@@ -51,8 +51,9 @@ All declarations are in the `TauCeti.MeasureTheory` namespace.
   `0 < p ≤ q < ∞` on a finite-dimensional space with a Haar measure, with an explicit constant. For
   `p = 1` and `q > n` this is `L^q ⊆ L^{1, n - 1 + α}` with `α = 1 - n / q`.
 * `morreyNormPow_comp_add_smul`: **scaling**. Under the affine change of variables
-  `y ↦ x₀ + ε y`, `ε > 0`, the Morrey norm is multiplied by `ε^(λ - n)`. This is how a coefficient
-  in a Morrey space behaves under the blow-up of an equation at a boundary point.
+  `y ↦ x₀ + ε y`, `ε > 0`, the `p`-th power of the Morrey norm (`morreyNormPow`) is multiplied
+  by `ε^(λ - n)`. This is how a coefficient in a Morrey space behaves under the blow-up of an
+  equation at a boundary point.
 * `morreyNormPow_one_convolution_le`: convolution with an integrable kernel does not leave
   `L^{1,λ}`: the Morrey norm of the convolution is at most `2^λ ‖v‖_{L¹}` times the Morrey norm of
   the function. This is the mollification step of the existence theory for equations with
@@ -203,10 +204,7 @@ theorem morreyNormPow_add_rpow_le (hp : 1 ≤ p) (hf : AEStronglyMeasurable f (�
   -- Minkowski's inequality on the ball, then the bounds on each ball by the two Morrey norms.
   have hmink : (∫⁻ y, ‖(f + g) y‖ₑ ^ p ∂ν) ^ (1 / p) ≤
       (∫⁻ y, ‖f y‖ₑ ^ p ∂ν) ^ (1 / p) + (∫⁻ y, ‖g y‖ₑ ^ p ∂ν) ^ (1 / p) := by
-    calc _ ≤ (∫⁻ y, ((fun y ↦ ‖f y‖ₑ) + fun y ↦ ‖g y‖ₑ) y ^ p ∂ν) ^ (1 / p) := by
-          gcongr with y
-          exact eNorm_add_le _ _
-      _ ≤ _ := ENNReal.lintegral_Lp_add_le (hf.restrict.eNorm) (hg.restrict.eNorm) hp
+    simpa only [eLpNorm'_eq_lintegral_eNorm] using eLpNorm'_add_le hf.restrict hg.restrict hp
   have hterm : ∀ h : X → F, (c * ∫⁻ y, ‖h y‖ₑ ^ p ∂ν) ^ (1 / p) ≤
       morreyNormPow μ Ω p lam h ^ (1 / p) := fun h ↦ by
     gcongr
