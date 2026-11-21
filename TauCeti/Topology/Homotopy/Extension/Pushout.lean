@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Topology.Category.TopCat.Limits.Basic
 public import TauCeti.Topology.Category.TopCat.Pushout
 public import TauCeti.Topology.Homotopy.Extension.Basic
 public import TauCeti.Topology.Homotopy.HomotopyEquiv
@@ -67,6 +68,9 @@ a two-sided homotopy inverse of `F`.
   base induces a homotopy equivalence of attachments.**
 * `ContinuousMap.HomotopyEquiv.exists_homotopyEquiv_pushout`: the same for the pushouts in
   `TopCat`, as a homotopy equivalence `Z ∪_a Y ≃ₕ Z' ∪_{e ∘ a} Y` which is `e` on `Z`.
+* `TauCeti.TopCat.hasHomotopyExtensionProperty_range_sigmaMap`: a coproduct in `TopCat` of
+  cofibrations is a cofibration, so that several pieces can be attached at once along a coproduct
+  of cofibrations.
 
 ## References
 
@@ -323,3 +327,32 @@ theorem exists_homotopyEquiv_pushout (e : Z ≃ₕ Z') (i : B ⟶ Y) (hi : IsEmb
   · exact ConcreteCategory.congr_hom hG z
 
 end ContinuousMap.HomotopyEquiv
+
+namespace TauCeti.TopCat
+
+open CategoryTheory CategoryTheory.Limits Set Topology
+
+universe u
+
+variable {ι : Type u} {A X : ι → TopCat.{u}} (φ : ∀ i, A i ⟶ X i)
+
+/-- **A coproduct of cofibrations in `TopCat` is a cofibration**: if the image of each `φ i` has
+the homotopy extension property in `X i`, then the image of `Limits.Sigma.map φ` has the homotopy
+extension property in `∐ X`. -/
+theorem hasHomotopyExtensionProperty_range_sigmaMap
+    (hφ : ∀ i, HasHomotopyExtensionProperty (range (φ i))) :
+    HasHomotopyExtensionProperty (range (Limits.Sigma.map φ)) := by
+  have hrange : range (Sigma.map id fun i ↦ φ i) = univ.sigma fun i ↦ range (φ i) := by
+    ext ⟨i, x⟩
+    refine ⟨?_, fun ⟨_, a, ha⟩ ↦ ⟨⟨i, a⟩, congrArg (Sigma.mk i) ha⟩⟩
+    rintro ⟨⟨k, a⟩, hka⟩
+    obtain ⟨rfl, ha⟩ := Sigma.mk.inj_iff.1 hka
+    exact ⟨mem_univ _, a, eq_of_heq ha⟩
+  convert (HasHomotopyExtensionProperty.sigma hφ).image
+    (TopCat.homeoOfIso (TopCat.sigmaIsoSigma X).symm) using 1
+  rw [coe_sigmaMap, range_comp, range_comp,
+    Function.Surjective.range_eq (f := ⇑(TopCat.sigmaIsoSigma A).hom)
+      (TopCat.homeoOfIso _).surjective, image_univ, hrange]
+  rfl
+
+end TauCeti.TopCat
