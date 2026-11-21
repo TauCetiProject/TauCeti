@@ -9,10 +9,10 @@ public import TauCeti.Geometry.Symplectic.Floer.Trajectory
 import TauCeti.Algebra.Order.BigOperators.Sum.SubSumBound
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.PeriodicDeriv
+import TauCeti.Analysis.Normed.Group.Lipschitz
 import TauCeti.Geometry.Symplectic.AlmostComplex.Topology
 import TauCeti.Geometry.Symplectic.Floer.Breaking
 import TauCeti.Topology.ContinuousMap.Ascoli
-import TauCeti.Topology.MetricSpace.Lipschitz.Basic
 import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
 /-!

@@ -7,11 +7,11 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Trajectory.Level
 public import TauCeti.Geometry.Symplectic.Floer.Trajectory.Neck
+import TauCeti.Analysis.Normed.Group.Lipschitz
 import TauCeti.Geometry.Symplectic.AlmostComplex.Topology
 import TauCeti.Order.Filter.AtTopBot
+import TauCeti.Order.Interval.Finite
 import TauCeti.Topology.ContinuousMap.Ascoli
-import TauCeti.Topology.Instances.Real.SeparatingGrid
-import TauCeti.Topology.MetricSpace.Lipschitz.Basic
 import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
 /-!
