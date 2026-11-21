@@ -24,7 +24,9 @@ the germ map on any affine neighbourhood. Independence of that neighbourhood mak
 ideal order available for arbitrary schemes. On an affine chart it agrees with ideal order
 at the corresponding prime, without a rationality or regularity assumption on the point.
 
-The stalk construction preserves sums, products and powers. Its being a proper ideal
+The stalk construction preserves sums, products and powers, and it detects inclusion of ideal
+sheaves (`AlgebraicGeometry.Scheme.IdealSheafData.le_iff_forall_stalkIdeal_le`), because an
+ideal of a ring is determined by its localizations at maximal ideals. Its being a proper ideal
 characterizes membership in the support, so order at least one recovers the usual support;
 higher order thresholds retain information about multiplicity.
 
@@ -155,6 +157,27 @@ theorem stalkIdeal_eq_map_localization (I : X.IdealSheafData) (U : X.affineOpens
   exact (IsLocalization.algEquiv (U.property.primeIdealOf ⟨x, hxU⟩).asIdeal.primeCompl
     (Localization.AtPrime (U.property.primeIdealOf ⟨x, hxU⟩).asIdeal)
     (X.presheaf.stalk x)).commutes r |>.symm
+
+/-- **Inclusion of ideal sheaves is checked on stalks.** An ideal sheaf is contained in another
+exactly when its stalk ideal is contained in the other's at every point. -/
+theorem le_iff_forall_stalkIdeal_le {I J : X.IdealSheafData} :
+    I ≤ J ↔ ∀ x, I.stalkIdeal x ≤ J.stalkIdeal x := by
+  refine ⟨fun h ↦ stalkIdeal_mono h, fun h U ↦ ?_⟩
+  have hU : IsAffineOpen U.val := U.property
+  -- Every maximal ideal of `Γ(X, U)` is the prime ideal of a point of `U`, at which the stalk
+  -- ideals are the localized section ideals.
+  refine Ideal.le_of_localization_maximal fun P hP ↦ ?_
+  have hmem : hU.fromSpec ⟨P, hP.isPrime⟩ ∈ U.val := by
+    rw [← SetLike.mem_coe, ← hU.range_fromSpec]
+    exact Set.mem_range_self _
+  obtain ⟨x, hx⟩ : ∃ x : U.val, (hU.primeIdealOf x).asIdeal = P :=
+    ⟨⟨_, hmem⟩, congrArg PrimeSpectrum.asIdeal
+      (hU.fromSpec.isOpenEmbedding.injective (hU.fromSpec_primeIdealOf ⟨_, hmem⟩))⟩
+  subst hx
+  have hIJ := h x.val
+  rw [I.stalkIdeal_eq_map_localization U x.val x.property,
+    J.stalkIdeal_eq_map_localization U x.val x.property] at hIJ
+  exact (Ideal.relIsoOfBijective _ (AlgEquiv.bijective _)).symm.le_iff_le.mp hIJ
 
 end AlgebraicGeometry.Scheme.IdealSheafData
 

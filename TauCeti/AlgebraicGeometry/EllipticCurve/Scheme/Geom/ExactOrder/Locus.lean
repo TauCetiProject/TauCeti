@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.ExactOrder.Subgroup
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.Basic
+public import TauCeti.AlgebraicGeometry.IdealSheaf.FaithfullyFlat
 public import TauCeti.AlgebraicGeometry.IdealSheaf.WeilRestriction
 public import TauCeti.CategoryTheory.Limits.Shapes.Pullback.Map
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.GroupLaw
@@ -40,6 +41,14 @@ order `N` exactly when the corresponding morphism `S' ⟶ E` factors through the
 (`EllipticCurveGeom.isOfExactOrder_iff_exactOrderLocus_le_ker_comp`). No hypothesis is placed on
 `S`, which may be nonreduced, and `N` need not be invertible on it.
 
+A flat surjective morphism factors through a closed subscheme only if that subscheme is everything
+(`AlgebraicGeometry.IsSchemeTheoreticallyDominant.of_flat_of_surjective`). Both conditions
+therefore descend along flat surjective morphisms, in particular along fpqc and fppf covers: a
+finite locally free closed subscheme is a subgroup scheme exactly when its base change is
+(`EllipticCurveGeom.exists_grpObj_isMonHom_comap_iff_of_flat_of_surjective`), and a point has exact
+order `N` exactly when its base change does
+(`EllipticCurveGeom.isOfExactOrder_pointsPullback_iff_of_flat_of_surjective`).
+
 ## Main definitions
 
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.subgroupLocus E D`: the ideal sheaf on `S` of the
@@ -56,6 +65,9 @@ order `N` exactly when the corresponding morphism `S' ⟶ E` factors through the
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isOfExactOrder_iff_exactOrderLocus_le_ker_comp`:
   the universal property of the exact-order locus; `isOfExactOrder_iff_exactOrderLocus_le_ker` is
   its special case for `S`-points of `E`.
+* `EllipticCurveGeom.exists_grpObj_isMonHom_comap_iff_of_flat_of_surjective` and
+  `EllipticCurveGeom.isOfExactOrder_pointsPullback_iff_of_flat_of_surjective`: being a subgroup
+  scheme and having exact order `N` descend along flat surjective morphisms.
 
 ## References
 
@@ -137,6 +149,35 @@ theorem subgroupLocus_le_ker_iff (hg : IsPullback g E'.structureMap E.structureM
     refine weilRestriction_comap_le_ker_iff D _ hD.flip ?_
     rw [Category.assoc, neg_comp_of_isPullback hg h0, reassoc_of% hρ]
 
+/-- **Subgroup schemes descend along flat surjective morphisms** (Katz–Mazur, 1.3.7). Let
+`g : E' ⟶ E` be a morphism of elliptic curves lying over a flat surjective `f : S' ⟶ S`, forming a
+pullback square with the structure morphisms and carrying the zero section of `E'` to that of `E`,
+and let `V(D) ⊆ E` be finite locally free over `S`. Then `V(D)` is a subgroup scheme of `E` exactly
+when its inverse image in `E'` is a subgroup scheme of `E'`. -/
+theorem exists_grpObj_isMonHom_comap_iff_of_flat_of_surjective [Flat f] [Surjective f]
+    (hg : IsPullback g E'.structureMap E.structureMap f) (h0 : E'.zero ≫ g = f ≫ E.zero) :
+    (∃ _ : GrpObj (Over.mk ((D.comap g).subschemeι ≫ E'.structureMap)),
+      IsMonHom (Over.homMk (D.comap g).subschemeι :
+        Over.mk ((D.comap g).subschemeι ≫ E'.structureMap) ⟶ Over.mk E'.structureMap)) ↔
+      ∃ _ : GrpObj (Over.mk (D.subschemeι ≫ E.structureMap)),
+        IsMonHom (Over.homMk D.subschemeι :
+          Over.mk (D.subschemeι ≫ E.structureMap) ⟶ Over.mk E.structureMap) := by
+  rw [← subgroupLocus_le_ker_iff _ hg h0, f.ker_eq_bot,
+    ← Scheme.Hom.ker_eq_bot_of_isIso (𝟙 S),
+    subgroupLocus_le_ker_iff _ (.id_horiz E.structureMap) (by simp)]
+  -- The inverse image along the identity cannot be rewritten in place, since the types in the
+  -- subgroup condition depend on it.
+  have key (D' : E.carrier.IdealSheafData) (hD' : D' = D) :
+      (∃ _ : GrpObj (Over.mk (D'.subschemeι ≫ E.structureMap)),
+        IsMonHom (Over.homMk D'.subschemeι :
+          Over.mk (D'.subschemeι ≫ E.structureMap) ⟶ Over.mk E.structureMap)) ↔
+      ∃ _ : GrpObj (Over.mk (D.subschemeι ≫ E.structureMap)),
+        IsMonHom (Over.homMk D.subschemeι :
+          Over.mk (D.subschemeι ≫ E.structureMap) ⟶ Over.mk E.structureMap) := by
+    subst hD'
+    rfl
+  exact key _ (comap_id D)
+
 end SubgroupLocus
 
 /-! ### Exact order is a closed condition -/
@@ -176,6 +217,16 @@ theorem isOfExactOrder_iff_subgroupLocus_eq_bot (P : 𝟙_ (Over S) ⟶ Over.mk 
     (N : ℕ) : E.IsOfExactOrder P N ↔ E.subgroupLocus (E.multiplesDivisor P N) = ⊥ := by
   rw [← le_bot_iff, ← Scheme.Hom.ker_eq_bot_of_isIso (𝟙 S),
     ← isOfExactOrder_pointsPullback_iff (.id_horiz E.structureMap) (by simp), pointsPullback_id]
+
+/-- **Points of exact order `N` descend along flat surjective morphisms** (Katz–Mazur, §1.4). For a
+pullback square of elliptic curves over a flat surjective `f : S' ⟶ S`, an `S`-point `P` of `E` has
+exact order `N` exactly when its base change to `E'` does. -/
+theorem isOfExactOrder_pointsPullback_iff_of_flat_of_surjective [Flat f] [Surjective f]
+    (hg : IsPullback g E'.structureMap E.structureMap f) (h0 : E'.zero ≫ g = f ≫ E.zero)
+    (P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap) (N : ℕ) :
+    E'.IsOfExactOrder (pointsPullback hg h0 P) N ↔ E.IsOfExactOrder P N := by
+  rw [isOfExactOrder_pointsPullback_iff, f.ker_eq_bot, le_bot_iff,
+    isOfExactOrder_iff_subgroupLocus_eq_bot]
 
 /-! ### The exact-order locus in `E` -/
 
