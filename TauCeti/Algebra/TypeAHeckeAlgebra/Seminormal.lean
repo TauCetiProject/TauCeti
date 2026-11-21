@@ -37,9 +37,11 @@ the split-semisimplicity criterion and includes `Q = 1` in characteristic zero.
 The vectors `v_U` diagonalize the Jucys–Murphy elements: the additive element `L_i` acts by
 `L_i v_U = [content i]_Q * v_U`, and the normalized element `J_i = 1 + (Q - 1) L_i` by
 `J_i v_U = Q ^ content i * v_U`, where `content i` is the column minus the row of the label `i`
-in `U`. The additive eigenvalues remain informative at `Q = 1`, where `J_i = 1`. Irreducibility
-of these modules is proved in `TauCeti.Algebra.TypeAHeckeAlgebra.Seminormal.Irreducible`; their
-comparison with other constructions of the Specht modules is not treated.
+in `U`. The additive eigenvalues remain informative at `Q = 1`, where `J_i = 1`. Under the
+split-semisimplicity criterion `[d]_Q ≠ 0` for `0 < d ≤ n` these modules are absolutely
+irreducible (`TauCeti.Algebra.TypeAHeckeAlgebra.Seminormal.Irreducible`); under the weaker
+hypothesis above they need not be. Their comparison with other constructions of the Specht
+modules is not treated.
 
 ## Main definitions
 

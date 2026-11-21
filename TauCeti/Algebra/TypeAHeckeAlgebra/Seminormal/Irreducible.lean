@@ -5,10 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.SimpleModule.Basic
 public import TauCeti.Algebra.TypeAHeckeAlgebra.Seminormal
 import Mathlib.Data.Matrix.Basis
 import Mathlib.LinearAlgebra.Matrix.ToLin
+import TauCeti.Algebra.Algebra.Subalgebra.Pi
 import TauCeti.Combinatorics.Young.StandardTableau.Swap
+import TauCeti.Data.Matrix.Basis
 
 /-!
 # Absolute irreducibility of the seminormal representations
@@ -18,7 +21,9 @@ the split-semisimplicity criterion that the `Q`-integers `[d]_Q`, `0 < d ≤ n`,
 seminormal representation `TauCeti.TypeAHeckeAlgebra.seminormalRep` of `H_n(q)` on the functions
 on the standard tableaux of shape `μ` is onto the whole endomorphism algebra
 (`TauCeti.TypeAHeckeAlgebra.seminormalRep_surjective`). This is the strong, absolute form of
-irreducibility; in particular the only invariant subspaces are `⊥` and `⊤`
+irreducibility. Through it these functions form a simple `H_n(q)`-module
+(`TauCeti.TypeAHeckeAlgebra.isSimpleModule_seminormalRep`), because they form a simple module over
+their endomorphism algebra; equivalently, the only invariant subspaces are `⊥` and `⊤`
 (`TauCeti.TypeAHeckeAlgebra.eq_bot_or_eq_top_of_seminormalRep_mem`).
 
 The image contains every matrix unit of the tableau basis:
@@ -27,7 +32,8 @@ The image contains every matrix unit of the tableau basis:
   elements `L_i`, with eigenvalues the additive contents `[content i]_Q`. A standard tableau is
   determined by the contents of its labels (`TauCeti.StandardYoungTableau.labelContent_injective`),
   and contents of two cells of `μ` differ by less than `n`, so the eigenvalues separate the
-  tableaux; Lagrange interpolation in the `L_i` then gives the projection onto each line `K v_U`;
+  tableaux; Lagrange interpolation in the `L_i` (`Subalgebra.single_one_mem_of_separates_points`)
+  then gives the projection onto each line `K v_U`;
 * when the labels `k` and `k + 1` of `U` lie neither next to each other in a row nor in a column,
   the generator `T_k` has a nonzero coefficient from `v_U` to the vector of the exchanged tableau,
   so compressing `T_k` between the two projections gives the corresponding matrix unit;
@@ -44,6 +50,8 @@ the tableau with first row `0, 1` spans an invariant line, since the off-diagona
 
 * `TauCeti.TypeAHeckeAlgebra.seminormalRep_surjective`: the seminormal representation is onto
   the endomorphism algebra.
+* `TauCeti.TypeAHeckeAlgebra.isSimpleModule_seminormalRep`: the functions on the standard tableaux
+  form a simple `H_n(q)`-module through the seminormal representation.
 * `TauCeti.TypeAHeckeAlgebra.eq_bot_or_eq_top_of_seminormalRep_mem`: the seminormal
   representation is irreducible.
 
@@ -120,39 +128,17 @@ private theorem single_self_mem_seminormalMatrices (U : StandardYoungTableau μ)
     refine ⟨additiveJucysMurphy q i, LinearMap.ext fun ψ => funext fun V => ?_⟩
     rw [seminormalRep_additiveJucysMurphy_apply, toLinAlgEquiv'_apply, diagonalAlgHom_apply,
       mulVec_diagonal]
-  have hsep : ∀ V, U ≠ V → ∃ i, φ i U ≠ φ i V := by
-    intro V hUV
+  have hsep : ∀ V W, V ≠ W → ∃ f ∈ S, f V ≠ f W := by
+    intro V W hVW
     by_contra! h
-    refine hUV (StandardYoungTableau.labelContent_injective μ (funext fun i => ?_))
+    refine hVW (StandardYoungTableau.labelContent_injective μ (funext fun i => ?_))
     dsimp only
-    refine (additiveContent_inj hQ hμ ?_).mp (h i)
+    refine (additiveContent_inj hQ hμ ?_).mp (h (φ i) (hφ i))
     rw [labelContent_def, labelContent_def]
     exact YoungDiagram.abs_cellContent_sub_lt_card
-      ((YoungDiagram.mem_cells _).mp (U.toTableau.symm i).property)
       ((YoungDiagram.mem_cells _).mp (V.toTableau.symm i).property)
-  -- for each `V ≠ U`, a function in `S` that is `1` at `U` and `0` at `V`
-  have hfactor : ∀ V, ∃ g ∈ S, g U = 1 ∧ (U ≠ V → g V = 0) := by
-    intro V
-    by_cases hUV : U = V
-    · exact ⟨1, Subalgebra.one_mem _, rfl, fun h => absurd hUV h⟩
-    obtain ⟨i, hi⟩ := hsep V hUV
-    refine ⟨(φ i U - φ i V)⁻¹ • (φ i - algebraMap K _ (φ i V)),
-      Subalgebra.smul_mem _ (Subalgebra.sub_mem _ (hφ i) (Subalgebra.algebraMap_mem _ _)) _,
-      ?_, fun _ => ?_⟩ <;>
-    simp only [Pi.smul_apply, Pi.sub_apply, Pi.algebraMap_apply, Algebra.algebraMap_self,
-      RingHom.id_apply, smul_eq_mul, sub_self, mul_zero, inv_mul_cancel₀ (sub_ne_zero.mpr hi)]
-  choose g hgS hgU hgV using hfactor
-  -- Lagrange interpolation: the indicator of `U` is the product of these functions
-  have hprod : Pi.single U 1 = ∏ V, g V := by
-    funext W
-    rw [Finset.prod_apply]
-    by_cases hW : W = U
-    · subst hW
-      rw [Pi.single_eq_same, eq_comm]
-      exact Finset.prod_eq_one fun V _ => hgU V
-    · rw [Pi.single_eq_of_ne hW, eq_comm]
-      exact Finset.prod_eq_zero (Finset.mem_univ W) (hgV W (Ne.symm hW))
-  have hmem : Pi.single U 1 ∈ S := hprod ▸ Subalgebra.prod_mem _ fun V _ => hgS V
+      ((YoungDiagram.mem_cells _).mp (W.toTableau.symm i).property)
+  have hmem := Subalgebra.single_one_mem_of_separates_points hsep U
   rw [hS, Subalgebra.mem_comap, diagonalAlgHom_apply, diagonal_single] at hmem
   exact hmem
 
@@ -217,14 +203,31 @@ theorem seminormalRep_surjective
     (hn : ∀ d : ℕ, 0 < d → d ≤ μ.card → additiveContent ((q : K) ^ 2) d ≠ 0) :
     Function.Surjective (seminormalRep q μ fun d hd hdn => hn d hd hdn.le) := by
   intro f
+  have htop := submodule_eq_top_of_single_one_mem
+    (S := Subalgebra.toSubmodule (seminormalMatrices q μ fun d hd hdn => hn d hd hdn.le))
+    (single_mem_seminormalMatrices hn)
   have hM : LinearMap.toMatrixAlgEquiv' f ∈
       seminormalMatrices q μ fun d hd hdn => hn d hd hdn.le := by
-    rw [matrix_eq_sum_single (LinearMap.toMatrixAlgEquiv' f)]
-    refine Subalgebra.sum_mem _ fun U _ => Subalgebra.sum_mem _ fun W _ => ?_
-    rw [← mul_one (LinearMap.toMatrixAlgEquiv' f U W), ← smul_eq_mul, ← smul_single]
-    exact Subalgebra.smul_mem _ (single_mem_seminormalMatrices hn U W) _
+    rw [← Subalgebra.mem_toSubmodule, htop]
+    exact Submodule.mem_top
   obtain ⟨x, hx⟩ := mem_seminormalMatrices.mp hM
   exact ⟨x, hx.trans (toLinAlgEquiv'_toMatrixAlgEquiv' f)⟩
+
+/-- **The seminormal modules are simple.** Under the split-semisimplicity criterion `[d]_Q ≠ 0`
+for `0 < d ≤ n`, the functions on the standard tableaux of shape `μ`, with the Hecke algebra
+`H_n(q)` acting through the seminormal representation, form a simple module. -/
+theorem isSimpleModule_seminormalRep
+    (hn : ∀ d : ℕ, 0 < d → d ≤ μ.card → additiveContent ((q : K) ^ 2) d ≠ 0) :
+    letI := Module.compHom (StandardYoungTableau μ → K)
+      (seminormalRep q μ fun d hd hdn => hn d hd hdn.le).toRingHom
+    IsSimpleModule (TypeAHeckeAlgebra K q μ.card) (StandardYoungTableau μ → K) := by
+  set σ := (seminormalRep q μ fun d hd hdn => hn d hd hdn.le).toRingHom
+  let := Module.compHom (StandardYoungTableau μ → K) σ
+  have : RingHomSurjective σ := ⟨seminormalRep_surjective hn⟩
+  -- the identity is `σ`-semilinear, so simplicity over the endomorphism algebra transfers
+  let l : (StandardYoungTableau μ → K) →ₛₗ[σ] (StandardYoungTableau μ → K) :=
+    { toFun := id, map_add' := fun _ _ => rfl, map_smul' := fun _ _ => rfl }
+  exact (LinearMap.isSimpleModule_iff_of_bijective l Function.bijective_id).mpr inferInstance
 
 /-- **The seminormal representation is irreducible.** Under the split-semisimplicity criterion
 `[d]_Q ≠ 0` for `0 < d ≤ n`, a subspace of the functions on the standard tableaux of shape `μ`
@@ -234,15 +237,15 @@ theorem eq_bot_or_eq_top_of_seminormalRep_mem
     (W : Submodule K (StandardYoungTableau μ → K))
     (hW : ∀ x, ∀ w ∈ W, seminormalRep q μ (fun d hd hdn => hn d hd hdn.le) x w ∈ W) :
     W = ⊥ ∨ W = ⊤ := by
-  refine or_iff_not_imp_left.mpr fun hne => eq_top_iff.mpr fun v _ => ?_
-  obtain ⟨w, hw, hw0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hne
-  obtain ⟨U, hU⟩ : ∃ U, w U ≠ 0 := by
-    by_contra! h
-    exact hw0 (funext h)
-  -- the endomorphism `ψ ↦ (ψ U / w U) • v` sends `w` to `v`
-  obtain ⟨x, hx⟩ := seminormalRep_surjective hn
-    ((w U)⁻¹ • (LinearMap.proj U).smulRight v)
-  have hxw := hW x w hw
-  simpa [hx, smul_smul, inv_mul_cancel₀ hU] using hxw
+  let := Module.compHom (StandardYoungTableau μ → K)
+    (seminormalRep q μ fun d hd hdn => hn d hd hdn.le).toRingHom
+  have := isSimpleModule_seminormalRep hn
+  -- `W` as an `H_n(q)`-submodule
+  let W' : Submodule (TypeAHeckeAlgebra K q μ.card) (StandardYoungTableau μ → K) :=
+    { W.toAddSubmonoid with smul_mem' := fun x w hw => hW x w hw }
+  rcases IsSimpleOrder.eq_bot_or_eq_top W' with h | h
+  · exact .inl (eq_bot_iff.mpr fun v hv =>
+      (Submodule.mem_bot K).mpr ((Submodule.mem_bot _).mp ((SetLike.ext_iff.mp h v).mp hv)))
+  · exact .inr (eq_top_iff.mpr fun v _ => (SetLike.ext_iff.mp h v).mpr Submodule.mem_top)
 
 end TauCeti.TypeAHeckeAlgebra
