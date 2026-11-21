@@ -250,6 +250,20 @@ theorem coeFn_toLp_inclusion_add (h : r ≤ s) (u v : H^{s, p}(E, G)) :
   rw [map_add, toLp_add]
   exact Lp.coeFn_add _ _
 
+/-- The `Lᵖ` function of the inclusion of `u - v` is almost everywhere the difference of those of
+`u` and `v`. -/
+theorem coeFn_toLp_inclusion_sub (h : r ≤ s) (u v : H^{s, p}(E, G)) :
+    ⇑(inclusion h (u - v)).toLp =ᵐ[volume] ⇑(inclusion h u).toLp - ⇑(inclusion h v).toLp := by
+  rw [map_sub, toLp_sub]
+  exact Lp.coeFn_sub _ _
+
+/-- The `Lᵖ` function of the inclusion of `-u` is almost everywhere the negative of that of
+`u`. -/
+theorem coeFn_toLp_inclusion_neg (h : r ≤ s) (u : H^{s, p}(E, G)) :
+    ⇑(inclusion h (-u)).toLp =ᵐ[volume] -⇑(inclusion h u).toLp := by
+  rw [map_neg, toLp_neg]
+  exact Lp.coeFn_neg _
+
 /-- The `Lᵖ` function of the inclusion of `c • u` is almost everywhere `c` times that of `u`. -/
 theorem coeFn_toLp_inclusion_smul (h : r ≤ s) (c : ℂ) (u : H^{s, p}(E, G)) :
     ⇑(inclusion h (c • u)).toLp =ᵐ[volume] c • ⇑(inclusion h u).toLp := by
@@ -271,6 +285,14 @@ theorem coeFn_inclusionLp_sub_ae_eq (hs : 0 ≤ s) {u v : H^{s, p}(E, G)} {F F' 
     ⇑(inclusionLp hs (u - v)) =ᵐ[volume] fun z ↦ F z - F' z := by
   rw [map_sub]
   exact (Lp.coeFn_sub _ _).trans (hu.sub hv)
+
+/-- If the `Lᵖ` function of `u` is almost everywhere `F`, then that of `-u` is almost everywhere
+`-F`. -/
+theorem coeFn_inclusionLp_neg_ae_eq (hs : 0 ≤ s) {u : H^{s, p}(E, G)} {F : E → G}
+    (hu : ⇑(inclusionLp hs u) =ᵐ[volume] F) :
+    ⇑(inclusionLp hs (-u)) =ᵐ[volume] fun z ↦ -F z := by
+  rw [map_neg]
+  exact (Lp.coeFn_neg _).trans hu.neg
 
 /-- If the `Lᵖ` function of `u` is almost everywhere `F`, then that of `c • u` is almost everywhere
 `c • F`. -/
