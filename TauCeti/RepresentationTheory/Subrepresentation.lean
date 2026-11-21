@@ -72,6 +72,7 @@ irreducibility, as does restriction along a monoid isomorphism.
 * `Subrepresentation.toSubmodule_lt_toSubmodule`
 * `Subrepresentation.isCompl_toSubmodule`
 * `Subrepresentation.toRepresentation_apply`
+* `Subrepresentation.coe_toRepresentation_apply`
 * `Representation.IntertwiningMap.eq_zero_iff_range_eq_bot`
 * `Representation.IntertwiningMap.surjective_iff_range_eq_top`
 * `Subrepresentation.subtype`
@@ -158,6 +159,12 @@ theorem isCompl_toSubmodule {ρ₁ ρ₂ : Subrepresentation ρ} :
 /-- The action on a subrepresentation is the restriction of the original action. -/
 theorem toRepresentation_apply (S : Subrepresentation ρ) (g : G) :
     S.toRepresentation g = (ρ g).restrict (S.apply_mem_toSubmodule g) :=
+  rfl
+
+/-- The action on a subrepresentation, coerced to the ambient module, is the original action. -/
+@[simp]
+theorem coe_toRepresentation_apply (S : Subrepresentation ρ) (g : G) (x : S.toSubmodule) :
+    ((S.toRepresentation g x : S.toSubmodule) : W) = ρ g x :=
   rfl
 
 /-- An intertwining map is zero exactly when its range is the bottom subrepresentation. -/
