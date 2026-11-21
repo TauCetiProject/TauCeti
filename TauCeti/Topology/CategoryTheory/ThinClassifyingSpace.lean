@@ -7,9 +7,11 @@ module
 
 public import TauCeti.AlgebraicTopology.SimplicialObject.GeometricRealization.Skeleton
 public import TauCeti.Topology.CategoryTheory.CoarseSpace.Restrict
+public import TauCeti.Topology.CategoryTheory.Groupoid.Examples
 public import TauCeti.Topology.CategoryTheory.Latching
 import Mathlib.Topology.GDelta.MetrizableSpace
 import Mathlib.Topology.Metrizable.Urysohn
+import TauCeti.Topology.Compactness.Paracompact
 
 /-!
 # Thin classifying spaces of topological categories and groupoids
@@ -300,6 +302,24 @@ instance instT4SpaceOfRegularSecondCountable [T0Space (Quiver.Total C)]
   have : TopologicalSpace.MetrizableSpace (Quiver.Total C) := inferInstance
   instT4Space
 
+/-- When the identity arrows form a closed subset of `Quiver.Total C` and `Quiver.Total C` is
+regular and second-countable (with no `T0` assumption), `thinClassifyingSpace C` is normal in its
+colimit topology. -/
+theorem normalSpace_of_isClosed_range_unit
+    (hunit : IsClosed (Set.range fun x : C ↦ (⟨x, x, 𝟙 x⟩ : Quiver.Total C)))
+    [RegularSpace (Quiver.Total C)] [SecondCountableTopology (Quiver.Total C)] :
+    NormalSpace (thinClassifyingSpace C) :=
+  geometricRealization.normalSpace_of_regularSpace_lindelofSpace (topologicalNerve C)
+    fun {_} j ↦ isClosedEmbedding_topologicalNerve_σ hunit j
+
+/-- **Paracompact thin classifying space for second-countable regular arrow spaces.** For any
+category whose total arrow space is `T0`, regular, and second-countable, `thinClassifyingSpace C` is
+paracompact in its colimit topology. -/
+instance instParacompactSpaceOfRegularSecondCountable [T0Space (Quiver.Total C)]
+    [RegularSpace (Quiver.Total C)] [SecondCountableTopology (Quiver.Total C)] :
+    ParacompactSpace (thinClassifyingSpace C) :=
+  inferInstance
+
 section CompactCategory
 
 variable [TopologicalSpace C] [CompactSpace (Quiver.Total C)]
@@ -337,6 +357,15 @@ theorem compactlyGeneratedSpace_of_compactSpace [T2Space (Quiver.Total C)] :
   have := compactSpace_composableArrows hs ht hu hc
   exact inferInstanceAs (CompactlyGeneratedSpace (geometricRealization (topologicalNerve C)))
 
+/-- If `Quiver.Total C` is compact Hausdorff and source, target, units, and composition are
+continuous, then `thinClassifyingSpace C` is paracompact in its colimit topology. -/
+theorem paracompactSpace_of_compactSpace [T2Space (Quiver.Total C)] :
+    ParacompactSpace (thinClassifyingSpace C) := by
+  have : T2Space C := .of_injective_continuous (fun _ _ h ↦ congrArg Quiver.Total.left h) hu
+  have := t4Space_of_compactSpace hs ht hu hc
+  have := lindelofSpace_of_compactSpace hs ht hu hc
+  exact inferInstance
+
 end CompactCategory
 
 end PointSetTopology
@@ -362,7 +391,50 @@ instance instCompactlyGeneratedSpaceOfCompactSpace :
   compactlyGeneratedSpace_of_compactSpace continuous_source continuous_target continuous_unit
     continuous_comp
 
+instance instParacompactSpaceOfCompactSpace : ParacompactSpace (thinClassifyingSpace C) :=
+  paracompactSpace_of_compactSpace continuous_source continuous_target continuous_unit
+    continuous_comp
+
 end TopologicalGroupoidInstances
+
+section SingleObj
+
+open geometricRealization (skeleton)
+
+variable (G : Type u)
+
+/-- In the one-object category `SingleObj G` over a `T1` monoid `G`, the unit locus is a singleton
+and therefore closed in `Quiver.Total (SingleObj G)`. No Hausdorff or étaleness assumption is
+needed. -/
+theorem isClosed_range_unit_singleObj [Monoid G] [TopologicalSpace G] [T1Space G] :
+    IsClosed (Set.range fun x : SingleObj G ↦ (⟨x, x, 𝟙 x⟩ : Quiver.Total (SingleObj G))) := by
+  have : T1Space (Quiver.Total (SingleObj G)) :=
+    (OneObjectGroupoid.arrowHomeomorph G).isEmbedding.t1Space
+  have hrange :
+      (Set.range fun x : SingleObj G ↦ (⟨x, x, 𝟙 x⟩ : Quiver.Total (SingleObj G))) =
+        {⟨SingleObj.star G, SingleObj.star G, 𝟙 (SingleObj.star G)⟩} :=
+    Set.ext fun _ ↦ ⟨by rintro ⟨⟨⟩, rfl⟩; rfl, by rintro rfl; exact ⟨SingleObj.star G, rfl⟩⟩
+  exact hrange ▸ isClosed_singleton
+
+/-- Every skeletal stage inclusion into `thinClassifyingSpace (SingleObj G)` is a closed embedding
+whenever `G` is a `T1` monoid, with no Hausdorff or étaleness assumption. -/
+theorem isClosedEmbedding_skeleton_toRealization_singleObj [Monoid G] [TopologicalSpace G]
+    [T1Space G] (n : ℕ) :
+    IsClosedEmbedding (skeleton.toRealization (topologicalNerve (SingleObj G)) n) :=
+  isClosedEmbedding_skeleton_toRealization (isClosed_range_unit_singleObj G) n
+
+/-- Continuous maps from compact spaces into `thinClassifyingSpace (SingleObj G)` factor
+continuously through a finite skeleton whenever `G` is a `T1` monoid. -/
+theorem exists_lift_skeleton_of_compactSpace_singleObj [Monoid G] [TopologicalSpace G]
+    [T1Space G] {K : Type*} [TopologicalSpace K] [CompactSpace K]
+    (g : C(K, thinClassifyingSpace (SingleObj G))) :
+    ∃ (n : ℕ) (g' : C(K, (skeleton (topologicalNerve (SingleObj G))).obj n)),
+      (skeleton.toRealization (topologicalNerve (SingleObj G)) n).hom.comp g' = g :=
+  have : T1Space (Quiver.Total (SingleObj G)) :=
+    (OneObjectGroupoid.arrowHomeomorph G).isEmbedding.t1Space
+  exists_lift_skeleton_of_compactSpace (isClosed_range_unit_singleObj G) g
+
+end SingleObj
 
 end thinClassifyingSpace
 
@@ -447,6 +519,30 @@ def thinClassifyingSpaceRestrictionHomeomorph (hP : IsOpen {x | P x}) :
     thinClassifyingSpaceMap P.ι P.continuous_mapTotal_ι
       ((P.thinClassifyingSpaceRestrictionHomeomorph hs hP).symm z) = z.val :=
   congrArg Subtype.val ((P.thinClassifyingSpaceRestrictionHomeomorph hs hP).apply_symm_apply z)
+
+/-- The thin classifying space of a saturated closed full subgroupoid is homeomorphic to the
+corresponding coarse-map preimage in `thinClassifyingSpace C`. -/
+def thinClassifyingSpaceClosedRestrictionHomeomorph (hP : IsClosed {x | P x}) :
+    thinClassifyingSpace P.FullSubcategory ≃ₜ
+      (thinClassifyingSpace.coarseMap hs ⁻¹'
+        (_root_.Quotient.mk (isIsomorphicSetoid C) '' {x | P x})) :=
+  (P.isClosedEmbedding_thinClassifyingSpaceMap_ι hs hP).isEmbedding.toHomeomorph.trans
+    (Homeomorph.setCongr (P.preimage_coarseMap_eq_range_thinClassifyingSpaceMap_ι hs).symm)
+
+@[simp↓] theorem thinClassifyingSpaceClosedRestrictionHomeomorph_apply_val
+    (hP : IsClosed {x | P x}) (z : thinClassifyingSpace P.FullSubcategory) :
+    (P.thinClassifyingSpaceClosedRestrictionHomeomorph hs hP z).val =
+      thinClassifyingSpaceMap P.ι P.continuous_mapTotal_ι z := (rfl)
+
+@[simp↓]
+theorem thinClassifyingSpaceMap_ι_thinClassifyingSpaceClosedRestrictionHomeomorph_symm_apply
+    (hP : IsClosed {x | P x})
+    (z : thinClassifyingSpace.coarseMap hs ⁻¹'
+      (_root_.Quotient.mk (isIsomorphicSetoid C) '' {x | P x})) :
+    thinClassifyingSpaceMap P.ι P.continuous_mapTotal_ι
+      ((P.thinClassifyingSpaceClosedRestrictionHomeomorph hs hP).symm z) = z.val :=
+  congrArg Subtype.val
+    ((P.thinClassifyingSpaceClosedRestrictionHomeomorph hs hP).apply_symm_apply z)
 
 end SaturatedGroupoid
 
