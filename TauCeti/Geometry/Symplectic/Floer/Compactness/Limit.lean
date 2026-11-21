@@ -35,13 +35,10 @@ The first point is the `C¹` convergence theorem for the coordinate equation
 `∂ₜu - X(z, u) i = J(z, u)(∂ₛu - X(z, u) 1)`
 (`TauCeti.Floer.tendstoLocallyUniformlyOn_fderiv_of_floer`), read in the coordinate
 `Complex.equivRealProdCLM` of the domain. In the form of the Floer equation used here it is
-`TauCeti.SymplecticForm.tendstoLocallyUniformlyOn_fderiv_of_floer`. The second is Fatou's
-lemma: the energy density `ω(∂ₛu - X_{K_s}, ∂ₜu - X_{K_t})` of the limit is the pointwise limit of
-the energy densities along the sequence, since it depends continuously on the value and the
-derivative of the map (`TauCeti.SymplecticForm.tendsto_floerEnergyDensity`), so the energy is
-lower semicontinuous (`TauCeti.SymplecticForm.setLIntegral_floerEnergyDensity_le_liminf`). The
-limit equation is read back from the coordinate equation by
+`TauCeti.SymplecticForm.tendstoLocallyUniformlyOn_fderiv_of_floer`. The limit equation is read
+back from the coordinate equation by
 `TauCeti.SymplecticForm.isComplexLinearMap_perturbedFDeriv_iff_fderiv_comp_equivRealProdCLM_I_sub`.
+The second point comes from the accounting of the energy at the bubbling points below.
 
 The energy that the limit loses is accounted for at the bubbling points. The energy densities
 converge to that of `v` locally uniformly on `Ω \ Z`
