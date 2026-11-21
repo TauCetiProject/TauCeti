@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Group.EvenFunction
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
+public import Mathlib.Analysis.Calculus.DSlope
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Convex.Function
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
@@ -52,6 +53,8 @@ nonempty (`TauCeti.exists_isStandardCapProfile`), so the standard cap can be cho
   `TauCeti.IsStandardCapProfile.deriv_deriv_nonpos`: `0 ≤ f' ≤ 1` and `f'' ≤ 0` on `[0, ∞)`.
 * `TauCeti.IsStandardCapProfile.apply_pos`, `TauCeti.IsStandardCapProfile.apply_le_sqrt_two`:
   `0 < f(r) ≤ √2` for `r > 0`.
+* `TauCeti.IsStandardCapProfile.dslope_zero_pos`: the ratio `f(r) / r`, read as `1` at the tip, is
+  positive on `[0, ∞)`.
 * `TauCeti.exists_isStandardCapProfile`: standard cap profiles exist.
 
 ## Implementation notes
@@ -184,6 +187,19 @@ theorem apply_le_sqrt_two {r : ℝ} (hr : 0 ≤ r) : f r ≤ √2 := by
   calc f r ≤ f (max r R) :=
         hf.monotoneOn (mem_Ici.2 hr) (mem_Ici.2 (hr.trans (le_max_left r R))) (le_max_left r R)
     _ = √2 := hR _ (le_max_right r R)
+
+/-- Away from the tip, the difference quotient `dslope f 0 r` of a standard cap profile is
+`f(r) / r`. -/
+theorem dslope_zero_of_ne_zero {r : ℝ} (hr : r ≠ 0) : dslope f 0 r = f r / r := by
+  rw [dslope_of_ne _ hr, slope_def_field, hf.apply_zero, sub_zero, sub_zero]
+
+/-- The ratio `f(r) / r`, read as `f'(0) = 1` at the tip, is positive for `r ≥ 0`. -/
+theorem dslope_zero_pos {r : ℝ} (hr : 0 ≤ r) : 0 < dslope f 0 r := by
+  rcases hr.eq_or_lt with rfl | hr
+  · rw [dslope_same, hf.deriv_zero]
+    exact one_pos
+  · rw [hf.dslope_zero_of_ne_zero hr.ne']
+    exact div_pos (hf.apply_pos hr) hr
 
 end IsStandardCapProfile
 

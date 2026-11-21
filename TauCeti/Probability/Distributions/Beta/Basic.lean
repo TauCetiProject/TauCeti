@@ -13,7 +13,7 @@ import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import TauCeti.Analysis.SpecialFunctions.Beta.Basic
 import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.MeasureTheory.Measure.WithDensity
-import TauCeti.Probability.Density
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
 /-!
 # Elementary theory of the beta distribution
@@ -118,7 +118,7 @@ parameters exactly when its density-weighted version is Lebesgue integrable. -/
 theorem integrable_betaMeasure_iff {α β : ℝ} (hα : 0 < α) (hβ : 0 < β) {g : ℝ → E} :
     Integrable g (betaMeasure α β) ↔ Integrable fun x ↦ betaPDFReal α β x • g x := by
   rw [betaMeasure_eq_withDensity_ofReal]
-  exact Probability.integrable_withDensity_ofReal_iff (measurable_betaPDFReal α β).aemeasurable
+  exact MeasureTheory.integrable_withDensity_ofReal_iff (measurable_betaPDFReal α β).aemeasurable
     (ae_of_all _ (betaPDFReal_nonneg hα hβ))
 
 /-- **Integral transfer.** An integral against a beta law with positive shape parameters is the
@@ -126,7 +126,7 @@ density-weighted Lebesgue integral. -/
 theorem integral_betaMeasure_eq {α β : ℝ} (hα : 0 < α) (hβ : 0 < β) (g : ℝ → E) :
     ∫ x, g x ∂betaMeasure α β = ∫ x, betaPDFReal α β x • g x := by
   rw [betaMeasure_eq_withDensity_ofReal]
-  exact Probability.integral_withDensity_ofReal (measurable_betaPDFReal α β).aemeasurable
+  exact MeasureTheory.integral_withDensity_ofReal (measurable_betaPDFReal α β).aemeasurable
     (ae_of_all _ (betaPDFReal_nonneg hα hβ)) g
 
 /-- **Integral transfer, kernel form.** An integral against a beta law with positive shape

@@ -6,14 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
+import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 
 /-!
 # Elementary bounds for the real exponential
 
-Every affine function `A x + B` is eventually smaller than `exp (a x)` when `0 < a`. For `0 < x`
-the function `x / (exp x - 1)`, the generating function of the Bernoulli numbers, lies between
-`exp (-x)` and `1`. With `q = exp (-x)` it is `x q / (1 - q)`, the rescaled mean of the geometric
-weights `(1 - q) q ^ k`, so these bounds control geometric averages as `q ↑ 1`.
+Every affine function `A x + B` is eventually smaller than `exp (a x)` when `0 < a`, and
+`(A x + B) exp (-(a x))` tends to `0`. For `0 < x` the function `x / (exp x - 1)`, the generating
+function of the Bernoulli numbers, lies between `exp (-x)` and `1`. With `q = exp (-x)` it is
+`x q / (1 - q)`, the rescaled mean of the geometric weights `(1 - q) q ^ k`, so these bounds control
+geometric averages as `q ↑ 1`.
 
 Comparing a real power `y ^ ε` with an exponential level `exp (-t)` amounts to comparing `y`
 with the rescaled level `exp (-(t / ε))`. Similarly, a two-sided logarithmic approximation
@@ -23,7 +25,11 @@ is bounded on `x ≥ 0`.
 
 ## Main results
 
+* `TauCeti.mul_exp_one_sub_lt_one`: `x exp (1 - x) < 1` for `x ≠ 1`.
+* `Real.one_add_le_exp_sub_sq_div_four`: `1 + v ≤ exp (v - v² / 4)` for `0 ≤ v ≤ 1 / 8`.
 * `TauCeti.eventually_mul_add_lt_exp_mul`: `A x + B < exp (a x)` eventually, for `0 < a`.
+* `TauCeti.tendsto_mul_add_mul_exp_neg_mul_atTop_nhds_zero`: `(A x + B) exp (-(a x)) → 0` as
+  `x → ∞`, for `0 < a`.
 * `TauCeti.exists_pos_eventually_forall_le_mul_exp`: finitely many eventual exponential bounds
   `f i s t ≤ A_i exp (-κ_i s)` combine into one, with the slowest rate and the largest constant.
 * `TauCeti.not_exists_ofReal_mul_exp_le_mul_exp`: for `K > 0` and `k < μ`, `K exp (-k t)` is not
@@ -56,9 +62,32 @@ is bounded on `x ≥ 0`.
 public section
 
 open Filter Real
-open scoped Nat
+open scoped Nat Topology
 
 namespace TauCeti
+
+/-- `x exp (1 - x) < 1` for `x ≠ 1`, a rescaling of `x + 1 < exp x` for `x ≠ 0`. -/
+theorem mul_exp_one_sub_lt_one {x : ℝ} (hx : x ≠ 1) : x * exp (1 - x) < 1 := by
+  have h := add_one_lt_exp (sub_ne_zero.2 hx)
+  rw [sub_add_cancel] at h
+  calc x * exp (1 - x) < exp (x - 1) * exp (1 - x) := by gcongr
+    _ = 1 := by rw [← exp_add, sub_add_sub_cancel, sub_self, exp_zero]
+
+/-- For `0 ≤ v ≤ 1 / 8`, `1 + v ≤ exp (v - v² / 4)`, from the alternating series of
+`log (1 + v)` (`Real.abs_log_sub_add_sum_range_le`). -/
+theorem _root_.Real.one_add_le_exp_sub_sq_div_four {v : ℝ} (hv0 : 0 ≤ v) (hv : v ≤ 1 / 8) :
+    1 + v ≤ Real.exp (v - v ^ 2 / 4) := by
+  have h := Real.abs_log_sub_add_sum_range_le (x := -v)
+    (by rw [abs_neg, abs_of_nonneg hv0]; linarith) 2
+  rw [abs_neg, abs_of_nonneg hv0, sub_neg_eq_add] at h
+  simp only [Finset.sum_range_succ, Finset.sum_range_zero] at h
+  norm_num at h
+  have h' := (abs_le.1 h).2
+  have h3 : v ^ 3 / (1 - v) ≤ v ^ 2 / 4 := by
+    rw [div_le_iff₀ (by linarith)]
+    nlinarith [mul_nonneg (sq_nonneg v) (show 0 ≤ 1 - 5 * v by linarith)]
+  rw [← Real.exp_log (by linarith : (0 : ℝ) < 1 + v)]
+  exact Real.exp_le_exp.2 (by nlinarith)
 
 /-- An affine function of `x` is eventually smaller than `exp (a x)` when `0 < a`. -/
 theorem eventually_mul_add_lt_exp_mul {a : ℝ} (ha : 0 < a) (A B : ℝ) :
@@ -68,6 +97,13 @@ theorem eventually_mul_add_lt_exp_mul {a : ℝ} (ha : 0 < a) (A B : ℝ) :
   rw [rpow_one, lt_div_iff₀ (by linarith)] at hx
   nlinarith [mul_nonneg (sub_nonneg.2 (le_abs_self A)) (by linarith : (0 : ℝ) ≤ x),
     mul_nonneg (abs_nonneg B) (by linarith : (0 : ℝ) ≤ x - 1), le_abs_self B]
+
+/-- An affine function of `x` times `exp (-(a x))` tends to `0` as `x → ∞`, for `0 < a`. -/
+theorem tendsto_mul_add_mul_exp_neg_mul_atTop_nhds_zero {a : ℝ} (ha : 0 < a) (A B : ℝ) :
+    Tendsto (fun x ↦ (A * x + B) * exp (-(a * x))) atTop (𝓝 0) := by
+  have h₁ := (tendsto_rpow_mul_exp_neg_mul_atTop_nhds_zero 1 a ha).const_mul A
+  have h₀ := (tendsto_rpow_mul_exp_neg_mul_atTop_nhds_zero 0 a ha).const_mul B
+  simpa [rpow_one, rpow_zero, add_mul, mul_assoc] using h₁.add h₀
 
 /-- Eventual exponential bounds `f i s t ≤ A_i exp (-κ_i s)` with rates `κ_i > 0`, for finitely
 many indices `i`, combine into one bound `f i s t ≤ A exp (-κ s)` for all `i`, with the slowest
