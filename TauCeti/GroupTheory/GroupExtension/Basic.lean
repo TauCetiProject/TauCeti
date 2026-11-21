@@ -19,6 +19,8 @@ This file provides operations on an existing group extension.
 * `GroupExtension.relabelKer`: relabels the kernel term of a group extension.
 * `GroupExtension.relabelQuotient`: relabels the quotient term of a group extension.
 * `GroupExtension.relabel`: relabels both the kernel and quotient terms of a group extension.
+* `GroupExtension.relabelEquivOfMulEquiv`: packages compatible multiplicative equivalences on all
+  three terms of two extensions into a `GroupExtension.Equiv` after relabelling.
 * `GroupExtension.Section.monoidHomComp`: transports a section along a homomorphism of extensions
   over the identity of the quotient group.
 * `GroupExtension.surjective_of_comp_inl_eq`: a homomorphism of extensions over the identity of
@@ -152,6 +154,45 @@ theorem _root_.TauCeti.GroupExtension.relabelQuotient_conjAct {S : GroupExtensio
   apply S.inl_injective
   rw [← GroupExtension.relabelQuotient_inl S e, GroupExtension.inl_conjAct_comm,
     GroupExtension.relabelQuotient_inl, GroupExtension.inl_conjAct_comm]
+
+/-- Compatible multiplicative equivalences `(eN, eE, eG)` between all three terms of two group
+extensions define an equivalence `(S.relabel eN.symm eG).Equiv S'` with fixed kernel `N'` and
+quotient `G'`. -/
+@[to_additive
+  /-- Compatible additive equivalences `(eN, eE, eG)` between all three terms of two additive group
+  extensions define an equivalence `(S.relabel eN.symm eG).Equiv S'` with fixed kernel `N'` and
+  quotient `G'`. -/]
+def relabelEquivOfMulEquiv (S : GroupExtension N E G) {N' E' G' : Type*} [Group N'] [Group E']
+    [Group G'] (S' : GroupExtension N' E' G') (eN : N ≃* N') (eE : E ≃* E') (eG : G ≃* G')
+    (hinl : eE.toMonoidHom.comp S.inl = S'.inl.comp eN.toMonoidHom)
+    (hright : S'.rightHom.comp eE.toMonoidHom = eG.toMonoidHom.comp S.rightHom) :
+    (S.relabel eN.symm eG).Equiv S' where
+  toMulEquiv := eE
+  inl_comm := by
+    ext n'
+    have h := DFunLike.congr_fun hinl (eN.symm n')
+    simpa only [relabel_inl, Function.comp_apply, MonoidHom.comp_apply,
+      MulEquiv.coe_toMonoidHom, eN.apply_symm_apply] using h
+  rightHom_comm := by
+    ext x
+    simpa only [relabel_rightHom, Function.comp_apply, MonoidHom.comp_apply,
+      MulEquiv.coe_toMonoidHom] using DFunLike.congr_fun hright x
+
+@[to_additive (attr := simp)]
+theorem relabelEquivOfMulEquiv_apply (S : GroupExtension N E G) {N' E' G' : Type*} [Group N']
+    [Group E'] [Group G'] (S' : GroupExtension N' E' G') (eN : N ≃* N') (eE : E ≃* E')
+    (eG : G ≃* G') (hinl : eE.toMonoidHom.comp S.inl = S'.inl.comp eN.toMonoidHom)
+    (hright : S'.rightHom.comp eE.toMonoidHom = eG.toMonoidHom.comp S.rightHom) (x : E) :
+    S.relabelEquivOfMulEquiv S' eN eE eG hinl hright x = eE x :=
+  (rfl)
+
+@[to_additive (attr := simp)]
+theorem relabelEquivOfMulEquiv_symm_apply (S : GroupExtension N E G) {N' E' G' : Type*} [Group N']
+    [Group E'] [Group G'] (S' : GroupExtension N' E' G') (eN : N ≃* N') (eE : E ≃* E')
+    (eG : G ≃* G') (hinl : eE.toMonoidHom.comp S.inl = S'.inl.comp eN.toMonoidHom)
+    (hright : S'.rightHom.comp eE.toMonoidHom = eG.toMonoidHom.comp S.rightHom) (y : E') :
+    (S.relabelEquivOfMulEquiv S' eN eE eG hinl hright).symm y = eE.symm y :=
+  (rfl)
 
 section Hom
 
@@ -299,3 +340,21 @@ theorem mulAutCongr_characterTwist (F : S.Equiv S') (hcentral : S.inl.range ≤ 
 end Equiv
 
 end GroupExtension
+
+namespace SemidirectProduct
+
+variable {N G : Type*} [Group N] [Group G] (φ : G →* MulAut N)
+
+/-- Evaluating the canonical splitting `SemidirectProduct.inr_splitting` applies
+`SemidirectProduct.inr`. -/
+@[simp]
+theorem inr_splitting_apply (g : G) : inr_splitting φ g = inr g :=
+  (rfl)
+
+/-- The underlying monoid homomorphism of `SemidirectProduct.inr_splitting` is
+`SemidirectProduct.inr`. -/
+@[simp]
+theorem toMonoidHom_inr_splitting : (inr_splitting φ).toMonoidHom = inr :=
+  (rfl)
+
+end SemidirectProduct

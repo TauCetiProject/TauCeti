@@ -49,15 +49,15 @@ variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing
 /-- **State separation of zero.** If `φ a = 0` for every state `φ` of `A`, then `a = 0`. -/
 theorem eq_zero_of_forall_mem_stateSpace_apply_eq_zero {a : A}
     (h : ∀ φ ∈ stateSpace A, φ a = 0) : a = 0 := by
-  have hsa (x : selfAdjoint A) (hx : ∀ φ : stateSpace A, φ.1 x = 0) : (x : A) = 0 := by
-    have : IsStarNormal (x : A) := x.2.isStarNormal
+  have hsa (x : selfAdjoint A) (hx : ∀ φ : stateSpace A, φ.val x = 0) : (x : A) = 0 := by
+    have : IsStarNormal (x : A) := x.property.isStarNormal
     exact norm_eq_zero.1 <| by
       simp [norm_eq_iSup_norm_apply_stateSpace_of_isStarNormal (x : A), hx, Real.iSup_const_zero]
   rw [← realPart_add_I_smul_imaginaryPart a,
     hsa (realPart a) fun φ => by
-      simpa [h φ.1 φ.2] using map_realPart (StateSpace.toPositiveLinearMap φ) a,
+      simpa [h φ.val φ.property] using map_realPart (StateSpace.toPositiveLinearMap φ) a,
     hsa (imaginaryPart a) fun φ => by
-      simpa [h φ.1 φ.2] using map_imaginaryPart (StateSpace.toPositiveLinearMap φ) a,
+      simpa [h φ.val φ.property] using map_imaginaryPart (StateSpace.toPositiveLinearMap φ) a,
     smul_zero, add_zero]
 
 /-- If `φ (star a * a) = 0` for every state `φ` of `A`, then `a = 0`. -/
@@ -113,13 +113,17 @@ theorem nonneg_iff_forall_mem_stateSpace {a : A} :
   have hunit (ψ : WeakDual ℂ A⁺¹) (hψ : ψ ∈ stateSpace A⁺¹) : 0 ≤ ψ (a : A⁺¹) := by
     set φ := pullbackFunctional A (Unitization.inrNonUnitalStarAlgHom ℂ A) ψ
     by_cases hφ0 : φ = 0
-    · simpa [φ] using (show 0 ≤ φ a by rw [hφ0, ← toStrongDual_apply]; simp)
+    · have hzero : ψ (a : A⁺¹) = 0 := by
+        calc ψ (a : A⁺¹)
+            = φ a := (pullbackFunctional_apply (Unitization.inrNonUnitalStarAlgHom ℂ A) ψ a).symm
+          _ = 0 := by rw [hφ0, ← toStrongDual_apply]; simp
+      simp [hzero]
     · have hpos : 0 < ‖toStrongDual φ‖ := by simp [hφ0]
       have hcφ := h _ (inv_norm_toStrongDual_smul_mem_stateSpace_of_map_nonneg_of_ne_zero
         (fun _ => map_nonneg_pullbackFunctional_inr_of_mem_stateSpace hψ) hφ0)
       simpa [-Complex.real_smul, φ, smul_smul, mul_inv_cancel₀ hpos.ne'] using
         smul_nonneg hpos.le hcφ
-  rw [← Unitization.inr_nonneg_iff]
+  rw [← Unitization.inr_nonneg_iff ℂ]
   have ha_inr_sa : IsSelfAdjoint (a : A⁺¹) := ha_sa.inr ℂ
   rw [StarOrderedRing.nonneg_iff_spectrum_nonneg (R := ℝ) (a : A⁺¹) ha_inr_sa]
   intro r hr

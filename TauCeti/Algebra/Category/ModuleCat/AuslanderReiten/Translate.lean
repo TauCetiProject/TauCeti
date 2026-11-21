@@ -56,11 +56,13 @@ variable (k : Type u) {A : Type v} [Field k] [Ring A] [Algebra k A] [FiniteDimen
 private noncomputable def arPresentation (M : ModuleCat.{max u v w} A) [Module.Finite A M] :
     FiniteProjectivePresentation M :=
   letI : IsArtinianRing A := IsArtinianRing.of_finite k A
+  haveI : Module.FinitePresentation A M := Module.finitePresentation_of_finite A M
   FiniteProjectivePresentation.minimal
 
 private theorem arPresentation_isMinimal (M : ModuleCat.{max u v w} A) [Module.Finite A M] :
     IsMinimalProjectivePresentation (arPresentation k M).p (arPresentation k M).π := by
   let : IsArtinianRing A := IsArtinianRing.of_finite k A
+  have : Module.FinitePresentation A M := Module.finitePresentation_of_finite A M
   exact FiniteProjectivePresentation.isMinimal_minimal
 
 /-- The Auslander–Reiten translate `τ M = D Tr M` of a finitely generated module, formed from a

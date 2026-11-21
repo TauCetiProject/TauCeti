@@ -211,7 +211,7 @@ theorem principalMinor_mul_column (v : ι → R) (A : Matrix ι ι R) (s : Finse
 /-- A principal minor vanishes on a set containing an index whose row vanishes on that set. -/
 theorem principalMinor_eq_zero_of_row_eq_zero {A : Matrix ι ι R} {s : Finset ι} {i : ι}
     (hi : i ∈ s) (h : ∀ j ∈ s, A i j = 0) : A.principalMinor s = 0 :=
-  det_eq_zero_of_row_eq_zero ⟨i, hi⟩ fun j ↦ h j j.2
+  det_eq_zero_of_row_eq_zero ⟨i, hi⟩ fun j ↦ h j j.property
 
 /-- Diagonal intertwining with regular entries preserves principal minors. The pointwise
 relation expresses `A D = D B` without requiring the index type to be finite. The diagonal

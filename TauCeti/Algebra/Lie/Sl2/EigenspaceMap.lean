@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.DirectSum.Internal
+public import TauCeti.LinearAlgebra.Submodule.Independent
 public import TauCeti.Algebra.Lie.Sl2.RangeKer
 public import TauCeti.Algebra.Lie.Sl2.Spectrum
 public import TauCeti.LinearAlgebra.Eigenspace.Anticommute
@@ -190,7 +190,7 @@ private theorem exists_mem_iSup_eigenspace_lie_e_add_eq (t : IsSl2Triple h e f) 
   refine ⟨x, ?_, z, ⟨LinearMap.mem_ker.2 (by simpa using hz),
     Module.End.mem_eigenspace_iff.2 (by simpa using hu)⟩, hxz⟩
   rw [← TauCeti.eigenspaceSup_toSubmodule t]
-  exact x.2
+  exact x.property
 
 omit [CharZero K] [FiniteDimensional K M] in
 /-- The raising operator maps `M_μ` into `M_(μ + 2)`. -/

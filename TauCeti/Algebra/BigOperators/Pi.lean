@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.BigOperators.Pi
 public import Mathlib.Algebra.BigOperators.Group.Finset.Piecewise
 public import Mathlib.Algebra.Order.BigOperators.Group.Finset
+import Mathlib.Data.Fintype.EquivFin
 
 /-!
 # Finite products and sums against `Pi.single`
@@ -32,6 +33,7 @@ coordinate `i` to another coordinate.
   degree has another positive entry.
 * `Pi.induction_on_single_of_sum_eq`: induction over the exponent vectors of degree `d`, starting
   from `Pi.single i d` and moving one unit at a time from the coordinate `i` to another coordinate.
+* `TauCeti.multiIndex_induction_add_single`: induction on exponent vectors by adding unit vectors.
 -/
 
 public section
@@ -115,3 +117,25 @@ theorem Pi.induction_on_single_of_sum_eq [Fintype ι] [DecidableEq ι] {d : ℕ}
     refine step β j hji hα (ih (by simp [sum_add_distrib, hα]) ?_)
     simp [hji.symm] at hm ⊢
     omega
+
+namespace TauCeti
+
+/-- **Induction on multi-indices.** To prove a property of every multi-index `α : ι → ℕ`, it
+suffices to prove it for `0` and to show that it passes from `α` to `α + eᵢ`. -/
+@[elab_as_elim]
+theorem multiIndex_induction_add_single [Finite ι] [DecidableEq ι] {P : (ι → ℕ) → Prop}
+    (zero : P 0) (add_single : ∀ α i, P α → P (α + Pi.single i 1)) (α : ι → ℕ) : P α := by
+  have := Fintype.ofFinite ι
+  induction h : ∑ i, α i generalizing α with
+  | zero =>
+    obtain rfl : α = 0 := funext fun i ↦ (sum_eq_zero_iff.1 h) i (mem_univ i)
+    exact zero
+  | succ n ih =>
+    obtain ⟨i, hi⟩ : ∃ i, 0 < α i := by
+      by_contra! h'
+      simp [Nat.le_zero.mp (h' _)] at h
+    obtain ⟨β, rfl⟩ := Pi.exists_eq_add_single_one hi
+    refine add_single β i (ih β ?_)
+    simpa [sum_add_distrib] using h
+
+end TauCeti

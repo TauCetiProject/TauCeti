@@ -110,8 +110,8 @@ namespace StateSpace
 
 /-- Every state has operator norm one. -/
 @[simp]
-theorem norm_toStrongDual (φ : stateSpace A) : ‖toStrongDual φ.1‖ = 1 :=
-  norm_toStrongDual_of_mem_stateSpace φ.2
+theorem norm_toStrongDual (φ : stateSpace A) : ‖toStrongDual φ.val‖ = 1 :=
+  norm_toStrongDual_of_mem_stateSpace φ.property
 
 end StateSpace
 
@@ -150,26 +150,26 @@ namespace StateSpace
 
 /-- View a state `φ : stateSpace A` as a bundled positive linear map `A →ₚ[ℂ] ℂ`. -/
 noncomputable def toPositiveLinearMap (φ : stateSpace A) : A →ₚ[ℂ] ℂ :=
-  φ.1.toPositiveLinearMap fun _ => map_nonneg_of_mem_stateSpace φ.2
+  φ.val.toPositiveLinearMap fun _ => map_nonneg_of_mem_stateSpace φ.property
 
 /-- `StateSpace.toPositiveLinearMap φ` evaluates as `φ`. -/
 @[simp]
 theorem toPositiveLinearMap_apply (φ : stateSpace A) (a : A) :
-    toPositiveLinearMap φ a = φ.1 a := by
+    toPositiveLinearMap φ a = φ.val a := by
   simp [toPositiveLinearMap]
 
-/-- The underlying linear map of `StateSpace.toPositiveLinearMap φ` is `toStrongDual φ.1`. -/
+/-- The underlying linear map of `StateSpace.toPositiveLinearMap φ` is `toStrongDual φ.val`. -/
 @[simp]
 theorem toLinearMap_toPositiveLinearMap (φ : stateSpace A) :
-    (toPositiveLinearMap φ).toLinearMap = (toStrongDual φ.1 : A →ₗ[ℂ] ℂ) := by
+    (toPositiveLinearMap φ).toLinearMap = (toStrongDual φ.val : A →ₗ[ℂ] ℂ) := by
   simp [toPositiveLinearMap]
 
 /-- Bundling `StateSpace.toPositiveLinearMap φ` as a continuous positive functional recovers
-`toStrongDual φ.1`. -/
+`toStrongDual φ.val`. -/
 @[simp]
 theorem toContinuousLinearMap_ofClass_toPositiveLinearMap (φ : stateSpace A) :
     (PositiveContinuousLinearMap.ofClass (toPositiveLinearMap φ) : A →L[ℂ] ℂ) =
-      toStrongDual φ.1 := by
+      toStrongDual φ.val := by
   simp [toPositiveLinearMap]
 
 /-- As a continuous positive functional, `StateSpace.toPositiveLinearMap φ` has norm one. -/
@@ -274,8 +274,8 @@ namespace StateSpace
 
 /-- Every state of a unital C⋆-algebra takes the value `1` at `1`. -/
 @[simp]
-theorem map_one (φ : stateSpace A) : φ.1 1 = 1 :=
-  map_one_of_mem_stateSpace φ.2
+theorem map_one (φ : stateSpace A) : φ.val 1 = 1 :=
+  map_one_of_mem_stateSpace φ.property
 
 end StateSpace
 

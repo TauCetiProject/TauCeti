@@ -171,7 +171,7 @@ theorem unitizationFunctional_mem_stateSpace_iff :
       (∀ a, 0 ≤ a → 0 ≤ φ a) ∧ ‖toStrongDual φ‖ ≤ 1 := by
   rw [mem_stateSpace_iff_map_one]
   refine ⟨fun ⟨hpos, _⟩ => ⟨fun a ha => ?_, ?_⟩, fun ⟨hpos, hnorm⟩ => ⟨fun x hx => ?_, by simp⟩⟩
-  · simpa using hpos (a : A⁺¹) (Unitization.inr_nonneg_iff.2 ha)
+  · simpa using hpos (a : A⁺¹) ((Unitization.inr_nonneg_iff ℂ).2 ha)
   · refine (toStrongDual φ).opNorm_le_bound zero_le_one fun a => ?_
     have hψ : φ.unitizationFunctional ∈ stateSpace A⁺¹ :=
       mem_stateSpace_iff_map_one.2 ⟨hpos, by simp⟩
@@ -192,8 +192,8 @@ theorem unitizationFunctional_mem_stateSpace_of_mem_stateSpace (hφ : φ ∈ sta
 `A⁺¹`. -/
 @[simp]
 theorem StateSpace.unitizationFunctional_mem_stateSpace (φ : stateSpace A) :
-    φ.1.unitizationFunctional ∈ stateSpace A⁺¹ :=
-  unitizationFunctional_mem_stateSpace_of_mem_stateSpace φ.2
+    φ.val.unitizationFunctional ∈ stateSpace A⁺¹ :=
+  unitizationFunctional_mem_stateSpace_of_mem_stateSpace φ.property
 
 /-- The zero functional on `A` extends via `WeakDual.unitizationFunctional` to the character
 `x ↦ x.fst`, which is a state of `A⁺¹`. -/
@@ -240,7 +240,7 @@ nonnegative elements of `A`. -/
 theorem map_nonneg_pullbackFunctional_inr_of_mem_stateSpace {ψ : WeakDual ℂ A⁺¹}
     (hψ : ψ ∈ stateSpace A⁺¹) {a : A} (ha : 0 ≤ a) :
     0 ≤ pullbackFunctional A (Unitization.inrNonUnitalStarAlgHom ℂ A) ψ a := by
-  simpa using map_nonneg_of_mem_stateSpace hψ (Unitization.inr_nonneg_iff.2 ha)
+  simpa using map_nonneg_of_mem_stateSpace hψ ((Unitization.inr_nonneg_iff ℂ).2 ha)
 
 /-- Restricting a state of `A⁺¹` along `inr` produces a contractive functional on `A`. -/
 theorem norm_toStrongDual_pullbackFunctional_inr_le_one_of_mem_stateSpace {ψ : WeakDual ℂ A⁺¹}

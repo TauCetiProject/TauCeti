@@ -77,11 +77,11 @@ zero-based, so `a₀(T) = ‖T‖` (`singularValue_zero`).
 
 On finite-dimensional Hilbert spaces these are the singular values of `T`. -/
 noncomputable def singularValue (T : E →L[𝕜] F) (n : ℕ) : ℝ≥0 :=
-  ⨅ R : {R : E →L[𝕜] F // R.rank ≤ n}, ‖T - R.1‖₊
+  ⨅ R : {R : E →L[𝕜] F // R.rank ≤ n}, ‖T - R.val‖₊
 
 /-- `aₙ(T)` is the infimum of `‖T - R‖` over the bounded maps `R` of rank at most `n`. -/
 theorem singularValue_def (T : E →L[𝕜] F) (n : ℕ) :
-    T.singularValue n = ⨅ R : {R : E →L[𝕜] F // R.rank ≤ n}, ‖T - R.1‖₊ := by
+    T.singularValue n = ⨅ R : {R : E →L[𝕜] F // R.rank ≤ n}, ‖T - R.val‖₊ := by
   rw [singularValue]
 
 private instance (n : ℕ) : Nonempty {R : E →L[𝕜] F // R.rank ≤ n} :=
@@ -91,7 +91,7 @@ private instance (n : ℕ) : Nonempty {R : E →L[𝕜] F // R.rank ≤ n} :=
 theorem singularValue_le_nnnorm_sub (T : E →L[𝕜] F) {n : ℕ} {R : E →L[𝕜] F} (hR : R.rank ≤ n) :
     T.singularValue n ≤ ‖T - R‖₊ := by
   unfold singularValue
-  exact ciInf_le (f := fun R : {R : E →L[𝕜] F // R.rank ≤ n} ↦ ‖T - R.1‖₊)
+  exact ciInf_le (f := fun R : {R : E →L[𝕜] F // R.rank ≤ n} ↦ ‖T - R.val‖₊)
     (OrderBot.bddBelow _) ⟨R, hR⟩
 
 /-- **Lower-bound characterization.** `c ≤ aₙ(T)` exactly when `c ≤ ‖T - R‖` for every bounded
@@ -99,7 +99,7 @@ map `R` of rank at most `n`. -/
 theorem le_singularValue_iff {T : E →L[𝕜] F} {n : ℕ} {c : ℝ≥0} :
     c ≤ T.singularValue n ↔ ∀ R : E →L[𝕜] F, R.rank ≤ n → c ≤ ‖T - R‖₊ := by
   unfold singularValue
-  exact le_ciInf_iff (f := fun R : {R : E →L[𝕜] F // R.rank ≤ n} ↦ ‖T - R.1‖₊)
+  exact le_ciInf_iff (f := fun R : {R : E →L[𝕜] F // R.rank ≤ n} ↦ ‖T - R.val‖₊)
     (OrderBot.bddBelow _) |>.trans Subtype.forall
 
 /-- **Infimum formula.** `aₙ(T)` is the greatest lower bound of the operator norms `‖T - R‖`
@@ -173,9 +173,9 @@ theorem zero_singularValue (n : ℕ) : (0 : E →L[𝕜] F).singularValue n = 0 
 theorem singularValue_add_index_le (S T : E →L[𝕜] F) (m n : ℕ) :
     (S + T).singularValue (m + n) ≤ S.singularValue m + T.singularValue n :=
   NNReal.le_iInf_add_iInf fun R₁ R₂ ↦
-    ((S + T).singularValue_le_nnnorm_sub (R := R₁.1 + R₂.1) <| by
+    ((S + T).singularValue_le_nnnorm_sub (R := R₁.val + R₂.val) <| by
       rw [Nat.cast_add]
-      exact (LinearMap.rank_add_le _ _).trans (add_le_add R₁.2 R₂.2)).trans <| by
+      exact (LinearMap.rank_add_le _ _).trans (add_le_add R₁.property R₂.property)).trans <| by
       rw [add_sub_add_comm]
       exact nnNorm_add_le _ _
 
@@ -211,10 +211,10 @@ theorem singularValue_comp_le_left (A : F →L[𝕜] G) (T : E →L[𝕜] F) (n 
   unfold singularValue
   rw [NNReal.mul_iInf]
   refine le_ciInf fun R ↦ ?_
-  have hR := (LinearMap.lift_rank_comp_le_right (R.1 : E →ₗ[𝕜] F) (A : F →ₗ[𝕜] G)).trans
-    (Cardinal.lift_le.mpr R.2)
+  have hR := (LinearMap.lift_rank_comp_le_right (R.val : E →ₗ[𝕜] F) (A : F →ₗ[𝕜] G)).trans
+    (Cardinal.lift_le.mpr R.property)
   rw [Cardinal.lift_natCast, Cardinal.lift_le_nat_iff] at hR
-  refine ((A.comp T).singularValue_le_nnnorm_sub (R := A.comp R.1) hR).trans ?_
+  refine ((A.comp T).singularValue_le_nnnorm_sub (R := A.comp R.val) hR).trans ?_
   rw [← comp_sub]
   exact opNNNorm_comp_le _ _
 
@@ -223,8 +223,8 @@ theorem singularValue_comp_le_right (T : F →L[𝕜] G) (B : E →L[𝕜] F) (n
     (T.comp B).singularValue n ≤ T.singularValue n * ‖B‖₊ := by
   unfold singularValue
   rw [NNReal.iInf_mul]
-  refine le_ciInf fun R ↦ ((T.comp B).singularValue_le_nnnorm_sub (R := R.1.comp B)
-    ((LinearMap.rank_comp_le_left _ _).trans R.2)).trans ?_
+  refine le_ciInf fun R ↦ ((T.comp B).singularValue_le_nnnorm_sub (R := R.val.comp B)
+    ((LinearMap.rank_comp_le_left _ _).trans R.property)).trans ?_
   rw [← sub_comp]
   exact opNNNorm_comp_le _ _
 
@@ -256,15 +256,16 @@ theorem singularValue_comp_add_le_mul (S : F →L[𝕜] G) (T : E →L[𝕜] F) 
   rw [NNReal.mul_iInf]
   refine le_ciInf fun R₂ ↦ ?_
   -- `S T - (R₁ T + (S - R₁) R₂) = (S - R₁)(T - R₂)`, and the subtracted map has rank `≤ m + n`.
-  have h₂ := (LinearMap.lift_rank_comp_le_right (R₂.1 : E →ₗ[𝕜] F)
-    ((S - R₁.1 : F →L[𝕜] G) : F →ₗ[𝕜] G)).trans (Cardinal.lift_le.mpr R₂.2)
+  have h₂ := (LinearMap.lift_rank_comp_le_right (R₂.val : E →ₗ[𝕜] F)
+    ((S - R₁.val : F →L[𝕜] G) : F →ₗ[𝕜] G)).trans (Cardinal.lift_le.mpr R₂.property)
   rw [Cardinal.lift_natCast, Cardinal.lift_le_nat_iff] at h₂
-  have hrank : (R₁.1.comp T + (S - R₁.1).comp R₂.1).rank ≤ ↑(m + n) := by
+  have hrank : (R₁.val.comp T + (S - R₁.val).comp R₂.val).rank ≤ ↑(m + n) := by
     rw [Nat.cast_add]
     exact (LinearMap.rank_add_le _ _).trans
-      (add_le_add ((LinearMap.rank_comp_le_left _ _).trans R₁.2) h₂)
+      (add_le_add ((LinearMap.rank_comp_le_left _ _).trans R₁.property) h₂)
   refine ((S.comp T).singularValue_le_nnnorm_sub hrank).trans ?_
-  have : S.comp T - (R₁.1.comp T + (S - R₁.1).comp R₂.1) = (S - R₁.1).comp (T - R₂.1) := by
+  have : S.comp T - (R₁.val.comp T + (S - R₁.val).comp R₂.val) = (S - R₁.val).comp (T - R₂.val)
+      := by
     simp only [comp_sub, sub_comp]
     abel
   rw [this]
@@ -277,8 +278,8 @@ theorem singularValue_smul (c : 𝕜) (T : E →L[𝕜] F) (n : ℕ) :
   have hle (c : 𝕜) (T : E →L[𝕜] F) : (c • T).singularValue n ≤ ‖c‖₊ * T.singularValue n := by
     unfold singularValue
     rw [NNReal.mul_iInf]
-    refine le_ciInf fun R ↦ ((c • T).singularValue_le_nnnorm_sub (R := c • R.1)
-      ((Submodule.rank_mono (LinearMap.range_smul_le_range _ c)).trans R.2)).trans ?_
+    refine le_ciInf fun R ↦ ((c • T).singularValue_le_nnnorm_sub (R := c • R.val)
+      ((Submodule.rank_mono (LinearMap.range_smul_le_range _ c)).trans R.property)).trans ?_
     rw [← smul_sub]
     exact nnNorm_smul_le _ _
   refine (hle c T).antisymm ?_

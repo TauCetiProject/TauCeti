@@ -81,11 +81,11 @@ theorem exists_positiveContinuousLinearMap_apply_star_pow_mul_pow_eq_of_mem_spec
   obtain ⟨χ, hχa⟩ := WeakDual.CharacterSpace.mem_spectrum_iff_exists.1
     (StarSubalgebra.spectrum_eq (S := S) (a := x) ▸ spectrum.algebraMap_mem ℂ hz)
   have hχ_strong : WeakDual.toStrongDual (χ : WeakDual ℂ S) =
-      (WeakDual.CharacterSpace.toAlgHom χ).toContinuousLinearMap :=
+      (WeakDual.CharacterSpace.toAlgHom χ : S →ₙₐ[ℂ] ℂ).toStrongDual :=
     DFunLike.ext _ _ fun _ => by simp
   have hχ_state : (χ : WeakDual ℂ S) ∈ stateSpace S :=
     mem_stateSpace_iff_norm_eq_one_and_map_one.2
-      ⟨hχ_strong ▸ AlgHom.toContinuousLinearMap_norm _, by simp⟩
+      ⟨hχ_strong ▸ AlgHom.norm_toStrongDual_toNonUnitalAlgHom _, by simp⟩
   obtain ⟨ψ, hψ, hψ_ext⟩ := S.exists_mem_stateSpace_forall_apply_coe_eq hχ_state
   refine ⟨.mk₀ (WeakDual.toStrongDual ψ) fun _ => map_nonneg_of_mem_stateSpace hψ,
     (PositiveContinuousLinearMap.mk₀_apply _ _ 1).trans <|
@@ -218,7 +218,7 @@ nonunital C⋆-algebra `A`, there is a state `φ ∈ stateSpace A` with `‖φ a
 theorem exists_mem_stateSpace_norm_apply_eq_norm_of_isStarNormal_of_ne_zero {a : A}
     [IsStarNormal a] (ha : a ≠ 0) : ∃ φ ∈ stateSpace A, ‖φ a‖ = ‖a‖ := by
   obtain ⟨z, hz, hz_norm⟩ :=
-    spectrum.exists_nnNorm_eq_spectralRadius_of_nonempty (spectrum.nonempty (a : A⁺¹))
+    exists_eNorm_spectrum_eq_spectralRadius_of_nonempty (spectrum.nonempty (a : A⁺¹))
   have hz_eq : ‖z‖ = ‖a‖ := by
     have hspec : (‖z‖₊ : ℝ≥0∞) = ‖(a : A⁺¹)‖₊ :=
       hz_norm.trans (IsStarNormal.spectralRadius_eq_nnNorm (a : A⁺¹))
@@ -296,14 +296,14 @@ theorem exists_mem_stateSpace_apply_star_mul_self_eq_norm_sq [Nontrivial A] (a :
 /-- **Norm recovery from states.** For every normal element `a` of a C⋆-algebra `A` (possibly
 nonunital or trivial), `‖a‖` is the supremum of `‖φ a‖` over all states `φ ∈ stateSpace A`. -/
 theorem norm_eq_iSup_norm_apply_stateSpace_of_isStarNormal (a : A) [IsStarNormal a] :
-    ‖a‖ = ⨆ φ : stateSpace A, ‖φ.1 a‖ := by
+    ‖a‖ = ⨆ φ : stateSpace A, ‖φ.val a‖ := by
   rcases eq_or_ne a 0 with rfl | ha
   · simp [Real.iSup_const_zero]
-  · have hbdd : BddAbove (range fun φ : stateSpace A => ‖φ.1 a‖) :=
-      ⟨‖a‖, by rintro _ ⟨φ, rfl⟩; exact norm_apply_le_of_mem_stateSpace φ.2 a⟩
+  · have hbdd : BddAbove (range fun φ : stateSpace A => ‖φ.val a‖) :=
+      ⟨‖a‖, by rintro _ ⟨φ, rfl⟩; exact norm_apply_le_of_mem_stateSpace φ.property a⟩
     obtain ⟨φ, hφ, hφa⟩ :=
       exists_mem_stateSpace_norm_apply_eq_norm_of_isStarNormal_of_ne_zero ha
-    refine le_antisymm ?_ (Real.iSup_le (fun ψ => norm_apply_le_of_mem_stateSpace ψ.2 a)
+    refine le_antisymm ?_ (Real.iSup_le (fun ψ => norm_apply_le_of_mem_stateSpace ψ.property a)
       (norm_nonneg a))
     exact hφa ▸ le_ciSup hbdd ⟨φ, hφ⟩
 
