@@ -47,6 +47,7 @@ every `v : E` has the complex coordinates `⟪b j, v⟫`:
   the coordinates of `S x` are those of `x` scaled by the eigenvalues.
 * `OrthonormalBasis.toBasis_equiv_refl`: for two finite orthonormal bases over the same index type,
   `Basis.equiv` along `Equiv.refl` agrees with `d₀.repr.trans c.repr.symm`.
+* `OrthonormalBasis.map_sum_smul`: a linear map applied to `∑ i, c i • b i`, expanded in `b`.
 * `TauCeti.exists_linearIsometryEquiv_inner_eq_norm_mul_eval`: for a vector `v` and a prescribed
   coordinate `i`, there is a linear isometry equivalence `f` with
   `⟪v, x⟫ = ‖v‖ * f x i` for all `x`.
@@ -133,6 +134,16 @@ theorem toBasis_equiv_refl {F : Type*} [NormedAddCommGroup F] [InnerProductSpace
   refine LinearEquiv.toLinearMap_injective (d₀.toBasis.ext fun i ↦ ?_)
   rw [LinearEquiv.coe_coe, Module.Basis.equiv_apply]
   simp
+
+/-- A linear map applied to a combination of an orthonormal basis, expanded in the same basis:
+the new coefficients are those of `c` transformed by the matrix of `f` in `b`. -/
+theorem map_sum_smul {F : Type*} [FunLike F E E] [LinearMapClass F 𝕜 E E]
+    (b : OrthonormalBasis ι 𝕜 E) (f : F) (c : ι → 𝕜) :
+    f (∑ i, c i • b i) = ∑ i, (∑ j, b.repr (f (b j)) i * c j) • b i := by
+  simp_rw [map_sum, map_smul, Finset.sum_smul]
+  rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  simp_rw [mul_comm _ (c j), mul_smul, ← Finset.smul_sum, OrthonormalBasis.sum_repr]
 
 end OrthonormalBasis
 
