@@ -80,8 +80,11 @@ independent of `s`) are the case `R = 0`, and continuation cylinders are treated
   compatible `J_t(x(t))` the operator is conjugate to this model by a unitary frame along the
   orbit; that conjugation is not treated here.
 
-The finiteness of the cokernel, hence the Fredholm property and the index, needs the same estimate
-for the formal adjoint of `D_u`.
+The semi-Fredholm estimate for the formal adjoint `D_u^*` on `C²` covector fields is
+`TauCeti.SymplecticForm.exists_forall_setIntegral_le_mul_setIntegral_floerLinearizationAdjoint_add`
+along a Floer trajectory, with a version for data cylindrical near the ends (suffix
+`_of_cylindrical`). The finiteness of the cokernel, hence the Fredholm property and the index,
+still needs the Sobolev realization of `D_u^*` and the regularity of weak `L²` cokernel elements.
 
 ## References
 
