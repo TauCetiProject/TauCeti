@@ -345,6 +345,16 @@ lemma singularChainComplexMap_eq_zero_of_fac (g : P.fst ⟶ P'.snd) (hg : g ≫ 
   exact (Category.assoc _ _ _).trans
     ((congrArg (_ ≫ ·) (chainComplexMap_comp_singularChainComplexπ P' R)).trans comp_zero)
 
+/-- **A pair whose subspace is everything has zero relative singular chains.** If the embedding
+of the subspace of `P` is surjective, for instance for `(X, X)`, the relative singular chain
+complex of `P` is zero, and in particular acyclic. -/
+lemma isZero_singularChainComplex_of_surjective_map (hP : Function.Surjective P.map) :
+    IsZero (P.singularChainComplex R) := by
+  -- The identity of `P` factors through the subspace, so it induces zero.
+  rw [IsZero.iff_id_eq_zero, ← singularChainComplexMap_id]
+  exact singularChainComplexMap_eq_zero_of_fac _ R
+    (TopCat.ofHom (P.liftSnd (.id _) fun x ↦ hP x)) (by ext x; exact P.map_liftSnd _ _ x)
+
 /-- The cokernel cofork presenting the relative singular chain complex as the quotient of the
 ambient singular chains by the subspace singular chains. -/
 noncomputable abbrev cokernelCoforkSingularChainComplex :
@@ -499,11 +509,9 @@ lemma isIso_singularHomologyMap_ofInclusion_congr {X Y : TopCat.{w}} (g : X → 
 /-- **A pair whose subspace is everything has no relative homology.** If the embedding of the
 subspace of `P` is surjective, the relative singular homology of `P` vanishes in every degree. -/
 lemma isZero_singularHomology_of_surjective_map (hP : Function.Surjective P.map) (n : ℕ) :
-    IsZero (P.singularHomology R n) := by
-  -- The identity of `P` factors through the subspace, so it induces zero.
-  rw [IsZero.iff_id_eq_zero, ← singularHomologyMap_id]
-  exact singularHomologyMap_eq_zero_of_fac _ R
-    (TopCat.ofHom (P.liftSnd (.id _) fun x ↦ hP x)) (by ext x; exact P.map_liftSnd _ _ x) n
+    IsZero (P.singularHomology R n) :=
+  (HomologicalComplex.homologyFunctor C _ n).map_isZero
+    (isZero_singularChainComplex_of_surjective_map P R hP)
 
 /-- **A subspace relative to itself has no relative homology.** For every subset `s` of `X`, the
 relative singular homology of the pair `(s, s)` vanishes in every degree. -/
