@@ -12,27 +12,35 @@ import TauCeti.GroupTheory.ConjugationTransfer
 /-!
 # Maps agreeing on a subgroup
 
-Two homomorphisms that agree on a subgroup `H` have the same image of `H`. If an endomorphism `f`
-of a group agrees on a set `s` with the inner automorphism by `c`, then on each conjugate
-`w s w⁻¹` it agrees with the inner automorphism by `f(w) c w⁻¹`, because
+Two monoid homomorphisms that agree on a submonoid `S` have the same image of `S`; in particular
+two group homomorphisms that agree on a subgroup `H` have the same image of `H`. If an
+endomorphism `f` of a group agrees on a set `s` with the inner automorphism by `c`, then on each
+conjugate `w s w⁻¹` it agrees with the inner automorphism by `f(w) c w⁻¹`, because
 `f(w k w⁻¹) = f(w) (c k c⁻¹) f(w)⁻¹` for `k ∈ s`. So an endomorphism that agrees with an inner
 automorphism on a subgroup `K` does so on every conjugate of `K`, and carries it to a conjugate of
 itself.
 
 ## Main results
 
-* `Set.EqOn.subgroup_map_eq`: homomorphisms agreeing on `H` have the same image of `H`.
+* `Set.EqOn.submonoid_map_eq`, `Set.EqOn.subgroup_map_eq`: homomorphisms agreeing on `S` or `H`
+  have the same image of it.
 * `Set.EqOn.map_conj`: agreement with an inner automorphism on `s` passes to the conjugates of `s`.
 -/
 
 public section
+
+/-- Two monoid homomorphisms that agree on a submonoid `S` have the same image of `S`. -/
+theorem Set.EqOn.submonoid_map_eq {M N F F' : Type*} [MulOneClass M] [MulOneClass N]
+    [FunLike F M N] [MonoidHomClass F M N] [FunLike F' M N] [MonoidHomClass F' M N] {f : F}
+    {g : F'} {S : Submonoid M} (h : Set.EqOn f g S) : S.map f = S.map g :=
+  SetLike.coe_injective (by simpa only [Submonoid.coe_map] using h.image_eq)
 
 variable {G N : Type*} [Group G] [Group N]
 
 /-- Two homomorphisms that agree on a subgroup `H` have the same image of `H`. -/
 theorem Set.EqOn.subgroup_map_eq {f g : G →* N} {H : Subgroup G} (h : Set.EqOn f g H) :
     H.map f = H.map g :=
-  SetLike.coe_injective (by simpa only [Subgroup.coe_map] using h.image_eq)
+  Subgroup.toSubmonoid_injective (h.submonoid_map_eq (S := H.toSubmonoid))
 
 /-- If an endomorphism `f` agrees on a set `s` with the inner automorphism by `c`, then on the
 conjugate `w s w⁻¹` it agrees with the inner automorphism by `f(w) c w⁻¹`. -/

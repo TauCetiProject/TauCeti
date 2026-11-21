@@ -70,8 +70,10 @@ theorem exists_map_stabilizer_eq_map_conj_segment {a : SerreGraph.segment.V}
     ∃ (b : SerreGraph.segment.V) (w : Monoid.PushoutI (segmentMaps f g hf hg)),
       (MulAction.stabilizer (π₁ (segment f g hf hg) a) y).map
           (π₁.equivPushoutI f g hf hg a).toMonoidHom =
-        (Monoid.PushoutI.of b).range.map (MulAut.conj w).toMonoidHom :=
-  exists_map_stabilizer_eq_map_conj _ (exists_path_map_range_vertexHom_segment a) y
+        (Monoid.PushoutI.of b).range.map (MulAut.conj w).toMonoidHom := by
+  obtain ⟨b, -, w, -, h⟩ := exists_map_stabilizer_eq_map_conj _
+    (fun b _ ↦ exists_path_map_range_vertexHom_segment a b) y
+  exact ⟨b, w, h⟩
 
 /-- A subgroup `H` of `A ∗_C B` is elliptic in the Bass–Serre tree of the segment exactly when it
 lies in a conjugate of one of the two factors. -/
@@ -81,7 +83,11 @@ theorem bassSerreTree_segment_isEllipticSubgroup_comap_iff {a : SerreGraph.segme
         (H.comap (π₁.equivPushoutI f g hf hg a).toMonoidHom) ↔
       ∃ (b : SerreGraph.segment.V) (w : Monoid.PushoutI (segmentMaps f g hf hg)),
         H ≤ (Monoid.PushoutI.of b).range.map (MulAut.conj w).toMonoidHom :=
-  bassSerreTree_isEllipticSubgroup_comap_iff _ (exists_path_map_range_vertexHom_segment a)
+  -- The segment is connected, so every vertex is joined to `a`.
+  (bassSerreTree_isEllipticSubgroup_comap_iff _
+    fun b _ ↦ exists_path_map_range_vertexHom_segment a b).trans
+    ⟨fun ⟨b, _, w, h⟩ ↦ ⟨b, w, h⟩, fun ⟨b, w, h⟩ ↦
+      ⟨b, (exists_path_map_range_vertexHom_segment a b).nonempty, w, h⟩⟩
 
 end segment
 
@@ -111,7 +117,8 @@ theorem exists_map_stabilizer_eq_map_conj_loop {v : (SerreGraph.rose Unit).V}
           (π₁.equivHNNExtension f g hf hg v).toMonoidHom =
         (HNNExtension.of : G →* HNNExtension G f.range g.range (loopEquiv f g hf hg)).range.map
           (MulAut.conj w).toMonoidHom := by
-  obtain ⟨_, w, h⟩ := exists_map_stabilizer_eq_map_conj _ (exists_path_map_range_vertexHom_loop v) y
+  obtain ⟨_, -, w, -, h⟩ := exists_map_stabilizer_eq_map_conj _
+    (fun b _ ↦ exists_path_map_range_vertexHom_loop v b) y
   exact ⟨w, h⟩
 
 /-- A subgroup `H` of the HNN extension is elliptic in the Bass–Serre tree of the loop exactly when
@@ -123,10 +130,10 @@ theorem bassSerreTree_loop_isEllipticSubgroup_comap_iff {v : (SerreGraph.rose Un
       ∃ w : HNNExtension G f.range g.range (loopEquiv f g hf hg),
         H ≤ (HNNExtension.of : G →* HNNExtension G f.range g.range (loopEquiv f g hf hg)).range.map
           (MulAut.conj w).toMonoidHom := by
-  have key := bassSerreTree_isEllipticSubgroup_comap_iff _ (exists_path_map_range_vertexHom_loop v)
-    (H := H)
+  have key := bassSerreTree_isEllipticSubgroup_comap_iff _
+    (fun b _ ↦ exists_path_map_range_vertexHom_loop v b) (H := H)
   -- The rose has a single vertex, so the vertex in the criterion carries no information.
-  exact key.trans ⟨fun ⟨_, w, h⟩ => ⟨w, h⟩, fun ⟨w, h⟩ => ⟨v, w, h⟩⟩
+  exact key.trans ⟨fun ⟨_, _, w, h⟩ => ⟨w, h⟩, fun ⟨w, h⟩ => ⟨v, ⟨.nil⟩, w, h⟩⟩
 
 end loop
 
