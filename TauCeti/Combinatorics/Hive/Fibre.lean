@@ -74,9 +74,14 @@ parallelograms traps every entry `h p` between explicit linear combinations `ent
   `TauCeti.Hive.le_entryUpperBound`, `TauCeti.Hive.boundary_eq_zero_iff`.
 * `TauCeti.Hive.isConvexPolyhedron_realFibre`, `TauCeti.Hive.isCompact_realFibre`,
   `TauCeti.Hive.isProperMap_boundary_properCone`.
-* `TauCeti.Hive.finite_fixedIntegerHive`, `TauCeti.Hive.dominates_add_of_productBoundary`,
+* `TauCeti.Hive.finite_fixedIntegerHive`, `TauCeti.Hive.shiftProductBoundaryEquiv`,
+  `TauCeti.Hive.hiveCount_productBoundary_shift`, `TauCeti.Hive.dominates_add_of_productBoundary`,
   `TauCeti.Hive.detShift_le_of_productBoundary`,
   `TauCeti.Hive.finite_support_hiveCount_productBoundary`.
+* `TauCeti.Hive.hiveCount_two_std_dual_trivial`, `TauCeti.Hive.hiveCount_two_std_dual_adjoint`,
+  `TauCeti.Hive.hiveCount_two_std_dual_excluded`,
+  `TauCeti.Hive.hiveCount_three_two_one_two_one_three_two_one`: concrete signed rank-`2` and
+  multiplicity-`2` rank-`3` hive-count checks.
 
 ## References
 
@@ -617,6 +622,32 @@ theorem hiveCount_productBoundary_dual {n : ℕ} (lam μ γ : DominantWeight n) 
       left_inv := fun _ => by ext p; simp
       right_inv := fun _ => by ext p; simp }
 
+/-- **Determinant-shift equivalence on product-boundary hive fibres**: adding the normalized affine
+hive `affine n a (a + b)` bijects `FixedIntegerHive (productBoundary lam μ γ)` with
+`FixedIntegerHive (productBoundary (lam.shift a) (μ.shift b) (γ.shift (a + b)))`. -/
+def shiftProductBoundaryEquiv {n : ℕ} (lam μ γ : DominantWeight n) (a b : ℤ) :
+    FixedIntegerHive (productBoundary lam μ γ) ≃
+      FixedIntegerHive (productBoundary (lam.shift a) (μ.shift b) (γ.shift (a + b))) where
+  toFun h := ⟨h.val + affine n a (a + b), by ext s i; fin_cases s <;> simp [h.property]⟩
+  invFun h :=
+    ⟨h.val + affine n (-a) (-(a + b)), by ext s i; fin_cases s <;> simp [h.property]; omega⟩
+  left_inv h := by ext p; simp [mul_add]; abel
+  right_inv h := by ext p; simp [mul_add]; abel
+
+@[simp] theorem shiftProductBoundaryEquiv_apply_val {n : ℕ} (lam μ γ : DominantWeight n) (a b : ℤ)
+    (h : FixedIntegerHive (productBoundary lam μ γ)) :
+    (shiftProductBoundaryEquiv lam μ γ a b h).val = h.val + affine n a (a + b) := (rfl)
+
+@[simp] theorem shiftProductBoundaryEquiv_symm_apply_val {n : ℕ} (lam μ γ : DominantWeight n)
+    (a b : ℤ) (h : FixedIntegerHive (productBoundary (lam.shift a) (μ.shift b) (γ.shift (a + b)))) :
+    ((shiftProductBoundaryEquiv lam μ γ a b).symm h).val = h.val + affine n (-a) (-(a + b)) := (rfl)
+
+/-- Shifting a product boundary by determinant twists `(a, b, a + b)` preserves `hiveCount`. -/
+@[simp] theorem hiveCount_productBoundary_shift {n : ℕ} (lam μ γ : DominantWeight n) (a b : ℤ) :
+    hiveCount (productBoundary (lam.shift a) (μ.shift b) (γ.shift (a + b))) =
+      hiveCount (productBoundary lam μ γ) :=
+  (Fintype.card_congr (shiftProductBoundaryEquiv lam μ γ a b)).symm
+
 /-! ### Central-degree conservation, dominance bound, lower-coordinate bound, and finite support -/
 
 /-- **Central-degree conservation**: `h.boundary = productBoundary lam μ γ` implies `|λ|+|μ| = |γ|`.
@@ -723,9 +754,9 @@ theorem finite_support_hiveCount_productBoundary {n : ℕ} (lam μ : DominantWei
 
 end IntegerFibre
 
-/-! ### Rank-`2` multiplicity-freeness and concrete checks -/
+/-! ### Concrete checks at ranks `2` and `3` -/
 
-section RankTwoChecks
+section RankChecks
 
 instance subsingleton_fixedIntegerHive_two (B : Fin 3 → Fin 2 → ℤ) :
     Subsingleton (FixedIntegerHive B) :=
@@ -768,6 +799,133 @@ theorem hiveCount_two_std_std_three_neg_one :
   have hlast := last_le_of_productBoundary hb
   simp at hlast
 
-end RankTwoChecks
+/-- Rank-`2` signed check: `V_{(1, 0)} ⊗ V_{(0, -1)}` contains the trivial module `V_{(0, 0)}` with
+multiplicity `1`, reduced by a determinant shift to `c^{(1, 1)}_{(1, 0), (1, 0)} = 1`. -/
+theorem hiveCount_two_std_dual_trivial :
+    hiveCount
+      (productBoundary ⟨![1, 0], by decide⟩ ⟨![0, -1], by decide⟩ ⟨![0, 0], by decide⟩) = 1 := by
+  rw [← hiveCount_productBoundary_shift _ _ _ 0 1]
+  convert hiveCount_two_std_std_det using 2
+  ext s i; fin_cases s <;> fin_cases i <;> simp [DominantWeight.dual_apply]
+
+/-- Rank-`2` signed check: `V_{(1, 0)} ⊗ V_{(0, -1)}` contains the adjoint summand `V_{(1, -1)}`
+with multiplicity `1`, reduced by a determinant shift to `c^{(2, 0)}_{(1, 0), (1, 0)} = 1`. -/
+theorem hiveCount_two_std_dual_adjoint :
+    hiveCount
+      (productBoundary ⟨![1, 0], by decide⟩ ⟨![0, -1], by decide⟩ ⟨![1, -1], by decide⟩) = 1 := by
+  rw [← hiveCount_productBoundary_shift _ _ _ 0 1]
+  convert hiveCount_two_std_std_sym using 2
+  ext s i; fin_cases s <;> fin_cases i <;> simp [DominantWeight.dual_apply]
+
+/-- Rank-`2` signed exclusion check: `γ = (2, -2)` violates `λ₂ + μ₂ ≤ γ₂` (`-1 ≤ -2`). -/
+theorem hiveCount_two_std_dual_excluded :
+    hiveCount
+      (productBoundary ⟨![1, 0], by decide⟩ ⟨![0, -1], by decide⟩ ⟨![2, -2], by decide⟩) = 0 := by
+  rw [hiveCount_eq_zero_iff]
+  refine ⟨fun ⟨_, hb⟩ => ?_⟩
+  have hlast := last_le_of_productBoundary hb; simp at hlast
+
+/-- On `Δ₃`, the boundary determines every vertex except the unique interior vertex `(1, 1, 1)`. -/
+private theorem eq_of_boundary_eq_of_interior_eq_three {h₁ h₂ : IntegerHive 3}
+    (hb : h₁.boundary = h₂.boundary) (hm : h₁ ⟨1, 1, 1, rfl⟩ = h₂ ⟨1, 1, 1, rfl⟩) : h₁ = h₂ := by
+  refine Hive.ext fun p => ?_
+  have := p.sum_eq
+  rcases (by omega : p.z = 0 ∨ p.x = 0 ∨ p.y = 0 ∨ (p.x = 1 ∧ p.y = 1 ∧ p.z = 1)) with
+    hz | hx | hy | ⟨hx, hy, hz⟩
+  · have hp : p = Vertex.edgePoint 3 0 ⟨p.y, by omega⟩ := by ext <;> simp [hz]; omega
+    rw [hp, apply_edgePoint_zero, apply_edgePoint_zero, hb]
+  · have hp : p = Vertex.edgePoint 3 1 ⟨p.z, by omega⟩ := by ext <;> simp [hx]; omega
+    rw [hp, apply_edgePoint_one, apply_edgePoint_one, hb]
+  · have hp : p = Vertex.edgePoint 3 2 ⟨p.x, by omega⟩ := by ext <;> simp [hy]; omega
+    rw [hp, apply_edgePoint_two, apply_edgePoint_two, hb]
+  · have hp : p = ⟨1, 1, 1, rfl⟩ := by ext <;> simp [hx, hy, hz]
+    rw [hp, hm]
+
+private def hiveThreeTwoOneFun (t : ℤ) (p : Vertex 3) : ℤ :=
+  match p.z, p.y + p.z with
+  | 0, 1 => 2
+  | 0, 2 | 0, 3 | 1, 1 => 3
+  | 1, 2 => t
+  | 1, 3 | 2, 2 => 5
+  | 2, 3 | 3, 3 => 6
+  | _, _ => 0
+
+private theorem isRhombusConcave_hiveThreeTwoOneFun {t : ℤ} (ht4 : 4 ≤ t) (ht5 : t ≤ 5) :
+    IsRhombusConcave (hiveThreeTwoOneFun t) := by
+  rw [isRhombusConcave_iff_ofChart]
+  refine ⟨fun i j hij hj => ?_, fun i j hij hj => ?_, fun i j hij hj => ?_⟩
+  · have : (i = 0 ∧ j = 1) ∨ (i = 0 ∧ j = 2) ∨ (i = 1 ∧ j = 2) := by omega
+    rcases this with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> simp [hiveThreeTwoOneFun] <;> omega
+  · have : (i = 0 ∧ j = 1) ∨ (i = 0 ∧ j = 2) ∨ (i = 1 ∧ j = 2) := by omega
+    rcases this with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> simp [hiveThreeTwoOneFun] <;> omega
+  · have : (i = 0 ∧ j = 0) ∨ (i = 0 ∧ j = 1) ∨ (i = 1 ∧ j = 1) := by omega
+    rcases this with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> simp [hiveThreeTwoOneFun] <;> omega
+
+/-- Parameterized family of size-`3` hives with boundary `((2, 1, 0), (2, 1, 0), (3, 2, 1)*)` and
+interior entry `t ∈ {4, 5}` at `(1, 1, 1)`. -/
+private def hiveThreeTwoOne (t : ℤ) (ht4 : 4 ≤ t) (ht5 : t ≤ 5) :
+    FixedIntegerHive
+      (productBoundary ⟨![2, 1, 0], by decide⟩ ⟨![2, 1, 0], by decide⟩
+        ⟨![3, 2, 1], by decide⟩) :=
+  ⟨⟨hiveThreeTwoOneFun t, by simp [hiveThreeTwoOneFun],
+      fun hr => (isRhombusConcave_def _).mp (isRhombusConcave_hiveThreeTwoOneFun ht4 ht5) hr⟩,
+    by
+      ext s i; fin_cases s <;> fin_cases i <;>
+        simp [boundary_apply, DominantWeight.dual_apply, hiveThreeTwoOneFun]⟩
+
+private theorem hiveThreeTwoOne_interior (t : ℤ) (ht4 : 4 ≤ t) (ht5 : t ≤ 5) :
+    (hiveThreeTwoOne t ht4 ht5).val ⟨1, 1, 1, rfl⟩ = t := rfl
+
+/-- **First multiplicity-`2` check**: `c^{(3, 2, 1)}_{(2, 1, 0), (2, 1, 0)} = 2`, realized by the
+two integer hives with interior values `4` and `5` at `(1, 1, 1)`. -/
+theorem hiveCount_three_two_one_two_one_three_two_one :
+    hiveCount
+      (productBoundary ⟨![2, 1, 0], by decide⟩ ⟨![2, 1, 0], by decide⟩
+        ⟨![3, 2, 1], by decide⟩) = 2 := by
+  let B := productBoundary ⟨![2, 1, 0], by decide⟩ ⟨![2, 1, 0], by decide⟩
+    ⟨![3, 2, 1], by decide⟩
+  have hbound : ∀ h : FixedIntegerHive B,
+      h.val ⟨1, 1, 1, rfl⟩ = 4 ∨ h.val ⟨1, 1, 1, rfl⟩ = 5 := fun h => by
+    have hu1 := h.val.le_of_isRhombus (isRhombus_ofChart_diag_y (n := 3) (i := 0) (j := 1)
+      (by omega) (by omega))
+    have hu2 := h.val.le_of_isRhombus (isRhombus_ofChart_diag_y (n := 3) (i := 0) (j := 2)
+      (by omega) (by omega))
+    have h01 : h.val (Vertex.ofChart 3 0 1 (by omega) (by omega)) = 2 := by
+      rw [Vertex.ofChart_zero_left, apply_edgePoint_zero, h.property]
+      simp [B, Finset.sum_filter]
+    have h02 : h.val (Vertex.ofChart 3 0 2 (by omega) (by omega)) = 3 := by
+      rw [Vertex.ofChart_zero_left, apply_edgePoint_zero, h.property]
+      simp [B, Finset.sum_filter, Fin.sum_univ_three]
+    have h03 : h.val (Vertex.ofChart 3 0 3 (by omega) (by omega)) = 3 := by
+      rw [Vertex.ofChart_zero_left, apply_edgePoint_zero, h.property]
+      simp [B, Fin.sum_univ_three]
+    have h11 : h.val (Vertex.ofChart 3 1 1 (by omega) (by omega)) = 3 := by
+      rw [Vertex.ofChart_self, apply_edgePoint_two, h.property]
+      simp [B, Finset.sum_filter, Fin.sum_univ_three, DominantWeight.dual_apply]
+    have h13 : h.val (Vertex.ofChart 3 1 3 (by omega) (by omega)) = 5 := by
+      rw [Vertex.ofChart_right, apply_edgePoint_one, h.property]
+      simp [B, Finset.sum_filter, Fin.sum_univ_three]
+    have hm : Vertex.ofChart 3 1 2 (by omega) (by omega) = ⟨1, 1, 1, rfl⟩ := by ext <;> simp
+    rw [h01, h02, h11, hm] at hu1; rw [h02, h03, h13, hm] at hu2
+    omega
+  let e : FixedIntegerHive B ≃ Bool :=
+    { toFun := fun h => decide (h.val ⟨1, 1, 1, rfl⟩ = 4)
+      invFun := fun b => if b then hiveThreeTwoOne 4 le_rfl (by omega)
+        else hiveThreeTwoOne 5 (by omega) le_rfl
+      left_inv := fun h => Subtype.ext <| by
+        rcases hbound h with h4 | h5
+        · simp only [h4, decide_true, ↓reduceIte]
+          exact eq_of_boundary_eq_of_interior_eq_three
+            ((hiveThreeTwoOne 4 le_rfl (by omega)).property.trans h.property.symm)
+            (by rw [hiveThreeTwoOne_interior, h4])
+        · have h54 : (5 : ℤ) ≠ 4 := by omega
+          simp only [h5, h54, decide_false, Bool.false_eq_true, ↓reduceIte]
+          exact eq_of_boundary_eq_of_interior_eq_three
+            ((hiveThreeTwoOne 5 (by omega) le_rfl).property.trans h.property.symm)
+            (by rw [hiveThreeTwoOne_interior, h5])
+      right_inv := fun b => by cases b <;> simp [hiveThreeTwoOne_interior] }
+  rw [← card_fixedIntegerHive, Fintype.card_congr e, Fintype.card_bool]
+
+end RankChecks
 
 end TauCeti.Hive
