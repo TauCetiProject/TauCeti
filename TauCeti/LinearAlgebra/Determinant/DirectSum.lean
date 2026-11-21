@@ -14,6 +14,7 @@ import TauCeti.LinearAlgebra.Contraction
 import TauCeti.LinearAlgebra.Prod
 import TauCeti.LinearAlgebra.TensorProduct.Basic
 import TauCeti.LinearAlgebra.TensorProduct.Dual
+import TauCeti.LinearAlgebra.TensorProduct.Separation
 
 /-!
 # Determinant lines of direct sums
@@ -248,6 +249,30 @@ theorem detLineTensorDualProdEquiv_tmul (a₁ : detLine K U₁) (φ₁ : Dual K 
     detLineTensorDualProdEquiv K U₁ V₁ U₂ V₂ ((a₁ ⊗ₜ φ₁) ⊗ₜ (a₂ ⊗ₜ φ₂)) =
       detLineProdEquiv K U₁ U₂ (a₁ ⊗ₜ a₂) ⊗ₜ detLineDualProdEquiv K V₁ V₂ (φ₁ ⊗ₜ φ₂) := by
   simp [detLineTensorDualProdEquiv]
+
+/-- **Naturality of `TauCeti.detLineTensorDualProdEquiv`** in the determinant-line factors. For
+isomorphisms `e₁ : U₁ ≃ U₁'` and `e₂ : U₂ ≃ U₂'`, the isomorphism induced by `e₁ × e₂` on
+`det (U₁ × U₂)` takes the image of `t` to the image of `t` under `det e₁` and `det e₂`, the dual
+factors being unchanged. -/
+theorem rTensor_detLineCongr_prodCongr_detLineTensorDualProdEquiv {U₁' U₂' : Type*}
+    [AddCommGroup U₁'] [Module K U₁'] [AddCommGroup U₂'] [Module K U₂'] [FiniteDimensional K U₁']
+    [FiniteDimensional K U₂'] (e₁ : U₁ ≃ₗ[K] U₁') (e₂ : U₂ ≃ₗ[K] U₂')
+    (t : (detLine K U₁ ⊗[K] Dual K (detLine K V₁)) ⊗[K]
+      (detLine K U₂ ⊗[K] Dual K (detLine K V₂))) :
+    LinearEquiv.rTensor _ (e₁.prodCongr e₂).detLineCongr
+        (detLineTensorDualProdEquiv K U₁ V₁ U₂ V₂ t) =
+      detLineTensorDualProdEquiv K U₁' V₁ U₂' V₂
+        (TensorProduct.congr (LinearEquiv.rTensor _ e₁.detLineCongr)
+          (LinearEquiv.rTensor _ e₂.detLineCongr) t) := by
+  induction t using TensorProduct.inductionOn with
+  | add s t hs ht => simp only [map_add, hs, ht]
+  | tmul x y =>
+    induction x using TensorProduct.inductionOn with
+    | add x x' hx hx' => simp only [add_tmul, map_add, hx, hx']
+    | tmul a φ =>
+      induction y using TensorProduct.inductionOn with
+      | add y y' hy hy' => simp only [tmul_add, map_add, hy, hy']
+      | tmul b ψ => simp [detLineCongr_prodCongr_detLineProdEquiv]
 
 end TensorDual
 
@@ -784,6 +809,19 @@ theorem detLineProdMapEquiv_symm_tmul
   rw [LinearEquiv.symm_apply_eq, LinearEquiv.map_smul,
     detLineProdMapEquiv_congr_detLineTensorDualProdEquiv f g eA heA eD heD, smul_smul,
     ← pow_add, ← two_mul, (even_two_mul _).neg_one_pow, one_smul]
+
+/-- The direct sum of nonzero elements of determinant lines is nonzero. -/
+theorem detLineProdMapEquiv_symm_tmul_ne_zero {y₁ : f.detLine} {y₂ : g.detLine} (hy₁ : y₁ ≠ 0)
+    (hy₂ : y₂ ≠ 0) : (detLineProdMapEquiv f g).symm (y₁ ⊗ₜ y₂) ≠ 0 :=
+  (LinearEquiv.map_ne_zero_iff _).2 (TauCeti.tmul_ne_zero hy₁ hy₂)
+
+/-- The direct sum of nonzero elements of determinant lines, multiplied by a sign `(-1) ^ n`, is
+nonzero. -/
+theorem neg_one_pow_smul_detLineProdMapEquiv_symm_tmul_ne_zero (n : ℕ) {y₁ : f.detLine}
+    {y₂ : g.detLine} (hy₁ : y₁ ≠ 0) (hy₂ : y₂ ≠ 0) :
+    (-1 : K) ^ n • (detLineProdMapEquiv f g).symm (y₁ ⊗ₜ y₂) ≠ 0 :=
+  smul_ne_zero (pow_ne_zero _ (neg_ne_zero.2 one_ne_zero))
+    (detLineProdMapEquiv_symm_tmul_ne_zero f g hy₁ hy₂)
 
 /-! ### Naturality of the direct sum isomorphism -/
 
