@@ -127,22 +127,25 @@ theorem nextTangential_nextParam_neg_nextTangential {s v : ℝ} (hv : v ∈ Ioo 
 tangential component of the state that the inverse of the next-collision map assigns to `(s, v)`. -/
 theorem neg_nextTangential_neg_mem_Ioo (s : ℝ) (v : Ioo (-1 : ℝ) 1) :
     -χ.nextTangential s (-v) ∈ Ioo (-1 : ℝ) 1 := by
-  have hw := χ.nextTangential_mem_Ioo (s := s) (v := -v) ⟨by linarith [v.2.2], by linarith [v.2.1]⟩
+  have hw := χ.nextTangential_mem_Ioo (s := s) (v := -v) ⟨by linarith [v.property.2], by linarith
+      [v.property.1]⟩
   exact ⟨by linarith [hw.2], by linarith [hw.1]⟩
 
 /-- The next-collision map `(s, v) ↦ (t, w)` as a bijection of the strip `ℝ × (-1, 1)`. Its inverse
 reverses time: it sends `(t, w)` to `(s - L, -v)`, where `(s, v)` is the next collision of
 `(t, -w)`. -/
 def nextCollisionEquiv : ℝ × Ioo (-1 : ℝ) 1 ≃ ℝ × Ioo (-1 : ℝ) 1 where
-  toFun x := (χ.nextParam x.1 x.2, ⟨χ.nextTangential x.1 x.2, χ.nextTangential_mem_Ioo x.2.2⟩)
+  toFun x := (χ.nextParam x.1 x.2, ⟨χ.nextTangential x.1 x.2,
+      χ.nextTangential_mem_Ioo x.2.property⟩)
   invFun x := (χ.nextParam x.1 (-x.2) - χ.period,
     ⟨-χ.nextTangential x.1 (-x.2), χ.neg_nextTangential_neg_mem_Ioo x.1 x.2⟩)
   left_inv x := by
     ext
-    · simp [χ.nextParam_nextParam_neg_nextTangential x.2.2]
-    · simp [χ.nextTangential_nextParam_neg_nextTangential x.2.2]
+    · simp [χ.nextParam_nextParam_neg_nextTangential x.2.property]
+    · simp [χ.nextTangential_nextParam_neg_nextTangential x.2.property]
   right_inv x := by
-    have hv : -(x.2 : ℝ) ∈ Ioo (-1) 1 := ⟨by linarith [x.2.2.2], by linarith [x.2.2.1]⟩
+    have hv : -(x.2 : ℝ) ∈ Ioo (-1) 1 := ⟨by linarith [x.2.property.2], by linarith
+        [x.2.property.1]⟩
     have hw := χ.neg_nextTangential_neg_mem_Ioo x.1 x.2
     -- The inverse moves the parameter back by one period; undo this by the deck translation.
     have hp := χ.nextParam_add_period (s := χ.nextParam x.1 (-x.2) - χ.period) hw
@@ -157,8 +160,17 @@ def nextCollisionEquiv : ℝ × Ioo (-1 : ℝ) 1 ≃ ℝ × Ioo (-1 : ℝ) 1 whe
 @[simp]
 theorem nextCollisionEquiv_apply (x : ℝ × Ioo (-1 : ℝ) 1) :
     χ.nextCollisionEquiv x =
-      (χ.nextParam x.1 x.2, ⟨χ.nextTangential x.1 x.2, χ.nextTangential_mem_Ioo x.2.2⟩) := by
+      (χ.nextParam x.1 x.2, ⟨χ.nextTangential x.1 x.2, χ.nextTangential_mem_Ioo x.2.property⟩) := by
   rfl
+
+/-- The next-collision map is injective on the strip `ℝ × (-1, 1)`. -/
+theorem injOn_nextCollision : InjOn χ.nextCollision (univ ×ˢ Ioo (-1 : ℝ) 1) := by
+  rintro ⟨s, v⟩ ⟨-, hv⟩ ⟨s', v'⟩ ⟨-, hv'⟩ h
+  simp only [nextCollision_apply, Prod.mk.injEq] at h
+  have := χ.nextCollisionEquiv.injective (a₁ := (s, ⟨v, hv⟩)) (a₂ := (s', ⟨v', hv'⟩)) (by
+    simp only [nextCollisionEquiv_apply]
+    exact Prod.ext h.1 (Subtype.ext h.2))
+  simpa using this
 
 /-- The inverse of the next-collision map `B` is `τ⁻¹ ∘ ι ∘ B ∘ ι`, where `ι(s, v) = (s, -v)` and
 `τ(s, v) = (s + L, v)`. -/
@@ -176,7 +188,7 @@ theorem periodic_nextCollisionEquiv (v : Ioo (-1 : ℝ) 1) :
     Periodic (fun s : ℝ ↦
       Prod.map ((↑) : ℝ → AddCircle χ.period) id (χ.nextCollisionEquiv (s, v))) χ.period := by
   intro s
-  simp [χ.nextParam_add_period v.2, χ.nextTangential_add_period v.2]
+  simp [χ.nextParam_add_period v.property, χ.nextTangential_add_period v.property]
 
 /-- The class in `AddCircle L × (-1, 1)` of the image of `(s, v)` under the inverse of the
 next-collision map depends only on the class of `s`. -/
@@ -184,7 +196,7 @@ theorem periodic_nextCollisionEquiv_symm (v : Ioo (-1 : ℝ) 1) :
     Periodic (fun s : ℝ ↦
       Prod.map ((↑) : ℝ → AddCircle χ.period) id (χ.nextCollisionEquiv.symm (s, v))) χ.period := by
   intro s
-  have hv : -(v : ℝ) ∈ Ioo (-1) 1 := ⟨by linarith [v.2.2], by linarith [v.2.1]⟩
+  have hv : -(v : ℝ) ∈ Ioo (-1) 1 := ⟨by linarith [v.property.2], by linarith [v.property.1]⟩
   ext
   · simp only [nextCollisionEquiv_symm_apply, Prod.map_fst]
     rw [χ.nextParam_add_period hv, add_sub_cancel_right, ← AddCircle.coe_add_period (χ.period)
@@ -217,7 +229,7 @@ collision. -/
 theorem billiardMap_coe (s : ℝ) (v : Ioo (-1 : ℝ) 1) :
     χ.billiardMap ((s : AddCircle χ.period), v) =
       ((χ.nextParam s v : AddCircle χ.period),
-        ⟨χ.nextTangential s v, χ.nextTangential_mem_Ioo v.2⟩) := by
+        ⟨χ.nextTangential s v, χ.nextTangential_mem_Ioo v.property⟩) := by
   simp [billiardMap]
 
 /-- Two boundary parameters give the same boundary point exactly when they agree modulo the
@@ -231,7 +243,7 @@ theorem fst_billiardMap_ne (x : AddCircle χ.period × Ioo (-1 : ℝ) 1) :
   obtain ⟨θ, v⟩ := x
   induction θ using QuotientAddGroup.induction_on with | H s => ?_
   rw [billiardMap_coe]
-  exact fun h ↦ χ.apply_nextParam_ne (s := s) v.2 (χ.apply_eq_apply_iff.2 h)
+  exact fun h ↦ χ.apply_nextParam_ne (s := s) v.property (χ.apply_eq_apply_iff.2 h)
 
 /-- The inverse of the billiard map is `ι ∘ β ∘ ι`, where `ι([s], v) = ([s], -v)` reverses the
 tangential component. -/

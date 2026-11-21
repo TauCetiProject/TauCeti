@@ -10,7 +10,7 @@ public import TauCeti.AlgebraicGeometry.Scheme.BaseAlgebra
 public import TauCeti.AlgebraicGeometry.Scheme.LocallyDirected
 public import TauCeti.AlgebraicGeometry.Gluing.Pushout
 public import TauCeti.FieldTheory.FunctionField.HolomorphyRing.Localization
-import TauCeti.AlgebraicGeometry.AffineScheme
+import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 
 /-!
 # The scheme of a function field glued from two affine charts

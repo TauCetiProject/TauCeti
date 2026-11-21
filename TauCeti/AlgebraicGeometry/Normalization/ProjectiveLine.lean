@@ -7,7 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.FunctionField
 public import Mathlib.AlgebraicGeometry.Limits
-public import TauCeti.AlgebraicGeometry.AffineScheme
+public import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 public import TauCeti.AlgebraicGeometry.Gluing.Pushout
 public import TauCeti.AlgebraicGeometry.Scheme.BaseAlgebra
 public import TauCeti.RingTheory.Localization.Away.AdjoinInv

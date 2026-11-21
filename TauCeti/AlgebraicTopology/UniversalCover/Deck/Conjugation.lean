@@ -102,12 +102,12 @@ private def conjHomeomorphMulEquiv (h : E ≃ₜ F) : (E ≃ₜ E) ≃* (F ≃�
 /-- Conjugation by an over-base homeomorphism sends deck transformations to deck
 transformations. -/
 private lemma conjHomeomorph_mem_deck (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) (φ : deck p) :
-    conjHomeomorph h φ.1 ∈ deck q := by
+    conjHomeomorph h φ.val ∈ deck q := by
   rw [deck.mem_iff, funext_iff]
   intro f
   calc
-    q (conjHomeomorph h φ.1 f) = q (h (φ.1 (h.symm f))) := rfl
-    _ = p (φ.1 (h.symm f)) := hpq _
+    q (conjHomeomorph h φ.val f) = q (h (φ.val (h.symm f))) := rfl
+    _ = p (φ.val (h.symm f)) := hpq _
     _ = p (h.symm f) := deck.proj_smul φ _
     _ = q f := map_symm_eq_of_map_eq h hpq f
 
@@ -133,14 +133,14 @@ def conjMulEquiv (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) : deck p ≃* dec
 /-- The deck transformation produced by `conjMulEquiv` evaluates by conjugation. -/
 @[simp]
 lemma conjMulEquiv_apply_coe (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) (φ : deck p) (f : F) :
-    ((conjMulEquiv h hpq φ).1 f) = h (φ.1 (h.symm f)) := by
+    ((conjMulEquiv h hpq φ).val f) = h (φ.val (h.symm f)) := by
   rfl
 
 /-- The inverse equivalence of `conjMulEquiv` is conjugation by the inverse
 homeomorphism. -/
 @[simp]
 lemma conjMulEquiv_symm_apply_coe (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) (ψ : deck q) (e : E) :
-    (((conjMulEquiv h hpq).symm ψ).1 e) = h.symm (ψ.1 (h e)) := by
+    (((conjMulEquiv h hpq).symm ψ).val e) = h.symm (ψ.val (h e)) := by
   rfl
 
 /-- Conjugating deck transformations along the identity over-base homeomorphism gives the
