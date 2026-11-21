@@ -38,9 +38,11 @@ undefined address that the simulated program never queries.
 * `TauCeti.Oracle.Single.Code.exists_code_answers_apply`: a single oracle program applies any
   primitive recursive function to `(n, k)` and the finite oracle prefix `O 0, …, O (k - 1)`,
   uniformly for every total oracle `O`.
-* `TauCeti.Oracle.Single.Code.exists_code_dom_iff_exists_answers`: a single oracle program has
-  domain consisting of all inputs admitting a witness `k` satisfying a primitive recursive
-  predicate on `(n, k)` and `O 0, …, O (k - 1)`, uniformly for every total oracle `O`.
+* `TauCeti.Oracle.Single.Code.exists_code_rfind_answers`: a single oracle program evaluates to the
+  least witness `k` satisfying a primitive recursive predicate on `(n, k)` and `O 0, …, O (k - 1)`,
+  uniformly for every total oracle `O`.
+* `TauCeti.Oracle.Single.Code.exists_code_dom_iff_exists_answers`: domain characterization of
+  `exists_code_rfind_answers`.
 * `TauCeti.Oracle.Single.Code.eval_universal`: the universal program computes the value of the
   program numbered `e` on `x` from `Nat.pair e x`, relative to every total oracle.
 * `TauCeti.Oracle.Single.Code.recursiveIn₂_eval`: evaluation of programs is recursive in a total
@@ -100,25 +102,44 @@ theorem exists_code_answers_apply {g : ℕ × ℕ × List ℕ → ℕ} (hg : Pri
   refine ⟨comp cg (pair (pair left right) ca), fun O n k => ?_⟩
   simp [hca, hcg, Seq.seq]
 
+/-- A single program whose evaluation on `n`, relative to every total oracle `O`, is the least
+witness `k` at which a primitive recursive predicate holds of `(n, k)` and the finite oracle string
+`O 0, …, O (k - 1)`. -/
+theorem exists_code_rfind_answers {p : ℕ × ℕ × List ℕ → Bool} (hp : Primrec p) :
+    ∃ c : Code, ∀ (O : ℕ → ℕ) n,
+      eval (O : ℕ →. ℕ) c n =
+        Nat.rfind fun k => Part.some (p (n, k, (List.range k).map O)) := by
+  obtain ⟨t, ht⟩ := exists_code_answers_apply (g := fun q => bif p q then 0 else 1)
+    (Primrec.cond hp (const 0) (const 1))
+  refine ⟨comp (rfind' t) (pair (pair left right) zero), fun O n => ?_⟩
+  have hid : eval (O : ℕ →. ℕ) (pair (pair left right) zero) n = Part.some (Nat.pair n 0) := by
+    simp [Seq.seq]
+  rw [eval_comp, hid, PFun.some_bind, eval_rfind']
+  have hstep : (fun m => (fun m => decide (m = 0)) <$> eval (O : ℕ →. ℕ) t (Nat.pair n (m + 0))) =
+      fun k => Part.some (p (n, k, (List.range k).map O)) := by
+    funext k
+    rw [add_zero, ht]
+    cases p (n, k, (List.range k).map O) <;> simp
+  rw [hstep]
+  exact Part.ext fun _ => by simp
+
 /-- A single program whose domain on `n`, relative to every total oracle `O`, is the set of inputs
 admitting a witness `k` at which a primitive recursive predicate holds of `(n, k)` and the finite
 oracle string `O 0, …, O (k - 1)`. -/
 theorem exists_code_dom_iff_exists_answers {p : ℕ × ℕ × List ℕ → Bool} (hp : Primrec p) :
     ∃ c : Code, ∀ (O : ℕ → ℕ) n,
       (eval (O : ℕ →. ℕ) c n).Dom ↔ ∃ k, p (n, k, (List.range k).map O) = true := by
-  obtain ⟨t, ht⟩ := exists_code_answers_apply (g := fun q => bif p q then 0 else 1)
-    (Primrec.cond hp (const 0) (const 1))
-  refine ⟨comp (rfind' t) (pair (pair left right) zero), fun O n => ?_⟩
-  let q : ℕ →. Bool := fun k => Part.some (p (n, k, (List.range k).map O))
-  have hsearch :
-      eval (O : ℕ →. ℕ) (comp (rfind' t) (pair (pair left right) zero)) n = Nat.rfind q := by
-    have hpred : (fun k =>
-        Part.some (decide ((bif p (n, k, (List.range k).map O) then 0 else 1) = 0)) : ℕ →. Bool) =
-        q :=
-      funext fun k => by cases h : p (n, k, (List.range k).map O) <;> simp [q, h]
-    simpa [ht, Seq.seq, Part.map_id', -List.getElem?_map] using congrArg Nat.rfind hpred
-  rw [hsearch, Nat.rfind_dom]
-  simp [q]
+  obtain ⟨c, hc⟩ := exists_code_rfind_answers hp
+  refine ⟨c, fun O n => ?_⟩
+  rw [hc, Part.dom_iff_mem]
+  constructor
+  · rintro ⟨k, hk⟩
+    exact ⟨k, (Part.mem_some_iff.1 (Nat.mem_rfind.1 hk).1).symm⟩
+  · intro hex
+    refine ⟨Nat.find hex, Nat.mem_rfind.2 ⟨Part.mem_some_iff.2 (Nat.find_spec hex).symm,
+      fun hm => Part.mem_some_iff.2 ?_⟩⟩
+    have hmin := Nat.find_min hex hm
+    cases h : p (n, _, (List.range _).map O) <;> simp_all
 
 /-- The run searched for by the universal program: on `(n, k, l)`, the run of the program numbered
 by the first coordinate of `n` on its second coordinate, with fuel `k`, against the oracle
@@ -135,27 +156,22 @@ private theorem primrec_run : Primrec run :=
 private theorem exists_universal : ∃ u : Code, ∀ (O : ℕ → ℕ) (e x : ℕ),
     eval (O : ℕ →. ℕ) u (Nat.pair e x) =
       eval (O : ℕ →. ℕ) (ofNat Code e) x := by
-  -- `t` tests whether the run at fuel `k` succeeds, and `r` returns its output
-  obtain ⟨t, ht⟩ := exists_code_answers_apply (g := fun p => bif (run p).isSome then 0 else 1)
-    (Primrec.cond (option_isSome.comp primrec_run) (const 0) (const 1))
+  -- `s` searches for the least fuel at which the run succeeds, and `r` returns its output
+  obtain ⟨s, hs⟩ := exists_code_rfind_answers (p := fun p => (run p).isSome)
+    (option_isSome.comp primrec_run)
   obtain ⟨r, hr⟩ := exists_code_answers_apply (g := fun p => ((run p).map Halt.output).getD 0)
     (option_getD.comp (option_map primrec_run (Halt.primrec_output.comp snd).to₂) (const 0))
-  -- search for the least fuel at which the run succeeds, and return the output of that run
-  refine ⟨comp r (pair (pair left right) (comp (rfind' t) (pair (pair left right) zero))),
-    fun O e x => Part.ext fun y => ?_⟩
+  refine ⟨comp r (pair (pair left right) s), fun O e x => Part.ext fun y => ?_⟩
   set R : ℕ → Option Halt :=
     fun k => evaln (fun z => ((List.range k).map O)[z]?) k (ofNat Code e) x with hR
   have hrun (k : ℕ) : run (Nat.pair e x, k, (List.range k).map O) = R k := by
     simp only [run, Nat.unpair_pair, hR]
   have hid : eval (O : ℕ →. ℕ) (pair left right) (Nat.pair e x) = Part.some (Nat.pair e x) := by
     simp [Seq.seq]
-  have hsearch :
-      eval (O : ℕ →. ℕ) (comp (rfind' t) (pair (pair left right) zero)) (Nat.pair e x) =
-        Nat.rfind fun k => Part.some (R k).isSome := by
-    have hp : (fun k => Part.some !decide (R k = none) : ℕ →. Bool) =
-        fun k => Part.some (R k).isSome :=
-      funext fun k => by cases R k <;> rfl
-    simp [hid, ht, hrun, hp, Seq.seq, Part.map_id', -List.getElem?_map]
+  have hsearch : eval (O : ℕ →. ℕ) s (Nat.pair e x) =
+      Nat.rfind fun k => Part.some (R k).isSome := by
+    rw [hs]
+    simp only [hrun]
   have hout (k : ℕ) : eval (O : ℕ →. ℕ) r (Nat.pair (Nat.pair e x) k) =
       Part.some (((R k).map Halt.output).getD 0) := by
     rw [hr, hrun]

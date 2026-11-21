@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Computability.Enumeration.Code
+public import TauCeti.Computability.RecursiveIn
 import TauCeti.Computability.Enumeration.Domain
 import TauCeti.Computability.Primrec.FiniteSet
 
@@ -18,10 +19,11 @@ as `(x, t)` and enumerate `x` if it belongs to `A t`. Repeated discoveries cause
 No decision about whether the limiting set is finite is needed.
 
 The construction preserves the limiting set, with explicit stage comparisons when the original
-stages increase. Its binary finite-set codes are computable uniformly in any parameters of the
-original enumeration. In particular, applying it to the canonical domain stages gives a uniform
-serialized presentation of every c.e. set. Numbers can also encode pairs or tagged entries:
-serialization does not change their codes or identify distinct entries.
+stages increase. Its binary finite-set codes are computable (and oracle-computable, via
+`TauCeti.Enumeration.computableIn_serializedStage`) uniformly in any parameters of the original
+enumeration. In particular, applying it to the canonical domain stages gives a uniform serialized
+presentation of every c.e. set. Numbers can also encode pairs or tagged entries: serialization does
+not change their codes or identify distinct entries.
 
 ## References
 
@@ -137,30 +139,36 @@ theorem subset_serializedStage (A : ℕ → Finset ℕ) (t : ℕ) :
   have hlt := x.lt_two_pow_self.trans_le (Nat.two_pow_le_of_mem_bitIndices hbit)
   exact mem_serializedStage.mpr ⟨t, Nat.pair_lt_pair_left t hlt, hx⟩
 
-/-- Binary codes of serialized stages are computable, uniformly in all parameters of the
-source stages. No monotonicity of the source or infinitude of its limit is required. -/
-theorem computable_serializedStage {α : Type*} [Primcodable α]
+/-- Binary codes of serialized stages are oracle-computable, uniformly in all parameters of the
+source stages, without monotonicity or infinitude assumptions. -/
+theorem computableIn_serializedStage {α : Type*} [Primcodable α] {G : Set (ℕ →. ℕ)}
     {A : α → ℕ → Finset ℕ}
-    (hA : Computable fun p : α × ℕ => Finset.equivBitIndices.symm (A p.1 p.2)) :
-    Computable fun p : α × ℕ => Finset.equivBitIndices.symm (serializedStage (A p.1) p.2) := by
-  have hunpair : Computable fun p : (α × ℕ) × (ℕ × ℕ) => p.2.1.unpair :=
-    Primrec.unpair.to_comp.comp (Computable.fst.comp Computable.snd)
-  have hcode : Computable fun p : (α × ℕ) × (ℕ × ℕ) =>
+    (hA : ComputableIn G fun p : α × ℕ => Finset.equivBitIndices.symm (A p.1 p.2)) :
+    ComputableIn G fun p : α × ℕ => Finset.equivBitIndices.symm (serializedStage (A p.1) p.2) := by
+  have hunpair : ComputableIn G fun p : (α × ℕ) × (ℕ × ℕ) => p.2.1.unpair :=
+    Primrec.unpair.computableIn.comp (ComputableIn.fst.comp ComputableIn.snd)
+  have hcode : ComputableIn G fun p : (α × ℕ) × (ℕ × ℕ) =>
       Finset.equivBitIndices.symm (A p.1.1 p.2.1.unpair.2) :=
-    hA.comp ((Computable.fst.comp Computable.fst).pair (Computable.snd.comp hunpair))
-  have hmem : ComputablePred fun p : (α × ℕ) × (ℕ × ℕ) =>
-      p.2.1.unpair.1 ∈ A p.1.1 p.2.1.unpair.2 :=
-    (Primrec.mem_equivBitIndices.decide.to_comp.comp
-      hcode (Computable.fst.comp hunpair)).computablePred.of_eq fun p => by simp
-  have hstep : Computable fun p : (α × ℕ) × (ℕ × ℕ) =>
-      if p.2.1.unpair.1 ∈ A p.1.1 p.2.1.unpair.2 then
-        p.2.2 ||| 2 ^ p.2.1.unpair.1 else p.2.2 :=
-    (Computable.cond hmem.decide
-      (Primrec.nat_lor.to_comp.comp (Computable.snd.comp Computable.snd)
-        (Primrec.nat_pow.to_comp.comp (Computable.const 2) (Computable.fst.comp hunpair)))
-      (Computable.snd.comp Computable.snd)).of_eq fun p => by simp
-  refine (Computable.nat_rec Computable.snd (Computable.const 0) hstep.to₂).of_eq ?_
+    hA.comp ((ComputableIn.fst.comp ComputableIn.fst).pair (ComputableIn.snd.comp hunpair))
+  have hmem : ComputableIn G fun p : (α × ℕ) × (ℕ × ℕ) =>
+      decide (p.2.1.unpair.1 ∈ A p.1.1 p.2.1.unpair.2) :=
+    RecursiveIn.of_eq
+      (Primrec.mem_equivBitIndices.decide.computableIn.comp
+        (hcode.pair (ComputableIn.fst.comp hunpair))) fun p => by simp
+  have hcond : Primrec fun q : Bool × ℕ × ℕ => bif q.1 then q.2.1 ||| 2 ^ q.2.2 else q.2.1 :=
+    Primrec.cond Primrec.fst
+      (Primrec.nat_lor.comp (Primrec.fst.comp Primrec.snd)
+        (Primrec.nat_pow.comp (Primrec.const 2) (Primrec.snd.comp Primrec.snd)))
+      (Primrec.fst.comp Primrec.snd)
+  have hstep : ComputableIn₂ G fun (p : α × ℕ) (q : ℕ × ℕ) =>
+      if q.1.unpair.1 ∈ A p.1 q.1.unpair.2 then q.2 ||| 2 ^ q.1.unpair.1 else q.2 :=
+    RecursiveIn.of_eq
+      (hcond.computableIn.comp
+        (hmem.pair ((ComputableIn.snd.comp ComputableIn.snd).pair
+          (ComputableIn.fst.comp hunpair)))) fun p => by simp
+  refine RecursiveIn.of_eq (ComputableIn.nat_rec ComputableIn.snd (ComputableIn.const 0) hstep) ?_
   rintro ⟨a, s⟩
+  congr 1
   induction s with
   | zero => simp
   | succ s ih =>
@@ -168,6 +176,14 @@ theorem computable_serializedStage {α : Type*} [Primcodable α]
     split_ifs with h
     · exact (Finset.equivBitIndices_symm_insert _ _).symm
     · rfl
+
+/-- Binary codes of serialized stages are computable, uniformly in all parameters of the
+source stages. No monotonicity of the source or infinitude of its limit is required. -/
+theorem computable_serializedStage {α : Type*} [Primcodable α]
+    {A : α → ℕ → Finset ℕ}
+    (hA : Computable fun p : α × ℕ => Finset.equivBitIndices.symm (A p.1 p.2)) :
+    Computable fun p : α × ℕ => Finset.equivBitIndices.symm (serializedStage (A p.1) p.2) :=
+  TauCeti.computableIn_empty_iff.1 (computableIn_serializedStage hA.computableIn)
 
 /-- The canonical c.e. domain enumeration has uniformly computable serialized stages. -/
 theorem computable_serializedStage_domStage :

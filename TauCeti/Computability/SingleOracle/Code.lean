@@ -482,6 +482,42 @@ def toSingleOracleCode : Nat.Partrec.Code → TauCeti.Oracle.Single.Code
   | prec cf cg => .prec cf.toSingleOracleCode cg.toSingleOracleCode
   | rfind' cf => .rfind' cf.toSingleOracleCode
 
+/-- `toSingleOracleCode` maps `Nat.Partrec.Code.zero` to `zero`. -/
+@[simp] theorem toSingleOracleCode_zero : toSingleOracleCode .zero = .zero := by
+  rw [toSingleOracleCode]
+
+/-- `toSingleOracleCode` maps `Nat.Partrec.Code.succ` to `succ`. -/
+@[simp] theorem toSingleOracleCode_succ : toSingleOracleCode .succ = .succ := by
+  rw [toSingleOracleCode]
+
+/-- `toSingleOracleCode` maps `Nat.Partrec.Code.left` to `left`. -/
+@[simp] theorem toSingleOracleCode_left : toSingleOracleCode .left = .left := by
+  rw [toSingleOracleCode]
+
+/-- `toSingleOracleCode` maps `Nat.Partrec.Code.right` to `right`. -/
+@[simp] theorem toSingleOracleCode_right : toSingleOracleCode .right = .right := by
+  rw [toSingleOracleCode]
+
+/-- `toSingleOracleCode` distributes over `pair`. -/
+@[simp] theorem toSingleOracleCode_pair (cf cg : Nat.Partrec.Code) :
+    toSingleOracleCode (.pair cf cg) = .pair cf.toSingleOracleCode cg.toSingleOracleCode := by
+  rw [toSingleOracleCode]
+
+/-- `toSingleOracleCode` distributes over `comp`. -/
+@[simp] theorem toSingleOracleCode_comp (cf cg : Nat.Partrec.Code) :
+    toSingleOracleCode (.comp cf cg) = .comp cf.toSingleOracleCode cg.toSingleOracleCode := by
+  rw [toSingleOracleCode]
+
+/-- `toSingleOracleCode` distributes over `prec`. -/
+@[simp] theorem toSingleOracleCode_prec (cf cg : Nat.Partrec.Code) :
+    toSingleOracleCode (.prec cf cg) = .prec cf.toSingleOracleCode cg.toSingleOracleCode := by
+  rw [toSingleOracleCode]
+
+/-- `toSingleOracleCode` distributes over `rfind'`. -/
+@[simp] theorem toSingleOracleCode_rfind' (cf : Nat.Partrec.Code) :
+    toSingleOracleCode (.rfind' cf) = .rfind' cf.toSingleOracleCode := by
+  rw [toSingleOracleCode]
+
 /-- `Nat.Partrec.Code.toSingleOracleCode` is injective: distinct ordinary codes give distinct
 programs. -/
 theorem toSingleOracleCode_injective : Function.Injective toSingleOracleCode := by
@@ -553,11 +589,42 @@ def toPartrecCode : Code → Nat.Partrec.Code
   | prec cf cg => .prec cf.toPartrecCode cg.toPartrecCode
   | rfind' cf => .rfind' cf.toPartrecCode
 
+/-- `toPartrecCode` maps `zero` to `Nat.Partrec.Code.zero`. -/
+@[simp] theorem toPartrecCode_zero : toPartrecCode zero = .zero := by rw [toPartrecCode]
+
+/-- `toPartrecCode` maps `succ` to `Nat.Partrec.Code.succ`. -/
+@[simp] theorem toPartrecCode_succ : toPartrecCode succ = .succ := by rw [toPartrecCode]
+
+/-- `toPartrecCode` maps `left` to `Nat.Partrec.Code.left`. -/
+@[simp] theorem toPartrecCode_left : toPartrecCode left = .left := by rw [toPartrecCode]
+
+/-- `toPartrecCode` maps `right` to `Nat.Partrec.Code.right`. -/
+@[simp] theorem toPartrecCode_right : toPartrecCode right = .right := by rw [toPartrecCode]
+
+/-- `toPartrecCode` replaces `oracle` by `Nat.Partrec.Code.zero`. -/
+@[simp] theorem toPartrecCode_oracle : toPartrecCode oracle = .zero := by rw [toPartrecCode]
+
+/-- `toPartrecCode` distributes over `pair`. -/
+@[simp] theorem toPartrecCode_pair (cf cg : Code) :
+    toPartrecCode (pair cf cg) = .pair cf.toPartrecCode cg.toPartrecCode := by rw [toPartrecCode]
+
+/-- `toPartrecCode` distributes over `comp`. -/
+@[simp] theorem toPartrecCode_comp (cf cg : Code) :
+    toPartrecCode (comp cf cg) = .comp cf.toPartrecCode cg.toPartrecCode := by rw [toPartrecCode]
+
+/-- `toPartrecCode` distributes over `prec`. -/
+@[simp] theorem toPartrecCode_prec (cf cg : Code) :
+    toPartrecCode (prec cf cg) = .prec cf.toPartrecCode cg.toPartrecCode := by rw [toPartrecCode]
+
+/-- `toPartrecCode` distributes over `rfind'`. -/
+@[simp] theorem toPartrecCode_rfind' (cf : Code) :
+    toPartrecCode (rfind' cf) = .rfind' cf.toPartrecCode := by rw [toPartrecCode]
+
 /-- Specializing a query-free program recovers the original ordinary code. -/
 @[simp]
 theorem toPartrecCode_toSingleOracleCode (c : Nat.Partrec.Code) :
     c.toSingleOracleCode.toPartrecCode = c := by
-  induction c <;> simp [Nat.Partrec.Code.toSingleOracleCode, toPartrecCode, *]
+  induction c <;> simp [Nat.Partrec.Code.toSingleOracleCode, *]
 
 /-- Relative to any oracle that always answers `0` (such as the empty set oracle), every oracle
 program computes the same partial function as its ordinary specialization `toPartrecCode`. -/

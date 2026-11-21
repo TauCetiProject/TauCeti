@@ -111,6 +111,12 @@ theorem oracle_empty : (∅ : Set ℕ).oracle = fun _ => Part.some 0 := by
   ext n
   simp
 
+/-- Partial recursiveness in the empty set oracle is ordinary partial recursiveness. -/
+theorem _root_.TauCeti.recursiveIn_empty_oracle_iff {α β : Type*} [Primcodable α] [Primcodable β]
+    {f : α →. β} : RecursiveIn {(∅ : Set ℕ).oracle} f ↔ Partrec f := by
+  rw [oracle_empty]
+  exact TauCeti.recursiveIn_const_iff
+
 /-- A set oracle is partial computable exactly when membership in the set is computable. -/
 @[simp]
 theorem partrec_oracle_iff (A : Set ℕ) : Partrec A.oracle ↔ ComputablePred (· ∈ A) := by

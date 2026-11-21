@@ -6,21 +6,27 @@ Authors: The Tau Ceti contributors
 module
 
 import TauCeti.Computability.Enumeration.Relative
+import TauCeti.Computability.Enumeration.Comparison
 import TauCeti.Computability.Enumeration.Closure
+import TauCeti.Computability.Enumeration.Range
+import TauCeti.Computability.Primrec.FiniteSet
+import TauCeti.Computability.RE
 
 /-!
 # Regression examples: relative enumerations, stage comparisons, and index closure
 
-These examples exercise `TauCeti.Computability.Enumeration.Relative` and
-`TauCeti.Computability.Enumeration.Closure` from a downstream module, using public APIs only:
+These examples exercise `TauCeti.Computability.Enumeration.Relative`,
+`TauCeti.Computability.Enumeration.Comparison`, `TauCeti.Computability.Enumeration.IndexClosure`,
+`TauCeti.Computability.Enumeration.Closure`, `TauCeti.Computability.Enumeration.Range`, and
+`TauCeti.Computability.RE` from a downstream module, using public APIs only:
 
 * the empty set is c.e. and admits a partial computable range presentation without any
   nonemptiness hypothesis;
 * concrete c.e. sets (finite sets, even numbers, and the halting set `(∅ : Set ℕ).jump`) combine
   under union, intersection, computable image, partial preimage, and existential projection;
-* stage comparison witnesses mutual inclusion between two monotone enumerations with different
+* stage comparison witnesses mutual inclusion between two directed enumerations with different
   entry times (`Finset.range` and the batched enumeration `s ↦ Finset.range (2 * s)`), whereas
-  without monotonicity of the target enumeration `stageCompare` can diverge even when the limiting
+  without directedness of the target enumeration `stageCompare` can diverge even when the limiting
   sets coincide;
 * `domStage` relative to a nontrivial oracle `Z = {0}` yields a `Z`-computable serialized stage
   presentation of every `Σ⁰₁(Z)` predicate;
@@ -83,22 +89,15 @@ example :
     ext x
     simp only [mem_stageLimit, Finset.mem_range]
     exact ⟨fun ⟨s, hs⟩ => ⟨2 * s, hs⟩, fun ⟨s, hs⟩ => ⟨s, by omega⟩⟩
-  have hcode : Primrec fun n => Finset.equivBitIndices.symm (Finset.range n) := by
-    have hpow : Primrec fun n => 2 ^ n - 1 :=
-      Primrec.nat_sub.comp (Primrec.nat_pow.comp (Primrec.const 2) Primrec.id) (Primrec.const 1)
-    refine hpow.of_eq fun n => ?_
-    apply Finset.equivBitIndices.injective
-    rw [Equiv.apply_symm_apply]
-    ext k
-    simp [Nat.testBit_two_pow_sub_one]
   have hA : ComputableIn (∅ : Set (ℕ →. ℕ))
       fun s => Finset.equivBitIndices.symm (Finset.range (2 * s)) :=
-    (hcode.comp (Primrec.nat_mul.comp (Primrec.const 2) Primrec.id)).computableIn
+    (Primrec.equivBitIndices_symm_range.comp
+      (Primrec.nat_mul.comp (Primrec.const 2) Primrec.id)).computableIn
   have hB : ComputableIn (∅ : Set (ℕ →. ℕ))
       fun s => Finset.equivBitIndices.symm (Finset.range s) :=
-    hcode.computableIn
+    Primrec.equivBitIndices_symm_range.computableIn
   refine ⟨fun s => mem_stageCompare.2 ⟨Finset.Subset.rfl, fun t ht hsub => ?_⟩,
-    exists_computableIn_stage_comparison hmono₁ hmono₂ hA hB hlim⟩
+    exists_computableIn_stage_comparison hmono₁.directed_le hmono₂.directed_le hA hB hlim⟩
   have : 2 * s ≤ t := Finset.range_subset_range.1 hsub
   omega
 

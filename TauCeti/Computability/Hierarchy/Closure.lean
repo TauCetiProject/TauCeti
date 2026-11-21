@@ -205,6 +205,30 @@ theorem IsDelta.of_le (hp : IsDelta Z n p) (hnm : n ≤ m) : IsDelta Z m p := by
   obtain ⟨hpS, hpP⟩ := isDelta_iff.1 hp
   exact isDelta_iff.2 ⟨hpS.of_le hnm, hpP.of_le hnm⟩
 
+/-- Existential pointclasses are closed under finite conjunctions, including the empty family. -/
+theorem IsSigma.forall_mem_finset {ι : Type*} {s : Finset ι} {p : ι → α → Prop}
+    (hp : ∀ i ∈ s, IsSigma Z n (p i)) : IsSigma Z n fun x => ∀ i ∈ s, p i x := by
+  classical
+  induction s using Finset.induction_on with
+  | empty =>
+    exact ((isSigma_zero_iff (p := fun _ : α => True)).2 ⟨fun _ => true, ComputableIn.const true,
+      fun _ => by simp⟩).of_le (Nat.zero_le _) |>.of_eq fun _ => by simp
+  | @insert i s _ ih =>
+    exact ((hp i (Finset.mem_insert_self i s)).and
+      (ih fun j hj => hp j (Finset.mem_insert_of_mem hj))).of_eq fun x => by simp
+
+/-- Existential pointclasses are closed under finite disjunctions, including the empty family. -/
+theorem IsSigma.exists_mem_finset {ι : Type*} {s : Finset ι} {p : ι → α → Prop}
+    (hp : ∀ i ∈ s, IsSigma Z n (p i)) : IsSigma Z n fun x => ∃ i ∈ s, p i x := by
+  classical
+  induction s using Finset.induction_on with
+  | empty =>
+    exact ((isSigma_zero_iff (p := fun _ : α => False)).2 ⟨fun _ => false, ComputableIn.const false,
+      fun _ => by simp⟩).of_le (Nat.zero_le _) |>.of_eq fun _ => by simp
+  | @insert i s _ ih =>
+    exact ((hp i (Finset.mem_insert_self i s)).or
+      (ih fun j hj => hp j (Finset.mem_insert_of_mem hj))).of_eq fun x => by simp
+
 /-- At a positive existential level, an existential quantifier over any primitive-codable type can
 be contracted into the leading quantifier. -/
 theorem IsSigma.exists {β : Type*} [Primcodable β] {r : α × β → Prop} (hr : IsSigma Z (n + 1) r) :

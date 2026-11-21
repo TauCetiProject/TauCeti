@@ -132,13 +132,9 @@ theorem primrecRel_mem_domStage_ofNat :
 /-- The binary finite-set codes `∑ x ∈ W_{c,s}, 2 ^ x` of the stages of the domain of a code are
 primitive recursive, uniformly in the code and the stage. -/
 theorem primrec_domStage :
-    Primrec fun p : Code × ℕ => Finset.equivBitIndices.symm (p.1.domStage p.2) := by
-  refine (Primrec.nat_filterBitIndices (Primrec.nat_sub.comp
-    (Primrec.nat_pow.comp (_root_.Primrec.const 2) Primrec.snd) (_root_.Primrec.const 1))
-    Primrec.snd primrec₂_evaln_isSome).of_eq fun p => ?_
-  apply Finset.equivBitIndices.injective
-  ext x
-  simp [Nat.testBit_two_pow_sub_one, domStage]
+    Primrec fun p : Code × ℕ => Finset.equivBitIndices.symm (p.1.domStage p.2) :=
+  (Primrec.equivBitIndices_symm_filter_range Primrec.snd primrec₂_evaln_isSome).of_eq fun _ =>
+    rfl
 
 /-- For a fixed code `c`, the binary finite-set codes of the stages `W_{c,s}` are primitive
 recursive in `s`. -/

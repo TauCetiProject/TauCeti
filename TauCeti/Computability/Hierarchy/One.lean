@@ -69,15 +69,20 @@ theorem isSigma_one_dom_eval (c : Code) :
   exact ⟨fun ⟨_, k, d, hd, _⟩ => ⟨k, d, hd⟩,
     fun ⟨k, d, hd⟩ => ⟨d.output, k, d, hd, rfl⟩⟩
 
-/-- **The first relativized Post equivalence.** Σ⁰₁ predicates relative to `Z` are exactly the
-domains of partial functions recursive in `Z`. -/
-theorem isSigma_one_iff_exists_recursiveIn_domain : IsSigma Z 1 p ↔
-    ∃ f : α →. ℕ, RecursiveIn {Z.oracle} f ∧ ∀ x, p x ↔ (f x).Dom := by
-  refine ⟨IsSigma.exists_recursiveIn_domain, fun ⟨f, hf, heq⟩ => ?_⟩
+/-- The domain of a partial function recursive in `Z` is Σ⁰₁ relative to `Z`. -/
+theorem _root_.RecursiveIn.isSigma_one_mem_dom {β : Type*} [Primcodable β] {f : α →. β}
+    (hf : RecursiveIn {Z.oracle} f) : IsSigma Z 1 (· ∈ f.Dom) := by
   unfold RecursiveIn at hf
   obtain ⟨c, hc⟩ := Code.exists_code.1 hf
   exact ((isSigma_one_dom_eval c).preimage Primrec.encode.computableIn).of_eq fun x => by
-    simpa [hc, encodek] using (heq x).symm
+    simp [PFun.Dom, hc, encodek]
+
+/-- **The first relativized Post equivalence.** Σ⁰₁ predicates relative to `Z` are exactly the
+domains of partial functions recursive in `Z`. -/
+theorem isSigma_one_iff_exists_recursiveIn_domain : IsSigma Z 1 p ↔
+    ∃ f : α →. ℕ, RecursiveIn {Z.oracle} f ∧ ∀ x, p x ↔ (f x).Dom :=
+  ⟨IsSigma.exists_recursiveIn_domain,
+    fun ⟨_, hf, heq⟩ => hf.isSigma_one_mem_dom.of_eq fun x => (heq x).symm⟩
 
 /-- Σ⁰₁ predicates relative to `Z` are exactly oracle-program domains on encoded inputs. -/
 theorem isSigma_one_iff_exists_code : IsSigma Z 1 p ↔

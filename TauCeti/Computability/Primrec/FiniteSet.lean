@@ -82,6 +82,16 @@ theorem equivBitIndices_symm_range :
     Primrec fun n => Finset.equivBitIndices.symm (Finset.range n) :=
   (equivBitIndices_symm_toFinset.comp list_range).of_eq fun n => by rw [List.toFinset_range]
 
+/-- Binary codes of filtered initial intervals `(Finset.range (b a)).filter (p a)` are primitive
+recursive, uniformly in the bound and predicate. -/
+theorem equivBitIndices_symm_filter_range {α : Type*} [Primcodable α]
+    {b : α → ℕ} {p : α → ℕ → Bool} (hb : Primrec b) (hp : Primrec₂ p) :
+    Primrec fun a => Finset.equivBitIndices.symm ((Finset.range (b a)).filter fun x => p a x) := by
+  refine (nat_filterBitIndices (equivBitIndices_symm_range.comp hb) hb hp).of_eq fun a => ?_
+  apply Finset.equivBitIndices.injective
+  rw [Nat.equivBitIndices_filterBitIndices, Equiv.apply_symm_apply, Equiv.apply_symm_apply]
+  exact Finset.filter_congr fun x hx => by simp [Finset.mem_range.1 hx]
+
 /-- Least-element search on binary finite-set codes is primitive recursive. -/
 theorem nat_leastBitIndex : Primrec Nat.leastBitIndex :=
   (list_head?.comp nat_bitIndices).of_eq fun n => (Nat.leastBitIndex_def n).symm

@@ -7,9 +7,13 @@ module
 
 public import TauCeti.Computability.Enumeration.Domain
 import Mathlib.Data.Set.Finite.Basic
+import TauCeti.Computability.RE
 
 /-!
-# Total and injective enumerations of c.e. sets
+# Total, partial-range, and injective enumerations of c.e. sets
+
+A c.e. set in any primitive-codable type is the range of a partial computable function `ℕ →. α`
+(`TauCeti.Enumeration.rePred_iff_exists_partrec_ran`), including the empty set.
 
 A nonempty c.e. set is the range of a total computable function. The enumeration
 runs bounded computations in dovetailed order and uses a fixed member of the set
@@ -179,3 +183,29 @@ theorem exists_injective_computable_range {α : Type*} [Primcodable α] {S : Set
   exact ⟨g, hg, hinj, hgrange.trans hfrange⟩
 
 end REPred
+
+namespace TauCeti.Enumeration
+
+/-- A set in any primitive-codable type is c.e. if and only if it is the range of a partial
+computable function `ℕ →. α`. Unlike `REPred.exists_computable_range`, this holds for the empty
+set as well. -/
+theorem rePred_iff_exists_partrec_ran {α : Type*} [Primcodable α] {S : Set α} :
+    REPred (· ∈ S) ↔ ∃ f : ℕ →. α, Partrec f ∧ f.ran = S := by
+  refine ⟨fun hS => ?_, fun ⟨f, hf, hran⟩ => hran ▸ hf.rePred_mem_ran⟩
+  let f : ℕ →. α := fun n =>
+    (Part.ofOption (Encodable.decode (α := α) n)).bind fun x =>
+      (Part.assert (x ∈ S) fun _ => Part.some ()).map fun _ => x
+  have hf : Partrec f :=
+    Computable.decode.ofOption.bind
+      ((hS.comp Computable.snd).map (Computable.snd.comp Computable.fst).to₂).to₂
+  refine ⟨f, hf, Set.ext fun y => ?_⟩
+  simp only [PFun.ran, Set.mem_ofPred_eq, f, Part.mem_bind_iff, Part.mem_ofOption]
+  constructor
+  · rintro ⟨n, x, _, hy⟩
+    obtain ⟨_, hxS, rfl⟩ := (Part.mem_map_iff _).1 hy
+    exact (Part.mem_assert_iff.1 hxS).1
+  · intro hy
+    exact ⟨Encodable.encode y, y, Encodable.encodek y,
+      (Part.mem_map_iff _).2 ⟨(), Part.mem_assert_iff.2 ⟨hy, Part.mem_some ()⟩, rfl⟩⟩
+
+end TauCeti.Enumeration
