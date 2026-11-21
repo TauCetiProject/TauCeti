@@ -7,7 +7,7 @@ module
 
 public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.GroupTheory.Index
-import Mathlib.Algebra.Pointwise.Stabilizer
+import TauCeti.GroupTheory.GroupAction.Orbit.Closure
 
 /-!
 # Coset tables
@@ -230,22 +230,19 @@ theorem smul_mem_range_point_of_edges [NeZero k]
     (hedges : ∀ t i, g t • T.point g a i = T.point g a (T.act t i))
     {x : G} (hx : x ∈ Subgroup.closure (Set.range g)) :
     x • a ∈ Set.range (T.point g a) := by
-  have hfin : (Set.range (T.point g a)).Finite := Set.finite_range _
-  have hstabilizer : Subgroup.closure (Set.range g) ≤
-      MulAction.stabilizer G (Set.range (T.point g a)) := by
-    rw [Subgroup.closure_le]
-    rintro _ ⟨t, rfl⟩
-    rw [SetLike.mem_coe, MulAction.mem_stabilizer_set' hfin]
-    rintro _ ⟨i, rfl⟩
-    exact ⟨T.act t i, (hedges t i).symm⟩
   have hw : ((T.word 0).map g).prod ∈ Subgroup.closure (Set.range g) := by
     apply list_prod_mem
     intro y hy
     obtain ⟨t, -, rfl⟩ := List.mem_map.1 hy
     exact Subgroup.subset_closure (Set.mem_range_self t)
-  have hxa := (MulAction.mem_stabilizer_set' hfin).1
-    (hstabilizer (Subgroup.mul_mem _ hx (Subgroup.inv_mem _ hw))) (Set.mem_range_self 0)
-  simpa [point_def, mul_smul] using hxa
+  have horb := MulAction.orbit_closure_subset_of_finite (Set.finite_range (T.point g a))
+    (Set.mem_range_self 0) (S := Set.range g) (by
+      rintro _ ⟨t, rfl⟩ _ ⟨i, rfl⟩
+      exact ⟨T.act t i, (hedges t i).symm⟩)
+  have hmem : (x * ((T.word 0).map g).prod⁻¹) • T.point g a 0 ∈
+      MulAction.orbit (Subgroup.closure (Set.range g)) (T.point g a 0) :=
+    ⟨⟨x * ((T.word 0).map g).prod⁻¹, Subgroup.mul_mem _ hx (Subgroup.inv_mem _ hw)⟩, rfl⟩
+  simpa [point_def, mul_smul] using horb hmem
 
 /-- If the generators `g` generate `G`, the points named by a certified coset table contain the
 whole orbit of the base point `a`. -/

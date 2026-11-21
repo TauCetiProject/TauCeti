@@ -72,9 +72,7 @@ open CosetEnumeration SubgroupEnumeration
 /-! ### Signed-letter words -/
 
 private def m12Rels : List (List ℕ) :=
-  [[3, 0, 3, 0, 3, 0],
-    [0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2],
-    [0, 2, 2, 0, 3, 0, 0, 2, 0, 0, 2, 2]]
+  M12.presentation.relatorLetters.map (List.map signedLetter)
 
 private def wordA5 : List ℕ := [0, 0, 0, 0, 0]
 private def wordB6 : List ℕ := [2, 2, 2, 2, 2, 2]
@@ -497,16 +495,10 @@ private def stage4Steps : List ℕ :=
 
 /-! ### Kernel certificate checks -/
 
-private theorem m12Rels_eq :
-    M12.presentation.relatorLetters.map (List.map signedLetter) = m12Rels := by
-  rw [presentation_M12, Sporadic.m12Presentation_relatorLetters]
-  decide
-
 private theorem check_stage1 :
     checkRelators M12.presentation.generatorCount
-      (M12.presentation.relatorLetters.map (List.map signedLetter))
-      [(131, wordA5)] stage1Parents stage1Steps = true := by
-  rw [presentation_M12, Sporadic.m12Presentation_generatorCount,
+      m12Rels [(131, wordA5)] stage1Parents stage1Steps = true := by
+  rw [m12Rels, presentation_M12, Sporadic.m12Presentation_generatorCount,
     Sporadic.m12Presentation_relatorLetters]
   decide +kernel
 
@@ -515,21 +507,22 @@ private theorem check_stage2 :
       (m12Rels ++ [wordA5, wordB6])
       [(77, wordAB6), (72, wordAAB11)]
       stage2Parents stage2Steps = true := by
-  rw [presentation_M12, Sporadic.m12Presentation_generatorCount]
+  rw [m12Rels, presentation_M12, Sporadic.m12Presentation_generatorCount,
+    Sporadic.m12Presentation_relatorLetters]
   decide +kernel
 
 private theorem check_stage3 :
     checkRelators M12.presentation.generatorCount
       (m12Rels ++ [wordA5, wordB6, wordAB6, wordAAB11])
       [(25, wordConj)] stage3Parents stage3Steps = true := by
-  rw [presentation_M12, Sporadic.m12Presentation_generatorCount]
+  rw [m12Rels, presentation_M12, Sporadic.m12Presentation_generatorCount,
+    Sporadic.m12Presentation_relatorLetters]
   decide +kernel
 
 private theorem run_stage4 :
     run M12.presentation.generatorCount
-      (M12.presentation.relatorLetters.map (List.map signedLetter))
-      [wordH, wordK] stage4Parents stage4Steps = some 1728 := by
-  rw [presentation_M12, Sporadic.m12Presentation_generatorCount,
+      m12Rels [wordH, wordK] stage4Parents stage4Steps = some 1728 := by
+  rw [m12Rels, presentation_M12, Sporadic.m12Presentation_generatorCount,
     Sporadic.m12Presentation_relatorLetters]
   decide +kernel
 
@@ -555,17 +548,15 @@ private theorem letter_two : letter m12Of 2 = gB := by
 private theorem letter_three : letter m12Of 3 = gB⁻¹ := by
   simpa [gB] using letter_two_mul_add_one m12Of ⟨1, by simp [presentation_M12]⟩
 
-private theorem wordValue_m12Rels : ∀ r ∈ m12Rels, wordValue m12Of r = 1 := by
-  rw [← m12Rels_eq]
-  exact M12.presentation.wordValue_relatorLetters_eq_one
-
 private theorem wordValue_wordA5 : wordValue m12Of wordA5 = 1 :=
   M12.presentation.wordValue_eq_one_of_checkRelators check_stage1 (131, wordA5)
     (by simp)
 
 private theorem wordValue_wordB6 : wordValue m12Of wordB6 = 1 := by
   have hr2 : wordValue m12Of (wordA5 ++ wordB6) = 1 :=
-    wordValue_m12Rels _ (by simp [m12Rels, wordA5, wordB6])
+    M12.presentation.wordValue_relatorLetters_eq_one _ (by
+      rw [presentation_M12, Sporadic.m12Presentation_relatorLetters]
+      decide)
   rw [wordValue_append, wordValue_wordA5, one_mul] at hr2
   exact hr2
 
@@ -573,7 +564,7 @@ private theorem wordValue_rels2 : ∀ r ∈ m12Rels ++ [wordA5, wordB6], wordVal
   intro r hr
   simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with hr | rfl | rfl
-  · exact wordValue_m12Rels r hr
+  · exact M12.presentation.wordValue_relatorLetters_eq_one r hr
   · exact wordValue_wordA5
   · exact wordValue_wordB6
 
@@ -590,7 +581,7 @@ private theorem wordValue_rels3 :
   intro r hr
   simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with hr | rfl | rfl | rfl | rfl
-  · exact wordValue_m12Rels r hr
+  · exact M12.presentation.wordValue_relatorLetters_eq_one r hr
   · exact wordValue_wordA5
   · exact wordValue_wordB6
   · exact wordValue_wordAB6
@@ -688,20 +679,25 @@ namespace TauCeti.Sporadic.M12
 
 /-- The transcribed presentation of `M₁₂` is isomorphic to the canonical permutation model,
 via the homomorphism sending its generators to `presentationImage`. -/
-noncomputable def presentationEquiv : SporadicName.M12.Group ≃* Sporadic.M12 := by
-  let f := (MulEquiv.subgroupCongr range_presentationHom).toMonoidHom.comp
-    presentationHom.rangeRestrict
-  have hf : Function.Surjective f :=
-    (MulEquiv.subgroupCongr range_presentationHom).surjective.comp
-      presentationHom.rangeRestrict_surjective
-  exact MulEquiv.ofBijective f (hf.bijective_of_nat_card_le
-    (by simpa only [card_M12] using SporadicName.natCard_group_M12_le))
+noncomputable def presentationEquiv : SporadicName.M12.Group ≃* Sporadic.M12 :=
+  MulEquiv.ofBijective
+    (SporadicName.M12.presentation.homOfClosureRangeEq
+      ⟨presentationImage, lift_presentationImage_toFreeGroup_eq_one⟩
+      closure_range_presentationImage)
+    ((SporadicName.M12.presentation.surjective_homOfClosureRangeEq
+      ⟨presentationImage, lift_presentationImage_toFreeGroup_eq_one⟩
+      closure_range_presentationImage).bijective_of_nat_card_le
+        (by simpa only [card_M12] using SporadicName.natCard_group_M12_le))
 
 /-- The underlying permutation of the recognition equivalence is the canonical presentation
 homomorphism. -/
 @[simp]
 theorem coe_presentationEquiv (g : SporadicName.M12.Group) :
-    (presentationEquiv g : Equiv.Perm (Fin 12)) = presentationHom g := (rfl)
+    (presentationEquiv g : Equiv.Perm (Fin 12)) = presentationHom g := by
+  dsimp only [presentationEquiv]
+  rw [MulEquiv.ofBijective_apply, GroupPresentation.coe_homOfClosureRangeEq]
+  refine DFunLike.congr_fun (PresentedGroup.ext fun i ↦ ?_) g
+  rw [GroupPresentation.homEquiv_symm_apply_of, presentationHom_of]
 
 end TauCeti.Sporadic.M12
 

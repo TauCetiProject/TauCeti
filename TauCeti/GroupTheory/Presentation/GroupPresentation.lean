@@ -35,6 +35,8 @@ relations, regarded as a set, defines `TauCeti.GroupPresentation.Group` using Ma
 * `TauCeti.GroupPresentation.relatorSet`: the relations as free-group elements.
 * `TauCeti.GroupPresentation.Group`: the group defined by the presentation.
 * `TauCeti.GroupPresentation.homEquiv`: homomorphisms specified by satisfying generator assignments.
+* `TauCeti.GroupPresentation.homOfClosureRangeEq`: the homomorphism onto a subgroup generated
+  by the assigned values.
 * `TauCeti.GroupPresentation.matchesMetadata`: the decidable relator count check.
 
 ## Main results
@@ -242,6 +244,37 @@ theorem range_homEquiv_symm (P : GroupPresentation) {G : Type*} [_root_.Group G]
     ← Set.range_comp]
   simp [Function.comp_def]
 
+/-- The homomorphism onto a subgroup `H` induced by a satisfying assignment whose values generate
+`H`. -/
+@[expose]
+def homOfClosureRangeEq (P : GroupPresentation) {G : Type*} [_root_.Group G] {H : Subgroup G}
+    (f : {f : Fin P.generatorCount → G //
+      ∀ t ∈ P.transcribed, FreeGroup.lift f t.toFreeGroup = 1})
+    (h : Subgroup.closure (Set.range f.1) = H) : P.Group →* H :=
+  (MulEquiv.subgroupCongr ((P.range_homEquiv_symm f).trans h)).toMonoidHom.comp
+    (P.homEquiv.symm f).rangeRestrict
+
+/-- Coercing `TauCeti.GroupPresentation.homOfClosureRangeEq` to the ambient group recovers
+`P.homEquiv.symm f` definitionally. -/
+@[simp]
+theorem coe_homOfClosureRangeEq (P : GroupPresentation) {G : Type*} [_root_.Group G]
+    {H : Subgroup G}
+    (f : {f : Fin P.generatorCount → G //
+      ∀ t ∈ P.transcribed, FreeGroup.lift f t.toFreeGroup = 1})
+    (h : Subgroup.closure (Set.range f.1) = H) (x : P.Group) :
+    (P.homOfClosureRangeEq f h x : G) = P.homEquiv.symm f x :=
+  (rfl)
+
+/-- The homomorphism `TauCeti.GroupPresentation.homOfClosureRangeEq` is surjective. -/
+theorem surjective_homOfClosureRangeEq (P : GroupPresentation) {G : Type*} [_root_.Group G]
+    {H : Subgroup G}
+    (f : {f : Fin P.generatorCount → G //
+      ∀ t ∈ P.transcribed, FreeGroup.lift f t.toFreeGroup = 1})
+    (h : Subgroup.closure (Set.range f.1) = H) :
+    Function.Surjective (P.homOfClosureRangeEq f h) := by
+  rw [homOfClosureRangeEq, MonoidHom.coe_comp, MulEquiv.coe_toMonoidHom]
+  exact (MulEquiv.surjective _).comp (P.homEquiv.symm f).rangeRestrict_surjective
+
 /-- A satisfying assignment whose values generate a subgroup `H` gives a surjective homomorphism
 from the presented group onto `H`. -/
 theorem exists_surjective_of_closure_range_eq (P : GroupPresentation) {G : Type*}
@@ -250,11 +283,7 @@ theorem exists_surjective_of_closure_range_eq (P : GroupPresentation) {G : Type*
       ∀ t ∈ P.transcribed, FreeGroup.lift f t.toFreeGroup = 1})
     (h : Subgroup.closure (Set.range f.1) = H) :
     ∃ g : P.Group →* H, Function.Surjective g :=
-  ⟨(MulEquiv.subgroupCongr ((P.range_homEquiv_symm f).trans h)).toMonoidHom.comp
-      (P.homEquiv.symm f).rangeRestrict,
-    by
-      rw [MonoidHom.coe_comp, MulEquiv.coe_toMonoidHom]
-      exact (MulEquiv.surjective _).comp (P.homEquiv.symm f).rangeRestrict_surjective⟩
+  ⟨P.homOfClosureRangeEq f h, P.surjective_homOfClosureRangeEq f h⟩
 
 /-- The recorded relator count agrees with the transcribed data.
 

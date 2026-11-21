@@ -12,7 +12,7 @@ public import Mathlib.Data.Int.GCD
 public import Mathlib.Data.ZMod.QuotientGroup
 public import Mathlib.GroupTheory.Index
 public import Mathlib.GroupTheory.OrderOfElement
-import Mathlib.Algebra.Pointwise.Stabilizer
+import TauCeti.GroupTheory.GroupAction.Orbit.Closure
 import TauCeti.Algebra.Group.Pow
 
 /-!
@@ -204,20 +204,46 @@ theorem decodeEntry_encodeEntry {q : ℕ} (hq : q < 2 ^ 32) (e : ℤ) :
   have h₀ : 1 + q + 2 ^ 32 * encodeInt e - 1 = q + 2 ^ 32 * encodeInt e := by omega
   rw [decodeEntry, encodeEntry, ite_eq_right (by omega), h₀, h₁, h₂, decodeInt_encodeInt]
 
-/-! ### The state of a replay -/
+/-! ### Replay configuration and state -/
 
-/-- The state of a replay of coset enumeration with `m` signed letters. -/
-structure State where
+/-- Configuration for a coset-enumeration replay: the label type `L` and global accumulator type
+`A`, together with the bit-field width, entry encoding/decoding, and label operations. -/
+structure Scheme (L A : Type) where
+  /-- The width in bits of each packed table and coincidence field. -/
+  width : ℕ
+  /-- Encode a target point and label as a nonzero natural number. -/
+  encode : ℕ → L → ℕ
+  /-- Decode a packed field value, returning `none` on `0`. -/
+  decode : ℕ → Option (ℕ × L)
+  /-- Whether a target point and label are eligible to be written into a field. -/
+  canEncode : ℕ → L → Bool
+  /-- The identity label. -/
+  zero : L
+  /-- Label addition. -/
+  add : L → L → L
+  /-- Label negation. -/
+  neg : L → L
+  /-- Label subtraction. -/
+  sub : L → L → L
+  /-- The label attached to subgroup-word scans. -/
+  subLabel : L
+  /-- Update the global accumulator when a coincidence closes a cycle on the same representative
+  with label `d`. -/
+  onSelf : A → L → A
+  /-- Extract a natural number from the accumulator for strict evaluation in `runSteps`. -/
+  force : A → ℕ
+
+/-- The state of a replay of coset enumeration with `m` signed letters, labels in `L`, and global
+accumulator in `A`. -/
+structure State (L A : Type) where
   /-- The number of points defined so far. -/
   n : ℕ
-  /-- The edges: field `j * m + t` of width `64` encodes the edge from the point `j` along the
-  letter `t`. -/
+  /-- The edges: field `j * m + t` encodes the edge from the point `j` along the letter `t`. -/
   edges : ℕ
-  /-- The coincidences: field `j` of width `64` encodes the coincidence recorded for the point
-  `j`. -/
+  /-- The coincidences: field `j` encodes the coincidence recorded for the point `j`. -/
   coins : ℕ
-  /-- An exponent `N` with `h ^ N = 1`. -/
-  exponent : ℕ
+  /-- The global accumulator (e.g. an exponent `N` with `h ^ N = 1`). -/
+  extra : A
   /-- The merged points whose edges still have to be moved to their representatives. -/
   pending : List ℕ
   /-- The parent codes of the points that are still to be defined. -/
@@ -225,145 +251,167 @@ structure State where
 
 namespace State
 
-variable (m : ℕ) (st : State)
+variable {L A : Type} (S : Scheme L A) (m : ℕ) (st : State L A)
 
-/-- The recorded edge `(q, e)` from the point `j` along the letter `t`, meaning
-`g_t * w_j = w_q * h ^ e`. -/
+/-- The recorded edge `(q, e)` from the point `j` along the letter `t`. -/
 @[expose]
-def edge (t j : ℕ) : Option (ℕ × ℤ) :=
-  if t < m then decodeEntry (Nat.bitField 64 st.edges (j * m + t)) else none
+def edge (t j : ℕ) : Option (ℕ × L) :=
+  if t < m then S.decode (Nat.bitField S.width st.edges (j * m + t)) else none
 
-/-- The recorded coincidence `(i, d)` of the point `j`, meaning `w_j = w_i * h ^ d`. -/
+/-- The recorded coincidence `(i, d)` of the point `j`. -/
 @[expose]
-def coin (j : ℕ) : Option (ℕ × ℤ) :=
-  decodeEntry (Nat.bitField 64 st.coins j)
+def coin (j : ℕ) : Option (ℕ × L) :=
+  S.decode (Nat.bitField S.width st.coins j)
 
 /-- Record the edge `(q, e)` from `j` along `t`. Entries that do not fit are dropped. -/
 @[expose]
-def setEdge (t j q : ℕ) (e : ℤ) : State :=
-  if t < m ∧ q < 2 ^ 32 then
-    { st with edges := Nat.setBitField 64 st.edges (j * m + t) (encodeEntry q e) }
+def setEdge (t j q : ℕ) (e : L) : State L A :=
+  if t < m ∧ S.canEncode q e then
+    { st with edges := Nat.setBitField S.width st.edges (j * m + t) (S.encode q e) }
   else st
 
 /-- Record the coincidence `(i, d)` of `j`, and schedule the edges of `j` to be moved. -/
 @[expose]
-def setCoin (j i : ℕ) (d : ℤ) : State :=
-  if i < 2 ^ 32 then
-    { st with coins := Nat.setBitField 64 st.coins j (encodeEntry i d), pending := j :: st.pending }
+def setCoin (j i : ℕ) (d : L) : State L A :=
+  if S.canEncode i d then
+    { st with
+      coins := Nat.setBitField S.width st.coins j (S.encode i d)
+      pending := j :: st.pending }
   else st
 
-/-- Follow recorded coincidences from `j`, for at most `fuel` steps: the result `(r, D)` satisfies
-`w_j = w_r * h ^ D`. -/
+/-- Follow recorded coincidences from `j`, for at most `fuel` steps, accumulating labels. -/
 @[expose]
-def root : ℕ → ℕ → ℕ × ℤ
-  | 0, j => (j, 0)
+def root : ℕ → ℕ → ℕ × L
+  | 0, j => (j, S.zero)
   | fuel + 1, j =>
-    match st.coin j with
-    | none => (j, 0)
-    | some (i, d) => ((root fuel i).1, (root fuel i).2 + d)
+    match st.coin S j with
+    | none => (j, S.zero)
+    | some (i, d) =>
+      let ri := root fuel i
+      (ri.1, S.add ri.2 d)
 
-/-- Record that `w_a = w_b * h ^ d`: merge the representatives of `a` and `b`, the larger into
-the smaller, or record a relation `h ^ d' = 1` if they agree. -/
+/-- Merge the representatives of `a` and `b` with label offset `d`, the larger into the smaller, or
+update the global accumulator if they agree. -/
 @[expose]
-def identify (a b : ℕ) (d : ℤ) : State :=
-  let ra := st.root st.n a
-  let rb := st.root st.n b
-  let x := rb.2 + d - ra.2
-  if ra.1 = rb.1 then { st with exponent := Nat.gcd st.exponent x.natAbs }
-  else if rb.1 < ra.1 then st.setCoin ra.1 rb.1 x
-  else st.setCoin rb.1 ra.1 (-x)
+def identify (a b : ℕ) (d : L) : State L A :=
+  let ra := st.root S st.n a
+  let rb := st.root S st.n b
+  let x := S.sub (S.add rb.2 d) ra.2
+  if ra.1 = rb.1 then { st with extra := S.onSelf st.extra x }
+  else if rb.1 < ra.1 then st.setCoin S ra.1 rb.1 x
+  else st.setCoin S rb.1 ra.1 (S.neg x)
 
-/-- Record that `g_t * w_j = w_q * h ^ e`, deducing a coincidence if the edge is already
+/-- Record the edge `(q, e)` from `j` along `t`, deducing a coincidence if the edge is already
 known. -/
 @[expose]
-def addOne (t j q : ℕ) (e : ℤ) : State :=
-  let rq := st.root st.n q
-  match st.edge m t j with
-  | none => st.setEdge m t j rq.1 (rq.2 + e)
-  | some (s, f) => st.identify s rq.1 (rq.2 + e - f)
+def addOne (t j q : ℕ) (e : L) : State L A :=
+  let rq := st.root S st.n q
+  match st.edge S m t j with
+  | none => st.setEdge S m t j rq.1 (S.add rq.2 e)
+  | some (s, f) => st.identify S s rq.1 (S.sub (S.add rq.2 e) f)
 
-/-- Record that `g_t * w_j = w_q * h ^ e` together with the inverse edge from `q`. -/
+/-- Record the edge `(q, e)` from `j` along `t` at the representatives of `j` and `q`, together with
+the inverse edge. -/
 @[expose]
-def add (t j q : ℕ) (e : ℤ) : State :=
+def add (t j q : ℕ) (e : L) : State L A :=
   if t < m then
-    let rq := st.root st.n q
-    (st.addOne m t j rq.1 (rq.2 + e)).addOne m (invLetter t) rq.1 j (-(rq.2 + e))
+    let rj := st.root S st.n j
+    let rq := st.root S st.n q
+    let d := S.sub (S.add rq.2 e) rj.2
+    (st.addOne S m t rj.1 rq.1 d).addOne S m (invLetter t) rq.1 rj.1 (S.neg d)
   else st
 
 /-- Move the edges of the merged point `p` to its representative. -/
 @[expose]
-def transfer (p : ℕ) : State :=
-  let rp := st.root st.n p
+def transfer (p : ℕ) : State L A :=
+  let rp := st.root S st.n p
   (List.range m).foldl (fun s t ↦
-    match s.edge m t p with
+    match s.edge S m t p with
     | none => s
-    | some (q, e) => s.add m t rp.1 q (e - rp.2)) st
+    | some (q, e) => s.add S m t rp.1 q (S.sub e rp.2)) st
 
 /-- Move the edges of the pending merged points, for at most `fuel` of them. -/
 @[expose]
-def process : ℕ → State → State
+def process : ℕ → State L A → State L A
   | 0, st => st
   | fuel + 1, st =>
     match st.pending with
     | [] => st
-    | p :: ps => process fuel ({ st with pending := ps }.transfer m p)
+    | p :: ps => process fuel ({ st with pending := ps }.transfer S m p)
 
-/-- Follow the known edges along the word `u` from the point `i`, reading `u` from right to left:
-the result `(j, E)` satisfies `u * w_i = w_j * h ^ E`. -/
+/-- Follow the known edges along the word `u` from the point `i`, reading `u` from right to
+left. -/
 @[expose]
-def walk (i : ℕ) (u : List ℕ) : Option (ℕ × ℤ) :=
-  u.foldr (fun t acc ↦ acc.bind fun je ↦ (st.edge m t je.1).map fun qe ↦
-    let rq := st.root st.n qe.1
-    (rq.1, je.2 + qe.2 + rq.2)) (some (st.root st.n i))
+def walk (i : ℕ) (u : List ℕ) : Option (ℕ × L) :=
+  u.foldr (fun t acc ↦ acc.bind fun je ↦ (st.edge S m t je.1).map fun qe ↦
+    let rq := st.root S st.n qe.1
+    (rq.1, S.add (S.add rq.2 qe.2) je.2)) (some (st.root S st.n i))
 
-/-- Scan the word `c` at the point `i`, given that `c * w_i = w_i * h ^ v`: follow all but the
-first letter `t` of `c`, then record the edge along `t` that closes the cycle. -/
+/-- Scan the word `c` at the point `i` with label `v`: follow all but the first letter `t` of `c`,
+then record the edge along `t` that closes the cycle. -/
 @[expose]
-def close (i : ℕ) (c : List ℕ) (v : ℤ) : State :=
+def close (i : ℕ) (c : List ℕ) (v : L) : State L A :=
   match c with
   | [] => st
   | t :: u =>
-    match st.walk m i u with
+    match st.walk S m i u with
     | none => st
-    | some (j, E) => st.add m t j i (v - E)
+    | some (j, E) => st.add S m t j i (S.sub v E)
 
 /-- Define the next point from the next parent code `c`: its parent is the point `c / m`, and it
 is reached along the letter `c % m`. -/
 @[expose]
-def define : State :=
+def define : State L A :=
   match st.parents with
   | [] => st
   | c :: cs =>
     if c / m < st.n then
-      { st with n := st.n + 1, parents := cs }.add m (c % m) (c / m) st.n 0
+      { st with n := st.n + 1, parents := cs }.add S m (c % m) (c / m) st.n S.zero
     else st
 
-/-- One step of a replay, for the list `rots` of relator rotations and the subgroup word `s`:
-code `0` defines a point, code `1` scans `s` at the point `0`, and code `k + 2` scans the
-rotation `k % rots.length` at the point `k / rots.length`. Pending merges are then processed. -/
+/-- One step of a replay, for the list `rots` of relator rotations and the subgroup words `subs`:
+code `0` defines a point, codes `1, …, subs.length` scan the corresponding subgroup word at the
+point `0` with label `S.subLabel`, and code `k + subs.length + 1` scans the rotation
+`k % rots.length` at the point `k / rots.length` with label `S.zero`. Pending merges are then
+processed. -/
 @[expose]
-def step (rots : List (List ℕ)) (s : List ℕ) (st : State) (code : ℕ) : State :=
+def step (rots subs : List (List ℕ)) (st : State L A) (code : ℕ) : State L A :=
   let st' :=
-    if code = 0 then st.define m
-    else if code = 1 then st.close m 0 s 1
-    else st.close m ((code - 2) / rots.length) (rots.getD ((code - 2) % rots.length) []) 0
-  State.process m (st'.n + 1) st'
+    if code = 0 then st.define S m
+    else if code ≤ subs.length then st.close S m 0 (subs.getD (code - 1) []) S.subLabel
+    else
+      let k := code - (subs.length + 1)
+      st.close S m (k / rots.length) (rots.getD (k % rots.length) []) S.zero
+  State.process S m (st'.n + 1) st'
 
 /-- The points that have not been merged into others. -/
 @[expose]
 def roots : List ℕ :=
-  (List.range st.n).filter fun r ↦ (st.coin r).isNone
+  (List.range st.n).filter fun r ↦ (st.coin S r).isNone
 
-/-- The final check of a replay: the point `0` survives, and every surviving point has an edge
-along every letter, ending at a surviving point. It returns the number of surviving points and
-the exponent. -/
+/-- Check whether the word `w` walks from the point `i` back to the representative of `i`. -/
 @[expose]
-def result : Option (ℕ × ℕ) :=
-  if (st.coin 0).isNone && decide (0 < st.n) && st.roots.all (fun r ↦ (List.range m).all fun t ↦
-      match st.edge m t r with
+def closesAt (i : ℕ) (w : List ℕ) : Bool :=
+  match st.walk S m i w with
+  | none => false
+  | some (j, _) => decide ((st.root S st.n j).1 = (st.root S st.n i).1)
+
+/-- Whether the point `0` survives and every surviving point has an edge along every letter, ending
+at a surviving point. -/
+@[expose]
+def isClosed : Bool :=
+  (st.coin S 0).isNone && decide (0 < st.n) && (st.roots S).all (fun r ↦
+    (List.range m).all fun t ↦
+      match st.edge S m t r with
       | none => false
-      | some (q, _) => decide ((st.root st.n q).1 < st.n) && (st.coin (st.root st.n q).1).isNone)
-  then some (st.roots.length, st.exponent) else none
+      | some (q, _) =>
+        decide ((st.root S st.n q).1 < st.n) && (st.coin S (st.root S st.n q).1).isNone)
+
+/-- The final result of a replay: if closed, the number of surviving points and the global
+accumulator. -/
+@[expose]
+def result : Option (ℕ × A) :=
+  if st.isClosed S m then some ((st.roots S).length, st.extra) else none
 
 end State
 
@@ -376,13 +424,30 @@ def rotations (rels : List (List ℕ)) : List (List ℕ) :=
 the next step is taken, by matching on the sum of its numeric fields: otherwise kernel evaluation
 would build the nested applications of all steps before evaluating any of them. -/
 @[expose]
-def runSteps (m : ℕ) (rots : List (List ℕ)) (s : List ℕ) : List ℕ → State → State
+def runSteps {L A : Type} (S : Scheme L A) (m : ℕ) (rots subs : List (List ℕ)) :
+    List ℕ → State L A → State L A
   | [], st => st
   | c :: cs, st =>
-    let st' := st.step m rots s c
-    match st'.n + st'.exponent + st'.edges + st'.coins with
-    | 0 => runSteps m rots s cs st'
-    | _ + 1 => runSteps m rots s cs st'
+    let st' := st.step S m rots subs c
+    match st'.n + S.force st'.extra + st'.edges + st'.coins with
+    | 0 => runSteps S m rots subs cs st'
+    | _ + 1 => runSteps S m rots subs cs st'
+
+/-- The 64-bit replay scheme for coset enumeration over a cyclic subgroup, tracking integer
+exponents `e : ℤ` and a subgroup-generator exponent `N : ℕ`. -/
+@[expose]
+def cyclicScheme : Scheme ℤ ℕ where
+  width := 64
+  encode := encodeEntry
+  decode := decodeEntry
+  canEncode q _ := decide (q < 2 ^ 32)
+  zero := 0
+  add := (· + ·)
+  neg := (-·)
+  sub := (· - ·)
+  subLabel := 1
+  onSelf N x := Nat.gcd N x.natAbs
+  force := id
 
 /-- **Replay of coset enumeration** over the cyclic subgroup generated by the value of the word
 `s`, for the relators `rels` in `n` generators. The `p`-th entry `c` of `parents` defines the
@@ -392,7 +457,8 @@ list of step codes of `TauCeti.CosetEnumeration.State.step`. A closed replay ret
 @[expose]
 def run (n : ℕ) (rels : List (List ℕ)) (s : List ℕ) (parents steps : List ℕ) :
     Option (ℕ × ℕ) :=
-  (runSteps (2 * n) (rotations rels) s steps ⟨1, 0, 0, 0, [], parents⟩).result (2 * n)
+  (runSteps cyclicScheme (2 * n) (rotations rels) [s] steps
+    ⟨1, 0, 0, 0, [], parents⟩).result cyclicScheme (2 * n)
 
 /-! ### Soundness -/
 
@@ -400,7 +466,9 @@ section Soundness
 
 open scoped Pointwise
 
-variable {G : Type*} [Group G] {n : ℕ} (x : Fin n → G) (h : G) (parents : List ℕ)
+section Points
+
+variable {G : Type*} [Group G] {n : ℕ} (x : Fin n → G) (parents : List ℕ)
 
 /-- The element `w_p` of the point `p`, defined from its parent code. -/
 def pt : ℕ → G
@@ -422,21 +490,72 @@ theorem pt_succ {p : ℕ} (hc : parents.getD p 0 / (2 * n) < p + 1) :
       letter x (parents.getD p 0 % (2 * n)) * pt x parents (parents.getD p 0 / (2 * n)) := by
   rw [pt.eq_2, dite_eq_left hc]
 
-/-- The invariant of a replay: every recorded edge, coincidence and exponent is a true statement
-in `G`, and the remaining parent codes are those of the points still to be defined. -/
-private structure Valid (st : State) : Prop where
-  edge : ∀ t j q e, st.edge (2 * n) t j = some (q, e) →
-    letter x t * pt x parents j = pt x parents q * h ^ e
-  coin : ∀ j i d, st.coin j = some (i, d) → pt x parents j = pt x parents i * h ^ d
-  exponent : h ^ st.exponent = 1
+end Points
+
+/-- Interpretation of a `Scheme` in a `G`-set `α`: a commuting right action `actR` of labels on
+`α` and an invariant `extraOk` on the global accumulator. -/
+structure Interp {L A : Type} (S : Scheme L A) (G α : Type*) [Group G] [MulAction G α] where
+  /-- Right action of a label on `α`. -/
+  actR : α → L → α
+  /-- Invariant on the global accumulator `extra : A`. -/
+  extraOk : A → Prop
+  /-- Compatibility of `S.decode` with `0`. -/
+  decode_zero : S.decode 0 = none
+  /-- Round-trip of `S.decode` and `S.encode` for encodable entries fitting in `S.width` bits. -/
+  decode_encode : ∀ {q : ℕ} {e : L},
+    S.canEncode q e = true → S.encode q e < 2 ^ S.width → S.decode (S.encode q e) = some (q, e)
+  /-- `actR` by `S.zero` is the identity. -/
+  actR_zero : ∀ y : α, actR y S.zero = y
+  /-- `actR` respects `S.add`. -/
+  actR_add : ∀ y : α, ∀ e₁ e₂ : L, actR (actR y e₁) e₂ = actR y (S.add e₁ e₂)
+  /-- `actR` by `S.neg e` cancels `actR` by `e`. -/
+  actR_add_neg : ∀ y : α, ∀ e : L, actR (actR y e) (S.neg e) = y
+  /-- `S.sub` agrees with `S.add` and `S.neg`. -/
+  sub_eq : ∀ e₁ e₂ : L, S.sub e₁ e₂ = S.add e₁ (S.neg e₂)
+  /-- Left `G`-action commutes with `actR`. -/
+  smul_actR : ∀ (g : G) (y : α) (e : L), g • actR y e = actR (g • y) e
+  /-- Updating `extra` on a self-coincidence preserves `extraOk`. -/
+  onSelf_ok : ∀ {a : A} {y : α} {d : L}, extraOk a → y = actR y d → extraOk (S.onSelf a d)
+
+private theorem Interp.actR_sub {L A : Type} {S : Scheme L A} {G α : Type*} [Group G]
+    [MulAction G α] (I : Interp S G α) {y z : α} {e₁ e₂ : L}
+    (h : I.actR y e₁ = I.actR z e₂) : y = I.actR z (S.sub e₂ e₁) := by
+  calc y
+    _ = I.actR (I.actR y e₁) (S.neg e₁) := (I.actR_add_neg y e₁).symm
+    _ = I.actR (I.actR z e₂) (S.neg e₁) := by rw [h]
+    _ = I.actR z (S.add e₂ (S.neg e₁)) := I.actR_add z e₂ (S.neg e₁)
+    _ = I.actR z (S.sub e₂ e₁) := by rw [I.sub_eq]
+
+private theorem Interp.actR_neg {L A : Type} {S : Scheme L A} {G α : Type*} [Group G]
+    [MulAction G α] (I : Interp S G α) {y z : α} {e : L}
+    (h : y = I.actR z e) : z = I.actR y (S.neg e) := by
+  calc z
+    _ = I.actR (I.actR z e) (S.neg e) := (I.actR_add_neg z e).symm
+    _ = I.actR y (S.neg e) := by rw [← h]
+
+/-- The invariant of a replay: every recorded edge, coincidence and accumulator satisfies `I`, and
+the remaining parent codes are those of the points still to be defined. -/
+private structure Valid {L A : Type} {S : Scheme L A} {G α : Type*} [Group G] [MulAction G α]
+    (I : Interp S G α) {n : ℕ} (x : Fin n → G) (base : α) (parents : List ℕ)
+    (st : State L A) : Prop where
+  edge : ∀ t j q e, st.edge S (2 * n) t j = some (q, e) →
+    letter x t • (pt x parents j • base) = I.actR (pt x parents q • base) e
+  coin : ∀ j i d, st.coin S j = some (i, d) →
+    pt x parents j • base = I.actR (pt x parents i • base) d
+  extra : I.extraOk st.extra
   one_le : 1 ≤ st.n
   parents : st.parents = parents.drop (st.n - 1)
 
-variable {x h parents}
+section ValidProofs
 
-private theorem edge_setEdge {m : ℕ} {st : State} {t j q t' j' q' : ℕ} {e e' : ℤ}
-    (H : (st.setEdge m t j q e).edge m t' j' = some (q', e')) :
-    (t' = t ∧ j' = j ∧ q' = q ∧ e' = e) ∨ st.edge m t' j' = some (q', e') := by
+variable {L A : Type} {S : Scheme L A} {G α : Type*} [Group G] [MulAction G α]
+  {I : Interp S G α} {n : ℕ} {x : Fin n → G} {base : α} {parents : List ℕ}
+
+private theorem edge_setEdge {m : ℕ} {st : State L A} {t j q t' j' q' : ℕ} {e e' : L}
+    (hdec : ∀ {q : ℕ} {e : L},
+      S.canEncode q e = true → S.encode q e < 2 ^ S.width → S.decode (S.encode q e) = some (q, e))
+    (H : (st.setEdge S m t j q e).edge S m t' j' = some (q', e')) :
+    (t' = t ∧ j' = j ∧ q' = q ∧ e' = e) ∨ st.edge S m t' j' = some (q', e') := by
   unfold State.setEdge at H
   split_ifs at H with hfit
   swap
@@ -445,116 +564,123 @@ private theorem edge_setEdge {m : ℕ} {st : State} {t j q t' j' q' : ℕ} {e e'
   split_ifs at H ⊢ with ht'
   rw [Nat.bitField_setBitField] at H
   split_ifs at H with hk
-  · rw [decodeEntry_encodeEntry hfit.2] at H
+  · rw [hdec hfit.2 hk.2] at H
     obtain ⟨rfl, rfl⟩ := Prod.mk.inj (Option.some.inj H)
     have hj : j = j' := by
       have := congrArg (· / m) hk.1
-      simpa [Nat.add_comm, Nat.add_mul_div_right _ _ (show 0 < m by omega),
+      simpa [Nat.add_comm, Nat.add_mul_div_right _ _ (Nat.zero_lt_of_lt hfit.1),
         Nat.div_eq_of_lt hfit.1, Nat.div_eq_of_lt ht'] using this
     subst hj
     exact Or.inl ⟨by omega, rfl, rfl, rfl⟩
   · exact Or.inr H
 
-private theorem Valid.setEdge {st : State} (hv : Valid x h parents st) {t j q : ℕ} {e : ℤ}
-    (H : letter x t * pt x parents j = pt x parents q * h ^ e) :
-    Valid x h parents (st.setEdge (2 * n) t j q e) := by
-  have hs : (st.setEdge (2 * n) t j q e).n = st.n ∧ (st.setEdge (2 * n) t j q e).coins = st.coins ∧
-      (st.setEdge (2 * n) t j q e).exponent = st.exponent ∧
-      (st.setEdge (2 * n) t j q e).parents = st.parents := by
+private theorem Valid.setEdge {st : State L A} (hv : Valid I x base parents st)
+    {t j q : ℕ} {e : L}
+    (H : letter x t • (pt x parents j • base) = I.actR (pt x parents q • base) e) :
+    Valid I x base parents (st.setEdge S (2 * n) t j q e) := by
+  have hs : (st.setEdge S (2 * n) t j q e).n = st.n ∧
+      (st.setEdge S (2 * n) t j q e).coins = st.coins ∧
+      (st.setEdge S (2 * n) t j q e).extra = st.extra ∧
+      (st.setEdge S (2 * n) t j q e).parents = st.parents := by
     unfold State.setEdge; split_ifs <;> simp
-  refine ⟨fun t' j' q' e' H' ↦ ?_, fun j' i d H' ↦ hv.coin j' i d (by
-    simpa [State.coin, hs.2.1] using H'), by rw [hs.2.2.1]; exact hv.exponent,
-    hs.1 ▸ hv.one_le, by rw [hs.2.2.2, hs.1]; exact hv.parents⟩
-  rcases edge_setEdge H' with ⟨rfl, rfl, rfl, rfl⟩ | H'
+  refine ⟨fun t' j' q' e' H' ↦ ?_,
+    fun j' i d H' ↦ hv.coin j' i d (by simpa [State.coin, hs.2.1] using H'),
+    by rw [hs.2.2.1]; exact hv.extra, hs.1 ▸ hv.one_le,
+    by rw [hs.2.2.2, hs.1]; exact hv.parents⟩
+  rcases edge_setEdge I.decode_encode H' with ⟨rfl, rfl, rfl, rfl⟩ | H'
   · exact H
   · exact hv.edge t' j' q' e' H'
 
-private theorem Valid.setCoin {st : State} (hv : Valid x h parents st) {j i : ℕ} {d : ℤ}
-    (H : pt x parents j = pt x parents i * h ^ d) :
-    Valid x h parents (st.setCoin j i d) := by
+private theorem Valid.setCoin {st : State L A} (hv : Valid I x base parents st)
+    {j i : ℕ} {d : L}
+    (H : pt x parents j • base = I.actR (pt x parents i • base) d) :
+    Valid I x base parents (st.setCoin S j i d) := by
   unfold State.setCoin
   split_ifs with hi
   swap
   · exact hv
   refine ⟨fun t' j' q' e' H' ↦ hv.edge t' j' q' e' (by simpa [State.edge] using H'),
-    fun j' i' d' H' ↦ ?_, hv.exponent, hv.one_le, hv.parents⟩
+    fun j' i' d' H' ↦ ?_, hv.extra, hv.one_le, hv.parents⟩
   simp only [State.coin, Nat.bitField_setBitField] at H'
   split_ifs at H' with hk
-  · rw [decodeEntry_encodeEntry hi] at H'
+  · rw [I.decode_encode hi hk.2] at H'
     obtain ⟨rfl, rfl⟩ := Prod.mk.inj (Option.some.inj H')
     rw [← hk.1]
     exact H
   · exact hv.coin j' i' d' H'
 
-private theorem Valid.root {st : State} (hv : Valid x h parents st) :
-    ∀ fuel j, pt x parents j =
-      pt x parents (st.root fuel j).1 * h ^ (st.root fuel j).2
-  | 0, j => by simp [State.root]
+private theorem Valid.root {st : State L A} (hv : Valid I x base parents st) :
+    ∀ fuel j, pt x parents j • base =
+      I.actR (pt x parents (st.root S fuel j).1 • base) (st.root S fuel j).2
+  | 0, j => by simp [State.root, I.actR_zero]
   | fuel + 1, j => by
     rw [State.root]
     split
-    · simp
+    · simp [I.actR_zero]
     · next i d hc =>
-      rw [hv.coin j i d hc, hv.root fuel i, mul_assoc, ← zpow_add]
+      dsimp only
+      rw [hv.coin j i d hc, hv.root fuel i, I.actR_add]
 
-/-- Moving a point of an equation to its representative. -/
-private theorem Valid.mul_zpow_root {st : State} (hv : Valid x h parents st) (q : ℕ) (e : ℤ) :
-    pt x parents q * h ^ e =
-      pt x parents (st.root st.n q).1 * h ^ ((st.root st.n q).2 + e) := by
-  rw [hv.root st.n q, mul_assoc, ← zpow_add]
+private theorem Valid.actR_root {st : State L A} (hv : Valid I x base parents st)
+    (q : ℕ) (e : L) :
+    I.actR (pt x parents q • base) e =
+      I.actR (pt x parents (st.root S st.n q).1 • base) (S.add (st.root S st.n q).2 e) := by
+  rw [hv.root st.n q, I.actR_add]
 
-private theorem Valid.identify {st : State} (hv : Valid x h parents st) {a b : ℕ} {d : ℤ}
-    (H : pt x parents a = pt x parents b * h ^ d) :
-    Valid x h parents (st.identify a b d) := by
-  -- In terms of the representatives, `w_{ra} = w_{rb} * h ^ x`.
-  have key : pt x parents (st.root st.n a).1 = pt x parents (st.root st.n b).1 *
-      h ^ ((st.root st.n b).2 + d - (st.root st.n a).2) := by
-    rw [hv.root st.n a, hv.mul_zpow_root b d] at H
-    exact eq_mul_zpow_sub_iff_mul_zpow_eq.2 H
+private theorem Valid.identify {st : State L A} (hv : Valid I x base parents st)
+    {a b : ℕ} {d : L} (H : pt x parents a • base = I.actR (pt x parents b • base) d) :
+    Valid I x base parents (st.identify S a b d) := by
+  have key : pt x parents (st.root S st.n a).1 • base =
+      I.actR (pt x parents (st.root S st.n b).1 • base)
+        (S.sub (S.add (st.root S st.n b).2 d) (st.root S st.n a).2) := by
+    rw [hv.root st.n a, hv.actR_root b d] at H
+    exact I.actR_sub H
   unfold State.identify
   simp only
   split_ifs with h₁ h₂
-  · refine ⟨hv.edge, hv.coin, ?_, hv.one_le, hv.parents⟩
-    rw [h₁] at key
-    have h0 : h ^ ((st.root st.n b).2 + d - (st.root st.n a).2) = 1 := by
-      simpa using key.symm
-    exact pow_gcd_eq_one.mpr ⟨hv.exponent, pow_natAbs_eq_one.mpr h0⟩
+  · rw [← h₁] at key
+    exact ⟨hv.edge, hv.coin, I.onSelf_ok hv.extra key, hv.one_le, hv.parents⟩
   · exact hv.setCoin key
-  · refine hv.setCoin ?_
-    rw [key, zpow_neg, mul_inv_cancel_right]
+  · exact hv.setCoin (I.actR_neg key)
 
-private theorem Valid.addOne {st : State} (hv : Valid x h parents st) {t j q : ℕ} {e : ℤ}
-    (H : letter x t * pt x parents j = pt x parents q * h ^ e) :
-    Valid x h parents (st.addOne (2 * n) t j q e) := by
-  have hq := H.trans (hv.mul_zpow_root q e)
+private theorem Valid.addOne {st : State L A} (hv : Valid I x base parents st)
+    {t j q : ℕ} {e : L}
+    (H : letter x t • (pt x parents j • base) = I.actR (pt x parents q • base) e) :
+    Valid I x base parents (st.addOne S (2 * n) t j q e) := by
+  have hq := H.trans (hv.actR_root q e)
   unfold State.addOne
   split
   · exact hv.setEdge hq
-  · next s f hs =>
-    exact hv.identify (eq_mul_zpow_sub_iff_mul_zpow_eq.2 ((hv.edge t j s f hs).symm.trans hq))
+  · next s f hs => exact hv.identify (I.actR_sub ((hv.edge t j s f hs).symm.trans hq))
 
-private theorem Valid.add {st : State} (hv : Valid x h parents st) {t j q : ℕ} {e : ℤ}
-    (H : letter x t * pt x parents j = pt x parents q * h ^ e) :
-    Valid x h parents (st.add (2 * n) t j q e) := by
+private theorem Valid.add {st : State L A} (hv : Valid I x base parents st)
+    {t j q : ℕ} {e : L}
+    (H : letter x t • (pt x parents j • base) = I.actR (pt x parents q • base) e) :
+    Valid I x base parents (st.add S (2 * n) t j q e) := by
   unfold State.add
   split_ifs with ht
   swap
   · exact hv
-  have hq := H.trans (hv.mul_zpow_root q e)
-  refine (hv.addOne hq).addOne ?_
-  rw [letter_invLetter x ht, inv_mul_eq_iff_eq_mul, ← mul_assoc, hq, zpow_neg,
-    mul_inv_cancel_right]
+  have hj : letter x t • (pt x parents (st.root S st.n j).1 • base) =
+      I.actR (pt x parents (st.root S st.n q).1 • base)
+        (S.sub (S.add (st.root S st.n q).2 e) (st.root S st.n j).2) := by
+    have h1 := H.trans (hv.actR_root q e)
+    rw [hv.root st.n j, I.smul_actR] at h1
+    exact I.actR_sub h1
+  refine (hv.addOne hj).addOne ?_
+  rw [letter_invLetter x ht, inv_smul_eq_iff, I.smul_actR]
+  exact (I.actR_neg hj).symm ▸ rfl
 
-private theorem Valid.transfer {st : State} (hv : Valid x h parents st) (p : ℕ) :
-    Valid x h parents (st.transfer (2 * n) p) := by
+private theorem Valid.transfer {st : State L A} (hv : Valid I x base parents st) (p : ℕ) :
+    Valid I x base parents (st.transfer S (2 * n) p) := by
   have hp := hv.root st.n p
   unfold State.transfer
-  generalize st.root st.n p = rp at hp ⊢
-  suffices ∀ (l : List ℕ) (s : State), Valid x h parents s →
-      Valid x h parents (l.foldl (fun s t ↦
-        match s.edge (2 * n) t p with
+  generalize st.root S st.n p = rp at hp ⊢
+  suffices ∀ (l : List ℕ) (s : State L A), Valid I x base parents s →
+      Valid I x base parents (l.foldl (fun s t ↦
+        match s.edge S (2 * n) t p with
         | none => s
-        | some (q, e) => s.add (2 * n) t rp.1 q (e - rp.2)) s) from this _ st hv
+        | some (q, e) => s.add S (2 * n) t rp.1 q (S.sub e rp.2)) s) from this _ st hv
   intro l
   induction l with
   | nil => exact fun s hs ↦ hs
@@ -566,16 +692,16 @@ private theorem Valid.transfer {st : State} (hv : Valid x h parents st) (p : ℕ
     · exact hs
     · next q e hqe =>
       have H := hs.edge t p q e hqe
-      rw [hp, ← mul_assoc] at H
-      exact hs.add (eq_mul_zpow_sub_iff_mul_zpow_eq.2 H)
+      rw [hp, I.smul_actR] at H
+      exact hs.add (I.actR_sub H)
 
-private theorem Valid.withPending {st : State} (hv : Valid x h parents st) (ps : List ℕ) :
-    Valid x h parents { st with pending := ps } :=
-  ⟨hv.edge, hv.coin, hv.exponent, hv.one_le, hv.parents⟩
+private theorem Valid.withPending {st : State L A} (hv : Valid I x base parents st)
+    (ps : List ℕ) : Valid I x base parents { st with pending := ps } :=
+  ⟨hv.edge, hv.coin, hv.extra, hv.one_le, hv.parents⟩
 
 private theorem Valid.process :
-    ∀ (fuel : ℕ) {st : State}, Valid x h parents st →
-      Valid x h parents (State.process (2 * n) fuel st)
+    ∀ (fuel : ℕ) {st : State L A}, Valid I x base parents st →
+      Valid I x base parents (State.process S (2 * n) fuel st)
   | 0, _, hv => hv
   | fuel + 1, st, hv => by
     rw [State.process]
@@ -583,27 +709,27 @@ private theorem Valid.process :
     · exact hv
     · next p ps _ => exact Valid.process fuel ((hv.withPending ps).transfer p)
 
-private theorem Valid.walk {st : State} (hv : Valid x h parents st) (i : ℕ) :
-    ∀ (u : List ℕ) {j : ℕ} {E : ℤ}, st.walk (2 * n) i u = some (j, E) →
-      wordValue x u * pt x parents i = pt x parents j * h ^ E
+private theorem Valid.walk {st : State L A} (hv : Valid I x base parents st) (i : ℕ) :
+    ∀ (u : List ℕ) {j : ℕ} {E : L}, st.walk S (2 * n) i u = some (j, E) →
+      wordValue x u • (pt x parents i • base) = I.actR (pt x parents j • base) E
   | [], j, E, hw => by
     simp only [State.walk, List.foldr_nil, Option.some.injEq] at hw
-    rw [wordValue_nil, one_mul]
-    simpa [hw] using hv.root st.n i
+    obtain ⟨hj, hE⟩ := Prod.mk.inj hw
+    rw [wordValue_nil, one_smul, ← hj, ← hE]
+    exact hv.root st.n i
   | t :: u, j, E, hw => by
     simp only [State.walk, List.foldr_cons] at hw
     obtain ⟨⟨j₀, E₀⟩, hw₀, hw⟩ := Option.bind_eq_some_iff.mp hw
     obtain ⟨⟨q, e⟩, hq, hw⟩ := Option.map_eq_some_iff.mp hw
     dsimp only at hw
     obtain ⟨rfl, rfl⟩ := Prod.mk.inj hw
-    rw [wordValue_cons, mul_assoc, hv.walk i u hw₀, ← mul_assoc, hv.edge t j₀ q e hq,
-      hv.mul_zpow_root q e, mul_assoc, ← zpow_add]
-    congr 2
-    omega
+    rw [wordValue_cons, mul_smul, hv.walk i u hw₀, I.smul_actR, hv.edge t j₀ q e hq,
+      hv.actR_root q e, I.actR_add]
 
-private theorem Valid.close {st : State} (hv : Valid x h parents st) {i : ℕ} {c : List ℕ}
-    {v : ℤ} (H : wordValue x c * pt x parents i = pt x parents i * h ^ v) :
-    Valid x h parents (st.close (2 * n) i c v) := by
+private theorem Valid.close {st : State L A} (hv : Valid I x base parents st) {i : ℕ}
+    {c : List ℕ} {v : L}
+    (H : wordValue x c • (pt x parents i • base) = I.actR (pt x parents i • base) v) :
+    Valid I x base parents (st.close S (2 * n) i c v) := by
   unfold State.close
   split
   · exact hv
@@ -611,11 +737,11 @@ private theorem Valid.close {st : State} (hv : Valid x h parents st) {i : ℕ} {
     split
     · exact hv
     · next j E hw =>
-      rw [wordValue_cons, mul_assoc, hv.walk i u hw, ← mul_assoc] at H
-      exact hv.add (eq_mul_zpow_sub_iff_mul_zpow_eq.2 H)
+      rw [wordValue_cons, mul_smul, hv.walk i u hw, I.smul_actR] at H
+      exact hv.add (I.actR_sub H)
 
-private theorem Valid.define {st : State} (hv : Valid x h parents st) :
-    Valid x h parents (st.define (2 * n)) := by
+private theorem Valid.define {st : State L A} (hv : Valid I x base parents st) :
+    Valid I x base parents (st.define S (2 * n)) := by
   unfold State.define
   split
   · exact hv
@@ -625,7 +751,6 @@ private theorem Valid.define {st : State} (hv : Valid x h parents st) :
     · exact hv
     have hpar := hv.parents
     rw [hcs] at hpar
-    -- The next parent code is the entry of `parents` for the point `st.n`.
     have hget : parents.getD (st.n - 1) 0 = c := by
       have := congrArg List.head? hpar
       rw [List.head?_cons, List.head?_drop] at this
@@ -634,90 +759,167 @@ private theorem Valid.define {st : State} (hv : Valid x h parents st) :
       have := congrArg List.tail hpar
       rw [List.tail_cons, List.tail_drop] at this
       rw [this, Nat.sub_add_cancel hv.one_le]
-    have hv' : Valid x h parents { st with n := st.n + 1, parents := cs } :=
-      ⟨hv.edge, hv.coin, hv.exponent, by simp, by simpa using hrest⟩
+    have hv' : Valid I x base parents { st with n := st.n + 1, parents := cs } :=
+      ⟨hv.edge, hv.coin, hv.extra, by simp, by simpa using hrest⟩
     refine hv'.add ?_
     have hn : st.n = st.n - 1 + 1 := (Nat.sub_add_cancel hv.one_le).symm
-    rw [zpow_zero, mul_one, hn, pt_succ x parents (by rw [hget, ← hn]; exact hc), hget]
+    rw [I.actR_zero, hn, pt_succ x parents (by rw [hget, ← hn]; exact hc), hget, mul_smul]
 
-private theorem Valid.step {rels : List (List ℕ)} {s : List ℕ}
-    (hrels : ∀ r ∈ rels, wordValue x r = 1) {st : State}
-    (hv : Valid x (wordValue x s) parents st) (code : ℕ) :
-    Valid x (wordValue x s) parents (st.step (2 * n) (rotations rels) s code) := by
+private theorem Valid.step {rels subs : List (List ℕ)}
+    (hrels : ∀ r ∈ rels, wordValue x r = 1)
+    (hsubs : ∀ s ∈ subs, wordValue x s • base = I.actR base S.subLabel)
+    {st : State L A} (hv : Valid I x base parents st) (code : ℕ) :
+    Valid I x base parents (st.step S (2 * n) (rotations rels) subs code) := by
   unfold State.step
   refine Valid.process _ ?_
   split_ifs
   · exact hv.define
-  · exact hv.close (by rw [pt_zero x parents, mul_one, one_mul, zpow_one])
   · refine hv.close ?_
-    have : wordValue x ((rotations rels).getD ((code - 2) % (rotations rels).length) []) = 1 := by
+    rw [pt_zero, one_smul]
+    rw [List.getD_eq_getElem?_getD]
+    cases hc : subs[code - 1]? with
+    | none =>
+      -- Wait: if code ≤ subs.length and code ≠ 0, `subs[code - 1]?` is always `some _`.
+      exfalso
+      have : code - 1 < subs.length := by omega
+      simp [List.getElem?_eq_getElem this] at hc
+    | some s => exact hsubs s (List.mem_of_getElem? hc)
+  · refine hv.close ?_
+    have hr : wordValue x ((rotations rels).getD
+        ((code - (subs.length + 1)) % (rotations rels).length) []) = 1 := by
       rw [List.getD_eq_getElem?_getD]
-      cases hc : (rotations rels)[(code - 2) % (rotations rels).length]? with
+      cases hc : (rotations rels)[(code - (subs.length + 1)) % (rotations rels).length]? with
       | none => simp
       | some c =>
         obtain ⟨r, hr, k, -, rfl⟩ : ∃ r ∈ rels, ∃ k < r.length, r.rotate k = c := by
           simpa [rotations] using List.mem_of_getElem? hc
         simpa using wordValue_rotate_eq_one (hrels r hr) k
-    rw [this, one_mul, zpow_zero, mul_one]
+    rw [hr, one_smul, I.actR_zero]
 
-private theorem Valid.runSteps {rels : List (List ℕ)} {s : List ℕ}
-    (hrels : ∀ r ∈ rels, wordValue x r = 1) :
-    ∀ (l : List ℕ) {st : State}, Valid x (wordValue x s) parents st →
-      Valid x (wordValue x s) parents (runSteps (2 * n) (rotations rels) s l st)
+private theorem Valid.runSteps {rels subs : List (List ℕ)}
+    (hrels : ∀ r ∈ rels, wordValue x r = 1)
+    (hsubs : ∀ s ∈ subs, wordValue x s • base = I.actR base S.subLabel) :
+    ∀ (l : List ℕ) {st : State L A}, Valid I x base parents st →
+      Valid I x base parents (runSteps S (2 * n) (rotations rels) subs l st)
   | [], _, hst => hst
   | c :: l, st, hst => by
     rw [CosetEnumeration.runSteps]
-    split <;> exact Valid.runSteps hrels l (hst.step hrels c)
+    split <;> exact Valid.runSteps hrels hsubs l (hst.step hrels hsubs c)
 
-private theorem valid_run {rels : List (List ℕ)} {s : List ℕ}
-    (hrels : ∀ r ∈ rels, wordValue x r = 1) (steps : List ℕ) :
-    Valid x (wordValue x s) parents
-      (runSteps (2 * n) (rotations rels) s steps ⟨1, 0, 0, 0, [], parents⟩) :=
-  Valid.runSteps hrels steps ⟨by simp [State.edge, decodeEntry], by simp [State.coin, decodeEntry],
-    by simp, le_rfl, by simp⟩
+private theorem valid_runSteps {rels subs : List (List ℕ)} {extra0 : A}
+    (hrels : ∀ r ∈ rels, wordValue x r = 1)
+    (hsubs : ∀ s ∈ subs, wordValue x s • base = I.actR base S.subLabel)
+    (hextra0 : I.extraOk extra0) (steps : List ℕ) :
+    Valid I x base parents
+      (runSteps S (2 * n) (rotations rels) subs steps ⟨1, 0, 0, extra0, [], parents⟩) :=
+  Valid.runSteps hrels hsubs steps
+    ⟨by simp [State.edge, I.decode_zero], by simp [State.coin, I.decode_zero],
+      hextra0, le_rfl, by simp⟩
 
-/-- The surviving points of a closed replay cover `G ⧸ ⟨h⟩`. -/
-private theorem Valid.exists_mem_roots {st : State} (hv : Valid x h parents st)
-    (hx : Subgroup.closure (Set.range x) = ⊤) {k N : ℕ}
-    (hres : st.result (2 * n) = some (k, N)) (y : G) :
-    ∃ r ∈ st.roots,
-      (QuotientGroup.mk y : G ⧸ Subgroup.zpowers h) = QuotientGroup.mk (pt x parents r) := by
-  unfold State.result at hres
-  split_ifs at hres with hcheck
+end ValidProofs
+
+section ReplayInterface
+
+variable {L A : Type} {S : Scheme L A} {G α : Type*} [Group G] [MulAction G α]
+  (I : Interp S G α) {n : ℕ} {x : Fin n → G} {base : α} {rels subs : List (List ℕ)}
+  {parents steps : List ℕ} {extra0 : A}
+
+/-- The accumulator invariant holds after replaying `steps`. -/
+theorem extraOk_of_runSteps (hrels : ∀ r ∈ rels, wordValue x r = 1)
+    (hsubs : ∀ s ∈ subs, wordValue x s • base = I.actR base S.subLabel)
+    (hextra0 : I.extraOk extra0) :
+    I.extraOk (runSteps S (2 * n) (rotations rels) subs steps
+      ⟨1, 0, 0, extra0, [], parents⟩).extra :=
+  (valid_runSteps (I := I) hrels hsubs hextra0 steps).extra
+
+/-- If `w` closes at point `i` after replaying `steps`, then
+`wordValue x w • (pt x parents i • base)` and `pt x parents i • base` are related by `I.actR` to a
+common representative. -/
+theorem closesAt_of_runSteps (hrels : ∀ r ∈ rels, wordValue x r = 1)
+    (hsubs : ∀ s ∈ subs, wordValue x s • base = I.actR base S.subLabel)
+    (hextra0 : I.extraOk extra0) {i : ℕ} {w : List ℕ}
+    (hw : (runSteps S (2 * n) (rotations rels) subs steps
+      ⟨1, 0, 0, extra0, [], parents⟩).closesAt S (2 * n) i w = true) :
+    ∃ r : ℕ, ∃ e₁ e₂ : L,
+      wordValue x w • (pt x parents i • base) = I.actR (pt x parents r • base) e₁ ∧
+      pt x parents i • base = I.actR (pt x parents r • base) e₂ := by
+  have hv := valid_runSteps (I := I) (parents := parents) hrels hsubs hextra0 steps
+  set st := runSteps S (2 * n) (rotations rels) subs steps ⟨1, 0, 0, extra0, [], parents⟩
+  unfold State.closesAt at hw
+  split at hw
+  · simp at hw
+  · next j E hwalk =>
+    have heq : (st.root S st.n j).1 = (st.root S st.n i).1 := of_decide_eq_true hw
+    refine ⟨(st.root S st.n i).1, S.add (st.root S st.n j).2 E, (st.root S st.n i).2, ?_, ?_⟩
+    · rw [hv.walk i w hwalk, hv.actR_root j E, heq]
+    · exact hv.root st.n i
+
+/-- If the replayed table is closed, `0` is a surviving root and every letter maps each surviving
+root to another surviving root up to `I.actR`. -/
+theorem closed_edges_of_runSteps (hrels : ∀ r ∈ rels, wordValue x r = 1)
+    (hsubs : ∀ s ∈ subs, wordValue x s • base = I.actR base S.subLabel)
+    (hextra0 : I.extraOk extra0)
+    (hclosed : (runSteps S (2 * n) (rotations rels) subs steps
+      ⟨1, 0, 0, extra0, [], parents⟩).isClosed S (2 * n) = true) :
+    let st := runSteps S (2 * n) (rotations rels) subs steps ⟨1, 0, 0, extra0, [], parents⟩
+    0 ∈ st.roots S ∧ ∀ t < 2 * n, ∀ r ∈ st.roots S, ∃ r' ∈ st.roots S, ∃ e : L,
+      letter x t • (pt x parents r • base) = I.actR (pt x parents r' • base) e := by
+  have hv := valid_runSteps (I := I) (parents := parents) hrels hsubs hextra0 steps
+  set st := runSteps S (2 * n) (rotations rels) subs steps ⟨1, 0, 0, extra0, [], parents⟩
+  unfold State.isClosed at hclosed
   simp only [Bool.and_eq_true, Option.isNone_iff_eq_none, decide_eq_true_eq, List.all_eq_true,
-    List.mem_range] at hcheck
-  obtain ⟨⟨h0, hn⟩, hall⟩ := hcheck
-  have h0r : 0 ∈ st.roots := by simp [State.roots, hn, h0]
-  -- Each letter moves the coset of a surviving point to the coset of a surviving point.
-  have hletter : ∀ t < 2 * n, ∀ r ∈ st.roots, ∃ r' ∈ st.roots,
-      letter x t • (QuotientGroup.mk (pt x parents r) : G ⧸ Subgroup.zpowers h) =
-        QuotientGroup.mk (pt x parents r') := by
-    intro t ht r hr
-    have := hall r hr t ht
-    split at this
-    · simp at this
-    · next q e hq =>
-      simp only [Bool.and_eq_true, decide_eq_true_eq, Option.isNone_iff_eq_none] at this
-      refine ⟨(st.root st.n q).1, by simp [State.roots, this.1, this.2], ?_⟩
-      rw [MulAction.Quotient.smul_mk, smul_eq_mul, hv.edge t r q e hq,
-        hv.mul_zpow_root q e, QuotientGroup.mk_mul_of_mem _ (Subgroup.zpow_mem_zpowers h _)]
-  -- So the finite set of their cosets is stabilised by every generator, hence by all of `G`.
-  set S : Set (G ⧸ Subgroup.zpowers h) :=
-    (fun r ↦ QuotientGroup.mk (pt x parents r)) '' {r | r ∈ st.roots}
-  have hfin : S.Finite := st.roots.finite_toSet.image _
-  have hstab : Subgroup.closure (Set.range x) ≤ MulAction.stabilizer G S := by
-    rw [Subgroup.closure_le]
-    rintro _ ⟨i, rfl⟩
-    rw [SetLike.mem_coe, MulAction.mem_stabilizer_set' hfin]
-    rintro _ ⟨r, hr, rfl⟩
-    obtain ⟨r', hr', h'⟩ := hletter (2 * i) (by omega) r hr
-    rw [letter_two_mul] at h'
-    exact ⟨r', hr', h'.symm⟩
-  obtain ⟨r, hr, hyr⟩ :=
-    (MulAction.mem_stabilizer_set' hfin).1 (hstab (hx ▸ Subgroup.mem_top y)) ⟨0, h0r, rfl⟩
-  refine ⟨r, hr, ?_⟩
-  dsimp only at hyr
+    List.mem_range] at hclosed
+  obtain ⟨⟨h0, hn⟩, hall⟩ := hclosed
+  refine ⟨by simp [State.roots, hn, h0], fun t ht r hr ↦ ?_⟩
+  have hedge := hall r hr t ht
+  split at hedge
+  · simp at hedge
+  · next q e hq =>
+    simp only [Bool.and_eq_true, decide_eq_true_eq, Option.isNone_iff_eq_none] at hedge
+    refine ⟨(st.root S st.n q).1, by simp [State.roots, hedge.1, hedge.2],
+      S.add (st.root S st.n q).2 e, ?_⟩
+    rw [hv.edge t r q e hq, hv.actR_root q e]
+
+/-- Shared root-to-coset surjection construction: if `0 ∈ roots`, `x` generates `G`, and every
+generator maps the coset of any point in `roots` to the coset of a point in `roots`, then the
+cosets of `roots` cover `G ⧸ H`. -/
+theorem surjective_mk_pt_of_roots (hx : Subgroup.closure (Set.range x) = ⊤) (H : Subgroup G)
+    (parents : List ℕ) {roots : List ℕ} (h0 : 0 ∈ roots)
+    (hstep : ∀ i : Fin n, ∀ r ∈ roots, ∃ r' ∈ roots,
+      x i • (QuotientGroup.mk (pt x parents r) : G ⧸ H) = QuotientGroup.mk (pt x parents r')) :
+    Function.Surjective (fun i : Fin roots.length ↦
+      (QuotientGroup.mk (pt x parents (roots.get i)) : G ⧸ H)) := by
+  set T : Set (G ⧸ H) := (fun r ↦ QuotientGroup.mk (pt x parents r)) '' {r | r ∈ roots}
+  have hfin : T.Finite := roots.finite_toSet.image _
+  have horb := MulAction.orbit_closure_subset_of_finite hfin ⟨0, h0, rfl⟩ (S := Set.range x) (by
+    rintro _ ⟨i, rfl⟩ _ ⟨r, hr, rfl⟩
+    obtain ⟨r', hr', h'⟩ := hstep i r hr
+    exact ⟨r', hr', h'.symm⟩)
+  intro y
+  obtain ⟨y, rfl⟩ := QuotientGroup.mk_surjective y
+  have hmem : y • (QuotientGroup.mk (pt x parents 0) : G ⧸ H) ∈
+      MulAction.orbit (Subgroup.closure (Set.range x)) (QuotientGroup.mk (pt x parents 0)) :=
+    ⟨⟨y, hx ▸ Subgroup.mem_top y⟩, rfl⟩
+  obtain ⟨r, hr, hyr⟩ := horb hmem
+  obtain ⟨i, rfl⟩ := List.get_of_mem hr
+  refine ⟨i, ?_⟩
+  dsimp only at hyr ⊢
   rw [hyr, pt_zero x parents, MulAction.Quotient.smul_mk, smul_eq_mul, mul_one]
+
+end ReplayInterface
+
+private def cyclicInterp {G : Type*} [Group G] (h : G) :
+    Interp cyclicScheme G G where
+  actR y e := y * h ^ e
+  extraOk N := h ^ N = 1
+  decode_zero := by simp [cyclicScheme, decodeEntry]
+  decode_encode hc _ := decodeEntry_encodeEntry (of_decide_eq_true hc) _
+  actR_zero y := by simp [cyclicScheme]
+  actR_add y e₁ e₂ := by simp [cyclicScheme, mul_assoc, zpow_add]
+  actR_add_neg y e := by simp [cyclicScheme, mul_assoc]
+  sub_eq e₁ e₂ := sub_eq_add_neg e₁ e₂
+  smul_actR g y e := by simp [smul_eq_mul, mul_assoc]
+  onSelf_ok ha hy := pow_gcd_eq_one.mpr ⟨ha, pow_natAbs_eq_one.mpr (by simpa using hy.symm)⟩
 
 end Soundness
 
@@ -729,19 +931,27 @@ variable {G : Type*} [Group G] {n : ℕ} {x : Fin n → G} {rels : List (List �
 private theorem surjective_of_run (hx : Subgroup.closure (Set.range x) = ⊤)
     (hrels : ∀ r ∈ rels, wordValue x r = 1) (hrun : run n rels s parents steps = some (k, N)) :
     ∃ f : Fin k → G ⧸ Subgroup.zpowers (wordValue x s), Function.Surjective f := by
-  have hv := valid_run (parents := parents) (s := s) hrels steps
-  set st := runSteps (2 * n) (rotations rels) s steps ⟨1, 0, 0, 0, [], parents⟩
-  have hk : st.roots.length = k := by
-    unfold run at hrun
-    unfold State.result at hrun
-    split_ifs at hrun
-    exact (Prod.mk.inj (Option.some.inj hrun)).1
-  subst hk
-  refine ⟨fun i ↦ QuotientGroup.mk (pt x parents (st.roots.get i)), fun y ↦ ?_⟩
-  obtain ⟨y, rfl⟩ := QuotientGroup.mk_surjective y
-  obtain ⟨r, hr, hyr⟩ := hv.exists_mem_roots hx hrun y
-  obtain ⟨i, rfl⟩ := List.get_of_mem hr
-  exact ⟨i, hyr.symm⟩
+  set st := runSteps cyclicScheme (2 * n) (rotations rels) [s] steps ⟨1, 0, 0, 0, [], parents⟩
+  have hclosed : st.isClosed cyclicScheme (2 * n) = true ∧ (st.roots cyclicScheme).length = k := by
+    unfold run State.result at hrun
+    split_ifs at hrun with hc
+    exact ⟨hc, (Prod.mk.inj (Option.some.inj hrun)).1⟩
+  have hsub : ∀ s' ∈ [s], wordValue x s' • (1 : G) =
+      (cyclicInterp (wordValue x s)).actR 1 cyclicScheme.subLabel := by
+    intro s' hs'
+    simp only [List.mem_singleton] at hs'
+    subst hs'
+    simp [cyclicInterp, cyclicScheme]
+  obtain ⟨h0, hstep⟩ := closed_edges_of_runSteps (cyclicInterp (wordValue x s)) hrels hsub
+    (by simp [cyclicInterp]) hclosed.1
+  rw [← hclosed.2]
+  refine ⟨_, surjective_mk_pt_of_roots hx (Subgroup.zpowers (wordValue x s)) parents h0
+    fun i r hr ↦ ?_⟩
+  obtain ⟨r', hr', e, he⟩ := hstep (2 * i) (by omega) r hr
+  refine ⟨r', hr', ?_⟩
+  simp only [cyclicInterp, smul_eq_mul, mul_one, letter_two_mul] at he
+  rw [MulAction.Quotient.smul_mk, smul_eq_mul, he,
+    QuotientGroup.mk_mul_of_mem _ (Subgroup.zpow_mem_zpowers (wordValue x s) e)]
 
 /-- A closed replay shows that the cyclic subgroup generated by the value of `s` has finite
 index. -/
@@ -766,11 +976,18 @@ theorem index_zpowers_le_of_run (hx : Subgroup.closure (Set.range x) = ⊤)
 returned by a closed replay annihilates the value of `s`. -/
 theorem wordValue_pow_eq_one_of_run (hrels : ∀ r ∈ rels, wordValue x r = 1)
     (hrun : run n rels s parents steps = some (k, N)) : wordValue x s ^ N = 1 := by
-  have hv := valid_run (parents := parents) (s := s) hrels steps
+  have hsub : ∀ s' ∈ [s], wordValue x s' • (1 : G) =
+      (cyclicInterp (wordValue x s)).actR 1 cyclicScheme.subLabel := by
+    intro s' hs'
+    simp only [List.mem_singleton] at hs'
+    subst hs'
+    simp [cyclicInterp, cyclicScheme]
+  have hex := extraOk_of_runSteps (cyclicInterp (wordValue x s)) (parents := parents)
+    (steps := steps) (extra0 := 0) hrels hsub (by simp [cyclicInterp])
   unfold run State.result at hrun
   split_ifs at hrun
   rw [← (Prod.mk.inj (Option.some.inj hrun)).2]
-  exact hv.exponent
+  exact hex
 
 /-- **A finiteness certificate.** If the generators `x` generate `G` and the relators `rels` hold,
 a closed replay with a positive exponent shows that `G` is finite. -/

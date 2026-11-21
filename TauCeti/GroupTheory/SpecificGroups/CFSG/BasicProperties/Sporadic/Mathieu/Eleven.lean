@@ -272,20 +272,25 @@ namespace TauCeti.Sporadic.M11
 
 /-- The transcribed presentation of `M₁₁` is isomorphic to the canonical permutation model,
 via the homomorphism sending its generators to `presentationImage`. -/
-noncomputable def presentationEquiv : SporadicName.M11.Group ≃* Sporadic.M11 := by
-  let f := (MulEquiv.subgroupCongr range_presentationHom).toMonoidHom.comp
-    presentationHom.rangeRestrict
-  have hf : Function.Surjective f :=
-    (MulEquiv.subgroupCongr range_presentationHom).surjective.comp
-      presentationHom.rangeRestrict_surjective
-  exact MulEquiv.ofBijective f (hf.bijective_of_nat_card_le
-    (by simpa only [card_M11] using SporadicName.natCard_group_M11_le))
+noncomputable def presentationEquiv : SporadicName.M11.Group ≃* Sporadic.M11 :=
+  MulEquiv.ofBijective
+    (SporadicName.M11.presentation.homOfClosureRangeEq
+      ⟨presentationImage, lift_presentationImage_toFreeGroup_eq_one⟩
+      closure_range_presentationImage)
+    ((SporadicName.M11.presentation.surjective_homOfClosureRangeEq
+      ⟨presentationImage, lift_presentationImage_toFreeGroup_eq_one⟩
+      closure_range_presentationImage).bijective_of_nat_card_le
+        (by simpa only [card_M11] using SporadicName.natCard_group_M11_le))
 
 /-- The underlying permutation of the recognition equivalence is the canonical presentation
 homomorphism. -/
 @[simp]
 theorem coe_presentationEquiv (g : SporadicName.M11.Group) :
-    (presentationEquiv g : Equiv.Perm (Fin 11)) = presentationHom g := (rfl)
+    (presentationEquiv g : Equiv.Perm (Fin 11)) = presentationHom g := by
+  dsimp only [presentationEquiv]
+  rw [MulEquiv.ofBijective_apply, GroupPresentation.coe_homOfClosureRangeEq]
+  refine DFunLike.congr_fun (PresentedGroup.ext fun i ↦ ?_) g
+  rw [GroupPresentation.homEquiv_symm_apply_of, presentationHom_of]
 
 end TauCeti.Sporadic.M11
 
