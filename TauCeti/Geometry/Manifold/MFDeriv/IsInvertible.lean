@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.MFDeriv.Basic
-public import Mathlib.Topology.Algebra.Module.FiniteDimension
+public import TauCeti.Analysis.Normed.Operator.FiniteDimensional
+public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
 # Invertible manifold derivatives of composites
@@ -18,12 +19,13 @@ needed, since an invertible derivative forces differentiability
 manifolds is assumed.
 
 If the target is modelled on a finite-dimensional space over a complete field and the source model
-has the same dimension, a manifold derivative is invertible exactly when it is injective
-(`isInvertible_mfderiv_iff_injective`); the source model need not be assumed finite-dimensional,
-since an injective derivative embeds it into the target model.
+has the same `Module.finrank`, a manifold derivative is invertible exactly when it is injective
+(`isInvertible_mfderiv_iff_injective`). An infinite-dimensional model has `finrank` zero, so the
+rank equality alone does not make the source model finite-dimensional; this follows instead from
+injectivity, since an injective derivative embeds the source model into the target model.
 Conversely to the first statement, if the middle manifold is modelled on a finite-dimensional
-space and the target model has the same dimension, and a composite of differentiable maps has
-invertible manifold derivative, then so do both factors
+space and the target model has the same `Module.finrank`, and a composite of differentiable maps
+has invertible manifold derivative, then so do both factors
 (`isInvertible_mfderiv_of_isInvertible_mfderiv_comp`); neither completeness of the field nor
 finite-dimensionality of the source or target model is assumed (the target is a quotient of the
 middle space).
@@ -59,22 +61,35 @@ theorem isInvertible_mfderiv_comp {f : M → M'} {g : M' → M''} {x : M}
   exact hdg.comp hdf
 
 /-- If the target is modelled on a finite-dimensional space over a complete field and the source
-model has the same dimension, a manifold derivative is invertible exactly when it is injective. The
-source model need not be assumed finite-dimensional: an injective derivative embeds it into the
-target model. -/
+model has the same `Module.finrank`, a manifold derivative is invertible exactly when it is
+injective; this is the manifold form of the operator criterion
+`ContinuousLinearMap.isInvertible_of_injective_of_finrank_eq`. The source model need not be
+assumed finite-dimensional: an infinite-dimensional model has `finrank` zero, and
+finite-dimensionality of the source follows from injectivity, which embeds the source model into
+the target model, not from the rank equality alone. -/
 theorem isInvertible_mfderiv_iff_injective [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E']
     {f : M → M'} {x : M} (hdim : Module.finrank 𝕜 E = Module.finrank 𝕜 E') :
     (mfderiv I I' f x).IsInvertible ↔ Function.Injective (mfderiv I I' f x) := by
   refine ⟨ContinuousLinearMap.IsInvertible.injective, fun hinj ↦ ?_⟩
-  let A : TangentSpace I x →ₗ[𝕜] TangentSpace I' (f x) := mfderiv I I' f x
-  have : FiniteDimensional 𝕜 (TangentSpace I x) := .of_injective A hinj
-  exact ⟨(A.linearEquivOfInjective hinj hdim).toContinuousLinearEquiv,
-    ContinuousLinearMap.ext (A.linearEquivOfInjective_apply hinj hdim)⟩
+  -- Read the derivative on the model spaces, where the operator criterion applies.
+  set e := tangentSpaceCastModel I x
+  set e' := tangentSpaceCastModel I' (f x)
+  set A : E →L[𝕜] E' := (e' : TangentSpace I' (f x) →L[𝕜] E') ∘L mfderiv I I' f x ∘L
+    (e.symm : E →L[𝕜] TangentSpace I x)
+  have hA : Function.Injective A := by
+    simp only [A, ContinuousLinearMap.coe_comp, ContinuousLinearEquiv.coe_coe]
+    exact e'.injective.comp (hinj.comp e.symm.injective)
+  have : FiniteDimensional 𝕜 E := .of_injective (A : E →ₗ[𝕜] E') hA
+  have hAinv := A.isInvertible_of_injective_of_finrank_eq hdim hA
+  rwa [ContinuousLinearMap.isInvertible_equiv_comp,
+    ContinuousLinearMap.isInvertible_comp_equiv] at hAinv
 
 /-- Between manifolds whose middle model is finite-dimensional and whose target model has the same
-dimension, if a composite of differentiable maps has invertible manifold derivative, then so do
-both factors. The source and target models need not be assumed finite-dimensional (the target is a
-quotient of the middle space), and the field need not be complete. -/
+`Module.finrank`, if a composite of differentiable maps has invertible manifold derivative, then so
+do both factors. The source and target models need not be assumed finite-dimensional (the target
+is a quotient of the middle space), and the field need not be complete. This specialises
+`ContinuousLinearMap.isInvertible_comp_iff_of_injective_left`: the rank equality makes the
+surjective derivative of `g` injective. -/
 theorem isInvertible_mfderiv_of_isInvertible_mfderiv_comp
     [FiniteDimensional 𝕜 E']
     {f : M → M'} {g : M' → M''} {x : M}
@@ -83,28 +98,20 @@ theorem isInvertible_mfderiv_of_isInvertible_mfderiv_comp
     (h : (mfderiv I I'' (g ∘ f) x).IsInvertible) :
     (mfderiv I I' f x).IsInvertible ∧ (mfderiv I' I'' g (f x)).IsInvertible := by
   rw [mfderiv_comp x hg hf] at h
-  set f' := mfderiv I I' f x
   set g' := mfderiv I' I'' g (f x)
-  -- `g'` is surjective since the composite is bijective, hence injective between spaces of the
-  -- same finite dimension.
+  -- `g'` is surjective since the composite is bijective, hence injective between tangent spaces
+  -- of the same finite dimension.
   have hsurj : Function.Surjective g' := .of_comp h.surjective
-  have : FiniteDimensional 𝕜 E'' :=
+  have : FiniteDimensional 𝕜 (TangentSpace I'' (g (f x))) :=
     Module.Finite.of_surjective (g' : TangentSpace I' (f x) →ₗ[𝕜] TangentSpace I'' (g (f x))) hsurj
+  have hdim' : Module.finrank 𝕜 (TangentSpace I' (f x)) =
+      Module.finrank 𝕜 (TangentSpace I'' (g (f x))) := by
+    rw [(tangentSpaceCastModel I' (f x)).toLinearEquiv.finrank_eq,
+      (tangentSpaceCastModel I'' (g (f x))).toLinearEquiv.finrank_eq, hdim]
   have hinj : Function.Injective g' :=
     (LinearMap.injective_iff_surjective_of_finrank_eq_finrank
-      (f := (g' : TangentSpace I' (f x) →ₗ[𝕜] TangentSpace I'' (g (f x)))) hdim).2 hsurj
-  obtain ⟨e, he⟩ := h
-  have hcomp (v : TangentSpace I x) : g' (f' v) = e v := by
-    rw [← ContinuousLinearEquiv.coe_coe, he, ContinuousLinearMap.comp_apply]
-  -- The inverse of `f'` is `e.symm ∘ g'`, so it is continuous without any completeness assumption
-  -- on the field.
-  obtain ⟨φ, hφ⟩ : f'.IsInvertible := .of_inverse (g := e.symm.toContinuousLinearMap ∘L g')
-    (ContinuousLinearMap.ext fun y ↦ hinj (by simp [hcomp]))
-    (ContinuousLinearMap.ext fun v ↦ by simp [hcomp])
-  -- Then `g' ∘ φ = e`, so `g'` is invertible as well.
-  refine ⟨⟨φ, hφ⟩, (ContinuousLinearMap.isInvertible_comp_equiv (e := φ)).1 ?_⟩
-  rw [hφ, ← he]
-  exact ContinuousLinearMap.isInvertible_equiv
+      (f := (g' : TangentSpace I' (f x) →ₗ[𝕜] TangentSpace I'' (g (f x)))) hdim').2 hsurj
+  exact (ContinuousLinearMap.isInvertible_comp_iff_of_injective_left hinj).1 h
 
 /-- If the source is modelled on a finite-dimensional space over a complete field and the
 derivative at `x` carries a basis `b` of the tangent space at `x` to a basis `b'` of the tangent
