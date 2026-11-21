@@ -10,10 +10,10 @@ public import TauCeti.Analysis.Pseudodifferential.Sobolev
 public import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
-import TauCeti.Analysis.Distribution.TemperedDistribution.SobolevOrder
 import TauCeti.Analysis.Pseudodifferential.Recovery
 import TauCeti.Analysis.Sobolev.BesselPotential.Distribution
 import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
+import TauCeti.Analysis.Sobolev.BesselPotential.TemperedOrder
 
 /-!
 # Pseudodifferential operators on tempered distributions
