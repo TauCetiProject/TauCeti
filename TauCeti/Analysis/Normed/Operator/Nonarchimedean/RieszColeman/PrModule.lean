@@ -59,7 +59,7 @@ transporting the Fredholm factors `H_(uE) = Q`, `H_(u(1-E)) = S`, the restricted
   `ContinuousLinearMap.IsRieszColemanProjection.charPowerSeries_restrict_range_of_isPrCompact`,
   `ContinuousLinearMap.IsRieszColemanProjection.charPowerSeries_restrict_ker_of_isPrCompact`, and
   `ContinuousLinearMap.IsRieszColemanProjection.projectiveCharpolyRev_restrict_range_of_isPrCompact`
-  give `H_(uE) = H_(u|_{range E}) = Q`, `H_(u(1-E)) = H_(u|_{ker E}) = S`, and
+  give, when `Q(0) = 1`, `H_(uE) = H_(u|_{range E}) = Q`, `H_(u(1-E)) = H_(u|_{ker E}) = S`, and
   `det (1 - X (u|_{range E})) = Q`.
 
 ## References
@@ -321,6 +321,23 @@ theorem charPowerSeries_mul_one_sub_of_isPrCompact {u E : M →L[R] M} {Q : R[X]
   rw [huE.charPowerSeries_eq hri, hext]
   exact hE'.charPowerSeries_matrixCoeff_mul_one_sub hv hQ0 hQ hS hQS' hcop
 
+omit [IsBoundedSMul R M] in
+/-- For a topological direct sum `p ⊕ q = M` preserved by `u`, the Fredholm series of `u|_{p}`
+equals that of `u * p.projectionL q h`. -/
+private theorem charPowerSeries_restrict_of_isTopCompl {u : M →L[R] M} (hu : u.IsPrCompact)
+    {p q : Submodule R M} (h : p.IsTopCompl q) (hu_maps : ∀ x ∈ p, u x ∈ p) :
+    (u.restrict hu_maps).charPowerSeries = (u * p.projectionL q h).charPowerSeries := by
+  have hri : (p.projectionOntoL q h).comp p.subtypeL = .id R p :=
+    ext fun x ↦ Submodule.projectionOntoL_apply_left h x
+  have hPr : TauCeti.HasPr R p := hu.hasPr_source.of_retract p.subtypeL _ hri
+  have hfac : u.restrict hu_maps = (p.projectionOntoL q h).comp (u.comp p.subtypeL) := by
+    refine ext fun x ↦ Subtype.ext ?_
+    rw [coe_restrict_apply, comp_apply, comp_apply, Submodule.coe_subtypeL,
+      Submodule.coe_subtype, Submodule.coe_projectionOntoL_apply]
+    exact (Submodule.projectionL_apply_left h ⟨u x, hu_maps x x.property⟩).symm
+  rw [hfac, ← (hu.comp_clm p.subtypeL hPr).charPowerSeries_comp_comm, comp_assoc]
+  rfl
+
 /-- **Fredholm series of the restriction to `range E`.** For a normalised coprime factorisation
 `H_u = Q * S` with `Q(0) = 1`, the restriction of `u` to `range E` has Fredholm series `Q`. -/
 theorem charPowerSeries_restrict_range_of_isPrCompact {u E : M →L[R] M} {Q : R[X]} {S : R⟦X⟧}
@@ -330,20 +347,9 @@ theorem charPowerSeries_restrict_range_of_isPrCompact {u E : M →L[R] M} {Q : R
     (hcop : IsCoprime (⟨Q, IsEntire.mem_subring.mpr (PowerSeries.isEntire_coe Q)⟩ :
       IsEntire.subring R) ⟨S, IsEntire.mem_subring.mpr hS⟩) :
     (u.restrict hE.mapsTo_range).charPowerSeries = (Q : R⟦X⟧) := by
-  have hfix (x : E.range) : E x = x :=
-    (LinearMap.IsIdempotentElem.mem_range_iff
-      (ContinuousLinearMap.IsIdempotentElem.toLinearMap hE.isIdempotentElem)).mp x.property
-  have hri : E.rangeRestrict.comp E.range.subtypeL = .id R E.range :=
-    ext fun x ↦ Subtype.ext (hfix x)
-  have hPr : TauCeti.HasPr R E.range :=
-    hu.hasPr_source.of_retract E.range.subtypeL E.rangeRestrict hri
-  have hfac : u.restrict hE.mapsTo_range = E.rangeRestrict.comp (u.comp E.range.subtypeL) := by
-    ext x
-    exact (hfix ⟨u x, hE.mapsTo_range x.property⟩).symm
-  have hrev : (u.comp E.range.subtypeL).comp E.rangeRestrict = u * E := by
-    ext x
-    rfl
-  rw [hfac, ← (hu.comp_clm E.range.subtypeL hPr).charPowerSeries_comp_comm E.rangeRestrict, hrev]
+  have hcompl := ContinuousLinearMap.IsIdempotentElem.isTopCompl hE.isIdempotentElem
+  rw [charPowerSeries_restrict_of_isTopCompl hu hcompl hE.mapsTo_range,
+    ← ContinuousLinearMap.IsIdempotentElem.eq_projectionL hE.isIdempotentElem]
   exact hE.charPowerSeries_mul_of_isPrCompact hu hQ0 hQ hS hQS hcop
 
 /-- **Fredholm series of the restriction to `ker E`.** For a normalised coprime factorisation
@@ -356,25 +362,10 @@ theorem charPowerSeries_restrict_ker_of_isPrCompact {u E : M →L[R] M} {Q : R[X
     (hcop : IsCoprime (⟨Q, IsEntire.mem_subring.mpr (PowerSeries.isEntire_coe Q)⟩ :
       IsEntire.subring R) ⟨S, IsEntire.mem_subring.mpr hS⟩) :
     (u.restrict hE.mapsTo_ker).charPowerSeries = S := by
-  let rK : M →L[R] E.ker := (1 - E).codRestrict E.ker fun x ↦ by
-    apply LinearMap.mem_ker.mpr
-    have hid := congr($(hE.isIdempotentElem.eq) x)
-    simpa only [coe_coe, sub_apply, one_apply_eq_self, map_sub, mul_apply_eq_comp,
-      sub_eq_zero] using hid.symm
-  have hri : rK.comp E.ker.subtypeL = .id R E.ker := by
-    ext x
-    have hx : E x = 0 := LinearMap.mem_ker.mp x.property
-    simp [rK, hx]
-  have hPr : TauCeti.HasPr R E.ker := hu.hasPr_source.of_retract E.ker.subtypeL rK hri
-  have hfac : u.restrict hE.mapsTo_ker = rK.comp (u.comp E.ker.subtypeL) := by
-    ext x
-    have hx : E (u x) = 0 := LinearMap.mem_ker.mp (hE.mapsTo_ker x.property)
-    simp [rK, hx]
-    rfl
-  have hrev : (u.comp E.ker.subtypeL).comp rK = u * (1 - E) := by
-    ext x
-    rfl
-  rw [hfac, ← (hu.comp_clm E.ker.subtypeL hPr).charPowerSeries_comp_comm rK, hrev]
+  have hcompl := ContinuousLinearMap.IsIdempotentElem.isTopCompl hE.isIdempotentElem
+  rw [charPowerSeries_restrict_of_isTopCompl hu hcompl.symm hE.mapsTo_ker,
+    Submodule.projectionL_eq_id_sub_projectionL hcompl,
+    ← ContinuousLinearMap.IsIdempotentElem.eq_projectionL hE.isIdempotentElem, ← one_def]
   exact hE.charPowerSeries_mul_one_sub_of_isPrCompact hu hQ0 hQ hS hQS hcop
 
 /-- **Characteristic polynomial of `u` on the finite Riesz–Coleman summand.** For a `(Pr)`-compact
@@ -430,11 +421,7 @@ theorem IsPrCompact.finrank_ker_aeval_reverse {u : M →L[K] M} (hu : u.IsPrComp
     (hcop : IsCoprime (⟨Q, IsEntire.mem_subring.mpr (PowerSeries.isEntire_coe Q)⟩ :
       IsEntire.subring K) ⟨S, IsEntire.mem_subring.mpr hS⟩) :
     Module.finrank K (Polynomial.aeval u Q.reverse : M →L[K] M).ker = Q.natDegree := by
-  have hQne : Q ≠ 0 := by
-    rintro rfl
-    have h0 := congrArg PowerSeries.constantCoeff hQS
-    simp at h0
-  have hQ : IsUnit Q.leadingCoeff := (leadingCoeff_ne_zero.mpr hQne).isUnit
+  have hQ := PowerSeries.isUnit_leadingCoeff_of_eq_coe_mul u.constantCoeff_charPowerSeries hQS
   have hr := hu.rankAtStalk_ker_aeval_reverse hQ hS hQS hcop ⟨⊥, Ideal.isPrime_bot⟩
   let : AddCommGroup (Polynomial.aeval u Q.reverse : M →L[K] M).ker := inferInstance
   rwa [Module.rankAtStalk_eq_finrank_of_free] at hr

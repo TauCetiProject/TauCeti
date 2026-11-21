@@ -210,6 +210,12 @@ theorem reverse_map_of_isUnit_leadingCoeff [Semiring R] [Semiring S] {p : R[X]}
   nontriviality S
   exact reverse_map_of_leadingCoeff_ne_zero f (hp.map f).ne_zero
 
+/-- Reversing a polynomial scaled on the left by a unit pulls the unit scalar out. -/
+@[simp]
+theorem reverse_C_mul_of_isUnit [Semiring R] {a : R} (ha : IsUnit a) (p : R[X]) :
+    (C a * p).reverse = C a * p.reverse := by
+  rw [reverse, reverse, natDegree_C_mul_of_isUnit ha, reflect_C_mul]
+
 /-- The reversal of `1` is `1`. -/
 @[simp]
 theorem reverse_one [Semiring R] : (1 : R[X]).reverse = 1 := by

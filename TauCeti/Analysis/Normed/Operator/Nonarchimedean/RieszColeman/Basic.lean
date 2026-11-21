@@ -151,12 +151,9 @@ variable {u E : M →L[R] M} {Q : R[X]}
 theorem of_C_mul (hE : IsRieszColemanProjection u Q E) {c : R} (hc : IsUnit c) :
     IsRieszColemanProjection u (Polynomial.C c * Q) E := by
   obtain ⟨c', hc'⟩ := hc.exists_left_inv
-  have hrev : (Polynomial.C c * Q).reverse = Polynomial.C c * Q.reverse := by
-    rw [Polynomial.reverse, Polynomial.reverse,
-      Polynomial.natDegree_C_mul_eq_of_mul_eq_one hc', Polynomial.reflect_C_mul]
   have haeval : Polynomial.aeval u (Polynomial.C c * Q).reverse =
       c • Polynomial.aeval u Q.reverse := by
-    rw [hrev, map_mul, Polynomial.aeval_C, Algebra.smul_def]
+    rw [Polynomial.reverse_C_mul_of_isUnit hc, map_mul, Polynomial.aeval_C, Algebra.smul_def]
   obtain ⟨w, hw₁, hw₂, hw₃, hw₄, hw⟩ := hE.exists_inverse
   have : IsTopologicalSemiring (M →L[R] M) := inferInstance
   set T := (Algebra.adjoin R {u}).topologicalClosure
@@ -173,6 +170,7 @@ theorem of_C_mul (hE : IsRieszColemanProjection u Q E) {c : R} (hc : IsUnit c) :
   · rw [smul_mul_assoc, hw₄, smul_zero]
 
 /-- Scaling `Q` by a unit scalar does not change the Riesz–Coleman projections of `u`. -/
+@[simp]
 theorem iff_C_mul {c : R} (hc : IsUnit c) :
     IsRieszColemanProjection u (Polynomial.C c * Q) E ↔ IsRieszColemanProjection u Q E := by
   obtain ⟨c', hc'⟩ := hc.exists_left_inv
