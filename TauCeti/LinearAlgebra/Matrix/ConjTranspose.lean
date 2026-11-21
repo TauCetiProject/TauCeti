@@ -1,0 +1,34 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.LinearAlgebra.Matrix.ConjTranspose
+
+/-!
+# Conjugating the entries of a matrix
+
+Over a commutative star ring, conjugating the entries of a matrix is mapping it through the ring
+homomorphism `starRingEnd`, so lemmas about ring homomorphisms apply to it.
+
+## Main results
+
+* `Matrix.map_star_eq_map_starRingEnd`: `M.map star = M.map (starRingEnd α)`.
+-/
+
+public section
+
+namespace Matrix
+
+variable {l m α : Type*} [CommSemiring α] [StarRing α]
+
+/-- Conjugating the entries of a matrix is mapping it through the ring homomorphism
+`starRingEnd α`, so that lemmas about ring homomorphisms, such as `Matrix.map_mul` and
+`RingHom.map_det`, apply to it. -/
+theorem map_star_eq_map_starRingEnd (M : Matrix l m α) : M.map star = M.map (starRingEnd α) := by
+  ext
+  exact (starRingEnd_apply _).symm
+
+end Matrix

@@ -46,6 +46,26 @@ public section
 open MeasureTheory ProbabilityTheory Filter Set TopologicalSpace
 open scoped NNReal Topology
 
+/-- A height known at the left endpoint, extended by zero outside `(s,t]`, is predictable. -/
+theorem MeasureTheory.Filtration.stronglyMeasurable_indicator_Ioc_predictable
+    {ι Ω E : Type*} {m : MeasurableSpace Ω} [LinearOrder ι] [OrderBot ι]
+    [TopologicalSpace E] [Zero E] (ℱ : Filtration ι m) (s t : ι) {a : Ω → E}
+    (ha : StronglyMeasurable[ℱ s] a) :
+    StronglyMeasurable[ℱ.predictable]
+      (fun p : ι × Ω ↦ (Ioc s t).indicator (fun _ ↦ a p.2) p.1) := by
+  classical
+  let : MeasurableSpace Ω := ℱ s
+  let : MeasurableSpace (ι × Ω) := ℱ.predictable
+  let S : Set (ι × Ω) := Ioc s t ×ˢ univ
+  have hS : MeasurableSet S := measurableSet_predictable_Ioc_prod s t MeasurableSet.univ
+  have hproj : Measurable (fun p : S ↦ p.val.2) := by
+    intro A hA
+    refine ⟨Ioc s t ×ˢ A, measurableSet_predictable_Ioc_prod s t hA, ?_⟩
+    ext p
+    simp [S, p.property.1]
+  simpa [S, indicator_apply] using
+    (ha.comp_measurable hproj).dite (stronglyMeasurable_const (b := (0 : E))) hS
+
 section Arithmetic
 
 variable {ι Ω E : Type*} {m : MeasurableSpace Ω} [Preorder ι] [OrderBot ι]
