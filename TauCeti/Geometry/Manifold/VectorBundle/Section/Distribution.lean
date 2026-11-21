@@ -261,8 +261,8 @@ theorem delta_add [IsTopologicalAddGroup W] (x : M) (ℓ ℓ' : V x →L[ℝ] W)
   ext s
   simp
 
-theorem delta_smul [IsTopologicalAddGroup W] [ContinuousSMul ℝ W] (x : M) (a : ℝ)
-    (ℓ : V x →L[ℝ] W) : delta (I := I) (F := F) x (a • ℓ) = a • delta x ℓ := by
+theorem delta_smul [ContinuousConstSMul ℝ W] (x : M) (a : ℝ) (ℓ : V x →L[ℝ] W) :
+    delta (I := I) (F := F) x (a • ℓ) = a • delta x ℓ := by
   ext s
   simp
 
