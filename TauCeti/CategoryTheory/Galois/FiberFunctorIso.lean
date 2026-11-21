@@ -44,8 +44,9 @@ to the case of the morphism universe of `C` along the equivalence `FintypeCat.uS
   fibre functors is an isomorphism.
 * `CategoryTheory.PreGaloisCategory.FiberFunctor.nonempty_hom`: there is a natural
   transformation between any two fibre functors.
-* `CategoryTheory.PreGaloisCategory.FiberFunctor.nonempty_iso`: any two fibre functors are
-  isomorphic.
+* `CategoryTheory.PreGaloisCategory.FiberFunctor.nonempty_iso`: any two fibre functors of a
+  pre-Galois category are isomorphic, as an instance. Such a category is Galois once it has a
+  fibre functor.
 
 ## References
 
@@ -133,10 +134,13 @@ theorem nonempty_hom : Nonempty (F ⟶ G) := by
   exact ⟨(Functor.FullyFaithful.whiskeringRight
     (Functor.FullyFaithful.ofFullyFaithful FintypeCat.uSwitch.{w, u₂}) C).preimage η⟩
 
-/-- **Any two fibre functors of a Galois category are isomorphic.** -/
-theorem nonempty_iso : Nonempty (F ≅ G) :=
-  (nonempty_hom F G).map fun η ↦ asIso η
-
 end FiberFunctor
+
+/-- **Any two fibre functors of a pre-Galois category are isomorphic.** A pre-Galois category
+with a fibre functor is a Galois category, so this follows from `FiberFunctor.nonempty_hom`. -/
+instance FiberFunctor.nonempty_iso {C : Type u₁} [Category.{u₂} C] [PreGaloisCategory C]
+    (F G : C ⥤ FintypeCat.{w}) [FiberFunctor F] [FiberFunctor G] : Nonempty (F ≅ G) :=
+  have : GaloisCategory C := ⟨⟨F ⋙ FintypeCat.uSwitch.{w, u₂}, inferInstance⟩⟩
+  (FiberFunctor.nonempty_hom F G).map fun η ↦ asIso η
 
 end CategoryTheory.PreGaloisCategory
