@@ -119,7 +119,7 @@ theorem exists_coe_eq_sin (hα : α ≤ 1) : ∃ f : CkHolderSpace k α ℝ ℝ,
     (holderWith_iteratedFDeriv_sin hα k).memHolder, coe_ofContDiff _ _ _ _⟩
 
 /-- Every derivative field of `sin` in `C_b^{k,α}(ℝ)` has supremum norm `1`. -/
-theorem norm_iteratedFDeriv_of_coe_eq_sin {f : CkHolderSpace k α ℝ ℝ} (hf : ⇑f = sin)
+theorem norm_iteratedFDeriv_eq_one_of_coe_eq_sin {f : CkHolderSpace k α ℝ ℝ} (hf : ⇑f = sin)
     (i : Fin (k + 1)) : ‖f.iteratedFDeriv i‖ = 1 := by
   have hval (x : ℝ) : ‖f.iteratedFDeriv i x‖ = |iteratedDeriv i sin x| := by
     rw [coe_iteratedFDeriv, hf, norm_iteratedFDeriv_eq_norm_iteratedDeriv, Real.norm_eq_abs]
@@ -135,7 +135,7 @@ theorem norm_iteratedFDeriv_of_coe_eq_sin {f : CkHolderSpace k α ℝ ℝ} (hf :
 theorem norm_eq_of_coe_eq_sin {f : CkHolderSpace k α ℝ ℝ} (hf : ⇑f = sin) :
     ‖f‖ = k + 1 + nnHolderNorm α (_root_.iteratedFDeriv ℝ k sin) := by
   rw [norm_eq, hf]
-  simp [norm_iteratedFDeriv_of_coe_eq_sin hf]
+  simp [norm_iteratedFDeriv_eq_one_of_coe_eq_sin hf]
 
 /-- For `α ≤ 1`, the `C^{k,α}` norm of `sin` is at most `k + 3`. -/
 theorem norm_le_add_three_of_coe_eq_sin (hα : α ≤ 1) {f : CkHolderSpace k α ℝ ℝ}
@@ -170,7 +170,7 @@ theorem norm_eq_norm_equivC1HolderSpace_add_one_of_coe_eq_sin {f : CkHolderSpace
     rw [C1HolderSpace.toBoundedContinuousFunction_apply, equivC1HolderSpace_apply,
       coe_toBoundedContinuousFunction]
   have hA : ‖C1HolderSpace.toBoundedContinuousFunction (equivC1HolderSpace f)‖ = 1 := by
-    rw [hbcf, norm_toBoundedContinuousFunction, norm_iteratedFDeriv_of_coe_eq_sin hf]
+    rw [hbcf, norm_toBoundedContinuousFunction, norm_iteratedFDeriv_eq_one_of_coe_eq_sin hf]
   -- The smaller of the two terms is the supremum norm `1`, since the other is at least `1`.
   have hnorm := norm_eq_of_coe_eq_sin hf
   rw [Nat.cast_one] at hnorm
