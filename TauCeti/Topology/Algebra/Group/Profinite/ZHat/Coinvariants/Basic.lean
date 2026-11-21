@@ -53,7 +53,9 @@ continuous `1`-cocycle taking the value `m` at `zHat.gen`
 `H¹(zHat, M) ≃+ zHat.Coinvariants M` (`TauCeti.zHat.h1AddEquivCoinvariants`). For compact totally
 disconnected, finitely generated integral and finite-dimensional rational coefficients, `evalGen`
 is surjective with no torsion hypothesis (`TauCeti.zHat.evalGen_surjective_of_profinite` and its
-siblings in `TauCeti.Topology.Algebra.Group.Profinite.ZHat.Coinvariants.Profinite`).
+siblings in `TauCeti.Topology.Algebra.Group.Profinite.ZHat.Coinvariants.Profinite`). In general,
+for `T₁` coefficients on which `evalGen` is surjective, it is an isomorphism
+(`TauCeti.zHat.h1AddEquivCoinvariantsOfSurjective`).
 
 For a finite `T₁` (hence discrete) `zHat`-module `M`, comparing the kernel and cokernel of the
 endomorphism `zHat.gen - 1` yields `#H¹(zHat, M) = #H⁰(zHat, M)`
@@ -63,6 +65,8 @@ endomorphism `zHat.gen - 1` yields `#H¹(zHat, M) = #H⁰(zHat, M)`
 
 * `TauCeti.zHat.genSubId`: the endomorphism `m ↦ zHat.gen • m - m` of a `zHat`-module `M`.
 * `TauCeti.zHat.evalGen`: evaluation at `zHat.gen`, `H¹(zHat, M) →+ M ⧸ (zHat.genSubId M).range`.
+* `TauCeti.zHat.h1AddEquivCoinvariantsOfSurjective`: the isomorphism
+  `H¹(zHat, M) ≃+ M ⧸ (zHat.genSubId M).range` for `T₁` `M` on which `evalGen` is surjective.
 * `TauCeti.zHat.Coinvariants`: the `zHat`-coinvariants `M ⧸ (zHat.genSubId M).range` of a discrete
   continuous `zHat`-module `M`.
 * `TauCeti.zHat.h1AddEquivCoinvariants`: the isomorphism `H¹(zHat, M) ≃+ zHat.Coinvariants M` for a
@@ -227,6 +231,39 @@ image under `evalGen M` vanishes. -/
 @[simp]
 theorem evalGen_eq_zero_iff {x : H1 zHat.{u} M} : evalGen.{u} M x = 0 ↔ x = 0 :=
   map_eq_zero_iff (evalGen.{u} M) (evalGen_injective M)
+
+/-- **`H¹(zHat, M) ≃+ M ⧸ (zHat.gen - 1) M` via evaluation at `zHat.gen`** for a `T₁` continuous
+`zHat`-module `M` on which `evalGen` is surjective. -/
+def h1AddEquivCoinvariantsOfSurjective (h : Function.Surjective (evalGen.{u} M)) :
+    H1 zHat.{u} M ≃+ M ⧸ (genSubId.{u} M).range :=
+  AddEquiv.ofBijective (evalGen.{u} M) ⟨evalGen_injective M, h⟩
+
+/-- `h1AddEquivCoinvariantsOfSurjective` acts as `evalGen`. -/
+@[simp]
+theorem h1AddEquivCoinvariantsOfSurjective_apply (h : Function.Surjective (evalGen.{u} M))
+    (x : H1 zHat.{u} M) : h1AddEquivCoinvariantsOfSurjective h x = evalGen.{u} M x :=
+  (rfl)
+
+/-- The underlying additive homomorphism of `h1AddEquivCoinvariantsOfSurjective` is `evalGen`. -/
+@[simp]
+theorem h1AddEquivCoinvariantsOfSurjective_toAddMonoidHom
+    (h : Function.Surjective (evalGen.{u} M)) :
+    (h1AddEquivCoinvariantsOfSurjective h : H1 zHat.{u} M →+ M ⧸ (genSubId.{u} M).range) =
+      evalGen.{u} M :=
+  (rfl)
+
+/-- Evaluating at `zHat.gen` cancels the inverse of `h1AddEquivCoinvariantsOfSurjective`. -/
+@[simp]
+theorem evalGen_h1AddEquivCoinvariantsOfSurjective_symm (h : Function.Surjective (evalGen.{u} M))
+    (q : M ⧸ (genSubId.{u} M).range) :
+    evalGen.{u} M ((h1AddEquivCoinvariantsOfSurjective h).symm q) = q :=
+  (h1AddEquivCoinvariantsOfSurjective h).apply_symm_apply q
+
+/-- Applying the inverse of `h1AddEquivCoinvariantsOfSurjective` to `evalGen M x` recovers `x`. -/
+@[simp]
+theorem h1AddEquivCoinvariantsOfSurjective_symm_evalGen (h : Function.Surjective (evalGen.{u} M))
+    (x : H1 zHat.{u} M) : (h1AddEquivCoinvariantsOfSurjective h).symm (evalGen.{u} M x) = x :=
+  (h1AddEquivCoinvariantsOfSurjective h).symm_apply_apply x
 
 end Injectivity
 
@@ -420,7 +457,7 @@ variable (M) in
 coinvariant quotient**: `H¹(zHat, M) ≃+ zHat.Coinvariants M` via evaluation at `zHat.gen`. -/
 def h1AddEquivCoinvariants (hM : IsAddTorsion M) :
     H1 zHat.{u} M ≃+ Coinvariants.{u} M :=
-  AddEquiv.ofBijective (evalGen.{u} M) ⟨evalGen_injective M, evalGen_surjective M hM⟩
+  h1AddEquivCoinvariantsOfSurjective (evalGen_surjective M hM)
 
 /-- `h1AddEquivCoinvariants` acts as `evalGen`. -/
 @[simp]
