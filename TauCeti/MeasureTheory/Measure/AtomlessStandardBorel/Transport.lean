@@ -100,7 +100,7 @@ theorem exists_measurePreserving_sum_of_nullSingleton
     · exact (Set.disjoint_left.mp (hAd hij) hi hj).elim
   let S := Set.liftCover A (fun i x ↦ T i x) hcompat hAu
   have hSm : Measurable S := measurable_liftCover A hAm _
-    (fun i ↦ (hT i).measurable.comp measurable_subtype_coe) hcompat hAu
+    (fun i ↦ (hT i).measurable.comp measurable_subtypeVal) hcompat hAu
   have hS (i : ι) : MeasurePreserving S (μ.restrict (A i)) (ν i) :=
     (hT i).congr hSm <| (ae_restrict_mem (hAm i)).mono fun x hx ↦
       (Set.liftCover_of_mem (f := fun i x ↦ T i x) (hf := hcompat) (hS := hAu) hx).symm
@@ -117,7 +117,7 @@ theorem exists_subset_measure_eq_of_nullSingleton {X : Type*} [MeasurableSpace X
     (hs : MeasurableSet s) (hμs : μ s ≠ ∞) {a : ℝ≥0∞} (ha : a ≤ μ s) :
     ∃ t ⊆ s, MeasurableSet t ∧ μ t = a := by
   rcases eq_or_ne (μ s) 0 with h0 | h0
-  · exact ⟨∅, Set.empty_subset s, MeasurableSet.empty, by simp [le_zero_iff.1 (h0 ▸ ha)]⟩
+  · exact ⟨∅, Set.empty_subset s, MeasurableSet.empty, by simp [nonpos_iff_eq_zero.1 (h0 ▸ ha)]⟩
   have : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 hμs
   obtain ⟨T, hT⟩ := exists_measurePreserving_of_nullSingleton_of_measure_univ_eq
     (μ.restrict s) (μ s • (volume : Measure unitInterval)) (by simp)

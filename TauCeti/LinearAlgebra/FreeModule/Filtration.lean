@@ -52,7 +52,7 @@ private theorem of_filtration_of_bot (N : ℕ → Submodule R M) (hN : Monotone 
     LinearMap.congr_fun (hs j) q
   let f (j : ℕ) : Q j →ₗ[R] M := (N (j + 1)).subtype ∘ₗ s j
   have hψinj : Function.Injective (DirectSum.toModule R ℕ M f) :=
-    DirectSum.toModule_injective_of_filtration N hN f (fun j q ↦ (s j q).2) fun j q hq ↦ by
+    DirectSum.toModule_injective_of_filtration N hN f (fun j q ↦ (s j q).property) fun j q hq ↦ by
       rw [← hs' j q, Submodule.Quotient.mk_eq_zero]
       exact Submodule.mem_comap.mpr hq
   have hψsurj : Function.Surjective (DirectSum.toModule R ℕ M f) :=

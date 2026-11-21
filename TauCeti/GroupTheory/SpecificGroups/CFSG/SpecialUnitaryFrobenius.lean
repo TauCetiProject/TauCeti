@@ -159,7 +159,7 @@ theorem mem_fixedSubgroup_galoisFieldTwistedFrobenius_iff (r : ℕ)
     ← SpecialLinearGroup.toGL_injective.eq_iff, SpecialLinearGroup.toGL_typeAGraphAutomorphism,
     typeAGraphAutomorphism_eq_iff_transpose_mul_conjugator_mul_eq,
     SpecialLinearGroup.coe_GL_coe_matrix, SpecialLinearGroup.coe_GL_coe_matrix,
-    SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply, coe_iterateFrobenius_galoisField]
+    SpecialLinearGroup.map_apply_coe, coe_iterateFrobenius_galoisField]
 
 /-- **The finite special unitary group is a special isometry group.** The fixed points of the
 graph-twisted Frobenius of `SL_{r+1}(𝔽_{q²})` are the special isometries of the sesquilinear form
@@ -191,19 +191,6 @@ theorem involutive_iterateFrobenius_galoisField :
   FiniteField.iterateFrobenius_involutive
     (GaloisField.card _ _ (Nat.mul_ne_zero d.fieldExponent_pos.ne' two_ne_zero))
 
-/-- The entries `0` and `±1` of the signed reversal matrix `Q` are fixed by `σ`. -/
-private theorem map_typeAGraphConjugator_galoisField :
-    (typeAGraphConjugator r (GaloisField d.characteristic (d.fieldExponent * 2)) :
-        Matrix (Fin (r + 1)) (Fin (r + 1)) _).map
-        (iterateFrobenius (GaloisField d.characteristic (d.fieldExponent * 2)) d.characteristic
-          d.fieldExponent) =
-      (typeAGraphConjugator r (GaloisField d.characteristic (d.fieldExponent * 2)) :
-        Matrix (Fin (r + 1)) (Fin (r + 1)) _) := by
-  have hmap := congrArg Units.val (map_typeAGraphConjugator
-    (iterateFrobenius (GaloisField d.characteristic (d.fieldExponent * 2)) d.characteristic
-      d.fieldExponent) r)
-  rwa [Units.coe_map, MonoidHom.coe_ofClass, RingHom.mapMatrix_apply] at hmap
-
 /-- The `σ`-sesquilinear form of Gram matrix `Q` is `(-1) ^ r`-Hermitian: `σ(Q)ᵀ = (-1) ^ r • Q`,
 with `σ` the `q`-power Frobenius and `Q` the signed reversal matrix. -/
 theorem transpose_map_typeAGraphConjugator_galoisField :
@@ -214,7 +201,7 @@ theorem transpose_map_typeAGraphConjugator_galoisField :
       (-1 : GaloisField d.characteristic (d.fieldExponent * 2)) ^ r •
         (typeAGraphConjugator r (GaloisField d.characteristic (d.fieldExponent * 2)) :
           Matrix (Fin (r + 1)) (Fin (r + 1)) _) := by
-  rw [map_typeAGraphConjugator_galoisField, transpose_typeAGraphConjugator]
+  rw [map_coe_typeAGraphConjugator, transpose_typeAGraphConjugator]
 
 variable (d r) in
 /-- **The form of the special unitary group** `SU_{r+1}(q)`: the sesquilinear form
@@ -266,7 +253,7 @@ theorem transpose_map_mul_mul_self_of_mem
       (typeAGraphConjugator r (GaloisField d.characteristic (d.fieldExponent * 2)) :
         Matrix (Fin (r + 1)) (Fin (r + 1)) _) := by
   rw [coe_iterateFrobenius_galoisField, ← mem_fixedSubgroup_galoisFieldTwistedFrobenius_iff]
-  exact g.2
+  exact g.property
 
 /-- **The special unitary group preserves its form**: `B(g x, g y) = B(x, y)` for every `g` in
 `SU_{r+1}(q)`. -/

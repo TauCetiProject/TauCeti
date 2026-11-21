@@ -291,29 +291,29 @@ end Lift
 /-- Equivalence between Steinberg pairings `Rˣ → Rˣ → A` and `ℤ`-linear maps
 `SymbolGroup R →ₗ[ℤ] A`. -/
 def liftEquiv : {c : Rˣ → Rˣ → A // IsSteinbergPairing c} ≃ (SymbolGroup R →ₗ[ℤ] A) where
-  toFun c := lift c.1 c.2
+  toFun c := lift c.val c.property
   invFun f :=
     ⟨fun a b => f (symbol a b), isSteinbergPairing_symbol.comp_addMonoidHom f.toAddMonoidHom⟩
-  left_inv c := Subtype.ext (funext fun a => funext fun b => lift_symbol c.1 c.2 a b)
+  left_inv c := Subtype.ext (funext fun a => funext fun b => lift_symbol c.val c.property a b)
   right_inv f := (lift_unique _ _ f fun _ _ => rfl).symm
 
 @[simp] theorem liftEquiv_apply (c : {c : Rˣ → Rˣ → A // IsSteinbergPairing c}) :
-    liftEquiv c = lift c.1 c.2 := by rfl
+    liftEquiv c = lift c.val c.property := by rfl
 @[simp] theorem liftEquiv_symm_apply_val (f : SymbolGroup R →ₗ[ℤ] A) (a b : Rˣ) :
-    (liftEquiv.symm f).1 a b = f (symbol a b) := by rfl
+    (liftEquiv.symm f).val a b = f (symbol a b) := by rfl
 
 /-- Equivalence between Steinberg pairings `Rˣ → Rˣ → A` and additive homomorphisms
 `SymbolGroup R →+ A`. -/
 def liftAddMonoidHomEquiv : {c : Rˣ → Rˣ → A // IsSteinbergPairing c} ≃ (SymbolGroup R →+ A) where
-  toFun c := (lift c.1 c.2).toAddMonoidHom
+  toFun c := (lift c.val c.property).toAddMonoidHom
   invFun f := ⟨fun a b => f (symbol a b), isSteinbergPairing_symbol.comp_addMonoidHom f⟩
-  left_inv c := Subtype.ext (funext fun a => funext fun b => lift_symbol c.1 c.2 a b)
+  left_inv c := Subtype.ext (funext fun a => funext fun b => lift_symbol c.val c.property a b)
   right_inv f := (lift_toAddMonoidHom_unique _ _ f fun _ _ => rfl).symm
 
 @[simp] theorem liftAddMonoidHomEquiv_apply (c : {c : Rˣ → Rˣ → A // IsSteinbergPairing c}) :
-    liftAddMonoidHomEquiv c = (lift c.1 c.2).toAddMonoidHom := by rfl
+    liftAddMonoidHomEquiv c = (lift c.val c.property).toAddMonoidHom := by rfl
 @[simp] theorem liftAddMonoidHomEquiv_symm_apply_val (f : SymbolGroup R →+ A) (a b : Rˣ) :
-    (liftAddMonoidHomEquiv.symm f).1 a b = f (symbol a b) := by rfl
+    (liftAddMonoidHomEquiv.symm f).val a b = f (symbol a b) := by rfl
 
 end Universal
 

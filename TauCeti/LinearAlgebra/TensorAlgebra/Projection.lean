@@ -176,7 +176,7 @@ def rangePowEquivTensorPower (d : ℕ) :
 
 @[simp] theorem rangePowEquivTensorPower_apply (d : ℕ)
     (x : ↥((LinearMap.range (ι R : M →ₗ[R] TensorAlgebra R M)) ^ d)) :
-    rangePowEquivTensorPower d x = tensorPowerProjection d x.1 := by rfl
+    rangePowEquivTensorPower d x = tensorPowerProjection d x.val := by rfl
 @[simp] theorem rangePowEquivTensorPower_symm_apply (d : ℕ) (x : TensorPower R d M) :
     ((rangePowEquivTensorPower d).symm x : TensorAlgebra R M) =
       TensorPower.toTensorAlgebra x := by rfl

@@ -7,8 +7,7 @@ module
 
 public import Mathlib.Algebra.CharP.Two
 public import TauCeti.FieldTheory.MilnorKTheory.Grading
-import Mathlib.RingTheory.IntegralDomain
-import TauCeti.FieldTheory.Finite.NonsquareSum
+import TauCeti.FieldTheory.MatsumotoGroup
 
 /-!
 # Vanishing of Milnor K-theory of finite fields
@@ -62,12 +61,17 @@ theorem eq_zero_of_isCyclic_of_exists_odd_add_eq_one {c : Fˣ → Fˣ → A}
 identically zero. -/
 theorem eq_zero_of_finite [Finite F] {c : Fˣ → Fˣ → A} (hc : IsSteinbergPairing c)
     (a b : Fˣ) : c a b = 0 := by
-  by_cases h2 : (2 : F) = 0
-  · have : CharP F 2 := CharTwo.of_one_ne_zero_of_two_eq_zero one_ne_zero h2
-    exact hc.eq_zero_of_isCyclic_of_charTwo a b
-  · obtain ⟨g, hg⟩ := IsCyclic.exists_generator (α := Fˣ)
-    obtain ⟨m, n, hm, hn, hadd⟩ := FiniteField.exists_odd_zpow_add_eq_one h2 hg
-    exact hc.eq_zero_of_isCyclic_of_exists_odd_add_eq_one hg hm hn hadd a b
+  let f : Additive Fˣ →+ Additive Fˣ →+ A :=
+    { toFun := fun u =>
+        { toFun := fun v => c (Additive.toMul u) (Additive.toMul v)
+          map_zero' := hc.map_one_right _
+          map_add' := fun _ _ => hc.map_mul_right _ _ _ }
+      map_zero' := AddMonoidHom.ext fun _ => hc.map_one_left _
+      map_add' := fun _ _ => AddMonoidHom.ext fun _ => hc.map_mul_left _ _ _ }
+  have h : c a b =
+      MatsumotoGroup.lift f (fun x y h => hc.steinberg x y h) (MatsumotoGroup.symbol a b) := by
+    simp [f]
+  rw [h, MatsumotoGroup.symbol_eq_zero_of_finite, map_zero]
 
 end IsSteinbergPairing
 

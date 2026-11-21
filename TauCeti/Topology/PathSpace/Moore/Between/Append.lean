@@ -133,4 +133,11 @@ theorem loopAppendHomotopyEquiv_symm_smul (γ : MoorePathBetween X a b)
   apply MooreLoopSpace.ext
   simp [MoorePath.trans_assoc]
 
+/-- For the constant path of length zero, the inverse loop-to-path equivalence is the
+identification of paths from `a` to itself with loops at `a`. -/
+@[simp]
+theorem loopAppendHomotopyEquiv_loopHomeomorph_one_symm_apply (δ : MoorePathBetween X a a) :
+    (loopAppendHomotopyEquiv (loopHomeomorph a 1)).symm δ = (loopHomeomorph a).symm δ :=
+  MooreLoopSpace.ext (by simp)
+
 end TauCeti.MoorePathBetween

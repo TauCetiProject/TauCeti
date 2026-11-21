@@ -34,6 +34,10 @@ the deck transformation labelled by the period `c` sends `f y` to `f y + c`
 (`PeriodCover.apply_deck_apply`). This is the equivariance `f (h • y) = f y + P h` of a primitive
 under the deck group, with `P` the period homomorphism on the deck group.
 
+The same holds on the universal cover itself: a primitive of the pulled-back form takes the value
+`f (mk x refl) + ∫_q θ` at the point represented by a path class `q`
+(`UniversalCover.apply_mk_eq_apply_mk_refl_add_pathClassIntegral`).
+
 The construction uses the subgroup-cover classification and the period exactness criterion.
 Our universal-cover action prepends inverse loops; consequently the deck transformation labelled
 by the period of a loop is the transformation represented by its inverse.
@@ -141,6 +145,36 @@ theorem SubgroupQuotient.apply_mk_eq_apply_basepoint_add_pathClassIntegral
     pathClassIntegral_cast] at h
   exact eq_add_of_sub_eq' h.symm
 
+/-- **Primitives on the universal cover.** Let `f` be a `C²` primitive of the pullback of a
+closed `C¹` form `θ` to the universal cover based at `x`. At the point represented by a path class
+`q` from `x` to `y`, `f` is its value at the constant-path point plus the integral of `θ` along
+`q`. In particular `f` is determined by that value. -/
+theorem apply_mk_eq_apply_mk_refl_add_pathClassIntegral
+    (hθ : IsSmoothForm I 1 θ) (hclosed : mextDeriv θ = 0) {f : UniversalCover x → F}
+    (hf : ContMDiff I 𝓘(ℝ, F) 2 f)
+    (hdf : mextDeriv (RoughForm.ofFunction I f) = mpullback I I proj θ)
+    {y : M} (q : Path.Homotopic.Quotient x y) :
+    f (mk y q) = f (mk x (Path.Homotopic.Quotient.refl x)) + pathClassIntegral θ q := by
+  have : T2Space (UniversalCover x) := (isCoveringMap x).t2Space
+  induction q with | mk γ =>
+  -- The initial segments of `γ` give a path `Γ` in the cover from the constant-path point,
+  -- lying over `γ`.
+  let Γ : Path (mk x (Path.Homotopic.Quotient.refl x)) (mk y (.mk γ)) :=
+    { toFun t := ofBasedPath x ((BasedPath.ofPath γ).initialSegmentFamily t)
+      continuous_toFun := by fun_prop
+      source' := by
+        simp [← BasedPath.ofPath_refl, Path.Homotopic.Quotient.mk_refl]
+      target' := by simp }
+  have hΓ : Γ.map (continuous_proj x) = γ := by
+    ext t
+    simp [Γ, proj_ofBasedPath]
+  -- Integrate `df` along `Γ` in two ways: downstairs, `Γ` projects to `γ`.
+  have h := pathClassIntegral_mextDeriv_ofFunction hf (.mk Γ)
+  rw [hdf, pathClassIntegral_mpullback
+    ((isLocalDiffeomorph_proj (I := I) (n := 2) x).contMDiff) hθ hclosed] at h
+  simp only [← Path.Homotopic.Quotient.mk_map, hΓ] at h
+  exact eq_add_of_sub_eq' h.symm
+
 /-- **Deck transformations shift primitives by periods.** For a normal subgroup `K` of the
 fundamental group of a path-connected manifold, the deck transformation of the cover attached to
 `K` given by the class of a loop `g` changes every `C²` primitive `f` of the pullback of a closed
@@ -151,7 +185,7 @@ theorem apply_deckSubgroupQuotientProjEquivOfNormal_mk_apply [PathConnectedSpace
     (hf : ContMDiff I 𝓘(ℝ, F) 2 f)
     (hdf : mextDeriv (RoughForm.ofFunction I f) = mpullback I I (subgroupQuotientProj x K) θ)
     (g : FundamentalGroup M x) (y : SubgroupQuotient x K) :
-    f ((deckSubgroupQuotientProjEquivOfNormal x K (QuotientGroup.mk g)).1 y) =
+    f ((deckSubgroupQuotientProjEquivOfNormal x K (QuotientGroup.mk g)).val y) =
       f y - periodHom θ x (Additive.ofMul g) := by
   induction y using Quotient.inductionOn' with | h e =>
   obtain ⟨y, q⟩ := e
@@ -253,7 +287,7 @@ theorem deckEquiv_symm_period_apply [PreconnectedSpace M]
     (g : FundamentalGroup M x) (e : UniversalCover x) :
     ((deckEquiv θ x).symm
       ⟨(periodHom (θ : RoughForm I M ℝ 1) x).toMultiplicativeRight g,
-        ⟨g, rfl⟩⟩).1 (Quotient.mk'' e) = Quotient.mk'' (g⁻¹ • e) := by
+        ⟨g, rfl⟩⟩).val (Quotient.mk'' e) = Quotient.mk'' (g⁻¹ • e) := by
   let : LocallyPathConnectedSpace M := I.locallyPathConnectedSpace_of_chartedSpace M
   let : SemilocallySimplyConnectedSpace M := I.semilocallySimplyConnectedSpace M
   let : Nonempty M := ⟨x⟩
@@ -295,7 +329,7 @@ theorem apply_deck_apply [PreconnectedSpace M] (hθ : θ ∈ closedForms I M 1)
     {f : PeriodCover θ x → ℝ} (hf : ContMDiff I 𝓘(ℝ, ℝ) 2 f)
     (hdf : mextDeriv (RoughForm.ofFunction I f) = mpullback I I (proj θ x) θ)
     (d : deck (proj θ x)) (y : PeriodCover θ x) :
-    f (d.1 y) = f y + Multiplicative.toAdd (deckEquiv θ x d : Multiplicative ℝ) := by
+    f (d.val y) = f y + Multiplicative.toAdd (deckEquiv θ x d : Multiplicative ℝ) := by
   let : LocallyPathConnectedSpace M := I.locallyPathConnectedSpace_of_chartedSpace M
   let : SemilocallySimplyConnectedSpace M := I.semilocallySimplyConnectedSpace M
   let : Nonempty M := ⟨x⟩

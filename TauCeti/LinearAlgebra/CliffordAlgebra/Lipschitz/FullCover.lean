@@ -11,6 +11,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Pin.Action
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Kernel
 import TauCeti.LinearAlgebra.CliffordAlgebra.CartanDieudonne
 import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Kernel
+import Mathlib.Algebra.Polynomial.Roots
 
 /-!
 # The normalized Clifford full cover
@@ -48,6 +49,8 @@ subgroup for an indefinite form.
 * `CliffordAlgebra.mem_ker_cliffordFullCoverToOrthogonal_iff` and
   `CliffordAlgebra.ker_cliffordFullCoverToOrthogonal`: when `-1` is not a square, the kernel of
   the full-cover action is `{±1}`, the image of the kernel of the Spin action.
+* `CliffordAlgebra.finite_ker_cliffordFullCoverToOrthogonal`: over any field the kernel of the
+  full-cover action is finite, consisting of scalars `r` with `r ^ 4 = 1`.
 * `CliffordAlgebra.exists_cliffordFullCoverToOrthogonal_eq_and_mem_even_iff`: an orthogonal
   transformation is the action of an even element of the full cover exactly when it lies in
   `SO(Q)`.
@@ -192,6 +195,19 @@ theorem cliffordFullCoverToOrthogonal_surjective (hQ : Q.Nondegenerate)
         fun h ↦ Units.isSquare_coe_iff.mp (by rwa [Units.val_neg])
   exact ⟨⟨_, ha⟩, by simp⟩
 
+/-- An element of the full cover of a nondegenerate quadratic form that acts trivially is a scalar
+`r` whose norm `r * r` is `1` or `-1`. -/
+private theorem exists_eq_algebraMap_of_mem_ker_cliffordFullCoverToOrthogonal
+    (hQ : Q.Nondegenerate) {x : cliffordFullCover Q}
+    (hx : x ∈ (cliffordFullCoverToOrthogonal Q).ker) :
+    ∃ r : Kˣ, (((x : lipschitzGroup Q) : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) =
+      algebraMap K _ r ∧ (r * r = 1 ∨ r * r = -1) := by
+  obtain ⟨r, hr⟩ := (mem_ker_lipschitzToOrthogonal_iff hQ).1 (by simpa using hx)
+  have hnorm : cliffordNorm Q x = r * r := by
+    simpa only [map_one, mul_one, sq] using
+      cliffordNorm_eq_sq_mul_of_coe_eq_algebraMap_mul (x := 1) (c := r) (by simpa using hr)
+  exact ⟨r, hr, hnorm ▸ (mem_cliffordFullCover_iff Q x).1 x.property⟩
+
 /-- **The kernel of the full-cover action is `{±1}`** for a positive-dimensional
 finite-dimensional nondegenerate quadratic space over a field in which `-1` is not a square. The
 element `-1` of the full cover is the image of the Spin element `-1`. -/
@@ -201,14 +217,11 @@ theorem mem_ker_cliffordFullCoverToOrthogonal_iff [Nontrivial V] (hQ : Q.Nondege
       x = 1 ∨ x = spinToCliffordFullCover Q (spinGroup.negOne Q hQ.ne_zero) := by
   constructor
   · intro hx
-    obtain ⟨r, hr⟩ := (mem_ker_lipschitzToOrthogonal_iff hQ).1 (by simpa using hx)
-    have hnorm : cliffordNorm Q x = r * r := by
-      simpa only [map_one, mul_one, sq] using
-        cliffordNorm_eq_sq_mul_of_coe_eq_algebraMap_mul (x := 1) (c := r) (by simpa using hr)
+    obtain ⟨r, hr, hr1⟩ := exists_eq_algebraMap_of_mem_ker_cliffordFullCoverToOrthogonal hQ hx
     have hr1 : (r : K) * r = 1 := by
-      rcases (mem_cliffordFullCover_iff Q x).1 x.2 with h1 | h1
-      · simpa using congrArg Units.val (hnorm.symm.trans h1)
-      · exact absurd ⟨(r : K), by simpa using (congrArg Units.val (hnorm.symm.trans h1)).symm⟩ h
+      rcases hr1 with h1 | h1
+      · simpa using congrArg Units.val h1
+      · exact absurd ⟨(r : K), by simpa using (congrArg Units.val h1).symm⟩ h
     have hval {y : cliffordFullCover Q} {c : K}
         (hy : (((y : lipschitzGroup Q) : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) =
           algebraMap K _ c) :
@@ -235,6 +248,23 @@ theorem ker_cliffordFullCoverToOrthogonal [Nontrivial V] (hQ : Q.Nondegenerate)
   rcases (mem_ker_cliffordFullCoverToOrthogonal_iff hQ h x).1 hx with rfl | rfl
   · exact one_mem _
   · exact ⟨_, rfl⟩
+
+/-- **The kernel of the full-cover action is finite.** An element of the normalized full cover of a
+nondegenerate quadratic form that acts trivially is a scalar `r` with `r ^ 4 = 1`. -/
+theorem finite_ker_cliffordFullCoverToOrthogonal (hQ : Q.Nondegenerate) :
+    ((cliffordFullCoverToOrthogonal Q).ker : Set (cliffordFullCover Q)).Finite := by
+  have hinj : Function.Injective fun x : cliffordFullCover Q =>
+      (((x : lipschitzGroup Q) : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) :=
+    fun x y h ↦ Subtype.ext (Subtype.ext (Units.ext h))
+  refine ((((Polynomial.nthRootsFinset 4 (1 : K) : Finset K) : Set K).toFinite.image
+    (algebraMap K (CliffordAlgebra Q))).preimage hinj.injOn).subset fun x hx ↦ ?_
+  obtain ⟨r, hr, hr1⟩ := exists_eq_algebraMap_of_mem_ker_cliffordFullCoverToOrthogonal hQ hx
+  refine ⟨r, ?_, hr.symm⟩
+  have hr4 : (r : K) ^ 4 = ((r * r : Kˣ) : K) ^ 2 := by
+    push_cast
+    ring
+  rw [Finset.mem_coe, Polynomial.mem_nthRootsFinset (by norm_num), hr4]
+  rcases hr1 with h | h <;> simp [h]
 
 /-- **The even part of the full cover covers `SO(Q)`.** Over a field in which every element is a
 square up to sign, an orthogonal transformation of a finite-dimensional nondegenerate quadratic

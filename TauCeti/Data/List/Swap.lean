@@ -61,7 +61,7 @@ theorem val_swapIndexEquiv (u v : List α) (a b : α) (j : Fin (u ++ b :: a :: v
 /-- Looking up an entry of `u ++ b :: a :: v` and translating its index gives the same entry of
 `u ++ a :: b :: v`. -/
 theorem getElem_swapIndexEquiv (u v : List α) (a b : α) (j : Fin (u ++ b :: a :: v).length) :
-    (u ++ b :: a :: v)[j.1] = (u ++ a :: b :: v)[(swapIndexEquiv u v a b j).1] := by
+    (u ++ b :: a :: v)[j.val] = (u ++ a :: b :: v)[(swapIndexEquiv u v a b j).val] := by
   grind [val_swapIndexEquiv]
 
 /-- The swap of indices of `u ++ b :: a :: v` is inverse to the swap of indices of
@@ -91,15 +91,15 @@ theorem exists_split_ofFn_swap {n : ℕ} (v : Fin n → α) {i j : Fin n} (hij :
     have h2 : ((ofFn w).drop (i + 1)).drop (j - i - 1) = w j :: (ofFn w).drop (j + 1) := by
       rw [drop_drop, hidx, drop_eq_getElem_cons (by simp)]; simp
     rw [← h2, take_append_drop, ← h1, take_append_drop]
-  have hslice (a b : ℕ) (hab : ∀ k < b, a + k ≠ i.1 ∧ a + k ≠ j.1) :
+  have hslice (a b : ℕ) (hab : ∀ k < b, a + k ≠ i.val ∧ a + k ≠ j.val) :
       ((ofFn (v ∘ Equiv.swap i j)).drop a).take b = ((ofFn v).drop a).take b :=
     ext_getElem (by simp) fun k hk _ => by
       simp only [getElem_take, getElem_drop, List.getElem_ofFn, Function.comp_apply]
       have hkb : k < b := by simp at hk; omega
       have hlt : a + k < n := by simp at hk; omega
       rw [Equiv.swap_apply_of_ne_of_ne
-        (Fin.val_ne_iff.mp ((hab k hkb).1 : (⟨a + k, hlt⟩ : Fin n).1 ≠ i.1))
-        (Fin.val_ne_iff.mp ((hab k hkb).2 : (⟨a + k, hlt⟩ : Fin n).1 ≠ j.1))]
+        (Fin.val_ne_iff.mp ((hab k hkb).left : (⟨a + k, hlt⟩ : Fin n).val ≠ i.val))
+        (Fin.val_ne_iff.mp ((hab k hkb).right : (⟨a + k, hlt⟩ : Fin n).val ≠ j.val))]
   refine ⟨_, _, _, hsplit v, ?_⟩
   rw [hsplit (v ∘ Equiv.swap i j)]
   have htake : (ofFn (v ∘ Equiv.swap i j)).take i = (ofFn v).take i := by

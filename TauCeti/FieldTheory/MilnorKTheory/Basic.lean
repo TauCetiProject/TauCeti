@@ -223,7 +223,7 @@ def liftEquiv :
     {f : Additive Rˣ →+ A //
       ∀ a b : Rˣ, (a : R) + b = 1 → f (Additive.ofMul a) * f (Additive.ofMul b) = 0} ≃
       (MilnorK R →+* A) where
-  toFun f := lift R f.1 f.2
+  toFun f := lift R f.val f.property
   invFun g := ⟨g.toAddMonoidHom.comp (ofUnitHom R), fun a b h => by
     simp only [AddMonoidHom.comp_apply, ofUnitHom_ofMul, RingHom.toAddMonoidHom_eq_coe,
       AddMonoidHom.coe_ofClass, ← map_mul, ofUnit_mul_ofUnit_eq_zero h, map_zero]⟩
@@ -234,9 +234,9 @@ def liftEquiv :
 
 @[simp] theorem liftEquiv_apply (f : {f : Additive Rˣ →+ A //
     ∀ a b : Rˣ, (a : R) + b = 1 → f (Additive.ofMul a) * f (Additive.ofMul b) = 0}) :
-    liftEquiv R f = lift R f.1 f.2 := by rfl
+    liftEquiv R f = lift R f.val f.property := by rfl
 @[simp] theorem liftEquiv_symm_apply_val (g : MilnorK R →+* A) (a : Rˣ) :
-    ((liftEquiv R).symm g).1 (Additive.ofMul a) = g (ofUnit a) := by rfl
+    ((liftEquiv R).symm g).val (Additive.ofMul a) = g (ofUnit a) := by rfl
 
 end LiftEquiv
 

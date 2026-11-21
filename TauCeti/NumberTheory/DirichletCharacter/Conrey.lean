@@ -306,7 +306,7 @@ theorem conreyPairing_eq_one_iff {N : ℕ} [NeZero N] (m : (ZMod N)ˣ) :
   apply (ZMod.unitsEquivPi hN).injective
   ext1 p
   rw [map_one, Pi.one_apply, ZMod.unitsEquivPi_apply,
-    ← conreyLocal_eq_one_iff (Nat.prime_of_mem_primeFactors p.2)]
+    ← conreyLocal_eq_one_iff (Nat.prime_of_mem_primeFactors p.property)]
   ext u : 1
   -- Pair `m` with the unit that is `u` modulo `p ^ v` and `1` modulo the other prime powers.
   let v : Π q : N.primeFactors, (ZMod (q ^ N.factorization q))ˣ := Pi.mulSingle p u

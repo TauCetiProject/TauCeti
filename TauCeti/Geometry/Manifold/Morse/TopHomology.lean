@@ -141,9 +141,9 @@ theorem IsMorse.projective_singularHomology_sublevelPair_of_manifoldMorseIndex_l
       @hasExactColimitsOfShape_discrete_finite A _ _ Abelian.hasFiniteBiproducts _ _
     have : IsEmpty (cell C (d + 1)) := (hcell (d + 1)).some.isEmpty_congr.2
       ⟨fun q ↦ by
-        have hq : f q.1.1 = f p := q.1.2.2
-        have := hd q.1.1 ⟨q.1.2.1, by rw [mem_preimage, hq]; exact ⟨hap.le, hpb.le⟩⟩
-        have := q.2
+        have hq : f q.val.val = f p := q.val.property.2
+        have := hd q.val.val ⟨q.val.property.1, by rw [mem_preimage, hq]; exact ⟨hap.le, hpb.le⟩⟩
+        have := q.property
         lia⟩
     have hzero := isZero_singularHomology_complexBasePair_of_isEmpty_cell C R (d + 1)
     have hproj := projective_singularHomology_complexBasePair_of_isEmpty_cell C R d
@@ -222,9 +222,9 @@ theorem IsMorse.free_singularHomology_sublevelPair_of_manifoldMorseIndex_le (hf 
     refine ⟨ε, hε, hεδ, ?_⟩
     have : IsEmpty (cell C (d + 1)) := (hcell (d + 1)).some.isEmpty_congr.2
       ⟨fun q ↦ by
-        have hq : f q.1.1 = f p := q.1.2.2
-        have := hd q.1.1 ⟨q.1.2.1, by rw [mem_preimage, hq]; exact ⟨hap.le, hpb.le⟩⟩
-        have := q.2
+        have hq : f q.val.val = f p := q.val.property.2
+        have := hd q.val.val ⟨q.val.property.1, by rw [mem_preimage, hq]; exact ⟨hap.le, hpb.le⟩⟩
+        have := q.property
         lia⟩
     have hzero := isZero_singularHomology_complexBasePair_of_isEmpty_cell C V (d + 1)
     have hfree := free_singularHomology_complexBasePair_of_isEmpty_cell C V d

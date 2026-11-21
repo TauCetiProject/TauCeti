@@ -115,7 +115,7 @@ theorem isSteinbergPairing_orderSignPairing : IsSteinbergPairing (orderSignPairi
   map_mul_right _ _ _ := by simp only [orderSignPairing_def, orderSign_mul, mul_add]
   steinberg a b hab := by
     rw [orderSignPairing_eq_ite]; split_ifs with h
-    · exact absurd (hab ▸ add_neg h.1 h.2) (not_lt_of_ge (zero_le_one (α := R)))
+    · exact absurd (hab ▸ add_neg h.left h.right) (not_lt_of_ge (zero_le_one (α := R)))
     · rfl
 
 end OrderedRing
@@ -203,7 +203,7 @@ noncomputable def orderSignDegree (n : ℕ) : degree R n →ₗ[ℤ] ZMod 2 :=
     ((orderSignPoly R).toIntAlgHom.toLinearMap.comp (degree R n).subtype)
 
 @[simp] theorem orderSignDegree_apply (n : ℕ) (x : degree R n) :
-    orderSignDegree R n x = (orderSignPoly R x.1).coeff n := by rfl
+    orderSignDegree R n x = (orderSignPoly R x.val).coeff n := by rfl
 theorem orderSignDegree_symbol {n : ℕ} (l : List Rˣ) (hl : l.length = n) :
     orderSignDegree R n ⟨symbol l, symbol_mem_degree_of_length hl⟩ = (l.map orderSign).prod := by
   rw [orderSignDegree_apply, coeff_orderSignPoly_symbol, ite_eq_left hl]

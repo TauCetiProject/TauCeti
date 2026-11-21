@@ -378,7 +378,7 @@ theorem ker_tensorPowerToDegree (R : Type u) [CommSemiring R] (n : ℕ) :
   · rintro ⟨z, hz, rfl⟩
     rw [TensorAlgebra.toTensorAlgebra_tensorPowerProjection_of_mem
       (milnorRelPiece_le_range_pow R n hz)]
-    exact (mem_ker_quotient_and_mem_range_pow_iff.mpr hz).1
+    exact (mem_ker_quotient_and_mem_range_pow_iff.mpr hz).left
 
 variable (R) in
 /-- **Degree-`n` presentation of Milnor K-theory**: `MilnorK.degree R n` is canonically
@@ -593,7 +593,7 @@ def mapDegree (f : R →+* S) (n : ℕ) : degree R n →ₗ[ℤ] degree S n :=
   ((gradedMap f).gradedAddHom n).toIntLinearMap
 
 @[simp] theorem mapDegree_coe (f : R →+* S) (n : ℕ) (x : degree R n) :
-    (mapDegree f n x : MilnorK S) = map f x.1 := by
+    (mapDegree f n x : MilnorK S) = map f x.val := by
   simp [mapDegree, gradedMap_apply]
 @[simp] theorem mapDegree_id (n : ℕ) : mapDegree (RingHom.id R) n = LinearMap.id := by ext x; simp
 @[simp] theorem mapDegree_comp (g : S →+* T) (f : R →+* S) (n : ℕ) :

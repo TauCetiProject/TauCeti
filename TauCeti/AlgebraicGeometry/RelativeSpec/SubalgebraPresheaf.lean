@@ -90,10 +90,10 @@ def sectionsPresheaf : X.Opensᵒᵖ ⥤ CommRingCat.{u} where
     fun _ ↦ S.restrictSections_mem i.unop)
   map_id U := by
     ext x
-    exact ConcreteCategory.congr_hom (A.sectionsPresheaf.map_id U) x.1
+    exact ConcreteCategory.congr_hom (A.sectionsPresheaf.map_id U) x.val
   map_comp i j := by
     ext x
-    exact ConcreteCategory.congr_hom (A.sectionsPresheaf.map_comp i j) x.1
+    exact ConcreteCategory.congr_hom (A.sectionsPresheaf.map_comp i j) x.val
 
 @[simp]
 lemma sectionsPresheaf_obj (U : X.Opensᵒᵖ) :
@@ -154,7 +154,7 @@ lemma sectionsPresheafι_comp_sectionsPresheafMap {B : CommMon X.Modules} {f g :
     S.sectionsPresheafι ≫ sectionsPresheafMap f = S.sectionsPresheafι ≫ sectionsPresheafMap g := by
   ext U x
   simp only [NatTrans.comp_app, sectionsPresheafMap_app, sectionsPresheafι_app]
-  exact h _ _ x.2
+  exact h _ _ x.property
 
 /-- On the affine opens of `X`, the presheaf of rings `S.sectionsPresheaf` is coequifibered over
 the structure presheaf: its sections over basic opens are localizations. This is the condition
@@ -174,7 +174,7 @@ lemma IsCoequifibered.of_isLocalizationAway
         (S.sections (X.basicOpen r)) fun _ ↦ S.restrictSections_mem _).toAlgebra
       IsLocalization.Away (algebraMap Γ(X, U) (S.sections U) r) (S.sections (X.basicOpen r))) :
     S.IsCoequifibered :=
-  ⟨coequifibered_iff_forall_isLocalizationAway.mpr fun U r ↦ h U.2 r⟩
+  ⟨coequifibered_iff_forall_isLocalizationAway.mpr fun U r ↦ h U.property r⟩
 
 variable [S.IsCoequifibered]
 
@@ -211,7 +211,7 @@ instance isOpenImmersion_relativeSpecCover_f (U : X.AffineZariskiSite) :
   isOpenImmersion_relativeGluingData_cover_f _ U
 
 lemma relativeSpecCover_X (U : X.AffineZariskiSite) :
-    S.relativeSpecCover.X U = Spec (CommRingCat.of (S.sections U.1)) :=
+    S.relativeSpecCover.X U = Spec (CommRingCat.of (S.sections U.val)) :=
   relativeGluingData_cover_X _ U
 
 /-- Over an affine open `U`, the structure morphism of the relative spectrum of `S` is `Spec` of
@@ -219,19 +219,19 @@ the structure map `Γ(X, U) ⟶ S.sections U`. -/
 @[reassoc (attr := simp)]
 lemma relativeSpecCover_f_relativeSpecToBase (U : X.AffineZariskiSite) :
     S.relativeSpecCover.f U ≫ S.relativeSpecToBase =
-      Spec.map (S.toSectionsPresheaf.app (op U.1)) ≫ U.2.fromSpec :=
+      Spec.map (S.toSectionsPresheaf.app (op U.val)) ≫ U.property.fromSpec :=
   relativeGluingData_cover_f_toBase (IsCoequifibered.coequifibered_toSectionsPresheaf (S := S)) U
 
 /-- The preimage of an affine open `U` under the structure morphism of the relative spectrum of
 `S` is the image of its chart over `U`. -/
 lemma relativeSpecToBase_preimage (U : X.AffineZariskiSite) :
-    S.relativeSpecToBase ⁻¹ᵁ U.1 = (S.relativeSpecCover.f U).opensRange :=
+    S.relativeSpecToBase ⁻¹ᵁ U.val = (S.relativeSpecCover.f U).opensRange :=
   relativeGluingData_toBase_preimage (IsCoequifibered.coequifibered_toSectionsPresheaf (S := S)) U
 
 /-- Over an affine open `U` of `X`, the relative spectrum of `S` is `Spec (S.sections U)`. -/
 lemma isPullback_relativeSpecCover (U : X.AffineZariskiSite) :
-    IsPullback (Spec.map (S.toSectionsPresheaf.app (op U.1)) ≫ U.2.isoSpec.inv)
-      (S.relativeSpecCover.f U) U.1.ι S.relativeSpecToBase :=
+    IsPullback (Spec.map (S.toSectionsPresheaf.app (op U.val)) ≫ U.property.isoSpec.inv)
+      (S.relativeSpecCover.f U) U.val.ι S.relativeSpecToBase :=
   isPullback_relativeGluingData_cover (IsCoequifibered.coequifibered_toSectionsPresheaf (S := S)) U
 
 /-- The structure morphism of the relative spectrum of `S` is affine. -/
@@ -243,12 +243,12 @@ relative spectrum of `S` exactly when it holds for `Spec` of the structure maps
 `Γ(X, U) ⟶ S.sections U` over the affine opens `U` of `X`. -/
 lemma relativeSpecToBase_iff (P : MorphismProperty Scheme.{u}) [IsZariskiLocalAtTarget P] :
     P S.relativeSpecToBase ↔ ∀ U : X.affineOpens,
-      P (Spec.map (CommRingCat.ofHom (algebraMap Γ(X, U.1) (S.sections U.1)))) := by
+      P (Spec.map (CommRingCat.ofHom (algebraMap Γ(X, U.val) (S.sections U.val)))) := by
   rw [IsZariskiLocalAtTarget.iff_of_iSup_eq_top (P := P) _ (iSup_affineOpens_eq_top X)]
   refine forall_congr' fun U ↦ ?_
   -- Over `U`, the restriction of the structure morphism is the chart of `S` over `U`.
-  have h := S.isPullback_relativeSpecCover ⟨U.1, U.2⟩
-  have h' := isPullback_morphismRestrict S.relativeSpecToBase U.1
+  have h := S.isPullback_relativeSpecCover ⟨U.val, U.property⟩
+  have h' := isPullback_morphismRestrict S.relativeSpecToBase U.val
   rw [← P.cancel_left_of_respectsIso (h.isoIsPullback _ _ h').hom,
     h.isoIsPullback_hom_fst _ _ h', P.cancel_right_of_respectsIso, toSectionsPresheaf_app]
   rfl
@@ -271,7 +271,7 @@ def relativeSpecπ : A.relativeSpec ⟶ S.relativeSpec :=
 @[reassoc (attr := simp)]
 lemma relativeSpecCover_f_relativeSpecπ (U : X.AffineZariskiSite) :
     A.relativeSpecCover.f U ≫ S.relativeSpecπ =
-      Spec.map (S.sectionsPresheafι.app (op U.1)) ≫ S.relativeSpecCover.f U :=
+      Spec.map (S.sectionsPresheafι.app (op U.val)) ≫ S.relativeSpecCover.f U :=
   ι_colimMap _ U
 
 /-- `S.relativeSpecπ` is a morphism over `X`. -/
@@ -283,21 +283,21 @@ lemma relativeSpecπ_relativeSpecToBase :
   -- Rebind the chart inclusions and the ring maps at their explicit sources and targets,
   -- rather than the definitionally equal objects of the open covers and of the presheaves, so
   -- that ordinary rewriting applies.
-  let ιA : Spec (CommRingCat.of Γ(A.X, U.1)) ⟶ A.relativeSpec := A.relativeSpecCover.f U
-  let ιS : Spec (CommRingCat.of (S.sections U.1)) ⟶ S.relativeSpec := S.relativeSpecCover.f U
-  let iU : CommRingCat.of (S.sections U.1) ⟶ CommRingCat.of Γ(A.X, U.1) :=
-    S.sectionsPresheafι.app (op U.1)
-  let eU : CommRingCat.of Γ(X, U.1) ⟶ CommRingCat.of (S.sections U.1) :=
-    S.toSectionsPresheaf.app (op U.1)
-  let aU : CommRingCat.of Γ(X, U.1) ⟶ CommRingCat.of Γ(A.X, U.1) :=
-    A.toSectionsPresheaf.app (op U.1)
+  let ιA : Spec (CommRingCat.of Γ(A.X, U.val)) ⟶ A.relativeSpec := A.relativeSpecCover.f U
+  let ιS : Spec (CommRingCat.of (S.sections U.val)) ⟶ S.relativeSpec := S.relativeSpecCover.f U
+  let iU : CommRingCat.of (S.sections U.val) ⟶ CommRingCat.of Γ(A.X, U.val) :=
+    S.sectionsPresheafι.app (op U.val)
+  let eU : CommRingCat.of Γ(X, U.val) ⟶ CommRingCat.of (S.sections U.val) :=
+    S.toSectionsPresheaf.app (op U.val)
+  let aU : CommRingCat.of Γ(X, U.val) ⟶ CommRingCat.of Γ(A.X, U.val) :=
+    A.toSectionsPresheaf.app (op U.val)
   have hπ : ιA ≫ S.relativeSpecπ = Spec.map iU ≫ ιS := S.relativeSpecCover_f_relativeSpecπ U
-  have hS : ιS ≫ S.relativeSpecToBase = Spec.map eU ≫ U.2.fromSpec :=
+  have hS : ιS ≫ S.relativeSpecToBase = Spec.map eU ≫ U.property.fromSpec :=
     S.relativeSpecCover_f_relativeSpecToBase U
-  have hA : ιA ≫ A.relativeSpecToBase = Spec.map aU ≫ U.2.fromSpec :=
+  have hA : ιA ≫ A.relativeSpecToBase = Spec.map aU ≫ U.property.fromSpec :=
     A.relativeSpecCover_f_relativeSpecToBase U
   have hcomp : eU ≫ iU = aU :=
-    NatTrans.congr_app S.toSectionsPresheaf_comp_sectionsPresheafι (op U.1)
+    NatTrans.congr_app S.toSectionsPresheaf_comp_sectionsPresheafι (op U.val)
   change ιA ≫ S.relativeSpecπ ≫ S.relativeSpecToBase = ιA ≫ A.relativeSpecToBase
   rw [reassoc_of% hπ, hS, ← Spec.map_comp_assoc, hcomp, hA]
 
@@ -310,13 +310,13 @@ lemma relativeSpecMap_relativeSpecπ {B : CommMon X.Modules} [B.X.IsQuasicoheren
   apply B.relativeSpec_hom_ext
   intro U
   -- Rebind the chart inclusions and the ring maps at their explicit sources, as above.
-  let ιA : Spec (CommRingCat.of Γ(A.X, U.1)) ⟶ A.relativeSpec := A.relativeSpecCover.f U
-  let ιB : Spec (CommRingCat.of Γ(B.X, U.1)) ⟶ B.relativeSpec := B.relativeSpecCover.f U
-  let ιS : Spec (CommRingCat.of (S.sections U.1)) ⟶ S.relativeSpec := S.relativeSpecCover.f U
-  let iU : CommRingCat.of (S.sections U.1) ⟶ CommRingCat.of Γ(A.X, U.1) :=
-    S.sectionsPresheafι.app (op U.1)
-  let hU (k : A ⟶ B) : CommRingCat.of Γ(A.X, U.1) ⟶ CommRingCat.of Γ(B.X, U.1) :=
-    CommRingCat.ofHom (sectionsAlgHom k U.1).toRingHom
+  let ιA : Spec (CommRingCat.of Γ(A.X, U.val)) ⟶ A.relativeSpec := A.relativeSpecCover.f U
+  let ιB : Spec (CommRingCat.of Γ(B.X, U.val)) ⟶ B.relativeSpec := B.relativeSpecCover.f U
+  let ιS : Spec (CommRingCat.of (S.sections U.val)) ⟶ S.relativeSpec := S.relativeSpecCover.f U
+  let iU : CommRingCat.of (S.sections U.val) ⟶ CommRingCat.of Γ(A.X, U.val) :=
+    S.sectionsPresheafι.app (op U.val)
+  let hU (k : A ⟶ B) : CommRingCat.of Γ(A.X, U.val) ⟶ CommRingCat.of Γ(B.X, U.val) :=
+    CommRingCat.ofHom (sectionsAlgHom k U.val).toRingHom
   have hπ : ιA ≫ S.relativeSpecπ = Spec.map iU ≫ ιS := S.relativeSpecCover_f_relativeSpecπ U
   have hB (k : A ⟶ B) : ιB ≫ relativeSpecMap k = Spec.map (hU k) ≫ ιA :=
     relativeSpecCover_f_relativeSpecMap k U
@@ -326,7 +326,7 @@ lemma relativeSpecMap_relativeSpecπ {B : CommMon X.Modules} [B.X.IsQuasicoheren
       Spec.map (iU ≫ hU k) ≫ ιS := by
     rw [reassoc_of% hB k, hπ, ← Spec.map_comp_assoc]
   have hι : iU ≫ hU f = iU ≫ hU g := by
-    have h := NatTrans.congr_app (S.sectionsPresheafι_comp_sectionsPresheafMap h) (op U.1)
+    have h := NatTrans.congr_app (S.sectionsPresheafι_comp_sectionsPresheafMap h) (op U.val)
     rwa [NatTrans.comp_app, NatTrans.comp_app, sectionsPresheafMap_app,
       sectionsPresheafMap_app] at h
   change ιB ≫ relativeSpecMap f ≫ S.relativeSpecπ = ιB ≫ relativeSpecMap g ≫ S.relativeSpecπ
@@ -336,7 +336,7 @@ lemma relativeSpecMap_relativeSpecπ {B : CommMon X.Modules} [B.X.IsQuasicoheren
 `S.sections U ⟶ Γ(A.X, U)`: the square formed with the two charts over `U` is a pullback
 square. -/
 lemma isPullback_relativeSpecπ (U : X.AffineZariskiSite) :
-    IsPullback (Spec.map (S.sectionsPresheafι.app (op U.1))) (A.relativeSpecCover.f U)
+    IsPullback (Spec.map (S.sectionsPresheafι.app (op U.val))) (A.relativeSpecCover.f U)
       (S.relativeSpecCover.f U) S.relativeSpecπ := by
   refine IsPullback.of_right ?_ (S.relativeSpecCover_f_relativeSpecπ U).symm
     (S.isPullback_relativeSpecCover U)
@@ -349,7 +349,7 @@ holds for `Spec` of the inclusions `S.sections U ⟶ Γ(A.X, U)` over the affine
 `X`. -/
 lemma relativeSpecπ_iff (P : MorphismProperty Scheme.{u}) [IsZariskiLocalAtTarget P] :
     P S.relativeSpecπ ↔ ∀ U : X.AffineZariskiSite,
-      P (Spec.map (CommRingCat.ofHom (algebraMap (S.sections U.1) Γ(A.X, U.1)))) := by
+      P (Spec.map (CommRingCat.ofHom (algebraMap (S.sections U.val) Γ(A.X, U.val)))) := by
   simp only [← sectionsPresheafι_app_eq_algebraMap]
   refine ⟨fun H U ↦ MorphismProperty.IsLocalAtTarget.of_isPullback S.relativeSpecCover U
     (S.isPullback_relativeSpecπ U).flip H,

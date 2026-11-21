@@ -57,15 +57,15 @@ theorem contMDiff_analyticMap (n : ℕ∞ω) :
   let _ := Ψ.analyticChartedSpace hΨ
   intro p
   obtain ⟨σ, x, rfl⟩ := Φ.exists_analyticAffineChartι_apply_eq hΦ p
-  let υ : Ψ.cones := ⟨f.leastCone σ.2, f.leastCone_mem σ.2⟩
-  have hσ := (Fan.isRegular_iff.mp hΦ) σ.1 σ.2
-  have hυ := (Fan.isRegular_iff.mp hΨ) υ.1 υ.2
+  let υ : Ψ.cones := ⟨f.leastCone σ.property, f.leastCone_mem σ.property⟩
+  have hσ := (Fan.isRegular_iff.mp hΦ) σ.val σ.property
+  have hυ := (Fan.isRegular_iff.mp hΨ) υ.val υ.property
   obtain ⟨l, B, hB⟩ := hσ.exists_basis_sum
   obtain ⟨l', C, hC⟩ := hυ.exists_basis_sum
-  have : Finite (ToricRay σ.1) := ToricRay.finite_of_fg hσ.fg
-  have : Finite (ToricRay υ.1) := ToricRay.finite_of_fg hυ.fg
-  let κ := Finite.equivFin (ToricRay σ.1)
-  let κ' := Finite.equivFin (ToricRay υ.1)
+  have : Finite (ToricRay σ.val) := ToricRay.finite_of_fg hσ.fg
+  have : Finite (ToricRay υ.val) := ToricRay.finite_of_fg hυ.fg
+  let κ := Finite.equivFin (ToricRay σ.val)
+  let κ' := Finite.equivFin (ToricRay υ.val)
   let g := (Φ.analyticChartGenerators σ).2
   let g' := (Ψ.analyticChartGenerators υ).2
   let _ := affinePointTopology g
@@ -81,7 +81,7 @@ theorem contMDiff_analyticMap (n : ℕ∞ω) :
     ((AffineSemigroupComplexPoint.contMDiff_comap Φ.lattice hσ.toIsToricCone hB κ Ψ.lattice
       hυ.toIsToricCone hC κ' g g'
       (dualSemigroupMap Φ.lattice Ψ.lattice f.latticeMap f.realMap f.map_lattice
-        (f.mapsTo_leastCone σ.2)) n).comp_contMDiffOn P.symm.contMDiffOn)
+        (f.mapsTo_leastCone σ.property)) n).comp_contMDiffOn P.symm.contMDiffOn)
   have hmem : P.target ∈ 𝓝 (Φ.analyticAffineChartι hΦ σ x) :=
     P.open_target.mem_nhds (hP ▸ mem_range_self x)
   refine (hloc.contMDiffAt hmem).congr_of_eventuallyEq ?_

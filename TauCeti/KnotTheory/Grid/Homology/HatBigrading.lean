@@ -20,10 +20,15 @@ For knot grids this is the bigrading of `G-hat`. For a link with several compone
 only the one-variable specialization: simply blocked link homology blocks one marking on
 each component.
 
-The homogeneous pieces are modules over the coefficient ring. We use the explicit
-`ModuleCat.restrictScalars` presentation of categorical homology to preserve its polynomial
-module structure and coefficient action. The internal decomposition prepares the bigraded
-Euler characteristic; no identification with the Alexander polynomial is asserted here.
+The homogeneous pieces are modules over the coefficient ring. The explicit
+`ModuleCat.restrictScalars` presentation fixes their coefficient action; the total homology
+retains its polynomial action, and each surviving variable lowers bidegree by `(2, 1)`.
+The internal decomposition prepares the bigraded Euler characteristic; no identification with the
+Alexander polynomial is asserted here.
+
+The comparison API descends cycle-level bigrading preservation to coefficient-linear
+homology maps and restricts degree-zero homology equivalences to their homogeneous pieces.
+It records forward and inverse membership and underlying-class equations for these restrictions.
 
 ## References
 
@@ -61,11 +66,11 @@ local instance : IsScalarTower R Poly ((C).homology ()) := IsScalarTower.of_comp
 private noncomputable def hatComplexGrading : InternalGrading R ((C).X ()) (ℤ × ℤ) :=
   (InternalGrading.mk (G.bigradedChainHatPiece R i)
     (G.isInternal_bigradedChainHatPiece R i)).map
-      ((G.1.simplyBlockedChainEquiv R i).symm.restrictScalars R)
+      ((G.val.simplyBlockedChainEquiv R i).symm.restrictScalars R)
 
 private theorem mem_hatComplexGrading_piece {g : ℤ × ℤ} {c : (C).X ()} :
     c ∈ (hatComplexGrading G R i).piece g ↔
-      G.1.simplyBlockedChainEquiv R i c ∈ G.bigradedChainHatPiece R i g := by
+      G.val.simplyBlockedChainEquiv R i c ∈ G.bigradedChainHatPiece R i g := by
   rw [hatComplexGrading, InternalGrading.mem_map_piece_iff]
   simp only [LinearEquiv.restrictScalars_symm_apply, LinearEquiv.symm_symm]
 
@@ -75,7 +80,7 @@ private theorem hatDifferential_homogeneous :
   rw [LinearMap.isHomogeneous_def]
   intro g c hc
   rw [mem_hatComplexGrading_piece] at hc ⊢
-  rw [G.1.simplyBlockedChainEquiv_d]
+  rw [G.val.simplyBlockedChainEquiv_d]
   simpa only [sub_eq_add_neg] using G.simplyBlockedDifferential_mem_bigradedChainHatPiece hc
 
 private noncomputable def hatHomologyEquiv :
@@ -105,8 +110,8 @@ chain has the specified bidegree. -/
 theorem mem_bigradedHatHomologyPiece_iff {g : ℤ × ℤ} {y : (Base).obj ((C).homology ())} :
     y ∈ G.bigradedHatHomologyPiece R i g ↔
       ∃ z : LinearMap.ker d,
-        G.1.simplyBlockedChainEquiv R i z ∈ G.bigradedChainHatPiece R i g ∧
-          G.1.oneVariableSpecializationHomologyClass R i z = y := by
+        G.val.simplyBlockedChainEquiv R i z ∈ G.bigradedChainHatPiece R i g ∧
+          G.val.oneVariableSpecializationHomologyClass R i z = y := by
   rw [bigradedHatHomologyPiece, bigradedHatHomologyGrading,
     InternalGrading.mem_map_piece_iff, InternalGrading.mem_homology_piece_iff]
   simp only [mem_hatComplexGrading_piece]
@@ -121,8 +126,8 @@ theorem mem_bigradedHatHomologyPiece_iff {g : ℤ × ℤ} {y : (Base).obj ((C).h
 /-- A homogeneous cycle represents a class of the same bidegree. -/
 theorem oneVariableSpecializationHomologyClass_mem_bigradedHatHomologyPiece
     {g : ℤ × ℤ} {z : LinearMap.ker d}
-    (hz : G.1.simplyBlockedChainEquiv R i z ∈ G.bigradedChainHatPiece R i g) :
-    G.1.oneVariableSpecializationHomologyClass R i z ∈ G.bigradedHatHomologyPiece R i g :=
+    (hz : G.val.simplyBlockedChainEquiv R i z ∈ G.bigradedChainHatPiece R i g) :
+    G.val.oneVariableSpecializationHomologyClass R i z ∈ G.bigradedHatHomologyPiece R i g :=
   (G.mem_bigradedHatHomologyPiece_iff R i).mpr ⟨z, hz, rfl⟩
 
 /-- The homogeneous pieces span the homology of the specialization. -/
@@ -157,5 +162,85 @@ theorem X_smul_mem_bigradedHatHomologyPiece (j : {c : Fin n // c ≠ i})
   rw [mem_hatComplexGrading_piece] at hc ⊢
   rw [map_smul]
   simpa only [sub_eq_add_neg] using G.X_smul_mem_bigradedChainHatPiece j hc
+
+section Comparison
+
+variable {m : ℕ} (H : OddComponentGridDiagram m) (j : Fin m)
+
+local notation "BaseH" => ModuleCat.restrictScalars
+  (MvPolynomial.C : R →+* MvPolynomial {c : Fin m // c ≠ j} R)
+local notation "D" => GridDiagram.simplyBlockedComplex H.val R j
+
+/-- Cycle-level homogeneity of the chain bigrading descends to the homology map.
+The class equation keeps this independent of how the homology comparison was constructed. -/
+theorem isHomogeneous_bigradedHatHomologyGrading_of_cycles {q : ℤ × ℤ}
+    (f : (Base).obj ((C).homology ()) →ₗ[R] (BaseH).obj ((D).homology ()))
+    (cycles : LinearMap.ker d → LinearMap.ker ((D).d () ()).hom)
+    (hclass : ∀ z, f (G.val.oneVariableSpecializationHomologyClass R i z) =
+      H.val.oneVariableSpecializationHomologyClass R j (cycles z))
+    (hdegree : ∀ (g : ℤ × ℤ) (z : LinearMap.ker d),
+      G.val.simplyBlockedChainEquiv R i z ∈ G.bigradedChainHatPiece R i g →
+      H.val.simplyBlockedChainEquiv R j (cycles z) ∈ H.bigradedChainHatPiece R j (g + q)) :
+    LinearMap.IsHomogeneous f (G.bigradedHatHomologyGrading R i).piece
+      (H.bigradedHatHomologyGrading R j).piece q := by
+  rw [LinearMap.isHomogeneous_def]
+  intro g y hy
+  rw [bigradedHatHomologyGrading_piece] at ⊢
+  rw [bigradedHatHomologyGrading_piece] at hy
+  obtain ⟨z, hz, rfl⟩ := (G.mem_bigradedHatHomologyPiece_iff R i).mp hy
+  rw [hclass]
+  exact H.oneVariableSpecializationHomologyClass_mem_bigradedHatHomologyPiece R j
+    (hdegree g z hz)
+
+/-- A degree-zero homology equivalence preserves and reflects each homogeneous piece. -/
+theorem linearEquiv_mem_bigradedHatHomologyPiece_iff
+    (e : (Base).obj ((C).homology ()) ≃ₗ[R] (BaseH).obj ((D).homology ()))
+    (he : LinearMap.IsHomogeneous e.toLinearMap (G.bigradedHatHomologyGrading R i).piece
+      (H.bigradedHatHomologyGrading R j).piece 0) (g : ℤ × ℤ)
+    (y : (Base).obj ((C).homology ())) :
+    e y ∈ H.bigradedHatHomologyPiece R j g ↔ y ∈ G.bigradedHatHomologyPiece R i g := by
+  simpa only [bigradedHatHomologyGrading_piece] using he.linearEquiv_mem_piece_iff g y
+
+/-- The inverse degree-zero equivalence also preserves and reflects homogeneous pieces. -/
+theorem linearEquiv_symm_mem_bigradedHatHomologyPiece_iff
+    (e : (Base).obj ((C).homology ()) ≃ₗ[R] (BaseH).obj ((D).homology ()))
+    (he : LinearMap.IsHomogeneous e.toLinearMap (G.bigradedHatHomologyGrading R i).piece
+      (H.bigradedHatHomologyGrading R j).piece 0) (g : ℤ × ℤ)
+    (y : (BaseH).obj ((D).homology ())) :
+    e.symm y ∈ G.bigradedHatHomologyPiece R i g ↔ y ∈ H.bigradedHatHomologyPiece R j g := by
+  simpa only [LinearEquiv.apply_symm_apply] using
+    (G.linearEquiv_mem_bigradedHatHomologyPiece_iff R i H j e he g (e.symm y)).symm
+
+/-- Restrict a degree-zero homology equivalence to a specified homogeneous piece. -/
+noncomputable def bigradedHatHomologyPieceEquiv
+    (e : (Base).obj ((C).homology ()) ≃ₗ[R] (BaseH).obj ((D).homology ()))
+    (he : LinearMap.IsHomogeneous e.toLinearMap (G.bigradedHatHomologyGrading R i).piece
+      (H.bigradedHatHomologyGrading R j).piece 0) (g : ℤ × ℤ) :
+    G.bigradedHatHomologyPiece R i g ≃ₗ[R] H.bigradedHatHomologyPiece R j g :=
+  he.pieceEquiv g
+
+/-- The piece equivalence applies the total homology equivalence to underlying classes. -/
+@[simp]
+theorem coe_bigradedHatHomologyPieceEquiv_apply
+    (e : (Base).obj ((C).homology ()) ≃ₗ[R] (BaseH).obj ((D).homology ()))
+    (he : LinearMap.IsHomogeneous e.toLinearMap (G.bigradedHatHomologyGrading R i).piece
+      (H.bigradedHatHomologyGrading R j).piece 0) (g : ℤ × ℤ)
+    (y : G.bigradedHatHomologyPiece R i g) :
+    (G.bigradedHatHomologyPieceEquiv R i H j e he g y : (BaseH).obj ((D).homology ())) =
+      e y :=
+  he.coe_pieceEquiv_apply g y
+
+/-- The inverse piece equivalence applies the inverse total equivalence to underlying classes. -/
+@[simp]
+theorem coe_bigradedHatHomologyPieceEquiv_symm_apply
+    (e : (Base).obj ((C).homology ()) ≃ₗ[R] (BaseH).obj ((D).homology ()))
+    (he : LinearMap.IsHomogeneous e.toLinearMap (G.bigradedHatHomologyGrading R i).piece
+      (H.bigradedHatHomologyGrading R j).piece 0) (g : ℤ × ℤ)
+    (y : H.bigradedHatHomologyPiece R j g) :
+    ((G.bigradedHatHomologyPieceEquiv R i H j e he g).symm y :
+        (Base).obj ((C).homology ())) = e.symm y :=
+  he.coe_pieceEquiv_symm_apply g y
+
+end Comparison
 
 end TauCeti.OddComponentGridDiagram

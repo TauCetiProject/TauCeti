@@ -43,8 +43,8 @@ theorem eq_reCLM_smulRight_add_imCLM_smulRight {V : Type*} [SeminormedAddCommGro
 with the continuous linear maps `smulRightL` so that it can be postcomposed in families. -/
 theorem fun_eq_smulRightL_reCLM_add_smulRightL_imCLM {X V : Type*} [SeminormedAddCommGroup V]
     [NormedSpace ℝ V] (D : X → ℂ →L[ℝ] V) :
-    D = (fun x => smulRightL ℝ ℂ V Complex.reCLM (D x 1)) +
-      fun x => smulRightL ℝ ℂ V Complex.imCLM (D x Complex.I) := by
+    D = (fun x => smulRightL ℝ ℝ ℝ ℂ V Complex.reCLM (D x 1)) +
+      fun x => smulRightL ℝ ℝ ℝ ℂ V Complex.imCLM (D x Complex.I) := by
   funext x
   conv_lhs => rw [(D x).eq_reCLM_smulRight_add_imCLM_smulRight]
   ext z

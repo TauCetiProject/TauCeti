@@ -105,8 +105,8 @@ theorem range_pow_eq_span {M : Type*} [AddCommMonoid M] [Module R M] (f : M →�
   rw [Set.mem_pow]
   constructor
   · rintro ⟨x, rfl⟩
-    refine ⟨fun i => (x i).2.choose, ?_⟩
-    simp only [(x _).2.choose_spec]
+    refine ⟨fun i => (x i).property.choose, ?_⟩
+    simp only [(x _).property.choose_spec]
   · rintro ⟨x, rfl⟩
     exact ⟨fun i => ⟨f (x i), ⟨x i, rfl⟩⟩, rfl⟩
 
