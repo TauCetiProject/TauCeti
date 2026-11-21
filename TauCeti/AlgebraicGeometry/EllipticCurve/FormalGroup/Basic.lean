@@ -33,9 +33,6 @@ power-series-valued points whose constant coefficient is nilpotent.
 
 * `WeierstrassCurve.isComm_formalGroup`: the elliptic formal group law is commutative.
 * `WeierstrassCurve.map_formalGroup`: the construction commutes with base change.
-* `WeierstrassCurve.subst_pairSubstitution_formalAdd_eq`: substituting a pair `(a, b)` into the
-  `Unit ⊕ Unit`-indexed `formalAdd W` agrees with substituting `![a, b]` into
-  `(formalGroup W).toPowerSeries`.
 * `WeierstrassCurve.formalGroup_addInvX`: the abstract inverse is the geometric inverse parameter.
 * `WeierstrassCurve.nsmulSeries_two_formalGroup`: doubling is the inverse of the third
   intersection parameter of the tangent.
@@ -85,18 +82,6 @@ theorem map_formalGroup {S : Type*} [CommRing S] (W : WeierstrassCurve R) (φ : 
   apply FormalGroup.ext
   simp [formalGroup, MvPowerSeries.rename_map]
 
-/-- Substituting a pair `(a, b)` into the `Unit ⊕ Unit`-indexed `formalAdd W` agrees with
-substituting `![a, b]` into the `Fin 2`-indexed `(formalGroup W).toPowerSeries`. -/
-theorem subst_pairSubstitution_formalAdd_eq (W : WeierstrassCurve R) {σ : Type*}
-    {a b : MvPowerSeries σ R} (ha : PowerSeries.HasSubst a) (hb : PowerSeries.HasSubst b) :
-    subst (pairSubstitution a b) (formalAdd W) =
-      subst ![a, b] (formalGroup W).toPowerSeries := by
-  rw [formalGroup_toPowerSeries, MvPowerSeries.subst_rename unitSumUnitEquivFinTwo _
-    (MvPowerSeries.hasSubst_finTwo ha hb)]
-  congr 1
-  funext s
-  rcases s with ⟨⟨⟩⟩ | ⟨⟨⟩⟩ <;> simp
-
 /-- The formal group law of a Weierstrass curve is commutative. This makes its power-series-valued
 points whose constant coefficient is nilpotent an additive commutative monoid through Mathlib's
 standard instance. -/
@@ -118,18 +103,12 @@ theorem formalGroup_addInvX (W : WeierstrassCurve R) :
   apply Eq.symm
   apply ((formalGroup W).eq_addInvX_iff_subst_right_eq_zero W.hasSubst_formalInverse).mpr
   rw [formalGroup_toPowerSeries,
-    MvPowerSeries.subst_rename unitSumUnitEquivFinTwo _
-      (MvPowerSeries.hasSubst_of_constantCoeff_zero (by
-        intro i
-        fin_cases i
-        · exact PowerSeries.constantCoeff_X
-        · exact W.constantCoeff_formalInverse))]
-  convert W.subst_invPair_formalAdd using 1
-  congr 1
-  funext i
-  rcases i with i | i <;> cases i <;> simp
-  -- The one-variable `PowerSeries.X` is `MvPowerSeries.X ()`.
-  rfl
+    MvPowerSeries.subst_rename_unitSumUnitEquivFinTwo (formalAdd W)
+      PowerSeries.HasSubst.X' W.hasSubst_formalInverse,
+    show pairSubstitution (PowerSeries.X : PowerSeries R) W.formalInverse =
+      Sum.elim X (fun _ => W.formalInverse) from
+      funext fun j => by rcases j with ⟨⟩ | ⟨⟩ <;> rfl]
+  exact W.subst_invPair_formalAdd
 
 /-- The doubling series is the geometric inverse of the tangent's third intersection parameter.
 This identity holds for every Weierstrass curve over a commutative ring. -/
@@ -140,13 +119,13 @@ theorem nsmulSeries_two_formalGroup (W : WeierstrassCurve R) :
   have hX : HasSubst (fun _ : Unit ⊕ Unit => (PowerSeries.X : PowerSeries R)) :=
     hasSubst_of_constantCoeff_zero fun _ => PowerSeries.constantCoeff_X
   rw [FormalGroup.nsmulSeries_succ, FormalGroup.nsmulSeries_one,
-    formalGroup_toPowerSeries, subst_rename _ _ (PowerSeries.hasSubst_pair
-      PowerSeries.constantCoeff_X PowerSeries.constantCoeff_X)]
-  have hfamily : (![PowerSeries.X, PowerSeries.X] : Fin 2 → PowerSeries R) ∘
-      unitSumUnitEquivFinTwo = fun _ => PowerSeries.X := by
-    funext s
-    rcases s with ⟨⟨⟩⟩ | ⟨⟨⟩⟩ <;> simp
-  rw [hfamily, formalAdd_def, ← PowerSeries.subst_def,
+    formalGroup_toPowerSeries,
+    subst_rename_unitSumUnitEquivFinTwo (formalAdd W)
+      PowerSeries.HasSubst.X' PowerSeries.HasSubst.X',
+    show pairSubstitution (PowerSeries.X : PowerSeries R) PowerSeries.X =
+      fun _ : Unit ⊕ Unit => (PowerSeries.X : PowerSeries R) from
+      funext fun s => by rcases s with ⟨⟨⟩⟩ | ⟨⟨⟩⟩ <;> rfl,
+    formalAdd_def, ← PowerSeries.subst_def,
     subst_powerSeriesSubst hX
       (PowerSeries.HasSubst.of_constantCoeff_zero W.constantCoeff_formalThirdRoot)]
 

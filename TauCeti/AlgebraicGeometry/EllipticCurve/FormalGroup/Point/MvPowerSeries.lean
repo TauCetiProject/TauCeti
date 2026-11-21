@@ -147,15 +147,8 @@ theorem dblAddXYZ_subst_formalW_eq_smul (hq₁ : PowerSeries.HasSubst q₁)
   have hvF := W.substAlgHom_pair_comp_formalVec hq₁ hq₂ (formalAdd W)
     (.of_constantCoeff_zero (constantCoeff_formalAdd W))
   simp only [subst_X hpair, pairSubstitution, Sum.elim_inl, Sum.elim_inr] at hv₁ hv₂
-  have hsF : MvPowerSeries.subst (pairSubstitution q₁ q₂) (formalAdd W) =
-      MvPowerSeries.subst ![q₁, q₂] (formalGroup W).toPowerSeries := by
-    have hcomp : (![q₁, q₂] : Fin 2 → MvPowerSeries σ R) ∘ TauCeti.unitSumUnitEquivFinTwo =
-        pairSubstitution q₁ q₂ := by
-      funext i
-      rcases i with ⟨⟨⟩⟩ | ⟨⟨⟩⟩ <;> simp [pairSubstitution]
-    rw [formalGroup_toPowerSeries,
-      MvPowerSeries.subst_rename TauCeti.unitSumUnitEquivFinTwo _ (hasSubst_finTwo hq₁ hq₂), hcomp]
-  rw [hsF] at hvF
+  rw [← MvPowerSeries.subst_rename_unitSumUnitEquivFinTwo (formalAdd W) hq₁ hq₂,
+    ← formalGroup_toPowerSeries] at hvF
   have key := congrArg (fun v ↦ (s : MvPowerSeries (Unit ⊕ Unit) R →+* MvPowerSeries σ R) ∘ v)
     W.dblAddXYZ_formalW_eq_smul
   rw [← Projective.map_dblAddXYZ, W.map_substAlgHom_pair hq₁ hq₂, hv₁, hv₂] at key

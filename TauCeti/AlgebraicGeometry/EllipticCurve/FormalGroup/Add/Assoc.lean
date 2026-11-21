@@ -128,6 +128,36 @@ private theorem subst_formalInverseDenom_eq {q : MvPowerSeries σ O}
   simp only [map_sub, map_one, map_mul, PowerSeries.substAlgHom_X,
     PowerSeries.coe_substAlgHom, PowerSeries.subst_C]
 
+private theorem fracCurve_a₁ :
+    (fracCurve W σ KK).a₁ = algebraMap (MvPowerSeries σ O) KK (C W.a₁) := by
+  rw [fracCurve_def, map_a₁, RingHom.comp_apply, c_eq_algebraMap]
+
+private theorem fracCurve_a₂ :
+    (fracCurve W σ KK).a₂ = algebraMap (MvPowerSeries σ O) KK (C W.a₂) := by
+  rw [fracCurve_def, map_a₂, RingHom.comp_apply, c_eq_algebraMap]
+
+private theorem fracCurve_a₃ :
+    (fracCurve W σ KK).a₃ = algebraMap (MvPowerSeries σ O) KK (C W.a₃) := by
+  rw [fracCurve_def, map_a₃, RingHom.comp_apply, c_eq_algebraMap]
+
+private theorem fracCurve_a₄ :
+    (fracCurve W σ KK).a₄ = algebraMap (MvPowerSeries σ O) KK (C W.a₄) := by
+  rw [fracCurve_def, map_a₄, RingHom.comp_apply, c_eq_algebraMap]
+
+private theorem fracCurve_a₆ :
+    (fracCurve W σ KK).a₆ = algebraMap (MvPowerSeries σ O) KK (C W.a₆) := by
+  rw [fracCurve_def, map_a₆, RingHom.comp_apply, c_eq_algebraMap]
+
+/-- The denominator of the formal inverse read at a parameter, pushed into `KK`. -/
+private theorem algebraMap_subst_formalInverseDenom_eq {q : MvPowerSeries σ O}
+    (hq : PowerSeries.HasSubst q) :
+    algebraMap (MvPowerSeries σ O) KK (PowerSeries.subst q (formalInverseDenom W)) =
+      1 - (fracCurve W σ KK).a₁ * algebraMap (MvPowerSeries σ O) KK q -
+        (fracCurve W σ KK).a₃ *
+          algebraMap (MvPowerSeries σ O) KK (PowerSeries.subst q (formalW W)) := by
+  rw [W.subst_formalInverseDenom_eq hq, map_sub, map_sub, map_one, map_mul, map_mul,
+    fracCurve_a₁, fracCurve_a₃]
+
 /-- The `w`-expansion at the inverted parameter: `w(ι(q)) = -(w(q) * u(q)⁻¹)`.
 
 This is the one-variable `subst_formalInverse_formalW` carried through the substitution `q`. -/
@@ -262,13 +292,15 @@ private theorem thetaPoint_add_eq_some (hΔ : (fracCurve W σ KK).Δ ≠ 0)
         3 * (fracCurve W σ KK).a₆ * ρ Λp ^ 2 * ρ Np) := by
     have h := congrArg ρ (subst_pair_formalThirdRoot_relation W h₁ h₂)
     simp only [map_add, map_mul, map_neg, map_pow, map_one, map_ofNat] at h
-    simpa [fracCurve_def, MvPowerSeries.c_eq_algebraMap] using h
+    rw [fracCurve_a₁, fracCurve_a₂, fracCurve_a₃, fracCurve_a₄, fracCurve_a₆]
+    exact h
   -- nonvanishing
   have hA : (1 + (fracCurve W σ KK).a₂ * ρ Λp + (fracCurve W σ KK).a₄ * ρ Λp ^ 2 +
       (fracCurve W σ KK).a₆ * ρ Λp ^ 3) ≠ 0 := by
     intro h
     refine subst_pair_thirdRootDenom_ne_zero W h₁ h₂ (hinj ?_)
-    simpa [fracCurve_def, MvPowerSeries.c_eq_algebraMap, map_zero] using h
+    rw [fracCurve_a₂, fracCurve_a₄, fracCurve_a₆] at h
+    simpa [map_zero] using h
   have hTp0 : Tp ≠ 0 := subst_pair_formalThirdRoot_ne_zero W h₁ h₂ hN
   have hw₁0 : ρ w₁ ≠ 0 := W.algebraMap_subst_formalW_ne_zero h₁ hq₁0
   have hw₂0 : ρ w₂ ≠ 0 := W.algebraMap_subst_formalW_ne_zero h₂ hq₂0
@@ -278,17 +310,15 @@ private theorem thetaPoint_add_eq_some (hΔ : (fracCurve W σ KK).Δ ≠ 0)
     rw [← map_mul, ← map_mul, ← map_sub]
     exact fun h ↦ hx (hinj (by rw [h, map_zero]))
   -- the two parametrized points satisfy the Weierstrass equation of `fracCurve W`
-  have hwq₁ := by
-    simpa [wEquationRHS_def] using
-      W.algebraMap_subst_formalW_wEquation (KK := KK)
-        (PowerSeries.HasSubst.of_constantCoeff_zero h₁)
-  have hwq₂ := by
-    simpa [wEquationRHS_def] using
-      W.algebraMap_subst_formalW_wEquation (KK := KK)
-        (PowerSeries.HasSubst.of_constantCoeff_zero h₂)
+  have hwq₁ := W.algebraMap_subst_formalW_wEquation (T := KK)
+    (PowerSeries.HasSubst.of_constantCoeff_zero h₁)
+  have hwq₂ := W.algebraMap_subst_formalW_wEquation (T := KK)
+    (PowerSeries.HasSubst.of_constantCoeff_zero h₂)
+  rw [← fracCurve_def W σ KK] at hwq₁ hwq₂
   -- the honest group law of `fracCurve W`, applied to the two points
-  have hns₁ := chord_point_nonsingular (fracCurve W σ KK) hwq₁ hw₁0 hΔ
-  have hns₂ := chord_point_nonsingular (fracCurve W σ KK) hwq₂ hw₂0 hΔ
+  have hns₁ := nonsingular_of_wEquation (fracCurve W σ KK) hwq₁ hw₁0 hΔ
+  have hns₂ := nonsingular_of_wEquation (fracCurve W σ KK) hwq₂ hw₂0 hΔ
+  rw [wEquationRHS_def] at hwq₁ hwq₂
   obtain ⟨h₃, hadd⟩ := chord_point_add (fracCurve W σ KK) hwq₁ hwq₂ hslope hNint hT₃ hwTeq hA
     hwT0 hxρ hns₁ hns₂
   rw [W.thetaPoint_eq_some hΔ h₁ hq₁0 hns₁, W.thetaPoint_eq_some hΔ h₂ hq₂0 hns₂]
@@ -331,10 +361,8 @@ private theorem some_eq_thetaPoint_formalAdd (hΔ : (fracCurve W σ KK).Δ ≠ 0
     exact congrArg ρ (subst_pair_formalInverseDenom_mul W h₁ h₂)
   have hsp0 := right_ne_zero_of_mul_eq_one hu
   have hueq : ρ (PowerSeries.subst Tp (formalInverseDenom W)) =
-      1 - (fracCurve W σ KK).a₁ * ρ Tp - (fracCurve W σ KK).a₃ * ρ wT := by
-    have h := congrArg ρ (subst_pair_formalInverseDenom_eq W h₁ h₂)
-    simp only [map_sub, map_mul, map_one] at h
-    simpa [fracCurve_def, MvPowerSeries.c_eq_algebraMap, PowerSeries.subst_def, ρ, Tp, wT] using h
+      1 - (fracCurve W σ KK).a₁ * ρ Tp - (fracCurve W σ KK).a₃ * ρ wT :=
+    W.algebraMap_subst_formalInverseDenom_eq (PowerSeries.HasSubst.of_constantCoeff_zero hTc)
   have hFeq : ρ (subst (pairSubstitution q₁ q₂) (formalAdd W)) = -(ρ Tp * ρ sp) := by
     have h := congrArg ρ (subst_pair_formalAdd_eq W h₁ h₂)
     simp only [map_neg, map_mul] at h
@@ -393,10 +421,8 @@ private theorem thetaPoint_neg (hΔ : (fracCurve W σ KK).Δ ≠ 0)
   have hsp0 := right_ne_zero_of_mul_eq_one hu
   have hueq : ρ (PowerSeries.subst q (formalInverseDenom W)) =
       1 - (fracCurve W σ KK).a₁ * ρ q -
-        (fracCurve W σ KK).a₃ * ρ (PowerSeries.subst q (formalW W)) := by
-    have h := congrArg ρ (W.subst_formalInverseDenom_eq hs)
-    simp only [map_sub, map_mul, map_one] at h
-    simpa [fracCurve_def, MvPowerSeries.c_eq_algebraMap, ← hρ] using h
+        (fracCurve W σ KK).a₃ * ρ (PowerSeries.subst q (formalW W)) :=
+    W.algebraMap_subst_formalInverseDenom_eq hs
   have hw0 : ρ (PowerSeries.subst q (formalW W)) ≠ 0 :=
     W.algebraMap_subst_formalW_ne_zero hq hq0
   rw [W.thetaPoint_eq_some hΔ hi hi0 (W.thetaPoint_nonsingular hΔ hi hi0),

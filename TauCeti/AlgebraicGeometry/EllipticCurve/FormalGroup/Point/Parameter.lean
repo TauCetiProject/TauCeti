@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Point
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.WExpansion
-import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.ThirdPoint
 import TauCeti.RingTheory.MvPowerSeries.NonZeroDivisors
+import TauCeti.RingTheory.PowerSeries.Substitution
 
 /-!
 # Parametrized affine points from formal-group parameters
@@ -33,7 +33,8 @@ curve `WeierstrassCurve.fracCurve W σ KK`, with coordinates `(q / w(q), -1 / w(
   a fraction field of the series ring.
 * `WeierstrassCurve.algebraMap_subst_formalW_ne_zero`: `w(q)` remains nonzero in `KK` whenever
   `MvPowerSeries σ O` acts faithfully on `KK`.
-* `WeierstrassCurve.thetaPoint_nonsingular`, `WeierstrassCurve.thetaPoint_eq_some`, and
+* `WeierstrassCurve.thetaPoint_nonsingular`, `WeierstrassCurve.thetaPoint_eq_some`,
+  `WeierstrassCurve.xCoord_thetaPoint`, `WeierstrassCurve.yCoord_thetaPoint`, and
   `WeierstrassCurve.thetaPoint_inj`: nonsingularity, affine coordinates, and injectivity of `θ`.
 
 ## References
@@ -82,44 +83,16 @@ theorem fracCurve_eq_baseChange (W : WeierstrassCurve O) {σ : Type*} {KK : Type
   rw [fracCurve_def, WeierstrassCurve.baseChange,
     ← IsScalarTower.algebraMap_eq O (MvPowerSeries σ O) KK]
 
-variable (W : WeierstrassCurve O) {σ : Type*} {KK : Type*} [Field KK]
-  [Algebra (MvPowerSeries σ O) KK]
-
-/-- The `w`-expansion read at a substitutable parameter still solves the `w`-equation after being
-pushed into `KK`, where the equation is the one of `fracCurve W`.
-
-`subst_formalW_wEquation` is the same fixed point one level down, over `MvPowerSeries σ O`; here
-the parameter and the solution are both read in `KK`, so the coefficients travel across the base
-change too and the curve on the right is `fracCurve W σ KK` rather than `W`. Consumers such as
-`chord_point_nonsingular` want the equation written out, so this is normally applied through
-`simpa [wEquationRHS_def] using …`. -/
-theorem algebraMap_subst_formalW_wEquation {q : MvPowerSeries σ O}
-    (hq : PowerSeries.HasSubst q) :
-    algebraMap (MvPowerSeries σ O) KK (PowerSeries.subst q (formalW W)) = wEquationRHS
-      (fracCurve W σ KK) (algebraMap (MvPowerSeries σ O) KK q)
-      (algebraMap (MvPowerSeries σ O) KK (PowerSeries.subst q (formalW W))) := by
-  conv_lhs => rw [subst_formalW_wEquation W hq]
-  simp [fracCurve_def, wEquationRHS_def]
+variable (W : WeierstrassCurve O) {σ : Type*}
 
 variable [IsDomain O] in
 /-- Over a domain the `w`-expansion at a nonzero parameter with vanishing constant coefficient is
-itself nonzero: it factors as `q ^ 3 * u(q)`, and `u` has constant coefficient `1`. -/
+itself nonzero. -/
 private theorem subst_formalW_ne_zero {q : MvPowerSeries σ O} (hq : constantCoeff q = 0)
-    (hq0 : q ≠ 0) : PowerSeries.subst q (formalW W) ≠ 0 := by
-  have hs : PowerSeries.HasSubst q := PowerSeries.HasSubst.of_constantCoeff_zero hq
-  have hexp : PowerSeries.subst q (formalW W) = q ^ 3 * PowerSeries.subst q (formalU W) := by
-    conv_lhs => rw [formalW_eq_X_pow_mul_formalU]
-    rw [← PowerSeries.coe_substAlgHom hs, map_mul, map_pow, PowerSeries.coe_substAlgHom hs,
-      PowerSeries.subst_X hs]
-  rw [hexp]
-  refine mul_ne_zero (pow_ne_zero 3 hq0) fun h ↦ ?_
-  have hc := congrArg constantCoeff h
-  rw [map_zero, PowerSeries.constantCoeff_subst hs] at hc
-  rw [finsum_eq_single _ 0 fun d hd ↦ ?_] at hc
-  · rw [PowerSeries.coeff_zero_eq_constantCoeff, constantCoeff_formalU, pow_zero, map_one,
-      smul_eq_mul, mul_one] at hc
-    exact one_ne_zero hc
-  · rw [map_pow, hq, zero_pow hd, smul_zero]
+    (hq0 : q ≠ 0) : PowerSeries.subst q (formalW W) ≠ 0 :=
+  (PowerSeries.subst_eq_zero_iff hq hq0).not.mpr (formalW_ne_zero W)
+
+variable {KK : Type*} [Field KK] [Algebra (MvPowerSeries σ O) KK]
 
 variable [FaithfulSMul (MvPowerSeries σ O) KK] in
 /-- The `w`-expansion at a nonzero parameter stays nonzero after being pushed into `KK`: a
@@ -153,10 +126,10 @@ theorem thetaPoint_nonsingular (hΔ : (fracCurve W σ KK).Δ ≠ 0)
       (algebraMap (MvPowerSeries σ O) KK q /
         algebraMap (MvPowerSeries σ O) KK (PowerSeries.subst q (formalW W)))
       (-1 / algebraMap (MvPowerSeries σ O) KK (PowerSeries.subst q (formalW W))) :=
-  chord_point_nonsingular (fracCurve W σ KK)
+  nonsingular_of_wEquation (fracCurve W σ KK)
     (by
-      simpa [wEquationRHS_def] using
-        W.algebraMap_subst_formalW_wEquation (KK := KK)
+      simpa [fracCurve_def] using
+        W.algebraMap_subst_formalW_wEquation (T := KK)
           (PowerSeries.HasSubst.of_constantCoeff_zero hq))
     (W.algebraMap_subst_formalW_ne_zero hq hq0)
     hΔ
@@ -178,6 +151,30 @@ theorem thetaPoint_eq_some (hΔ : (fracCurve W σ KK).Δ ≠ 0) {q : MvPowerSeri
       (-1 / algebraMap (MvPowerSeries σ O) KK (PowerSeries.subst q (formalW W)))) :
     W.thetaPoint hΔ hq hq0 = .some _ _ h :=
   (rfl)
+
+/-- The parametrized point `θ(q)` is not the point at infinity. -/
+@[simp]
+theorem thetaPoint_ne_zero (hΔ : (fracCurve W σ KK).Δ ≠ 0) {q : MvPowerSeries σ O}
+    (hq : constantCoeff q = 0) (hq0 : q ≠ 0) :
+    W.thetaPoint hΔ hq hq0 ≠ 0 :=
+  Affine.Point.some_ne_zero _
+
+/-- The `x`-coordinate of the parametrized point `θ(q)` is `q / w(q)` in `KK`. -/
+@[simp]
+theorem xCoord_thetaPoint (hΔ : (fracCurve W σ KK).Δ ≠ 0) {q : MvPowerSeries σ O}
+    (hq : constantCoeff q = 0) (hq0 : q ≠ 0) :
+    (W.thetaPoint hΔ hq hq0).xCoord =
+      algebraMap (MvPowerSeries σ O) KK q /
+        algebraMap (MvPowerSeries σ O) KK (PowerSeries.subst q (formalW W)) :=
+  Affine.Point.xCoord_some _
+
+/-- The `y`-coordinate of the parametrized point `θ(q)` is `-w(q)⁻¹` in `KK`. -/
+@[simp]
+theorem yCoord_thetaPoint (hΔ : (fracCurve W σ KK).Δ ≠ 0) {q : MvPowerSeries σ O}
+    (hq : constantCoeff q = 0) (hq0 : q ≠ 0) :
+    (W.thetaPoint hΔ hq hq0).yCoord =
+      -(algebraMap (MvPowerSeries σ O) KK (PowerSeries.subst q (formalW W)))⁻¹ := by
+  simp [thetaPoint, neg_div]
 
 /-- **The parametrized point determines the parameter**: `θ` is injective.
 

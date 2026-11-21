@@ -13,6 +13,7 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Add.Assoc
 import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Add.PairSubst
 import TauCeti.AlgebraicGeometry.EllipticCurve.Universal
 import TauCeti.RingTheory.Derivation.Localization
+import TauCeti.RingTheory.MvPowerSeries.Rename
 
 /-!
 # The invariant differential and the logarithm of the formal group of a Weierstrass curve
@@ -286,15 +287,6 @@ private theorem neg_two_add_ne_zero [IsFractionRing (MvPowerSeries σ R) KK] (h2
     map_ofNat] using
     (map_ne_zero_iff _ (IsFractionRing.injective (MvPowerSeries σ R) KK)).2 h
 
-/-- `(q, w(q))` solves the `w`-equation in `KK`. -/
-private theorem algebraMap_subst_formalW_eq_wEquationRHS {q : MvPowerSeries σ R}
-    (hq : constantCoeff q = 0) :
-    algebraMap (MvPowerSeries σ R) KK (PowerSeries.subst q (formalW W)) =
-      wEquationRHS W (algebraMap (MvPowerSeries σ R) KK q)
-        (algebraMap (MvPowerSeries σ R) KK (PowerSeries.subst q (formalW W))) := by
-  rw [← algebraMap_wEquationRHS,
-    ← subst_formalW_wEquation _ (PowerSeries.HasSubst.of_constantCoeff_zero hq)]
-
 /-- **The invariant differential at a point with a series parameter** under explicit non-vanishing
 of `-2 + a₁q + a₃w(q)` (covering characteristic `2` as well). Put `(x, y) = (q / w(q), -1 / w(q))`
 in `KK` with totalized division; every `R`-derivation `D : Derivation R KK M` satisfies
@@ -316,8 +308,12 @@ theorem inv_smul_derivation_div_subst_formalW_of_neg_two_add_ne_zero
         D (algebraMap (MvPowerSeries σ R) KK q) := by
   have hG0 := W.algebraMap_subst_formalInvariantDifferentialDenom_ne_zero (KK := KK) hq
   rw [W.algebraMap_subst_formalInvariantDifferentialDenom hq] at hG0 ⊢
-  exact W.inv_evalEval_polynomialY_smul_derivation_div D
-    (W.algebraMap_subst_formalW_eq_wEquationRHS hq) hG0 hu
+  have heq : algebraMap (MvPowerSeries σ R) KK (PowerSeries.subst q (formalW W)) =
+      wEquationRHS W (algebraMap (MvPowerSeries σ R) KK q)
+        (algebraMap (MvPowerSeries σ R) KK (PowerSeries.subst q (formalW W))) := by
+    simpa [wEquationRHS_def, ← IsScalarTower.algebraMap_apply R (MvPowerSeries σ R) KK] using
+      W.algebraMap_subst_formalW_wEquation (T := KK) (PowerSeries.HasSubst.of_constantCoeff_zero hq)
+  exact W.inv_evalEval_polynomialY_smul_derivation_div D heq hG0 hu
 
 /-- **The invariant differential at a point with a series parameter.** Over a ring `R` in which
 `2 ≠ 0`, put `(x, y) = (q / w(q), -1 / w(q))` for the parameter `q`, with totalized division
@@ -355,19 +351,6 @@ private abbrev UnivSeries := MvPowerSeries (Fin 2) (MvPolynomial Coeff ℤ)
 /-- The fraction field of `UnivSeries`. -/
 private abbrev UnivField := FractionRing UnivSeries
 
-/-- The point with series parameter `q` is the affine point `(q / w(q), -1 / w(q))`. -/
-private theorem coords_thetaPoint (hΔ : (fracCurve Universal.curve (Fin 2) UnivField).Δ ≠ 0)
-    {q : UnivSeries} (hq : constantCoeff q = 0) (hq0 : q ≠ 0) :
-    Universal.curve.thetaPoint hΔ hq hq0 ≠ 0 ∧
-      Affine.Point.xCoord (Universal.curve.thetaPoint hΔ hq hq0) =
-        algebraMap UnivSeries UnivField q /
-          algebraMap UnivSeries UnivField (PowerSeries.subst q (formalW Universal.curve)) ∧
-      Affine.Point.yCoord (Universal.curve.thetaPoint hΔ hq hq0) =
-        -1 / algebraMap UnivSeries UnivField (PowerSeries.subst q (formalW Universal.curve)) := by
-  have h := Universal.curve.thetaPoint_nonsingular hΔ hq hq0
-  rw [thetaPoint_eq_some Universal.curve hΔ hq hq0 h]
-  exact ⟨Affine.Point.some_ne_zero h, Affine.Point.xCoord_some h, Affine.Point.yCoord_some h⟩
-
 /-- `2y + a₁x + a₃` does not vanish at the point `(q / w(q), -1 / w(q))`. -/
 private theorem evalEval_polynomialY_div_ne_zero {q : UnivSeries} (hq : constantCoeff q = 0)
     (hq0 : q ≠ 0) :
@@ -398,8 +381,9 @@ private theorem pderiv_mul_subst_formalInvariantDifferentialDenom_universal :
     simp [D, Derivation.extendOfIsLocalization_algebraMap]
   have hF : (formalGroup Universal.curve).toPowerSeries =
       subst (pairSubstitution (X 0 : UnivSeries) (X 1)) (formalAdd Universal.curve) := by
-    rw [Universal.curve.subst_pairSubstitution_formalAdd_eq (.X 0) (.X 1),
-      MvPowerSeries.finTwo_X_eq_X]
+    rw [← MvPowerSeries.subst_rename_unitSumUnitEquivFinTwo (formalAdd Universal.curve)
+        (.X 0) (.X 1),
+      ← formalGroup_toPowerSeries, MvPowerSeries.finTwo_X_eq_X]
     exact (congrFun MvPowerSeries.subst_self _).symm
   rw [hF]
   have hΔ := fracCurve_Δ_ne_zero Universal.curve (σ := Fin 2) (KK := UnivField)
@@ -415,9 +399,12 @@ private theorem pderiv_mul_subst_formalInvariantDifferentialDenom_universal :
   have hFc := constantCoeff_subst_pair_formalAdd Universal.curve hc₀ hc₁
   have hF0 := subst_pair_formalAdd_ne_zero Universal.curve hχ hc₀ hc₁ hχ₀ hχ₁
   -- the three points with parameters `X 0`, `X 1` and `F(X 0, X 1)`, and their sum relation
-  obtain ⟨-, hPx, hPy⟩ := coords_thetaPoint hΔ hc₀ h₀
-  obtain ⟨-, hQx, hQy⟩ := coords_thetaPoint hΔ hc₁ h₁
-  obtain ⟨-, hSx, hSy⟩ := coords_thetaPoint hΔ hFc hF0
+  have hPx := Universal.curve.xCoord_thetaPoint hΔ hc₀ h₀
+  have hPy := (Universal.curve.yCoord_thetaPoint hΔ hc₀ h₀).trans (by rw [← one_div, ← neg_div])
+  have hQx := Universal.curve.xCoord_thetaPoint hΔ hc₁ h₁
+  have hQy := (Universal.curve.yCoord_thetaPoint hΔ hc₁ h₁).trans (by rw [← one_div, ← neg_div])
+  have hSx := Universal.curve.xCoord_thetaPoint hΔ hFc hF0
+  have hSy := (Universal.curve.yCoord_thetaPoint hΔ hFc hF0).trans (by rw [← one_div, ← neg_div])
   have e := thetaPoint_add_of_subst_separates Universal.curve (KK := UnivField) hΔ hχ hc₀ hc₁
     h₀ h₁ hχ₀ hχ₁ hFc hF0
   generalize Universal.curve.thetaPoint hΔ hc₀ h₀ = P at hPx hPy e

@@ -46,6 +46,9 @@ reindexing the three-variable ambient ring as well, along
 
 * `MvPowerSeries.subst_rename`: substituting into `rename e p` reindexes the family, i.e. it is
   substituting `g ∘ e` into `p`.
+* `MvPowerSeries.subst_rename_unitSumUnitEquivFinTwo`: substituting `![a, b]` into a
+  `Unit ⊕ Unit`-indexed series reindexed to `Fin 2` agrees with substituting
+  `pairSubstitution a b` into the original series.
 * `MvPowerSeries.coeff_single_rename`: the coefficient of `rename e p` at the single-variable
   monomial `single (e i) n` is the coefficient of `p` at `single i n`, for any exponent `n`.
 * `PowerSeries.coeff_rename`: renaming the variables of `p` along `e : σ ≃ Unit` gives a
@@ -232,6 +235,16 @@ theorem subst_rename (e : σ → τ) [TendstoCofinite e] (p : MvPowerSeries σ R
     (rename e p).subst g = p.subst (g ∘ e) := by
   rw [rename_eq_subst, subst_comp_subst_apply (HasSubst.X_comp _) hg]
   simp [subst_X hg, Function.comp_def]
+
+/-- Substituting a pair `![a, b]` into a `Unit ⊕ Unit`-indexed series reindexed to `Fin 2` agrees
+with substituting `pairSubstitution a b` into the original series. -/
+theorem subst_rename_unitSumUnitEquivFinTwo (p : MvPowerSeries (Unit ⊕ Unit) R)
+    {a b : MvPowerSeries τ R} (ha : PowerSeries.HasSubst a) (hb : PowerSeries.HasSubst b) :
+    subst ![a, b] (rename unitSumUnitEquivFinTwo p) = subst (pairSubstitution a b) p := by
+  rw [subst_rename unitSumUnitEquivFinTwo _ (hasSubst_finTwo ha hb)]
+  congr 1
+  funext s
+  rcases s with ⟨⟨⟩⟩ | ⟨⟨⟩⟩ <;> simp
 
 /-- Reindexing an associative two-variable series from `Unit ⊕ Unit` to `Fin 2` preserves
 associativity in Mathlib's three-variable convention.

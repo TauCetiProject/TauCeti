@@ -58,11 +58,13 @@ equation at the substituted parameter rather than at `z`.
   `CommSemiring` for both.
 * `WeierstrassCurve.algebraMap_wEquationRHS`: the equation's right-hand side commutes with an
   algebra map, so a solution over a ring is a solution over any algebra over it.
-* `WeierstrassCurve.wEquation_of_equation`: the `w`-equation is the Weierstrass equation in the
-  coordinates `z = -x / y`, `w = -1 / y`.
-* `WeierstrassCurve.subst_wEquationRHS` and `WeierstrassCurve.subst_formalW_wEquation`:
-  substituting a series `q` into the equation gives the equation at `q`, so `w(q)` solves it
-  there. When moreover `constantCoeff q = 0`, `eq_subst_formalW_of_wEquation` combines this with
+* `WeierstrassCurve.wEquation_of_equation` and `WeierstrassCurve.nonsingular_of_wEquation`: the
+  `w`-equation is the Weierstrass equation in the coordinates `z = -x / y`, `w = -1 / y`, and
+  conversely a nonzero solution yields a nonsingular affine point.
+* `WeierstrassCurve.subst_wEquationRHS`, `WeierstrassCurve.subst_formalW_wEquation`, and
+  `WeierstrassCurve.algebraMap_subst_formalW_wEquation`: substituting a series `q` into the
+  equation gives the equation at `q`, so `w(q)` solves it there and across any commutative
+  algebra. When moreover `constantCoeff q = 0`, `eq_subst_formalW_of_wEquation` combines this with
   `eq_of_wEquation` to identify `w(q)` as the only such solution.
 * `WeierstrassCurve.formalWCoeff_recurrence`: the coefficientwise recurrence — each coefficient
   of `w(z)` above the leading one, from the strictly earlier ones. This is the form to compute
@@ -327,6 +329,18 @@ theorem wEquation_of_equation (W : WeierstrassCurve O) {x y : K}
   field_simp
   linear_combination -hxy
 
+/-- **The converse reading of `wEquation_of_equation`**, with smoothness: if `(q, w)` satisfies
+the `w`-equation over a field `F` with `w ≠ 0` and `W.Δ ≠ 0`, then `(q / w, -1 / w)` is a
+nonsingular affine point of `W`. -/
+theorem nonsingular_of_wEquation {F : Type*} [Field F] (W : WeierstrassCurve F) {q w : F}
+    (hw : w = wEquationRHS W q w) (hw0 : w ≠ 0) (hΔ : W.Δ ≠ 0) :
+    W.toAffine.Nonsingular (q / w) (-1 / w) := by
+  refine (W.toAffine.equation_iff_nonsingular_of_Δ_ne_zero hΔ).mp ?_
+  rw [Affine.equation_iff]
+  rw [wEquationRHS_def] at hw
+  field_simp
+  linear_combination hw
+
 end Equation
 
 /-- The `w`-equation in `R⟦z⟧` itself, where the structure map is `PowerSeries.C`. This is the
@@ -586,6 +600,19 @@ theorem subst_formalW_wEquation {τ S : Type*} [CommRing S] [Algebra R S] {a : M
     PowerSeries.subst a (formalW W) = wEquationRHS W a (PowerSeries.subst a (formalW W)) := by
   conv_lhs => rw [formalW_wEquation W]
   rw [subst_wEquationRHS W ha, PowerSeries.subst_X ha]
+
+/-- Pushing the substituted `w`-expansion into any commutative `MvPowerSeries τ S`-algebra `T`
+gives a solution of the `w`-equation of `W` base-changed to `T`. -/
+theorem algebraMap_subst_formalW_wEquation {τ S T : Type*} [CommRing S] [Algebra R S]
+    [CommRing T] [Algebra (MvPowerSeries τ S) T] {a : MvPowerSeries τ S}
+    (ha : PowerSeries.HasSubst a) :
+    algebraMap (MvPowerSeries τ S) T (PowerSeries.subst a (formalW W)) =
+      wEquationRHS
+        (W.map ((algebraMap (MvPowerSeries τ S) T).comp (algebraMap R (MvPowerSeries τ S))))
+        (algebraMap (MvPowerSeries τ S) T a)
+        (algebraMap (MvPowerSeries τ S) T (PowerSeries.subst a (formalW W))) := by
+  conv_lhs => rw [subst_formalW_wEquation W ha]
+  simp [wEquationRHS_def]
 
 /-- **The substituted `w`-expansion is the unique solution at the substituted parameter.** For a
 parameter `q` with vanishing constant coefficient, any series with vanishing constant coefficient

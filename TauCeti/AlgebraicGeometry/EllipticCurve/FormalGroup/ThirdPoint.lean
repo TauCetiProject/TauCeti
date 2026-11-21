@@ -12,9 +12,9 @@ public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Point
 
 Over a field, a point of a Weierstrass curve `W` away from the origin can be written in the
 `(z, w)`-chart of `WeierstrassCurve.formalW` as `(z / w, -1 / w)`, coming from the substitution
-`x = z / w`, `y = -1 / w`. This file proves that such a point is nonsingular, and that the chord
-construction in that chart computes the group law: the third intersection point of the chord
-through two of them is, after negation, their sum in `WeierstrassCurve.Affine.Point`.
+`x = z / w`, `y = -1 / w`. This file proves that the chord construction in that chart computes the
+group law: the third intersection point of the chord through two of them is, after negation, their
+sum in `WeierstrassCurve.Affine.Point`.
 
 Everything here is an identity between field elements. The parameters `Λ`, `N` and `z₃` of the
 chord enter as hypotheses saying they satisfy the defining relations — the same relations that
@@ -23,7 +23,6 @@ file is independent of the power-series development and can be applied to it lat
 
 ## Main results
 
-* `WeierstrassCurve.chord_point_nonsingular`: a point of the `(z, w)`-chart is nonsingular.
 * `WeierstrassCurve.chord_point_add`: the third point of the chord computes the group law.
 
 ## References
@@ -35,7 +34,7 @@ file is independent of the power-series development and can be applied to it lat
 Adapted from Michael Stoll's `EllipticCurves` project
 (`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, at `66889eada51a`),
 `EllipticCurves/WeierstrassFormalGroup/ThirdPoint.lean`, its `FieldChord` section —
-declarations `chord_x_ne`, `chord_point_nonsingular`, `chord_addX_addY` and `chord_point_add`.
+declarations `chord_x_ne`, `chord_addX_addY` and `chord_point_add`.
 -/
 
 public section
@@ -43,18 +42,6 @@ public section
 namespace WeierstrassCurve
 
 variable {F : Type*} [Field F] (W : WeierstrassCurve F)
-
-/-- The parametrized point `(q/w, -1/w)` is nonsingular whenever `(q, w)` satisfies the
-Weierstrass equation in the `(z, w)`-chart and the discriminant does not vanish. -/
-lemma chord_point_nonsingular {q w : F}
-    (hw : w = q ^ 3 + W.a₁ * q * w + W.a₂ * q ^ 2 * w + W.a₃ * w ^ 2 +
-      W.a₄ * q * w ^ 2 + W.a₆ * w ^ 3)
-    (hw0 : w ≠ 0) (hΔ : W.Δ ≠ 0) :
-    W.toAffine.Nonsingular (q / w) (-1 / w) := by
-  refine (W.toAffine.equation_iff_nonsingular_of_Δ_ne_zero hΔ).mp ?_
-  rw [Affine.equation_iff]
-  field_simp
-  linear_combination hw
 
 /-- The cubic in the chord parameter left by substituting the line `w = Λ z + N` into the
 `(z, w)`-form of the Weierstrass equation, with its leading coefficient carried as the parameter
