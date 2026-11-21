@@ -9,7 +9,7 @@ public import Mathlib.NumberTheory.JacobiSum.Basic
 public import TauCeti.NumberTheory.MulChar.Basic
 
 /-!
-# Transport of Jacobi sums
+# Jacobi sums: transport, shifts and scaling
 
 Mathlib's `jacobiSum_ringHomComp` moves a Jacobi sum `J(χ, ψ) = ∑ x, χ x * ψ (1 - x)` along a
 homomorphism of the coefficient ring. Here we also change the domain: if a ring isomorphism
