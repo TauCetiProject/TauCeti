@@ -121,33 +121,16 @@ private theorem foxMap_orientableRelator_eq (i : Fin g) (v : OrientableGenerator
     cocycles₁_map_mul, hdrop, htake, map_zero, zero_add, add_zero, hc, Rep.of_ρ,
     MonoidHom.comp_apply]
 
-/-- The value at the `i`-th commutator of the free cocycle with value `y` at `a_i` and zero at
-the other generators. -/
-private theorem freeCocycle_single_a_handle (i : Fin g) (y : V) :
-    freeCocycle (ρ.comp (PresentedGroup.mk _)) (Pi.single (.a i) y) (handle i) =
-      ρ (Orientable.a g 0 i)⁻¹ (ρ (Orientable.b g 0 i)⁻¹ y) - ρ (Orientable.a g 0 i)⁻¹ y := by
-  have := cocycles₁_apply_inv_mul_inv_mul_mul
-    ((freeCocycleEquiv (ρ.comp (PresentedGroup.mk {orientableRelator g 0}))).symm
-      (Pi.single (.a i) y)) (FreeGroup.of (.a i)) (FreeGroup.of (.b i))
-  simp only [coe_freeCocycleEquiv_symm_apply, freeCocycle_of, Pi.single_eq_same,
-    ne_eq, reduceCtorEq, not_false_eq_true, Pi.single_eq_of_ne, map_zero, sub_zero,
-    add_zero] at this
-  rw [handle, this]
-  simp [Orientable.a_def, Orientable.b_def, PresentedGroup.of, mul_apply_eq_comp]
-
-/-- The value at the `i`-th commutator of the free cocycle with value `y` at `b_i` and zero at
-the other generators. -/
-private theorem freeCocycle_single_b_handle (i : Fin g) (y : V) :
-    freeCocycle (ρ.comp (PresentedGroup.mk _)) (Pi.single (.b i) y) (handle i) =
-      ρ (Orientable.a g 0 i)⁻¹ (ρ (Orientable.b g 0 i)⁻¹ (ρ (Orientable.a g 0 i) y)) -
-        ρ (Orientable.a g 0 i)⁻¹ (ρ (Orientable.b g 0 i)⁻¹ y) := by
-  have := cocycles₁_apply_inv_mul_inv_mul_mul
-    ((freeCocycleEquiv (ρ.comp (PresentedGroup.mk {orientableRelator g 0}))).symm
-      (Pi.single (.b i) y)) (FreeGroup.of (.a i)) (FreeGroup.of (.b i))
-  simp only [coe_freeCocycleEquiv_symm_apply, freeCocycle_of, Pi.single_eq_same,
-    ne_eq, reduceCtorEq, not_false_eq_true, Pi.single_eq_of_ne, map_zero, sub_zero,
-    zero_add] at this
-  rw [handle, this]
+/-- The value at the `i`-th commutator `a_i⁻¹ b_i⁻¹ a_i b_i` of the free cocycle with values `v`
+at the generators: Fox's formula `(ρ (a_i⁻¹ b_i⁻¹) - ρ a_i⁻¹) (v a_i) +
+(ρ (a_i⁻¹ b_i⁻¹ a_i) - ρ (a_i⁻¹ b_i⁻¹)) (v b_i)`. -/
+private theorem freeCocycle_handle (i : Fin g) (v : OrientableGenerator g 0 → V) :
+    freeCocycle (ρ.comp (PresentedGroup.mk _)) v (handle i) =
+      ρ (Orientable.a g 0 i)⁻¹ (ρ (Orientable.b g 0 i)⁻¹ (v (.a i))) -
+        ρ (Orientable.a g 0 i)⁻¹ (v (.a i)) +
+      (ρ (Orientable.a g 0 i)⁻¹ (ρ (Orientable.b g 0 i)⁻¹ (ρ (Orientable.a g 0 i) (v (.b i)))) -
+        ρ (Orientable.a g 0 i)⁻¹ (ρ (Orientable.b g 0 i)⁻¹ (v (.b i)))) := by
+  rw [handle, ← coe_freeCocycleEquiv_symm_apply, cocycles₁_apply_inv_mul_inv_mul_mul]
   simp [Orientable.a_def, Orientable.b_def, PresentedGroup.of, mul_apply_eq_comp]
 
 /-- A functional invariant under `c` is invariant under `c⁻¹`. -/
@@ -191,11 +174,13 @@ private theorem apply_eq_of_forall_foxMap_take (ψ : Module.Dual k V)
     obtain ⟨ha, hb⟩ := apply_eq_of_handle ρ (ψ := ψ) (a := Orientable.a g 0 i)
       (b := Orientable.b g 0 i) (fun y ↦ by
         have := hψ (Pi.single (.a i) y)
-        rwa [foxMap_orientableRelator_eq ρ i _ (hsupp _ y (.inl rfl)), hP,
-          freeCocycle_single_a_handle, map_sub, sub_eq_zero] at this) (fun y ↦ by
+        rw [foxMap_orientableRelator_eq ρ i _ (hsupp _ y (.inl rfl)), hP,
+          freeCocycle_handle] at this
+        simpa [sub_eq_zero] using this) (fun y ↦ by
         have := hψ (Pi.single (.b i) y)
-        rwa [foxMap_orientableRelator_eq ρ i _ (hsupp _ y (.inr rfl)), hP,
-          freeCocycle_single_b_handle, map_sub, sub_eq_zero] at this)
+        rw [foxMap_orientableRelator_eq ρ i _ (hsupp _ y (.inr rfl)), hP,
+          freeCocycle_handle] at this
+        simpa [sub_eq_zero] using this)
     refine ⟨fun y ↦ ?_, fun j hj ↦ ?_⟩
     · have hmk : PresentedGroup.mk {orientableRelator g 0} (handle i) =
           (Orientable.a g 0 i)⁻¹ * (Orientable.b g 0 i)⁻¹ * Orientable.a g 0 i *
@@ -244,10 +229,6 @@ theorem range_foxMap_orientableRelator :
 
 variable [FiniteDimensional k V]
 
-private theorem card_orientableGenerator : Fintype.card (OrientableGenerator g 0) = 2 * g := by
-  rw [Fintype.card_congr (OrientableGenerator.equivSum g 0)]
-  simp [two_mul]
-
 /-- **The dimension of the one-cocycles of a closed surface group.** For a representation of
 `S⁺(g, 0)` on a finite-dimensional space `V`,
 `dim Z¹(S⁺(g, 0), V) + dim V = 2g dim V + dim V_π`, where `V_π` is the space of coinvariants. -/
@@ -263,7 +244,8 @@ theorem finrank_cocycles₁_orientable_add_finrank :
   have hq : finrank k ρ.Coinvariants + finrank k (Coinvariants.ker ρ) = finrank k V :=
     Submodule.finrank_quotient_add_finrank (Coinvariants.ker ρ)
   rw [range_foxMap_orientableRelator, Module.finrank_pi_fintype] at hrn
-  simp only [Finset.sum_const, Finset.card_univ, card_orientableGenerator, smul_eq_mul] at hrn
+  simp only [Finset.sum_const, Finset.card_univ, card_orientableGenerator, add_zero,
+    smul_eq_mul] at hrn
   omega
 
 end Fox

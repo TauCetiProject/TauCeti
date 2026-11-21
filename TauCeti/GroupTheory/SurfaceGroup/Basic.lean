@@ -64,6 +64,8 @@ surface glued from two pieces along a boundary curve.
 
 ## Main results
 
+* `TauCeti.SurfaceGroup.card_orientableGenerator`: the presentation of `S⁺(g, m)` has `2g + m`
+  generators.
 * `TauCeti.SurfaceGroup.orientableRelator_mem_commutator`: the relator `[a₁, b₁] ⋯ [a_g, b_g]` of
   the closed orientable surface group `S⁺(g, 0)` lies in the commutator subgroup of the free group.
 * `TauCeti.SurfaceGroup.Nonorientable.commute_c_iff`: two generators `cᵢ` and `cⱼ` of `S⁻(g, m)`
@@ -263,6 +265,12 @@ theorem equivSum_symm_inl_inr (i : Fin g) : (equivSum g m).symm (.inl (.inr i)) 
 theorem equivSum_symm_inr (j : Fin m) : (equivSum g m).symm (.inr j) = .peripheral j := (rfl)
 
 end OrientableGenerator
+
+/-- The presentation of `S⁺(g, m)` has `2g + m` generators. -/
+theorem card_orientableGenerator (g m : ℕ) :
+    Fintype.card (OrientableGenerator g m) = 2 * g + m := by
+  rw [Fintype.card_congr (OrientableGenerator.equivSum g m)]
+  simp [two_mul]
 
 namespace NonorientableGenerator
 

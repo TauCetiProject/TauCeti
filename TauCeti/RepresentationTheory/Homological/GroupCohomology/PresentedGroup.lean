@@ -76,6 +76,10 @@ private theorem linear_freeAffineHom (v : X → V) (w : FreeGroup X) (y : V) :
     FreeGroup.ext_hom _ _ fun x ↦ LinearEquiv.ext fun y ↦ by
       simp only [freeAffineHom, MonoidHom.coe_comp, Function.comp_apply, FreeGroup.lift_apply_of,
         AffineEquiv.linearHom_apply, MulEquiv.coe_toMonoidHom]
+      -- Mathlib has no lemmas for the linear parts of `AffineEquiv.trans`,
+      -- `AffineEquiv.constVAdd` and `LinearEquiv.toAffineEquiv`; by definition they are the
+      -- composite, the identity and the linear equivalence itself, so the linear part of the
+      -- generator's image is the unit `generalLinearEquiv k V (ρ.asGroupHom (of x))`.
       rfl
   simpa [asGroupHom_apply] using congrArg (fun φ ↦ (φ w : V ≃ₗ[k] V) y) this
 
@@ -216,17 +220,16 @@ theorem range_cocyclesEvalOf : LinearMap.range (cocyclesEvalOf ρ) =
         FreeGroup.lift (fun x ↦ freeAffineHom σ v (FreeGroup.of x)) r = 1 := by
       rw [hlift]
       refine AffineEquiv.ext fun y ↦ ?_
-      rw [freeAffineHom_apply, ← foxMap_apply, hv r hr, add_zero, MonoidHom.comp_apply,
-        PresentedGroup.one_of_mem hr, map_one, one_apply_eq_self, AffineEquiv.coe_one, id_eq]
+      simp [σ, freeAffineHom_apply, ← foxMap_apply, hv r hr, PresentedGroup.one_of_mem hr]
     set φ := PresentedGroup.toGroup hrels
-    have hφ (w : FreeGroup X) : φ (PresentedGroup.mk rels w) = freeAffineHom σ v w := by
-      rw [← MonoidHom.comp_apply, ← hlift]
-      exact DFunLike.congr_fun (FreeGroup.ext_hom _ _ fun x ↦ PresentedGroup.toGroup.of hrels) w
+    have hφ (w : FreeGroup X) : φ (PresentedGroup.mk rels w) 0 = freeCocycle σ v w := by
+      rw [freeCocycle, ← MonoidHom.comp_apply, ← hlift]
+      exact DFunLike.congr_fun (DFunLike.congr_fun
+        (FreeGroup.ext_hom _ _ fun x ↦ PresentedGroup.toGroup.of hrels) w) 0
     refine ⟨⟨fun g ↦ φ g 0, (mem_cocycles₁_iff _).2 fun g h ↦ ?_⟩, funext fun x ↦ ?_⟩
     · obtain ⟨w, rfl⟩ := PresentedGroup.mk_surjective rels g
       obtain ⟨w', rfl⟩ := PresentedGroup.mk_surjective rels h
-      rw [← map_mul, hφ, hφ, hφ, ← freeCocycle, ← freeCocycle, ← freeCocycle, freeCocycle_mul,
-        Rep.of_ρ, MonoidHom.comp_apply]
+      rw [← map_mul, hφ, hφ, hφ, freeCocycle_mul, Rep.of_ρ, MonoidHom.comp_apply]
     · exact (DFunLike.congr_fun (PresentedGroup.toGroup.of hrels) 0).trans (freeCocycle_of σ v x)
 
 /-- **One-cocycles on a presented group are the tuples killed by the Fox maps of the
