@@ -54,6 +54,8 @@ bounds.
 * `MeasureTheory.integral_norm_sq_le_sq_mul_of_norm_le`: `‖f‖ ≤ c ‖g‖` almost everywhere gives
   `∫ ‖f‖² ≤ c² ∫ ‖g‖²`, and `MeasureTheory.memLp_clm_apply_and_integral_norm_sq_le` is its instance
   for operators bounded by `c` applied to `f`.
+* `MeasureTheory.tendsto_integral_norm_clm_apply_sub_sq`: a continuous linear map preserves
+  convergence in `L²`.
 * `MeasureTheory.exists_subseq_ae_tendsto_of_tendsto_integral_norm_sub_sq`: `∫ ‖f n - g‖² → 0`
   gives an almost everywhere convergent subsequence.
 * `MeasureTheory.lpNorm_congr_ae`: the `Lᵖ` norm of a function depends only on its almost
@@ -458,6 +460,20 @@ theorem memLp_clm_apply_and_integral_norm_sq_le {α 𝕜 E F : Type*} [Measurabl
     hf.of_le_mul ((isBoundedBilinearMap_apply (𝕜 := 𝕜) (E := E) (F := F)).continuous
       |>.comp_aestronglyMeasurable (hB.prodMk hf.aestronglyMeasurable)) hle
   exact ⟨hm, integral_norm_sq_le_sq_mul_of_norm_le hm hf hle⟩
+
+/-- **A continuous linear map preserves convergence in `L²`.** If `∫ ‖f n - g‖² → 0` for
+`f n, g ∈ L²`, then `∫ ‖T (f n) - T g‖² → 0`. -/
+theorem tendsto_integral_norm_clm_apply_sub_sq {α 𝕜 E F : Type*} [MeasurableSpace α]
+    {μ : Measure α} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] (T : E →L[𝕜] F) {f : ℕ → α → E} {g : α → E}
+    (hf : ∀ n, MemLp (f n) 2 μ) (hg : MemLp g 2 μ)
+    (h : Tendsto (fun n ↦ ∫ x, ‖f n x - g x‖ ^ 2 ∂μ) atTop (𝓝 0)) :
+    Tendsto (fun n ↦ ∫ x, ‖T (f n x) - T (g x)‖ ^ 2 ∂μ) atTop (𝓝 0) := by
+  refine squeeze_zero (fun n ↦ integral_nonneg fun _ ↦ by positivity)
+    (fun n ↦ integral_norm_sq_le_sq_mul_of_norm_le
+      ((T.comp_memLp' (hf n)).sub (T.comp_memLp' hg)) ((hf n).sub hg)
+      (Eventually.of_forall fun x ↦ by rw [← map_sub]; exact T.le_opNorm _)) ?_
+  simpa using h.const_mul (‖T‖ ^ 2)
 
 /-- **Convergence in `L²` gives an almost everywhere convergent subsequence.** If
 `∫ ‖f n - g‖² → 0` for `f n, g ∈ L²`, then a subsequence of `f n` converges to `g` almost

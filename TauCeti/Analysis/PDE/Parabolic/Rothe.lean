@@ -171,22 +171,10 @@ private theorem rotheScheme_energy {B : ℕ → V →L[ℝ] StrongDual ℝ V} {�
 private theorem one_add_pow_le_exp {α L a b : ℝ} (hα : 0 < α) (hL : 0 ≤ L) (hab : a ≤ b)
     {N k : ℕ} (hk : k ≤ N) :
     (1 + L * ((b - a) / N) / α) ^ k ≤ Real.exp (L * (b - a) / α) := by
-  have hx : 0 ≤ L * ((b - a) / N) / α :=
-    div_nonneg (mul_nonneg hL (div_nonneg (sub_nonneg.2 hab) N.cast_nonneg)) hα.le
-  calc (1 + L * ((b - a) / N) / α) ^ k ≤ Real.exp (L * ((b - a) / N) / α) ^ k :=
-        pow_le_pow_left₀ (by positivity)
-          (by linarith [Real.add_one_le_exp (L * ((b - a) / N) / α)]) k
-    _ = Real.exp (k * (L * ((b - a) / N) / α)) := (Real.exp_natCast_mul k _).symm
-    _ ≤ Real.exp (L * (b - a) / α) := by
-        refine Real.exp_le_exp.2 ?_
-        rcases Nat.eq_zero_or_pos N with rfl | hN
-        · have : k = 0 := by omega
-          subst this
-          simpa using div_nonneg (mul_nonneg hL (sub_nonneg.2 hab)) hα.le
-        · calc (k : ℝ) * (L * ((b - a) / N) / α) ≤ N * (L * ((b - a) / N) / α) :=
-                mul_le_mul_of_nonneg_right (Nat.cast_le.2 hk) hx
-            _ = L * (b - a) / α := by
-                field_simp
+  have hx : 0 ≤ L * (b - a) / α := div_nonneg (mul_nonneg hL (sub_nonneg.2 hab)) hα.le
+  rw [show 1 + L * ((b - a) / N) / α = 1 + L * (b - a) / α / N by ring]
+  exact (pow_le_pow_right₀ (le_add_of_nonneg_right (div_nonneg hx N.cast_nonneg)) hk).trans
+    (Real.one_add_div_pow_le_exp ((neg_nonpos.2 N.cast_nonneg).trans hx))
 
 /-! ### The interpolants of the scheme -/
 
@@ -264,7 +252,7 @@ private theorem norm_rotheInterp_sub_le [CompleteSpace V] {b t : ℝ} (ht : t �
     ‖rotheInterp x a h t - x (intervalCellIndex a h t)‖ ≤
       ‖x (intervalCellIndex a h t) - x (intervalCellIndex a h t - 1)‖ := by
   subst hh
-  have hh : 0 < (b - a) / N := sub_div_natCast_pos (ht.1.trans ht.2) hN
+  have hh : 0 < (b - a) / N := div_pos (sub_pos.2 (ht.1.trans ht.2)) (Nat.cast_pos.2 hN)
   obtain ⟨k, -, hk, hmem⟩ := exists_intervalCellIndex_eq ht hN
   rw [hk, Nat.add_sub_cancel, rotheInterp_eq hh (Ioc_subset_Icc_self hmem)]
   set c := (t - (a + k * ((b - a) / N))) / ((b - a) / N)
@@ -326,7 +314,7 @@ private theorem hasWeakLineDerivOn_rotheInterp [CompleteSpace V] {b : ℝ} (hab 
 private theorem integral_norm_rotheDeriv_sq {b : ℝ} (hab : a < b) {N : ℕ} (hN : 0 < N) :
     ∫ t in Ioo a b, ‖ι (rotheDeriv x a ((b - a) / N) t)‖ ^ 2 =
       ∑ k ∈ Finset.range N, ‖ι (x (k + 1) - x k)‖ ^ 2 / ((b - a) / N) := by
-  have hh : 0 < (b - a) / N := sub_div_natCast_pos hab hN
+  have hh : 0 < (b - a) / N := div_pos (sub_pos.2 hab) (Nat.cast_pos.2 hN)
   have := integral_Ioo_comp_intervalCellIndex hab hN
     (fun n ↦ ‖ι (((b - a) / N)⁻¹ • (x n - x (n - 1)))‖ ^ 2)
   simp only [rotheDeriv]
@@ -382,7 +370,7 @@ private theorem exists_rotheScheme_bound [CompleteSpace H] (hab : a < b) {N : �
           α * ‖x (j + 1) - x j‖ ^ 2) ≤
         Real.exp (L * (b - a) / α) * (A a v₀ v₀ + ∫ t in Ioo a b, ‖g t‖ ^ 2) := by
   set h := (b - a) / N
-  have hh : 0 < h := sub_div_natCast_pos hab hN
+  have hh : 0 < h := div_pos (sub_pos.2 hab) (Nat.cast_pos.2 hN)
   set B : ℕ → V →L[ℝ] StrongDual ℝ V := fun k ↦ A (a + (min k N : ℕ) * h)
   have hnode (k : ℕ) : a + (min k N : ℕ) * h ∈ Icc a b :=
     add_natCast_mul_sub_div_natCast_mem_Icc hab.le hN (min_le_right _ _)
@@ -448,7 +436,7 @@ private theorem rotheDeriv_add_eq {g : ℝ → H} {x : ℕ → V} (hab : a < b) 
         A (a + intervalCellIndex a ((b - a) / N) t * ((b - a) / N))
           (x (intervalCellIndex a ((b - a) / N) t)) =
       ι.gelfandDual (intervalStepAverage g a ((b - a) / N) t) := by
-  have hh : 0 < (b - a) / N := sub_div_natCast_pos hab hN
+  have hh : 0 < (b - a) / N := div_pos (sub_pos.2 hab) (Nat.cast_pos.2 hN)
   obtain ⟨k, hlt, hk, hmem⟩ := exists_intervalCellIndex_eq ht hN
   have hD : rotheDeriv x a ((b - a) / N) t = ((b - a) / N)⁻¹ • (x (k + 1) - x k) := by
     rw [rotheDeriv, hk, Nat.add_sub_cancel]
@@ -575,7 +563,7 @@ private theorem rotheScheme_integral_le (hab : a < b) {N : ℕ} (hN : 0 < N) (h�
           ‖rotheInterp x a ((b - a) / N) t - x (intervalCellIndex a ((b - a) / N) t)‖ ^ 2 ≤
         (b - a) / N * (M / α) ∧
       ∫ t in Ioo a b, ‖x (intervalCellIndex a ((b - a) / N) t)‖ ^ 2 ≤ (b - a) * (M / α) := by
-  have hh : 0 < (b - a) / N := sub_div_natCast_pos hab hN
+  have hh : 0 < (b - a) / N := div_pos (sub_pos.2 hab) (Nat.cast_pos.2 hN)
   have hxk (k : ℕ) (hk : k ≤ N) : ‖x k‖ ^ 2 ≤ M / α := by
     rw [le_div_iff₀ hα, mul_comm]
     exact (hA _ (add_natCast_mul_sub_div_natCast_mem_Icc hab.le hN hk) _).trans (hE k hk)
@@ -606,7 +594,7 @@ private theorem apply_rotheScheme_le (hab : a < b) {N : ℕ} (hN : 0 < N) (hL : 
     (hxk : ∀ k ≤ N, ‖x k‖ ^ 2 ≤ M / α) {t : ℝ} (ht : t ∈ Ioo a b) :
     A t (x (intervalCellIndex a ((b - a) / N) t)) (x (intervalCellIndex a ((b - a) / N) t)) ≤
       (1 + L * ((b - a) / N) / α) * M := by
-  have hh : 0 < (b - a) / N := sub_div_natCast_pos hab hN
+  have hh : 0 < (b - a) / N := div_pos (sub_pos.2 hab) (Nat.cast_pos.2 hN)
   have hd := (norm_le_and_norm_sub_node_le hL hLip hN ht).2
   set κ := intervalCellIndex a ((b - a) / N) t
   have hκ : κ ≤ N := (intervalCellIndex_mem_Icc ht hN).2
@@ -659,6 +647,8 @@ private theorem exists_rotheApprox [CompleteSpace H] (hab : a < b) {N : ℕ} (hN
   set M := Real.exp (L * (b - a) / α) * (A a v₀ v₀ + ∫ t in Ioo a b, ‖g t‖ ^ 2)
   obtain ⟨x, hx0, hx, hE, hS⟩ := exists_rotheScheme_bound (ι := ι) hab hN hsymm hα hA hL hLip hg v₀
   obtain ⟨hxk, hdiff', hub⟩ := rotheScheme_integral_le (ι := ι) hab hN hα hA hE hS
+  -- Instance synthesis does not find the pseudo-metrizable structure of `V →L[ℝ] V*`, needed for
+  -- the strong measurability of `A` below, although its topology is the one of its norm.
   have : TopologicalSpace.PseudoMetrizableSpace (V →L[ℝ] StrongDual ℝ V) :=
     PseudoEMetricSpace.pseudoMetrizableSpace (α := V →L[ℝ] StrongDual ℝ V)
   have hAc : ContinuousOn A (Icc a b) :=
@@ -744,20 +734,6 @@ private theorem ae_apply_le_of_tendsto {M : ℝ} {c : ℕ → ℝ} (hc : Tendsto
   exact le_of_tendsto_of_tendsto' (((A t).continuous₂.tendsto (u t, u t)).comp (ht.prodMk_nhds ht))
     (hc.comp hns.tendsto_atTop) fun k ↦ hE (ns k) t ht'
 
-omit [CompleteSpace V] in
-/-- Applying `ι` preserves convergence in `L²(a, b)`: if `∫ ‖uh n - u‖² → 0`, then
-`∫ ‖ι (uh n) - ι u‖² → 0`. -/
-private theorem tendsto_integral_norm_apply_sub_sq {u : ℝ → V} {uh : ℕ → ℝ → V}
-    (huh : ∀ n, MemLp (uh n) 2 (volume.restrict (Ioo a b)))
-    (hu : MemLp u 2 (volume.restrict (Ioo a b)))
-    (huhu : Tendsto (fun n ↦ ∫ t in Ioo a b, ‖uh n t - u t‖ ^ 2) atTop (𝓝 0)) :
-    Tendsto (fun n ↦ ∫ t in Ioo a b, ‖ι (uh n t) - ι (u t)‖ ^ 2) atTop (𝓝 0) := by
-  refine squeeze_zero (fun n ↦ setIntegral_nonneg measurableSet_Ioo fun _ _ ↦ by positivity)
-    (fun n ↦ integral_norm_sq_le_sq_mul_of_norm_le
-      ((ι.comp_memLp' (huh n)).sub (ι.comp_memLp' hu)) ((huh n).sub hu)
-      (Eventually.of_forall fun t ↦ by rw [← map_sub]; exact ι.le_opNorm _)) ?_
-  simpa using huhu.const_mul (‖ι‖ ^ 2)
-
 /-- **Time regularity of weak solutions with time-dependent coefficients.** Let `V ↪ H ↪ V*` be
 given by `ι : V →L[ℝ] H`, and let `A(t) : V →L[ℝ] V*`, `t ∈ [a, b]`, be symmetric and coercive,
 `α ‖v‖² ≤ A(t) v v`, and Lipschitz in time, `‖A(t) - A(s)‖ ≤ L |t - s|`. If `u` is a weak solution
@@ -838,7 +814,7 @@ theorem HasWeakLineDerivOn.exists_memLp_hasWeakLineDerivOn_of_gelfandDual_of_lip
   obtain ⟨dl, hderiv, hdl⟩ := exists_hasWeakLineDerivOn_and_norm_le_of_tendsto
     (F := fun n t ↦ ι (uh n t)) (G := fun n t ↦ ι (D n t)) (f := fun t ↦ ι (u t))
     (fun n ↦ (hD n).clm_comp ι) (fun n ↦ ι.comp_memLp' (huh n)) (ι.comp_memLp' hu)
-    (fun n ↦ ι.comp_memLp' (hDm n)) hDbd (tendsto_integral_norm_apply_sub_sq huh hu huhu)
+    (fun n ↦ ι.comp_memLp' (hDm n)) hDbd (tendsto_integral_norm_clm_apply_sub_sq ι huh hu huhu)
   refine ⟨dl, Lp.memLp dl, hderiv, h.ae_eq (hderiv.clm_comp ι.gelfandDual),
     ae_apply_le_of_tendsto hc hub hu hubu hE, ?_⟩
   have hn := MemLp.norm_toLp_sq (Lp.memLp dl)
