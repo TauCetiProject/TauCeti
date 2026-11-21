@@ -61,6 +61,9 @@ algebra is Hausdorff when `ι` is nonempty and is complete when `R` is complete.
 * `TauCeti.PowerSeries.GaussFamily.range_restrictFamily` and
   `TauCeti.PowerSeries.GaussFamily.range_restrictSubfamily_eq_compatibleSubring`: the images of
   the full and monotone-cofinal restriction embeddings.
+* `TauCeti.PowerSeries.GaussFamily.uniformContinuous_of_norm_le` and
+  `TauCeti.PowerSeries.GaussFamily.uniformContinuous_of_norm_restrict_le`: uniform continuity of
+  additive maps bounded by a radius Gauss norm.
 * `TauCeti.PowerSeries.GaussFamily.isTopologicalRing`,
   `TauCeti.PowerSeries.GaussFamily.nonarchimedeanRing`,
   `TauCeti.PowerSeries.GaussFamily.continuousSMul`, `TauCeti.PowerSeries.GaussFamily.t2Space`, and
@@ -301,6 +304,32 @@ theorem uniformContinuous_iff {X : Type*} [UniformSpace X] {f : X → T} :
 /-- The Gauss uniformity is compatible with addition. -/
 theorem isUniformAddGroup : IsUniformAddGroup T :=
   hu.isUniformAddGroup (restrictFamily hT)
+
+/-- An additive homomorphism out of `T` into a seminormed additive commutative group is uniformly
+continuous when it is bounded by a multiple of some radius Gauss norm. -/
+theorem uniformContinuous_of_norm_le {M F : Type*} [SeminormedAddCommGroup M]
+    [FunLike F T M] [AddMonoidHomClass F T M] (φ : F) (i : ι) (C : ℝ)
+    (hφ : ∀ f, ‖φ f‖ ≤ C * ‖restrict hT i f‖) : UniformContinuous φ := by
+  have := isUniformAddGroup hu
+  refine uniformContinuous_of_continuousAt_zero (AddMonoidHom.ofClass φ) ?_
+  rw [ContinuousAt, map_zero]
+  have h := (uniformContinuous_restrict hu i).continuous.tendsto 0
+  refine squeeze_zero_norm (fun f ↦ hφ f) ?_
+  simpa using h.norm.const_mul C
+
+/-- An additive homomorphism between two Gauss-family subrings is uniformly continuous when each
+target radius Gauss norm is bounded by a multiple of some source radius Gauss norm. -/
+theorem uniformContinuous_of_norm_restrict_le {S : Type*} [NormedRing S] [IsUltrametricDist S]
+    {κ : Type*} {σ : κ → ℝ} [∀ j, Fact (0 < σ j)]
+    {U : Subring S⟦X⟧} {hU : ∀ g : S⟦X⟧, g ∈ U ↔ ∀ j, g.IsRestricted (σ j)}
+    [UniformSpace U] (hv : IsUniformInducing (restrictFamily hU))
+    {F : Type*} [FunLike F T U] [AddMonoidHomClass F T U] (φ : F)
+    (hφ : ∀ j, ∃ (i : ι) (C : ℝ), ∀ f, ‖restrict hU j (φ f)‖ ≤ C * ‖restrict hT i f‖) :
+    UniformContinuous φ :=
+  (uniformContinuous_iff hv).mpr fun j ↦ by
+    obtain ⟨i, C, hC⟩ := hφ j
+    exact uniformContinuous_of_norm_le hu
+      ((restrict hU j).toAddMonoidHom.comp (AddMonoidHom.ofClass φ)) i C hC
 
 /-- The Gauss topology makes `T` a topological ring. -/
 theorem isTopologicalRing : IsTopologicalRing T :=

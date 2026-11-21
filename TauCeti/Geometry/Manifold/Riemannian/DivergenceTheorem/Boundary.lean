@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.TopForm
 public import TauCeti.Geometry.Manifold.Riemannian.DivergenceTheorem.Boundary.Chart
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeForm.Boundary
 import Mathlib.Geometry.Manifold.PartitionOfUnity
-import TauCeti.Geometry.Manifold.Riemannian.VolumeForm.Divergence
+import TauCeti.Geometry.Manifold.Riemannian.VolumeForm.Divergence.Basic
 import TauCeti.Geometry.Manifold.Riemannian.VolumeForm.Measure
 import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 

@@ -15,7 +15,7 @@ import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Positivity
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Regularity
 import TauCeti.Geometry.Manifold.DifferentialForm.Squared
 import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Leibniz
-import TauCeti.Geometry.Manifold.Riemannian.VolumeForm.Divergence
+import TauCeti.Geometry.Manifold.Riemannian.VolumeForm.Divergence.Basic
 
 /-!
 # The codifferential and the Hodge Laplacian of an oriented Riemannian manifold
@@ -65,6 +65,9 @@ operator, this says that the principal symbol of `Δ` at `df_x` is `-|df_x|² Id
 * `TauCeti.SmoothForm.laplacian`: the Laplacian `δD + Dδ` of a family of differentials `D` and
   codifferentials `δ`.
 * `TauCeti.SmoothForm.hodgeLaplacian`: the Hodge Laplacian `Δ = d*d + dd*` of smooth `k`-forms.
+* `TauCeti.compactlySupportedForms.codifferential`,
+  `TauCeti.compactlySupportedForms.hodgeLaplacian`: their restrictions to compactly supported
+  forms.
 
 ## Main results
 
@@ -86,6 +89,8 @@ operator, this says that the principal symbol of `Δ` at `df_x` is `-|df_x|² Id
   `Δf = -div grad f`.
 * `TauCeti.SmoothForm.coe_codifferential_funSMulₗ`: the Leibniz rule
   `d*(f β) = f d*β - ι_(grad f) β`.
+* `TauCeti.SmoothForm.codifferential_lie_lie_funSMulₗ_eq_zero`: `d*` has order one,
+  `[[d*, f], g] = 0`.
 * `TauCeti.SmoothForm.coe_lie_lie_hodgeLaplacian_funSMulₗ`,
   `TauCeti.SmoothForm.coe_lie_lie_hodgeLaplacian_funSMulₗ_self`: the principal symbol of the Hodge
   Laplacian, `[[Δ, f], g] = -2 ⟪df, dg⟫` and `[[Δ, f], f] = -2 |df|²`.
@@ -478,6 +483,13 @@ theorem tsupport_hodgeLaplacian_subset (o : Manifold.Orientation I M (Fin m)) (h
     (fun α ↦ by rw [mextDerivₗ_apply]; exact RoughForm.tsupport_mextDeriv_subset _)
     (tsupport_codifferential_subset o) hkl α
 
+/-- The Hodge Laplacian of a compactly supported form is compactly supported. -/
+theorem hodgeLaplacian_mem_compactlySupportedForms (o : Manifold.Orientation I M (Fin m))
+    (hkl : k + l = m) {α : SmoothForm I M ℝ k} (hα : α ∈ compactlySupportedForms I M k) :
+    hodgeLaplacian o hkl α ∈ compactlySupportedForms I M k :=
+  (mem_compactlySupportedForms I).2 (((mem_compactlySupportedForms I).1 hα).of_isClosed_subset
+    (_root_.isClosed_tsupport _) (tsupport_hodgeLaplacian_subset o hkl α))
+
 /-- **The Hodge star commutes with the Hodge Laplacian**: `⋆Δα = Δ⋆α`. -/
 theorem hodgeStar_hodgeLaplacian (o : Manifold.Orientation I M (Fin m)) (hkl : k + l = m)
     (hlk : l + k = m) (α : SmoothForm I M ℝ k) :
@@ -657,6 +669,23 @@ theorem coe_codifferential_funSMulₗ (o : Manifold.Orientation I M (Fin m))
     exact Odd.neg_one_pow ⟨m * (k + 1), by ring⟩
   rw [← key, map_smul, smul_smul, hsign]
   exact neg_one_smul ℝ (M := TangentSpace I x [⋀^Fin k]→L[ℝ] ℝ) _
+
+/-- **The codifferential has order one**: its double commutator with multiplication by smooth
+functions `f` and `g` vanishes, `[[d*, f], g] = 0`, since `[d*, f] = -ι_(grad f)` is fibrewise
+(`TauCeti.SmoothForm.coe_codifferential_funSMulₗ`). Since `d*` changes the degree, the commutators
+are written out as differences of composites. -/
+theorem codifferential_lie_lie_funSMulₗ_eq_zero (o : Manifold.Orientation I M (Fin m))
+    (hkl : k + 1 + l = m) (f g : C^∞⟮I, M; ℝ⟯) :
+    (codifferential o hkl ∘ₗ funSMulₗ f - funSMulₗ f ∘ₗ codifferential o hkl) ∘ₗ funSMulₗ g -
+      funSMulₗ g ∘ₗ (codifferential o hkl ∘ₗ funSMulₗ f - funSMulₗ f ∘ₗ codifferential o hkl) =
+      0 := by
+  refine LinearMap.ext fun β ↦ Subtype.ext (funext fun x ↦ ?_)
+  ext v
+  simp only [LinearMap.sub_apply, LinearMap.comp_apply, Submodule.coe_sub, Pi.sub_apply,
+    ContinuousAlternatingMap.sub_apply, LinearMap.zero_apply, Submodule.coe_zero, Pi.zero_apply,
+    ContinuousAlternatingMap.coe_zero, coe_codifferential_funSMulₗ, coe_funSMulₗ,
+    ContinuousAlternatingMap.smul_apply, smul_eq_mul, RoughForm.interior_apply]
+  ring
 
 /-- `[d*, f] = -ι_(grad f)`, in the form consumed by the double commutator computation. -/
 private theorem codifferential_funSMulₗ_apply (o : Manifold.Orientation I M (Fin m))
@@ -1211,5 +1240,39 @@ theorem hodgeLaplacian_eq_zero_iff (o : Manifold.Orientation I M (Fin m)) (hkl :
 end Boundaryless
 
 end SmoothForm
+
+namespace compactlySupportedForms
+
+variable [FiniteDimensional ℝ E] [IsManifold I ∞ M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] {m k l : ℕ}
+
+/-- The codifferential of compactly supported smooth forms, which does not enlarge supports. -/
+def codifferential (o : Manifold.Orientation I M (Fin m)) (hkl : k + 1 + l = m) :
+    compactlySupportedForms I M (k + 1) →ₗ[ℝ] compactlySupportedForms I M k :=
+  (SmoothForm.codifferential o hkl).restrict fun _ ↦
+    SmoothForm.codifferential_mem_compactlySupportedForms o hkl
+
+/-- The codifferential of a compactly supported form is its codifferential as a smooth form. -/
+@[simp]
+theorem coe_codifferential (o : Manifold.Orientation I M (Fin m)) (hkl : k + 1 + l = m)
+    (β : compactlySupportedForms I M (k + 1)) :
+    (codifferential o hkl β : SmoothForm I M ℝ k) = SmoothForm.codifferential o hkl β :=
+  (rfl)
+
+/-- The Hodge Laplacian of compactly supported smooth forms, which does not enlarge supports. -/
+def hodgeLaplacian (o : Manifold.Orientation I M (Fin m)) (hkl : k + l = m) :
+    compactlySupportedForms I M k →ₗ[ℝ] compactlySupportedForms I M k :=
+  (SmoothForm.hodgeLaplacian o hkl).restrict fun _ ↦
+    SmoothForm.hodgeLaplacian_mem_compactlySupportedForms o hkl
+
+/-- The Hodge Laplacian of a compactly supported form is its Hodge Laplacian as a smooth form. -/
+@[simp]
+theorem coe_hodgeLaplacian (o : Manifold.Orientation I M (Fin m)) (hkl : k + l = m)
+    (α : compactlySupportedForms I M k) :
+    (hodgeLaplacian o hkl α : SmoothForm I M ℝ k) = SmoothForm.hodgeLaplacian o hkl α :=
+  (rfl)
+
+end compactlySupportedForms
 
 end TauCeti

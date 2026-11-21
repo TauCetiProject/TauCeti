@@ -56,6 +56,11 @@ Koszul complex `K(x)` of the sequence, whose zeroth homology is `R ⧸ (x₁, �
 ## References
 
 * [The Stacks Project, Tags 0622, 0623 and 0624](https://stacks.math.columbia.edu/tag/0621)
+* [The Stacks Project, Tag 0626](https://stacks.math.columbia.edu/tag/0626) (Lemma 15.29.5,
+  `f = de + ed` for `f = φ(e)`), for `TauCeti.koszulComplex.smulHomotopy`, and
+  [Tag 0663](https://stacks.math.columbia.edu/tag/0663) (Lemma 15.29.6, multiplication by `fᵢ` is
+  null-homotopic, so `(f₁, …, fᵣ)` annihilates the Koszul homology), for
+  `TauCeti.koszulComplex.smul_homology_eq_zero`
 
 The interface (the Koszul complex of a linear functional with exterior-power terms, the
 alternating-deletion differential, `koszulComplex.map` along `ψ ∘ g = φ`, and the homotopy
