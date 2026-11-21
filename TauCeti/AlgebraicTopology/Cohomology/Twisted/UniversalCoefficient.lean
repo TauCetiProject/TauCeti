@@ -181,6 +181,13 @@ def twistedKroneckerSection (n : ℕ) :
     (L.twistedHomology n ⟶ M) →ₗ[k] L.twistedCohomology k M n :=
   TauCeti.ChainComplex.kroneckerSection k L.twistedChainComplex M n
 
+/-- The splitting `TauCeti.LocalCoefficientSystem.twistedKroneckerSection` is the algebraic section
+`TauCeti.ChainComplex.kroneckerSection` of the twisted chain complex. -/
+lemma twistedKroneckerSection_def (n : ℕ) :
+    L.twistedKroneckerSection k M n =
+      TauCeti.ChainComplex.kroneckerSection k L.twistedChainComplex M n :=
+  (rfl)
+
 /-- `TauCeti.LocalCoefficientSystem.twistedKroneckerSection` is a right inverse of the Kronecker
 map. -/
 @[simp]
@@ -267,6 +274,14 @@ def twistedUniversalCoefficientEquiv (n : ℕ) :
     L.twistedCohomology k M (n + 1) ≃ₗ[k]
       Ext.{t} (L.twistedHomology n) M 1 × (L.twistedHomology (n + 1) ⟶ M) :=
   TauCeti.ChainComplex.universalCoefficientEquiv k L.twistedChainComplex M rfl
+
+/-- The splitting `TauCeti.LocalCoefficientSystem.twistedUniversalCoefficientEquiv` is the
+algebraic splitting `TauCeti.ChainComplex.universalCoefficientEquiv` of the twisted chain
+complex. -/
+lemma twistedUniversalCoefficientEquiv_def (n : ℕ) :
+    L.twistedUniversalCoefficientEquiv k M n =
+      TauCeti.ChainComplex.universalCoefficientEquiv k L.twistedChainComplex M rfl :=
+  (rfl)
 
 /-- The inverse of the splitting `TauCeti.LocalCoefficientSystem.twistedUniversalCoefficientEquiv`
 restricts to the inclusion `TauCeti.LocalCoefficientSystem.twistedExtToCohomology` of the `Ext`
@@ -423,6 +438,13 @@ def twistedKroneckerSection (n : ℕ) :
     (P.twistedHomology L n ⟶ M) →ₗ[k] P.twistedCohomology L k M n :=
   TauCeti.ChainComplex.kroneckerSection k (P.twistedChainComplex L) M n
 
+/-- The splitting `TopPair.twistedKroneckerSection` is the algebraic section
+`TauCeti.ChainComplex.kroneckerSection` of the relative twisted chain complex. -/
+lemma twistedKroneckerSection_def (n : ℕ) :
+    P.twistedKroneckerSection L k M n =
+      TauCeti.ChainComplex.kroneckerSection k (P.twistedChainComplex L) M n :=
+  (rfl)
+
 /-- `TopPair.twistedKroneckerSection` is a right inverse of the relative Kronecker map. -/
 @[simp]
 lemma twistedKronecker_twistedKroneckerSection (n : ℕ) (g : P.twistedHomology L n ⟶ M) :
@@ -506,6 +528,13 @@ def twistedUniversalCoefficientEquiv (n : ℕ) :
     P.twistedCohomology L k M (n + 1) ≃ₗ[k]
       Ext.{t} (P.twistedHomology L n) M 1 × (P.twistedHomology L (n + 1) ⟶ M) :=
   TauCeti.ChainComplex.universalCoefficientEquiv k (P.twistedChainComplex L) M rfl
+
+/-- The splitting `TopPair.twistedUniversalCoefficientEquiv` is the algebraic splitting
+`TauCeti.ChainComplex.universalCoefficientEquiv` of the relative twisted chain complex. -/
+lemma twistedUniversalCoefficientEquiv_def (n : ℕ) :
+    P.twistedUniversalCoefficientEquiv L k M n =
+      TauCeti.ChainComplex.universalCoefficientEquiv k (P.twistedChainComplex L) M rfl :=
+  (rfl)
 
 /-- The inverse of the splitting `TopPair.twistedUniversalCoefficientEquiv` restricts to the
 inclusion `TopPair.twistedExtToCohomology` of the `Ext` term on the first factor. -/
