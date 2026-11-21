@@ -197,26 +197,6 @@ private theorem sq_div_add_div_le {lam beta gamma r σ : ℝ} (hlam : 0 < lam) (
   have h3 : 0 ≤ beta * (2 * r) / lam := by positivity
   exact add_le_add (pow_le_pow_left₀ h3 h1 2) h2
 
-omit [DecidableEq ι] in
-/-- The mass coefficient `c u⁺ / (u⁺ + δ)` of the shift `u + δ`, `δ > 0`, is measurable on every
-open `U ⊆ Ω`, and bounded by `γ` there when `|c| ≤ γ` on `Ω`. -/
-private theorem aestronglyMeasurable_mass_and_norm_mass_le {Omega U : Opens (EuclideanSpace ℝ ι)}
-    (hU : U ≤ Omega) {c : EuclideanSpace ℝ ι → ℝ} {gamma δ : ℝ} (u : W1p mu Omega 2)
-    (hc : AEStronglyMeasurable c (mu.restrict Omega))
-    (hcγ : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c x‖ ≤ gamma) (hδ : 0 < δ) :
-    AEStronglyMeasurable (fun x => c x * (max (W1p.value u x) 0 / (max (W1p.value u x) 0 + δ)))
-      (mu.restrict U) ∧ ∀ x ∈ (U : Set (EuclideanSpace ℝ ι)),
-        ‖c x * (max (W1p.value u x) 0 / (max (W1p.value u x) 0 + δ))‖ ≤ gamma := by
-  have hum : AEMeasurable (W1p.value u) (mu.restrict Omega) :=
-    (Lp.aestronglyMeasurable _).aemeasurable
-  refine ⟨(hc.mul ((hum.max aemeasurable_const).div ((hum.max aemeasurable_const).add_const δ)
-    ).aestronglyMeasurable).mono_measure (Measure.restrict_mono hU le_rfl), fun x hx => ?_⟩
-  have hq : ‖max (W1p.value u x) 0 / (max (W1p.value u x) 0 + δ)‖ ≤ 1 := by
-    rw [Real.norm_eq_abs, abs_of_nonneg (by positivity)]
-    exact div_le_one_of_le₀ (by linarith) (by positivity)
-  rw [norm_mul]
-  exact (mul_le_of_le_one_right (norm_nonneg _) hq).trans (hcγ x (hU hx))
-
 /-- The weak Harnack inequality at a small exponent with lower-order terms, for supersolutions
 bounded below by a positive constant `ε`, with constants independent of `ε`. -/
 private theorem exists_pos_ae_setAverage_rpow_rpow_inv_le_mul_value_of_pos_lowerOrder
@@ -349,7 +329,8 @@ theorem exists_pos_ae_setAverage_rpow_rpow_inv_le_mul_value_lowerOrder [Nonempty
     set δ : ℝ := 1 / ((k : ℝ) + 1)
     have hδ0 : 0 < δ := Nat.one_div_pos_of_nat
     have hwv := W1p.value_restrictL_add_const_ae hU u δ
-    obtain ⟨hc', hcγ'⟩ := aestronglyMeasurable_mass_and_norm_mass_le hU u hc hcγ hδ0
+    have hc' := aestronglyMeasurable_mass_add_const hU u hc δ
+    have hcγ' := norm_mass_add_const_le hU u hcγ hδ0.le
     have hH := hpos (h.mono_set hball) (ha.mono_measure (Measure.restrict_mono hball le_rfl))
       (hb.mono_measure (Measure.restrict_mono hball le_rfl)) hc' (fun x hx => hbβ x (hball hx))
       hcγ' (energyFormH1_restrictL_add_const_nonneg_mass hU hu hu0U hδ0) hδ0
@@ -463,7 +444,8 @@ private theorem exists_setAverage_add_const_rpow_rpow_inv_le_mul_lowerOrder [Non
   have : IsFiniteMeasure (mu.restrict U) := isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
   have hu0U := ae_restrict_of_ae_restrict_of_subset hball hu0
   have hwv := W1p.value_restrictL_add_const_ae hU u δ
-  obtain ⟨hc', hcγ'⟩ := aestronglyMeasurable_mass_and_norm_mass_le hU u hc hcγ hδ0
+  have hc' := aestronglyMeasurable_mass_add_const hU u hc δ
+  have hcγ' := norm_mass_add_const_le hU u hcγ hδ0.le
   obtain ⟨hint, hH⟩ := hpos (h.mono_set hball)
     (ha.mono_measure (Measure.restrict_mono hball le_rfl))
     (hb.mono_measure (Measure.restrict_mono hball le_rfl)) hc' (fun x hx => hbβ x (hball hx)) hcγ'

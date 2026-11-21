@@ -40,6 +40,8 @@ integrability hypotheses on `Ω`.
 * `TauCeti.PDE.energyFormH1_restrictL_add_const_nonneg_mass`: with a mass term, the restriction
   of a nonnegative weak supersolution shifted by `δ > 0` is a weak supersolution of the equation
   with the modified mass coefficient `c u⁺ / (u⁺ + δ)`, still bounded by `|c|`.
+* `TauCeti.PDE.aestronglyMeasurable_mass_add_const`, `TauCeti.PDE.norm_mass_add_const_le`: that
+  mass coefficient is measurable, and bounded by `γ` when `|c| ≤ γ`.
 * `TauCeti.PDE.energyFormH1_restrictL_eq_setIntegral`: weak solutions restrict to weak solutions.
 * `TauCeti.PDE.exists_forcing_restrictL_of_eqOn`: for `b, c ∈ L∞(Ω)`, the restriction of a weak
   solution to a set where the principal coefficient is replaced by an essentially bounded one
@@ -288,6 +290,31 @@ theorem energyFormH1_restrictL_add_const_nonneg_mass
   simp only [energyIntegrand_apply, jetField_apply, W1p.gradient_add_const, massForm_apply, h1,
     h2, max_eq_left h3]
   field_simp
+
+/-- The mass coefficient `c u⁺ / (u⁺ + δ)` of `energyFormH1_restrictL_add_const_nonneg_mass` is
+almost everywhere strongly measurable on every open `U ⊆ Ω` when `c` is on `Ω`. -/
+theorem aestronglyMeasurable_mass_add_const {c : EuclideanSpace ℝ ι → ℝ} (hU : U ≤ Omega)
+    (u : W1p mu Omega 2) (hc : AEStronglyMeasurable c (mu.restrict Omega)) (δ : ℝ) :
+    AEStronglyMeasurable (fun x => c x * (max (W1p.value u x) 0 / (max (W1p.value u x) 0 + δ)))
+      (mu.restrict U) := by
+  have hum : AEMeasurable (W1p.value u) (mu.restrict Omega) :=
+    (Lp.aestronglyMeasurable _).aemeasurable
+  exact (hc.mul ((hum.max aemeasurable_const).div ((hum.max aemeasurable_const).add_const δ)
+    ).aestronglyMeasurable).mono_measure (Measure.restrict_mono hU le_rfl)
+
+/-- The mass coefficient `c u⁺ / (u⁺ + δ)` of `energyFormH1_restrictL_add_const_nonneg_mass`,
+`δ ≥ 0`, is bounded by `γ` on every open `U ⊆ Ω` when `|c| ≤ γ` on `Ω`. -/
+theorem norm_mass_add_const_le {c : EuclideanSpace ℝ ι → ℝ} {gamma δ : ℝ} (hU : U ≤ Omega)
+    (u : W1p mu Omega 2) (hcγ : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c x‖ ≤ gamma)
+    (hδ : 0 ≤ δ) :
+    ∀ x ∈ (U : Set (EuclideanSpace ℝ ι)),
+      ‖c x * (max (W1p.value u x) 0 / (max (W1p.value u x) 0 + δ))‖ ≤ gamma := by
+  intro x hx
+  have hq : ‖max (W1p.value u x) 0 / (max (W1p.value u x) 0 + δ)‖ ≤ 1 := by
+    rw [Real.norm_eq_abs, abs_of_nonneg (by positivity)]
+    exact div_le_one_of_le₀ (by linarith) (by positivity)
+  rw [norm_mul]
+  exact (mul_le_of_le_one_right (norm_nonneg _) hq).trans (hcγ x (hU hx))
 
 /-- **Weak solutions restrict to weak solutions.** If `u ∈ H¹(Ω)` satisfies
 `a(u, v) = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`, then for every open `U ⊆ Ω` its restriction `u|_U`
