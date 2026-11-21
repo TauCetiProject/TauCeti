@@ -51,41 +51,6 @@ universe u v
 
 namespace HomologicalComplex
 
-section BoundarySums
-
-variable {R : Type u} [Ring R] {ι : Type*} {c : ComplexShape ι}
-  (K : HomologicalComplex (ModuleCat.{v} R) c)
-
-/-- For an index `i`, if the incoming differential from `c.prev i` vanishes whenever
-`c.prev i ∉ s`, then the rank of `im (K.d (c.prev i) i)` equals the sum over `j ∈ s` of the ranks
-of `im (K.d j i)`. -/
-private lemma finrank_range_d_prev_eq_sum [Nontrivial R] {s : Finset ι} {i : ι}
-    (hprev : c.prev i ∉ s → K.d (c.prev i) i = 0) :
-    finrank R (LinearMap.range (K.d (c.prev i) i).hom) =
-      ∑ j ∈ s, finrank R (LinearMap.range (K.d j i).hom) := by
-  symm
-  refine Finset.sum_eq_single (c.prev i) (fun j _ hj ↦ ?_) (fun hmem ↦ ?_)
-  · rw [K.shape j i (fun h ↦ hj (c.prev_eq' h).symm), ModuleCat.hom_zero, LinearMap.range_zero]
-    exact finrank_zero_of_subsingleton
-  · rw [hprev hmem, ModuleCat.hom_zero, LinearMap.range_zero]
-    exact finrank_zero_of_subsingleton
-
-/-- For an index `i`, if the outgoing differential to `c.next i` vanishes whenever
-`c.next i ∉ s`, then the rank of `im (K.d i (c.next i))` equals the sum over `j ∈ s` of the ranks
-of `im (K.d i j)`. -/
-private lemma finrank_range_d_next_eq_sum [Nontrivial R] {s : Finset ι} {i : ι}
-    (hnext : c.next i ∉ s → K.d i (c.next i) = 0) :
-    finrank R (LinearMap.range (K.d i (c.next i)).hom) =
-      ∑ j ∈ s, finrank R (LinearMap.range (K.d i j).hom) := by
-  symm
-  refine Finset.sum_eq_single (c.next i) (fun j _ hj ↦ ?_) (fun hmem ↦ ?_)
-  · rw [K.shape i j (fun h ↦ hj (c.next_eq' h).symm), ModuleCat.hom_zero, LinearMap.range_zero]
-    exact finrank_zero_of_subsingleton
-  · rw [hnext hmem, ModuleCat.hom_zero, LinearMap.range_zero]
-    exact finrank_zero_of_subsingleton
-
-end BoundarySums
-
 section RankNullity
 
 variable {R : Type u} [Ring R] [StrongRankCondition R] [HasRankNullity.{v} R]
