@@ -158,8 +158,8 @@ private lemma kanComplex_of_mem_spacesSubcomplex {n : SimplexCategoryᵒᵖ}
     (G : (catInfty.{u}.fullEnhancedSubcategory
       fun x ↦ KanComplex (SimplicialNerve.vertexEquiv CatInftyΔ.{u} x).obj.toSSet).obj n)
     (k : SimplicialThickening (ULift.{u} (Fin (n.unop.len + 1)))) :
-    KanComplex (G.1.obj k).obj.toSSet := by
-  have h := (mem_fullEnhancedSubcategory_obj_iff _ _).1 G.2
+    KanComplex (G.val.obj k).obj.toSSet := by
+  have h := (mem_fullEnhancedSubcategory_obj_iff _ _).1 G.property
     (SimplexCategory.const ⦋0⦌ n.unop k.as.down)
   rw [SimplicialNerve.vertexEquiv_apply] at h
   exact h
@@ -195,7 +195,7 @@ noncomputable def spacesIsoFullSubcategory :
     rw [vertexEquiv_spacesToCatInfty_app]
     exact (SimplicialNerve.vertexEquiv SpacesΔ.{u} x).property
   inv :=
-    { app n := ↾fun G ↦ spacesOfCatInftySimplex G.1 (kanComplex_of_mem_spacesSubcomplex G)
+    { app n := ↾fun G ↦ spacesOfCatInftySimplex G.val (kanComplex_of_mem_spacesSubcomplex G)
       naturality m n f := by
         ext G
         refine EnrichedFunctor.ext SSet (fun _ ↦ rfl) fun i j ↦ ?_
@@ -224,7 +224,7 @@ noncomputable def spacesIsoFullSubcategory :
     ext n G
     refine Subtype.ext ?_
     let F : EnrichedFunctor SSet (SimplicialThickening (ULift.{u} (Fin (n.unop.len + 1))))
-      CatInftyΔ.{u} := G.1
+      CatInftyΔ.{u} := G.val
     refine (simplicialNerveMap_app SpacesΔ.toCatInftyΔ n
       (spacesOfCatInftySimplex F (kanComplex_of_mem_spacesSubcomplex G))).trans ?_
     refine EnrichedFunctor.ext SSet (fun _ ↦ rfl) fun i j ↦ ?_

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Derivative
-public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.OpenEmbedding
+public import TauCeti.AlgebraicTopology.Singular.LocalHomology.LocalIndex
 public import TauCeti.Topology.VectorBundle.Orientation.SectionIndex
 
 /-!
@@ -23,7 +23,9 @@ by pulling back the Thom class along `s`. This file computes it in local coordin
   coordinate `x ↦ (e (s x)).2` is a map of pairs `(U, U ∖ {z}) ⟶ (F, F ∖ {0})`, and it carries the
   local orientation `oM z` to the local index times the local orientation of `F` at the origin
   selected by `ω` (`TauCeti.VectorBundleOrientation.localHomologyMap_eq_sectionIndex_smul`).
-  So the local index of the section is the local degree of its fibre coordinate.
+  So the local index of the section is the local index of its fibre coordinate
+  (`TauCeti.VectorBundleOrientation.sectionIndex_eq_localIndex_fiberCoord`, which only needs `e`
+  to read the orientation as `ω` near `z`, and holds at every zero, isolated or not).
 * **At a transverse zero.** If moreover `φ` is a chart of `M` with values in `F` that carries
   `oM z` to the local orientation selected by `ω` (after translating `φ z` to the origin), and the
   section read in these coordinates, `y ↦ (e (s (φ⁻¹ y))).2`, is differentiable at `φ z` with
@@ -43,10 +45,17 @@ second statement composes the first with the action of a map on local homology a
 has invertible derivative
 (`TauCeti.localHomologyMap_domRestrict_eq_sign_det_smul_of_hasFDerivAt`).
 
+## Main definitions
+
+* `TauCeti.VectorBundleOrientation.fiberCoord`: the fibre coordinate of a section in a
+  trivialization.
+
 ## Main results
 
 * `TauCeti.VectorBundleOrientation.localHomologyMap_eq_sectionIndex_smul`: the fibre coordinate
   of `s` acts on local homology at `z` by the local index.
+* `TauCeti.VectorBundleOrientation.sectionIndex_eq_localIndex_fiberCoord`: the local index of a
+  section at a zero is the local index of its fibre coordinate.
 * `TauCeti.VectorBundleOrientation.sectionIndex_eq_sign_det_of_hasFDerivAt`: at a transverse zero
   the local index is the sign of the Jacobian determinant in oriented coordinates.
 
@@ -80,36 +89,43 @@ variable {M E' : Type} [TopologicalSpace M] [T2Space M] [NormedAddCommGroup E']
 
 /-- The fibre coordinate `x ↦ (e (s x)).2` of a section `s` in a trivialization `e`, on an open
 set `U` inside the base set of `e`. -/
-private def fiberCoord {U : Set M} (hUe : U ⊆ e.baseSet) : C(U, F) :=
-  ⟨fun x ↦ (e (TotalSpace.mk' F x.1 (s x.1))).2,
-    continuous_snd.comp ((e.continuousOn.comp_continuous (hs.comp continuous_subtype_val)
-      fun x ↦ e.mem_source.2 (hUe x.2)))⟩
+def fiberCoord {U : Set M} (hUe : U ⊆ e.baseSet) : C(U, F) :=
+  ⟨fun x ↦ (e (TotalSpace.mk' F x.val (s x.val))).2,
+    continuous_snd.comp ((e.continuousOn.comp_continuous (hs.comp continuous_subtypeVal)
+      fun x ↦ e.mem_source.2 (hUe x.property)))⟩
+
+omit [T2Space M] [NormedSpace ℝ F] [∀ x, AddCommMonoid (E x)] [∀ x, Module ℝ (E x)]
+  [∀ x, TopologicalSpace (E x)] [FiberBundle F E] [VectorBundle ℝ F E] [e.IsLinear ℝ] in
+@[simp]
+theorem fiberCoord_apply {U : Set M} (hUe : U ⊆ e.baseSet) (x : U) :
+    fiberCoord hs e hUe x = (e (TotalSpace.mk' F x.val (s x.val))).2 :=
+  (rfl)
 
 omit [T2Space M] [∀ x, TopologicalSpace (E x)] [FiberBundle F E] [VectorBundle ℝ F E] in
 /-- The fibre coordinate vanishes exactly where the section does. -/
-private theorem fiberCoord_eq_zero_iff {U : Set M} (hUe : U ⊆ e.baseSet) (x : U) :
-    fiberCoord hs e hUe x = 0 ↔ s x.1 = 0 := by
-  have := e.snd_apply_ne_zero_iff ℝ (v := TotalSpace.mk' F x.1 (s x.1)) (hUe x.2)
+theorem fiberCoord_eq_zero_iff {U : Set M} (hUe : U ⊆ e.baseSet) (x : U) :
+    fiberCoord hs e hUe x = 0 ↔ s x.val = 0 := by
+  have := e.snd_apply_ne_zero_iff ℝ (v := TotalSpace.mk' F x.val (s x.val)) (hUe x.property)
   exact not_iff_not.1 this
 
 omit [T2Space M] [∀ x, TopologicalSpace (E x)] [FiberBundle F E] [VectorBundle ℝ F E] in
 /-- On a neighbourhood containing no other zero of `s`, the fibre coordinate is a map of pairs
 `(U, U ∖ {z}) ⟶ (F, F ∖ {0})`. -/
-private theorem fiberCoord_preimage_subset {z : M} {U : Set M} (hz : z ∈ U)
+theorem fiberCoord_preimage_subset {z : M} {U : Set M} (hz : z ∈ U)
     (hUz : ∀ x ∈ U, s x = 0 → x = z) (hUe : U ⊆ e.baseSet) :
     fiberCoord hs e hUe ⁻¹' {0} ⊆ {⟨z, hz⟩} := fun x hx ↦
-  Subtype.ext (hUz x.1 x.2 ((fiberCoord_eq_zero_iff hs e hUe x).1 hx))
+  Subtype.ext (hUz x.val x.property ((fiberCoord_eq_zero_iff hs e hUe x).1 hx))
 
 /-- The section `s` on `U`, as a map of pairs `(U, U ∖ {z}) ⟶ (E|_U, E₀|_U)`. -/
 private def sectionThomPairOverMap {z : M} {U : Set M} (hz : z ∈ U)
     (hUz : ∀ x ∈ U, s x = 0 → x = z) :
     TopPair.ofSubset ({⟨z, hz⟩}ᶜ : Set (TopCat.of U)) ⟶ thomPairOver F E U :=
   TopPair.ofHom
-    (TopCat.ofHom ⟨fun x ↦ ⟨TotalSpace.mk' F x.1 (s x.1), x.2⟩,
-      (hs.comp continuous_subtype_val).subtype_mk _⟩)
-    (TopCat.ofHom ⟨fun x ↦ ⟨TotalSpace.mk' F x.1.1 (s x.1.1), x.1.2,
-      mem_zeroSectionCompl.2 fun h0 ↦ x.2 (Subtype.ext (hUz x.1.1 x.1.2 h0))⟩,
-      ((hs.comp (continuous_subtype_val.comp continuous_subtype_val)).subtype_mk _)⟩)
+    (TopCat.ofHom ⟨fun x ↦ ⟨TotalSpace.mk' F x.val (s x.val), x.property⟩,
+      (hs.comp continuous_subtypeVal).subtype_mk _⟩)
+    (TopCat.ofHom ⟨fun x ↦ ⟨TotalSpace.mk' F x.val.val (s x.val.val), x.val.property,
+      mem_zeroSectionCompl.2 fun h0 ↦ x.property (Subtype.ext (hUz x.val.val x.val.property h0))⟩,
+      ((hs.comp (continuous_subtypeVal.comp continuous_subtypeVal)).subtype_mk _)⟩)
     (by ext; rfl)
 
 omit [NormedAddCommGroup F] [NormedSpace ℝ F] [∀ x, Module ℝ (E x)] [∀ x, TopologicalSpace (E x)]
@@ -118,9 +134,9 @@ private theorem sectionThomPairOverMap_comp {z : M} {U : Set M} (hz : z ∈ U)
     (hUz : ∀ x ∈ U, s x = 0 → x = z) :
     sectionThomPairOverMap hs hz hUz ≫ thomPairOverMap F E (subset_univ U) ≫
         (thomPairOverUnivIso F E).hom =
-      thomPairMapOfNeZero ⟨fun x : U ↦ TotalSpace.mk' F x.1 (s x.1),
-        hs.comp continuous_subtype_val⟩ (S := {⟨z, hz⟩})
-        fun x hx h0 ↦ hx (mem_singleton_iff.2 (Subtype.ext (hUz x.1 x.2 h0))) :=
+      thomPairMapOfNeZero ⟨fun x : U ↦ TotalSpace.mk' F x.val (s x.val),
+        hs.comp continuous_subtypeVal⟩ (S := {⟨z, hz⟩})
+        fun x hx h0 ↦ hx (mem_singleton_iff.2 (Subtype.ext (hUz x.val x.property h0))) :=
   TopPair.hom_ext_of_fst _ (TopCat.ext fun x ↦ by
     -- The carriers of the pairs agree with `U` and the subspaces of the total space only up to
     -- unfolding, so `rw [TopPair.Hom.fst_comp, ConcreteCategory.comp_apply]` leaves the
@@ -191,7 +207,7 @@ theorem localHomologyMap_eq_sectionIndex_smul {z : M} {U : Set M}
     (hU : IsOpen U) (hz : z ∈ U) (hUz : ∀ x ∈ U, s x = 0 → x = z) (hUe : U ⊆ e.baseSet)
     {ω : Orientation ℝ F (Fin (n + 1))}
     (ho : ∀ x (hx : x ∈ U), e.mapOrientation (Fin (n + 1)) (hUe hx) (o x) = ω) (σ : C(U, F))
-    (hσ : ∀ x : U, σ x = (e (TotalSpace.mk' F x.1 (s x.1))).2)
+    (hσ : ∀ x : U, σ x = (e (TotalSpace.mk' F x.val (s x.val))).2)
     (hσz : σ ⁻¹' ({0} : Set F) ⊆ {(⟨z, hz⟩ : U)}) :
     localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ)) σ (S := {⟨z, hz⟩}) (T := {0}) hσz (n + 1)
         ((hU.isOpenEmbedding_subtypeVal.localOrientationEquiv ⟨z, hz⟩ (n + 1)).symm (oM z)).val =
@@ -202,6 +218,57 @@ theorem localHomologyMap_eq_sectionIndex_smul {z : M} {U : Set M}
       ((hU.isOpenEmbedding_subtypeVal.localOrientationEquiv ⟨z, hz⟩ (n + 1)).symm (oM z)).val)
   rw [sectionIndex_eq_singularKronecker o hF oM hs e hU hz hUz hUe ho, ← hc,
     Orientation.kronecker_localCohomologyClass_zsmul]
+
+/-- **The local index of a section is the local index of its fibre coordinate.** Let `e` be a
+linear trivialization of `E`, `U` an open neighbourhood of a zero `z` of `s` inside the base set of
+`e`, and suppose that near `z` the trivialization `e` reads the orientation of every fibre as the
+orientation `ω` of `F`. Orient `F` by any homological orientation `oF` whose local orientation at
+the origin is the one selected by `ω`. Then the local index of `s` at `z` is the local index at `z`
+of the fibre coordinate `x ↦ (e (s x)).2`, a map `U → F`, for the orientation of `U` restricted from
+`oM` and the orientation `oF` of `F`. Both sides vanish when `z` is not an isolated zero. -/
+theorem sectionIndex_eq_localIndex_fiberCoord [FiniteDimensional ℝ F] {z : M}
+    (U : TopologicalSpace.Opens M) (hz : z ∈ U) (hsz : s z = 0) (hUe : (U : Set M) ⊆ e.baseSet)
+    {ω : Orientation ℝ F (Fin (n + 1))}
+    (ho : ∀ᶠ x in 𝓝 z, ∀ hx : x ∈ e.baseSet, e.mapOrientation (Fin (n + 1)) hx (o x) = ω)
+    (oF : HomologicalOrientation F F (n + 1)) (hoF : oF 0 = ω.localOrientation hF) :
+    o.sectionIndex hF oM hs z =
+      (oM.comap U.isOpenEmbedding').localIndex oF (fiberCoord hs e hUe) ⟨z, hz⟩ := by
+  by_cases hiso : ∃ W, IsOpen W ∧ z ∈ W ∧ ∀ x ∈ W, s x = 0 → x = z
+  · -- Shrink `U` to an open neighbourhood `V` isolating `z`, on which `e` reads the orientation
+    -- as `ω`, and compute both local indices there.
+    obtain ⟨W, hWo, hzW, hW⟩ := hiso
+    obtain ⟨W', hW', hW'o, hzW'⟩ := eventually_nhds_iff.1 ho
+    let V : TopologicalSpace.Opens M := ⟨U ∩ W ∩ W', (U.isOpen.inter hWo).inter hW'o⟩
+    have hzV : z ∈ V := ⟨⟨hz, hzW⟩, hzW'⟩
+    have hVU : (V : Set M) ⊆ U := fun x hx ↦ hx.1.1
+    have hVe : (V : Set M) ⊆ e.baseSet := hVU.trans hUe
+    have hVz : ∀ x ∈ (V : Set M), s x = 0 → x = z := fun x hx ↦ hW x hx.1.2
+    have hV : (oM.comap V.isOpenEmbedding').localIndex oF (fiberCoord hs e hVe) ⟨z, hzV⟩ =
+        o.sectionIndex hF oM hs z := by
+      rw [(oM.comap V.isOpenEmbedding').localIndex_eq_iff_of_preimage_subset oF hF _
+        ((fiberCoord_eq_zero_iff hs e hVe _).2 hsz) (fiberCoord_preimage_subset hs e hzV hVz hVe),
+        hoF, HomologicalOrientation.comap_apply]
+      exact o.localHomologyMap_eq_sectionIndex_smul hF oM hs e V.isOpen hzV hVz hVe
+        (fun x hx ↦ hW' x hx.2 (hVe hx)) _ (fun _ ↦ rfl) _
+    -- Restricting the fibre coordinate from `U` to `V` does not change its local index.
+    have hincl : IsOpenEmbedding (fun x : V ↦ (⟨x.val, hVU x.property⟩ : U)) :=
+      (IsOpenEmbedding.of_comp_iff _ U.isOpenEmbedding').1 V.isOpenEmbedding'
+    have h := HomologicalOrientation.localIndex_comap hF (oM.comap U.isOpenEmbedding') oF hincl
+      IsOpenEmbedding.id (f := fiberCoord hs e hVe) (g := fiberCoord hs e hUe) (x := ⟨z, hzV⟩)
+      (.of_forall fun _ ↦ rfl)
+    rw [HomologicalOrientation.comap_comap, HomologicalOrientation.comap_id,
+      HomologicalOrientation.comap_congr _ _ V.isOpenEmbedding' rfl] at h
+    exact hV.symm.trans h
+  · -- Zeros of `s` accumulate at `z`, so `z` is not isolated in the fibre of the fibre coordinate.
+    rw [o.sectionIndex_of_not_isolated hF oM hs hiso, eq_comm]
+    refine HomologicalOrientation.localIndex_of_frequently_eq _ oF _ fun h ↦ hiso ?_
+    obtain ⟨T, hT, hTo, hzT⟩ := eventually_nhds_iff.1 (eventually_nhdsWithin_iff.1 h)
+    refine ⟨Subtype.val '' T, U.isOpenEmbedding'.isOpenMap T hTo, ⟨_, hzT, rfl⟩, ?_⟩
+    rintro _ ⟨x, hxT, rfl⟩ hx0
+    by_contra hne
+    exact hT x hxT (fun hx ↦ hne (congrArg Subtype.val hx))
+      (((fiberCoord_eq_zero_iff hs e hUe x).2 hx0).trans
+        ((fiberCoord_eq_zero_iff hs e hUe _).2 hsz).symm)
 
 /-- **The local index at a transverse zero is the sign of the Jacobian.** Let `e` be a linear
 trivialization of `E` and `φ` a chart of `M` with values in the model fibre `F`, and let `U` be an
@@ -221,7 +288,7 @@ theorem sectionIndex_eq_sign_det_of_hasFDerivAt (φ : OpenPartialHomeomorph M F)
           C(φ.source, F)) (S := {⟨z, hUφ hz⟩}) (T := {0})
         (by
           rintro x hx
-          exact Subtype.ext (φ.injOn x.2 (hUφ hz) (sub_eq_zero.1 hx))) (n + 1)
+          exact Subtype.ext (φ.injOn x.property (hUφ hz) (sub_eq_zero.1 hx))) (n + 1)
         ((φ.open_source.isOpenEmbedding_subtypeVal.localOrientationEquiv ⟨z, hUφ hz⟩
           (n + 1)).symm (oM z)).val =
       (ω.localOrientation hF).val)
@@ -256,17 +323,17 @@ theorem sectionIndex_eq_sign_det_of_hasFDerivAt (φ : OpenPartialHomeomorph M F)
     rw [hfφ x hx] at h0
     rw [hUz x hx ((fiberCoord_eq_zero_iff hs e hUe ⟨x, hx⟩).1 h0)]
   let g : C(V, F) := ⟨V.domRestrict f, hfV.domRestrict⟩
-  let φU : C(U, V) := ⟨fun x ↦ ⟨φ x, mem_image_of_mem φ x.2⟩,
+  let φU : C(U, V) := ⟨fun x ↦ ⟨φ x, mem_image_of_mem φ x.property⟩,
     ((φ.continuousOn.mono hUφ).domRestrict).subtype_mk _⟩
   have hφU : φU ⁻¹' {⟨φ z, hzV⟩} ⊆ {⟨z, hz⟩} := fun x hx ↦
-    Subtype.ext (φ.injOn (hUφ x.2) (hUφ hz) (congrArg Subtype.val hx :))
-  have hg : g ⁻¹' {0} ⊆ {⟨φ z, hzV⟩} := fun y hy ↦ Subtype.ext (hfx y y.2 hy)
+    Subtype.ext (φ.injOn (hUφ x.property) (hUφ hz) (congrArg Subtype.val hx :))
+  have hg : g ⁻¹' {0} ⊆ {⟨φ z, hzV⟩} := fun y hy ↦ Subtype.ext (hfx y y.property hy)
   -- The action of `f` on local homology at `φ z`, with target the value `c = f (φ z)`. That value
   -- enters the morphism types and the proofs of the preimage conditions, so neither `rw` nor
   -- `simp` can replace it by `0` after the fact; it is generalized and substituted instead.
   have key : ∀ {c : F} (hc : f (φ z) = c),
       localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ)) g (S := {⟨φ z, hzV⟩}) (T := {c})
-          (fun y hy ↦ Subtype.ext (hfx y y.2 ((hy : f y = c).trans (hc.symm.trans hf0))))
+          (fun y hy ↦ Subtype.ext (hfx y y.property ((hy : f y = c).trans (hc.symm.trans hf0))))
           (n + 1) =
         (SignType.sign A.det : ℤ) • localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ))
           (⟨fun y : V ↦ c + (y - φ z), by fun_prop⟩ : C(V, F)) (S := {⟨φ z, hzV⟩}) (T := {c})
@@ -281,7 +348,7 @@ theorem sectionIndex_eq_sign_det_of_hasFDerivAt (φ : OpenPartialHomeomorph M F)
   let τ : C(φ.source, F) := ⟨fun x ↦ φ x - φ z, φ.continuousOn.domRestrict.sub continuous_const⟩
   have hτz : τ ⁻¹' {0} ⊆ {⟨z, hUφ hz⟩} := by
     rintro x hx
-    exact Subtype.ext (φ.injOn x.2 (hUφ hz) (sub_eq_zero.1 hx))
+    exact Subtype.ext (φ.injOn x.property (hUφ hz) (sub_eq_zero.1 hx))
   have hUz' : ContinuousMap.inclusion hUφ ⁻¹' {⟨z, hUφ hz⟩} ⊆ {⟨z, hz⟩} := by
     rintro x (hx : _ = _)
     exact Subtype.ext (congrArg Subtype.val hx :)
@@ -303,7 +370,7 @@ theorem sectionIndex_eq_sign_det_of_hasFDerivAt (φ : OpenPartialHomeomorph M F)
   have hsmul : ∀ (c : ℤ) {X Y : ModuleCat.{0} ℤ} (u : X ⟶ Y) (v : X), (c • u) v = c • u v :=
     fun _ _ _ _ _ ↦ rfl
   have hb := o.localHomologyMap_eq_sectionIndex_smul hF oM hs e hU hz
-    hUz hUe ho (g.comp φU) (fun x ↦ hfφ x.1 x.2) ((preimage_mono hg).trans hφU)
+    hUz hUe ho (g.comp φU) (fun x ↦ hfφ x.val x.property) ((preimage_mono hg).trans hφU)
   -- The inclusion of `U` into the source of `φ` carries the local orientation of `U` at `z` to
   -- that of the source, which `τ` carries to the local orientation selected by `ω`.
   rw [hmor, hsmul, ← localHomologyMap_comp _ _ τ hUz' hτz, ConcreteCategory.comp_apply,

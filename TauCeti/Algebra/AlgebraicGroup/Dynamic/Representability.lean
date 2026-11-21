@@ -182,7 +182,7 @@ theorem coe_parabolicPointsIso_hom_app_apply (l : H →ₐc[R] LaurentPolynomial
 theorem quotientPointsHom_parabolicPointsIso_inv_app_apply
     (l : H →ₐc[R] LaurentPolynomial R) (A : CommAlgCat.{w} R) (g : parabolic A l) :
     CommHopfAlgCat.quotientPointsHom (_root_.CommHopfAlgCat.of R H)
-        (parabolicDefiningHopfIdeal l) A ((parabolicPointsIso l).inv.app A g) = g.1 := by
+        (parabolicDefiningHopfIdeal l) A ((parabolicPointsIso l).inv.app A g) = g.val := by
   unfold parabolicPointsIso
   exact CommHopfAlgCat.quotientPointsHom_quotientPointsSubgroupRepresentingIso_inv_app_apply
     (_root_.CommHopfAlgCat.of R H) (parabolicDefiningHopfIdeal l) (fun A ↦ parabolic A l) _ A g

@@ -223,8 +223,8 @@ theorem isContractedComponent_pullback_iff {E : Set (F.pullback g).curve.total}
   let p := Limits.pullback.fst F.curve.toBase g
   -- The components of `C_L` correspond to those of `C`, by image and preimage under `p`.
   let e := p.irreducibleComponentsEquiv p.isOpenMap
-  have hpE : p ⁻¹' (p '' E) = E := congr($(e.symm_apply_apply ⟨E, hE⟩).1)
-  refine (and_iff_right hE).trans (Iff.trans ?_ (and_iff_right (e ⟨E, hE⟩).2).symm)
+  have hpE : p ⁻¹' (p '' E) = E := congr($(e.symm_apply_apply ⟨E, hE⟩).val)
+  refine (and_iff_right hE).trans (Iff.trans ?_ (and_iff_right (e ⟨E, hE⟩).property).symm)
   constructor
   · -- `F ∘ p` factors through `F_L`, so `F` maps `p '' E` onto the image of `F_L '' E` in the
     -- target.
@@ -239,7 +239,7 @@ theorem isContractedComponent_pullback_iff {E : Set (F.pullback g).curve.total}
     rw [← hpE]
     exact F.map.subsingleton_image_preimage_of_subsingleton_image q g p (F.pullback g).map
       (F.pullback_map_fst g)
-      (isClosed_of_mem_irreducibleComponents _ (e ⟨E, hE⟩).2).isLocallyClosed h
+      (isClosed_of_mem_irreducibleComponents _ (e ⟨E, hE⟩).property).isLocallyClosed h
 
 /-- Over an algebraically closed field `K`, with the target locally of finite type over `K`, an
 irreducible component `E` of the source curve of `F` is contracted by `F` exactly when its preimage
@@ -251,7 +251,7 @@ theorem isContractedComponent_pullback_preimage_iff {E : Set F.curve.total}
       F.IsContractedComponent E := by
   let p := Limits.pullback.fst F.curve.toBase g
   have hE' : p ⁻¹' E ∈ irreducibleComponents ↥(Limits.pullback F.curve.toBase g) :=
-    ((p.irreducibleComponentsEquiv p.isOpenMap).symm ⟨E, hE⟩).2
+    ((p.irreducibleComponentsEquiv p.isOpenMap).symm ⟨E, hE⟩).property
   refine (F.isContractedComponent_pullback_iff g hE').trans ?_
   rw [Set.image_preimage_eq E p.surjective]
 

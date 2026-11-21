@@ -180,8 +180,8 @@ divided by the block's cardinality. -/
 theorem diagonalBlockAverage_eq_trace_compression {ι : Type*}
     (T : Matrix ι ι ℂ) (s : Finset ι) :
     diagonalBlockAverage T s =
-      (Matrix.trace (T.submatrix (fun i : {i // i ∈ s} => i.1)
-        (fun i : {i // i ∈ s} => i.1))).re / s.card := by
+      (Matrix.trace (T.submatrix (fun i : {i // i ∈ s} => i.val)
+        (fun i : {i // i ∈ s} => i.val))).re / s.card := by
   classical
   simp only [diagonalBlockAverage, Matrix.trace, Matrix.diag_apply, Matrix.submatrix_apply,
     Complex.re_sum]

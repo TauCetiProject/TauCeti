@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicTopology.Quasicategory.Basic
 public import TauCeti.AlgebraicTopology.SimplicialSet.StdSimplex
 public import TauCeti.AlgebraicTopology.SimplicialSet.BoundaryColimits
 
@@ -16,11 +15,10 @@ Mathlib's covariant involution `SSet.opFunctor : SSet ⥤ SSet` reverses the ord
 of every simplex, and `SSet.stdSimplex.opIso n : Δ[n]ᵒᵖ ≅ Δ[n]` identifies the opposite of a
 standard simplex with itself. This file records that `SSet.opFunctor` is an equivalence of
 categories, and the compatibilities of `SSet.stdSimplex.opIso` with maps of standard simplices,
-with the involution, and with the Yoneda bijection. Reversal also restricts to an isomorphism
-on simplex boundaries (`SSet.boundary.opIso`) and on horns (`SSet.horn.opIso`), showing in
-particular that the opposite of a quasicategory is a quasicategory (`SSet.Quasicategory.op`).
-They are what one needs to transport constructions on simplicial sets, such as joins, slices, and
-outer-horn filling, along the opposite.
+with the involution, and with the Yoneda bijection. Reversal also restricts to isomorphisms
+on simplex boundaries (`SSet.boundary.opIso`) and horns (`SSet.horn.opIso`). They are what one
+needs to transport constructions on simplicial sets, such as joins, slices and outer horn
+fillings, along the opposite.
 
 ## Main results
 
@@ -31,22 +29,22 @@ outer-horn filling, along the opposite.
   the constant map at the reversed vertex.
 * `SSet.stdSimplex.opIso_inv_comp_opFunctor_map_yonedaEquiv_symm`: the map `Δ[n] ⟶ Xᵒᵖ` given by
   an `n`-simplex of `Xᵒᵖ` is the opposite of the map `Δ[n] ⟶ X` given by the same simplex of `X`.
-* `SSet.boundary.opIso`: boundary reversal, compatible with the boundary inclusions and vertices.
-* `SSet.boundary.exists_extension_iff_op`: boundary extension is invariant under reversal.
-* `SSet.horn.opIso`: horn reversal `Λ[n, i]ᵒᵖ ≅ Λ[n, i.rev]`, compatible with horn inclusions and
-  edges.
-* `SSet.horn.exists_extension_iff_op`: horn extension is invariant under reversal.
-* `SSet.Quasicategory.op`, `SSet.quasicategory_op_iff`: a simplicial set is a quasicategory
-  exactly when its opposite is.
+* `SSet.Subcomplex.opIso`: the opposite of `(A : SSet)` is the opposite subcomplex `A.op`.
+* `SSet.boundary.opIso`, `SSet.boundary.exists_extension_iff_op`: boundary reversal and
+  invariance of boundary extension under reversal.
+* `SSet.horn.opIso`, `SSet.horn.exists_extension_iff_op`: horn reversal `(Λ[n, i])ᵒᵖ ≅ Λ[n, i.rev]`,
+  compatible with horn inclusions and edges, and invariance of horn extension under reversal.
 * `SSet.Edge.opEquiv`: the edges of `Xᵒᵖ` are the edges of `X` with source and target exchanged.
 * `SSet.Edge.CompStruct.opEquiv`: a `2`-simplex of `X` exhibiting `e₀₂` as a composite of `e₀₁`
   and `e₁₂` is a `2`-simplex of `Xᵒᵖ` exhibiting the opposite of `e₀₂` as a composite of the
   opposites of `e₁₂` and `e₀₁`.
+* `SSet.Edge.InvStruct.opEquiv`: inverse structures of an edge correspond to inverse structures of
+  its opposite edge.
 -/
 
 public section
 
-open CategoryTheory Opposite Simplicial
+open CategoryTheory Limits Opposite Simplicial
 
 universe u
 
@@ -129,6 +127,10 @@ lemma opIso_inv_comp_opFunctor_map_yonedaEquiv_symm {X : SSet.{u}} {n : SimplexC
   rw [opFunctor_map, h]
   simp
 
+/-- The opposite of the standard `0`-simplex is a terminal simplicial set. -/
+def isTerminalOpObj₀ : IsTerminal (Δ[0] : SSet.{u}).op :=
+  IsTerminal.ofIso isTerminalObj₀ (opIso ⦋0⦌).symm
+
 end stdSimplex
 
 namespace boundary
@@ -151,7 +153,7 @@ def opIso (n : ℕ) : opFunctor.obj (∂Δ[n] : SSet.{u}) ≅ (∂Δ[n] : SSet.{
     ext x
     apply Subtype.ext
     exact NatTrans.naturality_apply (stdSimplex.opIso ⦋n⦌).hom f
-      (opObjEquiv.symm (opObjEquiv x).1))
+      (opObjEquiv.symm (opObjEquiv x).val))
 
 /-- Boundary reversal is the restriction of standard-simplex reversal. -/
 @[reassoc (attr := simp)]
@@ -194,6 +196,37 @@ lemma exists_extension_iff_op {X : SSet.{u}} {n : ℕ} (σ₀ : (∂Δ[n] : SSet
 
 end boundary
 
+namespace Subcomplex
+
+variable {X : SSet.{u}}
+
+/-- Restriction of the simplex-wise opposite equivalence to a subcomplex `A` of `X`. -/
+private def opObjEquiv' (A : X.Subcomplex) (d : SimplexCategoryᵒᵖ) :
+    ((A : SSet.{u}).op).obj d ≃ (A.op : SSet.{u}).obj d where
+  toFun x := ⟨X.opObjEquiv.symm (opObjEquiv x).val, (opObjEquiv x).property⟩
+  invFun y := opObjEquiv.symm ⟨X.opObjEquiv y.val, y.property⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+
+/-- The opposite of a subcomplex `A`, viewed as a simplicial set, is isomorphic to the opposite
+subcomplex `A.op` of `Xᵒᵖ`. -/
+def opIso (A : X.Subcomplex) : (A : SSet.{u}).op ≅ (A.op : SSet.{u}) :=
+  NatIso.ofComponents (fun d ↦ (opObjEquiv' A d).toIso) (fun _ ↦ rfl)
+
+/-- Under `Subcomplex.opIso`, the inclusion of `A.op` corresponds to the opposite of `A.ι`. -/
+@[reassoc (attr := simp)]
+lemma opIso_hom_ι (A : X.Subcomplex) :
+    (opIso A).hom ≫ A.op.ι = opFunctor.map A.ι :=
+  (rfl)
+
+/-- Under `Subcomplex.opIso`, the inverse commutes with the inclusions into `Xᵒᵖ`. -/
+@[reassoc (attr := simp)]
+lemma opIso_inv_opFunctor_map_ι (A : X.Subcomplex) :
+    (opIso A).inv ≫ opFunctor.map A.ι = A.op.ι :=
+  (rfl)
+
+end Subcomplex
+
 namespace horn
 
 /-- Restriction of standard-simplex reversal to horn simplices. -/
@@ -207,7 +240,7 @@ private def opObjEquiv' (n : ℕ) (i : Fin (n + 1)) (d : SimplexCategoryᵒᵖ) 
         Iso.hom_inv_id_app_apply, Equiv.apply_symm_apply, Equiv.trans_apply,
         Iso.toEquiv_fun, Iso.app_hom] using h))
 
-/-- Reversing the vertices identifies the opposite of the horn `Λ[n, i]` with the horn
+/-- Reversing the vertices identifies the opposite of the horn `Λ[n, i]` with the reversed horn
 `Λ[n, i.rev]`. -/
 def opIso (n : ℕ) (i : Fin (n + 1)) :
     opFunctor.obj (Λ[n, i] : SSet.{u}) ≅ (Λ[n, i.rev] : SSet.{u}) :=
@@ -216,7 +249,7 @@ def opIso (n : ℕ) (i : Fin (n + 1)) :
     ext x
     apply Subtype.ext
     exact NatTrans.naturality_apply (stdSimplex.opIso ⦋n⦌).hom f
-      (opObjEquiv.symm (opObjEquiv x).1))
+      (opObjEquiv.symm (opObjEquiv x).val))
 
 /-- Horn reversal is the restriction of standard-simplex reversal. -/
 @[reassoc (attr := simp)]
@@ -232,18 +265,17 @@ lemma opIso_inv_opFunctor_map_ι (n : ℕ) (i : Fin (n + 1)) :
       Λ[n, i.rev].ι ≫ (stdSimplex.opIso ⦋n⦌).inv :=
   (rfl)
 
-/-- Horn reversal sends an edge from `a` to `b` of `Λ[n, i.rev]` to the reversed edge from `b.rev`
-to `a.rev` of `Λ[n, i]`. -/
-lemma opIso_inv_app_edge {n : ℕ} (i a b : Fin (n + 1)) (hab : a ≤ b)
-    (H : Finset.card {i.rev, a, b} ≤ n) (H' : Finset.card {i, b.rev, a.rev} ≤ n) :
-    (dsimp% only [Subfunctor.toFunctor_obj]
-      (opIso.{u} n i).inv.app _ (edge n i.rev a b hab H)) =
-      opObjEquiv.symm (edge n i b.rev a.rev (Fin.rev_le_rev.2 hab) H') := by
+/-- Inverse horn reversal sends the edge of `Λ[n, i.rev]` from `b.rev` to `a.rev` to the edge of
+`Λ[n, i]` from `a` to `b`, read in the opposite simplicial set. -/
+lemma opIso_inv_app_edge (n : ℕ) (i a b : Fin (n + 1)) (hab : a ≤ b)
+    (H : Finset.card {i, a, b} ≤ n) (H' : Finset.card {i.rev, b.rev, a.rev} ≤ n) :
+    (opIso.{u} n i).inv.app _ (edge n i.rev b.rev a.rev (Fin.rev_anti hab) H') =
+      opObjEquiv.symm (edge n i a b hab H) := by
   apply opObjEquiv.injective
   apply Subtype.ext
   ext j
   fin_cases j <;>
-    simp [opIso, opObjEquiv', stdSimplex.opObjEquiv_opObjEquiv_symm_apply]
+    simp [opIso, opObjEquiv', edge, stdSimplex.edge, stdSimplex.opObjEquiv_opObjEquiv_symm_apply]
 
 /-- A horn map extends to a simplex if and only if its reversal does. -/
 lemma exists_extension_iff_op {X : SSet.{u}} {n : ℕ} {i : Fin (n + 1)}
@@ -261,33 +293,65 @@ lemma exists_extension_iff_op {X : SSet.{u}} {n : ℕ} {i : Fin (n + 1)}
       ← opIso_hom_ι, Category.assoc, ← hτ]
     simp
 
+/-- Reversing the vertices identifies the opposite of the outer horn `Λ[n, Fin.last n]` with the
+outer horn `Λ[n, 0]`. -/
+def opIsoLast (n : ℕ) :
+    opFunctor.obj (Λ[n, Fin.last n] : SSet.{u}) ≅ (Λ[n, 0] : SSet.{u}) :=
+  opIso n (Fin.last n) ≪≫ Subcomplex.eqToIso (by rw [Fin.rev_last])
+
+/-- Reversal of `Λ[n, Fin.last n]` is the restriction of standard-simplex reversal. -/
+@[reassoc (attr := simp)]
+lemma opIsoLast_hom_ι (n : ℕ) :
+    (opIsoLast.{u} n).hom ≫ Λ[n, 0].ι =
+      opFunctor.map Λ[n, Fin.last n].ι ≫ (stdSimplex.opIso ⦋n⦌).hom :=
+  (rfl)
+
+/-- Inverse reversal of `Λ[n, Fin.last n]` is the restriction of inverse simplex reversal. -/
+@[reassoc (attr := simp)]
+lemma opIsoLast_inv_opFunctor_map_ι (n : ℕ) :
+    (opIsoLast.{u} n).inv ≫ opFunctor.map Λ[n, Fin.last n].ι =
+      Λ[n, 0].ι ≫ (stdSimplex.opIso ⦋n⦌).inv :=
+  (rfl)
+
+/-- Inverse reversal of `Λ[n, Fin.last n]` sends the edge of `Λ[n, 0]` from `b.rev` to `a.rev` to
+the edge of `Λ[n, Fin.last n]` from `a` to `b`, read in the opposite simplicial set. -/
+lemma opIsoLast_inv_app_edge (n : ℕ) (a b : Fin (n + 1)) (hab : a ≤ b)
+    (H : Finset.card {Fin.last n, a, b} ≤ n) (H' : Finset.card {0, b.rev, a.rev} ≤ n) :
+    (opIsoLast.{u} n).inv.app _ (edge n 0 b.rev a.rev (Fin.rev_anti hab) H') =
+      opObjEquiv.symm (edge n (Fin.last n) a b hab H) := by
+  have h : ((Subcomplex.eqToIso (by rw [Fin.rev_last] :
+      (Λ[n, (Fin.last n).rev] : (Δ[n] : SSet.{u}).Subcomplex) = Λ[n, 0])).inv.app _
+        (edge n 0 b.rev a.rev (Fin.rev_anti hab) H')) =
+      edge n (Fin.last n).rev b.rev a.rev (Fin.rev_anti hab)
+        (by simpa [Fin.rev_last] using H') :=
+    Subtype.ext rfl
+  rw [opIsoLast, Iso.trans_inv, NatTrans.comp_app_apply, h, opIso_inv_app_edge]
+
+/-- Inverse reversal of `Λ[n + 2, Fin.last (n + 2)]` sends the initial edge `0 ⟶ 1` of
+`Λ[n + 2, 0]` to the final edge `(n + 1) ⟶ (n + 2)` of `Λ[n + 2, Fin.last (n + 2)]`. -/
+lemma opIsoLast_inv_app_edge_zero_one (n : ℕ) :
+    (opIsoLast.{u} (n + 2)).inv.app _ (edge (n + 2) 0 0 1 (Fin.zero_le _) (by simp)) =
+      opObjEquiv.symm (edge (n + 2) (Fin.last (n + 2)) (Fin.last (n + 1)).castSucc
+        (Fin.last (n + 2)) (Fin.le_last _) (by simp)) := by
+  convert opIsoLast_inv_app_edge (n + 2) (Fin.last (n + 1)).castSucc (Fin.last (n + 2))
+    (Fin.le_last _) (by simp) (by simp [Fin.rev_castSucc]) using 2
+  refine Subtype.ext (stdSimplex.ext _ _ fun j ↦ ?_)
+  fin_cases j <;> simp [Fin.rev_castSucc]
+
+/-- A map out of the last outer horn `Λ[n, Fin.last n]` extends to `Δ[n]` if and only if its
+reversal out of `Λ[n, 0]` extends to `Δ[n]` in `Xᵒᵖ`. -/
+lemma exists_extension_last_iff_op {X : SSet.{u}} {n : ℕ}
+    (σ₀ : (Λ[n, Fin.last n] : SSet) ⟶ X) :
+    (∃ σ : Δ[n] ⟶ X, σ₀ = Λ[n, Fin.last n].ι ≫ σ) ↔
+      ∃ τ : Δ[n] ⟶ X.op, (opIsoLast n).inv ≫ opFunctor.map σ₀ = Λ[n, 0].ι ≫ τ := by
+  let e : (Λ[n, (Fin.last n).rev] : SSet.{u}) ≅ (Λ[n, 0] : SSet.{u}) :=
+    Subcomplex.eqToIso (by rw [Fin.rev_last])
+  have he : e.inv ≫ Λ[n, (Fin.last n).rev].ι = Λ[n, 0].ι := by simp [e]
+  rw [exists_extension_iff_op σ₀]
+  exact exists_congr fun τ ↦ by
+    rw [opIsoLast, Iso.trans_inv, Category.assoc, ← he, Category.assoc, cancel_epi]
+
 end horn
-
-/-- The opposite of a quasicategory is a quasicategory. -/
-instance Quasicategory.op {X : SSet.{u}} [Quasicategory X] : Quasicategory X.op where
-  hornFilling' n i σ₀ h0 hn := by
-    have h0' : 0 < i.rev := by
-      rw [← Fin.rev_last]
-      exact Fin.rev_lt_rev.2 hn
-    have hn' : i.rev < Fin.last (n + 2) := by
-      rw [← Fin.rev_zero]
-      exact Fin.rev_lt_rev.2 h0
-    obtain ⟨τ, hτ⟩ := Quasicategory.hornFilling (S := X) h0' hn'
-      ((horn.opIso (n + 2) i).inv ≫ opFunctor.map σ₀ ≫ opFunctorCompOpFunctorIso.hom.app X)
-    refine (horn.exists_extension_iff_op σ₀).2 ⟨τ ≫ opFunctorCompOpFunctorIso.inv.app X, ?_⟩
-    have h := hτ =≫ opFunctorCompOpFunctorIso.inv.app X
-    simpa [Category.assoc] using h
-
-/-- A simplicial set is a quasicategory exactly when its opposite is. -/
-lemma quasicategory_op_iff {X : SSet.{u}} : Quasicategory X.op ↔ Quasicategory X := by
-  refine ⟨fun _ ↦ ⟨fun n i σ₀ h0 hn ↦ ?_⟩, fun _ ↦ inferInstance⟩
-  have h0' : 0 < i.rev := by
-    rw [← Fin.rev_last]
-    exact Fin.rev_lt_rev.2 hn
-  have hn' : i.rev < Fin.last (n + 2) := by
-    rw [← Fin.rev_zero]
-    exact Fin.rev_lt_rev.2 h0
-  exact (horn.exists_extension_iff_op σ₀).2 (Quasicategory.hornFilling h0' hn' _)
 
 namespace Edge
 
@@ -297,9 +361,7 @@ variable {X : SSet.{u}} {x₀ x₁ x₂ : X _⦋0⦌}
 `1`-simplex, read with its vertices in the reverse order. -/
 def opEquiv : X.Edge x₀ x₁ ≃ X.op.Edge (X.opObjEquiv.symm x₁) (X.opObjEquiv.symm x₀) where
   toFun e := mk (X.opObjEquiv.symm e.edge) (by simp) (by simp)
-  invFun e := mk (X.opObjEquiv e.edge)
-    (X.opObjEquiv.symm.injective ((X.op_δ 0 e.edge).symm.trans e.tgt_eq))
-    (X.opObjEquiv.symm.injective ((X.op_δ 1 e.edge).symm.trans e.src_eq))
+  invFun e := mk (X.opObjEquiv e.edge) (by simp [δ_opObjEquiv]) (by simp [δ_opObjEquiv])
   left_inv _ := rfl
   right_inv _ := rfl
 
@@ -328,9 +390,7 @@ def opEquiv : CompStruct e₀₁ e₁₂ e₀₂ ≃
     CompStruct (Edge.opEquiv e₁₂) (Edge.opEquiv e₀₁) (Edge.opEquiv e₀₂) where
   toFun h := mk (X.opObjEquiv.symm h.simplex) (by simp) (by simp) (by simp)
   invFun h := mk (X.opObjEquiv h.simplex)
-    (X.opObjEquiv.symm.injective (((X.op_δ 0 h.simplex).symm.trans h.d₀).trans (opEquiv_edge _)))
-    (X.opObjEquiv.symm.injective (((X.op_δ 2 h.simplex).symm.trans h.d₂).trans (opEquiv_edge _)))
-    (X.opObjEquiv.symm.injective (((X.op_δ 1 h.simplex).symm.trans h.d₁).trans (opEquiv_edge _)))
+    (by simp [δ_opObjEquiv]) (by simp [δ_opObjEquiv]) (by simp [δ_opObjEquiv])
   left_inv _ := rfl
   right_inv _ := rfl
 
@@ -346,6 +406,35 @@ lemma opEquiv_symm_simplex
   (rfl)
 
 end CompStruct
+
+namespace InvStruct
+
+variable {e : X.Edge x₀ x₁}
+
+/-- An inverse structure on an edge `e` of `X` corresponds to an inverse structure on the opposite
+edge `Edge.opEquiv e` of `Xᵒᵖ`, with left and right inverse `2`-simplices exchanged. -/
+def opEquiv : e.InvStruct ≃ (Edge.opEquiv e).InvStruct where
+  toFun I :=
+    { inv := Edge.opEquiv I.inv
+      homInvId := (CompStruct.opEquiv I.invHomId).ofEq rfl rfl (by simp)
+      invHomId := (CompStruct.opEquiv I.homInvId).ofEq rfl rfl (by simp) }
+  invFun I :=
+    { inv := Edge.opEquiv.symm I.inv
+      homInvId := CompStruct.opEquiv.symm (I.invHomId.ofEq (by simp) rfl (by simp))
+      invHomId := CompStruct.opEquiv.symm (I.homInvId.ofEq rfl (by simp) (by simp)) }
+  left_inv _ := rfl
+  right_inv _ := rfl
+
+@[simp]
+lemma opEquiv_inv (I : e.InvStruct) : (opEquiv I).inv = Edge.opEquiv I.inv :=
+  (rfl)
+
+@[simp]
+lemma opEquiv_symm_inv (I : (Edge.opEquiv e).InvStruct) :
+    (opEquiv.symm I).inv = Edge.opEquiv.symm I.inv :=
+  (rfl)
+
+end InvStruct
 
 end Edge
 

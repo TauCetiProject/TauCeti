@@ -71,18 +71,18 @@ theorem continuous_algebraMap_residueFieldValuation [TopologicalSpace A]
   let _ : ValuativeRel A := v.toValuativeRel
   -- the radius embeds to a nonzero element of the value group of `v`, so it is a ratio
   -- `v a / v b` of values of `v` itself, and continuity opens the ball of that radius
-  have hγ : MonoidWithZeroHom.ValueGroup₀.embedding γ.1 ≠ 0 := by simp [γ.ne_zero]
+  have hγ : MonoidWithZeroHom.ValueGroup₀.embedding γ.val ≠ 0 := by simp [γ.ne_zero]
   obtain ⟨a, b, -, hb, hab⟩ := (ValuativeRel.valuation A).exists_div_eq_of_unit
     (Units.mk0 (ValuativeRel.ValueGroupWithZero.orderMonoidIso (ValuativeRel.valuation A)
-      (MonoidWithZeroHom.ValueGroup₀.embedding γ.1)) (by simp [hγ]))
+      (MonoidWithZeroHom.ValueGroup₀.embedding γ.val)) (by simp [hγ]))
   simp only [Units.val_mk0] at hab
   have hb' : v.valuation b ≠ 0 := by rw [valuation_def]; exact hb.ne'
-  have hemb : MonoidWithZeroHom.ValueGroup₀.embedding γ.1 = v.valuation a / v.valuation b := by
+  have hemb : MonoidWithZeroHom.ValueGroup₀.embedding γ.val = v.valuation a / v.valuation b := by
     rw [valuation_def, ← ValuativeRel.ValueGroupWithZero.embedding_orderMonoidIso_valuation_eq
-      (MonoidWithZeroHom.ValueGroup₀.embedding γ.1), ← hab, map_div₀,
+      (MonoidWithZeroHom.ValueGroup₀.embedding γ.val), ← hab, map_div₀,
       Valuation.embedding_restrict, Valuation.embedding_restrict]
   filter_upwards [(((isContinuous_def v).mp hv).isOpen_lt_div a hb').mem_nhds
-    (by simp [← hemb, zero_lt_iff])] with z hz
+    (by simp [← hemb, pos_iff_ne_zero])] with z hz
   rwa [Valuation.restrict_lt_iff_lt_embedding, valued_algebraMap_residueFieldValuation, hemb]
 
 end ValuationSpectrum

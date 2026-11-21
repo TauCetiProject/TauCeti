@@ -56,7 +56,7 @@ def mappingSpaceGroupHomeomorph (x : X) :
   right_inv f := by ext; simp
   continuous_toFun :=
     (continuous_postcomp ⟨fun p : G × G ↦ p.1 * p.2, continuous_mul⟩).comp
-      (continuous_prodMk_const.comp (continuous_fst.prodMk continuous_snd.subtype_val))
+      (continuous_prodMk_const.comp (continuous_fst.prodMk continuous_snd.subtypeVal))
   continuous_invFun :=
     (continuous_eval_const x).prodMk
       (((continuous_postcomp ⟨fun p : G × G ↦ p.1 * p.2, continuous_mul⟩).comp
