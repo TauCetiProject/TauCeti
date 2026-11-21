@@ -49,6 +49,8 @@ with `F`. The canonical identification relates their vanishing, injectivity and 
   vanishes on a direction along which the map is constant.
 * `MDifferentiableAt.mvfderiv_prodMk_apply`: the derivative of a pair map into a product of normed
   spaces is the pair of the derivatives.
+* `MDifferentiableAt.mvfderiv_fst_apply` and `MDifferentiableAt.mvfderiv_snd_apply`: the derivative
+  of a component of a map into a product of normed spaces is that component of the derivative.
 * `TauCeti.mvfderiv_apply`: the derivative of a component of a function into a finite product is
   the component of its derivative, and `TauCeti.mvfderiv_apply_apply` is its evaluated form.
 * `mvfderiv_apply_eq_mfderiv_apply`: evaluating `mvfderiv` agrees with evaluating `mfderiv`.
@@ -205,6 +207,22 @@ theorem _root_.MDifferentiableAt.mvfderiv_prodMk_apply {f : M → F} {g : M → 
   ext1
   · exact ((ContinuousLinearMap.fst 𝕜 F F').mvfderiv_comp_apply hd v).symm
   · exact ((ContinuousLinearMap.snd 𝕜 F F').mvfderiv_comp_apply hd v).symm
+
+/-- The derivative of the first component of a function into a product of normed spaces is the
+first component of its derivative. -/
+theorem _root_.MDifferentiableAt.mvfderiv_fst_apply {g : M → F × F'} {x : M}
+    (hg : MDifferentiableAt I 𝓘(𝕜, F × F') g x) (v : TangentSpace I x) :
+    mvfderiv I (fun z ↦ (g z).1) x v = (mvfderiv I g x v).1 :=
+  -- The first component is `fst ∘ g` by definition of the projection.
+  (ContinuousLinearMap.fst 𝕜 F F').mvfderiv_comp_apply hg v
+
+/-- The derivative of the second component of a function into a product of normed spaces is the
+second component of its derivative. -/
+theorem _root_.MDifferentiableAt.mvfderiv_snd_apply {g : M → F × F'} {x : M}
+    (hg : MDifferentiableAt I 𝓘(𝕜, F × F') g x) (v : TangentSpace I x) :
+    mvfderiv I (fun z ↦ (g z).2) x v = (mvfderiv I g x v).2 :=
+  -- The second component is `snd ∘ g` by definition of the projection.
+  (ContinuousLinearMap.snd 𝕜 F F').mvfderiv_comp_apply hg v
 
 /-- The vector-valued derivative on a product is the sum of its partial derivatives. -/
 theorem _root_.MDifferentiableAt.mvfderiv_prod_eq_add_apply
