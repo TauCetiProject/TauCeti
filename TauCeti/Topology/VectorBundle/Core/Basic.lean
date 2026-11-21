@@ -191,7 +191,7 @@ variable {𝕜 B F ι : Type*} [NontriviallyNormedField 𝕜] [TopologicalSpace 
 /-- Points of the total space of a vector bundle core agree exactly when their base points and
 their vectors in the model fibre do. Unlike `Bundle.TotalSpace.mk_inj`, the base points may
 differ, since every fibre of a core is the model fibre. -/
-theorem mk_eq_mk_iff (Z : VectorBundleCore 𝕜 B F ι) {x y : B} {v w : F} :
+@[simp] theorem mk_eq_mk_iff (Z : VectorBundleCore 𝕜 B F ι) {x y : B} {v w : F} :
     (⟨x, v⟩ : Z.TotalSpace) = ⟨y, w⟩ ↔ x = y ∧ v = w := by
   constructor
   · intro h
