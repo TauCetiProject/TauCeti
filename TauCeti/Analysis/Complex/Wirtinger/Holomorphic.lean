@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.DiffContOnCl
 public import TauCeti.Analysis.Complex.Wirtinger.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Operations
+import Mathlib.Analysis.Complex.CauchyIntegral
 
 /-!
 # Holomorphy and the conjugate Wirtinger derivative
@@ -29,10 +30,11 @@ that is locally a `Cⁿ` function plus a holomorphic one is `Cⁿ` with the same
 derivatives (`TauCeti.contDiffOn_and_conjWirtingerDeriv_eq_of_locally_eq_add`). This glues the
 local solutions in exhaustion proofs of the `\bar∂`-lemma.
 
-These statements connect the real differential and its type decomposition with holomorphy. Two
-real-differentiable functions on an open subset of `ℂ` with the same conjugate Wirtinger derivative
-differ by a holomorphic function (`TauCeti.differentiableOn_sub_of_conjWirtingerDeriv_eq`); if they
-are also continuous on the closure, so is their difference
+differential and its type decomposition with holomorphy. Two real-differentiable functions on an
+open subset of `ℂ` with the same conjugate Wirtinger derivative differ by a holomorphic function
+(`TauCeti.differentiableOn_sub_of_conjWirtingerDeriv_eq`), giving the affine characterization of
+solutions to `\bar∂ u = f` (`TauCeti.contDiffOn_and_conjWirtingerDeriv_apply_one_eq_iff`); if
+they are also continuous on the closure, so is their difference
 (`TauCeti.diffContOnCl_sub_of_conjWirtingerDeriv_eq`).
 
 ## References
@@ -127,5 +129,29 @@ theorem diffContOnCl_sub_of_conjWirtingerDeriv_eq {U : Set ℂ} {u₁ u₂ : ℂ
     (heq : ∀ z ∈ U, conjWirtingerDeriv u₁ z 1 = conjWirtingerDeriv u₂ z 1) :
     DiffContOnCl ℂ (u₁ - u₂) U :=
   ⟨differentiableOn_sub_of_conjWirtingerDeriv_eq hU hd₁ hd₂ heq, hc₁.sub hc₂⟩
+
+/-- **Affine solution space of `\bar∂ u = f`.** Given a particular `Cⁿ` solution `u₀` of
+`\bar∂ u₀ = f` on an open set `Ω ⊆ ℂ`, for `n ≥ 1`, another function `u` is a `Cⁿ` solution of
+`\bar∂ u = f` on `Ω` if and only if `u - u₀` is holomorphic on `Ω`. -/
+theorem contDiffOn_and_conjWirtingerDeriv_apply_one_eq_iff [CompleteSpace W] {u₀ u f : ℂ → W}
+    {Ω : Set ℂ} {n : WithTop ℕ∞} (hn : 1 ≤ n) (hΩ : IsOpen Ω) (hu₀ : ContDiffOn ℝ n u₀ Ω)
+    (hsol : ∀ z ∈ Ω, conjWirtingerDeriv u₀ z 1 = f z) :
+    (ContDiffOn ℝ n u Ω ∧ ∀ z ∈ Ω, conjWirtingerDeriv u z 1 = f z) ↔
+      DifferentiableOn ℂ (u - u₀) Ω := by
+  have hn0 : n ≠ 0 := (zero_lt_one.trans_le hn).ne'
+  constructor
+  · rintro ⟨hu, huf⟩
+    exact differentiableOn_sub_of_conjWirtingerDeriv_eq hΩ (hu.differentiableOn hn0)
+      (hu₀.differentiableOn hn0) fun z hz ↦ by rw [huf z hz, hsol z hz]
+  · intro hdiff
+    have hcd : ContDiffOn ℝ n (u - u₀) Ω :=
+      ((DifferentiableOn.contDiffOn hdiff hΩ).of_le le_top).restrict_scalars ℝ
+    have hu_eq : u = u₀ + (u - u₀) := by ext z; simp
+    refine ⟨hu_eq ▸ hu₀.add hcd, fun z hz ↦ ?_⟩
+    have hd₀ : DifferentiableAt ℝ u₀ z :=
+      (hu₀.contDiffAt (hΩ.mem_nhds hz)).differentiableAt hn0
+    have hdh : DifferentiableAt ℂ (u - u₀) z := hdiff.differentiableAt (hΩ.mem_nhds hz)
+    rw [hu_eq, conjWirtingerDeriv_add hd₀ (hdh.restrictScalars ℝ), add_apply, hsol z hz,
+      hdh.conjWirtingerDeriv_eq_zero, zero_apply, add_zero]
 
 end TauCeti

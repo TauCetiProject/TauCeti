@@ -1024,23 +1024,10 @@ theorem mvfderiv_opens_eq_fderiv_apply {U : Opens E} {F : Type*}
       fderiv 𝕜 u' (x : E)
         (NormedSpace.fromTangentSpace (x : E) (tangentSpaceOpenEquiv x v)) := by
   have hcomp : u = u' ∘ (Subtype.val : U → E) := funext fun y ↦ (hu y).symm
-  have hmf : mfderiv 𝓘(𝕜, E) 𝓘(𝕜, F) (u' ∘ (Subtype.val : U → E)) x v =
-      mfderiv 𝓘(𝕜, E) 𝓘(𝕜, F) u' (x : E) (tangentSpaceOpenEquiv x v) :=
-    mfderiv_comp_subtype_val_apply v
-  calc
-    mvfderiv 𝓘(𝕜, E) u x v =
-        NormedSpace.fromTangentSpace (u' (x : E))
-          (mfderiv 𝓘(𝕜, E) 𝓘(𝕜, F) (u' ∘ (Subtype.val : U → E)) x v) := by
-      rw [hcomp, mvfderiv, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-        Function.comp_apply]
-    _ = NormedSpace.fromTangentSpace (u' (x : E))
-          (mfderiv 𝓘(𝕜, E) 𝓘(𝕜, F) u' (x : E) (tangentSpaceOpenEquiv x v)) :=
-      congrArg _ hmf
-    _ = mvfderiv 𝓘(𝕜, E) u' (x : E) (tangentSpaceOpenEquiv x v) := by
-      rw [mvfderiv, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe]
-    _ = fderiv 𝕜 u' (x : E)
-        (NormedSpace.fromTangentSpace (x : E) (tangentSpaceOpenEquiv x v)) := by
-      rw [mvfderiv_eq_fderiv, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe]
+  rw [hcomp, mvfderiv_apply_eq_mfderiv_apply, mfderiv_comp_subtype_val_apply]
+  nth_rw 1 [← tangentSpaceOpenEquiv_apply x v]
+  rw [← mvfderiv_apply_eq_mfderiv_apply, mvfderiv_eq_fderiv_apply,
+    NormedSpace.fromTangentSpace_apply]
 
 /-- The tangent bundle of a model space is Hausdorff. -/
 theorem instT2SpaceTangentBundleModelSpace :

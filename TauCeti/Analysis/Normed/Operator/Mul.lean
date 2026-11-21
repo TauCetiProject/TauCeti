@@ -124,6 +124,14 @@ theorem norm_le_opNorm_mul_apply_mul_norm_one (x : R) :
 
 end Unital
 
+/-- In a commutative seminormed algebra, the flipped scalar multiplication operator
+`(ContinuousLinearMap.lsmul 𝕜 R : R →L[𝕜] R →L[𝕜] R).flip` equals `ContinuousLinearMap.mul 𝕜 R`. -/
+theorem lsmul_flip_eq_mul (𝕜 R : Type*) [NontriviallyNormedField 𝕜] [SeminormedCommRing R]
+    [NormedAlgebra 𝕜 R] :
+    (lsmul 𝕜 R : R →L[𝕜] R →L[𝕜] R).flip = mul 𝕜 R := by
+  ext a b
+  simp [mul_comm]
+
 end ContinuousLinearMap
 
 namespace AlgHom

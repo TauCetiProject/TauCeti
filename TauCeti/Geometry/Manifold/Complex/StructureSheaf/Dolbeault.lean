@@ -7,8 +7,8 @@ module
 
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import TauCeti.Algebra.Homology.ShortComplex.ShortExact
-public import TauCeti.Analysis.Complex.Wirtinger.DolbeaultLemma
 public import TauCeti.Analysis.Complex.Wirtinger.Holomorphic
+public import TauCeti.Analysis.Complex.Wirtinger.OpenSet
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Basic
 public import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 public import TauCeti.Geometry.Manifold.Sheaf.Smooth.Cech
@@ -423,7 +423,7 @@ theorem isZero_cechCohomology_one_holomorphicStructureSheafModules_eball (c : �
       (holomorphicStructureSheafModules 𝓘(ℂ) (⟨Metric.eball c R, Metric.isOpen_eball⟩ :
         Opens ℂ)).obj) :=
   isZero_cechCohomology_one_holomorphicStructureSheafModules _ fun _ hf ↦
-    exists_contDiffOn_conjWirtingerDeriv_apply_one_eq_of_eball (c := c) (R := R) (n := ⊤) le_top hf
+    exists_contDiffOn_conjWirtingerDeriv_apply_one_eq (n := ⊤) le_top Metric.isOpen_eball hf
 
 end Cohomology
 

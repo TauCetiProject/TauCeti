@@ -9,7 +9,7 @@ public import TauCeti.Analysis.PDE.Vortex.Divisor
 public import TauCeti.Analysis.PDE.Vortex.Gauge.Fixed
 public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.Data.Multiset.Fintype
-import TauCeti.Analysis.Complex.Wirtinger.DolbeaultLemma
+import TauCeti.Analysis.Complex.Wirtinger.OpenSet
 import TauCeti.Analysis.PDE.Vortex.LogVariation
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
@@ -105,7 +105,7 @@ theorem conjWirtingerDeriv_apply_one_sectionValue_of_linearizedEquation_eq_zero 
 /-- **The global similarity principle for a vortex section.** If `∂bar ν = (b₂ - i b₁) / 2` on the
 plane, then `exp (-ν) α` is entire, so `α = e^ν f` with `f` entire. Such a `ν` exists, of class
 `Cᵏ` when the connection is, by the Dolbeault lemma
-`TauCeti.exists_contDiff_conjWirtingerDeriv_apply_one_eq`. -/
+`TauCeti.exists_contDiffOn_conjWirtingerDeriv_apply_one_eq`. -/
 theorem differentiable_exp_neg_mul_sectionValue {ν : ℂ → ℂ}
     (hp : Differentiable ℝ (fun w ↦ x w 2)) (hq : Differentiable ℝ (fun w ↦ x w 3))
     (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0) (hν : Differentiable ℝ ν)
@@ -135,8 +135,9 @@ theorem exists_sectionValue_eq_mul_add_exp_mul {k : ℕ∞} (hk : 1 ≤ k) {ν :
   have hk0 : (k : WithTop ℕ∞) ≠ 0 := by
     exact_mod_cast (ne_of_gt (lt_of_lt_of_le zero_lt_one hk))
   -- Solve `∂bar G = c(δb)` on the plane.
-  obtain ⟨G, hG, hGeq⟩ :=
-    exists_contDiff_conjWirtingerDeriv_apply_one_eq hk (contDiff_connectionCoeff hyb₁ hyb₂)
+  obtain ⟨G, hG_on, hGeq⟩ := exists_contDiffOn_conjWirtingerDeriv_apply_one_eq hk isOpen_univ
+    (contDiff_connectionCoeff hyb₁ hyb₂).contDiffOn
+  have hG : ContDiff ℝ k G := contDiffOn_univ.1 hG_on
   have hGd := hG.differentiable hk0
   have hαd : Differentiable ℝ (sectionValue x) := fun w ↦
     differentiableAt_sectionValue (hp w) (hq w)
@@ -149,7 +150,7 @@ theorem exists_sectionValue_eq_mul_add_exp_mul {k : ℕ∞} (hk : 1 ≤ k) {ν :
     rw [hF, conjWirtingerDeriv_sub (g₂ := fun w ↦ sectionValue x w * G w) (hδd w)
         ((hαd w).mul (hGd w)),
       conjWirtingerDeriv_fun_mul (hαd w) (hGd w)]
-    simp only [sub_apply, add_apply, smul_apply, smul_eq_mul, hGeq w,
+    simp only [sub_apply, add_apply, smul_apply, smul_eq_mul, hGeq w (Set.mem_univ w),
       conjWirtingerDeriv_apply_one_sectionValue_of_linearizedEquation_eq_zero (hyp w) (hyq w)
         (hylin w).1 (hylin w).2,
       conjWirtingerDeriv_apply_one_section_eq_mul (hp w) (hq w) (hhol w).1 (hhol w).2]
@@ -357,8 +358,11 @@ private theorem exists_injective_linearMap {k : ℕ∞} (hk : 1 ≤ k) {m : ℕ}
     isZeroMultiplicity_iff.2 fun z ↦ by
       obtain ⟨v, hv, hv₀, hvf⟩ := hD z
       exact ⟨v, hv.continuousAt, hv₀, hvf⟩
-  obtain ⟨ν, hν, hνeq⟩ :=
-    exists_contDiff_conjWirtingerDeriv_apply_one_eq hk (contDiff_connectionCoeff hb₁ hb₂)
+  obtain ⟨ν, hν_on, hνeq_on⟩ := exists_contDiffOn_conjWirtingerDeriv_apply_one_eq hk
+    isOpen_univ (contDiff_connectionCoeff hb₁ hb₂).contDiffOn
+  have hν : ContDiff ℝ k ν := contDiffOn_univ.1 hν_on
+  have hνeq (w : ℂ) : conjWirtingerDeriv ν w 1 = ((x w 1 : ℂ) - I * x w 0) / 2 :=
+    hνeq_on w (Set.mem_univ w)
   have hdec (y) (hy : y ∈ V) : ∃ G : ℂ → ℂ, Continuous G ∧ ∃ H : ℂ → ℂ, Differentiable ℂ H ∧
       ∀ w, sectionValue y w = sectionValue x w * G w + exp (ν w) * H w := by
     obtain ⟨h₁, h₂, h₃, h₄, h₅⟩ := hV y hy

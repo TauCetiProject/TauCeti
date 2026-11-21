@@ -14,7 +14,6 @@ import TauCeti.Analysis.Complex.Runge.Approximation
 import TauCeti.Analysis.Complex.UniformLimit
 import TauCeti.Analysis.Complex.Wirtinger.Holomorphic
 import TauCeti.Analysis.Complex.Wirtinger.Potential
-import TauCeti.Analysis.Normed.Module.Exhaustion
 
 /-!
 # Global solutions of the inhomogeneous Cauchy–Riemann equation on open subsets of `ℂ`
@@ -31,34 +30,37 @@ supported cutoff equal to `1` near `K (k + 1)` and taking its Cauchy transform
 (`TauCeti.exists_contDiff_conjWirtingerDeriv_apply_one_eq_of_hasCompactSupport`) produces a
 global `Cⁿ` function `h k` solving `\bar∂ (h k) = f` on `K (k + 1)`. Consecutive local solutions
 differ by a function holomorphic on `interior (K (k + 1))`
-(`TauCeti.differentiableOn_sub_of_conjWirtingerDeriv_eq`). Runge approximation on
-the filled-in compact set `K k` (`TauCeti.IsFilledIn.exists_differentiableOn_norm_sub_lt`) yields
+(`TauCeti.differentiableOn_sub_of_conjWirtingerDeriv_eq`). Runge approximation on the Runge
+compact pair `(Ω, K k)` (`TauCeti.IsRungeCompactPair.exists_differentiableOn_norm_sub_lt`) yields
 a holomorphic correction `P k` on `Ω` within `2⁻ᵏ` of `h (k + 1) - h k` on `K k`. The telescoping
 series `h 0 + ∑' k, (h (k + 1) - h k - P k)` differs on `interior (K m)` from `h m` by a uniform
 limit of holomorphic functions (`TauCeti.exists_differentiableOn_eqOn_add_tsum`), so it is `Cⁿ` on
 `Ω` and solves `\bar∂ g = f` (`TauCeti.contDiffOn_and_conjWirtingerDeriv_eq_of_locally_eq_add`).
 
-Given any particular `Cⁿ` solution `u₀`, a function `u` is a `Cⁿ` solution of `\bar∂ u = f` on `Ω`
-exactly when `u - u₀` is holomorphic on `Ω`
-(`TauCeti.contDiffOn_and_conjWirtingerDeriv_apply_one_eq_iff`), so the solution space is an
-affine space over the holomorphic functions on `Ω`. Applying global solvability to `∂ f` solves
-`\bar∂ g = ∂ f` (`TauCeti.exists_contDiffOn_conjWirtingerDeriv_eq_wirtingerDeriv`), which is the
-coefficient condition for the one-form `g dz + f dbar z` to be closed.
+Applying global solvability to `∂ f` solves `\bar∂ g = ∂ f`
+(`TauCeti.exists_contDiffOn_conjWirtingerDeriv_eq_wirtingerDeriv`), which is the coefficient
+condition for the one-form `g dz + f dbar z` to be closed. For smooth functions `g k` on open sets
+`Ω k` covering `U` with holomorphic pairwise differences, gluing `\bar∂ (g k)` and solving
+`\bar∂ f = θ` yields one smooth `f` on `U` with every `f - g k` holomorphic on `U ∩ Ω k`
+(`TauCeti.exists_contDiffOn_differentiableOn_sub`).
 
 ## Main results
 
 * `TauCeti.exists_contDiffOn_conjWirtingerDeriv_apply_one_eq`: global `Cⁿ` solvability of
   `\bar∂ g = f` on an arbitrary open subset of `ℂ`, for `1 ≤ n : ℕ∞` and Banach-valued data.
-* `TauCeti.contDiffOn_and_conjWirtingerDeriv_apply_one_eq_iff`: affine characterization of the
-  solution space of `\bar∂ u = f` on an open set.
 * `TauCeti.exists_contDiffOn_conjWirtingerDeriv_eq_wirtingerDeriv`: closed completion
   `\bar∂ g = ∂ f` on an arbitrary open subset of `ℂ`.
+* `TauCeti.exists_contDiffOn_differentiableOn_sub`: smooth functions `g k` on open sets covering an
+  open set `U ⊆ ℂ` with holomorphic pairwise differences equal `f` minus a holomorphic function for
+  one smooth `f` on `U`.
 
 ## References
 
 * A. Rainer, *Advanced Complex Analysis*, Theorem 12.2.
 * L. Hörmander, *An Introduction to Complex Analysis in Several Variables*, 3rd ed.,
   North-Holland, 1990, Theorem 1.4.4 and §1.4.
+* O. Forster, *Lectures on Riemann Surfaces*, Graduate Texts in Mathematics 81, Springer, 1981,
+  the proof of §14.7.
 -/
 
 public section
@@ -105,8 +107,8 @@ theorem exists_contDiffOn_conjWirtingerDeriv_apply_one_eq [CompleteSpace W] {n :
   -- Approximate each difference within `2⁻ᵏ` on `K k` by a function `P k` holomorphic on `Ω`.
   have happrox (k : ℕ) : ∃ P : ℂ → W, DifferentiableOn ℂ P Ω ∧
       ∀ z ∈ K k, ‖(h (k + 1) - h k) z - P z‖ < (1 / 2 : ℝ) ^ k :=
-    (hKfill k).exists_differentiableOn_norm_sub_lt hΩ (hKcpt k) (hKΩ k) isOpen_interior (hKint k)
-      (hdiff k) (by positivity)
+    (isRungeCompactPair_iff.2 ⟨hΩ, hKcpt k, hKΩ k, hKfill k⟩).exists_differentiableOn_norm_sub_lt
+      isOpen_interior (hKint k) (hdiff k) (by positivity)
   choose P hP hP_lt using happrox
   set G : ℂ → W := fun z ↦ h 0 z + ∑' k, (h (k + 1) - h k - P k) z
   have hkey (m : ℕ) : ∃ L : ℂ → W, DifferentiableOn ℂ L (interior (K m)) ∧
@@ -126,30 +128,6 @@ theorem exists_contDiffOn_conjWirtingerDeriv_apply_one_eq [CompleteSpace W] {n :
         hL.contDiffOn isOpen_interior, hGL⟩
   exact ⟨G, hglue.1, fun z hz ↦ hglue.2 z hz ()⟩
 
-/-- **Affine solution space of `\bar∂ u = f`.** Given a particular `Cⁿ` solution `u₀` of
-`\bar∂ u₀ = f` on an open set `Ω ⊆ ℂ`, for `n ≥ 1`, another function `u` is a `Cⁿ` solution of
-`\bar∂ u = f` on `Ω` if and only if `u - u₀` is holomorphic on `Ω`. -/
-theorem contDiffOn_and_conjWirtingerDeriv_apply_one_eq_iff [CompleteSpace W] {u₀ u f : ℂ → W}
-    {Ω : Set ℂ} {n : WithTop ℕ∞} (hn : 1 ≤ n) (hΩ : IsOpen Ω) (hu₀ : ContDiffOn ℝ n u₀ Ω)
-    (hsol : ∀ z ∈ Ω, conjWirtingerDeriv u₀ z 1 = f z) :
-    (ContDiffOn ℝ n u Ω ∧ ∀ z ∈ Ω, conjWirtingerDeriv u z 1 = f z) ↔
-      DifferentiableOn ℂ (u - u₀) Ω := by
-  have hn0 : n ≠ 0 := (zero_lt_one.trans_le hn).ne'
-  constructor
-  · rintro ⟨hu, huf⟩
-    exact differentiableOn_sub_of_conjWirtingerDeriv_eq hΩ (hu.differentiableOn hn0)
-      (hu₀.differentiableOn hn0) fun z hz ↦ by rw [huf z hz, hsol z hz]
-  · intro hdiff
-    have hcd : ContDiffOn ℝ n (u - u₀) Ω :=
-      ((hdiff.contDiffOn hΩ).of_le le_top).restrict_scalars ℝ
-    have hu_eq : u = u₀ + (u - u₀) := by ext z; simp
-    refine ⟨hu_eq ▸ hu₀.add hcd, fun z hz ↦ ?_⟩
-    have hd₀ : DifferentiableAt ℝ u₀ z :=
-      (hu₀.contDiffAt (hΩ.mem_nhds hz)).differentiableAt hn0
-    have hdh : DifferentiableAt ℂ (u - u₀) z := hdiff.differentiableAt (hΩ.mem_nhds hz)
-    rw [hu_eq, conjWirtingerDeriv_add hd₀ (hdh.restrictScalars ℝ), add_apply, hsol z hz,
-      hdh.conjWirtingerDeriv_eq_zero, zero_apply, add_zero]
-
 /-- **Closed completion on an open subset of `ℂ`.** For every `Cⁿ` function `f : ℂ → W` on an
 arbitrary open set `Ω ⊆ ℂ` with `1 ≤ m` and `m + 1 ≤ n`, there exists a `Cᵐ` function
 `g : ℂ → W` on `Ω` solving `\bar∂ g = ∂ f` on `Ω`. When `W = ℂ`, this is the coefficient equation
@@ -163,5 +141,52 @@ theorem exists_contDiffOn_conjWirtingerDeriv_eq_wirtingerDeriv [CompleteSpace W]
     ((hf.contDiffAt (hΩ.mem_nhds hz)).wirtingerDeriv_apply (by exact_mod_cast hmn) 1)
       |>.contDiffWithinAt
   exact exists_contDiffOn_conjWirtingerDeriv_apply_one_eq hm hΩ hwf
+
+/-- **Smooth data with holomorphic differences glue on an open subset of `ℂ`.** Let `g k` be
+smooth on open sets `Ω k` covering the open set `U ⊆ ℂ`, with `g k - g l` complex differentiable on
+`Ω k ∩ Ω l`. Then some `f`, smooth on `U`, has `f - g k` complex differentiable on `U ∩ Ω k` for
+every `k`. -/
+theorem exists_contDiffOn_differentiableOn_sub [CompleteSpace W] {ι : Type*} {U : Set ℂ}
+    {Ω : ι → Set ℂ} {g : ι → ℂ → W} (hU : IsOpen U) (hΩ : ∀ k, IsOpen (Ω k))
+    (hg : ∀ k, ContDiffOn ℝ (⊤ : ℕ∞) (g k) (Ω k))
+    (hgg : ∀ k l, DifferentiableOn ℂ (g k - g l) (Ω k ∩ Ω l))
+    (hcov : U ⊆ ⋃ k, Ω k) :
+    ∃ f : ℂ → W, ContDiffOn ℝ (⊤ : ℕ∞) f U ∧
+      ∀ k, DifferentiableOn ℂ (f - g k) (U ∩ Ω k) := by
+  -- The real differentiability of `g k` at points of `Ω k`.
+  have hgd (k : ι) {z : ℂ} (hz : z ∈ Ω k) : DifferentiableAt ℝ (g k) z :=
+    ((hg k).contDiffAt ((hΩ k).mem_nhds hz)).differentiableAt (by simp)
+  -- `\bar∂ (g k)` and `\bar∂ (g l)` agree on `Ω k ∩ Ω l`.
+  have hagree (k l : ι) (z : ℂ) (hk : z ∈ Ω k) (hl : z ∈ Ω l) :
+      conjWirtingerDeriv (g k) z 1 = conjWirtingerDeriv (g l) z 1 := by
+    have hkl : DifferentiableAt ℂ (g k - g l) z :=
+      (hgg k l).differentiableAt (((hΩ k).inter (hΩ l)).mem_nhds ⟨hk, hl⟩)
+    have := congrArg (· 1) hkl.conjWirtingerDeriv_eq_zero
+    simp only [conjWirtingerDeriv_sub (hgd k hk) (hgd l hl)] at this
+    simpa [sub_eq_zero] using this
+  -- Glue `\bar∂ (g k)` across the cover via `Set.iUnionLift` and extend by zero outside `⋃ k, Ω k`.
+  let θ_sub : (⋃ k, Ω k : Set ℂ) → W :=
+    Set.iUnionLift Ω (fun k z ↦ conjWirtingerDeriv (g k) (z : ℂ) 1) hagree _ Subset.rfl
+  let θ : ℂ → W := Subtype.val.extend θ_sub 0
+  have hθ (k : ι) {z : ℂ} (hz : z ∈ Ω k) : θ z = conjWirtingerDeriv (g k) z 1 := by
+    have hzU : z ∈ ⋃ j, Ω j := mem_iUnion.2 ⟨k, hz⟩
+    dsimp only [θ]
+    rw [Subtype.val_injective.extend_apply θ_sub 0 ⟨z, hzU⟩]
+    exact Set.iUnionLift_of_mem ⟨z, hzU⟩ hz
+  have hθs : ContDiffOn ℝ (⊤ : ℕ∞) θ U := by
+    refine contDiffOn_of_locally_contDiffOn fun z hz ↦ ?_
+    obtain ⟨k, hk⟩ := mem_iUnion.1 (hcov hz)
+    refine ⟨Ω k, hΩ k, hk, ?_⟩
+    refine (((hg k).conjWirtingerDeriv_apply_of_isOpen (hΩ k) (by simp) 1).mono
+      inter_subset_right).congr ?_
+    exact fun w hw ↦ hθ k hw.2
+  obtain ⟨f, hf, hfθ⟩ := exists_contDiffOn_conjWirtingerDeriv_apply_one_eq (n := ⊤) le_top hU hθs
+  refine ⟨f, hf, fun k z hz ↦ ?_⟩
+  have hfd : DifferentiableAt ℝ f z :=
+    (hf.contDiffAt (hU.mem_nhds hz.1)).differentiableAt (by simp)
+  have hd : DifferentiableAt ℝ (f - g k) z := hfd.sub (hgd k hz.2)
+  refine ((differentiableAt_iff_conjWirtingerDeriv_apply_one_eq_zero hd).2 ?_)
+    |>.differentiableWithinAt
+  rw [conjWirtingerDeriv_sub hfd (hgd k hz.2), sub_apply, hfθ z hz.1, hθ k hz.2, sub_self]
 
 end TauCeti

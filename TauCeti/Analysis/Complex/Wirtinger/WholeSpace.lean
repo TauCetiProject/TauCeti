@@ -26,8 +26,8 @@ all of `ℂⁿ` is `bar∂`-exact: some smooth `u` has `∂u/∂(conj z_j) = f_j
 (`TauCeti.exists_contDiffOn_conjWirtingerDeriv_apply_single_eq_of_polydisc`) only solves the
 equation on a strictly smaller polydisc.
 
-The proof is the exhaustion argument of the Dolbeault lemma on discs
-(`TauCeti.exists_contDiffOn_conjWirtingerDeriv_apply_one_eq_of_eball`), with balls of the sup norm,
+The proof is the exhaustion argument of the Dolbeault lemma on open sets
+(`TauCeti.exists_contDiffOn_conjWirtingerDeriv_apply_one_eq`), with balls of the sup norm,
 which are polydiscs, in place of discs. The polydisc lemma gives local solutions `h k` on the
 balls `ball 0 (k + 2)`. Consecutive ones differ by a holomorphic function
 (`TauCeti.differentiableAt_iff_forall_conjWirtingerDeriv_apply_single_eq_zero`), which a partial

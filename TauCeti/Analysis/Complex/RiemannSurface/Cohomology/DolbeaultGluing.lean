@@ -12,7 +12,7 @@ import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 import Mathlib.Geometry.Manifold.MFDeriv.FDeriv
 import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
-import TauCeti.Analysis.Complex.Wirtinger.DolbeaultLemma
+import TauCeti.Analysis.Complex.Wirtinger.OpenSet
 import TauCeti.Geometry.Manifold.Complex.Analytic
 import TauCeti.Geometry.Manifold.ContMDiff.RestrictScalars
 import TauCeti.Geometry.Manifold.ModelWithCorners.RestrictScalars.Basic
@@ -25,7 +25,7 @@ Let `X` be a Riemann surface, and let `g k` be smooth functions on open sets `V 
 pairwise differences are holomorphic. On the preimage `B` of a disc under a holomorphic chart of
 `X` (any member of the maximal atlas), covered by the `V k`, there
 is one smooth `f` with every `f - g k` holomorphic on `B ∩ V k`. In the chart this is
-`TauCeti.exists_contDiffOn_differentiableOn_sub_of_eball`, the Dolbeault lemma applied to the glued
+`TauCeti.exists_contDiffOn_differentiableOn_sub`, the Dolbeault lemma applied to the glued
 conjugate Wirtinger derivatives.
 
 Applied on each disc of a cover, this gives Forster, *Lectures on Riemann Surfaces*, 14.7: let
@@ -95,7 +95,7 @@ theorem exists_contMDiffOn_mdifferentiableOn_sub_of_chart_eball {ι : Type*} {V 
     obtain ⟨k, hk⟩ := mem_iUnion.1 <| hcov
       ⟨e.map_target hzt, by simpa only [mem_preimage, e.right_inv hzt] using hz⟩
     exact mem_iUnion.2 ⟨k, hzt, hk⟩
-  obtain ⟨F, hF, hFg⟩ := exists_contDiffOn_differentiableOn_sub_of_eball hΩ hg' hgg' hcov'
+  obtain ⟨F, hF, hFg⟩ := exists_contDiffOn_differentiableOn_sub isOpen_eball hΩ hg' hgg' hcov'
   refine ⟨F ∘ e, hF.contMDiffOn.comp ((contMDiffOn_of_mem_maximalAtlas heR).mono
     inter_subset_left) fun _ hy ↦ hy.2, fun k ↦ ?_⟩
   have hmaps : MapsTo e (e.source ∩ e ⁻¹' eball c R ∩ V k) (eball c R ∩ Ω k) :=
