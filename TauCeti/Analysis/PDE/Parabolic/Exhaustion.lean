@@ -12,7 +12,6 @@ import TauCeti.Analysis.PDE.DirichletProblem.Exhaustion
 import TauCeti.Analysis.PDE.HeatKernel.Generator
 import TauCeti.Analysis.PDE.WeakLaplacian
 import TauCeti.Analysis.Semigroups.TrotterKato
-import Mathlib.MeasureTheory.Function.ContinuousMapDense
 
 /-!
 # The Dirichlet heat flows of an exhaustion of `ℝⁿ`
@@ -116,95 +115,20 @@ private theorem norm_restrictL_apply_le (U : Opens (EuclideanSpace ℝ ι))
     ‖restrictL U x‖ ≤ ‖x‖ :=
   norm_Lp_toLp_restrict_le _ x
 
-/-- The extension by zero of `y ∈ L²(U)` is the indicator of `U` times `y`. -/
-private theorem coeFn_extendL (U : Opens (EuclideanSpace ℝ ι))
-    (y : Lp ℝ 2 (volume.restrict (U : Set (EuclideanSpace ℝ ι)))) :
-    (extendL U y : EuclideanSpace ℝ ι → ℝ) =ᵐ[volume]
-      (U : Set (EuclideanSpace ℝ ι)).indicator y := by
-  have h := coeFn_extendByZeroLpₗᵢ ℝ (μ := (volume : Measure (EuclideanSpace ℝ ι)))
-    U.isOpen.nullMeasurableSet (subset_univ _) y
-  refine Filter.EventuallyEq.trans (Filter.Eventually.of_forall fun x => ?_)
-    (h.filter_mono (ae_mono Measure.restrict_univ.ge))
-  rw [extendL_apply]
-  exact coeFn_castLpₗᵢ (𝕜 := ℝ) Measure.restrict_univ _ x
-
-/-- Restricting the extension by zero gives back the original function. -/
-private theorem restrictL_extendL (U : Opens (EuclideanSpace ℝ ι))
-    (y : Lp ℝ 2 (volume.restrict (U : Set (EuclideanSpace ℝ ι)))) :
-    restrictL U (extendL U y) = y := by
-  refine Lp.ext ?_
-  filter_upwards [LpToLpRestrictCLM_coeFn (𝕜 := ℝ) (U : Set (EuclideanSpace ℝ ι)) (extendL U y),
-    ae_restrict_of_ae (coeFn_extendL U y),
-    ae_restrict_mem U.isOpen.measurableSet] with x h1 h2 hx
-  rw [restrictL_apply, h1, h2, indicator_of_mem hx]
-
 /-- The zero extension of the value of `w ∈ H¹₀(U)` is the value of its zero extension in
 `H¹₀(ℝⁿ)`. -/
 private theorem extendL_value (U : Opens (EuclideanSpace ℝ ι)) (w : W1p0 volume U 2) :
     extendL U (W1p.value (w : W1p volume U 2)) =
       castLpₗᵢ (𝕜 := ℝ) restrict_top_eq (W1p0.valueL (W1p0.extendByZeroL le_top w)) := by
   refine Lp.ext ?_
-  filter_upwards [coeFn_extendL U _, W1p0.value_extendByZeroL_top_ae w] with z h1 h2
-  rw [h1, coeFn_castLpₗᵢ, W1p0.valueL_apply, h2]
+  filter_upwards [coeFn_castLpₗᵢ_extendByZeroLpₗᵢ ℝ U.isOpen.nullMeasurableSet
+    (W1p.value (w : W1p volume U 2)), W1p0.value_extendByZeroL_top_ae w] with z h1 h2
+  rw [extendL_apply, h1, coeFn_castLpₗᵢ, W1p0.valueL_apply, h2]
 
 /-- Integrals over the whole space, as an open set, are integrals against `volume`. -/
 private theorem setIntegral_top (F : EuclideanSpace ℝ ι → ℝ) :
     ∫ z in ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι)), F z = ∫ z, F z := by
   rw [restrict_top_eq]
-
-
-/-- A function vanishing off `U` is the extension by zero of its restriction to `U`. -/
-private theorem extendL_restrictL_of_ae_eq_zero (U : Opens (EuclideanSpace ℝ ι))
-    {z : Lp ℝ 2 (volume : Measure (EuclideanSpace ℝ ι))}
-    (hz : ∀ᵐ p ∂volume, p ∉ (U : Set (EuclideanSpace ℝ ι)) → z p = 0) :
-    extendL U (restrictL U z) = z := by
-  refine Lp.ext ?_
-  filter_upwards [coeFn_extendL U (restrictL U z),
-    (ae_eq_restrict_iff_indicator_ae_eq U.isOpen.measurableSet).1
-      (LpToLpRestrictCLM_coeFn (𝕜 := ℝ) (U : Set (EuclideanSpace ℝ ι)) z), hz] with p h1 h2 h3
-  rw [h1, restrictL_apply, h2]
-  by_cases hp : p ∈ (U : Set (EuclideanSpace ℝ ι))
-  · rw [indicator_of_mem hp]
-  · rw [indicator_of_notMem hp, h3 hp]
-
-/-- **Exhaustion in `L²`.** Along a monotone family of open sets covering `ℝⁿ`, the part
-`x - J P x` of `x ∈ L²(ℝⁿ)` outside `U k` tends to `0`. -/
-private theorem tendsto_sub_extendL_restrictL {κ : Type*} [Preorder κ] [IsDirectedOrder κ]
-    [Nonempty κ] {U : κ → Opens (EuclideanSpace ℝ ι)} (hmono : Monotone U)
-    (hcover : ⋃ k, (U k : Set (EuclideanSpace ℝ ι)) = univ)
-    (x : Lp ℝ 2 (volume : Measure (EuclideanSpace ℝ ι))) :
-    Tendsto (fun k => x - extendL (U k) (restrictL (U k) x)) atTop (𝓝 0) := by
-  refine Metric.tendsto_nhds.2 fun ε hε => ?_
-  -- Approximate `x` within `ε / 3` by a compactly supported `g`; its support lies in some `U k₀`.
-  obtain ⟨g, hgc, hgle, -, hgmem⟩ := (Lp.memLp x).exists_hasCompactSupport_eLpNorm_sub_le
-    ENNReal.ofNat_ne_top (ε := ENNReal.ofReal (ε / 3)) (by simp [hε])
-  have hdir : Directed (· ⊆ ·) fun k => (U k : Set (EuclideanSpace ℝ ι)) := fun i j =>
-    (directed_of (· ≤ ·) i j).imp fun k hk =>
-      ⟨SetLike.coe_subset_coe.mpr (hmono hk.1), SetLike.coe_subset_coe.mpr (hmono hk.2)⟩
-  obtain ⟨k₀, hk₀⟩ := hgc.isCompact.elim_directed_cover (fun k => (U k : Set _))
-    (fun k => (U k).isOpen) (by rw [hcover]; exact subset_univ _) hdir
-  have hxg : ‖x - hgmem.toLp g‖ ≤ ε / 3 := by
-    rw [Lp.norm_def, eLpNorm_congr_ae ((Lp.coeFn_sub _ _).trans
-      (Filter.EventuallyEq.rfl.sub hgmem.coeFn_toLp))]
-    exact ENNReal.toReal_le_of_le_ofReal (by positivity) hgle
-  filter_upwards [eventually_ge_atTop k₀] with k hk
-  have hg : extendL (U k) (restrictL (U k) (hgmem.toLp g)) = hgmem.toLp g := by
-    refine extendL_restrictL_of_ae_eq_zero _ ?_
-    filter_upwards [hgmem.coeFn_toLp] with p hp hpU
-    rw [hp]
-    exact image_eq_zero_of_notMem_tsupport fun h =>
-      hpU (SetLike.coe_subset_coe.mpr (hmono hk) (hk₀ h))
-  have hsplit : x - extendL (U k) (restrictL (U k) x) = (x - hgmem.toLp g) -
-      extendL (U k) (restrictL (U k) (x - hgmem.toLp g)) := by
-    rw [map_sub, map_sub, hg]
-    abel
-  rw [dist_zero_right, hsplit]
-  calc _ ≤ ‖x - hgmem.toLp g‖ + ‖extendL (U k) (restrictL (U k) (x - hgmem.toLp g))‖ :=
-        norm_sub_le _ _
-    _ ≤ ε / 3 + ε / 3 := by
-        rw [norm_extendL_apply]
-        exact add_le_add hxg ((norm_restrictL_apply_le _ _).trans hxg)
-    _ < ε := by linarith
 
 /-! ### A semigroup on `L²(U)`, extended by the identity off `U` -/
 
@@ -237,8 +161,10 @@ private def extendSemigroup (U : Opens (EuclideanSpace ℝ ι))
     simp
   map_add' s t := by
     ext1 x
-    simp only [ContinuousLinearMap.comp_apply, extendOp_apply, map_add, map_sub,
-      restrictL_extendL, sub_self, add_zero, D.map_add_apply]
+    have hPJ (y) : restrictL U (extendL U y) = y :=
+      LpToLpRestrictCLM_castLpₗᵢ_extendByZeroLpₗᵢ ℝ U.isOpen.nullMeasurableSet y
+    simp only [ContinuousLinearMap.comp_apply, extendOp_apply, map_add, map_sub, hPJ, sub_self,
+      add_zero, D.map_add_apply]
     abel
   continuousAt_zero' x := by
     have h := ((extendL U).continuous.continuousAt.comp (D.continuousAt_zero (restrictL U x))).add
@@ -397,13 +323,6 @@ private theorem resolvent_heatSemigroup_eq (x : Lp ℝ 2 (volume : Measure (Eucl
 
 /-! ### The heat flows of an exhaustion -/
 
-/-- The Dirichlet semigroup is a contraction. -/
-private theorem norm_dirichletSemigroup_le {U : Opens (EuclideanSpace ℝ ι)}
-    (hcoercive : IsCoercive (energyFormH1L0
-      (memLp_energyIntegrand_const_zero_zero (mu := volume) (Omega := U) (1 : Matrix ι ι ℝ))))
-    (t : ℝ≥0) : ‖(dirichletSemigroup _ hcoercive).toStronglyContinuousSemigroup t‖ ≤ 1 :=
-  (dirichletSemigroup _ hcoercive).contracting t
-
 /-- The resolvent at `1` of the extended Dirichlet semigroup of `U` is `J w + (y - J P y)`, where
 `w ∈ H¹₀(U)` is the weak solution of `-Δw + w = P y`, read through its zero extension to `ℝⁿ`. -/
 private theorem resolvent_extendSemigroup_dirichletSemigroup {U : Opens (EuclideanSpace ℝ ι)}
@@ -419,7 +338,7 @@ private theorem resolvent_extendSemigroup_dirichletSemigroup {U : Opens (Euclide
   obtain ⟨w, hw, hsol⟩ := exists_value_eq_resolvent_dirichletSemigroup hcoercive (restrictL U y)
   refine ⟨w, hsol, ?_⟩
   have hD := (dirichletSemigroup _ hcoercive).hasGrowthBound
-  have hS := hasGrowthBound_extendSemigroup U _ (norm_dirichletSemigroup_le hcoercive)
+  have hS := hasGrowthBound_extendSemigroup U _ (dirichletSemigroup _ hcoercive).contracting
   rw [StronglyContinuousSemigroup.generator_resolvent_eq _ hS one_pos,
     resolvent_extendSemigroup_apply _ _ hD, ← StronglyContinuousSemigroup.generator_resolvent_eq,
     ← hw, extendL_value]
@@ -429,16 +348,12 @@ private theorem exists_isCoercive_laplacian_add_one_top :
     ∃ hcoeff : MemLp (fun x => energyIntegrand ((fun _ => (1 : Matrix ι ι ℝ)) x)
         ((0 : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) x) ((fun _ => (1 : ℝ)) x)) ⊤
         (volume.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι))),
-      IsCoercive (energyFormH1L0 hcoeff) := by
-  have hcoeff : MemLp (fun x => energyIntegrand ((fun _ => (1 : Matrix ι ι ℝ)) x)
-      ((0 : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) x) ((fun _ => (1 : ℝ)) x)) ⊤
-      (volume.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι))) := by
-    simpa using memLp_top_const (μ := volume.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) :
-      Set (EuclideanSpace ℝ ι))) (energyIntegrand (1 : Matrix ι ι ℝ) 0 1)
-  exact ⟨hcoeff, UniformlyEllipticOn.isCoercive_energyFormH1L0_of_mass_lower_bound
-    (uniformlyEllipticOn_const_one_one _) aestronglyMeasurable_const aestronglyMeasurable_const
-    aestronglyMeasurable_const (beta := 0) (gamma := 1) (delta := 1) (by simp) (by simp)
-    (by simp) (by norm_num) hcoeff⟩
+      IsCoercive (energyFormH1L0 hcoeff) :=
+  ⟨memLp_top_const (energyIntegrand (1 : Matrix ι ι ℝ) 0 1),
+    UniformlyEllipticOn.isCoercive_energyFormH1L0_of_mass_lower_bound
+      (uniformlyEllipticOn_const_one_one _) aestronglyMeasurable_const aestronglyMeasurable_const
+      aestronglyMeasurable_const (beta := 0) (gamma := 1) (delta := 1) (by simp) (by simp)
+      (by simp) (by norm_num) _⟩
 
 /-- **The resolvents converge along the exhaustion.** The resolvents at `1` of the extended
 Dirichlet semigroups of the `U k` converge strongly to the resolvent of the heat semigroup. This
@@ -471,7 +386,8 @@ private theorem tendsto_resolvent_extendSemigroup {κ : Type*} [Preorder κ] [Is
       rw [restrictL_apply, hz, hfy]
   have h := ((((castLpₗᵢ (𝕜 := ℝ) (restrict_top_eq (ι := ι))).continuous.comp
     (W1p0.valueL (mu := volume) (Omega := ⊤) (p := 2)).continuous).tendsto u).comp hlim).add
-      (tendsto_sub_extendL_restrictL hmono hcover y)
+      (tendsto_sub_castLpₗᵢ_extendByZeroLpₗᵢ_LpToLpRestrictCLM ℝ ENNReal.ofNat_ne_top
+      (fun k => (U k).isOpen) (fun _ _ h => hmono h) hcover y)
   rw [add_zero] at h
   rwa [resolvent_heatSemigroup_eq y hfy hu
     (y := castLpₗᵢ (𝕜 := ℝ) restrict_top_eq (W1p0.valueL u)) fun z => by
@@ -500,22 +416,23 @@ theorem tendstoUniformlyOn_dirichletSemigroup_heatSemigroup {κ : Type*} [Preord
       (fun t => heatSemigroup (E := EuclideanSpace ℝ ι) (F := ℝ) (p := 2) ENNReal.ofNat_ne_top t x)
       atTop (Iic τ) := by
   have hS := fun k => hasGrowthBound_extendSemigroup (U k) _
-    (norm_dirichletSemigroup_le (hcoercive k))
+    (dirichletSemigroup _ (hcoercive k)).contracting
   have hT := (heatSemigroup (E := EuclideanSpace ℝ ι) (F := ℝ) (p := 2)
     ENNReal.ofNat_ne_top).hasGrowthBound_of_one_le_const (M := 3) (by norm_num)
   have h := StronglyContinuousSemigroup.tendstoUniformlyOn_realOperator_apply_of_tendsto_resolvent
     hS hT one_pos (tendsto_resolvent_extendSemigroup hmono hcover hcoercive) x τ
   -- Remove the part of `x` outside `U k`, which does not depend on the time.
   have h' := (h.comp ((↑) : ℝ≥0 → ℝ)).sub
-    ((tendsto_sub_extendL_restrictL hmono hcover x).tendstoUniformlyOn_const
+    ((tendsto_sub_castLpₗᵢ_extendByZeroLpₗᵢ_LpToLpRestrictCLM ℝ ENNReal.ofNat_ne_top
+      (fun k => (U k).isOpen) (fun _ _ h => hmono h) hcover x).tendstoUniformlyOn_const
       (((↑) : ℝ≥0 → ℝ) ⁻¹' Icc 0 τ))
   refine ((h'.mono (s' := Iic τ) fun t ht => ⟨t.coe_nonneg, NNReal.coe_le_coe.mpr ht⟩).congr_right
     fun t _ => ?_).congr (Eventually.of_forall fun k t _ => ?_)
-  · rw [Pi.sub_apply, Function.comp_apply, StronglyContinuousSemigroup.realOperator_coe, sub_zero,
+  · simp only [Pi.sub_apply, Function.comp_apply, StronglyContinuousSemigroup.realOperator_coe,
+      sub_zero, ContractionSemigroup.toStronglyContinuousSemigroup_apply]
+  · simp only [Pi.sub_apply, Function.comp_apply, StronglyContinuousSemigroup.realOperator_coe,
+      extendSemigroup_apply, extendL_apply, restrictL_apply, add_sub_cancel_right,
       ContractionSemigroup.toStronglyContinuousSemigroup_apply]
-  · rw [Pi.sub_apply, Pi.sub_apply, Function.comp_apply,
-      StronglyContinuousSemigroup.realOperator_coe, extendSemigroup_apply, add_sub_cancel_right,
-      extendL_apply, restrictL_apply, ContractionSemigroup.toStronglyContinuousSemigroup_apply]
 
 /-- **The Dirichlet heat flows of an exhaustion converge to the heat flow of `ℝⁿ`**, at a fixed
 time `t`: the zero extensions of `e^{tΔ_{U k}} (x|_{U k})` converge to `e^{tΔ} x` in `L²(ℝⁿ)`. This
