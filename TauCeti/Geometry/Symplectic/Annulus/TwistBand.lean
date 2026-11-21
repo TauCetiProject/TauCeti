@@ -56,7 +56,8 @@ band, and when `F` preserves area and the line `y = 0`:
 * it is invariant under the simultaneous translation `(x, X) ↦ (x + a, X + a)` when `F` commutes
   with `(x, y) ↦ (x + a, y)` on the strip, as a lift of an annulus map does for `a = 1`
   (`TauCeti.stripBandGeneratingFunction_add_diag`), and then so is the band itself
-  (`TauCeti.add_mem_image_stripTwistCoord_iff`);
+  (`TauCeti.add_mem_image_stripTwistCoord_iff`), so that it is periodic on all of `ℝ × ℝ`
+  (`TauCeti.periodic_stripBandGeneratingFunction`);
 * its mixed second derivative is `∂₁ ∂₂ S' = -1 / ∂_y X`
   (`TauCeti.fderiv_fderiv_stripBandGeneratingFunction_apply`), so its sign is opposite to that of
   the twist.
@@ -245,6 +246,21 @@ theorem add_mem_image_stripTwistCoord_iff {a : ℝ}
     ext <;> simp [hF]
   · rw [← hqz]
     ext <;> simp [hFa q hq]
+
+/-- **Global periodicity of the band generating function.** Under the hypotheses of
+`TauCeti.stripBandGeneratingFunction_add_diag`, the band generating function is periodic with
+period `(a, a)` on all of `ℝ × ℝ`: on the band this is `stripBandGeneratingFunction_add_diag`, and
+off the band, which is invariant under the translation, it takes the same unspecified value at
+`z` and `z + (a, a)`. -/
+theorem periodic_stripBandGeneratingFunction (hJ : IsOpen J) (hJc : J.OrdConnected)
+    (h0 : 0 ∈ J) (hinj : InjOn (stripTwistCoord F) (Prod.snd ⁻¹' J)) {a : ℝ}
+    (hFa : ∀ q ∈ Prod.snd ⁻¹' J, F (q + (a, 0)) = F q + (a, 0)) :
+    Periodic (stripBandGeneratingFunction F J) (a, a) := by
+  intro z
+  by_cases hz : z ∈ stripTwistCoord F '' (Prod.snd ⁻¹' J)
+  · exact stripBandGeneratingFunction_add_diag hJ hJc h0 hinj hFa hz
+  · rw [stripBandGeneratingFunction_def, stripBandGeneratingFunction_def,
+      invFunOn_neg ((add_mem_image_stripTwistCoord_iff hFa z).not.2 hz), invFunOn_neg hz]
 
 /-- **The generating equations on the band.** Let the twist coordinates be injective on the strip
 `ℝ × J` over an open set `J`, and let `p = (x, y)` be a point of the strip at which `F = (X, Y)`
