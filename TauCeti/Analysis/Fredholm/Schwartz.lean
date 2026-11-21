@@ -24,8 +24,9 @@ The proof uses the compact-operator quotient estimate and bounded nonlinear righ
 These lower-level APIs require neither Fredholm hypotheses nor complemented kernels. No
 approximation property or finite-rank operator-norm approximation is assumed.
 
-In the cohomological application the lemma is used in a second form: if every `y` is
-`r g + δ e` with `r` compact, then the range of `δ` has finite codimension and is closed. Here `δ`
+In the cohomological application the lemma is used in a second form: for `δ : E → F` between
+Banach spaces and a compact `r : G → F` from a normed space `G` that need not be complete, if every
+`y` is `r g + δ e`, then the range of `δ` has finite codimension and is closed. Here `δ`
 is the coboundary of cochains and `r` restricts cocycles to a relatively compact refinement, so
 surjectivity of `(g, e) ↦ r g + δ e` says that every cocycle on the refinement is cohomologous to
 a restricted one. This is the lemma applied to the surjection `(g, e) ↦ r g + δ e` and the compact
@@ -108,9 +109,10 @@ theorem isClosed_range_add_of_surjective_of_isCompactOperator [CompleteSpace E] 
   exact (T + K).isClosed_range_of_finite_coker
 
 open UniformSpace in
-/-- **Schwartz's lemma, cohomological form.** If every point of a Banach space `F` is of the
-form `r g + δ e` with `r` compact, then the range of `δ` has finite codimension. The source `G`
-of `r` need not be complete: the proof extends `r` to the completion of `G`. -/
+/-- **Schwartz's lemma, cohomological form.** Let `δ : E → F` be a map between real or complex
+Banach spaces. If every point of `F` is of the form `r g + δ e` with `r` compact, then the range
+of `δ` has finite codimension. The source `G` of `r` need not be complete: the proof extends `r`
+to the completion of `G`. -/
 theorem cofg_range_of_surjective_coprod_of_isCompactOperator [CompleteSpace E] [CompleteSpace F]
     (r : G →L[𝕜] F) (δ : E →L[𝕜] F) (h : Function.Surjective (r.coprod δ))
     (hr : IsCompactOperator r) : δ.range.CoFG := by
@@ -134,8 +136,9 @@ theorem cofg_range_of_surjective_coprod_of_isCompactOperator [CompleteSpace E] [
   rwa [hδ, toLinearMap_comp, coe_snd,
     LinearMap.range_comp_of_range_eq_top _ (Submodule.range_snd ..)] at this
 
-/-- If every point of a Banach space `F` is of the form `r g + δ e` with `r` compact, then the
-range of `δ` is closed. The source `G` of `r` need not be complete. -/
+/-- Let `δ : E → F` be a map between real or complex Banach spaces. If every point of `F` is of
+the form `r g + δ e` with `r` compact, then the range of `δ` is closed. The source `G` of `r` need
+not be complete. -/
 theorem isClosed_range_of_surjective_coprod_of_isCompactOperator [CompleteSpace E]
     [CompleteSpace F] (r : G →L[𝕜] F) (δ : E →L[𝕜] F)
     (h : Function.Surjective (r.coprod δ)) (hr : IsCompactOperator r) :
