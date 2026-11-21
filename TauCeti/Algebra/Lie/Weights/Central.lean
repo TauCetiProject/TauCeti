@@ -158,7 +158,7 @@ def centralEnd (z : LieAlgebra.center K L) : M →ₗ⁅K,L⁆ M where
   map_add' := lie_add (z : L)
   map_smul' t m := lie_smul t (z : L) m
   map_lie' {x m} := by
-    have hz : ⁅x, (z : L)⁆ = 0 := (LieModule.mem_maxTrivSubmodule K L L (z : L)).1 z.2 x
+    have hz : ⁅x, (z : L)⁆ = 0 := (LieModule.mem_maxTrivSubmodule K L L (z : L)).1 z.property x
     rw [leibniz_lie x (z : L) m, hz, zero_lie, zero_add]
 
 @[simp]

@@ -196,7 +196,7 @@ theorem implicitCoordEquiv_symm_apply_zero_mk (f' : E →L[K] F) (hf' : f'.range
     (hker : f'.ker.ClosedComplemented) (k : f'.ker) :
     (f'.implicitCoordEquiv hf' hker).symm (0, k) = k := by
   rw [ContinuousLinearEquiv.symm_apply_eq, implicitCoordEquiv_apply, Classical.choose_spec hker k,
-    ← ContinuousLinearMap.coe_coe, LinearMap.mem_ker.1 k.2]
+    ← ContinuousLinearMap.coe_coe, LinearMap.mem_ker.1 k.property]
 
 /-- A surjective map `f' : E → F` with complemented kernel, together with an identification `φ`
 of its kernel with a model space `G`, gives a linear homeomorphism `G × F ≃ E` whose inverse has

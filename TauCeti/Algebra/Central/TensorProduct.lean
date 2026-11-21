@@ -79,7 +79,7 @@ theorem forall_commute_tmul_one_iff [Module.Free K B] [Algebra.IsCentral K A] {x
     clear h
     induction y using TensorProduct.inductionOn with
     | tmul a b =>
-      obtain ⟨k, hk⟩ := Algebra.mem_bot.mp a.2
+      obtain ⟨k, hk⟩ := Algebra.mem_bot.mp a.property
       exact ⟨k • b, by
         simp [← hk, Algebra.algebraMap_eq_smul_one, TensorProduct.smul_tmul]⟩
     | add y z hy hz =>

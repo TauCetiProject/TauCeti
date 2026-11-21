@@ -131,7 +131,7 @@ theorem exists_isGlHighestWeightVector [CharZero K] [FiniteDimensional K M] [Non
     glHeight K n mu = glHeight K n mu₀ + m}
   have hmem : ∀ m : S, ∃ (mu : n → K) (v : M), v ≠ 0 ∧
       (∀ i : n, ⁅(single i i 1 : Matrix n n K), v⁆ = mu i • v) ∧
-      glHeight K n mu = glHeight K n mu₀ + ((m : ℤ) : K) := fun m => m.2
+      glHeight K n mu = glHeight K n mu₀ + ((m : ℤ) : K) := fun m => m.property
   choose weight vec hvec0 hveceig hvecht using hmem
   -- Those vectors are eigenvectors of one operator, with pairwise distinct eigenvalues.
   set T := LieModule.toEnd K (Matrix n n K) M (glHeightMatrix K n) with hT

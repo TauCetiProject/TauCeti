@@ -122,20 +122,20 @@ theorem ofAnalyticAt_congr {f g : E → 𝕜} {hf : AnalyticAt 𝕜 f a}
 def pullback (g : E → F) (hg : AnalyticAt 𝕜 g a) (hga : g a = b) :
     analyticGerms 𝕜 b →+* analyticGerms 𝕜 a where
   toFun φ := ⟨(φ : Germ (𝓝 b) 𝕜).compTendsto g (hga ▸ hg.continuousAt.tendsto), by
-    obtain ⟨f, hf, hφ⟩ := φ.2
+    obtain ⟨f, hf, hφ⟩ := φ.property
     rw [← hφ, Germ.coe_compTendsto, coe_mem_analyticGerms]
     exact hf.comp_of_eq hg hga⟩
   map_zero' := Subtype.ext <| Germ.const_compTendsto 0 (hga ▸ hg.continuousAt.tendsto)
   map_one' := Subtype.ext <| Germ.const_compTendsto 1 (hga ▸ hg.continuousAt.tendsto)
   map_add' φ ψ := by
-    obtain ⟨f, hf, hφ⟩ := φ.2
-    obtain ⟨g, hg, hψ⟩ := ψ.2
+    obtain ⟨f, hf, hφ⟩ := φ.property
+    obtain ⟨g, hg, hψ⟩ := ψ.property
     apply Subtype.ext
     simp only [Subring.coe_add, ← hφ, ← hψ, ← Germ.coe_add, Germ.coe_compTendsto]
     rfl
   map_mul' φ ψ := by
-    obtain ⟨f, hf, hφ⟩ := φ.2
-    obtain ⟨g, hg, hψ⟩ := ψ.2
+    obtain ⟨f, hf, hφ⟩ := φ.property
+    obtain ⟨g, hg, hψ⟩ := ψ.property
     apply Subtype.ext
     simp only [Subring.coe_mul, ← hφ, ← hψ, ← Germ.coe_mul, Germ.coe_compTendsto]
     rfl
@@ -157,7 +157,7 @@ theorem pullback_ofAnalyticAt (g : E → F) (hg : AnalyticAt 𝕜 g a) (hga : g 
 /-- Every analytic germ is the germ of an analytic function. -/
 theorem exists_ofAnalyticAt (φ : analyticGerms 𝕜 a) :
     ∃ (f : E → 𝕜) (hf : AnalyticAt 𝕜 f a), ofAnalyticAt f hf = φ := by
-  obtain ⟨f, hf, hφ⟩ := mem_analyticGerms_iff.1 φ.2
+  obtain ⟨f, hf, hφ⟩ := mem_analyticGerms_iff.1 φ.property
   exact ⟨f, hf, Subtype.ext (by rw [coe_ofAnalyticAt, hφ])⟩
 
 /-- Pullback along the identity fixes each analytic germ. -/
