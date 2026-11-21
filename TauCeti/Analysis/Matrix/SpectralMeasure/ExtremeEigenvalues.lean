@@ -14,11 +14,11 @@ import TauCeti.MeasureTheory.Measure.Portmanteau
 # Extreme eigenvalues and weak spectral limits
 
 The empirical spectral measure of a Hermitian matrix charges a set exactly when some eigenvalue
-lies in it. Consequently, if the empirical spectral measures of a family of Hermitian matrices
-converge weakly to a probability measure `μ`, then every point of the support of `μ` is
-eventually approximated by eigenvalues. In particular the largest eigenvalue is eventually
-larger than any number below a point of the support, and the smallest eigenvalue is eventually
-smaller than any number above one.
+lies in it (`Matrix.IsHermitian.spectralMeasure_pos_iff`). Consequently, if the empirical spectral
+measures of a family of Hermitian matrices converge weakly to a probability measure `μ`, then
+every point of the support of `μ` is eventually approximated by eigenvalues. In particular the
+largest eigenvalue is eventually larger than any number below a point of the support, and the
+smallest eigenvalue is eventually smaller than any number above one.
 
 These are the lower halves of edge limit theorems: weak convergence alone gives
 `liminf λ_max ≥ sup (supp μ)` and `limsup λ_min ≤ inf (supp μ)`. The matching upper bounds are
@@ -28,13 +28,12 @@ than with `liminf` and `limsup`, which on `ℝ` need boundedness side conditions
 
 ## Main statements
 
-* `Matrix.IsHermitian.spectralMeasure_pos_iff`: the spectral measure charges a set if and only if
-  some eigenvalue lies in it.
 * `Matrix.eventually_exists_eigenvalues₀_mem_of_tendsto_spectralMeasure`: every neighbourhood of
   a point of the support of a weak spectral limit eventually contains an eigenvalue.
 * `Matrix.eventually_lt_eigenvalues₀_zero_of_tendsto_spectralMeasure`,
-  `Matrix.eventually_eigenvalues₀_card_sub_one_lt_of_tendsto_spectralMeasure`: the largest and
-  smallest eigenvalues eventually reach beyond every point of the support.
+  `Matrix.eventually_eigenvalues₀_card_sub_one_lt_of_tendsto_spectralMeasure`: the largest
+  eigenvalue eventually exceeds every `c` below a point of the support, and the smallest is
+  eventually below every `c` above one.
 * `Matrix.tendsto_eigenvalues₀_zero_iff_of_tendsto_spectralMeasure`,
   `Matrix.tendsto_eigenvalues₀_card_sub_one_iff_of_tendsto_spectralMeasure`: convergence of the
   largest or smallest eigenvalue to a point of the support reduces to a one-sided bound.
@@ -48,24 +47,10 @@ than with `liminf` and `limsup`, which on `ℝ` need boundedness side conditions
 
 public section
 
-open Filter MeasureTheory TauCeti.Probability
+open Filter MeasureTheory
 open scoped Topology
 
 namespace Matrix
-
-section Single
-
-variable {n 𝕜 : Type*} [Fintype n] [DecidableEq n] [Nonempty n] [RCLike 𝕜]
-
-/-- The empirical spectral measure of a Hermitian matrix charges a set if and only if some
-eigenvalue lies in it. The set need not be measurable. -/
-theorem IsHermitian.spectralMeasure_pos_iff {A : Matrix n n 𝕜} (hA : A.IsHermitian)
-    {s : Set ℝ} :
-    0 < (A.spectralMeasure hA : Measure ℝ) s ↔ ∃ k, hA.eigenvalues₀ k ∈ s := by
-  rw [spectralMeasure_eq_empiricalMeasureOfFintype_eigenvalues₀,
-    empiricalMeasureOfFintype_pos_iff]
-
-end Single
 
 variable {ι 𝕜 : Type*} {n : ι → Type*} [∀ i, Fintype (n i)] [∀ i, DecidableEq (n i)]
   [∀ i, Nonempty (n i)] [RCLike 𝕜] {l : Filter ι} {A : (i : ι) → Matrix (n i) (n i) 𝕜}
