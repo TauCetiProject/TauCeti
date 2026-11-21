@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.SingularSupport
 public import TauCeti.Analysis.Pseudodifferential.Sobolev
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Differential
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Elliptic
+import TauCeti.Analysis.Distribution.LineDeriv
 import TauCeti.Analysis.Distribution.TemperedDistribution.Cutoff
 import TauCeti.Analysis.Distribution.TemperedDistribution.Deriv
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
@@ -264,12 +265,14 @@ private theorem memSobolev_cutoffTempered_of_isEllipticAbove (hg : ∀ i, ContDi
     (ClassicalSymbol.hasCompactSpatialSupport_toSymbol_ofDifferentialSymbol M t m
       (fun i x ↦ β i x • ContinuousLinearMap.id ℂ ℂ) (fun i hi ↦ (hβ i hi).smul contDiff_const)
       hk fun i hi ↦ (hβc i hi).smul_right)
-    (φ := φS) (hφS ▸ φ.hasCompactSupport) (by
+    (φ := φS) (by
     rw [hφS]
     filter_upwards [hbψ] with y ⟨hψy, hby⟩ ξ
     simp only [ClassicalSymbol.coefficient_toSymbol_ofDifferentialSymbol, differentialSymbol_def,
       hby, β, TestFunction.smulLeftCLM_apply, hψy, Complex.real_smul, mul_one])
-    (s := s + M) (u := hr.toBesselPotentialSpace) (by rw [hu]; simpa using hPψ)
+    (Function.HasTemperateGrowth.const 1) (.of_forall fun _ ↦ rfl) (s := s + M)
+    (u := hr.toBesselPotentialSpace)
+    (by rw [TemperedDistribution.smulLeftCLM_const, one_smul, hu]; simpa using hPψ)
   rwa [BesselPotentialSpace.toDistr_smulLeftCLM, hφS, hr.toBesselPotentialSpace_toDistr,
     smulLeftCLM_cutoffTempered T hχφ] at hreg
 
@@ -344,11 +347,10 @@ theorem sobolevSingularSupport_sum_smul_smulLeftCLM_iteratedLineDerivOp_of_foral
     (T : 𝓓'(Ω, ℂ)) :
     (∑ i ∈ t, c i • smulLeftCLM (hg i) (∂^{m i} T)).sobolevSingularSupport s =
       T.sobolevSingularSupport (s + M) := by
-  refine subset_antisymm (by simpa using
-    sobolevSingularSupport_sum_smul_smulLeftCLM_iteratedLineDerivOp_subset (s + M) t c hg m hk T)
-    fun x hx ↦ mem_sobolevSingularSupport_iff.2 ⟨(mem_sobolevSingularSupport_iff.1 hx).1,
-      fun hP ↦ (mem_sobolevSingularSupport_iff.1 hx).2
-        (hP.of_sum_smul_smulLeftCLM_iteratedLineDerivOp hg hk (hσ x hP.mem))⟩
+  ext x
+  simp only [mem_sobolevSingularSupport_iff, and_congr_right_iff]
+  exact fun hx ↦ not_congr (isLocallySobolevAt_sum_smul_smulLeftCLM_iteratedLineDerivOp_iff hg hk
+    (hσ x hx))
 
 /-- **Elliptic regularity for the Laplacian.** `T` is `H^(s + 2)` exactly where `Δ T` is `H^s`. -/
 @[simp]
@@ -359,7 +361,7 @@ theorem sobolevSingularSupport_laplacianCLM (s : ℝ) (T : 𝓓'(Ω, ℂ)) :
   have h := sobolevSingularSupport_sum_smul_smulLeftCLM_iteratedLineDerivOp_of_forall_ne_zero s
     Finset.univ (fun _ ↦ 1) (g := fun _ _ ↦ 1) (fun _ ↦ contDiff_const) (k := fun _ ↦ 2)
     (fun i ↦ ![b i, b i]) (M := 2) (fun _ _ ↦ le_rfl) (fun _ _ ξ hξ ↦ ?_) T
-  · simpa [laplacianCLM_eq_sum b, iteratedLineDerivOp_succ_left, Fin.tail] using h
+  · simpa [laplacianCLM_eq_sum_iteratedLineDerivOp b] using h
   simp only [ofReal_one, one_mul]
   rw [constCoeffPrincipalSymbol_laplacian]
   exact_mod_cast (pow_pos (norm_pos_iff.2 hξ) 2).ne'

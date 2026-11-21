@@ -10,7 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.RootSubgroup.Basic
 public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.Cocharacter
 public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.RootDatum.Basic
 public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.Weight
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A.Basic
 
 /-!
 # The root datum of the special linear group relative to its diagonal torus

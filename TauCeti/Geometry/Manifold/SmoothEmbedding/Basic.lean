@@ -39,9 +39,11 @@ the inputs of the tubular-neighbourhood and surgery constructions.
 
 ## Main results
 
-* `Manifold.IsSmoothEmbedding.contMDiff_iff_comp`, `contMDiffWithinAt_iff_comp`,
-  `contMDiffAt_iff_comp` and `contMDiffOn_iff_comp`: smoothness (globally, at a point, within a
-  set, or on a set) can be tested after composition with a smooth embedding, without a separate
+* `Manifold.IsSmoothEmbedding.contMDiffWithinAt_iff_comp`,
+  `Manifold.IsSmoothEmbedding.contMDiffAt_iff_comp`,
+  `Manifold.IsSmoothEmbedding.contMDiffOn_iff_comp`,
+  `Manifold.IsSmoothEmbedding.contMDiff_iff_comp`: smoothness (within a set, at a point, on a set,
+  or globally) can be tested after composition with a smooth embedding, without a separate
   continuity hypothesis.
 * `Manifold.IsSmoothEmbedding.comp`: the composition of smooth embeddings between boundaryless
   manifolds with a finite-dimensional target model is a smooth embedding.
@@ -82,6 +84,30 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 
 namespace Manifold.IsSmoothEmbedding
 
+/-- A map into a smoothly embedded manifold is `C^n` within a set at a point if and only if its
+composite with the embedding is. No separate continuity assumption is needed. -/
+theorem contMDiffWithinAt_iff_comp {f : M → N} {φ : N → N'} {s : Set M} {x : M}
+    (hφ : Manifold.IsSmoothEmbedding J J' n φ) :
+    ContMDiffWithinAt I J n f s x ↔ ContMDiffWithinAt I J' n (φ ∘ f) s x := by
+  rw [ContMDiffWithinAt.iff_comp_isImmersionAt (hφ.isImmersion.isImmersionAt (f x))]
+  exact ⟨And.right, fun h ↦ ⟨hφ.isEmbedding.continuousWithinAt_iff.2 h.continuousWithinAt, h⟩⟩
+
+/-- A map into a smoothly embedded manifold is `C^n` at a point if and only if its composite with
+the embedding is. No separate continuity assumption is needed. -/
+theorem contMDiffAt_iff_comp {f : M → N} {φ : N → N'} {x : M}
+    (hφ : Manifold.IsSmoothEmbedding J J' n φ) :
+    ContMDiffAt I J n f x ↔ ContMDiffAt I J' n (φ ∘ f) x := by
+  rw [ContMDiffAt.iff_comp_isImmersionAt (hφ.isImmersion.isImmersionAt (f x))]
+  exact ⟨And.right, fun h ↦ ⟨hφ.isEmbedding.continuousAt_iff.2 h.continuousAt, h⟩⟩
+
+/-- A map into a smoothly embedded manifold is `C^n` on a set if and only if its composite with
+the embedding is. No separate continuity assumption is needed. -/
+theorem contMDiffOn_iff_comp {f : M → N} {φ : N → N'} {s : Set M}
+    (hφ : Manifold.IsSmoothEmbedding J J' n φ) :
+    ContMDiffOn I J n f s ↔ ContMDiffOn I J' n (φ ∘ f) s := by
+  rw [ContMDiffOn.iff_comp_isImmersion hφ.isImmersion]
+  exact ⟨And.right, fun h ↦ ⟨hφ.isEmbedding.continuousOn_iff.2 h.continuousOn, h⟩⟩
+
 /-- A map into a smoothly embedded manifold is smooth if and only if its composite with
 the embedding is smooth. No separate continuity assumption is needed. -/
 theorem contMDiff_iff_comp {f : M → N} {φ : N → N'}
@@ -89,62 +115,6 @@ theorem contMDiff_iff_comp {f : M → N} {φ : N → N'}
     ContMDiff I J n f ↔ ContMDiff I J' n (φ ∘ f) := by
   rw [ContMDiff.iff_comp_isImmersion hφ.isImmersion]
   exact ⟨And.right, fun h ↦ ⟨hφ.isEmbedding.continuous_iff.2 h.continuous, h⟩⟩
-
-/-- A map into a smoothly embedded manifold is `C^n` within `s` at `x` if and only if its
-composite with the embedding is. No separate continuity assumption is needed.
-
-Adapted from `ContMDiffAt.iff_comp_isImmersionAtOfComplement` in
-`Mathlib.Geometry.Manifold.Immersion`, using the topological embedding property of `φ` in place of
-a pointwise continuity hypothesis. -/
-theorem contMDiffWithinAt_iff_comp {f : M → N} {φ : N → N'} {s : Set M} {x : M}
-    (hφ : Manifold.IsSmoothEmbedding J J' n φ) :
-    ContMDiffWithinAt I J n f s x ↔ ContMDiffWithinAt I J' n (φ ∘ f) s x := by
-  refine ⟨fun hf ↦ (hφ.contMDiff (f x)).comp_contMDiffWithinAt x hf, fun h' ↦ ?_⟩
-  rw [← contMDiffWithinAt_insert_self] at h' ⊢; set s' := insert x s
-  have hf_cont : ContinuousWithinAt f s' x :=
-    hφ.isEmbedding.isInducing.continuousWithinAt_iff.2 h'.continuousWithinAt
-  let h := (hφ.isImmersion.isImmersionAt (f x)).isImmersionAtOfComplement_complement
-  let t := s' ∩ f ⁻¹' h.domChart.source
-  have hxt : x ∈ t := ⟨Set.mem_insert x s, h.mem_domChart_source⟩
-  have ht_mem : t ∈ 𝓝[s'] x := Filter.inter_mem self_mem_nhdsWithin <|
-    hf_cont.preimage_mem_nhdsWithin (h.domChart.open_source.mem_nhds h.mem_domChart_source)
-  suffices ContMDiffWithinAt I J n f t x from this.mono_of_mem_nhdsWithin ht_mem
-  rw [contMDiffWithinAt_iff_of_mem_maximalAtlas' h.domChart_mem_maximalAtlas h.mem_domChart_source]
-  refine ⟨hf_cont.mono Set.inter_subset_left, ?_⟩
-  set f' := (h.domChart.extend J) ∘ f ∘ (extChartAt I x).symm
-  set φ' := (h.codChart.extend J') ∘ φ ∘ (h.domChart.extend J).symm
-  set x' := extChartAt I x x; set u := (extChartAt I x).symm ⁻¹' t ∩ Set.range I
-  have hx' : x' ∈ u := ⟨by simp [x', hxt], Set.mem_range_self _⟩
-  have h'loc : ContDiffWithinAt 𝕜 n ((h.codChart.extend J') ∘ (φ ∘ f) ∘ (extChartAt I x).symm)
-      u x' := by
-    have h't : ContMDiffWithinAt I J' n (φ ∘ f) t x := h'.mono Set.inter_subset_left
-    rw [contMDiffWithinAt_iff_of_mem_maximalAtlas' h.codChart_mem_maximalAtlas] at h't
-    exacts [h't.2, h.mem_codChart_source]
-  have hcomp : ContDiffWithinAt 𝕜 n (φ' ∘ f') u x' := h'loc.congr_of_mem (fun y hy ↦ by
-    simp only [mfld_simps, φ', f']; rw [h.domChart.left_inv]; exact hy.1.2) hx'
-  set f'' := (h.equiv ∘ fun z ↦ (z, 0)) ∘ f'
-  have hf'' : ContDiffWithinAt 𝕜 n f'' u x' := hcomp.congr_of_mem (fun y hy ↦ by
-    simp only [f'', φ', f']; nth_rw 2 [Function.comp_apply]
-    rw [Function.comp_apply, h.writtenInCharts]
-    rw [h.domChart.extend_target_eq_image_source]
-    exact ⟨f ((extChartAt I x).symm y), hy.1.2, rfl⟩) hx'
-  let P : _ →L[𝕜] E' := (ContinuousLinearMap.fst 𝕜 E' _).comp h.equiv.symm.toContinuousLinearMap
-  exact (P.contDiff.contDiffWithinAt.comp x' hf'' (Set.mapsTo_univ _ _)).congr_of_mem
-    (fun _ _ ↦ by simp [P, f'']) hx'
-
-/-- A map into a smoothly embedded manifold is `C^n` at `x` if and only if its composite with
-the embedding is. No separate continuity assumption is needed. -/
-theorem contMDiffAt_iff_comp {f : M → N} {φ : N → N'} {x : M}
-    (hφ : Manifold.IsSmoothEmbedding J J' n φ) :
-    ContMDiffAt I J n f x ↔ ContMDiffAt I J' n (φ ∘ f) x := by
-  simp only [← contMDiffWithinAt_univ, hφ.contMDiffWithinAt_iff_comp]
-
-/-- A map into a smoothly embedded manifold is `C^n` on `s` if and only if its composite with
-the embedding is. No separate continuity assumption is needed. -/
-theorem contMDiffOn_iff_comp {f : M → N} {φ : N → N'} {s : Set M}
-    (hφ : Manifold.IsSmoothEmbedding J J' n φ) :
-    ContMDiffOn I J n f s ↔ ContMDiffOn I J' n (φ ∘ f) s :=
-  forall₂_congr fun _ _ ↦ hφ.contMDiffWithinAt_iff_comp
 
 /-- The composition of two `C^n` smooth embeddings (`1 ≤ n`) whose source and target are
 boundaryless manifolds, with a finite-dimensional target model, is a `C^n` smooth embedding. -/
