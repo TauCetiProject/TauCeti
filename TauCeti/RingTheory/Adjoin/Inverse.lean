@@ -96,7 +96,8 @@ theorem finite_quotient_sup_of_mul_eq_one (hFG : F * G = 1) (hB : Algebra.adjoin
     (hQ : ∀ x ∈ Q, G • x ∈ Q) (hSQ : S ⊆ Q) :
     Module.Finite R (N ⧸ (P ⊔ Q)) := by
   have hpow (j : ℕ) {x : N} (hx : x ∈ P) : F ^ j • x ∈ P :=
-    smul_mem_of_mem_adjoin_singleton hP (pow_mem (Algebra.self_mem_adjoin_singleton R F) j) hx
+    smul_mem_of_mem_adjoin (by simpa using hP)
+      (pow_mem (Algebra.self_mem_adjoin_singleton R F) j) hx
   -- a uniform exponent `k` with `F ^ k • S ⊆ P`
   obtain ⟨k, hk⟩ : ∃ k : ℕ, ∀ n ∈ S, F ^ k • n ∈ P := by
     choose! e he using hSP
@@ -115,7 +116,7 @@ theorem finite_quotient_sup_of_mul_eq_one (hFG : F * G = 1) (hB : Algebra.adjoin
     obtain ⟨p, hp, q, hq, rfl⟩ := hb
     rw [add_smul]
     refine Submodule.add_mem _ ?_ (Submodule.mem_sup_left (Submodule.mem_sup_right
-      (smul_mem_of_mem_adjoin_singleton hQ hq (hSQ hn))))
+      (smul_mem_of_mem_adjoin (by simpa using hQ) hq (hSQ hn))))
     rw [Algebra.adjoin_eq_span] at hp
     induction hp using Submodule.span_induction with
     | mem m hm =>
