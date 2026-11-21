@@ -264,8 +264,11 @@ example :
       (fun q : {q : Ultrafilter unitInterval × Ultrafilter unitInterval // r q.1 q.2} ↦
         q.val.1) :=
     generalizingMap_of_t1Space
-  refine ⟨inferInstance, hR, hs_gen, hR.t0Space_quotient hs_gen,
-    hR.generalizingMap_quotientMk hs_gen, fun hspec ↦ ?_⟩
+  refine ⟨inferInstance, hR, hs_gen,
+    t0Space_quotient SpectralSpace.isLocallySpectralSpace hR.isLocallyProConstructible hs_gen,
+    generalizingMap_quotientMk SpectralSpace.isLocallySpectralSpace hR.isLocallyProConstructible
+      hs_gen,
+    fun hspec ↦ ?_⟩
   have hf_surj : Function.Surjective f := fun y ↦ ⟨pure y, ultrafilter_extend_pure id y⟩
   have hf_quot : IsQuotientMap f := f.continuous.isClosedMap.isQuotientMap f.continuous hf_surj
   have : SpectralSpace unitInterval := hf_quot.homeomorph.spectralSpace

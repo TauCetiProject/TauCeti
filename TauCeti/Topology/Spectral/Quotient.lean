@@ -46,7 +46,8 @@ generalizing spectral map (`TauCeti.spectralSpace_quotient`): the topology coind
 so `TauCeti.spectralSpace_of_isClopen_generateFrom` applies.
 
 Finally, when the first projection from `{q : X × X // r q.1 q.2}` to `X` is an open map, it is
-automatically generalizing (`TauCeti.generalizingMap_fst_of_isOpenMap`). On a spectral space `X`
+automatically generalizing (by `IsSpectralMap.generalizingMap_of_isOpenMap` and
+`TauCeti.IsLocallySpectralMap.generalizingMap_of_isOpenMap`). On a spectral space `X`
 this makes `Quotient r` spectral with spectral quotient map
 (`TauCeti.spectralSpace_quotient_of_isOpenMap`). On any locally spectral space `X`, restricting `r`
 to spectral open charts via `IsOpen.quotientComapHomeomorphImage` — without requiring the charts to
@@ -362,27 +363,6 @@ theorem spectralSpace_quotient [SpectralSpace X] {r : Setoid X}
 
 /-! ### Open-projection quotients -/
 
-/-- When `X` is locally spectral and `{q : X × X | r q.1 q.2}` is locally pro-constructible, an
-open first projection is automatically generalizing. -/
-theorem generalizingMap_fst_of_isOpenMap (hX : IsLocallySpectralSpace X) {r : Setoid X}
-    (hR : IsLocallyProConstructible {q : X × X | r q.1 q.2})
-    (hs_open : IsOpenMap fun q : {q : X × X // r q.1 q.2} ↦ q.val.1) :
-    GeneralizingMap fun q : {q : X × X // r q.1 q.2} ↦ q.val.1 := by
-  intro q b hbq
-  let fst : {q : X × X // r q.1 q.2} → X := fun p ↦ p.val.1
-  have hfib : IsLocallyProConstructible (fst ⁻¹' {b}) :=
-    (isLocallyProConstructible_singleton b).preimage hX (hR.isLocallySpectralMap_fst hX)
-  have hR_sp : IsLocallySpectralSpace {q : X × X // r q.1 q.2} :=
-    hR.isLocallySpectralSpace (hX.prod hX)
-  have hq_cl : q ∈ closure (fst ⁻¹' {b}) := by
-    refine mem_closure_iff.mpr fun O hOo hqO ↦ ?_
-    obtain ⟨p, hpO, hpb⟩ :=
-      specializes_iff_forall_open.mp hbq (fst '' O) (hs_open O hOo) ⟨q, hqO, rfl⟩
-    exact ⟨p, hpO, hpb⟩
-  rw [hfib.closure_eq_setOfPred_specializes hR_sp] at hq_cl
-  obtain ⟨p, hpb, hpq⟩ := hq_cl
-  exact ⟨p, hpq, hpb⟩
-
 /-- **Scholze, *Étale cohomology of diamonds*, Lemma 2.10** (global case): if `X` is spectral,
 `{q : X × X | r q.1 q.2}` is pro-constructible in `X × X`, and the first projection from
 `{q : X × X // r q.1 q.2}` to `X` is an open map, then `Quotient r` is a spectral space. -/
@@ -390,8 +370,8 @@ theorem spectralSpace_quotient_of_isOpenMap [SpectralSpace X] {r : Setoid X}
     (hR : IsProConstructible {q : X × X | r q.1 q.2})
     (hs_open : IsOpenMap fun q : {q : X × X // r q.1 q.2} ↦ q.val.1) :
     SpectralSpace (Quotient r) := by
-  have hX : IsLocallySpectralSpace X := SpectralSpace.isLocallySpectralSpace
-  have hs_gen := generalizingMap_fst_of_isOpenMap hX hR.isLocallyProConstructible hs_open
+  have _ := hR.spectralSpace
+  have hs_gen := hR.isSpectralMap_fst.generalizingMap_of_isOpenMap hs_open
   have hB :
       IsTopologicalBasis (Set.image (Quotient.mk r) '' {W : Set X | IsOpen W ∧ IsCompact W}) :=
     (r.isOpenQuotientMap_quotientMk hs_open).isTopologicalBasis
@@ -507,23 +487,6 @@ theorem IsProConstructible.preimage_image_quotientMk {s : Set X} (hs : IsProCons
   isLocallyProConstructible_iff_isProConstructible.mp <|
     hs.isLocallyProConstructible.preimage_image_quotientMk SpectralSpace.isLocallySpectralSpace
       hR.isLocallyProConstructible hR.isSpectralMap_fst
-
-/-- On a spectral space, the quotient map of a pro-constructible equivalence relation with
-generalizing first projection lifts generalizations. -/
-theorem IsProConstructible.generalizingMap_quotientMk
-    (hR : IsProConstructible {q : X × X | r q.1 q.2})
-    (hs : GeneralizingMap fun q : {q : X × X // r q.1 q.2} ↦ q.val.1) :
-    GeneralizingMap (Quotient.mk r) :=
-  TauCeti.generalizingMap_quotientMk SpectralSpace.isLocallySpectralSpace
-    hR.isLocallyProConstructible hs
-
-/-- On a spectral space, a pro-constructible equivalence relation with generalizing first
-projection has a T₀ quotient. -/
-theorem IsProConstructible.t0Space_quotient
-    (hR : IsProConstructible {q : X × X | r q.1 q.2})
-    (hs : GeneralizingMap fun q : {q : X × X // r q.1 q.2} ↦ q.val.1) :
-    T0Space (Quotient r) :=
-  TauCeti.t0Space_quotient SpectralSpace.isLocallySpectralSpace hR.isLocallyProConstructible hs
 
 /-- Global spectral form of `TauCeti.exists_isOpen_preimage_image_quotientMk_subset_sInter`: on a
 spectral space `X`, if `{q : X × X | r q.1 q.2}` is pro-constructible and its first projection
