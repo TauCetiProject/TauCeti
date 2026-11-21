@@ -102,24 +102,25 @@ private theorem shiftedLaplacianSymbol_rpow_le {c : ℝ} (hc : 0 < c) (s : ℝ) 
 
 /-- For `c > 0`, the complex-valued symbol `((2π)² ‖ζ‖² + c) ^ s` of `(-Δ + c) ^ s` has temperate
 growth. -/
-theorem hasTemperateGrowth_shiftedLaplacianSymbol {c : ℝ} (hc : 0 < c) (s : ℝ) :
+theorem hasTemperateGrowth_shiftedLaplacianSymbol_rpow {c : ℝ} (hc : 0 < c) (s : ℝ) :
     (fun ζ : E ↦ ((((2 * π) ^ 2 * ‖ζ‖ ^ 2 + c) ^ s : ℝ) : ℂ)).HasTemperateGrowth :=
   Complex.hasTemperateGrowth_ofReal.comp
     (TauCeti.hasTemperateGrowth_mul_norm_sq_add_rpow (by positivity) hc s)
 
 /-- For `c > 0`, the symbol `((2π)² ‖ζ‖² + c) ^ s (1 + ‖ζ‖ ^ 2) ^ (-s)` comparing `(-Δ + c) ^ s`
 with the Bessel potential `J ^ (2s)` has temperate growth. -/
-private theorem hasTemperateGrowth_shiftedLaplacianSymbol_mul_rpow_neg {c : ℝ} (hc : 0 < c)
+private theorem hasTemperateGrowth_shiftedLaplacianSymbol_rpow_mul_rpow_neg {c : ℝ} (hc : 0 < c)
     (s : ℝ) : (fun ζ : E ↦
       ((((2 * π) ^ 2 * ‖ζ‖ ^ 2 + c) ^ s * (1 + ‖ζ‖ ^ 2) ^ (-s) : ℝ) : ℂ)).HasTemperateGrowth := by
-  have h := hasTemperateGrowth_shiftedLaplacianSymbol (E := E) hc s
+  have h := hasTemperateGrowth_shiftedLaplacianSymbol_rpow (E := E) hc s
   simp only [Complex.ofReal_mul]
   fun_prop
 
 omit [InnerProductSpace ℝ E] in
 /-- For `c > 0`, the symbol `((2π)² ‖ζ‖² + c) ^ s (1 + ‖ζ‖ ^ 2) ^ (-s)` is bounded by
 `max (a ^ s) (b ^ s)`, with `a = min c (2π)²` and `b = max c (2π)²`. -/
-private theorem norm_shiftedLaplacianSymbol_mul_rpow_neg_le {c : ℝ} (hc : 0 < c) (s : ℝ) (ζ : E) :
+private theorem norm_shiftedLaplacianSymbol_rpow_mul_rpow_neg_le {c : ℝ} (hc : 0 < c) (s : ℝ)
+    (ζ : E) :
     ‖((((2 * π) ^ 2 * ‖ζ‖ ^ 2 + c) ^ s * (1 + ‖ζ‖ ^ 2) ^ (-s) : ℝ) : ℂ)‖ ≤
       max (min c ((2 * π) ^ 2) ^ s) (max c ((2 * π) ^ 2) ^ s) := by
   have hpos : 0 < (1 + ‖ζ‖ ^ 2) ^ s := by positivity
@@ -164,8 +165,9 @@ theorem shiftedLaplacianRpow_shiftedLaplacianRpow {c : ℝ} (hc : 0 < c) (s t : 
     shiftedLaplacianRpow F c t (shiftedLaplacianRpow F c s f) =
       shiftedLaplacianRpow F c (s + t) f := by
   rw [shiftedLaplacianRpow_eq_fourierMultiplierCLM, shiftedLaplacianRpow_eq_fourierMultiplierCLM,
-    fourierMultiplierCLM_fourierMultiplierCLM_apply (hasTemperateGrowth_shiftedLaplacianSymbol hc s)
-      (hasTemperateGrowth_shiftedLaplacianSymbol hc t),
+    fourierMultiplierCLM_fourierMultiplierCLM_apply
+      (hasTemperateGrowth_shiftedLaplacianSymbol_rpow hc s)
+      (hasTemperateGrowth_shiftedLaplacianSymbol_rpow hc t),
     shiftedLaplacianRpow_eq_fourierMultiplierCLM]
   congr 2
   ext ζ
@@ -230,7 +232,7 @@ private theorem shiftedLaplacianRpow_eq_besselPotential_fourierMultiplierCLM {c 
       (fourierMultiplierCLM F (fun ζ : E ↦
         ((((2 * π) ^ 2 * ‖ζ‖ ^ 2 + c) ^ s * (1 + ‖ζ‖ ^ 2) ^ (-s) : ℝ) : ℂ)) f) := by
   rw [besselPotential, fourierMultiplierCLM_fourierMultiplierCLM_apply
-      (hasTemperateGrowth_shiftedLaplacianSymbol_mul_rpow_neg hc s) (by fun_prop),
+      (hasTemperateGrowth_shiftedLaplacianSymbol_rpow_mul_rpow_neg hc s) (by fun_prop),
     shiftedLaplacianRpow_eq_fourierMultiplierCLM]
   congr 2
   ext ζ
@@ -246,8 +248,8 @@ theorem MemSobolev.shiftedLaplacianRpow {c t : ℝ} (hc : 0 < c) (s : ℝ) {f : 
   rw [shiftedLaplacianRpow_eq_besselPotential_fourierMultiplierCLM hc,
     memSobolev_besselPotential_iff, show 2 * s + (t - 2 * s) = t by ring]
   exact hf.fourierMultiplierCLM_of_bounded
-    (hasTemperateGrowth_shiftedLaplacianSymbol_mul_rpow_neg hc s)
-    ⟨_, norm_shiftedLaplacianSymbol_mul_rpow_neg_le hc s⟩
+    (hasTemperateGrowth_shiftedLaplacianSymbol_rpow_mul_rpow_neg hc s)
+    ⟨_, norm_shiftedLaplacianSymbol_rpow_mul_rpow_neg_le hc s⟩
 
 /-- For `c > 0`, a tempered distribution `f` lies in `H^t` if and only if `(-Δ + c) ^ s f` lies in
 `H^{t - 2s}`. -/
@@ -319,7 +321,7 @@ theorem norm_shiftedLaplacianRpowEquiv_le (hc : 0 < c) (s t : ℝ) (u : H^{t}(E,
     ‖shiftedLaplacianRpowEquiv hc s t u‖ ≤
       max (min c ((2 * π) ^ 2) ^ s) (max c ((2 * π) ^ 2) ^ s) * ‖u‖ := by
   refine norm_le_of_toDistr_eq_fourierMultiplierCLM
-    (TemperedDistribution.hasTemperateGrowth_shiftedLaplacianSymbol hc s) (fun ζ ↦ ?_)
+    (TemperedDistribution.hasTemperateGrowth_shiftedLaplacianSymbol_rpow hc s) (fun ζ ↦ ?_)
     (toDistr_shiftedLaplacianRpowEquiv hc s t u)
   rw [Complex.norm_real, Real.norm_of_nonneg (by positivity),
     show t / 2 = (2 * s + (t - 2 * s)) / 2 by ring, TauCeti.one_add_norm_sq_rpow_add,
@@ -335,7 +337,7 @@ theorem norm_le_norm_shiftedLaplacianRpowEquiv (hc : 0 < c) (s t : ℝ) (u : H^{
       ‖shiftedLaplacianRpowEquiv hc s t u‖ := by
   set v := shiftedLaplacianRpowEquiv hc s t u
   refine norm_le_of_toDistr_eq_fourierMultiplierCLM
-    (TemperedDistribution.hasTemperateGrowth_shiftedLaplacianSymbol hc (-s)) (fun ζ ↦ ?_)
+    (TemperedDistribution.hasTemperateGrowth_shiftedLaplacianSymbol_rpow hc (-s)) (fun ζ ↦ ?_)
     (u := v) (v := u) ?_
   · rw [Complex.norm_real, Real.norm_of_nonneg (by positivity),
       show (t - 2 * s) / 2 = (2 * -s + t) / 2 by ring, TauCeti.one_add_norm_sq_rpow_add,
