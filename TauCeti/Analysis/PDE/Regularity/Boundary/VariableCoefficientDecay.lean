@@ -15,6 +15,7 @@ import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Measure.Haar.HalfSpace
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
+import TauCeti.MeasureTheory.Measure.InterBall
 
 /-!
 # Decay estimates at a flat boundary for Hölder coefficients

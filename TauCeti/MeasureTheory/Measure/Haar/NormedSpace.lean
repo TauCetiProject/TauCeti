@@ -15,6 +15,7 @@ import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.Deriv.Pow
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Measure.Haar.Unique
+import TauCeti.MeasureTheory.Measure.InterBall
 import Mathlib.MeasureTheory.Measure.Prod
 import Mathlib.MeasureTheory.Group.Integral
 import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
@@ -79,8 +80,6 @@ gives a set of measure one.
 * `MeasureTheory.Measure.restrict_restrict_closedBall_eq_restrict_ball_inter`: for the
   restriction to a set `Ω`, restricting further to a closed ball is restricting to the
   intersection of `Ω` with the open ball.
-* `MeasureTheory.measure_ball_inter_ne_top`: the intersection of a ball with any set has finite
-  measure.
 * `MeasureTheory.Measure.mul_measureReal_ball_le_measureReal_ball_inter`: a lower density bound
   for a set in a closed ball passes to the open ball of the same radius.
 * `MeasureTheory.Measure.ae_eq_closedBall_of_subset_of_measure_eq`: a set inside a closed ball,
@@ -439,13 +438,6 @@ theorem _root_.MeasureTheory.Measure.restrict_restrict_closedBall_eq_restrict_ba
   rw [Measure.restrict_restrict measurableSet_closedBall]
   exact Measure.restrict_congr_set
     ((mu.addHaar_closedBall_ae_eq_ball x r).inter Filter.EventuallyEqSet.rfl)
-
-/-- The intersection of a ball with any set has finite measure, for a measure that is finite on
-compact sets of a proper space. -/
-theorem _root_.MeasureTheory.measure_ball_inter_ne_top {X : Type*} [PseudoMetricSpace X]
-    [ProperSpace X] [MeasurableSpace X] {μ : Measure X} [IsFiniteMeasureOnCompacts μ] {x : X}
-    {r : ℝ} {s : Set X} : μ (ball x r ∩ s) ≠ ⊤ :=
-  (measure_inter_lt_top_of_left_ne_top measure_ball_lt_top.ne).ne
 
 /-- If a set `Ω` has density at least `c` in a closed ball for an additive Haar measure, that is
 `c μ(closedBall x r) ≤ μ(closedBall x r ∩ Ω)`, then it has density at least `c` in the open ball
