@@ -24,7 +24,9 @@ image lies in `L(D')` for any divisor `D'` of `F'` with the coefficients `e(P' �
 conorm (`TauCeti.mem_riemannRochSpace_algebraMap_iff_of_coeff_eq`). Multiples of a pole divisor
 are an example: a function `f` of `F` lies in `L(n (z)_∞)` exactly when its image lies in
 `L(n (z)_∞)` computed in `F'` (`TauCeti.mem_riemannRochSpace_nsmul_poles_map_iff`), with no
-conorm needed, because both pole divisors are read off from the orders of `z`. For `F' = F`
+conorm needed, because both pole divisors are read off from the orders of `z`; similarly, an
+intermediate function field containing a basis of `L(l (z)_∞)` has at least the same dimension
+(`TauCeti.Divisor.dim_nsmul_poles_le_of_forall_exists`). For `F' = F`
 enlarging the constants inside `F` leaves every Riemann–Roch space unchanged as a set along the
 conorm (`TauCeti.restrictScalars_riemannRochSpace_conorm`,
 `TauCeti.restrictScalars_riemannRochSpace_nsmul_poles`), rescaling dimensions by `[k' : k]`
@@ -122,6 +124,41 @@ theorem restrictScalars_riemannRochSpace_nsmul_poles [Algebra k' F] [IsScalarTow
       riemannRochSpace (n • Divisor.poles hF z) := by
   ext f
   simpa using mem_riemannRochSpace_nsmul_poles_map_iff (F' := F) hF hF' n z f
+
+omit [Algebra.IsIntegral k k'] [Algebra k k'] [Algebra k F] [Algebra k F']
+    [IsScalarTower k k' F'] [IsScalarTower k F F'] in
+/-- If an intermediate function field `(M, E)` contains a `k'`-basis of `L(l • (z)_∞)` in `F'`,
+then `ℓ(l • (z)_∞)` over `(M, E)` is at least `ℓ(l • (z)_∞)` over `(k', F')`. -/
+theorem Divisor.dim_nsmul_poles_le_of_forall_exists {M E : Type*} [Field M] [Field E]
+    [Algebra M k'] [Algebra M E] [Algebra M F'] [Algebra E F'] [IsScalarTower M k' F']
+    [IsScalarTower M E F'] [Algebra F E] [IsScalarTower F E F'] [Algebra.IsIntegral E F']
+    (hFE : IsFunctionField M E) (hF' : IsFunctionField k' F') (z : Fˣ) (l : ℕ)
+    {ι : Type*} [Finite ι]
+    (b : Module.Basis ι k' (riemannRochSpace
+      (l • Divisor.poles hF' (Units.map (algebraMap F F' : F →* F') z))))
+    (hb : ∀ i, ∃ y : E, algebraMap E F' y = b i) :
+    (l • Divisor.poles hF' (Units.map (algebraMap F F' : F →* F') z)).dim ≤
+      (l • Divisor.poles hFE (Units.map (algebraMap F E : F →* E) z)).dim := by
+  classical
+  cases nonempty_fintype ι
+  choose y hy using hb
+  have hz_eq : Units.map (algebraMap E F' : E →* F') (Units.map (algebraMap F E : F →* E) z) =
+      Units.map (algebraMap F F' : F →* F') z :=
+    Units.ext (IsScalarTower.algebraMap_apply F E F' z).symm
+  let v : ι → riemannRochSpace (l • Divisor.poles hFE (Units.map (algebraMap F E : F →* E) z)) :=
+    fun i ↦ ⟨y i, (mem_riemannRochSpace_nsmul_poles_map_iff hFE hF' l
+      (Units.map (algebraMap F E : F →* E) z) (y i)).1 (by rw [hy i, hz_eq]; exact (b i).property)⟩
+  have hcomp : ((IsScalarTower.toAlgHom M E F').toLinearMap.comp
+      (riemannRochSpace _).subtype) ∘ v = (riemannRochSpace _).subtype ∘ b :=
+    funext fun i ↦ hy i
+  have hli : LinearIndependent M v :=
+    .of_comp ((IsScalarTower.toAlgHom M E F').toLinearMap.comp (riemannRochSpace _).subtype) <|
+      hcomp.symm ▸ ((b.linearIndependent.map' (riemannRochSpace _).subtype
+        (Submodule.ker_subtype _)).restrict_scalars' M)
+  have := finiteDimensional_riemannRochSpace hFE
+    (l • Divisor.poles hFE (Units.map (algebraMap F E : F →* E) z))
+  rw [Divisor.dim_def, Divisor.dim_def, Module.finrank_eq_card_basis b]
+  exact hli.fintype_card_le_finrank
 
 /-- **A function of `k(x)` whose poles are bounded by those of `x` lies in `k + k x`**: inside the
 rational function field `k(x)`, the Riemann–Roch space of `(x)_∞` contains `1` and `x` and has

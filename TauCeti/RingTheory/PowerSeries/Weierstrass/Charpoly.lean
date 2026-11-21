@@ -12,7 +12,7 @@ public import Mathlib.RingTheory.PowerSeries.WeierstrassPreparation
 public import Mathlib.RingTheory.QuotSMulTop
 
 import TauCeti.RingTheory.AdjoinRoot.Minpoly
-import TauCeti.RingTheory.PowerBasis
+import TauCeti.RingTheory.PowerBasis.Basic
 import TauCeti.RingTheory.QuotSMulTop
 
 /-!

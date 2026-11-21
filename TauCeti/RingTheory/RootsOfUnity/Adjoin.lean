@@ -9,7 +9,7 @@ public import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 import Mathlib.FieldTheory.Finite.Basic
 import Mathlib.RingTheory.RootsOfUnity.Minpoly
-import TauCeti.RingTheory.PowerBasis
+import TauCeti.RingTheory.PowerBasis.Basic
 
 /-!
 # Adjoining a primitive root of unity adjoins all of them

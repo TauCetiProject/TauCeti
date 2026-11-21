@@ -60,10 +60,11 @@ of `t − s`, and `e(P' ∣ P) = 1`, `f(P' ∣ P) = p`: the residue field of `P`
 * `TauCeti.Place.relativeDegree_eq_one_of_isPurelyInseparable` and
   `TauCeti.Place.ramificationIdx_eq_finrank_of_isPurelyInseparable`: `f(P' ∣ P) = 1` and
   `e(P' ∣ P) = [F' : F]` when the residue extension is separable.
-* `TauCeti.Place.moduleFinite_integers_of_isPurelyInseparable`,
+* `TauCeti.Place.isIntegral_integers_restrict_iff`,
+  `TauCeti.Place.moduleFinite_integers_of_isPurelyInseparable`,
   `TauCeti.Place.exists_adjoin_integers_eq_top_of_finrank_eq_prime`, and
-  `TauCeti.Place.exists_powerBasis_integers_of_finrank_eq_prime`: module finiteness and prime-degree
-  monogenicity of `𝒪_{P'}` over `𝒪_P`.
+  `TauCeti.Place.exists_powerBasis_integers_of_finrank_eq_prime`: characterization of the integral
+  closure of `𝒪_P`, module finiteness, and prime-degree monogenicity of `𝒪_{P'}` over `𝒪_P`.
 * `TauCeti.Place.ramificationIdx_adicOfIrreducible_X_pow_sub_C`,
   `TauCeti.Place.ord_restrict_adicOfIrreducible_X_pow_sub_C` and
   `TauCeti.Place.relativeDegree_adicOfIrreducible_X_pow_sub_C`: the counterexample
@@ -194,6 +195,15 @@ section Monogenic
 
 attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExtension
 
+/-- At a place `P'` of a purely inseparable extension `F' / F`, `P'` is the unique place over
+`P = P'|_F`, so the integral closure of `𝒪_P` in `F'` coincides with `𝒪_{P'}`. -/
+theorem isIntegral_integers_restrict_iff [Algebra.IsIntegral k k']
+    (hF' : IsFunctionField k' F') (P' : Place k' F') {z : F'} :
+    IsIntegral (P'.restrict k F).integers z ↔ z ∈ P'.integers := by
+  rw [isIntegral_iff_forall_restrict_eq_mem_integers hF' (P'.restrict k F)]
+  exact ⟨fun hz ↦ hz P' rfl,
+    fun hz Q' hQ' ↦ restrict_injective_of_isPurelyInseparable k F hQ' ▸ hz⟩
+
 /-- At any place `P'` of a finite purely inseparable extension `F' / F` of an algebraic function
 field `F / k`, `𝒪_{P'}` coincides with the integral closure of `𝒪_P` (`P = P'|_F`) in `F'` and
 is therefore module-finite over `𝒪_P`. -/
@@ -204,9 +214,7 @@ theorem moduleFinite_integers_of_isPurelyInseparable [FiniteDimensional F F']
   let P := P'.restrict k F
   have := moduleFinite_integralClosure_of_isFunctionField F' P hF
   have hmem (z : F') : z ∈ integralClosure P.integers F' ↔ z ∈ P'.integers := by
-    rw [mem_integralClosure_iff, isIntegral_iff_forall_restrict_eq_mem_integers hF' P]
-    exact ⟨fun hz ↦ hz P' rfl,
-      fun hz Q' hQ' ↦ restrict_injective_of_isPurelyInseparable k F hQ' ▸ hz⟩
+    rw [mem_integralClosure_iff, isIntegral_integers_restrict_iff hF' P']
   let e : integralClosure P.integers F' ≃ₗ[P.integers] P'.integers :=
     { toFun := fun x ↦ ⟨x.val, (hmem x.val).1 x.property⟩
       invFun := fun x ↦ ⟨x.val, (hmem x.val).2 x.property⟩

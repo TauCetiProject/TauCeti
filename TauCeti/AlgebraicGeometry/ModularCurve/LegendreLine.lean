@@ -10,7 +10,7 @@ public import Mathlib.RingTheory.Invariant.Defs
 public import Mathlib.RingTheory.Localization.Away.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FreyCurve.Basic
 import TauCeti.Algebra.Polynomial.AlgHom
-import TauCeti.RingTheory.PowerBasis
+import TauCeti.RingTheory.PowerBasis.Basic
 import Mathlib.RingTheory.IsAdjoinRoot
 import Mathlib.Tactic.ComputeDegree
 

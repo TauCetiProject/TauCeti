@@ -6,16 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.ConstantExtension.Genus.Change
-import Mathlib.RingTheory.PowerBasis
 import TauCeti.FieldTheory.FunctionField.ConstantExtension.Genus.Stabilization
 import TauCeti.FieldTheory.FunctionField.Place.Extension.PurelyInseparable
-import TauCeti.FieldTheory.FunctionField.Place.OrderOfVanishing
 import TauCeti.FieldTheory.IntermediateField.Adjoin.PrimitiveElement
 import TauCeti.FieldTheory.PurelyInseparable.Basic
 import TauCeti.FieldTheory.PurelyInseparable.Exponent
 import TauCeti.LinearAlgebra.Matrix.Nonsingular.Basic
 import TauCeti.RingTheory.Length.Determinant
-import TauCeti.RingTheory.Polynomial.Truncated.Determinant
+import TauCeti.RingTheory.OrderOfVanishing
+import TauCeti.RingTheory.PowerBasis.Determinant
+import TauCeti.RingTheory.Valuation.Discrete.OrderOfVanishing
 
 /-!
 # Tate's genus-change theorem in positive characteristic
@@ -115,10 +115,8 @@ private noncomputable def Place.singularityQuotientLinearEquiv [Algebra.IsIntegr
   haveI := Place.isScalarTower_integersAlgebraBase k P'
   haveI := Place.isScalarTower_integers_restrict k F P'
   let P := P'.restrict k F
-  have hmem : ∀ z : F', z ∈ P.integralClosureSubmodule k' F' ↔ z ∈ P'.integers := fun z ↦ by
-    rw [P.mem_integralClosureSubmodule_iff_forall_restrict_eq k' F' hF']
-    exact ⟨fun hz ↦ hz P' rfl,
-      fun hz Q' hQ' ↦ Place.restrict_injective_of_isPurelyInseparable k F hQ' ▸ hz⟩
+  have hmem (z : F') : z ∈ P.integralClosureSubmodule k' F' ↔ z ∈ P'.integers :=
+    (P.mem_integralClosureSubmodule_iff k' F').trans (Place.isIntegral_integers_restrict_iff hF' P')
   let eTop : P'.integers ≃ₗ[k] ↥(P.integralClosureSubmodule k' F') :=
     { toFun := fun x ↦ ⟨x.val, (hmem x.val).2 x.property⟩
       invFun := fun x ↦ ⟨x.val, (hmem x.val).1 x.property⟩
@@ -134,11 +132,10 @@ private noncomputable def Place.singularityQuotientLinearEquiv [Algebra.IsIntegr
       (((P.constantSpanIntegers k' F').submoduleOf
         (P.integralClosureSubmodule k' F')).restrictScalars k) eTop (by
         ext ⟨z, hz⟩
-        simp only [Submodule.mem_map, Submodule.restrictScalars_mem]
-        exact ⟨fun ⟨x, hx, hxz⟩ ↦ by
-            cases hxz; exact (Place.mem_constantSpanSubmodule_iff P').1 hx,
-          fun hz' ↦
-            ⟨⟨z, (hmem z).1 hz⟩, (Place.mem_constantSpanSubmodule_iff P').2 hz', rfl⟩⟩))).trans
+        simp only [Submodule.mem_map, Submodule.restrictScalars_mem,
+          Place.mem_constantSpanSubmodule_iff]
+        exact ⟨fun ⟨x, hx, hxz⟩ ↦ by cases hxz; exact hx,
+          fun hz' ↦ ⟨⟨z, (hmem z).1 hz⟩, hz', rfl⟩⟩))).trans
     (Submodule.Quotient.restrictScalarsEquiv k _)
 
 /-- Comparing `𝒪_P`-length and `k'`-dimension identifies `p · δ_P` with `ord_P(det A) · deg P`. -/
@@ -192,11 +189,17 @@ private theorem Place.mul_singularityDegree_eq_toNat_ord_det_mul_degree {n p : �
   let _ := Place.integersAlgebraBase k P'
   have := Place.isScalarTower_integersAlgebraBase k P'
   have := Place.isScalarTower_integers_restrict k F P'
+  let σ : P.integers ≃+* P.valuation.valuationSubring :=
+    RingEquiv.subringCongr (congrArg ValuationSubring.toSubring P.integers_def)
+  have hord : Ring.ord P.integers A.det = ((P.ord (A.det : F)).toNat : ℕ∞) := by
+    rw [← Ring.ord_ringEquiv σ A.det,
+      Valuation.ringOrd_valuationSubring_eq_toNat_ord P.valuation P.valuation_surjective
+        (by simpa [σ, RingEquiv.coe_subringCongr_apply] using hAdetF),
+      RingEquiv.coe_subringCongr_apply, P.ord_valuation]
   have hlen : (Module.length P.integers (P'.integers ⧸ P'.constantSpanSubmodule k F)).toNat =
       (P.ord (A.det : F)).toNat := by
     rw [← hrange, w.length_quotient_range_eq_length_quotient_range_toMatrix ψ,
-      Matrix.length_quotient_range_mulVecLin_eq_ord_det A hAdet,
-      P.ringOrd_integers_eq_toNat_ord hAdetF, ENat.toNat_natCast]
+      Matrix.length_quotient_range_mulVecLin_eq_ord_det A hAdet, hord, ENat.toNat_natCast]
   have hfinrank_k : p * P.singularityDegree k' F' = finrank k (P.singularityQuotient k' F') := by
     rw [← hk', Place.singularityDegree_def k' F' P,
       Module.finrank_mul_finrank k k' (P.singularityQuotient k' F')]
@@ -535,8 +538,13 @@ theorem sub_one_dvd_two_mul_genus_sub_genus_of_constantCompositum_eq_top {p : �
     [Algebra.IsAlgebraic k' k''] (hex'' : IsIntegrallyClosedIn k'' F') :
     (p - 1) ∣ 2 * (genus k F - genus k'' F') := by
   let _ : Algebra k k'' := RingHom.toAlgebra ((algebraMap k' k'').comp (algebraMap k k'))
-  obtain ⟨_, _, h'', -⟩ := genus_le_and_constantCompositum_eq_top_of_enlargement hF h (k'' := k'')
-  exact sub_one_dvd_two_mul_genus_sub_genus_of_isIntegrallyClosedIn hF hex h'' hex''
+  have : IsScalarTower k k' k'' := .of_algebraMap_eq fun _ ↦ rfl
+  have : IsScalarTower k k'' F' := .of_algebraMap_eq fun c ↦ by
+    rw [RingHom.algebraMap_toAlgebra, RingHom.comp_apply,
+      ← IsScalarTower.algebraMap_apply k' k'' F', ← IsScalarTower.algebraMap_apply k k' F']
+  have : Algebra.IsAlgebraic k k'' := Algebra.IsAlgebraic.trans k k' k''
+  exact sub_one_dvd_two_mul_genus_sub_genus_of_isIntegrallyClosedIn hF hex
+    (constantCompositum_eq_top_of_isScalarTower h) hex''
 
 /-- **Tate's genus-change theorem for `algebraicClosure k' F'`**: specialization of
 `TauCeti.sub_one_dvd_two_mul_genus_sub_genus_of_constantCompositum_eq_top` to
@@ -578,7 +586,13 @@ theorem genus_eq_genus_of_two_mul_genus_lt_sub_one {p : ℕ} [Fact p.Prime] [Cha
     [Algebra.IsAlgebraic k' k''] (hex'' : IsIntegrallyClosedIn k'' F') :
     genus k'' F' = genus k F := by
   let _ : Algebra k k'' := RingHom.toAlgebra ((algebraMap k' k'').comp (algebraMap k k'))
-  obtain ⟨_, _, -, hgle⟩ := genus_le_and_constantCompositum_eq_top_of_enlargement hF h (k'' := k'')
+  have : IsScalarTower k k' k'' := .of_algebraMap_eq fun _ ↦ rfl
+  have : IsScalarTower k k'' F' := .of_algebraMap_eq fun c ↦ by
+    rw [RingHom.algebraMap_toAlgebra, RingHom.comp_apply,
+      ← IsScalarTower.algebraMap_apply k' k'' F', ← IsScalarTower.algebraMap_apply k k' F']
+  have : Algebra.IsAlgebraic k k'' := Algebra.IsAlgebraic.trans k k' k''
+  have hgle : genus k'' F' ≤ genus k F :=
+    genus_le_genus_of_constantCompositum_eq_top hF (constantCompositum_eq_top_of_isScalarTower h)
   have hdvd := sub_one_dvd_two_mul_genus_sub_genus_of_constantCompositum_eq_top hF hex h hex''
   have hzero : 2 * (genus k F - genus k'' F') = 0 := Nat.eq_zero_of_dvd_of_lt hdvd (by omega)
   omega

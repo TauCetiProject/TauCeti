@@ -25,6 +25,8 @@ along `x ^ 0 = 1` is an `R`-linear map `S → R` sending `1` to `1`. So `R · 1`
 * `PowerBasis.charpoly_lmul_gen`: multiplication by the generator of a power basis has
   characteristic polynomial the minimal polynomial of the generator. This is the endomorphism form
   of Mathlib's `charpoly_leftMulMatrix`.
+* `PowerBasis.basis_repr_aeval`: the coordinates of `aeval pb.gen q` in `pb.basis` are the
+  coefficients of `q %ₘ pb.minpolyGen`.
 * `PowerBasis.roots_map_minpoly_eq_map_algHom`: in a domain `E`, the roots of the minimal
   polynomial of the generator are the images of the generator under the `R`-algebra embeddings
   `S →ₐ[R] E`, each counted once.
@@ -68,6 +70,27 @@ theorem PowerBasis.charpoly_lmul_gen {R S : Type*} [CommRing R] [Ring S] [Algebr
     (Algebra.lmul R S pb.gen).charpoly = minpoly R pb.gen := by
   rw [← LinearMap.charpoly_toMatrix _ pb.basis, ← Algebra.leftMulMatrix_apply,
     charpoly_leftMulMatrix]
+
+open Polynomial in
+/-- **Power-basis coordinates of a polynomial evaluation**: the `i`-th coordinate of
+`aeval pb.gen q` in `pb.basis` is the coefficient of `X ^ i` in `q %ₘ pb.minpolyGen`. -/
+theorem PowerBasis.basis_repr_aeval {R S : Type*} [CommRing R] [Ring S] [Algebra R S]
+    (pb : PowerBasis R S) (q : R[X]) (i : Fin pb.dim) :
+    pb.basis.repr (aeval pb.gen q) i = (q %ₘ pb.minpolyGen).coeff i := by
+  nontriviality R
+  have hne1 : pb.minpolyGen ≠ 1 := fun h1 ↦
+    i.pos.ne' (by simpa [pb.natDegree_minpolyGen, natDegree_one] using congrArg natDegree h1)
+  have hdeg : (q %ₘ pb.minpolyGen).natDegree < pb.dim :=
+    (natDegree_modByMonic_lt q pb.minpolyGen_monic hne1).trans_eq pb.natDegree_minpolyGen
+  have haeval : aeval pb.gen q =
+      ∑ j : Fin pb.dim, (q %ₘ pb.minpolyGen).coeff j • pb.basis j := by
+    rw [← aeval_modByMonic_eq_self_of_root pb.aeval_minpolyGen, aeval_eq_sum_range' hdeg,
+      Finset.sum_range]
+    refine Finset.sum_congr rfl fun j _ ↦ ?_
+    rw [pb.basis_eq_pow]
+  rw [haeval, map_sum, Finsupp.finsetSum_apply]
+  simp only [map_smul, Finsupp.smul_apply, smul_eq_mul, pb.basis.repr_self, Finsupp.single_apply,
+    mul_ite, mul_one, mul_zero, Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte]
 
 open Polynomial in
 /-- The roots in a domain `E` of the minimal polynomial of the generator of a power basis are the

@@ -197,6 +197,7 @@ noncomputable def constantSpanSubmodule [Algebra.IsIntegral F F']
 
 /-- Membership in `P'.constantSpanSubmodule k F` is membership in
 `(P'.restrict k F).constantSpanIntegers k' F'`. -/
+@[simp]
 theorem mem_constantSpanSubmodule_iff [Algebra.IsIntegral F F']
     (P' : Place k' F') {x : P'.integers} :
     x ∈ P'.constantSpanSubmodule k F ↔
@@ -230,8 +231,7 @@ theorem constantSpanSubmodule_eq_span [FiniteDimensional k k']
     rw [hx_eq]
     exact Submodule.sum_mem _ fun i _ ↦ Submodule.smul_mem _ _ (Submodule.subset_span ⟨i, rfl⟩)
   · rintro _ ⟨i, rfl⟩
-    rw [SetLike.mem_coe, Place.mem_constantSpanSubmodule_iff]
-    dsimp only
+    simp only [SetLike.mem_coe, Place.mem_constantSpanSubmodule_iff]
     rw [← mul_one (algebraMap k' F' (b i)), ← map_one (algebraMap F F'), ← Algebra.smul_def]
     exact Submodule.smul_mem _ (b i) (Place.algebraMap_mem_constantSpanIntegers k' F' (one_mem _))
 

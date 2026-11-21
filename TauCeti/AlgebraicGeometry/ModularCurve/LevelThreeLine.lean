@@ -11,7 +11,7 @@ public import Mathlib.RingTheory.Localization.Away.Basic
 public import TauCeti.Algebra.Ring.GeomSum
 import TauCeti.Algebra.Group.Subgroup.Closure
 import TauCeti.Algebra.Polynomial.AlgHom
-import TauCeti.RingTheory.PowerBasis
+import TauCeti.RingTheory.PowerBasis.Basic
 import Mathlib.RingTheory.IsAdjoinRoot
 import Mathlib.Tactic.ComputeDegree
 

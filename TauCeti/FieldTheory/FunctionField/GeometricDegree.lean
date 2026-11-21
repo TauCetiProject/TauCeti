@@ -64,6 +64,9 @@ closure of `k`, this is Stichtenoth's splitting `[F' : F] = [F' · K : F · K] �
   the image of `F` in `F'`.
 * `TauCeti.constantCompositum_eq_top_of_eq_top`: if `F' = F · k'`, then `F' = E · k'` for every
   intermediate field `E` of `F' / F`.
+* `TauCeti.constantCompositum_le_of_isScalarTower` and
+  `TauCeti.constantCompositum_eq_top_of_isScalarTower`: enlarging `k'` to `k''` compatibly with
+  `F'` enlarges `F · k'` and preserves `constantCompositum F _ F' = ⊤`.
 * `TauCeti.restrictScalars_constantCompositum_eq`: the tower identity
   `((F · L) · N).restrictScalars F = F · (N.restrictScalars k)` for intermediate fields
   `k ⊆ L ⊆ N ⊆ k'`.
@@ -207,6 +210,24 @@ theorem constantCompositum_eq_top_of_eq_top (E : IntermediateField F F')
     (constantCompositum_le_iff F k' F').2 fun c ↦ algebraMap_mem_constantCompositum E k' F' c
   rw [h] at hle
   exact eq_top_iff.2 fun z _ ↦ hle IntermediateField.mem_top
+
+variable {F k' F'} in
+/-- **Enlarging the constant field enlarges the compositum**: if `k''` receives `k'` compatibly
+with `F'`, then `F · k' ≤ F · k''`. -/
+theorem constantCompositum_le_of_isScalarTower {k'' : Type*} [CommSemiring k''] [Algebra k' k'']
+    [Algebra k'' F'] [IsScalarTower k' k'' F'] :
+    constantCompositum F k' F' ≤ constantCompositum F k'' F' :=
+  (constantCompositum_le_iff F k' F').2 fun c ↦ by
+    rw [IsScalarTower.algebraMap_apply k' k'' F']
+    exact algebraMap_mem_constantCompositum F k'' F' (algebraMap k' k'' c)
+
+variable {F k' F'} in
+/-- **Enlarging the constant field keeps the compositum everything**: if `F' = F · k'` and `k''`
+receives `k'` compatibly with `F'`, then `F' = F · k''`. -/
+theorem constantCompositum_eq_top_of_isScalarTower {k'' : Type*} [CommSemiring k''] [Algebra k' k'']
+    [Algebra k'' F'] [IsScalarTower k' k'' F'] (h : constantCompositum F k' F' = ⊤) :
+    constantCompositum F k'' F' = ⊤ :=
+  eq_top_iff.2 (h ▸ constantCompositum_le_of_isScalarTower)
 
 variable {F k' F'} in
 /-- **Transitivity of constant composita in a tower**: if `F' = F · k'` and `F'' = F' · k''` in a

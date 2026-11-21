@@ -5,14 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.CharP.Defs
 public import Mathlib.Algebra.Polynomial.Div
 public import Mathlib.Algebra.Polynomial.Taylor
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
-public import Mathlib.LinearAlgebra.Matrix.ToLin
-public import Mathlib.RingTheory.PowerBasis
 import Mathlib.Algebra.BigOperators.Intervals
-import Mathlib.Algebra.CharP.Lemmas
 import Mathlib.LinearAlgebra.Matrix.Block
 import TauCeti.Algebra.Polynomial.Taylor
 
@@ -39,13 +35,6 @@ determinant `1` (`Matrix.det_matrixOfPolynomials`), turning `A` into the lower-t
 coefficients of `(taylor c f - C (f.eval c)) ^ i` below degree `n`, whose `i`-th diagonal entry is
 `(f.derivative.eval c) ^ i`.
 
-In exponential characteristic `p`, `(X - C c) ^ p ^ e = X ^ p ^ e - C (c ^ p ^ e)`, so for any
-power basis `pb` of `S` over `R` of dimension `pb.dim = p ^ e` with `pb.gen ^ pb.dim ∈ R`, the
-transition matrix from `pb.basis` to the powers of `aeval pb.gen f` has determinant
-`aeval pb.gen f.derivative ^ (pb.dim * (pb.dim - 1) / 2)` in `S`
-(`PowerBasis.det_toMatrix_aeval_pow`). This is the local determinant step in Schröer's (2009) proof
-of Tate's (1952) genus-change theorem.
-
 ## Main results
 
 * `Matrix.det_of_X_sub_C_pow_dvd_pow_sub_sum`: any `n × n` matrix whose `i`-th column gives the
@@ -53,17 +42,11 @@ of Tate's (1952) genus-change theorem.
   `f.derivative.eval c ^ (n * (n - 1) / 2)`.
 * `Polynomial.det_coeff_pow_modByMonic_X_sub_C_pow`: the closed form for the remainder matrix
   `((f ^ i) %ₘ ((X - C c) ^ n)).coeff j`.
-* `PowerBasis.det_toMatrix_aeval_pow`: for a power basis `pb` of dimension `p ^ e` in exponential
-  characteristic `p` with `pb.gen ^ pb.dim ∈ R`, the determinant of the transition matrix from
-  `pb.basis` to the powers of `aeval pb.gen f` equals
-  `aeval pb.gen f.derivative ^ (pb.dim * (pb.dim - 1) / 2)` in `S`.
 
 ## References
 
 * S. Schröer, *On genus change in algebraic curves over imperfect fields*, Proc. Amer. Math. Soc.
   137 (2009), 1239–1243.
-* J. Tate, *Genus change in inseparable extensions of function fields*, Proc. Amer. Math. Soc. 3
-  (1952), 400–406.
 -/
 
 public section
@@ -179,58 +162,3 @@ theorem det_coeff_pow_modByMonic_X_sub_C_pow {R : Type*} [CommRing R] (n : ℕ) 
     sub_eq_of_eq_add' (modByMonic_add_div (f ^ (i : ℕ)) ((X - C c) ^ n)).symm⟩
 
 end Polynomial
-
-namespace PowerBasis
-
-/-- **Determinant of the power-expansion matrix in a purely inseparable power basis**: if `pb` is a
-power basis of `S` over `R` of dimension `pb.dim = p ^ e` in exponential characteristic `p` with
-`pb.gen ^ pb.dim = algebraMap R S b`, then the transition matrix from `pb.basis` to the powers
-`1, f(pb.gen), …, f(pb.gen) ^ (pb.dim - 1)` has determinant
-`f'(pb.gen) ^ (pb.dim * (pb.dim - 1) / 2)` in `S`. -/
-theorem det_toMatrix_aeval_pow {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
-    {p e : ℕ} [ExpChar S p] (pb : PowerBasis R S) (hdim : pb.dim = p ^ e)
-    {b : R} (hb : algebraMap R S b = pb.gen ^ pb.dim) (f : R[X]) :
-    algebraMap R S
-        (LinearMap.toMatrix pb.basis pb.basis
-          (pb.basis.constr R fun i : Fin pb.dim ↦ aeval pb.gen f ^ (i : ℕ))).det =
-      aeval pb.gen f.derivative ^ (pb.dim * (pb.dim - 1) / 2) := by
-  classical
-  nontriviality S
-  have : Nontrivial R := (algebraMap R S).domain_nontrivial
-  set ψ : S →ₗ[R] S := pb.basis.constr R fun i : Fin pb.dim ↦ aeval pb.gen f ^ (i : ℕ)
-  set A : Matrix (Fin pb.dim) (Fin pb.dim) R := LinearMap.toMatrix pb.basis pb.basis ψ
-  have hcol (i : Fin pb.dim) :
-      aeval pb.gen f ^ (i : ℕ) = ∑ j : Fin pb.dim, algebraMap R S (A j i) * pb.gen ^ (j : ℕ) := by
-    rw [← pb.basis.constr_basis R (fun m : Fin pb.dim ↦ aeval pb.gen f ^ (m : ℕ)) i,
-      ← pb.basis.sum_repr (ψ (pb.basis i))]
-    refine Finset.sum_congr rfl fun j _ ↦ ?_
-    rw [← LinearMap.toMatrix_apply pb.basis pb.basis ψ j i, Algebra.smul_def, pb.basis_eq_pow]
-  have hdvd_R (i : Fin pb.dim) :
-      (X ^ pb.dim - C b) ∣ f ^ (i : ℕ) - ∑ j : Fin pb.dim, C (A j i) * X ^ (j : ℕ) := by
-    set q : R[X] := f ^ (i : ℕ) - ∑ j : Fin pb.dim, C (A j i) * X ^ (j : ℕ)
-    have hm : (X ^ pb.dim - C b).Monic := monic_X_pow_sub_C b pb.dim_pos.ne'
-    have hne1 : (X ^ pb.dim - C b : R[X]) ≠ 1 := fun h1 ↦
-      pb.dim_pos.ne' (by simpa [natDegree_X_pow_sub_C] using congrArg natDegree h1)
-    rw [← modByMonic_eq_zero_iff_dvd hm]
-    have hdeg : (q %ₘ (X ^ pb.dim - C b)).natDegree < pb.dim :=
-      (natDegree_modByMonic_lt q hm hne1).trans_eq (by rw [natDegree_X_pow_sub_C])
-    have haeval_mod : aeval pb.gen (q %ₘ (X ^ pb.dim - C b)) = 0 := by
-      have hq0 : aeval pb.gen q = 0 := by
-        simpa [q, map_sum] using sub_eq_zero.2 (hcol i)
-      have hmod0 : aeval pb.gen (X ^ pb.dim - C b) = 0 := by
-        rw [map_sub, map_pow, aeval_X, aeval_C, hb, sub_self]
-      rw [aeval_modByMonic_eq_self_of_root hmod0, hq0]
-    by_contra hne
-    exact (pb.dim_le_natDegree_of_root hne haeval_mod).not_gt hdeg
-  have hdvd_S (i : Fin pb.dim) : (X - C pb.gen) ^ pb.dim ∣
-      (f.map (algebraMap R S)) ^ (i : ℕ) -
-        ∑ j : Fin pb.dim, C (((algebraMap R S).mapMatrix A) j i) * X ^ (j : ℕ) := by
-    have hmap := Polynomial.map_dvd (algebraMap R S) (hdvd_R i)
-    have hfac : (X ^ pb.dim - C b).map (algebraMap R S) = (X - C pb.gen) ^ pb.dim := by
-      rw [Polynomial.map_sub, Polynomial.map_pow, Polynomial.map_X, Polynomial.map_C, hb, C_pow,
-        hdim, sub_pow_expChar_pow]
-    simpa [hfac, Polynomial.map_sum] using hmap
-  rw [RingHom.map_det (algebraMap R S), Matrix.det_of_X_sub_C_pow_dvd_pow_sub_sum hdvd_S,
-    Polynomial.derivative_map, Polynomial.eval_map, aeval_def]
-
-end PowerBasis

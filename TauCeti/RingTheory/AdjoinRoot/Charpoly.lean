@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.AdjoinRoot
-public import TauCeti.RingTheory.PowerBasis
+public import TauCeti.RingTheory.PowerBasis.Basic
 
 import TauCeti.RingTheory.AdjoinRoot.Minpoly
 

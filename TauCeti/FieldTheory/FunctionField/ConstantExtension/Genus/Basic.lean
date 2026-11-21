@@ -46,8 +46,6 @@ be strict (`TauCeti.GenusDrop.genus_lt_genus`).
   `[k' : k] (g(F' / k') - 1) ≤ [F' : F] (g(F / k) - 1)` for any finite `k' / k`.
 * `TauCeti.genus_le_genus_of_constantCompositum_eq_top`: `g(F' / k') ≤ g(F / k)` for any
   algebraic `k' / k`, finite or not, separable or not.
-* `TauCeti.genus_le_and_constantCompositum_eq_top_of_enlargement`: composing `k → k' → k''`
-  preserves `constantCompositum F _ F' = ⊤` and `g(F' / k'') ≤ g(F / k)`.
 * `TauCeti.Divisor.degree_conorm_of_constantCompositum_eq_top`: `deg (Con D) = deg D`.
 * `TauCeti.genus_eq_genus_of_constantCompositum_eq_top`: `g(F' / k') = g(F / k)` for a separable
   algebraic `k' / k`, finite or not.
@@ -212,27 +210,6 @@ theorem genus_le_genus_of_constantCompositum_eq_top [Algebra.IsAlgebraic k k']
   exact (genus_le_genus_of_linearDisjoint hFFL
     (constantCompositum_eq_top_of_eq_top F k' F' FL h) H).trans
     (genus_le_genus_of_finiteDimensional hF hFL)
-
-/-- Composing `k → k' → k''` preserves `constantCompositum F _ F' = ⊤` and the genus bound
-`genus k'' F' ≤ genus k F`. -/
-theorem genus_le_and_constantCompositum_eq_top_of_enlargement [Algebra.IsAlgebraic k k']
-    (hF : IsFunctionField k F) (h : constantCompositum F k' F' = ⊤) {k'' : Type*} [Field k'']
-    [Algebra k' k''] [Algebra k'' F'] [IsScalarTower k' k'' F'] [Algebra.IsAlgebraic k' k''] :
-    letI : Algebra k k'' := RingHom.toAlgebra ((algebraMap k' k'').comp (algebraMap k k'))
-    ∃ (_ : IsScalarTower k k'' F') (_ : Algebra.IsAlgebraic k k''),
-      constantCompositum F k'' F' = ⊤ ∧ genus k'' F' ≤ genus k F := by
-  let _ : Algebra k k'' := RingHom.toAlgebra ((algebraMap k' k'').comp (algebraMap k k'))
-  have : IsScalarTower k k' k'' := .of_algebraMap_eq fun _ ↦ rfl
-  have hst : IsScalarTower k k'' F' := .of_algebraMap_eq fun c ↦ by
-    rw [RingHom.algebraMap_toAlgebra, RingHom.comp_apply,
-      ← IsScalarTower.algebraMap_apply k' k'' F', ← IsScalarTower.algebraMap_apply k k' F']
-  have halg : Algebra.IsAlgebraic k k'' := Algebra.IsAlgebraic.trans k k' k''
-  have h'' : constantCompositum F k'' F' = ⊤ := by
-    rw [eq_top_iff, ← h]
-    refine (constantCompositum_le_iff F k' F').2 fun c ↦ ?_
-    rw [IsScalarTower.algebraMap_apply k' k'' F']
-    exact algebraMap_mem_constantCompositum F k'' F' (algebraMap k' k'' c)
-  exact ⟨hst, halg, h'', genus_le_genus_of_constantCompositum_eq_top hF h''⟩
 
 end IsAlgebraic
 
