@@ -46,7 +46,7 @@ noncomputable def finTwoToUnit (i : R) (hi : i ^ 2 = -1)
   { val := a + i * b
     inv := a - i * b
     val_inv := by
-      have hM := (Matrix.mem_specialOrthogonalGroup_fin_two_iff.mp M.2).2.2
+      have hM := (Matrix.mem_specialOrthogonalGroup_fin_two_iff.mp M.property).2.2
       dsimp only [a, b]
       calc
         (M.val 0 0 + i * M.val 0 1) * (M.val 0 0 - i * M.val 0 1) =
@@ -54,7 +54,7 @@ noncomputable def finTwoToUnit (i : R) (hi : i ^ 2 = -1)
         _ = M.val 0 0 ^ 2 + M.val 0 1 ^ 2 := by rw [hi]; ring
         _ = 1 := hM
     inv_val := by
-      have hM := (Matrix.mem_specialOrthogonalGroup_fin_two_iff.mp M.2).2.2
+      have hM := (Matrix.mem_specialOrthogonalGroup_fin_two_iff.mp M.property).2.2
       dsimp only [a, b]
       calc
         (M.val 0 0 - i * M.val 0 1) * (M.val 0 0 + i * M.val 0 1) =
@@ -133,7 +133,7 @@ theorem finTwoOfUnit_finTwoToUnit (i half : R) (hi : i ^ 2 = -1)
     (hhalf : 2 * half = 1) (M : Matrix.specialOrthogonalGroup (Fin 2) R) :
     finTwoOfUnit i half hi hhalf (finTwoToUnit i hi M) = M := by
   apply Subtype.ext
-  have hM := Matrix.mem_specialOrthogonalGroup_fin_two_iff.mp M.2
+  have hM := Matrix.mem_specialOrthogonalGroup_fin_two_iff.mp M.property
   have hM10 : M.val 1 0 = -M.val 0 1 := by
     simpa only [neg_neg] using (congrArg Neg.neg hM.2.1).symm
   rw [finTwoOfUnit]
@@ -170,7 +170,7 @@ theorem finTwoToUnit_mul (i : R) (hi : i ^ 2 = -1)
     finTwoToUnit i hi (M * N) = finTwoToUnit i hi M * finTwoToUnit i hi N := by
   apply Units.ext
   rw [Units.val_mul, coe_finTwoToUnit, coe_finTwoToUnit, coe_finTwoToUnit]
-  have hN := Matrix.mem_specialOrthogonalGroup_fin_two_iff.mp N.2
+  have hN := Matrix.mem_specialOrthogonalGroup_fin_two_iff.mp N.property
   have hN11 : N.val 1 1 = N.val 0 0 := hN.1.symm
   have hN10 : N.val 1 0 = -N.val 0 1 := by
     simpa only [neg_neg] using (congrArg Neg.neg hN.2.1).symm

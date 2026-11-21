@@ -43,6 +43,8 @@ that ideal is finite over `k` by Zariski's lemma and therefore embeds into `K`.
   distinct elements.
 * `TauCeti.eq_of_forall_algHom_apply_eq`: the corresponding point-separation principle.
 * `TauCeti.algHom_evaluation_injective`: the same principle, stated as injectivity of evaluation.
+* `Set.Finite.exists_algHom_injOn`: one point simultaneously distinguishes all elements of
+  a prescribed finite subset of a finite-type domain.
 
 ## References
 
@@ -147,3 +149,25 @@ theorem algHom_evaluation_injective :
   fun _ _ h ↦ eq_of_forall_algHom_apply_eq (congrFun h)
 
 end TauCeti
+
+namespace Set.Finite
+
+variable {k A K : Type*} [Field k] [CommRing A] [IsDomain A]
+  [Algebra k A] [Algebra.FiniteType k A] [Field K] [Algebra k K] [IsAlgClosed K]
+
+/-- A finite subset of a finite-type domain admits an algebraically closed specialization
+that distinguishes all its elements. The homomorphism need not be injective outside the
+specified subset. -/
+theorem exists_algHom_injOn {s : Set A} (hs : s.Finite) :
+    ∃ f : A →ₐ[k] K, Set.InjOn f s := by
+  classical
+  have hp : ∏ p ∈ hs.toFinset.offDiag, (p.1 - p.2) ≠ 0 :=
+    Finset.prod_ne_zero_iff.mpr fun p hp ↦ sub_ne_zero.mpr (Finset.mem_offDiag.mp hp).2.2
+  obtain ⟨f, hf⟩ := TauCeti.exists_algHom_apply_ne_zero_of_ne_zero (k := k) (K := K) hp
+  rw [map_prod] at hf
+  refine ⟨f, fun x hx y hy hxy ↦ by_contra fun hne ↦ ?_⟩
+  have h := Finset.prod_ne_zero_iff.mp hf (x, y)
+    (Finset.mem_offDiag.mpr ⟨hs.mem_toFinset.mpr hx, hs.mem_toFinset.mpr hy, hne⟩)
+  exact h (by simp [map_sub, hxy])
+
+end Set.Finite

@@ -143,7 +143,7 @@ theorem exists_lintegral_eq_iInf {K : Set (ProbabilityMeasure Ω)} (hK : K.Nonem
       ⨅ ν : K, ∫⁻ x, f x ∂((ν : ProbabilityMeasure Ω) : Measure Ω) := by
   obtain ⟨μ, hμK, hμ⟩ := exists_isMinOn_lintegral hK hKc hf
   refine ⟨μ, hμK, le_antisymm ?_ (iInf_le_of_le ⟨μ, hμK⟩ le_rfl)⟩
-  exact le_iInf fun ν ↦ hμ ν.2
+  exact le_iInf fun ν ↦ hμ ν.property
 
 section Lusin
 
