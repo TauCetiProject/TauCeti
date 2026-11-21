@@ -405,12 +405,11 @@ private theorem isSelfAdjoint_fourierMultiplierCLM_toLp_symbol (hP : IsDyadic ψ
   Lp.isSelfAdjoint_fourierMultiplierCLM
     (Lp.star_eq_self_of_ae_eq_ofReal (coeFn_toLp_symbol hP i))
 
-private theorem inner_block_left (hP : IsDyadic ψ σ e) (i : ι) (f g : Lp F 2 (volume : Measure V)) :
+private theorem adjoint_block (hP : IsDyadic ψ σ e) (i : ι) :
     letI : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
-    inner ℝ (block σ i f) g = inner ℝ f (block σ i g) := by
-  let : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
-  rw [L2.real_inner_eq_re_inner, L2.real_inner_eq_re_inner]
-  exact congrArg RCLike.re ((isSelfAdjoint_fourierMultiplierCLM_toLp_symbol hP i).isSymmetric f g)
+    adjoint (block (F := F) σ i) = block σ i := by
+  rw [block, L2.adjoint_restrictScalars,
+    (isSelfAdjoint_fourierMultiplierCLM_toLp_symbol hP i).adjoint_eq]
 
 private theorem adjoint_lpPi_block [DecidableEq ι] (hP : IsDyadic ψ σ e) (s : Finset ι) :
     letI : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
@@ -418,7 +417,7 @@ private theorem adjoint_lpPi_block [DecidableEq ι] (hP : IsDyadic ψ σ e) (s :
   let : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
   rw [Lp.adjoint_lpPi, sqFunAdj]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [← (eq_adjoint_iff _ _).2 (inner_block_left hP i)]
+  rw [adjoint_block hP]
 
 private theorem sqFunAdj_lpPi_block [DecidableEq ι] (s : Finset ι)
     (f : Lp F 2 (volume : Measure V)) :
@@ -480,7 +479,7 @@ private theorem exists_norm_sqFun_apply_le [DecidableEq ι] [Countable ι] (hP :
   rw [mul_pow, Real.sq_sqrt hL0, ← real_inner_self_eq_norm_sq, ← adjoint_inner_right,
     adjoint_lpPi_block hP, sqFunAdj_lpPi_block, inner_sum]
   refine le_of_eq_of_le (Finset.sum_congr rfl fun i _ ↦ ?_) (hL _ f)
-  rw [← inner_block_left hP, real_inner_self_eq_norm_sq]
+  rw [← real_inner_self_eq_norm_sq, ← adjoint_inner_right, adjoint_block hP]
 
 /-- **The Calderón–Zygmund bound for the truncated square functions**, uniformly in the
 truncation. -/
