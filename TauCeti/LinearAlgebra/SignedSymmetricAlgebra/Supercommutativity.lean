@@ -26,7 +26,7 @@ zero when `2` is invertible in the coefficient ring. These identities allow the 
 algebra to serve as a receiving supercommutative algebra in universal properties and tensor
 comparisons, for both integer and parity (`ZMod 2`) gradings.
 
-The proof instantiates `TauCeti.mul_eq_smul_mul_of_adjoin_range_eq_top` from
+The proof instantiates `TauCeti.mul_eq_smul_mul_of_adjoin_range_eq_top_of_isHomogeneous` from
 `TauCeti.RingTheory.GradedAlgebra.Supercommutativity`.
 The construction follows the supercommutative algebra of J. Pardon,
 *Contact homology and virtual fundamental cycles*, equation (1.1).
@@ -51,7 +51,7 @@ No assumption on the characteristic of the coefficient ring is needed. -/
 theorem mul_eq_uzpow_smul_mul {p q : ι} {a b : SignedSym G}
     (ha : a ∈ signedSymPiece G p) (hb : b ∈ signedSymPiece G q) :
     a * b = ((-1 : ℤˣ) ^ (p * q)) • (b * a) :=
-  mul_eq_smul_mul_of_adjoin_range_eq_top (𝒜 := signedSymPiece G)
+  mul_eq_smul_mul_of_adjoin_range_eq_top_of_isHomogeneous (𝒜 := signedSymPiece G)
     (s := fun p q => (-1 : ℤˣ) ^ (p * q))
     (fun _ => by simp)
     (fun _ _ _ => by rw [mul_add, uzpow_add])

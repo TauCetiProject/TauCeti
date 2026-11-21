@@ -41,13 +41,10 @@ grading index types `ι` (in particular both `ℤ` and `ZMod 2`) and arbitrary s
 
 * `TauCeti.eq_zero_of_signedLeibniz_along_of_adjoin_eq_top`,
   `TauCeti.eq_of_signedLeibniz_along_of_adjoin_eq_top`,
-  `TauCeti.eq_zero_of_signedLeibniz_along_of_adjoin_range_eq_top`,
-  `TauCeti.eq_of_signedLeibniz_along_of_adjoin_range_eq_top`,
   `TauCeti.eq_zero_of_signedLeibniz_of_adjoin_eq_top`,
   `TauCeti.apply_map_eq_map_apply_of_signedLeibniz_of_adjoin_eq_top`,
   `TauCeti.apply_map_eq_map_apply_of_signedLeibniz_of_adjoin_range_eq_top`,
-  `TauCeti.eq_of_signedLeibniz_of_adjoin_eq_top`,
-  `TauCeti.eq_zero_of_signedLeibniz_of_adjoin_range_eq_top`, and
+  `TauCeti.eq_of_signedLeibniz_of_adjoin_eq_top`, and
   `TauCeti.eq_of_signedLeibniz_of_adjoin_range_eq_top`: an `s`-signed Leibniz map (along a
   unit-preserving map, as an endomorphism, or intertwined along a grading-preserving algebra map)
   is determined on any algebra-generating set.
@@ -110,26 +107,6 @@ theorem eq_of_signedLeibniz_along_of_adjoin_eq_top
     abel
   exact sub_eq_zero.1 hzero
 
-/-- An `s`-signed Leibniz map along a unit-preserving map `f` vanishing on the range of an
-algebra-generating map is zero. -/
-theorem eq_zero_of_signedLeibniz_along_of_adjoin_range_eq_top
-    {V B F : Type*} [NonAssocRing B] [Module R B] [FunLike F A B] [OneHomClass F A B]
-    (f : F) {D : A →ₗ[R] B}
-    (hl : ∀ {i : ι} {a : A}, a ∈ 𝒜 i → ∀ b : A, D (a * b) = D a * f b + s i • (f a * D b))
-    {g : V → A} (hadj : Algebra.adjoin R (Set.range g) = ⊤) (hg : ∀ x, D (g x) = 0) : D = 0 :=
-  eq_zero_of_signedLeibniz_along_of_adjoin_eq_top (𝒜 := 𝒜) f hl hadj <| Set.forall_mem_range.2 hg
-
-/-- Two `s`-signed Leibniz maps along the same unit-preserving map `f` agreeing on the range of an
-algebra-generating map are equal. -/
-theorem eq_of_signedLeibniz_along_of_adjoin_range_eq_top
-    {V B F : Type*} [NonAssocRing B] [Module R B] [FunLike F A B] [OneHomClass F A B]
-    (f : F) {d₁ d₂ : A →ₗ[R] B}
-    (hl₁ : ∀ {i : ι} {a : A}, a ∈ 𝒜 i → ∀ b : A, d₁ (a * b) = d₁ a * f b + s i • (f a * d₁ b))
-    (hl₂ : ∀ {i : ι} {a : A}, a ∈ 𝒜 i → ∀ b : A, d₂ (a * b) = d₂ a * f b + s i • (f a * d₂ b))
-    {g : V → A} (hadj : Algebra.adjoin R (Set.range g) = ⊤) (hg : ∀ x, d₁ (g x) = d₂ (g x)) :
-    d₁ = d₂ :=
-  eq_of_signedLeibniz_along_of_adjoin_eq_top (𝒜 := 𝒜) f hl₁ hl₂ hadj <| Set.forall_mem_range.2 hg
-
 end UniquenessAlong
 
 section Uniqueness
@@ -188,13 +165,6 @@ theorem eq_of_signedLeibniz_of_adjoin_eq_top {d₁ d₂ : A →ₗ[R] A}
     (hl₂ : ∀ {i : ι} {a : A}, a ∈ 𝒜 i → ∀ b : A, d₂ (a * b) = d₂ a * b + s i • (a * d₂ b))
     {S : Set A} (hadj : Algebra.adjoin R S = ⊤) (hS : ∀ x ∈ S, d₁ x = d₂ x) : d₁ = d₂ :=
   eq_of_signedLeibniz_along_of_adjoin_eq_top (𝒜 := 𝒜) (OneHom.id A) hl₁ hl₂ hadj hS
-
-/-- An `s`-signed Leibniz endomorphism vanishing on the range of an algebra-generating map is
-zero. -/
-theorem eq_zero_of_signedLeibniz_of_adjoin_range_eq_top {V : Type*} {D : A →ₗ[R] A}
-    (hl : ∀ {i : ι} {a : A}, a ∈ 𝒜 i → ∀ b : A, D (a * b) = D a * b + s i • (a * D b))
-    {g : V → A} (hadj : Algebra.adjoin R (Set.range g) = ⊤) (hg : ∀ x, D (g x) = 0) : D = 0 :=
-  eq_zero_of_signedLeibniz_of_adjoin_eq_top (𝒜 := 𝒜) hl hadj <| Set.forall_mem_range.2 hg
 
 /-- Two `s`-signed Leibniz endomorphisms agreeing on the range of an algebra-generating map are
 equal. -/

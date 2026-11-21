@@ -36,8 +36,9 @@ of a unit of `ℤ` by an element of `ZMod 2`.
 * `TauCeti.mul_eq_uzpow_smul_mul_of_mem_coarsenGrading` and
   `TauCeti.mul_eq_uzpow_smul_mul_of_mem_parityGrading`: Koszul graded commutativity passes to
   sign-preserving coarsenings, and in particular from integer degree to parity.
-* `TauCeti.leibniz_coarsenGrading_of_leibniz`: the graded Leibniz rule passes to sign-preserving
-  coarsenings.
+* `TauCeti.leibniz_coarsenGrading_of_leibniz` and `TauCeti.leibniz_parityGrading_of_leibniz`:
+  the graded Leibniz rule passes to sign-preserving coarsenings, and in particular from integer
+  degree to parity.
 -/
 
 public section
@@ -164,6 +165,16 @@ theorem mul_eq_uzpow_smul_mul_of_mem_parityGrading
     a * b = ((-1 : ℤˣ) ^ (i * j)) • (b * a) :=
   mul_eq_uzpow_smul_mul_of_mem_coarsenGrading (f := Int.castAddHom (ZMod 2))
     (fun p ↦ by rw [Int.coe_castAddHom]; exact uzpow_intCast (-1) p) hcomm ha hb
+
+/-- **The integer Leibniz rule implies the parity Leibniz rule.** If `d` satisfies the graded
+Leibniz rule with the sign `(-1) ^ p` on a left factor of degree `p`, it satisfies the graded
+Leibniz rule with the sign `(-1) ^ i` on a left factor of parity `i`. -/
+theorem leibniz_parityGrading_of_leibniz {d : A →ₗ[R] A}
+    (hl : ∀ {p : ℤ} {a : A}, a ∈ 𝒜 p → ∀ b : A, d (a * b) = d a * b + p.negOnePow • (a * d b))
+    {i : ZMod 2} {a : A} (ha : a ∈ parityGrading 𝒜 i) (b : A) :
+    d (a * b) = d a * b + ((-1 : ℤˣ) ^ i) • (a * d b) :=
+  leibniz_coarsenGrading_of_leibniz (f := Int.castAddHom (ZMod 2))
+    (fun p ↦ by rw [Int.coe_castAddHom]; exact uzpow_intCast (-1) p) hl ha b
 
 end ParityComm
 

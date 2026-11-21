@@ -49,8 +49,9 @@ super (parity-graded) object, for example when Koszul signs only depend on parit
   coarsened gradings.
 * `TauCeti.parityGrading_zero`, `TauCeti.parityGrading_one`, `TauCeti.parityGrading_one_eq_bot_iff`,
   `TauCeti.eq_bot_of_parityGrading_one_eq_bot_of_odd`, `TauCeti.parityGrading_trivialGrading_one`,
-  and `TauCeti.parityGrading_one_eq_bot_iff_of_isHomogeneous_zero`: the even and odd pieces and
-  even-support preservation.
+  `TauCeti.parityGrading_one_eq_bot_iff_of_isHomogeneous_zero`, and
+  `TauCeti.map_mem_parityGrading_of_map_mem`: the even and odd pieces, even-support preservation,
+  and odd maps on parity pieces.
 * `TauCeti.mem_parityGrading_zero_of_odd_eq_bot`, `TauCeti.mem_parityGrading_one_of_even_eq_bot`,
   and `TauCeti.coe_decompose_zero_add_coe_decompose_one`: single-parity concentration and the
   two-term decomposition for `ZMod 2`-gradings.
@@ -323,6 +324,17 @@ theorem LinearMap.IsHomogeneous.parityGrading_zero {N : Type*} [AddCommMonoid N]
     (hg : LinearMap.IsHomogeneous g ℳ 𝒩 0) :
     LinearMap.IsHomogeneous g (parityGrading ℳ) (parityGrading 𝒩) 0 :=
   hg.coarsenGrading_zero (Int.castAddHom (ZMod 2))
+
+/-- A linear map raising integer degree by one maps elements of parity `i` to elements of parity
+`i + 1`. -/
+theorem map_mem_parityGrading_of_map_mem {N : Type*} [AddCommMonoid N] [Module R N]
+    {ℳ : ℤ → Submodule R M} {𝒩 : ℤ → Submodule R N} {f : M →ₗ[R] N}
+    (hf : ∀ {p : ℤ} {x : M}, x ∈ ℳ p → f x ∈ 𝒩 (p + 1)) {i : ZMod 2} {x : M}
+    (hx : x ∈ parityGrading ℳ i) : f x ∈ parityGrading 𝒩 (i + 1) := by
+  have h1 : Int.castAddHom (ZMod 2) 1 = 1 := Int.cast_one
+  have := ((LinearMap.isHomogeneous_def.2 fun _ _ hy ↦ hf hy).coarsenGrading
+    (Int.castAddHom (ZMod 2))).map_mem hx
+  rwa [h1] at this
 
 /-- The universal property of the parity pieces. -/
 theorem parityGrading_le_iff {ℳ : ℤ → Submodule R M} {i : ZMod 2} {N : Submodule R M} :
