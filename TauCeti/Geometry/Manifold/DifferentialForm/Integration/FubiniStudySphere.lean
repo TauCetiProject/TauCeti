@@ -155,6 +155,8 @@ private theorem mfderiv_divPoint_of_ne_zero {c : ℝ × ℝ → ℂ} {d : ℝ ×
       ((ContinuousLinearMap.id ℝ ℂ).comp D) :=
     (hasMFDerivAt_coe _).comp x hD'.hasMFDerivAt
   rw [(divPoint_eventuallyEq_coe hd hx).mfderiv_eq, h.mfderiv]
+  -- The goal is `(tangentSpaceCast _ _ ∘L id ∘L D) v = D v`: `mfderiv_eq` inserts Mathlib's
+  -- definitional cast between tangent spaces, which has no rewriting API.
   rfl
 
 /-- Where `d` attains the value `0` as its minimum and `c ≠ 0`, the map `p ↦ c p / d p` has zero
@@ -211,6 +213,10 @@ private theorem offset_im (p : ℝ × ℝ) : (offset p).im = p.2 - 1 / 2 := by
 private theorem norm_offset_sq (p : ℝ × ℝ) : ‖offset p‖ ^ 2 = radiusSq p := by
   rw [Complex.sq_norm, offset, Complex.normSq_add_mul_I, radiusSq]
 
+private theorem norm_offset_div_sq (p : ℝ × ℝ) {ψ : ℝ} (hψ : 0 ≤ ψ) :
+    ‖offset p / (ψ : ℂ)‖ ^ 2 = radiusSq p / ψ ^ 2 := by
+  rw [norm_div, Complex.norm_real, Real.norm_of_nonneg hψ, div_pow, norm_offset_sq]
+
 private theorem contDiff_offset : ContDiff ℝ (⊤ : ℕ∞) offset :=
   (Complex.ofRealCLM.contDiff.comp (contDiff_fst.sub contDiff_const)).add
     ((Complex.ofRealCLM.contDiff.comp (contDiff_snd.sub contDiff_const)).mul contDiff_const)
@@ -266,28 +272,38 @@ private def areaPrimitive (q : ℝ) : ℝ :=
 private theorem areaDensity_of_le {q : ℝ} (hq : 1 / 4 ≤ q) : areaDensity q = 0 := by
   simp [areaDensity, profile_eq_zero_iff.2 hq]
 
+/-- The derivative of `ψ(|c|²)⁻¹ c` along a curve `γ` in the plane, at a time where
+`ψ = ψ(|c|²) ≠ 0`: if `c ∘ γ` has derivative `v` and `|c|² ∘ γ` has derivative `r'`, it is
+`ψ⁻¹ v + r' e ψ⁻² c`, for `e = expNegInvGlue' (1/4 - |c|²)`, which is minus the derivative of the
+profile. -/
+private theorem hasDerivAt_profile_inv_smul_offset {γ : ℝ → ℝ × ℝ} {τ : ℝ} {v : ℂ} {r' : ℝ}
+    (ho : HasDerivAt (fun τ ↦ offset (γ τ)) v τ) (hr : HasDerivAt (fun τ ↦ radiusSq (γ τ)) r' τ)
+    (h : profile (radiusSq (γ τ)) ≠ 0) :
+    HasDerivAt (fun τ ↦ (profile (radiusSq (γ τ)))⁻¹ • offset (γ τ))
+      ((profile (radiusSq (γ τ)))⁻¹ • v +
+        (r' * deriv expNegInvGlue (1 / 4 - radiusSq (γ τ)) /
+          profile (radiusSq (γ τ)) ^ 2) • offset (γ τ)) τ := by
+  have hψ : HasDerivAt (fun τ ↦ profile (radiusSq (γ τ)))
+      (-deriv expNegInvGlue (1 / 4 - radiusSq (γ τ)) * r') τ :=
+    (hasDerivAt_profile _).comp τ hr
+  have hp := hψ.inv h
+  convert hp.smul ho using 3
+  ring
+
 /-- The partial derivative `∂s (ψ⁻¹ c)` of the smooth sphere in the affine chart, at a point where
-`ψ = ψ(|c|²) ≠ 0`: it is `ψ⁻¹ + 2 (s - 1/2) e ψ⁻² c`, for `e = expNegInvGlue' (1/4 - |c|²)`, which
-is minus the derivative of the profile. -/
+`ψ = ψ(|c|²) ≠ 0`: it is `ψ⁻¹ + 2 (s - 1/2) e ψ⁻² c`, for `e = expNegInvGlue' (1/4 - |c|²)`. -/
 private theorem hasDerivAt_fst {s t : ℝ} (h : profile (radiusSq (s, t)) ≠ 0) :
     HasDerivAt (fun s' ↦ (profile (radiusSq (s', t)))⁻¹ • offset (s', t))
       ((profile (radiusSq (s, t)))⁻¹ • (1 : ℂ) +
         (2 * (s - 1 / 2) * deriv expNegInvGlue (1 / 4 - radiusSq (s, t)) /
           profile (radiusSq (s, t)) ^ 2) • offset (s, t)) s := by
   have ho : HasDerivAt (fun s' ↦ offset (s', t)) 1 s := by
-    have := (((hasDerivAt_id s).sub_const (1 / 2 : ℝ)).ofReal_comp).add_const
+    simpa [offset] using (((hasDerivAt_id s).sub_const (1 / 2 : ℝ)).ofReal_comp).add_const
       (((t - 1 / 2 : ℝ) : ℂ) * Complex.I)
-    simpa [offset] using this
   have hr : HasDerivAt (fun s' ↦ radiusSq (s', t)) (2 * (s - 1 / 2)) s := by
-    have h1 : HasDerivAt (fun s' : ℝ ↦ (s' - 1 / 2) ^ 2 + (t - 1 / 2) ^ 2) (2 * (s - 1 / 2)) s := by
-      simpa using (((hasDerivAt_id s).sub_const (1 / 2 : ℝ)).pow 2).add_const ((t - 1 / 2) ^ 2)
-    exact h1
-  have hψ : HasDerivAt (fun s' ↦ profile (radiusSq (s', t)))
-      (-deriv expNegInvGlue (1 / 4 - radiusSq (s, t)) * (2 * (s - 1 / 2))) s :=
-    (hasDerivAt_profile _).comp s hr
-  have hp := hψ.inv h
-  convert hp.smul ho using 3
-  ring
+    simpa [radiusSq] using
+      (((hasDerivAt_id s).sub_const (1 / 2 : ℝ)).pow 2).add_const ((t - 1 / 2) ^ 2)
+  exact hasDerivAt_profile_inv_smul_offset (γ := fun s' ↦ (s', t)) ho hr h
 
 /-- The partial derivative `∂t (ψ⁻¹ c)` of the smooth sphere in the affine chart, at a point where
 `ψ = ψ(|c|²) ≠ 0`: it is `ψ⁻¹ i + 2 (t - 1/2) e ψ⁻² c`, for `e = expNegInvGlue' (1/4 - |c|²)`. -/
@@ -297,19 +313,12 @@ private theorem hasDerivAt_snd {s t : ℝ} (h : profile (radiusSq (s, t)) ≠ 0)
         (2 * (t - 1 / 2) * deriv expNegInvGlue (1 / 4 - radiusSq (s, t)) /
           profile (radiusSq (s, t)) ^ 2) • offset (s, t)) t := by
   have ho : HasDerivAt (fun t' ↦ offset (s, t')) Complex.I t := by
-    have := ((((hasDerivAt_id t).sub_const (1 / 2 : ℝ)).ofReal_comp).mul_const
+    simpa [offset] using ((((hasDerivAt_id t).sub_const (1 / 2 : ℝ)).ofReal_comp).mul_const
       Complex.I).const_add (((s - 1 / 2 : ℝ) : ℂ))
-    simpa [offset] using this
   have hr : HasDerivAt (fun t' ↦ radiusSq (s, t')) (2 * (t - 1 / 2)) t := by
-    have h1 : HasDerivAt (fun t' : ℝ ↦ (s - 1 / 2) ^ 2 + (t' - 1 / 2) ^ 2) (2 * (t - 1 / 2)) t := by
-      simpa using (((hasDerivAt_id t).sub_const (1 / 2 : ℝ)).pow 2).const_add ((s - 1 / 2) ^ 2)
-    exact h1
-  have hψ : HasDerivAt (fun t' ↦ profile (radiusSq (s, t')))
-      (-deriv expNegInvGlue (1 / 4 - radiusSq (s, t)) * (2 * (t - 1 / 2))) t :=
-    (hasDerivAt_profile _).comp t hr
-  have hp := hψ.inv h
-  convert hp.smul ho using 3
-  ring
+    simpa [radiusSq] using
+      (((hasDerivAt_id t).sub_const (1 / 2 : ℝ)).pow 2).const_add ((s - 1 / 2) ^ 2)
+  exact hasDerivAt_profile_inv_smul_offset (γ := fun t' ↦ (s, t')) ho hr h
 
 /-- The smooth sphere has derivative `0` where the profile vanishes: there the profile attains its
 minimum `0`. -/
@@ -345,9 +354,7 @@ private theorem fubiniStudyForm_smoothSphere (p : ℝ × ℝ) :
     divPoint_of_ne_zero _ h
   rw [h1, h2]
   refine (SmoothBundleForm.eval₂_apply fubiniStudyForm (smoothSphere (s, t)) _ _).symm.trans ?_
-  rw [eval₂_fubiniStudyForm, hpt,
-    chartAt_coe, affineChart_coe, fubiniStudyDensity_def, norm_div, Complex.norm_real,
-    Real.norm_of_nonneg hψ.le, div_pow, norm_offset_sq]
+  rw [hpt, eval₂_fubiniStudyForm_coe, fubiniStudyDensity_def, norm_offset_div_sq _ hψ.le]
   simp only [Complex.mul_im, Complex.add_re, Complex.add_im, Complex.conj_re, Complex.conj_im,
     Complex.smul_re, Complex.smul_im, offset_re, offset_im, Complex.one_re, Complex.one_im,
     Complex.I_re, Complex.I_im, smul_eq_mul, areaDensity]
@@ -374,13 +381,12 @@ private theorem areaPrimitive_of_le {q : ℝ} (hq : 1 / 4 ≤ q) : areaPrimitive
 
 private theorem hasDerivAt_areaPrimitive {q : ℝ} (hq : 0 ≤ q) :
     HasDerivAt areaPrimitive (areaDensity q) q := by
-  have key : HasDerivAt (fun q ↦ q / (profile q ^ 2 + q)) (areaDensity q) q := by
-    convert (hasDerivAt_id' q).div (((hasDerivAt_profile q).pow 2).add (hasDerivAt_id' q))
-      (profile_sq_add_pos hq).ne' using 1
-    simp only [areaDensity, Pi.add_apply, Pi.pow_apply]
-    field_simp
-    ring
-  exact key
+  unfold areaPrimitive
+  convert (hasDerivAt_id' q).div (((hasDerivAt_profile q).pow 2).add (hasDerivAt_id' q))
+    (profile_sq_add_pos hq).ne' using 1
+  simp only [areaDensity, Pi.add_apply, Pi.pow_apply]
+  field_simp
+  ring
 
 private theorem continuousAt_areaDensity {q : ℝ} (hq : 0 ≤ q) : ContinuousAt areaDensity q := by
   have hψ : Continuous profile := contDiff_profile.continuous
@@ -422,7 +428,7 @@ private theorem integral_Ioi_mul_areaDensity :
     filter_upwards [eventually_ge_atTop (1 / 2 : ℝ)] with r hr
     rw [areaPrimitive_of_le (by nlinarith)]
   rw [integral_Ioi_of_hasDerivAt_of_tendsto' (fun r _ ↦ hderiv r) hint.integrableOn hlim]
-  simp [areaPrimitive_zero]
+  simp only [zero_pow two_ne_zero, areaPrimitive_zero]
   ring
 
 /-- The integrand integrates to `1` over `ℂ`, in polar coordinates. -/
