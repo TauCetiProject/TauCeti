@@ -140,8 +140,10 @@ theorem IsRieszColemanProjection.rankAtStalk_range_completedBaseChange {u E : M 
   · exact absurd (Subsingleton.elim p.asIdeal ⊤) p.isPrime.ne_top
   have hQS : IsUnit (Q.map f).leadingCoeff := by
     rw [leadingCoeff_map_of_leadingCoeff_ne_zero f (hQ.map f).ne_zero]; exact hQ.map f
-  have hcopS := (PowerSeries.isEntire_coe Q).isCoprime_map hF f hC hcop
-  simp only [← Polynomial.polynomial_map_coe] at hcopS
+  have hcopS : IsCoprime
+      (⟨(Q.map f : S⟦X⟧), IsEntire.mem_subring.mpr (PowerSeries.isEntire_coe _)⟩ :
+        IsEntire.subring S) ⟨PowerSeries.map f F, IsEntire.mem_subring.mpr (hF.map f hC)⟩ := by
+    convert hcop.map (IsEntire.mapHom f hC) <;> ext1 <;> simp [Polynomial.polynomial_map_coe]
   have hrank := (hE.completedBaseChange hS hu.hasPr_source α hQ).rankAtStalk_range_of_isPrCompact
     (hu.completedBaseChange hS α α) (by simp [hQ0]) hQS (hF.map f hC)
     (by rw [hu.charPowerSeries_completedBaseChange hS α, hQF, map_mul,
@@ -176,10 +178,8 @@ theorem IsRieszColemanProjection.finrank_range_completedBaseChange {u E : M →L
     ⟨1, fun r s ↦ by simpa using norm_smul_le r s⟩
   have hr := hE.rankAtStalk_range_completedBaseChange hS hu hQ0 hQ hF hQF hcop α
     ⟨⊥, Ideal.isPrime_bot⟩
-  let : AddCommGroup (E.completedBaseChange α α).range := inferInstance
   rw [Module.rankAtStalk_eq_finrank_of_free] at hr
-  rw [hE.finrank_range_of_isPrCompact hu hQ0 hF hQF hcop]
-  exact hr
+  rwa [hE.finrank_range_of_isPrCompact hu hQ0 hF hQF hcop]
 
 end Field
 

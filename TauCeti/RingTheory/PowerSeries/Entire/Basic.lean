@@ -38,6 +38,8 @@ restricted at a fixed radius.
 * `PowerSeries.IsEntire.subring`: the subring of entire series, with coefficient algebra structure
   `PowerSeries.IsEntire.instAlgebraSubring`.
 * `PowerSeries.IsEntire.polynomialHom`: the inclusion of polynomials into that subring.
+* `PowerSeries.IsEntire.mapHom`: the coefficientwise ring homomorphism between subrings of entire
+  series induced by a bounded coefficient map.
 
 ## Main results
 
@@ -49,8 +51,6 @@ restricted at a fixed radius.
 * `PowerSeries.IsEntire.hasseDeriv`, `PowerSeries.IsEntire.derivative`,
   `PowerSeries.IsEntire.rescale` and `PowerSeries.IsEntire.map`: entireness is preserved by Hasse
   derivatives, rescaling and bounded coefficient maps.
-* `PowerSeries.IsEntire.isCoprime_map`: bounded coefficient maps preserve coprimality in the ring
-  of entire series.
 * `PowerSeries.IsEntire.summable_norm_coeff_mul_pow`: `∑ ‖aₙ‖ tⁿ` converges for every real `t`.
 * `PowerSeries.IsEntire.mk_coeff_succ`: dropping the constant term and dividing by `X` keeps a
   series entire.
@@ -249,6 +249,19 @@ theorem IsEntire.coe_polynomialHom (p : Polynomial R) :
     (IsEntire.polynomialHom p : R⟦X⟧) = p :=
   RingHom.codRestrict_apply _ _ _ p
 
+/-- A bounded ring homomorphism `φ`, `‖φ x‖ ≤ C ‖x‖`, induces the coefficientwise ring
+homomorphism between the subrings of entire series. -/
+noncomputable def IsEntire.mapHom {S : Type*} [NormedRing S] (φ : R →+* S) {C : ℝ}
+    (hφ : ∀ x, ‖φ x‖ ≤ C * ‖x‖) : IsEntire.subring R →+* IsEntire.subring S :=
+  ((PowerSeries.map φ).comp (IsEntire.subring R).subtype).codRestrict _ fun f ↦
+    IsEntire.mem_subring.mpr ((IsEntire.mem_subring.mp f.property).map φ hφ)
+
+/-- `IsEntire.mapHom` acts by `PowerSeries.map` on the underlying formal power series. -/
+@[simp]
+theorem IsEntire.coe_mapHom {S : Type*} [NormedRing S] (φ : R →+* S) {C : ℝ}
+    (hφ : ∀ x, ‖φ x‖ ≤ C * ‖x‖) (f : IsEntire.subring R) :
+    (IsEntire.mapHom φ hφ f : S⟦X⟧) = PowerSeries.map φ (f : R⟦X⟧) := (rfl)
+
 /-- An algebra structure on the coefficients induces one on entire power series through constant
 series. Scalars act as on the ambient formal series, and the coefficient ring need not be
 commutative. -/
@@ -299,20 +312,6 @@ theorem IsEntire.rescale (hf : f.IsEntire) (a : R) : (rescale a f).IsEntire :=
 theorem IsEntire.derivative (hf : f.IsEntire) : (d⁄dX f).IsEntire := by
   rw [← hasseDeriv_one_apply]
   exact hf.hasseDeriv 1
-
-/-- A bounded ring homomorphism `φ`, `‖φ x‖ ≤ C ‖x‖`, preserves coprimality in the ring of entire
-series: it maps a Bézout identity `a f + b g = 1` among entire series coefficientwise to one among
-their images. -/
-theorem IsEntire.isCoprime_map {S : Type*} [NormedCommRing S] {g : R⟦X⟧} (hf : f.IsEntire)
-    (hg : g.IsEntire) (φ : R →+* S) {C : ℝ} (hφ : ∀ x, ‖φ x‖ ≤ C * ‖x‖)
-    (h : IsCoprime (⟨f, IsEntire.mem_subring.mpr hf⟩ : IsEntire.subring R)
-      ⟨g, IsEntire.mem_subring.mpr hg⟩) :
-    IsCoprime (⟨PowerSeries.map φ f, IsEntire.mem_subring.mpr (hf.map φ hφ)⟩ :
-      IsEntire.subring S) ⟨PowerSeries.map φ g, IsEntire.mem_subring.mpr (hg.map φ hφ)⟩ := by
-  obtain ⟨⟨a, ha⟩, ⟨b, hb⟩, hab⟩ := h
-  refine ⟨⟨PowerSeries.map φ a, IsEntire.mem_subring.mpr (IsEntire.map ha φ hφ)⟩,
-    ⟨PowerSeries.map φ b, IsEntire.mem_subring.mpr (IsEntire.map hb φ hφ)⟩, Subtype.ext ?_⟩
-  simpa using congrArg (fun x : IsEntire.subring R ↦ PowerSeries.map φ (x : R⟦X⟧)) hab
 
 end NormedCommRing
 
