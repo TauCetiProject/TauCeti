@@ -31,9 +31,11 @@ there after extension to the whole manifold, as for Mathlib's `ContMDiff.extend_
   `TauCeti.ContMDiffOn.subtypeVal_comp_iff`, and `TauCeti.ContMDiff.subtypeVal_comp_iff`: a map
   into an open submanifold is `C^n` (within a set, at a point, on a set, globally) iff its
   composition with the inclusion is.
-* `ContMDiffAt.extend_subtypeVal`, `TauCeti.contMDiffAt_extend_subtypeVal_iff`: an extension
-  to `M` of a map on an open submanifold is `C^n` at a point of the submanifold exactly when the
-  map is.
+* `ContMDiffAt.extend_subtypeVal`, `TauCeti.contMDiffAt_extend_subtypeVal_iff`,
+  `ContMDiff.contMDiffOn_extend_subtypeVal`, `ContMDiff.contDiffOn_extend_subtypeVal`, and
+  `ContDiffOn.contMDiff_comp_subtypeVal`: an extension to `M` of a map on an open submanifold is
+  `C^n` at a point (or on the open set) exactly when the map is, and on an open subset of a normed
+  space `ContMDiff` on `U` transfers back and forth with `ContDiffOn` on `(U : Set E)`.
 * `ContMDiff.extend_one_of_mulTSupport_subset`, `ContMDiff.extend_zero_of_tsupport_subset`,
   `ContMDiff.extend_prodMap_subtypeVal_one`, and `ContMDiff.extend_prodMap_subtypeVal_zero`: global
   `C^n` extension by `1` (or `0`) of a `C^n` map on an open submanifold whose topological support
@@ -126,6 +128,27 @@ theorem TauCeti.contMDiffAt_extend_subtypeVal_iff {U : Opens M} {g : U → M'} {
   rw [← contMDiffAt_subtype_iff] at h
   exact h.congr_of_eventuallyEq (Filter.Eventually.of_forall fun z ↦
     (Subtype.val_injective.extend_apply g e z).symm)
+
+/-- If `g : U → M'` is `C^n` on an open submanifold `U ⊆ M`, then any extension of `g` to `M` is
+`C^n` on `(U : Set M)`. -/
+theorem ContMDiff.contMDiffOn_extend_subtypeVal {U : Opens M} {g : U → M'}
+    (hg : ContMDiff I I' n g) (e : M → M') :
+    ContMDiffOn I I' n (Subtype.val.extend g e) (U : Set M) := fun x hx ↦
+  ((hg ⟨x, hx⟩).extend_subtypeVal e).contMDiffWithinAt
+
+/-- If `g : U → E'` is `C^n` on an open subset `U` of a normed space `E`, then any extension of
+`g` to `E` is `C^n` on `(U : Set E)` in the normed-space sense. -/
+theorem ContMDiff.contDiffOn_extend_subtypeVal {U : Opens E} {g : U → E'}
+    (hg : ContMDiff 𝓘(𝕜, E) 𝓘(𝕜, E') n g) (e : E → E') :
+    ContDiffOn 𝕜 n (Subtype.val.extend g e) (U : Set E) :=
+  contMDiffOn_iff_contDiffOn.1 (hg.contMDiffOn_extend_subtypeVal e)
+
+/-- If `g : E → E'` is `C^n` on an open subset `U` of a normed space `E`, then its restriction
+`g ∘ Subtype.val : U → E'` to the open submanifold `U` is `C^n`. -/
+theorem ContDiffOn.contMDiff_comp_subtypeVal {U : Opens E} {g : E → E'}
+    (hg : ContDiffOn 𝕜 n g (U : Set E)) :
+    ContMDiff 𝓘(𝕜, E) 𝓘(𝕜, E') n (g ∘ (Subtype.val : U → E)) :=
+  (contMDiffOn_iff_contDiffOn.2 hg).comp_contMDiff contMDiff_subtypeVal fun x ↦ x.property
 
 /-- If the topological multiplicative support of `Subtype.val.extend g 1` is contained in the open
 set `U` and `g : U → M'` is `C^n`, then `Subtype.val.extend g 1` is `C^n` on all of `M`. -/

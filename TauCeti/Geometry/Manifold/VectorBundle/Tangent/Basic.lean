@@ -111,6 +111,9 @@ are those of its summands, so its tangent coordinate changes are those of the su
 * `TauCeti.Manifold.mvfderiv_subtype_val_apply` and
   `TauCeti.Manifold.injective_mvfderiv_subtype_val`: for an open subset of a normed space, the
   derivative of the inclusion, read in the normed space, fixes each tangent vector.
+* `TauCeti.Manifold.mvfderiv_opens_eq_fderiv_apply`: for a map from an open subset of a normed
+  space into a normed space, its manifold derivative equals the Fréchet derivative of any ambient
+  representative agreeing with it on the open subset.
 * `TauCeti.Manifold.mfderiv_apply_of_subtype_val_comp_eq`: the differential of a map between open
   submanifolds is that of any ambient map it restricts; in particular one is the identity exactly
   when the other is (`TauCeti.Manifold.mfderiv_eq_id_iff_of_comp_subtype_val`).
@@ -1009,6 +1012,35 @@ is injective. -/
 theorem injective_mvfderiv_subtype_val {U : Opens E} (x : U) :
     Function.Injective (mvfderiv 𝓘(𝕜, E) (Subtype.val : U → E) x) :=
   TauCeti.injective_mvfderiv_iff.2 (mfderiv_subtype_val_injective x)
+
+/-- For a map `u : U → F` from an open subset `U` of a normed space `E` into a normed space `F`
+and any ambient representative `u' : E → F` agreeing with `u` on `U`, the manifold derivative of
+`u` at `x : U`, read in `F`, equals the Fréchet derivative of `u'` at `x` (both are `0` when
+`u'` is not differentiable at `x`). -/
+theorem mvfderiv_opens_eq_fderiv_apply {U : Opens E} {F : Type*}
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] {u : U → F} {u' : E → F}
+    (hu : ∀ x : U, u' x = u x) (x : U) (v : TangentSpace 𝓘(𝕜, E) x) :
+    mvfderiv 𝓘(𝕜, E) u x v =
+      fderiv 𝕜 u' (x : E)
+        (NormedSpace.fromTangentSpace (x : E) (tangentSpaceOpenEquiv x v)) := by
+  have hcomp : u = u' ∘ (Subtype.val : U → E) := funext fun y ↦ (hu y).symm
+  have hmf : mfderiv 𝓘(𝕜, E) 𝓘(𝕜, F) (u' ∘ (Subtype.val : U → E)) x v =
+      mfderiv 𝓘(𝕜, E) 𝓘(𝕜, F) u' (x : E) (tangentSpaceOpenEquiv x v) :=
+    mfderiv_comp_subtype_val_apply v
+  calc
+    mvfderiv 𝓘(𝕜, E) u x v =
+        NormedSpace.fromTangentSpace (u' (x : E))
+          (mfderiv 𝓘(𝕜, E) 𝓘(𝕜, F) (u' ∘ (Subtype.val : U → E)) x v) := by
+      rw [hcomp, mvfderiv, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+        Function.comp_apply]
+    _ = NormedSpace.fromTangentSpace (u' (x : E))
+          (mfderiv 𝓘(𝕜, E) 𝓘(𝕜, F) u' (x : E) (tangentSpaceOpenEquiv x v)) :=
+      congrArg _ hmf
+    _ = mvfderiv 𝓘(𝕜, E) u' (x : E) (tangentSpaceOpenEquiv x v) := by
+      rw [mvfderiv, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe]
+    _ = fderiv 𝕜 u' (x : E)
+        (NormedSpace.fromTangentSpace (x : E) (tangentSpaceOpenEquiv x v)) := by
+      rw [mvfderiv_eq_fderiv, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe]
 
 /-- The tangent bundle of a model space is Hausdorff. -/
 theorem instT2SpaceTangentBundleModelSpace :

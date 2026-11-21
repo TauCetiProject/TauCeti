@@ -29,10 +29,10 @@ that is locally a `Cⁿ` function plus a holomorphic one is `Cⁿ` with the same
 derivatives (`TauCeti.contDiffOn_and_conjWirtingerDeriv_eq_of_locally_eq_add`). This glues the
 local solutions in exhaustion proofs of the `\bar∂`-lemma.
 
-These statements connect the real differential and its type decomposition with holomorphy. In
-particular, two functions of one complex variable, continuous on the closure of an open set and real
-differentiable on it, with the same conjugate Wirtinger derivative there, differ by a function
-holomorphic on the set and continuous on its closure
+These statements connect the real differential and its type decomposition with holomorphy. Two
+real-differentiable functions on an open subset of `ℂ` with the same conjugate Wirtinger derivative
+differ by a holomorphic function (`TauCeti.differentiableOn_sub_of_conjWirtingerDeriv_eq`); if they
+are also continuous on the closure, so is their difference
 (`TauCeti.diffContOnCl_sub_of_conjWirtingerDeriv_eq`).
 
 ## References
@@ -106,6 +106,18 @@ theorem contDiffOn_and_conjWirtingerDeriv_eq_of_locally_eq_add {ι : Type*} {n :
         (hKz.restrictScalars ℝ), add_apply, hKz.conjWirtingerDeriv_eq_zero, zero_apply,
       add_zero, haf z hzO j]
 
+/-- Two real-differentiable functions on an open set `U ⊆ ℂ` with the same `∂/∂(conj z)` on `U`
+differ by a function holomorphic on `U`. -/
+theorem differentiableOn_sub_of_conjWirtingerDeriv_eq {U : Set ℂ} {u₁ u₂ : ℂ → W} (hU : IsOpen U)
+    (hd₁ : DifferentiableOn ℝ u₁ U) (hd₂ : DifferentiableOn ℝ u₂ U)
+    (heq : ∀ z ∈ U, conjWirtingerDeriv u₁ z 1 = conjWirtingerDeriv u₂ z 1) :
+    DifferentiableOn ℂ (u₁ - u₂) U := fun z hz ↦ by
+  have h₁ := (hd₁ z hz).differentiableAt (hU.mem_nhds hz)
+  have h₂ := (hd₂ z hz).differentiableAt (hU.mem_nhds hz)
+  refine ((differentiableAt_iff_conjWirtingerDeriv_apply_one_eq_zero (h₁.sub h₂)).mpr
+    ?_).differentiableWithinAt
+  rw [conjWirtingerDeriv_sub h₁ h₂, sub_apply, heq z hz, sub_self]
+
 /-- Two functions, continuous on the closure of an open set `U ⊆ ℂ` and real differentiable on
 `U`, with the same `∂/∂(conj z)` on `U`, differ by a function holomorphic on `U` and continuous on
 its closure. -/
@@ -113,12 +125,7 @@ theorem diffContOnCl_sub_of_conjWirtingerDeriv_eq {U : Set ℂ} {u₁ u₂ : ℂ
     (hc₁ : ContinuousOn u₁ (closure U)) (hc₂ : ContinuousOn u₂ (closure U))
     (hd₁ : DifferentiableOn ℝ u₁ U) (hd₂ : DifferentiableOn ℝ u₂ U)
     (heq : ∀ z ∈ U, conjWirtingerDeriv u₁ z 1 = conjWirtingerDeriv u₂ z 1) :
-    DiffContOnCl ℂ (u₁ - u₂) U := by
-  refine ⟨fun z hz ↦ ?_, hc₁.sub hc₂⟩
-  have h₁ := (hd₁ z hz).differentiableAt (hU.mem_nhds hz)
-  have h₂ := (hd₂ z hz).differentiableAt (hU.mem_nhds hz)
-  refine ((differentiableAt_iff_conjWirtingerDeriv_apply_one_eq_zero (h₁.sub h₂)).mpr
-    ?_).differentiableWithinAt
-  rw [conjWirtingerDeriv_sub h₁ h₂, sub_apply, heq z hz, sub_self]
+    DiffContOnCl ℂ (u₁ - u₂) U :=
+  ⟨differentiableOn_sub_of_conjWirtingerDeriv_eq hU hd₁ hd₂ heq, hc₁.sub hc₂⟩
 
 end TauCeti

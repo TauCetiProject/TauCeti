@@ -38,9 +38,10 @@ produced by Montel's theorem in several variables.
 * `TendstoLocallyUniformlyOn.differentiableOn_of_locallyCompactSpace`: on a locally compact
   complex normed space, a locally uniform limit of holomorphic maps on an open set is holomorphic.
 * `TauCeti.exists_differentiableOn_eqOn_add_tsum`: the telescoping step in exhaustion proofs of
-  the `\bar∂`-lemma. Local solutions `h k` on growing balls whose consecutive differences are
-  holomorphic, corrected by entire approximations `P k` of these differences, converge to a
-  function that is `h m` plus a holomorphic function on the `m`-th ball.
+  the `\bar∂`-lemma. On any open set `U` in a complex normed space, if each `P k` is holomorphic on
+  `U` and for `k ≥ m` the consecutive differences `h (k + 1) - h k` are holomorphic on `U` and
+  approximated by `P k` within a summable bound `u k`, then the corrected series
+  `h 0 + ∑' k, (h (k + 1) - h k - P k)` is `h m` plus a holomorphic function on `U`.
 
 ## References
 
@@ -137,31 +138,28 @@ theorem TendstoLocallyUniformlyOn.differentiableOn_of_locallyCompactSpace [Local
 
 namespace TauCeti
 
-/-- **Telescoping step.** If consecutive differences `h (k + 1) - h k` are holomorphic on the
-growing balls `ball c (r k)` of a complex normed space and are approximated within `2⁻ᵏ` on
-`closedBall c (r k)` by entire functions `P k`, then on `ball c (r m)` the corrected limit
+/-- **Telescoping step.** Let `U` be an open subset of a complex normed space `V`, and let
+`h P : ℕ → V → E` be sequences of functions into a complex Banach space `E`. If every `P k` is
+holomorphic on `U`, and for `k ≥ m` each consecutive difference `h (k + 1) - h k` is holomorphic on
+`U` and approximated on `U` by `P k` within a summable bound `u k`, then on `U` the corrected series
 `h 0 + ∑' k, (h (k + 1) - h k - P k)` is `h m` plus a holomorphic function. -/
-theorem exists_differentiableOn_eqOn_add_tsum [CompleteSpace E] {h P : ℕ → V → E} {c : V}
-    {r : ℕ → ℝ} (hr : Monotone r) (hP : ∀ k, Differentiable ℂ (P k))
-    (hdiff : ∀ k, DifferentiableOn ℂ (h (k + 1) - h k) (ball c (r k)))
-    (hP_lt : ∀ k, ∀ z ∈ closedBall c (r k), ‖(h (k + 1) - h k) z - P k z‖ < (1 / 2 : ℝ) ^ k)
-    (m : ℕ) : ∃ K : V → E, DifferentiableOn ℂ K (ball c (r m)) ∧
-      EqOn (fun z ↦ h 0 z + ∑' k, (h (k + 1) - h k - P k) z) (h m + K) (ball c (r m)) := by
+theorem exists_differentiableOn_eqOn_add_tsum [CompleteSpace E] {U : Set V} (hU : IsOpen U)
+    {h P : ℕ → V → E} {u : ℕ → ℝ} (hu : Summable u) {m : ℕ}
+    (hP : ∀ k, DifferentiableOn ℂ (P k) U)
+    (hdiff : ∀ k ≥ m, DifferentiableOn ℂ (h (k + 1) - h k) U)
+    (hP_le : ∀ k ≥ m, ∀ z ∈ U, ‖(h (k + 1) - h k) z - P k z‖ ≤ u k) :
+    ∃ K : V → E, DifferentiableOn ℂ K U ∧
+      EqOn (fun z ↦ h 0 z + ∑' k, (h (k + 1) - h k - P k) z) (h m + K) U := by
   set e : ℕ → V → E := fun k ↦ h (k + 1) - h k - P k
-  have he_le {k : ℕ} (hmk : m ≤ k) {z : V} (hz : z ∈ ball c (r m)) :
-      ‖e k z‖ ≤ (1 / 2 : ℝ) ^ k :=
-    (hP_lt k z (closedBall_subset_closedBall (hr hmk) (ball_subset_closedBall hz))).le
-  have hsumm : Summable fun k ↦ (1 / 2 : ℝ) ^ (k + m) :=
-    (summable_nat_add_iff m).2 summable_geometric_two
+  have hsumm : Summable fun k ↦ u (k + m) := (summable_nat_add_iff m).2 hu
   refine ⟨fun z ↦ ∑' k, e (k + m) z - ∑ k ∈ Finset.range m, P k z, ?_, fun z hz ↦ ?_⟩
-  · refine DifferentiableOn.sub ?_ (DifferentiableOn.fun_sum fun k _ ↦ (hP k).differentiableOn)
-    refine (tendstoUniformlyOn_tsum hsumm fun k z hz ↦ he_le (Nat.le_add_left m k) hz)
-      |>.differentiableOn (Eventually.of_forall fun s ↦ DifferentiableOn.fun_sum fun k _ ↦ ?_)
-      isOpen_ball
-    exact ((hdiff (k + m)).sub (hP (k + m)).differentiableOn).mono
-      (ball_subset_ball (hr (Nat.le_add_left m k)))
+  · refine DifferentiableOn.sub ?_ (DifferentiableOn.fun_sum fun k _ ↦ hP k)
+    refine (tendstoUniformlyOn_tsum hsumm fun k z hz ↦
+        hP_le (k + m) (Nat.le_add_left m k) z hz)
+      |>.differentiableOn (Eventually.of_forall fun s ↦ DifferentiableOn.fun_sum fun k _ ↦
+        (hdiff (k + m) (Nat.le_add_left m k)).sub (hP (k + m))) hU
   · have hs : Summable fun k ↦ e k z := (summable_nat_add_iff m).1 <|
-      .of_norm_bounded hsumm fun k ↦ he_le (Nat.le_add_left m k) hz
+      .of_norm_bounded hsumm fun k ↦ hP_le (k + m) (Nat.le_add_left m k) z hz
     have htel : ∑ k ∈ Finset.range m, e k z = h m z - h 0 z - ∑ k ∈ Finset.range m, P k z := by
       simp only [e, Pi.sub_apply, Finset.sum_sub_distrib, Finset.sum_range_sub fun k ↦ h k z]
     simp only [Pi.add_apply]

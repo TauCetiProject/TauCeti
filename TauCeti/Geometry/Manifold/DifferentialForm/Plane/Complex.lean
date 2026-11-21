@@ -8,14 +8,21 @@ module
 public import TauCeti.Analysis.Calculus.DifferentialForm.Complex
 public import TauCeti.Analysis.Complex.Wirtinger.Holomorphic
 public import TauCeti.Geometry.Manifold.DifferentialForm.MapCoeff
+public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Basic
+import TauCeti.Geometry.Manifold.DifferentialForm.Closed
 
 /-!
-# Complex coordinate one-forms and their pullback
+# Real and complex coordinate one-forms on `ℂ` and their pullback
 
-The coordinate forms `dz` and `dbar z` on the real manifold `ℂ` take a tangent vector to
-itself and to its conjugate. They use the existing `SmoothForm` carrier, with complex
-coefficients and real tangent spaces. Pullback by a real-differentiable map has the usual
-Wirtinger coefficients: `f⁎dz = f_z dz + f_barz dbar z`.
+The real coordinate forms `dx = d(Re)` (`TauCeti.SmoothForm.complexDx`) and `dy = d(Im)`
+(`TauCeti.SmoothForm.complexDy`) and the complex coordinate forms `dz = d(id)`
+(`TauCeti.SmoothForm.complexDz`) and `dbar z = d(conj)` (`TauCeti.SmoothForm.complexDzBar`) on
+the real manifold `ℂ` use the existing `SmoothForm` carrier, with real tangent spaces. All four
+are constant (hence closed) one-forms realized as exterior derivatives of the corresponding
+coordinate functions, and their wedge products satisfy `dz ∧ dbar z = -2i dx ∧ dy`.
+
+Pullback of `dz` by a real-differentiable map has the usual Wirtinger coefficients:
+`f⁎dz = f_z dz + f_barz dbar z`.
 
 A covector is of type `(1,0)` precisely when it is a complex multiple of `dz`. We prove
 that pullback preserves these covectors exactly when the map is complex differentiable;
@@ -100,6 +107,99 @@ theorem smul_complexDz_add_smul_complexDzBar_eq_smul_complexDz_iff (z a b c : �
     exact ⟨hb, by simpa [hb] using h1⟩
   · rintro ⟨rfl, rfl⟩
     simp
+
+/-- The real-valued coordinate one-form `dx = d(Re)` on the real manifold `ℂ`. -/
+def complexDx : SmoothForm 𝓘(ℝ, ℂ) ℂ ℝ 1 :=
+  const (ContinuousAlternatingMap.ofSubsingleton ℝ ℂ ℝ (0 : Fin 1) Complex.reCLM)
+
+/-- The real-valued coordinate one-form `dy = d(Im)` on the real manifold `ℂ`. -/
+def complexDy : SmoothForm 𝓘(ℝ, ℂ) ℂ ℝ 1 :=
+  const (ContinuousAlternatingMap.ofSubsingleton ℝ ℂ ℝ (0 : Fin 1) Complex.imCLM)
+
+@[simp]
+theorem complexDx_apply (z : ℂ) (v : Fin 1 → TangentSpace 𝓘(ℝ, ℂ) z) :
+    complexDx.val z v = (NormedSpace.fromTangentSpace z (v 0)).re := by
+  simp [complexDx]
+
+@[simp]
+theorem complexDy_apply (z : ℂ) (v : Fin 1 → TangentSpace 𝓘(ℝ, ℂ) z) :
+    complexDy.val z v = (NormedSpace.fromTangentSpace z (v 0)).im := by
+  simp [complexDy]
+
+/-- On `ℂ`, `dx` is the exterior derivative of the real-part coordinate function. -/
+theorem complexDx_eq_mextDeriv :
+    complexDx.val = mextDeriv (RoughForm.ofFunction 𝓘(ℝ, ℂ) Complex.re) := by
+  ext z v
+  rw [complexDx_apply, mextDeriv_ofFunction, ContinuousAlternatingMap.ofSubsingleton_apply_apply,
+    mvfderiv_eq_fderiv, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+    show Complex.re = ⇑Complex.reCLM from funext fun w ↦ (Complex.reCLM_apply w).symm,
+    ContinuousLinearMap.fderiv, Complex.reCLM_apply]
+
+/-- On `ℂ`, `dy` is the exterior derivative of the imaginary-part coordinate function. -/
+theorem complexDy_eq_mextDeriv :
+    complexDy.val = mextDeriv (RoughForm.ofFunction 𝓘(ℝ, ℂ) Complex.im) := by
+  ext z v
+  rw [complexDy_apply, mextDeriv_ofFunction, ContinuousAlternatingMap.ofSubsingleton_apply_apply,
+    mvfderiv_eq_fderiv, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+    show Complex.im = ⇑Complex.imCLM from funext fun w ↦ (Complex.imCLM_apply w).symm,
+    ContinuousLinearMap.fderiv, Complex.imCLM_apply]
+
+/-- On `ℂ`, `dz` is the exterior derivative of the identity coordinate function. -/
+theorem complexDz_eq_mextDeriv :
+    complexDz.val = mextDeriv (RoughForm.ofFunction 𝓘(ℝ, ℂ) (id : ℂ → ℂ)) := by
+  ext z v
+  rw [complexDz_apply, mextDeriv_ofFunction, ContinuousAlternatingMap.ofSubsingleton_apply_apply,
+    mvfderiv_eq_fderiv, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+    fderiv_id, ContinuousLinearMap.id_apply]
+
+/-- On `ℂ`, `dbar z` is the exterior derivative of complex conjugation. -/
+theorem complexDzBar_eq_mextDeriv :
+    complexDzBar.val = mextDeriv (RoughForm.ofFunction 𝓘(ℝ, ℂ) (starRingEnd ℂ : ℂ → ℂ)) := by
+  ext z v
+  rw [complexDzBar_apply, mextDeriv_ofFunction,
+    ContinuousAlternatingMap.ofSubsingleton_apply_apply, mvfderiv_eq_fderiv,
+    ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+    show (starRingEnd ℂ : ℂ → ℂ) = ⇑(Complex.conjCLE : ℂ →L[ℝ] ℂ) from
+      funext fun w ↦ by simp,
+    ContinuousLinearMap.fderiv, ContinuousLinearEquiv.coe_coe, Complex.conjCLE_apply]
+
+/-- The real coordinate one-form `dx` on `ℂ` is closed. -/
+@[simp]
+theorem mextDeriv_complexDx : mextDeriv complexDx.val = 0 :=
+  (isClosed_def _).1 (isClosed_const _)
+
+/-- The real coordinate one-form `dy` on `ℂ` is closed. -/
+@[simp]
+theorem mextDeriv_complexDy : mextDeriv complexDy.val = 0 :=
+  (isClosed_def _).1 (isClosed_const _)
+
+/-- The complex coordinate one-form `dz` on `ℂ` is closed. -/
+@[simp]
+theorem mextDeriv_complexDz : mextDeriv complexDz.val = 0 :=
+  (isClosed_def _).1 (isClosed_const _)
+
+/-- The conjugate coordinate one-form `dbar z` on `ℂ` is closed. -/
+@[simp]
+theorem mextDeriv_complexDzBar : mextDeriv complexDzBar.val = 0 :=
+  (isClosed_def _).1 (isClosed_const _)
+
+/-- The real area two-form `dx ∧ dy` on `ℂ` evaluates to the planar determinant. -/
+theorem complexDx_wedge_complexDy_apply (z : ℂ) (v w : TangentSpace 𝓘(ℝ, ℂ) z) :
+    RoughForm.wedge complexDx.val complexDy.val z ![v, w] =
+      (NormedSpace.fromTangentSpace z v).re * (NormedSpace.fromTangentSpace z w).im -
+        (NormedSpace.fromTangentSpace z w).re * (NormedSpace.fromTangentSpace z v).im := by
+  simp [RoughForm.wedge_apply_one_one]
+
+/-- The complex two-form `dz ∧ dbar z` on `ℂ` equals `-2i` times the real area determinant. -/
+theorem complexDz_wedgeWith_complexDzBar_apply (z : ℂ) (v w : TangentSpace 𝓘(ℝ, ℂ) z) :
+    RoughForm.wedgeWith (ContinuousLinearMap.mul ℝ ℂ) complexDz.val complexDzBar.val z ![v, w] =
+      (-2 * Complex.I) * (RoughForm.wedge complexDx.val complexDy.val z ![v, w] : ℂ) := by
+  rw [RoughForm.wedgeWith_apply_one_one, ContinuousLinearMap.mul_apply',
+    ContinuousLinearMap.mul_apply', complexDz_apply, complexDzBar_apply, complexDz_apply,
+    complexDzBar_apply, complexDx_wedge_complexDy_apply]
+  set a := NormedSpace.fromTangentSpace z v
+  set b := NormedSpace.fromTangentSpace z w
+  apply Complex.ext <;> simp [a, b] <;> ring
 
 end SmoothForm
 
