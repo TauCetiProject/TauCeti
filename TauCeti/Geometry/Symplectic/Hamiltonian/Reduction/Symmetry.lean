@@ -28,12 +28,14 @@ preserve `μ` is a symmetry of the reduction. This file shows that it acts on th
   (`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.levelMulAction`) commutes with the action of
   `G_c`, so it descends to an action `l • [z] = [l • z]` on `Z / G_c`
   (`MulAction.orbitRel.Quotient.instMulActionOfSMulCommClass`).
-* If `L` is a Lie group acting smoothly on `M`, its action on the reduced space is smooth
+* If `L` acts on `M` by smooth maps, so does it on the reduced space
+  (`IsEquivariantMomentMap.contMDiffConstSMul_orbitRelQuotient_levelMulAction`), and if `L` is a
+  Lie group acting smoothly on `M`, its action on the reduced space is smooth
   (`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.contMDiffSMul_orbitRelQuotient_levelMulAction`),
   being descended along the submersion `(l, z) ↦ (l, [z])`.
-* If `L` preserves `σ`, it preserves the reduced form
-  (`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.mpullback_smul_orbitRelQuotient`): every form `η`
-  on `Z / G_c` with `π^* η = i^* σ` is `L`-invariant.
+* If `L` acts by smooth maps preserving `σ`, it preserves the reduced form
+  (`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.mpullback_smul_orbitRelQuotient_eq_self`): every
+  form `η` on `Z / G_c` with `π^* η = i^* σ` is `L`-invariant.
 * If the action of `L` on `(M, σ)` is Hamiltonian, with a group-level moment map `ν : M → 𝔩*`
   invariant under `G_c` along the level, then `ν` descends to the unique map `ν'` on `Z / G_c`
   with `ν' ∘ π = ν ∘ i`, and `ν'` is a group-level moment map of the reduced action for `ω_red`
@@ -42,7 +44,8 @@ preserve `μ` is a symmetry of the reduction. This file shows that it acts on th
 Typical instances are the residual symmetries of reduction: for a Hamiltonian action of a product
 `G × L`, the factor `L` acts on the reduction by `G`, and for a Hamiltonian torus action, the
 torus acts on the reduction by any subtorus. Freeness and properness of the action of `L` are not
-needed, and `L` may be any monoid acting by smooth maps until its moment map enters.
+needed, and `L` may be any monoid acting by smooth maps, with no topology, until the joint
+smoothness of its action or its moment map enters.
 
 ## References
 
@@ -119,13 +122,34 @@ theorem smulCommClass_levelMulAction [SMulCommClass L G M]
   letI := h.levelMulAction c hμL
   ⟨fun l k z ↦ Subtype.ext (smul_comm l (k : G) (z : M))⟩
 
-variable [TopologicalSpace L] [ChartedSpace HL L]
+variable (c) in
+/-- **The symmetry acts by smooth maps on a regular level.** If `L` acts on `M` by smooth maps, it
+acts by smooth maps on the regular level `μ⁻¹(c)`, with the atlas
+`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.levelSubMulActionChartedSpace`. -/
+theorem contMDiffConstSMul_levelMulAction [ContMDiffConstSMul I' ∞ L M]
+    (hμL : ∀ (l : L) (x : M), μ (l • x) = μ x)
+    (hreg : ∀ x, μ x = c → Function.Surjective (h.differential x))
+    (hn : finrank ℝ E' - finrank ℝ (GroupLieAlgebra I G) = n) :
+    letI := h.levelSubMulActionChartedSpace c hreg hn
+    letI := h.levelMulAction c hμL
+    ContMDiffConstSMul 𝓘(ℝ, Fin n → ℝ) ∞ L (h.levelSubMulAction c) := by
+  let := h.levelSubMulActionChartedSpace c hreg hn
+  let := h.levelMulAction c hμL
+  have hi := h.isSmoothEmbedding_coe_levelSubMulAction hreg hn
+  refine ⟨fun l ↦ hi.contMDiff_iff_comp.2 ?_⟩
+  -- The inclusion intertwines the actions on the level and on `M`.
+  have hcomp : (Subtype.val : h.levelSubMulAction c → M) ∘ (fun z ↦ l • z) =
+      (fun x : M ↦ l • x) ∘ Subtype.val :=
+    funext (h.coe_smul_levelMulAction (c := c) hμL l)
+  rw [hcomp]
+  exact (contMDiff_const_smul l).comp hi.contMDiff
 
 variable (c) in
 /-- **The symmetry acts smoothly on a regular level.** If `L` acts smoothly on `M`, its action on
 the regular level `μ⁻¹(c)`, with the atlas
 `TauCeti.SmoothTwoForm.IsEquivariantMomentMap.levelSubMulActionChartedSpace`, is smooth. -/
-theorem contMDiffSMul_levelMulAction [ContMDiffSMul IL I' ∞ L M]
+theorem contMDiffSMul_levelMulAction [TopologicalSpace L] [ChartedSpace HL L]
+    [ContMDiffSMul IL I' ∞ L M]
     (hμL : ∀ (l : L) (x : M), μ (l • x) = μ x)
     (hreg : ∀ x, μ x = c → Function.Surjective (h.differential x))
     (hn : finrank ℝ E' - finrank ℝ (GroupLieAlgebra I G) = n) :
@@ -134,7 +158,8 @@ theorem contMDiffSMul_levelMulAction [ContMDiffSMul IL I' ∞ L M]
     ContMDiffSMul IL 𝓘(ℝ, Fin n → ℝ) ∞ L (h.levelSubMulAction c) :=
   letI := h.levelSubMulActionChartedSpace c hreg hn
   letI := h.levelMulAction c hμL
-  (h.isSmoothEmbedding_coe_levelSubMulAction hreg hn).contMDiffSMul contMDiff_id fun _ _ ↦ rfl
+  (h.isSmoothEmbedding_coe_levelSubMulAction hreg hn).contMDiffSMul contMDiff_id
+    (h.coe_smul_levelMulAction (c := c) hμL)
 
 /-! ### The action on the reduced space -/
 
@@ -146,14 +171,14 @@ variable [ProperSMul G M]
   (hn : finrank ℝ E' - finrank ℝ (GroupLieAlgebra I G) = n)
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
   (d : Lie.EmbeddedLieSubgroupData I ((Lie.coadjointRepresentation ℝ I G).stabilizer c) F)
-  [IL.Boundaryless] [ContMDiffSMul IL I' ∞ L M] [SMulCommClass L G M]
-  (hμL : ∀ (l : L) (x : M), μ (l • x) = μ x)
+  [SMulCommClass L G M] (hμL : ∀ (l : L) (x : M), μ (l • x) = μ x)
 
 /-- **The symmetry acts smoothly on the reduced space.** A smooth action of `L` on `M` commuting
 with that of `G` and preserving `μ` descends to a smooth action `l • [z] = [l • z]` on the reduced
 space `μ⁻¹(c) / G_c`, for its atlas
 `TauCeti.SmoothTwoForm.IsEquivariantMomentMap.orbitRelQuotientChartedSpace`. -/
-theorem contMDiffSMul_orbitRelQuotient_levelMulAction [IsManifold IL ∞ L] :
+theorem contMDiffSMul_orbitRelQuotient_levelMulAction [IL.Boundaryless] [TopologicalSpace L]
+    [ChartedSpace HL L] [IsManifold IL ∞ L] [ContMDiffSMul IL I' ∞ L M] :
     letI := h.levelSubMulActionChartedSpace c hreg hn
     letI := h.orbitRelQuotientChartedSpace c hreg hn d
     letI := h.levelMulAction c hμL
@@ -166,39 +191,54 @@ theorem contMDiffSMul_orbitRelQuotient_levelMulAction [IsManifold IL ∞ L] :
   exact h.contMDiffSMul_orbitRelQuotient hreg hn d
     (h.contMDiffSMul_levelMulAction (IL := IL) c hμL hreg hn)
 
+/-- **The symmetry acts by smooth maps on the reduced space.** An action of `L` on `M` by smooth
+maps commuting with the action of `G` and preserving `μ` descends to an action
+`l • [z] = [l • z]` on the reduced space `μ⁻¹(c) / G_c` by smooth maps, for its atlas
+`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.orbitRelQuotientChartedSpace`. -/
+theorem contMDiffConstSMul_orbitRelQuotient_levelMulAction [ContMDiffConstSMul I' ∞ L M] :
+    letI := h.levelSubMulActionChartedSpace c hreg hn
+    letI := h.orbitRelQuotientChartedSpace c hreg hn d
+    letI := h.levelMulAction c hμL
+    haveI := h.smulCommClass_levelMulAction c hμL
+    ContMDiffConstSMul 𝓘(ℝ, ProperSMul.QuotientModelSpace F (Fin n → ℝ)) ∞ L
+      (MulAction.orbitRel.Quotient ((Lie.coadjointRepresentation ℝ I G).stabilizer c)
+        (h.levelSubMulAction c)) := by
+  let := h.levelMulAction c hμL
+  have := h.smulCommClass_levelMulAction c hμL
+  exact h.contMDiffConstSMul_orbitRelQuotient hreg hn d
+    (h.contMDiffConstSMul_levelMulAction c hμL hreg hn)
+
 /-- **The symmetry preserves the reduced form.** If `L` acts on `M` by symplectomorphisms
 commuting with the action of `G` and preserving `μ`, then every form `η` on the reduced space
 `μ⁻¹(c) / G_c` with `π^* η = i^* σ`, such as the reduced symplectic form, is invariant under the
 descended action of `L`. -/
-theorem mpullback_smul_orbitRelQuotient [IsManifold IL ∞ L]
-    (hLσ : ∀ l : L, SmoothForm.mpullback (fun x : M ↦ l • x)
-      (ContMDiffSMul.contMDiff_const_smul (I := IL) l) σ = σ) :
+theorem mpullback_smul_orbitRelQuotient_eq_self [ContMDiffConstSMul I' ∞ L M]
+    (hLσ : ∀ l : L, SmoothForm.mpullback (fun x : M ↦ l • x) (contMDiff_const_smul l) σ = σ) :
     letI := h.levelSubMulActionChartedSpace c hreg hn
     letI := h.orbitRelQuotientChartedSpace c hreg hn d
     haveI := h.isManifold_levelSubMulAction hreg hn
     haveI := h.isManifold_orbitRelQuotient hreg hn d
     letI := h.levelMulAction c hμL
     haveI := h.smulCommClass_levelMulAction c hμL
-    haveI := h.contMDiffSMul_orbitRelQuotient_levelMulAction (IL := IL) hreg hn d hμL
+    haveI := h.contMDiffConstSMul_orbitRelQuotient_levelMulAction hreg hn d hμL
     ∀ {η : SmoothTwoForm 𝓘(ℝ, ProperSMul.QuotientModelSpace F (Fin n → ℝ))
         (MulAction.orbitRel.Quotient ((Lie.coadjointRepresentation ℝ I G).stabilizer c)
           (h.levelSubMulAction c))},
       SmoothForm.mpullback _ (h.isSubmersion_quotientMk_levelSubMulAction hreg hn d).contMDiff η =
           SmoothForm.mpullback Subtype.val
             (h.isSmoothEmbedding_coe_levelSubMulAction hreg hn).contMDiff σ →
-        ∀ l : L, SmoothForm.mpullback (fun q ↦ l • q)
-          (ContMDiffSMul.contMDiff_const_smul (I := IL) l) η = η := by
+        ∀ l : L, SmoothForm.mpullback (fun q ↦ l • q) (contMDiff_const_smul l) η = η := by
   let := h.levelSubMulActionChartedSpace c hreg hn
   let := h.orbitRelQuotientChartedSpace c hreg hn d
   have := h.isManifold_levelSubMulAction hreg hn
   have := h.isManifold_orbitRelQuotient hreg hn d
   let := h.levelMulAction c hμL
   have := h.smulCommClass_levelMulAction c hμL
-  have := h.contMDiffSMul_levelMulAction (IL := IL) c hμL hreg hn
-  have := h.contMDiffSMul_orbitRelQuotient_levelMulAction (IL := IL) hreg hn d hμL
+  have := h.contMDiffConstSMul_levelMulAction c hμL hreg hn
+  have := h.contMDiffConstSMul_orbitRelQuotient_levelMulAction hreg hn d hμL
   intro η hη l
   have hi := (h.isSmoothEmbedding_coe_levelSubMulAction hreg hn).contMDiff
-  have hl := ContMDiffSMul.contMDiff_const_smul (I := IL) (I' := 𝓘(ℝ, Fin n → ℝ)) (n := ∞)
+  have hl := contMDiff_const_smul (I := 𝓘(ℝ, Fin n → ℝ)) (n := ∞)
     (M := h.levelSubMulAction c) l
   refine SmoothForm.mpullback_eq_of_mpullback_eq hi _ hi _ hη hη Quotient.mk_surjective
     (fun z ↦ (h.isSubmersion_quotientMk_levelSubMulAction hreg hn d).surjective_mfderiv
@@ -206,11 +246,10 @@ theorem mpullback_smul_orbitRelQuotient [IsManifold IL ∞ L]
   -- The inclusion intertwines the actions on the level and on `M`, and `L` preserves `σ`.
   have hcomp : (Subtype.val : h.levelSubMulAction c → M) ∘ (fun z ↦ l • z) =
       (fun x : M ↦ l • x) ∘ Subtype.val :=
-    rfl
+    funext (h.coe_smul_levelMulAction (c := c) hμL l)
   rw [SmoothForm.mpullback_mpullback]
   simp only [hcomp]
-  rw [← SmoothForm.mpullback_mpullback _ _ hi (ContMDiffSMul.contMDiff_const_smul (I := IL) l),
-    hLσ l]
+  rw [← SmoothForm.mpullback_mpullback _ _ hi (contMDiff_const_smul l), hLσ l]
 
 end Quotient
 
@@ -269,7 +308,7 @@ theorem existsUnique_comp_quotientMk_eq_and_isEquivariantMomentMap
   exact hν.existsUnique_comp_eq_and_isEquivariantMomentMap
     (h.isSmoothEmbedding_coe_levelSubMulAction hreg hn).contMDiff
     (h.isSubmersion_quotientMk_levelSubMulAction hreg hn d) hη Quotient.mk_surjective
-    (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
+    (h.coe_smul_levelMulAction (c := c) hμL) MulAction.orbitRel.Quotient.smul_mk
     (fun z z' hzz' ↦
       MulAction.mem_orbit_iff.1 (MulAction.orbitRel_apply.1 (Quotient.exact hzz'.symm)))
     fun k z ↦ hνG k z
