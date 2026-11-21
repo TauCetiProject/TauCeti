@@ -755,6 +755,7 @@ jobs:
       # confines anything, so a substituted one would sit outside the sandbox by construction.
       # Same idiom as the bwrap pin below; scripts/test_elan_pin.py keeps the copies honest.
       - name: Install elan (trusted, pinned + checksum)
+        id: install_elan
         if: ${{ env.INFRA != '1' }}
         env:
           ELAN_SHA256: df0b2b3a439961ffcbb3985214365ffe40f49bc871df04dff268c7d8e21ca8b2
@@ -774,6 +775,7 @@ jobs:
       # Restore-only and after config/bump validation. The isolated main-defined warmer
       # writes official release snapshots; candidate code sees .elan only read-only below.
       - name: Restore or install the exact official Lean toolchain
+        id: lean_toolchain
         if: ${{ env.INFRA != '1' }}
         uses: ./gate/.github/actions/restore-lean-toolchain
         with:
@@ -797,6 +799,7 @@ jobs:
             --lean "$(cd pr && elan which lean)"
 
       - name: Install bubblewrap (pinned + checksum) and self-test (fail closed)
+        id: install_bwrap
         if: ${{ env.INFRA != '1' }}
         run: |
           set -euo pipefail
@@ -926,6 +929,7 @@ jobs:
       # workflow-pinned local action credits the corresponding Mathlib design and owns the key
       # namespace shared with ci.yml. This is separate from the much larger `./.lake` cache.
       - name: Restore Mathlib's compressed download cache from main
+        id: mathlib_ltars
         if: ${{ env.INFRA != '1' }}
         uses: ./gate/.github/actions/restore-mathlib-ltars
         with:
@@ -942,6 +946,7 @@ jobs:
       # so the code run here is still trusted Mathlib master under the project's "track master"
       # policy; only the PR's TauCeti/ code stays untrusted and runs solely under bwrap below.
       - name: Fetch Mathlib with the (bump-validated) config (network, no token; no PR code)
+        id: mathlib_fetch
         if: ${{ env.INFRA != '1' }}
         # `set -o pipefail` is not optional here. A `run:` step with no explicit `shell:`
         # gets the runner default `bash -e {0}`, which does NOT set pipefail, so piping
@@ -1098,6 +1103,7 @@ jobs:
       # downloads. If all attempts remain incomplete, it discards the partial cache and falls
       # back to no cache so ci.yml's post-merge build has the same final semantics.
       - name: Fetch TauCeti's own oleans from the Lake cache (network, no token; no PR code)
+        id: tauceti_cache
         if: ${{ env.INFRA != '1' && env.TAUCETI_CACHE_ENABLED == '1' }}
         env:
           # Passed under non-LAKE_ names so Lake never sees the deprecated endpoint
@@ -1152,6 +1158,7 @@ jobs:
         run: bash gate/scripts/repair-cache-get.sh pr "$STAGING_HEAD"
 
       - name: Prepare trusted read-only Lean watchdog toolchain
+        id: watchdog_toolchain
         if: ${{ env.INFRA != '1' }}
         run: |
           set -euo pipefail
@@ -1174,6 +1181,26 @@ jobs:
           bash gate/scripts/build-lint-driver.sh pr gate/scripts/LintEnvDriver.lean "$out"
           bash gate/scripts/build-audit-driver.sh pr gate/scripts "$out"
           echo "LINT_DRIVER_DIR=$out" >> "$GITHUB_ENV"
+
+      # A failed install or download says nothing about the candidate. The report posts it as
+      # a recoverable status, and the shim probe, which needs elan and bwrap, is skipped.
+      - name: Name the runner setup step that failed, if any
+        if: ${{ always() && env.INFRA != '1' }}
+        env:
+          FAILED_SETUP: >-
+            ${{ steps.install_elan.outcome == 'failure' && 'elan install'
+             || steps.lean_toolchain.outcome == 'failure' && 'Lean toolchain install'
+             || steps.install_bwrap.outcome == 'failure' && 'bubblewrap install'
+             || steps.mathlib_ltars.outcome == 'failure' && 'Mathlib cache restore'
+             || steps.mathlib_fetch.outcome == 'failure' && 'Mathlib fetch'
+             || steps.tauceti_cache.outcome == 'failure' && 'TauCeti cache fetch'
+             || steps.watchdog_toolchain.outcome == 'failure' && 'watchdog toolchain'
+             || '' }}
+        run: |
+          if [ -n "$FAILED_SETUP" ]; then
+            echo "SETUP_FAILED=$FAILED_SETUP" >> "$GITHUB_ENV"
+            echo "::warning::runner setup failed ($FAILED_SETUP); the candidate was not built"
+          fi
 
       # Which modules the environment lint covers: the TauCeti modules this change touches, or the
       # whole library for `full-lint`-labelled and lint-repair PRs (scripts/lint-scope.sh). Computed
@@ -1298,7 +1325,7 @@ jobs:
       # path first. Only concrete replacements block; broader sentinels remain audit warnings.
       - name: Migrate shims whose exact replacements exist in pinned Mathlib
         id: shim_expiry
-        if: ${{ always() && env.INFRA != '1' && env.SHIM_CHECK == '1' }}
+        if: ${{ always() && env.INFRA != '1' && env.SHIM_CHECK == '1' && !env.SETUP_FAILED }}
         continue-on-error: true
         run: |
           set +e
@@ -1470,6 +1497,13 @@ jobs:
             state=failure; desc="build not run — tested H/B/T identity missing or invalid"
           elif [ "${{ steps.import_headers.outcome }}" = "failure" ]; then
             state=failure; desc="import header preflight failed — see importing-file/header diagnostics"
+          elif [ -n "${SETUP_FAILED:-}" ] && [ "${{ env.IS_BATCH }}" = "true" ]; then
+            # The queue waits on a batch's `build`, so it still needs a terminal verdict.
+            state=failure; desc="build not run — runner setup failed ($SETUP_FAILED)"
+          elif [ -n "${SETUP_FAILED:-}" ]; then
+            # A failure would label the PR ci-failed, which housekeeping closes and recovery never
+            # retries. ci_recovery.py re-dispatches a head whose `build` is not terminal.
+            state=pending; desc="build not run — runner setup failed ($SETUP_FAILED); recovery will re-run pr-build"
           elif [ "${{ steps.build.outcome }}" = "failure" ]; then
             state=failure; desc="sandboxed build, audit, or simp-NF lint failed"
           elif { [ -n "${{ env.SHIM_COVERAGE_RC }}" ] \
