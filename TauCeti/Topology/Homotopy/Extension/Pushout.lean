@@ -353,13 +353,9 @@ theorem hasHomotopyExtensionProperty_range_sigmaMap
     rintro ⟨⟨k, a⟩, hka⟩
     obtain ⟨rfl, ha⟩ := Sigma.mk.inj_iff.1 hka
     exact ⟨mem_univ _, a, eq_of_heq ha⟩
-  have hA : ⇑(TopCat.homeoOfIso (TopCat.sigmaIsoSigma A)) = (TopCat.sigmaIsoSigma A).hom :=
-    funext (TopCat.homeoOfIso_apply _)
-  have hX : ⇑(TopCat.homeoOfIso (TopCat.sigmaIsoSigma X).symm) = (TopCat.sigmaIsoSigma X).inv :=
-    funext fun x ↦ by rw [TopCat.homeoOfIso_apply, Iso.symm_hom]
   convert (HasHomotopyExtensionProperty.sigma hφ).image
     (TopCat.homeoOfIso (TopCat.sigmaIsoSigma X).symm) using 1
-  rw [coe_sigmaMap, ← hA, ← hX, range_comp, range_comp, Homeomorph.range_coe, image_univ, hrange]
+  rw [coe_sigmaMap, range_comp, range_comp, Homeomorph.range_coe, image_univ, hrange]
 
 end TauCeti.TopCat
 

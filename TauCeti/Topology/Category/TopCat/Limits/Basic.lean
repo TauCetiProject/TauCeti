@@ -147,11 +147,11 @@ section Sigma
 
 variable {ι : Type u} {A X : ι → TopCat.{u}} (φ : ∀ i, A i ⟶ X i)
 
-/-- Read through the disjoint unions `TopCat.sigmaIsoSigma`, the map of coproducts
-`Limits.Sigma.map φ` is the map `Sigma.map id φ` of disjoint unions. -/
+/-- Read through the homeomorphisms `TopCat.sigmaIsoSigma` with disjoint unions, the map of
+coproducts `Limits.Sigma.map φ` is the map `Sigma.map id φ` of disjoint unions. -/
 theorem coe_sigmaMap :
-    ⇑(Limits.Sigma.map φ) = (TopCat.sigmaIsoSigma X).inv ∘ Sigma.map id (fun i ↦ φ i) ∘
-      (TopCat.sigmaIsoSigma A).hom := by
+    ⇑(Limits.Sigma.map φ) = TopCat.homeoOfIso (TopCat.sigmaIsoSigma X).symm ∘
+      Sigma.map id (fun i ↦ φ i) ∘ TopCat.homeoOfIso (TopCat.sigmaIsoSigma A) := by
   have : Limits.Sigma.map φ = (TopCat.sigmaIsoSigma A).hom ≫ TopCat.ofHom
       ⟨Sigma.map id fun i ↦ φ i, continuous_sigma_map.2 fun i ↦ (φ i).hom.continuous⟩ ≫
         (TopCat.sigmaIsoSigma X).inv := by
@@ -163,18 +163,14 @@ theorem coe_sigmaMap :
     refine TopCat.ext fun x ↦ ?_
     simp [Sigma.map]
   ext x
-  rw [this]
-  simp only [ConcreteCategory.comp_apply, TopCat.hom_ofHom, ContinuousMap.coe_mk,
-    Function.comp_apply]
+  rw [this, Function.comp_apply, Function.comp_apply, TopCat.homeoOfIso_apply,
+    TopCat.homeoOfIso_apply, Iso.symm_hom]
+  simp only [ConcreteCategory.comp_apply, TopCat.hom_ofHom, ContinuousMap.coe_mk]
 
 /-- **A coproduct of embeddings in `TopCat` is an embedding.** -/
 theorem isEmbedding_sigmaMap (hφ : ∀ i, Topology.IsEmbedding (φ i)) :
     Topology.IsEmbedding (Limits.Sigma.map φ) := by
-  have hA : ⇑(TopCat.homeoOfIso (TopCat.sigmaIsoSigma A)) = (TopCat.sigmaIsoSigma A).hom :=
-    funext (TopCat.homeoOfIso_apply _)
-  have hX : ⇑(TopCat.homeoOfIso (TopCat.sigmaIsoSigma X).symm) = (TopCat.sigmaIsoSigma X).inv :=
-    funext fun x ↦ by rw [TopCat.homeoOfIso_apply, Iso.symm_hom]
-  rw [coe_sigmaMap, ← hA, ← hX]
+  rw [coe_sigmaMap]
   exact (TopCat.homeoOfIso (TopCat.sigmaIsoSigma X).symm).isEmbedding.comp
     (((Topology.isEmbedding_sigmaMap Function.injective_id).2 hφ).comp
       (TopCat.homeoOfIso (TopCat.sigmaIsoSigma A)).isEmbedding)
