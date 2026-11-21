@@ -33,6 +33,9 @@ a single set of positive finite measure are equal.
 * `MeasureTheory.Measure.haar_apply_le_haar_apply_iff`: two Haar measures on a second-countable
   locally compact group compare sets the same way, since they differ by a positive finite factor.
   The additive version is `MeasureTheory.Measure.addHaar_apply_le_addHaar_apply_iff`.
+* `MeasureTheory.Measure.restrict_eq_haarScalarFactor_smul`: restricting two Haar measures on a
+  second-countable locally compact group to the same set produces measures differing by
+  `Measure.haarScalarFactor μ ν` (additive version: `restrict_eq_addHaarScalarFactor_smul`).
 * `MeasureTheory.Measure.isMulLeftInvariant_eq_of_measure_univ_eq`: a left-invariant measure
   with the same total mass as a finite Haar measure coincides with it.
 * `MeasureTheory.Measure.isMulLeftInvariant_eq_of_apply_eq`: a left-invariant measure that is
@@ -173,6 +176,19 @@ theorem haar_apply_le_haar_apply_iff {G : Type*} [Group G] [TopologicalSpace G]
     {s t : Set G} : μ s ≤ μ t ↔ ν s ≤ ν t := by
   rw [isMulLeftInvariant_eq_smul μ ν]
   simp [ENNReal.mul_le_mul_iff_right, (haarScalarFactor_pos_of_isHaarMeasure μ ν).ne']
+
+/-- Restricting a left-invariant measure finite on compacts and a Haar measure on a
+second-countable locally compact group to the same set produces measures differing by
+`Measure.haarScalarFactor μ ν`. -/
+@[to_additive restrict_eq_addHaarScalarFactor_smul /-- Restricting a left-invariant measure finite
+on compacts and an additive Haar measure on a second-countable locally compact group to the same set
+produces measures differing by `Measure.addHaarScalarFactor μ ν`. -/]
+theorem restrict_eq_haarScalarFactor_smul {G : Type*} [Group G] [TopologicalSpace G]
+    [IsTopologicalGroup G] [LocallyCompactSpace G] [SecondCountableTopology G]
+    [MeasurableSpace G] [BorelSpace G] (μ ν : Measure G) [IsFiniteMeasureOnCompacts μ]
+    [IsMulLeftInvariant μ] [IsHaarMeasure ν] (s : Set G) :
+    μ.restrict s = haarScalarFactor μ ν • ν.restrict s := by
+  rw [← Measure.restrict_smul, ← isMulLeftInvariant_eq_smul μ ν]
 
 end MeasureTheory.Measure
 
