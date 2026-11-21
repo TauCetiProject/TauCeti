@@ -13,12 +13,12 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 
 import Mathlib.Analysis.Calculus.ParametricIntegral
 import Mathlib.Analysis.MellinTransform
-import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import TauCeti.Analysis.RCLike.Basic
 import TauCeti.Analysis.SpecialFunctions.Gaussian.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import TauCeti.MeasureTheory.Integral.Exp.Decay
+import TauCeti.MeasureTheory.Integral.Exp.PowerLaplace
 
 /-!
 # Half-line Gaussian–Laplace integrals
@@ -81,18 +81,11 @@ namespace TauCeti
 theorem integrableOn_rpow_mul_exp_neg_mul_sq_sub_mul_Ioi {b s : ℝ} (hb : 0 < b) (hs : -1 < s)
     (c : ℝ) :
     IntegrableOn (fun u : ℝ => u ^ s * rexp (-b * u ^ 2 - c * u)) (Ioi 0) := by
-  have hmaj : IntegrableOn
-      (fun u : ℝ => rexp (c ^ 2 / (2 * b)) * (u ^ s * rexp (-(b / 2) * u ^ 2))) (Ioi 0) :=
-    (integrableOn_rpow_mul_exp_neg_mul_sq (half_pos hb) hs).const_mul _
-  refine hmaj.mono'
-    (by fun_prop : Measurable fun u : ℝ => u ^ s * rexp (-b * u ^ 2 - c * u)).aestronglyMeasurable
-    ?_
-  filter_upwards [ae_restrict_mem measurableSet_Ioi] with u (hu : 0 < u)
-  rw [Real.norm_of_nonneg (by positivity)]
-  calc u ^ s * rexp (-b * u ^ 2 - c * u)
-      ≤ u ^ s * (rexp (c ^ 2 / (2 * b)) * rexp (-(b / 2) * u ^ 2)) :=
-        mul_le_mul_of_nonneg_left (exp_neg_mul_sq_sub_mul_le hb c u) (by positivity)
-    _ = rexp (c ^ 2 / (2 * b)) * (u ^ s * rexp (-(b / 2) * u ^ 2)) := by ring
+  refine (integrableOn_rpow_mul_exp_mul_sub_mul_rpow (p := 2) (q := s) (b := b)
+    one_lt_two hs hb (-c)).congr_fun (fun u _ => ?_) measurableSet_Ioi
+  simp only [Real.rpow_two]
+  congr 2
+  ring
 
 /-- For `0 < a` and `0 < b`, `u ↦ u ^ s * exp (-b u² - c u)` is integrable on `(a, ∞)` for every
 real exponent `s` and linear parameter `c`. -/
@@ -151,12 +144,14 @@ theorem integrableOn_cpow_mul_cexp_neg_mul_sq_sub_mul_Ioi {b s : ℂ} (hb : 0 < 
     (hs : 0 < s.re) (z : ℂ) :
     IntegrableOn (fun u : ℝ => (u : ℂ) ^ (s - 1) * cexp (-b * (u : ℂ) ^ 2 - z * u))
       (Ioi 0) := by
-  have hmaj := integrableOn_rpow_mul_exp_neg_mul_sq_sub_mul_Ioi hb (s := s.re - 1) (by linarith)
-    z.re
-  refine hmaj.mono' (Measurable.aestronglyMeasurable (by fun_prop)) ?_
-  filter_upwards [ae_restrict_mem measurableSet_Ioi] with u (hu : 0 < u)
-  rw [norm_cpow_mul_cexp_neg_mul_sq_sub_mul b (s - 1) z hu]
-  simp
+  have hs' : -1 < (s - 1).re := by simp [hs]
+  refine (integrableOn_cpow_mul_cexp_mul_sub_mul_cpow_Ioi (p := 2) one_lt_two hb hs'
+    (-z)).congr_fun (fun u _ => ?_) measurableSet_Ioi
+  have h2 : ((2 : ℝ) : ℂ) = ((2 : ℕ) : ℂ) := by norm_num
+  dsimp only
+  rw [h2, Complex.cpow_natCast]
+  congr 2
+  ring
 
 /-- For `0 < a` and `0 < b.re`, `u ↦ (u : ℂ) ^ (s - 1) * cexp (-b * (u : ℂ) ^ 2 - z * u)` is
 integrable on `(a, ∞)` for every `s z : ℂ`. -/

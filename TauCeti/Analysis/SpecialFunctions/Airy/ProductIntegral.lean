@@ -43,9 +43,8 @@ that `Ai² + Bi²` solves the third-order product differential equation `w''' �
 * `TauCeti.airyAi_sq_add_airyBi_sq_eq_integral` and
   `TauCeti.airyAi_sq_add_airyBi_sq_ofReal_eq_integral` — DLMF 9.11.4 for complex and real
   arguments.
-* `TauCeti.airyAi_sq_add_airyBi_sq_ofReal_re_pos` and
-  `TauCeti.airyAi_sq_add_airyBi_sq_ofReal_ne_zero` — strict positivity and nonvanishing of
-  `Ai(x)² + Bi(x)²` on `ℝ`.
+* `TauCeti.airyAi_sq_add_airyBi_sq_ofReal_re_pos` — strict positivity of
+  `(Ai(x)² + Bi(x)²).re` on `ℝ`.
 * `TauCeti.hasSum_airyAi_sq_add_airyBi_sq` — the everywhere convergent Maclaurin series of
   `Ai(z)² + Bi(z)²`, absolutely convergent by `TauCeti.summable_norm_airyAi_sq_add_airyBi_sq`.
 * `TauCeti.four_mul_airyAi_zero_sq` — the origin identity
@@ -188,16 +187,10 @@ private theorem hasSum_integral_airy_product_series (z : ℂ) :
   refine hsum.congr_fun fun m => ?_
   have h12 : (1 / 12 : ℂ) ^ (-((-1 / 2 : ℂ) + m + 1) / ((3 : ℝ) : ℂ)) =
       (12 : ℂ) ^ (((m : ℂ) + 1 / 2) / 3) := by
-    have h12_real : ((1 / 12 : ℝ) : ℂ) = (1 / 12 : ℂ) := by push_cast; rfl
-    have hexp_real : ((-(((m : ℝ) + 1 / 2) / 3) : ℝ) : ℂ) =
-        -((-1 / 2 : ℂ) + m + 1) / ((3 : ℝ) : ℂ) := by
-      push_cast; ring
-    have hexp_pos : ((((m : ℝ) + 1 / 2) / 3 : ℝ) : ℂ) = ((m : ℂ) + 1 / 2) / 3 := by
-      push_cast; ring
-    rw [← h12_real, ← hexp_real, ← ofReal_cpow (by norm_num),
-      show (1 / 12 : ℝ) = (12 : ℝ)⁻¹ by norm_num, Real.inv_rpow (by norm_num),
-      ← Real.rpow_neg (by norm_num), neg_neg, ofReal_cpow (by norm_num), hexp_pos]
-    norm_num
+    have hexp : -((-1 / 2 : ℂ) + m + 1) / ((3 : ℝ) : ℂ) = -(((m : ℂ) + 1 / 2) / 3) := by
+      rw [neg_div]; push_cast; ring
+    rw [hexp, one_div, ← ofReal_ofNat 12, inv_cpow_ofReal_nonneg (by norm_num : (0 : ℝ) ≤ 12),
+      cpow_neg, inv_inv, ofReal_ofNat]
   have harg : ((-1 / 2 : ℂ) + m + 1) / ((3 : ℝ) : ℂ) = ((m : ℂ) + 1 / 2) / 3 := by
     push_cast; ring
   have h3c : ((3 : ℝ) : ℂ) = (3 : ℂ) := by norm_num
@@ -497,11 +490,6 @@ theorem airyAi_sq_add_airyBi_sq_ofReal_re_pos (x : ℝ) :
       positivity
     rw [hsupp, Real.volume_Ioi]
     simp
-
-/-- On the real line, `Ai(x)² + Bi(x)²` never vanishes. -/
-theorem airyAi_sq_add_airyBi_sq_ofReal_ne_zero (x : ℝ) :
-    airyAi x ^ 2 + airyBi x ^ 2 ≠ 0 := fun h =>
-  (airyAi_sq_add_airyBi_sq_ofReal_re_pos x).ne' (by simp [h])
 
 /-- The everywhere convergent Maclaurin series of `Ai(z)² + Bi(z)²`. -/
 theorem hasSum_airyAi_sq_add_airyBi_sq (z : ℂ) :

@@ -31,9 +31,8 @@ At `p = 3`, `b = 1 / 12`, and `s = -1 / 2`, this is the cubic-exponential Laplac
 
 * `TauCeti.integrableOn_cpow_mul_cexp_mul_sub_mul_cpow_Ioi`: complex integrability of
   `t ↦ t ^ s * exp (z * t - b * t ^ p)` on `(0, ∞)` for `1 < p`, `0 < b.re`, `-1 < s.re`.
-* `TauCeti.integral_cpow_mul_cexp_neg_mul_cpow_Ioi`,
-  `TauCeti.integral_cpow_mul_cexp_neg_cpow_Ioi`: complex-exponent and complex-rate counterparts of
-  Mathlib's `integral_rpow_mul_exp_neg_mul_rpow` and `integral_rpow_mul_exp_neg_rpow`.
+* `TauCeti.integral_cpow_mul_cexp_neg_mul_cpow_Ioi`: complex-exponent and complex-rate
+  counterpart of Mathlib's `integral_rpow_mul_exp_neg_mul_rpow`.
 * `TauCeti.hasSum_integral_cpow_mul_cexp_mul_sub_mul_cpow_Ioi`: the everywhere convergent
   Maclaurin series in `z` of the half-line superlinear exponential-power Laplace integral.
 -/
@@ -83,10 +82,8 @@ theorem integral_cpow_mul_cexp_neg_mul_cpow_Ioi {p : ℝ} (hp : 0 < p) {b s : �
           (1 / (p : ℂ)) * ((x : ℂ) ^ ((s + 1) / p - 1) * cexp (-(b * x))) := by
           refine setIntegral_congr_fun measurableSet_Ioi fun x (hx : 0 < x) => ?_
           have hx0 : (x : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hx.ne'
-          have hpow : ((x ^ (1 / p) : ℝ) : ℂ) ^ s = (x : ℂ) ^ (((1 / p : ℝ) : ℂ) * s) := by
-            rw [Complex.ofReal_cpow hx.le, ← Complex.cpow_mul]
-            · simp [← Complex.ofReal_log hx.le, Real.pi_pos]
-            · simp [← Complex.ofReal_log hx.le, Real.pi_nonneg]
+          have hpow : ((x ^ (1 / p) : ℝ) : ℂ) ^ s = (x : ℂ) ^ (((1 / p : ℝ) : ℂ) * s) :=
+            (Complex.cpow_mul_ofReal_nonneg hx.le (1 / p) s).symm
           have hxp : ((x ^ (1 / p) : ℝ) : ℂ) ^ (p : ℂ) = (x : ℂ) := by
             rw [← Complex.ofReal_cpow (by positivity), ← Real.rpow_mul hx.le,
               one_div_mul_cancel hp.ne', Real.rpow_one]
@@ -105,14 +102,6 @@ theorem integral_cpow_mul_cexp_neg_mul_cpow_Ioi {p : ℝ} (hp : 0 < p) {b s : �
           rw [integral_const_mul, Complex.integral_cpow_mul_exp_neg_mul_Ioi_of_re_pos hre hb,
             neg_div]
           ring
-
-/-- For `0 < p` and `-1 < s.re`,
-`∫ t in Ioi 0, (t : ℂ) ^ s * exp (-(t : ℂ) ^ (p : ℂ)) = (1 / p) * Γ ((s + 1) / p)`,
-the complex-exponent counterpart of `integral_rpow_mul_exp_neg_rpow`. -/
-theorem integral_cpow_mul_cexp_neg_cpow_Ioi {p : ℝ} (hp : 0 < p) {s : ℂ} (hs : -1 < s.re) :
-    ∫ t in Ioi (0 : ℝ), (t : ℂ) ^ s * cexp (-((t : ℂ) ^ (p : ℂ))) =
-      (1 / (p : ℂ)) * Complex.Gamma ((s + 1) / p) := by
-  simpa using integral_cpow_mul_cexp_neg_mul_cpow_Ioi hp (b := 1) (by simp) hs
 
 /-- **Series expansion of a superlinear exponential-power Laplace integral.** For `1 < p`,
 `0 < b.re`, `-1 < s.re`, and every `z : ℂ`,
