@@ -37,8 +37,9 @@ yielding an unconditional glued divided power structure on `I ⊔ J`.
 * `DividedPowers.dpowConv_eq_of_add_eq`: independence of `dpowConv` from the decomposition
   `z = x + y` when `hI` and `hJ` agree on `I ⊓ J`.
 * `DividedPowers.supAdditive`: the glued additive divided power candidate on `I ⊔ J` for
-  compatible `hI` and `hJ`, with evaluation `DividedPowers.supAdditive_dpow_add` and restrictions
-  `DividedPowers.supAdditive_dpow_left`, `DividedPowers.supAdditive_dpow_right`.
+  compatible `hI` and `hJ`, with evaluation `DividedPowers.supAdditive_dpow_add`, restrictions
+  `DividedPowers.supAdditive_dpow_left`, `DividedPowers.supAdditive_dpow_right`, and uniqueness
+  `DividedPowers.eq_supAdditive_iff`.
 * `DividedPowers.sup`: the glued divided power structure on `I ⊔ J` for compatible `hI` and `hJ`.
 * `DividedPowers.isDPMorphism_sup_iff`: universal property of `DividedPowers.sup` with respect to
   divided power morphisms.
@@ -316,6 +317,25 @@ theorem supAdditive_dpow_right (hI : DividedPowers I) (hJ : DividedPowers J)
     (hI.supAdditive hJ h).dpow n y = hJ.dpow n y := by
   simpa only [zero_add] using
     (hI.supAdditive_dpow_add hJ h n I.zero_mem hy).trans (hI.dpowConv_zero_left hJ n y)
+
+/-- An additive divided power structure `θ` on `I ⊔ J` equals `hI.supAdditive hJ h` if and only if
+it restricts to `hI` on `I` and to `hJ` on `J`. -/
+theorem eq_supAdditive_iff (hI : DividedPowers I) (hJ : DividedPowers J)
+    (h : ∀ n, ∀ w ∈ I ⊓ J, hI.dpow n w = hJ.dpow n w)
+    {θ : TauCeti.AdditiveDividedPowers (I ⊔ J)} :
+    θ = hI.supAdditive hJ h ↔
+      (∀ n, ∀ x ∈ I, θ.dpow n x = hI.dpow n x) ∧ (∀ n, ∀ y ∈ J, θ.dpow n y = hJ.dpow n y) := by
+  constructor
+  · rintro rfl
+    exact ⟨fun n _ hx ↦ hI.supAdditive_dpow_left hJ h n hx,
+      fun n _ hy ↦ hI.supAdditive_dpow_right hJ h n hy⟩
+  · rintro ⟨hθI, hθJ⟩
+    ext n z hz
+    rcases Submodule.mem_sup.mp hz with ⟨x, hx, y, hy, rfl⟩
+    rw [θ.dpow_add (Ideal.mem_sup_left hx) (Ideal.mem_sup_right hy),
+      hI.supAdditive_dpow_add hJ h n hx hy, dpowConv_def]
+    refine Finset.sum_congr rfl fun k _ ↦ ?_
+    rw [hθI k.1 x hx, hθJ k.2 y hy]
 
 /-- Stacks Project, Lemma 23.2.5 (tag `07GQ`): given divided power structures `hI` on `I` and
 `hJ` on `J` that agree on `I ⊓ J` in every degree, construct the unique divided power structure on
