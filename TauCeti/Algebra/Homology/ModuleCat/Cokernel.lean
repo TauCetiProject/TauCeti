@@ -86,6 +86,7 @@ variable {A' B' : HomologicalComplex (ModuleCat.{v} R) c} (ψ : B' ⟶ A') (u : 
   (w : u ≫ ψ = φ ≫ v)
 
 /-- The map `cokernel φ ⟶ cokernel ψ` induced by `v`, on representatives. -/
+@[simp]
 lemma cokernel_map_f_cokernel_π_f_apply (i : ι) (y : A.X i) :
     (cokernel.map φ ψ u v w).f i ((cokernel.π φ).f i y) = (cokernel.π ψ).f i (v.f i y) := by
   rw [← ConcreteCategory.comp_apply, ← comp_f, cokernel.π_desc, comp_f,
