@@ -80,6 +80,9 @@ the linear algebra itself is standard.
   its determinant.
 * `LinearEquiv.detLineCongr_neg_apply`: negation acts on the determinant line by
   `(-1) ^ finrank R V`.
+* `LinearEquiv.detLineCongr_symm_dualMap_apply_eq_det_symm_smul`,
+  `LinearEquiv.lTensor_detLineCongr_symm_dualMap_apply`: an automorphism `e` acts on the dual of
+  the determinant line, and on the dual factor of `X ⊗ (det W)^*`, by `det e⁻¹`.
 * `LinearEquiv.tensorProductCongr_detLineCongr_apply_eq_det_smul`: automorphisms `e` of `V` and
   `e'` of `W` act on `det V ⊗ (det W)^*` by `det e * (det e')⁻¹`.
 * `LinearMap.finrank_detLine`: the determinant line of a linear map between vector spaces has
@@ -208,6 +211,25 @@ theorem detLineCongr_neg_apply [Module.Free R V] (x : detLine R V) :
     LinearEquiv.det_eq_pow_of_forall_eq_smul _ (-1) fun x ↦ by simp, Units.val_pow_eq_pow_val,
     Units.val_neg, Units.val_one]
 
+/-- The dual of the action of the inverse of an automorphism `e` of a free module on its
+determinant line is multiplication by `det e⁻¹`. -/
+theorem detLineCongr_symm_dualMap_apply_eq_det_symm_smul [Module.Free R W] (e : W ≃ₗ[R] W)
+    (φ : Dual R (detLine R W)) :
+    e.detLineCongr.symm.dualMap φ = LinearMap.det (e.symm : W →ₗ[R] W) • φ := by
+  refine LinearMap.ext fun y ↦ ?_
+  rw [dualMap_apply, detLineCongr_symm, detLineCongr_apply_eq_det_smul, _root_.map_smul,
+    LinearMap.smul_apply]
+
+/-- An automorphism `e` of a free module `W` acts on `X ⊗ (det W)^*` through the dual factor by
+multiplication by `det e⁻¹`. -/
+theorem lTensor_detLineCongr_symm_dualMap_apply [Module.Free R W] {X : Type*} [AddCommGroup X]
+    [Module R X] (e : W ≃ₗ[R] W) (z : X ⊗[R] Dual R (detLine R W)) :
+    e.detLineCongr.symm.dualMap.lTensor X z = LinearMap.det (e.symm : W →ₗ[R] W) • z := by
+  induction z using TensorProduct.inductionOn with
+  | tmul x φ =>
+    rw [lTensor_tmul, detLineCongr_symm_dualMap_apply_eq_det_symm_smul, TensorProduct.tmul_smul]
+  | add a b ha hb => rw [map_add, ha, hb, smul_add]
+
 /-- Automorphisms `e` of `V` and `e'` of `W` act on `det V ⊗ (det W)^*` by multiplication by
 `det e * (det e')⁻¹`. -/
 theorem tensorProductCongr_detLineCongr_apply_eq_det_smul [Module.Free R V] [Module.Free R W]
@@ -216,14 +238,9 @@ theorem tensorProductCongr_detLineCongr_apply_eq_det_smul [Module.Free R V] [Mod
       (LinearEquiv.det e * (LinearEquiv.det e')⁻¹) • z := by
   induction z using TensorProduct.inductionOn with
   | tmul x φ =>
-    -- The dual factor is precomposed with the inverse of multiplication by `det e'`.
-    have hφ : e'.detLineCongr.symm.dualMap φ = ((LinearEquiv.det e')⁻¹ : Rˣ) • φ := by
-      refine LinearMap.ext fun y ↦ ?_
-      have hy : e'.detLineCongr.symm y = ((LinearEquiv.det e')⁻¹ : Rˣ) • y := by
-        rw [LinearEquiv.symm_apply_eq, detLineCongr_apply_eq_det_smul, ← LinearEquiv.coe_det,
-          ← Units.smul_def, smul_inv_smul]
-      rw [dualMap_apply, hy, LinearMap.smul_apply, Units.smul_def, Units.smul_def, _root_.map_smul]
-    rw [TensorProduct.congr_tmul, detLineCongr_apply_eq_det_smul, hφ, ← LinearEquiv.coe_det]
+    rw [TensorProduct.congr_tmul, detLineCongr_apply_eq_det_smul,
+      detLineCongr_symm_dualMap_apply_eq_det_symm_smul, ← LinearEquiv.coe_det,
+      ← LinearEquiv.coe_det, LinearEquiv.det_symm, map_inv]
     simp only [Units.smul_def, Units.val_mul, TensorProduct.smul_tmul_smul]
   | add a b ha hb => rw [map_add, ha, hb, smul_add]
 
@@ -343,6 +360,16 @@ the ambient spaces; for instance `f` and `g` may act on spaces of different dime
 def detLineCongrKerCoker (e₁ : ker f ≃ₗ[R] ker g) (e₂ : (N ⧸ range f) ≃ₗ[R] (N' ⧸ range g)) :
     f.detLine ≃ₗ[R] g.detLine :=
   TensorProduct.congr (LinearEquiv.detLineCongr e₁) (LinearEquiv.detLineCongr e₂).symm.dualMap
+
+variable {g : M' →ₗ[R] N'} in
+/-- `LinearMap.detLineCongrKerCoker` is the tensor product of the isomorphism of kernel
+determinant lines and the dual of the inverse of the isomorphism of cokernel determinant lines. -/
+theorem detLineCongrKerCoker_def (e₁ : ker f ≃ₗ[R] ker g)
+    (e₂ : (N ⧸ range f) ≃ₗ[R] (N' ⧸ range g)) :
+    detLineCongrKerCoker e₁ e₂ =
+      TensorProduct.congr (LinearEquiv.detLineCongr e₁)
+        (LinearEquiv.detLineCongr e₂).symm.dualMap :=
+  (rfl)
 
 variable {g : M' →ₗ[R] N'} in
 @[simp]
