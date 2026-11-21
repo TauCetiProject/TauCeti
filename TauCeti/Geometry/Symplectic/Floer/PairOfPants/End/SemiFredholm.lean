@@ -123,7 +123,8 @@ private theorem setIntegral_det_mul_comp_positiveEndChart_le_integral {g : ℝ �
         exact (Measure.set_prod_ae_eq Ioo_ae_eq_Icc Ioo_ae_eq_Icc).symm
     _ = ∫ z in positiveEndChart q '' (Ioo a b ×ˢ Ioo (0 : ℝ) 1), g z :=
         (integral_image_eq_integral_of_eq_abs_det_smul hs
-          ((injOn_positiveEndChart q 0).mono (prod_mono (subset_univ _) (by rw [zero_add])))
+          ((injOn_positiveEndChart q 0).mono
+            (prod_mono (subset_univ _) (by rw [zero_add]; exact Ioo_subset_Ico_self)))
           (fun ζ _ ↦ (contDiff_positiveEndChart q 1).differentiable one_ne_zero ζ)
           fun ζ _ ↦ by rw [abs_of_pos (det_fderiv_positiveEndChart_pos q ζ), smul_eq_mul]).symm
     _ ≤ _ := setIntegral_le_integral hgi (ae_of_all _ hg)

@@ -115,7 +115,7 @@ private theorem fderiv_endCutoff (R₀ : ℝ) (q : Puncture) {z : ℝ × ℝ}
 private theorem fderiv_endCutoff_eq_zero {R₀ : ℝ} {q : Puncture} {z : ℝ × ℝ}
     (hz : z ∈ thricePuncturedSphereReal) (h : (positiveEndCoord q z).1 ≤ R₀) :
     fderiv ℝ (endCutoff R₀ q) z = 0 := by
-  rw [fderiv_endCutoff R₀ q hz, Real.smoothTransition.deriv_of_neg (by linarith), zero_smul]
+  rw [fderiv_endCutoff R₀ q hz, Real.smoothTransition.deriv_of_nonpos (by linarith), zero_smul]
 
 /-- The derivative of the cutoff of the end `q` vanishes off the collar `R₀ ≤ ±s ≤ R₀ + 1`. -/
 private theorem mem_Icc_of_fderiv_endCutoff_ne_zero {R₀ : ℝ} {q : Puncture} {z : ℝ × ℝ}
@@ -123,8 +123,8 @@ private theorem mem_Icc_of_fderiv_endCutoff_ne_zero {R₀ : ℝ} {q : Puncture} 
     (positiveEndCoord q z).1 ∈ Icc R₀ (R₀ + 1) := by
   rw [fderiv_endCutoff R₀ q hz] at h
   refine ⟨?_, ?_⟩ <;> by_contra! h'
-  · exact h (by rw [Real.smoothTransition.deriv_of_neg (by linarith), zero_smul])
-  · exact h (by rw [Real.smoothTransition.deriv_of_one_lt (by linarith), zero_smul])
+  · exact h (by rw [Real.smoothTransition.deriv_of_nonpos (by linarith), zero_smul])
+  · exact h (by rw [Real.smoothTransition.deriv_of_one_le (by linarith), zero_smul])
 
 /-- The cutoff `1 - ∑_q β_q` of the core of the pair of pants. -/
 private noncomputable def coreCutoff (R₀ : ℝ) (z : ℝ × ℝ) : ℝ :=
