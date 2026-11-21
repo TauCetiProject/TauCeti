@@ -175,13 +175,13 @@ theorem lieAnnihilator_eq [DecidableEq R] (hD : IsRootPlaneDecomposition B t α 
   set N := (lieAnnihilator R L (B p)).toSubmodule
   have hle : t ⊔ ⨆ i ∈ s, E i ≤ N := by
     refine sup_le (fun H hH ↦ ?_) (iSup₂_le fun i hi ↦ ?_)
-    · rw [LieSubalgebra.mem_toSubmodule, mem_lieAnnihilator, hB.lie_apply_eq,
-        hD.lie_eq_zero hH p.property, map_zero]
+    · rw [LieSubalgebra.mem_toSubmodule, hB.mem_lieAnnihilator_iff, hD.lie_eq_zero hH p.property,
+        map_zero]
     · exact (hD.isRootPlane i).le_lieAnnihilator hB (by simpa [s] using hi)
   have hdisj : Disjoint (⨆ i ∈ sᶜ, E i) N := by
     refine Submodule.disjoint_def.mpr fun x hxA hxN ↦ ?_
     obtain ⟨μ, rfl⟩ := (Submodule.mem_iSup_finset_iff_exists_sum E x).mp hxA
-    rw [LieSubalgebra.mem_toSubmodule, mem_lieAnnihilator, hB.lie_apply_eq] at hxN
+    rw [LieSubalgebra.mem_toSubmodule, hB.mem_lieAnnihilator_iff] at hxN
     have hlie : ∑ i ∈ sᶜ, ⁅(μ i : L), (p : L)⁆ = 0 := by
       rw [← sum_lie]
       exact hsep _ fun y ↦ by rw [hxN, LinearMap.zero_apply]
@@ -192,7 +192,7 @@ theorem lieAnnihilator_eq [DecidableEq R] (hD : IsRootPlaneDecomposition B t α 
         exact neg_mem (Submodule.smul_mem _ _ (J i (μ i)).property)) hlie
     refine Finset.sum_eq_zero fun i hi ↦ ?_
     have hmem : (μ i : L) ∈ lieAnnihilator R L (B p) := by
-      rw [mem_lieAnnihilator, hB.lie_apply_eq, hzero i hi, map_zero]
+      rw [hB.mem_lieAnnihilator_iff, hzero i hi, map_zero]
     rcases ((hD.isRootPlane i).mem_lieAnnihilator_iff hB hsep p (μ i)).mp hmem with h | h
     · exact absurd h (by simpa [s] using hi)
     · simp [h]
