@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.ScalarChange
 public import TauCeti.Algebra.Module.Projective.FreeComplement
 public import TauCeti.Algebra.Module.StableEquivalent
-public import TauCeti.CategoryTheory.GrothendieckGroup.Split
 
 /-!
 # Equality in the split `K₀` of finitely generated projective modules
@@ -231,6 +230,7 @@ theorem classOf_free (n : ℕ) : classOf Λ (Fin n → Λ) n = 0 := by
 
 /-- Extension of scalars on split `K₀` sends `[M] - n[Λ]` to `[Λ' ⊗_Λ M] - n[Λ']`, for every
 finitely generated projective `Λ`-module `M`. -/
+@[simp]
 theorem map_extendScalars_classOf {Λ' : Type u} [Ring Λ'] (f : Λ →+* Λ') (n : ℕ) :
     SplitK0.map.{u, u} f.finiteProjectiveModulesExtendScalars (classOf Λ M n) =
       classOf Λ' (BalancedExtension f M) n := by

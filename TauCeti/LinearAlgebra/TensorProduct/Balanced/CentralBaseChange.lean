@@ -49,9 +49,7 @@ private theorem includeRightBase_apply (m : M) :
 
 private instance : IsScalarTower A S (BalancedExtension
     (RingHomClass.toRingHom (Algebra.TensorProduct.includeRight : Λ →ₐ[A] S ⊗[A] Λ)) M) :=
-  IsScalarTower.of_algebraMap_smul fun a x ↦ by
-    rw [← algebraMap_smul (S ⊗[A] Λ), ← algebraMap_smul (S ⊗[A] Λ) a,
-      ← IsScalarTower.algebraMap_apply]
+  IsScalarTower.to₁₂₄ A S (S ⊗[A] Λ) _
 
 /-- The map `s ⊗ m ↦ (s ⊗ 1) ⊗ m` into the balanced extension, inverse to `includeRightEquiv`. -/
 private noncomputable def centralInverse :
@@ -77,33 +75,30 @@ private theorem rightInverse_centralInverse :
     (g := ((lift (CentralBaseChange.includeRight A S Λ M)).restrictScalars S).comp
       (centralInverse A S Λ M)) (h := LinearMap.id) (fun s m ↦ by
         simp [centralInverse_tmul])
-  exact LinearMap.congr_fun h
+  intro x
+  simpa only [LinearMap.comp_apply, LinearMap.coe_restrictScalars, LinearMap.id_apply] using
+    LinearMap.congr_fun h x
 
 private theorem leftInverse_centralInverse :
     Function.LeftInverse (centralInverse A S Λ M)
       (lift (CentralBaseChange.includeRight A S Λ M)) := by
-  have h := BalancedTensorProduct.hom_ext
-    (f := ((centralInverse A S Λ M).restrictScalars ℤ).comp
-      ((lift (CentralBaseChange.includeRight A S Λ M)).restrictScalars ℤ))
-    (g := LinearMap.id) (fun t m ↦ by
-      obtain ⟨t, rfl⟩ := (Scalars.of _).surjective t
-      simp only [← tmul_def]
-      change centralInverse A S Λ M
-        (lift (CentralBaseChange.includeRight A S Λ M) (tmul _ t m)) = tmul _ t m
-      have ht := TensorProduct.AlgebraTensorModule.ext (A := S) (R := A)
-        (g := (centralInverse A S Λ M).comp
-          (((lift (CentralBaseChange.includeRight A S Λ M)).restrictScalars S).comp
-            ((LinearMap.toSpanSingleton (S ⊗[A] Λ) _ (tmul _ 1 m)).restrictScalars S)))
-        (h := (LinearMap.toSpanSingleton (S ⊗[A] Λ) _ (tmul _ 1 m)).restrictScalars S)
-        (fun s l ↦ by
-          simp only [LinearMap.comp_apply, LinearMap.coe_restrictScalars,
-            LinearMap.toSpanSingleton_apply, ← tmul_eq_smul_one_tmul]
-          rw [lift_includeRight_tmul, centralInverse_tmul, tmul_smul]
-          simp)
-      simpa only [LinearMap.comp_apply, LinearMap.coe_restrictScalars,
-        LinearMap.toSpanSingleton_apply, ← tmul_eq_smul_one_tmul] using
-          LinearMap.congr_fun ht t)
-  exact LinearMap.congr_fun h
+  intro x
+  induction x using induction_on with
+  | tmul t m =>
+    have ht := TensorProduct.AlgebraTensorModule.ext (A := S) (R := A)
+      (g := (centralInverse A S Λ M).comp
+        (((lift (CentralBaseChange.includeRight A S Λ M)).restrictScalars S).comp
+          ((LinearMap.toSpanSingleton (S ⊗[A] Λ) _ (tmul _ 1 m)).restrictScalars S)))
+      (h := (LinearMap.toSpanSingleton (S ⊗[A] Λ) _ (tmul _ 1 m)).restrictScalars S)
+      (fun s l ↦ by
+        simp only [LinearMap.comp_apply, LinearMap.coe_restrictScalars,
+          LinearMap.toSpanSingleton_apply, ← tmul_eq_smul_one_tmul]
+        rw [lift_includeRight_tmul, centralInverse_tmul, tmul_smul]
+        simp)
+    simpa only [LinearMap.comp_apply, LinearMap.coe_restrictScalars,
+      LinearMap.toSpanSingleton_apply, ← tmul_eq_smul_one_tmul] using
+        LinearMap.congr_fun ht t
+  | add x y hx hy => rw [_root_.map_add, _root_.map_add, hx, hy]
 
 /-- Central base change `S ⊗[A] M` is balanced extension along `Λ → S ⊗[A] Λ`, `l ↦ 1 ⊗ l`. -/
 noncomputable def includeRightEquiv :

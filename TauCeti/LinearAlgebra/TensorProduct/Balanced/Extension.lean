@@ -318,6 +318,7 @@ theorem congrRingHom_symm {g : R →+* S} (h : f = g) :
 theorem congrRingHom_refl : congrRingHom (P := P) (rfl : f = f) = LinearEquiv.refl S _ := by rfl
 
 /-- Successive transports compose to transport along the transitive equality. -/
+@[simp]
 theorem congrRingHom_trans {g h : R →+* S} (hfg : f = g) (hgh : g = h) :
     (congrRingHom (P := P) hfg).trans (congrRingHom hgh) = congrRingHom (hfg.trans hgh) := by
   subst g h
