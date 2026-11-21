@@ -31,6 +31,8 @@ isomorphisms such as `adicCompletionCongr`. When an `Algebra K L` structure is p
 
 ## Main results
 
+* `TauCeti.presentedForm_equivOfRingEquiv`: evaluation of a transported presented form on
+  coordinatewise images under `e`.
 * `TauCeti.RegularFormPresentation.equivOfRingEquiv_refl`,
   `TauCeti.RegularFormPresentation.equivOfRingEquiv_symm`,
   `TauCeti.RegularFormPresentation.equivOfRingEquiv_trans`: identity, inverse, and composition
@@ -113,6 +115,18 @@ theorem RegularFormPresentation.equivOfRingEquiv_apply (e : K ≃+* L)
     simp
   exact h _ (RegularFormPresentation.equivOfRingEquiv_def e p) i
 
+/-- Evaluating the form presented by `RegularFormPresentation.equivOfRingEquiv e p` on
+coordinatewise `e`-images of `x` gives `e (presentedForm p x)`. -/
+theorem presentedForm_equivOfRingEquiv (p : RegularFormPresentation K) (e : K ≃+* L)
+    (x : Fin p.1 → K) :
+    presentedForm (RegularFormPresentation.equivOfRingEquiv e p)
+        (fun i ↦ e (x (Fin.cast (RegularFormPresentation.fst_equivOfRingEquiv e p) i))) =
+      e (presentedForm p x) := by
+  rw [presentedForm_apply, presentedForm_apply, map_sum]
+  refine Fintype.sum_equiv (finCongr (RegularFormPresentation.fst_equivOfRingEquiv e p)) _ _
+    fun i ↦ ?_
+  simp [RegularFormPresentation.equivOfRingEquiv_apply]
+
 /-- When an `Algebra K L` structure agrees with `e`, presentation transport agrees with
 `RegularFormPresentation.baseChange`. -/
 theorem RegularFormPresentation.equivOfRingEquiv_eq_baseChange [Algebra K L] (e : K ≃+* L)
@@ -123,14 +137,14 @@ theorem RegularFormPresentation.equivOfRingEquiv_eq_baseChange [Algebra K L] (e 
   simp only [Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass, he]
   exact congrArg (fun j : Fin p.1 ↦ e (p.2 j : K)) (Fin.ext (by simp))
 
--- Not `@[simp]`: `RegularFormPresentation.equivOfRingEquiv_apply` rewrites inside the product, so
--- the left-hand side is not in `simp`-normal form.
 /-- The weight product of a transported presentation is the image of the original weight product. -/
+@[simp↓]
 theorem RegularFormPresentation.prod_equivOfRingEquiv (e : K ≃+* L)
     (p : RegularFormPresentation K) :
     (∏ i, (RegularFormPresentation.equivOfRingEquiv e p).2 i) =
-      Units.map (e : K →* L) (∏ i, p.2 i) := by
+      Units.map ((e : K →+* L) : K →* L) (∏ i, p.2 i) := by
   rw [RegularFormPresentation.equivOfRingEquiv_def, map_prod]
+  exact Units.ext (by simp)
 
 /-- Transporting presentations along the identity ring isomorphism is the identity equivalence. -/
 @[simp]
@@ -430,27 +444,26 @@ theorem formClass_eq_mapRingEquiv_of_semilinearEquiv
   let hAdd : W ≃+ (Fin p.1 → L) :=
     (f.symm.toAddEquiv.trans g.toLinearEquiv.toAddEquiv).trans
       (AddEquiv.piCongrRight fun _ ↦ e.toAddEquiv)
-  let hL : W ≃ₗ[L] (Fin p.1 → L) :=
-    { hAdd with
+  let hL : W ≃ₗ[L] (Fin (RegularFormPresentation.equivOfRingEquiv e p).1 → L) :=
+    ({ hAdd with
       map_smul' := fun c w ↦ by
         ext i
         have hsymm : f.symm (c • w) = σ' c • f.symm w := f.symm.map_smulₛₗ c w
-        simp [hAdd, e, hsymm] }
+        simp [hAdd, e, hsymm] } : W ≃ₗ[L] (Fin p.1 → L)).trans
+      (LinearEquiv.funCongrLeft L L (finCongr (RegularFormPresentation.fst_equivOfRingEquiv e p)))
   have hEquiv : Q'.Equivalent
-      (presentedForm ⟨p.1, fun i ↦ Units.map (e : K →* L) (p.2 i)⟩) := by
+      (presentedForm (RegularFormPresentation.equivOfRingEquiv e p)) := by
     refine ⟨{ toLinearEquiv := hL, map_app' := fun w ↦ ?_ }⟩
     obtain ⟨v, rfl⟩ := f.surjective w
     have hfv : f.symm (f v) = v := f.symm_apply_apply v
-    have hsum :
-        presentedForm ⟨p.1, fun i ↦ Units.map (e : K →* L) (p.2 i)⟩ (hL (f v)) =
-          σ (presentedForm p (g v)) := by
-      simp only [presentedForm_eq_weightedSumSquares, QuadraticMap.weightedSumSquares_apply,
-        Units.smul_def, smul_eq_mul, map_sum, map_mul]
-      refine Finset.sum_congr rfl fun i _ ↦ ?_
-      simp [hL, hAdd, e, hfv]
-    rw [LinearEquiv.toFun_eq_coe, hsum, g.map_app v, hf v]
+    have hcoord : hL (f v) =
+        fun i ↦ e (g v (Fin.cast (RegularFormPresentation.fst_equivOfRingEquiv e p) i)) := by
+      ext i
+      simp [hL, hAdd, hfv]
+    rw [LinearEquiv.toFun_eq_coe, hcoord, presentedForm_equivOfRingEquiv p e (g v),
+      g.map_app v, RingHomInvPair.toRingEquiv_apply, hf v]
   rw [formClass_mk Q hQ p ⟨g⟩, RegularFormClass.mapRingEquiv_mk,
-    RegularFormPresentation.equivOfRingEquiv_def, formClass_mk Q' hQ' _ hEquiv]
+    formClass_mk Q' hQ' _ hEquiv]
 
 /-- If `f : V ≃ₛₗ[σ] W` intertwines two regular quadratic forms `Q` and `Q'` via
 `Q' (f v) = σ (Q v)`, then the discriminant of `Q'` is the image under `σ` of the discriminant of
