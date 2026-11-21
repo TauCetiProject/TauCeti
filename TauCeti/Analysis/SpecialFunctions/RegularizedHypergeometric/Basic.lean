@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Complex.LocallyUniformLimit
 public import Mathlib.Analysis.SpecialFunctions.RegularizedHypergeometric
 public import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import Mathlib.RingTheory.Binomial
+import Mathlib.Algebra.Polynomial.OfFn
 import Mathlib.Analysis.Analytic.Constructions
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
 import TauCeti.Analysis.Analytic.OfScalars
@@ -40,6 +41,9 @@ Likewise, on the open unit disk `‖z‖ < 1`, `Complex.regularizedGaussHGFun a 
 parameter-shift and derivative-contiguous relations, and is jointly analytic in `(a, b, c, z)`.
 Because `1 / Γ` vanishes at the poles of `Γ`, none of these statements needs a pole-avoidance
 hypothesis on the lower parameter.
+For general parameter multisets, an upper parameter `-n` makes every coefficient of index greater
+than `n` vanish, so the series terminates and the function is a polynomial of degree at most `n`,
+with no condition on the lower parameters.
 
 ## Main results
 
@@ -64,6 +68,10 @@ hypothesis on the lower parameter.
 * `Complex.hasDerivAt_regularizedHGFun_zero_singleton_ofReal_re` — the derivative in `y`.
 * `Complex.hasDerivAt_regularizedHGFun_zero_singleton` — differentiating `₀F₁(; b; ·)` raises its
   parameter by one, for complex `b` and `z`.
+* `Complex.regularizedHGFun_eq_sum_range_of_neg_natCast_mem`,
+  `Complex.exists_natDegree_le_regularizedHGFun_of_neg_natCast_mem` — if an upper parameter is a
+  nonpositive integer `-n`, the series terminates and the function is a polynomial of degree at
+  most `n`.
 * `Complex.regularizedGaussHGFun_zero` — the origin value `(Gamma c)⁻¹` at `z = 0`.
 * `Complex.hasFPowerSeriesOnBall_regularizedGaussHGFun`, `Complex.analyticAt_regularizedGaussHGFun`,
   `Complex.analyticOnNhd_regularizedGaussHGFun` — power-series representation and analyticity of
@@ -403,6 +411,30 @@ theorem hasSum_regularizedHGFun_zero_singleton_ofReal_re_mul (a b y : ℝ) :
   have hb : (b : ℂ) + n = ((b + n : ℝ) : ℂ) := by push_cast; ring
   rw [hc, ha, hb, heval, Gamma_ofReal, Gamma_ofReal]
   norm_cast
+
+/-- If `-n` is an upper parameter, the regularized hypergeometric series terminates at
+degree `n`: `regularizedHGFun a b z` is the sum of its first `n + 1` terms. -/
+theorem regularizedHGFun_eq_sum_range_of_neg_natCast_mem {a b : Multiset ℂ} {n : ℕ}
+    (ha : -(n : ℂ) ∈ a) (z : ℂ) :
+    regularizedHGFun a b z =
+      ∑ k ∈ Finset.range (n + 1), regularizedHGFunCoeff a b k * z ^ k := by
+  rw [regularizedHGFun, (regularizedHGFunSeries a b).sum_of_finite (n := n + 1) (fun m hm =>
+    regularizedHGFunSeries_eq_zero.2 (regularizedHGFunCoeff_eq_zero_left a b m n ha hm)) z]
+  simp only [FormalMultilinearSeries.partialSum, regularizedHGFunSeries,
+    FormalMultilinearSeries.ofScalars_apply_eq, smul_eq_mul]
+
+open Polynomial in
+/-- If `-n` is an upper parameter, `regularizedHGFun a b` is a polynomial of degree at most `n`,
+whatever the other upper and the lower parameters are. -/
+theorem exists_natDegree_le_regularizedHGFun_of_neg_natCast_mem {a b : Multiset ℂ} {n : ℕ}
+    (ha : -(n : ℂ) ∈ a) :
+    ∃ p : ℂ[X], p.natDegree ≤ n ∧ ∀ z, regularizedHGFun a b z = p.eval z := by
+  refine ⟨ofFn (n + 1) fun k => regularizedHGFunCoeff a b k,
+    Nat.lt_succ_iff.mp (ofFn_natDegree_lt n.succ_pos _), fun z => ?_⟩
+  rw [regularizedHGFun_eq_sum_range_of_neg_natCast_mem ha z,
+    eval_eq_sum_range' (ofFn_natDegree_lt n.succ_pos _)]
+  exact Finset.sum_congr rfl fun k hk => by
+    rw [ofFn_coeff_eq_val_of_lt _ (Finset.mem_range.mp hk)]
 
 section Gaussian
 
