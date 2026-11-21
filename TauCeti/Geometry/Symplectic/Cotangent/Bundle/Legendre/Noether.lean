@@ -153,12 +153,12 @@ evaluated on the fundamental vector field `ξ_{TM}` of the tangent-lifted action
 charge `⟨μ(FL v), ξ⟩ = FL(v)(ξ_M(π v))`. -/
 theorem cartanForm_apply_fundamentalVectorField {L : TangentBundle I M → ℝ}
     (hL : ContMDiff I.tangent 𝓘(ℝ, ℝ) ∞ L) (ξ : GroupLieAlgebra IG G) (v : TangentBundle I M) :
-    (cartanForm L hL).1 v ![fundamentalVectorField I.tangent ξ v] =
+    (cartanForm L hL).val v ![fundamentalVectorField I.tangent ξ v] =
       CotangentBundle.momentMap IG G (legendreMap L v) ξ := by
   rw [cartanForm_apply, Matrix.cons_val_zero, TangentBundle.mfderiv_proj_fundamentalVectorField,
     CotangentBundle.momentMap_apply]
   -- The Legendre map covers the identity, `π (FL v) = π v`.
-  exact congrArg (legendreMap L v).2
+  exact congrArg (legendreMap L v).snd
     (congrArg (fundamentalVectorField I ξ) (proj_legendreMap L v).symm)
 
 end Charge

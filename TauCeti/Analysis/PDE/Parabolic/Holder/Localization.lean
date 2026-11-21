@@ -71,17 +71,17 @@ theorem parabolicOperatorL_mul_sub_mul_parabolicOperatorL :
     (ContinuousLinearMap.mul ℝ ℝ).compHolder₂
         (timeDerivL χ - spatialOperatorL hα A B 0 χ) (valueHolderL hα u) -
       (ContinuousLinearMap.id ℝ _).compHolder₂ A
-        ((ContinuousLinearMap.smulRightL ℝ E (E →L[ℝ] ℝ)).compHolder₂
+        ((StrongDual.smulRightL ℝ E (E →L[ℝ] ℝ)).compHolder₂
             (spatialFDerivHolderL hα χ) (spatialFDerivHolderL hα u) +
-          (ContinuousLinearMap.smulRightL ℝ E (E →L[ℝ] ℝ)).compHolder₂
+          (StrongDual.smulRightL ℝ E (E →L[ℝ] ℝ)).compHolder₂
             (spatialFDerivHolderL hα u) (spatialFDerivHolderL hα χ)) := by
   ext p
   have hH : spatialSecondFDerivL
       ((ContinuousLinearMap.mul ℝ ℝ).compParabolicC2Holder₂ hα χ u) p =
       χ p • spatialSecondFDerivL u p + u p • spatialSecondFDerivL χ p +
-        (ContinuousLinearMap.smulRightL ℝ E (E →L[ℝ] ℝ))
+        (StrongDual.smulRightL ℝ E (E →L[ℝ] ℝ))
           (spatialFDerivL χ p) (spatialFDerivL u p) +
-        (ContinuousLinearMap.smulRightL ℝ E (E →L[ℝ] ℝ))
+        (StrongDual.smulRightL ℝ E (E →L[ℝ] ℝ))
           (spatialFDerivL u p) (spatialFDerivL χ p) := by
     ext h k
     simp
@@ -132,7 +132,7 @@ theorem norm_parabolicOperatorL_mul_sub_mul_parabolicOperatorL_le :
         (‖B‖ + 2 * ‖A‖) * ‖spatialFDerivHolderL hα χ‖) *
         (‖valueHolderL hα u‖ + ‖spatialFDerivHolderL hα u‖) := by
   -- The two cross terms are rank-one Hessians, each with the product bound.
-  let T := ContinuousLinearMap.smulRightL ℝ E (E →L[ℝ] ℝ)
+  let T := StrongDual.smulRightL ℝ E (E →L[ℝ] ℝ)
   have hT : ‖T‖ ≤ 1 := by
     simpa only [T] using
       (ContinuousLinearMap.norm_smulRightL_le (𝕜 := ℝ) (E := E) (Fₗ := E →L[ℝ] ℝ))

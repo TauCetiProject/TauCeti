@@ -62,13 +62,14 @@ the quadratic order of discriminant `D`. -/
 noncomputable def picClass (f : primitiveForms D) : Pic (QuadraticOrder.numberFieldOrder D hD) :=
   (QuadraticOrder.numberFieldOrder D hD).mkPic
     ((f : BinaryQuadraticForm ℤ).invertibleFractionalIdeal D
-      ((mem_primitiveForms D f).mp f.2).1 ((mem_primitiveForms D f).mp f.2).2)
+      ((mem_primitiveForms D f).mp f.property).1 ((mem_primitiveForms D f).mp f.property).2)
 
 /-- The Picard class of a primitive form is the class of its invertible form ideal. -/
 theorem picClass_def (f : primitiveForms D) :
     picClass D hD f = (QuadraticOrder.numberFieldOrder D hD).mkPic
       ((f : BinaryQuadraticForm ℤ).invertibleFractionalIdeal D
-        ((mem_primitiveForms D f).mp f.2).1 ((mem_primitiveForms D f).mp f.2).2) := (rfl)
+        ((mem_primitiveForms D f).mp f.property).1 ((mem_primitiveForms D f).mp f.property).2) :=
+            (rfl)
 
 /-- **A form whose leading coefficient is a unit has trivial Picard class.** -/
 theorem picClass_eq_one_of_isUnit_a {f : primitiveForms D}
@@ -126,7 +127,7 @@ variable (hn : (-n : ℤ) % 4 = 0 ∨ (-n : ℤ) % 4 = 1)
 
 /-- A primitive positive definite form, as a primitive form of discriminant `-n`. -/
 private def toPrimitiveForms (f : ↥(posDef n ⊓ primitiveForms (-n))) : primitiveForms (-n) :=
-  ⟨f, inf_le_right (a := posDef n) f.2⟩
+  ⟨f, inf_le_right (a := posDef n) f.property⟩
 
 private theorem coe_toPrimitiveForms (f : ↥(posDef n ⊓ primitiveForms (-n))) :
     (toPrimitiveForms n f : BinaryQuadraticForm ℤ) = f := (rfl)
@@ -142,7 +143,7 @@ noncomputable def posDefProperClassToPic :
 /-- The Picard class of the proper class of a form is the Picard class of the form. -/
 @[simp] theorem posDefProperClassToPic_mk (f : ↥(posDef n ⊓ primitiveForms (-n))) :
     posDefProperClassToPic n hn (Quotient.mk _ f) =
-      picClass (-n) hn ⟨f, inf_le_right (a := posDef n) f.2⟩ := (rfl)
+      picClass (-n) hn ⟨f, inf_le_right (a := posDef n) f.property⟩ := (rfl)
 
 /-- **Distinct proper classes of primitive positive definite forms have distinct Picard classes.**
 This is the injective half of the correspondence between proper classes of primitive positive
@@ -152,8 +153,8 @@ theorem posDefProperClassToPic_injective : Function.Injective (posDefProperClass
   refine Quotient.inductionOn₂ p q fun f g h ↦ ?_
   have hneg : (-n : ℤ) < 0 := by simpa using NeZero.pos n
   obtain ⟨γ, hγ⟩ := (picClass_eq_picClass_iff_of_neg (-n) hn hneg
-    ((mem_posDef_inf_primitiveForms n).mp f.2).2.1
-    ((mem_posDef_inf_primitiveForms n).mp g.2).2.1).mp h
+    ((mem_posDef_inf_primitiveForms n).mp f.property).2.1
+    ((mem_posDef_inf_primitiveForms n).mp g.property).2.1).mp h
   refine Quotient.sound (mem_orbit_iff.mpr ⟨γ⁻¹, Subtype.ext ?_⟩)
   have hγ' := congrArg Subtype.val hγ
   simp only [SubMulAction.val_smul, coe_toPrimitiveForms] at hγ' ⊢

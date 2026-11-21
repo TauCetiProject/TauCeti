@@ -163,16 +163,18 @@ theorem normalSpace_of_isColimit
   -- Separating functions on all stages, each extending the previous one, chosen recursively.
   let Sep (n : ℕ) : Type u :=
     {v : C(F.obj n, ℝ) // EqOn v 0 (c.ι.app n ⁻¹' S) ∧ EqOn v 1 (c.ι.app n ⁻¹' T)}
-  have hstep (n : ℕ) (v : Sep n) : ∃ w : Sep (n + 1), w.1 ∘ F.map (homOfLE n.le_succ) = v.1 := by
-    obtain ⟨w, hwv, hw₀, hw₁⟩ := v.1.exists_extension_eqOn_const (hF n) (hS (n + 1)) (hT (n + 1))
-      (hST.preimage _) (a := 0) (b := 1) (fun x hx ↦ v.2.1 (by simpa [hw] using hx))
-      (fun x hx ↦ v.2.2 (by simpa [hw] using hx))
+  have hstep (n : ℕ) (v : Sep n) : ∃ w : Sep (n + 1), w.val ∘ F.map (homOfLE n.le_succ) = v.val
+      := by
+    obtain ⟨w, hwv, hw₀, hw₁⟩ := v.val.exists_extension_eqOn_const (hF n) (hS (n + 1)) (hT (n + 1))
+      (hST.preimage _) (a := 0) (b := 1) (fun x hx ↦ v.property.1 (by simpa [hw] using hx))
+      (fun x hx ↦ v.property.2 (by simpa [hw] using hx))
     exact ⟨⟨w, hw₀, hw₁⟩, hwv⟩
   obtain ⟨u₀, hu₀, hu₁, -⟩ := exists_continuous_zero_one_of_isClosed (hS 0) (hT 0)
     (hST.preimage (c.ι.app 0))
   let s (n : ℕ) : Sep n := Nat.rec ⟨u₀, hu₀, hu₁⟩ (fun n v ↦ (hstep n v).choose) n
-  let u (n : ℕ) : C(F.obj n, ℝ) := (s n).1
-  have hu (n : ℕ) : EqOn (u n) 0 (c.ι.app n ⁻¹' S) ∧ EqOn (u n) 1 (c.ι.app n ⁻¹' T) := (s n).2
+  let u (n : ℕ) : C(F.obj n, ℝ) := (s n).val
+  have hu (n : ℕ) : EqOn (u n) 0 (c.ι.app n ⁻¹' S) ∧ EqOn (u n) 1 (c.ι.app n ⁻¹' T) :=
+      (s n).property
   have hu' (n : ℕ) : u (n + 1) ∘ F.map (homOfLE n.le_succ) = u n := (hstep n (s n)).choose_spec
   -- The compatible separating functions descend to a continuous function `v` on the colimit.
   let d := hc.desc ⟨TopCat.of (ULift.{u} ℝ), NatTrans.ofSequence

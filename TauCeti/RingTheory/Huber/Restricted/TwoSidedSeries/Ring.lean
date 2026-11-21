@@ -121,7 +121,7 @@ variable {A : Type*} [Ring A] [TopologicalSpace A] [NonarchimedeanRing A]
 /-- **The product on `A⟨X, X⁻¹⟩`**: the coefficient convolution `(fg)ₙ = ∑_{i + j = n} aᵢ bⱼ`. -/
 noncomputable instance twoSidedRestrictedSubmodule.instMul :
     Mul (twoSidedRestrictedSubmodule A A) where
-  mul f g := ⟨f ⋆ᵣ₊ g, addRingConvolution_mem_twoSidedRestrictedSubmodule f.2 g.2⟩
+  mul f g := ⟨f ⋆ᵣ₊ g, addRingConvolution_mem_twoSidedRestrictedSubmodule f.property g.property⟩
 
 /-- The coefficient family of a product is the convolution of the coefficient families. -/
 @[simp, norm_cast]
@@ -146,17 +146,17 @@ the convolution product `instMul` and the unit `instOne`. -/
 noncomputable instance twoSidedRestrictedSubmodule.instRing :
     Ring (twoSidedRestrictedSubmodule A A) where
   mul_assoc f g h := Subtype.ext <|
-    (mem_twoSidedRestrictedSubmodule.mp f.2).addRingConvolution_assoc
-    (mem_twoSidedRestrictedSubmodule.mp g.2)
-    (mem_twoSidedRestrictedSubmodule.mp h.2)
+    (mem_twoSidedRestrictedSubmodule.mp f.property).addRingConvolution_assoc
+    (mem_twoSidedRestrictedSubmodule.mp g.property)
+    (mem_twoSidedRestrictedSubmodule.mp h.property)
   one_mul _ := Subtype.ext <| by simp
   mul_one _ := Subtype.ext <| by simp
   left_distrib f g h := Subtype.ext <| DiscreteConvolution.addRingConvolution_add _ _ _
-    (addConvolutionExists_of_mem_twoSidedRestrictedSubmodule f.2 g.2)
-    (addConvolutionExists_of_mem_twoSidedRestrictedSubmodule f.2 h.2)
+    (addConvolutionExists_of_mem_twoSidedRestrictedSubmodule f.property g.property)
+    (addConvolutionExists_of_mem_twoSidedRestrictedSubmodule f.property h.property)
   right_distrib f g h := Subtype.ext <| DiscreteConvolution.add_addRingConvolution _ _ _
-    (addConvolutionExists_of_mem_twoSidedRestrictedSubmodule f.2 h.2)
-    (addConvolutionExists_of_mem_twoSidedRestrictedSubmodule g.2 h.2)
+    (addConvolutionExists_of_mem_twoSidedRestrictedSubmodule f.property h.property)
+    (addConvolutionExists_of_mem_twoSidedRestrictedSubmodule g.property h.property)
   zero_mul _ := Subtype.ext <| DiscreteConvolution.zero_addRingConvolution _
   mul_zero _ := Subtype.ext <| DiscreteConvolution.addRingConvolution_zero _
 

@@ -94,16 +94,16 @@ variable {E H M : Type} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimens
 /-- The **time period homomorphism** `N(h) = ∫_h dt` of the mapping torus `Y_φ`: the periods of the
 time form `dt` on the first singular homology group `H₁(Y_φ; ℤ)`. -/
 def timePeriodHom : ((singularChains ℤ).obj (TopCat.of (SmoothMappingTorus φ))).homology 1 →+ ℝ :=
-  homologyPeriodHom (timeForm φ).1
+  homologyPeriodHom (timeForm φ).val
 
 /-- The time period homomorphism is the period homomorphism of the time form. -/
-theorem timePeriodHom_def : timePeriodHom φ = homologyPeriodHom (timeForm φ).1 := (rfl)
+theorem timePeriodHom_def : timePeriodHom φ = homologyPeriodHom (timeForm φ).val := (rfl)
 
 /-- The periods of the form `α = -dt`, whose negative gradient flow is the suspension flow, are the
 negatives `-N` of the time periods. -/
 theorem homologyPeriodHom_neg_timeForm :
-    homologyPeriodHom (-(timeForm φ).1) = -timePeriodHom φ := by
-  rw [← neg_one_smul ℝ (timeForm φ).1, homologyPeriodHom_smul, neg_one_smul, timePeriodHom_def]
+    homologyPeriodHom (-(timeForm φ).val) = -timePeriodHom φ := by
+  rw [← neg_one_smul ℝ (timeForm φ).val, homologyPeriodHom_smul, neg_one_smul, timePeriodHom_def]
 
 variable {φ}
 
@@ -116,7 +116,7 @@ theorem timePeriodHom_singularHomologyMap {E₀ H₀ X : Type} [NormedAddCommGro
     {f : X → SmoothMappingTorus φ} (hf : ContMDiff I₀ (𝓘(ℝ).prod I) ∞ f)
     (c : ((singularChains ℤ).obj (TopCat.of X)).homology 1) :
     timePeriodHom φ (ContinuousMap.singularHomologyMap ℤ 1 ⟨f, hf.continuous⟩ c) =
-      homologyPeriodHom (SmoothForm.mpullback f hf (timeForm φ)).1 c := by
+      homologyPeriodHom (SmoothForm.mpullback f hf (timeForm φ)).val c := by
   rw [timePeriodHom_def, SmoothForm.coe_mpullback]
   exact homologyPeriodHom_singularHomologyMap (hf.of_le (by simp))
     ((timeForm φ).isSmoothForm.of_le (by simp))
@@ -138,7 +138,7 @@ theorem timePeriodHom_singularHomologyMap_mk (t : ℝ)
 `ℝ / ℤ` on the image of a class under the projection `p : Y_φ → ℝ / ℤ`. -/
 theorem timePeriodHom_eq_homologyPeriodHom_singularHomologyMap_proj
     (c : ((singularChains ℤ).obj (TopCat.of (SmoothMappingTorus φ))).homology 1) :
-    timePeriodHom φ c = homologyPeriodHom (AddCircle.timeForm 1).1
+    timePeriodHom φ c = homologyPeriodHom (AddCircle.timeForm 1).val
       (ContinuousMap.singularHomologyMap ℤ 1 ⟨proj φ, (contMDiff_proj φ).continuous⟩ c) := by
   rw [homologyPeriodHom_singularHomologyMap ((contMDiff_proj φ).of_le (by simp))
       ((AddCircle.timeForm 1).isSmoothForm.of_le (by simp))

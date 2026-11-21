@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Calculus.FDeriv.Add
 public import Mathlib.Analysis.Calculus.FDeriv.Prod
+public import Mathlib.Analysis.Normed.Operator.Bilinear
 
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.Prod
@@ -69,6 +70,8 @@ expected derivative, with a norm bound in terms of bounds on the factors and the
   derivative along the first factor.
 * `HasDerivAt.hasFDerivAt_comp_snd`: a function `p ↦ x p.2` of a scalar second variable alone has
   derivative `(σ, τ) ↦ τ • x'`.
+* `HasDerivAt.hasFDerivAt_comp_fst_sub_comp_snd`: the map `p ↦ u₁ p.1 - u₂ p.2` of two scalar
+  variables has derivative `(s, t) ↦ s • a - t • b`.
 * `TauCeti.fderiv_apply_eq_fderiv_slice_left_add_fderiv_slice_right`: the derivative of a function
   on a product is the sum of the derivatives of its two slices.
 * `TauCeti.hasDerivAt_slice_left`, `TauCeti.hasDerivAt_slice_right`: the partial derivatives of
@@ -186,6 +189,17 @@ theorem _root_.HasDerivAt.hasFDerivAt_comp_snd {x : 𝕜 → G} {x' : G} {z : E 
     (hx : HasDerivAt x x' z.2) :
     HasFDerivAt (fun p : E × 𝕜 ↦ x p.2) ((ContinuousLinearMap.snd 𝕜 E 𝕜).smulRight x') z := by
   refine (hx.hasFDerivAt.comp z (hasFDerivAt_snd (p := z))).congr_fderiv ?_
+  ext <;> simp
+
+/-- The map `p ↦ u₁ p.1 - u₂ p.2` of two scalar variables, where `u₁` and `u₂` have derivatives
+`a` at `z` and `b` at `w`, has derivative `(s, t) ↦ s • a - t • b` at `(z, w)`. -/
+theorem _root_.HasDerivAt.hasFDerivAt_comp_fst_sub_comp_snd {u₁ u₂ : 𝕜 → G} {a b : G} {z w : 𝕜}
+    (h₁ : HasDerivAt u₁ a z) (h₂ : HasDerivAt u₂ b w) :
+    HasFDerivAt (fun p : 𝕜 × 𝕜 ↦ u₁ p.1 - u₂ p.2)
+      ((ContinuousLinearMap.fst 𝕜 𝕜 𝕜).smulRight a - (ContinuousLinearMap.snd 𝕜 𝕜 𝕜).smulRight b)
+      (z, w) := by
+  refine ((h₁.hasFDerivAt.comp (z, w) (hasFDerivAt_fst (p := (z, w)))).sub
+    (h₂.hasFDerivAt.comp (z, w) (hasFDerivAt_snd (p := (z, w))))).congr_fderiv ?_
   ext <;> simp
 
 /-- **The chain rule along a graph.** The derivative of `fun x ↦ f (x, u x)` is the derivative of
@@ -388,6 +402,18 @@ open Set
 variable {X Y V W : Type*} [NormedAddCommGroup X] [NormedSpace 𝕜 X] [NormedAddCommGroup Y]
   [NormedSpace 𝕜 Y] [NormedAddCommGroup V] [NormedSpace 𝕜 V] [NormedAddCommGroup W]
   [NormedSpace 𝕜 W]
+
+/-- Differentiate `w ↦ (w.1, A w.1 w.2)` on `E × F`, where `A` varies differentiably
+within `t` at `p.1` and is applied to the second coordinate. -/
+theorem _root_.HasFDerivWithinAt.fst_prodMk_clm_apply_snd {A : E → F →L[𝕜] G}
+    {A' : E →L[𝕜] F →L[𝕜] G} {s : Set (E × F)}
+    {t : Set E} {p : E × F} (hA : HasFDerivWithinAt A A' t p.1) (hs : Set.MapsTo Prod.fst s t) :
+    HasFDerivWithinAt (fun w : E × F ↦ (w.1, A w.1 w.2))
+      ((ContinuousLinearMap.fst 𝕜 E F).prod
+        ((A p.1).comp (ContinuousLinearMap.snd 𝕜 E F) +
+          (A'.comp (ContinuousLinearMap.fst 𝕜 E F)).flip p.2)) s p :=
+  hasFDerivWithinAt_fst.prodMk
+    ((hA.comp p hasFDerivWithinAt_fst hs).clm_apply hasFDerivWithinAt_snd)
 
 /-- The derivative within `s ×ˢ univ` of `a ↦ (F a.1, C a.1 a.2)` at `(a₀, v)`, evaluated at
 `(h, w)`, for `F : X → Y` and `C : X → V →L[𝕜] W` differentiable within `s` at `a₀`, is

@@ -339,15 +339,16 @@ theorem spinTransvection_eq_one_iff (hQ : Q.Nondegenerate) (hu : Q u = 0)
 `u`. It descends to `u^⊥ / K ∙ u` as `transvectionLiftHom`. -/
 private def spinTransvectionAddHom (hQ : Q.Nondegenerate) (hu : Q u = 0) :
     LinearMap.ker (Q.polarBilin u) →+ Additive (spinGroup Q) :=
-  AddMonoidHom.mk' (fun w => Additive.ofMul (spinTransvection hQ hu (LinearMap.mem_ker.mp w.2)))
+  AddMonoidHom.mk' (fun w => Additive.ofMul (spinTransvection hQ hu
+      (LinearMap.mem_ker.mp w.property)))
     fun w w' => by
-      rw [← ofMul_mul, ← spinTransvection_add hQ hu (LinearMap.mem_ker.mp w.2)
-        (LinearMap.mem_ker.mp w'.2)]
+      rw [← ofMul_mul, ← spinTransvection_add hQ hu (LinearMap.mem_ker.mp w.property)
+        (LinearMap.mem_ker.mp w'.property)]
 
 private theorem spinTransvectionAddHom_apply (hQ : Q.Nondegenerate) (hu : Q u = 0)
     (w : LinearMap.ker (Q.polarBilin u)) :
     Additive.toMul (spinTransvectionAddHom hQ hu w) =
-      spinTransvection hQ hu (LinearMap.mem_ker.mp w.2) := by
+      spinTransvection hQ hu (LinearMap.mem_ker.mp w.property) := by
   rw [spinTransvectionAddHom, AddMonoidHom.mk'_apply, toMul_ofMul]
 
 /-- **The Spin lifts of the Eichler transvections with a fixed isotropic vector `u`**, as a

@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.FormalGroup.AddInv
 public import TauCeti.RingTheory.FormalGroup.Logarithm.Basic
 -- Proof-only: splitting a power series into its truncation and its tail.
 import Mathlib.RingTheory.PowerSeries.Trunc
+import TauCeti.RingTheory.FormalGroup.Basic
 import TauCeti.RingTheory.PowerSeries.Substitution
 
 /-!
@@ -80,6 +81,8 @@ off the invariant differential.
 * `FormalGroup.natCast_dvd_coeff_nsmulSeries_sub_coeff_invariantDifferential`: if `p` is not a zero
   divisor, the coefficient of `Tᵖ` in `[p]_F` is congruent modulo `p` to the coefficient of `Tᵖ⁻¹`
   in the invariant differential.
+* `FormalGroup.le_order_nsmulSeries_sub`: if two formal group laws agree below degree `M`, then
+  their multiplication-by-`m` series agree below degree `M`.
 * `TauCeti.FormalGroupHom.subst_nsmulSeries`: a homomorphism `f` from `F` to `G` commutes with
   multiplication by `n`, `f([n]_F(T)) = [n]_G(f(T))`.
 * `TauCeti.FormalGroupHom.coeff_nsmulSeries_mul_coeff_one_pow_of_le_order`: if `f = u T + ⋯` and
@@ -439,6 +442,28 @@ theorem natCast_dvd_coeff_nsmulSeries_sub_coeff_invariantDifferential [F.IsComm]
   refine ⟨-PowerSeries.coeff (p - 1) (a * S * E), ?_⟩
   rw [h₂', ← h₁', map_add, hcoeff]
   ring
+
+end FormalGroup
+
+namespace FormalGroup
+
+variable {R : Type*} [CommRing R]
+
+/-- If two formal group laws `F` and `G` agree below degree `M`, then their multiplication-by-`m`
+series `[m]_F` and `[m]_G` agree below degree `M`. -/
+theorem le_order_nsmulSeries_sub {F G : FormalGroup R} {M : ℕ}
+    (hFG : (M : ℕ∞) ≤ (F.toPowerSeries - G.toPowerSeries).order) (m : ℕ) :
+    (M : ℕ∞) ≤ (F.nsmulSeries m - G.nsmulSeries m).order := by
+  induction m with
+  | zero => simp
+  | succ m ih =>
+    rw [F.nsmulSeries_succ, G.nsmulSeries_succ, PowerSeries.order_eq_order]
+    exact le_order_subst_pair_sub hFG
+      (by rw [← PowerSeries.constantCoeff_eq]; exact F.constantCoeff_nsmulSeries m)
+      (by rw [← PowerSeries.constantCoeff_eq]; exact PowerSeries.constantCoeff_X)
+      (by rw [← PowerSeries.constantCoeff_eq]; exact G.constantCoeff_nsmulSeries m)
+      (by rw [← PowerSeries.constantCoeff_eq]; exact PowerSeries.constantCoeff_X)
+      (by rwa [← PowerSeries.order_eq_order]) (by simp)
 
 end FormalGroup
 
