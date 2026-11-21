@@ -26,8 +26,9 @@ exactly when it sends that vector to a multiple of itself. Finally, a submodule 
 subring that is a direct sum `⊕ i, J i • y i` with nonzero ideal coefficients spans the same
 subspace over the larger field as the family `y`. A unitriangular change of a family indexed by a
 well-founded order, where each `z j` is `x j` plus a combination of the earlier `x l`, preserves
-the spans of initial segments. A ring homomorphism carries a span over `A` into a span over `B`
-as soon as it carries the generators into the target span and the scalars in `A` to scalars in `B`.
+the spans of initial segments, and more generally of lower sets of indices. A ring homomorphism
+carries a span over `A` into a span over `B` as soon as it carries the generators into the target
+span and the scalars in `A` to scalars in `B`.
 Over a scalar extension, the image span of a semilinear map is spanned by its values on any
 spanning family of the domain. The span of any countable set admits a spanning sequence indexed
 by `ℕ` (`Set.Countable.exists_span_range_eq_top`).
@@ -163,6 +164,21 @@ theorem span_image_Iio_eq_span_image_Iio {x z : ι → M}
     rintro _ ⟨l, hl, rfl⟩
     have hmem := sub_mem (subset_span (R := R) (Set.mem_image_of_mem z hl)) <|
       span_mono (Set.image_mono (Set.Iio_subset_Iio hl.le)) (ih l hl (h l))
+    rwa [sub_sub_cancel] at hmem
+
+/-- A lower set of indices spans the same submodule through `x` and through `z` when every
+`z j` is `x j` plus a combination of the earlier `x l`. -/
+theorem span_image_eq_span_image_of_isLowerSet {x z : ι → M}
+    (h : ∀ j, z j - x j ∈ span R (x '' Set.Iio j)) {s : Set ι} (hs : IsLowerSet s) :
+    span R (z '' s) = span R (x '' s) := by
+  have hIio {j : ι} (hj : j ∈ s) : Set.Iio j ⊆ s := fun l hl ↦ hs (le_of_lt hl) hj
+  refine le_antisymm (span_le.2 ?_) (span_le.2 ?_) <;> rintro _ ⟨j, hj, rfl⟩
+  · have hmem := add_mem (span_mono (Set.image_mono (hIio hj)) (h j))
+      (subset_span (R := R) ⟨j, hj, rfl⟩)
+    rwa [sub_add_cancel] at hmem
+  · have hzx : z j - x j ∈ span R (z '' s) :=
+      span_mono (Set.image_mono (hIio hj)) ((span_image_Iio_eq_span_image_Iio h j).ge (h j))
+    have hmem := sub_mem (subset_span (R := R) (Set.mem_image_of_mem z hj)) hzx
     rwa [sub_sub_cancel] at hmem
 
 end Unitriangular
