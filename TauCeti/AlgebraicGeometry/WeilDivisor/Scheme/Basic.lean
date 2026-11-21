@@ -72,7 +72,7 @@ def toAlgebraicCycle : SchemeWeilDivisor X →+ AlgebraicCycle X ℤ :=
 @[simp]
 lemma toAlgebraicCycle_apply (D : SchemeWeilDivisor X) (x : CodimensionOnePoint X) :
     toAlgebraicCycle D x = D x :=
-  Finsupp.embDomain_apply_self _ D x
+  (Function.locallyFinsupp.ofFinsupp_apply _ _).trans (Finsupp.embDomain_apply_self _ D x)
 
 /-- Extension by zero vanishes at points whose codimension is not one. -/
 @[simp]

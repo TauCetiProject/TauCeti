@@ -66,12 +66,13 @@ private noncomputable def cycleOfFinsupp (f : pointsOfDimension X k →₀ ℤ) 
   ⟨Function.locallyFinsupp.ofFinsupp (f.embDomain (Function.Embedding.subtype _)),
     mem_cyclesOfDimension_iff.mpr fun x hx ↦ by
       by_contra h
-      exact hx (Finsupp.embDomain_of_notMem_range _ _ _ (by simpa using h))⟩
+      exact hx <| (Function.locallyFinsupp.ofFinsupp_apply _ _).trans <|
+        Finsupp.embDomain_of_notMem_range _ _ _ (by simpa using h)⟩
 
 omit [CompactSpace X] in
 private lemma cycleOfFinsupp_apply (f : pointsOfDimension X k →₀ ℤ) (x : pointsOfDimension X k) :
     (cycleOfFinsupp X k f : AlgebraicCycle X ℤ) x = f x :=
-  Finsupp.embDomain_apply_self _ f x
+  (Function.locallyFinsupp.ofFinsupp_apply _ _).trans (Finsupp.embDomain_apply_self _ f x)
 
 /-- On a quasi-compact scheme, the `k`-cycles are the finitely supported functions on the points
 of dimension `k`: a cycle corresponds to its coefficients. -/

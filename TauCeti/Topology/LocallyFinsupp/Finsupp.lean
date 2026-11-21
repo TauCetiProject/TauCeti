@@ -27,7 +27,6 @@ namespace Function.locallyFinsupp
 variable {X Y : Type*} [TopologicalSpace X] [AddMonoid Y]
 
 /-- A finitely supported function, regarded as a function with locally finite support. -/
-@[expose]
 def ofFinsupp : (X →₀ Y) →+ locallyFinsupp X Y where
   toFun f :=
     { toFun := f
@@ -43,6 +42,6 @@ def ofFinsupp : (X →₀ Y) →+ locallyFinsupp X Y where
 /-- A finitely supported function keeps its values as a function with locally finite support. -/
 @[simp]
 lemma ofFinsupp_apply (f : X →₀ Y) (x : X) : ofFinsupp f x = f x :=
-  rfl
+  (rfl)
 
 end Function.locallyFinsupp
