@@ -7,7 +7,6 @@ module
 
 public import Mathlib.NumberTheory.DirichletCharacter.Orthogonality
 public import Mathlib.NumberTheory.LSeries.Convolution
-public import Mathlib.RingTheory.RootsOfUnity.EnoughRootsOfUnity
 public import TauCeti.NumberTheory.ArithmeticFunction.BellSeries
 import TauCeti.NumberTheory.DirichletCharacter.Polynomial
 

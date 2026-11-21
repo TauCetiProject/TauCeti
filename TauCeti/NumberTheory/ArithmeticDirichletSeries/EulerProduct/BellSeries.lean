@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.RamificationInertia.Inertia
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Basic
 public import TauCeti.NumberTheory.ArithmeticFunction.BellSeries
 import TauCeti.NumberTheory.NumberField.PrimeIdeal
