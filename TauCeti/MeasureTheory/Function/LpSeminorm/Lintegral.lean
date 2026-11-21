@@ -20,8 +20,9 @@ measurability the seminorm is `∞` by convention, so the inequality
 (`TauCeti.lintegral_rpow_enorm_le_rpow_eLpNorm`). This is the form in which a bound on the `Lᵖ`
 seminorm is used to bound an integral, with no measurability side condition. For a natural
 exponent `n ≠ 0` and measurable `f` the identity reads `∫⁻ ‖f‖ₑ ^ n ∂μ = eLpNorm f n μ ^ n`
-(`TauCeti.lintegral_enorm_pow_eq_eLpNorm_pow`). For an almost everywhere strongly measurable `f`
-and `p ≠ 0, ∞` in `ℝ≥0∞`, the two sides agree
+(`TauCeti.lintegral_enorm_pow_eq_eLpNorm_pow`); for `n = 2` and `f` with values in `[0, ∞]` it
+reads `eLpNorm f 2 μ ^ 2 = ∫⁻ f ^ 2 ∂μ` (`TauCeti.eLpNorm_two_sq_eq_lintegral_sq`). For an
+almost everywhere strongly measurable `f` and `p ≠ 0, ∞` in `ℝ≥0∞`, the two sides agree
 (`MeasureTheory.lintegral_rpow_enorm_eq_eLpNorm_rpow`), so `∫⁻ ‖f‖ₑ ^ p ∂μ ≤ t ^ p` gives
 `eLpNorm f p μ ≤ t` (`MeasureTheory.eLpNorm_le_of_lintegral_rpow_le`). In particular a pointwise
 bound `‖k x‖ ^ q ≤ t ^ (q - p) ‖f x‖ ^ p` with `t = ‖f‖_p` integrates to `‖k‖_q ≤ t`
@@ -68,6 +69,12 @@ theorem lintegral_enorm_pow_eq_eLpNorm_pow {n : ℕ} (hn : n ≠ 0) {f : α → 
     (hf : AEStronglyMeasurable f μ) : ∫⁻ x, ‖f x‖ₑ ^ n ∂μ = eLpNorm f n μ ^ n := by
   simpa only [ENNReal.coe_natCast, NNReal.coe_natCast, ENNReal.rpow_natCast] using
     (eLpNorm_nnreal_pow_eq_lintegral (p := (n : ℝ≥0)) (Nat.cast_ne_zero.2 hn) hf).symm
+
+/-- The square of the `L²` seminorm of an almost everywhere measurable function into `[0, ∞]` is
+the integral of its square. -/
+theorem eLpNorm_two_sq_eq_lintegral_sq {f : α → ℝ≥0∞} (hf : AEMeasurable f μ) :
+    eLpNorm f 2 μ ^ 2 = ∫⁻ x, f x ^ 2 ∂μ := by
+  simpa using (lintegral_enorm_pow_eq_eLpNorm_pow two_ne_zero hf.aestronglyMeasurable).symm
 
 end TauCeti
 

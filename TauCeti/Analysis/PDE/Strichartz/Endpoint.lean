@@ -10,6 +10,7 @@ public import TauCeti.MeasureTheory.Function.Lp.DyadicLayer
 import TauCeti.Analysis.InnerProductSpace.CotlarStein
 import TauCeti.Analysis.SpecificLimits.DyadicSum
 import TauCeti.MeasureTheory.Function.Lorentz
+import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 import TauCeti.MeasureTheory.Function.Lp.Integral.Functional
 import TauCeti.MeasureTheory.Integral.SchurTest
 
@@ -211,13 +212,11 @@ theorem tsum_sq_two_rpow_mul_levelNorm_le {r' : ℝ≥0∞} (hr'0 : r' ≠ 0) (h
         eLpNorm (fun t ↦ eLpNorm (F t) r' μ) 2 ^ 2 := by
   set a : ℤ → ℝ → ℝ≥0∞ := fun k t ↦ μ.decreasingRearrangement (fun x ↦ ‖F t x‖ₑ) ((2 : ℝ) ^ k)
   have ha (k : ℤ) : AEMeasurable (a k) := hF.aemeasurable_decreasingRearrangement_enorm _
-  -- The square of an `L²` norm in time is the integral of the square.
-  have hL2 {f : ℝ → ℝ≥0∞} (hf : AEMeasurable f) : eLpNorm f 2 ^ 2 = ∫⁻ t, f t ^ (2 : ℝ) := by
-    simpa using eLpNorm_nnreal_pow_eq_lintegral (p := 2) two_ne_zero hf.aestronglyMeasurable
   have hsq (k : ℤ) : (2 ^ ((k : ℝ) * r'.toReal⁻¹) * levelNorm μ F k) ^ 2 =
       ∫⁻ t, (ENNReal.ofReal ((2 : ℝ) ^ k) ^ r'.toReal⁻¹ * a k t) ^ (2 : ℝ) := by
     rw [levelNorm_def, ← eLpNorm_const_mul_ennreal_of_pos (by norm_num : (0 : ℝ≥0∞) < 2),
-      hL2 ((ha k).const_mul _), ofReal_two_zpow, ← ENNReal.rpow_mul]
+      eLpNorm_two_sq_eq_lintegral_sq ((ha k).const_mul _), ofReal_two_zpow, ← ENNReal.rpow_mul]
+    simp_rw [ENNReal.rpow_two]
   calc _ = ∑' k : ℤ, ∫⁻ t, (ENNReal.ofReal ((2 : ℝ) ^ k) ^ r'.toReal⁻¹ * a k t) ^ (2 : ℝ) :=
         tsum_congr hsq
     _ = ∫⁻ t, ∑' k : ℤ, (ENNReal.ofReal ((2 : ℝ) ^ k) ^ r'.toReal⁻¹ * a k t) ^ (2 : ℝ) :=
@@ -227,7 +226,8 @@ theorem tsum_sq_two_rpow_mul_levelNorm_le {r' : ℝ≥0∞} (hr'0 : r' ≠ 0) (h
           tsum_rpow_mul_decreasingRearrangement_sq_le (Lp.aestronglyMeasurable (F t)) hr'0 hr'2
     _ = _ := by
         rw [lintegral_const_mul'' _ ((hF.aemeasurable_eLpNorm_Lp .rfl r').pow_const _),
-          hL2 (hF.aemeasurable_eLpNorm_Lp .rfl r')]
+          eLpNorm_two_sq_eq_lintegral_sq (hF.aemeasurable_eLpNorm_Lp .rfl r')]
+        simp_rw [ENNReal.rpow_two]
 
 section Shell
 
@@ -393,12 +393,13 @@ theorem tsum_enorm_setIntegral_timeShell_dyadicLayer_le {σ : ℝ} (hσ : 1 < σ
     _ = _ := by ring
 
 omit [NormedSpace ℝ E] [NormedSpace ℝ H] in
-/-- An energy bound `‖U(t)‖ₑ ≤ M` bounds the adjoints in norm. -/
+/-- An energy bound `‖U(t)‖ₑ ≤ M` bounds the adjoints: `‖U(t)* v‖ ≤ M ‖v‖`. -/
 private theorem norm_adjoint_le {U : ℝ → H →L[𝕜] Lp E 2 μ} {M : ℝ≥0} (hM : ∀ t, ‖U t‖ₑ ≤ M)
-    (t : ℝ) : ‖(U t)†‖ ≤ M := by
+    (t : ℝ) (v : Lp E 2 μ) : ‖((U t)†) v‖ ≤ M * ‖v‖ := by
   have h := hM t
-  rw [← ofReal_norm, ← ENNReal.ofReal_coe_nnreal, ENNReal.ofReal_le_ofReal_iff M.coe_nonneg] at h
-  rwa [ContinuousLinearMap.adjoint.norm_map]
+  rw [← ofReal_norm, ← ENNReal.ofReal_coe_nnreal, ENNReal.ofReal_le_ofReal_iff M.coe_nonneg,
+    ← ContinuousLinearMap.adjoint.norm_map] at h
+  exact ((U t)†).le_of_opNorm_le h v
 
 /-- The partial sums of the dual integrals of the dyadic layers of `F` converge to the dual
 integral of `F`. -/
@@ -421,9 +422,8 @@ private theorem tendsto_sum_range_integral_dyadicLayer {U : ℝ → H →L[𝕜]
     (fun N ↦ hUm _ (Finset.aestronglyMeasurable_fun_sum _ fun i _ ↦
       hF.aestronglyMeasurable.dyadicLayer _))
     (hF.norm.const_mul _) (fun N ↦ ae_of_all _ fun t ↦ ?_) (ae_of_all _ fun t ↦ ?_)
-  · exact (ContinuousLinearMap.le_opNorm _ _).trans (mul_le_mul (norm_adjoint_le hM t)
-      (Lp.norm_sum_range_dyadicLayer_le two_ne_zero N (F t))
-      (norm_nonneg _) M.coe_nonneg)
+  · exact (norm_adjoint_le hM t _).trans <| mul_le_mul_of_nonneg_left
+      (Lp.norm_sum_range_dyadicLayer_le two_ne_zero N (F t)) M.coe_nonneg
   · exact (((U t)†).continuous.tendsto _).comp
       (Lp.tendsto_sum_range_dyadicLayer ENNReal.ofNat_ne_top (F t))
 
@@ -477,8 +477,7 @@ private theorem enorm_integral_adjoint_rpow_two_le {σ : ℝ} (hσ : 1 < σ) {p 
   have hUF (k : ℤ) : Integrable fun t ↦ ((U t)†) (Lp.dyadicLayer k (F t)) := by
     refine Integrable.mono' (hF.norm.const_mul M)
       (hUm _ (hF.aestronglyMeasurable.dyadicLayer k)) (ae_of_all _ fun t ↦ ?_)
-    refine (ContinuousLinearMap.le_opNorm _ _).trans (mul_le_mul (norm_adjoint_le hM t) ?_
-      (norm_nonneg _) M.coe_nonneg)
+    refine (norm_adjoint_le hM t _).trans (mul_le_mul_of_nonneg_left ?_ M.coe_nonneg)
     exact Lp.norm_le_norm_of_ae_le ((Lp.enorm_dyadicLayer_le_enorm two_ne_zero k (F t)).mono
       fun x hx ↦ eNorm_le_iff_norm_le.1 hx)
   set c : ℝ≥0∞ := 16 * A + 2 ^ (p.toReal⁻¹ + 2⁻¹ + b.toReal⁻¹) * M * K

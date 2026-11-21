@@ -9,6 +9,7 @@ public import TauCeti.MeasureTheory.Function.DecreasingRearrangement
 public import TauCeti.MeasureTheory.Measure.Haar.MultHaar
 import TauCeti.Analysis.SpecialFunctions.Pow.Integral
 import TauCeti.MeasureTheory.Function.Lp.IntermediateExponent
+import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 
 /-!
 # Lorentz gauges and Lorentz function classes
@@ -539,8 +540,7 @@ theorem rpow_mul_decreasingRearrangement_le_eLpNorm (hf : AEStronglyMeasurable f
     (hptop : p ≠ ∞) {t : ℝ} (ht : 0 < t) :
     ENNReal.ofReal (t ^ (p⁻¹).toReal) * μ.decreasingRearrangement (‖f ·‖ₑ) t ≤ eLpNorm f p μ := by
   have h := rpow_mul_decreasingRearrangement_le_eLorentzNorm hf hp0 hptop hp0 ht
-  rwa [div_self (ENNReal.toReal_pos hp0 hptop).ne', Real.one_rpow, ENNReal.ofReal_one, one_mul,
-    eLorentzNorm_self] at h
+  simpa [(ENNReal.toReal_pos hp0 hptop).ne'] using h
 
 /-- The decreasing rearrangement of a function in `Lᵖ`, `p ≠ 0`, is finite at positive
 arguments. For `p = ∞` it is bounded by the essential supremum of `‖f‖ₑ`. -/
@@ -587,8 +587,8 @@ private theorem ofReal_log_two_mul_tsum_le_eLpNorm_multHaar {f : α → ε} {q :
   set φ : ℝ → ℝ≥0∞ := fun t ↦ ENNReal.ofReal (t ^ q.toReal⁻¹) *
     μ.decreasingRearrangement (fun x ↦ ‖f x‖ₑ) t
   have hφ2 : ∫⁻ t, φ t ^ (2 : ℝ) ∂multHaar = eLpNorm φ 2 multHaar ^ (2 : ℝ) := by
-    simpa using (eLpNorm_nnreal_pow_eq_lintegral (p := 2) two_ne_zero
-      (μ.measurable_rpow_mul_decreasingRearrangement _ _).aestronglyMeasurable).symm
+    simpa only [ENNReal.rpow_two] using (eLpNorm_two_sq_eq_lintegral_sq
+      (μ.measurable_rpow_mul_decreasingRearrangement _ _).aemeasurable).symm
   -- On `[2ᵏ⁻¹, 2ᵏ)` the `k`-th term is at most `φ²`.
   have hcmp := ofReal_mul_tsum_int_le_lintegral_multHaar (b := 2) (c := 2⁻¹) (μ := 1)
     one_le_two (by norm_num) (f := fun t ↦ φ t ^ (2 : ℝ))
@@ -638,9 +638,7 @@ theorem tsum_rpow_mul_decreasingRearrangement_sq_le {f : α → ε} (hf : AEStro
   have hlor : eLpNorm (fun t ↦ ENNReal.ofReal (t ^ q.toReal⁻¹) *
       μ.decreasingRearrangement (fun x ↦ ‖f x‖ₑ) t) 2 multHaar ≤ eLpNorm f q μ := by
     have h := eLorentzNorm_le_of_exponent_le (f := f) (μ := μ) hq0 hqtop hq0 hq2
-    rw [eLorentzNorm_self, div_self hq.ne', Real.one_rpow, ENNReal.ofReal_one, one_mul,
-      eLorentzNorm_eq_eLpNorm hf hq0] at h
-    simpa [ENNReal.toReal_inv] using h
+    simpa [hq.ne', eLorentzNorm_eq_eLpNorm hf hq0, ENNReal.toReal_inv] using h
   rw [tsum_congr fun k ↦ ofReal_two_zpow_rpow_mul_rpow_two hq k
     (μ.decreasingRearrangement (fun x ↦ ‖f x‖ₑ) ((2 : ℝ) ^ k)), ENNReal.tsum_mul_left]
   calc _ ≤ ENNReal.ofReal (2 ^ (2 / q.toReal)) * ((ENNReal.ofReal (Real.log 2))⁻¹ *

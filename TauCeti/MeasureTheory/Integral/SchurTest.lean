@@ -12,6 +12,7 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.MeasureTheory.Measure.Prod
 import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
 import TauCeti.Data.ENNReal.Inv
+import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 import TauCeti.MeasureTheory.Integral.MeanInequalities
 import TauCeti.MeasureTheory.Measure.Prod
 
@@ -346,8 +347,7 @@ theorem tsum_tsum_mul_mul_le {G : Type*} [AddGroup G] [Countable G] (w y : G →
   have hcol (l : G) : ∫⁻ k, w (k - l) ∂Measure.count ≤ W := by
     rw [lintegral_count]; exact ((Equiv.subRight l).tsum_eq w).le
   have hnorm : eLpNorm y 2 Measure.count ^ 2 = ∑' k, y k ^ 2 := by
-    simpa [lintegral_count] using eLpNorm_nnreal_pow_eq_lintegral (μ := Measure.count) (p := 2)
-      two_ne_zero (measurable_of_countable y).aestronglyMeasurable
+    rw [eLpNorm_two_sq_eq_lintegral_sq (measurable_of_countable y).aemeasurable, lintegral_count]
   have h := lintegral_lintegral_mul_mul_le (μ := Measure.count) (ν := Measure.count)
     (k := fun k l : G ↦ w (k - l)) (measurable_of_countable _).aemeasurable
     (measurable_of_countable y).aemeasurable (measurable_of_countable y).aemeasurable
