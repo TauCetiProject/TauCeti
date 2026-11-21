@@ -687,12 +687,8 @@ theorem W1p.exists_value_eq_zero_and_value_ae_eq (hp : p ≠ ⊤) (hH : ∀ x, x
     · simp [g, image_eq_zero_of_notMem_tsupport fun h => hxV (hχV h)]
   set z : W1p0 mu ⊤ p := W1p0.extendByZeroL (le_top : Ω ≤ ⊤) ⟨v, hv0⟩
   have hz : W1p.value (W1p.restrictL (le_top : U₁ ≤ ⊤) (z : W1p mu ⊤ p)) =ᵐ[mu.restrict U₁]
-      (Ω : Set E).indicator (W1p.value v) := by
-    filter_upwards [W1p.value_restrictL_ae (mu := mu) (p := p) (le_top : U₁ ≤ ⊤)
-        (z : W1p mu ⊤ p),
-      ae_restrict_of_ae (W1p0.value_extendByZeroL_top_ae (mu := mu) (p := p) ⟨v, hv0⟩)]
-      with x hx1 hx2
-    rw [hx1, hx2]
+      (Ω : Set E).indicator (W1p.value v) :=
+    W1p0.value_restrictL_extendByZeroL_ae le_top le_top ⟨v, hv0⟩
   refine ⟨W1p.restrictL (le_top : U₁ ≤ ⊤) (z : W1p mu ⊤ p), ?_, ?_⟩
   · filter_upwards [hz] with x hx hxH
     rw [hx, indicator_of_notMem (s := (Ω : Set E)) fun h => hxH h.2]
