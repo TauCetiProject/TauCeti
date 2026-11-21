@@ -27,8 +27,7 @@ to that predicate, as `TauCeti.cosinePolynomial`.
 * `TauCeti.ExplicitBounds.IsAdmissibleCosinePolynomial n a`: the coefficient vector `a`, supported
   on `k ≤ n`, defines an admissible cosine polynomial of degree at most `n`.
 * `isAdmissibleCosinePolynomial_iff`: admissibility in terms of real-angle nonnegativity.
-* `IsAdmissibleCosinePolynomial.cosinePolynomial_nonneg`, `.alternating_sum_nonneg`: `P ≥ 0`,
-  in particular `P(π) = Σ_{k ≤ n} (-1)^k a k ≥ 0`.
+* `IsAdmissibleCosinePolynomial.cosinePolynomial_nonneg`: `P(θ) ≥ 0` for every real `θ`.
 * `IsAdmissibleCosinePolynomial.smul` and `.mono`: scaling by a positive constant and raising the
   index bound preserve admissibility.
 * `IsAdmissibleCosinePolynomial.one_le`: the index bound of an admissible polynomial satisfies
@@ -36,8 +35,10 @@ to that predicate, as `TauCeti.cosinePolynomial`.
 * `isAdmissibleCosinePolynomial_threeFourOne`: the `3-4-1` coefficients
   `TauCeti.LSeries.threeFourOneCoeff` are admissible.
 
-Positivity on the closed unit disk and its Euler-product form need only nonnegativity of the
-cosine polynomial: apply `TauCeti.re_sum_nonneg_of_cosinePolynomial_nonneg` and
+The bound `P(π) = Σ_{k ≤ n} (-1)^k a k ≥ 0`, positivity on the closed unit disk, and its
+Euler-product form need only nonnegativity of the cosine polynomial: apply
+`TauCeti.alternating_sum_nonneg_of_cosinePolynomial_nonneg`,
+`TauCeti.re_sum_nonneg_of_cosinePolynomial_nonneg`, and
 `TauCeti.sum_re_neg_log_one_sub_nonneg_of_cosinePolynomial_nonneg` to
 `IsAdmissibleCosinePolynomial.cosinePolynomial_nonneg`.
 
@@ -66,7 +67,8 @@ structure IsAdmissibleCosinePolynomial (n : ℕ) (a : ℕ → ℝ) : Prop where
   eq_zero : ∀ k, n < k → a k = 0
   /-- The constant coefficient is smaller than the first one. -/
   lt : a 0 < a 1
-  /-- The cosine polynomial is nonnegative on the unit circle. -/
+  /-- The associated trigonometric combination is nonnegative on the complex unit circle;
+  equivalently, the cosine polynomial is nonnegative at every real angle. -/
   isNonnegativeTrigonometricCombination :
     IsNonnegativeTrigonometricCombination (range (n + 1)) (fun k ↦ (a k : ℂ)) id
 
@@ -88,12 +90,6 @@ variable {n : ℕ} {a : ℕ → ℝ}
 theorem cosinePolynomial_nonneg (h : IsAdmissibleCosinePolynomial n a) (θ : ℝ) :
     0 ≤ cosinePolynomial n a θ :=
   isNonnegativeTrigonometricCombination_range_iff.1 h.isNonnegativeTrigonometricCombination θ
-
-/-- An admissible cosine polynomial has a nonnegative alternating coefficient sum, its value at
-`π`. -/
-theorem alternating_sum_nonneg (h : IsAdmissibleCosinePolynomial n a) :
-    0 ≤ ∑ k ∈ range (n + 1), (-1) ^ k * a k := by
-  simpa only [cosinePolynomial_apply_pi] using h.cosinePolynomial_nonneg Real.pi
 
 /-- The index bound of an admissible cosine polynomial satisfies `1 ≤ n`: for `n = 0` the
 vanishing clause forces `a 1 = 0`, against `0 ≤ a 0 < a 1`. -/
@@ -141,7 +137,7 @@ theorem isAdmissibleCosinePolynomial_threeFourOne :
 coefficient conditions do not imply nonnegativity. -/
 theorem not_isAdmissibleCosinePolynomial_one_two :
     ¬ IsAdmissibleCosinePolynomial 1 (fun k ↦ [1, 2].getD k 0) := fun h ↦ by
-  have := h.alternating_sum_nonneg
+  have := alternating_sum_nonneg_of_cosinePolynomial_nonneg h.cosinePolynomial_nonneg
   norm_num [sum_range_succ] at this
 
 /-- The coefficients `(1, 1)` give the nonnegative `1 + cos θ` but fail `a₀ < a₁`. -/

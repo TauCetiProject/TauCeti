@@ -66,8 +66,9 @@ def threeFourOneCombination (z : ℂ) : ℝ := 3 + 4 * z.re + (z ^ 2).re
 @[simp] theorem threeFourOneCoeff_two : threeFourOneCoeff 2 = 1 := (rfl)
 
 /-- The `3-4-1` coefficients vanish above frequency `2`. -/
-theorem threeFourOneCoeff_eq_zero {k : ℕ} (hk : 2 < k) : threeFourOneCoeff k = 0 :=
-  List.getD_eq_default _ _ hk
+@[simp] theorem threeFourOneCoeff_eq_zero {k : ℕ} (hk : 2 < k) : threeFourOneCoeff k = 0 := by
+  unfold threeFourOneCoeff
+  exact List.getD_eq_default _ _ (by simp only [List.length_cons, List.length_nil]; omega)
 
 /-- The defining formula for `threeFourOneCombination`. -/
 theorem threeFourOneCombination_def (z : ℂ) :

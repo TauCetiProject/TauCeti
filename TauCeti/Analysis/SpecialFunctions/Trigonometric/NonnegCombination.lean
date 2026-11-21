@@ -25,9 +25,10 @@ series of `-log (1 - z)`, giving a reusable logarithmic inequality.
 * `TauCeti.cosinePolynomial n a θ` is the cosine polynomial `Σ_{k ≤ n} a_k cos (k θ)`, with
   recursion in `n`, its values at `0` and `π`, its behaviour under scaling and zero padding, and
   `TauCeti.isNonnegativeTrigonometricCombination_range_iff`.
-* `TauCeti.re_sum_nonneg_of_cosinePolynomial_nonneg` and
+* `TauCeti.alternating_sum_nonneg_of_cosinePolynomial_nonneg`,
+  `TauCeti.re_sum_nonneg_of_cosinePolynomial_nonneg` and
   `TauCeti.sum_re_neg_log_one_sub_nonneg_of_cosinePolynomial_nonneg` transfer nonnegativity of a
-  cosine polynomial to the closed unit disk and to logarithms.
+  cosine polynomial to its alternating coefficient sum, the closed unit disk, and logarithms.
 * `TauCeti.trigonometricCombination_nonneg_of_boundary` extends this nonnegativity to the closed
   unit disk.
 * `TauCeti.sum_re_neg_log_one_sub_nonneg` transfers boundary nonnegativity to logarithms in the
@@ -202,6 +203,13 @@ theorem cosinePolynomial_eq_of_le {n m : ℕ} {a : ℕ → ℝ} (hnm : n ≤ m)
   refine (Finset.sum_subset (Finset.range_subset_range.2 (by omega)) fun k hkm hkn ↦ ?_).symm
   rw [Finset.mem_range] at hkm hkn
   rw [ha k (by omega) (by omega), zero_mul]
+
+/-- A cosine polynomial that is nonnegative at every real angle has a nonnegative alternating
+coefficient sum, its value at `π`. -/
+theorem alternating_sum_nonneg_of_cosinePolynomial_nonneg {n : ℕ} {a : ℕ → ℝ}
+    (h : ∀ θ : ℝ, 0 ≤ cosinePolynomial n a θ) :
+    0 ≤ ∑ k ∈ Finset.range (n + 1), (-1) ^ k * a k := by
+  simpa only [cosinePolynomial_apply_pi] using h Real.pi
 
 /-- If the cosine polynomial is nonnegative, the polynomial `Σ_{k ≤ n} a k z^k` has nonnegative
 real part on the closed unit disk. -/
