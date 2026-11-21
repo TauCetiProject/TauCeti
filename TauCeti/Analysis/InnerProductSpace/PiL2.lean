@@ -69,6 +69,8 @@ Borel measurable structure on the scalar field.
   (`EuclideanSpace.adjoint_piLpExtendByZero_castLEEmb_apply`).
 * `EuclideanSpace.finCastLEEquiv`: the first `m` coordinates of `𝕜ⁿ`, indexed by `Fin m`, as the
   first factor of the splitting along `j < m`.
+* `LinearEquiv.toEuclideanIsometry`: a linear automorphism of `ι → 𝕜` preserving the Euclidean
+  norm, as a linear isometric automorphism of `EuclideanSpace 𝕜 ι`.
 * `PiLp.inner_single_left`, `PiLp.inner_single_right`: the inner product against `PiLp.single 2 i v`
   extracts the `i`-th coordinate inner product.
 * `LinearIsometryEquiv.submodulePiLp_orthogonalProjectionOnto`,
@@ -598,6 +600,27 @@ theorem injOn_comp_euclideanSpace_proj_preimage {ι : Type*} [Unique ι] {α : T
   exact hg.comp hinj.injOn (Set.mapsTo_preimage _ _)
 
 end TauCeti
+
+namespace LinearEquiv
+
+variable {ι 𝕜 : Type*} [Fintype ι] [RCLike 𝕜]
+
+/-- A linear automorphism of `ι → 𝕜` preserving the Euclidean norm, as a linear isometric
+automorphism of `EuclideanSpace 𝕜 ι`. -/
+def toEuclideanIsometry (A : (ι → 𝕜) ≃ₗ[𝕜] (ι → 𝕜))
+    (hA : ∀ v, ‖WithLp.toLp 2 (A v)‖ = ‖WithLp.toLp 2 v‖) :
+    EuclideanSpace 𝕜 ι ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 ι where
+  toLinearEquiv := A.withLpCongr 2
+  norm_map' w := hA w.ofLp
+
+/-- `LinearEquiv.toEuclideanIsometry A hA` acts on coordinates by `A`. -/
+@[simp]
+theorem toEuclideanIsometry_toLp (A : (ι → 𝕜) ≃ₗ[𝕜] (ι → 𝕜))
+    (hA : ∀ v, ‖WithLp.toLp 2 (A v)‖ = ‖WithLp.toLp 2 v‖) (v : ι → 𝕜) :
+    A.toEuclideanIsometry hA (WithLp.toLp 2 v) = WithLp.toLp 2 (A v) :=
+  (rfl)
+
+end LinearEquiv
 
 namespace PiLp
 
