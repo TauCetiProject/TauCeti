@@ -236,9 +236,12 @@ theorem MemWkpLoc.tendsto_eLpNormWkp_succ_comp_sub {G : Type uG} [NormedAddCommG
   have hle (n : ι) : eLpNormWkp p K (k + 1) (g ∘ u n - g ∘ u₀) ≤
       ‖(e.symm : ULift.{uF} G →L[ℝ] G)‖ₑ *
         eLpNormWkp p K (k + 1) ((fun x => e (g x)) ∘ u n - (fun x => e (g x)) ∘ u₀) := by
-    convert eLpNormWkp_clm_comp_le (e.symm : ULift.{uF} G →L[ℝ] G) using 2
-    ext z
-    simp
+    have hf : g ∘ u n - g ∘ u₀ = (e.symm : ULift.{uF} G →L[ℝ] G) ∘
+        ((fun x => e (g x)) ∘ u n - (fun x => e (g x)) ∘ u₀) := by
+      ext z
+      simp
+    rw [hf]
+    exact eLpNormWkp_clm_comp_le (E := ℂ) (μ := volume) _
   have h' := ENNReal.Tendsto.const_mul (a := ‖(e.symm : ULift.{uF} G →L[ℝ] G)‖ₑ) h
     (Or.inr eNorm_ne_top)
   rw [mul_zero] at h'

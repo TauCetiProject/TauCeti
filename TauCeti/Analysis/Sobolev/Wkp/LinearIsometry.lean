@@ -130,8 +130,8 @@ private def compSpec (he : MeasurePreserving e μ ν) (hUW : (U : Set E) = e ⁻
   | k + 1 => ⟨fun u => mk k ((compSpec he hUW k).val (lowerOrder (k + 1) u))
       (pullbackLp he hUW (k + 1) (iteratedGradient (k + 1) u)) (by
         rw [(compSpec he hUW k).property]
-        have h := ((hasWeakFDerivOn_iteratedGradient k u).comp_continuousLinearEquiv
-          e.toContinuousLinearEquiv he (hUW ▸ mapsTo_preimage e W)).clm_comp
+        have h := ((hasWeakFDerivOn_iteratedGradient k u).comp_continuousLinearEquiv (μ := μ)
+          e.toContinuousLinearEquiv (hUW ▸ mapsTo_preimage e W)).clm_comp
           ((e.iteratedGradientCongr k).symm : IteratedGradient E' k →L[ℝ] IteratedGradient E k)
         refine (h.congr_ae (pullbackLp_ae he hUW k _).symm).congr_ae_deriv ?_
         filter_upwards [pullbackLp_ae he hUW (k + 1) (iteratedGradient (k + 1) u)] with x hx

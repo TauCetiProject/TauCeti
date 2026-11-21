@@ -227,7 +227,7 @@ theorem IsWeakCRSolution.integral_inner_eq_of_hasWeakFDerivOn
     fun hA => (hA.locallyIntegrableOn_clm_apply h.memLpLoc hpq
       Ω.isOpen.isLocallyClosed).integrableOn_compact_subset hK'Ω hK'c
   have hDJξ : IntegrableOn (fun z => DJ z I (ξ z)) K' :=
-    hint (hc.memLpLoc_deriv.clm_comp (ContinuousLinearMap.apply ℝ (V →L[ℝ] V) I))
+    hint (hc.memLpLoc_deriv_apply I)
   have hSξ := hint hc.memLpLoc_zeroth
   have hintD : ∀ c : ℂ, ∀ {a : ℂ → V}, MemLp a q (volume.restrict K') →
       IntegrableOn (fun z => ⟪Dψ z c, a z⟫_ℝ) K' := fun c a ha =>
@@ -298,7 +298,7 @@ private theorem memLpLoc_orderZero (h : IsWeakCRSolution q Ω J DJ S ξ η)
   have happly : ∀ {A : ℂ → V →L[ℝ] V} {w : ℂ → V}, MemLpLoc p Ω A → MemLpLoc q Ω w →
       MemLpLoc r Ω (fun z => A z (w z)) := fun hA hw => (hA.clm_apply hw).mono_exponent hrr
   have hDJ : ∀ c : ℂ, MemLpLoc p Ω (fun z => DJ z c) := fun c =>
-    hc.memLpLoc_deriv.clm_comp (ContinuousLinearMap.apply ℝ (V →L[ℝ] V) c)
+    hc.memLpLoc_deriv_apply c
   have hJr : ∀ {w : ℂ → V}, MemLpLoc r Ω w → MemLpLoc r Ω (fun z => J z (w z)) := fun hw =>
     hJb.clm_apply hw
   exact ⟨(hη.add (happly (hDJ I) h.memLpLoc)).sub (happly hc.memLpLoc_zeroth h.memLpLoc),
@@ -362,7 +362,7 @@ private theorem crTestField_props (hc : IsSobolevCRCoefficients p Ω J DJ S)
       (((StrongDual.smulRightL ℝ ℂ V).flip v).continuous.comp
         (a.contDiff.continuous_fderiv (by simp))).continuousOn
     have h2 : MemLpLoc p Ω (fun z => b z • A.comp (DJ z)) :=
-      (hc.memLpLoc_deriv.clm_comp
+      (MemLpLoc.clm_comp (F := ℂ →L[ℝ] V →L[ℝ] V) (G := ℂ →L[ℝ] V) hc.memLpLoc_deriv
         (ContinuousLinearMap.compL ℝ ℂ (V →L[ℝ] V) V A)).continuousOn_smul
           b.contDiff.continuous.continuousOn
     have h3 : MemLpLoc ⊤ Ω (fun z => (fderiv ℝ b z).smulRight (A (J z))) :=

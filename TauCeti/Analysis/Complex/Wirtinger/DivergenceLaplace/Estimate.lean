@@ -175,7 +175,8 @@ private theorem exists_eLpNormWkp_one_ball_sub_le_of_weaklyHarmonicOn (hr : 1 �
         (eLpNorm u q (volume.restrict K) + eLpNorm w r (volume.restrict K)) * E₂) := by
         gcongr
         exacts [le_self_add, le_add_self]
-    _ = _ := by ring
+    _ = 2 * (M * Ch) * (E₁ + E₂) * (eLpNorm u q (volume.restrict K) +
+        eLpNorm w r (volume.restrict K)) := by ring
 
 /-- The scalar estimate on one disc: the `W^{1,r}` norm of `ξ` on `B(c, ρ)` is bounded in terms of
 the data on `Ω ⊇ closedBall c R`. -/

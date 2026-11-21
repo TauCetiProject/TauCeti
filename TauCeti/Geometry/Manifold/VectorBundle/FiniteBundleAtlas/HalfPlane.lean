@@ -13,6 +13,7 @@ import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 import TauCeti.Analysis.Complex.ReImTopology
 import TauCeti.Analysis.Sobolev.Local.Basic
+import TauCeti.Analysis.Sobolev.Local.HalfPlane
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
 /-!

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Local.Coordinates
+public import TauCeti.Analysis.Sobolev.Local.HalfPlane
 public import TauCeti.Analysis.Sobolev.Local.Wkp
 import Mathlib.Topology.MetricSpace.ProperSpace.Lemmas
 import TauCeti.Analysis.Sobolev.WeakDeriv.Chain

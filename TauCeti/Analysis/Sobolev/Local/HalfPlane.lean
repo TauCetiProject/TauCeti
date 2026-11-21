@@ -6,13 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.BumpFunction.Basic
+public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
+public import TauCeti.Analysis.Complex.ReImTopology
 public import TauCeti.Analysis.Sobolev.Local.Basic
 import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
+import Mathlib.Topology.Separation.Regular
 import TauCeti.Analysis.Sobolev.Local.Locality
 import TauCeti.Analysis.Sobolev.Trace.Reflection.HalfSpace
+import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
 /-!
-# Smooth functions on relatively open subsets of the closed upper half-plane
+# Local Sobolev classes on relatively open subsets of the closed upper half-plane
 
 For an open `Ω ⊆ ℂ`, a map that is `Cᵏ` on the relatively open subset `Ω ∩ {z | 0 ≤ z.im}` of the
 closed upper half-plane is in the local Sobolev class `TauCeti.MemWkpLoc p (Ω ∩ {z | 0 ≤ z.im}) k`
@@ -21,8 +25,14 @@ real axis the map extends to a `Cᵏ` map across the axis, by
 `TauCeti.HalfSpaceExtension.exists_local_contDiff_extension_halfSpace` read in the coordinates
 `(im z, re z)`, and the pieces are glued by `TauCeti.memWkpLoc_iff_locally`.
 
+Because the real axis is null, local `Lᵖ` membership on `Ω ∩ {z | 0 ≤ z.im}` is detected on the
+upper halves `W ∩ {0 < im}` (`TopologicalSpace.Opens.upperHalf`) of the open `W` with compact
+closure inside `Ω` (`TauCeti.memLpLoc_inter_setOf_im_nonneg_iff`).
+
 ## Main declarations
 
+* `TauCeti.memLpLoc_inter_setOf_im_nonneg_iff`: local `Lᵖ` membership on `Ω ∩ {z | 0 ≤ z.im}`
+  detected through upper halves of relatively compact subdomains of `Ω`.
 * `TauCeti.exists_contDiffOn_eqOn_inter_setOf_im_nonneg`: near each point, a `Cᵏ` map on
   `Ω ∩ {z | 0 ≤ z.im}` agrees with a map that is `Cᵏ` on an open neighbourhood of the point.
 * `TauCeti.exists_contDiffOn_eqOn_inter_setOf_fst_im_nonneg`: the same for maps on relatively open
@@ -35,13 +45,37 @@ real axis the map extends to a `Cᵏ` map across the axis, by
 
 public section
 
-open Set Filter MeasureTheory
+open Set Filter MeasureTheory TopologicalSpace
 
 noncomputable section
 
 namespace TauCeti
 
-variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {p : ENNReal} {k : ℕ}
+variable {F : Type*} [NormedAddCommGroup F] {p : ENNReal}
+
+/-- **Local `Lᵖ` on a half-disc through upper halves.** A function is locally `Lᵖ` on
+`Ω ∩ {0 ≤ im}`, up to the real axis, exactly when it is `Lᵖ` on the upper half `W ∩ {0 < im}` of
+every open `W` whose closure is compact and contained in `Ω`. The real axis is null, so the
+compact sets reaching it see no more than these upper halves. -/
+theorem memLpLoc_inter_setOf_im_nonneg_iff {Ω : Opens ℂ} {f : ℂ → F} :
+    MemLpLoc p ((Ω : Set ℂ) ∩ {z : ℂ | 0 ≤ z.im}) f ↔
+      ∀ W : Opens ℂ, IsCompact (closure (W : Set ℂ)) → closure (W : Set ℂ) ⊆ Ω →
+        MemLp f p (volume.restrict (W.upperHalf : Set ℂ)) := by
+  refine ⟨fun hf W hWc hWΩ => ?_, fun h => memLpLoc_iff.2 fun K hKU hK => ?_⟩
+  · have hK : IsCompact (closure (W : Set ℂ) ∩ {z : ℂ | 0 ≤ z.im}) :=
+      hWc.inter_right (isClosed_le continuous_const Complex.continuous_im)
+    refine (memLpLoc_iff.1 hf _ (Set.inter_subset_inter_left _ hWΩ) hK).mono_measure
+      (Measure.restrict_mono ?_ le_rfl)
+    intro z hz
+    obtain ⟨hzW, hz0⟩ := Opens.mem_upperHalf.1 hz
+    exact ⟨subset_closure hzW, hz0.le⟩
+  · obtain ⟨W, hWo, hKW, hWΩ, hWc⟩ := exists_open_between_and_isCompact_closure hK Ω.isOpen
+      (hKU.trans Set.inter_subset_left)
+    refine (h ⟨W, hWo⟩ hWc hWΩ).mono_measure (Measure.restrict_mono_ae ?_)
+    filter_upwards [(Complex.setOf_le_im_ae_eq 0).subset] with z hz hzK
+    exact Opens.mem_upperHalf.2 ⟨hKW hzK, hz (hKU hzK).2⟩
+
+variable [NormedSpace ℝ F] {k : ℕ}
 
 section Product
 

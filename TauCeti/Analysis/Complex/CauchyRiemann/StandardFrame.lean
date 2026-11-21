@@ -346,9 +346,11 @@ theorem memLpLoc_frameCoeff_iff {q : ℝ≥0∞} {U : Set ℂ} (hU : MeasurableS
     rw [IsUnit.unit_spec] at h
     exact h.comp_continuousWithinAt (hΦc z hz)
   have h1 : MemLpLoc q U (fun z => DΦ z 1) := by
-    simpa using hDΦ.clm_comp (apply ℝ (V →L[ℝ] V) (1 : ℂ))
+    simpa using MemLpLoc.clm_comp (F := ℂ →L[ℝ] V →L[ℝ] V) (G := V →L[ℝ] V) hDΦ
+      (apply ℝ (V →L[ℝ] V) (1 : ℂ))
   have hI : MemLpLoc q U (fun z => DΦ z I) := by
-    simpa using hDΦ.clm_comp (apply ℝ (V →L[ℝ] V) I)
+    simpa using MemLpLoc.clm_comp (F := ℂ →L[ℝ] V →L[ℝ] V) (G := V →L[ℝ] V) hDΦ
+      (apply ℝ (V →L[ℝ] V) I)
   have hT : MemLpLoc q U (fun z => Ring.inverse (Φ z) ∘L (DΦ z 1 + J z ∘L DΦ z I)) :=
     (h1.add (hI.continuousOn_clm_comp hJc)).continuousOn_clm_comp hΨc
   have hsplit : frameCoeff J C Φ DΦ = (fun z => Ring.inverse (Φ z) ∘L

@@ -102,6 +102,7 @@ private theorem exists_eLpNorm_le_mul_eLpNormWkp_one_real [Fact (1 ≤ (q : ℝ�
     _ ≤ (C + 1 : ℝ≥0) * eLpNormWkp q W 1 u := by
         gcongr
         exact_mod_cast le_self_add
+  exact le_rfl
 
 variable [FiniteDimensional ℝ F]
 
@@ -137,6 +138,7 @@ private theorem exists_eLpNorm_le_mul_eLpNormWkp_one_of_w1p [Fact (1 ≤ (q : �
         refine Finset.sum_congr rfl fun i _ => ?_
         simp only [eNorm_eq_nnNorm]
         ring
+  exact le_rfl
 
 /-- **The local Sobolev inequality.** Let `1 ≤ q ≤ s < ∞` with `1/q - 1/s ≤ 1/2`, and let `V` have
 compact closure inside the open set `W ⊆ ℂ`. There is a constant `C` such that every
@@ -354,6 +356,7 @@ theorem exists_eLpNorm_top_le_mul_eLpNormWkp_of_two_lt_mul {p : ℝ≥0∞} (hp 
     calc eLpNorm u ∞ (volume.restrict V) ≤ C₂ * eLpNormWkp s W' k u := hC₂ u
       _ ≤ C₂ * (C₁ * eLpNormWkp p W (k + 1) u) := by gcongr; exact hC₁ u
       _ = (C₂ * C₁ : ℝ≥0) * eLpNormWkp p W (k + 1) u := by push_cast; ring
+    exact le_rfl
 
 /-- **Local boundedness for `kp > 2`.** If `1 ≤ p ≤ ∞` and `2 < k p`, every
 `u ∈ W^{k,p}_loc(Ω, F)` is locally essentially bounded on `Ω`. -/

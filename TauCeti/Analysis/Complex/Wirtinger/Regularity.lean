@@ -348,11 +348,11 @@ private theorem exists_eLpNormWkp_compact_le_of_hasWeakConjWirtingerDerivOn (hp 
         ‖a w‖ₑ * (C₁ * (1 + C₀) * (X + Y)) := by
       have hDw : eLpNorm (fun z => D z w) p (volume.restrict Ω₁) ≤
           ‖a w‖ₑ * eLpNorm D p (volume.restrict Ω₁) := by
-        have := eLpNormWkp_clm_comp_le (p := p) (U := Ω₁) (k := 0) (f := D) (a w)
+        have := eLpNormWkp_clm_comp_le (μ := volume) (p := p) (U := Ω₁) (k := 0) (f := D) (a w)
         rw [eLpNormWkp_zero, eLpNormWkp_zero] at this
         exact this
-      calc eLpNormWkp p K (k + 1) (fun z => D z w)
-          ≤ C₁ * (eLpNormWkp p Ω₁ k (fun z => Df z w) +
+      calc eLpNormWkp p K (k + 1) (fun z => D z w) volume
+          ≤ C₁ * (eLpNormWkp p Ω₁ k (fun z => Df z w) volume +
               eLpNorm (fun z => D z w) p (volume.restrict Ω₁)) :=
             hC₁ _ _ ((memWkpLoc_zero_iff.1 hDp).clm_comp (a w)) (hDfk.clm_comp (a w))
               (h.weakLineDeriv (hD.hasWeakLineDerivOn w) (hDf.hasWeakLineDerivOn w))
