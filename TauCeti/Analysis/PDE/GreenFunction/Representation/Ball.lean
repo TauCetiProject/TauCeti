@@ -117,12 +117,6 @@ section Smooth
 
 variable {n : ℕ} {f : EuclideanSpace ℝ (Fin n) → ℝ}
 
-/-- A function whose topological support lies in the unit ball has compact support. -/
-private theorem hasCompactSupport_of_tsupport_subset_ball {β : Type*} [Zero β]
-    {g : EuclideanSpace ℝ (Fin n) → β} (h : tsupport g ⊆ ball 0 1) : HasCompactSupport g :=
-  (isCompact_closedBall 0 1).of_isClosed_subset (isClosed_tsupport g)
-    (h.trans ball_subset_closedBall)
-
 /-- The integrand `φ(x, y) f(y)` of the harmonic correction is continuous on
 `closedBall 0 1 × ℝⁿ`. -/
 private theorem continuousOn_ballGreenCorrector_mul (hf : Continuous f)

@@ -44,7 +44,6 @@ The argument has the same two steps as in higher dimensions.
 
 ## Main declarations
 
-* `TauCeti.measurable_planarNewtonianKernel`: `G` is measurable.
 * `TauCeti.locallyIntegrable_planarNewtonianKernel`: `G` is locally integrable.
 * `TauCeti.locallyIntegrable_fderiv_planarNewtonianKernel`: so is its derivative.
 * `TauCeti.integral_planarNewtonianKernel_mul_fderiv_eq_neg_fderiv_mul`: integration by parts
@@ -75,14 +74,6 @@ namespace TauCeti
 open Filter InnerProductSpace Laplacian MeasureTheory Metric Set Topology TopologicalSpace
 
 open scoped RealInnerProductSpace
-
-/-- The planar Newtonian kernel is measurable. -/
-@[fun_prop]
-theorem measurable_planarNewtonianKernel : Measurable planarNewtonianKernel := by
-  have h : planarNewtonianKernel = fun z : ℂ ↦ -(2 * Real.pi)⁻¹ * Real.log ‖z‖ :=
-    funext planarNewtonianKernel_def
-  rw [h]
-  fun_prop
 
 /-- The planar Newtonian kernel is locally integrable. -/
 theorem locallyIntegrable_planarNewtonianKernel : LocallyIntegrable planarNewtonianKernel := by

@@ -50,7 +50,7 @@ Green potential of `f`
 
 ## Data in `L²(B)`
 
-At distinct points of the disk `0 < G(x, y) ≤ Φ(e y - e x) - Φ(2)`
+At distinct points of the disk `|G(x, y)| ≤ |Φ(e y - e x)| + |Φ(2)|`
 (`TauCeti.abs_planarGreenKernel_le`). As `Φ` is locally integrable, the Green operator acts on
 `L¹(B)` (`TauCeti.integrable_planarGreenKernel_mul`), and since `G` is symmetric
 (`TauCeti.planarGreenKernel_comm`) the representation for smooth data extends to `L²(B)` by
@@ -58,7 +58,6 @@ duality (`TauCeti.PDE.IsWeakSolutionDirichlet.value_ae_eq_setIntegral_mul_of_for
 
 ## Main declarations
 
-* `TauCeti.measurable_planarGreenKernel`: the planar Green kernel is jointly measurable.
 * `TauCeti.integrable_planarGreenKernel_mul`: the Green operator on `L¹(B)`.
 * `TauCeti.PDE.IsWeakSolutionDirichlet.value_ae_eq_integral_planarGreenKernel_mul`: the
   representation for data of class `C²` supported in the disk.
@@ -79,15 +78,6 @@ namespace TauCeti
 
 open InnerProductSpace Laplacian MeasureTheory Metric Set Filter Topology
 open scoped Convolution
-
-/-- The planar Green kernel is jointly measurable in the pole and the point. -/
-theorem measurable_planarGreenKernel : Measurable (Function.uncurry planarGreenKernel) := by
-  have h : Function.uncurry planarGreenKernel = fun p : ℂ × ℂ ↦
-      planarNewtonianKernel (p.2 - p.1) - planarNewtonianKernel (1 - starRingEnd ℂ p.1 * p.2) :=
-    funext fun p ↦ planarGreenKernel_def p.1 p.2
-  rw [h]
-  have hconj : Measurable (starRingEnd ℂ) := Complex.continuous_conj.measurable
-  fun_prop
 
 variable (e : EuclideanSpace ℝ (Fin 2) ≃ₗᵢ[ℝ] ℂ)
 
@@ -182,7 +172,7 @@ private theorem continuousOn_integral_planarNewtonianKernel_one_sub_conj_mul (hf
     ContinuousOn (fun x ↦ ∫ y, planarNewtonianKernel (1 - starRingEnd ℂ (e x) * e y) * f y)
       (closedBall 0 1) :=
   continuousOn_integral_of_compact_support
-    (Metric.isCompact_of_isClosed_isBounded (isClosed_tsupport f) (isBounded_ball.subset hsupp))
+    (hasCompactSupport_of_tsupport_subset_ball hsupp)
     (continuousOn_planarNewtonianKernel_one_sub_conj_mul e hf hsupp) fun _ _ _ hy => by
       rw [image_eq_zero_of_notMem_tsupport hy, mul_zero]
 
@@ -193,7 +183,7 @@ private theorem harmonicOnNhd_integral_planarNewtonianKernel_one_sub_conj_mul (h
       (ball 0 1) := by
   refine harmonicOnNhd_integral_mul_of_contDiffOn
     (F := fun p ↦ planarNewtonianKernel (1 - starRingEnd ℂ (e p.1) * e p.2)) hf
-    (Metric.isCompact_of_isClosed_isBounded (isClosed_tsupport f) (isBounded_ball.subset hsupp))
+    (hasCompactSupport_of_tsupport_subset_ball hsupp)
     (isOpen_ne_fun (contDiff_one_sub_conj_mul e (k := 0)).continuous continuous_const)
     (fun p hp ↦ ((contDiffAt_planarNewtonianKernel hp).comp p
       (contDiff_one_sub_conj_mul e).contDiffAt).contDiffWithinAt)
@@ -227,8 +217,7 @@ private theorem integral_planarGreenKernel_mul_eq_sub (hf : Continuous f)
     ∫ y, planarGreenKernel (e x) (e y) * f y =
       (∫ y, planarNewtonianKernel (e y - e x) * f y) -
         ∫ y, planarNewtonianKernel (1 - starRingEnd ℂ (e x) * e y) * f y := by
-  have hc : HasCompactSupport f :=
-    Metric.isCompact_of_isClosed_isBounded (isClosed_tsupport f) (isBounded_ball.subset hsupp)
+  have hc : HasCompactSupport f := hasCompactSupport_of_tsupport_subset_ball hsupp
   have h1 : Integrable fun y => planarNewtonianKernel (e y - e x) * f y := by
     refine (hc.convolutionExists_right (ContinuousLinearMap.lsmul ℝ ℝ)
       (locallyIntegrable_planarNewtonianKernel_comp e) hf x).integrable_swap.congr
@@ -265,8 +254,7 @@ theorem IsWeakSolutionDirichlet.value_ae_eq_integral_planarGreenKernel_mul
     W1p.value (u : W1p volume Omega 2)
       =ᵐ[volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin 2)))]
         fun x => ∫ y, planarGreenKernel (e x) (e y) * f y := by
-  have hc0 : HasCompactSupport f :=
-    Metric.isCompact_of_isClosed_isBounded (isClosed_tsupport f) (isBounded_ball.subset hsupp)
+  have hc0 : HasCompactSupport f := hasCompactSupport_of_tsupport_subset_ball hsupp
   have hc : HasCompactSupport (f ∘ e.symm) := hc0.comp_homeomorph e.symm.toHomeomorph
   have hf' : ContDiff ℝ 2 (f ∘ e.symm) := hf.comp e.symm.contDiff
   have hV : ContDiff ℝ 2 ((planarNewtonianKernel ⋆ (f ∘ e.symm)) ∘ e) :=

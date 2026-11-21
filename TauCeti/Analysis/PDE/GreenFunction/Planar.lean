@@ -31,6 +31,7 @@ Equations*, Chapter 2, Section 2.2.
 * `TauCeti.harmonicAt_planarGreenKernel`: harmonicity away from the pole in the disk.
 * `TauCeti.planarGreenKernel_eq_zero_of_norm_eq_one`: vanishing on the unit circle.
 * `TauCeti.planarGreenKernel_comm`: symmetry in the pole and the point.
+* `TauCeti.measurable_planarGreenKernel`: joint measurability in the pole and the point.
 * `TauCeti.abs_planarGreenKernel_le`: off the diagonal of the disk,
   `|G(a, z)| ≤ |Φ(z - a)| + |Φ(2)|`, so the Green kernel is as integrable as the Newtonian kernel.
 -/
@@ -67,6 +68,16 @@ theorem planarNewtonianKernel_one_sub_conj_mul_comm (a z : ℂ) :
 theorem planarGreenKernel_comm (a z : ℂ) : planarGreenKernel a z = planarGreenKernel z a := by
   rw [planarGreenKernel_def, planarGreenKernel_def, planarNewtonianKernel_sub_comm z a,
     planarNewtonianKernel_one_sub_conj_mul_comm]
+
+/-- The planar Green kernel is jointly measurable in the pole and the point. -/
+@[fun_prop]
+theorem measurable_planarGreenKernel : Measurable (Function.uncurry planarGreenKernel) := by
+  have h : Function.uncurry planarGreenKernel = fun p : ℂ × ℂ ↦
+      planarNewtonianKernel (p.2 - p.1) - planarNewtonianKernel (1 - starRingEnd ℂ p.1 * p.2) :=
+    funext fun p ↦ planarGreenKernel_def p.1 p.2
+  rw [h]
+  have hconj : Measurable (starRingEnd ℂ) := Complex.continuous_conj.measurable
+  fun_prop
 
 /-- The planar Green kernel is differentiable wherever neither of its logarithmic arguments
 vanishes. -/
@@ -136,8 +147,9 @@ theorem planarGreenKernel_pos {a z : ℂ} (ha : ‖a‖ < 1) (hz : ‖z‖ < 1)
   nlinarith
 
 /-- **The planar Green kernel is dominated by the Newtonian kernel.** At distinct points of the
-unit disk, `0 < G(a, z) ≤ Φ(z - a) - Φ(2)`, since `|z - a| < |1 - conj a * z| ≤ 2`; in particular
-`|G(a, z)| ≤ |Φ(z - a)| + |Φ(2)|`. -/
+unit disk, `|G(a, z)| ≤ |Φ(z - a)| + |Φ(2)|`. Indeed `G(a, z) > 0`
+(`TauCeti.planarGreenKernel_pos`), and `G(a, z) ≤ Φ(z - a) - Φ(2)` because
+`|1 - conj a * z| ≤ 2`. -/
 theorem abs_planarGreenKernel_le {a z : ℂ} (ha : ‖a‖ < 1) (hz : ‖z‖ < 1) (hza : z ≠ a) :
     |planarGreenKernel a z| ≤ |planarNewtonianKernel (z - a)| + |planarNewtonianKernel 2| := by
   have hne := one_sub_conj_mul_ne_zero_of_norm_le_one_of_norm_lt_one hz.le ha

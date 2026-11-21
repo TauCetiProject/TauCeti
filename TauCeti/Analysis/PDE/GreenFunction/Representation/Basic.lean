@@ -36,6 +36,9 @@ Green potential is a classical solution; it is applied to the unit ball in every
 (`TauCeti.Analysis.PDE.GreenFunction.Representation.Ball` and
 `TauCeti.Analysis.PDE.GreenFunction.Representation.Disk`).
 
+Both applications take smooth data whose topological support lies in a ball, which therefore has
+compact support (`TauCeti.hasCompactSupport_of_tsupport_subset_ball`).
+
 ## References
 
 * L. C. Evans, *Partial Differential Equations*, 2nd ed., Section 2.2.4 (Green's function) and
@@ -47,6 +50,14 @@ Green potential is a classical solution; it is applied to the unit ball in every
 public section
 
 namespace TauCeti
+
+/-- In a proper space, a function whose topological support lies in a ball has compact
+support. -/
+theorem hasCompactSupport_of_tsupport_subset_ball {X β : Type*} [PseudoMetricSpace X]
+    [ProperSpace X] [Zero β] {g : X → β} {c : X} {r : ℝ} (h : tsupport g ⊆ Metric.ball c r) :
+    HasCompactSupport g :=
+  (isCompact_closedBall c r).of_isClosed_subset (isClosed_tsupport g)
+    (h.trans Metric.ball_subset_closedBall)
 
 namespace PDE
 
