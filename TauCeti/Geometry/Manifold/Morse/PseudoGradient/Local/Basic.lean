@@ -22,12 +22,14 @@ One inclusion is read off the linear flow. The other is the energy barrier: an o
 the cube off the coordinate subspace reaches a level below `f x` before leaving the chart, and `f`
 decreases along orbits, so the orbit cannot converge to `x`.
 
+The linear flow `TauCeti.MorseBottChart.linearFlow` and the lemma that its orbits, read on the
+manifold, are integral curves of a field that is linear in the chart
+(`TauCeti.MorseBottChart.isMIntegralCurveOn_toChart_symm_linearFlow`) live in
+`TauCeti.Geometry.Manifold.Morse.Bott.PseudoGradient`; this file adds the estimates specific to
+Morse charts.
+
 ## Main declarations
 
-* `TauCeti.MorseChart.linearFlow`: the linear flow in the coordinates of a Morse chart, with its
-  flow law `TauCeti.MorseChart.linearFlow_add`.
-* `TauCeti.MorseChart.isMIntegralCurveOn_toChart_symm_linearFlow`: when `X` is linear in the chart,
-  the linear orbit read on the manifold is an integral curve of `X`.
 * `TauCeti.MorseChart.sum_weight_mul_linearFlow_sq_le`: the quadratic normal form along the linear
   flow, once a coordinate of negative weight has grown.
 * `TauCeti.IsAdaptedPseudoGradient.flow_toChart_symm`: the flow of an adapted pseudo-gradient is
@@ -66,86 +68,11 @@ namespace MorseChart
 
 variable (φ : MorseChart E f x)
 
-/-- The linear flow `z ↦ (e^{-wᵢ t} zᵢ)ᵢ` of the negative gradient of the quadratic normal form, in
-the coordinates of a Morse chart. -/
-noncomputable def linearFlow (t : ℝ) (z : Fin (Module.finrank ℝ E) → ℝ) :
-    Fin (Module.finrank ℝ E) → ℝ :=
-  fun i ↦ Real.exp (-(φ.weight i * t)) * z i
-
-/-- The coordinates of the linear flow. -/
-@[simp]
-theorem linearFlow_apply (t : ℝ) (z : Fin (Module.finrank ℝ E) → ℝ) (i : Fin (Module.finrank ℝ E)) :
-    φ.linearFlow t z i = Real.exp (-(φ.weight i * t)) * z i := by
-  rw [linearFlow]
-
-/-- At time zero the linear flow is the identity. -/
-@[simp]
-theorem linearFlow_zero (z : Fin (Module.finrank ℝ E) → ℝ) : φ.linearFlow 0 z = z := by
-  ext i
-  simp [linearFlow_apply]
-
-/-- The flow law of the linear flow. -/
-theorem linearFlow_add (s t : ℝ) (z : Fin (Module.finrank ℝ E) → ℝ) :
-    φ.linearFlow (s + t) z = φ.linearFlow s (φ.linearFlow t z) := by
-  ext i
-  simp only [linearFlow_apply, ← mul_assoc, ← Real.exp_add]
-  ring_nf
-
-/-- The linear flow is linear in the coordinates. -/
-theorem linearFlow_smul (t a : ℝ) (z : Fin (Module.finrank ℝ E) → ℝ) :
-    φ.linearFlow t (a • z) = a • φ.linearFlow t z := by
-  funext i
-  simp only [linearFlow_apply, Pi.smul_apply, smul_eq_mul]
-  ring
-
-/-- The linear flow fixes the origin. -/
-@[simp]
-theorem linearFlow_zero_right (t : ℝ) : φ.linearFlow t 0 = 0 := by
-  funext i
-  simp [linearFlow_apply]
-
 /-- The linear flow of the negated Morse chart runs the linear flow backwards. -/
 theorem neg_linearFlow (h : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x) (t : ℝ)
     (z : Fin (Module.finrank ℝ E) → ℝ) : (φ.neg h).linearFlow t z = φ.linearFlow (-t) z := by
-  funext i
-  simp only [linearFlow_apply, neg_weight, Pi.neg_apply]
-  ring_nf
-
-/-- The linear flow of a Morse chart is jointly continuous in the coordinates and the time. -/
-theorem continuous_linearFlow_uncurry :
-    Continuous fun p : (Fin (Module.finrank ℝ E) → ℝ) × ℝ ↦ φ.linearFlow p.2 p.1 := by
-  refine continuous_pi fun i ↦ ?_
-  simp only [linearFlow_apply]
-  fun_prop
-
-/-- The linear flow solves the ODE `z' = (-wᵢ zᵢ)ᵢ`. -/
-theorem hasDerivAt_linearFlow (z : Fin (Module.finrank ℝ E) → ℝ) (t : ℝ) :
-    HasDerivAt (fun t ↦ φ.linearFlow t z) (fun i ↦ -(φ.weight i * φ.linearFlow t z i)) t := by
-  refine hasDerivAt_pi.2 fun i ↦ ?_
-  simp only [linearFlow_apply]
-  convert ((((hasDerivAt_id' t).const_mul (φ.weight i)).neg.exp).mul_const (z i)) using 1
-  simp only [Pi.neg_apply]
-  ring
-
-/-- A coordinate of positive weight decays like `e^{-t}`. -/
-theorem linearFlow_of_weight_eq_one {i : Fin (Module.finrank ℝ E)} (hi : φ.weight i = 1) (t : ℝ)
-    (z : Fin (Module.finrank ℝ E) → ℝ) : φ.linearFlow t z i = Real.exp (-t) * z i := by
-  rw [linearFlow_apply, hi, one_mul]
-
-/-- A coordinate of negative weight grows like `e^{t}`. -/
-theorem linearFlow_of_weight_eq_neg_one {i : Fin (Module.finrank ℝ E)} (hi : φ.weight i = -1)
-    (t : ℝ) (z : Fin (Module.finrank ℝ E) → ℝ) : φ.linearFlow t z i = Real.exp t * z i := by
-  rw [linearFlow_apply, hi, neg_one_mul, neg_neg]
-
-/-- The linear flow multiplies the coordinate vector of a coordinate of weight `1` by `e^{-t}`. -/
-theorem linearFlow_single_of_weight_eq_one {j : Fin (Module.finrank ℝ E)} (hj : φ.weight j = 1)
-    (t : ℝ) : φ.linearFlow t (Pi.single j 1) = Real.exp (-t) • Pi.single j 1 := by
-  funext i
-  rw [linearFlow_apply, Pi.smul_apply, smul_eq_mul]
-  by_cases hi : i = j
-  · subst hi
-    rw [hj, one_mul]
-  · simp [hi]
+  rw [toMorseBottChart_neg]
+  exact φ.toMorseBottChart.neg_linearFlow t z
 
 /-- For times `t > -log 2`, a coordinate of positive weight grows at most by a factor `2`. -/
 theorem norm_linearFlow_lt_of_weight_eq_one {r : ℝ} {z : Fin (Module.finrank ℝ E) → ℝ}
@@ -203,52 +130,6 @@ theorem sum_weight_mul_linearFlow_sq_le {z : Fin (Module.finrank ℝ E) → ℝ}
   simp only [Finset.sum_add_distrib, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
     Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte, nsmul_eq_mul] at hsum
   linarith [sq_nonneg ε]
-
-/-- **The linear orbit is an integral curve.** If `X` is the linear field `z ↦ (-wᵢ zᵢ)ᵢ` in the
-Morse chart `φ` and the linear orbit of `z` stays in the chart for times in `s`, then the linear
-orbit, read on the manifold, is an integral curve of `X` on `s`. -/
-theorem isMIntegralCurveOn_toChart_symm_linearFlow
-    (hφ : ∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
-      fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i))
-    {z : Fin (Module.finrank ℝ E) → ℝ} {s : Set ℝ}
-    (hz : ∀ t ∈ s, φ.coord.symm (φ.linearFlow t z) ∈ φ.toChart.target) :
-    IsMIntegralCurveOn (fun t ↦ φ.toChart.symm (φ.coord.symm (φ.linearFlow t z))) X s := by
-  have := Module.Finite.equiv φ.coord.symm
-  set ℓ : ℝ → E := fun t ↦ φ.coord.symm (φ.linearFlow t z)
-  have hℓd (t : ℝ) :
-      HasDerivAt ℓ (φ.coord.symm fun i ↦ -(φ.weight i * φ.linearFlow t z i)) t := by
-    simpa [ℓ, Function.comp_def] using
-      φ.coordL.symm.hasFDerivAt.comp_hasDerivAt t (φ.hasDerivAt_linearFlow z t)
-  have hmd : φ.toChart.MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ, E) :=
-    ⟨fun y hy ↦ (φ.mdifferentiableAt_toChart hy).mdifferentiableWithinAt, fun w hw ↦
-      (mdifferentiableAt_symm_of_mem_maximalAtlas φ.mem_maximalAtlas_one
-        hw).mdifferentiableWithinAt⟩
-  intro t ht
-  have htT : ℓ t ∈ φ.toChart.target := hz t ht
-  have hy : φ.toChart.symm (ℓ t) ∈ φ.toChart.source := φ.toChart.map_target htT
-  have hψy : φ.toChart (φ.toChart.symm (ℓ t)) = ℓ t := φ.toChart.right_inv htT
-  have h1 : HasMFDerivAt 𝓘(ℝ) 𝓘(ℝ, E) ℓ t ((1 : ℝ →L[ℝ] ℝ).smulRight
-      (φ.coord.symm fun i ↦ -(φ.weight i * φ.linearFlow t z i))) :=
-    hasMFDerivAt_iff_hasFDerivAt.2 (hℓd t).hasFDerivAt
-  have h2 := (hmd.mdifferentiableAt_symm htT).hasMFDerivAt
-  refine ((h2.comp t h1).hasMFDerivWithinAt).congr_mfderiv ?_
-  refine ContinuousLinearMap.ext_ring ?_
-  have hXy : mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart (φ.toChart.symm (ℓ t))
-      (X (φ.toChart.symm (ℓ t))) = φ.coord.symm fun i ↦ -(φ.weight i * φ.linearFlow t z i) := by
-    apply φ.coord.injective
-    rw [hφ _ hy, hψy, LinearEquiv.apply_symm_apply]
-    simp
-  have hinv := congr($(hmd.symm_comp_deriv hy) (X (φ.toChart.symm (ℓ t))))
-  rw [ContinuousLinearMap.comp_apply, hXy, hψy, ContinuousLinearMap.id_apply] at hinv
-  -- Both sides are `smulRight 1 v` applied to `1`. The domain of these maps is
-  -- `TangentSpace 𝓘(ℝ) t`, whose topology is not syntactically that of `ℝ`, so
-  -- `ContinuousLinearMap.comp_apply` and `ContinuousLinearMap.smulRight_apply` do not rewrite
-  -- here; both sides are `1 • v` by definition.
-  change mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart.symm (ℓ t)
-      ((1 : ℝ) • φ.coord.symm fun i ↦ -(φ.weight i * φ.linearFlow t z i)) =
-    (1 : ℝ) • X (φ.toChart.symm (ℓ t))
-  rw [one_smul, one_smul]
-  exact hinv
 
 end MorseChart
 
