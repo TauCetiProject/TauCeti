@@ -36,6 +36,9 @@ the chains of the loop space are compared in Brown's theory of twisted tensor pr
   to the identity, by truncation.
 * `TauCeti.MoorePathBetween.toMoorePathFrom`: a Moore path from `b` to `c` as a path from `b`. It is
   an equivariant embedding onto the paths ending at `c`, the fibre of the end point map over `c`.
+* `TauCeti.MooreLoopSpace.toMoorePathFrom`: a Moore loop at `b` as a Moore path from `b`, an
+  embedding (`TauCeti.MooreLoopSpace.isEmbedding_toMoorePathFrom`) which turns the product of loops
+  into the left action (`TauCeti.MooreLoopSpace.toMoorePathFrom_mul`).
 
 ## Main results
 
@@ -227,5 +230,52 @@ theorem isEmbedding_toMoorePathFrom : Topology.IsEmbedding (toMoorePathFrom b c)
   exact (Topology.IsEmbedding.subtypeVal.of_comp_iff).1 (h ▸ Topology.IsEmbedding.subtypeVal)
 
 end MoorePathBetween
+
+/-! ### Loops as paths -/
+
+namespace MooreLoopSpace
+
+variable {X : Type*} [TopologicalSpace X] {b : X}
+
+/-- A Moore loop at `b`, read as a Moore path starting at `b`. -/
+def toMoorePathFrom : C(MooreLoopSpace X b, MoorePathFrom X b) :=
+  ⟨fun ω ↦ ⟨ω.toMoorePath, ω.source_eq⟩, continuous_toMoorePath.subtype_mk _⟩
+
+@[simp]
+theorem toMoorePath_toMoorePathFrom (ω : MooreLoopSpace X b) :
+    (toMoorePathFrom ω).toMoorePath = ω.toMoorePath :=
+  MoorePathFrom.toMoorePath_mk _ _
+
+/-- A loop read as a path ends at the base point. -/
+@[simp]
+theorem endpoint_toMoorePathFrom (ω : MooreLoopSpace X b) :
+    MoorePathFrom.endpoint X b (toMoorePathFrom ω) = b := by
+  rw [MoorePathFrom.endpoint_apply, toMoorePath_toMoorePathFrom, ω.target_eq]
+
+/-- The loops at `b`, read as paths, are the paths from `b` ending at `b`. -/
+theorem range_toMoorePathFrom :
+    Set.range (toMoorePathFrom : MooreLoopSpace X b → MoorePathFrom X b) =
+      MoorePathFrom.endpoint X b ⁻¹' {b} := by
+  ext γ
+  refine ⟨?_, fun hγ ↦ ⟨⟨γ.toMoorePath, γ.source, hγ⟩, MoorePathFrom.ext ?_⟩⟩
+  · rintro ⟨ω, rfl⟩
+    exact endpoint_toMoorePathFrom ω
+  · exact toMoorePath_toMoorePathFrom _
+
+/-- Reading loops as paths is an embedding. -/
+theorem isEmbedding_toMoorePathFrom :
+    Topology.IsEmbedding (toMoorePathFrom : MooreLoopSpace X b → MoorePathFrom X b) :=
+  Topology.IsEmbedding.of_comp toMoorePathFrom.continuous MoorePathFrom.continuous_toMoorePath
+    (by convert isEmbedding_toMoorePath (X := X) (x := b) using 1
+        funext ω
+        exact toMoorePath_toMoorePathFrom ω)
+
+/-- Reading loops as paths turns the product of loops into the left action of loops on paths. -/
+@[simp]
+theorem toMoorePathFrom_mul (ω ω' : MooreLoopSpace X b) :
+    toMoorePathFrom (ω * ω') = ω • toMoorePathFrom ω' :=
+  MoorePathFrom.ext (by simp [toMoorePath_mul])
+
+end MooreLoopSpace
 
 end TauCeti

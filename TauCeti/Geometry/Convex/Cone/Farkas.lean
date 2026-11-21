@@ -13,6 +13,7 @@ import Mathlib.RingTheory.Localization.FractionRing
 import Mathlib.RingTheory.Localization.Integer
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
+import TauCeti.LinearAlgebra.Matrix.DotProduct
 import TauCeti.LinearAlgebra.Matrix.MulVec
 
 /-!
@@ -31,6 +32,9 @@ lemma says that all consequences of the system arise in this way:
   case `Matrix.forall_dotProduct_nonpos_iff_exists_vecMul_add_vecMul_eq`;
 * the system has no solution exactly when some certificate has `y ᵥ* A + z ᵥ* E = 0` and
   `y ⬝ᵥ b + z ⬝ᵥ d < 0` (`Matrix.not_exists_mulVec_le_and_mulVec_eq_iff`).
+* an inequality `c ⬝ᵥ x ≤ δ` that no certificate implies is separated from the system by a
+  vector `(u, s)` with `0 ≤ s`, even when the system has no solution
+  (`Matrix.exists_dual_of_not_exists_vecMul_add_vecMul_eq_and_le`).
 
 Equality multipliers must be allowed to take both signs: each equation contributes the two
 inequalities `E j ⬝ᵥ x ≤ d j` and `-E j ⬝ᵥ x ≤ -d j`, and `z j` is the difference of their two
@@ -138,12 +142,8 @@ private theorem exists_certificate_or_exists [Fintype I] [Fintype J] (A : Matrix
         inv_mul_le_iff₀ hw₀, ← hδ]
       exact le_add_of_nonneg_right (hw _)
   · -- The relation avoids `-(c, δ)`: the functional `F` separates `(c, δ)` from the cone.
-    obtain ⟨x, t, hrep⟩ : ∃ (x : ι → K) (t : K), ∀ v r, F (v, r) = v ⬝ᵥ x + r * t := by
-      obtain ⟨x, hx⟩ := (dotProductEquiv K ι).surjective (F ∘ₗ .inl K (ι → K) K)
-      refine ⟨x, F (0, 1), fun v r => ?_⟩
-      have hv : ((v, r) : (ι → K) × K) = (v, 0) + r • (0, 1) := by ext <;> simp
-      rw [hv, map_add, map_smul, smul_eq_mul, dotProduct_comm]
-      exact congrArg (· + _) (LinearMap.congr_fun hx v).symm
+    obtain ⟨x, t, hrep⟩ : ∃ (x : ι → K) (t : K), ∀ v r, F (v, r) = v ⬝ᵥ x + r * t :=
+      ⟨_, _, F.apply_prod_eq_dotProduct_add_mul⟩
     have hF' : ∀ o, 0 ≤ F (a o) := hF
     simp only [a, Option.forall, Option.elim_none, Option.elim_some, Sum.forall, Sum.elim_inl,
       Sum.elim_inr, hrep, zero_dotProduct, one_mul, zero_add, neg_dotProduct] at hF'
@@ -157,6 +157,28 @@ private theorem exists_certificate_or_exists [Fintype I] [Fintype J] (A : Matrix
         Prod.snd_neg, neg_dotProduct, neg_mul] at hpos
       rw [dotProduct_neg]
       linarith
+
+/-- **Farkas certificate** for an inequality that is not a combination of a finite system: if
+`(c, δ)` is not a combination `y ᵥ* A + z ᵥ* E = c`, `y ⬝ᵥ b + z ⬝ᵥ d ≤ δ` with `y` nonnegative,
+then some `(u, s)` with `0 ≤ s` pairs nonnegatively with every row `(A i, b i)`, vanishes on every
+row `(E j, d j)`, and pairs negatively with `(c, δ)`. No solvability of the system is assumed. -/
+theorem exists_dual_of_not_exists_vecMul_add_vecMul_eq_and_le [Fintype I] [Fintype J]
+    (A : Matrix I ι K) (b : I → K) (E : Matrix J ι K) (d : J → K) (c : ι → K) (δ : K)
+    (h : ¬∃ y, 0 ≤ y ∧ ∃ z, y ᵥ* A + z ᵥ* E = c ∧ y ⬝ᵥ b + z ⬝ᵥ d ≤ δ) :
+    ∃ (u : ι → K) (s : K), 0 ≤ s ∧ (∀ i, 0 ≤ A i ⬝ᵥ u + s * b i) ∧
+      (∀ j, E j ⬝ᵥ u + s * d j = 0) ∧ c ⬝ᵥ u + s * δ < 0 := by
+  obtain ⟨x, t, ht, hA, hE, hlt⟩ := (exists_certificate_or_exists A b E d c δ).resolve_left h
+  refine ⟨-x, t, ht, fun i => ?_, fun j => ?_, ?_⟩
+  · have hi := hA i
+    simp only [mulVec, Pi.smul_apply, smul_eq_mul] at hi
+    rw [dotProduct_neg]
+    linarith
+  · have hj := congrFun hE j
+    simp only [mulVec, Pi.smul_apply, smul_eq_mul] at hj
+    rw [dotProduct_neg]
+    linarith
+  · rw [dotProduct_neg]
+    linarith
 
 /-- **Farkas' lemma** for a nonempty solution set. On the solutions of `A *ᵥ x ≤ b`,
 `E *ᵥ x = d`, if there are any, the inequality `c ⬝ᵥ x ≤ δ` holds exactly when it is implied by a
