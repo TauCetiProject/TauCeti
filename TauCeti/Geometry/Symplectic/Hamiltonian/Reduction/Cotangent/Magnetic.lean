@@ -106,13 +106,20 @@ variable (I IB ρ) in
 `(q, p) ↦ (q, p + α_q)` followed by the reduction map `TauCeti.CotangentBundle.reductionMap` along
 `ρ`. On a covector `p` at `q` for which `p + α_q` vanishes on `ker dρ_q` it is the unique covector
 `p'` at `ρ q` with `p + α_q = p' ∘ dρ_q`
-(`TauCeti.CotangentBundle.magneticReductionMap_snd_apply_mfderiv`). Elsewhere its value carries no
-meaning. -/
+(`TauCeti.CotangentBundle.magneticReductionMap_snd_apply_mfderiv`,
+`TauCeti.CotangentBundle.eq_magneticReductionMap_of_snd_apply_mfderiv`). Elsewhere its value
+carries no meaning. -/
 def magneticReductionMap (α : SmoothForm I Q ℝ 1) (z : CotangentBundle I Q) :
     CotangentBundle IB B :=
   reductionMap I IB ρ ⟨z.proj, z.snd + SmoothForm.degreeOneEquiv α z.proj⟩
 
 variable {α : SmoothForm I Q ℝ 1}
+
+/-- The covector `p` at `q` translated by `α` takes the value `p v + α_q(v)` at `v`. -/
+private theorem add_degreeOneEquiv_apply (α : SmoothForm I Q ℝ 1) (z : CotangentBundle I Q)
+    (v : TangentSpace I z.proj) :
+    (z.snd + SmoothForm.degreeOneEquiv α z.proj) v = z.snd v + α.val z.proj ![v] := by
+  rw [add_apply, SmoothForm.degreeOneEquiv_apply_apply_vec]
 
 /-- The magnetic reduction map reduces the translated covector `p + α_q`. -/
 theorem magneticReductionMap_def (α : SmoothForm I Q ℝ 1) (z : CotangentBundle I Q) :
@@ -143,10 +150,35 @@ theorem magneticReductionMap_snd_apply_mfderiv {z : CotangentBundle I Q}
     (magneticReductionMap I IB ρ α z).snd (mfderiv I IB ρ z.proj v) =
       z.snd v + α.val z.proj ![v] := by
   have h := reductionMap_snd_apply_mfderiv (IB := IB)
-    (z := ⟨z.proj, z.snd + SmoothForm.degreeOneEquiv α z.proj⟩) hρ (fun v hv ↦ by
-      rw [add_apply, SmoothForm.degreeOneEquiv_apply_apply_vec]
-      exact hz v hv) v
-  rwa [add_apply, SmoothForm.degreeOneEquiv_apply_apply_vec] at h
+    (z := ⟨z.proj, z.snd + SmoothForm.degreeOneEquiv α z.proj⟩) hρ
+    (fun v hv ↦ (add_degreeOneEquiv_apply α z v).trans (hz v hv)) v
+  rwa [add_degreeOneEquiv_apply] at h
+
+/-- **Uniqueness of the magnetic reduced covector.** If `dρ_q` has a continuous right inverse,
+every covector `p'` at `ρ q` with `p'(dρ_q v) = p v + α_q(v)` for all `v` is the magnetic reduced
+covector of the covector `p` at `q`. -/
+theorem eq_magneticReductionMap_of_snd_apply_mfderiv {z : CotangentBundle I Q}
+    {w : CotangentBundle IB B} (hρ : (mfderiv I IB ρ z.proj).HasRightInverse)
+    (hw : w.proj = ρ z.proj)
+    (h : ∀ v, w.snd (mfderiv I IB ρ z.proj v) = z.snd v + α.val z.proj ![v]) :
+    w = magneticReductionMap I IB ρ α z :=
+  eq_reductionMap_of_cotangentRel hρ ((cotangentRel_iff I IB ρ _ _).2
+    ⟨hw.symm, ContinuousLinearMap.ext fun v ↦ (add_degreeOneEquiv_apply α z v).trans (h v).symm⟩)
+
+/-- If `dρ_q` has a continuous right inverse, a covector `p'` at `ρ q` satisfies
+`p'(dρ_q v) = p v + α_q(v)` for all `v` exactly when `p + α_q` vanishes on `ker dρ_q` and `p'` is
+the magnetic reduced covector of `p`. -/
+theorem snd_apply_mfderiv_iff_eq_magneticReductionMap {z : CotangentBundle I Q}
+    {w : CotangentBundle IB B} (hρ : (mfderiv I IB ρ z.proj).HasRightInverse)
+    (hw : w.proj = ρ z.proj) :
+    (∀ v, w.snd (mfderiv I IB ρ z.proj v) = z.snd v + α.val z.proj ![v]) ↔
+      (∀ v, mfderiv I IB ρ z.proj v = 0 → z.snd v + α.val z.proj ![v] = 0) ∧
+        w = magneticReductionMap I IB ρ α z := by
+  refine ⟨fun h ↦ ⟨fun v hv ↦ ?_, eq_magneticReductionMap_of_snd_apply_mfderiv hρ hw h⟩, ?_⟩
+  · rw [← h v, hv]
+    exact map_zero w.snd
+  · rintro ⟨hz, rfl⟩
+    exact magneticReductionMap_snd_apply_mfderiv hρ hz
 
 /-- **Change of connection.** Let `α'` be a second one-form whose difference with `α` is the
 pullback along `ρ` of a one-form `γ` on `B`. On a covector `p` at `q` such that `p + α_q` vanishes
@@ -165,13 +197,10 @@ theorem magneticReductionMap_eq_vectorBundleTranslateDiffeomorph [IsManifold IB 
   generalize magneticReductionMap I IB ρ α z = w at h hp ⊢
   obtain ⟨y, p⟩ := w
   obtain rfl : y = ρ z.proj := hp
-  -- Both covectors pull back along `dρ_q` to `p + α'_q`.
-  rw [magneticReductionMap_def, vectorBundleTranslateDiffeomorph_apply]
-  refine (eq_reductionMap_of_cotangentRel
-    (z := ⟨z.proj, z.snd + SmoothForm.degreeOneEquiv α' z.proj⟩)
-    (w := ⟨ρ z.proj, p + SmoothForm.degreeOneEquiv γ (ρ z.proj)⟩)
-    hρ ((cotangentRel_iff I IB ρ _ _).2 ⟨rfl, ContinuousLinearMap.ext fun v ↦ ?_⟩)).symm
-  simp only [ContinuousLinearMap.comp_apply, add_apply, SmoothForm.degreeOneEquiv_apply_apply_vec]
+  -- The translated covector pulls back along `dρ_q` to `p + α'_q`.
+  rw [vectorBundleTranslateDiffeomorph_apply]
+  refine (eq_magneticReductionMap_of_snd_apply_mfderiv hρ rfl fun v ↦ ?_).symm
+  simp only [add_apply, SmoothForm.degreeOneEquiv_apply_apply_vec]
   rw [h v, ← hγ]
   ring
 
@@ -200,9 +229,8 @@ theorem contMDiff_magneticReductionMap_comp (hρ : IsSubmersion I IB ∞ ρ)
       (⟨(f x).proj, (f x).snd + SmoothForm.degreeOneEquiv α (f x).proj⟩ : CotangentBundle I Q) :=
     (((vectorBundleTranslateDiffeomorph _ (SmoothForm.degreeOneEquiv α).contMDiff).contMDiff.of_le
       hm).comp hf).congr fun x ↦ (vectorBundleTranslateDiffeomorph_apply _ _ (f x)).symm
-  refine contMDiff_reductionMap_comp hρ hτ (fun x v hv ↦ ?_) hm
-  simp only [add_apply, SmoothForm.degreeOneEquiv_apply_apply_vec]
-  exact hz x v hv
+  exact contMDiff_reductionMap_comp hρ hτ
+    (fun x v hv ↦ (add_degreeOneEquiv_apply α (f x) v).trans (hz x v hv)) hm
 
 /-- **The magnetic reduction map and the canonical symplectic forms.** For a smooth submersion `ρ`
 with boundaryless source and a smooth family `f` of covectors `p` at `q` such that `p + α_q`
@@ -224,27 +252,19 @@ theorem mpullback_magneticReductionMap_comp_symplecticForm [IsManifold IX ∞ X]
       ((vectorBundleTranslateDiffeomorph (SmoothForm.degreeOneEquiv α)
         (SmoothForm.degreeOneEquiv α).contMDiff ∘ f) x).snd v = 0 := by
     rw [comp_apply, vectorBundleTranslateDiffeomorph_apply]
-    intro v hv
-    simp only [add_apply, SmoothForm.degreeOneEquiv_apply_apply_vec]
-    exact hz x v hv
+    exact fun v hv ↦ (add_degreeOneEquiv_apply α (f x) v).trans (hz x v hv)
   -- The magnetic reduction map along `f` is the reduction map along the translated family.
   have hΦ : magneticReductionMap I IB ρ α ∘ f = reductionMap I IB ρ ∘
       (vectorBundleTranslateDiffeomorph (SmoothForm.degreeOneEquiv α)
         (SmoothForm.degreeOneEquiv α).contMDiff ∘ f) :=
     funext fun x ↦ (reductionMap_vectorBundleTranslateDiffeomorph α (f x)).symm
-  have hcongr {g g' : X → CotangentBundle IB B}
-      (hg : ContMDiff IX (IB.prod 𝓘(ℝ, EB →L[ℝ] ℝ)) ∞ g)
-      (hg' : ContMDiff IX (IB.prod 𝓘(ℝ, EB →L[ℝ] ℝ)) ∞ g') (h : g = g') :
-      SmoothForm.mpullback g hg (symplecticForm IB B) =
-        SmoothForm.mpullback g' hg' (symplecticForm IB B) := by
-    subst h
-    rfl
-  rw [hcongr _ (contMDiff_reductionMap_comp hρ (hτ.comp hf) hzτ le_rfl) hΦ,
+  rw [SmoothForm.mpullback_congr _ (contMDiff_reductionMap_comp hρ (hτ.comp hf) hzτ le_rfl) hΦ,
     mpullback_reductionMap_comp_symplecticForm hρ (hτ.comp hf) hzτ,
     ← SmoothForm.mpullback_mpullback f _ hf hτ,
     mpullback_vectorBundleTranslateDiffeomorph_symplecticForm, map_sub,
     SmoothForm.mpullback_mpullback]
-  rfl
+  -- `π ∘ f` is the family of base points `x ↦ (f x).proj`.
+  exact congrArg _ (SmoothForm.mpullback_congr _ _ rfl _)
 
 /-- **The reduced form of magnetic cotangent reduction.** Let `ρ` be a smooth submersion with
 boundaryless source and let `β` be a two-form on `B` with `ρ^* β = dα`. Along a smooth family `f`
@@ -305,7 +325,7 @@ theorem momentMap_eq_iff_of_ker_eq {z : CotangentBundle I Q}
   rw [← sub_eq_zero, ← h,
     momentMap_eq_zero_iff_of_ker_eq (z := ⟨z.proj, z.snd + SmoothForm.degreeOneEquiv α z.proj⟩)
       hker]
-  simp only [add_apply, SmoothForm.degreeOneEquiv_apply_apply_vec]
+  exact forall_congr' fun v ↦ by rw [add_degreeOneEquiv_apply]
 
 /-- **The magnetic reduction map is onto.** If `ρ` is surjective, its differentials have continuous
 right inverses and its vertical tangent vectors are the orbit directions, every covector on `B` is
@@ -538,8 +558,7 @@ theorem exists_mpullback_quotientMk_eq_sub_and_magneticReductionMap_eq
     ((momentMap_eq_iff_of_ker_eq (ker_mfderiv_quotientMk _) hα).1 hz)⟩
   -- Evaluate `π^* γ = α' - α` on the single vector `v`.
   have h := congrArg (fun φ ↦ φ.val q ![v]) hγ
-  simp only [SmoothForm.coe_mpullback, TauCeti.mpullback_apply] at h
-  calc α'.val q ![v] - α.val q ![v] = (α' - α).val q ![v] := by simp
-    _ = _ := h.symm.trans (congrArg _ (funext fun i ↦ by rw [Subsingleton.elim i 0]; rfl))
+  rw [SmoothForm.mpullback_apply_one] at h
+  simpa using h.symm
 
 end ProperSMul

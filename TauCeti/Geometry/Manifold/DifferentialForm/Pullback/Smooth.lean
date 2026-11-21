@@ -288,6 +288,12 @@ def mpullback (f : M → M') (hf : ContMDiff I I' ∞ f) :
 theorem coe_mpullback (f : M → M') (hf : ContMDiff I I' ∞ f) (φ : SmoothForm I' M' F k) :
     (mpullback f hf φ).val = TauCeti.mpullback (F := F) I I' f φ.val := (rfl)
 
+/-- Pulling a form back along equal maps gives the same form, whatever the smoothness proofs. -/
+theorem mpullback_congr {f g : M → M'} (hf : ContMDiff I I' ∞ f) (hg : ContMDiff I I' ∞ g)
+    (h : f = g) (φ : SmoothForm I' M' F k) : mpullback f hf φ = mpullback g hg φ := by
+  subst h
+  rfl
+
 /-- Pullback of smooth forms commutes with transport of the degree. -/
 theorem mpullback_cast {l : ℕ} (h : k = l) (f : M → M') (hf : ContMDiff I I' ∞ f)
     (φ : SmoothForm I' M' F k) :
