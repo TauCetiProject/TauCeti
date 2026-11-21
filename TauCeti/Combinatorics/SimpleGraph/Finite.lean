@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
 public import Mathlib.Combinatorics.SimpleGraph.Finite
 public import Mathlib.Data.Finset.Interval
+public import Mathlib.Order.Sym2
+import TauCeti.Order.Sym2
 
 /-!
 # Finite simple graphs
@@ -18,6 +20,10 @@ On a finite vertex set, `G ↦ G.edgeFinset` maps the graphs between `F` and `H`
 the finsets of pairs between `F.edgeFinset` and `H.edgeFinset`. Consequently a product or sum over
 an interval of graphs, of a factor that depends on the graph only through its edge set, is one over
 an interval of the Boolean lattice `Finset (Sym2 V)`, where the finset interval API applies.
+
+When the vertex type carries a linear order, `Sym2.sortEquiv` identifies `G.edgeSet` with strictly
+increasing adjacent pairs `{p : V × V // p.1 < p.2 ∧ G.Adj p.1 p.2}`, turning products, sums, and
+cardinalities over `G.edgeFinset` into ones over `{p : V × V | p.1 < p.2 ∧ G.Adj p.1 p.2}`.
 
 ## Main results
 
@@ -31,6 +37,10 @@ an interval of the Boolean lattice `Finset (Sym2 V)`, where the finset interval 
   `SimpleGraph.sum_filter_le_le_eq_sum_Icc_edgeFinset` — a product (sum) over the graphs between
   `F` and `H` of a function of their edge finsets is the product (sum) of that function over
   `Finset.Icc F.edgeFinset H.edgeFinset`.
+* `SimpleGraph.edgeSetEquivLtAdj`, `SimpleGraph.prod_edgeFinset_eq_prod_filter_lt`,
+  `SimpleGraph.sum_edgeFinset_eq_sum_filter_lt`, and
+  `SimpleGraph.card_edgeFinset_eq_card_filter_lt` — the equivalence between `G.edgeSet` and
+  strictly ordered adjacent pairs, and the resulting product, sum, and cardinality identities.
 -/
 
 public section
@@ -80,6 +90,8 @@ theorem edgeSet_fromEdgeSet_of_subset {G : SimpleGraph V} {s : Set (Sym2 V)}
   rw [edgeSet_fromEdgeSet, sdiff_eq_left, Set.disjoint_left]
   exact fun e he ↦ not_isDiag_of_mem_edgeSet G (hs he)
 
+section Interval
+
 variable [Fintype V] [DecidableEq V] [CommMonoid M]
 
 /-- Multiplying a function of the edge finset over the graphs between `F` and `H` is multiplying
@@ -102,5 +114,56 @@ theorem prod_filter_le_le_eq_prod_Icc_edgeFinset (F H : SimpleGraph V)
     rw [← edgeFinset_subset_edgeFinset, ← edgeFinset_subset_edgeFinset, hset s hs]
     exact mem_Icc.1 hs
   · rw [coe_edgeFinset, fromEdgeSet_edgeSet]
+
+end Interval
+
+section Ordered
+
+/-- When the vertex type is linearly ordered, `Sym2.sortEquiv` identifies the edges of `G` with the
+strictly increasing adjacent vertex pairs. -/
+def edgeSetEquivLtAdj [LinearOrder V] (G : SimpleGraph V) :
+    G.edgeSet ≃ {p : V × V // p.1 < p.2 ∧ G.Adj p.1 p.2} where
+  toFun e :=
+    have hadj : G.Adj e.val.inf e.val.sup := G.mem_edgeSet.mp (e.val.mk_inf_sup.symm ▸ e.property)
+    ⟨(e.val.inf, e.val.sup), lt_of_le_of_ne (Sym2.inf_le_sup e.val) hadj.ne, hadj⟩
+  invFun p := ⟨s(p.val.1, p.val.2), G.mem_edgeSet.mpr p.property.2⟩
+  left_inv e := Subtype.ext e.val.mk_inf_sup
+  right_inv p := Subtype.ext (by simp [p.property.1.le])
+
+/-- `SimpleGraph.edgeSetEquivLtAdj` sends an edge `e` to `(e.inf, e.sup)`. -/
+@[simp]
+theorem coe_edgeSetEquivLtAdj_apply [LinearOrder V] (G : SimpleGraph V) (e : G.edgeSet) :
+    (G.edgeSetEquivLtAdj e : V × V) = ((e : Sym2 V).inf, (e : Sym2 V).sup) :=
+  (rfl)
+
+/-- The inverse of `SimpleGraph.edgeSetEquivLtAdj` sends an ordered adjacent pair `(u, v)` to the
+unordered edge `s(u, v)`. -/
+@[simp]
+theorem coe_edgeSetEquivLtAdj_symm_apply [LinearOrder V] (G : SimpleGraph V)
+    (p : {p : V × V // p.1 < p.2 ∧ G.Adj p.1 p.2}) :
+    (G.edgeSetEquivLtAdj.symm p : Sym2 V) = s(p.val.1, p.val.2) :=
+  (rfl)
+
+/-- On a finite linearly ordered vertex type, a product over `G.edgeFinset` equals the product over
+strictly increasing adjacent pairs `(u, v)`. -/
+@[to_additive /-- On a finite linearly ordered vertex type, a sum over `G.edgeFinset` equals the
+sum over strictly increasing adjacent pairs `(u, v)`. -/]
+theorem prod_edgeFinset_eq_prod_filter_lt [Fintype V] [LinearOrder V] [CommMonoid M]
+    (G : SimpleGraph V) [DecidableRel G.Adj] [Fintype G.edgeSet] (f : Sym2 V → M) :
+    ∏ e ∈ G.edgeFinset, f e = ∏ p : V × V with p.1 < p.2 ∧ G.Adj p.1 p.2, f s(p.1, p.2) := by
+  rw [prod_subtype G.edgeFinset (p := (· ∈ G.edgeSet)) (fun _ ↦ G.mem_edgeFinset),
+    prod_subtype ({p : V × V | p.1 < p.2 ∧ G.Adj p.1 p.2} : Finset (V × V))
+      (p := fun p : V × V ↦ p.1 < p.2 ∧ G.Adj p.1 p.2) (F := inferInstance) (by simp),
+    ← G.edgeSetEquivLtAdj.symm.prod_comp (fun e : G.edgeSet ↦ f e.val)]
+  simp only [coe_edgeSetEquivLtAdj_symm_apply]
+
+/-- On a finite linearly ordered vertex type, `#G.edgeFinset` counts the strictly increasing
+adjacent vertex pairs. -/
+theorem card_edgeFinset_eq_card_filter_lt [Fintype V] [LinearOrder V]
+    (G : SimpleGraph V) [DecidableRel G.Adj] [Fintype G.edgeSet] :
+    #G.edgeFinset = #{p : V × V | p.1 < p.2 ∧ G.Adj p.1 p.2} := by
+  simpa using G.sum_edgeFinset_eq_sum_filter_lt (fun _ ↦ (1 : ℕ))
+
+end Ordered
 
 end SimpleGraph

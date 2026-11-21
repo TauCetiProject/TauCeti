@@ -41,8 +41,9 @@ range, so the value is a `dite` rather than a plain application.
 
 ## Main results
 
-* `Equiv.Perm.eq_one_or_swap_fin_two` and `Equiv.Perm.univ_fin_two`: every permutation of
-  `Fin 2` is the identity or the transposition, and these form the set of all permutations.
+* `Equiv.Perm.eq_one_or_swap_fin_two`, `Equiv.Perm.univ_fin_two`, and
+  `Equiv.Perm.eq_ite_ne_one_fin_two`: every permutation of `Fin 2` is the identity or the
+  transposition, and these form the set of all permutations.
 * `TauCeti.forall_cons_swap_eq_zero_iff`: vanishing of the final coordinates after swapping
   coordinate zero with coordinate `d` in a vector built with `Fin.cons`.
 * `Fin.sum_univ_eq_sum_castLE_add`: a sum over `Fin n` of a family vanishing beyond `i`
@@ -1060,6 +1061,11 @@ theorem univ_fin_two :
   classical
   ext e
   simpa using e.eq_one_or_swap_fin_two
+
+/-- Every permutation of `Fin 2` equals `Equiv.swap 0 1` when non-identity and `1` otherwise. -/
+theorem eq_ite_ne_one_fin_two (σ : Equiv.Perm (Fin 2)) :
+    σ = if σ ≠ 1 then Equiv.swap 0 1 else 1 := by
+  rcases σ.eq_one_or_swap_fin_two with rfl | rfl <;> decide
 
 end Equiv.Perm
 

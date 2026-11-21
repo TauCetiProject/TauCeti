@@ -13,13 +13,18 @@ public import Mathlib.Logic.Equiv.Bool
 # Bipartite restrictions and two-colourings
 
 Restricting a graph to pairs between two sets is intersection with the corresponding
-restriction of the complete graph (`SimpleGraph.between_eq_inf_top_between`), and on a finite
-vertex type the same decomposition holds for `edgeFinset` (`SimpleGraph.edgeFinset_between`),
-with `(⊤ : SimpleGraph V).between S T` having `S.toFinset.card * T.toFinset.card` edges when `S`
-and `T` are disjoint (`SimpleGraph.card_edgeFinset_top_between`). Complete-graph cuts respect
-symmetric difference (`SimpleGraph.top_between_symmDiff`). A bipartition `G.IsBipartiteWith s t`
-extends to a covering bipartition on the whole vertex type by adjoining the remaining isolated
-vertices to either side (`SimpleGraph.IsBipartiteWith.compl_right` and
+restriction of the complete graph (`SimpleGraph.between_eq_inf_top_between`), and removing the
+edges of `G` from `(⊤ : SimpleGraph V).between s t` gives `Gᶜ.between s t`
+(`SimpleGraph.top_between_sdiff_eq_compl_between`). On a finite vertex type the intersection
+decomposition holds for `edgeFinset` (`SimpleGraph.edgeFinset_between`), with
+`(⊤ : SimpleGraph V).between S T` having `S.toFinset.card * T.toFinset.card` edges when `S` and
+`T` are disjoint (`SimpleGraph.card_edgeFinset_top_between`). Complete-graph cuts `(S, Sᶜ)` have
+adjacency `Xor (u ∈ S) (v ∈ S)` (`SimpleGraph.top_between_compl_adj`), respect symmetric difference
+(`SimpleGraph.top_between_symmDiff`), meet singleton cuts in the incident edge set
+(`SimpleGraph.edgeSet_between_singleton_compl`), and have an even number of adjacent pairs around
+every vertex triple (`SimpleGraph.not_xor_top_between_compl_adj`). A bipartition
+`G.IsBipartiteWith s t` extends to a covering bipartition on the whole vertex type by adjoining the
+remaining isolated vertices to either side (`SimpleGraph.IsBipartiteWith.compl_right` and
 `SimpleGraph.IsBipartiteWith.compl_left`), and yields vertex covers given by either side or by
 replacing any subset `S` of the left side with its neighbours
 (`SimpleGraph.IsBipartiteWith.isVertexCover_left`,
@@ -37,6 +42,9 @@ independent of the colouring up to exchanging the two classes.
 
 ## Main results
 
+* `SimpleGraph.top_between_compl_adj`, `SimpleGraph.top_between_sdiff_eq_compl_between`,
+  `SimpleGraph.edgeSet_between_singleton_compl`, `SimpleGraph.not_xor_top_between_compl_adj`:
+  characterizations and parity of `SimpleGraph.between` cuts.
 * `SimpleGraph.edgeFinset_between`, `SimpleGraph.card_edgeFinset_top_between`: edge finset of
   `G.between S T` and edge count of `(⊤ : SimpleGraph V).between S T` for disjoint `S` and `T`.
 * `SimpleGraph.card_edgeFinset_between`: the edges between disjoint finite sets `s` and `t` are
@@ -67,6 +75,52 @@ theorem between_eq_inf_top_between (G : SimpleGraph V) (s t : Set V) :
   ext u v
   simp only [between_adj, inf_adj, top_adj]
   exact and_congr_right fun h ↦ (and_iff_right h.ne).symm
+
+/-- Removing the edges of `G` from the complete-graph restriction between `s` and `t` gives the
+restriction of `Gᶜ` between `s` and `t`. -/
+theorem top_between_sdiff_eq_compl_between (G : SimpleGraph V) (s t : Set V) :
+    (⊤ : SimpleGraph V).between s t \ G = Gᶜ.between s t := by
+  rw [sdiff_eq, inf_comm, ← between_eq_inf_top_between]
+
+/-- Adjacency in `G.between S Sᶜ` holds precisely when the endpoints are adjacent in `G` and lie on
+opposite sides of `S`. -/
+theorem between_compl_adj (G : SimpleGraph V) (S : Set V) (u v : V) :
+    (G.between S Sᶜ).Adj u v ↔ G.Adj u v ∧ Xor (u ∈ S) (v ∈ S) := by
+  rw [between_adj, Set.mem_compl_iff, Set.mem_compl_iff]
+  grind
+
+/-- Adjacency in the complete-graph cut `(⊤ : SimpleGraph V).between S Sᶜ` is `Xor (u ∈ S) (v ∈ S)`:
+the distinctness condition `u ≠ v` is automatic when `u` and `v` lie on opposite sides of `S`. -/
+@[simp, grind =]
+theorem top_between_compl_adj (S : Set V) (u v : V) :
+    ((⊤ : SimpleGraph V).between S Sᶜ).Adj u v ↔ Xor (u ∈ S) (v ∈ S) := by
+  rw [between_compl_adj, top_adj]
+  exact ⟨And.right, fun h ↦ ⟨fun huv ↦ by subst huv; exact (xor_self (u ∈ S)).mp h, h⟩⟩
+
+/-- The edges of `G` across the singleton cut `({v}, {v}ᶜ)` are precisely the edges incident to
+`v`. -/
+@[simp]
+theorem edgeSet_between_singleton_compl (G : SimpleGraph V) (v : V) :
+    (G.between {v} ({v} : Set V)ᶜ).edgeSet = G.incidenceSet v := by
+  ext e
+  induction e using Sym2.ind with
+  | _ x y =>
+    simp only [mem_edgeSet, between_adj, Set.mem_singleton_iff, Set.mem_compl_iff,
+      mk'_mem_incidenceSet_iff]
+    exact ⟨fun ⟨h, h'⟩ ↦ ⟨h, by rcases h' with ⟨rfl, -⟩ | ⟨-, rfl⟩ <;> simp⟩,
+      fun ⟨h, h'⟩ ↦ ⟨h, by
+        rcases h' with rfl | rfl
+        exacts [Or.inl ⟨rfl, h.ne'⟩, Or.inr ⟨h.ne, rfl⟩]⟩⟩
+
+/-- For any three vertices `u`, `v`, `w`, an even number of the pairs `(u, v)`, `(v, w)`, and
+`(w, u)` are adjacent in the complete-graph cut `(⊤ : SimpleGraph V).between S Sᶜ` (so pairwise
+distinct `u`, `v`, `w` span an even number of cut edges). -/
+theorem not_xor_top_between_compl_adj (S : Set V) (u v w : V) :
+    ¬ Xor (((⊤ : SimpleGraph V).between S Sᶜ).Adj u v)
+      (Xor (((⊤ : SimpleGraph V).between S Sᶜ).Adj v w)
+        (((⊤ : SimpleGraph V).between S Sᶜ).Adj w u)) := by
+  simp only [top_between_compl_adj]
+  grind
 
 /-- The complete-graph cut of `S ∆ T` is the symmetric difference of the cuts of `S` and `T`. -/
 theorem top_between_symmDiff (S T : Set V) :

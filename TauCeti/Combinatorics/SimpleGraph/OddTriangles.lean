@@ -7,44 +7,54 @@ module
 
 public import Mathlib.Combinatorics.SimpleGraph.Clique
 public import Mathlib.Combinatorics.SimpleGraph.DegreeSum
+public import TauCeti.Combinatorics.SimpleGraph.OddTriple
+public import TauCeti.Combinatorics.SimpleGraph.SymmDiff
 import Mathlib.Data.Fintype.BigOperators
-import TauCeti.Combinatorics.SimpleGraph.OddTriple
 import TauCeti.Order.Hom.PowersetCard
 
 /-!
 # Three-vertex subsets spanning an odd number of edges
 
 For a finite simple graph `G` on `V`, `G.oddTriangleFinset` is the finset of `3`-element subsets
-of `V` that span an odd number of edges of `G` (one or three edges). When `G` is viewed as the
+of `V` that span an odd number of edges of `G` (one or three edges), coinciding with
+`G.oddTripleFinset` (`SimpleGraph.oddTriangleFinset_eq_oddTripleFinset`). When `G` is viewed as the
 support of a binary `1`-cochain on the complete `2`-complex on `V`, `G.oddTriangleFinset` is the
-set of triangles with non-trivial coboundary.
+set of triangles with non-trivial coboundary, and switching `G` by any complete-graph cut leaves it
+unchanged (`SimpleGraph.oddTriangleFinset_symmDiff_top_between`).
 
 In a triangle-free graph (`G.CliqueFree 3`), no `3`-element vertex subset spans three edges, so
 `G.oddTriangleFinset` consists of the `3`-element subsets spanning a single edge, and its
 cardinality satisfies the degree-square identity
 `#G.oddTriangleFinset + ∑ v, G.degree v ^ 2 = Fintype.card V * #G.edgeFinset`
 (D. N. Kozlov, *The first Cheeger constant of a simplex*, arXiv:1610.07136v2, equation (2.5), p. 5).
+In particular, when every vertex has degree at most `1`,
+`#G.oddTriangleFinset = (Fintype.card V - 2) * #G.edgeFinset`
+(`SimpleGraph.card_oddTriangleFinset_of_degree_le_one`).
 
 ## Main definitions and results
 
 * `SimpleGraph.oddTriangleFinset`: the finset of `3`-element subsets of `V` spanning an odd number
   of edges of `G`.
+* `SimpleGraph.triple_mem_oddTriangleFinset_iff` and
+  `SimpleGraph.oddTriangleFinset_symmDiff_top_between`: `Xor` membership criterion on `{a, b, c}`
+  and invariance of `oddTriangleFinset` under complete-graph cut switching.
 * `SimpleGraph.Iso.map_oddTriangleFinset`, `SimpleGraph.Iso.card_oddTriangleFinset_eq`:
   invariance of `oddTriangleFinset` under graph isomorphism.
-* `SimpleGraph.triple_mem_oddTriangleFinset_iff`: `{a, b, c}` is an odd triangle exactly when an
-  odd number of the pairs `ab`, `ac`, `bc` are edges.
-* `SimpleGraph.card_oddTriangleFinset_eq_sum`: over a linear order, the odd triangles are counted
-  by their increasing triples `u < v < w`.
+* `SimpleGraph.card_oddTriangleFinset_eq_sum`,
+  `SimpleGraph.card_oddTriangleFinset_eq_card_filter_lt`: over a linear order, the odd triangles
+  are counted by their increasing triples `u < v < w`.
 * `SimpleGraph.mem_oddTriangleFinset_iff_of_cliqueFree`: in a `3`-clique-free graph, an odd
   triangle is a `3`-element vertex set spanning a single edge.
 * `SimpleGraph.card_oddTriangleFinset_add_sum_degree_sq`,
-  `SimpleGraph.card_oddTriangleFinset_eq_of_cliqueFree`: for `G.CliqueFree 3`,
-  `#G.oddTriangleFinset + ∑ v, G.degree v ^ 2 = Fintype.card V * #G.edgeFinset`.
+  `SimpleGraph.card_oddTriangleFinset_eq_of_cliqueFree`, and
+  `SimpleGraph.card_oddTriangleFinset_of_degree_le_one`: odd-triangle count in `3`-clique-free
+  graphs and graphs of maximum degree at most `1`.
 -/
 
 public section
 
 open Finset
+open scoped symmDiff
 
 namespace SimpleGraph
 
@@ -63,6 +73,12 @@ theorem oddTriangleFinset_def (G : SimpleGraph V) [DecidableRel G.Adj] :
     G.oddTriangleFinset =
       {s ∈ (univ : Finset V).powersetCard 3 | Odd #{e ∈ G.edgeFinset | e.toFinset ⊆ s}} := by
   rfl
+
+/-- `G.oddTriangleFinset` coincides with `G.oddTripleFinset`. -/
+theorem oddTriangleFinset_eq_oddTripleFinset (G : SimpleGraph V) [DecidableRel G.Adj] :
+    G.oddTriangleFinset = G.oddTripleFinset := by
+  ext s
+  simp [oddTriangleFinset, mem_powersetCard, filter_edgeFinset_toFinset_subset]
 
 /-- A vertex finset belongs to `G.oddTriangleFinset` iff it has cardinality `3` and contains an odd
 number of edges of `G`. -/
@@ -377,6 +393,37 @@ theorem card_oddTriangleFinset_eq_of_cliqueFree (hG : G.CliqueFree 3) :
   have h := G.card_oddTriangleFinset_add_sum_degree_sq hG
   omega
 
+omit [DecidableEq V] in
+/-- A finite graph in which every vertex has degree at most `1` is `3`-clique-free. -/
+theorem cliqueFree_three_of_degree_le_one (G : SimpleGraph V) [DecidableRel G.Adj]
+    (hdeg : ∀ v, G.degree v ≤ 1) : G.CliqueFree 3 := by
+  classical
+  intro t ht
+  have hcard := ht.card_eq
+  obtain ⟨v, hv⟩ := card_pos.mp (by omega : 0 < #t)
+  have hsub : t.erase v ⊆ G.neighborFinset v := fun w hw ↦ by
+    rw [mem_erase] at hw
+    exact (G.mem_neighborFinset v w).mpr (ht.isClique hv hw.2 hw.1.symm)
+  have hle : #(t.erase v) ≤ G.degree v :=
+    G.card_neighborFinset_eq_degree v ▸ card_le_card hsub
+  have hvdeg := hdeg v
+  rw [card_erase_of_mem hv, hcard] at hle
+  omega
+
+/-- In a finite graph of maximum degree at most `1`, the number of `3`-vertex subsets spanning an
+odd number of edges equals `(Fintype.card V - 2) * #G.edgeFinset`. -/
+theorem card_oddTriangleFinset_of_degree_le_one (G : SimpleGraph V) [DecidableRel G.Adj]
+    [Fintype G.edgeSet] (hdeg : ∀ v, G.degree v ≤ 1) :
+    #G.oddTriangleFinset = (Fintype.card V - 2) * #G.edgeFinset := by
+  have hchoose : ∑ v : V, (G.degree v).choose 2 = 0 :=
+    sum_eq_zero fun v _ ↦ Nat.choose_eq_zero_of_lt (Nat.lt_succ_of_le (hdeg v))
+  have hcf := G.cliqueFree_three_of_degree_le_one hdeg
+  have h := hcf.card_oddTripleFinset_add_two_mul_sum_degree_choose_two
+  rw [← G.oddTriangleFinset_eq_oddTripleFinset, hchoose, mul_zero, add_zero] at h
+  rw [h]
+  exact congrArg ((Fintype.card V - 2) * ·)
+    (congrArg card ((@edgeFinset_inj _ G G G.fintypeEdgeSet _).mpr rfl))
+
 end CliqueFree
 
 section Triples
@@ -392,6 +439,19 @@ theorem triple_mem_oddTriangleFinset_iff {a b c : V} :
     triple_mem_oddTripleFinset_iff]
 
 end Triples
+
+/-- Switching a finite graph by a complete-graph cut preserves `oddTriangleFinset`. -/
+@[simp]
+theorem oddTriangleFinset_symmDiff_top_between (G : SimpleGraph V) [DecidableRel G.Adj]
+    (S : Set V) [DecidablePred (· ∈ S)] :
+    (G ∆ (⊤ : SimpleGraph V).between S Sᶜ).oddTriangleFinset = G.oddTriangleFinset := by
+  ext s
+  by_cases hs : #s = 3
+  · obtain ⟨a, b, c, -, -, -, rfl⟩ := card_eq_three.mp hs
+    simp only [triple_mem_oddTriangleFinset_iff]
+    rw [(G ∆ _).adj_comm a c, G.adj_comm a c, xor_comm ((G ∆ _).Adj c a), xor_comm (G.Adj c a)]
+    exact G.xor_symmDiff_top_between_compl_adj S a b c
+  · simp [mem_oddTriangleFinset, hs]
 
 end Basic
 
@@ -425,5 +485,33 @@ theorem card_oddTriangleFinset_eq_sum :
   simp only [Fintype.sum_prod_type, triple_mem_oddTriangleFinset_iff]
 
 end Order
+
+/-- On a finite linearly ordered vertex type, `#G.oddTriangleFinset` counts the strictly increasing
+vertex triples `(u, v, w)` around which an odd number of pairs are adjacent in `G`. -/
+theorem card_oddTriangleFinset_eq_card_filter_lt [Fintype V] [LinearOrder V]
+    (G : SimpleGraph V) [DecidableRel G.Adj] :
+    #G.oddTriangleFinset =
+      #{p : V × V × V | p.1 < p.2.1 ∧ p.2.1 < p.2.2 ∧
+        Xor (G.Adj p.1 p.2.1) (Xor (G.Adj p.2.1 p.2.2) (G.Adj p.2.2 p.1))} := by
+  symm
+  refine card_bij (fun p _ ↦ ({p.1, p.2.1, p.2.2} : Finset V)) ?_ ?_ ?_
+  · rintro ⟨u, v, w⟩ hp
+    obtain ⟨-, -, hxor⟩ := (mem_filter.mp hp).2
+    rw [triple_mem_oddTriangleFinset_iff, G.adj_comm u w, xor_comm (G.Adj w u)]
+    exact hxor
+  · rintro ⟨u₁, v₁, w₁⟩ hp₁ ⟨u₂, v₂, w₂⟩ hp₂ htri
+    obtain ⟨huv₁, hvw₁, -⟩ := (mem_filter.mp hp₁).2
+    obtain ⟨huv₂, hvw₂, -⟩ := (mem_filter.mp hp₂).2
+    exact congrArg Subtype.val
+      (Set.powersetCard.ofLtTriple.injective
+        (a₁ := ⟨(u₁, v₁, w₁), huv₁, hvw₁⟩) (a₂ := ⟨(u₂, v₂, w₂), huv₂, hvw₂⟩)
+        (Subtype.ext <| (Set.powersetCard.val_ofLtTriple ⟨(u₁, v₁, w₁), huv₁, hvw₁⟩).trans
+          (htri.trans (Set.powersetCard.val_ofLtTriple ⟨(u₂, v₂, w₂), huv₂, hvw₂⟩).symm)))
+  · intro s hs
+    obtain ⟨hs3, -⟩ := mem_oddTriangleFinset.mp hs
+    obtain ⟨u, v, w, huv, hvw, rfl⟩ := Set.powersetCard.exists_lt_lt_val_eq ⟨s, hs3⟩
+    refine ⟨(u, v, w), mem_filter.mpr ⟨mem_univ _, huv, hvw, ?_⟩, rfl⟩
+    have hxor := triple_mem_oddTriangleFinset_iff.mp hs
+    rwa [G.adj_comm u w, xor_comm (G.Adj w u)] at hxor
 
 end SimpleGraph
