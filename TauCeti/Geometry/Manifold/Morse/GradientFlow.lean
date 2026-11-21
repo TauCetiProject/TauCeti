@@ -49,6 +49,8 @@ arbitrary: it need not be adapted to the Morse charts of `f`.
   gradient trajectory is `-grad f`.
 * `TauCeti.maximalIntegralCurve_neg_mgradient_neg`: a global negative gradient trajectory of `f`
   run backwards is the negative gradient trajectory of `-f`.
+* `TauCeti.maximalIntegralCurve_neg_mgradient_neg_of_nonpos`: the same for negative times, when
+  the trajectory of `f` is only defined for all positive time.
 * `TauCeti.hasDerivAt_comp_maximalIntegralCurve_neg_mgradient` and
   `TauCeti.antitoneOn_comp_maximalIntegralCurve_neg_mgradient`: energy dissipation and
   monotonicity along a negative gradient trajectory.
@@ -119,6 +121,35 @@ theorem maximalIntegralCurve_neg_mgradient_neg (hf : ContMDiff I 𝓘(ℝ) 2 f)
   funext t
   simpa only [Function.comp_apply, zero_mul, maximalIntegralCurve_zero] using
     hrev.maximalIntegralCurve_eq (contMDiff_neg_mgradient_one (f := -f) hf.neg) t
+
+/-- **Reversing time in a forward negative gradient trajectory.** If the maximal integral curve of
+`-grad f` through `x` is defined for all positive time, then for `t ≤ 0` the maximal integral curve
+of `-grad (-f)` through `x` at time `t` is the trajectory of `-grad f` at time `-t`. Unlike
+`TauCeti.maximalIntegralCurve_neg_mgradient_neg`, the flow of `-grad f` need not be complete. -/
+theorem maximalIntegralCurve_neg_mgradient_neg_of_nonpos (hf : ContMDiff I 𝓘(ℝ) 2 f)
+    (hx : Ici 0 ⊆ maximalIntegralCurveInterval (-mgradient I f) x) (ht : t ≤ 0) :
+    maximalIntegralCurve (-mgradient I (-f)) x t =
+      maximalIntegralCurve (-mgradient I f) x (-t) := by
+  -- The trajectory of `-grad f` is defined on a ray `(l, ∞)` with `l < 0`.
+  obtain ⟨l, u, ⟨hl, hu⟩, hlu⟩ := mem_nhds_iff_exists_Ioo_subset.1
+    (isOpen_maximalIntegralCurveInterval.mem_nhds (hx (le_refl (0 : ℝ))))
+  have hray : Ioi l ⊆ maximalIntegralCurveInterval (-mgradient I f) x := fun s hs ↦
+    (lt_or_ge s u).elim (fun hsu ↦ hlu ⟨hs, hsu⟩) fun hsu ↦ hx (hu.le.trans hsu)
+  -- Reversing time turns it into an integral curve of `-grad (-f)` through `x` on `(-∞, -l)`.
+  have hcurve : IsMIntegralCurveOn (maximalIntegralCurve (-mgradient I f) x ∘ (· * -1))
+      (-mgradient I (-f)) (Iio (-l)) := by
+    have h := ((isMIntegralCurveOn_maximalIntegralCurve
+      (contMDiff_neg_mgradient_one hf)).mono hray).comp_mul (-1)
+    have h2 : (-1 : ℝ) • -mgradient I f = -mgradient I (-f) := by
+      funext y
+      simp [mgradient_neg]
+    rw [h2] at h
+    exact h.mono fun s hs ↦ show l < s * -1 by linarith [mem_Iio.1 hs]
+  have h := (hcurve.mono (Ioo_subset_Iio_self (a := t - 1) (b := -l))).eqOn_maximalIntegralCurve
+    (x := x) (contMDiff_neg_mgradient_one (f := -f) hf.neg) ⟨by linarith, by linarith⟩
+    (by simp [maximalIntegralCurve_zero])
+    (show t ∈ Ioo (t - 1) (-l) from ⟨by linarith, by linarith⟩)
+  simpa only [Function.comp_apply, mul_neg_one] using h
 
 /-! ### Energy dissipation -/
 

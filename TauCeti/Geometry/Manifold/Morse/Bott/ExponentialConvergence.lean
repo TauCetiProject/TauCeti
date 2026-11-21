@@ -197,7 +197,6 @@ theorem exists_tendsto_atBot_and_riemannianEDist_le_mul_exp_maximalIntegralCurve
       ∃ μ > 0, ∃ C > 0, ∀ᶠ t in atBot,
         Manifold.riemannianEDist I (maximalIntegralCurve (-mgradient I f) x t) (i a s) ≤
           ENNReal.ofReal (C * Real.exp (μ * t)) := by
-  have : IsManifold I 1 M := IsManifold.of_le one_le_two
   have hf2 : ContMDiff I 𝓘(ℝ) 2 f := h.contMDiff.of_le (by norm_cast)
   obtain ⟨m, hm⟩ := hbdd
   -- The same family exhibits `-f`, which is proper and bounded below, as a Morse–Bott function, so
@@ -206,35 +205,16 @@ theorem exists_tendsto_atBot_and_riemannianEDist_le_mul_exp_maximalIntegralCurve
     h.neg.exists_tendsto_and_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_mgradient hn
       ((Homeomorph.neg ℝ).isProperMap.comp hp)
       ⟨-m, forall_mem_range.2 fun y ↦ neg_le_neg (hm (mem_range_self y))⟩ x
-  -- `γ'` is defined on `[0, ∞)`, hence on a ray `(l, ∞)` with `l < 0`.
-  have hx' := Ici_subset_maximalIntegralCurveInterval_neg_mgradient_of_tendsto
-    ((h.neg.isNondegenerateCriticalSubmanifold a).mem_criticalPoints s) hlim
-  obtain ⟨l, u, ⟨hl, hu⟩, hlu⟩ := mem_nhds_iff_exists_Ioo_subset.1
-    (isOpen_maximalIntegralCurveInterval.mem_nhds (hx' (le_refl (0 : ℝ))))
-  have hray : Ioi l ⊆ maximalIntegralCurveInterval (-mgradient I (-f)) x := fun t ht ↦
-    (lt_or_ge t u).elim (fun htu ↦ hlu ⟨ht, htu⟩) fun htu ↦ hx' (hu.le.trans htu)
-  -- Reversing time turns `γ'` into an integral curve of `-grad f` through `x` on `(-∞, -l)`, so it
-  -- agrees there with the trajectory of `-grad f`. The flow of `-grad f` need not be complete, so
-  -- the global time reversal `maximalIntegralCurve_neg_mgradient_neg` does not apply.
-  have hcurve : IsMIntegralCurveOn (maximalIntegralCurve (-mgradient I (-f)) x ∘ (· * -1))
-      (-mgradient I f) (Iio (-l)) := by
-    have h1 := ((isMIntegralCurveOn_maximalIntegralCurve
-      (contMDiff_neg_mgradient_one (f := -f) hf2.neg)).mono hray).comp_mul (-1)
-    have h2 : (-1 : ℝ) • -mgradient I (-f) = -mgradient I f := by
-      funext y
-      simp [mgradient_neg]
-    rw [h2] at h1
-    exact h1.mono fun t ht ↦ show l < t * -1 by linarith [mem_Iio.1 ht]
+  -- `γ'` is defined on `[0, ∞)`, so reversing time in it gives the trajectory of `-grad f` for
+  -- negative times. The flow of `-grad f` need not be complete.
   have hrev : ∀ t ≤ 0, maximalIntegralCurve (-mgradient I f) x t =
-      maximalIntegralCurve (-mgradient I (-f)) x (t * -1) := fun t ht ↦
-    (hcurve.mono (Ioo_subset_Iio_self (a := t - 1))).eqOn_maximalIntegralCurve
-      (contMDiff_neg_mgradient_one hf2) ⟨by linarith, by linarith⟩
-      (by simp [maximalIntegralCurve_zero]) ⟨by linarith, by linarith⟩
-  have hbot : Tendsto (fun t : ℝ ↦ t * -1) atBot atTop := by
-    simpa only [mul_neg_one] using tendsto_neg_atBot_atTop
-  refine ⟨a, s, (hlim.comp hbot).congr' ?_, μ, hμ, C, hC, ?_⟩
+      maximalIntegralCurve (-mgradient I (-f)) x (-t) := fun t ht ↦ by
+    simpa only [neg_neg] using maximalIntegralCurve_neg_mgradient_neg_of_nonpos (f := -f) hf2.neg
+      (Ici_subset_maximalIntegralCurveInterval_neg_mgradient_of_tendsto
+        ((h.neg.isNondegenerateCriticalSubmanifold a).mem_criticalPoints s) hlim) ht
+  refine ⟨a, s, (hlim.comp tendsto_neg_atBot_atTop).congr' ?_, μ, hμ, C, hC, ?_⟩
   · filter_upwards [eventually_le_atBot 0] with t ht using (hrev t ht).symm
-  · filter_upwards [hbot.eventually hrate, eventually_le_atBot 0] with t ht ht0
+  · filter_upwards [tendsto_neg_atBot_atTop.eventually hrate, eventually_le_atBot 0] with t ht ht0
     rw [hrev t ht0]
     simpa [mul_comm μ t] using ht
 

@@ -51,13 +51,14 @@ manifold counterpart, for an arbitrary `C¹` metric, of the vector-space theorem
 
 Energy decay alone does not bound the distance from `γ t` to `p`, since the Hessian at a saddle
 has null directions. The distance is recovered from the Riemannian length of `γ`. Along any
-stretch of time during which `γ` stays where the inequality holds, the excess
-`e = f (γ t) - f p` satisfies `e' = -‖grad f‖²` and `√lam * √e ≤ ‖grad f‖`, so the length of `γ`
-over that stretch is at most `2 / √lam` times the drop of `√e`
+stretch of time during which `γ` stays where a Łojasiewicz inequality
+`c * e ^ θ ≤ ‖grad f‖` holds for the excess `e = f (γ t) - f p`, with `c > 0` and `θ < 1`, we have
+`e' = -‖grad f‖²`, so the length of `γ` over that stretch is at most `1 / (c * (1 - θ))` times the
+drop of `e ^ (1 - θ)`
 (`TauCeti.pathELength_maximalIntegralCurve_neg_mgradient_le_of_lojasiewicz`, from the scalar
-bound `TauCeti.integral_le_rpow_sub_rpow_of_lojasiewicz`). This bounds the tail length of `γ`
-after time `t`, and with it the Riemannian distance from `γ t` to `p`, by a multiple of
-`sqrt (f (γ t) - f p)`. Hence that distance decays exponentially
+bound `TauCeti.integral_le_rpow_sub_rpow_of_lojasiewicz`). With `θ = 1 / 2` and `c = √lam`, as
+above, this bounds the tail length of `γ` after time `t`, and with it the Riemannian distance from
+`γ t` to `p`, by a multiple of `sqrt (f (γ t) - f p)`. Hence that distance decays exponentially
 (`TauCeti.exists_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_mgradient`), as in
 `IsIntegralCurveOn.exists_norm_sub_le_mul_exp_atTop`. The distance is
 `Manifold.riemannianEDist`, the infimum of lengths of `C¹` paths; on a Riemannian manifold in the
@@ -65,13 +66,13 @@ sense of `IsRiemannianManifold` it is the ambient extended distance.
 
 Convergence itself need not be assumed. **Łojasiewicz's convergence theorem**
 (`TauCeti.tendsto_maximalIntegralCurve_neg_mgradient_of_mapClusterPt`) says that a forward
-trajectory converges to each of its cluster points near which the inequality above holds. Here `p`
-is only a cluster point, but `f` still stays above `f p` along `γ`, so the same length bound
-applies. Once `γ` comes close enough to `p`, at a time when `√e` is small, it therefore cannot
-travel far enough to leave the neighbourhood, and its remaining length is small. Unlike the
-convergence theorem `TauCeti.exists_tendsto_maximalIntegralCurve_neg_mgradient`, nothing is
-assumed about the other critical points: they need not be isolated, as on a Morse–Bott critical
-submanifold.
+trajectory converges to each of its cluster points near which a Łojasiewicz inequality
+`c * |f y - f p| ^ θ ≤ ‖grad f y‖` holds, for any exponent `θ < 1`. Here `p` is only a cluster
+point, but `f` still stays above `f p` along `γ`, so the same length bound applies. Once `γ` comes
+close enough to `p`, at a time when `e ^ (1 - θ)` is small, it therefore cannot travel far enough
+to leave the neighbourhood, and its remaining length is small. Unlike the convergence theorem
+`TauCeti.exists_tendsto_maximalIntegralCurve_neg_mgradient`, nothing is assumed about the other
+critical points: they need not be isolated, as on a Morse–Bott critical submanifold.
 
 A forward trajectory trapped in a compact set `K` has a cluster point in `K`, which is critical. So
 if the inequality holds near every critical point in `K`, the trajectory converges exponentially
@@ -101,9 +102,11 @@ converges exponentially fast to a critical point
 * `TauCeti.exists_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_mgradient`: such a
   trajectory converges to its limit exponentially fast in the Riemannian distance.
 * `TauCeti.pathELength_maximalIntegralCurve_neg_mgradient_le_of_lojasiewicz`: Łojasiewicz's
-  bound on the length of a trajectory along which the inequality holds.
+  bound on the length of a trajectory along which a Łojasiewicz inequality with any exponent
+  `θ < 1` holds.
 * `TauCeti.tendsto_maximalIntegralCurve_neg_mgradient_of_mapClusterPt`: Łojasiewicz's convergence
-  theorem, a forward trajectory converges to a cluster point near which the inequality holds.
+  theorem, a forward trajectory converges to a cluster point near which a Łojasiewicz inequality
+  with any exponent `θ < 1` holds.
 * `exists_tendsto_and_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_mgradient_of_lojasiewicz`
   and `TauCeti.exists_tendsto_and_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_mgradient`:
   a forward trajectory trapped in a compact set near whose critical points the inequality holds,
@@ -212,38 +215,31 @@ theorem exists_sub_le_mul_exp_maximalIntegralCurve_neg_mgradient (hf : ContMDiff
 /-! ### Length of a trajectory and distance to its limit -/
 
 /-- **Łojasiewicz's length bound.** Let the maximal integral curve `γ` of `-grad f` through `x` be
-defined on `[a, b]`, and let `c ≤ f (γ b)`. If `lam * (f (γ t) - c) ≤ ‖grad f (γ t)‖ ^ 2` for
-`t ∈ [a, b)`, with `lam > 0`, then the Riemannian length of `γ` on `[a, b]` is at most
-`2 / √lam * (√(f (γ a) - c) - √(f (γ b) - c))`. -/
+defined on `[a, b]`, and let `c ≤ f (γ b)`. If `c₀ * (f (γ t) - c) ^ θ ≤ ‖grad f (γ t)‖` for
+`t ∈ [a, b)`, with `c₀ > 0` and `θ < 1`, then the Riemannian length of `γ` on `[a, b]` is at most
+`((f (γ a) - c) ^ (1 - θ) - (f (γ b) - c) ^ (1 - θ)) / (c₀ * (1 - θ))`. -/
 theorem pathELength_maximalIntegralCurve_neg_mgradient_le_of_lojasiewicz
-    (hf : ContMDiff I 𝓘(ℝ) 2 f) {a b c lam : ℝ} (hlam : 0 < lam) (hab : a ≤ b)
+    (hf : ContMDiff I 𝓘(ℝ) 2 f) {a b c θ c₀ : ℝ} (hθ : θ < 1) (hc₀ : 0 < c₀) (hab : a ≤ b)
     (hsub : Icc a b ⊆ maximalIntegralCurveInterval (-mgradient I f) x)
     (hc : c ≤ f (maximalIntegralCurve (-mgradient I f) x b))
-    (hloj : ∀ t ∈ Ico a b, lam * (f (maximalIntegralCurve (-mgradient I f) x t) - c) ≤
-      ‖mgradient I f (maximalIntegralCurve (-mgradient I f) x t)‖ ^ 2) :
+    (hloj : ∀ t ∈ Ico a b, c₀ * (f (maximalIntegralCurve (-mgradient I f) x t) - c) ^ θ ≤
+      ‖mgradient I f (maximalIntegralCurve (-mgradient I f) x t)‖) :
     Manifold.pathELength I (maximalIntegralCurve (-mgradient I f) x) a b ≤
-      ENNReal.ofReal (2 / √lam * (√(f (maximalIntegralCurve (-mgradient I f) x a) - c) -
-        √(f (maximalIntegralCurve (-mgradient I f) x b) - c))) := by
+      ENNReal.ofReal (((f (maximalIntegralCurve (-mgradient I f) x a) - c) ^ (1 - θ) -
+        (f (maximalIntegralCurve (-mgradient I f) x b) - c) ^ (1 - θ)) / (c₀ * (1 - θ))) := by
   have : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
     IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := 1)
   have : IsManifold I 1 M := IsManifold.of_le one_le_two
   set γ := maximalIntegralCurve (-mgradient I f) x
   set e : ℝ → ℝ := fun t ↦ f (γ t) - c
   set g : ℝ → ℝ := fun t ↦ ‖mgradient I f (γ t)‖
-  -- The excess `e` of `f` over `c` has derivative `-g²`, stays nonnegative, and satisfies the
-  -- scalar Łojasiewicz inequality `√lam * e ^ (1 / 2) ≤ g`.
+  -- The excess `e` of `f` over `c` has derivative `-g²` and stays nonnegative.
   have he : ∀ t ∈ Icc a b, HasDerivWithinAt e (-g t ^ 2) (Icc a b) t := fun t ht ↦
     ((hasDerivAt_comp_maximalIntegralCurve_neg_mgradient hf (hsub ht)).sub_const
       c).hasDerivWithinAt
   have he₀ : ∀ t ∈ Icc a b, 0 ≤ e t := fun t ht ↦ sub_nonneg.2 (hc.trans
     (antitoneOn_comp_maximalIntegralCurve_neg_mgradient hf (hsub ht)
       (hsub (right_mem_Icc.2 hab)) ht.2))
-  have hL : ∀ t ∈ Ico a b, √lam * e t ^ (1 / 2 : ℝ) ≤ g t := fun t ht ↦ by
-    rw [← Real.sqrt_eq_rpow, ← Real.sqrt_mul hlam.le]
-    calc √(lam * e t) ≤ √(g t ^ 2) := Real.sqrt_le_sqrt (hloj t ht)
-      _ = g t := Real.sqrt_sq (norm_nonneg _)
-  have hint := integral_le_rpow_sub_rpow_of_lojasiewicz hab (Real.sqrt_pos.2 hlam)
-    (by norm_num : (1 / 2 : ℝ) < 1) he he₀ hL
   -- The length of `γ` is the integral of its speed `g`.
   have hspeed : ∀ t ∈ uIcc a b,
       ‖curveVelocityWithin I γ (maximalIntegralCurveInterval (-mgradient I f) x) t‖ = g t := by
@@ -254,10 +250,15 @@ theorem pathELength_maximalIntegralCurve_neg_mgradient_le_of_lojasiewicz
   rw [(contMDiffOn_maximalIntegralCurve_neg_mgradient
     hf).pathELength_eq_ofReal_integral_norm_curveVelocityWithin hsub,
     intervalIntegral.integral_congr hspeed]
-  refine ENNReal.ofReal_le_ofReal (hint.trans_eq ?_)
-  rw [show (1 : ℝ) - 1 / 2 = 1 / 2 by norm_num, ← Real.sqrt_eq_rpow, ← Real.sqrt_eq_rpow]
-  simp only [e]
-  field_simp
+  exact ENNReal.ofReal_le_ofReal (integral_le_rpow_sub_rpow_of_lojasiewicz hab hc₀ hθ he he₀ hloj)
+
+/-- The squared form `lam * e ≤ g ^ 2` of the Łojasiewicz inequality with exponent `1 / 2` gives
+the form `√lam * e ^ (1 / 2) ≤ g` taken by Łojasiewicz's length bound. -/
+private theorem sqrt_mul_rpow_le_of_mul_le_sq {lam e g : ℝ} (hlam : 0 ≤ lam) (hg : 0 ≤ g)
+    (h : lam * e ≤ g ^ 2) : √lam * e ^ (1 / 2 : ℝ) ≤ g := by
+  rw [← Real.sqrt_eq_rpow, ← Real.sqrt_mul hlam]
+  calc √(lam * e) ≤ √(g ^ 2) := Real.sqrt_le_sqrt h
+    _ = g := Real.sqrt_sq hg
 
 /-- The length bound of `pathELength_maximalIntegralCurve_neg_mgradient_le_of_lojasiewicz` with
 `c = f p`, in the form used for convergence to an ω-limit point `p`, below which `f` stays along
@@ -265,18 +266,18 @@ the trajectory. -/
 private theorem pathELength_le_of_forall_abs_le (hf : ContMDiff I 𝓘(ℝ) 2 f)
     (hx : Ici 0 ⊆ maximalIntegralCurveInterval (-mgradient I f) x)
     (hle : ∀ t ∈ Ici (0 : ℝ), f p ≤ f (maximalIntegralCurve (-mgradient I f) x t))
-    {lam : ℝ} (hlam : 0 < lam) {t s : ℝ} (ht : 0 ≤ t) (hts : t ≤ s)
-    (hloj : ∀ u ∈ Ico t s, lam * |f (maximalIntegralCurve (-mgradient I f) x u) - f p| ≤
-      ‖mgradient I f (maximalIntegralCurve (-mgradient I f) x u)‖ ^ 2) :
+    {θ c₀ : ℝ} (hθ : θ < 1) (hc₀ : 0 < c₀) {t s : ℝ} (ht : 0 ≤ t) (hts : t ≤ s)
+    (hloj : ∀ u ∈ Ico t s, c₀ * |f (maximalIntegralCurve (-mgradient I f) x u) - f p| ^ θ ≤
+      ‖mgradient I f (maximalIntegralCurve (-mgradient I f) x u)‖) :
     Manifold.pathELength I (maximalIntegralCurve (-mgradient I f) x) t s ≤
-      ENNReal.ofReal (2 / √lam * √(f (maximalIntegralCurve (-mgradient I f) x t) - f p)) := by
-  refine (pathELength_maximalIntegralCurve_neg_mgradient_le_of_lojasiewicz hf hlam hts
+      ENNReal.ofReal
+        ((f (maximalIntegralCurve (-mgradient I f) x t) - f p) ^ (1 - θ) / (c₀ * (1 - θ))) := by
+  refine (pathELength_maximalIntegralCurve_neg_mgradient_le_of_lojasiewicz hf hθ hc₀ hts
     (fun u hu ↦ hx (ht.trans hu.1)) (hle s (ht.trans hts)) fun u hu ↦ ?_).trans
     (ENNReal.ofReal_le_ofReal ?_)
   · simpa only [abs_of_nonneg (sub_nonneg.2 (hle u (ht.trans hu.1)))] using hloj u hu
-  · have := Real.sqrt_nonneg (f (maximalIntegralCurve (-mgradient I f) x s) - f p)
-    have : 0 ≤ 2 / √lam := by positivity
-    nlinarith
+  · exact div_le_div_of_nonneg_right (sub_le_self _ (Real.rpow_nonneg
+      (sub_nonneg.2 (hle s (ht.trans hts))) _)) (mul_pos hc₀ (sub_pos.2 hθ)).le
 
 variable (hp : p ∈ criticalPoints I f)
   (hloj : ∃ lam > 0, ∀ᶠ y in 𝓝 p, lam * |f y - f p| ≤ ‖mgradient I f y‖ ^ 2)
@@ -304,9 +305,14 @@ theorem exists_pathELength_le_mul_sqrt_maximalIntegralCurve_neg_mgradient
   refine ⟨2 / √lam, by positivity, ?_⟩
   filter_upwards [eventually_ge_atTop T] with t ht s
   rcases le_total t s with hts | hst
-  · exact pathELength_le_of_forall_abs_le hf hx
-      (fun u hu ↦ le_comp_maximalIntegralCurve_neg_mgradient hf hx hconv.mapClusterPt hu) hlam
-      ((hT T le_rfl).2.trans ht) hts fun u hu ↦ (hT u (ht.trans hu.1)).1
+  · refine (pathELength_le_of_forall_abs_le hf hx
+      (fun u hu ↦ le_comp_maximalIntegralCurve_neg_mgradient hf hx hconv.mapClusterPt hu)
+      (by norm_num : (1 / 2 : ℝ) < 1) (Real.sqrt_pos.2 hlam) ((hT T le_rfl).2.trans ht) hts
+      fun u hu ↦ sqrt_mul_rpow_le_of_mul_le_sq hlam.le (norm_nonneg _)
+        (hT u (ht.trans hu.1)).1).trans_eq ?_
+    rw [show (1 : ℝ) - 1 / 2 = 1 / 2 by norm_num, ← Real.sqrt_eq_rpow]
+    congr 1
+    field_simp
   · exact (Manifold.pathELength_mono le_rfl hst).trans (by simp)
 
 /-- **The Riemannian distance from a trajectory to its limit is controlled by the square root of
@@ -375,18 +381,19 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 /-- **A trajectory cannot leave a Łojasiewicz ball once it is deep inside.** Let `f` stay above
 `f p` along the forward trajectory `γ` of `-grad f`, and let the Łojasiewicz inequality hold on the
 Riemannian ball of radius `r` about `p`. If at some time `t₀ ≥ 0` the point `γ t₀` lies within
-`r / 2` of `p` and the length bound `2 / √lam * √(f (γ t₀) - f p)` is at most `r / 2`, then `γ`
+`r / 2` of `p` and the length bound `(f (γ t₀) - f p) ^ (1 - θ) / (c * (1 - θ))` is at most
+`r / 2`, then `γ`
 stays in the ball after `t₀`: at a first exit time `τ`, the length of `γ` on `[t₀, τ]` would be at
 most `r / 2`, which keeps `γ τ` inside the ball. -/
 private theorem riemannianEDist_lt_of_lojasiewicz (hf : ContMDiff I 𝓘(ℝ) 2 f)
     (hx : Ici 0 ⊆ maximalIntegralCurveInterval (-mgradient I f) x)
     (hle : ∀ t ∈ Ici (0 : ℝ), f p ≤ f (maximalIntegralCurve (-mgradient I f) x t))
-    {lam : ℝ} (hlam : 0 < lam) {r : ℝ≥0}
-    (hrU : ∀ y, Manifold.riemannianEDist I p y < r → lam * |f y - f p| ≤ ‖mgradient I f y‖ ^ 2)
+    {θ c : ℝ} (hθ : θ < 1) (hc : 0 < c) {r : ℝ≥0}
+    (hrU : ∀ y, Manifold.riemannianEDist I p y < r → c * |f y - f p| ^ θ ≤ ‖mgradient I f y‖)
     {t₀ : ℝ} (ht₀0 : 0 ≤ t₀)
     (ht₀ : Manifold.riemannianEDist I p (maximalIntegralCurve (-mgradient I f) x t₀) < r / 2)
-    (hL : ENNReal.ofReal (2 / √lam * √(f (maximalIntegralCurve (-mgradient I f) x t₀) - f p)) ≤
-      r / 2)
+    (hL : ENNReal.ofReal ((f (maximalIntegralCurve (-mgradient I f) x t₀) - f p) ^ (1 - θ) /
+      (c * (1 - θ))) ≤ r / 2)
     {s : ℝ} (hs : t₀ ≤ s) :
     Manifold.riemannianEDist I p (maximalIntegralCurve (-mgradient I f) x s) < r := by
   have : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
@@ -409,7 +416,7 @@ private theorem riemannianEDist_lt_of_lojasiewicz (hf : ContMDiff I 𝓘(ℝ) 2 
   -- Before `τ` the trajectory stays in the ball, so its length on `[t₀, τ]` is at most `r / 2`.
   have hdist : Manifold.riemannianEDist I (γ t₀) (γ (sInf F)) ≤ r / 2 :=
     (Manifold.riemannianEDist_le_pathELength hγ₀ rfl rfl hτ.1.1).trans
-      ((pathELength_le_of_forall_abs_le hf hx hle hlam ht₀0 hτ.1.1 fun u hu ↦
+      ((pathELength_le_of_forall_abs_le hf hx hle hθ hc ht₀0 hτ.1.1 fun u hu ↦
         hrU _ (hin u hu)).trans hL)
   refine hτ.2 ?_
   calc Manifold.riemannianEDist I p (γ (sInf F))
@@ -421,9 +428,9 @@ private theorem riemannianEDist_lt_of_lojasiewicz (hf : ContMDiff I 𝓘(ℝ) 2 
 
 /-- **Łojasiewicz's convergence theorem.** If the maximal integral curve `γ` of `-grad f` through
 `x` exists for all positive time and has a cluster point `p` as `t → ∞` near which
-`lam * |f y - f p| ≤ ‖grad f y‖ ^ 2` for some `lam > 0`, then `γ` converges to `p`.
+`c * |f y - f p| ^ θ ≤ ‖grad f y‖` for some `θ < 1` and `c > 0`, then `γ` converges to `p`.
 
-The inequality holds near a nondegenerate critical point
+The inequality holds with `θ = 1 / 2` near a nondegenerate critical point
 (`TauCeti.IsManifoldNondegenerateCriticalPoint.exists_mul_abs_sub_le_norm_mgradient_sq`) and near
 a point of a Morse–Bott critical submanifold
 (`SmoothEmbedding.IsNondegenerateCriticalSubmanifold.exists_mul_abs_sub_le_norm_mgradient_sq`),
@@ -431,23 +438,25 @@ where the critical points need not be isolated. -/
 theorem tendsto_maximalIntegralCurve_neg_mgradient_of_mapClusterPt
     (hf : ContMDiff I 𝓘(ℝ) 2 f) (hx : Ici 0 ⊆ maximalIntegralCurveInterval (-mgradient I f) x)
     (hp : MapClusterPt p atTop (maximalIntegralCurve (-mgradient I f) x))
-    (hloj : ∃ lam > 0, ∀ᶠ y in 𝓝 p, lam * |f y - f p| ≤ ‖mgradient I f y‖ ^ 2) :
+    (hloj : ∃ θ < (1 : ℝ), ∃ c > 0, ∀ᶠ y in 𝓝 p, c * |f y - f p| ^ θ ≤ ‖mgradient I f y‖) :
     Tendsto (maximalIntegralCurve (-mgradient I f) x) atTop (𝓝 p) := by
   have : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
     IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := 1)
   have : IsManifold I 1 M := IsManifold.of_le one_le_two
   have : LocallyCompactSpace M := Manifold.locallyCompact_of_finiteDimensional I
   set γ := maximalIntegralCurve (-mgradient I f) x
-  obtain ⟨lam, hlam, hU⟩ := hloj
+  obtain ⟨θ, hθ, c, hc, hU⟩ := hloj
   have hle : ∀ t ∈ Ici (0 : ℝ), f p ≤ f (γ t) := fun t ht ↦
     le_comp_maximalIntegralCurve_neg_mgradient hf hx hp ht
   -- The bound on the length of `γ` after time `t` tends to `0`, since `f (γ t) → f p`.
-  have hL0 : Tendsto (fun t ↦ ENNReal.ofReal (2 / √lam * √(f (γ t) - f p))) atTop (𝓝 0) := by
+  have hL0 : Tendsto (fun t ↦ ENNReal.ofReal ((f (γ t) - f p) ^ (1 - θ) / (c * (1 - θ)))) atTop
+      (𝓝 0) := by
     have hlim : Tendsto (fun t ↦ f (γ t) - f p) atTop (𝓝 (f p - f p)) :=
       (tendsto_comp_maximalIntegralCurve_neg_mgradient hf hx hp).sub_const _
     rw [sub_self] at hlim
-    simpa using ENNReal.tendsto_ofReal
-      ((tendsto_const_nhds (x := 2 / √lam)).mul ((Real.continuous_sqrt.tendsto 0).comp hlim))
+    have h := ENNReal.tendsto_ofReal (((Real.continuousAt_rpow_const 0 (1 - θ)
+      (Or.inr (sub_pos.2 hθ).le)).tendsto.comp hlim).div_const (c * (1 - θ)))
+    rwa [Real.zero_rpow (sub_pos.2 hθ).ne', zero_div, ENNReal.ofReal_zero] at h
   -- Choose a radius `r` such that the Riemannian ball of radius `r` about `p` lies where the
   -- Łojasiewicz inequality holds, then a time `t₀ ≥ 0` at which `γ` is within `r / 2` of `p` and
   -- after which the length bound is at most `r / 2`. After `t₀` the trajectory stays in the ball.
@@ -458,14 +467,14 @@ theorem tendsto_maximalIntegralCurve_neg_mgradient_of_mapClusterPt
   obtain ⟨t₀, ht₀, ht₀T⟩ := ((hp.frequently (eventually_riemannianEDist_lt I p hr2)).and_eventually
     (eventually_ge_atTop T)).exists
   have hstay : ∀ s ≥ t₀, Manifold.riemannianEDist I p (γ s) < r := fun s hs ↦
-    riemannianEDist_lt_of_lojasiewicz hf hx hle hlam (fun y hy ↦ hrU hy) (hT t₀ ht₀T).2 ht₀
+    riemannianEDist_lt_of_lojasiewicz hf hx hle hθ hc (fun y hy ↦ hrU hy) (hT t₀ ht₀T).2 ht₀
       (hT t₀ ht₀T).1 hs
   -- Hence the tail lengths of `γ` after `t₀` tend to `0`.
   refine Manifold.tendsto_of_mapClusterPt_of_forall_pathELength_le
     ((contMDiffOn_maximalIntegralCurve_neg_mgradient hf).mono hx) hp fun ε hε ↦ ?_
   filter_upwards [eventually_ge_atTop t₀, ENNReal.tendsto_nhds_zero.1 hL0 ε hε] with t ht hLt s
   rcases le_total t s with hts | hst
-  · exact (pathELength_le_of_forall_abs_le hf hx hle hlam ((hT t₀ ht₀T).2.trans ht) hts
+  · exact (pathELength_le_of_forall_abs_le hf hx hle hθ hc ((hT t₀ ht₀T).2.trans ht) hts
       fun u hu ↦ hrU (hstay u (ht.trans hu.1))).trans hLt
   · exact (Manifold.pathELength_mono le_rfl hst).trans (by simp)
 
@@ -494,7 +503,12 @@ theorem
       (by filter_upwards [eventually_ge_atTop 0] with t ht using hmem ⟨hx ht, ht⟩))
   have hpc : p ∈ criticalPoints I f ∩ K :=
     ⟨mem_criticalPoints_of_mapClusterPt_maximalIntegralCurve_neg_mgradient hK hmem hf hp, hpK⟩
-  have hconv := tendsto_maximalIntegralCurve_neg_mgradient_of_mapClusterPt hf hx hp (hloj p hpc)
+  -- The inequality `lam * |f z - f p| ≤ ‖grad f z‖ ^ 2` is the case `θ = 1 / 2` of Łojasiewicz's
+  -- convergence theorem.
+  have hconv := tendsto_maximalIntegralCurve_neg_mgradient_of_mapClusterPt hf hx hp <| by
+    obtain ⟨lam, hlam, h⟩ := hloj p hpc
+    exact ⟨1 / 2, by norm_num, √lam, Real.sqrt_pos.2 hlam,
+      h.mono fun z hz ↦ sqrt_mul_rpow_le_of_mul_le_sq hlam.le (norm_nonneg _) hz⟩
   exact ⟨p, hpc, hconv,
     exists_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_mgradient hpc.1 (hloj p hpc)
       hconv hf⟩
