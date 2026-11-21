@@ -57,6 +57,11 @@ noncomputable def dedekindZetaCoeff (n : ℕ) : ℕ :=
 theorem dedekindZetaCoeff_zero : dedekindZetaCoeff K 0 = 1 := by
   simp [dedekindZetaCoeff, Ideal.absNorm_eq_zero_iff]
 
+/-- The unit ideal is the unique integral ideal of absolute norm `1`. -/
+@[simp]
+theorem dedekindZetaCoeff_one : dedekindZetaCoeff K 1 = 1 := by
+  simp [dedekindZetaCoeff, Ideal.absNorm_eq_one_iff]
+
 /-- The Dedekind zeta function is the `LSeries` of `dedekindZetaCoeff`. -/
 theorem dedekindZeta_eq_LSeries_dedekindZetaCoeff (s : ℂ) :
     NumberField.dedekindZeta K s = LSeries (fun n ↦ (dedekindZetaCoeff K n : ℂ)) s := by

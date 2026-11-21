@@ -12,6 +12,7 @@ public import TauCeti.NumberTheory.LFunctions.Theta.Mellin.Pair
 public import TauCeti.NumberTheory.LFunctions.Theta.UnitCone
 public import TauCeti.RingTheory.DedekindDomain.Different.Basic
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
+import TauCeti.Analysis.Meromorphic.Conj
 import TauCeti.Analysis.Meromorphic.Order
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Convergence
@@ -81,6 +82,8 @@ Hecke's functional equation `Z(I, 1 - s) = Z(I^∨, s)` against the trace dual
 * `TauCeti.LFunctions.completedPartialZeta_one_sub`: Hecke's functional equation
   `completedPartialZeta I (1 - s) = completedPartialZeta (FractionalIdeal.dualEquiv ℤ ℚ I) s`
   (Neukirch VII (5.9)).
+* `TauCeti.LFunctions.completedPartialZeta_conj`: reflection symmetry
+  `completedPartialZeta I (conj s) = conj (completedPartialZeta I s)`.
 
 ## References
 
@@ -92,9 +95,9 @@ Hecke's functional equation `Z(I, 1 - s) = Z(I^∨, s)` against the trace dual
 public section
 noncomputable section
 
-open Complex Filter MeasureTheory NumberField NumberField.InfinitePlace NumberField.mixedEmbedding
-  NumberField.mixedEmbedding.fundamentalCone Set Submodule TauCeti.GlobalNumberFields
-  TauCeti.NumberField.mixedEmbedding
+open Complex ComplexConjugate Filter MeasureTheory NumberField NumberField.InfinitePlace
+  NumberField.mixedEmbedding NumberField.mixedEmbedding.fundamentalCone Set Submodule
+  TauCeti.GlobalNumberFields TauCeti.NumberField.mixedEmbedding
 open scoped ENNReal nonZeroDivisors Pointwise Topology
 
 namespace TauCeti.LFunctions
@@ -747,5 +750,36 @@ theorem completedPartialZeta_one_sub (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) (s 
       indicator_of_mem (mem_Ioi.mpr hu)]
     exact mellinKernel_mixedDual_idealLattice (FractionalIdeal.coe_dualEquiv ℤ ℚ I) _ u
   exact congrFun hcongr (s / 2)
+
+/-- Reflection symmetry of the completed partial zeta function across the real axis. -/
+@[simp]
+theorem completedPartialZeta_conj (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) (s : ℂ) :
+    completedPartialZeta I (conj s) = conj (completedPartialZeta I s) := by
+  have heq : conj ∘ completedPartialZeta I ∘ conj = completedPartialZeta I := by
+    refine eq_of_meromorphicNFOn_of_eqOn_halfPlane
+      (meromorphicNFOn_conj_conj_iff.mpr (meromorphicNFOn_completedPartialZeta I))
+      (meromorphicNFOn_completedPartialZeta I) fun z (hz : 1 < z.re) ↦ ?_
+    have hzc : 1 < (conj z).re := by simpa using hz
+    have hdiscr : conj (((|discr K| : ℤ) : ℂ) ^ (conj z / 2)) =
+        ((|discr K| : ℤ) : ℂ) ^ (z / 2) := by
+      have h := congrArg conj
+        (TauCeti.ofReal_cpow_conj (by positivity : (0 : ℝ) ≤ (|discr K| : ℤ)) (z / 2))
+      simpa only [Complex.ofReal_intCast, map_div₀, map_ofNat, Complex.conj_conj] using h
+    set c : RayClassGroup (Modulus.one K) := oneEquivClassGroup.symm (ClassGroup.mk K I)⁻¹
+    have hstar : star (rayClassCoeff (Modulus.one K) c) = rayClassCoeff (Modulus.one K) c := by
+      funext 𝔟
+      simp only [Pi.star_apply, rayClassCoeff_apply]
+      split_ifs <;> simp
+    have hL : conj (LSeries (normCoeff K (rayClassCoeff (Modulus.one K) c)) (conj z)) =
+        LSeries (normCoeff K (rayClassCoeff (Modulus.one K) c)) z := by
+      have h := LSeries_normCoeff_star (K := K) (rayClassCoeff (Modulus.one K) c) z
+      rw [hstar] at h
+      simpa [Complex.star_def] using congrArg conj h
+    simp only [Function.comp_apply,
+      completedPartialZeta_eq_mul_LSeries_rayClassCoeff_one I hzc,
+      completedPartialZeta_eq_mul_LSeries_rayClassCoeff_one I hz,
+      map_mul, map_pow, ← Complex.Gammaℝ_conj, ← Complex.Gammaℂ_conj, Complex.conj_conj]
+    rw [hdiscr, show oneEquivClassGroup.symm (ClassGroup.mk K I)⁻¹ = c from rfl, hL]
+  simpa using (congrFun heq (conj s)).symm
 
 end TauCeti.LFunctions
