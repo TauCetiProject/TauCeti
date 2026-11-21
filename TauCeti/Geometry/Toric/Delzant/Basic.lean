@@ -330,6 +330,15 @@ theorem exists_mem_extremePoints_mem_activeSet (j : ι) :
   obtain ⟨x, hx, hxj⟩ := hΔ.irredundant j
   exact Toric.exists_mem_extremePoints_mem_activeSet hΔ.isCompact hx (hxj ▸ mem_singleton j)
 
+/-- The facets through a point of a Delzant polytope pass through a smooth vertex. In particular
+the active normals at every point are part of a lattice basis. -/
+theorem exists_isSmoothVertex_activeSet_subset {x : StrongDual ℝ V}
+    (hx : x ∈ facetPolyhedron i u c) :
+    ∃ v, IsSmoothVertex i u c v ∧
+      activeSet (facetPairing i u) c x ⊆ activeSet (facetPairing i u) c v := by
+  obtain ⟨v, hv, hsub⟩ := exists_mem_extremePoints_activeSet_subset hΔ.isCompact hx
+  exact ⟨v, hΔ.isSmoothVertex v hv, hsub⟩
+
 /-- The facet normals of a Delzant polytope are primitive lattice vectors. -/
 theorem isPrimitive (j : ι) : IsPrimitive (u j) := by
   obtain ⟨x, hx, hj⟩ := hΔ.exists_mem_extremePoints_mem_activeSet j
