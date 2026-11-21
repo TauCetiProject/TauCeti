@@ -9,9 +9,7 @@ public import Mathlib.CategoryTheory.Equivalence
 public import Mathlib.CategoryTheory.Limits.Shapes.BinaryBiproducts
 public import Mathlib.CategoryTheory.ObjectProperty.ClosedUnderIsomorphisms
 public import Mathlib.CategoryTheory.ObjectProperty.ContainsZero
-public import Mathlib.CategoryTheory.ObjectProperty.FiniteProducts
 public import Mathlib.CategoryTheory.ObjectProperty.Small
-public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
 public import TauCeti.CategoryTheory.ObjectProperty.FiniteProducts
 public import TauCeti.CategoryTheory.ObjectProperty.FullSubcategory
 

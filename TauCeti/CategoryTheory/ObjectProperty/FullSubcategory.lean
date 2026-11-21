@@ -36,11 +36,15 @@ instance FullSubcategory.isGroupoid [IsGroupoid C] : IsGroupoid P.FullSubcategor
   isGroupoid_of_reflects_iso P.ι
 
 /-- The lift of a functor through a full subcategory, followed by the inclusion, is the original
-functor. This is Mathlib's isomorphism `CategoryTheory.ObjectProperty.liftCompιIso`, whose
-components are identities, turned into an equality. -/
+functor. This is the equality form of Mathlib's isomorphism
+`CategoryTheory.ObjectProperty.liftCompιIso`, assembled from its componentwise lemmas
+`CategoryTheory.ObjectProperty.ι_obj_lift_obj` and `CategoryTheory.ObjectProperty.ι_obj_lift_map`.
+-/
 theorem lift_comp_ι {E : Type*} [Category* E] (F : E ⥤ C) (hF : ∀ A, P (F.obj A)) :
     P.lift F hF ⋙ P.ι = F :=
-  Functor.ext_of_iso (P.liftCompιIso F hF) (P.ι_obj_lift_obj F hF) fun _ ↦ rfl
+  Functor.ext (P.ι_obj_lift_obj F hF) fun _ _ f ↦ by
+    rw [Functor.comp_map, P.ι_obj_lift_map F hF f]
+    simp
 
 /-- Two successive full-subcategory restrictions agree with restriction to the intersection.
 The comparison and its inverse leave the underlying objects and morphisms unchanged. -/
