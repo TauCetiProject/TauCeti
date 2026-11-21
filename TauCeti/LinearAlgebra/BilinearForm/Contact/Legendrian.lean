@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import TauCeti.LinearAlgebra.BilinearForm.Contact
 import Mathlib.Tactic.LinearCombination
+import TauCeti.LinearAlgebra.Dimension.Prod
 
 /-!
 # The linear normal form of a contact covector along a Legendrian subspace
@@ -108,12 +109,6 @@ structure IsLegendrian (a : Module.Dual K V) (B : LinearMap.BilinForm K V) (f : 
   /-- The dimension count `2 dim U + 1 = dim V`. -/
   two_mul_finrank_add_one : 2 * finrank K U + 1 = finrank K V
 
-/-- The model space `U × U^* × K` of a finite-dimensional `U` has dimension `2 dim U + 1`. -/
-private theorem finrank_jetModel [FiniteDimensional K U] :
-    finrank K (U × Module.Dual K U × K) = 2 * finrank K U + 1 := by
-  rw [finrank_prod, finrank_prod, Subspace.dual_finrank_eq, finrank_self]
-  ring
-
 /-- The target of a Legendrian map is finite-dimensional, since its dimension `2 dim U + 1` is
 positive. -/
 theorem IsLegendrian.finiteDimensional (hf : a.IsLegendrian B f) : FiniteDimensional K V :=
@@ -184,9 +179,9 @@ theorem isLegendrian_jetContactCovector_inl [FiniteDimensional K U] :
     (jetContactCovector K U).IsLegendrian (jetContactBilinForm K U)
       (LinearMap.inl K U (Module.Dual K U × K)) where
   injective := LinearMap.inl_injective
-  apply_eq_zero _ := rfl
+  apply_eq_zero _ := by simp
   apply_apply_eq_zero _ _ := by simp
-  two_mul_finrank_add_one := Module.Dual.finrank_jetModel.symm
+  two_mul_finrank_add_one := (Module.finrank_prod_dual_prod_self K U).symm
 
 end TauCeti
 
@@ -320,8 +315,7 @@ theorem IsLegendrian.apply_jetMap (h : a.IsContact B) (hf : a.IsLegendrian B f)
     (x : U × Module.Dual K U × K) : a (a.jetMap B f s x) = x.2.2 := by
   have := hf.finiteDimensional
   have hsa : a (s x.2.1) = 0 := by simpa using congrArg Prod.snd (hs x.2.1)
-  rw [jetMap_apply, map_add, map_add, hf.apply_eq_zero, hsa, map_smul, h.apply_reebVector,
-    smul_eq_mul, mul_one, zero_add, zero_add]
+  simp [jetMap_apply, hf.apply_eq_zero, hsa, h.apply_reebVector]
 
 /-- The one-jet normal form carries the contact pairing to the projection `(q, p, z) ↦ (p, z)`. -/
 theorem IsLegendrian.contactPairing_jetMap (hB : B.IsAlt) (h : a.IsContact B)
@@ -370,7 +364,7 @@ theorem IsLegendrian.bijective_jetMap (hB : B.IsAlt) (h : a.IsContact B)
   have := hf.finiteDimensional
   have hinj := hf.injective_jetMap hs hB h
   refine ⟨hinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank ?_).1 hinj⟩
-  rw [finrank_jetModel, hf.two_mul_finrank_add_one]
+  rw [Module.finrank_prod_dual_prod_self, hf.two_mul_finrank_add_one]
 
 end JetMap
 
@@ -415,7 +409,7 @@ theorem isLegendrian_iff_exists_linearEquiv_jetContact [NeZero (2 : K)] [FiniteD
   refine ⟨hinj, fun u ↦ ?_, fun u u' ↦ ?_, ?_⟩
   · simpa [Prod.mk_zero_zero] using LinearMap.congr_fun ha (u, 0, 0)
   · simpa [Prod.mk_zero_zero] using LinearMap.congr_fun₂ hB' (u, 0, 0) (u', 0, 0)
-  · rw [← finrank_jetModel, e.finrank_eq]
+  · rw [← Module.finrank_prod_dual_prod_self, e.finrank_eq]
 
 /-! ### Properties of every normal form -/
 
@@ -472,7 +466,7 @@ theorem IsContact.exists_symm_apply_eq [FiniteDimensional K V] (hB : B.IsAlt) (h
   have hreeb : e.symm (e' (0, 0, 1)) = (0, 0, 1) := by
     rw [e.symm_apply_eq, h.apply_eq_reebVector hB e ha hB', h.apply_eq_reebVector hB e' ha' hB'']
   have hS (p : Module.Dual K U) : e.symm (e' (0, p, 0)) = (S p, p, 0) :=
-    Prod.ext rfl (by simpa using hsnd (0, p, 0))
+    Prod.ext (by simp [S]) (by simpa using hsnd (0, p, 0))
   have hx (x : U × Module.Dual K U × K) : e.symm (e' x) = (x.1 + S x.2.1, x.2) := by
     obtain ⟨q, p, z⟩ := x
     have hdec : ((q, p, z) : U × Module.Dual K U × K) =
