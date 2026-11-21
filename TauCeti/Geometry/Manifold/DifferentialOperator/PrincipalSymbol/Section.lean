@@ -283,7 +283,8 @@ theorem sectionCommutatorSymbol_mk_smul (hx : I.IsInteriorPoint x) {m : ℕ}
     (P : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ m)
     (g : C^∞⟮I, M; ℝ⟯) :
     sectionCommutatorSymbol I hx
-        ⟨g • (P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯), smul_mem_differentialOperators g P.2⟩ =
+        ⟨g • (P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯),
+          smul_mem_differentialOperators g P.property⟩ =
       g x • sectionCommutatorSymbol I hx P :=
   ((eq_sectionCommutatorSymbol_iff hx _ _).2 fun f s ↦ by
     simp [sectionCommutatorSymbol_mvfderiv, commutatorSymbol_mk_smul]).symm
@@ -306,7 +307,8 @@ theorem sectionPrincipalSymbol_mk_smul (hx : I.IsInteriorPoint x) {m : ℕ}
     (P : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ m)
     (g : C^∞⟮I, M; ℝ⟯) (ξ : TangentSpace I x →L[ℝ] ℝ) :
     sectionPrincipalSymbol I hx
-        ⟨g • (P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯), smul_mem_differentialOperators g P.2⟩ ξ =
+        ⟨g • (P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯),
+          smul_mem_differentialOperators g P.property⟩ ξ =
       g x • sectionPrincipalSymbol I hx P ξ := by
   rw [sectionPrincipalSymbol_def, sectionPrincipalSymbol_def, sectionCommutatorSymbol_mk_smul,
     smul_apply]
@@ -381,7 +383,7 @@ theorem sectionPrincipalSymbol_comp (hx : I.IsInteriorPoint x) {m k : ℕ}
     (ξ : TangentSpace I x →L[ℝ] ℝ) :
     sectionPrincipalSymbol I hx
         ⟨(P : Cₛ^∞⟮I; F', W⟯ →ₗ[ℝ] Cₛ^∞⟮I; F'', U⟯) ∘ₗ (Q : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯),
-          comp_mem_differentialOperators P.2 Q.2⟩ ξ =
+          comp_mem_differentialOperators P.property Q.property⟩ ξ =
       sectionPrincipalSymbol I hx P ξ ∘ₗ sectionPrincipalSymbol I hx Q ξ := by
   obtain ⟨f, rfl⟩ : ∃ f : C^∞⟮I, M; ℝ⟯, mvfderiv I f x = ξ := ⟨_, mvfderiv_covectorLift hx ξ⟩
   refine LinearMap.ext fun v ↦ ?_
@@ -395,7 +397,7 @@ theorem sectionPrincipalSymbol_comp (hx : I.IsInteriorPoint x) {m k : ℕ}
     rw [sectionPrincipalSymbol_mvfderiv, ContMDiffSection.coe_smul, Pi.smul_apply]
   rw [ContMDiffSection.evalLinearMap_apply, LinearMap.comp_apply, hQ,
     sectionPrincipalSymbol_mvfderiv, sectionPrincipalSymbol_mvfderiv,
-    smulCommutator_pow_comp_of_mem P.2 Q.2]
+    smulCommutator_pow_comp_of_mem P.property Q.property]
   have hc : ((m + k).factorial : ℝ)⁻¹ * ((m + k).choose m : ℕ) =
       (m.factorial : ℝ)⁻¹ * (k.factorial : ℝ)⁻¹ := by
     rw [Nat.cast_add_choose]
