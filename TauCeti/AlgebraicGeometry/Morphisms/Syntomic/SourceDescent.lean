@@ -7,11 +7,10 @@ module
 
 public import TauCeti.AlgebraicGeometry.Morphisms.Syntomic.Basic
 public import Mathlib.AlgebraicGeometry.Morphisms.Etale
-import Mathlib.AlgebraicGeometry.Morphisms.FiniteType
 import TauCeti.AlgebraicGeometry.Morphisms.Flat.Basic
 import TauCeti.AlgebraicGeometry.Morphisms.Syntomic.Fiber
 import TauCeti.AlgebraicGeometry.Morphisms.Syntomic.Smooth
-import TauCeti.RingTheory.Syntomic.Descent
+import TauCeti.RingTheory.Syntomic.SourceDescent
 
 /-!
 # Syntomicity along étale surjections of the source
@@ -72,8 +71,8 @@ private theorem exists_notMem_isStandardSyntomicOfRelativeDimension_of_etale {K 
     exact this
   have hQ : y.asIdeal.comap (algebraMap A (𝒱.X (𝒱.idx x'))) = (u x').asIdeal := by
     have : u x' = Spec.map χ y := by rw [hχ, Scheme.Hom.comp_apply, hy]
-    rw [this, Spec.map_apply]
-    rfl
+    rw [this, Spec.map_apply, RingHom.algebraMap_toAlgebra]
+    exact (PrimeSpectrum.comap_asIdeal χ.hom y).symm
   have : y.asIdeal.IsPrime := y.isPrime
   obtain ⟨g, hg, hstd⟩ :=
     exists_notMem_isStandardSyntomicOfRelativeDimension_localization_away_of_etale (A := A) h
@@ -119,9 +118,10 @@ private theorem SyntomicOfRelativeDimension.of_comp_surjective_of_field {K : Typ
   have := hstd x
   infer_instance
 
-/-- **Syntomicity descends along étale surjections of the source.** If `u : X' ⟶ X` is étale and
-surjective and `u ≫ f` is syntomic of relative dimension `n`, then so is `f`, provided `f` is
-locally of finite presentation. The cover `u` need not be quasi-compact. -/
+/-- **Syntomicity of a morphism locally of finite presentation descends along étale surjections of
+the source.** If `f` is locally of finite presentation, `u : X' ⟶ X` is étale and surjective, and
+`u ≫ f` is syntomic of relative dimension `n`, then so is `f`. The cover `u` need not be
+quasi-compact. -/
 theorem SyntomicOfRelativeDimension.of_comp_surjective {X' X S : Scheme.{u}} (u : X' ⟶ X)
     (f : X ⟶ S) [Etale u] [Surjective u] [LocallyOfFinitePresentation f]
     [SyntomicOfRelativeDimension n (u ≫ f)] : SyntomicOfRelativeDimension n f := by
