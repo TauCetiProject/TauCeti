@@ -33,10 +33,13 @@ to that predicate, as `TauCeti.cosinePolynomial`.
   index bound preserve admissibility.
 * `IsAdmissibleCosinePolynomial.one_le`: the index bound of an admissible polynomial satisfies
   `1 ≤ n`.
-* `IsAdmissibleCosinePolynomial.re_sum_nonneg` and `.sum_re_neg_log_one_sub_nonneg`: positivity
-  on the closed unit disk and its Euler-product form. These and `.alternating_sum_nonneg` are the
-  admissible cases of the `TauCeti.cosinePolynomial` lemmas that assume only nonnegativity.
-* `isAdmissibleCosinePolynomial_threeFourOne`: `(3, 4, 1)` is admissible.
+* `isAdmissibleCosinePolynomial_threeFourOne`: the `3-4-1` coefficients
+  `TauCeti.LSeries.threeFourOneCoeff` are admissible.
+
+Positivity on the closed unit disk and its Euler-product form need only nonnegativity of the
+cosine polynomial: apply `TauCeti.re_sum_nonneg_of_cosinePolynomial_nonneg` and
+`TauCeti.sum_re_neg_log_one_sub_nonneg_of_cosinePolynomial_nonneg` to
+`IsAdmissibleCosinePolynomial.cosinePolynomial_nonneg`.
 
 ## References
 
@@ -89,8 +92,8 @@ theorem cosinePolynomial_nonneg (h : IsAdmissibleCosinePolynomial n a) (θ : ℝ
 /-- An admissible cosine polynomial has a nonnegative alternating coefficient sum, its value at
 `π`. -/
 theorem alternating_sum_nonneg (h : IsAdmissibleCosinePolynomial n a) :
-    0 ≤ ∑ k ∈ range (n + 1), (-1) ^ k * a k :=
-  alternating_sum_nonneg_of_cosinePolynomial_nonneg h.cosinePolynomial_nonneg
+    0 ≤ ∑ k ∈ range (n + 1), (-1) ^ k * a k := by
+  simpa only [cosinePolynomial_apply_pi] using h.cosinePolynomial_nonneg Real.pi
 
 /-- The index bound of an admissible cosine polynomial satisfies `1 ≤ n`: for `n = 0` the
 vanishing clause forces `a 1 = 0`, against `0 ≤ a 0 < a 1`. -/
@@ -121,38 +124,22 @@ theorem mono (h : IsAdmissibleCosinePolynomial n a) {m : ℕ} (hnm : n ≤ m) :
   · rw [cosinePolynomial_eq_of_le hnm fun k hk _ ↦ h.eq_zero k hk]
     exact h.cosinePolynomial_nonneg θ
 
-/-- The polynomial `Σ_{k ≤ n} a k z^k` of an admissible cosine polynomial has nonnegative real
-part on the closed unit disk. -/
-theorem re_sum_nonneg (h : IsAdmissibleCosinePolynomial n a) {z : ℂ} (hz : ‖z‖ ≤ 1) :
-    0 ≤ (∑ k ∈ range (n + 1), (a k : ℂ) * z ^ k).re :=
-  re_sum_nonneg_of_cosinePolynomial_nonneg h.cosinePolynomial_nonneg hz
-
-/-- The Euler-product form of positivity: for `0 ≤ r < 1` and `‖z‖ ≤ 1`,
-`Σ_{k ≤ n} a k Re (-log (1 - r z^k)) ≥ 0`. -/
-theorem sum_re_neg_log_one_sub_nonneg (h : IsAdmissibleCosinePolynomial n a) {r : ℝ}
-    (hr₀ : 0 ≤ r) (hr₁ : r < 1) {z : ℂ} (hz : ‖z‖ ≤ 1) :
-    0 ≤ ∑ k ∈ range (n + 1), a k * (-log (1 - r * z ^ k)).re :=
-  sum_re_neg_log_one_sub_nonneg_of_cosinePolynomial_nonneg h.cosinePolynomial_nonneg hr₀ hr₁ hz
-
 end IsAdmissibleCosinePolynomial
 
 /-! ### Examples -/
 
 /-- `3 + 4 cos θ + cos 2θ = 2 (1 + cos θ)²` is admissible. -/
 theorem isAdmissibleCosinePolynomial_threeFourOne :
-    IsAdmissibleCosinePolynomial 2 (fun k ↦ ([3, 4, 1] : List ℝ).getD k 0) where
+    IsAdmissibleCosinePolynomial 2 LSeries.threeFourOneCoeff where
   nonneg k hk := by interval_cases k <;> norm_num
-  eq_zero k hk := by
-    obtain ⟨j, rfl⟩ : ∃ j, k = j + 3 := ⟨k - 3, by omega⟩
-    simp
+  eq_zero _ hk := LSeries.threeFourOneCoeff_eq_zero hk
   lt := by norm_num
   isNonnegativeTrigonometricCombination z hz := by
-    have heq : trigonometricCombination (range (2 + 1))
-        (fun k ↦ ((([3, 4, 1] : List ℝ).getD k 0 : ℝ) : ℂ)) id z =
-          LSeries.threeFourOneCombination z := by
-      simp [trigonometricCombination_def, LSeries.threeFourOneCombination_def, sum_range_succ]
-    rw [heq]
-    exact LSeries.threeFourOneCombination_nonneg hz.le
+    have h := LSeries.isNonnegativeTrigonometricCombination_threeFourOne z hz
+    simp only [trigonometricCombination_def, LSeries.threeFourOneWeight_apply,
+      LSeries.threeFourOneFrequency_apply] at h
+    rwa [trigonometricCombination_def, ← Fin.sum_univ_eq_sum_range
+      (fun k ↦ ((LSeries.threeFourOneCoeff k : ℂ) * z ^ id k).re)]
 
 /-- The coefficients `(1, 2)` satisfy `a₀ < a₁` but give `1 + 2 cos θ`, negative at `π`: the
 coefficient conditions do not imply nonnegativity. -/

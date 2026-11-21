@@ -206,13 +206,6 @@ theorem cosinePolynomial_eq_of_le {n m : ℕ} {a : ℕ → ℝ} (hnm : n ≤ m)
   rw [Finset.mem_range] at hkm hkn
   rw [ha k (by omega) (by omega), zero_mul]
 
-/-- A nonnegative cosine polynomial has a nonnegative alternating coefficient sum, its value at
-`π`. -/
-theorem alternating_sum_nonneg_of_cosinePolynomial_nonneg {n : ℕ} {a : ℕ → ℝ}
-    (h : ∀ θ : ℝ, 0 ≤ cosinePolynomial n a θ) :
-    0 ≤ ∑ k ∈ Finset.range (n + 1), (-1) ^ k * a k :=
-  cosinePolynomial_apply_pi n a ▸ h Real.pi
-
 /-- If the cosine polynomial is nonnegative, the polynomial `Σ_{k ≤ n} a k z^k` has nonnegative
 real part on the closed unit disk. -/
 theorem re_sum_nonneg_of_cosinePolynomial_nonneg {n : ℕ} {a : ℕ → ℝ}

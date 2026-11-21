@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.Fin.VecNotation
 public import TauCeti.Analysis.SpecialFunctions.Trigonometric.NonnegCombination
+import Mathlib.Data.List.GetD
 
 /-!
 # The 3-4-1 positivity combination
@@ -25,6 +26,8 @@ applications provide those analytic inputs separately.
 
 ## Main declarations
 
+* `TauCeti.LSeries.threeFourOneCoeff` is the coefficient sequence `3, 4, 1, 0, 0, …`, the single
+  source of the weights `TauCeti.LSeries.threeFourOneWeight`.
 * `TauCeti.LSeries.isNonnegativeTrigonometricCombination_threeFourOne` packages the frequencies
   `0`, `1`, and `2` with weights `3`, `4`, and `1`.
 * `TauCeti.LSeries.threeFourOne_re_neg_log_one_sub_nonneg` is the corresponding inequality for
@@ -48,9 +51,13 @@ noncomputable section
 
 /-! ### The concrete 3-4-1 combination -/
 
+/-- The `3-4-1` coefficients indexed by frequency: `3`, `4`, and `1` at `0`, `1`, and `2`, and
+`0` at every larger frequency. -/
+def threeFourOneCoeff (k : ℕ) : ℝ := ([3, 4, 1] : List ℝ).getD k 0
+
 /-- The three nonnegative weights `3`, `4`, and `1` in the `3-4-1` combination, as complex
 numbers. -/
-def threeFourOneWeight : Fin 3 → ℂ := ![3, 4, 1]
+def threeFourOneWeight (i : Fin 3) : ℂ := threeFourOneCoeff i
 
 /-- The frequencies `0`, `1`, and `2` in the `3-4-1` combination. -/
 def threeFourOneFrequency : Fin 3 → ℕ := ![0, 1, 2]
@@ -58,14 +65,39 @@ def threeFourOneFrequency : Fin 3 → ℕ := ![0, 1, 2]
 /-- The `3-4-1` trigonometric expression evaluated at a complex phase. -/
 def threeFourOneCombination (z : ℂ) : ℝ := 3 + 4 * z.re + (z ^ 2).re
 
+/-- The `3-4-1` coefficient at frequency `0` is `3`. -/
+@[simp] theorem threeFourOneCoeff_zero : threeFourOneCoeff 0 = 3 := (rfl)
+
+/-- The `3-4-1` coefficient at frequency `1` is `4`. -/
+@[simp] theorem threeFourOneCoeff_one : threeFourOneCoeff 1 = 4 := (rfl)
+
+/-- The `3-4-1` coefficient at frequency `2` is `1`. -/
+@[simp] theorem threeFourOneCoeff_two : threeFourOneCoeff 2 = 1 := (rfl)
+
+/-- The `3-4-1` coefficients vanish above frequency `2`. -/
+theorem threeFourOneCoeff_eq_zero {k : ℕ} (hk : 2 < k) : threeFourOneCoeff k = 0 :=
+  List.getD_eq_default _ _ hk
+
+/-- The `3-4-1` weights are the coefficients at the corresponding frequencies. -/
+theorem threeFourOneWeight_apply (i : Fin 3) : threeFourOneWeight i = threeFourOneCoeff i :=
+  (rfl)
+
+/-- The `3-4-1` frequencies are the indices themselves. -/
+theorem threeFourOneFrequency_apply (i : Fin 3) : threeFourOneFrequency i = i := by
+  revert i
+  decide
+
 /-- The first `3-4-1` weight is `3`. -/
-@[simp] theorem threeFourOneWeight_zero : threeFourOneWeight 0 = 3 := (rfl)
+@[simp] theorem threeFourOneWeight_zero : threeFourOneWeight 0 = 3 := by
+  simp [threeFourOneWeight_apply]
 
 /-- The second `3-4-1` weight is `4`. -/
-@[simp] theorem threeFourOneWeight_one : threeFourOneWeight 1 = 4 := (rfl)
+@[simp] theorem threeFourOneWeight_one : threeFourOneWeight 1 = 4 := by
+  simp [threeFourOneWeight_apply]
 
 /-- The third `3-4-1` weight is `1`. -/
-@[simp] theorem threeFourOneWeight_two : threeFourOneWeight 2 = 1 := (rfl)
+@[simp] theorem threeFourOneWeight_two : threeFourOneWeight 2 = 1 := by
+  simp [threeFourOneWeight_apply]
 
 /-- The first `3-4-1` frequency is `0`. -/
 @[simp] theorem threeFourOneFrequency_zero : threeFourOneFrequency 0 = 0 := (rfl)
