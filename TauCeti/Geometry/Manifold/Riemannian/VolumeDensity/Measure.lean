@@ -41,8 +41,6 @@ Proposition 2.44.
 * `TauCeti.setLIntegral_chartRiemannianVolume`, `TauCeti.setIntegral_chartRiemannianVolume`:
   integration against a chart volume in coordinates.
 * `TauCeti.chartRiemannianVolume_restrict_source`: a chart volume is supported on its source.
-* `TauCeti.chartRiemannianVolume_finiteAtFilter_nhds`: every point of a chart source has a
-  neighbourhood of finite chart volume.
 * `TauCeti.chartRiemannianVolume_restrict_overlap`: chart volume measures agree on overlaps.
 * `TauCeti.map_addHaar_eq_chartVolumeDensity_inv_smul_volume`: in coordinates which are
   orthonormal for the metric at the chart centre, the coordinate measure is the volume of
@@ -53,7 +51,7 @@ Proposition 2.44.
 public section
 
 open Bundle FiberBundle MeasureTheory Riemannian.Tensor Set
-open scoped ENNReal Manifold Topology
+open scoped ENNReal Manifold
 
 noncomputable section
 
@@ -276,35 +274,6 @@ theorem chartRiemannianVolume_restrict_source
     (hs.inter (chartAt H α).open_source.measurableSet), chartRiemannianVolume_apply α hs]
   congr 2
   simp only [extChartAt_source, inter_assoc, inter_self]
-
-/-- Every point of a chart source has a neighbourhood of finite chart volume. The chart volume
-need not be locally finite at the frontier of the chart source, where the density may blow up. -/
-theorem chartRiemannianVolume_finiteAtFilter_nhds
-    [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] (α : M) {x : M}
-    (hx : x ∈ (chartAt H α).source) :
-    (chartRiemannianVolume (I := I) α).FiniteAtFilter (𝓝 x) := by
-  let e := extChartAt I α
-  let g := fun y ↦ chartVolumeDensity (I := I) α (e.symm y)
-  have hxe : x ∈ e.source := by rwa [extChartAt_source]
-  -- Near `e x` in the model, the coordinate density stays below `g (e x) + 1`.
-  have hbound : {y | g y < g (e x) + 1} ∈ 𝓝[range I] (e x) := by
-    rw [← nhdsWithin_extChartAt_target_eq' hxe]
-    exact ((continuousOn_chartVolumeDensity_extChartAt_symm α) (e x)
-      (e.map_source hxe)).eventually_lt_const (lt_add_one _)
-  let t := {y | g y < g (e x) + 1} ∩ Metric.ball (e x) 1
-  have ht : t ∈ 𝓝[range I] (e x) :=
-    Filter.inter_mem hbound (mem_nhdsWithin_of_mem_nhds (Metric.ball_mem_nhds _ one_pos))
-  have hs : e.source ∩ e ⁻¹' t ∈ 𝓝 x :=
-    Filter.inter_mem (extChartAt_source_mem_nhds' hxe)
-      (extChartAt_preimage_mem_nhds_of_mem_nhdsWithin hxe ht)
-  refine ⟨interior (e.source ∩ e ⁻¹' t), interior_mem_nhds.2 hs, ?_⟩
-  rw [chartRiemannianVolume_apply α isOpen_interior.measurableSet]
-  have himage : e '' (interior (e.source ∩ e ⁻¹' t) ∩ e.source) ⊆ t := by
-    rintro _ ⟨z, ⟨hz, -⟩, rfl⟩
-    exact (interior_subset hz).2
-  refine setLIntegral_lt_top_of_le_nnreal ?_ ⟨(g (e x) + 1).toNNReal, fun y hy ↦ ?_⟩
-  · exact ((measure_mono (himage.trans inter_subset_right)).trans_lt measure_ball_lt_top).ne
-  · exact ENNReal.ofReal_le_ofReal (himage hy).1.le
 
 omit [MeasurableSpace M] [BorelSpace M] in
 /-- On the overlap of two chart sources, the `α` coordinate density is the `β` coordinate density

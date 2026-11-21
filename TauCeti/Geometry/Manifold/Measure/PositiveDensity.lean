@@ -22,11 +22,11 @@ and so is any such measure reweighted by a strictly positive continuous function
 and no orientation enters the definition.
 
 These measures are the integration measures of first-order analysis on manifolds without a
-preferred metric. They are interchangeable for every local question: they are locally finite and
-positive on nonempty open sets. On a Lindelöf manifold their null sets are exactly the chartwise
-null sets `TauCeti.IsNullSet`, so their almost-everywhere filters all agree with
-`TauCeti.Manifold.ae I M`. On a second countable manifold any two of them differ by a strictly
-positive continuous weight.
+preferred metric. Each is locally finite and positive on nonempty open sets. They agree on every
+measure-zero question: on a Lindelöf manifold their null sets are exactly the chartwise null sets
+`TauCeti.IsNullSet`, so their almost-everywhere filters all agree with `TauCeti.Manifold.ae I M`.
+Integrals do depend on the choice, but on a second countable manifold any two of them differ by a
+strictly positive continuous weight.
 
 The general facts about chart pushforwards used here are in
 `TauCeti.Geometry.Manifold.Measure.Chart`.

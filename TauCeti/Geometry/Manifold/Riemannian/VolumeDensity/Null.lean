@@ -13,18 +13,15 @@ import TauCeti.MeasureTheory.Constructions.BorelSpace.Basic
 /-!
 # Null sets for the Riemannian volume
 
-In each chart, the Riemannian volume of a continuous metric is Haar measure weighted by the chart
-volume density, which is continuous and positive. So the Riemannian volume is a positive
-continuous density measure (`TauCeti.IsPositiveDensityMeasure`), and a set has Riemannian volume
-zero exactly when its images in the charts are null for Haar measure. In other words, the null sets
+The Riemannian volume of a continuous metric is a positive continuous density measure
+(`TauCeti.isPositiveDensityMeasure_riemannianVolume`), so a set has Riemannian volume zero exactly
+when its images in the charts are null for Haar measure. In other words, the null sets
 of `TauCeti.riemannianVolume` are the chartwise null sets `TauCeti.IsNullSet`. This makes
 chartwise results such as Sard's theorem apply to the Riemannian volume, also on manifolds with
 boundary or corners.
 
 ## Main results
 
-* `TauCeti.isPositiveDensityMeasure_riemannianVolume`: the Riemannian volume is a positive
-  continuous density measure.
 * `TauCeti.riemannianVolume_eq_zero_iff_image_of_subset`: a subset of a chart source has volume
   zero exactly when its image in the chart is null for an additive Haar measure.
 * `TauCeti.isNullSet_iff_riemannianVolume_eq_zero`: a set is chartwise null exactly when it has
@@ -52,27 +49,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 section Null
 
 variable [MeasurableSpace E] [BorelSpace E]
-
-/-- The Riemannian volume of a continuous metric is a positive continuous density measure. -/
-theorem isPositiveDensityMeasure_riemannianVolume :
-    IsPositiveDensityMeasure I (riemannianVolume I M) := by
-  obtain rfl : ‹MeasurableSpace E› = extChartAtMeasurableSpaceE := BorelSpace.measurable_eq
-  let : MeasurableSpace E := extChartAtMeasurableSpaceE
-  rw [isPositiveDensityMeasure_iff_of_isAddHaarMeasure (Module.finBasis ℝ E).addHaar]
-  intro x
-  let e := extChartAt I x
-  refine ⟨fun y ↦ chartVolumeDensity (I := I) x (e.symm y),
-    continuousOn_chartVolumeDensity_extChartAt_symm x, fun y hy ↦ chartVolumeDensity_pos x ?_, ?_⟩
-  · simpa only [TangentBundle.trivializationAt_baseSet, e, extChartAt_source] using e.map_target hy
-  ext A hA
-  have hsrc : MeasurableSet e.source := (isOpen_extChartAt_source x).measurableSet
-  have hpre : MeasurableSet (e ⁻¹' A ∩ e.source) :=
-    (continuousOn_extChartAt x).measurableSet_preimage_inter hsrc hA
-  have hsub : e ⁻¹' A ∩ e.source ⊆ (chartAt H x).source := by
-    simpa only [e, extChartAt_source] using inter_subset_right
-  rw [map_restrict_extChartAt_source_apply x hA, riemannianVolume_apply_of_subset hsub,
-    chartRiemannianVolume_apply x hpre, withDensity_apply _ hA, Measure.restrict_restrict hA,
-    inter_assoc, inter_self, image_preimage_inter, e.image_source_eq_target]
 
 /-- A subset of the source of an extended chart has Riemannian volume zero exactly when its image
 in the chart is null for an additive Haar measure. The set need not be measurable. -/
