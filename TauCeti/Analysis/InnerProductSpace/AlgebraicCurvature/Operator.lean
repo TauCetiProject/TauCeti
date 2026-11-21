@@ -169,19 +169,6 @@ theorem isAlgebraicCurvature_ofExteriorEnd_iff (T : Module.End ℝ (⋀[ℝ]^2 V
       (ofExteriorEnd_swap_pairs_iff T).mpr hsym, fun u v z w ↦ by
         simpa only [ofExteriorEnd_apply] using hcyc u v z w⟩⟩
 
-private theorem inner_conj_exteriorPower_map {W : Type*} [NormedAddCommGroup W]
-    [InnerProductSpace ℝ W] [FiniteDimensional ℝ W] (e : W ≃ₗᵢ[ℝ] V)
-    (T : Module.End ℝ (⋀[ℝ]^2 V)) (x y : ⋀[ℝ]^2 W) :
-    ⟪(exteriorPower.map 2 e.symm.toLinearMap ∘ₗ T ∘ₗ exteriorPower.map 2 e.toLinearMap) x, y⟫ =
-      ⟪T (exteriorPower.map 2 e.toLinearMap x), exteriorPower.map 2 e.toLinearMap y⟫ := by
-  rw [LinearMap.comp_apply, LinearMap.comp_apply, ← exteriorPower.inner_map_map e.toLinearIsometry]
-  have hcomp : exteriorPower.map 2 e.toLinearMap ∘ₗ exteriorPower.map 2 e.symm.toLinearMap =
-      LinearMap.id := by
-    rw [← exteriorPower.map_comp,
-      show e.toLinearMap ∘ₗ e.symm.toLinearMap = LinearMap.id by ext v; simp,
-      exteriorPower.map_id]
-  exact congrArg (⟪·, _⟫) (LinearMap.congr_fun hcomp _)
-
 /-- Pulling back `ofExteriorEnd T` along a linear isometric equivalence conjugates `T` by the
 induced exterior-square isometry. -/
 theorem ofExteriorEnd_compContinuousLinearMap_linearIsometryEquiv {W : Type*}
@@ -193,7 +180,7 @@ theorem ofExteriorEnd_compContinuousLinearMap_linearIsometryEquiv {W : Type*}
           (exteriorPower.map 2 e.toLinearMap)) := by
   refine ext_vec fun u v z w ↦ ?_
   rw [compContinuousLinearMap_apply_vec, ofExteriorEnd_apply, ofExteriorEnd_apply,
-    inner_conj_exteriorPower_map]
+    exteriorPower.inner_conj_map]
   simp only [LinearIsometry.coe_toContinuousLinearMap, LinearIsometryEquiv.coe_toLinearIsometry,
     map_apply_ιMulti_two, LinearEquiv.coe_coe, LinearIsometryEquiv.coe_toLinearEquiv]
 

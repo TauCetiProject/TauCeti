@@ -52,6 +52,8 @@ skew endomorphism `u ↦ u ⌟ F` of a two-vector `F`, the operator that represe
 ## Main results
 
 * `exteriorPower.inner_map_map`: `⟪⋀ⁿ f x, ⋀ⁿ f y⟫ = ⟪x, y⟫` for a linear isometry `f`.
+* `exteriorPower.inner_conj_map`: `⟪(⋀ⁿ e.symm ∘ₗ T ∘ₗ ⋀ⁿ e) x, y⟫ = ⟪T (⋀ⁿ e x), ⋀ⁿ e y⟫` for a
+  linear isometric equivalence `e`.
 * `exteriorPower.inner_ιMulti_two`: `⟪a ∧ b, u ∧ w⟫ = ⟪a, u⟫ ⟪b, w⟫ - ⟪a, w⟫ ⟪b, u⟫`.
 * `exteriorPower.ext_inner_ιMulti`: elements of `⋀ⁿ E` with the same inner products against all
   wedges of vectors are equal, and `exteriorPower.linearMap_ext_inner_ιMulti` is the
@@ -121,6 +123,19 @@ theorem inner_map_map (f : E →ₗᵢ[ℝ] F) (x y : ⋀[ℝ]^n E) :
   | zero => simp
   | add x z _ _ hx hz => simp only [map_add, inner_add_left, hx, hz]
   | smul r x _ hx => simp only [map_smul, real_inner_smul_left, hx]
+
+/-- Conjugating an endomorphism of `⋀[ℝ]^n F` by a linear isometric equivalence `e : E ≃ₗᵢ[ℝ] F`
+moves the outer `map n e.symm.toLinearMap` to the right inner-product argument as
+`map n e.toLinearMap`. -/
+theorem inner_conj_map (e : E ≃ₗᵢ[ℝ] F) (T : Module.End ℝ (⋀[ℝ]^n F)) (x y : ⋀[ℝ]^n E) :
+    ⟪(map n e.symm.toLinearMap ∘ₗ T ∘ₗ map n e.toLinearMap) x, y⟫ =
+      ⟪T (map n e.toLinearMap x), map n e.toLinearMap y⟫ := by
+  rw [LinearMap.comp_apply, LinearMap.comp_apply, ← inner_map_map e.toLinearIsometry]
+  have hlin : e.toLinearMap ∘ₗ e.symm.toLinearMap = LinearMap.id :=
+    LinearMap.ext fun _ ↦ e.apply_symm_apply _
+  have hcomp : map n e.toLinearMap ∘ₗ map n e.symm.toLinearMap = LinearMap.id := by
+    rw [← map_comp, hlin, map_id]
+  exact congrArg (⟪·, _⟫) (LinearMap.congr_fun hcomp _)
 
 /-- The inner product of two wedges of two vectors is their `2 × 2` Gram determinant. -/
 theorem inner_ιMulti_two (a b u w : E) :

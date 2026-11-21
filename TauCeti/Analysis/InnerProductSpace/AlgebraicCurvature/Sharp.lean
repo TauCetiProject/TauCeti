@@ -46,7 +46,8 @@ tensors `bivectorSq e₁ e₂`, `Q(bivectorSq e₁ e₂) = 2 • bivectorSq e₁
 * `TauCeti.FourTensor.isSymmetric_sharpBilin` and `TauCeti.FourTensor.isSymmetric_sharp`:
   preservation of symmetry.
 * `TauCeti.FourTensor.sharp_one`: `sharp (1 : Module.End ℝ (⋀[ℝ]^2 V)) = (dim V - 2) • 1`.
-* `TauCeti.FourTensor.ofExteriorEnd_reactionBilinear`, `TauCeti.FourTensor.ofExteriorEnd_reaction`,
+* `TauCeti.FourTensor.reactionBilinear_ofExteriorEnd`,
+  `TauCeti.FourTensor.reactionTensor_ofExteriorEnd`,
   `TauCeti.FourTensor.curvatureEndomorphism_reactionTensor`, and
   `TauCeti.FourTensor.IsAlgebraicCurvature.curvatureEndomorphism_reactionTensor`: the operator
   identity `Q(R) = 2 (R² + R#)`.
@@ -370,7 +371,7 @@ private theorem two_mul_inner_sharpBilin_ιMulti {ι : Type*} [Fintype ι]
 /-- **Polarized bivector-operator identity**: for symmetric endomorphisms `A, B` of `⋀[ℝ]^2 V`,
 `reactionBilinear V (ofExteriorEnd A) (ofExteriorEnd B)` equals
 `ofExteriorEnd (A ∘ₗ B + B ∘ₗ A + 2 • sharpBilin A B)`. -/
-theorem ofExteriorEnd_reactionBilinear {A B : Module.End ℝ (⋀[ℝ]^2 V)} (hA : A.IsSymmetric)
+theorem reactionBilinear_ofExteriorEnd {A B : Module.End ℝ (⋀[ℝ]^2 V)} (hA : A.IsSymmetric)
     (hB : B.IsSymmetric) :
     reactionBilinear V (ofExteriorEnd A) (ofExteriorEnd B) =
       ofExteriorEnd (A ∘ₗ B + B ∘ₗ A + (2 : ℝ) • sharpBilin A B) := by
@@ -398,9 +399,9 @@ theorem ofExteriorEnd_reactionBilinear {A B : Module.End ℝ (⋀[ℝ]^2 V)} (hA
 
 /-- **Bivector-operator identity** `Q(ofExteriorEnd A) = ofExteriorEnd (2 • (A * A + sharp A))`
 for any symmetric endomorphism `A` of `⋀[ℝ]^2 V`. -/
-theorem ofExteriorEnd_reaction {A : Module.End ℝ (⋀[ℝ]^2 V)} (hA : A.IsSymmetric) :
+theorem reactionTensor_ofExteriorEnd {A : Module.End ℝ (⋀[ℝ]^2 V)} (hA : A.IsSymmetric) :
     reactionTensor (ofExteriorEnd A) = ofExteriorEnd ((2 : ℝ) • (A * A + sharp A)) := by
-  rw [← reactionBilinear_self, ofExteriorEnd_reactionBilinear hA hA]
+  rw [← reactionBilinear_self, reactionBilinear_ofExteriorEnd hA hA]
   congr 1; ext _; simp [two_smul, smul_add]
 
 /-- On any four-tensor antisymmetric in its first pair and symmetric under pair interchange,
@@ -414,7 +415,7 @@ theorem curvatureEndomorphism_reactionTensor {r : FourTensor V}
   have h₂ (u v z w : V) : r ![u, v, z, w] = -r ![u, v, w, z] := by
     rw [hswap u v z w, h₁ z w u v, hswap w z u v]
   conv_lhs => rw [← ofExteriorEnd_curvatureEndomorphism_of_antisymm h₁ h₂]
-  rw [ofExteriorEnd_reaction (isSymmetric_curvatureEndomorphism_of_swap_pairs hswap),
+  rw [reactionTensor_ofExteriorEnd (isSymmetric_curvatureEndomorphism_of_swap_pairs hswap),
     curvatureEndomorphism_ofExteriorEnd]
 
 /-- On any bivector-symmetric four-tensor `r`, `curvatureEndomorphism (Q(r)) = 2 • (R² + R#)` with
@@ -437,54 +438,27 @@ theorem IsAlgebraicCurvature.curvatureEndomorphism_reactionTensor {r : FourTenso
 
 /-! ### Explicit evaluations: identity and rank-one bivectors -/
 
-private theorem sum_constantCurvature_even {ι : Type*} [Fintype ι]
-    (b : OrthonormalBasis ι ℝ V) (u v z w : V) :
-    (∑ p, ∑ q, constantCurvature V ![u, b p, z, b q] * constantCurvature V ![v, b p, w, b q]) =
-      ((Module.finrank ℝ V : ℝ) - 2) * (⟪u, z⟫ * ⟪v, w⟫) + ⟪u, v⟫ * ⟪z, w⟫ := by
-  classical
-  have hp (x y : V) : ∑ i, ⟪x, b i⟫ * ⟪b i, y⟫ = ⟪x, y⟫ := by
-    simpa only [real_inner_comm (b _)] using b.sum_inner_mul_inner x y
-  have hdiag (p) (f : ι → ℝ) : (∑ q, ⟪b p, b q⟫ * f q) = f p := by
-    simp only [b.inner_eq_ite, ite_mul, one_mul, zero_mul, Finset.sum_ite_eq, Finset.mem_univ,
-      ↓reduceIte]
-  simp only [constantCurvature_apply, sub_mul, mul_sub, Finset.sum_sub_distrib]
-  have h1 : (∑ p, ∑ q, ⟪u, z⟫ * ⟪b p, b q⟫ * (⟪v, w⟫ * ⟪b p, b q⟫)) =
-      (Module.finrank ℝ V : ℝ) * (⟪u, z⟫ * ⟪v, w⟫) := by
-    have hq (p) : (∑ q, ⟪u, z⟫ * ⟪b p, b q⟫ * (⟪v, w⟫ * ⟪b p, b q⟫)) = ⟪u, z⟫ * ⟪v, w⟫ := by
-      simp [b.inner_eq_ite]
-    simp [hq, Module.finrank_eq_card_basis b.toBasis]
-  have h2 : (∑ p, ∑ q, ⟪u, z⟫ * ⟪b p, b q⟫ * (⟪v, b q⟫ * ⟪b p, w⟫)) = ⟪u, z⟫ * ⟪v, w⟫ := by
-    have hq (p) : (∑ q, ⟪u, z⟫ * ⟪b p, b q⟫ * (⟪v, b q⟫ * ⟪b p, w⟫)) =
-        ⟪u, z⟫ * (⟪v, b p⟫ * ⟪b p, w⟫) := by
-      simpa only [mul_assoc] using
-        (by convert hdiag p (fun q ↦ ⟪u, z⟫ * (⟪v, b q⟫ * ⟪b p, w⟫)) using 2; ring)
-    simp only [hq, ← Finset.mul_sum, hp]
-  have h3 : (∑ p, ∑ q, ⟪u, b q⟫ * ⟪b p, z⟫ * (⟪v, w⟫ * ⟪b p, b q⟫)) = ⟪u, z⟫ * ⟪v, w⟫ := by
-    have hq (p) : (∑ q, ⟪u, b q⟫ * ⟪b p, z⟫ * (⟪v, w⟫ * ⟪b p, b q⟫)) =
-        ⟪v, w⟫ * (⟪u, b p⟫ * ⟪b p, z⟫) := by
-      convert hdiag p (fun q ↦ ⟪v, w⟫ * (⟪u, b q⟫ * ⟪b p, z⟫)) using 2; ring
-    simp only [hq, ← Finset.mul_sum, hp]; ring
-  have h4 : (∑ p, ∑ q, ⟪u, b q⟫ * ⟪b p, z⟫ * (⟪v, b q⟫ * ⟪b p, w⟫)) = ⟪u, v⟫ * ⟪z, w⟫ := by
-    have hsplit (p) : (∑ q, ⟪u, b q⟫ * ⟪b p, z⟫ * (⟪v, b q⟫ * ⟪b p, w⟫)) =
-        (⟪b p, z⟫ * ⟪b p, w⟫) * ∑ q, ⟪u, b q⟫ * ⟪b q, v⟫ := by
-      rw [Finset.mul_sum]
-      exact Finset.sum_congr rfl fun q _ ↦ by rw [real_inner_comm (b q) v]; ring
-    simp only [hsplit, hp, ← Finset.sum_mul]
-    simpa only [real_inner_comm z, mul_comm] using congrArg (· * ⟪u, v⟫) (hp z w)
-  rw [h1, h2, h3, h4]; ring
-
 /-- `sharp 1 = (dim V - 2) • 1` on `⋀[ℝ]^2 V`, in every dimension `dim V : ℕ`. -/
 theorem sharp_one :
     sharp (1 : Module.End ℝ (⋀[ℝ]^2 V)) =
       ((Module.finrank ℝ V : ℝ) - 2) • (1 : Module.End ℝ (⋀[ℝ]^2 V)) := by
-  let b := stdOrthonormalBasis ℝ V
-  refine exteriorPower.linearMap_ext_inner_ιMulti_two fun u v z w ↦ ?_
-  have h2 := two_mul_inner_sharpBilin_ιMulti b (V := V) LinearMap.IsSymmetric.one
-    LinearMap.IsSymmetric.one u v z w
-  rw [sharpBilin_self, ofExteriorEnd_one, sum_constantCurvature_even b u v z w,
-    sum_constantCurvature_even b u v w z, real_inner_comm w z] at h2
-  simp only [LinearMap.smul_apply, one_apply_eq_self, real_inner_smul_left, inner_ιMulti_two]
-  linarith
+  have h :
+      ofExteriorEnd ((2 : ℝ) • (1 * 1 + sharp (1 : Module.End ℝ (⋀[ℝ]^2 V)))) =
+        ofExteriorEnd
+          ((2 * ((Module.finrank ℝ V : ℝ) - 1)) • (1 : Module.End ℝ (⋀[ℝ]^2 V))) := by
+    rw [← reactionTensor_ofExteriorEnd LinearMap.IsSymmetric.one, ofExteriorEnd_one,
+      reactionTensor_constantCurvature, map_smul, ofExteriorEnd_one]
+  have h2 : (2 : ℝ) • (1 + sharp (1 : Module.End ℝ (⋀[ℝ]^2 V))) =
+      (2 * ((Module.finrank ℝ V : ℝ) - 1)) • (1 : Module.End ℝ (⋀[ℝ]^2 V)) := by
+    simpa only [one_mul] using ofExteriorEnd_injective h
+  have h1 : 1 + sharp (1 : Module.End ℝ (⋀[ℝ]^2 V)) =
+      ((Module.finrank ℝ V : ℝ) - 1) • (1 : Module.End ℝ (⋀[ℝ]^2 V)) := by
+    refine smul_right_injective (Module.End ℝ (⋀[ℝ]^2 V)) (two_ne_zero (α := ℝ)) ?_
+    simpa only [smul_smul] using h2
+  have hsub : ((Module.finrank ℝ V : ℝ) - 2) = (Module.finrank ℝ V : ℝ) - 1 - 1 := by ring
+  rw [eq_sub_of_add_eq' h1, hsub]
+  refine LinearMap.ext fun x ↦ ?_
+  simp only [LinearMap.sub_apply, LinearMap.smul_apply, one_apply_eq_self, sub_smul, one_smul]
 
 /-- The rank-one algebraic curvature tensor `(e₁ ∧ e₂) ⊗ (e₁ ∧ e₂)` associated to a pair of vectors
 `e₁, e₂ : V`. For an orthonormal pair `e₁, e₂`, this is the curvature four-tensor of the product
@@ -507,11 +481,9 @@ Bianchi identity holds by the Plücker relation). -/
 theorem isAlgebraicCurvature_bivectorSq (e₁ e₂ : V) :
     IsAlgebraicCurvature (bivectorSq e₁ e₂) := by
   rw [bivectorSq, isAlgebraicCurvature_ofExteriorEnd_iff]
-  refine ⟨fun x _ ↦ ?_, fun _ _ _ _ ↦ ?_⟩
-  · simp only [ContinuousLinearMap.coe_coe, InnerProductSpace.rankOne_apply,
-      real_inner_smul_left, real_inner_smul_right, real_inner_comm x]; ring
-  · simp only [ContinuousLinearMap.coe_coe, InnerProductSpace.rankOne_apply,
-      real_inner_smul_left, inner_ιMulti_two]; ring
+  refine ⟨InnerProductSpace.isSymmetric_rankOne_self _, fun _ _ _ _ ↦ ?_⟩
+  simp only [ContinuousLinearMap.coe_coe, InnerProductSpace.rankOne_apply,
+    real_inner_smul_left, inner_ιMulti_two]; ring
 
 /-- The reaction tensor of `bivectorSq e₁ e₂` is
 `2 (‖e₁‖² ‖e₂‖² - ⟪e₁, e₂⟫²) • bivectorSq e₁ e₂`. -/
@@ -520,26 +492,29 @@ theorem reactionTensor_bivectorSq (e₁ e₂ : V) :
       (2 * constantCurvature V ![e₁, e₂, e₁, e₂]) • bivectorSq e₁ e₂ := by
   set α := ιMulti ℝ 2 ![e₁, e₂]
   set T := (InnerProductSpace.rankOne ℝ α α).toLinearMap
-  have hTsym : T.IsSymmetric := fun x _ ↦ by
-    simp only [T, ContinuousLinearMap.coe_coe, InnerProductSpace.rankOne_apply,
-      real_inner_smul_left, real_inner_smul_right, real_inner_comm x α]; ring
-  have hTsq : T * T = constantCurvature V ![e₁, e₂, e₁, e₂] • T := LinearMap.ext fun _ ↦ by
-    simp only [T, α, mul_apply_eq_comp, ContinuousLinearMap.coe_coe,
-      InnerProductSpace.rankOne_apply, real_inner_smul_right, LinearMap.smul_apply,
-      inner_ιMulti_two, constantCurvature_apply]
-    rw [smul_smul, mul_comm]
-  rw [bivectorSq, ofExteriorEnd_reaction hTsym, hTsq, sharp_rankOne_self α, add_zero, smul_smul,
-    map_smul]
+  have hTsym : T.IsSymmetric := InnerProductSpace.isSymmetric_rankOne_self α
+  have hTsq : T * T = constantCurvature V ![e₁, e₂, e₁, e₂] • T := by
+    have hcomp := congrArg ContinuousLinearMap.toLinearMap
+      (InnerProductSpace.rankOne_comp_rankOne (𝕜 := ℝ) α α α α)
+    simpa only [T, α, Module.End.mul_eq_comp, ContinuousLinearMap.toLinearMap_comp,
+      ContinuousLinearMap.toLinearMap_smul, inner_ιMulti_two, constantCurvature_apply] using hcomp
+  rw [bivectorSq, reactionTensor_ofExteriorEnd hTsym, hTsq, sharp_rankOne_self α, add_zero,
+    smul_smul, map_smul]
 
 /-- For an orthonormal pair `e₁, e₂`, `Q(bivectorSq e₁ e₂) = 2 • bivectorSq e₁ e₂` (the
 `S² × ℝ^(dim V - 2)` check). -/
 theorem reactionTensor_bivectorSq_of_orthonormal {e₁ e₂ : V} (h : Orthonormal ℝ ![e₁, e₂]) :
     reactionTensor (bivectorSq e₁ e₂) = (2 : ℝ) • bivectorSq e₁ e₂ := by
+  have h1 : ‖e₁‖ = 1 := by simpa only [Matrix.cons_val_zero] using h.1 0
+  have h2 : ‖e₂‖ = 1 := by simpa only [Matrix.cons_val_one, Matrix.cons_val_fin_one] using h.1 1
+  have h12 : ⟪e₁, e₂⟫ = 0 := by
+    have hne : (0 : Fin 2) ≠ 1 := by decide
+    simpa only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one] using h.2 hne
+  have h21 : ⟪e₂, e₁⟫ = 0 := by
+    have hne : (1 : Fin 2) ≠ 0 := by decide
+    simpa only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one] using h.2 hne
   rw [reactionTensor_bivectorSq, constantCurvature_apply,
-    real_inner_self_eq_norm_sq, real_inner_self_eq_norm_sq,
-    show ‖e₁‖ = 1 from h.1 0, show ‖e₂‖ = 1 from h.1 1,
-    show ⟪e₁, e₂⟫ = 0 from h.2 (show (0 : Fin 2) ≠ 1 by decide),
-    show ⟪e₂, e₁⟫ = 0 from h.2 (show (1 : Fin 2) ≠ 0 by decide)]
+    real_inner_self_eq_norm_sq, real_inner_self_eq_norm_sq, h1, h2, h12, h21]
   norm_num
 
 end TauCeti.FourTensor
