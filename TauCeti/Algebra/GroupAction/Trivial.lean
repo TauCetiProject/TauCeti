@@ -60,9 +60,9 @@ section TrivialActionSmul
 attribute [local instance] trivialMulDistribMulAction
 
 /-- Under `TauCeti.trivialMulDistribMulAction` every element is fixed. This is the triviality
-hypothesis that `TauCeti.FactorSet.isFactorSet_curry`, `TauCeti.IsFactorSet.toFactorSet` and
-`TauCeti.FactorSet.inl_range_le_center` take, supplied once so that their callers can name a
-constant rather than an inlined proof. -/
+hypothesis that `TauCeti.FactorSet.isFactorSet_curry` and `TauCeti.IsFactorSet.toFactorSet` take
+and that `TauCeti.FactorSet.range_inl_le_center_iff` characterizes, supplied once so that their
+callers can name a constant rather than an inlined proof. -/
 @[simp]
 theorem trivialMulDistribMulAction_smul {G M : Type*} [Monoid G] [Monoid M] (g : G) (a : M) :
     g • a = a :=

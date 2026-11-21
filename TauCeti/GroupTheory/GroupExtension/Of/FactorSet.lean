@@ -65,7 +65,8 @@ group cohomology: `groupCohomology.cocyclesOfIsMulCocycle₂ α.isMulCocycle₂`
   times the section at its `G`-component, so the two together determine a homomorphism out of the
   extension.
 * `TauCeti.FactorSet.mul_inl`: conjugation moves the copy of `M` by the action of the image in `G`.
-* `TauCeti.FactorSet.inl_range_le_center`: when `G` acts trivially the extension is central.
+* `TauCeti.FactorSet.range_inl_le_center_iff`: the extension is central exactly when `G` acts
+  trivially.
 * `TauCeti.FactorSet.characterTwist_groupExtension_left` and
   `TauCeti.FactorSet.characterTwist_groupExtension_right`: when the extension is central, a
   character twist multiplies the `M`-component by the character value and keeps the
@@ -392,13 +393,18 @@ by `TauCeti.FactorSet.range_inl_eq_ker_rightHom`. -/
 theorem mul_inl (x : α.Extension) (a : M) : x * inl α a = inl α (x.right • a) * x := by
   ext <;> simp [mul_comm]
 
-/-- **The extension is central when `G` acts trivially on `M`.** This is the case `M = kˣ` with the
-trivial action, in which a projective representation of `G` with factor set `α` is a linear
+/-- **The extension is central exactly when `G` acts trivially on `M`.** The trivial action with
+`M = kˣ` is the case in which a projective representation of `G` with factor set `α` is a linear
 representation of the extension. -/
-theorem inl_range_le_center (h : ∀ (g : G) (a : M), g • a = a) :
-    (inl α).range ≤ Subgroup.center α.Extension := by
-  rintro _ ⟨a, rfl⟩
-  exact Subgroup.mem_center_iff.2 fun x => by rw [mul_inl, h]
+theorem range_inl_le_center_iff :
+    (inl α).range ≤ Subgroup.center α.Extension ↔ ∀ (g : G) (a : M), g • a = a := by
+  refine ⟨fun h g a => inl_injective α ?_, fun h => ?_⟩
+  · -- Moving `inl α a` past `σ g` gives `inl α a` (centrality) and `inl α (g • a)` (`mul_inl`).
+    have hc := Subgroup.mem_center_iff.1 (h ⟨a, rfl⟩) (α.canonicalSection g)
+    rw [mul_inl] at hc
+    simpa using mul_right_cancel hc
+  · rintro _ ⟨a, rfl⟩
+    exact Subgroup.mem_center_iff.2 fun x => by rw [mul_inl, h]
 
 /-- A character twist of a central twisted product keeps the `G`-component. -/
 theorem characterTwist_groupExtension_right

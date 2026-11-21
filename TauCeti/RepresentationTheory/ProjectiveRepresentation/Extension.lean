@@ -34,11 +34,11 @@ spell a factor set differently. `TauCeti.FactorSet` is the uncurried, bundled `G
 of a general `G`-module `M`,
 which is what the group extension is built from, while `TauCeti.IsFactorSet` is a curried
 `Prop`-valued class on `G → G → kˣ`, which is what a projective representation carries. The two
-agree when `G` acts **trivially** on `kˣ`, the case in which the extension is central
-(`TauCeti.FactorSet.inl_range_le_center`), and `TauCeti.FactorSet.isFactorSet_curry` and
+agree when `G` acts **trivially** on `kˣ`, exactly the case in which the extension is central
+(`TauCeti.FactorSet.range_inl_le_center_iff`), and `TauCeti.FactorSet.isFactorSet_curry` and
 `TauCeti.IsFactorSet.toFactorSet` translate in the two directions. Triviality of the action is
 carried as an explicit hypothesis `∀ (g : G) (a : kˣ), g • a = a` rather than as a chosen instance,
-matching `TauCeti.FactorSet.inl_range_le_center`: the *type* `TauCeti.FactorSet G kˣ` already
+matching `TauCeti.FactorSet.range_inl_le_center_iff`: the *type* `TauCeti.FactorSet G kˣ` already
 depends on an ambient `MulDistribMulAction G kˣ`, so leaving that action free lets a factor set for
 any action be fed to the statements, and only the results that genuinely need centrality pay for
 it. A projective representation itself carries no action, so the closing existence statement
@@ -404,7 +404,7 @@ theorem IsProjectiveRep.exists_factorSet_linearization {α : G → G → kˣ}
   have hρ' : IsProjectiveRep ρ (Function.curry ⇑(IsFactorSet.toFactorSet α htriv)) := by
     rwa [IsFactorSet.curry_coe_toFactorSet]
   exact ⟨IsFactorSet.toFactorSet α htriv, hρ'.linearization htriv,
-    FactorSet.inl_range_le_center _ htriv, fun a ↦ hρ'.linearization_inl htriv a,
+    (FactorSet.range_inl_le_center_iff _).2 htriv, fun a ↦ hρ'.linearization_inl htriv a,
     fun g ↦ by simp⟩
 
 end TrivialAction
