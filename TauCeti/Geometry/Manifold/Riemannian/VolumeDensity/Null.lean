@@ -6,14 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
-public import TauCeti.Geometry.Manifold.Measure.AE
-import Mathlib.MeasureTheory.Measure.Haar.Unique
+public import TauCeti.Geometry.Manifold.Measure.PositiveDensity
 import TauCeti.Geometry.Manifold.Riemannian.Basic
+import TauCeti.MeasureTheory.Constructions.BorelSpace.Basic
 
 /-!
 # Null sets for the Riemannian volume
 
-The chart density of a continuous Riemannian metric is positive, so a set has Riemannian volume
+In each chart, the Riemannian volume of a continuous metric is Haar measure weighted by the chart
+volume density, which is continuous and positive. So the Riemannian volume is a positive
+continuous density measure (`TauCeti.IsPositiveDensityMeasure`), and a set has Riemannian volume
 zero exactly when its images in the charts are null for Haar measure. In other words, the null sets
 of `TauCeti.riemannianVolume` are the chartwise null sets `TauCeti.IsNullSet`. This makes
 chartwise results such as Sard's theorem apply to the Riemannian volume, also on manifolds with
@@ -21,6 +23,8 @@ boundary or corners.
 
 ## Main results
 
+* `TauCeti.isPositiveDensityMeasure_riemannianVolume`: the Riemannian volume is a positive
+  continuous density measure.
 * `TauCeti.riemannianVolume_eq_zero_iff_image_of_subset`: a subset of a chart source has volume
   zero exactly when its image in the chart is null for an additive Haar measure.
 * `TauCeti.isNullSet_iff_riemannianVolume_eq_zero`: a set is chartwise null exactly when it has
@@ -45,116 +49,45 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
 
-section Chart
-
-attribute [local instance] extChartAtMeasurableSpaceE extChartAtBorelSpaceE
-
-private theorem riemannianVolume_eq_zero_iff_image_of_measurableSet {α : M} {s : Set M}
-    (hs : MeasurableSet s) (hsub : s ⊆ (extChartAt I α).source) :
-    riemannianVolume I M s = 0 ↔
-      (Module.finBasis ℝ E).addHaar ((extChartAt I α) '' s) = 0 := by
-  let e := extChartAt I α
-  have him : MeasurableSet (e '' s) := hs.image_extChartAt α hsub
-  have : IsManifold I (0 + 1) M := by simpa using (inferInstance : IsManifold I 1 M)
-  have : IsContMDiffRiemannianBundle I 0 E (fun x : M ↦ TangentSpace I x) :=
-    IsContinuousRiemannianBundle.toIsContMDiffZero
-  have hd : ContinuousOn
-      (fun y ↦ ENNReal.ofReal (chartVolumeDensity (I := I) α (e.symm y))) (e '' s) := by
-    apply ENNReal.continuous_ofReal.comp_continuousOn
-    apply (contMDiffOn_chartVolumeDensity (I := I) (n := 0) α).continuousOn.comp
-      ((continuousOn_extChartAt_symm α).mono (image_mono hsub |>.trans e.image_source_eq_target.le))
-    rintro y ⟨x, hx, rfl⟩
-    rw [TangentBundle.trivializationAt_baseSet, ← extChartAt_source I α]
-    rw [e.left_inv (hsub hx)]
-    exact hsub hx
-  rw [riemannianVolume_apply_of_subset (by simpa only [extChartAt_source] using hsub),
-    chartRiemannianVolume_apply α hs, inter_eq_left.mpr hsub]
-  constructor
-  · intro hz
-    have ha := (lintegral_eq_zero_iff' (hd.aemeasurable him)).mp hz
-    have hfalse : ∀ᵐ _ ∂(Module.finBasis ℝ E).addHaar.restrict (e '' s), False := by
-      filter_upwards [ae_restrict_mem him, ha] with y hy hyzero
-      obtain ⟨x, hx, rfl⟩ := hy
-      have hp := chartVolumeDensity_pos (I := I) α (by
-        simpa only [TangentBundle.trivializationAt_baseSet, e.left_inv (hsub hx),
-          ← extChartAt_source I α] using hsub hx)
-      exact (ENNReal.ofReal_pos.mpr hp).ne' (by
-        simpa only [e.left_inv (hsub hx), Pi.zero_apply] using hyzero)
-    simpa only [not_false_eq_true, ofPred_true, Measure.restrict_apply_univ, e,
-      extChartAt_coe] using ae_iff.mp hfalse
-  · intro hz
-    rw [Measure.restrict_zero_set hz, lintegral_zero_measure]
-
-private theorem riemannianVolume_eq_zero_iff_finBasis_image {α : M} {s : Set M}
-    (hsub : s ⊆ (extChartAt I α).source) :
-    riemannianVolume I M s = 0 ↔
-      (Module.finBasis ℝ E).addHaar ((extChartAt I α) '' s) = 0 := by
-  let e := extChartAt I α
-  let μ := (Module.finBasis ℝ E).addHaar
-  constructor
-  · intro hs
-    let t := toMeasurable (riemannianVolume I M) s ∩ e.source
-    have hst : s ⊆ t := fun x hx ↦ ⟨subset_toMeasurable _ _ hx, hsub hx⟩
-    have htm : MeasurableSet t :=
-      (measurableSet_toMeasurable _ _).inter (isOpen_extChartAt_source α).measurableSet
-    have ht : riemannianVolume I M t = 0 :=
-      measure_mono_null inter_subset_left (by rwa [measure_toMeasurable])
-    exact measure_mono_null (image_mono hst)
-      ((riemannianVolume_eq_zero_iff_image_of_measurableSet htm inter_subset_right).mp ht)
-  · intro hs
-    let A := toMeasurable μ (e '' s)
-    let t := Subtype.val '' (e.source.domRestrict e ⁻¹' A)
-    have hval : MeasurableEmbedding (Subtype.val : e.source → M) :=
-      MeasurableEmbedding.subtypeVal (isOpen_extChartAt_source α).measurableSet
-    have htm : MeasurableSet t := hval.measurableSet_image.mpr
-      ((measurableSet_toMeasurable _ _).preimage
-        (measurableEmbedding_extChartAt_restrict α).measurable)
-    have hts : t ⊆ e.source := by rintro x ⟨y, _, rfl⟩; exact y.property
-    have hst : s ⊆ t := fun x hx ↦
-      ⟨⟨x, hsub hx⟩, subset_toMeasurable μ (e '' s) (mem_image_of_mem e hx), rfl⟩
-    have hAt : e '' t ⊆ A := by
-      rintro y ⟨x, ⟨z, hz, rfl⟩, rfl⟩
-      exact hz
-    apply measure_mono_null hst
-    apply (riemannianVolume_eq_zero_iff_image_of_measurableSet htm hts).mpr
-    exact measure_mono_null hAt (by rwa [measure_toMeasurable])
-
-end Chart
-
 section Null
 
 variable [MeasurableSpace E] [BorelSpace E]
+
+/-- The Riemannian volume of a continuous metric is a positive continuous density measure: in the
+preferred chart at `x`, its density with respect to the Haar measure of the basis
+`Module.finBasis ℝ E` is the chart volume density `TauCeti.chartVolumeDensity x` read in the
+chart. -/
+theorem isPositiveDensityMeasure_riemannianVolume :
+    IsPositiveDensityMeasure I (riemannianVolume I M) := by
+  obtain rfl : ‹MeasurableSpace E› = extChartAtMeasurableSpaceE := BorelSpace.measurable_eq
+  let : MeasurableSpace E := extChartAtMeasurableSpaceE
+  rw [isPositiveDensityMeasure_iff_of_isAddHaarMeasure (Module.finBasis ℝ E).addHaar]
+  intro x
+  let e := extChartAt I x
+  refine ⟨fun y ↦ chartVolumeDensity (I := I) x (e.symm y),
+    continuousOn_chartVolumeDensity_extChartAt_symm x, fun y hy ↦ chartVolumeDensity_pos x ?_, ?_⟩
+  · simpa only [TangentBundle.trivializationAt_baseSet, e, extChartAt_source] using e.map_target hy
+  ext A hA
+  have hsrc : MeasurableSet e.source := (isOpen_extChartAt_source x).measurableSet
+  have hpre : MeasurableSet (e ⁻¹' A ∩ e.source) :=
+    (continuousOn_extChartAt x).measurableSet_preimage_inter hsrc hA
+  have hsub : e ⁻¹' A ∩ e.source ⊆ (chartAt H x).source := by
+    simpa only [e, extChartAt_source] using inter_subset_right
+  rw [map_restrict_extChartAt_source_apply x hA, riemannianVolume_apply_of_subset hsub,
+    chartRiemannianVolume_apply x hpre, withDensity_apply _ hA, Measure.restrict_restrict hA,
+    inter_assoc, inter_self, image_preimage_inter, e.image_source_eq_target]
 
 /-- A subset of the source of an extended chart has Riemannian volume zero exactly when its image
 in the chart is null for an additive Haar measure. The set need not be measurable. -/
 theorem riemannianVolume_eq_zero_iff_image_of_subset {α : M} {s : Set M}
     (hsub : s ⊆ (extChartAt I α).source) (μ : Measure E) [μ.IsAddHaarMeasure] :
-    riemannianVolume I M s = 0 ↔ μ ((extChartAt I α) '' s) = 0 := by
-  obtain rfl : ‹MeasurableSpace E› = extChartAtMeasurableSpaceE := BorelSpace.measurable_eq
-  let : MeasurableSpace E := extChartAtMeasurableSpaceE
-  rw [riemannianVolume_eq_zero_iff_finBasis_image hsub]
-  exact ⟨fun h ↦ Measure.absolutelyContinuous_isAddHaarMeasure μ _ h,
-    fun h ↦ Measure.absolutelyContinuous_isAddHaarMeasure _ μ h⟩
+    riemannianVolume I M s = 0 ↔ μ ((extChartAt I α) '' s) = 0 :=
+  isPositiveDensityMeasure_riemannianVolume.measure_eq_zero_iff_image_of_subset hsub μ
 
 /-- A set is chartwise null exactly when it has Riemannian volume zero. -/
 theorem isNullSet_iff_riemannianVolume_eq_zero {s : Set M} :
-    IsNullSet I s ↔ riemannianVolume I M s = 0 := by
-  constructor
-  · intro hs
-    obtain ⟨t, ht, hcover⟩ := LindelofSpace.elim_nhds_subcover
-      (fun x : M ↦ (extChartAt I x).source) fun x ↦ extChartAt_source_mem_nhds x
-    have hsub : s ⊆ ⋃ α ∈ t, s ∩ (extChartAt I α).source := by
-      intro x hx
-      obtain ⟨α, hα, hxα⟩ := mem_iUnion₂.mp (hcover ▸ mem_univ x)
-      exact mem_iUnion₂.mpr ⟨α, hα, hx, hxα⟩
-    refine measure_mono_null hsub ((measure_biUnion_null_iff ht).mpr fun α _ ↦ ?_)
-    exact (riemannianVolume_eq_zero_iff_image_of_subset inter_subset_right
-      (Module.finBasis ℝ E).addHaar).mpr (hs.chartwise α _)
-  · intro hs
-    rw [isNullSet_iff]
-    intro α μ _
-    exact (riemannianVolume_eq_zero_iff_image_of_subset inter_subset_right μ).mp
-      (measure_mono_null inter_subset_left hs)
+    IsNullSet I s ↔ riemannianVolume I M s = 0 :=
+  isPositiveDensityMeasure_riemannianVolume.isNullSet_iff_measure_eq_zero
 
 /-- A chartwise null set has Riemannian volume zero. -/
 theorem IsNullSet.riemannianVolume_eq_zero {s : Set M} (hs : IsNullSet I s) :
@@ -163,8 +96,7 @@ theorem IsNullSet.riemannianVolume_eq_zero {s : Set M} (hs : IsNullSet I s) :
 /-- **Almost everywhere does not depend on the metric.** The almost-everywhere filter of the
 Riemannian volume of a continuous metric is the almost-everywhere filter of chartwise null sets. -/
 theorem ae_riemannianVolume : ae (riemannianVolume I M) = Manifold.ae I M :=
-  Manifold.ae_eq_iff_forall_measure_eq_zero_iff.2 fun _ ↦
-    isNullSet_iff_riemannianVolume_eq_zero.symm
+  isPositiveDensityMeasure_riemannianVolume.ae_eq
 
 end Null
 
@@ -175,7 +107,7 @@ attribute [local instance] extChartAtMeasurableSpaceE extChartAtBorelSpaceE
 /-- On a manifold of positive dimension, every point has Riemannian volume zero. -/
 instance nullSingletonClass_riemannianVolume [Nontrivial E] :
     NullSingletonClass (riemannianVolume I M) :=
-  ⟨fun x ↦ (countable_singleton x).isNullSet.riemannianVolume_eq_zero⟩
+  isPositiveDensityMeasure_riemannianVolume.nullSingletonClass
 
 end NullSingleton
 
