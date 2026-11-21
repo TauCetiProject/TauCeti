@@ -21,6 +21,14 @@ constant-structure `J`-holomorphic for these structures
 (`DifferentiableWithinAt.isConstStructureJHolomorphicWithinAt_ofComplexModule`,
 `DifferentiableOn.isConstStructureJHolomorphicOn_ofComplexModule`). This supplies holomorphic
 reparametrizations of discs, such as affine maps of `ℂ`, as `J`-holomorphic maps.
+
+Conversely, a real-linear map commuting with multiplication by `i` is the real restriction of a
+complex-linear map (`ContinuousLinearMap.exists_restrictScalars_eq_of_isComplexLinearMap`), so for
+these structures constant-structure `J`-holomorphicity is complex differentiability
+(`isConstStructureJHolomorphicAt_ofComplexModule_iff`,
+`isConstStructureJHolomorphicWithinAt_ofComplexModule_iff`,
+`isConstStructureJHolomorphicOn_ofComplexModule_iff`). This turns `J`-holomorphic functions on
+discs into holomorphic functions, to which complex analysis applies.
 -/
 
 public section
@@ -64,3 +72,49 @@ theorem DifferentiableOn.isConstStructureJHolomorphicOn_ofComplexModule
       (AlmostComplexStructure.ofComplexModule W) f s :=
   isConstStructureJHolomorphicOn_of_forall fun x hx ↦
     (hf x hx).isConstStructureJHolomorphicWithinAt_ofComplexModule
+
+/-- A real-linear map between complex normed spaces that commutes with the structures `v ↦ i v` is
+the restriction of scalars of a complex-linear map. For maps out of `ℂ` this is
+`ContinuousLinearMap.complexOfReal`. -/
+theorem ContinuousLinearMap.exists_restrictScalars_eq_of_isComplexLinearMap {L : V →L[ℝ] W}
+    (hL : IsComplexLinearMap (AlmostComplexStructure.ofComplexModule V)
+      (AlmostComplexStructure.ofComplexModule W) L.toLinearMap) :
+    ∃ L' : V →L[ℂ] W, L'.restrictScalars ℝ = L := by
+  have hI (v : V) : L (Complex.I • v) = Complex.I • L v := by
+    simpa [AlmostComplexStructure.ofComplexModule_apply] using
+      (isComplexLinearMap_iff_apply _ _ _).1 hL v
+  refine ⟨{ toFun := L, map_add' := L.map_add, map_smul' := fun c v ↦ ?_, cont := L.cont }, rfl⟩
+  -- Write `c = a + b i`, so that only real scalars and `i` act.
+  obtain ⟨a, b, rfl⟩ : ∃ a b : ℝ, c = a + b * Complex.I := ⟨c.re, c.im, (Complex.re_add_im c).symm⟩
+  simp only [RingHom.id_apply, add_smul, mul_smul, Complex.coe_smul, map_add, map_smul, hI]
+
+/-- For the structures `v ↦ i v`, a map is constant-structure `J`-holomorphic at `x` exactly when it
+is complex differentiable at `x`. -/
+theorem isConstStructureJHolomorphicAt_ofComplexModule_iff :
+    IsConstStructureJHolomorphicAt (AlmostComplexStructure.ofComplexModule V)
+      (AlmostComplexStructure.ofComplexModule W) f x ↔ DifferentiableAt ℂ f x := by
+  refine ⟨fun hf ↦ ?_, DifferentiableAt.isConstStructureJHolomorphicAt_ofComplexModule⟩
+  obtain ⟨L, hL, hlin⟩ := (isConstStructureJHolomorphicAt_iff _ _ f x).1 hf
+  obtain ⟨L', hL'⟩ := L.exists_restrictScalars_eq_of_isComplexLinearMap hlin
+  exact (hasFDerivAt_of_restrictScalars ℝ hL hL').differentiableAt
+
+/-- For the structures `v ↦ i v`, a map is constant-structure `J`-holomorphic within `s` at `x`
+exactly when it is complex differentiable within `s` at `x`. -/
+theorem isConstStructureJHolomorphicWithinAt_ofComplexModule_iff :
+    IsConstStructureJHolomorphicWithinAt (AlmostComplexStructure.ofComplexModule V)
+      (AlmostComplexStructure.ofComplexModule W) f s x ↔ DifferentiableWithinAt ℂ f s x := by
+  refine ⟨fun hf ↦ ?_,
+    DifferentiableWithinAt.isConstStructureJHolomorphicWithinAt_ofComplexModule⟩
+  obtain ⟨L, hL, hlin⟩ := (isConstStructureJHolomorphicWithinAt_iff _ _ f s x).1 hf
+  obtain ⟨L', hL'⟩ := L.exists_restrictScalars_eq_of_isComplexLinearMap hlin
+  exact (hL.of_restrictScalars ℝ hL').differentiableWithinAt
+
+/-- For the structures `v ↦ i v`, a map is constant-structure `J`-holomorphic on `s` exactly when it
+is complex differentiable on `s`. -/
+theorem isConstStructureJHolomorphicOn_ofComplexModule_iff :
+    IsConstStructureJHolomorphicOn (AlmostComplexStructure.ofComplexModule V)
+      (AlmostComplexStructure.ofComplexModule W) f s ↔ DifferentiableOn ℂ f s :=
+  ⟨fun hf x hx ↦ isConstStructureJHolomorphicWithinAt_ofComplexModule_iff.1
+      ((isConstStructureJHolomorphicWithinAt_iff _ _ f s x).2
+        ((isConstStructureJHolomorphicOn_iff _ _ f s).1 hf x hx)),
+    DifferentiableOn.isConstStructureJHolomorphicOn_ofComplexModule⟩

@@ -22,7 +22,8 @@ This file collects small API lemmas for Mathlib's `Complex.UnitDisc` and
 * Compactness of the disc points of Euclidean norm at most `ρ < 1`
   (`Complex.UnitDisc.isCompact_setOf_norm_le`).
 * The inclusion of the open unit disc into `ℂ` is an open embedding
-  (`Complex.UnitDisc.isOpenEmbedding_coe`), so the open unit disc is Hausdorff. A point outside a
+  (`Complex.UnitDisc.isOpenEmbedding_coe`), so the open unit disc is Hausdorff; it is connected
+  (`Complex.UnitDisc.instConnectedSpace`). A point outside a
   set of the disc with closed image in `ℂ` is the centre of a round disc missing that set
   (`Complex.UnitDisc.exists_pos_forall_notMem_ball`).
 * The closed unit disc `Complex.UnitClosedDisc` is a compact, contractible, second countable
@@ -72,6 +73,10 @@ theorem isOpenEmbedding_coe : Topology.IsOpenEmbedding ((↑) : 𝔻 → ℂ) :=
 /-- The open unit disc is Hausdorff. -/
 instance instT2Space : T2Space 𝔻 :=
   isEmbedding_coe.t2Space
+
+/-- The open unit disc is connected. -/
+instance instConnectedSpace : ConnectedSpace 𝔻 :=
+  Subtype.connectedSpace (isConnected_ball zero_lt_one)
 
 /-- If `K ⊆ 𝔻` has closed image in `ℂ` and `z ∉ K`, some round disc `B(z, R)` misses `K`. -/
 theorem exists_pos_forall_notMem_ball {K : Set 𝔻} (hK : IsClosed (((↑) : 𝔻 → ℂ) '' K))
