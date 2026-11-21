@@ -263,6 +263,13 @@ theorem mapCoeffs_id (u : C₀(J, R) →L[R] C₀(I, R))
   ext i j
   simp
 
+/-- Coefficientwise extension along the identity homomorphism is the identity ring homomorphism. -/
+@[simp]
+theorem mapCoeffsRingHom_id
+    (hf : ∃ C : ℝ≥0, ∀ r : R, ‖(RingHom.id R) r‖ ≤ C * ‖r‖) :
+    mapCoeffsRingHom (J := J) (RingHom.id R) hf = RingHom.id (C₀(J, R) →L[R] C₀(J, R)) :=
+  RingHom.ext fun u ↦ mapCoeffs_id u hf
+
 end Identity
 
 /-- Successive coefficient extensions agree with extension along the composite homomorphism. -/
@@ -276,5 +283,16 @@ theorem mapCoeffs_mapCoeffs [TauCeti.NormedRing.IsTate S]
   apply matrixCoeff_injective
   ext i j
   simp
+
+/-- Coefficientwise extension respects composition of bounded ring homomorphisms. -/
+theorem mapCoeffsRingHom_comp [TauCeti.NormedRing.IsTate S]
+    {T : Type*} [NormedCommRing T] [IsUltrametricDist T] [CompleteSpace T]
+    (f : R →+* S) (g : S →+* T)
+    (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖)
+    (hg : ∃ D : ℝ≥0, ∀ s, ‖g s‖ ≤ D * ‖s‖)
+    (hgf : ∃ E : ℝ≥0, ∀ r, ‖(g.comp f) r‖ ≤ E * ‖r‖) :
+    mapCoeffsRingHom (J := J) (g.comp f) hgf =
+      (mapCoeffsRingHom g hg).comp (mapCoeffsRingHom f hf) :=
+  RingHom.ext fun u ↦ (mapCoeffs_mapCoeffs u f g hf hg hgf).symm
 
 end ContinuousLinearMap

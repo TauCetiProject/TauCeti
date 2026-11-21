@@ -8,7 +8,6 @@ module
 public import TauCeti.RingTheory.PowerSeries.GaussNorm
 public import TauCeti.RingTheory.PowerSeries.HasseDeriv.GaussNorm
 public import TauCeti.RingTheory.PowerSeries.Restricted
-import TauCeti.RingTheory.PowerSeries.Dvd
 
 /-!
 # Entire power series
@@ -61,9 +60,6 @@ restricted at a fixed radius.
 * `PowerSeries.IsEntire.eq_C_of_mul_eq_one` and `PowerSeries.IsEntire.isUnit_iff`: over an
   ultrametric normed field, the units of the ring of entire series are the nonzero constants,
   since the Gauss norm is multiplicative and a nonconstant entire series has unbounded Gauss norms.
-* `PowerSeries.IsEntire.exists_normalised_factorisation` and
-  `PowerSeries.IsEntire.map_factorisation`: coprime entire factorisations rescale to the
-  normalised case `Q₁(0) = 1` and transport along bounded ring homomorphisms.
 
 ## References
 
@@ -407,95 +403,5 @@ theorem IsEntire.isUnit_iff {F : IsEntire.subring K} :
     rw [Subring.coe_mul, hFc, OneMemClass.coe_one, ← map_mul, mul_inv_cancel₀ hc, map_one]
 
 end Units
-
-section Factorisation
-
-/-- Bridges `IsCoprime` for `IsEntire.polynomialHom Q` and the raw subtype element `⟨Q, _⟩`. -/
-private theorem IsEntire.isCoprime_polynomialHom_iff {R : Type*} [NormedCommRing R]
-    (Q : Polynomial R) (S : IsEntire.subring R) :
-    IsCoprime (IsEntire.polynomialHom Q) S ↔
-      IsCoprime (⟨Q, IsEntire.mem_subring.mpr (isEntire_coe Q)⟩ : IsEntire.subring R) S := by
-  have hQ : IsEntire.polynomialHom Q = ⟨Q, IsEntire.mem_subring.mpr (isEntire_coe Q)⟩ :=
-    Subtype.ext (IsEntire.coe_polynomialHom Q)
-  rw [hQ]
-
-/-- Rescales a general coprime factorisation `u_series = Q * S` (with `u_series(0) = 1`) to the
-normalised case `Q₁(0) = 1` via `b = Ring.inverse (Q.coeff 0)` and `S₁ = C (Q.coeff 0) * S`. -/
-theorem IsEntire.exists_normalised_factorisation {R : Type*} [NormedCommRing R]
-    {u_series : R⟦X⟧} (hu0 : constantCoeff u_series = 1)
-    {Q : Polynomial R} {S : R⟦X⟧} (hQ : IsUnit Q.leadingCoeff) (hS : S.IsEntire)
-    (hQS : u_series = (Q : R⟦X⟧) * S)
-    (hcop : IsCoprime (⟨Q, IsEntire.mem_subring.mpr (isEntire_coe Q)⟩ : IsEntire.subring R)
-      ⟨S, IsEntire.mem_subring.mpr hS⟩) :
-    ∃ (b : R) (Q₁ : Polynomial R) (S₁ : R⟦X⟧) (hS₁ : S₁.IsEntire),
-      b = Ring.inverse (Q.coeff 0) ∧ IsUnit b ∧ Q₁ = Polynomial.C b * Q ∧
-      S₁ = C (Q.coeff 0) * S ∧ Q₁.coeff 0 = 1 ∧ IsUnit Q₁.leadingCoeff ∧
-      Q₁.natDegree = Q.natDegree ∧ u_series = (Q₁ : R⟦X⟧) * S₁ ∧
-      IsCoprime (⟨Q₁, IsEntire.mem_subring.mpr (isEntire_coe Q₁)⟩ : IsEntire.subring R)
-        ⟨S₁, IsEntire.mem_subring.mpr hS₁⟩ := by
-  have ha : IsUnit (Q.coeff 0) := isUnit_coeff_zero_of_eq_coe_mul hu0 hQS
-  set a : R := Q.coeff 0
-  set b : R := Ring.inverse a
-  have hba : b * a = 1 := Ring.inverse_mul_cancel a ha
-  have hb : IsUnit b := IsUnit.of_mul_eq_one a hba
-  set Q₁ : Polynomial R := Polynomial.C b * Q
-  set S₁ : R⟦X⟧ := C a * S
-  have hS₁ : S₁.IsEntire := (isEntire_C a).mul hS
-  have hQ₁0 : Q₁.coeff 0 = 1 := by simp [Q₁, hba, a]
-  have hQ₁deg : Q₁.natDegree = Q.natDegree := Polynomial.natDegree_C_mul_of_isUnit hb Q
-  have hQ₁lc : IsUnit Q₁.leadingCoeff := by
-    rw [Polynomial.leadingCoeff_C_mul_of_isUnit hb]
-    exact hb.mul hQ
-  have hQS₁ : u_series = (Q₁ : R⟦X⟧) * S₁ := by
-    rw [hQS]
-    simp only [Q₁, S₁, Polynomial.coe_mul, Polynomial.coe_C]
-    calc (Q : R⟦X⟧) * S = C (b * a) * ((Q : R⟦X⟧) * S) := by rw [hba, map_one, one_mul]
-      _ = C b * (Q : R⟦X⟧) * (C a * S) := by rw [map_mul]; ring
-  let S₀ : IsEntire.subring R := ⟨S, IsEntire.mem_subring.mpr hS⟩
-  let S₁sub : IsEntire.subring R := ⟨S₁, IsEntire.mem_subring.mpr hS₁⟩
-  have hS₁sub : S₁sub = IsEntire.polynomialHom (Polynomial.C a) * S₀ :=
-    Subtype.ext (by simp [S₁sub, S₁, S₀])
-  have hb' : IsUnit (IsEntire.polynomialHom (Polynomial.C b)) :=
-    hb.map (IsEntire.polynomialHom.comp Polynomial.C)
-  have ha' : IsUnit (IsEntire.polynomialHom (Polynomial.C a)) :=
-    ha.map (IsEntire.polynomialHom.comp Polynomial.C)
-  have hcop₁ : IsCoprime (IsEntire.polynomialHom Q₁) S₁sub := by
-    rw [hS₁sub]
-    simpa only [Q₁, map_mul] using (isCoprime_mul_units_left hb' ha' _ _).2
-      ((IsEntire.isCoprime_polynomialHom_iff Q S₀).mpr hcop)
-  exact ⟨b, Q₁, S₁, hS₁, rfl, hb, rfl, rfl, hQ₁0, hQ₁lc, hQ₁deg, hQS₁,
-    (IsEntire.isCoprime_polynomialHom_iff Q₁ S₁sub).mp hcop₁⟩
-
-/-- Transports a coprime polynomial factorisation `H = Q * S'` in entire power series along a
-bounded ring homomorphism `f : R →+* S` into a nontrivial normed commutative ring `S`. -/
-theorem IsEntire.map_factorisation {R S : Type*} [NormedCommRing R] [NormedCommRing S]
-    [Nontrivial S] {H : R⟦X⟧} {Q : Polynomial R} {S' : R⟦X⟧}
-    (hQ : IsUnit Q.leadingCoeff) (hS' : S'.IsEntire) (hQS' : H = (Q : R⟦X⟧) * S')
-    (hcop : IsCoprime (⟨Q, IsEntire.mem_subring.mpr (isEntire_coe Q)⟩ : IsEntire.subring R)
-      ⟨S', IsEntire.mem_subring.mpr hS'⟩)
-    (f : R →+* S) {C : ℝ} (hf : ∀ r, ‖f r‖ ≤ C * ‖r‖) :
-    (Q.map f).natDegree = Q.natDegree ∧
-      IsUnit (Q.map f).leadingCoeff ∧
-      (PowerSeries.map f S').IsEntire ∧
-      PowerSeries.map f H = ((Q.map f : Polynomial S) : S⟦X⟧) * PowerSeries.map f S' ∧
-      IsCoprime (⟨Q.map f, IsEntire.mem_subring.mpr (isEntire_coe (Q.map f))⟩ :
-        IsEntire.subring S) ⟨PowerSeries.map f S', IsEntire.mem_subring.mpr (hS'.map f hf)⟩ := by
-  have hQdeg : (Q.map f).natDegree = Q.natDegree :=
-    Polynomial.natDegree_map_eq_of_isUnit_leadingCoeff f hQ
-  have hQlc : IsUnit (Q.map f).leadingCoeff := by
-    rw [Polynomial.leadingCoeff_map_eq_of_isUnit_leadingCoeff f hQ]
-    exact hQ.map f
-  have hFS : (PowerSeries.map f S').IsEntire := hS'.map f hf
-  have hHS : PowerSeries.map f H = ((Q.map f : Polynomial S) : S⟦X⟧) * PowerSeries.map f S' := by
-    rw [hQS', map_mul, Polynomial.polynomial_map_coe]
-  let S₀ : IsEntire.subring R := ⟨S', IsEntire.mem_subring.mpr hS'⟩
-  let S₁ : IsEntire.subring S := ⟨PowerSeries.map f S', IsEntire.mem_subring.mpr hFS⟩
-  have hS₁ : IsEntire.mapHom f hf S₀ = S₁ := Subtype.ext (IsEntire.coe_mapHom f hf S₀)
-  have hcopS : IsCoprime (IsEntire.polynomialHom (Q.map f)) S₁ := by
-    rw [← hS₁, ← IsEntire.mapHom_polynomialHom f hf Q]
-    exact ((IsEntire.isCoprime_polynomialHom_iff Q S₀).mpr hcop).map (IsEntire.mapHom f hf)
-  exact ⟨hQdeg, hQlc, hFS, hHS, (IsEntire.isCoprime_polynomialHom_iff (Q.map f) S₁).mp hcopS⟩
-
-end Factorisation
 
 end PowerSeries

@@ -147,38 +147,6 @@ namespace IsRieszColemanProjection
 
 variable {u E : M →L[R] M} {Q : R[X]}
 
-/-- Scaling `Q` by a unit scalar preserves Riesz–Coleman projections. -/
-theorem of_C_mul (hE : IsRieszColemanProjection u Q E) {c : R} (hc : IsUnit c) :
-    IsRieszColemanProjection u (Polynomial.C c * Q) E := by
-  obtain ⟨c', hc'⟩ := hc.exists_left_inv
-  have haeval : Polynomial.aeval u (Polynomial.C c * Q).reverse =
-      c • Polynomial.aeval u Q.reverse := by
-    rw [Polynomial.reverse_C_mul_of_isUnit hc, map_mul, Polynomial.aeval_C, Algebra.smul_def]
-  obtain ⟨w, hw₁, hw₂, hw₃, hw₄, hw⟩ := hE.exists_inverse
-  have : IsTopologicalSemiring (M →L[R] M) := inferInstance
-  set T := (Algebra.adjoin R {u}).topologicalClosure
-  have hwT : c' • w ∈ closure (Algebra.adjoin R {u} : Set (M →L[R] M)) := by
-    have hmem : w ∈ T := by rwa [← SetLike.mem_coe, Subalgebra.topologicalClosure_coe]
-    have hsmul : c' • w ∈ T := T.smul_mem hmem c'
-    rwa [← SetLike.mem_coe, Subalgebra.topologicalClosure_coe] at hsmul
-  refine ⟨hE.isIdempotentElem, hE.commute, hE.mem_closure_adjoin, ?_,
-    c' • w, ?_, ?_, ?_, ?_, hwT⟩
-  · rw [haeval, smul_mul_assoc, hE.aeval_reverse_mul_eq_zero, smul_zero]
-  · rw [haeval, smul_mul_smul_comm, mul_comm c c', hc', one_smul, hw₁]
-  · rw [haeval, smul_mul_smul_comm, hc', one_smul, hw₂]
-  · rw [mul_smul_comm, hw₃, smul_zero]
-  · rw [smul_mul_assoc, hw₄, smul_zero]
-
-/-- Scaling `Q` by a unit scalar does not change the Riesz–Coleman projections of `u`. -/
-@[simp]
-theorem iff_C_mul {c : R} (hc : IsUnit c) :
-    IsRieszColemanProjection u (Polynomial.C c * Q) E ↔ IsRieszColemanProjection u Q E := by
-  obtain ⟨c', hc'⟩ := hc.exists_left_inv
-  refine ⟨fun h ↦ ?_, fun h ↦ h.of_C_mul hc⟩
-  have hQ : Polynomial.C c' * (Polynomial.C c * Q) = Q := by
-    rw [← mul_assoc, ← Polynomial.C_mul, hc', Polynomial.C_1, one_mul]
-  simpa only [hQ] using h.of_C_mul (IsUnit.of_mul_eq_one _ hc')
-
 /-- A Riesz–Coleman projection commutes with every polynomial in `u`. -/
 theorem commute_aeval (hE : IsRieszColemanProjection u Q E) (P : R[X]) :
     Commute (Polynomial.aeval u P) E := by
@@ -263,16 +231,61 @@ theorem eq_inverse (hE : IsRieszColemanProjection u Q E) {w : M →L[R] M}
     _ = hE.inverse := by
         rw [hw, mul_sub (α := M →L[R] M), mul_one, hE.inverse_mul_eq_zero, sub_zero hE.inverse]
 
+omit [TauCeti.NormedRing.IsTate R] in
+private theorem aeval_C_mul_reverse (u : M →L[R] M) {c : R} (hc : IsUnit c) (Q : R[X]) :
+    Polynomial.aeval u (Polynomial.C c * Q).reverse = c • Polynomial.aeval u Q.reverse := by
+  rw [Polynomial.reverse_C_mul_of_isUnit hc, map_mul, Polynomial.aeval_C, Algebra.smul_def]
+
+private theorem smul_mem_closure_adjoin {u w : M →L[R] M}
+    (hw : w ∈ closure (Algebra.adjoin R {u} : Set (M →L[R] M))) (c : R) :
+    c • w ∈ closure (Algebra.adjoin R {u} : Set (M →L[R] M)) := by
+  have : IsTopologicalSemiring (M →L[R] M) := inferInstance
+  have hw' : w ∈ (Algebra.adjoin R {u}).topologicalClosure := by
+    rwa [← SetLike.mem_coe, Subalgebra.topologicalClosure_coe]
+  have hsmul := (Algebra.adjoin R {u}).topologicalClosure.smul_mem hw' c
+  rwa [← SetLike.mem_coe, Subalgebra.topologicalClosure_coe] at hsmul
+
+private theorem of_C_mul_aux (hE : IsRieszColemanProjection u Q E) {c : R} (hc : IsUnit c) :
+    ∃ hE' : IsRieszColemanProjection u (Polynomial.C c * Q) E,
+      hE'.inverse = Ring.inverse c • hE.inverse := by
+  have haeval := aeval_C_mul_reverse u hc Q
+  have hcc : Ring.inverse c * c = 1 := Ring.inverse_mul_cancel _ hc
+  have hinv₁ : Polynomial.aeval u (Polynomial.C c * Q).reverse * (Ring.inverse c • hE.inverse) =
+      1 - E := by
+    rw [haeval, smul_mul_smul_comm, mul_comm c, hcc, one_smul, hE.aeval_reverse_mul_inverse]
+  have hinv₂ : (Ring.inverse c • hE.inverse) * Polynomial.aeval u (Polynomial.C c * Q).reverse =
+      1 - E := by
+    rw [haeval, smul_mul_smul_comm, hcc, one_smul, hE.inverse_mul_aeval_reverse]
+  have hinv₃ : E * (Ring.inverse c • hE.inverse) = 0 := by
+    rw [mul_smul_comm, hE.mul_inverse_eq_zero, smul_zero]
+  have hinv₄ : (Ring.inverse c • hE.inverse) * E = 0 := by
+    rw [smul_mul_assoc, hE.inverse_mul_eq_zero, smul_zero]
+  have hE' : IsRieszColemanProjection u (Polynomial.C c * Q) E :=
+    ⟨hE.isIdempotentElem, hE.commute, hE.mem_closure_adjoin,
+      by rw [haeval, smul_mul_assoc, hE.aeval_reverse_mul_eq_zero, smul_zero],
+      ⟨Ring.inverse c • hE.inverse, hinv₁, hinv₂, hinv₃, hinv₄,
+        smul_mem_closure_adjoin hE.inverse_mem_closure_adjoin _⟩⟩
+  exact ⟨hE', (hE'.eq_inverse hinv₁ hinv₃).symm⟩
+
+/-- Scaling `Q` by a unit scalar preserves Riesz–Coleman projections. -/
+theorem of_C_mul (hE : IsRieszColemanProjection u Q E) {c : R} (hc : IsUnit c) :
+    IsRieszColemanProjection u (Polynomial.C c * Q) E :=
+  (of_C_mul_aux hE hc).1
+
+/-- Scaling `Q` by a unit scalar does not change the Riesz–Coleman projections of `u`. -/
+@[simp]
+theorem iff_C_mul {c : R} (hc : IsUnit c) :
+    IsRieszColemanProjection u (Polynomial.C c * Q) E ↔ IsRieszColemanProjection u Q E := by
+  obtain ⟨c', hc'⟩ := hc.exists_left_inv
+  refine ⟨fun h ↦ ?_, fun h ↦ h.of_C_mul hc⟩
+  have hQ : Polynomial.C c' * (Polynomial.C c * Q) = Q := by
+    rw [← mul_assoc, ← Polynomial.C_mul, hc', Polynomial.C_1, one_mul]
+  simpa only [hQ] using h.of_C_mul (IsUnit.of_mul_eq_one _ hc')
+
 /-- Rescaling `Q` by a unit scalar `c` scales the complementary inverse by `Ring.inverse c`. -/
 theorem inverse_of_C_mul (hE : IsRieszColemanProjection u Q E) {c : R} (hc : IsUnit c) :
-    (hE.of_C_mul hc).inverse = Ring.inverse c • hE.inverse := by
-  refine ((hE.of_C_mul hc).eq_inverse ?_ ?_).symm
-  · have haeval : Polynomial.aeval u (Polynomial.C c * Q).reverse =
-        c • Polynomial.aeval u Q.reverse := by
-      rw [Polynomial.reverse_C_mul_of_isUnit hc, map_mul, Polynomial.aeval_C, Algebra.smul_def]
-    rw [haeval, smul_mul_smul_comm, mul_comm c, Ring.inverse_mul_cancel _ hc, one_smul,
-      hE.aeval_reverse_mul_inverse]
-  · rw [mul_smul_comm, hE.mul_inverse_eq_zero, smul_zero]
+    (hE.of_C_mul hc).inverse = Ring.inverse c • hE.inverse :=
+  (of_C_mul_aux hE hc).2
 
 /-- The complementary inverse preserves `ker E`. -/
 theorem mapsTo_ker_inverse (hE : IsRieszColemanProjection u Q E) :

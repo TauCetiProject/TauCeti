@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.PrModule.BaseChang
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.RieszColeman.PrModule
 import TauCeti.Algebra.Polynomial.Reverse
 import TauCeti.RingTheory.PowerSeries.Dvd
+import TauCeti.RingTheory.PowerSeries.Entire.Coprime
 
 /-!
 # Base change of Riesz–Coleman projections
@@ -155,12 +156,19 @@ theorem IsRieszColemanProjection.rankAtStalk_range_completedBaseChange
     Module.rankAtStalk (R := S) (E.completedBaseChange α α).range q = Q.natDegree := by
   have : Nontrivial S := q.nontrivial
   obtain ⟨C, hC⟩ := exists_norm_algebraMap_le_of_norm_smul_le hS
+  have hQeq : IsEntire.polynomialHom Q =
+      (⟨Q, IsEntire.mem_subring.mpr (PowerSeries.isEntire_coe Q)⟩ : IsEntire.subring R) :=
+    Subtype.ext (IsEntire.coe_polynomialHom Q)
   obtain ⟨hQdeg, hQlc, hFS, hHS, hcopS⟩ :=
-    IsEntire.map_factorisation hQ hS' hQS' hcop (algebraMap R S) hC
+    IsEntire.map_factorisation hQ hS' hQS' (hQeq.symm ▸ hcop) (algebraMap R S) hC
+  have hQSeq : IsEntire.polynomialHom (Polynomial.map (algebraMap R S) Q) =
+      ⟨_, IsEntire.mem_subring.mpr
+        (PowerSeries.isEntire_coe (Polynomial.map (algebraMap R S) Q))⟩ :=
+    Subtype.ext (IsEntire.coe_polynomialHom _)
   rw [← hu.charPowerSeries_completedBaseChange hS α] at hHS
   rw [← hQdeg]
   exact (hE.completedBaseChange hS hu.hasPr_source α hQ).rankAtStalk_range_of_isPrCompact
-    (hu.completedBaseChange hS α α) hQlc hFS hHS hcopS q
+    (hu.completedBaseChange hS α α) hQlc hFS hHS (hQSeq ▸ hcopS) q
 
 end PrBaseChange
 
@@ -218,11 +226,17 @@ theorem IsRowCompact.rieszColemanProjection_mapCoeffs [IsUltrametricDist R]
       (u.rieszColemanProjection Q).mapCoeffs f hf := by
   rcases subsingleton_or_nontrivial S with hS | hS
   · ext x i; exact Subsingleton.elim _ _
+  have hQeq : IsEntire.polynomialHom Q =
+      (⟨Q, IsEntire.mem_subring.mpr (PowerSeries.isEntire_coe Q)⟩ : IsEntire.subring R) :=
+    Subtype.ext (IsEntire.coe_polynomialHom Q)
   obtain ⟨-, hQlc, hFS, hHS, hcopS⟩ :=
-    IsEntire.map_factorisation hQ hS' hQS' hcop f hf.choose_spec
+    IsEntire.map_factorisation hQ hS' hQS' (hQeq.symm ▸ hcop) f hf.choose_spec
+  have hQfeq : IsEntire.polynomialHom (Q.map f) =
+      ⟨_, IsEntire.mem_subring.mpr (PowerSeries.isEntire_coe (Q.map f))⟩ :=
+    Subtype.ext (IsEntire.coe_polynomialHom _)
   rw [← hu.charPowerSeries_map f hf] at hHS
   exact (((hu.isRieszColemanProjection_rieszColemanProjection hQ hS' hQS' hcop).mapCoeffs
-    hQ f hf).eq_rieszColemanProjection (hu.mapCoeffs f hf) hQlc hFS hHS hcopS).symm
+    hQ f hf).eq_rieszColemanProjection (hu.mapCoeffs f hf) hQlc hFS hHS (hQfeq ▸ hcopS)).symm
 
 /-- **Constant stalk rank after bounded base change.** For a row-compact operator `u` on
 `C₀(I, R)` with a Riesz–Coleman projection `E` for a coprime factorisation `H_u = Q * S'`, where
@@ -238,11 +252,18 @@ theorem IsRieszColemanProjection.rankAtStalk_range_mapCoeffs [IsUltrametricDist 
     (f : R →+* S) (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖) (q : PrimeSpectrum S) :
     Module.rankAtStalk (R := S) (E.mapCoeffs f hf).range q = Q.natDegree := by
   have : Nontrivial S := q.nontrivial
+  have hQeq : IsEntire.polynomialHom Q =
+      (⟨Q, IsEntire.mem_subring.mpr (PowerSeries.isEntire_coe Q)⟩ : IsEntire.subring R) :=
+    Subtype.ext (IsEntire.coe_polynomialHom Q)
   obtain ⟨hQdeg, hQlc, hFS, hHS, hcopS⟩ :=
-    IsEntire.map_factorisation hQ hS' hQS' hcop f hf.choose_spec
+    IsEntire.map_factorisation hQ hS' hQS' (hQeq.symm ▸ hcop) f hf.choose_spec
+  have hQfeq : IsEntire.polynomialHom (Q.map f) =
+      ⟨_, IsEntire.mem_subring.mpr (PowerSeries.isEntire_coe (Q.map f))⟩ :=
+    Subtype.ext (IsEntire.coe_polynomialHom _)
   rw [← hu.charPowerSeries_map f hf] at hHS
   rw [← hQdeg]
-  exact (hE.mapCoeffs hQ f hf).rankAtStalk_range (hu.mapCoeffs f hf) hQlc hFS hHS hcopS q
+  exact (hE.mapCoeffs hQ f hf).rankAtStalk_range (hu.mapCoeffs f hf) hQlc hFS hHS
+    (hQfeq ▸ hcopS) q
 
 end BaseChange
 
@@ -266,10 +287,16 @@ theorem IsRowCompact.finrank_ker_aeval_reverse_mapCoeffs {u : C₀(I, K) →L[K]
       Module.finrank K (Polynomial.aeval u Q.reverse : C₀(I, K) →L[K] C₀(I, K)).ker := by
   have hQ := PowerSeries.isUnit_leadingCoeff_of_eq_coe_mul
     (Matrix.constantCoeff_charPowerSeries _) hQS
+  have hQeq : IsEntire.polynomialHom Q =
+      (⟨Q, IsEntire.mem_subring.mpr (PowerSeries.isEntire_coe Q)⟩ : IsEntire.subring K) :=
+    Subtype.ext (IsEntire.coe_polynomialHom Q)
   obtain ⟨hQdeg, -, hLS, hHS, hcopL⟩ :=
-    IsEntire.map_factorisation hQ hS hQS hcop f hf.choose_spec
+    IsEntire.map_factorisation hQ hS hQS (hQeq.symm ▸ hcop) f hf.choose_spec
+  have hQfeq : IsEntire.polynomialHom (Q.map f) =
+      ⟨_, IsEntire.mem_subring.mpr (PowerSeries.isEntire_coe (Q.map f))⟩ :=
+    Subtype.ext (IsEntire.coe_polynomialHom _)
   rw [← hu.charPowerSeries_map f hf] at hHS
-  rw [(hu.mapCoeffs f hf).finrank_ker_aeval_reverse hLS hHS hcopL, hQdeg,
+  rw [(hu.mapCoeffs f hf).finrank_ker_aeval_reverse hLS hHS (hQfeq ▸ hcopL), hQdeg,
     hu.finrank_ker_aeval_reverse hS hQS hcop]
 
 end FieldBaseChange
@@ -298,10 +325,17 @@ theorem IsPrCompact.finrank_ker_aeval_reverse_completedBaseChange
       Module.finrank K (Polynomial.aeval u Q.reverse : M →L[K] M).ker := by
   have hQ := PowerSeries.isUnit_leadingCoeff_of_eq_coe_mul u.constantCoeff_charPowerSeries hQS
   obtain ⟨C, hC⟩ := exists_norm_algebraMap_le_of_norm_smul_le hL
+  have hQeq : IsEntire.polynomialHom Q =
+      (⟨Q, IsEntire.mem_subring.mpr (PowerSeries.isEntire_coe Q)⟩ : IsEntire.subring K) :=
+    Subtype.ext (IsEntire.coe_polynomialHom Q)
   obtain ⟨hQdeg, -, hLS, hHS, hcopL⟩ :=
-    IsEntire.map_factorisation hQ hS hQS hcop (algebraMap K L) hC
+    IsEntire.map_factorisation hQ hS hQS (hQeq.symm ▸ hcop) (algebraMap K L) hC
+  have hQLeq : IsEntire.polynomialHom (Q.map (algebraMap K L)) =
+      ⟨_, IsEntire.mem_subring.mpr
+        (PowerSeries.isEntire_coe (Q.map (algebraMap K L)))⟩ :=
+    Subtype.ext (IsEntire.coe_polynomialHom _)
   rw [← hu.charPowerSeries_completedBaseChange hL α] at hHS
-  rw [(hu.completedBaseChange hL α α).finrank_ker_aeval_reverse hLS hHS hcopL, hQdeg,
+  rw [(hu.completedBaseChange hL α α).finrank_ker_aeval_reverse hLS hHS (hQLeq ▸ hcopL), hQdeg,
     hu.finrank_ker_aeval_reverse hS hQS hcop]
 
 end PrFieldBaseChange
