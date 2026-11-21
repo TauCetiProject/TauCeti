@@ -111,12 +111,12 @@ private theorem liftOfCommuteHom_ι {A : Type*} [Semiring A] [Algebra R A] (f : 
 `M →ₗ[R] A` with pairwise-commuting values. -/
 def liftOfCommute {A : Type*} [Semiring A] [Algebra R A] :
     {f : M →ₗ[R] A // ∀ x y, Commute (f x) (f y)} ≃ (SymmetricAlgebra R M →ₐ[R] A) where
-  toFun f := liftOfCommuteHom f.1 f.2
+  toFun f := liftOfCommuteHom f.val f.property
   invFun F :=
     ⟨F.toLinearMap.comp (ι R M), fun x y ↦ by
       simpa only [Commute, SemiconjBy, LinearMap.comp_apply, AlgHom.toLinearMap_apply,
         ← map_mul] using congrArg F (mul_comm (ι R M x) (ι R M y))⟩
-  left_inv f := Subtype.ext <| LinearMap.ext fun m ↦ liftOfCommuteHom_ι f.1 f.2 m
+  left_inv f := Subtype.ext <| LinearMap.ext fun m ↦ liftOfCommuteHom_ι f.val f.property m
   right_inv F := by
     ext m
     simp [liftOfCommuteHom_ι]

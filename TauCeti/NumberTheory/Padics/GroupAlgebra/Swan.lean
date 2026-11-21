@@ -191,7 +191,7 @@ private theorem natCard_linearMap_reduction_eq_of_tensorRat (p : ℕ) [Fact p.Pr
   obtain ⟨e, he⟩ := exists_linearEquiv_commute_reduction_of_not_dvd p (Subgroup.zpowers g)
     (by simpa only [Nat.card_zpowers] using hg) M N h
   exact ⟨Representation.Equiv.linHomComp (ρ := ρM) (ρ' := ρN) (f := (Subgroup.zpowers g).subtype)
-    (.mk e fun c ↦ LinearMap.ext fun x ↦ he c c.2 x) σ⟩
+    (.mk e fun c ↦ LinearMap.ext fun x ↦ he c c.property x) σ⟩
 
 end Helpers
 

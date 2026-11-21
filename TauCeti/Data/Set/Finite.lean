@@ -48,7 +48,7 @@ theorem Set.exists_enumeration_finite_family {ι A : Type*} [Finite ι] (T : ι 
       ∀ i, ∀ a ∈ T i, ∃ j, idx j = i ∧ t j = a := by
   have : ∀ i, Finite (T i) := fun i ↦ (hTfin i).to_subtype
   obtain ⟨m, ⟨e⟩⟩ := Finite.exists_equiv_fin ((i : ι) × T i)
-  exact ⟨m, fun j ↦ (e.symm j).1, fun j ↦ (e.symm j).2, fun j ↦ (e.symm j).2.2,
+  exact ⟨m, fun j ↦ (e.symm j).1, fun j ↦ (e.symm j).2, fun j ↦ (e.symm j).2.property,
     fun i a ha ↦ ⟨e ⟨i, a, ha⟩, by simp,
       congrArg (fun x : (i : ι) × T i ↦ (x.2 : A)) (e.symm_apply_apply _)⟩⟩
 

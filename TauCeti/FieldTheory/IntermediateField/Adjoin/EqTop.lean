@@ -80,6 +80,10 @@ a ring `A`, then `L` is the fraction field of the `A`-algebra they generate.
 * `TauCeti.IntermediateField.isFractionRing_algebra_adjoin_of_adjoin_eq_top`: conversely,
   generators of `L` over the fraction field of `A` generate an `A`-algebra with fraction field
   `L`.
+* `TauCeti.IntermediateField.exists_multiple_mem_adjoin_of_adjoin_eq_top` and
+  `TauCeti.IntermediateField.exists_multiple_mem_adjoin_of_adjoin_simple_eq_top`: if algebraic
+  elements of an `A`-algebra `S` generate `E` over the fraction field of `A`, every element of `S`
+  lands in the `A`-subalgebra they generate after multiplication by a nonzero element of `A`.
 * `TauCeti.IntermediateField.finrank_le_of_adjoin_simple_eq_top_of_pow_mem`: if `β` generates `L`
   over `E` and `β ^ n` lies in `E` for some `n ≠ 0`, then `[L : E] ≤ n`.
 * `TauCeti.IntermediateField.finrank_eq_one_of_adjoin_eq_top_of_mem_bot`: if `L = K(y)` with `y`
@@ -283,6 +287,46 @@ theorem isFractionRing_algebra_adjoin_of_adjoin_eq_top {s : Set L}
   simp only [map_mul, ← IsScalarTower.algebraMap_apply, Subalgebra.algebraMap_apply,
     Submonoid.smul_def, Algebra.smul_def]
   rw [mul_left_comm (algebraMap A L a), mul_div_mul_left _ _ hb0, mul_div_mul_left _ _ ha0]
+
+/-- If elements `s` of a faithfully embedded `A`-algebra `S` inside an extension `E` of the fraction
+field `K` of a commutative ring `A` are algebraic over `K` and generate `E` over `K`, then every
+element of `S` lies in `Algebra.adjoin A s` after multiplication by a nonzero element of `A`. -/
+theorem exists_multiple_mem_adjoin_of_adjoin_eq_top
+    {S E : Type*} [CommRing S] [Algebra A S] [Field E] [Algebra K E] [Algebra A E]
+    [IsScalarTower A K E] [Algebra S E] [FaithfulSMul S E] [IsScalarTower A S E]
+    {s : Set S} (hs : ∀ x ∈ s, IsAlgebraic K (algebraMap S E x))
+    (hadj : IntermediateField.adjoin K (algebraMap S E '' s) = ⊤) (c : S) :
+    ∃ a : A, a ≠ 0 ∧ algebraMap A S a * c ∈ Algebra.adjoin A s := by
+  have hadj_alg : Algebra.adjoin K (algebraMap S E '' s) = ⊤ := by
+    have h := congrArg IntermediateField.toSubalgebra hadj
+    rwa [IntermediateField.adjoin_toSubalgebra_of_isAlgebraic
+      (by rintro _ ⟨x, hx, rfl⟩; exact hs x hx), IntermediateField.top_toSubalgebra] at h
+  have hc : algebraMap S E c ∈ Algebra.adjoin K (algebraMap S E '' s) :=
+    hadj_alg ▸ Algebra.mem_top
+  obtain ⟨t, ht⟩ := _root_.multiple_mem_adjoin_of_mem_localization_adjoin
+    (nonZeroDivisors A) K (algebraMap S E '' s) (algebraMap S E c) hc
+  rw [← IsScalarTower.coe_toAlgHom' A S E, ← AlgHom.map_adjoin] at ht
+  obtain ⟨z, hz, hzeq⟩ := ht
+  have : Nontrivial A := (algebraMap A K).domain_nontrivial
+  refine ⟨t, nonZeroDivisors.ne_zero t.property, ?_⟩
+  have hzeq' : algebraMap S E z = (t : A) • algebraMap S E c := by
+    simpa [Submonoid.smul_def] using hzeq
+  have heq : algebraMap S E (algebraMap A S t * c) = algebraMap S E z := by
+    rw [hzeq', Algebra.smul_def, map_mul, ← IsScalarTower.algebraMap_apply A S E]
+  exact FaithfulSMul.algebraMap_injective S E heq ▸ hz
+
+/-- Single-generator case of
+`TauCeti.IntermediateField.exists_multiple_mem_adjoin_of_adjoin_eq_top`: if `β : S` is algebraic
+over `K` and generates `E` over `K`, every element of `S` becomes a polynomial in `β` over `A` after
+multiplication by a nonzero element of `A`. -/
+theorem exists_multiple_mem_adjoin_of_adjoin_simple_eq_top
+    {S E : Type*} [CommRing S] [Algebra A S] [Field E] [Algebra K E] [Algebra A E]
+    [IsScalarTower A K E] [Algebra S E] [FaithfulSMul S E] [IsScalarTower A S E]
+    {β : S} (hβ : IsAlgebraic K (algebraMap S E β))
+    (hadj : IntermediateField.adjoin K {algebraMap S E β} = ⊤) (c : S) :
+    ∃ a : A, a ≠ 0 ∧ algebraMap A S a * c ∈ Algebra.adjoin A {β} :=
+  exists_multiple_mem_adjoin_of_adjoin_eq_top (K := K) (E := E) (s := {β})
+    (by simpa using hβ) (by simpa using hadj) c
 
 end FractionRing
 

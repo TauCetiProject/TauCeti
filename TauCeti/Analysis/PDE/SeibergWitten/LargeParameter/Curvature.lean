@@ -417,7 +417,8 @@ theorem lieMap_lieMap_eq_of_add_hodgeStar_eq
   -- `D_J² X = -4 X`, since `X` is self-dual and orthogonal to `ω`.
   have hX : D (D X) = -(4 : ℝ) • X := by
     have hXsd : o.hodgeStar hkl X = X :=
-      (Module.End.mem_eigenspace_iff.1 (quadraticTwoFormPolar o ρ hkl φ β).2).trans (one_smul ℝ _)
+      (Module.End.mem_eigenspace_iff.1 (quadraticTwoFormPolar o ρ hkl φ β).property).trans
+          (one_smul ℝ _)
     have hXω : ⟪J.kahlerForm, X⟫ = 0 := by
       rw [real_inner_comm]
       exact inner_quadraticTwoFormPolar_of_cliffordProjection o hQ hkl hω hρ hφ hβ

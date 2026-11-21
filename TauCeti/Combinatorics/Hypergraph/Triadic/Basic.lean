@@ -144,12 +144,12 @@ theorem complexity_le :
 /-- The unordered triples underlying the supports of the selected polyads. -/
 noncomputable def topFaces : Finset (Finset V) :=
   C.polyads.biUnion fun P ↦ P.support.image fun x ↦
-    (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩).val
+    (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩).val
 
 /-- A top face is the underlying triple of a triple supported by a selected polyad. -/
 @[simp]
 theorem mem_topFaces {s : Finset V} :
-    s ∈ C.topFaces ↔ ∃ P ∈ C.polyads, ∃ x ∈ P.support, univ.map ⟨x.1, x.2⟩ = s := by
+    s ∈ C.topFaces ↔ ∃ P ∈ C.polyads, ∃ x ∈ P.support, univ.map ⟨x.val, x.property⟩ = s := by
   simp [topFaces]
 
 /-- Every top face has three elements. -/
@@ -471,7 +471,7 @@ count that top regularity does not control. Since `k.choose 3 ≤ k ^ 3`, the bo
 `k ^ 3 * H.exceptionalPolyadMass C η r * |V| ^ k`. -/
 theorem exceptional_route_mass_le (k : ℕ) (η : ℝ) (r : ℕ) :
     (#{f : Fin k ↪ V | ∃ P ∈ C.polyads, ¬H.IsTopRegularOverPolyad P η r ∧
-        ∃ i j l : Fin k, i < j ∧ j < l ∧ ∃ x ∈ P.support, x.1 = ![f i, f j, f l]} : ℝ) ≤
+        ∃ i j l : Fin k, i < j ∧ j < l ∧ ∃ x ∈ P.support, x.val = ![f i, f j, f l]} : ℝ) ≤
       k.choose 3 * H.exceptionalPolyadMass C η r * (Fintype.card V : ℝ) ^ k := by
   set n := Fintype.card V
   -- The triples supported by the irregular selected polyads.
@@ -482,7 +482,7 @@ theorem exceptional_route_mass_le (k : ℕ) (η : ℝ) (r : ℕ) :
     exact_mod_cast card_biUnion_le.trans_eq (by simp)
   -- Each such embedding sends the increasing enumeration of some triple into `T`.
   have hsub : #{f : Fin k ↪ V | ∃ P ∈ C.polyads, ¬H.IsTopRegularOverPolyad P η r ∧
-      ∃ i j l : Fin k, i < j ∧ j < l ∧ ∃ x ∈ P.support, x.1 = ![f i, f j, f l]} ≤
+      ∃ i j l : Fin k, i < j ∧ j < l ∧ ∃ x ∈ P.support, x.val = ![f i, f j, f l]} ≤
       Nat.card {f : Fin k ↪ V // ∃ g : Fin 3 ↪o Fin k, ⇑f ∘ g ∈ T} := by
     rw [Nat.card_eq_fintype_card, Fintype.card_subtype]
     refine card_le_card fun f hf ↦ ?_

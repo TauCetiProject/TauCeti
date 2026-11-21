@@ -469,7 +469,7 @@ theorem ReducedSubgroup.exists_isGreatest_and_coe_eq_gromovProduct_lyndonLength
 /-- On any subgroup of `CDR(Λ, X)`, word length `w ↦ |w|` is a free Lyndon length function. -/
 theorem ReducedSubgroup.isFree_lyndonLength {H : ReducedSubgroup Λ X}
     (hH : (H : Set (InfWord Λ X)) ⊆ CDR Λ X) : H.lyndonLength.IsFree :=
-  isFree_lyndonLengthOfIsMul H.isMul_coe_mul Subtype.val_injective fun u => hH u.2
+  isFree_lyndonLengthOfIsMul H.isMul_coe_mul Subtype.val_injective fun u => hH u.property
 
 end LyndonLength
 

@@ -216,10 +216,10 @@ theorem IsContact.exists_isCylindricalComplexStructure (hB : B.IsAlt) (ha : a.Is
     fun v ↦ by simp [ξ, hR1]
   have hπ : ∀ v, (π v : V) = v - a v • R := fun _ ↦ rfl
   have hπξ : ∀ v : ξ, π v = v := fun v ↦ Subtype.ext <| by
-    rw [hπ, LinearMap.mem_ker.1 v.2, zero_smul, sub_zero]
-  have hjξ : ∀ v : ξ, a (j v : V) = 0 := fun v ↦ (j v).2
+    rw [hπ, LinearMap.mem_ker.1 v.property, zero_smul, sub_zero]
+  have hjξ : ∀ v : ξ, a (j v : V) = 0 := fun v ↦ (j v).property
   have hπR : ∀ (s : ℝ) (v : ξ), π (s • R + (v : V)) = v := fun s v ↦ Subtype.ext <| by
-    rw [hπ, map_add, map_smul, hR1, LinearMap.mem_ker.1 v.2, smul_eq_mul, mul_one, add_zero]
+    rw [hπ, map_add, map_smul, hR1, LinearMap.mem_ker.1 v.property, smul_eq_mul, mul_one, add_zero]
     abel
   -- The cylindrical extension `(s, v) ↦ (-a v, s R + j (π v))` of `j`.
   let L : ℝ × V →ₗ[ℝ] ℝ × V :=

@@ -1,11 +1,12 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Axel Delaval, Jie Xu, Shitan Xu
 -/
 module
 
 public import Mathlib.AlgebraicGeometry.AffineScheme
+public import Mathlib.AlgebraicGeometry.Morphisms.Affine
 public import Mathlib.AlgebraicGeometry.Properties
 public import Mathlib.CategoryTheory.Sites.Spaces
 public import Mathlib.RingTheory.Ideal.Pointwise
@@ -256,7 +257,7 @@ open of `S` form a basis of the topology of `S'`. -/
 theorem Scheme.Hom.isBasis_range_affineOpens_le_preimage {S S' : Scheme.{u}} (g : S' ⟶ S) :
     TopologicalSpace.Opens.IsBasis (Set.range fun i :
       {p : S'.affineOpens × S.affineOpens // (p.1 : S'.Opens) ≤ g ⁻¹ᵁ p.2} ↦
-        (i.1.1 : S'.Opens)) := by
+        (i.val.1 : S'.Opens)) := by
   refine TopologicalSpace.Opens.isBasis_iff_nbhd.mpr fun {U x} hx ↦ ?_
   obtain ⟨_, ⟨V, hV, rfl⟩, hxV, -⟩ :=
     S.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ (g x)) isOpen_univ
@@ -424,8 +425,8 @@ theorem Scheme.Hom.eq_of_comp_eq_of_forall_liesOver_eq {R A : Type u} [CommRing 
     (e : A) (u : Spec ↧R) (v : Spec ↧A)
     (huniq : ∀ P'' : Ideal A, P''.IsPrime → P''.LiesOver u.asIdeal → e ∉ P'' → P'' = v.asIdeal)
     (hv : g v ∈ g ''ᵁ PrimeSpectrum.basicOpen e) (w : g ''ᵁ PrimeSpectrum.basicOpen e)
-    (hw : p w.1 = u) : w = ⟨g v, hv⟩ := by
-  obtain ⟨z, hz, hzw⟩ := w.2
+    (hw : p w.val = u) : w = ⟨g v, hv⟩ := by
+  obtain ⟨z, hz, hzw⟩ := w.property
   have hzu : Spec.map (CommRingCat.ofHom (algebraMap R A)) z = u := by
     rw [← hgp, Scheme.Hom.comp_apply]
     exact hzw.symm ▸ hw
@@ -541,3 +542,49 @@ theorem exists_affine_pair_comp_eq {S : Scheme.{u}} {T T' : Over S} (f : T' ⟶ 
   exact ⟨Z, this, g₁, g₂, κ, Over.OverMorphism.ext hι, hκ χ₁, hκ χ₂⟩
 
 end TauCeti.AlgebraicGeometry
+
+open scoped AlgebraicGeometry
+
+/-- A finite subset of an affine open has a basic-open neighbourhood contained in any
+prescribed open containing the subset. -/
+theorem AlgebraicGeometry.IsAffineOpen.exists_basicOpen_superset_le
+    {X : AlgebraicGeometry.Scheme} {V W : X.Opens} (hV : AlgebraicGeometry.IsAffineOpen V)
+    {s : Set X} (hs : s.Finite) (hsV : s ⊆ V) (hsW : s ⊆ W) :
+    ∃ r : Γ(X, V), s ⊆ X.basicOpen r ∧ X.basicOpen r ≤ W := by
+  classical
+  let _ := hs.fintype
+  let primes : s → Ideal Γ(X, V) := fun x ↦ (hV.primeIdealOf ⟨x.val, hsV x.property⟩).asIdeal
+  let sections : Set Γ(X, V) := {r | X.basicOpen r ≤ W}
+  have hnot : ¬ (Ideal.span sections : Set Γ(X, V)) ⊆
+      ⋃ P ∈ Set.range primes, (P : Set Γ(X, V)) := by
+    rw [Ideal.subset_union_prime_finite (Set.finite_range primes) ⊤ ⊤ (by
+      rintro _ ⟨x, rfl⟩ _ _
+      exact (hV.primeIdealOf ⟨x.val, hsV x.property⟩).isPrime)]
+    rintro ⟨P, ⟨x, rfl⟩, hle⟩
+    obtain ⟨r, hrW, hrx⟩ := hV.exists_basicOpen_le ⟨x.val, hsW x.property⟩ (hsV x.property)
+    exact (hV.mem_basicOpen_iff_notMem_primeIdealOf ⟨x.val, hsV x.property⟩ r).mp hrx
+      (hle (Ideal.subset_span hrW))
+  obtain ⟨r, hrI, hr⟩ := Set.not_subset.mp hnot
+  refine ⟨r, ?_, ?_⟩
+  · intro x hx
+    apply (hV.mem_basicOpen_iff_notMem_primeIdealOf ⟨x, hsV hx⟩ r).mpr
+    intro h
+    apply hr
+    exact Set.mem_iUnion.mpr ⟨primes ⟨x, hx⟩,
+      Set.mem_iUnion.mpr ⟨Set.mem_range_self _, h⟩⟩
+  · exact (hV.basicOpen_le_iSup_basicOpen_iff.mpr
+      (Ideal.le_radical hrI)).trans (iSup₂_le fun r hr ↦ hr)
+
+/-- An affine morphism transfers a finite affine neighbourhood from the target, and the source
+neighbourhood can be chosen inside any prescribed open containing the finite set. -/
+theorem AlgebraicGeometry.Scheme.Hom.exists_isAffineOpen_superset_of_isAffineHom
+    {X Y : AlgebraicGeometry.Scheme} (f : X ⟶ Y) [AlgebraicGeometry.IsAffineHom f]
+    {s : Set X} {W : X.Opens} (hs : s.Finite) (hsW : s ⊆ W)
+    (hY : ∃ V : Y.Opens, AlgebraicGeometry.IsAffineOpen V ∧ f '' s ⊆ V) :
+    ∃ U : X.Opens, AlgebraicGeometry.IsAffineOpen U ∧ s ⊆ U ∧ U ≤ W := by
+  obtain ⟨V, hV, hsV⟩ := hY
+  have hpre := hV.preimage f
+  have hsPre : s ⊆ f ⁻¹ᵁ V := fun x hx ↦ f.mem_preimage.mpr
+    (hsV (Set.mem_image_of_mem f hx))
+  obtain ⟨r, hsr, hrW⟩ := hpre.exists_basicOpen_superset_le hs hsPre hsW
+  exact ⟨X.basicOpen r, hpre.basicOpen r, hsr, hrW⟩

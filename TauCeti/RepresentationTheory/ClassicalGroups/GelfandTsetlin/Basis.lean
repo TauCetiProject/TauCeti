@@ -73,7 +73,7 @@ theorem weylForm_eq_zero_of_mem_gtLine : ∀ {n : ℕ} (l : DominantWeight n)
         (h : IntertwiningMap (rationalWeylRep ℂ n m')
           ((rationalWeylRep ℂ (n + 1) l).comp (glBlockSucc ℂ n)))
         (P' : {R : GTPattern n // R.topWeight = m}) (Q' : {R : GTPattern n // R.topWeight = m'}),
-        P'.1 ≠ Q'.1 → ∀ {x' y'}, x' ∈ gtLine m P' → y' ∈ gtLine m' Q' →
+        P'.val ≠ Q'.val → ∀ {x' y'}, x' ∈ gtLine m P' → y' ∈ gtLine m' Q' →
           weylForm (n + 1) l.detShiftShape (f x') (h y') = 0 := by
       intro m m' f h P' Q' hne x' y' hx' hy'
       rcases eq_or_ne m m' with rfl | hm
@@ -82,9 +82,9 @@ theorem weylForm_eq_zero_of_mem_gtLine : ∀ {n : ℕ} (l : DominantWeight n)
           mul_zero]
       · exact weylForm_intertwiningMap_apply_eq_zero hm f h x' y'
     have hmem (R : {P : GTPattern (n + 1) // P.topWeight = l}) :
-        R.1.truncate.topWeight ∈ interlacingWeights l := by
-      have h := R.1.topWeight_truncate_mem_interlacingWeights
-      rwa [R.2] at h
+        R.val.truncate.topWeight ∈ interlacingWeights l := by
+      have h := R.val.topWeight_truncate_mem_interlacingWeights
+      rwa [R.property] at h
     obtain ⟨f, hf⟩ := exists_intertwiningMap_ne_zero_of_mem_interlacingWeights (hmem P)
     obtain ⟨h, hh⟩ := exists_intertwiningMap_ne_zero_of_mem_interlacingWeights (hmem Q)
     rw [gtLine_succ l P f hf] at hx
@@ -93,10 +93,10 @@ theorem weylForm_eq_zero_of_mem_gtLine : ∀ {n : ℕ} (l : DominantWeight n)
     obtain ⟨y', hy', rfl⟩ := hy
     refine key f h _ _ (fun e ↦ hPQ (Subtype.ext ?_)) hx' hy'
     -- A pattern is determined by its top row and its truncation.
-    have hP : P.1.topRow = l := by rw [← GTPattern.topWeight_coe, P.2]
-    have hQ : Q.1.topRow = l := by rw [← GTPattern.topWeight_coe, Q.2]
+    have hP : P.val.topRow = l := by rw [← GTPattern.topWeight_coe, P.property]
+    have hQ : Q.val.topRow = l := by rw [← GTPattern.topWeight_coe, Q.property]
     exact Subtype.mk.inj ((GTPattern.truncateEquiv (l : Fin (n + 1) → ℤ)).injective
-      (a₁ := ⟨P.1, hP⟩) (a₂ := ⟨Q.1, hQ⟩) (Subtype.ext (by simpa using e)))
+      (a₁ := ⟨P.val, hP⟩) (a₂ := ⟨Q.val, hQ⟩) (Subtype.ext (by simpa using e)))
 
 variable {n : ℕ} (l : DominantWeight n)
 
@@ -217,7 +217,7 @@ theorem lift_differential_gelfandTsetlinGenerator_apply_gtBasis
     (P : {P : GTPattern n // P.topWeight = l}) {k : ℕ} (hk : k ≤ n) (r : ℕ) :
     UniversalEnvelopingAlgebra.lift ℂ (isRationalRep_rationalWeylRep n l).differential
         (gelfandTsetlinGenerator ℂ hk r) (gtBasis l P) =
-      gelfandEigenvalue (fun i : Fin k ↦ (P.1 i k : ℂ)) r • gtBasis l P :=
+      gelfandEigenvalue (fun i : Fin k ↦ (P.val i k : ℂ)) r • gtBasis l P :=
   lift_differential_gelfandTsetlinGenerator_apply_of_mem_gtLine l P hk r (gtBasis_mem_gtLine l P)
 
 end TauCeti

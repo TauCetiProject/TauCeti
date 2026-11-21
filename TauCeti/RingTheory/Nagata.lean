@@ -140,18 +140,18 @@ theorem finite_integralClosure [IsNagata R] (S : Type v) [CommRing S] [IsReduced
     [Algebra.EssFiniteType R S] : Module.Finite R (integralClosure R S) := by
   have : IsNoetherianRing S := Algebra.EssFiniteType.isNoetherianRing R S
   have : Finite (minimalPrimes S) := (minimalPrimes.finite_of_isNoetherianRing S).to_subtype
-  have (q : minimalPrimes S) : q.1.IsPrime := q.2.1.1
-  let L (q : minimalPrimes S) := FractionRing (S ⧸ q.1)
+  have (q : minimalPrimes S) : q.val.IsPrime := q.property.1.1
+  let L (q : minimalPrimes S) := FractionRing (S ⧸ q.val)
   -- The reduced ring `S` embeds into the product of the fraction fields of its quotients by its
   -- finitely many minimal primes.
   let g : S →ₐ[R] ∀ q, L q := AlgHom.pi fun q ↦
-    (IsScalarTower.toAlgHom R (S ⧸ q.1) (L q)).comp (Ideal.Quotient.mkₐ R q.1)
+    (IsScalarTower.toAlgHom R (S ⧸ q.val) (L q)).comp (Ideal.Quotient.mkₐ R q.val)
   have hg : Function.Injective g := by
-    have := (Function.Injective.piMap fun q ↦ IsFractionRing.injective (S ⧸ q.1) (L q)).comp
+    have := (Function.Injective.piMap fun q ↦ IsFractionRing.injective (S ⧸ q.val) (L q)).comp
       (Ideal.injective_pi_quotient_mk_minimalPrimes S)
     exact this
   have (q : minimalPrimes S) : Module.Finite R (integralClosure R (L q)) :=
-    finite_integralClosure_fractionRing_quotient S q.1
+    finite_integralClosure_fractionRing_quotient S q.val
   have : Module.Finite R (integralClosure R (∀ q, L q)) :=
     .equiv (integralClosurePiAlgEquiv R L).symm.toLinearEquiv
   exact .of_injective g.mapIntegralClosure.toLinearMap (AlgHom.mapIntegralClosure_injective hg)
@@ -172,6 +172,15 @@ instance (priority := 100) isN1 [IsReduced R] [IsNagata R] : IsN1 R := by
   have : Algebra.EssFiniteType R (FractionRing R) :=
     .of_isLocalization (S := FractionRing R) (nonZeroDivisors R)
   exact ⟨finite_integralClosure (FractionRing R)⟩
+
+/-- For a reduced Nagata ring `R` and any localization `S` of `R` at a submonoid `M`, the integral
+closure of `R` in `S` is a finite `R`-module. -/
+theorem finite_integralClosure_of_isLocalization [IsReduced R] [IsNagata R]
+    (M : Submonoid R) (S : Type*) [CommRing S] [Algebra R S] [IsLocalization M S] :
+    Module.Finite R (integralClosure R S) :=
+  have : IsReduced S := _root_.IsLocalization.isReduced M S
+  have : Algebra.EssFiniteType R S := .of_isLocalization (S := S) M
+  finite_integralClosure S
 
 /-- A Noetherian ring of Krull dimension zero, for instance an Artinian ring or the zero ring, is
 Nagata. -/
@@ -219,7 +228,7 @@ Lemma 10.162.7 (032V). -/
 theorem of_span_eq_top {t : Set R} (ht : Ideal.span t = ⊤)
     (H : ∀ f ∈ t, IsNagata (Localization.Away f)) : IsNagata R where
   toIsNoetherian :=
-    ⟨fun I ↦ Ideal.fg_of_localizationSpan t ht fun g ↦ (H g g.2).toIsNoetherian.noetherian _⟩
+    ⟨fun I ↦ Ideal.fg_of_localizationSpan t ht fun g ↦ (H g g.property).toIsNoetherian.noetherian _⟩
   -- The images of `t` generate the unit ideal of `R ⧸ p`, and for `f ∉ p` the localization of
   -- `R ⧸ p` away from `f` is a quotient of the Nagata ring `R_f`.
   isJapanese_quotient p _ := by

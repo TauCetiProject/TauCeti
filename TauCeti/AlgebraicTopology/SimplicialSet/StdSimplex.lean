@@ -312,7 +312,7 @@ instance boundary.isConnected (n : ℕ) : (∂Δ[n + 2] : SSet.{u}).IsConnected 
     let v (k : Fin (n + 3)) : (∂Δ[n + 2] : SSet.{u}) _⦋0⦌ :=
       ⟨stdSimplex.obj₀Equiv.symm k, by simp [boundary_obj_eq_univ]⟩
     suffices h : ∀ k, π₀.mk (v k) = π₀.mk (v 0) by
-      have hv (z : (∂Δ[n + 2] : SSet.{u}) _⦋0⦌) : z = v (stdSimplex.obj₀Equiv z.1) :=
+      have hv (z : (∂Δ[n + 2] : SSet.{u}) _⦋0⦌) : z = v (stdSimplex.obj₀Equiv z.val) :=
         Subtype.ext (stdSimplex.obj₀Equiv.symm_apply_apply _).symm
       rw [hv x, hv y]
       exact (h _).trans (h _).symm

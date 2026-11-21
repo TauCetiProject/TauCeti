@@ -29,6 +29,8 @@ needed for scalar actions beyond normed fields, bundled homomorphisms, and Uryso
   arbitrary semiring of scalars;
 * `ZeroAtInftyContinuousMap.toBCFNonUnitalStarAlgHom`: the canonical inclusion
   `C₀(α, β) →⋆ₙₐ[𝕜] (α →ᵇ β)`;
+* `ZeroAtInftyContinuousMap.toBCFₗᵢ`: the inclusion into bounded continuous functions as a linear
+  isometry;
 * `BoundedContinuousFunction.mulZeroAtInfty` and `ZeroAtInftyContinuousMap.mulBCF`: pointwise
   left and right multiplication of `C₀(α, β)` by bounded continuous functions `α →ᵇ β`, with
   submultiplicative norm bounds;
@@ -128,6 +130,25 @@ def evalCLM (x : α) : C₀(α, β) →L[𝕜] β where
 theorem evalCLM_apply (x : α) (f : C₀(α, β)) : evalCLM 𝕜 x f = f x := (rfl)
 
 end Normed
+
+section ToBCF
+
+variable [SeminormedAddCommGroup β] (𝕜 : Type*) [PseudoMetricSpace 𝕜] [Semiring 𝕜] [Module 𝕜 β]
+  [IsBoundedSMul 𝕜 β]
+
+/-- The inclusion `ZeroAtInftyContinuousMap.toBCF` of functions vanishing at infinity into bounded
+continuous functions, as a linear isometry `C₀(α, β) →ₗᵢ[𝕜] (α →ᵇ β)`. -/
+def toBCFₗᵢ : C₀(α, β) →ₗᵢ[𝕜] α →ᵇ β where
+  toFun := toBCF
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+  norm_map' _ := norm_toBCF_eq_norm
+
+/-- `toBCFₗᵢ 𝕜` is the inclusion `ZeroAtInftyContinuousMap.toBCF`. -/
+@[simp]
+theorem toBCFₗᵢ_apply (f : C₀(α, β)) : toBCFₗᵢ 𝕜 f = f.toBCF := (rfl)
+
+end ToBCF
 
 section Comparison
 
