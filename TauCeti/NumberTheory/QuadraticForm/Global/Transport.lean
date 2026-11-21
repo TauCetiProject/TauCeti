@@ -9,30 +9,35 @@ public import Mathlib.NumberTheory.NumberField.Completion.InfinitePlace
 public import TauCeti.NumberTheory.HilbertSymbol.Basic
 public import TauCeti.NumberTheory.NumberField.InfinitePlace.Transport
 public import TauCeti.NumberTheory.NumberField.RingOfIntegers.Transport
+public import TauCeti.NumberTheory.QuadraticForm.Global.FiniteHasse
 public import TauCeti.NumberTheory.QuadraticForm.Global.Localization
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Transport
 import TauCeti.Algebra.Ring.Hom
 import TauCeti.Analysis.Normed.Field.WithAbs
+import TauCeti.NumberTheory.NumberField.FinitePlace.Transport
+import TauCeti.NumberTheory.QuadraticForm.CompletionTransport
 
 /-!
-# Transporting localized units, Hilbert symbols, and local norm equations along field isomorphisms
+# Transporting local quadratic invariants along field isomorphisms
 
 A ring isomorphism `e : K ≃+* L` of number fields identifies the finite places of `K` with those of
 `L` by `HeightOneSpectrum.equivOfRingEquiv (RingOfIntegers.mapRingEquiv e)` and the infinite and
 real places of `K` with those of `L` by `NumberField.InfinitePlace.equivOfRingEquiv e` and
 `NumberField.InfinitePlace.realEquivOfRingEquiv e`. At each pair of corresponding finite places `v`
 and `w`, `adicCompletionCongr` extends `e` to a ring isomorphism `K_v ≃+* L_w` that intertwines
-`unitAtFinitePlace`, preserves local squares, preserves the norm-equation Hilbert symbol, and
-preserves solvability of the quadratic norm equation `a = x² - d y²`. At each pair of corresponding
-infinite places `w` and `w'`, `AbsoluteValue.Completion.congr` extends `e` to `K_w ≃+* L_{w'}` and
-likewise preserves solvability of `a = x² - d y²`; at real places `realEquivOfRingEquiv e`
-intertwines `unitAtRealPlace` on the nose in `ℝˣ`.
+`unitAtFinitePlace`, preserves local squares, preserves the norm-equation Hilbert symbol and the
+local and finite Hasse invariants, and preserves solvability of the quadratic norm equation
+`a = x² - d y²`. At each pair of corresponding infinite places `w` and `w'`,
+`AbsoluteValue.Completion.congr` extends `e` to `K_w ≃+* L_{w'}` and likewise preserves
+solvability of `a = x² - d y²`; at real places `realEquivOfRingEquiv e` intertwines
+`unitAtRealPlace` on the nose in `ℝˣ`.
 
 Reindexing along the place bijections shows that the product of the finite-place Hilbert symbols
 `(a_v, b_v)_v`, the product of the real-place Hilbert symbols `(a_w, b_w)_w`, and everywhere-local
 solvability of `a = x² - d y²` are all invariant under `e`. In particular, global statements
-expressed through local squareness, localized Hilbert symbols, or local norm equations transfer
-along `Shrink.ringEquiv K : Shrink.{0} K ≃+* K` from `Type` to number fields in any universe.
+expressed through local squareness, localized Hilbert symbols, regular-form classes, finite Hasse
+signs, or local norm equations transfer along `Shrink.ringEquiv K : Shrink.{0} K ≃+* K` from `Type`
+to number fields in any universe.
 
 ## Main results
 
@@ -46,6 +51,14 @@ along `Shrink.ringEquiv K : Shrink.{0} K ≃+* K` from `Type` to number fields i
   finite place is preserved along `e`.
 * `TauCeti.finprod_hilbertSymbol_unitAtFinitePlace_ringEquiv`: the product of the finite-place
   Hilbert symbols is preserved along `e`.
+* `TauCeti.RegularFormClass.localHasse_baseChange_adicCompletion_mapRingEquiv`: transporting a
+  global regular-form class along a field isomorphism of number fields preserves its local Hasse
+  invariant at corresponding finite places.
+* `QuadraticForm.finiteHasse_eq_of_semilinearEquiv_of_valuation_eq`,
+  `QuadraticForm.finiteHasse_eq_of_semilinearEquiv`,
+  `QuadraticForm.finiteHasse_equivOfRingEquiv_of_semilinearEquiv`: regular quadratic forms
+  intertwined by a semilinear equivalence over an isomorphism of number fields have the same
+  finite Hasse sign at corresponding finite places.
 * `RingEquiv.exists_sq_sub_mul_sq_adicCompletion_iff_of_ringEquiv`,
   `RingEquiv.exists_sq_sub_mul_sq_adicCompletion_equivOfRingEquiv`,
   `RingEquiv.forall_adicCompletion_exists_sq_sub_mul_sq_iff_of_ringEquiv`: solvability of
@@ -93,9 +106,7 @@ theorem isSquare_unitAtFinitePlace_iff_of_ringEquiv (e : K ≃+* L)
     (hvw : w.asIdeal = Ideal.map (RingOfIntegers.mapRingEquiv e) v.asIdeal) (a : Kˣ) :
     IsSquare (w.unitAtFinitePlace (Units.map (e : K →* L) a)) ↔
       IsSquare (v.unitAtFinitePlace a) := by
-  have he (x : K) : w.valuation L (e x) = v.valuation K x := by
-    simpa using valuation_ringEquivOfRingEquiv (K := K) (K' := L)
-      (RingOfIntegers.mapRingEquiv e) hvw x
+  have he := valuation_mapRingEquiv v w e hvw
   let f := Units.mapEquiv (adicCompletionCongr v w e he).toMulEquiv
   have hf : f (v.unitAtFinitePlace a) = w.unitAtFinitePlace (Units.map (e : K →* L) a) :=
     units_map_adicCompletionCongr_unitAtFinitePlace he a
@@ -122,9 +133,7 @@ theorem hilbertSymbol_unitAtFinitePlace_of_ringEquiv (e : K ≃+* L)
     hilbertSymbol (w.unitAtFinitePlace (Units.map (e : K →* L) a))
         (w.unitAtFinitePlace (Units.map (e : K →* L) b)) =
       hilbertSymbol (v.unitAtFinitePlace a) (v.unitAtFinitePlace b) := by
-  have he (x : K) : w.valuation L (e x) = v.valuation K x := by
-    simpa using valuation_ringEquivOfRingEquiv (K := K) (K' := L)
-      (RingOfIntegers.mapRingEquiv e) hvw x
+  have he := valuation_mapRingEquiv v w e hvw
   rw [← units_map_adicCompletionCongr_unitAtFinitePlace he a,
     ← units_map_adicCompletionCongr_unitAtFinitePlace he b,
     hilbertSymbol_units_map_ringEquiv (adicCompletionCongr v w e he)]
@@ -154,7 +163,88 @@ theorem finprod_hilbertSymbol_unitAtFinitePlace_ringEquiv (e : K ≃+* L) (a b :
   rw [← finprod_comp_equiv (HeightOneSpectrum.equivOfRingEquiv (RingOfIntegers.mapRingEquiv e))]
   exact finprod_congr fun v ↦ hilbertSymbol_unitAtFinitePlace_equivOfRingEquiv e v a b
 
+/-- For a ring isomorphism `e : K ≃+* L` of number fields carrying a finite place `v` to `w`, the
+local Hasse invariant at `w` of a transported global regular-form class equals the local Hasse
+invariant at `v` of the original class. -/
+theorem RegularFormClass.localHasse_baseChange_adicCompletion_mapRingEquiv (e : K ≃+* L)
+    {v : HeightOneSpectrum (𝓞 K)} {w : HeightOneSpectrum (𝓞 L)}
+    (hvw : w.asIdeal = Ideal.map (RingOfIntegers.mapRingEquiv e) v.asIdeal)
+    (x : RegularFormClass K) :
+    letI : Finite (𝓞 K ⧸ v.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient v.ne_bot
+    letI : Finite (𝓞 L ⧸ w.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient w.ne_bot
+    RegularFormClass.localHasse
+        (RegularFormClass.baseChange (w.adicCompletion L) (RegularFormClass.mapRingEquiv e x)) =
+      RegularFormClass.localHasse (RegularFormClass.baseChange (v.adicCompletion K) x) := by
+  let _ : Finite (𝓞 K ⧸ v.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient v.ne_bot
+  let _ : Finite (𝓞 L ⧸ w.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient w.ne_bot
+  exact RegularFormClass.localHasse_baseChange_adicCompletion_mapRingEquiv_of_valuation_eq
+    (valuation_mapRingEquiv v w e hvw) x
+
 end TauCeti
+
+namespace QuadraticForm
+
+open TauCeti
+
+section SemilinearEquiv
+
+variable {σ : K →+* L} {σ' : L →+* K} [RingHomInvPair σ σ'] [RingHomInvPair σ' σ]
+variable {V : Type*} [AddCommGroup V] [Module K V] [FiniteDimensional K V]
+variable {W : Type*} [AddCommGroup W] [Module L W] [FiniteDimensional L W]
+
+/-- Regular quadratic forms over number fields intertwined by a semilinear equivalence
+`f : V ≃ₛₗ[σ] W` (`Q' (f u) = σ (Q u)`) have the same finite Hasse sign at finite places `v` and
+`w` whose valuations are intertwined by `σ`. -/
+theorem finiteHasse_eq_of_semilinearEquiv_of_valuation_eq
+    {Q : _root_.QuadraticForm K V} {Q' : _root_.QuadraticForm L W}
+    (hQ : Q.Nondegenerate) (hQ' : Q'.Nondegenerate)
+    (f : V ≃ₛₗ[σ] W) (hf : ∀ u, Q' (f u) = σ (Q u))
+    {v : HeightOneSpectrum (𝓞 K)} {w : HeightOneSpectrum (𝓞 L)}
+    (he : ∀ a, w.valuation L (σ a) = v.valuation K a) :
+    Q'.finiteHasse hQ' w = Q.finiteHasse hQ v := by
+  let _ : Finite (𝓞 K ⧸ v.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient v.ne_bot
+  let _ : Finite (𝓞 L ⧸ w.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient w.ne_bot
+  rw [finiteHasse_eq_localHasse_baseChange, finiteHasse_eq_localHasse_baseChange,
+    formClass_eq_mapRingEquiv_of_semilinearEquiv hQ hQ' f hf]
+  exact RegularFormClass.localHasse_baseChange_adicCompletion_mapRingEquiv_of_valuation_eq
+    (e := RingHomInvPair.toRingEquiv σ σ')
+    (fun a ↦ by rw [RingHomInvPair.toRingEquiv_apply]; exact he a) (formClass Q hQ)
+
+/-- Regular quadratic forms over number fields intertwined by a semilinear equivalence
+`f : V ≃ₛₗ[σ] W` carrying a finite place `v` to `w` have the same finite Hasse sign at `w` and
+`v`. -/
+theorem finiteHasse_eq_of_semilinearEquiv
+    {Q : _root_.QuadraticForm K V} {Q' : _root_.QuadraticForm L W}
+    (hQ : Q.Nondegenerate) (hQ' : Q'.Nondegenerate)
+    (f : V ≃ₛₗ[σ] W) (hf : ∀ u, Q' (f u) = σ (Q u))
+    {v : HeightOneSpectrum (𝓞 K)} {w : HeightOneSpectrum (𝓞 L)}
+    (hvw : w.asIdeal =
+      Ideal.map (RingOfIntegers.mapRingEquiv (RingHomInvPair.toRingEquiv σ σ')) v.asIdeal) :
+    Q'.finiteHasse hQ' w = Q.finiteHasse hQ v := by
+  let _ : Finite (𝓞 K ⧸ v.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient v.ne_bot
+  let _ : Finite (𝓞 L ⧸ w.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient w.ne_bot
+  rw [finiteHasse_eq_localHasse_baseChange, finiteHasse_eq_localHasse_baseChange,
+    formClass_eq_mapRingEquiv_of_semilinearEquiv hQ hQ' f hf]
+  exact RegularFormClass.localHasse_baseChange_adicCompletion_mapRingEquiv
+    (RingHomInvPair.toRingEquiv σ σ') hvw (formClass Q hQ)
+
+/-- Specialization of `finiteHasse_eq_of_semilinearEquiv` when the place of `L` is the image of `v`
+under `HeightOneSpectrum.equivOfRingEquiv` along `RingHomInvPair.toRingEquiv σ σ'`. -/
+theorem finiteHasse_equivOfRingEquiv_of_semilinearEquiv
+    {Q : _root_.QuadraticForm K V} {Q' : _root_.QuadraticForm L W}
+    (hQ : Q.Nondegenerate) (hQ' : Q'.Nondegenerate)
+    (f : V ≃ₛₗ[σ] W) (hf : ∀ u, Q' (f u) = σ (Q u))
+    (v : HeightOneSpectrum (𝓞 K)) :
+    Q'.finiteHasse hQ'
+        (HeightOneSpectrum.equivOfRingEquiv
+          (RingOfIntegers.mapRingEquiv (RingHomInvPair.toRingEquiv σ σ')) v) =
+      Q.finiteHasse hQ v :=
+  finiteHasse_eq_of_semilinearEquiv hQ hQ' f hf
+    (asIdeal_equivOfRingEquiv (RingOfIntegers.mapRingEquiv (RingHomInvPair.toRingEquiv σ σ')) v)
+
+end SemilinearEquiv
+
+end QuadraticForm
 
 namespace RingEquiv
 
@@ -169,9 +259,7 @@ theorem exists_sq_sub_mul_sq_adicCompletion_iff_of_ringEquiv (e : K ≃+* L)
       ∃ x y : v.adicCompletion K,
         algebraMap K (v.adicCompletion K) a =
           x ^ 2 - algebraMap K (v.adicCompletion K) d * y ^ 2 := by
-  have he (x : K) : w.valuation L (e x) = v.valuation K x := by
-    simpa using valuation_ringEquivOfRingEquiv (K := K) (K' := L)
-      (RingOfIntegers.mapRingEquiv e) hvw x
+  have he := valuation_mapRingEquiv v w e hvw
   rw [← adicCompletionCongr_algebraMap he a, ← adicCompletionCongr_algebraMap he d,
     (adicCompletionCongr v w e he).exists_eq_sq_sub_mul_sq_map_iff]
 

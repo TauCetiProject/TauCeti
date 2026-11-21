@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.DedekindDomain.AdicValuation.Completion
 public import Mathlib.RingTheory.Localization.FractionRing
+public import TauCeti.FieldTheory.SquareClassGroup.Multiplicative
 public import TauCeti.RingTheory.DedekindDomain.Ideal.Basic
 public import TauCeti.Topology.Algebra.Valued.WithVal
 
@@ -42,6 +43,8 @@ how an automorphism permuting the places above a given place acts on their compl
   `continuous_adicCompletionCongr`, its universal property `eq_adicCompletionCongr_of_continuous`,
   its identity, composition, and inverse laws, and `valued_adicCompletionCongr` (it preserves the
   valuations).
+* `TauCeti.squareClassMap_adicCompletionCongr_algebraMap`: `adicCompletionCongr` commutes with
+  pushing square classes forward along `algebraMap`.
 
 The ideal-level input this rests on — that `Ideal.map e` preserves divisibility and
 factorisation multiplicities, and that Mathlib's `equivOfRingEquiv` is `Ideal.map e` on
@@ -67,8 +70,9 @@ Adapted from [AINTLIB](https://github.com/CBirkbeck/AINTLIB) (Apache-2.0), commi
 `intValuation_map_ringEquiv`, `valuation_map_ringEquiv_algebraMap` and `valuation_map_ringEquiv`
 are that file's, with the vocabulary adapted to this repository's interfaces. The ideal-level
 lemmas adapted from the same source are attributed in
-`TauCeti/RingTheory/DedekindDomain/Ideal/Basic.lean`. The completion section is not from that
-source; it follows the pattern of `adicCompletionExtension` in
+`TauCeti/RingTheory/DedekindDomain/Ideal/Basic.lean`. The completion section and
+`TauCeti.squareClassMap_adicCompletionCongr_algebraMap` are not from that source; the completion
+section follows the pattern of `adicCompletionExtension` in
 `TauCeti/RingTheory/DedekindDomain/AdicCompletionExtension.lean`.
 
 ## References
@@ -218,3 +222,33 @@ theorem valued_adicCompletionCongr (x : v.adicCompletion K) :
 end Completion
 
 end IsDedekindDomain.HeightOneSpectrum
+
+namespace TauCeti
+
+open IsDedekindDomain IsDedekindDomain.HeightOneSpectrum
+
+-- Not `@[simp]`: rewriting bottom-up inside `hilbertSymbolOnSquareClasses` would block
+-- `@[simp] RingEquiv.hilbertSymbolOnSquareClasses_squareClassMap` from cancelling
+-- `adicCompletionCongr`.
+/-- Extending a valuation-preserving isomorphism `e : K ≃+* K'` to the adic completions commutes
+with pushing square classes forward along `algebraMap`. -/
+theorem squareClassMap_adicCompletionCongr_algebraMap
+    {R R' K K' : Type*} [CommRing R] [IsDedekindDomain R] [CommRing R'] [IsDedekindDomain R']
+    [Field K] [Field K'] [Algebra R K] [IsFractionRing R K] [Algebra R' K'] [IsFractionRing R' K']
+    {v : HeightOneSpectrum R} {w : HeightOneSpectrum R'}
+    {e : K ≃+* K'} (he : ∀ x, w.valuation K' (e x) = v.valuation K x)
+    (d : SquareClassGroup K) :
+    (adicCompletionCongr v w e he :
+        v.adicCompletion K →+* w.adicCompletion K').squareClassMap
+        ((algebraMap K (v.adicCompletion K)).squareClassMap d) =
+      (algebraMap K' (w.adicCompletion K')).squareClassMap
+        ((e : K →+* K').squareClassMap d) := by
+  have hcomp : (adicCompletionCongr v w e he :
+        v.adicCompletion K →+* w.adicCompletion K').comp (algebraMap K (v.adicCompletion K)) =
+      (algebraMap K' (w.adicCompletion K')).comp (e : K →+* K') :=
+    RingHom.ext fun a ↦ by
+      simp only [RingHom.comp_apply, RingEquiv.coe_toRingHom, adicCompletionCongr_algebraMap]
+  rw [← LinearMap.comp_apply, ← RingHom.squareClassMap_comp, hcomp,
+    RingHom.squareClassMap_comp, LinearMap.comp_apply]
+
+end TauCeti

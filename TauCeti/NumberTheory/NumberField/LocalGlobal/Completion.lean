@@ -36,6 +36,10 @@ an unrelated algebra structure on `L_w` over `K_v`.
   fields.
 * `IsDedekindDomain.HeightOneSpectrum.completionAlgHom_vle_iff_vle`: the canonical map preserves
   and reflects the valuative relations of the completions.
+* `IsDedekindDomain.HeightOneSpectrum.completionAlgHom_toRingHom_eq_adicCompletionCongr`,
+  `IsDedekindDomain.HeightOneSpectrum.completionAlgHom_bijective_of_surjective`: when `K → L`
+  agrees with a valuation-preserving isomorphism (in particular, when `algebraMap K L` is
+  surjective), `completionAlgHom` coincides with `adicCompletionCongr` and is bijective.
 
 In the `AdicCompletionExtension` scope, `L_w` is moreover a `ValuativeExtension` of `K_v`
 (`completionValuativeExtension`), and Mathlib's finiteness instance for completions of number
@@ -182,5 +186,44 @@ by the adic valuations. -/
     [w.asIdeal.LiesOver v.asIdeal] (a b : v.adicCompletion K) :
     completionAlgHom v w a ≤ᵥ completionAlgHom v w b ↔ a ≤ᵥ b :=
   v.adicCompletionExtension_vle_iff_vle K L w a b
+
+/-- When `algebraMap K L` agrees with a valuation-preserving ring isomorphism `e : K ≃+* L`,
+the canonical completion map `completionAlgHom v w` agrees as a ring homomorphism with the
+isomorphism `adicCompletionCongr v w e he`. -/
+theorem completionAlgHom_toRingHom_eq_adicCompletionCongr
+    {L : Type*} [Field L] [NumberField L] [Algebra K L]
+    (v : HeightOneSpectrum (𝒪 K)) (w : HeightOneSpectrum (𝒪 L))
+    [w.asIdeal.LiesOver v.asIdeal] {e : K ≃+* L}
+    (halg : ∀ x, algebraMap K L x = e x)
+    (he : ∀ x, w.valuation L (e x) = v.valuation K x) :
+    (completionAlgHom v w).toRingHom = (adicCompletionCongr v w e he).toRingHom := by
+  rw [← algebraMap_eq_completionAlgHom, algebraMap_adicCompletionExtensionAlgebra]
+  exact v.adicCompletionExtension_eq_adicCompletionCongr K L w halg he
+
+/-- Pointwise form of `completionAlgHom_toRingHom_eq_adicCompletionCongr`. -/
+theorem completionAlgHom_apply_eq_adicCompletionCongr
+    {L : Type*} [Field L] [NumberField L] [Algebra K L]
+    (v : HeightOneSpectrum (𝒪 K)) (w : HeightOneSpectrum (𝒪 L))
+    [w.asIdeal.LiesOver v.asIdeal] {e : K ≃+* L}
+    (halg : ∀ x, algebraMap K L x = e x)
+    (he : ∀ x, w.valuation L (e x) = v.valuation K x) (a : v.adicCompletion K) :
+    completionAlgHom v w a = adicCompletionCongr v w e he a := by
+  rw [← AlgHom.coe_toRingHom, ← AlgHom.toRingHom_eq_coe,
+    completionAlgHom_toRingHom_eq_adicCompletionCongr v w halg he,
+    RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom]
+
+/-- If `algebraMap K L` is surjective (hence bijective, for example when `K` is `Shrink.{0} L`),
+the canonical completion map `K_v → L_w` at any pair of lying-over finite places is bijective. -/
+theorem completionAlgHom_bijective_of_surjective
+    {L : Type*} [Field L] [NumberField L] [Algebra K L]
+    (v : HeightOneSpectrum (𝒪 K)) (w : HeightOneSpectrum (𝒪 L))
+    [w.asIdeal.LiesOver v.asIdeal] (h : Function.Surjective (algebraMap K L)) :
+    Function.Bijective (completionAlgHom v w) := by
+  have hfn : (completionAlgHom v w : v.adicCompletion K → w.adicCompletion L) =
+      v.adicCompletionExtension K L w := by
+    rw [← AlgHom.coe_toRingHom, ← AlgHom.toRingHom_eq_coe, ← algebraMap_eq_completionAlgHom,
+      algebraMap_adicCompletionExtensionAlgebra]
+  rw [hfn]
+  exact v.adicCompletionExtension_bijective_of_surjective K L w h
 
 end IsDedekindDomain.HeightOneSpectrum

@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Completion
 public import TauCeti.RingTheory.AdjoinRoot.Factors
+public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Completion
+public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Transport
 public import TauCeti.RingTheory.DedekindDomain.Ideal.Basic
 public import TauCeti.RingTheory.DedekindDomain.ValuationOfNeZero
+import TauCeti.RingTheory.RamificationInertia.Bijective
 
 /-!
 # Extension of adic completions along an extension of Dedekind domains
@@ -61,6 +63,11 @@ global étale algebra with its images in the completions passes through exactly 
   `IsDedekindDomain.HeightOneSpectrum.eq_adicCompletionExtension_of_continuous`: the extension is
   continuous, and is the only continuous ring homomorphism `K_v →+* L_w` extending `K → L`. Together
   these are its universal property, usable without unfolding the definition.
+* `IsDedekindDomain.HeightOneSpectrum.adicCompletionExtension_eq_adicCompletionCongr`,
+  `IsDedekindDomain.HeightOneSpectrum.adicCompletionExtension_bijective_of_surjective`, and
+  `IsDedekindDomain.HeightOneSpectrum.algebraMap_adicCompletion_bijective_of_surjective`: when
+  `K → L` agrees with a valuation-preserving isomorphism (in particular, when `algebraMap K L` is
+  surjective), `adicCompletionExtension` coincides with `adicCompletionCongr` and is bijective.
 
 ## Motivation
 
@@ -97,6 +104,11 @@ The Henselian and completeness chain from that same Stoll file lives in
 `TauCeti.RingTheory.DedekindDomain.AdicValuation.Completion`, with the single-completion
 valuation and residue-field results it rests on — among them
 `residueFieldEquivAdicCompletionIntegers`, which this file uses.
+
+The comparison with `adicCompletionCongr` and the surjectivity-induced bijectivity theorems
+(`adicCompletionExtension_eq_adicCompletionCongr`,
+`adicCompletionExtension_bijective_of_surjective`, and
+`algebraMap_adicCompletion_bijective_of_surjective`) are new to Tau Ceti.
 
 ## Implementation notes
 
@@ -445,6 +457,49 @@ lemma comap_maximalIdeal_adicCompletionIntegersExtension :
   have : FaithfulSMul R B := FaithfulSMul.of_field_isFractionRing R B K L
   exact pow_lt_one_iff
     (Ideal.IsDedekindDomain.ramificationIdx'_ne_zero_of_liesOver w.asIdeal v.ne_bot)
+
+/-- When `algebraMap K L` agrees with a valuation-preserving ring isomorphism `e : K ≃+* L`,
+`adicCompletionExtension K L v w` coincides with `(adicCompletionCongr v w e he).toRingHom`. -/
+theorem adicCompletionExtension_eq_adicCompletionCongr {e : K ≃+* L}
+    (halg : ∀ x, algebraMap K L x = e x)
+    (he : ∀ x, w.valuation L (e x) = v.valuation K x) :
+    adicCompletionExtension K L v w = (adicCompletionCongr v w e he).toRingHom :=
+  (eq_adicCompletionExtension_of_continuous K L v w (continuous_adicCompletionCongr he) fun x ↦ by
+    have hK : (x : v.adicCompletion K) = algebraMap K (v.adicCompletion K) x := by
+      simp [algebraMap_adicCompletion]
+    have hL : (algebraMap K L x : w.adicCompletion L) =
+        algebraMap L (w.adicCompletion L) (algebraMap K L x) := by
+      simp [algebraMap_adicCompletion]
+    rw [hK, hL, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom,
+      adicCompletionCongr_algebraMap, halg]).symm
+
+/-- If `algebraMap K L` is surjective (hence bijective), `adicCompletionExtension K L v w` is
+bijective. -/
+theorem adicCompletionExtension_bijective_of_surjective
+    (h : Function.Surjective (algebraMap K L)) :
+    Function.Bijective (adicCompletionExtension K L v w) := by
+  have : FaithfulSMul R B := FaithfulSMul.of_field_isFractionRing R B K L
+  have hram : w.asIdeal.ramificationIdx R = 1 :=
+    w.asIdeal.ramificationIdx_eq_one_of_surjective_fractionRing R h
+  let e : K ≃+* L := RingEquiv.ofBijective (algebraMap K L) ⟨(algebraMap K L).injective, h⟩
+  have halg (a : K) : algebraMap K L a = e a := (RingEquiv.ofBijective_apply _ _ a).symm
+  have he (a : K) : w.valuation L (e a) = v.valuation K a := by
+    rw [← halg a, ← valuation_liesOver (K := K) L v w a, hram, pow_one]
+  have hfn : (adicCompletionExtension K L v w : v.adicCompletion K → w.adicCompletion L) =
+      adicCompletionCongr v w e he := by
+    rw [adicCompletionExtension_eq_adicCompletionCongr K L v w halg he, RingEquiv.toRingHom_eq_coe]
+    exact RingEquiv.coe_toRingHom _
+  rw [hfn]
+  exact (adicCompletionCongr v w e he).bijective
+
+/-- In the `AdicCompletionExtension` scope, a surjective `algebraMap K L` induces a bijective
+`algebraMap (v.adicCompletion K) (w.adicCompletion L)` at any pair of lying-over height-one
+primes. -/
+theorem algebraMap_adicCompletion_bijective_of_surjective
+    (h : Function.Surjective (algebraMap K L)) :
+    Function.Bijective (algebraMap (v.adicCompletion K) (w.adicCompletion L)) := by
+  rw [algebraMap_adicCompletionExtensionAlgebra]
+  exact adicCompletionExtension_bijective_of_surjective K L v w h
 
 end Extension
 

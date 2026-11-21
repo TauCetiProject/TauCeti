@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Chain.Induction
-public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Descent
-public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Discriminant
+public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Transport
 public import TauCeti.NumberTheory.HilbertSymbol.Binary
 public import TauCeti.NumberTheory.LocalField.QuadraticForm.Bimultiplicativity
 
@@ -52,6 +51,11 @@ Hasse symbol differs from this `i < j` sign by the Hilbert symbol of the discrim
   Hasse invariant `(-1, -1)_K^{m(m-1)/2}`.
 * `TauCeti.RegularFormClass.localHasse_mk_rankOne_add`: `s(⟨a⟩ ⊥ q) = s(q) · (a, d(q))_K`.
 * `TauCeti.RegularFormClass.localHasse_mk_rankOne_mul`: the formula for scaling by a unit.
+* `TauCeti.RegularFormClass.localHasse_mapRingEquiv`,
+  `TauCeti.RegularFormClass.localHasse_baseChange_of_surjective`,
+  `TauCeti.localHasse_formClass_eq_of_semilinearEquiv`,
+  `QuadraticForm.localHasse_formClass_baseChange_of_surjective`: invariance of the local Hasse
+  invariant under ring isomorphisms and surjective field extensions of nonarchimedean local fields.
 
 ## References
 
@@ -262,5 +266,73 @@ theorem localHasse_mk_rankOne_mul (a : Kˣ) (x : RegularFormClass K) :
     simpa only [rank_mk, discr_mk, hilbertSymbolOnSquareClasses_squareClass] using
       localHasse_mk_rankOne_mul_mk a p
 
+section RingEquiv
+
+variable {L : Type*} [Field L] [ValuativeRel L] [TopologicalSpace L]
+  [IsNonarchimedeanLocalField L] [Invertible (2 : L)]
+
+/-- **Invariance under field isomorphisms.** Transporting a regular-form class along a ring
+isomorphism of nonarchimedean local fields preserves its local Hasse invariant, because the
+norm-equation Hilbert symbol is preserved on each pair of diagonal weights. -/
+@[simp]
+theorem localHasse_mapRingEquiv (e : K ≃+* L) (x : RegularFormClass K) :
+    localHasse (mapRingEquiv e x) = localHasse x := by
+  induction x using Quotient.inductionOn with
+  | h p =>
+    rw [mapRingEquiv_mk, RegularFormPresentation.equivOfRingEquiv_def, localHasse_mk, localHasse_mk]
+    simp only [hilbertSymbol_units_map_ringEquiv]
+
+/-- Scalar extension along a surjective homomorphism of nonarchimedean local fields preserves the
+local Hasse invariant. -/
+theorem localHasse_baseChange_of_surjective [Algebra K L]
+    (h : Function.Surjective (algebraMap K L)) (x : RegularFormClass K) :
+    localHasse (baseChange L x) = localHasse x := by
+  rw [baseChange_eq_mapRingEquiv_of_surjective h, localHasse_mapRingEquiv]
+
+end RingEquiv
+
 end RegularFormClass
+
+section SemilinearEquiv
+
+variable {L : Type*} [Field L] [ValuativeRel L] [TopologicalSpace L]
+  [IsNonarchimedeanLocalField L] [Invertible (2 : L)]
+variable {σ : K →+* L} {σ' : L →+* K} [RingHomInvPair σ σ'] [RingHomInvPair σ' σ]
+variable {V W : Type*} [AddCommGroup V] [Module K V] [FiniteDimensional K V]
+  [AddCommGroup W] [Module L W] [FiniteDimensional L W]
+
+/-- Regular quadratic forms over nonarchimedean local fields intertwined by a semilinear
+equivalence `f : V ≃ₛₗ[σ] W` with `Q' (f v) = σ (Q v)` have the same local Hasse invariant. -/
+theorem localHasse_formClass_eq_of_semilinearEquiv
+    {Q : QuadraticForm K V} {Q' : QuadraticForm L W}
+    (hQ : Q.Nondegenerate) (hQ' : Q'.Nondegenerate)
+    (f : V ≃ₛₗ[σ] W) (hf : ∀ v, Q' (f v) = σ (Q v)) :
+    RegularFormClass.localHasse (formClass Q' hQ') =
+      RegularFormClass.localHasse (formClass Q hQ) := by
+  rw [formClass_eq_mapRingEquiv_of_semilinearEquiv hQ hQ' f hf,
+    RegularFormClass.localHasse_mapRingEquiv]
+
+end SemilinearEquiv
+
 end TauCeti
+
+namespace QuadraticForm
+
+open TauCeti
+
+variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
+  [IsNonarchimedeanLocalField K] [Invertible (2 : K)]
+  [Field L] [ValuativeRel L] [TopologicalSpace L]
+  [IsNonarchimedeanLocalField L] [Invertible (2 : L)] [Algebra K L]
+variable {V : Type*} [AddCommGroup V] [Module K V] [FiniteDimensional K V]
+
+/-- Extending scalars of a regular form along a surjective homomorphism of nonarchimedean local
+fields preserves its local Hasse invariant. -/
+theorem localHasse_formClass_baseChange_of_surjective
+    (h : Function.Surjective (algebraMap K L))
+    (Q : _root_.QuadraticForm K V) (hQ : Q.Nondegenerate) :
+    RegularFormClass.localHasse (formClass (Q.baseChange L) (Nondegenerate.baseChange hQ)) =
+      RegularFormClass.localHasse (formClass Q hQ) := by
+  rw [formClass_baseChange Q hQ, RegularFormClass.localHasse_baseChange_of_surjective h]
+
+end QuadraticForm
