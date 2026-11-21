@@ -79,8 +79,8 @@ def directSumEquivProd (C : AddSubgroup (ι → A))
 private theorem directSumEquivProd_apply_eq (C : AddSubgroup (ι → A))
     (D : AddSubgroup (κ → A)) (x : C.directSum D) :
     C.directSumEquivProd D x =
-      (⟨fun i ↦ x.1 (.inl i), (mem_directSum_iff.mp x.2).1⟩,
-        ⟨fun j ↦ x.1 (.inr j), (mem_directSum_iff.mp x.2).2⟩) := by
+      (⟨fun i ↦ x.val (.inl i), (mem_directSum_iff.mp x.property).1⟩,
+        ⟨fun j ↦ x.val (.inr j), (mem_directSum_iff.mp x.property).2⟩) := by
   simp only [directSumEquivProd, AddSubgroup.prodEquiv, Equiv.Set.prod,
     Equiv.sumArrowEquivProdArrow]
   rfl
@@ -88,30 +88,30 @@ private theorem directSumEquivProd_apply_eq (C : AddSubgroup (ι → A))
 @[simp]
 theorem directSumEquivProd_apply_fst (C : AddSubgroup (ι → A))
     (D : AddSubgroup (κ → A)) (x : C.directSum D) (i : ι) :
-    (C.directSumEquivProd D x).1.1 i = x.1 (.inl i) := by
-  exact congrArg (fun y : C × D ↦ y.1.1 i) (directSumEquivProd_apply_eq C D x)
+    (C.directSumEquivProd D x).1.val i = x.val (.inl i) := by
+  exact congrArg (fun y : C × D ↦ y.1.val i) (directSumEquivProd_apply_eq C D x)
 
 @[simp]
 theorem directSumEquivProd_apply_snd (C : AddSubgroup (ι → A))
     (D : AddSubgroup (κ → A)) (x : C.directSum D) (j : κ) :
-    (C.directSumEquivProd D x).2.1 j = x.1 (.inr j) := by
-  exact congrArg (fun y : C × D ↦ y.2.1 j) (directSumEquivProd_apply_eq C D x)
+    (C.directSumEquivProd D x).2.val j = x.val (.inr j) := by
+  exact congrArg (fun y : C × D ↦ y.2.val j) (directSumEquivProd_apply_eq C D x)
 
 @[simp]
 theorem directSumEquivProd_symm_apply_inl (C : AddSubgroup (ι → A))
     (D : AddSubgroup (κ → A)) (x : C) (y : D) (i : ι) :
-    ((C.directSumEquivProd D).symm (x, y)).1 (.inl i) = x.1 i := by
+    ((C.directSumEquivProd D).symm (x, y)).val (.inl i) = x.val i := by
   have h := directSumEquivProd_apply_eq C D ((C.directSumEquivProd D).symm (x, y))
   rw [AddEquiv.apply_symm_apply] at h
-  exact (congrArg (fun z : C × D ↦ z.1.1 i) h).symm
+  exact (congrArg (fun z : C × D ↦ z.1.val i) h).symm
 
 @[simp]
 theorem directSumEquivProd_symm_apply_inr (C : AddSubgroup (ι → A))
     (D : AddSubgroup (κ → A)) (x : C) (y : D) (j : κ) :
-    ((C.directSumEquivProd D).symm (x, y)).1 (.inr j) = y.1 j := by
+    ((C.directSumEquivProd D).symm (x, y)).val (.inr j) = y.val j := by
   have h := directSumEquivProd_apply_eq C D ((C.directSumEquivProd D).symm (x, y))
   rw [AddEquiv.apply_symm_apply] at h
-  exact (congrArg (fun z : C × D ↦ z.2.1 j) h).symm
+  exact (congrArg (fun z : C × D ↦ z.2.val j) h).symm
 
 /-- The cardinality of an additive direct sum is the product of the two code cardinalities. -/
 @[simp↓]
@@ -232,8 +232,8 @@ variable [DecidableEq A] [Fintype ι] [Fintype κ]
 theorem hammingNorm_directSumEquivProd_symm (C : AddSubgroup (ι → A))
     (D : AddSubgroup (κ → A)) (x : C) (y : D) :
     hammingNorm ((C.directSumEquivProd D).symm (x, y) : ι ⊕ κ → A) =
-      hammingNorm x.1 + hammingNorm y.1 := by
-  rw [← TauCeti.hammingNorm_sumElim x.1 y.1]
+      hammingNorm x.val + hammingNorm y.val := by
+  rw [← TauCeti.hammingNorm_sumElim x.val y.val]
   apply congrArg hammingNorm
   funext i
   cases i <;> simp
@@ -244,8 +244,8 @@ theorem hammingDist_directSumEquivProd_symm (C : AddSubgroup (ι → A))
     (D : AddSubgroup (κ → A)) (x x' : C) (y y' : D) :
     hammingDist ((C.directSumEquivProd D).symm (x, y) : ι ⊕ κ → A)
         ((C.directSumEquivProd D).symm (x', y') : ι ⊕ κ → A) =
-      hammingDist x.1 x'.1 + hammingDist y.1 y'.1 := by
-  rw [← TauCeti.hammingDist_sumElim x.1 x'.1 y.1 y'.1]
+      hammingDist x.val x'.val + hammingDist y.val y'.val := by
+  rw [← TauCeti.hammingDist_sumElim x.val x'.val y.val y'.val]
   apply congrArg₂ hammingDist
   · funext i
     cases i <;> simp

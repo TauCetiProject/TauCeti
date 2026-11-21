@@ -160,7 +160,7 @@ noncomputable def monomialGroupRepEvenEquivNegLineCoordinate :
       ((P.monomialGroupRep v).comp (monomialGroupEven Q v).subtype) :=
   .mk (involuteEquiv (Q := (0 : QuadraticForm K P.W))).toLinearEquiv fun g ↦
     LinearMap.ext fun s ↦ by
-      simp [P.spinAction_negLineCoordinate_apply, mem_monomialGroupEven_iff.mp g.2]
+      simp [P.spinAction_negLineCoordinate_apply, mem_monomialGroupEven_iff.mp g.property]
 
 /-- The parity equivalence `P.monomialGroupRepEvenEquivNegLineCoordinate v` is the grade
 involution of `⋀·W`. -/
@@ -426,6 +426,14 @@ variable {F : Type*} [Field F] [IsSepClosed F] [Invertible (2 : F)] {V : Type*} 
   [Module F V] [FiniteDimensional F V] {Q : QuadraticForm F V} {I : Type*} [LinearOrder I]
   {b : Basis I F V} {W : Type*} [AddCommGroup W] [Module F W]
 
+/-- The polarization data of the nondegenerate form with an orthogonal basis whose generators
+square to `±1`, over a separably closed field. -/
+private noncomputable def spinPolarizationDataOfIsOrthoᵢ
+    (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1) :
+    SpinPolarizationData Q :=
+  SpinPolarizationData.ofNondegenerate Q
+    (QuadraticMap.nondegenerate_of_isOrthoᵢ hb fun i ↦ by rcases hQ i with h | h <;> simp [h])
+
 /-- **In even dimension there is one irreducible representation with `ε ↦ -1`.** Over a separably
 closed field, for an orthogonal basis whose generators square to `±1` of a space of even dimension,
 any two irreducible representations of the group of signed monomials in which `ε` acts by `-1`
@@ -438,9 +446,7 @@ theorem monomialGroup_nonempty_equiv_of_even
     (hρ : ρ (monomialGroupEpsilon Q b) = -1)
     (hσ : σ (monomialGroupEpsilon Q b) = -1) :
     Nonempty (ρ.Equiv σ) := by
-  have : NeZero (2 : F) := ⟨Invertible.ne_zero 2⟩
-  let P := SpinPolarizationData.ofNondegenerate Q
-    (QuadraticMap.nondegenerate_of_isOrthoᵢ hb fun i ↦ by rcases hQ i with h | h <;> simp [h])
+  let P := spinPolarizationDataOfIsOrthoᵢ hb hQ
   obtain ⟨e⟩ := P.nonempty_equiv_monomialGroupRep_of_even hb hQ hV ρ hρ
   obtain ⟨e'⟩ := P.nonempty_equiv_monomialGroupRep_of_even hb hQ hV σ hσ
   exact ⟨e.trans e'.symm⟩
@@ -452,9 +458,7 @@ theorem monomialGroup_finrank_eq_two_pow_of_even
     {l : ℕ} (hV : finrank F V = 2 * l) (ρ : Representation F (monomialGroup Q b) W)
     [Representation.IsIrreducible ρ] (hρ : ρ (monomialGroupEpsilon Q b) = -1) :
     finrank F W = 2 ^ l := by
-  have : NeZero (2 : F) := ⟨Invertible.ne_zero 2⟩
-  let P := SpinPolarizationData.ofNondegenerate Q
-    (QuadraticMap.nondegenerate_of_isOrthoᵢ hb fun i ↦ by rcases hQ i with h | h <;> simp [h])
+  let P := spinPolarizationDataOfIsOrthoᵢ hb hQ
   obtain ⟨e⟩ := P.nonempty_equiv_monomialGroupRep_of_even hb hQ (hV ▸ even_two_mul l) ρ hρ
   rw [e.toLinearEquiv.finrank_eq, P.finrank_exteriorAlgebra_W_of_finrank_eq_two_mul hV]
 
@@ -466,9 +470,7 @@ theorem monomialGroup_finrank_eq_two_pow_of_odd
     {l : ℕ} (hV : finrank F V = 2 * l + 1) (ρ : Representation F (monomialGroup Q b) W)
     [Representation.IsIrreducible ρ] (hρ : ρ (monomialGroupEpsilon Q b) = -1) :
     finrank F W = 2 ^ l := by
-  have : NeZero (2 : F) := ⟨Invertible.ne_zero 2⟩
-  let P := SpinPolarizationData.ofNondegenerate Q
-    (QuadraticMap.nondegenerate_of_isOrthoᵢ hb fun i ↦ by rcases hQ i with h | h <;> simp [h])
+  let P := spinPolarizationDataOfIsOrthoᵢ hb hQ
   rw [← P.finrank_exteriorAlgebra_W_of_finrank_eq_two_mul_add_one hV]
   rcases P.nonempty_equiv_monomialGroupRep_or_of_odd hb hQ (hV ▸ odd_two_mul_add_one l) ρ hρ
     with h | h
@@ -490,9 +492,7 @@ theorem monomialGroup_nonempty_equiv_comp_subtype_of_odd
     (hσ : σ (monomialGroupEpsilon Q b) = -1) :
     Nonempty (Representation.Equiv (ρ.comp (monomialGroupEven Q b).subtype)
       (σ.comp (monomialGroupEven Q b).subtype)) := by
-  have : NeZero (2 : F) := ⟨Invertible.ne_zero 2⟩
-  let P := SpinPolarizationData.ofNondegenerate Q
-    (QuadraticMap.nondegenerate_of_isOrthoᵢ hb fun i ↦ by rcases hQ i with h | h <;> simp [h])
+  let P := spinPolarizationDataOfIsOrthoᵢ hb hQ
   obtain ⟨e⟩ := P.nonempty_equiv_monomialGroupRep_comp_subtype_of_odd hb hQ hV ρ hρ
   obtain ⟨e'⟩ := P.nonempty_equiv_monomialGroupRep_comp_subtype_of_odd hb hQ hV σ hσ
   exact ⟨e.trans e'.symm⟩

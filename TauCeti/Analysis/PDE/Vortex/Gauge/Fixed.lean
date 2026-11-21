@@ -5,11 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 public import TauCeti.Analysis.PDE.Vortex.Deformation
 import TauCeti.Analysis.Calculus.LineDeriv.IntegrationByParts
+import TauCeti.Analysis.Distribution.TestFunction.Inner
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
+import TauCeti.MeasureTheory.Function.Lp.Norm
 import Mathlib.Analysis.InnerProductSpace.Dual
 
 /-!
@@ -31,11 +34,15 @@ front of the three rows of `linearizedEquation`, and `gaugeFixedAdjoint` is its 
 
 ## Main results
 
+* `gaugeFixedOperator_eq_gaugeFixedFirstOrder_add`: `L_x y` splits as its constant-coefficient
+  first-order part `gaugeFixedFirstOrder`, applied to the gradients of the coordinates of `y`, plus
+  its zeroth-order part `gaugeFixedZerothOrder`, bilinear in the values of `x` and `y`.
 * `gaugeAdjoint_gaugeDirection`: `d₀* d₀ f = -Δ f + (|α|² / 4) f` pointwise, at every field.
 * `gaugeFixedOperator_fun_smul` and `gaugeFixedAdjoint_fun_smul`: the Leibniz rules of `L_x` and
   `L_x*` for a real weight, whose commutators are the principal symbols
   `gaugeFixedOperatorSymbol` and `gaugeFixedAdjointSymbol`; both symbols scale norms by the norm
-  of the covector (`norm_sq_gaugeFixedOperatorSymbol`, `norm_sq_gaugeFixedAdjointSymbol`).
+  of the covector (`norm_sq_gaugeFixedOperatorSymbol`, `norm_sq_gaugeFixedAdjointSymbol`), and the
+  adjoint symbol is minus the transpose of the operator symbol (`inner_gaugeFixedOperatorSymbol`).
 * `gaugeFixedOperator_gaugeFixedAdjoint`: the pointwise Weitzenböck formula for `L_x L_x*` at
   every field, with the vortex defects `equation x` appearing explicitly. In complex notation,
   with `φ = α / 2`, `η = (ξ, ζ)`, `∇ = d + a` and the complex defect `E = ∂bar_a α`, it reads
@@ -55,10 +62,13 @@ front of the three rows of `linearizedEquation`, and `gaugeFixedAdjoint` is its 
   operator is not a sum of nonnegative Schrödinger operators, since the coupling `K` has no
   sign; small `|∇₁ α|` and `|α|` close to one suffice for it to be coercive.
 * `gaugeFixedKernel x`: the kernel of `L_x` on `C²` square-integrable variations, a real
-  subspace.
+  subspace. Its elements are continuous, so taking `L²` classes embeds it in `L²(ℂ; ℝ⁴)`
+  (`gaugeFixedKernelToLp`, `gaugeFixedKernelToLp_injective`, `norm_gaugeFixedKernelToLp`).
 * `integral_mul_gaugeAdjoint` and `integral_inner_gaugeFixedOperator`: the integration-by-parts
   identities `∫ f d₀* y = ∫ ⟪d₀ f, y⟫` and `∫ ⟪L_x y, η⟫ = ∫ ⟪y, L_x* η⟫`, for `C¹` data with one
   factor compactly supported and any additive Haar measure.
+* `forall_integral_inner_gaugeFixedAdjoint_eq_iff`: a `C¹` field is a weak solution of
+  `L_x y = f`, for continuous `f`, exactly when it is a classical solution.
 * `gaugeFixedOperator_eq_add_gaugeFixedZerothOrder`: `L_x` is `L_x'` plus multiplication by
   `gaugeFixedZerothOrder (x z - x' z)`; with `x' = vacuumField`, `L_x` is the vacuum operator
   plus this zeroth-order term.
@@ -84,7 +94,7 @@ noncomputable section
 namespace TauCeti.Vortex
 
 open Complex MeasureTheory
-open scoped Laplacian RealInnerProductSpace
+open scoped Laplacian InnerProductSpace RealInnerProductSpace Gradient
 
 /-- The formal `L²` adjoint `d₀*` of the infinitesimal gauge action `gaugeDirection x`, applied to
 a variation `y`: `d₀* y = ∂₁ y₀ + ∂₂ y₁ + p y₃ - q y₂`. See `integral_mul_gaugeAdjoint`. -/
@@ -181,6 +191,16 @@ theorem gaugeAdjoint_add (x : ℂ → EuclideanSpace ℝ (Fin 4)) {y v : ℂ →
   simp [fderiv_fun_add, hyi, hvi]
   ring
 
+/-- `d₀*` preserves differences of variations whose connection coordinates are differentiable at
+the point; these are the only coordinates it differentiates. -/
+theorem gaugeAdjoint_sub (x : ℂ → EuclideanSpace ℝ (Fin 4)) {y v : ℂ → EuclideanSpace ℝ (Fin 4)}
+    {z : ℂ} (hy₀ : DifferentiableAt ℝ (fun w ↦ y w 0) z)
+    (hy₁ : DifferentiableAt ℝ (fun w ↦ y w 1) z) (hv₀ : DifferentiableAt ℝ (fun w ↦ v w 0) z)
+    (hv₁ : DifferentiableAt ℝ (fun w ↦ v w 1) z) :
+    gaugeAdjoint x (y - v) z = gaugeAdjoint x y z - gaugeAdjoint x v z := by
+  simp [fderiv_fun_sub hy₀ hv₀, fderiv_fun_sub hy₁ hv₁]
+  ring
+
 /-- `d₀*` commutes with real scalar multiplication of variations. -/
 theorem gaugeAdjoint_smul (x y : ℂ → EuclideanSpace ℝ (Fin 4)) (t : ℝ) (z : ℂ) :
     gaugeAdjoint x (t • y) z = t * gaugeAdjoint x y z := by
@@ -224,6 +244,14 @@ theorem gaugeFixedOperator_smul (x y : ℂ → EuclideanSpace ℝ (Fin 4)) (t : 
   · simp [-gaugeAdjoint_def, gaugeAdjoint_smul x y t z]
   all_goals simp [hL]
 
+/-- `L_x` preserves differences of variations differentiable at the point. -/
+theorem gaugeFixedOperator_sub (x : ℂ → EuclideanSpace ℝ (Fin 4))
+    {y v : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ} (hy : DifferentiableAt ℝ y z)
+    (hv : DifferentiableAt ℝ v z) :
+    gaugeFixedOperator x (y - v) z = gaugeFixedOperator x y z - gaugeFixedOperator x v z := by
+  rw [sub_eq_add_neg, ← neg_one_smul ℝ v, gaugeFixedOperator_add x hy (hv.const_smul _),
+    gaugeFixedOperator_smul, neg_one_smul, sub_eq_add_neg]
+
 /-- `L_x` sends the zero variation to zero. -/
 @[simp]
 theorem gaugeFixedOperator_zero (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
@@ -250,6 +278,69 @@ theorem gaugeFixedAdjoint_smul (x η : ℂ → EuclideanSpace ℝ (Fin 4)) (t : 
     congrFun (fderiv_const_smul_field t) z
   ext i
   fin_cases i <;> simp [hd] <;> ring
+
+/-- The coefficient matrix of the zeroth-order part of the gauge-fixed operator at a field with
+value `w`. It is linear in `w`, and `L_x - L₀` is multiplication by the matrix at
+`x z - vacuumField z` (`gaugeFixedOperator_eq_add_gaugeFixedZerothOrder`). -/
+@[expose] def gaugeFixedZerothOrderMatrix (w : EuclideanSpace ℝ (Fin 4)) :
+    Matrix (Fin 4) (Fin 4) ℝ :=
+  !![0, 0, -w 3, w 2; 0, 0, w 2, w 3; -w 3, -w 2, -w 1, -w 0; w 2, -w 3, w 0, -w 1]
+
+/-- The zeroth-order part of the gauge-fixed operator `L_x`, as a bilinear map of the value `w` of
+the field and the value `v` of the variation: the matrix `gaugeFixedZerothOrderMatrix w` applied
+to `v`. These are the terms of `L_x y` without derivatives of `y`
+(`gaugeFixedOperator_eq_gaugeFixedFirstOrder_add`), and `L_x - L₀` is multiplication by
+`gaugeFixedZerothOrder (x z - vacuumField z)`. -/
+def gaugeFixedZerothOrder :
+    EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4) :=
+  LinearMap.toContinuousLinearMap <|
+    (LinearMap.toContinuousLinearMap :
+        (EuclideanSpace ℝ (Fin 4) →ₗ[ℝ] EuclideanSpace ℝ (Fin 4)) ≃ₗ[ℝ]
+          (EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4))).toLinearMap ∘ₗ
+      LinearMap.mk₂ ℝ (fun w v : EuclideanSpace ℝ (Fin 4) ↦
+        WithLp.toLp 2 fun i ↦ ∑ j, gaugeFixedZerothOrderMatrix w i j * v j)
+        (fun _ _ _ ↦ by
+          ext i; fin_cases i <;> simp [gaugeFixedZerothOrderMatrix, Fin.sum_univ_four] <;> ring)
+        (fun _ _ _ ↦ by
+          ext i; fin_cases i <;> simp [gaugeFixedZerothOrderMatrix, Fin.sum_univ_four] <;> ring)
+        (fun _ _ _ ↦ by
+          ext i; fin_cases i <;> simp [gaugeFixedZerothOrderMatrix, Fin.sum_univ_four] <;> ring)
+        (fun _ _ _ ↦ by
+          ext i; fin_cases i <;> simp [gaugeFixedZerothOrderMatrix, Fin.sum_univ_four] <;> ring)
+
+/-- The defining formula of `gaugeFixedZerothOrder`. -/
+@[simp] theorem gaugeFixedZerothOrder_apply (w v : EuclideanSpace ℝ (Fin 4)) :
+    gaugeFixedZerothOrder w v =
+      WithLp.toLp 2 fun i ↦ ∑ j, gaugeFixedZerothOrderMatrix w i j * v j :=
+  (rfl)
+
+/-- The first-order part of the gauge-fixed operator `L_x`, as a linear map of the gradients
+`g j = ∇y_j` of the four coordinates of the variation. Along the frame `(∂₁, ∂₂) = (1, i)`,
+`∂_k y_j = ⟪g j, e_k⟫`, and the rows are `∂₁y₀ + ∂₂y₁`, `∂₂y₀ - ∂₁y₁`, `∂₁y₂ - ∂₂y₃` and
+`∂₁y₃ + ∂₂y₂`. -/
+def gaugeFixedFirstOrder : (Fin 4 → ℂ) →L[ℝ] EuclideanSpace ℝ (Fin 4) :=
+  LinearMap.toContinuousLinearMap
+    { toFun := fun g ↦ !₂[⟪g 0, 1⟫_ℝ + ⟪g 1, I⟫_ℝ, ⟪g 0, I⟫_ℝ - ⟪g 1, 1⟫_ℝ,
+        ⟪g 2, 1⟫_ℝ - ⟪g 3, I⟫_ℝ, ⟪g 3, 1⟫_ℝ + ⟪g 2, I⟫_ℝ]
+      map_add' := fun _ _ ↦ by ext i; fin_cases i <;> simp [inner_add_left] <;> ring
+      map_smul' := fun _ _ ↦ by ext i; fin_cases i <;> simp <;> ring }
+
+/-- The defining formula of `gaugeFixedFirstOrder`. -/
+@[simp] theorem gaugeFixedFirstOrder_apply (g : Fin 4 → ℂ) :
+    gaugeFixedFirstOrder g = !₂[⟪g 0, 1⟫_ℝ + ⟪g 1, I⟫_ℝ, ⟪g 0, I⟫_ℝ - ⟪g 1, 1⟫_ℝ,
+        ⟪g 2, 1⟫_ℝ - ⟪g 3, I⟫_ℝ, ⟪g 3, 1⟫_ℝ + ⟪g 2, I⟫_ℝ] :=
+  (rfl)
+
+/-- The gauge-fixed operator is the sum of its first-order part, applied to the gradients of
+the coordinates of the variation, and its zeroth-order part. -/
+theorem gaugeFixedOperator_eq_gaugeFixedFirstOrder_add (x y : ℂ → EuclideanSpace ℝ (Fin 4))
+    (z : ℂ) :
+    gaugeFixedOperator x y z =
+      gaugeFixedFirstOrder (fun j ↦ ∇ (fun w ↦ y w j) z) + gaugeFixedZerothOrder (x z) (y z) := by
+  ext i
+  fin_cases i <;>
+    simp [gaugeFixedFirstOrder_apply, gaugeFixedZerothOrder_apply, gaugeFixedZerothOrderMatrix,
+      Fin.sum_univ_four, inner_gradient_left] <;> ring
 
 /-- The principal symbol of the gauge-fixed vortex adjoint, acting on a real covector
 and a target field value. It is independent of the vortex coefficients. -/
@@ -296,6 +387,13 @@ theorem norm_sq_gaugeFixedAdjointSymbol (d : ℂ →L[ℝ] ℝ)
   simp [gaugeFixedAdjointSymbol_def, EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_four,
     Fin.sum_univ_two, coe_orthonormalBasisOneI]
   ring
+
+/-- The adjoint symbol is jointly continuous in the covector and the field value. -/
+theorem continuous_gaugeFixedAdjointSymbol :
+    Continuous fun p : (ℂ →L[ℝ] ℝ) × EuclideanSpace ℝ (Fin 4) ↦
+      gaugeFixedAdjointSymbol p.1 p.2 := by
+  simp_rw [gaugeFixedAdjointSymbol_def]
+  exact (PiLp.continuous_toLp 2 _).comp (by fun_prop)
 
 /-- The adjoint symbol commutes with real scaling of the covector. -/
 @[simp]
@@ -393,6 +491,14 @@ theorem gaugeFixedOperatorSymbol_smul_right (d : ℂ →L[ℝ] ℝ) (r : ℝ)
   ext i
   fin_cases i <;> simp <;> ring
 
+/-- The adjoint symbol is minus the transpose of the operator symbol, as the principal symbols of
+a first-order operator and of its formal adjoint are. -/
+theorem inner_gaugeFixedOperatorSymbol (d : ℂ →L[ℝ] ℝ) (v u : EuclideanSpace ℝ (Fin 4)) :
+    ⟪gaugeFixedOperatorSymbol d v, u⟫ = -⟪v, gaugeFixedAdjointSymbol d u⟫ := by
+  simp [gaugeFixedOperatorSymbol_def, gaugeFixedAdjointSymbol_def, PiLp.inner_apply,
+    Fin.sum_univ_four]
+  ring
+
 /-- The Leibniz rule of the gauge-fixed operator for a real weight, with its exact symbol
 commutator. -/
 theorem gaugeFixedOperator_fun_smul (x : ℂ → EuclideanSpace ℝ (Fin 4))
@@ -413,6 +519,23 @@ theorem gaugeFixedOperator_fun_smul (x : ℂ → EuclideanSpace ℝ (Fin 4))
     simp [gaugeFixedOperatorSymbol_def, gaugeFixedOperator_apply_zero,
       gaugeFixedOperator_apply_one, gaugeFixedOperator_apply_two, gaugeFixedOperator_apply_three,
       hd] <;> ring
+
+/-- The infinitesimal gauge action `d₀ f` is differentiable at a point where the phase `f` is
+`C²` and the section coordinates of the field are differentiable. -/
+theorem differentiableAt_gaugeDirection {x : ℂ → EuclideanSpace ℝ (Fin 4)} {f : ℂ → ℝ} {z : ℂ}
+    (hf : ContDiffAt ℝ 2 f z) (hx₂ : DifferentiableAt ℝ (fun w ↦ x w 2) z)
+    (hx₃ : DifferentiableAt ℝ (fun w ↦ x w 3) z) :
+    DifferentiableAt ℝ (gaugeDirection x f) z := by
+  have hdf (v : ℂ) : DifferentiableAt ℝ (fun w ↦ fderiv ℝ f w v) z :=
+    ((hf.fderiv_right (m := 1) (by norm_num)).differentiableAt one_ne_zero).clm_apply
+      (differentiableAt_const v)
+  have hf' : DifferentiableAt ℝ f z := hf.differentiableAt two_ne_zero
+  refine differentiableAt_euclidean.2 fun i ↦ ?_
+  fin_cases i
+  · simpa using (hdf 1).neg
+  · simpa using (hdf I).neg
+  · simpa using (hf'.fun_mul hx₃).neg
+  · simpa using hf'.fun_mul hx₂
 
 /-- **The gauge Laplacian**: at every field, `d₀* d₀ f = -Δ f + (|α|² / 4) f`, where
 `|α|² / 4 = p² + q²`. No regularity of the field is needed. -/
@@ -597,25 +720,12 @@ end Vacuum
 
 section ZerothOrder
 
-/-- The coefficient matrix of the zeroth-order part of the gauge-fixed operator at a field with
-value `w`. It is linear in `w`, and `L_x - L₀` is multiplication by the matrix at
-`x z - vacuumField z` (`gaugeFixedOperator_eq_add_gaugeFixedZerothOrder`). -/
-@[expose] def gaugeFixedZerothOrderMatrix (w : EuclideanSpace ℝ (Fin 4)) :
-    Matrix (Fin 4) (Fin 4) ℝ :=
-  !![0, 0, -w 3, w 2; 0, 0, w 2, w 3; -w 3, -w 2, -w 1, -w 0; w 2, -w 3, w 0, -w 1]
-
-/-- The zeroth-order part of the gauge-fixed operator at a field with value `w`, applied to a
-variation with value `v`: the matrix `gaugeFixedZerothOrderMatrix w` applied to `v`. The operator
-`L_x - L₀` is multiplication by `gaugeFixedZerothOrder (x z - vacuumField z)`. -/
-@[expose] def gaugeFixedZerothOrder (w v : EuclideanSpace ℝ (Fin 4)) : EuclideanSpace ℝ (Fin 4) :=
-  WithLp.toLp 2 fun i ↦ ∑ j, gaugeFixedZerothOrderMatrix w i j * v j
-
 /-- `gaugeFixedZerothOrder w` is the Euclidean linear map of the matrix
 `gaugeFixedZerothOrderMatrix w`. -/
 theorem gaugeFixedZerothOrder_eq_toEuclideanLin (w v : EuclideanSpace ℝ (Fin 4)) :
     gaugeFixedZerothOrder w v = (gaugeFixedZerothOrderMatrix w).toEuclideanLin v := by
   ext i
-  simp [gaugeFixedZerothOrder, Matrix.toLpLin_apply, Matrix.mulVec, dotProduct]
+  simp [gaugeFixedZerothOrder_apply, Matrix.toLpLin_apply, Matrix.mulVec, dotProduct]
 
 /-- The gauge-fixed operators at two fields `x` and `x'` differ by multiplication by the
 zeroth-order part `gaugeFixedZerothOrder (x z - x' z)`, pointwise and without any regularity of the
@@ -629,7 +739,7 @@ theorem gaugeFixedOperator_eq_add_gaugeFixedZerothOrder
     simp [gaugeFixedOperator_apply_zero, gaugeFixedOperator_apply_one,
       gaugeFixedOperator_apply_two, gaugeFixedOperator_apply_three, gaugeAdjoint_def,
       linearizedEquation_apply_zero, linearizedEquation_apply_one, linearizedEquation_apply_two,
-      gaugeFixedZerothOrder, gaugeFixedZerothOrderMatrix, Fin.sum_univ_four] <;>
+      gaugeFixedZerothOrder_apply, gaugeFixedZerothOrderMatrix, Fin.sum_univ_four] <;>
     ring
 
 /-- The formal adjoints `L_x*` and `L_x'*` at two fields differ by the transpose of the
@@ -640,7 +750,7 @@ theorem inner_gaugeFixedAdjoint_eq_add_inner_gaugeFixedZerothOrder
       ⟪gaugeFixedZerothOrder (x z - x' z) v, η z⟫ := by
   simp only [PiLp.inner_apply, Fin.sum_univ_four, gaugeFixedAdjoint_apply_zero,
     gaugeFixedAdjoint_apply_one, gaugeFixedAdjoint_apply_two, gaugeFixedAdjoint_apply_three,
-    gaugeFixedZerothOrder, gaugeFixedZerothOrderMatrix, PiLp.sub_apply, RCLike.inner_apply,
+    gaugeFixedZerothOrder_apply, gaugeFixedZerothOrderMatrix, PiLp.sub_apply, RCLike.inner_apply,
     conj_trivial]
   simp
   ring
@@ -699,18 +809,27 @@ theorem continuous_gaugeFixedAdjoint (hx : Continuous x) (hy : ContDiff ℝ 1 y)
     Continuous (gaugeFixedAdjoint x y) :=
   (contDiff_gaugeFixedAdjoint (n := 0) (contDiff_zero.mpr hx) (by simpa using hy)).continuous
 
-/-- The formal adjoint preserves compact support, with no regularity assumption on the field. -/
-theorem hasCompactSupport_gaugeFixedAdjoint (hy : HasCompactSupport y) :
-    HasCompactSupport (gaugeFixedAdjoint x y) := by
-  apply hy.mono'
-  intro z hz
-  by_contra hn
+/-- Outside `tsupport y`, `L_x* y` vanishes, with no regularity assumption on the field. -/
+theorem gaugeFixedAdjoint_eq_zero_of_notMem_tsupport {z : ℂ} (hz : z ∉ tsupport y) :
+    gaugeFixedAdjoint x y z = 0 := by
   have hd (i : Fin 4) : fderiv ℝ (fun w ↦ y w i) z = 0 :=
     fderiv_of_notMem_tsupport ℝ fun h ↦
-      hn (tsupport_comp_subset (g := fun v : EuclideanSpace ℝ (Fin 4) ↦ v i) (by simp) y h)
-  apply hz
+      hz (tsupport_comp_subset (g := fun v : EuclideanSpace ℝ (Fin 4) ↦ v i) (by simp) y h)
   ext i
-  fin_cases i <;> simp [hd, image_eq_zero_of_notMem_tsupport hn]
+  fin_cases i <;> simp [hd, image_eq_zero_of_notMem_tsupport hz]
+
+/-- The formal adjoint preserves compact support, with no regularity assumption on the field. -/
+theorem hasCompactSupport_gaugeFixedAdjoint (hy : HasCompactSupport y) :
+    HasCompactSupport (gaugeFixedAdjoint x y) :=
+  hy.mono' fun _ hz ↦ not_not.1 fun hn ↦ hz (gaugeFixedAdjoint_eq_zero_of_notMem_tsupport hn)
+
+/-- `L_x* y` lies in every `Lᵖ` space, for a continuous field and a compactly supported `C¹`
+argument. -/
+theorem memLp_gaugeFixedAdjoint (hx : Continuous x) (hy : ContDiff ℝ 1 y)
+    (hyc : HasCompactSupport y) {p : ENNReal} {μ : Measure ℂ} [IsFiniteMeasureOnCompacts μ] :
+    MemLp (gaugeFixedAdjoint x y) p μ :=
+  (continuous_gaugeFixedAdjoint hx hy).memLp_of_hasCompactSupport
+    (hasCompactSupport_gaugeFixedAdjoint hyc)
 
 /-- The gauge-fixed operator is `Cⁿ` when the background is `Cⁿ` and the argument is `Cⁿ⁺¹`. -/
 theorem contDiff_gaugeFixedOperator {n : WithTop ℕ∞}
@@ -789,9 +908,10 @@ private theorem inner_gaugeFixedOperator_eq {x y η : ℂ → EuclideanSpace ℝ
   ring
 
 /-- **`d₀*` is the formal adjoint of the infinitesimal gauge action**: `∫ f d₀* y = ∫ ⟪d₀ f, y⟫`
-for a continuous field `x`, a `C¹` variation `y` and a compactly supported `C¹` phase `f`. -/
+for a field `x`, a `C¹` variation `y` and a compactly supported `C¹` phase `f`. When `x` is
+not continuous, both integrals may be zero because `f d₀* y` is not integrable. -/
 theorem integral_mul_gaugeAdjoint {x y : ℂ → EuclideanSpace ℝ (Fin 4)} {f : ℂ → ℝ}
-    (hx : Continuous x) (hy : ContDiff ℝ 1 y) (hf : ContDiff ℝ 1 f) (hfc : HasCompactSupport f) :
+    (hy : ContDiff ℝ 1 y) (hf : ContDiff ℝ 1 f) (hfc : HasCompactSupport f) :
     ∫ z, f z * gaugeAdjoint x y z ∂μ = ∫ z, ⟪gaugeDirection x f z, y z⟫ ∂μ := by
   have hyi (i : Fin 4) : ContDiff ℝ 1 fun w ↦ y w i :=
     ((EuclideanSpace.proj (𝕜 := ℝ) i).contDiff.comp hy :)
@@ -805,26 +925,27 @@ theorem integral_mul_gaugeAdjoint {x y : ℂ → EuclideanSpace ℝ (Fin 4)} {f 
     rw [mul_gaugeAdjoint_eq (hy.differentiable one_ne_zero z) (hf.differentiable one_ne_zero z)]
     ring
   simp_rw [h]
-  rw [integral_sub _ (hint 1 I), integral_sub _ (hint 0 1),
-    integral_fderiv_apply_eq_zero_of_hasCompactSupport (hg 0) (hgc 0),
-    integral_fderiv_apply_eq_zero_of_hasCompactSupport (hg 1) (hgc 1), sub_zero, sub_zero]
-  · exact (hf.continuous.mul (continuous_gaugeAdjoint hx hy)).integrable_of_hasCompactSupport
-      hfc.mul_right
-  · exact ((hf.continuous.mul (continuous_gaugeAdjoint hx hy)).integrable_of_hasCompactSupport
-      hfc.mul_right).sub (hint 0 1)
+  by_cases hmain : Integrable (fun z ↦ f z * gaugeAdjoint x y z) μ
+  · rw [integral_sub _ (hint 1 I), integral_sub hmain (hint 0 1),
+      integral_fderiv_apply_eq_zero_of_hasCompactSupport (hg 0) (hgc 0),
+      integral_fderiv_apply_eq_zero_of_hasCompactSupport (hg 1) (hgc 1), sub_zero, sub_zero]
+    exact hmain.sub (hint 0 1)
+  · rw [integral_undef hmain, integral_undef]
+    intro hn
+    exact hmain (((hn.add (hint 1 I)).add (hint 0 1)).congr
+      (ae_of_all _ fun z ↦ by simp only [Pi.add_apply]; ring))
 
 /-- **`L_x*` is the formal adjoint of the gauge-fixed operator**: `∫ ⟪L_x y, η⟫ = ∫ ⟪y, L_x* η⟫`
-for a continuous field `x`, a compactly supported `C¹` variation `y` and a `C¹` field `η`. -/
+for a field `x` and `C¹` fields `y`, `η`, one of which is compactly supported. When `x` is not
+continuous, both integrals may be zero because `⟪y, L_x* η⟫` is not integrable. -/
 theorem integral_inner_gaugeFixedOperator {x y η : ℂ → EuclideanSpace ℝ (Fin 4)}
-    (hx : Continuous x) (hy : ContDiff ℝ 1 y) (hyc : HasCompactSupport y)
-    (hη : ContDiff ℝ 1 η) :
+    (hy : ContDiff ℝ 1 y) (hη : ContDiff ℝ 1 η)
+    (hc : HasCompactSupport y ∨ HasCompactSupport η) :
     ∫ z, ⟪gaugeFixedOperator x y z, η z⟫ ∂μ = ∫ z, ⟪y z, gaugeFixedAdjoint x η z⟫ ∂μ := by
   have hyi (i : Fin 4) : ContDiff ℝ 1 fun w ↦ y w i :=
     ((EuclideanSpace.proj (𝕜 := ℝ) i).contDiff.comp hy :)
   have hηi (i : Fin 4) : ContDiff ℝ 1 fun w ↦ η w i :=
     ((EuclideanSpace.proj (𝕜 := ℝ) i).contDiff.comp hη :)
-  have hyic (i : Fin 4) : HasCompactSupport fun w ↦ y w i :=
-    hyc.comp_left (g := EuclideanSpace.proj (𝕜 := ℝ) i) (map_zero _)
   set V₁ : ℂ → ℝ := fun w ↦ y w 0 * η w 0 - y w 1 * η w 1 + y w 2 * η w 2 + y w 3 * η w 3
   set V₂ : ℂ → ℝ := fun w ↦ y w 1 * η w 0 + y w 0 * η w 1 - y w 3 * η w 2 + y w 2 * η w 3
   have hV₁ : ContDiff ℝ 1 V₁ := by
@@ -833,26 +954,66 @@ theorem integral_inner_gaugeFixedOperator {x y η : ℂ → EuclideanSpace ℝ (
   have hV₂ : ContDiff ℝ 1 V₂ := by
     have := hyi; have := hηi
     fun_prop
-  have hV₁c : HasCompactSupport V₁ :=
-    ((((hyic 0).mul_right.sub (hyic 1).mul_right).add (hyic 2).mul_right).add (hyic 3).mul_right)
-  have hV₂c : HasCompactSupport V₂ :=
-    ((((hyic 1).mul_right.add (hyic 0).mul_right).sub (hyic 3).mul_right).add (hyic 2).mul_right)
+  -- The currents `V₁`, `V₂` and the integrand are supported in the support of `y` or of `η`.
+  obtain ⟨hV₁c, hV₂c⟩ : HasCompactSupport V₁ ∧ HasCompactSupport V₂ := by
+    rcases hc with hyc | hηc
+    · have hyic (i : Fin 4) : HasCompactSupport fun w ↦ y w i :=
+        hyc.comp_left (g := EuclideanSpace.proj (𝕜 := ℝ) i) (map_zero _)
+      exact ⟨(((hyic 0).mul_right.sub (hyic 1).mul_right).add (hyic 2).mul_right).add
+          (hyic 3).mul_right,
+        (((hyic 1).mul_right.add (hyic 0).mul_right).sub (hyic 3).mul_right).add
+          (hyic 2).mul_right⟩
+    · have hηic (i : Fin 4) : HasCompactSupport fun w ↦ η w i :=
+        hηc.comp_left (g := EuclideanSpace.proj (𝕜 := ℝ) i) (map_zero _)
+      exact ⟨(((hηic 0).mul_left.sub (hηic 1).mul_left).add (hηic 2).mul_left).add
+          (hηic 3).mul_left,
+        (((hηic 0).mul_left.add (hηic 1).mul_left).sub (hηic 2).mul_left).add
+          (hηic 3).mul_left⟩
   have hint (V : ℂ → ℝ) (hV : ContDiff ℝ 1 V) (hVc : HasCompactSupport V) (v : ℂ) :
       Integrable (fun z ↦ fderiv ℝ V z v) μ :=
     ((hV.continuous_fderiv one_ne_zero).clm_apply continuous_const).integrable_of_hasCompactSupport
       (hVc.fderiv_apply (𝕜 := ℝ) v)
-  have hmain : Integrable (fun z ↦ ⟪y z, gaugeFixedAdjoint x η z⟫) μ := by
-    refine (hy.continuous.inner
-      (continuous_gaugeFixedAdjoint hx hη)).integrable_of_hasCompactSupport
-        (hyc.mono fun z hz ↦ fun hyz ↦ hz (by simp [hyz]))
   have h (z : ℂ) : ⟪gaugeFixedOperator x y z, η z⟫ = ⟪y z, gaugeFixedAdjoint x η z⟫ +
       fderiv ℝ V₁ z 1 + fderiv ℝ V₂ z I :=
     inner_gaugeFixedOperator_eq (hy.differentiable one_ne_zero z) (hη.differentiable one_ne_zero z)
   simp_rw [h]
-  rw [integral_add _ (hint V₂ hV₂ hV₂c I), integral_add hmain (hint V₁ hV₁ hV₁c 1),
-    integral_fderiv_apply_eq_zero_of_hasCompactSupport hV₁ hV₁c,
-    integral_fderiv_apply_eq_zero_of_hasCompactSupport hV₂ hV₂c, add_zero, add_zero]
-  exact hmain.add (hint V₁ hV₁ hV₁c 1)
+  by_cases hmain : Integrable (fun z ↦ ⟪y z, gaugeFixedAdjoint x η z⟫) μ
+  · rw [integral_add _ (hint V₂ hV₂ hV₂c I), integral_add hmain (hint V₁ hV₁ hV₁c 1),
+      integral_fderiv_apply_eq_zero_of_hasCompactSupport hV₁ hV₁c,
+      integral_fderiv_apply_eq_zero_of_hasCompactSupport hV₂ hV₂c, add_zero, add_zero]
+    exact hmain.add (hint V₁ hV₁ hV₁c 1)
+  · rw [integral_undef hmain, integral_undef]
+    intro hn
+    exact hmain (((hn.sub (hint V₂ hV₂ hV₂c I)).sub (hint V₁ hV₁ hV₁c 1)).congr
+      (ae_of_all _ fun z ↦ by simp only [Pi.sub_apply]; ring))
+
+open scoped ContDiff in
+/-- **Weak solutions in `C¹` are classical.** Let `x` be a continuous field, `y` a `C¹` field
+and `f` a continuous field. Then `y` is a weak solution of `L_x y = f`,
+`∫ ⟪y, L_x* η⟫ = ∫ ⟪f, η⟫` for every smooth compactly supported `η`, exactly when
+`L_x y = f` everywhere. -/
+theorem forall_integral_inner_gaugeFixedAdjoint_eq_iff {x y f : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hx : Continuous x) (hy : ContDiff ℝ 1 y) (hf : Continuous f) :
+    (∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ ∞ η → HasCompactSupport η →
+      ∫ z, ⟪y z, gaugeFixedAdjoint x η z⟫ ∂μ = ∫ z, ⟪f z, η z⟫ ∂μ) ↔
+      ∀ z, gaugeFixedOperator x y z = f z := by
+  -- Integration by parts moves `L_x*` from the compactly supported test field onto `y`.
+  have hparts (η : ℂ → EuclideanSpace ℝ (Fin 4)) (hη : ContDiff ℝ ∞ η)
+      (hηc : HasCompactSupport η) :
+      ∫ z, ⟪y z, gaugeFixedAdjoint x η z⟫ ∂μ = ∫ z, ⟪gaugeFixedOperator x y z, η z⟫ ∂μ :=
+    (integral_inner_gaugeFixedOperator hy (hη.of_le (by exact_mod_cast le_top))
+      (.inr hηc)).symm
+  refine ⟨fun hweak ↦ ?_, fun heq η hη hηc ↦ by simp_rw [hparts η hη hηc, heq]⟩
+  -- Both sides are continuous and pair equally with every test field, so they agree.
+  have hL := continuous_gaugeFixedOperator hx hy
+  have hae : gaugeFixedOperator x y =ᵐ[μ] f := by
+    simpa using ae_eq_of_forall_integral_inner_eq (Ω := ⊤)
+      (hL.locallyIntegrable.locallyIntegrableOn _) (hf.locallyIntegrable.locallyIntegrableOn _)
+      fun φ ↦ by
+        have h := hweak φ φ.contDiff φ.hasCompactSupport
+        rw [hparts φ φ.contDiff φ.hasCompactSupport] at h
+        simpa only [real_inner_comm] using h
+  exact congrFun ((hL.ae_eq_iff_eq μ hf).1 hae)
 
 end Adjoint
 
@@ -883,6 +1044,48 @@ theorem mem_gaugeFixedKernel :
     y ∈ gaugeFixedKernel x ↔
       ContDiff ℝ 2 y ∧ MemLp y 2 volume ∧ ∀ z, gaugeFixedOperator x y z = 0 :=
   Iff.rfl
+
+/-- Elements of `gaugeFixedKernel x` are square integrable. -/
+theorem memLp_of_mem_gaugeFixedKernel (hy : y ∈ gaugeFixedKernel x) : MemLp y 2 :=
+  (mem_gaugeFixedKernel.1 hy).2.1
+
+/-- Elements of `gaugeFixedKernel x` are continuous. -/
+theorem continuous_of_mem_gaugeFixedKernel (hy : y ∈ gaugeFixedKernel x) : Continuous y :=
+  (mem_gaugeFixedKernel.1 hy).1.continuous
+
+/-- The `L²` class of an element of `gaugeFixedKernel x`, as a real-linear map into
+`L²(ℂ; ℝ⁴)`. -/
+def gaugeFixedKernelToLp (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
+    gaugeFixedKernel x →ₗ[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ) where
+  toFun y := (memLp_of_mem_gaugeFixedKernel y.property).toLp y
+  map_add' y v :=
+    MemLp.toLp_add (memLp_of_mem_gaugeFixedKernel y.property) (memLp_of_mem_gaugeFixedKernel
+        v.property)
+  map_smul' t y := MemLp.toLp_const_smul t (memLp_of_mem_gaugeFixedKernel y.property)
+
+theorem gaugeFixedKernelToLp_apply (y : gaugeFixedKernel x) :
+    gaugeFixedKernelToLp x y = (memLp_of_mem_gaugeFixedKernel y.property).toLp y := (rfl)
+
+/-- The `L²` class of a kernel element agrees almost everywhere with the element. -/
+theorem coeFn_gaugeFixedKernelToLp (y : gaugeFixedKernel x) :
+    gaugeFixedKernelToLp x y =ᵐ[volume] y :=
+  (memLp_of_mem_gaugeFixedKernel y.property).coeFn_toLp
+
+/-- The `L²` norm of the class of a kernel element is the square root of the integral of its
+squared pointwise norm. -/
+theorem norm_gaugeFixedKernelToLp (y : gaugeFixedKernel x) :
+    ‖gaugeFixedKernelToLp x y‖ = √(∫ z, ‖(y : ℂ → EuclideanSpace ℝ (Fin 4)) z‖ ^ 2) := by
+  rw [gaugeFixedKernelToLp_apply, Lp.norm_toLp,
+    (memLp_of_mem_gaugeFixedKernel y.property).eLpNorm_two_eq_ofReal_sqrt_integral,
+    ENNReal.toReal_ofReal (Real.sqrt_nonneg _)]
+
+/-- Elements of `gaugeFixedKernel x` are continuous, so they are determined by their `L²`
+classes. -/
+theorem gaugeFixedKernelToLp_injective (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
+    Function.Injective (gaugeFixedKernelToLp x) := by
+  refine (injective_iff_map_eq_zero _).2 fun y hy ↦ Subtype.ext ?_
+  have h := (coeFn_gaugeFixedKernelToLp y).symm.trans ((Lp.eq_zero_iff_ae_eq_zero).1 hy)
+  exact ((continuous_of_mem_gaugeFixedKernel y.property).ae_eq_iff_eq volume continuous_const).1 h
 
 end Kernel
 

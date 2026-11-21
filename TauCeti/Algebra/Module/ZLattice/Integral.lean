@@ -27,7 +27,8 @@ In a real inner product space, an even lattice is integral, by polarization:
 (`ZLattice.IsEven.isIntegral`). The converse fails: `ℤ ⊆ ℝ` is unimodular, hence integral, but not
 even (`ZLattice.not_isEven_span_one`), while `√2 ℤ ⊆ ℝ` is even (`ZLattice.isEven_span_sqrt_two`).
 More generally the `ℤ`-span of an orthonormal basis, the lattice `ℤⁿ ⊆ ℝⁿ`, is unimodular
-(`ZLattice.isUnimodular_span_orthonormalBasis`).
+(`ZLattice.isUnimodular_span_orthonormalBasis`). On the other hand, `½ ℤ ⊆ ℝ` is not integral
+(`ZLattice.not_isIntegral_span_one_half`).
 
 All three predicates are invariant under linear isometry equivalences
 (`ZLattice.isIntegral_comap_iff`, `ZLattice.isEven_comap_iff`, `ZLattice.isUnimodular_comap_iff`),
@@ -48,7 +49,7 @@ unimodular lattice has a theta series of level one.
 
 * `ZLattice.isIntegral_iff`: `L` is integral if and only if all inner products on `L` are
   integers.
-* `ZLattice.isIntegral_span_singleton_iff`, `ZLattice.not_isIntegral_span_inv_two`: the lattice
+* `ZLattice.isIntegral_span_singleton_iff`, `ZLattice.not_isIntegral_span_one_half`: the lattice
   `ℤ v` is integral if and only if `‖v‖² ∈ ℤ`; in particular `½ ℤ ⊆ ℝ` is not integral.
 * `ZLattice.IsEven.isIntegral`: an even lattice is integral.
 * `ZLattice.IsIntegral.discreteTopology`: an integral lattice is discrete.
@@ -161,11 +162,6 @@ theorem isIntegral_span_singleton_iff {v : E} :
     push_cast
     ring
 
-/-- The lattice `½ ℤ ⊆ ℝ` is not integral: its dual `2 ℤ` is strictly contained in it. -/
-theorem not_isIntegral_span_inv_two :
-    ¬ IsIntegral (span ℤ {(2⁻¹ : ℝ)} : Submodule ℤ ℝ) :=
-  mt isIntegral_iff_le_dual.mp dual_span_inv_two_lt.not_ge
-
 /-- An integral lattice is discrete. -/
 theorem IsIntegral.discreteTopology {L : Submodule ℤ E} (h : IsIntegral L) :
     DiscreteTopology L := by
@@ -175,7 +171,7 @@ theorem IsIntegral.discreteTopology {L : Submodule ℤ E} (h : IsIntegral L) :
   refine ⟨1, one_pos, fun x hx ↦ ?_⟩
   have hx1 : ‖(x : E)‖ < 1 := by simpa using hx
   by_contra hx0
-  obtain ⟨m, hm⟩ := isIntegral_iff.1 h x.1 x.2 x.1 x.2
+  obtain ⟨m, hm⟩ := isIntegral_iff.1 h x.val x.property x.val x.property
   rw [real_inner_self_eq_norm_sq] at hm
   have hpos : (0 : ℝ) < ‖(x : E)‖ := norm_pos_iff.2 fun h0 ↦ hx0 (Subtype.ext h0)
   have hm0 : (0 : ℤ) < m := by exact_mod_cast hm ▸ pow_pos hpos 2
@@ -241,6 +237,11 @@ theorem IsEven.exists_natCast_mul_norm_add_sq_eq {L : Submodule ℤ E} (hL : IsE
   obtain ⟨n, hn⟩ := hNγ
   obtain ⟨j, hj⟩ := hL.exists_norm_add_sq_sub_norm_sq_eq hγ hv
   exact ⟨n + N * j, by push_cast; linear_combination (N : ℝ) * hj + hn⟩
+
+/-- The lattice `½ ℤ ⊆ ℝ` is not integral. -/
+theorem not_isIntegral_span_one_half :
+    ¬ IsIntegral (span ℤ {1 / 2} : Submodule ℤ ℝ) :=
+  mt isIntegral_iff_le_dual.mp dual_span_one_half_lt.not_ge
 
 /-! ### Unimodular lattices -/
 
