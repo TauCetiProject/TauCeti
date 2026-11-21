@@ -74,14 +74,16 @@ protected theorem apply [Add K] [LE K] [Lattice L] {f : L → K} (hf : IsSubmodu
     (a b : L) : f (a ⊔ b) + f (a ⊓ b) ≤ f a + f b :=
   (isSubmodular_def f).mp hf a b
 
-/-- The pointwise sum of two submodular functions is submodular. -/
-theorem add [AddCommSemigroup K] [Preorder K] [AddLeftMono K] [Lattice L]
+/-- The pointwise sum of two submodular functions is submodular. The order need only be
+transitive, not reflexive: the two submodular inequalities are added one side at a time. -/
+theorem add [AddCommSemigroup K] [LE K] [IsTrans K (· ≤ ·)] [AddLeftMono K] [Lattice L]
     {f g : L → K} (hf : IsSubmodular f) (hg : IsSubmodular g) :
     IsSubmodular (fun a ↦ f a + g a) := fun a b ↦
   calc
     (f (a ⊔ b) + g (a ⊔ b)) + (f (a ⊓ b) + g (a ⊓ b)) =
         (f (a ⊔ b) + f (a ⊓ b)) + (g (a ⊔ b) + g (a ⊓ b)) := add_add_add_comm ..
-    _ ≤ (f a + f b) + (g a + g b) := add_le_add (hf a b) (hg a b)
+    _ ≤ (f a + f b) + (g (a ⊔ b) + g (a ⊓ b)) := add_le_add_left (hf a b) _
+    _ ≤ (f a + f b) + (g a + g b) := add_le_add_right (hg a b) _
     _ = (f a + g a) + (f b + g b) := add_add_add_comm ..
 
 /-- Precomposition with a lattice homomorphism (any map in a `LatticeHomClass`, such as an order
