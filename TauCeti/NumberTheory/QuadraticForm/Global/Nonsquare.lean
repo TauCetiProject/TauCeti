@@ -48,9 +48,9 @@ theorem exists_fieldUnit_not_isSquare_at_places
     ∃ a : Kˣ,
       (∀ v ∈ S, v.valuation K (a : K) = WithZero.exp (-1) ∧
         ¬ IsSquare (v.unitAtFinitePlace a)) ∧
-      (∀ w ∈ T, embedding_of_isReal w.2 (a : K) < 0 ∧
+      (∀ w ∈ T, embedding_of_isReal w.property (a : K) < 0 ∧
         ¬ IsSquare (unitAtRealPlace w a)) ∧
-      ∀ w ∉ T, 0 < embedding_of_isReal w.2 (a : K) := by
+      ∀ w ∉ T, 0 < embedding_of_isReal w.property (a : K) := by
   classical
   let s : {w : InfinitePlace K // w.IsReal} → ℤˣ := fun w => if w ∈ T then -1 else 1
   obtain ⟨a, ha, hs⟩ := GlobalNumberFields.exists_fieldUnit_valuation_eq_and_signHom_eq
@@ -65,7 +65,7 @@ theorem exists_fieldUnit_not_isSquare_at_places
     have hπ : TauCeti.IsUniformizer (v.adicCompletion K) (v.unitAtFinitePlace a) :=
       v.isUniformizer_iff_valued_eq_exp_neg_one.2 hval
     exact TauCeti.not_isSquare_of_isUniformizer hπ
-  have hneg : embedding_of_isReal w.2 (a : K) < 0 :=
+  have hneg : embedding_of_isReal w.property (a : K) < 0 :=
     (GlobalNumberFields.signHom_apply_eq_neg_one_iff a w).mp
       (by simpa [s, hw] using (congrFun hs w))
   refine ⟨hneg, ?_⟩

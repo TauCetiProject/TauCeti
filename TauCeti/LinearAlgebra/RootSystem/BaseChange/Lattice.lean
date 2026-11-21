@@ -98,7 +98,7 @@ theorem mem_latticeAut_iff_forall {g : P.Aut} :
 /-- A lattice-preserving automorphism preserves `X₀` under `weightEquiv`. -/
 theorem weightEquiv_mem_iff_of_mem_latticeAut {g : P.Aut}
     (hg : g ∈ P.latticeAut X₀ Y₀) (x : M) : g.weightEquiv x ∈ X₀ ↔ x ∈ X₀ :=
-  (mem_latticeAut_iff_forall.mp hg).1 x
+  (mem_latticeAut_iff_forall.mp hg).left x
 
 /-- A lattice-preserving automorphism preserves `X₀` under `weightEquiv.symm`. -/
 theorem weightEquiv_symm_mem_iff_of_mem_latticeAut {g : P.Aut}
@@ -108,7 +108,7 @@ theorem weightEquiv_symm_mem_iff_of_mem_latticeAut {g : P.Aut}
 /-- A lattice-preserving automorphism preserves `Y₀` under `coweightEquiv.symm`. -/
 theorem coweightEquiv_symm_mem_iff_of_mem_latticeAut {g : P.Aut}
     (hg : g ∈ P.latticeAut X₀ Y₀) (y : N) : g.coweightEquiv.symm y ∈ Y₀ ↔ y ∈ Y₀ :=
-  (mem_latticeAut_iff_forall.mp hg).2 y
+  (mem_latticeAut_iff_forall.mp hg).right y
 
 /-- A lattice-preserving automorphism preserves `Y₀` under the contravariant map `coweightEquiv`,
 the inverse of `coweightEquiv.symm`. -/
@@ -167,7 +167,7 @@ structure IsDualLatticePair (P : RootPairing ι S M N)
   isPerfPair :
     (LinearMap.restrictScalarsRange₂ X₀.subtype Y₀.subtype (Algebra.linearMap R S)
       (FaithfulSMul.algebraMap_injective R S) P.toLinearMap
-      fun x y ↦ pairing_mem_range x x.2 y y.2).IsPerfPair
+      fun x y ↦ pairing_mem_range x x.property y y.property).IsPerfPair
 
 namespace IsDualLatticePair
 
@@ -191,7 +191,7 @@ theorem flip : P.flip.IsDualLatticePair Y₀ X₀ where
   isPerfPair := by
     let p₀ := LinearMap.restrictScalarsRange₂ X₀.subtype Y₀.subtype (Algebra.linearMap R S)
       (FaithfulSMul.algebraMap_injective R S) P.toLinearMap
-      fun x y ↦ hXY.pairing_mem_range x x.2 y y.2
+      fun x y ↦ hXY.pairing_mem_range x x.property y y.property
     let _ : p₀.flip.IsPerfPair := hXY.isPerfPair.flip
     refine LinearMap.IsPerfPair.congr (p := p₀.flip) (LinearEquiv.refl R Y₀)
       (LinearEquiv.refl R X₀) _ ?_
@@ -207,7 +207,7 @@ to dual lattices over a faithful subring. -/
 noncomputable def restrict : RootPairing ι R X₀ Y₀ :=
   let B := LinearMap.restrictScalarsRange₂ X₀.subtype Y₀.subtype (Algebra.linearMap R S)
     (FaithfulSMul.algebraMap_injective R S) P.toLinearMap
-    fun x y ↦ hXY.pairing_mem_range x x.2 y y.2
+    fun x y ↦ hXY.pairing_mem_range x x.property y y.property
   have hB (x : X₀) (y : Y₀) : algebraMap R S (B x y) = P.toLinearMap x y :=
     algebraMap_restrictScalarsRange₂_apply x y
   { toLinearMap := B
@@ -315,12 +315,13 @@ theorem weylGroup_le_latticeAut : P.weylGroup ≤ P.latticeAut X₀ Y₀ :=
 noncomputable def restrictAutHom : P.latticeAut X₀ Y₀ →* hXY.restrict.Aut where
   toFun g :=
     have hX : X₀.map (((g : P.Aut).weightEquiv.restrictScalars R) : M →ₗ[R] M) = X₀ :=
-      SetLike.coe_injective (by simpa [Submodule.map_coe] using (mem_latticeAut_iff.mp g.2).1)
+      SetLike.coe_injective
+        (by simpa [Submodule.map_coe] using (mem_latticeAut_iff.mp g.property).left)
     have hY : Y₀.map (((g : P.Aut).coweightEquiv.restrictScalars R) : N →ₗ[R] N) = Y₀ := by
       ext y
-      refine ⟨?_, fun hy ↦ ⟨_, (coweightEquiv_symm_mem_iff_of_mem_latticeAut g.2 y).mpr hy,
+      refine ⟨?_, fun hy ↦ ⟨_, (coweightEquiv_symm_mem_iff_of_mem_latticeAut g.property y).mpr hy,
         (g : P.Aut).coweightEquiv.apply_symm_apply y⟩⟩
-      rintro ⟨z, hz, rfl⟩; exact (coweightEquiv_mem_iff_of_mem_latticeAut g.2 z).mpr hz
+      rintro ⟨z, hz, rfl⟩; exact (coweightEquiv_mem_iff_of_mem_latticeAut g.property z).mpr hz
     let eX : X₀ ≃ₗ[R] X₀ :=
       ((g : P.Aut).weightEquiv.restrictScalars R).ofSubmodules X₀ X₀ hX
     let eY : Y₀ ≃ₗ[R] Y₀ :=
@@ -535,15 +536,15 @@ variable {ι R K M N : Type*} [CommRing R] [Field K] [Algebra R K] [IsFractionRi
   [AddCommGroup M] [Module K M] [Module R M] [IsScalarTower R K M]
   [AddCommGroup N] [Module K N] [Module R N] [IsScalarTower R K N]
   {P : RootPairing ι K M N} {X₀ : Submodule R M} {Y₀ : Submodule R N}
-  [X₀.IsLattice K] [Module.Free R Y₀] [Y₀.IsLattice K]
+  [X₀.IsFullLattice K] [Module.Free R Y₀] [Y₀.IsFullLattice K]
 
 /-- **For full lattices over an integral domain in its fraction field with free coweight lattice,
 the integral automorphisms are isomorphic to the lattice-preserving automorphisms of the ambient
 pairing.** -/
 noncomputable def IsDualLatticePair.autMulEquivOfIsLattice (hXY : P.IsDualLatticePair X₀ Y₀) :
     hXY.restrict.Aut ≃* P.latticeAut X₀ Y₀ := by
-  have : Module.Free R X₀ := .of_equiv hXY.restrict.toLinearMap.toPerfPair.symm
   have : Module.Finite R Y₀ := Submodule.IsLattice.finite K Y₀
+  have : Module.Free R X₀ := .of_equiv hXY.restrict.toLinearMap.toPerfPair.symm
   exact hXY.autMulEquiv (Submodule.isBaseChange_subtype X₀) (Submodule.isBaseChange_subtype Y₀)
 
 /-- On `(X₀, Y₀)`, `autMulEquivOfIsLattice.symm` is lattice restriction `restrictAutHom`. -/
@@ -639,7 +640,7 @@ noncomputable def unitTmulRootPairingEquiv :
       bijective_weightMap := (TensorProduct.unitTmulEquiv R S X).bijective
       bijective_coweightMap := (TensorProduct.unitTmulEquiv R S Y).symm.bijective }
   ext y x; apply FaithfulSMul.algebraMap_injective R S
-  obtain ⟨y₀, hy₀⟩ := y.2
+  obtain ⟨y₀, hy₀⟩ := y.property
   have hy : y = TensorProduct.unitTmulEquiv R S Y y₀ := Subtype.ext (by simpa using hy₀.symm)
   simp [hy]
 

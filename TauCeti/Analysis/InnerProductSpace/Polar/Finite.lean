@@ -372,7 +372,7 @@ theorem exists_linearIsometryEquiv_eqOn_polarFactor (A : E →ₗ[𝕜] F)
   let e : F ≃ₗᵢ[𝕜] E := (stdOrthonormalBasis 𝕜 F).equiv (stdOrthonormalBasis 𝕜 E) (finCongr h.symm)
   let L : A.kerᗮ →ₗᵢ[𝕜] E :=
     { toLinearMap := e.toLinearMap ∘ₗ A.polarFactor ∘ₗ A.kerᗮ.subtype
-      norm_map' := fun x ↦ by simp [A.norm_polarFactor_apply x.2] }
+      norm_map' := fun x ↦ by simp [A.norm_polarFactor_apply x.property] }
   refine ⟨(L.extend.toLinearIsometryEquiv rfl).trans e.symm, fun x hx ↦ ?_⟩
   have hL : L.extend x = e (A.polarFactor x) := L.extend_apply ⟨x, hx⟩
   simp [hL]

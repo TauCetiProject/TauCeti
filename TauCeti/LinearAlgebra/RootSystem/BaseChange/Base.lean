@@ -165,8 +165,8 @@ noncomputable def baseChange : (P.baseChange S).Base where
     [Algebra T S] [IsScalarTower T R S] [FaithfulSMul T S] [P.IsValuedIn T]
     (i j : (b.baseChange S).support) :
     (b.baseChange S).cartanMatrixIn T i j =
-      b.cartanMatrixIn T ⟨i, (b.support_baseChange S).le i.2⟩
-        ⟨j, (b.support_baseChange S).le j.2⟩ := by
+      b.cartanMatrixIn T ⟨i, (b.support_baseChange S).le i.property⟩
+        ⟨j, (b.support_baseChange S).le j.property⟩ := by
   simp [cartanMatrixIn_def]
 
 /-- Scalar extension preserves every entry of the integral Cartan matrix of a crystallographic
@@ -174,8 +174,8 @@ root pairing. -/
 theorem cartanMatrix_baseChange_apply [CharZero S] [P.IsCrystallographic]
     (i j : (b.baseChange S).support) :
     (b.baseChange S).cartanMatrix i j =
-      b.cartanMatrix ⟨i, (b.support_baseChange S).le i.2⟩
-        ⟨j, (b.support_baseChange S).le j.2⟩ :=
+      b.cartanMatrix ⟨i, (b.support_baseChange S).le i.property⟩
+        ⟨j, (b.support_baseChange S).le j.property⟩ :=
   b.cartanMatrixIn_baseChange_apply S ℤ i j
 
 end Base

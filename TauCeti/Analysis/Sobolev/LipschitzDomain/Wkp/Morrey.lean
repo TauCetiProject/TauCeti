@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Morrey
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Wkp.Embedding
+import TauCeti.Data.ENNReal.Inv
 
 /-!
 # Higher-order Morrey embeddings on bounded Lipschitz domains
@@ -112,26 +113,6 @@ theorem Wkp.exists_isCompactOperator_morrey_of_isLipschitzDomainWith (k : ℕ) {
     with x h₁ h₂ hx
   rw [ContinuousLinearMap.comp_apply, h₁ hx, h₂ hx]
 
-/-- For `n < (j + 1) p`, the exponent `q = (j + 1) p` satisfies the hypotheses
-`1/p - j/n ≤ 1/q ≤ 1/p` of `TauCeti.Wkp.exists_morreyEmbeddingL_of_isLipschitzDomainWith`: the
-ladder with equal steps `1/((j + 1) p)` ends there. -/
-private theorem inv_le_inv_mul_add_and_inv_mul_le_inv {n j : ℕ} {p : ℝ≥0}
-    (hkp : (n : ℝ≥0) < (j + 1 : ℕ) * p) :
-    (p : ℝ≥0∞)⁻¹ ≤ (((j + 1 : ℕ) * p : ℝ≥0) : ℝ≥0∞)⁻¹ + j * (n : ℝ≥0∞)⁻¹ ∧
-      (((j + 1 : ℕ) * p : ℝ≥0) : ℝ≥0∞)⁻¹ ≤ (p : ℝ≥0∞)⁻¹ := by
-  have hkp0 : ((j + 1 : ℕ) * p : ℝ≥0) ≠ 0 := (zero_le.trans_lt hkp).ne'
-  have hp0 : p ≠ 0 := right_ne_zero_of_mul hkp0
-  have heq : (((j + 1 : ℕ) * p : ℝ≥0) : ℝ≥0∞)⁻¹ + j * (((j + 1 : ℕ) * p : ℝ≥0) : ℝ≥0∞)⁻¹ =
-      (p : ℝ≥0∞)⁻¹ := by
-    rw [← ENNReal.coe_inv hkp0, ← ENNReal.coe_inv hp0]
-    norm_cast
-    field_simp
-    push_cast
-    ring
-  refine ⟨heq.symm.le.trans ?_, le_self_add.trans_eq heq⟩
-  gcongr
-  exact_mod_cast hkp.le
-
 /-- **Hölder embedding of `W^{k,p}` with `n < k p` on bounded Lipschitz domains.** If
 `Ω ⊆ ℝ × E` is a bounded Lipschitz domain of dimension `n`, `1 ≤ p < ∞` and `n < k p`, then
 every `u ∈ W^{k,p}(Ω)` agrees almost everywhere on `Ω` with a function on `closure Ω` which is
@@ -148,7 +129,7 @@ theorem Wkp.exists_holderEmbeddingL_of_isLipschitzDomainWith {p : ℝ≥0} [Fact
   obtain ⟨j, rfl⟩ : ∃ j, k = j + 1 := Nat.exists_eq_succ_of_ne_zero (by
     rintro rfl
     simp at hkp)
-  obtain ⟨hq₁, hq₂⟩ := inv_le_inv_mul_add_and_inv_mul_le_inv hkp
+  obtain ⟨hq₁, hq₂⟩ := ENNReal.inv_le_inv_mul_add_and_inv_mul_le_inv hkp.le
   exact Wkp.exists_morreyEmbeddingL_of_isLipschitzDomainWith j hkp hq₁ hq₂ hΩ hb
 
 /-- **Hölder compactness of `W^{k,p}` with `n < k p` on bounded Lipschitz domains.** Under the
@@ -166,7 +147,7 @@ theorem Wkp.exists_isCompactOperator_holder_of_isLipschitzDomainWith {p : ℝ≥
   obtain ⟨j, rfl⟩ : ∃ j, k = j + 1 := Nat.exists_eq_succ_of_ne_zero (by
     rintro rfl
     simp at hkp)
-  obtain ⟨hq₁, hq₂⟩ := inv_le_inv_mul_add_and_inv_mul_le_inv hkp
+  obtain ⟨hq₁, hq₂⟩ := ENNReal.inv_le_inv_mul_add_and_inv_mul_le_inv hkp.le
   exact Wkp.exists_isCompactOperator_morrey_of_isLipschitzDomainWith j hkp hq₁ hq₂ hΩ hb hβ
 
 end TauCeti

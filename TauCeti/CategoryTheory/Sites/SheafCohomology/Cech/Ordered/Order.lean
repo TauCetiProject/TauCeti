@@ -85,8 +85,8 @@ private lemma changeOrder_absorption (o₁ o₂ : LinearOrder ι) :
     congr 1
     have hcoord (a a' : {a : Fin (n + 1) → ι //
         @StrictMono _ _ _ o₁.toPartialOrder.toPreorder a}) (ha : a = a')
-        (f : (∏ᶜ fun j ↦ U (b j)) ⟶ ∏ᶜ fun j ↦ U (a.1 j))
-        (g : (∏ᶜ fun j ↦ U (b j)) ⟶ ∏ᶜ fun j ↦ U (a'.1 j)) :
+        (f : (∏ᶜ fun j ↦ U (b j)) ⟶ ∏ᶜ fun j ↦ U (a.val j))
+        (g : (∏ᶜ fun j ↦ U (b j)) ⟶ ∏ᶜ fun j ↦ U (a'.val j)) :
         (letI := o₁; strictMonoCechComplexπ U P a) ≫ P.map f.op =
           (letI := o₁; strictMonoCechComplexπ U P a') ≫ P.map g.op := by
       subst a'
@@ -165,15 +165,17 @@ theorem strictMonoCechComplexChangeOrder_hom_app_f_π (o₁ o₂ : LinearOrder �
     (b : {b : Fin (n + 1) → ι // @StrictMono _ _ _ o₂.toPartialOrder.toPreorder b}) :
     ((strictMonoCechComplexChangeOrder U o₁ o₂).hom.app P).f n ≫
         (letI := o₂; strictMonoCechComplexπ U P b) =
-      (-1 : ℤ) ^ #(@Finset.inversions _ _ _ o₁ b.1 univ) •
+      (-1 : ℤ) ^ #(@Finset.inversions _ _ _ o₁ b.val univ) •
         ((letI := o₁; strictMonoCechComplexπ U P
-            ⟨b.1 ∘ Tuple.sort b.1, Tuple.strictMono_comp_sort (letI := o₂; b.2.injective)⟩) ≫
-          P.map (Pi.lift fun j ↦ Pi.π (fun j ↦ U (b.1 j))
-            (@Tuple.sort _ _ o₁ b.1 j)).op) := by
+            ⟨b.val ∘ Tuple.sort b.val, Tuple.strictMono_comp_sort (letI
+                := o₂; b.property.injective)⟩) ≫
+          P.map (Pi.lift fun j ↦ Pi.π (fun j ↦ U (b.val j))
+            (@Tuple.sort _ _ o₁ b.val j)).op) := by
   rw [strictMonoCechComplexChangeOrder_hom_def]
   simp only [NatTrans.comp_app, HomologicalComplex.comp_f]
   -- Unfold the native tuple-product presentation to apply its coordinate formulas.
   erw [Category.assoc, toStrictMonoCechComplex_app_f_π,
-    @fromStrictMonoCechComplex_app_f_π _ _ _ _ _ _ _ _ o₁ U _ P n b.1 (letI := o₂; b.2.injective)]
+    @fromStrictMonoCechComplex_app_f_π _ _ _ _ _ _ _ _ o₁ U _ P n b.val (letI
+        := o₂; b.property.injective)]
 
 end TauCeti.CategoryTheory

@@ -103,7 +103,7 @@ theorem uniformIntegrable_renewalCountNat_div (hT : ∀ n, Measurable (T n))
   have hΦ : Tendsto (fun x : ℝ ↦ x ^ 2 / x) atTop atTop :=
     tendsto_id.congr fun x ↦ by simp only [id, sq, mul_self_div_self]
   have hu : UnifIntegrable (fun (t : Ici (1 : ℝ≥0)) ω ↦ (renewalCountNat T t ω : ℝ) / t) 1 P :=
-    unifIntegrable_of_lintegral_ofReal_le hΦ hm ENNReal.coe_ne_top fun t ↦ hC t t.2
+    unifIntegrable_of_lintegral_ofReal_le hΦ hm ENNReal.coe_ne_top fun t ↦ hC t t.property
   refine ⟨hu, lt_of_le_of_lt (iSup_le fun t ↦ ?_) (ENNReal.coe_lt_top (r := 1 + C))⟩
   -- The bound `x ≤ 1 + x ^ 2` turns the second-moment bound into a first-moment bound.
   have hsq (x : ℝ) : x ≤ 1 + x ^ 2 := by nlinarith [sq_nonneg (x - 1)]
@@ -116,7 +116,7 @@ theorem uniformIntegrable_renewalCountNat_div (hT : ∀ n, Measurable (T n))
         exact ENNReal.ofReal_le_ofReal (hsq _)
     _ = 1 + ∫⁻ ω, ENNReal.ofReal (‖(renewalCountNat T t ω : ℝ) / t‖ ^ 2) ∂P := by
         rw [lintegral_add_left measurable_const, lintegral_const, measure_univ, mul_one]
-    _ ≤ 1 + C := by gcongr; exact hC t t.2
+    _ ≤ 1 + C := by gcongr; exact hC t t.property
     _ = ↑(1 + C) := by rw [ENNReal.coe_add, ENNReal.coe_one]
 
 /-- **The renewal law of large numbers in `L¹`.** For independent, identically distributed
@@ -129,7 +129,7 @@ theorem tendsto_eLpNorm_renewalCountNat_div_sub (hT : ∀ n, Measurable (T n))
       (∫⁻ ω, (T 0 ω : ℝ≥0∞) ∂P)⁻¹.toReal) 1 P) atTop (𝓝 0) := by
   have := hindep.isProbabilityMeasure
   have hui := uniformIntegrable_renewalCountNat_div hT hindep hid hzero
-  have hlim := ae_tendsto_renewalCountNat_div (fun _ _ hij ↦ hindep.indepFun hij) hid hzero
+  have hlim := ae_tendsto_renewalCountNat_div (fun _ _ hij ↦ hindep.indepFun hij) hid
   refine tendsto_of_seq_tendsto fun x hx ↦ ?_
   -- Vitali's theorem applies along the times `max (x n) 1 ≥ 1`, which eventually equal `x n`.
   let y (n : ℕ) : Ici (1 : ℝ≥0) := ⟨max (x n) 1, le_max_right _ _⟩
@@ -138,7 +138,7 @@ theorem tendsto_eLpNorm_renewalCountNat_div_sub (hT : ∀ n, Measurable (T n))
   have hvitali := tendsto_Lp_finite_of_tendsto_ae le_rfl ENNReal.one_ne_top
     (f := fun n ω ↦ (renewalCountNat T (y n) ω : ℝ) / (y n : ℝ≥0))
     (fun n ↦ by have := measurable_renewalCountNat hT (y n : ℝ≥0); fun_prop)
-    (memLp_const _) (hui.1.comp y) (hlim.mono fun ω hω ↦ hω.comp hy)
+    (memLp_const _) (hui.unifIntegrable.comp y) (hlim.mono fun ω hω ↦ hω.comp hy)
   refine hvitali.congr' ?_
   filter_upwards [hx.eventually_ge_atTop 1] with n hn
   simp only [Function.comp_apply, y, max_eq_left hn, Pi.sub_def]

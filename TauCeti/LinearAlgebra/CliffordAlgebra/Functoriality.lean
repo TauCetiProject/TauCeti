@@ -18,9 +18,9 @@ public import Mathlib.RingTheory.Flat.Basic
 This file records structural properties of the algebra map induced by a quadratic isometry. Such
 maps commute with Clifford conjugation and preserve the even subalgebra, and a linear map of
 Clifford modules that intertwines the generators along the isometry intertwines every Clifford
-element with its image. For an orthogonal product, the map induced by the left-summand inclusion
-is injective when the left Clifford algebra is flat and scalar action on the right Clifford algebra
-is faithful.
+element with its image. For an orthogonal product, the map induced by either summand inclusion is
+injective when that summand's Clifford algebra is flat and scalar action on the complementary
+Clifford algebra is faithful.
 
 ## Main results
 
@@ -31,7 +31,7 @@ is faithful.
 * `CliffordAlgebra.comp_eq_map_comp_of_forall_ιₛₗ`: a semilinear map of Clifford modules, whose
   twist fixes the base scalars, intertwining the generators along a quadratic isometry `f`
   intertwines every `a` with `map f a`; `CliffordAlgebra.comp_eq_map_comp_of_forall_ι` is the
-  linear case.
+  linear case, and `CliffordAlgebra.map_apply_of_forall_ιₛₗ` is the pointwise form for `f = id`.
 * `CliffordAlgebra.map_app_of_forall_ι`: a nonzero map of real Clifford modules intertwining the
   generators along a map `f` forces `f` to preserve the quadratic forms.
 * `CliffordAlgebra.mul_eq_map_involute_mul_of_forall_ι`: an element that moves past each
@@ -40,7 +40,8 @@ is faithful.
   `ℤ/2`-grading.
 * `CliffordAlgebra.evenEquivOfIsometry` restricts an isometry-induced equivalence to the even
   subalgebras, with coercion and generator-level transport equations.
-* `CliffordAlgebra.map_inl_injective` proves injectivity for a left orthogonal summand.
+* `CliffordAlgebra.map_inl_injective` and `CliffordAlgebra.map_inr_injective` prove injectivity for
+  left and right orthogonal summands.
 -/
 
 public section
@@ -125,6 +126,21 @@ theorem comp_eq_map_comp_of_forall_ιₛₗ {S : Type*} [CommRing S] [Algebra R 
     simp only [map_mul, Module.End.mul_eq_comp, ← LinearMap.comp_assoc, ha]
     simp only [LinearMap.comp_assoc, hb]
   | add a b ha hb => simp only [map_add, LinearMap.comp_add, LinearMap.add_comp, ha, hb]
+
+/-- A semilinear map `U` of Clifford modules over the same quadratic space that commutes with the
+generators, `U (c(m) w) = c(m) (U w)`, commutes with every Clifford element,
+`U (a w) = a (U w)`, provided its twist `σ` fixes the scalars coming from the base ring. -/
+theorem map_apply_of_forall_ιₛₗ {S : Type*} [CommRing S] [Algebra R S]
+    {W₁ W₂ : Type*} [AddCommGroup W₁] [Module S W₁] [Module R W₁] [IsScalarTower R S W₁]
+    [AddCommGroup W₂] [Module S W₂] [Module R W₂] [IsScalarTower R S W₂]
+    {ρ₁ : CliffordAlgebra Q₁ →ₐ[R] Module.End S W₁} {ρ₂ : CliffordAlgebra Q₁ →ₐ[R] Module.End S W₂}
+    {σ : S →+* S} (hσ : ∀ r, σ (algebraMap R S r) = algebraMap R S r)
+    {U : W₁ →ₛₗ[σ] W₂} (hU : ∀ m w, U (ρ₁ (ι Q₁ m) w) = ρ₂ (ι Q₁ m) (U w))
+    (a : CliffordAlgebra Q₁) (w : W₁) :
+    U (ρ₁ a w) = ρ₂ a (U w) := by
+  have h := comp_eq_map_comp_of_forall_ιₛₗ (f := QuadraticMap.Isometry.id Q₁) hσ
+    (fun m ↦ LinearMap.ext (hU m)) a
+  simpa [map_id] using LinearMap.congr_fun h w
 
 /-- A linear map `U` of Clifford modules that intertwines the generators along a quadratic
 isometry `f`, `U c(m) = c(f m) U`, intertwines every Clifford element `a` with `map f a`. -/
@@ -344,6 +360,23 @@ theorem map_inl_injective (P₁ : QuadraticForm K N₁) (P₂ : QuadraticForm K 
     toProd P₁ P₂ (GradedTensorProduct.includeLeft (evenOdd P₁) (evenOdd P₂) y)
   rw [toProd_includeLeft, toProd_includeLeft]
   exact hxy
+
+/-- The Clifford-algebra map induced by the inclusion of the right summand of an orthogonal product
+is injective when the right Clifford algebra is flat and scalar action on the left Clifford algebra
+is faithful. -/
+theorem map_inr_injective (P₁ : QuadraticForm K N₁) (P₂ : QuadraticForm K N₂)
+    [Module.Flat K (CliffordAlgebra P₂)] [FaithfulSMul K (CliffordAlgebra P₁)] :
+    Function.Injective (map (QuadraticMap.Isometry.inr P₁ P₂)) := by
+  have hinr : QuadraticMap.Isometry.inr P₁ P₂ =
+      (QuadraticMap.IsometryEquiv.prodComm P₂ P₁).toIsometry.comp
+        (QuadraticMap.Isometry.inl P₂ P₁) :=
+    QuadraticMap.Isometry.ext fun _ ↦ by simp
+  have hequiv : ⇑(map (QuadraticMap.IsometryEquiv.prodComm P₂ P₁).toIsometry) =
+      ⇑(equivOfIsometry (QuadraticMap.IsometryEquiv.prodComm P₂ P₁)) :=
+    funext fun x ↦ (equivOfIsometry_apply _ x).symm
+  rw [hinr, ← map_comp_map, AlgHom.coe_comp, hequiv]
+  exact (equivOfIsometry (QuadraticMap.IsometryEquiv.prodComm P₂ P₁)).injective.comp
+    (map_inl_injective P₂ P₁)
 
 end OrthogonalProduct
 

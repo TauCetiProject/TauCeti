@@ -113,7 +113,7 @@ theorem coe_rootSpanProj_smul (g : P.Aut) (x : M) :
       rw [map_sub, P.coroot'_coe_rootSpanProj, coroot'_smul, coroot'_smul,
         P.coroot'_coe_rootSpanProj, sub_self]
   exact sub_eq_zero.mp <| Submodule.disjoint_def.mp P.isCompl_rootSpan_iInf_ker_coroot'.disjoint _
-    (sub_mem (P.rootSpanProj (g • x)).2 (hle (P.rootSpanProj x).2)) hsub_ker
+    (sub_mem (P.rootSpanProj (g • x)).property (hle (P.rootSpanProj x).property)) hsub_ker
 
 end Balanced
 

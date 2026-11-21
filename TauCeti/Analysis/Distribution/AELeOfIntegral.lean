@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Distribution.TestFunction
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import Mathlib.MeasureTheory.Function.AEEqOfIntegral
 import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
@@ -49,6 +50,14 @@ The same scalar argument, with `k` the positive part of `h`, shows that a scalar
 pairings with nonnegative test functions are nonnegative is itself nonnegative almost everywhere
 (`TauCeti.ae_nonneg_of_forall_integral_mul_nonneg`).
 
+For a density continuous on an open set `U` of a finite-dimensional space, against a measure
+that is finite on compact sets and positive on nonempty open sets, the conclusion holds at every
+point of `U`, and squares of test functions suffice: if `0 ≤ ∫ ψ ^ 2 • h` for every smooth
+compactly supported real `ψ` supported in `U`, then `0 ≤ h` on `U`
+(`TauCeti.nonneg_of_forall_integral_sq_smul_nonneg`). The values may
+be complex, with the conclusion that `h` is real and nonnegative. This is the form in which the
+positivity of an operator, tested on functions localized near a point, is read off pointwise.
+
 ## Main declarations
 
 * `TauCeti.ae_enorm_le_of_forall_enorm_integral_apply_le`: the pointwise bound `‖h‖ ≤ k` in the
@@ -56,6 +65,9 @@ pairings with nonnegative test functions are nonnegative is itself nonnegative a
 * `TauCeti.ae_enorm_le_of_forall_enorm_integral_inner_le`: the pointwise bound `‖h‖ ≤ k` for an
   inner product space.
 * `TauCeti.ae_nonneg_of_forall_integral_mul_nonneg`: nonnegativity from nonnegative pairings.
+* `TauCeti.nonneg_of_forall_integral_sq_smul_nonneg`: pointwise nonnegativity of a real or
+  complex density continuous on an open set from nonnegative pairings with squares of test
+  functions supported there.
 
 ## References
 
@@ -68,7 +80,7 @@ public section
 noncomputable section
 
 open MeasureTheory TopologicalSpace Filter Metric Set
-open scoped ENNReal NNReal Distributions Topology RealInnerProductSpace
+open scoped ENNReal NNReal Distributions Topology RealInnerProductSpace ComplexOrder
 
 namespace TauCeti
 
@@ -86,7 +98,7 @@ private theorem tendsto_integral_testFunction_mul {K L : Set Ω} {W : ℕ → Se
     Tendsto (fun n => ∫ x, ψ n x * h x ∂ρ) atTop (𝓝 (∫ x in K, h x ∂ρ)) := by
   rw [← integral_indicator hK.measurableSet]
   refine tendsto_integral_of_dominated_convergence (L.indicator fun x => ‖h x‖)
-    (fun n => ((ψ n).continuous.comp continuous_subtype_val).aestronglyMeasurable.mul
+    (fun n => ((ψ n).continuous.comp continuous_subtypeVal).aestronglyMeasurable.mul
       hh.aestronglyMeasurable)
     ((integrable_indicator_iff hL.measurableSet).2 (hh.integrableOn_isCompact hL).norm)
     (fun n => ae_of_all _ fun x => ?_) (ae_of_all _ fun x => ?_)
@@ -115,7 +127,7 @@ private theorem enorm_setIntegral_isCompact_le (hh : LocallyIntegrable h ρ)
   have hcut (n : ℕ) : ∃ ψ : 𝓓(Ω, ℝ), (∀ x, 0 ≤ ψ x) ∧ (∀ x, ψ x ≤ 1) ∧ (∀ x ∈ K, ψ x = 1) ∧
       tsupport ψ ⊆ (↑) '' W n := by
     obtain ⟨ψ, h01, h1, hsupp⟩ := TestFunction.exists_cutoff_tsupport_subset
-      (hK.image continuous_subtype_val) (Ω.isOpen.isOpenMap_subtype_val _ (hWo n))
+      (hK.image continuous_subtypeVal) (Ω.isOpen.isOpenMap_subtypeVal _ (hWo n))
       (image_mono (hKW n)) (Subtype.coe_image_subset _ _)
     exact ⟨ψ, fun x => (h01 x).1, fun x => (h01 x).2,
       fun x hx => h1.self_of_nhdsSet x ⟨x, hx, rfl⟩, hsupp⟩
@@ -268,7 +280,7 @@ theorem ae_enorm_le_of_forall_enorm_integral_apply_le {h : Ω → StrongDual ℝ
     have hφs : tsupport φ ⊆ tsupport ψ := by
       rw [hφfun]
       exact tsupport_smul_subset_left _ _
-    have hU := H ⟨(↑) '' W, Ω.isOpen.isOpenMap_subtype_val W hW⟩ (Subtype.coe_image_subset _ _)
+    have hU := H ⟨(↑) '' W, Ω.isOpen.isOpenMap_subtypeVal W hW⟩ (Subtype.coe_image_subset _ _)
       φ (hφs.trans hψW) fun x => by
         rw [hφ, norm_smul, norm_smul, norm_inv, norm_norm, inv_mul_cancel₀ (norm_ne_zero_iff.2 hw0),
           mul_one, Real.norm_of_nonneg (hψ0 x)]
@@ -292,7 +304,7 @@ theorem ae_enorm_le_of_forall_enorm_integral_apply_le {h : Ω → StrongDual ℝ
     rw [mul_comm]
     exact_mod_cast this
   rw [eNorm_eq_nnNorm, ENNReal.coe_le_coe, ← NNReal.coe_le_coe, coe_nnNorm]
-  exact (h x).opNorm_le_bound q.2 hle
+  exact (h x).opNorm_le_bound q.property hle
 
 end Dual
 
@@ -319,5 +331,76 @@ theorem ae_enorm_le_of_forall_enorm_integral_inner_le {h : Ω → F} (hh : Local
   rwa [← eNorm_norm, innerSL_apply_norm, eNorm_norm] at hx
 
 end Inner
+
+section Continuous
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [OpensMeasurableSpace E] {μ : Measure E} [μ.IsOpenPosMeasure]
+  [IsFiniteMeasureOnCompacts μ] {U : Set E}
+
+open scoped ContDiff in
+/-- The real case of `nonneg_of_forall_integral_sq_smul_nonneg`. -/
+private theorem nonneg_of_forall_integral_sq_mul_nonneg_real (hU : IsOpen U) {h : E → ℝ}
+    (hh : ContinuousOn h U)
+    (H : ∀ ψ : E → ℝ, ContDiff ℝ ∞ ψ → HasCompactSupport ψ → tsupport ψ ⊆ U →
+      0 ≤ ∫ x, ψ x ^ 2 * h x ∂μ) {x : E} (hx : x ∈ U) : 0 ≤ h x := by
+  by_contra! hneg
+  obtain ⟨r, hr, hrU⟩ := Metric.isOpen_iff.1 (hh.isOpen_inter_preimage hU isOpen_Iio) x
+    ⟨hx, hneg⟩
+  let f : ContDiffBump x := ⟨r / 4, r / 2, by positivity, by linarith⟩
+  have hfU : tsupport f ⊆ ball x r := by
+    rw [f.tsupport_eq]
+    exact closedBall_subset_ball (half_lt_self hr)
+  have hs : Function.support (fun y ↦ f y ^ 2 * -h y) ⊆ Function.support f :=
+    fun y hy h0 ↦ hy (by simp [h0])
+  have hsupp : tsupport (fun y ↦ f y ^ 2 * -h y) ⊆ U :=
+    (closure_mono hs).trans (hfU.trans fun y hy ↦ (hrU hy).1)
+  have hpos : 0 < ∫ y, f y ^ 2 * -h y ∂μ := by
+    refine Continuous.integral_pos_of_hasCompactSupport_nonneg_ne_zero (x := x)
+      (((f.continuous.pow 2).continuousOn.mul hh.neg).continuous_of_tsupport_subset hU hsupp)
+      (f.hasCompactSupport.mono fun y hy h0 ↦ hy (by simp [h0])) (fun y ↦ ?_) ?_
+    · by_cases hy : y ∈ ball x r
+      · exact mul_nonneg (sq_nonneg _) (neg_nonneg.2 (hrU hy).2.le)
+      · simp [image_eq_zero_of_notMem_tsupport fun h ↦ hy (hfU h)]
+    · simpa [f.one_of_mem_closedBall (mem_closedBall_self (by positivity))] using hneg.ne
+  have := H f f.contDiff f.hasCompactSupport (hfU.trans fun y hy ↦ (hrU hy).1)
+  simp only [mul_neg, integral_neg] at hpos
+  linarith
+
+open scoped ContDiff in
+/-- **A continuous density with nonnegative pairings against squares is nonnegative.** Let `E`
+be a finite-dimensional real normed space, `μ` a measure on `E` that is finite on compact sets and
+positive on nonempty open sets, `U` an open set and `h : E → 𝕜` continuous on `U`, with `𝕜 = ℝ` or
+`ℂ`. If `0 ≤ ∫ ψ x ^ 2 • h x ∂μ` for every smooth compactly supported real function `ψ` supported
+in `U`, then `0 ≤ h x` at every `x ∈ U`. For `𝕜 = ℂ` the conclusion says that `h x` is real and
+nonnegative. -/
+theorem nonneg_of_forall_integral_sq_smul_nonneg {𝕜 : Type*} [RCLike 𝕜] (hU : IsOpen U)
+    {h : E → 𝕜} (hh : ContinuousOn h U)
+    (H : ∀ ψ : E → ℝ, ContDiff ℝ ∞ ψ → HasCompactSupport ψ → tsupport ψ ⊆ U →
+      0 ≤ ∫ x, ψ x ^ 2 • h x ∂μ) {x : E} (hx : x ∈ U) : 0 ≤ h x := by
+  -- The real and imaginary parts of the pairings are the pairings of the real and imaginary
+  -- parts of `h`.
+  have hpair : ∀ ψ : E → ℝ, ContDiff ℝ ∞ ψ → HasCompactSupport ψ → tsupport ψ ⊆ U →
+      0 ≤ ∫ x, ψ x ^ 2 * RCLike.re (h x) ∂μ ∧ ∫ x, ψ x ^ 2 * RCLike.im (h x) ∂μ = 0 := by
+    intro ψ hψ hψc hψU
+    have hs : Function.support (fun x ↦ ψ x ^ 2 • h x) ⊆ Function.support ψ :=
+      fun y hy h0 ↦ hy (by simp [h0])
+    have hsupp : tsupport (fun x ↦ ψ x ^ 2 • h x) ⊆ U := (closure_mono hs).trans hψU
+    have hint : Integrable (fun x ↦ ψ x ^ 2 • h x) μ :=
+      (((hψ.continuous.pow 2).continuousOn.smul hh).continuous_of_tsupport_subset hU
+        hsupp).integrable_of_hasCompactSupport (hψc.mono fun y hy h0 ↦ hy (by simp [h0]))
+    have h0 := RCLike.nonneg_iff.1 (H ψ hψ hψc hψU)
+    rw [← integral_re hint, ← integral_im hint] at h0
+    simpa [RCLike.smul_re, RCLike.smul_im] using h0
+  refine RCLike.nonneg_iff.2 ⟨nonneg_of_forall_integral_sq_mul_nonneg_real hU
+    (RCLike.continuous_re.comp_continuousOn hh) (fun ψ hψ hψc hψU ↦ (hpair ψ hψ hψc hψU).1) hx, ?_⟩
+  refine le_antisymm ?_ (nonneg_of_forall_integral_sq_mul_nonneg_real hU
+    (RCLike.continuous_im.comp_continuousOn hh) (fun ψ hψ hψc hψU ↦ (hpair ψ hψ hψc hψU).2.ge) hx)
+  have := nonneg_of_forall_integral_sq_mul_nonneg_real (μ := μ) hU
+    (RCLike.continuous_im.comp_continuousOn hh).neg (h := fun x ↦ -RCLike.im (h x))
+    (fun ψ hψ hψc hψU ↦ by simp [integral_neg, (hpair ψ hψ hψc hψU).2]) hx
+  linarith
+
+end Continuous
 
 end TauCeti

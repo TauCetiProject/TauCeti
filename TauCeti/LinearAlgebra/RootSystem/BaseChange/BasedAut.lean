@@ -136,8 +136,8 @@ theorem restrictAutHom_mem_basedAut_iff (b : P.Base) {g : P.latticeAut X₀ Y₀
     [Algebra T R] [Algebra T S] [IsScalarTower T R S] [FaithfulSMul T S] [P.IsValuedIn T]
     (i j : (hXY.restrictBase b).support) :
     (hXY.restrictBase b).cartanMatrixIn T i j =
-      b.cartanMatrixIn T ⟨i, (hXY.support_restrictBase b).le i.2⟩
-        ⟨j, (hXY.support_restrictBase b).le j.2⟩ := by
+      b.cartanMatrixIn T ⟨i, (hXY.support_restrictBase b).le i.property⟩
+        ⟨j, (hXY.support_restrictBase b).le j.property⟩ := by
   simp [Base.cartanMatrixIn_def]
 
 /-- Lattice restriction preserves every entry of the integral Cartan matrix of a crystallographic
@@ -145,8 +145,8 @@ root pairing. -/
 theorem cartanMatrix_restrictBase_apply [CharZero S] [P.IsCrystallographic] (b : P.Base)
     (i j : (hXY.restrictBase b).support) :
     (hXY.restrictBase b).cartanMatrix i j =
-      b.cartanMatrix ⟨i, (hXY.support_restrictBase b).le i.2⟩
-        ⟨j, (hXY.support_restrictBase b).le j.2⟩ :=
+      b.cartanMatrix ⟨i, (hXY.support_restrictBase b).le i.property⟩
+        ⟨j, (hXY.support_restrictBase b).le j.property⟩ :=
   hXY.cartanMatrixIn_restrictBase_apply b ℤ i j
 
 section BaseChangeLattices
@@ -166,14 +166,15 @@ free over `R` and `X₀.subtype`, `Y₀.subtype` satisfy `IsBaseChange S`. -/
 noncomputable def basedAutMulEquiv (b : P.Base) :
     (hXY.restrictBase b).basedAut ≃* ↥(b.basedAut ⊓ P.latticeAut X₀ Y₀) where
   toFun u := ⟨(hXY.extendAutHom hX hY u : P.Aut),
-    (hXY.extendAutHom_mem_basedAut_iff hX hY b).mpr u.2, (hXY.extendAutHom hX hY u).2⟩
-  invFun g := ⟨hXY.restrictAutHom ⟨g.1, g.2.2⟩,
-    (hXY.restrictAutHom_mem_basedAut_iff b).mpr g.2.1⟩
+    (hXY.extendAutHom_mem_basedAut_iff hX hY b).mpr u.property,
+    (hXY.extendAutHom hX hY u).property⟩
+  invFun g := ⟨hXY.restrictAutHom ⟨g.val, g.property.right⟩,
+    (hXY.restrictAutHom_mem_basedAut_iff b).mpr g.property.left⟩
   left_inv u := Subtype.ext (hXY.restrictAutHom_extendAutHom hX hY u)
   right_inv g := Subtype.ext <| congrArg (fun x : P.latticeAut X₀ Y₀ ↦ (x : P.Aut))
-    (hXY.extendAutHom_restrictAutHom hX hY ⟨g.1, g.2.2⟩)
+    (hXY.extendAutHom_restrictAutHom hX hY ⟨g.val, g.property.right⟩)
   map_mul' u v := Subtype.ext <| congrArg (fun x : P.latticeAut X₀ Y₀ ↦ (x : P.Aut))
-    (map_mul (hXY.extendAutHom hX hY) u.1 v.1)
+    (map_mul (hXY.extendAutHom hX hY) u.val v.val)
 
 /-- Coercing `hXY.basedAutMulEquiv hX hY b u` to `P.Aut` applies `hXY.extendAutHom hX hY`. -/
 @[simp] theorem coe_basedAutMulEquiv_apply (b : P.Base) (u : (hXY.restrictBase b).basedAut) :
@@ -183,7 +184,7 @@ noncomputable def basedAutMulEquiv (b : P.Base) :
 @[simp] theorem coe_basedAutMulEquiv_symm_apply (b : P.Base)
     (g : ↥(b.basedAut ⊓ P.latticeAut X₀ Y₀)) :
     ((hXY.basedAutMulEquiv hX hY b).symm g : hXY.restrict.Aut) =
-      hXY.restrictAutHom ⟨g.1, g.2.2⟩ := (rfl)
+      hXY.restrictAutHom ⟨g.val, g.property.right⟩ := (rfl)
 
 end BaseChangeLattices
 
@@ -222,7 +223,7 @@ noncomputable def conjWeylGroupLatticeAut (b : P.Base)
 @[simp] theorem coe_conjWeylGroupLatticeAut_apply (b : P.Base) (X₀ : Submodule R M)
     (Y₀ : Submodule R N) (δ : ↥(b.basedAut ⊓ P.latticeAut X₀ Y₀)) (w : P.weylGroup) :
     (b.conjWeylGroupLatticeAut X₀ Y₀ δ w : P.Aut) = (δ : P.Aut) * w * (δ : P.Aut)⁻¹ :=
-  b.coe_conjWeylGroup_apply ⟨δ.1, δ.2.1⟩ w
+  b.coe_conjWeylGroup_apply ⟨δ.val, δ.property.left⟩ w
 
 variable [Finite ι] [CharZero S] [IsDomain S] [P.IsCrystallographic] [P.IsReduced]
 
@@ -237,7 +238,7 @@ include hW
 `P.weylGroup ≤ P.latticeAut X₀ Y₀`. -/
 theorem semidirectProductMulEquiv_symm_left_mem_latticeAut (g : P.Aut) :
     ((b.semidirectProductMulEquiv.symm g).left : P.Aut) ∈ P.latticeAut X₀ Y₀ :=
-  hW (b.semidirectProductMulEquiv.symm g).left.2
+  hW (b.semidirectProductMulEquiv.symm g).left.property
 
 /-- The based factor of a lattice-preserving automorphism preserves `(X₀, Y₀)` whenever
 `P.weylGroup ≤ P.latticeAut X₀ Y₀`. -/
@@ -259,8 +260,8 @@ theorem isComplement'_weylGroup_basedAut_subgroupOf :
   refine Set.eq_univ_of_forall fun g ↦ ?_
   let s := b.semidirectProductMulEquiv.symm (g : P.Aut)
   exact Set.mem_mul.mpr ⟨⟨s.left, b.semidirectProductMulEquiv_symm_left_mem_latticeAut hW g⟩,
-    s.left.2, ⟨s.right, b.semidirectProductMulEquiv_symm_right_mem_latticeAut hW g.2⟩,
-    s.right.2, Subtype.ext (b.semidirectProductMulEquiv_symm_left_mul_right (g : P.Aut))⟩
+    s.left.property, ⟨s.right, b.semidirectProductMulEquiv_symm_right_mem_latticeAut hW g.property⟩,
+    s.right.property, Subtype.ext (b.semidirectProductMulEquiv_symm_left_mul_right (g : P.Aut))⟩
 
 /-- **Restricted semidirect product decomposition of `P.latticeAut X₀ Y₀`**: for a finite
 reduced crystallographic pairing over a characteristic-zero domain and any submodule pair
@@ -271,13 +272,13 @@ noncomputable def latticeAutSemidirectProductMulEquiv :
     P.weylGroup ⋊[b.conjWeylGroupLatticeAut X₀ Y₀]
       ↥(b.basedAut ⊓ P.latticeAut X₀ Y₀) ≃* P.latticeAut X₀ Y₀ where
   toFun x := ⟨(x.left : P.Aut) * x.right,
-    mul_mem (hW x.left.2) x.right.2.2⟩
+    mul_mem (hW x.left.property) x.right.property.right⟩
   invFun g :=
     let s := b.semidirectProductMulEquiv.symm (g : P.Aut)
-    ⟨s.left, ⟨s.right, s.right.2,
-      b.semidirectProductMulEquiv_symm_right_mem_latticeAut hW g.2⟩⟩
+    ⟨s.left, ⟨s.right, s.right.property,
+      b.semidirectProductMulEquiv_symm_right_mem_latticeAut hW g.property⟩⟩
   left_inv x := by
-    have h := b.semidirectProductMulEquiv_symm_mul x.left ⟨x.right, x.right.2.1⟩
+    have h := b.semidirectProductMulEquiv_symm_mul x.left ⟨x.right, x.right.property.left⟩
     exact SemidirectProduct.ext (congrArg (fun z ↦ z.left) h)
       (Subtype.ext <| congrArg (fun z ↦ (z.right : P.Aut)) h)
   right_inv g := Subtype.ext (b.semidirectProductMulEquiv_symm_left_mul_right (g : P.Aut))
@@ -316,8 +317,9 @@ theorem exists_basedAut_inf_latticeAut_forall_indexEquiv_eq_iff [P.IsRootSystem]
   have heq : (δ₀ : P.Aut) = b.equivOfCartanMatrixEq b σ hσ :=
     congrArg Subtype.val
       (huniq ⟨_, hmem⟩ (TauCeti.equivOfCartanMatrixEq_indexEquiv_apply b b σ hσ)).symm
-  exact ⟨fun ⟨g, hg⟩ ↦ heq ▸ congrArg Subtype.val (huniq ⟨g.1, g.2.1⟩ hg) ▸ g.2.2,
-    fun hlat ↦ ⟨⟨δ₀, δ₀.2, heq ▸ hlat⟩, hδ₀⟩⟩
+  exact ⟨fun ⟨g, hg⟩ ↦ heq ▸ congrArg Subtype.val (huniq ⟨g.val, g.property.left⟩ hg) ▸
+      g.property.right,
+    fun hlat ↦ ⟨⟨δ₀, δ₀.property, heq ▸ hlat⟩, hδ₀⟩⟩
 
 /-- When `b.equivOfCartanMatrixEq b σ hσ` preserves `(X₀, Y₀)`, there is a unique based
 lattice-preserving automorphism inducing `σ` on the simple roots. -/
@@ -331,7 +333,7 @@ theorem existsUnique_basedAut_inf_latticeAut_of_cartanMatrix [P.IsRootSystem] (b
     (b.exists_basedAut_inf_latticeAut_forall_indexEquiv_eq_iff X₀ Y₀ σ hσ).mpr hlat
   obtain ⟨_, -, huniq⟩ := b.existsUnique_basedAut_of_cartanMatrix σ hσ
   exact ⟨g, hg, fun g' hg' ↦ Subtype.ext <| congrArg (fun x : b.basedAut ↦ (x : P.Aut)) <|
-    (huniq ⟨g'.1, g'.2.1⟩ hg').trans (huniq ⟨g.1, g.2.1⟩ hg).symm⟩
+    (huniq ⟨g'.val, g'.property.left⟩ hg').trans (huniq ⟨g.val, g.property.left⟩ hg).symm⟩
 
 end Base
 

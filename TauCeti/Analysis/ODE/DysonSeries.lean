@@ -59,6 +59,8 @@ one-parameter automorphism groups of C⋆-algebras.
   time-dependent linear equation `w' t = M t (w t)` is `w t = dysonSeriesLeft M t (w 0)`.
 * `TauCeti.periodic_dysonSeriesLeft_apply_iff`: for a periodic path of bounded operators, such a
   solution is periodic exactly when its initial value is fixed by the propagator over one period.
+* `TauCeti.dysonSeriesLeft_add_natCast_mul_apply_of_eq_smul`: more generally, if the initial
+  value lies in the `ε`-eigenspace of `Γ d ^ n`, the solution is twisted by `ε` along `n d`.
 * `TauCeti.apply_dysonSeriesLeft_apply_dysonSeriesLeft`: the propagator of a continuous path
   that is skew for a continuous bilinear map `B` preserves `B`.
 * `TauCeti.contDiff_dysonSeriesLeft`: the left series of a `Cⁿ` path is `Cⁿ⁺¹`.
@@ -459,13 +461,24 @@ theorem hasDerivAt_dysonSeriesLeft_apply {M : ℝ → X →L[ℝ] X} (hM : Conti
     HasDerivAt (fun t => dysonSeriesLeft M t x) (M t (dysonSeriesLeft M t x)) t := by
   simpa using (hasDerivAt_dysonSeriesLeft hM t).clm_apply (hasDerivAt_const t x)
 
+/-- **The return twist of the propagator.** For a continuous path `M` of period `d`, if `x` lies
+in the `ε`-eigenspace of `Ψ(d) ^ n`, where `Ψ = dysonSeriesLeft M`, then the solution
+`t ↦ Ψ t x` of `w' t = M t (w t)` satisfies `Ψ (t + n d) x = ε • Ψ t x`. -/
+theorem dysonSeriesLeft_add_natCast_mul_apply_of_eq_smul {M : ℝ → X →L[ℝ] X} (hM : Continuous M)
+    {d : ℝ} (hper : Function.Periodic M d) {n : ℕ} {ε : ℝ} {x : X}
+    (hx : (dysonSeriesLeft M d ^ n) x = ε • x) (t : ℝ) :
+    dysonSeriesLeft M (t + n * d) x = ε • dysonSeriesLeft M t x := by
+  rw [dysonSeriesLeft_add_of_periodic hM (hper.nat_mul n),
+    dysonSeriesLeft_natCast_mul_of_periodic hM hper, mul_apply_eq_comp, hx, map_smul]
+
 /-- For a continuous path `M` of period `d`, the solution `t ↦ dysonSeriesLeft M t x` of
 `w' t = M t (w t)` has period `d` exactly when `x` is fixed by the propagator over one period. -/
 theorem periodic_dysonSeriesLeft_apply_iff {M : ℝ → X →L[ℝ] X} (hM : Continuous M) {d : ℝ}
     (hper : Function.Periodic M d) (x : X) :
     Function.Periodic (fun t => dysonSeriesLeft M t x) d ↔ dysonSeriesLeft M d x = x := by
   refine ⟨fun h => by simpa [dysonSeriesLeft_zero] using h 0, fun h t => ?_⟩
-  simp only [dysonSeriesLeft_add_of_periodic hM hper t, mul_apply_eq_comp, h]
+  simpa using dysonSeriesLeft_add_natCast_mul_apply_of_eq_smul hM hper (n := 1) (ε := 1)
+    (by simpa using h) t
 
 /-- **The propagator of a skew path preserves the bilinear form.** If `M` is a continuous path of
 bounded operators with `B (M r u) w + B u (M r w) = 0`, then the propagator of

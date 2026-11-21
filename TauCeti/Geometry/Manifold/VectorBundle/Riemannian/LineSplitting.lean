@@ -110,7 +110,7 @@ theorem exists_orthonormal_contMDiffSection_of_finrank_lt
     · induction i using Fin.cases with
       | zero => simpa [s'] using hc.smul_totalSpace hu
       | succ i => simpa [s'] using hs i
-    · have hux : u x ∈ W x := (t x).2
+    · have hux : u x ∈ W x := (t x).property
       have horth (i : Fin k) : ⟪s i x, c x • u x⟫_ℂ = 0 := by
         rw [inner_smul_right, (g.mem_orthogonalSpanFamily_iff hI s).mp hux i, mul_zero]
       have hnorm : ‖c x • u x‖ = 1 := by
