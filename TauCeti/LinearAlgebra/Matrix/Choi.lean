@@ -24,7 +24,7 @@ positive semidefinite Choi matrices into outer products.
 ## References
 
 * M.-D. Choi, *Completely positive linear maps on complex matrices*, Linear Algebra and
-  its Applications 10 (1975), 285–290, proof of Theorem 1 and Theorem 2.
+  its Applications 10 (1975), 285–290, proof of Theorem 1 (p. 286), used to state Theorem 2.
 -/
 
 public section
