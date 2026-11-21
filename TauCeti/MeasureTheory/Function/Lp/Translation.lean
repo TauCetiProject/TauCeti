@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.SegmentIncrement
-public import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreservingEquiv
+public import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreserving.Equiv
 public import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 public import TauCeti.Topology.Instances.ENNReal
 public import Mathlib.MeasureTheory.Function.LpSpace.ContinuousCompMeasurePreserving

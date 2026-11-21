@@ -232,26 +232,16 @@ single cells.** The inclusions `(Pⱼ, ∂Pⱼ) ⟶ (P, ∂P)` exhibit `(P, ∂P
 pairs `(Pⱼ, ∂Pⱼ)` in `TopPair`. -/
 def isColimitCofanCellDiskPullbackPairι (n : ℕ) :
     IsColimit (Cofan.mk (cellPullbackPair p C n) (cellDiskPullbackPairι p C n)) :=
-  let hσ := TopPair.sigmaCofanIsColimit (cellDiskPullbackPair p C n)
-  let σ := hσ.desc (Cofan.mk (cellPullbackPair p C n) (cellDiskPullbackPairι p C n))
-  -- On the summand of `j`, `σ` is the inclusion of `Pⱼ`.
-  have hσ_fst (x : Σ j : cell C n, (cellDiskPullbackPair p C n j).fst) :
-      TopPair.Hom.fst σ x = cellDiskPullbackι p C n x.1 x.2 :=
-    (ConcreteCategory.congr_hom (congrArg TopPair.Hom.fst (hσ.fac _ ⟨x.1⟩)) x.2).trans
-      (cellDiskPullbackPairι_fst_apply n x.1 x.2)
-  have : IsIso (TopPair.Hom.fst σ) := by
-    rw [_root_.TopCat.isIso_iff_isHomeomorph, (funext hσ_fst : ⇑(TopPair.Hom.fst σ) = _)]
-    exact isHomeomorph_sigmaCellDiskPullbackι n
-  have : IsIso σ := TopPair.isIso_of_isIso_fst_of_surjective_snd σ fun y ↦ by
+  TopPair.isColimitCofanOfIsHomeomorph _ (by
+    simp only [cellDiskPullbackPairι_fst_apply]
+    exact isHomeomorph_sigmaCellDiskPullbackι n) fun y ↦ by
     -- A point over a boundary sphere comes from the pullback to its cell, over the sphere.
     obtain ⟨x, hx⟩ := (isHomeomorph_sigmaCellDiskPullbackι (p := p) n).bijective.2 y.val
     have hy : ‖(y.val.val.1.2 : Fin n → ℝ)‖ = 1 := y.property
     rw [← hx, coe_cellDiskPullbackι_apply, coe_uliftClosedBall_apply] at hy
     -- Membership in `∂Pⱼ` is membership of the point of the disk in the sphere.
-    refine ⟨⟨x.1, x.2, (by simpa using hy : (x.2.val.1 : ULift.{u} (Fin n → ℝ)) ∈ sphere 0 1)⟩,
-      Subtype.ext ?_⟩
-    exact (TopPair.Hom.w_apply σ _).trans ((hσ_fst _).trans hx)
-  IsColimit.ofIsoColimit hσ (Cofan.ext (asIso σ) fun j ↦ hσ.fac _ ⟨j⟩)
+    exact ⟨x.1, ⟨x.2, (by simpa using hy : (x.2.val.1 : ULift.{u} (Fin n → ℝ)) ∈ sphere 0 1)⟩,
+      (cellDiskPullbackPairι_fst_apply n x.1 x.2).trans hx⟩
 
 variable (p C) in
 /-- The fibre of `Pⱼ ⟶ Dⁿ` over the centre of the disk is the fibre of `p` over the centre

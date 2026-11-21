@@ -292,7 +292,7 @@ private theorem isSymm_cayleyGen {S : Matrix (n ⊕ n) (n ⊕ n) ℝ} (hS : S.Is
     (hSπ : ‖S‖ < Real.pi) {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) : (cayleyGen S t).IsSymm :=
   isSymm_symplecticCayley
     (exp_mem_symplecticGroup_of_mem_sp _
-      ((LieAlgebra.Symplectic.sp n ℝ).smul_mem t (LieAlgebra.Symplectic.J_mul_mem_sp_iff.2 hS)))
+      ((LieAlgebra.Symplectic.sp n ℝ).smul_mem t (LieAlgebra.Symplectic.J_mul_mem_sp hS)))
     ((isUnit_iff_isUnit_det _).1 (isUnit_one_add_exp_smul_J_mul hSπ ht))
 
 /-- For `S` invertible with `‖S‖ < π`, the Cayley generator `cayleyGen S t` is invertible for
@@ -313,10 +313,10 @@ private theorem det_cayleyGen_ne_zero {S : Matrix (n ⊕ n) (n ⊕ n) ℝ} (hdet
 form formula applies to the whole path. -/
 private theorem conleyZehnderIndex_expPath_J_mul_of_norm_lt_pi {S : Matrix (n ⊕ n) (n ⊕ n) ℝ}
     (hS : S.IsSymm) (hdet : S.det ≠ 0) (hSπ : ‖S‖ < Real.pi) :
-    conleyZehnderIndex (expPath (J n ℝ * S) (LieAlgebra.Symplectic.J_mul_mem_sp_iff.2 hS)) =
+    conleyZehnderIndex (expPath (J n ℝ * S) (LieAlgebra.Symplectic.J_mul_mem_sp hS)) =
       -(signature S : ℝ) / 2 := by
   set X := J n ℝ * S
-  have hXsp : X ∈ LieAlgebra.Symplectic.sp n ℝ := LieAlgebra.Symplectic.J_mul_mem_sp_iff.2 hS
+  have hXsp : X ∈ LieAlgebra.Symplectic.sp n ℝ := LieAlgebra.Symplectic.J_mul_mem_sp hS
   have hunit (t : ℝ) (ht : t ∈ Icc (0 : ℝ) 1) : IsUnit (1 + exp (t • X)) :=
     isUnit_one_add_exp_smul_J_mul hSπ ht
   have hA (t : ℝ) (ht : t ∈ Icc (0 : ℝ) 1) : (cayleyGen S t).IsHermitian :=
@@ -355,15 +355,15 @@ private theorem conleyZehnderIndex_expPath_J_mul_of_norm_lt_pi {S : Matrix (n �
 path of `S / 2` followed by a path along which `exp (t J S)` has no eigenvalue `1`. -/
 private theorem conleyZehnderIndex_expPath_J_mul_eq_neg_signature_div_two
     {S : Matrix (n ⊕ n) (n ⊕ n) ℝ} (hS : S.IsSymm) (hdet : S.det ≠ 0) (hS2π : ‖S‖ < 2 * Real.pi) :
-    conleyZehnderIndex (expPath (J n ℝ * S) (LieAlgebra.Symplectic.J_mul_mem_sp_iff.2 hS)) =
+    conleyZehnderIndex (expPath (J n ℝ * S) (LieAlgebra.Symplectic.J_mul_mem_sp hS)) =
       -(signature S : ℝ) / 2 := by
   set X := J n ℝ * S
-  have hXsp : X ∈ LieAlgebra.Symplectic.sp n ℝ := LieAlgebra.Symplectic.J_mul_mem_sp_iff.2 hS
+  have hXsp : X ∈ LieAlgebra.Symplectic.sp n ℝ := LieAlgebra.Symplectic.J_mul_mem_sp hS
   have hS' : ((2⁻¹ : ℝ) • S).IsSymm := hS.smul _
   have hdet' : ((2⁻¹ : ℝ) • S).det ≠ 0 := by simp [hdet]
   have hX' : J n ℝ * ((2⁻¹ : ℝ) • S) = (2⁻¹ : ℝ) • X := Matrix.mul_smul _ _ _
   -- The second half `t ↦ exp (t X)`, `t ∈ [1/2, 1]`, of the path.
-  let δ : Path (expOfMemSp (J n ℝ * ((2⁻¹ : ℝ) • S)) (LieAlgebra.Symplectic.J_mul_mem_sp_iff.2 hS'))
+  let δ : Path (expOfMemSp (J n ℝ * ((2⁻¹ : ℝ) • S)) (LieAlgebra.Symplectic.J_mul_mem_sp hS'))
       (expOfMemSp X hXsp) :=
     { toFun s := expOfMemSp (((1 + (s : ℝ)) / 2) • X)
         ((LieAlgebra.Symplectic.sp n ℝ).smul_mem _ hXsp)
@@ -380,7 +380,7 @@ private theorem conleyZehnderIndex_expPath_J_mul_eq_neg_signature_div_two
       exp (((1 + (s : ℝ)) / 2) • X) :=
     coe_expOfMemSp _ _
   have hsplit : (expPath (J n ℝ * ((2⁻¹ : ℝ) • S))
-      (LieAlgebra.Symplectic.J_mul_mem_sp_iff.2 hS')).trans δ = expPath X hXsp := by
+      (LieAlgebra.Symplectic.J_mul_mem_sp hS')).trans δ = expPath X hXsp := by
     refine Path.ext (funext fun s ↦ ?_)
     rw [Path.trans_apply]
     split_ifs with h
@@ -414,7 +414,7 @@ theorem conleyZehnderIndex_eq_neg_signature_div_two {S : Matrix (n ⊕ n) (n ⊕
     (hγ : ∀ t : I, ((γ t : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) =
       NormedSpace.exp ((t : ℝ) • (J n ℝ * S))) :
     conleyZehnderIndex γ = -(signature S : ℝ) / 2 := by
-  have hXsp := LieAlgebra.Symplectic.J_mul_mem_sp_iff.2 hS.isSymm
+  have hXsp := LieAlgebra.Symplectic.J_mul_mem_sp hS.isSymm
   have hγ' (t : I) : γ t = expPath (J n ℝ * S) hXsp t :=
     Subtype.ext (Units.ext (by rw [hγ, coe_expPath_apply]))
   obtain rfl : A = 1 := by rw [← γ.source, hγ' 0, Path.source]

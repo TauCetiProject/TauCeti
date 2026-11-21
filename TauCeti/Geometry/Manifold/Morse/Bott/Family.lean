@@ -404,16 +404,14 @@ theorem isMorseBottFamily_const [IsManifold I n M] [BoundarylessManifold I M] [C
     (c : ℝ) :
     IsMorseBottFamily (fun _ : Unit ↦ SmoothEmbedding.id (I := I) (n := n) (M := M))
       (fun _ ↦ c) := by
-  have hcrit : criticalPoints I (fun _ : M ↦ c) = univ :=
-    eq_univ_of_forall fun _ ↦ mem_criticalPoints.2 (mvfderiv_const c)
   have hrange : range (SmoothEmbedding.id (I := I) (n := n) (M := M)) = univ := by
     rw [SmoothEmbedding.coe_id, range_id]
   refine ⟨contMDiff_const, fun _ ↦ SmoothEmbedding.isNondegenerateCriticalSubmanifold_id_const c,
     fun _ ↦ inferInstance, fun _ ↦ inferInstance, fun _ x ↦ ?_, fun _ _ _ ↦ rfl, ?_,
     (locallyFinite_of_finite _)⟩
-  · rw [hrange, hcrit, connectedComponentIn_univ,
+  · rw [hrange, criticalPoints_const, connectedComponentIn_univ,
       PreconnectedSpace.connectedComponent_eq_univ]
-  · rw [hcrit]
+  · rw [criticalPoints_const]
     exact subset_iUnion_of_subset () hrange.ge
 
 /-- **A constant function is Morse–Bott, with one piece for each connected component.** On a
@@ -426,8 +424,6 @@ theorem isMorseBottFamily_ofOpens_const [IsManifold I n M] [BoundarylessManifold
     IsMorseBottFamily
       (fun C : ConnectedComponents M ↦ SmoothEmbedding.ofOpens (I := I) (n := n) C.opens)
       (fun _ ↦ c) := by
-  have hcrit : criticalPoints I (fun _ : M ↦ c) = univ :=
-    eq_univ_of_forall fun _ ↦ mem_criticalPoints.2 (mvfderiv_const c)
   have hrange (C : ConnectedComponents M) :
       range (SmoothEmbedding.ofOpens (I := I) (n := n) C.opens) = C.opens := by
     rw [SmoothEmbedding.coe_ofOpens, Subtype.range_coe]
@@ -439,7 +435,7 @@ theorem isMorseBottFamily_ofOpens_const [IsManifold I n M] [BoundarylessManifold
   · obtain ⟨x, rfl⟩ := ConnectedComponents.surjective_coe C
     exact ⟨⟨x, hmem x⟩⟩
   · have hx : ConnectedComponents.mk (x : M) = C := ConnectedComponents.mem_opens.1 x.property
-    rw [hrange, hcrit, connectedComponentIn_univ, SmoothEmbedding.ofOpens_apply,
+    rw [hrange, criticalPoints_const, connectedComponentIn_univ, SmoothEmbedding.ofOpens_apply,
       ← ConnectedComponents.coe_opens_mk, hx]
   · -- A component is recovered from any of its points.
     obtain ⟨x, rfl⟩ := ConnectedComponents.surjective_coe C
@@ -447,7 +443,7 @@ theorem isMorseBottFamily_ofOpens_const [IsManifold I n M] [BoundarylessManifold
       simpa only [hrange] using h
     have hx : x ∈ (D.opens : Set M) := h' ▸ hmem x
     exact ConnectedComponents.mem_opens.1 hx
-  · rw [hcrit]
+  · rw [criticalPoints_const]
     exact fun x _ ↦ mem_iUnion.2 ⟨ConnectedComponents.mk x, by rw [hrange]; exact hmem x⟩
   · -- The component of `x` is a neighbourhood of `x` meeting no other component.
     refine ⟨_, (ConnectedComponents.mk x).opens.isOpen.mem_nhds (hmem x),
