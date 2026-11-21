@@ -30,8 +30,9 @@ converging on half-open annuli `r < |t| < 1` and their union, the Robba ring.
 * `TauCeti.robbaCoeff R` is the directed union of these modules over `r < 1`: the series converging
   on some annulus `r < |t| < 1`.
 * `TauCeti.RobbaRing R` is `robbaCoeff R` with the convolution product
-  `(ab)ₙ = ∑_{i ∈ ℤ} aᵢ bₙ₋ᵢ`, a ring when `R` is complete, and a commutative `R`-algebra when `R`
-  is commutative: over a complete ultrametric ring `robbaCoeff R` satisfies
+  `(ab)ₙ = ∑_{i ∈ ℤ} aᵢ bₙ₋ᵢ`, a ring when `R` is a complete ultrametric normed ring, and a
+  commutative `R`-algebra when `R` is moreover commutative: over a complete ultrametric
+  seminormed ring `robbaCoeff R` satisfies
   `TauCeti.IsConvolutionRing`, which supplies these structures, the monomials and the integral
   subring `TauCeti.IsConvolutionRing.integral (robbaCoeff R)` (`R^int`). It contains the annular
   algebras `TauCeti.RobbaRing.annulus R r` and the subalgebra `TauCeti.RobbaRing.bounded R` of
@@ -42,9 +43,10 @@ factors, its terms satisfy `‖aᵢ bₙ₋ᵢ‖ ρⁿ ≤ (‖aᵢ‖ ρⁱ)(�
 zero along the cofinite filter of `ℤ × ℤ`. Hence, over a complete ultrametric ring, the product
 coefficients converge, the product converges at `ρ` again, and the Gauss norm is submultiplicative
 (`TauCeti.laurentGaussNorm_addRingConvolution_le`). The Gauss-norm lemmas only ask the weighted
-norms to be bounded above, so they also apply at radius `1` to series whose coefficients are only
-bounded at `+∞`, such as those of the Amice ring. The radius-wise Fréchet and
-inductive-limit topologies are not constructed here.
+norms to be bounded above, so they also apply at radius `1` to families with bounded coefficients
+that need not decay at `+∞`, such as those of the Amice ring
+(`TauCeti.bddAbove_of_mem_amiceCoeff`). The radius-wise Fréchet and inductive-limit topologies are
+not constructed here.
 
 ## Main definitions
 
