@@ -84,14 +84,14 @@ theorem exists_forall_mem_integers_and_valuation_lt_one (hF : IsFunctionField k 
     fun h ↦ hnonunit a haI (by simpa using ha0) (h ▸ ValuationSubring.mem_top _)
   refine ⟨ofValuationSubring hF (fun c ↦ hRB (hkR c)) hBtop, fun r ↦ ?_, fun b hb ↦ ?_⟩
   · rw [integers_ofValuationSubring]
-    exact hRB r.2
+    exact hRB r.property
   · rcases eq_or_ne ((b : R) : F) 0 with h | h
     · simp [h]
     have hb1 : ((b : R) : F)⁻¹ ∉ (ofValuationSubring hF (fun c ↦ hRB (hkR c)) hBtop).integers := by
       rw [integers_ofValuationSubring]
       exact hnonunit b hb h
     rw [mem_integers_iff, not_le, map_inv₀,
-      one_lt_inv₀ (zero_lt_iff.2 ((Valuation.ne_zero_iff _).2 h))] at hb1
+      one_lt_inv₀ (pos_iff_ne_zero.2 ((Valuation.ne_zero_iff _).2 h))] at hb1
     exact hb1
 
 /-! ### Zeros and poles -/
@@ -108,7 +108,7 @@ theorem exists_ord_pos (hF : IsFunctionField k F) {x : F} (hx : Transcendental k
     rintro ⟨w, hw⟩
     obtain ⟨p, hp⟩ : ∃ p : k[X], aeval x p = (w : F) := by
       exact (AlgHom.mem_range _).1
-        ((SetLike.ext_iff.1 (Algebra.adjoin_singleton_eq_range_aeval k x) (w : F)).1 w.2)
+        ((SetLike.ext_iff.1 (Algebra.adjoin_singleton_eq_range_aeval k x) (w : F)).1 w.property)
     have hrel : aeval x (X * p - 1) = 0 := by
       have hxw : x * (w : F) = 1 := congrArg Subtype.val hw
       simp [hp, hxw]

@@ -56,11 +56,13 @@ theorem posSemidef_iff_eq_conjTranspose_mul_self {B : Matrix n n 𝕜} :
   obtain ⟨A, hA⟩ := CStarAlgebra.nonneg_iff_eq_star_mul_self.mp hB.nonneg
   exact ⟨A, star_eq_conjTranspose A ▸ hA⟩
 
+omit [Fintype n] in
 /-- A positive-semidefinite matrix of rank at most `Fintype.card m` is the Gram matrix `Aᴴ * A` of
 a matrix `A` with rows indexed by `m`. -/
-theorem PosSemidef.exists_eq_conjTranspose_mul_self_of_rank_le {B : Matrix n n 𝕜}
+theorem PosSemidef.exists_eq_conjTranspose_mul_self_of_rank_le [Finite n] {B : Matrix n n 𝕜}
     (hB : B.PosSemidef) (h : B.rank ≤ Fintype.card m) : ∃ A : Matrix m n 𝕜, B = Aᴴ * A := by
   classical
+  have := Fintype.ofFinite n
   obtain ⟨X, rfl⟩ := posSemidef_iff_eq_conjTranspose_mul_self.mp hB
   rw [rank_conjTranspose_mul_self] at h
   obtain ⟨L, R, rfl⟩ := X.exists_eq_mul_of_rank_le h
@@ -72,11 +74,13 @@ theorem PosSemidef.exists_eq_conjTranspose_mul_self_of_rank_le {B : Matrix n n �
         simp only [conjTranspose_mul, Matrix.mul_assoc]
     _ = (C * R)ᴴ * (C * R) := by rw [hC]; simp only [conjTranspose_mul, Matrix.mul_assoc]
 
+omit [Fintype n] in
 /-- A square matrix is positive semidefinite of rank at most `Fintype.card m` exactly when it is
 the Gram matrix `Aᴴ * A` of a matrix `A` with rows indexed by `m`, that is, the Gram matrix of a
 configuration of points in an `m`-indexed coordinate space. -/
-theorem posSemidef_and_rank_le_iff_eq_conjTranspose_mul_self {B : Matrix n n 𝕜} :
+theorem posSemidef_and_rank_le_iff_eq_conjTranspose_mul_self [Finite n] {B : Matrix n n 𝕜} :
     B.PosSemidef ∧ B.rank ≤ Fintype.card m ↔ ∃ A : Matrix m n 𝕜, B = Aᴴ * A := by
+  have := Fintype.ofFinite n
   refine ⟨fun ⟨hB, h⟩ ↦ hB.exists_eq_conjTranspose_mul_self_of_rank_le h, ?_⟩
   rintro ⟨A, rfl⟩
   exact ⟨posSemidef_conjTranspose_mul_self A,
