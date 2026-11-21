@@ -41,8 +41,8 @@ radius the Krull dimension of the restricted series ring is at least `dim R + 1`
 * `TauCeti.PowerSeries.norm_le_iff`: the norm is bounded by `r` exactly when every weighted
   coefficient norm `‖aₙ‖ cⁿ` is.
 * `TauCeti.PowerSeries.tendsto_trunc_atTop`: polynomial truncations converge in the Gauss norm.
-* `TauCeti.PowerSeries.norm_C`, `TauCeti.PowerSeries.norm_X`: constants keep their norm, and the
-  variable has norm `c`.
+* `TauCeti.PowerSeries.norm_monomial`, `TauCeti.PowerSeries.norm_C`, `TauCeti.PowerSeries.norm_X`:
+  monomials have norm `‖a‖ cⁿ`, constants keep their norm, and the variable has norm `c`.
 * `TauCeti.PowerSeries.nnnorm_eq_gaussValuation`: the norm is the Gauss valuation
   `TauCeti.PowerSeries.gaussValuation`.
 * `TauCeti.PowerSeries.ringKrullDim_succ_le_ringKrullDim_isRestricted_subring`: adjoining a
@@ -100,6 +100,14 @@ theorem norm_le_iff {f : PowerSeries.IsRestricted.subring (R := R) c} {r : ℝ} 
   refine ⟨fun h n ↦ (norm_coeff_mul_pow_le f n).trans h, fun h ↦ ?_⟩
   rw [norm_eq_gaussNorm, PowerSeries.gaussNorm_eq]
   exact Real.iSup_le h <| (norm_nonneg _).trans (by simpa using h 0)
+
+/-- The norm of a restricted monomial is its weighted coefficient norm. -/
+@[simp]
+theorem norm_monomial (n : ℕ) (a : R) :
+    ‖(⟨PowerSeries.monomial n a, PowerSeries.isRestricted_monomial c n a⟩ :
+      PowerSeries.IsRestricted.subring (R := R) c)‖ = ‖a‖ * c ^ n :=
+  (_root_.MvPowerSeries.norm_monomial (c := fun _ : Unit ↦ c) (Finsupp.single () n) a).trans
+    (by simp)
 
 /-- A constant series has the norm of its coefficient. -/
 @[simp]

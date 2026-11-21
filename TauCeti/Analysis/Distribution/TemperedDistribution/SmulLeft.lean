@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Distribution.TemperedDistribution
+import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 import TauCeti.Analysis.Distribution.SchwartzSpace.Deriv
 import TauCeti.Analysis.Distribution.TemperateGrowth
 
@@ -31,9 +32,10 @@ a function of temperate growth. By duality this is the Leibniz rule for Schwartz
   temperate growth, `smulLeftCLM` is the junk value `0`.
 * `TemperedDistribution.smulLeftCLM_toTemperedDistributionCLM_eq`: multiplication by `g` on
   tempered distributions extends multiplication by `g` on Schwartz functions.
-* `TemperedDistribution.smulLeftCLM_delta`: multiplying `δ_ξ` by `g` scales `δ_ξ` by `g ξ`.
 * `TemperedDistribution.lineDerivOp_smulLeftCLM`: the Leibniz rule for the product of a tempered
   distribution with a function of temperate growth.
+* `TemperedDistribution.smulLeftCLM_delta`: multiplication of the Dirac mass by a function of
+  temperate growth, `g • δ_ξ = g(ξ) δ_ξ`.
 -/
 
 public section
@@ -55,7 +57,7 @@ theorem smulLeftCLM_eq_zero_of_not_hasTemperateGrowth {g : E → ℂ}
     (hg : ¬ g.HasTemperateGrowth) : smulLeftCLM F g = 0 := by
   refine ContinuousLinearMap.ext fun u => ?_
   ext f'
-  simp [SchwartzMap.smulLeftCLM, hg]
+  simp [SchwartzMap.smulLeftCLM_of_not_hasTemperateGrowth hg]
 
 end TVS
 
@@ -63,12 +65,6 @@ section Deriv
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F]
   [NormedSpace ℂ F]
-
-/-- Multiplying a Dirac mass `δ_ξ` by a function `g` of temperate growth scales `δ_ξ` by `g ξ`. -/
-theorem smulLeftCLM_delta {g : E → ℂ} (hg : g.HasTemperateGrowth) (ξ : E) :
-    smulLeftCLM ℂ g (delta ξ) = g ξ • delta ξ := by
-  ext f
-  simp [SchwartzMap.smulLeftCLM_apply_apply hg]
 
 /-- **The Leibniz rule for tempered distributions**: for `g` of temperate growth,
 `∂_v (g f) = (∂_v g) f + g ∂_v f`, where `∂_v g` is the classical derivative `x ↦ Dg(x) v`. -/
@@ -79,6 +75,20 @@ theorem lineDerivOp_smulLeftCLM {g : E → ℂ} (hg : g.HasTemperateGrowth) (f :
   simp [SchwartzMap.lineDerivOp_smulLeftCLM hg, ← map_add]
 
 end Deriv
+
+section Delta
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- Multiplying the Dirac mass at `ξ` by a function `g` of temperate growth multiplies it by the
+value `g ξ`. -/
+@[simp]
+theorem smulLeftCLM_delta {g : E → ℂ} (hg : g.HasTemperateGrowth) (ξ : E) :
+    smulLeftCLM ℂ g (delta ξ) = g ξ • delta ξ := by
+  ext f
+  simp [SchwartzMap.smulLeftCLM_apply_apply hg]
+
+end Delta
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E]
   [BorelSpace E] [SecondCountableTopology E] [NormedAddCommGroup F] [NormedSpace ℂ F]
@@ -94,6 +104,6 @@ theorem smulLeftCLM_toTemperedDistributionCLM_eq {μ : Measure E} [μ.HasTempera
   by_cases hg : g.HasTemperateGrowth
   · simp only [smulLeftCLM_apply_apply, SchwartzMap.toTemperedDistributionCLM_apply_apply,
       SchwartzMap.smulLeftCLM_apply_apply hg, smul_smul, smul_eq_mul, mul_comm]
-  · simp [SchwartzMap.smulLeftCLM, hg]
+  · simp [SchwartzMap.smulLeftCLM_of_not_hasTemperateGrowth hg]
 
 end TemperedDistribution

@@ -932,14 +932,11 @@ private theorem exists_ae_value_le_add_mul_pow_mul_rpow_mul_sqrt_setIntegral_of_
     exists_ae_value_le_add_mul_rpow_mul_rpow_mul_rpow_mul_sqrt_setIntegral_of_memLp (mu := mu)
       hq2
   -- The constant of the Sobolev inequality on balls, `S = K R ^ (1 - n δ)`.
-  set K : ℝ := (n : ℝ)⁻¹ * mu.real (Metric.ball 0 1) ^ (-δ) * ((1 - δ) / ((n : ℝ)⁻¹ - δ)) ^ (1 - δ)
-  have hK : 0 < K := by
-    have : 0 < (n : ℝ)⁻¹ - δ := sub_pos.2 hδn
-    have : 0 < 1 - δ := by linarith
-    have : 0 < mu.real (Metric.ball (0 : EuclideanSpace ℝ ι) 1) :=
-      ENNReal.toReal_pos (Metric.measure_ball_pos mu
-        (0 : EuclideanSpace ℝ ι) one_pos).ne' measure_ball_lt_top.ne
-    positivity
+  obtain ⟨K, hK, hsobK⟩ :=
+    W1p.exists_forall_eLpNorm_value_le_mul_rpow_mul_enorm_gradient_of_eq_ball (mu := mu)
+      hq2.le (δ := δ) (by rw [ENNReal.toReal_ofNat, hq, inv_inv]; ring)
+      (by rwa [finrank_euclideanSpace])
+  simp only [finrank_euclideanSpace] at hsobK
   refine ⟨D₀ * K ^ (2 * δ)⁻¹, by positivity, ?_⟩
   intro Omega u k A B E x₀ R hΩ hA hB hE hR hcacc
   have : IsFiniteMeasure (mu.restrict Omega) := by
@@ -951,10 +948,7 @@ private theorem exists_ae_value_le_add_mul_pow_mul_rpow_mul_sqrt_setIntegral_of_
       eLpNorm (W1p.value v) q (mu.restrict Omega) ≤ S * ‖W1p.gradient v‖ₑ :=
     fun v hv => by
       rw [← ENNReal.ofReal_coe_nnreal (p := S), hS]
-      have := W1p.eLpNorm_value_le_mul_rpow_mul_enorm_gradient_of_eq_ball (mu := mu)
-        ENNReal.ofNat_ne_top hR hΩ hq2.le (δ := δ)
-        (by rw [ENNReal.toReal_ofNat, hq, inv_inv]; ring) (by rwa [finrank_euclideanSpace]) hv
-      rwa [finrank_euclideanSpace] at this
+      exact hsobK hΩ v hv
   have hbound := hmain (k := k) (NNReal.coe_pos.1 (by rw [hS]; positivity)) hA hB hE hsob hcacc
     ((Lp.memLp _).sub (memLp_const k)).pos_part hR hΩ.symm.subset
   rw [hα] at hbound

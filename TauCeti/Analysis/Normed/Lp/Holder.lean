@@ -7,12 +7,13 @@ module
 
 public import Mathlib.Analysis.Normed.Lp.lpHolder
 public import Mathlib.Analysis.Normed.Operator.Mul
+import TauCeti.Analysis.Normed.Lp.Basic
 
 /-!
-# Coordinate evaluation and pointwise multiplication for `lp.holderL`
+# Pointwise multiplication for `lp`
 
-Coordinate evaluation (`lp.holderL_apply_apply_coe`) for Mathlib's `lp.holderL` and its
-specialisation to pointwise multiplication `lp.mulL : ℓ^p(ι, R) →L[𝕜] ℓ^q(ι, R) →L[𝕜] ℓ^r(ι, R)`
+Specialisation of Mathlib's `lp.holderL` (with coordinate evaluation `lp.holderL_apply_apply_coe`)
+to pointwise multiplication `lp.mulL : ℓ^p(ι, R) →L[𝕜] ℓ^q(ι, R) →L[𝕜] ℓ^r(ι, R)`
 (`1/r = 1/p + 1/q`) on a non-unital normed `𝕜`-algebra `R`, with `lp.mulL_apply_apply`,
 `lp.norm_mulL_le`, and `lp.norm_mulL_apply_apply_le`.
 -/
@@ -26,17 +27,6 @@ open scoped ENNReal NNReal
 namespace lp
 
 variable {ι 𝕜 : Type*} [RCLike 𝕜] {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)]
-
-/-- Coordinatewise evaluation of `lp.holderL`. -/
-@[simp] theorem holderL_apply_apply_coe {E F G : ι → Type*}
-    [∀ i, NormedAddCommGroup (E i)] [∀ i, NormedSpace 𝕜 (E i)]
-    [∀ i, NormedAddCommGroup (F i)] [∀ i, NormedSpace 𝕜 (F i)]
-    [∀ i, NormedAddCommGroup (G i)] [∀ i, NormedSpace 𝕜 (G i)]
-    (r : ℝ≥0∞) [Fact (1 ≤ r)] [p.HolderTriple q r]
-    (B : (i : ι) → E i →L[𝕜] F i →L[𝕜] G i) {K : ℝ≥0} (hBK : ∀ i, ‖B i‖ ≤ K)
-    (e : lp E p) (f : lp F q) (i : ι) :
-    holderL (p := p) (q := q) r B hBK e f i = B i (e i) (f i) := by
-  rw [holderL, LinearMap.mkContinuous₂_apply, holderₗ_apply_apply_coe]
 
 variable (𝕜) (R : Type*) [NonUnitalNormedRing R] [NormedSpace 𝕜 R]
   [IsScalarTower 𝕜 R R] [SMulCommClass 𝕜 R R]
