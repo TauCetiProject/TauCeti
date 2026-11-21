@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Isogeny.Map
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.BaseChange.Separability
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.Basic
 
 /-!
 # Restriction of the Galois cohomology of the kernel of an isogeny
@@ -27,6 +28,8 @@ restriction commutes with the map induced by the inclusion `E₁[φ] → E₁` a
 with the Kummer maps of `φ` of
 `TauCeti/AlgebraicGeometry/EllipticCurve/GaloisCohomology/Isogeny/Descent.lean`. This is what lets
 the image of a local Kummer map of `φ` serve as the local condition of the `φ`-Selmer group.
+For the dual isogeny, `TauCeti.Isogeny.dualKerRes` lands in the kernel of the dual of the
+base-changed isogeny, as required by the Weil pairing over `L`.
 
 ## Main definitions
 
@@ -129,23 +132,112 @@ theorem pointRes_kerCoeffIncl (c : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).Ker
   exact explicitMap1_explicitMap1_of_comp_eq _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
     (by ext; rfl) (by ext; simp) c
 
+section Kummer
+
 variable [Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.toAffine.FunctionField]
   [DecidableEq K] [DecidableEq L]
+
+-- The same cocycle calculation applies when the target isogeny is only propositionally
+-- equal to the base change, as in the dual-kernel restriction below.
+private theorem explicitMap1_kummerMap_of_baseChange_eq
+    {ψ : Isogeny (W₁⁄L).toAffine (W₂⁄L).toAffine}
+    [Algebra.IsSeparable ψ.fieldPullback.fieldRange (W₁⁄L).toAffine.FunctionField]
+    (hψ : φ.baseChange L = ψ) (f : (ofIsogeny φ).KerCoeff →+ (ofIsogeny ψ).KerCoeff)
+    (hf : ∀ g x, f (absoluteGaloisGroupMap τ g • x) = g • f x)
+    (hcoe : ∀ x, (f x : (W₁⁄L).PointCoeff) = W₁.pointCoeffBaseChange τ x)
+    (P : W₂.toAffine.Point) :
+    explicitMap1 _ _ _ _ (absoluteGaloisGroupMap τ) f continuous_of_discreteTopology hf
+        (φ.kummerMap P) = ψ.kummerMap (W₂.toAffine.pointMap L P) := by
+  obtain ⟨Q, hQ⟩ := φ.pointCoeffMap_ofIsogeny_surjective (W₂.basePointCoeff P)
+  have hQ' : (ofIsogeny ψ).pointCoeffMap (W₁.pointCoeffBaseChange τ Q) =
+      (W₂⁄L).basePointCoeff (W₂.toAffine.pointMap L P) := by
+    rw [← hψ, pointCoeffMap_baseChange_pointCoeffBaseChange, hQ,
+      pointCoeffBaseChange_basePointCoeff]
+  rw [kummerMap_eq_H1pi hQ, kummerMap_eq_H1pi hQ', H1pi, QuotientAddGroup.mk'_apply,
+    explicitMap1_mk]
+  congr 1
+  refine Subtype.ext <| funext fun g ↦ Subtype.ext ?_
+  rw [cocyclesMap1_apply, hcoe, Hom.coe_kummerCocycle, Hom.coe_kummerCocycle, _root_.map_sub,
+    pointCoeffBaseChange_smul]
 
 /-- **Restriction carries Kummer classes to Kummer classes**: the restriction to `L` of the Kummer
 class of `P ∈ E₂(K)` is the Kummer class of the image of `P` in `E₂(L)` under the base change of
 `φ`. -/
 theorem kerRes_kummerMap (P : W₂.toAffine.Point) :
     φ.kerRes τ (φ.kummerMap P) = (φ.baseChange L).kummerMap (W₂.toAffine.pointMap L P) := by
-  obtain ⟨Q, hQ⟩ := φ.pointCoeffMap_ofIsogeny_surjective (W₂.basePointCoeff P)
-  have hQ' : (ofIsogeny (φ.baseChange L)).pointCoeffMap (W₁.pointCoeffBaseChange τ Q) =
-      (W₂⁄L).basePointCoeff (W₂.toAffine.pointMap L P) := by
-    rw [pointCoeffMap_baseChange_pointCoeffBaseChange, hQ, pointCoeffBaseChange_basePointCoeff]
-  rw [kummerMap_eq_H1pi hQ, kummerMap_eq_H1pi hQ', kerRes_eq_explicitMap1, H1pi,
-    QuotientAddGroup.mk'_apply, explicitMap1_mk]
-  congr 1
-  refine Subtype.ext <| funext fun g ↦ Subtype.ext ?_
-  rw [cocyclesMap1_apply, coe_kerCoeffBaseChange, Hom.coe_kummerCocycle, Hom.coe_kummerCocycle,
-    _root_.map_sub, pointCoeffBaseChange_smul]
+  rw [kerRes_eq_explicitMap1]
+  exact explicitMap1_kummerMap_of_baseChange_eq τ φ rfl _ _ (φ.coe_kerCoeffBaseChange τ) P
+
+end Kummer
+
+/-! ### Restriction on the dual kernel -/
+
+/-- Coordinate base change on the dual kernel, with target the kernel of the dual of the
+base-changed isogeny. -/
+def dualKerCoeffBaseChange :
+    (ofIsogeny φ.dual).KerCoeff →+ (ofIsogeny (φ.baseChange L).dual).KerCoeff :=
+  ((W₂.pointCoeffBaseChange τ).comp
+    ((ofIsogeny φ.dual).pointCoeffMap : W₂.PointCoeff →+ W₁.PointCoeff).ker.subtype).codRestrict _
+    fun P ↦ by
+      have hd : φ.dual.baseChange L = (φ.baseChange L).dual := φ.dual_map (algebraMap K L)
+      rw [← hd]
+      exact φ.dual.pointCoeffBaseChange_mem_kerCoeff τ P.2
+
+/-- Dual-kernel base change applies the ordinary coordinate map. -/
+@[simp]
+theorem coe_dualKerCoeffBaseChange (Q : (ofIsogeny φ.dual).KerCoeff) :
+    (φ.dualKerCoeffBaseChange τ Q : (W₂⁄L).PointCoeff) = W₂.pointCoeffBaseChange τ Q :=
+  (rfl)
+
+/-- Dual-kernel base change is equivariant for restriction of Galois automorphisms. -/
+@[simp]
+theorem dualKerCoeffBaseChange_smul (g : AbsoluteGaloisGroup L)
+    (Q : (ofIsogeny φ.dual).KerCoeff) :
+    φ.dualKerCoeffBaseChange τ (absoluteGaloisGroupMap τ g • Q) =
+      g • φ.dualKerCoeffBaseChange τ Q := by
+  apply Subtype.ext
+  simp only [coe_dualKerCoeffBaseChange, Hom.coe_smul_kerCoeff, pointCoeffBaseChange_smul]
+
+/-- Restriction of first cohomology of the dual kernel, landing in the kernel of the dual
+of the base-changed isogeny. -/
+def dualKerRes :
+    H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff →+
+      H1 (AbsoluteGaloisGroup L) (ofIsogeny (φ.baseChange L).dual).KerCoeff :=
+  explicitMap1 _ _ _ _ (absoluteGaloisGroupMap τ) (φ.dualKerCoeffBaseChange τ)
+    continuous_of_discreteTopology (φ.dualKerCoeffBaseChange_smul τ)
+
+/-- Dual-kernel restriction is pullback along the coordinate base-change map. -/
+theorem dualKerRes_eq_explicitMap1 :
+    φ.dualKerRes τ = explicitMap1 _ _ _ _ (absoluteGaloisGroupMap τ)
+      (φ.dualKerCoeffBaseChange τ) continuous_of_discreteTopology
+      (φ.dualKerCoeffBaseChange_smul τ) :=
+  (rfl)
+
+/-- Restriction of dual-kernel cohomology commutes with the map induced by including the
+kernel into the source elliptic curve of the dual isogeny. -/
+theorem pointRes_kerCoeffIncl_dual (c : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff) :
+    W₂.pointRes τ
+        (explicitCoeff1 _ _ (ofIsogeny φ.dual).kerCoeffIncl continuous_of_discreteTopology c) =
+      explicitCoeff1 _ _ (ofIsogeny (φ.baseChange L).dual).kerCoeffIncl
+        continuous_of_discreteTopology (φ.dualKerRes τ c) := by
+  simp only [explicitCoeff1_eq_explicitMap1, pointRes_eq_explicitMap1, dualKerRes_eq_explicitMap1]
+  exact explicitMap1_explicitMap1_of_comp_eq _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+    (by ext; rfl) (by ext; simp) c
+
+/-- The restriction of a dual Kummer class is the Kummer class of the base-changed point for
+the dual of the base-changed isogeny. -/
+theorem dualKerRes_kummerMap
+    [Algebra.IsSeparable φ.dual.fieldPullback.fieldRange W₂.toAffine.FunctionField]
+    [DecidableEq K] [DecidableEq L] (P : W₁.toAffine.Point) :
+    have hd : φ.dual.baseChange L = (φ.baseChange L).dual := φ.dual_map (algebraMap K L)
+    letI : Algebra.IsSeparable (φ.baseChange L).dual.fieldPullback.fieldRange
+        (W₂⁄L).toAffine.FunctionField := by rw [← hd]; infer_instance
+    φ.dualKerRes τ (φ.dual.kummerMap P) = (φ.baseChange L).dual.kummerMap
+      (W₁.toAffine.pointMap L P) := by
+  have hd : φ.dual.baseChange L = (φ.baseChange L).dual := φ.dual_map (algebraMap K L)
+  have : Algebra.IsSeparable (φ.baseChange L).dual.fieldPullback.fieldRange
+      (W₂⁄L).toAffine.FunctionField := by rw [← hd]; infer_instance
+  rw [dualKerRes_eq_explicitMap1]
+  exact explicitMap1_kummerMap_of_baseChange_eq τ φ.dual hd _ _ (φ.coe_dualKerCoeffBaseChange τ) P
 
 end TauCeti.Isogeny
