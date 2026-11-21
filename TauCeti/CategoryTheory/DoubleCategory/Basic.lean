@@ -335,4 +335,70 @@ attribute [simp] hId_hComp hComp_hId vId_vComp vComp_vId
 
 end StrictDoubleCategory
 
+namespace DoubleCategoryStruct
+
+variable {O : Type u} {H : Category.{h} O} {V : Category.{v} O}
+
+/-- The transpose of the data of a double category: its horizontal and vertical edges are the
+vertical and horizontal edges of `D`, a cell with boundary `(p, q, l, r)` is a cell of `D` with
+boundary `(l, r, p, q)`, and horizontal and vertical identity cells and pastings are exchanged. -/
+@[simps hId vId hComp vComp]
+def transpose (D : DoubleCategoryStruct.{s} O H V) : DoubleCategoryStruct.{s} O V H where
+  Cell p q l r := D.Cell l r p q
+  hId := D.vId
+  vId := D.hId
+  hComp := D.vComp
+  vComp := D.hComp
+
+variable {D : DoubleCategoryStruct.{s} O H V}
+
+/-- A cell of the transpose with boundary `(p, q, l, r)` is a cell with boundary `(l, r, p, q)`. -/
+theorem transpose_Cell {a b c d : O} (p : Edge V a b) (q : Edge V c d) (l : Edge H a c)
+    (r : Edge H b d) : D.transpose.Cell p q l r = D.Cell l r p q :=
+  rfl
+
+/-- Transport of a cell of the transpose is transport in the original double category, with the
+horizontal and vertical boundary equalities exchanged. -/
+@[simp]
+theorem transpose_cast {a b c d : O} {p p' : Edge V a b} {q q' : Edge V c d} {l l' : Edge H a c}
+    {r r' : Edge H b d} (hp : p = p') (hq : q = q') (hl : l = l') (hr : r = r')
+    (α : D.transpose.Cell p q l r) :
+    Cell.cast (D := D.transpose) hp hq hl hr α = Cell.cast (D := D) hl hr hp hq α := by
+  subst hp hq hl hr
+  rfl
+
+@[simp]
+theorem transpose_transpose : D.transpose.transpose = D :=
+  rfl
+
+end DoubleCategoryStruct
+
+namespace StrictDoubleCategory
+
+variable {O : Type u} {H : Category.{h} O} {V : Category.{v} O}
+
+/-- The transpose of a strict double category, exchanging the roles of horizontal and vertical
+edges, of horizontal and vertical identity cells, and of horizontal and vertical pasting. A
+statement about the horizontal direction of a strict double category gives the corresponding
+statement about the vertical direction when applied to its transpose. -/
+@[simps! toDoubleCategoryStruct]
+def transpose (D : StrictDoubleCategory.{s} O H V) : StrictDoubleCategory.{s} O V H where
+  toDoubleCategoryStruct := D.toDoubleCategoryStruct.transpose
+  hId_hComp α := (D.vId_vComp α).trans (transpose_cast _ _ _ _ α).symm
+  hComp_hId α := (D.vComp_vId α).trans (transpose_cast _ _ _ _ α).symm
+  vId_vComp α := (D.hId_hComp α).trans (transpose_cast _ _ _ _ α).symm
+  vComp_vId α := (D.hComp_hId α).trans (transpose_cast _ _ _ _ α).symm
+  hComp_assoc α β γ := (D.vComp_assoc α β γ).trans (transpose_cast _ _ _ _ _).symm
+  vComp_assoc α β γ := (D.hComp_assoc α β γ).trans (transpose_cast _ _ _ _ _).symm
+  interchange α β γ δ := (D.interchange α γ β δ).symm
+  hId_comp := D.vId_comp
+  vId_comp := D.hId_comp
+  hId_id a := (D.hId_id a).symm
+
+@[simp]
+theorem transpose_transpose (D : StrictDoubleCategory.{s} O H V) : D.transpose.transpose = D :=
+  rfl
+
+end StrictDoubleCategory
+
 end TauCeti
