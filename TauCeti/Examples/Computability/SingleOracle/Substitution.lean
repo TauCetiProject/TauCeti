@@ -25,11 +25,11 @@ example : ¬ ∃ j k t, evaln ((comp oracle succ).boundedAnswers (fun x => [0, 1
     rw [rfind'_subst, oracle_subst]
     refine evaln_succ_rfind'_eq_some.2
       ⟨by decide, ⟨1, 2⟩, ?_, .inr ⟨by decide, ⟨1, 3⟩, ?_, rfl⟩⟩
-    · exact evaln_succ_comp_eq_some.2
-        ⟨by decide, ⟨1, 0⟩, ⟨1, 2⟩, by simp [Nat.pair], by simp, rfl⟩
+    · rw [evaln_comp_oracle_succ, ite_eq_left (by decide)]
+      rfl
     · refine evaln_succ_rfind'_eq_some.2 ⟨by decide, ⟨0, 3⟩, ?_, .inl ⟨rfl, rfl⟩⟩
-      exact evaln_succ_comp_eq_some.2
-        ⟨by decide, ⟨2, 0⟩, ⟨0, 3⟩, by simp [Nat.pair], by simp, rfl⟩
+      rw [evaln_comp_oracle_succ, ite_eq_left (by decide)]
+      rfl
   rw [exists_evaln_boundedAnswers_iff_use_le h]
   decide
 

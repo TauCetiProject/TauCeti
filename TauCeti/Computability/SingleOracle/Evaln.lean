@@ -193,6 +193,19 @@ theorem evaln_succ_comp_eq_some {cf cg : Code} :
   simp only [evaln, bind, Option.bind_eq_some_iff, Option.guard_eq_some', exists_const]
   grind
 
+/-- `comp oracle succ` queries address `n + 1` with use `n + 2` if the address is below
+the fuel and an answer is supplied there. Otherwise the run fails. -/
+theorem evaln_comp_oracle_succ : evaln σ k (comp oracle succ) n =
+    if n + 1 < k then (σ (n + 1)).map (fun y => ⟨y, n + 2⟩) else none := by
+  cases k with
+  | zero => simp
+  | succ k =>
+    simp only [Nat.lt_succ_iff]
+    by_cases h : n + 1 ≤ k
+    · have hn : n ≤ k := Nat.le_of_succ_le h
+      cases ha : σ (n + 1) <;> simp [evaln, hn, h, ha]
+    · by_cases hn : n ≤ k <;> simp [evaln, hn, h]
+
 /-- Primitive recursion at zero runs the base program. -/
 @[simp]
 theorem evaln_succ_prec_zero_eq_some {cf cg : Code} {a : ℕ} :
