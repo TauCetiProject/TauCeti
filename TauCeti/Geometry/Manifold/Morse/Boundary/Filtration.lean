@@ -185,15 +185,6 @@ private theorem morseBoundaryOn_apply_eq_sum {s : Set ℝ} {n : ℕ}
     h.morseBoundaryOn hf s n c q = ∑ p, c p * h.morseBoundaryCoeff hf p.val q.val := by
   rw [morseBoundaryOn_apply, Finsupp.sum_fintype _ _ fun _ ↦ zero_mul _]
 
-/-- The mod-two Morse boundary squares to zero, in terms of the coefficients: the broken
-trajectories from `p` to `r` are even in number. -/
-private theorem sum_morseBoundaryCoeff_mul_morseBoundaryCoeff
-    [Fintype (criticalPoints 𝓘(ℝ, E) f)] (p r : criticalPoints 𝓘(ℝ, E) f) :
-    ∑ q, h.morseBoundaryCoeff hf p q * h.morseBoundaryCoeff hf q r = 0 := by
-  have := DFunLike.congr_fun (h.morseBoundary_morseBoundary hf (Finsupp.single p 1)) r
-  rw [morseBoundary_apply, Finsupp.sum_fintype _ _ fun _ ↦ zero_mul _] at this
-  simpa using this
-
 /-- **The Morse boundary with values in an order-connected set squares to zero.** A broken
 trajectory from `p` to `r` through `q` has `f r < f q < f p`, so if the values of `p` and `r` lie
 in the order-connected set `s`, so does that of `q`. -/
@@ -410,6 +401,14 @@ theorem morseComplexOnRestriction_f_apply (hst : s ⊆ t) (hup : ∀ x ∈ t, �
         (MorseGenerators.inclusion_injective hst).injOn :=
   (rfl)
 
+/-- The restriction to an upper part is surjective in every degree: a chain with values in `s` is
+the restriction of its extension by zero. -/
+instance epi_morseComplexOnRestriction (hst : s ⊆ t) (hup : ∀ x ∈ t, ∀ y ∈ s, y < x → x ∈ s) :
+    Epi (h.morseComplexOnRestriction hf hst hup) :=
+  epi_of_epi_f _ fun _ ↦ (ModuleCat.epi_iff_surjective _).2 fun c ↦
+    ⟨c.mapDomain (MorseGenerators.inclusion hst),
+      Finsupp.comapDomain_mapDomain _ (MorseGenerators.inclusion_injective hst) c⟩
+
 /-! ### The Morse complex itself -/
 
 /-- The critical points of index `n` with value anywhere are the critical points of index `n`. -/
@@ -520,9 +519,14 @@ theorem morseComplexBandSequence_shortExact {a b : ℝ} (hab : a ≤ b) :
   refine .mk' ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).2
     fun (c : MorseGenerators E f n (Iic b) →₀ ZMod 2) ↦ ⟨fun hc ↦ ?_, ?_⟩)
     ((ModuleCat.mono_iff_injective _).2 (Finsupp.mapDomain_injective hinj))
-    ((ModuleCat.epi_iff_surjective _).2 fun x ↦ ⟨x.mapDomain (MorseGenerators.inclusion
-      Ioc_subset_Iic_self), Finsupp.comapDomain_mapDomain _
-        (MorseGenerators.inclusion_injective _) x⟩)
+    (by
+      -- Instance search sees neither the second map of the sequence as the restriction nor its
+      -- image under `eval` as its component without unfolding these definitions, so the first
+      -- is unfolded by `dsimp` and the second is stated with `inferInstanceAs`.
+      have : Epi (h.morseComplexBandSequence hf hab).g := by
+        dsimp only [morseComplexBandSequence]
+        infer_instance
+      exact inferInstanceAs (Epi ((h.morseComplexBandSequence hf hab).g.f n)))
   · -- A chain vanishing on the band is the image of its restriction to the sublevel of `a`.
     refine ⟨c.comapDomain _ hinj.injOn, Finsupp.ext fun q ↦ ?_⟩
     -- As above, `morseComplexOnInclusion_f_apply` does not rewrite the component applied to a
