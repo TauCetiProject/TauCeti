@@ -40,6 +40,9 @@ and no spectral sequence is needed.
 
 ## Main results
 
+* `TauCeti.isIso_singularHomologyMap_nConnectedCoverProj_of_fiber`: the projection from the
+  `(m + 2)`-connected cover induces a `k`-homology isomorphism when the `K(πₘ₊₂, m + 1)`
+  fibres are `k`-acyclic.
 * `TauCeti.subsingleton_singularHomology_nConnectedCover_of_fiber`: the `(n + 2)`-connected cover
   of an `(n + 1)`-connected Hausdorff `k`-acyclic space is `k`-acyclic when the
   `K(πₙ₊₂, n + 1)` spaces are.
@@ -65,6 +68,21 @@ namespace TauCeti
 
 variable (k : Type) [CommRing k]
 
+/-- **The projection from the `(m + 2)`-connected cover is a homology isomorphism** when its
+`K(πₘ₊₂(X), m + 1)` fibres are `k`-acyclic. -/
+theorem isIso_singularHomologyMap_nConnectedCoverProj_of_fiber (X : TopCat.{0}) [T2Space X]
+    [PathConnectedSpace X] (x : X) (m : ℕ)
+    (hX : ∀ j, j ≠ 0 → j < m + 2 → Subsingleton (π_ j X x))
+    (hK : ∀ {Y : Type} [TopologicalSpace Y] {y : Y},
+      IsEilenbergMacLaneSpace (π_ (m + 2) X x) (m + 1) Y y →
+        ∀ i, Subsingleton (((singularChains k).obj (TopCat.of Y)).homology (i + 1)))
+    (i : ℕ) :
+    IsIso (((singularHomologyFunctor (ModuleCat.{0} k) i).obj (ModuleCat.of k k)).map
+      (nConnectedCoverProj (m + 2) X x)) :=
+  isIso_singularHomologyMap_of_isEilenbergMacLaneSpace_fiber k
+    (serreFibrations_nConnectedCoverProj (m + 2) X x)
+    (isEilenbergMacLaneSpace_fiber_nConnectedCoverProj X x m hX) hK i
+
 /-- **The `(n + 2)`-connected cover of a `k`-acyclic space.** Let `X` be a Hausdorff,
 path-connected space whose homotopy groups `πⱼ` vanish for `1 ≤ j < m + 2`, and which has the
 `k`-homology of a point. If every `K(πₘ₊₂(X), m + 1)` space has the `k`-homology of a point, then
@@ -80,9 +98,7 @@ theorem subsingleton_singularHomology_nConnectedCover_of_fiber (X : TopCat.{0}) 
     Subsingleton (((singularChains k).obj (nConnectedCover (m + 2) X x)).homology (i + 1)) := by
   -- Every fibre of the projection is a `K(πₘ₊₂(X), m + 1)` space, so it is `k`-acyclic and the
   -- projection is a `k`-homology isomorphism.
-  have := isIso_singularHomologyMap_of_isEilenbergMacLaneSpace_fiber k
-    (serreFibrations_nConnectedCoverProj (m + 2) X x)
-    (isEilenbergMacLaneSpace_fiber_nConnectedCoverProj X x m hX) hK (i + 1)
+  have := isIso_singularHomologyMap_nConnectedCoverProj_of_fiber k X x m hX hK (i + 1)
   exact (subsingleton_singularChains_homology_iff_of_isIso _
     (nConnectedCoverProj (m + 2) X x) _).2 (hXk i)
 

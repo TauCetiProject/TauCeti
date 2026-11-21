@@ -29,6 +29,11 @@ take both the `n`-torsion and the reduction mod `n` of a `ℤ`-module.
   surjective, respectively injective, then `V ⧸ ℓV`, respectively `V[ℓ]`, is zero.
 * `AddEquiv.isTorsion'_iff`: for a submonoid `S` of `ℤ`, being `S`-torsion is invariant under
   additive equivalences.
+* `TauCeti.isOfFinAddOrder_iff_exists_nonZeroDivisors`,
+  `TauCeti.not_isOfFinAddOrder_iff_forall_nonZeroDivisors`: elementwise characterizations of
+  finite and infinite additive order via `nonZeroDivisors ℤ`.
+* `Module.zero_mem_of_injective_of_isTorsion'`: if an `S`-torsion `ℤ`-module contains a copy of
+  `ℤ`, then `0 ∈ S`.
 * `TauCeti.span_range_mk_ofMul_eq_top_iff`: a family generates a commutative group modulo torsion
   exactly when its classes span the torsion-free quotient of the associated `ℤ`-module.
 -/
@@ -123,4 +128,32 @@ theorem _root_.AddEquiv.isTorsion'_iff {G H : Type*} [AddCommGroup G] [AddCommGr
     (e : G ≃+ H) {S : Submonoid ℤ} : Module.IsTorsion' G S ↔ Module.IsTorsion' H S :=
   e.toIntLinearEquiv.isTorsion'_iff
 
+/-- An element of an additive commutative group has finite additive order if and only if some
+nonzero integer kills it. -/
+theorem isOfFinAddOrder_iff_exists_nonZeroDivisors {M : Type*} [AddCommGroup M] {x : M} :
+    IsOfFinAddOrder x ↔ ∃ s ∈ nonZeroDivisors ℤ, s • x = 0 := by
+  simp [isOfFinAddOrder_iff_zsmul_eq_zero, mem_nonZeroDivisors_iff_ne_zero]
+
+/-- An element of an additive commutative group has infinite additive order if and only if no
+nonzero integer kills it. -/
+theorem not_isOfFinAddOrder_iff_forall_nonZeroDivisors {M : Type*} [AddCommGroup M] {x : M} :
+    ¬ IsOfFinAddOrder x ↔ ∀ s ∈ nonZeroDivisors ℤ, s • x ≠ 0 := by
+  simp [isOfFinAddOrder_iff_exists_nonZeroDivisors]
+
 end TauCeti
+
+namespace Module
+
+/-- If an `S`-torsion `ℤ`-module admits an injective additive homomorphism from `ℤ`, then
+`0 ∈ S`. -/
+theorem zero_mem_of_injective_of_isTorsion' {M : Type*} [AddCommGroup M]
+    {S : Submonoid ℤ} (f : ℤ →+ M) (hf : Function.Injective f) (hM : Module.IsTorsion' M S) :
+    (0 : ℤ) ∈ S := by
+  obtain ⟨s, hs⟩ := @hM (f 1)
+  have hs0 : (s : ℤ) = 0 := hf <| by
+    have hmap : f (s : ℤ) = (s : ℤ) • f 1 := by
+      simpa [zsmul_eq_mul] using map_zsmul f (s : ℤ) 1
+    rw [hmap, ← Submonoid.smul_def, hs, map_zero]
+  exact hs0 ▸ s.property
+
+end Module

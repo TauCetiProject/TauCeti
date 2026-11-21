@@ -5,13 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Finiteness.Defs
 public import TauCeti.Algebra.Module.Torsion.Localization
-import Mathlib.LinearAlgebra.TensorProduct.RightExactness
 import Mathlib.RingTheory.Flat.Localization
 
 /-!
-# Submonoid torsion under base change and tensor products
+# Submonoid torsion under base change
 
 Let `R` be a commutative ring, `S` a submonoid of `R`, and `A` a localization of `R` at `S`.
 Base change `A ⊗[R] -` is exact and kills a module exactly when it is `S`-torsion
@@ -25,74 +23,11 @@ injective, surjective, or bijective:
   only if `N ⧸ LinearMap.range f` is `S`-torsion.
 * `LinearMap.bijective_baseChange_iff`: `f.baseChange A` is bijective if and only if both the
   kernel and cokernel of `f` are `S`-torsion.
-
-We also record the elementwise characterization of `S`-torsion quotients
-(`Submodule.isTorsion'_quotient_iff`), uniform annihilation for finitely generated `S`-torsion
-modules (`Module.IsTorsion'.exists_isTorsionBy_of_finite`), and closure of `S`-torsion under
-tensor products with arbitrary modules (`TauCeti.isTorsion'_tensorProduct_left`).
 -/
 
 public section
 
 open scoped TensorProduct
-
-namespace Submodule
-
-/-- A quotient module `N ⧸ p` is `S`-torsion if and only if every element of `N` is carried into
-`p` by some element of `S`. -/
-theorem isTorsion'_quotient_iff {R N : Type*} [CommRing R] [AddCommGroup N] [Module R N]
-    (p : Submodule R N) (S : Submonoid R) :
-    Module.IsTorsion' (N ⧸ p) S ↔ ∀ y : N, ∃ s ∈ S, s • y ∈ p := by
-  refine ⟨fun h y ↦ ?_, fun h q ↦ Submodule.Quotient.induction_on p q fun y ↦ ?_⟩
-  · obtain ⟨⟨s, hs⟩, hsy⟩ := @h (Submodule.Quotient.mk y)
-    exact ⟨s, hs, by simpa [Submonoid.mk_smul, ← Submodule.Quotient.mk_smul] using hsy⟩
-  · obtain ⟨s, hs, hsy⟩ := h y
-    exact ⟨⟨s, hs⟩, by simpa [Submonoid.mk_smul, ← Submodule.Quotient.mk_smul] using hsy⟩
-
-end Submodule
-
-namespace Module.IsTorsion'
-
-/-- A finitely generated `S`-torsion module over a commutative semiring is uniformly annihilated by
-a single element of `S`, namely the product of annihilators of a finite generating set. -/
-theorem exists_isTorsionBy_of_finite {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
-    {S : Submonoid R} [Module.Finite R M] (hM : Module.IsTorsion' M S) :
-    ∃ s ∈ S, Module.IsTorsionBy R M s := by
-  classical
-  obtain ⟨G, hG⟩ := Module.Finite.fg_top (R := R) (M := M)
-  choose s hs using fun g : G ↦ @hM g.val
-  let r : R := ∏ g ∈ G.attach, (s g : R)
-  refine ⟨r, S.prod_mem fun g _ ↦ (s g).property, ?_⟩
-  rw [Module.isTorsionBy_iff_torsionBy_eq_top, eq_top_iff, ← hG, Submodule.span_le]
-  intro x hx
-  obtain ⟨c, hc⟩ :=
-    Finset.dvd_prod_of_mem (fun g : G ↦ (s g : R)) (Finset.mem_attach G ⟨x, hx⟩)
-  dsimp only [r]
-  rw [SetLike.mem_coe, Submodule.mem_torsionBy_iff, hc, mul_comm, mul_smul,
-    ← Submonoid.smul_def (s ⟨x, hx⟩) x, hs ⟨x, hx⟩, smul_zero]
-
-end Module.IsTorsion'
-
-namespace TauCeti
-
-/-- Tensoring an `S`-torsion module on the left with any module over a commuting base semiring
-yields an `S`-torsion module. -/
-theorem isTorsion'_tensorProduct_left {R R₀ M N : Type*} [CommSemiring R] [CommSemiring R₀]
-    [AddCommMonoid M] [AddCommMonoid N] [Module R M] [Module R N] [Module R₀ M]
-    [SMulCommClass R R₀ M] {S : Submonoid R₀} (hM : Module.IsTorsion' M S) :
-    Module.IsTorsion' (M ⊗[R] N) S := fun t ↦ by
-  induction t using TensorProduct.inductionOn with
-  | tmul x y =>
-    obtain ⟨s, hs⟩ := @hM x
-    exact ⟨s, by rw [Submonoid.smul_def, TensorProduct.smul_tmul', ← Submonoid.smul_def, hs,
-      TensorProduct.zero_tmul]⟩
-  | add x y hx hy =>
-    obtain ⟨s₁, hs₁⟩ := hx
-    obtain ⟨s₂, hs₂⟩ := hy
-    exact ⟨s₁ * s₂, by rw [smul_add, mul_smul, mul_smul, hs₂, smul_zero, add_zero, ← mul_smul,
-      mul_comm, mul_smul, hs₁, smul_zero]⟩
-
-end TauCeti
 
 namespace LinearMap
 
@@ -109,10 +44,8 @@ theorem injective_baseChange_iff_isTorsion'_ker (f : M →ₗ[R] N) (S : Submono
     Module.Flat.lTensor_exact A f.exact_subtype_ker_map
   have hinj : Function.Injective ((LinearMap.ker f).subtype.lTensor A) :=
     Module.Flat.lTensor_preserves_injective_linearMap _ Subtype.val_injective
-  rw [S.isTorsion'_iff_subsingleton_tensorProduct A]
-  -- `f.baseChange A` has underlying `R`-linear map `f.lTensor A` by definition.
-  change Function.Injective (f.lTensor A) ↔ Subsingleton (A ⊗[R] LinearMap.ker f)
-  rw [← LinearMap.ker_eq_bot, hex.linearMap_ker_eq, LinearMap.range_eq_bot]
+  rw [S.isTorsion'_iff_subsingleton_tensorProduct A, LinearMap.baseChange_eq_lTensor,
+    ← LinearMap.ker_eq_bot, hex.linearMap_ker_eq, LinearMap.range_eq_bot]
   refine ⟨fun h ↦ subsingleton_of_forall_eq 0 fun x ↦ hinj ?_,
     fun _ ↦ LinearMap.ext fun x ↦ by rw [Subsingleton.elim x 0, map_zero, map_zero]⟩
   rw [map_zero]
@@ -127,10 +60,8 @@ theorem surjective_baseChange_iff_isTorsion'_quotient (f : M →ₗ[R] N) (S : S
     lTensor_exact A f.exact_map_mkQ_range (Submodule.mkQ_surjective _)
   have hsurj : Function.Surjective ((LinearMap.range f).mkQ.lTensor A) :=
     LinearMap.lTensor_surjective A (Submodule.mkQ_surjective _)
-  rw [S.isTorsion'_iff_subsingleton_tensorProduct A]
-  -- `f.baseChange A` has underlying `R`-linear map `f.lTensor A` by definition.
-  change Function.Surjective (f.lTensor A) ↔ Subsingleton (A ⊗[R] (N ⧸ LinearMap.range f))
-  rw [← LinearMap.range_eq_top, ← hex.linearMap_ker_eq, LinearMap.ker_eq_top]
+  rw [S.isTorsion'_iff_subsingleton_tensorProduct A, LinearMap.baseChange_eq_lTensor,
+    ← LinearMap.range_eq_top, ← hex.linearMap_ker_eq, LinearMap.ker_eq_top]
   refine ⟨fun h ↦ subsingleton_of_forall_eq 0 fun y ↦ ?_,
     fun _ ↦ LinearMap.ext fun _ ↦ Subsingleton.elim _ _⟩
   obtain ⟨x, rfl⟩ := hsurj y

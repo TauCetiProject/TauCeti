@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Module.Torsion.BaseChange
-public import TauCeti.AlgebraicTopology.SerreClass.TensorTor
+public import TauCeti.AlgebraicTopology.SerreClass.Torsion
+import TauCeti.Algebra.Module.Torsion.Finite
 
 /-!
 # The Serre class of `S`-torsion abelian groups
@@ -25,9 +25,6 @@ Special cases include:
   with it on finitely generated abelian groups
   (`AddCommGrpCat.isSubmonoidTorsion_powers_iff_isKilledBySomePower_of_finite`).
 
-The class is also closed under tensor products and Tor with arbitrary modules over any commutative
-ring (`TauCeti.isSubmonoidTorsion_Tor_left`).
-
 ## Main definitions
 
 * `AddCommGrpCat.isSubmonoidTorsion S`: the `S`-torsion abelian groups, as an object property of
@@ -42,7 +39,7 @@ public section
 
 universe u
 
-open CategoryTheory Limits MonoidalCategory
+open CategoryTheory Limits
 
 namespace AddCommGrpCat
 
@@ -120,20 +117,3 @@ lemma isSubmonoidTorsion_powers_iff_isKilledBySomePower_of_finite (d : ℕ) (M :
   exact (prop_isKilledBySomePower_iff d M).2 ⟨n, fun x ↦ hs (x := x)⟩
 
 end AddCommGrpCat
-
-namespace TauCeti
-
-/-- Every Tor group of a module whose underlying abelian group is `S`-torsion on the left and an
-arbitrary module on the right is `S`-torsion as an abelian group. -/
-theorem isSubmonoidTorsion_Tor_left {R : Type u} [CommRing R] {M N : ModuleCat.{u} R}
-    (S : Submonoid ℤ) (h : Module.IsTorsion' M S) (n : ℕ) :
-    Module.IsTorsion' (((Tor (ModuleCat.{u} R) n).obj M).obj N) S := by
-  let P := (AddCommGrpCat.isSubmonoidTorsion S).inverseImage
-    (forget₂ (ModuleCat.{u} R) AddCommGrpCat)
-  apply (AddCommGrpCat.prop_isSubmonoidTorsion_iff S
-    (AddCommGrpCat.of (((Tor (ModuleCat.{u} R) n).obj M).obj N))).1
-  exact P.prop_leftDerived_obj ((tensoringLeft (ModuleCat.{u} R)).obj M)
-    (fun Y _ ↦ (AddCommGrpCat.prop_isSubmonoidTorsion_iff S _).2
-      (isTorsion'_tensorProduct_left (R := R) (R₀ := ℤ) h)) N n
-
-end TauCeti

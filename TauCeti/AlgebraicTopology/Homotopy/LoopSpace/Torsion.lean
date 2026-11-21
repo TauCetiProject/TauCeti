@@ -11,8 +11,6 @@ public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Basic
 import TauCeti.Algebra.Module.Torsion.Int
 import TauCeti.AlgebraicTopology.Homotopy.LoopSpace.Acyclic
 import TauCeti.Topology.Homotopy.HomotopyGroup.PathComponent
-import TauCeti.Topology.Homotopy.Path
-import TauCeti.Topology.PathComponent
 
 /-!
 # Detection of non-torsion higher homotopy groups in loop space homology
@@ -38,15 +36,12 @@ of the second part of Proposition 5.11 of Barraud--Damian--Humilière--Oancea; t
 
 ## Main results
 
-* `TauCeti.loopSpaceReducedHomology₀Iso`, `TauCeti.exists_injective_loopSpaceReducedHomology₀`:
-  `H~₀(Ω X x; R) ≅ ∐_{a ∈ π₁(X, x), a ≠ 1} R`, containing a copy of `R` when `π₁(X, x)` is
-  nontrivial.
 * `TauCeti.isTorsion'_homotopyGroup_of_forall_isTorsion'_loopSpaceReducedHomology`,
   `TauCeti.MooreLoopSpace.isTorsion'_homotopyGroup_of_forall_isTorsion'_reducedHomology`:
   `S`-torsion of `H~_k(Ω X x; ℤ)` for `k ≤ m + 2` implies `S`-torsion of `π_{m + 2}(X, x)`.
 * `TauCeti.isTorsion'_homotopyGroup_of_forall_isTorsion'_doubleLoopSpaceReducedHomology`,
-  `TauCeti.exists_not_isTorsion'_doubleLoopSpaceReducedHomology`,
-  `TauCeti.exists_not_pow_smul_eq_zero_doubleLoopSpaceReducedHomology`,
+  `TauCeti.exists_forall_smul_ne_zero_doubleLoopSpaceReducedHomology`,
+  `TauCeti.exists_forall_pow_smul_ne_zero_doubleLoopSpaceReducedHomology`,
   `TauCeti.exists_smul_ne_zero_doubleLoopSpaceReducedHomology`,
   `TauCeti.exists_not_isOfFinAddOrder_doubleLoopSpaceReducedHomology`: detection of non-`S`-torsion
   higher homotopy groups in `H~_*(Ω²Q; ℤ)`, with mirrors in `TauCeti.MooreLoopSpace` for
@@ -69,81 +64,33 @@ open scoped unitInterval Topology Topology.Homotopy
 
 namespace TauCeti
 
-/-! ### Reduced zeroth homology of a single loop space -/
-
-section LoopSpaceDegreeZero
-
-universe w v u
-
-/-- **Reduced zeroth homology of a loop space.** `H~₀(Ω X x; R)` is the coproduct of copies of
-`R` indexed by the nontrivial elements of `π₁(X, x)`. -/
-def loopSpaceReducedHomology₀Iso {C : Type u} [Category.{v} C] [HasCoproducts.{w} C]
-    [Preadditive C] [CategoryWithHomology C] [HasKernels C] (R : C) {X : Type w}
-    [TopologicalSpace X] (x : X) :
-    (reducedSingularHomologyFunctor R 0).obj (TopCat.of (Ω X x)) ≅
-      ∐ fun _ : {a : FundamentalGroup X x // a ≠ 1} ↦ R :=
-  reducedSingularHomology₀IsoOfEquiv R (Y := TopCat.of (Ω X x)) (Path.refl x)
-    zerothHomotopyLoopSpaceEquivFundamentalGroup
-    (zerothHomotopyLoopSpaceEquivFundamentalGroup_mk (Path.refl x))
-
-/-- If `π₁(X, x)` is nontrivial, the reduced zeroth homology `H~₀(Ω X x; R)` contains a copy
-of `R`. -/
-theorem exists_injective_loopSpaceReducedHomology₀ {R : Type u} [Ring R] {X : Type u}
-    [TopologicalSpace X] (x : X) [Nontrivial (π_ 1 X x)] :
-    ∃ f : R →ₗ[R]
-        (reducedSingularHomologyFunctor (ModuleCat.of R R) 0).obj (TopCat.of (Ω X x)),
-      Function.Injective f := by
-  have : Nontrivial (FundamentalGroup X x) :=
-    pi1MulEquivFundamentalGroup.toEquiv.nontrivial_congr.1 inferInstance
-  have : Nonempty {a : FundamentalGroup X x // a ≠ 1} :=
-    nonempty_subtype.2 (exists_ne (1 : FundamentalGroup X x))
-  exact ModuleCat.exists_injective_of_iso_sigma (loopSpaceReducedHomology₀Iso _ x)
-
-end LoopSpaceDegreeZero
-
-/-! ### Private torsion helpers -/
+/-! ### Private helpers -/
 
 section Helpers
 
-/-- If an `S`-torsion `ℤ`-module admits an injective `ℤ`-linear map from `ℤ`, then `0 ∈ S`. -/
-private lemma zero_mem_of_injective_of_isTorsion' {M : ModuleCat.{0} ℤ} {S : Submonoid ℤ}
-    (f : ℤ →ₗ[ℤ] M) (hf : Function.Injective f) (hM : Module.IsTorsion' M S) : (0 : ℤ) ∈ S := by
-  obtain ⟨s, hs⟩ := @hM (f 1)
-  have hs0 : (s : ℤ) = 0 := hf <| by
-    have hmap : f (s : ℤ) = (s : ℤ) • f 1 := by
-      simpa [zsmul_eq_mul] using map_zsmul f.toAddMonoidHom (s : ℤ) 1
-    rw [hmap, ← Submonoid.smul_def, hs, map_zero]
-  exact hs0 ▸ s.property
-
-/-- When `0 ∈ S`, every additive commutative group is `S`-torsion. -/
-private lemma isTorsion'_of_zero_mem {M : Type*} [AddCommGroup M] {S : Submonoid ℤ}
-    (h0 : (0 : ℤ) ∈ S) : Module.IsTorsion' M S :=
-  fun _ ↦ ⟨⟨0, h0⟩, by rw [Submonoid.smul_def, zero_smul]⟩
-
-/-- Contrapositive extraction of a degree `< m + 2` carrying a non-`S`-torsion homology class. -/
-private lemma exists_not_isTorsion'_of_contrapositive {F : ℕ → ModuleCat.{0} ℤ} {G : Type*}
+/-- Extraction of a degree `< m + 2` carrying a class not annihilated by any scalar in `S`. -/
+private lemma exists_forall_smul_ne_zero {F : ℕ → ModuleCat.{0} ℤ} {G : Type*}
     [AddCommGroup G] {S : Submonoid ℤ} {m : ℕ}
     (himp : (∀ k < m + 2, Module.IsTorsion' (F k) S) → Module.IsTorsion' G S)
     (hG : ¬ Module.IsTorsion' G S) :
     ∃ k < m + 2, ∃ x : F k, ∀ s ∈ S, s • x ≠ 0 := by
-  by_contra hall
-  push Not at hall
-  exact hG (himp fun k hk x ↦ let ⟨s, hs, h0⟩ := hall k hk x; ⟨⟨s, hs⟩, h0⟩)
+  obtain ⟨k, hk⟩ := Classical.not_forall.mp (mt himp hG)
+  rw [not_imp, Module.not_isTorsion'_iff] at hk
+  exact ⟨k, hk.1, hk.2⟩
 
-/-- An element of a `ℤ`-module has infinite additive order if no nonzero integer kills it. -/
-private lemma not_isOfFinAddOrder_of_forall_nonZeroDivisors {M : ModuleCat.{0} ℤ} {x : M}
-    (hx : ∀ s ∈ nonZeroDivisors ℤ, s • x ≠ 0) : ¬ IsOfFinAddOrder x := by
-  rw [isOfFinAddOrder_iff_nsmul_eq_zero]
-  rintro ⟨n, hn, hnx⟩
-  exact hx (n : ℤ) (mem_nonZeroDivisors_of_ne_zero (Nat.cast_ne_zero.mpr (Nat.ne_of_gt hn)))
-    ((natCast_zsmul x n).trans hnx)
-
-/-- Reinterpret an element not annihilated by any `d ^ r` as a witness against
-`Submonoid.powers d`-torsion. -/
-private lemma not_isTorsion'_powers_of_exists {M : Type*} [AddCommGroup M] {d : ℤ}
-    (h : ∃ a : M, ∀ r : ℕ, (d ^ r) • a ≠ 0) : ¬ Module.IsTorsion' M (Submonoid.powers d) :=
-  let ⟨a, ha⟩ := h
-  fun ht ↦ let ⟨⟨_, r, rfl⟩, hs⟩ := @ht a; ha r (by rwa [Submonoid.smul_def] at hs)
+/-- Degree-zero torsion transfer for double loop spaces: if `π₂(Q, q)` injects `ℤ` into an
+`S`-torsion reduced zeroth homology group `H₀` whenever it is nontrivial, then `π₂(Q, q)` is
+`S`-torsion. -/
+private lemma isTorsion'_pi2_of_isTorsion'_homology₀ {Q : Type} [TopologicalSpace Q]
+    (q : Q) {S : Submonoid ℤ} {H₀ : Type*} [AddCommGroup H₀] [Module ℤ H₀]
+    (hH₀ : Module.IsTorsion' H₀ S)
+    (hinj : Nontrivial (π_ 2 Q q) → ∃ f : ℤ →ₗ[ℤ] H₀, Function.Injective f) :
+    Module.IsTorsion' (Additive (π_ 2 Q q)) S := by
+  by_cases h2 : Subsingleton (π_ 2 Q q)
+  · exact fun a ↦ ⟨1, by rw [one_smul]; exact Subsingleton.elim a 0⟩
+  · obtain ⟨f, hf⟩ := hinj (not_subsingleton_iff_nontrivial.1 h2)
+    exact Module.isTorsion'_of_zero_mem
+      (Module.zero_mem_of_injective_of_isTorsion' f.toAddMonoidHom hf hH₀)
 
 end Helpers
 
@@ -204,7 +151,8 @@ theorem isTorsion'_homotopyGroup_of_forall_isTorsion'_loopSpaceReducedHomology
         Set.Subset.rfl rfl)).toAdditive.isTorsion'_iff.1 hπY
   · have : Nontrivial (π_ 1 X x) := not_subsingleton_iff_nontrivial.1 h1
     obtain ⟨f, hf⟩ := exists_injective_loopSpaceReducedHomology₀ (R := ℤ) x
-    exact isTorsion'_of_zero_mem (zero_mem_of_injective_of_isTorsion' f hf (hH 0 (Nat.zero_le _)))
+    exact Module.isTorsion'_of_zero_mem
+      (Module.zero_mem_of_injective_of_isTorsion' f.toAddMonoidHom hf (hH 0 (Nat.zero_le _)))
 
 namespace MooreLoopSpace
 
@@ -242,12 +190,8 @@ theorem isTorsion'_homotopyGroup_of_forall_isTorsion'_doubleLoopSpaceReducedHomo
     Module.IsTorsion' (Additive (π_ (m + 2) Q q)) S := by
   cases m with
   | zero =>
-    by_cases h2 : Subsingleton (π_ 2 Q q)
-    · exact fun a ↦ ⟨1, by rw [one_smul]; exact Subsingleton.elim a 0⟩
-    · have : Nontrivial (π_ 2 Q q) := not_subsingleton_iff_nontrivial.1 h2
-      obtain ⟨f, hf⟩ := exists_injective_doubleLoopSpaceReducedHomology₀ (R := ℤ) q
-      exact isTorsion'_of_zero_mem
-        (zero_mem_of_injective_of_isTorsion' f hf (hH 0 (Nat.zero_lt_succ 1)))
+    exact isTorsion'_pi2_of_isTorsion'_homology₀ q (hH 0 (Nat.zero_lt_succ 1))
+      fun _ ↦ exists_injective_doubleLoopSpaceReducedHomology₀ (R := ℤ) q
   | succ n =>
     exact (pathLoopSpaceMulEquiv (X := Q) (x := q) (n + 1)).symm.toAdditive.isTorsion'_iff.2
       (isTorsion'_homotopyGroup_of_forall_isTorsion'_loopSpaceReducedHomology (Path.refl q) S n
@@ -257,26 +201,26 @@ theorem isTorsion'_homotopyGroup_of_forall_isTorsion'_doubleLoopSpaceReducedHomo
 of Proposition 5.11 of Barraud--Damian--Humilière--Oancea). If `π_{m + 2}(Q, q)` is not
 `S`-torsion, then there exist `k < m + 2` and a class in `H~_k(Ω²Q; ℤ)` not annihilated by any
 element of `S`. -/
-theorem exists_not_isTorsion'_doubleLoopSpaceReducedHomology
+theorem exists_forall_smul_ne_zero_doubleLoopSpaceReducedHomology
     (q : Q) (S : Submonoid ℤ) (m : ℕ)
     (hπ : ¬ Module.IsTorsion' (Additive (π_ (m + 2) Q q)) S) :
     ∃ k < m + 2,
       ∃ x : (reducedSingularHomologyFunctor (ModuleCat.of ℤ ℤ) k).obj
         (TopCat.of (Ω (Ω Q q) (Path.refl q))), ∀ s ∈ S, s • x ≠ 0 :=
-  exists_not_isTorsion'_of_contrapositive
+  exists_forall_smul_ne_zero
     (isTorsion'_homotopyGroup_of_forall_isTorsion'_doubleLoopSpaceReducedHomology q S m) hπ
 
 /-- **Power-torsion detection in `H~_*(Ω²Q; ℤ)`.** If `π_{m + 2}(Q, q)` contains an element not
 killed by any power `d ^ r`, then in some degree `k < m + 2` the reduced integral homology
 `H~_k(Ω²Q; ℤ)` contains a class not killed by any power `d ^ r`. -/
-theorem exists_not_pow_smul_eq_zero_doubleLoopSpaceReducedHomology
+theorem exists_forall_pow_smul_ne_zero_doubleLoopSpaceReducedHomology
     (q : Q) (d : ℤ) (m : ℕ)
     (hπ : ∃ a : Additive (π_ (m + 2) Q q), ∀ r : ℕ, (d ^ r) • a ≠ 0) :
     ∃ k < m + 2,
       ∃ x : (reducedSingularHomologyFunctor (ModuleCat.of ℤ ℤ) k).obj
         (TopCat.of (Ω (Ω Q q) (Path.refl q))), ∀ r : ℕ, (d ^ r) • x ≠ 0 := by
-  obtain ⟨k, hk, x, hx⟩ := exists_not_isTorsion'_doubleLoopSpaceReducedHomology q
-    (Submonoid.powers d) m (not_isTorsion'_powers_of_exists hπ)
+  obtain ⟨k, hk, x, hx⟩ := exists_forall_smul_ne_zero_doubleLoopSpaceReducedHomology q
+    (Submonoid.powers d) m (by simpa [Submodule.isTorsion'_powers_iff] using hπ)
   exact ⟨k, hk, x, fun r ↦ hx (d ^ r) ⟨r, rfl⟩⟩
 
 /-- **Non-`d`-torsion class in `H~_*(Ω²Q; ℤ)`.** If `π_{m + 2}(Q, q)` contains an element not
@@ -288,7 +232,7 @@ theorem exists_smul_ne_zero_doubleLoopSpaceReducedHomology
     ∃ k < m + 2,
       ∃ x : (reducedSingularHomologyFunctor (ModuleCat.of ℤ ℤ) k).obj
         (TopCat.of (Ω (Ω Q q) (Path.refl q))), d • x ≠ 0 := by
-  obtain ⟨k, hk, x, hx⟩ := exists_not_pow_smul_eq_zero_doubleLoopSpaceReducedHomology q d m hπ
+  obtain ⟨k, hk, x, hx⟩ := exists_forall_pow_smul_ne_zero_doubleLoopSpaceReducedHomology q d m hπ
   exact ⟨k, hk, x, by simpa only [pow_one] using hx 1⟩
 
 /-- **Infinite-order class in `H~_*(Ω²Q; ℤ)`.** If `π_{m + 2}(Q, q)` is not a torsion group, then
@@ -300,9 +244,9 @@ theorem exists_not_isOfFinAddOrder_doubleLoopSpaceReducedHomology
     ∃ k < m + 2,
       ∃ x : (reducedSingularHomologyFunctor (ModuleCat.of ℤ ℤ) k).obj
         (TopCat.of (Ω (Ω Q q) (Path.refl q))), ¬ IsOfFinAddOrder x := by
-  obtain ⟨k, hk, x, hx⟩ := exists_not_isTorsion'_doubleLoopSpaceReducedHomology q
+  obtain ⟨k, hk, x, hx⟩ := exists_forall_smul_ne_zero_doubleLoopSpaceReducedHomology q
     (nonZeroDivisors ℤ) m (isAddTorsion_iff_isTorsion_int.not.1 hπ)
-  exact ⟨k, hk, x, not_isOfFinAddOrder_of_forall_nonZeroDivisors hx⟩
+  exact ⟨k, hk, x, not_isOfFinAddOrder_iff_forall_nonZeroDivisors.2 hx⟩
 
 end DoubleLoopSpace
 
@@ -323,12 +267,8 @@ theorem isTorsion'_homotopyGroup_of_forall_isTorsion'_doubleReducedHomology
     Module.IsTorsion' (Additive (π_ (m + 2) Q q)) S := by
   cases m with
   | zero =>
-    by_cases h2 : Subsingleton (π_ 2 Q q)
-    · exact fun a ↦ ⟨1, by rw [one_smul]; exact Subsingleton.elim a 0⟩
-    · have : Nontrivial (π_ 2 Q q) := not_subsingleton_iff_nontrivial.1 h2
-      obtain ⟨f, hf⟩ := exists_injective_doubleReducedHomology₀ (R := ℤ) q
-      exact isTorsion'_of_zero_mem
-        (zero_mem_of_injective_of_isTorsion' f hf (hH 0 (Nat.zero_lt_succ 1)))
+    exact isTorsion'_pi2_of_isTorsion'_homology₀ q (hH 0 (Nat.zero_lt_succ 1))
+      fun _ ↦ exists_injective_doubleReducedHomology₀ (R := ℤ) q
   | succ n =>
     exact (homotopyGroupMulEquiv q (n + 1)).symm.toAdditive.isTorsion'_iff.2
       (isTorsion'_homotopyGroup_of_forall_isTorsion'_reducedHomology (1 : MooreLoopSpace Q q) S n
@@ -337,26 +277,26 @@ theorem isTorsion'_homotopyGroup_of_forall_isTorsion'_doubleReducedHomology
 /-- **Detection of non-`S`-torsion higher homotopy groups in `H~_*(ΩᴹΩᴹQ; ℤ)`.** If
 `π_{m + 2}(Q, q)` is not `S`-torsion, then there exist `k < m + 2` and a class in
 `H~_k(ΩᴹΩᴹQ; ℤ)` not annihilated by any element of `S`. -/
-theorem exists_not_isTorsion'_doubleReducedHomology
+theorem exists_forall_smul_ne_zero_doubleReducedHomology
     (q : Q) (S : Submonoid ℤ) (m : ℕ)
     (hπ : ¬ Module.IsTorsion' (Additive (π_ (m + 2) Q q)) S) :
     ∃ k < m + 2,
       ∃ x : (reducedSingularHomologyFunctor (ModuleCat.of ℤ ℤ) k).obj
         (TopCat.of (MooreLoopSpace (MooreLoopSpace Q q) 1)), ∀ s ∈ S, s • x ≠ 0 :=
-  exists_not_isTorsion'_of_contrapositive
+  exists_forall_smul_ne_zero
     (isTorsion'_homotopyGroup_of_forall_isTorsion'_doubleReducedHomology q S m) hπ
 
 /-- **Power-torsion detection in `H~_*(ΩᴹΩᴹQ; ℤ)`.** If `π_{m + 2}(Q, q)` contains an element not
 killed by any power `d ^ r`, then in some degree `k < m + 2` the reduced integral homology
 `H~_k(ΩᴹΩᴹQ; ℤ)` contains a class not killed by any power `d ^ r`. -/
-theorem exists_not_pow_smul_eq_zero_doubleReducedHomology
+theorem exists_forall_pow_smul_ne_zero_doubleReducedHomology
     (q : Q) (d : ℤ) (m : ℕ)
     (hπ : ∃ a : Additive (π_ (m + 2) Q q), ∀ r : ℕ, (d ^ r) • a ≠ 0) :
     ∃ k < m + 2,
       ∃ x : (reducedSingularHomologyFunctor (ModuleCat.of ℤ ℤ) k).obj
         (TopCat.of (MooreLoopSpace (MooreLoopSpace Q q) 1)), ∀ r : ℕ, (d ^ r) • x ≠ 0 := by
-  obtain ⟨k, hk, x, hx⟩ := exists_not_isTorsion'_doubleReducedHomology q
-    (Submonoid.powers d) m (not_isTorsion'_powers_of_exists hπ)
+  obtain ⟨k, hk, x, hx⟩ := exists_forall_smul_ne_zero_doubleReducedHomology q
+    (Submonoid.powers d) m (by simpa [Submodule.isTorsion'_powers_iff] using hπ)
   exact ⟨k, hk, x, fun r ↦ hx (d ^ r) ⟨r, rfl⟩⟩
 
 /-- **Non-`d`-torsion class in `H~_*(ΩᴹΩᴹQ; ℤ)`.** If `π_{m + 2}(Q, q)` contains an element not
@@ -368,7 +308,7 @@ theorem exists_smul_ne_zero_doubleReducedHomology
     ∃ k < m + 2,
       ∃ x : (reducedSingularHomologyFunctor (ModuleCat.of ℤ ℤ) k).obj
         (TopCat.of (MooreLoopSpace (MooreLoopSpace Q q) 1)), d • x ≠ 0 := by
-  obtain ⟨k, hk, x, hx⟩ := exists_not_pow_smul_eq_zero_doubleReducedHomology q d m hπ
+  obtain ⟨k, hk, x, hx⟩ := exists_forall_pow_smul_ne_zero_doubleReducedHomology q d m hπ
   exact ⟨k, hk, x, by simpa only [pow_one] using hx 1⟩
 
 /-- **Infinite-order class in `H~_*(ΩᴹΩᴹQ; ℤ)`.** If `π_{m + 2}(Q, q)` is not a torsion group,
@@ -380,22 +320,22 @@ theorem exists_not_isOfFinAddOrder_doubleReducedHomology
     ∃ k < m + 2,
       ∃ x : (reducedSingularHomologyFunctor (ModuleCat.of ℤ ℤ) k).obj
         (TopCat.of (MooreLoopSpace (MooreLoopSpace Q q) 1)), ¬ IsOfFinAddOrder x := by
-  obtain ⟨k, hk, x, hx⟩ := exists_not_isTorsion'_doubleReducedHomology q
+  obtain ⟨k, hk, x, hx⟩ := exists_forall_smul_ne_zero_doubleReducedHomology q
     (nonZeroDivisors ℤ) m (isAddTorsion_iff_isTorsion_int.not.1 hπ)
-  exact ⟨k, hk, x, not_isOfFinAddOrder_of_forall_nonZeroDivisors hx⟩
+  exact ⟨k, hk, x, not_isOfFinAddOrder_iff_forall_nonZeroDivisors.2 hx⟩
 
 /-- **Normalized cubical homology version when `π₂(Q, q)` vanishes.** When
 `Subsingleton (π_ 2 Q q)`, `ΩᴹΩᴹQ` is path-connected so `H~₀(ΩᴹΩᴹQ; ℤ) = 0`, and any
 non-`S`-torsion higher homotopy group `π_{m + 2}(Q, q)` produces a positive-degree normalized
 cubical homology class (`1 ≤ k < m + 2`) not annihilated by any `s ∈ S`. -/
-theorem exists_not_isTorsion'_doubleCubicalHomology
+theorem exists_forall_smul_ne_zero_doubleCubicalHomology
     (q : Q) [Subsingleton (π_ 2 Q q)] (S : Submonoid ℤ) (m : ℕ)
     (hπ : ¬ Module.IsTorsion' (Additive (π_ (m + 2) Q q)) S) :
     ∃ k, 1 ≤ k ∧ k < m + 2 ∧
       ∃ x : ((normalizedCubicalChainComplex ℤ).obj
         (TopCat.of (MooreLoopSpace (MooreLoopSpace Q q) 1))).homology k,
         ∀ s ∈ S, s • x ≠ 0 := by
-  obtain ⟨k, hk, x, hx⟩ := exists_not_isTorsion'_doubleReducedHomology q S m hπ
+  obtain ⟨k, hk, x, hx⟩ := exists_forall_smul_ne_zero_doubleReducedHomology q S m hπ
   have := pathConnectedSpace_double q
   cases k with
   | zero =>
