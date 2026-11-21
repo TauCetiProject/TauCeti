@@ -12,6 +12,7 @@ public import Mathlib.Algebra.Order.BigOperators.Group.LocallyFinite
 public import Mathlib.Data.Fintype.Prod
 public import Mathlib.Data.Finset.NatAntidiagonal
 public import Mathlib.Order.Interval.Finset.Defs
+import Mathlib.Order.Sym2
 
 /-!
 # Sums and products over pairs
@@ -313,6 +314,20 @@ end TauCeti
 
 namespace Equiv
 
+/-- Non-diagonal unordered pairs in `Sym2 α` are equivalent to strictly increasing ordered pairs
+`{p : α × α // p.1 < p.2}`. -/
+private def sym2NotIsDiagEquivLt (α : Type*) [LinearOrder α] :
+    {s : Sym2 α // ¬ s.IsDiag} ≃ {p : α × α // p.1 < p.2} where
+  toFun s := ⟨(Sym2.sortEquiv s.1).1,
+    lt_of_le_of_ne (Sym2.sortEquiv s.1).2 fun h => s.2 <| by
+      rw [← Sym2.sortEquiv.symm_apply_apply s.1]
+      change s((Sym2.sortEquiv s.1).1.1, (Sym2.sortEquiv s.1).1.2).IsDiag
+      rwa [Sym2.mk_isDiag_iff]⟩
+  invFun p := ⟨Sym2.sortEquiv.symm ⟨p.1, p.2.le⟩, by
+    simpa [Sym2.mk_isDiag_iff] using p.2.ne⟩
+  left_inv s := Subtype.ext (Sym2.sortEquiv.symm_apply_apply s.1)
+  right_inv p := Subtype.ext (by simp [p.2.le])
+
 /-- Pulling back an off-diagonally symmetric function along an arbitrary bijection `e : V ≃ W`
 between finite linear orders preserves its product over strictly increasing pairs, even when `e` is
 not order-preserving. -/
@@ -324,18 +339,31 @@ theorem prod_filter_lt_of_symm {V W M : Type*} [Fintype V] [LinearOrder V]
     (hf : ∀ u v, u ≠ v → f v u = f u v) :
     (∏ p : V × V with p.1 < p.2, f (e p.1) (e p.2)) =
       ∏ q : W × W with q.1 < q.2, f q.1 q.2 := by
-  refine Finset.prod_nbij' (fun p => (min (e p.1) (e p.2), max (e p.1) (e p.2)))
-    (fun q => (min (e.symm q.1) (e.symm q.2), max (e.symm q.1) (e.symm q.2))) ?_ ?_ ?_ ?_ ?_
-  all_goals
-    rintro ⟨a, b⟩ h
-    simp only [Finset.mem_filter, Finset.mem_univ, true_and] at h ⊢
-  · rcases lt_or_gt_of_ne (e.injective.ne h.ne) with hab | hab <;> simpa [hab.le] using hab
-  · rcases lt_or_gt_of_ne (e.symm.injective.ne h.ne) with hab | hab <;> simpa [hab.le] using hab
-  · rcases le_total (e a) (e b) with hab | hab <;> simp [hab, h.le]
-  · rcases le_total (e.symm a) (e.symm b) with hab | hab <;> simp [hab, h.le]
-  · rcases lt_or_gt_of_ne (e.injective.ne h.ne) with hab | hab
-    · simp [hab.le]
-    · simp [hab.le, hf (e a) (e b) (e.injective.ne h.ne)]
+  let mapNotDiag : {s : Sym2 V // ¬ s.IsDiag} ≃ {t : Sym2 W // ¬ t.IsDiag} :=
+    { toFun := fun s => ⟨Sym2.map e s.1, by simpa [Sym2.isDiag_map e.injective] using s.2⟩
+      invFun := fun t => ⟨Sym2.map e.symm t.1,
+        by simpa [Sym2.isDiag_map e.symm.injective] using t.2⟩
+      left_inv := fun s => Subtype.ext (by simp [Sym2.map_map])
+      right_inv := fun t => Subtype.ext (by simp [Sym2.map_map]) }
+  let eqv : {p : V × V // p.1 < p.2} ≃ {q : W × W // q.1 < q.2} :=
+    (sym2NotIsDiagEquivLt V).symm.trans (mapNotDiag.trans (sym2NotIsDiagEquivLt W))
+  let F : Sym2 W → M :=
+    Sym2.lift ⟨f, fun u v => if h : u = v then by subst h; rfl else (hf u v h).symm⟩
+  have hL : (∏ p : V × V with p.1 < p.2, f (e p.1) (e p.2)) =
+      ∏ p : {p : V × V // p.1 < p.2}, F (Sym2.map e s(p.1.1, p.1.2)) := by
+    rw [← Finset.prod_subtype (Finset.univ.filter fun p : V × V => p.1 < p.2)
+      (by simp) (fun p => F (Sym2.map e s(p.1, p.2)))]
+    simp [F]
+  have hR : (∏ q : W × W with q.1 < q.2, f q.1 q.2) =
+      ∏ q : {q : W × W // q.1 < q.2}, F s(q.1.1, q.1.2) := by
+    rw [← Finset.prod_subtype (Finset.univ.filter fun q : W × W => q.1 < q.2)
+      (by simp) (fun q => F s(q.1, q.2))]
+    simp [F]
+  rw [hL, hR]
+  refine Fintype.prod_equiv eqv _ _ fun p => ?_
+  dsimp only [eqv, Equiv.trans_apply, sym2NotIsDiagEquivLt, mapNotDiag, Equiv.coe_fn_symm_mk,
+    Equiv.coe_fn_mk, Sym2.sortEquiv_symm_apply]
+  exact congrArg F (Sym2.sortEquiv.symm_apply_apply (Sym2.map e s(p.1.1, p.1.2))).symm
 
 end Equiv
 

@@ -10,7 +10,6 @@ public import TauCeti.Combinatorics.Hypergraph.Complex.TwoComplex.Relabel
 import Mathlib.Basic.Real.Pointwise
 import Mathlib.Order.ConditionallyCompleteLattice.Finset
 import Mathlib.Tactic.Linarith
-import TauCeti.Algebra.BigOperators.Finset.Pairs
 
 /-!
 # Attainment, coboundary vanishing, and relabelling invariance of cross-degree pair costs
@@ -46,12 +45,11 @@ moved-point gauge costs, coboundaries, vertex orderings, and vertex relabellings
 * **Orientation doubling, vertex-order independence, and relabelling invariance**
   (`TauCeti.TwoComplex.two_mul_sum_distErr_mul_inv`,
   `TauCeti.TwoComplex.sum_distErr_mul_inv_relabel`,
-  `TauCeti.TwoComplex.ciInf₂_sum_distErr_mul_inv_relabel`,
-  `TauCeti.TwoComplex.ciInf₂_sum_distErr_mul_inv_congr_linearOrder`, and
-  `Equiv.ciInf₂_sum_filter_lt_distErr_mul_inv`): when reversing an edge inverts its permutation
-  label, summing over `u < v` equals half the orientation-free sum over both orientations of each
-  edge, making cross-degree pair costs and their gauge infima independent of the chosen linear order
-  on `V` and invariant under arbitrary bijections `V ≃ W`.
+  `TauCeti.TwoComplex.ciInf₂_sum_distErr_mul_inv_relabel`, and
+  `TauCeti.TwoComplex.ciInf₂_sum_distErr_mul_inv_congr_linearOrder`): when reversing an edge
+  inverts its permutation label, summing over `u < v` equals half the orientation-free sum over
+  both orientations of each edge, making cross-degree pair costs and their gauge infima independent
+  of the chosen linear order on `V` and invariant under arbitrary bijections `V ≃ W`.
 
 ## References
 
@@ -449,47 +447,5 @@ theorem ciInf₂_sum_distErr_mul_inv_congr_linearOrder [Fintype V] (X : TwoCompl
   iInf_congr fun m => X.ciInf_sum_distErr_mul_inv_congr_linearOrder l₁ l₂ α hα (m + 2)
 
 end TauCeti.TwoComplex
-
-/-! ### Complete-graph relabelling along arbitrary vertex bijections -/
-
-namespace Equiv
-
-open Equiv.Perm
-
-variable {V W : Type*} [Fintype V] [LinearOrder V] [Fintype W] [LinearOrder W] {n m : ℕ}
-
-/-- Pulling back skew-symmetric edge labels along an arbitrary bijection `e : V ≃ W` preserves the
-complete-graph cross-degree pair cost over strictly increasing pairs, even when `e` is not
-order-preserving. -/
-theorem sum_filter_lt_distErr_mul_inv (e : V ≃ W) (α : W → W → Perm (Fin n))
-    (hα : ∀ u v, u ≠ v → α v u = (α u v)⁻¹) (β : W → Perm (Fin m)) :
-    (∑ p : V × V with p.1 < p.2,
-        distErr (α (e p.1) (e p.2)) (β (e p.1) * (β (e p.2))⁻¹)) =
-      ∑ q : W × W with q.1 < q.2, distErr (α q.1 q.2) (β q.1 * (β q.2)⁻¹) :=
-  e.sum_filter_lt_of_symm (fun u v => distErr (α u v) (β u * (β v)⁻¹)) fun u v huv => by
-    rw [hα u v huv, distErr_inv_mul_inv]
-
-/-- Pulling back skew-symmetric edge labels along `e : V ≃ W` preserves the degree-`m`
-complete-graph cross-degree gauge-cost infimum. -/
-theorem ciInf_sum_filter_lt_distErr_mul_inv (e : V ≃ W) (α : W → W → Perm (Fin n))
-    (hα : ∀ u v, u ≠ v → α v u = (α u v)⁻¹) (m : ℕ) :
-    (⨅ β : V → Perm (Fin m),
-        ∑ p : V × V with p.1 < p.2, distErr (α (e p.1) (e p.2)) (β p.1 * (β p.2)⁻¹)) =
-      ⨅ β : W → Perm (Fin m),
-        ∑ q : W × W with q.1 < q.2, distErr (α q.1 q.2) (β q.1 * (β q.2)⁻¹) :=
-  ((Equiv.arrowCongr e (.refl (Perm (Fin m)))).symm.iInf_congr fun β => by
-    simpa using e.sum_filter_lt_distErr_mul_inv α hα β).symm
-
-/-- Pulling back skew-symmetric edge labels along `e : V ≃ W` preserves the global complete-graph
-cross-degree gauge-cost infimum over all degrees `m + 2 ≥ 2`. -/
-theorem ciInf₂_sum_filter_lt_distErr_mul_inv (e : V ≃ W) (α : W → W → Perm (Fin n))
-    (hα : ∀ u v, u ≠ v → α v u = (α u v)⁻¹) :
-    (⨅ (m : ℕ) (β : V → Perm (Fin (m + 2))),
-        ∑ p : V × V with p.1 < p.2, distErr (α (e p.1) (e p.2)) (β p.1 * (β p.2)⁻¹)) =
-      ⨅ (m : ℕ) (β : W → Perm (Fin (m + 2))),
-        ∑ q : W × W with q.1 < q.2, distErr (α q.1 q.2) (β q.1 * (β q.2)⁻¹) :=
-  iInf_congr fun m => e.ciInf_sum_filter_lt_distErr_mul_inv α hα (m + 2)
-
-end Equiv
 
 end

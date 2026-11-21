@@ -43,9 +43,8 @@ both families of complete-complex extremizers:
   (`TauCeti.mul_two_mul_add_one_choose_two_div_four_sub`,
   `TauCeti.sq_mul_mul_add_one_div_three_lt_choose_two_div_four`,
   `TauCeti.sq_mul_mul_add_one_div_three_le_choose_two_div_four`,
-  `TauCeti.sq_mul_mul_add_one_div_three_lt_ciInf_sum_distErr_three_of_ne`,
-  `TauCeti.ciInf₂_sum_distErr_three_eq_ciInf_sum_movedNorm_div_three_of_card_eq`, and
-  `TauCeti.ciInf₂_sum_distErr_three_eq_sq_mul_mul_add_one_div_three_of_card_eq`): the slack between
+  `TauCeti.sq_mul_mul_add_one_div_three_lt_ciInf_sum_distErr_three_of_ne`, and
+  `TauCeti.ciInf₂_sum_distErr_three_eq_ciInf_sum_movedNorm_div_three_of_card_eq`): the slack between
   the complete-graph `1 / 4` baseline `((q * (2 * t + 1)).choose 2 : ℝ) / 4` and the degree-`3`
   staircase cross-degree gauge cost `D₃ = q ^ 2 * t * (t + 1) / 3` equals
   `q * (q * (4 * t ^ 2 + 4 * t + 3) - (6 * t + 3)) / 24`, which is nonnegative for all `q, t : ℕ`
@@ -141,6 +140,46 @@ private theorem if_ofLex_fst_eq_inv {U ι : Type*} [DecidableEq U] {n : ℕ}
   · simp [h1]
   · simp [h1, Ne.symm h1, hα (ofLex x).1 (ofLex y).1 h1]
 
+/-- Transporting the fixed-degree replicated cross-degree infimum on `V` along `e.trans toLex`
+to the lexicographic product `U ×ₗ ι`. -/
+private theorem ciInf_sum_filter_lt_distErr_prod_eq_lex
+    {V U ι : Type*} [Fintype V] [LinearOrder V] [Fintype U] [LinearOrder U]
+    [Fintype ι] [LinearOrder ι] {n : ℕ} (e : V ≃ U × ι) (α : U → U → Perm (Fin n))
+    (hα : ∀ u v : U, u ≠ v → α v u = (α u v)⁻¹) (m : ℕ) :
+    (⨅ β : V → Perm (Fin m),
+        ∑ p : V × V with p.1 < p.2,
+          distErr (if (e p.1).1 = (e p.2).1 then 1 else α (e p.1).1 (e p.2).1)
+            (β p.1 * (β p.2)⁻¹)) =
+      ⨅ β : (U ×ₗ ι) → Perm (Fin m),
+        ∑ p : (U ×ₗ ι) × (U ×ₗ ι) with p.1 < p.2,
+          distErr (if (ofLex p.1).1 = (ofLex p.2).1 then 1 else α (ofLex p.1).1 (ofLex p.2).1)
+            (β p.1 * (β p.2)⁻¹) := by
+  have hrel := (TwoComplex.complete V).ciInf_sum_distErr_mul_inv_relabel (e.trans toLex)
+    (fun x y : U ×ₗ ι => if (ofLex x).1 = (ofLex y).1 then 1 else α (ofLex x).1 (ofLex y).1)
+    (by simpa [TwoComplex.relabel_complete, TwoComplex.adj_complete] using if_ofLex_fst_eq_inv α hα)
+    m
+  rw [TwoComplex.relabel_complete] at hrel
+  simp only [TwoComplex.filter_lt_and_pair_mem_edges_complete] at hrel
+  dsimp only [trans_apply, ofLex_toLex] at hrel
+  convert hrel
+  exact if_congr Iff.rfl rfl rfl
+
+/-- Transporting the global cross-degree infimum over `m + 2 ≥ 2` on `V` along `e.trans toLex`
+to the lexicographic product `U ×ₗ ι`. -/
+private theorem ciInf₂_sum_filter_lt_distErr_prod_eq_lex
+    {V U ι : Type*} [Fintype V] [LinearOrder V] [Fintype U] [LinearOrder U]
+    [Fintype ι] [LinearOrder ι] {n : ℕ} (e : V ≃ U × ι) (α : U → U → Perm (Fin n))
+    (hα : ∀ u v : U, u ≠ v → α v u = (α u v)⁻¹) :
+    (⨅ (m : ℕ) (β : V → Perm (Fin (m + 2))),
+        ∑ p : V × V with p.1 < p.2,
+          distErr (if (e p.1).1 = (e p.2).1 then 1 else α (e p.1).1 (e p.2).1)
+            (β p.1 * (β p.2)⁻¹)) =
+      ⨅ (m : ℕ) (β : (U ×ₗ ι) → Perm (Fin (m + 2))),
+        ∑ p : (U ×ₗ ι) × (U ×ₗ ι) with p.1 < p.2,
+          distErr (if (ofLex p.1).1 = (ofLex p.2).1 then 1 else α (ofLex p.1).1 (ofLex p.2).1)
+            (β p.1 * (β p.2)⁻¹) :=
+  iInf_congr fun m => ciInf_sum_filter_lt_distErr_prod_eq_lex e α hα (m + 2)
+
 /-- Pulling the cluster replication of a skew-symmetric assignment on `U` (with identity labels
 inside each cluster `{u} × ι`) back along an arbitrary bijection `e : V ≃ U × ι`—requiring neither
 order preservation of `e` nor any linear order on `ι`—gives exact degree-`m` cross-degree
@@ -159,11 +198,8 @@ theorem ciInf_sum_filter_lt_distErr_prod {V U ι : Type*} [Fintype V] [LinearOrd
           ⨅ β₀ : U → Perm (Fin m),
             ∑ p : U × U with p.1 < p.2, distErr (α p.1 p.2) (β₀ p.1 * (β₀ p.2)⁻¹) := by
   let _ : LinearOrder ι := LinearOrder.lift' (Fintype.equivFin ι) (Fintype.equivFin ι).injective
-  have hrel := (e.trans toLex).ciInf_sum_filter_lt_distErr_mul_inv
-    (fun x y : U ×ₗ ι => if (ofLex x).1 = (ofLex y).1 then 1 else α (ofLex x).1 (ofLex y).1)
-    (if_ofLex_fst_eq_inv α hα) m
-  dsimp only [trans_apply, ofLex_toLex] at hrel
-  exact hrel.trans (ciInf_sum_distErr_lex (V := U) (ι := ι) α m)
+  exact (ciInf_sum_filter_lt_distErr_prod_eq_lex e α hα m).trans
+    (ciInf_sum_distErr_lex (V := U) (ι := ι) α m)
 
 /-- Whenever a skew-symmetric degree-`n` assignment (`2 ≤ n`) on `U` attains its global cross-degree
 infimum over `m + 2 ≥ 2` at its own degree `n`, pulling its cluster replication on `U × ι` back
@@ -186,11 +222,7 @@ theorem ciInf₂_sum_filter_lt_distErr_prod_eq_card_sq_mul_ciInf_of_le_of_forall
         ⨅ β₀ : U → Perm (Fin n),
           ∑ p : U × U with p.1 < p.2, distErr (α p.1 p.2) (β₀ p.1 * (β₀ p.2)⁻¹) := by
   let _ : LinearOrder ι := LinearOrder.lift' (Fintype.equivFin ι) (Fintype.equivFin ι).injective
-  have hrel := (e.trans toLex).ciInf₂_sum_filter_lt_distErr_mul_inv
-    (fun x y : U ×ₗ ι => if (ofLex x).1 = (ofLex y).1 then 1 else α (ofLex x).1 (ofLex y).1)
-    (if_ofLex_fst_eq_inv α hα)
-  dsimp only [trans_apply, ofLex_toLex] at hrel
-  exact hrel.trans
+  exact (ciInf₂_sum_filter_lt_distErr_prod_eq_lex e α hα).trans
     (ciInf₂_sum_distErr_lex_eq_card_sq_mul_ciInf_of_le_of_forall_le (V := U) (ι := ι) α hn hmin)
 
 /-- Pulling the cluster replication of a skew-symmetric three-transposition seed on `Fin 4` back
@@ -213,13 +245,9 @@ theorem ciInf₂_sum_filter_lt_distErr_fin_four_prod_of_eq_setOf_isSwap
     Finite.of_injective (fun i : ι => ((0 : Fin 4), i)) fun _ _ h => (Prod.mk.inj h).2
   let _ : Fintype ι := Fintype.ofFinite ι
   let _ : LinearOrder ι := LinearOrder.lift' (Fintype.equivFin ι) (Fintype.equivFin ι).injective
-  have hrel := (e.trans toLex).ciInf₂_sum_filter_lt_distErr_mul_inv
-    (fun x y : Fin 4 ×ₗ ι => if (ofLex x).1 = (ofLex y).1 then 1 else α (ofLex x).1 (ofLex y).1)
-    (if_ofLex_fst_eq_inv α hα)
-  dsimp only [trans_apply, ofLex_toLex] at hrel
   have hcard : Fintype.card V = 4 * Fintype.card ι := by
     simpa [Fintype.card_prod] using Fintype.card_congr e
-  refine hrel.trans ?_
+  refine (ciInf₂_sum_filter_lt_distErr_prod_eq_lex e α hα).trans ?_
   rw [ciInf₂_sum_distErr_lex_fin_four_of_eq_setOf_isSwap α h0 hswaps, hcard,
     Nat.cast_mul, Nat.cast_ofNat]
   ring
@@ -349,19 +377,6 @@ theorem ciInf₂_sum_distErr_three_eq_ciInf_sum_movedNorm_div_three_of_card_eq
     have hbase := sq_mul_mul_add_one_div_three_le_choose_two_div_four q t
     rw [Nat.cast_ofNat]
     linarith
-
-/-- Exact cross-degree gauge-cost evaluation `q ^ 2 * t * (t + 1) / 3` for any degree-`3` assignment
-on `Fintype.card V = q * (2 * t + 1)` vertices whose `movedNorm (Fin 3)` gauge-cost infimum equals
-`q ^ 2 * t * (t + 1)`. -/
-theorem ciInf₂_sum_distErr_three_eq_sq_mul_mul_add_one_div_three_of_card_eq
-    (hcard : Fintype.card V = q * (2 * t + 1)) (α : V → V → Perm (Fin 3))
-    (heq : (⨅ β : V → Perm (Fin 3),
-        ∑ e : V × V with e.1 < e.2, movedNorm (Fin 3) ((β e.1)⁻¹ * α e.1 e.2 * β e.2)) =
-      (q : ℝ) ^ 2 * t * (t + 1)) :
-    (⨅ (m : ℕ) (β : V → Perm (Fin (m + 2))),
-        ∑ e : V × V with e.1 < e.2, distErr (α e.1 e.2) (β e.1 * (β e.2)⁻¹)) =
-      (q : ℝ) ^ 2 * t * (t + 1) / 3 := by
-  rw [ciInf₂_sum_distErr_three_eq_ciInf_sum_movedNorm_div_three_of_card_eq hcard α heq.le, heq]
 
 end StaircaseGraph
 

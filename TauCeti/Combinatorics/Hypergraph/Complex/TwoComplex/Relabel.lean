@@ -172,15 +172,17 @@ theorem two_nsmul_sum_filter_lt_edges {A : Type*} [AddCommMonoid A] [Fintype V] 
     simp [F, Finset.sum_filter, X.adj_iff_pair_mem_edges]
   have hR : (∑ p ∈ {p : V × V | p.1 < p.2}, (F p + F p.swap)) =
       2 • (∑ p : V × V with p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges, f p.1 p.2) := by
-    rw [Finset.sum_filter, Finset.sum_filter, two_nsmul, ← Finset.sum_add_distrib]
-    refine Finset.sum_congr rfl fun p _ => ?_
-    simp only [← X.adj_iff_pair_mem_edges]
-    by_cases hp : p.1 < p.2
-    · by_cases hadj : X.Adj p.1 p.2
-      · simp [F, hp, hadj, hadj.symm, hf p.1 p.2 hadj]
-      · have hadj' : ¬ X.Adj p.2 p.1 := fun h => hadj h.symm
-        simp [F, hp, hadj, hadj']
-    · simp [hp]
+    have hsymm (p : V × V) : F p.swap = F p := by
+      by_cases hadj : X.Adj p.1 p.2
+      · simp [F, hadj, hadj.symm, hf p.1 p.2 hadj]
+      · simp [F, hadj, mt Adj.symm hadj]
+    calc (∑ p ∈ {p : V × V | p.1 < p.2}, (F p + F p.swap))
+        = ∑ p ∈ {p : V × V | p.1 < p.2}, (F p + F p) :=
+          Finset.sum_congr rfl fun p _ => by rw [hsymm p]
+      _ = 2 • ∑ p ∈ {p : V × V | p.1 < p.2}, F p := by
+          rw [Finset.sum_add_distrib, ← two_nsmul]
+      _ = 2 • ∑ p : V × V with p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges, f p.1 p.2 := by
+          simp only [F, X.adj_iff_pair_mem_edges, ← Finset.sum_filter, Finset.filter_filter]
   exact (hL.symm.trans hfold).trans hR |>.symm
 
 /-- Relabelling `X : TwoComplex V` along an arbitrary bijection `e : V ≃ W` (not required to
@@ -200,16 +202,11 @@ theorem sum_filter_lt_edges_relabel {A : Type*} [AddCommMonoid A] [Fintype V] [L
   have hpull := e.sum_filter_lt_of_symm g hg
   have hL : (∑ p : V × V with p.1 < p.2, g (e p.1) (e p.2)) =
       ∑ p : V × V with p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges, f (e p.1) (e p.2) := by
-    simp only [g, X.adj_relabel_apply, X.adj_iff_pair_mem_edges]
-    rw [Finset.sum_filter, Finset.sum_filter]
-    refine Finset.sum_congr rfl fun p _ => ?_
-    by_cases hp : p.1 < p.2 <;> simp [hp]
+    simp only [g, X.adj_relabel_apply, X.adj_iff_pair_mem_edges, ← Finset.sum_filter,
+      Finset.filter_filter]
   have hR : (∑ q : W × W with q.1 < q.2, g q.1 q.2) =
       ∑ q : W × W with q.1 < q.2 ∧ ({q.1, q.2} : Finset W) ∈ (X.relabel e).edges, f q.1 q.2 := by
-    simp only [g, (X.relabel e).adj_iff_pair_mem_edges]
-    rw [Finset.sum_filter, Finset.sum_filter]
-    refine Finset.sum_congr rfl fun q _ => ?_
-    by_cases hq : q.1 < q.2 <;> simp [hq]
+    simp only [g, (X.relabel e).adj_iff_pair_mem_edges, ← Finset.sum_filter, Finset.filter_filter]
   exact (hL.symm.trans hpull).trans hR
 
 /-- The sum of an edge-symmetric weight over positively oriented edges of `X : TwoComplex V` is
