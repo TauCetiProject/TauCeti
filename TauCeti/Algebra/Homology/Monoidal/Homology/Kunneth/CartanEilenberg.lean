@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Closed
 public import Mathlib.Algebra.Category.ModuleCat.Projective
+public import Mathlib.CategoryTheory.Monoidal.Closed.Braided
 public import Mathlib.RingTheory.Flat.CategoryTheory
 public import TauCeti.Algebra.Category.ModuleCat.AB
 public import TauCeti.Algebra.Homology.CartanEilenbergResolution

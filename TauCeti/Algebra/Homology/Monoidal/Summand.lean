@@ -5,9 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.ModuleCat.Colimits
-public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Closed
-public import Mathlib.CategoryTheory.Monoidal.Closed.Braided
 public import TauCeti.Algebra.Homology.Monoidal.Basic
 
 /-!
@@ -22,19 +19,20 @@ constructions the monoidal structure is built from — `HomologicalComplex.mapBi
 `HomologicalComplex.mapBifunctorAssociatorX` — but not for `⊗ₘ`, the whiskerings, `λ_`, `ρ_` and
 `α_` themselves.  This file supplies that last step, so that a calculation on homogeneous summands
 never has to unfold the monoidal structure.  The formulas are stated for homological complexes of
-any shape `c` with `c.TensorSigns`, in any preadditive monoidal category whose tensor product is
-additive in each variable.  `HomologicalComplex.ι_tensorHom`,
-`HomologicalComplex.ι_tensorHom_apply` and
+any shape `c` on an additive monoid `I` of degrees with `[DecidableEq I]` and `c.TensorSigns`, in
+any preadditive monoidal category whose tensor product is additive in each variable.
+`HomologicalComplex.ι_tensorHom` and
 `HomologicalComplex.XIsoOfEq_hom_tensorHom_XIsoOfEq_hom_ιTensorObj` assume only that the tensor
 products of complexes they involve exist.  The formulas for the monoidal structure itself assume in
 addition what Mathlib's `HomologicalComplex.monoidalCategoryStruct` needs: tensor products of
 graded objects with good associativity (`GradedObject.HasTensor`,
 `GradedObject.HasGoodTensor₁₂Tensor` and `GradedObject.HasGoodTensorTensor₂₃`), and a zero
 object, from which, with the additivity of the tensor product, follows the preservation of the
-empty colimit that Mathlib also assumes.  Only the evaluation on pure tensors,
-`HomologicalComplex.ι_tensorHom_apply`, is specific to modules.  The
-identification of `⊗ₘ`, `◁` and `▷` with totalizations of morphisms, on which these formulas
-rest, is in `TauCeti/Algebra/Homology/Monoidal/Basic.lean`.
+empty colimit that Mathlib also assumes.  The evaluation of `HomologicalComplex.ι_tensorHom` on
+pure tensors of modules, `HomologicalComplex.ι_tensorHom_apply`, is in
+`TauCeti/Algebra/Homology/ModuleCat/Tensor.lean`.  The identification of `⊗ₘ`, `◁` and `▷` with
+totalizations of morphisms, on which these formulas rest, is in
+`TauCeti/Algebra/Homology/Monoidal/Basic.lean`.
 
 ## Main results
 
@@ -60,8 +58,6 @@ The analogous formula for the differential of a tensor product is
 public section
 
 open CategoryTheory Limits MonoidalCategory
-
-universe v
 
 namespace HomologicalComplex
 
@@ -134,8 +130,10 @@ lemma ι_whiskerRight {X Y : HomologicalComplex C c} (f : X ⟶ Y)
   rw [whiskerRight_eq_mapBifunctorMap, ι_tensorHom, id_f, tensorHom_id]
 
 /-- The degreewise component of the inverse left unitor of homological complexes: on degree `j`
-it is the inverse left unitor of `X.X j`, followed by the inclusion of the summand
-`(𝟙_ _).X 0 ⊗ X.X j` of `𝟙_ _ ⊗ X`. -/
+it is the inverse left unitor of `X.X j`, then the identification
+`𝟙_ C ≅ (𝟙_ (HomologicalComplex C c)).X 0` (the inverse of `HomologicalComplex.singleObjXSelf`)
+whiskered on the right by `X.X j`, then the inclusion of the summand `(𝟙_ _).X 0 ⊗ X.X j` of
+`𝟙_ _ ⊗ X`. -/
 lemma leftUnitor_inv_f (X : HomologicalComplex C c) (j : I) :
     (λ_ X).inv.f j = (λ_ (X.X j)).inv ≫ ((singleObjXSelf c 0 (𝟙_ C)).inv ▷ X.X j) ≫
       ιTensorObj (𝟙_ (HomologicalComplex C c)) X 0 j j (zero_add j) := by
@@ -145,8 +143,10 @@ lemma leftUnitor_inv_f (X : HomologicalComplex C c) (j : I) :
   simp [MonoidalCategoryStruct.leftUnitor, leftUnitor]
 
 /-- The degreewise component of the inverse right unitor of homological complexes: on degree `j`
-it is the inverse right unitor of `X.X j`, followed by the inclusion of the summand
-`X.X j ⊗ (𝟙_ _).X 0` of `X ⊗ 𝟙_ _`. -/
+it is the inverse right unitor of `X.X j`, then the identification
+`𝟙_ C ≅ (𝟙_ (HomologicalComplex C c)).X 0` (the inverse of `HomologicalComplex.singleObjXSelf`)
+whiskered on the left by `X.X j`, then the inclusion of the summand `X.X j ⊗ (𝟙_ _).X 0` of
+`X ⊗ 𝟙_ _`. -/
 lemma rightUnitor_inv_f (X : HomologicalComplex C c) (j : I) :
     (ρ_ X).inv.f j = (ρ_ (X.X j)).inv ≫ (X.X j ◁ (singleObjXSelf c 0 (𝟙_ C)).inv) ≫
       ιTensorObj X (𝟙_ (HomologicalComplex C c)) j 0 j (add_zero j) := by
@@ -217,21 +217,5 @@ lemma ι_ι_associator_inv (X Y Z : HomologicalComplex C c)
     Iso.inv_hom_id_assoc]
 
 end General
-
-section ComplexesOfModules
-
-variable {R : Type v} [CommRing R]
-variable {I : Type*} [AddMonoid I] {c : ComplexShape I} [c.TensorSigns] [DecidableEq I]
-
-/-- The tensor product of two morphisms of homological complexes of modules on a pure tensor in a
-homogeneous summand: the tensor product of the components. -/
-lemma ι_tensorHom_apply {K₁ K₂ L₁ L₂ : HomologicalComplex (ModuleCat.{v} R) c} (f₁ : K₁ ⟶ L₁)
-    (f₂ : K₂ ⟶ L₂) [HasTensor K₁ K₂] [HasTensor L₁ L₂] (i₁ i₂ j : I) (h : i₁ + i₂ = j)
-    (a : K₁.X i₁) (b : K₂.X i₂) :
-    (tensorHom f₁ f₂).f j ((ιTensorObj K₁ K₂ i₁ i₂ j h).hom (a ⊗ₜ[R] b)) =
-      (ιTensorObj L₁ L₂ i₁ i₂ j h).hom (f₁.f i₁ a ⊗ₜ[R] f₂.f i₂ b) :=
-  LinearMap.congr_fun (congrArg ModuleCat.Hom.hom (ι_tensorHom f₁ f₂ i₁ i₂ j h)) (a ⊗ₜ[R] b)
-
-end ComplexesOfModules
 
 end HomologicalComplex

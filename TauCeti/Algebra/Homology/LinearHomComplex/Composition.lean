@@ -5,6 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.ModuleCat.Colimits
+public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Closed
+public import Mathlib.CategoryTheory.Monoidal.Closed.Braided
 public import TauCeti.Algebra.Homology.LinearHomComplex.Basic
 public import TauCeti.Algebra.Homology.Monoidal.Braiding
 
@@ -38,10 +41,10 @@ instance and its associativity and unit axioms in Mathlib's factor order are con
 The monoidal structure used here is Mathlib's `HomologicalComplex.monoidalCategory` at
 `ComplexShape.up ℤ`; nothing is re-totalized.  The component equations for the whiskerings, the
 unitors and the associator, which Mathlib does not state, are taken from
-`TauCeti/Algebra/Homology/Monoidal/Summand.lean` rather than repeated here.  Its
-colimit-preservation hypotheses are discharged
+`TauCeti/Algebra/Homology/Monoidal/Summand.lean` rather than repeated here.  The
+colimit-preservation hypotheses of Mathlib's monoidal structure are discharged
 by Mathlib's instances for a braided monoidal closed category, so
-`Mathlib.CategoryTheory.Monoidal.Closed.Braided`, which that file imports, is what makes the
+`Mathlib.CategoryTheory.Monoidal.Closed.Braided`, imported here, is what makes the
 tensor product of cochain complexes exist at all.  Note that `ModuleCat.{v} R` is monoidal only for
 a commutative `R : Type v`, so this file, unlike
 `TauCeti/Algebra/Homology/LinearHomComplex/Basic.lean`, requires `CommRing R` and ties the ring to

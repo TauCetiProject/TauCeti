@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Closed
 public import Mathlib.AlgebraicTopology.SimplicialSet.Monoidal
+public import Mathlib.CategoryTheory.Monoidal.Closed.Braided
 public import TauCeti.AlgebraicTopology.SimplicialObject.AlexanderWhitney
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Basic
 

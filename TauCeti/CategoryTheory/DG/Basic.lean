@@ -5,6 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.ModuleCat.Colimits
+public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Closed
+public import Mathlib.CategoryTheory.Monoidal.Closed.Braided
 public import Mathlib.CategoryTheory.Enriched.Basic
 public import TauCeti.Algebra.Homology.Monoidal.Summand
 public import TauCeti.Algebra.Homology.Monoidal.Tensor.Differential
