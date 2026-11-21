@@ -63,10 +63,12 @@ shrinking part.
 * `TauCeti.CommHopfAlgCat.homOfPointsMap`: the coordinate morphism a natural map of points
   functors comes from, with `TauCeti.CommHopfAlgCat.mapPointsFunctor_homOfPointsMap` its
   defining property, `TauCeti.CommHopfAlgCat.homOfPointsMap_mapPointsFunctor` the converse
-  recovery law, and `TauCeti.CommHopfAlgCat.homOfPointsMap_id` and
-  `TauCeti.CommHopfAlgCat.homOfPointsMap_comp` its functoriality. This is the form in which
-  fullness is used downstream, where a group-scheme morphism is built from its natural action
-  on points.
+  recovery law, `TauCeti.CommHopfAlgCat.homOfPointsMap_id` and
+  `TauCeti.CommHopfAlgCat.homOfPointsMap_comp` its functoriality,
+  `TauCeti.CommHopfAlgCat.isoOfPointsIso` the recovered isomorphism from a natural isomorphism
+  of points functors, and `TauCeti.CommHopfAlgCat.mapDomain_homOfPointsMap` its action on
+  arbitrary-universe points. This is the form in which fullness is used downstream, where a
+  group-scheme morphism is built from its natural action on points.
 * `TauCeti.CommHopfAlgCat.essImage_pointsFunctor`: the essential image consists exactly of
   group functors with corepresentable underlying functor.
 
@@ -618,6 +620,60 @@ theorem homOfPointsMap_comp {H K L : _root_.CommHopfAlgCat.{u} R}
       CommHopfAlgCat.Hom.mapPointsFunctor (homOfPointsMap β ≫ homOfPointsMap α)
     simp only [CommHopfAlgCat.Hom.mapPointsFunctor_comp, mapPointsFunctor_homOfPointsMap]
   exact Quiver.Hom.op_inj (Functor.map_injective _ h)
+
+/-- Recover a coordinate Hopf-algebra isomorphism `K ≅ H` from a natural isomorphism of
+group-valued points functors `pointsFunctor H ≅ pointsFunctor K`. -/
+@[expose] noncomputable def isoOfPointsIso {H K : _root_.CommHopfAlgCat.{u} R}
+    (e : HopfAlgebra.pointsFunctor (R := R) (H := H) ≅
+      HopfAlgebra.pointsFunctor (R := R) (H := K)) : K ≅ H where
+  hom := homOfPointsMap e.hom
+  inv := homOfPointsMap e.inv
+  hom_inv_id := by rw [← homOfPointsMap_comp, e.inv_hom_id, homOfPointsMap_id]
+  inv_hom_id := by rw [← homOfPointsMap_comp, e.hom_inv_id, homOfPointsMap_id]
+
+/-- The forward morphism of `isoOfPointsIso e` is `homOfPointsMap e.hom`. -/
+@[simp]
+theorem isoOfPointsIso_hom {H K : _root_.CommHopfAlgCat.{u} R}
+    (e : HopfAlgebra.pointsFunctor (R := R) (H := H) ≅
+      HopfAlgebra.pointsFunctor (R := R) (H := K)) :
+    (isoOfPointsIso e).hom = homOfPointsMap e.hom :=
+  rfl
+
+/-- The inverse morphism of `isoOfPointsIso e` is `homOfPointsMap e.inv`. -/
+@[simp]
+theorem isoOfPointsIso_inv {H K : _root_.CommHopfAlgCat.{u} R}
+    (e : HopfAlgebra.pointsFunctor (R := R) (H := H) ≅
+      HopfAlgebra.pointsFunctor (R := R) (H := K)) :
+    (isoOfPointsIso e).inv = homOfPointsMap e.inv :=
+  rfl
+
+/-- Evaluating the coordinate morphism `homOfPointsMap α` at the identity point `id_H` recovers
+the component `α.app (CommAlgCat.of R H)` on `id_H`. -/
+theorem mapDomain_homOfPointsMap_id {H K : _root_.CommHopfAlgCat.{u} R}
+    (α : HopfAlgebra.pointsFunctor (R := R) (H := H) ⟶
+      HopfAlgebra.pointsFunctor (R := R) (H := K)) :
+    BialgHom.mapDomain (homOfPointsMap α).hom (toConv (AlgHom.id R H)) =
+      α.app (CommAlgCat.of R H) (toConv (AlgHom.id R H)) := by
+  have h := congrArg (fun β ↦ β.app (CommAlgCat.of R H) (toConv (AlgHom.id R H)))
+    (mapPointsFunctor_homOfPointsMap α)
+  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, ← BialgHom.mapDomain_apply] at h
+  exact h
+
+/-- Precomposing an arbitrary-universe point `g` of `H` over `S` with `homOfPointsMap α` transports
+`α.app (CommAlgCat.of R H) id_H` along `g.ofConv`. -/
+theorem mapDomain_homOfPointsMap {H K : _root_.CommHopfAlgCat.{u} R}
+    (α : HopfAlgebra.pointsFunctor (R := R) (H := H) ⟶
+      HopfAlgebra.pointsFunctor (R := R) (H := K))
+    {S : Type*} [CommRing S] [Algebra R S] (g : WithConv (H →ₐ[R] S)) :
+    BialgHom.mapDomain (homOfPointsMap α).hom g =
+      AlgHom.mapValue (H := K) g.ofConv
+        (α.app (CommAlgCat.of R H) (toConv (AlgHom.id R H))) := by
+  have hg : AlgHom.mapValue (H := H) g.ofConv (toConv (AlgHom.id R H)) = g := by
+    simp [AlgHom.mapValue_apply]
+  have hnat := DFunLike.congr_fun
+    (BialgHom.mapValue_mapDomain (homOfPointsMap α).hom g.ofConv).symm (toConv (AlgHom.id R H))
+  rw [MonoidHom.comp_apply, MonoidHom.comp_apply, hg, mapDomain_homOfPointsMap_id] at hnat
+  exact hnat.symm
 
 /-- Precomposition by `unopUnop` turns representability on a double opposite into
 corepresentability. This is the type-valued variance correction underlying the essential-image

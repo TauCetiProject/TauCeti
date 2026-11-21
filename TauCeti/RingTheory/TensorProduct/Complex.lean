@@ -6,9 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Complex.Module
+public import Mathlib.RingTheory.Norm.Defs
 public import TauCeti.RingTheory.TensorProduct.Maps
+import Mathlib.RingTheory.Norm.Basic
 import Mathlib.Tactic.LinearCombination
 import TauCeti.LinearAlgebra.Complex.Conjugation
+import TauCeti.RingTheory.NormTrace.Prod
 
 /-!
 # Complexifying a complex algebra over the reals
@@ -25,6 +28,10 @@ restriction `Res_{ℂ/ℝ} 𝔾ₘ` it gives the splitting of the Deligne torus 
 natural in `A` (`TauCeti.complexTensorProductEquivProd_lTensor`), and for `A = ℂ` conjugation of
 the second factor exchanges the two components up to conjugation
 (`TauCeti.complexTensorProductEquivProd_lTensor_conjAe`).
+
+When `A` is commutative, commuting the tensor factors gives the `A`-algebra isomorphism
+`A ⊗[ℝ] ℂ ≃ₐ[A] A × A` (`TauCeti.tensorProductComplexAlgEquiv`), so the `A`-algebra norm of an
+element of `A ⊗[ℝ] ℂ` is the product of its two components (`TauCeti.norm_tensorProduct_complex`).
 
 In particular, for nontrivial `A` the tensor product `ℂ ⊗[ℝ] A` has zero divisors. Explicit
 factors are `I ⊗ 1 - 1 ⊗ I` and `I ⊗ 1 + 1 ⊗ I`, where the second occurrence of `I` is mapped into
@@ -174,4 +181,44 @@ theorem complexTensorProductEquivProd_lTensor_conjAe (t : ℂ ⊗[ℝ] ℂ) :
 
 end Splitting
 
+section CommRing
+
+variable (A : Type*) [CommRing A] [Algebra ℝ A] [Algebra ℂ A] [IsScalarTower ℝ ℂ A]
+
+/-- **Splitting of `A ⊗[ℝ] ℂ` as an `A`-algebra.** For a commutative complex algebra `A` with a
+compatible real algebra structure, `A ⊗[ℝ] ℂ ≃ₐ[A] A × A` sends `a ⊗ z` to
+`(a * algebraMap ℂ A z, a * algebraMap ℂ A (starRingEnd ℂ z))`. -/
+noncomputable def tensorProductComplexAlgEquiv : A ⊗[ℝ] ℂ ≃ₐ[A] A × A :=
+  AlgEquiv.ofRingEquiv
+    (f := (Algebra.TensorProduct.comm ℝ A ℂ).toRingEquiv.trans
+      (complexTensorProductEquivProd A).toRingEquiv)
+    fun a ↦ by
+      rw [RingEquiv.trans_apply, AlgEquiv.coe_toRingEquiv, AlgEquiv.coe_toRingEquiv,
+        Algebra.TensorProduct.algebraMap_apply, Algebra.TensorProduct.comm_tmul,
+        complexTensorProductEquivProd_tmul]
+      simp [Algebra.smul_def]
+
+variable {A}
+
+theorem tensorProductComplexAlgEquiv_apply (x : A ⊗[ℝ] ℂ) :
+    tensorProductComplexAlgEquiv A x =
+      complexTensorProductEquivProd A (Algebra.TensorProduct.comm ℝ A ℂ x) :=
+  (rfl)
+
+@[simp]
+theorem tensorProductComplexAlgEquiv_tmul (a : A) (z : ℂ) :
+    tensorProductComplexAlgEquiv A (a ⊗ₜ[ℝ] z) =
+      (a * algebraMap ℂ A z, a * algebraMap ℂ A (starRingEnd ℂ z)) := by
+  simp [tensorProductComplexAlgEquiv_apply, Algebra.smul_def, mul_comm]
+
+/-- **The `A`-algebra norm on `A ⊗[ℝ] ℂ` is the product of the two components.** -/
+theorem norm_tensorProduct_complex (x : A ⊗[ℝ] ℂ) :
+    Algebra.norm A x =
+      (tensorProductComplexAlgEquiv A x).1 * (tensorProductComplexAlgEquiv A x).2 := by
+  rw [← Algebra.norm_eq_of_algEquiv (tensorProductComplexAlgEquiv A), Algebra.norm_prod,
+    Algebra.norm_self, MonoidHom.id_apply, MonoidHom.id_apply]
+
+end CommRing
+
 end TauCeti
+
