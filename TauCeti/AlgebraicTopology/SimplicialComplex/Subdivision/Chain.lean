@@ -127,14 +127,6 @@ theorem augmentation_comp_subdivision_zero :
   refine lhom_ext' fun c ↦ LinearMap.ext_ring ?_
   simp
 
-/-- Every cell in the subdivision of the boundary of a cell `c` lies in the subdivision of a
-codimension-one face of `c`. -/
-theorem exists_mem_support_subdivision_face_of_mem_support_subdivision_boundary {n : ℕ}
-    (c : RealizationCell K (n + 1)) {e : RealizationCell L n}
-    (he : e ∈ (subdivision (L := L) R b n (boundary R n (single c 1))).support) :
-    ∃ j, e ∈ (subdivision (L := L) R b n (single (c.face j) 1)).support :=
-  exists_mem_support_face_of_mem_support_boundary _ c he
-
 /-- **Simplices of the subdivision of a cell are spanned by barycenters of its faces.** Every
 vertex of a cell in the support of the subdivision of a cell `c` is the barycenter of a face of
 `c`. -/
@@ -155,7 +147,7 @@ theorem exists_le_eq_of_mem_support_subdivision {n : ℕ} (c : RealizationCell K
     rw [RealizationCell.cone_val] at hw
     rcases Finset.mem_insert.mp hw with rfl | hw
     · exact ⟨c.val, le_rfl, rfl⟩
-    · obtain ⟨j, he⟩ := exists_mem_support_subdivision_face_of_mem_support_subdivision_boundary c he
+    · obtain ⟨j, he⟩ := exists_mem_support_face_of_mem_support_boundary _ c he
       obtain ⟨τ, hτ, rfl⟩ := ih (c.face j) he hw
       exact ⟨τ, hτ.trans (c.face_val_subset j), rfl⟩
 
@@ -187,7 +179,7 @@ theorem forall_lt_and_insert_mem_of_mem_support_subdivision_boundary {n : ℕ}
     (c : RealizationCell K (n + 1)) {e : RealizationCell L n}
     (he : e ∈ (subdivision (L := L) R b n (boundary R n (single c 1))).support) :
     (∀ w ∈ e.val.val, w < b c.val) ∧ insert (b c.val) e.val.val ∈ L := by
-  obtain ⟨j, he⟩ := exists_mem_support_subdivision_face_of_mem_support_subdivision_boundary c he
+  obtain ⟨j, he⟩ := exists_mem_support_face_of_mem_support_boundary _ c he
   have hlt : ∀ w ∈ e.val.val, ∃ τ < c.val, b τ = w := fun w hw ↦ by
     obtain ⟨τ, hτ, rfl⟩ := exists_le_eq_of_mem_support_subdivision (c.face j) he hw
     exact ⟨τ, lt_of_le_of_lt hτ (c.face_val_ssubset j), rfl⟩

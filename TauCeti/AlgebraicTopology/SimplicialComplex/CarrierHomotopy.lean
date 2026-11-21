@@ -266,32 +266,6 @@ universe u v
 variable {α ι : Type u} [LinearOrder α] [LinearOrder ι]
   {K : AbstractSimplicialComplex α} {L : AbstractSimplicialComplex ι} {R : Type v} [Ring R]
 
-/-- The morphism between the objects in degrees `n` and `m` of two ordered chain complexes given by
-a linear map of ordered chains. -/
-private abbrev chainHom {n m : ℕ}
-    (f : OrderedSimplicialChain K R n →ₗ[R] OrderedSimplicialChain L R m) :
-    (orderedSimplicialChainComplex K R).X n ⟶ (orderedSimplicialChainComplex L R).X m :=
-  eqToHom (orderedSimplicialChainComplex_X R n) ≫ ModuleCat.ofHom f ≫
-    eqToHom (orderedSimplicialChainComplex_X R m).symm
-
-private theorem chainHom_comp {κ : Type u} [LinearOrder κ] {M : AbstractSimplicialComplex κ}
-    {n m k : ℕ} (f : OrderedSimplicialChain K R n →ₗ[R] OrderedSimplicialChain L R m)
-    (g : OrderedSimplicialChain L R m →ₗ[R] OrderedSimplicialChain M R k) :
-    chainHom f ≫ chainHom g = chainHom (g ∘ₗ f) := by
-  simp [chainHom, ModuleCat.ofHom_comp]
-
-private theorem chainHom_sub {n m : ℕ}
-    (f g : OrderedSimplicialChain K R n →ₗ[R] OrderedSimplicialChain L R m) :
-    chainHom f - chainHom g = chainHom (f - g) := by
-  have h : ModuleCat.ofHom (f - g) = ModuleCat.ofHom f - ModuleCat.ofHom g :=
-    ModuleCat.hom_ext (by simp)
-  rw [chainHom, chainHom, chainHom, h, Preadditive.sub_comp, Preadditive.comp_sub]
-
-private theorem chainHom_add {n m : ℕ}
-    (f g : OrderedSimplicialChain K R n →ₗ[R] OrderedSimplicialChain L R m) :
-    chainHom f + chainHom g = chainHom (f + g) := by
-  rw [chainHom, chainHom, chainHom, ModuleCat.ofHom_add, Preadditive.add_comp, Preadditive.comp_add]
-
 variable {φ ψ : ∀ n, OrderedSimplicialChain K R n →ₗ[R] OrderedSimplicialChain L R n}
   (hφd : ∀ n, boundary R n ∘ₗ φ (n + 1) = φ n ∘ₗ boundary R n)
   (hψd : ∀ n, boundary R n ∘ₗ ψ (n + 1) = ψ n ∘ₗ boundary R n)
@@ -314,24 +288,28 @@ def orderedSimplicialChainComplexHomotopyOfCarrier :
     Homotopy (orderedSimplicialChainComplexHomOfLinear R φ hφd)
       (orderedSimplicialChainComplexHomOfLinear R ψ hψd) :=
   Homotopy.equivSubZero.symm <| Homotopy.mkChainComplex _
-    (fun n ↦ chainHom (carrierHomotopy R φ ψ v n))
+    (fun n ↦ orderedSimplicialChainComplexHomOfLinearMap R (carrierHomotopy R φ ψ v n))
     (by
       rw [HomologicalComplex.sub_f_apply, orderedSimplicialChainComplexHomOfLinear_f,
-        orderedSimplicialChainComplexHomOfLinear_f, orderedSimplicialChainComplex_d, chainHom_sub,
-        chainHom_comp, boundary_comp_carrierHomotopy_zero hcone hφ hψ hε])
+        orderedSimplicialChainComplexHomOfLinear_f, orderedSimplicialChainComplex_d,
+        orderedSimplicialChainComplexHomOfLinearMap_sub,
+        orderedSimplicialChainComplexHomOfLinearMap_comp,
+        boundary_comp_carrierHomotopy_zero hcone hφ hψ hε])
     fun n ↦ by
       rw [HomologicalComplex.sub_f_apply, orderedSimplicialChainComplexHomOfLinear_f,
         orderedSimplicialChainComplexHomOfLinear_f, orderedSimplicialChainComplex_d,
-        orderedSimplicialChainComplex_d, chainHom_sub, chainHom_comp, chainHom_comp, chainHom_add]
-      exact congrArg chainHom ((boundary_comp_carrierHomotopy_succ hcone hinsert hmono hφ hψ hε hφd
-        hψd n).symm.trans (add_comm _ _))
+        orderedSimplicialChainComplex_d, orderedSimplicialChainComplexHomOfLinearMap_sub,
+        orderedSimplicialChainComplexHomOfLinearMap_comp,
+        orderedSimplicialChainComplexHomOfLinearMap_comp,
+        orderedSimplicialChainComplexHomOfLinearMap_add]
+      exact congrArg (orderedSimplicialChainComplexHomOfLinearMap R)
+        ((boundary_comp_carrierHomotopy_succ hcone hinsert hmono hφ hψ hε hφd hψd n).symm.trans
+          (add_comm _ _))
 
 /-- The components of the chain homotopy of a cone carrier are the homotopy operator. -/
 theorem orderedSimplicialChainComplexHomotopyOfCarrier_hom (n : ℕ) :
     (orderedSimplicialChainComplexHomotopyOfCarrier hφd hψd hcone hinsert hmono hφ hψ hε).hom n
-      (n + 1) = eqToHom (orderedSimplicialChainComplex_X R n) ≫
-        ModuleCat.ofHom (carrierHomotopy R φ ψ v n) ≫
-          eqToHom (orderedSimplicialChainComplex_X R (n + 1)).symm := by
+      (n + 1) = orderedSimplicialChainComplexHomOfLinearMap R (carrierHomotopy R φ ψ v n) := by
   simp [orderedSimplicialChainComplexHomotopyOfCarrier, Homotopy.equivSubZero]
 
 end Homotopy

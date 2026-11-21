@@ -89,6 +89,11 @@ theorem image_vertexEmbedding (c : RealizationCell K n) :
     Finset.univ.image c.vertexEmbedding = c.val.val :=
   Finset.image_orderEmbOfFin_univ c.val.val c.property
 
+/-- The last enumerated vertex of a cell is its largest vertex. -/
+theorem vertexEmbedding_last (c : RealizationCell K n) :
+    c.vertexEmbedding (Fin.last n) = c.val.val.max' ⟨_, c.vertexEmbedding_mem 0⟩ :=
+  Finset.orderEmbOfFin_last c.property n.succ_pos
+
 /-- The only enumerated vertex of the `0`-cell of a vertex is that vertex. -/
 @[simp]
 theorem vertexEmbedding_vertex (v : ι) (i : Fin 1) : (vertex K v).vertexEmbedding i = v :=
@@ -279,20 +284,15 @@ theorem face_cone_zero (c : RealizationCell K 0) (v : ι) (hlt : ∀ w ∈ c.val
 
 /-- A vertex of a cell that no vertex of the cell exceeds is its last vertex. -/
 theorem vertexEmbedding_last_eq {c : RealizationCell K n} {v : ι} (hv : v ∈ c.val.val)
-    (hle : ∀ w ∈ c.val.val, w ≤ v) : c.vertexEmbedding (Fin.last n) = v := by
-  rw [← c.image_vertexEmbedding] at hv
-  obtain ⟨j, -, rfl⟩ := Finset.mem_image.mp hv
-  exact le_antisymm (hle _ (c.vertexEmbedding_mem _))
-    (c.strictMono_vertexEmbedding.monotone (Fin.le_last j))
+    (hle : ∀ w ∈ c.val.val, w ≤ v) : c.vertexEmbedding (Fin.last n) = v :=
+  c.vertexEmbedding_last.trans ((Finset.max'_eq_iff _ _ _).mpr ⟨hv, hle⟩)
 
 /-- Every vertex of the face opposite the last vertex of a cell precedes that last vertex. -/
 theorem lt_of_mem_face_last (c : RealizationCell K (n + 1)) {w : ι}
     (hw : w ∈ (c.face (Fin.last (n + 1))).val.val) : w < c.vertexEmbedding (Fin.last (n + 1)) := by
-  rw [face_val, Finset.mem_erase, ← c.image_vertexEmbedding] at hw
-  obtain ⟨hne, hw⟩ := hw
-  obtain ⟨j, -, rfl⟩ := Finset.mem_image.mp hw
-  exact c.strictMono_vertexEmbedding
-    (lt_of_le_of_ne (Fin.le_last j) fun h ↦ hne (congrArg c.vertexEmbedding h))
+  rw [face_val] at hw
+  rw [vertexEmbedding_last] at hw ⊢
+  exact Finset.lt_max'_of_mem_erase_max' _ _ hw
 
 /-- Adjoining the last vertex of a cell to the face opposite it recovers the cell. -/
 theorem insert_face_last (c : RealizationCell K (n + 1)) :
