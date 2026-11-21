@@ -8,7 +8,7 @@ module
 public import TauCeti.RingTheory.Length.Endomorphism
 public import TauCeti.RingTheory.OrderOfVanishing
 import Mathlib.Data.ENat.BigOperators
-import TauCeti.RingTheory.Ideal.Quotient.Semilocal
+import TauCeti.RingTheory.QuasiFinite.Basic
 
 /-!
 # The local projection formula for finite maps of curves
@@ -20,7 +20,8 @@ equation `a` satisfies
 `∑ m, [κ(m) : κ(A)] * ord_{Bₘ}(a) = rank_A B * ord_A(a)`.
 
 The sum is over the maximal ideals of `B`. Only the finitely many containing the image
-of `a` contribute. The residue degree is expressed as `length_A (B ⧸ m)`, and
+of `a` contribute. The residue degree is expressed as `length_A (B ⧸ m)`, which
+`MaximalSpectrum.length_quotient_eq_length_residueField` rewrites as `[κ(Bₘ) : κ(A)]`, and
 `rank_A B` is also the degree of the extension of fraction fields, by
 `IsFractionRing.finrank_eq`. Neither ring needs to be normal and `B` need not be flat
 over `A`: this includes finite birational maps onto singular curves.
@@ -66,24 +67,15 @@ theorem finsum_ord_algebraMap_mul_length_quotient_eq_finrank_mul_ord {a : A} (ha
         Module.length A (B ⧸ m.asIdeal)) =
       ((Module.finrank A B * (Ring.ord A a).toNat : ℕ) : ℕ∞) := by
   have : IsDomain A := .of_faithfulSMul A B
-  have ha' : Ring.ord A a ≠ ⊤ := Module.length_ne_top_iff.mpr
-    (_root_.isFiniteLength_quotient_span_singleton A (mem_nonZeroDivisors_of_ne_zero ha))
-  rw [Nat.cast_mul, ENat.natCast_toNat ha']
+  rw [Nat.cast_mul, ENat.natCast_toNat (Ring.ord_ne_top (mem_nonZeroDivisors_of_ne_zero ha))]
   have hab : algebraMap A B a ≠ 0 := (FaithfulSMul.algebraMap_eq_zero_iff A B).not.mpr ha
-  have hrange : LinearMap.range (LinearMap.lsmul A B a) =
-      (Ideal.span {algebraMap A B a}).restrictScalars A := by
-    ext b
-    simp [Ideal.mem_span_singleton', Algebra.smul_def, mul_comm]
   have hlen := length_quotient_lsmul_eq_finrank_mul_ord (M := B) ha
-  rw [hrange, (Submodule.Quotient.restrictScalarsEquiv A _).length_eq,
+  rw [range_lsmul_eq_smul_top, ← Submodule.ideal_span_singleton_smul, Ideal.smul_top_eq_map,
+    Ideal.map_span, Set.image_singleton, (Submodule.Quotient.restrictScalarsEquiv A _).length_eq,
     length_quotient_span_singleton_eq_finsum_ord hab] at hlen
   refine (finsum_congr fun m ↦ ?_).trans hlen
-  let e := IsLocalization.algEquiv m.asIdeal.primeCompl
-    (Localization.AtPrime m.asIdeal) (S m)
-  have hord := Ring.ord_ringEquiv e.toRingEquiv
-    (algebraMap B (Localization.AtPrime m.asIdeal) (algebraMap A B a))
-  simp only [AlgEquiv.coe_toRingEquiv, e.commutes] at hord
-  rw [hord, m.length_residueField_localization_eq]
+  rw [Ring.ord_algebraMap_isLocalization m.asIdeal.primeCompl (Localization.AtPrime m.asIdeal),
+    m.length_residueField_localization_eq]
 
 /-- The local projection formula as an equality of natural numbers. All summands of the
 extended-natural formula are finite, so conversion to natural numbers preserves the sum. -/
@@ -93,32 +85,12 @@ theorem finsum_toNat_ord_algebraMap_mul_length_quotient_eq_finrank_mul_ord
       (Ring.ord (S m) (algebraMap B (S m) (algebraMap A B a))).toNat *
         (Module.length A (B ⧸ m.asIdeal)).toNat) =
       Module.finrank A B * (Ring.ord A a).toNat := by
-  classical
-  have : IsDomain A := .of_faithfulSMul A B
-  have hab : algebraMap A B a ≠ 0 := (FaithfulSMul.algebraMap_eq_zero_iff A B).not.mpr ha
-  let t := (finite_setOf_mem_maximalSpectrum A hab).toFinset
-  let f : MaximalSpectrum B → ℕ∞ := fun m ↦
-    Ring.ord (S m) (algebraMap B (S m) (algebraMap A B a)) *
-      Module.length A (B ⧸ m.asIdeal)
-  have hsupp : Function.support f ⊆ t := by
-    intro m hm
-    simp only [t, Finset.mem_coe, Set.Finite.mem_toFinset, Set.mem_ofPred_eq]
-    by_contra ham
-    have hu := (IsLocalization.AtPrime.isUnit_to_map_iff (S m) m.asIdeal _).mpr ham
-    exact hm (by simp [f, Ring.ord_of_isUnit hu])
+  have : Finite (MaximalSpectrum B) := finite_maximalSpectrum_of_isIntegral_of_quasiFinite A
+  have := Fintype.ofFinite (MaximalSpectrum B)
   have h := finsum_ord_algebraMap_mul_length_quotient_eq_finrank_mul_ord S ha
-  rw [finsum_eq_sum_of_support_subset _ hsupp] at h
-  have hfin : ∀ m ∈ t, f m ≠ ⊤ := by
-    apply ENat.sum_ne_top.mp
-    rw [h]
-    exact ENat.natCast_ne_top _
-  have hsupp' : Function.support (fun m ↦ (f m).toNat) ⊆ t := by
-    intro m hm
-    apply hsupp
-    intro hz
-    exact hm (by simp only [hz, ENat.toNat_zero])
-  simpa only [f, ENat.toNat_mul, ENat.toNat_natCast] using
-    (finsum_eq_sum_of_support_subset _ hsupp').trans
-      ((ENat.toNat_sum hfin).symm.trans (congrArg ENat.toNat h))
+  rw [finsum_eq_sum_of_fintype] at h ⊢
+  have hfin := ENat.sum_ne_top.mp (h ▸ ENat.natCast_ne_top _)
+  simpa only [ENat.toNat_mul, ENat.toNat_natCast] using
+    (ENat.toNat_sum hfin).symm.trans (congrArg ENat.toNat h)
 
 end TauCeti
