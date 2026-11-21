@@ -19,7 +19,9 @@ import Mathlib.Analysis.CStarAlgebra.Matrix
 import Mathlib.Analysis.CStarAlgebra.Spectrum
 import Mathlib.Analysis.Complex.Polynomial.Basic
 import Mathlib.LinearAlgebra.Matrix.Charpoly.Eigs
+import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.Polynomial.ContinuityOfRoots.Basic
+import TauCeti.LinearAlgebra.Matrix.ConjTranspose
 import TauCeti.Topology.Instances.Matrix
 
 /-!
@@ -56,6 +58,10 @@ The index has the formal properties of the Robbin–Salamon Maslov index for pat
 * it is additive under direct sums (`Matrix.UnitaryGroup.maslovIndex_sum`), also when they are
   read in the regrouped coordinates of symplectic direct sums
   (`Matrix.UnitaryGroup.maslovIndex_eq_add_of_coe_eq_symplecticSum`);
+* it changes sign under complex conjugation of the frames
+  (`Matrix.UnitaryGroup.maslovIndex_map_map_star`), which reflects the Lagrangians by the
+  anti-symplectic involution `z ↦ conj z` fixing `ℝⁿ`: conjugation inverts `det (W t)` and
+  negates `s(W t)` (`Matrix.spectralAngleSum_map_star`);
 * on a path whose Lagrangians close up, it is the degree of the loop `t ↦ det (U t) ^ 2`, the
   Maslov index of the loop of Lagrangians (`Matrix.UnitaryGroup.maslovIndex_eq_degree`), and on a
   loop of frames it is twice the degree of `t ↦ det (U t)`
@@ -111,6 +117,7 @@ computes the parity of the Conley–Zehnder index.
 * `Matrix.UnitaryGroup.maslovIndex_eq_zero_of_rootMultiplicity_eq`: the zero axiom.
 * `Matrix.UnitaryGroup.exp_maslovIndex_mul_det_mul_exp_spectralAngleSum`: the index modulo `2`
   from the endpoint frames.
+* `Matrix.UnitaryGroup.maslovIndex_map_map_star`: complex conjugation negates the index.
 
 ## References
 
@@ -183,16 +190,37 @@ theorem spectralAngleSum_conj {P Q : Matrix n n ℂ} (hPQ : P * Q = 1) (hQP : Q 
   rw [Units.val_mk, inv_eq_left_inv hQP] at h
   rw [spectralAngleSum, spectralAngleSum, h]
 
+/-- On the unit circle, complex conjugation negates the angle offset: away from `1`, the number
+`-z` lies in the slit plane, where conjugation negates the argument. -/
+private theorem angleOffset_conj {z : ℂ} (hz : ‖z‖ = 1) :
+    angleOffset (starRingEnd ℂ z) = -angleOffset z := by
+  by_cases h1 : z = 1
+  · simp [angleOffset, h1]
+  have h1' : starRingEnd ℂ z ≠ 1 := fun h ↦ h1 (by simpa using congrArg (starRingEnd ℂ) h)
+  have hpi := slitPlane_arg_ne_pi (neg_mem_slitPlane_of_norm_eq_one hz h1)
+  simp only [angleOffset, h1, h1', ↓reduceIte, ← map_neg, arg_conj, hpi, neg_div]
+
+open scoped Matrix.Norms.L2Operator in
+/-- **Complex conjugation negates the spectral angle sum** of a unitary matrix: the eigenvalues of
+the conjugate matrix are the conjugates of those of `W`, with the same multiplicities, and
+conjugation negates the angle offset of every point of the unit circle. -/
+theorem spectralAngleSum_map_star {W : Matrix n n ℂ} (hW : W ∈ unitaryGroup n ℂ) :
+    spectralAngleSum (W.map star) = -spectralAngleSum W := by
+  have hroots : (W.map star).charpoly.roots = W.charpoly.roots.map (starRingEnd ℂ) := by
+    rw [map_star_eq_map_starRingEnd, charpoly_map]
+    exact ((charpoly_monic W).roots_map_of_card_eq_natDegree _
+      IsAlgClosed.card_roots_eq_natDegree).symm
+  rw [spectralAngleSum, spectralAngleSum, hroots, Multiset.map_map, ← Multiset.sum_map_neg]
+  refine congrArg Multiset.sum (Multiset.map_congr rfl fun z hz ↦ ?_)
+  exact angleOffset_conj (spectrum.norm_eq_one_of_unitary hW
+    (mem_spectrum_of_isRoot_charpoly (isRoot_of_mem_roots hz)))
+
 /-- Away from `1`, on the unit circle, the angle offset is continuous: there `-z` lies in the slit
 plane, where the argument is continuous. -/
 private theorem continuousAt_angleOffset {z : ℂ} (hz : ‖z‖ = 1) (hz1 : z ≠ 1) :
     ContinuousAt angleOffset z := by
-  have hslit : -z ∈ slitPlane := by
-    rw [mem_slitPlane_iff_not_le_zero, neg_nonpos]
-    intro h
-    exact hz1 (by rw [eq_coe_norm_of_nonneg h, hz, ofReal_one])
-  refine ContinuousAt.congr (((continuousAt_arg hslit).comp continuous_neg.continuousAt).div_const
-    (2 * Real.pi)) ?_
+  refine ContinuousAt.congr (((continuousAt_arg (neg_mem_slitPlane_of_norm_eq_one hz hz1)).comp
+    continuous_neg.continuousAt).div_const (2 * Real.pi)) ?_
   filter_upwards [isOpen_ne.mem_nhds hz1] with w hw
   simp [angleOffset, hw]
 
@@ -341,6 +369,13 @@ theorem souriau_eq_of_realImage_eq {U V : unitaryGroup n ℂ}
 theorem coe_souriau_mul_left (O U : unitaryGroup n α) :
     (souriau (O * U) : Matrix n n α) = (O : Matrix n n α) * souriau U * (O : Matrix n n α)ᵀ := by
   simp [Matrix.mul_assoc, transpose_mul]
+
+/-- The Souriau map of the complex conjugate frame is the complex conjugate of the Souriau map. -/
+@[simp]
+theorem souriau_map_star (U : unitaryGroup n α) : souriau (map_star U) = map_star (souriau U) := by
+  refine Subtype.ext ?_
+  rw [coe_souriau, map_star_coe, map_star_coe, coe_souriau, ← transpose_map]
+  simp only [map_star_eq_map_starRingEnd, Matrix.map_mul]
 
 /-- The Souriau map of a block-diagonal sum is the block-diagonal sum of the Souriau maps. -/
 @[simp]
@@ -527,6 +562,20 @@ theorem maslovIndex_map_mul_left {U V : unitaryGroup n ℂ} (O : unitaryGroup n 
     rw [coe_souriau_mul_left, spectralAngleSum_conj hO hO']
   rw [maslovIndex, maslovIndex, Circle.angleChange_congr (detSouriauPath (γ.map _))
     (detSouriauPath γ) fun t => by simp [hdet], hs, hs]
+
+/-- **Complex conjugation negates the Maslov index.** Conjugating a path of frames reflects the path
+of Lagrangians `γ t ℝⁿ` by the anti-symplectic involution `z ↦ conj z` of `ℂⁿ`, which fixes `ℝⁿ`.
+The Souriau maps are conjugated, which inverts their determinants and negates their spectral angle
+sums. -/
+@[simp]
+theorem maslovIndex_map_map_star {U V : unitaryGroup n ℂ} (γ : Path U V) :
+    maslovIndex (γ.map continuous_map_star) = -maslovIndex γ := by
+  have hs (W : unitaryGroup n ℂ) : spectralAngleSum (souriau (map_star W) : Matrix n n ℂ) =
+      -spectralAngleSum (souriau W : Matrix n n ℂ) := by
+    rw [souriau_map_star, map_star_coe, spectralAngleSum_map_star (souriau W).property]
+  rw [maslovIndex, maslovIndex, Circle.angleChange_congr (detSouriauPath (γ.map _))
+    (detSouriauPath γ).inv fun t => by simp, Circle.angleChange_inv, hs, hs]
+  ring
 
 /-- **The loop case.** If the path of Lagrangians closes up, that is, the frames at the endpoints
 have the same Souriau map, the Maslov index is the degree of the loop of determinants
