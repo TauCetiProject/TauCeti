@@ -10,6 +10,7 @@ public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Cayley.Basic
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Cayley
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Constructions
 public import TauCeti.Analysis.InnerProductSpace.ProjValMeasure.Map
+import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Resolvent
 import TauCeti.MeasureTheory.Measure.ResolventTransform.Inversion
 
 /-!
@@ -533,12 +534,8 @@ theorem _root_.IsSelfAdjoint.spectralPVM_toPMap_top {T : H →L[ℂ] H} (hT : Is
   have := hT.isStarNormal
   symm
   refine ((isSelfAdjoint_toPMap_top hT).eq_spectralPVM_iff _).mpr fun z hz ξ => ?_
-  have hzT : z ∈ _root_.resolventSet ℂ T := by
-    by_contra h
-    exact hz.ne' (by simpa using congrArg Complex.im (hT.mem_spectrum_eq_re h))
-  have hne : ∀ w ∈ _root_.spectrum ℂ T, z - w ≠ 0 := fun w hw h0 => by
-    rw [← sub_eq_zero.mp h0] at hw
-    exact hw hzT
+  have hzT : z ∈ _root_.resolventSet ℂ T :=
+    Set.notMem_compl_iff.mp fun h => hz.ne' (hT.im_eq_zero_of_mem_spectrum h)
   -- On the spectrum `w = re w`, so the symbol is `w ↦ (z - w)⁻¹`.
   have hsymb : (fun w : _root_.spectrum ℂ T => (z - ((w : ℂ).re : ℂ))⁻¹) =
       fun w : _root_.spectrum ℂ T => (z - (w : ℂ))⁻¹ := by
@@ -547,8 +544,6 @@ theorem _root_.IsSelfAdjoint.spectralPVM_toPMap_top {T : H →L[ℂ] H} (hT : Is
   rw [ContinuousLinearMap.resolvent_toPMap_top T hzT, ProjValMeasure.map_diag,
     integral_map (by fun_prop) (by fun_prop), ContinuousLinearMap.spectralPVM_diag, hsymb,
     ContinuousLinearMap.integral_diagMeasure_eq_inner_cfc _ _ (fun w => (z - w)⁻¹)
-      ((continuousOn_const.sub continuousOn_id).inv₀ hne),
-    cfc_inv (fun w => z - w) T hne, cfc_sub (fun _ => z) (fun w => w) T, cfc_const z T,
-    cfc_id' ℂ T, _root_.resolvent]
+      (continuousOn_inv_sub_of_mem_resolventSet hzT), cfc_inv_sub_eq_resolvent hzT]
 
 end LinearPMap
