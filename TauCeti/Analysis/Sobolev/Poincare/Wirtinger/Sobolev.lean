@@ -10,7 +10,7 @@ import TauCeti.Analysis.Sobolev.Poincare.Potential
 import TauCeti.Analysis.Sobolev.W1p.Restriction
 import TauCeti.Analysis.Sobolev.Wkp.MeyersSerrin
 import TauCeti.MeasureTheory.Integral.Average
-import TauCeti.MeasureTheory.Integral.RieszPotential
+import TauCeti.MeasureTheory.Integral.RieszPotential.Basic
 import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
@@ -361,9 +361,9 @@ theorem W1p.setLAverage_rpow_enorm_value_sub_setAverage_le_of_ball_subset [Nontr
     isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
   set uB : W1p mu B p := W1p.ofExponentLE hpp₀ (W1p.restrictL hB u)
   have hval : W1p.value uB =ᵐ[mu.restrict (ball c r)] W1p.value u :=
-    (W1p.value_ofExponentLE_ae _ _).trans (W1p.value_restrictL_ae hB u)
+    (W1p.coeFn_value_ofExponentLE _ _).eventuallyEq.trans (W1p.value_restrictL_ae hB u)
   have hgrad : W1p.gradient uB =ᵐ[mu.restrict (ball c r)] W1p.gradient u :=
-    (W1p.gradient_ofExponentLE_ae _ _).trans (W1p.gradient_restrictL_ae hB u)
+    (W1p.coeFn_gradient_ofExponentLE _ _).eventuallyEq.trans (W1p.gradient_restrictL_ae hB u)
   have havg : ⨍ y in (B : Set E), W1p.value uB y ∂mu = ⨍ y in ball c r, W1p.value u y ∂mu :=
     average_congr hval
   have h := W1p.setLAverage_rpow_enorm_value_sub_setAverage_le_of_eq_ball hp hr rfl hpq hδ hδn uB

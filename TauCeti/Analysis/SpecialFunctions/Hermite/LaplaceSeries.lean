@@ -8,13 +8,16 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 public import Mathlib.RingTheory.Polynomial.Hermite.Basic
+public import Mathlib.RingTheory.Polynomial.Pochhammer
 public import TauCeti.Analysis.SpecialFunctions.Gaussian.LaplaceIntegral
 
 import Mathlib.Analysis.Complex.AbelLimit
 import Mathlib.Analysis.Complex.LocallyUniformLimit
 import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
+import TauCeti.Analysis.RCLike.Basic
 import TauCeti.Analysis.SpecialFunctions.Erf.Series
+import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.Analysis.SpecialFunctions.Hermite.Bound
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import TauCeti.RingTheory.Polynomial.Hermite.GeneratingFunction
@@ -27,12 +30,13 @@ endpoint limits for the Laplace–Hermite series
 
   `∑_{m ≥ 0} r^m / m! * He_m(y) * ∫_{u > 0} u^{s + m - 1} exp(-u² / 2 - x u) du`
 
-for Mellin exponent `s : ℂ`, Laplace parameter `x : ℂ`, real Hermite argument `y : ℝ`, and
-expansion ratio `r : ℂ` (for absolute convergence and holomorphy in `s`) or `r : ℝ` (for closed-form
-summation and radial/Abel endpoint limits). This series encodes the Laplace-integral core of the
-rotational addition formula for parabolic cylinder functions (DLMF 12.13.5) via the Laplace
-representation of `U(s - 1 / 2, x)` (DLMF 12.5.1) and the Hermite polynomial specialization
-`D_m(y) = exp(-y² / 4) He_m(y)`.
+and its Pochhammer–Gamma–normalized counterpart with factor `(s)_m / Γ(s + m) = 1 / Γ(s)`, for
+Mellin exponent `s : ℂ`, Laplace parameter `x : ℂ`, real Hermite argument `y : ℝ`, and expansion
+ratio `r : ℂ` (for absolute convergence, holomorphy in `s`, and unrescaled summation) or `r : ℝ`
+(for rescaled closed-form summation and radial/Abel endpoint limits). This series encodes the
+Laplace-integral core of the rotational addition formula for parabolic cylinder functions (DLMF
+12.13.5) via the Laplace representation of `U(s - 1 / 2, x)` (DLMF 12.5.1) and the Hermite
+polynomial specialization `D_m(y) = exp(-y² / 4) He_m(y)`.
 
 ## Mathematical overview
 
@@ -45,14 +49,17 @@ representation of `U(s - 1 / 2, x)` (DLMF 12.5.1) and the Hermite polynomial spe
    `(1, ∞)` cancels `‖r‖² u² / 2` against `exp(-u² / 2)` without losing integrability near `0`.
    Consequently, for every `M : ℕ`, `s, x, r : ℂ` with `0 < s.re + M`, and `y : ℝ`, the `M`-shifted
    tail converges absolutely whenever `‖r‖ < 1`, whenever `‖r‖ ≤ 1` and `0 < x.re`, and at the
-   critical case `‖r‖ ≤ 1`, `0 ≤ x.re`, `s.re < 0`.
+   critical case `‖r‖ ≤ 1`, `0 ≤ x.re`, `s.re < 0`; shifting past any non-integrable initial indices
+   gives norm-summability of the full series for arbitrary `s : ℂ`.
 2. **Holomorphy in `s`:** Uniform domination on small disks by pairs of real exponents yields
    complex differentiability of the `M`-shifted `tsum` on `{s : ℂ | 0 < s.re + M}` whenever
    `‖r‖ < 1` or `‖r‖ ≤ 1 ∧ 0 < x.re`, and on `{s : ℂ | 0 < s.re + M ∧ s.re < 0}` at the critical
    case `‖r‖ ≤ 1 ∧ 0 ≤ x.re`, enabling analytic continuation in `s` across vertical strips.
 3. **Closed form and rotational specialization:** Interchanging summation and integration via the
-   exponential generating function of `Polynomial.hermite` and rescaling `v = √(1 + r²) u` sums the
-   series for `0 < s.re`, `x : ℂ`, `y, r : ℝ`, and `|r| < 1 ∨ (|r| ≤ 1 ∧ 0 < x.re)` to
+   exponential generating function of `Polynomial.hermite` sums the series for `0 < s.re`,
+   `x, r : ℂ`, `y : ℝ`, and `‖r‖ < 1 ∨ (‖r‖ ≤ 1 ∧ 0 < x.re)` to
+   `∫_{u > 0} u^{s - 1} exp(-((1 + r²) u²) / 2 - (x - r y) u) du`. For real `r`, rescaling
+   `v = √(1 + r²) u` yields
    `(√(1 + r²))^{-s} ∫_{v > 0} v^{s - 1} exp(-v² / 2 - ((x - r y) / √(1 + r²)) v) dv`.
    Setting `r = -tan t` (`|t| < π / 4`, or `|t| ≤ π / 4` when `0 < x.re`) yields the rotated
    Gaussian–Laplace integral at `x cos t + y sin t` with prefactor `(cos t)^s`.
@@ -63,6 +70,11 @@ representation of `U(s - 1 / 2, x)` (DLMF 12.5.1) and the Hermite polynomial spe
    (`Complex.tendsto_tsum_powerSeries_nhdsWithin_lt`) shows that whenever the series at any
    `|r| ≤ 1` (including the endpoints `r = ∓1`, i.e. `t = ±π / 4`) converges, its sum equals the
    rotated integral at `(x - r y) / √(1 + r²)`.
+5. **Pochhammer–Gamma normalization:** Multiplying termwise by `(s)_m (Γ(s + m))⁻¹ = (Γ s)⁻¹`
+   (`Complex.inv_Gamma_eq_ascPochhammer_eval_mul_inv_Gamma_add_natCast`) transfers summability
+   (including unconditionally at the nonpositive integer poles `s = -n`, where every term vanishes),
+   `M`-shifted tail holomorphy, closed-form `HasSum` (including complex `r` and `r = -tan t`), and
+   radial limits directly to the Gamma-normalized Laplace kernel of `U(s - 1 / 2, x)`.
 
 ## Main results
 
@@ -74,21 +86,32 @@ representation of `U(s - 1 / 2, x)` (DLMF 12.5.1) and the Hermite polynomial spe
   `(a, ∞)` (`0 < a`), and `(0, ∞)` of the `M`-shifted half-Gamma Laplace majorant.
 * `TauCeti.summable_integral_norm_cpow_mul_cexp_mul_hermite_add`,
   `TauCeti.summable_pow_div_factorial_mul_hermite_mul_integral_add`,
-  `TauCeti.summable_pow_div_factorial_mul_hermite_mul_integral`: absolute summability of `M`-shifted
-  and unshifted Laplace–Hermite series.
+  `TauCeti.summable_pow_div_factorial_mul_hermite_mul_integral`,
+  `TauCeti.summable_norm_pow_div_factorial_mul_hermite_mul_integral`: absolute summability of
+  `M`-shifted and unshifted Laplace–Hermite series.
 * `TauCeti.differentiableOn_tsum_pow_div_factorial_mul_hermite_mul_integral_add`,
   `TauCeti.differentiableOn_tsum_pow_div_factorial_mul_hermite_mul_integral`: holomorphy of the
   `M`-shifted and unshifted Laplace–Hermite `tsum` in the Mellin parameter `s`.
 * `TauCeti.differentiableOn_tsum_pow_div_factorial_mul_hermite_mul_integral_add_re_neg_of_re_nonneg`
   (strip holomorphy on `{s : ℂ | 0 < s.re + M ∧ s.re < 0}` when `‖r‖ ≤ 1` and `0 ≤ x.re`).
-* `TauCeti.hasSum_pow_div_factorial_mul_hermite_mul_integral`,
+* `TauCeti.hasSum_pow_div_factorial_mul_hermite_mul_integral_complex`,
+  `TauCeti.hasSum_pow_div_factorial_mul_hermite_mul_integral`,
   `TauCeti.hasSum_neg_tan_pow_div_factorial_mul_hermite_mul_integral`: closed-form `HasSum`
-  evaluation and trigonometric rotational specialization (`r = -tan t`).
+  evaluation for complex and real `r`, and trigonometric rotational specialization (`r = -tan t`).
 * `TauCeti.tendsto_tsum_mul_pow_div_factorial_mul_hermite_mul_integral_nhdsLT_one`: unrestricted
   radial limit as `t → 1⁻` for any `|r| ≤ 1`.
 * `TauCeti.eq_mul_integral_of_tendsto_sum_pow_div_factorial_mul_hermite_mul_integral`,
   `TauCeti.hasSum_pow_div_factorial_mul_hermite_mul_integral_of_summable`: conditional and
   summable evaluation on `|r| ≤ 1` via Abel's limit theorem.
+* `TauCeti.summable_norm_ascPochhammer_mul_hermite_mul_inv_Gamma_integral`,
+  `TauCeti.differentiableOn_tsum_ascPochhammer_mul_hermite_mul_inv_Gamma_integral_add`,
+  `TauCeti.differentiableOn_tsum_ascPochhammer_mul_hermite_mul_inv_Gamma_integral_add_re_neg`,
+  `TauCeti.hasSum_ascPochhammer_mul_hermite_mul_inv_Gamma_integral_complex`,
+  `TauCeti.hasSum_ascPochhammer_mul_hermite_mul_inv_Gamma_integral`,
+  `TauCeti.hasSum_neg_tan_ascPochhammer_mul_hermite_mul_inv_Gamma_integral`,
+  `TauCeti.tendsto_tsum_ascPochhammer_mul_hermite_mul_inv_Gamma_integral_nhdsLT_one`:
+  Pochhammer–Gamma–normalized summability (including `s = -n`), `M`-shifted holomorphy, closed-form
+  summation, and radial limits.
 
 ## References
 
@@ -377,6 +400,21 @@ theorem summable_pow_div_factorial_mul_hermite_mul_integral {s : ℂ} (hs : 0 < 
   simpa using summable_pow_div_factorial_mul_hermite_mul_integral_add 0 x r y (by simpa using hs)
     hconv'
 
+/-- Unshifted norm-summability of the Laplace–Hermite series for arbitrary `s : ℂ` (shifting past
+any non-integrable initial indices), covering `‖r‖ < 1`, `‖r‖ ≤ 1 ∧ 0 < x.re`, and the critical
+case `‖r‖ ≤ 1 ∧ 0 ≤ x.re ∧ s.re < 0`. -/
+theorem summable_norm_pow_div_factorial_mul_hermite_mul_integral (s x r : ℂ) (y : ℝ)
+    (hconv : ‖r‖ < 1 ∨ (‖r‖ ≤ 1 ∧ (0 < x.re ∨ (0 ≤ x.re ∧ s.re < 0)))) :
+    Summable fun m : ℕ =>
+      ‖r ^ m / (m ! : ℂ) * aeval (y : ℂ) (hermite m) *
+        ∫ u in Ioi (0 : ℝ), (u : ℂ) ^ (s + m - 1) * cexp (-(u : ℂ) ^ 2 / 2 - x * u)‖ := by
+  obtain ⟨M, hM⟩ := exists_nat_gt (-s.re)
+  rw [← summable_nat_add_iff M]
+  refine Summable.of_nonneg_of_le (fun _ => norm_nonneg _) (fun k => ?_)
+    (summable_integral_norm_cpow_mul_cexp_mul_hermite_add M x r y (by linarith) hconv)
+  rw [mul_integral_cpow_add_nat_eq_integral_mul]
+  exact norm_integral_le_integral_norm _
+
 /-! ### Complex differentiability in the Mellin parameter `s` -/
 
 private theorem differentiableOn_term_add (m : ℕ) (x r : ℂ) (y : ℝ) :
@@ -442,12 +480,8 @@ private theorem differentiableAt_tsum_add_of_ball (M : ℕ) (x r : ℂ) (y : ℝ
   have hconv₁ : ‖r‖ < 1 ∨ (‖r‖ ≤ 1 ∧ (0 < x.re ∨ (0 ≤ x.re ∧ σ₁ < 0))) :=
     hconv.imp_right fun ⟨h1, h2⟩ =>
       ⟨h1, h2.imp_right fun ⟨h3, _⟩ => ⟨h3, by dsimp [σ₁]; linarith⟩⟩
-  have hball : ∀ {s : ℂ}, s ∈ Metric.ball s₀ δ → σ₁ < s.re ∧ s.re < σ₂ := fun {s} hs => by
-    rw [Metric.mem_ball, dist_eq_norm] at hs
-    have hre := lt_of_le_of_lt (Complex.abs_re_le_norm (s - s₀)) hs
-    rw [Complex.sub_re] at hre
-    exact ⟨by dsimp [σ₁]; linarith [(abs_lt.mp hre).1],
-      by dsimp [σ₂]; linarith [(abs_lt.mp hre).2]⟩
+  have hball : ∀ {s : ℂ}, s ∈ Metric.ball s₀ δ → σ₁ < s.re ∧ s.re < σ₂ :=
+    fun hs => RCLike.re_mem_Ioo_of_mem_ball hs
   have hu_sum : Summable fun k : ℕ =>
       (∫ u in Ioi (0 : ℝ), majorantTerm σ₁ x.re ‖r‖ y (k + M) u) +
         ∫ u in Ioi (0 : ℝ), majorantTerm σ₂ x.re ‖r‖ y (k + M) u :=
@@ -522,6 +556,50 @@ theorem differentiableOn_tsum_pow_div_factorial_mul_hermite_mul_integral (x : �
 
 /-! ### Exact `HasSum` evaluation and rotational specialization -/
 
+/-- Closed-form `HasSum` evaluation of the Laplace–Hermite series for complex `r : ℂ`: for
+`0 < s.re`, `x r : ℂ`, and `y : ℝ` with `‖r‖ < 1 ∨ (‖r‖ ≤ 1 ∧ 0 < x.re)`,
+`∑_{m ≥ 0} r^m / m! * He_m(y) ∫_{u > 0} u^{s + m - 1} exp(-u² / 2 - x u) du` sums to
+`∫_{u > 0} u^{s - 1} exp(-((1 + r²) u²) / 2 - (x - r y) u) du`. -/
+theorem hasSum_pow_div_factorial_mul_hermite_mul_integral_complex {s : ℂ} (hs : 0 < s.re)
+    (x : ℂ) (y : ℝ) {r : ℂ} (hr : ‖r‖ < 1 ∨ (‖r‖ ≤ 1 ∧ 0 < x.re)) :
+    HasSum
+      (fun m : ℕ =>
+        r ^ m / (m ! : ℂ) * aeval (y : ℂ) (hermite m) *
+          ∫ u in Ioi (0 : ℝ), (u : ℂ) ^ (s + m - 1) * cexp (-(u : ℂ) ^ 2 / 2 - x * u))
+      (∫ u in Ioi (0 : ℝ),
+        (u : ℂ) ^ (s - 1) *
+          cexp (-((1 + r ^ 2) * (u : ℂ) ^ 2) / 2 - (x - r * y) * u)) := by
+  let F : ℕ → ℝ → ℂ := fun m u =>
+    (u : ℂ) ^ (s - 1) * cexp (-(u : ℂ) ^ 2 / 2 - x * u) *
+      (aeval (y : ℂ) (hermite m) * (r * u) ^ m / (m ! : ℂ))
+  let f : ℝ → ℂ := fun u =>
+    (u : ℂ) ^ (s - 1) * cexp (-((1 + r ^ 2) * (u : ℂ) ^ 2) / 2 - (x - r * y) * u)
+  -- Interchange sum and integral by dominated convergence against `majorantTerm`.
+  have hr' : ‖r‖ < 1 ∨ (‖r‖ ≤ 1 ∧ (0 < x.re ∨ (0 ≤ x.re ∧ s.re < 0))) :=
+    hr.imp_right fun ⟨h1, h2⟩ => ⟨h1, Or.inl h2⟩
+  have hdom : HasSum (fun m : ℕ => ∫ u in Ioi (0 : ℝ), F m u) (∫ u in Ioi (0 : ℝ), f u) := by
+    refine hasSum_integral_of_dominated_convergence (majorantTerm s.re x.re ‖r‖ y)
+      (fun m => Measurable.aestronglyMeasurable (by fun_prop))
+      (fun m => ?_) ?_ ?_ ?_
+    · filter_upwards [ae_restrict_mem measurableSet_Ioi] with u (hu : 0 < u)
+      exact norm_integrand_le_majorantTerm s x r y m hu
+    · exact Eventually.of_forall fun u => by
+        simpa only [Nat.add_zero] using summable_majorantTerm_add s.re x.re ‖r‖ y 0 u
+    · have hint := integrableOn_tsum_majorantTerm_add (σ := s.re) (x := x.re) (q := ‖r‖) (M := 0)
+        y (by simpa using hs) (by rwa [abs_of_nonneg (norm_nonneg r)])
+      simpa only [Nat.add_zero] using hint.integrable
+    · filter_upwards [ae_restrict_mem measurableSet_Ioi] with u _
+      have hgen := (Polynomial.hasSum_hermite_generating_function (y : ℂ) (r * u)).mul_left
+        ((u : ℂ) ^ (s - 1) * cexp (-(u : ℂ) ^ 2 / 2 - x * u))
+      have hf_eq : (u : ℂ) ^ (s - 1) * cexp (-(u : ℂ) ^ 2 / 2 - x * u) *
+          cexp ((y : ℂ) * (r * u) - (r * u) ^ 2 / 2) = f u := by
+        dsimp only [f]
+        rw [mul_assoc, ← Complex.exp_add]
+        refine congrArg (fun w => (u : ℂ) ^ (s - 1) * cexp w) ?_
+        ring
+      exact hf_eq ▸ hgen
+  exact hdom.congr_fun fun m => mul_integral_cpow_add_nat_eq_integral_mul s x r (y : ℂ) m
+
 /-- Closed-form `HasSum` evaluation of the Laplace–Hermite series: for `0 < s.re`, `x : ℂ`,
 `y r : ℝ`, and `|r| < 1` (or `|r| ≤ 1` when `0 < x.re`), the series sums to the rotated and
 rescaled Gaussian–Laplace integral at `(x - r y) / √(1 + r²)`. -/
@@ -535,48 +613,30 @@ theorem hasSum_pow_div_factorial_mul_hermite_mul_integral {s : ℂ} (hs : 0 < s.
         ∫ v in Ioi (0 : ℝ),
           (v : ℂ) ^ (s - 1) *
             cexp (-(v : ℂ) ^ 2 / 2 - ((x - r * y) / Real.sqrt (1 + r ^ 2)) * v)) := by
+  have hrC : ‖(r : ℂ)‖ < 1 ∨ (‖(r : ℂ)‖ ≤ 1 ∧ 0 < x.re) := by
+    simpa [Complex.norm_real, Real.norm_eq_abs] using hr
   let c : ℝ := Real.sqrt (1 + r ^ 2)
   have hc : 0 < c := Real.sqrt_pos.mpr (by positivity)
-  have hc_sq : c ^ 2 = 1 + r ^ 2 := Real.sq_sqrt (by positivity)
-  let F : ℕ → ℝ → ℂ := fun m u =>
-    (u : ℂ) ^ (s - 1) * cexp (-(u : ℂ) ^ 2 / 2 - x * u) *
-      (aeval (y : ℂ) (hermite m) * ((r : ℂ) * u) ^ m / (m ! : ℂ))
-  let f : ℝ → ℂ := fun u =>
-    (u : ℂ) ^ (s - 1) * cexp (-((1 / 2 : ℂ) * (c : ℂ) ^ 2) * (u : ℂ) ^ 2 - (x - r * y) * u)
-  -- Interchange sum and integral by dominated convergence against `majorantTerm`.
-  have hr' : |r| < 1 ∨ (|r| ≤ 1 ∧ (0 < x.re ∨ (0 ≤ x.re ∧ s.re < 0))) :=
-    hr.imp_right fun ⟨h1, h2⟩ => ⟨h1, Or.inl h2⟩
-  have hdom : HasSum (fun m : ℕ => ∫ u in Ioi (0 : ℝ), F m u) (∫ u in Ioi (0 : ℝ), f u) := by
-    refine hasSum_integral_of_dominated_convergence (majorantTerm s.re x.re |r| y)
-      (fun m => Measurable.aestronglyMeasurable (by fun_prop))
-      (fun m => ?_) ?_ ?_ ?_
-    · filter_upwards [ae_restrict_mem measurableSet_Ioi] with u (hu : 0 < u)
-      simpa [F, Complex.norm_real, Real.norm_eq_abs] using
-        norm_integrand_le_majorantTerm s x (r : ℂ) y m hu
-    · exact Eventually.of_forall fun u => by
-        simpa only [Nat.add_zero] using summable_majorantTerm_add s.re x.re |r| y 0 u
-    · have hint := integrableOn_tsum_majorantTerm_add (σ := s.re) (x := x.re) (q := |r|) (M := 0)
-        y (by simpa using hs) (by rwa [abs_abs])
-      simpa only [Nat.add_zero] using hint.integrable
-    · filter_upwards [ae_restrict_mem measurableSet_Ioi] with u _
-      have hgen := (Polynomial.hasSum_hermite_generating_function (y : ℂ) ((r : ℂ) * u)).mul_left
-        ((u : ℂ) ^ (s - 1) * cexp (-(u : ℂ) ^ 2 / 2 - x * u))
-      have hf_eq : (u : ℂ) ^ (s - 1) * cexp (-(u : ℂ) ^ 2 / 2 - x * u) *
-          cexp ((y : ℂ) * ((r : ℂ) * u) - ((r : ℂ) * u) ^ 2 / 2) = f u := by
-        dsimp only [f]
-        rw [mul_assoc, ← Complex.exp_add]
-        refine congrArg (fun w => (u : ℂ) ^ (s - 1) * cexp w) ?_
-        have hc_sq' : (c : ℂ) ^ 2 = ((1 + r ^ 2 : ℝ) : ℂ) := by exact_mod_cast hc_sq
-        rw [hc_sq']
-        push_cast
-        ring
-      exact hf_eq ▸ hgen
-  -- Rescale `v = c * u` (`c = √(1 + r²)`) in the summed Gaussian–Laplace integral.
+  have hc_sq : (c : ℂ) ^ 2 = 1 + (r : ℂ) ^ 2 := by
+    have h : c ^ 2 = 1 + r ^ 2 := Real.sq_sqrt (by positivity)
+    exact_mod_cast h
   have hscale := integral_cpow_mul_cexp_neg_mul_sq_mul_sq_sub_mul_Ioi_eq_cpow_mul_integral hc
     (1 / 2) s (x - r * y)
   simp_rw [← neg_sq_div_two_sub_eq] at hscale
   rw [← hscale]
-  exact hdom.congr_fun fun m => mul_integral_cpow_add_nat_eq_integral_mul s x (r : ℂ) (y : ℂ) m
+  have hint_eq :
+      (∫ u in Ioi (0 : ℝ),
+          (u : ℂ) ^ (s - 1) *
+            cexp (-((1 + (r : ℂ) ^ 2) * (u : ℂ) ^ 2) / 2 - (x - (r : ℂ) * y) * u)) =
+        ∫ u in Ioi (0 : ℝ),
+          (u : ℂ) ^ (s - 1) *
+            cexp (-((1 / 2 : ℂ) * (c : ℂ) ^ 2) * (u : ℂ) ^ 2 - (x - (r : ℂ) * y) * u) := by
+    refine setIntegral_congr_fun measurableSet_Ioi fun u _ => ?_
+    congr 2
+    rw [hc_sq]
+    ring
+  rw [← hint_eq]
+  exact hasSum_pow_div_factorial_mul_hermite_mul_integral_complex hs x y hrC
 
 /-- Trigonometric form of the Laplace–Hermite rotational identity (the Laplace core of DLMF
 12.13.5): for `0 < s.re`, `x : ℂ`, `y : ℝ`, and `|t| < π / 4` (or `|t| ≤ π / 4` when `0 < x.re`),
@@ -739,5 +799,136 @@ theorem hasSum_pow_div_factorial_mul_hermite_mul_integral_of_summable {s : ℂ}
   have heq := eq_mul_integral_of_tendsto_sum_pow_div_factorial_mul_hermite_mul_integral hs hr
     hsum.hasSum.tendsto_sum_nat
   exact heq ▸ hsum.hasSum
+
+/-! ### Pochhammer–Gamma–normalized Laplace–Hermite series -/
+
+private theorem ascPochhammer_mul_hermite_mul_inv_Gamma_eq (s r : ℂ) (y : ℝ) (m : ℕ) (I : ℂ) :
+    r ^ m / (m ! : ℂ) * (ascPochhammer ℂ m).eval s * aeval (y : ℂ) (hermite m) *
+        (Complex.Gamma (s + m))⁻¹ * I =
+      (Complex.Gamma s)⁻¹ * (r ^ m / (m ! : ℂ) * aeval (y : ℂ) (hermite m) * I) := by
+  rw [Complex.inv_Gamma_eq_ascPochhammer_eval_mul_inv_Gamma_add_natCast s m]
+  ring
+
+/-- Norm-summability of the Pochhammer–Gamma–normalized Laplace–Hermite series, covering the
+interior disk `‖r‖ < 1`, the boundary conditions `0 < x.re` and `0 ≤ x.re ∧ s.re < 0` on
+`‖r‖ ≤ 1`, and unconditionally `s = -n` (`n : ℕ`), where `(s)_m (Γ(s + m))⁻¹ = (Γ(-n))⁻¹ = 0`
+makes every term vanish. -/
+theorem summable_norm_ascPochhammer_mul_hermite_mul_inv_Gamma_integral {s x r : ℂ} (y : ℝ)
+    (hconv : (∃ n : ℕ, s = -n) ∨ ‖r‖ < 1 ∨ (‖r‖ ≤ 1 ∧ (0 < x.re ∨ (0 ≤ x.re ∧ s.re < 0)))) :
+    Summable fun m : ℕ =>
+      ‖r ^ m / (m ! : ℂ) * (ascPochhammer ℂ m).eval s * aeval (y : ℂ) (hermite m) *
+        (Complex.Gamma (s + m))⁻¹ *
+        ∫ u in Ioi (0 : ℝ), (u : ℂ) ^ (s + m - 1) * cexp (-(u : ℂ) ^ 2 / 2 - x * u)‖ := by
+  simp_rw [ascPochhammer_mul_hermite_mul_inv_Gamma_eq, norm_mul (Complex.Gamma s)⁻¹]
+  rcases hconv with ⟨n, rfl⟩ | hconv'
+  · simp [Complex.Gamma_neg_nat_eq_zero]
+  · exact (summable_norm_pow_div_factorial_mul_hermite_mul_integral s x r y hconv').mul_left _
+
+/-- Holomorphy in `s` of the `M`-shifted Pochhammer–Gamma–normalized Laplace–Hermite tail on
+`{s : ℂ | 0 < s.re + M}` whenever `‖r‖ < 1 ∨ (‖r‖ ≤ 1 ∧ 0 < x.re)`. -/
+theorem differentiableOn_tsum_ascPochhammer_mul_hermite_mul_inv_Gamma_integral_add
+    (M : ℕ) (x : ℂ) {r : ℂ} (y : ℝ) (hconv : ‖r‖ < 1 ∨ (‖r‖ ≤ 1 ∧ 0 < x.re)) :
+    DifferentiableOn ℂ
+      (fun s : ℂ =>
+        ∑' k : ℕ,
+          r ^ (k + M) / ((k + M)! : ℂ) * (ascPochhammer ℂ (k + M)).eval s *
+            aeval (y : ℂ) (hermite (k + M)) * (Complex.Gamma (s + ((k + M : ℕ) : ℂ)))⁻¹ *
+            ∫ u in Ioi (0 : ℝ),
+              (u : ℂ) ^ (s + ((k + M : ℕ) : ℂ) - 1) * cexp (-(u : ℂ) ^ 2 / 2 - x * u))
+      {s : ℂ | 0 < s.re + (M : ℝ)} := by
+  simp_rw [ascPochhammer_mul_hermite_mul_inv_Gamma_eq, tsum_mul_left]
+  exact Complex.differentiable_one_div_Gamma.differentiableOn.mul
+    (differentiableOn_tsum_pow_div_factorial_mul_hermite_mul_integral_add M x y hconv)
+
+/-- Holomorphy in `s` of the `M`-shifted Pochhammer–Gamma–normalized Laplace–Hermite tail on the
+vertical strip `{s : ℂ | 0 < s.re + M ∧ s.re < 0}` when `‖r‖ ≤ 1` and `0 ≤ x.re`. -/
+theorem differentiableOn_tsum_ascPochhammer_mul_hermite_mul_inv_Gamma_integral_add_re_neg
+    (M : ℕ) {x r : ℂ} (y : ℝ) (hr : ‖r‖ ≤ 1) (hx : 0 ≤ x.re) :
+    DifferentiableOn ℂ
+      (fun s : ℂ =>
+        ∑' k : ℕ,
+          r ^ (k + M) / ((k + M)! : ℂ) * (ascPochhammer ℂ (k + M)).eval s *
+            aeval (y : ℂ) (hermite (k + M)) * (Complex.Gamma (s + ((k + M : ℕ) : ℂ)))⁻¹ *
+            ∫ u in Ioi (0 : ℝ),
+              (u : ℂ) ^ (s + ((k + M : ℕ) : ℂ) - 1) * cexp (-(u : ℂ) ^ 2 / 2 - x * u))
+      {s : ℂ | 0 < s.re + (M : ℝ) ∧ s.re < 0} := by
+  simp_rw [ascPochhammer_mul_hermite_mul_inv_Gamma_eq, tsum_mul_left]
+  exact Complex.differentiable_one_div_Gamma.differentiableOn.mul
+    (differentiableOn_tsum_pow_div_factorial_mul_hermite_mul_integral_add_re_neg_of_re_nonneg
+      M y hr hx)
+
+/-- Pochhammer–Gamma–normalized `HasSum` for complex `r : ℂ`: for `0 < s.re`, `x r : ℂ`, and
+`y : ℝ` with `‖r‖ < 1 ∨ (‖r‖ ≤ 1 ∧ 0 < x.re)`, the factor `(s)_m (Γ(s + m))⁻¹` cancels to
+`(Γ s)⁻¹` term-by-term. -/
+theorem hasSum_ascPochhammer_mul_hermite_mul_inv_Gamma_integral_complex
+    {s : ℂ} (hs : 0 < s.re) (x : ℂ) (y : ℝ) {r : ℂ} (hr : ‖r‖ < 1 ∨ (‖r‖ ≤ 1 ∧ 0 < x.re)) :
+    HasSum
+      (fun m : ℕ =>
+        r ^ m / (m ! : ℂ) * (ascPochhammer ℂ m).eval s * aeval (y : ℂ) (hermite m) *
+          (Complex.Gamma (s + m))⁻¹ *
+          ∫ u in Ioi (0 : ℝ), (u : ℂ) ^ (s + m - 1) * cexp (-(u : ℂ) ^ 2 / 2 - x * u))
+      ((Complex.Gamma s)⁻¹ *
+        ∫ u in Ioi (0 : ℝ),
+          (u : ℂ) ^ (s - 1) *
+            cexp (-((1 + r ^ 2) * (u : ℂ) ^ 2) / 2 - (x - r * y) * u)) := by
+  simp_rw [ascPochhammer_mul_hermite_mul_inv_Gamma_eq]
+  exact (hasSum_pow_div_factorial_mul_hermite_mul_integral_complex hs x y hr).mul_left
+    (Complex.Gamma s)⁻¹
+
+/-- Pochhammer–Gamma–normalized `HasSum` for real `r : ℝ`. -/
+theorem hasSum_ascPochhammer_mul_hermite_mul_inv_Gamma_integral
+    {s : ℂ} (hs : 0 < s.re) (x : ℂ) (y : ℝ) {r : ℝ} (hr : |r| < 1 ∨ (|r| ≤ 1 ∧ 0 < x.re)) :
+    HasSum
+      (fun m : ℕ =>
+        (r : ℂ) ^ m / (m ! : ℂ) * (ascPochhammer ℂ m).eval s * aeval (y : ℂ) (hermite m) *
+          (Complex.Gamma (s + m))⁻¹ *
+          ∫ u in Ioi (0 : ℝ), (u : ℂ) ^ (s + m - 1) * cexp (-(u : ℂ) ^ 2 / 2 - x * u))
+      ((Real.sqrt (1 + r ^ 2) : ℂ) ^ (-s) * (Complex.Gamma s)⁻¹ *
+        ∫ v in Ioi (0 : ℝ),
+          (v : ℂ) ^ (s - 1) *
+            cexp (-(v : ℂ) ^ 2 / 2 - ((x - r * y) / Real.sqrt (1 + r ^ 2)) * v)) := by
+  simp_rw [ascPochhammer_mul_hermite_mul_inv_Gamma_eq]
+  simpa only [mul_left_comm (Complex.Gamma s)⁻¹, mul_assoc] using
+    (hasSum_pow_div_factorial_mul_hermite_mul_integral hs x y hr).mul_left (Complex.Gamma s)⁻¹
+
+/-- Pochhammer–Gamma–normalized trigonometric rotational `HasSum` (`r = -tan t`), giving the
+Gamma-normalized Laplace kernel identity underlying DLMF 12.13.5 for `0 < s.re`, `x : ℂ`, `y : ℝ`,
+and `|t| < π / 4 ∨ (|t| ≤ π / 4 ∧ 0 < x.re)`. -/
+theorem hasSum_neg_tan_ascPochhammer_mul_hermite_mul_inv_Gamma_integral
+    {s : ℂ} (hs : 0 < s.re) (x : ℂ) (y : ℝ) {t : ℝ}
+    (ht : |t| < π / 4 ∨ (|t| ≤ π / 4 ∧ 0 < x.re)) :
+    HasSum
+      (fun m : ℕ =>
+        ((-Real.tan t : ℝ) : ℂ) ^ m / (m ! : ℂ) * (ascPochhammer ℂ m).eval s *
+          aeval (y : ℂ) (hermite m) * (Complex.Gamma (s + m))⁻¹ *
+          ∫ u in Ioi (0 : ℝ), (u : ℂ) ^ (s + m - 1) * cexp (-(u : ℂ) ^ 2 / 2 - x * u))
+      ((Real.cos t : ℂ) ^ s * (Complex.Gamma s)⁻¹ *
+        ∫ v in Ioi (0 : ℝ),
+          (v : ℂ) ^ (s - 1) *
+            cexp (-(v : ℂ) ^ 2 / 2 - (x * Real.cos t + y * Real.sin t) * v)) := by
+  simp_rw [ascPochhammer_mul_hermite_mul_inv_Gamma_eq]
+  simpa only [mul_left_comm (Complex.Gamma s)⁻¹, mul_assoc] using
+    (hasSum_neg_tan_pow_div_factorial_mul_hermite_mul_integral hs x y ht).mul_left
+      (Complex.Gamma s)⁻¹
+
+/-- Pochhammer–Gamma–normalized unrestricted radial limit as `t → 1⁻` for `0 < s.re`, `x : ℂ`,
+`y : ℝ`, and `|r| ≤ 1`. -/
+theorem tendsto_tsum_ascPochhammer_mul_hermite_mul_inv_Gamma_integral_nhdsLT_one
+    {s : ℂ} (hs : 0 < s.re) (x : ℂ) (y : ℝ) {r : ℝ} (hr : |r| ≤ 1) :
+    Tendsto
+      (fun t : ℝ =>
+        ∑' m : ℕ,
+          ((r * t : ℝ) : ℂ) ^ m / (m ! : ℂ) * (ascPochhammer ℂ m).eval s *
+            aeval (y : ℂ) (hermite m) * (Complex.Gamma (s + m))⁻¹ *
+            ∫ u in Ioi (0 : ℝ), (u : ℂ) ^ (s + m - 1) * cexp (-(u : ℂ) ^ 2 / 2 - x * u))
+      (𝓝[<] 1)
+      (𝓝 ((Real.sqrt (1 + r ^ 2) : ℂ) ^ (-s) * (Complex.Gamma s)⁻¹ *
+        ∫ v in Ioi (0 : ℝ),
+          (v : ℂ) ^ (s - 1) *
+            cexp (-(v : ℂ) ^ 2 / 2 - ((x - r * y) / Real.sqrt (1 + r ^ 2)) * v))) := by
+  simp_rw [ascPochhammer_mul_hermite_mul_inv_Gamma_eq, tsum_mul_left]
+  simpa only [mul_left_comm (Complex.Gamma s)⁻¹, mul_assoc] using
+    (tendsto_tsum_mul_pow_div_factorial_mul_hermite_mul_integral_nhdsLT_one hs x y hr).const_mul
+      (Complex.Gamma s)⁻¹
 
 end TauCeti

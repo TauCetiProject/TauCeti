@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Quotient
 public import Mathlib.Topology.Algebra.Module.Equiv.Basic
 public import TauCeti.Algebra.Module.Submodule.OrbitRelQuotient
+public import TauCeti.LinearAlgebra.Quotient.Prod
 import Mathlib.Topology.Algebra.OpenSubgroup
 
 /-!
@@ -16,6 +17,8 @@ import Mathlib.Topology.Algebra.OpenSubgroup
 A continuous linear equivalence carrying one submodule onto another induces a continuous
 linear equivalence of their quotients. This is the topological version of Mathlib's
 `Submodule.Quotient.equiv`, and allows quotient fibres to be transported between coordinates.
+`Submodule.quotientProdContEquiv` identifies the quotient by a product submodule with
+the product of the two quotient topological modules.
 
 The quotient of a topological module by an open submodule is discrete; in particular the quotient
 of a discrete topological module by any submodule is discrete, since in a discrete module every
@@ -40,6 +43,47 @@ spaces induced by a continuous semilinear map is continuous
 -/
 
 public section
+
+namespace Submodule
+
+variable {R M N : Type*} [Ring R] [AddCommGroup M] [Module R M] [TopologicalSpace M]
+  [SeparatelyContinuousAdd M] [AddCommGroup N] [Module R N] [TopologicalSpace N]
+  [SeparatelyContinuousAdd N]
+
+/-- The quotient by a product submodule is continuously linearly equivalent to the product
+of the two quotients. Only separate continuity of addition is required; the submodules need not
+be closed. -/
+def quotientProdContEquiv (p : Submodule R M) (q : Submodule R N) :
+    ((M × N) ⧸ p.prod q) ≃L[R] (M ⧸ p) × (N ⧸ q) where
+  __ := p.quotientProdEquiv q
+  continuous_toFun := (p.prod q).isQuotientMap_mkQL.continuous_iff.2
+    (((p.mkQL.continuous.comp continuous_fst).prodMk
+      (q.mkQL.continuous.comp continuous_snd)).congr fun x ↦
+        (quotientProdEquiv_apply_mk p q x).symm)
+  continuous_invFun := by
+    -- The submodule and additive-group quotient projections are the same map.
+    have hp : IsOpenQuotientMap p.mkQL :=
+      QuotientAddGroup.isOpenQuotientMap_mk (N := p.toAddSubgroup)
+    have hq : IsOpenQuotientMap q.mkQL :=
+      QuotientAddGroup.isOpenQuotientMap_mk (N := q.toAddSubgroup)
+    exact (hp.prodMap hq).isQuotientMap.continuous_iff.2
+      ((p.prod q).mkQL.continuous.congr fun x ↦
+        (quotientProdEquiv_symm_apply_mk p q x.1 x.2).symm)
+
+/-- The quotient-product comparison sends the class of a pair to its component classes. -/
+@[simp]
+theorem quotientProdContEquiv_apply_mk (p : Submodule R M) (q : Submodule R N) (x : M × N) :
+    p.quotientProdContEquiv q (Quotient.mk x) = (Quotient.mk x.1, Quotient.mk x.2) :=
+  quotientProdEquiv_apply_mk p q x
+
+/-- The inverse quotient-product comparison sends component classes to the class of their pair. -/
+@[simp]
+theorem quotientProdContEquiv_symm_apply_mk
+    (p : Submodule R M) (q : Submodule R N) (x : M) (y : N) :
+    (p.quotientProdContEquiv q).symm (Quotient.mk x, Quotient.mk y) = Quotient.mk (x, y) :=
+  quotientProdEquiv_symm_apply_mk p q x y
+
+end Submodule
 
 namespace Submodule.Quotient
 

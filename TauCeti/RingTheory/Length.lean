@@ -245,7 +245,7 @@ theorem comap_subtype_map_lsmul (N : Submodule A M) (a : A) :
   · rintro ⟨z, hz, hzy⟩
     exact ⟨⟨z, hz⟩, Subtype.ext hzy⟩
   · rintro ⟨z, rfl⟩
-    exact ⟨(z : M), z.2, rfl⟩
+    exact ⟨(z : M), z.property, rfl⟩
 
 end CommSemiring
 
@@ -578,10 +578,11 @@ variable {A V W : Type*} [CommRing A] [AddCommGroup V] [Module A V] [AddCommGrou
 `aM ⊔ (M ⊓ ker e)`. -/
 theorem ker_mkQ_comp_codRestrict (e : V →ₗ[A] W) (M : Submodule A V) (a : A) :
     LinearMap.ker ((LinearMap.range (LinearMap.lsmul A ↥(M.map e) a)).mkQ ∘ₗ
-        LinearMap.codRestrict (M.map e) (e ∘ₗ M.subtype) (fun y => Submodule.mem_map_of_mem y.2))
+        LinearMap.codRestrict (M.map e) (e ∘ₗ M.subtype) (fun y => Submodule.mem_map_of_mem
+            y.property))
       = LinearMap.range (LinearMap.lsmul A ↥M a) ⊔ Submodule.comap M.subtype (LinearMap.ker e) := by
   set g : ↥M →ₗ[A] ↥(M.map e) :=
-    LinearMap.codRestrict (M.map e) (e ∘ₗ M.subtype) (fun y => Submodule.mem_map_of_mem y.2)
+    LinearMap.codRestrict (M.map e) (e ∘ₗ M.subtype) (fun y => Submodule.mem_map_of_mem y.property)
   have hg : Function.Surjective g := LinearMap.submoduleMap_surjective e M
   have hmap : LinearMap.range (LinearMap.lsmul A ↥(M.map e) a) =
       (LinearMap.range (LinearMap.lsmul A ↥M a)).map g := by
@@ -597,7 +598,7 @@ theorem length_quotient_sup_comap_ker (e : V →ₗ[A] W) (M : Submodule A V) (a
         Submodule.comap M.subtype (LinearMap.ker e))) =
       Module.length A (↥(M.map e) ⧸ LinearMap.range (LinearMap.lsmul A ↥(M.map e) a)) := by
   set g : ↥M →ₗ[A] ↥(M.map e) :=
-    LinearMap.codRestrict (M.map e) (e ∘ₗ M.subtype) (fun y => Submodule.mem_map_of_mem y.2)
+    LinearMap.codRestrict (M.map e) (e ∘ₗ M.subtype) (fun y => Submodule.mem_map_of_mem y.property)
   set Q : Submodule A ↥(M.map e) := LinearMap.range (LinearMap.lsmul A ↥(M.map e) a)
   have hgsurj : Function.Surjective g := LinearMap.submoduleMap_surjective e M
   have hker : LinearMap.ker (Q.mkQ ∘ₗ g) = LinearMap.range (LinearMap.lsmul A ↥M a) ⊔
@@ -622,8 +623,8 @@ compare the lengths of the two localizations in `length_localizedModule_comap`. 
 private noncomputable def localizedModuleComap (e : N ≃ₛₗ[σ] M) (𝔮 : Ideal B) [𝔮.IsPrime] :
     LocalizedModule (𝔮.comap σ).primeCompl N →ₛₗ[Localization.localRingHom (𝔮.comap σ) 𝔮 σ rfl]
       LocalizedModule 𝔮.primeCompl M where
-  toFun x := x.liftOn (fun p ↦ LocalizedModule.mk (e p.1) ⟨σ p.2, p.2.2⟩) fun ⟨n, s⟩ ⟨n', s'⟩
-      ⟨u, hu⟩ ↦ LocalizedModule.mk_eq.mpr ⟨⟨σ u, u.2⟩, by
+  toFun x := x.liftOn (fun p ↦ LocalizedModule.mk (e p.1) ⟨σ p.2, p.2.property⟩) fun ⟨n, s⟩ ⟨n', s'⟩
+      ⟨u, hu⟩ ↦ LocalizedModule.mk_eq.mpr ⟨⟨σ u, u.property⟩, by
         simpa [Submonoid.smul_def, map_smulₛₗ] using congrArg e hu⟩
   map_add' x y := by
     induction x using LocalizedModule.induction_on with | h n s => ?_
@@ -641,7 +642,8 @@ private noncomputable def localizedModuleComap (e : N ≃ₛₗ[σ] M) (𝔮 : I
 
 private theorem localizedModuleComap_mk (e : N ≃ₛₗ[σ] M) (𝔮 : Ideal B) [𝔮.IsPrime] (n : N)
     (s : (𝔮.comap σ).primeCompl) :
-    localizedModuleComap e 𝔮 (LocalizedModule.mk n s) = LocalizedModule.mk (e n) ⟨σ s, s.2⟩ :=
+    localizedModuleComap e 𝔮 (LocalizedModule.mk n s) = LocalizedModule.mk (e n) ⟨σ s, s.property⟩
+        :=
   rfl
 
 /-- **Transport of local lengths along a ring isomorphism.** Let `σ : A → B` be a ring isomorphism
@@ -654,7 +656,7 @@ theorem length_localizedModule_comap (e : N ≃ₛₗ[σ] M) (𝔮 : Ideal B) [�
   have hσ (b : B) : σ (σ' b) = b := RingHomInvPair.comp_apply_eq₂
   have hmem (t : 𝔮.primeCompl) : σ' t ∈ (𝔮.comap σ).primeCompl := by
     rw [Ideal.mem_primeCompl_iff, Ideal.mem_comap, hσ]
-    exact t.2
+    exact t.property
   have : RingHomSurjective (Localization.localRingHom (𝔮.comap σ) 𝔮 σ rfl) :=
     ⟨(Localization.localRingEquiv (𝔮.comap σ) 𝔮 (RingHomInvPair.toRingEquiv σ σ') rfl).surjective⟩
   refine LinearMap.length_eq_of_bijective (localizedModuleComap e 𝔮) ⟨fun x y hxy ↦ ?_, fun y ↦ ?_⟩

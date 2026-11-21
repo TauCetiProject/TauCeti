@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
+public import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
 
 /-!
 # Closedness and completeness of projected subspaces
@@ -13,6 +13,10 @@ public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 A subspace that admits an orthogonal projection is the range of a continuous idempotent and is
 therefore closed. In a complete ambient inner-product space, such a subspace is itself complete.
 Closedness, completeness and existence of an orthogonal projection are equivalent there.
+
+The sum `U ⊔ V` of two orthogonal subspaces admitting orthogonal projections equals
+`(Uᗮ ⊓ Vᗮ)ᗮ` and is therefore closed (`Submodule.IsOrtho.sup_eq_orthogonal_inf_orthogonal`,
+`Submodule.IsOrtho.isClosed_sup`).
 
 The completeness observation also appears in
 `ForTauCeti/Analysis/InnerProductSpace/ReducingSubspace.lean` of the
@@ -59,3 +63,28 @@ theorem hasOrthogonalProjection_iff_completeSpace {U : Submodule 𝕜 E} :
   ⟨fun _ ↦ U.completeSpace_coe_of_hasOrthogonalProjection, fun _ ↦ .ofCompleteSpace U⟩
 
 end Submodule
+
+namespace Submodule.IsOrtho
+
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  {U V : Submodule 𝕜 E} [U.HasOrthogonalProjection] [V.HasOrthogonalProjection]
+
+/-- The sum of two orthogonal subspaces admitting orthogonal projections is the orthogonal
+complement of `Uᗮ ⊓ Vᗮ`. -/
+theorem sup_eq_orthogonal_inf_orthogonal (h : U ⟂ V) : U ⊔ V = (Uᗮ ⊓ Vᗮ)ᗮ := by
+  set M := (Uᗮ ⊓ Vᗮ)ᗮ
+  have hU : U ≤ M := U.le_orthogonal_orthogonal.trans (orthogonal_le inf_le_left)
+  have hV : V ≤ Uᗮ ⊓ M :=
+    le_inf (isOrtho_iff_le.1 h.symm) (V.le_orthogonal_orthogonal.trans (orthogonal_le inf_le_right))
+  -- Split `M` along `U`, then its part in `Uᗮ` along `V`; what is left is orthogonal to itself.
+  have hM : Uᗮ ⊓ M = V := by
+    rw [← sup_orthogonal_inf_of_hasOrthogonalProjection hV, ← inf_assoc, inf_comm Vᗮ,
+      inf_orthogonal_eq_bot, sup_bot_eq]
+  rw [← sup_orthogonal_inf_of_hasOrthogonalProjection hU, hM]
+
+/-- The sum of two orthogonal subspaces admitting orthogonal projections is closed. -/
+theorem isClosed_sup (h : U ⟂ V) : IsClosed ((U ⊔ V : Submodule 𝕜 E) : Set E) := by
+  rw [h.sup_eq_orthogonal_inf_orthogonal]
+  exact Submodule.isClosed_orthogonal _
+
+end Submodule.IsOrtho

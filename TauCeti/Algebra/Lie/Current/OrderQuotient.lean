@@ -45,6 +45,8 @@ attribute [local instance 1100] HahnSeries.instAlgebra
 
 namespace TauCeti.CurrentAlgebra
 
+section CommRing
+
 variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
   (Φ : LinearMap.BilinForm R L) (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm) (a : R)
 
@@ -87,9 +89,11 @@ theorem isTwoSided_orderLeftIdeal (hL : IsLieAbelian L) (hform : a • Φ = 0) (
   rw [(hcomm _ v).eq]
   exact Ideal.mul_mem_left _ _ hu
 
+end CommRing
+
 section Field
 
-variable {K : Type*} [Field K] [LieAlgebra K L]
+variable {L : Type*} [LieRing L] {K : Type*} [Field K] [LieAlgebra K L]
   (Ψ : LinearMap.BilinForm K L) (hΨ : Ψ.lieInvariant L) (hΨs : Ψ.IsSymm) (b : K)
 
 local notation "CK" => currentAlgebra K L

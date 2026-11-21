@@ -254,7 +254,7 @@ private theorem continuous_spaXMap
     funext (spaXMap_quotientMap hI hI' h)
   rw [this]
   exact (isOpenQuotientMap_quotientMap hI').continuous.comp
-    (continuous_subtype_val.subtype_mk _)
+    (continuous_subtypeVal.subtype_mk _)
 
 private theorem spaXMap_spaXMap
     (hI : IsAdic (Ideal.span {(p : WittVector p R), teichmuller p ϖ}))

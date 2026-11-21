@@ -44,7 +44,7 @@ private theorem exists_eq_tmul_one_of_isIdempotentElem_of_isReduced
     [CommRing B] [Algebra k B] [Algebra.FiniteType k B] [IsReduced B]
     {e : B ⊗[k] A} (he : IsIdempotentElem e) :
     ∃ c : B, e = c ⊗ₜ[k] (1 : A) := by
-  let : Nontrivial A := PrimeSpectrum.nonempty_iff_nontrivial.mp inferInstance
+  let : Nontrivial A := nontrivial_of_connectedSpace_primeSpectrum
   obtain ⟨f, hf⟩ := Module.Projective.exists_dual_eq_one k (one_ne_zero : (1 : A) ≠ 0)
   let c := LinearMap.tensorComponent f e
   refine ⟨c, tensor_eq_of_forall_map_algHom_eq (K := k) fun p ↦ ?_⟩
@@ -69,7 +69,7 @@ private theorem exists_eq_tmul_one_of_isIdempotentElem_of_finiteType
     [CommRing B] [Algebra k B] [Algebra.FiniteType k B]
     {e : B ⊗[k] A} (he : IsIdempotentElem e) :
     ∃ c : B, IsIdempotentElem c ∧ e = c ⊗ₜ[k] (1 : A) := by
-  let : Nontrivial A := PrimeSpectrum.nonempty_iff_nontrivial.mp inferInstance
+  let : Nontrivial A := nontrivial_of_connectedSpace_primeSpectrum
   let q : B →ₐ[k] B ⧸ nilradical B := Ideal.Quotient.mkₐ k (nilradical B)
   have hq : Function.Surjective q := Ideal.Quotient.mkₐ_surjective k _
   have hqker : RingHom.ker q = nilradical B := Ideal.Quotient.mkₐ_ker k _
@@ -132,8 +132,8 @@ theorem connectedSpace_primeSpectrum_tensorProduct_of_isAlgClosed
   suffices h : ConnectedSpace (PrimeSpectrum (B ⊗[k] A)) from
     (PrimeSpectrum.homeomorphOfRingEquiv
       (Algebra.TensorProduct.comm k A B).toRingEquiv).connectedSpace_iff.mpr h
-  let : Nontrivial A := PrimeSpectrum.nonempty_iff_nontrivial.mp inferInstance
-  let : Nontrivial B := PrimeSpectrum.nonempty_iff_nontrivial.mp inferInstance
+  let : Nontrivial A := nontrivial_of_connectedSpace_primeSpectrum
+  let : Nontrivial B := nontrivial_of_connectedSpace_primeSpectrum
   let : Nontrivial (B ⊗[k] A) :=
     Algebra.TensorProduct.nontrivial_of_algebraMap_injective_of_flat_left k B A
       (FaithfulSMul.algebraMap_injective k A)
