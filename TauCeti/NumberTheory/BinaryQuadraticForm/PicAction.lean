@@ -7,6 +7,8 @@ module
 
 public import TauCeti.NumberTheory.BinaryQuadraticForm.ComplexMultiplication
 public import TauCeti.NumberTheory.BinaryQuadraticForm.Ideal.ComplexLattice
+public import TauCeti.NumberTheory.QuadraticOrder.ComplexFractionalIdeal
+import TauCeti.Algebra.Algebra.Operations
 
 /-!
 # The ideal-class action on CM lattices
@@ -14,10 +16,8 @@ public import TauCeti.NumberTheory.BinaryQuadraticForm.Ideal.ComplexLattice
 Let `n > 0` with `-n ≡ 0, 1 mod 4`, let `K = ℚ(√(-n))`, let `O` be the quadratic order of
 discriminant `-n` and let `ι : K → ℂ` be the complex embedding `QuadraticAlgebra.complexEmbedding`
 sending `√(-n)` to `i √n`. A fractional ideal `𝔞` of `O` gives the `ℤ`-submodule `ι(𝔞)` of `ℂ`
-(`TauCeti.QuadraticOrder.complexFractionalIdeal`). This is multiplicative
-(`complexFractionalIdeal_one`, `complexFractionalIdeal_mul`), turns multiplication by `x ∈ K` into
-multiplication by `ι(x)` (`complexFractionalIdeal_spanSingleton_mul`), and sends the ideal of a form
-to its complex submodule (`complexFractionalIdeal_fractionalIdeal`).
+(`TauCeti.QuadraticOrder.complexFractionalIdeal`), which sends the ideal of a form to its complex
+submodule (`complexFractionalIdeal_fractionalIdeal`).
 
 For an invertible ideal `𝔞`, `ι(𝔞)` is a period lattice
 (`exists_periodPair_lattice_eq_complexFractionalIdeal`) with multiplier order `O`
@@ -43,7 +43,6 @@ Artin action on the ring class field; that comparison is not made here.
 
 ## Main definitions
 
-* `TauCeti.QuadraticOrder.complexFractionalIdeal`: the image `ι(𝔞) ⊆ ℂ` of a fractional ideal.
 * `TauCeti.BinaryQuadraticForm.instMulActionPicCMHomothetyClass`: the action of `Pic(O)` on
   homothety classes of lattices with multiplier order `O`.
 
@@ -71,68 +70,6 @@ noncomputable section
 open QuadraticAlgebra FractionalIdeal
 open scoped nonZeroDivisors
 
-namespace TauCeti.QuadraticOrder
-
-variable {D : ℤ} {hD : D % 4 = 0 ∨ D % 4 = 1} [Fact (¬ IsSquare D)]
-
-/-- **The complex lattice of a fractional ideal.** For `D ≤ 0`, the image in `ℂ` of a fractional
-ideal `𝔞` of the quadratic order of discriminant `D` under `QuadraticAlgebra.complexEmbedding`, as
-a `ℤ`-submodule. For invertible `𝔞` and `D < 0` it is a period lattice
-(`TauCeti.BinaryQuadraticForm.exists_periodPair_lattice_eq_complexFractionalIdeal`). -/
-def complexFractionalIdeal (hD0 : D ≤ 0)
-    (I : FractionalIdeal (numberFieldOrder D hD).toSubalgebra⁰ (QuadraticAlgebra ℚ (D : ℚ) 0)) :
-    Submodule ℤ ℂ :=
-  ((I : Submodule (numberFieldOrder D hD).toSubalgebra
-      (QuadraticAlgebra ℚ (D : ℚ) 0)).restrictScalars ℤ).map
-    ((complexEmbedding (Int.cast_nonpos.mpr hD0)).restrictScalars ℤ).toLinearMap
-
-/-- The members of `complexFractionalIdeal hD0 I` are the images of the members of `I`. -/
-theorem mem_complexFractionalIdeal_iff (hD0 : D ≤ 0)
-    {I : FractionalIdeal (numberFieldOrder D hD).toSubalgebra⁰ (QuadraticAlgebra ℚ (D : ℚ) 0)}
-    {z : ℂ} :
-    z ∈ complexFractionalIdeal hD0 I ↔
-      ∃ x ∈ I, complexEmbedding (Int.cast_nonpos.mpr hD0) x = z := by
-  simp [complexFractionalIdeal]
-
-/-- The complex lattice of the unit ideal is the complex order `complexOrder D`. -/
-@[simp] theorem complexFractionalIdeal_one (hD0 : D ≤ 0) :
-    complexFractionalIdeal hD0
-        (1 : FractionalIdeal (numberFieldOrder D hD).toSubalgebra⁰ (QuadraticAlgebra ℚ (D : ℚ) 0)) =
-      Subalgebra.toSubmodule (complexOrder D hD0 hD) := by
-  ext z
-  simp only [mem_complexFractionalIdeal_iff, FractionalIdeal.mem_one_iff, complexOrder_def,
-    Subalgebra.mem_toSubmodule, Subalgebra.mem_map]
-  constructor
-  · rintro ⟨_, ⟨w, rfl⟩, rfl⟩
-    exact ⟨w, numberFieldOrder_toSubalgebra D hD ▸ w.property, rfl⟩
-  · rintro ⟨w, hw, rfl⟩
-    exact ⟨w, ⟨⟨w, (numberFieldOrder_toSubalgebra D hD).symm ▸ hw⟩, rfl⟩, rfl⟩
-
-/-- The complex lattice of a product of fractional ideals is the product of their lattices. -/
-@[simp] theorem complexFractionalIdeal_mul (hD0 : D ≤ 0)
-    (I J : FractionalIdeal (numberFieldOrder D hD).toSubalgebra⁰ (QuadraticAlgebra ℚ (D : ℚ) 0)) :
-    complexFractionalIdeal hD0 (I * J) =
-      complexFractionalIdeal hD0 I * complexFractionalIdeal hD0 J := by
-  rw [complexFractionalIdeal, coeToSubmodule_mul, Submodule.restrictScalars_mul]
-  exact Submodule.map_mul _ _ _
-
-/-- Multiplying a fractional ideal by `x ∈ K` multiplies its complex lattice by the image of `x`. -/
-theorem complexFractionalIdeal_spanSingleton_mul (hD0 : D ≤ 0) (x : QuadraticAlgebra ℚ (D : ℚ) 0)
-    (I : FractionalIdeal (numberFieldOrder D hD).toSubalgebra⁰ (QuadraticAlgebra ℚ (D : ℚ) 0)) :
-    complexFractionalIdeal hD0 (spanSingleton _ x * I) =
-      (complexFractionalIdeal hD0 I).map
-        (LinearMap.mulLeft ℤ (complexEmbedding (Int.cast_nonpos.mpr hD0) x)) := by
-  ext z
-  simp only [mem_complexFractionalIdeal_iff, mem_singleton_mul, Submodule.mem_map,
-    LinearMap.mulLeft_apply]
-  constructor
-  · rintro ⟨_, ⟨y, hy, rfl⟩, rfl⟩
-    exact ⟨_, ⟨y, hy, rfl⟩, (map_mul _ _ _).symm⟩
-  · rintro ⟨_, ⟨y, hy, rfl⟩, rfl⟩
-    exact ⟨_, ⟨y, hy, rfl⟩, map_mul _ _ _⟩
-
-end TauCeti.QuadraticOrder
-
 namespace TauCeti.BinaryQuadraticForm
 
 open GlobalNumberFields QuadraticOrder
@@ -141,7 +78,7 @@ open GlobalNumberFields QuadraticOrder
 @[simp] theorem complexFractionalIdeal_fractionalIdeal (f : BinaryQuadraticForm ℤ) {D : ℤ}
     (hD0 : D ≤ 0) (hf : f.discrim = D) [Fact (¬ IsSquare D)] :
     complexFractionalIdeal hD0 (f.fractionalIdeal D hf) = f.complexOrderIdeal D hD0 hf := by
-  rw [complexFractionalIdeal, fractionalIdeal_restrictScalars, complexOrderIdeal_def]
+  rw [complexFractionalIdeal_def, fractionalIdeal_restrictScalars, complexOrderIdeal_def]
 
 section PicAction
 
@@ -229,15 +166,15 @@ theorem cmHomothetyClassEquivPic_mk_of_lattice_eq
 
 /-- **The ideal-class action on CM lattices.** `Pic(O)` acts on the homothety classes of period
 lattices with multiplier order `O = complexOrder (-n)`, transported from its regular action through
-the dictionary of `cmHomothetyClassEquivPosDefProperClass` and `posDefProperClassToPic` (which
-together form `cmHomothetyClassEquivPic`). The class `[𝔞]` sends `[Λ]` to `[ι(𝔞) Λ]`
+the dictionary `cmHomothetyClassEquivPic`. The class `[𝔞]` sends `[Λ]` to `[ι(𝔞) Λ]`
 (`coe_smul_of_lattice_eq_mul`). -/
 instance instMulActionPicCMHomothetyClass :
     MulAction (Pic (numberFieldOrder (-n : ℤ) hn))
       {x : PeriodPairHomothetyClass // x.leftOrder =
         complexOrder (-n) (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n)) hn} :=
-  ((cmHomothetyClassEquivPosDefProperClass n hn).trans (Equiv.ofBijective _
-    ⟨posDefProperClassToPic_injective n hn, posDefProperClassToPic_surjective n hn⟩)).mulAction _
+  -- `β` restates the codomain of `cmHomothetyClassEquivPic`, written there with `-((n : ℤ) : ℚ)`,
+  -- in the definitionally equal form `((-n : ℤ) : ℚ)` that carries the group structure used here
+  Equiv.mulAction (β := Pic (numberFieldOrder (-n : ℤ) hn)) _ (cmHomothetyClassEquivPic n hn)
 
 /-- The CM dictionary is equivariant for the ideal-class action: the Picard class of `c • x` is
 `c` times the Picard class of `x`. -/
@@ -246,10 +183,10 @@ instance instMulActionPicCMHomothetyClass :
     (x : {x : PeriodPairHomothetyClass // x.leftOrder =
       complexOrder (-n) (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n)) hn}) :
     posDefProperClassToPic n hn (cmHomothetyClassEquivPosDefProperClass n hn (c • x)) =
-      c * posDefProperClassToPic n hn (cmHomothetyClassEquivPosDefProperClass n hn x) :=
-  Equiv.apply_symm_apply ((cmHomothetyClassEquivPosDefProperClass n hn).trans
-    (Equiv.ofBijective _ ⟨posDefProperClassToPic_injective n hn,
-      posDefProperClassToPic_surjective n hn⟩)) _
+      c * posDefProperClassToPic n hn (cmHomothetyClassEquivPosDefProperClass n hn x) := by
+  rw [Equiv.smul_def (β := Pic (numberFieldOrder (-n : ℤ) hn)) (cmHomothetyClassEquivPic n hn),
+    ← cmHomothetyClassEquivPic_apply, ← cmHomothetyClassEquivPic_apply]
+  exact (cmHomothetyClassEquivPic n hn).apply_symm_apply _
 
 /-- A CM homothety class is determined by its Picard class. -/
 private theorem eq_of_posDefProperClassToPic_eq
@@ -281,14 +218,6 @@ theorem stabilizer_pic_eq_bot
   simp only [posDefProperClassToPic_cmHomothetyClassEquivPosDefProperClass_smul] at h
   exact mul_eq_right.mp h
 
-/-- Multiplication by `c` in `ℂ` commutes with multiplication of `ℤ`-submodules of `ℂ`. -/
-private theorem mul_map_mulLeft (M N : Submodule ℤ ℂ) (c : ℂ) :
-    M * N.map (LinearMap.mulLeft ℤ c) = (M * N).map (LinearMap.mulLeft ℤ c) := by
-  have h (P : Submodule ℤ ℂ) : P.map (LinearMap.mulLeft ℤ c) = Submodule.span ℤ {c} * P := by
-    ext z
-    simp [Submodule.mem_span_singleton_mul]
-  rw [h, h, mul_left_comm]
-
 /-- A lattice with multiplier order `O` is a rescaling of the complex lattice of an invertible ideal
 `𝔍` of `O` whose Picard class corresponds to the homothety class of the lattice. -/
 private theorem exists_lattice_eq_map_mulLeft_complexFractionalIdeal
@@ -309,6 +238,29 @@ private theorem exists_lattice_eq_map_mulLeft_complexFractionalIdeal
   obtain ⟨c, hc⟩ := PeriodPair.homothetic_def.mp (PeriodPairHomothetyClass.mk_eq_mk_iff.mp hmk)
   exact ⟨J, c, hJ.symm, by rw [hc, PeriodPair.lattice_smul, hLJ]⟩
 
+/-- If the lattice `Λ` lies in the CM class `x`, then for every invertible ideal `𝔞` of `O` there
+are an invertible ideal `𝔍` with Picard class corresponding to `x` and a period lattice of lattice
+`ι(𝔞𝔍)` whose rescaling by some `c` is `ι(𝔞) Λ`. -/
+private theorem exists_lattice_smul_eq_complexFractionalIdeal_mul
+    (I : (numberFieldOrder (-n : ℤ) hn).invertibleProperFractionalIdeals)
+    {x : {x : PeriodPairHomothetyClass // x.leftOrder =
+      complexOrder (-n) (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n)) hn}} {L : PeriodPair}
+    (hx : (x : PeriodPairHomothetyClass) = PeriodPairHomothetyClass.mk L) :
+    ∃ (J : (numberFieldOrder (-n : ℤ) hn).invertibleProperFractionalIdeals) (c : ℂˣ)
+      (LIJ : PeriodPair),
+      posDefProperClassToPic n hn (cmHomothetyClassEquivPosDefProperClass n hn x) =
+        (numberFieldOrder (-n : ℤ) hn).mkPic J ∧
+      LIJ.lattice = complexFractionalIdeal (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n))
+        ((I * J : (numberFieldOrder (-n : ℤ) hn).invertibleProperFractionalIdeals) :
+          FractionalIdeal _ (QuadraticAlgebra ℚ ((-n : ℤ) : ℚ) 0)) ∧
+      (c • LIJ).lattice = complexFractionalIdeal (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n))
+        (I : FractionalIdeal _ (QuadraticAlgebra ℚ ((-n : ℤ) : ℚ) 0)) * L.lattice := by
+  obtain ⟨J, c, hJ, hc⟩ := exists_lattice_eq_map_mulLeft_complexFractionalIdeal n hn hx
+  obtain ⟨LIJ, hLIJ⟩ := exists_periodPair_lattice_eq_complexFractionalIdeal n hn (I * J)
+  refine ⟨J, c, LIJ, hJ, hLIJ, ?_⟩
+  rw [PeriodPair.lattice_smul, hLIJ, hc, Submodule.mul_map_mulLeft, Units.val_mul,
+    complexFractionalIdeal_mul]
+
 /-- **The product of an ideal lattice and a CM lattice is a period lattice**: if `Λ` has multiplier
 order `O`, then `ι(𝔞) Λ` is a period lattice for every invertible ideal `𝔞` of `O`. -/
 theorem exists_periodPair_lattice_eq_complexFractionalIdeal_mul
@@ -318,12 +270,9 @@ theorem exists_periodPair_lattice_eq_complexFractionalIdeal_mul
     ∃ L' : PeriodPair, L'.lattice = complexFractionalIdeal
       (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n))
       (I : FractionalIdeal _ (QuadraticAlgebra ℚ ((-n : ℤ) : ℚ) 0)) * L.lattice := by
-  obtain ⟨J, c, -, hc⟩ := exists_lattice_eq_map_mulLeft_complexFractionalIdeal n hn
+  obtain ⟨-, c, LIJ, -, -, h⟩ := exists_lattice_smul_eq_complexFractionalIdeal_mul n hn I
     (x := ⟨PeriodPairHomothetyClass.mk L, (PeriodPairHomothetyClass.leftOrder_mk L).trans hL⟩) rfl
-  obtain ⟨LIJ, hLIJ⟩ := exists_periodPair_lattice_eq_complexFractionalIdeal n hn (I * J)
-  refine ⟨c • LIJ, ?_⟩
-  rw [PeriodPair.lattice_smul, hLIJ, hc, mul_map_mulLeft, Units.val_mul,
-    complexFractionalIdeal_mul]
+  exact ⟨c • LIJ, h⟩
 
 /-- **The ideal-class action is multiplication of lattices**: if `x = [Λ]` and `Λ'` is the product
 `ι(𝔞) Λ` of the complex lattice of an invertible ideal `𝔞` with `Λ`, then `[𝔞] • x = [Λ']`. -/
@@ -337,16 +286,13 @@ theorem coe_smul_of_lattice_eq_mul
     (((numberFieldOrder (-n : ℤ) hn).mkPic I • x : {x : PeriodPairHomothetyClass //
       x.leftOrder = complexOrder (-n) (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n)) hn}) :
         PeriodPairHomothetyClass) = PeriodPairHomothetyClass.mk L' := by
-  obtain ⟨J, c, hJ, hc⟩ := exists_lattice_eq_map_mulLeft_complexFractionalIdeal n hn hx
-  obtain ⟨LIJ, hLIJ⟩ := exists_periodPair_lattice_eq_complexFractionalIdeal n hn (I * J)
-  have hL'IJ : L'.lattice = (c • LIJ).lattice := by
-    rw [PeriodPair.lattice_smul, hLIJ, hL', hc, mul_map_mulLeft, Units.val_mul,
-      complexFractionalIdeal_mul]
+  obtain ⟨J, c, LIJ, hJ, hLIJ, h⟩ := exists_lattice_smul_eq_complexFractionalIdeal_mul n hn I hx
   have hq : posDefProperClassToPic n hn
       (cmHomothetyClassEquivPosDefProperClass n hn ((numberFieldOrder (-n : ℤ) hn).mkPic I • x)) =
         (numberFieldOrder (-n : ℤ) hn).mkPic (I * J) := by
     rw [posDefProperClassToPic_cmHomothetyClassEquivPosDefProperClass_smul, hJ, map_mul]
-  rw [PeriodPairHomothetyClass.mk_eq_of_lattice_eq hL'IJ, PeriodPairHomothetyClass.mk_smul,
+  rw [PeriodPairHomothetyClass.mk_eq_of_lattice_eq (hL'.trans h.symm),
+    PeriodPairHomothetyClass.mk_smul,
     mk_eq_posDefProperClassToHomothetyClass_of_lattice_eq n hn hLIJ hq,
     posDefProperClassToHomothetyClass_cmHomothetyClassEquivPosDefProperClass]
 
