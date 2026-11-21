@@ -55,7 +55,7 @@ theorem upperJump_iff_isLocalRingUpperJump (u : RamificationIndexDomain) :
     UpperJump K L u ↔ TauCeti.IsLocalRing.UpperJump (L ≃ₐ[K] L) 𝒪[L] u := by
   rw [upperJump_iff, TauCeti.IsLocalRing.upperJump_iff]
   simp_rw [upperRamificationGroup_eq_isLocalRingUpperRamificationGroup]
-  exact ⟨fun hu v huv ↦ hu ⟨v, u.2.trans huv.le⟩ huv, fun hu v huv ↦ hu v huv⟩
+  exact ⟨fun hu v huv ↦ hu ⟨v, u.property.trans huv.le⟩ huv, fun hu v huv ↦ hu v huv⟩
 
 /-- An upper break requires a nontrivial Galois group. -/
 theorem UpperJump.nontrivial {u : RamificationIndexDomain} (hu : UpperJump K L u) :

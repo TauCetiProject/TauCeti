@@ -45,8 +45,9 @@ theorem smul_val_inv_eq_of_smul_eq {B G : Type*} [Monoid B] [Monoid G] [MulDistr
 /-- Inclusion `FixedPoints.submonoid G B →* B` reflects and preserves units. -/
 @[simp] theorem isUnit_coe_fixedPoints_submonoid_iff {B G : Type*} [Monoid B] [Monoid G]
     [MulDistribMulAction G B] {x : FixedPoints.submonoid G B} : IsUnit (x : B) ↔ IsUnit x :=
-  ⟨fun ⟨u, hu⟩ ↦ ⟨⟨x, ⟨↑u⁻¹, fun g ↦ smul_val_inv_eq_of_smul_eq (hu ▸ x.2 g)⟩,
+  ⟨fun ⟨u, hu⟩ ↦ ⟨⟨x, ⟨↑u⁻¹, fun g ↦ smul_val_inv_eq_of_smul_eq (hu ▸ x.property g)⟩,
     Subtype.ext (by simp [← hu]), Subtype.ext (by simp [← hu])⟩, rfl⟩,
-   fun ⟨u, hu⟩ ↦ ⟨⟨u.1, u.2, congrArg Subtype.val u.3, congrArg Subtype.val u.4⟩, hu ▸ rfl⟩⟩
+   fun ⟨u, hu⟩ ↦ ⟨⟨u.val, u.inv, congrArg Subtype.val u.val_inv, congrArg Subtype.val u.inv_val⟩,
+    hu ▸ rfl⟩⟩
 
 end TauCeti

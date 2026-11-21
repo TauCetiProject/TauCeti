@@ -45,16 +45,16 @@ namespace TauCeti
 /-- Inclusion `FixedPoints.subring B G →+* B` reflects and preserves units. -/
 @[simp] theorem isUnit_coe_fixedPoints_subring_iff {B G : Type*} [Ring B] [Monoid G]
     [MulSemiringAction G B] {x : FixedPoints.subring B G} : IsUnit (x : B) ↔ IsUnit x :=
-  ⟨fun hx ↦ ((isUnit_coe_fixedPoints_submonoid_iff (x := ⟨x.1, x.2⟩)).mp hx).map
-    (⟨⟨fun z ↦ ⟨z.1, z.2⟩, rfl⟩, fun _ _ ↦ rfl⟩ : _ →* FixedPoints.subring B G),
+  ⟨fun hx ↦ ((isUnit_coe_fixedPoints_submonoid_iff (x := ⟨x.val, x.property⟩)).mp hx).map
+    (⟨⟨fun z ↦ ⟨z.val, z.property⟩, rfl⟩, fun _ _ ↦ rfl⟩ : _ →* FixedPoints.subring B G),
    fun hx ↦ hx.map (FixedPoints.subring B G).subtype⟩
 
 /-- Inclusion `FixedPoints.subalgebra A B G →ₐ[A] B` reflects and preserves units. -/
 @[simp] theorem isUnit_coe_fixedPoints_subalgebra_iff {A B G : Type*} [CommSemiring A] [Semiring B]
     [Algebra A B] [Monoid G] [MulSemiringAction G B] [SMulCommClass G A B]
     {x : FixedPoints.subalgebra A B G} : IsUnit (x : B) ↔ IsUnit x :=
-  ⟨fun hx ↦ ((isUnit_coe_fixedPoints_submonoid_iff (x := ⟨x.1, x.2⟩)).mp hx).map
-    (⟨⟨fun z ↦ ⟨z.1, z.2⟩, rfl⟩, fun _ _ ↦ rfl⟩ : _ →* FixedPoints.subalgebra A B G),
+  ⟨fun hx ↦ ((isUnit_coe_fixedPoints_submonoid_iff (x := ⟨x.val, x.property⟩)).mp hx).map
+    (⟨⟨fun z ↦ ⟨z.val, z.property⟩, rfl⟩, fun _ _ ↦ rfl⟩ : _ →* FixedPoints.subalgebra A B G),
    fun hx ↦ hx.map (FixedPoints.subalgebra A B G).val⟩
 
 section FixedPointsEquiv
@@ -63,8 +63,8 @@ variable (A B G : Type*) [CommSemiring A] [Ring B] [Algebra A B] [Monoid G]
 /-- The canonical ring isomorphism `FixedPoints.subring B G ≃+* FixedPoints.subalgebra A B G`. -/
 def fixedPointsSubringEquivSubalgebra :
     FixedPoints.subring B G ≃+* FixedPoints.subalgebra A B G :=
-  { toFun x := ⟨x.1, x.2⟩, invFun x := ⟨x.1, x.2⟩, left_inv _ := rfl, right_inv _ := rfl,
-    map_mul' _ _ := rfl, map_add' _ _ := rfl }
+  { toFun x := ⟨x.val, x.property⟩, invFun x := ⟨x.val, x.property⟩,
+    left_inv _ := rfl, right_inv _ := rfl, map_mul' _ _ := rfl, map_add' _ _ := rfl }
 @[simp] theorem coe_fixedPointsSubringEquivSubalgebra_apply (x : FixedPoints.subring B G) :
     ((fixedPointsSubringEquivSubalgebra A B G x : FixedPoints.subalgebra A B G) : B) = x := by rfl
 @[simp] theorem coe_fixedPointsSubringEquivSubalgebra_symm_apply
@@ -81,18 +81,20 @@ and preserves divisibility. -/
   refine ⟨fun ⟨q, hq⟩ ↦ ?_, (FixedPoints.subsemiring B G).subtype.map_dvd⟩
   by_cases hx : x = 0; · subst hx; exact ⟨0, Subtype.ext (by simpa using hq)⟩
   refine ⟨⟨q, fun g ↦ mul_left_cancel₀ (Subtype.coe_ne_coe.2 hx) ?_⟩, Subtype.ext hq⟩
-  calc (x : B) * (g • q) = g • ((x : B) * q) := by rw [smul_mul', x.2 g]
-    _ = (x : B) * q := by rw [← hq, y.2 g]
+  calc (x : B) * (g • q) = g • ((x : B) * q) := by rw [smul_mul', x.property g]
+    _ = (x : B) * q := by rw [← hq, y.property g]
 @[simp] theorem coe_dvd_coe_fixedPoints_subring_iff [Ring B] [IsLeftCancelMulZero B]
     [MulSemiringAction G B] {x y : FixedPoints.subring B G} : (x : B) ∣ (y : B) ↔ x ∣ y :=
   ⟨fun h ↦ let ⟨q, hq⟩ := (coe_dvd_coe_fixedPoints_subsemiring_iff
-      (x := ⟨x.1, x.2⟩) (y := ⟨y.1, y.2⟩)).1 h; ⟨⟨q.1, q.2⟩, Subtype.ext (congrArg Subtype.val hq)⟩,
+      (x := ⟨x.val, x.property⟩) (y := ⟨y.val, y.property⟩)).1 h
+    ⟨⟨q.val, q.property⟩, Subtype.ext (congrArg Subtype.val hq)⟩,
    (FixedPoints.subring B G).subtype.map_dvd⟩
 @[simp] theorem coe_dvd_coe_fixedPoints_subalgebra_iff {A : Type*} [CommSemiring A] [Semiring B]
     [Algebra A B] [IsLeftCancelMulZero B] [MulSemiringAction G B] [SMulCommClass G A B]
     {x y : FixedPoints.subalgebra A B G} : (x : B) ∣ (y : B) ↔ x ∣ y :=
   ⟨fun h ↦ let ⟨q, hq⟩ := (coe_dvd_coe_fixedPoints_subsemiring_iff
-      (x := ⟨x.1, x.2⟩) (y := ⟨y.1, y.2⟩)).1 h; ⟨⟨q.1, q.2⟩, Subtype.ext (congrArg Subtype.val hq)⟩,
+      (x := ⟨x.val, x.property⟩) (y := ⟨y.val, y.property⟩)).1 h
+    ⟨⟨q.val, q.property⟩, Subtype.ext (congrArg Subtype.val hq)⟩,
    (FixedPoints.subalgebra A B G).val.toRingHom.map_dvd⟩
 end FixedPointsDvd
 

@@ -15,6 +15,7 @@ public import TauCeti.Algebra.Ring.Action.End
 public import TauCeti.RingTheory.DiscreteValuationRing.Basic
 public import TauCeti.RingTheory.Ideal.Inertia
 public import TauCeti.RingTheory.Ideal.RamificationGroup
+public import TauCeti.RingTheory.Invariant.Basic
 public import TauCeti.RingTheory.IsGaloisGroup.IntegralClosure
 public import TauCeti.RingTheory.LocalRing.Pointwise
 import Mathlib.Combinatorics.Enumerative.DoubleCounting

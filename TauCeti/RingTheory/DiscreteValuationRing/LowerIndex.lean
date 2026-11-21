@@ -174,10 +174,11 @@ theorem natCard_ramificationGroup_zero {A B G : Type*} [CommRing A] [IsDomain A]
     Nat.card (ramificationGroup G B 0) = (maximalIdeal B).ramificationIdx A := by
   have _ : Algebra.IsIntegral A B := Algebra.IsInvariant.isIntegral A B G
   have _ : FiniteRingKrullDim A := FiniteRingKrullDim.of_ringKrullDim_eq_natCast (n := 1)
-    (by simpa using ringKrullDim_eq_one A)
+    (by simpa using _root_.IsDiscreteValuationRing.ringKrullDim_eq_one A)
   have _ : FaithfulSMul A B := (faithfulSMul_iff_algebraMap_injective A B).2 <|
     (algebraMap A B).injective_of_isIntegral_of_ringKrullDim_le
-      (Algebra.isIntegral_def.1 inferInstance) (by simp [ringKrullDim_eq_one])
+      (Algebra.isIntegral_def.1 inferInstance)
+      (by simp [_root_.IsDiscreteValuationRing.ringKrullDim_eq_one])
   have _ : Module.Finite A B := IsGaloisGroup.moduleFinite_of_isIntegrallyClosed G A B
   have _ := (isSeparable_residueField_iff (A := A) (B := B)).mp ‹_›
   rw [ramificationGroup_zero_eq_inertia,
@@ -210,12 +211,11 @@ theorem ramificationIdx_mul_lowerIndex_quotient_mk'_eq_finsum (H : Subgroup G) [
         lowerIndex (FixedPoints.subalgebra A B H) (QuotientGroup.mk' H g) =
       ∑ᶠ h : H, lowerIndex B (g * h) := by
   set R₀ := FixedPoints.subalgebra A B G; set C := FixedPoints.subalgebra A B H
-  have hle : R₀ ≤ C := fun _ hx h ↦ hx h.property
-  let _ : Algebra R₀ B := Subalgebra.algebra R₀
-  let _ : Algebra R₀ C := (Subalgebra.inclusion hle).toRingHom.toAlgebra
+  have hle : R₀ ≤ C := fun _ hx h ↦ hx h.val
+  let _ : Algebra R₀ C := (Subalgebra.inclusion hle).toAlgebra
   have _ : IsScalarTower A R₀ B := IsScalarTower.subalgebra' A B B R₀
   have _ : IsScalarTower R₀ C B := .of_algebraMap_eq fun _ ↦ rfl
-  have _ : FaithfulSMul R₀ B := Subtype.val_injective.faithfulSMul
+  have _ : FaithfulSMul R₀ B := (faithfulSMul_iff_algebraMap_injective R₀ B).2 Subtype.val_injective
   have _ : FaithfulSMul R₀ C :=
     (faithfulSMul_iff_algebraMap_injective R₀ C).2 (Subalgebra.inclusion_injective hle)
   have _ : IsLocalHom (algebraMap R₀ B) := FixedPoints.isLocalHom_algebraMap_subalgebra

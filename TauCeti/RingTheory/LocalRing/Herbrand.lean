@@ -387,8 +387,8 @@ theorem inverseHerbrandFun_lt_iff {u v : ℝ} :
   (inverseHerbrandFun_strictMono G S).injective.eq_iff' (inverseHerbrandFun_zero G S)
 /-- `herbrandFun` restricted to an order automorphism of `[-1, ∞)`. -/
 def herbrandOrderIso : Ici (-1 : ℝ) ≃o Ici (-1 : ℝ) where
-  toFun u := ⟨herbrandFun G S u, (neg_one_le_herbrandFun_iff G S).2 u.2⟩
-  invFun v := ⟨inverseHerbrandFun G S v, (neg_one_le_inverseHerbrandFun_iff G S).2 v.2⟩
+  toFun u := ⟨herbrandFun G S u, (neg_one_le_herbrandFun_iff G S).2 u.property⟩
+  invFun v := ⟨inverseHerbrandFun G S v, (neg_one_le_inverseHerbrandFun_iff G S).2 v.property⟩
   left_inv u := Subtype.ext (inverseHerbrandFun_herbrandFun G S u)
   right_inv v := Subtype.ext (herbrandFun_inverseHerbrandFun G S v)
   map_rel_iff' := (herbrandFun_strictMono G S).le_iff_le

@@ -368,7 +368,7 @@ theorem lowerJump_iff (u : RamificationIndexDomain) :
 theorem lowerJump_iff_isLocalRingLowerJump (u : RamificationIndexDomain) :
     LowerJump K L u ↔ TauCeti.IsLocalRing.LowerJump (L ≃ₐ[K] L) 𝒪[L] u := by
   rw [lowerJump_iff, TauCeti.IsLocalRing.lowerJump_iff]
-  exact ⟨fun hu v huv ↦ hu ⟨v, u.2.trans huv.le⟩ huv, fun hu v huv ↦ hu v huv⟩
+  exact ⟨fun hu v huv ↦ hu ⟨v, u.property.trans huv.le⟩ huv, fun hu v huv ↦ hu v huv⟩
 
 /-- Every lower break occurs at an integer index. -/
 theorem lowerJump_eq_intCast {u : RamificationIndexDomain} (h : LowerJump K L u) :

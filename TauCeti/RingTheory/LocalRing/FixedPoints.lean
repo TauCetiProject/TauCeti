@@ -14,7 +14,7 @@ public import TauCeti.RingTheory.LocalRing.RingHom
 
 Unit reflection (`isUnit_coe_fixedPoints_*_iff`) makes inclusions from `FixedPoints.submonoid`,
 `FixedPoints.subring`, and `FixedPoints.subalgebra` into `B` `IsLocalHom`, transferring
-`IsLocalRing` from `B` to `FixedPoints.subring B G` and `FixedPoints.subalgebra A B G`.
+`IsLocalRing` from `B` to `FixedPoints.subring B G`.
 -/
 
 public section
