@@ -97,6 +97,9 @@ derivatives lie in `𝒞^{k-1+α}` lies in `𝒞^{k+α}`
   `𝒞^{k+α} ≃ C_b^{k,α}` given by `toCkHolderSpace` and `ofCkHolderSpace`, which are mutually
   inverse (`TauCeti.BesovSpace.toCkHolderSpace_ofCkHolderSpace` and
   `TauCeti.BesovSpace.ofCkHolderSpace_toCkHolderSpace`).
+* `TemperedDistribution.memBesov_iff_exists_holderSpace` and
+  `TemperedDistribution.memBesov_iff_exists_ckHolderSpace`: unbundled identifications
+  `𝒞^α = C^{0,α}` and `𝒞^{k+α} = C_b^{k,α}` for `0 < α < 1`.
 
 ## References
 
@@ -1006,3 +1009,34 @@ theorem holderSpaceEquiv_symm_apply {α : ℝ≥0} (hα0 : 0 < α) (hα1 : α < 
 end BesovSpace
 
 end TauCeti
+
+namespace TemperedDistribution
+
+variable (φ : ContDiffBump (0 : E)) {α : ℝ≥0}
+
+/-- **Unbundled identification `𝒞^α = C^{0,α}`** for `0 < α < 1`: a tempered distribution lies in
+`B^α_{∞,∞}` exactly when it is the tempered distribution of a bounded `α`-Hölder function. -/
+theorem memBesov_iff_exists_holderSpace (hα0 : 0 < α) (hα1 : α < 1) {u : 𝓢'(E, F)} :
+    u.MemBesov φ α ∞ ∞ ↔
+      ∃ f : TauCeti.HolderSpace α E F,
+        (BoundedContinuousFunction.toLpTop volume ℂ f.toBoundedContinuousFunction : 𝓢'(E, F)) =
+          u :=
+  ⟨fun hu ↦ ⟨TauCeti.BesovSpace.toHolderSpace F φ hα0 hα1 hu.toBesovSpace, by simp⟩,
+    fun ⟨f, hf⟩ ↦ hf ▸ by
+      simpa only [TauCeti.BesovSpace.toDistr_ofHolderSpace] using
+        (TauCeti.BesovSpace.ofHolderSpace F φ α f).memBesov_toDistr⟩
+
+/-- **Unbundled identification `𝒞^{k+α} = C_b^{k,α}`** for `k : ℕ` and `0 < α < 1`: a tempered
+distribution lies in `B^{k+α}_{∞,∞}` exactly when it is the tempered distribution of a bounded
+`C^{k,α}` map. -/
+theorem memBesov_iff_exists_ckHolderSpace (k : ℕ) (hα0 : 0 < α) (hα1 : α < 1) {u : 𝓢'(E, F)} :
+    u.MemBesov φ (k + α) ∞ ∞ ↔
+      ∃ f : TauCeti.CkHolderSpace k α E F,
+        (BoundedContinuousFunction.toLpTop volume ℂ f.toBoundedContinuousFunction : 𝓢'(E, F)) =
+          u :=
+  ⟨fun hu ↦ ⟨TauCeti.BesovSpace.toCkHolderSpace F φ k hα0 hα1 hu.toBesovSpace, by simp⟩,
+    fun ⟨f, hf⟩ ↦ hf ▸ by
+      simpa only [TauCeti.BesovSpace.toDistr_ofCkHolderSpace] using
+        (TauCeti.BesovSpace.ofCkHolderSpace F φ k α f).memBesov_toDistr⟩
+
+end TemperedDistribution
