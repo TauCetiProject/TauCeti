@@ -331,4 +331,48 @@ theorem completionExtension_self :
 
 end Constants
 
+section RestrictConstants
+
+variable {k k' F F' : Type*} [Field k] [Field k'] [Field F] [Field F']
+  [Algebra k F] [Algebra k k'] [Algebra k' F'] [Algebra k F'] [Algebra F F']
+  [IsScalarTower k k' F'] [IsScalarTower k F F']
+
+/-- Restricting the constant field of `P'` does not change `completionEmbedding`. -/
+@[simp]
+theorem completionEmbedding_restrictConstants (P' : Place k' F') (x : F') :
+    (P'.restrictConstants k).completionEmbedding x = P'.completionEmbedding x := by
+  rw [completionEmbedding_apply, completionEmbedding_apply]
+
+/-- Restricting the constant field of `P'` does not change the completed valuation ring
+`𝒪̂_{P'}`. -/
+@[simp]
+theorem integers_completionPlace_restrictConstants (P' : Place k' F') :
+    (P'.restrictConstants k).completionPlace.integers = P'.completionPlace.integers :=
+  SetLike.ext fun _ ↦ by simp
+
+variable [Algebra.IsIntegral F F']
+
+/-- Restricting the constant field of `P'` to `k` does not change `completionExtension`. -/
+@[simp]
+theorem completionExtension_restrictConstants
+    (P : Place k F) (P' : Place k' F') (hP : P'.restrict k F = P) :
+    P.completionExtension (P'.restrictConstants k)
+        ((restrict_restrictConstants k F P').trans hP) =
+      P.completionExtension P' hP :=
+  P.eq_completionExtension_of_continuous P' hP
+    (P.continuous_completionExtension (P'.restrictConstants k) _) fun x ↦ by
+      rw [P.completionExtension_completionEmbedding (P'.restrictConstants k) _,
+        completionEmbedding_restrictConstants]
+
+/-- Restricting the constant field of `P'` to `k` does not change `completionExtensionAlgebra`. -/
+@[simp]
+theorem completionExtensionAlgebra_restrictConstants
+    (P : Place k F) (P' : Place k' F') (hP : P'.restrict k F = P) :
+    P.completionExtensionAlgebra (P'.restrictConstants k)
+        ((restrict_restrictConstants k F P').trans hP) =
+      P.completionExtensionAlgebra P' hP :=
+  congrArg RingHom.toAlgebra (P.completionExtension_restrictConstants P' hP)
+
+end RestrictConstants
+
 end TauCeti.Place

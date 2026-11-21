@@ -19,8 +19,12 @@ extension of complete discretely valued fields of degree
 
 `[F̂'_{P'} : F̂_P] = e(P' ∣ P) · f(P' ∣ P)`,
 
-and the completed valuation ring `𝒪̂_{P'}` is a free module of the same rank over `𝒪̂_P`. Neither
-separability nor perfectness is assumed, of `F' / F`, of the residue extension, or of the
+and the completed valuation ring `𝒪̂_{P'}` is a free module of the same rank over `𝒪̂_P` and equals
+the integral closure of `𝒪̂_P` in `F̂'_{P'}` (`TauCeti.Place.isIntegralClosure_completionIntegers`,
+adapting `IsDedekindDomain.HeightOneSpectrum.adicCompletionIntegers_isIntegralClosure` in
+`TauCeti/RingTheory/DedekindDomain/AdicValuation/IntegralClosure.lean`). Moreover, the image of
+`F'` generates `F̂'_{P'}` over `F̂_P` (`TauCeti.Place.adjoin_range_completionEmbedding_eq_top`).
+Neither separability nor perfectness is assumed, of `F' / F`, of the residue extension, or of the
 constants: an inseparable residue extension is counted with its full degree. This identifies the
 completion at a place as a finite extension of complete discrete valuation rings, the setting in
 which integral bases, trace forms and the different of a completed extension are computed.
@@ -55,10 +59,11 @@ completed extension.
 * `TauCeti.Place.finiteDimensional_completion` and `TauCeti.Place.finrank_completion`: **the
   local degree** `[F̂'_{P'} : F̂_P] = e(P' ∣ P) f(P' ∣ P)`.
 * `TauCeti.Place.isIntegralClosure_completionIntegers`,
+  `TauCeti.Place.adjoin_range_completionEmbedding_eq_top`,
   `TauCeti.Place.isSeparable_completion`, and `TauCeti.Place.restrict_completionPlace`: `𝒪̂_{P'}`
-  is the integral closure of `𝒪̂_P` in `F̂'_{P'}`, separability of `F' / F` passes to
-  `F̂'_{P'} / F̂_P`, and over a common constant field `k` the completed upper place restricts to the
-  completed lower place.
+  is the integral closure of `𝒪̂_P` in `F̂'_{P'}`, the image of `F'` generates `F̂'_{P'}` over
+  `F̂_P`, separability of `F' / F` passes to `F̂'_{P'} / F̂_P`, and over a common constant field `k`
+  the completed upper place restricts to the completed lower place.
 
 ## References
 
@@ -499,6 +504,28 @@ theorem isIntegralClosure_completionIntegers :
   let _ := P.completionIntegersExtensionAlgebra P' hP
   have := P.moduleFinite_completionIntegers P' hP
   infer_instance
+
+/-- The image of `F'` generates `F̂'_{P'}` as an intermediate field over `F̂_P` when the residue
+extension is finite. -/
+theorem adjoin_range_completionEmbedding_eq_top :
+    letI := P.completionExtensionAlgebra P' hP
+    IntermediateField.adjoin P.Completion (Set.range P'.completionEmbedding) = ⊤ := by
+  let _ := P.completionExtensionAlgebra P' hP
+  obtain ⟨u, t, -, hsp, ht⟩ := exists_residue_basis (k := k) (F := F) P'
+  have hsub : Set.range (fun p : Fin (relativeDegree k F P') × Fin (ramificationIdx F P') ↦
+      P'.completionEmbedding ((u p.1 : F') * (t : F') ^ (p.2 : ℕ))) ⊆
+      Set.range P'.completionEmbedding := by
+    rintro _ ⟨p, rfl⟩
+    exact ⟨_, rfl⟩
+  have hspan : Submodule.span P.Completion (Set.range P'.completionEmbedding) = ⊤ :=
+    top_unique ((P.span_completion_eq_top P' hP u hsp ht).ge.trans
+      (Submodule.span_mono hsub))
+  have hle : (⊤ : Submodule P.Completion P'.Completion) ≤
+      (IntermediateField.adjoin P.Completion
+        (Set.range P'.completionEmbedding)).toSubalgebra.toSubmodule := by
+    rw [← hspan, Submodule.span_le]
+    exact IntermediateField.subset_adjoin P.Completion _
+  exact eq_top_iff.mpr fun x _ ↦ hle Submodule.mem_top
 
 /-- **Completion preserves separability**: for an integral separable extension `F' / F` with finite
 residue extension at `P' ∣ P`, `F̂'_{P'} / F̂_P` is separable (with arbitrary residue fields). -/
