@@ -42,15 +42,13 @@ Specializing to `X = G` gives the sequence-space counterpart of
 * `lp.tsum_leftTranslation`: left translation preserves `∑' x, u x`.
 * `lp.norm_leftTranslation_one_sub`: `‖L_g u - u‖₁ = ∑' x, ‖u (g⁻¹ • x) - u x‖`.
 * `lp.bcfPairing_leftTranslation`: `⟨L_g u, f⟩ = ⟨u, f (g • ·)⟩`.
-* `lp.dualPairing_leftTranslation_left`, `lp.dualPairing_leftTranslation_right`: adjointness of
-  left translation with respect to `lp.dualPairing`.
 -/
 
 public section
 
 noncomputable section
 
-open scoped ENNReal NNReal BoundedContinuousFunction
+open scoped ENNReal BoundedContinuousFunction
 
 namespace LinearIsometryEquiv
 
@@ -64,37 +62,6 @@ theorem tsum_lpCongrLeft {α β 𝕜 E : Type*} {p : ℝ≥0∞} [Fact (1 ≤ p)
 end LinearIsometryEquiv
 
 namespace lp
-
-section DualPairingCongr
-
-variable {α β 𝕜 E F H : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup H] [NormedSpace 𝕜 H]
-  [CompleteSpace H] {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)] [p.HolderConjugate q]
-
-/-- Reindexing both factors of `lp.dualPairing` along the same bijection leaves the pairing
-unchanged. -/
-theorem dualPairing_lpCongrLeft (B : E →L[𝕜] F →L[𝕜] H) {K : ℝ≥0} (hBK : ‖B‖ ≤ K) (e : α ≃ β)
-    (a : lp (fun _ : α ↦ E) p) (b : lp (fun _ : α ↦ F) q) :
-    dualPairing p q (fun _ : β ↦ B) (fun _ ↦ hBK)
-        (LinearIsometryEquiv.lpCongrLeft p 𝕜 E e a)
-        (LinearIsometryEquiv.lpCongrLeft q 𝕜 F e b) =
-      dualPairing p q (fun _ : α ↦ B) (fun _ ↦ hBK) a b := by
-  simp_rw [dualPairing_apply, LinearIsometryEquiv.lpCongrLeft_apply]
-  exact e.symm.tsum_eq fun x ↦ B (a x) (b x)
-
-/-- Moving `lpCongrLeft` from the left argument to the right argument of `lp.dualPairing` inverts
-the bijection. -/
-theorem dualPairing_lpCongrLeft_left (B : E →L[𝕜] F →L[𝕜] H) {K : ℝ≥0} (hBK : ‖B‖ ≤ K)
-    (e : α ≃ β) (a : lp (fun _ : α ↦ E) p) (b : lp (fun _ : β ↦ F) q) :
-    dualPairing p q (fun _ : β ↦ B) (fun _ ↦ hBK)
-        (LinearIsometryEquiv.lpCongrLeft p 𝕜 E e a) b =
-      dualPairing p q (fun _ : α ↦ B) (fun _ ↦ hBK)
-        a (LinearIsometryEquiv.lpCongrLeft q 𝕜 F e.symm b) := by
-  have h := dualPairing_lpCongrLeft B hBK e a (LinearIsometryEquiv.lpCongrLeft q 𝕜 F e.symm b)
-  rwa [← LinearIsometryEquiv.lpCongrLeft_symm, LinearIsometryEquiv.apply_symm_apply,
-    LinearIsometryEquiv.lpCongrLeft_symm] at h
-
-end DualPairingCongr
 
 section MulAction
 
@@ -153,9 +120,8 @@ theorem leftTranslation_symm_single [DecidableEq X] (g : G) (x : X) (v : E) :
 
 /-- Left translation preserves the series sum of coordinates. -/
 theorem tsum_leftTranslation (g : G) (u : lp (fun _ : X ↦ E) p) :
-    ∑' x, leftTranslation p 𝕜 g u x = ∑' x, u x := by
-  simp_rw [leftTranslation_apply]
-  exact (MulAction.toPerm g⁻¹).tsum_eq ⇑u
+    ∑' x, leftTranslation p 𝕜 g u x = ∑' x, u x :=
+  LinearIsometryEquiv.tsum_lpCongrLeft (MulAction.toPerm g) u
 
 /-- Left translation of `f.toLp p` pushes `f : X →₀ E` forward along `g • ·`. -/
 theorem leftTranslation_finsupp_toLp (g : G) (f : X →₀ E) :
@@ -258,40 +224,5 @@ theorem leftTranslation_toLpInfty_mulLeft {G E 𝕜 : Type*} [Group G] [Topologi
     leftTranslation ∞ 𝕜 g (BoundedContinuousFunction.toLpInfty 𝕜 f) =
       BoundedContinuousFunction.toLpInfty 𝕜 (f.compContinuous (ContinuousMap.mulLeft g⁻¹)) :=
   leftTranslation_toLpInfty (X := G) g f
-
-section DualPairingLeftTranslation
-
-variable {G α 𝕜 E F H : Type*} [Group G] [MulAction G α] [RCLike 𝕜]
-  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-  [NormedAddCommGroup H] [NormedSpace 𝕜 H] [CompleteSpace H] {p q : ℝ≥0∞}
-  [Fact (1 ≤ p)] [Fact (1 ≤ q)] [p.HolderConjugate q]
-
-/-- Simultaneous left translation of both arguments preserves `lp.dualPairing`. -/
-theorem dualPairing_leftTranslation (B : E →L[𝕜] F →L[𝕜] H) {K : ℝ≥0} (hBK : ‖B‖ ≤ K) (g : G)
-    (a : lp (fun _ : α ↦ E) p) (b : lp (fun _ : α ↦ F) q) :
-    dualPairing p q (fun _ : α ↦ B) (fun _ ↦ hBK)
-        (leftTranslation p 𝕜 g a) (leftTranslation q 𝕜 g b) =
-      dualPairing p q (fun _ : α ↦ B) (fun _ ↦ hBK) a b :=
-  dualPairing_lpCongrLeft B hBK (MulAction.toPerm g) a b
-
-/-- Left translation on the first argument of `lp.dualPairing` moves to inverse left translation on
-the second argument. -/
-theorem dualPairing_leftTranslation_left (B : E →L[𝕜] F →L[𝕜] H) {K : ℝ≥0} (hBK : ‖B‖ ≤ K)
-    (g : G) (a : lp (fun _ : α ↦ E) p) (b : lp (fun _ : α ↦ F) q) :
-    dualPairing p q (fun _ : α ↦ B) (fun _ ↦ hBK) (leftTranslation p 𝕜 g a) b =
-      dualPairing p q (fun _ : α ↦ B) (fun _ ↦ hBK) a (leftTranslation q 𝕜 g⁻¹ b) := by
-  have h := dualPairing_leftTranslation B hBK g a (leftTranslation q 𝕜 g⁻¹ b)
-  rwa [← leftTranslation_symm, LinearIsometryEquiv.apply_symm_apply, leftTranslation_symm] at h
-
-/-- Left translation on the second argument of `lp.dualPairing` moves to inverse left translation
-on the first argument. -/
-theorem dualPairing_leftTranslation_right (B : E →L[𝕜] F →L[𝕜] H) {K : ℝ≥0} (hBK : ‖B‖ ≤ K)
-    (g : G) (a : lp (fun _ : α ↦ E) p) (b : lp (fun _ : α ↦ F) q) :
-    dualPairing p q (fun _ : α ↦ B) (fun _ ↦ hBK) a (leftTranslation q 𝕜 g b) =
-      dualPairing p q (fun _ : α ↦ B) (fun _ ↦ hBK) (leftTranslation p 𝕜 g⁻¹ a) b := by
-  have h := dualPairing_leftTranslation B hBK g (leftTranslation p 𝕜 g⁻¹ a) b
-  rwa [← leftTranslation_symm, LinearIsometryEquiv.apply_symm_apply, leftTranslation_symm] at h
-
-end DualPairingLeftTranslation
 
 end lp
