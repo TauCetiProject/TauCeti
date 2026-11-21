@@ -69,6 +69,13 @@ section FrobeniusLift
 
 variable [Fact p.Prime] [DeltaRing p A]
 
+/-- On a monomial, `∑ aₘ m ↦ ∑ φ(aₘ) m ^ p` differs from the `p`-th power map by
+`p * single (m ^ p) (δ a)`. -/
+private theorem mapDomainRingHom_comp_mapRingHom_frobenius_single_sub_pow (m : M) (a : A) :
+    (mapDomainRingHom A (powMonoidHom p : M →* M)).comp (mapRingHom M (frobenius p A))
+        (single m a) - single m a ^ p = p * single (m ^ p) (delta p a) := by
+  simp [frobenius_apply, natCast_def, single_mul_single, mapDomain_add]
+
 variable (p A M) in
 /-- For every `δ`-ring `A`, the ring endomorphism of `A[M]` sending `∑ aₘ m` to
 `∑ φ(aₘ) m ^ p` lifts Frobenius modulo `p`. -/
@@ -85,8 +92,8 @@ theorem isFrobeniusLift_monoidAlgebra :
     rw [map_add]
     linear_combination ha + hb - natCast_mul_addCorrection (p := p) x y
   | single m a =>
-    refine ⟨single (m ^ p) (delta p a), ?_⟩
-    simp [frobenius_apply, natCast_def, single_mul_single, mapDomain_add]
+    exact ⟨single (m ^ p) (delta p a),
+      mapDomainRingHom_comp_mapRingHom_frobenius_single_sub_pow m a⟩
 
 end FrobeniusLift
 
@@ -254,17 +261,16 @@ nonzerodivisor: its Frobenius sends `∑ aₘ m` to `∑ φ(aₘ) m ^ p`, and
 `δ (single m a) = single (m ^ p) (δ a)` (`delta_single_monoidAlgebra`). -/
 @[instance_reducible]
 noncomputable def monoidAlgebra (hA : IsRegular (p : A)) : DeltaRing p A[M] :=
-  ofFrobeniusLift (by simpa [natCast_def] using isRegular_single_one (M := M) hA) _
+  ofFrobeniusLift (isRegular_natCast hA) _
     (isFrobeniusLift_monoidAlgebra p A M)
 
 /-- The `δ`-structure `monoidAlgebra M hA` satisfies `δ (single m a) = single (m ^ p) (δ a)`. -/
 theorem delta_single_monoidAlgebra (hA : IsRegular (p : A)) (m : M) (a : A) :
     @delta p _ _ (monoidAlgebra M hA) (single m a) = single (m ^ p) (delta p a) := by
-  have hreg : IsRegular (p : A[M]) := by simpa [natCast_def] using isRegular_single_one (M := M) hA
-  apply hreg.left
+  apply (isRegular_natCast (M := M) hA).left
   dsimp only
   rw [natCast_mul_delta_ofFrobeniusLift]
-  simp [frobenius_apply, natCast_def, single_mul_single, mapDomain_add]
+  exact mapDomainRingHom_comp_mapRingHom_frobenius_single_sub_pow m a
 
 end Construction
 

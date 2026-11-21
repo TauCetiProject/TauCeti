@@ -41,8 +41,9 @@ none of the further theory built on it.
 * `MonoidAlgebra.single_mem_nonZeroDivisors` and `MonoidAlgebra.mrange_of_le_nonZeroDivisors`:
   for a cancellative monoid `M`, monomials with non-zero-divisor coefficients (in particular
   coefficient-one monomials) are non-zero-divisors in `R[M]`.
-* `MonoidAlgebra.isRegular_single_one`: for an arbitrary monoid `M`, a regular element of `R`
-  placed at the identity is regular in `R[M]`.
+* `MonoidAlgebra.isRegular_single_one` and `MonoidAlgebra.isRegular_natCast`: for an arbitrary
+  monoid `M`, a regular element of `R` placed at the identity, for instance a regular natural
+  number, is regular in `R[M]`.
 * `MonoidAlgebra.singleOneUnit`: in a group algebra, `single g 1` as a unit with inverse
   `single g⁻¹ 1`, and `MonoidAlgebra.coeff_single_mul_mul_single_inv`: conjugating by it
   conjugates the indices of the coefficients.
@@ -250,6 +251,13 @@ theorem isRegular_single_one {R M : Type*} [Semiring R] [MulOneClass M] {r : R}
       hr.left (by simpa [coeff_single_one_mul] using congr(($h).coeff m)),
     fun x y h => coeff_injective <| Finsupp.ext fun m =>
       hr.right (by simpa [coeff_mul_single_one] using congr(($h).coeff m))⟩
+
+/-- A natural number that is regular in `R` stays regular in `R[M]`. -/
+@[to_additive (dont_translate := R)
+/-- A natural number that is regular in `R` stays regular in `R[M]`. -/]
+theorem isRegular_natCast {R M : Type*} [Semiring R] [MulOneClass M] {n : ℕ}
+    (hn : IsRegular (n : R)) : IsRegular (n : MonoidAlgebra R M) := by
+  simpa [natCast_def] using isRegular_single_one (M := M) hn
 
 /-- For a cancellative monoid `M`, every coefficient-one monomial in `MonoidHom.mrange (of R M)`
 is a non-zero-divisor of `R[M]`. -/
