@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.FieldTheory.Perfect
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Subgroup
 public import TauCeti.Algebra.CharP.Frobenius.Basic
 public import TauCeti.LinearAlgebra.Basis.DiagonalTorus.CharacterMap
@@ -95,6 +96,24 @@ theorem isCharacterMap_frobenius :
   refine isCharacterMap_iff.mpr fun s => ?_
   rw [frobenius_torusPoints, torusPointMap_nsmul, torusPointMap_one,
     MonoidHom.pow_apply, MonoidHom.id_apply]
+
+/-- Frobenius raises the unit parameter of `D.weylElement γ A s` to its `p ^ k`-th power. -/
+@[simp] theorem frobenius_weylElement (γ : Fin t.numRoots) (s : Aˣ) :
+    D.frobenius p k A (D.weylElement γ A s) = D.weylElement γ A (s ^ p ^ k) :=
+  Subtype.ext (by rw [coe_frobenius, map_weylElement, map_iterateFrobenius_unit_eq_pow])
+
+open Multiplicative in
+/-- Over a perfect ring of exponential characteristic `p`, Frobenius maps each root subgroup onto
+itself. -/
+@[simp] theorem map_range_rootSubgroupPoints_frobenius [PerfectRing A p] (γ : Fin t.numRoots) :
+    (D.rootSubgroupPoints γ A).range.map (D.frobenius p k A) =
+      (D.rootSubgroupPoints γ A).range :=
+  le_antisymm (fun _ ⟨_, ⟨u, rfl⟩, hu⟩ => ⟨ofAdd (toAdd u ^ p ^ k), by
+      rw [← hu]; conv_rhs => rw [← ofAdd_toAdd u, D.frobenius_rootSubgroupPoints]⟩)
+    (fun _ ⟨u, hu⟩ => by
+      obtain ⟨v, hv⟩ := (bijective_iterateFrobenius A p k).surjective (toAdd u)
+      exact ⟨D.rootSubgroupPoints γ A (ofAdd v), ⟨_, rfl⟩, by
+        rw [D.frobenius_rootSubgroupPoints, ← iterateFrobenius_def, hv, ofAdd_toAdd, hu]⟩)
 
 /-- The zeroth Frobenius is the identity on the point group. -/
 @[simp]

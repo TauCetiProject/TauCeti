@@ -151,6 +151,13 @@ def ofEquivHom (P : RootPairing ι R M N) : RootPairing.Aut P →* RootPairingIs
     ofEquiv (f ^ n) = ofEquiv f ^ n :=
   map_pow (ofEquivHom P) f n
 
+/-- Composing a reflection automorphism with itself as an endo-isogeny gives `1`. -/
+@[simp] theorem ofEquiv_reflection_mul_self (P : RootPairing ι R M N) (i : ι) :
+    ofEquiv (RootPairing.Equiv.reflection P i) *
+      ofEquiv (RootPairing.Equiv.reflection P i) = 1 := by
+  rw [← ofEquivHom_apply, ← map_mul,
+    mul_eq_one_iff_eq_inv.mpr (RootPairing.Equiv.reflection_inv P i).symm, map_one]
+
 /-! ## The multiplicative components -/
 
 /-- **The weight map of an isogeny, as a monoid homomorphism** into the endomorphism monoid of the
@@ -251,6 +258,18 @@ shadow of the `q`-power Frobenius, this is the root-datum form of the fact that 
 commutes with every endomorphism of the datum. -/
 theorem commute_smulId (f : RootPairingIsogeny P P) (c : ℕ+) : Commute (smulId P c) f :=
   (commute_iff_eq _ _).2 <| by rw [mul_def, mul_def, comp_smulId]
+
+/-- If an endo-isogeny `f` squares to `1`, then `f * smulId P c` squares to `smulId P (c ^ 2)`. -/
+theorem mul_smulId_mul_self {f : RootPairingIsogeny P P} (hf : f * f = 1) (c : ℕ+) :
+    (f * smulId P c) * (f * smulId P c) = smulId P (c ^ 2) := by
+  rw [mul_assoc, ← mul_assoc (smulId P c), (commute_smulId P f c).eq, mul_assoc, ← mul_assoc f, hf,
+    one_mul, smulId_mul_smulId, sq]
+
+/-- Composing a reflection-times-scaling endo-isogeny with itself gives `smulId P (c ^ 2)`. -/
+@[simp] theorem ofEquiv_reflection_mul_smulId_mul_self (i : ι) (c : ℕ+) :
+    (ofEquiv (RootPairing.Equiv.reflection P i) * smulId P c) *
+      (ofEquiv (RootPairing.Equiv.reflection P i) * smulId P c) = smulId P (c ^ 2) :=
+  mul_smulId_mul_self P (ofEquiv_reflection_mul_self P i) c
 
 variable {f : RootPairingIsogeny P P} {c : ℕ+}
 
