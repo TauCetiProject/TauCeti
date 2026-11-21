@@ -29,9 +29,9 @@ namespace TauCeti
 finite set `T ⊇ S`. -/]
 theorem multipliable_notMem_of_subset {ι α : Type*} [CommGroup α] [UniformSpace α]
     [IsUniformGroup α] [CompleteSpace α] {S T : Finset ι} (hST : S ⊆ T) (g : ι → α)
-    (hconv : Multipliable fun i : {i // i ∉ S} ↦ g i.1) :
-    Multipliable fun i : {i // i ∉ T} ↦ g i.1 :=
-  let incl : {i // i ∉ T} → {i // i ∉ S} := fun i ↦ ⟨i.1, fun h ↦ i.2 (hST h)⟩
+    (hconv : Multipliable fun i : {i // i ∉ S} ↦ g i.val) :
+    Multipliable fun i : {i // i ∉ T} ↦ g i.val :=
+  let incl : {i // i ∉ T} → {i // i ∉ S} := fun i ↦ ⟨i.val, fun h ↦ i.property (hST h)⟩
   hconv.comp_injective (i := incl) fun _ _ h ↦ Subtype.ext (Subtype.mk.inj h)
 
 end TauCeti

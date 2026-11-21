@@ -59,7 +59,7 @@ theorem summable_mul_pow_mul {K : Type*} [NormedRing K] [CompleteSpace K] {r : K
     fun p ↦ ?_
   calc ‖f p * r ^ ((p.1 : ℕ) * p.2)‖ ≤ ‖f p‖ * ‖r ^ ((p.1 : ℕ) * p.2)‖ := norm_mul_le _ _
     _ ≤ C * ‖r‖ ^ ((p.1 : ℕ) * p.2) :=
-      mul_le_mul (hf p) (norm_pow_le' _ (mul_pos p.1.2 p.2.2)) (norm_nonneg _) hC
+      mul_le_mul (hf p) (norm_pow_le' _ (mul_pos p.1.property p.2.property)) (norm_nonneg _) hC
 
 /-- **Lambert-type series as power series.** For a bounded sequence `g` and `‖r‖ < 1` in a
 complete normed ring, the power series `∑_n (∑_{m ∣ n} g(m)) rⁿ` sums to the double series

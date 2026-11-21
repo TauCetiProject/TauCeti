@@ -218,13 +218,13 @@ private def yosidaLimitCLMOfTendsto {A : X →ₗ.[ℝ] X} (M : ℝ)
   LinearMap.mkContinuous
     { toFun := fun x => yosidaLimit A t x
       map_add' := fun x y =>
-        yosidaLimit_add_of_tendsto (htend t.1 t.coe_nonneg) x y
+        yosidaLimit_add_of_tendsto (htend t.val t.coe_nonneg) x y
       map_smul' := fun c x =>
-        yosidaLimit_smul_of_tendsto (htend t.1 t.coe_nonneg) c x }
+        yosidaLimit_smul_of_tendsto (htend t.val t.coe_nonneg) c x }
     M fun x =>
       norm_yosidaLimit_le_of_tendsto_of_norm_le
-        (htend t.1 t.coe_nonneg x)
-        (hbound t.1 t.coe_nonneg)
+        (htend t.val t.coe_nonneg x)
+        (hbound t.val t.coe_nonneg)
 
 /-
 The characteristic equations for `yosidaLimitCLMOfTendsto` and `yosidaLimitSemigroupOfTendsto`
@@ -277,10 +277,10 @@ def yosidaLimitSemigroupOfTendsto {A : X →ₗ.[ℝ] X} {M : ℝ}
     ext x
     simp only [ContinuousLinearMap.comp_apply, yosidaLimitCLMOfTendsto_apply]
     exact yosidaLimit_time_add_of_tendsto_of_norm_le x
-      (htend t.1 t.coe_nonneg x)
-      (htend s.1 s.coe_nonneg (yosidaLimit A t x))
-      (htend (s + t).1 (add_nonneg s.coe_nonneg t.coe_nonneg) x)
-      (hbound s.1 s.coe_nonneg)
+      (htend t.val t.coe_nonneg x)
+      (htend s.val s.coe_nonneg (yosidaLimit A t x))
+      (htend (s + t).val (add_nonneg s.coe_nonneg t.coe_nonneg) x)
+      (hbound s.val s.coe_nonneg)
   continuousAt_zero' x := by
     simpa only [yosidaLimitCLMOfTendsto_apply] using
       continuousAt_nnreal_zero_of_continuousOn_Ici
@@ -363,7 +363,7 @@ theorem tendsto_yosidaLimitSemigroupOfTendsto {A : X →ₗ.[ℝ] X} {M : ℝ}
     Tendsto (fun lambda : ℝ => exp ((t : ℝ) • yosidaApproximation A lambda) x) atTop
       (𝓝 (yosidaLimitSemigroupOfTendsto htend hunif hbound t x)) := by
   rw [yosidaLimitSemigroupOfTendsto_apply]
-  exact htend t.1 t.coe_nonneg x
+  exact htend t.val t.coe_nonneg x
 
 end SharedConstruction
 

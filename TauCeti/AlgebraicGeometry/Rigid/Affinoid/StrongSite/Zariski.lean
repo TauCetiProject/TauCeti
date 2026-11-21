@@ -114,9 +114,9 @@ theorem isAffinoidTestRefined_opens_of_subset {U : Set (MaximalSpectrum A)}
       Ideal.mem_comap] at hxg'
     exact hxg' (hle (Ideal.subset_span ⟨g, W, hW, hgW, rfl⟩))
   obtain ⟨F, hFP, hFtop⟩ := (Ideal.span_eq_top_iff_finite P).mp hspan
-  let h : Fin F.card → B := fun i ↦ (F.equivFin.symm i).1
+  let h : Fin F.card → B := fun i ↦ (F.equivFin.symm i).val
   have hrange : Set.range h = (F : Set B) := Set.ext fun b ↦
-    ⟨fun ⟨i, hi⟩ ↦ hi ▸ (F.equivFin.symm i).2, fun hb ↦ ⟨F.equivFin ⟨b, hb⟩, by simp [h]⟩⟩
+    ⟨fun ⟨i, hi⟩ ↦ hi ▸ (F.equivFin.symm i).property, fun hb ↦ ⟨F.equivFin ⟨b, hb⟩, by simp [h]⟩⟩
   have htop : Ideal.span (Set.range h) = ⊤ := hrange.symm ▸ hFtop
   have htop_ins (i : Fin F.card) : Ideal.span (insert (h i) (Set.range h)) = ⊤ := by
     simpa only [Set.insert_eq_of_mem (Set.mem_range_self i)] using htop
@@ -125,7 +125,7 @@ theorem isAffinoidTestRefined_opens_of_subset {U : Set (MaximalSpectrum A)}
     simpa only [Function.comp_def, AffinoidSubdomain.coe_rational] using
       (hB.iUnion_rationalDomain_self_eq_univ_iff h).mpr htop
   · rintro _ ⟨i, rfl⟩
-    obtain ⟨g, W, hW, hgW, hg_eq⟩ := hFP (F.equivFin.symm i).2
+    obtain ⟨g, W, hW, hgW, hg_eq⟩ := hFP (F.equivFin.symm i).property
     refine ⟨W, ⟨W, hW, rfl⟩, fun y hy ↦ hgW ?_⟩
     rw [AffinoidSubdomain.coe_rational, mem_rationalDomain] at hy
     rw [SetLike.mem_coe, MaximalSpectrum.mem_basicOpen,

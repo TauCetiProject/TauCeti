@@ -158,7 +158,7 @@ theorem Convex.addHaar_eq_zero_iff_interior_eq_empty (hs : Convex ℝ s) :
 exactly when its interior is nonempty. -/
 theorem Convex.addHaar_pos_iff_interior_nonempty (hs : Convex ℝ s) :
     0 < μ s ↔ (interior s).Nonempty := by
-  simpa only [pos_iff_ne_zero, Set.nonempty_iff_ne_empty] using
+  simpa only [pos_iff_ne_zero, ← Set.ne_empty_iff_nonempty] using
     not_congr hs.addHaar_eq_zero_iff_interior_eq_empty
 
 /-- A convex set in a finite-dimensional real normed space has positive additive Haar measure
