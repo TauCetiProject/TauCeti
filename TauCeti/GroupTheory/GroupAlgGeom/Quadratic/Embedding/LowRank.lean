@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.GroupAlgGeom.Quadratic.Basic
 public import TauCeti.GroupTheory.LimitGroup.CentralizerExtension.Iterated
+import TauCeti.GroupTheory.FreeGroup.Commuting
 import TauCeti.GroupTheory.GroupAlgGeom.Abelian
 import TauCeti.GroupTheory.GroupAlgGeom.Quadratic.Regular
 import TauCeti.GroupTheory.GroupAlgGeom.Separated
@@ -16,7 +17,7 @@ import TauCeti.GroupTheory.NoncommPiCoprod
 /-!
 # Coordinate groups of `x₁² x₂² = 1` and `x₁² x₂² x₃² = 1`
 
-Let `G` be a fully residually free group and `X` a finite set of variables. The non-orientable
+Let `G` be a fully residually free group and `X` a countable set of variables. The non-orientable
 standard quadratic equations `x₁² x₂² = 1` and `x₁² x₂² x₃² = 1` without coefficients have only
 commutative solutions in `G`:
 
@@ -35,19 +36,19 @@ they are described by these relations:
   the generators `a₁`, `a₂` of `ℤ²` and `x₃` to `(a₁ a₂)⁻¹`, and its coordinate group is
   `G ∗ ℤ² ∗ F(X ∖ {x₁, x₂, x₃})`.
 
-If `G` is abelian, both radicals also contain the commutator subgroup of `G[X]`, and both
-coordinate groups are of the form `G × ℤᵏ`.
+If `G` is abelian, both radicals also contain the commutator subgroup of `G[X]`, and for finite
+`X` both coordinate groups are of the form `G × ℤᵏ`.
 
-In every case the coordinate group embeds, over `G`, in an iterated extension of centralizers of
-`G`; this embedding, not the description of the radical, is what is stated here. For nonabelian
-`G`, the free `G`-group `G[X]` embeds in one extension of a centralizer of `G` and `G[X] ∗ ℤ²` in
-one more (`TauCeti.LimitGroup.exists_ice_embedding_GX`,
+If `G` is nonabelian or `X` is finite, the coordinate group embeds, over `G`, in an iterated
+extension of centralizers of `G`; this embedding, not the description of the radical, is what is
+stated here. For nonabelian `G`, the free `G`-group `G[X]` embeds in one extension of a
+centralizer of `G` and `G[X] ∗ ℤ²` in one more (`TauCeti.LimitGroup.exists_ice_embedding_GX`,
 `TauCeti.LimitGroup.exists_ice_embedding_coprod_pi_of_exists_ice_embedding`). Every solution
 factors through the maps to these groups described above, so their kernels lie in the radicals.
 Iterated extensions of centralizers of `G` are discriminated, hence separated, by `G`
 (`TauCeti.LimitGroup.ICE.isDiscriminatedBy`), so the coordinate groups embed with them
 (`TauCeti.GroupAlgGeom.IsSeparatedBy.exists_injective_gHom_coordGroup_of_ker_le_Rad`). For
-abelian `G` the embedding is
+abelian `G` and finite `X` the embedding is
 `TauCeti.GroupAlgGeom.exists_ice_embedding_coordGroup_of_isMulCommutative`.
 
 These are the cases (4) and (5) of the radicals of consistent standard quadratic equations over a
@@ -61,6 +62,9 @@ low-genus cases of the embedding theorem of [VAR-I].
   group of `x₁² x₂² = 1` embeds, over `G`, in an iterated extension of centralizers of `G`.
 * `Standard.exists_ice_embedding_coordGroup_of_not_isOrientable_of_genus_eq_three`: the same for
   `x₁² x₂² x₃² = 1`.
+* `Standard.exists_ice_embedding_coordGroup_nonorientable_two_of_not_isMulCommutative`,
+  `Standard.exists_ice_embedding_coordGroup_nonorientable_three_of_not_isMulCommutative`: the same
+  embeddings for nonabelian `G` and a countable, possibly infinite, set of variables.
 
 ## References
 
@@ -84,10 +88,11 @@ universe u
 
 variable {G : Type u} [Group G] {X : Type*}
 
--- Over a nonabelian fully residually free group, every solution of `x₁² x₂² = 1` factors through
--- the substitution `x₂ ↦ x₁⁻¹` of `G[X]`, which embeds in an extension of a centralizer.
-private theorem exists_ice_embedding_coordGroup_sq_mul_sq (hG : IsFullyResiduallyFree G)
-    (hna : ¬IsMulCommutative G) [Countable X] {x : Fin 2 → X} (hx : x.Injective) :
+/-- Over a nonabelian fully residually free group `G`, the coordinate group of `x₁² x₂² = 1` in a
+countable set of variables embeds, over `G`, in an iterated extension of centralizers of `G`. -/
+theorem exists_ice_embedding_coordGroup_nonorientable_two_of_not_isMulCommutative
+    (hG : IsFullyResiduallyFree G) (hna : ¬IsMulCommutative G) [Countable X] {x : Fin 2 → X}
+    (hx : x.Injective) :
     ∃ (E : Type u) (_ : Group E) (j : G →* E) (_ : ICE G E j)
       (f : GHom (CoordGroup.coeff (MonoidHom.id G) {(nonorientable 2 two_pos x hx).toWord}) j),
       Function.Injective f := by
@@ -95,6 +100,7 @@ private theorem exists_ice_embedding_coordGroup_sq_mul_sq (hG : IsFullyResiduall
   rw [show (nonorientable (G := G) 2 two_pos x hx).toWord =
       inr (FreeGroup.of (x 0)) ^ 2 * inr (FreeGroup.of (x 1)) ^ 2 by
     simp [toWord_def, List.ofFn_succ]]
+  -- Every solution factors through the substitution `x₂ ↦ x₁⁻¹` of `G[X]`.
   have := hG.isResiduallyFree.hasUniqueRoots
   let p : X → GX G X :=
     Function.update (fun y => inr (FreeGroup.of y)) (x 1) (inr (FreeGroup.of (x 0)))⁻¹
@@ -110,17 +116,20 @@ private theorem exists_ice_embedding_coordGroup_sq_mul_sq (hG : IsFullyResiduall
     GX.ext_hom (fun g => by simp) fun y => by by_cases hy : y = x 1 <;> simp [p, hy, hv₁]
   rw [← hfac, MonoidHom.comp_apply, MonoidHom.mem_ker.1 hw, map_one]
 
--- Over a nonabelian fully residually free group, every solution of `x₁² x₂² x₃² = 1` factors
--- through the map `G[X] →* G[X] ∗ ℤ²` sending `x₁`, `x₂` to the generators `a₁`, `a₂` of `ℤ²` and
--- `x₃` to `(a₁ a₂)⁻¹`.
-private theorem exists_ice_embedding_coordGroup_sq_mul_sq_mul_sq (hG : IsFullyResiduallyFree G)
-    (hna : ¬IsMulCommutative G) [Countable X] {x : Fin 3 → X} (hx : x.Injective) :
+/-- Over a nonabelian fully residually free group `G`, the coordinate group of
+`x₁² x₂² x₃² = 1` in a countable set of variables embeds, over `G`, in an iterated extension of
+centralizers of `G`. -/
+theorem exists_ice_embedding_coordGroup_nonorientable_three_of_not_isMulCommutative
+    (hG : IsFullyResiduallyFree G) (hna : ¬IsMulCommutative G) [Countable X] {x : Fin 3 → X}
+    (hx : x.Injective) :
     ∃ (E : Type u) (_ : Group E) (j : G →* E) (_ : ICE G E j)
       (f : GHom (CoordGroup.coeff (MonoidHom.id G) {(nonorientable 3 three_pos x hx).toWord}) j),
       Function.Injective f := by
   rw [show (nonorientable (G := G) 3 three_pos x hx).toWord = inr (FreeGroup.of (x 0)) ^ 2 *
       inr (FreeGroup.of (x 1)) ^ 2 * inr (FreeGroup.of (x 2)) ^ 2 by
     simp [toWord_def, List.ofFn_succ, mul_assoc]]
+  -- Every solution factors through the map `G[X] →* G[X] ∗ ℤ²` sending `x₁`, `x₂` to the
+  -- generators `a₁`, `a₂` of `ℤ²` and `x₃` to `(a₁ a₂)⁻¹`.
   let a : Fin 2 → Fin 2 → Multiplicative ℤ := fun i => Pi.mulSingle i (.ofAdd 1)
   let p : X → Monoid.Coprod (GX G X) (Fin 2 → Multiplicative ℤ) := Function.extend x
     (fun i => inr (![a 0, a 1, (a 0 * a 1)⁻¹] i)) fun y => inl (inr (FreeGroup.of y))
@@ -162,7 +171,7 @@ theorem exists_ice_embedding_coordGroup_of_not_isOrientable_of_genus_eq_two
   by_cases hna : IsMulCommutative G
   · exact exists_ice_embedding_coordGroup_of_isMulCommutative hG.isResiduallyFree _ ⟨1, by simp⟩
   obtain rfl : n = 2 := by simpa using hg
-  exact exists_ice_embedding_coordGroup_sq_mul_sq hG hna inj
+  exact exists_ice_embedding_coordGroup_nonorientable_two_of_not_isMulCommutative hG hna inj
 
 /-- Over a fully residually free group `G`, the coordinate group of `x₁² x₂² x₃² = 1`, the
 non-orientable standard quadratic equation of genus three without coefficients, embeds, over `G`,
@@ -176,7 +185,7 @@ theorem exists_ice_embedding_coordGroup_of_not_isOrientable_of_genus_eq_three
   by_cases hna : IsMulCommutative G
   · exact exists_ice_embedding_coordGroup_of_isMulCommutative hG.isResiduallyFree _ ⟨1, by simp⟩
   obtain rfl : n = 3 := by simpa using hg
-  exact exists_ice_embedding_coordGroup_sq_mul_sq_mul_sq hG hna inj
+  exact exists_ice_embedding_coordGroup_nonorientable_three_of_not_isMulCommutative hG hna inj
 
 /-! ### Checks over `F(a, b)` -/
 
@@ -190,6 +199,16 @@ example : ∃ (E : Type) (_ : Group E) (j : FreeGroup (Fin 2) →* E) (_ : ICE (
   exists_ice_embedding_coordGroup_of_not_isOrientable_of_genus_eq_two
     isFullyResiduallyFree_of_isFreeGroup (not_isOrientable_nonorientable _ _)
     (constant_nonorientable ..) (genus_nonorientable ..)
+
+/-- Over `F(a, b)`, the equation `x₀² x₁² = 1` in the variables `x₀, x₁, x₂, …` indexed by `ℕ`: its
+coordinate group `F(a, b) ∗ F(x₀, x₂, x₃, …)` embeds in an iterated extension of centralizers of
+`F(a, b)`. -/
+example : ∃ (E : Type) (_ : Group E) (j : FreeGroup (Fin 2) →* E) (_ : ICE (FreeGroup (Fin 2)) E j)
+    (f : GHom (CoordGroup.coeff (MonoidHom.id (FreeGroup (Fin 2)))
+      {(nonorientable 2 two_pos (Fin.val : Fin 2 → ℕ) Fin.val_injective).toWord}) j),
+    Function.Injective f :=
+  exists_ice_embedding_coordGroup_nonorientable_two_of_not_isMulCommutative
+    isFullyResiduallyFree_of_isFreeGroup FreeGroup.not_isMulCommutative _
 
 /-- Over `F(a, b)`, the equation `x₁² x₂² x₃² = 1` is not regular: all its solutions commute, by
 Lyndon's theorem. Its coordinate group `F(a, b) ∗ ℤ²` still embeds in an iterated extension of

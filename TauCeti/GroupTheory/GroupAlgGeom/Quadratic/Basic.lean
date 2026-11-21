@@ -780,6 +780,14 @@ theorem ncard_vars_of_isOrientable (h : S.IsOrientable) :
 theorem ncard_vars_of_not_isOrientable (h : ¬S.IsOrientable) : S.vars.ncard = S.atomicRank := by
   cases S <;> simp_all [-Set.Sum.elim_range, Set.ncard_range_of_injective]
 
+/-- An orientable standard quadratic equation without the constant `d` is of type (1),
+`∏ᵢ₌₁ⁿ [xᵢ, yᵢ] = 1`. -/
+theorem exists_eq_orientable_of_isOrientable (ho : S.IsOrientable) (hc : S.constant = 1) :
+    ∃ n hn x y inj, S = orientable n hn x y inj := by
+  cases S with
+  | orientable n hn x y inj => exact ⟨n, hn, x, y, inj, rfl⟩
+  | _ => simp_all [IsOrientable]
+
 /-- A non-orientable standard quadratic equation without the constant `d` is of type (3),
 `∏ᵢ₌₁ⁿ xᵢ² = 1`. -/
 theorem exists_eq_nonorientable_of_not_isOrientable (ho : ¬S.IsOrientable)
