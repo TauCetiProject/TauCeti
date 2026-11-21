@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.SemiFredholm
 public import TauCeti.Geometry.Symplectic.Floer.Linearization.Adjoint
-import TauCeti.Analysis.Calculus.Bilinear
 import TauCeti.Geometry.Symplectic.Cayley.Tangent
 import TauCeti.Geometry.Symplectic.Floer.SemiFredholm.CauchyRiemann
 import TauCeti.Geometry.Symplectic.Floer.Sobolev.Density
