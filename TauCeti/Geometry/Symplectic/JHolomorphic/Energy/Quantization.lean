@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.MeanValue
+import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Analysis.RCLike.OperatorNorm
 import Mathlib.Analysis.Calculus.MeanValue
 
@@ -95,7 +96,6 @@ theorem exists_pos_forall_le_integral_norm_fderiv_one_sq_of_ne_parametric
   refine ⟨δ, hδ, fun p hp u hu hCR huK hInt z w hzw ↦ ?_⟩
   by_contra! hE
   set E := ∫ y, ‖fderiv ℝ u y 1‖ ^ 2
-  have hE0 : 0 ≤ E := integral_nonneg fun _ ↦ sq_nonneg _
   have hDu : Continuous (fderiv ℝ u) := hu.continuous_fderiv (by norm_num)
   -- The mean-value inequality on the disk of radius `r` about `x` bounds `π r² ‖∂ₛu(x)‖²` by
   -- `8 E`, uniformly in `r`, so `∂ₛu(x) = 0`.
@@ -108,17 +108,8 @@ theorem exists_pos_forall_le_integral_norm_fderiv_one_sq_of_ne_parametric
       exact (hmean hp hr.le hu.contDiffOn (hDu.clm_apply continuous_const).continuousOn
         (fun y _ ↦ hCR y) (fun y _ ↦ huK (mem_range_self y)) (hball.trans_lt hE)).trans
         (by gcongr)
-    by_contra! hx
-    have _ : 0 < ‖fderiv ℝ u x 1‖ ^ 2 := by positivity
-    -- Take `r` with `π r² ‖∂ₛu(x)‖² = 8 E + 1`.
-    set r := √((8 * E + 1) / (Real.pi * ‖fderiv ℝ u x 1‖ ^ 2))
-    have hr : 0 < r := Real.sqrt_pos.mpr (by positivity)
-    have hr2 : r ^ 2 = (8 * E + 1) / (Real.pi * ‖fderiv ℝ u x 1‖ ^ 2) :=
-      Real.sq_sqrt (by positivity)
-    have hr3 : Real.pi * r ^ 2 * ‖fderiv ℝ u x 1‖ ^ 2 = 8 * E + 1 := by
-      rw [hr2]
-      field_simp
-    linarith [hbound r hr]
+    exact norm_eq_zero.mp (pow_eq_zero_iff two_ne_zero |>.mp
+      ((nonpos_of_forall_pos_mul_sq_mul_le Real.pi_pos hbound).antisymm (sq_nonneg _)))
   -- By the Cauchy--Riemann equation the whole differential vanishes, so `u` is constant.
   have hfderiv : ∀ x, fderiv ℝ u x = 0 := by
     intro x

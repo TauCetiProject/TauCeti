@@ -14,8 +14,9 @@ If `Y` is an irreducible topological space and `Z ⊆ Y` is a closed subset diff
 then `topologicalKrullDim Z + 1 ≤ topologicalKrullDim Y`. Every chain of irreducible closed
 subsets of `Z` is a chain of irreducible closed subsets of `Y` whose members lie in `Z`, and the
 whole space `Y`, which is irreducible and closed, strictly contains all of them, so it extends
-the chain by one. When the Krull dimension of `Y` is finite this is the strict inequality
-`topologicalKrullDim Z < topologicalKrullDim Y`.
+the chain by one. When the Krull dimension of `Z` is finite this is the strict inequality
+`topologicalKrullDim Z < topologicalKrullDim Y`; this holds in particular when the Krull
+dimension of `Y` is finite.
 
 The argument only uses that the closure of the image of `Z` is not all of `Y`, so it is stated
 for an inducing map `f : X → Y` with non-dense range. The set-level form concerns a closed subset
@@ -30,11 +31,11 @@ subset, hence the whole space, and in a `T₀` space two points with the same cl
 * `Topology.IsInducing.topologicalKrullDim_add_one_le`: if `f : X → Y` is inducing with
   non-dense range and `Y` is irreducible, then `topologicalKrullDim X + 1 ≤ topologicalKrullDim Y`.
 * `Topology.IsInducing.topologicalKrullDim_lt`: the strict inequality for such a map, when the
-  Krull dimension of the target is finite.
+  Krull dimension of the source is finite.
 * `IsClosed.topologicalKrullDim_add_one_le`: a proper closed subset `Z` of an
   irreducible space `Y` satisfies `topologicalKrullDim Z + 1 ≤ topologicalKrullDim Y`.
 * `IsClosed.topologicalKrullDim_lt`: the strict inequality, when the Krull dimension
-  of `Y` is finite.
+  of `Z` is finite.
 * `IsIrreducible.topologicalKrullDim_add_one_le`, `IsIrreducible.topologicalKrullDim_lt`: the
   same statements for a closed subset strictly contained in an irreducible subset of an ambient
   space.
@@ -55,9 +56,7 @@ namespace Topology.IsInducing
 variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
 
 /-- If `f : X → Y` is inducing with non-dense range and `Y` is irreducible, then
-`topologicalKrullDim X + 1 ≤ topologicalKrullDim Y`: the irreducible closed subsets of `X` map
-strictly monotonically to irreducible closed subsets of `Y` contained in the closure of the
-range, and `Y` itself lies strictly above all of them. -/
+`topologicalKrullDim X + 1 ≤ topologicalKrullDim Y`. -/
 theorem topologicalKrullDim_add_one_le [IrreducibleSpace Y] {f : X → Y} (hf : IsInducing f)
     (hf' : ¬DenseRange f) : topologicalKrullDim X + 1 ≤ topologicalKrullDim Y := by
   cases isEmpty_or_nonempty (IrreducibleCloseds X)
@@ -73,20 +72,20 @@ theorem topologicalKrullDim_add_one_le [IrreducibleSpace Y] {f : X → Y} (hf : 
   exact WithTop.strictMono_iff.mpr
     ⟨by simpa using IrreducibleCloseds.map_strictMono_of_isInducing hf, by simpa using hlt⟩
 
-/-- If `f : X → Y` is inducing with non-dense range and `Y` is irreducible of finite Krull
-dimension, then `topologicalKrullDim X < topologicalKrullDim Y`. -/
+/-- If `f : X → Y` is inducing with non-dense range, `Y` is irreducible and `X` has finite
+Krull dimension, then `topologicalKrullDim X < topologicalKrullDim Y`. -/
 theorem topologicalKrullDim_lt [IrreducibleSpace Y] {f : X → Y} (hf : IsInducing f)
-    (hf' : ¬DenseRange f) (hY : topologicalKrullDim Y ≠ ⊤) :
+    (hf' : ¬DenseRange f) (hX : topologicalKrullDim X ≠ ⊤) :
     topologicalKrullDim X < topologicalKrullDim Y := by
   have h := hf.topologicalKrullDim_add_one_le hf'
-  cases hX : topologicalKrullDim X with
+  cases hX' : topologicalKrullDim X with
   | bot =>
     exact bot_lt_krullDim_iff.mpr
       ⟨⟨univ, IrreducibleSpace.isIrreducible_univ Y, isClosed_univ⟩⟩
   | coe n =>
     cases n with
     | top => simp_all
-    | coe n => exact ENat.WithBot.add_one_le_iff.mp (by simpa [hX] using h)
+    | coe n => exact ENat.WithBot.add_one_le_iff.mp (by simpa [hX'] using h)
 
 end Topology.IsInducing
 
@@ -101,12 +100,12 @@ theorem topologicalKrullDim_add_one_le (hZ : IsClosed Z) (hZY : Z ≠ univ) :
   IsInducing.subtypeVal.topologicalKrullDim_add_one_le fun h ↦
     hZY <| hZ.closure_eq ▸ dense_iff_closure_eq.mp (denseRange_subtypeVal.mp h)
 
-/-- A proper closed subset `Z` of an irreducible space `Y` of finite Krull dimension has
-strictly smaller Krull dimension than `Y`. -/
+/-- A proper closed subset `Z` of an irreducible space `Y` has strictly smaller Krull dimension
+than `Y`, provided the Krull dimension of `Z` is finite. -/
 theorem topologicalKrullDim_lt (hZ : IsClosed Z) (hZY : Z ≠ univ)
-    (hY : topologicalKrullDim Y ≠ ⊤) : topologicalKrullDim Z < topologicalKrullDim Y :=
+    (hZd : topologicalKrullDim Z ≠ ⊤) : topologicalKrullDim Z < topologicalKrullDim Y :=
   IsInducing.subtypeVal.topologicalKrullDim_lt (fun h ↦
-    hZY <| hZ.closure_eq ▸ dense_iff_closure_eq.mp (denseRange_subtypeVal.mp h)) hY
+    hZY <| hZ.closure_eq ▸ dense_iff_closure_eq.mp (denseRange_subtypeVal.mp h)) hZd
 
 end IsClosed
 
@@ -123,13 +122,13 @@ theorem topologicalKrullDim_add_one_le (hY : IsIrreducible Y) (hZ : IsClosed Z) 
     hZY.not_subset <| hZ.closure_eq ▸ (denseRange_inclusion_iff _).mp h
 
 /-- A closed subset `Z` of a topological space strictly contained in an irreducible subset `Y`
-of finite Krull dimension has strictly smaller Krull dimension than `Y`. The set `Y` need not be
-closed. -/
+has strictly smaller Krull dimension than `Y`, provided the Krull dimension of `Z` is finite. The
+set `Y` need not be closed. -/
 theorem topologicalKrullDim_lt (hY : IsIrreducible Y) (hZ : IsClosed Z) (hZY : Z ⊂ Y)
-    (hYd : topologicalKrullDim Y ≠ ⊤) : topologicalKrullDim Z < topologicalKrullDim Y :=
+    (hZd : topologicalKrullDim Z ≠ ⊤) : topologicalKrullDim Z < topologicalKrullDim Y :=
   haveI := Subtype.irreducibleSpace hY
   (IsEmbedding.inclusion hZY.subset).isInducing.topologicalKrullDim_lt (fun h ↦
-    hZY.not_subset <| hZ.closure_eq ▸ (denseRange_inclusion_iff _).mp h) hYd
+    hZY.not_subset <| hZ.closure_eq ▸ (denseRange_inclusion_iff _).mp h) hZd
 
 end IsIrreducible
 
@@ -150,9 +149,8 @@ theorem topologicalKrullDim_eq_zero_iff_subsingleton [T0Space X] :
       exact univ_subset_iff.mp (hmax Z (b := top) (subset_univ _))
     exact ⟨fun x y ↦ (inseparable_iff_closure_eq.mpr ((hclosure x).trans (hclosure y).symm)).eq⟩
   · intro _
-    have : Subsingleton (IrreducibleCloseds X) := ⟨fun Z W ↦ IrreducibleCloseds.ext <|
-      (Z.isIrreducible.nonempty.eq_univ).trans W.isIrreducible.nonempty.eq_univ.symm⟩
     have : Nonempty (IrreducibleCloseds X) := ⟨top⟩
-    exact krullDim_eq_zero
+    -- A subsingleton space is discrete, so its Krull dimension is at most zero.
+    exact (topologicalKrullDim_zero_of_discreteTopology X).antisymm krullDim_nonneg
 
 end TauCeti

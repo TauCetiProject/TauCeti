@@ -54,6 +54,7 @@ permutation to vectors invariant under the row map.
   coordinate lets the submatrix omitting the last column reproduce `A *ᵥ x`.
 * `Matrix.comp_smul_dotProduct_mulVec_smul`: `h(c v, c v) = σ c * c * h(v, v)`.
 * `Matrix.star_mulVec_eq_map_star_mulVec`: `star (M *ᵥ v) = M.map star *ᵥ star v`.
+* `Matrix.map_star_mulVec_of_star_eq`: if `star v = v`, then `M.map star *ᵥ v = star (M *ᵥ v)`.
 -/
 
 public section
@@ -140,6 +141,12 @@ theorem star_mulVec_eq_map_star_mulVec {R : Type*} [CommSemiring R] [StarRing R]
     (M : Matrix m n R) (v : n → R) : star (M *ᵥ v) = M.map star *ᵥ star v := by
   ext i
   simp [mulVec, dotProduct]
+
+/-- On a vector fixed by `star`, such as a real vector of `ℂⁿ`, the matrix `M.map star` with
+conjugated entries takes the conjugate value `star (M v)`. -/
+theorem map_star_mulVec_of_star_eq {R : Type*} [CommSemiring R] [StarRing R] (M : Matrix m n R)
+    {v : n → R} (hv : star v = v) : M.map star *ᵥ v = star (M *ᵥ v) := by
+  rw [star_mulVec_eq_map_star_mulVec, hv]
 
 section OrderedSemiring
 

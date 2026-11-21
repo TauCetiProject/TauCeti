@@ -32,6 +32,8 @@ For `h : ℕ`, the residue classes `a ∈ ZMod (p ^ h)` cut `ℤ_p` into the dis
   is `(a, w)`.
 * `PadicInt.discHomeomorph_symm_cast_add_mul`: the same statement in simp normal form.
 * `PadicInt.discHomeomorph_add`: carry decomposition of `x + y` in level-`h` disc coordinates.
+* `PadicInt.natCast_val_eq_add`: the centre of a disc of level `h + 1` is the centre of the disc
+  of level `h` containing it plus a multiple of `pʰ`.
 -/
 
 public section
@@ -117,5 +119,13 @@ theorem discHomeomorph_add (h : ℕ) (a b : ZMod (p ^ h)) (u v : ℤ_[p]) :
       ((a + b).val : ℤ_[p]) + (p : ℤ_[p]) ^ h * (((a.val + b.val) / p ^ h : ℕ) : ℤ_[p]) := by
     exact_mod_cast hnat
   linear_combination hcast
+
+/-- The centre `a'.val` of a disc of level `h + 1` is `a + pʰ b`, where `a` is the centre of the
+disc of level `h` containing it and `b = ⌊a'.val / pʰ⌋`. -/
+theorem natCast_val_eq_add {h : ℕ} (a' : ZMod (p ^ (h + 1))) :
+    (a'.val : ℤ_[p]) = (((a'.val : ZMod (p ^ h)).val : ℕ) : ℤ_[p]) +
+      (p : ℤ_[p]) ^ h * ((a'.val / p ^ h : ℕ) : ℤ_[p]) := by
+  rw [ZMod.val_natCast]
+  exact_mod_cast (Nat.mod_add_div a'.val (p ^ h)).symm
 
 end PadicInt

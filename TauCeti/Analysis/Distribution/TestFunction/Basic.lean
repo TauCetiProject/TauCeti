@@ -8,7 +8,10 @@ module
 public import Mathlib.Analysis.Distribution.TestFunction
 
 /-!
-# Components of vector-valued test functions in a basis
+# Basic facts about test functions
+
+A test function on `Ω` supported in an open set `Ω' ≤ Ω` is the extension by zero
+(`TestFunction.monoCLM`) of a test function on `Ω'`.
 
 Let `F` be a finite-dimensional real normed space with a basis `(bᵢ)`. An `F`-valued test
 function `φ` has the real-valued components `bᵢ* ∘ φ`, obtained by postcomposition with the
@@ -24,6 +27,8 @@ infinite-dimensional space every test function is zero (Riesz).
 
 * `TestFunction.isCompact_preimage_tsupport`: the preimage of a test function's support in
   its open domain is compact.
+* `TestFunction.exists_monoCLM_eq_of_tsupport_subset`: a test function supported in a smaller
+  open set is the extension by zero of a test function on that set.
 * `TestFunction.eq_zero_of_not_finiteDimensional`: on an infinite-dimensional space every test
   function is zero.
 * `TestFunction.postcompCLM_postcompCLM`: postcomposing with `L₁` and then with `L₂` is
@@ -58,6 +63,12 @@ theorem isCompact_preimage_tsupport (φ : 𝓓^{n}(Ω, F)) :
     IsCompact ((↑) ⁻¹' tsupport φ : Set Ω) :=
   Ω.isOpen.isOpenEmbedding_subtypeVal.isInducing.isCompact_preimage' φ.hasCompactSupport
     (by simpa using φ.tsupport_subset)
+
+/-- A test function on `Ω` supported in an open set `Ω' ≤ Ω` is the extension by zero of a test
+function on `Ω'`. -/
+theorem exists_monoCLM_eq_of_tsupport_subset {Ω' : Opens E} (h : Ω' ≤ Ω) {φ : 𝓓^{n}(Ω, F)}
+    (hφ : tsupport φ ⊆ Ω') : ∃ ψ : 𝓓^{n}(Ω', F), monoCLM ℝ ψ = φ :=
+  ⟨⟨φ, φ.contDiff, φ.hasCompactSupport, hφ⟩, TestFunction.ext fun x ↦ by simp [h]⟩
 
 /-- On an infinite-dimensional space every test function is zero: a nonzero continuous function
 with compact support forces finite dimension (Riesz,
