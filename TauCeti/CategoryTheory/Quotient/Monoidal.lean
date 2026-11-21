@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Quotient
 public import Mathlib.CategoryTheory.Monoidal.NaturalTransformation
+public import TauCeti.CategoryTheory.Quotient.Basic
 
 /-!
 # The monoidal structure on a quotient category
@@ -49,7 +49,12 @@ monoidal preadditive category by a tensor ideal (`TauCeti.MonoidalQuotient`) is 
   of `F` (`CategoryTheory.Quotient.lift_μ` and its companions), together with the instance saying
   that `CategoryTheory.Quotient.lift.isLift` is a monoidal natural isomorphism for lax monoidal
   `F`;
-* the instance saying that `CategoryTheory.Quotient.natTransLift r τ` is monoidal when `τ` is.
+* `CategoryTheory.Quotient.exists_lift_monoidalClosure_iff` and
+  `CategoryTheory.Quotient.exists_iso_lift_monoidalClosure_iff`: a strong monoidal functor factors
+  through the quotient by `HomRel.MonoidalClosure r` (strictly or up to natural isomorphism) if and
+  only if it identifies the morphisms related by `r`;
+* the instances saying that `CategoryTheory.Quotient.natTransLift r τ` and
+  `CategoryTheory.Quotient.natIsoLift r e` are monoidal when `τ` or `e.hom` is.
 -/
 
 public section
@@ -411,6 +416,41 @@ instance (τ : functor r ⋙ F ⟶ functor r ⋙ G) [τ.IsMonoidal] : (natTransL
       CategoryTheory.Functor.map_id, Category.comp_id] at h
     exact h
 
+/-- A natural isomorphism between lax monoidal functors out of the quotient by a monoidal
+relation is monoidal as soon as its restriction along the quotient functor is. -/
+instance (e : functor r ⋙ F ≅ functor r ⋙ G) [e.hom.IsMonoidal] :
+    (natIsoLift r e).hom.IsMonoidal :=
+  inferInstanceAs (natTransLift r e.hom).IsMonoidal
+
 end natTransLift
+
+end CategoryTheory.Quotient
+
+namespace CategoryTheory.Quotient
+
+section MonoidalClosureLift
+
+variable {D : Type u'} [Category.{v'} D] [MonoidalCategory D]
+
+/-- A strong monoidal functor `G : C ⥤ D` factors strictly through the quotient by the monoidal
+closure of `r` if and only if it identifies every pair of morphisms related by `r`. -/
+theorem exists_lift_monoidalClosure_iff (r : HomRel C) (G : C ⥤ D) [G.Monoidal] :
+    (∃ F : Quotient (HomRel.MonoidalClosure r) ⥤ D,
+        functor (HomRel.MonoidalClosure r) ⋙ F = G) ↔
+      ∀ ⦃X Y : C⦄ ⦃f g : X ⟶ Y⦄, r f g → G.map f = G.map g := by
+  rw [exists_lift_iff]
+  exact ⟨fun h _ _ _ _ hfg ↦ h (.of hfg), fun h _ _ _ _ hfg ↦ HomRel.MonoidalClosure.map_eq h hfg⟩
+
+/-- A strong monoidal functor `G : C ⥤ D` factors through the quotient by the monoidal closure of
+`r` up to a natural isomorphism if and only if it identifies every pair of morphisms related by
+`r`. -/
+theorem exists_iso_lift_monoidalClosure_iff (r : HomRel C) (G : C ⥤ D) [G.Monoidal] :
+    (∃ F : Quotient (HomRel.MonoidalClosure r) ⥤ D,
+        Nonempty (functor (HomRel.MonoidalClosure r) ⋙ F ≅ G)) ↔
+      ∀ ⦃X Y : C⦄ ⦃f g : X ⟶ Y⦄, r f g → G.map f = G.map g := by
+  rw [exists_iso_lift_iff]
+  exact ⟨fun h _ _ _ _ hfg ↦ h (.of hfg), fun h _ _ _ _ hfg ↦ HomRel.MonoidalClosure.map_eq h hfg⟩
+
+end MonoidalClosureLift
 
 end CategoryTheory.Quotient
