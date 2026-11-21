@@ -13,6 +13,10 @@ public import Mathlib.RingTheory.ClassGroup.ExtendedHom
 Mathlib's computation of `ClassGroup.extendedHom` on fractional ideals uses the canonical
 fraction fields. Here the same comparison is established for any fraction fields, so it can
 be used with the fractional ideals attached to finite ideles.
+
+For Dedekind domains, extension of ideal classes is trivial exactly when every extended ideal
+is principal (`ClassGroup.extendedHom_eq_one_iff_forall_isPrincipal`). This is the form in which
+an ideal-class statement, such as the principal ideal theorem, is read on ideals.
 -/
 
 public section
@@ -51,5 +55,25 @@ theorem extendedHom_mk_of_isFractionRing (I : (FractionalIdeal R⁰ K)ˣ) :
   apply congrArg (mk (FractionRing B))
   apply Units.ext
   exact h I
+
+section DedekindDomain
+
+variable (A C : Type*) [CommRing A] [IsDedekindDomain A] [CommRing C] [IsDedekindDomain C]
+  [Algebra A C] [Module.IsTorsionFree A C]
+
+/-- **Extension of ideal classes is trivial exactly when every extended ideal is principal.**
+This is the converse of Mathlib's `ClassGroup.extendedHom_eq_one_of_forall_isPrincipal`. -/
+theorem extendedHom_eq_one_iff_forall_isPrincipal :
+    extendedHom A C = 1 ↔ ∀ I : Ideal A, (I.map (algebraMap A C)).IsPrincipal := by
+  refine ⟨fun h I ↦ ?_, extendedHom_eq_one_of_forall_isPrincipal A C⟩
+  rcases eq_or_ne I ⊥ with rfl | hI
+  · rw [Ideal.map_bot]
+    exact bot_isPrincipal
+  have hI : I ∈ (Ideal A)⁰ := mem_nonZeroDivisors_of_ne_zero hI
+  have hmk := extendedHom_mk0 A C ⟨I, hI⟩
+  rw [h, MonoidHom.one_apply, eq_comm] at hmk
+  exact (mk0_eq_one_iff (extendedIdeal A C ⟨I, hI⟩).2).1 hmk
+
+end DedekindDomain
 
 end ClassGroup
