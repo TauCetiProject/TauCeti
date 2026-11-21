@@ -169,6 +169,26 @@ theorem coefficient_leftTerm (a : Amplitude n V W m) (k : ℕ) (x ξ : Coordinat
       simp only [List.cons_append, List.nil_append]
       exact List.Perm.cons _ List.perm_middle.symm
 
+/-- The terms of the expansion are additive in the coefficient of the amplitude: if
+`a = b + ∑ᵢ cᵢ`, for amplitudes of possibly different orders, then
+`leftTerm a k = leftTerm b k + ∑ᵢ leftTerm cᵢ k`. -/
+theorem coefficient_leftTerm_eq_add_sum {ι : Type*} (s : Finset ι) {m₀ : ℝ} {μ : ι → ℝ}
+    {a : Amplitude n V W m} {b : Amplitude n V W m₀} {c : (i : ι) → Amplitude n V W (μ i)}
+    (h : ∀ p, a.coefficient p = b.coefficient p + ∑ i ∈ s, (c i).coefficient p) (k : ℕ)
+    (p : CoordinateSpace n × CoordinateSpace n) :
+    (a.leftTerm k).coefficient p =
+      (b.leftTerm k).coefficient p + ∑ i ∈ s, ((c i).leftTerm k).coefficient p := by
+  obtain ⟨x, ξ⟩ := p
+  have ha : a.coefficient = b.coefficient + ∑ i ∈ s, (c i).coefficient :=
+    funext fun p ↦ by simp [h p]
+  have hc : ContDiff ℝ ∞ (∑ i ∈ s, (c i).coefficient) := by
+    simpa only [Finset.sum_fn] using ContDiff.sum fun i _ ↦ (c i).contDiff_coefficient
+  simp only [coefficient_leftTerm, ha]
+  simp only [iteratedFDerivAlong_add b.contDiff_coefficient hc _ (by simp),
+    iteratedFDerivAlong_sum s (fun i _ ↦ (c i).contDiff_coefficient) _ (by simp), Pi.add_apply,
+    Finset.sum_apply, Finset.sum_add_distrib, smul_add, Finset.smul_sum]
+  rw [Finset.sum_comm]
+
 /-- The terms of the expansion only depend on the amplitude near the diagonal: multiplying by a
 smooth function `φ(x, y)` equal to `1` near every point `(x, x)` of the diagonal does not change
 them. -/
