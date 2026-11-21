@@ -11,10 +11,10 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
-import Mathlib.Analysis.Calculus.ParametricIntegral
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.MeasureTheory.Integral.Gamma
+import Mathlib.Probability.Moments.ComplexMGF
 import TauCeti.MeasureTheory.Integral.Exp.Decay
 
 /-!
@@ -44,8 +44,10 @@ functions, which is `π^{-3/2}` times the integral with `b = 1/12` and `q = -1/2
 The norm, integrability and differentiation arguments are extracted and generalized from the
 proofs for the integral of `Ai² + Bi²` in `TauCeti.Analysis.SpecialFunctions.Airy.ProductIntegral`
 (formerly its own dominated-differentiation proof of
-`TauCeti.hasDerivAt_integral_pow_mul_cexp_sub_cube_div_twelve_mul_cpow`); the Gamma value is the
-complex form of Mathlib's `integral_rpow_mul_exp_neg_mul_rpow`.
+`TauCeti.hasDerivAt_integral_pow_mul_cexp_sub_cube_div_twelve_mul_cpow`). The derivative is
+Mathlib's `ProbabilityTheory.hasDerivAt_integral_pow_mul_exp` for the measure with density
+`t ^ q exp (-b t ^ p)` on `(0, ∞)`; the Gamma value is the complex form of Mathlib's
+`integral_rpow_mul_exp_neg_mul_rpow`.
 -/
 
 public section
@@ -53,7 +55,7 @@ public section
 noncomputable section
 
 open Complex Filter MeasureTheory Set
-open scoped Topology
+open scoped Topology NNReal ENNReal
 
 namespace TauCeti
 
@@ -88,30 +90,35 @@ theorem hasDerivAt_integral_cpow_mul_cexp_mul_sub_mul_rpow {p q b : ℝ} (hp : 1
     HasDerivAt
       (fun w : ℂ => ∫ t in Ioi (0 : ℝ), (t : ℂ) ^ (q : ℂ) * cexp (w * t - ((b * t ^ p : ℝ) : ℂ)))
       (∫ t in Ioi (0 : ℝ), (t : ℂ) ^ ((q : ℂ) + 1) * cexp (z * t - ((b * t ^ p : ℝ) : ℂ))) z := by
-  have hq1 : -1 < q + 1 := by linarith
-  -- The kernel of order `q + 1`, written with a real exponent.
-  have hcast : ((q + 1 : ℝ) : ℂ) = (q : ℂ) + 1 := by push_cast; ring
-  have hint1 := integrableOn_cpow_mul_cexp_mul_sub_mul_rpow hp hq1 hb z
-  rw [hcast] at hint1
-  refine (hasDerivAt_integral_of_dominated_loc_of_deriv_le
-    (F' := fun w (t : ℝ) => (t : ℂ) ^ ((q : ℂ) + 1) * cexp (w * t - ((b * t ^ p : ℝ) : ℂ)))
-    (bound := fun t => t ^ (q + 1) * Real.exp ((‖z‖ + 1) * t - b * t ^ p))
-    (Metric.ball_mem_nhds z zero_lt_one)
-    (.of_forall fun w => (integrableOn_cpow_mul_cexp_mul_sub_mul_rpow hp hq hb w).1)
-    (integrableOn_cpow_mul_cexp_mul_sub_mul_rpow hp hq hb z) hint1.1 ?_
-    (integrableOn_rpow_mul_exp_mul_sub_mul_rpow hp hq1 hb (‖z‖ + 1)) ?_).2
-  · filter_upwards [ae_restrict_mem measurableSet_Ioi] with t (ht : 0 < t) w hw
-    have hw_re : w.re ≤ ‖z‖ + 1 := by
-      have hdist : ‖w - z‖ < 1 := by simpa [dist_eq_norm] using Metric.mem_ball.mp hw
-      exact (Complex.re_le_norm w).trans (by linarith [norm_sub_rev w z, norm_sub_norm_le w z])
-    rw [← hcast, norm_cpow_mul_cexp_mul_sub_mul_rpow ht]
-    gcongr
-  · filter_upwards [ae_restrict_mem measurableSet_Ioi] with t (ht : 0 < t) w _
-    have hd := (((hasDerivAt_id w).mul_const (t : ℂ)).sub_const
-      ((b * t ^ p : ℝ) : ℂ)).cexp.const_mul ((t : ℂ) ^ (q : ℂ))
-    refine hd.congr_deriv ?_
-    rw [cpow_add _ _ (ofReal_ne_zero.mpr ht.ne'), cpow_one, id]
+  -- The weight `t ^ q exp (-b t ^ p)` as a density on `(0, ∞)`; the kernel integrals are
+  -- the exponential moments of the identity against it, so Mathlib's moment derivative applies.
+  set ρ : ℝ → ℝ≥0 := fun t => Real.toNNReal (t ^ q * Real.exp (-(b * t ^ p))) with hρ
+  have hρm : Measurable ρ := by fun_prop
+  set μ := (volume.restrict (Ioi (0 : ℝ))).withDensity fun t => (ρ t : ℝ≥0∞)
+  have hconv : ∀ (n : ℕ) (w : ℂ), ∫ t, (t : ℂ) ^ n * cexp (w * t) ∂μ =
+      ∫ t in Ioi (0 : ℝ), (t : ℂ) ^ ((q : ℂ) + n) * cexp (w * t - ((b * t ^ p : ℝ) : ℂ)) := by
+    intro n w
+    rw [integral_withDensity_eq_integral_smul hρm]
+    refine setIntegral_congr_fun measurableSet_Ioi fun t (ht : 0 < t) => ?_
+    rw [hρ, NNReal.smul_def, Real.coe_toNNReal _ (by positivity), real_smul,
+      cpow_add _ _ (ofReal_ne_zero.mpr ht.ne'), cpow_natCast, ← ofReal_cpow ht.le, sub_eq_add_neg,
+      Complex.exp_add, ← ofReal_neg, ← ofReal_exp, ofReal_mul]
     ring
+  have hexp : ∀ s : ℝ, s ∈ ProbabilityTheory.integrableExpSet id μ := by
+    intro s
+    refine (integrable_withDensity_iff_integrable_smul hρm).2 ?_
+    refine (integrableOn_rpow_mul_exp_mul_sub_mul_rpow hp hq hb s).congr_fun
+      (fun t (ht : 0 < t) => ?_) measurableSet_Ioi
+    rw [hρ, NNReal.smul_def, Real.coe_toNNReal _ (by positivity), smul_eq_mul, id, mul_assoc,
+      ← Real.exp_add]
+    ring_nf
+  have hz : z.re ∈ interior (ProbabilityTheory.integrableExpSet id μ) := by
+    rw [eq_univ_of_forall hexp, interior_univ]
+    trivial
+  have h := ProbabilityTheory.hasDerivAt_integral_pow_mul_exp hz 0
+  simp only [id] at h
+  rw [funext (hconv 0), hconv 1 z] at h
+  simpa only [Nat.cast_zero, add_zero, Nat.cast_one] using h
 
 /-- For real `p > 1` and `b > 0`, every real `q` and every complex `z`, the kernel
 `t ↦ t ^ q * exp (z t - b t ^ p)` tends to zero at infinity. -/

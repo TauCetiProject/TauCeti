@@ -39,7 +39,8 @@ cube root of unity `ν`, the rotation `f ↦ (z ↦ ν f(ν z))` preserves every
   integrands on `(0, ∞)`.
 * `Nat.iterate_deriv_scorerHi` — the iterated derivatives of `Hi` as moment integrals.
 * `TauCeti.differentiable_scorerHi`, `TauCeti.differentiable_scorerGi` — `Hi` and `Gi` are
-  entire.
+  entire, and `Real.differentiable_scorerHi`, `Real.differentiable_scorerGi` — their real
+  restrictions are differentiable.
 * `TauCeti.scorerHi_ode` — `Hi'' = z Hi + 1/π` (DLMF 9.12.1).
 * `TauCeti.scorerHi_rotation_ode` — `z ↦ ν Hi(ν z)` solves `w'' = z w + 1/π` when `ν³ = 1`
   (DLMF 9.12.3).
@@ -186,6 +187,16 @@ theorem differentiable_scorerHi : Differentiable ℂ scorerHi :=
 theorem differentiable_scorerGi : Differentiable ℂ scorerGi := by
   rw [funext Complex.scorerGi_def]
   fun_prop
+
+/-- The real restriction of `Hi` is differentiable. -/
+@[fun_prop]
+theorem _root_.Real.differentiable_scorerHi : Differentiable ℝ Real.scorerHi := fun x =>
+  (TauCeti.differentiable_scorerHi (x : ℂ)).hasDerivAt.real_of_complex.differentiableAt
+
+/-- The real restriction of `Gi` is differentiable. -/
+@[fun_prop]
+theorem _root_.Real.differentiable_scorerGi : Differentiable ℝ Real.scorerGi := fun x =>
+  (TauCeti.differentiable_scorerGi (x : ℂ)).hasDerivAt.real_of_complex.differentiableAt
 
 /-- The kernel identity `∫₀^∞ (t² exp(−t³/3 + z t) − z exp(−t³/3 + z t)) dt = 1`, from
 `(t² − z) exp(−t³/3 + z t) = −∂ₜ exp(−t³/3 + z t)`. -/

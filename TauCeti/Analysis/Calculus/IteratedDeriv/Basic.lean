@@ -41,11 +41,9 @@ variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
 derivative of the zeroth function is the `k`-th function. -/
 theorem iteratedDeriv_eq_of_derivative_tower {F : ℕ → 𝕜 → E}
     (hF : ∀ k x, HasDerivAt (F k) (F (k + 1) x) x) (k : ℕ) : iteratedDeriv k (F 0) = F k := by
-  induction k with
-  | zero => exact iteratedDeriv_zero
-  | succ k ih =>
-    rw [iteratedDeriv_succ, ih]
-    exact funext (fun x ↦ (hF k x).deriv)
+  -- `F` semiconjugates the successor to `deriv`, so `F k = deriv^[k] (F 0)`.
+  have h : Function.Semiconj F Nat.succ deriv := fun n => (funext fun x => (hF n x).deriv).symm
+  simpa [iteratedDeriv_eq_iterate, Nat.succ_iterate] using ((h.iterate_right k).eq 0).symm
 
 /-- A tower of functions with the stated successive ordinary derivatives gives a smooth zeroth
 function. -/

@@ -613,14 +613,9 @@ private theorem hasDerivAt_neg_four_mul_sqrt_mul_cexp_sub_cube_div_twelve {t : �
   have hcpow : (t : ℂ) ^ (-1 / 2 : ℂ) = (Real.sqrt t : ℂ)⁻¹ := by
     have hnh : (-1 / 2 : ℂ) = ((-(1 / 2) : ℝ) : ℂ) := by push_cast; ring
     rw [hnh, ← ofReal_cpow ht.le, Real.rpow_neg ht.le, ← Real.sqrt_eq_rpow, ofReal_inv]
-  have hmul : (Real.sqrt t : ℂ) * (Real.sqrt t : ℂ)⁻¹ = 1 :=
-    mul_inv_cancel₀ (ofReal_ne_zero.mpr (Real.sqrt_pos.mpr ht).ne')
   have hsq : (Real.sqrt t : ℂ) = (t : ℂ) * (Real.sqrt t : ℂ)⁻¹ := by
-    have hst : (Real.sqrt t : ℂ) * (Real.sqrt t : ℂ) = (t : ℂ) := by
-      rw [← ofReal_mul, Real.mul_self_sqrt ht.le]
-    calc (Real.sqrt t : ℂ) = (Real.sqrt t : ℂ) * 1 := (mul_one _).symm
-      _ = (Real.sqrt t : ℂ) * ((Real.sqrt t : ℂ) * (Real.sqrt t : ℂ)⁻¹) := by rw [hmul]
-      _ = (t : ℂ) * (Real.sqrt t : ℂ)⁻¹ := by rw [← mul_assoc, hst]
+    simpa only [div_eq_mul_inv, ofReal_mul, ofReal_inv] using
+      congrArg (fun x : ℝ => (x : ℂ)) (Real.div_sqrt (x := t)).symm
   rw [hcpow]
   push_cast
   linear_combination -4 * (z - (t : ℂ) ^ 2 / 4) * cexp (z * t - (t : ℂ) ^ 3 / 12) * hsq
