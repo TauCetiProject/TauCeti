@@ -672,10 +672,7 @@ theorem iteratedCoeff_eq_zero_of_lt (h : X → ℕ) (hh : ∀ x y, N.coeff x y �
     hne (MultilinearMap.map_coord_zero _ t h0)
   -- Along a path of nonzero coefficients the height rises `k` times, beyond every height.
   have hr : StrictMono (h ∘ r) := Fin.strictMono_iff_lt_succ.mpr fun t => hh _ _ (hnz t)
-  have := hr.add_sub_le_nat (Fin.zero_le (Fin.last k))
-  simp only [Function.comp_apply, Fin.val_last, Fin.val_zero, Nat.sub_zero] at this
-  have := Finset.le_sup (f := h) (Finset.mem_univ (r (Fin.last k)))
-  omega
+  exact hk.not_ge hr.le_univ_sup_nat
 
 /-- A type `D` structure is **bounded** when its iterates `δᵏ` vanish for all large `k`. -/
 def IsBounded : Prop :=
