@@ -28,7 +28,14 @@ projective terms needed to construct graded resolutions; they do not assert mini
 Over a left Noetherian algebra, the kernel is again finitely generated, giving a two-term
 presentation by finite graded free modules.
 
-No positivity, semisimplicity, or finite-dimensionality assumption on the graded algebra is needed.
+Homogeneous `A`-bases of a graded `A`-module `M` correspond to isomorphisms `free 𝒜 d ≅ M` in
+`GradedModuleCat 𝒜` (`Module.Basis.isoGradedFree` and `CategoryTheory.Iso.homogeneousBasis`).
+Over a nonnegatively graded algebra (`∀ i < 0, 𝒜 i = ⊥`), any finitely generated shifted free
+graded module is bounded below (`TauCeti.GradedModuleCat.exists_piece_eq_bot_of_lt_free`).
+
+No positivity, semisimplicity, or finite-dimensionality assumption on the graded algebra is needed
+for the universal property, homogeneous-basis correspondence, or projective presentations; only
+`exists_piece_eq_bot_of_lt_free` assumes nonnegativity (`∀ i < 0, 𝒜 i = ⊥`).
 
 ## References
 
@@ -47,9 +54,9 @@ noncomputable section
 open CategoryTheory
 open scoped DirectSum
 
-namespace TauCeti.GradedModuleCat
-
 universe uk uA v uI
+
+namespace TauCeti.GradedModuleCat
 
 variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
   (𝒜 : ℤ → Submodule k A) [GradedAlgebra 𝒜]
@@ -66,6 +73,16 @@ theorem mem_free_piece_iff (p : ℤ) (x : free 𝒜 d) :
     dsimp% only (x ∈ (free 𝒜 d).grading.piece p) ↔ ∀ i, x i ∈ 𝒜 (p - d i) := by
   simp only [InternalGrading.directSum_piece, InternalGrading.mem_directSumPiece_iff,
     InternalGrading.shift_piece, InternalGrading.ofDecomposition_piece, sub_eq_add_neg]
+
+/-- Under `DirectSum.linearEquivFunOnFintype`, a tuple `v : I → A` lies in the degree-`p` piece
+of `free 𝒜 d` exactly when its `i`-th coordinate lies in `𝒜 (p - d i)`.
+This is not a simp lemma: the direct-sum and shift simp lemmas already simplify its left side. -/
+theorem linearEquivFunOnFintype_symm_mem_free_piece_iff [Fintype I] (p : ℤ) (v : I → A) :
+    dsimp% only ((DirectSum.linearEquivFunOnFintype A I (fun _ ↦ A)).symm v ∈
+      (free 𝒜 d).grading.piece p) ↔ ∀ i, v i ∈ 𝒜 (p - d i) := by
+  rw [mem_free_piece_iff]
+  refine forall_congr' fun i ↦ ?_
+  rw [← DirectSum.linearEquivFunOnFintype_apply A, LinearEquiv.apply_symm_apply]
 
 variable {𝒜 d}
 
@@ -272,4 +289,99 @@ theorem exists_finite_free_presentation [IsNoetherianRing A]
   rw [hom_comp, hom_kernelι]
   exact hg.comp_exact_iff_exact.mpr (LinearMap.exact_subtype_ker_map f.hom)
 
+/-! ### Boundedness below -/
+
+/-- Over a nonnegatively graded algebra, a finitely generated shifted free graded module is
+bounded below. -/
+theorem exists_piece_eq_bot_of_lt_free {I : Type uI} [Finite I] (hneg : ∀ i < 0, 𝒜 i = ⊥)
+    (s : I → ℤ) : ∃ b : ℤ, ∀ p < b, (free 𝒜 s).grading.piece p = ⊥ := by
+  cases nonempty_fintype I
+  obtain ⟨b, hb⟩ := (Finset.univ.image s).bddBelow
+  refine ⟨b, fun p hp ↦ (Submodule.eq_bot_iff _).mpr fun x hx ↦ ?_⟩
+  ext j
+  have hsb : b ≤ s j := hb (Finset.mem_image_of_mem s (Finset.mem_univ j))
+  have hxj : x j ∈ 𝒜 (p - s j) := (mem_free_piece_iff 𝒜 s p x).mp hx j
+  rw [hneg (p - s j) (by omega), Submodule.mem_bot] at hxj
+  simpa using hxj
+
 end TauCeti.GradedModuleCat
+
+/-! ### Correspondence with homogeneous bases -/
+
+namespace Module.Basis
+
+open TauCeti TauCeti.GradedModuleCat
+
+variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
+  {𝒜 : ℤ → Submodule k A} [GradedAlgebra 𝒜]
+
+/-- An `A`-basis of `M` consisting of homogeneous elements of degrees `d` induces an isomorphism
+`free 𝒜 d ≅ M` in `GradedModuleCat 𝒜`. -/
+def isoGradedFree {I : Type uI} {d : I → ℤ} {M : GradedModuleCat.{max uA uI} 𝒜}
+    (b : Module.Basis I A M) (hb : ∀ i, b i ∈ M.grading.piece (d i)) : free 𝒜 d ≅ M := by
+  classical
+  let x : ∀ i, M.grading.piece (d i) := fun i ↦ ⟨b i, hb i⟩
+  have hcomp : ∀ v : I →₀ A,
+      (freeLift x).hom (finsuppLequivDFinsupp A v) = b.repr.symm v := by
+    intro v
+    induction v using Finsupp.induction_linear with
+    | zero => rw [map_zero, map_zero, map_zero]
+    | add u w hu hw => rw [map_add, map_add, map_add, hu, hw]
+    | single i a =>
+      simp only [finsuppLequivDFinsupp_apply_apply, Finsupp.toDFinsupp_single,
+        DirectSum.single_eq_lof A, Module.Basis.repr_symm_apply, Finsupp.linearCombination_single]
+      exact freeLift_lof x i a
+  have hbij : Function.Bijective (freeLift x).hom := by
+    rw [← (finsuppLequivDFinsupp A).bijective.of_comp_iff]
+    have hfun : ((freeLift x).hom ∘ ⇑(finsuppLequivDFinsupp A)) = ⇑b.repr.symm := funext hcomp
+    rw [hfun]
+    exact b.repr.symm.bijective
+  have : IsIso (freeLift x) := (isIso_iff_bijective (freeLift x)).mpr hbij
+  exact asIso (freeLift x)
+
+/-- `b.isoGradedFree hb` sends the `i`th free generator to `b i`. -/
+@[simp]
+theorem isoGradedFree_hom_freeGenerator {I : Type uI} {d : I → ℤ}
+    {M : GradedModuleCat.{max uA uI} 𝒜} (b : Module.Basis I A M)
+    (hb : ∀ i, b i ∈ M.grading.piece (d i)) (i : I) :
+    (b.isoGradedFree hb).hom.hom (freeGenerator i) = b i := by
+  simp [isoGradedFree]
+
+end Module.Basis
+
+namespace CategoryTheory.Iso
+
+open TauCeti TauCeti.GradedModuleCat
+
+variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
+  {𝒜 : ℤ → Submodule k A} [GradedAlgebra 𝒜]
+
+/-- Conversely, an isomorphism `free 𝒜 d ≅ M` in `GradedModuleCat 𝒜` equips `M` with an `A`-basis
+whose `i`th vector is the image of `freeGenerator i` in degree `d i`. -/
+def homogeneousBasis {I : Type uI} {d : I → ℤ} {M : GradedModuleCat.{max uA uI} 𝒜}
+    (Φ : free 𝒜 d ≅ M) : Module.Basis I A M := by
+  classical
+  have hbij : Function.Bijective Φ.hom.hom :=
+    (GradedModuleCat.isIso_iff_bijective Φ.hom).mp inferInstance
+  exact (Finsupp.basisSingleOne (ι := I) (R := A)).map
+    ((finsuppLequivDFinsupp A).trans (LinearEquiv.ofBijective Φ.hom.hom hbij))
+
+/-- The `i`th basis vector of `Φ.homogeneousBasis` is `Φ.hom.hom (freeGenerator i)`. -/
+@[simp]
+theorem homogeneousBasis_apply {I : Type uI} {d : I → ℤ}
+    {M : GradedModuleCat.{max uA uI} 𝒜} (Φ : free 𝒜 d ≅ M) (i : I) :
+    Φ.homogeneousBasis i = Φ.hom.hom (freeGenerator i) := by
+  classical
+  unfold homogeneousBasis
+  rw [Module.Basis.map_apply, Finsupp.coe_basisSingleOne, LinearEquiv.trans_apply,
+    LinearEquiv.ofBijective_apply, finsuppLequivDFinsupp_apply_apply,
+    Finsupp.toDFinsupp_single, DirectSum.single_eq_lof A, ← freeGenerator_eq_lof (𝒜 := 𝒜) (d := d)]
+
+/-- The `i`th vector of `Φ.homogeneousBasis` is homogeneous of degree `d i`. -/
+theorem homogeneousBasis_mem_piece {I : Type uI} {d : I → ℤ}
+    {M : GradedModuleCat.{max uA uI} 𝒜} (Φ : free 𝒜 d ≅ M) (i : I) :
+    Φ.homogeneousBasis i ∈ M.grading.piece (d i) := by
+  rw [homogeneousBasis_apply]
+  exact map_mem Φ.hom (freeGenerator_mem_free_piece i)
+
+end CategoryTheory.Iso

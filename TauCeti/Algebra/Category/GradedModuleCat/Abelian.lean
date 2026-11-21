@@ -64,8 +64,9 @@ graded abelian category, whose canonical exact structure is
   forgetful functor `TauCeti.GradedModuleCat.toModuleCat`.
 * `TauCeti.GradedModuleCat.exact_iff`: a short complex of graded modules is exact exactly when its
   underlying linear maps are exact.
-* `TauCeti.GradedModuleCat.shortExact_cokernelπ`: a monomorphism and the projection onto its
-  cokernel form a short exact sequence.
+* `TauCeti.GradedModuleCat.shortExact_kernelι` and `TauCeti.GradedModuleCat.shortExact_cokernelπ`:
+  the kernel inclusion of an epimorphism and the cokernel projection of a monomorphism each form
+  a short exact sequence.
 -/
 
 public section
@@ -358,6 +359,13 @@ theorem exact_iff {S : ShortComplex (GradedModuleCat.{v} 𝒜)} :
   rw [← S.exact_map_iff_of_faithful toModuleCat,
     ShortComplex.ShortExact.moduleCat_exact_iff_function_exact]
   rfl
+
+/-- The inclusion of the kernel of an epimorphism of graded modules followed by that epimorphism
+is a short exact sequence. -/
+theorem shortExact_kernelι [Epi f] :
+    (ShortComplex.mk (kernelι f) f (kernelι_comp f)).ShortExact where
+  exact := exact_iff.mpr (LinearMap.exact_subtype_ker_map f.hom)
+  mono_f := (mono_iff_injective _).mpr Subtype.val_injective
 
 /-- A monomorphism of graded modules followed by the projection onto its cokernel is a short
 exact sequence. -/
