@@ -40,8 +40,9 @@ Thus the database's orbit letters do not enumerate the exponent parameter in inc
 The literal cycle notation is checked against each stored permutation; the orbit letters are
 external data, not an invariant derived from the exponent.
 
-The equations and curve links are carried without an algebraic interpretation. In particular,
-validity does not certify that the displayed equation and map realize the stored monodromy.
+The equation and map strings are carried without an algebraic interpretation. The rows contain
+no curve links or related-object labels. In particular, validity does not certify that the
+displayed equation and map realize the stored monodromy.
 The equality of each stored orbit size with the size of its true Galois orbit also requires
 an orbit certificate, which these rows do not carry.
 
@@ -81,7 +82,7 @@ namespace LMFDB
 /-- The map row `5T1-5_5_5-a`, with literal stored triple `(r, r³, r)`, for `r = finRotate 5`,
 over the base field stored as the root `1` of `X - 1`. Its curve and map strings are transcribed
 carrier data; their algebraic meaning is not certified here. -/
-@[expose] def cyclicFiveBelyiRecordA : BelyiRecord 5 where
+def cyclicFiveBelyiRecordA : BelyiRecord 5 where
   label := "5T1-5_5_5-a"
   plabel := "5T1-5_5_5"
   deg := 5
@@ -103,7 +104,7 @@ carrier data; their algebraic meaning is not certified here. -/
 /-- The map row `5T1-5_5_5-b`, with literal stored triple `(r, r, r³)`, for `r = finRotate 5`,
 over the base field stored as the root `1` of `X - 1`. Its curve and map strings are transcribed
 carrier data; their algebraic meaning is not certified here. -/
-@[expose] def cyclicFiveBelyiRecordB : BelyiRecord 5 where
+def cyclicFiveBelyiRecordB : BelyiRecord 5 where
   label := "5T1-5_5_5-b"
   plabel := "5T1-5_5_5"
   deg := 5
@@ -125,7 +126,7 @@ carrier data; their algebraic meaning is not certified here. -/
 /-- The map row `5T1-5_5_5-c`, with literal stored triple `(r, r², r²)`, for `r = finRotate 5`,
 over the base field stored as the root `1` of `X - 1`. Its curve and map strings are transcribed
 carrier data; their algebraic meaning is not certified here. -/
-@[expose] def cyclicFiveBelyiRecordC : BelyiRecord 5 where
+def cyclicFiveBelyiRecordC : BelyiRecord 5 where
   label := "5T1-5_5_5-c"
   plabel := "5T1-5_5_5"
   deg := 5
@@ -144,11 +145,62 @@ carrier data; their algebraic meaning is not certified here. -/
   friends := []
   storedEmbeddingCount_eq_triplesLength := rfl
 
+/-- The literal stored permutations of the map row `5T1-5_5_5-a`. -/
+theorem cyclicFiveBelyiRecordA_triples :
+    cyclicFiveBelyiRecordA.triples =
+      [⟨(finRotate 5, finRotate 5 ^ 3, finRotate 5), by decide⟩] := by
+  apply congrArg List.singleton
+  apply Subtype.ext
+  simp only [equivOppositeConvention_apply_coe,
+    smul_σ0, smul_σ1, smul_σinf, cyclicPowTriple_σ0, cyclicPowTriple_σ1,
+    cyclicPowTriple_σinf]
+  decide +kernel
+
+/-- The literal stored cycle notation of the map row `5T1-5_5_5-a`. -/
+theorem cyclicFiveBelyiRecordA_triplesCyc :
+    cyclicFiveBelyiRecordA.triplesCyc =
+      [([[0, 1, 2, 3, 4]], [[0, 3, 1, 4, 2]], [[0, 1, 2, 3, 4]])] := by
+  simp only [cyclicFiveBelyiRecordA]
+
+/-- The literal stored permutations of the map row `5T1-5_5_5-b`. -/
+theorem cyclicFiveBelyiRecordB_triples :
+    cyclicFiveBelyiRecordB.triples =
+      [⟨(finRotate 5, finRotate 5, finRotate 5 ^ 3), by decide⟩] := by
+  apply congrArg List.singleton
+  apply Subtype.ext
+  simp only [equivOppositeConvention_apply_coe,
+    smul_σ0, smul_σ1, smul_σinf, cyclicPowTriple_σ0, cyclicPowTriple_σ1,
+    cyclicPowTriple_σinf]
+  decide +kernel
+
+/-- The literal stored cycle notation of the map row `5T1-5_5_5-b`. -/
+theorem cyclicFiveBelyiRecordB_triplesCyc :
+    cyclicFiveBelyiRecordB.triplesCyc =
+      [([[0, 1, 2, 3, 4]], [[0, 1, 2, 3, 4]], [[0, 3, 1, 4, 2]])] := by
+  simp only [cyclicFiveBelyiRecordB]
+
+/-- The literal stored permutations of the map row `5T1-5_5_5-c`. -/
+theorem cyclicFiveBelyiRecordC_triples :
+    cyclicFiveBelyiRecordC.triples =
+      [⟨(finRotate 5, finRotate 5 ^ 2, finRotate 5 ^ 2), by decide⟩] := by
+  apply congrArg List.singleton
+  apply Subtype.ext
+  simp only [equivOppositeConvention_apply_coe,
+    smul_σ0, smul_σ1, smul_σinf, cyclicPowTriple_σ0, cyclicPowTriple_σ1,
+    cyclicPowTriple_σinf]
+  decide +kernel
+
+/-- The literal stored cycle notation of the map row `5T1-5_5_5-c`. -/
+theorem cyclicFiveBelyiRecordC_triplesCyc :
+    cyclicFiveBelyiRecordC.triplesCyc =
+      [([[0, 1, 2, 3, 4]], [[0, 2, 4, 1, 3]], [[0, 2, 4, 1, 3]])] := by
+  simp only [cyclicFiveBelyiRecordC]
+
 /-- A map row storing the database form of the sheet reversal of
 `cyclicPowTriple 5 k`, for `k` and `k + 1` prime to `5`, written by its single cycle-notation entry,
 with orbit size one, the partitions `[5]` at each branch point and genus two, is valid for the
 passport `5T1-5_5_5`. -/
-private theorem isValidFor_of_triples_eq_cyclicPowTriple {q : BelyiRecord 5} {k : ℕ}
+private theorem isValidFor_of_triples_eq_revPerm_smul_cyclicPowTriple {q : BelyiRecord 5} {k : ℕ}
     (hk : k.Coprime 5) (hk' : (k + 1).Coprime 5) {c : CycleNotationTriple 5} (hdeg : q.deg = 5)
     (horbitSize : q.orbitSize = 1)
     (htriples : q.triples =
@@ -180,22 +232,22 @@ private theorem isValidFor_of_triples_eq_cyclicPowTriple {q : BelyiRecord 5} {k 
 /-- The map row `5T1-5_5_5-a` is valid for the passport `5T1-5_5_5`. -/
 theorem isValidFor_cyclicFiveBelyiRecordA :
     cyclicFiveBelyiRecordA.IsValidFor (PassportSpec.cyclicTotallyRamified 5) :=
-  isValidFor_of_triples_eq_cyclicPowTriple (k := 3) (by decide) (by decide) rfl rfl rfl rfl
-    ⟨by decide, by decide, by decide⟩ ⟨by decide, by decide, by decide⟩
+  isValidFor_of_triples_eq_revPerm_smul_cyclicPowTriple (k := 3) (by decide) (by decide)
+    rfl rfl rfl rfl ⟨by decide, by decide, by decide⟩ ⟨by decide, by decide, by decide⟩
     ⟨by decide, by decide, by decide⟩ rfl rfl
 
 /-- The map row `5T1-5_5_5-b` is valid for the passport `5T1-5_5_5`. -/
 theorem isValidFor_cyclicFiveBelyiRecordB :
     cyclicFiveBelyiRecordB.IsValidFor (PassportSpec.cyclicTotallyRamified 5) :=
-  isValidFor_of_triples_eq_cyclicPowTriple (k := 1) (by decide) (by decide) rfl rfl rfl rfl
-    ⟨by decide, by decide, by decide⟩ ⟨by decide, by decide, by decide⟩
+  isValidFor_of_triples_eq_revPerm_smul_cyclicPowTriple (k := 1) (by decide) (by decide)
+    rfl rfl rfl rfl ⟨by decide, by decide, by decide⟩ ⟨by decide, by decide, by decide⟩
     ⟨by decide, by decide, by decide⟩ rfl rfl
 
 /-- The map row `5T1-5_5_5-c` is valid for the passport `5T1-5_5_5`. -/
 theorem isValidFor_cyclicFiveBelyiRecordC :
     cyclicFiveBelyiRecordC.IsValidFor (PassportSpec.cyclicTotallyRamified 5) :=
-  isValidFor_of_triples_eq_cyclicPowTriple (k := 2) (by decide) (by decide) rfl rfl rfl rfl
-    ⟨by decide, by decide, by decide⟩ ⟨by decide, by decide, by decide⟩
+  isValidFor_of_triples_eq_revPerm_smul_cyclicPowTriple (k := 2) (by decide) (by decide)
+    rfl rfl rfl rfl ⟨by decide, by decide, by decide⟩ ⟨by decide, by decide, by decide⟩
     ⟨by decide, by decide, by decide⟩ rfl rfl
 
 /-! ### The map labels -/
@@ -276,21 +328,14 @@ theorem pairwise_not_equivalent_flatMap_triples_cyclicFivePassportRecord :
         [cyclicFiveBelyiRecordA, cyclicFiveBelyiRecordB, cyclicFiveBelyiRecordC]).flatMap
           BelyiRecord.triples).Pairwise fun s s' ↦ ¬ s.toTriple.Equivalent s'.toTriple := by
   rw [mapRows_cyclicFivePassportRecord]
-  have h := pairwise_not_equivalent_triples_cyclicFivePassportRecord
-  simp only [cyclicFivePassportRecord, List.pairwise_cons, List.mem_cons, List.not_mem_nil,
-    or_false, forall_eq_or_imp, forall_eq, List.Pairwise.nil, false_imp_iff, implies_true,
-    and_true, ← IsoClass.mk_eq_mk_iff] at h
-  simp only [cyclicFiveBelyiRecordA, cyclicFiveBelyiRecordB, cyclicFiveBelyiRecordC,
-    List.flatMap_cons, List.flatMap_nil, List.singleton_append,
-    List.pairwise_cons, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
-    forall_eq, List.Pairwise.nil, false_imp_iff, implies_true, and_true,
-    StoredTriple.toTriple_equivOppositeConvention,
-    ← IsoClass.mk_eq_mk_iff]
-  have he (k : ℕ) : IsoClass.mk (Fin.revPerm (n := 5) • cyclicPowTriple 5 k) =
-      IsoClass.mk (cyclicPowTriple 5 k) :=
-    IsoClass.mk_eq_mk_iff.mpr (equivalent_smul _ _)
-  simp only [he]
-  exact ⟨⟨Ne.symm h.1.2, Ne.symm h.2⟩, h.1.1⟩
+  change ((cyclicFivePassportRecord.triples.rotate 2).map
+    (fun t ↦ equivOppositeConvention 5 (Fin.revPerm • t))).Pairwise _
+  simp only [List.pairwise_map, StoredTriple.toTriple_equivOppositeConvention,
+    ← IsoClass.mk_eq_mk_iff, ← IsoClass.quotient_mk,
+    MulAction.orbitRel.Quotient.quotient_smul_eq]
+  apply (List.rotate_perm _ 2).pairwise_iff (fun h ↦ Ne.symm h) |>.mpr
+  simpa only [← IsoClass.mk_eq_mk_iff, ← IsoClass.quotient_mk] using
+    pairwise_not_equivalent_triples_cyclicFivePassportRecord
 
 open scoped Classical in
 /-- The stored triples of the three map rows represent exactly the isomorphism classes of the
@@ -307,10 +352,7 @@ theorem mapRowClasses_cyclicFivePassportRecord :
     exists_eq_left, StoredTriple.toTriple_equivOppositeConvention, Finset.image_insert,
     Finset.image_singleton, ConnectedIsoClass.forget_mk, Finset.mem_insert,
     Finset.mem_singleton, eq_comm]
-  have he (k : ℕ) : IsoClass.mk (Fin.revPerm (n := 5) • cyclicPowTriple 5 k) =
-      IsoClass.mk (cyclicPowTriple 5 k) :=
-    IsoClass.mk_eq_mk_iff.mpr (equivalent_smul _ _)
-  simp only [he]
+  simp only [← IsoClass.quotient_mk, MulAction.orbitRel.Quotient.quotient_smul_eq]
   tauto
 
 /-- **The sum formula for `5T1-5_5_5`.** The stored orbit sizes of the three map rows sum to the
