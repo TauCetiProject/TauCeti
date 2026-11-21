@@ -300,6 +300,18 @@ theorem trivial_apply (o : Orientation ℝ F ι) (b : B) : trivial B o b = o :=
 theorem neg_trivial (o : Orientation ℝ F ι) : -trivial B o = trivial B (-o) :=
   ext fun _ ↦ (rfl)
 
+variable (B) in
+/-- The trivialization of the trivial bundle `B × F` reads every orientation of a fibre as the same
+orientation of `F`. -/
+@[simp]
+theorem _root_.Bundle.Trivial.mapOrientation_trivialization {b : B}
+    (hb : b ∈ (Bundle.Trivial.trivialization B F).baseSet) (o : Orientation ℝ F ι) :
+    (Bundle.Trivial.trivialization B F).mapOrientation ι hb o = o := by
+  have h : (Bundle.Trivial.trivialization B F).linearEquivAt ℝ b hb = LinearEquiv.refl ℝ F := by
+    ext v
+    simp [Trivialization.linearEquivAt_apply]
+  rw [Trivialization.mapOrientation_apply, h, Orientation.map_refl, Equiv.refl_apply]
+
 section Pullback
 
 variable {B' : Type*} [TopologicalSpace B'] (f : C(B', B))

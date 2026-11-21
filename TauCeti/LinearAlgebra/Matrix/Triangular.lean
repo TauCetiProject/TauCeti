@@ -240,7 +240,7 @@ theorem isNilpotent_of_isUpperTriangular_of_diag_eq_zero [Fintype m] [LinearOrde
 
 end Nilpotence
 
-variable {R : Type*} [NonUnitalNonAssocSemiring R] {n : Type*} [Fintype n] [LinearOrder n]
+variable [NonUnitalNonAssocSemiring R] {n : Type*} [Fintype n] [LinearOrder n]
   {A B : Matrix n n R}
 
 /-- The diagonal of a product of upper-triangular matrices is the pointwise product of the

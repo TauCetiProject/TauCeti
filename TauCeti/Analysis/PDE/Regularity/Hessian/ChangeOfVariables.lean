@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables
 import Mathlib.Analysis.InnerProductSpace.Trace
+import TauCeti.Analysis.InnerProductSpace.Trace.Free
 
 /-!
 # Non-divergence-form equations under a change of variables
@@ -32,6 +33,15 @@ curvature of `Ψ` contributes the first-order term `∑ᵢ D²Ψ(y) eᵢ (A(y)�
 boundary of a domain of class `C²` by such a change of variables turns an equation near a curved
 boundary portion into one near a flat boundary portion, where the half-space estimates apply.
 
+The inverse change of variables is not needed: if `N(x)` is any right inverse of `DΦ(x)` on `U`,
+then `v` solves
+(`TauCeti.PDE.ae_traceCLM_comp_iteratedGradient_compL_add_inner_add_mul_eq_of_fderiv_comp_eq_id`)
+
+`tr (A' ∘ D²v) + ⟪b', ∇v⟫ + (c ∘ Φ) v = f ∘ Φ`
+
+with `A'(x) = N(x) A(Φ x) N(x)†` and `b'(x) = N(x) (b(Φ x) - ∑ᵢ D²Φ(x) eᵢ (A'(x)† eᵢ))`, where the
+second derivatives of `Φ` itself produce the first-order correction.
+
 ## The argument
 
 Since `Φ ∘ Ψ` is the identity on `V`, `u = v ∘ Ψ`, and the chain rule for the weak Hessian
@@ -44,11 +54,17 @@ with `∇u(y) = M† ∇v(Ψ y)` and `u(y) = v(Ψ y)`. Computing the trace in th
 `tr (A ∘ M† ∘ D²v ∘ M) = tr (M ∘ A ∘ M† ∘ D²v)`, rewrite the equation at `y` in terms of `v` at
 `Ψ y`. Pulling it back along `Φ` gives the equation for `v` at almost every `x ∈ U`.
 
+For the variant with a right inverse `N(x)` of `M(x) = DΦ(x)`, the chain rule along `Φ` writes
+`D²v(x) = M† ∘ D²u(Φ x) ∘ M + H` with `H f = (D²Φ(x) f)† ∇u(Φ x)`. Since `M N = 1`, the first part
+contributes `tr (A' ∘ M† ∘ D²u(Φ x) ∘ M) = tr (A(Φ x) ∘ D²u(Φ x))`, while `tr (A' ∘ H)` is the
+first-order term `⟪∑ᵢ D²Φ(x) eᵢ (A'† eᵢ), ∇u(Φ x)⟫`, and `⟪N z, ∇v⟫ = ⟪z, ∇u(Φ x)⟫`.
+
 ## References
 
 * D. Gilbarg, N. S. Trudinger, *Elliptic Partial Differential Equations of Second Order*,
   Section 6.2 and the proof of Theorem 9.13 (flattening the boundary transforms the operator into
   one of the same form).
+* L. C. Evans, *Partial Differential Equations*, 2nd ed., §6.3.2 (flattening the boundary).
 -/
 
 public section
@@ -135,5 +151,63 @@ theorem ae_traceCLM_comp_iteratedGradient_compL_add_inner_add_mul_eq {ι : Type*
     ring
   filter_upwards [hΦ.ae_comp hkey, ae_restrict_mem U.isOpen.measurableSet] with x hx hxU
   rwa [hΦ.injOn (hΨ.mapsTo (hΦ.mapsTo hxU)) hxU (hΦΨ (hΦ.mapsTo hxU))] at hx
+
+/-- **A non-divergence-form equation under a change of variables, with a right inverse of the
+derivative.** Let `Φ` be a change of variables of order two from `U` into `V`, let `N(x)` be a
+right inverse of `DΦ(x)` for `x ∈ U`, and let `1 ≤ p < ∞`. If `u ∈ W^{2,p}(V)` is a strong solution
+of `tr (A ∘ D²u) + ⟪b, ∇u⟫ + γ u = f` almost everywhere in `V`, then `w = u ∘ Φ`
+(`TauCeti.Wkp.compL`) is a strong solution of
+
+`tr (A' ∘ D²w) + ⟪b', ∇w⟫ + γ(Φ x) w = f(Φ x)` almost everywhere in `U`,
+
+where `A'(x) = N(x) A(Φ x) N(x)†` and, for any orthonormal basis `(eᵢ)` of `E`,
+`b'(x) = N(x) (b(Φ x) - ∑ᵢ D²Φ(x) eᵢ (N(x) A(Φ x)† N(x)† eᵢ))`; note `A'(x)† = N(x) A(Φ x)† N(x)†`.
+Unlike `TauCeti.PDE.ae_traceCLM_comp_iteratedGradient_compL_add_inner_add_mul_eq`, no inverse
+change of variables is needed. -/
+theorem ae_traceCLM_comp_iteratedGradient_compL_add_inner_add_mul_eq_of_fderiv_comp_eq_id
+    (h : IsChangeOfVariables 2 U V Φ L c) (hp : p ≠ ⊤) {N : E → E →L[ℝ] E}
+    (hN : ∀ x ∈ (U : Set E), fderiv ℝ Φ x ∘L N x = ContinuousLinearMap.id ℝ E)
+    {ι : Type*} [Fintype ι] (e : OrthonormalBasis ι ℝ E)
+    {A : E → E →L[ℝ] E} {b : E → E} {γ f : E → ℝ} {u : Wkp mu V p 2}
+    (hu : ∀ᵐ y ∂mu.restrict V, traceCLM ℝ E (A y ∘L iteratedGradient 1 u y) +
+      ⟪b y, iteratedGradient 0 (lowerOrder 1 u) y⟫_ℝ + γ y * value 2 u y = f y) :
+    ∀ᵐ x ∂mu.restrict U,
+      traceCLM ℝ E ((N x ∘L A (Φ x) ∘L (N x).adjoint) ∘L iteratedGradient 1 (compL h u) x) +
+        ⟪N x (b (Φ x) - ∑ i, fderiv ℝ (fderiv ℝ Φ) x (e i)
+            (N x ((A (Φ x)).adjoint ((N x).adjoint (e i))))),
+          iteratedGradient 0 (lowerOrder 1 (compL h u)) x⟫_ℝ +
+        γ (Φ x) * value 2 (compL h u) x = f (Φ x) := by
+  filter_upwards [h.ae_comp hu, inner_iteratedGradient_compL_ae h hp u,
+    gradient_firstOrder_compL_ae h u, value_compL_ae h u,
+    ae_restrict_mem U.isOpen.measurableSet] with x hux hD hg hv hx
+  rw [← gradient_firstOrder_one, hg, gradient_firstOrder_one]
+  set M := fderiv ℝ Φ x
+  set g := iteratedGradient 0 (lowerOrder 1 u) (Φ x)
+  set A' := N x ∘L A (Φ x) ∘L (N x).adjoint with hA'def
+  have hMN := hN x hx
+  have hA' : ∀ z, A'.adjoint z = N x ((A (Φ x)).adjoint ((N x).adjoint z)) := fun z => by
+    simp [A', ContinuousLinearMap.adjoint_comp]
+  -- The trace of `A' ∘ D²w`, computed on the basis `e`.
+  have htr : traceCLM ℝ E (A' ∘L iteratedGradient 1 (compL h u) x) =
+      traceCLM ℝ E (A (Φ x) ∘L iteratedGradient 1 u (Φ x)) +
+        ⟪∑ i, fderiv ℝ (fderiv ℝ Φ) x (e i) (A'.adjoint (e i)), g⟫_ℝ := by
+    have hH (f : E) : (iteratedGradient 1 (compL h u) x -
+        M.adjoint ∘L iteratedGradient 1 u (Φ x) ∘L M) f =
+          (fderiv ℝ (fderiv ℝ Φ) x f).adjoint g := by
+      refine ext_inner_right ℝ fun f' => ?_
+      rw [sub_apply, inner_sub_left, hD f f', ContinuousLinearMap.comp_apply,
+        ContinuousLinearMap.comp_apply, ContinuousLinearMap.adjoint_inner_left,
+        ContinuousLinearMap.adjoint_inner_left, add_sub_cancel_left]
+    rw [← sub_add_cancel (iteratedGradient 1 (compL h u) x)
+        (M.adjoint ∘L iteratedGradient 1 u (Φ x) ∘L M), ContinuousLinearMap.comp_add,
+      map_add, hA'def, ContinuousLinearMap.traceCLM_comp_adjoint_comp_comp_of_comp_eq_id hMN,
+      ContinuousLinearMap.traceCLM_comp_eq_sum_inner _ e _ g hH, add_comm]
+  -- The drift: `⟪N z, M† g⟫ = ⟪z, g⟫` since `M N = 1`.
+  have hdrift (z : E) : ⟪N x z, M.adjoint g⟫_ℝ = ⟪z, g⟫_ℝ := by
+    rw [ContinuousLinearMap.adjoint_inner_right]
+    simpa using congrArg (fun z' => ⟪z', g⟫_ℝ) (congrArg (fun T => T z) hMN)
+  rw [htr, hv, hdrift, ← hux]
+  simp only [hA', inner_sub_left]
+  ring
 
 end TauCeti.PDE
