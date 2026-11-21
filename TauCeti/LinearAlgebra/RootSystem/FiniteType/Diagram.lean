@@ -91,8 +91,8 @@ theorem diagramGraph_adj {i j : B} :
 
 namespace SymmetrizableDatum
 
-variable {I : Type*} (A : SymmetrizableDatum I)
-    (c : (diagramGraph A.cartan).Coloring Bool)
+variable {I : Type*} (A : SymmetrizableDatum I) {α : Type*}
+    (c : (diagramGraph A.cartan).Coloring α)
 
 /-- Two distinct vertices of the same colour have zero Cartan entry. -/
 theorem cartan_apply_eq_zero_of_color_eq {i j : I} (hij : i ≠ j) (hc : c i = c j) :
