@@ -45,7 +45,8 @@ the inverse.
 * `AlgHom.mapValue`: post-composition with `φ : A →ₐ[R] B` as a monoid homomorphism of
   convolution monoids, with `AlgHom.ofConv_comp_mapValue` describing it on underlying
   homomorphisms, `AlgHom.mapValue_id`, `AlgHom.mapValue_comp` recording its
-  functoriality in the value algebra and `AlgHom.mapValue_injective` recording that it loses no
+  functoriality in the value algebra, `AlgHom.mapValue_comp_ofId` its compatibility with constant
+  points, and `AlgHom.mapValue_injective` recording that it loses no
   information when `φ` does not.
 * `AlgHom.mem_mrange_mapValue_iff_mapValue_eq`: when the image of an injective `φ` is the fixed
   ring of an endomorphism `τ`, the points coming from the source of `φ` are those fixed by
@@ -216,6 +217,19 @@ lemma mapValue_comp (ψ : B →ₐ[R] C) (φ : A →ₐ[R] B) :
   refine MonoidHom.ext fun f => ?_
   rw [MonoidHom.comp_apply, mapValue_apply, mapValue_apply, mapValue_apply, toConv_ofConv,
     AlgHom.comp_assoc]
+
+/-- `mapValue φ` sends the constant points coming from the base to the constant points:
+`mapValue φ ∘ mapValue (ofId R A) = mapValue (ofId R B)`. -/
+lemma mapValue_comp_ofId (φ : A →ₐ[R] B) :
+    (mapValue (H := H) φ).comp (mapValue (Algebra.ofId R A)) =
+      mapValue (Algebra.ofId R B) := by
+  rw [← mapValue_comp, Algebra.comp_ofId]
+
+/-- `mapValue φ` sends the constant point of a base-valued point `g` to the constant point
+of `g`. -/
+lemma mapValue_mapValue_ofId (φ : A →ₐ[R] B) (g : WithConv (H →ₐ[R] R)) :
+    mapValue φ (mapValue (Algebra.ofId R A) g) = mapValue (Algebra.ofId R B) g := by
+  rw [← MonoidHom.comp_apply, mapValue_comp_ofId]
 
 end Bialgebra
 
