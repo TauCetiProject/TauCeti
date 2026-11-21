@@ -124,6 +124,19 @@ theorem indicatorConstLpL_apply [Fact (1 ≤ p)] (hs : MeasurableSet s) (hμs : 
     indicatorConstLpL 𝕜 p hs hμs c = indicatorConstLp p hs hμs c := by
   simp [indicatorConstLpL]
 
+section NormedField
+
+variable {α 𝕜 E : Type*} [MeasurableSpace α] {μ : Measure α} {p : ℝ≥0∞} [NormedAddCommGroup E]
+  [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 E] {s : Set α}
+
+variable (𝕜 E) in
+/-- The operator norm of `TauCeti.indicatorConstLpL` is at most `μ(s) ^ (1 / p)`. -/
+theorem norm_indicatorConstLpL_le [Fact (1 ≤ p)] (hs : MeasurableSet s) (hμs : μ s ≠ ∞) :
+    ‖(indicatorConstLpL 𝕜 p hs hμs : E →L[𝕜] Lp E p μ)‖ ≤ μ.real s ^ (1 / p.toReal) :=
+  LinearMap.mkContinuous_norm_le _ (Real.rpow_nonneg measureReal_nonneg _) _
+
+end NormedField
+
 section Disjoint
 
 variable {ι : Type*} [Fintype ι] {s : ι → Set α}
