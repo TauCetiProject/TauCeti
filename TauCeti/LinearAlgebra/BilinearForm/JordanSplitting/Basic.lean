@@ -753,8 +753,9 @@ theorem IsJordanSplitting.equivalent_restrict_of_forall_unimodular [IsDomain R] 
   have hC'app (x y : N' j) : π ^ j * C' x y = B' x y := by
     simpa using LinearMap.congr_fun₂ hC' x y
   have hB' : B'.IsSymm := ⟨fun x y ↦ by rw [← hεs, ← hεs, hB.eq]⟩
-  have hCs : C.IsSymm := IsSymm.of_smul hπj (hC ▸ hB.restrict (N j))
-  have hC's : C'.IsSymm := IsSymm.of_smul hπj (hC' ▸ hB'.restrict (N' j))
+  have hπj' : IsSMulRegular R (π ^ j) := .of_ne_zero (pow_ne_zero j hπ)
+  have hCs : C.IsSymm := (isSymm_smul_iff hπj').mp (hC ▸ hB.restrict (N j))
+  have hC's : C'.IsSymm := (isSymm_smul_iff hπj').mp (hC' ▸ hB'.restrict (N' j))
   -- The projection to `N j` carries `C'` to `C` modulo `π`, and on the diagonal modulo `π ^ 2`.
   obtain ⟨f, -, hf, hf₂⟩ := h.exists_pow_succ_dvd_sub hπnz j
   have hdvd (x : N' j) (z : M) : π ^ j ∣ B (ε.symm x) z := by

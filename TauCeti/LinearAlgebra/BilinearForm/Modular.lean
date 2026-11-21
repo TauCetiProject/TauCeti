@@ -47,7 +47,7 @@ This file proves the facts about modular forms that hold over every commutative 
   the actual scale rather than the coefficient ring;
 * when `a` is a non-zero-divisor, every form `C` with `a • C = B` for an `a`-modular `B` is a
   perfect pairing (`LinearMap.BilinForm.IsModular.isPerfPair_of_smul_eq`), and it is symmetric
-  when `B` is (`LinearMap.BilinForm.IsSymm.of_smul`);
+  when `B` is (`LinearMap.BilinForm.isSymm_smul_iff`);
 * a vector `x` with `a r ∣ B x y` for all `y`, where `B` is `a`-modular and `a` and `r` are
   non-zero-divisors, is divisible by `r`
   (`LinearMap.BilinForm.IsModular.exists_eq_smul_of_forall_dvd`);
