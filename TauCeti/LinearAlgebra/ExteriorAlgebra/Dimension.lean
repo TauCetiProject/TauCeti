@@ -34,6 +34,8 @@ commutative ring.
 * `TauCeti.ExteriorAlgebra.instFree`: the exterior algebra of a free module is free.
 * `TauCeti.ExteriorAlgebra.instFinite`: the exterior algebra of a finite module is a finite module.
 * `TauCeti.ExteriorAlgebra.finrank_eq_two_pow`: `finrank R (ExteriorAlgebra R M) = 2 ^ finrank R M`.
+* `ExteriorAlgebra.exists_finite_submodule_map_subtype`: every element of `ExteriorAlgebra R M`
+  arises from `ExteriorAlgebra R W` for a finitely generated submodule `W ≤ M`.
 -/
 
 public section
@@ -72,3 +74,37 @@ theorem finrank_eq_two_pow [Nontrivial R] [Module.Free R M] [Module.Finite R M] 
 end ExteriorAlgebra
 
 end TauCeti
+
+namespace ExteriorAlgebra
+
+/-- Every element of `ExteriorAlgebra R M` lies in the image of `ExteriorAlgebra.map W.subtype`
+for some finitely generated submodule `W : Submodule R M`. -/
+theorem exists_finite_submodule_map_subtype {R : Type u} {M : Type v} [CommRing R]
+    [AddCommGroup M] [Module R M] (x : ExteriorAlgebra R M) :
+    ∃ (W : Submodule R M) (_ : Module.Finite R W) (y : ExteriorAlgebra R W),
+      ExteriorAlgebra.map W.subtype y = x := by
+  induction x using CliffordAlgebra.left_induction with
+  | algebraMap r =>
+    exact ⟨⊥, inferInstance, algebraMap R _ r, AlgHom.commutes _ r⟩
+  | add x₁ x₂ hx₁ hx₂ =>
+    obtain ⟨W₁, hW₁, y₁, rfl⟩ := hx₁
+    obtain ⟨W₂, hW₂, y₂, rfl⟩ := hx₂
+    have hsup : Module.Finite R ↥(W₁ ⊔ W₂) :=
+      Module.Finite.iff_fg.mpr ((Module.Finite.iff_fg.mp hW₁).sup (Module.Finite.iff_fg.mp hW₂))
+    refine ⟨W₁ ⊔ W₂, hsup,
+      ExteriorAlgebra.map (Submodule.inclusion le_sup_left) y₁ +
+        ExteriorAlgebra.map (Submodule.inclusion le_sup_right) y₂, ?_⟩
+    rw [map_add, ← AlgHom.comp_apply, ← AlgHom.comp_apply, ExteriorAlgebra.map_comp_map,
+      ExteriorAlgebra.map_comp_map, Submodule.subtype_comp_inclusion,
+      Submodule.subtype_comp_inclusion]
+  | ι_mul s m hs =>
+    obtain ⟨W, hW, y, rfl⟩ := hs
+    have hsup : Module.Finite R ↥(W ⊔ (R ∙ m)) :=
+      Module.Finite.iff_fg.mpr ((Module.Finite.iff_fg.mp hW).sup (Submodule.fg_span_singleton m))
+    refine ⟨W ⊔ (R ∙ m), hsup,
+      ExteriorAlgebra.ι R ⟨m, Submodule.mem_sup_right (Submodule.mem_span_singleton_self m)⟩ *
+        ExteriorAlgebra.map (Submodule.inclusion le_sup_left) y, ?_⟩
+    rw [map_mul, ExteriorAlgebra.map_apply_ι, Submodule.coe_subtype, ← AlgHom.comp_apply,
+      ExteriorAlgebra.map_comp_map, Submodule.subtype_comp_inclusion]
+
+end ExteriorAlgebra

@@ -10,12 +10,15 @@ public import Mathlib.LinearAlgebra.CliffordAlgebra.Contraction
 public import TauCeti.Algebra.Lie.ExteriorPower
 public import TauCeti.Analysis.InnerProductSpace.Dual
 public import Mathlib.LinearAlgebra.UnitaryGroup
+public import TauCeti.LinearAlgebra.ExteriorAlgebra.HermitianMetric
 import TauCeti.Analysis.InnerProductSpace.Gram.Hadamard
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Family
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.SesquilinearForm
 import TauCeti.Analysis.InnerProductSpace.GramSchmidtOrtho
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
 import TauCeti.LinearAlgebra.Determinant.Basic
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
+import TauCeti.LinearAlgebra.ExteriorAlgebra.Dimension
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
 import TauCeti.LinearAlgebra.ExteriorPower.Basis
 import TauCeti.LinearAlgebra.ExteriorPower.Square
@@ -25,7 +28,10 @@ import TauCeti.LinearAlgebra.Matrix.Adjugate.Basic
 # Norms and linear isometries of exterior powers
 
 The exterior powers `⋀[ℝ]^n E` of a finite-dimensional real inner product space carry Mathlib's
-induced inner product, with `⟪v₁ ∧ ⋯ ∧ vₙ, w₁ ∧ ⋯ ∧ wₙ⟫ = det ⟪vⱼ, wᵢ⟫`. This file proves that the
+induced inner product, with `⟪v₁ ∧ ⋯ ∧ vₙ, w₁ ∧ ⋯ ∧ wₙ⟫ = det ⟪vⱼ, wᵢ⟫`. This file identifies that
+inner product with `(innerₗ E).sesqExteriorPower n` and shows that the orthogonal direct-sum form
+`(innerₗ V).sesqExteriorAlgebra` is symmetric and positive definite without finite-dimensionality
+on `V` (agreeing with the wedge-basis form of any finite orthonormal basis). It proves that the
 map `⋀ⁿ f` induced by a linear isometry `f` preserves it, so that rotations of an oriented space
 act isometrically on its forms, and that infinitesimal rotations, the skew-adjoint endomorphisms,
 act skew-adjointly on forms of every degree. It also records that the norm of a wedge
@@ -49,6 +55,12 @@ skew endomorphism `u ↦ u ⌟ F` of a two-vector `F`, the operator that represe
 
 ## Main results
 
+* `exteriorPower.sesqExteriorPower_innerₗ`: `(innerₗ E).sesqExteriorPower n = innerₗ (⋀[ℝ]^n E)`.
+* `OrthonormalBasis.toLinearMap₂_toBasis_exteriorAlgebra_one`: the wedge-basis real bilinear form
+  of a finite orthonormal basis `b` is `(innerₗ E).sesqExteriorAlgebra`.
+* `ExteriorAlgebra.isSymm_sesqExteriorAlgebra_innerₗ` and
+  `ExteriorAlgebra.posDef_toQuadraticMap_sesqExteriorAlgebra_innerₗ`: symmetry and positive
+  definiteness of `(innerₗ V).sesqExteriorAlgebra` without finite-dimensionality on `V`.
 * `exteriorPower.inner_map_map`: `⟪⋀ⁿ f x, ⋀ⁿ f y⟫ = ⟪x, y⟫` for a linear isometry `f`.
 * `exteriorPower.inner_ιMulti_two`: `⟪a ∧ b, u ∧ w⟫ = ⟪a, u⟫ ⟪b, w⟫ - ⟪a, w⟫ ⟪b, u⟫`.
 * `exteriorPower.ext_inner_ιMulti`: elements of `⋀ⁿ E` with the same inner products against all
@@ -240,6 +252,18 @@ theorem _root_.Orthonormal.norm_ιMulti {v : Fin n → E} (hv : Orthonormal ℝ 
   rw [← pow_left_inj₀ (norm_nonneg _) zero_le_one two_ne_zero, norm_ιMulti_sq,
     Matrix.gram_eq_one_iff_orthonormal.mpr hv, Matrix.det_one, one_pow]
 
+/-- On a finite-dimensional real inner product space `E`, the `k`-th exterior Gram form of
+`innerₗ E` is `innerₗ (⋀[ℝ]^k E)`. -/
+@[simp]
+theorem sesqExteriorPower_innerₗ (k : ℕ) :
+    (innerₗ E).sesqExteriorPower k = innerₗ (⋀[ℝ]^k E) := by
+  symm
+  rw [LinearMap.eq_sesqExteriorPower_iff]
+  intro u v
+  simp only [innerₗ_apply_apply, inner_ιMulti_ιMulti]
+  rw [← Matrix.det_transpose]
+  congr 1
+
 omit [FiniteDimensional ℝ E] in
 /-- Two orthonormal frames have the same wedge exactly when one is obtained from the other by a
 special orthogonal change of frame, `vⱼ = ∑ i, A j i • eᵢ` with `A ∈ SO(n)`: they span the same
@@ -357,6 +381,18 @@ theorem inner_toBasis_exteriorPower [LinearOrder ι] (b : OrthonormalBasis ι �
     ⟪b.toBasis.exteriorPower n u, b.toBasis.exteriorPower n v⟫ = if u = v then 1 else 0 := by
   rw [← OrthonormalBasis.toBasis_exteriorPower, OrthonormalBasis.coe_toBasis,
     OrthonormalBasis.inner_eq_ite]
+
+omit [FiniteDimensional ℝ E] in
+/-- The real bilinear form making `b.toBasis.ExteriorAlgebra` orthonormal is
+`(innerₗ E).sesqExteriorAlgebra`. -/
+theorem toLinearMap₂_toBasis_exteriorAlgebra_one [LinearOrder ι]
+    (b : OrthonormalBasis ι ℝ E) :
+    Matrix.toLinearMap₂ b.toBasis.ExteriorAlgebra b.toBasis.ExteriorAlgebra
+        (1 : Matrix (Finset ι) (Finset ι) ℝ) =
+      (innerₗ E).sesqExteriorAlgebra := by
+  change Matrix.toLinearMapₛₗ₂ (starRingEnd ℝ) b.toBasis.ExteriorAlgebra b.toBasis.ExteriorAlgebra
+      1 = _
+  rw [ExteriorAlgebra.toLinearMapₛₗ₂_exteriorAlgebra_one, b.toLinearMapₛₗ₂_real]
 
 /-! ### Two-vectors in an orthonormal frame of a four-dimensional space -/
 
@@ -582,3 +618,31 @@ theorem twoVectorAlternatingSum_swap₂₃ (θ : V → ⋀[ℝ]^2 V) (a b c : V)
 end TwoVectorAlternatingSum
 
 end TauCeti
+
+namespace ExteriorAlgebra
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+
+/-- The real Euclidean exterior Gram form `(innerₗ V).sesqExteriorAlgebra` is symmetric. -/
+theorem isSymm_sesqExteriorAlgebra_innerₗ :
+    LinearMap.BilinForm.IsSymm (innerₗ V).sesqExteriorAlgebra := by
+  have hsymm : (innerₗ V).IsSymm := LinearMap.isSymm_def.mpr fun x y ↦ real_inner_comm y x
+  exact LinearMap.BilinForm.isSymm_iff.mpr (hsymm.sesqExteriorAlgebra fun _ ↦ rfl)
+
+/-- The real Euclidean exterior Gram form `(innerₗ V).sesqExteriorAlgebra` is positive definite
+(without any finite-dimensionality assumption on `V`). -/
+theorem posDef_toQuadraticMap_sesqExteriorAlgebra_innerₗ :
+    (LinearMap.BilinMap.toQuadraticMap (innerₗ V).sesqExteriorAlgebra).PosDef := by
+  intro x hx
+  obtain ⟨W, _, y, rfl⟩ := x.exists_finite_submodule_map_subtype
+  have hy : y ≠ 0 := by rintro rfl; exact hx (map_zero _)
+  let b := stdOrthonormalBasis ℝ W
+  have hsub : ∀ u v : W, innerₗ V (W.subtype u) (W.subtype v) = innerₗ W u v :=
+    fun u v ↦ by simp [Submodule.coe_inner]
+  rw [LinearMap.BilinMap.toQuadraticMap_apply,
+    LinearMap.sesqExteriorAlgebra_map_map hsub,
+    ← b.toLinearMap₂_toBasis_exteriorAlgebra_one]
+  exact (Matrix.toLinearMapₛₗ₂_one_self_nonneg b.toBasis.ExteriorAlgebra y).lt_of_ne'
+    ((Matrix.toLinearMapₛₗ₂_one_self_eq_zero_iff b.toBasis.ExteriorAlgebra).not.mpr hy)
+
+end ExteriorAlgebra
