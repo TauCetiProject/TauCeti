@@ -18,6 +18,10 @@ projective spaces have finitely many points of bounded multiplicative or logarit
 The instances allow callers to use `Northcott.finite_le` and `Northcott.exists_min_image`.
 Over a number field the scalar hypothesis follows from Mathlib's number-field instance.
 
+As a consequence, the nonzero tuples of bounded height lie on finitely many lines
+(`Height.exists_finset_finrank_eq_one_of_mulHeight_le`). This is how points of small height are
+disposed of in finiteness statements about subspaces, such as the Subspace Theorem.
+
 Normalizing a nonzero coordinate to `1` bounds the scalar height of every coordinate of the
 representative by the projective height. Such representatives form a finite product of finite
 scalar sublevel sets. The statement concerns projective points: tuple heights are invariant
@@ -70,3 +74,26 @@ instance instNorthcottLogHeight [Northcott (mulHeight (K := K) (ι := ι))] :
     bddAbove_def.mpr ⟨Real.exp B, fun _ ↦ Real.le_exp_of_log_le⟩
 
 end Projectivization
+
+namespace Height
+
+variable {K : Type*} [Field K] [AdmissibleAbsValues K] {ι : Type*} [Finite ι]
+
+/-- The nonzero tuples of bounded height lie on finitely many lines: if the scalar height has the
+Northcott property, for instance over a number field, then for every `B` there are finitely many
+one-dimensional subspaces of `ι → K` such that every nonzero `x` with `mulHeight x ≤ B` lies in one
+of them. -/
+theorem exists_finset_finrank_eq_one_of_mulHeight_le [Northcott (mulHeight₁ (K := K))] (B : ℝ) :
+    ∃ T : Finset (Submodule K (ι → K)), (∀ W ∈ T, Module.finrank K W = 1) ∧
+      ∀ x : ι → K, x ≠ 0 → mulHeight x ≤ B → ∃ W ∈ T, x ∈ W := by
+  classical
+  have h := (Northcott.finite_le (h := Projectivization.mulHeight (K := K) (ι := ι)) B).image
+    Projectivization.submodule
+  refine ⟨h.toFinset, fun W hW ↦ ?_, fun x hx hB ↦
+    ⟨K ∙ x, h.mem_toFinset.mpr ?_, Submodule.mem_span_singleton_self x⟩⟩
+  · obtain ⟨p, -, rfl⟩ := h.mem_toFinset.mp hW
+    exact p.finrank_submodule
+  · exact ⟨Projectivization.mk K x hx, by rwa [Set.mem_ofPred_eq, Projectivization.mulHeight_mk],
+      Projectivization.submodule_mk x hx⟩
+
+end Height
