@@ -24,10 +24,6 @@ adapted. The conclusion uses actual stopping times on the original raw filtratio
 retains the native indicator at time zero. No usual conditions, density bounds or reciprocal
 moments are required. Only the forward density-product implication is proved here.
 
-For each original localized martingale, choose a predictable indistinguishable version,
-weight it by `Z`, and stop again at the original localizer. This second stopping is essential:
-the native stopped product contains the stopped density, not the unstopped density.
-
 ## References
 
 * I. Karatzas and S. E. Shreve, *Brownian Motion and Stochastic Calculus*, second edition,
@@ -46,8 +42,9 @@ variable {Ω E : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} [IsFiniteMea
   {ℱ : Filtration ℝ≥0 mΩ} {w : Ω → ℝ≥0∞} [IsFiniteMeasure (P.withDensity w)]
   {X : ℝ≥0 → Ω → E} {Z : ℝ≥0 → Ω → ℝ}
 
--- The stage of the weighted process uses the stopped density. Select a progressive version
--- before the second stopping, but retain the original native stage in the conclusion.
+-- Choose a predictable indistinguishable version of the localized martingale, weight it by Z,
+-- and stop again at the original localizer. The second stopping gives the stopped density
+-- required by the native stage of the weighted process.
 private theorem martingale_density_native_stage {τ : Ω → WithTop ℝ≥0}
     (hτ : IsStoppingTime ℱ τ)
     (hU : Martingale (stoppedProcess (fun t ↦ {ω | ⊥ < τ ω}.indicator (X t)) τ)
