@@ -36,7 +36,10 @@ up to a rescaling `v ↦ c v`. The local parameter `t = -X / Y` at the origin
 rescaling along which `t` has derivative `1` at `0`
 (`WeierstrassCurve.Projective.hasDerivAt_localParameter_exp`). As the invariant differential is
 `(1 + O(t)) dt`, this is the classical normalization under which `exp_E` pulls the invariant
-differential back to `dz`; differential forms themselves are not used here.
+differential back to `dz`: on the affine part of `E(ℂ)`, the `x`-coordinate of `exp_E` has
+derivative `2y + a₁x + a₃`
+(`WeierstrassCurve.Projective.hasDerivAt_of_toAffineAddEquiv_exp_eq_some`). Differential forms
+themselves are not used here.
 
 A continuous homomorphism `g : ℂ → E(ℂ)` is determined by `t ∘ g` to first order at `0`
 (`WeierstrassCurve.Projective.eq_exp_of_hasDerivAt`): its restrictions to the real lines through `0`
@@ -70,9 +73,13 @@ map, inducing an isomorphism of topological groups `ℂ / ker exp_E ≃ E(ℂ)`.
 * `WeierstrassCurve.Projective.eq_exp_of_hasDerivAt`: `exp_E` is the only continuous homomorphism
   with this normalization.
 * `WeierstrassCurve.Projective.contMDiff_exp`: `exp_E` is holomorphic.
+* `WeierstrassCurve.Projective.isInvertible_mfderiv_exp`: the derivative of `exp_E` is invertible
+  at every point.
 * `WeierstrassCurve.Projective.exp_weierstrassCurve` and
   `WeierstrassCurve.Projective.exp_variableChange_weierstrassCurve`: the comparison with the
   Weierstrass point map `z ↦ (℘(z), ℘'(z) / 2)`.
+* `WeierstrassCurve.Projective.hasDerivAt_of_toAffineAddEquiv_exp_eq_some`: `exp_E` pulls the
+  invariant differential `dx / (2y + a₁x + a₃)` back to `dz`.
 * `WeierstrassCurve.Projective.ker_exp`: the kernel of `exp_E` is the period lattice of `E`.
 * `WeierstrassCurve.Projective.exp_surjective`, `WeierstrassCurve.Projective.isOpenMap_exp` and
   `WeierstrassCurve.Projective.isCoveringMap_exp`: `exp_E` is an open covering map onto `E(ℂ)`.
@@ -308,6 +315,46 @@ theorem hasDerivAt_localParameter_exp :
     ((hasDerivAt_id (0 : ℂ)).const_mul W.tangentScale⁻¹) (by simp)
   rwa [mul_one, mul_inv_cancel₀ W.tangentScale_ne_zero] at h
 
+/-- **The derivative of `exp_E` is invertible** at every point: it is nonzero at `0`, since the
+local parameter has derivative `1` along `exp_E`, and translations carry it to every other point. -/
+theorem isInvertible_mfderiv_exp (z : ℂ) :
+    (mfderiv 𝓘(ℂ) 𝓘(ℂ) W.exp z).IsInvertible := by
+  have hd := W.mdifferentiable_exp
+  -- The derivative at `0` is nonzero, as the local parameter has derivative `1` along `exp_E`.
+  have h₀ : mfderiv 𝓘(ℂ) 𝓘(ℂ) W.exp 0 ≠ 0 := by
+    intro h
+    have ht := ((Point.contMDiffAt_localParameter_zero (W := W) 1).mdifferentiableAt
+      one_ne_zero)
+    have hc := mfderiv_comp (I := 𝓘(ℂ)) (I' := 𝓘(ℂ)) (I'' := 𝓘(ℂ)) (0 : ℂ)
+      (by rwa [map_zero]) (hd 0)
+    rw [h, ContinuousLinearMap.comp_zero] at hc
+    have hm : mfderiv 𝓘(ℂ) 𝓘(ℂ) (Point.localParameter ∘ W.exp) 0 = _ :=
+      W.hasDerivAt_localParameter_exp.hasFDerivAt.hasMFDerivAt.mfderiv
+    rw [hc] at hm
+    have h1 := congrArg (fun f : ℂ →L[ℂ] ℂ ↦ f 1) hm
+    simp only [ContinuousLinearMap.toSpanSingleton_apply, one_smul] at h1
+    exact zero_ne_one (α := ℂ) h1
+  -- Translations carry the derivative at `0` to the derivative at `z`.
+  have hz : mfderiv 𝓘(ℂ) 𝓘(ℂ) W.exp z ≠ 0 := by
+    intro h
+    have he : ⇑W.exp = (fun P ↦ P - W.exp z) ∘ W.exp ∘ (· + z) := by
+      funext w
+      simp
+    have hτ : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) (fun P : W.Point ↦ P - W.exp z) :=
+      (contMDiff_id.sub contMDiff_const).mdifferentiable (n := 1) one_ne_zero
+    have hadd : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) (· + z : ℂ → ℂ) :=
+      (differentiable_id.add_const z).mdifferentiable
+    apply h₀
+    rw [he, mfderiv_comp_of_eq (hτ _) ((hd _).comp (0 : ℂ) (hadd 0)) rfl,
+      mfderiv_comp (0 : ℂ) (hd _) (hadd 0)]
+    have h' : mfderiv 𝓘(ℂ) 𝓘(ℂ) W.exp (0 + z) = 0 := by rwa [zero_add]
+    rw [h']
+    simp
+  -- A nonzero `ℂ`-linear endomorphism of `ℂ` is multiplication by a unit.
+  refine ⟨ContinuousLinearEquiv.unitsEquivAut ℂ (Units.mk0 (mfderiv 𝓘(ℂ) 𝓘(ℂ) W.exp z (1 : ℂ))
+    fun h1 ↦ hz (ContinuousLinearMap.ext_ring h1)), ContinuousLinearMap.ext_ring ?_⟩
+  exact one_mul (M := ℂ) _
+
 /-- **The exponential map of a lattice curve is the Weierstrass point map**:
 `exp_{E_Λ}(z) = (℘(z), ℘'(z) / 2)`, the point at infinity for `z ∈ Λ`. -/
 theorem exp_weierstrassCurve (L : PeriodPair) (z : ℂ) :
@@ -332,6 +379,55 @@ theorem exp_variableChange_weierstrassCurve (L : PeriodPair) (C : VariableChange
   rw [← weierstrassPointVariableChange_apply, eq_exp_of_hasDerivAt _
     (continuous_weierstrassPointVariableChange L C)
     (hasDerivAt_localParameter_weierstrassPointVariableChange L C)]
+
+/-- **`exp_E` pulls the invariant differential back to `dz`**: where `exp_E z` is the affine point
+`(x z, y z)`, the invariant differential `dx / (2y + a₁x + a₃)` pulls back to `dz`, that is
+`x' = 2y + a₁x + a₃`. Writing `E` as the image of `E_Λ` under a change of variables `(1, r, s, t)`,
+this is `℘' = 2 (℘' / 2)` for the coordinates `x = ℘ - r` and `y = ℘' / 2 - s x - t`. -/
+theorem hasDerivAt_of_toAffineAddEquiv_exp_eq_some {x y : ℂ → ℂ} {z₀ : ℂ}
+    (h : ∀ᶠ z in 𝓝 z₀, ∃ hz : W.toAffine.Nonsingular (x z) (y z),
+      Point.toAffineAddEquiv W (W.exp z) = .some (x z) (y z) hz) :
+    HasDerivAt x (2 * y z₀ + W.a₁ * x z₀ + W.a₃) z₀ := by
+  obtain ⟨L, C, hu, rfl⟩ := WeierstrassCurve.exists_periodPair_variableChange_smul_eq W
+  -- The change of variables `C = (1, r, s, t)` carries the affine point `(x z, y z)` of `exp_E z`
+  -- to the point `(℘ z, ℘' z / 2)` of `E_Λ`.
+  have key : ∀ z, (∃ hz : (C • L.weierstrassCurve).toProjective.toAffine.Nonsingular (x z) (y z),
+      Point.toAffineAddEquiv _ ((C • L.weierstrassCurve).toProjective.exp z) =
+        .some (x z) (y z) hz) →
+      z ∉ L.lattice ∧ L.weierstrassP z = x z + C.r ∧
+        L.derivWeierstrassP z / 2 = y z + C.s * x z + C.t := by
+    rintro z ⟨hz, hxy⟩
+    have hC : ∀ Q : (C • L.weierstrassCurve).toProjective.Point,
+        Point.toAffineAddEquiv _ (Point.addEquivVariableChange L.weierstrassCurve C Q) =
+          Affine.Point.addEquivVariableChange L.weierstrassCurve C
+            (Point.toAffineAddEquiv _ Q) := by
+      rintro @⟨P, hP⟩
+      induction P using Quotient.inductionOn with | h P => ?_
+      rw [Point.addEquivVariableChange_mk, Point.toAffineAddEquiv_apply,
+        Point.toAffineAddEquiv_apply, Point.toAffineLift_eq, Point.toAffineLift_eq,
+        Point.toAffine_toMatrix_mulVec, Affine.Point.coe_addEquivVariableChange]
+    have h₁ := congrArg (Affine.Point.addEquivVariableChange L.weierstrassCurve C) hxy
+    rw [← hC, exp_variableChange_weierstrassCurve, AddEquiv.apply_symm_apply, hu, Units.val_one,
+      inv_one, one_mul] at h₁
+    -- `Affine.Point.toProjective` is the inverse of `Point.toAffineAddEquiv`.
+    rw [show Point.toAffineAddEquiv _ (L.weierstrassPoint z).toProjective = L.weierstrassPoint z
+      from (Point.toAffineAddEquiv _).apply_symm_apply _] at h₁
+    by_cases hzL : z ∈ L.lattice
+    · simp [L.weierstrassPoint_of_mem hzL] at h₁
+    · simp only [L.weierstrassPoint_of_notMem hzL, Affine.Point.coe_addEquivVariableChange,
+        Affine.Point.equivVariableChange_some, Affine.Point.some.injEq, hu, Units.val_one,
+        one_pow, one_mul] at h₁
+      exact ⟨hzL, h₁.1, h₁.2⟩
+  obtain ⟨hz₀, -, hy₀⟩ := key z₀ h.self_of_nhds
+  have hx : x =ᶠ[𝓝 z₀] fun z ↦ L.weierstrassP z - C.r :=
+    h.mono fun z hz ↦ eq_sub_of_add_eq (key z hz).2.1.symm
+  have h℘ : HasDerivAt L.weierstrassP (L.derivWeierstrassP z₀) z₀ := by
+    rw [← L.deriv_weierstrassP]
+    exact ((L.analyticOnNhd_weierstrassP z₀ hz₀).differentiableAt).hasDerivAt
+  refine ((h℘.sub_const C.r).congr_of_eventuallyEq hx).congr_deriv ?_
+  simp only [variableChange_a₁, variableChange_a₃, PeriodPair.weierstrassCurve_a₁,
+    PeriodPair.weierstrassCurve_a₃, hu, Units.val_one, inv_one, one_pow, one_mul]
+  linear_combination 2 * hy₀
 
 /-- **The kernel of `exp_E` is the period lattice of `E`.** -/
 theorem ker_exp : W.exp.ker = W.periodLattice.toAddSubgroup := by
