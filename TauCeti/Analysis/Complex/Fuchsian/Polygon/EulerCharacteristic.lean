@@ -773,12 +773,6 @@ theorem eulerChar_orbitRel_quotient :
   rw [eulerChar_eq_cwEulerChar (Homeomorph.Set.univ _).symm.toHomotopyEquiv,
     σ.cwEulerChar_cwComplex hmap hlf hdisj]
 
-/-- A compact polygon has no ideal vertex cycles. -/
-private theorem natCard_idealVertexCycle_eq_zero : Nat.card σ.IdealVertexCycle = 0 := by
-  have : IsEmpty {i : Fin n // (P.toConvexPolygon.vertex i).isRight} :=
-    ⟨fun i ↦ by simpa [P.vertex_toConvexPolygon] using i.2⟩
-  exact Nat.card_of_isEmpty
-
 /-- **The Euler characteristic of the quotient by a compact fundamental polygon is its cell
 count.** Under the hypotheses of `finiteCWType_orbitRel_quotient`, `χ(Γ \ ℍ) = σ.cellEulerChar`:
 a compact polygon has no ideal vertex cycles. -/
@@ -786,7 +780,7 @@ theorem eulerChar_orbitRel_quotient_eq_cellEulerChar :
     haveI := σ.finiteCWType_orbitRel_quotient hmap hlf hdisj
     eulerChar (orbitRel.Quotient Γ ℍ) = σ.cellEulerChar := by
   rw [σ.eulerChar_orbitRel_quotient hmap hlf hdisj, cellEulerChar_def,
-    σ.natCard_idealVertexCycle_eq_zero]
+    Nat.card_of_isEmpty (α := σ.IdealVertexCycle)]
   push_cast
   ring
 
@@ -800,6 +794,6 @@ theorem covolume_eq_two_pi_mul_neg_eulerChar_add :
       ∑ᶠ e ∈ Γ.ellipticOrbits, (1 - (cardStabilizerOnOrbit e : ℝ)⁻¹))) := by
   rw [σ.eulerChar_orbitRel_quotient_eq_cellEulerChar hmap hlf hdisj,
     σ.covolume_eq_two_pi_mul_neg_cellEulerChar_add hmap hlf hdisj,
-    σ.natCard_idealVertexCycle_eq_zero, Nat.cast_zero, add_zero]
+    Nat.card_of_isEmpty (α := σ.IdealVertexCycle), Nat.cast_zero, add_zero]
 
 end TauCeti.UpperHalfPlane.ConvexPolygon.SidePairing
