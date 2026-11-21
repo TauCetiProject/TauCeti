@@ -44,7 +44,8 @@ and of the commutators of the `x_k` and the `uⱼ` with each other and with the 
   `G(d, ℤ^{m + n})` of the centralizer of `d` with the free group on the variables, by
   `zⱼ ↦ a(zⱼ) tⱼ` and `x_k ↦ a(x_k) t_{m+k}`, the image of `x₁` being corrected so that the product
   relation holds. This needs only `C = C_G(d)` and distinct variables
-  (`TauCeti.GroupAlgGeom.Quadratic.exists_leftInverse_gHom_systemGroup_commutativeSystem`). The
+  (`TauCeti.GroupAlgGeom.Quadratic.commutativeSystemEmbedding`,
+  `TauCeti.GroupAlgGeom.Quadratic.exists_leftInverse_commutativeSystemEmbedding`). The
   free product is discriminated by `G`
   (`TauCeti.LimitGroup.CentralizerExt.isDiscriminatedBy_inl_comp_of`), so the radical of the
   system is its normal closure
@@ -64,13 +65,18 @@ the variables of `S`. Over `G = ℤ`, the commutator `⁅y, g⁆` with a variabl
 
 * `TauCeti.GroupAlgGeom.Quadratic.commutativeSystem`: the system of [IFT], Theorem 2 (7), of a
   point `a`.
+* `TauCeti.GroupAlgGeom.Quadratic.commutativeSystemEmbedding`: when `C = C_G(d)`, the
+  `G`-homomorphism from the group of the system to `G(d, ℤ^{m + n}) ∗ F(X)` given by
+  `zⱼ ↦ a(zⱼ) tⱼ`, `x_k ↦ a(x_k) t_{m+k}` (corrected at `x₁`), and the identity on the other
+  variables.
 
 ## Main results
 
 * `TauCeti.GroupAlgGeom.Quadratic.mem_commutativeSystem_iff`: the relators of the system.
 * `TauCeti.GroupAlgGeom.Quadratic.mem_V_commutativeSystem_iff`: the solutions of the system.
-* `TauCeti.GroupAlgGeom.Quadratic.exists_leftInverse_gHom_systemGroup_commutativeSystem`: the
-  group of the system is a retract over `G` of `G(d, ℤ^{m + n}) ∗ F(X)` when `C = C_G(d)`.
+* `TauCeti.GroupAlgGeom.Quadratic.exists_leftInverse_commutativeSystemEmbedding`: the
+  embedding has a left inverse over `G`, so the group of the system is a retract over `G` of
+  `G(d, ℤ^{m + n}) ∗ F(X)` when `C = C_G(d)`.
 * `TauCeti.GroupAlgGeom.Quadratic.Rad_commutativeSystem_eq_normalClosure`: over a nonabelian
   fully residually free group, the radical of the system is its normal closure when
   `C = C_G(d)`.
@@ -567,19 +573,83 @@ private theorem exists_comp_eval_extPoint {H : Type*} [Group H] (inj : (Sum.elim
       simp [τ, letterVals]
   · simp [extPoint, Function.extend_apply' _ _ _ hy]
 
-/-- If the centralizer `C` of the system is the centralizer of `d`, the group of the system
-`commutativeSystem x z c a` is a retract over `G` of the free product `G(d, ℤ^{m + n}) ∗ F(X)` of
-the extension of the centralizer of `d` with the free group on the variables: there are
-`G`-homomorphisms `f` from the system group to `G(d, ℤ^{m + n}) ∗ F(X)` and `ψ` back with
-`ψ ∘ f = id`. In particular `f` embeds the system group over `G`. -/
-theorem exists_leftInverse_gHom_systemGroup_commutativeSystem (inj : (Sum.elim x z).Injective)
+/-- The element `(g, xExp m n k)` of `C_G(d) × ℤ^{m + n}` is `g t_{m+k}` in `G(d, ℤ^{m + n})`,
+times `(t_{m+1} ⋯ t_{m+n})⁻¹` for the first variable. -/
+private theorem ofProd_xExp {g : G} (hg : g ∈ centralizer {d}) (k : Fin n) :
+    (CentralizerExt.ofProd (⟨g, hg⟩, xExp m n k) : CentralizerExt d (m + n)) =
+      CentralizerExt.of g * CentralizerExt.t (Fin.natAdd m k) *
+        if (k : ℕ) = 0 then (List.ofFn fun l ↦ CentralizerExt.t (Fin.natAdd m l)).prod⁻¹
+        else 1 := by
+  rw [CentralizerExt.ofProd_apply, xExp, map_mul, zpowersPiHom_mulSingle, mul_assoc]
+  split_ifs
+  · rw [map_inv, ← List.prod_ofFn, map_list_prod, List.map_ofFn]
+    simp [Function.comp_def]
+  · simp
+
+/-- The `G`-homomorphism from the group of `commutativeSystem x z c a` to the free product
+`G(d, ℤ^{m + n}) ∗ F(X)` of the extension of the centralizer of `d` with the free group on the
+variables given by `zⱼ ↦ a(zⱼ) tⱼ`, `x_k ↦ a(x_k) t_{m+k}` for `k > 1`,
+`x₁ ↦ a(x₁) t_{m+1} (t_{m+1} ⋯ t_{m+n})⁻¹`, and every other variable to itself. It is defined when
+the variables `x_k`, `zⱼ` are distinct and the centralizer `C` of the system is the centralizer of
+`d`. It has a left inverse over `G` (`exists_leftInverse_commutativeSystemEmbedding`), so it embeds
+the group of the system. -/
+noncomputable def commutativeSystemEmbedding (inj : (Sum.elim x z).Injective)
     (hC : centralizer
       (Set.range (fun j ↦ (a (z j))⁻¹ * c j * a (z j)) ∪ Set.range fun k ↦ a (x k)) =
         centralizer {d}) :
-    ∃ (f : GHom (SystemGroup.coeff (commutativeSystem x z c a))
-        (inl.comp CentralizerExt.of : G →* GX (CentralizerExt d (m + n)) X))
-      (ψ : GHom (inl.comp CentralizerExt.of : G →* GX (CentralizerExt d (m + n)) X)
-        (SystemGroup.coeff (commutativeSystem x z c a))), Function.LeftInverse ψ f := by
+    GHom (SystemGroup.coeff (commutativeSystem x z c a))
+      (inl.comp CentralizerExt.of : G →* GX (CentralizerExt d (m + n)) X) :=
+  SystemGroup.evalGHom _ (mem_V_extPoint inj (mem_centralizer_of_centralizer_eq hC) hC)
+
+section Generators
+
+variable {inj : (Sum.elim x z).Injective}
+  {hC : centralizer
+    (Set.range (fun j ↦ (a (z j))⁻¹ * c j * a (z j)) ∪ Set.range fun k ↦ a (x k)) =
+      centralizer {d}}
+
+/-- `commutativeSystemEmbedding` sends `x_k` to `a(x_k) t_{m+k}`, times `(t_{m+1} ⋯ t_{m+n})⁻¹` for
+the first variable (the index `k : Fin n` starts at `0`). -/
+@[simp]
+theorem commutativeSystemEmbedding_mk_inr_of_x (k : Fin n) :
+    commutativeSystemEmbedding inj hC
+        ((inr (FreeGroup.of (x k)) : GX G X) : SystemGroup G (commutativeSystem x z c a)) =
+      inl (CentralizerExt.of (a (x k)) * CentralizerExt.t (Fin.natAdd m k) *
+        if (k : ℕ) = 0 then (List.ofFn fun l ↦ CentralizerExt.t (Fin.natAdd m l)).prod⁻¹
+        else 1) := by
+  rw [commutativeSystemEmbedding, SystemGroup.evalGHom_mk, eval_inr_of, extPoint_x inj, ofProd_xExp]
+
+/-- `commutativeSystemEmbedding` sends `zⱼ` to `a(zⱼ) tⱼ`. -/
+@[simp]
+theorem commutativeSystemEmbedding_mk_inr_of_z (j : Fin m) :
+    commutativeSystemEmbedding inj hC
+        ((inr (FreeGroup.of (z j)) : GX G X) : SystemGroup G (commutativeSystem x z c a)) =
+      inl (CentralizerExt.of (a (z j)) * CentralizerExt.t (Fin.castAdd n j)) := by
+  rw [commutativeSystemEmbedding, SystemGroup.evalGHom_mk, eval_inr_of, extPoint_z inj]
+
+/-- `commutativeSystemEmbedding` fixes every variable other than the `x_k` and the `zⱼ`. -/
+@[simp]
+theorem commutativeSystemEmbedding_mk_inr_of_of_forall_ne {y : X} (hx : ∀ k, x k ≠ y)
+    (hz : ∀ j, z j ≠ y) :
+    commutativeSystemEmbedding inj hC
+        ((inr (FreeGroup.of y) : GX G X) : SystemGroup G (commutativeSystem x z c a)) =
+      inr (FreeGroup.of y) := by
+  rw [commutativeSystemEmbedding, SystemGroup.evalGHom_mk, eval_inr_of, extPoint,
+    Function.extend_apply' _ _ _ (by rintro ⟨k | j, h⟩; exacts [hx k h, hz j h])]
+
+end Generators
+
+/-- If the centralizer `C` of the system is the centralizer of `d`, `commutativeSystemEmbedding`
+has a left inverse over `G`: the group of the system `commutativeSystem x z c a` is a retract over
+`G` of the free product `G(d, ℤ^{m + n}) ∗ F(X)` of the extension of the centralizer of `d` with
+the free group on the variables. -/
+theorem exists_leftInverse_commutativeSystemEmbedding (inj : (Sum.elim x z).Injective)
+    (hC : centralizer
+      (Set.range (fun j ↦ (a (z j))⁻¹ * c j * a (z j)) ∪ Set.range fun k ↦ a (x k)) =
+        centralizer {d}) :
+    ∃ ψ : GHom (inl.comp CentralizerExt.of : G →* GX (CentralizerExt d (m + n)) X)
+        (SystemGroup.coeff (commutativeSystem x z c a)),
+      Function.LeftInverse ψ (commutativeSystemEmbedding inj hC) := by
   set T := commutativeSystem x z c a
   have hs := mem_centralizer_of_centralizer_eq hC
   -- The generic point of `G_T` solves `T`, so it factors through `extPoint`.
@@ -589,11 +659,20 @@ theorem exists_leftInverse_gHom_systemGroup_commutativeSystem (inj : (Sum.elim x
   obtain ⟨ψ, hψ⟩ := exists_comp_eval_extPoint inj hs hC (v := ξ) <| mem_V.2 fun t ht ↦ by
     rw [hξ, QuotientGroup.mk'_apply, QuotientGroup.eq_one_iff]
     exact subset_normalClosure ht
-  refine ⟨SystemGroup.evalGHom _ (mem_V_extPoint inj hs hC), ⟨ψ, fun g ↦ ?_⟩, fun w ↦ ?_⟩
+  refine ⟨⟨ψ, fun g ↦ ?_⟩, fun w ↦ ?_⟩
   · simpa using DFunLike.congr_fun hψ (inl g)
   · obtain ⟨w, rfl⟩ := QuotientGroup.mk_surjective w
-    rw [SystemGroup.evalGHom_mk, GHom.coe_mk]
+    rw [commutativeSystemEmbedding, SystemGroup.evalGHom_mk, GHom.coe_mk]
     simpa [hξ] using DFunLike.congr_fun hψ w
+
+/-- If the centralizer `C` of the system is the centralizer of `d`, `commutativeSystemEmbedding`
+is injective. -/
+theorem commutativeSystemEmbedding_injective (inj : (Sum.elim x z).Injective)
+    (hC : centralizer
+      (Set.range (fun j ↦ (a (z j))⁻¹ * c j * a (z j)) ∪ Set.range fun k ↦ a (x k)) =
+        centralizer {d}) :
+    Function.Injective (commutativeSystemEmbedding inj hC) :=
+  (exists_leftInverse_commutativeSystemEmbedding inj hC).choose_spec.injective
 
 /-! ### The radical -/
 
@@ -606,11 +685,10 @@ theorem Rad_commutativeSystem_eq_normalClosure (hG : IsFullyResiduallyFree G)
     (hC : centralizer
       (Set.range (fun j ↦ (a (z j))⁻¹ * c j * a (z j)) ∪ Set.range fun k ↦ a (x k)) =
         centralizer {d}) :
-    Rad (.id G) (commutativeSystem x z c a) = normalClosure (commutativeSystem x z c a) := by
-  obtain ⟨f, _, hf⟩ := exists_leftInverse_gHom_systemGroup_commutativeSystem inj hC
-  exact (SystemGroup.isSeparatedBy_coeff_iff _).1
-    ((CentralizerExt.isDiscriminatedBy_inl_comp_of hG hna hd).isSeparatedBy.of_injective f
-      hf.injective)
+    Rad (.id G) (commutativeSystem x z c a) = normalClosure (commutativeSystem x z c a) :=
+  (SystemGroup.isSeparatedBy_coeff_iff _).1
+    ((CentralizerExt.isDiscriminatedBy_inl_comp_of hG hna hd).isSeparatedBy.of_injective _
+      (commutativeSystemEmbedding_injective inj hC))
 
 namespace Standard
 
