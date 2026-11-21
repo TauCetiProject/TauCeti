@@ -7,7 +7,9 @@ module
 
 public import TauCeti.AlgebraicTopology.Cohomology.Cap.Kronecker
 public import TauCeti.AlgebraicTopology.Cohomology.Cup.Pullback
+import Mathlib.Algebra.Category.ModuleCat.EnoughInjectives
 import TauCeti.AlgebraicTopology.Cohomology.UniversalCoefficient.Field
+import TauCeti.CategoryTheory.Preadditive.Injective.Basic
 
 /-!
 # The relative cap product followed by push-forward
@@ -30,7 +32,13 @@ bijectivity of `p₀_*(- ⌢ u)` on `K`-homology is equivalent to that of `p₀^
 `K`-cohomology (`TopPair.bijective_pushforwardCap_iff`). Over any commutative ring `K`, when the
 Kronecker maps of `Y` in degree `p` and of `(X, Z)` in degree `m` are bijective, invertibility
 of `p₀_*(- ⌢ u)` yields bijectivity of `TopPair.pullbackCup` for `M`
-(`TopPair.bijective_pullbackCup_of_isIso_pushforwardCap`).
+(`TopPair.bijective_pullbackCup_of_isIso_pushforwardCap`). Conversely, over any commutative ring,
+if `p₀^*(-) ⌣ u` is bijective with coefficients in every injective `K`-module, then `p₀_*(- ⌢ u)` is
+an isomorphism on `K`-homology (`TopPair.isIso_pushforwardCap_of_bijective_pullbackCup`): for
+injective coefficients the Kronecker maps are bijective, so precomposition with `p₀_*(- ⌢ u)` is
+bijective on morphisms into every injective module, and injective modules detect isomorphisms
+(`CategoryTheory.Injective.isCoseparating_isInjective` and
+`CategoryTheory.ObjectProperty.IsCoseparating.isCodetecting`).
 
 ## Main definitions and results
 
@@ -40,6 +48,8 @@ of `p₀_*(- ⌢ u)` yields bijectivity of `TopPair.pullbackCup` for `M`
 * `TopPair.bijective_pullbackCup_of_isIso_pushforwardCap`: duality transferring invertibility of
   `pushforwardCap` to bijectivity of `pullbackCup` when the Kronecker maps in degrees `p` and `m`
   are bijective.
+* `TopPair.isIso_pushforwardCap_of_bijective_pullbackCup`: over any commutative ring, bijectivity
+  of `pullbackCup` for all injective coefficient modules makes `pushforwardCap` an isomorphism.
 
 ## References
 
@@ -160,6 +170,37 @@ theorem bijective_pullbackCup_of_isIso_pushforwardCap {K : Type w} [CommRing K] 
   rw [hcomp]
   exact eP.symm.bijective.comp (((isUnit_neg_one.pow (n * p)).smul_bijective.comp
     (Linear.homCongr K T.symm (Iso.refl M)).bijective).comp eY.bijective)
+
+/-- **Cohomology with injective coefficients detects the homology map** `x ↦ p₀_*(x ⌢ u)`: over a
+commutative ring `K`, if `TopPair.pullbackCup` in degree `p` (`p + n = m`) is bijective with
+coefficients in every injective `K`-module `M`, then `TopPair.pushforwardCap` with coefficients
+in `K` is an isomorphism `Hₘ(X, Z; K) ≅ Hₚ(Y; K)` in `ModuleCat K`. No hypothesis on `K` or on
+the homology is needed, unlike the field case `TopPair.bijective_pushforwardCap_iff`. -/
+theorem isIso_pushforwardCap_of_bijective_pullbackCup {K : Type w} [CommRing K] (P : TopPair.{w})
+    {Y : TopCat.{w}} (p₀ : P.fst ⟶ Y) {n p m : ℕ} (h : n + p = m)
+    (u : P.singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n)
+    (hu : ∀ (M : ModuleCat.{w} K) [Injective M],
+      Function.Bijective (P.pullbackCup M p₀ n p m (by omega) u)) :
+    IsIso (P.pushforwardCap p₀ (ModuleCat.of K K) n p m h u) := by
+  refine (Injective.isCoseparating_isInjective (C := ModuleCat.{w} K)).isCodetecting _
+    fun M _ ↦ Function.Bijective.existsUnique ?_
+  -- With injective coefficients both Kronecker maps are bijective.
+  let eY := Y.singularKroneckerEquiv (R := ModuleCat.of K K) (M := M) K p
+  have hP : Function.Bijective (P.singularKronecker (R := ModuleCat.of K K) (M := M) K m) := by
+    rw [TopPair.singularKronecker_def]
+    exact TauCeti.ChainComplex.kronecker_bijective m
+  -- Through them, precomposition with `p₀_*(- ⌢ u)` is `±` the cup map `p₀^*(-) ⌣ u`.
+  have hcomp : CategoryStruct.comp (P.pushforwardCap p₀ (ModuleCat.of K K) n p m h u) =
+      (fun ψ ↦ ((-1 : ℤ) ^ (n * p)) • ψ) ∘ ⇑(P.singularKronecker K m) ∘
+        ⇑(P.pullbackCup M p₀ n p m (by omega) u) ∘ ⇑eY.symm := by
+    funext g
+    obtain ⟨a, rfl⟩ := eY.surjective g
+    simp only [Function.comp_apply, LinearEquiv.symm_apply_apply]
+    rw [TopCat.singularKroneckerEquiv_apply]
+    exact P.pushforwardCap_comp_singularKronecker p₀ h u a
+  rw [hcomp]
+  exact (isUnit_neg_one.pow (n * p)).smul_bijective.comp
+    (hP.comp ((hu M).comp eY.symm.bijective))
 
 end TopPair
 

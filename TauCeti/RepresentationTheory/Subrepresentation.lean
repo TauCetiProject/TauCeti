@@ -88,6 +88,7 @@ irreducibility, as does restriction along a monoid isomorphism.
 * `Subrepresentation.isIntertwiningMap_dualRestrict`
 * `Subrepresentation.coe_toRepresentation_asAlgebraHom_apply`
 * `Subrepresentation.asModuleEquivAsSubmodule`
+* `Subrepresentation.intertwiningMapEquivLinearMapAsSubmodule`
 * `Subrepresentation.isSimpleModule_asSubmodule_iff`
 * `Subrepresentation.equivProdOfIsCompl`
 * `Subrepresentation.isIntertwiningMap_projectionOnto`
@@ -281,6 +282,24 @@ theorem coe_asModuleEquivAsSubmodule_symm_apply (σ : Subrepresentation ρ)
       _root_.Representation.asModuleEquiv ρ x.val := by
   exact (coe_asModuleEquivAsSubmodule_apply σ (σ.asModuleEquivAsSubmodule.symm x)).symm.trans
     (congrArg Subtype.val (σ.asModuleEquivAsSubmodule.apply_symm_apply x))
+
+/-- **Intertwining maps out of a subrepresentation are module maps out of its submodule**: the
+`A[G]`-linear maps out of `σ.asSubmodule`, read through `Subrepresentation.asModuleEquivAsSubmodule`
+and `Representation.IntertwiningMap.equivLinearMapAsModule`. -/
+noncomputable def intertwiningMapEquivLinearMapAsSubmodule (σ : Subrepresentation ρ)
+    {U : Type*} [AddCommMonoid U] [Module A U] (τ : Representation A G U) :
+    Representation.IntertwiningMap σ.toRepresentation τ ≃ₗ[A] (σ.asSubmodule →ₗ[A[G]] τ.asModule) :=
+  (Representation.IntertwiningMap.equivLinearMapAsModule _ τ).trans
+    (LinearEquiv.congrLeft _ A σ.asModuleEquivAsSubmodule)
+
+@[simp]
+theorem intertwiningMapEquivLinearMapAsSubmodule_apply (σ : Subrepresentation ρ)
+    {U : Type*} [AddCommMonoid U] [Module A U] (τ : Representation A G U)
+    (f : Representation.IntertwiningMap σ.toRepresentation τ) (x : σ.asSubmodule) :
+    σ.intertwiningMapEquivLinearMapAsSubmodule τ f x =
+      Representation.IntertwiningMap.equivLinearMapAsModule _ τ f
+        (σ.asModuleEquivAsSubmodule.symm x) :=
+  (rfl)
 
 end AsSubmoduleEquiv
 
