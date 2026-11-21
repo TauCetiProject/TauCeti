@@ -9,6 +9,10 @@ public import Mathlib.Algebra.Module.LinearMap.FiniteRange
 public import Mathlib.Analysis.Normed.Operator.NormedSpace
 public import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 public import Mathlib.Topology.UniformSpace.Ascoli
+public import Mathlib.Analysis.Convex.Basic
+public import Mathlib.Analysis.RCLike.Basic
+import TauCeti.Analysis.Convex.TotallyBounded
+import TauCeti.Analysis.Normed.Module.Convex
 
 /-!
 # Approximation properties of normed spaces
@@ -22,6 +26,12 @@ A uniformly bounded net of finite-rank operators converging pointwise to the ide
 bounded approximation property. The compact-uniform convergence needed here follows from
 Mathlib's equicontinuity criterion for bounded families of operators and its Ascoli theorem.
 This criterion applies to finite projections of Schauder bases.
+
+Over `ℝ` or `ℂ`, the finite-rank operators of norm at most `r` form a real-convex set
+(`TauCeti.convex_setOf_hasFiniteRange_norm_le`). By Grothendieck's compactness lemma, every totally
+bounded set lies in the closed convex hull of a null sequence, so approximating the identity
+uniformly along null sequences by operators from any family approximates it on totally bounded
+sets (`TauCeti.exists_mem_forall_norm_sub_lt_of_forall_tendsto_zero`).
 
 Finite rank is Mathlib's `LinearMap.HasFiniteRange`, meaning finitely generated range, which
 over a field is equivalent to finite-dimensional range.
@@ -141,5 +151,46 @@ theorem hasMetricApproximationProperty_of_finiteDimensional [FiniteDimensional �
   intro K _ ε hε
   exact ⟨ContinuousLinearMap.id 𝕜 E, .of_finite_dom, ContinuousLinearMap.norm_id_le,
     fun x _ => by simpa using hε⟩
+
+section RCLike
+
+variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- The finite-rank operators of norm at most `r` form a real-convex set. -/
+theorem convex_setOf_hasFiniteRange_norm_le [NormedSpace ℝ F] [IsScalarTower ℝ 𝕜 F] (r : ℝ) :
+    Convex ℝ {T : E →L[𝕜] F | T.toLinearMap.HasFiniteRange ∧ ‖T‖ ≤ r} := by
+  rintro T ⟨hT, hTr⟩ S ⟨hS, hSr⟩ a b ha hb hab
+  refine ⟨?_, ?_⟩
+  · rw [RCLike.real_smul_eq_coe_smul (K := 𝕜) a T, RCLike.real_smul_eq_coe_smul (K := 𝕜) b S,
+      ContinuousLinearMap.toLinearMap_add, ContinuousLinearMap.toLinearMap_smul,
+      ContinuousLinearMap.toLinearMap_smul]
+    exact (hT.smul _).add (hS.smul _)
+  · calc ‖a • T + b • S‖ ≤ a * ‖T‖ + b * ‖S‖ := by
+          refine (norm_add_le _ _).trans ?_
+          rw [norm_smul, norm_smul, Real.norm_of_nonneg ha, Real.norm_of_nonneg hb]
+      _ ≤ a * r + b * r := by gcongr
+      _ = r := by rw [← add_mul, hab, one_mul]
+
+/-- If every null sequence `x` admits, for each `δ > 0`, an operator `R ∈ P` within `δ` of the
+identity uniformly along `x`, then for every totally bounded set `K` and `ε > 0` some `R ∈ P` is
+within `ε` of the identity uniformly on `K`. By Grothendieck's compactness lemma, `K` lies in the
+closed convex hull of a null sequence. -/
+theorem exists_mem_forall_norm_sub_lt_of_forall_tendsto_zero {P : Set (E →L[𝕜] E)}
+    (h : ∀ x : ℕ → E, Tendsto x atTop (𝓝 0) → ∀ δ > (0 : ℝ),
+      ∃ R ∈ P, ∀ n, ‖R (x n) - x n‖ < δ)
+    {K : Set E} (hK : TotallyBounded K) {ε : ℝ} (hε : 0 < ε) :
+    ∃ R ∈ P, ∀ z ∈ K, ‖R z - z‖ < ε := by
+  let : NormedSpace ℝ E := .restrictScalars ℝ 𝕜 E
+  have : IsScalarTower ℝ 𝕜 E := .restrictScalars ℝ 𝕜 E
+  obtain ⟨x, hx, hKx⟩ := hK.exists_tendsto_zero_subset_closure_convexHull
+  obtain ⟨R, hR, hRx⟩ := h x hx _ (half_pos hε)
+  refine ⟨R, hR, fun z hz ↦ ?_⟩
+  have hle : ‖(R - ContinuousLinearMap.id 𝕜 E) z‖ ≤ ε / 2 :=
+    (R - ContinuousLinearMap.id 𝕜 E).norm_le_of_mem_closure_convexHull
+      (by rintro _ ⟨n, rfl⟩; exact (hRx n).le) (hKx hz)
+  simpa using hle.trans_lt (half_lt_self hε)
+
+end RCLike
 
 end TauCeti
