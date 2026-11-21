@@ -7,8 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.Normed.Operator.Compact.Basic
-import Mathlib.Analysis.InnerProductSpace.l2Space
-import TauCeti.Analysis.InnerProductSpace.OrthogonalFamily
+import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Dimension
 import TauCeti.Analysis.Normed.Operator.Compact.Finite.Rank
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.IdempotentRange
 
@@ -53,19 +52,9 @@ theorem IsIdempotentElem.exists_linearIsometry_mul_eq_and_star_mul_mul_eq_one [S
     (ContinuousLinearMap.IsIdempotentElem.isClosed_range hp).completeSpace_coe
   have hinf : ¬ FiniteDimensional 𝕜 p.range := fun _ ↦
     hnc (LinearMap.HasFiniteRange.isCompactOperator Submodule.FG.of_finite)
-  obtain ⟨w₁, b₁, -⟩ := exists_hilbertBasis 𝕜 p.range
-  have : Infinite w₁ := not_finite_iff_infinite.mp fun hfin ↦ by
-    have := Fintype.ofFinite w₁
-    exact hinf b₁.toOrthonormalBasis.toBasis.finiteDimensional_of_finite
-  obtain ⟨w₂, b₂, -⟩ := exists_hilbertBasis 𝕜 H
-  have : Countable w₂ := b₂.orthonormal.countable
-  obtain ⟨f₂, hf₂⟩ := exists_injective_nat w₂
-  -- Embed the countable Hilbert basis of `H` into the infinite Hilbert basis of `p.range`.
-  let φ : w₂ → w₁ := Infinite.natEmbedding w₁ ∘ f₂
-  have hφ : Function.Injective φ := (Infinite.natEmbedding w₁).injective.comp hf₂
-  have hu : Orthonormal 𝕜 (b₁ ∘ φ) := b₁.orthonormal.comp φ hφ
-  let v : H →ₗᵢ[𝕜] H :=
-    p.range.subtypeₗᵢ.comp (hu.orthogonalFamily.linearIsometry.comp b₂.repr.toLinearIsometry)
+  obtain ⟨e⟩ := TauCeti.nonempty_linearIsometryEquiv_of_separableSpace_of_not_finiteDimensional
+    (𝕜 := 𝕜) (E := H) (F := p.range) (fun _ ↦ hinf inferInstance) hinf
+  let v : H →ₗᵢ[𝕜] H := p.range.subtypeₗᵢ.comp e.toLinearIsometry
   have hpv : p * v.toContinuousLinearMap = v.toContinuousLinearMap := by
     ext x
     simp [v, ContinuousLinearMap.IsIdempotentElem.apply_coe_range hp]

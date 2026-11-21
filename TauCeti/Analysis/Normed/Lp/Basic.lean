@@ -286,10 +286,13 @@ theorem linearIndependent_single {κ : ι → Type*} (v : ∀ i, κ i → E i)
 /-- The scalar coordinate vectors in `lp` are linearly independent. -/
 theorem linearIndependent_single_one :
     LinearIndependent 𝕜 (fun i : ι ↦ lp.single p i (1 : 𝕜)) := by
-  rw [← linearIndependent_equiv (Equiv.sigmaPUnit ι)]
-  exact linearIndependent_single (fun (_ : ι) (_ : Unit) ↦ (1 : 𝕜)) fun _ ↦
-    Fintype.linearIndependent_iff.mpr fun g hg _ ↦ by
-      simpa only [Fintype.sum_unique, smul_eq_mul, mul_one] using hg
+  apply LinearIndependent.of_comp (lpSubmodule 𝕜 (fun _ : ι ↦ 𝕜) p).subtype
+  have hcoe : (lpSubmodule 𝕜 (fun _ : ι ↦ 𝕜) p).subtype ∘
+      (fun i : ι ↦ lp.single p i (1 : 𝕜)) = fun i ↦ Pi.single i (1 : 𝕜) := by
+    funext i
+    exact lp.coeFn_single p i 1
+  rw [hcoe]
+  exact Pi.linearIndependent_single_one ι 𝕜
 
 /-- A vector in the span of a family of coordinate vectors vanishes outside their indices. -/
 theorem apply_eq_zero_of_mem_span_single {κ : Type*} (f : κ → ι) {x : ℓ^p(ι, 𝕜)}

@@ -252,21 +252,3 @@ theorem finCons_of_inner_eq_zero {n : ℕ} {p : E} (hp : p ≠ 0) {v : Fin n →
   exact inner_self_eq_zero.1 (Submodule.mem_orthogonal_singleton_iff_inner_right.1 (hle hmem))
 
 end LinearIndependent
-
-namespace Orthonormal
-
-variable {𝕜 E ι : Type*} [RCLike 𝕜] [SeminormedAddCommGroup E] [InnerProductSpace 𝕜 E]
-
-/-- An orthonormal family in a separable inner product space has a countable index type. -/
-theorem countable [TopologicalSpace.SeparableSpace E] {v : ι → E} (hv : Orthonormal 𝕜 v) :
-    Countable ι := by
-  refine Pairwise.countable_of_isOpen_disjoint (s := fun i ↦ Metric.ball (v i) (1 / 2))
-    ?_ (fun _ ↦ Metric.isOpen_ball) (fun i ↦ ⟨v i, Metric.mem_ball_self (by norm_num)⟩)
-  intro i j hij
-  refine Metric.ball_disjoint_ball ?_
-  have hsq : dist (v i) (v j) ^ 2 = 2 := by
-    rw [dist_eq_norm, norm_sub_sq (𝕜 := 𝕜), hv.1 i, hv.1 j, hv.2 hij, map_zero]
-    norm_num
-  nlinarith [dist_nonneg (x := v i) (y := v j)]
-
-end Orthonormal

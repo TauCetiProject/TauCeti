@@ -10,7 +10,7 @@ public import Mathlib.RingTheory.TwoSidedIdeal.Instances
 public import TauCeti.Analysis.InnerProductSpace.RankOne
 import Mathlib.Analysis.Normed.Module.HahnBanach
 import Mathlib.RingTheory.TwoSidedIdeal.Lattice
-import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Basic
+import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Dimension
 import TauCeti.Analysis.Normed.Operator.Compact.Orthonormal
 import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Schmidt
 
@@ -270,29 +270,13 @@ theorem mem_separableRangeIdeal_iff_separableSpace {f : E →L[𝕜] E} :
 theorem isClosed_separableRangeIdeal :
     IsClosed (separableRangeIdeal 𝕜 E : Set (E →L[𝕜] E)) := by
   refine isClosed_of_closure_subset fun f hf ↦ mem_separableRangeIdeal.mpr ?_
-  have hex : ∀ n : ℕ, ∃ g ∈ separableRangeIdeal 𝕜 E, dist f g < 1 / (n + 1 : ℝ) := fun n ↦
-    Metric.mem_closure_iff.mp hf (1 / (n + 1 : ℝ)) (by positivity)
-  choose g hg hdist using hex
-  -- Approximate `f x` by `g n x` inside `⋃ n, Set.range (g n)`.
+  obtain ⟨g, hg, hlim⟩ := mem_closure_iff_seq_limit.mp hf
   have hsep : IsSeparable (closure (⋃ n : ℕ, Set.range (g n))) :=
     (IsSeparable.iUnion fun n ↦ mem_separableRangeIdeal.mp (hg n)).closure
   refine hsep.mono ?_
   rintro _ ⟨x, rfl⟩
-  rw [Metric.mem_closure_iff]
-  intro ε hε
-  obtain ⟨n, hn⟩ := exists_nat_gt (‖x‖ / ε)
-  refine ⟨g n x, Set.mem_iUnion.mpr ⟨n, x, rfl⟩, ?_⟩
-  have hn1 : (0 : ℝ) < n + 1 := by positivity
-  calc dist (f x) (g n x) = ‖(f - g n) x‖ := dist_eq_norm (f x) (g n x)
-    _ ≤ ‖f - g n‖ * ‖x‖ := le_opNorm (f - g n) x
-    _ ≤ (1 / (n + 1 : ℝ)) * ‖x‖ := by
-      gcongr
-      rw [← dist_eq_norm]
-      exact (hdist n).le
-    _ < ε := by
-      rw [one_div_mul_eq_div, div_lt_iff₀ hn1]
-      have hlt : ‖x‖ < ε * n := (div_lt_iff₀' hε).mp hn
-      linarith
+  exact mem_closure_of_tendsto ((ContinuousLinearMap.apply 𝕜 E x).continuous.tendsto f |>.comp hlim)
+    (Eventually.of_forall fun n ↦ Set.mem_iUnion.mpr ⟨n, x, rfl⟩)
 
 /-- Typeclass witness that `separableRangeIdeal` is closed on a seminormed space. -/
 instance instIsClosedSeparableRangeIdeal :
@@ -411,7 +395,7 @@ theorem ContinuousLinearMap.compactIdeal_lt_separableRangeIdeal (hH : ¬ Separab
     compactIdeal 𝕜 H < separableRangeIdeal 𝕜 H := by
   refine lt_of_le_of_ne compactIdeal_le_separableRangeIdeal fun heq ↦ ?_
   obtain ⟨w, b, -⟩ := exists_hilbertBasis 𝕜 H
-  have hnot_count : ¬ Countable w := fun _ ↦ hH b.separableSpace
+  have hnot_count : ¬ Countable w := fun _ ↦ hH (b.separableSpace_iff_countable.mpr ‹Countable w›)
   have : Infinite w := not_finite_iff_infinite.mp fun _ ↦ hnot_count inferInstance
   let e := Infinite.natEmbedding w
   let v : ℕ → H := fun n ↦ b (e n)

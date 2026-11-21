@@ -26,7 +26,8 @@ norm-closed two-sided ideal of `H →L[ℂ] H`, hence a nonunital C⋆-algebra o
 `TwoSidedIdeal.nonUnitalCStarAlgebra`, and `CalkinAlgebra H` is a unital C⋆-algebra with canonical
 quotient `⋆`-homomorphism `CalkinAlgebra.mk` and essential-norm formula `CalkinAlgebra.norm_mk_eq`.
 
-Combining the closed-ideal `star a * a` criterion (`TauCeti.Analysis.CStarAlgebra.Quotient`),
+Combining the closed-ideal `star a * a` criterion (`TauCeti.Analysis.CStarAlgebra.Hereditary.Ideal`)
+and self-adjoint separation (`TauCeti.Analysis.CStarAlgebra.Quotient`),
 spectral cutoffs of normal operators (`TauCeti.Analysis.InnerProductSpace.BorelCalculus.Cutoff`),
 noncompact-idempotent factorization (`TauCeti.Analysis.Normed.Operator.Compact.Idempotent`),
 the compact-operator and separable-range ideals (`TauCeti.Analysis.Normed.Operator.Compact.Ideal`),
@@ -48,9 +49,8 @@ and the Banach-ring simplicity criterion (`TauCeti.Analysis.Normed.Ring.Simple`)
   `SeparableSpace H`.
 * `TauCeti.CalkinAlgebra`: the quotient `(H →L[ℂ] H) ⧸ ContinuousLinearMap.compactIdeal ℂ H`, with
   quotient projection `TauCeti.CalkinAlgebra.mk`, its characterization lemmas
-  (`TauCeti.CalkinAlgebra.mk_eq_zero_iff`, `TauCeti.CalkinAlgebra.mk_eq_mk_iff`,
-  `TauCeti.CalkinAlgebra.mk_surjective`, `TauCeti.CalkinAlgebra.ker_mk`), and essential-norm
-  formula `TauCeti.CalkinAlgebra.norm_mk_eq`.
+  (`TauCeti.CalkinAlgebra.mk_eq_zero_iff`, `TauCeti.CalkinAlgebra.mk_eq_mk_iff`), and
+  essential-norm formula `TauCeti.CalkinAlgebra.norm_mk_eq`.
 * `TauCeti.CalkinAlgebra.subsingleton_iff_finiteDimensional`,
   `TauCeti.CalkinAlgebra.nontrivial_iff_not_finiteDimensional`,
   `TauCeti.CalkinAlgebra.eq_bot_or_eq_top_of_isClosed`,
@@ -70,7 +70,7 @@ and the Banach-ring simplicity criterion (`TauCeti.Analysis.Normed.Ring.Simple`)
 public noncomputable section
 
 open TopologicalSpace
-open scoped lp
+open scoped CStarAlgebra lp
 
 namespace ContinuousLinearMap
 
@@ -192,16 +192,6 @@ theorem mk_eq_mk_iff {S T : H →L[ℂ] H} : mk S = mk T ↔ IsCompactOperator (
     TwoSidedIdeal.Quotient.mkUnitalStarAlgHom_apply, TwoSidedIdeal.Quotient.eq,
     ContinuousLinearMap.mem_compactIdeal]
 
-/-- The Calkin quotient homomorphism `CalkinAlgebra.mk` is surjective. -/
-theorem mk_surjective : Function.Surjective (mk (H := H)) :=
-  TwoSidedIdeal.Quotient.mkUnitalStarAlgHom_surjective _
-
--- Not `@[simp]`: since `mk` is an `abbrev`, `simp` already reduces `TwoSidedIdeal.ker mk` via
--- `TwoSidedIdeal.Quotient.ker_mkUnitalStarAlgHom`.
-/-- The kernel of `CalkinAlgebra.mk` is `ContinuousLinearMap.compactIdeal ℂ H`. -/
-theorem ker_mk : TwoSidedIdeal.ker (mk (H := H)) = ContinuousLinearMap.compactIdeal ℂ H :=
-  TwoSidedIdeal.Quotient.ker_mkUnitalStarAlgHom _
-
 /-- **Essential norm formula.** The norm of `mk T` in `CalkinAlgebra H` is the infimum of
 `‖T + K‖` over all compact operators `K : H →L[ℂ] H`. -/
 theorem norm_mk_eq (T : H →L[ℂ] H) :
@@ -220,16 +210,19 @@ theorem eq_bot_or_eq_top_of_isClosed [SeparableSpace H] (J : TwoSidedIdeal (Calk
     Set.ext hmemI
   have hI_closed : IsClosed (I : Set (H →L[ℂ] H)) := by
     rw [hI_set]
-    exact hJ.preimage (by fun_prop)
+    refine hJ.preimage ?_
+    simpa only [TwoSidedIdeal.Quotient.coe_mkUnitalStarAlgHom,
+      ← TwoSidedIdeal.Quotient.coe_mkStarAlgHom] using
+      map_continuous (TwoSidedIdeal.Quotient.mkStarAlgHom (ContinuousLinearMap.compactIdeal ℂ H))
   rcases ContinuousLinearMap.eq_bot_or_eq_compactIdeal_or_eq_top_of_isClosed hI_closed with
     hbot | hcpt | htop
   · refine Or.inl (le_bot_iff.mp fun x hx ↦ ?_)
-    obtain ⟨a, rfl⟩ := mk_surjective x
+    obtain ⟨a, rfl⟩ := TwoSidedIdeal.Quotient.mkUnitalStarAlgHom_surjective _ x
     have ha : a ∈ (⊥ : TwoSidedIdeal (H →L[ℂ] H)) := hbot ▸ (hmemI a).mpr hx
     rw [TwoSidedIdeal.mem_bot] at ha ⊢
     rw [ha, map_zero]
   · refine Or.inl (le_bot_iff.mp fun x hx ↦ ?_)
-    obtain ⟨a, rfl⟩ := mk_surjective x
+    obtain ⟨a, rfl⟩ := TwoSidedIdeal.Quotient.mkUnitalStarAlgHom_surjective _ x
     have ha : a ∈ ContinuousLinearMap.compactIdeal ℂ H := hcpt ▸ (hmemI a).mpr hx
     rw [TwoSidedIdeal.mem_bot, mk_eq_zero_iff]
     exact ContinuousLinearMap.mem_compactIdeal.mp ha
