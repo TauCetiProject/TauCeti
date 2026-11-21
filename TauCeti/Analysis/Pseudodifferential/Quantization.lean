@@ -77,6 +77,8 @@ frequency derivative of its Fourier transform.
   `TauCeti.Symbol.HasCompactSpatialSupport.memLp_quantizeSchwartzValue`: for a symbol
   `a : TauCeti.Symbol n V W m`, `Op(a) u` is continuous, and if `a` has compact spatial support
   then so does `Op(a) u`, which therefore lies in every `Lᵖ`.
+* `TauCeti.Symbol.quantizeSchwartzValue_ofSpatial_comp`: composing a symbol on the left with a
+  smooth operator-valued function `f` of the position composes its quantization with `f`.
 * `TauCeti.Symbol.quantizeSchwartzValue_smulLeft`: multiplying a symbol by a smooth function `ψ`
   of the position multiplies its quantization by `ψ`, `Op(ψ a) u = ψ Op(a) u`.
 * `TauCeti.differentiable_quantizeSchwartzValue` and
@@ -924,6 +926,22 @@ theorem quantizeSchwartzValue_sum_left {ι : Type*} (s : Finset ι) (a : ι → 
   | insert i s hi ih =>
     rw [Finset.sum_insert hi, Finset.sum_insert hi, coefficient_add,
       quantizeSchwartzValue_coefficient_add, ih]
+
+open scoped ContDiff in
+/-- Composing a symbol on the left with a smooth operator-valued function `f` of the position
+before quantizing composes the quantization with `f`: `Op(f(x) a(x, ξ)) u = f (Op(a) u)`. -/
+theorem quantizeSchwartzValue_ofSpatial_comp [CompleteSpace W] {U : Type*}
+    [NormedAddCommGroup U] [NormedSpace ℂ U] [CompleteSpace U]
+    {f : CoordinateSpace n → W →L[ℂ] U} (hf : ContDiff ℝ ∞ f) (a : Symbol n V W m)
+    (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
+    quantizeSchwartzValue ((ofSpatial f hf).comp a).coefficient u x =
+      f x (quantizeSchwartzValue a.coefficient u x) := by
+  obtain ⟨C, -, hC⟩ := a.exists_bound_coefficient_slice x
+  rw [quantizeSchwartzValue_def, quantizeSchwartzValue_def, ← (f x).integral_comp_comm
+    (integrable_quantizeSchwartzValue_integrand
+      (a.continuous_coefficient_slice x).aestronglyMeasurable hC (𝓕 u))]
+  simp only [coefficient_comp, coefficient_ofSpatial, ContinuousLinearMap.comp_apply,
+    Circle.smul_def, map_smul]
 
 open scoped ContDiff in
 /-- **Multiplication by a smooth function of the position.** The quantization of the symbol

@@ -96,7 +96,7 @@ lemma IsFredholm.of_prodMap_left (h : IsFredholm (T.prodMap S)) : IsFredholm T :
       LinearMap.fst_surjective
   · obtain ⟨P, hP⟩ := h.closedComplemented_ker
     have hmem (x : E₁) : (P (x, 0) : E₁ × E₂).1 ∈ T.ker :=
-      congr($(LinearMap.mem_ker.mp (P (x, 0)).2).1)
+      congr($(LinearMap.mem_ker.mp (P (x, 0)).property).1)
     refine ⟨((fst K E₁ E₂).comp ((Submodule.subtypeL _).comp (P.comp (inl K E₁ E₂)))).codRestrict
       _ hmem, fun x ↦ Subtype.ext ?_⟩
     have hx : ((x : E₁), (0 : E₂)) ∈ (T.prodMap S : E₁ × E₂ →ₗ[K] F₁ × F₂).ker := by

@@ -120,7 +120,7 @@ theorem ofHomotopyGroup_surjective [PathConnectedSpace X] (x : X) :
   intro γ
   induction γ using QuotientAddGroup.induction_on with
   | H s =>
-    obtain ⟨a, ha⟩ := (mem_sphericalClasses_iff x).1 s.2
+    obtain ⟨a, ha⟩ := (mem_sphericalClasses_iff x).1 s.property
     exact ⟨a, congrArg _ (Subtype.ext ha)⟩
 
 /-- **The period group is trivial exactly when `ω` and `c` vanish on all spheres**, as they do for
@@ -134,7 +134,7 @@ theorem subsingleton_iff :
   -- The joint kernel of `ω` and `c` contains every Hurewicz class, hence every spherical class.
   have hle : sphericalClasses X 1 ≤ (ω.prod c).ker :=
     sphericalClasses_le_iff.2 fun x a ↦ by simpa using h x a
-  simpa using hle s.2
+  simpa using hle s.property
 
 /-- **If every sphere is null-homotopic, the period group is trivial**, whatever `ω` and `c`
 are. -/

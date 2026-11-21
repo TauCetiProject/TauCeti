@@ -114,7 +114,7 @@ theorem Ear.isVertexConnected_two_adjoin (hH : H.coe.IsVertexConnected 2) {e : G
     have hHK : H ≤ K := e₀.le_adjoin
     have hpK : p.toSubgraph ≤ K :=
       (Ear.toSubgraph_open p hp hu hv huv hint hedge) ▸ e₀.toSubgraph_le_adjoin
-    let ι : H.verts → K.verts := fun x ↦ ⟨x.1, hHK.1 x.2⟩
+    let ι : H.verts → K.verts := fun x ↦ ⟨x.val, hHK.1 x.property⟩
     have hι : Function.Injective ι :=
       fun _ _ h ↦ Subtype.ext (congrArg (Subtype.val : K.verts → V) h)
     refine isVertexConnected_iff.mpr ⟨?_, fun s hs ↦ ?_⟩
@@ -127,18 +127,18 @@ theorem Ear.isVertexConnected_two_adjoin (hH : H.coe.IsVertexConnected 2) {e : G
       have hH_pre : (H.coe.induce sHᶜ).Preconnected :=
         (isVertexConnected_iff.mp hH).2 hsH
       let ψ : H.coe.induce sHᶜ →g K.coe.induce sᶜ :=
-        { toFun z := ⟨ι z.1, z.2⟩
+        { toFun z := ⟨ι z.val, z.property⟩
           map_rel' h := (K.coe_adj _ _).mpr (hHK.2 ((H.coe_adj _ _).mp h)) }
       -- Every vertex in `K` outside `s` reaches some vertex of `H` outside `s`.
       have h_to_H : ∀ w : ↑(sᶜ : Set K.verts), ∃ z : ↑(sHᶜ : Set H.verts),
           (K.coe.induce sᶜ).Reachable w (ψ z) := by
         intro w
-        have hwK : w.1.1 ∈ H.verts ∪ p.toSubgraph.verts := by
-          simpa [K, e₀] using w.1.2
+        have hwK : w.val.val ∈ H.verts ∪ p.toSubgraph.verts := by
+          simpa [K, e₀] using w.val.property
         rcases hwK with hwH | hwp
-        · exact ⟨⟨⟨w.1.1, hwH⟩, w.2⟩, .rfl⟩
+        · exact ⟨⟨⟨w.val.val, hwH⟩, w.property⟩, .rfl⟩
         · obtain ⟨z, hz, hr⟩ := reachable_induce_compl_of_mem_verts_toSubgraph_of_encard_le_one
-            hp hpK hu hv hHK hs1 w.2 hwp
+            hp hpK hu hv hHK hs1 w.property hwp
           exact ⟨⟨z, hz⟩, hr⟩
       intro a b
       obtain ⟨za, hra⟩ := h_to_H a
