@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.Herbrand.Quotient
-import TauCeti.RingTheory.DiscreteValuationRing.Herbrand
+import TauCeti.RingTheory.DiscreteValuationRing.Herbrand.IntegralClosure
 
 /-!
 # Transitivity of the Herbrand functions
@@ -32,14 +32,14 @@ All declarations live in the namespace `TauCeti.LocalFieldsRamification`.
   `#(G/H)_{φ_{M/L}(u)} · #H_u = #G_u`.
 * `lowerRamificationGroupReal_eq_of_forall_eq_of_herbrand_lt_of_le_herbrand`: the filtration of
   `L/K` is constant on `(φ_{M/L}(a), φ_{M/L}(b)]` when that of `M/K` is constant on `(a, b]`.
+* `ramificationGroup_integerRing_eq_integralClosure`: lower ramification groups on `𝒪[L]` coincide
+  with those on `integralClosure 𝒪[K₀] L` for `K₀ ⊆ K ⊆ L`.
 * `herbrand_tower`: `φ_{M/K} = φ_{L/K} ∘ φ_{M/L}`, as the identity
   `herbrandOrderIso K M = (herbrandOrderIso L M).trans (herbrandOrderIso K L)` of bundled order
   isomorphisms.
 * `inverseHerbrand_tower`: `ψ_{M/K} = ψ_{M/L} ∘ ψ_{L/K}`, as the identity of the inverse order
   isomorphisms.
 * `psiNat_tower`: `ψℕ_{M/K} = ψℕ_{M/L} ∘ ψℕ_{L/K}`.
-* `withIntegralClosureTower`: installs integral-closure instances and transports lower
-  filtrations for a Galois tower `M/L/K`.
 
 ## References
 
@@ -118,25 +118,37 @@ Since `L` is an arbitrary field rather than an `IntermediateField K M`, instance
 recover `IsGalois L M` from `[IsGalois K M]`; the statements below therefore install it with
 `haveI` as well. -/
 
+section SingleExtension
+
+open TauCeti.IsLocalRing in
+/-- For a tower `K₀ ⊆ K ⊆ L` of nonarchimedean local fields, the lower ramification filtration
+of `Gal(L/K)` on `𝒪[L]` equals its lower ramification filtration on `integralClosure 𝒪[K₀] L`. -/
+theorem ramificationGroup_integerRing_eq_integralClosure (K₀ K L : Type*)
+    [Field K₀] [ValuativeRel K₀] [TopologicalSpace K₀] [IsNonarchimedeanLocalField K₀]
+    [Field K] [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
+    [Field L] [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L]
+    [Algebra K₀ K] [Algebra K L] [Algebra K₀ L] [ValuativeExtension K₀ L] [ValuativeExtension K L]
+    [Module.Finite K L] [Algebra.IsAlgebraic K₀ L]
+    [IsScalarTower 𝒪[K₀] K L] [IsLocalRing (integralClosure 𝒪[K₀] L)] (i : ℤ) :
+    ramificationGroup (L ≃ₐ[K] L) 𝒪[L] i =
+      ramificationGroup (L ≃ₐ[K] L) (integralClosure 𝒪[K₀] L) i := by
+  simpa only [Subgroup.comap_id] using
+    ramificationGroup_eq_comap_of_ringEquiv (φ := MonoidHom.id (L ≃ₐ[K] L))
+      (e := (TauCeti.integerRingEquivIntegralClosure K₀ L).toRingEquiv)
+      (fun _ _ ↦ Subtype.ext (by simp)) i
+
+end SingleExtension
+
 variable [IsGalois K L] [IsGalois K M]
 
 open TauCeti.IsLocalRing _root_.IsLocalRing _root_.IsDiscreteValuationRing in
-/-- Installs the finite-Galois and integral-closure instances for a tower `M/L/K` and transports
-the lower ramification filtrations from `𝒪[M]` and `𝒪[L]` to `integralClosure 𝒪[K] M` and
-`integralClosure 𝒪[K] L`. -/
-theorem withIntegralClosureTower {P : Prop}
-    (h : [Module.Finite K M] → [IsGalois L M] → [IsScalarTower 𝒪[K] L M] →
-      [IsLocalRing (integralClosure 𝒪[K] L)] →
-      [_root_.IsDiscreteValuationRing (integralClosure 𝒪[K] M)] →
-      [IsLocalHom (algebraMap 𝒪[K] (integralClosure 𝒪[K] M))] →
-      [Algebra.IsSeparable (ResidueField 𝒪[K]) (ResidueField (integralClosure 𝒪[K] M))] →
-      (∀ i : ℤ, ramificationGroup (M ≃ₐ[K] M) 𝒪[M] i =
-        (ramificationGroup (M ≃ₐ[K] M) (integralClosure 𝒪[K] M) i).comap (MonoidHom.id _)) →
-      (∀ i : ℤ, ramificationGroup (M ≃ₐ[L] M) 𝒪[M] i =
-        (ramificationGroup (M ≃ₐ[L] M) (integralClosure 𝒪[K] M) i).comap (MonoidHom.id _)) →
-      (∀ i : ℤ, ramificationGroup (L ≃ₐ[K] L) 𝒪[L] i =
-        (ramificationGroup (L ≃ₐ[K] L) (integralClosure 𝒪[K] L) i).comap (MonoidHom.id _)) →
-      P) : P := by
+/-- **Transitivity of the Herbrand function** in a tower `M/L/K` of Galois extensions:
+`φ_{M/K} = φ_{L/K} ∘ φ_{M/L}`, as an identity of the bundled order isomorphisms of
+`RamificationIndexDomain`. -/
+theorem herbrand_tower :
+    haveI : Module.Finite K M := Module.Finite.trans L M
+    haveI := IsGalois.tower_top_of_isGalois K L M
+    herbrandOrderIso K M = (herbrandOrderIso L M).trans (herbrandOrderIso K L) := by
   have : Module.Finite K M := Module.Finite.trans L M
   have := IsGalois.tower_top_of_isGalois K L M; let _ := IsScalarTower.to₁₃₄ 𝒪[K] K L M
   let eM := TauCeti.integerRingEquivIntegralClosure K M
@@ -145,29 +157,21 @@ theorem withIntegralClosureTower {P : Prop}
     eM.toAlgHom.comp_algebraMap ▸ inferInstance
   have := Finite.of_equiv (ResidueField 𝒪[M]) (ResidueField.mapEquiv eM.toRingEquiv).toEquiv
   let _ := TauCeti.isLocalRing_integralClosure_of_tower 𝒪[K] L M
-  have hMK := ramificationGroup_eq_comap_of_ringEquiv (φ := MonoidHom.id (M ≃ₐ[K] M))
-    (e := eM.toRingEquiv) (fun _ _ ↦ Subtype.ext (by simp [eM]))
-  have hML := ramificationGroup_eq_comap_of_ringEquiv (φ := MonoidHom.id (M ≃ₐ[L] M))
-    (e := eM.toRingEquiv) (fun _ _ ↦ Subtype.ext (by simp [eM]))
-  have hLK := ramificationGroup_eq_comap_of_ringEquiv (φ := MonoidHom.id (L ≃ₐ[K] L))
-    (e := (TauCeti.integerRingEquivIntegralClosure K L).toRingEquiv) fun _ _ ↦ Subtype.ext (by simp)
-  exact h hMK hML hLK
-
-open TauCeti.IsLocalRing in
-/-- **Transitivity of the Herbrand function** in a tower `M/L/K` of Galois extensions:
-`φ_{M/K} = φ_{L/K} ∘ φ_{M/L}`, as an identity of the bundled order isomorphisms of
-`RamificationIndexDomain`. -/
-theorem herbrand_tower :
-    haveI : Module.Finite K M := Module.Finite.trans L M
-    haveI := IsGalois.tower_top_of_isGalois K L M
-    herbrandOrderIso K M = (herbrandOrderIso L M).trans (herbrandOrderIso K L) :=
-  withIntegralClosureTower K L M fun {_ _ _ _ _ _ _} hMK hML hLK ↦ by
-    refine OrderIso.ext <| funext fun u ↦ Subtype.ext ?_
-    simp only [OrderIso.trans_apply, herbrandOrderIso_apply, coe_herbrand_eq_herbrandFun,
-      herbrandFun_eq_of_ramificationGroup_eq_comap Function.bijective_id hMK,
-      herbrandFun_eq_of_ramificationGroup_eq_comap Function.bijective_id hLK,
-      herbrandFun_eq_of_ramificationGroup_eq_comap Function.bijective_id hML]
-    exact herbrandFun_integralClosure_tower 𝒪[K] L u
+  have hMK (i : ℤ) : ramificationGroup (M ≃ₐ[K] M) 𝒪[M] i =
+      (ramificationGroup (M ≃ₐ[K] M) (integralClosure 𝒪[K] M) i).comap (MonoidHom.id _) := by
+    simpa using ramificationGroup_integerRing_eq_integralClosure K K M i
+  have hML (i : ℤ) : ramificationGroup (M ≃ₐ[L] M) 𝒪[M] i =
+      (ramificationGroup (M ≃ₐ[L] M) (integralClosure 𝒪[K] M) i).comap (MonoidHom.id _) := by
+    simpa using ramificationGroup_integerRing_eq_integralClosure K L M i
+  have hLK (i : ℤ) : ramificationGroup (L ≃ₐ[K] L) 𝒪[L] i =
+      (ramificationGroup (L ≃ₐ[K] L) (integralClosure 𝒪[K] L) i).comap (MonoidHom.id _) := by
+    simpa using ramificationGroup_integerRing_eq_integralClosure K K L i
+  refine OrderIso.ext <| funext fun u ↦ Subtype.ext ?_
+  simp only [OrderIso.trans_apply, herbrandOrderIso_apply, coe_herbrand_eq_herbrandFun,
+    herbrandFun_eq_of_ramificationGroup_eq_comap Function.bijective_id hMK,
+    herbrandFun_eq_of_ramificationGroup_eq_comap Function.bijective_id hLK,
+    herbrandFun_eq_of_ramificationGroup_eq_comap Function.bijective_id hML]
+  exact herbrandFun_integralClosure_tower 𝒪[K] L u
 
 /-- **Transitivity of the inverse Herbrand function** in a tower `M/L/K` of Galois extensions:
 `ψ_{M/K} = ψ_{M/L} ∘ ψ_{L/K}`, as an identity of the inverse order isomorphisms. Inverting the

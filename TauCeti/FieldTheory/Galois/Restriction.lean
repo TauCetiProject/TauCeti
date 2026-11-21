@@ -368,6 +368,19 @@ theorem coe_equivFixedFieldEmbeddingSubgroup_apply [IsGalois K M] (x : L) :
       IntermediateField.fixedField (embeddingSubgroup K L M)) : M) = algebraMap L M x := by
   simp [equivFixedFieldEmbeddingSubgroup]
 
+/-- Coercing `(equivFixedFieldEmbeddingSubgroup K L M).symm y` into `M` recovers `(y : M)`. -/
+@[simp]
+theorem algebraMap_equivFixedFieldEmbeddingSubgroup_symm_apply [IsGalois K M]
+    (y : IntermediateField.fixedField (embeddingSubgroup K L M)) :
+    algebraMap L M ((equivFixedFieldEmbeddingSubgroup K L M).symm y) = y := by
+  rw [← coe_equivFixedFieldEmbeddingSubgroup_apply K L M,
+    (equivFixedFieldEmbeddingSubgroup K L M).apply_symm_apply]
+
+/-- Restriction as a group homomorphism agrees with restriction of an automorphism. -/
+theorem _root_.AlgEquiv.restrictNormalHom_apply_eq_restrictNormal [Normal K L] (σ : M ≃ₐ[K] M) :
+    (AlgEquiv.restrictNormalHom L) σ = σ.restrictNormal L :=
+  rfl
+
 /-- Restricting `Gal(M/K)` to a normal intermediate field `L` and conjugating along
 `equivFixedFieldEmbeddingSubgroup K L M` equals quotienting by `embeddingSubgroup K L M` followed
 by `IsGalois.normalAutEquivQuotient`. -/
@@ -378,17 +391,11 @@ theorem autCongr_equivFixedFieldEmbeddingSubgroup_comp_restrictNormalHom
       MonoidHom.comp (MonoidHom.ofClass (IsGalois.normalAutEquivQuotient
           (embeddingSubgroup K L M)))
         (QuotientGroup.mk' (embeddingSubgroup K L M)) := by
-  ext σ y
-  have heK : algebraMap L M ((equivFixedFieldEmbeddingSubgroup K L M).symm y) = y := by
-    rw [← coe_equivFixedFieldEmbeddingSubgroup_apply K L M,
-      (equivFixedFieldEmbeddingSubgroup K L M).apply_symm_apply]
-  change ((equivFixedFieldEmbeddingSubgroup K L M)
-    ((AlgEquiv.restrictNormalHom L σ) ((equivFixedFieldEmbeddingSubgroup K L M).symm y)) : M) =
-    (IsGalois.normalAutEquivQuotient (embeddingSubgroup K L M)
-      (QuotientGroup.mk' (embeddingSubgroup K L M) σ) y : M)
-  rw [coe_equivFixedFieldEmbeddingSubgroup_apply,
-    show AlgEquiv.restrictNormalHom L σ = σ.restrictNormal L from rfl,
-    AlgEquiv.restrictNormal_commutes, heK, QuotientGroup.coe_mk',
+  refine MonoidHom.ext fun σ ↦ AlgEquiv.ext fun y ↦ Subtype.ext ?_
+  simp only [MonoidHom.comp_apply, MonoidHom.coe_ofClass, AlgEquiv.autCongr_apply,
+    AlgEquiv.trans_apply, coe_equivFixedFieldEmbeddingSubgroup_apply,
+    AlgEquiv.restrictNormalHom_apply_eq_restrictNormal, AlgEquiv.restrictNormal_commutes,
+    algebraMap_equivFixedFieldEmbeddingSubgroup_symm_apply, QuotientGroup.coe_mk',
     IsGalois.normalAutEquivQuotient_apply]
   exact (σ.restrictNormal_commutes (IntermediateField.fixedField (embeddingSubgroup K L M)) y).symm
 
@@ -447,11 +454,6 @@ theorem AlgEquiv.restrictNormal_eq_one_iff_algebraMap (σ : M ≃ₐ[K] M) :
     have hx := AlgEquiv.restrictNormal_commutes σ L x
     rw [h x] at hx
     exact (algebraMap L M).injective hx
-
-/-- Restriction as a group homomorphism agrees with restriction of an automorphism. -/
-theorem AlgEquiv.restrictNormalHom_apply_eq_restrictNormal (σ : M ≃ₐ[K] M) :
-    (AlgEquiv.restrictNormalHom L) σ = σ.restrictNormal L :=
-  rfl
 
 /-- An automorphism of `M/K` comes from an automorphism of `M/L` exactly when its restriction to
 `L` is the identity. -/

@@ -6,19 +6,21 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.DiscreteValuationRing.LowerIndex
-public import TauCeti.RingTheory.IntegralClosure.Map
-public import TauCeti.RingTheory.LocalRing.Herbrand.IntegralClosure
+public import TauCeti.RingTheory.LocalRing.Herbrand.Basic
 
 /-!
-# Herbrand's theorem and transitivity of Herbrand functions on discrete valuation rings
+# Herbrand's lemma and transitivity of Herbrand functions on discrete valuation rings
 
 For a faithful finite action of `G` on a DVR `B` over a local ring `A` with separable residue
 extension (no completeness or residue-finiteness), we prove Herbrand's lemma
 (`ramificationGroupReal_quotient_herbrandFun`), transitivity (`herbrandFun_tower`,
 `inverseHerbrandFun_tower`, `herbrandOrderIso_tower`, `psiNat_tower`), Herbrand's theorem
-(`upperRamificationGroup_quotient_eq_map`), upper breaks in quotients,
-`TauCeti.instIsDiscreteValuationRingIntegralClosureFixedField`, and Galois tower transport, adapting
-`NumberTheory/LocalField/Herbrand/{Quotient,Tower,UpperQuotient}.lean`.
+(`upperRamificationGroup_quotient_eq_map`), and upper breaks in quotients.
+
+We also extract the general maximal-lift membership and surjective-image lemmas
+(`apply_mem_ramificationGroupReal_iff` and `map_ramificationGroupReal_eq_of_surjective`),
+instantiated both for `QuotientGroup.mk' H` here and for `AlgEquiv.restrictNormalHom L` on local
+fields.
 
 ## References
 
@@ -31,6 +33,66 @@ public section
 noncomputable section
 open IsLocalRing
 namespace TauCeti.IsLocalRing
+
+section Map
+
+/-- If `π : G →* G'` sends `g` to an element whose `C`-lower index stays finite when `i_B(g) ≠ ⊤`
+and satisfies `φ (i_B(g) - 1) = i_C(π g) - 1` for a strictly monotone `φ : ℝ → ℝ`, then
+`π g ∈ G'_{φ(u)} ↔ g ∈ G_u`. -/
+theorem apply_mem_ramificationGroupReal_iff
+    {G G' B C : Type*} [Group G] [Group G']
+    [CommRing B] [IsDomain B] [_root_.IsDiscreteValuationRing B] [MulSemiringAction G B]
+    [FaithfulSMul G B]
+    [CommRing C] [IsDomain C] [_root_.IsDiscreteValuationRing C] [MulSemiringAction G' C]
+    {π : G →* G'} {φ : ℝ → ℝ} (hφ : StrictMono φ) {g : G}
+    (hne : lowerIndex B g ≠ ⊤ → lowerIndex C (π g) ≠ ⊤)
+    (h_eq : ∀ {j : ℕ}, lowerIndex B g = j →
+      φ ((j : ℝ) - 1) = ((lowerIndex C (π g)).toNat : ℝ) - 1)
+    (u : ℝ) :
+    π g ∈ ramificationGroupReal G' C (φ u) ↔ g ∈ ramificationGroupReal G B u := by
+  rcases eq_or_ne (lowerIndex B g) ⊤ with htop | htop
+  · obtain rfl := lowerIndex_eq_top_iff.1 htop
+    simp [one_mem]
+  obtain ⟨j, hj⟩ := ENat.ne_top_iff_exists.1 htop
+  rw [mem_ramificationGroupReal_iff_of_lowerIndex_eq (ENat.natCast_toNat (hne htop)).symm,
+    ← h_eq hj.symm, mem_ramificationGroupReal_iff_of_lowerIndex_eq hj.symm, hφ.le_iff_le]
+
+/-- **Herbrand-style quotient image**: if `π : G →* G'` is surjective with finite kernel, `φ` is
+strictly monotone, and coset-maximal lifts `g` satisfy `i_B(g) ≠ ⊤ → i_C(π g) ≠ ⊤` and
+`φ (i_B(g) - 1) = i_C(π g) - 1`, then `(G_u).map π = G'_{φ(u)}`. -/
+theorem map_ramificationGroupReal_eq_of_surjective
+    {G G' B C : Type*} [Group G] [Group G']
+    [CommRing B] [IsDomain B] [_root_.IsDiscreteValuationRing B] [MulSemiringAction G B]
+    [FaithfulSMul G B]
+    [CommRing C] [IsDomain C] [_root_.IsDiscreteValuationRing C] [MulSemiringAction G' C]
+    {π : G →* G'} (hπ : Function.Surjective π) [Finite π.ker]
+    {φ : ℝ → ℝ} (hφ : StrictMono φ)
+    (hne : ∀ g : G, (∀ h ∈ π.ker, lowerIndex B (g * h) ≤ lowerIndex B g) →
+      lowerIndex B g ≠ ⊤ → lowerIndex C (π g) ≠ ⊤)
+    (h_eq : ∀ g : G, (∀ h ∈ π.ker, lowerIndex B (g * h) ≤ lowerIndex B g) →
+      ∀ {j : ℕ}, lowerIndex B g = j →
+        φ ((j : ℝ) - 1) = ((lowerIndex C (π g)).toNat : ℝ) - 1)
+    (u : ℝ) :
+    (ramificationGroupReal G B u).map π = ramificationGroupReal G' C (φ u) := by
+  have hmk (g : G) {h : G} (hh : h ∈ π.ker) : π (g * h) = π g := by
+    rw [map_mul, MonoidHom.mem_ker.1 hh, mul_one]
+  ext q
+  rw [Subgroup.mem_map]
+  refine ⟨fun ⟨g, hg, hq⟩ ↦ ?_, fun hq ↦ ?_⟩
+  · obtain ⟨h₀, hh₀_mem, hh₀⟩ := Subgroup.exists_mem_forall_lowerIndex_mul_le (S := B) π.ker g
+    rw [← hq, ← hmk g hh₀_mem,
+      apply_mem_ramificationGroupReal_iff hφ (hne _ hh₀) (h_eq _ hh₀),
+      ramificationGroupReal_def, mem_ramificationGroup_iff_le_lowerIndex]
+    rw [ramificationGroupReal_def, mem_ramificationGroup_iff_le_lowerIndex] at hg
+    exact hg.trans (by simpa [mul_inv_cancel_right] using hh₀ h₀⁻¹ (π.ker.inv_mem hh₀_mem))
+  · obtain ⟨g, rfl⟩ := hπ q
+    obtain ⟨h₀, hh₀_mem, hh₀⟩ := Subgroup.exists_mem_forall_lowerIndex_mul_le (S := B) π.ker g
+    exact ⟨g * h₀,
+      (apply_mem_ramificationGroupReal_iff hφ (hne _ hh₀) (h_eq _ hh₀) u).1
+        (hmk g hh₀_mem ▸ hq),
+      hmk g hh₀_mem⟩
+
+end Map
 
 section Quotient
 variable (A B G : Type*) [CommRing A] [IsLocalRing A] [CommRing B] [IsDomain B]
@@ -50,35 +112,17 @@ theorem herbrandFun_lowerIndex_sub_one (g : G) {j : ℕ} (hj : lowerIndex B g = 
     ← natCard_ramificationGroup_zero_fixedPoints A B H] at hsum
   rw [← hn, ENat.toNat_natCast]
   exact herbrandFun_sub_one_of_card_mul_eq_sum H B hsum
-private theorem quotient_mk_mem_ramificationGroupReal_herbrandFun_iff (g : G)
-    (hg : ∀ h : H, lowerIndex B (g * h) ≤ lowerIndex B g) (u : ℝ) :
-    QuotientGroup.mk' H g ∈
-        ramificationGroupReal (G ⧸ H) (FixedPoints.subalgebra A B H) (herbrandFun H B u) ↔
-      g ∈ ramificationGroupReal G B u := by
-  rcases eq_or_ne (lowerIndex B g) ⊤ with htop | htop
-  · obtain rfl := lowerIndex_eq_top_iff.1 htop; simp [one_mem]
-  obtain ⟨j, hj⟩ := ENat.ne_top_iff_exists.1 htop
-  rw [mem_ramificationGroupReal_iff_of_lowerIndex_eq
-      (ENat.natCast_toNat (lowerIndex_quotient_mk'_ne_top A B G H g htop hg)).symm,
-    ← herbrandFun_lowerIndex_sub_one A B G H g hj.symm hg,
-    mem_ramificationGroupReal_iff_of_lowerIndex_eq hj.symm, herbrandFun_le_herbrandFun_iff]
 /-- **Herbrand's lemma**: `(G ⧸ H)_{φ_H(u)} = (G_u).map (QuotientGroup.mk' H)` for normal `H`. -/
 theorem ramificationGroupReal_quotient_herbrandFun (u : ℝ) :
     ramificationGroupReal (G ⧸ H) (FixedPoints.subalgebra A B H) (herbrandFun H B u) =
-      (ramificationGroupReal G B u).map (QuotientGroup.mk' H) := by
-  have hmk (g : G) (h : H) : QuotientGroup.mk' H (g * h) = QuotientGroup.mk' H g := by
-    simp [QuotientGroup.mk'_apply, h.property]
-  ext q; rw [Subgroup.mem_map]; refine ⟨fun hq ↦ ?_, fun ⟨g, hg, hq⟩ ↦ ?_⟩
-  · obtain ⟨g, rfl⟩ := QuotientGroup.mk'_surjective H q
-    obtain ⟨h₀, hh₀_mem, hh₀⟩ := Subgroup.exists_mem_forall_lowerIndex_mul_le (S := B) H g
-    exact ⟨g * h₀, (quotient_mk_mem_ramificationGroupReal_herbrandFun_iff A B G H (g * h₀)
-      (fun h ↦ hh₀ h h.property) u).1 (hmk g ⟨h₀, hh₀_mem⟩ ▸ hq), hmk g ⟨h₀, hh₀_mem⟩⟩
-  · obtain ⟨h₀, hh₀_mem, hh₀⟩ := Subgroup.exists_mem_forall_lowerIndex_mul_le (S := B) H g
-    rw [← hq, ← hmk g ⟨h₀, hh₀_mem⟩,
-      quotient_mk_mem_ramificationGroupReal_herbrandFun_iff A B G H _ (fun h ↦ hh₀ h h.property),
-      ramificationGroupReal_def, mem_ramificationGroup_iff_le_lowerIndex]
-    rw [ramificationGroupReal_def, mem_ramificationGroup_iff_le_lowerIndex] at hg
-    exact hg.trans (by simpa [mul_inv_cancel_right] using hh₀ h₀⁻¹ (H.inv_mem hh₀_mem))
+      (ramificationGroupReal G B u).map (QuotientGroup.mk' H) :=
+  (map_ramificationGroupReal_eq_of_surjective (QuotientGroup.mk'_surjective H)
+    (herbrandFun_strictMono H B)
+    (fun g hg htop ↦ lowerIndex_quotient_mk'_ne_top A B G H g htop
+      (fun h ↦ hg h (by simp [QuotientGroup.ker_mk'])))
+    (fun g hg {j} hj ↦ herbrandFun_lowerIndex_sub_one A B G H g hj
+      (fun h ↦ hg h (by simp [QuotientGroup.ker_mk'])))
+    u).symm
 /-- For normal `H ≤ G`, `(G ⧸ H)_v = (G_{ψ_H(v)}).map (QuotientGroup.mk' H)`. -/
 theorem ramificationGroupReal_quotient_eq_map_inverseHerbrandFun (v : ℝ) :
     ramificationGroupReal (G ⧸ H) (FixedPoints.subalgebra A B H) v =
@@ -221,135 +265,4 @@ theorem upperJump_iff_upperJump_quotient_or_upperJump_inverseHerbrandFun (v : �
   simpa only [← upperRamificationGroup_quotient_eq_map A B G] using hw
 end Quotient
 
-open _root_.IntermediateField
-variable (A : Type*) {K L : Type*} [CommRing A] [Field K] [Field L] [Algebra A K] [Algebra K L]
-  [Algebra A L] [IsScalarTower A K L] [FiniteDimensional K L] [IsGalois K L]
-  [IsLocalRing A] [FaithfulSMul (L ≃ₐ[K] L) (integralClosure A L)]
-  [IsDiscreteValuationRing (integralClosure A L)]
-  [IsLocalHom (algebraMap A (integralClosure A L))]
-  [Algebra.IsSeparable (ResidueField A) (ResidueField (integralClosure A L))]
-/-- **Herbrand's theorem for Galois fixed fields**: `IsGalois.normalAutEquivQuotient H` maps
-`(Gal(L/K)^v).map (QuotientGroup.mk' H)` onto `Gal(fixedField H / K)^v`. -/
-@[simp] theorem map_normalAutEquivQuotient_map_mk'_upperRamificationGroup_integralClosure
-    (H : Subgroup (L ≃ₐ[K] L)) [H.Normal] (v : ℝ) :
-    ((upperRamificationGroup (L ≃ₐ[K] L) (integralClosure A L) v).map
-        (QuotientGroup.mk' H)).map (IsGalois.normalAutEquivQuotient H : _ →* _) =
-      upperRamificationGroup (fixedField H ≃ₐ[K] fixedField H)
-        (integralClosure A (fixedField H)) v := by
-  rw [← upperRamificationGroup_quotient_eq_map A (integralClosure A L) (L ≃ₐ[K] L) H v,
-    upperRamificationGroup_fixedPoints_integralClosure_eq_comap A H v]
-  exact Subgroup.map_comap_eq_self_of_surjective (IsGalois.normalAutEquivQuotient H).surjective _
-variable (E : Type*) [Field E] [Algebra K E] [Algebra E L] [Algebra A E] [IsScalarTower A K E]
-  [IsScalarTower K E L] [Normal K E]
-/-- **Transitivity of `herbrandFun` in a field tower `L / E / K`** (`L / K` finite Galois, `E / K`
-normal): `φ_{L/K}(u) = φ_{E/K}(φ_{L/E}(u))`. -/
-theorem herbrandFun_integralClosure_tower (u : ℝ) :
-    haveI := IsScalarTower.to₁₃₄ A K E L; haveI := isLocalRing_integralClosure_of_tower A E L
-    herbrandFun (L ≃ₐ[K] L) (integralClosure A L) u =
-      herbrandFun (E ≃ₐ[K] E) (integralClosure A E)
-        (herbrandFun (L ≃ₐ[E] L) (integralClosure A L) u) := by
-  let _ := IsScalarTower.to₁₃₄ A K E L; let _ := isLocalRing_integralClosure_of_tower A E L
-  have := IsGalois.tower_bot_of_normal K E L
-  rw [herbrandFun_tower A (integralClosure A L) (L ≃ₐ[K] L) (TauCeti.embeddingSubgroup K E L) u,
-    ← herbrandFun_eq_of_smul_eq
-      (φ := (TauCeti.algEquivEquivEmbeddingSubgroup K E L : (L ≃ₐ[E] L) →* _))
-      (TauCeti.algEquivEquivEmbeddingSubgroup K E L).bijective
-      (fun _ _ ↦ (TauCeti.algEquivEquivEmbeddingSubgroup_smul_integralClosure _ _).symm) u,
-    herbrandFun_fixedPoints_integralClosure A (TauCeti.embeddingSubgroup K E L),
-    (TauCeti.equivFixedFieldEmbeddingSubgroup K E L).herbrandFun_integralClosure_eq_of_algEquiv]
-/-- **Transitivity of `inverseHerbrandFun` in a field tower `L / E / K`** (`L / K` finite Galois,
-`E / K` normal): `ψ_{L/K}(v) = ψ_{L/E}(ψ_{E/K}(v))`. -/
-theorem inverseHerbrandFun_integralClosure_tower (v : ℝ) :
-    haveI := IsScalarTower.to₁₃₄ A K E L; haveI := isLocalRing_integralClosure_of_tower A E L
-    inverseHerbrandFun (L ≃ₐ[K] L) (integralClosure A L) v =
-      inverseHerbrandFun (L ≃ₐ[E] L) (integralClosure A L)
-        (inverseHerbrandFun (E ≃ₐ[K] E) (integralClosure A E) v) := by
-  let _ := IsScalarTower.to₁₃₄ A K E L; let _ := isLocalRing_integralClosure_of_tower A E L
-  have _ := Module.Finite.left K E L; have _ := Module.Finite.right K E L
-  rw [← herbrandFun_inj (L ≃ₐ[K] L) (integralClosure A L), herbrandFun_inverseHerbrandFun,
-    herbrandFun_integralClosure_tower A E, herbrandFun_inverseHerbrandFun,
-    herbrandFun_inverseHerbrandFun]
-/-- **Upper filtration of `Gal(L/E)` in a field tower `L / E / K`**: pulling `Gal(L/K)^v` back along
-`AlgEquiv.restrictScalarsHom K` gives `Gal(L/E)^{ψ_{E/K}(v)}`. -/
-@[simp] theorem comap_restrictScalarsHom_upperRamificationGroup_integralClosure (v : ℝ) :
-    haveI := IsScalarTower.to₁₃₄ A K E L; haveI := isLocalRing_integralClosure_of_tower A E L
-    (upperRamificationGroup (L ≃ₐ[K] L) (integralClosure A L) v).comap
-        (AlgEquiv.restrictScalarsHom (S := E) K) =
-      upperRamificationGroup (L ≃ₐ[E] L) (integralClosure A L)
-        (inverseHerbrandFun (E ≃ₐ[K] E) (integralClosure A E) v) := by
-  let _ := IsScalarTower.to₁₃₄ A K E L; let _ := isLocalRing_integralClosure_of_tower A E L
-  rw [upperRamificationGroup_def, upperRamificationGroup_def,
-    inverseHerbrandFun_integralClosure_tower A E v, ramificationGroupReal_def,
-    ramificationGroupReal_def]
-  exact (ramificationGroup_eq_comap_of_smul_eq (e := AlgEquiv.restrictScalarsHom (S := E) K)
-    (fun _ _ ↦ by simp) _).symm
-/-- **Image of `Gal(L/E)^{ψ_{E/K}(v)}` in `Gal(L/K)`** in a field tower `L / E / K`. -/
-theorem map_restrictScalarsHom_upperRamificationGroup_integralClosure (v : ℝ) :
-    haveI := IsScalarTower.to₁₃₄ A K E L; haveI := isLocalRing_integralClosure_of_tower A E L
-    (upperRamificationGroup (L ≃ₐ[E] L) (integralClosure A L)
-        (inverseHerbrandFun (E ≃ₐ[K] E) (integralClosure A E) v)).map
-        (AlgEquiv.restrictScalarsHom (S := E) K) =
-      (AlgEquiv.restrictScalarsHom (S := E) K).range ⊓
-        upperRamificationGroup (L ≃ₐ[K] L) (integralClosure A L) v := by
-  let _ := IsScalarTower.to₁₃₄ A K E L; let _ := isLocalRing_integralClosure_of_tower A E L
-  rw [← comap_restrictScalarsHom_upperRamificationGroup_integralClosure A E v,
-    Subgroup.map_comap_eq]
-/-- **Herbrand's theorem for normal subextensions** in a field tower `L / E / K` (`L / K` finite
-Galois, `E / K` normal): `AlgEquiv.restrictNormalHom E` maps `Gal(L/K)^v` onto `Gal(E/K)^v`. -/
-@[simp] theorem map_restrictNormalHom_upperRamificationGroup_integralClosure (v : ℝ) :
-    haveI := IsScalarTower.to₁₃₄ A K E L; haveI := isLocalRing_integralClosure_of_tower A E L
-    (upperRamificationGroup (L ≃ₐ[K] L) (integralClosure A L) v).map
-        (AlgEquiv.restrictNormalHom E) =
-      upperRamificationGroup (E ≃ₐ[K] E) (integralClosure A E) v := by
-  let _ := IsScalarTower.to₁₃₄ A K E L; let _ := isLocalRing_integralClosure_of_tower A E L
-  have := IsGalois.tower_bot_of_normal K E L
-  let eK := TauCeti.equivFixedFieldEmbeddingSubgroup K E L
-  apply Subgroup.map_injective (f := MonoidHom.ofClass eK.autCongr)
-    (by simpa using eK.autCongr.injective)
-  rw [Subgroup.map_map,
-    TauCeti.autCongr_equivFixedFieldEmbeddingSubgroup_comp_restrictNormalHom K E L,
-    ← Subgroup.map_map,
-    map_normalAutEquivQuotient_map_mk'_upperRamificationGroup_integralClosure A _ v,
-    eK.upperRamificationGroup_integralClosure_eq_comap_autCongr v,
-    Subgroup.map_comap_eq_self_of_surjective (by simpa using eK.autCongr.surjective)]
-/-- **Upper breaks in a field tower `L / E / K`** (`L / K` finite Galois, `E / K` normal):
-`v` is an upper break of `Gal(L/K)` iff it is one of `Gal(E/K)` or `ψ_{E/K}(v)` is one of
-`Gal(L/E)`. -/
-theorem upperJump_integralClosure_tower_iff (v : ℝ) :
-    haveI := IsScalarTower.to₁₃₄ A K E L; haveI := isLocalRing_integralClosure_of_tower A E L
-    UpperJump (L ≃ₐ[K] L) (integralClosure A L) v ↔
-      UpperJump (E ≃ₐ[K] E) (integralClosure A E) v ∨
-        UpperJump (L ≃ₐ[E] L) (integralClosure A L)
-          (inverseHerbrandFun (E ≃ₐ[K] E) (integralClosure A E) v) := by
-  let _ := IsScalarTower.to₁₃₄ A K E L; let _ := isLocalRing_integralClosure_of_tower A E L
-  have := IsGalois.tower_bot_of_normal K E L
-  rw [upperJump_iff_upperJump_quotient_or_upperJump_inverseHerbrandFun A (integralClosure A L)
-      (L ≃ₐ[K] L) (TauCeti.embeddingSubgroup K E L) v,
-    upperJump_fixedPoints_integralClosure_iff A (TauCeti.embeddingSubgroup K E L),
-    ← (TauCeti.equivFixedFieldEmbeddingSubgroup K E L).upperJump_integralClosure_iff_of_algEquiv,
-    ← upperJump_iff_of_smul_eq (S := integralClosure A L)
-      (φ := (TauCeti.algEquivEquivEmbeddingSubgroup K E L : (L ≃ₐ[E] L) →* _))
-      (TauCeti.algEquivEquivEmbeddingSubgroup K E L).bijective
-      (fun _ _ ↦ (TauCeti.algEquivEquivEmbeddingSubgroup_smul_integralClosure _ _).symm),
-    inverseHerbrandFun_fixedPoints_integralClosure A (TauCeti.embeddingSubgroup K E L),
-    (TauCeti.equivFixedFieldEmbeddingSubgroup K E
-      L).inverseHerbrandFun_integralClosure_eq_of_algEquiv]
-
 end TauCeti.IsLocalRing
-
-namespace TauCeti
-
-/-- If `integralClosure A L` is a DVR and `H ≤ Gal(L/K)`, then
-`integralClosure A (fixedField H)` is a DVR. -/
-instance instIsDiscreteValuationRingIntegralClosureFixedField {A K L : Type*} [CommRing A]
-    [Field K] [Field L] [Algebra A K] [Algebra K L] [Algebra A L] [IsScalarTower A K L]
-    [_root_.IsDiscreteValuationRing (integralClosure A L)] {H : Subgroup (L ≃ₐ[K] L)} :
-    _root_.IsDiscreteValuationRing (integralClosure A (IntermediateField.fixedField H)) :=
-  have : Algebra.IsIntegral (FixedPoints.subalgebra A (integralClosure A L) H)
-      (integralClosure A L) := Algebra.IsIntegral.tower_top A
-  have := isDiscreteValuationRing_fixedPoints_subalgebra_of_isIntegral
-    (A := A) (B := integralClosure A L) (G := H)
-  _root_.IsDiscreteValuationRing.RingEquivClass.isDiscreteValuationRing
-    (fixedPointsSubalgebraIntegralClosureEquiv A H)
-
-end TauCeti

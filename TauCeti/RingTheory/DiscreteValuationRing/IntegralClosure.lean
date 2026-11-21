@@ -5,9 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.FieldTheory.Galois.Basic
 public import TauCeti.RingTheory.DiscreteValuationRing.IntegrallyClosed
 public import TauCeti.RingTheory.Henselian.Integral
 import TauCeti.RingTheory.DedekindDomain.IntegralClosure
+import TauCeti.RingTheory.DiscreteValuationRing.Invariant
+import TauCeti.RingTheory.IsGaloisGroup.IntegralClosure
 
 /-!
 # Integral closures of henselian discrete valuation rings
@@ -29,7 +32,9 @@ Krull–Akizuki supplies Dedekindness even without separability.
 and any chosen fraction field. `TauCeti.integralClosure.isDiscreteValuationRing` specializes to
 `integralClosure A L`, still allowing a chosen fraction field. The instance
 `TauCeti.integralClosure.isDiscreteValuationRing_fractionRing` uses `FractionRing A`, as do
-Mathlib's integral-closure instances.
+Mathlib's integral-closure instances. For a Galois subgroup `H ≤ Gal(L/K)`,
+`TauCeti.instIsDiscreteValuationRingIntegralClosureFixedField` transfers the DVR property from
+`integralClosure A L` to `integralClosure A (IntermediateField.fixedField H)`.
 
 ## References
 
@@ -81,5 +86,18 @@ instance isDiscreteValuationRing_fractionRing [IsDiscreteValuationRing A]
   isDiscreteValuationRing A (FractionRing A) L
 
 end integralClosure
+
+/-- If `integralClosure A L` is a DVR and `H ≤ Gal(L/K)`, then
+`integralClosure A (fixedField H)` is a DVR. -/
+instance instIsDiscreteValuationRingIntegralClosureFixedField {A K L : Type*} [CommRing A]
+    [Field K] [Field L] [Algebra A K] [Algebra K L] [Algebra A L] [IsScalarTower A K L]
+    [_root_.IsDiscreteValuationRing (integralClosure A L)] {H : Subgroup (L ≃ₐ[K] L)} :
+    _root_.IsDiscreteValuationRing (integralClosure A (IntermediateField.fixedField H)) :=
+  have : Algebra.IsIntegral (FixedPoints.subalgebra A (integralClosure A L) H)
+      (integralClosure A L) := Algebra.IsIntegral.tower_top A
+  have := isDiscreteValuationRing_fixedPoints_subalgebra_of_isIntegral
+    (A := A) (B := integralClosure A L) (G := H)
+  _root_.IsDiscreteValuationRing.RingEquivClass.isDiscreteValuationRing
+    (fixedPointsSubalgebraIntegralClosureEquiv A H)
 
 end TauCeti

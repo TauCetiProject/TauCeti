@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LocalField.Herbrand.Basic
 public import TauCeti.NumberTheory.LocalField.LowerIndex
+import TauCeti.RingTheory.DiscreteValuationRing.Herbrand.Basic
 
 /-!
 # Herbrand's theorem: the lower filtration of a quotient
@@ -133,18 +134,16 @@ theorem restrictNormal_mem_lowerRamificationGroupReal_herbrand_iff (σ : M ≃�
     (u : RamificationIndexDomain) :
     σ.restrictNormal L ∈ lowerRamificationGroupReal K L (herbrand L M u) ↔
       σ ∈ lowerRamificationGroupReal K M u := by
-  rcases eq_or_ne (lowerIndex 𝒪[M] σ) ⊤ with htop | htop
-  · -- `i_G(σ) = ⊤` means `σ = 1`, and both sides hold.
-    rw [TauCeti.IsLocalRing.lowerIndex_eq_top_iff] at htop
-    subst htop
-    rw [← AlgEquiv.restrictNormalHom_apply_eq_restrictNormal K L M, map_one]
-    exact iff_of_true (one_mem _) (one_mem _)
-  obtain ⟨j, hj⟩ := ENat.ne_top_iff_exists.1 htop
-  rw [mem_lowerRamificationGroupReal_iff_of_lowerIndex_eq
-      (ENat.natCast_toNat (lowerIndex_restrictNormal_ne_top σ htop hσ)).symm,
-    ← coe_herbrand_lowerIndex_sub_one σ hj.symm hσ,
-    mem_lowerRamificationGroupReal_iff_of_lowerIndex_eq hj.symm]
-  exact Subtype.coe_le_coe.trans (herbrand_strictMono L M).le_iff_le
+  rw [← AlgEquiv.restrictNormalHom_apply_eq_restrictNormal K L M,
+    lowerRamificationGroupReal_eq_ramificationGroupReal,
+    lowerRamificationGroupReal_eq_ramificationGroupReal, coe_herbrand_eq_herbrandFun]
+  exact TauCeti.IsLocalRing.apply_mem_ramificationGroupReal_iff
+    (TauCeti.IsLocalRing.herbrandFun_strictMono (M ≃ₐ[L] M) 𝒪[M])
+    (lowerIndex_restrictNormal_ne_top σ · hσ)
+    (fun hj ↦ by
+      simpa [coe_herbrand_eq_herbrandFun, AlgEquiv.restrictNormalHom_apply_eq_restrictNormal K L M]
+        using coe_herbrand_lowerIndex_sub_one σ hj hσ)
+    u
 
 /-- **Herbrand's theorem.** For `M/K` finite normal, `L/K` a normal subextension and
 `H = Gal(M/L)`, the image of the lower ramification group `G_u` of `M/K` under restriction to
@@ -155,31 +154,18 @@ theorem map_restrictNormalHom_lowerRamificationGroupReal [Normal K M]
     (u : RamificationIndexDomain) :
     (lowerRamificationGroupReal K M u).map (AlgEquiv.restrictNormalHom L) =
       lowerRamificationGroupReal K L (herbrand L M u) := by
-  ext σ'
-  rw [Subgroup.mem_map]
-  constructor
-  · rintro ⟨σ, hσ, rfl⟩
-    obtain ⟨τ₀, hτ₀⟩ := exists_forall_lowerIndex_mul_restrictScalars_le (L := L) σ
-    rw [AlgEquiv.restrictNormalHom_apply_eq_restrictNormal,
-      ← AlgEquiv.restrictNormal_mul_restrictScalars K L M σ τ₀,
-      restrictNormal_mem_lowerRamificationGroupReal_herbrand_iff _ hτ₀]
-    -- `σ ∈ G_u` and `i(σ) ≤ i(σ τ₀)` give `σ τ₀ ∈ G_u`.
-    have hle : lowerIndex 𝒪[M] σ ≤ lowerIndex 𝒪[M] (σ * τ₀.restrictScalars K) := by
-      have := hτ₀ τ₀⁻¹
-      simp only [← AlgEquiv.restrictScalarsHom_apply, map_inv, mul_inv_cancel_right] at this
-      exact this
-    rw [mem_lowerRamificationGroupReal_iff, mem_lowerRamificationGroup_iff_le_lowerIndex] at hσ ⊢
-    exact hσ.trans hle
-  · intro h
-    obtain ⟨σ, rfl⟩ := AlgEquiv.restrictNormalHom_surjective (F := K) (K₁ := L) (E := M) σ'
-    obtain ⟨τ₀, hτ₀⟩ := exists_forall_lowerIndex_mul_restrictScalars_le (L := L) σ
-    refine ⟨σ * τ₀.restrictScalars K, ?_, ?_⟩
-    · rw [← restrictNormal_mem_lowerRamificationGroupReal_herbrand_iff _ hτ₀,
-        AlgEquiv.restrictNormal_mul_restrictScalars]
-      exact h
-    · rw [AlgEquiv.restrictNormalHom_apply_eq_restrictNormal,
-        AlgEquiv.restrictNormal_mul_restrictScalars,
-        AlgEquiv.restrictNormalHom_apply_eq_restrictNormal]
+  rw [lowerRamificationGroupReal_eq_ramificationGroupReal,
+    lowerRamificationGroupReal_eq_ramificationGroupReal, coe_herbrand_eq_herbrandFun]
+  exact TauCeti.IsLocalRing.map_ramificationGroupReal_eq_of_surjective
+    (AlgEquiv.restrictNormalHom_surjective (F := K) (K₁ := L) (E := M))
+    (TauCeti.IsLocalRing.herbrandFun_strictMono (M ≃ₐ[L] M) 𝒪[M])
+    (fun σ hσ htop ↦ lowerIndex_restrictNormal_ne_top σ htop fun τ ↦
+      hσ _ ((AlgEquiv.range_restrictScalarsHom_eq_ker_restrictNormalHom K L M).le ⟨τ, rfl⟩))
+    (fun σ hσ {j} hj ↦ by
+      simpa [coe_herbrand_eq_herbrandFun, AlgEquiv.restrictNormalHom_apply_eq_restrictNormal K L M]
+        using coe_herbrand_lowerIndex_sub_one σ hj fun τ ↦
+          hσ _ ((AlgEquiv.range_restrictScalarsHom_eq_ker_restrictNormalHom K L M).le ⟨τ, rfl⟩))
+    u
 
 /-- Herbrand's theorem read at `v = φ_{M/L}(u)`: `(G/H)_v = G_{ψ_{M/L}(v)} H / H`. -/
 theorem lowerRamificationGroupReal_eq_map_inverseHerbrand [Normal K M]

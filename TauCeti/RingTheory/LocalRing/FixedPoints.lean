@@ -14,7 +14,7 @@ public import TauCeti.RingTheory.LocalRing.RingHom
 
 Unit reflection (`isUnit_coe_fixedPoints_*_iff`) makes inclusions from `FixedPoints.submonoid`,
 `FixedPoints.subring`, and `FixedPoints.subalgebra` into `B` `IsLocalHom`, transferring
-`IsLocalRing` from `B` to `FixedPoints.subring B G`.
+`IsLocalRing` from `B` to `FixedPoints.subring B G` and `FixedPoints.subalgebra A B G`.
 -/
 
 public section
@@ -34,8 +34,15 @@ instance instIsLocalRingFixedPointsSubring [Ring B] [IsLocalRing B] [MulSemiring
 
 section Subalgebra
 variable {A : Type*} [CommSemiring A]
-instance instIsLocalHomValFixedPointsSubalgebra [Semiring B] [Algebra A B] [MulSemiringAction G B]
-    [SMulCommClass G A B] : IsLocalHom (FixedPoints.subalgebra A B G).val :=
+instance instIsLocalHomAlgebraMapFixedPointsSubalgebra [CommSemiring B] [Algebra A B]
+    [MulSemiringAction G B] [SMulCommClass G A B] :
+    IsLocalHom (algebraMap (FixedPoints.subalgebra A B G) B) :=
   ⟨fun _ ↦ isUnit_coe_fixedPoints_subalgebra_iff.mp⟩
+
+/-- The fixed-point subalgebra of a local ring under any monoid action is a local ring. -/
+instance FixedPoints.isLocalRing_subalgebra [CommSemiring B] [IsLocalRing B] [Algebra A B]
+    [MulSemiringAction G B] [SMulCommClass G A B] :
+    IsLocalRing (FixedPoints.subalgebra A B G) :=
+  RingHom.domain_isLocalRing (algebraMap (FixedPoints.subalgebra A B G) B)
 end Subalgebra
 end TauCeti

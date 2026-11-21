@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.FieldTheory.Separable
 public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
-import Mathlib.RingTheory.Ideal.Quotient.Operations
 
 /-!
 # The quotient by a maximal ideal of a local ring
@@ -24,9 +22,6 @@ is the residue field `κ`. Likewise, any surjective `R₀`-algebra map `ψ : R �
   sending the class of `r` to `residue R r`.
 * `TauCeti.residueFieldAlgEquivOfSurjective`: `ResidueField R ≃ₐ[R₀] L` induced by a surjective
   `R₀`-algebra map `ψ : R →ₐ[R₀] L` onto a field `L`.
-* `TauCeti.isSeparable_residueField_iff`: for a local algebra map `A → B`, `Algebra.IsSeparable`
-  between `ResidueField`s agrees with that between maximal-ideal quotients, mirroring
-  `Algebra.isSeparable_residueField_iff`.
 -/
 
 public section
@@ -86,27 +81,5 @@ theorem residueFieldAlgEquivOfSurjective_symm_apply {R₀ L : Type*} [CommRing R
     (residueFieldAlgEquivOfSurjective hψ).symm (ψ r) = residue R r :=
   (residueFieldAlgEquivOfSurjective hψ).symm_apply_eq.mpr
     (residueFieldAlgEquivOfSurjective_residue hψ r).symm
-
-section Separable
-attribute [local instance] Ideal.Quotient.field
-
-/-- For a local algebra map `A → B`, `ResidueField B / ResidueField A` is separable iff
-`(B ⧸ maximalIdeal B) / (A ⧸ maximalIdeal A)` is separable. -/
-theorem isSeparable_residueField_iff {A B : Type*} [CommRing A] [_root_.IsLocalRing A]
-    [CommRing B] [_root_.IsLocalRing B] [Algebra A B] [IsLocalHom (algebraMap A B)] :
-    Algebra.IsSeparable (ResidueField A) (ResidueField B) ↔
-      Algebra.IsSeparable (A ⧸ maximalIdeal A) (B ⧸ maximalIdeal B) := by
-  refine Algebra.IsSeparable.iff_of_equiv_equiv
-    (TauCeti.residueFieldAlgEquivOfSurjective (ψ := Algebra.ofId A (A ⧸ maximalIdeal A))
-      Ideal.Quotient.mk_surjective).toRingEquiv
-    (TauCeti.residueFieldAlgEquivOfSurjective (ψ := Algebra.ofId B (B ⧸ maximalIdeal B))
-      Ideal.Quotient.mk_surjective).toRingEquiv (RingHom.ext fun x ↦ ?_)
-  obtain ⟨a, rfl⟩ := residue_surjective x
-  have hA := TauCeti.residueFieldAlgEquivOfSurjective_residue
-    (ψ := Algebra.ofId A (A ⧸ maximalIdeal A)) Ideal.Quotient.mk_surjective a
-  have hB := TauCeti.residueFieldAlgEquivOfSurjective_residue
-    (ψ := Algebra.ofId B (B ⧸ maximalIdeal B)) Ideal.Quotient.mk_surjective (algebraMap A B a)
-  simp [hA, hB, Ideal.Quotient.algebraMap_eq, Ideal.Quotient.algebraMap_mk_of_liesOver]
-end Separable
 
 end TauCeti

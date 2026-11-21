@@ -8,7 +8,6 @@ module
 public import TauCeti.RingTheory.DiscreteValuationRing.Monogenic
 public import TauCeti.RingTheory.Invariant.Basic
 import TauCeti.RingTheory.LocalRing.FixedPoints
-import TauCeti.RingTheory.LocalRing.RingHom
 
 /-!
 # Invariants of group and monoid actions on discrete valuation rings
@@ -132,9 +131,6 @@ theorem exists_adjoin_eq_top :
     ∃ y : FixedPoints.subalgebra A B G, Algebra.adjoin A {y} = ⊤ := by
   have : Module.Finite A (FixedPoints.subalgebra A B G) :=
     Module.Finite.of_injective (Subalgebra.val _).toLinearMap Subtype.val_injective
-  have : IsLocalHom (algebraMap (FixedPoints.subalgebra A B G) B) := by
-    rw [Subalgebra.algebraMap_eq]
-    infer_instance
   have := Algebra.isSeparable_tower_bot_of_isSeparable (ResidueField A)
     (ResidueField (FixedPoints.subalgebra A B G)) (ResidueField B)
   obtain ⟨π, hπ⟩ := _root_.IsDiscreteValuationRing.exists_irreducible (FixedPoints.subalgebra A B G)

@@ -12,8 +12,6 @@ public import TauCeti.RingTheory.RamificationInertia.DiscreteValuationRing
 public import TauCeti.RingTheory.Valuation.AddValuation
 import TauCeti.NumberTheory.RamificationInertia.SeparableDegree
 import TauCeti.RingTheory.IsGaloisGroup.IntegralClosure
-import TauCeti.RingTheory.LocalRing.FixedPoints
-import TauCeti.RingTheory.LocalRing.ResidueField.Quotient
 
 /-!
 # Inertia cardinality and Serre's lower-index quotient formula on discrete valuation rings
@@ -114,7 +112,11 @@ theorem natCard_ramificationGroup_zero {A B G : Type*} [CommRing A] [IsDomain A]
   have _ : Algebra.IsIntegral A B := Algebra.IsInvariant.isIntegral A B G
   have _ : FaithfulSMul A B := IsDiscreteValuationRing.faithfulSMul_of_isIntegral (R := A) (S := B)
   have _ : Module.Finite A B := IsGaloisGroup.moduleFinite_of_isIntegrallyClosed G A B
-  have _ := (isSeparable_residueField_iff (A := A) (B := B)).mp ‹_›
+  let := Ideal.Quotient.field (maximalIdeal A)
+  let := Ideal.Quotient.field (maximalIdeal B)
+  have _ : Algebra.IsSeparable (A ⧸ maximalIdeal A) (B ⧸ maximalIdeal B) := by
+    change Algebra.IsSeparable (ResidueField A) (ResidueField B)
+    infer_instance
   rw [ramificationGroup_zero_eq_inertia,
     ← Ideal.ramificationIdxIn_eq_ramificationIdx (maximalIdeal A) (maximalIdeal B) G]
   exact Ideal.card_inertia_eq_ramificationIdxIn_of_isSeparable (G := G)
@@ -134,9 +136,6 @@ theorem natCard_ramificationGroup_zero_fixedPoints :
       (maximalIdeal B).ramificationIdx (FixedPoints.subalgebra A B G) :=
   let _ : IsGaloisGroup G (FixedPoints.subalgebra A B G) B :=
     ⟨inferInstance, inferInstance, inferInstance⟩
-  have _ : IsLocalHom (algebraMap (FixedPoints.subalgebra A B G) B) := by
-    rw [Subalgebra.algebraMap_eq]
-    infer_instance
   have _ : Algebra.IsSeparable (ResidueField (FixedPoints.subalgebra A B G)) (ResidueField B) :=
     Algebra.isSeparable_tower_top_of_isSeparable (ResidueField A) _ (ResidueField B)
   natCard_ramificationGroup_zero
@@ -155,12 +154,6 @@ theorem ramificationIdx_mul_lowerIndex_quotient_mk'_eq_finsum (H : Subgroup G) [
   have _ : FaithfulSMul R₀ B := (faithfulSMul_iff_algebraMap_injective R₀ B).2 Subtype.val_injective
   have _ : FaithfulSMul R₀ C :=
     (faithfulSMul_iff_algebraMap_injective R₀ C).2 (Subalgebra.inclusion_injective hle)
-  have _ : IsLocalHom (algebraMap R₀ B) := by
-    rw [Subalgebra.algebraMap_eq]
-    infer_instance
-  have _ : IsLocalHom (algebraMap C B) := by
-    rw [Subalgebra.algebraMap_eq]
-    infer_instance
   have _ : IsLocalHom ((algebraMap C B).comp (algebraMap R₀ C)) :=
     IsScalarTower.algebraMap_eq R₀ C B ▸ inferInstance
   have _ : IsLocalHom (algebraMap R₀ C) := isLocalHom_of_comp _ (algebraMap C B)
