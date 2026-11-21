@@ -58,14 +58,16 @@ are the complexified coordinates of the variation, elements of Mathlib's Bessel-
   (`contDiff_sobolevEquation`), and its derivative at `y` is the complexified linearized equation
   `sobolevLinearizedEquation f m hk y` at `x_m + y` (`hasFDerivAt_sobolevEquation`).
   The derivatives in it are `BesselPotentialSpace.lineDerivCLM`, the coefficients of the reference
-  field act by `referenceMulCLM`, and those of `x_m + y` by `fieldMulCLM`.
+  field act by `referenceMulCLM`, and those of `x_m + y` by `fieldMulCLM`. With the same
+  ingredients, the gauge-fixing row `d₀*` at `x_m + y` is the bounded operator
+  `sobolevGaugeAdjoint f m hk y : H^(k+1)(ℂ)⁴ → H^k(ℂ)`.
 * A real field `y` lies in `sobolevFields s` exactly when its coordinates are, almost everywhere,
   the `L²` functions of some `u : Fin 4 → H^s(ℂ)`
   (`mem_sobolevFields_iff_exists_inclusionLp_ae_eq`). For such `u` and `C¹` fields, the Sobolev
   maps compute the pointwise ones: `sobolevEquation f m hk u` is almost everywhere
   `equation (x_m + y)` (`coeFn_inclusionLp_sobolevEquation_ae_eq`), and similarly for the linearized
-  equation and the quadratic term. In particular, for a real `C¹` field `x ∈ A_m^(k+1)` whose
-  difference with `x_m` has coordinates `u`, `x` is a vortex exactly when
+  equation, the gauge-fixing row and the quadratic term. In particular, for a real `C¹` field
+  `x ∈ A_m^(k+1)` whose difference with `x_m` has coordinates `u`, `x` is a vortex exactly when
   `sobolevEquation f m hk u = 0` (`sobolevEquation_eq_zero_iff`). Only these real zeros, at
   coordinates of real fields, are vortices: the complexified map can also vanish at non-real `u`,
   which corresponds to no field. For `k ≥ 2`, its restriction to the real subspace, whose zeros
@@ -392,6 +394,27 @@ theorem sobolevLinearizedEquation_apply_two :
 
 end apply
 
+variable (f m) in
+/-- **The gauge-fixing row between Sobolev spaces.** For `k ≥ 1` and complexified coordinates
+`y ∈ H^(k+1)(ℂ)⁴`, the formal adjoint `d₀* h = ∂₁h₀ + ∂₂h₁ + p h₃ - q h₂` of the infinitesimal
+gauge action at `x_m + y` (`TauCeti.Vortex.gaugeAdjoint`), as a bounded operator
+`H^(k+1)(ℂ)⁴ → H^k(ℂ)`. When `y` holds the coordinates of a real variation, it computes `d₀*` at
+the field `x_m + y` of `A_m^(k+1)` (`coeFn_inclusionLp_sobolevGaugeAdjoint_ae_eq`). Together with
+`sobolevLinearizedEquation` it realizes the gauge-fixed operator `L = d₀* ⊕ d₁`. -/
+def sobolevGaugeAdjoint (hk : 1 ≤ k) (y : Fin 4 → H^{(k : ℝ) + 1}(ℂ)) :
+    (Fin 4 → H^{(k : ℝ) + 1}(ℂ)) →L[ℂ] H^{(k : ℝ)}(ℂ) :=
+  (lineDerivCLM ENNReal.one_lt_two ENNReal.ofNat_ne_top 1).comp (proj 0) +
+    (lineDerivCLM ENNReal.one_lt_two ENNReal.ofNat_ne_top I).comp (proj 1) +
+    (fieldMulCLM f m hk y 2).comp (proj 3) - (fieldMulCLM f m hk y 3).comp (proj 2)
+
+/-- The defining formula of `sobolevGaugeAdjoint`. -/
+theorem sobolevGaugeAdjoint_apply (hk : 1 ≤ k) (y h : Fin 4 → H^{(k : ℝ) + 1}(ℂ)) :
+    sobolevGaugeAdjoint f m hk y h =
+      lineDerivCLM ENNReal.one_lt_two ENNReal.ofNat_ne_top 1 (h 0) +
+        lineDerivCLM ENNReal.one_lt_two ENNReal.ofNat_ne_top I (h 1) +
+        fieldMulCLM f m hk y 2 (h 3) - fieldMulCLM f m hk y 3 (h 2) :=
+  (rfl)
+
 /-- **The quadratic remainder between Sobolev spaces.** The quadratic term of the vortex equation
 (`TauCeti.Vortex.quadraticTerm`) on complexified coordinates `y ∈ H^(k+1)(ℂ)⁴`, `k ≥ 1`, with
 values in `H^k(ℂ)³`. -/
@@ -592,6 +615,26 @@ theorem coeFn_inclusionLp_sobolevLinearizedEquation_ae_eq (hk : 1 ≤ k)
     simp only [Pi.add_apply, Pi.sub_apply, Fin.isValue, linearizedEquation_apply_two,
       Complex.ofReal_add, Complex.ofReal_sub, Complex.ofReal_mul]
     ring
+
+/-- **The Sobolev gauge-fixing row computes the pointwise one.** If the coordinates of `u` and `w`
+are almost everywhere those of the real fields `y` and `h`, with `h` of class `C¹`, then
+`sobolevGaugeAdjoint f m hk u w` is almost everywhere `gaugeAdjoint (x_m + y) h`. -/
+theorem coeFn_inclusionLp_sobolevGaugeAdjoint_ae_eq (hk : 1 ≤ k)
+    {u w : Fin 4 → H^{(k : ℝ) + 1}(ℂ)} {y h : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hu : ∀ a, ⇑(inclusionLp (by positivity) (u a)) =ᵐ[volume] fun z ↦ (y z a : ℂ))
+    (hw : ∀ a, ⇑(inclusionLp (by positivity) (w a)) =ᵐ[volume] fun z ↦ (h z a : ℂ))
+    (hh : ContDiff ℝ 1 h) :
+    ⇑(inclusionLp (k.cast_nonneg : (0 : ℝ) ≤ k) (sobolevGaugeAdjoint f m hk u w))
+      =ᵐ[volume] fun z ↦ (gaugeAdjoint (referenceField f m + y) h z : ℂ) := by
+  have hd (b : Fin 4) (v : ℂ) := coeFn_inclusionLp_lineDerivCLM_ae_eq ENNReal.one_lt_two
+    ENNReal.ofNat_ne_top k.cast_nonneg (contDiff_euclidean.1 hh b) (hw b) v
+  have hX (a b : Fin 4) := coeFn_inclusionLp_fieldMulCLM_ae_eq (f := f) (m := m) hk hu a (hw b)
+  rw [sobolevGaugeAdjoint_apply, map_sub, map_add, map_add]
+  filter_upwards [Lp.coeFn_sub_ae_eq_of_ae_eq (Lp.coeFn_add_ae_eq_of_ae_eq
+    (Lp.coeFn_add_ae_eq_of_ae_eq (hd 0 1) (hd 1 I)) (hX 2 3)) (hX 3 2)] with z hz
+  rw [hz]
+  simp only [Pi.add_apply, Pi.sub_apply, gaugeAdjoint_def, Complex.ofReal_add, Complex.ofReal_sub,
+    Complex.ofReal_mul]
 
 /-- **The Sobolev quadratic term computes the pointwise one.** If the coordinates of `u` are
 almost everywhere those of the real field `y`, then `sobolevQuadraticTerm hk u` is almost
