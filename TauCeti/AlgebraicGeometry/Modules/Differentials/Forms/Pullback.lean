@@ -97,6 +97,10 @@ theorem differentialFormsPullbackHom_id (p : ℕ) :
   have h := pullbackExteriorPowerComparison_id p (X.relativeDifferentials R)
   have n := (Scheme.Modules.pullbackId X).hom.naturality (eqToHom (differentialForms_def R X p))
   rw [differentialFormsPullbackHom_def, cotangentMap_id]
+  -- `rw` and `simp` cannot use `h` or `n` here: the implicit objects of the composites in the goal
+  -- differ from theirs by `Functor.comp_obj` and `differentialForms_def`, and these cannot be
+  -- normalized since `X.Modules` is not reducibly the category of sheaves of modules that
+  -- `SheafOfModules.exteriorPower` expects. So compose the squares as terms.
   exact (congrArg (_ ≫ ·) ((Category.assoc _ _ _).symm.trans (congrArg (· ≫ _) h))).trans
     ((Category.assoc _ _ _).symm.trans ((congrArg (· ≫ _) n).trans
       ((Category.assoc _ _ _).trans ((congrArg (_ ≫ ·)
@@ -321,8 +325,8 @@ lemma differentialFormsRepresentation_apply (p : ℕ) (g : Aut (Over.mk (X ↘ S
 /-- The inverse of `g` acts on global forms by pullback along `g`. -/
 lemma differentialFormsRepresentation_inv_apply (p : ℕ) (g : Aut (Over.mk (X ↘ Spec (.of R)))) :
     differentialFormsRepresentation R X p g⁻¹ =
-      differentialFormsPullback R (X := X) (Y := X) g.asIso.hom.left p :=
-  (rfl)
+      differentialFormsPullback R (X := X) (Y := X) g.asIso.hom.left p := by
+  rw [differentialFormsRepresentation_apply, Aut.inv_asIso, Iso.symm_inv]
 
 /-- An automorphism acts trivially on global `p`-forms exactly when its pullback fixes every global
 `p`-form: pullback and inverse pullback have the same fixed forms. -/
