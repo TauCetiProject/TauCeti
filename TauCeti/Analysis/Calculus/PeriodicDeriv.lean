@@ -39,8 +39,10 @@ protected so that opening `Function.Periodic` does not shadow `deriv` and `logDe
   periodic.
 * `Function.Periodic.iteratedFDeriv`: the iterated Fréchet derivatives of a periodic function are
   periodic.
-* `TauCeti.periodic_deriv_of_apply_add_eq_add`: the derivative of a function with
-  `f (x + c) = f x + d`, such as a lift of a degree one circle map, is `c`-periodic.
+* `TauCeti.periodic_fderiv_of_apply_add_eq_add`: the Fréchet derivative of a function with
+  `f (x + c) = f x + d` is `c`-periodic.
+* `TauCeti.periodic_deriv_of_apply_add_eq_add`: its one-variable form; for instance the derivative
+  of a lift of a degree one circle map is `1`-periodic.
 * `Function.Periodic.deriv`: the derivative of a periodic function is periodic.
 * `Function.Periodic.iteratedDeriv`: the iterated derivatives of a periodic function are
   periodic.
@@ -62,12 +64,21 @@ public section
 
 namespace TauCeti
 
+/-- The Fréchet derivative of a function with `f (x + c) = f x + d` is `c`-periodic: translating
+the argument by `c` only adds the constant `d`. For `d = 0` this is `Function.Periodic.fderiv`. -/
+theorem periodic_fderiv_of_apply_add_eq_add {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    {f : E → F} {c : E} {d : F} (h : ∀ x, f (x + c) = f x + d) :
+    Function.Periodic (fderiv 𝕜 f) c := fun x ↦ by
+  rw [← fderiv_comp_add_right, funext h, fderiv_add_const]
+
 /-- The derivative of a function with `f (x + c) = f x + d`, such as a lift of a degree one circle
-map (`c = d = 1`), is `c`-periodic. For `d = 0` this is `Function.Periodic.deriv`. -/
+map (`c = d = 1`), is `c`-periodic. This is the one-variable form of
+`TauCeti.periodic_fderiv_of_apply_add_eq_add`; for `d = 0` it is `Function.Periodic.deriv`. -/
 theorem periodic_deriv_of_apply_add_eq_add {𝕜 F : Type*} [NontriviallyNormedField 𝕜]
     [NormedAddCommGroup F] [NormedSpace 𝕜 F] {f : 𝕜 → F} {c : 𝕜} {d : F}
     (h : ∀ x, f (x + c) = f x + d) : Function.Periodic (deriv f) c := fun x ↦ by
-  rw [← deriv_comp_add_const, funext h, deriv_add_const]
+  simp only [← fderiv_apply_one_eq_deriv, periodic_fderiv_of_apply_add_eq_add h x]
 
 end TauCeti
 
