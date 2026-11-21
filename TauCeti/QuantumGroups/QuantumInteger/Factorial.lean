@@ -47,13 +47,14 @@ specializes to `n!` at `v = 1`.
   `TauCeti.laurentEval_one_laurentQuantumFactorial`: `[n]_v!` specializes to `[n]_q!` at `v = q`
   when `q - q⁻¹ ≠ 0`, and to `n!` at `v = 1`; in particular `[n]_v! ≠ 0`
   (`TauCeti.laurentQuantumFactorial_ne_zero`).
+* `TauCeti.rescale_neg_one_laurentQuantumFactorial`: `[n]_{-v}! = (-1)^{n(n-1)/2} [n]_v!`.
 
 ## References
 
 * J. C. Jantzen, *Lectures on Quantum Groups*, Graduate Studies in Mathematics 6, Chapter 0, for
   quantum factorials and the symmetric normalization.
 * G. Lusztig, *Introduction to Quantum Groups*, Progress in Mathematics 110, Section 1.3, for
-  quantum factorials and divided powers.
+  quantum factorials and divided powers, and Chapters 33 and 34 for the sign comparison.
 -/
 
 public section
@@ -266,6 +267,31 @@ theorem laurentEval_laurentQuantumFactorial {K : Type*} [Field K] {u : Kˣ}
 theorem laurentEval_one_laurentQuantumFactorial {A : Type*} [CommRing A] (n : ℕ) :
     laurentEval (1 : Aˣ) (laurentQuantumFactorial n) = n.factorial := by
   simp [laurentQuantumFactorial_def, ← prod_range_add_one_eq_factorial]
+
+/-- The integral normalization of divided powers changes by `(-1)^{n(n-1)/2}` under
+`v ↦ -v`. No quantum factorial is inverted. -/
+@[simp]
+theorem rescale_neg_one_laurentQuantumFactorial (n : ℕ) :
+    rescale ℤ (-1) (laurentQuantumFactorial n) =
+      (-1) ^ (n * (n - 1) / 2) * laurentQuantumFactorial n := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [laurentQuantumFactorial_succ, map_mul, ih,
+      rescale_neg_one_laurentQuantumInteger]
+    simp only [add_sub_cancel_right, Int.cast_negOnePow_natCast, Nat.triangle_succ, pow_add]
+    ring
+
+/-- The factorial sign formula remains valid after specialization in any ring. -/
+@[simp]
+theorem laurentEval_neg_laurentQuantumFactorial {R : Type*} [Ring R] (u : Rˣ) (n : ℕ) :
+    laurentEval (-u) (laurentQuantumFactorial n) =
+      (-1) ^ (n * (n - 1) / 2) * laurentEval u (laurentQuantumFactorial n) := by
+  have h := congrArg (laurentEval u) (rescale_neg_one_laurentQuantumFactorial n)
+  simpa [-rescale_neg_one_laurentQuantumFactorial] using h
+
+example : laurentEval (-1 : ℤˣ) (laurentQuantumFactorial 3) = -6 := by
+  norm_num [laurentEval_one_laurentQuantumFactorial]
 
 /-- The Laurent quantum factorial `[n]_v!` is nonzero, since its value at `v = 1` is `n!`. -/
 theorem laurentQuantumFactorial_ne_zero (n : ℕ) : laurentQuantumFactorial n ≠ 0 := fun h => by

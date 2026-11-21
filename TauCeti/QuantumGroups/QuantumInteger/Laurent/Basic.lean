@@ -41,6 +41,7 @@ classical specialization at `v = 1` at the same time.
 * `TauCeti.T_sub_T_neg_mul_laurentQuantumInteger`: `(v - v⁻¹) [r]_v = v^r - v^(-r)`.
 * `TauCeti.laurentEval_laurentQuantumInteger`: the value at a unit `q` of a field with
   `q - q⁻¹ ≠ 0` is the quantum integer `[r]_q`.
+* `TauCeti.rescale_neg_one_laurentQuantumInteger`: `[r]_{-v} = (-1)^{r-1} [r]_v`.
 * `TauCeti.laurentEval_one_laurentQuantumInteger`: the value at `v = 1` is `r`.
 * `TauCeti.laurentQuantumInteger_add`: the addition formula `[a + b]_v = v^a [b]_v + v^(-b) [a]_v`.
 * `TauCeti.qInt_add_inv_eq_laurentEval`: the value of `[n]_v` at a unit `u` of a commutative ring
@@ -94,6 +95,29 @@ theorem T_sub_T_neg_mul_laurentQuantumInteger (r : ℤ) :
   rcases Int.eq_nat_or_neg r with ⟨n, rfl | rfl⟩
   · exact key n
   · rw [laurentQuantumInteger_neg, mul_neg, key, neg_neg, neg_sub]
+
+/-- The Laurent quantum integer changes by `(-1)^{m-1}` when the parameter changes sign,
+for every integer index. -/
+@[simp]
+theorem rescale_neg_one_laurentQuantumInteger (m : ℤ) :
+    rescale ℤ (-1) (laurentQuantumInteger m) =
+      Int.negOnePow (m - 1) * laurentQuantumInteger m := by
+  have h := congrArg (rescale ℤ (-1)) (T_sub_T_neg_mul_laurentQuantumInteger m)
+  simp only [map_mul, map_sub, rescale_T, zpow_one, zpow_neg_one, inv_neg, inv_one,
+    Units.val_neg, Units.val_one, map_neg, map_one, neg_one_mul, ← Int.negOnePow_def,
+    Int.negOnePow_neg, eq_intCast] at h
+  refine mul_left_cancel₀ (T_sub_T_ne_zero (R := ℤ) (by decide : (1 : ℤ) ≠ -1)) ?_
+  simp only [Int.negOnePow_sub, Int.negOnePow_one, Units.val_mul, Units.val_neg, Units.val_one,
+    Int.cast_mul, Int.cast_neg, Int.cast_one]
+  linear_combination -h + (Int.negOnePow m : ℤ[T;T⁻¹]) * T_sub_T_neg_mul_laurentQuantumInteger m
+
+/-- The signed quantum integer changes by `(-1)^{m-1}` at opposite parameters in any ring. -/
+@[simp]
+theorem laurentEval_neg_laurentQuantumInteger {R : Type*} [Ring R] (u : Rˣ) (m : ℤ) :
+    laurentEval (-u) (laurentQuantumInteger m) =
+      Int.negOnePow (m - 1) * laurentEval u (laurentQuantumInteger m) := by
+  have h := congrArg (laurentEval u) (rescale_neg_one_laurentQuantumInteger m)
+  simpa [-rescale_neg_one_laurentQuantumInteger] using h
 
 /-- At `v = 1` the quantum integer `[r]_v` is the integer `r`. -/
 @[simp]

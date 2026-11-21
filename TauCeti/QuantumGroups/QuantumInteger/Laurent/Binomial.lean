@@ -46,9 +46,13 @@ domain `ℤ[v, v⁻¹]`.
   `[-m choose r]_v = (-1)^r [m + r - 1 choose r]_v` for every integer `m`.
 * `TauCeti.signedLaurentQuantumBinomial_succ_succ`: the Pascal rule for every integer upper
   argument.
+* `TauCeti.rescale_neg_one_signedLaurentQuantumBinomial`: changing `v` to `-v` multiplies
+  `[m choose r]_v` by `(-1)^{r(m-r)}`, also at negative weights. The sign identity specializes
+  over any ring, including at roots of unity and in positive characteristic.
 
 The normalization and negative-upper-argument convention are those of G. Lusztig,
-*Introduction to Quantum Groups*, Chapters 1 and 34. The symmetric normalization, with
+*Introduction to Quantum Groups*, Chapters 1 and 34; see Chapters 33 and 34 for the sign
+comparison in modified quantum enveloping algebras. The symmetric normalization, with
 `[n]_v = (v^n - v^(-n)) / (v - v⁻¹)` invariant under `v ↦ v⁻¹`, follows J. C. Jantzen,
 *Lectures on Quantum Groups*, Chapter 0.
 -/
@@ -161,6 +165,24 @@ theorem invert_laurentQuantumBinomial (n r : ℕ) :
     invert (laurentQuantumBinomial n r) = laurentQuantumBinomial n r := by
   refine eq_of_forall_laurentEval_eq fun K _ u _ => ?_
   simp [Units.val_inv_eq_inv_val]
+
+/-- Changing `v` to `-v` multiplies a natural-upper-argument Laurent Gaussian by
+`(-1)^{r(n-r)}`. The formula also holds above the diagonal, where both sides vanish. -/
+@[simp]
+theorem rescale_neg_one_laurentQuantumBinomial (n r : ℕ) :
+    rescale ℤ (-1) (laurentQuantumBinomial n r) =
+      (-1) ^ (r * (n - r)) * laurentQuantumBinomial n r := by
+  refine eq_of_forall_laurentEval_eq fun K _ u _ => ?_
+  simp [quantumBinomial_neg_left]
+
+/-- The sign change for Laurent Gaussians with natural upper argument specializes at every
+unit of every ring. -/
+@[simp]
+theorem laurentEval_neg_laurentQuantumBinomial {R : Type*} [Ring R] (u : Rˣ) (n r : ℕ) :
+    laurentEval (-u) (laurentQuantumBinomial n r) =
+      (-1) ^ (r * (n - r)) * laurentEval u (laurentQuantumBinomial n r) := by
+  have h := congrArg (laurentEval u) (rescale_neg_one_laurentQuantumBinomial n r)
+  simpa [-rescale_neg_one_laurentQuantumBinomial] using h
 
 /-- The second Pascal rule
 `[n+1 choose r+1]_v = v^(-(n-r)) [n choose r]_v + v^(r+1) [n choose r+1]_v`, the image of the
@@ -328,6 +350,42 @@ theorem laurentEval_one_signedLaurentQuantumBinomial {R : Type*} [Ring R] (m : �
     rw [he, Ring.choose_natCast, Units.smul_def, Int.coe_negOnePow_natCast, zsmul_eq_mul]
     simp only [Int.cast_mul, Int.cast_pow, Int.cast_neg, Int.cast_one, Int.cast_natCast]
 
+/-- Changing `v` to `-v` multiplies the signed Laurent Gaussian by `(-1)^{r(m-r)}`,
+including negative upper arguments. -/
+@[simp]
+theorem rescale_neg_one_signedLaurentQuantumBinomial (m : ℤ) (r : ℕ) :
+    rescale ℤ (-1) (signedLaurentQuantumBinomial m r) =
+      Int.negOnePow ((r : ℤ) * (m - r)) * signedLaurentQuantumBinomial m r := by
+  cases m with
+  | ofNat n =>
+    by_cases h : r ≤ n
+    · simpa only [Int.ofNat_eq_natCast, signedLaurentQuantumBinomial_natCast,
+        ← Nat.cast_sub h, ← Nat.cast_mul, Int.cast_negOnePow_natCast] using
+        rescale_neg_one_laurentQuantumBinomial n r
+    · simp [Int.ofNat_eq_natCast, laurentQuantumBinomial_eq_zero_of_lt (by omega : n < r)]
+  | negSucc n =>
+    have hsign : Int.negOnePow ((r : ℤ) * (Int.negSucc n - r)) =
+        Int.negOnePow (r * ((n + r : ℕ) - r) : ℕ) := by
+      rw [Int.negOnePow_eq_iff]
+      convert (Int.even_mul_succ_self (r : ℤ)).neg.add
+        (even_two_mul (-(r : ℤ) * n)) using 1
+      simp only [Nat.add_sub_cancel, Nat.cast_mul, Int.negSucc_eq]
+      ring
+    rw [hsign, Int.negSucc_eq, signedLaurentQuantumBinomial_neg_succ, map_mul,
+      rescale_neg_one_laurentQuantumBinomial]
+    simp only [Int.cast_negOnePow_natCast, map_pow, map_neg, map_one]
+    ring
+
+/-- The sign change for signed Gaussians specializes at every unit of every ring,
+including at roots of unity and at `±1`. -/
+@[simp]
+theorem laurentEval_neg_signedLaurentQuantumBinomial {R : Type*} [Ring R]
+    (u : Rˣ) (m : ℤ) (r : ℕ) :
+    laurentEval (-u) (signedLaurentQuantumBinomial m r) =
+      Int.negOnePow ((r : ℤ) * (m - r)) * laurentEval u (signedLaurentQuantumBinomial m r) := by
+  have h := congrArg (laurentEval u) (rescale_neg_one_signedLaurentQuantumBinomial m r)
+  simpa [-rescale_neg_one_signedLaurentQuantumBinomial] using h
+
 -- Small normalization witnesses: these are symmetric, not the polynomial `1 + v²`.
 example : laurentQuantumBinomial 2 1 = T 1 + T (-1) := by
   norm_num [laurentQuantumBinomial_succ_succ]
@@ -337,5 +395,11 @@ example : signedLaurentQuantumBinomial (-2) 1 = -(T 1 + T (-1)) := by
   norm_num [laurentQuantumBinomial_succ_succ] at h
   simpa only [signedLaurentQuantumBinomial_one_right, laurentQuantumInteger_neg,
     neg_add_rev] using h
+
+example : laurentEval (-1 : ℤˣ) (signedLaurentQuantumBinomial (-2) 1) = 2 := by
+  norm_num [Ring.choose_one_right]
+
+example : laurentEval (-1 : ℤˣ) (signedLaurentQuantumBinomial 2 1) = -2 := by
+  norm_num [Ring.choose_one_right]
 
 end TauCeti
