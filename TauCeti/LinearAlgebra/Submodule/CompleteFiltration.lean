@@ -81,9 +81,7 @@ Source: https://github.com/yuma-mizuno-lean/Mei/blob/7f1e4c7714fb020473694755ad8
 theorem pow_eq_zero_of_map_le (hT : ∀ n, (F n).map T ≤ F (n + 1))
     (hzero : F 0 = ⊤) {r : ℕ} (hr : F r = ⊥) : T ^ r = 0 := by
   ext x
-  have hx0 : x ∈ F 0 := by simp [hzero]
-  have hx := pow_apply_mem_of_map_le hT hx0 r
-  simpa only [Nat.zero_add, hr, Submodule.mem_bot, LinearMap.zero_apply] using hx
+  simpa [hr] using pow_apply_mem_of_map_le hT (by simp [hzero] : x ∈ F 0) r
 
 end Module.End
 
@@ -120,11 +118,21 @@ theorem comp_add_right (d : ℕ) : IsCompleteFiltration fun n ↦ F (n + d) wher
     -- for `F`, and its limit is a limit of `x` for the tail.
     obtain ⟨L, hL⟩ := hF.exists_limit (fun n ↦ x (n - d)) fun n ↦ by
       rcases Nat.lt_or_ge n d with hn | hn
-      · rw [Nat.sub_eq_zero_of_le hn, Nat.sub_eq_zero_of_le hn.le, sub_self]
-        exact zero_mem _
-      · rw [Nat.sub_add_comm hn]
-        simpa [Nat.sub_add_cancel hn] using hx (n - d)
+      · simp [Nat.sub_eq_zero_of_le hn, Nat.sub_eq_zero_of_le hn.le]
+      · simpa [Nat.sub_add_comm hn, Nat.sub_add_cancel hn] using hx (n - d)
     exact ⟨L, fun n ↦ by simpa using hL (n + d)⟩
+
+/-- **Complete filtrations pull back along linear equivalences.** If `F` is a complete separated
+filtration of `M` and `e : N ≃ₗ[R] M`, the preimages of the `F n` form a complete separated
+filtration of `N`. -/
+theorem comap_linearEquiv {N : Type*} [AddCommGroup N] [Module R N] (e : N ≃ₗ[R] M) :
+    IsCompleteFiltration fun n ↦ (F n).comap (e : N →ₗ[R] M) where
+  antitone _ _ h := Submodule.comap_mono (hF.antitone h)
+  eq_zero_of_forall_mem x hx :=
+    e.injective ((hF.eq_zero_of_forall_mem (e x) hx).trans e.map_zero.symm)
+  exists_limit x hx := by
+    obtain ⟨L, hL⟩ := hF.exists_limit (fun n ↦ e (x n)) fun n ↦ by simpa using hx n
+    exact ⟨e.symm L, fun n ↦ by simpa using hL n⟩
 
 /-- **Successive approximation.** Let `f` map a complete filtration `F` into a separated
 filtration `G`, with `f (F n) ⊆ G n`. If `f` is surjective on the associated graded modules, in
@@ -204,27 +212,22 @@ include hF hF0 hT
 
 /-- **Inverting `1 + T` on a complete filtered module.**  If `T` raises a complete separated
 filtration with `F 0 = ⊤`, then `1 + T` is invertible, its inverse being the convergent geometric
-series `∑ₖ (-T)ᵏ`. -/
+series `∑ₖ (-T)ᵏ` (`Module.End.ringInverse_one_add_apply_sub_sum_mem`). -/
 theorem isUnit_one_add : IsUnit (1 + T) := by
   rw [Module.End.isUnit_iff]
   refine ⟨(injective_iff_map_eq_zero (1 + T)).2 fun u hu ↦ ?_, fun y ↦ ?_⟩
   · exact hF.eq_zero_of_forall_mem u fun n ↦
       Module.End.mem_of_one_add_apply_mem hF.antitone hF0 hT (hu ▸ zero_mem (F n))
-  · -- The partial geometric sums form a Cauchy sequence; its limit is a preimage of `y`.
-    have hy : y ∈ F 0 := by simp [hF0]
-    have hpow := Module.End.pow_apply_mem_of_map_le (T := -T) (by simpa using hT) hy
-    obtain ⟨L, hL⟩ := hF.exists_limit (fun n ↦ (∑ k ∈ Finset.range n, (-T) ^ k) y) fun n ↦ by
-      simpa [Finset.sum_range_succ] using hpow n
-    refine ⟨L, sub_eq_zero.mp (hF.eq_zero_of_forall_mem _ fun n ↦ ?_)⟩
-    have hgeom := LinearMap.congr_fun (mul_neg_geom_sum (-T) n) y
-    rw [sub_neg_eq_add, mul_apply_eq_comp, LinearMap.sub_apply, one_apply_eq_self] at hgeom
-    have h : (1 + T) L - y =
-        (1 + T) (L - (∑ k ∈ Finset.range n, (-T) ^ k) y) - ((-T) ^ n) y := by
-      rw [map_sub, hgeom, sub_sub, sub_add_cancel]
-    rw [h]
-    refine sub_mem ?_ (by simpa using hpow n)
-    rw [LinearMap.add_apply, one_apply_eq_self]
-    exact add_mem (hL n) (hF.antitone (Nat.le_succ n) (hT n ⟨_, hL n, rfl⟩))
+  · -- Successive approximation correcting `z ∈ F n` by `z` itself, as `z - (1 + T) z = -T z`;
+    -- the corrections are the terms `(-T) ^ k y` of the geometric series.
+    have hle (n : ℕ) {z : M} (hz : z ∈ F n) : T z ∈ F (n + 1) := hT n ⟨z, hz, rfl⟩
+    have hsurj := hF.surjOn hF.eq_zero_of_forall_mem (1 + T)
+      (fun n ↦ Submodule.map_le_iff_le_comap.2 fun z hz ↦ by
+        rw [Submodule.mem_comap, LinearMap.add_apply, one_apply_eq_self]
+        exact add_mem hz (hF.antitone n.le_succ (hle n hz)))
+      fun n z hz ↦ ⟨z, hz, by simpa using hle n hz⟩
+    obtain ⟨L, -, hL⟩ := hsurj (by simp [hF0] : y ∈ F 0)
+    exact ⟨L, hL⟩
 
 end TauCeti.IsCompleteFiltration
 
@@ -242,8 +245,7 @@ theorem isCompleteFiltration_pi {ι : Type*} {E : ι → Type*} [∀ i, AddCommG
   eq_zero_of_forall_mem x hx := funext fun i ↦ (hF _ x).1 (hx (w i + 1)) i (Nat.lt_succ_self _)
   exists_limit x hx := by
     -- From step `w i + 1` on, the `i`-th coordinate of `x` no longer changes.
-    have hconst : ∀ i, ∀ n, w i + 1 ≤ n → x n i = x (w i + 1) i := by
-      intro i n hn
+    have hconst (i : ι) (n : ℕ) (hn : w i + 1 ≤ n) : x n i = x (w i + 1) i := by
       induction n, hn using Nat.le_induction with
       | base => rfl
       | succ n hn ih =>

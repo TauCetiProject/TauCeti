@@ -5,9 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Convex.ConvexSpace.CompactSpaceStdSimplex
 public import TauCeti.Algebra.Homology.Embedding.ExtendHomology.Sequence
+public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.Complete
 public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.Indexing
 public import TauCeti.AlgebraicTopology.Cohomology.Triple
+public import TauCeti.AlgebraicTopology.SimplicialSet.Cochains.Basic
+public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
 public import TauCeti.CategoryTheory.Subobject.Cokernel
 import TauCeti.Algebra.Homology.Embedding.ExtendSubobject
 
@@ -36,14 +40,29 @@ on `X (p - 1)`.
   graded piece `F^p H / F^{p+1} H` of the filtration of `H^{p+q}(Y)` by the images `F^p H` of the
   cohomology of `Y` relative to `X (p - 1)`
   (`TauCeti.filteredSpaceCohomologySpectralSequencePageXIsoGradedOfFinite`).
+* **Completeness.** A singular cochain vanishes on `X q` exactly when it vanishes on every singular
+  simplex with image in `X q` (`TauCeti.mem_range_singularCochainFiltration_arrow_iff`). If every
+  compact subset of `Y` lies in some `X q`, then every singular simplex of `Y` lies in some `X q`,
+  so in each degree the filtration is complete and separated
+  (`TauCeti.isCompleteFiltration_singularCochainFiltration`): a cochain is the family of its
+  restrictions to the simplices (`TauCeti.cochainComponentsLinearEquiv`), and in these coordinates
+  the filtration is the weight filtration of a product, the weight of a simplex being the first
+  stage containing it. Unlike the filtration of singular chains, the stages
+  need not vanish in any degree, as for the skeletal filtration of an infinite-dimensional CW
+  complex.
+* **Convergence of a complete filtration.** If moreover `X (-1) = ∅` and `Hⁿ(X j, X (j - 1)) = 0`
+  whenever `n < j`, the spectral sequence converges strongly: on every page `r ≥ 1` with `p < r`
+  and `q + 1 < r` the object at `(p, q)` is the graded piece `F^p H^{p+q} / F^{p+1} H^{p+q}` of the
+  filtration of the abutment
+  (`TauCeti.filteredSpaceCohomologySpectralSequencePageXIsoGradedOfFirstQuadrant`). The piece
+  `F^p Hⁿ` of this filtration vanishes for `n < p`
+  (`TauCeti.isZero_filteredSpaceCohomologySpectralObject_abutmentFiltration`).
 
 Filtering the total space of a fibration by the preimages of the skeleta of the base gives the
-cohomology Serre spectral sequence, with `E₁^{p,q} = H^{p+q}(Eₚ, Eₚ₋₁)`. Over an
-infinite-dimensional base that filtration is not finite in any degree. Its convergence, through
-the completeness of the cochain filtration
-(`TauCeti.Algebra.Homology.SpectralSequence.Filtered.Complete`), is not treated here; neither is
-the identification of the first differential with the connecting map of the triple
-`(X (p + 1), X p, X (p - 1))` (`TauCeti.TopTriple.singularCohomologyδ`).
+cohomology Serre spectral sequence, with `E₁^{p,q} = H^{p+q}(Eₚ, Eₚ₋₁)`; see
+`TauCeti.AlgebraicTopology.Singular.Fibration.Cohomology`. The identification of the first
+differential with the connecting map of the triple `(X (p + 1), X p, X (p - 1))`
+(`TauCeti.TopTriple.singularCohomologyδ`) is not treated here.
 
 This is the cohomological counterpart of `TauCeti.filteredSpaceSpectralSequence`
 (`TauCeti.AlgebraicTopology.Singular.FilteredSpace.Basic`), whose construction it dualises.
@@ -55,13 +74,15 @@ This is the cohomological counterpart of `TauCeti.filteredSpaceSpectralSequence`
   filtration of a total space by the preimages of the skeleta of the base.
 * J.-P. Serre, *Homologie singulière des espaces fibrés. Applications*, Ann. of Math. 54 (1951),
   425–505.
+* C. A. Weibel, *An Introduction to Homological Algebra*, Cambridge University Press, 1994,
+  Theorem 5.5.10 (complete convergence).
 -/
 
 public section
 
 noncomputable section
 
-open CategoryTheory Limits HomologicalComplex
+open CategoryTheory Limits HomologicalComplex Simplicial
 
 universe w v u
 
@@ -214,6 +235,46 @@ lemma π_singularCochainFiltrationCokernelIso_hom {a b : ℤ} (hab : X a ⊆ X b
   (cokernel.π_desc_assoc _ _ _ _).trans <| (Category.assoc _ _ _).trans <|
     congrArg (_ ≫ ·) (IsColimit.comp_coconePointUniqueUpToIso_hom _ _ WalkingParallelPair.one)
 
+/-- For `X a ⊆ X b`, the quotient of the cochains relative to `X a` by those relative to `X b` has
+vanishing cohomology in degree `m` when the relative singular cohomology `Hⁿ(X b, X a)` vanishes
+for `m = n`. In negative degrees there is nothing to check. -/
+lemma isZero_homology_cokernel_singularCochainFiltration {a b : ℤ} (hab : X a ⊆ X b) (m : ℤ)
+    (hm : ∀ n : ℕ, m = n → IsZero ((TopPair.ofInclusion hab).singularCohomology R k M n)) :
+    IsZero ((cokernel (Subobject.ofLE _ _ (singularCochainFiltration_anti R k M hab))).homology
+      m) := by
+  refine IsZero.of_iso ?_ ((homologyFunctor (ModuleCat.{v} k) _ m).mapIso
+    (singularCochainFiltrationCokernelIso R k M hab))
+  by_cases hm' : ∃ n : ℕ, ComplexShape.embeddingUpNat.f n = m
+  · obtain ⟨n, hn⟩ := hm'
+    exact (hm n hn.symm).of_iso (extendHomologyIso _ _ hn)
+  · push Not at hm'
+    exact (extend_exactAt _ _ m hm').isZero_homology
+
+section Membership
+
+variable {R k M}
+
+/-- **A cochain vanishes on `X q` exactly when it lies in the stage of the filtration at `q`.** A
+singular cochain `c` of degree `m` of `Y`, read in degree `n = m` of the extended complex, lies in
+the cochains relative to `X q` exactly when `c` vanishes on every singular `m`-simplex of `Y` with
+image in `X q`. -/
+theorem mem_range_singularCochainFiltration_arrow_iff (q : ℤ) {m : ℕ} {n : ℤ}
+    (hn : ComplexShape.embeddingUpNat.f m = n)
+    (c : ((Y.singularCochainComplex R k M).extend ComplexShape.embeddingUpNat).X n) :
+    c ∈ LinearMap.range ((singularCochainFiltration R k M X q).arrow.f n).hom ↔
+      ∀ σ : (TopCat.toSSet.obj Y) _⦋m⦌, Set.range (Y.toSSetObjEquiv _ σ) ⊆ X q →
+        (TopCat.toSSet.obj Y).ιChainComplex (R := R) σ ≫
+          ((Y.singularCochainComplex R k M).extendXIso _ hn).hom c = 0 := by
+  rw [← singularCochainFiltrationIso_hom_comp_singularCochainFiltrationι, HomologicalComplex.comp_f,
+    ModuleCat.hom_comp, LinearMap.range_comp_of_range_eq_top _ (ModuleCat.range_eq_top_of_epi _),
+    singularCochainFiltrationι_def]
+  refine (HomologicalComplex.mem_range_extendMap_f_iff _ _ hn c).trans ?_
+  have h := TopPair.mem_range_linearYonedaFunctor_map_singularChainComplexπ_f_iff
+    (TopPair.ofSubset (X q)) R k M m (((Y.singularCochainComplex R k M).extendXIso _ hn).hom c)
+  rwa [TopPair.range_ofSubset_map] at h
+
+end Membership
+
 section SpectralSequence
 
 variable (hX : Monotone X)
@@ -232,6 +293,14 @@ filtration of the singular cochains of `Y` whose stage `F^p` is the cochains van
 abbrev filteredSpaceCohomologySpectralSequence :=
   CochainComplex.decreasingFiltrationSpectralSequence _
     (antitone_singularCochainFiltration_sub_one R k M hX)
+
+/-- **The spectral object of the cohomology spectral sequence of a filtered space**, for an
+increasing family `X : ℤ → Set Y` of subsets of `Y`. Its abutment in degree `n` is `Hⁿ(Y)`
+(`TauCeti.filteredSpaceCohomologyAbutmentIso`), filtered by the images of the relative cohomology
+of the pairs `(Y, X (p - 1))`; the piece `F^p` sits at index `-p`. -/
+abbrev filteredSpaceCohomologySpectralObject :=
+  CochainComplex.spectralObject (CochainComplex.filtrationFunctor _
+    ((antitone_singularCochainFiltration_sub_one R k M hX).comp fun _ _ h ↦ neg_le_neg h))
 
 /-- The object at `(p, q)` on the first page is the cohomology in degree `p + q` of the reindexed
 relative singular cochains of `(X b, X a)`, for `a = p - 1` and `b = p`. -/
@@ -268,9 +337,7 @@ lemma isZero_filteredSpaceCohomologySpectralSequence_page_one_X (p q : ℤ) (h :
 /-- **The abutment of the cohomology spectral sequence of a filtered space** in degree `n` is the
 singular cohomology `Hⁿ(Y)`. -/
 def filteredSpaceCohomologyAbutmentIso (n : ℕ) :
-    (CochainComplex.spectralObject (CochainComplex.filtrationFunctor _
-        ((antitone_singularCochainFiltration_sub_one R k M hX).comp
-          fun _ _ h ↦ neg_le_neg h))).abutment n ≅
+    (filteredSpaceCohomologySpectralObject R k M hX).abutment n ≅
       Y.singularCohomology R k M n :=
   CochainComplex.filtrationAbutmentIso _ _ _ ≪≫
     extendHomologyIso _ ComplexShape.embeddingUpNat rfl
@@ -284,14 +351,140 @@ def filteredSpaceCohomologySpectralSequencePageXIsoGradedOfFinite {a b : ℤ} (h
     (hb : X b = Set.univ) (r : ℤ) (hr : 1 ≤ r) (p q : ℤ) (hra : b + 1 ≤ p + r)
     (hrb : p - r ≤ a) :
     ((filteredSpaceCohomologySpectralSequence R k M hX).page r).X (p, q) ≅
-      cokernel ((CochainComplex.spectralObject (CochainComplex.filtrationFunctor _
-        ((antitone_singularCochainFiltration_sub_one R k M hX).comp
-          fun _ _ h ↦ neg_le_neg h))).abutmentFiltrationMap (-p - 1) (p + q)) :=
+      cokernel ((filteredSpaceCohomologySpectralObject R k M hX).abutmentFiltrationMap
+        (-p - 1) (p + q)) :=
   CochainComplex.decreasingFiltrationSpectralSequencePageXIsoGradedOfFinite _ _
     (a := b + 1) (b := a + 1)
     (by rw [add_sub_cancel_right]; exact singularCochainFiltration_eq_bot R k M hb)
     (by rw [add_sub_cancel_right]; exact singularCochainFiltration_eq_top R k M ha) r hr p q hra
     (by lia)
+
+/-! ### Completeness and convergence -/
+
+variable {R k M}
+
+include hX in
+/-- **The filtration of singular cochains is complete and separated.** If every compact subset of
+`Y` lies in some `X q`, then in each degree the stages of the filtration of the singular cochains
+by vanishing on `X (j - a)`, `j : ℕ`, form a complete separated filtration, for every offset `a`.
+A cochain is the family of its restrictions to the singular simplices
+(`TauCeti.cochainComponentsLinearEquiv`), and in these coordinates the filtration is the weight
+filtration of a product (`TauCeti.isCompleteFiltration_pi`), the weight of a simplex being the
+first stage containing it; a singular simplex has compact image, so it has a weight. -/
+theorem isCompleteFiltration_singularCochainFiltration
+    (hK : ∀ K : Set Y, IsCompact K → ∃ q, K ⊆ X q) (a n : ℤ) :
+    IsCompleteFiltration fun j : ℕ ↦
+      LinearMap.range ((singularCochainFiltration R k M X (j - a)).arrow.f n).hom := by
+  classical
+  by_cases hn : ∃ m : ℕ, ComplexShape.embeddingUpNat.f m = n
+  swap
+  · -- Below degree `0` the extended cochain complex vanishes.
+    push Not at hn
+    have : Subsingleton (((Y.singularCochainComplex R k M).extend
+        ComplexShape.embeddingUpNat).X n) :=
+      ModuleCat.isZero_iff_subsingleton.1 (isZero_extend_X _ _ n hn)
+    exact
+      { antitone _ _ _ x _ := by rw [Subsingleton.elim x 0]; exact zero_mem _
+        eq_zero_of_forall_mem x _ := Subsingleton.elim x 0
+        exists_limit x _ := ⟨0, fun j ↦ by rw [Subsingleton.elim (0 - x j) 0]; exact zero_mem _⟩ }
+  obtain ⟨m, hm⟩ := hn
+  -- A singular simplex has compact image, so it lies in some stage `X (j - a)`.
+  have hσ (σ : (TopCat.toSSet.obj Y) _⦋m⦌) :
+      ∃ j : ℕ, Set.range (Y.toSSetObjEquiv _ σ) ⊆ X (j - a) := by
+    obtain ⟨q, hq⟩ := hK _ (isCompact_range (Y.toSSetObjEquiv _ σ).continuous)
+    exact ⟨(q + a).toNat, hq.trans (hX (by lia))⟩
+  -- In the coordinates given by the simplices, the filtration is a weight filtration of a
+  -- product, with the weight of a simplex the first stage containing it.
+  let G : ℕ → Submodule k ((TopCat.toSSet.obj Y) _⦋m⦌ → (R ⟶ M)) := fun j ↦
+    ⨅ (σ) (_ : Nat.find (hσ σ) < j), LinearMap.ker (LinearMap.proj σ)
+  have hG := isCompleteFiltration_pi (fun σ ↦ Nat.find (hσ σ)) G fun j v ↦ by simp [G]
+  convert ((hG.comp_add_right 1).comap_linearEquiv
+    (cochainComponentsLinearEquiv k (TopCat.toSSet.obj Y) R M m)).comap_linearEquiv
+      ((Y.singularCochainComplex R k M).extendXIso _ hm).toLinearEquiv using 1
+  funext j
+  ext x
+  rw [mem_range_singularCochainFiltration_arrow_iff _ hm]
+  simp only [G, Submodule.mem_comap, Submodule.mem_iInf, LinearMap.mem_ker]
+  -- A simplex lies in `X (j - a)` exactly when its weight is at most `j`; the coordinates of a
+  -- cochain are its restrictions to the summands of the simplices.
+  -- `Iso.toLinearMap_toLinearEquiv` unwraps the coordinate equivalence; the two sides then
+  -- differ only in the instances of the coercion to functions, closed by `rfl`.
+  refine forall_congr' fun σ ↦ imp_congr ?_ (by
+    rw [LinearMap.proj_apply, LinearEquiv.coe_coe, cochainComponentsLinearEquiv_apply,
+      Iso.toLinearMap_toLinearEquiv]; rfl)
+  rw [Nat.lt_succ_iff, Nat.find_le_iff]
+  exact ⟨fun h ↦ ⟨j, le_rfl, h⟩, fun ⟨i, hi, h⟩ ↦ h.trans (hX (by lia))⟩
+
+/-- The graded pieces `F^j / F^{j+1}` of the filtration of singular cochains have vanishing
+cohomology in degree `m` when `Hⁿ(X j, X (j - 1))` vanishes for `m = n`. -/
+private lemma isZero_homology_filtrationCokernel (j m : ℤ)
+    (h : ∀ n : ℕ, m = n →
+      IsZero ((TopPair.ofInclusion (hX (by lia : j - 1 ≤ j))).singularCohomology R k M n)) :
+    IsZero ((cokernel (Subobject.ofLE (singularCochainFiltration R k M X (j + 1 - 1))
+      (singularCochainFiltration R k M X (j - 1))
+      (antitone_singularCochainFiltration_sub_one R k M hX (by lia)))).homology m) :=
+  (isZero_homology_cokernel_singularCochainFiltration R k M _ m h).of_iso
+    ((homologyFunctor (ModuleCat.{v} k) _ m).mapIso
+      (Subobject.cokernelOfLEIsoOfEq (by rw [add_sub_cancel_right]) rfl _ _))
+
+include hX in
+/-- **The filtration of the abutment vanishes above the degree.** Suppose that every compact
+subset of `Y` lies in some `X q` and that `Hⁿ(X j, X (j - 1)) = 0` whenever `n < j`. Then the piece
+`F^p Hⁿ(Y)` of the induced filtration of the abutment, the image of `Hⁿ(Y, X (p - 1))`, vanishes
+for `n < p`. -/
+theorem isZero_filteredSpaceCohomologySpectralObject_abutmentFiltration
+    (hK : ∀ K : Set Y, IsCompact K → ∃ q, K ⊆ X q)
+    (hvanish : ∀ (j : ℤ) (n : ℕ), n < j →
+      IsZero ((TopPair.ofInclusion (hX (by lia : j - 1 ≤ j))).singularCohomology R k M n))
+    {p n : ℤ} (hn : n < p) :
+    IsZero ((filteredSpaceCohomologySpectralObject R k M hX).abutmentFiltration (-p) n) := by
+  refine Abelian.SpectralObject.isZero_abutmentFiltration _
+    (CochainComplex.isZero_spectralObject_H_bot _ _ (-p) n ?_)
+  rw [Function.comp_apply, neg_neg]
+  rcases lt_or_ge n 0 with hn₀ | hn₀
+  · -- In negative degrees the extended cochains, and so their subcomplexes, vanish.
+    refine (HomologicalComplex.exactAt_iff_isZero_homology _ _).1
+      (HomologicalComplex.ExactAt.of_isZero (IsZero.of_mono
+        ((singularCochainFiltration R k M X (p - 1)).arrow.f n)
+        (isZero_extend_X _ _ n fun m hm ↦ ?_)))
+    have : (m : ℤ) = n := hm
+    lia
+  · -- Above degree `n` the graded pieces have no cohomology in degree `n`, and the stages from
+    -- `p ≥ 0` on form a complete filtration.
+    obtain ⟨p', rfl⟩ := Int.eq_ofNat_of_zero_le (by lia : 0 ≤ p)
+    exact CochainComplex.isZero_homology_of_antitone_of_isCompleteFiltration _
+      (antitone_singularCochainFiltration_sub_one R k M hX)
+      (by
+        convert (isCompleteFiltration_singularCochainFiltration hX hK 1 (n - 1)).comp_add_right p'
+          using 2
+        push_cast
+        rw [add_comm])
+      (fun x hx ↦ (isCompleteFiltration_singularCochainFiltration hX hK 1 n).eq_zero_of_forall_mem
+        x fun j ↦ hx j)
+      fun j hj ↦ isZero_homology_filtrationCokernel hX j n fun m hm ↦ hvanish j m (by lia)
+
+/-- **Strong convergence of the cohomology spectral sequence of a complete filtration of a
+space.** Suppose that every compact subset of `Y` lies in some `X q`, that `X (-1) = ∅`, and that
+`Hⁿ(X j, X (j - 1)) = 0` whenever `n < j`, so that the first page is concentrated in the first
+quadrant. Then on every page `r ≥ 1` with `p < r` and `q + 1 < r`, the object at `(p, q)` is the
+graded piece `F^p H^{p+q} / F^{p+1} H^{p+q}` of the induced filtration of the abutment
+`H^{p+q}(Y)` (`TauCeti.filteredSpaceCohomologyAbutmentIso`). The stages of the filtration of the
+cochains need not vanish in any degree. -/
+def filteredSpaceCohomologySpectralSequencePageXIsoGradedOfFirstQuadrant
+    (hK : ∀ K : Set Y, IsCompact K → ∃ q, K ⊆ X q) (h₀ : X (-1) = ∅)
+    (hvanish : ∀ (j : ℤ) (n : ℕ), n < j →
+      IsZero ((TopPair.ofInclusion (hX (by lia : j - 1 ≤ j))).singularCohomology R k M n))
+    (r : ℤ) (hr : 1 ≤ r) (p q : ℤ) (hp : p < r) (hq : q + 1 < r) :
+    ((filteredSpaceCohomologySpectralSequence R k M hX).page r).X (p, q) ≅
+      cokernel ((filteredSpaceCohomologySpectralObject R k M hX).abutmentFiltrationMap
+        (-p - 1) (p + q)) :=
+  CochainComplex.decreasingFiltrationSpectralSequencePageXIsoGradedOfFirstQuadrant
+    (fun p ↦ singularCochainFiltration R k M X (p - 1))
+    (antitone_singularCochainFiltration_sub_one R k M hX)
+    (singularCochainFiltration_eq_top R k M (by rwa [zero_sub]))
+    (isCompleteFiltration_singularCochainFiltration hX hK 1)
+    (fun j _ m hm ↦ isZero_homology_filtrationCokernel hX j m fun n hn ↦ hvanish j n (by lia))
+    r hr p q hp hq
 
 end SpectralSequence
 

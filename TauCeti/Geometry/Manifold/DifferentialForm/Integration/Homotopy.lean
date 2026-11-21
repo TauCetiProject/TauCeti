@@ -294,6 +294,29 @@ theorem rectangleIntegral_const (φ : RoughForm I M F 2) (x : M) (a b : ℝ × �
     rectangleIntegral φ (fun _ ↦ x) a b = 0 :=
   rectangleIntegral_comp_fst φ (fun _ ↦ x) a b
 
+/-- The integrand of `TauCeti.rectangleIntegral` along `u ∘ Prod.map σ τ` is the integrand along
+`u` at the image point, scaled by the product of the derivatives of `σ` and `τ`. -/
+theorem mpullback_comp_prodMap_apply (φ : RoughForm I M F 2) {u : ℝ × ℝ → M} {σ τ : ℝ → ℝ}
+    {σ' τ' s t : ℝ} (hσ : HasDerivAt σ σ' s) (hτ : HasDerivAt τ τ' t)
+    (hu : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u (σ s, τ t)) :
+    mpullback 𝓘(ℝ, ℝ × ℝ) I (u ∘ Prod.map σ τ) φ (s, t) ![(1, 0), (0, 1)] =
+      (σ' * τ') • mpullback 𝓘(ℝ, ℝ × ℝ) I u φ (σ s, τ t) ![(1, 0), (0, 1)] := by
+  -- The derivative of `Prod.map σ τ` scales the coordinate vectors by `σ'` and `τ'`.
+  let A : ℝ × ℝ →L[ℝ] ℝ × ℝ :=
+    (ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ) σ').prodMap
+      (ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ) τ')
+  have hL : HasFDerivAt (Prod.map σ τ) A (s, t) := hσ.hasFDerivAt.prodMap (s, t) hτ.hasFDerivAt
+  have hv : (A ∘ ![(1, 0), (0, 1)]) = fun i ↦ ![σ', τ'] i • ![((1 : ℝ), (0 : ℝ)), (0, 1)] i := by
+    funext i
+    fin_cases i <;> simp [A]
+  rw [mpullback_comp_apply_of_hasFDerivAt hL hu]
+  -- Read the pullback as a flat form on the plane, whose tangent spaces are `ℝ × ℝ` itself.
+  let ψ : ℝ × ℝ → (ℝ × ℝ) [⋀^Fin 2]→L[ℝ] F := mpullback 𝓘(ℝ, ℝ × ℝ) I u φ
+  refine (((ContinuousAlternatingMap.compContinuousLinearMap_apply _ _ _).trans
+    (congrArg _ hv)).trans ((ψ (σ s, τ t)).map_smul_univ _ _)).trans ?_
+  simp only [Fin.prod_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one]
+  rfl
+
 section Continuous
 
 variable [IsManifold I 1 M]
@@ -333,23 +356,8 @@ theorem rectangleIntegral_comp_prodMap {φ : RoughForm I M F 2} (hφ : IsSmoothF
   refine intervalIntegral.integral_congr fun s hs ↦ ?_
   rw [Function.comp_apply, ← intervalIntegral.integral_smul]
   refine intervalIntegral.integral_congr fun t _ ↦ ?_
-  -- The derivative of `Prod.map σ id` sends the coordinate vectors to `(σ' s, 0)` and `(0, 1)`.
-  let A : ℝ × ℝ →L[ℝ] ℝ × ℝ :=
-    (ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ) (σ' s)).prodMap (ContinuousLinearMap.id ℝ ℝ)
-  have hL : HasFDerivAt (Prod.map σ id) A (s, t) :=
-    (hσ s hs).hasFDerivAt.prodMap (s, t) (hasFDerivAt_id t)
-  have hv : (A ∘ ![(1, 0), (0, 1)]) =
-      Function.update ![((1 : ℝ), (0 : ℝ)), (0, 1)] 0 (σ' s • ((1 : ℝ), (0 : ℝ))) := by
-    funext i
-    fin_cases i <;> simp [A]
-  rw [mpullback_comp_apply_of_hasFDerivAt hL ((hu _).mdifferentiableAt one_ne_zero)]
-  -- Read the pullback as a flat form on the plane, whose tangent spaces are `ℝ × ℝ` itself.
-  let ψ : ℝ × ℝ → (ℝ × ℝ) [⋀^Fin 2]→L[ℝ] F := mpullback 𝓘(ℝ, ℝ × ℝ) I u φ
-  refine (((ContinuousAlternatingMap.compContinuousLinearMap_apply _ _ _).trans
-    (congrArg _ hv)).trans ((ψ (σ s, t)).map_update_smul _ _ _ _)).trans ?_
-  congr 2
-  funext i
-  fin_cases i <;> rfl
+  simpa using mpullback_comp_prodMap_apply φ (hσ s hs) (hasDerivAt_id t)
+    ((hu _).mdifferentiableAt one_ne_zero)
 
 /-- **Reparametrization by a `C¹` function in the first coordinate.** For a continuous form, a
 `C¹` map `u` and a `C¹` function `σ`, the integral over `(s, t) ↦ u (σ s, t)` is the integral over
