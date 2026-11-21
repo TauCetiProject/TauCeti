@@ -20,8 +20,9 @@ Let `β ≥ 0` be integrable on `[a, b]` and let `u` satisfy `u t ≤ α + ∫�
 `β u` integrable there. Then `u t ≤ α exp (∫ₐᵗ β)` on `[a, b]`
 (`TauCeti.le_mul_exp_integral_of_le_add_integral_mul`). The backward form, with `∫ₜᵇ` in place of
 `∫ₐᵗ`, is `TauCeti.le_mul_exp_integral_of_le_add_integral_mul_rev`. The kernel need not be
-bounded, nor `u` continuous; the constant-kernel case for continuous `u` is
-`TauCeti.le_mul_exp_of_le_add_mul_integral`.
+bounded, nor `u` continuous. For a constant kernel `β ≡ K` the bound at `t` holds as soon as the
+hypothesis holds at `t` and at almost every point of `[a, b]`
+(`TauCeti.le_mul_exp_of_le_add_mul_integral`, deduced from the forward form here).
 
 The sign of the kernel matters: `u ≡ 1/2`, `β ≡ -1` and `α = 1` satisfy the hypothesis on
 `[0, 1]`, yet `1/2 > e^{-1}`.

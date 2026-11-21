@@ -14,7 +14,7 @@ import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.DerivIntegrable
-import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
+import TauCeti.Analysis.ODE.Gronwall.Integrable
 
 /-!
 # Grönwall-type estimates
@@ -24,7 +24,9 @@ a bound on its derivative. Energy estimates for evolution equations instead prod
 function by an integral of itself: an integrable `φ` with `φ t ≤ c + K ∫ₐᵗ φ` for almost every
 `t ∈ [a, b]`, for some `K ≥ 0`. This file proves that such a `φ` satisfies
 `φ t ≤ c exp (K (t - a))` at every `t ∈ [a, b]` where the inequality itself holds
-(`TauCeti.le_mul_exp_of_le_add_mul_integral`).
+(`TauCeti.le_mul_exp_of_le_add_mul_integral`). This is the constant-kernel case of the
+integrable-kernel inequality `TauCeti.le_mul_exp_integral_of_le_add_integral_mul`, with the
+hypothesis needed only almost everywhere.
 
 The hypothesis `K ≥ 0` cannot be dropped: a very negative stretch of `φ` makes `c + K ∫ₐᵗ φ`
 large when `K < 0`.
@@ -81,9 +83,9 @@ theorem le_mul_exp_of_le_add_mul_integral {φ : ℝ → ℝ} {a b c K t : ℝ}
     (h : ∀ᵐ s ∂volume.restrict (Icc a b), φ s ≤ c + K * ∫ r in a..s, φ r)
     (ht : t ∈ Icc a b) (hφt : φ t ≤ c + K * ∫ s in a..t, φ s) :
     φ t ≤ c * exp (K * (t - a)) := by
-  -- With `Ψ t = ∫ₐᵗ φ`, the bound `χ = c + K Ψ` of `φ` (a.e. on `[a, b]`) is continuous. Apply
-  -- the differential form to a primitive `Θ t = ∫ₐᵗ χ`, whose derivative `χ` is at most
-  -- `c + K Θ` because `Ψ ≤ Θ` and `K ≥ 0`, then pass from the bound on `Θ` back to `φ t ≤ χ t`.
+  -- The bound `χ = c + K ∫ₐ φ` of `φ` (a.e. on `[a, b]`) is continuous, and it satisfies the
+  -- hypothesis of the integrable-kernel inequality with the constant kernel `K` everywhere on
+  -- `[a, b]`, because `∫ₐˣ φ ≤ ∫ₐˣ χ` and `K ≥ 0`. Hence `φ t ≤ χ t ≤ c exp (K (t - a))`.
   have hab : a ≤ b := ht.1.trans ht.2
   have hint : IntervalIntegrable φ volume a b :=
     (intervalIntegrable_iff_integrableOn_Icc_of_le hab).2 hφ
@@ -94,34 +96,18 @@ theorem le_mul_exp_of_le_add_mul_integral {φ : ℝ → ℝ} {a b c K t : ℝ}
         intervalIntegral.continuousOn_primitive_interval' hint left_mem_uIcc
     exact continuousOn_const.add (continuousOn_const.mul hΨ)
   have hχint : IntervalIntegrable χ volume a b := hχ.intervalIntegrable_of_Icc hab
-  -- `Ψ ≤ Θ` on `[a, b]`, because `φ ≤ χ` almost everywhere there.
-  have hΨΘ (x : ℝ) (hx : x ∈ Icc a b) : ∫ s in a..x, φ s ≤ ∫ s in a..x, χ s := by
+  -- `χ x ≤ c + ∫ₐˣ K χ` on `[a, b]`, because `φ ≤ χ` almost everywhere there.
+  have hχle (x : ℝ) (hx : x ∈ Icc a b) : χ x ≤ c + ∫ s in a..x, K * χ s := by
     have hsub : uIcc a x ⊆ uIcc a b := uIcc_subset_uIcc_left (Icc_subset_uIcc hx)
+    rw [intervalIntegral.integral_const_mul]
+    gcongr c + K * ?_
     exact intervalIntegral.integral_mono_ae_restrict hx.1 (hint.mono_set hsub)
       (hχint.mono_set hsub) (ae_restrict_of_ae_restrict_of_subset (Icc_subset_Icc_right hx.2) h)
-  -- A continuous primitive `F` of `χ` gives `Θ = F - F a`, with derivative `χ` on `[a, b]`.
-  obtain ⟨F, hFc, hFd, hFint⟩ := intervalIntegral.exists_continuous_primitive_Icc hχ
-  have hΘ (x : ℝ) (hx : x ∈ Icc a b) : F x - F a = ∫ s in a..x, χ s :=
-    hFint a (left_mem_Icc.2 hab) x hx
-  have hgr := le_gronwallBound_of_liminf_deriv_right_le (f := fun t ↦ F t - F a) (δ := 0)
-    (K := K) (ε := c) (hFc.sub continuous_const).continuousOn
-    (fun x hx r hr ↦
-      ((hFd x (Ico_subset_Icc_self hx)).sub_const _).hasDerivWithinAt.liminf_right_slope_le hr)
-    (by simp)
-    (fun x hx ↦ by
-      rw [hΘ x (Ico_subset_Icc_self hx)]
-      linarith [mul_le_mul_of_nonneg_left (hΨΘ x (Ico_subset_Icc_self hx)) hK]) t ht
-  rw [hΘ t ht] at hgr
-  -- Hence `φ t ≤ c + K Ψ t ≤ c + K Θ t ≤ c + K gronwallBound 0 K c (t - a) = c exp (K (t - a))`.
-  calc φ t ≤ c + K * ∫ s in a..t, φ s := hφt
-    _ ≤ c + K * ∫ s in a..t, χ s := by gcongr c + K * ?_; exact hΨΘ t ht
-    _ ≤ c + K * gronwallBound 0 K c (t - a) := by gcongr
-    _ = c * exp (K * (t - a)) := by
-        rcases hK.eq_or_lt with rfl | hK
-        · simp
-        · rw [gronwallBound_of_K_ne_0 hK.ne']
-          field_simp
-          ring
+  have hgr := le_mul_exp_integral_of_le_add_integral_mul (integrableOn_const measure_Icc_lt_top.ne)
+    (.of_forall fun _ ↦ hK) (hχ.integrableOn_Icc.const_mul K) hχle t ht
+  -- The constant kernel integrates to `∫ₐᵗ K = (t - a) K`.
+  rw [intervalIntegral.integral_const, smul_eq_mul, mul_comm (t - a)] at hgr
+  exact hφt.trans hgr
 
 /-- **Grönwall's inequality for monotone functions, almost-everywhere form.** Let `g` be monotone
 on `[s, t]` with `g s ≥ 0`. If `k g ≤ g'` at almost every point of `(s, t)`, then
