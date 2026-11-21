@@ -20,9 +20,11 @@ it is the order of `ζ`, so a primitive `n`-th root of unity gives a character o
 With values in a domain there are at most `n` characters (Mathlib's
 `MulChar.equiv_rootsOfUnity`), so a character `ω` of order `n` generates the character group:
 every character is `ω ^ m` for exactly one `m < n`. The order of `ω ^ m` is then
-`n / gcd(n, m)` by Mathlib's `orderOf_pow`, and Mathlib's `MulChar.exists_mulChar_orderOf` and
-`MulChar.orderOf_dvd_card_sub_one` say that a finite field `F` has characters of order `d` exactly
-for `d ∣ #F - 1`.
+`n / gcd(n, m)` by Mathlib's `orderOf_pow`. For a finite field `F`, the order of every character
+divides `#F - 1` (Mathlib's `MulChar.orderOf_dvd_card_sub_one`). Conversely, for `d ∣ #F - 1`
+there is a character of order `d` if the target ring has a primitive `d`-th root of unity
+(Mathlib's `MulChar.exists_mulChar_orderOf`). For complex values this holds for every such `d`, so
+`F` has complex characters of order `d` exactly for `d ∣ #F - 1`.
 
 ## Main results
 
