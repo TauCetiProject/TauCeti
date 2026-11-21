@@ -41,10 +41,12 @@ For data on the whole plane, compatible on the disc `‖w‖ ≤ b`, a cutoff be
 
 (`exists_forall_setIntegral_le_mul_integral_floerLinearization_add_of_lt`).
 
-No nondegeneracy, no Floer equation for `u` and no smallness of the data is assumed: the regularity
-needed is only at the points of `K`. The estimate controls the derivative of `ξ` and not `ξ`
-itself. On the cylindrical ends of a Floer domain the operator converges to a translation
-invariant one, and at a nondegenerate orbit the stationary cylinder estimate
+No nondegeneracy, no Floer equation for `u` and no smallness of the data is assumed. The first two
+estimates need regularity only at the points of `K`, respectively of the rectangle, and control
+the derivative of `ξ` and not `ξ` itself. The disc estimate needs regularity at every point of the
+plane, and it also controls `ξ` on the smaller disc. On the cylindrical ends of a Floer domain the
+operator converges to a translation invariant one, and at a nondegenerate orbit the stationary
+cylinder estimate
 (`TauCeti.Floer.exists_forall_setIntegral_le_mul_setIntegral_stationaryCylinderOperator`) controls
 `ξ` as well. The estimate here is the one on the compact part of the domain in the semi-Fredholm
 estimate of the linearized operator, which bounds the `W^{1,2}` norm of a section by the `L²` norms
