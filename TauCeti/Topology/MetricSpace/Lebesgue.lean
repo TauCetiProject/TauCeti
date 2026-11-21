@@ -8,6 +8,9 @@ module
 public import Mathlib.Topology.MetricSpace.Basic
 public import Mathlib.Topology.MetricSpace.Pseudo.Lemmas
 
+import Mathlib.Topology.MetricSpace.Thickening
+import Mathlib.Topology.UniformSpace.HeineCantor
+
 /-!
 # The Lebesgue number lemma for neighbourhood covers
 
@@ -16,7 +19,8 @@ This file records the variant for a family of sets such that every point of the 
 some member of the family as a neighbourhood, as happens for the preimages of such a cover under
 a continuous map. It also records the consequence for an injective continuous map `f` from a
 compact space to a metric space: points with close images lie in a common member of any open
-cover of the domain.
+cover of the domain. Finally, a neighbourhood of a compact set and the Heine–Cantor modulus of a
+map continuous at its points admit a common positive radius.
 
 ## Main declarations
 
@@ -25,6 +29,9 @@ cover of the domain.
 * `TauCeti.exists_pos_forall_dist_lt_exists_mem`: for an injective continuous map from a compact
   space to a metric space and an open cover of the domain, a positive `m` such that any two points
   whose images are at distance less than `m` lie in a common member of the cover.
+* `IsCompact.exists_pos_forall_mem_and_dist_lt`: for a compact set `L`, a neighbourhood `U` of
+  `L`, a map `h` continuous at the points of `L` and `ε > 0`, a positive `η` such that the points
+  within `η` of a point `y ∈ L` lie in `U` and are mapped within `ε` of `h y`.
 -/
 
 public section
@@ -67,3 +74,18 @@ theorem exists_pos_forall_dist_lt_exists_mem {X Y : Type*} [TopologicalSpace X] 
     exact hi (by rwa [mem_ball, dist_comm])
 
 end TauCeti
+
+/-- **A uniform radius at a compact set.** Let `L` be compact, `U` a neighbourhood of `L` and `h`
+a map continuous at the points of `L`. For every `ε > 0` there is `η > 0` such that every point
+`z` within `η` of a point `y ∈ L` lies in `U` and satisfies `dist (h z) (h y) < ε`. -/
+theorem IsCompact.exists_pos_forall_mem_and_dist_lt {X Y : Type*} [PseudoMetricSpace X]
+    [PseudoMetricSpace Y] {L U : Set X} (hL : IsCompact L) (hU : U ∈ 𝓝ˢ L) {h : X → Y}
+    (hh : ∀ y ∈ L, ContinuousAt h y) {ε : ℝ} (hε : 0 < ε) :
+    ∃ η > 0, ∀ y ∈ L, ∀ z, dist z y < η → z ∈ U ∧ dist (h z) (h y) < ε := by
+  obtain ⟨r, hr, hrU⟩ := (hasBasis_nhdsSet_thickening hL).mem_iff.1 hU
+  obtain ⟨η, hη, H⟩ := mem_uniformity_dist.1 <|
+    hL.uniformContinuousAt_of_continuousAt h hh (dist_mem_uniformity hε)
+  refine ⟨min r η, lt_min hr hη, fun y hy z hzy ↦ ⟨?_, ?_⟩⟩
+  · exact hrU (mem_thickening_iff.2 ⟨y, hy, hzy.trans_le (min_le_left _ _)⟩)
+  · rw [dist_comm] at hzy ⊢
+    exact H (hzy.trans_le (min_le_right _ _)) hy
