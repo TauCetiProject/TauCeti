@@ -117,22 +117,13 @@ linear orbit, and its coordinates have size less than `R`. -/
 private theorem flow_eq_linearFlow_of_le {t : ℝ} (ht : 0 ≤ t) (hlev : f q ≤ f (hX.flow t y)) :
     ‖φ.linearFlow t (φ.coord (φ.toChart y))‖ < R ∧
       hX.flow t y = φ.toChart.symm (φ.coord.symm (φ.linearFlow t (φ.coord (φ.toChart y)))) := by
-  set z := φ.coord (φ.toChart y)
   have hR : 0 < R :=
     (div_pos_iff_of_pos_right (by positivity)).1 ((norm_nonneg _).trans_lt hyR)
-  have hz2 : ‖z‖ < R / 2 := hyR.trans_le (div_le_div_of_nonneg_left hR.le (by norm_num)
-    (by linarith [(Nat.cast_nonneg (Module.finrank ℝ E) : (0 : ℝ) ≤ _)]))
+  have hz2 : ‖φ.coord (φ.toChart y)‖ < R / 2 := hyR.trans_le (div_le_div_of_nonneg_left hR.le
+    (by norm_num) (by linarith [(Nat.cast_nonneg (Module.finrank ℝ E) : (0 : ℝ) ≤ _)]))
   -- The coordinates of negative weight have not reached `R` by time `t`, so neither has the orbit.
-  have hsmall : ∀ i, φ.weight i < 0 → Real.exp t * |z i| < R := fun i hi ↦
+  exact hX.norm_linearFlow_lt_and_flow_eq_of_exp_mul_lt φ hφ hRT hy hz2 ht fun i hi ↦
     not_le.1 fun h ↦ (hX.apply_flow_lt_of_le_exp_mul φ hφ hRT hy hyR hi h).not_ge hlev
-  have hnorm : ∀ s ∈ uIcc 0 t, ‖φ.linearFlow s z‖ < R := fun s hs ↦ by
-    rw [uIcc_of_le ht] at hs
-    have hlog2 : 0 < Real.log 2 := Real.log_pos one_lt_two
-    exact φ.norm_linearFlow_lt hz2 (by linarith [hs.1]) fun i hi ↦
-      (mul_le_mul_of_nonneg_right (Real.exp_le_exp.2 hs.2) (abs_nonneg _)).trans_lt (hsmall i hi)
-  have hflow := hX.flow_toChart_symm_of_forall_mem_uIcc φ hφ fun s hs ↦ hRT _ (hnorm s hs)
-  rw [φ.toChart_symm_coord_symm_coord hy] at hflow
-  exact ⟨hnorm t right_mem_uIcc, hflow⟩
 
 end Chart
 

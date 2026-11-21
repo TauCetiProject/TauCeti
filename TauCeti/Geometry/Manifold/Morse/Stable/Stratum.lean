@@ -59,8 +59,8 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
   strata.
 * `morseBrokenTrajectoryStratum_eq_morseTrajectoryRecords`: the stratum of a one-step chain is the
   space of unbroken trajectories.
-* `antitone_apply_of_chain`, `strictAnti_apply_of_chain`: `f` decreases along a chain of critical
-  points joined by trajectories, strictly when consecutive points are distinct.
+* `strictAnti_apply_of_chain`: `f` decreases strictly along a chain of critical points joined by
+  trajectories with consecutive points distinct.
 * `mem_unstableSet_inter_stableSet_of_mem_morseBrokenTrajectoryStratum`: the point of a record on a
   level of step `j` lies on a trajectory from `x j` to `x (j + 1)`.
 * `exists_homeomorph_morseBrokenTrajectoryStratum`: a stratum is the product of the spaces of
@@ -141,15 +141,6 @@ theorem morseBrokenTrajectoryStratum_eq_morseTrajectoryRecords (p r : M) (c : ι
     exact ⟨z 0, hz, hw⟩
   · rintro ⟨y, hy, hw⟩
     exact ⟨![y], hy, hw⟩
-
-/-- **`f` decreases along a chain joined by trajectories.** If each `x j` is joined to `x (j + 1)`
-by a trajectory, then `f (x (j + 1)) ≤ f (x j)` for all `j`. -/
-theorem antitone_apply_of_chain {k : ℕ} {x : Fin (k + 1) → M} {z : Fin k → M}
-    (hz : ∀ j : Fin k, z j ∈ hX.flow.unstableSet (x j.castSucc) ∩ hX.flow.stableSet (x j.succ)) :
-    Antitone fun j ↦ f (x j) :=
-  Fin.antitone_iff_succ_le.2 fun j ↦
-    (hX.mem_Icc_of_mem_unstableSet_inter_stableSet (hz j)).1.trans
-      (hX.mem_Icc_of_mem_unstableSet_inter_stableSet (hz j)).2
 
 /-- **`f` decreases strictly along a chain of distinct points joined by trajectories.** If each
 `x j` is joined to a different point `x (j + 1)` by a trajectory, then `f (x (j + 1)) < f (x j)`

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Neighborhoods
+public import Mathlib.Topology.Order.OrderClosed
 
 /-!
 # Closures and neighbourhoods
@@ -38,6 +39,8 @@ into it.
   it.
 * `Dense.subset_closure_range_domRestrict_preimage`: the values of a family with dense range that
   lie in an open set are dense in it.
+* `TauCeti.exists_mem_Ioo_of_Ioo_subset_closure_range`: a family whose values are dense in a
+  nonempty open interval of a densely ordered space takes a value in it.
 -/
 
 public section
@@ -85,6 +88,15 @@ theorem mapsTo_of_tendsto_of_isClosed {α ι : Type*} {l : Filter ι} [l.NeBot] 
     (hv : ∀ s ∈ S, Filter.Tendsto (fun m ↦ u m s) l (𝓝 (v s))) :
     MapsTo v S L :=
   fun s hs ↦ hL.mem_of_tendsto (hv s hs) (Filter.Eventually.of_forall fun m ↦ hu m hs)
+
+/-- A family whose values are dense in a nonempty open interval of a densely ordered space takes a
+value in that interval. -/
+theorem exists_mem_Ioo_of_Ioo_subset_closure_range {α ι : Type*} [LinearOrder α] [DenselyOrdered α]
+    [TopologicalSpace α] [OrderClosedTopology α] {c : ι → α} {a b : α} (hab : a < b)
+    (h : Ioo a b ⊆ closure (range c)) : ∃ i, c i ∈ Ioo a b := by
+  obtain ⟨y, hy⟩ := nonempty_Ioo.2 hab
+  obtain ⟨_, hy', i, rfl⟩ := mem_closure_iff.1 (h hy) _ isOpen_Ioo hy
+  exact ⟨i, hy'⟩
 
 end TauCeti
 

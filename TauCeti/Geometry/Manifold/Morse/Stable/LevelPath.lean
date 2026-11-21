@@ -259,14 +259,6 @@ private theorem apply_mem_of_mem_Icc {j : Fin k} {t₁ t₂ : ℝ} (ht : t₁ �
     (hwc.trans hsi.symm)]
   exact hV s hs
 
-omit hxne hz hw in
-/-- When the levels are dense between the ends, there are levels in every subinterval. -/
-private theorem exists_mem_Ioo_of_dense {lo hi : ℝ} (hdense : Ioo lo hi ⊆ closure (range c))
-    {a b : ℝ} (hab : a < b) (h : Ioo a b ⊆ Ioo lo hi) : ∃ i, c i ∈ Ioo a b := by
-  have hy : (a + b) / 2 ∈ Ioo a b := ⟨by linarith, by linarith⟩
-  obtain ⟨_, hy', i, rfl⟩ := mem_closure_iff.1 (hdense (h hy)) _ isOpen_Ioo hy
-  exact ⟨i, hy'⟩
-
 omit hw in
 private theorem apply_flow_mem_Ioo_ends (hx0 : x 0 = p) (hxk : x (Fin.last k) = r) (j : Fin k)
     (t : ℝ) : f (hX.flow t (z j)) ∈ Ioo (f r) (f p) := by
@@ -285,8 +277,9 @@ private theorem exists_lt_apply_mem_of_flow (hdense : Ioo (f r) (f p) ⊆ closur
     ((hX.flow.continuous continuous_id continuous_const).continuousAt.preimage_mem_nhds hV)
   set g := fun t ↦ f (hX.flow t (z j))
   have hlt : g t₀ < g (t₀ - η / 2) := hanti (by linarith)
-  obtain ⟨i, hi⟩ := exists_mem_Ioo_of_dense hdense (lt_min hlt (lt_add_of_pos_right _ hδ))
-    fun b hb ↦ ⟨(apply_flow_mem_Ioo_ends hxne hz hx0 hxk j t₀).1.trans hb.1,
+  obtain ⟨i, hi⟩ := exists_mem_Ioo_of_Ioo_subset_closure_range
+    (lt_min hlt (lt_add_of_pos_right _ hδ))
+    fun b hb ↦ hdense ⟨(apply_flow_mem_Ioo_ends hxne hz hx0 hxk j t₀).1.trans hb.1,
       hb.2.trans_le ((min_le_left _ _).trans (apply_flow_mem_Ioo_ends hxne hz hx0 hxk j _).2.le)⟩
   refine ⟨i, ⟨hi.1, hi.2.trans_le (min_le_right _ _)⟩,
     apply_mem_of_mem_Icc hxne hz hw (by linarith : t₀ - η / 2 ≤ t₀) (fun s hs ↦ hηV ?_)
@@ -303,8 +296,9 @@ private theorem exists_lt_apply_mem_of_succ (hdense : Ioo (f r) (f p) ⊆ closur
   set g := fun t ↦ f (hX.flow t (z j))
   have hT₀l := apply_flow_mem_Ioo hxne hz j T₀
   have hanti := hX.antitone_apply_of_chain hz
-  obtain ⟨i, hi⟩ := exists_mem_Ioo_of_dense hdense (lt_min hT₀l.1 (lt_add_of_pos_right _ hδ))
-    fun b hb ↦ ⟨by rw [← hxk]; exact (hanti (Fin.le_last _)).trans_lt hb.1,
+  obtain ⟨i, hi⟩ := exists_mem_Ioo_of_Ioo_subset_closure_range
+    (lt_min hT₀l.1 (lt_add_of_pos_right _ hδ))
+    fun b hb ↦ hdense ⟨by rw [← hxk]; exact (hanti (Fin.le_last _)).trans_lt hb.1,
       hb.2.trans_le ((min_le_left _ _).trans (apply_flow_mem_Ioo_ends hxne hz hx0 hxk j _).2.le)⟩
   have hglim : Tendsto g atTop (𝓝 (f (x j.succ))) :=
     (hX.mdifferentiable.continuous.tendsto _).comp hlim
@@ -324,9 +318,10 @@ private theorem exists_apply_lt_mem_of_castSucc (hdense : Ioo (f r) (f p) ⊆ cl
   set g := fun t ↦ f (hX.flow t (z j))
   have hT₀l := apply_flow_mem_Ioo hxne hz j T₀
   have hanti := hX.antitone_apply_of_chain hz
-  obtain ⟨i, hi⟩ := exists_mem_Ioo_of_dense hdense (max_lt hT₀l.2 (sub_lt_self _ hδ))
-    fun b hb ↦ ⟨((apply_flow_mem_Ioo_ends hxne hz hx0 hxk j _).1.trans_le (le_max_left _ _)).trans
-      hb.1, by rw [← hx0]; exact hb.2.trans_le (hanti (Fin.zero_le _))⟩
+  obtain ⟨i, hi⟩ := exists_mem_Ioo_of_Ioo_subset_closure_range
+    (max_lt hT₀l.2 (sub_lt_self _ hδ))
+    fun b hb ↦ hdense ⟨((apply_flow_mem_Ioo_ends hxne hz hx0 hxk j _).1.trans_le
+      (le_max_left _ _)).trans hb.1, by rw [← hx0]; exact hb.2.trans_le (hanti (Fin.zero_le _))⟩
   have hglim : Tendsto g atBot (𝓝 (f (x j.castSucc))) :=
     (hX.mdifferentiable.continuous.tendsto _).comp hlim
   obtain ⟨T₁, hT₁, hT₀₁⟩ := ((hglim.eventually (lt_mem_nhds hi.2)).and
@@ -436,14 +431,12 @@ private theorem tendsto_of_isLevelPoint_of_flow (hdense : Ioo (f r) (f p) ⊆ cl
     (hm : ∀ᶠ n in l, hX.IsLevelPoint p r c (w n) (a n) (m n))
     (hf : IsMorse 𝓘(ℝ, E) f) {j : Fin k} {t₀ : ℝ}
     (ha : Tendsto a l (𝓝 (f (hX.flow t₀ (z j))))) : Tendsto m l (𝓝 (hX.flow t₀ (z j))) := by
-  have hcrit : {y : M | mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y = 0}.Finite := by
-    simpa only [criticalPoints_eq_setOf_mfderiv_eq_zero] using hf.finite_criticalPoints
   refine tendsto_def.2 fun U hU ↦ ?_
   -- Shrink `U` to a closed neighbourhood containing no critical point.
   have hreg := hX.mfderiv_ne_zero_of_mem_unstableSet_inter_stableSet (hxne j)
     (hX.flow.isInvariant_unstableSet_inter_stableSet _ _ t₀ (hz j))
   obtain ⟨U₁, ⟨hU₁, hU₁c⟩, hU₁U⟩ := (closed_nhds_basis _).mem_iff.1
-    (inter_mem hU (hcrit.isClosed.compl_mem_nhds hreg))
+    (inter_mem hU (hf.finite_setOf_mfderiv_eq_zero.isClosed.compl_mem_nhds hreg))
   obtain ⟨V, hV, ε, hε, hVU⟩ := hX.exists_mem_nhds_forall_flow_mem_of_sub_le hreg hU₁
   obtain ⟨i, hi, hwi⟩ := exists_lt_apply_mem_of_flow hxne hz hw₀ hdense hx0 hxk
     (interior_mem_nhds.2 hV) (half_pos hε)
@@ -530,10 +523,9 @@ private theorem tendsto_of_isLevelPoint (hf : IsMorse 𝓘(ℝ, E) f)
   · -- At a critical point, shrink `U` to a closed neighbourhood containing no other critical
     -- point, and treat the levels above and below that of `x l₀` separately.
     refine tendsto_def.2 fun U hU ↦ ?_
-    have hcrit : {y : M | mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y = 0}.Finite := by
-      simpa only [criticalPoints_eq_setOf_mfderiv_eq_zero] using hf.finite_criticalPoints
     obtain ⟨U₁, ⟨hU₁, hU₁c⟩, hU₁U⟩ := (closed_nhds_basis (x l₀)).mem_iff.1 (inter_mem hU
-      ((hcrit.subset sdiff_subset).isClosed.compl_mem_nhds fun h ↦ h.2 (mem_singleton _)))
+      ((hf.finite_setOf_mfderiv_eq_zero.subset sdiff_subset).isClosed.compl_mem_nhds
+        fun h ↦ h.2 (mem_singleton _)))
     have honly : ∀ y ∈ U₁, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y = 0 → y = x l₀ := fun y hy hyc ↦
       by_contra fun hne ↦ (hU₁U hy).2 ⟨hyc, hne⟩
     filter_upwards [eventually_mem_of_isLevelPoint_of_le hw hx0 hxk hxne hz hw₀ hU₁ hU₁c honly
@@ -565,10 +557,8 @@ noncomputable def morseLevelPoint (p r : M) (c : ι → ℝ) (w : ι → M) (a :
 the level clamped between the levels of the ends. -/
 private theorem isLevelPoint_morseLevelPoint (hw : w ∈ hX.morseBrokenTrajectoryRecords p r c)
     (a : ℝ) : hX.IsLevelPoint p r c w (max (f r) (min a (f p))) (hX.morseLevelPoint p r c w a) := by
+  have hrp := hX.apply_le_apply_of_mem_morseBrokenTrajectoryRecords hw
   obtain ⟨k, x, z, hx0, hxk, hxc, hxne, hz, hrec⟩ := hX.mem_morseBrokenTrajectoryRecords.1 hw
-  have hrp : f r ≤ f p := by
-    rw [← hx0, ← hxk]
-    exact hX.antitone_apply_of_chain hz (Fin.zero_le _)
   unfold morseLevelPoint
   split_ifs with h₁ h₂ h₃
   · rw [min_eq_right h₁, max_eq_right hrp]
@@ -622,10 +612,9 @@ theorem morseLevelPoint_of_le_apply (hw : w ∈ hX.morseBrokenTrajectoryRecords 
     (h : a ≤ f r) : hX.morseLevelPoint p r c w a = r := by
   by_cases hp : f p ≤ a
   · -- Then `f p = f r`, and the point is `p`, which is also the point on the level of `r`.
+    have hrp := hX.apply_le_apply_of_mem_morseBrokenTrajectoryRecords hw
     have h' := isLevelPoint_morseLevelPoint hw a
-    rw [min_eq_right hp] at h'
-    have hrp : f r ≤ f p := (le_max_left _ _).trans h'.mem_Icc.2
-    rw [max_eq_right hrp] at h'
+    rw [min_eq_right hp, max_eq_right hrp] at h'
     exact h'.eq_of_eq_bot (le_antisymm (hp.trans h) hrp)
   · simp only [morseLevelPoint, hp, h, ↓reduceIte]
 
@@ -650,10 +639,6 @@ section LevelPath
 
 variable {p r : M} {c : ι → ℝ}
 
-/-- The level reached at the end of the Moore path of a recorded broken trajectory. -/
-private theorem sub_coe_toNNReal_le (a b : ℝ) : a - ((a - b).toNNReal : ℝ) ≤ b := by
-  linarith [Real.le_coe_toNNReal (a - b)]
-
 /-- **The Moore path of a recorded broken trajectory.** For records of broken trajectories from
 `p` to `r` on levels dense between `f r` and `f p`, the Moore path of length `f p - f r` whose
 point at time `t` is the point of the broken trajectory on the level `f p - t`. It runs from `p`
@@ -668,7 +653,8 @@ noncomputable def morseLevelPath (hf : IsMorse 𝓘(ℝ, E) f)
         fun _ ↦ ⟨w.property, mem_univ _⟩
       length := (f p - f r).toNNReal
       apply_of_length_le' := fun t ht ↦ by
-        rw [hX.morseLevelPoint_of_le_apply w.property (sub_coe_toNNReal_le (f p) (f r)),
+        rw [hX.morseLevelPoint_of_le_apply w.property
+            (sub_le_comm.1 (Real.le_coe_toNNReal (f p - f r))),
           hX.morseLevelPoint_of_le_apply w.property
             (by linarith [Real.toNNReal_le_iff_le_coe.1 ht] : f p - t ≤ f r)] }
   continuous_toFun := MoorePath.continuous_iff.2 ⟨continuous_const,
@@ -702,16 +688,9 @@ theorem source_morseLevelPath : (hX.morseLevelPath hf hdense w).source = p := by
 @[simp]
 theorem target_morseLevelPath : (hX.morseLevelPath hf hdense w).target = r := by
   rw [MoorePath.target_def, morseLevelPath_apply, length_morseLevelPath,
-    hX.morseLevelPoint_of_le_apply w.property (sub_coe_toNNReal_le (f p) (f r))]
+    hX.morseLevelPoint_of_le_apply w.property (sub_le_comm.1 (Real.le_coe_toNNReal (f p - f r)))]
 
 end LevelPath
-
-/-- The end `r` of a recorded broken trajectory from `p` to `r` is not above its start `p`. -/
-theorem apply_le_apply_of_mem_morseBrokenTrajectoryRecords {p r : M} {c : ι → ℝ} {w : ι → M}
-    (hw : w ∈ hX.morseBrokenTrajectoryRecords p r c) : f r ≤ f p := by
-  obtain ⟨k, x, z, hx0, hxk, -, -, hz, -⟩ := hX.mem_morseBrokenTrajectoryRecords.1 hw
-  rw [← hx0, ← hxk]
-  exact hX.antitone_apply_of_chain hz (Fin.zero_le _)
 
 end IsAdaptedPseudoGradient
 
@@ -762,62 +741,6 @@ namespace IsAdaptedPseudoGradient
 
 variable (hX : IsAdaptedPseudoGradient f X)
 
-/-- **Two chains with a common end point concatenate**, to a chain whose steps are those of the
-two chains. -/
-private theorem exists_chain_concat {α : Type*} {k₁ k₂ : ℕ} (x₁ : Fin (k₁ + 1) → α)
-    (z₁ : Fin k₁ → α) (x₂ : Fin (k₂ + 1) → α) (z₂ : Fin k₂ → α) (h₁₂ : x₁ (Fin.last k₁) = x₂ 0) :
-    ∃ (x : Fin (k₁ + k₂ + 1) → α) (z : Fin (k₁ + k₂) → α), x 0 = x₁ 0 ∧
-      x (Fin.last _) = x₂ (Fin.last k₂) ∧
-      (∀ j, (∃ j₁, x j.castSucc = x₁ j₁.castSucc ∧ x j.succ = x₁ j₁.succ ∧ z j = z₁ j₁) ∨
-        ∃ j₂, x j.castSucc = x₂ j₂.castSucc ∧ x j.succ = x₂ j₂.succ ∧ z j = z₂ j₂) ∧
-      (∀ l, (∃ l₁, x l = x₁ l₁) ∨ ∃ l₂, x l = x₂ l₂) ∧
-      (∀ l₁, ∃ l, x l = x₁ l₁) ∧ (∀ l₂, ∃ l, x l = x₂ l₂) ∧
-      (∀ j₁, ∃ j, z j = z₁ j₁) ∧ (∀ j₂, ∃ j, z j = z₂ j₂) := by
-  -- The chain runs through `x₁` up to its last point, which is the first point of `x₂`, and then
-  -- through `x₂`.
-  set x : Fin (k₁ + k₂ + 1) → α := fun l ↦
-    if h : (l : ℕ) ≤ k₁ then x₁ ⟨l, by omega⟩ else x₂ ⟨l - k₁, by omega⟩
-  set z : Fin (k₁ + k₂) → α := fun j ↦
-    if h : (j : ℕ) < k₁ then z₁ ⟨j, h⟩ else z₂ ⟨j - k₁, by omega⟩
-  have hx₁ (n : ℕ) (hn : n ≤ k₁) : x ⟨n, by omega⟩ = x₁ ⟨n, by omega⟩ := by
-    simp only [x, hn, ↓reduceDIte]
-  have hx₂ (n : ℕ) (hn₁ : k₁ ≤ n) (hn₂ : n ≤ k₁ + k₂) :
-      x ⟨n, by omega⟩ = x₂ ⟨n - k₁, by omega⟩ := by
-    simp only [x]
-    split_ifs with h
-    · obtain rfl : n = k₁ := le_antisymm h hn₁
-      exact (congrArg x₁ (Fin.ext rfl)).trans (h₁₂.trans (congrArg x₂ (Fin.ext (by simp))))
-    · rfl
-  refine ⟨x, z, hx₁ 0 (Nat.zero_le _), ?_, fun j ↦ ?_, fun l ↦ ?_, fun l₁ ↦ ⟨⟨l₁, by omega⟩, ?_⟩,
-    fun l₂ ↦ ⟨⟨k₁ + l₂, by omega⟩, ?_⟩, fun j₁ ↦ ⟨⟨j₁, by omega⟩, ?_⟩,
-    fun j₂ ↦ ⟨⟨k₁ + j₂, by omega⟩, ?_⟩⟩
-  · rw [show Fin.last (k₁ + k₂) = ⟨k₁ + k₂, by omega⟩ from rfl, hx₂ _ (by omega) le_rfl]
-    congr 1
-    ext
-    simp
-  · by_cases h : (j : ℕ) < k₁
-    · refine Or.inl ⟨⟨j, h⟩, hx₁ j h.le, hx₁ (j + 1) h, by simp only [z, h, ↓reduceDIte]⟩
-    · refine Or.inr ⟨⟨j - k₁, by omega⟩, hx₂ j (by omega) (by omega), ?_,
-        by simp only [z, h, ↓reduceDIte]⟩
-      rw [show j.succ = ⟨j + 1, by omega⟩ from rfl, hx₂ (j + 1) (by omega) (by omega)]
-      congr 1
-      ext
-      simp only [Fin.val_succ]
-      omega
-  · by_cases h : (l : ℕ) ≤ k₁
-    · exact Or.inl ⟨_, hx₁ l h⟩
-    · exact Or.inr ⟨_, hx₂ l (by omega) (by omega)⟩
-  · exact hx₁ l₁ (by omega)
-  · rw [hx₂ _ (by omega) (by omega)]
-    congr 1
-    ext
-    simp
-  · simp only [z, j₁.isLt, ↓reduceDIte]
-  · simp only [z, show ¬ k₁ + (j₂ : ℕ) < k₁ by omega, ↓reduceDIte]
-    congr 1
-    ext
-    simp
-
 section Concat
 
 variable {p q r : M} {c : ι → ℝ} (hq : ∀ i, c i ≠ f q) {w₁ : c ⁻¹' Ioo (f q) (f p) → M}
@@ -845,38 +768,32 @@ private theorem exists_chain_concatLevelRecords {k₁ : ℕ} {x₁ : Fin (k₁ +
         ∃ j t, hX.flow t (z j) = concatLevelRecords c hq w₁ w₂ i) ∧
       (∀ m, hX.OnChain x₁ z₁ m → hX.OnChain x z m) ∧
       (∀ m, hX.OnChain x₂ z₂ m → hX.OnChain x z m) := by
-  obtain ⟨x, z, hx0, hxk, hstep, hxl, hx₁, hx₂, hzj₁, hzj₂⟩ :=
-    exists_chain_concat x₁ z₁ x₂ z₂ (hxk₁.trans hx0₂.symm)
-  refine ⟨x, z, hx0.trans hx0₁, hxk.trans hxk₂, fun l ↦ ?_, fun j ↦ ?_, fun j ↦ ?_, fun i ↦ ?_,
-    ?_, ?_⟩
-  · rcases hxl l with ⟨l₁, h⟩ | ⟨l₂, h⟩
+  -- The broken trajectory runs through the first one up to `q`, and then through the second one.
+  have h₁₂ : x₁ (Fin.last k₁) = x₂ 0 := hxk₁.trans hx0₂.symm
+  refine ⟨(Fin.append (Fin.init x₁) x₂ :), Fin.append z₁ z₂,
+    (Fin.append_init_castLE h₁₂ 0).trans hx0₁, (Fin.append_right _ _ (Fin.last k₂)).trans hxk₂,
+    fun l ↦ ?_,
+    Fin.forall_append_init_castSucc_succ (z₁ := z₁) (z₂ := z₂) (P := fun a b _ ↦ a ≠ b) h₁₂
+      hxne₁ hxne₂,
+    Fin.forall_append_init_castSucc_succ
+      (P := fun a b y ↦ y ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b) h₁₂ hz₁ hz₂,
+    fun i ↦ ?_, ?_, ?_⟩
+  · rcases Fin.append_init_eq_or_eq l with ⟨l₁, h⟩ | ⟨l₂, h⟩
     · exact h ▸ hxc₁ l₁
     · exact h ▸ hxc₂ l₂
-  · rcases hstep j with ⟨j₁, h₁, h₂, -⟩ | ⟨j₂, h₁, h₂, -⟩
-    · exact h₁ ▸ h₂ ▸ hxne₁ j₁
-    · exact h₁ ▸ h₂ ▸ hxne₂ j₂
-  · rcases hstep j with ⟨j₁, h₁, h₂, h₃⟩ | ⟨j₂, h₁, h₂, h₃⟩
-    · exact h₁ ▸ h₂ ▸ h₃ ▸ hz₁ j₁
-    · exact h₁ ▸ h₂ ▸ h₃ ▸ hz₂ j₂
   · by_cases h : f q < c i
     · rw [concatLevelRecords_of_lt hq w₁ w₂ h]
       obtain ⟨hc, j₁, t, ht⟩ := hw₁ ⟨i, h, i.property.2⟩
-      obtain ⟨j, hj⟩ := hzj₁ j₁
-      exact ⟨hc, j, t, hj ▸ ht⟩
+      exact ⟨hc, Fin.castAdd k₂ j₁, t, by rw [Fin.append_left, ht]⟩
     · rw [concatLevelRecords_of_gt hq w₁ w₂ (lt_of_le_of_ne (not_lt.1 h) (hq i))]
       obtain ⟨hc, j₂, t, ht⟩ := hw₂ ⟨i, i.property.1, lt_of_le_of_ne (not_lt.1 h) (hq i)⟩
-      obtain ⟨j, hj⟩ := hzj₂ j₂
-      exact ⟨hc, j, t, hj ▸ ht⟩
+      exact ⟨hc, Fin.natAdd k₁ j₂, t, by rw [Fin.append_right, ht]⟩
   · rintro m (⟨l₁, rfl⟩ | ⟨j₁, t, rfl⟩)
-    · obtain ⟨l, hl⟩ := hx₁ l₁
-      exact Or.inl ⟨l, hl⟩
-    · obtain ⟨j, hj⟩ := hzj₁ j₁
-      exact Or.inr ⟨j, t, by rw [hj]⟩
+    · exact Or.inl ⟨_, Fin.append_init_castLE h₁₂ l₁⟩
+    · exact Or.inr ⟨Fin.castAdd k₂ j₁, t, by rw [Fin.append_left]⟩
   · rintro m (⟨l₂, rfl⟩ | ⟨j₂, t, rfl⟩)
-    · obtain ⟨l, hl⟩ := hx₂ l₂
-      exact Or.inl ⟨l, hl⟩
-    · obtain ⟨j, hj⟩ := hzj₂ j₂
-      exact Or.inr ⟨j, t, by rw [hj]⟩
+    · exact Or.inl ⟨Fin.natAdd k₁ l₂, Fin.append_right _ _ l₂⟩
+    · exact Or.inr ⟨Fin.natAdd k₁ j₂, t, by rw [Fin.append_right]⟩
 
 variable (hw₁ : w₁ ∈ hX.morseBrokenTrajectoryRecords p q ((c ⁻¹' Ioo (f q) (f p)).domRestrict c))
   (hw₂ : w₂ ∈ hX.morseBrokenTrajectoryRecords q r ((c ⁻¹' Ioo (f r) (f q)).domRestrict c))

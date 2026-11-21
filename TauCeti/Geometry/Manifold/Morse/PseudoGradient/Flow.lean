@@ -197,8 +197,7 @@ theorem mfderiv_eq_zero_of_mem_unstableSet {a y : M} (hy : y ∈ hX.flow.unstabl
 theorem exists_tendsto_atTop (hf : IsMorse 𝓘(ℝ, E) f) (y : M) :
     ∃ x, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0 ∧ Tendsto (fun t ↦ hX.flow t y) atTop (𝓝 x) :=
   Flow.exists_tendsto_atTop_of_antitone hX.flow hf.contMDiff.continuous hX.antitone_flow
-    (by simpa only [criticalPoints_eq_setOf_mfderiv_eq_zero] using hf.finite_criticalPoints)
-    (fun z hz ↦ hX.mfderiv_eq_zero_of_forall_eq hz) y
+    hf.finite_setOf_mfderiv_eq_zero (fun _ hz ↦ hX.mfderiv_eq_zero_of_forall_eq hz) y
 
 /-- **Every orbit converges backward in time to a critical point.** -/
 theorem exists_tendsto_atBot (hf : IsMorse 𝓘(ℝ, E) f) (y : M) :
@@ -208,7 +207,7 @@ theorem exists_tendsto_atBot (hf : IsMorse 𝓘(ℝ, E) f) (y : M) :
     (fun y ↦ fun s t hst ↦ by
       simp only [Flow.reverse_apply, Pi.neg_apply]
       exact neg_le_neg (hX.antitone_flow y (neg_le_neg hst)))
-    (by simpa only [criticalPoints_eq_setOf_mfderiv_eq_zero] using hf.finite_criticalPoints)
+    hf.finite_setOf_mfderiv_eq_zero
     (fun z hz ↦ hX.mfderiv_eq_zero_of_forall_eq fun t ↦ by
       have := hz (-t)
       simp only [Flow.reverse_apply, neg_neg, Pi.neg_apply] at this
