@@ -50,7 +50,7 @@ private theorem exp_pi_eq_exp_neg_pi : Circle.exp π = Circle.exp (-π) := by
 def unitDiskBoundaryLoop : Path (S (Circle.exp (-π))) (S (Circle.exp (-π))) where
   toFun t := S (Circle.exp (2 * π * (t : ℝ) - π))
   continuous_toFun := (S).continuous.comp <| Circle.exp.continuous.comp
-    ((continuous_const.mul continuous_subtype_val).sub continuous_const)
+    ((continuous_const.mul continuous_subtypeVal).sub continuous_const)
   source' := by simp
   target' := by
     -- Evaluate the path endpoint on its subtype parameter before reducing the endpoint angle.

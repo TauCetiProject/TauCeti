@@ -69,8 +69,8 @@ theorem spaComap_preimage_spaAnalytic_quotientMk (J : Ideal A) (Aplus : Subring 
   have hval :
       (spaComap (Ideal.Quotient.mk J) continuous_quotient_mk' Aplus
         (Aplus.map (Ideal.Quotient.mk J))
-        (fun a ha ↦ (Subring.mem_map (f := Ideal.Quotient.mk J)).mpr ⟨a, ha, rfl⟩) v).1 =
-      comap (Ideal.Quotient.mk J) v.1 :=
+        (fun a ha ↦ (Subring.mem_map (f := Ideal.Quotient.mk J)).mpr ⟨a, ha, rfl⟩) v).val =
+      comap (Ideal.Quotient.mk J) v.val :=
     spaComap_val (Ideal.Quotient.mk J) continuous_quotient_mk' Aplus
       (Aplus.map (Ideal.Quotient.mk J)) _ v
   rw [hval]
@@ -119,7 +119,7 @@ theorem spaSeparationQuotientHomeomorph_apply (Aplus : Subring A)
 /-- The inverse separated-quotient homeomorphism is the canonical lift through the quotient. -/
 @[simp]
 theorem spaSeparationQuotientHomeomorph_symm_apply_val (Aplus : Subring A) (v : spa Aplus) :
-    ((spaSeparationQuotientHomeomorph Aplus).symm v).1 =
+    ((spaSeparationQuotientHomeomorph Aplus).symm v).val =
       quotientLift (Ideal.closure (⊥ : Ideal A))
         (closure_zero_le_supp_of_isContinuous ((mem_spa_iff Aplus v).mp v.property).1) := by
   apply (isEmbedding_comap_quotientMk (Ideal.closure (⊥ : Ideal A))).injective

@@ -146,7 +146,7 @@ private theorem isOpen_escapeSet : IsOpen escapeSet := by
     Set.mem_ofPred_eq]
   refine ⟨fun h n _ hn ↦ h n hn, fun h n hn ↦ ?_⟩
   by_cases hnS : n ∈ S
-  · have hy : y n = 1 := Subgroup.mem_bot.1 (eventually_principal.1 y.2 n hnS)
+  · have hy : y n = 1 := Subgroup.mem_bot.1 (eventually_principal.1 y.property n hnS)
     have hirr : Irrational (√2 / ((n : ℝ) + 1)) := by
       exact_mod_cast irrational_sqrt_two.div_natCast (Nat.succ_ne_zero n)
     simp only [realCoord, hy, toAdd_one, Rat.cast_zero, abs_zero, abs_pos, sub_ne_zero]
@@ -253,7 +253,8 @@ private theorem continuous_mul_restrictedProductSum_rat_bot :
     fun z ↦ RestrictedProduct.mk (fun n ↦ z (Sum.inl n) * z (Sum.inr n)) (by
       rw [eventually_principal]
       intro n hn
-      exact mul_mem (eventually_principal.1 z.2 _ hn.1) (eventually_principal.1 z.2 _ hn.2))
+      exact mul_mem (eventually_principal.1 z.property _ hn.1) (eventually_principal.1 z.property _
+          hn.2))
   have hg : Continuous g := by
     refine RestrictedProduct.continuous_rng_of_principal.mpr (continuous_pi fun n ↦ ?_)
     exact (RestrictedProduct.continuous_eval (Sum.inl n)).mul
@@ -338,8 +339,8 @@ theorem not_continuous_awayDecomposition_symm :
       fun _ : ℕ ↦ (⊥ : Subgroup (Multiplicative ℚ))).symm :=
   not_continuous_restrictedProduct_of_apply_eq_rat_bot
     (fun p i ↦ awayDecomposition_symm_apply_of_mem {0} (Set.finite_singleton 0)
-      (fun _ ↦ (⊥ : Subgroup (Multiplicative ℚ))) p i.1 i.2)
+      (fun _ ↦ (⊥ : Subgroup (Multiplicative ℚ))) p i.val i.property)
     fun p j ↦ awayDecomposition_symm_apply_of_notMem {0} (Set.finite_singleton 0)
-      (fun _ ↦ (⊥ : Subgroup (Multiplicative ℚ))) p j.1 j.2
+      (fun _ ↦ (⊥ : Subgroup (Multiplicative ℚ))) p j.val j.property
 
 end TauCeti

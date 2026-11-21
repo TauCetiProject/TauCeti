@@ -118,7 +118,7 @@ private theorem isUnit_lift_of_mem_coprimeSubmonoid (F : {F : FormalGroup R // F
     (m : coprimeSubmonoid p) : IsUnit (lift F m) :=
   ((coprimeSubmonoid_le p (M := (IsUnit.submonoid R).comap (lift F).toMonoidHom)).mpr
     fun q hq hqp ↦ by simpa only [Submonoid.mem_comap, RingHom.toMonoidHom_eq_coe,
-      MonoidHom.coe_ofClass, IsUnit.mem_submonoid_iff, map_natCast] using hunit q hq hqp) m.2
+      MonoidHom.coe_ofClass, IsUnit.mem_submonoid_iff, map_natCast] using hunit q hq hqp) m.property
 
 /-- **Universal property of the localized Lazard ring**: for any commutative ring `R` in which
 every prime `q ∤ p` is invertible, commutative formal group laws over `R` correspond bijectively to
@@ -148,13 +148,13 @@ theorem localizedLift_algebraMap (F : {F : FormalGroup R // F.IsComm}) (x : Laza
 
 /-- Base-changing the universal law over `S` along `localizedLift p S hunit F` gives `F`. -/
 theorem map_localizedLift (F : {F : FormalGroup R // F.IsComm}) :
-    (formalGroup.map (algebraMap LazardRing S)).map (localizedLift p S hunit F) = F.1 := by
+    (formalGroup.map (algebraMap LazardRing S)).map (localizedLift p S hunit F) = F.val := by
   rw [FormalGroup.map_comp, localizedLift_comp_algebraMap, map_lift]
 
 /-- The law classified by `f : S →+* R` is `(formalGroup.map (algebraMap LazardRing S)).map f`. -/
 @[simp]
 theorem coe_localizedLift_symm (f : S →+* R) :
-    ((localizedLift p S hunit).symm f).1 =
+    ((localizedLift p S hunit).symm f).val =
       (formalGroup.map (algebraMap LazardRing S)).map f := (rfl)
 
 end Lift

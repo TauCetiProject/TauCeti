@@ -120,7 +120,7 @@ private theorem eventually_mem_image_normedSpace
   have hg' : ContMDiff J I 1 g' := by
     apply (ContMDiff.subtypeVal_comp_iff U' g').mp
     exact fun q ↦ ((hVsub q q.property).2.2.1.comp q
-      (contMDiff_subtype_val q)).contMDiffWithinAt
+      (contMDiff_subtypeVal q)).contMDiffWithinAt
   have hregU : IsRegularValue I 𝓘(𝕜, F) (f ∘ (Subtype.val : U' → M)) c :=
     isRegularValue_iff.mpr fun p _ ↦ (hUsub p p.property).2.comp (isRegularPoint_subtype_val p)
   have hinj' : Injective (mfderiv J I g' ⟨q₀, hVmem⟩) := by
@@ -132,10 +132,10 @@ private theorem eventually_mem_image_normedSpace
       Manifold.mfderiv_subtype_val_comp_apply, Manifold.mfderiv_subtype_val_comp_apply]
     exact hvw
   have hmem := eventually_mem_range_of_isRegularValue hregU
-    (fun p _ ↦ (hUsub p p.property).1.comp p (contMDiff_subtype_val p)) hdim hg'
+    (fun p _ ↦ (hUsub p p.property).1.comp p (contMDiff_subtypeVal p)) hdim hg'
     (fun q ↦ (hVsub q q.property).2.1) hinj'
     (ModelWithCorners.isInteriorPoint_iff_isInteriorPoint_val.mpr hq₀)
-  have hmap := map_nhds_subtype_coe_eq_nhds (g' ⟨q₀, hVmem⟩).property
+  have hmap := map_nhds_subtypeVal_eq_nhds (g' ⟨q₀, hVmem⟩).property
     (hUopen.mem_nhds hUmem)
   rw [← hmap, eventually_map]
   filter_upwards [hmem] with x hx hxc

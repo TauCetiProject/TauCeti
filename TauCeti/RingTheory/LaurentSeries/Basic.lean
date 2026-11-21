@@ -49,6 +49,8 @@ derivative `f' / f` is the order of `f`.
   structure acts coefficientwise.
 * `TauCeti.LaurentSeries.mem_range_ofPowerSeries_iff`: the Laurent series coming from power series
   are those with no negative exponents.
+* `TauCeti.LaurentSeries.ringHom_ext` and `TauCeti.LaurentSeries.algHom_ext`: homomorphisms out of
+  `R⸨X⸩` are determined by their values on power series.
 * `TauCeti.laurentSeries_algebraMap_mul_eq_smul`: the algebra action agrees with the
   coefficientwise scalar action, and `TauCeti.laurentSeries_isScalarTower_algebra` transfers
   scalar towers from the coefficientwise action to the algebra action.
@@ -150,6 +152,17 @@ theorem mem_range_ofPowerSeries_iff {f : R⸨X⸩} :
   split_ifs with hn
   · exact (hf n hn).symm
   · rw [PowerSeries.coeff_mk, Int.natCast_natAbs, abs_of_nonneg (not_lt.mp hn)]
+
+/-- Ring homomorphisms out of `R⸨X⸩` that agree on power series are equal, since `R⸨X⸩` is the
+localization of `R⟦X⟧` at the powers of `X`. -/
+theorem ringHom_ext {R A : Type*} [CommRing R] [Semiring A] {f g : R⸨X⸩ →+* A}
+    (h : ∀ p : R⟦X⟧, f p = g p) : f = g :=
+  IsLocalization.ringHom_ext (Submonoid.powers (PowerSeries.X : R⟦X⟧)) (RingHom.ext h)
+
+/-- `R`-algebra homomorphisms out of `R⸨X⸩` that agree on power series are equal. -/
+theorem algHom_ext {R A : Type*} [CommRing R] [Semiring A] [Algebra R A]
+    {f g : R⸨X⸩ →ₐ[R] A} (h : ∀ p : R⟦X⟧, f p = g p) : f = g :=
+  AlgHom.toRingHom_injective <| ringHom_ext h
 
 section Valuation
 

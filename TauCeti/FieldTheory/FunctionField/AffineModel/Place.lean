@@ -72,7 +72,7 @@ attached to `x` — an object of the finite chart of `P`. -/
 theorem mem_integers_of_isIntegral_adjoin {x : F} (hx : x ∈ P.integers) {y : F}
     (hy : IsIntegral (Algebra.adjoin k ({x} : Set F)) y) : y ∈ P.integers :=
   P.mem_integers_of_isIntegral
-    (fun r ↦ P.adjoin_le_integers_iff.mpr hx r.1 r.2) hy
+    (fun r ↦ P.adjoin_le_integers_iff.mpr hx r.val r.property) hy
 
 end Integers
 

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Gluing
-import TauCeti.Geometry.Manifold.Boundary.OneDimensional
+import TauCeti.Geometry.Manifold.Boundary.LocalModels
 
 /-!
 # The mod-two Morse boundary squares to zero
@@ -83,9 +83,9 @@ theorem even_ncard_morseBrokenTrajectoryPairs {p r : M}
     (by rw [Subtype.range_coe]; exact h.morseBrokenTrajectoryPairs_subset_closure hf p r c₁ c₂)]
   refine even_ncard_of_forall_exists_homeomorph_Ico (F := ℝ) (Module.finrank_self ℝ)
     (fun w hw ↦ h.exists_homeomorph_Ico_of_mem_morseBrokenTrajectoryPairs hf hind hr₂ h₂₁ h₁p
-      hgap w.2 hw) fun w hw ↦ ?_
-  exact h.exists_nhds_homeomorph_of_mem_morseTrajectoryPairs hf hind hr₂ h₂₁ h₁p hgap w.2
-    ((h.closure_morseTrajectoryPairs_subset hf hind hr₂ h₂₁ h₁p hgap w.2).resolve_right hw)
+      hgap w.property hw) fun w hw ↦ ?_
+  exact h.exists_nhds_homeomorph_of_mem_morseTrajectoryPairs hf hind hr₂ h₂₁ h₁p hgap w.property
+    ((h.closure_morseTrajectoryPairs_subset hf hind hr₂ h₂₁ h₁p hgap w.property).resolve_right hw)
 
 include h hf in
 /-- **Broken index-two trajectories come in pairs.** Between any two critical points `p` and `r`,

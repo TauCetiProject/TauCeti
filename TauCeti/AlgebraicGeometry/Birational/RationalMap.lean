@@ -69,7 +69,7 @@ the morphism `Spec 𝒪_{X,x} ⟶ U` precomposed with `Spec` of the specializati
 theorem Opens.SpecMap_stalkSpecializes_fromSpecStalkOfMem (U : X.Opens) {x y : X} (h : y ⤳ x)
     (hx : x ∈ U) :
     Spec.map (X.presheaf.stalkSpecializes h) ≫ U.fromSpecStalkOfMem x hx =
-      U.fromSpecStalkOfMem y (h.mem_open U.2 hx) := by
+      U.fromSpecStalkOfMem y (h.mem_open U.is_open' hx) := by
   rw [← cancel_mono U.ι]
   simp [SpecMap_stalkSpecializes_fromSpecStalk]
 

@@ -232,12 +232,12 @@ theorem finrank_invariants_dual (ρ : Representation k G V) :
     ρ.averageMap.codRestrict ρ.invariants ρ.averageMap_invariant
   have hr : Function.Bijective r := by
     refine ⟨fun ψ φ h => Subtype.ext (LinearMap.ext fun u => ?_), fun χ => ?_⟩
-    · rw [← apply_averageMap_of_mem_invariants_dual ψ.2,
-        ← apply_averageMap_of_mem_invariants_dual φ.2]
+    · rw [← apply_averageMap_of_mem_invariants_dual ψ.property,
+        ← apply_averageMap_of_mem_invariants_dual φ.property]
       exact DFunLike.congr_fun h (avg u)
     · refine ⟨⟨χ.comp avg, mem_invariants_dual_iff.2 fun g u => ?_⟩, ?_⟩
       · exact congrArg χ (Subtype.ext (LinearMap.congr_fun (ρ.averageMap_comp_ρ g) u))
-      · exact LinearMap.ext fun v => congrArg χ (Subtype.ext (ρ.averageMap_id v v.2))
+      · exact LinearMap.ext fun v => congrArg χ (Subtype.ext (ρ.averageMap_id v v.property))
   rw [(LinearEquiv.ofBijective r hr).finrank_eq, Subspace.dual_finrank_eq]
 
 end Finite

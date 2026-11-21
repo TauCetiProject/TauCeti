@@ -332,7 +332,7 @@ instance instSupSet : SupSet (HopfIdeal R H) where
       isTwoSided' := by
         refine ⟨fun {x} b hx => ?_⟩
         exact Submodule.iSup_induction _ (motive := (· * b ∈ _)) hx
-          (fun I _ hx => Submodule.mem_iSup_of_mem I (I.1.mul_mem_right hx b))
+          (fun I _ hx => Submodule.mem_iSup_of_mem I (I.val.mul_mem_right hx b))
           (by simp)
           (fun _ _ hx hy => by simpa only [add_mul] using add_mem hx hy)
       comul_mem' := fun _ hx => by
@@ -341,16 +341,16 @@ instance instSupSet : SupSet (HopfIdeal R H) where
         · exact sup_le_sup
             (Ideal.leftTensorIdeal_mono (R := R) (B := H) (le_iSup _ I))
             (Ideal.rightTensorIdeal_mono (R := R) (A := H) (le_iSup _ I))
-            (I.1.comul_mem hx)
+            (I.val.comul_mem hx)
         · intro x y hx hy
           simpa only [map_add] using add_mem hx hy
       counit_eq_zero' := fun _ hx =>
         Submodule.iSup_induction _ (motive := (Coalgebra.counit (R := R) · = 0)) hx
-          (fun I _ hx => I.1.counit_eq_zero hx) (map_zero _)
+          (fun I _ hx => I.val.counit_eq_zero hx) (map_zero _)
           (fun _ _ hx hy => by rw [map_add, hx, hy, add_zero])
       antipode_mem' := fun _ hx =>
         Submodule.iSup_induction _ (motive := (HopfAlgebra.antipode R · ∈ _)) hx
-          (fun I _ hx => Submodule.mem_iSup_of_mem I (I.1.antipode_mem hx))
+          (fun I _ hx => Submodule.mem_iSup_of_mem I (I.val.antipode_mem hx))
           (by simp)
           (fun _ _ hx hy => by simpa only [map_add] using add_mem hx hy) }
 
@@ -394,7 +394,7 @@ instance instCompleteSemilatticeSup : CompleteSemilatticeSup (HopfIdeal R H) whe
       rw [← mem_toIdeal, sSup_toIdeal] at hx
       rw [← mem_toIdeal]
       have hle : (⨆ J : S, (J : HopfIdeal R H).toIdeal) ≤ I.toIdeal :=
-        iSup_le fun J : S => toIdeal_le_toIdeal.2 (hI J.2)
+        iSup_le fun J : S => toIdeal_le_toIdeal.2 (hI J.property)
       exact hle hx⟩
 
 end HopfIdeal

@@ -87,6 +87,6 @@ theorem mappingSpaceEval_comp_subtypeVal (b : B) (x : X) :
   ext f
   simp only [ContinuousMap.comp_apply, mappingSpaceEval_apply, ContinuousMap.subtypeVal_apply,
     ContinuousMap.const_apply]
-  exact f.2
+  exact f.property
 
 end TauCeti

@@ -180,8 +180,9 @@ theorem discr_adjoin_prod_root_primeDiscriminants {root : ι → L} (hS : S.None
     obtain ⟨i₀, hi₀⟩ := hS
     have : Nonempty {i // i ∈ S} := ⟨⟨i₀, hi₀⟩⟩
     have h := not_isSquare_prod_primeDiscriminantRadicands_of_forall_isEvenPrimeDiscriminant_eq
-      (fun i : {i // i ∈ S} => D i) (fun i => hD i i.2)
-      (fun i j hij => Subtype.ext (hinj i.2 j.2 hij)) (fun i j => heven i i.2 j j.2)
+      (fun i : {i // i ∈ S} => D i) (fun i => hD i i.property)
+      (fun i j hij => Subtype.ext (hinj i.property j.property hij)) (fun i j => heven i i.property j
+          j.property)
       Finset.univ Finset.univ_nonempty
     rw [Int.cast_prod,
       ← Finset.prod_attach S fun i => ((primeDiscriminantRadicand (D i) : ℤ) : ℚ)]

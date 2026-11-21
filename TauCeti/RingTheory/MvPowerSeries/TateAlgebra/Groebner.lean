@@ -131,7 +131,7 @@ private def IsLeadingIndex (m : MonomialOrder σ) (f : IsRestricted.subring (R :
 /-- A nonzero restricted series has a leading index. -/
 private theorem exists_isLeadingIndex (m : MonomialOrder σ)
     {f : IsRestricted.subring (R := R) c} (hf : f ≠ 0) : ∃ J, IsLeadingIndex m f J :=
-  f.2.exists_achievesGaussNorm_max m fun h ↦ hf (Subtype.ext h)
+  f.property.exists_achievesGaussNorm_max m fun h ↦ hf (Subtype.ext h)
 
 /-- Perturbing `y` by strictly less than `‖y‖` preserves its norm, its leading index, and the
 degree of its leading coefficient. -/
@@ -230,7 +230,7 @@ private noncomputable def potential (m : MonomialOrder σ) (deg : R → ℕ) {θ
       (m.toSyn.symm s).prod (c · ^ ·) then deg (coeff (m.toSyn.symm s) (y : MvPowerSeries σ R)) + 1
       else 0) (by
     have hfin : {t | ¬ ‖coeff t (y : MvPowerSeries σ R)‖ * t.prod (c · ^ ·) < θ}.Finite :=
-      y.2.eventually (gt_mem_nhds hθ)
+      y.property.eventually (gt_mem_nhds hθ)
     refine (hfin.image m.toSyn).subset fun s hs ↦ ⟨m.toSyn.symm s, fun h ↦ hs ?_, by simp⟩
     exact ite_eq_right h.not_gt)
 
