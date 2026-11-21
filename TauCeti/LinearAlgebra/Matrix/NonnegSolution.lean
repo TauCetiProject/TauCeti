@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Convex.Cone.Alternative
 public import Mathlib.LinearAlgebra.Matrix.Determinant.TotallyUnimodular
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
+import TauCeti.Analysis.Convex.Cone.Caratheodory
 import TauCeti.LinearAlgebra.Matrix.Determinant.Basic
 import TauCeti.LinearAlgebra.Matrix.MulVec
 import TauCeti.LinearAlgebra.Matrix.Rank
@@ -15,7 +16,7 @@ import TauCeti.LinearAlgebra.Matrix.Rank
 /-!
 # Nonnegative solutions of linear systems
 
-This file collects three facts about the nonnegative solutions `x ≥ 0` of a linear system
+This file collects two facts about the nonnegative solutions `x ≥ 0` of a linear system
 `A *ᵥ x = b`, the fibres counted by vector partition functions.
 
 * **Integer heights.** The columns of an integer matrix `A` admit a strictly positive integer
@@ -23,16 +24,14 @@ This file collects three facts about the nonnegative solutions `x ≥ 0` of a li
   nonnegative vector in its kernel: over `ℕ`, or equivalently over any linearly ordered ring. This
   is Gordan's theorem with the denominators of the functional cleared, obtained from the integer
   form of Tucker's theorem `TauCeti.exists_nat_sum_nsmul_eq_zero_and_forall_coeff_add_dual_pos`.
-* **Basic solutions** (the conic form of Carathéodory's theorem). Over a linearly ordered field,
-  every nonnegative solution of `M *ᵥ x = b` can be replaced by one whose support is contained in
-  that of `x` and indexes linearly independent columns of `M`.
 * **Integral basic solutions.** If an integer matrix `A` has linearly independent rows and each
   of its maximal minors is `0`, `1` or `-1`, then every integer right-hand side `b` with a
   nonnegative solution over a linearly ordered field has a solution in natural numbers. A basic
-  solution extends to a column basis, whose square submatrix has determinant `±1`, so Cramer's
-  rule makes the solution integral. Totally unimodular matrices
-  (`Matrix.IsTotallyUnimodular`) satisfy the minor hypothesis, by
-  `Matrix.isTotallyUnimodular_iff_fintype` applied to the rows `id`.
+  solution, given by Carathéodory's theorem for cones
+  `TauCeti.exists_nonneg_sum_smul_eq_and_linearIndepOn` applied to the columns, extends to a
+  column basis, whose square submatrix has determinant `±1`, so Cramer's rule makes the solution
+  integral. Totally unimodular matrices (`Matrix.IsTotallyUnimodular`) satisfy the minor
+  hypothesis, by `Matrix.isTotallyUnimodular_iff_fintype` applied to the rows `id`.
 
 Both hypotheses of the last result are needed: the `1 × 1` matrix `[2]` has the nonnegative
 solution `1 / 2` for `b = 1`, and the `2 × 1` matrix with rows `[2]` and `[0]`, which has no
@@ -42,7 +41,6 @@ system has an integer solution.
 ## Main results
 
 * `Matrix.exists_pos_vecMul_iff`, `Matrix.exists_pos_vecMul_iff_forall_nonneg`: integer heights.
-* `Matrix.exists_nonneg_mulVec_eq_linearIndepOn`: basic solutions.
 * `Matrix.exists_natCast_mulVec_eq_of_nonneg`: integral basic solutions.
 
 ## References
@@ -124,82 +122,6 @@ section Field
 
 variable [Field K] [LinearOrder K] [IsStrictOrderedRing K]
 
-omit [Fintype ι] in
-/-- A linearly dependent family of columns of `M` on the support of `x` yields a vector of the
-kernel of `M`, supported in the support of `x`, with a positive coordinate. -/
-private theorem exists_mulVec_eq_zero_of_not_linearIndepOn [Fintype ι] (M : Matrix κ ι K)
-    {x : ι → K} (hli : ¬LinearIndepOn K M.col (support x)) :
-    ∃ g : ι → K, M *ᵥ g = 0 ∧ support g ⊆ support x ∧ ∃ j, 0 < g j := by
-  classical
-  have hs : support x = ↑(Finset.univ.filter fun j => x j ≠ 0) := by ext; simp
-  rw [hs, not_linearIndepOn_finset_iff] at hli
-  obtain ⟨f, hf, j, hj, hfj⟩ := hli
-  -- Restrict the relation to the support, and fix its sign.
-  have hmul : M *ᵥ (support x).indicator f = 0 := by
-    rw [mulVec_eq_sum, ← hf, hs]
-    simp only [op_smul_eq_smul, Set.indicator_apply, Finset.coe_filter, Finset.mem_univ,
-      true_and, Set.mem_ofPred_eq, ite_smul, zero_smul, Finset.sum_ite, Finset.sum_const_zero,
-      add_zero, col_def]
-  have hsupp : support ((support x).indicator f) ⊆ support x :=
-    Set.support_indicator_subset
-  have hj' : j ∈ support x := by simpa using hj
-  rcases hfj.lt_or_gt with hneg | hpos
-  · refine ⟨-(support x).indicator f, by rw [mulVec_neg, hmul, neg_zero], by
-      simp, j, ?_⟩
-    simpa [Set.indicator_of_mem hj'] using hneg
-  · exact ⟨_, hmul, hsupp, j, by simpa [Set.indicator_of_mem hj'] using hpos⟩
-
-omit [Fintype ι] in
-/-- One exchange step: a kernel vector `g` with a positive coordinate, supported where the
-nonnegative vector `x` is, moves `x` to a nonnegative vector with the same image whose support is
-strictly smaller. -/
-private theorem exists_nonneg_mulVec_eq_support_ssubset [Fintype ι] (M : Matrix κ ι K)
-    {x g : ι → K} (hx : 0 ≤ x) (hg : M *ᵥ g = 0) (hgx : support g ⊆ support x)
-    (hpos : ∃ j, 0 < g j) :
-    ∃ y, 0 ≤ y ∧ M *ᵥ y = M *ᵥ x ∧ support y ⊂ support x := by
-  classical
-  -- The largest step `t` along `-g` keeping `x - t • g` nonnegative.
-  obtain ⟨j₀, hj₀⟩ := hpos
-  obtain ⟨j₁, hj₁, hmin⟩ := (Finset.univ.filter fun j => 0 < g j).exists_min_image
-    (fun j => x j / g j) ⟨j₀, by simpa using hj₀⟩
-  simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hj₁ hmin
-  set t := x j₁ / g j₁
-  have ht : 0 ≤ t := div_nonneg (hx j₁) hj₁.le
-  refine ⟨x - t • g, fun j => ?_, by rw [mulVec_sub, mulVec_smul, hg, smul_zero, sub_zero], ?_⟩
-  · simp only [Pi.zero_apply, Pi.sub_apply, Pi.smul_apply, smul_eq_mul, sub_nonneg]
-    rcases le_or_gt (g j) 0 with hgj | hgj
-    · exact (mul_nonpos_of_nonneg_of_nonpos ht hgj).trans (hx j)
-    · exact (le_div_iff₀ hgj).1 (hmin j hgj)
-  · refine LE.le.ssubset_of_ne (fun j hj => ?_) fun h => ?_
-    · by_contra hxj
-      have hgj : g j = 0 := by_contra fun h => hxj (hgx h)
-      simp_all
-    · have hj₁x : j₁ ∈ support (x - t • g) := h ▸ hgx hj₁.ne'
-      exact hj₁x (by simp [t, div_mul_cancel₀ _ hj₁.ne'])
-
-/-- **Basic solutions** (conic Carathéodory). Every nonnegative vector `x` has the same image
-under `M` as a nonnegative vector `y` supported inside the support of `x` whose support indexes
-linearly independent columns of `M`. -/
-theorem exists_nonneg_mulVec_eq_linearIndepOn (M : Matrix κ ι K) {x : ι → K} (hx : 0 ≤ x) :
-    ∃ y, 0 ≤ y ∧ M *ᵥ y = M *ᵥ x ∧ support y ⊆ support x ∧
-      LinearIndepOn K M.col (support y) := by
-  classical
-  -- Strong induction on the size of the support.
-  induction hn : (Finset.univ.filter fun j => x j ≠ 0).card using Nat.strong_induction_on
-    generalizing x with
-  | _ n ih =>
-  by_cases hli : LinearIndepOn K M.col (support x)
-  · exact ⟨x, hx, rfl, subset_rfl, hli⟩
-  obtain ⟨g, hg, hgx, hpos⟩ := exists_mulVec_eq_zero_of_not_linearIndepOn M hli
-  obtain ⟨y, hy, hyx, hsub⟩ := exists_nonneg_mulVec_eq_support_ssubset M hx hg hgx hpos
-  have hcard : (Finset.univ.filter fun j => y j ≠ 0).card < n := by
-    rw [← hn]
-    refine Finset.card_lt_card ?_
-    rw [← Finset.coe_ssubset]
-    simpa [Set.ssubset_def, Set.subset_def] using hsub
-  obtain ⟨z, hz, hzy, hzsub, hzli⟩ := ih _ hcard hy rfl
-  exact ⟨z, hz, hzy.trans hyx, hzsub.trans hsub.subset, hzli⟩
-
 /-- A nonnegative solution over `K` with integer coordinates is a solution in natural numbers. -/
 private theorem exists_natCast_mulVec_eq_of_forall_exists_intCast {A : Matrix κ ι ℤ} {b : κ → ℤ}
     {y : ι → K} (hy : 0 ≤ y) (hint : ∀ j, ∃ n : ℤ, y j = n)
@@ -227,7 +149,10 @@ theorem exists_natCast_mulVec_eq_of_nonneg [Fintype κ] [DecidableEq κ] (A : Ma
     ∃ c : ι → ℕ, A *ᵥ (fun j => (c j : ℤ)) = b := by
   classical
   -- A basic solution `y`, and a column basis `f` containing its support.
-  obtain ⟨y, hy, hyx, -, hli⟩ := exists_nonneg_mulVec_eq_linearIndepOn (A.map Int.cast) hx
+  obtain ⟨y, hy, -, hsum, hli⟩ :=
+    TauCeti.exists_nonneg_sum_smul_eq_and_linearIndepOn (A.map (Int.cast : ℤ → K)).col hx
+  have hyx : A.map (Int.cast : ℤ → K) *ᵥ y = A.map Int.cast *ᵥ x := by
+    simpa only [mulVec_eq_sum, op_smul_eq_smul, col_def] using hsum
   have hrow : LinearIndependent K (A.map (Int.cast : ℤ → K)).row := by
     simpa using (linearIndependent_map_algebraMap_row_iff (S := K)).2 hA
   obtain ⟨f, hyf, hdetK⟩ := exists_det_submatrix_ne_zero_of_linearIndepOn hrow hli
