@@ -39,7 +39,9 @@ radial derivative `(1 - n) ∂_r w` up to `o(|x| ^ (1 - n))`. If `w - 1 = O(|x| 
 
 All asymptotic hypotheses are stated along `Bornology.cobounded`, that is as `|x| → ∞`. On the
 coefficients `g_ij` they ask that `g_ij → δ_ij` and `∂g_ij = o(|x|⁻¹)`, which holds on an
-asymptotically Euclidean end of any positive order.
+asymptotically Euclidean end of any positive order
+(`TauCeti.IsAsymptoticallyEuclideanEnd.tendsto_pullbackMetricCoeff` and
+`TauCeti.IsAsymptoticallyEuclideanEnd.isLittleO_fderiv_pullbackMetricCoeff`).
 
 ## Main results
 
@@ -162,16 +164,13 @@ theorem isLittleO_coordinateFluxIntegrand_mul_sub {w : EuclideanSpace ℝ (Fin n
       fun x ↦ ‖x‖ ^ (1 - n : ℝ) :=
     ((ContinuousLinearMap.apply ℝ ℝ (EuclideanSpace.single k 1)).isBigO_comp _ _).trans
       (isBigO_fderiv_of_isLittleO hw1)
-  have hxj (j : Fin n) : (fun x : EuclideanSpace ℝ (Fin n) ↦ x j / ‖x‖) =O[cobounded _]
-      fun _ ↦ (1 : ℝ) :=
-    ((isBigO_inv_norm_smul_apply _ (fun _ ↦ EuclideanSpace.proj j) id).trans
-      (isBigO_const_const _ one_ne_zero _)).congr_left fun x ↦ by simp [div_eq_inv_mul]
   have h2 : (fun x ↦ ∑ j, (∑ i, (fderiv ℝ w x (EuclideanSpace.single i 1) *
       (g x i j - if i = j then 1 else 0) - fderiv ℝ w x (EuclideanSpace.single j 1) *
         (g x i i - 1))) * (x j / ‖x‖)) =o[cobounded _] fun x ↦ ‖x‖ ^ (1 - n : ℝ) := by
     refine IsLittleO.fun_sum fun j _ ↦ ?_
     simpa using (IsLittleO.fun_sum fun i _ ↦ ((hDe i).mul_isLittleO (hh i j)).sub
-      ((hDe j).mul_isLittleO ((hh i i).congr_left fun x ↦ by simp))).mul_isBigO (hxj j)
+      ((hDe j).mul_isLittleO ((hh i i).congr_left fun x ↦ by simp))).mul_isBigO
+        (isBigO_apply_div_norm _ j)
   -- The radial derivative of `w - a |x| ^ (2 - n)` is `o(|x| ^ (1 - n))`.
   have h3 : (fun x ↦ (1 - n : ℝ) * ((fderiv ℝ w x - a • fderiv ℝ (fun y ↦ ‖y‖ ^ (2 - n : ℝ)) x) x /
       ‖x‖)) =o[cobounded _] fun x ↦ ‖x‖ ^ (1 - n : ℝ) :=
@@ -326,44 +325,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)] {t R : ℝ} {φ : EuclideanSpace ℝ (Fin n) → M}
 
-/-- The metric coefficients of an end of positive order are differentiable at infinity, tend to
-`δ_ij`, and have derivatives `o(|x|⁻¹)`. -/
-private theorem flux_hypotheses (h : IsAsymptoticallyEuclideanEnd I t R φ) (ht : 0 < t) :
-    (∀ᶠ x in cobounded _, ∀ i j, DifferentiableAt ℝ (fun y ↦ pullbackMetricCoeff I φ y i j) x) ∧
-    (∀ i j, Tendsto (fun x ↦ pullbackMetricCoeff I φ x i j) (cobounded _)
-      (𝓝 (if i = j then 1 else 0))) ∧
-    ∀ i j, (fun x ↦ fderiv ℝ (fun y ↦ pullbackMetricCoeff I φ y i j) x) =o[cobounded _]
-      fun x ↦ ‖x‖⁻¹ := by
-  have hext : ∀ᶠ x : EuclideanSpace ℝ (Fin n) in cobounded _, x ∈ (closedBall 0 R)ᶜ :=
-    (tendsto_norm_cobounded_atTop.eventually_gt_atTop R).mono fun x hx ↦ by simpa using hx
-  obtain ⟨C, hC⟩ := h.exists_norm_iteratedFDeriv_le
-  have hfd (i j : Fin n) (x : EuclideanSpace ℝ (Fin n)) :
-      fderiv ℝ (fun y ↦ (pullbackMetricCoeff I φ y - 1) i j) x =
-        fderiv ℝ (fun y ↦ pullbackMetricCoeff I φ y i j) x := by
-    simp only [Matrix.sub_apply, fderiv_sub_const]
-  refine ⟨?_, fun i j ↦ ?_, fun i j ↦ ?_⟩
-  · filter_upwards [hext] with x hx i j
-    exact ((h.contDiffOn_pullbackMetricCoeff i j).contDiffAt
-      (isClosed_closedBall.isOpen_compl.mem_nhds hx)).differentiableAt (by norm_num)
-  -- `|g_ij - δ_ij| ≤ C |x| ^ (-t) → 0`.
-  · have h0 : Tendsto (fun x ↦ (pullbackMetricCoeff I φ x - 1) i j) (cobounded _) (𝓝 0) := by
-      have hC0 := (tendsto_norm_rpow_cobounded (E := EuclideanSpace ℝ (Fin n))
-        (neg_lt_zero.2 ht)).const_mul C
-      rw [mul_zero] at hC0
-      refine squeeze_zero_norm' ?_ hC0
-      filter_upwards [hext] with x hx
-      simpa using hC 0 (by norm_num) i j x hx
-    simpa [Matrix.one_apply] using tendsto_sub_nhds_zero_iff.1 h0
-  -- `|∂g_ij| ≤ C |x| ^ (-t - 1) = o(|x|⁻¹)`.
-  · have h1 : (fun x ↦ fderiv ℝ (fun y ↦ pullbackMetricCoeff I φ y i j) x) =O[cobounded _]
-        fun x ↦ ‖x‖ ^ (-t - 1) := by
-      refine IsBigO.of_bound C ?_
-      filter_upwards [hext] with x hx
-      rw [← hfd, Real.norm_of_nonneg (Real.rpow_nonneg (norm_nonneg _) _)]
-      simpa using hC 1 (by norm_num) i j x hx
-    exact h1.trans_isLittleO ((isLittleO_norm_rpow_norm_rpow_cobounded (by linarith)).congr_right
-      fun _ ↦ Real.rpow_neg_one _)
-
 /-- **The flux of an end under a conformal change.** Let `φ` be an asymptotically Euclidean end of
 order `t > 0` in dimension `n ≥ 3`, with metric coefficients `g_ij`, and let `u` be a function
 with `u - 1 = O(|x| ^ (2 - n))` and `∇u = c ∇(|x| ^ (2 - n)) + o(|x| ^ (1 - n))` at infinity, as
@@ -379,12 +340,12 @@ theorem tendsto_normalizedCoordinateFlux_rpow_mul_sub (h : IsAsymptoticallyEucli
     Tendsto (fun r ↦ normalizedCoordinateFlux
       (fun y i j ↦ u y ^ (4 / (n - 2 : ℝ)) * pullbackMetricCoeff I φ y i j) r -
         normalizedCoordinateFlux (pullbackMetricCoeff I φ) r) atTop (𝓝 (2 * c)) := by
-  obtain ⟨hgd, hg0, hg1⟩ := h.flux_hypotheses ht
   have hn' : (n : ℝ) - 2 ≠ 0 := by
     have : (3 : ℝ) ≤ n := by exact_mod_cast hn
     linarith
-  convert TauCeti.tendsto_normalizedCoordinateFlux_rpow_mul_sub hn _ hgd hg0 hg1 hud hu0 hu1
-    using 2
+  convert TauCeti.tendsto_normalizedCoordinateFlux_rpow_mul_sub hn _
+    h.eventually_differentiableAt_pullbackMetricCoeff (h.tendsto_pullbackMetricCoeff ht)
+    (h.isLittleO_fderiv_pullbackMetricCoeff ht) hud hu0 hu1 using 2
   field_simp
   ring
 
