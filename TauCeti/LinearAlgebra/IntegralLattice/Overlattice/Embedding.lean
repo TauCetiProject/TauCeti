@@ -41,40 +41,34 @@ variable (e : FiniteQuadraticModule.Isometry (L.discriminantQuadraticModule hL)
 /-- The first coordinate inclusion into the graph gluing is a primitive embedding. -/
 @[simp]
 theorem isPrimitiveEmbedding_inl_glueAlongDiscriminant :
-    IsPrimitiveEmbedding L (L.glueAlongDiscriminant M hL hM e) (LinearMap.inl ℚ V W) where
-  injective := LinearMap.inl_injective
-  map_form x y := by simp [glueAlongDiscriminant_form]
-  map_carrier := by
-    rintro _ ⟨x, hx, rfl⟩
-    exact (L.mem_glueAlongDiscriminant_left_iff M hL hM e x).mpr hx
-  saturated y hy k hk hky := by
-    obtain ⟨x, _, hxy⟩ := hky
-    have hz : (k : ℚ) • y.2 = 0 := by
-      rw [Int.cast_smul_eq_zsmul]
-      exact (congrArg Prod.snd hxy).symm
-    have hyz : y.2 = 0 := (smul_eq_zero.mp hz).resolve_left (Int.cast_ne_zero.mpr hk)
-    have heq : (y.1, 0) = y := Prod.ext rfl hyz.symm
-    exact ⟨y.1, (L.mem_glueAlongDiscriminant_left_iff M hL hM e _).mp (heq.symm ▸ hy),
-      heq⟩
+    IsPrimitiveEmbedding L (L.glueAlongDiscriminant M hL hM e) (LinearMap.inl ℚ V W) := by
+  have hmem (x : V) (hx : x ∈ L.carrier) :
+      (LinearMap.inl ℚ V W).restrictScalars ℤ x ∈ (L.glueAlongDiscriminant M hL hM e).carrier :=
+    (L.mem_glueAlongDiscriminant_left_iff M hL hM e x).mpr hx
+  refine (isPrimitiveEmbedding_iff_isTorsionFree_quotient _ LinearMap.inl_injective
+    (fun x y ↦ by simp [glueAlongDiscriminant_form])
+    (Submodule.map_le_iff_le_comap.mpr hmem)).mpr ?_
+  have hglue : ((LinearMap.inl ℚ V W).restrictScalars ℤ).restrict hmem =
+      L.glueLeft M hL hM e :=
+    LinearMap.ext fun x ↦ Subtype.ext (L.coe_glueLeft_apply M hL hM e x).symm
+  rw [← LinearMap.range_restrict _ hmem, hglue]
+  exact L.isTorsionFree_quotient_range_glueLeft M hL hM e
 
 /-- The second coordinate inclusion into the graph gluing is a primitive embedding. -/
 @[simp]
 theorem isPrimitiveEmbedding_inr_glueAlongDiscriminant :
-    IsPrimitiveEmbedding M (L.glueAlongDiscriminant M hL hM e) (LinearMap.inr ℚ V W) where
-  injective := LinearMap.inr_injective
-  map_form x y := by simp [glueAlongDiscriminant_form]
-  map_carrier := by
-    rintro _ ⟨y, hy, rfl⟩
-    exact (L.mem_glueAlongDiscriminant_right_iff M hL hM e y).mpr hy
-  saturated y hy k hk hky := by
-    obtain ⟨x, _, hxy⟩ := hky
-    have hz : (k : ℚ) • y.1 = 0 := by
-      rw [Int.cast_smul_eq_zsmul]
-      exact (congrArg Prod.fst hxy).symm
-    have hyz : y.1 = 0 := (smul_eq_zero.mp hz).resolve_left (Int.cast_ne_zero.mpr hk)
-    have heq : (0, y.2) = y := Prod.ext hyz.symm rfl
-    exact ⟨y.2, (L.mem_glueAlongDiscriminant_right_iff M hL hM e _).mp (heq.symm ▸ hy),
-      heq⟩
+    IsPrimitiveEmbedding M (L.glueAlongDiscriminant M hL hM e) (LinearMap.inr ℚ V W) := by
+  have hmem (y : W) (hy : y ∈ M.carrier) :
+      (LinearMap.inr ℚ V W).restrictScalars ℤ y ∈ (L.glueAlongDiscriminant M hL hM e).carrier :=
+    (L.mem_glueAlongDiscriminant_right_iff M hL hM e y).mpr hy
+  refine (isPrimitiveEmbedding_iff_isTorsionFree_quotient _ LinearMap.inr_injective
+    (fun x y ↦ by simp [glueAlongDiscriminant_form])
+    (Submodule.map_le_iff_le_comap.mpr hmem)).mpr ?_
+  have hglue : ((LinearMap.inr ℚ V W).restrictScalars ℤ).restrict hmem =
+      L.glueRight M hL hM e :=
+    LinearMap.ext fun y ↦ Subtype.ext (L.coe_glueRight_apply M hL hM e y).symm
+  rw [← LinearMap.range_restrict _ hmem, hglue]
+  exact L.isTorsionFree_quotient_range_glueRight M hL hM e
 
 /-- Opposite discriminant forms are equivalent to the existence of an even unimodular
 overlattice of the rational orthogonal sum in which both coordinate inclusions are primitive.
