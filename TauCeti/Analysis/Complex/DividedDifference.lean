@@ -5,12 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Polynomial.Degree.Defs
 public import Mathlib.Algebra.Polynomial.Div
-public import Mathlib.Algebra.Polynomial.Eval.Defs
 public import Mathlib.Analysis.Calculus.DSlope
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
-public import TauCeti.Analysis.Complex.PartialDeriv
+public import TauCeti.Analysis.Complex.PartialDeriv.Basic
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
 import Mathlib.Analysis.Calculus.FDeriv.Pi
 import Mathlib.Analysis.Complex.AbsMax
@@ -23,7 +21,7 @@ import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
 import TauCeti.Topology.MetricSpace.Pseudo.Pi
 
 /-!
-# Coordinate divided differences of entire functions on `ℂⁿ`
+# Coordinate divided differences of complex differentiable functions on `ℂⁿ`
 
 For a function `f : (ι → ℂ) → E` of several complex variables, a coordinate `i : ι` and a base
 point `ζ : ℂ`, the coordinate divided difference `TauCeti.partialDslope i ζ f` applies the
@@ -37,15 +35,15 @@ every point `z` it satisfies the exact decomposition
 
   `f z = f (update z i ζ) + (z i - ζ) • partialDslope i ζ f z`.
 
-When `f` is entire on `ι → ℂ` (with `ι` finite and `E` complete), the fundamental theorem of
-calculus represents `partialDslope i ζ f z` as `∫ t in 0..1, ∂ᵢ f (update z i (ζ + t • (z i - ζ)))`,
-and differentiation under the integral sign makes `partialDslope i ζ f` entire. For any `f` that is
-complex differentiable on a closed polydisc `closedBall c R` (with no completeness assumption on
-`E`), applying Hahn–Banach and the one-variable maximum modulus principle along the `i`-th
-coordinate bounds `partialDslope i ζ f` by `2 M / (R - r)` on `closedBall c R` whenever `ζ` lies
-within `r < R` of `c i` and `f` is bounded by `M` on the polydisc. Finally, `partialDslope i ζ`
-agrees with Euclidean division by `X - C ζ` along polynomial coordinate lines, lowers polynomial
-degree in `z i` by one, and preserves polynomial degree bounds in every coordinate.
+When `f` is analytic at `z` and `update z i ζ` (with `ι` finite and `E` complete),
+`partialDslope i ζ f` is analytic at `z` (`TauCeti.analyticAt_partialDslope`), and in particular
+entire when `f` is entire (`TauCeti.differentiable_partialDslope`). For any `f` that is complex
+differentiable on a closed polydisc `closedBall c R` (with no completeness assumption on `E`),
+applying Hahn–Banach and the one-variable maximum modulus principle along the `i`-th coordinate
+bounds `partialDslope i ζ f` by `2 M / (R - r)` on `closedBall c R` whenever `ζ` lies within
+`r < R` of `c i` and `f` is bounded by `M` on the polydisc. Finally, `partialDslope i ζ` agrees
+with Euclidean division by `X - C ζ` along polynomial coordinate lines, lowers polynomial degree
+in `z i` by one, and preserves polynomial degree bounds in every coordinate.
 
 ## Main definitions and results
 
@@ -53,17 +51,19 @@ degree in `z i` by one, and preserves polynomial degree bounds in every coordina
 * `TauCeti.sub_smul_partialDslope`, `TauCeti.eq_update_add_sub_mul_partialDslope`: the coordinate
   division identity `f z = f (update z i ζ) + (z i - ζ) * partialDslope i ζ f z`.
 * `TauCeti.partialDslope_eq_integral_partialDeriv`: the integral representation over `[0, 1]`.
+* `TauCeti.analyticAt_partialDslope`: `partialDslope i ζ f` is analytic at `z` when `f` is
+  analytic at `z` and `update z i ζ`.
 * `TauCeti.differentiable_partialDslope`: `partialDslope i ζ f` is entire when `f` is entire.
+* `TauCeti.norm_update_le`: pointwise polydisc bound `‖f (update z i ζ)‖ ≤ M` for the frozen
+  coordinate term.
 * `TauCeti.norm_partialDslope_le`: polydisc supremum estimate `2 * M / (R - r)` for functions
   complex differentiable on `closedBall c R`.
 * `TauCeti.partialDslope_update_eq_eval_divByMonic`: exact polynomial division formula
   `partialDslope i ζ f (update z i w) = (P /ₘ (X - C ζ)).eval w`.
-* `TauCeti.exists_degree_lt_and_update_eq_eval`, `TauCeti.exists_natDegree_le_and_update_eq_eval`,
-  `TauCeti.exists_natDegree_le_sub_one_and_partialDslope_eq_eval_self`,
+* `TauCeti.exists_natDegree_le_sub_one_and_partialDslope_eq_eval_self`,
   `TauCeti.exists_degree_lt_and_partialDslope_eq_eval`,
-  `TauCeti.exists_natDegree_le_and_partialDslope_eq_eval`,
-  `TauCeti.exists_degree_lt_and_partialDeriv_eq_eval`,
-  `TauCeti.exists_degree_lt_and_iterate_partialDeriv_eq_eval`: coordinate polynomial degree control.
+  `TauCeti.exists_natDegree_le_and_partialDslope_eq_eval`: coordinate polynomial degree control
+  for `partialDslope`.
 
 ## References
 
@@ -165,9 +165,9 @@ theorem partialDslope_add [Finite ι] {f g : (ι → ℂ) → E} (hf : Different
     (hg (update z i ζ)).comp ζ (hasFDerivAt_update z ζ).differentiableAt
   exact congrFun (dslope_add hfu hgu) (z i)
 
-/-! ### Integral representation and entireness -/
+/-! ### Integral representation, local analyticity, and entireness -/
 
-section Entire
+section Analytic
 
 variable [Finite ι] [CompleteSpace E]
 
@@ -187,49 +187,112 @@ theorem partialDslope_eq_integral_partialDeriv {f : (ι → ℂ) → E} (hf : Di
   rw [partialDeriv_eq_deriv_update (hf _) i]
   simp only [update_idem, update_self]
 
+omit [Finite ι] in
+/-- Local integral representation on `ball z r` across `ζ = z i` when `f` is complex
+differentiable on `ball z r`. -/
+private theorem partialDslope_eq_integral_partialDeriv_of_mem_ball [Fintype ι] {f : (ι → ℂ) → E}
+    {z : ι → ℂ} {r : ℝ} (hr : 0 < r) (hf : DifferentiableOn ℂ f (ball z r)) (i : ι)
+    {q : ι → ℂ} (hq : q ∈ ball z r) :
+    partialDslope i (z i) f q =
+      ∫ t in (0 : ℝ)..1, partialDeriv i f (update q i (z i + t • (q i - z i))) := by
+  have hmem (w : ℂ) (hw : w ∈ ball (z i) r) : update q i w ∈ ball z r := by
+    rw [mem_ball, dist_pi_lt_iff hr]
+    intro j
+    by_cases hj : j = i
+    · subst hj; simpa using hw
+    · simpa [hj] using (dist_le_pi_dist q z j).trans_lt (mem_ball.mp hq)
+  have hline : DifferentiableOn ℂ (fun w ↦ f (update q i w)) (ball (z i) r) :=
+    hf.comp (fun w _ ↦ (hasFDerivAt_update q w).differentiableAt.differentiableWithinAt) hmem
+  have hqi : q i ∈ ball (z i) r :=
+    mem_ball.mpr ((dist_le_pi_dist q z i).trans_lt (mem_ball.mp hq))
+  have hseg : segment ℝ (z i) (q i) ⊆ ball (z i) r :=
+    (convex_ball (z i) r).segment_subset (mem_ball_self hr) hqi
+  rw [partialDslope_apply,
+    dslope_eq_integral_deriv isOpen_ball (hline.contDiffOn isOpen_ball) hseg]
+  refine intervalIntegral.integral_congr fun t ht ↦ ?_
+  have hpt : z i + t • (q i - z i) ∈ ball (z i) r :=
+    hseg (segment_eq_image' ℝ (z i) (q i) ▸
+      mem_image_of_mem _ (uIcc_of_le (zero_le_one : (0 : ℝ) ≤ 1) ▸ ht))
+  rw [partialDeriv_eq_deriv_update
+    ((hf _ (hmem _ hpt)).differentiableAt (isOpen_ball.mem_nhds (hmem _ hpt))) i]
+  simp only [update_idem, update_self]
+
+omit [Finite ι] in
+/-- **Local analyticity of the coordinate divided difference.** If `f : (ι → ℂ) → E` is analytic at
+`z` and at `update z i ζ`, then `partialDslope i ζ f` is analytic at `z`. On the hyperplane
+`z i = ζ`, the two analyticity hypotheses coincide. -/
+theorem analyticAt_partialDslope [Fintype ι] {f : (ι → ℂ) → E} {z : ι → ℂ} {i : ι} {ζ : ℂ}
+    (hfz : AnalyticAt ℂ f z) (hfζ : AnalyticAt ℂ f (update z i ζ)) :
+    AnalyticAt ℂ (partialDslope i ζ f) z := by
+  rcases ne_or_eq (z i) ζ with hne | rfl
+  · have hupd_diff : Differentiable ℂ (fun q : ι → ℂ ↦ update q i ζ) :=
+      differentiable_pi.mpr fun j ↦ by
+        by_cases hj : j = i
+        · subst hj; simp
+        · simpa [hj] using differentiable_apply j
+    have hupd_an : AnalyticAt ℂ (fun q : ι → ℂ ↦ update q i ζ) z :=
+      hupd_diff.differentiableOn.analyticAt_of_finiteDimensional Filter.univ_mem
+    have hinv : AnalyticAt ℂ (fun q : ι → ℂ ↦ (q i - ζ)⁻¹) z :=
+      ((ContinuousLinearMap.proj (R := ℂ) (φ := fun _ : ι ↦ ℂ) i).analyticAt z |>.sub
+        analyticAt_const).inv (sub_ne_zero.mpr hne)
+    refine (hinv.smul (hfz.sub (hfζ.comp_of_eq hupd_an rfl))).congr ?_
+    filter_upwards [(continuousAt_apply i z).eventually_ne hne] with q hq
+    exact (partialDslope_of_ne i f hq).symm
+  · obtain ⟨r, hr, hball⟩ := Metric.eventually_nhds_iff.mp hfz.eventually_analyticAt
+    have hf_diff : DifferentiableOn ℂ f (ball z r) :=
+      fun y hy ↦ (hball (mem_ball.mp hy)).differentiableAt.differentiableWithinAt
+    have harg_an (t : ℂ) : AnalyticAt ℂ
+        (fun p : (ι → ℂ) × ℂ ↦ update p.1 i (z i + p.2 * (p.1 i - z i))) (z, t) :=
+      (differentiable_pi.mpr fun j ↦ by
+        by_cases hj : j = i
+        · subst hj; simp only [update_self]; fun_prop
+        · simp only [update_of_ne hj]; fun_prop).differentiableOn.analyticAt_of_finiteDimensional
+          Filter.univ_mem
+    have hpf_an : AnalyticAt ℂ (partialDeriv i f) z := by
+      rw [partialDeriv_def]
+      exact ((ContinuousLinearMap.apply ℂ E (Pi.single i 1)).analyticAt _).comp hfz.fderiv
+    have han := analyticAt_integral_smul (isCompact_Icc.image Complex.continuous_ofReal)
+      (Complex.continuous_ofReal.comp (continuous_subtypeVal.comp continuous_projIcc))
+      (fun t ↦ ⟨projIcc 0 1 zero_le_one t, (projIcc 0 1 zero_le_one t).property, rfl⟩)
+      (fun t _ ↦ hpf_an.comp_of_eq (harg_an t) (by simp))
+      ((continuous_const (y := (1 : ℂ))).integrableOn_Ioc :
+        MeasureTheory.Integrable _ (MeasureTheory.volume.restrict (Ioc (0 : ℝ) 1)))
+    refine han.congr ?_
+    filter_upwards [isOpen_ball.mem_nhds (mem_ball_self hr)] with q hq
+    rw [partialDslope_eq_integral_partialDeriv_of_mem_ball hr hf_diff i hq,
+      intervalIntegral.integral_of_le zero_le_one]
+    refine MeasureTheory.setIntegral_congr_fun measurableSet_Ioc fun t ht ↦ ?_
+    simp only [one_smul, Function.comp_apply, projIcc_of_mem zero_le_one (Ioc_subset_Icc_self ht),
+      Complex.real_smul]
+
+omit [Finite ι] in
 /-- **Entireness of the coordinate divided difference.** If `f : (ι → ℂ) → E` is entire, then
 `partialDslope i ζ f` is entire. -/
-theorem differentiable_partialDslope {f : (ι → ℂ) → E} (hf : Differentiable ℂ f) (i : ι) (ζ : ℂ) :
+theorem differentiable_partialDslope [Finite ι] {f : (ι → ℂ) → E} (hf : Differentiable ℂ f)
+    (i : ι) (ζ : ℂ) :
     Differentiable ℂ (partialDslope i ζ f) := by
   have := Fintype.ofFinite ι
-  let K : Set ℂ := Complex.ofReal '' Icc (0 : ℝ) 1
-  have hK : IsCompact K := isCompact_Icc.image Complex.continuous_ofReal
-  let φ : ℝ → ℂ := fun t ↦ ((projIcc (0 : ℝ) 1 zero_le_one t : ℝ) : ℂ)
-  have hφ : Continuous φ :=
-    Complex.continuous_ofReal.comp (continuous_subtypeVal.comp continuous_projIcc)
-  have hφK : ∀ t, φ t ∈ K :=
-    fun t ↦ ⟨projIcc 0 1 zero_le_one t, (projIcc 0 1 zero_le_one t).property, rfl⟩
-  let F : ((ι → ℂ) × ℂ) → E := fun p ↦ partialDeriv i f (update p.1 i (ζ + p.2 * (p.1 i - ζ)))
-  have hFd : Differentiable ℂ F := by
-    refine (differentiable_partialDeriv hf i).comp (differentiable_pi.mpr fun j ↦ ?_)
-    by_cases hj : j = i
-    · subst hj
-      simp only [update_self]
-      fun_prop
-    · simp only [update_of_ne hj]
-      fun_prop
-  have hg : MeasureTheory.Integrable (fun _ : ℝ ↦ (1 : ℂ))
-      (MeasureTheory.volume.restrict (Ioc (0 : ℝ) 1)) :=
-    continuous_const.integrableOn_Ioc
-  intro z
-  have han : AnalyticAt ℂ
-      (fun q ↦ ∫ t in Ioc (0 : ℝ) 1, (1 : ℂ) • F (q, φ t)) z :=
-    analyticAt_integral_smul hK hφ hφK
-      (fun y _ ↦ hFd.differentiableOn.analyticAt_of_finiteDimensional Filter.univ_mem) hg
-  refine han.differentiableAt.congr_of_eventuallyEq (Filter.Eventually.of_forall fun q ↦ ?_)
-  rw [partialDslope_eq_integral_partialDeriv hf i ζ q,
-    intervalIntegral.integral_of_le zero_le_one]
-  refine MeasureTheory.setIntegral_congr_fun measurableSet_Ioc fun t ht ↦ ?_
-  simp only [one_smul, F, φ, projIcc_of_mem zero_le_one (Ioc_subset_Icc_self ht),
-    Complex.real_smul]
+  exact fun z ↦
+    (analyticAt_partialDslope (hf.differentiableOn.analyticAt_of_finiteDimensional Filter.univ_mem)
+      (hf.differentiableOn.analyticAt_of_finiteDimensional Filter.univ_mem)).differentiableAt
 
-end Entire
+end Analytic
 
 /-! ### Polydisc supremum bounds -/
 
 section NormBounds
 
 variable [Fintype ι]
+
+omit [NormedSpace ℂ E] in
+/-- Pointwise polydisc bound for the frozen-coordinate term: if `f : (ι → ℂ) → E` is bounded by
+`M` on `closedBall c R`, and `ζ ∈ closedBall (c i) R` and `z ∈ closedBall c R`, then
+`‖f (update z i ζ)‖ ≤ M`. -/
+theorem norm_update_le {f : (ι → ℂ) → E} {c : ι → ℂ} {R M : ℝ} {i : ι} {ζ : ℂ}
+    (hζ : ζ ∈ closedBall (c i) R) (hM : ∀ w ∈ closedBall c R, ‖f w‖ ≤ M)
+    {z : ι → ℂ} (hz : z ∈ closedBall c R) :
+    ‖f (update z i ζ)‖ ≤ M :=
+  hM _ (update_mem_closedBall hζ hz)
 
 /-- **Polydisc maximum modulus bound for `partialDslope`.** If `f : (ι → ℂ) → E` is complex
 differentiable and bounded by `M` on `closedBall c R`, and `ζ ∈ closedBall (c i) r` with `r < R`,
@@ -243,7 +306,7 @@ theorem norm_partialDslope_le {f : (ι → ℂ) → E} {c : ι → ℂ} {r R M :
   have hRr : 0 < R - r := sub_pos.mpr hrR
   have hζ_ball : ζ ∈ ball (c i) R := mem_ball.mpr ((mem_closedBall.mp hζ).trans_lt hrR)
   have hζM : ‖f (update z i ζ)‖ ≤ M :=
-    hM _ (update_mem_closedBall (closedBall_subset_closedBall hrR.le hζ) hz)
+    norm_update_le (closedBall_subset_closedBall hrR.le hζ) hM hz
   set h : ℂ → E := fun u ↦ f (update z i u)
   have hh_diff : DifferentiableOn ℂ h (closedBall (c i) R) :=
     hf.comp (fun u _ ↦ (hasFDerivAt_update z u).differentiableAt.differentiableWithinAt)
@@ -264,8 +327,7 @@ theorem norm_partialDslope_le {f : (ι → ℂ) → E} {c : ι → ℂ} {r R M :
     have huR : ‖u - c i‖ = R := by simpa [dist_eq_norm] using mem_sphere.mp hu
     have hζr : ‖ζ - c i‖ ≤ r := by simpa [dist_eq_norm] using mem_closedBall.mp hζ
     have huζ : R - r ≤ ‖u - ζ‖ := by linarith [norm_sub_le_norm_sub_add_norm_sub u ζ (c i)]
-    have hfuM : ‖f (update z i u)‖ ≤ M :=
-      hM _ (update_mem_closedBall (sphere_subset_closedBall hu) hz)
+    have hfuM : ‖f (update z i u)‖ ≤ M := norm_update_le (sphere_subset_closedBall hu) hM hz
     rw [le_div_iff₀ hRr, mul_comm]
     calc (R - r) * ‖g u‖
         ≤ ‖u - ζ‖ * ‖g u‖ := mul_le_mul_of_nonneg_right huζ (norm_nonneg _)
@@ -312,31 +374,6 @@ theorem partialDslope_update_eq_eval_divByMonic {f : (ι → ℂ) → ℂ} {i : 
     · simp
     · simp [dslope_of_ne _ hw, slope_def_field, sub_ne_zero.mpr hw]
   simp [hderiv]
-
-/-- Fixing the `i`-th coordinate at `ζ` preserves a strict polynomial degree bound `< d` in any
-coordinate `j` (becoming constant in coordinate `i` itself). -/
-theorem exists_degree_lt_and_update_eq_eval {f : (ι → ℂ) → ℂ} (i j : ι) (ζ : ℂ)
-    {d : WithBot ℕ} (hf : ∀ y, ∃ Q : ℂ[X], Q.degree < d ∧ ∀ w, f (update y j w) = Q.eval w)
-    (z : ι → ℂ) :
-    ∃ Q : ℂ[X], Q.degree < d ∧ ∀ w, f (update (update z j w) i ζ) = Q.eval w := by
-  by_cases hij : j = i
-  · subst hij
-    obtain ⟨Q, hQdeg, hQ⟩ := hf z
-    refine ⟨C (Q.eval ζ), ?_, fun w ↦ by simp [hQ ζ]⟩
-    rcases eq_or_ne Q 0 with rfl | hQ0
-    · simpa using hQdeg
-    · exact degree_C_le.trans_lt ((zero_le_degree_iff.mpr hQ0).trans_lt hQdeg)
-  · obtain ⟨Q, hQdeg, hQ⟩ := hf (update z i ζ)
-    exact ⟨Q, hQdeg, fun w ↦ by rw [update_comm hij, hQ]⟩
-
-/-- Fixing the `i`-th coordinate at `ζ` preserves a polynomial degree bound `≤ e` in any
-coordinate `j` (becoming constant in coordinate `i` itself). -/
-theorem exists_natDegree_le_and_update_eq_eval {f : (ι → ℂ) → ℂ} (i j : ι) (ζ : ℂ) {e : ℕ}
-    (hf : ∀ y, ∃ Q : ℂ[X], Q.natDegree ≤ e ∧ ∀ w, f (update y j w) = Q.eval w) (z : ι → ℂ) :
-    ∃ Q : ℂ[X], Q.natDegree ≤ e ∧ ∀ w, f (update (update z j w) i ζ) = Q.eval w := by
-  simpa only [Order.lt_succ_iff, ← natDegree_le_iff_degree_le] using
-    exists_degree_lt_and_update_eq_eval i j ζ (d := Order.succ (e : WithBot ℕ))
-      (fun y ↦ by simpa only [Order.lt_succ_iff, ← natDegree_le_iff_degree_le] using hf y) z
 
 /-- **Degree reduction in the divided coordinate.** If `f` is a polynomial of degree at most `e` in
 `z i` along the `i`-th coordinate line through `z`, then `partialDslope i ζ f` is a polynomial of
@@ -406,38 +443,6 @@ theorem exists_natDegree_le_and_partialDslope_eq_eval [Finite ι] {f : (ι → �
   simpa only [Order.lt_succ_iff, ← natDegree_le_iff_degree_le] using
     exists_degree_lt_and_partialDslope_eq_eval hf i j ζ (d := Order.succ (e : WithBot ℕ))
       (fun y ↦ by simpa only [Order.lt_succ_iff, ← natDegree_le_iff_degree_le] using hdeg y) z
-
-/-- Differentiating an entire function along coordinate `i` preserves a strict polynomial degree
-bound `< d` in every coordinate `j`. -/
-theorem exists_degree_lt_and_partialDeriv_eq_eval [Finite ι] {f : (ι → ℂ) → ℂ}
-    (hf : Differentiable ℂ f) (i j : ι) {d : WithBot ℕ}
-    (hdeg : ∀ y, ∃ Q : ℂ[X], Q.degree < d ∧ ∀ w, f (update y j w) = Q.eval w) (z : ι → ℂ) :
-    ∃ Q : ℂ[X], Q.degree < d ∧ ∀ w, partialDeriv i f (update z j w) = Q.eval w := by
-  by_cases hij : j = i
-  · subst hij
-    obtain ⟨Q, hQdeg, hQ⟩ := hdeg z
-    refine ⟨Q.derivative, degree_derivative_le.trans_lt hQdeg, fun w ↦ ?_⟩
-    rw [partialDeriv_eq_deriv_update (hf _) j, update_self]
-    have hfun : (fun s ↦ f (update (update z j w) j s)) = fun s ↦ Q.eval s :=
-      funext fun s ↦ by simp [hQ]
-    rw [hfun, Polynomial.deriv]
-  · obtain ⟨Q, hQ, hQz⟩ := exists_degree_lt_and_partialDslope_eq_eval hf i j (z i) hdeg z
-    exact ⟨Q, hQ, fun w ↦ by
-      rw [← partialDslope_of_eq (hf _) i (update_of_ne (Ne.symm hij) w z), hQz]⟩
-
-/-- Iterated differentiation of an entire function along coordinate `i` preserves a strict
-polynomial degree bound `< d` in every coordinate `j`. -/
-theorem exists_degree_lt_and_iterate_partialDeriv_eq_eval [Finite ι] {f : (ι → ℂ) → ℂ}
-    (hf : Differentiable ℂ f) (i j : ι) {d : WithBot ℕ}
-    (hdeg : ∀ y, ∃ Q : ℂ[X], Q.degree < d ∧ ∀ w, f (update y j w) = Q.eval w) (m : ℕ) :
-    ∀ z, ∃ Q : ℂ[X], Q.degree < d ∧
-      ∀ w, (partialDeriv i)^[m] f (update z j w) = Q.eval w := by
-  induction m with
-  | zero => exact hdeg
-  | succ m ih =>
-    simp_rw [iterate_succ_apply']
-    exact exists_degree_lt_and_partialDeriv_eq_eval (differentiable_iterate_partialDeriv hf i m)
-      i j ih
 
 end Degree
 

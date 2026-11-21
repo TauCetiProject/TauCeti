@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.PowerSeries.MultiIndex
-public import TauCeti.Analysis.Complex.Schwarz
+public import TauCeti.Analysis.Complex.Schwarz.Basic
 import Mathlib.Analysis.Analytic.CPolynomialDef
 import Mathlib.Analysis.Analytic.OfScalars
 import Mathlib.Tactic.FinCases

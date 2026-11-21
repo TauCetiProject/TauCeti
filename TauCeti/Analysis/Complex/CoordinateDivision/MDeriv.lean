@@ -6,17 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.Roots
-public import TauCeti.NumberTheory.Transcendental.Baker.MDeriv
+public import TauCeti.Analysis.Complex.MDeriv
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
-import TauCeti.Analysis.Complex.CoordinateDivision
-import TauCeti.Analysis.Complex.DividedDifference
+import TauCeti.Analysis.Complex.CoordinateDivision.Basic
+import TauCeti.Analysis.Complex.PartialDeriv.Degree
 
 /-!
 # Mixed-derivative remainder vanishing for multivariate coordinate division
 
-This file connects mixed partial derivatives `TauCeti.Baker.mDeriv` to multivariate coordinate
-polynomial division (`TauCeti.Analysis.Complex.CoordinateDivision`). Every mixed partial
-derivative preserves strict coordinate polynomial degree bounds, and if a multivariate division
+This file connects mixed partial derivatives `TauCeti.mDeriv` to multivariate coordinate
+polynomial division (`TauCeti.Analysis.Complex.CoordinateDivision.Basic`). Every mixed partial
+derivative preserves strict coordinate polynomial degree bounds, `mDeriv κ` annihilates
+`y ↦ g y * P.eval (y i)` whenever `κ i < P.rootMultiplicity (z i)`, and if a multivariate division
 remainder `f₀` satisfies `f(z) = f₀(z) + ∑ i, g_i(z) (P i).eval (z i)` with
 `deg_{z_j} f₀ < deg (P j)` while `D^κ f(ζ) = 0` at every root tuple `ζ ∈ ∏ᵢ Pᵢ⁻¹(0)` for all
 multi-orders `κ` with `κᵢ < (P i).rootMultiplicity (ζ i)`, then `f₀ = 0`
@@ -24,13 +25,15 @@ multi-orders `κ` with `κᵢ < (P i).rootMultiplicity (ζ i)`, then `f₀ = 0`
 
 ## Main results
 
-* `TauCeti.Baker.exists_degree_lt_and_mDeriv_eq_eval`: `mDeriv σ f` preserves any strict
-  coordinate polynomial degree bound `< d`.
-* `TauCeti.Baker.eq_zero_of_degree_lt_of_mDeriv_eq_zero`: an entire function with
+* `TauCeti.exists_degree_lt_and_mDeriv_eq_eval`: `mDeriv σ f` preserves any strict coordinate
+  polynomial degree bound `< d`.
+* `TauCeti.mDeriv_mul_eval_eq_zero_of_lt_rootMultiplicity`: `mDeriv κ` annihilates
+  `y ↦ g y * P.eval (y i)` at `z` whenever `κ i < P.rootMultiplicity (z i)`.
+* `TauCeti.eq_zero_of_degree_lt_of_mDeriv_eq_zero`: an entire function with
   `deg_{z_j} f₀ < deg (P j)` in every coordinate whose mixed partial derivatives vanish on
   `∏ᵢ Pᵢ⁻¹(0)` up to the root multiplicities is identically zero.
-* `TauCeti.Baker.eq_zero_of_eq_add_sum_mul_eval_of_mDeriv_eq_zero`: vanishing of the multivariate
-  division remainder when `D^κ f` vanishes on `∏ᵢ Pᵢ⁻¹(0)` up to the root multiplicities.
+* `TauCeti.eq_zero_of_eq_add_sum_mul_eval_of_mDeriv_eq_zero`: vanishing of the multivariate division
+  remainder when `D^κ f` vanishes on `∏ᵢ Pᵢ⁻¹(0)` up to the root multiplicities.
 
 ## References
 
@@ -42,7 +45,7 @@ public section
 
 open Finset Function Polynomial
 
-namespace TauCeti.Baker
+namespace TauCeti
 
 variable {n : ℕ}
 
@@ -75,8 +78,8 @@ theorem exists_degree_lt_and_mDeriv_eq_eval {f : (Fin n → ℂ) → ℂ} (hf : 
 
 /-- If `g : (Fin n → ℂ) → ℂ` is entire and `κ i < P.rootMultiplicity (z i)`, then `mDeriv κ`
 annihilates `y ↦ g y * P.eval (y i)` at `z`. -/
-private theorem mDeriv_mul_eval_eq_zero {g : (Fin n → ℂ) → ℂ} (hg : Differentiable ℂ g)
-    {i : Fin n} {P : ℂ[X]} {z : Fin n → ℂ} {κ : Fin n → ℕ}
+theorem mDeriv_mul_eval_eq_zero_of_lt_rootMultiplicity {g : (Fin n → ℂ) → ℂ}
+    (hg : Differentiable ℂ g) {i : Fin n} {P : ℂ[X]} {z : Fin n → ℂ} {κ : Fin n → ℕ}
     (hκ : κ i < P.rootMultiplicity (z i)) :
     mDeriv κ (fun y ↦ g y * P.eval (y i)) z = 0 := by
   have hPi : Differentiable ℂ (fun y : Fin n → ℂ ↦ P.eval (y i)) :=
@@ -161,7 +164,7 @@ theorem eq_zero_of_eq_add_sum_mul_eval_of_mDeriv_eq_zero
   rw [hf_eq, mDeriv_add hf₀ (Differentiable.sum fun i _ ↦ hterm i),
     mDeriv_sum univ (fun i _ ↦ hterm i), Pi.add_apply, Finset.sum_apply] at h0
   have hsum0 : ∑ i : Fin n, mDeriv κ (fun y ↦ g i y * (P i).eval (y i)) ζ = 0 :=
-    sum_eq_zero fun i _ ↦ mDeriv_mul_eval_eq_zero (hg i) (hκ i)
+    sum_eq_zero fun i _ ↦ mDeriv_mul_eval_eq_zero_of_lt_rootMultiplicity (hg i) (hκ i)
   rwa [hsum0, add_zero] at h0
 
-end TauCeti.Baker
+end TauCeti

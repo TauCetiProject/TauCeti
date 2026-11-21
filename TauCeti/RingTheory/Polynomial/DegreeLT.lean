@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Polynomial.Eval.SMul
+public import Mathlib.LinearAlgebra.Pi
 public import Mathlib.RingTheory.Polynomial.DegreeLT
 import TauCeti.Algebra.Polynomial.Degree.Operations
 import Mathlib.Tactic.LinearCombination
@@ -28,9 +30,14 @@ For `g` monic and coprime to `h`, the same division solves the Bézout equation
 of `g` and `h` on these degree bounds, in the explicit form consumed by Hensel's lemma
 (`TauCeti.RingTheory.PowerSeries.Hensel`).
 
+It also exposes `Polynomial.evalDegreeLT R n`, the `R`-submodule of functions `R → R` obtained by
+evaluating polynomials of degree `< n`.
+
 ## Main results
 
 * `Polynomial.mem_degreeLT_natDegree_iff`: membership in `R[X]_(g.natDegree)` is `degree < degree`.
+* `Polynomial.evalLinearMap`, `Polynomial.evalDegreeLT`, `Polynomial.mem_evalDegreeLT`: the
+  `R`-submodule of functions `R → R` represented by polynomials of degree `< n`.
 * `Polynomial.modByMonic_mem_degreeLT`, `Polynomial.divByMonic_mem_degreeLT`: where `%ₘ` and `/ₘ`
   land.
 * `Polynomial.Monic.modByMonic_mul_add`, `Polynomial.Monic.divByMonic_mul_add`: division with
@@ -43,9 +50,9 @@ of `g` and `h` on these degree bounds, in the explicit form consumed by Hensel's
   existence and uniqueness of degree-bounded solutions of `g * b + h * a = c`.
 
 Stated over an arbitrary commutative ring, with the trivial ring dispatched by `nontriviality`
-rather than excluded by hypothesis; `mem_degreeLT_natDegree_iff` needs only a semiring,
-`finrank_degreeLT` a semiring with the strong rank condition, and `Monic.sub_mem_degreeLT` and
-`divByMonic_mem_degreeLT` only a ring.
+rather than excluded by hypothesis; `mem_degreeLT_natDegree_iff`, `evalLinearMap`, and
+`evalDegreeLT` need only a semiring, `finrank_degreeLT` a semiring with the strong rank condition,
+and `Monic.sub_mem_degreeLT` and `divByMonic_mem_degreeLT` only a ring.
 
 ## Provenance
 
@@ -70,6 +77,24 @@ variable {R : Type*} [Semiring R] {g q : R[X]}
 theorem mem_degreeLT_natDegree_iff (hg : g ≠ 0) :
     q ∈ degreeLT R g.natDegree ↔ q.degree < g.degree := by
   rw [mem_degreeLT, degree_eq_natDegree hg]
+
+/-- Evaluation of polynomials as an `R`-linear map `R[X] →ₗ[R] (R → R)`. -/
+noncomputable def evalLinearMap (R : Type*) [Semiring R] : R[X] →ₗ[R] (R → R) :=
+  LinearMap.pi fun r ↦ leval r
+
+@[simp]
+theorem evalLinearMap_apply (R : Type*) [Semiring R] (p : R[X]) (r : R) :
+    evalLinearMap R p r = p.eval r := by
+  simp [evalLinearMap]
+
+/-- The `R`-submodule of functions `R → R` induced by evaluating polynomials of degree `< n`. -/
+noncomputable def evalDegreeLT (R : Type*) [Semiring R] (n : ℕ) : Submodule R (R → R) :=
+  (degreeLT R n).map (evalLinearMap R)
+
+theorem mem_evalDegreeLT {n : ℕ} {f : R → R} :
+    f ∈ evalDegreeLT R n ↔ ∃ Q : R[X], Q.degree < n ∧ ∀ w, f w = Q.eval w := by
+  simp only [evalDegreeLT, Submodule.mem_map, mem_degreeLT, funext_iff, evalLinearMap_apply]
+  refine exists_congr fun Q ↦ and_congr_right fun _ ↦ forall_congr' fun _ ↦ eq_comm
 
 /-- A change of coefficients preserves the degree bound. -/
 theorem map_mem_degreeLT {S : Type*} [Semiring S] (φ : R →+* S) {n : ℕ} {f : R[X]}

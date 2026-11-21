@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Polynomial.Basic
 public import Mathlib.Algebra.Polynomial.Eval.Defs
 public import Mathlib.Analysis.Normed.Ring.Basic
-public import Mathlib.Topology.MetricSpace.Pseudo.Defs
 
 /-!
 # Norm bounds for polynomials given by a multiset of roots

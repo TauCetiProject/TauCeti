@@ -5,15 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.Transcendental.Baker.MDeriv
-import Mathlib.Algebra.Polynomial.BigOperators
-import Mathlib.Algebra.Polynomial.Roots
+public import TauCeti.Analysis.Complex.MDeriv
 import Mathlib.Data.Finsupp.Indicator
 import Mathlib.Data.Finsupp.Multiset
 import Mathlib.Data.Finsupp.Weight
-import TauCeti.Analysis.Complex.CoordinateDivision
+import TauCeti.Analysis.Complex.CoordinateDivision.Basic
+import TauCeti.Analysis.Complex.CoordinateDivision.MDeriv
 import TauCeti.Analysis.Polynomial.OfMultiset
-import TauCeti.NumberTheory.Transcendental.Baker.CoordinateDivision
 
 /-!
 # Schwarz's lemma for Cartesian products
@@ -37,9 +35,9 @@ linear forms in logarithms.
 
 ## Main results
 
-* `TauCeti.Baker.norm_le_mul_six_pow_mul_div_pow_of_le_sum`: weighted Cartesian zero-set Schwarz
-  lemma with factor `(6 ^ n * r / R) ^ p` when `∀ i, p ≤ ∑ ζ ∈ E i, k i ζ` and `r ≤ R`.
-* `TauCeti.Baker.norm_le_mul_eighteen_pow_mul_div_pow`: Waldschmidt's Schwarz lemma for Cartesian
+* `TauCeti.norm_le_mul_six_pow_mul_div_pow_of_le_sum`: weighted Cartesian zero-set Schwarz lemma
+  with factor `(6 ^ n * r / R) ^ p` when `∀ i, p ≤ ∑ ζ ∈ E i, k i ζ` and `r ≤ R`.
+* `TauCeti.norm_le_mul_eighteen_pow_mul_div_pow`: Waldschmidt's Schwarz lemma for Cartesian
   products (Waldschmidt 2000, §4.3, Proposition 4.7), bounding
   `‖f z‖ ≤ M * (18 ^ n * r / R) ^ (S₀ * S₁)` on `closedBall c r` whenever `∀ i, S₁ ≤ #(E i)`,
   `∀ i, (E i : Set ℂ) ⊆ closedBall (c i) r`, `r ≤ R`, and (for `0 < S₀ * S₁`) `mDeriv σ f ξ = 0` on
@@ -55,7 +53,7 @@ public section
 
 open Finset Metric Polynomial
 
-namespace TauCeti.Baker
+namespace TauCeti
 
 /-! ### Preliminary helpers -/
 
@@ -214,4 +212,4 @@ theorem norm_le_mul_eighteen_pow_mul_div_pow {n : ℕ} {f : (Fin n → ℂ) → 
   refine div_le_div_of_nonneg_right (mul_le_mul_of_nonneg_right ?_ hr) (by positivity)
   exact pow_le_pow_left₀ (by norm_num) (by norm_num) n
 
-end TauCeti.Baker
+end TauCeti

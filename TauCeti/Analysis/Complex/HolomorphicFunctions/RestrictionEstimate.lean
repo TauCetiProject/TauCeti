@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.HolomorphicFunctions.Jet
 import Mathlib.Analysis.SpecificLimits.Basic
-import TauCeti.Analysis.Complex.Schwarz
+import TauCeti.Analysis.Complex.Schwarz.Basic
 
 /-!
 # Small restriction on a subspace of finite codimension

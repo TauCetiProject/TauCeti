@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.Polynomial.Basic
+public import Mathlib.Algebra.Polynomial.Splits
 public import Mathlib.Algebra.Polynomial.Taylor
 public import Mathlib.Algebra.Polynomial.Roots
 import TauCeti.Algebra.Polynomial.Taylor
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
+import Mathlib.Topology.DiscreteSubset
 import Mathlib.Topology.LocallyConstant.Basic
 
 /-!
@@ -23,7 +25,9 @@ constant, every factor multiplicity is locally constant: none can increase, and 
 decrease.
 
 This transfers the multiplicities of root sections of a product to its individual factors,
-including factors sharing roots and roots of multiplicity greater than one.
+including factors sharing roots and roots of multiplicity greater than one. For fixed polynomials
+over Hausdorff topological domains without isolated points, the same continuity of evaluation yields
+vanishing and root-multiplicity comparison for `Q.eval w + g w * P.eval w = 0`.
 
 ## References
 
@@ -100,6 +104,66 @@ theorem eventually_rootMultiplicity_eq_of_prod [IsDomain R] [T1Space R]
   filter_upwards [hle, hnonzero, hmult] with x hx hxne hxm
   rw [hsum x hxne, hsum x₀ hne] at hxm
   exact (Finset.sum_eq_sum_iff_of_le hx).1 hxm
+
+omit [IsTopologicalSemiring R] in
+/-- If `g : R → R` is continuous at a non-isolated point `w₀` of a Hausdorff integral domain `R`
+and `g w * P.eval w = 0` everywhere for a nonzero polynomial `P : R[X]`, then `g w₀ = 0`. -/
+theorem eq_zero_of_mul_eval_eq_zero [IsDomain R] [T2Space R]
+    {g : R → R} {w₀ : R} [(𝓝[≠] w₀).NeBot] (hg : ContinuousAt g w₀) {P : R[X]} (hP0 : P ≠ 0)
+    (hgP : ∀ w, g w * P.eval w = 0) : g w₀ = 0 := by
+  have hne : ∀ᶠ w in 𝓝[≠] w₀, P.eval w ≠ 0 :=
+    (eventually_eval_ne_zero_codiscrete hP0).filter_mono (nhdsNE_le_codiscrete w₀)
+  have heq : g =ᶠ[𝓝[≠] w₀] fun _ ↦ (0 : R) := by
+    filter_upwards [hne] with w hw
+    exact (mul_eq_zero.mp (hgP w)).resolve_right hw
+  exact tendsto_nhds_unique (hg.tendsto.mono_left nhdsWithin_le_nhds)
+    (tendsto_const_nhds.congr' heq.symm)
+
+omit [IsTopologicalSemiring R] in
+/-- If `Q.eval w + g w * P.eval w = 0` everywhere on a Hausdorff topological integral domain `R`,
+with `P, Q ≠ 0` and `g` continuous at a non-isolated point `ζ`, then
+`P.rootMultiplicity ζ ≤ Q.rootMultiplicity ζ`. -/
+theorem rootMultiplicity_le_of_eval_add_mul_eval_eq_zero [IsTopologicalRing R] [IsDomain R]
+    [T2Space R] {g : R → R} {ζ : R} [(𝓝[≠] ζ).NeBot] (hg : ContinuousAt g ζ) {P Q : R[X]}
+    (hP0 : P ≠ 0) (hQ0 : Q ≠ 0) (h : ∀ w, Q.eval w + g w * P.eval w = 0) :
+    P.rootMultiplicity ζ ≤ Q.rootMultiplicity ζ := by
+  by_contra! hlt
+  obtain ⟨Q₁, hQ₁, hndvd⟩ := Q.exists_eq_pow_rootMultiplicity_mul_and_not_dvd hQ0 ζ
+  obtain ⟨P₁, hP₁⟩ := (le_rootMultiplicity_iff hP0).mp hlt
+  have hlim : Tendsto (fun w ↦ Q₁.eval w + g w * ((w - ζ) * P₁.eval w)) (𝓝[≠] ζ)
+      (𝓝 (Q₁.eval ζ)) := by
+    have hc : ContinuousAt (fun w ↦ Q₁.eval w + g w * ((w - ζ) * P₁.eval w)) ζ :=
+      Q₁.continuous.continuousAt.add (hg.mul
+        ((continuousAt_id.sub continuousAt_const).mul P₁.continuous.continuousAt))
+    simpa using hc.tendsto.mono_left nhdsWithin_le_nhds
+  have hzero : (fun w ↦ Q₁.eval w + g w * ((w - ζ) * P₁.eval w)) =ᶠ[𝓝[≠] ζ] fun _ ↦ 0 := by
+    filter_upwards [self_mem_nhdsWithin] with w (hw : w ≠ ζ)
+    have hw0 : (w - ζ) ^ Q.rootMultiplicity ζ ≠ 0 := pow_ne_zero _ (sub_ne_zero.mpr hw)
+    have h0 := h w
+    rw [hQ₁, hP₁, pow_succ] at h0
+    simp only [eval_mul, eval_pow, eval_sub, eval_X, eval_C] at h0
+    exact mul_left_cancel₀ hw0 (by linear_combination h0)
+  have hQ₁0 : Q₁.eval ζ = 0 :=
+    tendsto_nhds_unique hlim (tendsto_const_nhds.congr' hzero.symm)
+  exact hndvd (dvd_iff_isRoot.mpr hQ₁0)
+
+/-- If `Q.eval w + g w * P.eval w = 0` everywhere on a Hausdorff topological field `K` without
+isolated points, where `P` splits, `Q.degree < P.degree`, and `g` is continuous at every root of
+`P`, then `Q = 0`. -/
+theorem eq_zero_of_eval_add_mul_eval_eq_zero {K : Type*} [Field K] [TopologicalSpace K]
+    [IsTopologicalRing K] [T2Space K] [∀ ζ : K, (𝓝[≠] ζ).NeBot] {g : K → K} {P Q : K[X]}
+    (hP : P.Splits) (hdeg : Q.degree < P.degree) (hg : ∀ ζ, P.IsRoot ζ → ContinuousAt g ζ)
+    (h : ∀ w, Q.eval w + g w * P.eval w = 0) : Q = 0 := by
+  have hP0 : P ≠ 0 := ne_zero_of_degree_gt hdeg
+  by_contra hQ0
+  classical
+  have hdvd : P ∣ Q := hP.dvd_of_roots_le_roots hP0 <| Multiset.le_iff_count.mpr fun ζ ↦ by
+    rw [count_roots, count_roots]
+    rcases Nat.eq_zero_or_pos (P.rootMultiplicity ζ) with h0 | hpos
+    · simp [h0]
+    · exact rootMultiplicity_le_of_eval_add_mul_eval_eq_zero
+        (hg ζ ((rootMultiplicity_pos hP0).mp hpos)) hP0 hQ0 h
+  exact hQ0 (eq_zero_of_dvd_of_degree_lt hdvd hdeg)
 
 end Polynomial
 

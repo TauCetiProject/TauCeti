@@ -6,16 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.Roots
-public import TauCeti.Analysis.Complex.PartialDeriv
-import Mathlib.Algebra.Polynomial.Div
+public import TauCeti.Analysis.Complex.PartialDeriv.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Pi
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import Mathlib.Analysis.Complex.Polynomial.Basic
-import Mathlib.Topology.Algebra.Polynomial
+import TauCeti.Algebra.Polynomial.Eval.Pi
+import TauCeti.Algebra.Polynomial.LinearFactor
 import TauCeti.Algebra.Polynomial.Taylor
 import TauCeti.Analysis.Calculus.Deriv.Polynomial
 import TauCeti.Analysis.Complex.DividedDifference
-import TauCeti.Topology.Algebra.Polynomial.Basic
+import TauCeti.RingTheory.Polynomial.DegreeLT
+import TauCeti.Topology.Algebra.Polynomial.Root.Multiplicity
 import TauCeti.Topology.MetricSpace.Pseudo.Pi
 
 /-!
@@ -83,70 +84,6 @@ public section
 open Finset Function Metric Nat Polynomial
 
 namespace TauCeti
-
-/-! ### Closure helpers for coordinate polynomial degree bounds -/
-
-section DegreeHelpers
-
-private lemma exists_degree_lt_zero {d : WithBot ℕ} (hd : ⊥ < d) :
-    ∃ Q : ℂ[X], Q.degree < d ∧ ∀ w : ℂ, (0 : ℂ) = Q.eval w :=
-  ⟨0, by simpa using hd, by simp⟩
-
-private lemma exists_degree_lt_add {f g : ℂ → ℂ} {d : WithBot ℕ}
-    (hf : ∃ Q : ℂ[X], Q.degree < d ∧ ∀ w, f w = Q.eval w)
-    (hg : ∃ Q : ℂ[X], Q.degree < d ∧ ∀ w, g w = Q.eval w) :
-    ∃ Q : ℂ[X], Q.degree < d ∧ ∀ w, f w + g w = Q.eval w := by
-  obtain ⟨Qf, hQf, hQfz⟩ := hf
-  obtain ⟨Qg, hQg, hQgz⟩ := hg
-  exact ⟨Qf + Qg, (degree_add_le Qf Qg).trans_lt (max_lt hQf hQg), fun w ↦ by simp [hQfz, hQgz]⟩
-
-private lemma exists_degree_lt_sub {f g : ℂ → ℂ} {d : WithBot ℕ}
-    (hf : ∃ Q : ℂ[X], Q.degree < d ∧ ∀ w, f w = Q.eval w)
-    (hg : ∃ Q : ℂ[X], Q.degree < d ∧ ∀ w, g w = Q.eval w) :
-    ∃ Q : ℂ[X], Q.degree < d ∧ ∀ w, f w - g w = Q.eval w := by
-  obtain ⟨Qf, hQf, hQfz⟩ := hf
-  obtain ⟨Qg, hQg, hQgz⟩ := hg
-  exact ⟨Qf - Qg, (degree_sub_le Qf Qg).trans_lt (max_lt hQf hQg), fun w ↦ by simp [hQfz, hQgz]⟩
-
-private lemma exists_degree_lt_const_mul {f : ℂ → ℂ} {d : WithBot ℕ} (c : ℂ)
-    (hf : ∃ Q : ℂ[X], Q.degree < d ∧ ∀ w, f w = Q.eval w) :
-    ∃ Q : ℂ[X], Q.degree < d ∧ ∀ w, c * f w = Q.eval w := by
-  obtain ⟨Q, hQ, hQz⟩ := hf
-  exact ⟨c • Q, (degree_smul_le c Q).trans_lt hQ, fun w ↦ by simp [hQz w]⟩
-
-private lemma exists_degree_lt_mul_const {f : ℂ → ℂ} {d : WithBot ℕ} (c : ℂ)
-    (hf : ∃ Q : ℂ[X], Q.degree < d ∧ ∀ w, f w = Q.eval w) :
-    ∃ Q : ℂ[X], Q.degree < d ∧ ∀ w, f w * c = Q.eval w := by
-  obtain ⟨Q, hQ, hQz⟩ := exists_degree_lt_const_mul c hf
-  exact ⟨Q, hQ, fun w ↦ by rw [mul_comm, hQz w]⟩
-
-private lemma exists_degree_lt_sum {α : Type*} (s : Finset α) {f : α → ℂ → ℂ} {d : WithBot ℕ}
-    (hd : ⊥ < d) (hf : ∀ a ∈ s, ∃ Q : ℂ[X], Q.degree < d ∧ ∀ w, f a w = Q.eval w) :
-    ∃ Q : ℂ[X], Q.degree < d ∧ ∀ w, ∑ a ∈ s, f a w = Q.eval w := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simpa using exists_degree_lt_zero hd
-  | insert a s ha ih =>
-    have hsum := exists_degree_lt_add (hf a (mem_insert_self a s))
-      (ih fun b hb ↦ hf b (mem_insert_of_mem hb))
-    simpa only [sum_insert ha] using hsum
-
-private lemma degree_C_add_X_sub_C_mul_lt {a ζ : ℂ} {Q : ℂ[X]} {d : ℕ} (hQ : Q.degree < d) :
-    (C a + (X - C ζ) * Q).degree < ((d + 1 : ℕ) : WithBot ℕ) := by
-  refine (degree_add_le _ _).trans_lt (max_lt
-    (degree_C_le.trans_lt (WithBot.coe_lt_coe.mpr (Nat.succ_pos d))) ?_)
-  rcases eq_or_ne Q 0 with rfl | hQ0
-  · simp
-  · rw [degree_eq_natDegree hQ0] at hQ
-    have hlt : Q.natDegree < d := Nat.cast_lt.mp hQ
-    calc ((X - C ζ) * Q).degree
-        ≤ (X - C ζ).degree + Q.degree := degree_mul_le _ _
-      _ = ((1 + Q.natDegree : ℕ) : WithBot ℕ) := by
-          rw [degree_X_sub_C, degree_eq_natDegree hQ0]
-          norm_cast
-      _ < ((d + 1 : ℕ) : WithBot ℕ) := Nat.cast_lt.mpr (by omega)
-
-end DegreeHelpers
 
 /-! ### Univariate coordinate division -/
 
@@ -248,9 +185,15 @@ theorem eq_of_eq_add_mul_eval {f f₀ fk f₀' fk' : (ι → ℂ) → ℂ}
     (hfk.sub hfk').comp (continuous_const.update k continuous_id)
   have hf₀_eq : f₀ = f₀' := by
     ext z
-    obtain ⟨Q, hQdeg, hQ⟩ := exists_degree_lt_sub (hdeg z) (hdeg' z)
+    have hP_deg : P.degree = (P.natDegree : ℕ) := degree_eq_natDegree hP0
+    have hsub_mem : (fun w ↦ f₀ (update z k w) - f₀' (update z k w)) ∈
+        evalDegreeLT ℂ P.natDegree :=
+      (evalDegreeLT ℂ P.natDegree).sub_mem
+        (mem_evalDegreeLT.mpr (by simpa only [hP_deg] using hdeg z))
+        (mem_evalDegreeLT.mpr (by simpa only [hP_deg] using hdeg' z))
+    obtain ⟨Q, hQdeg, hQ⟩ := mem_evalDegreeLT.mp hsub_mem
     have hQ0 : Q = 0 := Polynomial.eq_zero_of_eval_add_mul_eval_eq_zero (IsAlgClosed.splits P)
-      hQdeg (fun _ _ ↦ (hline_cont z).continuousAt) fun w ↦ by
+      (hP_deg ▸ hQdeg) (fun _ _ ↦ (hline_cont z).continuousAt) fun w ↦ by
         simpa [hQ w, update_self] using hsub_div (update z k w)
     exact sub_eq_zero.mp (by simpa [hQ0, update_eq_self] using hQ (z k))
   refine ⟨hf₀_eq, ?_⟩
@@ -289,7 +232,7 @@ private lemma norm_update_add_sub_mul_le [Fintype ι] {f r' : (ι → ℂ) → �
     ‖f (update z k ζ) + (z k - ζ) * r' z‖ ≤ ((3 : ℝ) ^ (d + 1) - 1) / 2 * M := by
   have hr_lt_R : r < R := by linarith [dist_nonneg.trans (mem_closedBall.mp hζ)]
   have hfζ : ‖f (update z k ζ)‖ ≤ M :=
-    hM _ (update_mem_closedBall (closedBall_subset_closedBall hr_lt_R.le hζ) hz)
+    norm_update_le (closedBall_subset_closedBall hr_lt_R.le hζ) hM hz
   have hzk : ‖z k - c k‖ ≤ R := by
     simpa [dist_eq_norm] using (dist_le_pi_dist z c k).trans (mem_closedBall.mp hz)
   have hζc : ‖ζ - c k‖ ≤ r := by simpa [dist_eq_norm] using mem_closedBall.mp hζ
@@ -329,18 +272,17 @@ private theorem exists_eq_add_mul_prod_of_list [Fintype ι] {f : (ι → ℂ) �
       fun j _ d hdeg ↦ ⟨fun z ↦ ?_, hdeg⟩,
       fun c r R M _ _ _ hM z hz ↦ ⟨by simp, by simpa using hM z hz⟩⟩
     obtain ⟨Q, hQ, _⟩ := hdeg z
-    exact exists_degree_lt_zero (bot_le.trans_lt hQ)
+    exact ⟨0, bot_le.trans_lt hQ, by simp⟩
   | cons ζ l ih =>
     have hq₁ : Differentiable ℂ (partialDslope k ζ f) := differentiable_partialDslope hf k ζ
     obtain ⟨r', q', hr', hq', hdiv', hdeg', hdeg_ne', hnorm'⟩ := ih hq₁
     let f₀ : (ι → ℂ) → ℂ := fun z ↦ f (update z k ζ) + (z k - ζ) * r' z
     have hf₀ : Differentiable ℂ f₀ := by
-      have hupd : Differentiable ℂ (fun z : ι → ℂ ↦ update z k ζ) :=
-        differentiable_pi.mpr fun j ↦ by
-          by_cases hj : j = k
-          · subst hj; simp
-          · simpa [hj] using differentiable_apply j
-      exact (hf.comp hupd).add (((differentiable_apply k).sub (differentiable_const ζ)).mul hr')
+      refine (hf.comp (differentiable_pi.mpr fun j ↦ ?_)).add
+        (((differentiable_apply k).sub (differentiable_const ζ)).mul hr')
+      by_cases hj : j = k
+      · subst hj; simp
+      · simpa [hj] using differentiable_apply j
     refine ⟨f₀, q', hf₀, hq', ?_, ?_, ?_, ?_⟩
     · intro z
       have hstep := eq_update_add_sub_mul_partialDslope k ζ f z
@@ -349,15 +291,23 @@ private theorem exists_eq_add_mul_prod_of_list [Fintype ι] {f : (ι → ℂ) �
       linear_combination hstep
     · intro z
       obtain ⟨Q', hQ'deg, hQ'⟩ := hdeg' z
-      exact ⟨C (f (update z k ζ)) + (X - C ζ) * Q', degree_C_add_X_sub_C_mul_lt hQ'deg,
+      exact ⟨C (f (update z k ζ)) + (X - C ζ) * Q',
+        Polynomial.degree_C_add_X_sub_C_mul_lt hQ'deg,
         fun w ↦ by simp [f₀, update_idem, update_self, hQ' w]⟩
     · intro j hjk d hfj
-      obtain ⟨hr'j, hq'j⟩ :=
-        hdeg_ne' j hjk d (exists_degree_lt_and_partialDslope_eq_eval hf k j ζ hfj)
-      refine ⟨fun z ↦ ?_, hq'j⟩
-      simpa only [f₀, update_of_ne hjk.symm] using exists_degree_lt_add
-        (exists_degree_lt_and_update_eq_eval k j ζ hfj z)
-        (exists_degree_lt_const_mul (z k - ζ) (hr'j z))
+      cases d with
+      | bot =>
+        obtain ⟨Q, hQ, _⟩ := hfj 0
+        exact (not_lt_bot hQ).elim
+      | coe n =>
+        obtain ⟨hr'j, hq'j⟩ :=
+          hdeg_ne' j hjk n (exists_degree_lt_and_partialDslope_eq_eval hf k j ζ hfj)
+        refine ⟨fun z ↦ mem_evalDegreeLT.mp ?_, hq'j⟩
+        convert (evalDegreeLT ℂ n).add_mem
+          (mem_evalDegreeLT.mpr (exists_degree_lt_and_update_eq_eval k j ζ hfj z))
+          ((evalDegreeLT ℂ n).smul_mem (z k - ζ) (mem_evalDegreeLT.mpr (hr'j z))) using 1
+        ext w
+        simp [f₀, update_of_ne hjk.symm]
     · intro c r R M hR hrR hroots hM z hz
       have hζ : ζ ∈ closedBall (c k) r := hroots ζ List.mem_cons_self
       obtain ⟨hr'z, hq'z⟩ := hnorm' c r R (5 / (2 * R) * M) hR hrR
@@ -523,9 +473,17 @@ theorem exists_degree_lt_of_eq_add_mul_eval [Finite ι] {f f₀ fk : (ι → ℂ
   obtain ⟨h0, hk₁⟩ := exists_degree_lt_of_eq_add_mul_eval_of_monic hf₀ (hfk.const_mul _) hP₁
     hdiv₁ (fun y ↦ by simpa only [hP₁_deg] using hdeg y) hfj
   refine ⟨h0, fun y ↦ ?_⟩
-  obtain ⟨Q, hQdeg, hQy⟩ := exists_degree_lt_const_mul P.leadingCoeff⁻¹ (hk₁ y)
-  refine ⟨Q, hQdeg, fun w ↦ ?_⟩
-  rw [← hQy w, inv_mul_cancel_left₀ hlc]
+  cases d with
+  | bot =>
+    obtain ⟨Q, hQ, _⟩ := hfj y
+    exact (not_lt_bot hQ).elim
+  | coe n =>
+    obtain ⟨Q, hQdeg, hQy⟩ := mem_evalDegreeLT.mp
+      ((evalDegreeLT ℂ n).smul_mem P.leadingCoeff⁻¹ (mem_evalDegreeLT.mpr (hk₁ y)))
+    refine ⟨Q, hQdeg, fun w ↦ ?_⟩
+    have hQy' : P.leadingCoeff⁻¹ * (P.leadingCoeff * fk (update y j w)) = Q.eval w := by
+      simpa [fk₁] using hQy w
+    rwa [inv_mul_cancel_left₀ hlc] at hQy'
 
 /-- If `f(y) = f₀(y) + fk(y) P(y k)` with `f₀, fk` entire and `deg_{z_k} f₀ < deg P`, then any
 `natDegree ≤ e` bound on `f` in any coordinate `j` transfers to both `f₀` and `fk`. -/
@@ -571,17 +529,32 @@ private theorem eq_zero_of_add_sum_mul_eval_eq_zero
       rw [hF_def, Pi.zero_apply]
       linear_combination -h
     obtain ⟨_, hPj_pos, _⟩ := hdeg₀ j (mem_insert_self j s) 0
-    have hPj_bot : ⊥ < (P j).degree := bot_le.trans_lt hPj_pos
+    have hPj0 : P j ≠ 0 := ne_zero_of_degree_gt hPj_pos
+    have hPj_deg : (P j).degree = ((P j).natDegree : ℕ) := degree_eq_natDegree hPj0
     have hF_deg (z : ι → ℂ) :
         ∃ Q : ℂ[X], Q.degree < (P j).degree ∧ ∀ w, F (update z j w) = Q.eval w := by
-      refine exists_degree_lt_add (hdeg₀ j (mem_insert_self j s) z)
-        (exists_degree_lt_sum s hPj_bot fun a has ↦ ?_)
-      have haj : a < j := hj a has
-      simpa only [update_of_ne haj.ne] using exists_degree_lt_mul_const ((P a).eval (z a))
-        (hdeg_g a (mem_insert_of_mem has) j (mem_insert_self j s) haj z)
+      rw [hPj_deg, ← mem_evalDegreeLT]
+      have hF_mem : (fun w ↦ f₀ (update z j w)) +
+          ∑ a ∈ s, (fun w ↦ g a (update z j w) * (P a).eval (update z j w a)) ∈
+          evalDegreeLT ℂ (P j).natDegree := by
+        refine (evalDegreeLT ℂ (P j).natDegree).add_mem
+          (mem_evalDegreeLT.mpr (by simpa only [hPj_deg] using hdeg₀ j (mem_insert_self j s) z))
+          ((evalDegreeLT ℂ (P j).natDegree).sum_mem fun a has ↦ ?_)
+        have haj : a < j := hj a has
+        have hmem : (fun w ↦ (P a).eval (z a) * g a (update z j w)) ∈
+            evalDegreeLT ℂ (P j).natDegree :=
+          (evalDegreeLT ℂ (P j).natDegree).smul_mem ((P a).eval (z a)) (mem_evalDegreeLT.mpr <| by
+            simpa only [hPj_deg] using
+              hdeg_g a (mem_insert_of_mem has) j (mem_insert_self j s) haj z)
+        simpa only [update_of_ne haj.ne, mul_comm] using hmem
+      convert hF_mem using 1
+      ext w
+      simp [F]
     obtain ⟨hF0, hgj0⟩ := eq_of_eq_add_mul_eval (f := (0 : (ι → ℂ) → ℂ)) (f₀ := F) (fk := g j)
       (f₀' := 0) (fk' := 0) (hg j) continuous_const hsplit (fun _ ↦ by simp) hF_deg
-      fun _ ↦ exists_degree_lt_zero hPj_bot
+      fun _ ↦ by
+        simpa only [hPj_deg, Pi.zero_apply] using
+          mem_evalDegreeLT.mp (evalDegreeLT ℂ (P j).natDegree).zero_mem
     obtain ⟨hf₀0, hgs0⟩ := ih (fun z ↦ by simpa [hF_def] using congrFun hF0 z)
       (fun a has ↦ hdeg₀ a (mem_insert_of_mem has))
       (fun a has b hbs ↦ hdeg_g a (mem_insert_of_mem has) b (mem_insert_of_mem hbs))
@@ -610,9 +583,19 @@ theorem eq_of_eq_add_sum_mul_eval [Fintype ι]
       exact sum_congr rfl fun i _ ↦ sub_mul (g i z) (g' i z) _
     rw [hsum, Pi.sub_apply]
     linear_combination hdiv' z - hdiv z
+  have hPj_deg (j : ι) : (P j).degree = ((P j).natDegree : ℕ) :=
+    degree_eq_natDegree (ne_zero_of_degree_gt (hdeg₀ j 0).choose_spec.1)
   obtain ⟨hf₀0, hg0⟩ := eq_zero_of_add_sum_mul_eval_eq_zero (fun i ↦ (hg i).sub (hg' i)) univ hsub
-    (fun j _ z ↦ exists_degree_lt_sub (hdeg₀ j z) (hdeg₀' j z))
-    (fun i _ j _ hij z ↦ exists_degree_lt_sub (hdeg_g i j hij z) (hdeg_g' i j hij z))
+    (fun j _ z ↦ by
+      simpa only [hPj_deg j, Pi.sub_apply] using mem_evalDegreeLT.mp <|
+        (evalDegreeLT ℂ (P j).natDegree).sub_mem
+          (mem_evalDegreeLT.mpr (by simpa only [hPj_deg j] using hdeg₀ j z))
+          (mem_evalDegreeLT.mpr (by simpa only [hPj_deg j] using hdeg₀' j z)))
+    (fun i _ j _ hij z ↦ by
+      simpa only [hPj_deg j, Pi.sub_apply] using mem_evalDegreeLT.mp <|
+        (evalDegreeLT ℂ (P j).natDegree).sub_mem
+          (mem_evalDegreeLT.mpr (by simpa only [hPj_deg j] using hdeg_g i j hij z))
+          (mem_evalDegreeLT.mpr (by simpa only [hPj_deg j] using hdeg_g' i j hij z)))
   exact ⟨sub_eq_zero.mp hf₀0, funext fun i ↦ sub_eq_zero.mp (hg0 i (mem_univ i))⟩
 
 /-- Multivariate coordinate division along a strictly increasing list `l : List ι`: produces entire
@@ -666,6 +649,24 @@ private theorem exists_eq_add_sum_mul_eval_of_list [Finite ι] {f : (ι → ℂ)
           (hab.trans (hbi ▸ hilt a hal')).false
         simpa [g, hai] using hdeg_g' a hal' b hbl' hab z
 
+/-- Degree preservation when absorbing `g i w * (P i).eval (w i)` into `f₀ w` along `j ≠ i`. -/
+private lemma exists_degree_lt_add_mul_eval {ι : Type*} [DecidableEq ι]
+    {f₀ : (ι → ℂ) → ℂ} {g : ι → (ι → ℂ) → ℂ} {P : ι → ℂ[X]} {i j : ι} (hij : i ≠ j)
+    (hPj : (P j).Monic)
+    (hdeg₀ : ∀ w, ∃ Q : ℂ[X], Q.degree < (P j).degree ∧ ∀ u, f₀ (update w j u) = Q.eval u)
+    (hdeg_g : ∀ w, ∃ Q : ℂ[X], Q.degree < (P j).degree ∧ ∀ u, g i (update w j u) = Q.eval u)
+    (w : ι → ℂ) :
+    ∃ Q : ℂ[X], Q.degree < (P j).degree ∧
+      ∀ u, f₀ (update w j u) + g i (update w j u) * (P i).eval (update w j u i) = Q.eval u := by
+  have hPj_deg : (P j).degree = ((P j).natDegree : ℕ) := degree_eq_natDegree hPj.ne_zero
+  rw [hPj_deg, ← mem_evalDegreeLT]
+  convert (evalDegreeLT ℂ (P j).natDegree).add_mem
+    (mem_evalDegreeLT.mpr (by simpa only [hPj_deg] using hdeg₀ w))
+    ((evalDegreeLT ℂ (P j).natDegree).smul_mem ((P i).eval (w i))
+      (mem_evalDegreeLT.mpr (by simpa only [hPj_deg] using hdeg_g w))) using 1
+  ext u
+  simp [hij, mul_comm]
+
 /-- Polydisc supremum bounds for any entire multivariate coordinate division along a strictly
 increasing list `l : List ι`. -/
 private theorem norm_le_of_eq_add_sum_mul_eval_of_list [Fintype ι]
@@ -701,13 +702,9 @@ private theorem norm_le_of_eq_add_sum_mul_eval_of_list [Fintype ι]
       have h := hdiv w
       rw [List.toFinset_cons, sum_insert hi_not] at h
       linear_combination h
-    have hdeg_r' (j : ι) (hjl' : j ∈ l') (w : ι → ℂ) :
-        ∃ Q : ℂ[X], Q.degree < (P j).degree ∧ ∀ u, r' (update w j u) = Q.eval u := by
-      have hij : i < j := hilt j hjl'
-      simpa only [r', update_of_ne hij.ne] using exists_degree_lt_add
-        (hdeg₀ j (List.mem_cons_of_mem i hjl') w)
-        (exists_degree_lt_mul_const ((P i).eval (w i))
-          (hdeg_g i List.mem_cons_self j (List.mem_cons_of_mem i hjl') hij w))
+    have hdeg_r' (j : ι) (hjl' : j ∈ l') := exists_degree_lt_add_mul_eval (hilt j hjl').ne (hP j)
+      (hdeg₀ j (List.mem_cons_of_mem i hjl'))
+      (hdeg_g i List.mem_cons_self j (List.mem_cons_of_mem i hjl') (hilt j hjl'))
     have hnorm' := fun w hw ↦ ih hsort' hr' (fun m hm ↦ hg m (List.mem_cons_of_mem i hm))
       hdiv' hdeg_r' (fun a ha b hb ↦ hdeg_g a (List.mem_cons_of_mem i ha) b
         (List.mem_cons_of_mem i hb)) w hw
