@@ -248,7 +248,7 @@ theorem energyFormH1_eq_of_transpose_eq_neg
     isClosed_eq (energyFormH1L hcK u).continuous (energyFormH1L hcg u).continuous
   have hmem := w1p0Submodule_subset_of_isClosed hclosed (fun ψ ↦ by
     simpa only [Set.mem_ofPred_eq, energyFormH1L_apply] using
-      energyFormH1_ofTestFunctionₗ_eq_of_transpose_eq_neg hK hKt hg u ψ) v.2
+      energyFormH1_ofTestFunctionₗ_eq_of_transpose_eq_neg hK hKt hg u ψ) v.property
   simpa only [Set.mem_ofPred_eq, energyFormH1L_apply] using hmem
 
 /-- **Moving the antisymmetric part of the principal coefficient into the drift.** Adding to the
