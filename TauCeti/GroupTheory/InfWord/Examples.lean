@@ -27,7 +27,7 @@ do not occur in the Archimedean case `Λ = ℤ`:
   lengths `{0, 1, 2, …}`, which has no greatest element, so `(x^t)⁻¹ ∗ nonArchimedeanWord t x y` is
   undefined (`TauCeti.InfWord.inv_ofFun_const_mul_nonArchimedeanWord_eq_none`).
 * **Strictness of `CDR(Λ, X)`**: the concatenation `nonArchimedeanWord t x y ++ (x^t)⁻¹` is reduced
-  but has no defined square, so it does not belong to `CDR(Λ, X)`
+  (`TauCeti.InfWord.isReduced_nonArchimedeanWord_append_inv`) yet does not belong to `CDR(Λ, X)`
   (`TauCeti.InfWord.nonArchimedeanWord_append_inv_notMem_CDR`).
 * **Failure of Stallings' pregroup axiom (P5)**: on the set `R(Λ, X)` of all reduced `Λ`-words
   (`TauCeti.InfWord.not_pregroup_P5`), there exist reduced words `u, v, w, z` such that `u ∗ v`,

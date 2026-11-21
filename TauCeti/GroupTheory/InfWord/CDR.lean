@@ -11,9 +11,9 @@ public import TauCeti.GroupTheory.LyndonLength.Basic
 /-!
 # Cyclic decompositions, subgroups of infinite words, and free Lyndon length functions
 
-Let `Λ` be a discretely ordered abelian group and `X` a set. Over a non-Archimedean `Λ`, the
-partial multiplication `∗` of reduced `Λ`-words is genuinely partial and not every reduced word
-admits a cyclic decomposition.
+Let `Λ` be a discretely ordered abelian group and `X` a set. When `Λ` is non-Archimedean and `X`
+is nonempty, the partial multiplication `∗` of reduced `Λ`-words is genuinely partial and not
+every reduced word admits a cyclic decomposition (see `TauCeti.GroupTheory.InfWord.Examples`).
 
 Nonetheless, many subsets of the reduced `Λ`-words are closed under `∗` and inversion and contain
 the empty word; equipped with `∗`, any such subset `H` (`TauCeti.InfWord.ReducedSubgroup Λ X`) is a
