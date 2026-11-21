@@ -7,10 +7,12 @@ module
 
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
 import Mathlib.Algebra.MvPolynomial.SchwartzZippel
-import Mathlib.Algebra.Polynomial.Bivariate
 import Mathlib.Algebra.Polynomial.Taylor
 import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
+import TauCeti.Algebra.Polynomial.BigOperators
+import TauCeti.Algebra.Polynomial.Bivariate
+import TauCeti.Algebra.Polynomial.Roots
 import TauCeti.RingTheory.Polynomial.Resultant.Basic
 import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
 
@@ -35,8 +37,6 @@ grid points (`Polynomial.eq_zero_of_forall_linearGrid_X_sub_C_pow_dvd`).
 
 ## Main results
 
-* `Polynomial.natDegree_resultant_le`: the `Y`-degree of `Res_X(f, g)` at bounds `m, n` is at
-  most `m * dg + n * df`.
 * `Polynomial.X_sub_C_pow_dvd_resultant_deriv`: `(X - C b) ^ (k - 1)` divides the resultant
   of `f` and `f.derivative` whenever `(X - C a) ^ k` divides the specialization of `f` at `b`.
 * `Polynomial.rootMultiplicity_le_one_add_rootMultiplicity_resultant_deriv`: the fiberwise
@@ -62,58 +62,14 @@ open Finset
 
 namespace Polynomial
 
-section DegreeBound
-
-variable {R : Type*} [CommRing R]
-
-/-- The `Y`-degree of `f.resultant g m n` for bivariate polynomials `f, g : R[X][X]` is at most
-`m * dg + n * df`, where `df` and `dg` bound the `Y`-degrees of the coefficients of `f` and `g`
-up to `m` and `n`. -/
-theorem natDegree_resultant_le {f g : R[X][X]} {m n df dg : ℕ}
-    (hf : ∀ i ≤ m, (f.coeff i).natDegree ≤ df)
-    (hg : ∀ i ≤ n, (g.coeff i).natDegree ≤ dg) :
-    (f.resultant g m n).natDegree ≤ m * dg + n * df := by
-  rw [resultant, Matrix.det_apply]
-  refine (natDegree_sum_le _ _).trans (Finset.sup_le fun σ _ ↦ ?_)
-  have hsmul : (Equiv.Perm.sign σ • ∏ j : Fin (m + n), sylvester f g m n (σ j) j).natDegree ≤
-      (∏ j : Fin (m + n), sylvester f g m n (σ j) j).natDegree := by
-    rw [Units.smul_def, zsmul_eq_mul]
-    exact (natDegree_mul_le).trans (by simp [natDegree_intCast])
-  refine hsmul.trans ((natDegree_prod_le Finset.univ _).trans ?_)
-  rw [Fin.sum_univ_add]
-  have hleft :
-      ∑ j : Fin m, (sylvester f g m n (σ (Fin.castAdd n j)) (Fin.castAdd n j)).natDegree ≤
-        m * dg := by
-    calc ∑ j : Fin m, (sylvester f g m n (σ (Fin.castAdd n j)) (Fin.castAdd n j)).natDegree
-        ≤ ∑ _j : Fin m, dg := by
-          refine Finset.sum_le_sum fun j _ ↦ ?_
-          rw [sylvester_apply_of_lt f g _ _ (by simp [j.isLt])]
-          split_ifs with h
-          · exact hg _ (by simp only [Fin.val_castAdd] at h ⊢; omega)
-          · simp
-      _ = m * dg := by simp
-  have hright :
-      ∑ j : Fin n, (sylvester f g m n (σ (Fin.natAdd m j)) (Fin.natAdd m j)).natDegree ≤
-        n * df := by
-    calc ∑ j : Fin n, (sylvester f g m n (σ (Fin.natAdd m j)) (Fin.natAdd m j)).natDegree
-        ≤ ∑ _j : Fin n, df := by
-          refine Finset.sum_le_sum fun j _ ↦ ?_
-          rw [sylvester_apply_of_le f g _ _ (by simp)]
-          split_ifs with h
-          · exact hf _ (by simp only [Fin.val_natAdd] at h ⊢; omega)
-          · simp
-      _ = n * df := by simp
-  exact add_le_add hleft hright
-
-end DegreeBound
-
 section MultiplicityDivisibility
 
 variable {R : Type*} [CommRing R]
 
 /-- Base case of the resultant multiplicity divisibility at `(a, b) = (0, 0)`: if `X` divides the
-first `k` coefficients of `f : R[X][X]`, then `X ^ (k - 1)` divides every entry in the first
-`k - 1` rows of `sylvester f f.derivative`, and hence divides the resultant. -/
+first `k` coefficients of `f : R[X][X]`, then `X` divides every entry in the first `k - 1` rows
+of `sylvester f f.derivative`, so `X ^ (k - 1)` divides each summand of the determinant and hence
+divides the resultant. -/
 private theorem X_pow_dvd_resultant_deriv_of_forall_dvd (f : R[X][X]) {k : ℕ}
     (hk : k - 1 ≤ f.natDegree + (f.natDegree - 1)) (hcoeff : ∀ i < k, X ∣ f.coeff i) :
     X ^ (k - 1) ∣ f.resultant f.derivative f.natDegree (f.natDegree - 1) := by
@@ -192,15 +148,9 @@ theorem X_sub_C_pow_dvd_resultant_deriv (f : R[X][X]) {a b : R} {k : ℕ}
     (X - C b) ^ (k - 1) ∣ f.resultant f.derivative f.natDegree (f.natDegree - 1) := by
   let φ : R[X] →+* R[X] := eval₂RingHom C (X + C b)
   let ψ : R[X] →+* R[X] := eval₂RingHom C (X - C b)
-  have hψφ : ∀ g : R[X], ψ (φ g) = g := by
-    intro g
-    induction g using Polynomial.induction_on' with
-    | add p q hp hq => simp only [map_add, hp, hq]
-    | monomial n r =>
-      rw [← C_mul_X_pow_eq_monomial, map_mul, map_pow, map_mul, map_pow]
-      have hC : ψ (φ (C r)) = C r := by simp [φ, ψ]
-      have hX : ψ (φ X) = X := by simp [φ, ψ]
-      rw [hC, hX]
+  have hψφ_comp : ψ.comp φ = RingHom.id R[X] := by
+    apply Polynomial.ringHom_ext <;> simp [φ, ψ]
+  have hψφ : ∀ g : R[X], ψ (φ g) = g := RingHom.congr_fun hψφ_comp
   have hφ_inj : Function.Injective φ := Function.LeftInverse.injective hψφ
   let f₁ : R[X][X] := f.map φ
   have hf₁_deg : f₁.natDegree = f.natDegree := natDegree_map_eq_of_injective hφ_inj f
@@ -274,91 +224,12 @@ end MultiplicityDivisibility
 
 section BivariateVanishing
 
-private theorem coeff_coeff_swap {R : Type*} [CommRing R] (P : R[X][X]) (r s : ℕ) :
-    ((Bivariate.swap P).coeff s).coeff r = (P.coeff r).coeff s := by
-  induction P using Polynomial.induction_on' with
-  | add p q hp hq => simp only [map_add, coeff_add, hp, hq]
-  | monomial k p =>
-    rw [Bivariate.swap_monomial, mul_comm, coeff_C_mul, coeff_map, mul_comm, coeff_C_mul,
-      coeff_X_pow]
-    by_cases hkr : r = k
-    · subst hkr
-      simp
-    · simp [hkr]
-
-private theorem natDegree_swap_le_iff {R : Type*} [CommRing R] (P : R[X][X]) (d : ℕ) :
-    (Bivariate.swap P).natDegree ≤ d ↔ ∀ i, (P.coeff i).natDegree ≤ d := by
-  constructor
-  · intro h i
-    refine natDegree_le_iff_coeff_eq_zero.mpr fun s hs ↦ ?_
-    rw [← coeff_coeff_swap, coeff_eq_zero_of_natDegree_lt (lt_of_le_of_lt h hs), coeff_zero]
-  · intro h
-    refine natDegree_le_iff_coeff_eq_zero.mpr fun s hs ↦ ?_
-    ext r
-    rw [coeff_coeff_swap, coeff_zero]
-    exact coeff_eq_zero_of_natDegree_lt (lt_of_le_of_lt (h r) hs)
-
-private theorem natDegree_swap_C {R : Type*} [CommRing R] (p : R[X]) :
-    (Bivariate.swap (C p)).natDegree = p.natDegree := by
-  rw [Bivariate.swap_C, natDegree_map_eq_of_injective C_injective]
-
-private theorem natDegree_swap_mul {R : Type*} [CommRing R] [IsDomain R]
-    {A B : R[X][X]} (hA : A ≠ 0) (hB : B ≠ 0) :
-    (Bivariate.swap (A * B)).natDegree =
-      (Bivariate.swap A).natDegree + (Bivariate.swap B).natDegree := by
-  rw [map_mul, natDegree_mul (by simpa using hA) (by simpa using hB)]
-
-private theorem map_evalRingHom_ne_zero_of_irreducible {K : Type*} [Field K]
-    {F : K[X][X]} (hF : Irreducible F) (hdeg : 0 < F.natDegree) (b : K) :
-    F.map (evalRingHom b) ≠ 0 := by
-  intro h0
-  have hdvd : C (X - C b) ∣ F := by
-    rw [C_dvd_iff_dvd_coeff]
-    intro i
-    rw [dvd_iff_isRoot, IsRoot]
-    have hi : (F.map (evalRingHom b)).coeff i = 0 := by rw [h0, coeff_zero]
-    simpa [coeff_map] using hi
-  obtain ⟨Q, hQ⟩ := hdvd
-  rcases hF.isUnit_or_isUnit hQ with hU | hU
-  · have hU' : IsUnit (X - C b) := isUnit_C.mp hU
-    have hdeg0 : (X - C b).natDegree = 0 := natDegree_eq_zero_of_isUnit hU'
-    simp at hdeg0
-  · have hQ0 : Q.natDegree = 0 := natDegree_eq_zero_of_isUnit hU
-    have hF0 : F.natDegree = 0 := by
-      rw [hQ]
-      exact Nat.eq_zero_of_le_zero ((natDegree_C_mul_le _ _).trans (by omega))
-    omega
-
-private theorem sum_rootMultiplicity_le_natDegree {R : Type*} [CommRing R] [IsDomain R]
-    (g : R[X]) (s : Finset R) : ∑ b ∈ s, g.rootMultiplicity b ≤ g.natDegree := by
-  classical
-  calc ∑ b ∈ s, g.rootMultiplicity b
-      = ∑ b ∈ s, g.roots.count b := Finset.sum_congr rfl fun b _ ↦ (count_roots g).symm
-    _ ≤ ∑ b ∈ s ∪ g.roots.toFinset, g.roots.count b :=
-        Finset.sum_le_sum_of_subset Finset.subset_union_left
-    _ = g.roots.card := Multiset.sum_count_eq_card fun a ha ↦
-        Finset.mem_union_right _ (Multiset.mem_toFinset.mpr ha)
-    _ ≤ g.natDegree := card_roots' g
-
-/-- If `Prod.snd` is injective on `Ω`, then the sum of `g.rootMultiplicity p.2` over any subset
-`Z ⊆ Ω` is bounded by `g.natDegree`. -/
-private theorem sum_rootMultiplicity_snd_le_natDegree {K : Type*} [Field K]
-    (g : K[X]) {Ω Z : Finset (K × K)} (hZ : Z ⊆ Ω)
-    (hinj : Set.InjOn Prod.snd (Ω : Set (K × K))) :
-    ∑ p ∈ Z, g.rootMultiplicity p.2 ≤ g.natDegree := by
-  classical
-  have hsub : ∑ p ∈ Z, g.rootMultiplicity p.2 ≤ ∑ p ∈ Ω, g.rootMultiplicity p.2 :=
-    Finset.sum_le_sum_of_subset hZ
-  have himg : ∑ p ∈ Ω, g.rootMultiplicity p.2 =
-      ∑ b ∈ Ω.image Prod.snd, g.rootMultiplicity b :=
-    (Finset.sum_image (f := g.rootMultiplicity) fun p₁ hp₁ p₂ hp₂ h ↦ hinj hp₁ hp₂ h).symm
-  exact hsub.trans (himg.le.trans (sum_rootMultiplicity_le_natDegree g (Ω.image Prod.snd)))
-
 /-- **Sum of fiberwise root multiplicities of an irreducible bivariate polynomial.**
-Over a field of characteristic zero, the sum of `(F(X, p.2)).rootMultiplicity p.1` over a finite
-set `Ω` of points with distinct second coordinates is bounded by the number of zeros of `F` in `Ω`
-plus `(2 * F.natDegree - 1) * dY`. -/
-theorem sum_rootMultiplicity_le_of_irreducible {K : Type*} [Field K] [CharZero K] [DecidableEq K]
+Over a GCD domain of characteristic zero, the sum of `(F(X, p.2)).rootMultiplicity p.1` over a
+finite set `Ω` of points with distinct second coordinates is bounded by the number of zeros of `F`
+in `Ω` plus `(2 * F.natDegree - 1) * dY`. -/
+theorem sum_rootMultiplicity_le_of_irreducible {K : Type*} [CommRing K] [IsDomain K]
+    [IsGCDMonoid K] [CharZero K] [DecidableEq K]
     {F : K[X][X]} (hF : Irreducible F) (hdeg : 0 < F.natDegree)
     {dY : ℕ} (hdY : ∀ i, (F.coeff i).natDegree ≤ dY)
     {Ω : Finset (K × K)} (hinj : Set.InjOn Prod.snd (Ω : Set (K × K))) :
@@ -398,99 +269,6 @@ theorem sum_rootMultiplicity_le_of_irreducible {K : Type*} [Field K] [CharZero K
   have hsum_res : ∑ p ∈ Z, res.rootMultiplicity p.2 ≤ res.natDegree :=
     sum_rootMultiplicity_snd_le_natDegree res (Finset.filter_subset _ Ω) hinj
   exact hsum_eq.le.trans (hsum_Z.trans (Nat.add_le_add_left (hsum_res.trans hres_deg) Z.card))
-
-/-- Every nonzero bivariate polynomial over a field factors as `C c * l.prod`, where `c : K[X]`
-is nonzero and every factor in `l` is irreducible of positive `X`-degree. -/
-private theorem exists_C_mul_list_prod_irreducible {K : Type*} [Field K] (P : K[X][X])
-    (hP : P ≠ 0) :
-    ∃ (c : K[X]) (l : List K[X][X]), c ≠ 0 ∧
-      (∀ F ∈ l, Irreducible F ∧ 0 < F.natDegree) ∧ P = C c * l.prod := by
-  induction hn : P.natDegree + (Bivariate.swap P).natDegree using Nat.strong_induction_on
-      generalizing P with
-  | ind n ih =>
-    by_cases hdeg : P.natDegree = 0
-    · refine ⟨P.coeff 0, [], ?_, by simp, ?_⟩
-      · intro h0
-        exact hP (by rw [eq_C_of_natDegree_eq_zero hdeg, h0, map_zero])
-      · rw [List.prod_nil, mul_one]
-        exact eq_C_of_natDegree_eq_zero hdeg
-    · by_cases hirr : Irreducible P
-      · exact ⟨1, [P], one_ne_zero, by simp [hirr, Nat.pos_of_ne_zero hdeg], by simp⟩
-      · have hnotU : ¬ IsUnit P := fun hU ↦ hdeg (natDegree_eq_zero_of_isUnit hU)
-        have hfact : ∃ A B : K[X][X], P = A * B ∧ ¬ IsUnit A ∧ ¬ IsUnit B := by
-          by_contra h
-          push Not at h
-          exact hirr ⟨hnotU, fun {A B} hAB ↦ by_contra fun hnot ↦
-            (not_or.mp hnot).2 (h A B hAB (not_or.mp hnot).1)⟩
-        obtain ⟨A, B, rfl, hAU, hBU⟩ := hfact
-        have hA0 : A ≠ 0 := left_ne_zero_of_mul hP
-        have hB0 : B ≠ 0 := right_ne_zero_of_mul hP
-        have hdeg_pos : ∀ Q : K[X][X], Q ≠ 0 → ¬ IsUnit Q →
-            0 < Q.natDegree + (Bivariate.swap Q).natDegree := by
-          intro Q hQ0 hQU
-          by_contra h0
-          have hQx : Q.natDegree = 0 := by omega
-          have hQy : (Bivariate.swap Q).natDegree = 0 := by omega
-          have hQ1 : Q = C (Q.coeff 0) := eq_C_of_natDegree_eq_zero hQx
-          have hQ2 : (Q.coeff 0).natDegree = 0 := by
-            rw [hQ1, natDegree_swap_C] at hQy
-            exact hQy
-          have hQ3 : Q = C (C ((Q.coeff 0).coeff 0)) := by
-            conv_lhs => rw [hQ1]
-            exact congrArg C (eq_C_of_natDegree_eq_zero hQ2)
-          have hc0 : (Q.coeff 0).coeff 0 ≠ 0 := by
-            intro h; exact hQ0 (by rw [hQ3, h, map_zero, map_zero])
-          exact hQU (by rw [hQ3]; exact isUnit_C.mpr (isUnit_C.mpr (Ne.isUnit hc0)))
-        have hApos := hdeg_pos A hA0 hAU
-        have hBpos := hdeg_pos B hB0 hBU
-        have hsum : (A * B).natDegree + (Bivariate.swap (A * B)).natDegree =
-            (A.natDegree + (Bivariate.swap A).natDegree) +
-              (B.natDegree + (Bivariate.swap B).natDegree) := by
-          rw [natDegree_mul hA0 hB0, natDegree_swap_mul hA0 hB0]
-          omega
-        obtain ⟨c₁, l₁, hc₁, hl₁, hAeq⟩ := ih _ (by omega) A hA0 rfl
-        obtain ⟨c₂, l₂, hc₂, hl₂, hBeq⟩ := ih _ (by omega) B hB0 rfl
-        refine ⟨c₁ * c₂, l₁ ++ l₂, mul_ne_zero hc₁ hc₂, ?_, ?_⟩
-        · intro F hF
-          rcases List.mem_append.mp hF with hF | hF
-          · exact hl₁ F hF
-          · exact hl₂ F hF
-        · rw [hAeq, hBeq, List.prod_append, map_mul]
-          ring
-
-private theorem rootMultiplicity_map_list_prod {K : Type*} [Field K] (a b : K)
-    (l : List K[X][X]) (hl : ∀ F ∈ l, F.map (evalRingHom b) ≠ 0) :
-    (l.prod.map (evalRingHom b)).rootMultiplicity a =
-      (l.map fun F ↦ (F.map (evalRingHom b)).rootMultiplicity a).sum := by
-  induction l with
-  | nil => simp
-  | cons F m ih =>
-    have hF0 : F.map (evalRingHom b) ≠ 0 := hl F List.mem_cons_self
-    have hm_all : ∀ G ∈ m, G.map (evalRingHom b) ≠ 0 := fun G hG ↦
-      hl G (List.mem_cons_of_mem F hG)
-    have hm0 : m.prod.map (evalRingHom b) ≠ 0 := by
-      have heq : m.prod.map (evalRingHom b) = (m.map fun G ↦ G.map (evalRingHom b)).prod :=
-        map_list_prod (mapRingHom (evalRingHom b)) m
-      rw [heq]
-      exact List.prod_ne_zero fun h0 ↦ by
-        obtain ⟨G, hG, hG0⟩ := List.mem_map.mp h0
-        exact hm_all G hG hG0
-    rw [List.prod_cons, Polynomial.map_mul, rootMultiplicity_mul (mul_ne_zero hF0 hm0),
-      List.map_cons, List.sum_cons, ih hm_all]
-
-private theorem finset_sum_list_map {α β : Type*} (s : Finset α) (l : List β) (f : β → α → ℕ) :
-    ∑ p ∈ s, (l.map fun F ↦ f F p).sum = (l.map fun F ↦ ∑ p ∈ s, f F p).sum := by
-  induction l with
-  | nil => simp
-  | cons F m ih => simp only [List.map_cons, List.sum_cons, Finset.sum_add_distrib, ih]
-
-private theorem list_sum_map_mul_le {α : Type*} (l : List α) (a b : α → ℕ) :
-    (l.map fun x ↦ a x * b x).sum ≤ (l.map a).sum * (l.map b).sum := by
-  induction l with
-  | nil => simp
-  | cons x m ih =>
-    simp only [List.map_cons, List.sum_cons, add_mul, mul_add]
-    omega
 
 /-- **Abstract bivariate multiplicity bound.** Let `P : K[X][X]` be nonzero over a field of
 characteristic zero, with `X`-degree at most `dX` and `Y`-degree at most `dY`. If `Ω` is a
@@ -542,13 +320,8 @@ theorem mul_card_le_of_forall_X_sub_C_pow_dvd {K : Type*} [Field K] [CharZero K]
     have hcp : c.eval p.2 ≠ 0 := (Finset.mem_filter.mp hp).2
     have hFmap_ne : ∀ F ∈ l, F.map (evalRingHom p.2) ≠ 0 := fun F hF ↦
       map_evalRingHom_ne_zero_of_irreducible (hl F hF).1 (hl F hF).2 p.2
-    have hmap_prod_ne : l.prod.map (evalRingHom p.2) ≠ 0 := by
-      have heq : l.prod.map (evalRingHom p.2) = (l.map fun F ↦ F.map (evalRingHom p.2)).prod :=
-        map_list_prod (mapRingHom (evalRingHom p.2)) l
-      rw [heq]
-      exact List.prod_ne_zero fun h0 ↦ by
-        obtain ⟨F, hF, hF0⟩ := List.mem_map.mp h0
-        exact hFmap_ne F hF hF0
+    have hmap_prod_ne : l.prod.map (evalRingHom p.2) ≠ 0 :=
+      map_list_prod_ne_zero (evalRingHom p.2) l hFmap_ne
     have hPmap_ne : P.map (evalRingHom p.2) ≠ 0 := by
       rw [hPeq, Polynomial.map_mul, map_C]
       exact mul_ne_zero (C_ne_zero.mpr (by simpa using hcp)) hmap_prod_ne
@@ -558,7 +331,7 @@ theorem mul_card_le_of_forall_X_sub_C_pow_dvd {K : Type*} [Field K] [CharZero K]
       rootMultiplicity_mul (mul_ne_zero (C_ne_zero.mpr (by simpa using hcp)) hmap_prod_ne)]
       at hle_rm
     rw [coe_evalRingHom, rootMultiplicity_eq_zero (by simpa using hcp), zero_add,
-      rootMultiplicity_map_list_prod p.1 p.2 l hFmap_ne] at hle_rm
+      rootMultiplicity_map_list_prod (evalRingHom p.2) p.1 l hFmap_ne] at hle_rm
     exact hle_rm
   have hF_bound : ∀ F ∈ l,
       ∑ p ∈ Ω₁, (F.map (evalRingHom p.2)).rootMultiplicity p.1 ≤
@@ -597,19 +370,21 @@ theorem mul_card_le_of_forall_X_sub_C_pow_dvd {K : Type*} [Field K] [CharZero K]
     calc k * Ω₁.card = ∑ _p ∈ Ω₁, k := by rw [Finset.sum_const, smul_eq_mul, mul_comm]
       _ ≤ ∑ p ∈ Ω₁, (l.map fun F ↦ (F.map (evalRingHom p.2)).rootMultiplicity p.1).sum :=
           Finset.sum_le_sum hpt
-      _ = (l.map fun F ↦ ∑ p ∈ Ω₁, (F.map (evalRingHom p.2)).rootMultiplicity p.1).sum :=
-          finset_sum_list_map Ω₁ l _
+      _ = (l.map fun F ↦ ∑ p ∈ Ω₁, (F.map (evalRingHom p.2)).rootMultiplicity p.1).sum := by
+          simpa using (Multiset.sum_map_sum (m := (l : Multiset K[X][X])) (s := Ω₁)
+            (f := fun F p ↦ (F.map (evalRingHom p.2)).rootMultiplicity p.1)).symm
       _ ≤ (l.map fun F ↦ M * (F.natDegree + (Bivariate.swap F).natDegree) +
             2 * F.natDegree * (Bivariate.swap F).natDegree).sum :=
           List.sum_le_sum hF_bound
       _ = M * (sX + sY) +
             2 * (l.map fun F ↦ F.natDegree * (Bivariate.swap F).natDegree).sum :=
           hlin_sum l
-      _ ≤ M * (sX + sY) + 2 * (sX * sY) :=
-          Nat.add_le_add_left
-            (Nat.mul_le_mul_left 2
-              (list_sum_map_mul_le l natDegree fun F ↦ (Bivariate.swap F).natDegree))
-            _
+      _ ≤ M * (sX + sY) + 2 * (sX * sY) := by
+          refine Nat.add_le_add_left (Nat.mul_le_mul_left 2 ?_) _
+          exact (List.sum_le_sum fun F hF ↦ Nat.mul_le_mul_left _
+            (List.single_le_sum (fun _ _ ↦ Nat.zero_le _) _
+              (List.mem_map_of_mem hF))).trans_eq
+            (List.sum_map_mul_right l natDegree sY)
       _ = M * (sX + sY) + 2 * sX * sY := by ring
   have hsX_le : sX ≤ dX := hdegX_sum.le.trans hdX
   have hc_sY_le : c.natDegree + sY ≤ dY :=
@@ -660,23 +435,17 @@ private theorem eval_linearPullback {K : Type*} [CommRing K] (M : Matrix (Fin 2)
     (F : K[X][X]) (v : Fin 2 → K) :
     MvPolynomial.eval v (linearPullback M F) =
       (F.map (evalRingHom (M 1 0 * v 0 + M 1 1 * v 1))).eval (M 0 0 * v 0 + M 0 1 * v 1) := by
-  induction F using Polynomial.induction_on' with
-  | add p q hp hq =>
-    simp only [map_add, Polynomial.map_add, eval_add, hp, hq]
-  | monomial r p =>
-    rw [← C_mul_X_pow_eq_monomial, map_mul, map_pow, Polynomial.map_mul, Polynomial.map_pow,
-      map_C, map_X, eval_mul, eval_C, eval_pow, eval_X, map_mul, map_pow]
-    have hX : MvPolynomial.eval v (linearPullback M X) = M 0 0 * v 0 + M 0 1 * v 1 := by
-      simp [linearPullback_X]
-    have hC : MvPolynomial.eval v (linearPullback M (C p)) =
-        p.eval (M 1 0 * v 0 + M 1 1 * v 1) := by
-      induction p using Polynomial.induction_on' with
-      | add a b ha hb => simp only [map_add, eval_add, ha, hb]
-      | monomial s c =>
-        rw [← C_mul_X_pow_eq_monomial, map_mul, map_pow, map_mul, map_pow,
-          linearPullback_C_C, linearPullback_C_X]
-        simp
-    rw [hX, hC, coe_evalRingHom]
+  have hhom : (MvPolynomial.eval v).comp (linearPullback M) =
+      (evalRingHom (M 0 0 * v 0 + M 0 1 * v 1)).comp
+        (mapRingHom (evalRingHom (M 1 0 * v 0 + M 1 1 * v 1))) := by
+    apply Polynomial.ringHom_ext
+    · intro p
+      have hC : ((MvPolynomial.eval v).comp (linearPullback M)).comp C =
+          evalRingHom (M 1 0 * v 0 + M 1 1 * v 1) := by
+        apply Polynomial.ringHom_ext <;> simp [linearPullback]
+      simpa using RingHom.congr_fun hC p
+    · simp [linearPullback]
+  exact RingHom.congr_fun hhom F
 
 private theorem totalDegree_linearPullback_le {K : Type*} [CommRing K]
     (M : Matrix (Fin 2) (Fin 2) K) (F : K[X][X]) {a b : ℕ}
@@ -720,49 +489,38 @@ private theorem linearPullback_injective {K : Type*} [Field K] {M : Matrix (Fin 
   let invHom : MvPolynomial (Fin 2) K →+* K[X][X] :=
     MvPolynomial.eval₂Hom (C.comp C) fun i ↦
       C (C (N i 0)) * X + C (C (N i 1)) * C X
-  have hleft : ∀ F : K[X][X], invHom (linearPullback M F) = F := by
-    have hmul_entry : ∀ i j : Fin 2,
-        M i 0 * N 0 j + M i 1 * N 1 j = (1 : Matrix (Fin 2) (Fin 2) K) i j := by
-      intro i j
-      have h := congr_fun (congr_fun hmul i) j
-      simpa [Matrix.mul_apply, Fin.sum_univ_two, N] using h
-    have hinv_lin : ∀ i : Fin 2,
-        invHom (MvPolynomial.C (M i 0) * MvPolynomial.X 0 +
-          MvPolynomial.C (M i 1) * MvPolynomial.X 1) = if i = 0 then X else C X := by
-      intro i
-      simp only [invHom, map_add, map_mul, MvPolynomial.eval₂Hom_C, MvPolynomial.eval₂Hom_X',
-        RingHom.comp_apply]
-      have h0 := hmul_entry i 0
-      have h1 := hmul_entry i 1
-      have hre :
-          C (C (M i 0)) * (C (C (N 0 0)) * X + C (C (N 0 1)) * C X) +
-          C (C (M i 1)) * (C (C (N 1 0)) * X + C (C (N 1 1)) * C X) =
-          C (C (M i 0 * N 0 0 + M i 1 * N 1 0)) * X +
-          C (C (M i 0 * N 0 1 + M i 1 * N 1 1)) * C X := by
-        simp only [map_add, map_mul]
-        ring
-      rw [hre, h0, h1]
-      fin_cases i <;> simp [Matrix.one_apply]
-    intro F
-    induction F using Polynomial.induction_on' with
-    | add p q hp hq => simp only [map_add, hp, hq]
-    | monomial r p =>
-      rw [← C_mul_X_pow_eq_monomial, map_mul, map_pow, map_mul, map_pow]
-      have hX : invHom (linearPullback M X) = X := by
-        simpa [linearPullback_X] using hinv_lin 0
-      have hC : invHom (linearPullback M (C p)) = C p := by
-        induction p using Polynomial.induction_on' with
-        | add a b ha hb => simp only [map_add, ha, hb]
-        | monomial s c =>
-          rw [← C_mul_X_pow_eq_monomial, map_mul, map_pow, map_mul, map_pow,
-            map_mul, map_pow, linearPullback_C_C, linearPullback_C_X]
-          have hY : invHom (MvPolynomial.C (M 1 0) * MvPolynomial.X 0 +
-              MvPolynomial.C (M 1 1) * MvPolynomial.X 1) = C X := by
-            simpa using hinv_lin 1
-          rw [hY]
-          simp [invHom]
-      rw [hX, hC]
-  exact Function.LeftInverse.injective hleft
+  have hmul_entry : ∀ i j : Fin 2,
+      M i 0 * N 0 j + M i 1 * N 1 j = (1 : Matrix (Fin 2) (Fin 2) K) i j := by
+    intro i j
+    have h := congr_fun (congr_fun hmul i) j
+    simpa [Matrix.mul_apply, Fin.sum_univ_two, N] using h
+  have hinv_lin : ∀ i : Fin 2,
+      invHom (MvPolynomial.C (M i 0) * MvPolynomial.X 0 +
+        MvPolynomial.C (M i 1) * MvPolynomial.X 1) = if i = 0 then X else C X := by
+    intro i
+    simp only [invHom, map_add, map_mul, MvPolynomial.eval₂Hom_C, MvPolynomial.eval₂Hom_X',
+      RingHom.comp_apply]
+    have h0 := hmul_entry i 0
+    have h1 := hmul_entry i 1
+    have hre :
+        C (C (M i 0)) * (C (C (N 0 0)) * X + C (C (N 0 1)) * C X) +
+        C (C (M i 1)) * (C (C (N 1 0)) * X + C (C (N 1 1)) * C X) =
+        C (C (M i 0 * N 0 0 + M i 1 * N 1 0)) * X +
+        C (C (M i 0 * N 0 1 + M i 1 * N 1 1)) * C X := by
+      simp only [map_add, map_mul]
+      ring
+    rw [hre, h0, h1]
+    fin_cases i <;> simp [Matrix.one_apply]
+  have hleft_comp : invHom.comp (linearPullback M) = RingHom.id K[X][X] := by
+    apply Polynomial.ringHom_ext
+    · intro p
+      have hC : (invHom.comp (linearPullback M)).comp C = C := by
+        apply Polynomial.ringHom_ext
+        · intro c; simp [invHom, linearPullback]
+        · simpa [linearPullback_C_X] using hinv_lin 1
+      exact RingHom.congr_fun hC p
+    · simpa [linearPullback_X] using hinv_lin 0
+  exact Function.LeftInverse.injective (g := invHom) fun F ↦ RingHom.congr_fun hleft_comp F
 
 /-- Schwartz–Zippel zero bound pulled back along an invertible `2 × 2` linear map on `S × S`. -/
 private theorem card_filter_eval_eq_zero_linearGrid_le {K : Type*} [Field K] [DecidableEq K]

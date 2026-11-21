@@ -45,6 +45,8 @@ coprime, coprimality can be read off a unit resultant: against `X - C a` this is
 
 * `Polynomial.sylvester_apply_of_lt`, `Polynomial.sylvester_apply_of_le`: the entries of the
   Sylvester matrix in its first `n` and its last `m` columns.
+* `Polynomial.natDegree_resultant_le`: bound on the degree of the resultant of two bivariate
+  polynomials from coefficient degree bounds.
 * `Polynomial.resultant_C_sub_X_right`
 * `Polynomial.resultant_one_sub_C_mul_X_right`: `Res_(n,1)(f, 1 - t X) = (reflect n f)(t)`.
 * `Polynomial.resultant_mul_left_of_natDegree_le`: multiplicativity in the left argument at
@@ -140,6 +142,45 @@ private theorem sylvester_reflect (f g : S[X]) (m n : ℕ) :
 end Sylvester
 
 variable {R : Type*} [CommRing R]
+
+/-- The `Y`-degree of `f.resultant g m n` for bivariate polynomials `f, g : R[X][X]` is at most
+`m * dg + n * df`, where `df` and `dg` bound the `Y`-degrees of the coefficients of `f` and `g`
+up to `m` and `n`. -/
+theorem natDegree_resultant_le {f g : R[X][X]} {m n df dg : ℕ}
+    (hf : ∀ i ≤ m, (f.coeff i).natDegree ≤ df)
+    (hg : ∀ i ≤ n, (g.coeff i).natDegree ≤ dg) :
+    (f.resultant g m n).natDegree ≤ m * dg + n * df := by
+  rw [resultant, Matrix.det_apply]
+  refine (natDegree_sum_le _ _).trans (Finset.sup_le fun σ _ ↦ ?_)
+  have hsmul : (Equiv.Perm.sign σ • ∏ j : Fin (m + n), sylvester f g m n (σ j) j).natDegree ≤
+      (∏ j : Fin (m + n), sylvester f g m n (σ j) j).natDegree := by
+    rw [Units.smul_def, zsmul_eq_mul]
+    exact (natDegree_mul_le).trans (by simp [natDegree_intCast])
+  refine hsmul.trans ((natDegree_prod_le Finset.univ _).trans ?_)
+  rw [Fin.sum_univ_add]
+  have hleft :
+      ∑ j : Fin m, (sylvester f g m n (σ (Fin.castAdd n j)) (Fin.castAdd n j)).natDegree ≤
+        m * dg := by
+    calc ∑ j : Fin m, (sylvester f g m n (σ (Fin.castAdd n j)) (Fin.castAdd n j)).natDegree
+        ≤ ∑ _j : Fin m, dg := by
+          refine Finset.sum_le_sum fun j _ ↦ ?_
+          rw [sylvester_apply_of_lt f g _ _ (by simp [j.isLt])]
+          split_ifs with h
+          · exact hg _ (by simp only [Fin.val_castAdd] at h ⊢; omega)
+          · simp
+      _ = m * dg := by simp
+  have hright :
+      ∑ j : Fin n, (sylvester f g m n (σ (Fin.natAdd m j)) (Fin.natAdd m j)).natDegree ≤
+        n * df := by
+    calc ∑ j : Fin n, (sylvester f g m n (σ (Fin.natAdd m j)) (Fin.natAdd m j)).natDegree
+        ≤ ∑ _j : Fin n, df := by
+          refine Finset.sum_le_sum fun j _ ↦ ?_
+          rw [sylvester_apply_of_le f g _ _ (by simp)]
+          split_ifs with h
+          · exact hf _ (by simp only [Fin.val_natAdd] at h ⊢; omega)
+          · simp
+      _ = n * df := by simp
+  exact add_le_add hleft hright
 
 /-- The resultant of `f` with the reversed linear polynomial `C x - X` is `f.eval x`. Note the
 absence of a sign: `C x - X` is `-(X - C x)`, and the two signs cancel. -/

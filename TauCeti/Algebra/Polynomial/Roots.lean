@@ -84,6 +84,26 @@ theorem sum_rootMultiplicity_le_natDegree (f : R[X]) (s : Finset R) :
     _ = f.roots.card := Multiset.toFinset_sum_count_eq f.roots
     _ ≤ f.natDegree := card_roots' f
 
+/-- If `Prod.snd` is injective on `Ω`, then the sum of `g.rootMultiplicity p.2` over any
+subset `Z ⊆ Ω` is bounded by `g.natDegree`. -/
+theorem sum_rootMultiplicity_snd_le_natDegree (g : R[X]) {Ω Z : Finset (R × R)} (hZ : Z ⊆ Ω)
+    (hinj : Set.InjOn Prod.snd (Ω : Set (R × R))) :
+    ∑ p ∈ Z, g.rootMultiplicity p.2 ≤ g.natDegree := by
+  classical
+  calc ∑ p ∈ Z, g.rootMultiplicity p.2
+      ≤ ∑ p ∈ Ω, g.rootMultiplicity p.2 := Finset.sum_le_sum_of_subset hZ
+    _ = ∑ b ∈ Ω.image Prod.snd, g.rootMultiplicity b :=
+        (Finset.sum_image (f := g.rootMultiplicity) fun _ hp₁ _ hp₂ h ↦ hinj hp₁ hp₂ h).symm
+    _ ≤ g.natDegree := sum_rootMultiplicity_le_natDegree g (Ω.image Prod.snd)
+
+/-- Over an integral domain, the root multiplicity of a list product of nonzero polynomials is the
+sum of the root multiplicities of its factors. -/
+theorem rootMultiplicity_list_prod (a : R) (l : List R[X]) (hl : ∀ p ∈ l, p ≠ 0) :
+    l.prod.rootMultiplicity a = (l.map fun p ↦ p.rootMultiplicity a).sum := by
+  classical
+  rw [← count_roots, roots_list_prod l fun h0 ↦ hl 0 h0 rfl, Multiset.count_bind]
+  simp [count_roots]
+
 /-- A nonzero constant multiple of a product of linear factors vanishes exactly at the
 `r i`. -/
 theorem isRoot_C_mul_prod_X_sub_C_iff {ι : Type*} [Fintype ι] {l : R} (hl : l ≠ 0)
@@ -92,3 +112,21 @@ theorem isRoot_C_mul_prod_X_sub_C_iff {ι : Type*} [Fintype ι] {l : R} (hl : l 
   simp [sub_eq_zero, eq_comm]
 
 end Polynomial
+
+section MapListProd
+
+namespace Polynomial
+
+/-- Over an integral domain, the root multiplicity of a specialized list product of polynomials is
+the sum of the root multiplicities of the specialized factors, provided every specialized factor is
+nonzero. -/
+theorem rootMultiplicity_map_list_prod {R S : Type*} [Semiring R] [CommRing S] [IsDomain S]
+    (φ : R →+* S) (a : S) (l : List R[X]) (hl : ∀ p ∈ l, p.map φ ≠ 0) :
+    (l.prod.map φ).rootMultiplicity a = (l.map fun p ↦ (p.map φ).rootMultiplicity a).sum := by
+  rw [← coe_mapRingHom, map_list_prod,
+    rootMultiplicity_list_prod a _ (by simpa using fun p hp ↦ hl p hp), List.map_map]
+  rfl
+
+end Polynomial
+
+end MapListProd
