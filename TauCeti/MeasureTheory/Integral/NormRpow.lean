@@ -62,6 +62,9 @@ at most `|x - Re e| ^ s`.
   centred at `c` exactly when `2 < m p`.
 * `Bornology.IsBounded.memLp_norm_inv_restrict`, `TauCeti.not_memLp_norm_inv_closedBall`:
   `‖x‖⁻¹` is `Lʳ` on bounded sets for `r < dim E`, and not near the origin for `r ≥ dim E`.
+* `Bornology.IsBounded.memLp_norm_rpow_restrict`,
+  `Bornology.IsBounded.memLp_norm_rpow_restrict_iff`: `‖x‖ ^ s` is `Lᵖ` on a bounded
+  neighbourhood of the origin exactly when `-d < s p`.
 * `Complex.setLIntegral_closedBall_enorm_ofReal_sub_rpow_lt_top`: for `e ∈ ℂ` and `s > -1`,
   `∫⁻ x in closedBall c R, ‖(x : ℂ) - e‖ₑ ^ s < ∞` over the real line.
 
@@ -398,7 +401,14 @@ theorem lintegral_enorm_sub_rpow_le_of_mem {Ω : Set E} {x : E}
 
 section Inverse
 
-open scoped ENNReal
+open scoped ENNReal Topology
+
+omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- `‖‖x‖ ^ s‖ ^ r = ‖x‖ ^ (s r)`: the `r`-th power of the norm of a norm power. -/
+private theorem norm_norm_rpow_rpow (s r : ℝ) :
+    (fun x : E => ‖‖x‖ ^ s‖ ^ r) = fun x => ‖x‖ ^ (s * r) := by
+  funext x
+  rw [Real.norm_of_nonneg (Real.rpow_nonneg (norm_nonneg x) _), ← Real.rpow_mul (norm_nonneg x)]
 
 /-- On a bounded set, `‖x‖ ^ s` is `Lʳ` for every finite exponent `r` with `-dim E < s r`. -/
 theorem _root_.Bornology.IsBounded.memLp_norm_rpow_restrict {K : Set E}
@@ -410,12 +420,24 @@ theorem _root_.Bornology.IsBounded.memLp_norm_rpow_restrict {K : Set E}
   · exact memLp_zero_iff_aestronglyMeasurable.2 hm.aestronglyMeasurable
   obtain ⟨R, hR⟩ := hK.subset_ball 0
   refine MemLp.mono_measure (Measure.restrict_mono hR le_rfl) ?_
-  rw [← integrable_norm_rpow_iff hm.aestronglyMeasurable hr0 hr]
-  have heq : (fun x : E => ‖‖x‖ ^ s‖ ^ r.toReal) = fun x => ‖x‖ ^ (s * r.toReal) := by
-    funext x
-    rw [Real.norm_of_nonneg (Real.rpow_nonneg (norm_nonneg x) _), ← Real.rpow_mul (norm_nonneg x)]
-  rw [heq]
+  rw [← integrable_norm_rpow_iff hm.aestronglyMeasurable hr0 hr, norm_norm_rpow_rpow]
   exact integrableOn_norm_rpow_ball hs
+
+/-- **`Lᵖ` membership of a norm power.** On a nontrivial space, for `p < ∞` and a bounded
+neighbourhood `U` of the origin, `x ↦ ‖x‖ ^ s` is `Lᵖ` on `U` exactly when `-dim E < s p`. -/
+theorem _root_.Bornology.IsBounded.memLp_norm_rpow_restrict_iff [Nontrivial E] {U : Set E}
+    (hb : Bornology.IsBounded U) (hU : U ∈ 𝓝 (0 : E)) {p : ℝ≥0∞} (hp : p ≠ ∞) {s : ℝ} :
+    MemLp (fun x : E => ‖x‖ ^ s) p (mu.restrict U) ↔
+      -(Module.finrank ℝ E : ℝ) < s * p.toReal := by
+  refine ⟨fun h => ?_, hb.memLp_norm_rpow_restrict hp⟩
+  rcases eq_or_ne p 0 with rfl | hp0
+  · rw [ENNReal.toReal_zero, mul_zero, neg_lt_zero]
+    exact_mod_cast Module.finrank_pos
+  obtain ⟨r, hr, hrU⟩ := nhds_basis_ball.mem_iff.1 hU
+  have h' := h.mono_measure (Measure.restrict_mono hrU le_rfl)
+  rw [← integrable_norm_rpow_iff (measurable_norm.pow_const s).aestronglyMeasurable hp0 hp,
+    norm_norm_rpow_rpow] at h'
+  exact (integrableOn_norm_rpow_ball_iff hr).1 h'
 
 /-- On a bounded set, a function dominated by `C ‖x‖ ^ s` is `Lʳ` for every finite exponent `r`
 with `-dim E < s r`. -/
@@ -446,17 +468,10 @@ theorem not_memLp_norm_inv_closedBall [Nontrivial E] {ε : ℝ} (hε : 0 < ε) {
   have : IsFiniteMeasure (mu.restrict (closedBall (0 : E) ε)) :=
     isFiniteMeasure_restrict.2 measure_closedBall_lt_top.ne
   have h2 := h.mono_exponent hr
-  rw [← integrable_norm_rpow_iff (by fun_prop) (by simp [Module.finrank_pos.ne'])
-    (by simp)] at h2
-  have heq : (fun x : E => ‖‖x‖⁻¹‖ ^ (Module.finrank ℝ E : ℝ≥0∞).toReal) =
-      fun x => ‖x‖ ^ (-(Module.finrank ℝ E : ℝ)) := by
-    funext x
-    rw [Real.norm_of_nonneg (inv_nonneg.2 (norm_nonneg x)), Real.inv_rpow (norm_nonneg x),
-      Real.rpow_neg (norm_nonneg x), ENNReal.toReal_natCast]
-  rw [heq] at h2
-  have h3 : IntegrableOn (fun x : E => ‖x‖ ^ (-(Module.finrank ℝ E : ℝ))) (ball 0 ε) mu :=
-    IntegrableOn.mono_set h2 ball_subset_closedBall
-  exact lt_irrefl _ ((integrableOn_norm_rpow_ball_iff hε).1 h3)
+  -- `‖x‖⁻¹ = ‖x‖ ^ (-1)`, and `-1 * dim E > -dim E` fails.
+  simp only [← Real.rpow_neg_one] at h2
+  exact lt_irrefl _ (((isBounded_closedBall.memLp_norm_rpow_restrict_iff
+    (closedBall_mem_nhds 0 hε) (by simp)).1 h2).trans_eq (by simp))
 
 end Inverse
 
