@@ -13,8 +13,8 @@ public import TauCeti.AlgebraicTopology.TopologicalSimplex
 public import TauCeti.Topology.Category.TopCat.Compact
 public import TauCeti.Topology.Category.TopCat.Normal
 import TauCeti.Topology.Category.TopCat.Paracompact
-import TauCeti.Topology.Compactness.CompactlyGeneratedSpace
 import TauCeti.Topology.Compactness.Lindelof
+import TauCeti.Topology.Convenient.CompactlyGenerated
 
 /-!
 # Normal form, skeletal filtration, and point-set topology of thin geometric realization
@@ -790,10 +790,6 @@ instance instT4Space [∀ n : ℕ, T4Space (X _⦋n⦌ × toTop.{u}.obj ⦋n⦌)
 
 section Levelwise
 
-private local instance {Y : Type*} [TopologicalSpace Y] [LindelofSpace Y] (n : ℕ) :
-    LindelofSpace (Y × toTop.{u}.obj ⦋n⦌) :=
-  TauCeti.lindelofSpace_prod_of_compactSpace
-
 /-- Stage `skₙ |X|` of the skeletal filtration is Lindelöf whenever each `X _⦋k⦌` (`k ≤ n`) is
 Lindelöf. -/
 theorem lindelofSpace_skeleton (n : ℕ) [∀ k : {k : ℕ // k ≤ n}, LindelofSpace (X _⦋k.val⦌)] :
@@ -813,7 +809,7 @@ theorem uCompactlyGeneratedSpace_skeleton.{v} (n : ℕ)
       Homeomorph.prodCongr (.refl _) (Homeomorph.ulift.trans Homeomorph.ulift.symm)
     have : UCompactlyGeneratedSpace.{v}
         (X _⦋k.val⦌ × ULift.{v} (Convexity.StdSimplex ℝ (Fin (k.val + 1)))) :=
-      TauCeti.uCompactlyGeneratedSpace_prod_of_compactSpace
+      UCompactlyGeneratedSpace.prod_right
     exact uCompactlyGeneratedSpace_of_coinduced e.continuous e.isQuotientMap.eq_coinduced
   exact uCompactlyGeneratedSpace_of_coinduced (skeleton.isQuotientMap_sigma X n).continuous
     (skeleton.isQuotientMap_sigma X n).eq_coinduced

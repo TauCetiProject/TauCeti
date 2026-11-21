@@ -11,8 +11,8 @@ public import Mathlib.Topology.Compactness.Lindelof
 public import TauCeti.AlgebraicTopology.FatRealization
 import Mathlib.Geometry.Convex.ConvexSpace.CompactSpaceStdSimplex
 import TauCeti.AlgebraicTopology.TopologicalSimplex
-import TauCeti.Topology.Compactness.CompactlyGeneratedSpace
 import TauCeti.Topology.Compactness.Lindelof
+import TauCeti.Topology.Convenient.CompactlyGenerated
 
 /-!
 # Geometric realization of a simplicial space
@@ -101,8 +101,6 @@ instance [∀ n : ℕ, LindelofSpace (X _⦋n⦌ × toTop.{u}.obj ⦋n⦌)] :
 topology. -/
 theorem lindelofSpace [∀ n : ℕ, LindelofSpace (X _⦋n⦌)] :
     LindelofSpace X.geometricRealization :=
-  have : ∀ n : ℕ, LindelofSpace (X _⦋n⦌ × toTop.{u}.obj ⦋n⦌) :=
-    fun _ ↦ TauCeti.lindelofSpace_prod_of_compactSpace
   inferInstance
 
 instance [∀ n : ℕ, UCompactlyGeneratedSpace.{v} (X _⦋n⦌ × toTop.{u}.obj ⦋n⦌)] :
@@ -119,7 +117,7 @@ theorem uCompactlyGeneratedSpace [∀ n : ℕ, UCompactlyGeneratedSpace.{v} (X _
       Homeomorph.prodCongr (.refl _) (Homeomorph.ulift.trans Homeomorph.ulift.symm)
     have : UCompactlyGeneratedSpace.{v}
         (X _⦋n⦌ × ULift.{v} (Convexity.StdSimplex ℝ (Fin (n + 1)))) :=
-      TauCeti.uCompactlyGeneratedSpace_prod_of_compactSpace
+      UCompactlyGeneratedSpace.prod_right
     exact uCompactlyGeneratedSpace_of_coinduced e.continuous e.isQuotientMap.eq_coinduced
   inferInstance
 

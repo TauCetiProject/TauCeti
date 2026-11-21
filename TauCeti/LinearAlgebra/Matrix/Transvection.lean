@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.LinearAlgebra.Matrix.Transvection
 import Mathlib.RingTheory.Localization.FractionRing
 import Mathlib.RingTheory.Localization.Integer
@@ -16,11 +17,28 @@ import Mathlib.RingTheory.Localization.Integer
 nonsingular matrices over a domain vanishes if it vanishes on nonsingular diagonal matrices and
 transvections. The proof clears denominators to apply Mathlib's diagonal-transvection induction
 over the fraction field.
+
+The file also records the action `Matrix.toLin'_transvection_single` of a transvection on the
+standard basis vectors.
 -/
 
 public section
 
 namespace Matrix
+
+/-- An elementary transvection fixes every standard basis vector except the `j`-th one, which it
+moves by `c` times the `i`-th one. -/
+theorem toLin'_transvection_single {n A : Type*} [Fintype n] [DecidableEq n] [CommRing A]
+    (i j a : n) (c : A) :
+    toLin' (transvection i j c) (Pi.single a 1) =
+      Pi.single a 1 + if a = j then c • Pi.single i 1 else 0 := by
+  rw [toLin'_apply]
+  ext r
+  by_cases h : a = j <;>
+    simp [transvection, Matrix.single_apply, Matrix.one_apply, h, Pi.single_apply]
+  all_goals grind
+
+section Rigidity
 
 variable {A ι : Type*} [CommRing A] [IsDomain A] [Fintype ι] [DecidableEq ι]
 
@@ -146,5 +164,7 @@ theorem eq_zero_of_map_mul_of_diagonal_of_transvection {G : Type*}
       (fun T ↦ hgood_transvec T.i T.j T.hij T.c) hgood_mul
     simpa only [det_diagonal, Finset.prod_ne_zero_iff, Finset.mem_univ, forall_const] using hD
   exact hgood 1 M one_ne_zero (by rw [map_one, one_smul])
+
+end Rigidity
 
 end Matrix
