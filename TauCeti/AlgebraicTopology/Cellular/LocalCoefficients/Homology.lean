@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Cellular.LocalCoefficients.Basic
 public import TauCeti.AlgebraicTopology.Cellular.LocalCoefficients.Chains
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Equivalence
-import TauCeti.AlgebraicTopology.Singular.Twisted.CompactSupport
+import TauCeti.AlgebraicTopology.Singular.Twisted.CompactSupport.Basic
 import TauCeti.Topology.CWComplex.Classical.CompactSupport
 
 /-!
@@ -38,9 +38,9 @@ triples `(Xⁿ⁺¹, Xⁿ, X⁻¹)`.
   (`TauCeti.twistedCellularSingularHomologyIso`).
 
 The comparison with the whole complex is the compact-support argument of
-`TauCeti.AlgebraicTopology.Singular.Twisted.CompactSupport`, made on relative chains. A relative
-chain of `(C, X⁻¹)` is the class of a chain of `C` supported on finitely many simplices. Their
-images form a compact set, which lies in a skeleton
+`TauCeti.AlgebraicTopology.Singular.Twisted.CompactSupport.Basic`, made on relative chains. A
+relative chain of `(C, X⁻¹)` is the class of a chain of `C` supported on finitely many simplices.
+Their images form a compact set, which lies in a skeleton
 (`TauCeti.exists_subset_skeletonLT_of_isCompact`). The relative chains of the pairs `(Xʲ, X⁻¹)`
 inject into those of `(C, X⁻¹)`, because the subspace is the same
 (`TopPair.twistedChainComplexMap_f_injective`). So a class of `Hₖ(C, X⁻¹; L)` comes from some
