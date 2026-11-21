@@ -4,18 +4,23 @@ Where the build cache lives, who owns it, and which knob feeds which workflow.
 
 ## Mathlib download cache (GitHub Actions)
 
-The main `ci.yml` workflow maintains a narrow snapshot of Mathlib's compressed download store:
+The trusted `ci.yml` and `warm-dependencies.yml` workflows maintain a narrow snapshot of Mathlib's compressed download store:
 `$MATHLIB_CACHE_DIR/*.ltar`. The `.ltar` files are content-addressed; cache-tool scratch files,
 executables, and the unpacked `.lake` tree are not included. The local
 `.github/actions/restore-mathlib-ltars` action sets `MATHLIB_CACHE_DIR` job-wide through
 `$GITHUB_ENV`, defaulting to `$GITHUB_WORKSPACE/.mathlib-ltar-cache`; its `cache-dir` input can
-override that location. Main publishes only after a non-exact restore: an exact key is immutable
-and already contains this pin's snapshot. Before publishing, main runs `lake exe cache clean` so
-the snapshot contains only files needed by the current pin; if pruning fails, it skips publication
-instead of saving an unpruned snapshot. PR and merge-group jobs in `pr-build.yml` may restore this
+override that location. The action's restore and both publishers cache that directory's `*.ltar`
+files; publishers read the directory from the action's `cache-dir` output. Each publisher saves
+only after a non-exact restore: an exact key is immutable and already contains this pin's snapshot.
+Before publishing, each runs `lake exe cache clean` so the snapshot contains only files needed by
+the pin it fetched; if pruning fails, it skips publication instead of saving an unpruned snapshot.
+`ci.yml` publishes for main's current pin. `warm-dependencies.yml` always runs as a trusted job on
+the main ref, but on `pull_request_target` pin changes, or on `workflow_dispatch` with a `pr` input,
+it publishes a snapshot for that PR's candidate pins after the bump validator accepts them, keyed to
+the candidate's `lean-toolchain` and `lake-manifest.json`. PR and merge-group jobs in `pr-build.yml` may restore this
 trusted snapshot but never publish one. `pages.yml` and
-`pr-profile.yml` are intentionally outside this initial rollout: `ci.yml` is included as the sole
-publisher and `pr-build.yml` as the highest-volume consumer. `pr-profile.yml` has comparable
+`pr-profile.yml` are intentionally outside this initial rollout; `pr-build.yml` is the
+highest-volume consumer. `pr-profile.yml` has comparable
 per-PR fetch volume but remains outside as a rollout control. Both excluded workflows continue
 fetching into Mathlib's default cache directory.
 
