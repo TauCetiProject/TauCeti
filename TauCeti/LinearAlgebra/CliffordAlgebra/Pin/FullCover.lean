@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.FullCover.Even
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.FullCover.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Pin.Norm
 
 /-!
@@ -16,7 +16,7 @@ elements whose reverse norm `reverse x * x` is `1` or `-1`; it is also the set w
 norm `star x * x` is `±1` (`CliffordAlgebra.mem_cliffordFullCover_iff_lipschitzNorm`). Mathlib's
 Pin group consists of the Lipschitz elements whose `star` norm is `1`, so it is the subgroup of the
 full cover where the `star` norm is `1`. In the same way the Spin group is the subgroup of even
-elements of reverse norm `1`, inside the even part `CliffordAlgebra.cliffordFullCoverEven Q`.
+elements of reverse norm `1`, inside the even part of the full cover.
 
 Over a field in which `-1` is not a square, the kernel of the full-cover action on a nondegenerate
 quadratic space is `{±1}` in positive dimension and trivial in dimension zero; in either case it

@@ -12,6 +12,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.RootsOfUnity
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.FullCover.Real.OneOne
 import TauCeti.RingTheory.RootsOfUnity.Basic
 import Mathlib.GroupTheory.NoncommCoprod
+import TauCeti.Algebra.Order.Ring.Square
 
 /-!
 # The real Spin group of signature `(1, 1)`
@@ -279,7 +280,7 @@ theorem negOrthogonal_notMem_range_spinToOrthogonal_realCliffordForm_one_one :
     (realCliffordForm 1 1).negOrthogonal ∉ (spinToOrthogonal (realCliffordForm 1 1)).range := by
   rw [← cliffordFullCoverToOrthogonal_realCliffordOneOneVolumeFullCover, ← Subgroup.mem_comap,
     comap_range_spinToOrthogonal (nondegenerate_realCliffordForm 1 1)
-      fun h ↦ absurd h.nonneg (by norm_num)]
+      not_isSquare_neg_one]
   exact realCliffordOneOneVolumeFullCover_notMem_range_spinToCliffordFullCover
 
 end CliffordAlgebra

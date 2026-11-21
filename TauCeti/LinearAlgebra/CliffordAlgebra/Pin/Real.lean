@@ -11,6 +11,7 @@ public import Mathlib.Basic.Real.Basic
 import Mathlib.FieldTheory.IsRealClosed.Real
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Basic
 import TauCeti.FieldTheory.SquareClassGroup.Real
+import TauCeti.Algebra.Order.Ring.Square
 
 /-!
 # The orthogonal image of the real Pin group
@@ -163,7 +164,7 @@ the form takes no positive value. -/
 theorem pinToCliffordFullCover_surjective_iff (Q : QuadraticForm ℝ V) (hQ : Q.Nondegenerate) :
     Function.Surjective (pinToCliffordFullCover Q) ↔ ∀ v, Q v ≤ 0 := by
   rw [← pinToOrthogonal_surjective_iff Q hQ, ← MonoidHom.range_eq_top, ← MonoidHom.range_eq_top,
-    ← comap_range_pinToOrthogonal hQ fun h ↦ absurd h.nonneg (by norm_num)]
+    ← comap_range_pinToOrthogonal hQ not_isSquare_neg_one]
   constructor
   · intro h
     rw [eq_top_iff]

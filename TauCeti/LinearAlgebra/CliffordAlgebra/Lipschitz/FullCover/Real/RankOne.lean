@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.FullCover.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm.Basic
 import Mathlib.FieldTheory.IsRealClosed.Real
 import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.FullCover.RankOne
+import TauCeti.Algebra.Order.Ring.Square
 
 /-!
 # The real full Clifford covers in rank one
@@ -49,7 +50,7 @@ both extensions of `O(1) = {±1}` by `{±1}`. -/
 theorem card_cliffordFullCover_realCliffordForm {p q : ℕ} (hpq : p + q = 1) :
     Nat.card (cliffordFullCover (realCliffordForm p q)) = 4 :=
   card_cliffordFullCover_of_finrank_eq_one (nondegenerate_realCliffordForm p q)
-    (by rw [Module.finrank_fin_fun, hpq]) (fun h ↦ absurd h.nonneg (by norm_num))
+    (by rw [Module.finrank_fin_fun, hpq]) not_isSquare_neg_one
     IsRealClosed.isSquare_or_isSquare_neg
 
 /-- **The full cover of `Cliff(0, 1)` is cyclic**: the generator `e`, with `e ^ 2 = -1`, has order
@@ -57,7 +58,7 @@ four. -/
 theorem isCyclic_cliffordFullCover_realCliffordForm_zero_one :
     IsCyclic (cliffordFullCover (realCliffordForm 0 1)) :=
   (isCyclic_cliffordFullCover_iff_of_finrank_eq_one (nondegenerate_realCliffordForm 0 1)
-    (by simp) (fun h ↦ absurd h.nonneg (by norm_num))
+    (by simp) not_isSquare_neg_one
     IsRealClosed.isSquare_or_isSquare_neg).2 ⟨Pi.single 0 1, by simp⟩
 
 /-- **The full cover of `Cliff(1, 0)` is not cyclic**: `1`, `-1` and the generator `e`, with
@@ -65,7 +66,7 @@ theorem isCyclic_cliffordFullCover_realCliffordForm_zero_one :
 theorem not_isCyclic_cliffordFullCover_realCliffordForm_one_zero :
     ¬IsCyclic (cliffordFullCover (realCliffordForm 1 0)) := by
   rw [isCyclic_cliffordFullCover_iff_of_finrank_eq_one (nondegenerate_realCliffordForm 1 0)
-    (by simp) (fun h ↦ absurd h.nonneg (by norm_num)) IsRealClosed.isSquare_or_isSquare_neg]
+    (by simp) not_isSquare_neg_one IsRealClosed.isSquare_or_isSquare_neg]
   rintro ⟨v, hv⟩
   linarith [(posDef_realCliffordForm_zero 1).nonneg v]
 

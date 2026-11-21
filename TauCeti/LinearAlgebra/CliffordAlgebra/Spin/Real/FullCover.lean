@@ -10,6 +10,7 @@ public import Mathlib.Basic.Real.Basic
 import Mathlib.FieldTheory.IsRealClosed.Real
 import TauCeti.FieldTheory.SquareClassGroup.Real
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.SpinorNorm
+import TauCeti.Algebra.Order.Ring.Square
 
 /-!
 # The real full Clifford cover and the Spin group
@@ -46,10 +47,6 @@ open TauCeti
 
 universe v
 
-/-- `-1` is not a square in `ℝ`. -/
-private theorem not_isSquare_neg_one_real : ¬IsSquare (-1 : ℝ) :=
-  fun h ↦ by linarith [h.nonneg]
-
 variable {V : Type v} [AddCommGroup V] [Module ℝ V] [FiniteDimensional ℝ V]
 
 /-- **For a positive definite form, Spin is the even full cover.** The spinor norm is trivial, so
@@ -59,7 +56,7 @@ theorem range_spinToCliffordFullCover_eq_cliffordFullCoverEven_of_posDef (Q : Qu
     (spinToCliffordFullCover Q).range = cliffordFullCoverEven Q := by
   refine le_antisymm (range_spinToCliffordFullCover_le_cliffordFullCoverEven Q) ?_
   rw [← Subgroup.relIndex_eq_one, relIndex_range_spinToCliffordFullCover
-    hQ.anisotropic.nondegenerate not_isSquare_neg_one_real IsRealClosed.isSquare_or_isSquare_neg,
+    hQ.anisotropic.nondegenerate not_isSquare_neg_one IsRealClosed.isSquare_or_isSquare_neg,
     spinorNorm_eq_one_of_posDef Q hQ, MonoidHom.range_one, Subgroup.card_bot]
 
 /-- **For a negative definite form, Spin is the even full cover.** The spinor norm is the
@@ -71,7 +68,7 @@ theorem range_spinToCliffordFullCover_eq_cliffordFullCoverEven_of_negDef (Q : Qu
   refine le_antisymm (range_spinToCliffordFullCover_le_cliffordFullCoverEven Q) ?_
   rw [← Subgroup.relIndex_eq_one, relIndex_range_spinToCliffordFullCover
     ((QuadraticMap.nondegenerate_neg Q).mp hneg.anisotropic.nondegenerate)
-    not_isSquare_neg_one_real IsRealClosed.isSquare_or_isSquare_neg,
+    not_isSquare_neg_one IsRealClosed.isSquare_or_isSquare_neg,
     spinorNorm_eq_one_of_negDef Q hneg, MonoidHom.range_one, Subgroup.card_bot]
 
 /-- **For an indefinite form, Spin has index two in the even full cover.** The spinor norm then
@@ -80,7 +77,7 @@ takes both signs on `SO(Q)`, so the even part of the full cover contains element
 theorem relIndex_range_spinToCliffordFullCover_of_indefinite (Q : QuadraticForm ℝ V)
     (hQ : Q.Nondegenerate) (hpos : ∃ v, 0 < Q v) (hneg : ∃ v, Q v < 0) :
     (spinToCliffordFullCover Q).range.relIndex (cliffordFullCoverEven Q) = 2 := by
-  rw [relIndex_range_spinToCliffordFullCover hQ not_isSquare_neg_one_real
+  rw [relIndex_range_spinToCliffordFullCover hQ not_isSquare_neg_one
       IsRealClosed.isSquare_or_isSquare_neg,
     MonoidHom.range_eq_top.2 (spinorNorm_surjective_of_indefinite Q hQ hpos hneg),
     Subgroup.card_top, natCard_units_quotient_square_real]

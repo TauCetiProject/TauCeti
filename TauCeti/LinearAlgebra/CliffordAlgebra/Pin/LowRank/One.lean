@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Pin.FullCover
 public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Pin.Real
 import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.LowRank
+import TauCeti.Algebra.Order.Ring.Square
 
 /-!
 # The real Pin groups in rank one
@@ -66,7 +67,7 @@ theorem range_pinToCliffordFullCover_realCliffordForm_one_zero :
     rw [index_range_pinToOrthogonal _ hQ ⟨Pi.single 0 1, by simp⟩,
       QuadraticMap.card_orthogonalGroup_of_finrank_eq_one hQ.ne_zero (by simp)] at h
     exact Subgroup.eq_bot_of_card_eq _ (by omega)
-  rw [← comap_range_pinToOrthogonal hQ (fun h ↦ absurd h.nonneg (by norm_num)), hbot,
+  rw [← comap_range_pinToOrthogonal hQ not_isSquare_neg_one, hbot,
     MonoidHom.comap_bot]
 
 /-- The Pin group of `Cliff(1, 0)` has order two. -/
@@ -76,6 +77,6 @@ theorem card_range_pinToCliffordFullCover_realCliffordForm_one_zero :
     Module.nontrivial_of_finrank_eq_succ (R := ℝ) (n := 0) (by simp)
   rw [range_pinToCliffordFullCover_realCliffordForm_one_zero,
     card_ker_cliffordFullCoverToOrthogonal (nondegenerate_realCliffordForm 1 0)
-      (fun h ↦ absurd h.nonneg (by norm_num))]
+      not_isSquare_neg_one]
 
 end CliffordAlgebra
