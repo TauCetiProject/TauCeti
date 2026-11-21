@@ -107,7 +107,7 @@ private theorem exists_pos_bound_iteratedFDeriv_prod_left {v : P × Q → ℂ �
     ∃ M : ℝ, 0 < M ∧ ∀ k ≤ j, ∀ x ∈ D, ∀ w ∈ L,
       ‖iteratedFDeriv ℝ k (fun x' ↦ v x' w) x‖ ≤ M := by
   have hcont (k : Fin (j + 1)) : ∃ B : ℝ, ∀ p ∈ D ×ˢ L,
-      ‖iteratedFDeriv ℝ k.1 (fun x' ↦ v x' p.2) p.1‖ ≤ B :=
+      ‖iteratedFDeriv ℝ k.val (fun x' ↦ v x' p.2) p.1‖ ≤ B :=
     (hD.prod hL).exists_bound_of_continuousOn
       ((hv.continuousOn_iteratedFDeriv_partial (hs.prod isOpen_univ) (by simp)).mono
         (prod_mono hDs (subset_univ L)))

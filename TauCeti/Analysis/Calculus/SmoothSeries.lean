@@ -169,10 +169,10 @@ theorem contDiffOn_tsum_of_eventually (hs : IsOpen s) (hf : ∀ i, ContDiffOn �
   refine ((ContDiffOn.sum fun i _ ↦ (hf i).of_le (mod_cast hm)).add ?_).congr hsplit
   refine contDiffOn_tsum hs (fun i ↦ (hf i).of_le (mod_cast hm))
     (fun k hk ↦ (hv k (hk.trans hm)).subtype _) fun k i x hx hk ↦ ?_
-  have hi : ∀ j ∈ Finset.range (m + 1), ∀ y ∈ s, ‖iteratedFDeriv 𝕜 j (f i.1) y‖ ≤ v j i.1 := by
-    have hnot : i.1 ∉ { j : α | ¬∀ k ∈ Finset.range (m + 1),
+  have hi : ∀ j ∈ Finset.range (m + 1), ∀ y ∈ s, ‖iteratedFDeriv 𝕜 j (f i.val) y‖ ≤ v j i.val := by
+    have hnot : i.val ∉ { j : α | ¬∀ k ∈ Finset.range (m + 1),
         ∀ y ∈ s, ‖iteratedFDeriv 𝕜 k (f j) y‖ ≤ v k j } := by
-      simpa [T] using i.2
+      simpa [T] using i.property
     simpa only [Set.mem_ofPred_eq, not_not] using hnot
   exact hi k (Finset.mem_range.2 (Nat.lt_succ_of_le (Nat.cast_le.1 hk))) x hx
 
