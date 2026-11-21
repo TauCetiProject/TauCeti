@@ -264,12 +264,14 @@ private theorem memSobolev_cutoffTempered_of_isEllipticAbove (hg : ∀ i, ContDi
     (ClassicalSymbol.hasCompactSpatialSupport_toSymbol_ofDifferentialSymbol M t m
       (fun i x ↦ β i x • ContinuousLinearMap.id ℂ ℂ) (fun i hi ↦ (hβ i hi).smul contDiff_const)
       hk fun i hi ↦ (hβc i hi).smul_right)
-    (φ := φS) (hφS ▸ φ.hasCompactSupport) (by
+    (φ := φS) (by
     rw [hφS]
     filter_upwards [hbψ] with y ⟨hψy, hby⟩ ξ
     simp only [ClassicalSymbol.coefficient_toSymbol_ofDifferentialSymbol, differentialSymbol_def,
       hby, β, TestFunction.smulLeftCLM_apply, hψy, Complex.real_smul, mul_one])
-    (s := s + M) (u := hr.toBesselPotentialSpace) (by rw [hu]; simpa using hPψ)
+    (Function.HasTemperateGrowth.const 1) (.of_forall fun _ ↦ rfl) (s := s + M)
+    (u := hr.toBesselPotentialSpace)
+    (by rw [TemperedDistribution.smulLeftCLM_const, one_smul, hu]; simpa using hPψ)
   rwa [BesselPotentialSpace.toDistr_smulLeftCLM, hφS, hr.toBesselPotentialSpace_toDistr,
     smulLeftCLM_cutoffTempered T hχφ] at hreg
 

@@ -7,9 +7,9 @@ module
 
 public import Mathlib.Algebra.DirectSum.Decomposition
 public import TauCeti.LinearAlgebra.FreeProduct.Star
+public import TauCeti.Data.List.Chain
 public import TauCeti.LinearAlgebra.PiTensorProduct.Fin
 import TauCeti.Algebra.Star.BigOperators
-import Mathlib.Data.List.Chain
 import Mathlib.Data.List.OfFn
 import Mathlib.LinearAlgebra.Dual.Lemmas
 import Mathlib.LinearAlgebra.TensorProduct.Map
@@ -57,6 +57,9 @@ property `LinearAlgebra.FreeProduct.lift`, and evaluates at the vacuum vector of
   sum along a single factor `A i = R · 1 ⊕ ker (φ i)`.
 * `LinearAlgebra.FreeProduct.equivReducedWords φ hφ` — the `R`-linear equivalence between
   `FreeProduct R A` and `⨁ w : ReducedWord I, WordTensor φ w`.
+
+The reduced-word API also includes involutive right steps (`ReducedWord.step`) and free
+reduction by cancellation of adjacent equal letters (`ReducedWord.reduce`).
 
 ## Main results
 
@@ -190,6 +193,128 @@ theorem cons_induction_on {motive : ReducedWord I → Prop} (w : ReducedWord I)
   | cons i rest ih =>
     exact cons ⟨rest, hl.tail⟩
       (fun h ↦ (List.isChain_cons.1 hl).1 i (Option.mem_def.2 h) rfl) (ih hl.tail)
+
+section Reduction
+
+variable {K : Type*}
+
+/-- Without directions, the empty word is the only reduced word. -/
+instance [IsEmpty K] : Unique (ReducedWord K) where
+  default := nil
+  uniq _ := ReducedWord.ext <| (List.eq_nil_iff_forall_not_mem.2 fun k _ ↦ isEmptyElim k).trans
+    toList_nil.symm
+
+variable [DecidableEq K]
+
+/-- Mutation of reduced words in direction `k`: a final letter `k` is cancelled, and otherwise
+`k` is appended. -/
+def step (k : K) (w : ReducedWord K) : ReducedWord K :=
+  if h : w.toList.getLast? = some k then ⟨w.toList.dropLast, w.isChain.dropLast⟩
+  else ⟨w.toList ++ [k],
+    List.isChain_append_singleton_iff.2 ⟨w.isChain, fun _ hx hxk ↦ h (hxk ▸ hx)⟩⟩
+
+/-- A step in the direction of the last letter deletes that letter. -/
+theorem toList_step_of_getLast?_eq {k : K} {w : ReducedWord K} (h : w.toList.getLast? = some k) :
+    (step k w).toList = w.toList.dropLast := by
+  simp [step, h]
+
+/-- A step in any direction other than the last letter appends that direction. -/
+theorem toList_step_of_getLast?_ne {k : K} {w : ReducedWord K} (h : w.toList.getLast? ≠ some k) :
+    (step k w).toList = w.toList ++ [k] := by
+  simp [step, h]
+
+/-- Stepping from the empty word gives the corresponding single-letter word. -/
+@[simp]
+theorem step_nil (k : K) : step k nil = singleton k := by
+  apply ReducedWord.ext
+  exact toList_step_of_getLast?_ne (by simp)
+
+/-- The two cases of a step: either `w` is the step extended by `k`, or the step is `w` extended
+by `k`. -/
+theorem toList_step_cases (k : K) (w : ReducedWord K) :
+    w.toList = (step k w).toList ++ [k] ∨ (step k w).toList = w.toList ++ [k] := by
+  by_cases h : w.toList.getLast? = some k
+  · obtain ⟨u, hu⟩ := List.getLast?_eq_some_iff.1 h
+    left
+    rw [toList_step_of_getLast?_eq h, hu, List.dropLast_concat]
+  · exact .inr (toList_step_of_getLast?_ne h)
+
+/-- Stepping to a reduced extension appends its final letter. -/
+theorem step_eq_of_toList_eq_append {k : K} {v w : ReducedWord K}
+    (h : w.toList = v.toList ++ [k]) : step k v = w := by
+  have hw : (v.toList ++ [k]).IsChain (· ≠ ·) := h ▸ w.isChain
+  apply ReducedWord.ext
+  rw [toList_step_of_getLast?_ne fun hv ↦
+    (List.isChain_append_singleton_iff.1 hw).2 k hv rfl, h]
+
+/-- Two steps in the same direction cancel. -/
+@[simp]
+theorem step_step (k : K) (w : ReducedWord K) : step k (step k w) = w := by
+  by_cases h : w.toList.getLast? = some k
+  · apply step_eq_of_toList_eq_append
+    obtain ⟨u, hu⟩ := List.getLast?_eq_some_iff.1 h
+    rw [toList_step_of_getLast?_eq h, hu, List.dropLast_concat]
+  · apply ReducedWord.ext
+    rw [toList_step_of_getLast?_eq (by rw [toList_step_of_getLast?_ne h, List.getLast?_concat]),
+      toList_step_of_getLast?_ne h, List.dropLast_concat]
+
+/-- Each step is an involution on reduced words. -/
+theorem step_involutive (k : K) : Function.Involutive (step k) :=
+  step_step k
+
+/-- A step never fixes a reduced word. -/
+theorem step_ne (k : K) (w : ReducedWord K) : step k w ≠ w := by
+  intro h
+  rcases toList_step_cases k w with hw | hw <;>
+    · have := congrArg List.length hw
+      rw [h] at this
+      simp at this
+
+/-- Steps in different directions lead to different words. -/
+@[simp]
+theorem step_inj {j k : K} {w : ReducedWord K} : step j w = step k w ↔ j = k := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ rfl⟩
+  rcases toList_step_cases j w with hj | hj <;> rcases toList_step_cases k w with hk | hk <;>
+    first
+    | rw [h] at hj
+      exact List.singleton_inj.1 (List.append_cancel_left (hj.symm.trans hk))
+    | have h₁ := congrArg List.length hj
+      have h₂ := congrArg List.length hk
+      rw [h] at h₁
+      simp only [List.length_append, List.length_singleton] at h₁ h₂
+      omega
+
+/-- Free reduction of a word: perform its steps in reading order, starting from the empty word.
+Adjacent equal letters cancel. -/
+def reduce (w : List K) : ReducedWord K :=
+  w.foldl (fun v k ↦ step k v) nil
+
+/-- The empty word is already reduced. -/
+@[simp]
+theorem reduce_nil : reduce ([] : List K) = nil := (rfl)
+
+/-- Reducing a word ending in `k` performs the step `k` after reducing the rest. -/
+@[simp]
+theorem reduce_append_singleton (w : List K) (k : K) :
+    reduce (w ++ [k]) = step k (reduce w) := by
+  simp [reduce]
+
+/-- A single-letter word is already reduced. -/
+@[simp]
+theorem reduce_singleton (k : K) : reduce [k] = singleton k := by
+  simpa only [List.nil_append, reduce_nil, step_nil] using reduce_append_singleton ([] : List K) k
+
+/-- A reduced word is its own free reduction. -/
+@[simp]
+theorem reduce_toList (w : ReducedWord K) : reduce w.toList = w := by
+  obtain ⟨w, hw⟩ := w
+  induction w using List.reverseRecOn with
+  | nil => rfl
+  | append_singleton u k ih =>
+    rw [reduce_append_singleton, ih hw.left_of_append]
+    exact step_eq_of_toList_eq_append rfl
+
+end Reduction
 
 end ReducedWord
 
