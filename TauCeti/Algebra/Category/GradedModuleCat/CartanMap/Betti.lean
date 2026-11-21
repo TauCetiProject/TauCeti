@@ -84,40 +84,7 @@ zero is finitely generated. -/
 theorem gradedFiniteModules_of_finite [Module.Finite A (r.X 0)] : gradedFiniteModules 𝒜 M :=
   gradedFiniteModules_iff.2 (Module.Finite.of_surjective r.π r.surjective_π)
 
-/-- The differentials of the chain complex of a graded projective resolution are its
-differentials. -/
-private theorem chainComplex_d (n : ℕ) :
-    (ChainComplex.of r.termObj r.differential r.differential_comp_differential).d (n + 1) n =
-      r.differential n := by
-  simp
-
-/-- The augmentation of a graded projective resolution is an epimorphism of graded modules. -/
-private instance epi_augmentation : Epi r.augmentation :=
-  (GradedModuleCat.epi_iff_surjective _).2 r.surjective_π
-
 variable [∀ n, Module.Finite A (r.X n)]
-
-/-- Transport a finite resolution along an equality of exact structures. -/
-private def finiteResolutionOfEq {C : Type*} [Category* C] [Preadditive C]
-    [Limits.HasZeroObject C] [Limits.HasBinaryBiproducts C] {E E' : ExactStructure C}
-    {P : ObjectProperty C} {X : C} (h : E = E') (s : E.FiniteResolution P X) :
-    E'.FiniteResolution P X :=
-  h ▸ s
-
-private theorem length_finiteResolutionOfEq {C : Type*} [Category* C] [Preadditive C]
-    [Limits.HasZeroObject C] [Limits.HasBinaryBiproducts C] {E E' : ExactStructure C}
-    {P : ObjectProperty C} {X : C} (h : E = E') (s : E.FiniteResolution P X) :
-    (finiteResolutionOfEq h s).length = s.length := by
-  subst h
-  rfl
-
-private theorem foldAlternating_finiteResolutionOfEq {C : Type*} [Category* C] [Preadditive C]
-    [Limits.HasZeroObject C] [Limits.HasBinaryBiproducts C] {E E' : ExactStructure C}
-    {P : ObjectProperty C} {X : C} (h : E = E') (s : E.FiniteResolution P X) {G : Type*}
-    [AddGroup G] (f : ∀ Z : C, P Z → G) :
-    (finiteResolutionOfEq h s).foldAlternating f = s.foldAlternating f := by
-  subst h
-  rfl
 
 /-- A graded projective resolution by finitely generated terms whose term in homological degree
 `N + 1` vanishes, as a finite resolution of length `N` by finite graded projectives for the
@@ -126,15 +93,11 @@ def toFiniteResolution {N : ℕ} (hN : Subsingleton (r.X (N + 1))) :
     (gradedModuleCanonicalExactStructure 𝒜).toExactStructure.FiniteResolution
       (gradedFiniteProjectiveModules 𝒜) M :=
   -- The canonical exact structure of graded modules is that of the abelian category.
-  finiteResolutionOfEq (GradedExactStructure.abelian_toExactStructure _).symm <|
-  ExactStructure.FiniteResolution.ofChainComplex
-    (K := ChainComplex.of r.termObj r.differential r.differential_comp_differential)
-    (ε := r.augmentation)
-    (hε := by rw [chainComplex_d]; exact r.differential_zero_comp_augmentation)
-    (ChainComplex.of_exact_d_one_zero _ _ _ _ r.differential_zero_comp_augmentation
-      (GradedModuleCat.exact_iff.2 r.exact_d_π))
+  .ofEq (GradedExactStructure.abelian_toExactStructure _).symm <|
+  ExactStructure.FiniteResolution.ofChainComplex (K := r.complex) (ε := r.augmentation)
+    (hε := r.complex_d_one_zero_comp_augmentation) r.exact_complex_d_one_zero
     (fun i _ ↦ (HomologicalComplex.exactAt_iff' _ (i + 2) (i + 1) i (by simp) (by simp)).1
-      (ChainComplex.of_exactAt_succ _ _ _ i (GradedModuleCat.exact_iff.2 (r.exact_d_d i))))
+      (r.complex_exactAt_succ i))
     (by simpa using GradedModuleCat.isZero_of_subsingleton (r.termObj (N + 1)))
     (fun i _ ↦ by simpa using (r.finiteProjectiveTerm i).property)
 
@@ -143,7 +106,7 @@ has length `N`. -/
 @[simp]
 theorem length_toFiniteResolution {N : ℕ} (hN : Subsingleton (r.X (N + 1))) :
     (r.toFiniteResolution hN).length = N := by
-  rw [toFiniteResolution, length_finiteResolutionOfEq,
+  rw [toFiniteResolution, ExactStructure.FiniteResolution.length_ofEq,
     ExactStructure.FiniteResolution.length_ofChainComplex]
 
 /-- The alternating class of the finite resolution of a graded projective resolution with
@@ -153,7 +116,7 @@ theorem foldAlternating_toFiniteResolution {N : ℕ} (hN : Subsingleton (r.X (N 
         LaurentK0.of.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜) ⟨Z, hZ⟩) =
       ∑ n ∈ Finset.range (N + 1),
         (-1 : ℤ) ^ n • LaurentK0.of.{uA} _ (r.finiteProjectiveTerm n) := by
-  rw [toFiniteResolution, foldAlternating_finiteResolutionOfEq,
+  rw [toFiniteResolution, ExactStructure.FiniteResolution.foldAlternating_ofEq,
     ExactStructure.FiniteResolution.foldAlternating_ofChainComplex _ _ _ _ _
     fun e _ _ ↦ LaurentK0.of_congr _ (ObjectProperty.isoMk _ e), ← Fin.sum_univ_eq_sum_range]
   exact Finset.sum_congr rfl fun n _ ↦ congrArg _

@@ -172,9 +172,7 @@ theorem eval_trunc_bettiPoincarePowerSeries
         (-1 : ℤ) ^ n • LaurentK0.of.{uA} _ (r.finiteProjectiveTerm n)) i := by
   rw [← Polynomial.eval₂_id, PowerSeries.eval₂_trunc_eq_sum_range, map_sum,
     Finset.sum_apply']
-  refine Finset.sum_congr rfl fun n _ ↦ ?_
-  rw [map_zsmul, Finsupp.smul_apply, coeff_bettiPoincarePowerSeries, RingHom.id_apply,
-    zsmul_eq_mul, mul_comm, Int.cast_pow, Int.cast_neg, Int.cast_one]
+  exact Finset.sum_congr rfl fun n _ ↦ by simp [coeff_bettiPoincarePowerSeries, mul_comm]
 
 end GradedProjectiveResolution
 
