@@ -80,6 +80,9 @@ theorem horizontalLift_graphDistribution [FiniteDimensional 𝕜 E] {n : ℕ∞�
   refine (congrArg Subtype.val ((isEhresmannConnection_graphDistribution hA).eq_horizontalLift_iff
     (w := ⟨(v, A p v), mem_graphDistribution.2 rfl⟩) |>.2 ?_)).symm
   rw [mfderiv_fst_eq]
+  -- `rfl` rather than `simp`: the goal applies `ContinuousLinearMap.fst 𝕜 E F` to a vector of
+  -- `TangentSpace 𝓘(𝕜, E × F) p`, which is `E × F` only up to unfolding, so `coe_fst'` does not
+  -- rewrite. The goal is the first projection of the pair `(v, A p v)`.
   rfl
 
 /-- **Morphisms of product connections.** For differentiable maps `g : E → E'` and
@@ -98,7 +101,10 @@ theorem isEhresmannConnectionHom_prodMap_graphDistribution_zero
     fun p v hv ↦ ?_⟩
   rw [(hd p).hasMFDerivAt.mfderiv]
   refine mem_graphDistribution.2 ?_
-  have hv' : v.2 = 0 := mem_graphDistribution.1 hv
-  exact (congrArg (fderiv 𝕜 ψ p.2) hv').trans (map_zero _)
+  have hv' : v.2 = 0 := by simpa using mem_graphDistribution.1 hv
+  -- The second component of `dg.prodMap dψ v` is `dψ v.2`. The vector `v` lives in a tangent space,
+  -- so `ContinuousLinearMap.coe_prodMap'` does not rewrite and we unfold it with `change`.
+  change fderiv 𝕜 ψ p.2 v.2 = 0
+  rw [hv', map_zero]
 
 end TauCeti

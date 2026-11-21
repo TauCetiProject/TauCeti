@@ -24,9 +24,10 @@ projections of the two connections.
 
 The identity is a morphism and morphisms compose, so Ehresmann connections and their morphisms
 form a category. If `Φ` has a differentiable two-sided inverse `Φ'` and `φ` a differentiable left
-inverse `φ'`, for instance if `Φ` and `φ` are diffeomorphisms, then `(Φ', φ')` is again a
-morphism, so `(Φ, φ)` is an isomorphism of connections. Such isomorphisms compare connections
-related by changes of coordinates or by symmetries.
+inverse `φ'`, then `(Φ', φ')` is a morphism in the opposite direction. In particular, if `Φ` and
+`φ` are diffeomorphisms then the pair of inverse diffeomorphisms is again a morphism, so `(Φ, φ)`
+is an isomorphism of connections. Such isomorphisms compare connections related by changes of
+coordinates or by symmetries.
 
 The base field `𝕜` is arbitrary. Over `ℂ` with complex manifolds the differentiable maps are the
 holomorphic ones, so the same predicate describes morphisms of holomorphic connections.
@@ -105,6 +106,13 @@ structure IsEhresmannConnectionHom (π : P → B) (D : Π x : P, Submodule 𝕜 
   comp_eq : ρ ∘ Φ = φ ∘ π
   /-- The derivative of the map of total spaces preserves horizontality. -/
   mfderiv_mem (x : P) {v : TangentSpace I x} (hv : v ∈ D x) : mfderiv I I' Φ x v ∈ D' (Φ x)
+
+/-- If `g ∘ f = id` for differentiable maps `f` and `g`, then `dg_(f x) ∘ df_x = id`. -/
+private theorem mfderiv_apply_mfderiv_apply_of_leftInverse {f : P → Q} {g : Q → P} {x : P}
+    (hg : MDifferentiableAt I' I g (f x)) (hf : MDifferentiableAt I I' f x)
+    (hl : LeftInverse g f) (u : TangentSpace I x) :
+    mfderiv I' I g (f x) (mfderiv I I' f x u) = u := by
+  rw [← mfderiv_comp_apply x hg hf, hl.comp_eq_id, mfderiv_id, ContinuousLinearMap.id_apply]
 
 namespace IsEhresmannConnectionHom
 
@@ -225,25 +233,21 @@ theorem inverse [IsManifold I 1 P] [IsManifold I' 1 Q] {n n' : ℕ∞ω}
     -- With `x = Φ' y`, the derivative `dΦ_x` is injective and maps both `dΦ'_y w` and the
     -- horizontal lift of `dπ (dΦ'_y w)` to `w`.
     have hw₀ : w ∈ D' (Φ (Φ' y)) := (hr y).symm ▸ hw
-    have hinv (u : TangentSpace I (Φ' y)) :
-        mfderiv I' I Φ' (Φ (Φ' y)) (mfderiv I I' Φ (Φ' y) u) = u := by
-      have hid : Φ' ∘ Φ = _root_.id := hl.comp_eq_id
-      have := mfderiv_comp_apply (Φ' y) (hΦ' _) (h.mdifferentiable _) u
-      rw [hid, mfderiv_id] at this
-      exact this.symm
-    have hinj : Injective (mfderiv I I' Φ (Φ' y)) := fun a b hab ↦
-      (hinv a).symm.trans ((congrArg _ hab).trans (hinv b))
-    have hw' : mfderiv I I' Φ (Φ' y) (mfderiv I' I Φ' y w) = w := by
-      have hid : Φ ∘ Φ' = _root_.id := hr.comp_eq_id
-      have := mfderiv_comp_apply y (h.mdifferentiable (Φ' y)) (hΦ' y) w
-      rw [hid, mfderiv_id] at this
-      exact this.symm
+    have hinj : Injective (mfderiv I I' Φ (Φ' y)) :=
+      LeftInverse.injective (g := mfderiv I' I Φ' (Φ (Φ' y))) fun u ↦
+        mfderiv_apply_mfderiv_apply_of_leftInverse (hΦ' _) (h.mdifferentiable (Φ' y)) hl u
+    have hw' : mfderiv I I' Φ (Φ' y) (mfderiv I' I Φ' y w) = w :=
+      mfderiv_apply_mfderiv_apply_of_leftInverse (h.mdifferentiable _) (hΦ' y) hr w
+    -- `w` is horizontal, so it is the horizontal lift of `dρ w = dφ (dπ (dΦ'_y w))`.
+    have hρw : mfderiv I' J' ρ (Φ (Φ' y)) w =
+        mfderiv J J' φ (π (Φ' y)) (mfderiv I J π (Φ' y) (mfderiv I' I Φ' y w)) := by
+      rw [← h.mfderiv_apply_mfderiv_apply (hD.mdifferentiable _) (hD'.mdifferentiable _), hw']
     have hz : mfderiv I' I Φ' y w =
-        hD.horizontalLift (Φ' y) (mfderiv I J π (Φ' y) (mfderiv I' I Φ' y w)) :=
-      hinj <| hw'.trans <| (congrArg Subtype.val <| (hD'.eq_horizontalLift_iff
-        (x := Φ (Φ' y)) (w := ⟨w, hw₀⟩)).2 <| (congrArg (mfderiv I' J' ρ (Φ (Φ' y))) hw').symm.trans
-          (h.mfderiv_apply_mfderiv_apply (hD.mdifferentiable _) (hD'.mdifferentiable _) _)).trans
-        (h.mfderiv_horizontalLift hD hD' _ _).symm
+        hD.horizontalLift (Φ' y) (mfderiv I J π (Φ' y) (mfderiv I' I Φ' y w)) := by
+      apply hinj
+      rw [hw', h.mfderiv_horizontalLift hD hD']
+      exact congrArg Subtype.val ((hD'.eq_horizontalLift_iff
+        (x := Φ (Φ' y)) (w := ⟨w, hw₀⟩)).2 hρw)
     rw [hz]
     exact Subtype.prop _
 
