@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.GradedMulAction
 public import Mathlib.Algebra.Module.Submodule.Lattice
 public import Mathlib.Algebra.DirectSum.Decomposition
+public import TauCeti.Algebra.Module.GradedModule.Internal
 
 /-!
 # The trivial grading of a module
@@ -16,7 +17,8 @@ Every module has an integer grading concentrated in degree zero: the whole modul
 and the zero submodule in every other degree.  This file packages that family of submodules,
 records its membership API, and proves that it is an internal direct-sum decomposition, computing
 its projections.  Scalar multiplication by a trivially graded base ring preserves every
-homogeneous piece of any family closed under scalar multiplication.  For an algebra,
+homogeneous piece of any family closed under scalar multiplication, and every Koszul twist of the
+trivial grading is the identity.  For an algebra,
 `TauCeti.RingTheory.GradedAlgebra.Trivial` makes it a `GradedAlgebra`.
 
 ## Main definitions
@@ -32,6 +34,8 @@ homogeneous piece of any family closed under scalar multiplication.  For an alge
   family of scalar-stable sets containing zero.
 * `TauCeti.proj_trivialGrading`: its degree projection is the identity in degree zero and zero in
   every other degree.
+* `TauCeti.InternalGrading.koszulTwist_ofDecomposition_trivialGrading`: every Koszul twist of the
+  trivial grading is the identity.
 -/
 
 public section
@@ -116,5 +120,13 @@ instance instGradedSMulTrivialGrading {M σ : Type*} [Zero M] [SMulWithZero R M]
     rcases (mem_trivialGrading_iff R R).mp hr with rfl | rfl
     · simpa using SMulMemClass.smul_mem r hm
     · simp
+
+/-- Every Koszul twist of the trivial grading, concentrated in degree zero, is the identity. -/
+@[simp]
+theorem InternalGrading.koszulTwist_ofDecomposition_trivialGrading {R M : Type*} [Ring R]
+    [AddCommMonoid M] [Module R M] (q : ℤ) :
+    (InternalGrading.ofDecomposition (trivialGrading R M)).koszulTwist q = LinearMap.id :=
+  LinearMap.ext fun x ↦ InternalGrading.koszulTwist_apply_of_mem_zero _
+    (by rw [InternalGrading.ofDecomposition_piece, trivialGrading_zero]; trivial) q
 
 end TauCeti

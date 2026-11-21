@@ -374,12 +374,11 @@ private theorem isSelfAdjoint_fourierMultiplierCLM_toLp_symbol (j : ℕ) :
   Lp.isSelfAdjoint_fourierMultiplierCLM
     (Lp.star_eq_self_of_ae_eq_ofReal (coeFn_toLp_symbol φ j))
 
-private theorem inner_block_left (j : ℕ) (f g : Lp F 2 (volume : Measure V)) :
+private theorem adjoint_block (j : ℕ) :
     letI : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
-    inner ℝ (block φ j f) g = inner ℝ f (block φ j g) := by
-  let : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
-  rw [L2.real_inner_eq_re_inner, L2.real_inner_eq_re_inner]
-  exact congrArg RCLike.re ((isSelfAdjoint_fourierMultiplierCLM_toLp_symbol φ j).isSymmetric f g)
+    adjoint (block (F := F) φ j) = block φ j := by
+  rw [block, L2.adjoint_restrictScalars,
+    (isSelfAdjoint_fourierMultiplierCLM_toLp_symbol φ j).adjoint_eq]
 
 private theorem adjoint_lpPi_block (n : ℕ) :
     letI : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
@@ -387,7 +386,7 @@ private theorem adjoint_lpPi_block (n : ℕ) :
   let : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
   rw [Lp.adjoint_lpPi, sqFunAdj]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
-  rw [← (eq_adjoint_iff _ _).2 (inner_block_left φ j)]
+  rw [adjoint_block]
 
 private theorem sqFunAdj_lpPi_block (n : ℕ) (f : Lp F 2 (volume : Measure V)) :
     sqFunAdj φ n (Lp.lpPi 2 (Finset.range (n + 1)) (block φ) f) =
@@ -458,7 +457,7 @@ private theorem exists_norm_sqFun_apply_le :
   rw [mul_pow, Real.sq_sqrt hL0, ← real_inner_self_eq_norm_sq, ← adjoint_inner_right,
     adjoint_lpPi_block, sqFunAdj_lpPi_block, inner_sum]
   refine le_of_eq_of_le (Finset.sum_congr rfl fun j _ ↦ ?_) (hL _ f)
-  rw [← inner_block_left, real_inner_self_eq_norm_sq]
+  rw [← real_inner_self_eq_norm_sq, ← adjoint_inner_right, adjoint_block]
 
 /-- **The Calderón–Zygmund bound for the truncated square functions**, uniformly in the
 truncation. -/

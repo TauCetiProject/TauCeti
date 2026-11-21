@@ -29,9 +29,8 @@ growth input of Hadamard's factorization and of the convexity bounds for L-funct
   exponential type.
 * `TauCeti.not_isBigO_exp_mul_norm_of_factorial_le`: a function that is at least `n!` up to a
   geometric factor along points of linearly growing norm is not of exponential type.
-* `TauCeti.OrderLE.comp_mul_add`, `TauCeti.OrderLE.of_eq_sub_pow_mul`,
-  `TauCeti.OrderLE.of_eq_pow_mul`: the order does not increase under an affine substitution
-  `s ↦ a * s + b` or on dividing by a monomial power `(z - z₀) ^ m`.
+* `TauCeti.OrderLE.comp_mul_add`: the order does not increase under an affine substitution
+  `s ↦ a * s + b`.
 * `Polynomial.orderLE_eval`: polynomials have order at most `0`; constants have every order.
 * `Polynomial.orderLE_cexp_eval`: the exponential of a polynomial has order at most its
   natural degree.
@@ -174,24 +173,6 @@ theorem comp_mul_add (h : OrderLE f A) (a b : ℂ) : OrderLE (fun s ↦ f (a * s
           rw [mul_one, ← norm_mul]; exact norm_add_le _ _
       _ ≤ ‖a‖ * ‖s‖ + ‖b‖ * ‖s‖ := by gcongr
       _ = (‖a‖ + ‖b‖) * ‖s‖ := by ring
-
-/-- Dividing a function of order at most `A` by `(z - z₀) ^ m` preserves `OrderLE · A`, because
-`‖g z‖ ≤ ‖f z‖` whenever `‖z - z₀‖ ≥ 1`. -/
-theorem of_eq_sub_pow_mul (h : OrderLE f A) {z₀ : ℂ} {m : ℕ}
-    (hfg : ∀ z : ℂ, f z = (z - z₀) ^ m * g z) : OrderLE g A := by
-  refine (IsBigO.of_bound 1 ?_).orderLE h
-  filter_upwards [eventually_cobounded_le_norm (‖z₀‖ + 1)] with z hz
-  have hsub : 1 ≤ ‖z - z₀‖ := by
-    have htri := norm_sub_norm_le z z₀
-    linarith
-  have hpow : 1 ≤ ‖z - z₀‖ ^ m := one_le_pow₀ hsub
-  rw [one_mul, hfg z, norm_mul, norm_pow]
-  exact le_mul_of_one_le_left (norm_nonneg _) hpow
-
-/-- Dividing a function of order at most `A` by `z ^ m` preserves `OrderLE · A`. -/
-theorem of_eq_pow_mul (h : OrderLE f A) {m : ℕ}
-    (hfg : ∀ z : ℂ, f z = z ^ m * g z) : OrderLE g A :=
-  h.of_eq_sub_pow_mul (z₀ := 0) fun z ↦ by simpa only [sub_zero] using hfg z
 
 /-- **Liouville's theorem for functions of negative order.** An entire function of order at most
 `A < 0` is constant. -/

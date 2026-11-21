@@ -62,19 +62,12 @@ theorem AnalyticAt.iteratedDeriv_eq_zero_of_reflection
   have hcenter : 2 * a - a = a := by ring
   simp only [hcenter] at hd
   have hpow : (-1 : 𝕜) ^ k = -((-1 : 𝕜) ^ analyticOrderNatAt f a) := by
-    have hk : (-1 : 𝕜) ^ k * (-1 : 𝕜) ^ analyticOrderNatAt f a = -1 := by
-      rw [← pow_add, hodd.neg_one_pow]
-    calc (-1 : 𝕜) ^ k
-        = ((-1 : 𝕜) ^ k * (-1 : 𝕜) ^ analyticOrderNatAt f a) *
-            (-1 : 𝕜) ^ analyticOrderNatAt f a := by
-          rw [mul_assoc, ← pow_add, ← two_mul, (even_two_mul _).neg_one_pow, mul_one]
-      _ = -((-1 : 𝕜) ^ analyticOrderNatAt f a) := by rw [hk, neg_one_mul]
+    have hm := congrArg (· * (-1 : 𝕜) ^ analyticOrderNatAt f a) hodd.neg_one_pow
+    simpa [pow_add, mul_assoc, ← mul_pow] using hm
   rw [hpow, neg_smul] at hd
-  have htwo : (2 : 𝕜) • ((-1 : 𝕜) ^ analyticOrderNatAt f a • iteratedDeriv k f a) = 0 := by
-    rw [two_smul]
-    exact add_eq_zero_iff_eq_neg.mpr hd.symm
-  have hsmul := (smul_eq_zero.mp htwo).resolve_left two_ne_zero
-  exact (smul_eq_zero.mp hsmul).resolve_left (pow_ne_zero _ (neg_ne_zero.mpr one_ne_zero))
+  have : HasUniqueDiv E := .of_isTorsionFree 𝕜 E
+  have hzero := self_eq_neg.1 hd.symm
+  exact (smul_eq_zero.mp hzero).resolve_left (pow_ne_zero _ (neg_ne_zero.mpr one_ne_zero))
 
 namespace TauCeti
 

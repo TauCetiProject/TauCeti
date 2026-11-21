@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Analytic.Order
 public import TauCeti.Analysis.Complex.GrowthOrder.Centered
-public import TauCeti.Analysis.Complex.Hadamard.OriginZero
 import Mathlib.Analysis.Complex.TaylorSeries
 import Mathlib.Topology.MetricSpace.Algebra
 import TauCeti.Algebra.Polynomial.Coeff.Basic
@@ -15,10 +15,12 @@ import TauCeti.Analysis.Analytic.Reflection
 import TauCeti.Analysis.Calculus.Deriv.Polynomial
 import TauCeti.Analysis.Calculus.LogDeriv
 import TauCeti.Analysis.Complex.Basic
-import TauCeti.Analysis.Complex.ExtractZeros
+import TauCeti.Analysis.Complex.GrowthOrder.Zero.Factorization
 import TauCeti.Analysis.Complex.GrowthOrder.Zero.Summability
+import TauCeti.Analysis.Complex.Hadamard.OrderOne
 import TauCeti.Analysis.Complex.IteratedDeriv
 import TauCeti.Topology.Algebra.InfiniteSum.Real
+import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
 
 /-!
 # Paired Hadamard factorization and positivity of derivatives
@@ -133,6 +135,17 @@ private theorem hasProd_pairedFactor {γ : ℕ → ℝ}
   (hasProdUniformlyOn_pairedFactor hsum (isCompact_singleton (x := z))).hasProd
     (Set.mem_singleton z)
 
+/-- The limit of a sequence of real numbers cast to `ℂ` and bounded below by `a` is real with
+real part at least `a`. -/
+private theorem im_eq_zero_and_le_re_of_tendsto {ι : Type*} {l : Filter ι} [l.NeBot]
+    {u : ι → ℝ} {w : ℂ} (a : ℝ) (hu : ∀ᶠ i in l, a ≤ u i)
+    (htend : Tendsto (fun i ↦ (u i : ℂ)) l (𝓝 w)) :
+    w.im = 0 ∧ a ≤ w.re := by
+  have hclosed : IsClosed {z : ℂ | z.im = 0 ∧ a ≤ z.re} :=
+    (isClosed_eq Complex.continuous_im continuous_const).inter
+      (isClosed_le continuous_const Complex.continuous_re)
+  exact hclosed.mem_of_tendsto htend (hu.mono fun _ hi ↦ ⟨ofReal_im _, by simpa using hi⟩)
+
 /-- At any real point `x : ℝ`, the paired infinite product has zero imaginary part and real part at
 least `1`. -/
 private theorem pairedProduct_ofReal_im_eq_zero_and_one_le_re {γ : ℕ → ℝ}
@@ -148,20 +161,13 @@ private theorem pairedProduct_ofReal_im_eq_zero_and_one_le_re {γ : ℕ → ℝ}
     rw [pairedFactor_eq_one_add_inv_sq_mul]
     push_cast
     ring
-  have him : Tendsto
-      (fun s : Finset ℕ ↦
-        (∏ n ∈ s, if γ n = 0 then (1 : ℂ) else 1 + (x : ℂ) ^ 2 / (γ n : ℂ) ^ 2).im)
-      atTop (𝓝 0) := by
-    refine tendsto_const_nhds.congr fun s ↦ ?_
-    rw [hreal s, ofReal_im]
-  have hre_ge : ∀ s : Finset ℕ,
-      1 ≤ (∏ n ∈ s, if γ n = 0 then (1 : ℂ) else 1 + (x : ℂ) ^ 2 / (γ n : ℂ) ^ 2).re := by
-    intro s
-    rw [hreal s, ofReal_re]
-    exact Finset.one_le_prod₀ fun n _ ↦ le_add_of_nonneg_right (by positivity)
-  exact ⟨tendsto_nhds_unique (Complex.continuous_im.continuousAt.tendsto.comp hhp) him,
-    ge_of_tendsto (Complex.continuous_re.continuousAt.tendsto.comp hhp)
-      (Eventually.of_forall hre_ge)⟩
+  have htend : Tendsto (fun s : Finset ℕ ↦ ((∏ n ∈ s, (1 + (γ n)⁻¹ ^ 2 * x ^ 2) : ℝ) : ℂ))
+      atTop (𝓝 (∏' n : ℕ, if γ n = 0 then (1 : ℂ) else 1 + (x : ℂ) ^ 2 / (γ n : ℂ) ^ 2)) :=
+    hhp.congr fun s ↦ hreal s
+  exact im_eq_zero_and_le_re_of_tendsto 1
+    (Eventually.of_forall fun s ↦
+      Finset.one_le_prod₀ fun n _ ↦ le_add_of_nonneg_right (by positivity))
+    htend
 
 /-! ### Pairing the divisor product of an even entire function with imaginary zeros -/
 
@@ -169,6 +175,24 @@ private theorem re_eq_zero_of_mem_divisor_support {g : ℂ → ℂ} (hg : Differ
     (hzeros : ∀ z : ℂ, g z = 0 → z.re = 0) {ρ : ℂ}
     (hρ : ρ ∈ (MeromorphicOn.divisor g Set.univ).support) : ρ.re = 0 :=
   hzeros ρ ((hg.analyticAt ρ).apply_eq_zero_of_divisor_ne_zero hρ)
+
+/-- Pairing equivalence between `(Σ _ : {ρ ∈ S | 0 < ρ.im}, Bool)` and `S` for a
+negation-invariant set `S ⊆ ℂ` with `ρ.im ≠ 0` on `S`, sending `(ρ, true) ↦ ρ` and
+`(ρ, false) ↦ -ρ`. -/
+private noncomputable def imagPairEquiv {S : Set ℂ} (hneg : ∀ {ρ}, ρ ∈ S → -ρ ∈ S)
+    (him : ∀ {ρ}, ρ ∈ S → ρ.im ≠ 0) :
+    (Σ _ : {ρ : ℂ | ρ ∈ S ∧ 0 < ρ.im}, Bool) ≃ S where
+  toFun := fun ⟨ρ, b⟩ ↦ if b then ⟨ρ.val, ρ.property.1⟩ else ⟨-ρ.val, hneg ρ.property.1⟩
+  invFun := fun σ ↦
+    if h : 0 < (σ : ℂ).im then ⟨⟨σ.val, σ.property, h⟩, true⟩
+    else ⟨⟨-σ.val, hneg σ.property, by
+      rw [neg_im]
+      exact neg_pos.mpr (lt_of_le_of_ne (not_lt.mp h) (him σ.property))⟩, false⟩
+  left_inv := fun ⟨ρ, b⟩ ↦ by
+    cases b
+    · simpa using ρ.property.2.le
+    · simp [ρ.property.2]
+  right_inv := fun σ ↦ by by_cases h : 0 < (σ : ℂ).im <;> simp [h]
 
 /-- Grouping each upper-half-plane zero `ρ` (`Im ρ > 0`) of an even entire function `g` with `-ρ`
 rewrites `divisorProductOne g z` as a product over `{ρ ∈ d.support | 0 < ρ.im}`. -/
@@ -193,32 +217,22 @@ private theorem divisorProductOne_eq_tprod_im_pos {g : ℂ → ℂ} (hg : Differ
     have hρ0 : ρ = 0 := Complex.ext (by simp [hsupp_re hρ]) (by simp [him])
     exact h0_notMem (hρ0 ▸ hρ)
   have hsupp_neg {ρ : ℂ} (hρ : ρ ∈ d.support) : -ρ ∈ d.support := by
-    rw [Function.mem_support, hdiv_neg]
-    exact hρ
-  let Spos : Set ℂ := {ρ : ℂ | ρ ∈ d.support ∧ 0 < ρ.im}
-  let e : (Σ _ : Spos, Bool) ≃ d.support :=
-    { toFun := fun ⟨ρ, b⟩ ↦ if b then ⟨ρ.val, ρ.property.1⟩ else ⟨-ρ.val, hsupp_neg ρ.property.1⟩
-      invFun := fun σ ↦
-        if h : 0 < (σ : ℂ).im then ⟨⟨σ.val, σ.property, h⟩, true⟩
-        else ⟨⟨-σ.val, hsupp_neg σ.property, by
-          rw [neg_im]; linarith [lt_of_le_of_ne (not_lt.mp h) (hsupp_im_ne σ.property)]⟩, false⟩
-      left_inv := fun ⟨ρ, b⟩ ↦ by
-        cases b
-        · simpa using ρ.property.2.le
-        · simp [ρ.property.2]
-      right_inv := fun σ ↦ by by_cases h : 0 < (σ : ℂ).im <;> simp [h] }
+    rw [Function.mem_support, hdiv_neg]; exact hρ
+  let e := imagPairEquiv hsupp_neg hsupp_im_ne
   let F : d.support → ℂ := fun σ ↦ weierstrassFactor 1 ((σ : ℂ)⁻¹ * z) ^ (d σ).toNat
   have hF_mult : Multipliable F :=
     ((hasProdLocallyUniformlyOn_weierstrassFactor_one_pow (fun σ : d.support ↦ (σ : ℂ)⁻¹)
       (fun σ ↦ (d σ).toNat) hsum).hasProd (Set.mem_univ z)).multipliable
+  -- Reindex along `±ρ`, split the sigma product, and collapse each pair.
   calc (∏' σ : d.support, F σ)
-      = ∏' p : Σ _ : Spos, Bool, F (e p) := (e.tprod_eq F).symm
-    _ = ∏' ρ : Spos, ∏' b : Bool, F (e ⟨ρ, b⟩) :=
+      = ∏' p : Σ _ : {ρ : ℂ | ρ ∈ d.support ∧ 0 < ρ.im}, Bool, F (e p) := (e.tprod_eq F).symm
+    _ = ∏' ρ : {ρ : ℂ | ρ ∈ d.support ∧ 0 < ρ.im}, ∏' b : Bool, F (e ⟨ρ, b⟩) :=
         Multipliable.tprod_sigma' (fun _ ↦ Multipliable.of_finite) (e.multipliable_iff.mpr hF_mult)
-    _ = ∏' ρ : Spos, (1 + z ^ 2 / (ρ.val.im : ℂ) ^ 2) ^ (d ρ.val).toNat := by
+    _ = ∏' ρ : {ρ : ℂ | ρ ∈ d.support ∧ 0 < ρ.im},
+          (1 + z ^ 2 / (ρ.val.im : ℂ) ^ 2) ^ (d ρ.val).toNat := by
         refine tprod_congr fun ρ ↦ ?_
         rw [tprod_fintype, Fintype.prod_bool]
-        simp only [F, e, Equiv.coe_fn_mk, ↓reduceIte, Bool.false_eq_true, hdiv_neg]
+        simp only [F, e, imagPairEquiv, Equiv.coe_fn_mk, ↓reduceIte, Bool.false_eq_true, hdiv_neg]
         exact weierstrassFactor_one_imag_pair (hsupp_re ρ.property.1) (d ρ.val).toNat z
 
 /-- Any product `∏' i : α, (1 + z ^ 2 / (y i) ^ 2) ^ (m i)` with `0 < y i` and
@@ -357,10 +371,8 @@ private theorem tendstoUniformlyOn_mul_pow_pairedFactor (a : ℂ) (m : ℕ) {γ 
         simp_rw [pairedFactor_eq_one_add_inv_sq_mul]; fun_prop).frequently)
   have hconst : TendstoLocallyUniformlyOn
       (fun (_ : Finset ℕ) (z : ℂ) ↦ a * z ^ m)
-      (fun z : ℂ ↦ a * z ^ m) atTop K := by
-    rw [tendstoLocallyUniformlyOn_iff_tendstoUniformlyOn_of_compact hK,
-      Metric.tendstoUniformlyOn_iff]
-    exact fun ε hε ↦ Eventually.of_forall fun _ _ _ ↦ by simpa using hε
+      (fun z : ℂ ↦ a * z ^ m) atTop K :=
+    (tendstoUniformlyOn_const (fun z : ℂ ↦ a * z ^ m) atTop K).tendstoLocallyUniformlyOn
   exact (tendstoLocallyUniformlyOn_iff_tendstoUniformlyOn_of_compact hK).mp
     (hconst.fun_mul₀ hp.tendstoLocallyUniformlyOn (by fun_prop) hp_cts)
 
@@ -385,10 +397,12 @@ private theorem exists_analyticOrderAt_pairedHadamard_factorization
     obtain ⟨R, hR⟩ := hpositive
     exact fun h0 ↦ lt_irrefl 0 (by simpa [h0] using (hR R le_rfl).2)
   set m : ℕ := (analyticOrderAt f 0).toNat
-  obtain ⟨g, hg_diff, hg0, _, hfg⟩ := hf.differentiable.exists_eq_pow_mul hf_ne_zero
+  obtain ⟨g, hg_diff, hg0, hg_ord, hfg0⟩ :=
+    hf.orderLE_one.exists_eq_sub_pow_mul hf.differentiable (Function.ne_iff.mp hf_ne_zero) 0
+  have hfg (z : ℂ) : f z = z ^ m * g z := by
+    simpa only [sub_zero, analyticOrderNatAt] using hfg0 z
   obtain ⟨hδ_eq, hg_even⟩ :=
     eq_neg_one_pow_and_even_of_eq_pow_mul hfg hparity hg_diff.continuous.continuousAt hg0
-  have hg_ord : OrderLE g 1 := hf.orderLE_one.of_eq_pow_mul hfg
   obtain ⟨a, ha_exp, hg_had⟩ := hg_ord.exists_eq_cexp_mul_divisorProductOne hg_diff hg0
   have hg_prod (z : ℂ) : g z = g 0 * divisorProductOne g z := by
     rw [hg_had z, hg_even.logDeriv_zero, zero_mul, add_zero, ha_exp]
@@ -400,10 +414,11 @@ private theorem exists_analyticOrderAt_pairedHadamard_factorization
     rw [hfg z, hg_prod z, hdiv_eq z]; ring
   obtain ⟨hg0_im, hg0_re_pos⟩ :=
     im_eq_zero_and_re_pos_of_eq_mul_pow_pairedFactor hγ_sum hf_eq_g0 hpositive
-  have hc_coe : (((g 0).re : ℝ) : ℂ) = g 0 := Complex.ext rfl hg0_im.symm
+  have hc_coe : g 0 = (((g 0).re : ℝ) : ℂ) := Complex.ext rfl hg0_im
   have hf_eq_c (z : ℂ) : f z = (((g 0).re : ℝ) : ℂ) * z ^ m *
-      ∏' n : ℕ, if γ n = 0 then (1 : ℂ) else 1 + z ^ 2 / (γ n : ℂ) ^ 2 :=
-    hc_coe.symm ▸ hf_eq_g0 z
+      ∏' n : ℕ, if γ n = 0 then (1 : ℂ) else 1 + z ^ 2 / (γ n : ℂ) ^ 2 := by
+    rw [← hc_coe]
+    exact hf_eq_g0 z
   exact ⟨(g 0).re, γ, hg0_re_pos, hγ_nonneg, hγ_sum, hδ_eq,
     fun z ↦ (hasProd_pairedFactor hγ_sum z).multipliable, hf_eq_c,
     fun K hK ↦ (tendstoUniformlyOn_mul_pow_pairedFactor _ m hγ_sum hK).congr_right
@@ -459,28 +474,16 @@ private theorem eval_map_pairedPartialPoly (c : ℝ) (m : ℕ) (γ : ℕ → ℝ
 private theorem coeff_pairedPartialPoly_nonneg {c : ℝ} (hc : 0 ≤ c) (m : ℕ) (γ : ℕ → ℝ)
     (s : Finset ℕ) : ∀ d, 0 ≤ (pairedPartialPoly c m γ s).coeff d := by
   classical
-  unfold pairedPartialPoly
-  set Q : ℝ[X] := ∏ n ∈ s, (1 + C ((γ n)⁻¹ ^ 2) * X ^ 2) with hQ
-  suffices hprod : ∀ d, 0 ≤ Q.coeff d by
-    intro d
-    rw [mul_assoc, coeff_C_mul, mul_comm (X ^ m)]
-    by_cases hmd : m ≤ d
-    · have hshift : (Q * X ^ m).coeff d = Q.coeff (d - m) := by
-        conv_lhs => rw [← Nat.sub_add_cancel hmd]
-        exact coeff_mul_X_pow Q m (d - m)
-      rw [hshift]
-      exact mul_nonneg hc (hprod (d - m))
-    · rw [coeff_mul_X_pow' Q m d, ite_eq_right hmd, mul_zero]
-  rw [hQ]
-  clear hQ Q
-  induction s using Finset.induction_on with
-  | empty =>
-    intro d
-    by_cases hd : d = 0 <;> simp [coeff_one, hd]
-  | insert n s hns ih =>
-    intro d
-    rw [Finset.prod_insert hns, mul_comm]
-    exact (ih d).trans (coeff_le_coeff_mul_one_add_C_mul_X_pow ih (sq_nonneg _) 2 d)
+  have hC : ∀ d, 0 ≤ (C c).coeff d := fun d ↦ by rw [coeff_C]; split_ifs <;> positivity
+  have hX : ∀ d, 0 ≤ (X ^ m : ℝ[X]).coeff d := fun d ↦ by
+    rw [coeff_X_pow]; split_ifs <;> norm_num
+  have hfactor (n : ℕ) : ∀ d, 0 ≤ (1 + C ((γ n)⁻¹ ^ 2) * X ^ 2).coeff d := fun d ↦ by
+    rw [coeff_add, coeff_one, coeff_C_mul_X_pow]; split_ifs <;> positivity
+  have hprod : ∀ d, 0 ≤ (∏ n ∈ s, (1 + C ((γ n)⁻¹ ^ 2) * X ^ 2)).coeff d := by
+    refine Finset.prod_induction _ (fun p : ℝ[X] ↦ ∀ d, 0 ≤ p.coeff d)
+      (fun _ _ hp hq d ↦ coeff_mul_nonneg hp hq d) (fun d ↦ ?_) (fun n _ ↦ hfactor n)
+    rw [coeff_one]; split_ifs <;> norm_num
+  exact coeff_mul_nonneg (coeff_mul_nonneg hC hX) hprod
 
 /-- The coefficients of `pairedPartialPoly c m γ s` are monotone with respect to `s : Finset ℕ`. -/
 private theorem coeff_pairedPartialPoly_mono {c : ℝ} (hc : 0 ≤ c) (m : ℕ) (γ : ℕ → ℝ)
@@ -560,23 +563,15 @@ theorem pairedHadamard_derivatives_nonnegative
     pairedHadamard_factorization hf hparity hzeros hpositive
   have htend := tendsto_iteratedDeriv_pairedPartialPoly hunif k (x : ℂ)
   have hreal_val (s : Finset ℕ) :
-      iteratedDeriv k
-        (fun w : ℂ ↦ ((pairedPartialPoly c m γ s).map (algebraMap ℝ ℂ)).eval w) (x : ℂ) =
-        (((Polynomial.derivative^[k] (pairedPartialPoly c m γ s)).eval x : ℝ) : ℂ) := by
+      (((Polynomial.derivative^[k] (pairedPartialPoly c m γ s)).eval x : ℝ) : ℂ) =
+        iteratedDeriv k
+          (fun w : ℂ ↦ ((pairedPartialPoly c m γ s).map (algebraMap ℝ ℂ)).eval w) (x : ℂ) := by
     simpa only [Complex.coe_algebraMap] using
-      (pairedPartialPoly c m γ s).iteratedDeriv_eval_map (algebraMap ℝ ℂ) k x
-  have him : Tendsto
-      (fun s : Finset ℕ ↦ (iteratedDeriv k
-        (fun w : ℂ ↦ ((pairedPartialPoly c m γ s).map (algebraMap ℝ ℂ)).eval w) (x : ℂ)).im)
-      atTop (𝓝 0) :=
-    tendsto_const_nhds.congr fun s ↦ by rw [hreal_val s, ofReal_im]
-  exact ⟨tendsto_nhds_unique (Complex.continuous_im.continuousAt.tendsto.comp htend) him,
-    ge_of_tendsto (Complex.continuous_re.continuousAt.tendsto.comp htend)
-      (Eventually.of_forall fun s ↦ by
-        dsimp only [Function.comp_apply]
-        rw [hreal_val s, ofReal_re]
-        exact Polynomial.eval_iterate_derivative_nonneg
-          (coeff_pairedPartialPoly_nonneg hc.le m γ s) k hx)⟩
+      ((pairedPartialPoly c m γ s).iteratedDeriv_eval_map (algebraMap ℝ ℂ) k x).symm
+  exact im_eq_zero_and_le_re_of_tendsto 0
+    (Eventually.of_forall fun s ↦ Polynomial.eval_iterate_derivative_nonneg
+      (coeff_pairedPartialPoly_nonneg hc.le m γ s) k hx)
+    (htend.congr fun s ↦ (hreal_val s).symm)
 
 /-- **Strict positivity of same-parity Taylor coefficients for nonpolynomial paired products.** If
 `f` is not a polynomial, then for every `j : ℕ` the derivative of order
@@ -608,23 +603,19 @@ theorem pairedHadamard_iteratedDeriv_zero_pos
     simpa only [N, ht_card] using coeff_pairedPartialPoly_top_pos hc m γ t (fun n hn ↦ ht_sub hn)
   have htend := tendsto_iteratedDeriv_pairedPartialPoly hunif N 0
   have heval_zero (s : Finset ℕ) :
-      (iteratedDeriv N
-        (fun w : ℂ ↦ ((pairedPartialPoly c m γ s).map (algebraMap ℝ ℂ)).eval w) 0).re =
-        (N.factorial : ℝ) * (pairedPartialPoly c m γ s).coeff N := by
+      (((N.factorial : ℝ) * (pairedPartialPoly c m γ s).coeff N : ℝ) : ℂ) =
+        iteratedDeriv N
+          (fun w : ℂ ↦ ((pairedPartialPoly c m γ s).map (algebraMap ℝ ℂ)).eval w) 0 := by
     rw [Polynomial.iteratedDeriv_eval_zero, coeff_map, Complex.coe_algebraMap]
-    have hcast : (N.factorial : ℂ) * (((pairedPartialPoly c m γ s).coeff N : ℝ) : ℂ) =
-        (((N.factorial : ℝ) * (pairedPartialPoly c m γ s).coeff N : ℝ) : ℂ) := by
-      push_cast
-      ring
-    rw [hcast, ofReal_re]
+    push_cast
+    ring
   have hlow : (N.factorial : ℝ) * (pairedPartialPoly c m γ t).coeff N ≤
-      (iteratedDeriv N f 0).re := by
-    refine ge_of_tendsto (Complex.continuous_re.continuousAt.tendsto.comp htend) ?_
-    filter_upwards [Filter.eventually_ge_atTop t] with s hts
-    dsimp only [Function.comp_apply]
-    rw [heval_zero s]
-    exact mul_le_mul_of_nonneg_left (coeff_pairedPartialPoly_mono hc.le m γ hts N)
-      (Nat.cast_nonneg _)
+      (iteratedDeriv N f 0).re :=
+    (im_eq_zero_and_le_re_of_tendsto ((N.factorial : ℝ) * (pairedPartialPoly c m γ t).coeff N)
+      ((Filter.eventually_ge_atTop t).mono fun s hts ↦
+        mul_le_mul_of_nonneg_left (coeff_pairedPartialPoly_mono hc.le m γ hts N)
+          (Nat.cast_nonneg _))
+      (htend.congr fun s ↦ (heval_zero s).symm)).2
   exact (mul_pos (Nat.cast_pos.mpr N.factorial_pos) ht_pos).trans_le hlow
 
 /-- **Strict positivity of derivatives for nonpolynomial paired Hadamard products.** Under the
@@ -659,8 +650,9 @@ theorem pairedHadamard_derivatives_positive
       (pairedHadamard_derivatives_nonnegative hf hparity hzeros hpositive (n + k) 0 le_rfl).2
   set n₀ : ℕ := (analyticOrderAt f 0).toNat + k
   have hn₀_add : n₀ + k = (analyticOrderAt f 0).toNat + 2 * k := by omega
-  have hpos_coeff : 0 < (iteratedDeriv (n₀ + k) f 0).re :=
-    hn₀_add.symm ▸ pairedHadamard_iteratedDeriv_zero_pos hf hparity hzeros hpositive hnonpoly k
+  have hpos_coeff : 0 < (iteratedDeriv (n₀ + k) f 0).re := by
+    rw [hn₀_add]
+    exact pairedHadamard_iteratedDeriv_zero_pos hf hparity hzeros hpositive hnonpoly k
   have hterm_pos : 0 < (n₀.factorial : ℝ)⁻¹ * x ^ n₀ * (iteratedDeriv (n₀ + k) f 0).re :=
     mul_pos (mul_pos (inv_pos.mpr (Nat.cast_pos.mpr n₀.factorial_pos)) (pow_pos hx n₀)) hpos_coeff
   have hle : (n₀.factorial : ℝ)⁻¹ * x ^ n₀ * (iteratedDeriv (n₀ + k) f 0).re ≤

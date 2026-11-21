@@ -30,9 +30,10 @@ as `exp (z ^ 2)`.
 
 * `TauCeti.IsCenteredOrderOne`: global centered order-at-most-one predicate for entire functions.
 * `TauCeti.isCenteredOrderOne_iff`: equivalence with `Differentiable ℂ f ∧ OrderLE f 1`.
-* `TauCeti.IsCenteredOrderOne.add`, `TauCeti.IsCenteredOrderOne.mul`,
-  `TauCeti.IsCenteredOrderOne.comp_mul_add`, `Polynomial.isCenteredOrderOne_eval`,
-  `TauCeti.isCenteredOrderOne_cexp_mul`: algebraic and analytic closure properties.
+* `TauCeti.IsCenteredOrderOne.add`, `TauCeti.IsCenteredOrderOne.const_mul`,
+  `TauCeti.IsCenteredOrderOne.pow`, `TauCeti.IsCenteredOrderOne.comp_mul_add`,
+  `Polynomial.isCenteredOrderOne_eval`, `TauCeti.isCenteredOrderOne_cexp_mul`: algebraic and
+  analytic closure properties.
 * `TauCeti.IsCenteredOrderOne.of_norm_le_exp_mul_log`: transfer from logarithmic-exponential bounds.
 * `TauCeti.not_isCenteredOrderOne_cexp_sq`: `exp (z ^ 2)` does not satisfy `IsCenteredOrderOne`.
 
@@ -58,12 +59,6 @@ def IsCenteredOrderOne (f : ℂ → ℂ) : Prop :=
     ∀ z : ℂ, ‖f z‖ ≤ Real.exp (C * (1 + ‖z‖ ^ (1 + ε)))
 
 variable {f g : ℂ → ℂ}
-
-/-- The defining conjunction of `IsCenteredOrderOne`. -/
-theorem isCenteredOrderOne_def :
-    IsCenteredOrderOne f ↔ Differentiable ℂ f ∧ ∀ ε : ℝ, 0 < ε → ∃ C : ℝ, 0 < C ∧
-      ∀ z : ℂ, ‖f z‖ ≤ Real.exp (C * (1 + ‖z‖ ^ (1 + ε))) :=
-  Iff.rfl
 
 namespace IsCenteredOrderOne
 
@@ -146,20 +141,6 @@ theorem add (hf : IsCenteredOrderOne f) (hg : IsCenteredOrderOne g) :
     IsCenteredOrderOne (fun z ↦ f z + g z) :=
   (hf.orderLE_one.add hg.orderLE_one).isCenteredOrderOne (hf.differentiable.add hg.differentiable)
 
-/-- Negating a function preserves `IsCenteredOrderOne`. -/
-theorem neg (hf : IsCenteredOrderOne f) : IsCenteredOrderOne (fun z ↦ -f z) :=
-  hf.orderLE_one.neg.isCenteredOrderOne hf.differentiable.neg
-
-/-- A difference of two functions satisfying `IsCenteredOrderOne` satisfies `IsCenteredOrderOne`. -/
-theorem sub (hf : IsCenteredOrderOne f) (hg : IsCenteredOrderOne g) :
-    IsCenteredOrderOne (fun z ↦ f z - g z) :=
-  (hf.orderLE_one.sub hg.orderLE_one).isCenteredOrderOne (hf.differentiable.sub hg.differentiable)
-
-/-- A product of two functions satisfying `IsCenteredOrderOne` satisfies `IsCenteredOrderOne`. -/
-theorem mul (hf : IsCenteredOrderOne f) (hg : IsCenteredOrderOne g) :
-    IsCenteredOrderOne (fun z ↦ f z * g z) :=
-  (hf.orderLE_one.mul hg.orderLE_one).isCenteredOrderOne (hf.differentiable.mul hg.differentiable)
-
 /-- Scaling by a complex constant preserves `IsCenteredOrderOne`. -/
 theorem const_mul (hf : IsCenteredOrderOne f) (c : ℂ) :
     IsCenteredOrderOne (fun z ↦ c * f z) :=
@@ -169,24 +150,6 @@ theorem const_mul (hf : IsCenteredOrderOne f) (c : ℂ) :
 theorem pow (hf : IsCenteredOrderOne f) (n : ℕ) :
     IsCenteredOrderOne (fun z ↦ f z ^ n) :=
   (hf.orderLE_one.pow n).isCenteredOrderOne (hf.differentiable.pow n)
-
-/-- A finite sum of functions satisfying `IsCenteredOrderOne` satisfies `IsCenteredOrderOne`. -/
-theorem sum {ι : Type*} {t : Finset ι} {F : ι → ℂ → ℂ}
-    (h : ∀ i ∈ t, IsCenteredOrderOne (F i)) :
-    IsCenteredOrderOne (fun z ↦ ∑ i ∈ t, F i z) :=
-  (OrderLE.sum fun i hi ↦ (h i hi).orderLE_one).isCenteredOrderOne
-    (Differentiable.fun_sum fun i hi ↦ (h i hi).differentiable)
-
-/-- A finite product of functions satisfying `IsCenteredOrderOne` satisfies `IsCenteredOrderOne`. -/
-theorem prod {ι : Type*} {t : Finset ι} {F : ι → ℂ → ℂ}
-    (h : ∀ i ∈ t, IsCenteredOrderOne (F i)) :
-    IsCenteredOrderOne (fun z ↦ ∏ i ∈ t, F i z) :=
-  (OrderLE.prod fun i hi ↦ (h i hi).orderLE_one).isCenteredOrderOne
-    (by
-      have heq : (fun z ↦ ∏ i ∈ t, F i z) = ∏ i ∈ t, F i := by ext z; simp
-      rw [heq]
-      exact Finset.prod_induction F (Differentiable ℂ) (fun _ _ ha hb ↦ ha.mul hb)
-        (differentiable_const 1) fun i hi ↦ (h i hi).differentiable)
 
 /-- Pullback along an affine map `z ↦ a * z + b` preserves `IsCenteredOrderOne`. -/
 theorem comp_mul_add (hf : IsCenteredOrderOne f) (a b : ℂ) :
@@ -199,27 +162,12 @@ theorem comp_neg (hf : IsCenteredOrderOne f) :
     IsCenteredOrderOne (fun z ↦ f (-z)) := by
   simpa using hf.comp_mul_add (-1) 0
 
-/-- Translation `z ↦ z + b` preserves `IsCenteredOrderOne`. -/
-theorem comp_add_right (hf : IsCenteredOrderOne f) (b : ℂ) :
-    IsCenteredOrderOne (fun z ↦ f (z + b)) := by
-  simpa using hf.comp_mul_add 1 b
-
 end IsCenteredOrderOne
 
 /-- Every constant function satisfies `IsCenteredOrderOne`. -/
 @[simp]
 theorem isCenteredOrderOne_const (c : ℂ) : IsCenteredOrderOne (fun _ ↦ c) :=
   (orderLE_const c 1).isCenteredOrderOne (differentiable_const c)
-
-/-- The zero function satisfies `IsCenteredOrderOne`. -/
-@[simp]
-theorem isCenteredOrderOne_zero : IsCenteredOrderOne 0 :=
-  isCenteredOrderOne_const 0
-
-/-- The constant function `1` satisfies `IsCenteredOrderOne`. -/
-@[simp]
-theorem isCenteredOrderOne_one : IsCenteredOrderOne 1 :=
-  isCenteredOrderOne_const 1
 
 /-- Every complex polynomial satisfies `IsCenteredOrderOne`. -/
 theorem _root_.Polynomial.isCenteredOrderOne_eval (p : Polynomial ℂ) :

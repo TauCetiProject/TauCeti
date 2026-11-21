@@ -67,7 +67,5 @@ theorem Function.Even.deriv_zero {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
   have hneg := TauCeti.deriv_neg_eq_neg_of_eventually_even (x := (0 : 𝕜))
     (Filter.Eventually.of_forall hf)
   rw [neg_zero] at hneg
-  have htwo : (2 : 𝕜) • deriv f 0 = 0 := by
-    rw [two_smul]
-    exact add_eq_zero_iff_eq_neg.mpr hneg
-  exact (smul_eq_zero.mp htwo).resolve_left two_ne_zero
+  have : HasUniqueDiv E := .of_isTorsionFree 𝕜 E
+  exact self_eq_neg.1 hneg

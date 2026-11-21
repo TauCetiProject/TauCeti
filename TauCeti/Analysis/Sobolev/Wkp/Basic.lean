@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Calculus.IteratedGradient.Basic
 public import TauCeti.Analysis.Sobolev.GraphStep.Basic
 public import TauCeti.Analysis.Sobolev.W1p.Basic
 import TauCeti.Analysis.Distribution.TestFunction.Inner
+import TauCeti.MeasureTheory.Measure.Restrict
 
 /-!
 # Arbitrary-order weak Sobolev spaces
@@ -374,6 +375,12 @@ theorem value_succ (k : ℕ) (u : Wkp mu Omega p (k + 1)) :
     value (k + 1) u = value k (lowerOrder k u) :=
   (rfl)
 
+/-- Convergence in `W^{k,p}(Ω)` gives convergence of the values in `Lᵖ(Ω)`. -/
+theorem tendsto_value {α : Type*} {l : Filter α} {k : ℕ} {u : α → Wkp mu Omega p k}
+    {v : Wkp mu Omega p k} (h : Filter.Tendsto u l (nhds v)) :
+    Filter.Tendsto (fun i => value k (u i)) l (nhds (value k v)) :=
+  ((valueL k).continuous.tendsto v).comp h
+
 /-- If `u i → v` in `W^{k,p}(Ω)` along a filter `l` and the values of `u i` and `v` represent
 `f i` and `g` almost everywhere on `Ω`, then `f i → g` in `Lᵖ(Ω)` along `l`. -/
 theorem tendsto_eLpNorm_sub_of_tendsto {α : Type*} {l : Filter α} {k : ℕ}
@@ -382,8 +389,8 @@ theorem tendsto_eLpNorm_sub_of_tendsto {α : Type*} {l : Filter α} {k : ℕ}
     (hv : value k v =ᵐ[mu.restrict Omega] g) :
     Filter.Tendsto (fun i => eLpNorm (f i - g) p (mu.restrict Omega)) l (nhds 0) := by
   refine ((Lp.tendsto_Lp_iff_tendsto_eLpNorm' _ _).1
-    (((valueL k).continuous.tendsto v).comp huv)).congr fun i => eLpNorm_congr_ae ?_
-  simpa only [Function.comp_apply, valueL_apply] using (hu i).sub hv
+    (tendsto_value huv)).congr fun i => eLpNorm_congr_ae ?_
+  exact (hu i).sub hv
 
 /-- At first order, the generic lower-order projection is the `W1p` value projection. -/
 @[simp]
@@ -591,6 +598,11 @@ theorem continuous_integral_value_mul (k : ℕ) {ψ : E → ℝ} (hψ : MemLp ψ
     rw [hx, real_inner_eq_re_inner, RCLike.inner_apply, conj_trivial, RCLike.re_to_real, mul_comm]
   simp_rw [key]
   exact (valueL k).continuous.inner continuous_const
+
+/-- On the whole space, a Sobolev function is determined by its value almost everywhere. -/
+theorem ext_ae {k : ℕ} {u v : Wkp mu ⊤ p k} (h : (value k u : E → ℝ) =ᵐ[mu] value k v) :
+    u = v :=
+  ext k (Lp.ext (by rwa [Filter.EventuallyEq, Measure.ae_restrict_coe_opens_top]))
 
 /-- On an empty domain every Sobolev space is trivial. -/
 theorem subsingleton_of_eq_empty (k : ℕ) (h : (Omega : Set E) = ∅) :
