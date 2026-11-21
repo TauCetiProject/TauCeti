@@ -13,6 +13,7 @@ import Mathlib.Data.ZMod.Basic
 import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
 import TauCeti.LinearAlgebra.BilinearForm.JordanSplitting.Parity
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
+import TauCeti.LinearAlgebra.Matrix.BilinearForm
 import TauCeti.LinearAlgebra.PerfectPairing.Basis
 import TauCeti.NumberTheory.Padics.DyadicUnits
 import TauCeti.NumberTheory.Padics.PadicIntegers
@@ -241,7 +242,7 @@ theorem IsJordanSplitting.constituentOddity_of_even (h : B.IsJordanSplitting 2 N
     {i : ℕ} (heven : ∀ v ∈ N i, 2 * 2 ^ i ∣ B v v) : h.constituentOddity hB i = 0 := by
   have h2i := mem_nonZeroDivisors_of_ne_zero (pow_ne_zero i (two_ne_zero (α := ℤ_[2])))
   have hw : (constituentForm h i).IsCharacteristic 0 := isCharacteristic_zero_iff.mpr fun x ↦ by
-    obtain ⟨c, hc⟩ := heven x x.2
+    obtain ⟨c, hc⟩ := heven x x.property
     have hBC : (2 : ℤ_[2]) ^ i * constituentForm h i x x = B x x := by
       simpa using LinearMap.congr_fun₂ (two_pow_smul_constituentForm h i) x x
     exact ⟨c, (mul_cancel_left_mem_nonZeroDivisors h2i).mp (by rw [hBC]; linear_combination hc)⟩

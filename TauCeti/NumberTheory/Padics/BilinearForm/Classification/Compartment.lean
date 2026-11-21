@@ -12,6 +12,7 @@ import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
 import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic
 import TauCeti.LinearAlgebra.BilinearForm.Odd.LocalRing
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
+import TauCeti.LinearAlgebra.Matrix.BilinearForm
 import TauCeti.LinearAlgebra.PerfectPairing.Basis
 import TauCeti.NumberTheory.Padics.BilinearForm.OddUnimodular
 import TauCeti.NumberTheory.Padics.BilinearForm.Oddity.Fusion
@@ -389,7 +390,7 @@ private theorem isValidOdd_constituent_and_exists_mem (h : B.IsJordanSplitting 2
       simp only [signBool, h.constituentSign_eq hC d], h.constituentOddity_eq hB hC hw]
   refine ⟨hres.1, fun isThree hcan ↦ ?_⟩
   obtain ⟨x, hx, hmod⟩ := hres.2 isThree hcan
-  exact ⟨x.1, x.2, C x x, hx, Eq.symm (by simpa using LinearMap.congr_fun₂ hC x x), hmod⟩
+  exact ⟨x.val, x.property, C x x, hx, Eq.symm (by simpa using LinearMap.congr_fun₂ hC x x), hmod⟩
 
 private theorem signBool_eq_not_of_constituentSign_eq_neg {N' : ℕ → Submodule ℤ_[2] M}
     (h : B.IsJordanSplitting 2 N) (h' : B.IsJordanSplitting 2 N') {k : ℕ}

@@ -453,7 +453,7 @@ private theorem forall_two_dvd_iff_forall_two_mul_pow_dvd {P : Submodule ℤ_[2]
     simpa using LinearMap.congr_fun₂ hC x x
   refine ⟨fun he v hv ↦ ?_, fun he x ↦ ?_⟩
   · obtain ⟨c, hc⟩ := he ⟨v, hv⟩; exact ⟨c, by rw [← hBC ⟨v, hv⟩, hc]; ring⟩
-  · obtain ⟨c, hc⟩ := he x x.2
+  · obtain ⟨c, hc⟩ := he x x.property
     exact ⟨c, (mul_cancel_left_mem_nonZeroDivisors h2i).mp (by rw [hBC]; linear_combination hc)⟩
 
 private theorem free_and_finite_of_isJordanSplitting {M' : Type*} [AddCommGroup M']
@@ -545,19 +545,20 @@ theorem IsJordanSplitting.equivalent_iff_prod_χ₈_pow_mul_stdAddChar_sum_eq
   obtain ⟨C'', hC'', hC''p⟩ := isModular_def.mp (h''.isModular i)
   have hC''s : C''.IsSymm := IsSymm.of_smul h2i (hC'' ▸ hB.restrict (N'' i))
   have hC's : (C' i).IsSymm := IsSymm.of_smul h2i (hC' i ▸ hB'.restrict (N' i))
-  let d'' := Module.finBasis ℤ_[2] (N'' i)
+  have hcard : Fintype.card (Fin (finrank ℤ_[2] (N'' i))) = Fintype.card (α' i) := by
+    rw [Fintype.card_fin, h''.finrank_eq h two_ne_zero PadicInt.not_isUnit_two i,
+      hrank i, finrank_eq_card_basis (d' i)]
+  let d'' := (Module.finBasis ℤ_[2] (N'' i)).reindex (Fintype.equivOfCardEq hcard)
   obtain ⟨w'', hw''⟩ := hC''s.exists_isCharacteristic PadicInt.two_dvd_sq_sub_self
   obtain ⟨hsign_i, hodd_i⟩ := hmatch i
   rw [h''.constituentSign_eq hC'' d'', h'.constituentSign_eq (hC' i) (d' i)] at hsign_i
   rw [h''.constituentOddity_eq hB hC'' hw'', h'.constituentOddity_eq hB' (hC' i) (hw' i)] at hodd_i
   rw [← hC'', ← hC' i, equivalent_smul_iff h2i,
-    hC''s.equivalent_iff_card_eq_and_two_dvd_iff_and_χ₈_det_eq_and_eight_dvd hC's d'' (d' i)
+    hC''s.equivalent_iff_two_dvd_iff_and_χ₈_eq_and_eight_dvd hC's d'' (d' i)
       (d''.isUnit_det_of_isPerfPair d'' C'' hC''p)
       ((d' i).isUnit_det_of_isPerfPair (d' i) (C' i) ((h'.isModular i).isPerfPair_of_smul_eq h2i
         (hC' i))) hw'' (hw' i)]
-  refine ⟨by rw [Fintype.card_fin, h''.finrank_eq h two_ne_zero PadicInt.not_isUnit_two i,
-      hrank i, finrank_eq_card_basis (d' i)],
-    (forall_two_dvd_iff_forall_two_mul_pow_dvd hC'').trans
+  refine ⟨(forall_two_dvd_iff_forall_two_mul_pow_dvd hC'').trans
       (((h''.forall_two_mul_pow_dvd_iff_of_isJordanSplitting h i).trans (hpar i)).trans
         (forall_two_dvd_iff_forall_two_mul_pow_dvd (hC' i)).symm),
     hsign_i, PadicInt.eight_dvd_sub_iff_toZModPow_three_eq.mpr hodd_i⟩

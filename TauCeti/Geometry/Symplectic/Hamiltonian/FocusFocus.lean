@@ -91,7 +91,7 @@ variable {V : Type*} [AddCommGroup V] [Module ℝ V] {ω : SymplecticForm V}
 /-! ### Commuting square roots of `1` and `-1` in `sp(V, ω)` -/
 
 /-- An element of `sp(V, ω)` squaring to `1` has a nonzero fixed vector. -/
-private theorem exists_ne_zero_apply_eq_self [Nontrivial V]
+theorem exists_ne_zero_apply_eq_self [Nontrivial V]
     {A : skewAdjointLieSubalgebra ω.toBilinForm} (hA : (A : Module.End ℝ V) * A = 1) :
     ∃ v ≠ 0, (A : Module.End ℝ V) v = v := by
   by_contra! h
@@ -103,7 +103,7 @@ private theorem exists_ne_zero_apply_eq_self [Nontrivial V]
   have hA' : (A : Module.End ℝ V) = (-1 : ℝ) • 1 := LinearMap.ext fun u ↦ by
     rw [LinearMap.smul_apply, one_apply_eq_self, neg_one_smul]
     exact eq_neg_of_add_eq_zero_right (hfix u)
-  have := eq_zero_of_smul_one_mem (ω := ω) (hA' ▸ A.2)
+  have := eq_zero_of_smul_one_mem (ω := ω) (hA' ▸ A.property)
   norm_num at this
 
 /-- If `A₁, A₂ ∈ sp(V, ω)` commute with `A₁² = 1` and `A₂² = -1`, some vector `v` makes
