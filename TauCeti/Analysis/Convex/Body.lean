@@ -202,8 +202,8 @@ theorem neg_mem_of_coe_eq_preimage_closedBall {E F : Type*} [TopologicalSpace E]
     [Module ℝ E] [SeminormedAddCommGroup F] [Module ℝ F] {K : ConvexBody E} {f : E →ₗ[ℝ] F}
     (hK : (K : Set E) = f ⁻¹' Metric.closedBall 0 1) {x : E} :
     -x ∈ K ↔ x ∈ K := by
-  rw [← SetLike.mem_coe, ← SetLike.mem_coe, hK, Set.mem_preimage, Set.mem_preimage, map_neg,
-    mem_closedBall_zero_iff, mem_closedBall_zero_iff, norm_neg]
+  rw [← SetLike.mem_coe, ← SetLike.mem_coe, hK]
+  simp
 
 /-- In a finite-dimensional Hausdorff real topological vector space, a convex body whose carrier is
 the preimage of `Metric.closedBall 0 1` under a real linear map contains `0` in its interior. -/
@@ -229,9 +229,10 @@ theorem mem_smul_iff_norm_le_of_coe_eq_preimage_closedBall {E F : Type*} [Topolo
   · let _ : MetricSpace F := .ofT0PseudoMetricSpace F
     rw [Set.zero_smul_set K.nonempty, Set.mem_zero, ← dist_zero_right, dist_le_zero,
       map_eq_zero_iff f hf]
-  · rw [Set.mem_smul_set_iff_inv_smul_mem₀ ht.ne', hK, Set.mem_preimage, map_smul,
-      mem_closedBall_zero_iff, norm_smul, Real.norm_eq_abs, abs_of_nonneg (inv_nonneg.2 ht.le),
-      inv_mul_le_iff₀ ht, mul_one]
+  · rw [Set.mem_smul_set_iff_inv_smul_mem₀ ht.ne', hK]
+    simp only [Set.mem_preimage, map_smul, mem_closedBall_zero_iff, norm_smul, Real.norm_eq_abs,
+      abs_inv, abs_of_pos ht]
+    exact inv_mul_le_one₀ ht
 
 end PreimageClosedBall
 

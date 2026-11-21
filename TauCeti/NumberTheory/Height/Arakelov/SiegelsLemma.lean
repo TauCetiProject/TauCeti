@@ -323,22 +323,6 @@ end Matrix
 
 namespace TauCeti
 
-/-- **Fixed-field Siegel's lemma for linear forms, in Euclidean height** (Evertse–Ferretti,
-Lemma 13.1). Let `K` be a number field of degree `D = [K : ℚ]` and discriminant `discr K`. For any
-family `L : m → ι → K` of `#m < #ι` nonzero linear forms in `#ι` variables, without assuming linear
-independence, there exists a nonzero vector `x : ι → K` in their common kernel satisfying
-`H₂(x) ≤ √(#ι) * |discr K| ^ (1 / (2 * D)) * (∏ i, H₂(L i)) ^ (1 / (#ι - #m))`. -/
-theorem exists_ne_zero_height2_le {K m ι : Type*} [Field K] [NumberField K] [Fintype m] [Fintype ι]
-    {L : m → ι → K} (hL : ∀ i, L i ≠ 0) (hm : Fintype.card m < Fintype.card ι) :
-    ∃ x : ι → K, x ≠ 0 ∧ (∀ i, ∑ j, L i j * x j = 0) ∧
-      height2 x ≤
-        √(Fintype.card ι : ℝ) * |(discr K : ℝ)| ^ (2 * finrank ℚ K : ℝ)⁻¹ *
-          (∏ i, height2 (L i)) ^ ((Fintype.card ι : ℝ) - Fintype.card m)⁻¹ := by
-  obtain ⟨z, hz0, hLz, hle⟩ :=
-    Matrix.exists_ne_zero_mulVec_eq_zero_height2_le_of_card_lt (A := Matrix.of L) hL hm
-  refine ⟨fun j ↦ (z j : K), mt RingOfIntegers.coe_tuple_eq_zero_iff.1 hz0, fun i ↦ ?_, hle⟩
-  simpa [Matrix.mulVec, dotProduct] using congrFun hLz i
-
 /-- **Fixed-field Siegel's lemma for linear forms over `𝓞 K`, in Euclidean height**
 (Evertse–Ferretti, Lemma 13.1). Let `K` be a number field of degree `D = [K : ℚ]` and discriminant
 `discr K`. For any family `L : m → ι → K` of `#m < #ι` nonzero linear forms in `#ι` variables,
@@ -354,7 +338,21 @@ theorem exists_ne_zero_integer_height2_le {K m ι : Type*} [Field K] [NumberFiel
   obtain ⟨z, hz0, hLz, hle⟩ :=
     Matrix.exists_ne_zero_mulVec_eq_zero_height2_le_of_card_lt (A := Matrix.of L) hL hm
   refine ⟨z, hz0, fun i ↦ ?_, hle⟩
-  simpa [Matrix.mulVec, dotProduct] using congrFun hLz i
+  simpa only [Matrix.mulVec_apply_eq_sum, Matrix.of_apply, Pi.zero_apply] using congrFun hLz i
+
+/-- **Fixed-field Siegel's lemma for linear forms, in Euclidean height** (Evertse–Ferretti,
+Lemma 13.1). Let `K` be a number field of degree `D = [K : ℚ]` and discriminant `discr K`. For any
+family `L : m → ι → K` of `#m < #ι` nonzero linear forms in `#ι` variables, without assuming linear
+independence, there exists a nonzero vector `x : ι → K` in their common kernel satisfying
+`H₂(x) ≤ √(#ι) * |discr K| ^ (1 / (2 * D)) * (∏ i, H₂(L i)) ^ (1 / (#ι - #m))`. -/
+theorem exists_ne_zero_height2_le {K m ι : Type*} [Field K] [NumberField K] [Fintype m] [Fintype ι]
+    {L : m → ι → K} (hL : ∀ i, L i ≠ 0) (hm : Fintype.card m < Fintype.card ι) :
+    ∃ x : ι → K, x ≠ 0 ∧ (∀ i, ∑ j, L i j * x j = 0) ∧
+      height2 x ≤
+        √(Fintype.card ι : ℝ) * |(discr K : ℝ)| ^ (2 * finrank ℚ K : ℝ)⁻¹ *
+          (∏ i, height2 (L i)) ^ ((Fintype.card ι : ℝ) - Fintype.card m)⁻¹ := by
+  obtain ⟨z, hz0, hLz, hle⟩ := exists_ne_zero_integer_height2_le hL hm
+  exact ⟨fun j ↦ (z j : K), mt RingOfIntegers.coe_tuple_eq_zero_iff.1 hz0, hLz, hle⟩
 
 end TauCeti
 
