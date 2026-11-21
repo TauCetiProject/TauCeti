@@ -55,6 +55,9 @@ point `z` of the closed upper half-plane does not decrease the norm
 (`Complex.norm_le_norm_add_ofReal_mul_I`), and every point `z + s * I` of the vertical line
 through such a `z` has norm at least `(‖z‖ + s) / 2`
 (`Complex.norm_add_div_two_le_norm_add_ofReal_mul_I`).
+
+On the closed right half-plane `0 ≤ z.re`, `1 + z` has real part and norm at least `1`
+(`Complex.one_le_re_one_add`, `Complex.one_le_norm_one_add`).
 -/
 
 public section
@@ -319,5 +322,13 @@ theorem norm_add_div_two_le_norm_add_ofReal_mul_I {z : ℂ} (hz : 0 ≤ z.im) (s
     have h := norm_le_norm_add_norm_sub' z (z + (s : ℂ) * I)
     have hsI : ‖z - (z + (s : ℂ) * I)‖ = -s := by simp [abs_of_nonpos hs]
     linarith [norm_nonneg (z + (s : ℂ) * I)]
+
+/-- For `z` in the closed right half-plane (`0 ≤ z.re`), `1 + z` has real part at least `1`. -/
+theorem one_le_re_one_add {z : ℂ} (hz : 0 ≤ z.re) : 1 ≤ (1 + z).re := by
+  simp [hz]
+
+/-- For `z` in the closed right half-plane (`0 ≤ z.re`), `1 + z` has norm at least `1`. -/
+theorem one_le_norm_one_add {z : ℂ} (hz : 0 ≤ z.re) : 1 ≤ ‖1 + z‖ :=
+  (one_le_re_one_add hz).trans (re_le_norm _)
 
 end Complex

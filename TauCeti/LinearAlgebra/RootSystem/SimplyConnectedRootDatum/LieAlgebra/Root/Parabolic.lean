@@ -72,7 +72,7 @@ theorem range_simpleIndex_le_normalizer_posRoots_diff_singleton
     rintro ⟨γ, hγ⟩
     -- Rebuilding native indices from their values changes only their bound proofs.
     let i₆ : Fin 6 := ⟨(G2.simpleIndex ht i).val,
-      lt_trans (by simpa only [simpleIndex_val, rank_G2] using i.isLt) (by decide : 2 < 6)⟩
+      lt_trans (by simpa only [val_simpleIndex, rank_G2] using i.isLt) (by decide : 2 < 6)⟩
     let γ₆ : Fin 6 := ⟨γ.val, (mem_posRoots_rational_g2_iff ht γ).mp hγ.1⟩
     have hcomm := commutator_range_chevalleyRootSubgroup_g2_le ρ M hM hnil A i₆ γ₆
       (by intro h; exact hγ.2 (Fin.ext (congrArg Fin.val h).symm))
