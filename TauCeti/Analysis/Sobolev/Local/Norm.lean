@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Local.Basic
+import Mathlib.Analysis.Normed.Operator.Bilinear
 import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
-import Mathlib.Analysis.Normed.Operator.NNNorm
 import Mathlib.MeasureTheory.Function.LpSeminorm.TriangleInequality
 
 /-!
@@ -124,6 +124,14 @@ theorem eLpNormWkp_succ_le {D : E → E →L[ℝ] F}
   gcongr
   exact iInf₂_le D hD
 
+private theorem eLpNormWkp_mono_set_succ (hVU : V ⊆ U)
+    (ih : ∀ {D : E → E →L[ℝ] F}, eLpNormWkp p V k D ≤ eLpNormWkp p U k D) :
+    eLpNormWkp p V (k + 1) f ≤ eLpNormWkp p U (k + 1) f := by
+  rw [eLpNormWkp_succ, eLpNormWkp_succ]
+  gcongr ?_ + ?_
+  · exact eLpNorm_mono_measure _ (Measure.restrict_mono hVU le_rfl)
+  · exact le_iInf₂ fun D hD => iInf₂_le_of_le D (hD.mono (interior_mono hVU)) ih
+
 /-- The `W^{k,p}` norm increases with the set. -/
 theorem eLpNormWkp_mono_set (hVU : V ⊆ U) : eLpNormWkp p V k f ≤ eLpNormWkp p U k f := by
   have aux : ∀ (k : ℕ) {F : Type (max u v)} [NormedAddCommGroup F] [NormedSpace ℝ F]
@@ -131,19 +139,17 @@ theorem eLpNormWkp_mono_set (hVU : V ⊆ U) : eLpNormWkp p V k f ≤ eLpNormWkp 
     intro k
     induction k with
     | zero => intro _ _ _ _; exact eLpNorm_mono_measure _ (Measure.restrict_mono hVU le_rfl)
-    | succ k ih =>
-      intro _ _ _ _
-      rw [eLpNormWkp_succ, eLpNormWkp_succ]
-      gcongr ?_ + ?_
-      · exact eLpNorm_mono_measure _ (Measure.restrict_mono hVU le_rfl)
-      · exact le_iInf₂ fun D hD => iInf₂_le_of_le D (hD.mono (interior_mono hVU)) ih
+    | succ k ih => exact fun {_ _ _ _} => eLpNormWkp_mono_set_succ hVU ih
   cases k with
   | zero => exact eLpNorm_mono_measure _ (Measure.restrict_mono hVU le_rfl)
-  | succ k =>
-    rw [eLpNormWkp_succ, eLpNormWkp_succ]
-    gcongr ?_ + ?_
-    · exact eLpNorm_mono_measure _ (Measure.restrict_mono hVU le_rfl)
-    · exact le_iInf₂ fun D hD => iInf₂_le_of_le D (hD.mono (interior_mono hVU)) (aux k)
+  | succ k => exact eLpNormWkp_mono_set_succ hVU (aux k)
+
+private theorem eLpNormWkp_mono_order_succ {l k : ℕ}
+    (ih : ∀ {D : E → E →L[ℝ] F}, eLpNormWkp p U l D ≤ eLpNormWkp p U k D) :
+    eLpNormWkp p U (l + 1) f ≤ eLpNormWkp p U (k + 1) f := by
+  rw [eLpNormWkp_succ, eLpNormWkp_succ]
+  gcongr
+  exact ih
 
 /-- The `W^{k,p}(U)` norm increases with the derivative order. -/
 theorem eLpNormWkp_mono_order {l : ℕ} (hlk : l ≤ k) :
@@ -158,16 +164,12 @@ theorem eLpNormWkp_mono_order {l : ℕ} (hlk : l ≤ k) :
     | succ l ih =>
       intro k hlk _ _ _ _
       obtain ⟨k, rfl⟩ : ∃ k', k = k' + 1 := ⟨k - 1, by omega⟩
-      rw [eLpNormWkp_succ, eLpNormWkp_succ]
-      gcongr
-      exact ih k (by omega)
+      exact eLpNormWkp_mono_order_succ (ih k (by omega))
   cases l with
   | zero => exact eLpNorm_le_eLpNormWkp.trans_eq' eLpNormWkp_zero.symm
   | succ l =>
     obtain ⟨k, rfl⟩ : ∃ k', k = k' + 1 := ⟨k - 1, by omega⟩
-    rw [eLpNormWkp_succ, eLpNormWkp_succ]
-    gcongr
-    exact aux l k (by omega)
+    exact eLpNormWkp_mono_order_succ (aux l k (by omega))
 
 /-- Almost-everywhere equality on `U` preserves the `W^{k,p}(U)` norm. -/
 theorem eLpNormWkp_congr_ae (hfg : f =ᵐ[volume.restrict U] g) :
@@ -228,6 +230,12 @@ theorem le_add_mul_eLpNormWkp_succ_of_forall_hasWeakFDerivOn {a b c : ℝ≥0∞
         rw [eLpNormWkp_succ]
         simp only [ENNReal.add_iInf, ENNReal.mul_iInf_of_ne hc0 hc]
 
+private theorem memWkpLoc_of_eLpNormWkp_ne_top_succ (hf : eLpNormWkp p U (k + 1) f ≠ ∞)
+    (ih : ∀ {D : E → E →L[ℝ] F}, eLpNormWkp p U k D ≠ ∞ → MemWkpLoc p U k D) :
+    MemWkpLoc p U (k + 1) f := by
+  obtain ⟨D, hD, hDk⟩ := exists_hasWeakFDerivOn_of_eLpNormWkp_succ_ne_top hf
+  exact memWkpLoc_succ_iff.2 ⟨(memLp_of_eLpNormWkp_ne_top hf).memLpLoc, D, hD, ih hDk⟩
+
 /-- A function of finite `W^{k,p}` norm lies in the local Sobolev class `W^{k,p}_loc`. -/
 theorem memWkpLoc_of_eLpNormWkp_ne_top (hf : eLpNormWkp p U k f ≠ ∞) : MemWkpLoc p U k f := by
   have aux : ∀ (k : ℕ) {F : Type (max u v)} [NormedAddCommGroup F] [NormedSpace ℝ F]
@@ -235,15 +243,10 @@ theorem memWkpLoc_of_eLpNormWkp_ne_top (hf : eLpNormWkp p U k f ≠ ∞) : MemWk
     intro k
     induction k with
     | zero => intro _ _ _ _ hf; exact memWkpLoc_zero_iff.2 (memLp_of_eLpNormWkp_ne_top hf).memLpLoc
-    | succ k ih =>
-      intro _ _ _ _ hf
-      obtain ⟨D, hD, hDk⟩ := exists_hasWeakFDerivOn_of_eLpNormWkp_succ_ne_top hf
-      exact memWkpLoc_succ_iff.2 ⟨(memLp_of_eLpNormWkp_ne_top hf).memLpLoc, D, hD, ih hDk⟩
+    | succ k ih => exact fun {_ _ _ _} hf => memWkpLoc_of_eLpNormWkp_ne_top_succ hf ih
   cases k with
   | zero => exact memWkpLoc_zero_iff.2 (memLp_of_eLpNormWkp_ne_top hf).memLpLoc
-  | succ k =>
-    obtain ⟨D, hD, hDk⟩ := exists_hasWeakFDerivOn_of_eLpNormWkp_succ_ne_top hf
-    exact memWkpLoc_succ_iff.2 ⟨(memLp_of_eLpNormWkp_ne_top hf).memLpLoc, D, hD, aux k hDk⟩
+  | succ k => exact memWkpLoc_of_eLpNormWkp_ne_top_succ hf (aux k)
 
 /-- On an open set, a finite successor-order norm is realized by a weak derivative of finite norm
 of the previous order. -/
@@ -255,6 +258,14 @@ theorem exists_hasWeakFDerivOn_eLpNormWkp_succ_eq_of_ne_top [FiniteDimensional �
   rw [Opens.interior_coe] at hD
   exact ⟨D, hD, hDk, eLpNormWkp_succ_eq_of_hasWeakFDerivOn hD⟩
 
+private theorem eLpNormWkp_ne_top_of_isCompact_succ (hf : MemWkpLoc p U (k + 1) f) {K : Set E}
+    (hKU : K ⊆ U) (hK : IsCompact K)
+    (ih : ∀ {D : E → E →L[ℝ] F}, MemWkpLoc p U k D → eLpNormWkp p K k D ≠ ∞) :
+    eLpNormWkp p K (k + 1) f ≠ ∞ := by
+  obtain ⟨D, hD, hDk⟩ := hf.exists_weakFDeriv
+  refine ne_top_of_le_ne_top ?_ (eLpNormWkp_succ_le (hD.mono (interior_mono hKU)))
+  exact ENNReal.add_ne_top.2 ⟨(memLpLoc_iff.1 hf.memLpLoc K hKU hK).eLpNorm_ne_top, ih hDk⟩
+
 /-- A local Sobolev function has finite `W^{k,p}` norm on every compact subset of its domain. -/
 theorem MemWkpLoc.eLpNormWkp_ne_top_of_isCompact (hf : MemWkpLoc p U k f) {K : Set E}
     (hKU : K ⊆ U) (hK : IsCompact K) : eLpNormWkp p K k f ≠ ∞ := by
@@ -263,17 +274,10 @@ theorem MemWkpLoc.eLpNormWkp_ne_top_of_isCompact (hf : MemWkpLoc p U k f) {K : S
     intro k
     induction k with
     | zero => intro _ _ _ _ hf; exact (memLpLoc_iff.1 hf.memLpLoc K hKU hK).eLpNorm_ne_top
-    | succ k ih =>
-      intro _ _ _ _ hf
-      obtain ⟨D, hD, hDk⟩ := hf.exists_weakFDeriv
-      refine ne_top_of_le_ne_top ?_ (eLpNormWkp_succ_le (hD.mono (interior_mono hKU)))
-      exact ENNReal.add_ne_top.2 ⟨(memLpLoc_iff.1 hf.memLpLoc K hKU hK).eLpNorm_ne_top, ih hDk⟩
+    | succ k ih => exact fun {_ _ _ _} hf => eLpNormWkp_ne_top_of_isCompact_succ hf hKU hK ih
   cases k with
   | zero => exact (memLpLoc_iff.1 hf.memLpLoc K hKU hK).eLpNorm_ne_top
-  | succ k =>
-    obtain ⟨D, hD, hDk⟩ := hf.exists_weakFDeriv
-    refine ne_top_of_le_ne_top ?_ (eLpNormWkp_succ_le (hD.mono (interior_mono hKU)))
-    exact ENNReal.add_ne_top.2 ⟨(memLpLoc_iff.1 hf.memLpLoc K hKU hK).eLpNorm_ne_top, aux k hDk⟩
+  | succ k => exact eLpNormWkp_ne_top_of_isCompact_succ hf hKU hK (aux k)
 
 /-- A local Sobolev function has finite `W^{k,p}` norm on every set whose closure is compact and
 contained in its domain. -/
@@ -281,6 +285,12 @@ theorem MemWkpLoc.eLpNormWkp_ne_top_of_closure_subset (hf : MemWkpLoc p U k f)
     (hV : IsCompact (closure V)) (hVU : closure V ⊆ U) : eLpNormWkp p V k f ≠ ∞ :=
   ne_top_of_le_ne_top (hf.eLpNormWkp_ne_top_of_isCompact hVU hV)
     (eLpNormWkp_mono_set subset_closure)
+
+private theorem eLpNormWkp_zero_fun_succ [CompleteSpace F]
+    (ih : eLpNormWkp p U k (0 : E → E →L[ℝ] F) = 0) :
+    eLpNormWkp p U (k + 1) (0 : E → F) = 0 := by
+  refine le_antisymm ((eLpNormWkp_succ_le hasWeakFDerivOn_zero).trans ?_) zero_le
+  simp [ih]
 
 /-- The zero function has zero `W^{k,p}` norm. -/
 @[simp]
@@ -290,15 +300,20 @@ theorem eLpNormWkp_zero_fun [CompleteSpace F] : eLpNormWkp p U k (0 : E → F) =
     intro k
     induction k with
     | zero => intro _ _ _ _; simp
-    | succ k ih =>
-      intro _ _ _ _
-      refine le_antisymm ((eLpNormWkp_succ_le hasWeakFDerivOn_zero).trans ?_) zero_le
-      simp [ih]
+    | succ k ih => exact fun {_ _ _ _} => eLpNormWkp_zero_fun_succ ih
   cases k with
   | zero => simp
-  | succ k =>
-    refine le_antisymm ((eLpNormWkp_succ_le hasWeakFDerivOn_zero).trans ?_) zero_le
-    simp [aux k]
+  | succ k => exact eLpNormWkp_zero_fun_succ (aux k)
+
+private theorem eLpNormWkp_add_le_succ [OpensMeasurableSpace E] (hp : 1 ≤ p)
+    (ih : ∀ {D D' : E → E →L[ℝ] F},
+      eLpNormWkp p U k (D + D') ≤ eLpNormWkp p U k D + eLpNormWkp p U k D') :
+    eLpNormWkp p U (k + 1) (f + g) ≤ eLpNormWkp p U (k + 1) f + eLpNormWkp p U (k + 1) g := by
+  rw [eLpNormWkp_succ, eLpNormWkp_succ, eLpNormWkp_succ, add_add_add_comm]
+  gcongr ?_ + ?_
+  · exact eLpNorm_add_le hp
+  · exact ENNReal.le_iInf_add_iInf fun D D' => ENNReal.le_iInf_add_iInf fun hD hD' =>
+      iInf₂_le_of_le (D + D') (hD.add hD') ih
 
 /-- The triangle inequality for the `W^{k,p}` norm. -/
 theorem eLpNormWkp_add_le [OpensMeasurableSpace E] (hp : 1 ≤ p) :
@@ -308,21 +323,10 @@ theorem eLpNormWkp_add_le [OpensMeasurableSpace E] (hp : 1 ≤ p) :
     intro k
     induction k with
     | zero => intro _ _ _ _ _; exact eLpNorm_add_le hp
-    | succ k ih =>
-      intro _ _ _ _ _
-      rw [eLpNormWkp_succ, eLpNormWkp_succ, eLpNormWkp_succ, add_add_add_comm]
-      gcongr ?_ + ?_
-      · exact eLpNorm_add_le hp
-      · exact ENNReal.le_iInf_add_iInf fun D D' => ENNReal.le_iInf_add_iInf fun hD hD' =>
-          iInf₂_le_of_le (D + D') (hD.add hD') ih
+    | succ k ih => exact fun {_ _ _ _ _} => eLpNormWkp_add_le_succ hp ih
   cases k with
   | zero => exact eLpNorm_add_le hp
-  | succ k =>
-    rw [eLpNormWkp_succ, eLpNormWkp_succ, eLpNormWkp_succ, add_add_add_comm]
-    gcongr ?_ + ?_
-    · exact eLpNorm_add_le hp
-    · exact ENNReal.le_iInf_add_iInf fun D D' => ENNReal.le_iInf_add_iInf fun hD hD' =>
-        iInf₂_le_of_le (D + D') (hD.add hD') (aux k)
+  | succ k => exact eLpNormWkp_add_le_succ hp (aux k)
 
 /-- The triangle inequality for the `W^{k,p}` norm over a finite sum. -/
 theorem eLpNormWkp_sum_le [OpensMeasurableSpace E] [CompleteSpace F] {ι : Type*}
@@ -330,6 +334,42 @@ theorem eLpNormWkp_sum_le [OpensMeasurableSpace E] [CompleteSpace F] {ι : Type*
     eLpNormWkp p U k (∑ i ∈ s, u i) ≤ ∑ i ∈ s, eLpNormWkp p U k (u i) :=
   Finset.le_sum_of_subadditive (fun u : E → F ↦ eLpNormWkp p U k u) eLpNormWkp_zero_fun.le
     (fun _ _ ↦ eLpNormWkp_add_le hp) s u
+
+private theorem eLpNormWkp_clm_comp_le_succ [OpensMeasurableSpace E] [CompleteSpace G]
+    (A : F →L[ℝ] G)
+    (ih : ∀ {D : E → E →L[ℝ] F},
+      eLpNormWkp p U k (fun z => ContinuousLinearMap.compL ℝ E F G A (D z)) ≤
+        ‖ContinuousLinearMap.compL ℝ E F G A‖ₑ * eLpNormWkp p U k D) :
+    eLpNormWkp p U (k + 1) (fun z => A (f z)) ≤ ‖A‖ₑ * eLpNormWkp p U (k + 1) f := by
+  by_cases hA : A = 0
+  · subst hA
+    have h0 : (fun z => (0 : F →L[ℝ] G) (f z)) = (0 : E → G) := by
+      funext z
+      simp only [zero_apply, Pi.zero_apply]
+    rw [h0, eLpNormWkp_zero_fun]
+    exact zero_le
+  have hA₀ : ‖A‖ₑ ≠ 0 := by
+    rw [eNorm_eq_nnNorm]; exact ENNReal.coe_ne_zero.2 (nnNorm_ne_zero_iff.2 hA)
+  have hA_top : ‖A‖ₑ ≠ ⊤ := eNorm_ne_top
+  rw [eLpNormWkp_succ, eLpNormWkp_succ, mul_add]
+  gcongr ?_ + ?_
+  · exact MeasureTheory.eLpNorm_clm_comp_le A
+  · rw [ENNReal.mul_iInf_of_ne hA₀ hA_top]
+    refine le_iInf fun D => ?_
+    rw [ENNReal.mul_iInf_of_ne hA₀ hA_top]
+    refine le_iInf fun hD => iInf₂_le_of_le _ (hD.clm_comp A) ?_
+    refine ih.trans ?_
+    gcongr
+    let : SeminormedAddCommGroup ((E →L[ℝ] F) →L[ℝ] E →L[ℝ] G) := inferInstance
+    let : NormedSpace ℝ ((E →L[ℝ] F) →L[ℝ] E →L[ℝ] G) := inferInstance
+    have hle : ‖ContinuousLinearMap.compL ℝ E F G A‖ ≤ ‖A‖ := by
+      calc ‖ContinuousLinearMap.compL ℝ E F G A‖
+          ≤ ‖ContinuousLinearMap.compL ℝ E F G‖ * ‖A‖ :=
+            (ContinuousLinearMap.compL ℝ E F G).le_opNorm A
+        _ ≤ 1 * ‖A‖ :=
+            mul_le_mul_of_nonneg_right (ContinuousLinearMap.norm_compL_le ℝ E F G) (norm_nonneg _)
+        _ = ‖A‖ := one_mul _
+    exact eNorm_le_iff_norm_le.2 hle
 
 /-- A continuous linear map of the codomain scales the `W^{k,p}` norm by at most its operator
 norm. -/
@@ -342,50 +382,9 @@ theorem eLpNormWkp_clm_comp_le [OpensMeasurableSpace E] [CompleteSpace G] (A : F
     intro k
     induction k with
     | zero => intro _ _ _ _ _ _ _ _ A; exact MeasureTheory.eLpNorm_clm_comp_le A
-    | succ k ih =>
-      intro F G _ _ _ _ _ f A
-      by_cases hA : A = 0
-      · subst hA
-        have h0 : (fun z => (0 : F →L[ℝ] G) (f z)) = (0 : E → G) := rfl
-        rw [h0, eLpNormWkp_zero_fun]
-        exact zero_le
-      have hA₀ : ‖A‖ₑ ≠ 0 := by
-        rw [eNorm_eq_nnNorm]; exact ENNReal.coe_ne_zero.2 (nnNorm_ne_zero_iff.2 hA)
-      have hA_top : ‖A‖ₑ ≠ ⊤ := eNorm_ne_top
-      rw [eLpNormWkp_succ, eLpNormWkp_succ, mul_add]
-      gcongr ?_ + ?_
-      · exact MeasureTheory.eLpNorm_clm_comp_le A
-      · rw [ENNReal.mul_iInf_of_ne hA₀ hA_top]
-        refine le_iInf fun D => ?_
-        rw [ENNReal.mul_iInf_of_ne hA₀ hA_top]
-        refine le_iInf fun hD => iInf₂_le_of_le _ (hD.clm_comp A) ?_
-        refine (ih (ContinuousLinearMap.compL ℝ E F G A)).trans ?_
-        gcongr
-        have hle : ‖ContinuousLinearMap.compL ℝ E F G A‖ ≤ ‖A‖ :=
-          ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun B => A.opNorm_comp_le B
-        exact eNorm_le_iff_norm_le.2 hle
+    | succ k ih => exact fun {_ _ _ _ _ _ _ _} A => eLpNormWkp_clm_comp_le_succ A (ih _)
   cases k with
   | zero => exact MeasureTheory.eLpNorm_clm_comp_le A
-  | succ k =>
-    by_cases hA : A = 0
-    · subst hA
-      have h0 : (fun z => (0 : F →L[ℝ] G) (f z)) = (0 : E → G) := rfl
-      rw [h0, eLpNormWkp_zero_fun]
-      exact zero_le
-    have hA₀ : ‖A‖ₑ ≠ 0 := by
-      rw [eNorm_eq_nnNorm]; exact ENNReal.coe_ne_zero.2 (nnNorm_ne_zero_iff.2 hA)
-    have hA_top : ‖A‖ₑ ≠ ⊤ := eNorm_ne_top
-    rw [eLpNormWkp_succ, eLpNormWkp_succ, mul_add]
-    gcongr ?_ + ?_
-    · exact MeasureTheory.eLpNorm_clm_comp_le A
-    · rw [ENNReal.mul_iInf_of_ne hA₀ hA_top]
-      refine le_iInf fun D => ?_
-      rw [ENNReal.mul_iInf_of_ne hA₀ hA_top]
-      refine le_iInf fun hD => iInf₂_le_of_le _ (hD.clm_comp A) ?_
-      refine (aux k (ContinuousLinearMap.compL ℝ E F G A)).trans ?_
-      gcongr
-      have hle : ‖ContinuousLinearMap.compL ℝ E F G A‖ ≤ ‖A‖ :=
-        ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun B => A.opNorm_comp_le B
-      exact eNorm_le_iff_norm_le.2 hle
+  | succ k => exact eLpNormWkp_clm_comp_le_succ A (aux k _)
 
 end TauCeti

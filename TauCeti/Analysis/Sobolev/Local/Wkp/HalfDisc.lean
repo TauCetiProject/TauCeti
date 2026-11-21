@@ -5,11 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
+public import TauCeti.Analysis.Complex.ReImTopology
 public import TauCeti.Analysis.Sobolev.Local.Coordinates
 public import TauCeti.Analysis.Sobolev.Local.Wkp
 import Mathlib.Topology.MetricSpace.ProperSpace.Lemmas
 import TauCeti.Analysis.Sobolev.WeakDeriv.Chain
 import TauCeti.Analysis.Sobolev.Wkp.Chain
+import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
 /-!
 # Local Sobolev classes on half-discs and the scalar spaces `W^{k,p}`
@@ -40,6 +43,8 @@ coordinatewise (`Module.Basis.memWkpLoc_inter_setOf_im_nonneg_iff_forall_wkp`).
 
 ## Main declarations
 
+* `TauCeti.memLpLoc_inter_setOf_im_nonneg_iff`: characterization of local `Lᵖ` on a half-disc via
+  upper halves.
 * `TauCeti.MemWkpLoc.exists_wkp_upperHalf_iteratedGradient_ae_eq`,
   `TauCeti.MemWkpLoc.exists_wkp_upperHalf`: a member is represented by an element of `Wkp`
   on every upper half.
@@ -56,9 +61,7 @@ coordinatewise (`Module.Basis.memWkpLoc_inter_setOf_im_nonneg_iff_forall_wkp`).
 * L. C. Evans, *Partial Differential Equations*, Chapter 5, §5.2.
 -/
 
-public section
-
-noncomputable section
+public noncomputable section
 
 open Metric Set MeasureTheory TopologicalSpace Filter
 open scoped ENNReal
@@ -66,6 +69,28 @@ open scoped ENNReal
 namespace TauCeti
 
 variable {p : ℝ≥0∞} {Ω : Opens ℂ} {k : ℕ}
+
+/-- **Local `Lᵖ` on a half-disc through upper halves.** A function is locally `Lᵖ` on
+`Ω ∩ {0 ≤ im}`, up to the real axis, exactly when it is `Lᵖ` on the upper half `W ∩ {0 < im}` of
+every open `W` whose closure is compact and contained in `Ω`. The real axis is null, so the
+compact sets reaching it see no more than these upper halves. -/
+theorem memLpLoc_inter_setOf_im_nonneg_iff {F : Type*} [NormedAddCommGroup F] {f : ℂ → F} :
+    MemLpLoc p ((Ω : Set ℂ) ∩ {z : ℂ | 0 ≤ z.im}) f ↔
+      ∀ W : Opens ℂ, IsCompact (closure (W : Set ℂ)) → closure (W : Set ℂ) ⊆ Ω →
+        MemLp f p (volume.restrict (W.upperHalf : Set ℂ)) := by
+  refine ⟨fun hf W hWc hWΩ => ?_, fun h => memLpLoc_iff.2 fun K hKU hK => ?_⟩
+  · have hK : IsCompact (closure (W : Set ℂ) ∩ {z : ℂ | 0 ≤ z.im}) :=
+      hWc.inter_right (isClosed_le continuous_const Complex.continuous_im)
+    refine (memLpLoc_iff.1 hf _ (Set.inter_subset_inter_left _ hWΩ) hK).mono_measure
+      (Measure.restrict_mono ?_ le_rfl)
+    intro z hz
+    obtain ⟨hzW, hz0⟩ := Opens.mem_upperHalf.1 hz
+    exact ⟨subset_closure hzW, hz0.le⟩
+  · obtain ⟨W, hWo, hKW, hWΩ, hWc⟩ := exists_open_between_and_isCompact_closure hK Ω.isOpen
+      (hKU.trans Set.inter_subset_left)
+    refine (h ⟨W, hWo⟩ hWc hWΩ).mono_measure (Measure.restrict_mono_ae ?_)
+    filter_upwards [(Complex.setOf_le_im_ae_eq 0).subset] with z hz hzK
+    exact Opens.mem_upperHalf.2 ⟨hKW hzK, hz (hKU hzK).2⟩
 
 /-- An open set whose closure lies in the upper half of `Ω` has closure in `Ω` and is its own
 upper half. -/

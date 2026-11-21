@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Local.Basic
+public import TauCeti.MeasureTheory.Function.MemLpLoc.Coordinates
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 import TauCeti.Analysis.Complex.OperatorNorm
 
@@ -14,8 +15,9 @@ import TauCeti.Analysis.Complex.OperatorNorm
 
 A map into a finite-dimensional real normed space is locally Sobolev of order `k` if and
 only if all its coordinates in a finite basis are. The same criterion holds for local `Lᵖ`
-membership. These criteria allow scalar local estimates to be applied to vector-valued maps
-without choosing compatible representatives of their iterated weak derivatives.
+membership (re-exported from `TauCeti.MeasureTheory.Function.MemLpLoc.Coordinates`). These criteria
+allow scalar local estimates to be applied to vector-valued maps without choosing compatible
+representatives of their iterated weak derivatives.
 
 The criteria include the zero-dimensional codomain, order zero, and the exponent infinity.
 They also show that testing one basis is equivalent to testing every basis.
@@ -26,10 +28,6 @@ For maps on `ℂ`, a weak derivative `D` is likewise tested through its two part
 `z ↦ D z 1` and `z ↦ D z I`: `TauCeti.memWkpLoc_succ_iff_apply_one_apply_I` characterises
 `W^{k+1,q}_loc(U)` by local `L^q` membership and these two partial derivatives lying in
 `W^{k,q}_loc(U)`, for an arbitrary codomain.
-
-On an open set, the precise representative of a locally `Lᵖ` map is reconstructed from the
-precise representatives of its coordinates wherever these are continuous
-(`Module.Basis.eqOn_preciseRepresentative_sum_repr`).
 
 ## References
 
@@ -45,23 +43,6 @@ namespace Module.Basis
 
 variable {E F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {ι : Type*} [Finite ι]
   {p : ENNReal}
-
-/-- Local `Lᵖ` membership can be tested in any finite basis. No completeness of the
-codomain is needed. -/
-theorem memLpLoc_iff [TopologicalSpace E] [MeasureSpace E] {U : Set E} {f : E → F}
-    (b : Module.Basis ι ℝ F) :
-    MemLpLoc p U f ↔ ∀ i, MemLpLoc p U (fun z => b.repr (f z) i) := by
-  classical
-  let : Fintype ι := Fintype.ofFinite ι
-  let : FiniteDimensional ℝ F := b.finiteDimensional_of_finite
-  constructor
-  · intro h i
-    exact h.clm_comp ((ContinuousLinearMap.proj i).comp b.equivFunL.toContinuousLinearMap)
-  · intro h
-    have hs : MemLpLoc p U (fun z => ∑ i, b.repr (f z) i • b i) :=
-      MemLpLoc.sum Finset.univ fun i _ =>
-        (h i).clm_comp ((ContinuousLinearMap.id ℝ ℝ).smulRight (b i))
-    simpa only [b.sum_repr] using hs
 
 /-- Local Sobolev membership of every order can be tested in any finite basis.
 Scalar coordinate witnesses may be chosen independently; finite sums reconstruct the map
@@ -92,37 +73,6 @@ theorem exists_memWkpLoc_repr_eq [NormedAddCommGroup E] [NormedSpace ℝ E] [Mea
   have hrepr : ∀ i, (fun z => b.repr (b.equivFun.symm fun j => v j z) i) = v i := fun i =>
     funext fun z => by rw [← b.equivFun_apply, b.equivFun.apply_symm_apply]
   exact ⟨_, b.memWkpLoc_iff.2 fun i => (hrepr i).symm ▸ hv i, hrepr⟩
-
-end Module.Basis
-
-namespace Module.Basis
-
-open TopologicalSpace TauCeti.MeasureTheory
-
-variable {E F : Type*} [PseudoMetricSpace E] [SecondCountableTopology E] [LocallyCompactSpace E]
-  [MeasureSpace E] [BorelSpace E] [IsUnifLocDoublingMeasure (volume : Measure E)]
-  [IsLocallyFiniteMeasure (volume : Measure E)] [(volume : Measure E).IsOpenPosMeasure]
-  [NormedAddCommGroup F] [NormedSpace ℝ F] {ι : Type*} [Fintype ι] {p : ENNReal}
-  {Ω : Opens E} {f : E → F}
-
-/-- On an open set `Ω`, the precise representative of a locally `Lᵖ` map, `1 ≤ p`, whose
-coordinates in a finite basis `b` have precise representatives continuous on `Ω`, is the
-combination of those precise representatives with the vectors of `b`. -/
-theorem eqOn_preciseRepresentative_sum_repr (b : Module.Basis ι ℝ F) (hp : 1 ≤ p)
-    (hf : MemLpLoc p Ω f)
-    (hc : ∀ i, ContinuousOn (preciseRepresentative volume fun z => b.repr (f z) i) Ω) :
-    Set.EqOn (preciseRepresentative volume f)
-      (fun z => ∑ i, preciseRepresentative volume (fun w => b.repr (f w) i) z • b i) Ω := by
-  have : FiniteDimensional ℝ F := b.finiteDimensional_of_finite
-  refine eqOn_preciseRepresentative_of_continuousOn Ω.isOpen
-    (hf.locallyIntegrableOn hp Ω.isOpen.isLocallyClosed) ?_
-    (continuousOn_finsetSum _ fun i _ => (hc i).smul continuousOn_const)
-  have hcoord : ∀ i, (fun z => b.repr (f z) i) =ᵐ[volume.restrict Ω]
-      preciseRepresentative volume fun z => b.repr (f z) i := fun i =>
-    (b.memLpLoc_iff.1 hf i).ae_eq_preciseRepresentative hp
-  filter_upwards [ae_all_iff.2 hcoord] with z hz
-  conv_lhs => rw [← b.sum_repr (f z)]
-  exact Finset.sum_congr rfl fun i _ => by rw [← hz i]
 
 end Module.Basis
 

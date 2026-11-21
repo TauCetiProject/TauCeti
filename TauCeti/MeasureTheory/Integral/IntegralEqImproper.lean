@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 public import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
@@ -214,6 +215,13 @@ theorem HasCompactSupport.integral_Ioi_fderiv_apply_ray {u : E → F}
   simpa only [hderiv, zero_smul, add_zero] using h
 
 end Ray
+
+/-- The derivative of a smooth bump function `a` on `ℝ` centred at `c` integrates to `-1` on the
+half-line `(c, ∞)`. -/
+theorem _root_.ContDiffBump.integral_Ioi_deriv {c : ℝ} (a : ContDiffBump c) :
+    ∫ x in Ioi c, deriv (a : ℝ → ℝ) x = -1 := by
+  simpa [a.one_of_mem_closedBall (Metric.mem_closedBall_self a.rIn_pos.le)] using
+    a.hasCompactSupport.integral_Ioi_deriv_eq (f := (a : ℝ → ℝ)) (a.contDiff (n := 1)) c
 
 namespace MeasureTheory.AECover
 

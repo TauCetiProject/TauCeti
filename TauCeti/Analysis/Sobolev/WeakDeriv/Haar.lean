@@ -30,7 +30,7 @@ measure-preserving hypothesis
 `ContinuousLinearEquiv.hasWeakFDerivOn_comp_iff_of_isAddHaarMeasure`). Combining this with
 translation invariance gives the weak chain rule for general invertible affine maps `x ↦ e x + b`
 between different spaces
-(`TauCeti.HasWeakFDerivOn.comp_continuousLinearEquiv_add_of_isAddHaarMeasure`).
+(`TauCeti.HasWeakFDerivOn.comp_continuousLinearEquiv_add`).
 
 ## Main declarations
 
@@ -44,8 +44,8 @@ between different spaces
 * `TauCeti.HasWeakFDerivOn.comp_continuousLinearEquiv_of_isAddHaarMeasure`,
   `ContinuousLinearEquiv.hasWeakFDerivOn_comp_iff_of_isAddHaarMeasure`: linear chain rule between
   arbitrary finite-dimensional real normed spaces with arbitrary additive Haar measures.
-* `TauCeti.HasWeakFDerivOn.comp_continuousLinearEquiv_add_of_isAddHaarMeasure`: affine chain rule
-  between arbitrary finite-dimensional real normed spaces.
+* `TauCeti.HasWeakFDerivOn.comp_continuousLinearEquiv_add`: affine chain rule between arbitrary
+  finite-dimensional real normed spaces.
 
 ## References
 
@@ -163,7 +163,7 @@ theorem _root_.ContinuousLinearEquiv.hasWeakFDerivOn_comp_iff_of_isAddHaarMeasur
 For any continuous linear equivalence `e : E ≃L[ℝ] E₁`, translation `b : E₁`, and additive
 Haar measures `μ` on `E` and `ν` on `E₁`, if `x ↦ e x + b` maps `U` into `V`, then
 `x ↦ u (e x + b)` has weak derivative `x ↦ D (e x + b) ∘L e` on `U`. -/
-theorem HasWeakFDerivOn.comp_continuousLinearEquiv_add_of_isAddHaarMeasure
+theorem HasWeakFDerivOn.comp_continuousLinearEquiv_add
     (h : HasWeakFDerivOn ν V u D) (e : E ≃L[ℝ] E₁) (b : E₁)
     (hUV : MapsTo (fun x => e x + b) U V) :
     HasWeakFDerivOn μ U (fun x => u (e x + b))

@@ -8,7 +8,6 @@ module
 public import Mathlib.Topology.EMetricSpace.Lipschitz
 public import TauCeti.Analysis.Sobolev.Local.Basic
 import TauCeti.Analysis.Sobolev.WeakDeriv.Lipschitz
-import TauCeti.Topology.Sets.Opens
 
 /-!
 # Locally Lipschitz maps are in every local `W^{1,p}` class
@@ -18,7 +17,8 @@ finite-dimensional real normed space belongs to the local class `W^{1,p}` for ev
 (`LocallyLipschitzOn.memWkpLoc_one`). By Rademacher's theorem its Fréchet derivative is a weak
 derivative, and on every compact subset it is bounded by a local Lipschitz constant. The same
 conclusions hold on arbitrary subsets for locally Lipschitz (`LocallyLipschitz.memWkpLoc_one`) and
-globally Lipschitz (`LipschitzWith.memWkpLoc_one`) maps.
+globally Lipschitz (`LipschitzWith.memWkpLoc_one`) maps; in particular the norm `x ↦ ‖x‖` lies in
+`W^{1,p}` everywhere (`TauCeti.memWkpLoc_one_norm`).
 
 ## References
 
@@ -67,5 +67,12 @@ a weak derivative bounded by the Lipschitz constant. -/
 theorem _root_.LipschitzWith.memWkpLoc_one [FiniteDimensional ℝ F] {U : Set E} {K : NNReal}
     {u : E → F} (hu : LipschitzWith K u) : MemWkpLoc p U 1 u :=
   hu.locallyLipschitz.memWkpLoc_one
+
+/-- The norm `x ↦ ‖x‖` lies in the local class `W^{1,p}` on every set of any
+finite-dimensional real normed space, for every exponent: it is `1`-Lipschitz and requires no
+inner product. -/
+theorem memWkpLoc_one_norm {U : Set E} :
+    MemWkpLoc p U 1 (fun x : E => ‖x‖) :=
+  lipschitzWith_one_norm.memWkpLoc_one
 
 end TauCeti

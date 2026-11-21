@@ -289,10 +289,10 @@ theorem MemWkpLoc.exists_wkp_iteratedGradient_ae_eq (n : ℕ) {u : ℂ → ℝ}
     ∃ v : Wkp volume W p (n + 1), Wkp.value (n + 1) v =ᵐ[volume.restrict W] u ∧
       Wkp.iteratedGradient n v =ᵐ[volume.restrict W] G n := by
   obtain ⟨v, hv, htop, -⟩ := Wkp.exists_value_iteratedGradient_ae_eq_of_chain n
-    (hu.memLp_restrict_of_isCompact_closure hWc hWΩ)
+    (hu.memLp_of_closure_subset hWc hWΩ)
     (h0.mono (SetLike.coe_subset_coe.1 (subset_closure.trans hWΩ)))
     (fun i hi => (hG i hi).mono (SetLike.coe_subset_coe.1 (subset_closure.trans hWΩ)))
-    (fun i hi => (hGp i hi).memLp_restrict_of_isCompact_closure hWc hWΩ)
+    (fun i hi => (hGp i hi).memLp_of_closure_subset hWc hWΩ)
   exact ⟨v, hv, htop⟩
 
 /-- **A local Sobolev function is Sobolev on relatively compact subdomains.** If
@@ -303,7 +303,7 @@ theorem MemWkpLoc.exists_wkp {u : ℂ → ℝ} (hu : MemWkpLoc p Ω k u) {W : Op
     ∃ v : Wkp volume W p k, Wkp.value k v =ᵐ[volume.restrict W] u := by
   cases k with
   | zero =>
-    have hW := MemLpLoc.memLp_restrict_of_isCompact_closure (memWkpLoc_zero_iff.1 hu) hWc hWΩ
+    have hW := MemLpLoc.memLp_of_closure_subset (memWkpLoc_zero_iff.1 hu) hWc hWΩ
     exact ⟨hW.toLp u, by rw [Wkp.value_zero]; exact hW.coeFn_toLp⟩
   | succ n =>
     obtain ⟨hu, G, h0, hG, hGp⟩ := (memWkpLoc_succ_iff_exists_iteratedGradient n).1 hu

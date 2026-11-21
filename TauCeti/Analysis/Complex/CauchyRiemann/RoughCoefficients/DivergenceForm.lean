@@ -327,15 +327,15 @@ private theorem IsWeakCRSolution.integral_crPairing_coeff
     hball z hz 0 hδ.le (mem_closedBall_self le_rfl)
   have hUm : MeasurableSet (U : Set ℂ) := U.isOpen.measurableSet
   have hJpU : MemLp J p (volume.restrict U) :=
-    hc.memLpLoc_coeff.memLp_restrict_of_isCompact_closure hUc hUΩ
+    hc.memLpLoc_coeff.memLp_of_closure_subset hUc hUΩ
   have hDJU : MemLp DJ p (volume.restrict U) :=
-    hc.memLpLoc_deriv.memLp_restrict_of_isCompact_closure hUc hUΩ
+    hc.memLpLoc_deriv.memLp_of_closure_subset hUc hUΩ
   have hg : MemLp ((U : Set ℂ).indicator J) ⊤ volume :=
     (memLp_indicator_iff_restrict hUm.nullMeasurableSet).2
-      (hJ.memLp_restrict_of_isCompact_closure hUc hUΩ)
+      (hJ.memLp_of_closure_subset hUc hUΩ)
   have hDg (e : ℂ) : MemLp ((U : Set ℂ).indicator (fun z => DJ z e)) p volume :=
     (memLp_indicator_iff_restrict hUm.nullMeasurableSet).2
-      ((hc.memLpLoc_deriv_apply e).memLp_restrict_of_isCompact_closure hUc hUΩ)
+      ((hc.memLpLoc_deriv_apply e).memLp_of_closure_subset hUc hUΩ)
   have hwJ : HasWeakFDerivOn volume U J DJ :=
     hc.hasWeakFDerivOn.mono fun x hx => hUΩ (subset_closure hx)
   have key := integral_add_eq_zero_of_forall_normed_convolution (crPairing v)

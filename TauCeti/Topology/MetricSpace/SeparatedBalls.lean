@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Bases
 public import Mathlib.Topology.MetricSpace.Pseudo.Lemmas
 public import Mathlib.Topology.MetricSpace.Defs
 
@@ -18,6 +19,10 @@ ball lies on the boundary sphere of another. This is the geometric input for spl
 points near the centres as a sum over the balls, as in the contour-integral computation of sums
 over the roots of a polynomial.
 
+For a separable subset of a pseudometric space, any family mapping a set into it with pairwise
+distances bounded below by a positive constant is countable
+(`TopologicalSpace.IsSeparable.countable_of_mapsTo_of_le_dist`).
+
 ## Main declarations
 
 * `TauCeti.exists_pos_closedBall_subset_and_lt_dist`: a common radius that is small enough for
@@ -27,6 +32,8 @@ over the roots of a polynomial.
 * `TauCeti.mem_and_apply_eq_of_surjOn_of_dist_lt`: a map moving the points of a separated set
   by less than the radius and onto a target is determined by the points of the target near the
   source points.
+* `TopologicalSpace.IsSeparable.countable_of_mapsTo_of_le_dist`: a family mapping into a
+  separable set with positive uniform separation is countable.
 -/
 
 public section
@@ -70,6 +77,33 @@ theorem mem_and_apply_eq_of_surjOn_of_dist_lt [PseudoMetricSpace X] {A B T : Set
   obtain rfl : z = z' :=
     eq_of_dist_lt_of_dist_lt (hsep z hz z' (hA hz')) hwz (hclose z' hz')
   exact ⟨hz', rfl⟩
+
+/-- Any family of points mapping into a separable subset of a pseudometric space whose distinct
+images are separated by at least `r > 0` has a countable domain. -/
+theorem _root_.TopologicalSpace.IsSeparable.countable_of_mapsTo_of_le_dist
+    {ι Y : Type*} [PseudoMetricSpace Y] {t : Set Y} (ht : TopologicalSpace.IsSeparable t)
+    {s : Set ι} {u : ι → Y} (hmaps : Set.MapsTo u s t) {r : ℝ} (hr : 0 < r)
+    (hdist : ∀ i ∈ s, ∀ j ∈ s, i ≠ j → r ≤ dist (u i) (u j)) :
+    s.Countable := by
+  obtain ⟨D, hD_count, hDt⟩ := ht
+  have hex : ∀ i : s, ∃ d : D, dist (u i.val) d.val < r / 2 := fun i => by
+    obtain ⟨d, hdD, hdist'⟩ :=
+      Metric.mem_closure_iff.1 (hDt (hmaps i.property)) (r / 2) (half_pos hr)
+    exact ⟨⟨d, hdD⟩, hdist'⟩
+  choose φ hφ using hex
+  have hinj : Function.Injective φ := fun i j hij => by
+    by_contra hne
+    have h1 := hdist i.val i.property j.val j.property (Subtype.coe_ne_coe.2 hne)
+    have h2 : dist (u i.val) (u j.val) < r := by
+      calc dist (u i.val) (u j.val)
+          ≤ dist (u i.val) (φ i).val + dist (φ i).val (u j.val) := dist_triangle _ _ _
+        _ = dist (u i.val) (φ i).val + dist (u j.val) (φ j).val := by
+            rw [hij, dist_comm (φ j).val]
+        _ < r / 2 + r / 2 := add_lt_add (hφ i) (hφ j)
+        _ = r := add_halves r
+    exact h2.not_ge h1
+  have : Countable D := hD_count.to_subtype
+  exact hinj.countable.to_set
 
 end TauCeti
 

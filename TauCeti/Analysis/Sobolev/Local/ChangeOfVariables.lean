@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Sobolev.Local.Haar
 public import TauCeti.Analysis.Sobolev.W1p.ChangeOfVariables
 
 import TauCeti.Analysis.Calculus.InverseFunctionTheorem
+import TauCeti.Analysis.Sobolev.WeakDeriv.Haar
 
 /-!
 # Change of variables in local Sobolev classes on planar sets
@@ -159,7 +160,7 @@ theorem HasWeakFDerivOn.comp_two_mul {u : ℂ → F} {Du : ℂ → ℂ →L[ℝ]
     HasWeakFDerivOn volume U (fun z => u (2 * z)) (fun z => (2 : ℝ) • Du (2 * z)) := by
   set A : ℂ ≃L[ℝ] ℂ := (LinearEquiv.smulOfNeZero ℝ ℂ 2 two_ne_zero).toContinuousLinearEquiv
   have hA : ∀ z, A z = 2 * z := fun z => by simp [A, Complex.real_smul]
-  have h := hu.comp_continuousLinearEquiv_add (U := U) A 0 fun z hz => by
+  have h := hu.comp_continuousLinearEquiv_add (μ := volume) (U := U) A 0 fun z hz => by
     simpa [hA] using hUV hz
   convert h using 2 with z
   · simp [hA]
