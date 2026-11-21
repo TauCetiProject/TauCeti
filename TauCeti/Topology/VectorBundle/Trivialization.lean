@@ -67,6 +67,9 @@ scalar actions are compatible, the one over `𝕜'` is the scalar restriction of
 including its zero extension off the base set
 (`Bundle.Trivialization.restrictScalars_continuousLinearMapAt`). Subspaces of the fibres of a
 vector bundle with finite-dimensional model fibre are closed (`VectorBundle.isClosed_submodule`).
+
+Reconstruction at equal base points agrees with the equality cast between fibres
+(`Bundle.Trivialization.symmL_continuousLinearMapAt_eq_cast`).
 -/
 
 public section
@@ -186,6 +189,13 @@ section FiberBundle
 
 variable [∀ b, TopologicalSpace (E b)] [FiberBundle F E] (e : Trivialization F (π F E))
   [e.IsLinear 𝕜]
+
+/-- Reconstruction in a common chart agrees with the equality cast between equal fibres. -/
+theorem symmL_continuousLinearMapAt_eq_cast {x₀ x₁ : B} (h : x₀ = x₁)
+    (he : x₀ ∈ e.baseSet) (v : E x₀) :
+    e.symmL 𝕜 x₁ (e.continuousLinearMapAt 𝕜 x₀ v) = cast (congrArg E h) v := by
+  subst x₁
+  exact e.symmL_continuousLinearMapAt he v
 
 theorem homeomorphTrivial_apply_eq_continuousLinearEquivAt (he : e.baseSet = Set.univ)
     (v : TotalSpace F E) :

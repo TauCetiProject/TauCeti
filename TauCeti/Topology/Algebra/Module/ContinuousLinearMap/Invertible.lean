@@ -36,6 +36,9 @@ A one-sided inverse of an invertible map is its inverse
 An endomorphism is invertible exactly when it is a unit of the endomorphism ring
 (`ContinuousLinearMap.isInvertible_iff_isUnit`).
 
+A map agreeing pointwise with an equality cast is invertible
+(`ContinuousLinearMap.isInvertible_of_eq_cast`), including zero modules.
+
 The file also records that the product `f.prodMap g` of two continuous linear maps is invertible
 exactly when both factors are, which is how block-diagonal second derivatives on a product space
 are shown to be invertible. More generally, a map `M₁ × M₂ → M₁ × M₃` which preserves the first
@@ -57,6 +60,15 @@ open Filter
 open scoped Topology
 
 namespace ContinuousLinearMap
+
+/-- A continuous linear map equal to the equality cast between its fibres is invertible. -/
+theorem isInvertible_of_eq_cast {R M : Type*} [Semiring R] {V : M → Type*}
+    [∀ x, AddCommMonoid (V x)] [∀ x, Module R (V x)] [∀ x, TopologicalSpace (V x)]
+    {x₀ x₁ : M} (h : x₀ = x₁) (A : V x₀ →L[R] V x₁)
+    (hA : ∀ v, A v = cast (congrArg V h) v) : A.IsInvertible := by
+  subst x₁
+  obtain rfl : A = ContinuousLinearMap.id R (V x₀) := ContinuousLinearMap.ext hA
+  exact ContinuousLinearMap.isInvertible_equiv (f := ContinuousLinearEquiv.refl R (V x₀))
 
 section IsUnit
 
