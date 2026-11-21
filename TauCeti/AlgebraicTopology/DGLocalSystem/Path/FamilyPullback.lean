@@ -211,7 +211,7 @@ def changeBasepointPullbackHom :
     (fun r m c ↦ LinearMap.map_smul₂ _ r m c)
     (fun α m c ↦ changeBasepointPullbackBilin_op_smul f M α m c)
     (fun hm hc ↦ changeBasepointPullbackBilin_mem f M hm hc)
-    (fun hm c ↦ differential_changeBasepointPullbackBilin f M hm c)).1
+    (fun hm c ↦ differential_changeBasepointPullbackBilin f M hm c)).val
 
 variable {f M}
 

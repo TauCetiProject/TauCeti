@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Complex.RiemannSurface.Degree
 public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.RiemannRoch
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.Basic
 import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Meromorphic
-import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Sphere
+import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Sphere.Basic
 import TauCeti.Topology.Sheaves.Cech.Functoriality
 
 /-!
@@ -25,8 +25,8 @@ biholomorphic to the Riemann sphere `OnePoint ℂ`
   `h⁰(𝒪(p)) ≥ deg p + 1 - g_an = 2`. So `𝒪(p)` has a section which is not constant: a
   meromorphic function with at most a simple pole at `p` and holomorphic elsewhere. As a finite
   holomorphic map to the sphere it has degree one
-  (`exists_finiteHolomorphicMap_degree_eq_one_of_one_lt_finrank_divisorSections_ofPoint`), hence
-  is a biholomorphism (`TauCeti.RiemannSurface.biholomorphOfDegreeEqOne`).
+  (`TauCeti.RiemannSurface.exists_finiteHolomorphicMap_degree_eq_one_of_analyticGenus_eq_zero`),
+  hence is a biholomorphism (`TauCeti.RiemannSurface.biholomorphOfDegreeEqOne`).
 * **The sphere has genus zero.** The analytic genus is invariant under biholomorphisms
   (`Diffeomorph.analyticGenus_eq`): precomposition with a biholomorphism `φ : X ≃ Y` identifies
   the structure sheaf of `Y` with the pushforward of that of `X`
@@ -123,13 +123,7 @@ Riemann sphere `OnePoint ℂ`. -/
 theorem analyticGenus_eq_zero_iff_nonempty_diffeomorph_onePoint :
     analyticGenus X = 0 ↔ Nonempty (X ≃ₘ⟮𝓘(ℂ), 𝓘(ℂ)⟯ OnePoint ℂ) := by
   refine ⟨fun h ↦ ?_, fun ⟨φ⟩ ↦ (φ.analyticGenus_eq (by simp)).trans analyticGenus_onePoint⟩
-  obtain ⟨p⟩ := ConnectedSpace.toNonempty (α := X)
-  -- Riemann–Roch gives `h⁰(𝒪(p)) ≥ 2`, so `𝒪(p)` has a nonconstant section.
-  have hRR := degree_add_one_sub_analyticGenus_le_finrank_divisorSheaf (WeilDivisor.ofPoint p)
-  rw [WeilDivisor.degree_ofPoint, h, (divisorSheafSectionsEquiv _ ⊤).finrank_eq] at hRR
-  obtain ⟨F, hF⟩ :=
-    exists_finiteHolomorphicMap_degree_eq_one_of_one_lt_finrank_divisorSections_ofPoint
-      (x := p) (by omega)
+  obtain ⟨F, hF⟩ := exists_finiteHolomorphicMap_degree_eq_one_of_analyticGenus_eq_zero h
   exact ⟨biholomorphOfDegreeEqOne F hF⟩
 
 end TauCeti.RiemannSurface

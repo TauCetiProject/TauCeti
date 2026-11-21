@@ -131,6 +131,10 @@ theorem smul_ne_rev (g : G) (e : T.E) : g • e ≠ T.rev e :=
 @[simp] theorem dist_smul (g : G) (a b : T.V) : T.dist (g • a) (g • b) = T.dist a b :=
   Aut.dist_smul (T.action g) a b
 
+/-- The underlying graph of a `G`-tree is preconnected. -/
+theorem preconnected : T.Preconnected :=
+  (T.connected_iff.1 (SerreGraph.IsTree.connected _ T.isTree)).2
+
 /-- Any two vertices of a `G`-tree are joined by a path. -/
 theorem nonempty_path (a b : T.V) : Nonempty (T.Path a b) :=
   T.isTree.nonempty_path a b
@@ -211,13 +215,15 @@ theorem smulPath_def (g : G) {a b : T.V} (p : T.Path a b) :
 dart. -/
 @[simp] theorem smulPath_cons (g : G) {a b c : T.V} (p : T.Path a b) (e : Quiver.Hom b c) :
     smulPath g (p.cons e) =
-      (smulPath g p).cons ⟨g • e.1, by rw [src_smul, e.2.1], by rw [tgt_smul, e.2.2]⟩ :=
+      (smulPath g p).cons ⟨g • e.val, by rw [src_smul, e.property.1], by rw [tgt_smul,
+          e.property.2]⟩ :=
   Aut.smulPath_cons (T.action g) p e
 
 /-- The translate of a one-dart path is the one-dart path through the translated dart. -/
 @[simp] theorem smulPath_toPath (g : G) {a b : T.V} (e : Quiver.Hom a b) :
     smulPath g e.toPath =
-      Quiver.Hom.toPath (⟨g • e.1, by rw [src_smul, e.2.1], by rw [tgt_smul, e.2.2]⟩ :
+      Quiver.Hom.toPath (⟨g • e.val, by rw [src_smul, e.property.1], by rw [tgt_smul,
+          e.property.2]⟩ :
         Quiver.Hom (g • a) (g • b)) :=
   Aut.smulPath_toPath (T.action g) e
 
@@ -520,6 +526,13 @@ variable {T}
 @[simp] theorem isConvex_smul_set_iff {g : G} {S : Set T.V} :
     T.IsConvex (g • S) ↔ T.IsConvex S := by
   rw [smul_set_vertex_def, Aut.isConvex_smul_set_iff]
+
+/-- An element that maps a set of vertices into itself maps the darts induced by the set to darts
+induced by the set. -/
+theorem smul_mem_inducedDarts {g : G} {C : Set T.V} (hinv : ∀ v ∈ C, g • v ∈ C) {e : T.E}
+    (he : e ∈ T.inducedDarts C) : g • e ∈ T.inducedDarts C := by
+  simp only [mem_inducedDarts_iff, src_smul, tgt_smul] at he ⊢
+  exact ⟨hinv _ he.1, hinv _ he.2⟩
 
 end Pointwise
 

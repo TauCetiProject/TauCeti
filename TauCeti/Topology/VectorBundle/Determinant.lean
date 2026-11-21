@@ -199,7 +199,7 @@ base set of `e`, it reads the determinant line in the chart coordinate
 `TauCeti.DetBundle.chartCoord e`. -/
 def pretrivialization (e : Trivialization F (π F E)) [e.IsLinear 𝕜] :
     Pretrivialization 𝕜 (π 𝕜 (DetBundle 𝕜 F E)) where
-  toFun p := ⟨p.proj, if h : p.proj ∈ e.baseSet then chartCoord e h p.2 else 0⟩
+  toFun p := ⟨p.proj, if h : p.proj ∈ e.baseSet then chartCoord e h p.snd else 0⟩
   invFun p := ⟨p.1, if h : p.1 ∈ e.baseSet then (chartCoord e h).symm p.2 else 0⟩
   source := TotalSpace.proj ⁻¹' e.baseSet
   target := e.baseSet ×ˢ univ
@@ -226,7 +226,7 @@ open scoped Classical in
 private theorem pretrivialization_apply (e : Trivialization F (π F E)) [e.IsLinear 𝕜]
     (p : TotalSpace 𝕜 (DetBundle 𝕜 F E)) :
     pretrivialization e p =
-      (p.proj, if h : p.proj ∈ e.baseSet then chartCoord e h p.2 else 0) := (rfl)
+      (p.proj, if h : p.proj ∈ e.baseSet then chartCoord e h p.snd else 0) := (rfl)
 
 /-- Over its base set, the induced pretrivialization reads the determinant line in the chart
 coordinate. -/
@@ -447,7 +447,7 @@ variable [TopologicalSpace B] [CompleteSpace 𝕜]
 multiplication by the determinant of the coordinate expression of `e`, which depends
 continuously on the base point. -/
 private theorem continuousAt_chartCoord_congrEquiv (e : ∀ x, E x ≃L[𝕜] E' x)
-    (he : Continuous (fun p : TotalSpace F E ↦ TotalSpace.mk' F p.proj (e p.proj p.2)))
+    (he : Continuous (fun p : TotalSpace F E ↦ TotalSpace.mk' F p.proj (e p.proj p.snd)))
     (a : B) :
     ∃ s : B → 𝕜, ContinuousAt s a ∧ ∀ x (hx : x ∈ (trivializationAt F E a).baseSet)
       (hx' : x ∈ (trivializationAt F E' a).baseSet) (c : 𝕜),
@@ -491,7 +491,7 @@ induces a
 homeomorphism of the total spaces of their determinant lines, which is
 `TauCeti.DetBundle.congrEquiv e` on each fibre. -/
 def congrHomeomorph (e : ∀ x, E x ≃L[𝕜] E' x)
-    (he : Continuous (fun p : TotalSpace F E ↦ TotalSpace.mk' F p.proj (e p.proj p.2))) :
+    (he : Continuous (fun p : TotalSpace F E ↦ TotalSpace.mk' F p.proj (e p.proj p.snd))) :
     TotalSpace 𝕜 (DetBundle 𝕜 F E) ≃ₜ TotalSpace 𝕜 (DetBundle 𝕜 F E') :=
   bundleHomeomorph (congrEquiv e) <| by
     refine FiberBundle.continuous_of_forall_trivialization _ (fun _ ↦ rfl) fun p ↦ ?_
@@ -511,16 +511,16 @@ def congrHomeomorph (e : ∀ x, E x ≃L[𝕜] E' x)
 
 @[simp]
 theorem congrHomeomorph_apply (e : ∀ x, E x ≃L[𝕜] E' x)
-    (he : Continuous (fun p : TotalSpace F E ↦ TotalSpace.mk' F p.proj (e p.proj p.2)))
+    (he : Continuous (fun p : TotalSpace F E ↦ TotalSpace.mk' F p.proj (e p.proj p.snd)))
     (p : TotalSpace 𝕜 (DetBundle 𝕜 F E)) :
-    congrHomeomorph e he p = ⟨p.proj, congrEquiv e p.proj p.2⟩ :=
+    congrHomeomorph e he p = ⟨p.proj, congrEquiv e p.proj p.snd⟩ :=
   bundleHomeomorph_apply _ _ p
 
 @[simp]
 theorem congrHomeomorph_symm_apply (e : ∀ x, E x ≃L[𝕜] E' x)
-    (he : Continuous (fun p : TotalSpace F E ↦ TotalSpace.mk' F p.proj (e p.proj p.2)))
+    (he : Continuous (fun p : TotalSpace F E ↦ TotalSpace.mk' F p.proj (e p.proj p.snd)))
     (p : TotalSpace 𝕜 (DetBundle 𝕜 F E')) :
-    (congrHomeomorph e he).symm p = ⟨p.proj, (congrEquiv e p.proj).symm p.2⟩ :=
+    (congrHomeomorph e he).symm p = ⟨p.proj, (congrEquiv e p.proj).symm p.snd⟩ :=
   bundleHomeomorph_symm_apply _ _ p
 
 end Congr
@@ -615,13 +615,13 @@ def pullbackHomeomorph :
 
 @[simp]
 theorem pullbackHomeomorph_apply (p : TotalSpace 𝕜 ((f : B' → B) *ᵖ (DetBundle 𝕜 F E))) :
-    pullbackHomeomorph f p = ⟨p.proj, pullbackEquiv (f : B' → B) p.proj p.2⟩ :=
+    pullbackHomeomorph f p = ⟨p.proj, pullbackEquiv (f : B' → B) p.proj p.snd⟩ :=
   bundleHomeomorph_apply _ _ p
 
 @[simp]
 theorem pullbackHomeomorph_symm_apply
     (p : TotalSpace 𝕜 (DetBundle 𝕜 F ((f : B' → B) *ᵖ E))) :
-    (pullbackHomeomorph f).symm p = ⟨p.proj, (pullbackEquiv (f : B' → B) p.proj).symm p.2⟩ :=
+    (pullbackHomeomorph f).symm p = ⟨p.proj, (pullbackEquiv (f : B' → B) p.proj).symm p.snd⟩ :=
   bundleHomeomorph_symm_apply _ _ p
 
 end Pullback
@@ -697,7 +697,7 @@ def ofBundleDetHomeomorph :
 theorem ofBundleDetHomeomorph_apply
     (p : (FiniteRankBundleCore.ofBundle 𝕜 n E).det.core.TotalSpace) :
     ofBundleDetHomeomorph (𝕜 := 𝕜) (n := n) E p =
-      ⟨p.proj, ofBundleDetFiberEquiv (𝕜 := 𝕜) (n := n) E p.proj p.2⟩ :=
+      ⟨p.proj, ofBundleDetFiberEquiv (𝕜 := 𝕜) (n := n) E p.proj p.snd⟩ :=
   bundleHomeomorph_apply _ _ p
 
 end FiniteRank
