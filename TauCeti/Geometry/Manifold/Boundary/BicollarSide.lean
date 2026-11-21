@@ -344,7 +344,30 @@ private theorem mem_interiorChart_target (hCo : IsOpen (C \ range f)) (x : C)
     ⟨⟨_, hC', fun ⟨y, hy⟩ ↦ hf' y hy⟩, rfl⟩
   simpa [interiorChart] using hCo.isOpenEmbedding_subtypeVal.toOpenPartialHomeomorph_right_inv _ hm
 
+/-- A point of the source of a chart transition `e.symm ≫ₕ e'` lies in the target of `e`, and
+`e.symm` sends it into the source of `e'`. -/
+private theorem mem_target_and_mem_source_of_mem_symm_trans_source {α β : Type*}
+    [TopologicalSpace α] [TopologicalSpace β] {e e' : OpenPartialHomeomorph α β} {w : β}
+    (hw : w ∈ (e.symm ≫ₕ e').source) : w ∈ e.target ∧ e.symm w ∈ e'.source :=
+  hw
+
 variable {k : WithTop ℕ∞}
+
+/-- Read through the inverse of a collar chart, the point of `N × [0, ∞)` depends smoothly on
+the chart coordinates. -/
+private theorem contMDiffAt_collarChart_symm_pair [IsManifold (𝓡 n) k N] (y : N)
+    {z : EuclideanHalfSpace (n + 1)}
+    (hz : ((EuclideanHalfSpace.collarDiffeomorph (k := ⊤) n).symm z).1 ∈
+      (chartAt (EuclideanSpace ℝ (Fin n)) y).target) :
+    ContMDiffAt (𝓡∂ (n + 1)) ((𝓡 n).prod (𝓡∂ 1)) k (fun z ↦
+      ((chartAt (EuclideanSpace ℝ (Fin n)) y).symm
+          ((EuclideanHalfSpace.collarDiffeomorph (k := ⊤) n).symm z).1,
+        ((EuclideanHalfSpace.collarDiffeomorph (k := ⊤) n).symm z).2)) z := by
+  have hcd : ContMDiff (𝓡∂ (n + 1)) ((𝓡 n).prod (𝓡∂ 1)) k
+      (EuclideanHalfSpace.collarDiffeomorph (k := ⊤) n).symm :=
+    (EuclideanHalfSpace.collarDiffeomorph (k := ⊤) n).symm.contMDiff.of_le le_top
+  exact ((contMDiffAt_symm_of_mem_maximalAtlas (IsManifold.chart_mem_maximalAtlas y) hz).comp z
+    (contMDiff_fst.comp hcd).contMDiffAt).prodMk (contMDiff_snd.comp hcd).contMDiffAt
 
 /-- Read through the inverse of a collar chart, the point of `M` depends smoothly on the chart
 coordinates. -/
@@ -357,14 +380,14 @@ private theorem contMDiffAt_collarChart_symm_coe [IsManifold (𝓡 n) k N]
       ((chartAt (EuclideanSpace ℝ (Fin n)) y).symm
           ((EuclideanHalfSpace.collarDiffeomorph (k := ⊤) n).symm z).1,
         ((EuclideanHalfSpace.collarDiffeomorph (k := ⊤) n).symm z).2.val 0)) z := by
-  have hcd : ContMDiff (𝓡∂ (n + 1)) ((𝓡 n).prod (𝓡∂ 1)) k
-      (EuclideanHalfSpace.collarDiffeomorph (k := ⊤) n).symm :=
-    (EuclideanHalfSpace.collarDiffeomorph (k := ⊤) n).symm.contMDiff.of_le le_top
-  refine hbd.contMDiff.contMDiffAt.comp z (ContMDiffAt.prodMk ?_ ?_)
-  · exact (contMDiffAt_symm_of_mem_maximalAtlas (IsManifold.chart_mem_maximalAtlas y) hz).comp z
-      (contMDiff_fst.comp hcd).contMDiffAt
-  · exact ((contDiff_piLp_apply 2).contMDiff.comp
-      ((𝓡∂ 1).contMDiff.comp (contMDiff_snd.comp hcd))).contMDiffAt
+  have hp := contMDiffAt_collarChart_symm_pair (k := k) y hz
+  have hq : ContMDiff ((𝓡 n).prod (𝓡∂ 1)) ((𝓡 n).prod 𝓘(ℝ)) k
+      (fun p : N × EuclideanHalfSpace 1 ↦ (p.1, p.2.val 0)) :=
+    contMDiff_fst.prodMk ((contDiff_piLp_apply 2).contMDiff.comp
+      ((𝓡∂ 1).contMDiff.comp contMDiff_snd))
+  -- Elaborated without the expected type, which would unify the pair map with `collarDiffeomorph`.
+  have h := hbd.contMDiff.contMDiffAt.comp z (hq.contMDiffAt.comp z hp)
+  exact h
 
 /-- In an interior chart, the point of `M` depends smoothly on the chart coordinates. -/
 private theorem contMDiffAt_interiorChart_symm_coe [IsManifold (𝓡 (n + 1)) k M] (x : M)
@@ -430,17 +453,9 @@ private theorem contMDiffOn_collarChart_symm_trans_collarChart [IsManifold (𝓡
     rw [OpenPartialHomeomorph.coe_trans, Function.comp_apply, collarChart_symm_apply,
       collarChart_apply_collarPiece]
   rw [hF]
-  have hcd : ContMDiff (𝓡∂ (n + 1)) ((𝓡 n).prod (𝓡∂ 1)) k
-      (EuclideanHalfSpace.collarDiffeomorph (k := ⊤) n).symm :=
-    (EuclideanHalfSpace.collarDiffeomorph (k := ⊤) n).symm.contMDiff.of_le le_top
-  refine (contMDiffAt_collarDiffeomorph_chartAt y' (g := fun w ↦
-    ((chartAt (EuclideanSpace ℝ (Fin n)) y).symm
-      ((EuclideanHalfSpace.collarDiffeomorph (k := ⊤) n).symm w).1,
-      ((EuclideanHalfSpace.collarDiffeomorph (k := ⊤) n).symm w).2)) ?_
+  exact (contMDiffAt_collarDiffeomorph_chartAt y'
+    (contMDiffAt_collarChart_symm_pair y (mem_collarChart_target hb hC y hzt))
     (collarChart_symm_mem_collarChart_source hb hC y y' hzs)).contMDiffWithinAt
-  exact ((contMDiffAt_symm_of_mem_maximalAtlas (IsManifold.chart_mem_maximalAtlas y)
-    (mem_collarChart_target hb hC y hzt)).comp z (contMDiff_fst.comp hcd).contMDiffAt).prodMk
-      (contMDiff_snd.comp hcd).contMDiffAt
 
 /-- Transitions from a collar chart to an interior chart are smooth. -/
 private theorem contMDiffOn_collarChart_symm_trans_interiorChart [IsManifold (𝓡 (n + 1)) k M]
@@ -451,7 +466,6 @@ private theorem contMDiffOn_collarChart_symm_trans_interiorChart [IsManifold (�
     ContMDiffOn (𝓡∂ (n + 1)) (𝓡∂ (n + 1)) k
       ((collarChart (n := n) hC hb y).symm ≫ₕ interiorChart (n := n) hCo x hx)
       ((collarChart (n := n) hC hb y).symm ≫ₕ interiorChart (n := n) hCo x hx).source := by
-  intro z hz
   have hF : ∀ w ∈ ((collarChart (n := n) hC hb y).symm ≫ₕ interiorChart (n := n) hCo x hx).source,
       ((collarChart (n := n) hC hb y).symm ≫ₕ interiorChart (n := n) hCo x hx) w =
         EuclideanHalfSpace.interiorEmbedding n (chartAt (EuclideanSpace ℝ (Fin (n + 1))) (x : M)
@@ -459,21 +473,18 @@ private theorem contMDiffOn_collarChart_symm_trans_interiorChart [IsManifold (�
             ((EuclideanHalfSpace.collarDiffeomorph (k := ⊤) n).symm w).1,
             ((EuclideanHalfSpace.collarDiffeomorph (k := ⊤) n).symm w).2.val 0))) := by
     intro w hw
-    rw [OpenPartialHomeomorph.trans_source, OpenPartialHomeomorph.symm_source, mem_inter_iff,
-      mem_preimage] at hw
-    replace hw := hw.2
+    replace hw := (mem_target_and_mem_source_of_mem_symm_trans_source hw).2
     rw [OpenPartialHomeomorph.coe_trans, Function.comp_apply,
       interiorChart_apply hCo x hx (mem_interiorChart_source hCo x hx hw).1,
       collarChart_symm_apply, coe_collarPiece]
-  refine (ContMDiffAt.congr_of_eventuallyEq ?_ (Filter.eventually_of_mem
-    (OpenPartialHomeomorph.open_source _ |>.mem_nhds hz) hF)).contMDiffWithinAt
-  rw [OpenPartialHomeomorph.trans_source, OpenPartialHomeomorph.symm_source, mem_inter_iff,
-    mem_preimage] at hz
-  obtain ⟨hzt, hzs⟩ := hz
+  refine ContMDiffOn.congr ?_ hF
+  intro z hz
+  obtain ⟨hzt, hzs⟩ := mem_target_and_mem_source_of_mem_symm_trans_source hz
   have hzs' := (mem_interiorChart_source hCo x hx hzs).2
   rw [collarChart_symm_apply, coe_collarPiece] at hzs'
-  exact contMDiffAt_interiorEmbedding_chartAt (x : M)
-    (contMDiffAt_collarChart_symm_coe hbd y (mem_collarChart_target hb hC y hzt)) hzs'
+  exact (contMDiffAt_interiorEmbedding_chartAt (x : M)
+    (contMDiffAt_collarChart_symm_coe hbd y (mem_collarChart_target hb hC y hzt))
+    hzs').contMDiffWithinAt
 
 omit [TopologicalSpace N] [ChartedSpace (EuclideanSpace ℝ (Fin n)) N] in
 /-- Transitions between two interior charts are smooth. -/
@@ -483,7 +494,6 @@ private theorem contMDiffOn_interiorChart_symm_trans_interiorChart [IsManifold (
     ContMDiffOn (𝓡∂ (n + 1)) (𝓡∂ (n + 1)) k
       ((interiorChart (n := n) hCo x hx).symm ≫ₕ interiorChart (n := n) hCo x' hx')
       ((interiorChart (n := n) hCo x hx).symm ≫ₕ interiorChart (n := n) hCo x' hx').source := by
-  intro z hz
   have hF : ∀ w ∈ ((interiorChart (n := n) hCo x hx).symm ≫ₕ
       interiorChart (n := n) hCo x' hx').source,
       ((interiorChart (n := n) hCo x hx).symm ≫ₕ interiorChart (n := n) hCo x' hx') w =
@@ -492,22 +502,18 @@ private theorem contMDiffOn_interiorChart_symm_trans_interiorChart [IsManifold (
             (((EuclideanHalfSpace.isOpenEmbedding_interiorEmbedding n).toOpenPartialHomeomorph
               _).symm w))) := by
     intro w hw
-    rw [OpenPartialHomeomorph.trans_source, OpenPartialHomeomorph.symm_source, mem_inter_iff,
-      mem_preimage] at hw
-    obtain ⟨hwt, hw⟩ := hw
+    obtain ⟨hwt, hw⟩ := mem_target_and_mem_source_of_mem_symm_trans_source hw
     rw [OpenPartialHomeomorph.coe_trans, Function.comp_apply,
       interiorChart_apply hCo x' hx' (mem_interiorChart_source hCo x' hx' hw).1,
       (mem_interiorChart_target hCo x hx hwt).2.2]
-  refine (ContMDiffAt.congr_of_eventuallyEq ?_ (Filter.eventually_of_mem
-    (OpenPartialHomeomorph.open_source _ |>.mem_nhds hz) hF)).contMDiffWithinAt
-  rw [OpenPartialHomeomorph.trans_source, OpenPartialHomeomorph.symm_source, mem_inter_iff,
-    mem_preimage] at hz
-  obtain ⟨hzt, hzs⟩ := hz
+  refine ContMDiffOn.congr ?_ hF
+  intro z hz
+  obtain ⟨hzt, hzs⟩ := mem_target_and_mem_source_of_mem_symm_trans_source hz
   obtain ⟨hz0, hzt', hzeq⟩ := mem_interiorChart_target hCo x hx hzt
   have hzs' := (mem_interiorChart_source hCo x' hx' hzs).2
   rw [hzeq] at hzs'
-  exact contMDiffAt_interiorEmbedding_chartAt (x' : M)
-    (contMDiffAt_interiorChart_symm_coe (x : M) hz0 hzt') hzs'
+  exact (contMDiffAt_interiorEmbedding_chartAt (x' : M)
+    (contMDiffAt_interiorChart_symm_coe (x : M) hz0 hzt') hzs').contMDiffWithinAt
 
 /-- A point in the source of a transition from an interior chart to a collar chart is a point of
 the collar at positive depth. -/
@@ -520,14 +526,13 @@ private theorem exists_collarPiece_eq_interiorChart_symm (hb : IsBicollar f b)
       (chartAt (EuclideanSpace ℝ (Fin (n + 1))) (x : M)).symm
           (((EuclideanHalfSpace.isOpenEmbedding_interiorEmbedding n).toOpenPartialHomeomorph
             _).symm w) = b (q.1, q.2.val 0) := by
-  rw [OpenPartialHomeomorph.trans_source, OpenPartialHomeomorph.symm_source, mem_inter_iff,
-    mem_preimage] at hw
-  obtain ⟨q, hq, hq1⟩ := exists_of_mem_collarChart_source (n := n) hb hC y hw.2
+  obtain ⟨hwt, hws⟩ := mem_target_and_mem_source_of_mem_symm_trans_source hw
+  obtain ⟨q, hq, hq1⟩ := exists_of_mem_collarChart_source (n := n) hb hC y hws
   refine ⟨q, hq, hq1, lt_of_le_of_ne q.2.property fun h ↦ ?_,
-    (mem_interiorChart_target hCo x hx hw.1).2.2.symm.trans (by rw [← hq, coe_collarPiece])⟩
+    (mem_interiorChart_target hCo x hx hwt).2.2.symm.trans (by rw [← hq, coe_collarPiece])⟩
   -- Interior charts avoid the image of `f`, which is the collar at depth zero.
   refine (mem_interiorChart_source hCo x hx
-    ((interiorChart (n := n) hCo x hx).map_target hw.1)).1 ⟨q.1, ?_⟩
+    ((interiorChart (n := n) hCo x hx).map_target hwt)).1 ⟨q.1, ?_⟩
   rw [← hq, coe_collarPiece, ← h, hb.apply_zero]
 
 open Function in
@@ -547,7 +552,6 @@ private theorem contMDiffOn_interiorChart_symm_trans_collarChart [IsManifold (�
   let σ : EuclideanHalfSpace (n + 1) → M := fun w ↦
     (chartAt (EuclideanSpace ℝ (Fin (n + 1))) (x : M)).symm
       (((EuclideanHalfSpace.isOpenEmbedding_interiorEmbedding n).toOpenPartialHomeomorph _).symm w)
-  intro z hz
   have hF : ∀ w ∈ ((interiorChart (n := n) hCo x hx).symm ≫ₕ
       collarChart (n := n) hC hb y).source,
       ((interiorChart (n := n) hCo x hx).symm ≫ₕ collarChart (n := n) hC hb y) w =
@@ -559,13 +563,12 @@ private theorem contMDiffOn_interiorChart_symm_trans_collarChart [IsManifold (�
     replace hσ : σ w = b (q.1, q.2.val 0) := hσ
     rw [OpenPartialHomeomorph.coe_trans, Function.comp_apply, ← hq, collarChart_apply_collarPiece,
       hσ, hbinv, EuclideanHalfSpace.normalRay_normalCoord]
-  refine (ContMDiffAt.congr_of_eventuallyEq ?_ (Filter.eventually_of_mem
-    (OpenPartialHomeomorph.open_source _ |>.mem_nhds hz) hF)).contMDiffWithinAt
+  refine ContMDiffOn.congr ?_ hF
+  intro z hz
   obtain ⟨q, -, hq1, hq2, hσz⟩ := exists_collarPiece_eq_interiorChart_symm hb hC hCo x hx y hz
   replace hσz : σ z = b (q.1, q.2.val 0) := hσz
-  rw [OpenPartialHomeomorph.trans_source, OpenPartialHomeomorph.symm_source, mem_inter_iff,
-    mem_preimage] at hz
-  obtain ⟨hz0, hzt', -⟩ := mem_interiorChart_target hCo x hx hz.1
+  obtain ⟨hzt, -⟩ := mem_target_and_mem_source_of_mem_symm_trans_source hz
+  obtain ⟨hz0, hzt', -⟩ := mem_interiorChart_target hCo x hx hzt
   have hB : ContMDiffAt (𝓡∂ (n + 1)) ((𝓡 n).prod 𝓘(ℝ)) k (fun w ↦ invFunOn b univ (σ w)) z := by
     refine ContMDiffAt.comp z ((IsLocalDiffeomorphOn.contMDiffOn_invFunOn
       (hbd.isLocalDiffeomorphOn univ) isOpen_univ
@@ -573,9 +576,9 @@ private theorem contMDiffOn_interiorChart_symm_trans_collarChart [IsManifold (�
       (contMDiffAt_interiorChart_symm_coe (x : M) hz0 hzt')
     rw [image_univ]
     exact hb.isOpenEmbedding.isOpen_range.mem_nhds ⟨_, hσz.symm⟩
-  refine contMDiffAt_collarDiffeomorph_chartAt y (g := fun w ↦
+  refine (contMDiffAt_collarDiffeomorph_chartAt y (g := fun w ↦
     ((invFunOn b univ (σ w)).1, EuclideanHalfSpace.normalRay (invFunOn b univ (σ w)).2))
-    ((contMDiffAt_fst.comp z hB).prodMk ?_) (by simpa [hσz, hbinv] using hq1)
+    ((contMDiffAt_fst.comp z hB).prodMk ?_) (by simpa [hσz, hbinv] using hq1)).contMDiffWithinAt
   refine (EuclideanHalfSpace.contMDiffOn_normalRay.contMDiffAt (Ici_mem_nhds ?_)).comp z
     (contMDiffAt_snd.comp z hB)
   simpa [hσz, hbinv] using hq2
