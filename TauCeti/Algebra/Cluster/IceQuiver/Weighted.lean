@@ -545,57 +545,56 @@ theorem toExchangeMatrix_freeze (ι : K' ↪ K) :
   · rw [ExchangeMatrix.submatrix_symmetrizer, Function.comp_apply, ← weight_row (q.freeze ι),
       weight_freeze, Function.Embedding.trans_apply, weight_row]
 
-/-- *Defrost* the vertices in the range of a new mutable embedding `row'`. The full matrix must be
-integral at each new mutable vertex that was frozen before; the full matrix and the weights are
-kept. -/
-noncomputable def defrost (row' : K' ↪ I)
-    (h : ∀ k, row' k ∉ Set.range row → q.IsIntegralAt (row' k)) : WeightedIceQuiver row' :=
+/-- *Defrost* along `ι : K ↪ K'`: the new mutable embedding `row'` extends `row` along `ι`, so
+every old mutable vertex stays mutable. The full matrix must be integral at each new mutable vertex
+outside the range of `ι`; the full matrix and the weights are kept. -/
+noncomputable def defrost (ι : K ↪ K') (row' : K' ↪ I) (hι : ∀ k, row' (ι k) = row k)
+    (h : ∀ k, k ∉ Set.range ι → q.IsIntegralAt (row' k)) : WeightedIceQuiver row' :=
   ofFullMatrix q.weight q.fullMatrix
     { weight_pos := q.weight_pos
       weight_mul := q.weight_mul_fullMatrix
       exists_intCast_eq_row k j := by
-        by_cases hk : row' k ∈ Set.range row
-        · obtain ⟨l, hl⟩ := hk
-          simpa [hl] using q.exists_intCast_eq_fullMatrix_row l j
+        by_cases hk : k ∈ Set.range ι
+        · obtain ⟨l, rfl⟩ := hk
+          exact (hι l).symm ▸ q.exists_intCast_eq_fullMatrix_row l j
         · exact (h k hk j).1
       exists_intCast_eq_col i k := by
-        by_cases hk : row' k ∈ Set.range row
-        · obtain ⟨l, hl⟩ := hk
-          simpa [hl] using q.exists_intCast_eq_fullMatrix_col i l
+        by_cases hk : k ∈ Set.range ι
+        · obtain ⟨l, rfl⟩ := hk
+          exact (hι l).symm ▸ q.exists_intCast_eq_fullMatrix_col i l
         · exact (h k hk i).2 }
 
 @[simp]
-theorem weight_defrost (row' : K' ↪ I)
-    (h : ∀ k, row' k ∉ Set.range row → q.IsIntegralAt (row' k)) :
-    (q.defrost row' h).weight = q.weight :=
+theorem weight_defrost (ι : K ↪ K') (row' : K' ↪ I) (hι : ∀ k, row' (ι k) = row k)
+    (h : ∀ k, k ∉ Set.range ι → q.IsIntegralAt (row' k)) :
+    (q.defrost ι row' hι h).weight = q.weight :=
   weight_ofFullMatrix _ _ _
 
 @[simp]
-theorem fullMatrix_defrost (row' : K' ↪ I)
-    (h : ∀ k, row' k ∉ Set.range row → q.IsIntegralAt (row' k)) :
-    (q.defrost row' h).fullMatrix = q.fullMatrix :=
+theorem fullMatrix_defrost (ι : K ↪ K') (row' : K' ↪ I) (hι : ∀ k, row' (ι k) = row k)
+    (h : ∀ k, k ∉ Set.range ι → q.IsIntegralAt (row' k)) :
+    (q.defrost ι row' hι h).fullMatrix = q.fullMatrix :=
   fullMatrix_ofFullMatrix _ _ _
 
 /-- Integrality at a vertex only depends on the full matrix, so it is unchanged by defrosting. -/
 @[simp]
-theorem isIntegralAt_defrost_iff (row' : K' ↪ I)
-    (h : ∀ k, row' k ∉ Set.range row → q.IsIntegralAt (row' k)) {i : I} :
-    (q.defrost row' h).IsIntegralAt i ↔ q.IsIntegralAt i := by
+theorem isIntegralAt_defrost_iff (ι : K ↪ K') (row' : K' ↪ I) (hι : ∀ k, row' (ι k) = row k)
+    (h : ∀ k, k ∉ Set.range ι → q.IsIntegralAt (row' k)) {i : I} :
+    (q.defrost ι row' hι h).IsIntegralAt i ↔ q.IsIntegralAt i := by
   simp [isIntegralAt_iff]
 
 section Mutation
 
 variable [DecidableEq I]
 
-/-- Mutation at a vertex that is mutable before and after defrosting commutes with defrosting. -/
-theorem defrost_mutation (row' : K' ↪ I)
-    (h : ∀ k, row' k ∉ Set.range row → q.IsIntegralAt (row' k)) {k : K} {k' : K'}
-    (hk : row' k' = row k) :
-    (q.mutation k).defrost row' (fun l hl ↦ (q.isIntegralAt_mutation_iff k).2 (h l hl)) =
-      (q.defrost row' h).mutation k' := by
+/-- Mutation at an old mutable vertex commutes with defrosting. -/
+theorem defrost_mutation (ι : K ↪ K') (row' : K' ↪ I) (hι : ∀ k, row' (ι k) = row k)
+    (h : ∀ k, k ∉ Set.range ι → q.IsIntegralAt (row' k)) (k : K) :
+    (q.mutation k).defrost ι row' hι (fun l hl ↦ (q.isIntegralAt_mutation_iff k).2 (h l hl)) =
+      (q.defrost ι row' hι h).mutation (ι k) := by
   apply ext_fullMatrix (by simp)
   ext i j
-  simp [fullMatrix_mutation_apply, hk]
+  simp [fullMatrix_mutation_apply, hι]
 
 /-- Mutation at a vertex that stays mutable commutes with freezing. -/
 theorem freeze_mutation (ι : K' ↪ K) (k : K') :
