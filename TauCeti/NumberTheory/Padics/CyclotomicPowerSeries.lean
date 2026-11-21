@@ -7,7 +7,6 @@ module
 
 public import Mathlib.RingTheory.PowerSeries.Expand
 public import TauCeti.NumberTheory.Padics.BinomialSeries
-import TauCeti.RingTheory.Polynomial.Distinguished
 import TauCeti.RingTheory.PowerSeries.Binomial
 import TauCeti.RingTheory.PowerSeries.OneAddXPow
 
@@ -50,8 +49,12 @@ of `𝒪`.
 * `TauCeti.exists_cyclotomicSubst_X_eq`: for a unit `a`, `γ_a(X) = a X (1 + h_a)` with
   `h_a ∈ X ℤ_p⟦X⟧`.
 * `TauCeti.one_add_X_mul_cyclotomicSubst_neg_one_X`: `γ_(-1)(X) = -X / (1 + X)`.
+* `TauCeti.coeff_one_cyclotomicSubst`: the linear coefficient of `γ_a(f)` is `a` times that of
+  `f`.
 * `TauCeti.X_notMem_range_cyclotomicSubst`: if `a` is not a unit of `𝒪`, then `X` is not in the
   image of `γ_a`.
+* `TauCeti.cyclotomicSubst_injective`: `γ_a` is injective when `(1 + X) ^ a - 1 ≠ 0` and `𝒪` has
+  no zero divisors.
 * `TauCeti.continuous_cyclotomicSubst`: `(a, f) ↦ γ_a(f)` is jointly continuous.
 * `TauCeti.map_cyclotomicSubst`: `γ_a` commutes with `ℤ_p`-algebra maps on coefficients.
 * `TauCeti.cyclotomicFrobenius_X`, `TauCeti.cyclotomicFrobenius_C`,
@@ -128,6 +131,12 @@ theorem coeff_one_cyclotomicSubst_X (a : ℤ_[p]) :
     coeff 1 (cyclotomicSubst O a X) = algebraMap ℤ_[p] O a := by
   simp [Algebra.smul_def]
 
+/-- The linear coefficient of `γ_a(f)` is `a` times that of `f`. -/
+theorem coeff_one_cyclotomicSubst (a : ℤ_[p]) (f : O⟦X⟧) :
+    coeff 1 (cyclotomicSubst O a f) = algebraMap ℤ_[p] O a * coeff 1 f := by
+  rw [cyclotomicSubst_apply, coeff_one_subst (by simp)]
+  simp [Algebra.smul_def, mul_comm]
+
 /-- **The shape of `γ_a(X)` for a unit `a`.** For `a ∈ ℤ_pˣ`, `γ_a(X) = (1 + X) ^ a - 1` is
 `a X (1 + h_a)` for a series `h_a ∈ X ℤ_p⟦X⟧` with `p`-adic integer coefficients. -/
 theorem exists_cyclotomicSubst_X_eq (a : ℤ_[p]ˣ) :
@@ -158,9 +167,13 @@ theorem X_notMem_range_cyclotomicSubst {a : ℤ_[p]} (ha : ¬IsUnit (algebraMap 
     X ∉ Set.range (cyclotomicSubst O a) := by
   rintro ⟨f, hf⟩
   have h := congrArg (coeff 1) hf
-  rw [cyclotomicSubst_apply, coeff_one_subst (by simp), ← cyclotomicSubst_X,
-    coeff_one_cyclotomicSubst_X, coeff_one_X, Algebra.algebraMap_self, RingHom.id_apply] at h
-  exact ha (.of_mul_eq_one (coeff 1 f) (by rw [mul_comm]; exact h))
+  rw [coeff_one_cyclotomicSubst, coeff_one_X] at h
+  exact ha (.of_mul_eq_one _ h)
+
+/-- `γ_a` is injective when `O` has no zero divisors and `(1 + X) ^ a - 1 ≠ 0`. -/
+theorem cyclotomicSubst_injective [NoZeroDivisors O] {a : ℤ_[p]}
+    (ha : binomialSeries O a - 1 ≠ 0) : Function.Injective (cyclotomicSubst O a) :=
+  substAlgHom_injective (hasSubst_binomialSeries_sub_one a) ha
 
 variable (O) in
 /-- The cyclotomic action of the units `ℤ_pˣ` on `O⟦X⟧` by the `O`-algebra automorphisms
@@ -240,16 +253,10 @@ theorem cyclotomicFrobenius_cyclotomicSubst (a : ℤ_[p]) (f : O⟦X⟧) :
 theorem cyclotomicFrobenius_injective [NoZeroDivisors O] (hσ : Function.Injective σ) :
     Function.Injective (cyclotomicFrobenius p σ) := by
   nontriviality O
-  have hne : ((1 + X) ^ p - 1 : O⟦X⟧) ≠ 0 := fun h ↦ by
-    refine (Polynomial.monic_one_add_X_pow_sub_one (R := O) (Fact.out : p.Prime).ne_zero).ne_zero ?_
-    rw [← Polynomial.coe_eq_zero_iff]
-    simpa using h
-  have h : ⇑(cyclotomicFrobenius p σ) =
-      substAlgHom (R := O) (HasSubst.of_constantCoeff_zero' (a := ((1 + X) ^ p - 1 : O⟦X⟧))
-        (by simp)) ∘ map (σ : O →+* O) :=
-    funext fun f ↦ by rw [cyclotomicFrobenius_apply, Function.comp_apply, coe_substAlgHom]
-  rw [h]
-  exact (substAlgHom_injective _ hne).comp (map_injective _ hσ)
+  have hne : binomialSeries O (p : ℤ_[p]) - 1 ≠ 0 := by
+    rw [binomialSeries_nat]
+    exact one_add_X_pow_sub_one_ne_zero (Fact.out : p.Prime).ne_zero
+  exact (cyclotomicSubst_injective hne).comp (map_injective _ hσ)
 
 /-- **Reduction of the Frobenius.** If `σ` lifts the `p`-th power map along a ring homomorphism
 `π : O → k` to a ring of characteristic `p`, then `φ_σ` reduces to the `p`-th power map:
@@ -257,15 +264,19 @@ theorem cyclotomicFrobenius_injective [NoZeroDivisors O] (hσ : Function.Injecti
 theorem map_cyclotomicFrobenius {k : Type*} [CommRing k] [CharP k p] (π : O →+* k)
     (hσ : ∀ x, π (σ x) = π x ^ p) (f : O⟦X⟧) :
     map π (cyclotomicFrobenius p σ f) = map π f ^ p := by
-  have hs : map π ((map (σ : O →+* O) f).subst ((1 + X) ^ p - 1 : O⟦X⟧)) =
-      (map π (map (σ : O →+* O) f)).subst (map π ((1 + X) ^ p - 1 : O⟦X⟧)) :=
-    PowerSeries.map_subst (HasSubst.of_constantCoeff_zero' (by simp)) _
-  have hπσ : π.comp (σ : O →+* O) = (frobenius k p).comp π := RingHom.ext hσ
-  have hX : ((1 + X : k⟦X⟧) ^ p - 1) = X ^ p := by
-    simpa using one_add_X_pow_sub_one_eq_X_pow p k 1
-  rw [cyclotomicFrobenius_apply, hs, ← RingHom.comp_apply (map π), ← map_comp, hπσ, map_comp,
-    RingHom.comp_apply, map_sub, map_pow, map_add, map_one, map_X, hX,
-    ← expand_apply p (Fact.out : p.Prime).ne_zero, ← map_expand, map_frobenius_expand]
+  -- On coefficients, `π ∘ σ` is the Frobenius of `k` after `π`.
+  have hπσ : map π (map (σ : O →+* O) f) = map (frobenius k p) (map π f) := by
+    ext n
+    simp [hσ, frobenius_def]
+  -- In characteristic `p`, the substituted series `(1 + X) ^ p - 1` reduces to `X ^ p`, so the
+  -- reduced substitution is `expand p`.
+  have hX : map π (binomialSeries O (p : ℤ_[p]) - 1) = X ^ p := by
+    simpa [binomialSeries_nat] using one_add_X_pow_sub_one_eq_X_pow p k 1
+  have hs : map π (cyclotomicFrobenius p σ f) =
+      (map π (map (σ : O →+* O) f)).subst (X ^ p : k⟦X⟧) := by
+    rw [← hX, cyclotomicFrobenius_eq_cyclotomicSubst, cyclotomicSubst_apply]
+    exact PowerSeries.map_subst (hasSubst_binomialSeries_sub_one _) _
+  rw [hs, hπσ, ← expand_apply p (Fact.out : p.Prime).ne_zero, ← map_expand, map_frobenius_expand]
 
 /-- `X` is not in the image of the Frobenius when `p` is not a unit of `O`: the linear coefficient
 of `φ(f)` is `p σ(f₁)`. -/
