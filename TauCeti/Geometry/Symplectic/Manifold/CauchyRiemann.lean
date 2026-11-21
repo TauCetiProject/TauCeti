@@ -19,29 +19,30 @@ Let `(M, j)` and `(M', J)` be manifolds with smooth almost complex structures; i
 
 `∂bar_J u = (du + J ∘ du ∘ j) / 2`,
 
-at each point `x` a real-linear map `T_x M → T_{u x} M'` (`TauCeti.cauchyRiemann`). It is the
-complex-antilinear part of the manifold derivative of `u` for the structures `j x` and
-`J (u x)` (`TauCeti.toLinearMap_cauchyRiemann`), so it anticommutes with the two structures
-(`TauCeti.isComplexAntilinear_cauchyRiemann`), and `du - ∂bar_J u` is complex linear
-(`TauCeti.isComplexLinearMap_mfderiv_sub_cauchyRiemann`). This is the half-normalized convention
-of McDuff–Salamon; the operator `du + J ∘ du ∘ j` used by Wendl is twice it.
+at each point `x` a real-linear map `T_x M → T_{u x} M'` (`TauCeti.cauchyRiemannSection`). It is
+the complex-antilinear part of the manifold derivative of `u` for the structures `j x` and
+`J (u x)` (`TauCeti.toLinearMap_cauchyRiemannSection`), so it anticommutes with the two structures
+(`TauCeti.isComplexAntilinear_cauchyRiemannSection`), and `du - ∂bar_J u` is complex linear
+(`TauCeti.isComplexLinearMap_mfderiv_sub_cauchyRiemannSection`). This is the half-normalized
+convention of McDuff–Salamon; the operator `du + J ∘ du ∘ j` used by Wendl is twice it.
 
 * **Pseudoholomorphic maps are its zeros.** At a point where `u` is differentiable, `∂bar_J u`
   vanishes exactly when `u` is pseudoholomorphic there in the sense of
-  `TauCeti.IsPseudoholomorphicAt` (`TauCeti.cauchyRiemann_eq_zero_iff`), and a differentiable map
-  is pseudoholomorphic exactly when its Cauchy–Riemann section vanishes everywhere
-  (`TauCeti.isPseudoholomorphic_iff_forall_cauchyRiemann_eq_zero`). Differentiability cannot be
-  dropped: Mathlib's `mfderiv` is `0` where `u` is not differentiable, so there `∂bar_J u` is `0`
-  as well (`TauCeti.cauchyRiemann_of_not_mdifferentiableAt`).
+  `TauCeti.IsPseudoholomorphicAt` (`TauCeti.cauchyRiemannSection_eq_zero_iff`), and a
+  differentiable map is pseudoholomorphic exactly when its Cauchy–Riemann section vanishes
+  everywhere (`TauCeti.isPseudoholomorphic_iff_forall_cauchyRiemannSection_eq_zero`).
+  Differentiability cannot be dropped: Mathlib's `mfderiv` is `0` where `u` is not
+  differentiable, so there `∂bar_J u` is `0` as well
+  (`TauCeti.cauchyRiemannSection_of_not_mdifferentiableAt`).
 * **Naturality.** Precomposing with a map pseudoholomorphic for the source structures, such as a
   biholomorphism of Riemann surfaces or a holomorphic chart, precomposes the section with its
-  derivative (`TauCeti.cauchyRiemann_comp_of_isPseudoholomorphicAt_right`), and postcomposing with
-  a map intertwining the target structures postcomposes it with its derivative
-  (`TauCeti.cauchyRiemann_comp_of_isPseudoholomorphicAt_left`). Reversing both structures does not
-  change the section (`TauCeti.cauchyRiemann_neg_neg`).
+  derivative (`TauCeti.cauchyRiemannSection_comp_of_isPseudoholomorphicAt_right`), and
+  postcomposing with a map intertwining the target structures postcomposes it with its derivative
+  (`TauCeti.cauchyRiemannSection_comp_of_isPseudoholomorphicAt_left`). Reversing both structures
+  does not change the section (`TauCeti.cauchyRiemannSection_neg_neg`).
 * **Complex vector spaces.** For a map between complex normed spaces, with multiplication by `i`
   as almost complex structure on both, the section is the conjugate Wirtinger derivative
-  (`TauCeti.cauchyRiemann_ofComplexManifold_apply`).
+  (`TauCeti.cauchyRiemannSection_ofComplexManifold_apply`).
 * **Energy.** For a curve `u` from the standard complex line `ℝ × ℝ` into `M'` and a smooth
   two-form `ω` invariant under `J`, the energy density of `du` splits as
   `e(du) = 2 ω(∂s u, ∂t u) + 2 e(∂bar_J u)`
@@ -87,105 +88,107 @@ variable {j : SmoothAlmostComplexStructure I M} {J : SmoothAlmostComplexStructur
 between manifolds with almost complex structures `j` and `J`, at the point `x`: a real-linear
 map from the tangent space at `x` to the tangent space at `u x`, built from the manifold
 derivative `mfderiv`. It vanishes at a point of differentiability exactly when `u` is
-pseudoholomorphic there (`TauCeti.cauchyRiemann_eq_zero_iff`). -/
-def cauchyRiemann (j : SmoothAlmostComplexStructure I M) (J : SmoothAlmostComplexStructure I' M')
-    (u : M → M') (x : M) : TangentSpace I x →L[ℝ] TangentSpace I' (u x) :=
+pseudoholomorphic there (`TauCeti.cauchyRiemannSection_eq_zero_iff`). -/
+def cauchyRiemannSection (j : SmoothAlmostComplexStructure I M)
+    (J : SmoothAlmostComplexStructure I' M') (u : M → M') (x : M) :
+    TangentSpace I x →L[ℝ] TangentSpace I' (u x) :=
   (2⁻¹ : ℝ) • (mfderiv I I' u x +
     (J.toEndomorphism (u x)).comp ((mfderiv I I' u x).comp (j.toEndomorphism x)))
 
 /-- The definition of the Cauchy–Riemann section. -/
-theorem cauchyRiemann_def (j : SmoothAlmostComplexStructure I M)
+theorem cauchyRiemannSection_def (j : SmoothAlmostComplexStructure I M)
     (J : SmoothAlmostComplexStructure I' M') (u : M → M') (x : M) :
-    cauchyRiemann j J u x = (2⁻¹ : ℝ) • (mfderiv I I' u x +
+    cauchyRiemannSection j J u x = (2⁻¹ : ℝ) • (mfderiv I I' u x +
       (J.toEndomorphism (u x)).comp ((mfderiv I I' u x).comp (j.toEndomorphism x))) :=
   (rfl)
 
 /-- The Cauchy–Riemann section evaluated on a tangent vector:
 `∂bar_J u (v) = (du v + J (du (j v))) / 2`. -/
-theorem cauchyRiemann_apply (j : SmoothAlmostComplexStructure I M)
+theorem cauchyRiemannSection_apply (j : SmoothAlmostComplexStructure I M)
     (J : SmoothAlmostComplexStructure I' M') (u : M → M') (x : M) (v : TangentSpace I x) :
-    cauchyRiemann j J u x v =
+    cauchyRiemannSection j J u x v =
       (2⁻¹ : ℝ) • (mfderiv I I' u x v + J (u x) (mfderiv I I' u x (j x v))) :=
   (rfl)
 
 /-- The Cauchy–Riemann section is the complex-antilinear part of the manifold derivative, for
 the almost complex structures at the point and at its image. -/
-theorem toLinearMap_cauchyRiemann (j : SmoothAlmostComplexStructure I M)
+theorem toLinearMap_cauchyRiemannSection (j : SmoothAlmostComplexStructure I M)
     (J : SmoothAlmostComplexStructure I' M') (u : M → M') (x : M) :
-    (cauchyRiemann j J u x).toLinearMap =
+    (cauchyRiemannSection j J u x).toLinearMap =
       complexAntilinearPart (j.almostComplexStructureAt x).toLinearMap
         (J.almostComplexStructureAt (u x)).toLinearMap (mfderiv I I' u x).toLinearMap := by
   ext v
   simp only [complexAntilinearPart_apply,
     SmoothAlmostComplexStructure.almostComplexStructureAt_toLinearMap, ContinuousLinearMap.coe_coe,
-    cauchyRiemann_apply]
+    cauchyRiemannSection_apply]
 
 /-- The Cauchy–Riemann section anticommutes with the almost complex structures:
 `∂bar_J u ∘ j = -J ∘ ∂bar_J u`. -/
-theorem isComplexAntilinear_cauchyRiemann (j : SmoothAlmostComplexStructure I M)
+theorem isComplexAntilinear_cauchyRiemannSection (j : SmoothAlmostComplexStructure I M)
     (J : SmoothAlmostComplexStructure I' M') (u : M → M') (x : M) :
     IsComplexAntilinear (j.almostComplexStructureAt x).toLinearMap
-      (J.almostComplexStructureAt (u x)).toLinearMap (cauchyRiemann j J u x).toLinearMap := by
-  rw [toLinearMap_cauchyRiemann]
+      (J.almostComplexStructureAt (u x)).toLinearMap
+      (cauchyRiemannSection j J u x).toLinearMap := by
+  rw [toLinearMap_cauchyRiemannSection]
   exact isComplexAntilinear_complexAntilinearPart (j.almostComplexStructureAt x).square_neg
     (J.almostComplexStructureAt (u x)).square_neg _
 
 /-- The Cauchy–Riemann section anticommutes with the almost complex structures, on a tangent
 vector. -/
-theorem cauchyRiemann_apply_apply (j : SmoothAlmostComplexStructure I M)
+theorem cauchyRiemannSection_apply_almostComplexStructure (j : SmoothAlmostComplexStructure I M)
     (J : SmoothAlmostComplexStructure I' M') (u : M → M') (x : M) (v : TangentSpace I x) :
-    cauchyRiemann j J u x (j x v) = -J (u x) (cauchyRiemann j J u x v) := by
+    cauchyRiemannSection j J u x (j x v) = -J (u x) (cauchyRiemannSection j J u x v) := by
   simpa only [SmoothAlmostComplexStructure.almostComplexStructureAt_toLinearMap,
-    ContinuousLinearMap.coe_coe] using (isComplexAntilinear_cauchyRiemann j J u x).apply v
+    ContinuousLinearMap.coe_coe] using (isComplexAntilinear_cauchyRiemannSection j J u x).apply v
 
 /-- The difference `du - ∂bar_J u`, the complex-linear part `∂_J u` of the derivative, commutes with
 the almost complex structures. -/
-theorem isComplexLinearMap_mfderiv_sub_cauchyRiemann (j : SmoothAlmostComplexStructure I M)
+theorem isComplexLinearMap_mfderiv_sub_cauchyRiemannSection (j : SmoothAlmostComplexStructure I M)
     (J : SmoothAlmostComplexStructure I' M') (u : M → M') (x : M) :
     IsComplexLinearMap (j.almostComplexStructureAt x) (J.almostComplexStructureAt (u x))
-      (mfderiv I I' u x - cauchyRiemann j J u x).toLinearMap := by
-  have hsub : (mfderiv I I' u x - cauchyRiemann j J u x).toLinearMap =
+      (mfderiv I I' u x - cauchyRiemannSection j J u x).toLinearMap := by
+  have hsub : (mfderiv I I' u x - cauchyRiemannSection j J u x).toLinearMap =
       complexLinearPart (j.almostComplexStructureAt x).toLinearMap
         (J.almostComplexStructureAt (u x)).toLinearMap (mfderiv I I' u x).toLinearMap := by
-    rw [ContinuousLinearMap.toLinearMap_sub, toLinearMap_cauchyRiemann, sub_eq_iff_eq_add',
+    rw [ContinuousLinearMap.toLinearMap_sub, toLinearMap_cauchyRiemannSection, sub_eq_iff_eq_add',
       add_comm, complexLinearPart_add_complexAntilinearPart]
   rw [isComplexLinearMap_iff_isComplexLinear, hsub]
   exact isComplexLinear_complexLinearPart (j.almostComplexStructureAt x).square_neg
     (J.almostComplexStructureAt (u x)).square_neg _
 
 /-- The Cauchy–Riemann section of a map pseudoholomorphic at a point vanishes there. -/
-theorem IsPseudoholomorphicAt.cauchyRiemann_eq_zero (hu : IsPseudoholomorphicAt j J u x) :
-    cauchyRiemann j J u x = 0 := by
+theorem IsPseudoholomorphicAt.cauchyRiemannSection_eq_zero (hu : IsPseudoholomorphicAt j J u x) :
+    cauchyRiemannSection j J u x = 0 := by
   ext v
-  simp [cauchyRiemann_apply, hu.mfderiv_apply_commute]
+  simp [cauchyRiemannSection_apply, hu.mfderiv_apply_commute]
 
 /-- The identity map has vanishing Cauchy–Riemann section. -/
 @[simp]
-theorem cauchyRiemann_id (j : SmoothAlmostComplexStructure I M) (x : M) :
-    cauchyRiemann j j id x = 0 :=
-  (isPseudoholomorphicAt_id j x).cauchyRiemann_eq_zero
+theorem cauchyRiemannSection_id (j : SmoothAlmostComplexStructure I M) (x : M) :
+    cauchyRiemannSection j j id x = 0 :=
+  (isPseudoholomorphicAt_id j x).cauchyRiemannSection_eq_zero
 
 /-- A constant map has vanishing Cauchy–Riemann section. -/
 @[simp]
-theorem cauchyRiemann_const (j : SmoothAlmostComplexStructure I M)
+theorem cauchyRiemannSection_const (j : SmoothAlmostComplexStructure I M)
     (J : SmoothAlmostComplexStructure I' M') (c : M') (x : M) :
-    cauchyRiemann j J (fun _ ↦ c) x = 0 :=
-  (isPseudoholomorphicAt_const j J c x).cauchyRiemann_eq_zero
+    cauchyRiemannSection j J (fun _ ↦ c) x = 0 :=
+  (isPseudoholomorphicAt_const j J c x).cauchyRiemannSection_eq_zero
 
 /-- At a point where the map is not differentiable its Cauchy–Riemann section is `0`, because
-Mathlib's `mfderiv` is `0` there. So `cauchyRiemann_eq_zero_iff` needs differentiability. -/
-theorem cauchyRiemann_of_not_mdifferentiableAt (hu : ¬MDifferentiableAt I I' u x) :
-    cauchyRiemann j J u x = 0 := by
-  rw [cauchyRiemann_def, mfderiv_zero_of_not_mdifferentiableAt hu,
+Mathlib's `mfderiv` is `0` there. So `cauchyRiemannSection_eq_zero_iff` needs differentiability. -/
+theorem cauchyRiemannSection_of_not_mdifferentiableAt (hu : ¬MDifferentiableAt I I' u x) :
+    cauchyRiemannSection j J u x = 0 := by
+  rw [cauchyRiemannSection_def, mfderiv_zero_of_not_mdifferentiableAt hu,
     ContinuousLinearMap.zero_comp, ContinuousLinearMap.comp_zero, add_zero, smul_zero]
 
 /-- At a point where the map is differentiable, its Cauchy–Riemann section vanishes exactly when
 the map is pseudoholomorphic there. -/
-theorem cauchyRiemann_eq_zero_iff (hu : MDifferentiableAt I I' u x) :
-    cauchyRiemann j J u x = 0 ↔ IsPseudoholomorphicAt j J u x := by
+theorem cauchyRiemannSection_eq_zero_iff (hu : MDifferentiableAt I I' u x) :
+    cauchyRiemannSection j J u x = 0 ↔ IsPseudoholomorphicAt j J u x := by
   refine ⟨fun h ↦ isPseudoholomorphicAt_iff_mfderiv.2 ⟨hu, fun w ↦ ?_⟩,
-    IsPseudoholomorphicAt.cauchyRiemann_eq_zero⟩
-  have hw := (toLinearMap_cauchyRiemann j J u x).symm.trans
+    IsPseudoholomorphicAt.cauchyRiemannSection_eq_zero⟩
+  have hw := (toLinearMap_cauchyRiemannSection j J u x).symm.trans
     (congrArg ContinuousLinearMap.toLinearMap h)
   have hlin := (isComplexLinear_iff_complexAntilinearPart_eq_zero
     (J.almostComplexStructureAt (u x)).square_neg _).2 hw
@@ -194,18 +197,18 @@ theorem cauchyRiemann_eq_zero_iff (hu : MDifferentiableAt I I' u x) :
 
 /-- A differentiable map is pseudoholomorphic exactly when its Cauchy–Riemann section vanishes at
 every point. -/
-theorem isPseudoholomorphic_iff_forall_cauchyRiemann_eq_zero (hu : MDifferentiable I I' u) :
-    IsPseudoholomorphic j J u ↔ ∀ x, cauchyRiemann j J u x = 0 := by
+theorem isPseudoholomorphic_iff_forall_cauchyRiemannSection_eq_zero (hu : MDifferentiable I I' u) :
+    IsPseudoholomorphic j J u ↔ ∀ x, cauchyRiemannSection j J u x = 0 := by
   rw [isPseudoholomorphic_iff]
-  exact forall_congr' fun x ↦ (cauchyRiemann_eq_zero_iff (hu x)).symm
+  exact forall_congr' fun x ↦ (cauchyRiemannSection_eq_zero_iff (hu x)).symm
 
 /-- Reversing both almost complex structures does not change the Cauchy–Riemann section. -/
 @[simp]
-theorem cauchyRiemann_neg_neg (j : SmoothAlmostComplexStructure I M)
+theorem cauchyRiemannSection_neg_neg (j : SmoothAlmostComplexStructure I M)
     (J : SmoothAlmostComplexStructure I' M') (u : M → M') :
-    cauchyRiemann (-j) (-J) u = cauchyRiemann j J u := by
+    cauchyRiemannSection (-j) (-J) u = cauchyRiemannSection j J u := by
   ext x v
-  simp only [cauchyRiemann_apply, SmoothAlmostComplexStructure.neg_apply, map_neg, neg_neg]
+  simp only [cauchyRiemannSection_apply, SmoothAlmostComplexStructure.neg_apply, map_neg, neg_neg]
 
 end Basic
 
@@ -223,22 +226,24 @@ variable {j₀ : SmoothAlmostComplexStructure I₀ M₀} {j : SmoothAlmostComple
 
 /-- Postcomposing with a map that intertwines the target almost complex structures postcomposes
 the Cauchy–Riemann section with its derivative: `∂bar_K (ψ ∘ u) = dψ ∘ ∂bar_J u`. -/
-theorem cauchyRiemann_comp_of_isPseudoholomorphicAt_left {ψ : M' → M''} {u : M → M'} {x : M}
+theorem cauchyRiemannSection_comp_of_isPseudoholomorphicAt_left {ψ : M' → M''} {u : M → M'} {x : M}
     (hψ : IsPseudoholomorphicAt J K ψ (u x)) (hu : MDifferentiableAt I I' u x) :
-    cauchyRiemann j K (ψ ∘ u) x = (mfderiv I' I'' ψ (u x)).comp (cauchyRiemann j J u x) := by
+    cauchyRiemannSection j K (ψ ∘ u) x =
+      (mfderiv I' I'' ψ (u x)).comp (cauchyRiemannSection j J u x) := by
   ext v
-  simp only [cauchyRiemann_apply, mfderiv_comp x hψ.mdifferentiableAt hu,
+  simp only [cauchyRiemannSection_apply, mfderiv_comp x hψ.mdifferentiableAt hu,
     ContinuousLinearMap.comp_apply, map_smul, map_add, Function.comp_apply]
   rw [hψ.mfderiv_apply_commute]
 
 /-- Precomposing with a map that intertwines the source almost complex structures, such as a
 biholomorphism of Riemann surfaces or a holomorphic chart, precomposes the Cauchy–Riemann
 section with its derivative: `∂bar_J (u ∘ φ) = ∂bar_J u ∘ dφ`. -/
-theorem cauchyRiemann_comp_of_isPseudoholomorphicAt_right {u : M → M'} {φ : M₀ → M} {x : M₀}
+theorem cauchyRiemannSection_comp_of_isPseudoholomorphicAt_right {u : M → M'} {φ : M₀ → M} {x : M₀}
     (hu : MDifferentiableAt I I' u (φ x)) (hφ : IsPseudoholomorphicAt j₀ j φ x) :
-    cauchyRiemann j₀ J (u ∘ φ) x = (cauchyRiemann j J u (φ x)).comp (mfderiv I₀ I φ x) := by
+    cauchyRiemannSection j₀ J (u ∘ φ) x =
+      (cauchyRiemannSection j J u (φ x)).comp (mfderiv I₀ I φ x) := by
   ext v
-  simp only [cauchyRiemann_apply, mfderiv_comp x hu hφ.mdifferentiableAt,
+  simp only [cauchyRiemannSection_apply, mfderiv_comp x hu hφ.mdifferentiableAt,
     ContinuousLinearMap.comp_apply, Function.comp_apply]
   rw [hφ.mfderiv_apply_commute]
 
@@ -254,11 +259,12 @@ variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddComm
 /-- For a map `g` between complex normed spaces, with multiplication by `i` as the almost complex
 structure on both, the Cauchy–Riemann section is the conjugate Wirtinger derivative
 `v ↦ (dg v + i dg (i v)) / 2`. -/
-theorem cauchyRiemann_ofComplexManifold_apply (g : V → W) (x : V) (v : TangentSpace 𝓘(ℝ, V) x) :
-    cauchyRiemann (SmoothAlmostComplexStructure.ofComplexManifold V V)
+theorem cauchyRiemannSection_ofComplexManifold_apply (g : V → W) (x : V)
+    (v : TangentSpace 𝓘(ℝ, V) x) :
+    cauchyRiemannSection (SmoothAlmostComplexStructure.ofComplexManifold V V)
         (SmoothAlmostComplexStructure.ofComplexManifold W W) g x v =
       conjWirtingerDeriv g x v := by
-  rw [cauchyRiemann_apply, conjWirtingerDeriv_eq_complexAntilinearPart, mfderiv_eq_fderiv]
+  rw [cauchyRiemannSection_apply, conjWirtingerDeriv_eq_complexAntilinearPart, mfderiv_eq_fderiv]
   simp only [SmoothAlmostComplexStructure.toEndomorphism_ofComplexManifold]
   exact (ContinuousLinearMap.complexAntilinearPart_apply (fderiv ℝ g x) v).symm
 
@@ -326,8 +332,9 @@ theorem Invariant.stdComplexLineEnergyDensity_mfderiv_eq (hinv : form.Invariant 
           (mfderiv (modelWithCornersSelf ℝ (ℝ × ℝ)) I' u z stdComplexLineReal)
           (mfderiv (modelWithCornersSelf ℝ (ℝ × ℝ)) I' u z stdComplexLineImag) +
         2 * form.stdComplexLineEnergyDensity J (u z)
-          (cauchyRiemann (SmoothAlmostComplexStructure.product ℝ) J u z).toLinearMap := by
-  rw [toLinearMap_cauchyRiemann, SmoothAlmostComplexStructure.product_almostComplexStructureAt]
+          (cauchyRiemannSection (SmoothAlmostComplexStructure.product ℝ) J u z).toLinearMap := by
+  rw [toLinearMap_cauchyRiemannSection,
+    SmoothAlmostComplexStructure.product_almostComplexStructureAt]
   exact hinv.stdComplexLineEnergyDensity_eq_two_mul_twoForm_add (u z) _
 
 end SmoothTwoForm
