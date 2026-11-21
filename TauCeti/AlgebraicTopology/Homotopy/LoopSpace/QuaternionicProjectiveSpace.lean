@@ -39,9 +39,9 @@ the others.
 
 The restriction of `j ⋆ Ωq` to `{1} × ΩS⁴ⁿ⁺³` is `Ωq`
 (`TauCeti.QuaternionicProjectiveSpace.hopfProduct_comp_prodMk_const_one`), and the inclusion at
-`1` is an isomorphism on `H_k` exactly when `H_{k-3}(ΩS⁴ⁿ⁺³)` vanishes, which is the case unless
-`k` is `3` modulo `4n + 2`. In the degrees `3` modulo `4n + 2` the group `H_{k-3}(ΩS⁴ⁿ⁺³)` comes
-from the sphere factor, while `H_k(ΩS⁴ⁿ⁺³)` vanishes.
+`1` is an isomorphism on `H_k` for `k < 3`, and for `k ≥ 3` exactly when `H_{k-3}(ΩS⁴ⁿ⁺³)`
+vanishes, which is the case unless `k` is `3` modulo `4n + 2`. In the degrees `3` modulo `4n + 2`,
+`H_k(S³ × ΩS⁴ⁿ⁺³) ≅ H_{k-3}(ΩS⁴ⁿ⁺³)` comes from the sphere factor, while `H_k(ΩS⁴ⁿ⁺³)` vanishes.
 
 With integer coefficients, composing with the Hurewicz isomorphism of the loop space gives the
 explicit generator of `H_{4n+2}(ΩHPⁿ; ℤ) ≅ ℤ`: it is the image under `Ωq` of the Hurewicz class of
