@@ -22,6 +22,8 @@ both `E` and `F` onto their strong biduals (`ContinuousLinearEquiv.bidualEquivOf
   a compatible dual identification `(StrongDual 𝕜 E ≃L[𝕜] F, E ≃L[𝕜] StrongDual 𝕜 F)`.
 * `ContinuousLinearEquiv.dualBidualEquivOfDualEquiv`: strong-bidual evaluation equivalence on `F`
   from the same dual identification.
+* `ContinuousLinearEquiv.trans_dualBidualEquivOfDualEquiv`: compatibility of `a` composed with
+  `dualBidualEquivOfDualEquiv a b h` against `b.arrowCongr (.refl 𝕜 𝕜)`.
 -/
 
 public section
@@ -110,6 +112,17 @@ theorem dualBidualEquivOfDualEquiv_apply_apply [ContinuousSMul 𝕜 F]
     (f : F) (φ : StrongDual 𝕜 F) :
     dualBidualEquivOfDualEquiv a b h f φ = φ f :=
   (rfl)
+
+omit [ContinuousSMul 𝕜 E] in
+/-- Composing `a : StrongDual 𝕜 E ≃L[𝕜] F` with the dual-bidual equivalence
+`dualBidualEquivOfDualEquiv a b h` agrees with `b.arrowCongr (.refl 𝕜 𝕜)`. -/
+theorem trans_dualBidualEquivOfDualEquiv [ContinuousSMul 𝕜 F]
+    (a : StrongDual 𝕜 E ≃L[𝕜] F) (b : E ≃L[𝕜] StrongDual 𝕜 F)
+    (h : ∀ (x : E) (ℓ : StrongDual 𝕜 E), b x (a ℓ) = ℓ x) :
+    a.trans (dualBidualEquivOfDualEquiv a b h) = b.arrowCongr (ContinuousLinearEquiv.refl 𝕜 𝕜) := by
+  ext ℓ Ξ
+  obtain ⟨x, rfl⟩ := b.surjective Ξ
+  simp [h]
 
 end DualReflexivity
 

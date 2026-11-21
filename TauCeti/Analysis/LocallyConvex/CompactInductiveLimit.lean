@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.LocallyConvex.DualProjectiveLimit
 public import TauCeti.Analysis.LocallyConvex.FinalTopology
 import Mathlib.Analysis.LocallyConvex.StrongTopology
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Precomp
+import TauCeti.Topology.Algebra.Module.Spaces.StrongDual
 
 /-!
 # Inductive limits of normed spaces with compact bonding maps
@@ -491,12 +493,17 @@ theorem strongDualEquiv_trans_bidualEquiv [Module ℝ L] [IsScalarTower ℝ 𝕜
       (continuous_of_continuous_evalInductive_of_continuous_comp hι hinj hcover hcont)).trans
       (dualProjectiveLimit.bidualEquiv hT) =
     (evalEquiv hT hι hinj hcover hcont).arrowCongr (ContinuousLinearEquiv.refl 𝕜 𝕜) := by
-  ext φ Ξ
-  obtain ⟨x, rfl⟩ := (evalEquiv hT hι hinj hcover hcont).surjective Ξ
-  rw [ContinuousLinearEquiv.trans_apply, dualProjectiveLimit.bidualEquiv_apply_apply,
-    coe_strongDualEquiv, ContinuousLinearEquiv.arrowCongr_apply,
-    ContinuousLinearEquiv.refl_apply, ContinuousLinearEquiv.symm_apply_apply,
-    coe_evalEquiv, evalInductive_apply_precomp]
+  let a := strongDualEquiv hT hι hinj hcover
+    (continuous_of_continuous_evalInductive_of_continuous_comp hι hinj hcover hcont)
+  let b := evalEquiv hT hι hinj hcover hcont
+  have h : ∀ (x : L) (ℓ : StrongDual 𝕜 L), b x (a ℓ) = ℓ x := fun x ℓ ↦ by
+    simp [a, b, evalInductive_apply_precomp]
+  have hbidual : dualProjectiveLimit.bidualEquiv hT =
+      ContinuousLinearEquiv.dualBidualEquivOfDualEquiv a b h := by
+    ext f φ
+    simp
+  rw [hbidual]
+  exact a.trans_dualBidualEquivOfDualEquiv b h
 
 /-- **Completeness of compact inductive limits.** Let `L` be a locally convex uniform additive
 group over `ℝ` or `ℂ`, covered by compatible injective continuous linear maps `ι n : B n →L[𝕜] L`
