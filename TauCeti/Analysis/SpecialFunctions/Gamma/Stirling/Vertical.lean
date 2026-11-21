@@ -490,6 +490,43 @@ theorem exists_norm_inv_Gamma_vertical_strip_le (a b : ℝ) :
           gcongr
           exact (le_max_left C₁ C_mid).trans (le_max_left _ 1)
 
+/-- Comparison of the polynomial factors in the shifted strip bounds: for `s = w + (x + i T)`,
+`e ≤ K` and `0 ≤ K`, `(1 + |Im s|) ^ e ≤ (1 + |Im w|) ^ K (1 + |T|) ^ K`. -/
+private theorem one_add_abs_im_add_rpow_le (w : ℂ) (x T : ℝ) {e K : ℝ} (he : e ≤ K)
+    (hK : 0 ≤ K) :
+    (1 + |(w + (x + T * I)).im|) ^ e ≤ (1 + |w.im|) ^ K * (1 + |T|) ^ K := by
+  have hup : |(w + (x + T * I)).im| ≤ |w.im| + |T| := by simpa using abs_add_le w.im T
+  calc (1 + |(w + (x + T * I)).im|) ^ e ≤ (1 + |(w + (x + T * I)).im|) ^ K :=
+        Real.rpow_le_rpow_of_exponent_le (by linarith [abs_nonneg (w + (x + T * I)).im]) he
+    _ ≤ ((1 + |w.im|) * (1 + |T|)) ^ K :=
+        Real.rpow_le_rpow (by positivity) (by nlinarith [abs_nonneg T, abs_nonneg w.im]) hK
+    _ = (1 + |w.im|) ^ K * (1 + |T|) ^ K := Real.mul_rpow (by positivity) (by positivity)
+
+/-- Comparison of the growing exponential factors in the shifted strip bounds: for
+`s = w + (x + i T)`, `exp (π |Im s| / 2) ≤ exp (π |Im w| / 2) exp (π |T| / 2)`. -/
+private theorem exp_abs_im_add_le (w : ℂ) (x T : ℝ) :
+    Real.exp (π * |(w + (x + T * I)).im| / 2) ≤
+      Real.exp (π * |w.im| / 2) * Real.exp (π * |T| / 2) := by
+  have hup : |(w + (x + T * I)).im| ≤ |w.im| + |T| := by simpa using abs_add_le w.im T
+  rw [← Real.exp_add]
+  exact Real.exp_le_exp.mpr (by nlinarith [Real.pi_pos])
+
+/-- For `s = w + (x + i T)`, `|T| - |Im w| ≤ |Im s|`. -/
+private theorem abs_sub_abs_im_le_abs_im_add (w : ℂ) (x T : ℝ) :
+    |T| - |w.im| ≤ |(w + (x + T * I)).im| := by
+  have := abs_sub_abs_le_abs_sub T (-w.im)
+  rw [abs_neg, sub_neg_eq_add, add_comm] at this
+  simpa using this
+
+/-- Comparison of the decaying exponential factors in the shifted strip bounds: for
+`s = w + (x + i T)`, `exp (-π |Im s| / 2) ≤ exp (π |Im w| / 2) exp (-π |T| / 2)`. -/
+private theorem exp_neg_abs_im_add_le (w : ℂ) (x T : ℝ) :
+    Real.exp (-(π * |(w + (x + T * I)).im| / 2)) ≤
+      Real.exp (π * |w.im| / 2) * Real.exp (-(π * |T| / 2)) := by
+  have hlow := abs_sub_abs_im_le_abs_im_add w x T
+  rw [← Real.exp_add]
+  exact Real.exp_le_exp.mpr (by nlinarith [Real.pi_pos])
+
 /-- Shifted Stirling bound on a vertical strip, uniform in the real part: for `w : ℂ` and
 `A ≤ x ≤ B`, `‖Γ(w + x + i T)‖ ≤ C (1 + |T|) ^ K exp (-π |T| / 2)` once `|T| ≥ T₀`. -/
 theorem exists_norm_Gamma_add_vertical_strip_le (w : ℂ) (A B : ℝ) :
@@ -503,29 +540,14 @@ theorem exists_norm_Gamma_add_vertical_strip_le (w : ℂ) (A B : ℝ) :
     fun x hx T hT ↦ ?_⟩
   set s : ℂ := w + (x + T * I)
   have hre : s.re = w.re + x := by simp [s]
-  have him : s.im = w.im + T := by simp [s]
-  have hlow : |T| - m ≤ |s.im| := by
-    have := abs_sub_abs_le_abs_sub T (-w.im)
-    rw [abs_neg, sub_neg_eq_add, add_comm] at this
-    rw [him]
-    linarith
-  have hup : |s.im| ≤ m + |T| := him ▸ abs_add_le _ _
-  have e1 : (1 + |s.im|) ^ (s.re - 1 / 2) ≤ (1 + m) ^ K * (1 + |T|) ^ K := by
-    calc (1 + |s.im|) ^ (s.re - 1 / 2) ≤ (1 + |s.im|) ^ K :=
-          Real.rpow_le_rpow_of_exponent_le (by linarith [abs_nonneg s.im])
-            (le_max_of_le_left (by rw [hre]; linarith [hx.2]))
-      _ ≤ ((1 + m) * (1 + |T|)) ^ K :=
-          Real.rpow_le_rpow (by positivity)
-            (by nlinarith [abs_nonneg T, abs_nonneg w.im]) (le_max_right _ _)
-      _ = (1 + m) ^ K * (1 + |T|) ^ K := Real.mul_rpow (by positivity) (by positivity)
-  have e2 : Real.exp (-(π * |s.im| / 2)) ≤ Real.exp (π * m / 2) * Real.exp (-(π * |T| / 2)) := by
-    rw [← Real.exp_add]
-    exact Real.exp_le_exp.mpr (by nlinarith [Real.pi_pos])
+  have hlow : |T| - m ≤ |s.im| := abs_sub_abs_im_le_abs_im_add w x T
   calc ‖Complex.Gamma s‖ ≤ C₀ * (1 + |s.im|) ^ (s.re - 1 / 2) * Real.exp (-(π * |s.im| / 2)) :=
         h s (by rw [hre]; exact ⟨by linarith [hx.1], by linarith [hx.2]⟩) (by linarith)
     _ ≤ C₀ * ((1 + m) ^ K * (1 + |T|) ^ K) *
           (Real.exp (π * m / 2) * Real.exp (-(π * |T| / 2))) :=
-        mul_le_mul (mul_le_mul_of_nonneg_left e1 hC₀.le) e2 (by positivity) (by positivity)
+        mul_le_mul (mul_le_mul_of_nonneg_left (one_add_abs_im_add_rpow_le w x T
+            (le_max_of_le_left (by rw [hre]; linarith [hx.2])) (le_max_right _ _)) hC₀.le)
+          (exp_neg_abs_im_add_le w x T) (by positivity) (by positivity)
     _ = C₀ * (1 + m) ^ K * Real.exp (π * m / 2) * (1 + |T|) ^ K *
           Real.exp (-(π * |T| / 2)) := by ring
 
@@ -540,24 +562,13 @@ theorem exists_norm_inv_Gamma_add_vertical_strip_le (w : ℂ) (A B : ℝ) :
   refine ⟨C₀ * (1 + m) ^ K * Real.exp (π * m / 2), by positivity, K, fun x hx T ↦ ?_⟩
   set s : ℂ := w + (x + T * I)
   have hre : s.re = w.re + x := by simp [s]
-  have him : s.im = w.im + T := by simp [s]
-  have hup : |s.im| ≤ m + |T| := him ▸ abs_add_le _ _
-  have e1 : (1 + |s.im|) ^ (1 / 2 - s.re) ≤ (1 + m) ^ K * (1 + |T|) ^ K := by
-    calc (1 + |s.im|) ^ (1 / 2 - s.re) ≤ (1 + |s.im|) ^ K :=
-          Real.rpow_le_rpow_of_exponent_le (by linarith [abs_nonneg s.im])
-            (le_max_of_le_left (by rw [hre]; linarith [hx.1]))
-      _ ≤ ((1 + m) * (1 + |T|)) ^ K :=
-          Real.rpow_le_rpow (by positivity)
-            (by nlinarith [abs_nonneg T, abs_nonneg w.im]) (le_max_right _ _)
-      _ = (1 + m) ^ K * (1 + |T|) ^ K := Real.mul_rpow (by positivity) (by positivity)
-  have e2 : Real.exp (π * |s.im| / 2) ≤ Real.exp (π * m / 2) * Real.exp (π * |T| / 2) := by
-    rw [← Real.exp_add]
-    exact Real.exp_le_exp.mpr (by nlinarith [Real.pi_pos])
   calc ‖(Complex.Gamma s)⁻¹‖ ≤ C₀ * (1 + |s.im|) ^ (1 / 2 - s.re) * Real.exp (π * |s.im| / 2) :=
         h s (by rw [hre]; exact ⟨by linarith [hx.1], by linarith [hx.2]⟩)
     _ ≤ C₀ * ((1 + m) ^ K * (1 + |T|) ^ K) *
           (Real.exp (π * m / 2) * Real.exp (π * |T| / 2)) :=
-        mul_le_mul (mul_le_mul_of_nonneg_left e1 hC₀.le) e2 (by positivity) (by positivity)
+        mul_le_mul (mul_le_mul_of_nonneg_left (one_add_abs_im_add_rpow_le w x T
+            (le_max_of_le_left (by rw [hre]; linarith [hx.1])) (le_max_right _ _)) hC₀.le)
+          (exp_abs_im_add_le w x T) (by positivity) (by positivity)
     _ = C₀ * (1 + m) ^ K * Real.exp (π * m / 2) * (1 + |T|) ^ K *
           Real.exp (π * |T| / 2) := by ring
 

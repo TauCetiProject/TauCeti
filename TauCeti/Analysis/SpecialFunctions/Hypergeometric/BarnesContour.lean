@@ -8,12 +8,13 @@ module
 public import TauCeti.Analysis.Contour.Residue.Basic
 public import TauCeti.Analysis.SpecialFunctions.Hypergeometric.MellinBarnes
 import Mathlib.Analysis.Meromorphic.Complex
-import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import TauCeti.Analysis.Contour.Residue.ChangeOfVariables
 import TauCeti.Analysis.Contour.Residue.VerticalLineShift
 import TauCeti.Analysis.SpecialFunctions.Gamma.Order
 import TauCeti.Analysis.SpecialFunctions.Gamma.Residue
 import TauCeti.Analysis.SpecialFunctions.Gamma.Stirling.Vertical
+import TauCeti.Analysis.SpecialFunctions.Pow.Complex
+import TauCeti.MeasureTheory.Integral.Exp.Decay
 
 /-!
 # Barnes's integral over a separating contour
@@ -34,7 +35,7 @@ poles. This file defines that value and proves that it does not depend on the li
 
 ## Main definitions
 
-* `Complex.mellinBarnesIntegrand a b c z t`: the integrand
+* `Complex.hypergeometricMellinBarnesIntegrand a b c z t`: the integrand
   `Γ(a + t) Γ(b + t) Γ(-t) Γ(c + t)⁻¹ (-z)^t` of DLMF 15.6.6.
 * `Complex.gammaPolesRightOf a σ`: the poles `-a - k` of `t ↦ Γ(a + t)` with real part `> σ`.
 * `Complex.hypergeometricMellinBarnes a b c z σ`: the integral `(2πi)⁻¹ ∫_C` over the separating
@@ -49,8 +50,9 @@ poles. This file defines that value and proves that it does not depend on the li
 * `Complex.eulerIntegral_eq_hypergeometricMellinBarnes`: for `0 < Re a`, `0 < Re b < Re c` and
   `-z ∈ slitPlane`, Euler's integral is `(Γ(a) Γ(b))⁻¹` times the contour integral, on every such
   line, including lines with poles of `Γ(a + t) Γ(b + t)` to their right.
-* `Complex.residue_mellinBarnesIntegrand_neg_sub_natCast`: the residue at a simple pole
-  `t = -a - k`, which is `(-1)^k / k! · Γ(b - a - k) Γ(a + k) Γ(c - a - k)⁻¹ (-z)^(-a - k)`.
+* `Complex.residue_hypergeometricMellinBarnesIntegrand_neg_sub_natCast`: the residue at a simple
+  pole `t = -a - k` that is not a pole of `Γ(b + t)` or of `Γ(-t)`, which is
+  `(-1)^k / k! · Γ(b - a - k) Γ(a + k) Γ(c - a - k)⁻¹ (-z)^(-a - k)`.
 
 ## Implementation notes
 
@@ -80,22 +82,22 @@ namespace Complex
 
 /-- The integrand `Γ(a + t) Γ(b + t) Γ(-t) Γ(c + t)⁻¹ (-z)^t` of Barnes's integral for the Gauss
 hypergeometric function (DLMF 15.6.6). -/
-def mellinBarnesIntegrand (a b c z t : ℂ) : ℂ :=
+def hypergeometricMellinBarnesIntegrand (a b c z t : ℂ) : ℂ :=
   Gamma (a + t) * Gamma (b + t) * Gamma (-t) * (Gamma (c + t))⁻¹ * (-z) ^ t
 
-theorem mellinBarnesIntegrand_def (a b c z t : ℂ) :
-    mellinBarnesIntegrand a b c z t =
+theorem hypergeometricMellinBarnesIntegrand_def (a b c z t : ℂ) :
+    hypergeometricMellinBarnesIntegrand a b c z t =
       Gamma (a + t) * Gamma (b + t) * Gamma (-t) * (Gamma (c + t))⁻¹ * (-z) ^ t := (rfl)
 
-theorem mellinBarnesIntegrand_comm (a b c z : ℂ) :
-    mellinBarnesIntegrand a b c z = mellinBarnesIntegrand b a c z := by
+theorem hypergeometricMellinBarnesIntegrand_comm (a b c z : ℂ) :
+    hypergeometricMellinBarnesIntegrand a b c z = hypergeometricMellinBarnesIntegrand b a c z := by
   ext t
-  simp only [mellinBarnesIntegrand_def]
+  simp only [hypergeometricMellinBarnesIntegrand_def]
   ring
 
 /-- The integrand of Barnes's integral is meromorphic in `t` everywhere. -/
-theorem meromorphicAt_mellinBarnesIntegrand (a b c z t : ℂ) :
-    MeromorphicAt (mellinBarnesIntegrand a b c z) t := by
+theorem meromorphicAt_hypergeometricMellinBarnesIntegrand (a b c z t : ℂ) :
+    MeromorphicAt (hypergeometricMellinBarnesIntegrand a b c z) t := by
   have hG (s : ℂ → ℂ) (hs : AnalyticAt ℂ s t) :
       MeromorphicAt (fun t ↦ Gamma (s t)) t :=
     (Meromorphic.Gamma (s t)).comp_analyticAt hs
@@ -147,85 +149,55 @@ over the contour `C` that runs up the line `Re t = σ` and is deformed to pass t
 poles of `Γ(a + t) Γ(b + t)` with real part `> σ`: the line integral `(2π)⁻¹ ∫ F(σ + i y) dy` plus
 the residues of the integrand at those poles. For `σ < 0` avoiding the poles of
 `Γ(a + t) Γ(b + t)` and `-z ∈ slitPlane`, it does not depend on `σ`
-(`Complex.hypergeometricMellinBarnes_eq`), and for `0 < Re a`, `0 < Re b < Re c` it is
+(`Complex.hypergeometricMellinBarnes_eq`), and when moreover `0 < Re a`, `0 < Re b < Re c` it is
 `Γ(a) Γ(b)` times Euler's integral (`Complex.eulerIntegral_eq_hypergeometricMellinBarnes`). -/
 def hypergeometricMellinBarnes (a b c z : ℂ) (σ : ℝ) : ℂ :=
-  (2 * (π : ℂ))⁻¹ * (∫ y : ℝ, mellinBarnesIntegrand a b c z (σ + y * I)) +
+  (2 * (π : ℂ))⁻¹ * (∫ y : ℝ, hypergeometricMellinBarnesIntegrand a b c z (σ + y * I)) +
     ∑ p ∈ gammaPolesRightOf a σ ∪ gammaPolesRightOf b σ,
-      TauCeti.Contour.residue (mellinBarnesIntegrand a b c z) p
+      TauCeti.Contour.residue (hypergeometricMellinBarnesIntegrand a b c z) p
 
 theorem hypergeometricMellinBarnes_def (a b c z : ℂ) (σ : ℝ) :
     hypergeometricMellinBarnes a b c z σ =
-      (2 * (π : ℂ))⁻¹ * (∫ y : ℝ, mellinBarnesIntegrand a b c z (σ + y * I)) +
+      (2 * (π : ℂ))⁻¹ * (∫ y : ℝ, hypergeometricMellinBarnesIntegrand a b c z (σ + y * I)) +
         ∑ p ∈ gammaPolesRightOf a σ ∪ gammaPolesRightOf b σ,
-          TauCeti.Contour.residue (mellinBarnesIntegrand a b c z) p := (rfl)
+          TauCeti.Contour.residue (hypergeometricMellinBarnesIntegrand a b c z) p := (rfl)
 
 theorem hypergeometricMellinBarnes_comm (a b c z : ℂ) (σ : ℝ) :
     hypergeometricMellinBarnes a b c z σ = hypergeometricMellinBarnes b a c z σ := by
-  simp only [hypergeometricMellinBarnes_def, mellinBarnesIntegrand_comm a b, Finset.union_comm]
+  simp only [hypergeometricMellinBarnes_def, hypergeometricMellinBarnesIntegrand_comm a b,
+    Finset.union_comm]
 
 /-- When no pole of `Γ(a + t) Γ(b + t)` lies to the right of the line `Re t = σ`, the contour is
 the line itself. -/
 theorem hypergeometricMellinBarnes_eq_integral (a b c z : ℂ) {σ : ℝ} (ha : -a.re ≤ σ)
     (hb : -b.re ≤ σ) :
     hypergeometricMellinBarnes a b c z σ =
-      (2 * (π : ℂ))⁻¹ * ∫ y : ℝ, mellinBarnesIntegrand a b c z (σ + y * I) := by
+      (2 * (π : ℂ))⁻¹ * ∫ y : ℝ, hypergeometricMellinBarnesIntegrand a b c z (σ + y * I) := by
   rw [hypergeometricMellinBarnes_def, gammaPolesRightOf_eq_empty_iff.mpr ha,
     gammaPolesRightOf_eq_empty_iff.mpr hb]
   simp
 
 /-! ### Stirling bounds on vertical strips -/
 
-/-- The bound `‖u ^ (x + i T)‖ ≤ C exp (|arg u| |T|)` for `x` in a compact interval. -/
-private theorem exists_norm_cpow_strip_le {u : ℂ} (hu : u ≠ 0) (A B : ℝ) :
-    ∃ C : ℝ, ∀ x ∈ Icc A B, ∀ T : ℝ,
-      ‖u ^ ((x : ℂ) + T * I)‖ ≤ C * Real.exp (|arg u| * |T|) := by
-  refine ⟨max (‖u‖ ^ A) (‖u‖ ^ B), fun x hx T ↦ ?_⟩
-  have hpos : 0 < ‖u‖ := norm_pos_iff.mpr hu
-  rw [norm_cpow_of_ne_zero hu]
-  simp only [add_re, ofReal_re, mul_re, ofReal_im, I_re, mul_zero, I_im, mul_one, sub_self,
-    add_zero, add_im, mul_im, zero_add]
-  rw [div_eq_mul_inv, ← Real.exp_neg]
-  refine mul_le_mul ?_ (Real.exp_le_exp.mpr ?_) (by positivity) (by positivity)
-  · rcases le_total 1 ‖u‖ with h | h
-    · exact le_max_of_le_right (Real.rpow_le_rpow_of_exponent_le h hx.2)
-    · exact le_max_of_le_left (Real.rpow_le_rpow_of_exponent_ge hpos h hx.1)
-  · rw [← abs_mul]
-    exact neg_le_abs _
-
-/-- `(1 + |T|)^K exp (-κ |T|) → 0` as `|T| → ∞`. -/
-private theorem tendsto_one_add_abs_rpow_mul_exp_neg_mul_abs (K : ℝ) {κ : ℝ} (hκ : 0 < κ) :
-    Tendsto (fun T : ℝ ↦ (1 + |T|) ^ K * Real.exp (-(κ * |T|))) (cocompact ℝ) (𝓝 0) := by
-  have h1 := tendsto_rpow_mul_exp_neg_mul_atTop_nhds_zero K κ hκ
-  have h2 : Tendsto (fun T : ℝ ↦ 1 + |T|) (cocompact ℝ) atTop :=
-    tendsto_atTop_add_const_left _ 1
-      ((tendsto_norm_cocompact_atTop (E := ℝ)).congr fun T ↦ Real.norm_eq_abs T)
-  have h3 := (h1.comp h2).const_mul (Real.exp κ)
-  rw [mul_zero] at h3
-  refine h3.congr fun T ↦ ?_
-  simp only [Function.comp_apply]
-  rw [mul_left_comm, ← Real.exp_add]
-  ring_nf
-
 /-- Stirling's bound for the integrand of Barnes's integral on the part `|Im t| ≥ T₀` of the strip
 `A ≤ Re t ≤ B`: it is `O((1 + |Im t|)^K exp (-(π - |arg (-z)|) |Im t|))`. -/
-private theorem exists_norm_mellinBarnesIntegrand_strip_le (a b c : ℂ) {z : ℂ} (hz : z ≠ 0)
-    (A B : ℝ) :
+private theorem exists_norm_hypergeometricMellinBarnesIntegrand_strip_le (a b c : ℂ) {z : ℂ}
+    (hz : z ≠ 0) (A B : ℝ) :
     ∃ C K T₀ : ℝ, ∀ x ∈ Icc A B, ∀ T : ℝ, T₀ ≤ |T| →
-      ‖mellinBarnesIntegrand a b c z (x + T * I)‖ ≤
+      ‖hypergeometricMellinBarnesIntegrand a b c z (x + T * I)‖ ≤
         C * ((1 + |T|) ^ K * Real.exp (-((π - |arg (-z)|) * |T|))) := by
   obtain ⟨Ca, hCa, Ka, Ta, ha⟩ := TauCeti.exists_norm_Gamma_add_vertical_strip_le a A B
   obtain ⟨Cb, hCb, Kb, Tb, hb⟩ := TauCeti.exists_norm_Gamma_add_vertical_strip_le b A B
   obtain ⟨Cs, hCs, Ks, Ts, hs⟩ := TauCeti.exists_norm_Gamma_add_vertical_strip_le 0 (-B) (-A)
   obtain ⟨Cc, hCc, Kc, hc⟩ := TauCeti.exists_norm_inv_Gamma_add_vertical_strip_le c A B
-  obtain ⟨Cz, hzb⟩ := exists_norm_cpow_strip_le (neg_ne_zero.mpr hz) A B
+  obtain ⟨Cz, hzb⟩ := TauCeti.exists_norm_cpow_strip_le (neg_ne_zero.mpr hz) A B
   refine ⟨Ca * Cb * Cs * Cc * Cz, Ka + Kb + Ks + Kc, max (max Ta Tb) Ts, fun x hx T hT ↦ ?_⟩
   -- `Γ(-t)` is the case `w = 0` at the reflected point `-x - i T`.
   have h3 := hs (-x) ⟨neg_le_neg hx.2, neg_le_neg hx.1⟩ (-T)
     (by rw [abs_neg]; exact le_trans (le_max_right _ _) hT)
   rw [show (0 : ℂ) + (((-x : ℝ) : ℂ) + ((-T : ℝ) : ℂ) * I) = -((x : ℂ) + T * I) by push_cast; ring,
     abs_neg] at h3
-  rw [mellinBarnesIntegrand_def, norm_mul, norm_mul, norm_mul, norm_mul]
+  rw [hypergeometricMellinBarnesIntegrand_def, norm_mul, norm_mul, norm_mul, norm_mul]
   calc ‖Gamma (a + (x + T * I))‖ * ‖Gamma (b + (x + T * I))‖ * ‖Gamma (-(x + T * I))‖ *
         ‖(Gamma (c + (x + T * I)))⁻¹‖ * ‖(-z) ^ ((x : ℂ) + T * I)‖
       ≤ (Ca * (1 + |T|) ^ Ka * Real.exp (-(π * |T| / 2))) *
@@ -251,18 +223,19 @@ private theorem exists_norm_mellinBarnesIntegrand_strip_le (a b c : ℂ) {z : �
 
 /-- On a vertical strip `A ≤ Re t ≤ B`, the integrand of Barnes's integral tends to `0` as
 `|Im t| → ∞`, uniformly in `Re t`, when `-z ∈ slitPlane`. -/
-private theorem tendsto_mellinBarnesIntegrand_strip (a b c : ℂ) {z : ℂ} (hz : -z ∈ slitPlane)
-    (A B : ℝ) :
-    Tendsto (fun q : ℝ × ℝ ↦ mellinBarnesIntegrand a b c z (q.2 + q.1 * I))
+private theorem tendsto_hypergeometricMellinBarnesIntegrand_strip (a b c : ℂ) {z : ℂ}
+    (hz : -z ∈ slitPlane) (A B : ℝ) :
+    Tendsto (fun q : ℝ × ℝ ↦ hypergeometricMellinBarnesIntegrand a b c z (q.2 + q.1 * I))
       (cocompact ℝ ×ˢ 𝓟 (Icc A B)) (𝓝 0) := by
   obtain ⟨C, K, T₀, hbound⟩ :=
-    exists_norm_mellinBarnesIntegrand_strip_le a b c (by simpa using slitPlane_ne_zero hz) A B
+    exists_norm_hypergeometricMellinBarnesIntegrand_strip_le a b c
+      (by simpa using slitPlane_ne_zero hz) A B
   have hθ : |arg (-z)| < π :=
     abs_lt.mpr ⟨neg_pi_lt_arg _, (arg_le_pi _).lt_of_ne (slitPlane_arg_ne_pi hz)⟩
   have hT : ∀ᶠ T : ℝ in cocompact ℝ, T₀ ≤ |T| :=
     ((tendsto_norm_cocompact_atTop (E := ℝ)).eventually_ge_atTop T₀).mono
       fun T h ↦ by rwa [Real.norm_eq_abs] at h
-  have hlim := ((tendsto_one_add_abs_rpow_mul_exp_neg_mul_abs K (sub_pos.mpr hθ)).comp
+  have hlim := ((TauCeti.tendsto_one_add_abs_rpow_mul_exp_neg_mul_abs K (sub_pos.mpr hθ)).comp
     (tendsto_fst (f := cocompact ℝ) (g := 𝓟 (Icc A B)))).const_mul C
   rw [mul_zero] at hlim
   refine squeeze_zero_norm' ?_ hlim
@@ -273,24 +246,23 @@ private theorem tendsto_mellinBarnesIntegrand_strip (a b c : ℂ) {z : ℂ} (hz 
 
 /-- The integrand of Barnes's integral is holomorphic wherever none of `a + t`, `b + t`, `-t` is a
 nonpositive integer. -/
-private theorem differentiableAt_mellinBarnesIntegrand {a b c z t : ℂ} (hz : z ≠ 0)
+private theorem differentiableAt_hypergeometricMellinBarnesIntegrand {a b c z t : ℂ} (hz : z ≠ 0)
     (ha : ∀ m : ℕ, a + t ≠ -m) (hb : ∀ m : ℕ, b + t ≠ -m) (ht : ∀ m : ℕ, -t ≠ -m) :
-    DifferentiableAt ℂ (mellinBarnesIntegrand a b c z) t := by
-  have hinv : Differentiable ℂ fun s : ℂ ↦ (Gamma s)⁻¹ := by
-    simpa only [one_div] using differentiable_one_div_Gamma
+    DifferentiableAt ℂ (hypergeometricMellinBarnesIntegrand a b c z) t := by
   have hGa := (differentiableAt_Gamma _ ha).comp t (differentiableAt_id.const_add a)
   have hGb := (differentiableAt_Gamma _ hb).comp t (differentiableAt_id.const_add b)
   have hGs := (differentiableAt_Gamma _ ht).comp t differentiableAt_id.neg
-  have hGc := (hinv (c + t)).comp t (differentiableAt_id.const_add c)
+  have hGc := (differentiable_one_div_Gamma (c + t)).comp t (differentiableAt_id.const_add c)
   have hpow := differentiableAt_id.const_cpow (x := t) (.inl (neg_ne_zero.mpr hz))
   exact (((hGa.mul hGb).mul hGs).mul hGc).mul hpow
 
 /-- On a line `Re t = σ` with `σ < 0` avoiding the poles of `Γ(a + t) Γ(b + t)`, the integrand of
 Barnes's integral is integrable. -/
-private theorem integrable_mellinBarnesIntegrand (a b c : ℂ) {z : ℂ} (hz : -z ∈ slitPlane)
-    {σ : ℝ} (hσ : σ < 0) (ha : ∀ n : ℕ, a.re + σ ≠ -n) (hb : ∀ n : ℕ, b.re + σ ≠ -n) :
-    Integrable fun y : ℝ ↦ mellinBarnesIntegrand a b c z (σ + y * I) := by
-  simp only [mellinBarnesIntegrand_def]
+private theorem integrable_hypergeometricMellinBarnesIntegrand (a b c : ℂ) {z : ℂ}
+    (hz : -z ∈ slitPlane) {σ : ℝ} (hσ : σ < 0) (ha : ∀ n : ℕ, a.re + σ ≠ -n)
+    (hb : ∀ n : ℕ, b.re + σ ≠ -n) :
+    Integrable fun y : ℝ ↦ hypergeometricMellinBarnesIntegrand a b c z (σ + y * I) := by
+  simp only [hypergeometricMellinBarnesIntegrand_def]
   exact integrable_Gamma_mul_Gamma_mul_Gamma_mul_inv_Gamma_mul_neg_cpow c hz ha hb
     fun n hn ↦ by linarith [n.cast_nonneg' (α := ℝ)]
 
@@ -304,11 +276,11 @@ private theorem re_ne_of_pole {a b t : ℂ} {σ : ℝ} (ha : ∀ n : ℕ, a.re +
 /-- For `σ₁ ≤ σ₂ < 0`, with the line `Re t = σ₁` avoiding the poles of `Γ(a + t) Γ(b + t)`, the
 integrand of Barnes's integral is holomorphic on an open neighbourhood of the strip
 `σ₁ ≤ Re t ≤ σ₂` except at the poles of `Γ(a + t) Γ(b + t)` with `σ₁ < Re t`, `Re t ≤ σ₂`. -/
-private theorem exists_differentiableOn_mellinBarnesIntegrand (a b c : ℂ) {z : ℂ} (hz : z ≠ 0)
-    {σ₁ σ₂ : ℝ} (hσ₂ : σ₂ < 0) (ha₁ : ∀ n : ℕ, a.re + σ₁ ≠ -n)
+private theorem exists_differentiableOn_hypergeometricMellinBarnesIntegrand (a b c : ℂ) {z : ℂ}
+    (hz : z ≠ 0) {σ₁ σ₂ : ℝ} (hσ₂ : σ₂ < 0) (ha₁ : ∀ n : ℕ, a.re + σ₁ ≠ -n)
     (hb₁ : ∀ n : ℕ, b.re + σ₁ ≠ -n) :
     ∃ U : Set ℂ, IsOpen U ∧ {t : ℂ | σ₁ ≤ t.re ∧ t.re ≤ σ₂} ⊆ U ∧
-      DifferentiableOn ℂ (mellinBarnesIntegrand a b c z) (U \
+      DifferentiableOn ℂ (hypergeometricMellinBarnesIntegrand a b c z) (U \
         ↑((gammaPolesRightOf a σ₁ ∪ gammaPolesRightOf b σ₁) \
           (gammaPolesRightOf a σ₂ ∪ gammaPolesRightOf b σ₂))) := by
   set P := (gammaPolesRightOf a σ₁ ∪ gammaPolesRightOf b σ₁) \
@@ -329,7 +301,7 @@ private theorem exists_differentiableOn_mellinBarnesIntegrand (a b c : ℂ) {z :
   · rintro t ⟨⟨⟨h₁, h₂⟩, hU⟩, hP⟩
     have hpole {w : ℂ} (hw : ∀ m : ℕ, w + t = -m → t ∈ Q) : ∀ m : ℕ, w + t ≠ -m :=
       fun m hm ↦ hU (by rw [Finset.coe_sdiff]; exact ⟨Finset.mem_coe.mpr (hw m hm), hP⟩)
-    refine (differentiableAt_mellinBarnesIntegrand hz
+    refine (differentiableAt_hypergeometricMellinBarnesIntegrand hz
       (hpole fun m hm ↦ mem_gammaPolesRightOf_union.mpr ⟨h₁, m, .inl (by linear_combination hm)⟩)
       (hpole fun m hm ↦ mem_gammaPolesRightOf_union.mpr ⟨h₁, m, .inr (by linear_combination hm)⟩)
       fun m hm ↦ ?_).differentiableWithinAt
@@ -353,23 +325,23 @@ private theorem hypergeometricMellinBarnes_eq_of_le (a b c : ℂ) {z : ℂ} (hz 
     rw [Finset.mem_sdiff, mem_gammaPolesRightOf_union, mem_gammaPolesRightOf_union] at hp
     obtain ⟨⟨h₁, hk⟩, h₂⟩ := hp
     exact ⟨h₁, lt_of_le_of_ne (not_lt.mp fun h ↦ h₂ ⟨h, hk⟩) (re_ne_of_pole ha₂ hb₂ hk)⟩
-  obtain ⟨U, hU, hstrip, hF⟩ := exists_differentiableOn_mellinBarnesIntegrand a b c
+  obtain ⟨U, hU, hstrip, hF⟩ := exists_differentiableOn_hypergeometricMellinBarnesIntegrand a b c
     (by simpa using slitPlane_ne_zero hz) hσ₂ ha₁ hb₁
-  have hhor := (tendsto_mellinBarnesIntegrand_strip a b c hz σ₁ σ₂)
+  have hhor := (tendsto_hypergeometricMellinBarnesIntegrand_strip a b c hz σ₁ σ₂)
   rw [← uIcc_of_le hle] at hhor
   have hshift := TauCeti.Contour.integral_vertical_sub_eq_two_pi_mul_sum_residue _ hle hU hstrip
-    P hP hF (fun p _ ↦ meromorphicAt_mellinBarnesIntegrand a b c z p)
-    (integrable_mellinBarnesIntegrand a b c hz hσ₂ ha₂ hb₂)
-    (integrable_mellinBarnesIntegrand a b c hz (hle.trans_lt hσ₂) ha₁ hb₁)
+    P hP hF (fun p _ ↦ meromorphicAt_hypergeometricMellinBarnesIntegrand a b c z p)
+    (integrable_hypergeometricMellinBarnesIntegrand a b c hz hσ₂ ha₂ hb₂)
+    (integrable_hypergeometricMellinBarnesIntegrand a b c hz (hle.trans_lt hσ₂) ha₁ hb₁)
     (TauCeti.Contour.tendsto_intervalIntegral_horizontal
       (hhor.mono_left (prod_mono atTop_le_cocompact le_rfl)))
     (TauCeti.Contour.tendsto_intervalIntegral_horizontal
       (hhor.mono_left (prod_mono atBot_le_cocompact le_rfl)))
-  set r := TauCeti.Contour.residue (mellinBarnesIntegrand a b c z)
+  set r := TauCeti.Contour.residue (hypergeometricMellinBarnesIntegrand a b c z)
   have h2π : (2 * π : ℂ) ≠ 0 := by exact_mod_cast Real.two_pi_pos.ne'
   rw [hypergeometricMellinBarnes_def, hypergeometricMellinBarnes_def, ← Finset.sum_sdiff hsub,
-    show (∫ y : ℝ, mellinBarnesIntegrand a b c z (σ₁ + y * I)) =
-      (∫ y : ℝ, mellinBarnesIntegrand a b c z (σ₂ + y * I)) - 2 * π * ∑ p ∈ P, r p by
+    show (∫ y : ℝ, hypergeometricMellinBarnesIntegrand a b c z (σ₁ + y * I)) =
+      (∫ y : ℝ, hypergeometricMellinBarnesIntegrand a b c z (σ₂ + y * I)) - 2 * π * ∑ p ∈ P, r p by
     linear_combination -hshift, mul_sub, ← mul_assoc, inv_mul_cancel₀ h2π, one_mul]
   ring
 
@@ -404,36 +376,36 @@ theorem eulerIntegral_eq_hypergeometricMellinBarnes {a b c z : ℂ} (ha : 0 < a.
   rw [hypergeometricMellinBarnes_eq a b c hz hσ hσ' haσ hbσ hpa hpb,
     hypergeometricMellinBarnes_eq_integral a b c z ha'.le hb'.le,
     eulerIntegral_eq_mellinBarnes a hbc hz hσ' ha' hb']
-  simp only [mellinBarnesIntegrand_def, mul_inv]
+  simp only [hypergeometricMellinBarnesIntegrand_def, mul_inv]
   ring
 
 /-! ### Residues -/
 
 /-- The residue of Barnes's integrand at a pole `t = -a - k` of `Γ(a + t)` that is not a pole of
-`Γ(b + t)` is `(-1)^k / k! · Γ(b - a - k) Γ(a + k) Γ(c - a - k)⁻¹ (-z)^(-a - k)`. -/
-theorem residue_mellinBarnesIntegrand_neg_sub_natCast (c : ℂ) {a b z : ℂ} (k : ℕ)
-    (ha : ∀ m : ℕ, a ≠ -m) (hab : ∀ m : ℕ, b - a - k ≠ -m) :
-    TauCeti.Contour.residue (mellinBarnesIntegrand a b c z) (-a - k) =
+`Γ(b + t)` or of `Γ(-t)` (that is, neither `a + k` nor `b - a - k` is a nonpositive integer) is
+`(-1)^k / k! · Γ(b - a - k) Γ(a + k) Γ(c - a - k)⁻¹ (-z)^(-a - k)`. -/
+theorem residue_hypergeometricMellinBarnesIntegrand_neg_sub_natCast (c : ℂ) {a b z : ℂ} (k : ℕ)
+    (ha : ∀ m : ℕ, a + k ≠ -m) (hab : ∀ m : ℕ, b - a - k ≠ -m) :
+    TauCeti.Contour.residue (hypergeometricMellinBarnesIntegrand a b c z) (-a - k) =
       (-1) ^ k / k ! * (Gamma (b - a - k) * Gamma (a + k) * (Gamma (c - a - k))⁻¹ *
         (-z) ^ (-a - k)) := by
   set G : ℂ → ℂ := fun t ↦ Gamma (b + t) * Gamma (-t) * (Gamma (c + t))⁻¹ * (-z) ^ t
-  have hF : mellinBarnesIntegrand a b c z = fun t ↦ (fun s ↦ Gamma s * G (s - a)) (t + a) := by
+  have hF : hypergeometricMellinBarnesIntegrand a b c z =
+      fun t ↦ (fun s ↦ Gamma s * G (s - a)) (t + a) := by
     ext t
-    simp only [mellinBarnesIntegrand_def, G, add_comm t a, add_sub_cancel_left]
+    simp only [hypergeometricMellinBarnesIntegrand_def, G, add_comm t a, add_sub_cancel_left]
     ring
-  have hinv : Differentiable ℂ fun s : ℂ ↦ (Gamma s)⁻¹ := by
-    simpa only [one_div] using differentiable_one_div_Gamma
   have hG : AnalyticAt ℂ G (-a - k) := by
     have h1 : AnalyticAt ℂ (fun t ↦ Gamma (b + t)) (-a - k) :=
       (analyticAt_Gamma fun m hm ↦ hab m (by linear_combination hm)).comp (by fun_prop)
     -- `Γ(-t) (-z)^t` is analytic at `-a - k` also for `z = 0`, where `(-z)^t` vanishes near it.
     have h24 : AnalyticAt ℂ (fun t ↦ Gamma (-t) * (-z) ^ t) (-a - k) := by
       have := (analyticAt_Gamma_sub_mul_cpow (-z) (s₀ := a + k) (β := 0)
-        fun m hm ↦ ha (m + k) (by push_cast; linear_combination hm)).comp_of_eq
+        fun m hm ↦ ha m (by linear_combination hm)).comp_of_eq
           (f := fun t : ℂ ↦ -t) (x := -a - k) (by fun_prop) (by ring)
       simpa [Function.comp_def] using this
     have h3 : AnalyticAt ℂ (fun t ↦ (Gamma (c + t))⁻¹) (-a - k) :=
-      (hinv.analyticAt _).comp (by fun_prop)
+      (differentiable_one_div_Gamma.analyticAt _).comp (by fun_prop)
     exact ((h1.mul h24).mul h3).congr
       (Eventually.of_forall fun t ↦ by simp only [G, Pi.mul_apply]; ring)
   have hw : AnalyticAt ℂ (fun s ↦ G (s - a)) (-(k : ℂ)) :=

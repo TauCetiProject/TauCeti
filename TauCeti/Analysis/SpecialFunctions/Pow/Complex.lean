@@ -82,6 +82,8 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
   `z ∈ slitPlane`, `t ≥ 0`, and arbitrary `s : ℂ`.
 * `TauCeti.exists_ball_slitPlane_cpow_le` -- locally uniform bounds on `w ^ (σ + i y)` and its
   `w`-derivative in `|y|` with exponential rate strictly below `π` around `w₀ ∈ slitPlane`.
+* `TauCeti.exists_norm_cpow_strip_le` -- for `u ≠ 0` and `x` in a compact interval,
+  `‖u ^ (x + i T)‖ ≤ C exp (|arg u| |T|)`.
 * `TauCeti.continuousOn_ofReal_add_cpow`, `TauCeti.continuousOn_ofReal_add_cpow_Ici`,
   `TauCeti.continuous_ofReal_add_cpow_of_re_pos` -- continuity of `t ↦ (t + x) ^ s` on
   `(0, ∞)`, on `[0, ∞)`, and everywhere when `0 < s.re`.
@@ -524,6 +526,24 @@ theorem exists_ball_slitPlane_cpow_le {w₀ : ℂ} (hw₀ : w₀ ∈ slitPlane) 
       _ = (max 1 |σ| * B (σ - 1)) * (1 + |y|) * Real.exp (θ * |y|) := by ring
       _ ≤ M * (1 + |y|) * Real.exp (θ * |y|) := by
           gcongr; dsimp [M]; linarith [le_max_right (B σ) (max 1 |σ| * B (σ - 1))]
+
+/-- On a vertical strip, the principal power of a nonzero base grows at most exponentially in the
+imaginary part of the exponent: `‖u ^ (x + i T)‖ ≤ C exp (|arg u| |T|)` for `x ∈ [A, B]`. -/
+theorem exists_norm_cpow_strip_le {u : ℂ} (hu : u ≠ 0) (A B : ℝ) :
+    ∃ C : ℝ, ∀ x ∈ Set.Icc A B, ∀ T : ℝ,
+      ‖u ^ ((x : ℂ) + T * I)‖ ≤ C * Real.exp (|arg u| * |T|) := by
+  refine ⟨max (‖u‖ ^ A) (‖u‖ ^ B), fun x hx T ↦ ?_⟩
+  have hpos : 0 < ‖u‖ := norm_pos_iff.mpr hu
+  rw [norm_cpow_of_ne_zero hu]
+  simp only [add_re, ofReal_re, mul_re, ofReal_im, I_re, mul_zero, I_im, mul_one, sub_self,
+    add_zero, add_im, mul_im, zero_add]
+  rw [div_eq_mul_inv, ← Real.exp_neg]
+  refine mul_le_mul ?_ (Real.exp_le_exp.mpr ?_) (by positivity) (by positivity)
+  · rcases le_total 1 ‖u‖ with h | h
+    · exact le_max_of_le_right (Real.rpow_le_rpow_of_exponent_le h hx.2)
+    · exact le_max_of_le_left (Real.rpow_le_rpow_of_exponent_ge hpos h hx.1)
+  · rw [← abs_mul]
+    exact neg_le_abs _
 
 /-- For `x ∈ slitPlane ∪ {0}` and any complex exponent `s`, the principal power `(t + x) ^ s` is
 continuous in the real variable `t > 0`. -/
