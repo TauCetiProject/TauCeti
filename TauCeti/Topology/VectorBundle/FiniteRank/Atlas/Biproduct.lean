@@ -183,8 +183,8 @@ private theorem continuous_blocks_of_continuous_whitneySum {Y : Type*} [Topologi
     Continuous (fun y =>
       (⟨b y, (splitCoords (𝕜 := 𝕜) (A.rank (b y)) (D.rank (b y)) (s y)).2⟩ :
         TotalSpace Unit D.Fiber)) := by
-  have hb : Continuous b := (whitneySum A D).continuous_proj.comp hs
-  have hstrata := ((whitneySum A D).continuous_mk_iff_rankStrata hb s).1 hs
+  have hb : Continuous b := (VariableRankBundle.continuous_proj (whitneySum A D)).comp hs
+  have hstrata := (VariableRankBundle.continuous_mk_iff_rankStrata (whitneySum A D) hb s).1 hs
   let s₁ (y : Y) : A.Fiber (b y) := (splitCoords (𝕜 := 𝕜) (A.rank (b y)) (D.rank (b y)) (s y)).1
   let s₂ (y : Y) : D.Fiber (b y) := (splitCoords (𝕜 := 𝕜) (A.rank (b y)) (D.rank (b y)) (s y)).2
   have hpiece (p q : ℕ) := (continuous_whitneyPieceCore_iff A D (p + q) ⟨(p, q), rfl⟩
@@ -192,8 +192,8 @@ private theorem continuous_blocks_of_continuous_whitneySum {Y : Type*} [Topologi
     (fun y => fun i : Fin (p + q) => s y.val.val (Fin.cast y.val.property.symm i))).1 <|
       ((isLocallyConstant_rankSplit A D (p + q)).continuous_mk_pointIndexedVectorBundleCore_iff
         _ ((hb.comp continuous_subtypeVal).subtype_mk _) _).1 (hstrata (p + q)) ⟨(p, q), rfl⟩
-  refine ⟨(A.continuous_mk_iff_rankStrata hb s₁).2 fun p => ?_,
-    (D.continuous_mk_iff_rankStrata hb s₂).2 fun q => ?_⟩
+  refine ⟨(VariableRankBundle.continuous_mk_iff_rankStrata A hb s₁).2 fun p => ?_,
+    (VariableRankBundle.continuous_mk_iff_rankStrata D hb s₂).2 fun q => ?_⟩
   · refine continuous_of_cover_nhds
       (s := fun q : ℕ => {z : {y : Y // A.rank (b y) = p} | D.rank (b z.val) = q})
       (fun z => ⟨D.rank (b z.val), ((D.rank.isLocallyConstant.isOpen_fiber _).preimage
@@ -239,12 +239,12 @@ theorem continuous_mk_whitneySum_iff {Y : Type*} [TopologicalSpace Y]
           TotalSpace Unit D.Fiber)) := by
   refine ⟨continuous_blocks_of_continuous_whitneySum, ?_⟩
   rintro ⟨hs₁, hs₂⟩
-  have hb : Continuous b := A.continuous_proj.comp hs₁
+  have hb : Continuous b := (VariableRankBundle.continuous_proj A).comp hs₁
   let s₁ (y : Y) : A.Fiber (b y) := (splitCoords (𝕜 := 𝕜) (A.rank (b y)) (D.rank (b y)) (s y)).1
   let s₂ (y : Y) : D.Fiber (b y) := (splitCoords (𝕜 := 𝕜) (A.rank (b y)) (D.rank (b y)) (s y)).2
-  have hs₁_strata := (A.continuous_mk_iff_rankStrata hb s₁).1 hs₁
-  have hs₂_strata := (D.continuous_mk_iff_rankStrata hb s₂).1 hs₂
-  refine ((whitneySum A D).continuous_mk_iff_rankStrata hb s).2 fun n => ?_
+  have hs₁_strata := (VariableRankBundle.continuous_mk_iff_rankStrata A hb s₁).1 hs₁
+  have hs₂_strata := (VariableRankBundle.continuous_mk_iff_rankStrata D hb s₂).1 hs₂
+  refine (VariableRankBundle.continuous_mk_iff_rankStrata (whitneySum A D) hb s).2 fun n => ?_
   refine ((isLocallyConstant_rankSplit A D n).continuous_mk_pointIndexedVectorBundleCore_iff
     _ ((hb.comp continuous_subtypeVal).subtype_mk _) _).2 fun pq => ?_
   refine (continuous_whitneyPieceCore_iff A D n pq
@@ -291,7 +291,8 @@ noncomputable def whitneyInl (A D : FiniteRankAtlas 𝕜 X) : A ⟶ whitneySum A
     (LinearMap.inl 𝕜 (A.Fiber x) (D.Fiber x))
   continuous_totalSpaceMap := by
     refine continuous_mk_whitneySum_iff.2 ⟨continuous_id.congr fun ⟨x, v⟩ => ?_,
-      (D.continuous_zeroSection.comp A.continuous_proj).congr fun ⟨x, v⟩ => ?_⟩
+      ((VariableRankBundle.continuous_zeroSection D).comp
+        (VariableRankBundle.continuous_proj A)).congr fun ⟨x, v⟩ => ?_⟩
     · exact TotalSpace.mk_inj.mpr <| congrArg Prod.fst
         ((splitCoords (𝕜 := 𝕜) (M := 𝕜) (A.rank x) (D.rank x)).apply_symm_apply (v, 0)).symm
     · exact TotalSpace.mk_inj.mpr <| congrArg Prod.snd
@@ -303,7 +304,8 @@ noncomputable def whitneyInr (A D : FiniteRankAtlas 𝕜 X) : D ⟶ whitneySum A
     (LinearMap.inr 𝕜 (A.Fiber x) (D.Fiber x))
   continuous_totalSpaceMap := by
     refine continuous_mk_whitneySum_iff.2
-      ⟨(A.continuous_zeroSection.comp D.continuous_proj).congr fun ⟨x, w⟩ => ?_,
+      ⟨((VariableRankBundle.continuous_zeroSection A).comp
+          (VariableRankBundle.continuous_proj D)).congr fun ⟨x, w⟩ => ?_,
         continuous_id.congr fun ⟨x, w⟩ => ?_⟩
     · exact TotalSpace.mk_inj.mpr <| congrArg Prod.fst
         ((splitCoords (𝕜 := 𝕜) (M := 𝕜) (A.rank x) (D.rank x)).apply_symm_apply (0, w)).symm
@@ -337,28 +339,28 @@ noncomputable def whitneyInr (A D : FiniteRankAtlas 𝕜 X) : D ⟶ whitneySum A
 /-- Composing the first inclusion with the first projection is the identity on `A`. -/
 @[reassoc (attr := simp)] theorem whitneyInl_fst (A D : FiniteRankAtlas 𝕜 X) :
     whitneyInl A D ≫ whitneyFst A D = 𝟙 A := by
-  apply hom_ext; intro x; apply LinearMap.ext; intro v
+  apply VariableRankBundle.hom_ext; intro x; apply LinearMap.ext; intro v
   exact congrArg Prod.fst
     ((splitCoords (𝕜 := 𝕜) (M := 𝕜) (A.rank x) (D.rank x)).apply_symm_apply (v, 0))
 
 /-- Composing the first inclusion with the second projection is zero. -/
 @[reassoc (attr := simp)] theorem whitneyInl_snd (A D : FiniteRankAtlas 𝕜 X) :
     whitneyInl A D ≫ whitneySnd A D = 0 := by
-  apply hom_ext; intro x; apply LinearMap.ext; intro v
+  apply VariableRankBundle.hom_ext; intro x; apply LinearMap.ext; intro v
   exact congrArg Prod.snd
     ((splitCoords (𝕜 := 𝕜) (M := 𝕜) (A.rank x) (D.rank x)).apply_symm_apply (v, 0))
 
 /-- Composing the second inclusion with the first projection is zero. -/
 @[reassoc (attr := simp)] theorem whitneyInr_fst (A D : FiniteRankAtlas 𝕜 X) :
     whitneyInr A D ≫ whitneyFst A D = 0 := by
-  apply hom_ext; intro x; apply LinearMap.ext; intro w
+  apply VariableRankBundle.hom_ext; intro x; apply LinearMap.ext; intro w
   exact congrArg Prod.fst
     ((splitCoords (𝕜 := 𝕜) (M := 𝕜) (A.rank x) (D.rank x)).apply_symm_apply (0, w))
 
 /-- Composing the second inclusion with the second projection is the identity on `D`. -/
 @[reassoc (attr := simp)] theorem whitneyInr_snd (A D : FiniteRankAtlas 𝕜 X) :
     whitneyInr A D ≫ whitneySnd A D = 𝟙 D := by
-  apply hom_ext; intro x; apply LinearMap.ext; intro w
+  apply VariableRankBundle.hom_ext; intro x; apply LinearMap.ext; intro w
   exact congrArg Prod.snd
     ((splitCoords (𝕜 := 𝕜) (M := 𝕜) (A.rank x) (D.rank x)).apply_symm_apply (0, w))
 
@@ -400,7 +402,7 @@ noncomputable def whitneyBicone (A D : FiniteRankAtlas 𝕜 X) : BinaryBicone A 
 @[simp] theorem whitney_total (A D : FiniteRankAtlas 𝕜 X) :
     whitneyFst A D ≫ whitneyInl A D + whitneySnd A D ≫ whitneyInr A D =
       𝟙 (whitneySum A D) := by
-  apply hom_ext; intro x; apply LinearMap.ext; intro v
+  apply VariableRankBundle.hom_ext; intro x; apply LinearMap.ext; intro v
   let e := splitCoords (𝕜 := 𝕜) (M := 𝕜) (A.rank x) (D.rank x)
   exact (e.symm.map_add ((e v).1, 0) (0, (e v).2)).symm.trans <|
     (congrArg e.symm (Prod.ext (add_zero _) (zero_add _))).trans (e.symm_apply_apply v)
@@ -421,7 +423,7 @@ instance : HasFiniteBiproducts (FiniteRankAtlas 𝕜 X) :=
 /-- Rank additivity for the categorical binary biproduct `A ⊞ D`. -/
 @[simp] theorem rank_biprod (A D : FiniteRankAtlas 𝕜 X) :
     (A ⊞ D).rank = A.rank + D.rank :=
-  (biprod.uniqueUpToIso A D (whitneyBiconeIsBilimit A D)).symm.finiteRankAtlas_rank_eq
+  (biprod.uniqueUpToIso A D (whitneyBiconeIsBilimit A D)).symm.variableRankBundle_rank_eq
 
 /-- Rank additivity for finite categorical biproducts `⨁ f`. -/
 @[simp] theorem rank_biproduct.{w} {J : Type w} [Fintype J] (f : J → FiniteRankAtlas 𝕜 X) :
@@ -446,7 +448,7 @@ instance : HasFiniteBiproducts (FiniteRankAtlas 𝕜 X) :=
       rw [Fintype.card_subtype_compl (· = k₀), h1, hK]; omega
     calc
       (⨁ g).rank = (g k₀ ⊞ ⨁ Subtype.restrict (· ≠ k₀) g).rank :=
-        (biproductSubtypeNeIso g k₀).finiteRankAtlas_rank_eq
+        (biproductSubtypeNeIso g k₀).variableRankBundle_rank_eq
       _ = (g k₀).rank + (⨁ Subtype.restrict (· ≠ k₀) g).rank := rank_biprod _ _
       _ = (g k₀).rank + ∑ k : {k : K // k ≠ k₀}, (g k.val).rank := by
         rw [ih (Subtype.restrict (· ≠ k₀) g) hcard]; rfl
@@ -628,8 +630,8 @@ theorem whitneyMap_def (f : A ⟶ A') (g : D ⟶ D') :
       (splitCoords (𝕜 := 𝕜) (A'.rank x) (D'.rank x)).symm.toLinearMap.comp
         (((f.fiberMap x).prodMap (g.fiberMap x)).comp
           (splitCoords (𝕜 := 𝕜) (A.rank x) (D.rank x)).toLinearMap) := by
-  simp only [whitneyMap_def, fiberMap_whitneyLift, fiberMap_comp, fiberMap_whitneyFst,
-    fiberMap_whitneySnd]
+  simp only [whitneyMap_def, fiberMap_whitneyLift, VariableRankBundle.fiberMap_comp,
+    fiberMap_whitneyFst, fiberMap_whitneySnd]
   apply LinearMap.ext; intro _; rfl
 
 /-- Coordinate blocks of `(whitneyMap f g).fiberMap x v` under `splitCoords`. -/
@@ -761,19 +763,20 @@ private theorem continuous_trivialAdd_hom (r₁ r₂ : LocallyConstant X ℕ) :
     Continuous (fun p : TotalSpace Unit (whitneySum (trivial 𝕜 X r₁) (trivial 𝕜 X r₂)).Fiber =>
       (⟨p.proj, p.snd⟩ : TotalSpace Unit (trivial 𝕜 X (r₁ + r₂)).Fiber)) := by
   let WT := whitneySum (trivial 𝕜 X r₁) (trivial 𝕜 X r₂)
+  have hproj := VariableRankBundle.continuous_proj WT
   have hfst_snd := continuous_mk_whitneySum_iff.1 (continuous_id (X := TotalSpace Unit WT.Fiber))
-  have hc₁ := (continuous_mk_trivial_iff (r := r₁) WT.continuous_proj _).1 hfst_snd.1
-  have hc₂ := (continuous_mk_trivial_iff (r := r₂) WT.continuous_proj _).1 hfst_snd.2
-  refine (continuous_mk_trivial_iff (r := r₁ + r₂) WT.continuous_proj
+  have hc₁ := (continuous_mk_trivial_iff (r := r₁) hproj _).1 hfst_snd.1
+  have hc₂ := (continuous_mk_trivial_iff (r := r₂) hproj _).1 hfst_snd.2
+  refine (continuous_mk_trivial_iff (r := r₁ + r₂) hproj
     (fun p => (p.snd : (trivial 𝕜 X (r₁ + r₂)).Fiber p.proj))).2 fun n => ?_
   let S := {y : TotalSpace Unit WT.Fiber // (r₁ + r₂) y.proj = n}
   apply continuous_of_cover_nhds
     (s := fun pq : ℕ × ℕ => {y : S | r₁ y.val.proj = pq.1 ∧ r₂ y.val.proj = pq.2})
   · exact fun y => ⟨(r₁ y.val.proj, r₂ y.val.proj),
       (((r₁.isLocallyConstant.isOpen_fiber _).preimage
-          (WT.continuous_proj.comp continuous_subtypeVal)).inter
+          (hproj.comp continuous_subtypeVal)).inter
         ((r₂.isLocallyConstant.isOpen_fiber _).preimage
-          (WT.continuous_proj.comp continuous_subtypeVal))).mem_nhds ⟨rfl, rfl⟩⟩
+          (hproj.comp continuous_subtypeVal))).mem_nhds ⟨rfl, rfl⟩⟩
   · rintro ⟨p, q⟩
     rw [continuousOn_iff_continuous_domRestrict]
     by_cases hpq : p + q = n
@@ -806,20 +809,19 @@ private theorem continuous_trivialAdd_inv (r₁ r₂ : LocallyConstant X ℕ) :
     Continuous (fun p : TotalSpace Unit (trivial 𝕜 X (r₁ + r₂)).Fiber =>
       (⟨p.proj, p.snd⟩ :
         TotalSpace Unit (whitneySum (trivial 𝕜 X r₁) (trivial 𝕜 X r₂)).Fiber)) := by
-  have hc := (continuous_mk_trivial_iff (r := r₁ + r₂)
-    (trivial 𝕜 X (r₁ + r₂)).continuous_proj _).1
-      (continuous_id (X := TotalSpace Unit (trivial 𝕜 X (r₁ + r₂)).Fiber))
+  have hproj := VariableRankBundle.continuous_proj (trivial 𝕜 X (r₁ + r₂))
+  have hc := (continuous_mk_trivial_iff (r := r₁ + r₂) hproj _).1
+    (continuous_id (X := TotalSpace Unit (trivial 𝕜 X (r₁ + r₂)).Fiber))
   refine (continuous_mk_whitneySum_iff
     (A := trivial 𝕜 X r₁) (D := trivial 𝕜 X r₂)
     (b := fun p : TotalSpace Unit (trivial 𝕜 X (r₁ + r₂)).Fiber => p.proj)
     (s := fun p => (p.snd : (whitneySum (trivial 𝕜 X r₁) (trivial 𝕜 X r₂)).Fiber p.proj))).2 ⟨?_,
         ?_⟩
-  · refine (continuous_mk_trivial_iff (r := r₁)
-      (trivial 𝕜 X (r₁ + r₂)).continuous_proj _).2 fun p => ?_
+  · refine (continuous_mk_trivial_iff (r := r₁) hproj _).2 fun p => ?_
     let S := {y : TotalSpace Unit (trivial 𝕜 X (r₁ + r₂)).Fiber // r₁ y.proj = p}
     refine continuous_of_cover_nhds (s := fun q : ℕ => {y : S | r₂ y.val.proj = q})
       (fun y => ⟨r₂ y.val.proj, ((r₂.isLocallyConstant.isOpen_fiber _).preimage
-        ((trivial 𝕜 X (r₁ + r₂)).continuous_proj.comp continuous_subtypeVal)).mem_nhds rfl⟩)
+        (hproj.comp continuous_subtypeVal)).mem_nhds rfl⟩)
       fun q => ?_
     rw [continuousOn_iff_continuous_domRestrict]
     let g : {y : S // r₂ y.val.proj = q} →
@@ -829,12 +831,11 @@ private theorem continuous_trivialAdd_inv (r₁ r₂ : LocallyConstant X ℕ) :
     exact (((continuous_fst.comp (splitCoords (𝕜 := 𝕜) (M := 𝕜) p q).continuous).comp
       ((hc (p + q)).comp hg)).congr
       fun y => splitCoords_cast_fst y.val.property.symm (g y).property.symm y.val.val.snd)
-  · refine (continuous_mk_trivial_iff (r := r₂)
-      (trivial 𝕜 X (r₁ + r₂)).continuous_proj _).2 fun q => ?_
+  · refine (continuous_mk_trivial_iff (r := r₂) hproj _).2 fun q => ?_
     let S := {y : TotalSpace Unit (trivial 𝕜 X (r₁ + r₂)).Fiber // r₂ y.proj = q}
     refine continuous_of_cover_nhds (s := fun p : ℕ => {y : S | r₁ y.val.proj = p})
       (fun y => ⟨r₁ y.val.proj, ((r₁.isLocallyConstant.isOpen_fiber _).preimage
-        ((trivial 𝕜 X (r₁ + r₂)).continuous_proj.comp continuous_subtypeVal)).mem_nhds rfl⟩)
+        (hproj.comp continuous_subtypeVal)).mem_nhds rfl⟩)
       fun p => ?_
     rw [continuousOn_iff_continuous_domRestrict]
     let g : {y : S // r₁ y.val.proj = p} →
@@ -849,7 +850,7 @@ private theorem continuous_trivialAdd_inv (r₁ r₂ : LocallyConstant X ℕ) :
 trivial atlas of the summed rank, acting as the identity on every coordinate fibre. -/
 noncomputable def trivialAddIso (r₁ r₂ : LocallyConstant X ℕ) :
     whitneySum (trivial 𝕜 X r₁) (trivial 𝕜 X r₂) ≅ trivial 𝕜 X (r₁ + r₂) :=
-  isoMk
+  VariableRankBundle.isoMk
     (fun x : X => (LinearEquiv.refl 𝕜 (Fin (r₁ x + r₂ x) → 𝕜) :
       (whitneySum (trivial 𝕜 X r₁) (trivial 𝕜 X r₂)).Fiber x ≃ₗ[𝕜]
         (trivial 𝕜 X (r₁ + r₂)).Fiber x))
@@ -858,12 +859,12 @@ noncomputable def trivialAddIso (r₁ r₂ : LocallyConstant X ℕ) :
 /-- Forward fibrewise action of `trivialAddIso r₁ r₂` is the identity. -/
 @[simp] theorem fiberMap_trivialAddIso_hom (r₁ r₂ : LocallyConstant X ℕ) (x : X) :
     (trivialAddIso (𝕜 := 𝕜) r₁ r₂).hom.fiberMap x = LinearMap.id :=
-  fiberMap_isoMk_hom _ _ _ x
+  VariableRankBundle.fiberMap_isoMk_hom _ _ _ x
 
 /-- Inverse fibrewise action of `trivialAddIso r₁ r₂` is the identity. -/
 @[simp] theorem fiberMap_trivialAddIso_inv (r₁ r₂ : LocallyConstant X ℕ) (x : X) :
     (trivialAddIso (𝕜 := 𝕜) r₁ r₂).inv.fiberMap x = LinearMap.id :=
-  fiberMap_isoMk_inv _ _ _ x
+  VariableRankBundle.fiberMap_isoMk_inv _ _ _ x
 
 end Coherence
 

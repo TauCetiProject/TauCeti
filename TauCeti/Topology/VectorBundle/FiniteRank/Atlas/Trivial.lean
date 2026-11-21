@@ -73,7 +73,7 @@ theorem continuous_mk_trivial_iff {Y : Type*} [TopologicalSpace Y]
     Continuous (fun y => (⟨b y, s y⟩ : TotalSpace Unit (trivial 𝕜 X r).Fiber)) ↔
       ∀ n : ℕ, Continuous (fun y : {y : Y // r (b y) = n} =>
         fun i : Fin n => s y.val (Fin.cast y.property.symm i)) := by
-  rw [(trivial 𝕜 X r).continuous_mk_iff_rankStrata hb s]
+  rw [VariableRankBundle.continuous_mk_iff_rankStrata (trivial 𝕜 X r) hb s]
   refine forall_congr' fun n => ?_
   exact (FiniteRankBundleCore.continuous_trivial_iff
     (𝕜 := 𝕜) (B := {x : X // r x = n}) (n := n)).trans
@@ -88,7 +88,8 @@ theorem continuous_mk_trivial_const_iff {Y : Type*} [TopologicalSpace Y]
       Continuous b ∧ Continuous s := by
   constructor
   · intro hs
-    have hb : Continuous b := (trivial 𝕜 X (LocallyConstant.const X n)).continuous_proj.comp hs
+    have hb : Continuous b :=
+      (VariableRankBundle.continuous_proj (trivial 𝕜 X (LocallyConstant.const X n))).comp hs
     refine ⟨hb, ?_⟩
     exact ((continuous_mk_trivial_iff (r := LocallyConstant.const X n) hb s).1 hs n).comp
       (Continuous.subtype_mk continuous_id fun _ => rfl)
@@ -140,7 +141,7 @@ theorem isZero_iff_rank_eq_zero {A : FiniteRankAtlas 𝕜 X} :
     have hid := congrArg (fun f : A ⟶ A => f.fiberMap x (fun _ => (1 : 𝕜)) ⟨0, hpos⟩) h
     exact one_ne_zero hid
   · intro h
-    apply hom_ext
+    apply VariableRankBundle.hom_ext
     intro x
     have hx : A.rank x = 0 := congrFun (congrArg DFunLike.coe h) x
     ext v i

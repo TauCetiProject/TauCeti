@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Module.TransferInstance
-public import TauCeti.Topology.Algebra.Module.Equiv.ULift
 public import TauCeti.Topology.FiberBundle.ULift
 public import TauCeti.Topology.VectorBundle.Transport
 

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Homeomorph.Sigma
-public import TauCeti.Topology.VectorBundle.Core.Basic
 public import TauCeti.Topology.VectorBundle.FiniteRank.Basic
 public import TauCeti.Topology.VectorBundle.FiniteRank.Glued
 
@@ -94,34 +93,12 @@ instance instVariableRankBundle :
 @[simp] theorem stratumFiberEquiv_rfl_symm_apply (x : X) (u : A.Fiber x) :
     (VariableRankBundle.stratumFiberEquiv A ⟨x, rfl⟩).symm u = u := by rfl
 
-/-- The disjoint union of the native core total spaces. -/
-abbrev GluedTotalSpace := VariableRankBundle.GluedTotalSpace A
-
-/-- The projection of the disjoint union to the original base. -/
-abbrev gluedProj (p : A.GluedTotalSpace) : X := VariableRankBundle.gluedProj A p
-
-theorem gluedProj_mk (n : ℕ) (p : (A.charts n).TotalSpace) :
-    A.gluedProj ⟨n, p⟩ = p.proj.val :=
-  VariableRankBundle.gluedProj_mk A n p
-
-/-- The glued projection is continuous, since each stratum projection is continuous. -/
-@[continuity, fun_prop] theorem continuous_gluedProj : Continuous A.gluedProj :=
-  VariableRankBundle.continuous_gluedProj A
-
-/-- The glued projection is open: the rank strata are open in the base. -/
-theorem isOpenMap_gluedProj : IsOpenMap A.gluedProj :=
-  VariableRankBundle.isOpenMap_gluedProj A
-
 /-- Equip `TotalSpace Unit A.Fiber` with the glued topology of the native stratum bundle cores. -/
 instance : TopologicalSpace (TotalSpace Unit A.Fiber) :=
   VariableRankBundle.instTopologicalSpaceTotalSpace A
 
-/-- Reindexing the core total spaces gives the reconstructed bundle topology. -/
-abbrev totalSpaceHomeomorph : A.GluedTotalSpace ≃ₜ TotalSpace Unit A.Fiber :=
-  VariableRankBundle.totalSpaceHomeomorph A
-
-theorem totalSpaceHomeomorph_apply (p : A.GluedTotalSpace) :
-    A.totalSpaceHomeomorph p =
+theorem totalSpaceHomeomorph_apply (p : VariableRankBundle.GluedTotalSpace A) :
+    VariableRankBundle.totalSpaceHomeomorph A p =
       ⟨p.snd.proj.val, fun i => p.snd.snd (Fin.cast p.snd.proj.property i)⟩ := by
   rw [VariableRankBundle.totalSpaceHomeomorph_apply]; rfl
 
@@ -131,50 +108,9 @@ theorem totalSpaceHomeomorph_apply (p : A.GluedTotalSpace) :
   VariableRankBundle.totalSpaceHomeomorph_apply A ⟨A.rank x, ⟨⟨x, rfl⟩, v⟩⟩
 
 @[simp high] theorem totalSpaceHomeomorph_symm_apply (p : TotalSpace Unit A.Fiber) :
-    A.totalSpaceHomeomorph.symm p = ⟨A.rank p.proj, ⟨⟨p.proj, rfl⟩, p.snd⟩⟩ :=
+    (VariableRankBundle.totalSpaceHomeomorph A).symm p =
+      ⟨A.rank p.proj, ⟨⟨p.proj, rfl⟩, p.snd⟩⟩ :=
   VariableRankBundle.totalSpaceHomeomorph_symm_apply A p
-
-/-- The reconstructed total-space projection is continuous. -/
-@[continuity, fun_prop] theorem continuous_proj :
-    Continuous (TotalSpace.proj : TotalSpace Unit A.Fiber → X) :=
-  VariableRankBundle.continuous_proj A
-
-/-- The reconstructed total-space projection is open. -/
-theorem isOpenMap_proj : IsOpenMap (TotalSpace.proj : TotalSpace Unit A.Fiber → X) :=
-  VariableRankBundle.isOpenMap_proj A
-
-/-- Each native core total space is an open subspace of the reconstruction. -/
-theorem isOpenEmbedding_stratum (n : ℕ) :
-    IsOpenEmbedding (fun p : (A.charts n).TotalSpace => A.totalSpaceHomeomorph ⟨n, p⟩) :=
-  VariableRankBundle.isOpenEmbedding_stratum A n
-
-/-- The image of the `n`th core total space is exactly the rank-`n` part of the
-reconstructed total space. -/
-theorem range_stratum (n : ℕ) :
-    Set.range (fun p : (A.charts n).TotalSpace => A.totalSpaceHomeomorph ⟨n, p⟩) =
-      {p : TotalSpace Unit A.Fiber | A.rank p.proj = n} :=
-  VariableRankBundle.range_stratum A n
-
-section Continuity
-
-variable {Y : Type*} [TopologicalSpace Y] {b : Y → X}
-
-/-- A map into a reconstructed total space is continuous exactly when its restrictions
-to the rank strata, read in the native core total spaces, are continuous. -/
-theorem continuous_mk_iff_rankStrata (hb : Continuous b) (s : ∀ y, A.Fiber (b y)) :
-    Continuous (fun y => (⟨b y, s y⟩ : TotalSpace Unit A.Fiber)) ↔
-      ∀ n : ℕ, Continuous (fun y : {y : Y // A.rank (b y) = n} =>
-        (⟨⟨b y, y.property⟩, fun i => s y (Fin.cast y.property.symm i)⟩ :
-          (A.charts n).TotalSpace)) :=
-  VariableRankBundle.continuous_mk_iff_rankStrata A hb s
-
-/-- The zero section of a variable-rank atlas is continuous. -/
-@[fun_prop]
-theorem continuous_zeroSection :
-    Continuous (fun x => (⟨x, 0⟩ : TotalSpace Unit A.Fiber)) :=
-  VariableRankBundle.continuous_zeroSection A
-
-end Continuity
 
 section ChartBaseSet
 
