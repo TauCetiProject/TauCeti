@@ -10,11 +10,12 @@ public import Mathlib.Analysis.LocallyConvex.WeakSpace
 public import Mathlib.Topology.Semicontinuity.Basic
 
 /-!
-# Weak lower semicontinuity of quasiconvex functions
+# Weak closedness of convex sets and weak lower semicontinuity
 
 In a locally convex space, a convex set has the same closure in the original and in the weak
-topology (`Convex.toWeakSpace_closure`). Applied to the sublevel sets of a function, this shows
-that a lower semicontinuous function whose sublevel sets are convex, that is, a quasiconvex
+topology (`Convex.toWeakSpace_closure`), so every closed real-convex set is weakly closed
+(`IsClosed.isClosed_toWeakSpace_image_of_convex`). Applied to the sublevel sets of a function, this
+shows that a lower semicontinuous function whose sublevel sets are convex, that is, a quasiconvex
 function, is also lower semicontinuous for the weak topology. Convex functions are quasiconvex
 (`ConvexOn.quasiconvexOn`), so this covers lower semicontinuous convex functions. This is the
 semicontinuity step of the direct method of the calculus of variations, where minimizing
@@ -30,6 +31,21 @@ public section
 
 open Set
 
+section ClosedConvex
+
+variable (𝕜 : Type*) {E : Type*} [RCLike 𝕜] [AddCommGroup E] [Module 𝕜 E] [Module ℝ E]
+  [IsScalarTower ℝ 𝕜 E] [TopologicalSpace E] [IsTopologicalAddGroup E] [ContinuousSMul 𝕜 E]
+  [LocallyConvexSpace ℝ E]
+
+/-- A closed real-convex subset of a locally convex space is weakly closed. -/
+theorem IsClosed.isClosed_toWeakSpace_image_of_convex {s : Set E}
+    (hs : IsClosed s) (hconv : Convex ℝ s) :
+    IsClosed (toWeakSpace 𝕜 E '' s) := by
+  rw [← hs.closure_eq, hconv.toWeakSpace_closure 𝕜]
+  exact isClosed_closure
+
+end ClosedConvex
+
 namespace QuasiconvexOn
 
 variable {𝕜 E β : Type*} [RCLike 𝕜] [AddCommGroup E] [Module 𝕜 E] [Module ℝ E]
@@ -44,10 +60,8 @@ theorem lowerSemicontinuous_comp_toWeakSpace_symm (hf : QuasiconvexOn ℝ univ f
   rw [lowerSemicontinuous_iff_isClosed_preimage] at hlsc ⊢
   intro c
   have hconv : Convex ℝ {x | f x ≤ c} := by simpa only [mem_univ, true_and] using hf c
-  have hclosed : IsClosed (toWeakSpace 𝕜 E '' {x | f x ≤ c}) := by
-    have hc : IsClosed {x | f x ≤ c} := hlsc c
-    rw [← hc.closure_eq, hconv.toWeakSpace_closure 𝕜]
-    exact isClosed_closure
+  have hclosed : IsClosed (toWeakSpace 𝕜 E '' {x | f x ≤ c}) :=
+    (hlsc c).isClosed_toWeakSpace_image_of_convex 𝕜 hconv
   rwa [(toWeakSpace 𝕜 E).image_eq_preimage_symm] at hclosed
 
 end QuasiconvexOn

@@ -18,13 +18,14 @@ public import TauCeti.Analysis.Normed.Operator.Compact.Finite.Rank
 # Bounded diagonal operators on sequence spaces
 
 A bounded scalar family defines coordinatewise multiplication on `lp` for every exponent
-`1 ≤ p ≤ ∞`. The operator norm is the supremum of the coefficient norms, and the operator is
-injective exactly when no coefficient vanishes. Finite coordinate truncations have rank at most
-the number of retained coordinates, and the discarded coefficients bound their error in operator
-norm. These estimates provide finite-rank approximations of diagonal operators. Over a locally
-compact scalar field, coefficients tending to zero along the cofinite filter give a compact
-diagonal operator. Over `RCLike 𝕜`, every antitone `ℕ → ℝ≥0` sequence defines a nonnegative
-bounded sequence (`lp.ofAntitone`).
+`1 ≤ p ≤ ∞`. The operator norm is the supremum of the coefficient norms. It is injective (and,
+for `p ≠ ∞`, has dense range) precisely when every coefficient is nonzero, and its range is
+finite-dimensional precisely when only finitely many coefficients are nonzero. Finite coordinate
+truncations have rank at most the number of retained coordinates, and the discarded coefficients
+bound their error in operator norm. These estimates provide finite-rank approximations of
+diagonal operators. Over a locally compact scalar field, coefficients tending to
+zero along the cofinite filter give a compact diagonal operator. Over `RCLike 𝕜`, every antitone
+`ℕ → ℝ≥0` sequence defines a nonnegative bounded sequence (`lp.ofAntitone`).
 
 The construction uses Mathlib's `lp.mapCLM` for uniformly bounded families of operators.
 -/
@@ -258,6 +259,56 @@ theorem isCompactOperator_diagonalCLM [LocallyCompactSpace 𝕜]
     Module.rank_lt_aleph0_iff.mp
       ((rank_diagonalTruncation_le (p := p) d s).trans_lt Cardinal.natCast_lt_aleph0)
   exact LinearMap.HasFiniteRange.isCompactOperator (Module.Finite.iff_fg.mp this)
+
+omit [DecidableEq ι] in
+/-- For finite exponent `1 ≤ p < ∞`, a bounded diagonal multiplier has dense range if and only if
+every coefficient is nonzero. -/
+theorem denseRange_diagonalCLM_iff (hp : p ≠ ∞) (d : ℓ^∞(ι, 𝕜)) :
+    DenseRange (diagonalCLM (p := p) d) ↔ ∀ i, d i ≠ 0 := by
+  classical
+  refine ⟨fun hdense i hi ↦ ?_, fun hd x ↦ ?_⟩
+  · have hclosed : IsClosed (evalCLM 𝕜 (fun _ : ι ↦ 𝕜) p i ⁻¹' {(0 : 𝕜)}) :=
+      isClosed_singleton.preimage (evalCLM 𝕜 (fun _ : ι ↦ 𝕜) p i).continuous
+    have hsub : Set.range (diagonalCLM (p := p) d) ⊆
+        evalCLM 𝕜 (fun _ : ι ↦ 𝕜) p i ⁻¹' {(0 : 𝕜)} := by
+      rintro _ ⟨x, rfl⟩
+      simp [hi]
+    have hmem : lp.single p i (1 : 𝕜) ∈ evalCLM 𝕜 (fun _ : ι ↦ 𝕜) p i ⁻¹' {(0 : 𝕜)} :=
+      closure_minimal hsub hclosed (hdense (lp.single p i 1))
+    simp [lp.single_apply] at hmem
+  · refine mem_closure_of_tendsto (lp.hasSum_single hp x) (Eventually.of_forall fun s ↦ ?_)
+    refine ⟨∑ i ∈ s, lp.single p i ((d i)⁻¹ * x i), ?_⟩
+    rw [map_sum]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    rw [diagonalCLM_single, ← mul_assoc, mul_inv_cancel₀ (hd i), one_mul]
+
+omit [DecidableEq ι] in
+/-- A bounded diagonal multiplier has finite-dimensional range if and only if only finitely many
+of its coefficients are nonzero. -/
+theorem finiteDimensional_range_diagonalCLM_iff (d : ℓ^∞(ι, 𝕜)) :
+    FiniteDimensional 𝕜 (diagonalCLM (p := p) d).range ↔ {i : ι | d i ≠ 0}.Finite := by
+  classical
+  refine ⟨fun hfin ↦ ?_, fun hfin ↦ ?_⟩
+  · let v : {i : ι | d i ≠ 0} → (diagonalCLM (p := p) d).range :=
+      fun i ↦ ⟨diagonalCLM (p := p) d (lp.single p i.val 1), ⟨lp.single p i.val 1, rfl⟩⟩
+    have hv_coe : (diagonalCLM (p := p) d).range.subtype ∘ v =
+        fun i : {i : ι | d i ≠ 0} ↦ Units.mk0 (d i.val) i.property • lp.single p i.val (1 : 𝕜) := by
+      funext i
+      simp [v, Units.smul_def, ← lp.single_smul]
+    have hli : LinearIndependent 𝕜 v := by
+      refine LinearIndependent.of_comp (diagonalCLM (p := p) d).range.subtype ?_
+      rw [hv_coe]
+      exact ((linearIndependent_single_one (𝕜 := 𝕜) (p := p)).comp
+        Subtype.val Subtype.val_injective).units_smul _
+    exact Set.finite_coe_iff.1 hli.finite
+  · have heq : diagonalCLM (p := p) d = diagonalTruncation (p := p) d hfin.toFinset := by
+      ext x i
+      by_cases hi : d i = 0
+      · simp [hi]
+      · simp [hfin.mem_toFinset.2 hi]
+    rw [heq]
+    exact Module.rank_lt_aleph0_iff.mp
+      ((rank_diagonalTruncation_le (p := p) d hfin.toFinset).trans_lt Cardinal.natCast_lt_aleph0)
 
 end Multiplier
 
