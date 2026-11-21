@@ -33,6 +33,10 @@ through a linear isomorphism, so:
   nondegenerate;
 * the Morse index of `f ∘ φ` at `y` is the Morse index of `f` at `i s`.
 
+For a submanifold of codimension one, a curve `φ : ℝ → M` through `i s` along which `f` has nonzero
+second derivative is transverse: a curve tangent to the submanifold has normal class `0`, where the
+normal Hessian vanishes.
+
 This is Bott's description of a nondegenerate critical manifold: the restriction of `f` to each
 normal slice has a nondegenerate critical point on the core, of the index of the critical manifold.
 It is what makes the fibre restrictions of `f` read through a tubular neighbourhood satisfy the
@@ -50,6 +54,8 @@ In the namespace `TauCeti.SmoothEmbedding`:
   through a Morse–Bott submanifold has a nondegenerate critical point there.
 * `IsCriticalSubmanifold.ker_normalHessian_eq_bot_of_isNondegenerateCriticalPoint_comp`: if a
   transverse slice has a nondegenerate critical point, the normal Hessian is nondegenerate.
+* `IsCriticalSubmanifold.bijective_normalClass_mfderiv_of_finrank_eq_one`: in codimension one, a
+  curve along which `f` has nonzero second derivative is transverse.
 * `IsCriticalSubmanifold.morseIndex_comp`: the Morse index of a transverse slice is the Morse
   index of `f` at the core point.
 
@@ -159,6 +165,31 @@ theorem ker_normalHessian_eq_bot_of_isNondegenerateCriticalPoint_comp (hφy : φ
     rw [h.fderiv_fderiv_comp_apply_sliceNormalMap hn hφy hφ v w,
       LinearMap.congr_fun (LinearMap.mem_ker.mp hp), LinearMap.zero_apply, zero_apply]
   rw [hv, map_zero]
+
+/-- **A curved line slice of a hypersurface is transverse.** If the normal space at `s` is a line,
+`V` is a line, `φ y = i s`, `φ` is `C²` at `y` and the Hessian of `f ∘ φ` at `y` does not vanish
+on some `(v, v)`, then `w ↦ [dφ_y w]` is a bijection from `V` onto the normal space at `s`. -/
+theorem bijective_normalClass_mfderiv_of_finrank_eq_one (hφy : φ y = i s)
+    (hφ : ContMDiffAt 𝓘(ℝ, V) I 2 φ y) (hV : Module.finrank ℝ V = 1)
+    (hN : Module.finrank ℝ (i.NormalSpace s hn) = 1) {v : V}
+    (hv : fderiv ℝ (fderiv ℝ (f ∘ φ)) y v v ≠ 0) :
+    Bijective fun w : V ↦ i.normalClass s hn (mfderiv 𝓘(ℝ, V) I φ y w) := by
+  have : FiniteDimensional ℝ V := Module.finite_of_finrank_eq_succ hV
+  have : FiniteDimensional ℝ (i.NormalSpace s hn) := Module.finite_of_finrank_eq_succ hN
+  -- The normal class of `dφ_y v` is nonzero, so the range of the slice normal map is not `⊥`.
+  have hne : i.sliceNormalMap hn φ y s v ≠ 0 := fun h0 ↦ hv <| by
+    rw [h.fderiv_fderiv_comp_apply_sliceNormalMap hn hφy hφ v v, h0, map_zero]
+  have hsurj : Surjective (i.sliceNormalMap hn φ y s) := by
+    rw [← LinearMap.range_eq_top]
+    refine Submodule.eq_top_of_finrank_eq
+      (le_antisymm (Submodule.finrank_le (LinearMap.range (i.sliceNormalMap hn φ y s))) ?_)
+    rw [hN, Nat.one_le_iff_ne_zero, Ne, Submodule.finrank_eq_zero]
+    intro hbot
+    have hmem := LinearMap.mem_range_self (i.sliceNormalMap hn φ y s) v
+    rw [hbot, Submodule.mem_bot] at hmem
+    exact hne hmem
+  refine (bijective_sliceNormalMap_iff hn).1
+    ⟨(LinearMap.injective_iff_surjective_of_finrank_eq_finrank (hV.trans hN.symm)).2 hsurj, hsurj⟩
 
 variable [FiniteDimensional ℝ E]
 
