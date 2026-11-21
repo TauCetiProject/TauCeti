@@ -430,9 +430,8 @@ noncomputable def twistProj (ω : Conjugation W) (p : ℤ) : W →ₗ[ℝ] W whe
     simp only [conjRealPart_def, map_add, smul_add]
     abel
   map_smul' r x := by
-    rw [conjRealPart_def, conjRealPart_def, LinearMap.smul_apply, LinearMap.smul_apply,
-      LinearEquiv.coe_coe, RingHom.id_apply, toEquiv_real_smul, smul_comm p.negOnePow r,
-      ← smul_add, smul_comm]
+    simp only [conjRealPart_def, LinearMap.smul_apply, LinearEquiv.coe_coe, RingHom.id_apply,
+      toEquiv_real_smul, smul_comm p.negOnePow r, smul_comm (2⁻¹ : ℝ) r, smul_add]
 
 /-- The projection to a real twist is the real part relative to the signed conjugation
 `(-1) ^ p ω`. -/
@@ -478,6 +477,12 @@ theorem twistProj_add_twistProj_sub_one (ω : Conjugation W) (p : ℤ) (x : W) :
   rcases Int.units_eq_one_or p.negOnePow with h | h <;>
     simp only [twistProj_apply, Int.negOnePow_sub, Int.negOnePow_one, h, Units.smul_def,
       Units.val_mul, Units.val_neg, Units.val_one] <;> module
+
+/-- The projection to the real twist `ω.twist p` kills the real twist `ω.twist (p + 1)`. -/
+theorem twistProj_eq_zero_of_mem (ω : Conjugation W) {p : ℤ} {x : W}
+    (hx : x ∈ ω.twist (p + 1)) : ω.twistProj p x = 0 := by
+  have h := ω.twistProj_add_twistProj_sub_one (p + 1) x
+  rwa [add_sub_cancel_right, ω.twistProj_of_mem hx, add_eq_left] at h
 
 /-- An additive map intertwining two conjugations commutes with the projections to a real
 twist. -/

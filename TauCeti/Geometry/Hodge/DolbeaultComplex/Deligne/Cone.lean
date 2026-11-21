@@ -332,26 +332,11 @@ private theorem supportedProj_hodge (p : ℤ) (y : A) :
   rw [hU, supportedProj_union]
   exact Set.disjoint_left.2 (by region_omega)
 
-variable (X) in
-/-- `π_S d π_T = 0` when `d` carries no type in `T` into `S`. -/
-private theorem supportedProj_d_supportedProj_eq_zero {S T : Set (ℤ × ℤ)}
-    (h : ∀ i ∈ T, (i.1 + 1, i.2) ∉ S ∧ (i.1, i.2 + 1) ∉ S) (y : A) :
-    supportedProj 𝒜 S (X.d (supportedProj 𝒜 T y)) = 0 :=
-  supportedProj_eq_zero_of_disjoint disjoint_compl_right
-    (X.d_mem_iSup (T := Sᶜ) h (supportedProj_mem_iSup 𝒜 T y))
-
 /-- Conjugation carries the projection onto the types `(r, s)` with `r < p ≤ s` to the projection
 onto the types with `s < p ≤ r`. -/
 private theorem conj_supportedProj_mixed (p : ℤ) (y : A) :
     X.conj.toEquiv (supportedProj 𝒜 {i | i.1 < p ∧ p ≤ i.2} y) =
       supportedProj 𝒜 {i | p ≤ i.1 ∧ i.2 < p} (X.conj.toEquiv y) :=
-  X.conj_supportedProj (fun i ↦ by simp only [Set.mem_ofPred_eq, Prod.fst_swap, Prod.snd_swap,
-    and_comm]) y
-
-/-- Conjugation commutes with the projection onto a set of types stable under exchange. -/
-private theorem conj_supportedProj_low (p : ℤ) (y : A) :
-    X.conj.toEquiv (supportedProj 𝒜 {i | i.1 < p ∧ i.2 < p} y) =
-      supportedProj 𝒜 {i | i.1 < p ∧ i.2 < p} (X.conj.toEquiv y) :=
   X.conj_supportedProj (fun i ↦ by simp only [Set.mem_ofPred_eq, Prod.fst_swap, Prod.snd_swap,
     and_comm]) y
 
@@ -369,6 +354,24 @@ private theorem conj_supportedProj_mixedBar (p : ℤ) (y : A) :
       supportedProj 𝒜 {i | i.1 < p ∧ p ≤ i.2} (X.conj.toEquiv y) :=
   X.conj_supportedProj (fun i ↦ by simp only [Set.mem_ofPred_eq, Prod.fst_swap, Prod.snd_swap,
     and_comm]) y
+
+/-- The map `(π_Qbar - π_Q) ∘ d` anticommutes with conjugation. -/
+private theorem conj_mixedDiff (p : ℤ) (y : A) :
+    X.conj.toEquiv (((supportedProj 𝒜 {i | p ≤ i.1 ∧ i.2 < p} -
+        supportedProj 𝒜 {i | i.1 < p ∧ p ≤ i.2}) ∘ₗ X.d) y) =
+      -((supportedProj 𝒜 {i | p ≤ i.1 ∧ i.2 < p} - supportedProj 𝒜 {i | i.1 < p ∧ p ≤ i.2}) ∘ₗ
+        X.d) (X.conj.toEquiv y) := by
+  simp only [LinearMap.comp_apply, LinearMap.sub_apply, map_sub, conj_supportedProj_mixed,
+    conj_supportedProj_mixedBar, conj_d, neg_sub]
+
+/-- On the real twist `A_ℝ(p)`, twice the projection to `A_ℝ(p)` of the part of type `r < p ≤ s`
+is the sum of the parts of types `r < p ≤ s` and `s < p ≤ r`. -/
+private theorem two_nsmul_twistProj_mixed_of_mem_twist {p : ℤ} {r : A}
+    (hr : r ∈ X.conj.twist p) :
+    2 • X.conj.twistProj p (supportedProj 𝒜 {i | i.1 < p ∧ p ≤ i.2} r) =
+      supportedProj 𝒜 {i | i.1 < p ∧ p ≤ i.2} r + supportedProj 𝒜 {i | p ≤ i.1 ∧ i.2 < p} r := by
+  rw [Conjugation.two_nsmul_twistProj, conj_supportedProj_mixed, (Conjugation.mem_twist _).1 hr,
+    LinearMap.map_smul_of_tower, smul_smul, Int.units_mul_self, one_smul]
 
 /-- The projection onto the types `(r, s)` with `r < p ≤ s` after `d`. -/
 private theorem supportedProj_mixed_d (p : ℤ) (y : A) :
@@ -464,9 +467,7 @@ private theorem d_contractionFst_sub (p : ℤ) (ω : A) :
   -- `f = (π_Qbar - π_Q) ∘ d` anticommutes with conjugation, so it carries `π_{p-1}` to `π_p`.
   have e := X.conj.map_twistProj_of_conj_eq_neg X.conj
     (f := (supportedProj 𝒜 {i | p ≤ i.1 ∧ i.2 < p} - supportedProj 𝒜 {i | i.1 < p ∧ p ≤ i.2}) ∘ₗ
-      X.d)
-    (fun y ↦ by simp only [LinearMap.comp_apply, LinearMap.sub_apply, map_sub,
-      conj_supportedProj_mixed, conj_supportedProj_mixedBar, conj_d, neg_sub]) (p - 1)
+      X.d) (conj_mixedDiff p) (p - 1)
     (supportedProj 𝒜 {i | i.1 < p ∧ i.2 < p} ω)
   rw [sub_add_cancel] at e
   simp only [LinearMap.comp_apply, LinearMap.sub_apply, map_sub] at e
@@ -490,9 +491,10 @@ private theorem d_contractionSnd_sub (p : ℤ) (ω : A) :
   have e₂ : 2 • supportedProj 𝒜 {i | p ≤ i.1 ∧ i.2 < p} (X.d (X.conj.twistProj (p - 1) a)) =
       supportedProj 𝒜 {i | p ≤ i.1 ∧ i.2 < p} (X.d a) -
         p.negOnePow • supportedProj 𝒜 {i | p ≤ i.1 ∧ i.2 < p} (X.d (X.conj.toEquiv a)) := by
-    rw [← map_nsmul, ← map_nsmul, Conjugation.two_nsmul_twistProj, Int.negOnePow_sub,
-      Int.negOnePow_one, mul_neg_one, Units.neg_smul, map_add, map_add, map_neg, map_neg,
-      LinearMap.map_smul_of_tower, LinearMap.map_smul_of_tower, sub_eq_add_neg]
+    rw [← map_nsmul, ← map_nsmul, Conjugation.two_nsmul_twistProj]
+    simp only [Int.negOnePow_sub, Int.negOnePow_one, mul_neg_one, Units.neg_smul, map_add,
+      map_neg, LinearMap.map_smul_of_tower]
+    abel
   rw [contractionSnd_apply, contractionSnd_apply, map_sub, map_sub, map_nsmul, d_twistProj,
     supportedProj_mixed_d p ω, supportedProj_hodge_d p ω]
   simp only [map_add, map_sub]
@@ -503,19 +505,13 @@ private theorem contractionFst_of_mem_twist {p : ℤ} {r : A} (hr : r ∈ X.conj
     contractionFst X p r = r - supportedProj 𝒜 {i | p ≤ i.1 ∧ p ≤ i.2} r := by
   have hL : supportedProj 𝒜 {i | i.1 < p ∧ i.2 < p} r ∈ X.conj.twist p :=
     X.conj.map_mem_twist X.conj (fun y ↦ conj_supportedProj_low p y) hr
-  have hQ : 2 • X.conj.twistProj p (supportedProj 𝒜 {i | i.1 < p ∧ p ≤ i.2} r) =
-      supportedProj 𝒜 {i | i.1 < p ∧ p ≤ i.2} r + supportedProj 𝒜 {i | p ≤ i.1 ∧ i.2 < p} r := by
-    rw [Conjugation.two_nsmul_twistProj, conj_supportedProj_mixed, (Conjugation.mem_twist _).1 hr,
-      LinearMap.map_smul_of_tower, smul_smul, Int.units_mul_self, one_smul]
-  rw [contractionFst_apply, X.conj.twistProj_of_mem hL, hQ]
+  rw [contractionFst_apply, X.conj.twistProj_of_mem hL, two_nsmul_twistProj_mixed_of_mem_twist hr]
   linear_combination (norm := abel) supportedProj_partition 𝒜 p r
 
 /-- On the real twist `A_ℝ(p)`, the second component of the contraction is `r ↦ -π_PP r`. -/
 private theorem contractionSnd_of_mem_twist {p : ℤ} {r : A} (hr : r ∈ X.conj.twist p) :
     contractionSnd X p r = -supportedProj 𝒜 {i | p ≤ i.1 ∧ p ≤ i.2} r := by
-  rw [contractionSnd_apply, Conjugation.two_nsmul_twistProj, conj_supportedProj_mixed,
-    (Conjugation.mem_twist _).1 hr, LinearMap.map_smul_of_tower, smul_smul, Int.units_mul_self,
-    one_smul, supportedProj_hodge 𝒜 p r]
+  rw [contractionSnd_apply, two_nsmul_twistProj_mixed_of_mem_twist hr, supportedProj_hodge 𝒜 p r]
   abel
 
 /-- A projection onto types `(r, s)` with `r < p` kills a sum of type pieces with `p ≤ r`. -/
@@ -588,9 +584,7 @@ theorem deligneToConeMap_mem {p n : ℤ} {x : A} (hx : x ∈ X.delignePiece p n)
     -- `(π_Qbar - π_Q) ∘ d` anticommutes with conjugation, so it raises the real twist by one.
     have ht := X.conj.map_mem_twist_add_one X.conj
       (f := (supportedProj 𝒜 {i | p ≤ i.1 ∧ i.2 < p} - supportedProj 𝒜 {i | i.1 < p ∧ p ≤ i.2}) ∘ₗ
-        X.d)
-      (fun y ↦ by simp only [LinearMap.comp_apply, LinearMap.sub_apply, map_sub,
-        conj_supportedProj_mixed, conj_supportedProj_mixedBar, conj_d, neg_sub]) hx.2
+        X.d) (conj_mixedDiff p) hx.2
     rw [sub_add_cancel] at ht
     have hF : ({i : ℤ × ℤ | p ≤ i.1 ∧ i.2 < p} ∩ {i | i.1 + i.2 = n}) ⊆
         {i | i.1 + i.2 = n ∧ p ≤ i.1} := fun i hi ↦ ⟨hi.2, hi.1.1⟩
@@ -829,6 +823,9 @@ private theorem coneHomotopyHom_apply {p n m : ℤ} (h : m + 1 = n) (x : X.delig
       X.deligneConeContraction p x := by
   subst h
   simp only [coneHomotopyHom, ↓reduceDIte]
+  -- The terms of the cone are only definitionally the subtypes `deligneConePiece`, and the
+  -- morphism is `ModuleCat.ofHom` of a `LinearMap.restrict`, so its value is the value of the
+  -- contraction by unfolding `ModuleCat.ofHom`, `LinearMap.restrict` and `Subtype.val`.
   rfl
 
 /-- The homotopy `h d + d h` from the inclusion after the projection to the identity of the

@@ -45,6 +45,8 @@ whose interaction is recorded here.
   (`TauCeti.Hodge.DolbeaultComplex.d_mem_iSup_degree`).
 * `TauCeti.Hodge.DolbeaultComplex.conj_supportedProj`: conjugation carries the projection onto a
   set of types to the projection onto the set of exchanged types.
+* `TauCeti.Hodge.DolbeaultComplex.supportedProj_d_supportedProj_eq_zero`: `π_S d π_T = 0` when
+  `d` carries no type in `T` into `S`.
 * `TauCeti.Hodge.DolbeaultComplex.twistProj_mem_iSup`: the projections to the real twists preserve
   every sum of type pieces stable under exchanging the two indices, and they commute with the total
   differential (`TauCeti.Hodge.DolbeaultComplex.d_twistProj`).
@@ -200,6 +202,14 @@ open TauCeti.DirectSum
 theorem conj_supportedProj {S T : Set (ℤ × ℤ)} (hST : ∀ i, i.swap ∈ T ↔ i ∈ S) (x : A) :
     X.conj.toEquiv (supportedProj 𝒜 S x) = supportedProj 𝒜 T (X.conj.toEquiv x) :=
   map_supportedProj X.conj.toEquiv (e := Prod.swap) (fun _ _ ↦ X.conj_mem) hST x
+
+/-- The projection onto the types in `S` kills the total differential of the projection onto the
+types in `T` when `d` carries no type in `T` into `S`. -/
+theorem supportedProj_d_supportedProj_eq_zero {S T : Set (ℤ × ℤ)}
+    (h : ∀ i ∈ T, (i.1 + 1, i.2) ∉ S ∧ (i.1, i.2 + 1) ∉ S) (y : A) :
+    supportedProj 𝒜 S (X.d (supportedProj 𝒜 T y)) = 0 :=
+  supportedProj_eq_zero_of_disjoint disjoint_compl_right
+    (X.d_mem_iSup (T := Sᶜ) h (supportedProj_mem_iSup 𝒜 T y))
 
 end Decomposition
 
