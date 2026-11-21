@@ -5,15 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.BigWitt.GhostPolynomial
+public import TauCeti.RingTheory.BigWitt.Ghost.Basic
 public import Mathlib.RingTheory.Ideal.Span
-public import Mathlib.RingTheory.Multiplicity
+public import Mathlib.Data.Nat.PadicValNat
 
 import TauCeti.Data.Nat.Factorization.MulDvd
 import TauCeti.RingTheory.Coprime.Lemmas
 import Mathlib.NumberTheory.Basic
 import Mathlib.Algebra.Ring.GeomSum
-import Mathlib.Algebra.Regular.SMul
 
 /-!
 # The image of the big Witt ghost map
@@ -30,23 +29,6 @@ public section
 
 namespace TauCeti.BigWitt
 
-/-- Torsion-freeness at the primes occurring in a truncation set suffices for ghost injectivity. -/
-theorem ghost_injective_of_prime_nsmul_injective {R : Type*} [NonUnitalSemiring R]
-    [IsLeftCancelAdd R] (S : TruncationSet)
-    (hS : ∀ p, p.Prime → p ∈ S → Function.Injective (p • · : R → R))
-    {x y : ℕ → R} (h : ∀ n ∈ S, ghostPolynomial n x = ghostPolynomial n y) :
-    Set.EqOn x y S := by
-  apply ghost_injective S _ h
-  intro n hn
-  have hreg : IsSMulRegular R n := by
-    rw [Nat.prod_primeFactors_pow_factorization (S.pos hn).ne']
-    apply Finset.prod_induction _ (IsSMulRegular R)
-      (fun _ _ ha hb => ha.mul hb) (IsSMulRegular.one R)
-    intro p hp
-    exact IsSMulRegular.pow _
-      (hS p (Nat.prime_of_mem_primeFactors hp) (S.mem_of_dvd hn (Nat.dvd_of_mem_primeFactors hp)))
-  exact hreg
-
 variable {R : Type*} [CommRing R]
 
 private theorem dvd_sub_ghostSummand (p d m : ℕ) (hp : p.Prime) (hm : m ≠ 0)
@@ -56,9 +38,9 @@ private theorem dvd_sub_ghostSummand (p d m : ℕ) (hp : p.Prime) (hm : m ≠ 0)
   have hd0 := ne_zero_of_dvd_ne_zero hm hd
   have hv : (p * m).factorization p =
       d.factorization p + ((m / d).factorization p + 1) := by
-    rw [Nat.factorization_mul hp.ne_zero hm, Finsupp.add_apply, hp.factorization_self,
-      Nat.factorization_div hd, Finsupp.tsub_apply]
     have hle := (Nat.factorization_le_iff_dvd hd0 hm).mpr hd p
+    simp only [Nat.factorization_mul hp.ne_zero hm, Finsupp.add_apply,
+      hp.factorization_self, Nat.factorization_div hd, Finsupp.tsub_apply]
     omega
   -- The power congruence supplies the factors of `p` missing from the coefficient `d`.
   have hpower : (p : R) ^ ((m / d).factorization p + 1) ∣
@@ -69,10 +51,18 @@ private theorem dvd_sub_ghostSummand (p d m : ℕ) (hp : p.Prime) (hm : m ≠ 0)
       (sub_dvd_pow_sub_pow ((a ^ p) ^ p ^ (m / d).factorization p)
         ((φ a) ^ p ^ (m / d).factorization p) k)
     simpa only [← pow_mul, mul_assoc, ← hk] using h
-  rw [map_mul, map_natCast, map_pow, Nat.mul_div_assoc p hd, pow_mul, ← mul_sub,
-    hv, pow_add]
-  exact mul_dvd_mul (by simpa using (Nat.castRingHom R).map_dvd (Nat.ordProj_dvd d p))
-    hpower
+  have hcoeff : (p : R) ^ d.factorization p ∣ (d : R) := by
+    simpa using (Nat.castRingHom R).map_dvd (Nat.ordProj_dvd d p)
+  have hsummand : (d : R) * a ^ (p * m / d) - φ ((d : R) * a ^ (m / d)) =
+      (d : R) * ((a ^ p) ^ (m / d) - (φ a) ^ (m / d)) := by
+    simp only [map_mul, map_natCast, map_pow, Nat.mul_div_assoc p hd, pow_mul, mul_sub]
+  calc
+    (p : R) ^ (p * m).factorization p =
+        (p : R) ^ d.factorization p * (p : R) ^ ((m / d).factorization p + 1) := by
+      rw [hv, pow_add]
+    _ ∣ (d : R) * ((a ^ p) ^ (m / d) - (φ a) ^ (m / d)) :=
+      mul_dvd_mul hcoeff hpower
+    _ = (d : R) * a ^ (p * m / d) - φ ((d : R) * a ^ (m / d)) := hsummand.symm
 
 private theorem dvd_ghostPolynomial_sub_frobenius (p m : ℕ) (hp : p.Prime) (hm : m ≠ 0)
     (φ : R →+* R) (hφ : ∀ a : R, (p : R) ∣ φ a - a ^ p)
@@ -169,7 +159,7 @@ private theorem ghost_numerator_dvd (S : TruncationSet) (φ : ℕ → R →+* R)
   rwa [← hnprod, hny] at hprod
 
 /-- Dwork's ghost-image criterion with independent prime Frobenius lifts.
-The modulus at a prime `p` dividing `n` is its full power `p ^ multiplicity p n`.
+The modulus at a prime `p` dividing `n` is its full power `p ^ padicValNat p n`.
 The lifts can be chosen independently over any commutative ring.
 See Hesselholt, *The big de Rham–Witt complex*, Lemma 1.1. -/
 theorem ghost_image (S : TruncationSet) (φ : ℕ → R →+* R)
@@ -178,7 +168,7 @@ theorem ghost_image (S : TruncationSet) (φ : ℕ → R →+* R)
     (∃ x : ℕ → R, ∀ n ∈ S, ghostPolynomial n x = b n) ↔
       ∀ p, p.Prime → ∀ n ∈ S, p ∣ n →
         b n - φ p (b (n / p)) ∈
-          Ideal.span ({(p : R) ^ multiplicity p n} : Set R) := by
+          Ideal.span ({(p : R) ^ padicValNat p n} : Set R) := by
   have hφ' : ∀ p, p.Prime → p ∈ S → ∀ a : R, (p : R) ∣ φ p a - a ^ p := by
     intro p hp hps a
     exact Ideal.mem_span_singleton.mp (hφ p hp hps a)
@@ -189,7 +179,7 @@ theorem ghost_image (S : TruncationSet) (φ : ℕ → R →+* R)
     rw [← hx n hn, ← hx (n / p) (S.mem_of_dvd hn (Nat.div_dvd_of_dvd hpn))]
     have h := dvd_ghostPolynomial_sub_frobenius p (n / p) hp hm.ne' (φ p)
       (hφ' p hp (S.mem_of_dvd hn hpn)) x
-    simpa only [Nat.mul_div_cancel' hpn, Nat.factorization_def n hp] using h
+    simpa only [Nat.mul_div_cancel' hpn, Nat.factorization_def n hp, Nat.padicValNat_def] using h
   · intro hb
     refine ⟨ghostCoordinates b, ?_⟩
     intro n
@@ -198,7 +188,7 @@ theorem ghost_image (S : TruncationSet) (φ : ℕ → R →+* R)
       intro hn
       have hnum := ghost_numerator_dvd S φ hφ' b (ghostCoordinates b)
         (fun p hp n hn hpn => by
-          simpa only [Nat.factorization_def n hp] using
+          simpa only [Nat.factorization_def n hp, Nat.padicValNat_def] using
             Ideal.mem_span_singleton.mp (hb p hp n hn hpn)) hn
         (fun m hm hmn => ih m hmn hm)
       rw [ghostPolynomial_eq_sum_properDivisors_add n _ (S.pos hn).ne',

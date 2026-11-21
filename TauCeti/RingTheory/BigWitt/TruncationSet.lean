@@ -41,6 +41,20 @@ instance : SetLike TruncationSet ℕ where
     cases h
     rfl
 
+/-- Membership in a constructed truncation set is membership in its carrier. -/
+@[simp]
+theorem mem_mk (s : Set ℕ) (hpos : ∀ {n : ℕ}, n ∈ s → 0 < n)
+    (hdvd : ∀ {n d : ℕ}, n ∈ s → d ∣ n → d ∈ s) (n : ℕ) :
+    n ∈ (⟨s, hpos, hdvd⟩ : TruncationSet) ↔ n ∈ s :=
+  Iff.rfl
+
+/-- The set underlying a constructed truncation set is its carrier. -/
+@[simp]
+theorem coe_mk (s : Set ℕ) (hpos : ∀ {n : ℕ}, n ∈ s → 0 < n)
+    (hdvd : ∀ {n d : ℕ}, n ∈ s → d ∣ n → d ∈ s) :
+    ((⟨s, hpos, hdvd⟩ : TruncationSet) : Set ℕ) = s :=
+  rfl
+
 /-- Truncation sets are determined by their members. -/
 @[ext]
 theorem ext {S T : TruncationSet} (h : ∀ n : ℕ, n ∈ S ↔ n ∈ T) : S = T :=
@@ -60,6 +74,11 @@ instance : OrderBot TruncationSet where
   bot := ⟨∅, fun h ↦ h.elim, fun h _ ↦ h.elim⟩
   bot_le := fun _ _ h ↦ False.elim h
 
+/-- The underlying set of the bottom truncation set is empty. -/
+@[simp]
+theorem coe_bot : ((⊥ : TruncationSet) : Set ℕ) = ∅ := by
+  rfl
+
 /-- The empty truncation set has no indices. -/
 @[simp]
 theorem notMem_bot (n : ℕ) : n ∉ (⊥ : TruncationSet) :=
@@ -77,6 +96,11 @@ def divisors (m : ℕ) : TruncationSet where
   mem_of_dvd' hn hd := Nat.mem_divisors.mpr <|
     ⟨hd.trans (Nat.dvd_of_mem_divisors hn), Nat.ne_zero_of_mem_divisors hn⟩
 
+/-- The underlying set of a divisor truncation is the set of positive divisors. -/
+@[simp]
+theorem coe_divisors (m : ℕ) : (divisors m : Set ℕ) = m.divisors := by
+  rfl
+
 /-- Membership in a divisor truncation set is divisibility of a nonzero index. -/
 @[simp]
 theorem mem_divisors {m d : ℕ} : d ∈ divisors m ↔ d ∣ m ∧ m ≠ 0 :=
@@ -93,6 +117,11 @@ def div (S : TruncationSet) (n : ℕ) : TruncationSet where
   carrier := {d | n * d ∈ S}
   pos' := fun hd ↦ Nat.pos_of_mul_pos_left (S.pos hd)
   mem_of_dvd' hn hd := S.mem_of_dvd hn (Nat.mul_dvd_mul_left n hd)
+
+/-- The underlying set of a shifted truncation consists of the allowed multiples. -/
+@[simp]
+theorem coe_div (S : TruncationSet) (n : ℕ) : (S.div n : Set ℕ) = {d | n * d ∈ S} := by
+  rfl
 
 /-- An index belongs to `S.div n` precisely when its multiple by `n` belongs to `S`. -/
 @[simp]

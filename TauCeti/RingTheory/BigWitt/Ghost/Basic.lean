@@ -10,6 +10,8 @@ public import Mathlib.Algebra.Ring.Hom.Defs
 
 import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 import Mathlib.Algebra.Group.Basic
+import Mathlib.Algebra.Regular.SMul
+import Mathlib.Data.Nat.Factorization.Basic
 
 /-!
 # Big Witt ghost polynomials
@@ -75,7 +77,7 @@ theorem map_ghostPolynomial {R A F : Type*} [NonUnitalSemiring R] [NonUnitalSemi
 @[simp]
 theorem ghostPolynomial_one {R : Type*} [NonUnitalSemiring R] (x : ℕ → R) :
     ghostPolynomial 1 x = x 1 := by
-  simp [ghostPolynomial, Nat.divisors_one, one_nsmul]
+  simp [ghostPolynomial, Nat.divisors_one]
 
 /-- The divisor sum at index zero is empty. -/
 @[simp]
@@ -120,5 +122,23 @@ theorem ghost_injective {R : Type*} [NonUnitalSemiring R] [IsLeftCancelAdd R]
     rw [ghostPolynomial_eq_sum_properDivisors_nsmul_add n x (S.pos hn).ne',
       ghostPolynomial_eq_sum_properDivisors_nsmul_add n y (S.pos hn).ne', hs] at hg
     exact add_left_cancel hg
+
+/-- Torsion-freeness at the primes occurring in a truncation set suffices for ghost injectivity. -/
+theorem ghost_injective_of_prime_nsmul_injective {R : Type*} [NonUnitalSemiring R]
+    [IsLeftCancelAdd R] (S : TruncationSet)
+    (hS : ∀ p, p.Prime → p ∈ S → Function.Injective (p • · : R → R))
+    {x y : ℕ → R} (h : ∀ n ∈ S, ghostPolynomial n x = ghostPolynomial n y) :
+    Set.EqOn x y S := by
+  apply ghost_injective S _ h
+  intro n hn
+  have hreg : IsSMulRegular R n := by
+    rw [Nat.prod_primeFactors_pow_factorization (S.pos hn).ne']
+    apply Finset.prod_induction _ (IsSMulRegular R)
+      (fun _ _ ha hb => ha.mul hb) (IsSMulRegular.one R)
+    intro p hp
+    exact IsSMulRegular.pow _
+      (hS p (Nat.prime_of_mem_primeFactors hp) (S.mem_of_dvd hn (Nat.dvd_of_mem_primeFactors hp)))
+  unfold IsSMulRegular at hreg
+  exact hreg
 
 end TauCeti.BigWitt
