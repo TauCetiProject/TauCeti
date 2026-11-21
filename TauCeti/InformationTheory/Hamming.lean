@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors, Wentao Li
 -/
 module
 
+public import Mathlib.Data.Finset.SymmDiff
 public import Mathlib.Data.Set.Card
 public import Mathlib.InformationTheory.Hamming
 public import Mathlib.LinearAlgebra.Pi
+import Mathlib.Algebra.Notation.Indicator
 
 /-!
 # Hamming support, and Hamming data under coordinate decompositions and reindexing
@@ -37,7 +39,8 @@ blocks reduce their Hamming data to the data of the blocks.
 It also proves that Hamming distance and Hamming weight are invariant under relabelling a finite
 coordinate type along an equivalence, and evaluates a product over the coordinates of a word which
 only depends on which coordinates vanish; this is how weight monomials `X^(n - wt x) Y^(wt x)`
-factor over the coordinates.
+factor over the coordinates. For set indicators, weight is cardinality and distance is the
+cardinality of the symmetric difference.
 
 Finally, for a binary word `c : ι → Bool` and any `x` in a commutative semiring,
 `∑ y, x ^ hammingDist y c = (1 + x) ^ card ι` (`TauCeti.sum_pow_hammingDist_eq`), and for every
@@ -50,6 +53,37 @@ lean-CKSD project (<https://github.com/bjbraams/lean-CKSD>), file
 -/
 
 public section
+
+namespace Finset
+
+open scoped symmDiff
+
+variable {ι A : Type*} [Fintype ι] [Zero A] [One A] [NeZero (1 : A)] [DecidableEq A]
+
+/-- The Hamming weight of the indicator of a finite subset is its cardinality. -/
+@[simp]
+theorem hammingNorm_indicator_one (s : Finset ι) :
+    hammingNorm ((s : Set ι).indicator (1 : ι → A)) = s.card := by
+  classical
+  rw [hammingNorm]
+  congr 1
+  ext i
+  by_cases hi : i ∈ s <;>
+    simp [Set.indicator_apply, hi, NeZero.ne]
+
+/-- Two indicators differ at exactly the elements of the symmetric difference of their sets. -/
+@[simp]
+theorem hammingDist_indicator_one [DecidableEq ι] (s t : Finset ι) :
+    hammingDist ((s : Set ι).indicator (1 : ι → A)) ((t : Set ι).indicator 1) = (s ∆ t).card := by
+  classical
+  rw [hammingDist]
+  congr 1
+  ext i
+  by_cases hs : i ∈ s <;> by_cases ht : i ∈ t <;>
+    simp [Set.indicator_apply, Finset.mem_symmDiff, hs, ht, NeZero.ne,
+      NeZero.ne' (1 : A)]
+
+end Finset
 
 namespace TauCeti
 

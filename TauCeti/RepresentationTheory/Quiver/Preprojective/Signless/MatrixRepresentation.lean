@@ -215,8 +215,8 @@ vertex `v` to the block `E_vv ⊗ ∏ (β w v * β v w)`, the blocks multiplied 
 theorem signlessMatrixRepresentation_list_prod_backtrackElem {v : V}
     (l : List {w // G.Adj v w}) (hl : l ≠ []) :
     signlessMatrixRepresentation k β hβ
-        (l.map fun w => signlessPreprojectiveMk k _ (backtrackElem G k w.2)).prod =
-      single v v 1 ⊗ₖ (l.map fun w => β w.1 v * β v w.1).prod := by
+        (l.map fun w => signlessPreprojectiveMk k _ (backtrackElem G k w.property)).prod =
+      single v v 1 ⊗ₖ (l.map fun w => β w.val v * β v w.val).prod := by
   induction l with
   | nil => exact absurd rfl hl
   | cons w l ih =>
@@ -229,8 +229,8 @@ is the trace of the product of their blocks at `v`. -/
 theorem trace_signlessMatrixRepresentation_list_prod_backtrackElem {v : V}
     (l : List {w // G.Adj v w}) (hl : l ≠ []) :
     trace (signlessMatrixRepresentation k β hβ
-        (l.map fun w => signlessPreprojectiveMk k _ (backtrackElem G k w.2)).prod) =
-      trace (l.map fun w => β w.1 v * β v w.1).prod := by
+        (l.map fun w => signlessPreprojectiveMk k _ (backtrackElem G k w.property)).prod) =
+      trace (l.map fun w => β w.val v * β v w.val).prod := by
   rw [signlessMatrixRepresentation_list_prod_backtrackElem β hβ l hl, trace_kronecker,
     trace_single_eq_same, one_mul]
 
@@ -253,7 +253,7 @@ theorem exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_of_trac
     (f : H.Copy G) (β : W → W → Matrix m m k)
     (hβ : ∀ x, ∑ y ∈ H.neighborFinset x, β y x * β x y = 0) {c : W}
     (l : List {a // H.Adj c a})
-    (htr : trace (l.map fun a => β a.1 c * β c a.1).prod ≠ 0) :
+    (htr : trace (l.map fun a => β a.val c * β c a.val).prod ≠ 0) :
     ∃ x ∈ signlessPreprojectiveGrade k (DoubledQuiver G) (2 * l.length),
       x ∉ commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver G)) := by
   classical
@@ -269,7 +269,7 @@ theorem exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_of_trac
     simpa using htrace
   -- The backtracks of `G` at `f c` along the image of the list.
   let l' : List {w // G.Adj (f c) w} :=
-    l.map fun a : {a // H.Adj c a} => ⟨f a.1, f.toHom.map_adj a.2⟩
+    l.map fun a : {a // H.Adj c a} => ⟨f a.val, f.toHom.map_adj a.property⟩
   have hgrade :=
     list_prod_signlessPreprojectiveMk_backtrackElem_mem_signlessPreprojectiveGrade (k := k) l'
   rw [List.length_map] at hgrade
@@ -279,8 +279,8 @@ theorem exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_of_trac
     hx
   rw [trace_signlessMatrixRepresentation_list_prod_backtrackElem _ _ l' (by simpa [l'] using hl)]
     at htrace
-  have h₁ (a : {a // H.Adj c a}) : H.Adj c a := a.2
-  have h₂ (a : {a // H.Adj c a}) : H.Adj a c := a.2.symm
+  have h₁ (a : {a // H.Adj c a}) : H.Adj c a := a.property
+  have h₂ (a : {a // H.Adj c a}) : H.Adj a c := a.property.symm
   simpa [l', Function.comp_def, h₁, h₂] using htrace
 
 variable (k) in
@@ -305,16 +305,16 @@ theorem exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_of_trac
     [Nontrivial k] (f : H.Copy G) (β : W → W → Matrix m m ℤ)
     (h₀ : ∀ v w, ¬H.Adj v w → β v w = 0) (h : ∀ v, ∑ w, β w v * β v w = 0) {c : W}
     (l : List {a // H.Adj c a})
-    (htr : trace (l.map fun a => β a.1 c * β c a.1).prod = 1) :
+    (htr : trace (l.map fun a => β a.val c * β c a.val).prod = 1) :
     ∃ x ∈ signlessPreprojectiveGrade k (DoubledQuiver G) (2 * l.length),
       x ∉ commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver G)) := by
   classical
   refine exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_of_trace_ne_zero f
     (fun i j => (Int.castRingHom k).mapMatrix (β i j))
     (sum_mapMatrix_intCast_mul_mapMatrix_intCast k β h₀ h) l ?_
-  have hmap : (l.map fun a => (Int.castRingHom k).mapMatrix (β a.1 c) *
-      (Int.castRingHom k).mapMatrix (β c a.1)) =
-      (l.map fun a => β a.1 c * β c a.1).map (Int.castRingHom k).mapMatrix := by
+  have hmap : (l.map fun a => (Int.castRingHom k).mapMatrix (β a.val c) *
+      (Int.castRingHom k).mapMatrix (β c a.val)) =
+      (l.map fun a => β a.val c * β c a.val).map (Int.castRingHom k).mapMatrix := by
     simp only [List.map_map, Function.comp_def, map_mul]
   rw [hmap, ← map_list_prod, RingHom.mapMatrix_apply, ← AddMonoidHom.map_trace, htr, map_one]
   exact one_ne_zero

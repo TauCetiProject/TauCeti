@@ -10,7 +10,9 @@ public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.LinearAlgebra.UnitaryGroup
 public import Mathlib.Topology.Instances.Matrix
+public import TauCeti.Analysis.Complex.Circle
 public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Block
+import TauCeti.LinearAlgebra.Matrix.ConjTranspose
 
 /-!
 # `U(n) = Circle · SU(n)`
@@ -22,7 +24,6 @@ unitary group. Rescaling by a scalar of modulus one keeps a matrix unitary, so n
 
 ## Main results
 
-* `Circle.coe_mem_unitary`: a point of the circle is a unitary complex number.
 * `Matrix.exists_circle_smul_mem_specialUnitaryGroup`: every complex unitary matrix becomes
   special unitary after multiplication by a suitable scalar of modulus one.
 * `Matrix.mem_unitaryGroup_of_star_mul_self_eq_scalar`: over `ℝ` or `ℂ`, a matrix `A` for which
@@ -39,14 +40,11 @@ unitary group. Rescaling by a scalar of modulus one keeps a matrix unitary, so n
 
 * `Matrix.UnitaryGroup.detCircle`: the determinant of a complex unitary matrix, as a continuous
   group morphism `U(n) →* Circle`. It is multiplicative on block-diagonal sums
-  (`Matrix.UnitaryGroup.detCircle_sum`).
+  (`Matrix.UnitaryGroup.detCircle_sum`) and inverted by complex conjugation of the entries
+  (`Matrix.UnitaryGroup.detCircle_map_star`).
 -/
 
 public section
-
-/-- A point of the circle is a unitary complex number. -/
-theorem Circle.coe_mem_unitary (z : Circle) : (z : ℂ) ∈ unitary ℂ :=
-  Unitary.mem_iff_star_mul_self.mpr <| by simp [← Complex.normSq_eq_conj_mul_self]
 
 namespace Matrix
 
@@ -131,12 +129,12 @@ theorem exists_circle_smul_mem_specialUnitaryGroup (U : unitaryGroup n ℂ) :
     ∃ c : Circle, (c : ℂ) • (U : Matrix n n ℂ) ∈ specialUnitaryGroup n ℂ := by
   -- Rescaling by a scalar of modulus one keeps the matrix unitary, whatever the scalar.
   have hunit (c : Circle) : (c : ℂ) • (U : Matrix n n ℂ) ∈ unitaryGroup n ℂ :=
-    Unitary.smul_mem_of_mem c.coe_mem_unitary U.2
+    Unitary.smul_mem_of_mem c.coe_mem_unitary U.property
   rcases isEmpty_or_nonempty n with hn | hn
   · -- With no indices at all every determinant is one and there is nothing to rescale.
     exact ⟨1, mem_specialUnitaryGroup_iff.mpr ⟨hunit 1, det_isEmpty⟩⟩
   obtain ⟨θ, hθ⟩ := Circle.exp_surjective (⟨(U : Matrix n n ℂ).det,
-    mem_sphere_zero_iff_norm.mpr (CStarRing.norm_of_mem_unitary (det_of_mem_unitary U.2))⟩ :
+    mem_sphere_zero_iff_norm.mpr (CStarRing.norm_of_mem_unitary (det_of_mem_unitary U.property))⟩ :
       Circle)
   refine ⟨Circle.exp (-(θ / Fintype.card n)), mem_specialUnitaryGroup_iff.mpr ⟨hunit _, ?_⟩⟩
   -- `c ^ card n` is the inverse of the determinant, viewed as a point of the circle.
@@ -154,7 +152,7 @@ variable {n : Type*} [Fintype n] [DecidableEq n]
 /-- The determinant of a complex unitary matrix, as a point of the unit circle. -/
 noncomputable def detCircle : unitaryGroup n ℂ →* Circle where
   toFun U := ⟨(U : Matrix n n ℂ).det,
-    mem_sphere_zero_iff_norm.2 (CStarRing.norm_of_mem_unitary (det_of_mem_unitary U.2))⟩
+    mem_sphere_zero_iff_norm.2 (CStarRing.norm_of_mem_unitary (det_of_mem_unitary U.property))⟩
   map_one' := Circle.ext det_one
   map_mul' U V := Circle.ext (det_mul (U : Matrix n n ℂ) V)
 
@@ -165,7 +163,7 @@ theorem coe_detCircle (U : unitaryGroup n ℂ) : (detCircle U : ℂ) = (U : Matr
 
 /-- The determinant of a unitary matrix depends continuously on the matrix. -/
 theorem continuous_detCircle : Continuous (detCircle : unitaryGroup n ℂ → Circle) :=
-  Continuous.subtype_mk (continuous_subtype_val.matrix_det) _
+  Continuous.subtype_mk (continuous_subtypeVal.matrix_det) _
 
 /-- The transpose of a unitary matrix is unitary, with inverse its entrywise conjugate:
 `Uᵀ conj(U) = 1`. -/
@@ -183,8 +181,8 @@ theorem continuous_sum {α : Type*} [CommRing α] [StarRing α] [TopologicalSpac
     Continuous (sum : unitaryGroup n α × unitaryGroup m α →* unitaryGroup (n ⊕ m) α) := by
   refine continuous_induced_rng.2 ?_
   simpa only [Function.comp_def, coe_sum] using
-    Continuous.matrix_fromBlocks (continuous_subtype_val.comp continuous_fst) continuous_const
-      continuous_const (continuous_subtype_val.comp continuous_snd)
+    Continuous.matrix_fromBlocks (continuous_subtypeVal.comp continuous_fst) continuous_const
+      continuous_const (continuous_subtypeVal.comp continuous_snd)
 
 /-- The determinant of a block-diagonal sum of unitary matrices is the product of the
 determinants. -/
@@ -196,5 +194,20 @@ theorem detCircle_sum (p : unitaryGroup n ℂ × unitaryGroup m ℂ) :
   exact det_fromBlocks_zero₂₁ _ _ _
 
 end Sum
+
+/-! ### Complex conjugation -/
+
+/-- Conjugating the entries of a unitary matrix (`Matrix.UnitaryGroup.map_star`) is continuous. -/
+theorem continuous_map_star {α : Type*} [CommRing α] [StarRing α] [TopologicalSpace α]
+    [ContinuousStar α] : Continuous (map_star : unitaryGroup n α → unitaryGroup n α) :=
+  Continuous.subtype_mk (continuous_subtypeVal.matrix_map continuous_star) _
+
+/-- The determinant of the complex conjugate of a unitary matrix is the inverse of its
+determinant. -/
+@[simp]
+theorem detCircle_map_star (U : unitaryGroup n ℂ) : detCircle (map_star U) = (detCircle U)⁻¹ := by
+  refine Circle.ext ?_
+  rw [coe_detCircle, map_star_coe, map_star_eq_map_starRingEnd, Circle.coe_inv_eq_conj,
+    coe_detCircle, RingHom.map_det, RingHom.mapMatrix_apply]
 
 end Matrix.UnitaryGroup

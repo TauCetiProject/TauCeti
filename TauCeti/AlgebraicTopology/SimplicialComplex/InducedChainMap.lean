@@ -95,8 +95,8 @@ private theorem injective_of_det_incidence_ne_zero {g : Fin (n + 1) → ι}
 /-- A tuple with nonzero incidence determinant against a cell enumerates exactly the vertices of
 that cell. -/
 private theorem image_eq_of_det_incidence_ne_zero {g : Fin (n + 1) → ι}
-    {c : RealizationCell K n} (h : (incidence g c).det ≠ 0) : Finset.univ.image g = c.1.1 := by
-  have hmem : ∀ i, g i ∈ c.1.1 := fun i ↦ by
+    {c : RealizationCell K n} (h : (incidence g c).det ≠ 0) : Finset.univ.image g = c.val.val := by
+  have hmem : ∀ i, g i ∈ c.val.val := fun i ↦ by
     by_contra hi
     refine h (Matrix.det_eq_zero_of_row_eq_zero i fun k ↦ ?_)
     have hk : g i ≠ c.vertexEmbedding k := fun hk ↦ hi (hk ▸ c.vertexEmbedding_mem k)
@@ -104,7 +104,7 @@ private theorem image_eq_of_det_incidence_ne_zero {g : Fin (n + 1) → ι}
   refine Finset.eq_of_subset_of_card_le (fun x hx ↦ ?_) ?_
   · obtain ⟨i, -, rfl⟩ := Finset.mem_image.mp hx
     exact hmem i
-  · rw [c.2, Finset.card_image_of_injective _ (injective_of_det_incidence_ne_zero h),
+  · rw [c.property, Finset.card_image_of_injective _ (injective_of_det_incidence_ne_zero h),
       Finset.card_univ, Fintype.card_fin]
 
 private theorem det_incidence_vertexEmbedding (c d : RealizationCell K n) :
@@ -176,7 +176,8 @@ theorem tupleChain_eq_zero_of_image_notMem {g : Fin (n + 1) → ι} (hg : Finset
   ext c
   rw [tupleChain_apply, Finsupp.zero_apply]
   by_contra h
-  exact hg ((image_eq_of_det_incidence_ne_zero fun h' ↦ h (by rw [h', Int.cast_zero])) ▸ c.1.2)
+  exact hg ((image_eq_of_det_incidence_ne_zero fun h' ↦ h (by rw [h',
+      Int.cast_zero])) ▸ c.val.property)
 
 /-- The integer matrix obtained by adjoining a column of ones to the incidence matrix of a
 tuple of `n + 2` vertices against an `n`-cell. Its Laplace expansion along the column of ones
@@ -271,7 +272,7 @@ theorem map_single (c : RealizationCell K n) (r : R) :
 /-- A simplicial map increasing on a cell sends a multiple of that cell to the same multiple of
 its image cell, without a change of sign. -/
 theorem map_single_of_strictMonoOn (c : RealizationCell K n)
-    (hc : StrictMonoOn f (↑c.1.1 : Set ι)) (r : R) :
+    (hc : StrictMonoOn f (↑c.val.val : Set ι)) (r : R) :
     map R f n (single c r) = single (c.map f hc.injOn) r := by
   rw [map_single, ← RealizationCell.vertexEmbedding_map c f hc, tupleChain_vertexEmbedding,
     smul_single, smul_eq_mul, mul_one]
@@ -301,7 +302,7 @@ theorem map_comp
       L.toPreAbstractSimplicialComplex P.toPreAbstractSimplicialComplex) (n : ℕ) :
     map R (g.comp f) n = map R g n ∘ₗ map R f n := by
   refine lhom_ext' fun c ↦ LinearMap.ext_ring ?_
-  have hc : Finset.univ.image c.vertexEmbedding ∈ K := c.image_vertexEmbedding ▸ c.1.2
+  have hc : Finset.univ.image c.vertexEmbedding ∈ K := c.image_vertexEmbedding ▸ c.val.property
   simp only [LinearMap.comp_apply, lsingle_apply, map_single, one_smul,
     map_tupleChain g (f.image_comp_mem hc),
     PreAbstractSimplicialComplex.SimplicialMap.coe_comp, Function.comp_assoc]
@@ -310,7 +311,7 @@ theorem map_comp
 theorem boundary_comp_map (n : ℕ) :
     boundary R n ∘ₗ map R f (n + 1) = map R f n ∘ₗ boundary R n := by
   refine lhom_ext' fun c ↦ LinearMap.ext_ring ?_
-  have hc : Finset.univ.image c.vertexEmbedding ∈ K := c.image_vertexEmbedding ▸ c.1.2
+  have hc : Finset.univ.image c.vertexEmbedding ∈ K := c.image_vertexEmbedding ▸ c.val.property
   simp only [LinearMap.comp_apply, lsingle_apply, map_single, one_smul,
     boundary_tupleChain (f.image_comp_mem hc), boundary_single, map_sum, map_smul,
     RealizationCell.vertexEmbedding_face, Function.comp_assoc]
@@ -330,18 +331,16 @@ variable {ι κ τ : Type u} [LinearOrder ι] [LinearOrder κ] [LinearOrder τ]
 oriented simplex to the oriented image simplex, with the sign of the reordering of its vertices,
 and to `0` when the simplicial map collapses it. -/
 def orderedSimplicialChainComplexMap :
-    orderedSimplicialChainComplex K R ⟶ orderedSimplicialChainComplex L R where
-  f n := eqToHom (orderedSimplicialChainComplex_X R n) ≫
-    ModuleCat.ofHom (OrderedSimplicialChain.map R f n) ≫
-      eqToHom (orderedSimplicialChainComplex_X R n).symm
-  comm' i j h := by
-    subst i
-    simp only [orderedSimplicialChainComplex_d, Category.assoc, eqToHom_trans_assoc,
-      eqToHom_refl, Category.id_comp]
-    congr 1
-    simp only [← Category.assoc]
-    congr 1
-    exact ModuleCat.hom_ext (OrderedSimplicialChain.boundary_comp_map f j)
+    orderedSimplicialChainComplex K R ⟶ orderedSimplicialChainComplex L R :=
+  orderedSimplicialChainComplexHomOfLinear R (OrderedSimplicialChain.map R f)
+    (OrderedSimplicialChain.boundary_comp_map f)
+
+/-- The induced map of ordered chain complexes is built from the induced maps of chains. -/
+theorem orderedSimplicialChainComplexMap_def :
+    orderedSimplicialChainComplexMap R f =
+      orderedSimplicialChainComplexHomOfLinear R (OrderedSimplicialChain.map R f)
+        (OrderedSimplicialChain.boundary_comp_map f) :=
+  (rfl)
 
 /-- The degreewise map is the linear extension of the map on cells. -/
 @[simp]
@@ -350,7 +349,7 @@ theorem orderedSimplicialChainComplexMap_f (n : ℕ) :
       eqToHom (orderedSimplicialChainComplex_X R n) ≫
         ModuleCat.ofHom (OrderedSimplicialChain.map R f n) ≫
           eqToHom (orderedSimplicialChainComplex_X R n).symm :=
-  (rfl)
+  orderedSimplicialChainComplexHomOfLinear_f R _ _ n
 
 /-- The identity simplicial map induces the identity chain map. -/
 @[simp]
@@ -367,13 +366,7 @@ theorem orderedSimplicialChainComplexMap_comp
       L.toPreAbstractSimplicialComplex P.toPreAbstractSimplicialComplex) :
     orderedSimplicialChainComplexMap R (g.comp f) =
       orderedSimplicialChainComplexMap R f ≫ orderedSimplicialChainComplexMap R g := by
-  ext n : 1
-  simp only [orderedSimplicialChainComplexMap_f, HomologicalComplex.comp_f,
-    Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
-  congr 1
-  rw [← Category.assoc, cancel_mono, ← ModuleCat.ofHom_comp]
-  apply ModuleCat.hom_ext
-  simp only [ModuleCat.hom_ofHom]
-  exact OrderedSimplicialChain.map_comp f g n
+  simp only [orderedSimplicialChainComplexMap_def, orderedSimplicialChainComplexHomOfLinear_comp,
+    ← OrderedSimplicialChain.map_comp]
 
 end TauCeti

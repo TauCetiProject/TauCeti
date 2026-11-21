@@ -265,7 +265,7 @@ private theorem pullbackJetL_mem (hp : p ≠ ⊤) (hΦ : DifferentiableOn ℝ Φ
   have hclosed : IsClosed {u : W1p mu V p |
       pullbackJetL hm hmap hC hL (u : Sobolev1JetLp mu V p) ∈ w1pSubmodule mu U p} :=
     (w1pSubmodule mu U p).isClosed.preimage
-      ((pullbackJetL hm hmap hC hL).continuous.comp continuous_subtype_val)
+      ((pullbackJetL hm hmap hC hL).continuous.comp continuous_subtypeVal)
   refine closure_minimal ?_ hclosed (Wkp.dense_contDiffOn_representatives hp 1 u)
   rintro (v : Wkp mu V p 1) ⟨f, hf, hv⟩
   rw [Wkp.value_one] at hv

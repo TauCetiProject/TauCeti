@@ -495,7 +495,7 @@ end Ear
 /-- The possible initial graphs of an ear decomposition: one actual vertex or the graph traced by
 a cycle. -/
 inductive EarStart (G : Graph α β) : Graph α β → Type (max u v)
-  | vertex (v : V(G)) : G.EarStart (Graph.noEdge {v.1} β)
+  | vertex (v : V(G)) : G.EarStart (Graph.noEdge {v.val} β)
   | cycle {s : α} (walk : G.Walk s s) (isCycle : walk.IsCycle) :
       G.EarStart (G.walkGraph walk)
 
@@ -547,12 +547,12 @@ theorem vertexSet_nonempty (start : G.EarStart H) : V(H).Nonempty := by
 
 /-- Every allowed initial graph of an ear decomposition is connected. -/
 theorem connected : ∀ _start : G.EarStart H, H.Connected
-  | .vertex v => connected_of_vertexSet_eq_singleton (vertexSet_noEdge {v.1} β)
+  | .vertex v => connected_of_vertexSet_eq_singleton (vertexSet_noEdge {v.val} β)
   | .cycle walk _ => walk.connected_walkGraph
 
 /-- A vertex-started initial graph is an edgeless single-vertex graph. -/
 theorem exists_noEdge_of_not_isCycle :
-    ∀ {start : G.EarStart H}, ¬ start.IsCycle → ∃ v : V(G), H = Graph.noEdge {v.1} β
+    ∀ {start : G.EarStart H}, ¬ start.IsCycle → ∃ v : V(G), H = Graph.noEdge {v.val} β
   | .vertex v, _ => ⟨v, rfl⟩
   | .cycle walk isCycle, h => False.elim (h ((isCycle_cycle walk isCycle).mpr trivial))
 
@@ -677,11 +677,11 @@ def IsOpen (d : G.EarDecomposition H) : Prop :=
 
 /-- An ear decomposition starts from a single actual vertex rather than from a cycle. -/
 def IsVertexStart (d : G.EarDecomposition H) : Prop :=
-  ∃ v : V(G), d.initial = Graph.noEdge {v.1} β
+  ∃ v : V(G), d.initial = Graph.noEdge {v.val} β
 
 /-- Characterization of a vertex-starting ear decomposition by its initial graph. -/
 theorem isVertexStart_iff (d : G.EarDecomposition H) :
-    d.IsVertexStart ↔ ∃ v : V(G), d.initial = Graph.noEdge {v.1} β :=
+    d.IsVertexStart ↔ ∃ v : V(G), d.initial = Graph.noEdge {v.val} β :=
   Iff.rfl
 
 /-- An ear decomposition starts from a single actual vertex if and only if its initial stage is
@@ -713,9 +713,9 @@ theorem IsOpen.kindAt_eq_open {d : G.EarDecomposition H} (hd : d.IsOpen)
   hd.2 i
 
 /-- A decomposition consisting only of one actual vertex. -/
-def vertex (v : V(G)) : G.EarDecomposition (Graph.noEdge {v.1} β) where
+def vertex (v : V(G)) : G.EarDecomposition (Graph.noEdge {v.val} β) where
   length := 0
-  graphAfter _ := Graph.noEdge {v.1} β
+  graphAfter _ := Graph.noEdge {v.val} β
   start := .vertex v
   earAt i := Fin.elim0 i
   earAt_fst i := Fin.elim0 i
@@ -726,11 +726,11 @@ def vertex (v : V(G)) : G.EarDecomposition (Graph.noEdge {v.1} β) where
 theorem length_vertex (v : V(G)) : (vertex v).length = 0 := (rfl)
 
 /-- The initial graph of a single-vertex decomposition is that vertex without edges. -/
-theorem initial_vertex (v : V(G)) : (vertex v).initial = Graph.noEdge {v.1} β := (rfl)
+theorem initial_vertex (v : V(G)) : (vertex v).initial = Graph.noEdge {v.val} β := (rfl)
 
 @[simp]
 theorem graphAfter_vertex_zero (v : V(G)) :
-    (vertex v).graphAfter 0 = Graph.noEdge {v.1} β := by
+    (vertex v).graphAfter 0 = Graph.noEdge {v.val} β := by
   rw [vertex]
 
 /-- The initial stage data of `vertex v` is `EarStart.vertex v`. -/

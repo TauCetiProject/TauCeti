@@ -16,9 +16,7 @@ The independent square kernel `κ ∥ₖ κ` turns the square of a singleton tra
 probability into a singleton probability on the product space. If `(y, y)` is transient
 for this kernel, the Green-function identity makes these squares summable under every
 finite initial measure. Consequently the original singleton masses tend to zero, even
-when `y` is recurrent for the original chain. In the recurrent-product case, recurrence of
-`(y, y)` implies recurrence of `y`, since squared return probabilities are bounded by the
-original return probabilities.
+when `y` is recurrent for the original chain.
 
 These are the product-chain alternatives used in proving convergence to equilibrium.
 Neither irreducibility nor aperiodicity is required here. The limit is pointwise on
@@ -40,23 +38,6 @@ namespace ProbabilityTheory.Kernel
 
 variable {α : Type*} [MeasurableSpace α] [MeasurableSingletonClass α]
   (κ : Kernel α α) [IsMarkovKernel κ]
-
-/-- Recurrence of a state in an independent product chain implies recurrence of its
-first coordinate. In particular this applies to diagonal states of the square chain. -/
-theorem return_eq_one_of_parallelComp_return_eq_one
-    {β : Type*} [MeasurableSpace β] [MeasurableSingletonClass β]
-    (η : Kernel β β) [IsMarkovKernel η] {y : α} {z : β}
-    (hy : markovChainLaw (Measure.dirac (y, z)) (κ ∥ₖ η)
-      {w | hittingAfter (fun n w => w n) {(y, z)} 1 w ≠ ⊤} = 1) :
-    markovChainLaw (Measure.dirac y) κ
-      {w | hittingAfter (fun n w => w n) {y} 1 w ≠ ⊤} = 1 := by
-  apply (κ.tsum_pow_apply_singleton_self_eq_top_iff y).mp
-  apply top_unique
-  rw [← (κ ∥ₖ η).tsum_pow_apply_singleton_self_eq_top_iff (y, z)] at hy
-  rw [← hy]
-  exact tsum_le_tsum fun n => by
-    rw [parallelComp_pow_apply_singleton]
-    exact mul_le_of_le_one_right' prob_le_one
 
 /-- If the diagonal state `(y, y)` is transient for the independent square chain,
 then squared singleton masses are summable from every finite initial measure.

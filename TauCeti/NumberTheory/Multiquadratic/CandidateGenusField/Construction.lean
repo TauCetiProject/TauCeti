@@ -59,16 +59,16 @@ theorem exists_prod_radicand_eq_sq_mul_of_prod_primeDiscriminant_eq {d : ℤ} {s
         a ^ 2 * ((d : ℤ) : ℚ) := by
   classical
   choose c hc0 hcP using primeDiscriminant_eq_sq_mul_radicand
-  let C : ℤ := ∏ P ∈ s.attach, c P.1
-  let R : ℤ := ∏ P ∈ s.attach, primeDiscriminantRadicand P.1
+  let C : ℤ := ∏ P ∈ s.attach, c P.val
+  let R : ℤ := ∏ P ∈ s.attach, primeDiscriminantRadicand P.val
   have hCprod : ∏ P ∈ s, P = C ^ 2 * R := by
     dsimp only [C, R]
     rw [← Finset.prod_pow, ← Finset.prod_mul_distrib,
       ← Finset.prod_attach s (fun P => P)]
-    exact Finset.prod_congr rfl fun P _ => hcP P.1
+    exact Finset.prod_congr rfl fun P _ => hcP P.val
   obtain ⟨c0, hc0ne, hfd⟩ := exists_sq_mul_eq_fundamentalDiscriminant d
   have hCne : C ≠ 0 :=
-    Finset.prod_ne_zero_iff.mpr fun P _ => hc0 P.1
+    Finset.prod_ne_zero_iff.mpr fun P _ => hc0 P.val
   have hkey : C ^ 2 * R = c0 ^ 2 * d := by rw [← hCprod, hprod, hfd]
   let a : ℚ := (c0 : ℚ) / (C : ℚ)
   have hCQ : (C : ℚ) ≠ 0 := Int.cast_ne_zero.mpr hCne

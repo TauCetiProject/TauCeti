@@ -68,13 +68,13 @@ variable (C D) in
 /-- The `n`-cells of the product of two CW complexes: a `p`-cell of `C` and a `q`-cell of `D`
 with `p + q = n`. -/
 private abbrev ProdCell (n : ℕ) : Type (max u v) :=
-  Σ pq : Finset.antidiagonal n, cell C pq.1.1 × cell D pq.1.2
+  Σ pq : Finset.antidiagonal n, cell C pq.val.1 × cell D pq.val.2
 
 /-- The identification of `Fin n → ℝ` with `(Fin p → ℝ) × (Fin q → ℝ)` used to parametrise the
 product cell indexed by `c`. -/
 private abbrev prodCellIsometry {n : ℕ} (c : ProdCell C D n) :
-    (Fin n → ℝ) ≃ᵢ (Fin c.1.1.1 → ℝ) × (Fin c.1.1.2 → ℝ) :=
-  (Fin.appendIsometryOfEq (Finset.mem_antidiagonal.1 c.1.2)).symm
+    (Fin n → ℝ) ≃ᵢ (Fin c.1.val.1 → ℝ) × (Fin c.1.val.2 → ℝ) :=
+  (Fin.appendIsometryOfEq (Finset.mem_antidiagonal.1 c.1.property)).symm
 
 /-- The characteristic map of a product cell: the product of the characteristic maps of the two
 factors, after splitting the coordinates. -/
@@ -191,10 +191,11 @@ def cwComplexProd : CWComplex (C ×ˢ D) :=
         source_eq]
       ext x
       rw [mem_preimage, mem_prod]
-      exact (Fin.mem_ball_iff_appendIsometryOfEq_symm (Finset.mem_antidiagonal.1 c.1.2)).symm)
+      exact (Fin.mem_ball_iff_appendIsometryOfEq_symm
+          (Finset.mem_antidiagonal.1 c.1.property)).symm)
     (fun _ c ↦ ((continuousOn _ c.2.1).prodMap (continuousOn _ c.2.2)).comp
       (prodCellIsometry c).continuous.continuousOn fun _ hx ↦ by
-        rw [← Fin.image_closedBall_appendIsometryOfEq_symm (Finset.mem_antidiagonal.1 c.1.2)]
+        rw [← Fin.image_closedBall_appendIsometryOfEq_symm (Finset.mem_antidiagonal.1 c.1.property)]
         exact mem_image_of_mem _ hx)
     (fun _ c ↦ (prodCellIsometry c).symm.continuous.comp_continuousOn
       ((continuousOn_symm _ c.2.1).prodMap (continuousOn_symm _ c.2.2)))
@@ -210,10 +211,10 @@ instance finite_cwComplexProd : RelCWComplex.Finite (C ×ˢ D) where
 /-- The `n`-cells of `C ×ˢ D` are the pairs of a `p`-cell of `C` and a `q`-cell of `D` with
 `p + q = n`. -/
 def cellProdEquiv (n : ℕ) :
-    cell (C ×ˢ D) n ≃ Σ pq : Finset.antidiagonal n, cell C pq.1.1 × cell D pq.1.2 :=
+    cell (C ×ˢ D) n ≃ Σ pq : Finset.antidiagonal n, cell C pq.val.1 × cell D pq.val.2 :=
   Equiv.refl _
 
-variable {n : ℕ} (c : Σ pq : Finset.antidiagonal n, cell C pq.1.1 × cell D pq.1.2)
+variable {n : ℕ} (c : Σ pq : Finset.antidiagonal n, cell C pq.val.1 × cell D pq.val.2)
 
 /-- The characteristic maps of `TauCeti.cwComplexProd` are the maps `prodCellMap`, by
 construction (`Topology.CWComplex.mkFinite` takes the supplied family as its `map` field). -/
@@ -226,8 +227,9 @@ factors, after splitting the coordinates of `Fin n → ℝ` into `(Fin p → ℝ
 @[simp]
 theorem map_cellProdEquiv_symm_apply (x : Fin n → ℝ) :
     map n ((cellProdEquiv n).symm c) x =
-      (map _ c.2.1 ((Fin.appendIsometryOfEq (Finset.mem_antidiagonal.1 c.1.2)).symm x).1,
-        map _ c.2.2 ((Fin.appendIsometryOfEq (Finset.mem_antidiagonal.1 c.1.2)).symm x).2) := by
+      (map _ c.2.1 ((Fin.appendIsometryOfEq (Finset.mem_antidiagonal.1 c.1.property)).symm x).1,
+        map _ c.2.2 ((Fin.appendIsometryOfEq (Finset.mem_antidiagonal.1 c.1.property)).symm x).2)
+            := by
   rw [map_cellProdEquiv_symm_eq_prodCellMap, prodCellMap_apply, Prod.map_apply]
 
 /-- The open product cell is the product of the open cells of its factors. -/

@@ -725,6 +725,22 @@ lemma DiscreteRep.equivariant {X Y : DiscreteRep.{u, v, w} R G} (f : X ⟶ Y) (g
     f.toLinearMap (g • x) = g • f.toLinearMap x := by
   simpa using f.isIntertwining _ _ g x
 
+/-- An equivalence between the underlying representations of two discrete `G`-modules induces an
+isomorphism in `DiscreteRep R G`, mirroring `Rep.mkIso`. -/
+def DiscreteRep.mkIso {X Y : DiscreteRep.{u, v, w} R G} (e : X.ρ.Equiv Y.ρ) : X ≅ Y where
+  hom := e.toIntertwiningMap
+  inv := e.symm.toIntertwiningMap
+  hom_inv_id := Representation.IntertwiningMap.ext <| LinearMap.ext e.symm_apply_apply
+  inv_hom_id := Representation.IntertwiningMap.ext <| LinearMap.ext e.apply_symm_apply
+
+/-- The forward morphism of `DiscreteRep.mkIso e` is `e.toIntertwiningMap`. -/
+@[simp] lemma DiscreteRep.mkIso_hom {X Y : DiscreteRep.{u, v, w} R G} (e : X.ρ.Equiv Y.ρ) :
+    (DiscreteRep.mkIso e).hom = e.toIntertwiningMap := (rfl)
+
+/-- The inverse morphism of `DiscreteRep.mkIso e` is `e.symm.toIntertwiningMap`. -/
+@[simp] lemma DiscreteRep.mkIso_inv {X Y : DiscreteRep.{u, v, w} R G} (e : X.ρ.Equiv Y.ρ) :
+    (DiscreteRep.mkIso e).inv = e.symm.toIntertwiningMap := (rfl)
+
 variable (R G)
 
 /-- The dictionary going in, as a functor: a discrete `G`-module with continuous `G`-action goes
@@ -823,7 +839,7 @@ statements that must see the restricted representation (for instance the domain 
 `TauCeti.coindTraceHom`) use this abbreviation. -/
 abbrev smoothDiscreteResTopRep (A : SmoothDiscreteTopRep.{u, v, w} R G) :
     SmoothDiscreteTopRep.{u, v, w} R U :=
-  ⟨TopRep.res (U.subtype : U →* G) A.obj, A.property.res continuous_subtype_val⟩
+  ⟨TopRep.res (U.subtype : U →* G) A.obj, A.property.res continuous_subtypeVal⟩
 
 /-- Restriction along `U → G` on smooth discrete representations: Mathlib's `TopRep.resFunctor`
 along the subgroup inclusion, lifted to the smooth discrete objects since restriction preserves
@@ -833,13 +849,13 @@ object map as `TauCeti.smoothDiscreteResTopRep` and its action on morphisms as t
 @[expose] def smoothDiscreteResFunctor :
     SmoothDiscreteTopRep.{u, v, w} R G ⥤ SmoothDiscreteTopRep.{u, v, w} R U :=
   ObjectProperty.lift _ (smoothDiscreteι R G ⋙ TopRep.resFunctor (U.subtype : U →* G))
-    fun A ↦ A.property.res continuous_subtype_val
+    fun A ↦ A.property.res continuous_subtypeVal
 
 /-- Restriction along `U → G` restricts the underlying topological representation. -/
 @[simp]
 theorem smoothDiscreteResFunctor_obj (A : SmoothDiscreteTopRep.{u, v, w} R G) :
     (smoothDiscreteResFunctor R G U).obj A =
-      ⟨TopRep.res (U.subtype : U →* G) A.obj, A.property.res continuous_subtype_val⟩ :=
+      ⟨TopRep.res (U.subtype : U →* G) A.obj, A.property.res continuous_subtypeVal⟩ :=
   (rfl)
 
 /-- Restriction along `U → G` does not change the underlying map of a morphism. -/

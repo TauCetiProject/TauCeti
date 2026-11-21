@@ -75,7 +75,7 @@ private theorem qExpansion_coeff_one_smul (f : Eigenform N k)
 
 private theorem apply_eq_qExpansion_coeff_one_smul (f : Eigenform N k)
     (h₁ : (qExpansion 1 f.toCuspForm).coeff 1 = 1) (T : heckeTCuspPrimeAlgebra N k) :
-    T.1 f.toCuspForm = (qExpansion 1 (T.1 f.toCuspForm)).coeff 1 • f.toCuspForm := by
+    T.val f.toCuspForm = (qExpansion 1 (T.val f.toCuspForm)).coeff 1 • f.toCuspForm := by
   obtain ⟨T, hT⟩ := T
   rw [heckeTCuspPrimeAlgebra_def] at hT
   obtain ⟨c, hc⟩ := exists_smul_eq_of_mem_adjoin (v := f.toCuspForm) (by
@@ -88,7 +88,7 @@ algebra. -/
 def _root_.HeckeRing.GL2.Eigenform.eigenvalueHom (f : Eigenform N k)
     (h₁ : (qExpansion 1 f.toCuspForm).coeff 1 = 1) : heckeTCuspPrimeAlgebra N k →ₐ[ℤ] ℂ :=
   (heckeTCuspPrimeAlgebra N k).val.eigenvalueHomOfJointEigenvector
-    (fun T ↦ (qExpansion 1 (T.1 f.toCuspForm)).coeff 1) f.toCuspForm f.ne_zero fun T ↦
+    (fun T ↦ (qExpansion 1 (T.val f.toCuspForm)).coeff 1) f.toCuspForm f.ne_zero fun T ↦
       Module.End.mem_eigenspace_iff.mpr (apply_eq_qExpansion_coeff_one_smul f h₁ T)
 
 /-- The eigenvalue of an operator in the prime-index Hecke algebra on a normalised full
@@ -96,7 +96,7 @@ eigenform is the first Fourier coefficient of its image. -/
 @[simp]
 theorem _root_.HeckeRing.GL2.Eigenform.eigenvalueHom_apply (f : Eigenform N k)
     (h₁ : (qExpansion 1 f.toCuspForm).coeff 1 = 1) (T : heckeTCuspPrimeAlgebra N k) :
-    f.eigenvalueHom h₁ T = (qExpansion 1 (T.1 f.toCuspForm)).coeff 1 := by
+    f.eigenvalueHom h₁ T = (qExpansion 1 (T.val f.toCuspForm)).coeff 1 := by
   rw [Eigenform.eigenvalueHom, AlgHom.eigenvalueHomOfJointEigenvector_apply]
 
 /-- A normalised full eigenform is an eigenvector of every operator in the prime-index Hecke
@@ -104,7 +104,7 @@ algebra, with eigenvalue given by its eigenvalue homomorphism. -/
 theorem _root_.HeckeRing.GL2.Eigenform.heckeTCuspPrimeAlgebra_apply_eq_eigenvalueHom_smul
     (f : Eigenform N k) (h₁ : (qExpansion 1 f.toCuspForm).coeff 1 = 1)
     (T : heckeTCuspPrimeAlgebra N k) :
-    T.1 f.toCuspForm = f.eigenvalueHom h₁ T • f.toCuspForm := by
+    T.val f.toCuspForm = f.eigenvalueHom h₁ T • f.toCuspForm := by
   rw [Eigenform.eigenvalueHom_apply]
   exact apply_eq_qExpansion_coeff_one_smul f h₁ T
 
