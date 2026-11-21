@@ -34,8 +34,9 @@ In the chart at a point `α`, the equation becomes a coordinate Floer equation o
   `-1` on the chart target (`TauCeti.Floer.almostComplexInChartAt_apply_apply`). For a jointly
   `Cⁿ` family it is the coordinate expression `ContMDiffAlmostComplexStructureFamily.inChart`
   (`TauCeti.Floer.almostComplexInChartAt_eq_inChart`), which is `Cⁿ` on the chart target; for a
-  smooth domain-independent structure it is `SmoothAlmostComplexStructure.inChart`
-  (`TauCeti.Floer.almostComplexInChartAt_const`).
+  family of smooth structures `J z`, such as a domain-independent one, it is
+  `SmoothAlmostComplexStructure.inChart` of `J z`
+  (`TauCeti.Floer.almostComplexInChartAt_almostComplexStructureAt`).
 * For a map `u` into the chart source, with coordinate expression `v = extChartAt I α ∘ u`, the
   perturbed derivative `du - X_K` in tangent coordinates is `dv` minus the Hamiltonian vector
   fields in the chart (`TauCeti.SmoothTwoForm.continuousLinearMapAt_perturbedMFDeriv_apply`).
@@ -170,18 +171,19 @@ theorem almostComplexInChartAt_eq_inChart {n : ℕ∞}
   -- The two sides apply the same endomorphism, once through its underlying linear map.
   rfl
 
-/-- For a domain-independent smooth structure `J`, the structure in the chart is `J` read in the
-chart at `α`. In particular it is smooth on the chart target
-(`SmoothAlmostComplexStructure.contDiffOn_inChart`). -/
+/-- For a family of smooth structures `J p`, the structure in the chart at `(p, y)` is `J p` read
+in the chart at `α`. For a domain-independent structure (a constant family) it is therefore smooth
+on the chart target (`SmoothAlmostComplexStructure.contDiffOn_inChart`). -/
 @[simp]
-theorem almostComplexInChartAt_const (J : SmoothAlmostComplexStructure I M) (α : M)
-    (p : P × E) :
-    almostComplexInChartAt I α (fun _ ↦ J.almostComplexStructureAt) p = J.inChart α p.2 := by
+theorem almostComplexInChartAt_almostComplexStructureAt (J : P → SmoothAlmostComplexStructure I M)
+    (α : M) (p : P × E) :
+    almostComplexInChartAt I α (fun z ↦ (J z).almostComplexStructureAt) p =
+      (J p.1).inChart α p.2 := by
   rw [almostComplexInChartAt, SmoothAlmostComplexStructure.inChart_def]
   congr 1
   ext v
   rw [LinearMap.coe_toContinuousLinearMap']
-  exact J.almostComplexStructureAt_apply _ v
+  exact (J p.1).almostComplexStructureAt_apply _ v
 
 end Floer
 

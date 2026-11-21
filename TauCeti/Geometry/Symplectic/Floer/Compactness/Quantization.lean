@@ -318,14 +318,9 @@ private theorem exists_pos_forall_mul_norm_sq_le_and_le_of_chart
   · exact ⟨1, one_pos, 1, one_pos, fun p hp ↦ absurd hp (notMem_empty p)⟩
   have hω := (hJt p₀ hp₀).isNondegenerate
   -- Read in the chart, the family of structures is the family of coordinate expressions.
-  have hJc (q : P × E) : Floer.almostComplexInChartAt I α
-      (fun p ↦ (J p).almostComplexStructureAt) q = (J q.1).inChart α q.2 := by
-    obtain ⟨p, y⟩ := q
-    rw [← Floer.almostComplexInChartAt_const (J p) α (p, y)]
-    ext v
-    rw [Floer.almostComplexInChartAt_apply, Floer.almostComplexInChartAt_apply]
   obtain ⟨c, hc, C', hcC⟩ := hω.exists_pos_forall_mul_norm_sq_le_eval₂_le_mul_norm_sq α hC hKc hK
-    (hJ.congr fun q _ ↦ hJc q) fun p hp _ _ ↦ hω.tames_iff.1 (hJt p hp) _
+    (hJ.congr fun q _ ↦ Floer.almostComplexInChartAt_almostComplexStructureAt J α q)
+    fun p hp _ _ ↦ hω.tames_iff.1 (hJt p hp) _
   refine ⟨c, hc, max C' 1, by positivity, fun p hp x hx hy ξ ↦ ?_⟩
   have h := hcC p hp (extChartAt I α x) hy ξ
   rw [(extChartAt I α).left_inv hx] at h
