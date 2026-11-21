@@ -55,8 +55,9 @@ variation with `δα = α η`, `η` of class `Cᵏ`, is zero, this map is inject
 
 The `C²` square-integrable kernel of the gauge-fixed operator `L_x = d₀* ⊕ d₁`
 (`TauCeti.Vortex.gaugeFixedKernel x`) is such a space: rows `2` and `3` of `L_x y = 0` are the
-holomorphicity rows of the linearized equation, and a kernel element with `δα = α η`, `η` of class
-`C²`, vanishes when `|α| → 1` at infinity
+holomorphicity rows of the linearized equation
+(`TauCeti.Vortex.gaugeFixedKernel_linearizedEquation`), and a kernel element with `δα = α η`, `η`
+of class `C²`, vanishes when `|α| → 1` at infinity
 (`TauCeti.Vortex.eq_zero_of_gaugeFixedOperator_eq_zero_of_sectionValue_eq_mul_of_tendsto`). So at a
 `C²` field satisfying `∂bar_a α = 0` with the degree-`m` end framing, the kernel of `L_x` is finite
 dimensional, of real dimension at most `2 m`
@@ -421,7 +422,8 @@ variable (hx : ContDiff ℝ 2 x) (hhol : ∀ w, equation x w 1 = 0 ∧ equation 
 /-- A kernel element of `L_x` has `C²` connection variation and differentiable section variation,
 and satisfies the holomorphicity rows of the linearized equation, which are rows `2` and `3` of
 `L_x y = 0`. -/
-private theorem gaugeFixedKernel_linearizedEquation (y) (hy : y ∈ gaugeFixedKernel x) :
+theorem gaugeFixedKernel_linearizedEquation (y : ℂ → EuclideanSpace ℝ (Fin 4))
+    (hy : y ∈ gaugeFixedKernel x) :
     ContDiff ℝ 2 (fun w ↦ y w 0) ∧ ContDiff ℝ 2 (fun w ↦ y w 1) ∧
       Differentiable ℝ (fun w ↦ y w 2) ∧ Differentiable ℝ (fun w ↦ y w 3) ∧
       ∀ w, linearizedEquation x y w 1 = 0 ∧ linearizedEquation x y w 2 = 0 := by
