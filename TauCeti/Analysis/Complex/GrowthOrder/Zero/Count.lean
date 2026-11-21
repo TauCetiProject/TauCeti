@@ -7,17 +7,19 @@ module
 
 public import TauCeti.Analysis.Complex.GrowthOrder
 public import TauCeti.Analysis.Meromorphic.Divisor
-public import Mathlib.Analysis.Complex.JensenFormula
+public import TauCeti.Analysis.Complex.JensenFormula
 
 /-!
 # Zero counts from the order of growth
 
-An entire function of order at most `A` that is nonzero at the origin has
+An entire function of order at most `A` has
 `O(R ^ B)` zeros in the closed disk of radius `R`, counted with multiplicity,
 for every `B > A`. The count is the finite sum of Mathlib's native divisor on
-the disk. Its summands are nonnegative because the function is entire.
+the disk. Its summands are nonnegative because the function is entire. For the identically
+zero function, this divisor is zero by Mathlib's convention; the count in this theorem
+is therefore zero rather than the cardinality of its ordinary zero set.
 
-The proof applies Mathlib's `AnalyticOnNhd.sum_divisor_le` to disks of radii
+The proof applies `AnalyticOnNhd.sum_divisor_le_analyticOrderNatAt_add` to disks of radii
 `R` and `2 * R`, using the growth bound from `TauCeti.OrderLE`. Negative
 exponents reduce to constants by the existing Liouville theorem. This is
 the counting estimate used to obtain convergence of sums over the zeros of
@@ -39,7 +41,7 @@ variable {f : ℂ → ℂ} {A B : ℝ}
 
 private theorem OrderLE.eventually_sum_divisor_le_of_nonneg (h : OrderLE f A)
     (hf : Differentiable ℂ f)
-    (hf0 : f 0 ≠ 0) (hAB : A < B) (hB : 0 ≤ B) :
+    (hfc : analyticOrderAt f 0 ≠ ⊤) (hAB : A < B) (hB : 0 ≤ B) :
     ∃ C > 0, ∀ᶠ R : ℝ in atTop,
       ((∑ᶠ z, MeromorphicOn.divisor f (closedBall 0 R) z : ℤ) : ℝ) ≤ C * R ^ B := by
   obtain ⟨c, _, hb⟩ := (h.isBigO hAB).exists_pos
@@ -47,7 +49,10 @@ private theorem OrderLE.eventually_sum_divisor_le_of_nonneg (h : OrderLE f A)
   let c' : ℝ := max c 1
   have hc' : 0 < c' := lt_of_lt_of_le zero_lt_one (le_max_right _ _)
   have hlog : 0 < Real.log 2 := Real.log_pos (by norm_num)
-  let C : ℝ := (|Real.log c' - Real.log ‖f 0‖| + 2 ^ B) / Real.log 2
+  let m : ℝ := analyticOrderNatAt f 0
+  let a : ℂ := meromorphicTrailingCoeffAt f 0
+  have hm : 0 ≤ m := Nat.cast_nonneg _
+  let C : ℝ := m + (|Real.log c' - Real.log ‖a‖| + 2 ^ B) / Real.log 2
   refine ⟨C, by positivity, ?_⟩
   filter_upwards [eventually_ge_atTop (max L 1)] with R hR
   have hR1 : 1 ≤ R := (le_max_right _ _).trans hR
@@ -58,47 +63,59 @@ private theorem OrderLE.eventually_sum_divisor_le_of_nonneg (h : OrderLE f A)
   have hM : 1 ≤ M := by
     exact one_le_mul_of_one_le_of_one_le (le_max_right _ _)
       (Real.one_le_exp (Real.rpow_nonneg (by positivity) _))
-  have ha : AnalyticOnNhd ℂ f (closedBall 0 |2 * R|) := fun z _ ↦ hf.analyticAt z
-  have hfM : ∀ z ∈ sphere (0 : ℂ) |2 * R|, ‖f z‖ ≤ M := by
+  have ha : AnalyticOnNhd ℂ f (closedBall 0 (2 * R)) := fun z _ ↦ hf.analyticAt z
+  have hfM : ∀ z ∈ sphere (0 : ℂ) (2 * R), ‖f z‖ ≤ M := by
     intro z hz
     have hzR : ‖z‖ = 2 * R := by
-      simpa [mem_sphere_iff_norm, abs_of_pos (by positivity : 0 < 2 * R)] using hz
+      simpa only [mem_sphere_iff_norm, sub_zero] using hz
     have hzL : L ≤ ‖z‖ := by rw [hzR]; linarith
     have hbz : ‖f z‖ ≤ c * Real.exp ((2 * R) ^ B) := by
       simpa only [Set.mem_ofPred_eq, Real.norm_eq_abs, Real.abs_exp, hzR] using hL hzL
     exact hbz.trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (Real.exp_pos _).le)
   -- Jensen bounds the zero count on the inner disk.
-  have hj := AnalyticOnNhd.sum_divisor_le (r := R) (R := 2 * R)
-    (by simpa only [abs_of_pos hR0] using hR0)
-    (by rw [abs_of_pos hR0, abs_of_pos (by positivity : 0 < 2 * R)]; linarith)
-    hM ha hf0 hfM
-  rw [abs_of_pos hR0, mul_div_cancel_right₀ (2 : ℝ) (ne_of_gt hR0)] at hj
-  have hfnorm : ‖f 0‖ ≠ 0 := norm_ne_zero_iff.mpr hf0
-  have hlogM : Real.log (M / ‖f 0‖) =
-      Real.log c' - Real.log ‖f 0‖ + (2 * R) ^ B := by
-    rw [Real.log_div (by positivity : M ≠ 0) hfnorm,
+  have hj := ha.sum_divisor_le_analyticOrderNatAt_add hR0 (by linarith) hM hfc hfM
+  rw [mul_div_cancel_right₀ (2 : ℝ) (ne_of_gt hR0)] at hj
+  have hanorm : ‖a‖ ≠ 0 := norm_ne_zero_iff.mpr <|
+    (hf.analyticAt 0).meromorphicAt.meromorphicTrailingCoeffAt_ne_zero
+      (by simpa [(hf.analyticAt 0).meromorphicOrderAt_eq] using hfc)
+  have hlogM : Real.log (M / ‖a‖) =
+      Real.log c' - Real.log ‖a‖ + (2 * R) ^ B := by
+    rw [Real.log_div (by positivity : M ≠ 0) hanorm,
       Real.log_mul hc'.ne' (Real.exp_ne_zero _), Real.log_exp]
     ring
+  have hj' : ((∑ᶠ z, MeromorphicOn.divisor f (closedBall 0 R) z : ℤ) : ℝ) ≤
+      m + Real.log (M / ‖a‖) / Real.log 2 := by
+    refine hj.trans (add_le_add le_rfl (div_le_div_of_nonneg_right ?_ hlog.le))
+    exact sub_le_self _ (mul_nonneg hm (Real.log_nonneg (by linarith)))
   -- Absorb the constant logarithmic term into the power bound.
   have hpow : 1 ≤ R ^ B := Real.one_le_rpow hR1 hB
   calc
-    _ ≤ Real.log (M / ‖f 0‖) / Real.log 2 := hj
-    _ ≤ (|Real.log c' - Real.log ‖f 0‖| + 2 ^ B) * R ^ B / Real.log 2 := by
+    _ ≤ m + Real.log (M / ‖a‖) / Real.log 2 := hj'
+    _ ≤ m * R ^ B + (|Real.log c' - Real.log ‖a‖| + 2 ^ B) * R ^ B /
+        Real.log 2 := by
+      apply add_le_add (by nlinarith [mul_le_mul_of_nonneg_left hpow hm])
       apply div_le_div_of_nonneg_right _ hlog.le
       rw [hlogM, Real.mul_rpow (by norm_num : (0 : ℝ) ≤ 2) hR0.le]
-      have habs := le_abs_self (Real.log c' - Real.log ‖f 0‖)
-      have hm := mul_le_mul_of_nonneg_left hpow (abs_nonneg (Real.log c' - Real.log ‖f 0‖))
+      have habs := le_abs_self (Real.log c' - Real.log ‖a‖)
+      have habsPow := mul_le_mul_of_nonneg_left hpow (abs_nonneg (Real.log c' - Real.log ‖a‖))
       nlinarith
     _ = C * R ^ B := by dsimp [C]; ring
 
 /-- An eventual power bound for the zero count of an entire function of order at most `A`,
-valid for every exponent `B > A` when the function is nonzero at the origin. -/
+valid for every exponent `B > A`, including functions vanishing at the origin. -/
 theorem OrderLE.eventually_sum_divisor_le (h : OrderLE f A) (hf : Differentiable ℂ f)
-    (hf0 : f 0 ≠ 0) (hAB : A < B) :
+    (hAB : A < B) :
     ∃ C > 0, ∀ᶠ R : ℝ in atTop,
       ((∑ᶠ z, MeromorphicOn.divisor f (closedBall 0 R) z : ℤ) : ℝ) ≤ C * R ^ B := by
+  by_cases hzero : f = 0
+  · subst f
+    refine ⟨1, zero_lt_one, ?_⟩
+    filter_upwards [eventually_ge_atTop (0 : ℝ)] with R hR
+    simpa using Real.rpow_nonneg hR B
+  have hfc : analyticOrderAt f 0 ≠ ⊤ :=
+    (AnalyticOnNhd.analyticOrderAt_eq_top_iff_eq_zero 0 (fun z ↦ hf.analyticAt z)).not.mpr hzero
   rcases le_or_gt 0 B with hB | hB
-  · exact h.eventually_sum_divisor_le_of_nonneg hf hf0 hAB hB
+  · exact h.eventually_sum_divisor_le_of_nonneg hf hfc hAB hB
   · have hc := h.isConst hf (hAB.trans hB)
     have heq : f = fun _ : ℂ ↦ f 0 := funext fun z ↦ hc z 0
     refine ⟨1, zero_lt_one, ?_⟩
@@ -109,12 +126,12 @@ theorem OrderLE.eventually_sum_divisor_le (h : OrderLE f A) (hf : Differentiable
     exact Real.rpow_nonneg hR B
 
 /-- The zero count, with multiplicity, of an entire function of order at most `A`
-is `O(R ^ B)` for every `B > A`, provided the function is nonzero at the origin. -/
+is `O(R ^ B)` for every `B > A`, including functions vanishing at the origin. -/
 theorem OrderLE.isBigO_sum_divisor (h : OrderLE f A) (hf : Differentiable ℂ f)
-    (hf0 : f 0 ≠ 0) (hAB : A < B) :
+    (hAB : A < B) :
     (fun R : ℝ ↦ ((∑ᶠ z, MeromorphicOn.divisor f (closedBall 0 R) z : ℤ) : ℝ))
       =O[atTop] (fun R : ℝ ↦ R ^ B) := by
-  obtain ⟨C, _, hC⟩ := h.eventually_sum_divisor_le hf hf0 hAB
+  obtain ⟨C, _, hC⟩ := h.eventually_sum_divisor_le hf hAB
   apply Asymptotics.IsBigO.of_bound C
   filter_upwards [hC, eventually_ge_atTop (0 : ℝ)] with R hR hR0
   have hfa : AnalyticOnNhd ℂ f (closedBall 0 R) := fun z _ ↦ hf.analyticAt z

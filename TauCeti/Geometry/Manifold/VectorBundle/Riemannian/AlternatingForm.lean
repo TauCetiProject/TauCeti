@@ -7,8 +7,13 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.AlternatingForm
 public import TauCeti.Geometry.Manifold.VectorBundle.GramSchmidt
+public import TauCeti.Geometry.Manifold.VectorBundle.Subbundle
 public import Mathlib.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap
 import Mathlib.Geometry.Manifold.Algebra.Structures
+import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
+import TauCeti.Geometry.Manifold.ContMDiff.FiniteDimension
+import TauCeti.Geometry.Manifold.Riemannian.Section
+import TauCeti.Topology.VectorBundle.Coordinates
 
 /-!
 # Smooth Gram pairings of alternating forms
@@ -21,7 +26,11 @@ orientation or replacing their continuous-alternating-map fibres.
 
 The regularity theorem works locally and at every differentiability order. The proof uses
 the smooth orthonormal frames constructed by Gram–Schmidt and the pointwise formula
-`TauCeti.alternatingFormInner_eq_sum`.
+`TauCeti.alternatingFormInner_eq_sum`. The Gram inner product is then a `C^n` Riemannian metric
+on the whole bundle of alternating forms (`TauCeti.alternatingFormRiemannianMetric`), recorded as
+data so that the fibres keep their operator norm. Restricting `TauCeti.alternatingFormInner` to
+any `C^n` subbundle of alternating forms given by `C^n` local frames likewise yields an induced
+`C^n` Riemannian bundle metric (`TauCeti.alternatingFormSubbundleRiemannianMetric`).
 
 ## References
 
@@ -120,3 +129,129 @@ theorem ContMDiff.alternatingFormInner_bundle
     ContMDiff I 𝓘(ℝ) n
       (fun y ↦ TauCeti.alternatingFormInner (V y) k (α y) (β y)) :=
   fun x ↦ (hα x).alternatingFormInner_bundle (hβ x)
+
+namespace TauCeti
+
+variable (I n F V k) in
+/-- The Gram inner product `TauCeti.alternatingFormInner` on the exterior `k`-forms of a
+finite-rank `C^n` Riemannian bundle `V` is a `C^n` Riemannian metric on the bundle of
+alternating forms, whose fibres keep their operator-norm topology. -/
+def alternatingFormRiemannianMetric [FiniteDimensional ℝ F] :
+    ContMDiffRiemannianMetric I n (F [⋀^Fin k]→L[ℝ] ℝ) (fun x ↦ V x [⋀^Fin k]→L[ℝ] ℝ) :=
+  let g (x : M) :=
+    IsBilinearMap.toContinuousBilinearMap (𝕜 := ℝ) (E := V x [⋀^Fin k]→L[ℝ] ℝ)
+      (F := V x [⋀^Fin k]→L[ℝ] ℝ) (G := ℝ) (f := fun v w ↦ alternatingFormInner (V x) k v w)
+      { add_left := fun _ _ _ ↦ by simp
+        smul_left := fun _ _ _ ↦ by simp
+        add_right := fun _ _ _ ↦ by simp
+        smul_right := fun _ _ _ ↦ by simp }
+  ContMDiffRiemannianMetric.ofPositiveDefiniteSection
+    (⟨g, by
+      have hg (x : M) (v w : V x [⋀^Fin k]→L[ℝ] ℝ) :
+          g x v w = alternatingFormInner (V x) k v w := rfl
+      intro x
+      let e := trivializationAt (F [⋀^Fin k]→L[ℝ] ℝ) (fun y ↦ V y [⋀^Fin k]→L[ℝ] ℝ) x
+      have hx : x ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt
+        (F [⋀^Fin k]→L[ℝ] ℝ) (fun y ↦ V y [⋀^Fin k]→L[ℝ] ℝ) x
+      -- The inverse chart applied to a fixed model form is a `C^n` section near `x`.
+      have hsec (c : F [⋀^Fin k]→L[ℝ] ℝ) : ContMDiffAt I (I.prod 𝓘(ℝ, F [⋀^Fin k]→L[ℝ] ℝ)) n
+          (fun y ↦ TotalSpace.mk' (F [⋀^Fin k]→L[ℝ] ℝ) (E := fun z ↦ V z [⋀^Fin k]→L[ℝ] ℝ) y
+            (e.symm y c)) x := by
+        rw [contMDiffAt_section_iff]
+        refine (contMDiffAt_const (c := c)).congr_of_eventuallyEq ?_
+        filter_upwards [e.open_baseSet.mem_nhds hx] with y hy
+        exact congr(Prod.snd $(e.apply_mk_symm hy c))
+      rw [contMDiffAt_hom_bundle]
+      refine ⟨contMDiffAt_id, contMDiffAt_clm_apply.2 fun u ↦
+        contMDiffAt_clm_apply.2 fun w ↦ ?_⟩
+      refine (ContMDiffAt.alternatingFormInner_bundle (hsec u) (hsec w)).congr_of_eventuallyEq ?_
+      filter_upwards [e.open_baseSet.mem_nhds hx] with y hy
+      rw [inCoordinates_apply_eq₂ (F₃ := ℝ) (E₃ := fun _ : M ↦ ℝ) hy hy (by simp)]
+      simp [hg, e]⟩ :
+      Manifold.BilinearSection I (F [⋀^Fin k]→L[ℝ] ℝ) (fun x ↦ V x [⋀^Fin k]→L[ℝ] ℝ) ℝ n)
+    ((Manifold.mem_positiveDefiniteBilinearSections _).2
+      ⟨(Manifold.mem_symmetricBilinearSections _).2 fun _ v w ↦ alternatingFormInner_comm v w,
+        fun _ v hv ↦ (alternatingFormInner_self_nonneg v).lt_of_ne'
+          (mt alternatingFormInner_self_eq_zero.mp hv)⟩)
+
+/-- `TauCeti.alternatingFormRiemannianMetric` is the Gram inner product
+`TauCeti.alternatingFormInner`. -/
+@[simp]
+theorem alternatingFormRiemannianMetric_inner [FiniteDimensional ℝ F] (x : M)
+    (v w : V x [⋀^Fin k]→L[ℝ] ℝ) :
+    (alternatingFormRiemannianMetric F I V n k).inner x v w = alternatingFormInner (V x) k v w := by
+  rw [alternatingFormRiemannianMetric, ContMDiffRiemannianMetric.ofPositiveDefiniteSection_inner]
+  rfl
+
+/-- Restricting the Gram inner product `TauCeti.alternatingFormInner` on exterior `k`-forms of a
+finite-rank `C^n` Riemannian bundle `V` to any `C^n` subbundle `W` given by `C^n` local frames
+yields an induced `C^n` Riemannian bundle metric on `W`. -/
+def alternatingFormSubbundleRiemannianMetric
+    {ι : Type*} [Fintype ι] {W : ∀ x, Submodule ℝ (V x [⋀^Fin k]→L[ℝ] ℝ)}
+    (hW : HasLocalContMDiffSubbundleFrames I n (F [⋀^Fin k]→L[ℝ] ℝ) ι W) :
+    letI := subbundleTopology (F [⋀^Fin k]→L[ℝ] ℝ) (F' := ι → ℝ) W
+    letI := hW.fiberBundle
+    letI := hW.vectorBundle
+    ContMDiffRiemannianMetric I n (ι → ℝ) (fun x ↦ W x) :=
+  letI := subbundleTopology (F [⋀^Fin k]→L[ℝ] ℝ) (F' := ι → ℝ) W
+  letI := hW.fiberBundle
+  letI := hW.vectorBundle
+  letI := hW.contMDiffVectorBundle
+  let g (x : M) :=
+    IsBilinearMap.toContinuousBilinearMap (𝕜 := ℝ) (E := W x) (F := W x) (G := ℝ)
+      (f := fun v w : W x ↦ alternatingFormInner (V x) k v.val w.val)
+      { add_left := fun _ _ _ ↦ by simp
+        smul_left := fun _ _ _ ↦ by simp
+        add_right := fun _ _ _ ↦ by simp
+        smul_right := fun _ _ _ ↦ by simp }
+  ContMDiffRiemannianMetric.ofPositiveDefiniteSection
+    (⟨g, by
+      have hg (x : M) (v w : W x) : g x v w = alternatingFormInner (V x) k v.val w.val := rfl
+      intro x
+      let eW := trivializationAt (ι → ℝ) (fun y ↦ W y) x
+      have hx : x ∈ eW.baseSet := FiberBundle.mem_baseSet_trivializationAt (ι → ℝ) (fun y ↦ W y) x
+      have hsec (c : ι → ℝ) : ContMDiffAt I (I.prod 𝓘(ℝ, F [⋀^Fin k]→L[ℝ] ℝ)) n
+          (fun y ↦ TotalSpace.mk' (F [⋀^Fin k]→L[ℝ] ℝ) (E := fun z ↦ V z [⋀^Fin k]→L[ℝ] ℝ) y
+            (eW.symm y c : V y [⋀^Fin k]→L[ℝ] ℝ)) x := by
+        have hs : ContMDiffAt I (I.prod 𝓘(ℝ, ι → ℝ)) n
+            (fun y ↦ TotalSpace.mk' (ι → ℝ) (E := fun z ↦ W z) y (eW.symm y c)) x := by
+          rw [contMDiffAt_section_iff]
+          refine (contMDiffAt_const (c := c)).congr_of_eventuallyEq ?_
+          filter_upwards [eW.open_baseSet.mem_nhds hx] with y hy
+          exact congr(Prod.snd $(eW.apply_mk_symm hy c))
+        exact (hW.contMDiff_totalSpace_inclusion _).comp x hs
+      rw [contMDiffAt_hom_bundle]
+      refine ⟨contMDiffAt_id, contMDiffAt_clm_apply.2 fun u ↦
+        contMDiffAt_clm_apply.2 fun w ↦ ?_⟩
+      refine (ContMDiffAt.alternatingFormInner_bundle (hsec u) (hsec w)).congr_of_eventuallyEq ?_
+      filter_upwards [eW.open_baseSet.mem_nhds hx] with y hy
+      rw [inCoordinates_apply_eq₂ (F₃ := ℝ) (E₃ := fun _ : M ↦ ℝ) hy hy (by simp)]
+      simp [hg, eW]⟩ :
+      Manifold.BilinearSection I (ι → ℝ) (fun x ↦ W x) ℝ n)
+    ((Manifold.mem_positiveDefiniteBilinearSections _).2
+      ⟨(Manifold.mem_symmetricBilinearSections _).2
+        fun _ v w ↦ alternatingFormInner_comm v.val w.val,
+        fun _ v hv ↦ (alternatingFormInner_self_nonneg v.val).lt_of_ne'
+          (mt (fun h0 ↦ Subtype.ext (alternatingFormInner_self_eq_zero.mp h0)) hv)⟩)
+
+/-- `TauCeti.alternatingFormSubbundleRiemannianMetric` evaluates on `v, w ∈ W x` as the ambient
+Gram inner product `TauCeti.alternatingFormInner`. -/
+@[simp]
+theorem alternatingFormSubbundleRiemannianMetric_inner
+    {ι : Type*} [Fintype ι] {W : ∀ x, Submodule ℝ (V x [⋀^Fin k]→L[ℝ] ℝ)}
+    (hW : HasLocalContMDiffSubbundleFrames I n (F [⋀^Fin k]→L[ℝ] ℝ) ι W)
+    (x : M) (v w : W x) :
+    letI := subbundleTopology (F [⋀^Fin k]→L[ℝ] ℝ) (F' := ι → ℝ) W
+    letI := hW.fiberBundle
+    letI := hW.vectorBundle
+    (alternatingFormSubbundleRiemannianMetric hW).inner x v w =
+      alternatingFormInner (V x) k
+        (v : V x [⋀^Fin k]→L[ℝ] ℝ) (w : V x [⋀^Fin k]→L[ℝ] ℝ) := by
+  let := subbundleTopology (F [⋀^Fin k]→L[ℝ] ℝ) (F' := ι → ℝ) W
+  let := hW.fiberBundle
+  let := hW.vectorBundle
+  rw [alternatingFormSubbundleRiemannianMetric,
+    ContMDiffRiemannianMetric.ofPositiveDefiniteSection_inner]
+  rfl
+
+end TauCeti

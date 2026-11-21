@@ -9,6 +9,7 @@ public import Mathlib.Algebra.BigOperators.Pi
 public import Mathlib.Algebra.BigOperators.Group.Finset.Piecewise
 public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 public import Mathlib.Data.Fintype.Pi
+import Mathlib.Data.Fintype.EquivFin
 import Mathlib.Data.Fintype.Prod
 
 /-!
@@ -40,6 +41,7 @@ and `b`.
   degree has another positive entry.
 * `Pi.induction_on_single_of_sum_eq`: induction over the exponent vectors of degree `d`, starting
   from `Pi.single i d` and moving one unit at a time from the coordinate `i` to another coordinate.
+* `TauCeti.multiIndex_induction_add_single`: induction on exponent vectors by adding unit vectors.
 -/
 
 public section
@@ -139,15 +141,37 @@ theorem Fintype.prod_ite_eq_off_pair [Fintype ι] [DecidableEq ι] {α : ι → 
   let e : α a × α b ≃ {m : ∀ i, α i // ∀ r, r ≠ a → r ≠ b → v r = m r} :=
     { toFun p := ⟨Function.update (Function.update v a p.1) b p.2, fun r hra hrb => by
         simp [hra, hrb]⟩
-      invFun m := (m.1 a, m.1 b)
+      invFun m := (m.val a, m.val b)
       left_inv p := by simp [hab]
       right_inv m := Subtype.ext <| funext fun r => by
         rcases eq_or_ne r b with rfl | hrb
         · simp
         rcases eq_or_ne r a with rfl | hra
         · simp [hab]
-        · simpa [hra, hrb] using m.2 r hra hrb }
+        · simpa [hra, hrb] using m.property r hra hrb }
   rw [← Finset.prod_filter,
     Finset.prod_subtype (p := fun m => ∀ r, r ≠ a → r ≠ b → v r = m r) _ (fun _ => by simp),
     ← e.prod_comp, ← Finset.univ_product_univ, Finset.prod_product]
   rfl
+
+namespace TauCeti
+
+/-- **Induction on multi-indices.** To prove a property of every multi-index `α : ι → ℕ`, it
+suffices to prove it for `0` and to show that it passes from `α` to `α + eᵢ`. -/
+@[elab_as_elim]
+theorem multiIndex_induction_add_single [Finite ι] [DecidableEq ι] {P : (ι → ℕ) → Prop}
+    (zero : P 0) (add_single : ∀ α i, P α → P (α + Pi.single i 1)) (α : ι → ℕ) : P α := by
+  have := Fintype.ofFinite ι
+  induction h : ∑ i, α i generalizing α with
+  | zero =>
+    obtain rfl : α = 0 := funext fun i ↦ (sum_eq_zero_iff.1 h) i (mem_univ i)
+    exact zero
+  | succ n ih =>
+    obtain ⟨i, hi⟩ : ∃ i, 0 < α i := by
+      by_contra! h'
+      simp [Nat.le_zero.mp (h' _)] at h
+    obtain ⟨β, rfl⟩ := Pi.exists_eq_add_single_one hi
+    refine add_single β i (ih β ?_)
+    simpa [sum_add_distrib] using h
+
+end TauCeti

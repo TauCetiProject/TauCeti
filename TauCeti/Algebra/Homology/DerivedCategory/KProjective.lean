@@ -58,9 +58,9 @@ variable {C : Type*} [Category* C] [Abelian C] {K L : ChainComplex C ℕ}
 cochain homotopy equivalence `Hom(L, Y) ⟶ Hom(K, Y)` by precomposition, for every object `Y`. -/
 theorem homotopyEquivalences_linearYonedaFunctor_map_of_projective (φ : K ⟶ L) [QuasiIso φ]
     (k : Type*) [Ring k] [Linear k C] (Y : C) :
-    homotopyEquivalences _ _ ((TauCeti.ChainComplex.linearYonedaFunctor k Y).map φ.op) := by
-  obtain ⟨e, he⟩ := (quasiIso_iff_of_projective φ).1 ‹_›
-  exact ⟨e.linearYonedaFunctorMap k Y, by rw [HomotopyEquiv.linearYonedaFunctorMap_hom, he]⟩
+    homotopyEquivalences _ _ ((TauCeti.ChainComplex.linearYonedaFunctor k Y).map φ.op) :=
+  TauCeti.ChainComplex.homotopyEquivalences_linearYonedaFunctor_map k Y
+    ((quasiIso_iff_of_projective φ).1 ‹_›)
 
 /-- A quasi-isomorphism `φ : K ⟶ L` of `ℕ`-graded chain complexes of projective objects induces a
 quasi-isomorphism `Hom(L, Y) ⟶ Hom(K, Y)` by precomposition, for every object `Y`. -/

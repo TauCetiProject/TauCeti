@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.Lie.Killing
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.LieModule
 import TauCeti.Algebra.Lie.Killing.AdNilpotent
+import TauCeti.Algebra.Lie.Killing.Basic
+import TauCeti.Algebra.Lie.Solvable.Basic
 import TauCeti.Algebra.Lie.TracePowerPolynomial
 
 /-!
@@ -17,9 +19,9 @@ Let `L` be a Lie algebra over a field `K` of characteristic zero. The polynomial
 are the symmetric algebra `S(L*)` of the dual, a point `x : L` evaluating `p` through
 `SymmetricAlgebra.lift (Module.Dual.eval K L x)`, and `L` acts on them through the coadjoint
 action by derivations. Its invariants `S(L*)^L` (`TauCeti.SymmetricAlgebra.lieInvariants`) are
-the invariant polynomial functions. This file proves that when `L` is finite-dimensional with
-nondegenerate Killing form, an element `x` has nilpotent `ad x` exactly when every invariant
-polynomial function with zero constant term vanishes at `x`
+the invariant polynomial functions. This file proves that when `L` has a nondegenerate Killing form
+(which forces `L` to be finite-dimensional), an element `x` has nilpotent `ad x` exactly when every
+invariant polynomial function with zero constant term vanishes at `x`
 (`TauCeti.isNilpotent_ad_iff_forall_lift_eval_eq_zero`). That is, the ad-nilpotent elements form
 the common zero locus of the invariants of positive degree.
 
@@ -42,15 +44,25 @@ Both directions hold more generally, and are proved in
   `LinearMap.isNilpotent_iff_forall_trace_pow_eq_zero`
   (`TauCeti.isNilpotent_toEnd_of_forall_lift_eval_eq_zero`).
 
-Thus, pointwise, the nilpotent cone is the zero fibre of the map defined by the invariant
-polynomial functions of positive degree. For the adjoint quotient `𝔤 → 𝔤 // G` of a group `G`,
-this describes the points of its zero fibre wherever its invariant algebra is `S(𝔤*)^𝔤`.
+Thus, pointwise, when the Killing form of `L` is nondegenerate, the nilpotent cone is the zero
+fibre of the map defined by the invariant polynomial functions of positive degree. For the adjoint
+quotient `𝔤 → 𝔤 // G` of a group `G`, this describes the points of its zero fibre wherever its
+invariant algebra is `S(𝔤*)^𝔤`.
+
+Without that hypothesis the zero fibre can be strictly smaller than the ad-nilpotent locus. A
+linear function vanishing on `⁅L, L⁆` is an invariant of degree one, so every common zero of the
+invariants of positive degree lies in `⁅L, L⁆`, over any field
+(`TauCeti.mem_derivedSeries_of_forall_lift_eval_eq_zero`). For a reductive `L` with nonzero centre
+this excludes the nonzero central elements, although they are ad-nilpotent; see
+`TauCeti.Algebra.Lie.Reductive.InvariantZeroLocus`.
 
 ## Main results
 
-* `TauCeti.isNilpotent_ad_iff_forall_lift_eval_eq_zero`: in a finite-dimensional Lie algebra with
+* `TauCeti.isNilpotent_ad_iff_forall_lift_eval_eq_zero`: in a Lie algebra with
   nondegenerate Killing form, `ad x` is nilpotent exactly when every invariant polynomial function
   with zero constant term vanishes at `x`.
+* `TauCeti.mem_derivedSeries_of_forall_lift_eval_eq_zero`: a common zero of the invariants of
+  positive degree lies in the derived ideal.
 
 ## References
 
@@ -68,16 +80,34 @@ namespace TauCeti
 
 open SymmetricAlgebra
 
-variable {K L : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
+variable {K L : Type*} [Field K] [LieRing L] [LieAlgebra K L]
+
+/-- **Common zeros of the invariants lie in the derived ideal.** If every invariant polynomial
+function on `L` with zero constant term vanishes at `x`, then `x ∈ ⁅L, L⁆`: a linear function
+vanishing on `⁅L, L⁆` is killed by the coadjoint action, so it is such an invariant. -/
+theorem mem_derivedSeries_of_forall_lift_eval_eq_zero {x : L}
+    (h : ∀ p ∈ lieInvariants K L (Dual K L), algebraMapInv p = 0 → lift (Dual.eval K L x) p = 0) :
+    x ∈ derivedSeries K L 1 := by
+  by_contra hx
+  obtain ⟨φ, hφx, hφ⟩ := Submodule.exists_le_ker_of_notMem
+    (p := (derivedSeries K L 1 : Submodule K L)) hx
+  refine hφx ?_
+  have hinv : ι K (Dual K L) φ ∈ lieInvariants K L (Dual K L) :=
+    ι_mem_lieInvariants_iff_apply_lie_eq_zero.mpr fun y z ↦
+      LinearMap.mem_ker.mp <| hφ <| lie_mem_derivedSeries_one y z
+  simpa using h _ hinv (algebraMapInv_ι φ)
+
+variable [CharZero K]
 
 /-- **The ad-nilpotent elements are the common zeros of the invariants of positive degree.** In a
-finite-dimensional Lie algebra with nondegenerate Killing form over a field of characteristic zero,
+Lie algebra with nondegenerate Killing form (hence finite-dimensional) over a field of
+characteristic zero,
 `ad x` is nilpotent exactly when every invariant polynomial function on `L` with zero constant term
 vanishes at `x`. -/
-theorem isNilpotent_ad_iff_forall_lift_eval_eq_zero [FiniteDimensional K L] [IsKilling K L]
-    {x : L} :
+theorem isNilpotent_ad_iff_forall_lift_eval_eq_zero [IsKilling K L] {x : L} :
     IsNilpotent (ad K L x) ↔
       ∀ p ∈ lieInvariants K L (Dual K L), algebraMapInv p = 0 → lift (Dual.eval K L x) p = 0 := by
+  have : FiniteDimensional K L := finite_of_isKilling (R := K) (L := L)
   refine ⟨fun hx p hp hp₀ ↦ ?_, isNilpotent_toEnd_of_forall_lift_eval_eq_zero L⟩
   obtain ⟨t, ht⟩ := exists_lie_eq_self_of_isNilpotent_ad hx
   exact lift_eval_eq_zero_of_mem_lieInvariants hp hp₀ (y := t) (a := -1)

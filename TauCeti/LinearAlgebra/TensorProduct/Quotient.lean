@@ -16,6 +16,7 @@ public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import Mathlib.RingTheory.TensorProduct.Finite
 public import Mathlib.RingTheory.QuotSMulTop
 public import TauCeti.LinearAlgebra.TensorProduct.Submodule
+import TauCeti.LinearAlgebra.Dual.Divisibility
 
 /-!
 # Cokernels commute with tensor products, heterobasically
@@ -58,6 +59,8 @@ relations, for instance the rationalisation of a module over an integral group r
 * `TensorProduct.exists_one_tmul_eq`: every element of `(R ⧸ I) ⊗ M` is `1 ⊗ x`.
 * `TensorProduct.one_tmul_eq_zero_iff_exists_smul_eq`: `1 ⊗ x` vanishes in
   `(R ⧸ (r)) ⊗ M` exactly when `x` is a multiple of `r`.
+* `TensorProduct.ker_mk_one_of_surjective`: if `R → S` is surjective with kernel `I`, then
+  `x ↦ 1 ⊗ x` from `M` to `S ⊗[R] M` has kernel `I M`.
 * `TensorProduct.mk_one_bijective_of_ker_le_annihilator`: if `R → S` is surjective and its
   kernel annihilates `M`, then `x ↦ 1 ⊗ x` is a bijection `M → S ⊗[R] M`.
 * `LinearMap.exact_lTensor_quotient_span_singleton`: if `a : M → N` and `b : N → M` compose in
@@ -106,6 +109,22 @@ theorem one_tmul_eq_zero_iff_exists_smul_eq (r : R) (x : M) :
     Submodule.mem_smul_pointwise_iff_exists]
   exact ⟨fun ⟨y, _, hy⟩ ↦ ⟨y, hy⟩, fun ⟨y, hy⟩ ↦ ⟨y, Submodule.mem_top, hy⟩⟩
 
+/-- **Base change along a surjective ring map.** If `R → S` is surjective with kernel `I`, then
+`x ↦ 1 ⊗ x` from `M` to `S ⊗[R] M` has kernel `I M`: writing `S = R ⧸ I`, the tensor product is
+`M ⧸ I M`. -/
+theorem ker_mk_one_of_surjective {S : Type*} [CommRing S] [Algebra R S]
+    (hS : Function.Surjective (algebraMap R S)) :
+    LinearMap.ker (mk R S M 1) = RingHom.ker (algebraMap R S) • ⊤ := by
+  let e₀ := Ideal.quotientKerAlgEquivOfSurjective (f := Algebra.ofId R S) hS
+  let e : (R ⧸ RingHom.ker (algebraMap R S)) ≃ₗ[R] S := e₀.toLinearEquiv
+  have he : e 1 = 1 := map_one e₀
+  have h : mk R S M 1 =
+      e.toLinearMap.rTensor M ∘ₗ mk R (R ⧸ RingHom.ker (algebraMap R S)) M 1 := by
+    ext x
+    simp [he]
+  rw [h, ← LinearEquiv.coe_rTensor, LinearEquiv.ker_comp]
+  exact LinearMap.ker_tensorProductMk M
+
 /-- **Base change to a quotient ring that already acts.** If `R → S` is surjective and its kernel
 annihilates `M`, then `x ↦ 1 ⊗ x` is a bijection `M → S ⊗[R] M`: writing `S = R ⧸ I`, the
 tensor product is `M ⧸ I M = M`. -/
@@ -113,19 +132,10 @@ theorem mk_one_bijective_of_ker_le_annihilator {S : Type*} [CommRing S] [Algebra
     (hS : Function.Surjective (algebraMap R S))
     (hM : RingHom.ker (algebraMap R S) ≤ Module.annihilator R M) :
     Function.Bijective (mk R S M 1) := by
-  refine ⟨?_, mk_surjective R M S hS⟩
-  let I := RingHom.ker (algebraMap R S)
-  let e₀ := (Ideal.quotientKerAlgEquivOfSurjective (f := Algebra.ofId R S) hS).symm
-  let e : S ≃ₗ[R] R ⧸ I := e₀.toLinearEquiv
-  have hI : I • (⊤ : Submodule R M) = ⊥ := eq_bot_iff.mpr <|
-    (Submodule.smul_mono_left hM).trans_eq <| by
-      rw [← Submodule.annihilator_top, Submodule.annihilator_smul]
-  -- A left inverse: `S ⊗[R] M ≃ (R ⧸ I) ⊗[R] M ≃ M ⧸ I M ≃ M`, sending `1 ⊗ x` to `x`.
-  let ψ := (Submodule.quotEquivOfEqBot _ hI).toLinearMap ∘ₗ
-    (quotTensorEquivQuotSMul M I).toLinearMap ∘ₗ e.toLinearMap.rTensor M
-  have he : e 1 = 1 := map_one e₀
-  refine Function.LeftInverse.injective (g := ψ) fun x ↦ ?_
-  simp [ψ, he]
+  refine ⟨LinearMap.ker_eq_bot.mp ?_, mk_surjective R M S hS⟩
+  rw [ker_mk_one_of_surjective hS, eq_bot_iff]
+  refine (Submodule.smul_mono_left hM).trans_eq ?_
+  rw [← Submodule.annihilator_top, Submodule.annihilator_smul]
 
 end TensorProduct
 
@@ -180,24 +190,15 @@ theorem exact_comp_baseChange_quotient_span_singleton {R M N : Type*} [CommRing 
       (φ.restrictScalars R ∘ₗ TensorProduct.mk R (R ⧸ Ideal.span {r}) N 1)
       (Submodule.mkQ_surjective _)
     have hϕ' (n : N) : Ideal.Quotient.mk _ (ϕ n) = φ (1 ⊗ₜ n) := congr($hϕ n)
-    -- Since `φ` kills the image of `a`, the map `ϕ ∘ a` takes values in `rR`, so it is `r` times
-    -- a map `χ : M → R`, which is linear because `r` is regular.
-    have hc (x : M) : ∃ c : R, ϕ (a x) = r * c := by
-      refine Ideal.mem_span_singleton.1 ?_
-      rw [← Ideal.Quotient.eq_zero_iff_mem, hϕ']
+    -- Since `φ` kills the image of `a`, `r` divides every value of `ϕ ∘ a`, so `ϕ ∘ a` is `r`
+    -- times a linear functional `χ : M → R`, because `r` is regular.
+    obtain ⟨χ, hc⟩ := exists_smul_eq_of_forall_dvd (f := ϕ ∘ₗ a) hr.isLeftRegular fun x ↦ by
+      rw [← Ideal.Quotient.eq_zero_iff_dvd, comp_apply, hϕ']
       simpa using congr($hφ (1 ⊗ₜ x))
-    choose c hc using hc
-    let χ : M →ₗ[R] R :=
-      { toFun := c
-        map_add' x y := hr (by simp only [smul_eq_mul, mul_add, ← hc, map_add])
-        map_smul' s x := hr (by
-          simp only [smul_eq_mul, RingHom.id_apply, ← hc, map_smul]
-          rw [hc]
-          ring) }
     -- From `a ∘ b = r • id`, `r • χ (b n) = ϕ (a (b n)) = r • ϕ n`, so `χ ∘ b = ϕ`.
     have hχ (n : N) : χ (b n) = ϕ n := hr (by
-      simp only [smul_eq_mul]
-      rw [show r * χ (b n) = ϕ (a (b n)) from (hc _).symm, ← comp_apply a b, hab]
+      dsimp only
+      rw [← LinearMap.smul_apply, hc, comp_apply, ← comp_apply a b, hab]
       simp)
     refine ⟨((Ideal.span {r}).mkQ ∘ₗ χ).liftBaseChange _, ?_⟩
     refine TensorProduct.AlgebraTensorModule.ext fun s n ↦ ?_
@@ -464,7 +465,7 @@ theorem baseChange_mkQ_bijective {r : R} (hr : algebraMap R A r = 0) :
   let p := r • (⊤ : Submodule R M)
   have hzero : lTensor A p.subtype = 0 := by
     ext a v
-    obtain ⟨w, -, hw⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).mp v.2
+    obtain ⟨w, -, hw⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).mp v.property
     simp [← hw, smul_tmul', Algebra.smul_def, hr]
   rw [baseChange_eq_lTensor]
   exact ⟨(injective_iff_eq_zero_of_exact

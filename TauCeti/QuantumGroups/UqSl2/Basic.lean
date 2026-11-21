@@ -30,10 +30,10 @@ complex-linear map between `UqSl2 q`-modules that commutes with `E`, `F` and `K`
 `UqSl2 q`-linear, and an element of `UqSl2 q` that commutes with `E`, `F` and `K` is central. We
 also package `K` as a unit and derive the commutation rules with `K⁻¹` and with `K` on the
 right, together with the invariance `K F E K⁻¹ = F E`; these are the basic presentation-level
-identities used when putting words into triangular order.  Establishing a PBW basis, and hence
-nontriviality of this presentation, requires additional Ore-extension arguments and is not part
-of the presentation API: `TauCeti.QuantumGroups.UqSl2.OreTower` identifies `UqSl2 q`, for nonzero
-`q`, with an iterated Ore extension of `ℂ[K, K⁻¹]`.
+identities used when putting words into triangular order.  Establishing a PBW basis requires
+additional Ore-extension arguments and is not part of the presentation API:
+`TauCeti.QuantumGroups.UqSl2.OreTower` identifies `UqSl2 q`, for nonzero `q`, with an iterated Ore
+extension of `ℂ[K, K⁻¹]`.
 
 ## Main definitions
 
@@ -168,11 +168,11 @@ def kUnit (q : ℂ) : (UqSl2 q)ˣ where
 
 /-- The value of `kUnit q` is the generator `K`. -/
 @[simp]
-theorem kUnit_val : (kUnit q : UqSl2 q) = k q := (rfl)
+theorem val_kUnit : (kUnit q : UqSl2 q) = k q := (rfl)
 
 /-- The inverse of `kUnit q` has value `K⁻¹`. -/
 @[simp]
-theorem kUnit_inv : ↑(kUnit q)⁻¹ = kInv q := (rfl)
+theorem val_inv_kUnit : ↑(kUnit q)⁻¹ = kInv q := (rfl)
 
 /-- Left multiplication by `K` cancels left multiplication by `K⁻¹`. -/
 @[simp]
@@ -188,13 +188,13 @@ theorem kInv_mul_k_mul (x : UqSl2 q) : kInv q * (k q * x) = x :=
 theorem k_mul_kUnit_zpow (b : ℤ) :
     k q * ((kUnit q ^ b : (UqSl2 q)ˣ) : UqSl2 q) =
       ((kUnit q ^ (b + 1) : (UqSl2 q)ˣ) : UqSl2 q) := by
-  rw [← kUnit_val, ← Units.val_mul, add_comm, zpow_one_add]
+  rw [← val_kUnit, ← Units.val_mul, add_comm, zpow_one_add]
 
 /-- Multiplying an integer power of `K` by `K⁻¹` on the left lowers the exponent by one. -/
 theorem kInv_mul_kUnit_zpow (b : ℤ) :
     kInv q * ((kUnit q ^ b : (UqSl2 q)ˣ) : UqSl2 q) =
       ((kUnit q ^ (b - 1) : (UqSl2 q)ˣ) : UqSl2 q) := by
-  rw [← kUnit_inv, ← Units.val_mul, ← zpow_neg_one, ← zpow_add, neg_add_eq_sub]
+  rw [← val_inv_kUnit, ← Units.val_mul, ← zpow_neg_one, ← zpow_add, neg_add_eq_sub]
 
 /-- At `q = 0` the relation `K E = 0 • E K` forces `E = 0`. -/
 @[simp]
@@ -211,8 +211,8 @@ theorem f_zero : f (0 : ℂ) = 0 := by
 /-- The relation `E K⁻¹ = q² K⁻¹ E`, obtained from the defining `K E` relation. -/
 theorem e_mul_kInv : e q * kInv q = q ^ 2 • (kInv q * e q) := by
   have h := (SemiconjBy.units_inv_symm_left (a := kUnit q) (x := e q) (y := q ^ 2 • e q)
-    (by rw [SemiconjBy, kUnit_val, k_mul_e, smul_mul_assoc])).eq
-  rw [kUnit_inv, mul_smul_comm] at h
+    (by rw [SemiconjBy, val_kUnit, k_mul_e, smul_mul_assoc])).eq
+  rw [val_inv_kUnit, mul_smul_comm] at h
   exact h.symm
 
 /-- The inverse-generator commutation relation `K⁻¹ E = q⁻² E K⁻¹`. -/
@@ -225,8 +225,8 @@ theorem kInv_mul_e : kInv q * e q = q⁻¹ ^ 2 • (e q * kInv q) := by
 /-- The relation `F K⁻¹ = q⁻² K⁻¹ F`, obtained from the defining `K F` relation. -/
 theorem f_mul_kInv : f q * kInv q = q⁻¹ ^ 2 • (kInv q * f q) := by
   have h := (SemiconjBy.units_inv_symm_left (a := kUnit q) (x := f q) (y := q⁻¹ ^ 2 • f q)
-    (by rw [SemiconjBy, kUnit_val, k_mul_f, smul_mul_assoc])).eq
-  rw [kUnit_inv, mul_smul_comm] at h
+    (by rw [SemiconjBy, val_kUnit, k_mul_f, smul_mul_assoc])).eq
+  rw [val_inv_kUnit, mul_smul_comm] at h
   exact h.symm
 
 /-- The inverse-generator commutation relation `K⁻¹ F = q² F K⁻¹`. -/
@@ -258,7 +258,6 @@ theorem k_mul_f_mul_e_mul_kInv : k q * f q * (e q * kInv q) = f q * e q := by
     simp [hq]
 
 /-- A tuple in a complex algebra satisfying the defining relations of `UqSl2 q`. -/
-@[ext]
 structure GeneratorTuple (q : ℂ) (A : Type*) [Ring A] [Algebra ℂ A] where
   /-- The proposed image of `E`. -/
   e : A
@@ -303,6 +302,17 @@ def toFun (x : GeneratorTuple q A) : Generator → A
 /-- The function underlying a tuple takes the inverse-weight label to its inverse-weight element. -/
 @[simp] theorem toFun_kInv (x : GeneratorTuple q A) : x.toFun .kInv = x.kInv := (rfl)
 
+/-- Two generator tuples with the same images of `E`, `F` and `K` are equal: the images of `K⁻¹`
+agree, being the inverse of the image of `K`. -/
+@[ext]
+theorem ext {x y : GeneratorTuple q A} (he : x.e = y.e) (hf : x.f = y.f) (hk : x.k = y.k) :
+    x = y := by
+  have hkInv : x.kInv = y.kInv :=
+    left_inv_eq_right_inv (a := y.k) (by rw [← hk, x.kInv_mul_k]) y.k_mul_kInv
+  cases x
+  cases y
+  congr
+
 end GeneratorTuple
 
 /-- The universal property of the presentation: a tuple satisfying the defining relations extends
@@ -332,7 +342,7 @@ theorem lift_generator (x : GeneratorTuple q A) (g : Generator) :
 /-- Two algebra maps from `UqSl2 q` agreeing on `E`, `F` and `K` are equal; agreement on `K⁻¹`
 follows since it is the inverse of `K`. -/
 @[ext high]
-theorem hom_ext {F G : UqSl2 q →ₐ[ℂ] A}
+theorem hom_ext {A : Type*} [Semiring A] [Algebra ℂ A] {F G : UqSl2 q →ₐ[ℂ] A}
     (he : F (e q) = G (e q)) (hf : F (f q) = G (f q))
     (hk : F (k q) = G (k q)) : F = G := by
   have hkInv : F (kInv q) = G (kInv q) :=
@@ -382,25 +392,21 @@ theorem _root_.LinearMap.map_smul_of_commute_uqSl2 {V W : Type*} [AddCommGroup V
     calc φ (kInv q • x) = (kInv q * k q) • φ (kInv q • x) := by rw [kInv_mul_k, one_smul]
       _ = kInv q • φ ((k q * kInv q) • x) := by rw [mul_smul, ← hk, ← mul_smul]
       _ = kInv q • φ x := by rw [k_mul_kInv, one_smul]
-  have ha : a ∈ Algebra.adjoin ℂ (Set.range (generator q)) := by
-    rw [adjoin_range_generator]
-    exact Algebra.mem_top
-  induction ha using Algebra.adjoin_induction generalizing x with
-  | mem a ha =>
-    obtain ⟨g, rfl⟩ := ha
+  induction a using UqSl2.induction generalizing x with
+  | generator g =>
     cases g
     exacts [he x, hf x, hk x, hkInv x]
   | algebraMap c => rw [algebraMap_smul, algebraMap_smul, map_smul]
-  | add a b _ _ ha hb => rw [add_smul, add_smul, map_add, ha, hb]
-  | mul a b _ _ ha hb => rw [mul_smul, mul_smul, ha, hb]
+  | add a b ha hb => rw [add_smul, add_smul, map_add, ha, hb]
+  | mul a b ha hb => rw [mul_smul, mul_smul, ha, hb]
 
 /-- An element of `UqSl2 q` that commutes with `E`, `F` and `K` commutes with every element of
 `UqSl2 q`; commuting with `K⁻¹` is automatic. -/
 theorem commute_of_commute_generators {z : UqSl2 q} (he : Commute (e q) z)
     (hf : Commute (f q) z) (hk : Commute (k q) z) (a : UqSl2 q) : Commute a z := by
   have hkInv : Commute (kInv q) z := by
-    rw [← kUnit_inv]
-    exact Commute.units_inv_left (by rwa [kUnit_val])
+    rw [← val_inv_kUnit]
+    exact Commute.units_inv_left (by rwa [val_kUnit])
   refine (Algebra.commute_of_mem_adjoin_of_forall_mem_commute (R := ℂ)
     (s := Set.range (generator q)) ?_ ?_).symm
   · rw [adjoin_range_generator]
@@ -415,17 +421,13 @@ theorem _root_.Submodule.smul_mem_of_uqSl2_generators {V : Type*} [AddCommGroup 
     [Module (UqSl2 q) V] [IsScalarTower ℂ (UqSl2 q) V] (W : Submodule ℂ V)
     (he : ∀ x ∈ W, e q • x ∈ W) (hf : ∀ x ∈ W, f q • x ∈ W) (hk : ∀ x ∈ W, k q • x ∈ W)
     (hkInv : ∀ x ∈ W, kInv q • x ∈ W) (a : UqSl2 q) {x : V} (hx : x ∈ W) : a • x ∈ W := by
-  have ha : a ∈ Algebra.adjoin ℂ (Set.range (generator q)) := by
-    rw [adjoin_range_generator]
-    exact Algebra.mem_top
-  induction ha using Algebra.adjoin_induction generalizing x with
-  | mem a ha =>
-    obtain ⟨g, rfl⟩ := ha
+  induction a using UqSl2.induction generalizing x with
+  | generator g =>
     cases g
     exacts [he x hx, hf x hx, hk x hx, hkInv x hx]
   | algebraMap c => rw [algebraMap_smul]; exact W.smul_mem c hx
-  | add a b _ _ ha hb => rw [add_smul]; exact W.add_mem (ha hx) (hb hx)
-  | mul a b _ _ ha hb => rw [mul_smul]; exact ha (hb hx)
+  | add a b ha hb => rw [add_smul]; exact W.add_mem (ha hx) (hb hx)
+  | mul a b ha hb => rw [mul_smul]; exact ha (hb hx)
 
 /-- Algebra maps from `UqSl2 q` are equivalent to tuples satisfying its defining relations. -/
 def liftEquiv : (UqSl2 q →ₐ[ℂ] A) ≃ GeneratorTuple q A where

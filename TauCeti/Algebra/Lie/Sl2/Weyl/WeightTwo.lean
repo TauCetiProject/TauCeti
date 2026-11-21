@@ -35,17 +35,19 @@ open TauCeti LieAlgebra
 variable {K L : Type*} [CommRing K] [LieRing L] [LieAlgebra K L] [LieAlgebra ℚ L]
   {h e f y : L}
 
-/-- On a lowest-weight vector of weight minus two whose third raising bracket vanishes,
-the pinned Weyl automorphism is the divided second raising bracket. -/
+/-- On a lowest-weight vector of weight minus two, the pinned Weyl automorphism is the divided
+second raising bracket. -/
 theorem weylAut_apply_of_lie_eq_neg_two_smul (t : IsSl2Triple h e f)
     (he : IsNilpotent (ad K L e)) (hf : IsNilpotent (ad K L f))
-    (hhy : ⁅h, y⁆ = (-2 : ℚ) • y) (hfy : ⁅f, y⁆ = 0)
-    (heeey : ⁅e, ⁅e, ⁅e, y⁆⁆⁆ = 0) :
+    (hhy : ⁅h, y⁆ = (-2 : ℚ) • y) (hfy : ⁅f, y⁆ = 0) :
     weylAut t he.exists_pow_apply_eq_zero hf.exists_pow_apply_eq_zero y =
       (2⁻¹ : ℚ) • ⁅e, ⁅e, y⁆⁆ := by
   have hf' := (show IsNilpotent (ad K L (-f)) by
     simpa only [map_neg] using hf.neg).exists_pow_apply_eq_zero
   have he' := he.exists_pow_apply_eq_zero
+  have heeey : ⁅e, ⁅e, ⁅e, y⁆⁆⁆ = 0 := by
+    simpa only [pow_succ, pow_zero, one_mul, mul_apply_eq_comp, ad_apply] using
+      t.pow_ad_apply_eq_zero_of_weight_neg_nat he 2 (by simpa using hhy) hfy
   have hfey : ⁅f, ⁅e, y⁆⁆ = (2 : ℚ) • y := by
     simpa only [t.lie_e_f, hhy, hfy, lie_zero, zero_sub, neg_smul, neg_inj] using
       (lie_lie (m := y) (x := e) (y := f)).symm
@@ -87,13 +89,10 @@ theorem weylAut_apply_of_lie_eq_two_smul (t : IsSl2Triple h e f)
   have hnf : IsNilpotent (ad K L (-f)) := by simpa using hf.neg
   have hne : IsNilpotent (ad K L (-e)) := by simpa using he.neg
   have hweight : ⁅-h, y⁆ = (-2 : ℚ) • y := by simp [hhy]
-  have hthird : ⁅-f, ⁅-f, ⁅-f, y⁆⁆⁆ = 0 := by
-    simpa only [pow_succ, pow_zero, one_mul, mul_apply_eq_comp, ad_apply] using
-      t.neg_symm.pow_ad_apply_eq_zero_of_weight_neg_nat hnf 2 hweight (by simp [hey])
   rw [← t.weylAut_neg_symm he.exists_pow_apply_eq_zero hf.exists_pow_apply_eq_zero
     hnf.exists_pow_apply_eq_zero hne.exists_pow_apply_eq_zero]
   simpa only [neg_lie, lie_neg, neg_neg] using
-    t.neg_symm.weylAut_apply_of_lie_eq_neg_two_smul hnf hne hweight (by simp [hey]) hthird
+    t.neg_symm.weylAut_apply_of_lie_eq_neg_two_smul hnf hne hweight (by simp [hey])
 
 section Associative
 
@@ -105,13 +104,12 @@ variable {A : Type*} [Ring A] [Algebra ℚ A] {H E F Y : A}
 divided second raising bracket. -/
 theorem weylUnit_conj_of_lie_eq_neg_two_smul (t : IsSl2Triple H E F)
     (hE : IsNilpotent E) (hF : IsNilpotent F)
-    (hHY : ⁅H, Y⁆ = (-2 : ℚ) • Y) (hFY : ⁅F, Y⁆ = 0)
-    (hEEEY : ⁅E, ⁅E, ⁅E, Y⁆⁆⁆ = 0) :
+    (hHY : ⁅H, Y⁆ = (-2 : ℚ) • Y) (hFY : ⁅F, Y⁆ = 0) :
     (weylUnit hE hF : A) * Y * ↑(weylUnit hE hF)⁻¹ =
       (2⁻¹ : ℚ) • ⁅E, ⁅E, Y⁆⁆ := by
   rw [← weylAut_apply_eq_weylUnit_conj (K := ℚ) t hE hF]
   exact t.weylAut_apply_of_lie_eq_neg_two_smul (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hE)
-    (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hF) hHY hFY hEEEY
+    (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hF) hHY hFY
 
 /-- The pinned Weyl unit conjugates a highest-weight vector of weight two to its
 second lowering bracket divided by two. -/

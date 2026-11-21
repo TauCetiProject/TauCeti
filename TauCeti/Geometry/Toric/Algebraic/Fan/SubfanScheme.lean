@@ -63,14 +63,14 @@ cone. -/
 theorem subfanInclusion_affineToricChartMap_comp_affineToricChartι
     (σ : (Φ.subfan S hS hface).cones) :
     (Φ.subfanInclusion S hS hface).affineToricChartMap σ ≫
-      Φ.affineToricChartι ⟨(Φ.subfanInclusion S hS hface).leastCone σ.2,
-        (Φ.subfanInclusion S hS hface).leastCone_mem σ.2⟩ =
-      Φ.affineToricChartι ⟨σ.1, hS (by simpa only [subfan_cones] using σ.2)⟩ := by
+      Φ.affineToricChartι ⟨(Φ.subfanInclusion S hS hface).leastCone σ.property,
+        (Φ.subfanInclusion S hS hface).leastCone_mem σ.property⟩ =
+      Φ.affineToricChartι ⟨σ.val, hS (by simpa only [subfan_cones] using σ.property)⟩ := by
   let f := Φ.subfanInclusion S hS hface
   -- The let-bound `f` is definitionally the subfan inclusion.
-  have hleast : f.leastCone σ.2 = σ.1 :=
+  have hleast : f.leastCone σ.property = σ.val :=
     subfanInclusion_leastCone Φ S hS hface σ
-  have hσleast : σ.1.IsFaceOf (f.leastCone σ.2) := by
+  have hσleast : σ.val.IsFaceOf (f.leastCone σ.property) := by
     rw [hleast]
   have hmap : f.affineToricChartMap σ =
       faceAffineToricSchemeMap Φ.lattice hσleast := by
@@ -78,8 +78,8 @@ theorem subfanInclusion_affineToricChartMap_comp_affineToricChartι
     simp only [f, subfanInclusion_latticeMap, subfanInclusion_realMap]
   rw [hmap]
   exact faceAffineToricSchemeMap_comp_affineToricChartι
-    (τ := ⟨σ.1, hS (by simpa only [subfan_cones] using σ.2)⟩)
-    (σ := ⟨f.leastCone σ.2, f.leastCone_mem σ.2⟩) hσleast
+    (τ := ⟨σ.val, hS (by simpa only [subfan_cones] using σ.property)⟩)
+    (σ := ⟨f.leastCone σ.property, f.leastCone_mem σ.property⟩) hσleast
 
 /-- On every affine cone chart, the map of toric schemes induced by a subfan inclusion is the
 ordinary inclusion of that chart into the ambient fan scheme. -/
@@ -88,7 +88,7 @@ theorem affineToricChartι_comp_subfanInclusion_algebraicMap
     (σ : (Φ.subfan S hS hface).cones) :
     (Φ.subfan S hS hface).affineToricChartι σ ≫
       (Φ.subfanInclusion S hS hface).algebraicMap =
-      Φ.affineToricChartι ⟨σ.1, hS (by simpa only [subfan_cones] using σ.2)⟩ := by
+      Φ.affineToricChartι ⟨σ.val, hS (by simpa only [subfan_cones] using σ.property)⟩ := by
   simp
 
 /-- The map of algebraic realizations induced by a subfan inclusion is injective on points. -/
@@ -105,8 +105,8 @@ theorem subfanInclusion_algebraicMap_injective :
   apply ((Φ.subfan S hS hface).affineToricChartι_eq_affineToricChartι_iff a b).2
   obtain ⟨z, hza, hzb⟩ :=
     (Φ.affineToricChartι_eq_affineToricChartι_iff
-      (σ := ⟨σ.1, hS (by simpa only [subfan_cones] using σ.2)⟩)
-      (τ := ⟨τ.1, hS (by simpa only [subfan_cones] using τ.2)⟩) a b).1 hxy
+      (σ := ⟨σ.val, hS (by simpa only [subfan_cones] using σ.property)⟩)
+      (τ := ⟨τ.val, hS (by simpa only [subfan_cones] using τ.property)⟩) a b).1 hxy
   refine ⟨z, ?_, ?_⟩
   · simpa only [Fan.affineToricOverlapLeft_def, subfan_lattice] using hza
   · simpa only [Fan.affineToricOverlapRight_def, subfan_lattice] using hzb
@@ -117,7 +117,7 @@ theorem range_subfanInclusion_algebraicMap :
     Set.range (Φ.subfanInclusion S hS hface).algebraicMap =
       ⋃ σ : (Φ.subfan S hS hface).cones,
         Set.range (Φ.affineToricChartι
-          ⟨σ.1, hS (by simpa only [subfan_cones] using σ.2)⟩) := by
+          ⟨σ.val, hS (by simpa only [subfan_cones] using σ.property)⟩) := by
   ext x
   constructor
   · rintro ⟨y, rfl⟩
@@ -178,14 +178,14 @@ private theorem exists_affineToricChartι_eq_of_algebraicMap_mem (σ : Φ.cones)
     (hy : f.algebraicMap (Φ.affineToricChartι σ y) ∈ Set.range (Ψ.affineToricChartι τ)) :
     ∃ (σ' : Φ.cones) (y' : Φ.affineToricChart σ'),
       Φ.affineToricChartι σ' y' = Φ.affineToricChartι σ y ∧
-        (f.leastCone σ'.2).IsFaceOf τ.1 := by
-  let υ : Ψ.cones := ⟨f.leastCone σ.2, f.leastCone_mem σ.2⟩
-  have hυ := Ψ.isToricCone υ.2
+        (f.leastCone σ'.property).IsFaceOf τ.val := by
+  let υ : Ψ.cones := ⟨f.leastCone σ.property, f.leastCone_mem σ.property⟩
+  have hυ := Ψ.isToricCone υ.property
   -- The image lies in the chart of `υ ⊓ τ`, which is cut out of the chart of `υ` by a character.
   obtain ⟨m, hm, hmυτ⟩ := hυ.rational.exists_mem_dualSemigroup_inf_ker_eq Ψ.lattice
-    (Ψ.inf_isFaceOf_left υ.2 τ.2)
-  have hρ : (υ.1 ⊓ PointedCone.ofSubmodule (LinearMap.ker (Ψ.lattice.realCharacter m))).IsFaceOf
-      υ.1 := PointedCone.isFaceOf_inf_ker ((mem_dualSemigroup Ψ.lattice m).1 hm)
+    (Ψ.inf_isFaceOf_left υ.property τ.property)
+  have hρ : (υ.val ⊓ PointedCone.ofSubmodule (LinearMap.ker (Ψ.lattice.realCharacter m))).IsFaceOf
+      υ.val := PointedCone.isFaceOf_inf_ker ((mem_dualSemigroup Ψ.lattice m).1 hm)
   have hy' : f.affineToricChartMap σ y ∈ Set.range (faceAffineToricSchemeMap Ψ.lattice hρ) := by
     rw [← Scheme.Hom.comp_apply, affineToricChartι_comp_algebraicMap, Scheme.Hom.comp_apply]
       at hy
@@ -193,36 +193,37 @@ private theorem exists_affineToricChartι_eq_of_algebraicMap_mem (σ : Φ.cones)
         Set.range (Ψ.affineToricChartι (υ ⊓ τ)) := by
       rw [← Fan.range_affineToricChartι_inter_range_affineToricChartι]
       exact ⟨⟨_, rfl⟩, hy⟩
-    have hinf : υ ⊓ τ = ⟨_, Ψ.mem_of_isFaceOf υ.2 hρ⟩ := Subtype.ext hmυτ.symm
+    have hinf : υ ⊓ τ = ⟨_, Ψ.mem_of_isFaceOf υ.property hρ⟩ := Subtype.ext hmυτ.symm
     rw [hinf, ← Fan.faceAffineToricSchemeMap_comp_affineToricChartι hρ] at hυτ
     obtain ⟨z, hz⟩ := hυτ
     rw [Scheme.Hom.comp_apply] at hz
     exact ⟨z, (Ψ.affineToricChartι υ).isOpenEmbedding.injective hz⟩
   -- Pulling back along the affine chart map, `y` lies in the chart of the face of `σ` cut out
   -- by the pullback of that character.
-  have hmaps : Set.MapsTo f.realMap (σ.1 : Set V) (υ.1 : Set V') :=
-    fun x hx ↦ f.map_le_leastCone σ.2 ⟨x, hx, rfl⟩
+  have hmaps : Set.MapsTo f.realMap (σ.val : Set V) (υ.val : Set V') :=
+    fun x hx ↦ f.map_le_leastCone σ.property ⟨x, hx, rfl⟩
   rw [← Set.mem_preimage, affineToricChartMap_def,
     preimage_range_faceAffineToricSchemeMap_inf_ker Φ.lattice Ψ.lattice _ _ _ hmaps
-      (Φ.isToricCone σ.2).fg hυ.fg ⟨m, hm⟩] at hy'
+      (Φ.isToricCone σ.property).fg hυ.fg ⟨m, hm⟩] at hy'
   obtain ⟨y', hy'⟩ := hy'
   have hσ' := PointedCone.isFaceOf_inf_ker ((mem_dualSemigroup Φ.lattice _).1
     (dualSemigroupMap Φ.lattice Ψ.lattice f.latticeMap f.realMap f.map_lattice hmaps
-      ⟨m, hm⟩).2)
-  refine ⟨⟨_, Φ.mem_of_isFaceOf σ.2 hσ'⟩, y', ?_, ?_⟩
+      ⟨m, hm⟩).property)
+  refine ⟨⟨_, Φ.mem_of_isFaceOf σ.property hσ'⟩, y', ?_, ?_⟩
   · rw [← hy', ← Scheme.Hom.comp_apply,
-      Fan.faceAffineToricSchemeMap_comp_affineToricChartι (τ := ⟨_, Φ.mem_of_isFaceOf σ.2 hσ'⟩)]
+      Fan.faceAffineToricSchemeMap_comp_affineToricChartι (τ := ⟨_,
+          Φ.mem_of_isFaceOf σ.property hσ'⟩)]
   -- The face of `σ` maps into `υ ⊓ ker m = υ ⊓ τ`, so its least target cone is a face of `τ`.
-  have hle : f.leastCone (Φ.mem_of_isFaceOf σ.2 hσ') ≤ υ.1 ⊓ τ.1 := by
+  have hle : f.leastCone (Φ.mem_of_isFaceOf σ.property hσ') ≤ υ.val ⊓ τ.val := by
     rw [← hmυτ]
-    refine f.leastCone_le _ (Ψ.mem_of_isFaceOf υ.2 hρ) ?_
+    refine f.leastCone_le _ (Ψ.mem_of_isFaceOf υ.property hρ) ?_
     rintro _ ⟨x, hx, rfl⟩
-    refine ⟨f.mapsTo_leastCone σ.2 hx.1, ?_⟩
+    refine ⟨f.mapsTo_leastCone σ.property hx.1, ?_⟩
     have hx₂ := LinearMap.mem_ker.1 hx.2
     rwa [coe_dualSemigroupMap,
       Φ.lattice.realCharacter_comp Ψ.lattice f.latticeMap f.realMap f.map_lattice] at hx₂
-  exact (Ψ.isFaceOf_of_le (Ψ.inf_mem υ.2 τ.2) (f.leastCone_mem _) hle).trans
-    (Ψ.inf_isFaceOf_right υ.2 τ.2)
+  exact (Ψ.isFaceOf_of_le (Ψ.inf_mem υ.property τ.property) (f.leastCone_mem _) hle).trans
+    (Ψ.inf_isFaceOf_right υ.property τ.property)
 
 /-- The open subscheme of the preimage subfan is exactly the inverse image of the open subscheme
 of the target subfan under the algebraic toric map. -/
@@ -235,19 +236,20 @@ theorem range_preimageSubfanAlgebraicMap :
   simp only [Set.mem_iUnion, Set.mem_preimage]
   constructor
   · rintro ⟨σ, y, rfl⟩
-    have hσ := f.preimageSubfan_cones_subset S hface σ.2
-    have hleast := (f.mem_preimageCones_iff S hσ).1 (by simpa only [Fan.subfan_cones] using σ.2)
+    have hσ := f.preimageSubfan_cones_subset S hface σ.property
+    have hleast := (f.mem_preimageCones_iff S hσ).1 (by simpa only
+        [Fan.subfan_cones] using σ.property)
     refine ⟨⟨f.leastCone hσ, by simpa only [Fan.subfan_cones] using hleast⟩,
-      f.affineToricChartMap ⟨σ.1, hσ⟩ y, ?_⟩
+      f.affineToricChartMap ⟨σ.val, hσ⟩ y, ?_⟩
     rw [← Scheme.Hom.comp_apply, ← Scheme.Hom.comp_apply, affineToricChartι_comp_algebraicMap]
   · rintro ⟨τ, hx⟩
     obtain ⟨σ, y, rfl⟩ := Φ.exists_affineToricChartι_apply_eq x
-    have hτ : τ.1 ∈ S := by simpa only [Fan.subfan_cones] using τ.2
+    have hτ : τ.val ∈ S := by simpa only [Fan.subfan_cones] using τ.property
     obtain ⟨σ', y', hy', hσ'⟩ :=
-      f.exists_affineToricChartι_eq_of_algebraicMap_mem σ y ⟨τ.1, hS hτ⟩ hx
-    exact ⟨⟨σ'.1, by
+      f.exists_affineToricChartι_eq_of_algebraicMap_mem σ y ⟨τ.val, hS hτ⟩ hx
+    exact ⟨⟨σ'.val, by
       simpa only [Fan.subfan_cones] using
-        (f.mem_preimageCones_iff S σ'.2).2 (hface hτ hσ')⟩, y', hy'⟩
+        (f.mem_preimageCones_iff S σ'.property).2 (hface hτ hσ')⟩, y', hy'⟩
 
 /-- Restriction to an open subfan is a base change: the toric scheme of the preimage subfan is
 the pullback of the open subscheme of the target subfan along the algebraic toric map. -/

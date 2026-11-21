@@ -103,26 +103,26 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
 `α(X) = f` and `ι_X dα = (R_α f) α - df`, where `R_α` is the Reeb vector field of `α`. -/
 def IsContactHamiltonianVectorField (α : SmoothForm I M ℝ 1) (f : M → ℝ)
     (X : (x : M) → TangentSpace I x) : Prop :=
-  ∀ x, α.1 x ![X x] = f x ∧ ∀ v, mextDeriv α.1 x ![X x, v] =
-    mvfderiv I f x (α.reebVectorField x) * α.1 x ![v] - mvfderiv I f x v
+  ∀ x, α.val x ![X x] = f x ∧ ∀ v, mextDeriv α.val x ![X x, v] =
+    mvfderiv I f x (α.reebVectorField x) * α.val x ![v] - mvfderiv I f x v
 
 /-- The defining characterization of a contact Hamiltonian vector field. -/
 theorem isContactHamiltonianVectorField_iff :
-    α.IsContactHamiltonianVectorField f X ↔ ∀ x, α.1 x ![X x] = f x ∧ ∀ v,
-      mextDeriv α.1 x ![X x, v] =
-        mvfderiv I f x (α.reebVectorField x) * α.1 x ![v] - mvfderiv I f x v :=
+    α.IsContactHamiltonianVectorField f X ↔ ∀ x, α.val x ![X x] = f x ∧ ∀ v,
+      mextDeriv α.val x ![X x, v] =
+        mvfderiv I f x (α.reebVectorField x) * α.val x ![v] - mvfderiv I f x v :=
   Iff.rfl
 
 namespace IsContactHamiltonianVectorField
 
 /-- A contact Hamiltonian vector field of `f` takes the value `f` under `α`. -/
-theorem apply_eq (hX : α.IsContactHamiltonianVectorField f X) (x : M) : α.1 x ![X x] = f x :=
+theorem apply_eq (hX : α.IsContactHamiltonianVectorField f X) (x : M) : α.val x ![X x] = f x :=
   (hX x).1
 
 /-- The contraction of `dα` with a contact Hamiltonian vector field of `f` is `(R_α f) α - df`. -/
 theorem mextDeriv_apply_eq (hX : α.IsContactHamiltonianVectorField f X) (x : M)
-    (v : TangentSpace I x) : mextDeriv α.1 x ![X x, v] =
-      mvfderiv I f x (α.reebVectorField x) * α.1 x ![v] - mvfderiv I f x v :=
+    (v : TangentSpace I x) : mextDeriv α.val x ![X x, v] =
+      mvfderiv I f x (α.reebVectorField x) * α.val x ![v] - mvfderiv I f x v :=
   (hX x).2 v
 
 /-- A contact Hamiltonian vector field of `f` lies in the contact distribution exactly where `f`
@@ -136,7 +136,7 @@ changes by `df(X) = (R_α f) f`. -/
 theorem mvfderiv_apply_self (hX : α.IsContactHamiltonianVectorField f X) (x : M) :
     mvfderiv I f x (X x) = mvfderiv I f x (α.reebVectorField x) * f x := by
   have h := hX.mextDeriv_apply_eq x (X x)
-  rw [(mextDeriv α.1 x).map_eq_zero_of_eq ![X x, X x] (i := 0) (j := 1) rfl (by decide),
+  rw [(mextDeriv α.val x).map_eq_zero_of_eq ![X x, X x] (i := 0) (j := 1) rfl (by decide),
     hX.apply_eq] at h
   linarith
 
@@ -144,7 +144,7 @@ theorem mvfderiv_apply_self (hX : α.IsContactHamiltonianVectorField f X) (x : M
 differentiable: `L_X α = (R_α f) α`. -/
 theorem mlieDerivForm_apply_eq (hX : α.IsContactHamiltonianVectorField f X) {x : M}
     (hXd : MDifferentiableAt I I.tangent (fun y ↦ (X y : TangentBundle I M)) x) :
-    mlieDerivForm X α.1 x = mvfderiv I f x (α.reebVectorField x) • α.1 x := by
+    mlieDerivForm X α.val x = mvfderiv I f x (α.reebVectorField x) • α.val x := by
   ext v
   obtain ⟨w, rfl⟩ : ∃ w, v = ![w] := ⟨v 0, by ext i; fin_cases i; rfl⟩
   rw [mlieDerivForm_apply_eq_mextDeriv_add hX.apply_eq (α.mdifferentiableAt x) hXd,
@@ -156,8 +156,8 @@ theorem mvfderiv_apply_sub_apply_mlieBracket {x : M}
     {W : (y : M) → TangentSpace I y} (hX : α.IsContactHamiltonianVectorField f X)
     (hXd : MDifferentiableAt I I.tangent (fun y ↦ (X y : TangentBundle I M)) x)
     (hW : MDifferentiableAt I I.tangent (fun y ↦ (W y : TangentBundle I M)) x) :
-    mvfderiv I (fun y ↦ α.1 y ![W y]) x (X x) - α.1 x ![mlieBracket I X W x] =
-      mvfderiv I f x (α.reebVectorField x) * α.1 x ![W x] := by
+    mvfderiv I (fun y ↦ α.val y ![W y]) x (X x) - α.val x ![mlieBracket I X W x] =
+      mvfderiv I f x (α.reebVectorField x) * α.val x ![W x] := by
   have h := mlieDerivForm_apply_one (V := X) (α.mdifferentiableAt x) hW
   rw [hX.mlieDerivForm_apply_eq hXd, ContinuousAlternatingMap.smul_apply, smul_eq_mul] at h
   exact h.symm
@@ -166,7 +166,7 @@ theorem mvfderiv_apply_sub_apply_mlieBracket {x : M}
 Hamiltonian vector field `X` of `f` satisfies `L_X α = (R_α f) α`. -/
 theorem mlieDerivForm_eq (hX : α.IsContactHamiltonianVectorField f X)
     (hXd : MDifferentiable I I.tangent (fun y ↦ (X y : TangentBundle I M))) :
-    mlieDerivForm X α.1 = fun x ↦ mvfderiv I f x (α.reebVectorField x) • α.1 x :=
+    mlieDerivForm X α.val = fun x ↦ mvfderiv I f x (α.reebVectorField x) • α.val x :=
   funext fun x ↦ hX.mlieDerivForm_apply_eq (hXd x)
 
 /-- **A contact Hamiltonian vector field preserves the contact distribution** infinitesimally: its
@@ -179,7 +179,7 @@ theorem mlieBracket_mem_kerDistribution (hX : α.IsContactHamiltonianVectorField
     mlieBracket I X Y x ∈ α.kerDistribution x := by
   -- The bracket formula `X(α(Y)) - α([X, Y]) = (R_α f) α(Y)`, where `α(Y) = 0` near `x`.
   have h := hX.mvfderiv_apply_sub_apply_mlieBracket hXd hYd
-  have hd : mvfderiv I (fun y ↦ α.1 y ![Y y]) x = 0 := by
+  have hd : mvfderiv I (fun y ↦ α.val y ![Y y]) x = 0 := by
     rw [Filter.EventuallyEq.mvfderiv_eq (f := fun _ ↦ (0 : ℝ))
       (hY.mono fun y hy ↦ mem_kerDistribution.1 hy)]
     exact mvfderiv_const (0 : ℝ)
@@ -215,6 +215,13 @@ theorem contactHamiltonianVectorField_zero (α : SmoothForm I M ℝ 1) :
     α.contactHamiltonianVectorField 0 = 0 := by
   funext x
   simp [contactHamiltonianVectorField_def, mvfderiv_zero]
+
+/-- A contact Hamiltonian with vanishing value and differential has a stationary vector field.
+This follows from the inverse-flat construction even without contactness. -/
+theorem contactHamiltonianVectorField_eq_zero_of_jet_eq_zero (α : SmoothForm I M ℝ 1)
+    {x : M} (hf : f x = 0) (hdf : mvfderiv I f x = 0) :
+    α.contactHamiltonianVectorField f x = 0 := by
+  simp [contactHamiltonianVectorField_def, hf, hdf]
 
 /-- The contact Hamiltonian vector field is additive on differentiable functions. -/
 theorem contactHamiltonianVectorField_add {x : M} (hf : MDifferentiableAt I 𝓘(ℝ) f x)
@@ -265,7 +272,7 @@ theorem isContactHamiltonianVectorField_iff_contactFlat :
     have hR := DFunLike.congr_fun h (α.reebVectorField x)
     simp only [contactFlat_apply, hα.mextDeriv_reebVectorField_right, hα.apply_reebVectorField,
       sub_apply, smul_apply, degreeOneEquiv_apply_apply_vec, smul_eq_mul] at hR
-    have hf : α.1 x ![X x] = f x := by linarith
+    have hf : α.val x ![X x] = f x := by linarith
     refine ⟨hf, fun v ↦ ?_⟩
     have hv := DFunLike.congr_fun h v
     simp only [contactFlat_apply, hf, sub_apply,
@@ -289,15 +296,15 @@ theorem isContactHamiltonianVectorField_contactHamiltonianVectorField (f : M →
 /-- A contact form takes the value `f` on the contact Hamiltonian vector field of `f`. -/
 @[simp]
 theorem apply_contactHamiltonianVectorField (f : M → ℝ) (x : M) :
-    α.1 x ![α.contactHamiltonianVectorField f x] = f x :=
+    α.val x ![α.contactHamiltonianVectorField f x] = f x :=
   (hα.isContactHamiltonianVectorField_contactHamiltonianVectorField f).apply_eq x
 
 /-- **Contraction of `dα` with the contact Hamiltonian vector field** of `f` is
 `(R_α f) α - df`. -/
 @[simp]
 theorem mextDeriv_contactHamiltonianVectorField_left (f : M → ℝ) (x : M)
-    (v : TangentSpace I x) : mextDeriv α.1 x ![α.contactHamiltonianVectorField f x, v] =
-      mvfderiv I f x (α.reebVectorField x) * α.1 x ![v] - mvfderiv I f x v :=
+    (v : TangentSpace I x) : mextDeriv α.val x ![α.contactHamiltonianVectorField f x, v] =
+      mvfderiv I f x (α.reebVectorField x) * α.val x ![v] - mvfderiv I f x v :=
   (hα.isContactHamiltonianVectorField_contactHamiltonianVectorField f).mextDeriv_apply_eq x v
 
 /-- **Existence and uniqueness of contact Hamiltonian vector fields.** For a contact form on a
@@ -312,8 +319,8 @@ theorem isContactHamiltonianVectorField_iff_eq :
 /-- A contact Hamiltonian vector field is characterized by its value under `α` and its
 contraction equation tested only on the contact hyperplanes. -/
 theorem isContactHamiltonianVectorField_iff_kerDistribution :
-    α.IsContactHamiltonianVectorField f X ↔ ∀ x, α.1 x ![X x] = f x ∧
-      ∀ v ∈ α.kerDistribution x, mextDeriv α.1 x ![X x, v] = -mvfderiv I f x v := by
+    α.IsContactHamiltonianVectorField f X ↔ ∀ x, α.val x ![X x] = f x ∧
+      ∀ v ∈ α.kerDistribution x, mextDeriv α.val x ![X x, v] = -mvfderiv I f x v := by
   constructor
   · intro hX x
     refine ⟨hX.apply_eq x, fun v hv ↦ ?_⟩
@@ -321,7 +328,7 @@ theorem isContactHamiltonianVectorField_iff_kerDistribution :
   · intro hX x
     refine ⟨(hX x).1, fun v ↦ ?_⟩
     -- Subtract the Reeb component to test the equation on a vector in the contact plane.
-    have hv : v - α.1 x ![v] • α.reebVectorField x ∈ α.kerDistribution x := by
+    have hv : v - α.val x ![v] • α.reebVectorField x ∈ α.kerDistribution x := by
       rw [mem_kerDistribution, ← degreeOneEquiv_apply_apply_vec, map_sub, map_smul]
       simp only [degreeOneEquiv_apply_apply_vec, hα.apply_reebVectorField,
         smul_eq_mul, mul_one, sub_self]
@@ -363,20 +370,29 @@ theorem mdifferentiable_mvfderiv_reebVectorField (hf : ContMDiff I 𝓘(ℝ) 2 f
   (hα.contMDiff_mvfderiv_reebVectorField (n := 1) (by simp)
     (by norm_num [hf])).mdifferentiable one_ne_zero
 
+/-- **Local regularity of contact Hamiltonian vector fields.** A Hamiltonian which is
+`C^(n+1)` at a point has contact Hamiltonian field `C^n` there, for `n ≤ ∞`. -/
+theorem contMDiffAt_contactHamiltonianVectorField {n : WithTop ℕ∞} (hn : n ≤ ∞)
+    {x : M} (hf : ContMDiffAt I 𝓘(ℝ) (n + 1) f x) :
+    ContMDiffAt I I.tangent n (T% (α.contactHamiltonianVectorField f)) x := by
+  have hRf := (hf.contMDiffAt_mvfderiv_apply le_rfl).comp x
+    ((hα.contMDiff_reebVectorField x).of_le hn)
+  have hcov : ContMDiffAt I (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) n (fun y ↦
+      TotalSpace.mk' (E →L[ℝ] ℝ) (E := fun z : M ↦ TangentSpace I z →L[ℝ] ℝ) y
+        ((f y + mvfderiv I f y (α.reebVectorField y)) • degreeOneEquiv α y - mvfderiv I f y)) x :=
+    (((hf.of_le le_self_add).add hRf).smul_section
+      (((degreeOneEquiv α).contMDiff x).of_le hn)).sub_section
+        hf.contMDiffAt_totalSpaceMk_mvfderiv
+  exact ((((contMDiff_contactFlat α) x).clm_bundle_inverse
+    (hα.isInvertible_contactFlat x)).of_le hn).clm_bundle_apply hcov
+
 /-- **Regularity of contact Hamiltonian vector fields.** For a contact form on a
 finite-dimensional manifold, the contact Hamiltonian vector field of a `C^(n+1)` function is a
 `C^n` vector field, for `n ≤ ∞`. -/
 theorem contMDiff_contactHamiltonianVectorField {n : WithTop ℕ∞} (hn : n ≤ ∞)
     (hf : ContMDiff I 𝓘(ℝ) (n + 1) f) :
-    ContMDiff I I.tangent n (T% (α.contactHamiltonianVectorField f)) := by
-  have hRf := hα.contMDiff_mvfderiv_reebVectorField hn hf
-  have hcov : ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) n fun x ↦ TotalSpace.mk' (E →L[ℝ] ℝ)
-      (E := fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) x
-      ((f x + mvfderiv I f x (α.reebVectorField x)) • degreeOneEquiv α x - mvfderiv I f x) :=
-    (((hf.of_le le_self_add).add hRf).smul_section
-      ((degreeOneEquiv α).contMDiff.of_le hn)).sub_section hf.contMDiff_totalSpaceMk_mvfderiv
-  exact (((contMDiff_contactFlat α).clm_bundle_inverse hα.isInvertible_contactFlat).of_le
-    hn).clm_bundle_apply hcov
+    ContMDiff I I.tangent n (T% (α.contactHamiltonianVectorField f)) :=
+  fun x ↦ hα.contMDiffAt_contactHamiltonianVectorField hn (hf x)
 
 /-- **Regularity of contact Hamiltonian vector fields.** For a contact form on a
 finite-dimensional manifold, every contact Hamiltonian vector field of a `C^(n+1)` function is a
@@ -398,9 +414,9 @@ theorem mdifferentiable_contactHamiltonianVectorField (hf : ContMDiff I 𝓘(ℝ
 /-- **The multiplier of a contact vector field.** For a contact form `α` and a vector field `X`
 differentiable at `x` with `α(X) = f`, if `L_X α = c α` at `x`, then `c = R_α f` at `x`. -/
 theorem eq_mvfderiv_reebVectorField_of_mlieDerivForm_apply_eq_smul
-    (hf : ∀ y, α.1 y ![X y] = f y) {x : M}
+    (hf : ∀ y, α.val y ![X y] = f y) {x : M}
     (hXd : MDifferentiableAt I I.tangent (fun y ↦ (X y : TangentBundle I M)) x) {c : ℝ}
-    (hc : mlieDerivForm X α.1 x = c • α.1 x) :
+    (hc : mlieDerivForm X α.val x = c • α.val x) :
     c = mvfderiv I f x (α.reebVectorField x) := by
   -- Evaluate Cartan's formula `L_X α = ι_X dα + df` at the Reeb vector field.
   have h := mlieDerivForm_apply_eq_mextDeriv_add hf (α.mdifferentiableAt x) hXd
@@ -415,12 +431,12 @@ multiplier is then `g = R_α f`
 (`TauCeti.SmoothForm.IsContactForm.eq_mvfderiv_reebVectorField_of_mlieDerivForm_apply_eq_smul`). -/
 theorem isContactHamiltonianVectorField_iff_mlieDerivForm
     (hXd : MDifferentiable I I.tangent (fun y ↦ (X y : TangentBundle I M))) :
-    α.IsContactHamiltonianVectorField f X ↔ (∀ x, α.1 x ![X x] = f x) ∧
-      ∃ g : M → ℝ, mlieDerivForm X α.1 = fun x ↦ g x • α.1 x := by
+    α.IsContactHamiltonianVectorField f X ↔ (∀ x, α.val x ![X x] = f x) ∧
+      ∃ g : M → ℝ, mlieDerivForm X α.val = fun x ↦ g x • α.val x := by
   refine ⟨fun hX ↦ ⟨hX.apply_eq, _, hX.mlieDerivForm_eq hXd⟩,
     fun ⟨hf, g, hg⟩ x ↦ ⟨hf x, fun v ↦ ?_⟩⟩
   -- Cartan's formula: `g α = ι_X dα + df`.
-  have key : ∀ v, g x * α.1 x ![v] = mextDeriv α.1 x ![X x, v] + mvfderiv I f x v := fun v ↦ by
+  have key : ∀ v, g x * α.val x ![v] = mextDeriv α.val x ![X x, v] + mvfderiv I f x v := fun v ↦ by
     rw [← mlieDerivForm_apply_eq_mextDeriv_add hf (α.mdifferentiableAt x) (hXd x), hg,
       ContinuousAlternatingMap.smul_apply, smul_eq_mul]
   rw [← hα.eq_mvfderiv_reebVectorField_of_mlieDerivForm_apply_eq_smul hf (hXd x) (congrFun hg x)]
@@ -431,8 +447,8 @@ contact form `α`, a differentiable vector field `X` whose Lie derivative `L_X �
 `α` is the contact Hamiltonian vector field of `α(X)`. -/
 theorem eq_contactHamiltonianVectorField_of_mlieDerivForm_eq_smul
     (hXd : MDifferentiable I I.tangent (fun y ↦ (X y : TangentBundle I M))) {g : M → ℝ}
-    (hg : mlieDerivForm X α.1 = fun x ↦ g x • α.1 x) :
-    X = α.contactHamiltonianVectorField fun x ↦ α.1 x ![X x] :=
+    (hg : mlieDerivForm X α.val = fun x ↦ g x • α.val x) :
+    X = α.contactHamiltonianVectorField fun x ↦ α.val x ![X x] :=
   hα.isContactHamiltonianVectorField_iff_eq.1
     ((hα.isContactHamiltonianVectorField_iff_mlieDerivForm hXd).2 ⟨fun _ ↦ rfl, g, hg⟩)
 
