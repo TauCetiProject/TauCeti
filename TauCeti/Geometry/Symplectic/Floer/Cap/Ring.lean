@@ -308,18 +308,6 @@ abbrev cohomologyGAlgebraOfCounts :
     (kernelProduct_kernelProduct_coefficientComparison_sub_mem_coboundaries q hq r hF hμ n D hδ Q
       hnQ hassoc)
 
-/-- The structure map of the cohomology algebra of class-indexed counts sends `x` to `x • [e]`,
-for `e` the combination of the counts of PSS planes. -/
-theorem cohomologyGAlgebraOfCounts_toFun (x : R) :
-    letI := cohomologyGRingOfCounts q hq r hF hμ n D hδ Q hnQ hQ hL E hE hED hone_mul hmul_one
-      hassoc
-    (cohomologyGAlgebraOfCounts q hq r hF hμ n D hδ Q hnQ hQ hL E hE hED hone_mul hmul_one
-        hassoc).toFun x =
-      x • Submodule.Quotient.mk
-        ⟨(coordinates hF r).symm fun i => coefficientComparison q hq (E i),
-          coordinates_symm_coefficientComparison_mem_cocycles_zero q hq r hF hμ n D hδ E hE hED⟩ :=
-  rfl
-
 /-- **Graded commutativity of the cohomology ring of class-indexed counts.** If, in addition to
 the hypotheses of `TauCeti.Floer.cohomologyGRingOfCounts`, some family `K` of counts of rigid
 members of the input-exchange family, which lowers the cochain degree by one, gives a homotopy
