@@ -18,8 +18,9 @@ Here mass is the norm in the native dual of continuous alternating forms, throug
 `exteriorPower.formDualEquiv`; no new norm is installed on the exterior power.
 
 The associated alternating form has comass at most one: it evaluates on `(u, v)` as
-`⟪J u, v⟫`. It certifies the lower mass bound, and the orthonormal-basis expansion of the
-Kähler bivector gives the matching upper bound. In an orthonormal four-frame this proves that
+`⟪J u, v⟫` (`TauCeti.AlmostComplexStructure.alternatingFormEquiv_kahlerForm_apply`). It
+certifies the lower mass bound, and the orthonormal-basis expansion of the Kähler bivector gives
+the matching upper bound. In an orthonormal four-frame this proves that
 `e₀ ∧ e₁ + e₂ ∧ e₃` has mass `2` and Hilbert norm `√2`. Thus the dual-comass mass used for
 vector-valued representations of currents cannot be replaced by the Hilbert norm.
 
@@ -47,6 +48,12 @@ namespace TauCeti.AlmostComplexStructure
 variable {J : AlmostComplexStructure V} (hJ : ∀ u v, ⟪J u, J v⟫ = ⟪u, v⟫)
 include hJ
 
+/-- The alternating form associated to an orthogonal complex structure evaluates as
+`ω(u, w) = ⟪J u, w⟫`. -/
+theorem alternatingFormEquiv_kahlerForm_apply (u w : V) :
+    alternatingFormEquiv V 2 J.kahlerForm ![u, w] = ⟪J u, w⟫ := by
+  rw [alternatingFormEquiv_apply, inner_kahlerForm_ιMulti hJ]
+
 /-- The alternating form associated to an orthogonal complex structure has comass at most one.
 This also covers the zero-dimensional space, where the form vanishes. -/
 theorem norm_alternatingFormEquiv_kahlerForm_le :
@@ -54,7 +61,7 @@ theorem norm_alternatingFormEquiv_kahlerForm_le :
   refine (alternatingFormEquiv V 2 J.kahlerForm).opNorm_le_bound zero_le_one fun v ↦ ?_
   have heval : alternatingFormEquiv V 2 J.kahlerForm v = ⟪J (v 0), v 1⟫ := by
     have hv : v = ![v 0, v 1] := by ext i; fin_cases i <;> rfl
-    rw [hv, alternatingFormEquiv_apply, inner_kahlerForm_ιMulti hJ]
+    rw [hv, alternatingFormEquiv_kahlerForm_apply hJ]
     simp only [Matrix.cons_val_zero, Matrix.cons_val_one]
   rw [heval, Real.norm_eq_abs, Fin.prod_univ_two, one_mul]
   simpa only [norm_apply hJ] using abs_real_inner_le_norm (J (v 0)) (v 1)
