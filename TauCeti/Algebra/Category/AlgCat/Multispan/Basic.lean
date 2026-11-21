@@ -77,6 +77,26 @@ private def toLinearSection (s : AlgCat.sectionsSubalgebra I.multispan) :
     I.asSemimoduleIndex.mem_sectionsSubmodule_multispan.mpr
       ⟨fun a => s.property (.fst a), fun a => s.property (.snd a)⟩⟩
 
+private theorem toLinearSection_apply_right
+    (s : AlgCat.sectionsSubalgebra I.multispan) (b : J.R) :
+    (I.toLinearSection s).val (.right b) = s.val (.right b) := rfl
+
+private def toAlgebraSection (s : SemimoduleCat.sectionsSubmodule I.asSemimoduleIndex.multispan) :
+    AlgCat.sectionsSubalgebra I.multispan := by
+  refine ⟨fun j => match j with
+    | .left a => s.val (.left a)
+    | .right b => s.val (.right b), ?_⟩
+  obtain ⟨hf, hg⟩ := I.asSemimoduleIndex.mem_sectionsSubmodule_multispan.mp s.property
+  intro j j' f
+  cases f with
+  | id j => rfl
+  | fst a => exact hf a
+  | snd a => exact hg a
+
+private theorem toAlgebraSection_apply_right
+    (s : SemimoduleCat.sectionsSubmodule I.asSemimoduleIndex.multispan) (b : J.R) :
+    (I.toAlgebraSection s).val (.right b) = s.val (.right b) := rfl
+
 /-- Under joint injectivity, the chamber values determine the entire section. -/
 theorem restrictAlgebraSections_injective
     (hinj : ∀ a, Function.Injective ((I.fst a).hom.prod (I.snd a).hom)) :
@@ -86,8 +106,7 @@ theorem restrictAlgebraSections_injective
       I.asSemimoduleIndex.restrictSections (I.toLinearSection t) := by
     apply Subtype.ext
     funext b
-    rw [restrictSections_apply, restrictSections_apply]
-    change s.val (.right b) = t.val (.right b)
+    simp only [restrictSections_apply, toLinearSection_apply_right]
     exact congrArg (fun x => x.val b) h
   have hs := I.asSemimoduleIndex.restrictSections_injective hinj hr
   apply Subtype.ext
@@ -104,22 +123,10 @@ theorem restrictAlgebraSections_surjective :
     I.asSemimoduleIndex.mem_compatibleFamilies_iff_forall_mem_range.mpr
       (I.mem_compatibleAlgebraFamilies.mp x.property)
   obtain ⟨s, hs⟩ := I.asSemimoduleIndex.restrictSections_surjective ⟨_, hx⟩
-  let t : ∀ j, I.multispan.obj j := fun j => match j with
-    | .left a => s.val (.left a)
-    | .right b => s.val (.right b)
-  have ht : t ∈ AlgCat.sectionsSubalgebra I.multispan := by
-    obtain ⟨hf, hg⟩ := I.asSemimoduleIndex.mem_sectionsSubmodule_multispan.mp s.property
-    intro j j' f
-    cases f with
-    | id j => rfl
-    | fst a => exact hf a
-    | snd a => exact hg a
-  apply Exists.intro ⟨t, ht⟩
-  apply Subtype.ext
-  funext b
+  refine ⟨I.toAlgebraSection s, Subtype.ext (funext fun b => ?_)⟩
+  rw [restrictAlgebraSections_apply, toAlgebraSection_apply_right]
   have hb := congrArg (fun y => y.val b) hs
   rw [restrictSections_apply] at hb
-  change s.val (.right b) = x.val b at hb ⊢
   exact hb
 
 /-- For jointly injective spans, restriction to chamber values is an algebra equivalence. -/
@@ -144,17 +151,34 @@ theorem matchingFamilyAlgEquiv_symm_apply_right
     ((I.matchingFamilyAlgEquiv hinj).symm x).val (.right b) = x.val b :=
   congrArg (fun z => z.val b) ((I.matchingFamilyAlgEquiv hinj).apply_symm_apply x)
 
+/-- The first incident map sends a reconstructed face to its prescribed chamber value. -/
+@[simp]
+theorem fst_matchingFamilyAlgEquiv_symm_apply_left
+    (hinj : ∀ a, Function.Injective ((I.fst a).hom.prod (I.snd a).hom))
+    (x : I.compatibleAlgebraFamilies) (a : J.L) :
+    (I.fst a).hom (((I.matchingFamilyAlgEquiv hinj).symm x).val (.left a)) =
+      x.val (J.fst a) :=
+  (((I.matchingFamilyAlgEquiv hinj).symm x).property (.fst a)).trans
+    (I.matchingFamilyAlgEquiv_symm_apply_right hinj x (J.fst a))
+
+/-- The second incident map sends a reconstructed face to its prescribed chamber value. -/
+@[simp]
+theorem snd_matchingFamilyAlgEquiv_symm_apply_left
+    (hinj : ∀ a, Function.Injective ((I.fst a).hom.prod (I.snd a).hom))
+    (x : I.compatibleAlgebraFamilies) (a : J.L) :
+    (I.snd a).hom (((I.matchingFamilyAlgEquiv hinj).symm x).val (.left a)) =
+      x.val (J.snd a) :=
+  (((I.matchingFamilyAlgEquiv hinj).symm x).property (.snd a)).trans
+    (I.matchingFamilyAlgEquiv_symm_apply_right hinj x (J.snd a))
+
 /-- The reconstructed value at a face is the unique common lift of the two incident values. -/
 theorem eq_matchingFamilyAlgEquiv_symm_apply_left_iff
     (hinj : ∀ a, Function.Injective ((I.fst a).hom.prod (I.snd a).hom))
     (x : I.compatibleAlgebraFamilies) (a : J.L) {y : I.left a} :
     y = ((I.matchingFamilyAlgEquiv hinj).symm x).val (.left a) ↔
       (I.fst a).hom y = x.val (J.fst a) ∧ (I.snd a).hom y = x.val (J.snd a) := by
-  let s := (I.matchingFamilyAlgEquiv hinj).symm x
-  have hf := (s.property (.fst a)).trans
-    (I.matchingFamilyAlgEquiv_symm_apply_right hinj x (J.fst a))
-  have hg := (s.property (.snd a)).trans
-    (I.matchingFamilyAlgEquiv_symm_apply_right hinj x (J.snd a))
+  have hf := I.fst_matchingFamilyAlgEquiv_symm_apply_left hinj x a
+  have hg := I.snd_matchingFamilyAlgEquiv_symm_apply_left hinj x a
   exact ⟨by rintro rfl; exact ⟨hf, hg⟩, fun h =>
     hinj a (Prod.ext (h.1.trans hf.symm) (h.2.trans hg.symm))⟩
 
@@ -195,15 +219,16 @@ theorem matchingFamilyAlgEquiv_symm_naturality
   let transported := (Functor.sectionsFunctor _).map
     (Functor.whiskerRight α (forget (AlgCat R))) ⟨source.val, source.property⟩
   let s : AlgCat.sectionsSubalgebra I'.multispan := ⟨transported.val, transported.property⟩
+  -- The type-valued section functor applies the component of the forgotten map.
+  have htransport (k : WalkingMultispan J) : s.val k = (α.app k).hom (source.val k) := rfl
   have hs : (I'.matchingFamilyAlgEquiv hinj').symm (compatibleAlgebraFamiliesMap α x) = s := by
     apply I'.restrictAlgebraSections_injective hinj'
     apply Subtype.ext
     funext b
     rw [restrictAlgebraSections_apply, restrictAlgebraSections_apply,
-      matchingFamilyAlgEquiv_symm_apply_right, compatibleAlgebraFamiliesMap_apply]
-    change (α.app (.right b)).hom (x.val b) = (α.app (.right b)).hom (source.val (.right b))
+      matchingFamilyAlgEquiv_symm_apply_right, compatibleAlgebraFamiliesMap_apply, htransport]
     exact congrArg (α.app (.right b)).hom (I.matchingFamilyAlgEquiv_symm_apply_right hinj x b).symm
-  exact congrArg (fun z => z.val j) hs
+  exact (congrArg (fun z => z.val j) hs).trans (htransport j)
 
 end Maps
 
