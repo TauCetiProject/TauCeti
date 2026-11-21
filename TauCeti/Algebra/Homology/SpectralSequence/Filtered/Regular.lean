@@ -36,7 +36,7 @@ of weak convergence has two steps.
 
 * **Mittag-Leffler.** Regularity at every position `t ≤ q` makes the tower of the modules
   `H^n(F_{q+1}/F_s)`, `s ≤ q`, Mittag-Leffler
-  (`CategoryTheory.Abelian.SpectralObject.exists_range_le_range_of_isRegularAt`). So a class of
+  (`CategoryTheory.Abelian.SpectralObject.exists_rangeStableFrom_of_isRegularAt`). So a class of
   `H^n(F_{q+1}/F_q)` lying in every `Z_r` extends to a compatible family of classes of all the
   `H^n(F_{q+1}/F_s)`
   (`CategoryTheory.Abelian.SpectralObject.exists_compatible_family_of_forall_mem_range`).
@@ -303,7 +303,7 @@ theorem exists_spectralObject_H_map_eq_of_isRegularAt {q n i₀ : ℤ}
         (WithBotTop.coe_le_coe.2 (by omega))) w := by
   have hi₀ := hq.le
   -- The tower `s ↦ H^n(s ≤ q + 1)` is Mittag-Leffler.
-  have hml (s : ℤ) (hs : s ≤ q) := (spectralObject G).exists_range_le_range_of_isRegularAt hs
+  have hml (s : ℤ) (hs : s ≤ q) := (spectralObject G).exists_rangeStableFrom_of_isRegularAt hs
     fun t _ ht ↦ (eq_or_lt_of_le ht).elim (fun h ↦ h ▸ ⟨i₀, hq⟩) (hreg t)
   obtain ⟨x, hx, hxq⟩ := (spectralObject G).exists_compatible_family_of_forall_mem_range hml
     (((spectralObject G).H n).map (twoδ₁Toδ₀' (i : EInt) (q : EInt) ((q + 1 : ℤ) : EInt)
@@ -313,7 +313,7 @@ theorem exists_spectralObject_H_map_eq_of_isRegularAt {q n i₀ : ℤ}
       · exact ⟨((spectralObject G).H n).map (twoδ₁Toδ₀' (i : EInt) (i' : EInt)
           ((q + 1 : ℤ) : EInt) (WithBotTop.coe_le_coe.2 hii') (WithBotTop.coe_le_coe.2 (by omega)))
           w, (spectralObject G).H_map_map_apply _ _ _ w⟩
-      · exact hq.range_le rfl i' (by omega) ⟨((spectralObject G).H n).map (twoδ₁Toδ₀' (i : EInt)
+      · exact hq.range_le i' (by omega) ⟨((spectralObject G).H n).map (twoδ₁Toδ₀' (i : EInt)
           (i₀ : EInt) ((q + 1 : ℤ) : EInt) (WithBotTop.coe_le_coe.2 hi)
           (WithBotTop.coe_le_coe.2 (by omega))) w, (spectralObject G).H_map_map_apply _ _ _ w⟩
   obtain ⟨y, hy⟩ := exists_spectralObject_H_map_eq_of_isCompleteFiltration G hc hs x hx
