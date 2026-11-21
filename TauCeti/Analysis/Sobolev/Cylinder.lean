@@ -549,7 +549,7 @@ private theorem sq_norm_restrictValue_jetLp (T : ℝ) (ξ : testSection V) :
 
 /-- A semi-Fredholm estimate for test sections, as for the linearized Floer operator, gives
 `‖f‖ ≤ √C (‖D f‖ + ‖f|_{[-T, T] × [0, 1]}‖)` on the jets of test sections. -/
-private theorem norm_jetLp_le {M : ℝ × ℝ → V × V × V →L[ℝ] W} (hM : MemLp M ∞ stripMeasure)
+theorem norm_jetLp_le {M : ℝ × ℝ → V × V × V →L[ℝ] W} (hM : MemLp M ∞ stripMeasure)
     {C T : ℝ}
     (hest : HasSemiFredholmEstimate M C T)
     (ξ : testSection V) :
