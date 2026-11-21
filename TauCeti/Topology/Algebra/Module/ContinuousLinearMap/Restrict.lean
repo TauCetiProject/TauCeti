@@ -51,7 +51,7 @@ variable {R S M N : Type*} [Semiring R] [Semiring S] [SMul R S]
 /-- The restriction of an `R`-linear map `f : M →L[R] N` mapping the submodule `p` into the
 submodule `q`, as an `R`-linear map `p →L[R] q`. The submodules may be over a larger ring `S` of
 scalars, whose module structure on `p` and `q` is kept. -/
-@[expose] def restrictOfTower (f : M →L[R] N) {p : Submodule S M} {q : Submodule S N}
+def restrictOfTower (f : M →L[R] N) {p : Submodule S M} {q : Submodule S N}
     (h : ∀ x ∈ p, f x ∈ q) : p →L[R] q where
   toFun x := ⟨f x, h x x.property⟩
   map_add' x y := Subtype.ext (f.map_add x y)
@@ -61,7 +61,7 @@ scalars, whose module structure on `p` and `q` is kept. -/
 @[simp]
 theorem coe_restrictOfTower_apply (f : M →L[R] N) {p : Submodule S M} {q : Submodule S N}
     (h : ∀ x ∈ p, f x ∈ q) (x : p) : (f.restrictOfTower h x : N) = f x :=
-  rfl
+  (rfl)
 
 end Tower
 

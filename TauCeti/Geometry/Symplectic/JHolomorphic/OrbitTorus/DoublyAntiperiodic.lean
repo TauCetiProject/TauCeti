@@ -198,7 +198,7 @@ def doublyAntiperiodicTorusOperator (ℓ : ℝ) (S : C(AddCircle T, F →L[ℝ] 
 theorem coe_doublyAntiperiodicTorusOperator_apply (ℓ : ℝ) (S : C(AddCircle T, F →L[ℝ] F))
     (hS : ∀ t, S (t + (T / 2 : ℝ)) = S t) (x : doublyAntiperiodicSobolev F ℓ) :
     (doublyAntiperiodicTorusOperator T ℓ S hS x : 𝕐[F]) = antiperiodicTorusOperator T ℓ S x :=
-  (rfl)
+  ContinuousLinearMap.coe_restrictOfTower_apply _ _ _
 
 /-- **The reference operator is complex linear.** For `S = 0` the operator `∂s + J₀ ∂t` on maps
 antiperiodic in both factors commutes with multiplication by complex scalars, the complex
@@ -207,7 +207,9 @@ theorem doublyAntiperiodicTorusOperator_zero_apply_smul (ℓ : ℝ) (c : ℂ)
     (x : doublyAntiperiodicSobolev F ℓ) :
     doublyAntiperiodicTorusOperator T ℓ 0 (fun _ ↦ rfl) (c • x) =
       c • doublyAntiperiodicTorusOperator T ℓ 0 (fun _ ↦ rfl) x :=
-  Subtype.ext (antiperiodicTorusOperator_zero_apply_smul T ℓ c (x : antiperiodicSobolev F ℓ))
+  Subtype.ext <| by
+    have h := coe_doublyAntiperiodicTorusOperator_apply (F := F) T ℓ 0 fun _ ↦ rfl
+    rw [Submodule.coe_smul, h, h, Submodule.coe_smul, antiperiodicTorusOperator_zero_apply_smul]
 
 /-! ### The half rotation -/
 
