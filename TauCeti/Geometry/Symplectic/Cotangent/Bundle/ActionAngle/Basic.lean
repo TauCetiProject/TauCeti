@@ -85,7 +85,7 @@ theorem proj_actionAngleCover (x : (ι → ℝ) × (ι → ℝ)) :
 `∑ j, I_j * v_j`. -/
 @[simp]
 theorem actionAngleCover_snd_apply (x : (ι → ℝ) × (ι → ℝ)) (v : ι → ℝ) :
-    (actionAngleCover p x).2 v = ∑ j, x.2 j * v j := by
+    (actionAngleCover p x).snd v = ∑ j, x.2 j * v j := by
   -- Read `v` as a tangent vector at `[θ]`, where the fibrewise sum is evaluated termwise.
   let w : TangentSpace (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (fun i ↦ (x.1 i : AddCircle p)) := v
   refine (sum_apply Finset.univ (fun j ↦ x.2 j • SmoothForm.degreeOneEquiv
@@ -99,12 +99,12 @@ theorem actionAngleCover_snd_apply (x : (ι → ℝ) × (ι → ℝ)) (v : ι �
 coordinate vectors. -/
 def torusActions [DecidableEq ι]
     (z : CotangentBundle (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (ι → AddCircle p)) : ι → ℝ :=
-  fun j ↦ z.2 (Pi.single j 1)
+  fun j ↦ z.snd (Pi.single j 1)
 
 /-- The `j`-th action of a covector is its value on the `j`-th coordinate vector. -/
 theorem torusActions_apply [DecidableEq ι]
     (z : CotangentBundle (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (ι → AddCircle p)) (j : ι) :
-    torusActions p z j = z.2 (Pi.single j 1) :=
+    torusActions p z j = z.snd (Pi.single j 1) :=
   (rfl)
 
 /-- **The actions of `κ(θ, I)` are `I`.** The covector `κ(θ, I)` takes the value `I_j` on the
@@ -165,7 +165,7 @@ theorem surjective_actionAngleCover :
   refine ⟨(θ, torusActions p z), CotangentBundle.ext hθ fun v ↦ ?_⟩
   -- A covector is determined by its values on the coordinate vectors.
   refine (actionAngleCover_snd_apply p _ v).trans ?_
-  refine ((LinearMap.pi_apply_eq_sum_univ z.2.toLinearMap v).trans ?_).symm
+  refine ((LinearMap.pi_apply_eq_sum_univ z.snd.toLinearMap v).trans ?_).symm
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   simp only [← Pi.single_apply, Pi.single_comm, smul_eq_mul, mul_comm]
   -- `z.2` is a covector on the tangent space, a type synonym of `ι → ℝ`.
@@ -193,7 +193,7 @@ theorem mpullback_liouvilleForm_actionAngleCover_apply (x : (ι → ℝ) × (ι 
     mpullback 𝓘(ℝ, (ι → ℝ) × (ι → ℝ))
         ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ, (ι → ℝ) →L[ℝ] ℝ))
         (actionAngleCover p)
-        (liouvilleForm (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (ι → AddCircle p)).1 x v =
+        (liouvilleForm (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (ι → AddCircle p)).val x v =
       ∑ j, x.2 j * (v 0).1 j := by
   -- The base map `(θ, I) ↦ [θ]` is the covering map of the torus after `fst`, so its derivative
   -- is `fst`.
@@ -213,7 +213,7 @@ private def actionAngleLiouvilleCLM :
     ((ι → ℝ) × (ι → ℝ)) →L[ℝ] (((ι → ℝ) × (ι → ℝ)) [⋀^Fin 1]→L[ℝ] ℝ) :=
   (ContinuousAlternatingMap.ofSubsingletonLIE (𝕜 := ℝ) (E := (ι → ℝ) × (ι → ℝ)) (F := ℝ)
     (0 : Fin 1)).toContinuousLinearEquiv.toContinuousLinearMap.comp
-    (∑ j, ((ContinuousLinearMap.smulRightL ℝ ((ι → ℝ) × (ι → ℝ)) ℝ
+    (∑ j, ((StrongDual.smulRightL ℝ ((ι → ℝ) × (ι → ℝ)) ℝ
       ((ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℝ) j).comp
         (ContinuousLinearMap.fst ℝ (ι → ℝ) (ι → ℝ)))).comp
       ((ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℝ) j).comp
@@ -271,7 +271,7 @@ theorem eval₂_symplecticForm_mfderiv_actionAngleCover (x : (ι → ℝ) × (ι
   have hκ := contMDiff_actionAngleCover (ι := ι) p
   -- The pulled-back Liouville form is the linear form `∑ j, I_j dθ_j`.
   have hpull : (SmoothForm.mpullback (actionAngleCover p) hκ
-      (liouvilleForm (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (ι → AddCircle p))).1 =
+      (liouvilleForm (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (ι → AddCircle p))).val =
       actionAngleLiouville := by
     funext y
     ext u

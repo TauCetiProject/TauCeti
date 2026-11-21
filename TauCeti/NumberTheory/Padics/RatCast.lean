@@ -116,7 +116,7 @@ theorem exists_nat_eq_pow_mul (k : Nat.Primes → ℕ)
   let S := hS.toFinset
   have hkS {q : Nat.Primes} (hq : q ∉ S) : k q = 0 := by simpa [S] using hq
   refine ⟨∏ q ∈ S, (q : ℕ) ^ k q, fun p ↦ ∏ q ∈ S.erase p, (q : ℕ) ^ k q,
-    Finset.prod_ne_zero_iff.mpr fun q _ ↦ pow_ne_zero _ q.2.ne_zero, fun p ↦ ?_,
+    Finset.prod_ne_zero_iff.mpr fun q _ ↦ pow_ne_zero _ q.property.ne_zero, fun p ↦ ?_,
     fun {p q} hqp ↦ ?_, fun p ↦ ?_⟩
   · by_cases hp : p ∈ S
     · exact (Finset.mul_prod_erase S _ hp).symm
@@ -125,9 +125,10 @@ theorem exists_nat_eq_pow_mul (k : Nat.Primes → ℕ)
     · exact Finset.dvd_prod_of_mem _ (Finset.mem_erase.mpr ⟨hqp, hq⟩)
     · simp [hkS hq]
   · rw [PadicInt.isUnit_iff, PadicInt.norm_natCast_eq_one_iff,
-      Nat.Prime.coprime_iff_not_dvd p.2, Prime.dvd_finsetProd_iff p.2.prime]
+      Nat.Prime.coprime_iff_not_dvd p.property, Prime.dvd_finsetProd_iff p.property.prime]
     rintro ⟨q, hq, hpq⟩
     exact (Finset.mem_erase.mp hq).1
-      (Subtype.ext ((Nat.prime_dvd_prime_iff_eq p.2 q.2).mp (p.2.dvd_of_dvd_pow hpq))).symm
+      (Subtype.ext ((Nat.prime_dvd_prime_iff_eq p.property q.property).mp
+          (p.property.dvd_of_dvd_pow hpq))).symm
 
 end Padic

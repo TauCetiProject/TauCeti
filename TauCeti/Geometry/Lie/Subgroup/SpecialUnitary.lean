@@ -111,8 +111,8 @@ theorem unitsLieAlgebraLieEquiv_coe_mem_sl
       (GLSpecialUnitary n 𝕜 : Subgroup (Matrix n n 𝕜)ˣ)) :
     unitsLieAlgebraLieEquiv (R := Matrix n n 𝕜) (X : LeftInvariantDerivation _ _) ∈
       LieAlgebra.SpecialLinear.sl n 𝕜 := by
-  have hX := X.2
-  rw [← (unitsLieAlgebraLieEquiv (R := Matrix n n 𝕜)).symm_apply_apply X.1,
+  have hX := X.property
+  rw [← (unitsLieAlgebraLieEquiv (R := Matrix n n 𝕜)).symm_apply_apply X.val,
     unitsLieAlgebraLieEquiv_symm_mem_GLSpecialUnitary_lieSubalgebra_iff] at hX
   exact LieAlgebra.SpecialLinear.mem_sl_iff.2 hX.2
 

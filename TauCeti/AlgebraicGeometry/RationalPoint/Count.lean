@@ -69,9 +69,10 @@ theorem numberOfRationalPoints_pullback {X Y : Scheme.{u}} (a : X ⟶ Spec (.of 
   have : HomIsOver (pullback.fst a b) (Spec (.of k)) := ⟨rfl⟩
   rw [numberOfRationalPoints_def, numberOfRationalPoints_def, numberOfRationalPoints_def,
     ← Nat.card_prod]
-  exact Nat.card_congr <| (Equiv.subtypeEquivRight fun _ ↦ ⟨fun h ↦ ⟨h⟩, fun h ↦ h.1⟩).trans <|
+  exact Nat.card_congr <| (Equiv.subtypeEquivRight fun _ ↦ ⟨fun h ↦ ⟨h⟩,
+      fun h ↦ h.comp_over⟩).trans <|
     (IsPullback.homIsOverEquiv _ (IsPullback.of_hasPullback a b)).trans <|
-    Equiv.prodCongr (Equiv.subtypeEquivRight fun _ ↦ ⟨fun h ↦ h.1, fun h ↦ ⟨h⟩⟩)
-      (Equiv.subtypeEquivRight fun _ ↦ ⟨fun h ↦ h.1, fun h ↦ ⟨h⟩⟩)
+    Equiv.prodCongr (Equiv.subtypeEquivRight fun _ ↦ ⟨fun h ↦ h.comp_over, fun h ↦ ⟨h⟩⟩)
+      (Equiv.subtypeEquivRight fun _ ↦ ⟨fun h ↦ h.comp_over, fun h ↦ ⟨h⟩⟩)
 
 end AlgebraicGeometry.Scheme.Hom

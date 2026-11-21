@@ -253,7 +253,7 @@ private theorem exists_actionAngle_aux (hσ : σ.IsSymplectic) (hF : ContMDiff I
     extend (fun q : W ↦ Ψ q) (fun q : W ↦ κ q) fun _ ↦ κ 0
   have hΦΨ (q : (ι → ℝ) × (ι → ℝ)) (hq : q ∈ W) : Φ (Ψ q) = κ q :=
     FactorsThrough.extend_apply (f := fun q : W ↦ Ψ q) (g := fun q : W ↦ κ q)
-      (fun q q' h ↦ (hκeq q q' q.2 q'.2).2 h) _ ⟨q, hq⟩
+      (fun q q' h ↦ (hκeq q q' q.property q'.property).2 h) _ ⟨q, hq⟩
   have hΨloc (q : (ι → ℝ) × (ι → ℝ)) (hq : q ∈ W) :
       IsLocalDiffeomorphAt 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) I ∞ Ψ q :=
     (hΨ q.2 hq.2.1).2.1 q.1
@@ -279,7 +279,8 @@ private theorem exists_actionAngle_aux (hσ : σ.IsSymplectic) (hF : ContMDiff I
   refine ⟨Ψ '' W, (fun c ↦ a⁻¹ • A c) '' U₀, Φ, fun J ↦ ΦA.symm (a • J), ?_, ?_, ?_, ?_, ?_, ?_,
     ?_, ?_, ?_⟩
   · -- `Ψ` is a local homeomorphism on the open set `W`, so `Ψ '' W` is open.
-    exact ((isLocalDiffeomorphOn_iff W).2 fun q ↦ hΨloc q q.2).isLocalHomeomorphOn.isOpen_image hW
+    exact ((isLocalDiffeomorphOn_iff W).2 fun q ↦ hΨloc q
+        q.property).isLocalHomeomorphOn.isOpen_image hW
   · -- The component is swept out by the angles at the value `F x ∈ U₀`.
     rw [← hrange]
     rintro _ ⟨θ, rfl⟩

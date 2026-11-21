@@ -79,7 +79,7 @@ theorem exists_homotopyRel_frontier (hs : Convex ℝ s) (hsc : IsClosed s)
   set a : I → E → ℝ := fun t y ↦ (1 - (t : ℝ)) + (t : ℝ) * (max (gauge K (y - p)) c)⁻¹
   have hmax (y : E) : 0 < max (gauge K (y - p)) c := lt_max_of_lt_right hc
   have ha_nonneg (t : I) (y : E) : 0 ≤ a t y :=
-    add_nonneg (sub_nonneg.2 t.2.2) (mul_nonneg t.2.1 (inv_nonneg.2 (hmax y).le))
+    add_nonneg (sub_nonneg.2 t.property.2) (mul_nonneg t.property.1 (inv_nonneg.2 (hmax y).le))
   have hgauge (t : I) (y : E) : gauge K (a t y • (y - p)) =
       (1 - (t : ℝ)) * gauge K (y - p) + (t : ℝ) * (gauge K (y - p) / max (gauge K (y - p)) c) := by
     rw [gauge_smul_of_nonneg (ha_nonneg t y), smul_eq_mul]
@@ -109,7 +109,7 @@ theorem exists_homotopyRel_frontier (hs : Convex ℝ s) (hsc : IsClosed s)
     have h1 := (hmem y).1 hy
     have h2 : gauge K (y - p) / max (gauge K (y - p)) c ≤ 1 :=
       (div_le_one (hmax y)).2 (le_max_left _ _)
-    nlinarith [t.2.1, t.2.2]
+    nlinarith [t.property.1, t.property.2]
   · -- Outside `U`, the cut-off `c` is inactive, so the endpoint has gauge one.
     have hγc := hfar y hyU
     rw [hfr, hg, add_sub_cancel_left, hgauge, max_eq_left hγc]

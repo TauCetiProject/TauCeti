@@ -94,7 +94,7 @@ theorem sample_eq_toUnitPath_arcPoint (γ : MoorePath X) {r : ℕ} (i : Fin r) :
   rw [sample_apply, toUnitPath_apply]
   congr 2
   apply NNReal.coe_injective
-  rw [unitInterval.coe_toNNReal, unitInterval.coe_arcPoint i.2]
+  rw [unitInterval.coe_toNNReal, unitInterval.coe_arcPoint i.isLt]
   simp
 
 variable {X : Type*} [PseudoMetricSpace X]
@@ -114,7 +114,7 @@ theorem exists_sample_arc_dist_lt {K : Set (MoorePath X)} (hK : IsCompact K)
   refine ⟨n + 1, by omega, fun r hr γ hγ i t ht₀ ht₁ ↦ ?_⟩
   let s : I := unitInterval.arcPoint r i 0
   have hs : (s : ℝ) = (i.val : ℝ) / r := by
-    rw [unitInterval.coe_arcPoint i.2, Set.Icc.coe_zero, add_zero]
+    rw [unitInterval.coe_arcPoint i.isLt, Set.Icc.coe_zero, add_zero]
   have hmesh : 1 / (r : ℝ) < δ :=
     (one_div_le_one_div_of_le (by positivity) (by exact_mod_cast hr)).trans_lt hn
   have hst : dist s t < δ := by

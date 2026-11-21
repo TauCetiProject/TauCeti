@@ -108,9 +108,9 @@ variable (p : ℝ) [Fact (0 < p)] {ι : Type*} [Fintype ι] [DecidableEq ι]
 theorem generalLinearGroup_smul_snd_apply (A : GL ι ℤ)
     (z : CotangentBundle (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (ι → AddCircle p))
     (v : ι → ℝ) :
-    (A • z).2 v = z.2 (((A⁻¹ : GL ι ℤ) : Matrix ι ι ℤ).map ((↑) : ℤ → ℝ) *ᵥ v) :=
+    (A • z).snd v = z.snd (((A⁻¹ : GL ι ℤ) : Matrix ι ι ℤ).map ((↑) : ℤ → ℝ) *ᵥ v) :=
   (smul_snd_apply A z v).trans
-    (congrArg z.2 (AddCircle.mfderiv_generalLinearGroup_smul_apply p A⁻¹ _ v))
+    (congrArg z.snd (AddCircle.mfderiv_generalLinearGroup_smul_apply p A⁻¹ _ v))
 
 /-- **The cotangent lift of an integral linear automorphism changes the actions by the inverse
 transpose.** The action `I_i = ξ(e_i)` of `A • ξ` is `∑ j, A⁻¹ j i * I_j`. -/
@@ -122,7 +122,7 @@ theorem torusActions_generalLinearGroup_smul (A : GL ι ℤ)
   refine (generalLinearGroup_smul_snd_apply p A z _).trans ?_
   rw [Matrix.mulVec_single_one]
   -- The `i`-th column of `A⁻¹` has coordinates `A⁻¹ j i`.
-  refine (LinearMap.pi_apply_eq_sum_univ z.2.toLinearMap _).trans ?_
+  refine (LinearMap.pi_apply_eq_sum_univ z.snd.toLinearMap _).trans ?_
   simp only [← Pi.single_apply, Pi.single_comm]
   simp only [smul_eq_mul, Matrix.col_apply, Matrix.map_apply]
   -- `z.2` is a covector on the tangent space, a type synonym of `ι → ℝ`, so
@@ -169,8 +169,8 @@ theorem proj_integralAffineDiffeomorph (A : GL ι ℤ) (b : ι → ℝ)
 theorem integralAffineDiffeomorph_snd_apply (A : GL ι ℤ) (b : ι → ℝ)
     (z : CotangentBundle (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (ι → AddCircle p))
     (v : ι → ℝ) :
-    (integralAffineDiffeomorph p A b z).2 v =
-      z.2 (((A⁻¹ : GL ι ℤ) : Matrix ι ι ℤ).map ((↑) : ℤ → ℝ) *ᵥ v) + ∑ j, b j * v j := by
+    (integralAffineDiffeomorph p A b z).snd v =
+      z.snd (((A⁻¹ : GL ι ℤ) : Matrix ι ι ℤ).map ((↑) : ℤ → ℝ) *ᵥ v) + ∑ j, b j * v j := by
   rw [integralAffineDiffeomorph_apply, vectorBundleTranslateDiffeomorph_apply]
   -- The translated covector is the sum of the lifted covector and the value of the form.
   exact congrArg₂ (· + ·) (generalLinearGroup_smul_snd_apply p A z v)
@@ -244,7 +244,7 @@ theorem integralAffineDiffeomorph_one_zero :
     (integralAffineDiffeomorph_snd_apply p 1 0 z v).trans <| by
       simp only [inv_one, Units.val_one, Matrix.map_one _ Int.cast_zero Int.cast_one,
         Pi.zero_apply, zero_mul, Finset.sum_const_zero, add_zero]
-      exact congrArg z.2 (Matrix.one_mulVec v)
+      exact congrArg z.snd (Matrix.one_mulVec v)
 
 /-- **Composition of integral affine changes.** Applying `Φ_(A', b')` and then `Φ_(A, b)` is the
 integral affine change `Φ_(A A', A⁻ᵀ b' + b)`, matching the composite
@@ -270,7 +270,7 @@ theorem integralAffineDiffeomorph_trans (A A' : GL ι ℤ) (b b' : ι → ℝ) :
       -- Both sides are dot products: `b' ⬝ᵥ (M *ᵥ w) = (b' ᵥ* M) ⬝ᵥ w`.
       rw [Matrix.mulVec_transpose]
       exact Matrix.dotProduct_mulVec b' _ w
-    rw [congrArg z.2 (hz v), hb v, add_assoc, ← Finset.sum_add_distrib]
+    rw [congrArg z.snd (hz v), hb v, add_assoc, ← Finset.sum_add_distrib]
     simp only [Pi.add_apply, add_mul]
 
 /-- **Inverse of an integral affine change.** The inverse of `Φ_(A, b)` is the integral affine
