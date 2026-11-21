@@ -9,6 +9,7 @@ public import TauCeti.Probability.Distributions.WrappedCauchy.Density
 public import TauCeti.Probability.Quantile
 public import TauCeti.Probability.Distributions.Dirac
 import TauCeti.MeasureTheory.Measure.AddCircle
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
 /-!
 # The wrapped Cauchy law in the fixed angle chart
@@ -139,9 +140,9 @@ theorem cdf_wrappedCauchyAngleMeasure_eq_integral (hγ : 0 < γ) (hx : x ∈ Icc
     ((continuous_wrappedCauchyPDFReal m γ).comp (AddCircle.continuous_mk' _)).div_const _
   rw [cdf_eq_real, wrappedCauchyAngleMeasure_eq_withDensity hγ,
     Measure.restrict_congr_set Ico_ae_eq_Ioc,
-    measureReal_withDensity_ofReal
+    MeasureTheory.measureReal_withDensity_ofReal
       (ae_of_all _ fun t ↦ (div_pos (wrappedCauchyPDFReal_pos _ hγ _) two_pi_pos).le)
-      measurableSet_Iic hf.aemeasurable,
+      nullMeasurableSet_Iic hf.aemeasurable,
     Measure.restrict_restrict measurableSet_Iic, Iic_inter_Ioc_of_le hx.2,
     ← intervalIntegral.integral_of_le hx.1, intervalIntegral.integral_div]
 

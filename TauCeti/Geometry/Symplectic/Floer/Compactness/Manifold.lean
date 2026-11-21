@@ -44,8 +44,11 @@ needs no closedness of `ω` and no inner product on `E`, and for a symplectic ch
   energy density is nonnegative where `J` is tamed by `ω`
   (`TauCeti.SmoothTwoForm.IsNondegenerate.floerEnergyDensity_nonneg_of_tames_inChartAt`).
 * In the chart, `ω(·, J ·)` is a continuous family of bilinear forms on `E`, positive when `J` is
-  tamed by `ω`, hence uniformly coercive on a compact window. So the intrinsic Floer energy
-  density `ω(∂ₛu - X_{K_s}, ∂ₜu - X_{K_t})` controls `‖∂ₛv‖²` up to an additive constant
+  tamed by `ω`, hence uniformly coercive and bounded on a compact window: `c ‖ξ‖² ≤ ω(a, J a) ≤
+  C ‖ξ‖²` for tangent vectors `a` with tangent coordinate `ξ`
+  (`TauCeti.SmoothTwoForm.IsNondegenerate.exists_pos_forall_mul_norm_sq_le_eval₂_le_mul_norm_sq`).
+  So the intrinsic Floer energy density `ω(∂ₛu - X_{K_s}, ∂ₜu - X_{K_t})` controls `‖∂ₛv‖²` up to
+  an additive constant
   (`TauCeti.SmoothTwoForm.IsNondegenerate.exists_forall_norm_fderiv_extChartAt_comp_sq_le`).
   Conversely, `‖∂ₛv‖²` controls the energy density up to constants, without taming
   (`TauCeti.SmoothTwoForm.exists_forall_floerEnergyDensity_le_norm_fderiv_extChartAt_comp_sq`).
@@ -101,7 +104,10 @@ converge to some `p₀ ∈ C`
 (`IsNondegenerate.exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset`, from the
 vector-space theorem
 `TauCeti.SymplecticForm.exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset`).
-The theorem for fixed data is the case of a one-point window.
+The theorem for fixed data is the case of a one-point window. For a family of Hamiltonian data
+on `X × (ℂ × M)` that is smooth jointly in the parameter, the domain point and the target point,
+reparametrized by a `Cⁿ` map `P → X`, the chart reading is `Cⁿ` jointly in `(p, z, y)`
+(`TauCeti.Floer.contDiffOn_comp_prodMap_equivRealProdCLM_symm_symm`).
 
 For smooth solutions and fixed data the convergence holds in `C¹`
 (`IsNondegenerate.exists_pos_forall_tendstoLocallyUniformlyOn_fderiv_subseq_off_finset`): the
@@ -248,26 +254,28 @@ theorem IsNondegenerate.floerEnergyDensity_nonneg_of_tames_inChartAt (hω : ω.I
   rw [(extChartAt I α).left_inv hus] at hJ
   exact floerEnergyDensity_nonneg hω hJ h
 
-/-- **The energy density bounds the derivative in a chart, uniformly on a compact window.** Let
-the structures `J(z, x)` be tamed by `ω` and, read in the chart at `α`, continuous on `D × K`,
-together with the Hamiltonian vector field of `K_s`, for compact `D ⊆ ℝ × ℝ` and a compact set `K`
-of chart coordinates. There are constants `A, B ≥ 0` such that every solution `u` of the Floer
-equation for `J(z, u)` at a point `z ∈ D`, with `u z` in the chart source and coordinate in `K`,
-satisfies `‖∂ₛv(z)‖² ≤ A ω(∂ₛu - X_{K_s}, ∂ₜu - X_{K_t}) + B` for its coordinate expression
-`v = extChartAt I α ∘ u`. -/
-theorem IsNondegenerate.exists_forall_norm_fderiv_extChartAt_comp_sq_le
+/-- **The energy form is comparable to the chart norm, uniformly on a compact window.** Let the
+structures `J(z, x)` be tamed by `ω` and, read in the chart at `α`, continuous on `D × K`, for
+compact `D ⊆ ℝ × ℝ` and a compact set `K` of chart coordinates. There are constants `c > 0` and `C`
+such that at every point `x` with chart coordinate `y ∈ K`, and for every `z ∈ D`, the energy form
+`ω_x(a, J(z, x) a)` of the tangent vector `a` with tangent coordinate `ξ` in the chart at `α`
+satisfies `c ‖ξ‖² ≤ ω_x(a, J(z, x) a) ≤ C ‖ξ‖²`. -/
+theorem IsNondegenerate.exists_pos_forall_mul_norm_sq_le_eval₂_le_mul_norm_sq
     (hω : ω.IsNondegenerate) (α : M) {D : Set (ℝ × ℝ)} {K : Set E} (hD : IsCompact D)
     (hK : IsCompact K) (hKα : K ⊆ (extChartAt I α).target)
     (hJ : ContinuousOn (Floer.almostComplexInChartAt I α J) (D ×ˢ K))
-    (hX : ContinuousOn (ω.hamiltonianVectorFieldInChartAt α Ks) (D ×ˢ K))
     (hJt : ∀ z ∈ D, ∀ y ∈ K, (hω.symplecticFormAt ((extChartAt I α).symm y)).Tames
       (J z ((extChartAt I α).symm y))) :
-    ∃ A ≥ 0, ∃ B ≥ 0, ∀ ⦃u : ℝ × ℝ → M⦄ ⦃z : ℝ × ℝ⦄, z ∈ D → u z ∈ (extChartAt I α).source →
-      extChartAt I α (u z) ∈ K → MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u z →
-      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u z))
-        (ω.perturbedMFDeriv Ks Kt u z).toLinearMap →
-      ‖fderiv ℝ (extChartAt I α ∘ u) z stdComplexLineReal‖ ^ 2 ≤
-        A * ω.floerEnergyDensity Ks Kt u z + B := by
+    ∃ c > 0, ∃ C, ∀ z ∈ D, ∀ y ∈ K, ∀ ξ : E,
+      c * ‖ξ‖ ^ 2 ≤ SmoothBundleForm.eval₂ ω ((extChartAt I α).symm y)
+          ((trivializationAt E (TangentSpace I) α).symmL ℝ ((extChartAt I α).symm y) ξ)
+          (J z ((extChartAt I α).symm y)
+            ((trivializationAt E (TangentSpace I) α).symmL ℝ ((extChartAt I α).symm y) ξ)) ∧
+        SmoothBundleForm.eval₂ ω ((extChartAt I α).symm y)
+          ((trivializationAt E (TangentSpace I) α).symmL ℝ ((extChartAt I α).symm y) ξ)
+          (J z ((extChartAt I α).symm y)
+            ((trivializationAt E (TangentSpace I) α).symmL ℝ ((extChartAt I α).symm y) ξ)) ≤
+          C * ‖ξ‖ ^ 2 := by
   set e := extChartAt I α
   set T := trivializationAt E (TangentSpace I) α with hT
   set Jc := Floer.almostComplexInChartAt I α J
@@ -300,15 +308,43 @@ theorem IsNondegenerate.exists_forall_norm_fderiv_extChartAt_comp_sq_le
     have hSa : T.symmL ℝ (e.symm p.2) a ≠ 0 := fun h0 ↦ ha <| by
       rw [← Trivialization.continuousLinearMapAt_symmL (R := ℝ) _ (hbase hy) a, h0, map_zero]
     simpa only [IsNondegenerate.symplecticFormAt_apply] using hJt p.1 hp.1 p.2 hp.2 _ hSa
-  obtain ⟨B, hB⟩ := hDK.exists_bound_of_continuousOn hX
+  obtain ⟨C, hC⟩ := hDK.exists_forall_le_mul_norm_sq hbc
+  exact ⟨c, hc, C, fun z hz y hy ξ ↦ ⟨(hb (z, y) ⟨hz, hy⟩ ξ) ▸ hcb _ ⟨hz, hy⟩ ξ,
+    (hb (z, y) ⟨hz, hy⟩ ξ) ▸ hC _ ⟨hz, hy⟩ ξ⟩⟩
+
+/-- **The energy density bounds the derivative in a chart, uniformly on a compact window.** Let
+the structures `J(z, x)` be tamed by `ω` and, read in the chart at `α`, continuous on `D × K`,
+together with the Hamiltonian vector field of `K_s`, for compact `D ⊆ ℝ × ℝ` and a compact set `K`
+of chart coordinates. There are constants `A, B ≥ 0` such that every solution `u` of the Floer
+equation for `J(z, u)` at a point `z ∈ D`, with `u z` in the chart source and coordinate in `K`,
+satisfies `‖∂ₛv(z)‖² ≤ A ω(∂ₛu - X_{K_s}, ∂ₜu - X_{K_t}) + B` for its coordinate expression
+`v = extChartAt I α ∘ u`. -/
+theorem IsNondegenerate.exists_forall_norm_fderiv_extChartAt_comp_sq_le
+    (hω : ω.IsNondegenerate) (α : M) {D : Set (ℝ × ℝ)} {K : Set E} (hD : IsCompact D)
+    (hK : IsCompact K) (hKα : K ⊆ (extChartAt I α).target)
+    (hJ : ContinuousOn (Floer.almostComplexInChartAt I α J) (D ×ˢ K))
+    (hX : ContinuousOn (ω.hamiltonianVectorFieldInChartAt α Ks) (D ×ˢ K))
+    (hJt : ∀ z ∈ D, ∀ y ∈ K, (hω.symplecticFormAt ((extChartAt I α).symm y)).Tames
+      (J z ((extChartAt I α).symm y))) :
+    ∃ A ≥ 0, ∃ B ≥ 0, ∀ ⦃u : ℝ × ℝ → M⦄ ⦃z : ℝ × ℝ⦄, z ∈ D → u z ∈ (extChartAt I α).source →
+      extChartAt I α (u z) ∈ K → MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u z →
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u z))
+        (ω.perturbedMFDeriv Ks Kt u z).toLinearMap →
+      ‖fderiv ℝ (extChartAt I α ∘ u) z stdComplexLineReal‖ ^ 2 ≤
+        A * ω.floerEnergyDensity Ks Kt u z + B := by
+  set e := extChartAt I α
+  obtain ⟨c, hc, _, hcb⟩ :=
+    hω.exists_pos_forall_mul_norm_sq_le_eval₂_le_mul_norm_sq α hD hK hKα hJ hJt
+  obtain ⟨B, hB⟩ := (hD.prod hK).exists_bound_of_continuousOn hX
   refine ⟨2 / c, by positivity, 2 * B ^ 2, by positivity, fun u z hz hus huK hu h ↦ ?_⟩
   have hp : (z, e (u z)) ∈ D ×ˢ K := ⟨hz, huK⟩
   -- The coordinate `a` of the perturbed derivative `∂ₛu - X_{K_s}` has `c ‖a‖² ≤ e(u)`.
   set Xs := ω.hamiltonianVectorFieldInChartAt α Ks (z, e (u z))
   set a := fderiv ℝ (e ∘ u) z stdComplexLineReal - Xs
-  have hea : b (z, e (u z)) a a = ω.floerEnergyDensity Ks Kt u z := by
-    rw [hb_apply, ω.floerEnergyDensity_eq_inChartAt hu hus h]
-  have hca : c * ‖a‖ ^ 2 ≤ ω.floerEnergyDensity Ks Kt u z := hea ▸ hcb _ hp a
+  have hca : c * ‖a‖ ^ 2 ≤ ω.floerEnergyDensity Ks Kt u z := by
+    refine (hcb z hz (e (u z)) huK a).1.trans_eq ?_
+    rw [← ω.inChartAt_apply_almostComplexInChartAt (hKα huK) z a,
+      ω.floerEnergyDensity_eq_inChartAt hu hus h]
   have hXB : ‖Xs‖ ≤ B := by simpa using hB _ hp
   refine (norm_sq_le_of_mul_norm_sub_sq_le hc hca).trans ?_
   gcongr
@@ -455,6 +491,41 @@ section
 
 open Filter Function MeasureTheory Metric Set Topology
 open scoped Manifold
+
+namespace TauCeti.Floer
+
+/-- **Families of data read in a chart.** Let `F` be a family on `X × (ℂ × M)` which is `Cⁿ` at
+the points `(a, (z, x))` with `z` in a set `S` (in real coordinates), such as the Hamiltonian data
+of a family of Floer problems on `S`, smooth jointly in the family parameter, the domain point and
+the target point. Read in a smooth partial diffeomorphism `φ : M ⊇ U → V` and reparametrized by a
+`Cⁿ` map `g : P → X`, the family `(p, z, y) ↦ F (g p, (z, φ⁻¹ y))` is `Cⁿ` on `P × S × φ(U)`. -/
+theorem contDiffOn_comp_prodMap_equivRealProdCLM_symm_symm {E H M V X P Y : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+    [TopologicalSpace M] [ChartedSpace H M] [NormedAddCommGroup V] [NormedSpace ℝ V]
+    [NormedAddCommGroup X] [NormedSpace ℝ X] [NormedAddCommGroup P] [NormedSpace ℝ P]
+    [NormedAddCommGroup Y] [NormedSpace ℝ Y] {n : ℕ∞} {F : X × (ℂ × M) → Y} {S : Set (ℝ × ℝ)}
+    (hF : ∀ a, ∀ z ∈ S, ∀ x,
+      ContMDiffAt (𝓘(ℝ, X).prod (𝓘(ℝ, ℂ).prod I)) 𝓘(ℝ, Y) n F
+        (a, (Complex.equivRealProdCLM.symm z, x)))
+    {g : P → X} (hg : ContDiff ℝ n g) (φ : PartialDiffeomorph I 𝓘(ℝ, V) M V (⊤ : ℕ∞)) :
+    ContDiffOn ℝ n (fun q : P × ((ℝ × ℝ) × V) ↦
+      F (g q.1, (Complex.equivRealProdCLM.symm q.2.1, φ.symm q.2.2)))
+      (univ ×ˢ (S ×ˢ φ.target)) := by
+  have hm : ContMDiffOn 𝓘(ℝ, P × ((ℝ × ℝ) × V)) (𝓘(ℝ, X).prod (𝓘(ℝ, ℂ).prod I)) n
+      (fun q : P × ((ℝ × ℝ) × V) ↦ (g q.1, (Complex.equivRealProdCLM.symm q.2.1, φ.symm q.2.2)))
+      (univ ×ˢ (univ ×ˢ φ.target)) :=
+    (hg.comp contDiff_fst).contMDiff.contMDiffOn.prodMk
+      ((Complex.equivRealProdCLM.symm.contDiff.comp
+        (contDiff_fst.comp contDiff_snd)).contMDiff.contMDiffOn.prodMk
+          ((φ.symm.contMDiffOn.of_le (WithTop.coe_le_coe.2 le_top)).comp
+            (contDiff_snd.comp contDiff_snd).contMDiff.contMDiffOn fun _ hq ↦ hq.2.2))
+  rintro ⟨p, z, y⟩ ⟨-, hz, hy⟩
+  have h := (hF (g p) z hz (φ.symm y)).comp_contMDiffWithinAt (p, (z, y))
+    (hm _ ⟨trivial, trivial, hy⟩)
+  exact (contMDiffWithinAt_iff_contDiffWithinAt.1 h).mono
+    (prod_mono subset_rfl (prod_mono (subset_univ _) subset_rfl))
+
+end TauCeti.Floer
 
 namespace TauCeti.SmoothTwoForm.IsNondegenerate
 
