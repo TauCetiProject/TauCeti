@@ -48,6 +48,9 @@ complete list of linear characters.
   surjectively onto `rootsOfUnity (orderOf a) M`.
 * `CommGroup.finprod_monoidHom_apply`: the product of `g (χ a)` over all characters of `G` is the
   product of `g ζ` over `rootsOfUnity (orderOf a) M`, raised to `#(G ⧸ Subgroup.zpowers a)`.
+* `MonoidHom.exists_comp_eq_iff_ker_le_ker`: a character extends along a homomorphism into a
+  finite commutative group exactly when it kills the kernel of that homomorphism. This is
+  Mathlib's `MonoidHom.domRestrict_surjective` applied to the range of the homomorphism.
 
 ## References
 
@@ -165,3 +168,24 @@ theorem finprod_monoidHom_apply {N : Type*} [CommMonoid N] (a : G) (g : Mˣ → 
     (surjective_evalRootsOfUnityHom M a) (fun ζ ↦ g ζ)
 
 end CommGroup
+
+namespace MonoidHom
+
+variable {A B R : Type*} [Group B] [CommMonoid R]
+
+/-- A character extends along a homomorphism into a finite commutative group exactly when it kills
+the kernel of that homomorphism. -/
+theorem exists_comp_eq_iff_ker_le_ker [CommGroup A] [Finite A]
+    [HasEnoughRootsOfUnity R (Monoid.exponent A)] (f : B →* A) (χ : B →* Rˣ) :
+    (∃ ψ : A →* Rˣ, ψ.comp f = χ) ↔ f.ker ≤ χ.ker := by
+  constructor
+  · rintro ⟨ψ, rfl⟩
+    rw [← comap_ker]
+    exact f.ker_le_comap _
+  · intro hχ
+    obtain ⟨ψ, hψ⟩ := domRestrict_surjective (M := R) _
+      (f.rangeRestrict.liftOfSurjective f.rangeRestrict_surjective ⟨χ, by rwa [ker_rangeRestrict]⟩)
+    refine ⟨ψ, MonoidHom.ext fun b ↦ ?_⟩
+    simpa using DFunLike.congr_fun hψ (f.rangeRestrict b)
+
+end MonoidHom

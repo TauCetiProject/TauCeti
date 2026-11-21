@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Normed.Operator.Compact.Ehrling
 public import TauCeti.Analysis.Normed.Operator.Compact.Pi
 public import TauCeti.Analysis.Sobolev.Wkp.FiniteCover
 public import TauCeti.Analysis.Sobolev.Wkp.Local.Compactness
+public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Exponent
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Transfer
 
 /-!
@@ -45,6 +46,8 @@ spaces (`TauCeti.SectionChartData.isCompactOperator_of_forall_apply`).
 
 ## Main results
 
+* `TauCeti.SobolevSection.isCompactOperator_lowerOrdersL_comp_ofExponentLEL`:
+  `W^{k+d+1,q}(V) → W^{k,p}(V)` is compact for `1 ≤ p ≤ q ≤ ∞`.
 * `TauCeti.SectionChartData.isCompactOperator_of_forall_apply`: a map into the Sobolev sections is
   a compact operator as soon as all its chart components are.
 * `TauCeti.SobolevSection.isCompactOperator_lowerOrderL`: **Rellich's theorem** for Sobolev
@@ -153,6 +156,14 @@ theorem isCompactOperator_lowerOrdersL [T2Space M] (d : ℕ) :
     IsCompactOperator (A.sectionChartData.lowerOrdersL μ p k (d + 1)) := by
   rw [SectionChartData.lowerOrdersL_succ]
   exact (isCompactOperator_lowerOrderL A μ p (k + d)).clm_comp _
+
+/-- **Rellich with exponent change.** The inclusion `W^{k+d+1,q} → W^{k,p}` is compact
+for `1 ≤ p ≤ q`; both exponents may be infinite. -/
+theorem isCompactOperator_lowerOrdersL_comp_ofExponentLEL [T2Space M]
+    {q : ℝ≥0∞} [Fact (1 ≤ q)] (hpq : p ≤ q) (d : ℕ) :
+    IsCompactOperator ((A.sectionChartData.lowerOrdersL μ p k (d + 1)).comp
+      (A.sectionChartData.ofExponentLEL μ (k + (d + 1)) hpq)) :=
+  (isCompactOperator_lowerOrdersL A μ p k d).comp_clm _
 
 /-- **Ehrling's inequality for Sobolev sections.** On a compact manifold without boundary, given by
 a finite bundle atlas of a Hausdorff manifold, for `1 ≤ p ≤ ∞`, orders `k < k + d + 1` and every

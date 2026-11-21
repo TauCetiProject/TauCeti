@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.SingularSupport
 public import TauCeti.Analysis.Pseudodifferential.Sobolev
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Differential
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Elliptic
+import TauCeti.Analysis.Distribution.LineDeriv
 import TauCeti.Analysis.Distribution.TemperedDistribution.Cutoff
 import TauCeti.Analysis.Distribution.TemperedDistribution.Deriv
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
@@ -346,11 +347,10 @@ theorem sobolevSingularSupport_sum_smul_smulLeftCLM_iteratedLineDerivOp_of_foral
     (T : 𝓓'(Ω, ℂ)) :
     (∑ i ∈ t, c i • smulLeftCLM (hg i) (∂^{m i} T)).sobolevSingularSupport s =
       T.sobolevSingularSupport (s + M) := by
-  refine subset_antisymm (by simpa using
-    sobolevSingularSupport_sum_smul_smulLeftCLM_iteratedLineDerivOp_subset (s + M) t c hg m hk T)
-    fun x hx ↦ mem_sobolevSingularSupport_iff.2 ⟨(mem_sobolevSingularSupport_iff.1 hx).1,
-      fun hP ↦ (mem_sobolevSingularSupport_iff.1 hx).2
-        (hP.of_sum_smul_smulLeftCLM_iteratedLineDerivOp hg hk (hσ x hP.mem))⟩
+  ext x
+  simp only [mem_sobolevSingularSupport_iff, and_congr_right_iff]
+  exact fun hx ↦ not_congr (isLocallySobolevAt_sum_smul_smulLeftCLM_iteratedLineDerivOp_iff hg hk
+    (hσ x hx))
 
 /-- **Elliptic regularity for the Laplacian.** `T` is `H^(s + 2)` exactly where `Δ T` is `H^s`. -/
 @[simp]
@@ -361,7 +361,7 @@ theorem sobolevSingularSupport_laplacianCLM (s : ℝ) (T : 𝓓'(Ω, ℂ)) :
   have h := sobolevSingularSupport_sum_smul_smulLeftCLM_iteratedLineDerivOp_of_forall_ne_zero s
     Finset.univ (fun _ ↦ 1) (g := fun _ _ ↦ 1) (fun _ ↦ contDiff_const) (k := fun _ ↦ 2)
     (fun i ↦ ![b i, b i]) (M := 2) (fun _ _ ↦ le_rfl) (fun _ _ ξ hξ ↦ ?_) T
-  · simpa [laplacianCLM_eq_sum b, iteratedLineDerivOp_succ_left, Fin.tail] using h
+  · simpa [laplacianCLM_eq_sum_iteratedLineDerivOp b] using h
   simp only [ofReal_one, one_mul]
   rw [constCoeffPrincipalSymbol_laplacian]
   exact_mod_cast (pow_pos (norm_pos_iff.2 hξ) 2).ne'
