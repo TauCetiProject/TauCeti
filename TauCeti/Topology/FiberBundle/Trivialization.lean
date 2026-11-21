@@ -18,6 +18,8 @@ trivialization over their union, with the same forward and inverse maps on each 
 The coordinate change between two trivializations is jointly continuous in the base point and the
 fibre coordinate over the overlap of their base sets, which makes the transition functions of a
 fibre bundle continuous.
+A homeomorphism of the total space with a product, lying over the base, is a trivialization over
+the whole base.
 A map is continuous as soon as every point of the base lies in the base set of a trivialization,
 and the trivializations at the points of the base of a fibre bundle make its projection such a
 locally trivial map.
@@ -33,12 +35,17 @@ fibre is a bijection onto the base.
 * `IsCompact.exists_finset_subset_preimage_biUnion_baseSet`: a compact subset of the total
   space lies over a finite union of preferred trivializing base sets.
 * `TauCeti.continuous_of_forall_exists_trivialization`: a locally trivial map is continuous.
+* `Homeomorph.toTrivialization`: a homeomorphism `Z ≃ₜ B × F` over `B` is a trivialization of the
+  projection `Z → B` over all of `B`.
 * `FiberBundle.exists_trivialization_mem_baseSet`: the projection of a fibre bundle is locally
   trivial.
 * `Bundle.Trivialization.continuousOn_coordChange`: coordinate changes are jointly continuous over
   the overlap of the base sets.
 * `Bundle.Trivialization.isOpen_preimage`: the preimage under `proj` of an open subset of
   `e.baseSet` is open.
+* `Bundle.Trivialization.coe_restrOpen`, `Bundle.Trivialization.coe_restrOpen_symm`,
+  `Bundle.Trivialization.restrOpen_baseSet`: the restriction of a trivialization to an open set of
+  the base keeps its forward and inverse maps and intersects its base set with that set.
 * `Bundle.Trivialization.op_smul_symm`, `Bundle.Trivialization.op_smul_symm_one`, and
   `Bundle.Trivialization.op_snd_smul_symm_one`: for a right-equivariant trivialization, the
   inverse turns right multiplication into the right action and recovers points over `e.baseSet`
@@ -98,6 +105,25 @@ theorem continuousOn_coordChange (e₁ e₂ : Trivialization F proj) :
     (e₂.toOpenPartialHomeomorph.continuousOn.comp hsymm hmaps)).congr
     fun p hp ↦ ?_
   simp only [Function.comp_apply, e₂.coe_coe, ← e₁.mk_coordChange e₂ hp.1.1 hp.1.2 p.2]
+
+/-- The restriction of a trivialization to an open set has the original forward map. -/
+@[simp]
+theorem coe_restrOpen (e : Trivialization F proj) (s : Set B) (hs : IsOpen s) :
+    ⇑(e.restrOpen s hs) = e :=
+  (rfl)
+
+/-- The restriction of a trivialization to an open set has the original inverse map. -/
+@[simp]
+theorem coe_restrOpen_symm (e : Trivialization F proj) (s : Set B) (hs : IsOpen s) :
+    ⇑(e.restrOpen s hs).toOpenPartialHomeomorph.symm = e.toOpenPartialHomeomorph.symm :=
+  (rfl)
+
+/-- The base set of the restriction of a trivialization to an open set `s` is the intersection
+of its base set with `s`. -/
+@[simp]
+theorem restrOpen_baseSet (e : Trivialization F proj) (s : Set B) (hs : IsOpen s) :
+    (e.restrOpen s hs).baseSet = e.baseSet ∩ s :=
+  (rfl)
 
 /-- For a trivialization `e` of `proj`, the preimage of an open subset of `e.baseSet` is open. -/
 theorem isOpen_preimage (e : Trivialization F proj) {s : Set B} (hs : IsOpen s)
@@ -164,6 +190,40 @@ theorem continuous_of_forall_exists_trivialization {B F Z : Type*} [TopologicalS
     exact e.continuousAt_proj (e.mem_source.2 he)
 
 end TauCeti
+
+namespace Homeomorph
+
+variable {B F Z : Type*} [TopologicalSpace B] [TopologicalSpace F] [TopologicalSpace Z]
+  {proj : Z → B} (h : Z ≃ₜ B × F) (hproj : ∀ z, (h z).1 = proj z)
+
+/-- A homeomorphism `h : Z ≃ₜ B × F` lying over `B` is a trivialization of `proj : Z → B` over all
+of `B`. -/
+def toTrivialization : Trivialization F proj where
+  toOpenPartialHomeomorph := h.toOpenPartialHomeomorph
+  baseSet := univ
+  open_baseSet := isOpen_univ
+  source_eq := by simp
+  target_eq := by simp
+  proj_toFun z _ := hproj z
+
+/-- The trivialization of a homeomorphism over the base has the whole base as its base set. -/
+@[simp]
+theorem toTrivialization_baseSet : (h.toTrivialization hproj).baseSet = univ :=
+  (rfl)
+
+/-- The trivialization of a homeomorphism over the base is the homeomorphism. -/
+@[simp]
+theorem coe_toTrivialization : ⇑(h.toTrivialization hproj) = h :=
+  (rfl)
+
+/-- The inverse of the trivialization of a homeomorphism over the base is the inverse
+homeomorphism. -/
+@[simp]
+theorem coe_toTrivialization_symm :
+    ⇑(h.toTrivialization hproj).toOpenPartialHomeomorph.symm = h.symm :=
+  (rfl)
+
+end Homeomorph
 
 namespace FiberBundle
 
