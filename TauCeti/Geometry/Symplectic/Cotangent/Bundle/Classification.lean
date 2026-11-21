@@ -78,9 +78,9 @@ private theorem snd_apply_mfderiv_of_proj_apply_eq
     (hψ : SmoothForm.mpullback ψ ψ.contMDiff (liouvilleForm J N) = liouvilleForm I M)
     {f : M → N} (hproj : ∀ z, (ψ z).proj = f z.proj)
     (z : CotangentBundle I M) (v : TangentSpace I z.proj) :
-    (ψ z).2 (mfderiv I J f z.proj v) = z.2 v := by
+    (ψ z).snd (mfderiv I J f z.proj v) = z.snd v := by
   obtain ⟨w, rfl⟩ := Bundle.mfderiv_proj_surjective (IB := I) z v
-  have h := congrArg (fun α : SmoothForm _ _ ℝ 1 ↦ α.1 z fun _ ↦ w) hψ
+  have h := congrArg (fun α : SmoothForm _ _ ℝ 1 ↦ α.val z fun _ ↦ w) hψ
   simpa only [mpullback_liouvilleForm_apply_of_proj_apply_eq ψ.contMDiff hproj z,
     liouvilleForm_apply] using h
 
@@ -100,14 +100,14 @@ theorem apply_mk_zero_of_mpullback_liouvilleForm
     ψ ⟨z.proj, 0⟩ = ⟨(ψ z).proj, 0⟩ := by
   -- As `c → 0⁺`, `ψ (c • z)` tends to `ψ` of the zero covector by continuity, while it equals
   -- `c • ψ z`, which tends to the zero covector over the base point of `ψ z`.
-  have hM : Tendsto (fun c : ℝ ↦ ψ ⟨z.proj, c • z.2⟩) (𝓝[>] 0) (𝓝 (ψ ⟨z.proj, 0⟩)) := by
-    have hc : Continuous fun c : ℝ ↦ (⟨z.proj, c • z.2⟩ : CotangentBundle I M) :=
+  have hM : Tendsto (fun c : ℝ ↦ ψ ⟨z.proj, c • z.snd⟩) (𝓝[>] 0) (𝓝 (ψ ⟨z.proj, 0⟩)) := by
+    have hc : Continuous fun c : ℝ ↦ (⟨z.proj, c • z.snd⟩ : CotangentBundle I M) :=
       (FiberBundle.continuous_totalSpaceMk _ _ z.proj).comp (continuous_id.smul continuous_const)
     have h := (ψ.continuous.comp hc).tendsto 0
     simp only [Function.comp_apply, zero_smul] at h
     exact h.mono_left nhdsWithin_le_nhds
-  have hN : Tendsto (fun c : ℝ ↦ ψ ⟨z.proj, c • z.2⟩) (𝓝[>] 0) (𝓝 ⟨(ψ z).proj, 0⟩) := by
-    have hc : Continuous fun c : ℝ ↦ (⟨(ψ z).proj, c • (ψ z).2⟩ : CotangentBundle J N) :=
+  have hN : Tendsto (fun c : ℝ ↦ ψ ⟨z.proj, c • z.snd⟩) (𝓝[>] 0) (𝓝 ⟨(ψ z).proj, 0⟩) := by
+    have hc : Continuous fun c : ℝ ↦ (⟨(ψ z).proj, c • (ψ z).snd⟩ : CotangentBundle J N) :=
       (FiberBundle.continuous_totalSpaceMk _ _ (ψ z).proj).comp
         (continuous_id.smul continuous_const)
     have h := hc.tendsto 0
@@ -156,7 +156,7 @@ private theorem cotangent_baseDiffeomorph
   -- Both covectors evaluate `v = dh_x ((dh_x)⁻¹ v)` as `z` evaluates `(dh_x)⁻¹ v`.
   exact (cotangent_snd_apply h z v).trans
     ((snd_apply_mfderiv_of_proj_apply_eq ψ hψ hproj z _).symm.trans
-      (congrArg (ψ z).2 (h.mfderiv_apply_mfderiv_symm_apply (by simp) z.proj v)))
+      (congrArg (ψ z).snd (h.mfderiv_apply_mfderiv_symm_apply (by simp) z.proj v)))
 
 /-- **Liouville-preserving diffeomorphisms of cotangent bundles are cotangent lifts.** On
 Hausdorff manifolds without boundary, a smooth diffeomorphism `ψ : T*M → T*N` with

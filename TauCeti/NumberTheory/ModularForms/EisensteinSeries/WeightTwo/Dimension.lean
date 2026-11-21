@@ -143,15 +143,16 @@ private theorem finrank_span_range_weightTwoForm :
   have hne (a : CharIndex N 2) : a.weightTwoForm ≠ 0 ↔ a ≠ one :=
     (CharIndex.weightTwoForm_eq_zero_iff_eq_one a).not
   let g (a : {a : CharIndex N 2 // a ≠ one}) : {a : CharIndex N 2 | a.weightTwoForm ≠ 0} :=
-    ⟨a.1, (hne a.1).mpr a.2⟩
+    ⟨a.val, (hne a.val).mpr a.property⟩
   have hg : Function.Injective g := fun a b hab ↦
     Subtype.ext (by simpa [g] using congrArg Subtype.val hab)
-  have hli : LinearIndependent ℂ fun a : {a : CharIndex N 2 // a ≠ one} ↦ a.1.weightTwoForm :=
+  have hli : LinearIndependent ℂ fun a : {a : CharIndex N 2 // a ≠ one} ↦ a.val.weightTwoForm :=
     CharIndex.linearIndepOn_weightTwoForm.comp g hg
   have hspan : Submodule.span ℂ (Set.range (CharIndex.weightTwoForm (N := N))) =
-      Submodule.span ℂ (Set.range fun a : {a : CharIndex N 2 // a ≠ one} ↦ a.1.weightTwoForm) := by
+      Submodule.span ℂ (Set.range fun a : {a : CharIndex N 2 // a ≠ one} ↦ a.val.weightTwoForm)
+          := by
     refine le_antisymm (Submodule.span_le.mpr (Set.range_subset_iff.mpr fun a ↦ ?_))
-      (Submodule.span_mono (Set.range_subset_iff.mpr fun a ↦ ⟨a.1, rfl⟩))
+      (Submodule.span_mono (Set.range_subset_iff.mpr fun a ↦ ⟨a.val, rfl⟩))
     by_cases ha : a = one
     · rw [(CharIndex.weightTwoForm_eq_zero_iff_eq_one a).mpr ha]
       exact zero_mem _
@@ -216,18 +217,18 @@ theorem weightTwoEisensteinSubspace_eq_comap_congruenceG2Subspace (χ : (ZMod N)
     CharIndex.weightTwoForm_mem_modFormCharSpace χ
   rw [span_range_weightTwoForm_eq_congruenceG2Subspace] at hcut
   have hrange : Set.range ((modFormCharSpace 2 χ).subtype ∘
-      fun a : {a : CharIndex N 2 // a.nebentypus = χ} ↦ a.1.weightTwoInCharSpace a.2) =
+      fun a : {a : CharIndex N 2 // a.nebentypus = χ} ↦ a.val.weightTwoInCharSpace a.property) =
         CharIndex.weightTwoForm '' {a | a.nebentypus = χ} := by
     ext g
     constructor
     · rintro ⟨a, rfl⟩
-      exact ⟨a.1, a.2, by simp⟩
+      exact ⟨a.val, a.property, by simp⟩
     · rintro ⟨a, ha, rfl⟩
       exact ⟨⟨a, ha⟩, by simp⟩
   have hfχ : (f : ModularForm ((Gamma1 N).map (mapGL ℝ)) 2) ∈
       (weightTwoEisensteinSubspace χ).map (modFormCharSpace 2 χ).subtype := by
     rw [weightTwoEisensteinSubspace_def, Submodule.map_span, ← Set.range_comp, hrange, ← hcut]
-    exact Submodule.mem_inf.mpr ⟨Submodule.mem_comap.mp hf, f.2⟩
+    exact Submodule.mem_inf.mpr ⟨Submodule.mem_comap.mp hf, f.property⟩
   obtain ⟨g, hg, hgf⟩ := Submodule.mem_map.mp hfχ
   rwa [← Subtype.ext hgf]
 
