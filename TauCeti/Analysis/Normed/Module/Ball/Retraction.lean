@@ -76,7 +76,7 @@ open scoped NNReal
 
 namespace TauCeti
 
-variable {E : Type*} {r : ℝ} {x y : E}
+variable {E : Type*} {r : ℝ} {x : E}
 
 section Seminormed
 
