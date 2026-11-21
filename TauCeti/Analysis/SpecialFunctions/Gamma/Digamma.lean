@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Digamma
 public import Mathlib.Analysis.Analytic.Basic
 import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
-import TauCeti.Analysis.SpecialFunctions.Gamma.Order
 
 /-!
 # Analyticity of the complex digamma function
@@ -28,9 +27,9 @@ public section
 namespace Complex
 
 /-- The digamma function is analytic at every `s` that is not a nonpositive integer. -/
+@[fun_prop]
 theorem analyticAt_digamma {s : ℂ} (hs : ∀ n : ℕ, s ≠ -(n : ℂ)) : AnalyticAt ℂ digamma s := by
-  have h := (analyticAt_Gamma hs).deriv.div (analyticAt_Gamma hs) (Gamma_ne_zero hs)
-  simpa only [digamma_def, logDeriv, Pi.div_def] using h
+  simpa only [digamma_def] using (analyticAt_Gamma hs).logDeriv (Gamma_ne_zero hs)
 
 /-- The digamma function is analytic on the right half-plane `0 < Re s`. -/
 theorem analyticOnNhd_digamma_re_pos : AnalyticOnNhd ℂ digamma {s : ℂ | 0 < s.re} :=
