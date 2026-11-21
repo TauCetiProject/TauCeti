@@ -10,6 +10,7 @@ public import Mathlib.GroupTheory.Coxeter.Basic
 public import Mathlib.LinearAlgebra.BilinearForm.Basic
 public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 public import Mathlib.RepresentationTheory.Basic
+public import TauCeti.GroupTheory.Coxeter.Matrix
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Angle
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 
@@ -77,7 +78,9 @@ The second simple root is handled without a second induction: `σᵢ' σᵢ` is 
 
 * `CoxeterMatrix.geometricForm`: **the canonical bilinear form** of a Coxeter matrix, with
   `CoxeterMatrix.geometricForm_single_single` its Gram matrix and
-  `CoxeterMatrix.geometricForm_comm` its symmetry.
+  `CoxeterMatrix.geometricForm_comm` its symmetry, and
+  `CoxeterMatrix.geometricForm_eq_zero_of_eq_two` the orthogonality of vectors whose supports are
+  joined only by entries `2`.
 * `CoxeterMatrix.geometricReflection`: **the simple reflections**, with
   `CoxeterMatrix.geometricReflection_mul_self` saying that they are involutions,
   `CoxeterMatrix.geometricReflection_apply_single_self` that the `i`-th one negates the `i`-th
@@ -87,6 +90,8 @@ The second simple root is handled without a second induction: `σᵢ' σᵢ` is 
   `CoxeterMatrix.mapDomain_geometricReflection`: **a map of index types along which the Coxeter
   matrices agree** carries the canonical form to the canonical form and intertwines the simple
   reflections.
+* `CoxeterMatrix.geometricForm_restrict`: **the canonical form of a restriction**
+  (`CoxeterMatrix.restrict`) is the pullback of the canonical form along extension by zero.
 * `CoxeterMatrix.isLiftable_geometricReflection`: **the simple reflections satisfy the Coxeter
   relations**, so they lift along `CoxeterSystem.lift`.
 * `CoxeterSystem.geometricRepresentation`: **the standard geometric representation**, with
@@ -159,6 +164,22 @@ theorem geometricForm_comm (u v : B →₀ ℝ) : M.geometricForm u v = M.geomet
     | single i' b =>
       rw [geometricForm_single_single, geometricForm_single_single, M.symmetric i i']
       ring
+
+/-- **Vectors whose supports are joined only by entries `2` are orthogonal** for the canonical
+form: each Gram entry between them is `-cos (π / 2) = 0`. -/
+theorem geometricForm_eq_zero_of_eq_two {x y : B →₀ ℝ}
+    (h : ∀ i ∈ x.support, ∀ j ∈ y.support, M i j = 2) : M.geometricForm x y = 0 := by
+  have hx : M.geometricForm x = x.sum fun i a ↦ a • M.geometricForm (Finsupp.single i 1) := by
+    conv_lhs => rw [← x.sum_single]
+    simp only [Finsupp.sum, map_sum]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    rw [← map_smul, Finsupp.smul_single_one]
+  rw [hx, Finsupp.sum, LinearMap.sum_apply]
+  refine Finset.sum_eq_zero fun i hi ↦ ?_
+  rw [LinearMap.smul_apply, ← y.sum_single, map_finsuppSum, Finsupp.sum]
+  rw [Finset.sum_eq_zero fun j hj ↦ ?_, smul_zero]
+  rw [geometricForm_single_single, h i hi j hj]
+  norm_num
 
 /-! ### The simple reflections -/
 
@@ -251,6 +272,13 @@ theorem mapDomain_geometricReflection (hf : ∀ i j, M i j = M' (f i) (f j)) (i 
     Finsupp.mapDomain_smul, Finsupp.mapDomain_single, hform]
 
 end MapDomain
+
+/-- **The canonical form of a restriction** is the pullback of the canonical form along extension
+by zero, which sends the simple root of `i ∈ J` to the simple root of `i`. -/
+theorem geometricForm_restrict (J : Set B) (u v : J →₀ ℝ) :
+    (M.restrict J).geometricForm u v =
+      M.geometricForm (u.mapDomain Subtype.val) (v.mapDomain Subtype.val) :=
+  (geometricForm_mapDomain_mapDomain (fun _ _ ↦ M.restrict_apply J _ _) u v).symm
 
 /-! ### The rank-two computation -/
 

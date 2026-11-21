@@ -85,11 +85,11 @@ theorem wedgeWith_assoc_apply
     (φ : SmoothBundleForm I F₁ V₁ k) (ψ : SmoothBundleForm I F₂ V₂ l)
     (χ : SmoothBundleForm I F₃ V₃ m) (x : M)
     (v : Fin (k + l + m) → TangentSpace I x) :
-    (wedgeWith μ₁₂₃ h₁₂₃ s₁₂₃ (wedgeWith μ₁₂ h₁₂ s₁₂ φ ψ) χ).1 x v =
-      (wedgeWith μ₁₂₃' h₁₂₃' s₁₂₃' φ (wedgeWith μ₂₃ h₂₃ s₂₃ ψ χ)).1 x
+    (wedgeWith μ₁₂₃ h₁₂₃ s₁₂₃ (wedgeWith μ₁₂ h₁₂ s₁₂ φ ψ) χ).val x v =
+      (wedgeWith μ₁₂₃' h₁₂₃' s₁₂₃' φ (wedgeWith μ₂₃ h₂₃ s₂₃ ψ χ)).val x
         (v ∘ Fin.cast (Nat.add_assoc k l m).symm) := by
   rw [coe_wedgeWith, coe_wedgeWith, coe_wedgeWith, coe_wedgeWith]
-  exact bundleWedgeWith_assoc μ₁₂ μ₁₂₃ μ₂₃ μ₁₂₃' h₁₂ h₁₂₃ h₂₃ h₁₂₃' h φ.1 ψ.1 χ.1 x v
+  exact bundleWedgeWith_assoc μ₁₂ μ₁₂₃ μ₂₃ μ₁₂₃' h₁₂ h₁₂₃ h₂₃ h₁₂₃' h φ.val ψ.val χ.val x v
 
 end SmoothBundleForm
 
@@ -105,17 +105,17 @@ theorem wedgeWith_assoc_apply
     (φ : SmoothForm I M F₁ k) (ψ : SmoothForm I M F₂ l)
     (χ : SmoothForm I M F₃ m) (x : M)
     (v : Fin (k + l + m) → TangentSpace I x) :
-    (wedgeWith μ₁₂₃ (wedgeWith μ₁₂ φ ψ) χ).1 x v =
-      (wedgeWith μ₁₂₃' φ (wedgeWith μ₂₃ ψ χ)).1 x
+    (wedgeWith μ₁₂₃ (wedgeWith μ₁₂ φ ψ) χ).val x v =
+      (wedgeWith μ₁₂₃' φ (wedgeWith μ₂₃ ψ χ)).val x
         (v ∘ Fin.cast (Nat.add_assoc k l m).symm) := by
   rw [coe_wedgeWith, coe_wedgeWith, coe_wedgeWith, coe_wedgeWith]
-  exact RoughForm.wedgeWith_assoc μ₁₂ μ₁₂₃ μ₂₃ μ₁₂₃' h φ.1 ψ.1 χ.1 x v
+  exact RoughForm.wedgeWith_assoc μ₁₂ μ₁₂₃ μ₂₃ μ₁₂₃' h φ.val ψ.val χ.val x v
 
 /-- The scalar wedge of smooth forms is associative, with the tuple degree reassociated. -/
 theorem wedge_assoc_apply (φ : SmoothForm I M ℝ k) (ψ : SmoothForm I M ℝ l)
     (χ : SmoothForm I M ℝ m) (x : M) (v : Fin (k + l + m) → TangentSpace I x) :
-    (wedge (wedge φ ψ) χ).1 x v =
-      (wedge φ (wedge ψ χ)).1 x (v ∘ Fin.cast (Nat.add_assoc k l m).symm) := by
+    (wedge (wedge φ ψ) χ).val x v =
+      (wedge φ (wedge ψ χ)).val x (v ∘ Fin.cast (Nat.add_assoc k l m).symm) := by
   simpa only [wedge_def] using
     wedgeWith_assoc_apply (μ₁₂ := ContinuousLinearMap.mul ℝ ℝ)
       (μ₁₂₃ := ContinuousLinearMap.mul ℝ ℝ)

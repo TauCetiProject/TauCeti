@@ -61,7 +61,7 @@ private lemma fromSpecStalkOfMem_comp_basicOpen_isoSpec {S : Scheme.{u}} {W₀ :
       φ (algebraMap Γ(S, W₀) (Localization.Away (f : Γ(S, W₀))) r) =
         S.presheaf.germ W₀ s hs₀ r) :
     let hsW : s ∈ S.basicOpen (f : Γ(S, W₀)) :=
-      (hW₀.mem_basicOpen_iff_notMem_primeIdealOf ⟨s, hs₀⟩ (f : Γ(S, W₀))).mpr f.2
+      (hW₀.mem_basicOpen_iff_notMem_primeIdealOf ⟨s, hs₀⟩ (f : Γ(S, W₀))).mpr f.property
     (S.basicOpen (f : Γ(S, W₀))).fromSpecStalkOfMem s hsW ≫
         ((hW₀.basicOpen (f : Γ(S, W₀))).isoSpec ≪≫
           Scheme.Spec.mapIso eLoc.toCommRingCatIso.op).hom =
@@ -102,7 +102,8 @@ theorem exists_spread_fromSpecStalk {S : Scheme.{u}} (s : S)
   let _ : Algebra (Localization.Away (f : Γ(S, W₀))) (S.presheaf.stalk s) := φ.toAlgebra
   let W : S.Opens := S.basicOpen (f : Γ(S, W₀))
   have hW : IsAffineOpen W := hW₀.basicOpen (f : Γ(S, W₀))
-  have hsW : s ∈ W := (hW₀.mem_basicOpen_iff_notMem_primeIdealOf ⟨s, hs₀⟩ (f : Γ(S, W₀))).mpr f.2
+  have hsW : s ∈ W :=
+    (hW₀.mem_basicOpen_iff_notMem_primeIdealOf ⟨s, hs₀⟩ (f : Γ(S, W₀))).mpr f.property
   have hlocW : IsLocalization.Away (f : Γ(S, W₀)) Γ(S, W) :=
     hW₀.isLocalization_basicOpen (f : Γ(S, W₀))
   let eLoc : Localization.Away (f : Γ(S, W₀)) ≃+* Γ(S, W) :=

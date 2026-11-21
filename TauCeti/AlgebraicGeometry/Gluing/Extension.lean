@@ -82,7 +82,7 @@ private theorem preimage_opensRange_gluedToBase :
     rw [← Scheme.Hom.comp_apply, gluedToBase, pushout.inr_desc] at hu
     have hu' : u ∈ j ⁻¹ᵁ V := by
       rw [Scheme.Hom.mem_preimage, hu]
-      exact v.2
+      exact v.property
     obtain ⟨w, hw⟩ := (f ∣_ j ⁻¹ᵁ V).surjective ⟨u, hu'⟩
     refine ⟨(f ⁻¹ᵁ j ⁻¹ᵁ V).ι w, ?_⟩
     rw [← Scheme.Hom.comp_apply, pushout.condition, Scheme.Hom.comp_apply]
@@ -133,7 +133,7 @@ theorem exists_isPullback_isIso_morphismRestrict :
     · refine Or.inr ?_
       rw [SetLike.mem_coe, Scheme.Hom.mem_preimage, ← Scheme.Hom.comp_apply, gluedToBase,
         pushout.inr_desc]
-      exact v.2
+      exact v.property
 
 end Scheme.Hom
 

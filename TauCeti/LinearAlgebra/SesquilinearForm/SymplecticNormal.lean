@@ -73,7 +73,7 @@ what lets a reflexive form descend to the symplectic normal space. -/
 private theorem comap_le_ker_domRestrict₁₂ :
     W.comap (W.orthogonalBilin B).subtype ≤
       LinearMap.ker (B.domRestrict₁₂ (W.orthogonalBilin B) (W.orthogonalBilin B)) :=
-  fun w hw ↦ LinearMap.mem_ker.2 <| LinearMap.ext fun u ↦ u.2 w hw
+  fun w hw ↦ LinearMap.mem_ker.2 <| LinearMap.ext fun u ↦ u.property w hw
 
 variable (W) in
 /-- The form `[u], [v] ↦ B u v` induced by a reflexive bilinear map `B` on the symplectic normal

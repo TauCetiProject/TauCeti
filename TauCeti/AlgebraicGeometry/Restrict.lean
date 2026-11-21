@@ -14,7 +14,9 @@ public import Mathlib.CategoryTheory.Comma.Over.Pullback
 
 For a morphism of schemes `f : X ⟶ Y` and an open `U` of `Y`, Mathlib's `f ∣_ U` is the
 restriction `f ⁻¹ᵁ U ⟶ U`. A property local on the target passes from this restriction to
-every smaller open. An open immersion restricts to an isomorphism over opens in its range.
+every smaller open. A property local on the source holds for a morphism that has it on an open
+neighbourhood of every point of its source. An open immersion restricts to an isomorphism over
+opens in its range.
 Restricting the source to an open equal to the full preimage gives a pullback square, which
 transfers properties stable under base change to `Scheme.Hom.resLE`. Between affine opens, a
 property attached to a ring-hom property holds for `Scheme.Hom.resLE` iff the ring-hom property
@@ -26,6 +28,8 @@ global functions of the base change.
 
 * `AlgebraicGeometry.IsZariskiLocalAtTarget.restrict_of_le`: a property local on the target
   passes from `f ∣_ U` to `f ∣_ V` when `V ≤ U`.
+* `AlgebraicGeometry.IsZariskiLocalAtSource.of_forall_exists_ι_comp`: a property local on the
+  source holds for `f` if every point of `X` has an open neighbourhood `U` with `P (U.ι ≫ f)`.
 * `AlgebraicGeometry.Scheme.Hom.isIso_morphismRestrict_of_le_opensRange`: an open immersion
   restricts to an isomorphism over every open contained in its range.
 * `AlgebraicGeometry.Scheme.Hom.isPullback_resLE_of_eq`: the restriction of `f` to an open `U`
@@ -70,13 +74,22 @@ theorem IsZariskiLocalAtTarget.restrict_of_le (P : MorphismProperty Scheme.{u})
     (morphismRestrictRestrict f _ _ ≪≫ morphismRestrictEq f himage)).mp
     (IsZariskiLocalAtTarget.restrict h _)
 
+/-- A property local on the source holds for a morphism if every point of its source has an
+open neighbourhood on which it holds. -/
+theorem IsZariskiLocalAtSource.of_forall_exists_ι_comp {P : MorphismProperty Scheme.{u}}
+    [IsZariskiLocalAtSource P] {f : X ⟶ Y} (H : ∀ x, ∃ U : X.Opens, x ∈ U ∧ P (U.ι ≫ f)) :
+    P f := by
+  choose U hxU hU using H
+  exact of_iSup_eq_top U
+    (eq_top_iff.mpr fun x _ ↦ TopologicalSpace.Opens.mem_iSup.mpr ⟨x, hxU x⟩) hU
+
 /-- An open immersion `f` restricts to an isomorphism over every open `V` contained in its
 range. -/
 theorem Scheme.Hom.isIso_morphismRestrict_of_le_opensRange [IsOpenImmersion f] {V : Y.Opens}
     (hV : V ≤ f.opensRange) : IsIso (f ∣_ V) := by
   refine (isIso_iff_isOpenImmersion_and_surjective _).mpr ⟨inferInstance, ⟨fun y ↦ ?_⟩⟩
-  obtain ⟨z, hz⟩ := hV y.2
-  exact ⟨⟨z, (Scheme.Hom.mem_preimage _).mpr (hz ▸ y.2)⟩,
+  obtain ⟨z, hz⟩ := hV y.property
+  exact ⟨⟨z, (Scheme.Hom.mem_preimage _).mpr (hz ▸ y.property)⟩,
     Subtype.ext ((morphismRestrict_base_coe _ _ _).trans hz)⟩
 
 /-- Restricting `f` over an open `U` of the target, with source the open `V = f ⁻¹ᵁ U` (up to a

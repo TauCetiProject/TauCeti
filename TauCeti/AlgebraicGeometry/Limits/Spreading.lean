@@ -308,7 +308,7 @@ instance : IsCofiltered (AffineOpenNhds S s) where
   cone_objs U V := by
     obtain ⟨_, ⟨W, hW, rfl⟩, hsW, hWle⟩ :=
       S.isBasis_affineOpens.exists_subset_of_mem_open
-        (show s ∈ (U.opens ⊓ V.opens : Set S) from ⟨U.mem, V.mem⟩) (U.opens ⊓ V.opens).2
+        (show s ∈ (U.opens ⊓ V.opens : Set S) from ⟨U.mem, V.mem⟩) (U.opens ⊓ V.opens).isOpen
     exact ⟨⟨W, hW, hsW⟩, homOfLE (hWle.trans inf_le_left),
       homOfLE (hWle.trans inf_le_right), trivial⟩
   cone_maps U V f g := ⟨U, 𝟙 U, by simp [Subsingleton.elim f g]⟩
@@ -321,7 +321,7 @@ def toOpenNhds (S : Scheme.{u}) (s : S) : AffineOpenNhds S s ⥤ OpenNhds s wher
 instance (S : Scheme.{u}) (s : S) : (toOpenNhds S s).Initial where
   out U := by
     obtain ⟨_, ⟨W₀, hW₀, rfl⟩, hsW₀, hW₀U⟩ :=
-      S.isBasis_affineOpens.exists_subset_of_mem_open U.2 U.1.2
+      S.isBasis_affineOpens.exists_subset_of_mem_open U.property U.val.isOpen
     have : Nonempty (CostructuredArrow (toOpenNhds S s) U) :=
       ⟨CostructuredArrow.mk (Y := ⟨W₀, hW₀, hsW₀⟩)
         (homOfLE (show (toOpenNhds S s).obj ⟨W₀, hW₀, hsW₀⟩ ≤ U from hW₀U))⟩
@@ -329,7 +329,7 @@ instance (S : Scheme.{u}) (s : S) : (toOpenNhds S s).Initial where
     obtain ⟨_, ⟨W, hW, rfl⟩, hsW, hWle⟩ :=
       S.isBasis_affineOpens.exists_subset_of_mem_open
         (show s ∈ (X.left.opens ⊓ Y.left.opens : Set S) from ⟨X.left.mem, Y.left.mem⟩)
-        (X.left.opens ⊓ Y.left.opens).2
+        (X.left.opens ⊓ Y.left.opens).isOpen
     let Z : CostructuredArrow (toOpenNhds S s) U :=
       CostructuredArrow.mk (Y := ⟨W, hW, hsW⟩)
         (homOfLE (show (toOpenNhds S s).obj ⟨W, hW, hsW⟩ ≤ U from

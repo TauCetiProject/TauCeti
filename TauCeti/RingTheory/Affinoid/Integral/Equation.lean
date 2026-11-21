@@ -149,8 +149,8 @@ theorem exists_monic_aeval_eq_zero_supSeminorm_coeff_le (hA : IsAffinoidAlgebra 
   let := Fintype.ofFinite (minimalPrimes B)
   -- One monic polynomial for each minimal prime, vanishing at `f` modulo that prime.
   choose q hqm hq hqc using fun 𝔮 : minimalPrimes B ↦
-    have : 𝔮.1.IsPrime := Ideal.IsMinimalPrime.isPrime 𝔮.2
-    exists_monic_aeval_mem_supSeminorm_coeff_le hA hB 𝔮.1 f
+    have : 𝔮.val.IsPrime := Ideal.IsMinimalPrime.isPrime 𝔮.property
+    exists_monic_aeval_mem_supSeminorm_coeff_le hA hB 𝔮.val f
   -- Their product vanishes at `f` modulo every prime, hence up to a nilpotent.
   set Q := ∏ 𝔮, q 𝔮
   obtain ⟨N, hN⟩ : IsNilpotent (aeval f Q) := by
@@ -188,7 +188,7 @@ theorem exists_monic_aeval_eq_zero_supSeminorm_eq_iSup_coeff_rpow (hA : IsAffino
   obtain ⟨p, hp, hpf, hc⟩ := hA.exists_monic_aeval_eq_zero_supSeminorm_coeff_le hB f
   refine ⟨p, hp, hpf, le_antisymm ?_ (Real.iSup_le (fun i ↦
     (Real.rpow_one_div_natCast_sub_le_iff (supSeminorm_nonneg _) (supSeminorm_nonneg f)
-      i.2).mpr (hc i)) (supSeminorm_nonneg f))⟩
+      i.isLt).mpr (hc i)) (supSeminorm_nonneg f))⟩
   rcases subsingleton_or_nontrivial B with _ | _
   · rw [supSeminorm_eq_zero_of_subsingleton]
     exact Real.iSup_nonneg fun _ ↦ Real.rpow_nonneg (supSeminorm_nonneg _) _
@@ -200,6 +200,6 @@ theorem exists_monic_aeval_eq_zero_supSeminorm_eq_iSup_coeff_rpow (hA : IsAffino
   rw [coeff_map]
   exact Real.rpow_le_rpow (supSeminorm_nonneg _)
     (hA.supSeminorm_map_le hB (IsScalarTower.toAlgHom K A B) _)
-    (one_div_nonneg.mpr (sub_nonneg.mpr (mod_cast i.2.le)))
+    (one_div_nonneg.mpr (sub_nonneg.mpr (mod_cast i.isLt.le)))
 
 end TauCeti.IsAffinoidAlgebra

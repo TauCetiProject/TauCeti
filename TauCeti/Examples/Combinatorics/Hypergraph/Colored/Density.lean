@@ -46,7 +46,8 @@ example :
       {⟨![0, 1, 2], by decide⟩, ⟨![1, 0, 2], by decide⟩, ⟨![0, 1, 3], by decide⟩}
     H.relDensityOn true supp = 2 / 3 := by
   intro H supp
-  have htrue : #{x ∈ supp | H.color (Set.powersetCard.ofFinEmb 3 (Fin 4) ⟨x.1, x.2⟩) = true} = 2 :=
+  have htrue : #{x ∈ supp | H.color (Set.powersetCard.ofFinEmb 3 (Fin 4) ⟨x.val,
+      x.property⟩) = true} = 2 :=
     by decide
   have hsupp : #supp = 3 := by decide
   rw [relDensityOn_def, htrue, hsupp]

@@ -71,7 +71,7 @@ lemma coe_characteristicCellPairMap_fst_apply {n : ℕ} (j : cell C n)
     (x : TopCat.disk.{w} n) :
     (ConcreteCategory.hom (X := TopCat.disk.{w} n)
       (Y := TopCat.of (skeletonLT C ((n + 1 : ℕ) : ℕ∞)))
-      (TopPair.Hom.fst (characteristicCellPairMap C j)) x).1 =
+      (TopPair.Hom.fst (characteristicCellPairMap C j)) x).val =
       map n j ((EuclideanSpace.equiv (Fin n) ℝ).unitBallHomeomorph x.down) := by
   -- Pair components use the skeletal subspace object, while the evaluation lemmas use its
   -- explicit `TopCat.of` presentation; `erw` identifies these before evaluating composites.
@@ -169,7 +169,7 @@ theorem cellularDifferential_eq_zero_of_cellFrontier_subset (n : ℕ)
     TopCat.ofHom ⟨fun z ↦ ⟨cellAttachingMap j z, h j <| by
         rw [← range_cellAttachingMap]
         exact Set.mem_range_self z⟩,
-      (continuous_subtype_val.comp (cellAttachingMap j).hom.continuous).subtype_mk _⟩
+      (continuous_subtypeVal.comp (cellAttachingMap j).hom.continuous).subtype_mk _⟩
   have hzero : SSet.homologyMap (TopCat.toSSet.map (g ≫ (skeletonPair C n).map)) R n ≫
       (skeletonPair C n).singularHomologyπ R n = 0 := by
     rw [Functor.map_comp, SSet.homologyMap_comp]

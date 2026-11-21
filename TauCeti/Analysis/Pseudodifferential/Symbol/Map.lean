@@ -19,7 +19,8 @@ operator `T`, so do the values of its derivatives
 `TauCeti.Symbol.commute_coefficient_frequencyDeriv`).
 
 The image of a symbol with estimates uniform in the position, or with compact spatial support, has
-the same property (`TauCeti.Symbol.IsUniform.map`, `TauCeti.Symbol.HasCompactSpatialSupport.map`).
+the same property (`TauCeti.Symbol.IsUniform.map`, `TauCeti.Symbol.HasCompactSpatialSupport.map`),
+as does the image of a smoothing symbol (`TauCeti.Symbol.IsSmoothing.map`).
 -/
 
 public section
@@ -68,6 +69,11 @@ theorem HasCompactSpatialSupport.map {a : Symbol n V W m} (ha : a.HasCompactSpat
   obtain ⟨K, hK, hKa⟩ := hasCompactSpatialSupport_iff.1 ha
   exact hasCompactSpatialSupport_iff.2
     ⟨K, hK, fun x hx ξ ↦ by rw [coefficient_map, hKa x hx ξ, map_zero]⟩
+
+theorem IsSmoothing.map {a : Symbol n V W m} (ha : a.IsSmoothing)
+    (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')) : (a.map Φ).IsSmoothing :=
+  isSmoothing_iff.2 fun m' ↦ (isSmoothing_iff.1 ha m').elim fun b hb ↦
+    ⟨b.map Φ, congrArg (Φ ∘ ·) hb⟩
 
 /-- Spatial derivatives commute with the image under a continuous linear map. -/
 @[simp]
