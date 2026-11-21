@@ -401,11 +401,9 @@ private theorem forall_apply_eq_apply_zero_of_tendsto_sub (hH : ContDiff ℝ 1 (
     (hg.tendstoLocallyUniformlyOn (s := univ ×ˢ Icc 0 1))
   -- The limit is `1`-periodic in `t`, so it does not depend on `s` on the whole plane.
   have hgper (s : ℝ) : Periodic (fun t ↦ g (s, t)) 1 := fun t ↦ by
-    have hat (z : ℝ × ℝ) : Tendsto (fun k ↦ u k (z + (σ k, 0))) atTop (𝓝 (g z)) :=
-      (hg.tendstoLocallyUniformlyOn (s := univ)).tendsto_at (mem_univ z)
     have hzσ (z : ℝ × ℝ) (r : ℝ) : z + (r, 0) = (z.1 + r, z.2) := by ext <;> simp
-    exact tendsto_nhds_unique ((hat (s, t + 1)).congr fun k ↦ by
-      simpa [hzσ] using hper k (s + σ k) t) (hat (s, t))
+    exact tendsto_nhds_unique ((hg.tendsto_at (s, t + 1)).congr fun k ↦ by
+      simpa [hzσ] using hper k (s + σ k) t) (hg.tendsto_at (s, t))
   intro s t
   have hfract (s : ℝ) : g (s, t) = g (s, Int.fract t) := by
     rw [Int.fract, ← (hgper s).sub_int_mul_eq ⌊t⌋, mul_one]
@@ -497,12 +495,9 @@ theorem exists_eq_comp_add_of_tendstoLocallyUniformly (hH : ContDiff ℝ 1 (uncu
     have h := hT (u k) (J k) (hu k) (hper k) (huK k) (hJc k) (hJM k) (hfloer k) (hL k)
     exact ⟨by linarith [h _ _ (hσ' k).1 (hσ k).2], h _ _ (hσ k).1 (hσ' k).2⟩
   obtain ⟨δ, -, φ, hφ, hδ⟩ := isCompact_Icc.tendsto_subseq hd
-  have hat {f : ℕ → ℝ × ℝ → V} {F : ℝ × ℝ → V} (hF : TendstoLocallyUniformly f F atTop)
-      (y : ℝ × ℝ) : Tendsto (fun k ↦ f (φ k) y) atTop (𝓝 (F y)) :=
-    ((hF.tendstoLocallyUniformlyOn (s := univ)).tendsto_at (mem_univ y)).comp hφ.tendsto_atTop
-  -- Along the subsequence, the shifts `(σ' k, 0) - (σ k, 0)` converge to `(δ, 0)`.
-  exact ⟨δ, apply_eq_apply_add_of_tendsto_sub (u := fun k ↦ u (φ k)) (fun k ↦ hL (φ k))
-    (σ := fun k ↦ (σ (φ k), 0)) (σ' := fun k ↦ (σ' (φ k), 0))
-    (by simpa using hδ.prodMk_nhds (tendsto_const_nhds (x := (0 : ℝ)))) (hat hg) (hat hg')⟩
+  -- Along the subsequence, the shifts `σ' k - σ k` converge to `δ`.
+  exact ⟨δ, apply_eq_apply_add_prodMk_zero_of_tendsto_sub (u := fun k ↦ u (φ k))
+    (fun k ↦ hL (φ k)) (σ := fun k ↦ σ (φ k)) (σ' := fun k ↦ σ' (φ k)) hδ
+    (hg.comp_tendsto hφ.tendsto_atTop).tendsto_at (hg'.comp_tendsto hφ.tendsto_atTop).tendsto_at⟩
 
 end TauCeti.SymplecticForm

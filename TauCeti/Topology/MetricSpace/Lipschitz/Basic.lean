@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Group.Basic
+public import Mathlib.Analysis.Normed.Group.Constructions
 public import Mathlib.Topology.MetricSpace.Lipschitz
 import Mathlib.Analysis.Normed.Group.Continuity
 import TauCeti.Algebra.Order.Field.Basic
@@ -36,6 +36,8 @@ This file collects elementary `LipschitzWith` facts and bounded-gauge estimates:
   map `α × β → γ` with `1 ≤ K`.
 * `TauCeti.apply_eq_apply_add_of_tendsto_sub`: limits of translates of uniformly Lipschitz maps
   along shifts with convergent difference are translates of each other.
+* `TauCeti.apply_eq_apply_add_prodMk_zero_of_tendsto_sub`: the same for maps on a product
+  translated in the first coordinate.
 
 ## References
 
@@ -71,6 +73,19 @@ theorem apply_eq_apply_add_of_tendsto_sub {ι E F : Type*} [SeminormedAddCommGro
       rw [dist_eq_norm, ← norm_neg]
       congr 2
       abel
+
+open Filter Topology in
+/-- **Limits of translates in the first coordinate.** The special case of
+`apply_eq_apply_add_of_tendsto_sub` for maps on a product `E × E'` translated by `(σ i, 0)` and
+`(σ' i, 0)`: if `σ' i - σ i → δ`, the two pointwise limits differ by the translation `(δ, 0)`. -/
+theorem apply_eq_apply_add_prodMk_zero_of_tendsto_sub {ι E E' F : Type*}
+    [SeminormedAddCommGroup E] [SeminormedAddCommGroup E'] [MetricSpace F] {l : Filter ι}
+    [l.NeBot] {u : ι → E × E' → F} {K : ℝ≥0} (hu : ∀ i, LipschitzWith K (u i)) {σ σ' : ι → E}
+    {δ : E} (hδ : Tendsto (fun i ↦ σ' i - σ i) l (𝓝 δ)) {g g' : E × E' → F}
+    (hg : ∀ z, Tendsto (fun i ↦ u i (z + (σ i, 0))) l (𝓝 (g z)))
+    (hg' : ∀ z, Tendsto (fun i ↦ u i (z + (σ' i, 0))) l (𝓝 (g' z))) (z : E × E') :
+    g' z = g (z + (δ, 0)) :=
+  apply_eq_apply_add_of_tendsto_sub hu (by simpa using hδ.prodMk_nhds tendsto_const_nhds) hg hg' z
 
 /-- The shifted positive part `t ↦ max (t - k) 0` is `1`-Lipschitz on the real line. -/
 theorem lipschitzWith_max_sub_const_zero (k : ℝ) :

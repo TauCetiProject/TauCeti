@@ -248,13 +248,10 @@ theorem exists_subseq_forall_tendstoLocallyUniformly_comp_add_of_hamiltonianActi
       (by simp [hσ]) ((hg i).comp_tendsto hψt)
   · rcases hgap i (Finset.mem_univ i) with ⟨δ, hδ⟩ | hneck
     · -- Converging shifts: the two limits are translates of each other.
-      have hat (j : Fin (m + 1)) (y : ℝ × ℝ) :
-          Tendsto (fun n ↦ u (φ₀ (ψ n)) (y + (σ j (φ₀ (ψ n)), 0))) atTop (𝓝 (g j y)) :=
-        (((hg j).tendstoLocallyUniformlyOn (s := univ)).tendsto_at (mem_univ y)).comp hψt
-      exact Or.inl ⟨δ, hδ, apply_eq_apply_add_of_tendsto_sub (u := fun n ↦ u (φ₀ (ψ n)))
-        (fun _ ↦ hL _) (σ := fun n ↦ (σ i.castSucc (φ₀ (ψ n)), 0))
-        (σ' := fun n ↦ (σ i.succ (φ₀ (ψ n)), 0))
-        (by simpa using hδ.prodMk_nhds (tendsto_const_nhds (x := (0 : ℝ)))) (hat _) (hat _)⟩
+      exact Or.inl ⟨δ, hδ, apply_eq_apply_add_prodMk_zero_of_tendsto_sub
+        (u := fun n ↦ u (φ₀ (ψ n))) (fun _ ↦ hL _) (σ := fun n ↦ σ i.castSucc (φ₀ (ψ n)))
+        (σ' := fun n ↦ σ i.succ (φ₀ (ψ n))) hδ ((hg _).comp_tendsto hψt).tendsto_at
+        ((hg _).comp_tendsto hψt).tendsto_at⟩
     · exact Or.inr hneck
 
 /-- **Normalizing a breaking sequence between consecutive orbit actions.** Let `H` be a `C¹`
