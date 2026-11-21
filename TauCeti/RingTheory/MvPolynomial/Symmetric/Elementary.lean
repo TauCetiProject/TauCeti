@@ -7,6 +7,8 @@ module
 
 public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
 public import TauCeti.RingTheory.PowerSeries.Rescale
+import Mathlib.RingTheory.Polynomial.Vieta
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # Elementary symmetric polynomials
@@ -31,6 +33,10 @@ product in elementary symmetric polynomials.
 * `Multiset.esymm_erase`: removing an element `a ∈ s` gives
   `eₙ(s ∖ a) = ∑_{k=0}^{n} (-1)ᵏ e_{n-k}(s) aᵏ`, and `Multiset.sum_map_mul_esymm_erase` sums it
   over `a ∈ s` against weights `w(a)`.
+* `Multiset.esymm_card_eq_prod`, `Multiset.esymm_map_inv_mul_prod` and
+  `Multiset.esymm_map_add_const`: `e_{card s}(s) = ∏ s`, the reversal
+  `e_j(s⁻¹) ∏ s = e_{card s - j}(s)` for `0 ∉ s`, and the shift expansion
+  `e_k(s + t) = ∑_{j ≤ k} binom(card s - j, k - j) e_j(s) t^{k-j}`.
 * `TauCeti.esymmInt`: the elementary symmetric polynomial `e_m` of an integer degree `m`, which
   is `0` for `m < 0`.
 * `TauCeti.coeff_prod_one_add_C_mul_X`: the coefficient of `tⁿ` in `∏ᵢ (1 + xᵢ t)`, as a sum
@@ -42,6 +48,12 @@ product in elementary symmetric polynomials.
 * `TauCeti.mk_neg_one_pow_mul_esymm_eq_prod_one_sub_X`: its signed version
   `∑ₙ (-1)ⁿ eₙ tⁿ = ∏ᵢ (1 - xᵢ t)`.
 * `TauCeti.esymm_fin_four`: the four elementary symmetric polynomials in four variables.
+* `TauCeti.eval_esymm_succ`, `TauCeti.sum_mul_eval_update_zero_esymm`,
+  `TauCeti.sum_eval_update_zero_esymm` and `TauCeti.eval_add_smul_one_esymm`: for `μ : ι → R`,
+  `σ_{k+1} = μ_i σ_{k;i} + σ_{k+1;i}`, `∑_i μ_i σ_{k;i} = (k + 1) σ_{k+1}`,
+  `∑_i σ_{k;i} = (n - k) σ_k` and `σ_k(μ + t e) = ∑_{j ≤ k} binom(n - j, k - j) σ_j(μ) t^{k-j}`,
+  where `σ_k` is `MvPolynomial.esymm` evaluated at `μ`, `σ_{k;i}` its value at `μ` with
+  `μ_i = 0`, `n` the cardinality of `ι` and `e = (1, …, 1)`.
 
 ## References
 
@@ -118,6 +130,81 @@ theorem Multiset.sum_map_mul_esymm_erase {R : Type*} [CommRing R] [DecidableEq R
   refine congrArg Multiset.sum (Multiset.map_congr rfl fun k _ ↦ ?_)
   rw [← Multiset.sum_map_mul_left]
   exact congrArg Multiset.sum (Multiset.map_congr rfl fun a _ ↦ by ring)
+
+/-- The top elementary symmetric function of a multiset is its product: `e_{card s}(s) = ∏ s`. -/
+@[simp]
+theorem Multiset.esymm_card_eq_prod {R : Type*} [CommSemiring R] (s : Multiset R) :
+    s.esymm (Multiset.card s) = s.prod := by
+  simp [Multiset.esymm, Multiset.powersetCard_self]
+
+/-- Reversal: the elementary symmetric functions of the inverses of a multiset `s` of nonzero
+elements of a field are those of `s`, read backwards and divided by `e_{card s}(s) = ∏ s`. -/
+theorem Multiset.esymm_map_inv_mul_prod {K : Type*} [Field K] (s : Multiset K)
+    (hs : (0 : K) ∉ s) {j : ℕ} (hj : j ≤ Multiset.card s) :
+    (s.map (·⁻¹)).esymm j * s.prod = s.esymm (Multiset.card s - j) := by
+  induction s using Multiset.induction_on generalizing j with
+  | empty =>
+    obtain rfl : j = 0 := by simpa using hj
+    simp
+  | cons a t ih =>
+    have ha : a ≠ 0 := fun h ↦ hs (h ▸ Multiset.mem_cons_self _ _)
+    have ht : (0 : K) ∉ t := fun h ↦ hs (Multiset.mem_cons_of_mem h)
+    have hinv : a⁻¹ * a = 1 := inv_mul_cancel₀ ha
+    rw [Multiset.card_cons] at hj ⊢
+    rcases j with _ | i
+    · rw [Multiset.esymm_zero, one_mul, Nat.sub_zero, ← Multiset.card_cons a t,
+        Multiset.esymm_card_eq_prod]
+    rw [Multiset.map_cons, Multiset.esymm_cons, Multiset.prod_cons]
+    have e1 := ih ht (j := i) (by omega)
+    rcases Nat.lt_or_ge i (Multiset.card t) with hlt | hge
+    · have e2 := ih ht (j := i + 1) hlt
+      rw [show Multiset.card t + 1 - (i + 1) = (Multiset.card t - (i + 1)) + 1 by omega,
+        Multiset.esymm_cons]
+      rw [show Multiset.card t - i = Multiset.card t - (i + 1) + 1 by omega] at e1
+      linear_combination a * e2 + e1 + ((t.map (·⁻¹)).esymm i * t.prod) * hinv
+    · obtain rfl : i = Multiset.card t := by omega
+      rw [Multiset.esymm_of_card_lt (by simp), Nat.sub_self, Multiset.esymm_zero]
+      rw [Nat.sub_self, Multiset.esymm_zero] at e1
+      linear_combination e1 + ((t.map (·⁻¹)).esymm (Multiset.card t) * t.prod) * hinv
+
+open Polynomial in
+/-- Shifting every element of a multiset `s` by `t`:
+`e_k(s + t) = ∑_{j=0}^{k} binom(card s - j, k - j) e_j(s) t^{k-j}`. -/
+theorem Multiset.esymm_map_add_const {R : Type*} [CommSemiring R] (s : Multiset R) (t : R) (k : ℕ) :
+    (s.map (· + t)).esymm k =
+      ∑ j ∈ Finset.range (k + 1),
+        ((Multiset.card s - j).choose (k - j) : R) * s.esymm j * t ^ (k - j) := by
+  rcases le_or_gt k (Multiset.card s) with hkm | hkm
+  · have hcomp : ((s.map (· + t)).map fun r ↦ Polynomial.X + Polynomial.C r).prod =
+        (s.map fun r ↦ Polynomial.X + Polynomial.C r).prod.comp
+          (Polynomial.X + Polynomial.C t) := by
+      rw [Polynomial.multiset_prod_comp, Multiset.map_map, Multiset.map_map]
+      congr 1
+      refine Multiset.map_congr rfl fun r _ ↦ ?_
+      simp only [Function.comp_apply, add_comp, X_comp, C_comp, _root_.map_add]
+      ring
+    have h := congrArg (fun p ↦ p.coeff (Multiset.card s - k)) hcomp
+    rw [Multiset.prod_X_add_C_coeff _ (by simp), Multiset.card_map,
+      Nat.sub_sub_self hkm, Multiset.prod_X_add_C_eq_sum_esymm, Polynomial.sum_comp] at h
+    rw [h, Polynomial.finsetSum_coeff]
+    simp_rw [Polynomial.mul_comp, Polynomial.C_comp, Polynomial.pow_comp, Polynomial.X_comp,
+      Polynomial.coeff_C_mul, Polynomial.coeff_X_add_C_pow]
+    rw [← Finset.sum_subset (Finset.range_subset_range.mpr (show k + 1 ≤ Multiset.card s + 1 by
+      omega))]
+    · refine Finset.sum_congr rfl fun j hj ↦ ?_
+      have hjk : j ≤ k := Nat.lt_succ_iff.mp (Finset.mem_range.mp hj)
+      rw [show Multiset.card s - j - (Multiset.card s - k) = k - j by omega,
+        show Multiset.card s - k = (Multiset.card s - j) - (k - j) by omega,
+        Nat.choose_symm (by omega)]
+      ring
+    · intro j hj hjk
+      simp only [Finset.mem_range, not_lt] at hj hjk
+      rw [Nat.choose_eq_zero_of_lt (by omega), Nat.cast_zero, mul_zero, mul_zero]
+  · rw [Multiset.esymm_of_card_lt (by simpa using hkm)]
+    refine (Finset.sum_eq_zero fun j _ ↦ ?_).symm
+    rcases le_or_gt j (Multiset.card s) with hj | hj
+    · rw [Nat.choose_eq_zero_of_lt (by omega), Nat.cast_zero, zero_mul, zero_mul]
+    · rw [Multiset.esymm_of_card_lt hj, mul_zero, zero_mul]
 
 namespace TauCeti
 
@@ -281,5 +368,110 @@ theorem esymm_fin_four {R : Type*} [CommSemiring R] :
     · simp (config := { decide := true }) only [MvPolynomial.esymm, h1, h2, h3, h4,
         Finset.sum_insert, Finset.prod_insert, Finset.sum_singleton, Finset.prod_singleton,
         Finset.mem_insert, Finset.mem_singleton, add_assoc, mul_assoc]
+
+section EvalUpdate
+
+open MvPolynomial Function
+
+variable {R ι : Type*} [CommSemiring R] [Fintype ι]
+
+/-- The evaluation of `MvPolynomial.esymm` at `μ` is the elementary symmetric function of the
+multiset of values of `μ`. -/
+theorem eval_esymm_eq_esymm_map (μ : ι → R) (k : ℕ) :
+    eval μ (esymm ι R k) = (univ.val.map μ).esymm k :=
+  aeval_esymm_eq_multiset_esymm ι R k μ
+
+variable [DecidableEq ι]
+
+private theorem eval_update_zero_esymm (μ : ι → R) (i : ι) (k : ℕ) :
+    eval (update μ i 0) (esymm ι R k) = ((univ.erase i).val.map μ).esymm k := by
+  rw [eval_esymm_eq_esymm_map, ← Multiset.cons_erase (Finset.mem_univ_val i), ← Finset.erase_val,
+    Multiset.map_cons, update_self,
+    Multiset.map_congr rfl fun j hj ↦
+      update_of_ne (Finset.ne_of_mem_erase (Finset.mem_val.mp hj)) _ _]
+  cases k with
+  | zero => simp
+  | succ k => exact Multiset.esymm_cons_zero _ _
+
+/-- The expansion of `σ_{k+1}(λ)` along the coordinate `λ_i`:
+`σ_{k+1}(λ) = λ_i σ_{k;i}(λ) + σ_{k+1;i}(λ)`, where `σ_{k;i}(λ) = σ_k(λ)|_{λ_i = 0}`. -/
+theorem eval_esymm_succ (μ : ι → R) (i : ι) (k : ℕ) :
+    eval μ (esymm ι R (k + 1)) =
+      μ i * eval (update μ i 0) (esymm ι R k) + eval (update μ i 0) (esymm ι R (k + 1)) := by
+  rw [eval_update_zero_esymm, eval_update_zero_esymm, eval_esymm_eq_esymm_map,
+    ← Multiset.cons_erase (Finset.mem_univ_val i), ← Finset.erase_val, Multiset.map_cons,
+    Multiset.esymm_cons, add_comm]
+
+/-- `∑_i σ_{k;i}(λ) = (n - k) σ_k(λ)`, where `σ_{k;i}(λ) = σ_k(λ)|_{λ_i = 0}` and `n` is the
+cardinality of `ι`. -/
+theorem sum_eval_update_zero_esymm (μ : ι → R) (k : ℕ) :
+    ∑ i, eval (update μ i 0) (esymm ι R k) =
+      ((Fintype.card ι - k : ℕ) : R) * eval μ (esymm ι R k) := by
+  simp_rw [eval_update_zero_esymm, eval_esymm_eq_esymm_map, Finset.esymm_map_val]
+  have h : ∀ i, powersetCard k (univ.erase i) = {A ∈ powersetCard k (univ : Finset ι) | i ∉ A} := by
+    intro i
+    ext A
+    simp [Finset.mem_powersetCard, Finset.subset_erase, and_comm]
+  simp_rw [h, Finset.sum_filter]
+  rw [Finset.sum_comm, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun A hA ↦ ?_
+  rw [Finset.sum_ite, Finset.sum_const_zero, add_zero, Finset.sum_const, nsmul_eq_mul]
+  congr 2
+  rw [Finset.filter_not, Finset.filter_mem_eq_inter, Finset.univ_inter, Finset.card_univ_sdiff,
+    (Finset.mem_powersetCard.mp hA).2]
+
+/-- The Euler identity `∑_i λ_i σ_{k;i}(λ) = (k + 1) σ_{k+1}(λ)`, where
+`σ_{k;i}(λ) = σ_k(λ)|_{λ_i = 0}`. -/
+theorem sum_mul_eval_update_zero_esymm (μ : ι → R) (k : ℕ) :
+    ∑ i, μ i * eval (update μ i 0) (esymm ι R k) = (k + 1) * eval μ (esymm ι R (k + 1)) := by
+  simp_rw [eval_update_zero_esymm, eval_esymm_eq_esymm_map, Finset.esymm_map_val, Finset.mul_sum]
+  have h : ∀ i, ∑ A ∈ powersetCard k (univ.erase i), μ i * ∏ j ∈ A, μ j =
+      ∑ B ∈ powersetCard (k + 1) univ, if i ∈ B then ∏ j ∈ B, μ j else 0 := by
+    intro i
+    rw [← Finset.sum_filter]
+    have hi : ∀ A ∈ powersetCard k (univ.erase i), i ∉ A := fun A hA h ↦ by
+      simpa using (Finset.subset_erase.mp (Finset.mem_powersetCard.mp hA).1).2 h
+    refine Finset.sum_nbij' (insert i) (fun B ↦ B.erase i) (fun A hA ↦ ?_) (fun B hB ↦ ?_)
+      (fun A hA ↦ Finset.erase_insert (hi A hA)) (fun B hB ↦ ?_)
+      (fun A hA ↦ (Finset.prod_insert (hi A hA)).symm)
+    · have := Finset.mem_powersetCard.mp hA
+      simp only [Finset.mem_filter, Finset.mem_powersetCard]
+      exact ⟨⟨Finset.subset_univ _, by rw [Finset.card_insert_of_notMem (hi A hA), this.2]⟩,
+        Finset.mem_insert_self _ _⟩
+    · simp only [Finset.mem_filter, Finset.mem_powersetCard] at hB ⊢
+      exact ⟨Finset.erase_subset_erase _ (Finset.subset_univ _), by
+        rw [Finset.card_erase_of_mem hB.2, hB.1.2]; rfl⟩
+    · simp only [Finset.mem_filter] at hB
+      exact Finset.insert_erase hB.2
+  simp_rw [h]
+  rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun B hB ↦ ?_
+  rw [Finset.sum_ite_mem, Finset.univ_inter, Finset.sum_const, nsmul_eq_mul,
+    (Finset.mem_powersetCard.mp hB).2]
+  push_cast
+  ring
+
+end EvalUpdate
+
+section Shift
+
+open MvPolynomial
+
+variable {R ι : Type*} [CommSemiring R] [Fintype ι]
+
+/-- The shift expansion
+`σ_k(λ + t e) = ∑_{j=0}^{k} binom(n - j, k - j) σ_j(λ) t^{k-j}`, where `e = (1, …, 1)` and `n` is
+the cardinality of `ι`. -/
+theorem eval_add_smul_one_esymm (μ : ι → R) (t : R) (k : ℕ) :
+    eval (μ + t • 1) (esymm ι R k) =
+      ∑ j ∈ range (k + 1),
+        ((Fintype.card ι - j).choose (k - j) : R) * eval μ (esymm ι R j) * t ^ (k - j) := by
+  simp_rw [eval_esymm_eq_esymm_map]
+  have h : (univ.val.map (μ + t • 1)) = (univ.val.map μ).map (· + t) := by
+    rw [Multiset.map_map]
+    exact Multiset.map_congr rfl fun i _ ↦ by simp
+  rw [h, Multiset.esymm_map_add_const, Multiset.card_map, Finset.card_val, Finset.card_univ]
+
+end Shift
 
 end TauCeti
