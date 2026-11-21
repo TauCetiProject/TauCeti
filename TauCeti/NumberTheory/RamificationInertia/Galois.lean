@@ -10,7 +10,7 @@ public import Mathlib.Algebra.Group.Action.TransferInstance
 public import Mathlib.NumberTheory.RamificationInertia.Galois
 public import TauCeti.NumberTheory.NumberField.AutomorphismAction
 public import TauCeti.RingTheory.Ideal.PrimesOver
-import TauCeti.RingTheory.Unramified.AlgEquiv
+import TauCeti.RingTheory.Unramified.Equiv
 
 /-!
 # Ramification and inertia in Galois extensions

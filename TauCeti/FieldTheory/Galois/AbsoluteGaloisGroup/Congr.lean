@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors, Codex
 module
 
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Extension
+import TauCeti.Algebra.Algebra.Equiv
 
 /-!
 # Absolute Galois groups of isomorphic fields
@@ -242,46 +243,24 @@ instance [Normal K E] : IsGalois L (E.separableClosureCongr e) where
 
 /-- Identify automorphisms by conjugating through the restricted field identification. -/
 def separableClosureCongrAutEquiv :
-    (E ≃ₐ[K] E) ≃* (E.separableClosureCongr e ≃ₐ[L] E.separableClosureCongr e) where
-  toFun g :=
-    { toRingEquiv := (E.separableClosureCongrEquiv e).symm.trans
-        (g.toRingEquiv.trans (E.separableClosureCongrEquiv e))
-      commutes' r := by
-        obtain ⟨r, rfl⟩ := e.surjective r
-        -- Expose only composition of ring maps; keep the restricted identification opaque.
-        change E.separableClosureCongrEquiv e
-          (g ((E.separableClosureCongrEquiv e).symm
-            (algebraMap L (E.separableClosureCongr e) (e r)))) = _
-        rw [← separableClosureCongrEquiv_algebraMap, RingEquiv.symm_apply_apply,
-          AlgEquiv.commutes, separableClosureCongrEquiv_algebraMap] }
-  invFun g :=
-    { toRingEquiv := (E.separableClosureCongrEquiv e).trans
-        (g.toRingEquiv.trans (E.separableClosureCongrEquiv e).symm)
-      commutes' r := by
-        apply (E.separableClosureCongrEquiv e).injective
-        -- Expose only composition of ring maps to cancel the inverse identification.
-        change E.separableClosureCongrEquiv e
-          ((E.separableClosureCongrEquiv e).symm
-            (g (E.separableClosureCongrEquiv e (algebraMap K E r)))) = _
-        rw [RingEquiv.apply_symm_apply, separableClosureCongrEquiv_algebraMap,
-          AlgEquiv.commutes] }
-  left_inv g := by ext x; simp
-  right_inv g := by ext x; simp
-  map_mul' g h := by ext x; simp
+    (E ≃ₐ[K] E) ≃* (E.separableClosureCongr e ≃ₐ[L] E.separableClosureCongr e) :=
+  e.algAutCongr (E.separableClosureCongrEquiv e) (E.separableClosureCongrEquiv_algebraMap e)
 
 /-- The transported automorphism acts by conjugation through the field identification. -/
 @[simp]
 theorem separableClosureCongrAutEquiv_apply (g : E ≃ₐ[K] E)
     (x : E.separableClosureCongr e) :
     E.separableClosureCongrAutEquiv e g x = E.separableClosureCongrEquiv e
-      (g ((E.separableClosureCongrEquiv e).symm x)) := by rfl
+      (g ((E.separableClosureCongrEquiv e).symm x)) :=
+  RingEquiv.algAutCongr_apply e _ _ g x
 
 /-- The inverse automorphism transport acts by the reverse conjugation. -/
 @[simp]
 theorem separableClosureCongrAutEquiv_symm_apply
     (g : E.separableClosureCongr e ≃ₐ[L] E.separableClosureCongr e) (x : E) :
     (E.separableClosureCongrAutEquiv e).symm g x =
-      (E.separableClosureCongrEquiv e).symm (g (E.separableClosureCongrEquiv e x)) := by rfl
+      (E.separableClosureCongrEquiv e).symm (g (E.separableClosureCongrEquiv e x)) := by
+  simp [separableClosureCongrAutEquiv]
 
 /-- Restriction to a normal subextension commutes with transport of the absolute Galois group. -/
 theorem separableClosureCongrAutEquiv_restrictNormalHom [Normal K E]

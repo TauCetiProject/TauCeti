@@ -6,11 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Unramified.Locus
-import Mathlib.RingTheory.Localization.Basic
 import Mathlib.RingTheory.RingHom.Unramified
 
 /-!
-# Formal unramifiedness and unramifiedness at a prime along ring isomorphisms
+# Formal unramifiedness and unramifiedness at a prime along ring and algebra isomorphisms
 
 Formal unramifiedness and unramifiedness at a prime are invariant under any commuting square of
 ring isomorphisms `f : R ≃+* R'` and `g : A ≃+* B` intertwining `algebraMap R A` and
@@ -19,9 +18,8 @@ ring isomorphisms `f : R ≃+* R'` and `g : A ≃+* B` intertwining `algebraMap 
 `Algebra.IsUnramifiedAt`, `g` induces a ring isomorphism between the localizations at `q.comap g`
 and `q` intertwining the base maps through `f`.
 
-This generalizes `Algebra.FormallyUnramified.iff_of_equiv` and
-`AlgEquiv.isUnramifiedAt_iff_of_eq_comap` to the case where the base ring also moves by an
-isomorphism.
+Specialization to a fixed base ring `R` and an algebra equivalence `ψ : A ≃ₐ[R] B` yields
+`AlgEquiv.isUnramifiedAt_iff_of_eq_comap`.
 
 ## Main results
 
@@ -29,6 +27,8 @@ isomorphism.
   formal unramifiedness transports along a commuting square of ring isomorphisms.
 * `Algebra.isUnramifiedAt_iff_of_equiv_equiv`, `Algebra.IsUnramifiedAt.of_equiv_equiv`:
   unramifiedness at a prime transports along a commuting square of ring isomorphisms.
+* `AlgEquiv.isUnramifiedAt_iff_of_eq_comap`: `A` is unramified over `R` at a prime equal to
+  `q.comap ψ` if and only if `B` is unramified over `R` at `q`.
 -/
 
 public section
@@ -68,6 +68,9 @@ theorem isUnramifiedAt_iff_of_equiv_equiv
     (hcomp : (algebraMap R' B).comp (f : R →+* R') = (g : A →+* B).comp (algebraMap R A))
     {q : Ideal B} [q.IsPrime] {p : Ideal A} [p.IsPrime] (hp : p = q.comap g) :
     IsUnramifiedAt R p ↔ IsUnramifiedAt R' q := by
+  -- The transported prime is the parameter `p` with the equation `hp`, not the term `q.comap g`
+  -- itself: `Algebra.IsUnramifiedAt` takes the primality of its ideal as an instance argument, so
+  -- `rw` cannot turn a statement about `q.comap g` into one about `p`, while `subst` can.
   subst hp
   let e : Localization.AtPrime (q.comap g) ≃+* Localization.AtPrime q :=
     IsLocalization.ringEquivOfRingEquiv (Localization.AtPrime (q.comap g))
@@ -88,3 +91,18 @@ theorem IsUnramifiedAt.of_equiv_equiv
   (isUnramifiedAt_iff_of_equiv_equiv f g hcomp hp).1 inferInstance
 
 end Algebra
+
+namespace AlgEquiv
+
+variable {R A B : Type*} [CommRing R] [CommRing A] [CommRing B] [Algebra R A] [Algebra R B]
+
+/-- **Unramifiedness transports along an isomorphism of `R`-algebras.** For a prime `q` of `B`,
+`A` is unramified over `R` at the corresponding prime `q.comap ψ` if and only if `B` is unramified
+over `R` at `q`, stated for any prime `p` of `A` equal to `q.comap ψ`. -/
+theorem isUnramifiedAt_iff_of_eq_comap (ψ : A ≃ₐ[R] B) {q : Ideal B} [q.IsPrime]
+    {p : Ideal A} [p.IsPrime] (hp : p = q.comap ψ) :
+    Algebra.IsUnramifiedAt R p ↔ Algebra.IsUnramifiedAt R q :=
+  Algebra.isUnramifiedAt_iff_of_equiv_equiv (RingEquiv.refl R) ψ.toRingEquiv
+    (RingHom.ext fun x ↦ (ψ.commutes x).symm) hp
+
+end AlgEquiv

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.FieldTheory.Galois.Abelian
 public import Mathlib.GroupTheory.Abelianization.Defs
+import TauCeti.Algebra.Algebra.Equiv
 import TauCeti.GroupTheory.Abelianization.Basic
 
 /-!
@@ -133,17 +134,10 @@ theorem of_equiv_equiv {K L M N : Type*} [Field K] [Field L] [Algebra K L]
     (hcomp : (algebraMap M N).comp (f : K →+* M) = (g : L →+* N).comp (algebraMap K L)) :
     IsAbelianGalois M N := by
   have hgal : IsGalois M N := IsGalois.of_equiv_equiv hcomp
-  have hcomm (x : K) : g (algebraMap K L x) = algebraMap M N (f x) :=
-    (RingHom.congr_fun hcomp x).symm
-  -- Conjugate an `M`-automorphism of `N` back to a `K`-automorphism of `L` along `g`.
-  let conj (σ : N ≃ₐ[M] N) : L ≃ₐ[K] L :=
-    AlgEquiv.ofRingEquiv (f := (g.trans σ.toRingEquiv).trans g.symm) fun x ↦ by
-      simp [RingEquiv.symm_apply_eq, hcomm]
+  let φ : (L ≃ₐ[K] L) ≃* (N ≃ₐ[M] N) :=
+    f.algAutCongr g fun x ↦ (RingHom.congr_fun hcomp x).symm
   refine { toIsGalois := hgal, is_comm := ⟨fun σ τ ↦ ?_⟩ }
-  have h : conj σ * conj τ = conj τ * conj σ := mul_comm' (conj σ) (conj τ)
-  ext y
-  have hy := AlgEquiv.congr_fun h (g.symm y)
-  simpa [conj] using congrArg g hy
+  exact φ.symm.injective (by simpa [map_mul] using mul_comm' (φ.symm σ) (φ.symm τ))
 
 /-- **Being abelian Galois is invariant under a commuting square of field isomorphisms.** -/
 theorem iff_of_equiv_equiv {K L M N : Type*} [Field K] [Field L] [Algebra K L]

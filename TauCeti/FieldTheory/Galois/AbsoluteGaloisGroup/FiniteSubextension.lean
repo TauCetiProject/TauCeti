@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Congr
+import TauCeti.Algebra.Algebra.Equiv
 
 /-!
 # Transporting finite Galois subextensions between separable closures
@@ -239,24 +240,9 @@ instance isGalois_intermediateFieldCongr [IsGalois K E] :
 identified by conjugation with `intermediateFieldCongrEquiv`. Like `absoluteGaloisGroupCongr`,
 the identification is contravariant in `e`. -/
 def intermediateFieldAutCongr :
-    (e.intermediateFieldCongr E ≃ₐ[L] e.intermediateFieldCongr E) ≃* (E ≃ₐ[K] E) where
-  toFun g := AlgEquiv.ofRingEquiv
-    (f := ((e.intermediateFieldCongrEquiv E).trans g.toRingEquiv).trans
-      (e.intermediateFieldCongrEquiv E).symm)
-    fun x ↦ by simp
-  invFun g := AlgEquiv.ofRingEquiv
-    (f := ((e.intermediateFieldCongrEquiv E).symm.trans g.toRingEquiv).trans
-      (e.intermediateFieldCongrEquiv E))
-    fun y ↦ by simp
-  left_inv g := by
-    ext
-    simp
-  right_inv g := by
-    ext
-    simp
-  map_mul' g h := by
-    ext
-    simp
+    (e.intermediateFieldCongr E ≃ₐ[L] e.intermediateFieldCongr E) ≃* (E ≃ₐ[K] E) :=
+  (e.algAutCongr (e.intermediateFieldCongrEquiv E)
+    (e.intermediateFieldCongrEquiv_algebraMap E)).symm
 
 /-- The automorphism of `E` corresponding to an automorphism `g` of its transport is
 conjugation of `g` by `intermediateFieldCongrEquiv`. -/
@@ -264,8 +250,8 @@ conjugation of `g` by `intermediateFieldCongrEquiv`. -/
 theorem intermediateFieldAutCongr_apply
     (g : e.intermediateFieldCongr E ≃ₐ[L] e.intermediateFieldCongr E) (x : E) :
     e.intermediateFieldAutCongr E g x =
-      (e.intermediateFieldCongrEquiv E).symm (g (e.intermediateFieldCongrEquiv E x)) :=
-  (rfl)
+      (e.intermediateFieldCongrEquiv E).symm (g (e.intermediateFieldCongrEquiv E x)) := by
+  simp [intermediateFieldAutCongr]
 
 /-- **The automorphism identification is compatible with the transport of elements**:
 `intermediateFieldCongrEquiv` intertwines an automorphism of the transport with the corresponding
@@ -280,7 +266,7 @@ theorem intermediateFieldCongrEquiv_intermediateFieldAutCongr
 @[simp]
 theorem intermediateFieldAutCongr_symm_apply (g : E ≃ₐ[K] E) (y : e.intermediateFieldCongr E) :
     (e.intermediateFieldAutCongr E).symm g y =
-      e.intermediateFieldCongrEquiv E (g ((e.intermediateFieldCongrEquiv E).symm y)) :=
-  (rfl)
+      e.intermediateFieldCongrEquiv E (g ((e.intermediateFieldCongrEquiv E).symm y)) := by
+  simp [intermediateFieldAutCongr]
 
 end RingEquiv

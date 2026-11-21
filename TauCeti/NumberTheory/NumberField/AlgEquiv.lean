@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.Basic
-public import TauCeti.RingTheory.Unramified.AlgEquiv
+public import TauCeti.RingTheory.Unramified.Equiv
 
 /-!
 # Transport between isomorphic number-field extensions

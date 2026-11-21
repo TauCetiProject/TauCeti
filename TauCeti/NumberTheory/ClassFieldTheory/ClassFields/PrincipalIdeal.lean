@@ -8,10 +8,11 @@ module
 public import TauCeti.NumberTheory.ClassFieldTheory.ClassFields.RayClassField
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.IdealExtension
 
+import TauCeti.FieldTheory.IntermediateField.ScalarTower
 import TauCeti.NumberTheory.ClassFieldTheory.ClassFields.HilbertTower
+import TauCeti.NumberTheory.ClassFieldTheory.Global.PrincipalIdeal
 import TauCeti.NumberTheory.NumberField.InfinitePlace.Transport
-import TauCeti.NumberTheory.NumberField.RingOfIntegers.Transport
-import TauCeti.RingTheory.Unramified.AlgEquiv
+import TauCeti.RingTheory.Unramified.Equiv
 
 /-!
 # The principal ideal theorem
@@ -36,6 +37,9 @@ extension map `ClassGroup.extendedHom (𝓞 K) (𝓞 H)` is trivial
 
 ## Main results
 
+* `TauCeti.ClassFieldTheory.ideleClassExtension_mem_range_ideleClassNormMap_of_unramified`: every
+  idele class of `K`, extended to `hilbertClassField K`, is a norm from any everywhere-unramified
+  finite Galois extension containing `hilbertClassField K`.
 * `TauCeti.ClassFieldTheory.ideleClassExtension_mem_raySubgroup_hilbertClassField`: every idele
   class of `K`, extended to `hilbertClassField K`, lies in the trivial-modulus ray subgroup.
 * `TauCeti.ClassFieldTheory.extendedHom_hilbertClassField_eq_one`: extension of ideal classes
@@ -62,6 +66,27 @@ namespace TauCeti.ClassFieldTheory
 
 /-! ### The principal ideal theorem -/
 
+/-- Every idele class of `K`, extended to its Hilbert class field, is a norm from any
+everywhere-unramified finite Galois extension containing that field. The relative algebra
+and scalar tower are the caller's compatible choices. -/
+theorem ideleClassExtension_mem_range_ideleClassNormMap_of_unramified
+    {K : Type} [Field K] [NumberField K]
+    (V : OpenNormalSubgroup (AbsoluteGaloisGroup K))
+    [Algebra (hilbertClassField K) (classField K V)]
+    [IsScalarTower (hilbertClassField K) (classField K V) (SeparableClosure K)]
+    (hur : ∀ w : HeightOneSpectrum (𝓞 (classField K V)),
+      Algebra.IsUnramifiedAt (𝓞 K) w.asIdeal)
+    [IsUnramifiedAtInfinitePlaces K (classField K V)]
+    (c : IdeleClassGroup (𝓞 K) K) :
+    ideleClassExtension K (hilbertClassField K) c ∈
+      (ideleClassNormMap (hilbertClassField K) (classField K V) :
+        IdeleClassGroup (𝓞 (classField K V)) (classField K V) →*
+          IdeleClassGroup (𝓞 (hilbertClassField K)) (hilbertClassField K)).range :=
+  ideleClassExtension_mem_range_ideleClassNormMap_commutator_ofOpenNormal V
+    (fixedField_commutator_eq_hilbertClassField V
+      IntermediateField.le_of_isScalarTower hur)
+    (fixedField_top_ofOpenNormal_eq_classField V) c
+
 /-- **Idelic principal ideal theorem.** Every idele class of a number field `K`, extended to its
 Hilbert class field `H`, lies in the trivial-modulus ray subgroup of `H`. -/
 theorem ideleClassExtension_mem_raySubgroup_hilbertClassField (K : Type) [Field K]
@@ -85,11 +110,9 @@ theorem ideleClassExtension_mem_raySubgroup_hilbertClassField (K : Type) [Field 
       Algebra.IsUnramifiedAt (𝓞 K) w.asIdeal := fun w ↦ by
     let eO : 𝓞 (secondHilbertClassField K) ≃ₐ[𝓞 K] 𝓞 (classField K V) :=
       RingOfIntegers.mapAlgEquiv eVK.symm
-    have hne : w.asIdeal.comap eO ≠ ⊥ :=
-      mt (fun h ↦ by rw [← Ideal.map_comap_of_surjective eO eO.surjective w.asIdeal, h,
-        Ideal.map_bot]) w.ne_bot
     exact (AlgEquiv.isUnramifiedAt_iff_of_eq_comap eO rfl).1
-      (isUnramifiedAt_secondHilbertClassField K ⟨w.asIdeal.comap eO, inferInstance, hne⟩)
+      (isUnramifiedAt_secondHilbertClassField K
+        (HeightOneSpectrum.comap eO.toRingEquiv.toRingHom eO.surjective w))
   have : IsUnramifiedAtInfinitePlaces K (classField K V) :=
     IsUnramifiedAtInfinitePlaces.of_equiv_equiv (RingEquiv.refl K) eVK.symm.toRingEquiv
       (RingHom.ext fun x ↦ (eVK.symm.commutes x).symm)

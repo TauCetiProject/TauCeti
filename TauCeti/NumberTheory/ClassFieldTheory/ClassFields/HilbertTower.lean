@@ -6,14 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.ClassFields.RayClassField
-public import TauCeti.NumberTheory.ClassFieldTheory.Global.PrincipalIdeal
 import TauCeti.FieldTheory.Galois.Abelian.Basic
-import TauCeti.FieldTheory.IntermediateField.ScalarTower
 import TauCeti.FieldTheory.IsSepClosed
 import TauCeti.NumberTheory.NumberField.InfinitePlace.Transport
-import TauCeti.NumberTheory.NumberField.RingOfIntegers.Transport
-import TauCeti.RingTheory.Unramified.AlgEquiv
-import TauCeti.RingTheory.Unramified.RingEquiv
+import TauCeti.RingTheory.Unramified.Equiv
 
 /-!
 # Hilbert class field towers and the second Hilbert class field
@@ -24,16 +20,20 @@ subextension is exactly `H`: every abelian subextension is unramified and so lie
 while `H` itself is abelian.
 
 `fixedField_commutator_eq_hilbertClassField` gives this identification in the finite-layer
-presentation used by transfer. Consequently every idele class of `K`, extended to `H`, is a
-norm from `L` (`ideleClassExtension_mem_range_ideleClassNormMap_of_unramified`).
+presentation used by transfer.
 
-This module also realizes the Hilbert class field of `H = hilbertClassField K` inside `Kˢ` as
-the **second Hilbert class field** `secondHilbertClassField K`, proves that it is Galois and
-everywhere unramified over `K`, and identifies its norm group over `H` with the trivial-modulus
-ray subgroup of `H`.
+This module also realizes the Hilbert class field of an abstract intermediate field `H` inside `Kˢ`
+via `hilbertClassFieldIn K H`, and specializes to `H = hilbertClassField K` as the **second
+Hilbert class field** `secondHilbertClassField K`, proves that it is Galois and everywhere
+unramified over `K`, and identifies its norm group over `H` with the trivial-modulus ray subgroup
+of `H`.
 
 ## Main definitions
 
+* `TauCeti.ClassFieldTheory.hilbertClassFieldIn`: realization of `hilbertClassField H` inside `Kˢ`
+  for an abstract intermediate base `H`.
+* `TauCeti.ClassFieldTheory.algEquivHilbertClassFieldIn`: algebra equivalence from
+  `hilbertClassField H` to any intermediate field equal to `hilbertClassFieldIn K H`.
 * `TauCeti.ClassFieldTheory.secondHilbertClassField`: the Hilbert class field of
   `hilbertClassField K`, realized as an intermediate field of `Kˢ / K`.
 
@@ -41,9 +41,10 @@ ray subgroup of `H`.
 
 * `TauCeti.ClassFieldTheory.fixedField_commutator_eq_hilbertClassField`: the commutator subgroup
   fixes `hilbertClassField K` in an everywhere-unramified finite Galois extension containing it.
-* `TauCeti.ClassFieldTheory.ideleClassExtension_mem_range_ideleClassNormMap_of_unramified`: every
-  idele class of `K`, extended to `hilbertClassField K`, is a norm from any everywhere-unramified
-  finite Galois extension containing `hilbertClassField K`.
+* `TauCeti.ClassFieldTheory.fieldRange_eq_hilbertClassFieldIn`: every `H`-embedding of
+  `hilbertClassField H` into `Kˢ` has range `hilbertClassFieldIn K H`.
+* `TauCeti.ClassFieldTheory.secondHilbertClassField_def`: `secondHilbertClassField K` equals
+  `hilbertClassFieldIn K (hilbertClassField K)`.
 * `TauCeti.ClassFieldTheory.hilbertClassField_le_secondHilbertClassField`: `H ≤ H₂`.
 * `TauCeti.ClassFieldTheory.le_secondHilbertClassField_of_unramified`: `secondHilbertClassField K`
   contains every everywhere-unramified finite abelian extension of `hilbertClassField K` in `Kˢ`.
@@ -126,26 +127,6 @@ theorem fixedField_commutator_eq_hilbertClassField
   rw [hfield]
   exact classField_maximalAbelianLayer_eq_hilbertClassField V hH hur
 
-/-- Every idele class of `K`, extended to its Hilbert class field, is a norm from any
-everywhere-unramified finite Galois extension containing that field. The relative algebra
-and scalar tower are the caller's compatible choices. -/
-theorem ideleClassExtension_mem_range_ideleClassNormMap_of_unramified
-    (V : OpenNormalSubgroup (AbsoluteGaloisGroup K))
-    [Algebra (hilbertClassField K) (classField K V)]
-    [IsScalarTower (hilbertClassField K) (classField K V) (SeparableClosure K)]
-    (hur : ∀ w : HeightOneSpectrum (𝓞 (classField K V)),
-      Algebra.IsUnramifiedAt (𝓞 K) w.asIdeal)
-    [IsUnramifiedAtInfinitePlaces K (classField K V)]
-    (c : IdeleClassGroup (𝓞 K) K) :
-    ideleClassExtension K (hilbertClassField K) c ∈
-      (ideleClassNormMap (hilbertClassField K) (classField K V) :
-        IdeleClassGroup (𝓞 (classField K V)) (classField K V) →*
-          IdeleClassGroup (𝓞 (hilbertClassField K)) (hilbertClassField K)).range :=
-  ideleClassExtension_mem_range_ideleClassNormMap_commutator_ofOpenNormal V
-    (fixedField_commutator_eq_hilbertClassField V
-      IntermediateField.le_of_isScalarTower hur)
-    (fixedField_top_ofOpenNormal_eq_classField V) c
-
 end MaximalAbelianLayer
 
 /-! ### Realizing the Hilbert class field of a subextension inside `Kˢ` -/
@@ -158,25 +139,27 @@ variable (K H : Type) [Field K] [Field H] [NumberField H]
 /-- Realize `hilbertClassField H` inside `Kˢ` via an `H`-embedding. Parameterizing over an
 abstract base `H` avoids nested `IntermediateField` algebra synthesis when `H` is itself an
 intermediate field of `Kˢ / K`. -/
-private def hilbertClassFieldIn : IntermediateField K (SeparableClosure K) :=
+def hilbertClassFieldIn : IntermediateField K (SeparableClosure K) :=
   (IsSepClosed.lift : hilbertClassField H →ₐ[H] SeparableClosure K).fieldRange.restrictScalars K
 
-private theorem algebraMap_mem_hilbertClassFieldIn (x : H) :
+/-- Every element of `H` lies in the realized Hilbert class field `hilbertClassFieldIn K H`. -/
+theorem algebraMap_mem_hilbertClassFieldIn (x : H) :
     algebraMap H (SeparableClosure K) x ∈ hilbertClassFieldIn K H :=
   ⟨algebraMap H (hilbertClassField H) x, AlgHom.commutes _ x⟩
 
-private theorem fieldRange_eq_hilbertClassFieldIn
+/-- Every `H`-embedding of `hilbertClassField H` into `Kˢ` has range `hilbertClassFieldIn K H`. -/
+theorem fieldRange_eq_hilbertClassFieldIn
     (ι : hilbertClassField H →ₐ[H] SeparableClosure K) :
     ι.fieldRange.restrictScalars K = hilbertClassFieldIn K H := by
-  let ι₀ : hilbertClassField H →ₐ[H] SeparableClosure K := IsSepClosed.lift
-  have : Normal H ι₀.fieldRange := Normal.of_algEquiv ι₀.equivFieldRange
-  have hrange : ι.fieldRange = ι₀.fieldRange := by
-    have h := (ι.comp ι₀.equivFieldRange.symm.toAlgHom).fieldRange_of_normal
-    rw [← AlgHom.map_fieldRange, AlgEquiv.fieldRange_eq_top, ← AlgHom.fieldRange_eq_map] at h
-    exact h
+  have hrange : ι.fieldRange =
+      (IsSepClosed.lift : hilbertClassField H →ₐ[H] SeparableClosure K).fieldRange := by
+    rw [← IntermediateField.normalClosure_eq_fieldRange,
+      ← IntermediateField.normalClosure_eq_fieldRange]
   exact congrArg (IntermediateField.restrictScalars K) hrange
 
-private def algEquivHilbertClassFieldIn
+/-- An `H`-embedding of `hilbertClassField H` into `Kˢ` identifies `hilbertClassField H` with any
+intermediate field equal to `hilbertClassFieldIn K H`. -/
+def algEquivHilbertClassFieldIn
     (L : IntermediateField K (SeparableClosure K)) (hL : L = hilbertClassFieldIn K H)
     [Algebra H L] [IsScalarTower H L (SeparableClosure K)]
     (ι : hilbertClassField H →ₐ[H] SeparableClosure K) :
@@ -188,6 +171,15 @@ private def algEquivHilbertClassFieldIn
           ((fieldRange_eq_hilbertClassFieldIn K H ι).trans hL.symm))).toRingEquiv)
     fun r ↦ Subtype.ext <| by
       simpa using (ι.commutes r).trans (IsScalarTower.algebraMap_apply H L (SeparableClosure K) r)
+
+/-- The identification `algEquivHilbertClassFieldIn` sends `x` to `ι x` in `Kˢ`. -/
+@[simp]
+theorem coe_algEquivHilbertClassFieldIn
+    (L : IntermediateField K (SeparableClosure K)) (hL : L = hilbertClassFieldIn K H)
+    [Algebra H L] [IsScalarTower H L (SeparableClosure K)]
+    (ι : hilbertClassField H →ₐ[H] SeparableClosure K) (x : hilbertClassField H) :
+    (algEquivHilbertClassFieldIn K H L hL ι x : SeparableClosure K) = ι x := by
+  simp [algEquivHilbertClassFieldIn]
 
 private theorem finiteDimensional_hilbertClassFieldIn
     (L : IntermediateField K (SeparableClosure K)) (hL : L = hilbertClassFieldIn K H)
@@ -212,11 +204,9 @@ private theorem isUnramifiedAt_hilbertClassFieldIn
     Algebra.IsUnramifiedAt (𝓞 H) w.asIdeal := by
   let e := algEquivHilbertClassFieldIn K H L hL IsSepClosed.lift
   let eO : 𝓞 (hilbertClassField H) ≃ₐ[𝓞 H] 𝓞 L := RingOfIntegers.mapAlgEquiv e
-  have hne : w.asIdeal.comap eO ≠ ⊥ :=
-    mt (fun h ↦ by rw [← Ideal.map_comap_of_surjective eO eO.surjective w.asIdeal, h,
-      Ideal.map_bot]) w.ne_bot
   exact (AlgEquiv.isUnramifiedAt_iff_of_eq_comap eO rfl).1
-    (isUnramifiedAt_hilbertClassField H ⟨w.asIdeal.comap eO, inferInstance, hne⟩)
+    (isUnramifiedAt_hilbertClassField H
+      (HeightOneSpectrum.comap eO.toRingEquiv.toRingHom eO.surjective w))
 
 private theorem isUnramifiedAtInfinitePlaces_hilbertClassFieldIn
     (L : IntermediateField K (SeparableClosure K)) (hL : L = hilbertClassFieldIn K H)
@@ -269,6 +259,12 @@ def secondHilbertClassField (K : Type) [Field K] [NumberField K] :
 section SecondHilbertClassField
 
 variable (K : Type) [Field K] [NumberField K]
+
+/-- `secondHilbertClassField K` is the realization `hilbertClassFieldIn K (hilbertClassField K)`
+of the Hilbert class field of `hilbertClassField K` inside `Kˢ`. -/
+theorem secondHilbertClassField_def :
+    secondHilbertClassField K = hilbertClassFieldIn K (hilbertClassField K) :=
+  (rfl)
 
 /-- The Hilbert class field of `K` lies in the second Hilbert class field of `K`. -/
 theorem hilbertClassField_le_secondHilbertClassField :
@@ -384,11 +380,9 @@ private theorem map_secondHilbertClassField_le (σ : AbsoluteGaloisGroup K) :
     have hcompO : (algebraMap (𝓞 H) (𝓞 E)).comp (fO : 𝓞 H →+* 𝓞 H) =
         (gO : 𝓞 H₂ →+* 𝓞 E).comp (algebraMap (𝓞 H) (𝓞 H₂)) :=
       RingHom.ext fun x ↦ RingOfIntegers.ext (RingHom.congr_fun hcomp (x : H))
-    have hne : w.asIdeal.comap gO ≠ ⊥ :=
-      (Ideal.comap_mapRingEquiv_eq_bot_iff w.asIdeal g).not.mpr w.ne_bot
     exact (Algebra.isUnramifiedAt_iff_of_equiv_equiv fO gO hcompO rfl).1
       (isUnramifiedAt_secondHilbertClassField_over_hilbertClassField K
-        ⟨w.asIdeal.comap gO, inferInstance, hne⟩)
+        (HeightOneSpectrum.comap gO.toRingHom gO.surjective w))
   exact le_secondHilbertClassField_of_unramified K E hfin
 
 /-- **The second Hilbert class field of `K` is Galois over `K`.** -/
