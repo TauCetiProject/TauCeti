@@ -67,76 +67,47 @@ open scoped Topology Topology.Homotopy
 
 namespace TauCeti
 
-/-- The first two barycentric coordinates of a point of the standard `2`-simplex sum to at most
-`1`. -/
-private theorem weights_one_add_weights_two_le (w : StdSimplex ℝ (Fin 3)) :
-    w.weights 1 + w.weights 2 ≤ 1 := by
-  have h := w.total_of_fintype
-  rw [Fin.sum_univ_three] at h
-  linarith [w.weights_nonneg 0]
-
-/-- The point `w₁ + w₂` of the unit interval, for a point `w` of the standard `2`-simplex. -/
-private def weightsOneAddTwo (w : StdSimplex ℝ (Fin 3)) : I :=
-  ⟨w.weights 1 + w.weights 2, add_nonneg (w.weights_nonneg 1) (w.weights_nonneg 2),
-    weights_one_add_weights_two_le w⟩
-
-/-- The point `wᵢ` of the unit interval, for a barycentric coordinate of a point `w` of the
-standard `2`-simplex. -/
-private def weightsUnit (i : Fin 3) (w : StdSimplex ℝ (Fin 3)) : I :=
-  ⟨w.weights i, w.weights_nonneg i, by
-    have h := w.total_of_fintype
-    rw [Fin.sum_univ_three] at h
-    fin_cases i <;> simp only [Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk] <;>
-      linarith [w.weights_nonneg 0, w.weights_nonneg 1, w.weights_nonneg 2]⟩
-
-private theorem continuous_weightsOneAddTwo : Continuous weightsOneAddTwo :=
-  (StdSimplex.continuous_weights_apply ℝ 1 |>.add
-    (StdSimplex.continuous_weights_apply ℝ 2)).subtype_mk _
-
-private theorem continuous_weightsUnit (i : Fin 3) : Continuous (weightsUnit i) :=
-  (StdSimplex.continuous_weights_apply ℝ i).subtype_mk _
-
 /-- The **lower triangle** of the unit square, with vertices `(0, 0)`, `(1, 0)`, `(1, 1)`: the
 affine map `w ↦ (w₁ + w₂, w₂)` from the standard `2`-simplex. -/
 def squareLowerTriangle : C(StdSimplex ℝ (Fin 3), I^(Fin 2)) where
-  toFun w := ![weightsOneAddTwo w, weightsUnit 2 w]
+  toFun w := ![StdSimplex.weightsOneAddTwoI w, StdSimplex.weightI 2 w]
   continuous_toFun := by
     refine continuous_pi fun i ↦ ?_
     fin_cases i
-    exacts [continuous_weightsOneAddTwo, continuous_weightsUnit 2]
+    exacts [StdSimplex.weightsOneAddTwoI.continuous, (StdSimplex.weightI 2).continuous]
 
 /-- The **upper triangle** of the unit square, with vertices `(0, 0)`, `(1, 1)`, `(0, 1)`: the
 affine map `w ↦ (w₁, w₁ + w₂)` from the standard `2`-simplex. -/
 def squareUpperTriangle : C(StdSimplex ℝ (Fin 3), I^(Fin 2)) where
-  toFun w := ![weightsUnit 1 w, weightsOneAddTwo w]
+  toFun w := ![StdSimplex.weightI 1 w, StdSimplex.weightsOneAddTwoI w]
   continuous_toFun := by
     refine continuous_pi fun i ↦ ?_
     fin_cases i
-    exacts [continuous_weightsUnit 1, continuous_weightsOneAddTwo]
+    exacts [(StdSimplex.weightI 1).continuous, StdSimplex.weightsOneAddTwoI.continuous]
 
 /-- The first coordinate of the lower triangle is `w₁ + w₂`. -/
 @[simp]
 theorem squareLowerTriangle_apply_zero (w : StdSimplex ℝ (Fin 3)) :
     (squareLowerTriangle w 0 : ℝ) = w.weights 1 + w.weights 2 :=
-  (rfl)
+  StdSimplex.coe_weightsOneAddTwoI_apply w
 
 /-- The second coordinate of the lower triangle is `w₂`. -/
 @[simp]
 theorem squareLowerTriangle_apply_one (w : StdSimplex ℝ (Fin 3)) :
     (squareLowerTriangle w 1 : ℝ) = w.weights 2 :=
-  (rfl)
+  StdSimplex.coe_weightI_apply 2 w
 
 /-- The first coordinate of the upper triangle is `w₁`. -/
 @[simp]
 theorem squareUpperTriangle_apply_zero (w : StdSimplex ℝ (Fin 3)) :
     (squareUpperTriangle w 0 : ℝ) = w.weights 1 :=
-  (rfl)
+  StdSimplex.coe_weightI_apply 1 w
 
 /-- The second coordinate of the upper triangle is `w₁ + w₂`. -/
 @[simp]
 theorem squareUpperTriangle_apply_one (w : StdSimplex ℝ (Fin 3)) :
     (squareUpperTriangle w 1 : ℝ) = w.weights 1 + w.weights 2 :=
-  (rfl)
+  StdSimplex.coe_weightsOneAddTwoI_apply w
 
 /-- On the face of the standard `2`-simplex opposite the vertex `0`, the coordinates `w₁` and `w₂`
 sum to `1`. -/

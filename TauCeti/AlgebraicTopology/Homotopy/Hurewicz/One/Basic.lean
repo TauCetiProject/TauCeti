@@ -187,20 +187,6 @@ lemma pathChain_add_sub_trans_mem_boundaries₁ {a b c : X} (γ : Path a b) (δ 
     exact Path.trans_apply_of_eq_two_mul γ δ _
       (by simp [concatProj, StdSimplex.homeomorphI_apply_eq_mk]; ring)
 
-/-- The weight of the last vertex of the standard `2`-simplex, as a point of the unit
-interval. -/
-private def lastWeight : C(StdSimplex ℝ (Fin 3), I) :=
-  ⟨fun w ↦ ⟨w.weights 2, w.weights_nonneg 2, w.weights_apply_le_one 2⟩,
-    (StdSimplex.continuous_weights_apply ℝ 2).subtype_mk _⟩
-
-/-- The sum of the weights of the last two vertices of the standard `2`-simplex, as a point of
-the unit interval. -/
-private def lastTwoWeights : C(StdSimplex ℝ (Fin 3), I) :=
-  ⟨fun w ↦ ⟨w.weights 1 + w.weights 2,
-    add_nonneg (w.weights_nonneg 1) (w.weights_nonneg 2), w.weights_one_add_weights_two_le_one⟩,
-    (by fun_prop :
-      Continuous fun w : StdSimplex ℝ (Fin 3) ↦ w.weights 1 + w.weights 2).subtype_mk _⟩
-
 /-- The chains of homotopic paths differ by a boundary. -/
 lemma pathChain_sub_mem_boundaries₁_of_homotopy {a b : X} {γ γ' : Path a b}
     (F : Path.Homotopy γ γ') :
@@ -208,24 +194,30 @@ lemma pathChain_sub_mem_boundaries₁_of_homotopy {a b : X} {γ γ' : Path a b}
   let D : C(I, X) := F.toContinuousMap.comp ⟨fun t ↦ (t, t), by fun_prop⟩
   have h₁ : pathChain ℤ (.const I b) - pathChain ℤ D + pathChain ℤ γ.toContinuousMap ∈
       boundaries₁ X := by
-    refine mem_boundaries₁ (chain₂ (F.toContinuousMap.comp (lastWeight.prodMk lastTwoWeights))) ?_
+    refine mem_boundaries₁ (chain₂ (F.toContinuousMap.comp
+      ((StdSimplex.weightI 2).prodMk StdSimplex.weightsOneAddTwoI))) ?_
     rw [d_chain₂ _ (.const I b) D γ.toContinuousMap]
     · ext x
-      simp [lastWeight, lastTwoWeights]
+      simp [StdSimplex.weightI_apply_eq_mk, StdSimplex.weightsOneAddTwoI_apply_eq_mk]
     · ext x
-      simp [lastWeight, lastTwoWeights, StdSimplex.homeomorphI_apply_eq_mk, D]
+      simp [StdSimplex.weightI_apply_eq_mk, StdSimplex.weightsOneAddTwoI_apply_eq_mk,
+        StdSimplex.homeomorphI_apply_eq_mk, D]
     · ext x
-      simp [lastWeight, lastTwoWeights, StdSimplex.homeomorphI_apply_eq_mk]
+      simp [StdSimplex.weightI_apply_eq_mk, StdSimplex.weightsOneAddTwoI_apply_eq_mk,
+        StdSimplex.homeomorphI_apply_eq_mk]
   have h₂ : pathChain ℤ γ'.toContinuousMap - pathChain ℤ D + pathChain ℤ (.const I a) ∈
       boundaries₁ X := by
-    refine mem_boundaries₁ (chain₂ (F.toContinuousMap.comp (lastTwoWeights.prodMk lastWeight))) ?_
+    refine mem_boundaries₁ (chain₂ (F.toContinuousMap.comp
+      (StdSimplex.weightsOneAddTwoI.prodMk (StdSimplex.weightI 2)))) ?_
     rw [d_chain₂ _ γ'.toContinuousMap D (.const I a)]
     · ext x
-      simp [lastWeight, lastTwoWeights, StdSimplex.homeomorphI_apply_eq_mk]
+      simp [StdSimplex.weightI_apply_eq_mk, StdSimplex.weightsOneAddTwoI_apply_eq_mk,
+        StdSimplex.homeomorphI_apply_eq_mk]
     · ext x
-      simp [lastWeight, lastTwoWeights, StdSimplex.homeomorphI_apply_eq_mk, D]
+      simp [StdSimplex.weightI_apply_eq_mk, StdSimplex.weightsOneAddTwoI_apply_eq_mk,
+        StdSimplex.homeomorphI_apply_eq_mk, D]
     · ext x
-      simp [lastWeight, lastTwoWeights]
+      simp [StdSimplex.weightI_apply_eq_mk, StdSimplex.weightsOneAddTwoI_apply_eq_mk]
   have := sub_mem (add_mem (sub_mem h₁ h₂) (pathChain_const_mem_boundaries₁ a))
     (pathChain_const_mem_boundaries₁ b)
   convert this using 1
