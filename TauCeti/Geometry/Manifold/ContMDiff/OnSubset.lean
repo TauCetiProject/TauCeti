@@ -23,11 +23,13 @@ a subset of Euclidean space with corners.
 ## Main definitions and results
 
 * `TauCeti.ContMDiffOnSubset`: `f : s → M` is `C^n` in the sense of maps on arbitrary subsets.
+* `TauCeti.ContMDiffOnSubset.exists_contMDiffOn`: extract a local `C^n` extension at a point.
 * `TauCeti.ContMDiffOnSubset.continuous`: such a map is continuous.
 * `TauCeti.ContMDiffOnSubset.contMDiffOn`: every ambient map agreeing with it on `s` is `C^n`
   within `s`.
 * `ContMDiffOn.contMDiffOnSubset`: the restriction of a map that is `C^n` on a neighbourhood of `s`.
-* `TauCeti.ContMDiffOnSubset.comp_contDiff`: precomposition with a `C^n` map of normed spaces.
+* `TauCeti.ContMDiffOnSubset.comp_contDiff`, `TauCeti.ContMDiffOnSubset.comp_contDiffOn`:
+  precomposition with a `C^n` map of normed spaces (globally or on a neighbourhood of `s`).
 * `ContMDiff.comp_contMDiffOnSubset`: postcomposition with a `C^n` map of manifolds.
 * `TauCeti.ContMDiffOnSubset.prodMk`: a pair of such maps is such a map to the product.
 * `TauCeti.ContMDiffOnSubset.subtypeVal_comp_iff`: a map into an open submanifold is such a map
@@ -67,6 +69,13 @@ namespace ContMDiffOnSubset
 
 variable {s : Set E} {t : Set E'} {f : s → M}
 
+/-- Near any point `x : s`, a `C^n` map on `s` agrees on `s` with a map that is `C^n` on a
+neighbourhood of `x` in `E`. -/
+theorem exists_contMDiffOn (hf : ContMDiffOnSubset I n f) (x : s) :
+    ∃ U ∈ 𝓝 (x : E), ∃ g : E → M, ContMDiffOn 𝓘(𝕜, E) I n g U ∧
+      ∀ y : s, (y : E) ∈ U → g y = f y :=
+  hf x
+
 /-- A map that is `C^n` on an arbitrary subset is continuous. -/
 theorem continuous (hf : ContMDiffOnSubset I n f) : Continuous f := by
   refine continuous_iff_continuousAt.2 fun x ↦ ?_
@@ -92,15 +101,25 @@ theorem contMDiffOn (hf : ContMDiffOnSubset I n f) {g : E → M} (hg : ∀ x : s
   filter_upwards [self_mem_nhdsWithin, mem_nhdsWithin_of_mem_nhds hU] with y hys hyU
   exact (hg ⟨y, hys⟩).trans (hgf ⟨y, hys⟩ hyU).symm
 
+/-- Precomposing a map that is `C^n` on `t` with a map of normed spaces that is `C^n` on a
+neighbourhood of `s` and sends `s` into `t` gives a map that is `C^n` on `s`. -/
+theorem comp_contDiffOn {f : t → M} (hf : ContMDiffOnSubset I n f) {A : E → E'} {V : Set E}
+    (hA : ContDiffOn 𝕜 n A V) (hV : V ∈ 𝓝ˢ s) (hst : MapsTo A s t) :
+    ContMDiffOnSubset I n (f ∘ hst.restrict A s t) := by
+  intro x
+  obtain ⟨U, hU, g, hg, hgf⟩ := hf (hst.restrict A s t x)
+  have hVx : V ∈ 𝓝 (x : E) := mem_nhdsSet_iff_forall.1 hV x x.2
+  have hpre : A ⁻¹' U ∈ 𝓝 (x : E) := (hA.continuousOn.continuousAt hVx).preimage_mem_nhds hU
+  exact ⟨V ∩ A ⁻¹' U, Filter.inter_mem hVx hpre, g ∘ A,
+    hg.comp (hA.contMDiffOn.mono inter_subset_left) inter_subset_right,
+    fun y hy ↦ hgf (hst.restrict A s t y) hy.2⟩
+
 /-- Precomposing a map that is `C^n` on `t` with a `C^n` map of normed spaces sending `s` into
 `t` gives a map that is `C^n` on `s`. -/
 theorem comp_contDiff {f : t → M} (hf : ContMDiffOnSubset I n f) {A : E → E'}
     (hA : ContDiff 𝕜 n A) (hst : MapsTo A s t) :
-    ContMDiffOnSubset I n (f ∘ hst.restrict A s t) := by
-  intro x
-  obtain ⟨U, hU, g, hg, hgf⟩ := hf (hst.restrict A s t x)
-  exact ⟨A ⁻¹' U, hA.continuous.continuousAt.preimage_mem_nhds hU, g ∘ A,
-    hg.comp hA.contMDiff.contMDiffOn Subset.rfl, fun y hy ↦ hgf (hst.restrict A s t y) hy⟩
+    ContMDiffOnSubset I n (f ∘ hst.restrict A s t) :=
+  hf.comp_contDiffOn hA.contDiffOn Filter.univ_mem hst
 
 /-- A pair of maps that are `C^n` on `s` is a map to the product that is `C^n` on `s`. -/
 theorem prodMk {g : s → N} (hf : ContMDiffOnSubset I n f) (hg : ContMDiffOnSubset J n g) :
