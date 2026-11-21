@@ -412,31 +412,20 @@ theorem mulEquivOfConjMulEquiv_mk (hw' : u * φ w * u⁻¹ = w') (t : GX G X) :
 theorem mulEquivOfConjMulEquiv_symm_mk (hw' : u * φ w * u⁻¹ = w') (t : GX G Y) :
     (mulEquivOfConjMulEquiv ι φ hφ hw').symm (t : CoordGroup ι {w'}) =
       (φ.symm t : CoordGroup ι {w}) := by
-  have hq : (QuotientGroup.quotientMulEquivOfEq
-      (by rw [Set.image_singleton, ← hw', Rad_singleton_conj] :
-        Rad ι (φ '' {w}) = Rad ι {w'})).symm (t : CoordGroup ι {w'}) =
-      (t : CoordGroup ι (φ '' {w})) :=
-    (MulEquiv.symm_apply_eq _).2 (QuotientGroup.quotientMulEquivOfEq_mk _ _).symm
-  rw [mulEquivOfConjMulEquiv, MulEquiv.symm_trans_apply, hq, imageMulEquiv_symm_mk]
+  apply (mulEquivOfConjMulEquiv ι φ hφ hw').injective
+  simp
 
 /-- The coordinate-group isomorphism induced by a `G`-isomorphism and conjugation commutes with
 the coefficient maps. -/
 theorem mulEquivOfConjMulEquiv_coeff (hw' : u * φ w * u⁻¹ = w') (g : G) :
     mulEquivOfConjMulEquiv ι φ hφ hw' (coeff ι {w} g) = coeff ι {w'} g := by
-  rw [mulEquivOfConjMulEquiv, MulEquiv.trans_apply, imageMulEquiv_coeff, coeff_apply,
-    QuotientGroup.quotientMulEquivOfEq_mk, coeff_apply]
+  simp [coeff_apply, hφ]
 
 /-- The inverse coordinate-group isomorphism induced by a `G`-isomorphism and conjugation commutes
 with the coefficient maps. -/
 theorem mulEquivOfConjMulEquiv_symm_coeff (hw' : u * φ w * u⁻¹ = w') (g : G) :
     (mulEquivOfConjMulEquiv ι φ hφ hw').symm (coeff ι {w'} g) = coeff ι {w} g := by
-  have hq : (QuotientGroup.quotientMulEquivOfEq
-      (by rw [Set.image_singleton, ← hw', Rad_singleton_conj] :
-        Rad ι (φ '' {w}) = Rad ι {w'})).symm (coeff ι {w'} g) =
-      coeff ι (φ '' {w}) g := by
-    rw [MulEquiv.symm_apply_eq]
-    simp only [coeff_apply, QuotientGroup.quotientMulEquivOfEq_mk]
-  rw [mulEquivOfConjMulEquiv, MulEquiv.symm_trans_apply, hq, imageMulEquiv_symm_coeff]
+  rw [MulEquiv.symm_apply_eq, mulEquivOfConjMulEquiv_coeff]
 
 /-- The coordinate-group isomorphism induced by a `G`-isomorphism `φ` and conjugation sends a
 coordinate `x` of the generic point of `{w}` to the class of the word `φ x`. -/

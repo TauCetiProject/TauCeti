@@ -16,7 +16,7 @@ coefficients and their conjugates, such as the strictly quadratic word `z⁻¹ c
 ends, after a conjugation, either at a coefficient `c ∈ G` or at a standard quadratic word. This
 file shows that the two alternatives exclude each other: no standard quadratic word is conjugate
 in `G[X]` to a coefficient, the trivial coefficient included
-(`TauCeti.GroupTheory.GroupAlgGeom.Quadratic.Standard.toWord_ne_conj_inl`). Consequently a conjugate
+(`TauCeti.GroupAlgGeom.Quadratic.Standard.toWord_ne_conj_inl`). Consequently a conjugate
 `v⁻¹ c v` of a coefficient is not carried to a standard quadratic word by any homomorphism fixing
 `c` followed by a conjugation (`Standard.toWord_ne_conj_map_conj_inl`). For `z⁻¹ c z` with
 `c ≠ 1` this shows that the coefficient alternative cannot be avoided.
@@ -29,9 +29,9 @@ coefficient has no variable letters (`GX.IsCyclicallyReduced.countVar_eq_zero_of
 
 ## Main results
 
-* `TauCeti.GroupTheory.GroupAlgGeom.Quadratic.Standard.toWord_ne_conj_inl`: a standard quadratic
+* `TauCeti.GroupAlgGeom.Quadratic.Standard.toWord_ne_conj_inl`: a standard quadratic
   word is not conjugate to a coefficient.
-* `TauCeti.GroupTheory.GroupAlgGeom.Quadratic.Standard.toWord_ne_conj_map_conj_inl`: a homomorphism
+* `TauCeti.GroupAlgGeom.Quadratic.Standard.toWord_ne_conj_map_conj_inl`: a homomorphism
   fixing a coefficient and a conjugation do not carry a conjugate of that coefficient to a standard
   quadratic word.
 

@@ -118,10 +118,6 @@ private theorem signAut_apply_of_mem_avoiding {x : X} {b : Bool} {a : GX G X}
     (ha : a ∈ GX.avoiding x) : signAut x b a = a := by
   cases b <;> simp [signAut, ha]
 
-private theorem letter_inr_mem_avoiding {x y : X} (hyx : y ≠ x) (b : Bool) :
-    GX.letter (G := G) (.inr (y, b)) ∈ GX.avoiding x := by
-  cases b <;> simp [hyx]
-
 private theorem step_sameSign {w : GX G X} (hw : IsStrictlyQuadratic {w}) {x : X} {b : Bool}
     {P M Q : List (G ⊕ X × Bool)}
     (hl : GX.reducedWord w = P ++ [.inr (x, b)] ++ M ++ [.inr (x, b)] ++ Q) :
@@ -144,14 +140,15 @@ private theorem step_sameSign {w : GX G X} (hw : IsStrictlyQuadratic {w}) {x : X
   have hf_mem : f ∈ GX.elementaryAut G X :=
     mul_mem (GX.transvection_mem_elementaryAut _ _ _) (signAut_mem_elementaryAut x b)
   set L := P ++ GX.invRev M ++ Q
+  have hLx : GX.countVar x L = 0 := by
+    simp [L, hPMQ.1, hPMQ.2.1, hPMQ.2.2, GX.countVar_invRev]
   have hrem := isStrictlyQuadratic_and_occVars_prod hw (L := L) fun v => by
     by_cases hvx : v = x
-    · subst hvx; left; simp [L, hPMQ.1, hPMQ.2.1, hPMQ.2.2, GX.countVar_invRev]
+    · subst hvx; exact .inl hLx
     · right
       simp [occurrences_eq_countVar_reducedWord, hl, L, Ne.symm hvx, GX.countVar_invRev]
   have hxR : x ∉ occVars (L.map GX.letter).prod :=
-    notMem_occVars_prod_of_countVar_eq_zero
-      (by simp [L, hPMQ.1, hPMQ.2.1, hPMQ.2.2, GX.countVar_invRev])
+    notMem_occVars_prod_of_countVar_eq_zero hLx
   refine ⟨f, hf_mem, (L.map GX.letter).prod, hrem.1, hrem.2, hxk, hxR, fun a ha => ?_, ?_⟩
   · simp [f, signAut_apply_of_mem_avoiding (ha x hxk), ha x hxk]
   · have hLprod : (L.map GX.letter).prod = p * m⁻¹ * q := by
@@ -180,7 +177,7 @@ private theorem exists_aut_signed_handle {x y : X} {bx by_ : Bool} {p u v w₀ z
       inr (FreeGroup.of x) * u * inr (FreeGroup.of y) * v * (inr (FreeGroup.of x))⁻¹ *
         (p * w₀) * (inr (FreeGroup.of y))⁻¹ * z := by
     simp only [φ₁₂, MulAut.mul_apply, map_mul, map_inv, signAut_letter_self, signAut_letter_not,
-      signAut_apply_of_mem_avoiding, letter_inr_mem_avoiding hxy.symm,
+      signAut_apply_of_mem_avoiding, GX.letter_inr_mem_avoiding hxy.symm,
       GX.inr_of_mem_avoiding hxy, GX.inr_of_mem_avoiding hxy.symm,
       hp.1, hp.2, hu.1, hu.2, hv.1, hv.2, hw₀.1, hw₀.2, hz.1, hz.2, GX.transvection_inr_of_self,
       GX.transvection_apply_of_mem_avoiding, mul_one, mul_inv_rev, inv_inv, mul_assoc,
@@ -213,18 +210,18 @@ private theorem step_alt {w : GX G X} (hw : IsStrictlyQuadratic {w}) {x y : X} {
     (hav hx0.1 hy0.1) (hav hx0.2.1 hy0.2.1) (hav hx0.2.2.1 hy0.2.2.1)
     (hav hx0.2.2.2.1 hy0.2.2.2.1) (hav hx0.2.2.2.2 hy0.2.2.2.2)
   set L := P ++ W ++ V ++ U ++ Z
+  have hLx : GX.countVar x L = 0 := by
+    simp [L, hx0.1, hx0.2.1, hx0.2.2.1, hx0.2.2.2.1, hx0.2.2.2.2]
+  have hLy : GX.countVar y L = 0 := by
+    simp [L, hy0.1, hy0.2.1, hy0.2.2.1, hy0.2.2.2.1, hy0.2.2.2.2]
   have hrem := isStrictlyQuadratic_and_occVars_prod hw (L := L) fun v => by
     by_cases hvx : v = x
-    · subst hvx; left; simp [L, hx0.1, hx0.2.1, hx0.2.2.1, hx0.2.2.2.1, hx0.2.2.2.2]
+    · subst hvx; exact .inl hLx
     · by_cases hvy : v = y
-      · subst hvy; left; simp [L, hy0.1, hy0.2.1, hy0.2.2.1, hy0.2.2.2.1, hy0.2.2.2.2]
+      · subst hvy; exact .inl hLy
       · right; simp [occurrences_eq_countVar_reducedWord, hl, L, Ne.symm hvx, Ne.symm hvy]; omega
-  have hxR : x ∉ occVars (L.map GX.letter).prod :=
-    notMem_occVars_prod_of_countVar_eq_zero
-      (by simp [L, hx0.1, hx0.2.1, hx0.2.2.1, hx0.2.2.2.1, hx0.2.2.2.2])
-  have hyR : y ∉ occVars (L.map GX.letter).prod :=
-    notMem_occVars_prod_of_countVar_eq_zero
-      (by simp [L, hy0.1, hy0.2.1, hy0.2.2.1, hy0.2.2.2.1, hy0.2.2.2.2])
+  have hxR : x ∉ occVars (L.map GX.letter).prod := notMem_occVars_prod_of_countVar_eq_zero hLx
+  have hyR : y ∉ occVars (L.map GX.letter).prod := notMem_occVars_prod_of_countVar_eq_zero hLy
   have hw_eq : w = (P.map GX.letter).prod * GX.letter (.inr (x, bx)) * (U.map GX.letter).prod *
       GX.letter (.inr (y, by_)) * (V.map GX.letter).prod * GX.letter (.inr (x, !bx)) *
       (W.map GX.letter).prod * GX.letter (.inr (y, !by_)) * (Z.map GX.letter).prod := by
@@ -254,12 +251,12 @@ private theorem step_conj {w : GX G X} (hw : IsStrictlyQuadratic {w}) {z : X} {b
   have hf_mem : f ∈ GX.elementaryAut G X :=
     mul_mem (GX.transvection_mem_elementaryAut _ _ _) (signAut_mem_elementaryAut _ _)
   set L := P ++ Q
+  have hLz : GX.countVar z L = 0 := by simp [L, hPQ.1, hPQ.2]
   have hrem := isStrictlyQuadratic_and_occVars_prod hw (L := L) fun v => by
     by_cases hvz : v = z
-    · subst hvz; left; simp [L, hPQ.1, hPQ.2]
+    · subst hvz; exact .inl hLz
     · right; simp [occurrences_eq_countVar_reducedWord, hl, L, Ne.symm hvz]
-  have hzR : z ∉ occVars (L.map GX.letter).prod :=
-    notMem_occVars_prod_of_countVar_eq_zero (by simp [L, hPQ.1, hPQ.2])
+  have hzR : z ∉ occVars (L.map GX.letter).prod := notMem_occVars_prod_of_countVar_eq_zero hLz
   refine ⟨f, hf_mem, (L.map GX.letter).prod, hrem.1, hrem.2, hzk, hzR, fun a ha => ?_, ?_⟩
   · simp [f, signAut_apply_of_mem_avoiding (ha z hzk), ha z hzk]
   · have hb_eq : signAut (G := G) z (!b) (GX.letter (.inr (z, b))) = (inr (FreeGroup.of z))⁻¹ := by
@@ -284,9 +281,11 @@ private theorem atomic_step_sq {w R' : GX G X} {f₁ f₂ : MulAut (GX G X)} {x 
       IsAtomicReduction w f ⟨P.comms, x :: P.squares, P.conjs, P.const⟩ := by
   obtain ⟨hf₂_eq, hnd, hsub, hf₂_fix⟩ := hred
   have hx_not : x ∉ P.vars := fun hm => hxR (hsub x hm)
-  have hC := P.commsProd_mem_avoiding hx_not
-  have hSq := P.squaresProd_mem_avoiding hx_not
-  have hCj := P.conjsProd_mem_avoiding hx_not
+  have hx_parts : x ∉ P.vars := hx_not
+  simp only [AtomicForm.vars_def, List.mem_append, not_or] at hx_parts
+  have hC := P.commsProd_mem_avoiding hx_parts.1.1
+  have hSq := P.squaresProd_mem_avoiding hx_parts.1.2
+  have hCj := P.conjsProd_mem_avoiding hx_parts.2
   let φ := GX.transvection x P.commsProd P.commsProd⁻¹ hC (inv_mem hC)
   have hperm : (⟨P.comms, x :: P.squares, P.conjs, P.const⟩ : AtomicForm G X).vars.Perm
       (x :: P.vars) := by
@@ -356,9 +355,11 @@ private theorem atomic_step_conj {w R' : GX G X} {f₁ f₂ : MulAut (GX G X)} {
       IsAtomicReduction w f ⟨P.comms, P.squares, (z, c) :: P.conjs, P.const⟩ := by
   obtain ⟨hf₂_eq, hnd, hsub, hf₂_fix⟩ := hred
   have hz_not : z ∉ P.vars := fun hm => hzR (hsub z hm)
-  have hC := P.commsProd_mem_avoiding hz_not
-  have hSq := P.squaresProd_mem_avoiding hz_not
-  have hCj := P.conjsProd_mem_avoiding hz_not
+  have hz_parts : z ∉ P.vars := hz_not
+  simp only [AtomicForm.vars_def, List.mem_append, not_or] at hz_parts
+  have hC := P.commsProd_mem_avoiding hz_parts.1.1
+  have hSq := P.squaresProd_mem_avoiding hz_parts.1.2
+  have hCj := P.conjsProd_mem_avoiding hz_parts.2
   let φ := GX.transvection z 1 (P.commsProd * P.squaresProd)⁻¹
     (one_mem _) (inv_mem (mul_mem hC hSq))
   have hperm : (⟨P.comms, P.squares, (z, c) :: P.conjs, P.const⟩ : AtomicForm G X).vars.Perm

@@ -253,14 +253,18 @@ theorem exists_eq_map_inl {l : List (G ⊕ X × Bool)} (h : ∀ x, countVar x l 
       exact ⟨g :: L, rfl⟩
     · simpa using h x
 
+/-- A signed variable letter `y^{±1}` with `y ≠ x` does not involve `x`. -/
+theorem letter_inr_mem_avoiding [Group G] [DecidableEq X] {x y : X} (hyx : y ≠ x) (b : Bool) :
+    letter (G := G) (.inr (y, b)) ∈ avoiding x := by
+  cases b <;> simp [hyx]
+
 /-- A variable that is not spelled in a word does not occur in its product. -/
 theorem prod_map_letter_mem_avoiding [Group G] [DecidableEq X] {x : X} {l : List (G ⊕ X × Bool)}
     (h : countVar x l = 0) : (l.map letter).prod ∈ avoiding x :=
   list_prod_mem <| List.forall_mem_map.2 fun
     | .inl g, _ => by simp
-    | .inr (y, b), hm => by
-      have hy : y ≠ x := by rintro rfl; exact countVar_eq_zero.1 h b hm
-      cases b <;> simp [hy]
+    | .inr (y, b), hm =>
+      letter_inr_mem_avoiding (by rintro rfl; exact countVar_eq_zero.1 h b hm) b
 
 end CountVar
 
@@ -364,14 +368,6 @@ theorem isReduced_flatten_iff {L : List (List (G ⊕ X × Bool))} (hne : ∀ l �
     forall_exists_index, and_imp]
   exact ⟨fun ⟨h1, h2, h3⟩ => ⟨fun l hl => ⟨fun g hg => h1 g l hl hg, h2 l hl⟩, h3⟩,
     fun ⟨h, h3⟩ => ⟨fun g l hl hg => (h l hl).1 g hg, fun l hl => (h l hl).2, h3⟩⟩
-
-/-- A flatten of nonempty reduced words whose adjacent boundary letters do not combine is
-reduced. -/
-theorem isReduced_flatten {L : List (List (G ⊕ X × Bool))} (hne : ∀ l ∈ L, l ≠ [])
-    (hred : ∀ l ∈ L, IsReduced l)
-    (hchain : L.IsChain fun l₁ l₂ => ∀ a ∈ l₁.getLast?, ∀ b ∈ l₂.head?, ¬Combines a b) :
-    IsReduced L.flatten :=
-  (isReduced_flatten_iff hne).2 ⟨hred, hchain⟩
 
 end Reduced
 
@@ -841,7 +837,8 @@ theorem isCyclicallyReduced_flatten_of_blocks {blocks : List (List (G ⊕ X × B
       ∀ l₁ ∈ blocks.getLast?, ∀ l₂ ∈ blocks.head?,
         ∀ a ∈ l₁.getLast?, ∀ b ∈ l₂.head?, ¬Combines a b) :
     IsCyclicallyReduced blocks.flatten := by
-  refine isCyclicallyReduced_iff.2 ⟨isReduced_flatten hne hred hchain, fun a b m hm => ?_⟩
+  refine isCyclicallyReduced_iff.2
+    ⟨(isReduced_flatten_iff hne).2 ⟨hred, hchain⟩, fun a b m hm => ?_⟩
   rcases blocks with _ | ⟨l₀, rest⟩
   · simp at hm
   have hlen : 2 ≤ (l₀ :: rest).flatten.length := by simp [hm]
@@ -867,8 +864,8 @@ word. -/
 theorem isCyclicallyReduced_flatten_append_inl {blocks : List (List (G ⊕ X × Bool))}
     {d : G} (hne : ∀ l ∈ blocks, l ≠ []) (hred : ∀ l ∈ blocks, IsReduced l)
     (hchain : blocks.IsChain fun l₁ l₂ => ∀ a ∈ l₁.getLast?, ∀ b ∈ l₂.head?, ¬Combines a b)
-    (hhead : ∀ l ∈ blocks, ∀ b ∈ l.head?, ∀ g, b ≠ .inl g)
-    (hlast : ∀ l ∈ blocks, ∀ a ∈ l.getLast?, ∀ g, a ≠ .inl g) (hd : d ≠ 1) :
+    (hhead : ∀ l ∈ blocks.head?, ∀ b ∈ l.head?, ∀ g, b ≠ .inl g)
+    (hlast : ∀ l ∈ blocks.getLast?, ∀ a ∈ l.getLast?, ∀ g, a ≠ .inl g) (hd : d ≠ 1) :
     IsCyclicallyReduced (blocks.flatten ++ [.inl d]) := by
   have hfl : blocks.flatten ++ [(.inl d : G ⊕ X × Bool)] =
       (blocks ++ [[(.inl d : G ⊕ X × Bool)]]).flatten := by simp
@@ -889,7 +886,7 @@ theorem isCyclicallyReduced_flatten_append_inl {blocks : List (List (G ⊕ X × 
     obtain rfl : [.inl d] = l₂ := by simpa using hl₂
     obtain rfl : .inl d = b := by simpa using hb
     rcases a with g | _
-    · exact absurd rfl (hlast l₁ (List.mem_of_getLast? hl₁) (.inl g) ha g)
+    · exact absurd rfl (hlast l₁ hl₁ (.inl g) ha g)
     · simp
   · intro hlen l₁ hl₁ l₂ hl₂ a ha b hb
     rcases blocks with _ | ⟨l₀, rest⟩
@@ -900,7 +897,7 @@ theorem isCyclicallyReduced_flatten_append_inl {blocks : List (List (G ⊕ X × 
     obtain rfl : l₀ = l₂ := by simpa using hl₂
     obtain rfl : .inl d = a := by simpa using ha
     rcases b with g | _
-    · exact absurd rfl (hhead _ List.mem_cons_self (.inl g) hb g)
+    · exact absurd rfl (hhead l₀ rfl (.inl g) hb g)
     · simp
 
 end Cyclic
@@ -1026,7 +1023,8 @@ theorem IsCyclicallyReduced.countVar_eq_zero_of_eq_conj_inl {l : List (G ⊕ X �
       have hm_eq : l = (q ++ [.inr (y, b)]) ++ [.inl c] ++ invRev (q ++ [.inr (y, b)]) := by
         rw [← hl.isReduced.reducedWord_prod, ← hm_red.reducedWord_prod]
         congr 1
-        cases b <;> simpa [mul_assoc] using hprod
+        simpa only [List.map_append, List.prod_append, List.map_singleton, List.prod_singleton,
+          letter_inl, prod_map_letter_invRev] using hprod
       rcases hqp : q ++ [.inr (y, b)] with _ | ⟨a, r⟩
       · simp at hqp
       rw [hqp, invRev_cons] at hm_eq
