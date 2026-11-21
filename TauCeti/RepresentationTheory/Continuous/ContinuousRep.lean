@@ -42,6 +42,8 @@ on which the action is an explicit continuous formula.
   subspace topology.
 * `TauCeti.ContinuousRep.quotient`: descent to the quotient by an invariant submodule with the
   quotient topology.
+* `TauCeti.ContinuousRep.trivial`, `TauCeti.ContinuousRep.prod`: the trivial action, and the
+  componentwise action on a product.
 * `TauCeti.ContinuousRep.Iso`: equivariant continuous linear equivalences, with `refl`, `symm`
   and `trans`.
 * `TauCeti.ContinuousRep.ofCharacter`: the rank-one representation of a continuous character
@@ -202,6 +204,35 @@ theorem quotient_apply_mk [ContinuousAdd V] (ρ : ContinuousRep Γ R V)
   (rfl)
 
 end Subquotient
+
+section Constructions
+
+/-- **The trivial continuous representation**: every element of `Γ` acts as the identity. -/
+def trivial (Γ A M : Type*) [Monoid Γ] [TopologicalSpace Γ] [Semiring A] [AddCommMonoid M]
+    [Module A M] [TopologicalSpace M] : ContinuousRep Γ A M where
+  toRepresentation := Representation.trivial A Γ M
+  continuous_action := continuous_snd
+
+@[simp]
+theorem trivial_apply (g : Γ) (x : M) : trivial Γ A M g x = x :=
+  (rfl)
+
+/-- **The product of two continuous representations**: `Γ` acts componentwise on `M × N`, with
+the product topology. -/
+noncomputable def prod (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N) :
+    ContinuousRep Γ A (M × N) where
+  toRepresentation := ρ.toRepresentation.prod σ.toRepresentation
+  -- `Representation.prod` acts on `(x, y)` by `(ρ g x, σ g y)` by definition, and is stated with
+  -- `LinearMap.prodMap`, which `fun_prop` does not unfold.
+  continuous_action := show Continuous fun p : Γ × (M × N) => (ρ p.1 p.2.1, σ p.1 p.2.2) by
+    fun_prop
+
+@[simp]
+theorem prod_apply (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N) (g : Γ) (x : M × N) :
+    ρ.prod σ g x = (ρ g x.1, σ g x.2) :=
+  (rfl)
+
+end Constructions
 
 section ContRepresentation
 
