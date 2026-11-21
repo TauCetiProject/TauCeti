@@ -72,7 +72,8 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
 * `Submodule.finrank_range_comp_starProjection_le`: `rank (T P_U) ≤ dim U`.
 * `Submodule.finrank_inf_orthogonal_comm`: `dim (U ⊓ Vᗮ) = dim (V ⊓ Uᗮ)` when `dim U = dim V`.
 * `Submodule.finrank_orthogonal_span_singleton_eq_finrank_sub_one`: `dim (𝕜 ∙ v)ᗮ = dim E - 1`
-  for a nonzero vector `v`.
+  for a nonzero vector `v`, and `Submodule.orthogonal_span_singleton_eq_bot_of_finrank_eq_one`:
+  in a one-dimensional space `(𝕜 ∙ v)ᗮ = ⊥`.
 * `Submodule.isCompl_orthogonal_span_of_finite`: the span of finitely many vectors is
   complemented by its orthogonal complement.
 * `TauCeti.exists_ne_zero_forall_inner_eq_zero_of_card_lt_finrank`,
@@ -219,6 +220,14 @@ theorem finrank_orthogonal_span_singleton_eq_finrank_sub_one [FiniteDimensional 
     (hv : v ≠ 0) : Module.finrank 𝕜 (𝕜 ∙ v)ᗮ = Module.finrank 𝕜 E - 1 := by
   have := Module.finrank_pos_iff_exists_ne_zero (R := 𝕜).2 ⟨v, hv⟩
   exact finrank_add_finrank_orthogonal' <| by rw [finrank_span_singleton hv]; omega
+
+/-- In a one-dimensional inner product space, the orthogonal complement of the span of any nonzero
+vector is `⊥`. -/
+theorem orthogonal_span_singleton_eq_bot_of_finrank_eq_one
+    (hdim : Module.finrank 𝕜 E = 1) {v : E} (hv : v ≠ 0) : (𝕜 ∙ v)ᗮ = ⊥ := by
+  have : FiniteDimensional 𝕜 E := .of_finrank_eq_succ hdim
+  exact Submodule.finrank_eq_zero.1 <| by
+    rw [finrank_orthogonal_span_singleton_eq_finrank_sub_one hv, hdim]
 
 /-- The span of finitely many vectors is complemented by its orthogonal complement. -/
 theorem isCompl_orthogonal_span_of_finite {s : Set E} (hs : s.Finite) :

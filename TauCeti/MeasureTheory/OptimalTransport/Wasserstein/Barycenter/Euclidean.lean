@@ -9,6 +9,8 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.Normed.Lp.MeasurableSpace
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Barycenter.Uniqueness.Euclidean
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.PopulationBarycenter
+import TauCeti.Analysis.InnerProductSpace.OrthogonalLine.HausdorffDimension
+import TauCeti.MeasureTheory.Measure.Haar.Hausdorff
 import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.FrechetMean
 
 /-!

@@ -11,19 +11,19 @@ public import TauCeti.MeasureTheory.OptimalTransport.Brenier
 /-!
 # Brenier's theorem for sources vanishing on Lipschitz hypersurfaces and small sets
 
-In `TauCeti.MeasureTheory.OptimalTransport.Brenier`, Brenier's theorem is proved for source
-measures `μ` absolutely continuous with respect to an additive Haar measure on a finite-dimensional
-real inner product space `E`: absolute continuity enters only to invoke Rademacher's theorem for the
-convex Legendre–Fenchel potential `u : E → EReal` carrying the support of an optimal plan.
+In `TauCeti.MeasureTheory.OptimalTransport.Brenier`, the shared forward Brenier core factors through
+an almost-everywhere differentiability hypothesis on convex potentials `u : E → EReal` along `μ`,
+which is specialized there to `c - c`-regular sources (`TauCeti.IsCCRegular μ`, in particular
+measures absolutely continuous with respect to an additive Haar measure).
 
 By `TauCeti.ae_eventually_ne_top_and_differentiableAt_toReal_of_null_lipschitz_graphs`, any measure
 `μ` that gives mass `0` to every globally Lipschitz graph
 `range (fun w : (ℝ ∙ v)ᗮ => (w : E) + g w • v)` over the orthogonal complement of a unit vector `v`
-already sees every convex `u : E → EReal` (never `⊥`) finite on a neighbourhood and differentiable
+already sees every convex `u : E → EReal` finite on a neighbourhood and differentiable
 at `μ`-almost every point of `{x | u x ≠ ⊤}`. Consequently, the entire forward Brenier theory—graph
 representation of subdifferential plans, gradient representation and uniqueness of optimal quadratic
 plans, existence and uniqueness of the gradient Kantorovich optimal transport map, and graph
-representation of optimal `edist ^ 2` plans—holds under this weaker geometric hypothesis on `μ`.
+representation of optimal `edist ^ 2` plans—holds under this geometric hypothesis on `μ`.
 
 Since globally Lipschitz graphs over `(ℝ ∙ v)ᗮ` (`‖v‖ = 1`) are closed and satisfy
 `dimH + 1 ≤ finrank ℝ E`, the same conclusions hold whenever `μ` vanishes on all Borel sets `A`
@@ -89,8 +89,8 @@ theorem eq_graphPlan_gradient_of_ae_mem_subdifferential_of_null_lipschitz_graphs
     (∀ᵐ x ∂μ, (∀ᶠ x' in 𝓝 x, u x' ≠ ⊤) ∧ DifferentiableAt ℝ (fun x' => (u x').toReal) x) ∧
       π = graphPlan (∇ fun x => (u x).toReal) μ :=
   eq_graphPlan_gradient_of_ae_mem_subdifferential_of_ae_differentiableAt hπ hlsc
-    (fun hbot => ae_eventually_ne_top_and_differentiableAt_toReal_of_null_lipschitz_graphs
-      hconv hbot hμ) hsub
+    (fun _ => ae_eventually_ne_top_and_differentiableAt_toReal_of_null_lipschitz_graphs
+      hconv hμ) hsub
 
 /-- **An optimal quadratic plan out of a source vanishing on Lipschitz hypersurfaces is induced by
 the gradient of a convex function.** -/
@@ -105,8 +105,8 @@ theorem IsOptimalCoupling.exists_eq_graphPlan_gradient_of_null_lipschitz_graphs
       (∀ᵐ x ∂μ, (∀ᶠ x' in 𝓝 x, u x' ≠ ⊤) ∧ DifferentiableAt ℝ (fun x' => (u x').toReal) x) ∧
       π = graphPlan (∇ fun x => (u x).toReal) μ :=
   h.exists_eq_graphPlan_gradient_of_forall_convex_ae_differentiableAt
-    (fun _ hu hbot =>
-      ae_eventually_ne_top_and_differentiableAt_toReal_of_null_lipschitz_graphs hu hbot hμ) hfin
+    (fun _ hu _ =>
+      ae_eventually_ne_top_and_differentiableAt_toReal_of_null_lipschitz_graphs hu hμ) hfin
 
 /-- **Uniqueness of the optimal quadratic plan** when the finite source `μ` vanishes on globally
 Lipschitz graphs over hyperplanes. -/
@@ -119,8 +119,8 @@ theorem IsOptimalCoupling.unique_of_null_lipschitz_graphs [IsFiniteMeasure μ]
     (hfin : transportCost (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) μ ν ≠ ∞) :
     π = π' :=
   h.unique_of_forall_convex_ae_differentiableAt
-    (fun _ hu hbot =>
-      ae_eventually_ne_top_and_differentiableAt_toReal_of_null_lipschitz_graphs hu hbot hμ) h' hfin
+    (fun _ hu _ =>
+      ae_eventually_ne_top_and_differentiableAt_toReal_of_null_lipschitz_graphs hu hμ) h' hfin
 
 /-- **Brenier's theorem for sources vanishing on Lipschitz hypersurfaces** (Villani, *Topics in
 Optimal Transportation*, Theorem 2.12(ii) and §2.4). Let `μ` be a probability measure on a
@@ -146,8 +146,8 @@ theorem exists_isKantorovichOptimalTransportMap_gradient_of_null_lipschitz_graph
         IsKantorovichOptimalTransportMap (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2))
           μ ν S → S =ᵐ[μ] ∇ fun x => (u x).toReal :=
   exists_isKantorovichOptimalTransportMap_gradient_of_forall_convex_ae_differentiableAt
-    (fun _ hu hbot =>
-      ae_eventually_ne_top_and_differentiableAt_toReal_of_null_lipschitz_graphs hu hbot hμ) hfin
+    (fun _ hu _ =>
+      ae_eventually_ne_top_and_differentiableAt_toReal_of_null_lipschitz_graphs hu hμ) hfin
 
 /-- **Brenier's theorem for the cost `edist ^ 2` out of a source vanishing on Lipschitz
 hypersurfaces.** -/
@@ -158,8 +158,8 @@ theorem IsOptimalCoupling.exists_eq_graphPlan_of_null_lipschitz_graphs [IsFinite
     (hfin : wassersteinEDist 2 μ ν ≠ ∞) :
     ∃ T : E → E, Measurable T ∧ π = graphPlan T μ :=
   h.exists_eq_graphPlan_of_forall_convex_ae_differentiableAt
-    (fun _ hu hbot =>
-      ae_eventually_ne_top_and_differentiableAt_toReal_of_null_lipschitz_graphs hu hbot hμ) hfin
+    (fun _ hu _ =>
+      ae_eventually_ne_top_and_differentiableAt_toReal_of_null_lipschitz_graphs hu hμ) hfin
 
 end NullLipschitzGraphs
 

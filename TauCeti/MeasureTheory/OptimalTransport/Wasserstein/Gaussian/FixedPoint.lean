@@ -296,11 +296,11 @@ theorem Probability.frechetBarycenters_sum_smul_dirac_multivariateGaussian (hw :
     frechetBarycenters 2 (∑ j, w j • Measure.dirac (gaussianWassersteinLaw (m j) (C j))) =
       {gaussianWassersteinLaw (∑ j, (w j : ℝ) • m j) S} := by
   refine (WassersteinSpace.subsingleton_frechetBarycenters_two_sum_smul_dirac
-    (ρ := (volume : Measure (EuclideanSpace ℝ ι))) hj₀ ?_).eq_singleton_of_mem
+    hj₀ ?_).eq_singleton_of_mem
       (mem_frechetBarycenters.2
         (isFrechetBarycenter_sum_smul_dirac_multivariateGaussian hw m hC hS hfix))
   rw [gaussianWassersteinLaw_coe, multivariateGaussian_eq_withDensity hCj₀]
-  exact withDensity_absolutelyContinuous _ _
+  exact isCCRegular_of_absolutelyContinuous (withDensity_absolutelyContinuous _ _)
 
 /-- **The Gaussian barycenter.** Let `w j` be nonnegative weights summing to `1`, and let one of
 the Gaussian laws `N(m j, C j)` with a positive weight be nondegenerate. Then their quadratic

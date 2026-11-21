@@ -36,7 +36,7 @@ are exactly the linear interpolations `t ↦ ((1 - t) • x + t • y)₊ π` of
 of `μ` and `ν` (`TauCeti.WassersteinSpace.isGeodesicSegment_iff_exists_isOptimalCoupling`), so
 when the optimal coupling is unique they are exactly the linear interpolation of `π`. On a
 finite-dimensional real inner product space, Brenier's theorem makes the quadratic optimal coupling
-out of an absolutely continuous law `μ` unique, and the graph plan of the Brenier map `T`. Every
+out of a `c - c`-regular law `μ` unique, and the graph plan of the Brenier map `T`. Every
 geodesic segment of `P₂ (E)` out of `μ` is then McCann's displacement interpolation
 `t ↦ ((1 - t) • id + t • T)₊ μ`, and in particular there is only one.
 
@@ -48,12 +48,11 @@ geodesic segment of `P₂ (E)` out of `μ` is then McCann's displacement interpo
 * `TauCeti.WassersteinSpace.isGeodesicSegment_iff_coe_eq_map_smul_add_smul`: on a strictly convex
   separable Banach space, if the optimal coupling `π` is unique, the geodesic segments of
   `P_p (E)` from `μ` to `ν` are exactly the linear interpolation of `π`.
-* `TauCeti.WassersteinSpace.isGeodesicSegment_iff_coe_eq_map_smul_add_smul_of_absolutelyContinuous`:
-  on a finite-dimensional real inner product space, the geodesic segments of `P₂ (E)` out of an
-  absolutely continuous law are exactly McCann's displacement interpolation of a Brenier map.
-* `TauCeti.WassersteinSpace.eqOn_of_isGeodesicSegment_of_absolutelyContinuous`: any two geodesic
-  segments of `P₂ (E)` out of an absolutely continuous law with the same endpoint agree on
-  `[0, 1]`.
+* `TauCeti.WassersteinSpace.isGeodesicSegment_iff_coe_eq_map_smul_add_smul_of_isCCRegular`:
+  on a finite-dimensional real inner product space, the geodesic segments of `P₂ (E)` out of a
+  `c - c`-regular law are exactly McCann's displacement interpolation of a Brenier map.
+* `TauCeti.WassersteinSpace.eqOn_of_isGeodesicSegment_of_isCCRegular`: any two geodesic
+  segments of `P₂ (E)` out of a `c - c`-regular law with the same endpoint agree on `[0, 1]`.
 
 ## References
 
@@ -138,16 +137,17 @@ end Normed
 section InnerProduct
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E] {ρ : Measure E} [ρ.IsAddHaarMeasure]
+  [MeasurableSpace E] [BorelSpace E]
 
-/-- **Geodesics out of an absolutely continuous law are McCann's interpolation.** Let `E` be a
+/-- **Geodesics out of a `c - c`-regular law are McCann's interpolation.** Let `E` be a
 finite-dimensional real inner product space, let `μ` and `ν` be laws of finite second moment with
-`μ` absolutely continuous with respect to an additive Haar measure, and let `T` be a Brenier map,
-an optimal transport map from `μ` to `ν` for the cost `‖x - y‖ ^ 2 / 2`. Then a curve `γ` is a
-geodesic segment of `P₂ (E)` from `μ` to `ν` exactly when for every `t ∈ [0, 1]` the law `γ t` is
-the image of `μ` under `x ↦ (1 - t) • x + t • T x`. -/
-theorem isGeodesicSegment_iff_coe_eq_map_smul_add_smul_of_absolutelyContinuous
-    {μ ν : WassersteinSpace 2 E} (hμ : ((μ : ProbabilityMeasure E) : Measure E) ≪ ρ) {T : E → E}
+`μ` `c - c`-regular (in particular, absolutely continuous with respect to an additive Haar
+measure), and let `T` be a Brenier map, an optimal transport map from `μ` to `ν` for the cost
+`‖x - y‖ ^ 2 / 2`. Then a curve `γ` is a geodesic segment of `P₂ (E)` from `μ` to `ν` exactly when
+for every `t ∈ [0, 1]` the law `γ t` is the image of `μ` under `x ↦ (1 - t) • x + t • T x`. -/
+theorem isGeodesicSegment_iff_coe_eq_map_smul_add_smul_of_isCCRegular
+    {μ ν : WassersteinSpace 2 E} (hμ : IsCCRegular ((μ : ProbabilityMeasure E) : Measure E))
+    {T : E → E}
     (hT : IsKantorovichOptimalTransportMap (fun z : E × E ↦ ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2))
       ((μ : ProbabilityMeasure E) : Measure E) ((ν : ProbabilityMeasure E) : Measure E) T)
     {γ : ℝ → WassersteinSpace 2 E} :
@@ -169,18 +169,18 @@ theorem isGeodesicSegment_iff_coe_eq_map_smul_add_smul_of_absolutelyContinuous
   rw [graphPlan_def, AEMeasurable.map_map_of_aemeasurable (by fun_prop)
     (aemeasurable_id'.prodMk hT.aemeasurable), Function.comp_def]
 
-/-- **Uniqueness of geodesics out of an absolutely continuous law.** On a finite-dimensional real
-inner product space, if `μ` is absolutely continuous with respect to an additive Haar measure, any
-two geodesic segments of `P₂ (E)` from `μ` to `ν` agree on `[0, 1]`. -/
-theorem eqOn_of_isGeodesicSegment_of_absolutelyContinuous {μ ν : WassersteinSpace 2 E}
-    (hμ : ((μ : ProbabilityMeasure E) : Measure E) ≪ ρ) {γ γ' : ℝ → WassersteinSpace 2 E}
+/-- **Uniqueness of geodesics out of a `c - c`-regular law.** On a finite-dimensional real inner
+product space, if `μ` is `c - c`-regular, any two geodesic segments of `P₂ (E)` from `μ` to `ν`
+agree on `[0, 1]`. -/
+theorem eqOn_of_isGeodesicSegment_of_isCCRegular {μ ν : WassersteinSpace 2 E}
+    (hμ : IsCCRegular ((μ : ProbabilityMeasure E) : Measure E)) {γ γ' : ℝ → WassersteinSpace 2 E}
     (h : IsGeodesicSegment γ μ ν) (h' : IsGeodesicSegment γ' μ ν) : EqOn γ γ' (Icc 0 1) := by
   obtain ⟨u, -, -, -, -, hT, -⟩ := exists_isKantorovichOptimalTransportMap_gradient hμ
     (transportCost_norm_sub_sq_div_two_ne_top μ ν)
   intro t ht
   refine ext (ProbabilityMeasure.toMeasure_injective ?_)
-  rw [(isGeodesicSegment_iff_coe_eq_map_smul_add_smul_of_absolutelyContinuous hμ hT).1 h t ht,
-    (isGeodesicSegment_iff_coe_eq_map_smul_add_smul_of_absolutelyContinuous hμ hT).1 h' t ht]
+  rw [(isGeodesicSegment_iff_coe_eq_map_smul_add_smul_of_isCCRegular hμ hT).1 h t ht,
+    (isGeodesicSegment_iff_coe_eq_map_smul_add_smul_of_isCCRegular hμ hT).1 h' t ht]
 
 end InnerProduct
 

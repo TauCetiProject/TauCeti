@@ -119,7 +119,8 @@ theorem exists_withDensity_div_le_mongeAmpereMeasure_of_isKantorovichOptimalTran
   have hνρ : (ρ.restrict Y).withDensity g ≪ ρ :=
     (withDensity_absolutelyContinuous _ _).trans (absolutelyContinuous_of_le restrict_le_self)
   obtain ⟨u, hconv, hlsc, hbot, hdiff, hopt, -, huniq⟩ :=
-    exists_isKantorovichOptimalTransportMap_gradient hμρ hfin
+    exists_isKantorovichOptimalTransportMap_gradient
+      (isCCRegular_of_absolutelyContinuous hμρ) hfin
   have hdom : ∀ᵐ x ∂(ρ.restrict X).withDensity f, u x ≠ ⊤ :=
     hdiff.mono fun _ hx => hx.1.self_of_nhds
   have hMA : mongeAmpereMeasure ((ρ.restrict Y).withDensity g) u =
@@ -163,11 +164,14 @@ theorem exists_mongeAmpereMeasure_eq_withDensity_div_of_isKantorovichOptimalTran
   have hint : ∀ᵐ y ∂ν', y ∈ interior Y := hY.ae_withDensity_restrict_mem_interior ρ g
   obtain ⟨u, hconv, hlsc, hbot, hopt, hsubcl, hMA⟩ :=
     exists_isKantorovichOptimalTransportMap_gradient_and_mongeAmpereMeasure_eq_withDensity
-      hμ'ρ hg'm (hY.withDensity_restrict_eq_withDensity_indicator_interior ρ g) hY.closure
+      (isCCRegular_of_absolutelyContinuous hμ'ρ) hg'm
+      (hY.withDensity_restrict_eq_withDensity_indicator_interior ρ g) hY.closure
       isClosed_closure ((mem_ae_iff (s := closure Y)).1 (hint.mono fun _ hy =>
         interior_subset_closure hy))
       (hY.ae_mem_closure_imp_indicator_interior_ne_zero_iff.2 hgpos) hfin
-  obtain ⟨_, -, -, -, -, -, -, huniq⟩ := exists_isKantorovichOptimalTransportMap_gradient hμ'ρ hfin
+  obtain ⟨_, -, -, -, -, -, -, huniq⟩ :=
+    exists_isKantorovichOptimalTransportMap_gradient
+      (isCCRegular_of_absolutelyContinuous hμ'ρ) hfin
   have hXμ : ρ.restrict X ≪ μ' := withDensity_absolutelyContinuous' hf hfpos
   have hTu : T =ᵐ[ρ.restrict X] ∇ fun x => (u x).toReal :=
     hXμ.ae_le ((huniq T hT).trans (huniq _ hopt).symm)
@@ -222,7 +226,8 @@ theorem exists_mongeAmpereMeasure_eq_withDensity_div_of_isBounded
     (ρ₁ := ρ) (ρ₂ := ρ) (f := f) (g := g) hXb hYb
   have hμρ : (ρ.restrict X).withDensity f ≪ ρ :=
     (withDensity_absolutelyContinuous _ _).trans (absolutelyContinuous_of_le restrict_le_self)
-  obtain ⟨_, -, -, -, -, hopt₀, -, -⟩ := exists_isKantorovichOptimalTransportMap_gradient hμρ hfin
+  obtain ⟨_, -, -, -, -, hopt₀, -, -⟩ :=
+    exists_isKantorovichOptimalTransportMap_gradient (isCCRegular_of_absolutelyContinuous hμρ) hfin
   obtain ⟨u, hconv, hlsc, hbot, -, hopt, hXD, hsubcl, hMA⟩ :=
     exists_mongeAmpereMeasure_eq_withDensity_div_of_isKantorovichOptimalTransportMap
       hX hY hf hg hfpos hgpos hfin hopt₀

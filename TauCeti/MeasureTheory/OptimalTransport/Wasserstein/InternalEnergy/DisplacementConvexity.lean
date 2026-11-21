@@ -429,7 +429,7 @@ theorem WassersteinSpace.exists_isGeodesicSegment_convexAlong_internalEnergy (hU
         internalEnergy U ρ ((ξ : ProbabilityMeasure E) : Measure E)) γ := by
   -- The Brenier map `∇u` from `μ` to `ν` induces an optimal plan for the squared distance.
   obtain ⟨u, hconv, -, hbot, hdiff, hT, hiff, -⟩ :=
-    exists_isKantorovichOptimalTransportMap_gradient hμ
+    exists_isKantorovichOptimalTransportMap_gradient (isCCRegular_of_absolutelyContinuous hμ)
       (transportCost_norm_sub_sq_div_two_ne_top μ ν)
   set G := ∇ fun x => (u x).toReal
   have hopt := (isOptimalCoupling_edist_rpow_iff measurable_edist two_ne_zero

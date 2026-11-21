@@ -335,7 +335,7 @@ theorem dynamicCurvatureDimension_zero_of_finrank_le [Nontrivial E] (hN : (finra
   simp only [WassersteinSpace.coe_mk] at hfin
   -- The Brenier map `∇u` from `μ₀` to `μ₁` induces the optimal plan.
   obtain ⟨u, hconv, -, hbot, hdiff, hT, hiff, -⟩ :=
-    exists_isKantorovichOptimalTransportMap_gradient h₀ hfin
+    exists_isKantorovichOptimalTransportMap_gradient (isCCRegular_of_absolutelyContinuous h₀) hfin
   have hopt := isOptimalCoupling_edist_rpow_two_of_norm_sub_sq_div_two
     ((hiff (graphPlan (∇ fun x ↦ (u x).toReal) (μ₀ : Measure E))).2 rfl)
   refine ⟨(graphPlan (∇ fun x ↦ (u x).toReal) (μ₀ : Measure E)).map segmentPath,

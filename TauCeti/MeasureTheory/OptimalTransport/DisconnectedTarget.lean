@@ -112,7 +112,7 @@ theorem exists_isKantorovichOptimalTransportMap_gradient_and_not_continuousOn (h
       hν2]
     exact ENNReal.ofReal_ne_top
   obtain ⟨u, hconv, hlsc, hbot, -, hopt, -⟩ := exists_isKantorovichOptimalTransportMap_gradient
-    (uniformBallMeasure_absolutelyContinuous hR.ne') hfin
+    (isCCRegular_of_absolutelyContinuous (uniformBallMeasure_absolutelyContinuous hR.ne')) hfin
   exact ⟨u, hconv, hlsc, hbot, hopt, fun S hS =>
     not_continuousOn_of_hasLaw_uniformBallMeasure hR hr hr' hab (hopt.toHasLaw.congr hS)⟩
 
