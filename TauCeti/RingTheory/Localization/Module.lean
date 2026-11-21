@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Module.FinitePresentation
 public import Mathlib.LinearAlgebra.Dual.Defs
-public import Mathlib.RingTheory.Localization.Module
+public import Mathlib.RingTheory.Localization.BaseChange
 public import Mathlib.RingTheory.QuotSMulTop
 import Mathlib.Algebra.Module.LocalizedModule.Submodule
 import Mathlib.RingTheory.Localization.Ideal
@@ -34,6 +34,8 @@ submonoid `S`:
 * `Module.FinitePresentation.exists_bijective_map_of_isLocalizedModule`: if `M` is finitely
   presented, an isomorphism between localizations of `M` and `N` at `S` gives a map `M → N` whose
   localization at `S` is bijective.
+* `LocalizedModule.bijective_map_toSpanSingleton_iff`: a localized generator map is bijective
+  exactly when its map in any localization model is bijective.
 * `LocalizedModule.bijective_map_dual_eval_iff`: if `M` and its dual are finitely presented, the
   map `M → M**` becomes bijective after localizing at `S` exactly when the localization `Mₛ` is
   reflexive over `Rₛ`. Taking duals commutes with localization for finitely presented modules,
@@ -270,3 +272,34 @@ theorem localizedQuotSMulTopEquiv_mk (a : R) (S : Submonoid R) (m : M) (s : S) :
     ← Submodule.Quotient.mk_smul, hs]
 
 end TauCeti
+
+/-- The localization of the map `r ↦ r • m` is the map `a ↦ a • f m`. -/
+@[simp]
+theorem IsLocalizedModule.map_toSpanSingleton {R M : Type*} [CommSemiring R] [AddCommMonoid M]
+    [Module R M] (S : Submonoid R) (Rₛ : Type*) [CommSemiring Rₛ]
+    [Algebra R Rₛ] [IsLocalization S Rₛ]
+    {Mₛ : Type*} [AddCommMonoid Mₛ] [Module R Mₛ] [Module Rₛ Mₛ] [IsScalarTower R Rₛ Mₛ]
+    (f : M →ₗ[R] Mₛ) [IsLocalizedModule S f] (m : M) :
+    IsLocalizedModule.map S (Algebra.linearMap R Rₛ) f (LinearMap.toSpanSingleton R M m) =
+      (LinearMap.toSpanSingleton Rₛ Mₛ (f m)).restrictScalars R := by
+  refine IsLocalizedModule.linearMap_ext S (Algebra.linearMap R Rₛ) f ?_
+  rw [IsLocalizedModule.map_comp]
+  ext
+  simp
+
+namespace LocalizedModule
+
+/-- Bijectivity of a localized generator map can be checked in any ring and module models
+of the localization. -/
+theorem bijective_map_toSpanSingleton_iff {R M : Type*} [CommSemiring R] [AddCommMonoid M]
+    [Module R M] (S : Submonoid R) (Rₛ : Type*) [CommSemiring Rₛ]
+    [Algebra R Rₛ] [IsLocalization S Rₛ]
+    {Mₛ : Type*} [AddCommMonoid Mₛ] [Module R Mₛ] [Module Rₛ Mₛ] [IsScalarTower R Rₛ Mₛ]
+    (f : M →ₗ[R] Mₛ) [IsLocalizedModule S f] (m : M) :
+    Function.Bijective (map S (LinearMap.toSpanSingleton R M m)) ↔
+      Function.Bijective (LinearMap.toSpanSingleton Rₛ Mₛ (f m)) := by
+  rw [← IsLocalizedModule.map_bijective_iff_localizedModuleMap_bijective
+    (Algebra.linearMap R Rₛ) f, IsLocalizedModule.map_toSpanSingleton]
+  rfl
+
+end LocalizedModule
