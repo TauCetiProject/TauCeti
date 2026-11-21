@@ -40,6 +40,8 @@ from the gluing theorem `TauCeti.Wkp.exists_glue_of_restrictL_eq`.
   open cover.
 * `TauCeti.Wkp.isCompactOperator_of_restrictL`: compactness of maps into `W^{k,p}(Ω)` is local on
   a finite open cover.
+* `TauCeti.Wkp.exists_continuousLinearMap_value_ae_eq`: continuous linear maps into the members
+  of a finite open cover with almost everywhere matching values glue to one into `W^{k,p}(Ω)`.
 
 ## References
 
@@ -241,5 +243,35 @@ theorem isCompactOperator_of_restrictL [Finite ι] {X : Type*} [TopologicalSpace
   funext x
   rw [Function.comp_apply, ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.eq_symm_apply]
   exact Subtype.ext (funext fun i ↦ restrictCompatibleEquiv_apply_coe hle hcov k (f x) i)
+
+
+/-- **Continuous linear maps into `W^{k,p}(Ω)` glue over a finite open cover.** Let finitely many
+open sets `V i ⊆ Ω` cover `Ω`, and let `f i : X → W^{k,p}(V i)` be continuous linear maps whose
+values agree, almost everywhere on `V i`, with a function `g x` independent of `i`. Then there is a
+continuous linear map `F : X → W^{k,p}(Ω)` whose values equal `g x` almost everywhere on `Ω`. -/
+theorem exists_continuousLinearMap_value_ae_eq [Finite ι] {X : Type*} [TopologicalSpace X]
+    [AddCommMonoid X] [Module ℝ X] {V : ι → Opens E} (hle : ∀ i, V i ≤ Omega)
+    (hcov : Omega ≤ ⨆ i, V i) {k : ℕ} (f : ∀ i, X →L[ℝ] Wkp mu (V i) p k) (g : X → E → ℝ)
+    (hf : ∀ i x, (value k (f i x) : E → ℝ) =ᵐ[mu.restrict (V i)] g x) :
+    ∃ F : X →L[ℝ] Wkp mu Omega p k, ∀ x, (value k (F x) : E → ℝ) =ᵐ[mu.restrict Omega] g x := by
+  have := Fintype.ofFinite ι
+  -- The members `f i x` agree on the overlaps, since their values agree with `g x` there.
+  have hcomp (x : X) : (fun i ↦ f i x) ∈ compatibleFamilies mu p V k := fun i j ↦ by
+    have hi : (value k (f i x) : E → ℝ) =ᵐ[mu.restrict (V i ⊓ V j : Opens E)] g x :=
+      ae_restrict_of_ae_restrict_of_subset (SetLike.coe_subset_coe.2 inf_le_left) (hf i x)
+    have hj : (value k (f j x) : E → ℝ) =ᵐ[mu.restrict (V i ⊓ V j : Opens E)] g x :=
+      ae_restrict_of_ae_restrict_of_subset (SetLike.coe_subset_coe.2 inf_le_right) (hf j x)
+    exact Wkp.ext k (Lp.ext ((value_restrictL_ae inf_le_left k (f i x)).trans <|
+      hi.trans <| hj.symm.trans (value_restrictL_ae inf_le_right k (f j x)).symm))
+  refine ⟨(restrictCompatibleEquiv hle hcov k).symm.toContinuousLinearMap.comp
+    ((ContinuousLinearMap.pi f).codRestrict _ hcomp), fun x ↦ ?_⟩
+  have hV (i : ι) : (value k ((restrictCompatibleEquiv hle hcov k).symm
+      ⟨fun i ↦ f i x, hcomp x⟩) : E → ℝ) =ᵐ[mu.restrict (V i)] g x := by
+    refine (value_restrictL_ae (hle i) k _).symm.trans ?_
+    rw [restrictL_restrictCompatibleEquiv_symm]
+    exact hf i x
+  have hsub : (Omega : Set E) ⊆ ⋃ i, (V i : Set E) := by
+    simpa only [Opens.coe_iSup] using SetLike.coe_subset_coe.2 hcov
+  exact ae_restrict_of_ae_restrict_of_subset hsub ((ae_restrict_iUnion_iff _ _).2 hV)
 
 end TauCeti.Wkp

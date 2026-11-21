@@ -61,7 +61,8 @@ theorem IsSufficientStatistic.exists_factorization [Nonempty Θ] {P : Θ → Mea
       ∀ θ, ∀ᵐ x ∂μ, f θ x = g θ (T x) * h x := by
   obtain ⟨hT, K, hK, hdis⟩ := isSufficientStatistic_def.mp hs
   have hpair : Measurable fun x ↦ (T x, x) := hT.prodMk measurable_id
-  obtain ⟨θs, hdom⟩ := exists_absolutelyContinuous_countableMixture P μ f hf
+  obtain ⟨θs, hdom⟩ := exists_absolutelyContinuous_countableMixture P μ
+    fun θ ↦ (hf θ).absolutelyContinuous
   let L : Measure X := countableMixture P θs
   have hLdis : L.map (fun x ↦ (T x, x)) = L.map T ⊗ₘ K := by
     calc L.map (fun x ↦ (T x, x))
@@ -70,21 +71,15 @@ theorem IsSufficientStatistic.exists_factorization [Nonempty Θ] {P : Θ → Mea
       _ = countableMixture (fun θ ↦ (P θ).map T ⊗ₘ K) θs := by
           simp_rw [hdis]
       _ = countableMixture (fun θ ↦ (P θ).map T) θs ⊗ₘ K :=
-          (countableMixture_compProd (fun θ ↦ (P θ).map T) θs K).symm
+          (countableMixture_compProd K).symm
       _ = L.map T ⊗ₘ K := by rw [← map_countableMixture hT.aemeasurable]
-  have hh₀ : HasDensity L μ (fun x ↦ ∑' n, (mixtureWeight n).toReal * f (θs n) x) :=
-    hasDensity_countableMixture hf θs
-  let h : X → ℝ := fun x ↦ max (∑' n, (mixtureWeight n).toReal * f (θs n) x) 0
-  have hh_dens : HasDensity L μ h := by
-    refine hh₀.congr_ae (hh₀.measurable.max measurable_const) ?_
-    filter_upwards [hh₀.ae_nonneg] with x hx
-    exact (max_eq_left hx).symm
+  let h : X → ℝ := fun x ↦ (∑' n, mixtureWeight n * ENNReal.ofReal (f (θs n) x)).toReal
+  have hh_dens : HasDensity L μ h := HasDensity.countableMixture fun n ↦ hf (θs n)
   let g : Θ → S → ℝ := fun θ s ↦ (((P θ).map T).rnDeriv (L.map T) s).toReal
   refine ⟨g, h,
     fun θ ↦ ⟨(Measure.measurable_rnDeriv _ _).ennreal_toReal, fun _ ↦ ENNReal.toReal_nonneg⟩,
-    hh_dens.measurable, fun _ ↦ le_max_right _ _, fun θ ↦ ?_⟩
+    hh_dens.measurable, fun _ ↦ ENNReal.toReal_nonneg, fun θ ↦ ?_⟩
   have hPL_dens : HasDensity (P θ) L (fun x ↦ g θ (T x)) := by
-    rw [hasDensity_def]
     refine ⟨((Measure.measurable_rnDeriv _ _).ennreal_toReal).comp hT,
       ae_of_all _ fun _ ↦ ENNReal.toReal_nonneg, ?_⟩
     rw [eq_withDensity_rnDeriv_map_of_map_prodMk_eq_compProd hT (hdom θ) (hdis θ) hLdis]
@@ -93,7 +88,7 @@ theorem IsSufficientStatistic.exists_factorization [Nonempty Θ] {P : Θ → Mea
       Measure.rnDeriv_lt_top _ _
     filter_upwards [ae_of_ae_map hT.aemeasurable hlt] with x hx
     exact (ENNReal.ofReal_toReal hx.ne).symm
-  exact (hf θ).ae_eq (hPL_dens.trans hh_dens)
+  exact (hf θ).ae_eq_of_sigmaFinite (hPL_dens.trans hh_dens)
 
 /-- A countable mixture of measures with factorized `ℝ≥0∞`-valued densities `g θ (T x) * h x`
 has factorized density `(∑' n, mixtureWeight n * g (θs n) (T x)) * h x`. -/
@@ -103,10 +98,10 @@ private theorem countableMixture_withDensity_factorized {P : Θ → Measure X} {
     (hP : ∀ θ, P θ = μ.withDensity (fun x ↦ g θ (T x) * h x)) (θs : ℕ → Θ) :
     countableMixture P θs =
       μ.withDensity (fun x ↦ (∑' n, mixtureWeight n * g (θs n) (T x)) * h x) := by
-  have hPeq : P = fun θ ↦ μ.withDensity (fun x ↦ g θ (T x) * h x) := funext hP
-  rw [hPeq, countableMixture_withDensity μ (fun θ x ↦ g θ (T x) * h x)
-    (fun θ ↦ ((hg θ).comp hT).mul hh) θs]
-  congr 1 with x
+  rw [countableMixture_eq_withDensity (g := fun n x ↦ g (θs n) (T x) * h x)
+    (fun n ↦ ((hg (θs n)).comp hT).mul hh) fun n ↦ hP (θs n)]
+  congr 1
+  funext x
   simp_rw [← mul_assoc]
   exact ENNReal.tsum_mul_right
 
@@ -164,7 +159,8 @@ theorem isSufficientStatistic_of_exists_factorization [StandardBorelSpace X] [No
     (hfac : ∀ θ, ∀ᵐ x ∂μ, f θ x = g θ (T x) * h x) :
     IsSufficientStatistic P T := by
   -- Step 1: pick a Halmos–Savage dominating mixture `L` and take `K = condDistrib id T L`.
-  obtain ⟨θs, hdom⟩ := exists_absolutelyContinuous_countableMixture P μ f hf
+  obtain ⟨θs, hdom⟩ := exists_absolutelyContinuous_countableMixture P μ
+    fun θ ↦ (hf θ).absolutelyContinuous
   let L : Measure X := countableMixture P θs
   let K : Kernel S X := condDistrib id T L
   have hLdis : L.map (fun x ↦ (T x, x)) = L.map T ⊗ₘ K :=

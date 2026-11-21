@@ -1,228 +1,163 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: Claude
 -/
 module
 
-public import Mathlib.MeasureTheory.Integral.Bochner.Basic
-public import Mathlib.MeasureTheory.Measure.Decomposition.RadonNikodym
-public import Mathlib.MeasureTheory.Measure.WithDensity
-
-import Mathlib.MeasureTheory.Integral.Bochner.Set
-import TauCeti.MeasureTheory.Measure.WithDensity
-import TauCeti.Probability.Density
+public import TauCeti.MeasureTheory.Measure.WithDensity
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
 /-!
-# Real-valued densities of measures
+# Real densities of statistical models
 
-This file defines `TauCeti.HasDensity P μ f`, stating that `f : X → ℝ` is a measurable,
-`μ`-almost-everywhere nonnegative real-valued density of `P` with respect to `μ`:
-`P = μ.withDensity (fun x ↦ ENNReal.ofReal (f x))`.
+A statistical model is usually specified by real densities with respect to a fixed reference
+measure. `TauCeti.HasDensity P μ f` says that the real function `f` is a density of `P` with
+respect to `μ`: `f` is measurable, `μ`-a.e. nonnegative, and `P = μ.withDensity (ofReal ∘ f)`.
+A density may be changed on a `μ`-null set, and when `μ` is σ-finite it is unique up to such a
+change.
+Measures with densities in `ℝ≥0∞` are handled by Mathlib's `withDensity` and `rnDeriv` directly.
 
-It develops the characteristic API for `HasDensity`:
-* measure evaluation, Lebesgue integral transfer, and null-set characterization via the positivity
-  set `{x | 0 < f x}`;
-* Bochner integral and integrability transfer (without integrability assumptions on the integrand,
-  reusing `TauCeti.Probability.integral_withDensity_ofReal` and
-  `TauCeti.Probability.integrable_withDensity_ofReal_iff`), together with integrability and unit
-  integral of densities of finite and probability measures;
-* almost-everywhere congruence, uniqueness for σ-finite measures (reusing
-  `MeasureTheory.withDensity_eq_iff_of_sigmaFinite_withDensity`), identification with
-  the Radon–Nikodym derivative, chaining of densities, and pushforward along a map through which
-  the density factors (reusing `MeasureTheory.Measure.map_withDensity_comp`).
+The integral transfer `∫ g dP = ∫ f • g dμ` holds for every integrand `g`, with no integrability
+hypothesis, since both sides take the junk value `0` together; integrability transfers in the
+same way. A finite measure has an integrable density, and a probability measure a density of
+integral `1`. A density that factors as `k ∘ φ` through a measurable map `φ` pushes forward to the
+density `k` of `P.map φ` with respect to `μ.map φ`.
+
+## Main definitions
+
+* `TauCeti.HasDensity P μ f`: `f` is a real density of `P` with respect to `μ`.
+
+## Main results
+
+* `TauCeti.HasDensity.congr_ae`, `TauCeti.HasDensity.ae_eq`,
+  `TauCeti.HasDensity.ae_eq_of_sigmaFinite`: a density may be changed on a `μ`-null set, and for
+  σ-finite `μ` or σ-finite `P` it is unique up to such a change.
+* `TauCeti.HasDensity.integral_eq`: `∫ g dP = ∫ f • g dμ`, for every `g`.
+* `TauCeti.HasDensity.integrable_iff`: `g` is `P`-integrable iff `f • g` is `μ`-integrable.
+* `TauCeti.HasDensity.integrable`, `TauCeti.HasDensity.integral_eq_one`: the density of a finite
+  measure is integrable, and that of a probability measure has integral `1`.
+* `TauCeti.HasDensity.integral_map`: the integral transfer for the pushforward `P.map φ`.
+* `TauCeti.HasDensity.map`: a density `k ∘ φ` of `P` gives the density `k` of `P.map φ` with
+  respect to `μ.map φ`.
+* `TauCeti.HasDensity.trans`: chaining real densities `P ≪ Q ≪ μ`.
 
 ## References
 
-* M. J. Schervish, *Theory of Statistics*, Springer (1995), Theorems A.54 (p. 591) and A.74 with
-  (A.76) (pp. 597–598).
+* M. J. Schervish, *Theory of Statistics*, Springer (1995), Theorem A.54 and Theorem A.74 with
+  (A.76).
 -/
 
 public section
 
-noncomputable section
+open MeasureTheory
 
-open MeasureTheory Set
 open scoped ENNReal
 
 namespace TauCeti
 
-variable {X Y F : Type*} [MeasurableSpace X] [MeasurableSpace Y]
-  {P Q μ : Measure X} {f g : X → ℝ}
+variable {X Y E : Type*} [MeasurableSpace X] [MeasurableSpace Y] [NormedAddCommGroup E]
+  [NormedSpace ℝ E] {P μ : Measure X} {f : X → ℝ}
 
-/-- `f : X → ℝ` is a real-valued density of `P` with respect to `μ`: `f` is measurable,
-`μ`-almost-everywhere nonnegative, and `P = μ.withDensity (fun x ↦ ENNReal.ofReal (f x))`. -/
-def HasDensity (P μ : Measure X) (f : X → ℝ) : Prop :=
-  Measurable f ∧ (∀ᵐ x ∂μ, 0 ≤ f x) ∧ P = μ.withDensity (fun x ↦ ENNReal.ofReal (f x))
+/-- `f` is a **real density** of the measure `P` with respect to the reference measure `μ`: it is
+measurable, nonnegative `μ`-almost everywhere, and `P = μ.withDensity (ENNReal.ofReal ∘ f)`. -/
+structure HasDensity (P μ : Measure X) (f : X → ℝ) : Prop where
+  /-- A density is measurable. -/
+  measurable : Measurable f
+  /-- A density is nonnegative almost everywhere. -/
+  ae_nonneg : 0 ≤ᵐ[μ] f
+  /-- The measure is the reference measure weighted by the density. -/
+  eq_withDensity : P = μ.withDensity fun x ↦ ENNReal.ofReal (f x)
 
-/-- Unfolding lemma for `HasDensity`. -/
-theorem hasDensity_def :
-    HasDensity P μ f ↔
-      Measurable f ∧ (∀ᵐ x ∂μ, 0 ≤ f x) ∧ P = μ.withDensity (fun x ↦ ENNReal.ofReal (f x)) :=
-  (Iff.rfl)
+/-- A measurable, almost everywhere nonnegative `f` is a density of `μ.withDensity (ofReal ∘ f)`. -/
+theorem hasDensity_withDensity_ofReal (hf : Measurable f) (hf₀ : 0 ≤ᵐ[μ] f) :
+    HasDensity (μ.withDensity fun x ↦ ENNReal.ofReal (f x)) μ f :=
+  ⟨hf, hf₀, rfl⟩
 
-/-- A real density is measurable. -/
-@[fun_prop]
-theorem HasDensity.measurable (h : HasDensity P μ f) : Measurable f :=
-  h.1
+namespace HasDensity
 
-/-- A real density is almost everywhere nonnegative with respect to the reference measure. -/
-theorem HasDensity.ae_nonneg (h : HasDensity P μ f) : ∀ᵐ x ∂μ, 0 ≤ f x :=
-  h.2.1
+/-- A measure with a density is absolutely continuous with respect to the reference measure. -/
+theorem absolutelyContinuous (h : HasDensity P μ f) : P ≪ μ :=
+  h.eq_withDensity ▸ withDensity_absolutelyContinuous μ _
 
-/-- A measure with a real density `f` equals `μ.withDensity (ENNReal.ofReal ∘ f)`. -/
-theorem HasDensity.eq_withDensity (h : HasDensity P μ f) :
-    P = μ.withDensity (fun x ↦ ENNReal.ofReal (f x)) :=
-  h.2.2
+/-- A density may be changed on a `μ`-null set, keeping it measurable. -/
+theorem congr_ae (h : HasDensity P μ f) {g : X → ℝ} (hg : Measurable g) (hfg : f =ᵐ[μ] g) :
+    HasDensity P μ g where
+  measurable := hg
+  ae_nonneg := by
+    filter_upwards [h.ae_nonneg, hfg] with x hx hfx
+    rwa [← hfx]
+  eq_withDensity := h.eq_withDensity.trans <| withDensity_congr_ae <| by
+    filter_upwards [hfg] with x hx
+    rw [hx]
 
-/-- A measurable, `μ`-almost-everywhere nonnegative function `f` is a real density of
-`μ.withDensity (fun x ↦ ENNReal.ofReal (f x))`. -/
-theorem hasDensity_withDensity_ofReal (hf : Measurable f) (hnn : ∀ᵐ x ∂μ, 0 ≤ f x) :
-    HasDensity (μ.withDensity (fun x ↦ ENNReal.ofReal (f x))) μ f :=
-  ⟨hf, hnn, rfl⟩
+/-- **Uniqueness of densities.** Two densities of the same measure with respect to a σ-finite
+measure agree almost everywhere. -/
+theorem ae_eq [SigmaFinite μ] (hf : HasDensity P μ f) {g : X → ℝ} (hg : HasDensity P μ g) :
+    f =ᵐ[μ] g := by
+  have h := (withDensity_eq_iff_of_sigmaFinite hf.measurable.ennreal_ofReal.aemeasurable
+    hg.measurable.ennreal_ofReal.aemeasurable).mp (hf.eq_withDensity.symm.trans hg.eq_withDensity)
+  filter_upwards [h, hf.ae_nonneg, hg.ae_nonneg] with x hx hfx hgx
+  exact (ENNReal.ofReal_eq_ofReal_iff hfx hgx).mp hx
 
-/-- Every measure has the constant function `1` as a real density with respect to itself. -/
-@[simp]
-theorem hasDensity_self (μ : Measure X) : HasDensity μ μ (fun _ ↦ 1) :=
-  ⟨measurable_const, ae_of_all _ fun _ ↦ zero_le_one, by simp⟩
+/-- **Uniqueness of densities under σ-finite `P`.** Two densities of the same σ-finite measure
+agree almost everywhere with respect to the reference measure `μ`, even if `μ` is only s-finite. -/
+theorem ae_eq_of_sigmaFinite [SigmaFinite P] (hf : HasDensity P μ f) {g : X → ℝ}
+    (hg : HasDensity P μ g) : f =ᵐ[μ] g := by
+  have : SigmaFinite (μ.withDensity fun x ↦ ENNReal.ofReal (f x)) :=
+    hf.eq_withDensity ▸ inferInstance
+  have h := (withDensity_eq_iff_of_sigmaFinite_withDensity hf.measurable.ennreal_ofReal.aemeasurable
+    hg.measurable.ennreal_ofReal.aemeasurable).mp (hf.eq_withDensity.symm.trans hg.eq_withDensity)
+  filter_upwards [h, hf.ae_nonneg, hg.ae_nonneg] with x hx hfx hgx
+  exact (ENNReal.ofReal_eq_ofReal_iff hfx hgx).mp hx
 
-/-- A measure with a real density with respect to `μ` is absolutely continuous with respect to
-`μ`. -/
-theorem HasDensity.absolutelyContinuous (h : HasDensity P μ f) : P ≪ μ := by
-  rw [h.eq_withDensity]
-  exact withDensity_absolutelyContinuous _ _
-
-/-- A measure with a real density with respect to a σ-finite measure is σ-finite. -/
-theorem HasDensity.sigmaFinite [SigmaFinite μ] (h : HasDensity P μ f) : SigmaFinite P := by
-  rw [h.eq_withDensity]
-  infer_instance
-
-/-- A measure with a real density with respect to an s-finite measure is s-finite. -/
-theorem HasDensity.sFinite [SFinite μ] (h : HasDensity P μ f) : SFinite P := by
-  rw [h.eq_withDensity]
-  infer_instance
-
-/-- Measure of a measurable set under a real density. -/
-theorem HasDensity.apply (h : HasDensity P μ f) {s : Set X} (hs : MeasurableSet s) :
+/-- The mass of a measurable set is the integral of the density over it. -/
+theorem measure_apply (h : HasDensity P μ f) {s : Set X} (hs : MeasurableSet s) :
     P s = ∫⁻ x in s, ENNReal.ofReal (f x) ∂μ := by
   rw [h.eq_withDensity, withDensity_apply _ hs]
 
-/-- Real measure of a measurable set under a real density, as a set Bochner integral. -/
-theorem HasDensity.measureReal_eq_setIntegral (h : HasDensity P μ f) {s : Set X}
-    (hs : MeasurableSet s) :
-    P.real s = ∫ x in s, f x ∂μ := by
-  rw [h.eq_withDensity]
-  exact Probability.measureReal_withDensity_ofReal (ae_restrict_of_ae h.ae_nonneg) hs
-    h.measurable.aemeasurable.restrict
-
-/-- Lebesgue integral transfer under a real density, with no measurability hypothesis on `g`. -/
-theorem HasDensity.lintegral_eq (h : HasDensity P μ f) (g : X → ℝ≥0∞) :
-    ∫⁻ x, g x ∂P = ∫⁻ x, ENNReal.ofReal (f x) * g x ∂μ := by
-  rw [h.eq_withDensity,
-    lintegral_withDensity_eq_lintegral_mul_non_measurable _ h.measurable.ennreal_ofReal
-      (ae_of_all _ fun _ ↦ ENNReal.ofReal_lt_top) g]
-  simp only [Pi.mul_apply]
-
-/-- A set is `P`-null if and only if its intersection with `{x | 0 < f x}` is `μ`-null. -/
-theorem HasDensity.measure_eq_zero_iff (h : HasDensity P μ f) {s : Set X} :
-    P s = 0 ↔ μ (s ∩ {x | 0 < f x}) = 0 := by
-  rw [h.eq_withDensity, withDensity_apply_eq_zero h.measurable.ennreal_ofReal, inter_comm]
-  simp only [ne_eq, ENNReal.ofReal_eq_zero, not_le]
-
-section Bochner
-
-variable [NormedAddCommGroup F] [NormedSpace ℝ F]
-
-/-- Under a real density `f`, a function is `P`-integrable if and only if its `f`-weighted
-version is `μ`-integrable. -/
-theorem HasDensity.integrable_iff (h : HasDensity P μ f) (g : X → F) :
-    Integrable g P ↔ Integrable (fun x ↦ f x • g x) μ := by
-  rw [h.eq_withDensity]
-  exact Probability.integrable_withDensity_ofReal_iff h.measurable.aemeasurable h.ae_nonneg
-
-/-- Bochner integral transfer under a real density `f`, with no integrability hypothesis on `g`:
-when `g` is not `P`-integrable, both sides vanish. -/
-theorem HasDensity.integral_eq (h : HasDensity P μ f) (g : X → F) :
+/-- **The integral transfer.** Integration against `P` is integration of the `f`-weighted
+integrand against `μ`. No integrability hypothesis is needed: when `g` is not `P`-integrable,
+`f • g` is not `μ`-integrable either, and both sides are `0`. -/
+theorem integral_eq (h : HasDensity P μ f) (g : X → E) :
     ∫ x, g x ∂P = ∫ x, f x • g x ∂μ := by
   rw [h.eq_withDensity]
-  exact Probability.integral_withDensity_ofReal h.measurable.aemeasurable h.ae_nonneg g
+  exact MeasureTheory.integral_withDensity_ofReal h.measurable.aemeasurable h.ae_nonneg g
 
-/-- Bochner integral transfer for the pushforward of a measure with a real density. -/
-theorem HasDensity.integral_map (h : HasDensity P μ f) {φ : X → Y} (hφ : AEMeasurable φ P)
-    {g : Y → F} (hg : AEStronglyMeasurable g (P.map φ)) :
+/-- A function is `P`-integrable iff its product with the density is `μ`-integrable. -/
+theorem integrable_iff (h : HasDensity P μ f) {g : X → E} :
+    Integrable g P ↔ Integrable (fun x ↦ f x • g x) μ := by
+  rw [h.eq_withDensity]
+  exact MeasureTheory.integrable_withDensity_ofReal_iff h.measurable.aemeasurable h.ae_nonneg
+
+/-- The density of a finite measure is integrable. -/
+theorem integrable [IsFiniteMeasure P] (h : HasDensity P μ f) : Integrable f μ :=
+  MeasureTheory.integrable_of_eq_withDensity h.eq_withDensity h.measurable.aemeasurable h.ae_nonneg
+
+/-- The density of a probability measure has integral `1`. -/
+theorem integral_eq_one [IsProbabilityMeasure P] (h : HasDensity P μ f) : ∫ x, f x ∂μ = 1 := by
+  simpa using (h.integral_eq fun _ ↦ (1 : ℝ)).symm
+
+/-- **The integral transfer for pushforwards.** Integration against the image of `P` under `φ` is
+integration of the `f`-weighted integrand `g ∘ φ` against `μ`. -/
+theorem integral_map (h : HasDensity P μ f) {φ : X → Y} (hφ : AEMeasurable φ P) {g : Y → E}
+    (hg : AEStronglyMeasurable g (P.map φ)) :
     ∫ y, g y ∂P.map φ = ∫ x, f x • g (φ x) ∂μ := by
   rw [MeasureTheory.integral_map hφ hg, h.integral_eq]
 
-end Bochner
+/-- **Pushing a density forward.** If the density of `P` factors as `k ∘ φ` through a measurable
+map `φ`, with `k` measurable, then `k` is a density of `P.map φ` with respect to `μ.map φ`. -/
+theorem map {k : Y → ℝ} {φ : X → Y} (h : HasDensity P μ (k ∘ φ)) (hφ : Measurable φ)
+    (hk : Measurable k) : HasDensity (P.map φ) (μ.map φ) k where
+  measurable := hk
+  ae_nonneg := (ae_map_iff hφ.aemeasurable (measurableSet_le measurable_const hk)).mpr h.ae_nonneg
+  eq_withDensity := by
+    rw [h.eq_withDensity]
+    exact Measure.map_withDensity_comp hφ hk.ennreal_ofReal
 
-/-- A real density of a finite measure is integrable with respect to the reference measure. -/
-theorem HasDensity.integrable [IsFiniteMeasure P] (h : HasDensity P μ f) : Integrable f μ :=
-  Probability.integrable_of_eq_withDensity h.eq_withDensity h.measurable.aemeasurable h.ae_nonneg
-
-/-- The Bochner integral of a real density equals the real total mass of the measure. -/
-theorem HasDensity.integral_eq_measureReal_univ (h : HasDensity P μ f) :
-    ∫ x, f x ∂μ = P.real univ := by
-  rw [h.measureReal_eq_setIntegral MeasurableSet.univ, Measure.restrict_univ]
-
-/-- The Bochner integral of a real density of a probability measure equals `1`. -/
-theorem HasDensity.integral_eq_one [IsProbabilityMeasure P] (h : HasDensity P μ f) :
-    ∫ x, f x ∂μ = 1 := by
-  rw [h.integral_eq_measureReal_univ, probReal_univ]
-
-/-- Replacing a real density by a `μ`-almost-everywhere equal measurable function preserves
-`HasDensity`. -/
-theorem HasDensity.congr_ae (h : HasDensity P μ f) (hg : Measurable g) (hfg : f =ᵐ[μ] g) :
-    HasDensity P μ g := by
-  refine ⟨hg, ?_, ?_⟩
-  · filter_upwards [h.ae_nonneg, hfg] with x hx hxeq
-    exact hxeq ▸ hx
-  · rw [h.eq_withDensity]
-    refine withDensity_congr_ae ?_
-    filter_upwards [hfg] with x hxeq
-    rw [hxeq]
-
-/-- Two real densities of the same σ-finite measure agree almost everywhere with respect to the
-reference measure. (In particular, this holds whenever `P` is finite, or whenever `μ` is σ-finite
-via `HasDensity.sigmaFinite`.) -/
-theorem HasDensity.ae_eq [SigmaFinite P] (h₁ : HasDensity P μ f) (h₂ : HasDensity P μ g) :
-    f =ᵐ[μ] g := by
-  have : SigmaFinite (μ.withDensity fun x ↦ ENNReal.ofReal (f x)) := by
-    rwa [← h₁.eq_withDensity]
-  have hae : (fun x ↦ ENNReal.ofReal (f x)) =ᵐ[μ] fun x ↦ ENNReal.ofReal (g x) :=
-    (withDensity_eq_iff_of_sigmaFinite_withDensity h₁.measurable.ennreal_ofReal.aemeasurable
-      h₂.measurable.ennreal_ofReal.aemeasurable).mp
-      (h₁.eq_withDensity.symm.trans h₂.eq_withDensity)
-  filter_upwards [hae, h₁.ae_nonneg, h₂.ae_nonneg] with x hxeq hfx hgx
-  exact (ENNReal.ofReal_eq_ofReal_iff hfx hgx).mp hxeq
-
-/-- The Radon–Nikodym derivative of a measure with real density `f` with respect to a σ-finite
-reference measure agrees almost everywhere with `ENNReal.ofReal ∘ f`. -/
-theorem HasDensity.rnDeriv_ae_eq [SigmaFinite μ] (h : HasDensity P μ f) :
-    P.rnDeriv μ =ᵐ[μ] fun x ↦ ENNReal.ofReal (f x) := by
-  rw [h.eq_withDensity]
-  exact Measure.rnDeriv_withDensity μ h.measurable.ennreal_ofReal
-
-/-- The real part of the Radon–Nikodym derivative of a measure with real density `f` with respect
-to a σ-finite reference measure agrees almost everywhere with `f`. -/
-theorem HasDensity.toReal_rnDeriv_ae_eq [SigmaFinite μ] (h : HasDensity P μ f) :
-    (fun x ↦ (P.rnDeriv μ x).toReal) =ᵐ[μ] f := by
-  filter_upwards [h.rnDeriv_ae_eq, h.ae_nonneg] with x hxeq hfx
-  rw [hxeq, ENNReal.toReal_ofReal hfx]
-
-/-- If `P` is σ-finite and absolutely continuous with respect to `μ` (with a Lebesgue
-decomposition), then `(P.rnDeriv μ ·).toReal` is a real density of `P` with respect to `μ`. -/
-theorem hasDensity_rnDeriv [SigmaFinite P] [P.HaveLebesgueDecomposition μ] (hac : P ≪ μ) :
-    HasDensity P μ (fun x ↦ (P.rnDeriv μ x).toReal) := by
-  refine ⟨(Measure.measurable_rnDeriv P μ).ennreal_toReal,
-    ae_of_all _ fun _ ↦ ENNReal.toReal_nonneg, ?_⟩
-  conv_lhs => rw [← Measure.withDensity_rnDeriv_eq P μ hac]
-  refine withDensity_congr_ae ?_
-  filter_upwards [Measure.rnDeriv_lt_top P μ] with x hx
-  rw [ENNReal.ofReal_toReal hx.ne]
-
-/-- Chaining real densities: if `P` has density `g` with respect to `Q` and `Q` has density `h`
-with respect to `μ`, then `P` has density `g * h` with respect to `μ`. -/
-theorem HasDensity.trans (hPQ : HasDensity P Q g) (hQμ : HasDensity Q μ h) :
+/-- **Chaining real densities.** If `P` has density `g` with respect to `Q` and `Q` has density
+`h` with respect to `μ`, then `P` has density `g * h` with respect to `μ`. -/
+theorem trans {Q : Measure X} {g h : X → ℝ} (hPQ : HasDensity P Q g) (hQμ : HasDensity Q μ h) :
     HasDensity P μ (fun x ↦ g x * h x) := by
   have hgnn : ∀ᵐ x ∂μ, 0 ≤ h x → h x = 0 ∨ 0 ≤ g x := by
     have hQ : ∀ᵐ x ∂(μ.withDensity (fun x ↦ ENNReal.ofReal (h x))), 0 ≤ g x :=
@@ -246,16 +181,6 @@ theorem HasDensity.trans (hPQ : HasDensity P Q g) (hQμ : HasDensity Q μ h) :
     · simp [h0]
     · rw [Pi.mul_apply, mul_comm, ENNReal.ofReal_mul hgx]
 
-/-- Pushforward of a real density that factors through a measurable map `φ`: if `P` has real
-density `g ∘ φ` with respect to `μ`, then `P.map φ` has real density `g` with respect to
-`μ.map φ`. -/
-theorem HasDensity.map_comp {φ : X → Y} {g : Y → ℝ} (hφ : Measurable φ) (hg : Measurable g)
-    (h : HasDensity P μ (g ∘ φ)) :
-    HasDensity (P.map φ) (μ.map φ) g := by
-  refine ⟨hg, ?_, ?_⟩
-  · rw [ae_map_iff hφ.aemeasurable (measurableSet_le measurable_const hg)]
-    exact h.ae_nonneg
-  · rw [h.eq_withDensity]
-    exact Measure.map_withDensity_comp hφ hg.ennreal_ofReal
+end HasDensity
 
 end TauCeti

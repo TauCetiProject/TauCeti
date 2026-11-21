@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Fredholm.DeterminantLine.Chart
+public import TauCeti.Analysis.Fredholm.DeterminantLine.Transport
 public import TauCeti.LinearAlgebra.Determinant.Complex.LinearMap
 public import TauCeti.Topology.Algebra.Module.Equiv.RestrictScalars
 import TauCeti.LinearAlgebra.Complex.Finrank
@@ -52,12 +52,31 @@ read in any real kernel chart as positive multiples of one fixed vector
 (`ContinuousLinearMap.exists_forall_isComplexPositiveDetLine_detLineChartEquiv_eq_smul`): the
 complex orientations form a continuous orientation of the determinant line bundle of the family.
 
+Over an arbitrary parameter space, a family of complex positive elements along a family of
+complex-linear operators which is continuous and Fredholm on `s` is coherent on `s`
+(`TauCeti.isDetLineCoherentOn_of_isComplexPositiveDetLine`): near each parameter, one complex
+kernel chart reads any two complex positive elements as positive multiples of each other, and
+coherence may be checked in that chart
+(`TauCeti.isDetLineCoherentWithinAt_of_eventually_sameRay`). Hence orientation transport along a
+path of complex-linear Fredholm operators carries the complex orientation
+(`ContinuousLinearMap.IsFredholm.complexDetLineOrientation`) at one end to the complex
+orientation at the other (`TauCeti.detLineOrientationTransport_complexDetLineOrientation`).
+
+## Main definitions
+
+* `ContinuousLinearMap.IsFredholm.complexDetLineOrientation`: the complex orientation of the
+  determinant line of a complex-linear Fredholm operator.
+
 ## Main results
 
 * `ContinuousLinearMap.isComplexPositiveTMulDual_detLineChartEquiv_iff`: complex kernel charts read
   complex orientations as complex orientations.
 * `ContinuousLinearMap.exists_forall_isComplexPositiveDetLine_detLineChartEquiv_eq_smul`: the
   complex orientations of a continuous family of complex-linear operators are continuous.
+* `TauCeti.isDetLineCoherentOn_of_isComplexPositiveDetLine`: complex orientations of a continuous
+  family of complex-linear Fredholm operators are coherent.
+* `TauCeti.detLineOrientationTransport_complexDetLineOrientation`: transport along complex-linear
+  paths preserves complex orientations.
 
 ## References
 
@@ -105,21 +124,15 @@ private theorem cokerEquiv_mk (y : F) :
 
 /-- Complex positivity of an element of the determinant line of `T.restrictScalars ℝ`, read in the
 complex kernel and cokernel of `T`. This is `LinearMap.isComplexPositiveDetLine_iff`, with
-`LinearMap.detLineRestrictScalarsEquiv`, whose body is not exposed here, computed on pure tensors
+`LinearMap.detLineRestrictScalarsEquiv` unfolded by `LinearMap.detLineRestrictScalarsEquiv_eq_congr`
 and with the kernel and cokernel retyped through `kerEquiv` and `cokerEquiv`. -/
 private theorem isComplexPositiveDetLine_iff_congr
     {z : (T.restrictScalars ℝ : E →ₗ[ℝ] F).detLine} :
     (T : E →ₗ[ℂ] F).IsComplexPositiveDetLine z ↔
       IsComplexPositiveTMulDual (TensorProduct.congr (kerEquiv T).symm.detLineCongr
         (cokerEquiv T).symm.detLineCongr.dualMap z) := by
-  have heq : ((T : E →ₗ[ℂ] F).detLineRestrictScalarsEquiv :
-      (T.restrictScalars ℝ : E →ₗ[ℝ] F).detLine ≃ₗ[ℝ] _) = TensorProduct.congr
-        (kerEquiv T).symm.detLineCongr (cokerEquiv T).symm.detLineCongr.dualMap :=
-    LinearEquiv.toLinearMap_injective (TensorProduct.ext' fun x φ ↦
-      (LinearMap.detLineRestrictScalarsEquiv_tmul _ x φ).trans (TensorProduct.congr_tmul
-        (kerEquiv T).symm.detLineCongr (cokerEquiv T).symm.detLineCongr.dualMap x φ).symm)
-  exact LinearMap.isComplexPositiveDetLine_iff.trans
-    (Iff.of_eq (congrArg _ (LinearEquiv.congr_fun heq z)))
+  exact LinearMap.isComplexPositiveDetLine_iff.trans (Iff.of_eq (congrArg _
+    (LinearEquiv.congr_fun (LinearMap.detLineRestrictScalarsEquiv_eq_congr (T : E →ₗ[ℂ] F)) z)))
 
 end Real
 
@@ -329,3 +342,140 @@ theorem exists_forall_isComplexPositiveDetLine_detLineChartEquiv_eq_smul (hT : C
 end Continuity
 
 end ContinuousLinearMap
+
+/-! ### Complex orientations along families -/
+
+open Filter Set Topology ContinuousLinearMap
+
+namespace TauCeti
+
+section Coherence
+
+section Chart
+
+variable {E Λ F G : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [NormedAddCommGroup Λ]
+  [NormedSpace ℂ Λ] [FiniteDimensional ℂ Λ] [NormedAddCommGroup F] [NormedSpace ℂ F]
+  [NormedAddCommGroup G] [NormedSpace ℂ G] [FiniteDimensional ℂ G] {D₂ : Λ →L[ℂ] F}
+  {q : E × Λ →L[ℂ] G} {T T' : E →L[ℂ] F}
+
+/-- A complex kernel chart reads complex positive elements of the determinant lines of two
+complex-linear operators as positive multiples of each other. -/
+private theorem sameRay_detLineChartEquiv_of_isComplexPositiveDetLine
+    (h : (((T.restrictScalars ℝ).coprod (D₂.restrictScalars ℝ)).prod
+      (q.restrictScalars ℝ)).IsInvertible)
+    (h' : (((T'.restrictScalars ℝ).coprod (D₂.restrictScalars ℝ)).prod
+      (q.restrictScalars ℝ)).IsInvertible)
+    {z : (T.restrictScalars ℝ : E →ₗ[ℝ] F).detLine}
+    {z' : (T'.restrictScalars ℝ : E →ₗ[ℝ] F).detLine}
+    (hz : (T : E →ₗ[ℂ] F).IsComplexPositiveDetLine z)
+    (hz' : (T' : E →ₗ[ℂ] F).IsComplexPositiveDetLine z') :
+    SameRay ℝ (detLineChartEquiv (T'.restrictScalars ℝ) _ _ h' z')
+      (detLineChartEquiv (T.restrictScalars ℝ) _ _ h z) := by
+  obtain ⟨c, hc, hcz⟩ :=
+    ((isComplexPositiveTMulDual_detLineChartEquiv_iff h).2 hz).exists_pos_smul_eq
+      ((isComplexPositiveTMulDual_detLineChartEquiv_iff h').2 hz')
+  rw [hcz]
+  exact SameRay.sameRay_pos_smul_left _ hc
+
+end Chart
+
+variable {E F X : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
+  [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F] [TopologicalSpace X]
+  {T : X → E →L[ℂ] F} {s : Set X}
+
+/-- **Complex orientations are coherent.** Along a family of complex-linear operators which is
+continuous and Fredholm on `s`, a family of complex positive elements of the determinant lines of
+the underlying real operators is coherent on `s`: the complex orientations form a continuous
+orientation of the determinant line bundle over `s`. -/
+theorem isDetLineCoherentOn_of_isComplexPositiveDetLine (hT : ContinuousOn T s)
+    (hF : ∀ x ∈ s, IsFredholm (T x)) {v : ∀ x, ((T x).restrictScalars ℝ : E →ₗ[ℝ] F).detLine}
+    (hv : ∀ x ∈ s, (T x : E →ₗ[ℂ] F).IsComplexPositiveDetLine (v x)) :
+    IsDetLineCoherentOn (fun x ↦ (T x).restrictScalars ℝ) v s := by
+  refine isDetLineCoherentOn_iff.2 fun x₀ hx₀ ↦ ?_
+  obtain ⟨S, hS, G, hG, q, U, hU, hxU, hinv⟩ := (hF x₀ hx₀).exists_isOpen_kernelChart
+  -- A complex kernel chart of `T x₀`, valid on `U`, is a kernel chart of the real operators.
+  have hinvℝ (x : X) (hx : T x ∈ U) : ((((T x).restrictScalars ℝ).coprod
+      (S.subtypeL.restrictScalars ℝ)).prod (q.restrictScalars ℝ)).IsInvertible :=
+    (hinv _ hx).restrictScalars
+  have hTℝ : ContinuousWithinAt (fun x ↦ (T x).restrictScalars ℝ) s x₀ :=
+    (restrictScalarsIsometry ℂ E F ℝ ℝ).continuous.continuousAt.comp_continuousWithinAt
+      (hT x₀ hx₀)
+  have := (hF x₀ hx₀).finite_coker
+  refine isDetLineCoherentWithinAt_of_eventually_sameRay hTℝ ((hF x₀ hx₀).restrictScalars ℝ)
+    (hv x₀ hx₀).ne_zero (hinvℝ x₀ hxU) ?_
+  filter_upwards [(hT x₀ hx₀).tendsto.eventually (hU.mem_nhds hxU), self_mem_nhdsWithin]
+    with x hxU' hx
+  exact ⟨hinvℝ x hxU', sameRay_detLineChartEquiv_of_isComplexPositiveDetLine _ _ (hv x₀ hx₀)
+    (hv x hx)⟩
+
+end Coherence
+
+end TauCeti
+
+namespace ContinuousLinearMap.IsFredholm
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [NormedAddCommGroup F]
+  [NormedSpace ℂ F] {A : E →L[ℂ] F}
+
+/-- The determinant line of a complex-linear Fredholm operator has a complex positive element. -/
+theorem exists_isComplexPositiveDetLine (hA : IsFredholm A) :
+    ∃ z : (A.restrictScalars ℝ : E →ₗ[ℝ] F).detLine,
+      (A : E →ₗ[ℂ] F).IsComplexPositiveDetLine z ∧ z ≠ 0 := by
+  have := hA.finite_ker
+  have := hA.finite_coker
+  obtain ⟨z, hz⟩ := (A : E →ₗ[ℂ] F).exists_isComplexPositiveDetLine
+  exact ⟨z, hz, hz.ne_zero⟩
+
+/-- The **complex orientation** of the determinant line of the real operator underlying a
+complex-linear Fredholm operator `A`: the orientation given by its complex positive elements
+(`LinearMap.IsComplexPositiveDetLine`), which orient the complex kernel and cokernel of `A` by
+their complex structures. -/
+def complexDetLineOrientation (hA : IsFredholm A) :
+    Module.Ray ℝ (A.restrictScalars ℝ : E →ₗ[ℝ] F).detLine :=
+  rayOfNeZero ℝ hA.exists_isComplexPositiveDetLine.choose
+    hA.exists_isComplexPositiveDetLine.choose_spec.2
+
+/-- The complex orientation is the orientation of any complex positive element of the
+determinant line. -/
+theorem complexDetLineOrientation_eq (hA : IsFredholm A)
+    {z : (A.restrictScalars ℝ : E →ₗ[ℝ] F).detLine}
+    (hz : (A : E →ₗ[ℂ] F).IsComplexPositiveDetLine z) (hz0 : z ≠ 0) :
+    hA.complexDetLineOrientation = rayOfNeZero ℝ z hz0 := by
+  have := hA.finite_coker
+  obtain ⟨c, hc, rfl⟩ := hA.exists_isComplexPositiveDetLine.choose_spec.1.exists_pos_smul_eq hz
+  exact (ray_pos_smul _ hc _).symm
+
+end ContinuousLinearMap.IsFredholm
+
+namespace TauCeti
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
+  [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
+
+/-- **Transport preserves complex orientations.** Along a path of complex-linear operators which
+is continuous and Fredholm between `a` and `b`, orientation transport of the determinant lines of
+the underlying real operators carries the complex orientation at `a` to the complex orientation
+at `b`. -/
+theorem detLineOrientationTransport_complexDetLineOrientation {T : ℝ → E →L[ℂ] F} {a b : ℝ}
+    (hT : ContinuousOn T (uIcc a b)) (hF : ∀ t ∈ uIcc a b, IsFredholm (T t)) :
+    detLineOrientationTransport (T := fun t ↦ (T t).restrictScalars ℝ) a b
+        ((restrictScalarsIsometry ℂ E F ℝ ℝ).continuous.comp_continuousOn hT)
+        (fun t ht ↦ (hF t ht).restrictScalars ℝ)
+        (hF a left_mem_uIcc).complexDetLineOrientation =
+      (hF b right_mem_uIcc).complexDetLineOrientation := by
+  classical
+  -- A family of complex positive elements along the path.
+  let v : ∀ t, ((T t).restrictScalars ℝ : E →ₗ[ℝ] F).detLine := fun t ↦
+    if h : IsFredholm (T t) then h.exists_isComplexPositiveDetLine.choose else 0
+  have hv (t : ℝ) (ht : t ∈ uIcc a b) :
+      (T t : E →ₗ[ℂ] F).IsComplexPositiveDetLine (v t) ∧ v t ≠ 0 := by
+    simp only [v, dite_eq_left (hF t ht)]
+    exact (hF t ht).exists_isComplexPositiveDetLine.choose_spec
+  have hcoh := isDetLineCoherentOn_of_isComplexPositiveDetLine hT hF fun t ht ↦ (hv t ht).1
+  rw [(hF a left_mem_uIcc).complexDetLineOrientation_eq (hv a left_mem_uIcc).1
+      (hv a left_mem_uIcc).2,
+    (hF b right_mem_uIcc).complexDetLineOrientation_eq (hv b right_mem_uIcc).1
+      (hv b right_mem_uIcc).2]
+  exact detLineOrientationTransport_rayOfNeZero _ _ hcoh
+
+end TauCeti

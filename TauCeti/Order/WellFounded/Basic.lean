@@ -75,11 +75,11 @@ theorem exists_mem_forall_not_rel {α : Type u} {r : α → α → Prop} (hr : W
   -- On the finite set `s`, the converse of the transitive closure of `r` is a strict order,
   -- hence well-founded, and a minimal element for it is related to nothing in `s`.
   have := hs.to_subtype
-  let rel : s → s → Prop := fun a b ↦ TransGen r b.1 a.1
+  let rel : s → s → Prop := fun a b ↦ TransGen r b.val a.val
   have : IsTrans s rel := ⟨fun _ _ _ hab hbc ↦ hbc.trans hab⟩
-  have : Std.Irrefl rel := ⟨fun a ↦ hr.transGen.irrefl.irrefl a.1⟩
+  have : Std.Irrefl rel := ⟨fun a ↦ hr.transGen.irrefl.irrefl a.val⟩
   obtain ⟨a, -, ha⟩ := (Finite.wellFounded_of_trans_of_irrefl rel).has_min Set.univ
     ⟨⟨hne.some, hne.some_mem⟩, Set.mem_univ _⟩
-  exact ⟨a.1, a.2, fun b hb hab ↦ ha ⟨b, hb⟩ (Set.mem_univ _) (.single hab)⟩
+  exact ⟨a.val, a.property, fun b hb hab ↦ ha ⟨b, hb⟩ (Set.mem_univ _) (.single hab)⟩
 
 end WellFounded

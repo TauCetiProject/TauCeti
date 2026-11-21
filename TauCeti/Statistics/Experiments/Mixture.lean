@@ -1,43 +1,48 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: Claude
 -/
 module
 
-public import Mathlib.MeasureTheory.Measure.Sum
 public import Mathlib.Probability.Kernel.Composition.MeasureCompProd
 public import TauCeti.Statistics.Experiments.Density
 
-import Mathlib.MeasureTheory.Constructions.Polish.StronglyMeasurable
-import Mathlib.MeasureTheory.Measure.AEMeasurable
-import Mathlib.MeasureTheory.Measure.Typeclasses.SFinite
-import Mathlib.Topology.Algebra.InfiniteSum.ENNReal
-
 /-!
-# Countable mixtures and the Halmos–Savage domination lemma
+# Countable mixtures and the Halmos–Savage lemma
 
-This file defines countable convex mixtures of parametric families of measures using the geometric
-weights `TauCeti.mixtureWeight n = (2 ^ (n + 1))⁻¹`:
-`TauCeti.countableMixture P θs = Measure.sum fun n ↦ mixtureWeight n • P (θs n)`.
+For a family of measures `P : Θ → Measure X` and a sequence of parameters `θs : ℕ → Θ`, the
+countable mixture `countableMixture P θs` is `∑ₙ 2^{-(n+1)} • P (θs n)`. Its weights
+`mixtureWeight n = 2^{-(n+1)}` are positive and sum to `1`, so a mixture of probability measures
+is a probability measure and a set is null for the mixture iff it is null for every component.
 
-It develops the basic API for `mixtureWeight` and `countableMixture` (total weight `1`, null sets
-and almost-everywhere properties, preservation of probability/s-finite measures, pushforwards,
-composition products, and densities) and proves the Halmos–Savage domination lemma
-(`TauCeti.exists_absolutelyContinuous_countableMixture_of_withDensity`,
-`TauCeti.exists_absolutelyContinuous_countableMixture_of_absolutelyContinuous`, and
-`TauCeti.exists_absolutelyContinuous_countableMixture`): any nonempty family of measures with
-densities with respect to an s-finite reference measure `μ` (or that are absolutely continuous and
-admit a Lebesgue decomposition relative to `μ`, which Mathlib supplies automatically when `μ` and
-each `P θ` are σ-finite) is dominated by a countable mixture of members of the family.
+The **Halmos–Savage lemma** says that a family dominated by an s-finite (in particular, a
+σ-finite) measure is dominated by one of its own countable mixtures. This is the form of
+domination used throughout statistics: the factorization theorem and the theory of sufficiency
+work with a dominating measure that is itself a mixture of the laws of the model.
 
-The domination proof reduces the covering of the positivity sets `{x | 0 < g θ x}` to Mathlib's
-`MeasureTheory.Measure.exists_ae_subset_biUnion_countable`.
+## Main definitions
+
+* `TauCeti.mixtureWeight n`: the weight `2^{-(n+1)}`.
+* `TauCeti.countableMixture P θs`: the mixture `∑ₙ mixtureWeight n • P (θs n)`.
+
+## Main results
+
+* `TauCeti.tsum_mixtureWeight`: the weights sum to `1`.
+* `TauCeti.countableMixture_apply_eq_zero_iff`: a set is null for a mixture iff it is null for
+  every component.
+* `TauCeti.map_countableMixture`, `TauCeti.countableMixture_compProd`: pushforwards and
+  composition products commute with countable mixtures.
+* `TauCeti.countableMixture_eq_withDensity`, `TauCeti.HasDensity.countableMixture`: a mixture of
+  measures with densities has the mixed density.
+* `TauCeti.exists_absolutelyContinuous_countableMixture`: the Halmos–Savage lemma.
 
 ## References
 
-* J. Pfanzagl, *Parametric Statistical Theory*, de Gruyter (1994), Lemma 1.2.1 (p. 4).
-* M. J. Schervish, *Theory of Statistics*, Springer (1995), Theorem A.78 (p. 600).
+* P. R. Halmos and L. J. Savage, *Application of the Radon–Nikodym theorem to the theory of
+  sufficient statistics*, Ann. Math. Statist. 20 (1949), 225–241.
+* J. Pfanzagl, *Parametric Statistical Theory*, de Gruyter (1994), Lemma 1.2.1.
+* M. J. Schervish, *Theory of Statistics*, Springer (1995), Theorem A.78.
 -/
 
 public section
@@ -45,272 +50,162 @@ public section
 noncomputable section
 
 open MeasureTheory ProbabilityTheory Set
+
 open scoped ENNReal
 
 namespace TauCeti
 
-variable {Θ X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y]
+variable {Θ X : Type*} [MeasurableSpace X] {P : Θ → Measure X} {θs : ℕ → Θ} {μ : Measure X}
 
-/-! ### Geometric mixture weights -/
-
-/-- The geometric weights `2 ^ (-(n + 1))` used to form countable mixtures of measures. -/
+/-- The weight `2^{-(n+1)}` of the `n`-th component of a countable mixture. -/
 def mixtureWeight (n : ℕ) : ℝ≥0∞ := (2 ^ (n + 1))⁻¹
 
-/-- Unfolding lemma for `mixtureWeight`. -/
-theorem mixtureWeight_def (n : ℕ) : mixtureWeight n = (2 ^ (n + 1))⁻¹ :=
-  (rfl)
+theorem mixtureWeight_def (n : ℕ) : mixtureWeight n = (2 ^ (n + 1))⁻¹ := (rfl)
 
-/-- Every mixture weight is strictly positive. -/
-theorem mixtureWeight_pos (n : ℕ) : 0 < mixtureWeight n := by
-  rw [mixtureWeight_def]
-  exact ENNReal.inv_pos.mpr (ENNReal.pow_ne_top ENNReal.ofNat_ne_top)
+@[simp]
+theorem mixtureWeight_ne_zero (n : ℕ) : mixtureWeight n ≠ 0 := by
+  simp [mixtureWeight_def]
 
-/-- Every mixture weight is nonzero. -/
-theorem mixtureWeight_ne_zero (n : ℕ) : mixtureWeight n ≠ 0 :=
-  (mixtureWeight_pos n).ne'
+@[simp]
+theorem mixtureWeight_ne_top (n : ℕ) : mixtureWeight n ≠ ∞ := by
+  simp [mixtureWeight_def]
 
-/-- Every mixture weight is finite. -/
-theorem mixtureWeight_lt_top (n : ℕ) : mixtureWeight n < ∞ := by
-  rw [mixtureWeight_def]
-  exact ENNReal.inv_lt_top.mpr (by positivity)
-
-/-- Every mixture weight is not `∞`. -/
-theorem mixtureWeight_ne_top (n : ℕ) : mixtureWeight n ≠ ∞ :=
-  (mixtureWeight_lt_top n).ne
-
-/-- The geometric mixture weights sum to `1`. -/
+/-- The mixture weights sum to `1`. -/
 @[simp]
 theorem tsum_mixtureWeight : ∑' n, mixtureWeight n = 1 := by
-  simp_rw [mixtureWeight_def, ENNReal.inv_pow]
-  rw [ENNReal.tsum_geometric_add_one, ENNReal.one_sub_inv_two, inv_inv]
-  exact ENNReal.inv_mul_cancel (OfNat.ofNat_ne_zero 2) ENNReal.ofNat_ne_top
+  simp_rw [mixtureWeight_def, ENNReal.inv_pow, pow_succ, ENNReal.tsum_mul_right,
+    ENNReal.tsum_geometric_two]
+  exact ENNReal.mul_inv_cancel two_ne_zero ENNReal.ofNat_ne_top
 
-/-- Real value of `mixtureWeight n`. -/
-theorem toReal_mixtureWeight (n : ℕ) : (mixtureWeight n).toReal = ((2 : ℝ) ^ (n + 1))⁻¹ := by
-  rw [mixtureWeight_def, ENNReal.toReal_inv, ENNReal.toReal_pow, ENNReal.toReal_ofNat]
-
-/-- The real-valued mixture weights are summable. -/
-theorem summable_toReal_mixtureWeight : Summable fun n ↦ (mixtureWeight n).toReal :=
-  ENNReal.summable_toReal (by simp)
-
-/-- The real-valued mixture weights sum to `1`. -/
-@[simp]
-theorem tsum_toReal_mixtureWeight : ∑' n, (mixtureWeight n).toReal = 1 := by
-  rw [← ENNReal.tsum_toReal_eq mixtureWeight_ne_top, tsum_mixtureWeight, ENNReal.toReal_one]
-
-/-! ### Countable mixtures of measures -/
-
-/-- The countable mixture `∑' n, mixtureWeight n • P (θs n)` of a parametric family `P` along a
-sequence of parameters `θs`. -/
+/-- The **countable mixture** `∑ₙ 2^{-(n+1)} • P (θs n)` of the members `P (θs n)` of a family
+of measures. -/
 def countableMixture (P : Θ → Measure X) (θs : ℕ → Θ) : Measure X :=
   Measure.sum fun n ↦ mixtureWeight n • P (θs n)
 
-/-- Unfolding lemma for `countableMixture`. -/
 theorem countableMixture_def (P : Θ → Measure X) (θs : ℕ → Θ) :
-    countableMixture P θs = Measure.sum fun n ↦ mixtureWeight n • P (θs n) :=
-  (rfl)
+    countableMixture P θs = Measure.sum fun n ↦ mixtureWeight n • P (θs n) := (rfl)
 
-/-- Evaluation of a countable mixture on an arbitrary set. -/
+/-- The mass of any set, measurable or not, under a countable mixture. -/
 theorem countableMixture_apply (P : Θ → Measure X) (θs : ℕ → Θ) (s : Set X) :
     countableMixture P θs s = ∑' n, mixtureWeight n * P (θs n) s := by
-  rw [countableMixture_def, Measure.sum_apply_of_countable]
-  simp_rw [smul_apply, smul_eq_mul]
+  simp [countableMixture_def, Measure.sum_apply_of_countable]
 
-/-- A set has measure zero under `countableMixture P θs` if and only if it has measure zero under
-every component `P (θs n)`. -/
-theorem countableMixture_apply_eq_zero_iff (P : Θ → Measure X) (θs : ℕ → Θ) {s : Set X} :
+/-- A set is null for a countable mixture iff it is null for every component. -/
+@[simp]
+theorem countableMixture_apply_eq_zero_iff {s : Set X} :
     countableMixture P θs s = 0 ↔ ∀ n, P (θs n) s = 0 := by
-  rw [countableMixture_def, Measure.sum_apply_eq_zero]
-  simp [mixtureWeight_ne_zero]
+  simp [countableMixture_def]
 
-/-- A property holds almost everywhere under `countableMixture P θs` if and only if it holds almost
-everywhere under every component `P (θs n)`. -/
-theorem ae_countableMixture_iff (P : Θ → Measure X) (θs : ℕ → Θ) {p : X → Prop} :
-    (∀ᵐ x ∂countableMixture P θs, p x) ↔ ∀ n, ∀ᵐ x ∂P (θs n), p x :=
-  countableMixture_apply_eq_zero_iff P θs
+/-- Every component is absolutely continuous with respect to the mixture. -/
+theorem absolutelyContinuous_countableMixture (n : ℕ) : P (θs n) ≪ countableMixture P θs :=
+  fun _ hs ↦ countableMixture_apply_eq_zero_iff.mp hs n
 
-/-- A countable mixture of a constant family equals that measure. -/
-@[simp]
-theorem countableMixture_const_left (μ : Measure X) (θs : ℕ → Θ) :
-    countableMixture (fun _ ↦ μ) θs = μ := by
-  ext s _
-  rw [countableMixture_apply, ENNReal.tsum_mul_right, tsum_mixtureWeight, one_mul]
+/-- A mixture of measures dominated by `μ` is dominated by `μ`. -/
+theorem countableMixture_absolutelyContinuous (h : ∀ n, P (θs n) ≪ μ) :
+    countableMixture P θs ≪ μ :=
+  fun _ hs ↦ countableMixture_apply_eq_zero_iff.mpr fun n ↦ h n hs
 
-/-- A countable mixture along a constant parameter sequence equals that member of the family. -/
-@[simp]
-theorem countableMixture_const_right (P : Θ → Measure X) (θ₀ : Θ) :
-    countableMixture P (fun _ ↦ θ₀) = P θ₀ :=
-  countableMixture_const_left (P θ₀) (fun _ ↦ θ₀)
-
-/-- A countable mixture of probability measures is a probability measure. -/
-instance isProbabilityMeasure_countableMixture (P : Θ → Measure X)
-    [∀ θ, IsProbabilityMeasure (P θ)] (θs : ℕ → Θ) :
+instance isProbabilityMeasure_countableMixture [∀ n, IsProbabilityMeasure (P (θs n))] :
     IsProbabilityMeasure (countableMixture P θs) :=
-  ⟨by rw [countableMixture_apply]; simp⟩
+  ⟨by simp [countableMixture_apply]⟩
 
-/-- A countable mixture of s-finite measures is s-finite. -/
-instance sFinite_countableMixture (P : Θ → Measure X) [∀ θ, SFinite (P θ)] (θs : ℕ → Θ) :
+instance sFinite_countableMixture [∀ n, SFinite (P (θs n))] :
     SFinite (countableMixture P θs) := by
   rw [countableMixture_def]
   infer_instance
 
-/-- Every component `P (θs n)` is absolutely continuous with respect to `countableMixture P θs`. -/
-theorem absolutelyContinuous_countableMixture (P : Θ → Measure X) (θs : ℕ → Θ) (n : ℕ) :
-    P (θs n) ≪ countableMixture P θs :=
-  Measure.AbsolutelyContinuous.mk fun _ _ h0 ↦
-    (countableMixture_apply_eq_zero_iff P θs).mp h0 n
-
-/-- If every component `P (θs n)` is absolutely continuous with respect to `μ`, then so is
-`countableMixture P θs`. -/
-theorem countableMixture_absolutelyContinuous {P : Θ → Measure X} {θs : ℕ → Θ} {μ : Measure X}
-    (h : ∀ n, P (θs n) ≪ μ) :
-    countableMixture P θs ≪ μ :=
-  Measure.AbsolutelyContinuous.mk fun _ _ h0 ↦
-    (countableMixture_apply_eq_zero_iff P θs).mpr fun n ↦ h n h0
+/-- The mixture of a constant sequence is the measure it repeats. -/
+@[simp]
+theorem countableMixture_const (P : Θ → Measure X) (θ : Θ) :
+    countableMixture P (fun _ ↦ θ) = P θ := by
+  ext s -
+  rw [countableMixture_apply, ENNReal.tsum_mul_right, tsum_mixtureWeight, one_mul]
 
 /-- Pushforward commutes with taking a countable mixture. -/
-theorem map_countableMixture {P : Θ → Measure X} {θs : ℕ → Θ} {φ : X → Y}
+theorem map_countableMixture {Y : Type*} [MeasurableSpace Y] {φ : X → Y}
     (hφ : AEMeasurable φ (countableMixture P θs)) :
     (countableMixture P θs).map φ = countableMixture (fun θ ↦ (P θ).map φ) θs := by
   rw [countableMixture_def, countableMixture_def, Measure.map_sum (by rwa [← countableMixture_def])]
   exact Measure.sum_congr fun n ↦
-    Measure.map_smul _ (hφ.mono_ac (absolutelyContinuous_countableMixture P θs n))
+    Measure.map_smul _ (hφ.mono_ac (absolutelyContinuous_countableMixture n))
 
 /-- Composition product with an s-finite kernel distributes over a countable mixture on the left. -/
-theorem countableMixture_compProd (P : Θ → Measure X) [∀ θ, SFinite (P θ)] (θs : ℕ → Θ)
-    (κ : Kernel X Y) [IsSFiniteKernel κ] :
+theorem countableMixture_compProd {Y : Type*} [MeasurableSpace Y] [∀ n, SFinite (P (θs n))]
+    (κ : ProbabilityTheory.Kernel X Y) [ProbabilityTheory.IsSFiniteKernel κ] :
     countableMixture P θs ⊗ₘ κ = countableMixture (fun θ ↦ P θ ⊗ₘ κ) θs := by
   rw [countableMixture_def, countableMixture_def, Measure.compProd_sum_left]
   exact Measure.sum_congr fun n ↦ Measure.compProd_smul_left _
 
-/-- The countable mixture of `withDensity` measures has the mixed `ℝ≥0∞`-valued density. -/
-theorem countableMixture_withDensity (μ : Measure X) (g : Θ → X → ℝ≥0∞)
-    (hg : ∀ θ, Measurable (g θ)) (θs : ℕ → Θ) :
-    countableMixture (fun θ ↦ μ.withDensity (g θ)) θs =
-      μ.withDensity (fun x ↦ ∑' n, mixtureWeight n * g (θs n) x) := by
-  have htsum : (fun x ↦ ∑' n, mixtureWeight n * g (θs n) x) =
-      ∑' n, fun x ↦ mixtureWeight n * g (θs n) x :=
-    funext fun x ↦ (ENNReal.tsum_apply (f := fun n x ↦ mixtureWeight n * g (θs n) x) (x := x)).symm
-  rw [countableMixture_def, htsum,
-    withDensity_tsum (f := fun n x ↦ mixtureWeight n * g (θs n) x)
-      fun n ↦ measurable_const.mul (hg _)]
-  exact Measure.sum_congr fun n ↦ (withDensity_smul (mixtureWeight n) (hg _)).symm
+/-- A countable mixture of measures with densities `g n` in `ℝ≥0∞` has the mixed density
+`∑ₙ mixtureWeight n * g n`. -/
+theorem countableMixture_eq_withDensity {g : ℕ → X → ℝ≥0∞} (hg : ∀ n, Measurable (g n))
+    (hP : ∀ n, P (θs n) = μ.withDensity (g n)) :
+    countableMixture P θs = μ.withDensity fun x ↦ ∑' n, mixtureWeight n * g n x := by
+  simp_rw [countableMixture_def, hP, ← withDensity_smul _ (hg _)]
+  rw [← withDensity_tsum fun n ↦ (hg n).const_smul (mixtureWeight n)]
+  congr with x
+  simp [ENNReal.tsum_apply]
 
-/-- If `countableMixture P θs` is a finite measure, then it has the mixed real density
-`fun x ↦ ∑' n, (mixtureWeight n).toReal * f (θs n) x`. -/
-theorem hasDensity_countableMixture {P : Θ → Measure X} {μ : Measure X} {f : Θ → X → ℝ}
-    (hf : ∀ θ, HasDensity (P θ) μ (f θ)) (θs : ℕ → Θ)
-    [IsFiniteMeasure (countableMixture P θs)] :
+/-- A countable mixture that is a finite measure, of measures with real densities `f n`, has the
+real density `(∑ₙ mixtureWeight n * ofReal (f n)).toReal`. That sum is finite
+`μ`-almost everywhere because the mixture is finite; the hypothesis is needed, since for densities
+`f n = 4 ^ n` on a set of positive measure the sum is infinite there. -/
+theorem HasDensity.countableMixture {f : ℕ → X → ℝ} [IsFiniteMeasure (countableMixture P θs)]
+    (hf : ∀ n, HasDensity (P (θs n)) μ (f n)) :
     HasDensity (countableMixture P θs) μ
-      (fun x ↦ ∑' n, (mixtureWeight n).toReal * f (θs n) x) := by
-  let a : ℕ → X → ℝ := fun n x ↦ (mixtureWeight n).toReal * f (θs n) x
-  have ha : ∀ n, Measurable (a n) := fun n ↦ measurable_const.mul (hf _).measurable
-  -- Measurability of the real `tsum` follows directly from Mathlib's `StronglyMeasurable.tsum`.
-  have hmeas : Measurable fun x ↦ ∑' n, a n x :=
-    (StronglyMeasurable.tsum fun n ↦ (ha n).stronglyMeasurable).measurable
-  -- Express the mixture as a `withDensity` in `ℝ≥0∞`, whose density is finite `μ`-a.e. since the
-  -- mixture is finite.
-  have hwd : countableMixture P θs =
-      μ.withDensity (fun x ↦ ∑' n, mixtureWeight n * ENNReal.ofReal (f (θs n) x)) := by
-    have hP : P = fun θ ↦ μ.withDensity (fun x ↦ ENNReal.ofReal (f θ x)) :=
-      funext fun θ ↦ (hf θ).eq_withDensity
-    rw [hP]
-    exact countableMixture_withDensity μ (fun θ x ↦ ENNReal.ofReal (f θ x))
-      (fun θ ↦ (hf θ).measurable.ennreal_ofReal) θs
-  have hlt : ∀ᵐ x ∂μ, (∑' n, mixtureWeight n * ENNReal.ofReal (f (θs n) x)) < ∞ := by
-    refine ae_lt_top
-      (Measurable.tsum fun n ↦ measurable_const.mul (hf _).measurable.ennreal_ofReal) ?_
-    have huniv : ∫⁻ x, (∑' n, mixtureWeight n * ENNReal.ofReal (f (θs n) x)) ∂μ =
-        countableMixture P θs univ := by
-      rw [hwd, withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ]
-    rw [huniv]
+      fun x ↦ (∑' n, mixtureWeight n * ENNReal.ofReal (f n x)).toReal := by
+  have hg : ∀ n, Measurable fun x ↦ ENNReal.ofReal (f n x) :=
+    fun n ↦ (hf n).measurable.ennreal_ofReal
+  have hmix := countableMixture_eq_withDensity hg fun n ↦ (hf n).eq_withDensity
+  have hsum : Measurable fun x ↦ ∑' n, mixtureWeight n * ENNReal.ofReal (f n x) :=
+    Measurable.tsum fun n ↦ (hg n).const_mul _
+  refine ⟨hsum.ennreal_toReal, ae_of_all _ fun _ ↦ ENNReal.toReal_nonneg, ?_⟩
+  have hfin : ∀ᵐ x ∂μ, ∑' n, mixtureWeight n * ENNReal.ofReal (f n x) < ∞ := by
+    refine ae_lt_top hsum ?_
+    rw [← setLIntegral_univ, ← withDensity_apply _ MeasurableSet.univ, ← hmix]
     exact measure_ne_top _ _
-  have hnn : ∀ᵐ x ∂μ, ∀ n, 0 ≤ f (θs n) x := ae_all_iff.mpr fun n ↦ (hf _).ae_nonneg
-  rw [hasDensity_def]
-  refine ⟨hmeas, ?_, ?_⟩
-  · filter_upwards [hnn] with x hx
-    exact tsum_nonneg fun n ↦ mul_nonneg ENNReal.toReal_nonneg (hx n)
-  · -- Match the `ℝ≥0∞` mixed density with `ENNReal.ofReal` of the real `tsum` `μ`-a.e.
-    rw [hwd]
-    refine withDensity_congr_ae ?_
-    filter_upwards [hlt, hnn] with x hxlt hxnn
-    have hterm : ∀ n, mixtureWeight n * ENNReal.ofReal (f (θs n) x) =
-        ENNReal.ofReal (a n x) := fun n ↦ by
-      rw [ENNReal.ofReal_mul ENNReal.toReal_nonneg, ENNReal.ofReal_toReal (mixtureWeight_ne_top n)]
-    have hsum : Summable fun n ↦ a n x := by
-      have hne : (∑' n, ENNReal.ofReal (a n x)) ≠ ∞ := by
-        rw [← tsum_congr hterm]
-        exact hxlt.ne
-      exact (ENNReal.summable_toReal hne).congr fun n ↦
-        ENNReal.toReal_ofReal (mul_nonneg ENNReal.toReal_nonneg (hxnn n))
-    rw [ENNReal.ofReal_tsum_of_nonneg (fun n ↦ mul_nonneg ENNReal.toReal_nonneg (hxnn n)) hsum]
-    exact tsum_congr hterm
+  rw [hmix]
+  refine withDensity_congr_ae ?_
+  filter_upwards [hfin] with x hx
+  rw [ENNReal.ofReal_toReal hx.ne]
 
-/-! ### The Halmos–Savage domination lemma -/
-
-/-- The Halmos–Savage domination lemma for families of `withDensity` measures with respect to an
-s-finite reference measure `μ`: there exists a countable mixture of members of the family that
-dominates the entire family.
-
-Proved by applying Mathlib's `MeasureTheory.Measure.exists_ae_subset_biUnion_countable` to the
-positivity sets `{x | 0 < g θ x}`. -/
-theorem exists_absolutelyContinuous_countableMixture_of_withDensity [Nonempty Θ]
-    (P : Θ → Measure X) (μ : Measure X) [SFinite μ] (g : Θ → X → ℝ≥0∞)
-    (hg : ∀ θ, Measurable (g θ)) (hP : ∀ θ, P θ = μ.withDensity (g θ)) :
+/-- **The Halmos–Savage lemma.** A nonempty family of measures dominated by an s-finite measure
+`μ` is dominated by one of its countable mixtures. A family with real densities with respect to
+`μ` is dominated by `μ`, by `TauCeti.HasDensity.absolutelyContinuous`. -/
+theorem exists_absolutelyContinuous_countableMixture [Nonempty Θ] (P : Θ → Measure X)
+    (μ : Measure X) [SFinite μ] (hP : ∀ θ, P θ ≪ μ) :
     ∃ θs : ℕ → Θ, ∀ θ, P θ ≪ countableMixture P θs := by
-  let S : Θ → Set X := fun θ ↦ {x | 0 < g θ x}
-  have hS : ∀ θ, MeasurableSet (S θ) := fun θ ↦ measurableSet_lt measurable_const (hg θ)
-  have hnull : ∀ (θ : Θ) (A : Set X), P θ A = 0 ↔ μ (A ∩ S θ) = 0 := fun θ A ↦ by
-    rw [hP θ, withDensity_apply_eq_zero (hg θ), inter_comm]
-    simp only [S, pos_iff_ne_zero]
-  obtain ⟨D, hDsub, hDcount, hDae⟩ :=
-    Measure.exists_ae_subset_biUnion_countable μ (C := range S) (by rintro _ ⟨θ, rfl⟩; exact hS θ)
-  rcases D.eq_empty_or_nonempty with rfl | hDne
-  · refine ⟨fun _ ↦ Classical.arbitrary Θ, fun θ ↦ Measure.AbsolutelyContinuous.mk fun A _ _ ↦ ?_⟩
-    rw [hnull θ A]
-    have hle : S θ ≤ᵐ[μ] (∅ : Set X) := by simpa using hDae (S θ) ⟨θ, rfl⟩
-    have hμS : μ (S θ) = 0 := by simpa [ae_subset] using hle
-    exact measure_mono_null inter_subset_right hμS
-  · obtain ⟨d, hd⟩ := hDcount.exists_eq_range hDne
-    have hmem : ∀ n, ∃ θ, S θ = d n := fun n ↦ hDsub (hd ▸ mem_range_self n)
-    choose θs hθs using hmem
-    have hU : ⋃₀ D = ⋃ n, S (θs n) := by
-      rw [hd, sUnion_range]
-      simp_rw [hθs]
-    refine ⟨θs, fun θ ↦ Measure.AbsolutelyContinuous.mk fun A _ h0 ↦ ?_⟩
-    rw [hnull θ A]
-    have hcomp : ∀ n, μ (A ∩ S (θs n)) = 0 := fun n ↦
-      (hnull (θs n) A).mp ((countableMixture_apply_eq_zero_iff P θs).mp h0 n)
-    have hμU : μ (A ∩ ⋃ n, S (θs n)) = 0 := by
-      rw [inter_iUnion]
-      exact measure_iUnion_null hcomp
-    have hdiff : μ (S θ \ ⋃ n, S (θs n)) = 0 :=
-      ae_subset.mp (hU ▸ hDae (S θ) ⟨θ, rfl⟩)
-    refine measure_mono_null (fun x hx ↦ ?_) (measure_union_null hμU hdiff)
-    by_cases hxU : x ∈ ⋃ n, S (θs n)
-    · exact Or.inl ⟨hx.1, hxU⟩
-    · exact Or.inr ⟨hx.2, hxU⟩
-
-/-- The Halmos–Savage domination lemma for families of measures that are absolutely continuous and
-admit a Lebesgue decomposition with respect to an s-finite reference measure `μ` (in particular,
-whenever `μ` and each `P θ` are σ-finite). -/
-theorem exists_absolutelyContinuous_countableMixture_of_absolutelyContinuous [Nonempty Θ]
-    (P : Θ → Measure X) (μ : Measure X) [SFinite μ]
-    [∀ θ, (P θ).HaveLebesgueDecomposition μ] (hac : ∀ θ, P θ ≪ μ) :
-    ∃ θs : ℕ → Θ, ∀ θ, P θ ≪ countableMixture P θs :=
-  exists_absolutelyContinuous_countableMixture_of_withDensity P μ
-    (fun θ ↦ (P θ).rnDeriv μ) (fun θ ↦ Measure.measurable_rnDeriv (P θ) μ)
-    (fun θ ↦ (Measure.withDensity_rnDeriv_eq (P θ) μ (hac θ)).symm)
-
-/-- The Halmos–Savage domination lemma, density form: any nonempty family of measures with real
-densities with respect to an s-finite reference measure `μ` is dominated by a countable mixture of
-members of the family. -/
-theorem exists_absolutelyContinuous_countableMixture [Nonempty Θ]
-    (P : Θ → Measure X) (μ : Measure X) [SFinite μ] (f : Θ → X → ℝ)
-    (hf : ∀ θ, HasDensity (P θ) μ (f θ)) :
-    ∃ θs : ℕ → Θ, ∀ θ, P θ ≪ countableMixture P θs :=
-  exists_absolutelyContinuous_countableMixture_of_withDensity P μ
-    (fun θ x ↦ ENNReal.ofReal (f θ x)) (fun θ ↦ (hf θ).measurable.ennreal_ofReal)
-    (fun θ ↦ (hf θ).eq_withDensity)
+  -- A `P θ`-null set `N θ` that a.e. contains every measurable `P θ`-null set: the union of a
+  -- countable subfamily of the measurable `P θ`-null sets.
+  have hN : ∀ θ, ∃ N, MeasurableSet N ∧ P θ N = 0 ∧
+      ∀ s, MeasurableSet s → P θ s = 0 → s ≤ᵐ[μ] N := by
+    intro θ
+    obtain ⟨D, hDC, hDc, hD⟩ := Measure.exists_ae_subset_biUnion_countable μ
+      (C := {s | MeasurableSet s ∧ P θ s = 0}) fun _ hs ↦ hs.1
+    exact ⟨⋃₀ D, .sUnion hDc fun _ hs ↦ (hDC hs).1,
+      (measure_sUnion_null_iff hDc).2 fun _ hs ↦ (hDC hs).2, fun s hs hs0 ↦ hD s ⟨hs, hs0⟩⟩
+  choose N hNm hN0 hN using hN
+  -- Countably many complements `(N (θs n))ᶜ` whose union a.e. contains every `(N θ)ᶜ`.
+  obtain ⟨D, hDC, hDc, hD⟩ := Measure.exists_ae_subset_biUnion_countable μ
+    (C := range fun θ ↦ (N θ)ᶜ) (by rintro _ ⟨θ, rfl⟩; exact (hNm θ).compl)
+  obtain ⟨e, he⟩ := (hDc.insert (N ‹Nonempty Θ›.some)ᶜ).exists_eq_range (insert_nonempty _ _)
+  have he_mem : ∀ n, e n ∈ range fun θ ↦ (N θ)ᶜ :=
+    fun n ↦ insert_subset (mem_range_self _) hDC (he ▸ mem_range_self n)
+  choose θs hθs using he_mem
+  have hDθs : ⋃₀ D ⊆ ⋃ n, (N (θs n))ᶜ := by
+    simp_rw [hθs, ← sUnion_range, ← he]
+    exact sUnion_subset_sUnion (subset_insert _ _)
+  have hT : ∀ θ, (N θ)ᶜ ≤ᵐ[μ] ⋃ n, (N (θs n))ᶜ :=
+    fun θ ↦ (hD _ (mem_range_self θ)).trans (ae_of_all _ fun _ hx ↦ hDθs hx)
+  refine ⟨θs, fun θ ↦ Measure.AbsolutelyContinuous.mk fun s hs hs0 ↦ ?_⟩
+  -- A measurable mixture-null set is `μ`-a.e. inside every `N (θs n)`, hence inside `N θ`.
+  have hsN : ∀ n, s ≤ᵐ[μ] N (θs n) :=
+    fun n ↦ hN _ s hs (countableMixture_apply_eq_zero_iff.mp hs0 n)
+  have hsNθ : s ≤ᵐ[μ] N θ := by
+    filter_upwards [ae_all_iff.2 hsN, hT θ] with x hxs hxθ hx
+    by_contra hxN
+    obtain ⟨n, hn⟩ := mem_iUnion.mp (hxθ hxN)
+    exact hn (hxs n hx)
+  exact measure_mono_null_ae ((hP θ).ae_le hsNθ) (hN0 θ)
 
 end TauCeti

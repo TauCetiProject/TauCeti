@@ -87,7 +87,7 @@ theorem localHomologyMap_domRestrict_eq_affine_of_hasFDerivAt {f : E → F} {f' 
     localHomologyMap R (⟨U.domRestrict f, hfU.domRestrict⟩ : C(U, F))
         (S := {⟨x, mem_of_mem_nhds hU⟩}) (T := {f x}) (by
           rintro y hy
-          exact Subtype.ext (hfx y y.2 hy)) k =
+          exact Subtype.ext (hfx y y.property hy)) k =
       localHomologyMap R (⟨fun y : U ↦ f x + f' (y - x), by fun_prop⟩ : C(U, F))
         (S := {⟨x, mem_of_mem_nhds hU⟩}) (T := {f x}) (by
           rintro _ hy
@@ -111,7 +111,7 @@ theorem localHomologyMap_domRestrict_eq_affine_of_hasFDerivAt {f : E → F} {f' 
     ext y
     simp [ι, Subtype.ext_iff]
   have := isIso_localHomologyMap R ι
-    (IsOpenEmbedding.inclusion hBU (isOpen_ball.preimage continuous_subtype_val)) hιx
+    (IsOpenEmbedding.inclusion hBU (isOpen_ball.preimage continuous_subtypeVal)) hιx
     isClosed_singleton (by simp [ι, hr]) k
   rw [← cancel_epi (localHomologyMap R ι hιx.subset k), localHomologyMap_comp,
     localHomologyMap_comp]
@@ -120,7 +120,7 @@ theorem localHomologyMap_domRestrict_eq_affine_of_hasFDerivAt {f : E → F} {f' 
     (fun t y hy ↦ ?_) _ _ k
   have hfι : (⟨U.domRestrict f, hfU.domRestrict⟩ : C(U, F)).comp ι y = f y := by
     simp only [ι, ContinuousMap.comp_apply, ContinuousMap.coe_mk, Set.domRestrict_apply]
-  have hrem : ‖f y - f x - f' (y - x)‖ ≤ ε * ‖(y : E) - x‖ := (hrU y.2).2
+  have hrem : ‖f y - f x - f' (y - x)‖ ≤ ε * ‖(y : E) - x‖ := (hrU y.property).2
   -- The point of the segment is `f x + f' (y - x) + (1 - t) • (f y - f x - f' (y - x))`.
   have hseg : (1 - (t : ℝ)) • f y + (t : ℝ) • (f x + f' (y - x)) - f x =
       f' (y - x) + (1 - (t : ℝ)) • (f y - f x - f' (y - x)) := by
@@ -129,8 +129,8 @@ theorem localHomologyMap_domRestrict_eq_affine_of_hasFDerivAt {f : E → F} {f' 
   refine fun h ↦ f'.apply_add_ne_zero_of_forall_norm_le hC hKε
     (sub_ne_zero.2 fun h ↦ hy (Subtype.ext h)) ?_
     (hseg.symm.trans (sub_eq_zero.2 (Set.mem_singleton_iff.1 h)))
-  rw [norm_smul, Real.norm_of_nonneg (by linarith [t.2.2])]
-  exact (mul_le_of_le_one_left (norm_nonneg _) (by linarith [t.2.1])).trans hrem
+  rw [norm_smul, Real.norm_of_nonneg (by linarith [t.property.2])]
+  exact (mul_le_of_le_one_left (norm_nonneg _) (by linarith [t.property.1])).trans hrem
 
 end Linearization
 
@@ -149,7 +149,7 @@ theorem localHomologyMap_domRestrict_eq_sign_det_smul_of_hasFDerivAt {f : E → 
     localHomologyMap R (⟨U.domRestrict f, hfU.domRestrict⟩ : C(U, E))
         (S := {⟨x, mem_of_mem_nhds hU⟩}) (T := {f x}) (by
           rintro y hy
-          exact Subtype.ext (hfx y y.2 hy)) k =
+          exact Subtype.ext (hfx y y.property hy)) k =
       (SignType.sign f'.det : ℤ) •
         localHomologyMap R (⟨fun y : U ↦ f x + (y - x), by fun_prop⟩ : C(U, E))
           (S := {⟨x, mem_of_mem_nhds hU⟩}) (T := {f x}) (by
