@@ -258,8 +258,8 @@ theorem jetSymmetrize_comp_subtypeL [CharZero 𝕜] (r : ℕ) :
 /-- The **coordinate change of symmetric `r`-jets** under a change of base coordinates
 `h : E' → E` and a base-dependent linear change of fibre coordinates `g : E' → F →L[𝕜] G`, at the
 point `x : E'`: the coordinate change of jets `TauCeti.linearJetCoordChange` followed by the
-symmetrization. Where `h` and `g` are `C^r` (analytic over fields other than `ℝ` and `ℂ`), the
-symmetrization does nothing (`TauCeti.coeFn_symmetricJetCoordChange`). -/
+symmetrization. In characteristic zero, where `h` and `g` are `C^r` (analytic over fields other
+than `ℝ` and `ℂ`), the symmetrization does nothing (`TauCeti.coeFn_symmetricJetCoordChange`). -/
 def symmetricJetCoordChange (r : ℕ) (h : E' → E) (g : E' → F →L[𝕜] G) (x : E') :
     SymmetricJet 𝕜 E F r →L[𝕜] SymmetricJet 𝕜 E' G r :=
   jetSymmetrize 𝕜 E' G r ∘L linearJetCoordChange r h g x ∘L SymmetricJet.subtypeL 𝕜 E F r

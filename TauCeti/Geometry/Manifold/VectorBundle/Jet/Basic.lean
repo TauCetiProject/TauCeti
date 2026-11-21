@@ -421,11 +421,11 @@ theorem coeFn_trivializationAt_jet {s : ∀ x, V x} {y : M}
   rw [trivializationAt_apply_snd]
   exact coeFn_coordChange_jet hs hi
 
-/-- **Every `r`-jet is the `r`-jet of a section that is `C^n` at the base point.** In the chart
-and trivialization at the base point, the section is the Taylor polynomial of the jet. -/
+/-- **Every `r`-jet is the `r`-jet of a section that is `C^n` at the base point.** -/
 theorem exists_contMDiffAt_jet_eq {n : ℕ∞ω} (x : M) (j : JetBundle I F V r x) :
     ∃ s : ∀ y, V y, ContMDiffAt I (I.prod 𝓘(𝕜, F)) n (fun y ↦ TotalSpace.mk' F y (s y)) x ∧
       jet I F r s x = j := by
+  -- The witness is, near `x` in the chart and trivialization at `x`, the Taylor polynomial of `j`.
   set e := trivializationAt F V x
   -- The Taylor polynomial of `j` about `φ x`, and its pullback by the chart.
   set A : (k : Fin (r + 1)) → E [×k]→L[𝕜] F := ⇑j
