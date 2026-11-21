@@ -47,10 +47,11 @@ critical points are not isolated, so for a merely smooth function a trapped traj
 converge; here it does, by Łojasiewicz's theorem
 (`TauCeti.tendsto_maximalIntegralCurve_neg_mgradient_of_mapClusterPt`), which needs the inequality
 only at a cluster point. So if `f` is proper and bounded below, every forward negative gradient
-trajectory converges exponentially fast to a point `i a s` of one of the critical submanifolds. On
-a compact manifold the same holds in backward time, and the forward limit, as well as the backward
-limit, of each trajectory lies on exactly one critical submanifold: every point lies in the stable
-set, and in the unstable set, of exactly one critical submanifold. These limits are the source and
+trajectory converges exponentially fast to a point `i a s` of one of the critical submanifolds, and
+this limit lies on exactly one critical submanifold, since distinct critical submanifolds are
+disjoint (`TauCeti.IsMorseBottFamily.eq_of_apply_eq`): every point lies in the stable set of exactly
+one critical submanifold. If `f` is proper and bounded above, the same holds in backward time, for
+the unstable sets. On a compact manifold both hold. These limits are the source and
 target of a trajectory between critical submanifolds.
 
 ## Main results
@@ -69,11 +70,12 @@ In the namespace `TauCeti.IsMorseBottFamily`:
 * `exists_tendsto_and_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_mgradient`: every
   forward negative gradient trajectory of a proper Morse–Bott function bounded below converges
   exponentially fast to a point of a critical submanifold.
-* `exists_tendsto_atBot_and_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_mgradient`: on a
-  compact manifold, the same in backward time.
+* `exists_tendsto_atBot_and_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_mgradient`: for a
+  proper Morse–Bott function bounded above, the same in backward time.
 * `existsUnique_exists_tendsto_maximalIntegralCurve_neg_mgradient` and
-  `existsUnique_exists_tendsto_atBot_maximalIntegralCurve_neg_mgradient`: on a compact manifold,
-  the forward and the backward limit of each trajectory lie on exactly one critical submanifold.
+  `existsUnique_exists_tendsto_atBot_maximalIntegralCurve_neg_mgradient`: for a proper function
+  bounded below, respectively above, the forward, respectively backward, limit of each trajectory
+  lies on exactly one critical submanifold.
 
 ## References
 
@@ -182,72 +184,84 @@ theorem exists_tendsto_and_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_m
   obtain ⟨a, s, rfl⟩ := h.mem_criticalPoints_iff.1 hpc.1
   exact ⟨a, s, hconv⟩
 
-/-- **Negative gradient trajectories of a Morse–Bott function on a compact manifold converge in
-backward time.** If the family `i` of `C²` embeddings exhibits `f` as a Morse–Bott function on a
-compact manifold, the maximal integral curve of `-grad f` through any point `x` converges as
+/-- **Negative gradient trajectories of a proper Morse–Bott function converge in backward time.**
+If the family `i` of `C²` embeddings exhibits a proper function `f`, bounded above, as a Morse–Bott
+function, the maximal integral curve of `-grad f` through any point `x` converges as
 `t → -∞` to a point `i a s` of one of its critical submanifolds, and the Riemannian distance from
 its value at time `t` to `i a s` is at most `C * exp (μ * t)` for some `μ, C > 0` and all `t` near
 `-∞`. -/
 theorem exists_tendsto_atBot_and_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_mgradient
-    [CompactSpace M] (h : IsMorseBottFamily i f) (hn : 2 ≤ n) (x : M) :
+    (h : IsMorseBottFamily i f) (hn : 2 ≤ n) (hp : IsProperMap f) (hbdd : BddAbove (range f))
+    (x : M) :
     ∃ a s, Tendsto (maximalIntegralCurve (-mgradient I f) x) atBot (𝓝 (i a s)) ∧
       ∃ μ > 0, ∃ C > 0, ∀ᶠ t in atBot,
         Manifold.riemannianEDist I (maximalIntegralCurve (-mgradient I f) x t) (i a s) ≤
           ENNReal.ofReal (C * Real.exp (μ * t)) := by
   have : IsManifold I 1 M := IsManifold.of_le one_le_two
   have hf2 : ContMDiff I 𝓘(ℝ) 2 f := h.contMDiff.of_le (by norm_cast)
-  -- Reversing time turns the trajectory of `-grad f` into the trajectory of `-grad (-f)`, and the
-  -- same family exhibits `-f` as a Morse–Bott function.
-  have hrev : maximalIntegralCurve (-mgradient I (-f)) x =
-      maximalIntegralCurve (-mgradient I f) x ∘ (· * -1) :=
-    maximalIntegralCurve_neg_mgradient_neg hf2
-      (isMIntegralCurve_maximalIntegralCurve (contMDiff_neg_mgradient_one hf2))
+  obtain ⟨m, hm⟩ := hbdd
+  -- The same family exhibits `-f`, which is proper and bounded below, as a Morse–Bott function, so
+  -- the trajectory `γ'` of `-grad (-f)` through `x` converges exponentially fast as `t → ∞`.
   obtain ⟨a, s, hlim, μ, hμ, C, hC, hrate⟩ :=
     h.neg.exists_tendsto_and_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_mgradient hn
-      h.neg.contMDiff.continuous.isProperMap (isCompact_range h.neg.contMDiff.continuous).bddBelow
-      x
-  rw [hrev] at hlim hrate
+      ((Homeomorph.neg ℝ).isProperMap.comp hp)
+      ⟨-m, forall_mem_range.2 fun y ↦ neg_le_neg (hm (mem_range_self y))⟩ x
+  -- `γ'` is defined on `[0, ∞)`, hence on a ray `(l, ∞)` with `l < 0`.
+  have hx' := Ici_subset_maximalIntegralCurveInterval_neg_mgradient_of_tendsto
+    ((h.neg.isNondegenerateCriticalSubmanifold a).mem_criticalPoints s) hlim
+  obtain ⟨l, u, ⟨hl, hu⟩, hlu⟩ := mem_nhds_iff_exists_Ioo_subset.1
+    (isOpen_maximalIntegralCurveInterval.mem_nhds (hx' (le_refl (0 : ℝ))))
+  have hray : Ioi l ⊆ maximalIntegralCurveInterval (-mgradient I (-f)) x := fun t ht ↦
+    (lt_or_ge t u).elim (fun htu ↦ hlu ⟨ht, htu⟩) fun htu ↦ hx' (hu.le.trans htu)
+  -- Reversing time turns `γ'` into an integral curve of `-grad f` through `x` on `(-∞, -l)`, so it
+  -- agrees there with the trajectory of `-grad f`. The flow of `-grad f` need not be complete, so
+  -- the global time reversal `maximalIntegralCurve_neg_mgradient_neg` does not apply.
+  have hcurve : IsMIntegralCurveOn (maximalIntegralCurve (-mgradient I (-f)) x ∘ (· * -1))
+      (-mgradient I f) (Iio (-l)) := by
+    have h1 := ((isMIntegralCurveOn_maximalIntegralCurve
+      (contMDiff_neg_mgradient_one (f := -f) hf2.neg)).mono hray).comp_mul (-1)
+    have h2 : (-1 : ℝ) • -mgradient I (-f) = -mgradient I f := by
+      funext y
+      simp [mgradient_neg]
+    rw [h2] at h1
+    exact h1.mono fun t ht ↦ show l < t * -1 by linarith [mem_Iio.1 ht]
+  have hrev : ∀ t ≤ 0, maximalIntegralCurve (-mgradient I f) x t =
+      maximalIntegralCurve (-mgradient I (-f)) x (t * -1) := fun t ht ↦
+    (hcurve.mono (Ioo_subset_Iio_self (a := t - 1))).eqOn_maximalIntegralCurve
+      (contMDiff_neg_mgradient_one hf2) ⟨by linarith, by linarith⟩
+      (by simp [maximalIntegralCurve_zero]) ⟨by linarith, by linarith⟩
   have hbot : Tendsto (fun t : ℝ ↦ t * -1) atBot atTop := by
     simpa only [mul_neg_one] using tendsto_neg_atBot_atTop
-  refine ⟨a, s, ?_, μ, hμ, C, hC, ?_⟩
-  · simpa [Function.comp_def] using hlim.comp hbot
-  · filter_upwards [hbot.eventually hrate] with t ht
-    simpa [Function.comp_def, mul_comm μ t] using ht
-
-omit [I.Boundaryless] [∀ a, (J a).Boundaryless]
-  [IsContMDiffRiemannianBundle I 1 E fun x : M ↦ TangentSpace I x] in
-/-- The limits along a nontrivial filter of the trajectory through a point lie on at most one
-critical submanifold of a Morse–Bott function, since distinct critical submanifolds are disjoint. -/
-private theorem eq_of_tendsto_maximalIntegralCurve (h : IsMorseBottFamily i f) {l : Filter ℝ}
-    [l.NeBot] {x : M} {a b : ι} {s : S a} {s' : S b}
-    (ha : Tendsto (maximalIntegralCurve (-mgradient I f) x) l (𝓝 (i a s)))
-    (hb : Tendsto (maximalIntegralCurve (-mgradient I f) x) l (𝓝 (i b s'))) : a = b := by
-  by_contra hab
-  exact disjoint_left.1 (h.pairwise_disjoint_range hab) (mem_range_self s)
-    (tendsto_nhds_unique ha hb ▸ mem_range_self s')
+  refine ⟨a, s, (hlim.comp hbot).congr' ?_, μ, hμ, C, hC, ?_⟩
+  · filter_upwards [eventually_le_atBot 0] with t ht using (hrev t ht).symm
+  · filter_upwards [hbot.eventually hrate, eventually_le_atBot 0] with t ht ht0
+    rw [hrev t ht0]
+    simpa [mul_comm μ t] using ht
 
 /-- **Every point lies in the stable set of exactly one critical submanifold.** If the family `i`
-of `C²` embeddings exhibits `f` as a Morse–Bott function on a compact manifold, the maximal
-integral curve of `-grad f` through any point `x` converges as `t → ∞` to a point of exactly one
-critical submanifold `i a`. -/
-theorem existsUnique_exists_tendsto_maximalIntegralCurve_neg_mgradient [CompactSpace M]
-    (h : IsMorseBottFamily i f) (hn : 2 ≤ n) (x : M) :
+of `C²` embeddings exhibits a proper function `f`, bounded below, as a Morse–Bott function, the
+maximal integral curve of `-grad f` through any point `x` converges as `t → ∞` to a point of
+exactly one critical submanifold `i a`. -/
+theorem existsUnique_exists_tendsto_maximalIntegralCurve_neg_mgradient
+    (h : IsMorseBottFamily i f) (hn : 2 ≤ n) (hp : IsProperMap f) (hbdd : BddBelow (range f))
+    (x : M) :
     ∃! a, ∃ s, Tendsto (maximalIntegralCurve (-mgradient I f) x) atTop (𝓝 (i a s)) := by
   obtain ⟨a, s, hlim, -⟩ :=
-    h.exists_tendsto_and_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_mgradient hn
-      h.contMDiff.continuous.isProperMap (isCompact_range h.contMDiff.continuous).bddBelow x
-  exact ⟨a, ⟨s, hlim⟩, fun b ⟨s', hb⟩ ↦ (h.eq_of_tendsto_maximalIntegralCurve hlim hb).symm⟩
+    h.exists_tendsto_and_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_mgradient hn hp hbdd x
+  exact ⟨a, ⟨s, hlim⟩, fun b ⟨s', hb⟩ ↦ (h.eq_of_apply_eq (tendsto_nhds_unique hlim hb)).symm⟩
 
 /-- **Every point lies in the unstable set of exactly one critical submanifold.** If the family
-`i` of `C²` embeddings exhibits `f` as a Morse–Bott function on a compact manifold, the maximal
-integral curve of `-grad f` through any point `x` converges as `t → -∞` to a point of exactly one
-critical submanifold `i a`. -/
-theorem existsUnique_exists_tendsto_atBot_maximalIntegralCurve_neg_mgradient [CompactSpace M]
-    (h : IsMorseBottFamily i f) (hn : 2 ≤ n) (x : M) :
+`i` of `C²` embeddings exhibits a proper function `f`, bounded above, as a Morse–Bott function, the
+maximal integral curve of `-grad f` through any point `x` converges as `t → -∞` to a point of
+exactly one critical submanifold `i a`. -/
+theorem existsUnique_exists_tendsto_atBot_maximalIntegralCurve_neg_mgradient
+    (h : IsMorseBottFamily i f) (hn : 2 ≤ n) (hp : IsProperMap f) (hbdd : BddAbove (range f))
+    (x : M) :
     ∃! a, ∃ s, Tendsto (maximalIntegralCurve (-mgradient I f) x) atBot (𝓝 (i a s)) := by
   obtain ⟨a, s, hlim, -⟩ :=
-    h.exists_tendsto_atBot_and_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_mgradient hn x
-  exact ⟨a, ⟨s, hlim⟩, fun b ⟨s', hb⟩ ↦ (h.eq_of_tendsto_maximalIntegralCurve hlim hb).symm⟩
+    h.exists_tendsto_atBot_and_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_mgradient hn
+      hp hbdd x
+  exact ⟨a, ⟨s, hlim⟩, fun b ⟨s', hb⟩ ↦ (h.eq_of_apply_eq (tendsto_nhds_unique hlim hb)).symm⟩
 
 end IsMorseBottFamily
 
