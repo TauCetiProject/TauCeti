@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Topology.Algebra.Module.Equiv.Prod
 public import Mathlib.Topology.Algebra.Module.Spaces.ContinuousLinearMap
+public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Restrict
 public import TauCeti.Topology.Algebra.Module.Equiv.SMul
 import Mathlib.Tactic.Abel
 
@@ -45,6 +46,11 @@ bundles over the same base, read in bundle charts.
 
 Between uniformly topologized modules an invertible continuous linear map transfers
 completeness from the codomain to the domain, because its inverse is a uniform homeomorphism.
+
+An invertible map restricts to an invertible map between submodules `p` and `q` as soon as its
+inverse maps `q` into `p` (`ContinuousLinearMap.IsInvertible.restrictOfTower`), and the inverse of
+the restriction is the restriction of the inverse
+(`ContinuousLinearMap.IsInvertible.coe_inverse_restrictOfTower_apply`).
 
 The rectangular Jacobson identity says that `1 - u ∘ v` and `1 - v ∘ u` are invertible together,
 even for maps between different modules. It transports invertibility from an operator to its
@@ -85,6 +91,36 @@ theorem IsInvertible.inverse_sub_inverse {f g : E →L[R] F}
   simp [hf.inverse_apply_self, hg.self_apply_inverse]
 
 end Sub
+
+section Restrict
+
+variable {R S M N : Type*} [Semiring R] [Semiring S] [SMul R S]
+  [TopologicalSpace M] [AddCommMonoid M] [Module R M] [Module S M] [IsScalarTower R S M]
+  [TopologicalSpace N] [AddCommMonoid N] [Module R N] [Module S N] [IsScalarTower R S N]
+
+/-- Let `f` be invertible, mapping the submodule `p` into the submodule `q`, and suppose that `x`
+lies in `p` whenever `f x` lies in `q`. Then the restriction `p →L[R] q` of `f` is invertible:
+the inverse of `f` maps `q` into `p`. The submodules may be over a larger ring `S` of scalars, for
+example complex subspaces for a real-linear `f`. -/
+theorem IsInvertible.restrictOfTower {f : M →L[R] N} (hf : f.IsInvertible) {p : Submodule S M}
+    {q : Submodule S N} (h : ∀ x ∈ p, f x ∈ q) (hq : ∀ x, f x ∈ q → x ∈ p) :
+    (f.restrictOfTower h).IsInvertible := by
+  refine IsInvertible.of_inverse (g := f.inverse.restrictOfTower fun y hy ↦
+    hq _ (by rwa [hf.self_apply_inverse])) ?_ ?_ <;> ext1 y <;> refine Subtype.ext ?_
+  · simpa using hf.self_apply_inverse (y : N)
+  · simpa using hf.inverse_apply_self (y : M)
+
+/-- The inverse of the restriction of an invertible map `f` to submodules `p` and `q` is the
+restriction of the inverse of `f`. -/
+@[simp]
+theorem IsInvertible.coe_inverse_restrictOfTower_apply {f : M →L[R] N} (hf : f.IsInvertible)
+    {p : Submodule S M} {q : Submodule S N} (h : ∀ x ∈ p, f x ∈ q)
+    (hq : ∀ x, f x ∈ q → x ∈ p) (y : q) :
+    ((f.restrictOfTower h).inverse y : M) = f.inverse y := by
+  conv_rhs => rw [← (hf.restrictOfTower h hq).self_apply_inverse y]
+  simp [hf.inverse_apply_self]
+
+end Restrict
 
 section OneSided
 

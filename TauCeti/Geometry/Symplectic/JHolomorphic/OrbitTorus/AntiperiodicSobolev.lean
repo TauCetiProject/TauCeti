@@ -60,9 +60,9 @@ the method of continuity makes every operator of the path invertible
 complex-linear reference operator along which the determinant line of an anti-`s` twisted
 orbit-torus operator is oriented.
 
-The twist along `γ` by the sign `-1` is not treated here: a map antiperiodic in `t` of period `T`
-is `exp (J₀ π t / T)` times a periodic one, and the corresponding loop operator is that of a
-different loop. Finite covers of the torus are not treated either.
+The twist along `γ` by the sign `-1` is treated in
+`TauCeti.Geometry.Symplectic.JHolomorphic.OrbitTorus.DoublyAntiperiodic`, on the double cover of
+`γ`, by restricting the operator of this file. Finite covers of the torus are not treated here.
 
 ## Main definitions
 
