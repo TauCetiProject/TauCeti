@@ -8,9 +8,9 @@ module
 public import Mathlib.AlgebraicGeometry.IdealSheaf.Functorial
 public import Mathlib.RingTheory.LocalRing.Defs
 public import TauCeti.AlgebraicGeometry.IdealSheaf.OfIdealTop
+public import TauCeti.AlgebraicGeometry.Morphisms.ClosedImmersion.FinitePresentation
 
 import Mathlib.RingTheory.LocalProperties.Submodule
-import TauCeti.AlgebraicGeometry.Morphisms.ClosedImmersion.FinitePresentation
 import TauCeti.AlgebraicGeometry.Scheme.StalkSpecializes
 
 /-!
@@ -179,18 +179,12 @@ theorem comap_comap_fromSpec_eq_ofIdealTop {Y : Scheme.{u}} (I : X.IdealSheafDat
       (Scheme.ΓSpecIso Γ(Y, V)).inv.hom) := by
   rw [comap_fromSpec_eq_ofIdealTop, ideal_comap_of_le I f ⟨U, hU⟩ ⟨V, hV⟩ e]
 
-/-- Pulling a finite-type ideal sheaf back along a morphism preserves finite generation on
-affine opens. -/
+/-- Pulling an ideal sheaf with locally finitely presented closed inclusion back along a
+morphism preserves finite generation on affine opens. -/
 theorem fg_ideal_comap {Y : Scheme.{u}} (J : Y.IdealSheafData)
-    (hJ : ∀ W : Y.affineOpens, (J.ideal W).FG) (f : X ⟶ Y)
-    (W : X.affineOpens) : ((J.comap f).ideal W).FG := by
-  refine (J.comap f).fg_ideal_of_forall_exists_fg (fun x ↦ ?_) W
-  obtain ⟨U, hU, hxU, -⟩ := exists_isAffineOpen_mem_and_subset (x := f x) (Opens.mem_top (f x))
-  obtain ⟨_, ⟨V, hV, rfl⟩, hxV, hVU⟩ :=
-    X.isBasis_affineOpens.exists_subset_of_mem_open (f.mem_preimage.mpr hxU) (f ⁻¹ᵁ U).isOpen
-  refine ⟨⟨V, hV⟩, hxV, ?_⟩
-  rw [ideal_comap_of_le J f ⟨U, hU⟩ ⟨V, hV⟩ hVU]
-  exact Ideal.FG.map (hJ ⟨U, hU⟩) _
+    [LocallyOfFinitePresentation J.subschemeι] (f : X ⟶ Y)
+    (W : X.affineOpens) : ((J.comap f).ideal W).FG :=
+  (J.comap f).fg_ideal W
 
 /-- On `Spec B`, if the ideal sheaf of `N₁` lies in that of `N₂` over the basic open `D(g)`,
 then every element of `N₁` is multiplied into `N₂` by some power of `g`. -/
