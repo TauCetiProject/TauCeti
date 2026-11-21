@@ -10,6 +10,7 @@ public import TauCeti.Probability.Density
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.Analysis.Calculus.Deriv.Slope
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
 /-!
 # Densities of Irwin–Hall laws
@@ -209,16 +210,17 @@ theorem integrable_irwinHallPDFReal (n : ℕ) : Integrable (irwinHallPDFReal n) 
   · subst n
     rw [funext irwinHallPDFReal_zero]
     exact integrable_zero _ _ _
-  exact integrable_of_eq_withDensity (irwinHallMeasure_eq_withDensity (Nat.pos_of_ne_zero hn))
+  exact MeasureTheory.integrable_of_eq_withDensity
+    (irwinHallMeasure_eq_withDensity (Nat.pos_of_ne_zero hn))
     (measurable_irwinHallPDFReal n).aemeasurable (ae_of_all _ (irwinHallPDFReal_nonneg n))
 
 /-- The real density of a positive-order Irwin–Hall law integrates to one. -/
 theorem integral_irwinHallPDFReal {n : ℕ} (hn : 0 < n) :
     ∫ x, irwinHallPDFReal n x = 1 := by
   have hμ := irwinHallMeasure_eq_withDensity hn
-  have hfi := integrable_irwinHallPDFReal n
-  have hmass := measureReal_withDensity_ofReal
-    (s := univ) (ae_of_all _ (irwinHallPDFReal_nonneg n)) MeasurableSet.univ hfi.integrableOn
+  have hmass := MeasureTheory.measureReal_withDensity_ofReal (μ := volume)
+    (s := univ) (ae_of_all _ (irwinHallPDFReal_nonneg n)) nullMeasurableSet_univ
+    (measurable_irwinHallPDFReal n).aemeasurable
   simpa [← irwinHallPDF_eq_ofReal, ← hμ] using hmass.symm
 
 /-- A variable with positive-order Irwin–Hall law has a density. -/

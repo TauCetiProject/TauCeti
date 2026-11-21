@@ -223,7 +223,7 @@ theorem coord_sub_algebraMap_mul_dslope_add {a : ℂ} (ha : a ∈ ball c R) (f :
       algebraMap ℂ (discAlgebra c R) (extend f a) = f := by
   apply Subtype.ext
   ext z
-  have h := sub_smul_dslope (extend f) a z.1
+  have h := sub_smul_dslope (extend f) a z.val
   rw [smul_eq_mul, extend_apply f z] at h
   simp only [Subalgebra.coe_add, Subalgebra.coe_mul, Subalgebra.coe_sub,
     Algebra.algebraMap_eq_smul_one, Subalgebra.coe_smul, Subalgebra.coe_one,
@@ -288,7 +288,7 @@ theorem differentiableAt_iff_coe {E : Type*} [NormedAddCommGroup E] [NormedSpace
   have hfg := hg.hasFDerivAt
   have hmem : ∀ v, fderiv ℂ (fun x => (f x : C(closedBall c R, ℂ))) a v ∈ S :=
     hfg.apply_mem_of_eventually_sub_mem (isClosed_discAlgebra c R)
-      (Eventually.of_forall fun y => (discAlgebra c R).sub_mem (f y).2 (f a).2)
+      (Eventually.of_forall fun y => (discAlgebra c R).sub_mem (f y).property (f a).property)
   let L : E →L[ℂ] S := (fderiv ℂ (fun x => (f x : C(closedBall c R, ℂ))) a).codRestrict S hmem
   exact (HasFDerivAt.of_comp_of_isEmbedding (f := S.subtypeL) (f' := S.subtypeL) (g := f) (g' := L)
     (Topology.IsEmbedding.subtypeVal.continuousAt_iff.2 hg.continuousAt)
@@ -301,10 +301,10 @@ theorem analyticAt_mkD_of_analyticAt {E : Type*} [NormedAddCommGroup E] [NormedS
     [FiniteDimensional ℂ E] {F : E × ℂ → ℂ} {a : E} {d : discAlgebra c R}
     (hF : ∀ z ∈ closedBall c R, AnalyticAt ℂ F (a, z)) :
     AnalyticAt ℂ (fun x => mkD c R (fun z => F (x, z)) d) a := by
-  let g : E → C(closedBall c R, ℂ) := fun x => ContinuousMap.mkD (fun z => F (x, z.1)) 0
+  let g : E → C(closedBall c R, ℂ) := fun x => ContinuousMap.mkD (fun z => F (x, z.val)) 0
   have hg : AnalyticAt ℂ g a :=
-    TauCeti.analyticAt_mkD_of_analyticAt (K := closedBall c R) continuous_subtype_val
-      fun z => hF z.1 z.2
+    TauCeti.analyticAt_mkD_of_analyticAt (K := closedBall c R) continuous_subtypeVal
+      fun z => hF z.val z.property
   have hnear : ∀ᶠ x in 𝓝 a, ∀ z ∈ closedBall c R, AnalyticAt ℂ F (x, z) :=
     (isCompact_closedBall c R).eventually_forall_of_forall_eventually fun z hz =>
       (hF z hz).eventually_analyticAt
@@ -316,8 +316,8 @@ theorem analyticAt_mkD_of_analyticAt {E : Type*} [NormedAddCommGroup E] [NormedS
     ext z
     dsimp only [g]
     rw [mkD_apply_of_analyticOnNhd han,
-      ContinuousMap.mkD_apply_of_continuous (f := fun z : closedBall c R => F (x, z.1))
-        (han.continuousOn.comp_continuous continuous_subtype_val fun w => w.2)]
+      ContinuousMap.mkD_apply_of_continuous (f := fun z : closedBall c R => F (x, z.val))
+        (han.continuousOn.comp_continuous continuous_subtypeVal fun w => w.property)]
   refine DifferentiableOn.analyticAt_of_finiteDimensional (s := U) (fun x hx => ?_)
     (hopen.mem_nhds haU)
   refine (differentiableAt_iff_coe.2 ?_).differentiableWithinAt
@@ -340,15 +340,15 @@ theorem analyticAt_extend_of_analyticAt {E : Type*} [NormedAddCommGroup E] [Norm
   -- The Cauchy kernel `z ↦ (ζ ↦ ζ - z)⁻¹` as a `C(sphere c |R|, ℂ)`-valued analytic map near `z₀`.
   let ζId : C(sphere c |R|, ℂ) := ContinuousMap.subtypeVal (sphere c |R|)
   let κ : ℂ → C(sphere c |R|, ℂ) := fun z => ζId - z • (1 : C(sphere c |R|, ℂ))
-  have hne {z : ℂ} (hz : z ∈ ball c R) (ζ : sphere c |R|) : ζ.1 - z ≠ 0 := by
+  have hne {z : ℂ} (hz : z ∈ ball c R) (ζ : sphere c |R|) : ζ.val - z ≠ 0 := by
     intro h
-    have hdz : dist ζ.1 c = dist z c := by rw [sub_eq_zero.1 h]
-    rw [mem_sphere.1 ζ.2, abs_of_pos hR] at hdz
+    have hdz : dist ζ.val c = dist z c := by rw [sub_eq_zero.1 h]
+    rw [mem_sphere.1 ζ.property, abs_of_pos hR] at hdz
     exact (mem_ball.1 hz).ne hdz.symm
   let κUnit (z : ℂ) (hz : z ∈ ball c R) : C(sphere c |R|, ℂ)ˣ :=
     { val := κ z
-      inv := ⟨fun ζ => (ζ.1 - z)⁻¹,
-        (continuous_subtype_val.sub continuous_const).inv₀ (hne hz)⟩
+      inv := ⟨fun ζ => (ζ.val - z)⁻¹,
+        (continuous_subtypeVal.sub continuous_const).inv₀ (hne hz)⟩
       val_inv := ContinuousMap.ext fun ζ => by simp [κ, ζId, mul_inv_cancel₀ (hne hz ζ)]
       inv_val := ContinuousMap.ext fun ζ => by simp [κ, ζId, inv_mul_cancel₀ (hne hz ζ)] }
   have hκ : AnalyticAt ℂ κ z₀ :=

@@ -5,13 +5,32 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.ModuleCat.Semicontinuity
 public import TauCeti.AlgebraicGeometry.Cohomology.BaseChange
+public import TauCeti.AlgebraicGeometry.Cohomology.Cech.FiniteProjective
 public import TauCeti.RingTheory.Spectrum.Prime.Semicontinuity
 public import Mathlib.RingTheory.LocalRing.Module
 public import Mathlib.RingTheory.Support
 
 /-!
-# Semicontinuity of first cohomology on the fibres of a two-affine cover
+# Semicontinuity of cohomology on the fibres
+
+## The semicontinuity theorem
+
+Let `R` be a Noetherian ring, `X` a quasi-compact scheme over `R` with affine diagonal, for
+instance a separated one, and `M` a quasi-coherent sheaf on `X` which is flat over `R` and whose
+cohomology modules `Hⁿ(X, M)` are finitely generated, as for a coherent sheaf flat over `R` on a
+proper scheme. For a prime `p` of `R`, write `X_p = X ×_R κ(p)` for the fibre and `M_p` for the
+pullback of `M` to it. Then `p ↦ dim_{κ(p)} Hⁿ(X_p, M_p)` is an upper semicontinuous function on
+`Spec R`, in every degree `n`
+(`TauCeti.AlgebraicGeometry.upperSemicontinuous_finrank_cohomology_fiber`).
+Indeed the cohomology of every fibre is computed by a single bounded complex `P` of finite
+projective `R`-modules, `Hⁿ(X_p, M_p) ≅ Hⁿ(κ(p) ⊗_R P)`
+(`TauCeti.AlgebraicGeometry.exists_finite_projective_complex_cohomology_pullback`), and the
+dimension of the fibre homology of such a complex is upper semicontinuous
+(`HomologicalComplex.upperSemicontinuous_finrank_homology_extendScalars`).
+
+## First cohomology on the fibres of a two-affine cover
 
 Let `X` be a scheme over a commutative ring `R`, covered by affine opens `U` and `V` with affine
 intersection, and let `M` be a quasicoherent sheaf on `X`. For a prime `p` of `R`, write
@@ -36,6 +55,9 @@ square.
 
 ## Main results
 
+* `TauCeti.AlgebraicGeometry.upperSemicontinuous_finrank_cohomology_fiber`: the semicontinuity
+  theorem, upper semicontinuity of `p ↦ dim_{κ(p)} Hⁿ(X_p, M_p)` for `M` flat over a Noetherian
+  base with finitely generated cohomology.
 * `TauCeti.AlgebraicGeometry.finrank_cohomology_one_pullback_eq_finrank_fiber`:
   `dim_{κ(p)} H¹(X_p, M_p) = dim_{κ(p)} κ(p) ⊗_R H¹(X, M)`.
 * `TauCeti.AlgebraicGeometry.subsingleton_cohomology_one_pullback_iff_notMem_support`:
@@ -151,5 +173,32 @@ theorem subsingleton_cohomology_one_iff_forall_isMaximal [Module.Finite R (Cohom
   -- The support is closed under specialization, so it meets the closed points if nonempty.
   obtain ⟨m, hm, hpm⟩ := p.asIdeal.exists_le_maximal p.isPrime.ne_top
   exact h ⟨m, hm.isPrime⟩ hm (Module.mem_support_mono hpm hp)
+
+/-- **The semicontinuity theorem.** Let `R` be a Noetherian ring, `X` a quasi-compact scheme over
+`R` with affine diagonal, and `M` a quasi-coherent sheaf on `X` with stalks flat over `R` whose
+cohomology modules `Hⁿ(X, M)` are finitely generated. Then in every degree `n`, the dimension of
+`Hⁿ` of `M` on the fibre `X ×_R κ(p)` is an upper semicontinuous function of `p ∈ Spec R`. -/
+theorem upperSemicontinuous_finrank_cohomology_fiber [IsNoetherianRing R] [CompactSpace X]
+    [IsAffineHom (pullback.diagonal (terminal.from X))]
+    (hM : ∀ x : X, Module.Flat R (M.presheaf.stalk x))
+    (hfin : ∀ n, Module.Finite R (Cohomology M n)) (n : ℕ) :
+    UpperSemicontinuous fun p : PrimeSpectrum R ↦ finrank p.asIdeal.ResidueField
+      (Cohomology ((Scheme.Modules.pullback (pullback.fst (X ↘ Spec (.of R))
+        (Spec.map (CommRingCat.ofHom (algebraMap R p.asIdeal.ResidueField))))).obj M) n) := by
+  -- A finite affine open cover has affine finite intersections, as `X` has affine diagonal.
+  let 𝒰 := X.affineCover.finiteSubcover
+  let : LinearOrder 𝒰.I₀ := LinearOrder.lift' _ (Finite.equivFin 𝒰.I₀).injective
+  obtain ⟨P, -, -, -, hP, -, -, hPY⟩ := exists_finite_projective_complex_cohomology_pullback
+    (fun i : 𝒰.I₀ ↦ (𝒰.f i).opensRange) M
+    (fun s hs ↦ IsAffineOpen.finset_inf s hs fun i _ ↦ isAffineOpen_opensRange (𝒰.f i))
+    𝒰.iSup_opensRange hM hfin
+  have := (hP n).1
+  have := (hP (n + 1)).2
+  convert P.upperSemicontinuous_finrank_homology_extendScalars (CochainComplex.next ℤ n)
+    using 2 with p
+  obtain ⟨e⟩ := hPY p.asIdeal.ResidueField (pullback (X ↘ Spec (.of R))
+    (Spec.map (CommRingCat.ofHom (algebraMap R p.asIdeal.ResidueField)))) _
+    (IsPullback.of_hasPullback _ _) n
+  exact e.finrank_eq.symm
 
 end TauCeti.AlgebraicGeometry

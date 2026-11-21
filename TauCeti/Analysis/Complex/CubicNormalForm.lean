@@ -183,7 +183,7 @@ private noncomputable def cubicLinearCLM (R : ℝ) :
 private theorem cubicLinearCLM_apply_coe (R : ℝ) (x : discAlgebra 0 R × (ℂ × ℂ))
     (z : closedBall (0 : ℂ) R) :
     (cubicLinearCLM R x : C(closedBall (0 : ℂ) R, ℂ)) z =
-      z.1 ^ 2 * (x.1 : C(closedBall (0 : ℂ) R, ℂ)) z - x.2.1 * z.1 + x.2.2 := by
+      z.val ^ 2 * (x.1 : C(closedBall (0 : ℂ) R, ℂ)) z - x.2.1 * z.val + x.2.2 := by
   simp [cubicLinearCLM]
 
 private theorem ker_cubicLinearCLM {R : ℝ} (hR : 0 < R) :
@@ -257,7 +257,7 @@ private noncomputable def cubicLinearEquiv {R : ℝ} (hR : 0 < R) :
       ContinuousMap.smul_apply, ContinuousMap.one_apply, smul_eq_mul, mul_one,
       DiscAlgebra.coord_apply] at h1z h2z
     rw [ContinuousLinearMap.coe_coe, cubicLinearCLM_apply_coe]
-    linear_combination h1z + z.1 * h2z
+    linear_combination h1z + z.val * h2z
 
 /-- The nonlinear cubic normal-form operator `(u, (ζ, η)) ↦ u ^ 3 / 3 - ζ u + η` on
 `discAlgebra 0 R`. -/
@@ -349,14 +349,14 @@ private theorem exists_cubic_normal_form_of_normalized {E : Type*} [NormedAddCom
     (analyticAt_cubicMap R x₀).exists_openPartialHomeomorph hfderiv univ_mem
   let slice : E → discAlgebra 0 R := fun β => DiscAlgebra.mkD 0 R (fun s => F (β, s)) 0
   have hslice_apply {β : E} (hβ : β ∈ ball (0 : E) δ) (s : closedBall (0 : ℂ) R) :
-      (slice β : C(closedBall (0 : ℂ) R, ℂ)) s = F (β, s.1) :=
+      (slice β : C(closedBall (0 : ℂ) R, ℂ)) s = F (β, s.val) :=
     DiscAlgebra.mkD_apply_of_analyticOnNhd
       (fun z hz => (hFδ β hβ z hz).comp_of_eq (analyticAt_const.prod analyticAt_id) rfl) s
   have hslice_eq : slice 0 = cubicMap R x₀ := by
     apply Subtype.ext
     ext s
     rw [hslice_apply (mem_ball_self hδ)]
-    simpa [cubicMap_apply_coe, x₀] using hF0_cb s.1 s.2
+    simpa [cubicMap_apply_coe, x₀] using hF0_cb s.val s.property
   have hslice_an : AnalyticAt ℂ slice 0 :=
     DiscAlgebra.analyticAt_mkD_of_analyticAt (hFδ 0 (mem_ball_self hδ))
   have hmem_tgt : slice 0 ∈ Θ.target := by rw [hslice_eq, ← hΘ]; exact Θ.map_source hx₀_src
