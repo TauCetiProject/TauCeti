@@ -26,6 +26,8 @@ over `R ⧸ I`. Conversely, elements of an ideal `I` of `A` whose images span th
 * `AlgHom.finite_cotangent_ker_of_fg`: finite generation of the kernel gives finiteness of its
   cotangent space over the base.
 * `AlgHom.finite_cotangent_ker`: the noetherian specialization.
+* `IsLocalRing.finrank_cotangentSpace_eq_of_ringEquiv`: a ring isomorphism between local rings
+  preserves the dimension of the cotangent space over the residue field.
 
 ## References
 
@@ -104,3 +106,48 @@ theorem finite_cotangent_ker [IsNoetherianRing A] (f : A →ₐ[R] S) (hf : Func
   finite_cotangent_ker_of_fg f hf (RingHom.ker f).fg_of_isNoetherianRing
 
 end AlgHom
+
+namespace IsLocalRing
+
+/-- A ring isomorphism between local rings preserves the dimension of the cotangent space over the
+residue field. -/
+theorem finrank_cotangentSpace_eq_of_ringEquiv {R S : Type*} [CommRing R] [CommRing S]
+    [IsLocalRing R] [IsLocalRing S] (σ : R ≃+* S) :
+    Module.finrank (ResidueField R) (CotangentSpace R) =
+      Module.finrank (ResidueField S) (CotangentSpace S) := by
+  have h₁ : maximalIdeal R ≤ (maximalIdeal S).comap σ.toRingHom.toIntAlgHom :=
+    fun x hx ↦ (mem_maximalIdeal _).2
+      (mt (fun hu ↦ by simpa using hu.map σ.symm.toRingHom) ((mem_maximalIdeal _).1 hx))
+  have h₂ : maximalIdeal S ≤ (maximalIdeal R).comap σ.symm.toRingHom.toIntAlgHom :=
+    fun y hy ↦ (mem_maximalIdeal _).2
+      (mt (fun hu ↦ by simpa using hu.map σ.toRingHom) ((mem_maximalIdeal _).1 hy))
+  let f₁ := Ideal.mapCotangent (maximalIdeal R) (maximalIdeal S) σ.toRingHom.toIntAlgHom h₁
+  let f₂ := Ideal.mapCotangent (maximalIdeal S) (maximalIdeal R) σ.symm.toRingHom.toIntAlgHom h₂
+  let eCot : CotangentSpace R ≃+ CotangentSpace S :=
+    { toFun := f₁
+      invFun := f₂
+      left_inv := fun v ↦ by
+        obtain ⟨s, rfl⟩ := Ideal.toCotangent_surjective _ v
+        simp [f₁, f₂]
+      right_inv := fun w ↦ by
+        obtain ⟨s, rfl⟩ := Ideal.toCotangent_surjective _ w
+        simp [f₁, f₂]
+      map_add' := f₁.map_add }
+  let κ : ResidueField R ≃+* ResidueField S := ResidueField.mapEquiv σ
+  have hsmul : ∀ (r : ResidueField R) (m : CotangentSpace R), eCot (r • m) = κ r • eCot m :=
+    fun r m ↦ by
+      obtain ⟨r, rfl⟩ := residue_surjective r
+      obtain ⟨m, rfl⟩ := Ideal.toCotangent_surjective _ m
+      change f₁ (residue R r • Ideal.toCotangent _ m) =
+        κ (residue R r) • f₁ (Ideal.toCotangent _ m)
+      rw [← ResidueField.algebraMap_eq, IsScalarTower.algebraMap_smul,
+        ResidueField.mapEquiv_apply, ResidueField.algebraMap_eq,
+        ResidueField.map_residue, ← ResidueField.algebraMap_eq,
+        IsScalarTower.algebraMap_smul]
+      apply congrArg (Ideal.toCotangent _)
+      ext
+      exact map_mul σ r m
+  simpa [Module.finrank] using congrArg Cardinal.toNat
+    (lift_rank_eq_of_equiv_equiv κ eCot κ.bijective hsmul)
+
+end IsLocalRing

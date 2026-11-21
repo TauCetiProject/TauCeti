@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.LocalRing
 public import Mathlib.RingTheory.Ideal.Cotangent
 import Mathlib.LinearAlgebra.Dual.Basis
 import TauCeti.Geometry.Manifold.Complex.StructureSheaf.StalkPullback
+import TauCeti.RingTheory.Ideal.Cotangent.Basic
 
 /-!
 # The cotangent space of a holomorphic stalk
@@ -284,52 +285,6 @@ private theorem finrank_cotangentSpace_holomorphicStalk_self :
 
 end SelfModel
 
-private theorem finrank_cotangentSpace_eq_of_ringEquiv {R S : Type*} [CommRing R] [CommRing S]
-    [IsLocalRing R] [IsLocalRing S] (σ : R ≃+* S) :
-    Module.finrank (IsLocalRing.ResidueField R) (IsLocalRing.CotangentSpace R) =
-      Module.finrank (IsLocalRing.ResidueField S) (IsLocalRing.CotangentSpace S) := by
-  have h₁ : IsLocalRing.maximalIdeal R ≤
-      (IsLocalRing.maximalIdeal S).comap σ.toRingHom.toIntAlgHom :=
-    fun x hx ↦ (IsLocalRing.mem_maximalIdeal _).2
-      (mt (fun hu ↦ by simpa using hu.map σ.symm.toRingHom)
-        ((IsLocalRing.mem_maximalIdeal _).1 hx))
-  have h₂ : IsLocalRing.maximalIdeal S ≤
-      (IsLocalRing.maximalIdeal R).comap σ.symm.toRingHom.toIntAlgHom :=
-    fun y hy ↦ (IsLocalRing.mem_maximalIdeal _).2
-      (mt (fun hu ↦ by simpa using hu.map σ.toRingHom)
-        ((IsLocalRing.mem_maximalIdeal _).1 hy))
-  let f₁ := Ideal.mapCotangent (IsLocalRing.maximalIdeal R) (IsLocalRing.maximalIdeal S)
-    σ.toRingHom.toIntAlgHom h₁
-  let f₂ := Ideal.mapCotangent (IsLocalRing.maximalIdeal S) (IsLocalRing.maximalIdeal R)
-    σ.symm.toRingHom.toIntAlgHom h₂
-  let eCot : IsLocalRing.CotangentSpace R ≃+ IsLocalRing.CotangentSpace S :=
-    { toFun := f₁
-      invFun := f₂
-      left_inv := fun v ↦ by
-        obtain ⟨s, rfl⟩ := Ideal.toCotangent_surjective _ v
-        simp [f₁, f₂]
-      right_inv := fun w ↦ by
-        obtain ⟨s, rfl⟩ := Ideal.toCotangent_surjective _ w
-        simp [f₁, f₂]
-      map_add' := f₁.map_add }
-  let κ : IsLocalRing.ResidueField R ≃+* IsLocalRing.ResidueField S :=
-    IsLocalRing.ResidueField.mapEquiv σ
-  have hsmul : ∀ (r : IsLocalRing.ResidueField R) (m : IsLocalRing.CotangentSpace R),
-      eCot (r • m) = κ r • eCot m := fun r m ↦ by
-    obtain ⟨r, rfl⟩ := IsLocalRing.residue_surjective r
-    obtain ⟨m, rfl⟩ := Ideal.toCotangent_surjective _ m
-    change f₁ (IsLocalRing.residue R r • Ideal.toCotangent _ m) =
-      κ (IsLocalRing.residue R r) • f₁ (Ideal.toCotangent _ m)
-    rw [← IsLocalRing.ResidueField.algebraMap_eq, IsScalarTower.algebraMap_smul,
-      IsLocalRing.ResidueField.mapEquiv_apply, IsLocalRing.ResidueField.algebraMap_eq,
-      IsLocalRing.ResidueField.map_residue, ← IsLocalRing.ResidueField.algebraMap_eq,
-      IsScalarTower.algebraMap_smul]
-    apply congrArg (Ideal.toCotangent _)
-    ext
-    exact map_mul σ r m
-  simpa [Module.finrank] using congrArg Cardinal.toNat
-    (lift_rank_eq_of_equiv_equiv κ eCot κ.bijective hsmul)
-
 section GeneralModel
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
@@ -348,7 +303,8 @@ theorem finrank_cotangentSpace_holomorphicStalk :
       Module.finrank ℂ E := by
   let V := Fin (Module.finrank ℂ E) → ℂ
   let L : E ≃L[ℂ] V := ContinuousLinearEquiv.ofFinrankEq (Module.finrank_fin_fun ℂ).symm
-  rw [finrank_cotangentSpace_eq_of_ringEquiv (e.holomorphicStalkEquivModelSpace he x hx L),
+  rw [IsLocalRing.finrank_cotangentSpace_eq_of_ringEquiv
+      (e.holomorphicStalkEquivModelSpace he x hx L),
     (OpenPartialHomeomorph.refl V).finrank_cotangentSpace_holomorphicStalk_self
       (L (e.extend I x)) (Set.mem_univ _)
       (StructureGroupoid.id_mem_maximalAtlas (contDiffGroupoid ω 𝓘(ℂ, V)))]
