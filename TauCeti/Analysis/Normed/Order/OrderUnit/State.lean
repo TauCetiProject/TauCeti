@@ -69,18 +69,21 @@ variable {E F : Type*} [SeminormedAddCommGroup E] [Module ℝ E]
   [SeminormedAddCommGroup F] [NormedSpace ℝ F] [Preorder F] [IsOrderedAddMonoid F]
   {e : E} {f : F}
 
+private theorem norm_map_le_of_monotone [LE E] (he : IsOrderUnitNorm e) (hf : IsOrderUnitNorm f)
+    (T : E →ₗ[ℝ] F) (hT : ∀ ⦃a b : E⦄, a ≤ b → T a ≤ T b) (a : E) :
+    ‖T a‖ ≤ ‖T e‖ * ‖a‖ := by
+  have h1 : -(‖a‖ • T e) ≤ T a := by
+    simpa [map_smul, neg_smul] using hT (he.neg_norm_smul_le a)
+  have h2 : T a ≤ ‖a‖ • T e := by
+    simpa [map_smul] using hT (he.le_norm_smul a)
+  calc ‖T a‖ ≤ ‖‖a‖ • T e‖ := hf.norm_le_of_neg_le_of_le h1 h2
+    _ = ‖T e‖ * ‖a‖ := by rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg (norm_nonneg a), mul_comm]
+
 /-- Every positive linear map between order-unit spaces satisfies `‖T a‖ ≤ ‖T e‖ * ‖a‖`. -/
 theorem norm_map_le [LE E] {G : Type*} [FunLike G E F] [LinearMapClass G ℝ E F]
     [OrderHomClass G E F] (he : IsOrderUnitNorm e) (hf : IsOrderUnitNorm f) (T : G) (a : E) :
-    ‖T a‖ ≤ ‖T e‖ * ‖a‖ := by
-  have h1 : -(‖a‖ • T e) ≤ T a := by
-    have := map_rel T (he.neg_norm_smul_le a)
-    simpa [map_smul, neg_smul] using this
-  have h2 : T a ≤ ‖a‖ • T e := by
-    have := map_rel T (he.le_norm_smul a)
-    simpa [map_smul] using this
-  calc ‖T a‖ ≤ ‖‖a‖ • T e‖ := hf.norm_le_of_neg_le_of_le h1 h2
-    _ = ‖T e‖ * ‖a‖ := by rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg (norm_nonneg a), mul_comm]
+    ‖T a‖ ≤ ‖T e‖ * ‖a‖ :=
+  he.norm_map_le_of_monotone hf (T : E →ₗ[ℝ] F) (fun _ _ hab => map_rel T hab) a
 
 /-- Every positive linear map between order-unit spaces is automatically continuous. -/
 theorem continuous_of_monotone [LE E] {G : Type*} [FunLike G E F] [LinearMapClass G ℝ E F]
@@ -121,15 +124,9 @@ variable {E F : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E] [Preorder 
 /-- A monotone continuous linear map between order-unit spaces has operator norm `‖T e‖`. -/
 theorem opNorm_eq_norm_apply (he : IsOrderUnitNorm e) (hf : IsOrderUnitNorm f)
     {T : E →L[ℝ] F} (hT : Monotone T) : ‖T‖ = ‖T e‖ := by
-  refine le_antisymm (T.opNorm_le_bound (norm_nonneg _) fun a => ?_) ?_
-  · have h1 : -(‖a‖ • T e) ≤ T a := by
-      simpa [map_smul, neg_smul] using hT (he.neg_norm_smul_le a)
-    have h2 : T a ≤ ‖a‖ • T e := by
-      simpa [map_smul] using hT (he.le_norm_smul a)
-    calc ‖T a‖ ≤ ‖‖a‖ • T e‖ := hf.norm_le_of_neg_le_of_le h1 h2
-      _ = ‖T e‖ * ‖a‖ := by
-          rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg (norm_nonneg a), mul_comm]
-  · simpa [he.norm_e] using T.le_opNorm e
+  refine le_antisymm
+    (T.opNorm_le_bound (norm_nonneg _) (he.norm_map_le_of_monotone hf (T : E →ₗ[ℝ] F) hT)) ?_
+  simpa [he.norm_e] using T.le_opNorm e
 
 /-- A unital positive continuous linear map between order-unit spaces has operator norm `1`. -/
 theorem opNorm_eq_one_of_monotone_of_map_unit (he : IsOrderUnitNorm e) (hf : IsOrderUnitNorm f)
@@ -206,9 +203,8 @@ theorem convex_stateSpace (e : E) : Convex ℝ (stateSpace e) := by
   refine ⟨fun a b hab => ?_, ?_⟩
   · exact add_le_add (mul_le_mul_of_nonneg_left (hφ.1 hab) hs)
       (mul_le_mul_of_nonneg_left (hψ.1 hab) ht)
-  · rw [← WeakDual.toStrongDual_apply, map_add, map_smul, map_smul, add_apply, smul_apply,
-      smul_apply, WeakDual.toStrongDual_apply, WeakDual.toStrongDual_apply, smul_eq_mul,
-      smul_eq_mul, hφ.2, hψ.2, mul_one, mul_one, hst]
+  · rw [← WeakDual.toStrongDual_apply]
+    simp [hφ.2, hψ.2, hst]
 
 /-- The order-unit state space is weak-star closed in `WeakDual ℝ E`. -/
 theorem isClosed_stateSpace (e : E) : IsClosed (stateSpace e) := by
@@ -258,9 +254,7 @@ variable {E F G : Type*} [AddCommMonoid E] [Module ℝ E] [TopologicalSpace E] [
 def statePullback {e : E} {f : F} (T : E →L[ℝ] F) (hT : Monotone T) (hunit : T e = f)
     (φ : stateSpace f) : stateSpace e :=
   ⟨WeakDual.toStrongDual.symm ((WeakDual.toStrongDual φ.1).comp T),
-    fun _ _ hab => φ.2.1 (hT hab), by
-      rw [WeakDual.symm_toStrongDual, StrongDual.toWeakDual_apply, ContinuousLinearMap.comp_apply,
-        WeakDual.toStrongDual_apply, hunit, φ.2.2]⟩
+    fun _ _ hab => φ.2.1 (hT hab), by simp [hunit, φ.2.2]⟩
 
 @[simp]
 theorem statePullback_apply {e : E} {f : F} (T : E →L[ℝ] F) (hT : Monotone T) (hunit : T e = f)
@@ -297,22 +291,27 @@ section Compactness
 
 variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E] [PartialOrder E] {e : E}
 
+/-- Every state in `OrderUnit.stateSpace e` has strong-dual operator norm `1`. -/
 theorem opNorm_eq_one_of_mem_stateSpace (he : IsOrderUnitNorm e) {φ : WeakDual ℝ E}
     (hφ : φ ∈ OrderUnit.stateSpace e) : ‖WeakDual.toStrongDual φ‖ = 1 := by
-  rw [he.opNorm_functional_eq_apply (φ := WeakDual.toStrongDual φ) hφ.1,
-    WeakDual.toStrongDual_apply, hφ.2]
+  simpa [hφ.2] using he.opNorm_functional_eq_apply (φ := WeakDual.toStrongDual φ) hφ.1
 
+/-- Evaluation of a state at `a : E` is bounded in absolute value by `‖a‖`. -/
 theorem abs_apply_le_norm_of_mem_stateSpace (he : IsOrderUnitNorm e) {φ : WeakDual ℝ E}
     (hφ : φ ∈ OrderUnit.stateSpace e) (a : E) : |φ a| ≤ ‖a‖ := by
   have h := (WeakDual.toStrongDual φ).le_opNorm a
   simpa [he.opNorm_eq_one_of_mem_stateSpace hφ, Real.norm_eq_abs] using h
 
+/-- A weak-star dual functional belongs to `OrderUnit.stateSpace e` if and only if its strong-dual
+operator norm is `1` and it is normalized by `φ e = 1`. -/
 theorem mem_stateSpace_iff_opNorm_eq_one [IsOrderedAddMonoid E] (he : IsOrderUnitNorm e)
     {φ : WeakDual ℝ E} :
     φ ∈ OrderUnit.stateSpace e ↔ ‖WeakDual.toStrongDual φ‖ = 1 ∧ φ e = 1 := by
   refine ⟨fun h => ⟨he.opNorm_eq_one_of_mem_stateSpace h, h.2⟩, fun ⟨hnorm, he1⟩ => ?_⟩
   refine ⟨(he.monotone_iff_opNorm_eq_one (φ := WeakDual.toStrongDual φ) he1).mpr hnorm, he1⟩
 
+/-- The state space embeds via `WeakDual.toStrongDual` into the closed unit ball of
+`StrongDual ℝ E`. -/
 theorem stateSpace_subset_closedBall (he : IsOrderUnitNorm e) :
     OrderUnit.stateSpace e ⊆
       WeakDual.toStrongDual ⁻¹' Metric.closedBall (0 : StrongDual ℝ E) 1 := by
@@ -404,19 +403,14 @@ def stateHomeomorph {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E] [
       (fun _ _ h => (coe_le_coe_iff _ _).mpr h) rfl
   let invFun : OrderUnit.stateSpace e → OrderUnit.stateSpace (coe he e) := fun φ =>
     ⟨WeakDual.toStrongDual.symm (extend he (WeakDual.toStrongDual φ.1)),
-      monotone_extend φ.2.1, by
-        rw [WeakDual.symm_toStrongDual, StrongDual.toWeakDual_apply, extend_coe,
-          WeakDual.toStrongDual_apply, φ.2.2]⟩
+      monotone_extend φ.2.1, by simp [φ.2.2]⟩
   have hleft : Function.LeftInverse invFun toFun := by
     intro φ
     apply Subtype.ext
     apply WeakDual.toStrongDual.injective
     dsimp only [invFun]
     rw [WeakDual.toStrongDual.apply_symm_apply]
-    refine (extend_unique _ (S := WeakDual.toStrongDual φ.1) fun a => ?_).symm
-    rw [WeakDual.toStrongDual_apply, WeakDual.toStrongDual_apply]
-    exact (OrderUnit.statePullback_apply (coe he).toContinuousLinearMap
-      (fun _ _ h => (coe_le_coe_iff _ _).mpr h) rfl φ a).symm
+    exact (extend_unique _ (S := WeakDual.toStrongDual φ.1) fun _ => rfl).symm
   have hright : Function.RightInverse invFun toFun := fun φ =>
     Subtype.ext (DFunLike.ext _ _ fun a => extend_coe (WeakDual.toStrongDual φ.1) a)
   exact Continuous.homeoOfEquivCompactToT2
@@ -464,17 +458,15 @@ theorem le_iff_forall_state_le {a b : E} :
       norm_eq_zero.mp (le_antisymm (by simpa [hf_norm] using f.le_opNorm x) (norm_nonneg _))
     rw [hf0 a, hf0 b]
   · let φ : WeakDual ℝ E := WeakDual.toStrongDual.symm ((f e)⁻¹ • f)
+    have hφ_apply (x : E) : φ x = (f e)⁻¹ * f x := by
+      rw [← WeakDual.toStrongDual_apply]
+      simp [φ]
     have hφ : φ ∈ OrderUnit.stateSpace e := by
       refine ⟨fun x y hxy => ?_, ?_⟩
-      · simp only [φ, WeakDual.symm_toStrongDual, StrongDual.toWeakDual_apply,
-          smul_apply, smul_eq_mul]
-        exact mul_le_mul_of_nonneg_left (hf hxy) (inv_nonneg.mpr hpos.le)
-      · simp only [φ, WeakDual.symm_toStrongDual, StrongDual.toWeakDual_apply,
-          smul_apply, smul_eq_mul]
-        exact inv_mul_cancel₀ hpos.ne'
+      · simpa [hφ_apply] using mul_le_mul_of_nonneg_left (hf hxy) (inv_nonneg.mpr hpos.le)
+      · simpa [hφ_apply] using inv_mul_cancel₀ hpos.ne'
     have hle := h φ hφ
-    simp only [φ, WeakDual.symm_toStrongDual, StrongDual.toWeakDual_apply,
-      smul_apply, smul_eq_mul] at hle
+    rw [hφ_apply, hφ_apply] at hle
     exact le_of_mul_le_mul_left hle (inv_pos.mpr hpos)
 
 /-- **Positivity detection by states:** `0 ≤ a` if and only if `0 ≤ φ a` for every state `φ`. -/
@@ -519,18 +511,8 @@ theorem norm_eq_iSup_states (a : E) : ‖a‖ = ⨆ φ : OrderUnit.stateSpace e,
 /-- **Norm detection by states (`ℝ≥0`-valued):** `‖a‖₊ = ⨆ φ : OrderUnit.stateSpace e, ‖φ.1 a‖₊`.
 -/
 theorem nnNorm_eq_iSup_states (a : E) : ‖a‖₊ = ⨆ φ : OrderUnit.stateSpace e, ‖φ.1 a‖₊ := by
-  have : Nonempty (OrderUnit.stateSpace e) := he.stateSpace_nonempty.to_subtype
-  obtain ⟨φ₀, hφ₀, hnorm⟩ := he.exists_state_abs_apply_eq_norm a
-  have hle : ∀ φ : OrderUnit.stateSpace e, ‖φ.1 a‖₊ ≤ ‖a‖₊ := fun φ => by
-    exact_mod_cast he.abs_apply_le_norm_of_mem_stateSpace φ.2 a
-  have hbdd : BddAbove (Set.range fun φ : OrderUnit.stateSpace e => ‖φ.1 a‖₊) :=
-    ⟨‖a‖₊, by rintro _ ⟨φ, rfl⟩; exact hle φ⟩
-  refine le_antisymm ?_ (ciSup_le hle)
-  have hnn : ‖φ₀ a‖₊ = ‖a‖₊ := by
-    apply Subtype.ext
-    simpa [Real.norm_eq_abs] using hnorm
-  rw [← hnn]
-  exact le_ciSup hbdd ⟨φ₀, hφ₀⟩
+  rw [← NNReal.coe_inj, coe_nnNorm, NNReal.coe_iSup]
+  simpa [coe_nnNorm, Real.norm_eq_abs] using he.norm_eq_iSup_states a
 
 end SeparationAndNorm
 
@@ -562,12 +544,8 @@ def cstarStateRestrict (ψ : TauCeti.stateSpace A) : OrderUnit.stateSpace (1 : s
       have hpos : 0 ≤ ψ.1 ((b : A) - (a : A)) := map_nonneg_of_mem_stateSpace ψ.2 hsub
       have hre : 0 ≤ (ψ.1 b - ψ.1 a).re := by
         simpa [map_sub] using (Complex.le_def.mp hpos).1
-      rw [WeakDual.symm_toStrongDual, StrongDual.toWeakDual_apply, StrongDual.toWeakDual_apply,
-        hf, hf]
-      exact sub_nonneg.mp (by simpa using hre),
-    by
-      rw [WeakDual.symm_toStrongDual, StrongDual.toWeakDual_apply, hf, selfAdjoint.val_one,
-        map_one_of_mem_stateSpace ψ.2, Complex.one_re]⟩
+      simpa [hf, sub_nonneg] using hre,
+    by simp [hf, map_one_of_mem_stateSpace ψ.2]⟩
 
 @[simp]
 theorem cstarStateRestrict_apply (ψ : TauCeti.stateSpace A) (a : selfAdjoint A) :
@@ -599,15 +577,13 @@ def cstarStateExtend (φ : OrderUnit.stateSpace (1 : selfAdjoint A)) : TauCeti.s
       have hre : 0 ≤ ℜ a := by
         rw [← Subtype.coe_le_coe, hsa.coe_realPart, ZeroMemClass.coe_zero]
         exact ha
-      rw [WeakDual.symm_toStrongDual, StrongDual.toWeakDual_apply, hg, him, map_zero,
-        Complex.ofReal_zero, mul_zero, add_zero]
-      exact Complex.le_def.mpr ⟨by simpa using stateSpace_apply_nonneg φ.2 hre, by simp⟩,
+      have hre_nonneg : 0 ≤ φ.1 (ℜ a) := stateSpace_apply_nonneg φ.2 hre
+      simpa [hg, him, Complex.le_def] using hre_nonneg,
     by
-      rw [WeakDual.symm_toStrongDual, StrongDual.toWeakDual_apply, hg]
       have hre : ℜ (1 : A) = (1 : selfAdjoint A) :=
         selfAdjoint.realPart_coe (x := (1 : selfAdjoint A))
       have him : ℑ (1 : A) = 0 := selfAdjoint.imaginaryPart_coe (x := (1 : selfAdjoint A))
-      rw [hre, him, φ.2.2, map_zero, Complex.ofReal_one, Complex.ofReal_zero, mul_zero, add_zero]⟩⟩
+      simp [hg, hre, him, φ.2.2]⟩⟩
 
 @[simp]
 theorem cstarStateExtend_apply (φ : OrderUnit.stateSpace (1 : selfAdjoint A)) (a : A) :

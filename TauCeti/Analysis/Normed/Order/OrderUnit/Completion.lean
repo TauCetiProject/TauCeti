@@ -26,14 +26,16 @@ local to the wrapper type rather than registering a global order on `UniformSpac
   closed positive cone.
 * `TauCeti.OrderUnitCompletion.toCompletionₗᵢ`: the canonical linear isometry equivalence onto
   `UniformSpace.Completion E`.
-* `TauCeti.OrderUnitCompletion.coe`: the canonical dense linear isometric order embedding
-  `E →ₗᵢ[ℝ] OrderUnitCompletion he`.
+* `TauCeti.OrderUnitCompletion.coe`: the canonical dense linear isometry
+  `E →ₗᵢ[ℝ] OrderUnitCompletion he` preserving and reflecting order (an embedding when `E` is
+  separated).
 * `TauCeti.OrderUnitCompletion.extend`: the unique continuous linear extension of a bounded real
   linear map `E →L[ℝ] F` into a complete space `F`.
 
 ## Main results
 
-* `TauCeti.OrderUnitCompletion.coe_le_coe_iff`: `coe he` is an order embedding.
+* `TauCeti.OrderUnitCompletion.coe_le_coe_iff`: `coe he` preserves and reflects order (forming
+  an order embedding when `E` is separated).
 * `TauCeti.OrderUnitCompletion.isOrderUnitNorm`: `coe he e` satisfies `IsOrderUnitNorm` on
   `OrderUnitCompletion he`.
 * `TauCeti.OrderUnitCompletion.opNorm_extend`: extending a bounded linear map preserves its
@@ -138,47 +140,48 @@ private theorem norm_le_of_mem_closure_nonneg (he : IsOrderUnitNorm e)
     (h2 : r • (e : UniformSpace.Completion E) - x ∈
       closure (((↑) : E → UniformSpace.Completion E) '' {a : E | 0 ≤ a})) : ‖x‖ ≤ r := by
   let y : UniformSpace.Completion E := r • (e : UniformSpace.Completion E)
-  obtain ⟨u, hu_mem, hu_lim⟩ := mem_closure_iff_seq_limit.mp h2
-  obtain ⟨v, hv_mem, hv_lim⟩ := mem_closure_iff_seq_limit.mp h1
-  choose u' hu' hu'_eq using hu_mem
-  choose v' hv' hv'_eq using hv_mem
-  let a : ℕ → E := fun n => (2⁻¹ : ℝ) • (v' n - u' n)
-  let s : ℕ → E := fun n => (2⁻¹ : ℝ) • (v' n + u' n)
-  have ha_lim : Tendsto (fun n => (a n : UniformSpace.Completion E)) atTop (𝓝 x) := by
-    have h := (hv_lim.sub hu_lim).const_smul (2⁻¹ : ℝ)
-    have hmid : (2⁻¹ : ℝ) • ((x + y) - (y - x)) = x := by
-      have hdiff : (x + y) - (y - x) = (2 : ℝ) • x := by rw [two_smul]; abel
-      rw [hdiff, smul_smul]
-      norm_num
-    rw [hmid] at h
-    exact h.congr fun n => by
-      simp [a, hu'_eq n, hv'_eq n, UniformSpace.Completion.coe_smul,
-        UniformSpace.Completion.coe_sub]
-  have hs_lim : Tendsto (fun n => (s n : UniformSpace.Completion E)) atTop (𝓝 y) := by
-    have h := (hv_lim.add hu_lim).const_smul (2⁻¹ : ℝ)
-    have hmid : (2⁻¹ : ℝ) • ((x + y) + (y - x)) = y := by
-      have hsum : (x + y) + (y - x) = (2 : ℝ) • y := by rw [two_smul]; abel
-      rw [hsum, smul_smul]
-      norm_num
-    rw [hmid] at h
-    exact h.congr fun n => by
-      simp [s, hu'_eq n, hv'_eq n, UniformSpace.Completion.coe_smul,
-        UniformSpace.Completion.coe_add]
-  have hle : ∀ n, ‖(a n : UniformSpace.Completion E)‖ ≤ ‖(s n : UniformSpace.Completion E)‖ := by
-    intro n
-    rw [UniformSpace.Completion.norm_coe, UniformSpace.Completion.norm_coe]
+  let C : Set (UniformSpace.Completion E) :=
+    ((↑) : E → UniformSpace.Completion E) '' {a : E | 0 ≤ a}
+  let halfDiff : UniformSpace.Completion E × UniformSpace.Completion E →
+      UniformSpace.Completion E := fun p => (2⁻¹ : ℝ) • (p.1 - p.2)
+  let halfSum : UniformSpace.Completion E × UniformSpace.Completion E →
+      UniformSpace.Completion E := fun p => (2⁻¹ : ℝ) • (p.1 + p.2)
+  have hhd : Continuous halfDiff := by dsimp only [halfDiff]; fun_prop
+  have hhs : Continuous halfSum := by dsimp only [halfSum]; fun_prop
+  have hclosed : IsClosed {p : UniformSpace.Completion E × UniformSpace.Completion E |
+      ‖halfDiff p‖ ≤ ‖halfSum p‖} :=
+    isClosed_le hhd.norm hhs.norm
+  have hsub : C ×ˢ C ⊆ {p | ‖halfDiff p‖ ≤ ‖halfSum p‖} := by
+    rintro ⟨_, _⟩ ⟨⟨v, hv, rfl⟩, ⟨u, hu, rfl⟩⟩
+    simp only [Set.mem_ofPred_eq, halfDiff, halfSum, ← UniformSpace.Completion.coe_sub,
+      ← UniformSpace.Completion.coe_add, ← UniformSpace.Completion.coe_smul,
+      UniformSpace.Completion.norm_coe]
     refine he.norm_le_of_neg_le_of_le ?_ ?_
-    · rw [← sub_nonneg, sub_neg_eq_add]
-      have : a n + s n = v' n := by
-        simp only [a, s, ← smul_add, sub_add_add_cancel, ← two_smul ℝ, smul_smul]; norm_num
-      exact this ▸ hv' n
-    · rw [← sub_nonneg]
-      have : s n - a n = u' n := by
-        simp only [a, s, ← smul_sub, add_sub_sub_cancel, ← two_smul ℝ, smul_smul]; norm_num
-      exact this ▸ hu' n
-  have hnorm_lim := le_of_tendsto_of_tendsto ha_lim.norm hs_lim.norm (Eventually.of_forall hle)
+    · rw [← sub_nonneg, sub_neg_eq_add, ← smul_add]
+      have hsum : (v - u) + (v + u) = (2 : ℝ) • v := by rw [two_smul]; abel
+      rw [hsum, smul_smul, inv_mul_cancel₀ two_ne_zero, one_smul]
+      exact hv
+    · rw [← sub_nonneg, ← smul_sub]
+      have hdiff : (v + u) - (v - u) = (2 : ℝ) • u := by rw [two_smul]; abel
+      rw [hdiff, smul_smul, inv_mul_cancel₀ two_ne_zero, one_smul]
+      exact hu
+  have hmem : (x + y, y - x) ∈ closure (C ×ˢ C) := by
+    rw [closure_prod_eq]
+    exact ⟨h1, h2⟩
+  have hineq := closure_minimal hsub hclosed hmem
+  have hhalfDiff : halfDiff (x + y, y - x) = x := by
+    have hdiff : (x + y) - (y - x) = (2 : ℝ) • x := by rw [two_smul]; abel
+    dsimp only [halfDiff]
+    rw [hdiff, smul_smul]
+    norm_num
+  have hhalfSum : halfSum (x + y, y - x) = y := by
+    have hsum : (x + y) + (y - x) = (2 : ℝ) • y := by rw [two_smul]; abel
+    dsimp only [halfSum]
+    rw [hsum, smul_smul]
+    norm_num
+  rw [Set.mem_ofPred_eq, hhalfDiff, hhalfSum] at hineq
   simpa [y, norm_smul, Real.norm_eq_abs, abs_of_nonneg hr, UniformSpace.Completion.norm_coe,
-    he.norm_e] using hnorm_lim
+    he.norm_e] using hineq
 
 instance : PartialOrder (OrderUnitCompletion he) where
   le x y := y.toCompletion - x.toCompletion ∈
@@ -215,7 +218,8 @@ instance : IsOrderedAddMonoid (OrderUnitCompletion he) where
     rw [le_iff] at h ⊢
     simpa [add_sub_add_left_eq_sub] using h
 
-/-- The canonical linear isometric embedding `E →ₗᵢ[ℝ] OrderUnitCompletion he`. -/
+/-- The canonical dense linear isometry `E →ₗᵢ[ℝ] OrderUnitCompletion he` preserving and reflecting
+order (an embedding when `E` is separated). -/
 def coe (he : IsOrderUnitNorm e) : E →ₗᵢ[ℝ] OrderUnitCompletion he :=
   (toCompletionₗᵢ he).symm.toLinearIsometry.comp (UniformSpace.Completion.toComplₗᵢ (𝕜 := ℝ))
 
@@ -223,13 +227,13 @@ def coe (he : IsOrderUnitNorm e) : E →ₗᵢ[ℝ] OrderUnitCompletion he :=
 theorem toCompletion_coe (a : E) : (coe he a).toCompletion = (a : UniformSpace.Completion E) :=
   (rfl)
 
-/-- The canonical embedding `coe he : E →ₗᵢ[ℝ] OrderUnitCompletion he` has dense range. -/
+/-- The canonical linear isometry `coe he : E →ₗᵢ[ℝ] OrderUnitCompletion he` has dense range. -/
 theorem denseRange_coe (he : IsOrderUnitNorm e) : DenseRange (coe he) :=
   (toCompletionₗᵢ he).symm.toHomeomorph.surjective.denseRange.comp
     UniformSpace.Completion.denseRange_coe (toCompletionₗᵢ he).symm.continuous
 
-/-- The canonical embedding `coe he` preserves and reflects the order:
-`coe he a ≤ coe he b ↔ a ≤ b`. -/
+/-- The canonical linear isometry `coe he` preserves and reflects order (forming an order embedding
+when `E` is separated): `coe he a ≤ coe he b ↔ a ≤ b`. -/
 @[simp]
 theorem coe_le_coe_iff (a b : E) : coe he a ≤ coe he b ↔ a ≤ b := by
   rw [le_iff, toCompletion_coe, toCompletion_coe, ← UniformSpace.Completion.coe_sub]
@@ -241,43 +245,36 @@ theorem coe_le_coe_iff (a b : E) : coe he a ≤ coe he b ↔ a ≤ b := by
 
 private theorem le_norm_smul_coe (x : OrderUnitCompletion he) : x ≤ ‖x‖ • coe he e := by
   rw [le_iff, toCompletion_smul, toCompletion_coe, ← norm_toCompletion]
-  have hy : x.toCompletion ∈ closure (Set.range ((↑) : E → UniformSpace.Completion E)) :=
+  let f : UniformSpace.Completion E → UniformSpace.Completion E :=
+    fun z => ‖z‖ • (e : UniformSpace.Completion E) - z
+  have hf : Continuous f :=
+    (continuous_norm.smul continuous_const).sub continuous_id
+  have hsub : Set.range ((↑) : E → UniformSpace.Completion E) ⊆
+      f ⁻¹' closure (((↑) : E → UniformSpace.Completion E) '' {a : E | 0 ≤ a}) := by
+    rintro _ ⟨a, rfl⟩
+    refine subset_closure ⟨‖a‖ • e - a, sub_nonneg.mpr (he.le_norm_smul a), ?_⟩
+    simp [f, UniformSpace.Completion.norm_coe, UniformSpace.Completion.coe_sub,
+      UniformSpace.Completion.coe_smul]
+  have hx : x.toCompletion ∈ closure (Set.range ((↑) : E → UniformSpace.Completion E)) :=
     UniformSpace.Completion.denseRange_coe x.toCompletion
-  obtain ⟨u, hu_mem, hu_lim⟩ := mem_closure_iff_seq_limit.mp hy
-  choose a ha using hu_mem
-  have hnorm : Tendsto (fun n => ‖a n‖) atTop (𝓝 ‖x.toCompletion‖) := by
-    refine hu_lim.norm.congr fun n => ?_
-    rw [← ha n, UniformSpace.Completion.norm_coe]
-  have hlim : Tendsto (fun n => (((‖a n‖ • e - a n : E) : UniformSpace.Completion E)))
-      atTop (𝓝 (‖x.toCompletion‖ • (e : UniformSpace.Completion E) - x.toCompletion)) := by
-    have hsub := (hnorm.smul_const (e : UniformSpace.Completion E)).sub
-      (hu_lim.congr fun n => (ha n).symm)
-    refine hsub.congr fun n => ?_
-    simp [UniformSpace.Completion.coe_sub, UniformSpace.Completion.coe_smul]
-  refine mem_closure_of_tendsto hlim (Eventually.of_forall fun n => ?_)
-  exact ⟨‖a n‖ • e - a n, sub_nonneg.mpr (he.le_norm_smul (a n)), rfl⟩
+  exact closure_minimal hsub (isClosed_closure.preimage hf) hx
 
 /-- The order-unit norm on `OrderUnitCompletion he` satisfies `IsOrderUnitNorm (coe he e)`. -/
 theorem isOrderUnitNorm (he : IsOrderUnitNorm e) : IsOrderUnitNorm (coe he e) where
   norm_e := by rw [(coe he).norm_map, he.norm_e]
   norm_le_iff x r hr := by
     refine ⟨fun hx => ?_, fun ⟨h1, h2⟩ => ?_⟩
-    · have hnonneg : (0 : OrderUnitCompletion he) ≤ (r - ‖x‖) • coe he e := by
-        rw [← (coe he).map_zero, ← (coe he).map_smul, coe_le_coe_iff]
-        exact he.smul_nonneg_of_nonneg (sub_nonneg.mpr hx)
-      have hupper : x ≤ r • coe he e := by
-        calc x ≤ ‖x‖ • coe he e := le_norm_smul_coe x
-          _ ≤ ‖x‖ • coe he e + (r - ‖x‖) • coe he e := le_add_of_nonneg_right hnonneg
+    · have hupper : ∀ y : OrderUnitCompletion he, ‖y‖ ≤ r → y ≤ r • coe he e := by
+        intro y hy
+        have hnonneg : (0 : OrderUnitCompletion he) ≤ (r - ‖y‖) • coe he e := by
+          rw [← (coe he).map_zero, ← (coe he).map_smul, coe_le_coe_iff]
+          exact he.smul_nonneg_of_nonneg (sub_nonneg.mpr hy)
+        calc y ≤ ‖y‖ • coe he e := le_norm_smul_coe y
+          _ ≤ ‖y‖ • coe he e + (r - ‖y‖) • coe he e := le_add_of_nonneg_right hnonneg
           _ = r • coe he e := by rw [← add_smul, add_sub_cancel]
-      have hlower : -r • coe he e ≤ x := by
-        have hneg : -x ≤ r • coe he e := by
-          calc -x ≤ ‖-x‖ • coe he e := le_norm_smul_coe (-x)
-            _ = ‖x‖ • coe he e := by rw [norm_neg]
-            _ ≤ ‖x‖ • coe he e + (r - ‖x‖) • coe he e := le_add_of_nonneg_right hnonneg
-            _ = r • coe he e := by rw [← add_smul, add_sub_cancel]
-        rw [neg_smul]
-        exact neg_le.mp hneg
-      exact ⟨hlower, hupper⟩
+      refine ⟨?_, hupper x hx⟩
+      rw [neg_smul]
+      exact neg_le.mp (hupper (-x) (by simpa [norm_neg] using hx))
     · rw [← norm_toCompletion]
       refine norm_le_of_mem_closure_nonneg he hr ?_ ?_
       · simpa [le_iff, neg_smul, sub_neg_eq_add] using h1
@@ -320,14 +317,13 @@ theorem opNorm_extend {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [Co
     (T : E →L[ℝ] F) : ‖extend he T‖ = ‖T‖ := by
   refine le_antisymm ?_ ?_
   · refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg T) fun x => ?_
-    obtain ⟨u, hu_mem, hu_lim⟩ := mem_closure_iff_seq_limit.mp (denseRange_coe he x)
-    choose a ha using hu_mem
-    have hlim : Tendsto (fun n => coe he (a n)) atTop (𝓝 x) :=
-      hu_lim.congr fun n => (ha n).symm
-    refine le_of_tendsto_of_tendsto (((extend he T).continuous.tendsto x).comp hlim).norm
-      (hlim.norm.const_mul ‖T‖) (Eventually.of_forall fun n => ?_)
-    simp only [Function.comp_apply, extend_coe, (coe he).norm_map]
-    exact T.le_opNorm (a n)
+    have hclosed : IsClosed {z : OrderUnitCompletion he | ‖extend he T z‖ ≤ ‖T‖ * ‖z‖} :=
+      isClosed_le (extend he T).continuous.norm (continuous_const.mul continuous_norm)
+    have hsub : Set.range (coe he) ⊆
+        {z : OrderUnitCompletion he | ‖extend he T z‖ ≤ ‖T‖ * ‖z‖} := by
+      rintro _ ⟨a, rfl⟩
+      simpa [extend_coe, (coe he).norm_map] using T.le_opNorm a
+    exact closure_minimal hsub hclosed ((denseRange_coe he) x)
   · refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun a => ?_
     calc ‖T a‖ = ‖extend he T (coe he a)‖ := by rw [extend_coe]
       _ ≤ ‖extend he T‖ * ‖coe he a‖ := (extend he T).le_opNorm _
@@ -341,19 +337,20 @@ theorem monotone_extend {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [
   intro x y hxy
   rw [← sub_nonneg, ← map_sub]
   have hcone : (y - x).toCompletion ∈
-      closure (((↑) : E → UniformSpace.Completion E) '' {a : E | 0 ≤ a}) := hxy
-  obtain ⟨u, hu_mem, hu_lim⟩ := mem_closure_iff_seq_limit.mp hcone
-  choose a ha ha_eq using hu_mem
-  have hlim : Tendsto (fun n => coe he (a n)) atTop (𝓝 (y - x)) := by
-    have hcont := (toCompletionₗᵢ he).symm.continuous.tendsto (y - x).toCompletion
-    have h1 := hcont.comp (hu_lim.congr fun n => (ha_eq n).symm)
-    have htarget : (toCompletionₗᵢ he).symm (y - x).toCompletion = y - x := rfl
-    rw [htarget] at h1
-    exact h1.congr fun _ => rfl
-  have hTlim : Tendsto (fun n => T (a n)) atTop (𝓝 (extend he T (y - x))) :=
-    (((extend he T).continuous.tendsto (y - x)).comp hlim).congr fun n => extend_coe T (a n)
-  exact ge_of_tendsto' hTlim fun n => by
-    simpa only [map_zero] using hT (ha n)
+      closure (((↑) : E → UniformSpace.Completion E) '' {a : E | 0 ≤ a}) := by
+    rw [toCompletion_sub]
+    exact (le_iff x y).mp hxy
+  have hclosed : IsClosed {z : UniformSpace.Completion E |
+      0 ≤ extend he T ((toCompletionₗᵢ he).symm z)} :=
+    isClosed_Ici.preimage ((extend he T).continuous.comp (toCompletionₗᵢ he).symm.continuous)
+  have hsub : ((↑) : E → UniformSpace.Completion E) '' {a : E | 0 ≤ a} ⊆
+      {z : UniformSpace.Completion E | 0 ≤ extend he T ((toCompletionₗᵢ he).symm z)} := by
+    rintro _ ⟨a, ha, rfl⟩
+    rw [Set.mem_ofPred_eq, ← toCompletion_coe (he := he) a, ← toCompletionₗᵢ_apply,
+      (toCompletionₗᵢ he).symm_apply_apply, extend_coe]
+    simpa only [map_zero] using hT ha
+  simpa only [Set.mem_ofPred_eq, ← toCompletionₗᵢ_apply, (toCompletionₗᵢ he).symm_apply_apply]
+    using closure_minimal hsub hclosed hcone
 
 end OrderUnitCompletion
 

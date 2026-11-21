@@ -26,12 +26,14 @@ On such a space, the **order-unit norm**
 ‖a‖ = sInf {r : ℝ | 0 ≤ r ∧ -r • e ≤ a ∧ a ≤ r • e}
 ```
 is a norm satisfying `‖e‖ = 1` and the closed-interval characterization
-`‖a‖ ≤ r ↔ -r • e ≤ a ∧ a ≤ r • e` for all `r ≥ 0`. Conversely, on a space already equipped with
-a norm and a partial order, the predicate `TauCeti.IsOrderUnitNorm e` records `‖e‖ = 1` and this
-interval formula; it automatically forces positivity of nonnegative scalar multiplication
-(`PosSMulMono ℝ E`), closedness of the positive cone (`OrderClosedTopology E`), definiteness of the
-seminorm, the Archimedean property, and recovery of the order from the norm via
-`0 ≤ a ↔ ‖‖a‖ • e - a‖ ≤ ‖a‖`.
+`‖a‖ ≤ r ↔ -r • e ≤ a ∧ a ≤ r • e` for all `r ≥ 0`. Conversely, on a space equipped with
+a norm, a real scalar action, and an order relation, the predicate `TauCeti.IsOrderUnitNorm e`
+records `‖e‖ = 1` and this interval formula. On an additive-order-compatible real module with a
+seminorm (`SeminormedAddCommGroup E`, `Module ℝ E`, `Preorder E`, `IsOrderedAddMonoid E`), it
+automatically forces closedness of the positive cone (`OrderClosedTopology E`), the Archimedean
+property, and recovery of the order from the norm via `0 ≤ a ↔ ‖‖a‖ • e - a‖ ≤ ‖a‖`; additionally
+assuming `NormedSpace ℝ E` gives positivity of nonnegative scalar multiplication
+(`PosSMulMono ℝ E`), and antisymmetry (`PartialOrder E`) gives definiteness of the seminorm.
 
 ## Main definitions
 
@@ -239,6 +241,8 @@ variable {E : Type*} [AddCommGroup E] [Module ℝ E] [PartialOrder E] [IsOrdered
 
 include he
 
+/-- Definiteness of the constructed order-unit norm: `orderUnitNorm e a = 0` if and only if
+`a = 0`. -/
 @[simp]
 theorem orderUnitNorm_eq_zero_iff {a : E} : orderUnitNorm e a = 0 ↔ a = 0 := by
   refine ⟨fun h => ?_, fun h => h ▸ he.orderUnitNorm_zero⟩
@@ -246,6 +250,8 @@ theorem orderUnitNorm_eq_zero_iff {a : E} : orderUnitNorm e a = 0 ↔ a = 0 := b
   simp only [neg_zero, zero_smul] at h1 h2
   exact le_antisymm h2 h1
 
+/-- Normalization of the constructed order-unit norm at the distinguished order unit:
+`orderUnitNorm e e = 1`. -/
 @[simp]
 theorem orderUnitNorm_self : orderUnitNorm e e = 1 := by
   refine le_antisymm ?_ ?_
