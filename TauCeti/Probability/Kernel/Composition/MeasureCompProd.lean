@@ -117,8 +117,9 @@ theorem compProd_comap_map {T : Type*} [MeasurableSpace T] (μ : Measure W)
   rw [Kernel.comap_map_comm κ hf hg, compProd_map hg]
 
 /-- **Integrating out a hidden variable.** Suppose that under `Q`, the variable `g` has conditional
-law `κ` given the observed variable `f`. If a kernel `η` depends on both, then forgetting all but
-`f` in `Q ⊗ₘ η` leaves the composition-product of the law of `f` with `η` averaged over `κ`.
+law `κ` given the observed variable `f`. If a kernel `η` depends on both, then replacing `w` by
+`f w` in `Q ⊗ₘ η.comap (f, g)`, which forgets `g` and keeps the output of `η`, leaves the
+composition-product of the law of `f` with `η` averaged over `κ`.
 This extends `map_prodMap_compProd_comap`, the case where `η` does not depend on `g`. -/
 theorem map_prodMap_compProd_comap_prodMk {V β : Type*} [MeasurableSpace V] [MeasurableSpace β]
     (Q : Measure W) [SFinite Q] {f : W → V} {g : W → β}
@@ -141,7 +142,8 @@ theorem map_prodMap_compProd_comap_prodMk {V β : Type*} [MeasurableSpace V] [Me
     _ = Q.map f ⊗ₘ (κ ⊗ₖ η).snd := by
         rw [map_map (by fun_prop) (by fun_prop), Kernel.snd_eq,
           compProd_map measurable_snd]
-        rfl
+        refine congrArg (fun h ↦ Measure.map h _) (funext fun ⟨v, b, z⟩ ↦ ?_)
+        simp [MeasurableEquiv.prodAssoc]
 
 /-- Restricting the base of a composition-product to `s` restricts the product to `s ×ˢ univ`.
 This is the measure counterpart of Mathlib's `ProbabilityTheory.Kernel.compProd_restrict_left`. -/

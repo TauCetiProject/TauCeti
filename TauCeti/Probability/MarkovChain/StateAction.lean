@@ -20,7 +20,8 @@ The states alone form a Markov chain, whose kernel `(ρ ⊗ₖ τ).snd` averages
 actions drawn from `ρ s`. This is not an instance of the lumping criterion
 `MeasureTheory.Measure.markovChainLaw_map_comp`: the law of the next state depends on the current
 action and not only on the current state. The point is that, given the states up to time `n`,
-the action at time `n` is drawn from `ρ` at the state at time `n`, whatever happened before.
+the action at time `n` is drawn from `ρ` at the state at time `n`, once the earlier actions are
+integrated out.
 
 This is how a stationary randomized policy of a Markov decision process turns its trajectory law
 into a Markov chain on the states.
@@ -51,22 +52,28 @@ namespace TauCeti.Probability
 variable {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
   (ν : Measure α) (τ : Kernel (α × β) α) (ρ : Kernel α β) [IsMarkovKernel τ] [IsMarkovKernel ρ]
 
+/-- The law of the chain of state-action pairs that draws the next state from `τ` and then the
+next action from `ρ` at that state, started from `ν ⊗ₘ ρ`. -/
+private abbrev stateActionLaw : Measure (ℕ → α × β) :=
+  markovChainLaw (ν ⊗ₘ ρ) (τ ⊗ₖ ρ.comap Prod.snd measurable_snd)
+
+/-- Under `stateActionLaw`, given the states up to time `n`, the action at time `n` has law `ρ` at
+the state at time `n`: the induction hypothesis of `markovChainLaw_compProd_map_prefix`. -/
+private def ActionGivenStates (n : ℕ) : Prop :=
+  (stateActionLaw ν τ ρ).map (fun x ↦ ((fun i : Fin (n + 1) ↦ (x i).1), (x n).2)) =
+    ((stateActionLaw ν τ ρ).map fun x (i : Fin (n + 1)) ↦ (x i).1) ⊗ₘ
+      ρ.comap (fun w : Fin (n + 1) → α ↦ w (Fin.last n)) (measurable_pi_apply _)
+
 /-- If, given the states up to time `n`, the action at time `n` has law `ρ` at the state at time
 `n`, then forgetting the actions in the one-step extension of the state-action prefix by `τ`
 leaves the state prefix extended by `(ρ ⊗ₖ τ).snd`. -/
-private theorem map_prefix_fst_succ (n : ℕ)
-    (hA : (markovChainLaw (ν ⊗ₘ ρ) (τ ⊗ₖ ρ.comap Prod.snd measurable_snd)).map
-        (fun x ↦ ((fun i : Fin (n + 1) ↦ (x i).1), (x n).2)) =
-      ((markovChainLaw (ν ⊗ₘ ρ) (τ ⊗ₖ ρ.comap Prod.snd measurable_snd)).map
-          fun x (i : Fin (n + 1)) ↦ (x i).1) ⊗ₘ
-        ρ.comap (fun w : Fin (n + 1) → α ↦ w (Fin.last n)) (measurable_pi_apply _)) :
-    (((markovChainLaw (ν ⊗ₘ ρ) (τ ⊗ₖ ρ.comap Prod.snd measurable_snd)).map
-          fun x (i : Fin (n + 1)) ↦ x i) ⊗ₘ
+private theorem map_prefix_fst_succ (n : ℕ) (hA : ActionGivenStates ν τ ρ n) :
+    (((stateActionLaw ν τ ρ).map fun x (i : Fin (n + 1)) ↦ x i) ⊗ₘ
         τ.comap (fun z : Fin (n + 1) → α × β ↦ z (Fin.last n)) (measurable_pi_apply _)).map
         (Prod.map (fun z i ↦ (z i).1) id) =
-      ((markovChainLaw (ν ⊗ₘ ρ) (τ ⊗ₖ ρ.comap Prod.snd measurable_snd)).map
-          fun x (i : Fin (n + 1)) ↦ (x i).1) ⊗ₘ
+      ((stateActionLaw ν τ ρ).map fun x (i : Fin (n + 1)) ↦ (x i).1) ⊗ₘ
         (ρ ⊗ₖ τ).snd.comap (fun w : Fin (n + 1) → α ↦ w (Fin.last n)) (measurable_pi_apply _) := by
+  unfold ActionGivenStates stateActionLaw at *
   set μ := markovChainLaw (ν ⊗ₘ ρ) (τ ⊗ₖ ρ.comap Prod.snd measurable_snd)
   have hlast : Measurable fun w : Fin (n + 1) → α ↦ w (Fin.last n) := measurable_pi_apply _
   have hF : Measurable fun (z : Fin (n + 1) → α × β) (i : Fin (n + 1)) ↦ (z i).1 := by fun_prop
@@ -92,38 +99,25 @@ private theorem map_prefix_fst_succ (n : ℕ)
     (ρ.comap (fun w : Fin (n + 1) → α ↦ w (Fin.last n)) hlast) _ (by rw [hprefix, hprefixF, hA]),
     hprefixF, ← Kernel.comap_compProd, Kernel.snd_comap]
 
-/-- The prefix of states of length `n + 2` is the prefix of length `n + 1` followed by the next
-state. -/
-private theorem measurable_snoc (n : ℕ) :
-    Measurable fun p : (Fin (n + 1) → α) × α ↦ (Fin.snoc p.1 p.2 : Fin (n + 2) → α) :=
-  measurable_pi_iff.2 fun i ↦ Fin.lastCases (by simp only [Fin.snoc_last]; fun_prop)
-    (fun j ↦ by simp only [Fin.snoc_castSucc]; fun_prop) i
-
 /-- The law of the states up to time `n + 1` is the law of the states up to time `n` and the state
 at time `n + 1`, read as one prefix. -/
 private theorem map_prefix_fst_snoc (μ : Measure (ℕ → α × β)) (n : ℕ) :
     (μ.map fun x ↦ ((fun i : Fin (n + 1) ↦ (x i).1), (x (n + 1)).1)).map
         (fun p ↦ (Fin.snoc p.1 p.2 : Fin (n + 2) → α)) =
       μ.map fun x (i : Fin (n + 2)) ↦ (x i).1 := by
-  rw [Measure.map_map (measurable_snoc n) (by fun_prop)]
+  rw [Measure.map_map (MeasureTheory.measurable_finSnoc (n + 1)) (by fun_prop)]
   congr 1
-  funext x i
-  refine Fin.lastCases ?_ (fun j ↦ ?_) i <;> simp
+  funext x
+  exact (congrFun (prefix_succ_eq_finSnoc_comp (n + 1)) fun k ↦ (x k).1).symm
 
 /-- If, given the states up to time `n`, the action at time `n` has law `ρ` at the state at time
 `n`, then, given the same states, the state at time `n + 1` has law `(ρ ⊗ₖ τ).snd` at the state
 at time `n`. -/
-private theorem map_prefix_fst_succ_eq_compProd (n : ℕ)
-    (hA : (markovChainLaw (ν ⊗ₘ ρ) (τ ⊗ₖ ρ.comap Prod.snd measurable_snd)).map
-        (fun x ↦ ((fun i : Fin (n + 1) ↦ (x i).1), (x n).2)) =
-      ((markovChainLaw (ν ⊗ₘ ρ) (τ ⊗ₖ ρ.comap Prod.snd measurable_snd)).map
-          fun x (i : Fin (n + 1)) ↦ (x i).1) ⊗ₘ
-        ρ.comap (fun w : Fin (n + 1) → α ↦ w (Fin.last n)) (measurable_pi_apply _)) :
-    (markovChainLaw (ν ⊗ₘ ρ) (τ ⊗ₖ ρ.comap Prod.snd measurable_snd)).map
-        (fun x ↦ ((fun i : Fin (n + 1) ↦ (x i).1), (x (n + 1)).1)) =
-      ((markovChainLaw (ν ⊗ₘ ρ) (τ ⊗ₖ ρ.comap Prod.snd measurable_snd)).map
-          fun x (i : Fin (n + 1)) ↦ (x i).1) ⊗ₘ
+private theorem map_prefix_fst_succ_eq_compProd (n : ℕ) (hA : ActionGivenStates ν τ ρ n) :
+    (stateActionLaw ν τ ρ).map (fun x ↦ ((fun i : Fin (n + 1) ↦ (x i).1), (x (n + 1)).1)) =
+      ((stateActionLaw ν τ ρ).map fun x (i : Fin (n + 1)) ↦ (x i).1) ⊗ₘ
         (ρ ⊗ₖ τ).snd.comap (fun w : Fin (n + 1) → α ↦ w (Fin.last n)) (measurable_pi_apply _) := by
+  unfold stateActionLaw
   set μ := markovChainLaw (ν ⊗ₘ ρ) (τ ⊗ₖ ρ.comap Prod.snd measurable_snd)
   have hlast : Measurable fun z : Fin (n + 1) → α × β ↦ z (Fin.last n) := measurable_pi_apply _
   calc μ.map (fun x ↦ ((fun i : Fin (n + 1) ↦ (x i).1), (x (n + 1)).1))
@@ -142,21 +136,13 @@ private theorem map_prefix_fst_succ_eq_compProd (n : ℕ)
 
 /-- The inductive step: if the action at time `n` has law `ρ` at the state at time `n` given the
 states up to time `n`, then the same holds at time `n + 1`. -/
-private theorem map_prefix_succ_eq_compProd (n : ℕ)
-    (hA : (markovChainLaw (ν ⊗ₘ ρ) (τ ⊗ₖ ρ.comap Prod.snd measurable_snd)).map
-        (fun x ↦ ((fun i : Fin (n + 1) ↦ (x i).1), (x n).2)) =
-      ((markovChainLaw (ν ⊗ₘ ρ) (τ ⊗ₖ ρ.comap Prod.snd measurable_snd)).map
-          fun x (i : Fin (n + 1)) ↦ (x i).1) ⊗ₘ
-        ρ.comap (fun w : Fin (n + 1) → α ↦ w (Fin.last n)) (measurable_pi_apply _)) :
-    (markovChainLaw (ν ⊗ₘ ρ) (τ ⊗ₖ ρ.comap Prod.snd measurable_snd)).map
-        (fun x ↦ ((fun i : Fin (n + 2) ↦ (x i).1), (x (n + 1)).2)) =
-      ((markovChainLaw (ν ⊗ₘ ρ) (τ ⊗ₖ ρ.comap Prod.snd measurable_snd)).map
-          fun x (i : Fin (n + 2)) ↦ (x i).1) ⊗ₘ
-        ρ.comap (fun w : Fin (n + 2) → α ↦ w (Fin.last (n + 1))) (measurable_pi_apply _) := by
+private theorem map_prefix_succ_eq_compProd (n : ℕ) (hA : ActionGivenStates ν τ ρ n) :
+    ActionGivenStates ν τ ρ (n + 1) := by
+  unfold ActionGivenStates stateActionLaw
   set μ := markovChainLaw (ν ⊗ₘ ρ) (τ ⊗ₖ ρ.comap Prod.snd measurable_snd)
   have hlast : Measurable fun z : Fin (n + 1) → α × β ↦ z (Fin.last n) := measurable_pi_apply _
   have hF : Measurable fun (z : Fin (n + 1) → α × β) (i : Fin (n + 1)) ↦ (z i).1 := by fun_prop
-  have hsnoc := measurable_snoc (α := α) n
+  have hsnoc := MeasureTheory.measurable_finSnoc (α := α) (n + 1)
   -- After the state at time `n + 1` is drawn, the action is drawn from `ρ` at that state.
   have hK : (τ ⊗ₖ ρ.comap Prod.snd measurable_snd).comap
       (fun z : Fin (n + 1) → α × β ↦ z (Fin.last n)) hlast =
@@ -190,7 +176,8 @@ private theorem map_prefix_succ_eq_compProd (n : ℕ)
           (Prod.map (fun p ↦ (Fin.snoc p.1 p.2 : Fin (n + 2) → α)) id) := by
         rw [hK, ← Measure.compProd_assoc', Measure.map_map (by fun_prop) (by fun_prop),
           Measure.map_map (by fun_prop) (by fun_prop)]
-        rfl
+        refine congrArg (fun h ↦ Measure.map h _) (funext fun ⟨⟨z, s⟩, a⟩ ↦ ?_)
+        simp [MeasurableEquiv.prodAssoc]
     _ = ((μ.map fun x ↦ ((fun i : Fin (n + 1) ↦ (x i).1), (x (n + 1)).1)) ⊗ₘ
           ρ.comap (Prod.snd : (Fin (n + 1) → α) × α → α) measurable_snd).map
           (Prod.map (fun p ↦ (Fin.snoc p.1 p.2 : Fin (n + 2) → α)) id) := by
@@ -201,12 +188,8 @@ private theorem map_prefix_succ_eq_compProd (n : ℕ)
 
 /-- The initial state-action pair has law `ν ⊗ₘ ρ`, so the initial action has law `ρ` at the
 initial state. -/
-private theorem map_prefix_zero_eq_compProd [SFinite ν] :
-    (markovChainLaw (ν ⊗ₘ ρ) (τ ⊗ₖ ρ.comap Prod.snd measurable_snd)).map
-        (fun x ↦ ((fun i : Fin 1 ↦ (x i).1), (x 0).2)) =
-      ((markovChainLaw (ν ⊗ₘ ρ) (τ ⊗ₖ ρ.comap Prod.snd measurable_snd)).map
-          fun x (i : Fin 1) ↦ (x i).1) ⊗ₘ
-        ρ.comap (fun w : Fin 1 → α ↦ w (Fin.last 0)) (measurable_pi_apply _) := by
+private theorem map_prefix_zero_eq_compProd [SFinite ν] : ActionGivenStates ν τ ρ 0 := by
+  unfold ActionGivenStates stateActionLaw
   set μ := markovChainLaw (ν ⊗ₘ ρ) (τ ⊗ₖ ρ.comap Prod.snd measurable_snd)
   have hc : Measurable fun (a : α) (_ : Fin 1) ↦ a := measurable_pi_iff.2 fun _ ↦ measurable_id
   have h₀ : μ.map (fun x ↦ x 0) = ν ⊗ₘ ρ := markovChainLaw_map_eval_zero _ _
@@ -231,7 +214,7 @@ private theorem map_prefix_zero_eq_compProd [SFinite ν] :
 state from `τ` and then the next action from `ρ` at that state, the joint law of the states up to
 time `n` and of the action at time `n` is the law of the states extended by `ρ` at the state at
 time `n`. That is, given the states up to time `n`, the action at time `n` has law `ρ` at the
-current state, whatever the earlier actions were. -/
+current state, once the earlier actions are integrated out. -/
 theorem _root_.MeasureTheory.Measure.markovChainLaw_compProd_map_prefix [SFinite ν]
     (n : ℕ) :
     (markovChainLaw (ν ⊗ₘ ρ) (τ ⊗ₖ ρ.comap Prod.snd measurable_snd)).map

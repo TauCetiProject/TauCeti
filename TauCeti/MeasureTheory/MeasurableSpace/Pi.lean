@@ -20,6 +20,8 @@ It also records that extending a family along an arbitrary map of index types, w
 default outside the range, is measurable in the family
 (`TauCeti.MeasureTheory.measurable_extend`), and that reading a family along an arbitrary map of
 index types is measurable in the family (`TauCeti.MeasureTheory.measurable_comp_apply`).
+It also records that appending an entry to a tuple with `Fin.snoc` is measurable
+(`TauCeti.MeasureTheory.measurable_finSnoc`).
 
 It also records that recombining a block `z` on a finset `s` with the remaining coordinates of a
 point `w` of a dependent product is the finset update of `w` by `z`
@@ -108,6 +110,13 @@ measurable in `u`. -/
 theorem measurable_comp_apply {ι κ : Type*} (e : ι → κ) :
     Measurable fun (u : κ → α) (a : ι) ↦ u (e a) :=
   Measurable.of_eval fun a ↦ measurable_pi_apply (e a)
+
+/-- Appending an entry to a tuple with `Fin.snoc` is measurable. -/
+@[fun_prop]
+theorem measurable_finSnoc (n : ℕ) :
+    Measurable fun p : (Fin n → α) × α ↦ (Fin.snoc p.1 p.2 : Fin (n + 1) → α) :=
+  measurable_pi_iff.2 fun i ↦ Fin.lastCases (by simp only [Fin.snoc_last]; fun_prop)
+    (fun j ↦ by simp only [Fin.snoc_castSucc]; fun_prop) i
 
 end MeasureTheory
 
