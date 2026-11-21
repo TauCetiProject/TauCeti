@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Coordinate
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.BigCell.Basic
+public import TauCeti.LinearAlgebra.Matrix.LDU.Coordinates
 import Mathlib.AlgebraicGeometry.OpenImmersion
 
 /-!
@@ -27,7 +28,8 @@ permits any ordering of distinct weights; for the usual big cell one orders them
 dominance.
 
 The matrix open and its localization API are those of
-`TauCeti.Algebra.AlgebraicGroup.GeneralLinear.BigCell.Basic`.
+`TauCeti.Algebra.AlgebraicGroup.GeneralLinear.BigCell.Basic`. The denominator uses the
+leading-minor product from `TauCeti.LinearAlgebra.Matrix.LDU.Coordinates`.
 
 ## References
 
@@ -49,14 +51,13 @@ variable {β : Type*} [LinearOrder β] (r : Set.range D.weight ≃ β)
 /-- The product of the leading weight-block minors in the actual coordinate algebra.
 Repeated weights repeat factors, without changing the principal open. -/
 def blockBigCellDenominator : D.coordinateHopfAlgebra :=
-  ∏ i, (D.coordinateMatrix.toSquareBlockProp
-    fun j => r ⟨D.weight j, Set.mem_range_self j⟩ ≤ r ⟨D.weight i, Set.mem_range_self i⟩).det
+  Matrix.leadingBlockMinorProduct (fun j => r ⟨D.weight j, Set.mem_range_self j⟩) D.coordinateMatrix
 
-/-- The defining product of the actual coordinate matrix's leading weight-block minors. -/
+/-- The denominator is the leading-block-minor product for the induced ranking of the basis. -/
 theorem blockBigCellDenominator_def :
-    D.blockBigCellDenominator r = ∏ i, (D.coordinateMatrix.toSquareBlockProp
-      fun j => r ⟨D.weight j, Set.mem_range_self j⟩ ≤
-        r ⟨D.weight i, Set.mem_range_self i⟩).det :=
+    D.blockBigCellDenominator r =
+      Matrix.leadingBlockMinorProduct (fun j => r ⟨D.weight j, Set.mem_range_self j⟩)
+        D.coordinateMatrix :=
   (rfl)
 
 /-- The coordinate algebra of the intersection with the weight-block LDU locus. -/
@@ -69,6 +70,12 @@ abbrev blockBigCell : Scheme := Spec (CommRingCat.of (D.BlockBigCellCoordinateAl
 def blockBigCellι : D.blockBigCell r ⟶ D.groupScheme.X.left :=
   Spec.map (CommRingCat.ofHom (algebraMap D.coordinateHopfAlgebra
     (D.BlockBigCellCoordinateAlgebra r))) ≫ eqToHom D.groupScheme_X_left.symm
+
+/-- The inclusion is induced by localization of the Chevalley coordinate algebra. -/
+theorem blockBigCellι_def :
+    D.blockBigCellι r = Spec.map (CommRingCat.ofHom (algebraMap D.coordinateHopfAlgebra
+      (D.BlockBigCellCoordinateAlgebra r))) ≫ eqToHom D.groupScheme_X_left.symm :=
+  (rfl)
 
 /-- The weight-block locus is open over the integers, not merely in each geometric fibre. -/
 instance isOpenImmersion_blockBigCellι : IsOpenImmersion (D.blockBigCellι r) := by
@@ -83,75 +90,86 @@ theorem blockBigCellι_comp_eqToHom :
     D.blockBigCellι r ≫ eqToHom D.groupScheme_X_left =
       Spec.map (CommRingCat.ofHom (algebraMap D.coordinateHopfAlgebra
         (D.BlockBigCellCoordinateAlgebra r))) := by
-  simp [blockBigCellι]
+  simp [blockBigCellι_def]
+
+/-- The inclusion into the Chevalley group scheme respects the structure map to `Spec ℤ`. -/
+@[reassoc (attr := simp↓)]
+theorem blockBigCellι_comp_groupScheme_X_hom :
+    D.blockBigCellι r ≫ D.groupScheme.X.hom =
+      Spec.map (CommRingCat.ofHom (algebraMap ℤ (D.BlockBigCellCoordinateAlgebra r))) := by
+  have h : D.groupScheme.X.hom = eqToHom D.groupScheme_X_left ≫
+      Spec.map (CommRingCat.ofHom (algebraMap ℤ D.coordinateHopfAlgebra)) :=
+    hopfSpec_obj_X_hom ℤ D.coordinateHopfAlgebra
+  rw [h, ← Category.assoc, blockBigCellι_comp_eqToHom, ← Spec.map_comp,
+    IsScalarTower.algebraMap_eq ℤ D.coordinateHopfAlgebra (D.BlockBigCellCoordinateAlgebra r)]
+  rfl
 
 /-- The universal matrix on the weight-block open. -/
 def blockBigCellMatrix :
     Matrix (Fin D.dim) (Fin D.dim) (D.BlockBigCellCoordinateAlgebra r) :=
   D.coordinateMatrix.map (algebraMap _ _)
 
-/-- Each leading weight-block minor of the universal matrix is a unit. -/
-theorem isUnit_leading_minor_blockBigCellMatrix (i : Fin D.dim) :
-    IsUnit ((D.blockBigCellMatrix r).toSquareBlockProp
-      fun j => r ⟨D.weight j, Set.mem_range_self j⟩ ≤
-        r ⟨D.weight i, Set.mem_range_self i⟩).det := by
-  have h := IsLocalization.Away.isUnit_of_dvd
-    (S := D.BlockBigCellCoordinateAlgebra r) (D.blockBigCellDenominator r)
-    (Finset.dvd_prod_of_mem (fun k => (D.coordinateMatrix.toSquareBlockProp
-      fun j => r ⟨D.weight j, Set.mem_range_self j⟩ ≤ r ⟨D.weight k, Set.mem_range_self k⟩).det)
-      (Finset.mem_univ i))
-  rw [blockBigCellMatrix, Matrix.map_toSquareBlockProp, ← RingHom.mapMatrix_apply,
-    ← RingHom.map_det]
-  exact h
+/-- The universal matrix on the open is the localization of the Chevalley coordinate matrix. -/
+theorem blockBigCellMatrix_def :
+    D.blockBigCellMatrix r = D.coordinateMatrix.map
+      (algebraMap D.coordinateHopfAlgebra (D.BlockBigCellCoordinateAlgebra r)) :=
+  (rfl)
 
-variable {A : Type*} [CommRing A]
-
-/-- Evaluating the denominator multiplies the leading weight-block minors of the point's matrix. -/
+/-- The entries of the matrix on the open are the localized Chevalley matrix entries. -/
 @[simp]
-theorem map_blockBigCellDenominator (f : D.coordinateHopfAlgebra →ₐ[ℤ] A) :
+theorem blockBigCellMatrix_apply (i j : Fin D.dim) :
+    D.blockBigCellMatrix r i j = algebraMap D.coordinateHopfAlgebra
+      (D.BlockBigCellCoordinateAlgebra r) (D.coordinateMatrix i j) :=
+  (rfl)
+
+section Denominator
+
+variable {A F : Type*} [CommRing A] [FunLike F D.coordinateHopfAlgebra A]
+  [RingHomClass F D.coordinateHopfAlgebra A]
+
+/-- Evaluation sends the denominator to the product of leading weight-block minors. -/
+@[simp]
+theorem map_blockBigCellDenominator (f : F) :
     f (D.blockBigCellDenominator r) = ∏ i, ((D.coordinateMatrix.map f).toSquareBlockProp
       fun j => r ⟨D.weight j, Set.mem_range_self j⟩ ≤
         r ⟨D.weight i, Set.mem_range_self i⟩).det := by
-  simp only [blockBigCellDenominator, map_prod]
-  exact Finset.prod_congr rfl fun i _ => by
-    rw [Matrix.map_toSquareBlockProp, ← AlgHom.mapMatrix_apply, ← AlgHom.map_det]
+  have h := Matrix.leadingBlockMinorProduct_map (fun j => r ⟨D.weight j, Set.mem_range_self j⟩)
+    D.coordinateMatrix (RingHomClass.toRingHom f)
+  rw [RingHom.coe_coe] at h
+  rw [blockBigCellDenominator_def, ← h, Matrix.leadingBlockMinorProduct_def]
 
-/-- A coordinate point extends to the weight-block open exactly when all its leading
-weight-block minors are units. No reducedness or field hypothesis is required. -/
-theorem isUnit_map_blockBigCellDenominator_iff (f : D.coordinateHopfAlgebra →ₐ[ℤ] A) :
+/-- The image of the denominator is a unit exactly when all leading weight-block minors of the
+image matrix are units. -/
+theorem isUnit_map_blockBigCellDenominator_iff (f : F) :
     IsUnit (f (D.blockBigCellDenominator r)) ↔ ∀ i,
       IsUnit ((D.coordinateMatrix.map f).toSquareBlockProp
         fun j => r ⟨D.weight j, Set.mem_range_self j⟩ ≤
           r ⟨D.weight i, Set.mem_range_self i⟩).det := by
   rw [D.map_blockBigCellDenominator r, IsUnit.prod_univ_iff]
 
-section Evaluation
+end Denominator
 
-variable {S : Type*} [CommSemiring S] [Algebra ℤ S]
+/-- Each leading weight-block minor of the universal matrix is a unit. -/
+theorem isUnit_det_toSquareBlockProp_blockBigCellMatrix (i : Fin D.dim) :
+    IsUnit ((D.blockBigCellMatrix r).toSquareBlockProp
+      fun j => r ⟨D.weight j, Set.mem_range_self j⟩ ≤
+        r ⟨D.weight i, Set.mem_range_self i⟩).det := by
+  rw [blockBigCellMatrix_def]
+  exact (D.isUnit_map_blockBigCellDenominator_iff r (algebraMap _ _)).mp
+    (IsLocalization.Away.algebraMap_isUnit _) i
 
-/-- Extension of a Chevalley coordinate point to the weight-block open. -/
-def blockBigCellEval (f : D.coordinateHopfAlgebra →ₐ[ℤ] S)
-    (hf : IsUnit (f (D.blockBigCellDenominator r))) :
-    D.BlockBigCellCoordinateAlgebra r →ₐ[ℤ] S :=
-  IsLocalization.Away.liftAlgHom (D.blockBigCellDenominator r) hf
+/-- The localization lift evaluates the matrix on the open by evaluating the original entries. -/
+@[simp↓]
+theorem map_blockBigCellMatrix_liftAlgHom {S : Type*} [CommSemiring S] [Algebra ℤ S]
+    (f : D.coordinateHopfAlgebra →ₐ[ℤ] S) (hf : IsUnit (f (D.blockBigCellDenominator r))) :
+    (D.blockBigCellMatrix r).map
+      (IsLocalization.Away.liftAlgHom (D.blockBigCellDenominator r) hf :
+        D.BlockBigCellCoordinateAlgebra r →ₐ[ℤ] S) = D.coordinateMatrix.map f := by
+  ext i j
+  simp only [Matrix.map_apply, blockBigCellMatrix_apply, IsLocalization.Away.coe_liftAlgHom,
+    IsLocalization.Away.lift_eq, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom]
 
-/-- The extension agrees with the original coordinate point. -/
-@[simp]
-theorem blockBigCellEval_algebraMap (f : D.coordinateHopfAlgebra →ₐ[ℤ] S)
-    (hf : IsUnit (f (D.blockBigCellDenominator r))) (x : D.coordinateHopfAlgebra) :
-    D.blockBigCellEval r f hf (algebraMap _ _ x) = f x := by
-  simp [blockBigCellEval]
-
-end Evaluation
-
-/-- Maps out of the weight-block open are determined on the Chevalley coordinate algebra. -/
-@[ext]
-theorem blockBigCell_algHom_ext {S : Type*} [Semiring S] [Algebra ℤ S]
-    {f g : D.BlockBigCellCoordinateAlgebra r →ₐ[ℤ] S}
-    (h : ∀ x : D.coordinateHopfAlgebra, f (algebraMap _ _ x) = g (algebraMap _ _ x)) :
-    f = g := by
-  apply IsLocalization.algHom_ext (Submonoid.powers (D.blockBigCellDenominator r))
-  exact AlgHom.ext h
+variable {A : Type*} [CommRing A] [Algebra ℤ A]
 
 /-- The algebra-valued points of the integral open are precisely the actual Chevalley
 points with unit leading weight-block minors. -/
@@ -167,16 +185,17 @@ def blockBigCellPointsEquiv :
       rw [← D.map_coordinateMatrix]
       apply (D.isUnit_map_blockBigCellDenominator_iff r _).mp
       exact (IsLocalization.Away.algebraMap_isUnit (D.blockBigCellDenominator r)).map f⟩
-  invFun g := D.blockBigCellEval r
-    (((D.pointsPresentation A).mulEquiv (A := CommAlgCat.of ℤ A)).symm g.val).ofConv
+  invFun g := IsLocalization.Away.liftAlgHom (D.blockBigCellDenominator r)
+    (f := (((D.pointsPresentation A).mulEquiv (A := CommAlgCat.of ℤ A)).symm g.val).ofConv)
     ((D.isUnit_map_blockBigCellDenominator_iff r _).mpr (by
       simpa only [D.map_coordinateMatrix, toConv_ofConv, MulEquiv.apply_symm_apply]
         using g.property))
   left_inv f := by
-    apply D.blockBigCell_algHom_ext r
-    intro x
-    simp only [MulEquiv.symm_apply_apply, ofConv_toConv]
-    exact D.blockBigCellEval_algebraMap r _ _ x
+    apply Localization.algHom_ext (Submonoid.powers (D.blockBigCellDenominator r))
+    ext x
+    simp only [MulEquiv.symm_apply_apply, ofConv_toConv, AlgHom.comp_apply, Algebra.algHom,
+      IsScalarTower.toAlgHom_apply, IsLocalization.Away.coe_liftAlgHom, IsLocalization.Away.lift_eq,
+      AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom]
   right_inv g := by
     apply Subtype.ext
     apply ((D.pointsPresentation A).mulEquiv (A := CommAlgCat.of ℤ A)).symm.injective
@@ -184,8 +203,8 @@ def blockBigCellPointsEquiv :
     apply AlgHom.ext
     intro x
     simp only [MulEquiv.symm_apply_apply, ofConv_toConv, AlgHom.comp_apply,
-      IsScalarTower.toAlgHom_apply]
-    exact D.blockBigCellEval_algebraMap r _ _ x
+      IsScalarTower.toAlgHom_apply, IsLocalization.Away.coe_liftAlgHom, IsLocalization.Away.lift_eq,
+      AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom]
 
 /-- The point of the Chevalley group underlying a point of the open is obtained by
 restriction along the coordinate localization map. -/
@@ -205,20 +224,33 @@ theorem blockBigCellPointsEquiv_symm_algebraMap
         fun j => r ⟨D.weight j, Set.mem_range_self j⟩ ≤ r ⟨D.weight i, Set.mem_range_self i⟩).det})
     (x : D.coordinateHopfAlgebra) :
     (D.blockBigCellPointsEquiv r).symm g (algebraMap _ _ x) =
-      (((D.pointsPresentation A).mulEquiv (A := CommAlgCat.of ℤ A)).symm g.val).ofConv x :=
-  D.blockBigCellEval_algebraMap r _ _ x
+      (((D.pointsPresentation A).mulEquiv (A := CommAlgCat.of ℤ A)).symm g.val).ofConv x := by
+  simp only [blockBigCellPointsEquiv, Equiv.coe_fn_symm_mk, IsLocalization.Away.coe_liftAlgHom,
+    IsLocalization.Away.lift_eq, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom]
+
+/-- The inverse point comparison restricts to the original Chevalley coordinate map. -/
+@[simp]
+theorem blockBigCellPointsEquiv_symm_comp_toAlgHom
+    (g : {g : D.points A // ∀ i,
+      IsUnit ((g.val : Matrix (Fin D.dim) (Fin D.dim) A).toSquareBlockProp
+        fun j => r ⟨D.weight j, Set.mem_range_self j⟩ ≤
+          r ⟨D.weight i, Set.mem_range_self i⟩).det}) :
+    ((D.blockBigCellPointsEquiv r).symm g).comp
+        (IsScalarTower.toAlgHom ℤ D.coordinateHopfAlgebra (D.BlockBigCellCoordinateAlgebra r)) =
+      (((D.pointsPresentation A).mulEquiv (A := CommAlgCat.of ℤ A)).symm g.val).ofConv := by
+  ext x
+  exact D.blockBigCellPointsEquiv_symm_algebraMap r g x
 
 /-- Evaluation of the matrix on the open is the underlying matrix of its Chevalley point. -/
-@[simp]
 theorem map_blockBigCellMatrix (f : D.BlockBigCellCoordinateAlgebra r →ₐ[ℤ] A) :
     (D.blockBigCellMatrix r).map f =
       (((D.blockBigCellPointsEquiv r f).val).val : Matrix (Fin D.dim) (Fin D.dim) A) := by
   rw [blockBigCellPointsEquiv_apply, ← D.map_coordinateMatrix]
-  simp only [blockBigCellMatrix, Matrix.map_map, AlgHom.coe_comp,
+  simp only [blockBigCellMatrix_def, Matrix.map_map, AlgHom.coe_comp,
     IsScalarTower.coe_toAlgHom']
 
 /-- The point comparison commutes with arbitrary homomorphisms of value rings. -/
-theorem blockBigCellPointsEquiv_comp {B : Type*} [CommRing B] (φ : A →ₐ[ℤ] B)
+theorem blockBigCellPointsEquiv_comp {B : Type*} [CommRing B] [Algebra ℤ B] (φ : A →ₐ[ℤ] B)
     (f : D.BlockBigCellCoordinateAlgebra r →ₐ[ℤ] A) :
     (D.blockBigCellPointsEquiv r (φ.comp f)).val =
       (D.pointsPresentation A).map (D.pointsPresentation B) φ.toRingHom
@@ -235,15 +267,29 @@ def blockBigCellAmbientCoordinateMap :
     GeneralLinear.BlockBigCellCoordinateAlgebra ℤ
       (fun j => r ⟨D.weight j, Set.mem_range_self j⟩) →ₐ[ℤ] D.BlockBigCellCoordinateAlgebra r :=
   GeneralLinear.blockBigCellEval (D.blockBigCellMatrix r)
-    (D.isUnit_leading_minor_blockBigCellMatrix r)
+    (D.isUnit_det_toSquareBlockProp_blockBigCellMatrix r)
+
+/-- The ambient comparison is evaluation at the universal matrix of the Chevalley open. -/
+theorem blockBigCellAmbientCoordinateMap_def :
+    D.blockBigCellAmbientCoordinateMap r = GeneralLinear.blockBigCellEval (D.blockBigCellMatrix r)
+      (D.isUnit_det_toSquareBlockProp_blockBigCellMatrix r) :=
+  (rfl)
 
 /-- The ambient-coordinate comparison preserves the universal matrix, so every regular LDU
 coordinate can be evaluated on the Chevalley open without a choice of factorization. -/
 @[simp]
-theorem map_blockBigCellMatrix_ambient :
+theorem map_blockBigCellMatrix_blockBigCellAmbientCoordinateMap :
     (GeneralLinear.blockBigCellMatrix ℤ (fun j => r ⟨D.weight j, Set.mem_range_self j⟩)).map
         (D.blockBigCellAmbientCoordinateMap r) = D.blockBigCellMatrix r :=
   GeneralLinear.map_blockBigCellMatrix _ _
+
+/-- Specializing the ambient coordinate map is evaluation at the specialized Chevalley matrix. -/
+theorem comp_blockBigCellAmbientCoordinateMap (f : D.BlockBigCellCoordinateAlgebra r →ₐ[ℤ] A) :
+    f.comp (D.blockBigCellAmbientCoordinateMap r) =
+      GeneralLinear.blockBigCellEval ((D.blockBigCellMatrix r).map f)
+        (fun i => (D.isUnit_det_toSquareBlockProp_blockBigCellMatrix r i).det_map_toSquareBlockProp
+          f.toRingHom) := by
+  rw [blockBigCellAmbientCoordinateMap_def, GeneralLinear.comp_blockBigCellEval]
 
 end
 
