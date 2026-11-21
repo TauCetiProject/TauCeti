@@ -45,8 +45,10 @@ atom while vanishing on every singleton.
   `MeasureTheory.Measure.IsAtom.exists_measure_sdiff_singleton_eq_zero` — a finite-mass atom, in
   particular an atom on which the measure is σ-finite, of a measure on a countably separated
   space (such as `ℝ` with its Borel σ-algebra) is concentrated on one of its points;
-* `MeasureTheory.Measure.not_isAtom_of_nullSingletonClass` — a σ-finite measure on a countably
-  separated space with zero mass on every singleton has no atoms.
+* `MeasureTheory.Measure.not_isAtom_of_nullSingletonClass_of_measure_ne_top`,
+  `MeasureTheory.Measure.not_isAtom_of_nullSingletonClass` — a measure on a countably separated
+  space with zero mass on every singleton has no finite-mass atoms, and in particular no atoms on
+  which the measure is σ-finite.
 -/
 
 public section
@@ -204,12 +206,18 @@ theorem IsAtom.exists_measure_sdiff_singleton_eq_zero [CountablySeparated X] {s 
     [SigmaFinite (μ.restrict s)] (hs : μ.IsAtom s) : ∃ x ∈ s, μ (s \ {x}) = 0 :=
   hs.exists_measure_sdiff_singleton_eq_zero_of_measure_ne_top hs.measure_ne_top
 
-/-- A σ-finite measure on a countably separated measurable space with zero mass on every singleton
-has no atoms. -/
-theorem not_isAtom_of_nullSingletonClass [CountablySeparated X] [SigmaFinite μ]
-    [NullSingletonClass μ] (s : Set X) : ¬ μ.IsAtom s := fun hs ↦ by
-  obtain ⟨x, -, hx⟩ := hs.exists_measure_sdiff_singleton_eq_zero
+/-- A measure on a countably separated measurable space with zero mass on every singleton has no
+finite-mass atoms. -/
+theorem not_isAtom_of_nullSingletonClass_of_measure_ne_top [CountablySeparated X]
+    [NullSingletonClass μ] {s : Set X} (hfin : μ s ≠ ∞) : ¬ μ.IsAtom s := fun hs ↦ by
+  obtain ⟨x, -, hx⟩ := hs.exists_measure_sdiff_singleton_eq_zero_of_measure_ne_top hfin
   exact hs.pos.ne'
     (measure_mono_null (subset_sdiff_union s {x}) (measure_union_null hx (measure_singleton x)))
+
+/-- A measure on a countably separated measurable space with zero mass on every singleton has no
+atoms on which the measure is σ-finite. -/
+theorem not_isAtom_of_nullSingletonClass [CountablySeparated X] [NullSingletonClass μ] (s : Set X)
+    [SigmaFinite (μ.restrict s)] : ¬ μ.IsAtom s := fun hs ↦
+  not_isAtom_of_nullSingletonClass_of_measure_ne_top hs.measure_ne_top hs
 
 end MeasureTheory.Measure

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
 public import TauCeti.MeasureTheory.Function.Lp.Norm
+public import TauCeti.MeasureTheory.Function.Lp.One
 import TauCeti.Algebra.Order.Group.MinMax
 
 /-!
@@ -33,8 +34,8 @@ measurable representative.
   in the closure of the sequence.
 * `MeasureTheory.SimpleFunc.tendstoUniformly_approxOn` — for totally bounded `s`, the simple
   approximants `approxOn f hf s y₀ h₀ n` converge to `f` uniformly.
-* `MeasureTheory.SimpleFunc.toLpTop μ 𝕜`: the class in `L∞(μ)` of a simple function, as a linear
-  map.
+* `MeasureTheory.SimpleFunc.toLpTop μ 𝕜`, `MeasureTheory.SimpleFunc.toLpTop_one`: the class in
+  `L∞(μ)` of a simple function as a linear map, sending the constant simple function `1` to `1`.
 * `MeasureTheory.SimpleFunc.denseRange_toLpTop` — simple functions are dense in real `L∞`.
 * `MeasureTheory.SimpleFunc.integrable_toLp` — the class in `Lᵖ`, `0 < p < ∞`, of a simple
   function is integrable.
@@ -121,6 +122,14 @@ noncomputable def toLpTop : SimpleFunc α E →ₗ[𝕜] Lp E ∞ μ where
 theorem coeFn_toLpTop {𝕜 E : Type*} [NormedAddCommGroup E] [NormedRing 𝕜] [Module 𝕜 E]
     [IsBoundedSMul 𝕜 E] (f : SimpleFunc α E) : toLpTop μ 𝕜 f =ᵐ[μ] f :=
   MemLp.coeFn_toLp (f.memLp_top μ)
+
+/-- The class in `L∞` of the constant simple function `1` is `1`. -/
+@[simp]
+theorem toLpTop_one {𝕜 E : Type*} [NormedAddCommGroup E] [One E]
+    [NormedRing 𝕜] [Module 𝕜 E] [IsBoundedSMul 𝕜 E] :
+    toLpTop μ 𝕜 (1 : SimpleFunc α E) = 1 :=
+  Lp.ext ((coeFn_toLpTop (μ := μ) (𝕜 := 𝕜) (1 : SimpleFunc α E)).trans
+    (Lp.coeFn_one (E := E) (μ := μ)).symm)
 
 /-- Simple functions are dense in real `L∞`, for any measure: an essentially bounded function
 has a bounded measurable representative, which is a uniform limit of simple functions. -/

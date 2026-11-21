@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.LpSpace.Indicator
+public import Mathlib.MeasureTheory.Measure.Dirac.Basic
 import Mathlib.MeasureTheory.Function.LpSpace.Complete
 import TauCeti.Topology.Algebra.Order.Field
 
@@ -22,6 +23,10 @@ Fatou's lemma bounds the deviation from a constant along an exhaustion: the `L�
 `f - b` on `Ω` is at most the `liminf` of the seminorms of `f - aₙ` on measurable sets `Vₙ ↑ Ω`,
 when `aₙ → b`.
 
+Over a Dirac measure `Measure.dirac x₀`, every element of `Lp E p (Measure.dirac x₀)` equals a
+constant class `Lp.const p (Measure.dirac x₀) c`, with no singleton-measurability assumption on
+the domain.
+
 It also records that the constant class `t / (1 - t)` has `Lᵖ` norm tending to infinity as
 `t → 1⁻`, for every finite nonzero measure. This is the check that the family of real
 Cauchy–Riemann operators `\bar∂ + t / (1 - t)` has unbounded zeroth-order term, so it does not
@@ -32,6 +37,8 @@ extend continuously to `t = 1`.
 * `TauCeti.eLpNorm_sub_const_eq_enorm`: the deviation from a constant as a distance in `Lᵖ`.
 * `TauCeti.eLpNorm_sub_const_restrict_le_liminf`: Fatou along an exhaustion for the deviation from
   a constant.
+* `MeasureTheory.Lp.exists_eq_const_dirac`: over a Dirac measure, every `Lᵖ` class is a constant
+  class `Lp.const`.
 * `MeasureTheory.Measure.tendsto_norm_lpConst_div_one_sub`: the constant class `t / (1 - t)` is
   unbounded in `Lᵖ` as `t → 1⁻`.
 -/
@@ -112,3 +119,19 @@ theorem tendsto_norm_lpConst_div_one_sub {α : Type*} [MeasurableSpace α] (μ :
   exact (tendsto_abs_atTop_atTop.comp TauCeti.tendsto_div_one_sub_nhdsLT_one).atTop_mul_const hμ
 
 end MeasureTheory.Measure
+
+namespace MeasureTheory.Lp
+
+open scoped ENNReal
+
+/-- Over a Dirac measure `Measure.dirac x₀`, every element of `Lp E p (Measure.dirac x₀)` equals a
+constant class `Lp.const p (Measure.dirac x₀) c` (with no singleton-measurability assumption on
+`α`). -/
+theorem exists_eq_const_dirac {α E : Type*} [MeasurableSpace α] [NormedAddCommGroup E]
+    {p : ℝ≥0∞} {x₀ : α} (a : Lp E p (Measure.dirac x₀)) :
+    ∃ c : E, a = Lp.const p (Measure.dirac x₀) c := by
+  borelize E
+  exact ⟨a x₀, Lp.ext <| (ae_eq_dirac' (Lp.stronglyMeasurable a).measurable).trans
+    (Lp.coeFn_const p (Measure.dirac x₀) (a x₀)).symm⟩
+
+end MeasureTheory.Lp

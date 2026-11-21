@@ -184,15 +184,17 @@ open scoped Pointwise
 
 /-- Left translation by `g` of the indicator of `s` in `L∞` is the indicator of `g • s`. -/
 @[simp]
-theorem leftTranslation_linftyIndicator {G : Type*} [Group G]
-    [MeasurableSpace G] [MeasurableMul G] {ν : Measure G} [ν.IsMulLeftInvariant] (g : G)
+theorem leftTranslation_linftyIndicator {G E 𝕜 : Type*} [Group G]
+    [MeasurableSpace G] [MeasurableMul G] {ν : Measure G} [ν.IsMulLeftInvariant]
+    [NormedAddCommGroup E] [One E] [NormedRing 𝕜] [Module 𝕜 E] [IsBoundedSMul 𝕜 E] (g : G)
     {s : Set G} (hs : MeasurableSet s) :
-    Lp.leftTranslation ν ∞ ℝ g (linftyIndicator ν s hs) =
-      linftyIndicator ν (g • s) (hs.const_smul g) := by
+    Lp.leftTranslation ν ∞ 𝕜 g (linftyIndicator ν E s hs) =
+      linftyIndicator ν E (g • s) (hs.const_smul g) := by
   refine Lp.ext ?_
-  filter_upwards [Lp.coeFn_leftTranslation (𝕜 := ℝ) g (linftyIndicator ν s hs),
-    (measurePreserving_mul_left ν g⁻¹).quasiMeasurePreserving.ae (coeFn_linftyIndicator hs),
-    coeFn_linftyIndicator (μ := ν) (hs.const_smul g)] with x h h' hg
+  filter_upwards [Lp.coeFn_leftTranslation (𝕜 := 𝕜) g (linftyIndicator ν E s hs),
+    (measurePreserving_mul_left ν g⁻¹).quasiMeasurePreserving.ae
+      (coeFn_linftyIndicator (R := E) hs),
+    coeFn_linftyIndicator (μ := ν) (R := E) (hs.const_smul g)] with x h h' hg
   rw [h, h', hg]
   by_cases hx : g⁻¹ * x ∈ s <;> simp [hx, Set.mem_smul_set_iff_inv_smul_mem]
 

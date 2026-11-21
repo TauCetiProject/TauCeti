@@ -60,11 +60,11 @@ theorem coeFn_l2Integral_indicator_Ioc_prod (hW : IsFilteredPreBrownianReal ℱ 
   let hD := measurableSet_predictable_Ioc_prod s t (𝓕 := ℱ) MeasurableSet.univ
   let J := (hW.l2Integral T).toContinuousLinearMap
   let R := (ContinuousLinearMap.mul ℝ ℝ).holderL μ ∞ 2 2
-    (linftyIndicator μ (Ioc s t ×ˢ A) hR)
+    (linftyIndicator μ ℝ (Ioc s t ×ˢ A) hR)
   let D := (ContinuousLinearMap.mul ℝ ℝ).holderL μ ∞ 2 2
-    (linftyIndicator μ (Ioc s t ×ˢ univ) hD)
+    (linftyIndicator μ ℝ (Ioc s t ×ˢ univ) hD)
   let E := (ContinuousLinearMap.mul ℝ ℝ).holderL P ∞ 2 2
-    (linftyIndicator P A (ℱ.le s _ hA))
+    (linftyIndicator P ℝ A (ℱ.le s _ hA))
   -- Both sides are continuous linear maps; compare predictable rectangles.
   have hmaps : J.comp R = E.comp (J.comp D) := by
     apply ContinuousLinearMap.ext_indicatorConstLp_Ioc_prod_predictableMeasure T
@@ -73,7 +73,7 @@ theorem coeFn_l2Integral_indicator_Ioc_prod (hW : IsFilteredPreBrownianReal ℱ 
     have hAB := ((ℱ.mono (le_max_left s u)) _ hA).inter hB'
     have hstep (C : Set Ω) (hC : MeasurableSet[ℱ s] C) :
         (ContinuousLinearMap.mul ℝ ℝ).holderL μ ∞ 2 2
-          (linftyIndicator μ (Ioc s t ×ˢ C) (measurableSet_predictable_Ioc_prod s t hC))
+          (linftyIndicator μ ℝ (Ioc s t ×ˢ C) (measurableSet_predictable_Ioc_prod s t hC))
           (indicatorConstLp 2 (measurableSet_predictable_Ioc_prod u v hB)
             (measure_ne_top _ _) 1) =
         indicatorConstLp 2 (measurableSet_predictable_Ioc_prod (max s u) (min t v)

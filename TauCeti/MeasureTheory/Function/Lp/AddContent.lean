@@ -52,7 +52,7 @@ under left translation again matches invariance of the content.
 The construction follows the discrete case in
 `TauCeti/Topology/ContinuousMap/Bounded/AddContent.lean`, and shares its finite sums
 `MeasureTheory.AddContent.integralSimple`; the extension is `LinearMap.extendOfNorm`. The classes
-`TauCeti.linftyIndicator μ s hs` of indicators and `MeasureTheory.SimpleFunc.toLpTop μ 𝕜` of
+`TauCeti.linftyIndicator μ ℝ s hs` of indicators and `MeasureTheory.SimpleFunc.toLpTop μ 𝕜` of
 simple functions in `L∞` come from `TauCeti/MeasureTheory/Function/Lp/Indicator.lean` and
 `TauCeti/MeasureTheory/Function/SimpleFunc/Dense.lean`.
 
@@ -110,7 +110,7 @@ open Classical in
 Its value at a nonmeasurable set is zero. -/
 def toAddContentLpTop (m : Lp ℝ ∞ μ →ₗ[ℝ] ℝ) : AddContent ℝ {s : Set α | MeasurableSet s} :=
   isSetRing_measurableSet.addContent_of_union
-    (fun s => if hs : MeasurableSet s then m (linftyIndicator μ s hs) else 0)
+    (fun s => if hs : MeasurableSet s then m (linftyIndicator μ ℝ s hs) else 0)
     (by simp) fun {s t} hs ht hst => by
       rw [mem_ofPred_eq] at hs ht
       simp only [dite_eq_left (hs.union ht), dite_eq_left hs, dite_eq_left ht,
@@ -119,7 +119,7 @@ def toAddContentLpTop (m : Lp ℝ ∞ μ →ₗ[ℝ] ℝ) : AddContent ℝ {s : 
 /-- On a measurable set `s`, the content of `m` is its value at the indicator of `s`. -/
 @[simp 900] -- Prefer normalization at the whole space to expanding the content.
 theorem toAddContentLpTop_apply (m : Lp ℝ ∞ μ →ₗ[ℝ] ℝ) {s : Set α} (hs : MeasurableSet s) :
-    m.toAddContentLpTop s = m (linftyIndicator μ s hs) := by
+    m.toAddContentLpTop s = m (linftyIndicator μ ℝ s hs) := by
   unfold toAddContentLpTop
   exact dite_eq_left hs
 
@@ -208,7 +208,7 @@ private theorem norm_integral_apply_le (φ : Lp ℝ ∞ μ) : ‖integral μ ν 
     (norm_integralSimple_le hν₀ hνμ) φ
 
 private theorem integral_linftyIndicator {s : Set α} (hs : MeasurableSet s) :
-    integral μ ν (linftyIndicator μ s hs) = ν s := by
+    integral μ ν (linftyIndicator μ ℝ s hs) = ν s := by
   have := integral_toLpTop hν₀ hνμ
     (SimpleFunc.piecewise s hs (SimpleFunc.const α 1) (SimpleFunc.const α 0))
   rwa [AddContent.integralSimple_piecewise, one_mul, SimpleFunc.const_zero,
@@ -233,7 +233,7 @@ def ofAddContentLpTop : Lp ℝ ∞ μ →ₚ[ℝ] ℝ :=
 /-- The functional associated to a content takes the value `ν s` at the indicator of `s`. -/
 @[simp]
 theorem ofAddContentLpTop_linftyIndicator {s : Set α} (hs : MeasurableSet s) :
-    ofAddContentLpTop ν hν₀ hνμ (linftyIndicator μ s hs) = ν s :=
+    ofAddContentLpTop ν hν₀ hνμ (linftyIndicator μ ℝ s hs) = ν s :=
   integral_linftyIndicator hν₀ hνμ hs
 
 /-- The functional associated to a content takes its total mass at the constant one. -/
