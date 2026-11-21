@@ -132,21 +132,36 @@ theorem automorphySection_smul {g : SL(2, ℝ)} (hg : (g : PSL(2, ℝ)) ∈ Γ) 
     ψ.automorphyFrame_smul k r q rfl hk, quotientCoordinate_smul, mul_assoc]
 
 /-- **The coefficient of the local section with coefficient `G` is `G`** on the set of local
-quotient-coordinate values, when `r < m`, the subgroup `Γ` lies in the image of `Γ'` in
-`PSL(2, ℝ)`, `denom g z ^ (2 * r + k) = 1` for the elements `g ∈ Γ'` fixing `z`, and `G` is
-holomorphic there. -/
-theorem eqOn_automorphyDescent_automorphySection
-    (hΓ : Γ ≤ Γ'.map (QuotientGroup.mk' (center SL(2, ℝ))))
-    (hk : ∀ g ∈ Γ', g • z = z → denom (Matrix.SpecialLinearGroup.mapGL ℝ g) z ^ (2 * r + k) = 1)
-    (hr : r < Nat.card (stabilizer Γ z)) (hG : DifferentiableOn ℂ G ψ.quotientImage) :
+quotient-coordinate values, when `r < m` and `G` is holomorphic there. -/
+theorem eqOn_automorphyDescent_automorphySection (hr : r < Nat.card (stabilizer Γ z))
+    (hG : DifferentiableOn ℂ G ψ.quotientImage) :
     EqOn G (ψ.automorphyDescent k r (ψ.automorphySection k r G)) ψ.quotientImage := by
-  refine ψ.eqOn_automorphyDescent (Γ' := Γ' ⊓ Γ.comap (QuotientGroup.mk' (center SL(2, ℝ))))
-    (fun γ hγ ↦ ?_) (fun g hg ↦ hk g hg.1)
-    (fun g hg hgz _ hτ ↦ ψ.automorphySection_smul hg.2 hgz (hk g hg.1 hgz) hτ)
-    (ψ.mdifferentiableOn_automorphySection hG) hr hG.continuousOn
-    fun τ ↦ ψ.automorphySection_coe k r G τ
-  obtain ⟨g, hg, rfl⟩ := hΓ hγ
-  exact ⟨g, ⟨hg, hγ⟩, rfl⟩
+  have : NeZero (Nat.card (stabilizer Γ z)) := ⟨Nat.card_pos.ne'⟩
+  -- The untwisted section is `u ↦ u ^ r * G (u ^ m)`.
+  have hU (τ : stabilizerBall Γ z ε) :
+      ψ.automorphyUntwist k (ψ.automorphySection k r G) (ψ.coordinate τ) =
+        ψ.coordinate τ ^ r * G (ψ.coordinate τ ^ Nat.card (stabilizer Γ z)) := by
+    rw [automorphyUntwist_coordinate, automorphySection_coe, ← mul_assoc,
+      zpow_mul_automorphyFrame, quotientCoordinate_def]
+  have hU' : EqOn (ψ.automorphyUntwist k (ψ.automorphySection k r G))
+      (fun u ↦ u ^ r * G (u ^ Nat.card (stabilizer Γ z))) ψ.toEquiv.target := fun u hu ↦ by
+    obtain ⟨τ, rfl⟩ := (ψ.mem_target_iff u).mp hu
+    exact hU τ
+  rw [quotientImage_def] at hG ⊢
+  rw [automorphyDescent_def]
+  refine eqOn_descendPowTwist ψ.isOpen_target hr
+    (((differentiableOn_id.pow r).mul (hG.comp (differentiableOn_id.pow _)
+      (mapsTo_image _ _))).congr hU') (fun u hu ζ ↦ ?_) hG.continuousOn
+    fun u hu ↦ by rw [hU' hu, smul_eq_mul]
+  obtain ⟨τ, rfl⟩ := (ψ.mem_target_iff u).mp hu
+  set q := (stabilizerRotationEquiv Γ z).symm ζ
+  have hq : stabilizerRotation Γ z q = ζ := by
+    rw [← coe_stabilizerRotationEquiv]
+    exact (stabilizerRotationEquiv Γ z).apply_symm_apply ζ
+  have hζ : ((ζ : ℂˣ) : ℂ) ^ Nat.card (stabilizer Γ z) = 1 := by
+    rw [← Units.val_pow_eq_pow_val, (mem_rootsOfUnity _ (ζ : ℂˣ)).mp ζ.property, Units.val_one]
+  rw [rootsOfUnity.smul_eq_mul, ← hq, ← coordinate_smul, hU, hU, coordinate_smul, hq, mul_pow,
+    mul_pow, hζ, one_mul, smul_eq_mul, mul_assoc]
 
 /-- **Every local section is the local section with its coefficient**: under the hypotheses of
 `Subgroup.LinearizingCoordinate.automorphyFrame_mul_automorphyDescent`, a local section `f` of the
