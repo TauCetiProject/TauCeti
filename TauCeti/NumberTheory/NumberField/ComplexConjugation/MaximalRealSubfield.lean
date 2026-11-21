@@ -7,8 +7,8 @@ module
 
 public import Mathlib.NumberTheory.NumberField.CMField
 public import Mathlib.RingTheory.Norm.Defs
-import Mathlib.RingTheory.Norm.Transitivity
 import TauCeti.FieldTheory.Minpoly.Invariant
+import TauCeti.RingTheory.Norm.Quadratic
 
 /-!
 # Real elements of a CM field
@@ -87,14 +87,8 @@ theorem coeff_minpoly_mem_maximalRealSubfield [Algebra K ℂ] {x : ℂ} (hx : st
 `K⁺` of `x` is `x` times its complex conjugate. -/
 theorem algebraMap_norm_eq_mul_complexConj (x : K) :
     algebraMap (maximalRealSubfield K) K (Algebra.norm (maximalRealSubfield K) x) =
-      x * complexConj K x := by
-  -- `Gal(K/K⁺)` has two elements, `1` and `complexConj K`.
-  have hcard : Nat.card (K ≃ₐ[maximalRealSubfield K] K) = 2 := by
-    rw [IsGalois.card_aut_eq_finrank, Algebra.IsQuadraticExtension.finrank_eq_two]
-  obtain ⟨c, -, hc⟩ := (Nat.card_eq_two_iff' 1).1 hcard
-  rw [Algebra.norm_eq_prod_automorphisms, Fintype.prod_eq_mul 1 (complexConj K)
-    (complexConj_ne_one K).symm fun σ hσ ↦
-      absurd ((hc σ hσ.1).trans (hc _ (complexConj_ne_one K)).symm) hσ.2, AlgEquiv.one_apply]
+      x * complexConj K x :=
+  Algebra.IsQuadraticExtension.algebraMap_norm_eq_mul _ K (complexConj_ne_one K) x
 
 /-- **The norm to the maximal real subfield is a squared absolute value.** Under every complex
 embedding `φ` of a CM field `K`, the relative norm from `K` to `K⁺` of `x` becomes

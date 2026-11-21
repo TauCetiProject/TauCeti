@@ -12,6 +12,7 @@ public import Mathlib.NumberTheory.NumberField.CMField
 public import Mathlib.RingTheory.Norm.Defs
 import Mathlib.Analysis.Complex.Basic
 import TauCeti.FieldTheory.Galois.FixedField
+import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 import TauCeti.NumberTheory.NumberField.ComplexConjugation.MaximalRealSubfield
 
 /-!
@@ -121,12 +122,10 @@ theorem toSubfield_fixedField_zpowers_galEquivZMod_symm_neg_one :
 
 /-- The automorphism `ζ ↦ ζ⁻¹` of `ℚ(ζₙ)` is trivial exactly when `n ≤ 2`. -/
 theorem galEquivZMod_symm_neg_one_eq_one_iff : (galEquivZMod n K).symm (-1) = 1 ↔ n ≤ 2 := by
-  rw [MulEquiv.symm_apply_eq, map_one, Units.ext_iff, Units.val_neg, Units.val_one]
-  refine ⟨fun h ↦ not_lt.1 fun hn ↦ ?_, fun hn ↦ ?_⟩
-  · have : Fact (2 < n) := ⟨hn⟩
-    exact ZMod.neg_one_ne_one h
-  · obtain rfl | rfl : n = 1 ∨ n = 2 := by have := NeZero.ne n; omega
-    all_goals decide
+  rw [MulEquiv.symm_apply_eq, map_one, Units.ext_iff, Units.val_neg, Units.val_one,
+    ZMod.neg_one_eq_one_iff]
+  have := NeZero.ne n
+  omega
 
 /-- **`ℚ(ζₙ)` is its own maximal real subfield exactly when `n ≤ 2`.** -/
 theorem maximalRealSubfield_eq_top_iff : maximalRealSubfield K = ⊤ ↔ n ≤ 2 := by
@@ -135,12 +134,17 @@ theorem maximalRealSubfield_eq_top_iff : maximalRealSubfield K = ⊤ ↔ n ≤ 2
   · exact (galEquivZMod_symm_neg_one_apply_eq_self_iff n x).2 (h trivial)
   · rw [← galEquivZMod_symm_neg_one_apply_eq_self_iff n, h, AlgEquiv.one_apply]
 
+variable {K} in
+/-- For `n ≤ 2` every element of `ℚ(ζₙ) = ℚ` lies in its maximal real subfield. -/
+theorem mem_maximalRealSubfield_of_le_two (hn : n ≤ 2) (x : K) : x ∈ maximalRealSubfield K := by
+  rw [(maximalRealSubfield_eq_top_iff n K).2 hn]
+  trivial
+
 /-- For `n ≤ 2` the extension of `ℚ(ζₙ) = ℚ` over its maximal real subfield is trivial. -/
 theorem finrank_maximalRealSubfield_of_le_two (hn : n ≤ 2) :
     Module.finrank (maximalRealSubfield K) K = 1 := by
-  have hmem (y : K) : y ∈ maximalRealSubfield K :=
-    (maximalRealSubfield_eq_top_iff n K).2 hn ▸ Subfield.mem_top y
-  refine (finrank_eq_one_iff_of_ne_zero' (1 : K) one_ne_zero).2 fun y ↦ ⟨⟨y, hmem y⟩, ?_⟩
+  refine (finrank_eq_one_iff_of_ne_zero' (1 : K) one_ne_zero).2 fun y ↦
+    ⟨⟨y, mem_maximalRealSubfield_of_le_two n hn y⟩, ?_⟩
   simp [Algebra.smul_def, Subfield.algebraMap_ofSubfield]
 
 /-- **The degree of `ℚ(ζₙ)` over its maximal real subfield** is `2` for `n > 2` and `1` for
@@ -177,9 +181,8 @@ variable {K} in
 subfield and the relative norm is the identity. -/
 theorem algebraMap_norm_maximalRealSubfield_of_le_two (hn : n ≤ 2) (x : K) :
     algebraMap (maximalRealSubfield K) K (Algebra.norm (maximalRealSubfield K) x) = x := by
-  have hx : x ∈ maximalRealSubfield K :=
-    (maximalRealSubfield_eq_top_iff n K).2 hn ▸ Subfield.mem_top x
-  have hx' : algebraMap (maximalRealSubfield K) K ⟨x, hx⟩ = x := by
+  have hx' : algebraMap (maximalRealSubfield K) K ⟨x, mem_maximalRealSubfield_of_le_two n hn x⟩ =
+      x := by
     simp [Subfield.algebraMap_ofSubfield]
   rw [← hx', Algebra.norm_algebraMap, finrank_maximalRealSubfield_of_le_two n K hn, pow_one]
 
@@ -239,8 +242,8 @@ theorem adjoin_add_inv_eq_fixedField (hζ : IsPrimitiveRoot ζ n) :
   rw [← IsGalois.fixedField_fixingSubgroup ℚ⟮ζ + ζ⁻¹⟯]
   refine fixedField_le fun σ hσ ↦ ?_
   have hext {σ₁ σ₂ : Gal(K/ℚ)} (h : σ₁ ζ = σ₂ ζ) : σ₁ = σ₂ :=
-    AlgEquiv.coe_toAlgHom_injective <| AlgHom.ext_of_adjoin_eq_top
-      (_root_.IsCyclotomicExtension.adjoin_primitive_root_eq_top hζ) (by rintro _ rfl; exact h)
+    TauCeti.IntermediateField.algEquiv_ext_of_adjoin_eq_top (adjoin_eq_top_of_algebra _ _
+      (_root_.IsCyclotomicExtension.adjoin_primitive_root_eq_top hζ)) (by rintro _ rfl; exact h)
   have hs : σ ζ + (σ ζ)⁻¹ = ζ + ζ⁻¹ := by
     rw [← map_inv₀, ← map_add]
     exact hσ ⟨_, mem_adjoin_simple_self ℚ _⟩
