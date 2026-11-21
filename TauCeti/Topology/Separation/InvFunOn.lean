@@ -106,8 +106,7 @@ theorem ContinuousOn.exists_continuousOn_injOn_lift [Nonempty α] [T1Space β] {
           exact hinj.leftInvOn_invFunOn (hQP x' hx' hx'y (hk ▸ hkP x' hx' hx'y))
       exact continuousWithinAt_id.congr_of_eventuallyEq_of_mem hid hx
     · -- Off the fibre, `g` is `f⁻¹ ∘ k ∘ f` near `x`, a composite of maps continuous there.
-      have hne : {x' | f x' ≠ y} ∈ 𝓝[Q] x :=
-        (hf x hx).preimage_mem_nhdsWithin (isOpen_compl_singleton.mem_nhds hxy)
+      have hne : ∀ᶠ x' in 𝓝[Q] x, f x' ≠ y := (hf x hx).tendsto.eventually_ne hxy
       have hkf : ContinuousWithinAt (k ∘ f) Q x :=
         (hkc (f x) (mem_image_of_mem f hx)).comp (hf x hx) (mapsTo_image f Q)
       exact ((hinv _ (hkP x hx hxy)).comp_of_preimage_mem_nhdsWithin (f := k ∘ f) hkf <|
@@ -140,11 +139,10 @@ theorem ContinuousOn.exists_continuousOn_injOn_mapsTo_of_mapsTo_image [T2Space �
   have hUP : (K ∩ U) \ f ⁻¹' {y} ⊆ P := Set.sdiff_subset_sdiff_left inter_subset_left
   -- Off the fibre, `k ∘ f` avoids `y`, since `k` fixes `y` and is injective on `f '' K`.
   have hkP (x : α) (hx : x ∈ K) (hxy : f x ≠ y) : k (f x) ∈ f '' ((K ∩ U) \ f ⁻¹' {y}) := by
-    obtain ⟨x', hx', hx'k⟩ := hkN (mem_image_of_mem f hx)
-    refine ⟨x', ⟨hx', fun h ↦ hxy ?_⟩, hx'k⟩
-    have hfx' : f x' = y := mem_singleton_iff.1 h
-    exact hki (mem_image_of_mem f hx) (hfx' ▸ mem_image_of_mem f hx'.1)
-      (hx'k.symm.trans hfx' ▸ (hkid.eq_of_nhdsWithin ⟨x', hx'.1, hfx'⟩).symm)
+    rw [image_sdiff_preimage, Set.mem_sdiff, mem_singleton_iff]
+    refine ⟨hkN (mem_image_of_mem f hx), fun h ↦ hxy ?_⟩
+    have hyK : y ∈ f '' K := image_mono inter_subset_left (h ▸ hkN (mem_image_of_mem f hx))
+    exact hki (mem_image_of_mem f hx) hyK (h.trans (hkid.eq_of_nhdsWithin hyK).symm)
   -- The inverse of `f` on `P` is continuous, since `K` is compact.
   have hinv : ContinuousOn (invFunOn f P) (f '' P) :=
     hf.continuousOn_invFunOn_image_of_isCompact hK sdiff_subset hinj <| by
