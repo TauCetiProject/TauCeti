@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Calculus.Morse.Index
 public import TauCeti.Geometry.Manifold.Instances.Projectivization
 public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 public import TauCeti.Geometry.Manifold.Morse.Hessian
+public import TauCeti.LinearAlgebra.Projectivization.Signs
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Calculus.SecondDerivative
@@ -54,6 +55,8 @@ makes the moment function Morse–Bott.
 
 * `TauCeti.projectiveMomentFunction`: the moment function with weights `w`.
 * `TauCeti.contMDiff_projectiveMomentFunction`: it is smooth.
+* `TauCeti.projectiveMomentFunction_smul`: it is invariant under the sign changes of the
+  homogeneous coordinates.
 * `TauCeti.mk_mem_criticalPoints_projectiveMomentFunction_iff`: for arbitrary weights its critical
   points are the eigenlines of the diagonal form.
 * `TauCeti.mk_mem_criticalPoints_projectiveMomentFunction_and_eq_iff`: the critical points of
@@ -475,6 +478,14 @@ def projectiveMomentFunction (w : Fin (n + 1) → ℝ) : ℙ 𝕜 (Fin (n + 1) �
 theorem projectiveMomentFunction_mk (w : Fin (n + 1) → ℝ) (v : Fin (n + 1) → 𝕜) (hv : v ≠ 0) :
     projectiveMomentFunction 𝕜 w (mk 𝕜 v hv) = (∑ i, w i * ‖v i‖ ^ 2) / ∑ i, ‖v i‖ ^ 2 :=
   (rfl)
+
+/-- The moment function is invariant under the sign changes of the homogeneous coordinates. -/
+@[simp]
+theorem projectiveMomentFunction_smul (w : Fin (n + 1) → ℝ) (ε : Fin (n + 1) → ℤˣ)
+    (x : ℙ 𝕜 (Fin (n + 1) → 𝕜)) :
+    projectiveMomentFunction 𝕜 w (ε • x) = projectiveMomentFunction 𝕜 w x := by
+  induction x using ind with | h v hv =>
+  simp only [smul_mk, projectiveMomentFunction_mk, Pi.smul_apply', norm_units_zsmul]
 
 /-- In the affine chart at the coordinate `k`, the moment function with weights `w` is the chart
 model with `a = w k` and `ν = w ∘ k.succAbove`. -/

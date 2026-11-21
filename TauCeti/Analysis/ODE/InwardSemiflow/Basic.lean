@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import TauCeti.Analysis.Convex.Cone.StrictInward
 import TauCeti.Analysis.ODE.ExistUnique
-import TauCeti.Analysis.ODE.Glue
+import TauCeti.Analysis.ODE.Gluing
 import Mathlib.Tactic.Module
 
 /-!

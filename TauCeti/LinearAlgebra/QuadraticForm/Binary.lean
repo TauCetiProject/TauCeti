@@ -70,8 +70,10 @@ polynomial `t ^ 2 + t + c` has no root in `K`.
 * `TauCeti.apply_mul_eq_of_equivalent_binary`: a pairing constant on isometric binary forms
   agrees on their discriminants in its first argument.
 * `TauCeti.equivalent_binary_iff`: the binary equivalence criterion, Lam I.5.1.
-* `TauCeti.represents_binary_one_neg_iff` and `TauCeti.anisotropic_binary_one_neg_iff`: coordinate
-  representation and square-radicand anisotropy criteria for the norm form `⟨1, -d⟩`.
+* `TauCeti.represents_binary_one_neg_iff`: coordinate representation criterion for the norm form
+  `⟨1, -d⟩`.
+* `TauCeti.anisotropic_binary_iff`: `⟨a, b⟩` is anisotropic exactly when `-ab` is not a square;
+  `TauCeti.anisotropic_binary_one_neg_iff` is its square-radicand form for `⟨1, -d⟩`.
 * `TauCeti.nondegenerate_polarBilin_binaryQuadraticForm_zero`,
   `TauCeti.nondegenerate_polarBilin_binaryQuadraticForm_of_two_mul_eq_zero`: nondegeneracy of the
   polar bilinear form of `[a, b]` when `2 * a = 0` and `2 * b = 0`.
@@ -289,32 +291,34 @@ theorem represents_binary_one_neg_iff (d a : R) :
 
 end CommRing
 
+/-- **Isotropy of a binary diagonal form.** The form `⟨a, b⟩` is anisotropic exactly when `-ab`
+is not a square: a zero `(x, y) ≠ 0` of `a x² + b y²` with `y ≠ 0` gives `-ab = (a x / y)²`,
+and one with `y = 0` forces `a = 0`. -/
+theorem anisotropic_binary_iff {F : Type*} [Field F] (a b : F) :
+    (weightedSumSquares F ![a, b]).Anisotropic ↔ ¬IsSquare (-(a * b)) := by
+  simp only [QuadraticMap.Anisotropic, weightedSumSquares_apply, Fin.sum_univ_two,
+    Matrix.cons_val_zero, Matrix.cons_val_one, smul_eq_mul]
+  refine ⟨fun h ⟨r, hr⟩ ↦ ?_, fun h x hx ↦ ?_⟩
+  · by_cases ha : a = 0
+    · simpa using congrFun (h ![1, 0] (by simp [ha])) 0
+    · have := h ![r, a] (by
+        simp only [Matrix.cons_val_zero, Matrix.cons_val_one]
+        linear_combination -a * hr)
+      simpa [ha] using congrFun this 1
+  · by_cases h1 : x 1 = 0
+    · by_cases ha : a = 0
+      · exact absurd ⟨0, by simp [ha]⟩ h
+      · have h0 : x 0 = 0 := by simpa [h1, ha] using hx
+        funext i
+        fin_cases i <;> simp [h0, h1]
+    · exact absurd ⟨a * x 0 / x 1, by
+        rw [div_mul_div_comm, eq_div_iff (mul_ne_zero h1 h1)]
+        linear_combination -a * hx⟩ h
+
 /-- The binary form `⟨1, -d⟩` over a field is anisotropic if and only if `d` is not a square. -/
 theorem anisotropic_binary_one_neg_iff {F : Type*} [Field F] (d : F) :
     (weightedSumSquares F ![(1 : F), -d]).Anisotropic ↔ ¬ IsSquare d := by
-  constructor
-  · intro hQ ⟨z, hz⟩
-    have hzero : weightedSumSquares F ![(1 : F), -d] ![z, 1] = 0 := by
-      simp [weightedSumSquares_apply, Fin.sum_univ_two, hz]
-    have hh := congrArg (fun f : Fin 2 → F => f 1) (hQ ![z, 1] hzero)
-    simp at hh
-  · intro hsq x hx
-    have hxy : x 0 ^ 2 - d * x 1 ^ 2 = 0 := by
-      simpa [weightedSumSquares_apply, Fin.sum_univ_two, pow_two, sub_eq_add_neg] using hx
-    have hy : x 1 = 0 := by
-      by_contra hy
-      refine hsq ⟨x 0 / x 1, ?_⟩
-      rw [← _root_.sq, div_pow]
-      field_simp
-      linear_combination -hxy
-    have hx0 : x 0 = 0 := sq_eq_zero_iff.mp (by simpa [hy] using hxy)
-    funext i
-    fin_cases i <;> simp [hx0, hy]
-
-/-- The binary form `⟨1, 1⟩` is anisotropic exactly when `-1` is not a square. -/
-theorem anisotropic_binary_one_one_iff {F : Type*} [Field F] :
-    (weightedSumSquares F ![(1 : F), 1]).Anisotropic ↔ ¬ IsSquare (-1 : F) := by
-  simpa using anisotropic_binary_one_neg_iff (-1 : F)
+  simpa using anisotropic_binary_iff (1 : F) (-d)
 
 /-- **Worked example.** Over `ℚ` the binary forms `⟨1, 1⟩` and `⟨2, 2⟩` are isometric: their
 discriminants `1` and `4` agree modulo squares, and both represent `2`, once as `1² + 1²` and once
