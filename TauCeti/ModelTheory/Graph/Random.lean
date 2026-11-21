@@ -9,6 +9,7 @@ public import Mathlib.ModelTheory.Graph
 public import TauCeti.Combinatorics.SimpleGraph.ExtensionProperty
 public import TauCeti.ModelTheory.Infinitary.Semantics
 import Mathlib.Data.Fin.Tuple.Basic
+import TauCeti.ModelTheory.BackAndForth.Graph
 import TauCeti.ModelTheory.Infinitary.Theory
 
 /-!
@@ -44,6 +45,7 @@ noncomputable def graphExtensionAxiom (m n : ℕ) : Language.graph.Sentence :=
 
 /-- A graph satisfies the extension axiom for tuple lengths `m` and `n` exactly when each
 pair of disjoint tuples of those lengths has a vertex with the required adjacencies. -/
+@[simp]
 theorem _root_.SimpleGraph.realize_graphExtensionAxiom {V : Type*} (G : SimpleGraph V) (m n : ℕ) :
     @Sentence.Realize Language.graph V G.structure (graphExtensionAxiom m n) ↔
       ∀ a : Fin m → V, ∀ b : Fin n → V, (∀ i j, a i ≠ b j) →
@@ -54,8 +56,8 @@ theorem _root_.SimpleGraph.realize_graphExtensionAxiom {V : Type*} (G : SimpleGr
         ∃ z, (∀ i : Fin m, G.Adj z (v (i.castAdd n))) ∧
           ∀ j : Fin n, z ≠ v (j.natAdd m) ∧ ¬G.Adj z (v (j.natAdd m)) := by
     rw [Sentence.Realize]
-    have hAdj (x y : V) : Structure.RelMap adj ![x, y] ↔ G.Adj x y := Iff.rfl
-    simp [graphExtensionAxiom, -Fin.castSucc_natAdd, hAdj]
+    -- Keep `castSucc` outermost on the negative tuple indices so `Fin.snoc_castSucc` applies.
+    simp [graphExtensionAxiom, -Fin.castSucc_natAdd]
   rw [h]
   refine ⟨fun h a b hab => ?_, fun h v => h (v ∘ Fin.castAdd n) (v ∘ Fin.natAdd m)⟩
   simpa using h (Fin.append a b) (by simpa using hab)
@@ -77,6 +79,7 @@ theorem Theory.simpleGraph_subset_randomGraph : Theory.simpleGraph ⊆ Theory.ra
 
 /-- On a simple graph, the random-graph axioms hold exactly when the graph has the extension
 property. -/
+@[simp]
 theorem _root_.SimpleGraph.randomGraph_model_iff {V : Type*} (G : SimpleGraph V) :
     @Theory.Model Language.graph V G.structure Theory.randomGraph ↔ G.HasExtensionProperty := by
   classical
@@ -90,8 +93,8 @@ theorem _root_.SimpleGraph.randomGraph_model_iff {V : Type*} (G : SimpleGraph V)
     let a i := ((s.equivFin).symm i : V)
     let b j := ((t.equivFin).symm j : V)
     obtain ⟨z, ha, hb⟩ := h s.card t.card a b fun i j hij => by
-      have hi : a i ∈ s := ((s.equivFin).symm i).2
-      have hj : b j ∈ t := ((t.equivFin).symm j).2
+      have hi : a i ∈ s := (s.equivFin.symm i).property
+      have hj : b j ∈ t := (t.equivFin.symm j).property
       exact Finset.disjoint_left.mp hst hi (hij.symm ▸ hj)
     refine ⟨z, fun hz => (hb (t.equivFin ⟨z, hz⟩)).1 (by simp [b]), ?_, ?_⟩
     · intro u hu
@@ -116,6 +119,7 @@ noncomputable def randomGraphSentence : Language.graph.Sentenceω :=
     exact ((Set.countable_singleton _).insert _).union (Set.countable_range _))
 
 /-- The random-graph sentence holds exactly in the models of the first-order random-graph theory. -/
+@[simp]
 theorem realize_randomGraphSentence_iff {V : Type*} [Language.graph.Structure V] :
     SentenceInf.Realize randomGraphSentence V ↔ V ⊨ Theory.randomGraph := by
   rw [randomGraphSentence, Theoryω.realize_conjunction_iff, Theoryω.model_image_toOmega_iff]
