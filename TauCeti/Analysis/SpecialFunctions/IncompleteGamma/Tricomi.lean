@@ -7,7 +7,8 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 public import Mathlib.MeasureTheory.Integral.DominatedConvergence
-public import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric
+public import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric.Basic
+import TauCeti.Analysis.SpecialFunctions.Hypergeometric.Kummer.Contiguous
 
 /-!
 # Tricomi's entire incomplete Gamma function
@@ -92,12 +93,9 @@ theorem hasSum_tricomiIncompleteGamma (a z : ℂ) :
 theorem tricomiIncompleteGamma_eq_mul_tricomiIncompleteGamma_add_one (a z : ℂ) :
     tricomiIncompleteGamma a z =
       z * tricomiIncompleteGamma (a + 1) z + cexp (-z) / Gamma (a + 1) := by
-  have h := (hasSum_nat_add_iff' 1).mpr (hasSum_tricomiIncompleteGamma a z)
-  have h' := (hasSum_tricomiIncompleteGamma (a + 1) z).mul_left z
-  simp only [range_one, sum_singleton, CharP.cast_eq_zero, add_zero, pow_zero, mul_one] at h
-  rw [← sub_eq_iff_eq_add, h.unique (h'.congr_fun fun k => ?_)]
-  push_cast
-  ring_nf
+  rw [tricomiIncompleteGamma_def, tricomiIncompleteGamma_def,
+    regularizedHGFun_one_singleton_eq_inv_Gamma_add_mul (a + 1) z, div_eq_mul_inv]
+  ring
 
 /-- The value of Tricomi's function at `z = 0` (DLMF 8.4.2): `γ*(a, 0) = 1 / Γ(a + 1)`. This is
 `0` at `a ∈ {−1, −2, …}`. -/
@@ -144,23 +142,12 @@ theorem tricomiIncompleteGamma_one_left {z : ℂ} (hz : z ≠ 0) :
 `∂γ*(a, z)/∂z = −a γ*(a + 1, z)`. -/
 theorem hasDerivAt_tricomiIncompleteGamma (a z : ℂ) :
     HasDerivAt (tricomiIncompleteGamma a) (-a * tricomiIncompleteGamma (a + 1) z) z := by
-  have hcard : ({1} : Multiset ℂ).card ≤ ({a + 1} : Multiset ℂ).card := by simp
-  -- the derivative of `𝐌(1, a + 1, ·)` is `𝐌(1, a + 1, ·) − a 𝐌(1, a + 2, ·)`, termwise
-  have hM : deriv (regularizedHGFun {1} {a + 1}) z =
-      regularizedHGFun {1} {a + 1} z - a * regularizedHGFun {1} {a + 1 + 1} z := by
-    refine (hasSum_deriv_regularizedHGFun hcard z).unique ?_
-    refine ((hasSum_regularizedHGFun hcard z).sub
-      ((hasSum_regularizedHGFun (b := {a + 1 + 1}) (by simp) z).mul_left a)).congr_fun fun k => ?_
-    simp only [regularizedHGFunCoeff_one_singleton]
-    rw [one_div_Gamma_eq_self_mul_one_div_Gamma_add_one (a + 1 + k)]
-    push_cast
-    ring_nf
-  have hd := ((analyticAt_regularizedHGFun_of_card_le hcard z).differentiableAt.hasDerivAt)
-  rw [hM] at hd
+  have hd := hasDerivAt_regularizedHGFun_singleton 1 (a + 1) z
+  have hrel := regularizedHGFun_singleton_eq_sub_mul_add_mul 1 (a + 1) z
   convert ((hasDerivAt_neg z).cexp).mul hd using 1
   · exact funext (tricomiIncompleteGamma_def a)
   · rw [tricomiIncompleteGamma_def]
-    ring
+    linear_combination cexp (-z) * hrel
 
 /-- The derivative of Tricomi's function in its argument, as a function:
 `∂γ*(a, ·)/∂z = −a γ*(a + 1, ·)`. -/

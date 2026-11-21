@@ -72,7 +72,7 @@ theorem normalCrystal_e_centralTransportOfEq {lam lam' χ : X}
       ((normalCrystal hlam).e i π).map (centralTransportOfEq χ hχ h_lam) := by
   let f₀ : X →+ ℚ ⊗[ℤ] X := (TensorProduct.mk ℤ ℚ X 1).toAddMonoidHom
   let F₀ : b.support → Dual ℚ (ℚ ⊗[ℤ] X) :=
-    fun j ↦ ((Algebra.linearMap ℤ ℚ).comp (P.coroot' j.1)).liftBaseChange ℚ
+    fun j ↦ ((Algebra.linearMap ℤ ℚ).comp (P.coroot' j.val)).liftBaseChange ℚ
   have hF₀ (j : b.support) (x : X) : F₀ j (f₀ x) = (P.coroot' j x : ℚ) := by simp [f₀, F₀]
   apply Option.map_injective (toPLPath_injective_of_coroot' (𝕜 := ℚ) hlam' hF₀)
   rw [← raise_toPLPath_eq_map_normalCrystal_e hlam' hF₀ i,
@@ -184,19 +184,19 @@ variable {lam lam' χ : X} (hlam : lam ∈ dominantChamber P b) (hlam' : lam' �
 theorem normalCrystal_f_centralTransportOfEq :
     (normalCrystal hlam').f i (centralTransportOfEq χ hχ h_lam π) =
       ((normalCrystal hlam).f i π).map (centralTransportOfEq χ hχ h_lam) := by
-  have hχ' : ∀ j : b.support, P.toLinearMap χ (P.coroot j) = 0 := fun j ↦ hχ j.1 j.2
+  have hχ' : ∀ j : b.support, P.toLinearMap χ (P.coroot j) = 0 := fun j ↦ hχ j.val j.property
   simpa using (centralTransportIsoOfEq hlam hlam' hχ' (σ := 0) (τ := χ) (by simp) hχ' h_lam
     (zero_add χ)).f_apply i π
 
 theorem normalCrystal_ε_centralTransportOfEq :
     (normalCrystal hlam').ε i (centralTransportOfEq χ hχ h_lam π) = (normalCrystal hlam).ε i π := by
-  have hχ' : ∀ j : b.support, P.toLinearMap χ (P.coroot j) = 0 := fun j ↦ hχ j.1 j.2
+  have hχ' : ∀ j : b.support, P.toLinearMap χ (P.coroot j) = 0 := fun j ↦ hχ j.val j.property
   simpa using (centralTransportIsoOfEq hlam hlam' hχ' (σ := 0) (τ := χ) (by simp) hχ' h_lam
     (zero_add χ)).ε_apply i π
 
 theorem normalCrystal_φ_centralTransportOfEq :
     (normalCrystal hlam').φ i (centralTransportOfEq χ hχ h_lam π) = (normalCrystal hlam).φ i π := by
-  have hχ' : ∀ j : b.support, P.toLinearMap χ (P.coroot j) = 0 := fun j ↦ hχ j.1 j.2
+  have hχ' : ∀ j : b.support, P.toLinearMap χ (P.coroot j) = 0 := fun j ↦ hχ j.val j.property
   simpa using (centralTransportIsoOfEq hlam hlam' hχ' (σ := 0) (τ := χ) (by simp) hχ' h_lam
     (zero_add χ)).φ_apply i π
 
@@ -261,8 +261,8 @@ noncomputable def straightComponentCentralTransportIsoOfEq : StrictIso
 theorem straightComponentCentralTransportIsoOfEq_apply
     (x : (PLPath.normalCrystal hf hF).graph.connectedComponentMk
       ⟨PLPath.straight 𝕜 (f lam), PLPath.isIntegralPath_straight_of_mem_dominantChamber hlam hF⟩) :
-    (straightComponentCentralTransportIsoOfEq hlam hlam' hf hF hχ hσ hτ h_lam h_στ x).1.1 =
-      PLPath.shiftDistinguished (range fun w : P.weylGroup ↦ f (w • lam)) (f χ) x.1.1 := by
+    (straightComponentCentralTransportIsoOfEq hlam hlam' hf hF hχ hσ hτ h_lam h_στ x).val.val =
+      PLPath.shiftDistinguished (range fun w : P.weylGroup ↦ f (w • lam)) (f χ) x.val.val := by
   simp only [straightComponentCentralTransportIsoOfEq, StrictIso.trans_apply,
     StrictIso.weightTwist_apply, centralTransportIsoOfEq_apply, normalCrystalComponentIso_apply]
   rw [toPLPath_centralTransportOfEq_of_coroot' χ (coroot'_eq_zero_of_forall hχ) _ 𝕜 f h_lam hlam
@@ -307,8 +307,8 @@ noncomputable def straightComponentCentralTransportIso : StrictIso
 theorem straightComponentCentralTransportIso_apply
     (x : (PLPath.normalCrystal hf hF).graph.connectedComponentMk
       ⟨PLPath.straight 𝕜 (f lam), PLPath.isIntegralPath_straight_of_mem_dominantChamber hlam hF⟩) :
-    (straightComponentCentralTransportIso hlam hf hF χ hχ σ hσ x).1.1 =
-      PLPath.shiftDistinguished (range fun w : P.weylGroup ↦ f (w • lam)) (f χ) x.1.1 :=
+    (straightComponentCentralTransportIso hlam hf hF χ hχ σ hσ x).val.val =
+      PLPath.shiftDistinguished (range fun w : P.weylGroup ↦ f (w • lam)) (f χ) x.val.val :=
   straightComponentCentralTransportIsoOfEq_apply hlam _ hf hF hχ hσ _ rfl rfl x
 
 /-- Specialization at `σ = 0` on the straight-path component: `B(λ)^χ ≃ B(λ + χ)`. -/
@@ -326,8 +326,8 @@ noncomputable def straightComponentCentralTransportIsoZero : StrictIso
 theorem straightComponentCentralTransportIsoZero_apply
     (x : (PLPath.normalCrystal hf hF).graph.connectedComponentMk
       ⟨PLPath.straight 𝕜 (f lam), PLPath.isIntegralPath_straight_of_mem_dominantChamber hlam hF⟩) :
-    (straightComponentCentralTransportIsoZero hlam hf hF χ hχ x).1.1 =
-      PLPath.shiftDistinguished (range fun w : P.weylGroup ↦ f (w • lam)) (f χ) x.1.1 := by
+    (straightComponentCentralTransportIsoZero hlam hf hF χ hχ x).val.val =
+      PLPath.shiftDistinguished (range fun w : P.weylGroup ↦ f (w • lam)) (f χ) x.val.val := by
   simp only [straightComponentCentralTransportIsoZero, StrictIso.trans_apply,
     StrictIso.weightTwist_apply, coe_centralTransportIsoZero, normalCrystalComponentIso_apply]
   rw [toPLPath_centralTransport_of_coroot' χ (coroot'_eq_zero_of_forall hχ) _ 𝕜 f hlam hF,

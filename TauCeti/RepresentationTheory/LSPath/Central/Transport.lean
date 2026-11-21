@@ -92,7 +92,7 @@ private def transport {lam lam' : M} (hJ : P.wallIndices b lam = P.wallIndices b
       P.reflectionBond b (x • lam') (y • lam') = P.reflectionBond b (x • lam) (y • lam))
     (π : LSPath P b lam) : LSPath P b lam' where
   length := π.length
-  dir j := ⟨(π.dir j).1, hJ ▸ (π.dir j).2⟩
+  dir j := ⟨(π.dir j).val, hJ ▸ (π.dir j).property⟩
   time := π.time
   time_zero := π.time_zero
   time_last := π.time_last
@@ -106,7 +106,7 @@ private def transport {lam lam' : M} (hJ : P.wallIndices b lam = P.wallIndices b
         (h : (weylCoxeterSystem P b).MinimalCosetRepCovBy (P.wallIndices b lam) y x) :
         (weylCoxeterSystem P b).MinimalCosetRepCovBy (P.wallIndices b lam') y x :=
       hJ ▸ h
-    refine ⟨(C.map ⟨fun x ↦ ⟨x.1, hJ ▸ x.2⟩, fun h ↦ hcov _ _ h⟩ :
+    refine ⟨(C.map ⟨fun x ↦ ⟨x.val, hJ ▸ x.property⟩, fun h ↦ hcov _ _ h⟩ :
       (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam')),
       by rw [RelSeries.head_map, hhead]; rfl, by rw [RelSeries.last_map, hlast]; rfl, ?_⟩
     rw [isAChain_iff_den_dvd_bondGcd, dvd_bondGcd_iff] at hC ⊢
@@ -180,7 +180,8 @@ theorem length_centralTransport : (centralTransport χ hχ π).length = π.lengt
 /-- The central transport keeps the directions of an LS path. -/
 @[simp]
 theorem dir_centralTransport (j : Fin ((centralTransport χ hχ π).length + 1)) :
-    ((centralTransport χ hχ π).dir j).1 = (π.dir (j.cast (by rw [length_centralTransport]))).1 :=
+    ((centralTransport χ hχ π).dir j).val = (π.dir (j.cast (by rw [length_centralTransport]))).val
+        :=
   (rfl)
 
 /-- The central transport keeps the breaks of an LS path. -/
@@ -202,8 +203,9 @@ theorem length_centralTransport_symm (π : LSPath P b (lam + χ)) :
 @[simp]
 theorem dir_centralTransport_symm (π : LSPath P b (lam + χ))
     (j : Fin (((centralTransport χ hχ).symm π).length + 1)) :
-    (((centralTransport χ hχ).symm π).dir j).1 =
-      (π.dir (j.cast (by rw [length_centralTransport_symm]))).1 := (rfl)
+    (((centralTransport χ hχ).symm π).dir j).val =
+      (π.dir (j.cast (by rw [length_centralTransport_symm]))).val :=
+  (rfl)
 
 @[simp]
 theorem time_centralTransport_symm (π : LSPath P b (lam + χ))
@@ -330,11 +332,11 @@ theorem lower_toPLPath_centralTransport_of_coroot' (hlam : lam ∈ dominantChamb
     PLPath.lower (F i) (f (P.root i)) ((centralTransport χ hχ π).toPLPath 𝕜 f) =
       (PLPath.lower (F i) (f (P.root i)) (π.toPLPath 𝕜 f)).map
         (PLPath.shiftDistinguished (Set.range fun w : P.weylGroup ↦ f (w • lam)) (f χ)) := by
-  have hS := P.mapsTo_preReflection_image_orbit_weylGroup i.1 (hF i) lam
+  have hS := P.mapsTo_preReflection_image_orbit_weylGroup i.val (hF i) lam
   rw [MulAction.orbit, ← Set.range_comp] at hS
   rw [toPLPath_centralTransport_of_coroot' χ hχ π 𝕜 f hlam hF]
   exact PLPath.lower_shiftDistinguished (π.hasDistinguished_toPLPath 𝕜 f) hS
-    (pairwise_not_sameRay_range_smul hF lam) (by rw [hF i χ, hχ i.1 i.2, Int.cast_zero])
+    (pairwise_not_sameRay_range_smul hF lam) (by rw [hF i χ, hχ i.val i.property, Int.cast_zero])
 
 /-- **Raising commutes with central transport of realized LS paths.** -/
 theorem raise_toPLPath_centralTransport_of_coroot' (hlam : lam ∈ dominantChamber P b)
@@ -343,11 +345,11 @@ theorem raise_toPLPath_centralTransport_of_coroot' (hlam : lam ∈ dominantChamb
     PLPath.raise (F i) (f (P.root i)) ((centralTransport χ hχ π).toPLPath 𝕜 f) =
       (PLPath.raise (F i) (f (P.root i)) (π.toPLPath 𝕜 f)).map
         (PLPath.shiftDistinguished (Set.range fun w : P.weylGroup ↦ f (w • lam)) (f χ)) := by
-  have hS := P.mapsTo_preReflection_image_orbit_weylGroup i.1 (hF i) lam
+  have hS := P.mapsTo_preReflection_image_orbit_weylGroup i.val (hF i) lam
   rw [MulAction.orbit, ← Set.range_comp] at hS
   rw [toPLPath_centralTransport_of_coroot' χ hχ π 𝕜 f hlam hF]
   exact PLPath.raise_shiftDistinguished (π.hasDistinguished_toPLPath 𝕜 f) hS
-    (pairwise_not_sameRay_range_smul hF lam) (by rw [hF i χ, hχ i.1 i.2, Int.cast_zero])
+    (pairwise_not_sameRay_range_smul hF lam) (by rw [hF i χ, hχ i.val i.property, Int.cast_zero])
 
 theorem lower_toPLPath_centralTransportOfEq_of_coroot' {lam' : M} (h : lam + χ = lam')
     (hlam : lam ∈ dominantChamber P b) {F : b.support → Module.Dual 𝕜 V}

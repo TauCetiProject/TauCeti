@@ -54,6 +54,9 @@ reciprocity between arbitrary primary elements is deduced in
   and a rational integer `a ≡ 1 (mod 4)`.
 * `TauCeti.IsPrimaryGaussian.quartic_reciprocity_natCast_of_odd`:
   `(((-1) ^ ((q - 1) / 2) * q) / π)_4 = (π / q)_4` for primary `π` and an odd natural number `q`.
+* `TauCeti.IsPrimaryGaussian.powerResidueSymbolIdeal_add_mul_mk_intCast_of_isCoprime`:
+  `(c / (c + d i))_4 = (-1) ^ ((c² - 1) / 8 + ((c - 1) / 2)²)` for primary `c + d i` with
+  `gcd(c, d) = 1`.
 
 ## References
 
@@ -513,6 +516,20 @@ theorem IsPrimaryGaussian.quartic_reciprocity_natCast_of_odd {π : 𝓞 K} (hπ 
       simp only [a, ho.neg_one_pow, neg_one_mul, Int.ModEq]
       omega
   rw [← ha_cast, hπ.quartic_reciprocity_intCast ha_mod.1, ha_mod.2]
+
+/-- For primary `π = c + d i` with coprime coordinates, `(c / π)_4` read in `K` equals
+`(-1) ^ ((c² - 1) / 8 + ((c - 1) / 2)²)`. -/
+theorem IsPrimaryGaussian.powerResidueSymbolIdeal_add_mul_mk_intCast_of_isCoprime {ζ : K}
+    {hζ : IsPrimitiveRoot ζ 4} {c d : ℤ}
+    (hπ : IsPrimaryGaussian ((c : 𝓞 K) + (d : 𝓞 K) * hζ.toInteger)) (hcd : IsCoprime c d) :
+    ((powerResidueSymbolIdeal (span {(c : 𝓞 K) + (d : 𝓞 K) * hζ.toInteger}) 4
+        (Ideal.Quotient.mk _ (c : 𝓞 K)) : 𝓞 K) : K) =
+      (-1) ^ ((c ^ 2 - 1) / 8 + ((c - 1) / 2) * ((c - 1) / 2)) := by
+  have hcoord := (hζ.isPrimaryGaussian_add_mul_iff (a := c) (b := d)).mp hπ
+  have hc_odd : Odd c := by rw [Int.odd_iff]; simp only [Int.ModEq] at hcoord; omega
+  rw [hπ.coe_quartic_reciprocity_intCast_add_mul_of_odd hc_odd,
+    hζ.powerResidueSymbolIdeal_span_intCast_mk_add_mul_of_dvd hc_odd dvd_rfl hcd.symm,
+    ← zpow_add₀ (by norm_num)]
 
 /-! ### Examples -/
 
