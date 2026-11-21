@@ -158,6 +158,18 @@ theorem coe_formalPointsMap_apply (I : Ideal A) (φ : G →* Q) (f : formalPoint
     (formalPointsMap R I φ f : WithConv (MonoidAlgebra R G →ₐ[R] A)) = pointsMap φ f :=
   (rfl)
 
+/-- Pulling back formal points along the identity homomorphism is the identity. -/
+@[simp]
+theorem formalPointsMap_id (I : Ideal A) :
+    formalPointsMap R I (MonoidHom.id G) = MonoidHom.id _ :=
+  MonoidHom.ext fun f ↦ Subtype.ext (by simp)
+
+/-- **Contravariant functoriality.** Pulling back formal points along a composite homomorphism is
+the composite of the pullbacks, in the opposite order. -/
+theorem formalPointsMap_comp {P : Type*} [CommGroup P] (I : Ideal A) (φ : G →* Q) (ψ : Q →* P) :
+    formalPointsMap R I (ψ.comp φ) = (formalPointsMap R I φ).comp (formalPointsMap R I ψ) :=
+  MonoidHom.ext fun f ↦ Subtype.ext congr($(pointsMap_comp φ ψ) f.1)
+
 variable (R G) in
 /-- **The points of the formal diagonalizable group.** The points of `D(G)` reducing to the
 identity modulo `I` are the characters of `G` with values in the principal unit group `1 + I`.
@@ -170,13 +182,13 @@ noncomputable def formalPointsMulEquiv (I : Ideal A) :
     mem_formalPoints_iff_charOfPoint.mpr fun g ↦ by
       rw [← pointsMulEquiv_apply, MulEquiv.apply_symm_apply, MonoidHom.comp_apply]
       exact (χ g).2⟩
-  left_inv f := Subtype.ext ((MulEquiv.symm_apply_eq _).mpr rfl)
+  left_inv f := Subtype.ext ((MulEquiv.symm_apply_eq _).mpr (MonoidHom.ext fun _ ↦ rfl))
   right_inv χ := by
     ext g
     simp
   map_mul' f f' := by
     ext g
-    simp [MonoidHom.codRestrict]
+    simp [MonoidHom.codRestrict_apply]
 
 /-- The character attached to a formal point sends `g` to the value of the point on the
 group-like `single g 1`. -/
@@ -275,7 +287,7 @@ noncomputable def formalPointsTorusTruncationMulEquiv (I : Ideal A) {n m : ℕ} 
     formalPoints R (Multiplicative (ι → ZMod (n ^ m))) I ≃*
       formalPoints R (Multiplicative (ι → ℤ)) I :=
   formalPointsMulEquivOfKerLe R I hn hI (ZMod.piReduction ι (n ^ m))
-    (ZMod.piReduction_surjective ι _) (ZMod.ker_piReduction_le ι _)
+    (ZMod.piReduction_surjective ι _) (ZMod.ker_piReduction ι _).le
 
 /-- The truncation isomorphism for the formal torus is precomposition with the map of group
 algebras induced by the reduction `ℤ ^ ι → (ℤ / n ^ m) ^ ι`. -/
@@ -302,12 +314,11 @@ theorem formalPoints_eq_bot_of_coprime (I : Ideal A) {n m k : ℕ} (hn : (n : A)
     have hn' : (formalPointsMulEquiv R G I ⟨f, hf⟩ g : Aˣ) ^ n ^ m = 1 :=
       Ideal.pow_pow_eq_one_of_mem_principalUnitGroup hn hI (SetLike.coe_mem _)
     have hk' : (formalPointsMulEquiv R G I ⟨f, hf⟩ g : Aˣ) ^ k = 1 := by
-      rw [← Subgroup.coe_pow, ← map_pow, hG, map_one, OneMemClass.coe_one]
+      simpa [hG] using congr((($(map_pow (formalPointsMulEquiv R G I ⟨f, hf⟩) g k)) : Aˣ)).symm
     have h1 := pow_gcd_eq_one.mpr ⟨hk', hn'⟩
     rw [Nat.Coprime.pow_right m hk, pow_one] at h1
     simp [h1]
-  exact congrArg Subtype.val ((formalPointsMulEquiv R G I).injective
-    (hχ.trans (map_one (formalPointsMulEquiv R G I)).symm))
+  simpa using hχ
 
 end Truncation
 

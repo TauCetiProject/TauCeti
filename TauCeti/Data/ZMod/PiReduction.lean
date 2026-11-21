@@ -12,7 +12,7 @@ public import Mathlib.Data.ZMod.Basic
 
 The reduction `ℤ ^ ι → (ℤ / k) ^ ι` of every coordinate modulo `k`, written multiplicatively so
 that it is a homomorphism of commutative groups `Multiplicative (ι → ℤ) →* Multiplicative
-(ι → ZMod k)`. It is surjective, and its kernel consists of `k`-th powers.
+(ι → ZMod k)`. It is surjective, and its kernel is the subgroup of `k`-th powers.
 
 ## Main definitions
 
@@ -21,7 +21,7 @@ that it is a homomorphism of commutative groups `Multiplicative (ι → ℤ) →
 ## Main results
 
 * `TauCeti.ZMod.piReduction_surjective`: the reduction is surjective.
-* `TauCeti.ZMod.ker_piReduction_le`: its kernel consists of `k`-th powers.
+* `TauCeti.ZMod.ker_piReduction`: its kernel is the subgroup of `k`-th powers.
 -/
 
 public section
@@ -46,18 +46,25 @@ theorem piReduction_apply (x : Multiplicative (ι → ℤ)) (i : ι) :
 theorem piReduction_surjective : Function.Surjective (piReduction ι k) :=
   Function.Surjective.piMap fun _ ↦ _root_.ZMod.intCast_surjective
 
-/-- The kernel of the reduction `ℤ ^ ι → (ℤ / k) ^ ι` consists of the `k`-th powers. -/
-theorem ker_piReduction_le :
-    (piReduction ι k).ker ≤ (powMonoidHom k : Multiplicative (ι → ℤ) →* _).range := by
-  intro x hx
-  have hdvd (i : ι) : (k : ℤ) ∣ x.toAdd i := by
-    rw [← _root_.ZMod.intCast_zmod_eq_zero_iff_dvd, ← piReduction_apply]
-    exact congrFun (congrArg Multiplicative.toAdd hx) i
-  choose y hy using hdvd
-  refine ⟨Multiplicative.ofAdd y, ?_⟩
-  apply Multiplicative.toAdd.injective
-  funext i
-  simp [hy i]
+/-- The kernel of the reduction `ℤ ^ ι → (ℤ / k) ^ ι` is the subgroup of `k`-th powers. -/
+theorem ker_piReduction :
+    (piReduction ι k).ker = (powMonoidHom k : Multiplicative (ι → ℤ) →* _).range := by
+  ext x
+  rw [MonoidHom.mem_ker, MonoidHom.mem_range]
+  constructor
+  · intro hx
+    have hdvd (i : ι) : (k : ℤ) ∣ x.toAdd i := by
+      rw [← _root_.ZMod.intCast_zmod_eq_zero_iff_dvd, ← piReduction_apply]
+      exact congrFun (congrArg Multiplicative.toAdd hx) i
+    choose y hy using hdvd
+    refine ⟨Multiplicative.ofAdd y, ?_⟩
+    apply Multiplicative.toAdd.injective
+    funext i
+    simp [hy i]
+  · rintro ⟨y, rfl⟩
+    apply Multiplicative.toAdd.injective
+    funext i
+    simp
 
 end ZMod
 
