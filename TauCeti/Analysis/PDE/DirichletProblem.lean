@@ -452,12 +452,19 @@ def weakEquationGraph
   simp only [← energyFormH1L_apply hcoeff]
   rfl
 
+/-- The graph of the weak equation as a set: the pairs `(u, f)` with
+`a(u, v) = ⟪f, v⟫_{L²(Ω)}` for every `v ∈ H¹₀(Ω)`. -/
+theorem coe_weakEquationGraph
+    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega)) :
+    (weakEquationGraph hcoeff : Set (W1p mu Omega 2 × Lp ℝ 2 (mu.restrict Omega))) =
+      {p | ∀ v : W1p0 mu Omega 2, energyFormH1L hcoeff p.1 v = dirichletForcing p.2 v} :=
+  (rfl)
+
 /-- The graph of the weak equation is closed in `H¹(Ω) × L²(Ω)`. -/
 theorem isClosed_weakEquationGraph
     (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega)) :
     IsClosed (weakEquationGraph hcoeff : Set (W1p mu Omega 2 × Lp ℝ 2 (mu.restrict Omega))) := by
-  change IsClosed {p : W1p mu Omega 2 × Lp ℝ 2 (mu.restrict Omega) |
-    ∀ v : W1p0 mu Omega 2, energyFormH1L hcoeff p.1 v = dirichletForcing p.2 v}
+  rw [coe_weakEquationGraph]
   simp only [Set.ofPred_forall]
   refine isClosed_iInter fun v => isClosed_eq ?_ ?_
   · exact ((energyFormH1L hcoeff).continuous.comp continuous_fst).clm_apply continuous_const
@@ -479,8 +486,10 @@ weak equation, each a closed condition. -/
 theorem coe_dirichletGraph
     (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega)) :
     (dirichletGraph hcoeff : Set (W1p mu Omega 2 × Lp ℝ 2 (mu.restrict Omega))) =
-      {p | p.1 ∈ w1p0Submodule mu Omega 2} ∩ weakEquationGraph hcoeff :=
-  (rfl)
+      {p | p.1 ∈ w1p0Submodule mu Omega 2} ∩ weakEquationGraph hcoeff := by
+  rw [dirichletGraph, Submodule.coe_inf, Submodule.comap_coe, ClosedSubmodule.coe_toSubmodule,
+    LinearMap.coe_fst]
+  rfl
 
 /-- A pair `(u, f)` lies in the graph of the weak Dirichlet problem exactly when `u ∈ H¹₀(Ω)`
 and `a(u, v) = ⟪f, v⟫_{L²(Ω)}` for every `v ∈ H¹₀(Ω)`. -/
@@ -489,8 +498,9 @@ and `a(u, v) = ⟪f, v⟫_{L²(Ω)}` for every `v ∈ H¹₀(Ω)`. -/
     {p : W1p mu Omega 2 × Lp ℝ 2 (mu.restrict Omega)} :
     p ∈ dirichletGraph hcoeff ↔ p.1 ∈ w1p0Submodule mu Omega 2 ∧
       ∀ v : W1p0 mu Omega 2,
-        energyFormH1 a b c p.1 (v : W1p mu Omega 2) = dirichletForcing p.2 v :=
-  and_congr Iff.rfl (mem_weakEquationGraph_iff hcoeff)
+        energyFormH1 a b c p.1 (v : W1p mu Omega 2) = dirichletForcing p.2 v := by
+  rw [dirichletGraph, Submodule.mem_inf, Submodule.mem_comap, LinearMap.fst_apply,
+    ClosedSubmodule.mem_toSubmodule_iff, mem_weakEquationGraph_iff]
 
 /-- For `u ∈ H¹₀(Ω)`, the pair `(u, f)` lies in the graph of the weak Dirichlet problem exactly
 when `u` is a weak solution of `L u = f`. -/
