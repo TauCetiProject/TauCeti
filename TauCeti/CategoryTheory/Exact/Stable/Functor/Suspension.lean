@@ -28,6 +28,12 @@ the source stable category.
 * `TauCeti.StableConflationExact.stableSuspensionCompStableFunctorIso`: the natural isomorphism
   comparing suspension composed with the induced stable functor to the opposite composite.
 
+## Main results
+
+* `TauCeti.StableConflationExact.stableSuspensionCompStableFunctorIso_hom_app_eq_connectingMap`:
+  on the class of an object, the comparison is the connecting map of the image of its suspension
+  presentation.
+
 ## References
 
 * Dieter Happel, *Triangulated Categories in the Representation Theory of Finite Dimensional
@@ -308,6 +314,33 @@ theorem stableSuspensionCompStableFunctorIso_inv_app
       eqToHom (congrArg (hF.stableFunctor hE).obj
         (hE.stableSuspension_obj_projectiveStableFunctor_obj X)).symm := by
   simp [stableSuspensionCompStableFunctorIso]
+
+/-- On the class of an object `A`, the suspension comparison of the stable functor is the
+connecting map of the image of the suspension presentation of `A`. -/
+theorem stableSuspensionCompStableFunctorIso_hom_app_eq_connectingMap
+    (hF : StableConflationExact E E' F) (hE : E.IsFrobenius) (hE' : E'.IsFrobenius) (A : C) :
+    (hF.stableSuspensionCompStableFunctorIso hE hE').hom.app (E.projectiveStableFunctor.obj A) =
+      eqToHom (congrArg (hF.stableFunctor hE).obj
+        (hE.stableSuspension_obj_projectiveStableFunctor_obj A)) ≫
+      eqToHom (hF.stableFunctor_obj_projectiveStableFunctor_obj hE (hE.suspensionObj A)) ≫
+      E'.projectiveStableFunctor.map (hE'.connectingMap
+        (hF.isConflationExact.map_conflation (hE.suspensionPresentation A).conflation)) ≫
+      eqToHom (hE'.stableSuspension_obj_projectiveStableFunctor_obj (F.obj A)).symm ≫
+      eqToHom (congrArg hE'.stableSuspension.obj
+        (hF.stableFunctor_obj_projectiveStableFunctor_obj hE A)).symm := by
+  have hc : E'.projectiveStableFunctor.map
+      (F.map (hE.connectingMap (hE.suspensionPresentation A).conflation)) = 𝟙 _ := by
+    have h := hF.stableFunctor_map_projectiveStableFunctor_map hE
+      (hE.connectingMap (hE.suspensionPresentation A).conflation)
+    rw [hE.projectiveStableFunctor_map_connectingMap_suspensionPresentation,
+      CategoryTheory.Functor.map_id, Category.id_comp] at h
+    exact (cancel_epi (eqToHom (hF.stableFunctor_obj_projectiveStableFunctor_obj hE _))).1
+      (h.symm.trans (Category.comp_id _).symm)
+  have h := hF.map_connectingMap_comp_suspensionComparison hE hE'
+    (hE.suspensionPresentation A).conflation
+  rw [hc, Category.id_comp] at h
+  rw [stableSuspensionCompStableFunctorIso_hom_app,
+    ExactStructure.IsFrobenius.projectiveStableIsoSuspensionObj_hom, reassoc_of% h]
 
 end StableConflationExact
 

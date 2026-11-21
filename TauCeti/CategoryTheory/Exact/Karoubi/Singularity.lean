@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Exact.DerivedCategory.Singularity.StableFunctor
+public import TauCeti.CategoryTheory.Exact.DerivedCategory.Singularity.Stable.Functor
 public import TauCeti.CategoryTheory.Exact.Karoubi.Stable
 
 /-!
