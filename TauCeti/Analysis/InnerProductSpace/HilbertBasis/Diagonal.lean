@@ -5,9 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.l2Space
 public import TauCeti.Analysis.Normed.Lp.Diagonal.Basic
 import Mathlib.Analysis.Normed.Group.Tannery
+import Mathlib.Analysis.RCLike.Lemmas
+import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Basic
+import TauCeti.Analysis.Normed.Operator.Compact.Orthonormal
 
 /-!
 # Diagonal operators in a Hilbert basis
@@ -17,8 +21,10 @@ A Hilbert basis `b : HilbertBasis ι 𝕜 E` identifies `E` isometrically with `
 on `E`, which multiplies the `i`-th coordinate by `m i`: it is the diagonal operator
 `lp.diagonalCLM m` transported along `b.repr`. The map `m ↦ b.diagonal m` is a unital algebra
 homomorphism from `ℓ^∞(ι, 𝕜)` to the bounded operators on `E`, so any two diagonal operators
-commute. The operator norm of `b.diagonal m` is the supremum norm of `m`, the operator determines
-`m`, and it acts on the basis vectors by `b.diagonal m (b i) = m i • b i`.
+commute. Its adjoint is `b.diagonal (star m)`, so `b.diagonal m` is self-adjoint when `m` is, and
+it is compact exactly when `m` vanishes along the cofinite filter. The operator norm of
+`b.diagonal m` is the supremum norm of `m`, the operator determines `m`, and it acts on the basis
+vectors by `b.diagonal m (b i) = m i • b i`.
 
 Diagonal operators are continuous in their entries for the strong operator topology on bounded
 sets: if `m_a → m` pointwise on `ι` and `‖m_a‖ ≤ C`, then `b.diagonal m_a x → b.diagonal m x` for
@@ -33,6 +39,10 @@ the diagonal operators in the Fourier basis.
 * `HilbertBasis.hasSum_diagonal`: the expansion of `b.diagonal m x` in the basis.
 * `HilbertBasis.norm_diagonal`: `‖b.diagonal m‖ = ‖m‖`.
 * `HilbertBasis.diagonal_injective`: the entries are determined by the operator.
+* `HilbertBasis.adjoint_diagonal`, `HilbertBasis.star_diagonal`,
+  `HilbertBasis.isSelfAdjoint_diagonal`: adjoint and self-adjointness of diagonal operators.
+* `HilbertBasis.isCompactOperator_diagonal_iff`: a diagonal operator is compact iff its entries
+  tend to `0` along `cofinite`.
 * `HilbertBasis.tendsto_diagonal_apply`: strong continuity in the entries.
 -/
 
@@ -41,7 +51,7 @@ public section
 noncomputable section
 
 open Filter Topology
-open scoped lp ENNReal
+open scoped lp ENNReal InnerProductSpace
 
 namespace HilbertBasis
 
@@ -131,6 +141,40 @@ theorem diagonal_inj {m₁ m₂ : ℓ^∞(ι, 𝕜)} : b.diagonal m₁ = b.diago
 /-- Any two diagonal operators in the same basis commute. -/
 theorem commute_diagonal (m₁ m₂ : ℓ^∞(ι, 𝕜)) : Commute (b.diagonal m₁) (b.diagonal m₂) :=
   (Commute.all m₁ m₂).map b.diagonal
+
+/-- The adjoint of a diagonal operator is the diagonal operator with conjugate entries. -/
+@[simp]
+theorem adjoint_diagonal [CompleteSpace E] (m : ℓ^∞(ι, 𝕜)) :
+    (b.diagonal m).adjoint = b.diagonal (star m) := by
+  classical
+  refine b.ext_inner_apply b fun i j ↦ ?_
+  rw [ContinuousLinearMap.adjoint_inner_right, diagonal_apply_self, diagonal_apply_self,
+    inner_smul_left, inner_smul_right, lp.coeFn_star, Pi.star_apply, RCLike.star_def,
+    orthonormal_iff_ite.1 b.orthonormal i j]
+  split_ifs with h <;> simp [h]
+
+/-- The star of a diagonal operator is the diagonal operator with conjugate entries. -/
+@[simp]
+theorem star_diagonal [CompleteSpace E] (m : ℓ^∞(ι, 𝕜)) :
+    star (b.diagonal m) = b.diagonal (star m) := by
+  rw [ContinuousLinearMap.star_eq_adjoint, b.adjoint_diagonal]
+
+/-- A diagonal operator with self-adjoint (real) entries is self-adjoint. -/
+theorem isSelfAdjoint_diagonal [CompleteSpace E] {m : ℓ^∞(ι, 𝕜)} (hm : IsSelfAdjoint m) :
+    IsSelfAdjoint (b.diagonal m) := by
+  rw [IsSelfAdjoint, b.star_diagonal, hm.star_eq]
+
+/-- A diagonal operator in a Hilbert basis is compact if and only if its entries tend to `0` along
+the cofinite filter. -/
+theorem isCompactOperator_diagonal_iff (m : ℓ^∞(ι, 𝕜)) :
+    IsCompactOperator (b.diagonal m) ↔ Tendsto (m : ι → 𝕜) cofinite (𝓝 0) := by
+  have : ProperSpace 𝕜 := FiniteDimensional.proper_rclike 𝕜 𝕜
+  refine ⟨fun h ↦ h.tendsto_cofinite_of_orthonormal b.orthonormal (b.diagonal_apply_self m),
+    fun hm ↦ ?_⟩
+  have hcomp : IsCompactOperator (lp.diagonalCLM (p := 2) m) :=
+    lp.isCompactOperator_diagonalCLM m (tendsto_zero_iff_norm_tendsto_zero.1 hm)
+  exact (hcomp.comp_clm b.repr.toContinuousLinearEquiv.toContinuousLinearMap).clm_comp
+    b.repr.symm.toContinuousLinearEquiv.toContinuousLinearMap
 
 /-- **Strong continuity of diagonal operators in the entries.** If the entries `m a` are bounded
 uniformly by `C` and converge pointwise on `ι` to `m₀`, then `b.diagonal (m a) x → b.diagonal m₀ x`

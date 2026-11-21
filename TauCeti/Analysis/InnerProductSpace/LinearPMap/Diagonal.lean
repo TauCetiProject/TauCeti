@@ -7,7 +7,10 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.l2Space
 public import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Diagonal
+public import TauCeti.Analysis.InnerProductSpace.LinearPMap.CompactResolvent
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.SelfAdjoint
+public import TauCeti.Analysis.InnerProductSpace.LinearPMap.SpectralCutoff
+import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Basic
 import TauCeti.Analysis.InnerProductSpace.Parseval
 
 /-!
@@ -40,7 +43,9 @@ squared graph norm `‖x‖² + ‖A x‖²`. For any function `f : ℝ → 𝕜
 eigenbasis is orthogonal to the vectors of another eigenbasis with different eigenvalues. By
 `IsSelfAdjoint.exists_hilbertBasis_forall_apply_eq_smul_of_hasCompactResolvent`, a self-adjoint
 operator with compact resolvent, such as the Dirac operator of a spectral triple, has such an
-eigenbasis, so `f(A)` makes sense for `f = |·|`, `sign`, `exp (-t ·)` and powers.
+eigenbasis, so `f(A)` makes sense for `f = |·|`, `sign`, `exp (-t ·)` and powers. Conversely,
+a real diagonal operator has compact resolvent if and only if `|λᵢ|` is Northcott
+(`HilbertBasis.hasCompactResolvent_diagonalPMap_iff`).
 
 No measurability of `f` is needed: `b.diagonalPMap (f ∘ λ)` acts coordinatewise in the eigenbasis,
 so `f` only enters through its values `f (λ i)` at the eigenvalues.
@@ -63,6 +68,8 @@ so `f` only enters through its values `f (λ i)` at the eigenvalues.
 * `HilbertBasis.adjoint_diagonalPMap`, `HilbertBasis.isSelfAdjoint_diagonalPMap`: the adjoint of
   `b.diagonalPMap c` is `b.diagonalPMap (star c)`, so diagonal operators are self-adjoint for
   self-adjoint coefficient families.
+* `HilbertBasis.hasCompactResolvent_diagonalPMap_iff`: a real diagonal operator has compact
+  resolvent iff `|λᵢ|` is Northcott (Reed–Simon XIII.64).
 * `HilbertBasis.le_diagonalPMap_iff`: the restrictions of a diagonal operator.
 * `HilbertBasis.diagonalPMap_apply_mem_diagonalPMap_domain_iff`,
   `HilbertBasis.diagonalPMap_apply_diagonalPMap_apply`,
@@ -322,6 +329,57 @@ theorem isSelfAdjoint_diagonalPMap {c : ι → 𝕜} (hc : IsSelfAdjoint c) :
   rw [isSelfAdjoint_def, adjoint_diagonalPMap, hc.star_eq]
 
 end HilbertBasis
+
+section CompactResolvent
+
+open Filter Topology
+
+variable {ι H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
+
+/-- **Reed–Simon criterion for diagonal operators.** A diagonal partial linear map with real
+entries `lam : ι → ℝ` in a Hilbert basis has compact resolvent if and only if `i ↦ |lam i|` is
+Northcott (only finitely many entries lie in any bounded interval). -/
+theorem HilbertBasis.hasCompactResolvent_diagonalPMap_iff (b : HilbertBasis ι ℂ H) (lam : ι → ℝ) :
+    (b.diagonalPMap fun i ↦ (lam i : ℂ)).HasCompactResolvent ↔ Northcott fun i ↦ |lam i| := by
+  set A := b.diagonalPMap fun i ↦ (lam i : ℂ)
+  have hA : IsSelfAdjoint A := b.isSelfAdjoint_diagonalPMap (by ext i; simp)
+  have hb : ∀ i, ∃ hi : b i ∈ A.domain, A ⟨b i, hi⟩ = (lam i : ℂ) • b i := fun i ↦
+    ⟨b.self_mem_diagonalPMap_domain _ i, b.diagonalPMap_apply_self _ i⟩
+  constructor
+  · intro h
+    simpa only [Complex.norm_real, Real.norm_eq_abs] using
+      h.northcott_norm_of_orthonormal b.orthonormal hb
+  · intro hN
+    rw [hA.hasCompactResolvent_iff_isCompactOperator_resolvent (z := Complex.I) (by simp)]
+    have hnorm (i : ι) : 1 ≤ ‖Complex.I - (lam i : ℂ)‖ := by
+      simpa using Complex.abs_im_le_norm (Complex.I - (lam i : ℂ))
+    let m : ℓ^∞(ι, ℂ) := ⟨fun i ↦ (Complex.I - (lam i : ℂ))⁻¹, memℓp_infty ⟨1, by
+      rintro _ ⟨i, rfl⟩
+      dsimp only
+      rw [norm_inv]
+      exact inv_le_one_of_one_le₀ (hnorm i)⟩⟩
+    have hm (i : ι) : m i = (Complex.I - (lam i : ℂ))⁻¹ := rfl
+    have hR : A.resolvent Complex.I = b.diagonal m := by
+      refine b.ext_inner_apply b fun i j ↦ ?_
+      rw [LinearPMap.resolvent_apply_of_apply_eq_smul hA.I_mem_resolventSet
+        ⟨b j, (hb j).1⟩ (hb j).2, b.diagonal_apply_self]
+    rw [hR, b.isCompactOperator_diagonal_iff, tendsto_zero_iff_norm_tendsto_zero,
+      Metric.tendsto_nhds]
+    intro ε hε
+    rw [Filter.eventually_cofinite]
+    refine (hN.finite_le ε⁻¹).subset fun i hi ↦ ?_
+    simp only [Set.mem_ofPred_eq, Real.dist_eq, sub_zero, abs_of_nonneg (norm_nonneg _),
+      not_lt] at hi
+    rw [hm, norm_inv] at hi
+    have hne : Complex.I - (lam i : ℂ) ≠ 0 := fun h0 ↦ by
+      have := hnorm i
+      rw [h0, norm_zero] at this
+      linarith
+    have hre : |lam i| ≤ ‖Complex.I - (lam i : ℂ)‖ := by
+      simpa using Complex.abs_re_le_norm (Complex.I - (lam i : ℂ))
+    exact hre.trans ((le_inv_comm₀ hε (norm_pos_iff.2 hne)).1 hi)
+
+end CompactResolvent
 
 namespace LinearPMap
 

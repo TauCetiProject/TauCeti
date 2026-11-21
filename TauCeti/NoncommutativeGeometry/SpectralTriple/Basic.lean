@@ -1,0 +1,621 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Analysis.InnerProductSpace.LinearPMap.CompactResolvent
+public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Constructions
+public import TauCeti.LinearAlgebra.Complex.Module
+import TauCeti.Analysis.InnerProductSpace.LinearPMap.Eigenbasis
+
+/-!
+# Spectral triples
+
+A (unital) *spectral triple* `(A, H, D)` over a complex `*`-algebra `A` consists of a Hilbert
+space `H`, a unital `*`-representation `π : A → B(H)` by bounded operators, and an unbounded
+self-adjoint operator `D : H →ₗ.[ℂ] H` with compact resolvent such that every `π(a)` preserves
+the domain `D(D)` and the commutator `[D, π(a)]` extends from `D(D)` to a bounded operator on `H`.
+This is Connes' unbounded model of a noncommutative Riemannian spin geometry. An *even* spectral
+triple additionally carries a grading `γ`, a self-adjoint unitary involution commuting with `π`,
+preserving `D(D)`, and anticommuting with `D` on `D(D)`.
+
+Because `D` is self-adjoint with compact resolvent, the Hilbert space `H` is automatically
+separable (`SpectralTriple.separableSpace`), and because `D(D)` is dense in `H`, the bounded
+extension `S.commutator a` of `[D, π(a)]` is uniquely determined
+(`SpectralTriple.eq_commutator_of_domain`). Consequently `S.commutator` is a `ℂ`-linear derivation
+`A →ₗ[ℂ] (H →L[ℂ] H)` into `B(H)` satisfying:
+
+* `SpectralTriple.commutator_one`: `[D, π(1)] = 0`.
+* `SpectralTriple.commutator_mul`: the Leibniz rule `[D, π(a b)] = [D, π(a)] π(b) + π(a) [D, π(b)]`.
+* `SpectralTriple.commutator_star`: the adjoint identity `[D, π(a*)] = -[D, π(a)]*`.
+* `SpectralTriple.norm_operator_rep_le`, `SpectralTriple.norm_rep_add_norm_operator_rep_le`, and
+  `SpectralTriple.norm_sq_add_norm_operator_sq_rep_le`: graph-norm bounds for `π(a)` on `D(D)`.
+
+This file also develops the basic functorial operations on spectral triples:
+
+* `SpectralTriple.conj`: unitary transport along `U : H ≃ₗᵢ[ℂ] H'`.
+* `SpectralTriple.comap`: pullback along a unital `*`-algebra homomorphism `φ : B →⋆ₐ[ℂ] A`.
+* `SpectralTriple.ofFiniteDimensional`: on a finite-dimensional Hilbert space, every unital
+  `*`-representation together with every self-adjoint bounded operator defines a spectral triple.
+
+Each construction has its even counterpart in the `EvenSpectralTriple` namespace.
+
+## Main definitions
+
+* `TauCeti.SpectralTriple A H`: an odd (unital) spectral triple over `A` on `H`.
+* `TauCeti.EvenSpectralTriple A H`: an even spectral triple, with grading `γ`.
+* `TauCeti.SpectralTriple.commutator`: the canonical bounded extension `a ↦ [D, π(a)]` as a
+  `ℂ`-linear map `A →ₗ[ℂ] (H →L[ℂ] H)`.
+
+## References
+
+* A. Connes, *Noncommutative Geometry*, Academic Press (1994), Chapter IV, §2.
+* J. M. Gracia-Bondía, J. C. Várilly, H. Figueroa, *Elements of Noncommutative Geometry*,
+  Birkhäuser (2001), Chapter 10.
+-/
+
+public section
+
+noncomputable section
+
+open scoped ComplexStarModule InnerProductSpace
+
+namespace TauCeti
+
+variable (A : Type*) [Semiring A] [Algebra ℂ A] [Star A]
+variable (H : Type*) [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
+
+/-- An odd (unital) **spectral triple** over the complex `*`-algebra `A` on the Hilbert space `H`:
+a unital `*`-representation `rep` of `A` by bounded operators on `H` and an unbounded self-adjoint
+operator `operator` (Connes' `D`) with compact resolvent such that every `π(a)` preserves the
+domain of `D` and the commutator `[D, π(a)]` extends from `D(D)` to a bounded operator on `H`.
+
+Because `D` is self-adjoint with compact resolvent, `H` is automatically separable
+(`SpectralTriple.separableSpace`). -/
+@[ext]
+structure SpectralTriple where
+  /-- The unital `*`-representation `π` of `A` by bounded operators on `H`. -/
+  rep : A →⋆ₐ[ℂ] H →L[ℂ] H
+  /-- The unbounded Dirac operator `D` of the spectral triple. -/
+  operator : H →ₗ.[ℂ] H
+  isSelfAdjoint_operator : IsSelfAdjoint operator
+  hasCompactResolvent_operator : operator.HasCompactResolvent
+  rep_mem_domain (a : A) {x : H} (hx : x ∈ operator.domain) : rep a x ∈ operator.domain
+  exists_bounded_commutator (a : A) :
+    ∃ C : H →L[ℂ] H, ∀ x : operator.domain,
+      operator ⟨rep a x, rep_mem_domain a x.2⟩ - rep a (operator x) = C x
+
+/-- An **even spectral triple** over `A` on `H`: a spectral triple together with a grading `γ`, a
+self-adjoint unitary involution of `H` that commutes with the representation `π`, preserves the
+domain of `D`, and anticommutes with `D` on its domain. -/
+@[ext]
+structure EvenSpectralTriple extends SpectralTriple A H where
+  /-- The grading operator `γ`. -/
+  grading : H →L[ℂ] H
+  isSelfAdjoint_grading : IsSelfAdjoint grading
+  grading_mul_grading : grading * grading = 1
+  commute_grading_rep (a : A) : Commute grading (rep a)
+  grading_mem_domain {x : H} (hx : x ∈ operator.domain) : grading x ∈ operator.domain
+  grading_apply_operator (x : operator.domain) :
+    grading (operator x) = -operator ⟨grading x, grading_mem_domain x.2⟩
+
+variable {A H}
+
+/-! ### Odd spectral triples -/
+
+namespace SpectralTriple
+
+variable (S : SpectralTriple A H)
+
+/-- The domain of the Dirac operator of a spectral triple is dense in `H`. -/
+theorem dense_domain : Dense (S.operator.domain : Set H) :=
+  S.isSelfAdjoint_operator.dense_domain
+
+/-- The Hilbert space of a spectral triple is automatically separable. -/
+theorem separableSpace (S : SpectralTriple A H) : TopologicalSpace.SeparableSpace H := by
+  exact S.isSelfAdjoint_operator.separableSpace_of_hasCompactResolvent
+    S.hasCompactResolvent_operator
+
+private def commutatorFun (a : A) : H →L[ℂ] H :=
+  Classical.choose (S.exists_bounded_commutator a)
+
+private theorem commutatorFun_spec (a : A) (x : S.operator.domain) :
+    S.operator ⟨S.rep a x, S.rep_mem_domain a x.2⟩ - S.rep a (S.operator x) =
+      S.commutatorFun a x :=
+  Classical.choose_spec (S.exists_bounded_commutator a) x
+
+/-- Any bounded operator agreeing with `[D, π(a)]` on `D(D)` equals the chosen extension. -/
+private theorem eq_commutatorFun_of_domain {a : A} {C : H →L[ℂ] H}
+    (hC : ∀ x : S.operator.domain,
+      S.operator ⟨S.rep a x, S.rep_mem_domain a x.2⟩ - S.rep a (S.operator x) = C x) :
+    C = S.commutatorFun a := by
+  ext x
+  exact congrFun (Continuous.ext_on S.dense_domain C.continuous (S.commutatorFun a).continuous
+    fun y hy ↦ (hC ⟨y, hy⟩).symm.trans (S.commutatorFun_spec a ⟨y, hy⟩)) x
+
+/-- The canonical bounded extension `a ↦ [D, π(a)]` of the commutator with `D`, as a `ℂ`-linear
+map `A →ₗ[ℂ] (H →L[ℂ] H)`. -/
+def commutator : A →ₗ[ℂ] (H →L[ℂ] H) where
+  toFun := S.commutatorFun
+  map_add' a b := by
+    refine (S.eq_commutatorFun_of_domain fun x ↦ ?_).symm
+    have hsum : (⟨S.rep (a + b) x, S.rep_mem_domain (a + b) x.2⟩ : S.operator.domain) =
+        ⟨S.rep a x, S.rep_mem_domain a x.2⟩ + ⟨S.rep b x, S.rep_mem_domain b x.2⟩ := by
+      ext
+      simp [map_add]
+    rw [hsum, LinearPMap.map_add, map_add, add_apply, add_apply,
+      ← S.commutatorFun_spec a x, ← S.commutatorFun_spec b x]
+    abel
+  map_smul' c a := by
+    refine (S.eq_commutatorFun_of_domain fun x ↦ ?_).symm
+    have hsm : (⟨S.rep (c • a) x, S.rep_mem_domain (c • a) x.2⟩ : S.operator.domain) =
+        c • ⟨S.rep a x, S.rep_mem_domain a x.2⟩ := by
+      ext
+      simp [map_smul]
+    rw [hsm, LinearPMap.map_smul, map_smul, smul_apply, smul_apply, RingHom.id_apply,
+      ← S.commutatorFun_spec a x, smul_sub]
+
+/-- On the domain of `D`, `S.commutator a` agrees with `D (π(a) x) - π(a) (D x)`. -/
+theorem commutator_apply_domain (a : A) (x : S.operator.domain) :
+    S.operator ⟨S.rep a x, S.rep_mem_domain a x.2⟩ - S.rep a (S.operator x) = S.commutator a x :=
+  S.commutatorFun_spec a x
+
+/-- Rewritten form of `commutator_apply_domain`: `D (π(a) x) = π(a) (D x) + [D, π(a)] x`. -/
+theorem operator_rep_apply (a : A) (x : S.operator.domain) :
+    S.operator ⟨S.rep a x, S.rep_mem_domain a x.2⟩ =
+      S.rep a (S.operator x) + S.commutator a x :=
+  eq_add_of_sub_eq' (S.commutator_apply_domain a x)
+
+/-- Uniqueness of the bounded commutator extension: any bounded operator agreeing with `[D, π(a)]`
+on `D(D)` equals `S.commutator a`. -/
+theorem eq_commutator_of_domain {a : A} {C : H →L[ℂ] H}
+    (hC : ∀ x : S.operator.domain,
+      S.operator ⟨S.rep a x, S.rep_mem_domain a x.2⟩ - S.rep a (S.operator x) = C x) :
+    C = S.commutator a :=
+  S.eq_commutatorFun_of_domain hC
+
+/-- The commutator of `D` with the unit `π(1) = 1` vanishes. -/
+@[simp]
+theorem commutator_one : S.commutator 1 = 0 := by
+  refine (S.eq_commutator_of_domain fun x ↦ ?_).symm
+  have h1 : (⟨S.rep 1 x, S.rep_mem_domain 1 x.2⟩ : S.operator.domain) = x := by
+    ext
+    simp
+  rw [h1, map_one, one_apply_eq_self, sub_self, zero_apply]
+
+/-- **Leibniz rule.** The commutator map satisfies
+`[D, π(a b)] = [D, π(a)] π(b) + π(a) [D, π(b)]`. -/
+theorem commutator_mul (a b : A) :
+    S.commutator (a * b) = S.commutator a * S.rep b + S.rep a * S.commutator b := by
+  refine (S.eq_commutator_of_domain fun x ↦ ?_).symm
+  have h1 := S.commutator_apply_domain a ⟨S.rep b x, S.rep_mem_domain b x.2⟩
+  have h2 := S.commutator_apply_domain b x
+  simp only [add_apply, ContinuousLinearMap.mul_def, ContinuousLinearMap.comp_apply, map_mul]
+  dsimp only at h1
+  rw [← h1, ← h2, map_sub]
+  abel
+
+/-- **Adjoint identity.** For every `a : A`, `[D, π(a*)] = -[D, π(a)]*`. -/
+theorem commutator_star (a : A) :
+    S.commutator (star a) = -star (S.commutator a) := by
+  refine (S.eq_commutator_of_domain fun x ↦ ?_).symm
+  refine ext_inner_left ℂ <| congrFun <| Continuous.ext_on S.dense_domain
+    (continuous_id.inner continuous_const) (continuous_id.inner continuous_const) fun y hy ↦ ?_
+  have hπ_adj : S.rep (star a) = (S.rep a).adjoint := by
+    rw [map_star, ContinuousLinearMap.star_eq_adjoint]
+  have h1 : ⟪y, S.operator ⟨S.rep (star a) x, S.rep_mem_domain (star a) x.2⟩⟫_ℂ =
+      ⟪S.rep a (S.operator ⟨y, hy⟩), (x : H)⟫_ℂ := by
+    rw [← S.isSelfAdjoint_operator.isFormalAdjoint ⟨y, hy⟩
+      ⟨S.rep (star a) x, S.rep_mem_domain (star a) x.2⟩]
+    dsimp only
+    rw [hπ_adj, ContinuousLinearMap.adjoint_inner_right]
+  have h2 : ⟪y, S.rep (star a) (S.operator x)⟫_ℂ =
+      ⟪S.operator ⟨S.rep a y, S.rep_mem_domain a hy⟩, (x : H)⟫_ℂ := by
+    rw [hπ_adj, ContinuousLinearMap.adjoint_inner_right,
+      ← S.isSelfAdjoint_operator.isFormalAdjoint ⟨S.rep a y, S.rep_mem_domain a hy⟩ x]
+  rw [inner_sub_right, h1, h2, neg_apply, inner_neg_right, ContinuousLinearMap.star_eq_adjoint,
+    ContinuousLinearMap.adjoint_inner_right, ← S.commutator_apply_domain a ⟨y, hy⟩,
+    inner_sub_left, neg_sub]
+
+/-- Taking the adjoint preserves the norm of the commutator `[D, π(a)]`. -/
+@[simp]
+theorem norm_commutator_star (a : A) : ‖S.commutator (star a)‖ = ‖S.commutator a‖ := by
+  rw [S.commutator_star, norm_neg, ContinuousLinearMap.star_eq_adjoint,
+    LinearIsometryEquiv.norm_map]
+
+/-! #### Graph-norm estimates -/
+
+/-- Pointwise bound on `‖D (π(a) x)‖` in terms of `‖D x‖` and `‖x‖`. -/
+theorem norm_operator_rep_le (a : A) (x : S.operator.domain) :
+    ‖S.operator ⟨S.rep a x, S.rep_mem_domain a x.2⟩‖ ≤
+      ‖S.rep a‖ * ‖S.operator x‖ + ‖S.commutator a‖ * ‖(x : H)‖ := by
+  rw [S.operator_rep_apply a x]
+  exact (norm_add_le _ _).trans
+    (add_le_add ((S.rep a).le_opNorm _) ((S.commutator a).le_opNorm _))
+
+/-- `ℓ¹` graph-norm bound: `π(a)` acts boundedly on `D(D)` with norm at most
+`‖π(a)‖ + ‖[D, π(a)]‖`. -/
+theorem norm_rep_add_norm_operator_rep_le (a : A) (x : S.operator.domain) :
+    ‖S.rep a x‖ + ‖S.operator ⟨S.rep a x, S.rep_mem_domain a x.2⟩‖ ≤
+      (‖S.rep a‖ + ‖S.commutator a‖) * (‖(x : H)‖ + ‖S.operator x‖) := by
+  have h1 : ‖S.rep a x‖ ≤ ‖S.rep a‖ * ‖(x : H)‖ := (S.rep a).le_opNorm _
+  have h2 := S.norm_operator_rep_le a x
+  have h3 : 0 ≤ ‖S.commutator a‖ * ‖S.operator x‖ := by positivity
+  linarith
+
+/-- Hilbert graph-norm bound:
+`‖π(a) x‖² + ‖D (π(a) x)‖² ≤ 2 (‖π(a)‖² + ‖[D, π(a)]‖²) (‖x‖² + ‖D x‖²)`. -/
+theorem norm_sq_add_norm_operator_sq_rep_le (a : A) (x : S.operator.domain) :
+    ‖S.rep a x‖ ^ 2 + ‖S.operator ⟨S.rep a x, S.rep_mem_domain a x.2⟩‖ ^ 2 ≤
+      2 * (‖S.rep a‖ ^ 2 + ‖S.commutator a‖ ^ 2) * (‖(x : H)‖ ^ 2 + ‖S.operator x‖ ^ 2) := by
+  have h1 : ‖S.rep a x‖ ≤ ‖S.rep a‖ * ‖(x : H)‖ := (S.rep a).le_opNorm _
+  have h2 := S.norm_operator_rep_le a x
+  have h1sq : ‖S.rep a x‖ ^ 2 ≤ (‖S.rep a‖ * ‖(x : H)‖) ^ 2 :=
+    pow_le_pow_left₀ (norm_nonneg _) h1 2
+  have h2sq : ‖S.operator ⟨S.rep a x, S.rep_mem_domain a x.2⟩‖ ^ 2 ≤
+      (‖S.rep a‖ * ‖S.operator x‖ + ‖S.commutator a‖ * ‖(x : H)‖) ^ 2 :=
+    pow_le_pow_left₀ (norm_nonneg _) h2 2
+  nlinarith [sq_nonneg (‖S.rep a‖ * ‖S.operator x‖ - ‖S.commutator a‖ * ‖(x : H)‖),
+    sq_nonneg (‖S.rep a‖ * ‖(x : H)‖), sq_nonneg (‖S.commutator a‖ * ‖S.operator x‖)]
+
+/-! #### Unitary equivalence -/
+
+section Conj
+
+variable {H' : Type*} [NormedAddCommGroup H'] [InnerProductSpace ℂ H'] [CompleteSpace H']
+
+private theorem conj_rep_mem_domain (U : H ≃ₗᵢ[ℂ] H') (a : A) {y : H'}
+    (hy : y ∈ (LinearPMap.unitaryConj U S.operator).domain) :
+    (U.conjStarAlgEquiv.toStarAlgHom.comp S.rep) a y ∈
+      (LinearPMap.unitaryConj U S.operator).domain := by
+  rw [LinearPMap.mem_unitaryConj_domain_iff] at hy ⊢
+  simpa [LinearIsometryEquiv.conjStarAlgEquiv_apply_apply] using S.rep_mem_domain a hy
+
+private theorem conj_commutator_apply_domain (U : H ≃ₗᵢ[ℂ] H') (a : A)
+    (y : (LinearPMap.unitaryConj U S.operator).domain) :
+    LinearPMap.unitaryConj U S.operator
+        ⟨(U.conjStarAlgEquiv.toStarAlgHom.comp S.rep) a y, S.conj_rep_mem_domain U a y.2⟩ -
+      (U.conjStarAlgEquiv.toStarAlgHom.comp S.rep) a (LinearPMap.unitaryConj U S.operator y) =
+    U.conjStarAlgEquiv (S.commutator a) y := by
+  have hy : U.symm (y : H') ∈ S.operator.domain :=
+    (LinearPMap.mem_unitaryConj_domain_iff (U := U) (A := S.operator)).1 y.2
+  have hrep (z : H') : (U.conjStarAlgEquiv.toStarAlgHom.comp S.rep) a z =
+      U (S.rep a (U.symm z)) := by
+    simp [LinearIsometryEquiv.conjStarAlgEquiv_apply_apply]
+  rw [LinearPMap.unitaryConj_apply, LinearPMap.unitaryConj_apply]
+  have hsub : (⟨U.symm ((U.conjStarAlgEquiv.toStarAlgHom.comp S.rep) a y),
+      (LinearPMap.mem_unitaryConj_domain_iff (U := U) (A := S.operator)).1
+        (S.conj_rep_mem_domain U a y.2)⟩ : S.operator.domain) =
+      ⟨S.rep a (U.symm (y : H')), S.rep_mem_domain a hy⟩ :=
+    Subtype.ext (by dsimp only; rw [hrep, U.symm_apply_apply])
+  rw [hsub, hrep, U.symm_apply_apply, LinearIsometryEquiv.conjStarAlgEquiv_apply_apply,
+    ← map_sub]
+  exact congrArg U (S.commutator_apply_domain a ⟨U.symm (y : H'), hy⟩)
+
+/-- **Unitary equivalence.** The spectral triple on `H'` obtained by transporting `S` along the
+unitary `U : H ≃ₗᵢ[ℂ] H'`, with representation `U π(a) U*` and Dirac operator `U D U*`. -/
+def conj (U : H ≃ₗᵢ[ℂ] H') : SpectralTriple A H' where
+  rep := U.conjStarAlgEquiv.toStarAlgHom.comp S.rep
+  operator := LinearPMap.unitaryConj U S.operator
+  isSelfAdjoint_operator := LinearPMap.isSelfAdjoint_unitaryConj S.isSelfAdjoint_operator
+  hasCompactResolvent_operator :=
+    (LinearPMap.hasCompactResolvent_unitaryConj_iff U).2 S.hasCompactResolvent_operator
+  rep_mem_domain a _ hy := S.conj_rep_mem_domain U a hy
+  exists_bounded_commutator a :=
+    ⟨U.conjStarAlgEquiv (S.commutator a), S.conj_commutator_apply_domain U a⟩
+
+@[simp]
+theorem conj_rep_apply (U : H ≃ₗᵢ[ℂ] H') (a : A) :
+    (S.conj U).rep a = U.conjStarAlgEquiv (S.rep a) :=
+  (rfl)
+
+@[simp]
+theorem conj_operator (U : H ≃ₗᵢ[ℂ] H') :
+    (S.conj U).operator = LinearPMap.unitaryConj U S.operator :=
+  (rfl)
+
+@[simp]
+theorem conj_commutator (U : H ≃ₗᵢ[ℂ] H') (a : A) :
+    (S.conj U).commutator a = U.conjStarAlgEquiv (S.commutator a) := by
+  exact ((S.conj U).eq_commutator_of_domain (S.conj_commutator_apply_domain U a)).symm
+
+/-- Transporting back along the inverse unitary recovers the original spectral triple. -/
+@[simp]
+theorem conj_conj_symm (U : H ≃ₗᵢ[ℂ] H') : (S.conj U).conj U.symm = S := by
+  ext1
+  · ext1 a; simp [← LinearIsometryEquiv.symm_conjStarAlgEquiv]
+  · exact LinearPMap.unitaryConj_unitaryConj_symm U S.operator
+
+/-- Transporting along the inverse unitary and then along `U` recovers the original triple. -/
+@[simp]
+theorem conj_symm_conj (U : H' ≃ₗᵢ[ℂ] H) : (S.conj U.symm).conj U = S := by
+  simpa using S.conj_conj_symm U.symm
+
+/-- Transporting along the identity unitary does nothing. -/
+@[simp]
+theorem conj_refl : S.conj (LinearIsometryEquiv.refl ℂ H) = S := by
+  ext1
+  · ext1 a; simp
+  · exact LinearPMap.unitaryConj_refl S.operator
+
+/-- Transporting along `U` and then along `V` is transporting along their composite. -/
+theorem conj_trans {H'' : Type*} [NormedAddCommGroup H''] [InnerProductSpace ℂ H'']
+    [CompleteSpace H''] (U : H ≃ₗᵢ[ℂ] H') (V : H' ≃ₗᵢ[ℂ] H'') :
+    (S.conj U).conj V = S.conj (U.trans V) := by
+  ext1
+  · ext1 a; ext x; simp [LinearIsometryEquiv.conjStarAlgEquiv_apply_apply]
+  · exact LinearPMap.unitaryConj_trans U V S.operator
+
+end Conj
+
+/-! #### Algebra pullback -/
+
+section Comap
+
+variable {B : Type*} [Semiring B] [Algebra ℂ B] [Star B]
+
+/-- **Algebra pullback.** Restricting the representation of a spectral triple along a unital
+`*`-algebra homomorphism `φ : B →⋆ₐ[ℂ] A` yields a spectral triple over `B` with the same Dirac
+operator. -/
+def comap (φ : B →⋆ₐ[ℂ] A) : SpectralTriple B H where
+  rep := S.rep.comp φ
+  operator := S.operator
+  isSelfAdjoint_operator := S.isSelfAdjoint_operator
+  hasCompactResolvent_operator := S.hasCompactResolvent_operator
+  rep_mem_domain b _ hx := S.rep_mem_domain (φ b) hx
+  exists_bounded_commutator b := S.exists_bounded_commutator (φ b)
+
+@[simp]
+theorem comap_rep (φ : B →⋆ₐ[ℂ] A) : (S.comap φ).rep = S.rep.comp φ :=
+  (rfl)
+
+@[simp]
+theorem comap_operator (φ : B →⋆ₐ[ℂ] A) : (S.comap φ).operator = S.operator :=
+  (rfl)
+
+@[simp]
+theorem comap_commutator (φ : B →⋆ₐ[ℂ] A) (b : B) :
+    (S.comap φ).commutator b = S.commutator (φ b) :=
+  ((S.comap φ).eq_commutator_of_domain fun x ↦ S.commutator_apply_domain (φ b) x).symm
+
+@[simp]
+theorem comap_id : S.comap (StarAlgHom.id ℂ A) = S := by
+  ext1 <;> first | (ext1 a; rfl) | rfl
+
+theorem comap_comp {C : Type*} [Semiring C] [Algebra ℂ C] [Star C]
+    (φ : B →⋆ₐ[ℂ] A) (ψ : C →⋆ₐ[ℂ] B) :
+    (S.comap φ).comap ψ = S.comap (φ.comp ψ) :=
+  (rfl)
+
+theorem comap_conj {H' : Type*} [NormedAddCommGroup H'] [InnerProductSpace ℂ H'] [CompleteSpace H']
+    (U : H ≃ₗᵢ[ℂ] H') (φ : B →⋆ₐ[ℂ] A) :
+    (S.conj U).comap φ = (S.comap φ).conj U :=
+  (rfl)
+
+end Comap
+
+/-! #### Finite-dimensional spectral triples -/
+
+/-- On a finite-dimensional Hilbert space every self-adjoint bounded operator has compact
+resolvent and bounded commutators, so every unital `*`-representation and self-adjoint operator
+form a spectral triple. -/
+def ofFiniteDimensional [FiniteDimensional ℂ H] (π : A →⋆ₐ[ℂ] H →L[ℂ] H) (D : H →L[ℂ] H)
+    (hD : IsSelfAdjoint D) : SpectralTriple A H where
+  rep := π
+  operator := (D : H →ₗ[ℂ] H).toPMap ⊤
+  isSelfAdjoint_operator := LinearPMap.isSelfAdjoint_toPMap_top hD
+  hasCompactResolvent_operator := hD.hasCompactResolvent_toPMap_top_iff.2 ‹_›
+  rep_mem_domain _ _ _ := Submodule.mem_top
+  exists_bounded_commutator a := ⟨D * π a - π a * D, fun _ ↦ rfl⟩
+
+@[simp]
+theorem ofFiniteDimensional_rep [FiniteDimensional ℂ H] (π : A →⋆ₐ[ℂ] H →L[ℂ] H)
+    (D : H →L[ℂ] H) (hD : IsSelfAdjoint D) :
+    (ofFiniteDimensional π D hD).rep = π :=
+  (rfl)
+
+@[simp]
+theorem ofFiniteDimensional_operator [FiniteDimensional ℂ H] (π : A →⋆ₐ[ℂ] H →L[ℂ] H)
+    (D : H →L[ℂ] H) (hD : IsSelfAdjoint D) :
+    (ofFiniteDimensional π D hD).operator = (D : H →ₗ[ℂ] H).toPMap ⊤ :=
+  (rfl)
+
+@[simp]
+theorem ofFiniteDimensional_operator_apply [FiniteDimensional ℂ H] (π : A →⋆ₐ[ℂ] H →L[ℂ] H)
+    (D : H →L[ℂ] H) (hD : IsSelfAdjoint D) (x : (ofFiniteDimensional π D hD).operator.domain) :
+    (ofFiniteDimensional π D hD).operator x = D x :=
+  (rfl)
+
+@[simp]
+theorem ofFiniteDimensional_commutator [FiniteDimensional ℂ H] (π : A →⋆ₐ[ℂ] H →L[ℂ] H)
+    (D : H →L[ℂ] H) (hD : IsSelfAdjoint D) (a : A) :
+    (ofFiniteDimensional π D hD).commutator a = D * π a - π a * D :=
+  ((ofFiniteDimensional π D hD).eq_commutator_of_domain fun _ ↦ rfl).symm
+
+end SpectralTriple
+
+/-! ### Even spectral triples -/
+
+namespace EvenSpectralTriple
+
+variable (S : EvenSpectralTriple A H)
+
+/-- The grading of an even spectral triple equals its adjoint. -/
+@[simp]
+theorem star_grading : star S.grading = S.grading :=
+  S.isSelfAdjoint_grading.star_eq
+
+/-- The grading of an even spectral triple anticommutes with every commutator `[D, π(a)]`. -/
+theorem grading_mul_commutator (a : A) :
+    S.grading * S.commutator a = -(S.commutator a * S.grading) := by
+  ext x
+  refine congrFun (Continuous.ext_on S.dense_domain
+    (S.grading * S.commutator a).continuous (-(S.commutator a * S.grading)).continuous
+    fun y hy ↦ ?_) x
+  have hcomm (z : H) : S.grading (S.rep a z) = S.rep a (S.grading z) := by
+    simpa [ContinuousLinearMap.mul_def] using
+      congrArg (fun T : H →L[ℂ] H ↦ T z) (S.commute_grading_rep a).eq
+  have hmem : (⟨S.grading (S.rep a y), S.grading_mem_domain (S.rep_mem_domain a hy)⟩ :
+      S.operator.domain) = ⟨S.rep a (S.grading y), S.rep_mem_domain a (S.grading_mem_domain hy)⟩ :=
+    Subtype.ext (hcomm y)
+  simp only [ContinuousLinearMap.mul_def, ContinuousLinearMap.comp_apply, neg_apply]
+  rw [← S.commutator_apply_domain a ⟨y, hy⟩,
+    ← S.commutator_apply_domain a ⟨S.grading y, S.grading_mem_domain hy⟩,
+    map_sub, S.grading_apply_operator ⟨S.rep a y, S.rep_mem_domain a hy⟩, hmem,
+    hcomm (S.operator ⟨y, hy⟩), S.grading_apply_operator ⟨y, hy⟩, map_neg]
+  abel
+
+section Conj
+
+variable {H' : Type*} [NormedAddCommGroup H'] [InnerProductSpace ℂ H'] [CompleteSpace H']
+
+private theorem conj_grading_mem_domain (U : H ≃ₗᵢ[ℂ] H') {y : H'}
+    (hy : y ∈ (LinearPMap.unitaryConj U S.operator).domain) :
+    U.conjStarAlgEquiv S.grading y ∈ (LinearPMap.unitaryConj U S.operator).domain := by
+  rw [LinearPMap.mem_unitaryConj_domain_iff] at hy ⊢
+  simpa [LinearIsometryEquiv.conjStarAlgEquiv_apply_apply] using S.grading_mem_domain hy
+
+private theorem conj_grading_apply_operator (U : H ≃ₗᵢ[ℂ] H')
+    (y : (LinearPMap.unitaryConj U S.operator).domain) :
+    (U.conjStarAlgEquiv S.grading) (LinearPMap.unitaryConj U S.operator y) =
+      -LinearPMap.unitaryConj U S.operator
+        ⟨U.conjStarAlgEquiv S.grading y, S.conj_grading_mem_domain U y.2⟩ := by
+  have hy : U.symm (y : H') ∈ S.operator.domain :=
+    (LinearPMap.mem_unitaryConj_domain_iff (U := U) (A := S.operator)).1 y.2
+  have hsub : (⟨U.symm (U.conjStarAlgEquiv S.grading y),
+      (LinearPMap.mem_unitaryConj_domain_iff (U := U) (A := S.operator)).1
+        (S.conj_grading_mem_domain U y.2)⟩ : S.operator.domain) =
+      ⟨S.grading (U.symm (y : H')), S.grading_mem_domain hy⟩ :=
+    Subtype.ext (by simp [LinearIsometryEquiv.conjStarAlgEquiv_apply_apply])
+  rw [LinearPMap.unitaryConj_apply, LinearPMap.unitaryConj_apply, hsub,
+    LinearIsometryEquiv.conjStarAlgEquiv_apply_apply, U.symm_apply_apply, ← map_neg]
+  exact congrArg U (S.grading_apply_operator ⟨U.symm (y : H'), hy⟩)
+
+/-- **Unitary equivalence**, even version: the grading is transported to `U γ U*`. -/
+def conj (U : H ≃ₗᵢ[ℂ] H') : EvenSpectralTriple A H' where
+  toSpectralTriple := S.toSpectralTriple.conj U
+  grading := U.conjStarAlgEquiv S.grading
+  isSelfAdjoint_grading := S.isSelfAdjoint_grading.map U.conjStarAlgEquiv
+  grading_mul_grading := by rw [← map_mul, S.grading_mul_grading, map_one]
+  commute_grading_rep a := by
+    rw [SpectralTriple.conj_rep_apply]
+    exact (S.commute_grading_rep a).map U.conjStarAlgEquiv
+  grading_mem_domain hy := S.conj_grading_mem_domain U hy
+  grading_apply_operator y := S.conj_grading_apply_operator U y
+
+@[simp]
+theorem conj_toSpectralTriple (U : H ≃ₗᵢ[ℂ] H') :
+    (S.conj U).toSpectralTriple = S.toSpectralTriple.conj U :=
+  (rfl)
+
+@[simp]
+theorem conj_grading (U : H ≃ₗᵢ[ℂ] H') : (S.conj U).grading = U.conjStarAlgEquiv S.grading :=
+  (rfl)
+
+/-- Transporting back along the inverse unitary recovers the original even spectral triple. -/
+@[simp]
+theorem conj_conj_symm (U : H ≃ₗᵢ[ℂ] H') : (S.conj U).conj U.symm = S := by
+  ext1
+  · ext1 a; simp
+  · exact LinearPMap.unitaryConj_unitaryConj_symm U S.operator
+  · simp [← LinearIsometryEquiv.symm_conjStarAlgEquiv]
+
+/-- Transporting along the inverse unitary and then along `U` recovers the original triple. -/
+@[simp]
+theorem conj_symm_conj (U : H' ≃ₗᵢ[ℂ] H) : (S.conj U.symm).conj U = S := by
+  simpa using S.conj_conj_symm U.symm
+
+/-- Transporting along the identity unitary does nothing. -/
+@[simp]
+theorem conj_refl : S.conj (LinearIsometryEquiv.refl ℂ H) = S := by
+  ext1
+  · ext1 a; simp
+  · exact LinearPMap.unitaryConj_refl S.operator
+  · simp
+
+/-- Transporting along `U` and then along `V` is transporting along their composite. -/
+theorem conj_trans {H'' : Type*} [NormedAddCommGroup H''] [InnerProductSpace ℂ H'']
+    [CompleteSpace H''] (U : H ≃ₗᵢ[ℂ] H') (V : H' ≃ₗᵢ[ℂ] H'') :
+    (S.conj U).conj V = S.conj (U.trans V) := by
+  ext1
+  · ext1 a; ext x; simp [LinearIsometryEquiv.conjStarAlgEquiv_apply_apply]
+  · exact LinearPMap.unitaryConj_trans U V S.operator
+  · ext x; simp [LinearIsometryEquiv.conjStarAlgEquiv_apply_apply]
+
+end Conj
+
+section Comap
+
+variable {B : Type*} [Semiring B] [Algebra ℂ B] [Star B]
+
+/-- **Algebra pullback**, even version: restricts the representation along `φ : B →⋆ₐ[ℂ] A` while
+keeping the Dirac operator and grading unchanged. -/
+def comap (φ : B →⋆ₐ[ℂ] A) : EvenSpectralTriple B H where
+  toSpectralTriple := S.toSpectralTriple.comap φ
+  grading := S.grading
+  isSelfAdjoint_grading := S.isSelfAdjoint_grading
+  grading_mul_grading := S.grading_mul_grading
+  commute_grading_rep b := S.commute_grading_rep (φ b)
+  grading_mem_domain hx := S.grading_mem_domain hx
+  grading_apply_operator x := S.grading_apply_operator x
+
+@[simp]
+theorem comap_toSpectralTriple (φ : B →⋆ₐ[ℂ] A) :
+    (S.comap φ).toSpectralTriple = S.toSpectralTriple.comap φ :=
+  (rfl)
+
+@[simp]
+theorem comap_grading (φ : B →⋆ₐ[ℂ] A) : (S.comap φ).grading = S.grading :=
+  (rfl)
+
+@[simp]
+theorem comap_id : S.comap (StarAlgHom.id ℂ A) = S := by
+  ext1 <;> first | (ext1 a; rfl) | rfl
+
+theorem comap_comp {C : Type*} [Semiring C] [Algebra ℂ C] [Star C]
+    (φ : B →⋆ₐ[ℂ] A) (ψ : C →⋆ₐ[ℂ] B) :
+    (S.comap φ).comap ψ = S.comap (φ.comp ψ) :=
+  (rfl)
+
+theorem comap_conj {H' : Type*} [NormedAddCommGroup H'] [InnerProductSpace ℂ H'] [CompleteSpace H']
+    (U : H ≃ₗᵢ[ℂ] H') (φ : B →⋆ₐ[ℂ] A) :
+    (S.conj U).comap φ = (S.comap φ).conj U :=
+  (rfl)
+
+end Comap
+
+/-- On a finite-dimensional Hilbert space, every unital `*`-representation, self-adjoint operator
+`D`, and grading `γ` commuting with the representation and anticommuting with `D` form an even
+spectral triple. -/
+def ofFiniteDimensional [FiniteDimensional ℂ H] (π : A →⋆ₐ[ℂ] H →L[ℂ] H) (D : H →L[ℂ] H)
+    (hD : IsSelfAdjoint D) (γ : H →L[ℂ] H) (hγ : IsSelfAdjoint γ) (hγγ : γ * γ = 1)
+    (hγπ : ∀ a, Commute γ (π a)) (hγD : γ * D = -(D * γ)) : EvenSpectralTriple A H where
+  toSpectralTriple := SpectralTriple.ofFiniteDimensional π D hD
+  grading := γ
+  isSelfAdjoint_grading := hγ
+  grading_mul_grading := hγγ
+  commute_grading_rep := hγπ
+  grading_mem_domain _ := Submodule.mem_top
+  grading_apply_operator x := by
+    rw [SpectralTriple.ofFiniteDimensional_operator_apply,
+      SpectralTriple.ofFiniteDimensional_operator_apply]
+    simpa [ContinuousLinearMap.mul_def] using congrArg (fun T : H →L[ℂ] H ↦ T (x : H)) hγD
+
+@[simp]
+theorem ofFiniteDimensional_toSpectralTriple [FiniteDimensional ℂ H] (π : A →⋆ₐ[ℂ] H →L[ℂ] H)
+    (D : H →L[ℂ] H) (hD) (γ : H →L[ℂ] H) (hγ hγγ hγπ hγD) :
+    (ofFiniteDimensional π D hD γ hγ hγγ hγπ hγD).toSpectralTriple =
+      SpectralTriple.ofFiniteDimensional π D hD :=
+  (rfl)
+
+@[simp]
+theorem ofFiniteDimensional_grading [FiniteDimensional ℂ H] (π : A →⋆ₐ[ℂ] H →L[ℂ] H)
+    (D : H →L[ℂ] H) (hD) (γ : H →L[ℂ] H) (hγ hγγ hγπ hγD) :
+    (ofFiniteDimensional π D hD γ hγ hγγ hγπ hγD).grading = γ :=
+  (rfl)
+
+end EvenSpectralTriple
+
+end TauCeti
