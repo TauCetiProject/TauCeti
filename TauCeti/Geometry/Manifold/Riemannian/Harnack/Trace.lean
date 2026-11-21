@@ -5,7 +5,7 @@ Authors: Axel Delaval, Zhiyuan Zhang, Leheng Chen
 -/
 module
 
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar.Basic
 public import TauCeti.Geometry.Manifold.MFDeriv.Curve
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace

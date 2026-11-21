@@ -16,7 +16,10 @@ At a boundary point, the zeroth coordinate of a chart transition has a local min
 the model half-space. Fermat's theorem on the positive tangent cone makes its derivative vanish
 on the coordinate hyperplane and nonnegative in the inward direction. The inverse chart
 transition makes the inward coefficient strictly positive. Thus outward signs are independent
-of the preferred chart, including at boundary points.
+of the preferred chart, including at boundary points. The minimum of the normal coordinate at a
+boundary point is `normal_le_of_mem_boundary`, and the Fermat step,
+`hasFDerivWithinAt_normal_nonneg`, holds for the normal coordinate of any half-space chart read
+in a preferred chart.
 -/
 
 public section
@@ -31,6 +34,47 @@ namespace TauCeti
 variable {n : ℕ} {M : Type*} [TopologicalSpace M]
   [ChartedSpace (EuclideanHalfSpace (n + 1)) M] [IsManifold (𝓡∂ (n + 1)) 1 M]
 
+omit [IsManifold (𝓡∂ (n + 1)) 1 M] in
+/-- The normal coordinate `(e ·).1 0` of a half-space chart `e` attains its minimum at a boundary
+point `x` of the source of `e`: it vanishes there and is nonnegative everywhere. -/
+theorem normal_le_of_mem_boundary {e : OpenPartialHomeomorph M (EuclideanHalfSpace (n + 1))}
+    {x : M} (hx : x ∈ (𝓡∂ (n + 1)).boundary M) (hxe : x ∈ e.source) (y : M) :
+    (e x).val 0 ≤ (e y).val 0 :=
+  ((ModelWithCorners.mem_boundary_euclideanHalfSpace_iff hxe).mp hx).trans_le (e y).property
+
+omit [IsManifold (𝓡∂ (n + 1)) 1 M] in
+/-- Fermat's theorem on the half-space at a boundary point. The normal coordinate `(e ·).1 0` of a
+half-space chart `e` is nonnegative and vanishes at a boundary point `x` of its source, so, read in
+an extended chart at `α`, it has a minimum at `x`. Hence its derivative within the model
+half-space is nonnegative on the closed inward half-space `0 ≤ v 0`. -/
+theorem hasFDerivWithinAt_normal_nonneg
+    {e : OpenPartialHomeomorph M (EuclideanHalfSpace (n + 1))} {α x : M}
+    (hx : x ∈ (𝓡∂ (n + 1)).boundary M)
+    (hα : x ∈ (extChartAt (𝓡∂ (n + 1)) α).source) (hxe : x ∈ e.source)
+    {f' : EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] ℝ}
+    (hf : HasFDerivWithinAt (fun z ↦ (e ((extChartAt (𝓡∂ (n + 1)) α).symm z)).val 0) f'
+      (range (𝓡∂ (n + 1))) (extChartAt (𝓡∂ (n + 1)) α x))
+    {v : EuclideanSpace ℝ (Fin (n + 1))} (hv : 0 ≤ v 0) : 0 ≤ f' v := by
+  let I := 𝓡∂ (n + 1)
+  have hy0 : (extChartAt I α x) 0 = 0 := by
+    have hc : x ∈ (chartAt (EuclideanHalfSpace (n + 1)) α).source := by
+      simpa only [extChartAt_source] using hα
+    simpa only [I, extChartAt, OpenPartialHomeomorph.extend_coe, Function.comp_apply,
+      modelWithCornersEuclideanHalfSpace_toFun] using
+      (ModelWithCorners.mem_boundary_euclideanHalfSpace_iff hc).mp hx
+  have hmin : IsLocalMinOn (fun z ↦ (e ((extChartAt I α).symm z)).val 0) (range I)
+      (extChartAt I α x) :=
+    Filter.Eventually.of_forall fun z ↦ by
+      simpa only [(extChartAt I α).left_inv hα] using
+        normal_le_of_mem_boundary hx hxe ((extChartAt I α).symm z)
+  have hcone : v ∈ posTangentConeAt (range I) (extChartAt I α x) := by
+    apply mem_posTangentConeAt_of_segment_subset
+    apply I.convex_range.segment_subset (mem_range_self (chartAt _ α x))
+    rw [range_modelWithCornersEuclideanHalfSpace]
+    simp only [mem_ofPred_eq, PiLp.add_apply, hy0, zero_add]
+    exact hv
+  exact hmin.hasFDerivWithinAt_nonneg hf hcone
+
 /-- At a boundary point an actual coordinate transition maps the closed inward half-space
 `0 ≤ v 0` into itself: the normal coordinate of the image of an inward vector is nonnegative. -/
 theorem tangentCoordChange_normal_nonneg {α β x : M}
@@ -39,44 +83,10 @@ theorem tangentCoordChange_normal_nonneg {α β x : M}
     (hβ : x ∈ (extChartAt (𝓡∂ (n + 1)) β).source)
     (v : EuclideanSpace ℝ (Fin (n + 1))) (hv : 0 ≤ v 0) :
     0 ≤ (tangentCoordChange (𝓡∂ (n + 1)) α β x v) 0 := by
-  let I := 𝓡∂ (n + 1)
-  let y := extChartAt I α x
-  let D := tangentCoordChange I α β x
-  let f : EuclideanSpace ℝ (Fin (n + 1)) → ℝ :=
-    fun z ↦ (extChartAt I β ((extChartAt I α).symm z)) 0
-  let π : EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] ℝ :=
-    PiLp.proj 2 (fun _ : Fin (n + 1) ↦ ℝ) 0
-  have hz (γ : M) (hγ : x ∈ (extChartAt I γ).source) : (extChartAt I γ x) 0 = 0 := by
-    have hc : x ∈ (chartAt (EuclideanHalfSpace (n + 1)) γ).source := by
-      simpa only [extChartAt_source] using hγ
-    have hb := (ModelWithCorners.mem_boundary_euclideanHalfSpace_iff hc).mp hx
-    simpa only [I, extChartAt, OpenPartialHomeomorph.extend_coe, Function.comp_apply,
-      modelWithCornersEuclideanHalfSpace_toFun] using hb
-  have hy0 : y 0 = 0 := hz α hα
-  have hf0 : f y = 0 := by
-    dsimp only [f, y]
-    rw [(extChartAt I α).left_inv hα]
-    exact hz β hβ
-  have hsource : (extChartAt I α).symm ⁻¹' (extChartAt I β).source ∈ 𝓝 y := by
-    apply (continuousAt_extChartAt_symm' hα).preimage_mem_nhds
-    rw [(extChartAt I α).left_inv hα]
-    exact extChartAt_source_mem_nhds' hβ
-  have hmin : IsLocalMinOn f (range I) y := by
-    filter_upwards [mem_nhdsWithin_of_mem_nhds hsource] with z hz'
-    rw [hf0]
-    have hm := extChartAt_target_subset_range β ((extChartAt I β).map_source hz')
-    rw [range_modelWithCornersEuclideanHalfSpace] at hm
-    exact hm
-  have hdf : HasFDerivWithinAt f (π.comp D) (range I) y :=
-    π.hasFDerivAt.comp_hasFDerivWithinAt y (hasFDerivWithinAt_tangentCoordChange ⟨hα, hβ⟩)
-  have hcone (v : EuclideanSpace ℝ (Fin (n + 1))) (hv : 0 ≤ v 0) :
-      v ∈ posTangentConeAt (range I) y := by
-    apply mem_posTangentConeAt_of_segment_subset
-    apply I.convex_range.segment_subset (mem_range_self (chartAt _ α x))
-    rw [range_modelWithCornersEuclideanHalfSpace]
-    simp only [mem_ofPred_eq, PiLp.add_apply, hy0, zero_add]
-    exact hv
-  exact hmin.hasFDerivWithinAt_nonneg hdf (hcone v hv)
+  have hD := (PiLp.proj 2 (fun _ : Fin (n + 1) ↦ ℝ) 0).hasFDerivAt.comp_hasFDerivWithinAt _
+    (hasFDerivWithinAt_tangentCoordChange (I := 𝓡∂ (n + 1)) ⟨hα, hβ⟩)
+  exact hasFDerivWithinAt_normal_nonneg (e := chartAt _ β) hx hα
+    (by simpa only [extChartAt_source] using hβ) hD hv
 
 /-- At a boundary point an actual coordinate transition scales the normal coordinate by a
 strictly positive number. No block structure or orientation identity is assumed. -/

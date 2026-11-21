@@ -30,9 +30,13 @@ variable {X : Type w} [TopologicalSpace X] [T2Space X] (C : Set X) [CWComplex C]
 def zeroCellPoint (i : cell C 0) : ↑(skeletonLT C ((1 : ℕ) : ℕ∞)) :=
   ⟨map 0 i ![], closedCell_subset_skeletonLT 0 i (by simp [closedCell_zero_eq_singleton])⟩
 
+/-- Distinct zero-cells have distinct points. -/
+theorem zeroCellPoint_injective : Function.Injective (zeroCellPoint C) :=
+  fun _ _ h ↦ injective_map_zero C (congrArg Subtype.val h)
+
 /-- The zero-cells are in bijection with the points of the zero-skeleton. -/
 def zeroCellEquiv : cell C 0 ≃ ↑(skeletonLT C ((1 : ℕ) : ℕ∞)) :=
-  Equiv.ofBijective (zeroCellPoint C) ⟨fun _ _ h ↦ injective_map_zero C (congrArg Subtype.val h),
+  Equiv.ofBijective (zeroCellPoint C) ⟨zeroCellPoint_injective C,
     fun ⟨x, hx⟩ ↦ by
       obtain ⟨m, hm, i, hi⟩ := CWComplex.mem_skeletonLT_iff.mp hx
       obtain rfl : m = 0 := by simpa using hm
