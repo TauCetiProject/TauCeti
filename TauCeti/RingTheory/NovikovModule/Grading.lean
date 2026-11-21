@@ -89,6 +89,24 @@ theorem single_mem_gradeBy [DecidableEq S] (d : S → D) (s : S) (r : R) :
     by_contra h
     exact ht (by rw [single_val]; exact Pi.single_eq_of_ne (fun e => h (congrArg d e)) _)
 
+/-- Homogeneous completed combinations of different degrees span independent submodules. -/
+theorem iSupIndep_gradeBy (d : S → D) : iSupIndep (gradeBy R F d) := by
+  intro k
+  -- As for NovikovSeries.iSupIndep_gradeBy, the other pieces avoid the fibre over k.
+  let p : Submodule R (NovikovModule R F) :=
+    { carrier := {a | ∀ s, d s = k → a.val s = 0}
+      zero_mem' := by simp
+      add_mem' := by intros; simp_all
+      smul_mem' := by intros; simp_all }
+  have hle : ⨆ (j) (_ : j ≠ k), gradeBy R F d j ≤ p :=
+    iSup₂_le fun j hj a ha s hs => val_eq_zero_of_mem_gradeBy ha (hs ▸ Ne.symm hj)
+  refine (Submodule.disjoint_def.mpr fun a ha hp => ?_).mono_right hle
+  apply Subtype.ext
+  funext s
+  by_cases hs : d s = k
+  · exact hp s hs
+  · exact val_eq_zero_of_mem_gradeBy ha hs
+
 /-- An affine reversal of generator degrees relabels the same homogeneous pieces. -/
 @[simp]
 theorem gradeBy_sub [AddCommGroup D] (d : S → D) (n k : D) :
