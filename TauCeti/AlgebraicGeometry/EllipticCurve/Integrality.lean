@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Denominator
-public import TauCeti.RingTheory.IntegralClosure.IsIntegral.Basic
 
 import Mathlib.RingTheory.Polynomial.RationalRoot
+import TauCeti.RingTheory.IntegralClosure.IsIntegral.Basic
 
 /-!
 # Integrality of points on a Weierstrass curve over a unique factorization domain
@@ -27,22 +28,23 @@ denominator at all, so `den x` is a unit and `x` is integral.
 The second is a consequence of the curve equation alone: once `x` comes from `R`, `y` is a root of
 the monic quadratic `Y² + (a₁x + a₃)Y − (x³ + a₂x² + a₄x + a₆)` over `R`, so `y` is integral over
 `R`. That step needs no domain, fraction-field or factorisation hypothesis, so it is stated over an
-arbitrary `R`-algebra, with the `IsLocalization.IsInteger` form as a corollary over any commutative
-`R`-algebra in which `R` is integrally closed.
+arbitrary commutative `R`-algebra, with the `IsLocalization.IsInteger` form as a corollary over any
+commutative `R`-algebra in which `R` is integrally closed.
 
 The third is the scaling that replaces integrality in the **order-two case**, the one case of
 Nagell–Lutz where the conclusion is weaker. Where the `Y`-derivative of the Weierstrass polynomial
 vanishes — `2y + a₁x + a₃ = 0`, which is what the division-polynomial API calls `ψ₂ = 0` — a bound
 `4x ∈ R` scales to `8y ∈ R`. Like the second step this needs no domain, fraction field or
-factorisation, only an `R`-algebra.
+factorisation, only a commutative `R`-algebra.
 
 ## Main results
 
 * `WeierstrassCurve.isInteger_x_of_equation_of_is_root_of_squarefree_leadingCoeff`: the
   `x`-coordinate of a point is integral if it is a root of a polynomial over `R` with squarefree
   leading coefficient.
-* `WeierstrassCurve.isIntegral_y_of_equation_of_isIntegral_x`: over **any** `R`-algebra, a
-  point whose `x`-coordinate is integral over `R` has `y`-coordinate integral over `R`.
+* `WeierstrassCurve.isIntegral_y_of_equation_of_isIntegral_x`: over **any** commutative
+  `R`-algebra, a point whose `x`-coordinate is integral over `R` has `y`-coordinate integral over
+  `R`.
 * `WeierstrassCurve.isInteger_y_of_equation_of_isInteger_x`: its `IsLocalization.IsInteger`
   corollary over any commutative `R`-algebra in which `R` is integrally closed, the shape the
   Nagell–Lutz argument consumes.

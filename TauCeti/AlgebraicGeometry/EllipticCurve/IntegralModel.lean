@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Reduction
-public import TauCeti.RingTheory.IntegralClosure.IsIntegral.Basic
 
 import Mathlib.Tactic.ComputeDegree
 import Mathlib.Tactic.Field
+import TauCeti.RingTheory.IntegralClosure.IsIntegral.Basic
 
 /-!
 # Changes of variables between integral models
