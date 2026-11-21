@@ -320,22 +320,30 @@ theorem phi_cons_cons (γ : M) (k : ℕ) {p : List ℕ} (hp : p.length ≤ Γ.le
 
 end Phi
 
-/-- For a sequence of automorphisms of `H`, the automorphisms `φ_{j,p}` fix every element fixed by
-all the automorphisms of the sequence. -/
-theorem phi_apply_of_forall_mem {H : Type*} [Mul H] {Γ : List (MulAut H)} {w : H}
-    (h : ∀ γ ∈ Γ, γ w = w) (p : List ℕ) : phi Γ p w = w := by
-  have hpow (γ : MulAut H) (hγ : γ w = w) (e : ℕ) : (γ ^ e) w = w := by
+/-- For a sequence of automorphisms of `H`, the automorphisms `φ_{j,p}` map into itself every set
+that all the automorphisms of the sequence map into itself. -/
+theorem mapsTo_phi {H : Type*} [Mul H] {Γ : List (MulAut H)} {s : Set H}
+    (h : ∀ γ ∈ Γ, Set.MapsTo γ s s) (p : List ℕ) : Set.MapsTo ⇑(phi Γ p) s s := by
+  have hpow (γ : MulAut H) (hγ : Set.MapsTo γ s s) (e : ℕ) : Set.MapsTo ⇑(γ ^ e) s s := by
     induction e with
-    | zero => simp
-    | succ e ih => rw [pow_succ, MulAut.mul_apply, hγ, ih]
+    | zero => simpa using Set.mapsTo_id s
+    | succ e ih => simpa only [pow_succ, MulAut.coe_mul] using ih.comp hγ
   induction p using List.reverseRecOn with
-  | nil => simp
+  | nil => simpa using Set.mapsTo_id s
   | append_singleton p e ih =>
-    rw [phi_concat, MulAut.mul_apply, hpow _ ?_, ih]
+    rw [phi_concat, MulAut.coe_mul]
+    refine ih.comp (hpow _ ?_ e)
     obtain hlt | hle := lt_or_ge (p.length % Γ.length) Γ.length
     · rw [List.getD_eq_getElem _ _ hlt]
       exact h _ (List.getElem_mem hlt)
-    · rw [List.getD_eq_default _ _ hle, MulAut.one_apply]
+    · rw [List.getD_eq_default _ _ hle, MulAut.coe_one]
+      exact Set.mapsTo_id s
+
+/-- For a sequence of automorphisms of `H`, the automorphisms `φ_{j,p}` fix every element fixed by
+all the automorphisms of the sequence. -/
+theorem phi_apply_of_forall_mem {H : Type*} [Mul H] {Γ : List (MulAut H)} {w : H}
+    (h : ∀ γ ∈ Γ, γ w = w) (p : List ℕ) : phi Γ p w = w :=
+  Set.mapsTo_singleton.1 (mapsTo_phi (fun γ hγ => Set.mapsTo_singleton.2 (h γ hγ)) p)
 
 /-- For a sequence of automorphisms of `H`, the inverses of the automorphisms `φ_{j,p}` fix every
 element fixed by all the automorphisms of the sequence. -/
