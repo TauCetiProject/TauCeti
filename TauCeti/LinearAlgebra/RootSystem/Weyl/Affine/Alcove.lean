@@ -22,10 +22,11 @@ file proves that the affine Weyl group `W_aff` (`RootPairing.affineWeylGroup`) m
 into the closed fundamental alcove, and so permutes the alcoves transitively: every alcove is
 `f⁻¹(A)` for some `f ∈ W_aff`. Over any linearly ordered ring, it proves a local wall-reflection
 descent without the archimedean hypothesis and shows that an element of `W_aff` sending a point of
-the open fundamental alcove back into it is the identity (so `W_aff` acts freely on
-`W_aff`-translates of `A`, and over an archimedean ring on all alcoves, making `f` unique). Over an
-archimedean linearly ordered field, the open fundamental alcove is nonempty, and combining
-transitivity with freeness at `A` shows that the affine simple reflections generate `W_aff`
+the open fundamental alcove back into it is the identity (so when `A` is nonempty, `W_aff` acts
+freely on `W_aff`-translates of `A`, and over an archimedean ring on the alcove of any point lying
+on no affine root hyperplane, making `f` unique). Over an archimedean linearly ordered field, the
+open fundamental alcove is nonempty, and combining transitivity with freeness at `A` shows that
+the affine simple reflections generate `W_aff`
 (`RootPairing.Base.closure_range_affineSimpleReflection`).
 
 The transitivity proof is the classical descent of Bourbaki and Humphreys, made purely
@@ -96,8 +97,8 @@ chambers.
   each of them, is the preimage of the fundamental alcove under an element of the affine Weyl group.
 * `RootPairing.eq_one_of_mem_affineWeylGroup_of_apply_mem_fundamentalAlcove`: an element of `W_aff`
   carrying a point of the open fundamental alcove back into the open fundamental alcove is the
-  identity (so `W_aff` acts freely on translates of the fundamental alcove, and over an archimedean
-  ring on all alcoves).
+  identity (so when `A` is nonempty, `W_aff` acts freely on translates of the fundamental alcove,
+  and over an archimedean ring on the alcove of any point lying on no affine root hyperplane).
 * `RootPairing.eq_of_mem_affineWeylGroup_of_apply_mem_fundamentalAlcove`,
   `RootPairing.eq_one_of_mem_affineWeylGroup_of_mapsTo`, and
   `RootPairing.affinePointStabilizer_eq_bot_of_mem_fundamentalAlcove`: two elements carrying the
@@ -105,7 +106,8 @@ chambers.
   is trivial, and the point stabilizer in `W_aff` of any point of the open fundamental alcove is
   trivial.
 * `RootPairing.existsUnique_mem_affineWeylGroup_preimage_fundamentalAlcove_eq`: **over an
-  archimedean ring, the affine Weyl group acts simply transitively on the alcoves.**
+  archimedean ring, the affine Weyl group acts simply transitively on the alcove of any point lying
+  on no affine root hyperplane.**
 * `RootPairing.Base.closure_range_affineSimpleReflection`: **Coxeter generation of `W_aff`**: over
   an archimedean linearly ordered field, the affine simple reflections generate `W_aff`.
 
@@ -391,6 +393,10 @@ private def IsAffinePos (p : ι × ℤ) : Prop :=
 private def sepSet (x : N) : Set (ι × ℤ) :=
   {p | IsAffinePos b p ∧ P.root' p.1 x < p.2}
 
+private lemma mem_sepSet {x : N} {p : ι × ℤ} :
+    p ∈ sepSet b x ↔ IsAffinePos b p ∧ P.root' p.1 x < p.2 :=
+  Iff.rfl
+
 /-- Only finitely many affine root hyperplanes separate a point from the fundamental alcove. -/
 private lemma sepSet_finite [Finite ι] [Archimedean R] (x : N) : (sepSet b x).Finite := by
   choose n hn using fun j ↦ exists_int_lt (P.root' j x)
@@ -574,20 +580,24 @@ theorem exists_mem_closure_affineWallReflections_apply_mem_closedFundamentalAlco
     (fun u hu ↦ by
       refine Set.Finite.of_injOn (f := Prod.fst) (fun _ _ ↦ mem_univ _) ?_ finite_univ
       rintro ⟨j₁, k₁⟩ h₁ ⟨j₂, k₂⟩ h₂ (rfl : j₁ = j₂)
+      obtain ⟨h₁pos, h₁lt⟩ := (mem_sepSet b).mp h₁
+      obtain ⟨h₂pos, h₂lt⟩ := (mem_sepSet b).mp h₂
       exact Prod.ext rfl (Int.cast_injective
-        ((hu j₁ k₁ h₁.1 h₁.2).symm.trans (hu j₁ k₂ h₂.1 h₂.2))))
+        ((hu j₁ k₁ h₁pos h₁lt).symm.trans (hu j₁ k₂ h₂pos h₂lt))))
     (fun u k₀ j₀ c hu _ hwall0 hpres w hw hwz ↦ ?_) hsep
+  obtain ⟨hwpos, hwlt⟩ := (mem_sepSet b).mp hwz
   have hj₀y : P.root' j₀ y = c := by
     rcases hw with rfl | rfl
-    · exact hu j₀ c hwz.1 hwz.2
-    · have h := hu (P.reflectionPerm j₀ j₀) (-c) hwz.1 hwz.2
+    · exact hu j₀ c hwpos hwlt
+    · have h := hu (P.reflectionPerm j₀ j₀) (-c) hwpos hwlt
       simp only [root'_reflectionPerm_self, LinearMap.neg_apply, Int.cast_neg, neg_inj] at h
       exact h
   have hsy : P.affineCoreflection j₀ c y = y := P.affineCoreflection_apply_of_root'_eq hj₀y
   have hmaps := sepSet_affineCoreflection_mapsTo b hpres hw hwz
   refine ⟨⟨k₀, hwall0 y hj₀y, rfl⟩, fun j k hpos hlt ↦ ?_⟩
-  have hw' := hmaps (j, k) ⟨hpos, hlt⟩
-  have hwy := hu _ _ hw'.1.1 hw'.1.2
+  obtain ⟨hw', -⟩ := (mem_sdiff _).mp (hmaps (j, k) ((mem_sepSet b).mpr ⟨hpos, hlt⟩))
+  obtain ⟨hw'pos, hw'lt⟩ := (mem_sepSet b).mp hw'
+  have hwy := hu _ _ hw'pos hw'lt
   have hcalc := P.root'_affineCoreflection_intCast j₀ j c y
   rw [hsy] at hcalc
   simp only [Int.cast_sub] at hwy
@@ -671,8 +681,9 @@ theorem eq_zero_of_mem_corootSpan_of_mem_closedFundamentalAlcove {v : N}
 /-! ### Freeness and simple transitivity -/
 
 /-- An element of the affine Weyl group carrying a point of the open fundamental alcove back into
-the open fundamental alcove is the identity (so `W_aff` acts freely on translates of
-`fundamentalAlcove P b`, and over an archimedean ring on all alcoves). -/
+the open fundamental alcove is the identity (so when `fundamentalAlcove P b` is nonempty, `W_aff`
+acts freely on its translates, and over an archimedean ring on the alcove of any point lying on no
+affine root hyperplane). -/
 theorem eq_one_of_mem_affineWeylGroup_of_apply_mem_fundamentalAlcove {f : N ≃ᵃ[R] N}
     (hf : f ∈ P.affineWeylGroup) {x : N} (hx : x ∈ fundamentalAlcove P b)
     (hfx : f x ∈ fundamentalAlcove P b) : f = 1 := by

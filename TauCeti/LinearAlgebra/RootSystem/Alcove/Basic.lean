@@ -92,6 +92,8 @@ open dominant chamber of the flipped pairing `P.flip`, which contains `A`.
 * `RootPairing.exists_mem_fundamentalAlcove_root'_eq_height_div` and
   `RootPairing.fundamentalAlcove_nonempty`: over a linearly ordered field the fundamental alcove is
   nonempty, containing the point where every root `α` takes the value `ht(α) / (ht(θ) + 1)`.
+* `RootPairing.Base.exists_forall_affineSimpleRoot_eq`: over a field any tuple `a` satisfying
+  `∑ k, mₖ aₖ = 1` is realized by `b.affineSimpleRoot · x` at some point `x : N`.
 * `RootPairing.Base.iUnion_openAlcoveFace`, `RootPairing.Base.pairwise_disjoint_openAlcoveFace`,
   `RootPairing.Base.openAlcoveFace_nonempty_iff`, `RootPairing.Base.closedAlcoveFace_nonempty_iff`,
   `RootPairing.Base.closedAlcoveFace_compl_singleton_none`,
@@ -126,9 +128,9 @@ variable [CharZero R] [Finite ι] [Nonempty ι] [Preorder R]
 /-- The **open fundamental alcove** of a base `b`: the points of the coweight space at which every
 simple root is positive and the highest root `θ = b.highestRoot` is less than `1`.
 
-When `P` is reduced and irreducible, so that `θ` is the highest root rather than merely a root of
-maximal height, it is a cell of the affine root-hyperplane arrangement
-(`RootPairing.mem_fundamentalAlcove_iff_of_mem`). -/
+For a finite, reduced, irreducible, crystallographic root pairing over a linearly ordered ring,
+`RootPairing.mem_fundamentalAlcove_iff_of_mem` characterizes it as the cell of a given point of
+the alcove in the affine root-hyperplane arrangement. -/
 def fundamentalAlcove : Set N :=
   {x | (∀ i ∈ b.support, 0 < P.root' i x) ∧ P.root' b.highestRoot x < 1}
 
@@ -147,8 +149,9 @@ lemma fundamentalAlcove_subset_openDominantChamber :
 
 /-- The **closed fundamental alcove** of a base `b`: the points of the coweight space at which every
 simple root is nonnegative and the highest root `θ = b.highestRoot` is at most `1`. For a real root
-system it is the closure of `RootPairing.fundamentalAlcove`. Over an archimedean ring the affine
-Weyl group carries every point into it
+system it is the closure of `RootPairing.fundamentalAlcove`. For a finite, reduced, irreducible,
+crystallographic root pairing over an archimedean linearly ordered ring, the affine Weyl group
+carries every point into it
 (`RootPairing.exists_mem_affineWeylGroup_apply_mem_closedFundamentalAlcove`). -/
 def closedFundamentalAlcove : Set N :=
   {x | (∀ i ∈ b.support, 0 ≤ P.root' i x) ∧ P.root' b.highestRoot x ≤ 1}
@@ -580,25 +583,37 @@ theorem closedAlcoveFace_compl_singleton_none [ZeroLEOneClass R] [P.IsRootSystem
   exact Subset.antisymm (fun _ hx ↦ mem_singleton_iff.mpr
     (b.subsingleton_closedAlcoveFace_compl_singleton none hx h0)) (singleton_subset_iff.mpr h0)
 
+/-- For a root system, a point `x : N` with `0 ≤ P.root' j x` and `b.affineSimpleRoot l x = 0` for
+all `l ≠ some j` is the unique point of the closed vertex face `b.closedAlcoveFace {some j}ᶜ`. -/
+private lemma closedAlcoveFace_compl_singleton_some_eq_singleton [P.IsRootSystem]
+    {j : b.support} {x : N} (hj : 0 ≤ P.root' j x)
+    (h0 : ∀ l ≠ some j, b.affineSimpleRoot l x = 0) :
+    b.closedAlcoveFace {some j}ᶜ = {x} := by
+  have hmem : x ∈ b.closedAlcoveFace {some j}ᶜ := by
+    refine ⟨⟨fun i hi ↦ ?_, ?_⟩, fun l hl ↦ h0 l (mem_compl_singleton_iff.mp hl)⟩
+    · by_cases hij : (⟨i, hi⟩ : b.support) = j
+      · rcases hij with rfl
+        exact hj
+      · have hzero : b.affineSimpleRoot (some ⟨i, hi⟩) x = 0 := h0 _ (by simp [hij])
+        rw [affineSimpleRoot_some] at hzero
+        exact hzero.ge
+    · have hnone : b.affineSimpleRoot none x = 0 := h0 none (by simp)
+      rw [affineSimpleRoot_none, sub_eq_zero] at hnone
+      exact hnone.ge
+  exact Subset.antisymm (fun _ hy ↦ mem_singleton_iff.mpr
+    (b.subsingleton_closedAlcoveFace_compl_singleton (some j) hy hmem))
+    (singleton_subset_iff.mpr hmem)
+
 /-- For a root system, at a special simple node `j`, the vertex of the closed fundamental alcove
 opposite the wall `αⱼ = 0` is `{b.fundamentalCoweightBasis j}`. -/
 theorem closedAlcoveFace_compl_singleton_some_of_mem_specialNodes [ZeroLEOneClass R]
     [P.IsRootSystem] {j : b.support} (hj : some j ∈ b.specialNodes) :
     b.closedAlcoveFace {some j}ᶜ = {b.fundamentalCoweightBasis j} := by
   classical
-  have hmem : b.fundamentalCoweightBasis j ∈ b.closedAlcoveFace {some j}ᶜ := by
-    refine ⟨⟨fun i hi ↦ ?_, ?_⟩, fun k hk ↦ ?_⟩
-    · let i' : b.support := ⟨i, hi⟩
-      have hval : 0 ≤ P.root' i' (b.fundamentalCoweightBasis j) := by
-        rw [root'_fundamentalCoweightBasis]
-        split_ifs <;> simp
-      exact hval
-    · rw [b.root'_highestRoot_fundamentalCoweightBasis, b.mem_specialNodes.mp hj, Int.cast_one]
-    · rw [b.affineSimpleRoot_fundamentalCoweightBasis_of_mem_specialNodes hj k]
-      exact ite_eq_right_iff.mpr fun h ↦ absurd h (mem_compl_singleton_iff.mp hk)
-  exact Subset.antisymm (fun _ hx ↦ mem_singleton_iff.mpr
-    (b.subsingleton_closedAlcoveFace_compl_singleton (some j) hx hmem))
-    (singleton_subset_iff.mpr hmem)
+  have hj_pos : 0 ≤ P.root' j (b.fundamentalCoweightBasis j) := by simp [zero_le_one]
+  have h0 : ∀ l ≠ some j, b.affineSimpleRoot l (b.fundamentalCoweightBasis j) = 0 :=
+    fun l hl ↦ by simp [b.affineSimpleRoot_fundamentalCoweightBasis_of_mem_specialNodes hj, hl]
+  exact b.closedAlcoveFace_compl_singleton_some_eq_singleton hj_pos h0
 
 section OrderedAdd
 
@@ -692,6 +707,26 @@ theorem Base.affineSimpleRoot_eq_inv_affineMarks_of_mem_closedAlcoveFace_compl_s
     b.affineSimpleRoot k x = (b.affineMarks k : R)⁻¹ :=
   eq_inv_of_mul_eq_one_right (b.affineMarks_mul_affineSimpleRoot_eq_one hx)
 
+/-- Over a field, any tuple `a : Option b.support → R` satisfying the null-root relation
+`∑ k, mₖ aₖ = 1` is realized as `b.affineSimpleRoot · x` at some point `x : N`. -/
+theorem Base.exists_forall_affineSimpleRoot_eq [CharZero R] [Finite ι] [Nonempty ι]
+    {a : Option b.support → R} (ha : ∑ k, (b.affineMarks k : R) * a k = 1) :
+    ∃ x : N, ∀ k, b.affineSimpleRoot k x = a k := by
+  classical
+  obtain ⟨x, hx⟩ := b.exists_forall_root'_eq fun i ↦
+    if h : i ∈ b.support then a (some ⟨i, h⟩) else 0
+  refine ⟨x, ?_⟩
+  have hsome (i : b.support) : b.affineSimpleRoot (some i) x = a (some i) := by
+    simpa [i.property] using hx i i.property
+  have hnull := b.sum_affineMarks_mul_affineSimpleRoot x
+  rw [Fintype.sum_option] at hnull ha
+  simp only [Base.affineMarks_none, Int.cast_one, one_mul, hsome] at hnull ha
+  have hnone : b.affineSimpleRoot none x = a none :=
+    add_right_cancel (hnull.trans ha.symm)
+  rintro (_ | i)
+  · exact hnone
+  · exact hsome i
+
 variable [LinearOrder R] [IsStrictOrderedRing R]
 
 /-- The point `x₀` at which every simple root takes the value `1 / h`, with `h = ht(θ) + 1`, lies in
@@ -736,43 +771,18 @@ theorem Base.openAlcoveFace_nonempty_iff {J : Set (Option b.support)} :
   have hc : 0 < c := Finset.sum_pos'
     (fun k _ ↦ by split_ifs <;> positivity [b.affineMarks_pos k])
     ⟨k₀, Finset.mem_univ k₀, by simpa [hk₀] using b.affineMarks_pos k₀⟩
-  -- Prescribe the values of the finite simple roots `a_{some i}(x) = αᵢ(x)`.
-  obtain ⟨x, hx⟩ := b.exists_forall_root'_eq fun i ↦
-    if h : i ∈ b.support then
-      if (some ⟨i, h⟩ : Option b.support) ∈ J then 0 else c⁻¹
-    else 0
-  have hsome (i : b.support) :
-      b.affineSimpleRoot (some i) x = if (some i : Option b.support) ∈ J then 0 else c⁻¹ := by
-    simpa [i.property] using hx i i.property
-  -- The null-root relation `a₀(x) + ∑ᵢ mᵢ aᵢ(x) = 1` together with `c * c⁻¹ = 1` forces `a₀(x)`
-  -- to match the same piecewise formula `(if none ∈ J then 0 else c⁻¹)`.
-  have hnone :
-      b.affineSimpleRoot none x = if (none : Option b.support) ∈ J then 0 else c⁻¹ := by
-    have hnull := b.sum_affineMarks_mul_affineSimpleRoot x
-    rw [Fintype.sum_option] at hnull
-    have hcsum : c = (if (none : Option b.support) ∈ J then 0 else 1) +
-        ∑ i : b.support, (if (some i : Option b.support) ∈ J then 0
-          else (b.affineMarks (some i) : R)) := by
-      simp [c, Fintype.sum_option]
-    have hc_inv : (if (none : Option b.support) ∈ J then 0 else c⁻¹) +
-        ∑ i : b.support, (b.affineMarks (some i) : R) *
-          (if (some i : Option b.support) ∈ J then 0 else c⁻¹) = 1 := by
-      calc _ = c * c⁻¹ := by
-            rw [hcsum, add_mul, Finset.sum_mul]
-            congr 1
-            · split_ifs <;> simp
-            · refine Finset.sum_congr rfl fun i _ ↦ ?_
-              split_ifs <;> simp
-        _ = 1 := mul_inv_cancel₀ hc.ne'
-    simp only [Base.affineMarks_none, Int.cast_one, one_mul, hsome] at hnull
-    linarith
-  have hall (k : Option b.support) :
-      b.affineSimpleRoot k x = if k ∈ J then 0 else c⁻¹ := by
-    rcases k with _ | i
-    · exact hnone
-    · exact hsome i
-  exact ⟨x, fun k hk ↦ by simp [hall k, hk],
-    fun k hk ↦ by simpa [hall k, hk] using inv_pos.mpr hc⟩
+  let a : Option b.support → R := fun k ↦ if k ∈ J then 0 else c⁻¹
+  have ha : ∑ k, (b.affineMarks k : R) * a k = 1 := by
+    calc ∑ k, (b.affineMarks k : R) * a k
+        = c * c⁻¹ := by
+          rw [Finset.sum_mul]
+          refine Finset.sum_congr rfl fun k _ ↦ ?_
+          dsimp [a]
+          split_ifs <;> simp
+      _ = 1 := mul_inv_cancel₀ hc.ne'
+  obtain ⟨x, hx⟩ := b.exists_forall_affineSimpleRoot_eq ha
+  exact ⟨x, fun k hk ↦ by simp [hx k, a, hk],
+    fun k hk ↦ by simpa [hx k, a, hk] using inv_pos.mpr hc⟩
 
 /-- **A closed face `b.closedAlcoveFace J` is nonempty if and only if `J ≠ univ`.** -/
 theorem Base.closedAlcoveFace_nonempty_iff {J : Set (Option b.support)} :
@@ -789,29 +799,19 @@ theorem Base.closedAlcoveFace_compl_singleton_some [P.IsRootSystem] (j : b.suppo
       {(b.affineMarks (some j) : R)⁻¹ • b.fundamentalCoweightBasis j} := by
   classical
   have hm : (0 : R) < b.affineMarks (some j) := Int.cast_pos.mpr (b.affineMarks_pos (some j))
-  have hmem :
-      (b.affineMarks (some j) : R)⁻¹ • b.fundamentalCoweightBasis j ∈
-        b.closedAlcoveFace {some j}ᶜ := by
-    refine ⟨⟨fun i hi ↦ ?_, ?_⟩, ?_⟩
-    · let i' : b.support := ⟨i, hi⟩
-      have hval :
-          0 ≤ P.root' i' ((b.affineMarks (some j) : R)⁻¹ • b.fundamentalCoweightBasis j) := by
-        rw [map_smul, root'_fundamentalCoweightBasis, smul_eq_mul]
-        split_ifs
-        · exact mul_nonneg (inv_nonneg.mpr hm.le) zero_le_one
-        · simp
-      exact hval
-    · rw [map_smul, b.root'_highestRoot_fundamentalCoweightBasis, smul_eq_mul,
-        inv_mul_cancel₀ hm.ne']
-    · rintro (_ | i) hk
-      · rw [Base.affineSimpleRoot_none, map_smul, b.root'_highestRoot_fundamentalCoweightBasis,
-          smul_eq_mul, inv_mul_cancel₀ hm.ne', sub_self]
-      · have hij : i ≠ j := fun h ↦ hk (congrArg some h)
-        rw [Base.affineSimpleRoot_some, map_smul, root'_fundamentalCoweightBasis,
-          ite_eq_right hij, smul_zero]
-  exact Subset.antisymm (fun _ hx ↦ mem_singleton_iff.mpr
-    (b.subsingleton_closedAlcoveFace_compl_singleton (some j) hx hmem))
-    (singleton_subset_iff.mpr hmem)
+  let v : N := (b.affineMarks (some j) : R)⁻¹ • b.fundamentalCoweightBasis j
+  have hcoord (k : Option b.support) :
+      b.affineSimpleRoot k v = if k = some j then (b.affineMarks (some j) : R)⁻¹ else 0 := by
+    rcases k with _ | i
+    · simp [v, inv_mul_cancel₀ hm.ne']
+    · by_cases hij : i = j <;> simp [v, hij]
+  have hj_pos : 0 ≤ P.root' j v := by
+    have := hcoord (some j)
+    simp only [Base.affineSimpleRoot_some, ↓reduceIte] at this
+    rw [this]
+    exact inv_nonneg.mpr hm.le
+  exact b.closedAlcoveFace_compl_singleton_some_eq_singleton hj_pos
+    fun l hl ↦ by rw [hcoord l, ite_eq_right hl]
 
 end IrreducibleFaces
 

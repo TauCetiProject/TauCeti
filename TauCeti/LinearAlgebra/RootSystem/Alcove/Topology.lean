@@ -30,7 +30,8 @@ module topology):
 * over any linearly ordered ring with `[OrderClosedTopology R]`, the family of affine root
   hyperplanes `H_{αⱼ,k}` is locally finite, so their union is closed and its complement — the set
   of points lying on no affine root hyperplane — is open;
-* over a linearly ordered topological field with `[OrderTopology R]`, `Ā` is the topological
+* over a linearly ordered topological field with `[OrderTopology R]` and continuous addition and
+  scalar multiplication on `N` (`[ContinuousAdd N] [ContinuousSMul R N]`), `Ā` is the topological
   closure of `A` (by shrinking segments toward an interior point `x₀ ∈ A`), and `A` is the
   topological interior of `Ā` (by moving across any wall `aₖ(x) = 0` in the direction `-αₖ^∨`).
 
