@@ -330,7 +330,7 @@ private theorem rotation_eq_right (h1 : ∀ t, 2 / 3 ≤ t → ρ t = 1) (c : �
   rw [h1 t (by linarith [ht.1]), mul_one]
 
 /-- **The half-turn: the identity in fixed bases, the exchange in tracked labels, on minima.** Let
-`ρ` be continuous, `0` for `t ≤ 1/3` and `1` for `t ≥ 2/3`, and let `δ > 0` with
+`ρ` be `0` for `t ≤ 1/3` and `1` for `t ≥ 2/3`, and let `δ > 0` with
 `2 δ ∫_{1/6}^{5/6} (t (1 - t²))⁻¹ dt < π / 12`. For the path `r = r₀ + π ρ`, a trajectory leaving
 the source minimum `q_j(r₀)` ends at the target minimum `q_k(r₀ + π)` exactly when `k = j + 1`. As
 points of the circle `q_{j + 1}(r₀ + π) = q_j(r₀)` (`TauCeti.circleCosTwoMin_add_pi`), so in fixed
@@ -415,9 +415,11 @@ theorem tendsto_coe_circleCosTwoMax_iff_of_add_pi_div_three
 double speed on `[0, 1/2]` and `[1/2, 1]`, is `r₀` on `(0, 1/6]` and `r₀ + 2 π / 3` on
 `[5/6, 1)`. -/
 private theorem concat_rotation (h0 : ∀ t ≤ 1 / 3, ρ t = 0) (h1 : ∀ t, 2 / 3 ≤ t → ρ t = 1) :
-    let r : ℝ → ℝ := fun t ↦
-      if t ≤ 1 / 2 then r₀ + π / 3 * ρ (2 * t) else r₀ + π / 3 + π / 3 * ρ (2 * t - 1)
-    (∀ t ∈ Ioc (0 : ℝ) (1 / 6), r t = r₀) ∧ ∀ t ∈ Ico (5 / 6 : ℝ) 1, r t = r₀ + 2 * π / 3 := by
+    (∀ t ∈ Ioc (0 : ℝ) (1 / 6),
+      (if t ≤ 1 / 2 then r₀ + π / 3 * ρ (2 * t) else r₀ + π / 3 + π / 3 * ρ (2 * t - 1)) = r₀) ∧
+    ∀ t ∈ Ico (5 / 6 : ℝ) 1,
+      (if t ≤ 1 / 2 then r₀ + π / 3 * ρ (2 * t) else r₀ + π / 3 + π / 3 * ρ (2 * t - 1)) =
+        r₀ + 2 * π / 3 := by
   refine ⟨fun t ht ↦ ?_, fun t ht ↦ ?_⟩
   · simp only [show t ≤ 1 / 2 by linarith [ht.2], ↓reduceIte,
       h0 _ (by linarith [ht.2] : 2 * t ≤ 1 / 3), mul_zero, add_zero]

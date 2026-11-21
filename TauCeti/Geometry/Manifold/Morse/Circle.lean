@@ -191,15 +191,12 @@ theorem exists_circleCosTwoMax_eq (r : ℝ) (m : ℤ) :
     ∃ j : Fin 2, circleCosTwoMax r j = ((r + m * π : ℝ) : AddCircle (2 * π)) := by
   have hm : (m : ℝ) = 2 * ((m / 2 : ℤ) : ℝ) + ((m % 2 : ℤ) : ℝ) := by
     exact_mod_cast (Int.mul_ediv_add_emod m 2).symm
-  rcases Int.emod_two_eq_zero_or_one m with h | h <;> rw [h] at hm
-  · refine ⟨0, coe_eq_coe_iff_exists_zsmul.2 ⟨-(m / 2), ?_⟩⟩
-    rw [zsmul_eq_mul, hm]
-    simp
-    ring
-  · refine ⟨1, coe_eq_coe_iff_exists_zsmul.2 ⟨-(m / 2), ?_⟩⟩
-    rw [zsmul_eq_mul, hm]
-    simp
-    ring
+  rcases Int.emod_two_eq_zero_or_one m with h | h <;> rw [h] at hm <;>
+    [refine ⟨0, coe_eq_coe_iff_exists_zsmul.2 ⟨-(m / 2), ?_⟩⟩;
+      refine ⟨1, coe_eq_coe_iff_exists_zsmul.2 ⟨-(m / 2), ?_⟩⟩] <;>
+    · rw [zsmul_eq_mul, hm]
+      push_cast [Fin.val_zero, Fin.val_one]
+      ring
 
 /-- Every class `r + π / 2 + j π` with `j ∈ ℤ` is one of the two minima. -/
 theorem exists_circleCosTwoMin_eq (r : ℝ) (m : ℤ) :
@@ -216,19 +213,22 @@ theorem circleCosTwoMax_add_coe (r c : ℝ) (j : Fin 2) :
 theorem circleCosTwoMin_add_coe (r c : ℝ) (j : Fin 2) :
     circleCosTwoMin r j + (c : AddCircle (2 * π)) = circleCosTwoMin (r + c) j := by
   rw [circleCosTwoMin_def, circleCosTwoMin_def, ← coe_add]
-  ring_nf
+  congr 1
+  ring
 
 /-- Rotating the function by `π` exchanges the labels of its maxima: the maximum `r + π + j π` is
 `r + (j + 1) π`. -/
+@[simp]
 theorem circleCosTwoMax_add_pi (r : ℝ) (j : Fin 2) :
     circleCosTwoMax (r + π) j = circleCosTwoMax r (j + 1) := by
   rw [circleCosTwoMax_def, circleCosTwoMax_def]
   fin_cases j
   · norm_num
-  · exact coe_eq_coe_iff_exists_zsmul.2 ⟨1, by norm_num; ring⟩
+  · exact coe_eq_coe_iff_exists_zsmul.2 ⟨1, by push_cast [Fin.val_zero, Fin.val_one]; ring⟩
 
 /-- Rotating the function by `π` exchanges the labels of its minima: the minimum
 `r + π + π / 2 + j π` is `r + π / 2 + (j + 1) π`. -/
+@[simp]
 theorem circleCosTwoMin_add_pi (r : ℝ) (j : Fin 2) :
     circleCosTwoMin (r + π) j = circleCosTwoMin r (j + 1) := by
   rw [circleCosTwoMin_def, circleCosTwoMin_def, add_right_comm r π,

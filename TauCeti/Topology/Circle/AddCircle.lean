@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
+import TauCeti.Algebra.AddCircle
 import TauCeti.Analysis.Complex.Circle
 
 /-!
@@ -202,12 +203,12 @@ open scoped Topology
 variable {X : Type*} [TopologicalSpace X] {p : ℝ}
 
 /-- **Lifting on a connected set.** If a function `f` with values in `ℝ`, continuous on a
-preconnected set `s`, stays within `p / 4` of the class of `y` in `AddCircle p`, then on `s` it
+preconnected set `s`, stays within `p / 2` of the class of `y` in `AddCircle p`, then on `s` it
 stays near one lift `y + n p` of that class: its distance to `y + n p` is the distance in the
 circle. -/
 theorem exists_forall_abs_sub_eq_norm_coe_of_isPreconnected (hp : 0 < p) {s : Set X}
     (hs : IsPreconnected s) {f : X → ℝ} (hf : ContinuousOn f s) {y : ℝ}
-    (hsmall : ∀ x ∈ s, ‖((f x - y : ℝ) : AddCircle p)‖ < p / 4) :
+    (hsmall : ∀ x ∈ s, ‖((f x - y : ℝ) : AddCircle p)‖ < p / 2) :
     ∃ n : ℤ, ∀ x ∈ s, |f x - (y + n * p)| = ‖((f x - y : ℝ) : AddCircle p)‖ := by
   set k : X → ℤ := fun x ↦ round (p⁻¹ * (f x - y))
   have hk (x : X) : ‖((f x - y : ℝ) : AddCircle p)‖ = |f x - (y + k x * p)| := by
@@ -225,8 +226,7 @@ theorem exists_forall_abs_sub_eq_norm_coe_of_isPreconnected (hp : 0 < p) {s : Se
         ⟨by nlinarith, by nlinarith⟩
     have h := hsmall x hx
     rw [hfx, show y + (k x₁ + 1 / 2) * p - y = p / 2 + (k x₁ : ℤ) * p by ring,
-      coe_add, ← zsmul_eq_mul, coe_zsmul, coe_period, smul_zero, add_zero, norm_half_period_eq,
-      abs_of_pos hp] at h
+      coe_add_int_mul_period, norm_half_period_eq, abs_of_pos hp] at h
     linarith
   rcases s.eq_empty_or_nonempty with rfl | ⟨x₀, hx₀⟩
   · exact ⟨0, by simp⟩
@@ -245,7 +245,7 @@ theorem exists_tendsto_add_int_mul_of_tendsto_coe (hp : 0 < p) {l : Filter X}
   have hnorm : Tendsto (fun x ↦ ‖((f x - y : ℝ) : AddCircle p)‖) l (𝓝 0) := by
     simpa [coe_sub] using tendsto_iff_norm_sub_tendsto_zero.1 h
   obtain ⟨v, hv, hvu, hvc⟩ := hl _ (inter_mem hu
-    (hnorm.eventually (gt_mem_nhds (by positivity : (0 : ℝ) < p / 4))))
+    (hnorm.eventually (gt_mem_nhds (by positivity : (0 : ℝ) < p / 2))))
   obtain ⟨n, hn⟩ := exists_forall_abs_sub_eq_norm_coe_of_isPreconnected hp hvc
     (hf.mono fun x hx ↦ (hvu hx).1) fun x hx ↦ (hvu hx).2
   refine ⟨n, tendsto_iff_norm_sub_tendsto_zero.2 (hnorm.congr' ?_)⟩
