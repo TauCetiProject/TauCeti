@@ -152,6 +152,17 @@ theorem fderiv_sub_apply_add_smul {Λ : Type*} [AddCommGroup Λ] [Module ℝ Λ]
       fderiv ℝ (fun y ↦ g y - P p y) x - s • fderiv ℝ (P q) x := by
   rw [sub_apply_add_smul g P p q s, fderiv_sub hg (hq.const_smul s), fderiv_const_smul hq]
 
+/-- **A map that is affine along a line has the slope of that line as its derivative there.** If
+`g` is differentiable at `w` and `g (w + s • d) = g w + s • y` for every scalar `s`, then the
+derivative of `g` at `w` sends `d` to `y`. -/
+theorem _root_.DifferentiableAt.fderiv_apply_eq_of_add_smul {𝕜 F G : Type*}
+    [NontriviallyNormedField 𝕜] [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup G]
+    [NormedSpace 𝕜 G] {g : F → G} {w d : F} {y : G} (hg : DifferentiableAt 𝕜 g w)
+    (h : ∀ s : 𝕜, g (w + s • d) = g w + s • y) : fderiv 𝕜 g w d = y := by
+  refine (hg.hasFDerivAt.hasLineDerivAt d).unique ?_
+  rw [HasLineDerivAt, funext h]
+  simpa using ((hasDerivAt_id (0 : 𝕜)).smul_const y).const_add (g w)
+
 /-- **The derivative of the parametrized differential** `(t, x) ↦ d(f t)_x` at `(t, x)` sends
 `(τ, ξ)` to `τ • ∂ₜ (d(f t)_x) + Hess(f t)_x ξ`. -/
 theorem fderiv_fderiv_apply (hf : ContDiffAt ℝ 2 (uncurry f) (t, x)) (p : ℝ × E) :
@@ -243,16 +254,11 @@ theorem ae_forall_surjective_fderiv_fderiv_sub_of_forall_exists_fderiv_eq {Λ : 
         (contDiffAt_const.prodMk contDiffAt_id)).differentiableAt (by norm_num)
     have hw' : DifferentiableAt ℝ (P q) x :=
       (hP.comp (contDiff_const.prodMk contDiff_id)).differentiable (by norm_num) x
-    refine ⟨((0, 0), q),
-      (((hGc _ hw).differentiableAt (by norm_num)).hasFDerivAt.hasLineDerivAt _).unique ?_⟩
     -- Along the line in the direction of `q`, the map `G` moves by `s • a`.
-    have hline : (fun s : ℝ ↦ G (((t, x), p) + s • ((0, 0), q))) =
-        fun s ↦ G ((t, x), p) + s • a := by
-      ext1 s
-      simp only [G, Prod.mk_add_mk, Prod.smul_mk, smul_zero, add_zero]
-      rw [fderiv_sub_apply_add_smul hu hw', hq, smul_neg, sub_neg_eq_add]
-    rw [HasLineDerivAt, hline]
-    simpa using ((hasDerivAt_id (0 : ℝ)).smul_const a).const_add (G ((t, x), p))
+    refine ⟨((0, 0), q),
+      ((hGc _ hw).differentiableAt (by norm_num)).fderiv_apply_eq_of_add_smul fun s ↦ ?_⟩
+    simp only [G, Prod.mk_add_mk, Prod.smul_mk, smul_zero, add_zero]
+    rw [fderiv_sub_apply_add_smul hu hw', hq, smul_neg, sub_neg_eq_add]
   have hreg := ae_isRegularParameterOn ν (U := U) (c := 0) (n := 2) (fun w hw _ ↦ hGc w hw)
     htotal (by
       rw [Module.finrank_prod, Module.finrank_self, ContinuousLinearMap.dual_finrank_eq]

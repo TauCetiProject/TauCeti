@@ -129,13 +129,12 @@ noncomputable def cubicPerturbation : CubicCoefficients E →ₗ[ℝ] E → ℝ 
   toFun p y := p.1 y + p.2.1 (fun _ ↦ y) + p.2.2 (fun _ ↦ y)
   map_add' p q := by
     ext y
-    simp only [Prod.fst_add, Prod.snd_add, Pi.add_apply]
-    simp
+    simp only [Prod.fst_add, Prod.snd_add, Pi.add_apply, add_apply]
     ring
   map_smul' s p := by
     ext y
-    simp only [Prod.smul_fst, Prod.smul_snd, Pi.smul_apply, RingHom.id_apply]
-    simp
+    simp only [Prod.smul_fst, Prod.smul_snd, Pi.smul_apply, RingHom.id_apply, smul_apply,
+      smul_eq_mul]
     ring
 
 /-- The value of the polynomial with coefficients `(a, B, C)` at `y`. -/
@@ -223,7 +222,7 @@ theorem exists_cubicPerturbation_fderiv_eq (x : E) {v : E} (hv : v ≠ 0) (a b :
     simp only [add_apply, smul_apply, Pi.zero_apply, zero_add, hQB,
       ContinuousLinearMap.flip_apply, ContinuousLinearMap.smulRight_apply, smul_eq_mul, hℓ, one_mul]
     subst hγ hb'
-    simp [hℓ]
+    simp only [sub_apply, smul_apply, smul_eq_mul, hℓ, mul_one]
     ring
   · rw [fderiv_fderiv_fderiv_add haQ.contDiffAt hcK.contDiffAt,
       fderiv_fderiv_fderiv_add a'.contDiff.contDiffAt hQ.contDiffAt, a'.fderiv_fderiv_fderiv,
@@ -277,7 +276,7 @@ private theorem fderiv_jetMap_apply_scale {w : (ℝ × E × E) × Λ}
     have hsv : v + s • v = (1 + s) • v := by rw [add_smul, one_smul]
     simp only [jetMap, Prod.mk_add_mk, Prod.smul_mk, smul_zero, add_zero, hsv, map_smul]
     refine Prod.ext rfl (Prod.ext rfl ?_)
-    simp
+    simp only [smul_apply, smul_eq_mul]
     ring
   rw [HasLineDerivAt, hline]
   have hs : HasDerivAt (fun s : ℝ ↦ 1 + s) 1 0 := (hasDerivAt_id 0).const_add 1
@@ -299,26 +298,21 @@ private theorem fderiv_jetMap_apply_coeff {t : ℝ} {x v : E} {p : Λ}
       (contDiffAt_const.prodMk contDiffAt_id)).of_le (by norm_num)
   have hw : ContDiff ℝ 3 (P q) :=
     (hP.comp (contDiff_const.prodMk contDiff_id)).of_le (by norm_num)
-  refine (((contDiffAt_jetMap hf hP p).differentiableAt one_ne_zero).hasFDerivAt.hasLineDerivAt
-    _).unique ?_
-  have hline : (fun s : ℝ ↦ jetMap f P (((t, x, v), p) + s • ((0, 0, 0), q))) =
-      fun s ↦ jetMap f P ((t, x, v), p) - s • (fderiv ℝ (P q) x, fderiv ℝ (fderiv ℝ (P q)) x v,
-        fderiv ℝ (fderiv ℝ (fderiv ℝ (P q))) x v v v) := by
-    ext1 s
-    have hsw : ContDiffAt ℝ 3 (s • P q) x := (hw.const_smul s).contDiffAt
-    simp only [jetMap, Prod.mk_add_mk, Prod.smul_mk, smul_zero, add_zero, Prod.mk_sub_mk]
-    refine Prod.ext ?_ (Prod.ext ?_ ?_)
-    · exact fderiv_sub_apply_add_smul (hu.differentiableAt (by norm_num))
-        (hw.differentiable (by norm_num) x) s
-    · rw [sub_apply_add_smul (f t) P p q s,
-        fderiv_fderiv_sub (hu.of_le (by norm_num)) (hsw.of_le (by norm_num)),
-        fderiv_fderiv_const_smul, sub_apply, smul_apply]
-    · rw [sub_apply_add_smul (f t) P p q s, fderiv_fderiv_fderiv_sub hu hsw,
-        fderiv_fderiv_fderiv_const_smul]
-      simp
-  rw [HasLineDerivAt, hline]
-  simpa using ((hasDerivAt_id (0 : ℝ)).smul_const (fderiv ℝ (P q) x, fderiv ℝ (fderiv ℝ (P q)) x v,
-    fderiv ℝ (fderiv ℝ (fderiv ℝ (P q))) x v v v)).const_sub (jetMap f P ((t, x, v), p))
+  -- Along the line in the direction of `q`, the jet map moves by minus `s` times the jet of `P q`.
+  refine ((contDiffAt_jetMap hf hP p).differentiableAt one_ne_zero).fderiv_apply_eq_of_add_smul
+    fun s ↦ ?_
+  have hsw : ContDiffAt ℝ 3 (s • P q) x := (hw.const_smul s).contDiffAt
+  simp only [jetMap, Prod.mk_add_mk, Prod.smul_mk, smul_zero, add_zero, smul_neg,
+    ← sub_eq_add_neg, Prod.mk_sub_mk]
+  refine Prod.ext ?_ (Prod.ext ?_ ?_)
+  · exact fderiv_sub_apply_add_smul (hu.differentiableAt (by norm_num))
+      (hw.differentiable (by norm_num) x) s
+  · rw [sub_apply_add_smul (f t) P p q s,
+      fderiv_fderiv_sub (hu.of_le (by norm_num)) (hsw.of_le (by norm_num)),
+      fderiv_fderiv_const_smul, sub_apply, smul_apply]
+  · rw [sub_apply_add_smul (f t) P p q s, fderiv_fderiv_fderiv_sub hu hsw,
+      fderiv_fderiv_fderiv_const_smul, sub_apply, sub_apply, sub_apply, smul_apply, smul_apply,
+      smul_apply, smul_eq_mul]
 
 /-- **For almost every member of a rich linear family of perturbations, the third derivative does
 not vanish on the kernel of a degenerate Hessian.** Let `f t` be a family of functions on a

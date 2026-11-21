@@ -564,16 +564,17 @@ theorem _root_.ContinuousLinearMap.fderiv_fderiv_fderiv_pow_three_apply (ℓ : E
       one_ne_zero
   have h1 : ∀ c, (fun y ↦ fderiv 𝕜 g y c) = fun y ↦ 3 * ℓ c * ℓ y ^ 2 := fun c ↦ funext fun y ↦ by
     rw [(ℓ.hasFDerivAt.pow 3).fderiv]
-    simp
+    simp only [Nat.add_one_sub_one, nsmul_eq_mul, Nat.cast_ofNat, smul_apply, smul_eq_mul]
     ring
   have h2 : ∀ b c, (fun y ↦ fderiv 𝕜 (fderiv 𝕜 g) y b c) = fun y ↦ 6 * ℓ b * ℓ c * ℓ y :=
     fun b c ↦ funext fun y ↦ by
       rw [← fderiv_clm_apply_const_apply (hd1 y), h1, ((ℓ.hasFDerivAt.pow 2).const_mul
         (3 * ℓ c)).fderiv]
-      simp
+      simp only [Nat.add_one_sub_one, pow_one, nsmul_eq_mul, Nat.cast_ofNat, smul_apply,
+        smul_eq_mul]
       ring
   rw [← fderiv_clm_apply_const_apply₂ (hd2 x), h2, (ℓ.hasFDerivAt.const_mul (6 * ℓ b * ℓ c)).fderiv]
-  simp
+  simp only [smul_apply, smul_eq_mul]
   ring
 
 /-- **The derivative of a partition of unity by squares.** If `∑ₐ Jₐ²` is constant near `x` and
