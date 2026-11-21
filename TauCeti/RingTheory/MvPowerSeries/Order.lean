@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.LocalRing.MaximalIdeal.Defs
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
-public import Mathlib.RingTheory.MvPowerSeries.Inverse
 public import Mathlib.RingTheory.MvPowerSeries.Order
 public import Mathlib.RingTheory.MvPowerSeries.Rename
 public import Mathlib.RingTheory.MvPowerSeries.Substitution
@@ -15,8 +13,8 @@ public import Mathlib.RingTheory.MvPowerSeries.Substitution
 import TauCeti.RingTheory.MvPowerSeries.Substitution
 
 import Mathlib.Tactic.LinearCombination
-import TauCeti.RingTheory.MvPowerSeries.Ideal
-import TauCeti.RingTheory.MvPowerSeries.Inverse
+
+import Mathlib.RingTheory.MvPowerSeries.NoZeroDivisors
 
 /-!
 # Lowest-degree homogeneous components of powers, products and substitutions
@@ -75,12 +73,6 @@ Over a ring, vanishing of the constant coefficient then puts the remainder after
 `X + Y` in order at least two. Over a commutative ring, whatever the constant coefficient of `f`,
 the linear part of `f(x, y)` is the sum of the linear parts of `x` and `y` whenever `x` and `y`
 have zero constant coefficient (`MvPowerSeries.homogeneousComponent_one_subst_pair`).
-
-Over a local commutative ring `R`, every monomial `monomial α r` lies in `𝔪 ^ α.degree`
-(`MvPowerSeries.monomial_mem_maximalIdeal_pow`), and in finitely many variables every series of
-order at least `k` lies in `𝔪 ^ k` (`MvPowerSeries.mem_maximalIdeal_pow_of_le_order`). Over a field
-`K`, the converse also holds in any number of variables
-(`MvPowerSeries.natCast_le_order_of_mem_maximalIdeal_pow`).
 -/
 
 public section
@@ -706,57 +698,5 @@ theorem homogeneousComponent_one_subst_pair
   simp
 
 end CommRing
-
-section MaximalIdeal
-
-section LocalRing
-
-variable {σ R : Type*} [CommRing R] [IsLocalRing R]
-
-/-- Every monomial `monomial α r` lies in `𝔪 ^ α.degree`. -/
-theorem monomial_mem_maximalIdeal_pow (α : σ →₀ ℕ) (r : R) :
-    monomial α r ∈ IsLocalRing.maximalIdeal (MvPowerSeries σ R) ^ α.degree := by
-  have h1 : monomial α (1 : R) ∈ IsLocalRing.maximalIdeal (MvPowerSeries σ R) ^ α.degree := by
-    refine Finsupp.induction_linear α (by simp) (fun β γ hβ hγ ↦ ?_) fun i m ↦ ?_
-    · rw [map_add, pow_add, ← one_mul (1 : R), ← monomial_mul_monomial]
-      exact Ideal.mul_mem_mul hβ hγ
-    · rw [← X_pow_eq, Finsupp.degree_single]
-      exact Ideal.pow_mem_pow (X_mem_maximalIdeal i) m
-  have hr : monomial α r = C r * monomial α 1 := by
-    rw [← monomial_zero_eq_C_apply, monomial_mul_monomial, zero_add, mul_one]
-  rw [hr]
-  exact Ideal.mul_mem_left _ _ h1
-
-/-- Over a local commutative ring `R` in finitely many variables `σ`, any power series of order at
-least `k` belongs to `𝔪 ^ k`. -/
-theorem mem_maximalIdeal_pow_of_le_order [Finite σ] {g : MvPowerSeries σ R} {k : ℕ}
-    (hg : (k : ℕ∞) ≤ g.order) :
-    g ∈ IsLocalRing.maximalIdeal (MvPowerSeries σ R) ^ k :=
-  pow_le_pow_left' (Ideal.span_le.mpr (Set.range_subset_iff.mpr X_mem_maximalIdeal)) k
-    (mem_pow_span_range_X_iff_le_order.mpr hg)
-
-end LocalRing
-
-section Field
-
-variable {σ K : Type*} [Field K]
-
-/-- Over a field `K`, any element of `𝔪 ^ k` in `MvPowerSeries σ K` has order at least `k`. -/
-theorem natCast_le_order_of_mem_maximalIdeal_pow {g : MvPowerSeries σ K} {k : ℕ}
-    (hg : g ∈ IsLocalRing.maximalIdeal (MvPowerSeries σ K) ^ k) :
-    (k : ℕ∞) ≤ g.order := by
-  induction k generalizing g with
-  | zero => simp
-  | succ k ih =>
-    rw [pow_succ] at hg
-    refine Submodule.mul_induction_on hg (fun a ha b hb ↦ ?_) (fun _ _ hx hy ↦ le_order_add hx hy)
-    have hb1 : (1 : ℕ∞) ≤ b.order :=
-      one_le_order_iff_constCoeff_eq_zero.mpr (mem_maximalIdeal_iff_constantCoeff_eq_zero.mp hb)
-    rw [Nat.cast_add, Nat.cast_one]
-    exact (add_le_add (ih ha) hb1).trans le_order_mul
-
-end Field
-
-end MaximalIdeal
 
 end MvPowerSeries

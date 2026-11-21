@@ -14,16 +14,19 @@ import TauCeti.RingTheory.LocalRing.HilbertSamuel
 /-!
 # Examples of local quotient Hilbert–Samuel functions
 
-At a non-rational closed point such as `(X ^ 2 + 1)` in `ℚ[X]`, measuring length over the local
-ring `A = Localization.AtPrime (Ideal.span {X ^ 2 + 1})` normalizes
-`TauCeti.localQuotientHilbertSamuel A ⊥ 0` to `1`, whereas the `ℚ`-vector space length of
-`A ⧸ IsLocalRing.maximalIdeal A` equals the residue-field degree `2`.
+At a non-rational closed point of `ℚ[X]`, measuring length over the local ring
+`A = Localization.AtPrime (Ideal.span {p})` normalizes `TauCeti.localQuotientHilbertSamuel A ⊥ 0`
+to `1`, whereas the `ℚ`-vector space length of `A ⧸ IsLocalRing.maximalIdeal A` equals the
+residue-field degree. The example below shows that there exists a closed point `(Ideal.span {p})`
+of `ℚ[X]` (witnessed in the proof by `p = X ^ 2 + 1`) where the local Hilbert–Samuel value is `1`
+and the `ℚ`-dimension of `A ⧸ IsLocalRing.maximalIdeal A` is `2`.
 -/
 
 open Polynomial TauCeti
 
-/-- At the degree-two closed point `(X ^ 2 + 1)` of `ℚ[X]`, the local Hilbert–Samuel value `H(0)` is
-`1` by local length, even though the quotient `A ⧸ 𝔪` has `ℚ`-dimension `2`. -/
+/-- There exists a closed point `(Ideal.span {p})` of `ℚ[X]` (witnessed in the proof by
+`p = X ^ 2 + 1`) at which the local Hilbert–Samuel value `H(0)` is `1` by local length, even though
+the quotient `A ⧸ 𝔪` has `ℚ`-dimension `2`. -/
 example : ∃ (p : ℚ[X]) (hmax : (Ideal.span {p}).IsMaximal),
     letI : (Ideal.span {p}).IsMaximal := hmax
     let A := Localization.AtPrime (Ideal.span {p})

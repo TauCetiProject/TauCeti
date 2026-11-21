@@ -9,7 +9,8 @@ public import Mathlib.RingTheory.Length
 public import Mathlib.RingTheory.LocalRing.Defs
 public import Mathlib.RingTheory.MvPowerSeries.Basic
 import Mathlib.RingTheory.LocalRing.Length
-import TauCeti.RingTheory.MvPowerSeries.Inverse
+import TauCeti.RingTheory.MvPowerSeries.Basic
+import TauCeti.RingTheory.MvPowerSeries.Ideal
 
 /-!
 # Module length over formal power series rings

@@ -41,6 +41,8 @@ the monomials may be replaced by products `∏ᵢ Sₖᵢ(Xᵢ)` of the members 
   polynomials of total degree at most `m`.
 * `MvPolynomial.basisRestrictTotalDegree`: the monomial basis of the polynomials of total degree
   at most `m`, whose coordinates are the coefficients.
+* `TauCeti.finrank_restrictTotalDegree`: the polynomials of total degree at most `m` in
+  `d = card σ` variables have dimension `(m + d choose d)`.
 * `MvPolynomial.boundedCoefficientEquiv`: monomial coefficients as finite coordinates on tuples of
   bounded-degree polynomials.
 * `MvPolynomial.tupleEvaluation`, `MvPolynomial.tupleEvaluation_injective`: evaluation of tuples
@@ -129,6 +131,16 @@ theorem coe_basisRestrictTotalDegree (m : ℕ) (s : {s : σ →₀ ℕ // s.degr
   -- As in `basisRestrictTotalDegree`, the index `s` is read as an element of the set
   -- `{t | t.degree ≤ m}` that indexes `basisRestrictSupport`; the two subtypes agree by definition.
   exact basisRestrictSupport_apply_coe (s := {t : σ →₀ ℕ | t.degree ≤ m}) s
+
+/-- The polynomials of total degree at most `m` in `d = card σ` variables have dimension
+`(m + d choose d)`. -/
+theorem _root_.TauCeti.finrank_restrictTotalDegree (σ R : Type*) [Fintype σ] [CommSemiring R]
+    [StrongRankCondition R] (m : ℕ) :
+    Module.finrank R (restrictTotalDegree σ R m) =
+      (m + Fintype.card σ).choose (Fintype.card σ) := by
+  classical
+  rw [Module.finrank_eq_nat_card_basis (basisRestrictTotalDegree σ R m),
+    Finsupp.natCard_degree_le, Nat.card_eq_fintype_card, add_comm]
 
 section Coordinates
 

@@ -30,19 +30,19 @@ along a nonprincipal ultrafilter `𝓤` on `ℕ`, the limit upper set
 `D j₀` contains `Dlim`; a strict lexicographic drop from `j₀` to `j₀ + 1` at some least degree `n₁`
 would then force a strict lexicographic increase between `j₀ + 1` and a later `j₂` agreeing with
 `Dlim` up to degree `n₁`. Consequently, the range of degree-bounded complement counts of upper sets
-in `Lex (ℕ → ℕ)` is well-founded (`TauCeti.isWF_range_toLex_card_degree_le_notMem_upperSet`), and
-any sequence of upper sets whose degree-bounded complement counts are lexicographically
+in `Lex (ℕ → ℕ)` is well-founded (`TauCeti.isWF_range_toLex_natCard_degree_le_notMem_upperSet`),
+and any sequence of upper sets whose degree-bounded complement counts are lexicographically
 nonincreasing eventually stabilizes in those counts
-(`TauCeti.exists_forall_ge_card_degree_le_notMem_eq_of_isUpperSet`).
+(`TauCeti.exists_forall_ge_natCard_degree_le_notMem_eq_of_isUpperSet`).
 
 ## Main results
 
-* `TauCeti.isWF_range_toLex_card_degree_le_notMem_upperSet`: for `[Finite σ]`, the range of
+* `TauCeti.isWF_range_toLex_natCard_degree_le_notMem_upperSet`: for `[Finite σ]`, the range of
   `D : UpperSet (σ →₀ ℕ) ↦ toLex (fun n ↦ Nat.card {α : σ →₀ ℕ // α.degree ≤ n ∧ α ∉ D})` is
   well-founded (`Set.IsWF`).
-* `TauCeti.exists_forall_ge_card_degree_le_notMem_eq_of_isUpperSet`: for `[Finite σ]`, any sequence
-  of upper sets `D : ℕ → Set (σ →₀ ℕ)` whose degree-bounded complement counts are nonincreasing in
-  `Lex (ℕ → ℕ)` is eventually constant in those counts.
+* `TauCeti.exists_forall_ge_natCard_degree_le_notMem_eq_of_isUpperSet`: for `[Finite σ]`, any
+  sequence of upper sets `D : ℕ → Set (σ →₀ ℕ)` whose degree-bounded complement counts are
+  nonincreasing in `Lex (ℕ → ℕ)` is eventually constant in those counts.
 
 ## References
 
@@ -62,10 +62,10 @@ private noncomputable def diagramHilbert {σ : Type*} (D : Set (σ →₀ ℕ)) 
 private theorem diagramHilbert_anti {σ : Type*} [Finite σ] {D₁ D₂ : Set (σ →₀ ℕ)}
     (h : D₁ ⊆ D₂) (n : ℕ) :
     diagramHilbert D₂ n ≤ diagramHilbert D₁ n :=
-  Nat.card_le_card_of_injective
-    (fun α ↦ (⟨α.val, α.property.1, fun h₁ ↦ α.property.2 (h h₁)⟩ :
-      {α : σ →₀ ℕ // α.degree ≤ n ∧ α ∉ D₁}))
-    (fun _ _ hEq ↦ Subtype.ext (Subtype.mk.inj hEq))
+  Nat.card_mono (s := {α : σ →₀ ℕ | α.degree ≤ n ∧ α ∉ D₂})
+    (t := {α : σ →₀ ℕ | α.degree ≤ n ∧ α ∉ D₁})
+    ((Finsupp.finite_of_degree_le n).sep _)
+    fun _ ⟨hdeg, hnot⟩ ↦ ⟨hdeg, fun h₁ ↦ hnot (h h₁)⟩
 
 private theorem diagramHilbert_congr_of_degree_le {σ : Type*} {D₁ D₂ : Set (σ →₀ ℕ)} {n m : ℕ}
     (hmn : m ≤ n) (h : ∀ α : σ →₀ ℕ, α.degree ≤ n → (α ∈ D₁ ↔ α ∈ D₂)) :
@@ -116,7 +116,7 @@ private theorem not_strictAnti_toLex_diagramHilbert {σ : Type*} [Finite σ]
 
 /-- For finitely many variables `σ`, the set of degree-bounded complement-count functions of upper
 sets `D : UpperSet (σ →₀ ℕ)`, ordered lexicographically in `Lex (ℕ → ℕ)`, is well-founded. -/
-theorem isWF_range_toLex_card_degree_le_notMem_upperSet {σ : Type*} [Finite σ] :
+theorem isWF_range_toLex_natCard_degree_le_notMem_upperSet {σ : Type*} [Finite σ] :
     (Set.range fun D : UpperSet (σ →₀ ℕ) ↦
       toLex (fun n ↦ Nat.card {α : σ →₀ ℕ // α.degree ≤ n ∧ α ∉ D})).IsWF := by
   refine Set.isWF_iff_no_descending_seq.mpr fun f hf hmem ↦ ?_
@@ -126,7 +126,7 @@ theorem isWF_range_toLex_card_degree_le_notMem_upperSet {σ : Type*} [Finite σ]
 /-- For finitely many variables `σ`, any sequence of upward-closed subsets `D : ℕ → Set (σ →₀ ℕ)`
 whose degree-bounded complement counts are lexicographically nonincreasing is eventually constant
 in those counts. -/
-theorem exists_forall_ge_card_degree_le_notMem_eq_of_isUpperSet {σ : Type*} [Finite σ]
+theorem exists_forall_ge_natCard_degree_le_notMem_eq_of_isUpperSet {σ : Type*} [Finite σ]
     (D : ℕ → Set (σ →₀ ℕ)) (hD : ∀ j, IsUpperSet (D j))
     (hlex : ∀ j, toLex (fun n ↦ Nat.card {α : σ →₀ ℕ // α.degree ≤ n ∧ α ∉ D (j + 1)}) ≤
       toLex (fun n ↦ Nat.card {α : σ →₀ ℕ // α.degree ≤ n ∧ α ∉ D j})) :
@@ -135,7 +135,7 @@ theorem exists_forall_ge_card_degree_le_notMem_eq_of_isUpperSet {σ : Type*} [Fi
         (fun n ↦ Nat.card {α : σ →₀ ℕ // α.degree ≤ n ∧ α ∉ D j₀}) := by
   let S := Set.range fun U : UpperSet (σ →₀ ℕ) ↦
     toLex (fun n ↦ Nat.card {α : σ →₀ ℕ // α.degree ≤ n ∧ α ∉ U})
-  have : WellFoundedLT S := isWF_range_toLex_card_degree_le_notMem_upperSet
+  have : WellFoundedLT S := isWF_range_toLex_natCard_degree_le_notMem_upperSet
   let seq : ℕ → S := fun j ↦
     ⟨toLex (fun n ↦ Nat.card {α : σ →₀ ℕ // α.degree ≤ n ∧ α ∉ D j}), ⟨D j, hD j⟩, rfl⟩
   have hanti : Antitone seq := antitone_nat_of_succ_le fun j ↦ Subtype.mk_le_mk.mpr (hlex j)

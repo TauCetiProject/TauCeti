@@ -285,8 +285,7 @@ instance finite_degree_le {σ : Type*} [Finite σ] (n : ℕ) :
 an additional predicate is finite. -/
 instance finite_degree_le_and {σ : Type*} [Finite σ] (n : ℕ) (p : (σ →₀ ℕ) → Prop) :
     Finite {s : σ →₀ ℕ // s.degree ≤ n ∧ p s} :=
-  .of_injective (fun s ↦ (⟨s.val, s.property.1⟩ : {s : σ →₀ ℕ // s.degree ≤ n}))
-    fun _ _ h ↦ Subtype.ext (Subtype.mk.inj h)
+  ((Finsupp.finite_of_degree_le n).sep p).to_subtype
 
 /-- For a fintype of variables with decidable equality, the exponent vectors of degree `n` form a
 fintype, enumerated by `Finset.finsuppAntidiag`. -/
@@ -303,17 +302,6 @@ instance fintypeDegreeLe {σ : Type*} [Fintype σ] [DecidableEq σ] (n : ℕ) :
     ((Finset.range (n + 1)).biUnion fun m ↦ (Finset.univ : Finset σ).finsuppAntidiag m)
     fun s ↦ by simp [Finset.mem_finsuppAntidiag, degree_eq_sum]
 
-/-- The number of exponent vectors of degree `n` in `Fintype.card σ` variables is
-`(Fintype.card σ).multichoose n`. -/
-@[simp]
-theorem card_degree_eq (σ : Type*) [Fintype σ] (n : ℕ)
-    [Fintype {s : σ →₀ ℕ // s.degree = n}] :
-    Fintype.card {s : σ →₀ ℕ // s.degree = n} = (Fintype.card σ).multichoose n := by
-  classical
-  refine (Fintype.card_of_subtype ((Finset.univ : Finset σ).finsuppAntidiag n)
-    fun s ↦ by simp [Finset.mem_finsuppAntidiag, degree_eq_sum]).trans ?_
-  rw [Finset.card_finsuppAntidiag_nat_eq_multichoose, Finset.card_univ]
-
 /-- The `Nat.card` of exponent vectors of degree `n` in variables `σ` is
 `(Nat.card σ).multichoose n`. -/
 @[simp]
@@ -324,6 +312,14 @@ theorem natCard_degree_eq (σ : Type*) (n : ℕ) :
     (Equiv.subtypeEquivRight fun s ↦ by simp [degree_apply, Finsupp.sum]).trans
       (Sym.equivNatSum σ n).symm
   rw [Nat.card_congr e, Sym.natCard_sym_eq_multichoose]
+
+/-- The number of exponent vectors of degree `n` in `Fintype.card σ` variables is
+`(Fintype.card σ).multichoose n`. -/
+@[simp]
+theorem card_degree_eq (σ : Type*) [Fintype σ] (n : ℕ)
+    [Fintype {s : σ →₀ ℕ // s.degree = n}] :
+    Fintype.card {s : σ →₀ ℕ // s.degree = n} = (Fintype.card σ).multichoose n := by
+  simpa only [Nat.card_eq_fintype_card] using natCard_degree_eq σ n
 
 /-- The number of exponent vectors of degree at most `n` in `Fintype.card σ` variables is
 `(Fintype.card σ + n).choose (Fintype.card σ)`. -/

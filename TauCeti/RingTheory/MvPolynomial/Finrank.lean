@@ -13,14 +13,12 @@ import Mathlib.LinearAlgebra.Dimension.Constructions
 import TauCeti.Data.Finsupp.Weight
 
 /-!
-# Dimension of homogeneous and bounded-degree polynomials
+# Dimension of homogeneous polynomials
 
 The monomial basis of a homogeneous component is indexed by exponent vectors of its degree.
 For two variables this gives dimension `w + 1`, used for the scalar-matrix trace on binary forms.
 Changing the coefficients along a ring homomorphism, `TauCeti.mapHomogeneousSubmodule`, is
 semilinear and sends this basis to the monomial basis over the new ring.
-Summing over the degrees, the polynomials of total degree at most `m` in `d` variables have
-dimension `(m + d choose d)`, the number of rows of an interpolation matrix built from them.
 -/
 
 public section
@@ -134,19 +132,6 @@ theorem finrank_homogeneousSubmodule_eq_multichoose (σ R : Type*) [Fintype σ]
     Module.finrank R (homogeneousSubmodule σ R n) = (Fintype.card σ).multichoose n := by
   rw [finrank_homogeneousSubmodule, Set.coe_ofPred, Finsupp.natCard_degree_eq,
     Nat.card_eq_fintype_card]
-
-/-- The polynomials of total degree at most `m` in `d = card σ` variables have dimension
-`(m + d choose d)`. -/
-theorem finrank_restrictTotalDegree (σ R : Type*) [Fintype σ] [CommSemiring R]
-    [StrongRankCondition R] (m : ℕ) :
-    Module.finrank R (restrictTotalDegree σ R m) =
-      (m + Fintype.card σ).choose (Fintype.card σ) := by
-  classical
-  have hset : {s : σ →₀ ℕ | (s.sum fun _ e ↦ e) ≤ m} = {s : σ →₀ ℕ | s.degree ≤ m} := by
-    ext s
-    simp [Finsupp.degree_eq_sum, Finsupp.sum_fintype]
-  rw [restrictTotalDegree, Module.finrank_eq_nat_card_basis (basisRestrictSupport R _), hset,
-    Set.coe_ofPred, Finsupp.natCard_degree_le, Nat.card_eq_fintype_card, add_comm]
 
 /-- The degree-`w` homogeneous polynomials in two variables have dimension `w + 1`. -/
 theorem finrank_homogeneousSubmodule_fin_two (R : Type*) [CommSemiring R]

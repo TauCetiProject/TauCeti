@@ -16,7 +16,6 @@ public import TauCeti.RingTheory.MvPowerSeries.Basic
 public import TauCeti.RingTheory.MvPowerSeries.Ideal
 import Mathlib.Data.Finsupp.PWO
 import Mathlib.Order.UpperLower.Closure
-import TauCeti.RingTheory.MvPowerSeries.Order
 
 /-!
 # Initial exponents and diagrams of initial exponents of multivariate power series

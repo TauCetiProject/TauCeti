@@ -550,16 +550,23 @@ open scoped Classical in
 private noncomputable def seriesOfComplement {R : Type*} [Semiring R]
     (I : Ideal (MvPowerSeries σ R))
     (g : {α : σ →₀ ℕ // α ∉ ord.initialDiagram I} → R) : MvPowerSeries σ R :=
-  fun β ↦ if h : β ∉ ord.initialDiagram I then g ⟨β, h⟩ else 0
+  Function.extend Subtype.val g 0
 
-open scoped Classical in
-private theorem coeff_seriesOfComplement {R : Type*} [Semiring R]
+private theorem coeff_seriesOfComplement_coe {R : Type*} [Semiring R]
     (I : Ideal (MvPowerSeries σ R))
-    (g : {α : σ →₀ ℕ // α ∉ ord.initialDiagram I} → R) (β : σ →₀ ℕ) :
-    MvPowerSeries.coeff β (ord.seriesOfComplement I g) =
-      if h : β ∉ ord.initialDiagram I then g ⟨β, h⟩ else 0 := by
-  rw [MvPowerSeries.coeff_apply]
-  rfl
+    (g : {α : σ →₀ ℕ // α ∉ ord.initialDiagram I} → R)
+    (α : {α : σ →₀ ℕ // α ∉ ord.initialDiagram I}) :
+    MvPowerSeries.coeff α.val (ord.seriesOfComplement I g) = g α := by
+  rw [MvPowerSeries.coeff_apply, seriesOfComplement]
+  exact Subtype.val_injective.extend_apply g 0 α
+
+private theorem coeff_seriesOfComplement_of_mem {R : Type*} [Semiring R]
+    (I : Ideal (MvPowerSeries σ R))
+    (g : {α : σ →₀ ℕ // α ∉ ord.initialDiagram I} → R)
+    {β : σ →₀ ℕ} (hβ : β ∈ ord.initialDiagram I) :
+    MvPowerSeries.coeff β (ord.seriesOfComplement I g) = 0 := by
+  rw [MvPowerSeries.coeff_apply, seriesOfComplement,
+    Function.extend_apply' _ _ _ fun ⟨α, h⟩ ↦ α.property (h ▸ hβ), Pi.zero_apply]
 
 /-- The `R`-submodule `ord.complementSubmodule I` of power series supported outside
 `ord.initialDiagram I` is `R`-linearly isomorphic to the function space
@@ -572,20 +579,17 @@ noncomputable def complementSubmoduleEquivFun {R : Type*} [Semiring R]
   map_smul' _ _ := funext fun _ ↦ by simp
   invFun g := ⟨ord.seriesOfComplement I g,
     ord.mem_complementSubmodule_iff.mpr fun β hβ hD ↦ by
-      rw [MvPowerSeries.mem_support, ord.coeff_seriesOfComplement] at hβ
-      simp [hD] at hβ⟩
+      rw [MvPowerSeries.mem_support, ord.coeff_seriesOfComplement_of_mem I g hD] at hβ
+      exact hβ rfl⟩
   left_inv f := Subtype.ext <| MvPowerSeries.ext fun β ↦ by
-    rw [Subtype.coe_mk, ord.coeff_seriesOfComplement]
-    split_ifs with h
-    · symm
+    by_cases h : β ∈ ord.initialDiagram I
+    · rw [Subtype.coe_mk, ord.coeff_seriesOfComplement_of_mem I _ h]
+      symm
       by_contra hne
-      exact absurd h
-        (ord.mem_complementSubmodule_iff.mp f.property β (MvPowerSeries.mem_support.mpr hne))
-    · rfl
-  right_inv g := funext fun ⟨α, hα⟩ ↦ by
-    dsimp only
-    rw [ord.coeff_seriesOfComplement]
-    simp [hα]
+      exact absurd h (ord.mem_complementSubmodule_iff.mp f.property β
+        (MvPowerSeries.mem_support.mpr hne))
+    · exact ord.coeff_seriesOfComplement_coe I (fun α ↦ MvPowerSeries.coeff α.val f.val) ⟨β, h⟩
+  right_inv g := funext fun α ↦ ord.coeff_seriesOfComplement_coe I g α
 
 @[simp]
 theorem complementSubmoduleEquivFun_apply {R : Type*} [Semiring R]
@@ -600,8 +604,10 @@ theorem coeff_coe_complementSubmoduleEquivFun_symm {R : Type*} [Semiring R]
     (I : Ideal (MvPowerSeries σ R)) (g : {α : σ →₀ ℕ // α ∉ ord.initialDiagram I} → R)
     (β : σ →₀ ℕ) :
     MvPowerSeries.coeff β ((ord.complementSubmoduleEquivFun I).symm g : MvPowerSeries σ R) =
-      if h : β ∉ ord.initialDiagram I then g ⟨β, h⟩ else 0 :=
-  ord.coeff_seriesOfComplement I g β
+      if h : β ∉ ord.initialDiagram I then g ⟨β, h⟩ else 0 := by
+  split_ifs with h
+  · exact ord.coeff_seriesOfComplement_of_mem I g h
+  · exact ord.coeff_seriesOfComplement_coe I g ⟨β, h⟩
 
 /-- At an exponent `α` outside `ord.initialDiagram I`, the series
 `((ord.complementSubmoduleEquivFun I).symm g : MvPowerSeries σ R)` has coefficient `g α`. -/
@@ -610,18 +616,8 @@ theorem coeff_coe_complementSubmoduleEquivFun_symm_coe {R : Type*} [Semiring R]
     (I : Ideal (MvPowerSeries σ R)) (g : {α : σ →₀ ℕ // α ∉ ord.initialDiagram I} → R)
     (α : {α : σ →₀ ℕ // α ∉ ord.initialDiagram I}) :
     MvPowerSeries.coeff α.val ((ord.complementSubmoduleEquivFun I).symm g : MvPowerSeries σ R) =
-      g α := by
-  classical
-  rw [ord.coeff_coe_complementSubmoduleEquivFun_symm, dite_eq_left α.property]
-
-/-- At an unpacked exponent `β ∉ ord.initialDiagram I`, the series
-`((ord.complementSubmoduleEquivFun I).symm g : MvPowerSeries σ R)` has coefficient `g ⟨β, hβ⟩`. -/
-theorem coeff_coe_complementSubmoduleEquivFun_symm_of_notMem {R : Type*} [Semiring R]
-    (I : Ideal (MvPowerSeries σ R)) (g : {α : σ →₀ ℕ // α ∉ ord.initialDiagram I} → R)
-    {β : σ →₀ ℕ} (hβ : β ∉ ord.initialDiagram I) :
-    MvPowerSeries.coeff β ((ord.complementSubmoduleEquivFun I).symm g : MvPowerSeries σ R) =
-      g ⟨β, hβ⟩ :=
-  ord.coeff_coe_complementSubmoduleEquivFun_symm_coe I g ⟨β, hβ⟩
+      g α :=
+  ord.coeff_seriesOfComplement_coe I g α
 
 /-- At an exponent `β ∈ ord.initialDiagram I`, the series
 `((ord.complementSubmoduleEquivFun I).symm g : MvPowerSeries σ R)` has coefficient `0`. -/
@@ -629,9 +625,8 @@ theorem coeff_coe_complementSubmoduleEquivFun_symm_of_notMem {R : Type*} [Semiri
 theorem coeff_coe_complementSubmoduleEquivFun_symm_of_mem {R : Type*} [Semiring R]
     (I : Ideal (MvPowerSeries σ R)) (g : {α : σ →₀ ℕ // α ∉ ord.initialDiagram I} → R)
     {β : σ →₀ ℕ} (hβ : β ∈ ord.initialDiagram I) :
-    MvPowerSeries.coeff β ((ord.complementSubmoduleEquivFun I).symm g : MvPowerSeries σ R) = 0 := by
-  classical
-  rw [ord.coeff_coe_complementSubmoduleEquivFun_symm, dite_eq_right (not_not.mpr hβ)]
+    MvPowerSeries.coeff β ((ord.complementSubmoduleEquivFun I).symm g : MvPowerSeries σ R) = 0 :=
+  ord.coeff_seriesOfComplement_of_mem I g hβ
 
 private theorem sub_mem_and_mem_complementSubmodule {R ι : Type*} [Ring R] [Fintype ι]
     {I : Ideal (MvPowerSeries σ R)}

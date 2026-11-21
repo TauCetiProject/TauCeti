@@ -34,12 +34,13 @@ the zero ideal this recovers the binomial count `Nat.choose (Nat.card σ + n) (N
 (`TauCeti.localQuotientHilbertSamuel_mvPowerSeries_bot`).
 
 Applying Dickson-lemma stabilization of degree-bounded complement counts for sequences of upper
-sets in `σ →₀ ℕ` (`TauCeti.exists_forall_ge_card_degree_le_notMem_eq_of_isUpperSet`) to graded
+sets in `σ →₀ ℕ` (`TauCeti.exists_forall_ge_natCard_degree_le_notMem_eq_of_isUpperSet`) to graded
 lexicographic initial diagrams yields lexicographic stabilization
-(`TauCeti.exists_forall_ge_localQuotientHilbertSamuel_eq_of_lex`, `TauCeti.hsLexStabilization`) and
-hence pointwise stabilization (`TauCeti.exists_forall_ge_localQuotientHilbertSamuel_eq_of_le`) for
-Hilbert–Samuel functions of ideals in `MvPowerSeries σ (K j)` across possibly varying coefficient
-fields `K j` (Bierstone–Milman 1989, Theorem 5.2.1; Bierstone–Milman–Temkin 2011, §6.1).
+(`TauCeti.exists_forall_ge_localQuotientHilbertSamuel_eq_of_toLex_le`, `TauCeti.hsLexStabilization`)
+and hence pointwise stabilization (`TauCeti.exists_forall_ge_localQuotientHilbertSamuel_eq_of_le`)
+for Hilbert–Samuel functions of ideals in `MvPowerSeries σ (K j)` across possibly varying
+coefficient fields `K j` (Bierstone–Milman 1989, Theorem 5.2.1; Bierstone–Milman–Temkin 2011,
+§6.1).
 
 ## Main results
 
@@ -53,7 +54,7 @@ fields `K j` (Bierstone–Milman 1989, Theorem 5.2.1; Bierstone–Milman–Temki
   `TauCeti.localQuotientHilbertSamuel_mvPowerSeries_span_X_pow_of_subsingleton`: explicit
   evaluations for `⊥`, coordinate ideals `Ideal.span (X '' S)`, coordinate hyperplanes `(X i)`, and
   univariate monomial powers `(X i ^ k)`.
-* `TauCeti.exists_forall_ge_localQuotientHilbertSamuel_eq_of_lex`,
+* `TauCeti.exists_forall_ge_localQuotientHilbertSamuel_eq_of_toLex_le`,
   `TauCeti.hsLexStabilization`,
   `TauCeti.exists_forall_ge_localQuotientHilbertSamuel_eq_of_le`: lexicographic and pointwise
   stabilization of realized Hilbert–Samuel functions in `MvPowerSeries σ (K j)` and
@@ -95,15 +96,16 @@ theorem localQuotientHilbertSamuel_mvPowerSeries {σ K : Type*} [Field K] [Finit
   let idxEquiv : {α : σ →₀ ℕ // α ∉ MonomialOrder.degLex.initialDiagram J} ≃
       {α : σ →₀ ℕ // α.degree ≤ n ∧ α ∉ MonomialOrder.degLex.initialDiagram I} :=
     Equiv.subtypeEquivRight hmem
-  set d := Nat.card {α : σ →₀ ℕ // α.degree ≤ n ∧ α ∉ MonomialOrder.degLex.initialDiagram I}
-  let finEquiv : {α : σ →₀ ℕ // α ∉ MonomialOrder.degLex.initialDiagram J} ≃ Fin d :=
-    idxEquiv.trans (Finite.equivFin _)
-  let linEquiv : (MvPowerSeries σ K ⧸ J) ≃ₗ[K] (Fin d → K) :=
-    ((MonomialOrder.degLex.quotientEquivComplementSubmodule J).trans
-      (MonomialOrder.degLex.complementSubmoduleEquivFun J)).trans
-      (LinearEquiv.funCongrLeft K K finEquiv.symm)
+  have : Finite {α : σ →₀ ℕ // α ∉ MonomialOrder.degLex.initialDiagram J} :=
+    .of_equiv _ idxEquiv.symm
+  let _ := Fintype.ofFinite {α : σ →₀ ℕ // α ∉ MonomialOrder.degLex.initialDiagram J}
+  let linEquiv : (MvPowerSeries σ K ⧸ J) ≃ₗ[K]
+      ({α : σ →₀ ℕ // α ∉ MonomialOrder.degLex.initialDiagram J} → K) :=
+    (MonomialOrder.degLex.quotientEquivComplementSubmodule J).trans
+      (MonomialOrder.degLex.complementSubmoduleEquivFun J)
   rw [localQuotientHilbertSamuel_def, ← length_mvPowerSeries_restrictScalars (R := K),
-    linEquiv.length_eq, Module.length_eq_finrank, Module.finrank_fin_fun]
+    linEquiv.length_eq, Module.length_eq_finrank, Module.finrank_pi,
+    ← Nat.card_eq_fintype_card, Nat.card_congr idxEquiv]
 
 /-- Two ideals of `MvPowerSeries σ K₁` and `MvPowerSeries σ K₂` with the same graded lexicographic
 initial diagram have the same Hilbert–Samuel function. -/
@@ -208,10 +210,10 @@ end FormalHilbertSamuel
 section Stabilization
 
 /-- **Lexicographic Hilbert–Samuel stabilization** over `MvPowerSeries σ (K j)` (`[Finite σ]`):
-every lexicographically nonincreasing sequence of Hilbert–Samuel functions realized by ideals `I j`
+every `toLex`-nonincreasing sequence of Hilbert–Samuel functions realized by ideals `I j`
 in `MvPowerSeries σ (K j)` (allowing the coefficient field `K j` to vary with `j`) is eventually
 constant (Bierstone–Milman 1989, Theorem 5.2.1). -/
-theorem exists_forall_ge_localQuotientHilbertSamuel_eq_of_lex
+theorem exists_forall_ge_localQuotientHilbertSamuel_eq_of_toLex_le
     {σ : Type*} {K : ℕ → Type*} [∀ j, Field (K j)] [Finite σ]
     (I : ∀ j, Ideal (MvPowerSeries σ (K j)))
     (h : ∀ j, toLex (localQuotientHilbertSamuel (MvPowerSeries σ (K (j + 1))) (I (j + 1))) ≤
@@ -233,7 +235,7 @@ theorem exists_forall_ge_localQuotientHilbertSamuel_eq_of_lex
     · refine Or.inr ⟨m, fun k hk ↦ ?_, ?_⟩
       · exact Nat.cast_inj.mp ((hval (j + 1) k).symm.trans ((hprev k hk).trans (hval j k)))
       · exact Nat.cast_lt.mp ((hval (j + 1) m).symm ▸ (hval j m).symm ▸ hltm)
-  obtain ⟨j₀, hj₀⟩ := exists_forall_ge_card_degree_le_notMem_eq_of_isUpperSet D
+  obtain ⟨j₀, hj₀⟩ := exists_forall_ge_natCard_degree_le_notMem_eq_of_isUpperSet D
     (fun j ↦ MonomialOrder.degLex.isUpperSet_initialDiagram (I j)) hlex
   refine ⟨j₀, fun j hj ↦ funext fun n ↦ ?_⟩
   rw [hval j n, hval j₀ n]
@@ -248,7 +250,8 @@ theorem hsLexStabilization (K : Type*) [Field K] (n : ℕ)
         (localQuotientHilbertSamuel _ (I j))) :
     ∃ j₀, ∀ j, j₀ ≤ j →
       localQuotientHilbertSamuel _ (I j) = localQuotientHilbertSamuel _ (I j₀) :=
-  exists_forall_ge_localQuotientHilbertSamuel_eq_of_lex I fun j ↦ Pi.Lex.toLex_le_toLex.mpr (h j)
+  exists_forall_ge_localQuotientHilbertSamuel_eq_of_toLex_le I
+    fun j ↦ Pi.Lex.toLex_le_toLex.mpr (h j)
 
 /-- **Pointwise Hilbert–Samuel stabilization** over `MvPowerSeries σ (K j)` (`[Finite σ]`): every
 pointwise nonincreasing sequence of Hilbert–Samuel functions realized by ideals `I j` in
@@ -261,99 +264,8 @@ theorem exists_forall_ge_localQuotientHilbertSamuel_eq_of_le
     ∃ j₀, ∀ j, j₀ ≤ j →
       localQuotientHilbertSamuel (MvPowerSeries σ (K j)) (I j) =
         localQuotientHilbertSamuel (MvPowerSeries σ (K j₀)) (I j₀) :=
-  exists_forall_ge_localQuotientHilbertSamuel_eq_of_lex I fun j ↦ Pi.toLex_monotone (h j)
+  exists_forall_ge_localQuotientHilbertSamuel_eq_of_toLex_le I fun j ↦ Pi.toLex_monotone (h j)
 
 end Stabilization
-
-section Examples
-
-/-- For `K⟦X⟧ ⧸ (X²)`, the Hilbert–Samuel function takes value `1` at `0` and `2` for every
-`ℓ ≥ 1`. -/
-example (K : Type*) [Field K] :
-    localQuotientHilbertSamuel (MvPowerSeries (Fin 1) K)
-        (Ideal.span {MvPowerSeries.X 0 ^ 2}) 0 = 1 ∧
-      ∀ ℓ, 1 ≤ ℓ →
-        localQuotientHilbertSamuel (MvPowerSeries (Fin 1) K)
-          (Ideal.span {MvPowerSeries.X 0 ^ 2}) ℓ = 2 := by
-  refine ⟨by simp [localQuotientHilbertSamuel_mvPowerSeries_span_X_pow_of_subsingleton],
-    fun ℓ hℓ ↦ ?_⟩
-  rw [localQuotientHilbertSamuel_mvPowerSeries_span_X_pow_of_subsingleton, min_eq_right (by omega)]
-  norm_num
-
-/-- For `I_j = (X ^ max (N - j) 1) ⊆ K⟦X⟧`, the Hilbert–Samuel functions decrease in both orders
-and stabilize at the constant function `1` of `K⟦X⟧ ⧸ (X)` for `j ≥ N`. -/
-example (K : Type*) [Field K] (N : ℕ) :
-    let I : ℕ → Ideal (MvPowerSeries (Fin 1) K) :=
-      fun j ↦ Ideal.span {MvPowerSeries.X 0 ^ max (N - j) 1}
-    (∀ j ℓ, localQuotientHilbertSamuel _ (I (j + 1)) ℓ ≤ localQuotientHilbertSamuel _ (I j) ℓ) ∧
-      ∀ j, N ≤ j →
-        localQuotientHilbertSamuel _ (I j) =
-          localQuotientHilbertSamuel (MvPowerSeries (Fin 1) K)
-            (Ideal.span {MvPowerSeries.X (0 : Fin 1)}) := by
-  intro I
-  refine ⟨fun j ℓ ↦ ?_, fun j hj ↦ ?_⟩
-  · simp only [I, localQuotientHilbertSamuel_mvPowerSeries_span_X_pow_of_subsingleton, Nat.cast_le]
-    omega
-  · have hmax : max (N - j) 1 = 1 := by omega
-    simp [I, hmax]
-
-/-- In `K⟦X₀, X₁⟧`, the length-three fat point `I₁ = 𝔪²` (`H = (1, 3, 3, 3, …)`) and the smooth
-line `I₂ = (X₀)` (`H = (1, 2, 3, 4, …)`) have pointwise incomparable Hilbert–Samuel functions, yet
-`H(I₂)` is strictly lexicographically smaller than `H(I₁)`. -/
-example (K : Type*) [Field K] :
-    let I₁ : Ideal (MvPowerSeries (Fin 2) K) :=
-      IsLocalRing.maximalIdeal (MvPowerSeries (Fin 2) K) ^ 2
-    let I₂ : Ideal (MvPowerSeries (Fin 2) K) := Ideal.span {MvPowerSeries.X 0}
-    let H₁ := localQuotientHilbertSamuel (MvPowerSeries (Fin 2) K) I₁
-    let H₂ := localQuotientHilbertSamuel (MvPowerSeries (Fin 2) K) I₂
-    ¬ (H₂ ≤ H₁) ∧ ¬ (H₁ ≤ H₂) ∧ Pi.Lex (· < ·) (· < ·) H₂ H₁ := by
-  intro I₁ I₂ H₁ H₂
-  have hH₁ : ∀ n, 1 ≤ n → H₁ n = 3 := fun n hn ↦ by
-    dsimp only [H₁, I₁]
-    rw [localQuotientHilbertSamuel_maximalIdeal_pow_succ (A := MvPowerSeries (Fin 2) K) 1 n,
-      min_eq_left hn, localQuotientHilbertSamuel_mvPowerSeries_bot, Nat.card_fin]
-    norm_num
-  have hH₂ : ∀ n, H₂ n = (n + 1 : ℕ∞) := fun n ↦ by
-    simp [H₂, I₂, Nat.add_comm 1 n]
-  have hH₁_0 : H₁ 0 = 1 :=
-    localQuotientHilbertSamuel_zero_of_ne_top
-      (ne_top_of_le_ne_top (IsLocalRing.maximalIdeal.isMaximal _).ne_top
-        (Ideal.pow_le_self two_ne_zero))
-  refine ⟨fun hle ↦ ?_, fun hle ↦ ?_, ⟨1, fun j hj ↦ ?_, ?_⟩⟩
-  · have h3 := hle 3
-    rw [hH₂ 3, hH₁ 3 (by omega)] at h3
-    norm_num at h3
-  · have h1 := hle 1
-    rw [hH₁ 1 le_rfl, hH₂ 1] at h1
-    norm_num at h1
-  · obtain rfl : j = 0 := by omega
-    rw [hH₂ 0, hH₁_0]
-    norm_num
-  · rw [hH₂ 1, hH₁ 1 le_rfl]
-    norm_num
-
-/-- Realizability as Hilbert–Samuel functions is essential for `hsLexStabilization`: the sequence
-`f j ℓ = if j ≤ ℓ then 1 else 0` decreases strictly in the lexicographic order at every step and
-never stabilizes, and for `j ≥ 1` none of its terms is realized by any ideal of `A`. -/
-example (A : Type*) [CommRing A] [IsLocalRing A] :
-    let f : ℕ → ℕ → ℕ∞ := fun j ℓ ↦ if j ≤ ℓ then 1 else 0
-    (∀ j, Pi.Lex (· < ·) (· < ·) (f (j + 1)) (f j)) ∧
-      (∀ j₀, f (j₀ + 1) ≠ f j₀) ∧
-      ∀ j, 1 ≤ j → ∀ I : Ideal A, localQuotientHilbertSamuel A I ≠ f j := by
-  intro f
-  refine ⟨fun j ↦ ⟨j, fun m hm ↦ ?_, ?_⟩, fun j₀ hEq ↦ ?_, fun j hj I hEq ↦ ?_⟩
-  · simp [f, Nat.not_le_of_lt hm, Nat.not_le_of_lt (Nat.lt_succ_of_lt hm)]
-  · simp [f]
-  · have h := congr_fun hEq j₀
-    simp [f] at h
-  · have h0 : localQuotientHilbertSamuel A I 0 = 0 := by
-      simpa [f, Nat.not_le_of_lt hj] using congr_fun hEq 0
-    have htop : I = ⊤ := localQuotientHilbertSamuel_eq_zero_iff.mp h0
-    have hj_eq : localQuotientHilbertSamuel A I j = 1 := by
-      simpa [f] using congr_fun hEq j
-    rw [htop, localQuotientHilbertSamuel_top] at hj_eq
-    exact zero_ne_one hj_eq
-
-end Examples
 
 end TauCeti

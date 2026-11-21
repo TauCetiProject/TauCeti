@@ -32,14 +32,16 @@ This file collects general results about upper and lower semicontinuous function
   (`TauCeti.eventually_ge_of_lowerSemicontinuousWithinAt`,
   `TauCeti.eventually_ge_of_lowerSemicontinuousAt`). Consequently, post-composing such a family
   with any monotone map into a preorder preserves upper and lower semicontinuity at all four scopes
-  (`Monotone.upperSemicontinuousWithinAt_comp_of_finite`,
-  `Monotone.upperSemicontinuousAt_comp_of_finite`,
-  `Monotone.upperSemicontinuousOn_comp_of_finite`,
-  `Monotone.upperSemicontinuous_comp_of_finite`,
-  `Monotone.lowerSemicontinuousWithinAt_comp_of_finite`,
-  `Monotone.lowerSemicontinuousAt_comp_of_finite`,
-  `Monotone.lowerSemicontinuousOn_comp_of_finite`,
-  `Monotone.lowerSemicontinuous_comp_of_finite`).
+  (`Monotone.upperSemicontinuousWithinAt_comp_of_locally_finite_image`,
+  `Monotone.upperSemicontinuousAt_comp_of_locally_finite_image`,
+  `Monotone.upperSemicontinuousOn_comp_of_locally_finite_image`,
+  `Monotone.upperSemicontinuous_comp_of_locally_finite_image`,
+  `Monotone.lowerSemicontinuousWithinAt_comp_of_locally_finite_image`,
+  `Monotone.lowerSemicontinuousAt_comp_of_locally_finite_image`,
+  `Monotone.lowerSemicontinuousOn_comp_of_locally_finite_image`,
+  `Monotone.lowerSemicontinuous_comp_of_locally_finite_image`). In particular, for a well-ordered
+  index type `ι`, composing with `Pi.toLex` yields semicontinuity into `Lex (∀ i, β i)` directly
+  via `Pi.toLex_monotone.<scope>_comp_of_locally_finite_image hf hfin`.
 
 ## References
 
@@ -179,7 +181,7 @@ variable {α ι γ : Type*} {β : ι → Type*} [TopologicalSpace α] [∀ i, Li
 
 /-- Post-composing a coordinatewise upper semicontinuous locally finite family with a monotone map
 preserves `UpperSemicontinuousWithinAt`. -/
-theorem Monotone.upperSemicontinuousWithinAt_comp_of_finite {g : (∀ i, β i) → γ}
+theorem Monotone.upperSemicontinuousWithinAt_comp_of_locally_finite_image {g : (∀ i, β i) → γ}
     (hg : Monotone g) {f : α → ∀ i, β i} {s : Set α} {x : α}
     (hf : ∀ i, UpperSemicontinuousWithinAt (f · i) s x)
     (hfin : ∃ u ∈ 𝓝[s] x, (f '' u).Finite) :
@@ -189,7 +191,7 @@ theorem Monotone.upperSemicontinuousWithinAt_comp_of_finite {g : (∀ i, β i) �
 
 /-- Post-composing a coordinatewise upper semicontinuous locally finite family with a monotone map
 preserves `UpperSemicontinuousAt`. -/
-theorem Monotone.upperSemicontinuousAt_comp_of_finite {g : (∀ i, β i) → γ}
+theorem Monotone.upperSemicontinuousAt_comp_of_locally_finite_image {g : (∀ i, β i) → γ}
     (hg : Monotone g) {f : α → ∀ i, β i} {x : α}
     (hf : ∀ i, UpperSemicontinuousAt (f · i) x)
     (hfin : ∃ u ∈ 𝓝 x, (f '' u).Finite) :
@@ -199,25 +201,26 @@ theorem Monotone.upperSemicontinuousAt_comp_of_finite {g : (∀ i, β i) → γ}
 
 /-- Post-composing a coordinatewise upper semicontinuous locally finite family with a monotone map
 preserves `UpperSemicontinuousOn`. -/
-theorem Monotone.upperSemicontinuousOn_comp_of_finite {g : (∀ i, β i) → γ}
+theorem Monotone.upperSemicontinuousOn_comp_of_locally_finite_image {g : (∀ i, β i) → γ}
     (hg : Monotone g) {f : α → ∀ i, β i} {s : Set α}
     (hf : ∀ i, UpperSemicontinuousOn (f · i) s)
     (hfin : ∀ x ∈ s, ∃ u ∈ 𝓝[s] x, (f '' u).Finite) :
     UpperSemicontinuousOn (fun x' ↦ g (f x')) s :=
-  fun x hx ↦ hg.upperSemicontinuousWithinAt_comp_of_finite (fun i ↦ hf i x hx) (hfin x hx)
+  fun x hx ↦
+    hg.upperSemicontinuousWithinAt_comp_of_locally_finite_image (fun i ↦ hf i x hx) (hfin x hx)
 
 /-- Post-composing a coordinatewise upper semicontinuous locally finite family with a monotone map
 preserves `UpperSemicontinuous`. -/
-theorem Monotone.upperSemicontinuous_comp_of_finite {g : (∀ i, β i) → γ}
+theorem Monotone.upperSemicontinuous_comp_of_locally_finite_image {g : (∀ i, β i) → γ}
     (hg : Monotone g) {f : α → ∀ i, β i}
     (hf : ∀ i, UpperSemicontinuous (f · i))
     (hfin : ∀ x, ∃ u ∈ 𝓝 x, (f '' u).Finite) :
     UpperSemicontinuous (fun x' ↦ g (f x')) :=
-  fun x ↦ hg.upperSemicontinuousAt_comp_of_finite (fun i ↦ hf i x) (hfin x)
+  fun x ↦ hg.upperSemicontinuousAt_comp_of_locally_finite_image (fun i ↦ hf i x) (hfin x)
 
 /-- Post-composing a coordinatewise lower semicontinuous locally finite family with a monotone map
 preserves `LowerSemicontinuousWithinAt`. -/
-theorem Monotone.lowerSemicontinuousWithinAt_comp_of_finite {g : (∀ i, β i) → γ}
+theorem Monotone.lowerSemicontinuousWithinAt_comp_of_locally_finite_image {g : (∀ i, β i) → γ}
     (hg : Monotone g) {f : α → ∀ i, β i} {s : Set α} {x : α}
     (hf : ∀ i, LowerSemicontinuousWithinAt (f · i) s x)
     (hfin : ∃ u ∈ 𝓝[s] x, (f '' u).Finite) :
@@ -227,7 +230,7 @@ theorem Monotone.lowerSemicontinuousWithinAt_comp_of_finite {g : (∀ i, β i) �
 
 /-- Post-composing a coordinatewise lower semicontinuous locally finite family with a monotone map
 preserves `LowerSemicontinuousAt`. -/
-theorem Monotone.lowerSemicontinuousAt_comp_of_finite {g : (∀ i, β i) → γ}
+theorem Monotone.lowerSemicontinuousAt_comp_of_locally_finite_image {g : (∀ i, β i) → γ}
     (hg : Monotone g) {f : α → ∀ i, β i} {x : α}
     (hf : ∀ i, LowerSemicontinuousAt (f · i) x)
     (hfin : ∃ u ∈ 𝓝 x, (f '' u).Finite) :
@@ -237,21 +240,22 @@ theorem Monotone.lowerSemicontinuousAt_comp_of_finite {g : (∀ i, β i) → γ}
 
 /-- Post-composing a coordinatewise lower semicontinuous locally finite family with a monotone map
 preserves `LowerSemicontinuousOn`. -/
-theorem Monotone.lowerSemicontinuousOn_comp_of_finite {g : (∀ i, β i) → γ}
+theorem Monotone.lowerSemicontinuousOn_comp_of_locally_finite_image {g : (∀ i, β i) → γ}
     (hg : Monotone g) {f : α → ∀ i, β i} {s : Set α}
     (hf : ∀ i, LowerSemicontinuousOn (f · i) s)
     (hfin : ∀ x ∈ s, ∃ u ∈ 𝓝[s] x, (f '' u).Finite) :
     LowerSemicontinuousOn (fun x' ↦ g (f x')) s :=
-  fun x hx ↦ hg.lowerSemicontinuousWithinAt_comp_of_finite (fun i ↦ hf i x hx) (hfin x hx)
+  fun x hx ↦
+    hg.lowerSemicontinuousWithinAt_comp_of_locally_finite_image (fun i ↦ hf i x hx) (hfin x hx)
 
 /-- Post-composing a coordinatewise lower semicontinuous locally finite family with a monotone map
 preserves `LowerSemicontinuous`. -/
-theorem Monotone.lowerSemicontinuous_comp_of_finite {g : (∀ i, β i) → γ}
+theorem Monotone.lowerSemicontinuous_comp_of_locally_finite_image {g : (∀ i, β i) → γ}
     (hg : Monotone g) {f : α → ∀ i, β i}
     (hf : ∀ i, LowerSemicontinuous (f · i))
     (hfin : ∀ x, ∃ u ∈ 𝓝 x, (f '' u).Finite) :
     LowerSemicontinuous (fun x' ↦ g (f x')) :=
-  fun x ↦ hg.lowerSemicontinuousAt_comp_of_finite (fun i ↦ hf i x) (hfin x)
+  fun x ↦ hg.lowerSemicontinuousAt_comp_of_locally_finite_image (fun i ↦ hf i x) (hfin x)
 
 end MonotoneComp
 
