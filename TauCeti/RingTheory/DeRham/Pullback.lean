@@ -207,6 +207,9 @@ noncomputable def complexMap (f : B →ₐ[A] C) : complex A B ⟶ complex A C :
   CochainComplex.ofHom (fun n => ModuleCat.ofHom (pullbackLinear f n)) fun n => by
     rw [complex_d, complex_d]
     ext ω
+    -- The composites typecheck only because `(complex A B).X n` unfolds to
+    -- `ModuleCat.of A (Forms A B n)` (`complex_X`, by `rfl`), so `ModuleCat.hom_comp` and
+    -- `ModuleCat.hom_ofHom` cannot rewrite them; pointwise they are the two sides of `pullback_d`.
     exact (pullback_d f ω).symm
 
 /-- The degree-`n` component of `complexMap f` is `pullback f n`. -/
@@ -224,7 +227,10 @@ theorem complexMap_f_hom (f : B →ₐ[A] C) (n : ℕ) :
 @[simp]
 theorem complexMap_id : complexMap (AlgHom.id A B) = 𝟙 (complex A B) := by
   ext n ω
-  exact pullback_id_apply ω
+  rw [HomologicalComplex.id_f, ModuleCat.id_apply]
+  -- `ext` types `ω` in `(complex A B).X n`, which is `Forms A B n` only after unfolding `complex`
+  -- (`complex_X`), so `complexMap_f_apply` cannot be used by `rw` or `simp` here.
+  exact (complexMap_f_apply _ n ω).trans (pullback_id_apply ω)
 
 /-- `complexMap` is functorial: `g ∘ f` induces the composite of the morphisms of de Rham
 complexes. -/
@@ -232,6 +238,9 @@ complexes. -/
 theorem complexMap_comp (f : B →ₐ[A] C) (g : C →ₐ[A] E) :
     complexMap (g.comp f) = complexMap f ≫ complexMap g := by
   ext n ω
+  rw [HomologicalComplex.comp_f, ModuleCat.comp_apply]
+  -- As in `complexMap_id`, each component is `pullback` by `complexMap_f_apply`, applied
+  -- definitionally because `ω : (complex A B).X n` is `Forms A B n` only after unfolding `complex`.
   exact pullback_comp f g ω
 
 end
