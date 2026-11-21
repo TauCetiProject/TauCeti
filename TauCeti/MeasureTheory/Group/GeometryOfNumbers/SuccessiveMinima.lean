@@ -152,8 +152,8 @@ theorem exists_lt_setFinrank_smul_inter_zLattice [DiscreteTopology L] [IsZLattic
   exact exists_lt_setFinrank_smul_inter hs (hi.trans_eq (ZLattice.rank ℝ L).symm)
 
 /-- **Monotonicity in the index.** Below the integer rank of a discrete `L`, the successive minima
-of an absorbent set are nondecreasing. The ambient space need not be finite-dimensional. Beyond
-the rank they take the junk value `0`. -/
+of an absorbent set are nondecreasing. The ambient space need not be finite-dimensional. When
+`span ℝ L` is finite-dimensional, beyond the rank they take the junk value `0`. -/
 @[gcongr]
 theorem successiveMin_mono [DiscreteTopology L] {j : ℕ} (hs : Absorbent ℝ s) (hij : i ≤ j)
     (hj : j < finrank ℤ L) : successiveMin L s i ≤ successiveMin L s j :=
