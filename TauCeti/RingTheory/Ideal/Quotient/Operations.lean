@@ -34,7 +34,11 @@ the component of `R` cut out by `e`.
 If `R / I → B / IB` is surjective, algebra maps from `B` to an algebra annihilated by `I`
 are unique. This quotient extensionality lemma is used to construct compatible residue maps.
 More generally, if `R ⧸ I → S ⧸ J` is surjective, every element of `S` is congruent modulo `J` to
-the image of an element of `R` (`Ideal.exists_sub_mem_of_surjective_quotientMap`).
+the image of an element of `R` (`Ideal.exists_sub_mem_of_surjective_quotientMap`); if
+`R ⧸ K → S ⧸ K S` is bijective then `R ⧸ J → S ⧸ J S` is bijective for every ideal `J ≥ K`
+(`Ideal.quotientMap_bijective_of_le`), bijectivity transports along ideal equalities
+(`Ideal.quotientMap_bijective_congr`), and bijectivity modulo zero ideals implies bijectivity of
+the underlying homomorphism (`Ideal.bijective_of_quotientMap_bot_bijective`).
 
 An action of a monoid by ring automorphisms preserving a two-sided ideal `I` descends to an action
 on the quotient by `I` (`MonoidHom.quotientRingAut`), assembled from Mathlib's
@@ -109,6 +113,49 @@ theorem exists_sub_mem_of_surjective_quotientMap {S : Type*} [CommRing S] {I : I
   obtain ⟨r, rfl⟩ := Quotient.mk_surjective x
   rw [quotientMap_mk] at hx
   exact ⟨r, Quotient.eq.mp hx.symm⟩
+
+/-- If `R ⧸ K → S ⧸ K S` is bijective, then `R ⧸ J → S ⧸ J S` is bijective for every ideal
+`J ≥ K`: passing to a further quotient by `J` preserves the isomorphism. -/
+theorem quotientMap_bijective_of_le {S : Type*} [CommRing S] (f : R →+* S) {K J : Ideal R}
+    (hKJ : K ≤ J) {HK : K ≤ (K.map f).comap f}
+    (hbij : Function.Bijective (quotientMap (K.map f) f HK)) {HJ : J ≤ (J.map f).comap f} :
+    Function.Bijective (quotientMap (J.map f) f HJ) := by
+  let e : R ⧸ K ≃+* S ⧸ K.map f := RingEquiv.ofBijective _ hbij
+  refine ⟨quotientMap_injective' fun r hr ↦ ?_, fun y ↦ ?_⟩
+  · have hmap : (J.map (Quotient.mk K)).map e.toRingHom =
+        (J.map f).map (Quotient.mk (K.map f)) := by
+      rw [map_map, map_map]; exact congrArg (J.map ·) (quotientMap_comp_mk HK)
+    have hmem : e (Quotient.mk K r) ∈ (J.map (Quotient.mk K)).map e.toRingHom :=
+      hmap ▸ mem_map_of_mem _ hr
+    exact comap_map_mk hKJ ▸
+      (comap_map_of_bijective e.toRingHom e.bijective (I := J.map (Quotient.mk K)) ▸ hmem)
+  · obtain ⟨s, rfl⟩ := Quotient.mk_surjective y
+    obtain ⟨r, hr⟩ := exists_sub_mem_of_surjective_quotientMap hbij.2 s
+    exact ⟨Quotient.mk J r, by
+      rw [quotientMap_mk, Quotient.eq]; simpa [neg_sub] using neg_mem (map_mono hKJ hr)⟩
+
+/-- Bijectivity of `Ideal.quotientMap` is preserved under rewriting equal source and target
+ideals. -/
+theorem quotientMap_bijective_congr {S : Type*} [CommRing S] (f : R →+* S)
+    {I₁ I₂ : Ideal R} {J₁ J₂ : Ideal S} (hI : I₁ = I₂) (hJ : J₁ = J₂)
+    {H₁ : I₁ ≤ J₁.comap f} {H₂ : I₂ ≤ J₂.comap f}
+    (h : Function.Bijective (quotientMap J₁ f H₁)) :
+    Function.Bijective (quotientMap J₂ f H₂) := by
+  subst hI hJ; exact h
+
+/-- If `Ideal.quotientMap` along `f : R →+* S` modulo zero ideals is bijective, then `f` itself is
+bijective. -/
+theorem bijective_of_quotientMap_bot_bijective {S : Type*} [CommRing S] (f : R →+* S)
+    {I : Ideal R} {J : Ideal S} (hI : I = ⊥) (hJ : J = ⊥) {H : I ≤ J.comap f}
+    (hbij : Function.Bijective (quotientMap J f H)) :
+    Function.Bijective f := by
+  subst hI hJ
+  have heq : (f : R → S) =
+      RingEquiv.quotientBot S ∘ quotientMap ⊥ f H ∘ (RingEquiv.quotientBot R).symm :=
+    funext fun _ ↦ by simp
+  rw [heq]
+  exact (RingEquiv.quotientBot S).bijective.comp
+    (hbij.comp (RingEquiv.quotientBot R).symm.bijective)
 
 /-- If `I ≤ J` are ideals with `I` finitely generated, then `J.spanFinrank` is at most the sum
 of the `spanFinrank`s of its image in `R ⧸ I` and `I`. For finitely generated `J`, this bounds
