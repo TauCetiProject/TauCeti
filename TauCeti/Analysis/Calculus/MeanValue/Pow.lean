@@ -25,8 +25,10 @@ The two other cases need no derivative, only data at the two endpoints, so they 
 two points `x` and `y` of a pseudometric space, the values of `u` at `b` and `a`. For `a < 0`,
 `0 ≤ β ≤ 1` and `0 ≤ K`, the data are that `dist x y` vanishes if `b ≤ 0` and is at most `K b ^ β`
 if `0 < b`. For `0 < a` and `b ≤ a / 2`, they are that `x` and `y` both lie within `K a ^ β` of a
-point `c`. When `0 ≤ β`, a function equal to `c` on `(-∞, 0]` with `dist (u r) c ≤ K r ^ β` for
-`r ≥ 0` meets both, for `x = u b` and `y = u a`.
+point `c`. A function `u` equal to `c` on `(-∞, 0]` with `dist (u r) c ≤ K r ^ β` for `r ≥ 0`
+supplies, at `x = u b` and `y = u a`, the endpoint data of both estimates: of the first for every
+`β`, and of the second when `0 ≤ β`, so that `b ^ β ≤ a ^ β` for `0 < b ≤ a / 2`. The data alone
+do not give the first estimate: it still requires `0 ≤ β ≤ 1` and `0 ≤ K`.
 
 ## Main results
 
@@ -58,18 +60,21 @@ theorem norm_sub_le_mul_abs_sub_mul_rpow_of_hasDerivWithinAt {F : Type*} [Normed
   have ha2 : 0 < a / 2 := half_pos ha
   have hD : 0 ≤ D := nonneg_of_mul_nonneg_left ((norm_nonneg _).trans (hbound a left_mem_uIcc))
     (rpow_pos_of_pos ha _)
-  have hr2 (r : ℝ) (hr : r ∈ uIcc a b) : a / 2 ≤ r := by
-    rcases mem_uIcc.1 hr with h | h <;> linarith [h.1]
+  have hr2 : uIcc a b ⊆ Ici (a / 2) :=
+    ordConnected_Ici.uIcc_subset (mem_Ici.2 (half_le_self ha.le)) (mem_Ici.2 hb)
   have hmv := (convex_uIcc a b).norm_image_sub_le_of_norm_hasDerivWithin_le (f := u)
     (f' := f') (C := D * (a / 2) ^ (β - 1)) hderiv
     (fun r hr => (hbound r hr).trans
-      (mul_le_mul_of_nonneg_left (rpow_le_rpow_of_nonpos ha2 (hr2 r hr) hβ₁) hD))
+      (mul_le_mul_of_nonneg_left (rpow_le_rpow_of_nonpos ha2 (hr2 hr) hβ₁) hD))
     left_mem_uIcc right_mem_uIcc
-  have hhalf : (a / 2) ^ (β - 1) ≤ 2 * a ^ (β - 1) := by
-    rw [div_rpow ha.le zero_le_two, div_eq_mul_inv, ← rpow_neg zero_le_two, neg_sub, mul_comm]
-    gcongr
-    calc (2 : ℝ) ^ (1 - β) ≤ 2 ^ (1 : ℝ) := rpow_le_rpow_of_exponent_le one_le_two (by linarith)
-      _ = 2 := rpow_one 2
+  have hhalf : (a / 2) ^ (β - 1) ≤ 2 * a ^ (β - 1) :=
+    calc (a / 2) ^ (β - 1) = a ^ (β - 1) / 2 ^ (β - 1) := div_rpow ha.le zero_le_two _
+      _ = 2 ^ (1 - β) * a ^ (β - 1) := by
+          rw [div_eq_inv_mul, ← rpow_neg zero_le_two, neg_sub]
+      _ ≤ 2 ^ (1 : ℝ) * a ^ (β - 1) :=
+          mul_le_mul_of_nonneg_right (rpow_le_rpow_of_exponent_le one_le_two (by linarith))
+            (by positivity)
+      _ = 2 * a ^ (β - 1) := by rw [rpow_one]
   rw [Real.norm_eq_abs] at hmv
   calc ‖u b - u a‖ ≤ D * (a / 2) ^ (β - 1) * |b - a| := hmv
     _ ≤ D * (2 * a ^ (β - 1)) * |b - a| := by gcongr

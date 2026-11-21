@@ -536,13 +536,12 @@ theorem exists_norm_heatCauchyPotential_sub_heatCauchyPotential_le_mul
   rw [abs_of_pos ha]
   rcases le_or_gt (a / 2) b with hb | hb
   · -- At positive times the time derivative is the Laplacian, of size `O(H r^(β - 1))`.
-    have hpos (r : ℝ) (hr : r ∈ uIcc a b) : 0 < r := by
-      rcases mem_uIcc.1 hr with h | h <;> linarith [h.1]
+    have hpos : uIcc a b ⊆ Ioi 0 := ordConnected_Ioi.uIcc_subset ha ((half_pos ha).trans_le hb)
     have := norm_sub_le_mul_abs_sub_mul_rpow_of_hasDerivWithinAt (u := u)
       (f' := fun r => Δ (heatCauchyPotential g r) x) (D := C₂ * H) hβ₀ hβ₁ ha hb
       (fun r hr => (hasDerivAt_heatCauchyPotential_of_ae_norm_le
-        (ae_of_all _ hM) (hpos r hr) x).hasDerivWithinAt)
-      (fun r hr => hC₂ (ae_of_all _ hM) hg (hpos r hr) x)
+        (ae_of_all _ hM) (hpos hr) x).hasDerivWithinAt)
+      (fun r hr => hC₂ (ae_of_all _ hM) hg (hpos hr) x)
     calc ‖u b - u a‖ ≤ 2 * (C₂ * H) * (|b - a| * a ^ (β - 1)) := this
       _ = 2 * C₂ * (H * (|b - a| * a ^ (β - 1))) := by ring
       _ ≤ (2 * C₂ + 4 * Mα) * (H * (|b - a| * a ^ (β - 1))) := by

@@ -15,7 +15,7 @@ import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Analysis.Distribution.TemperateGrowth
-import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Bounds
+import TauCeti.Analysis.SpecialFunctions.Pow.Regularization
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
 
 /-!
@@ -369,7 +369,9 @@ theorem exists_norm_iteratedFDeriv_japaneseBracketCpow_le_div_pow (N : ℕ) :
         -- Since `re z ≤ 0`, the bracket power has order at most `-k`.
         calc (1 + ‖ξ‖ ^ 2) ^ ((z.re - k) / 2) ≤ (1 + ‖ξ‖ ^ 2) ^ (-(k : ℝ) / 2) :=
               Real.rpow_le_rpow_of_exponent_le (by nlinarith [sq_nonneg ‖ξ‖]) (by linarith)
-          _ ≤ 1 / ‖ξ‖ ^ k := Real.one_add_sq_rpow_neg_le (norm_pos_iff.2 hξ) k
+          _ ≤ 1 / ‖ξ‖ ^ k := by
+            simpa only [add_comm, Real.rpow_neg (norm_nonneg ξ), Real.rpow_natCast, one_div]
+              using norm_sq_add_rpow_div_two_le zero_le_one hξ (neg_nonpos.2 (Nat.cast_nonneg k))
     _ = _ := by
         push_cast
         ring

@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.SingularSupport
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Distribution.WaveFrontSet.LineDeriv
-import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Bounds
 
 /-!
 # The Sobolev wave front set of a derivative

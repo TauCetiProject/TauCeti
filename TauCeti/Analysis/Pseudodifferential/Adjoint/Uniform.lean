@@ -11,6 +11,7 @@ import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
 import TauCeti.Analysis.Pseudodifferential.LatticeDecomposition
 import TauCeti.Analysis.Pseudodifferential.OutputSupport.Basic
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Bounds
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!

@@ -22,16 +22,20 @@ convexity of `t ↦ t ^ q`, and if `u < s + t`, because `t ↦ t ^ q` is strictl
 The improvement is uniform once `u` is bounded away from `2 * s`: for each `0 < δ` there is
 `κ > 0` with `u ^ q ≤ (1 - κ) * 2 ^ (q - 1) * (s ^ q + t ^ q)` whenever `0 ≤ s`, `0 ≤ t`,
 `0 ≤ u ≤ s + t` and `u ≤ (2 - δ) * s`. Since `(2 - δ) * s ≤ s` for `δ ≥ 1`, it is enough to treat
-`0 < δ ≤ 1`, and by symmetry `t ≤ s`. Rescaling to `s = 1`, the strict inequality holds at
-`u = min (1 + r) (2 - δ)` for every ratio `r = t / s ∈ [0, 1]`: by strict convexity when `r < 1`,
-and because `2 - δ < 2` when `r = 1`. Compactness of `[0, 1]` makes the gap a uniform fraction of
-the right-hand side. This is the scalar step in showing that `q`-th powers of norms on a uniformly
-convex space are uniformly convex.
+`0 < δ ≤ 1`. The right-hand side is symmetric in `s` and `t`, and the cutoff is not, but it
+survives passing to the larger scale: if `s ≤ t`, then `u ≤ (2 - δ) * s ≤ (2 - δ) * t` because
+`2 - δ ≥ 0`. So it is enough to treat `t ≤ s`. If `s = 0`, then `t = u = 0` and both sides vanish.
+Otherwise, rescaling to `s = 1`, the strict inequality holds at `u = min (1 + r) (2 - δ)` for every
+ratio `r = t / s ∈ [0, 1]`: by strict convexity when `r < 1`, and because `2 - δ < 2` when
+`r = 1`. Compactness of `[0, 1]` makes the gap a uniform fraction of the right-hand side. This is
+the scalar step in showing that `q`-th powers of norms on a uniformly convex space are uniformly
+convex.
 
 ## Main results
 
-* `Real.rpow_lt_mul_rpow_add_rpow_of_le_add`: `u ^ q < 2 ^ (q - 1) * (s ^ q + t ^ q)` for
-  `1 < q`, `0 ≤ s`, `0 ≤ t` and `0 ≤ u ≤ s + t`, when `s ≠ t` or `u < s + t`.
+* `Real.rpow_lt_mul_rpow_add_rpow_of_le_add_of_ne_or_lt_add`:
+  `u ^ q < 2 ^ (q - 1) * (s ^ q + t ^ q)` for `1 < q`, `0 ≤ s`, `0 ≤ t` and `0 ≤ u ≤ s + t`, when
+  `s ≠ t` or `u < s + t`.
 * `Real.exists_rpow_le_of_le_add_of_le_two_sub_mul`: for `1 < q` and `0 < δ` there is `κ > 0`
   with `u ^ q ≤ (1 - κ) * 2 ^ (q - 1) * (s ^ q + t ^ q)` whenever `0 ≤ s`, `0 ≤ t`,
   `0 ≤ u ≤ s + t` and `u ≤ (2 - δ) * s`.
@@ -43,8 +47,8 @@ namespace Real
 
 /-- **A strict power mean inequality.** For `1 < q`, `0 ≤ s`, `0 ≤ t` and `0 ≤ u ≤ s + t`,
 `u ^ q < 2 ^ (q - 1) * (s ^ q + t ^ q)` unless `s = t` and `u = s + t`. -/
-theorem rpow_lt_mul_rpow_add_rpow_of_le_add (u : ℝ) {q s t : ℝ} (hq : 1 < q) (hs : 0 ≤ s)
-    (ht : 0 ≤ t) (hu : 0 ≤ u) (hus : u ≤ s + t) (hne : s ≠ t ∨ u < s + t) :
+theorem rpow_lt_mul_rpow_add_rpow_of_le_add_of_ne_or_lt_add (u : ℝ) {q s t : ℝ} (hq : 1 < q)
+    (hs : 0 ≤ s) (ht : 0 ≤ t) (hu : 0 ≤ u) (hus : u ≤ s + t) (hne : s ≠ t ∨ u < s + t) :
     u ^ q < 2 ^ (q - 1) * (s ^ q + t ^ q) := by
   have hq0 : 0 < q := by linarith
   -- The midpoint form `(s + t) ^ q = 2 ^ (q - 1) * (2 * ((s + t) / 2) ^ q)`.
@@ -71,9 +75,9 @@ theorem rpow_lt_mul_rpow_add_rpow_of_le_add (u : ℝ) {q s t : ℝ} (hq : 1 < q)
         gcongr
         linarith
 
-/-- The normalized gap behind `Real.exists_rpow_le_of_le_add_of_le_two_sub_mul`: at `s = 1`
-and `t = r ∈ [0, 1]`, the `q`-th power of the largest admissible `u = min (1 + r) (2 - δ)` is a
-uniform fraction below the power mean bound. -/
+/-- The normalized gap behind `Real.exists_rpow_le_of_le_add_of_le_two_sub_mul`: for `1 < q` and
+`0 < δ ≤ 2`, at `s = 1` and `t = r ∈ [0, 1]`, the `q`-th power of the largest admissible
+`u = min (1 + r) (2 - δ)` is a uniform fraction below the power mean bound. -/
 private theorem exists_min_rpow_le_one_sub_mul {q δ : ℝ} (hq : 1 < q) (hδ : 0 < δ)
     (hδ2 : δ ≤ 2) :
     ∃ κ, 0 < κ ∧ ∀ r ∈ Set.Icc (0 : ℝ) 1,
@@ -85,7 +89,7 @@ private theorem exists_min_rpow_le_one_sub_mul {q δ : ℝ} (hq : 1 < q) (hδ : 
   have hgap (r : ℝ) (hr : r ∈ Set.Icc (0 : ℝ) 1) : m r ^ q < f r := by
     have hne : (1 : ℝ) ≠ r ∨ m r < 1 + r :=
       (ne_or_eq 1 r).imp_right fun h ↦ (min_le_right _ _).trans_lt (by linarith)
-    have h := (m r).rpow_lt_mul_rpow_add_rpow_of_le_add hq zero_le_one hr.1
+    have h := (m r).rpow_lt_mul_rpow_add_rpow_of_le_add_of_ne_or_lt_add hq zero_le_one hr.1
       (le_min (by linarith [hr.1]) (by linarith)) (min_le_left _ _) hne
     rwa [one_rpow] at h
   have := continuous_rpow_const hq0.le
@@ -99,8 +103,8 @@ private theorem exists_min_rpow_le_one_sub_mul {q δ : ℝ} (hq : 1 < q) (hδ : 
   have h : A⁻¹ * f r < f r - m r ^ q := by
     rw [inv_mul_lt_iff₀ hA]
     exact hAf r hr
-  change m r ^ q ≤ (1 - A⁻¹) * f r
-  linarith
+  have h' : m r ^ q ≤ (1 - A⁻¹) * f r := by linarith
+  simpa only [m, f] using h'
 
 /-- **A uniform strict power mean inequality.** For `1 < q` and `0 < δ` there is `κ > 0`
 such that `u ^ q ≤ (1 - κ) * 2 ^ (q - 1) * (s ^ q + t ^ q)` whenever `0 ≤ s`, `0 ≤ t` and
