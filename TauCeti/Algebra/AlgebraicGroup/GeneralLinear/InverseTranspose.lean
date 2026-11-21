@@ -31,7 +31,7 @@ orthogonal group, and its twisted real form is the unitary group.
 
 * `TauCeti.GeneralLinear.pointsMulEquiv_toConv_comp_inverseTransposeCoordinateIso`: precomposing a
   point with it applies inverse transpose to the corresponding invertible matrix.
-* `TauCeti.GeneralLinear.inverseTransposeCoordinateIso_hom_comp_hom`: it is an involution.
+* `TauCeti.GeneralLinear.inverseTransposeCoordinateIso_hom_comp_self`: it is an involution.
 * `TauCeti.GeneralLinear.toConv_comp_inverseTransposeCoordinateIso_eq_self_iff`: its fixed
   points are the orthogonal matrices.
 
@@ -69,6 +69,14 @@ private theorem pointsMulEquiv_inverseTransposePointsMulEquiv (A : CommAlgCat.{u
   rw [inverseTransposePointsMulEquiv, MulEquiv.trans_apply, MulEquiv.trans_apply]
   exact (pointsMulEquiv (R := R) (A := A) n).apply_symm_apply _
 
+/-- Inverse transpose on the points of `GLₙ` is an involution. -/
+private theorem inverseTransposePointsMulEquiv_apply_apply (A : CommAlgCat.{u} R)
+    (f : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R n) A) :
+    inverseTransposePointsMulEquiv R n A (inverseTransposePointsMulEquiv R n A f) = f := by
+  apply (pointsMulEquiv (R := R) (A := A) n).injective
+  rw [pointsMulEquiv_inverseTransposePointsMulEquiv, pointsMulEquiv_inverseTransposePointsMulEquiv,
+    Matrix.GeneralLinearGroup.inverseTranspose_inverseTranspose]
+
 /-- Inverse transpose, naturally on the functor of points of `GLₙ`. -/
 private noncomputable def inverseTransposePointsNatIso :
     HopfAlgebra.pointsFunctor.{u, u, u} (R := R) (H := coordinateHopfAlgebra R n) ≅
@@ -90,6 +98,13 @@ private noncomputable def inverseTransposePointsNatIso :
       pointsMulEquiv_inverseTransposePointsMulEquiv,
       pointsMulEquiv_inverseTransposePointsMulEquiv, pointsMulEquiv_mapValue]
     exact (Matrix.GeneralLinearGroup.map_inverseTranspose (φ.hom : A →+* B) _).symm
+
+/-- The component of `inverseTransposePointsNatIso` at `A` is `inverseTransposePointsMulEquiv`. -/
+@[simp]
+private theorem inverseTransposePointsNatIso_hom_app_apply (A : CommAlgCat.{u} R)
+    (x : (HopfAlgebra.pointsFunctor (R := R) (H := coordinateHopfAlgebra R n)).obj A) :
+    (inverseTransposePointsNatIso R n).hom.app A x = inverseTransposePointsMulEquiv R n A x :=
+  rfl
 
 /-- **Inverse transpose on `GLₙ`, in coordinates.** The coordinate Hopf-algebra automorphism of
 `GLₙ` over `R` corresponding to the group-scheme automorphism `g ↦ (g⁻¹)ᵀ`. -/
@@ -113,9 +128,8 @@ private theorem pointsMulEquiv_toConv_comp_inverseTransposeCoordinateIso_of_univ
           coordinateHopfAlgebra R n →ₐ[R] coordinateHopfAlgebra R n))) =
       Matrix.GeneralLinearGroup.inverseTranspose (pointsMulEquiv n f) := by
   rw [← CommHopfAlgCat.Hom.mapPointsFunctor_app_apply (A := CommAlgCat.of R A),
-    inverseTransposeCoordinateIso, CommHopfAlgCat.mapPointsFunctor_homOfPointsMap]
-  -- The component of `inverseTransposePointsNatIso` is its pointwise equivalence once the
-  -- `NatIso.ofComponents` and `MulEquiv.toGrpIso` wrappers are unfolded.
+    inverseTransposeCoordinateIso, CommHopfAlgCat.mapPointsFunctor_homOfPointsMap,
+    inverseTransposePointsNatIso_hom_app_apply R n (CommAlgCat.of R A) f]
   exact pointsMulEquiv_inverseTransposePointsMulEquiv R n (CommAlgCat.of R A) f
 
 /-- **Precomposing a point of `GLₙ` with the inverse-transpose coordinate automorphism applies
@@ -142,26 +156,23 @@ theorem pointsMulEquiv_toConv_comp_inverseTransposeCoordinateIso (A : Type v)
     (f.ofConv : coordinateHopfAlgebra R n →+* A) _
 
 /-- Inverse transpose on the functor of points of `GLₙ` is an involution. -/
-private theorem inverseTransposePointsNatIso_hom_comp_hom :
+private theorem inverseTransposePointsNatIso_hom_comp_self :
     (inverseTransposePointsNatIso R n).hom ≫ (inverseTransposePointsNatIso R n).hom = 𝟙 _ := by
-  apply HopfAlgebra.pointsFunctor_hom_ext
-  intro A x
-  apply (pointsMulEquiv (R := R) (A := A) n).injective
-  -- The components of `inverseTransposePointsNatIso` are its pointwise equivalences once the
-  -- `NatIso.ofComponents` and `MulEquiv.toGrpIso` wrappers are unfolded.
-  change pointsMulEquiv n (inverseTransposePointsMulEquiv R n A
-    (inverseTransposePointsMulEquiv R n A x)) = pointsMulEquiv n x
-  rw [pointsMulEquiv_inverseTransposePointsMulEquiv,
-    pointsMulEquiv_inverseTransposePointsMulEquiv,
-    Matrix.GeneralLinearGroup.inverseTranspose_inverseTranspose]
+  apply NatTrans.ext
+  funext A
+  apply GrpCat.ext
+  intro x
+  rw [NatTrans.comp_app, GrpCat.comp_apply, NatTrans.id_app, GrpCat.id_apply,
+    inverseTransposePointsNatIso_hom_app_apply, inverseTransposePointsNatIso_hom_app_apply]
+  exact inverseTransposePointsMulEquiv_apply_apply R n A x
 
 /-- **Inverse transpose is an involution of `GLₙ`**, in coordinates. -/
 @[reassoc (attr := simp)]
-theorem inverseTransposeCoordinateIso_hom_comp_hom :
+theorem inverseTransposeCoordinateIso_hom_comp_self :
     (inverseTransposeCoordinateIso R n).hom ≫ (inverseTransposeCoordinateIso R n).hom =
       𝟙 (coordinateHopfAlgebra R n) := by
   rw [inverseTransposeCoordinateIso, ← CommHopfAlgCat.homOfPointsMap_comp,
-    inverseTransposePointsNatIso_hom_comp_hom, CommHopfAlgCat.homOfPointsMap_id]
+    inverseTransposePointsNatIso_hom_comp_self, CommHopfAlgCat.homOfPointsMap_id]
 
 /-- The inverse of the inverse-transpose coordinate automorphism is itself. -/
 @[simp]
@@ -169,7 +180,7 @@ theorem inverseTransposeCoordinateIso_symm :
     (inverseTransposeCoordinateIso R n).symm = inverseTransposeCoordinateIso R n :=
   Iso.ext <| by
     rw [Iso.symm_hom, ← cancel_epi (inverseTransposeCoordinateIso R n).hom, Iso.hom_inv_id,
-      inverseTransposeCoordinateIso_hom_comp_hom]
+      inverseTransposeCoordinateIso_hom_comp_self]
 
 /-- **The fixed points of inverse transpose are the orthogonal matrices.** A point of `GLₙ` is
 fixed by the inverse-transpose coordinate automorphism exactly when its matrix is orthogonal; over

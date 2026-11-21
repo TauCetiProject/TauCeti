@@ -63,25 +63,28 @@ universe v
 variable {H : CommHopfAlgCat.{v} ℝ}
 
 /-- **The twisted real points of an automorphism `θ` of a real affine group scheme**: the complex
-points `g` with `g = θ(conj g)`, where `conj g` is the complex conjugate of `g`. For a complex
-point `p : H →ₐ[ℝ] ℂ`, the point `θ(conj g)` is `h ↦ star (p (θ h))`; when `θ` is an involution
-these are the real points of the real form of `H` twisted by `θ`. -/
+points `p` with `p = θ(conj p)`, where `conj p` is the complex conjugate of `p`. The point
+`θ(conj p)` is `h ↦ star (p (θ h))`, so `p = θ(conj p)` is the condition
+`p h = star (p (θ h))` for all `h`. When `θ` is an involution these are the real points of the
+real form of `H` twisted by `θ`. -/
 def twistedRealPoints (θ : H ≅ H) : Set (H →ₐ[ℝ] ℂ) :=
-  {p | ∀ h : H, p (θ.hom.hom h) = star (p h)}
+  {p | ∀ h : H, p h = star (p (θ.hom.hom h))}
 
-/-- A complex point `p` is twisted-real exactly when `p ∘ θ = star ∘ p` pointwise. -/
+/-- A complex point `p` is twisted-real exactly when `p h = star (p (θ h))` for every `h`. -/
 @[simp]
 theorem mem_twistedRealPoints_iff {θ : H ≅ H} {p : H →ₐ[ℝ] ℂ} :
-    p ∈ twistedRealPoints θ ↔ ∀ h : H, p (θ.hom.hom h) = star (p h) :=
+    p ∈ twistedRealPoints θ ↔ ∀ h : H, p h = star (p (θ.hom.hom h)) :=
   Iff.rfl
 
 /-- A complex point is twisted-real exactly when precomposing it with `θ` is the same as
-postcomposing it with complex conjugation. -/
+postcomposing it with complex conjugation: this is `p = θ(conj p)` with complex conjugation applied
+to both sides. -/
 theorem mem_twistedRealPoints_iff_comp_eq {θ : H ≅ H} {p : H →ₐ[ℝ] ℂ} :
     p ∈ twistedRealPoints θ ↔
       p.comp (θ.hom.hom : H →ₐ[ℝ] H) = (Complex.conjAe : ℂ →ₐ[ℝ] ℂ).comp p := by
-  rw [mem_twistedRealPoints_iff, AlgHom.ext_iff]
-  rfl
+  simp only [mem_twistedRealPoints_iff, AlgHom.ext_iff, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
+    Complex.conjAe_coe, starRingEnd_apply]
+  exact forall_congr' fun _ ↦ eq_star_iff_eq_star
 
 /-- **Cartan involutions of a real affine algebraic group** (Milne, *Introduction to Shimura
 varieties*, §1, definition (9)). An automorphism `θ` of the coordinate Hopf algebra is a Cartan
@@ -90,7 +93,7 @@ compact subset of the complex points, with the topology induced from the product
 `H → ℂ`. -/
 structure IsCartanInvolution (θ : H ≅ H) : Prop where
   /-- A Cartan involution is an involution. -/
-  hom_comp_hom : θ.hom ≫ θ.hom = 𝟙 H
+  hom_comp_self : θ.hom ≫ θ.hom = 𝟙 H
   /-- The twisted real points of a Cartan involution are compact. -/
   isCompact : IsCompact ((fun p : H →ₐ[ℝ] ℂ ↦ (p : H → ℂ)) '' twistedRealPoints θ)
 
@@ -100,7 +103,7 @@ points. -/
 theorem isCartanInvolution_iff_isCompact {θ : H ≅ H} :
     IsCartanInvolution θ ↔ θ.hom ≫ θ.hom = 𝟙 H ∧ IsCompact (twistedRealPoints θ) := by
   rw [PointTopology.isEmbedding_coeFn.isCompact_iff]
-  exact ⟨fun h ↦ ⟨h.hom_comp_hom, h.isCompact⟩, fun h ↦ ⟨h.1, h.2⟩⟩
+  exact ⟨fun h ↦ ⟨h.hom_comp_self, h.isCompact⟩, fun h ↦ ⟨h.1, h.2⟩⟩
 
 /-- **The twisted real points of the identity are the real points**, embedded in the complex
 points. -/
@@ -134,7 +137,7 @@ theorem isCartanInvolution_refl_iff :
   have himage : ((fun p : H →ₐ[ℝ] ℂ ↦ (p : H → ℂ)) '' twistedRealPoints (Iso.refl H)) =
       (fun f : H → ℝ ↦ fun h ↦ (f h : ℂ)) '' Set.range fun q : H →ₐ[ℝ] ℝ ↦ (q : H → ℝ) := by
     rw [twistedRealPoints_refl, ← Set.range_comp, ← Set.range_comp]
-    rfl
+    simp only [Function.comp_def, AlgHom.coe_comp, Algebra.ofId_apply, Complex.coe_algebraMap]
   rw [hemb.isCompact_iff, ← himage]
   exact ⟨IsCartanInvolution.isCompact, fun h ↦ ⟨by simp, h⟩⟩
 

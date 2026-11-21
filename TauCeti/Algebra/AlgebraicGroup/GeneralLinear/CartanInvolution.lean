@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.CartanInvolution
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.InverseTranspose
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Unitary
 import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Topology
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
 import TauCeti.Topology.Algebra.UnitaryGroup
@@ -48,21 +47,6 @@ namespace TauCeti.GeneralLinear
 
 variable {n : ℕ}
 
-/-- An invertible complex matrix is unitary exactly when its inverse transpose is its entrywise
-complex conjugate. -/
-private theorem inverseTranspose_eq_map_conj_iff (g : GL (Fin n) ℂ) :
-    Matrix.GeneralLinearGroup.inverseTranspose g =
-        Matrix.GeneralLinearGroup.map (starRingEnd ℂ) g ↔
-      g ∈ unitarySubgroup (GL (Fin n) ℂ) := by
-  have hstar : Matrix.transpose (Matrix.GeneralLinearGroup.map (starRingEnd ℂ) g :
-      Matrix (Fin n) (Fin n) ℂ) = star (g : Matrix (Fin n) (Fin n) ℂ) := by
-    ext i j
-    simp [Matrix.star_apply]
-  rw [mem_unitarySubgroup_GL_iff_mem_unitaryGroup, Matrix.mem_unitaryGroup_iff, Units.ext_iff,
-    Matrix.GeneralLinearGroup.coe_inverseTranspose, ← Matrix.transpose_inj,
-    Matrix.transpose_transpose, hstar]
-  exact ⟨fun h ↦ h ▸ Units.mul_inv g, Units.inv_eq_of_mul_eq_one_right⟩
-
 /-- **The twisted real points of inverse transpose are the unitary matrices.** A complex point of
 `GLₙ` satisfies `g = θ(conj g)` for inverse transpose `θ` exactly when its matrix is unitary. -/
 theorem mem_twistedRealPoints_inverseTransposeCoordinateIso_iff
@@ -76,14 +60,14 @@ theorem mem_twistedRealPoints_inverseTransposeCoordinateIso_iff
       pointsMulEquiv n (toConv ((Complex.conjAe : ℂ →ₐ[ℝ] ℂ).comp p)) := by
     rw [pointsMulEquiv_apply, pointsMulEquiv_apply]
     exact hconj.symm
-  rw [mem_twistedRealPoints_iff_comp_eq, ← inverseTranspose_eq_map_conj_iff, ← hθ, hconj',
-    (pointsMulEquiv n).injective.eq_iff, toConv_injective.eq_iff]
+  rw [mem_twistedRealPoints_iff_comp_eq, mem_unitarySubgroup_GL_iff_inverseTranspose_eq, ← hθ,
+    hconj', (pointsMulEquiv n).injective.eq_iff, toConv_injective.eq_iff]
 
 /-- **Inverse transpose is a Cartan involution of `GLₙ` over `ℝ`**: its twisted real form is the
 compact unitary group `U(n)`. -/
 theorem isCartanInvolution_inverseTransposeCoordinateIso :
     IsCartanInvolution (inverseTransposeCoordinateIso ℝ n) where
-  hom_comp_hom := inverseTransposeCoordinateIso_hom_comp_hom
+  hom_comp_self := inverseTransposeCoordinateIso_hom_comp_self
   isCompact := by
     have hcont : Continuous fun g : GL (Fin n) ℂ ↦
         (((pointsMulEquiv (R := ℝ) (A := ℂ) n).symm g).ofConv :
