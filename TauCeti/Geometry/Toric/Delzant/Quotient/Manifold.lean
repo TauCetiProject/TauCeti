@@ -48,7 +48,8 @@ actions of Lie groups.
   vectors are exactly the directions of the orbits of the kernel torus
   (`TauCeti.Toric.IsDelzant.ker_mfderiv_delzantQuotientMk`). The reduced moment map
   `μ_Δ : M_Δ → V*` is smooth (`TauCeti.Toric.IsDelzant.contMDiff_reducedMomentMap`), because its
-  composite with the projection is a restriction of the moment map of the torus.
+  composite with the projection is the smooth function `z ↦ μ(z) ∘ s` on the level, where `μ` is
+  the moment map of the torus `(ℝ / 2πℤ)^ι` and `s` is a right inverse of `β_ℝ : ℝ^ι → V`.
 
 The atlas is modelled on `ℝ^(d + n - k)`, where `d` is the number of facets, `n = dim V` and `k`
 is the dimension of the Lie algebra of the kernel torus.
