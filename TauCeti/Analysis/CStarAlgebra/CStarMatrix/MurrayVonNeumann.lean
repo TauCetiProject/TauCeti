@@ -203,6 +203,60 @@ projections. -/
     (p q : {p : CStarMatrix n n A // IsStarProjection p}) :
     (murrayVonNeumannSetoid n A).r p q ↔ MurrayVonNeumannEquiv p.val q.val := (Iff.rfl)
 
+namespace MurrayVonNeumannEquiv
+
+/-- Orthogonal sums preserve Murray–von Neumann equivalence: if `p₁ * p₂ = 0` and `q₁ * q₂ = 0`,
+then adding supported implementing matrices `v₁ + v₂` implements `(p₁ + p₂) ∼ (q₁ + q₂)`. -/
+theorem add_of_mul_eq_zero [Fintype m] [Fintype n] [NonUnitalSemiring A] [StarRing A]
+    {p₁ p₂ : CStarMatrix m m A} {q₁ q₂ : CStarMatrix n n A}
+    (h₁ : MurrayVonNeumannEquiv p₁ q₁) (h₂ : MurrayVonNeumannEquiv p₂ q₂)
+    (hp : p₁ * p₂ = 0) (hq : q₁ * q₂ = 0) :
+    MurrayVonNeumannEquiv (p₁ + p₂) (q₁ + q₂) := by
+  have hp₁ := h₁.isStarProjection_left
+  have hq₁ := h₁.isStarProjection_right
+  have hp₂ := h₂.isStarProjection_left
+  have hq₂ := h₂.isStarProjection_right
+  obtain ⟨v₁, hv₁p, hv₁q, hv₁_mul⟩ := h₁.exists_matrix_mul_eq_self
+  obtain ⟨v₂, hv₂p, hv₂q, hv₂_mul⟩ := h₂.exists_matrix_mul_eq_self
+  have hq₁v₁ : q₁ * v₁ = v₁ := by rw [← hv₁q, mul_assoc_rectangular, hv₁p, hv₁_mul]
+  have hq₂v₂ : q₂ * v₂ = v₂ := by rw [← hv₂q, mul_assoc_rectangular, hv₂p, hv₂_mul]
+  have hp₂_sa : p₂.conjTranspose = p₂ := by rw [← star_eq_conjTranspose, hp₂.isSelfAdjoint.star_eq]
+  have hq₁_sa : q₁.conjTranspose = q₁ := by rw [← star_eq_conjTranspose, hq₁.isSelfAdjoint.star_eq]
+  have hp₁_sa : p₁.conjTranspose = p₁ := by rw [← star_eq_conjTranspose, hp₁.isSelfAdjoint.star_eq]
+  have hq₂_sa : q₂.conjTranspose = q₂ := by rw [← star_eq_conjTranspose, hq₂.isSelfAdjoint.star_eq]
+  have hp₂v₂ : p₂ * v₂.conjTranspose = v₂.conjTranspose := by
+    simpa [hp₂_sa] using congrArg conjTranspose hv₂_mul
+  have hv₁q₁ : v₁.conjTranspose * q₁ = v₁.conjTranspose := by
+    simpa [hq₁_sa] using congrArg conjTranspose hq₁v₁
+  have hv₁₂ : v₁.conjTranspose * v₂ = 0 := by
+    calc v₁.conjTranspose * v₂
+        = (v₁.conjTranspose * q₁) * (q₂ * v₂) := by rw [hv₁q₁, hq₂v₂]
+      _ = v₁.conjTranspose * (q₁ * q₂) * v₂ := by simp only [mul_assoc_rectangular]
+      _ = 0 := by rw [hq, CStarMatrix.mul_zero, CStarMatrix.zero_mul]
+  have hv₂₁ : v₂.conjTranspose * v₁ = 0 := by simpa using congrArg conjTranspose hv₁₂
+  have hw₁₂ : v₁ * v₂.conjTranspose = 0 := by
+    calc v₁ * v₂.conjTranspose
+        = (v₁ * p₁) * (p₂ * v₂.conjTranspose) := by rw [hv₁_mul, hp₂v₂]
+      _ = v₁ * (p₁ * p₂) * v₂.conjTranspose := by simp only [mul_assoc_rectangular]
+      _ = 0 := by rw [hp, CStarMatrix.mul_zero, CStarMatrix.zero_mul]
+  have hw₂₁ : v₂ * v₁.conjTranspose = 0 := by simpa using congrArg conjTranspose hw₁₂
+  have hp₂₁ : p₂ * p₁ = 0 := by simpa [hp₁_sa, hp₂_sa] using congrArg conjTranspose hp
+  have hq₂₁ : q₂ * q₁ = 0 := by simpa [hq₁_sa, hq₂_sa] using congrArg conjTranspose hq
+  refine (murrayVonNeumannEquiv_iff
+    ⟨by rw [IsIdempotentElem, add_mul, mul_add, mul_add, hp₁.isIdempotentElem.eq,
+        hp₂.isIdempotentElem.eq, hp, hp₂₁, add_zero, zero_add],
+      hp₁.isSelfAdjoint.add hp₂.isSelfAdjoint⟩
+    ⟨by rw [IsIdempotentElem, add_mul, mul_add, mul_add, hq₁.isIdempotentElem.eq,
+        hq₂.isIdempotentElem.eq, hq, hq₂₁, add_zero, zero_add],
+      hq₁.isSelfAdjoint.add hq₂.isSelfAdjoint⟩).mpr
+    ⟨v₁ + v₂,
+      by rw [conjTranspose_add, CStarMatrix.add_mul, CStarMatrix.mul_add, CStarMatrix.mul_add,
+        hv₁p, hv₂p, hv₁₂, hv₂₁, add_zero, zero_add],
+      by rw [conjTranspose_add, CStarMatrix.add_mul, CStarMatrix.mul_add, CStarMatrix.mul_add,
+        hv₁q, hv₂q, hw₁₂, hw₂₁, add_zero, zero_add]⟩
+
+end MurrayVonNeumannEquiv
+
 end Permanence
 
 section ProperStar
@@ -232,58 +286,17 @@ private theorem conjTranspose_mul_eq_self_of_self_mul_conjTranspose {p : CStarMa
   simpa [hq_sa] using congrArg conjTranspose
     (mul_self_eq_self_of_self_mul_conjTranspose hp hvp hvq)
 
-namespace MurrayVonNeumannEquiv
-
-/-- Orthogonal sums preserve Murray–von Neumann equivalence: if `p₁ * p₂ = 0` and `q₁ * q₂ = 0`,
-then adding implementing matrices `v₁ + v₂` implements `(p₁ + p₂) ∼ (q₁ + q₂)`. -/
-theorem add_of_mul_eq_zero {p₁ p₂ : CStarMatrix m m A} {q₁ q₂ : CStarMatrix n n A}
-    (h₁ : MurrayVonNeumannEquiv p₁ q₁) (h₂ : MurrayVonNeumannEquiv p₂ q₂)
-    (hp : p₁ * p₂ = 0) (hq : q₁ * q₂ = 0) :
-    MurrayVonNeumannEquiv (p₁ + p₂) (q₁ + q₂) := by
-  have hp₁ := h₁.isStarProjection_left
-  have hq₁ := h₁.isStarProjection_right
-  have hp₂ := h₂.isStarProjection_left
-  have hq₂ := h₂.isStarProjection_right
-  obtain ⟨v₁, rfl, rfl⟩ := h₁.exists_matrix
-  obtain ⟨v₂, rfl, rfl⟩ := h₂.exists_matrix
-  have hv₁₂ : v₁.conjTranspose * v₂ = 0 :=
-    (mul_self_mul_conjTranspose_eq_zero v₂ v₁.conjTranspose).mp
-      ((self_mul_conjTranspose_mul_eq_zero v₁ (v₂ * v₂.conjTranspose)).mp hq)
-  have hv₂₁ : v₂.conjTranspose * v₁ = 0 := by simpa using congrArg conjTranspose hv₁₂
-  have hw₁₂ : v₁ * v₂.conjTranspose = 0 :=
-    (mul_conjTranspose_mul_self_eq_zero v₂ v₁).mp
-      ((conjTranspose_mul_self_mul_eq_zero v₁ (v₂.conjTranspose * v₂)).mp hp)
-  have hw₂₁ : v₂ * v₁.conjTranspose = 0 := by simpa using congrArg conjTranspose hw₁₂
-  have hp₂₁ : (v₂.conjTranspose * v₂) * (v₁.conjTranspose * v₁) = 0 := by
-    rw [mul_assoc_rectangular, ← mul_assoc_rectangular v₂ v₁.conjTranspose v₁, hw₂₁,
-      CStarMatrix.zero_mul, CStarMatrix.mul_zero]
-  have hq₂₁ : (v₂ * v₂.conjTranspose) * (v₁ * v₁.conjTranspose) = 0 := by
-    rw [mul_assoc_rectangular, ← mul_assoc_rectangular v₂.conjTranspose v₁ v₁.conjTranspose, hv₂₁,
-      CStarMatrix.zero_mul, CStarMatrix.mul_zero]
-  refine (murrayVonNeumannEquiv_iff
-    ⟨by rw [IsIdempotentElem, add_mul, mul_add, mul_add, hp₁.isIdempotentElem.eq,
-        hp₂.isIdempotentElem.eq, hp, hp₂₁, add_zero, zero_add],
-      hp₁.isSelfAdjoint.add hp₂.isSelfAdjoint⟩
-    ⟨by rw [IsIdempotentElem, add_mul, mul_add, mul_add, hq₁.isIdempotentElem.eq,
-        hq₂.isIdempotentElem.eq, hq, hq₂₁, add_zero, zero_add],
-      hq₁.isSelfAdjoint.add hq₂.isSelfAdjoint⟩).mpr
-    ⟨v₁ + v₂,
-      by rw [conjTranspose_add, CStarMatrix.add_mul, CStarMatrix.mul_add, CStarMatrix.mul_add,
-        hv₁₂, hv₂₁, add_zero, zero_add],
-      by rw [conjTranspose_add, CStarMatrix.add_mul, CStarMatrix.mul_add, CStarMatrix.mul_add,
-        hw₁₂, hw₂₁, add_zero, zero_add]⟩
-
-end MurrayVonNeumannEquiv
-
 end ProperStar
 
 section StabilizedUnitaryAndRotationPath
 
 section UnitalAlgebraic
 
-/-- The `2 × 2` block reflection `fromBlocks (1 - p) v.conjTranspose v (1 - q)` over a unital ring,
-which is a self-adjoint unitary conjugating `fromBlocks p 0 0 0` to `fromBlocks 0 0 0 q` whenever
-`v` implements `p ∼ q` for an idempotent `p`. -/
+/-- The `2 × 2` block matrix `fromBlocks (1 - p) v.conjTranspose v (1 - q)` over a unital ring
+with `0`, `1`, subtraction, and `star`. Over a star-ordered ring with proper star
+(`IsProperStar A`), whenever `p` is idempotent, `v.conjTranspose * v = p`, and
+`v * v.conjTranspose = q`, it is a self-adjoint unitary (`stabilizedSymmetry_mem_unitary`)
+conjugating `fromBlocks p 0 0 0` to `fromBlocks 0 0 0 q` (`stabilizedSymmetry_conj_inl`). -/
 def stabilizedSymmetry {m n A : Type*} [DecidableEq m] [DecidableEq n]
     [Zero A] [One A] [Sub A] [Star A] (p : CStarMatrix m m A) (q : CStarMatrix n n A)
     (v : CStarMatrix n m A) : CStarMatrix (m ⊕ n) (m ⊕ n) A :=
