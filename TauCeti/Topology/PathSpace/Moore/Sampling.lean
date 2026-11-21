@@ -293,6 +293,12 @@ end CutTimes
 
 namespace MooreFreeLoopSpace
 
+/-- The vertices of a free loop vary continuously with the loop. -/
+@[fun_prop]
+theorem continuous_sample {X : Type*} [TopologicalSpace X] (r : ℕ) :
+    Continuous fun γ : MooreFreeLoopSpace X ↦ γ.toMoorePath.sample r :=
+  (MoorePath.continuous_sample r).comp continuous_toMoorePath
+
 /-- The vertex sampled after the `i`-th one on a free loop is the end of its `i`-th arc; the vertex
 after the last one is the first one again, the end of the closing arc. -/
 theorem sample_add_one_eq_toUnitPath_arcPoint {X : Type*} [TopologicalSpace X]

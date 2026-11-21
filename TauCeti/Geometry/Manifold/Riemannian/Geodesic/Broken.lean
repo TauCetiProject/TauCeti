@@ -480,20 +480,14 @@ private theorem forall_dist_snoc_lt {n : ℕ} {q : Fin (n + 1) → M}
     (h : ∀ i, dist (q i) (q (i - 1)) < r) (i : Fin (n + 1)) :
     dist ((Fin.snoc q (q 0) : Fin (n + 2) → M) i.castSucc)
       ((Fin.snoc q (q 0) : Fin (n + 2) → M) i.succ) < r := by
-  rw [Fin.snoc_castSucc, Fin.snoc_self_zero_succ, dist_comm]
-  simpa only [add_sub_cancel_right] using h (i + 1)
+  rw [Fin.snoc_castSucc, Fin.snoc_self_zero_succ]
+  exact dist_add_one_lt_of_forall_dist_sub_one_lt h i
 
 /-- The edges of `q 0, …, q n, q 0` are the cyclic edges of `q`. -/
 private theorem nndist_snoc_castSucc_succ {n : ℕ} (q : Fin (n + 1) → M) :
     (fun k : Fin (n + 1) ↦ nndist ((Fin.snoc q (q 0) : Fin (n + 2) → M) k.castSucc)
       ((Fin.snoc q (q 0) : Fin (n + 2) → M) k.succ)) = fun k ↦ nndist (q k) (q (k + 1)) :=
   funext fun k ↦ by rw [Fin.snoc_castSucc, Fin.snoc_self_zero_succ]
-
-/-- If every point of a cyclic tuple is at distance less than `r` from the preceding one, it is at
-distance less than `r` from the next one. -/
-theorem dist_add_one_lt_of_forall_dist_sub_one_lt {n : ℕ} {q : Fin (n + 1) → M}
-    (h : ∀ i, dist (q i) (q (i - 1)) < r) (i : Fin (n + 1)) : dist (q i) (q (i + 1)) < r := by
-  simpa only [add_sub_cancel_right, dist_comm] using h (i + 1)
 
 include hr
 

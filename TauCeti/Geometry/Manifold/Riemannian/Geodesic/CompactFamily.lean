@@ -211,9 +211,8 @@ def sampleBrokenGeodesicLoop :
   toFun γ := brokenGeodesicLoop hr n ((γ : MooreFreeLoopSpace M).toMoorePath.sample (n + 1))
     (MooreFreeLoopSpace.dist_sample_sub_one_lt_of_mem_arcsWithin γ.property)
   continuous_toFun := (continuous_brokenGeodesicLoop hr n).comp
-    (((MoorePath.continuous_sample _).comp
-      (MooreFreeLoopSpace.continuous_toMoorePath.comp continuous_subtypeVal)).subtype_mk
-        fun γ ↦ MooreFreeLoopSpace.dist_sample_sub_one_lt_of_mem_arcsWithin γ.property)
+    (((MooreFreeLoopSpace.continuous_sample _).comp continuous_subtypeVal).subtype_mk
+      fun γ ↦ MooreFreeLoopSpace.dist_sample_sub_one_lt_of_mem_arcsWithin γ.property)
 
 @[simp]
 theorem sampleBrokenGeodesicLoop_apply
@@ -232,6 +231,12 @@ theorem length_sampleBrokenGeodesicLoop
         ((γ : MooreFreeLoopSpace M).toMoorePath.sample (n + 1) (k + 1)) := by
   rw [sampleBrokenGeodesicLoop_apply, length_brokenGeodesicLoop_eq_partialSum,
     Fin.partialSum_last]
+
+/-- The length of the broken geodesic through the samples varies continuously with the loop. -/
+theorem continuous_length_sampleBrokenGeodesicLoop :
+    Continuous fun γ : arcsWithin {p : M × M | dist p.1 p.2 < r} (n + 1) ↦
+      (sampleBrokenGeodesicLoop hr n γ).length :=
+  MooreFreeLoopSpace.continuous_length.comp (sampleBrokenGeodesicLoop hr n).continuous
 
 /-- The broken geodesic through the samples of a free loop of duration zero has length zero. -/
 private theorem length_sampleBrokenGeodesicLoop_eq_zero
@@ -285,22 +290,24 @@ private def reparamLength (t : unitInterval)
 private theorem continuous_reparamTime :
     Continuous fun p : (unitInterval × arcsWithin {p : M × M | dist p.1 p.2 < r} (n + 1))
       × unitInterval ↦ reparamTime hr n p.1.1 p.1.2 p.2 := by
-  have hq : Continuous fun γ : arcsWithin {p : M × M | dist p.1 p.2 < r}
-      (n + 1) ↦ (γ : MooreFreeLoopSpace M).toMoorePath.sample (n + 1) :=
-    (MoorePath.continuous_sample _).comp
-      (MooreFreeLoopSpace.continuous_toMoorePath.comp continuous_subtypeVal)
   have hσ := (continuous_arcTime (M := M) (n := n)).comp
-    ((hq.comp (continuous_snd.comp continuous_fst)).prodMk
+    ((((MooreFreeLoopSpace.continuous_sample _).comp continuous_subtypeVal).comp
+      (continuous_snd.comp continuous_fst)).prodMk
     (continuous_snd : Continuous fun p : (unitInterval × MooreFreeLoopSpace.arcsWithin
       {p : M × M | dist p.1 p.2 < r} (n + 1)) × unitInterval ↦ p.2))
-  have hL : Continuous fun p : (unitInterval × MooreFreeLoopSpace.arcsWithin
-      {p : M × M | dist p.1 p.2 < r} (n + 1)) × unitInterval ↦
-        (sampleBrokenGeodesicLoop hr n p.1.2).length :=
-    MooreFreeLoopSpace.continuous_length.comp
-      ((sampleBrokenGeodesicLoop hr n).continuous.comp (continuous_snd.comp continuous_fst))
   unfold reparamTime
   exact ((by fun_prop : Continuous _).mul hσ).add ((by fun_prop : Continuous _).mul
-    (hL.mul (by fun_prop)))
+    (((continuous_length_sampleBrokenGeodesicLoop hr n).comp
+      (continuous_snd.comp continuous_fst)).mul (by fun_prop)))
+
+private theorem continuous_reparamLength :
+    Continuous fun p : unitInterval × arcsWithin {p : M × M | dist p.1 p.2 < r} (n + 1) ↦
+      reparamLength hr n p.1 p.2 := by
+  unfold reparamLength
+  exact ((by fun_prop : Continuous _).mul
+    (MooreFreeLoopSpace.continuous_length.comp (continuous_subtypeVal.comp continuous_snd))).add
+    ((by fun_prop : Continuous _).mul
+      ((continuous_length_sampleBrokenGeodesicLoop hr n).comp continuous_snd))
 
 private theorem reparamTime_zero (t : unitInterval)
     (γ : arcsWithin {p : M × M | dist p.1 p.2 < r} (n + 1)) :
@@ -357,22 +364,13 @@ private def reparamMap :
     (reparamLength hr n p.1 p.2)
   continuous_toFun := by
     refine (MoorePath.continuous_ofUnitPath.comp (reparamUnitPath hr n).curry.continuous)
-      |>.moorePath_rescale_of_forall_eq_source ?_ fun p hp s ↦ ?_
-    · have hL : Continuous fun p : unitInterval × MooreFreeLoopSpace.arcsWithin
-          {p : M × M | dist p.1 p.2 < r} (n + 1) ↦ (sampleBrokenGeodesicLoop hr n p.2).length :=
-        MooreFreeLoopSpace.continuous_length.comp
-          ((sampleBrokenGeodesicLoop hr n).continuous.comp continuous_snd)
-      have hγL : Continuous fun p : unitInterval × MooreFreeLoopSpace.arcsWithin
-          {p : M × M | dist p.1 p.2 < r} (n + 1) ↦ (p.2 : MooreFreeLoopSpace M).length :=
-        MooreFreeLoopSpace.continuous_length.comp (continuous_subtypeVal.comp continuous_snd)
-      unfold reparamLength
-      exact ((by fun_prop : Continuous _).mul hγL).add ((by fun_prop : Continuous _).mul hL)
-    · -- Where the duration vanishes, the time vanishes, and the path is constant.
-      obtain ⟨t, γ⟩ := p
-      simp only [Function.comp_apply, MoorePath.ofUnitPath_apply, MoorePath.source_ofUnitPath,
-        ContinuousMap.curry_apply]
-      rw [reparamUnitPath_apply, reparamUnitPath_apply, reparamTime_eq_zero hr n hp,
-        reparamTime_eq_zero hr n hp]
+      |>.moorePath_rescale_of_forall_eq_source (continuous_reparamLength hr n) fun p hp s ↦ ?_
+    -- Where the duration vanishes, the time vanishes, and the path is constant.
+    obtain ⟨t, γ⟩ := p
+    simp only [Function.comp_apply, MoorePath.ofUnitPath_apply, MoorePath.source_ofUnitPath,
+      ContinuousMap.curry_apply]
+    rw [reparamUnitPath_apply, reparamUnitPath_apply, reparamTime_eq_zero hr n hp,
+      reparamTime_eq_zero hr n hp]
 
 private theorem reparamMap_apply (t : unitInterval)
     (γ : arcsWithin {p : M × M | dist p.1 p.2 < r} (n + 1)) :
@@ -467,8 +465,7 @@ theorem exists_homotopic_cyclicDistanceCutBrokenGeodesic_comp_sample
       ∃ hKδ : MapsTo (fun γ : MooreFreeLoopSpace M ↦ γ.toMoorePath.sample (n + 1)) K
           (cyclicDistanceCut δ),
         ((cyclicDistanceCutBrokenGeodesic hr hδ).comp
-          ⟨hKδ.restrict, ((MoorePath.continuous_sample _).comp
-            MooreFreeLoopSpace.continuous_toMoorePath).restrict hKδ⟩).Homotopic
+          ⟨hKδ.restrict, (MooreFreeLoopSpace.continuous_sample _).restrict hKδ⟩).Homotopic
           (ContinuousMap.subtypeVal K) := by
   rcases le_or_gt r ε with hrε | hrε
   · -- No cut-offs lie between `ε` and `r`.
