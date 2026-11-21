@@ -37,8 +37,10 @@ regularity (McDuff–Salamon, Lemma B.4.6):
 2. *Bootstrap across the Sobolev exponent ladder*
    (`TauCeti.IsWeakCRSolution.memWkpLoc_one_of_memLpLoc`): if `1/p + 1/q < 1`, `1 < s ≤ p` with
    `s < ∞` and `η ∈ Lˢ_loc(Ω)`, alternating the single Hölder step with the two-dimensional Sobolev
-   embedding decreases `1/q` by `1/2 - 1/p > 0` at each subcritical step until the product exponent
-   exceeds `2`, where `W^{1,r}_loc ⊂ L^∞_loc` finishes in one more step and yields
+   embedding decreases `1/q` by `1/2 - 1/p > 0` at each subcritical step (`r₁ < 2`), stopping
+   immediately if the product exponent reaches `s`. At the critical exponent `r₁ = 2`, embedding
+   `W^{1,2}_loc` into a large finite `L^{t*}_loc` pushes the next product exponent above `2`, and
+   for `r₁ > 2` the embedding `W^{1,r₁}_loc ⊂ L^∞_loc` finishes in one final step to yield
    `ξ ∈ W^{1,s}_loc(Ω)`. The coefficient endpoint `p = ∞` is handled by lowering `p` locally to a
    finite exponent above `max 2 s`. In particular `ξ ∈ W^{1,q}_loc(Ω)` when `q ≤ p`, `q < ∞`, and
    `η ∈ L^q_loc(Ω)` (`TauCeti.IsWeakCRSolution.memWkpLoc_one_of_le`), and `ξ ∈ W^{1,p}_loc(Ω)`
@@ -65,8 +67,10 @@ extended from smooth test functions to bounded compactly supported test fields w
 derivative in `Lˢ`, `1/s + 1/q ≤ 1`
 (`TauCeti.IsWeakCRSolution.integral_inner_eq_of_hasWeakFDerivOn`). The proof mollifies the test
 field: the mollifications are smooth test functions, their derivatives are the mollifications of
-the weak derivative, and every pairing in the weak equation converges, by the strong `Lˢ`
-convergence of mollifications (`ContinuousLinearMap.tendsto_integral_bilin_normed_convolution`).
+the weak derivative, and every pairing in the weak equation converges via
+`ContinuousLinearMap.tendsto_integral_bilin_normed_convolution`—by strong `Lˢ` convergence of the
+derivative mollifications when `s < ∞`, and by weak-star convergence against `L¹` for the bounded
+test field itself and for the derivatives at `s = ∞`.
 
 ## Main results
 
@@ -574,8 +578,11 @@ private theorem memWkpLoc_one_critical_case {p s r₁ : ℝ≥0} (hp : 2 < (p : 
   exact memWkpLoc_one_of_two_lt (by exact_mod_cast hr₂_gt2')
     hp ENNReal.coe_ne_top hs1 hsp hJ hDJ hJsq hS hsol hη hξ_r₂
 
-/-- Finite-exponent Sobolev ladder: if `1/t ≤ n * (1/2 - 1/p)` with `1/p + 1/t < 1`, at most `n`
-iterations of the single Hölder step and 2D Sobolev embedding upgrade `ξ` to `W^{1,s}_loc(Ω)`. -/
+/-- Finite-exponent Sobolev ladder: `n` serves as induction fuel for the subcritical recursion
+(`1/t ≤ n * (1/2 - 1/p)` with `1/p + 1/t < 1`), since each subcritical step (`r₁ < 2`) decreases
+`1/t` by `1/2 - 1/p`. At any step the recursion terminates immediately if the product exponent
+reaches `s`, handles the critical case `r₁ = 2` by embedding `W^{1,2}_loc` into a large finite
+`L^{t*}_loc` before continuing past `2`, and finishes `r₁ > 2` via `W^{1,r₁}_loc ⊂ L^∞_loc`. -/
 private theorem memWkpLoc_one_ladder {p s : ℝ≥0} (hp : 2 < (p : ℝ≥0∞))
     (hs1 : 1 < (s : ℝ≥0∞)) (hsp : (s : ℝ≥0∞) ≤ p)
     (hJ : MemWkpLoc p Ω 1 J) (hDJ : HasWeakFDerivOn volume Ω J DJ)

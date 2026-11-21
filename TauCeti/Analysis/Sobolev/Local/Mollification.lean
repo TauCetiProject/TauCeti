@@ -99,8 +99,10 @@ private theorem tendsto_integral_smul_bilin_normed_convolution_indicator
 
 /-- Local mollification of a bounded map `f ∈ L^∞_loc(Ω; F)` with weak derivative
 `Df ∈ Lᵖ_loc(Ω; ℂ →L[ℝ] F)` (`1 ≤ p ≤ ∞`) near a compact subset `K ⊆ Ω`: produces `C^∞` maps
-`fn n : ℂ → F` whose bilinear pairings against locally integrable fields and derivative pairings
-against `L^{p'}_loc` fields supported in `K` converge to those of `f` and `Df`. -/
+`fn n : ℂ → F` such that, for every scalar test function `α ∈ 𝓓(Ω, ℝ)` with `tsupport α ⊆ K`, the
+`α`-weighted bilinear pairings against any `g ∈ L¹_loc(Ω; G)` and the `α`-weighted
+directional-derivative pairings against any `g ∈ L^{p'}_loc(Ω; G)` converge to those of `f` and
+`Df` (without requiring `g` itself to be supported in `K`). -/
 theorem exists_contDiff_tendsto_integral_smul_bilin_of_hasWeakFDerivOn
     (B : F →L[ℝ] G →L[ℝ] H) (hp1 : 1 ≤ p)
     {f : ℂ → F} {Df : ℂ → ℂ →L[ℝ] F}

@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.Local.Basic
 public import TauCeti.Analysis.Sobolev.W1p.MixedMultiplication
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import TauCeti.Analysis.Distribution.TestFunction.Inner
 import TauCeti.Analysis.Sobolev.Leibniz
 import TauCeti.Analysis.Sobolev.Local.Mollification
 import TauCeti.Analysis.Sobolev.Local.Morrey.Higher
@@ -48,6 +49,8 @@ bilinear map.
 * `TauCeti.MemWkpLoc.bilin_of_memLpLoc_top` and `TauCeti.MemWkpLoc.bilin`: order-one membership.
 * `TauCeti.HasWeakFDerivOn.bilin`: the weak Leibniz rule for all `2 < p ≤ ∞` and `1 ≤ q ≤ ∞` with
   finite-dimensional factors `F, G`.
+* `TauCeti.HasWeakFDerivOn.integral_inner_fderiv_bilin_eq_neg`: inner-product integration by parts
+  for `HasWeakFDerivOn.bilin` against a vector-valued test function.
 * `TauCeti.HasWeakFDerivOn.ae_bilin_add_bilin_eq_zero_of_eq_const`: differentiating a constant
   bilinear product `B(f, g) = c` weakly on `Ω`.
 * `TauCeti.HasWeakFDerivOn.ae_apply_add_apply_eq_zero_of_comp_self_eq_const`: differentiating
@@ -67,9 +70,11 @@ hold in any finite-dimensional space with `dim E < p` and live in
 public noncomputable section
 
 open Filter LineDeriv MeasureTheory Module Set TopologicalSpace
-open scoped ContDiff Distributions ENNReal NNReal Topology
+open scoped ContDiff Distributions ENNReal InnerProductSpace NNReal Topology
 
 namespace TauCeti
+
+section Normed
 
 variable {F G H : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   [NormedAddCommGroup G] [NormedSpace ℝ G] [FiniteDimensional ℝ G]
@@ -182,33 +187,14 @@ theorem MemWkpLoc.bilin [FiniteDimensional ℝ F] [CompleteSpace H] (B : F →L[
   exact hf.bilin_of_memLpLoc_top B hp hq hqp (hf.memLpLoc_of_holderTriple hp le_rfl) hg
 
 omit [FiniteDimensional ℝ G] in
-/-- Smooth-factor weak Leibniz identity for a continuous bilinear map against a test function:
-expanding the smooth factor `F_sm` in a finite basis of `F` reduces to scalar smooth multiplication
-(`HasWeakLineDerivOn.contDiff_smul`) and `HasWeakLineDerivOn.sum`. -/
+/-- Smooth-factor weak Leibniz identity for a continuous bilinear map against a test function,
+derived from `TauCeti.HasWeakLineDerivOn.contDiff_bilin`. -/
 private theorem integral_lineDeriv_smul_bilin_of_contDiff [FiniteDimensional ℝ F] [CompleteSpace H]
     (B : F →L[ℝ] G →L[ℝ] H) {g g' : ℂ → G} {u : ℂ} (hg : HasWeakLineDerivOn volume Ω g g' u)
     {F_sm : ℂ → F} (hF : ContDiff ℝ ∞ F_sm) (ψ : 𝓓(Ω, ℝ)) :
     (∫ z, (∂_{u} ψ : 𝓓(Ω, ℝ)) z • B (F_sm z) (g z)) +
         (∫ z, (ψ : ℂ → ℝ) z • B (fderiv ℝ F_sm z u) (g z)) =
       -∫ z, (ψ : ℂ → ℝ) z • B (F_sm z) (g' z) := by
-  let b := Module.finBasis ℝ F
-  let ℓ : Fin (finrank ℝ F) → F →L[ℝ] ℝ := fun i => (b.coord i).toContinuousLinearMap
-  have hBrep (x : F) (y : G) : ∑ i, ℓ i x • B (b i) y = B x y := by
-    have hx : ∑ i, ℓ i x • b i = x := by simp [ℓ]
-    conv_rhs => rw [← hx, map_sum, sum_apply]
-    simp [map_smul]
-  have hfd (i : Fin (finrank ℝ F)) (z : ℂ) :
-      fderiv ℝ (fun w => ℓ i (F_sm w)) z u = ℓ i (fderiv ℝ F_sm z u) := by
-    rw [fderiv_fun_comp z (ℓ i).differentiableAt (hF.differentiable (by simp) z),
-      ContinuousLinearMap.fderiv, ContinuousLinearMap.comp_apply]
-  have hc (i : Fin (finrank ℝ F)) : ContDiff ℝ ∞ fun w => ℓ i (F_sm w) :=
-    (ℓ i).contDiff.comp hF
-  have hsum := HasWeakLineDerivOn.sum (F := H) Finset.univ fun i _ =>
-    (hg.clm_comp (B (b i))).contDiff_smul (hc i)
-  have hbilin : HasWeakLineDerivOn volume Ω (fun z => B (F_sm z) (g z))
-      (fun z => B (F_sm z) (g' z) + B (fderiv ℝ F_sm z u) (g z)) u :=
-    (hsum.congr_ae (.of_forall fun z => hBrep (F_sm z) (g z))).congr_ae_deriv
-      (.of_forall fun z => by simp only [Finset.sum_add_distrib, hfd, hBrep])
   have hDFu_c : Continuous fun z => fderiv ℝ F_sm z u :=
     (ContinuousLinearMap.apply ℝ F u).continuous.comp
       ((hF.of_le (WithTop.coe_le_coe.2 (le_top : (1 : ℕ∞) ≤ ⊤))).continuous_fderiv one_ne_zero)
@@ -218,7 +204,7 @@ private theorem integral_lineDeriv_smul_bilin_of_contDiff [FiniteDimensional ℝ
   have h2 : Integrable (fun z => (ψ : ℂ → ℝ) z • B (fderiv ℝ F_sm z u) (g z)) volume :=
     ψ.integrable_smul <| hg.locallyIntegrableOn.continuousOn_clm_apply
       Ω.isOpen.isLocallyClosed (B.continuous.comp hDFu_c).continuousOn
-  have hibp := hbilin.integral_lineDeriv_smul_eq_neg_integral_smul ψ
+  have hibp := (hg.contDiff_bilin B hF).integral_lineDeriv_smul_eq_neg_integral_smul ψ
   have hsplit : ∫ z, (ψ : ℂ → ℝ) z • (B (F_sm z) (g' z) + B (fderiv ℝ F_sm z u) (g z)) =
       (∫ z, (ψ : ℂ → ℝ) z • B (F_sm z) (g' z)) +
         ∫ z, (ψ : ℂ → ℝ) z • B (fderiv ℝ F_sm z u) (g z) := by
@@ -310,6 +296,8 @@ theorem HasWeakFDerivOn.ae_bilin_add_bilin_eq_zero_of_eq_const
   filter_upwards [(hprod.congr_ae hconst).ae_eq h0] with z hz v
   simpa using congr($hz v)
 
+end Normed
+
 section Operator
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
@@ -328,5 +316,51 @@ theorem HasWeakFDerivOn.ae_apply_add_apply_eq_zero_of_comp_self_eq_const
   simpa using congr($(hz v) w)
 
 end Operator
+
+section InnerProduct
+
+variable {F G H : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  [NormedAddCommGroup G] [NormedSpace ℝ G] [FiniteDimensional ℝ G]
+  [NormedAddCommGroup H] [InnerProductSpace ℝ H] [FiniteDimensional ℝ H]
+  {Ω : Opens ℂ}
+
+/-- **Inner-product integration by parts for mixed-exponent bilinear products.** For `2 < p ≤ ∞`
+and `1 ≤ q ≤ ∞`, if `f ∈ W^{1,p}_loc(Ω; F)` has weak derivative `Df`, `g ∈ W^{1,q}_loc(Ω; G)` has
+weak derivative `Dg` with `F` and `G` finite-dimensional, and `B : F →L[ℝ] G →L[ℝ] H` is a
+continuous bilinear map into a finite-dimensional real inner product space `H`, then for every
+direction `u : ℂ` and every test function `φ ∈ 𝓓(Ω, H)`,
+`∫ ⟪∂_u φ, B(f, g)⟫ = -(∫ ⟪φ, B(Df · u, g)⟫ + ∫ ⟪φ, B(f, Dg · u)⟫)`. -/
+theorem HasWeakFDerivOn.integral_inner_fderiv_bilin_eq_neg
+    (B : F →L[ℝ] G →L[ℝ] H) {p q : ℝ≥0∞} (hp : 2 < p) (hq : 1 ≤ q)
+    {f : ℂ → F} {Df : ℂ → ℂ →L[ℝ] F} {g : ℂ → G} {Dg : ℂ → ℂ →L[ℝ] G}
+    (hf : MemWkpLoc p Ω 1 f) (hDf : HasWeakFDerivOn volume Ω f Df)
+    (hg : MemWkpLoc q Ω 1 g) (hDg : HasWeakFDerivOn volume Ω g Dg)
+    (u : ℂ) (φ : 𝓓(Ω, H)) :
+    ∫ z, ⟪fderiv ℝ (φ : ℂ → H) z u, B (f z) (g z)⟫_ℝ =
+      -((∫ z, ⟪(φ : ℂ → H) z, B (Df z u) (g z)⟫_ℝ) +
+        ∫ z, ⟪(φ : ℂ → H) z, B (f z) (Dg z u)⟫_ℝ) := by
+  have : CompleteSpace H := FiniteDimensional.completeSpace ℝ H
+  have hloc := Ω.isOpen.isLocallyClosed
+  have hg1 : MemWkpLoc (1 : ℝ≥0) Ω 1 g := hg.mono_exponent (by simpa using hq)
+  have hg2 : MemLpLoc (2 : ℝ≥0) Ω g :=
+    hg1.memLpLoc_of_inv_sub_inv_le le_rfl one_le_two (by norm_num)
+  have hp2 : p⁻¹ + (2 : ℝ≥0∞)⁻¹ < 1 := ENNReal.inv_add_inv_lt_one_of_two_lt hp le_rfl
+  have hDfp : MemLpLoc p Ω Df := hf.memLpLoc_of_hasWeakFDerivOn hDf
+  have hDg1 : MemLpLoc (1 : ℝ≥0) Ω Dg := hg1.memLpLoc_of_hasWeakFDerivOn hDg
+  have hfg := hDf.bilin B hp hq hf hg hDg
+  have h := (hfg.hasWeakLineDerivOn u).integral_inner_lineDeriv_eq_neg φ
+  simp only [TestFunction.lineDeriv_eq_fderiv, add_apply,
+    ContinuousLinearMap.precompL_apply, ContinuousLinearMap.precompR_apply,
+    ContinuousLinearMap.compL_apply, ContinuousLinearMap.comp_apply, inner_add_right] at h
+  have hi1 : Integrable (fun z => ⟪(φ : ℂ → H) z, B (Df z u) (g z)⟫_ℝ) :=
+    φ.integrable_inner
+      (((hDfp.clm_comp (ContinuousLinearMap.apply ℝ F u)).clm_comp B).locallyIntegrableOn_clm_apply
+        hg2 (by simpa using hp2.le) hloc)
+  have hi2 : Integrable (fun z => ⟪(φ : ℂ → H) z, B (f z) (Dg z u)⟫_ℝ) :=
+    φ.integrable_inner (((hf.memLpLoc_top hp).clm_comp B).locallyIntegrableOn_clm_apply
+      (hDg1.clm_comp (ContinuousLinearMap.apply ℝ G u)) (by simp) hloc)
+  rwa [integral_add hi1 hi2] at h
+
+end InnerProduct
 
 end TauCeti

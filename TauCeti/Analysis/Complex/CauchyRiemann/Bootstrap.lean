@@ -34,11 +34,13 @@ higher-order local Sobolev chain rule (`TauCeti.MemWkpLoc.contDiffOn_comp_graph_
 Sobolev coefficients (`TauCeti.memWkpLoc_of_ae_cauchyRiemann`, with `S = 0`) upgrades `u` to
 `W^{m+1,p}_loc(Ω)`.
 
-For Sobolev membership `u ∈ W^{ℓ+1,p}_loc` at finite `ℓ`, the hypothesis `p ≠ ⊤` is sharp: in
+At `ℓ = 0`, `u ∈ W^{1,p}_loc` is already part of the hypothesis `IsWeakCauchyRiemannOn` (including
+`p = ∞`). For Sobolev membership `u ∈ W^{ℓ+1,p}_loc` at `ℓ ≥ 1`, the hypothesis `p ≠ ⊤` is sharp
+for local `C^ℓ` data (`TauCeti.IsWeakCauchyRiemannOn.memWkpLoc_of_contDiffOn`): in
 `TauCeti.Analysis.Complex.CauchyRiemann.LogLog.Sobolev`, the graph of
 `f(z) = z² log log (1 / ‖z‖)` (`TauCeti.isWeakCauchyRiemannOn_graph_logLogExample`) solves the
-homogeneous equation for a `C¹` almost complex structure with `p = ∞`, yet fails to belong to
-`W^{2,∞}_loc` on any neighbourhood of `0`
+homogeneous equation on the unit disc for a `C¹` almost complex structure with `p = ∞`, yet fails
+to belong to `W^{2,∞}_loc` on any neighbourhood of `0`
 (`TauCeti.not_memWkpLoc_two_top_graph_logLogExample`). For `C^n` regularity (`n : ℕ∞`), the
 endpoint `p = ∞` is allowed because a `W^{1,∞}_loc` solution is `W^{1,3}_loc` by local
 monotonicity in the exponent, and `W^{ℓ+1,3}_loc ⊂ C^ℓ`.
@@ -79,8 +81,9 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 an open neighbourhood of the graph of `u` over an open set `Ω ⊆ ℂ`, and suppose `J` and `η` are
 `C^ℓ` on `W` with `J(z, u z)² = -1` for every `z ∈ Ω`. Every solution `u` of
 `IsWeakCauchyRiemannOn p Ω J η u` belongs to `MemWkpLoc p Ω (ℓ + 1) u`. At `ℓ = 0` this is
-`IsWeakCauchyRiemannOn.memWkpLoc_one`; for `ℓ ≥ 1` each bootstrap step gains one derivative
-(McDuff–Salamon, Theorem B.4.1 and Remark B.4.3). -/
+`IsWeakCauchyRiemannOn.memWkpLoc_one`; for `ℓ = 1` the finite-exponent hypothesis `p ≠ ⊤` is
+sharp over the unit disc (`TauCeti.not_memWkpLoc_two_top_graph_logLogExample`), and each step for
+`ℓ ≥ 1` gains one derivative (McDuff–Salamon, Theorem B.4.1 and Remark B.4.3). -/
 theorem IsWeakCauchyRiemannOn.memWkpLoc_of_contDiffOn [FiniteDimensional ℝ V] {p : ENNReal}
     (hp : 2 < p) (hp_top : p ≠ ⊤) {ℓ : ℕ} {Ω : Opens ℂ} {W : Set (ℂ × V)} (hW : IsOpen W)
     {J : ℂ → V → V →L[ℝ] V} {η : ℂ → V → V} {u : ℂ → V}
@@ -142,8 +145,7 @@ theorem IsWeakCauchyRiemannOn.contDiffOn [FiniteDimensional ℝ V] {p : ENNReal}
 /-- **Interior elliptic bootstrapping** (McDuff–Salamon, Theorem B.4.1 and Remark B.4.3): for a
 finite exponent `p > 2`, a `C^ℓ` domain-dependent almost complex structure `J` (`J² = -1`) and a
 `C^ℓ` inhomogeneous term `η`, every weak solution `u` of `∂_s u + J(z, u) ∂_t u = η(z, u)` on `Ω`
-belongs to `W^{ℓ+1,p}_loc(Ω)`. The endpoint `p = ⊤` fails at `ℓ = 1`
-(`TauCeti.not_memWkpLoc_two_top_graph_logLogExample`). -/
+belongs to `W^{ℓ+1,p}_loc(Ω)`. -/
 theorem memWkpLoc_of_isWeakCauchyRiemannOn [FiniteDimensional ℝ V] {p : ENNReal} (hp : 2 < p)
     (hp_top : p ≠ ⊤) {ℓ : ℕ} {Ω : Opens ℂ} {J : ℂ → V → V →L[ℝ] V}
     (hJ : ContDiff ℝ ℓ (Function.uncurry J))

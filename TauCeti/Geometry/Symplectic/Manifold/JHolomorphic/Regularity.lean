@@ -37,6 +37,9 @@ two steps:
 
 ## Main results
 
+* `TauCeti.IsIsothermalChart.contMDiffOn`, `TauCeti.IsIsothermalChart.contMDiffOn_symm`: every
+  isothermal chart of a smooth almost complex surface and its inverse are `C^n` for every `n : ℕ∞`
+  on their respective domains.
 * `TauCeti.IsPseudoholomorphicOn.contMDiffOn`, `TauCeti.IsPseudoholomorphic.contMDiff`: a `C¹`
   pseudoholomorphic map from an open subset (or all) of an almost complex surface into a
   finite-dimensional smooth almost complex manifold without boundary is `C^n` for every `n : ℕ∞`.
@@ -126,11 +129,15 @@ private theorem contMDiffOn_of_isPseudoholomorphicOn_ofComplexManifold
     exact (φ.left_inv hz.2).symm
   exact (hφ_symm.comp z₀ hv_at).congr_of_eventuallyEq h_eq
 
-private theorem contMDiffAt_of_isIsothermalChart
+/-- **Smoothness of the inverse of an isothermal chart.** Every isothermal chart of a smooth
+almost complex surface has `C^n` inverse on its target for every `n : ℕ∞`. -/
+theorem IsIsothermalChart.contMDiffOn_symm
     {M : Type*} [TopologicalSpace M] [ChartedSpace ℂ M] [IsManifold 𝓘(ℝ, ℂ) ∞ M]
     {j : SmoothAlmostComplexStructure 𝓘(ℝ, ℂ) M} {e : OpenPartialHomeomorph M ℂ}
-    (he : IsIsothermalChart j e) {x₀ : M} (hx₀ : x₀ ∈ e.source) :
-    ContMDiffAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) ∞ e x₀ := by
+    (he : IsIsothermalChart j e) {n : ℕ∞} :
+    ContMDiffOn 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) n e.symm e.target := by
+  suffices ContMDiffOn 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) ∞ e.symm e.target from
+    this.of_le (WithTop.coe_le_coe.2 le_top)
   have he_symm_hol :
       IsPseudoholomorphicOn (SmoothAlmostComplexStructure.ofComplexManifold ℂ ℂ) j e.symm
         e.target :=
@@ -138,8 +145,21 @@ private theorem contMDiffAt_of_isIsothermalChart
       (he.isPseudoholomorphicAt_symm hz).isPseudoholomorphicWithinAt
   have he_symm_c1 : ContMDiffOn 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) 1 e.symm e.target :=
     contMDiffOn_symm_of_mem_maximalAtlas he.mem_maximalAtlas
+  exact contMDiffOn_of_isPseudoholomorphicOn_ofComplexManifold he_symm_hol e.open_target he_symm_c1
+
+/-- **Smoothness of an isothermal chart.** Every isothermal chart of a smooth almost complex
+surface is `C^n` on its source for every `n : ℕ∞`. -/
+theorem IsIsothermalChart.contMDiffOn
+    {M : Type*} [TopologicalSpace M] [ChartedSpace ℂ M] [IsManifold 𝓘(ℝ, ℂ) ∞ M]
+    {j : SmoothAlmostComplexStructure 𝓘(ℝ, ℂ) M} {e : OpenPartialHomeomorph M ℂ}
+    (he : IsIsothermalChart j e) {n : ℕ∞} :
+    ContMDiffOn 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) n e e.source := by
+  suffices ContMDiffOn 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) ∞ e e.source from
+    this.of_le (WithTop.coe_le_coe.2 le_top)
+  intro x₀ hx₀
+  refine ContMDiffAt.contMDiffWithinAt ?_
   have he_symm_smooth : ContMDiffOn 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) ∞ e.symm e.target :=
-    contMDiffOn_of_isPseudoholomorphicOn_ofComplexManifold he_symm_hol e.open_target he_symm_c1
+    he.contMDiffOn_symm
   let ψ : OpenPartialHomeomorph M ℂ := chartAt ℂ x₀
   let f : OpenPartialHomeomorph ℂ ℂ := e.symm ≫ₕ ψ
   let z₀ : ℂ := e x₀
@@ -213,7 +233,8 @@ theorem IsPseudoholomorphicOn.contMDiffOn
   have hz₀T : e x₀ ∈ T := ⟨e.map_source hx₀, by simpa [e.left_inv hx₀] using hx₀s⟩
   have h_comp_at : ContMDiffAt 𝓘(ℝ, ℂ) I' ∞ (u ∘ e.symm) (e x₀) :=
     h_comp_smooth.contMDiffAt (hT.mem_nhds hz₀T)
-  have he_at : ContMDiffAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) ∞ e x₀ := contMDiffAt_of_isIsothermalChart he hx₀
+  have he_at : ContMDiffAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) ∞ e x₀ :=
+    he.contMDiffOn.contMDiffAt (e.open_source.mem_nhds hx₀)
   have hu_eq : u =ᶠ[nhds x₀] (u ∘ e.symm) ∘ e := by
     filter_upwards [e.open_source.mem_nhds hx₀] with x hx
     simp [e.left_inv hx]
