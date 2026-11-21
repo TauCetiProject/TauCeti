@@ -12,6 +12,7 @@ public import TauCeti.Analysis.PositiveDefinite.AddGroup
 public import TauCeti.Analysis.Semigroups.Group.PhaseShift
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.Prod
+import Mathlib.Topology.MetricSpace.UniformConvergence
 import TauCeti.Analysis.Bochner.CharFun.Bochner
 import TauCeti.Analysis.InnerProductSpace.Gram.PosSemidef
 import TauCeti.Analysis.InnerProductSpace.Projection.RestrictScalars
@@ -231,34 +232,34 @@ private def zeroAverageSubmodule (U : StronglyContinuousGroup X) : Submodule ℝ
     rw [Set.mem_ofPred_eq, hsmul]
     simpa only [smul_zero] using ha.const_smul c
 
+private theorem mem_zeroAverageSubmodule_iff (U : StronglyContinuousGroup X) (x : X) :
+    x ∈ U.zeroAverageSubmodule ↔
+      Tendsto (fun T : ℝ => T⁻¹ • ∫ t in (0 : ℝ)..T, U t x) atTop (𝓝 0) :=
+  Iff.rfl
+
 /-- The zero-average submodule is closed when `U` is contractive, because the averaging operators
 are uniformly contractive. -/
 private theorem isClosed_zeroAverageSubmodule (U : StronglyContinuousGroup X)
     (hnorm : ∀ t : ℝ, ‖U t‖ ≤ 1) : IsClosed (U.zeroAverageSubmodule : Set X) := by
-  rw [← closure_subset_iff_isClosed]
-  intro y hy
-  rw [SetLike.mem_coe, zeroAverageSubmodule, Submodule.mem_mk, AddSubmonoid.mem_mk,
-    AddSubsemigroup.mem_mk, Set.mem_ofPred_eq, Metric.tendsto_nhds]
-  intro ε hε
-  obtain ⟨z, hz, hyz⟩ := Metric.mem_closure_iff.mp hy (ε / 2) (half_pos hε)
-  rw [dist_eq_norm] at hyz
-  filter_upwards [(Metric.tendsto_nhds.mp hz) (ε / 2) (half_pos hε)] with T hTz
-  rw [dist_zero_right] at hTz ⊢
-  have hlin : (T⁻¹ • ∫ t in (0 : ℝ)..T, U t y) =
-      (T⁻¹ • ∫ t in (0 : ℝ)..T, U t (y - z)) + (T⁻¹ • ∫ t in (0 : ℝ)..T, U t z) := by
-    have hfun : (fun t : ℝ => U t (y - z)) = fun t : ℝ => U t y - U t z :=
-      funext fun t => (U t).map_sub y z
-    rw [hfun, intervalIntegral.integral_sub ((U.continuous_orbit y).intervalIntegrable 0 T)
-      ((U.continuous_orbit z).intervalIntegrable 0 T), smul_sub, sub_add_cancel]
-  rw [hlin]
-  calc
-    ‖(T⁻¹ • ∫ t in (0 : ℝ)..T, U t (y - z)) + (T⁻¹ • ∫ t in (0 : ℝ)..T, U t z)‖
-        ≤ ‖T⁻¹ • ∫ t in (0 : ℝ)..T, U t (y - z)‖ + ‖T⁻¹ • ∫ t in (0 : ℝ)..T, U t z‖ :=
-      norm_add_le _ _
-    _ ≤ ‖y - z‖ + ‖T⁻¹ • ∫ t in (0 : ℝ)..T, U t z‖ :=
-      add_le_add (U.norm_average_orbit_le hnorm T (y - z)) le_rfl
-    _ < ε / 2 + ε / 2 := add_lt_add hyz hTz
-    _ = ε := add_halves ε
+  have hcoe : (U.zeroAverageSubmodule : Set X) =
+      {x : X | Tendsto (fun T : ℝ => T⁻¹ • ∫ t in (0 : ℝ)..T, U t x) atTop (𝓝 0)} := by
+    ext x
+    exact U.mem_zeroAverageSubmodule_iff x
+  have hLip : ∀ T : ℝ, LipschitzWith 1 (fun x : X => T⁻¹ • ∫ t in (0 : ℝ)..T, U t x) := by
+    intro T
+    refine LipschitzWith.mk_one fun x y => ?_
+    rw [dist_eq_norm, dist_eq_norm]
+    have hsub : (T⁻¹ • ∫ t in (0 : ℝ)..T, U t x) - (T⁻¹ • ∫ t in (0 : ℝ)..T, U t y) =
+        T⁻¹ • ∫ t in (0 : ℝ)..T, U t (x - y) := by
+      have hfun : (fun t : ℝ => U t (x - y)) = fun t : ℝ => U t x - U t y :=
+        funext fun t => (U t).map_sub x y
+      rw [hfun, intervalIntegral.integral_sub ((U.continuous_orbit x).intervalIntegrable 0 T)
+        ((U.continuous_orbit y).intervalIntegrable 0 T), smul_sub]
+    rw [hsub]
+    exact U.norm_average_orbit_le hnorm T (x - y)
+  rw [hcoe]
+  exact (LipschitzWith.uniformEquicontinuous _ 1 hLip).equicontinuous.isClosed_setOfPred_tendsto
+    continuous_const
 
 end RealNormed
 
