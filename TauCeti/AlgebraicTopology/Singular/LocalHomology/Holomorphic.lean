@@ -427,13 +427,6 @@ private theorem hasDerivAt_lineZero (z : ℂ) :
     HasDerivAt (fun z : ℂ ↦ ((z, 0) : ℂ × ℂ)) ((1 : ℂ), (0 : ℂ)) z :=
   (hasDerivAt_id z).prodMk (hasDerivAt_const z 0)
 
-/-- The vectors `(1, 0)` and `(c, d)` of `ℂ²` are linearly independent when `d ≠ 0`. -/
-private theorem linearIndependent_one_zero {c d : ℂ} (hd : d ≠ 0) :
-    LinearIndependent ℂ ![((1 : ℂ), (0 : ℂ)), (c, d)] :=
-  LinearIndependent.pair_iff.2 fun s t hst ↦ by
-    have ht : t = 0 := by simpa [hd] using congrArg Prod.snd hst
-    exact ⟨by simpa [ht] using congrArg Prod.fst hst, ht⟩
-
 include hn in
 /-- The coordinate lines `w = 0` and `z = 0` of `ℂ²` meet at the origin with local intersection
 number `1`. -/
@@ -441,14 +434,14 @@ example : o.localIndex o ⟨fun p ↦ (p.1, -p.2), by fun_prop⟩ (0, 0) = 1 :=
   o.localIndex_eq_one_of_apply_eq_sub hn (u₁ := fun z ↦ (z, 0)) (u₂ := fun w ↦ (0, w))
     (fun p ↦ by simp) (hasDerivAt_lineZero 0)
     ((hasDerivAt_const (0 : ℂ) (0 : ℂ)).prodMk (hasDerivAt_id 0))
-    (linearIndependent_one_zero one_ne_zero)
+    (linearIndependent_pair_mk_one_iff.2 (by simp))
 
 include hn in
 /-- The lines `w = 0` and `w = z` of `ℂ²` meet at the origin with local intersection number `1`. -/
 example : o.localIndex o ⟨fun p ↦ (p.1 - p.2, -p.2), by fun_prop⟩ (0, 0) = 1 :=
   o.localIndex_eq_one_of_apply_eq_sub hn (u₁ := fun z ↦ (z, 0)) (u₂ := fun w ↦ (w, w))
     (fun p ↦ by simp) (hasDerivAt_lineZero 0) ((hasDerivAt_id 0).prodMk (hasDerivAt_id 0))
-    (linearIndependent_one_zero one_ne_zero)
+    (linearIndependent_pair_mk_one_iff.2 (by simp))
 
 include hn in
 /-- The line `w = 0` meets itself along a whole line: `(z, z)` is not isolated among the solutions

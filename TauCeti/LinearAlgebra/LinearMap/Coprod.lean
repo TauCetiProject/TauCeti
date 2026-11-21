@@ -17,7 +17,9 @@ algebra behind recognising an internal direct sum decomposition `M = range f ⊕
 behind inverse-function-theorem arguments whose differential has the form `(a, b) ↦ f a + g b`.
 For two vectors `a` and `b`, the map `(s, t) ↦ s • a - t • b` out of `R × R` is injective exactly
 when `a` and `b` are linearly independent
-(`LinearMap.injective_fst_smulRight_sub_snd_smulRight_iff`).
+(`LinearMap.injective_fst_smulRight_sub_snd_smulRight_iff`). Over a domain `R`, the vectors
+`(1, c)` and `v` of `R × R` are linearly independent exactly when the determinant `v.2 - c * v.1`
+is nonzero (`TauCeti.linearIndependent_pair_mk_one_iff`).
 -/
 
 public section
@@ -68,3 +70,21 @@ theorem injective_fst_smulRight_sub_snd_smulRight_iff {R M : Type*} [Ring R] [Ad
     exact Prod.ext h.1 (neg_eq_zero.1 h.2)
 
 end LinearMap
+
+namespace TauCeti
+
+/-- Over a domain `R`, the vectors `(1, c)` and `v` of `R × R` are linearly independent exactly
+when the determinant `v.2 - c * v.1` is nonzero: the case of
+`LinearIndependent.pair_add_smul_add_smul_iff` for the standard basis. -/
+theorem linearIndependent_pair_mk_one_iff {R : Type*} [CommRing R] [IsDomain R] {c : R}
+    {v : R × R} : LinearIndependent R ![((1 : R), c), v] ↔ v.2 - c * v.1 ≠ 0 := by
+  have hbasis : LinearIndependent R ![((1 : R), (0 : R)), ((0 : R), (1 : R))] :=
+    LinearIndependent.pair_iff.2 fun s t hst ↦ by simpa [Prod.ext_iff] using hst
+  have key := LinearIndependent.pair_add_smul_add_smul_iff (R := R)
+    (x := ((1 : R), (0 : R))) (y := ((0 : R), (1 : R))) (1 : R) c v.1 v.2
+  simp only [Prod.smul_mk, smul_eq_mul, mul_one, mul_zero, Prod.mk_add_mk, add_zero, zero_add,
+    Prod.mk.eta, one_mul] at key
+  rw [key]
+  exact ⟨fun h ↦ sub_ne_zero.2 h.2, fun h ↦ ⟨hbasis, sub_ne_zero.1 h⟩⟩
+
+end TauCeti

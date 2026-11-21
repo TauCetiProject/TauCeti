@@ -104,20 +104,6 @@ namespace TauCeti
 
 namespace HomologicalOrientation
 
-/-- The vectors `(1, c)` and `v` of `ℂ²` are linearly independent exactly when the determinant
-`v.2 - c v.1` is nonzero: the case of `LinearIndependent.pair_add_smul_add_smul_iff` for the
-standard basis. -/
-private theorem linearIndependent_one_iff {c : ℂ} {v : ℂ × ℂ} :
-    LinearIndependent ℂ ![((1 : ℂ), c), v] ↔ v.2 - c * v.1 ≠ 0 := by
-  have hbasis : LinearIndependent ℂ ![((1 : ℂ), (0 : ℂ)), ((0 : ℂ), (1 : ℂ))] :=
-    LinearIndependent.pair_iff.2 fun s t hst ↦ by simpa [Prod.ext_iff] using hst
-  have key := LinearIndependent.pair_add_smul_add_smul_iff (R := ℂ)
-    (x := ((1 : ℂ), (0 : ℂ))) (y := ((0 : ℂ), (1 : ℂ))) (1 : ℂ) c v.1 v.2
-  simp only [Prod.smul_mk, smul_eq_mul, mul_one, mul_zero, Prod.mk_add_mk, add_zero, zero_add,
-    Prod.mk.eta, one_mul] at key
-  rw [key]
-  exact ⟨fun h ↦ sub_ne_zero.2 h.2, fun h ↦ ⟨hbasis, sub_ne_zero.1 h⟩⟩
-
 /-- The function `φ w = (u w).2 - f (u w).1`, whose zeros are the meetings of the disc `u` with
 the graph of `f`, is analytic where `u` and `f` are. -/
 private theorem analyticAt_snd_sub_comp_fst {f : ℂ → ℂ} {u : ℂ → ℂ × ℂ} {w : ℂ}
@@ -203,6 +189,18 @@ private theorem hasFDerivAt_of_apply_eq_graph_sub (hF : ∀ p, F p = (p.1, f p.1
   (((hasDerivAt_id _).prodMk hf.hasDerivAt).hasFDerivAt_comp_fst_sub_comp_snd
     hu.hasDerivAt).congr_of_eventuallyEq (.of_forall hF)
 
+/-- At a point `((u w).1, w)` of the disc where `f` and `u` are differentiable and the derivative of
+`φ w = (u w).2 - f (u w).1` is nonzero, the map `F (z, w) = (z, f z) - u w` has an injective
+complex derivative. -/
+private theorem exists_hasFDerivAt_injective_of_apply_eq_graph_sub
+    (hF : ∀ p, F p = (p.1, f p.1) - u p.2) {w : ℂ} (hf : DifferentiableAt ℂ f (u w).1)
+    (hu : DifferentiableAt ℂ u w) (hφ : deriv (fun w ↦ (u w).2 - f (u w).1) w ≠ 0) :
+    ∃ L : ℂ × ℂ →L[ℂ] ℂ × ℂ, HasFDerivAt F L ((u w).1, w) ∧ Function.Injective L := by
+  refine ⟨_, hasFDerivAt_of_apply_eq_graph_sub hF hf hu,
+    LinearMap.injective_fst_smulRight_sub_snd_smulRight_iff.2
+      (linearIndependent_pair_mk_one_iff.2 ?_)⟩
+  rwa [← (hasDerivAt_snd_sub_comp_fst hf hu).deriv]
+
 variable {n : ℕ} (o : HomologicalOrientation (ℂ × ℂ) (ℂ × ℂ) n)
 
 /-- If the disc `u` runs inside the graph of `f` near `w₀`, their intersection at `u w₀` is not
@@ -257,26 +255,22 @@ private theorem localIndex_eq_analyticOrderNatAt_of_closedBall
   -- `φ w = ε`, away from `w₀`, where `F` has an invertible complex derivative.
   have hS := setOf_apply_eq_eq_image hF w₀ r ε
   have hreg : ∀ p ∈ ball ((u w₀).1, w₀) r, F p = (0, -ε) →
-      HasFDerivAt F ((ContinuousLinearMap.fst ℂ ℂ ℂ).smulRight ((1 : ℂ), deriv f p.1) -
-        (ContinuousLinearMap.snd ℂ ℂ ℂ).smulRight (deriv u p.2)) p ∧
-      Function.Injective ((ContinuousLinearMap.fst ℂ ℂ ℂ).smulRight ((1 : ℂ), deriv f p.1) -
-        (ContinuousLinearMap.snd ℂ ℂ ℂ).smulRight (deriv u p.2)) := by
+      ∃ L : ℂ × ℂ →L[ℂ] ℂ × ℂ, HasFDerivAt F L p ∧ Function.Injective L := by
     intro p hp hFp
     have hmem : p ∈ {p ∈ ball ((u w₀).1, w₀) r | F p = (0, -ε)} := ⟨hp, hFp⟩
     rw [hS] at hmem
     obtain ⟨w, ⟨hw, -, hφw⟩, rfl⟩ := hmem
     obtain ⟨huw, hfw⟩ := hgood w hw
-    refine ⟨hasFDerivAt_of_apply_eq_graph_sub hF hfw.differentiableAt huw.differentiableAt,
-      LinearMap.injective_fst_smulRight_sub_snd_smulRight_iff.2 (linearIndependent_one_iff.2 ?_)⟩
-    rw [← (hasDerivAt_snd_sub_comp_fst hfw.differentiableAt huw.differentiableAt).deriv]
-    exact hder w hw fun h' ↦ norm_pos_iff.1 hε (by rw [← hφw, h', hφ₀])
+    exact exists_hasFDerivAt_injective_of_apply_eq_graph_sub hF hfw.differentiableAt
+      huw.differentiableAt (hder w hw fun h' ↦ norm_pos_iff.1 hε (by rw [← hφw, h', hφ₀]))
+  choose! L hL using hreg
   have hy : ‖((0 : ℂ), -ε) - F ((u w₀).1, w₀)‖ < δ₂ := by
     rw [apply_eq_of_apply_eq_graph_sub hF, sub_self, h, sub_self, Prod.mk_zero_zero, sub_zero,
       Prod.norm_def, norm_zero, norm_neg, max_eq_right (norm_nonneg _)]
     exact hεδ.trans_le ((min_le_left _ _).trans (min_le_left _ _))
   rw [o.localIndex_eq_ncard_of_hasFDerivAt hn hr hδ₂ hδ₂le
     (fun p hp ↦ eq_of_mem_closedBall_of_apply_eq hF h hiso (ball_subset_closedBall hp)) hy
-    (fun p hp hFp ↦ (hreg p hp hFp).1) (fun p hp hFp ↦ (hreg p hp hFp).2), hS,
+    (fun p hp hFp ↦ (hL p hp hFp).1) (fun p hp hFp ↦ (hL p hp hFp).2), hS,
     ncard_image_of_injective _ fun _ _ hab ↦ congrArg Prod.snd hab]
   -- These solutions lie over the solutions of `φ w = ε` in the ball of radius `r`, and include
   -- those in the ball of radius `min r' r`: both have `m` elements.
@@ -342,7 +336,7 @@ theorem localIndex_eq_one_iff_of_apply_eq_graph_sub (hF : ∀ p, F p = (p.1, f p
   simp only [hφ₀, sub_zero] at key
   rw [(hasDerivAt_snd_sub_comp_fst hf.differentiableAt hu.differentiableAt).deriv] at key
   rw [o.localIndex_eq_analyticOrderNatAt_of_apply_eq_graph_sub hn hF hf hu h, Nat.cast_eq_one,
-    linearIndependent_one_iff, ← key, analyticOrderNatAt]
+    linearIndependent_pair_mk_one_iff, ← key, analyticOrderNatAt]
   exact ENat.toNat_eq_iff one_ne_zero
 
 include hn in
@@ -392,8 +386,7 @@ example (k : ℕ) :
     (analyticAt_id.pow _) (by simp)]
   have hpow : (fun z : ℂ ↦ z ^ (k + 1) - 0) = (· - 0) ^ (k + 1) := funext fun z ↦ by simp
   rw [analyticOrderNatAt, hpow, analyticOrderAt_centeredMonomial, ENat.toNat_natCast]
-  push_cast
-  rfl
+  exact Nat.cast_succ k
 
 include hn in
 /-- The line `w = 0` and the cusp `w ↦ (w², w³)` of `ℂ²`, critical at `0`, meet at the origin with
@@ -418,7 +411,8 @@ example : o.localIndex o ⟨fun p ↦ (p.1 - p.2 ^ 2, p.1 - p.2 ^ 3), by fun_pro
   have hord : analyticOrderAt (fun w : ℂ ↦ ((w ^ 2, w ^ 3) : ℂ × ℂ).2 - id (w ^ 2, w ^ 3).1) 0 =
       (2 : ℕ) :=
     (AnalyticAt.analyticOrderAt_eq_natCast (by fun_prop)).2
-      ⟨fun w ↦ w - 1, by fun_prop, by norm_num, .of_forall fun w ↦ by simp; ring⟩
+      ⟨fun w ↦ w - 1, by fun_prop, by norm_num,
+        .of_forall fun w ↦ by simp only [id, smul_eq_mul]; ring⟩
   rw [analyticOrderNatAt, hord, ENat.toNat_natCast] at this
   simpa using this
 
