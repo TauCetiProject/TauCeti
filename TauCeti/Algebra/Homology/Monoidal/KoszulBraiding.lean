@@ -86,9 +86,8 @@ lemma ιTensorObj_koszulBraidingHom_f (p q n : ℕ) (h : p + q = n) :
     ιTensorObj A B p q n h ≫ (koszulBraidingHom A B).f n =
       ((-1 : ℤ) ^ (p * q)) • ((β_ (A.X p) (B.X q)).hom ≫
         ιTensorObj B A q p n (by omega)) := by
-  rw [koszulBraidingHom, HomologicalComplex.ιTensorObj_tensorBraiding_hom_f, Units.smul_def]
-  -- The sign of `totalComplexShapeSymmetryDownNat` is `(-1 : ℤˣ) ^ (p * q)` by definition.
-  rfl
+  rw [koszulBraidingHom, HomologicalComplex.ιTensorObj_tensorBraiding_hom_f, Units.smul_def,
+    ComplexShape.σ_down_ℕ, Units.val_pow_eq_pow_val, Units.val_neg, Units.val_one]
 
 /-- Koszul interchange is natural in both chain complexes. -/
 @[reassoc]

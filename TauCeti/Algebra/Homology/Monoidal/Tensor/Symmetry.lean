@@ -47,6 +47,8 @@ regrading `C^k = CF_(n-k)` is `ChainComplex.regradeTensorHom_comp_restrictionMap
   `HomologicalComplex.ιTensorObj_tensorBraiding_inv_f`: the interchange and its inverse on
   summands.
 * `HomologicalComplex.tensorBraiding_hom_naturality`: naturality in both complexes.
+* `HomologicalComplex.tensorBraiding_inv_eq_reverseBraiding`: with symmetric signs, the inverse
+  interchange is the interchange of the swapped complexes for the reversed braiding of `C`.
 * `HomologicalComplex.tensorBraiding_inv`: over symmetric coefficients with symmetric signs, the
   inverse interchange is the interchange of the swapped complexes.
 
@@ -140,6 +142,18 @@ lemma tensorBraiding_hom_naturality {K' L' : HomologicalComplex C c} [K'.HasTens
     ιTensorObj_tensorBraiding_hom_f_assoc, Linear.comp_units_smul, Linear.units_smul_comp,
     Category.assoc, ι_tensorHom, BraidedCategory.braiding_naturality_assoc]
 
+/-- With symmetric signs, the inverse of the signed interchange of `K ⊗ L` is the signed
+interchange of `L ⊗ K` for the reversed braiding of `C`: on each summand both are the inverse
+braiding of `C` with the sign `σ p q = σ q p`. -/
+lemma tensorBraiding_inv_eq_reverseBraiding [TotalComplexShapeSymmetrySymmetry c c c] :
+    (tensorBraiding K L).inv = (letI := reverseBraiding C; tensorBraiding L K).hom := by
+  ext j : 1
+  refine mapBifunctor.hom_ext fun q p (h : q + p = j) ↦ ?_
+  rw [ιTensorObj_tensorBraiding_inv_f,
+    (letI := reverseBraiding C; ιTensorObj_tensorBraiding_hom_f L K q p j h), ComplexShape.σ_symm]
+  -- Under `reverseBraiding C`, the braiding `β_ (L.X q) (K.X p)` is `(β_ (K.X p) (L.X q)).symm`.
+  rfl
+
 end Braided
 
 section Symmetric
@@ -151,10 +165,7 @@ variable [SymmetricCategory C] [TotalComplexShapeSymmetrySymmetry c c c]
 `K ⊗ L` is the signed interchange of `L ⊗ K`. -/
 @[simp]
 lemma tensorBraiding_inv : (tensorBraiding K L).inv = (tensorBraiding L K).hom := by
-  ext j : 1
-  refine mapBifunctor.hom_ext fun q p (h : q + p = j) ↦ ?_
-  rw [ιTensorObj_tensorBraiding_inv_f, ιTensorObj_tensorBraiding_hom_f,
-    SymmetricCategory.braiding_swap_eq_inv_braiding (K.X p) (L.X q), ComplexShape.σ_symm]
+  rw [tensorBraiding_inv_eq_reverseBraiding, SymmetricCategory.reverseBraiding_eq]
 
 /-- Over symmetric coefficients with symmetric signs, interchanging the factors of a tensor
 product of complexes twice is the identity. -/

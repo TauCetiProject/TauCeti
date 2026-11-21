@@ -28,8 +28,8 @@ interchange of the factors of tensor products of such chain complexes. The signs
 The instance `HomologicalComplex₂.totalComplexShapeSymmetryDownNat` identifies the total
 complexes of a first-quadrant bicomplex and of its flip by the Koszul sign `(-1)^(p*q)` in
 bidegree `(p, q)`. It is the natural-number analogue of Mathlib's `TotalComplexShapeSymmetry`
-instance for cochain complexes indexed by `ℤ`, and adapts its sign calculation. These signs are
-also symmetric in the two factors.
+instance for cochain complexes indexed by `ℤ`, and adapts its sign calculation
+(`ComplexShape.σ_down_ℕ`). These signs are also symmetric in the two factors.
 -/
 
 public section
@@ -111,11 +111,16 @@ instance totalComplexShapeSymmetryDownNat :
     dsimp
     rw [one_mul, Nat.mul_add, Nat.mul_one, pow_add, mul_assoc, Int.units_mul_self, mul_one]
 
+/-- The Koszul symmetry sign on `ComplexShape.down ℕ` in bidegree `(p, q)` is `(-1)^(p q)`. -/
+@[simp]
+theorem _root_.ComplexShape.σ_down_ℕ (p q : ℕ) :
+    ComplexShape.σ (ComplexShape.down ℕ) (ComplexShape.down ℕ) (ComplexShape.down ℕ) p q =
+      (-1 : ℤˣ) ^ (p * q) :=
+  rfl
+
 /-- The Koszul symmetry signs on `ComplexShape.down ℕ` are symmetric in the two factors. -/
 instance : TotalComplexShapeSymmetrySymmetry (ComplexShape.down ℕ) (ComplexShape.down ℕ)
     (ComplexShape.down ℕ) where
-  σ_symm p q := by
-    change (-1 : ℤˣ) ^ (q * p) = (-1 : ℤˣ) ^ (p * q)
-    rw [Nat.mul_comm]
+  σ_symm p q := by rw [ComplexShape.σ_down_ℕ, ComplexShape.σ_down_ℕ, Nat.mul_comm]
 
 end HomologicalComplex₂

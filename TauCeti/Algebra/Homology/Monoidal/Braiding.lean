@@ -42,11 +42,8 @@ structures.
 
 ## Main results
 
-* `TauCeti.koszulBraidingHom_naturality_left` and `TauCeti.koszulBraidingHom_naturality_right`:
-  the braiding is natural in each factor.
 * `TauCeti.koszulBraidingHom_hexagon_forward` and `TauCeti.koszulBraidingHom_hexagon_reverse`: the
   two hexagon identities.
-* `TauCeti.koszulBraidingHom_comp`: the braiding is symmetric.
 * `TauCeti.ι_tensorμ`: on a homogeneous summand, the middle-four interchange
   `MonoidalCategory.tensorμ` of cochain complexes is that of `C`, with the Koszul sign of
   the two factors it exchanges.
@@ -64,8 +61,9 @@ and in the tensor product and opposite of differential graded categories.
 The braiding `β_ X Y` is `HomologicalComplex.tensorBraiding X Y` for Mathlib's `up ℤ` symmetry
 signs, so its summand formulas, naturality and involutivity come from the generic API of
 `TauCeti/Algebra/Homology/Monoidal/Tensor/Symmetry.lean`. The inverse is identified with the
-braiding for the reversed coefficient braiding, which turns the first hexagon identity into the
-second.
+braiding for the reversed coefficient braiding
+(`HomologicalComplex.tensorBraiding_inv_eq_reverseBraiding`), which turns the first hexagon
+identity into the second.
 
 The hypotheses are the graded-object tensor existence and preservation classes used by
 Mathlib's `HomologicalComplex.monoidalCategory`. In particular, modules over a commutative
@@ -133,18 +131,6 @@ lemma ι_koszulBraidingHom (X Y : CochainComplex C ℤ) (p q j : ℤ)
         (ComplexShape.up ℤ) p q j h ≫ (koszulBraidingHom C X Y).f j =
       koszulBraidingSummand C X Y p q j h :=
   HomologicalComplex.ιTensorObj_tensorBraiding_hom_f X Y p q j h
-
-/-- The Koszul braiding is natural in the left-hand factor. -/
-lemma koszulBraidingHom_naturality_left {X Y : CochainComplex C ℤ} (f : X ⟶ Y)
-    (Z : CochainComplex C ℤ) :
-    f ▷ Z ≫ koszulBraidingHom C Y Z = koszulBraidingHom C X Z ≫ Z ◁ f :=
-  HomologicalComplex.tensorBraiding_hom_naturality f (𝟙 Z)
-
-/-- The Koszul braiding is natural in the right-hand factor. -/
-lemma koszulBraidingHom_naturality_right (X : CochainComplex C ℤ)
-    {Y Z : CochainComplex C ℤ} (f : Y ⟶ Z) :
-    X ◁ f ≫ koszulBraidingHom C X Z = koszulBraidingHom C X Y ≫ f ▷ X :=
-  HomologicalComplex.tensorBraiding_hom_naturality (𝟙 X) f
 
 /- Composing a left whiskering into the braiding summand: the braiding of `C` is natural,
 so a map into the second factor passes through it and becomes a right whiskering.  Stating this
@@ -270,23 +256,6 @@ lemma koszulBraidingHom_hexagon_forward :
 
 end Hexagon
 
-/- The inverse Koszul braiding is the Koszul braiding of the swapped complexes for the reversed
-coefficient braiding: on each summand both are the inverse coefficient braiding with the
-symmetric sign `(-1)^(p * q)`. -/
-omit [HasZeroObject C] [∀ X, PreservesColimit (Functor.empty.{0} C) ((curriedTensor C).flip.obj X)]
-  [∀ (X Y Z : GradedObject ℤ C), GradedObject.HasGoodTensor₁₂Tensor X Y Z]
-  [∀ (X Y Z : GradedObject ℤ C), GradedObject.HasGoodTensorTensor₂₃ X Y Z] in
-private lemma tensorBraiding_inv_eq_reverseBraiding (X Y : CochainComplex C ℤ) :
-    (HomologicalComplex.tensorBraiding X Y).inv =
-      (letI := reverseBraiding C; HomologicalComplex.tensorBraiding Y X).hom := by
-  ext j : 1
-  refine HomologicalComplex.mapBifunctor.hom_ext fun q p (h : q + p = j) ↦ ?_
-  rw [HomologicalComplex.ιTensorObj_tensorBraiding_inv_f,
-    (letI := reverseBraiding C; HomologicalComplex.ιTensorObj_tensorBraiding_hom_f Y X q p j h),
-    ComplexShape.σ_symm]
-  -- Under `reverseBraiding C`, the braiding `β_ (Y.X q) (X.X p)` is `(β_ (X.X p) (Y.X q)).symm`.
-  rfl
-
 variable [∀ X, PreservesColimit (Functor.empty.{0} C) ((curriedTensor C).obj X)]
   [∀ (W X Y Z : GradedObject ℤ C), GradedObject.HasTensor₄ObjExt W X Y Z]
 
@@ -300,7 +269,7 @@ lemma koszulBraidingHom_hexagon_reverse (X Y Z : CochainComplex C ℤ) :
         whiskerRightIso (HomologicalComplex.tensorBraiding X Z) Y)).1
   -- The forward hexagon for the inverse coefficient braiding is the inverse of this hexagon.
   simp only [Iso.trans_inv, Iso.symm_inv, whiskerLeftIso_inv, whiskerRightIso_inv,
-    tensorBraiding_inv_eq_reverseBraiding, Category.assoc]
+    HomologicalComplex.tensorBraiding_inv_eq_reverseBraiding, Category.assoc]
   let := reverseBraiding C
   exact koszulBraidingHom_hexagon_forward C Z X Y
 
@@ -311,10 +280,8 @@ the tensor flip, this is `x ⊗ y ↦ (-1)^{|x| * |y|} y ⊗ x`. -/
 noncomputable instance koszulBraidedCategory :
     BraidedCategory (CochainComplex C ℤ) where
   braiding X Y := HomologicalComplex.tensorBraiding X Y
-  braiding_naturality_right X _ _ f := by
-    simpa only [koszulBraidingHom.eq_1] using koszulBraidingHom_naturality_right C X f
-  braiding_naturality_left f Z := by
-    simpa only [koszulBraidingHom.eq_1] using koszulBraidingHom_naturality_left C f Z
+  braiding_naturality_right X _ _ f := HomologicalComplex.tensorBraiding_hom_naturality (𝟙 X) f
+  braiding_naturality_left f Z := HomologicalComplex.tensorBraiding_hom_naturality f (𝟙 Z)
   hexagon_forward X Y Z := by
     simpa only [koszulBraidingHom.eq_1] using koszulBraidingHom_hexagon_forward C X Y Z
   hexagon_reverse X Y Z := by
@@ -385,20 +352,13 @@ section Symmetric
 
 variable [SymmetricCategory C]
 
-/-- Composing the Koszul braiding with the braiding of the swapped factors is the identity. -/
-lemma koszulBraidingHom_comp (X Y : CochainComplex C ℤ) :
-    koszulBraidingHom C X Y ≫ koszulBraidingHom C Y X = 𝟙 _ :=
-  HomologicalComplex.tensorBraiding_hom_comp_tensorBraiding_hom X Y
-
 variable [∀ X, PreservesColimit (Functor.empty.{0} C) ((curriedTensor C).obj X)]
   [∀ (W X Y Z : GradedObject ℤ C), GradedObject.HasTensor₄ObjExt W X Y Z]
 
 /-- The Koszul braiding over symmetric coefficients is symmetric. -/
 noncomputable instance koszulSymmetricCategory :
     SymmetricCategory (CochainComplex C ℤ) where
-  symmetry X Y := by
-    rw [braiding_hom_eq_koszulBraidingHom, braiding_hom_eq_koszulBraidingHom]
-    exact koszulBraidingHom_comp C X Y
+  symmetry X Y := HomologicalComplex.tensorBraiding_hom_comp_tensorBraiding_hom X Y
 
 end Symmetric
 
