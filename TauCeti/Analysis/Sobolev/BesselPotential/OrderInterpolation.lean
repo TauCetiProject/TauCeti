@@ -91,13 +91,6 @@ open BesselPotentialSpace
 section Preliminaries
 
 omit [CompleteSpace F] in
-/-- The Fourier multiplier with symbol `⟨ξ⟩ ^ 0 = 1` is the identity. -/
-private theorem fourierMultiplierCLM_japaneseBracketCpow_zero (u : 𝓢'(E, F)) :
-    fourierMultiplierCLM F (japaneseBracketCpow (0 : ℂ)) u = u := by
-  have h1 : japaneseBracketCpow (0 : ℂ) = fun _ : E ↦ (1 : ℂ) := funext japaneseBracketCpow_zero
-  rw [h1, fourierMultiplierCLM_const, one_smul, ContinuousLinearMap.id_apply]
-
-omit [CompleteSpace F] in
 /-- `J^{-s} J^s u = u`. -/
 private theorem fourierMultiplierCLM_japaneseBracketCpow_neg_besselPotential (s : ℝ)
     (u : 𝓢'(E, F)) :

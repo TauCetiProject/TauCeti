@@ -319,13 +319,6 @@ theorem _root_.SchwartzMap.continuousOn_toBesselPotentialSpaceCLM_besselPotentia
     (Or.inr hθ₀.le)).const_mul (M ^ (1 - θ))
   simpa [Real.zero_rpow hθ₀.ne'] using hlim
 
-/-- The pairing `u ↦ u φ` of the tempered distributions with a test function `φ`. -/
-private def evalCLM (φ : 𝓢(E, ℂ)) : 𝓢'(E, F) →L[ℂ] F :=
-  ⟨⟨⟨fun T ↦ T φ, fun _ _ ↦ rfl⟩, fun _ _ ↦ rfl⟩, continuous_eval_const φ⟩
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [CompleteSpace F] in
-private theorem evalCLM_apply (φ : 𝓢(E, ℂ)) (T : 𝓢'(E, F)) : evalCLM φ T = T φ := (rfl)
-
 /-- For a Schwartz function `ψ`, the map `w ↦ J^w ψ` into `H^{0,p}` is holomorphic on the open
 half-plane `re w < 0`, `1 < p < ∞`. -/
 theorem _root_.SchwartzMap.differentiableOn_toBesselPotentialSpaceCLM_besselPotentialCLM
@@ -333,24 +326,30 @@ theorem _root_.SchwartzMap.differentiableOn_toBesselPotentialSpaceCLM_besselPote
     DifferentiableOn ℂ (fun w ↦ SchwartzMap.toBesselPotentialSpaceCLM 0 p
       (SchwartzMap.besselPotentialCLM w ψ)) {w | w.re < 0} := by
   refine TauCeti.differentiableOn_of_continuousOn_of_forall_comp
-    (fun φ : 𝓢(E, ℂ) ↦ evalCLM φ ∘L toDistrCLM E F 0 p) (fun u hu ↦ ?_)
+    (fun φ : 𝓢(E, ℂ) ↦ PointwiseConvergenceCLM.evalCLM (RingHom.id ℂ) F φ ∘L toDistrCLM E F 0 p)
+    (fun u hu ↦ ?_)
     ((SchwartzMap.continuousOn_toBesselPotentialSpaceCLM_besselPotentialCLM ψ hp hp_top).mono
       fun w (hw : w.re < 0) ↦ (hw.le : w.re ≤ 0)) (fun φ ↦ ?_)
     (isOpen_lt Complex.continuous_re continuous_const)
   · ext1
     ext φ
-    simpa [evalCLM_apply, toDistrCLM_apply] using hu φ
+    have h := hu φ
+    simp only [ContinuousLinearMap.comp_apply, PointwiseConvergenceCLM.evalCLM_apply,
+      toDistrCLM_apply] at h
+    exact h
   · -- The pairing only sees the tempered distribution `J^w ψ`, which is also an element of
     -- `H^0 = L²` depending holomorphically on `w`.
-    have h : (fun w ↦ (evalCLM φ ∘L toDistrCLM E F 0 p) (SchwartzMap.toBesselPotentialSpaceCLM 0 p
-        (SchwartzMap.besselPotentialCLM w ψ))) = fun w ↦ (evalCLM φ ∘L toDistrCLM E F 0 2)
+    have h : (fun w ↦ (PointwiseConvergenceCLM.evalCLM (RingHom.id ℂ) F φ ∘L toDistrCLM E F 0 p)
+        (SchwartzMap.toBesselPotentialSpaceCLM 0 p (SchwartzMap.besselPotentialCLM w ψ))) =
+        fun w ↦ (PointwiseConvergenceCLM.evalCLM (RingHom.id ℂ) F φ ∘L toDistrCLM E F 0 2)
           (SchwartzMap.toBesselPotentialSpaceCLM 0 2 (SchwartzMap.besselPotentialCLM w ψ)) := by
       funext w
       simp [toDistrCLM_apply, SchwartzMap.toDistr_toBesselPotentialSpaceCLM]
     rw [h]
-    exact fun w _ ↦ ((evalCLM φ ∘L toDistrCLM E F 0 2).hasFDerivAt.comp_hasDerivAt w
-      (SchwartzMap.hasDerivAt_toBesselPotentialSpaceCLM_besselPotentialCLM 0 ψ w)
-        ).differentiableAt.differentiableWithinAt
+    exact fun w _ ↦ ((PointwiseConvergenceCLM.evalCLM (RingHom.id ℂ) F φ ∘L
+      toDistrCLM E F 0 2).hasFDerivAt.comp_hasDerivAt w
+        (SchwartzMap.hasDerivAt_toBesselPotentialSpaceCLM_besselPotentialCLM 0 ψ w)
+          ).differentiableAt.differentiableWithinAt
 
 end Schwartz
 
