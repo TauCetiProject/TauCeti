@@ -51,6 +51,8 @@ The hypothesis `α ≤ 1` is used for both: a bounded Lipschitz function is `α`
   `TauCeti.ParabolicCkHolderSpace.mixedDerivL_inclusionL`: it keeps the map and its fields.
 * `TauCeti.ParabolicCkHolderSpace.norm_inclusionL_le`: the bound on its norm.
 * `TauCeti.ParabolicCkHolderSpace.inclusionL_injective`: it is injective.
+* `TauCeti.ParabolicCkHolderSpace.memHolder_mixedDerivL_of_le`: every field of order at most `k`
+  is parabolically `α`-Hölder.
 
 ## References
 
@@ -210,6 +212,20 @@ theorem norm_inclusionL_le (hα : α ≤ 1) :
 theorem inclusionL_injective (hα : α ≤ 1) :
     Function.Injective (inclusionL (k := k) (E := E) (F := F) (hab := hab) hα) :=
   fun f g hfg ↦ ext fun p ↦ by rw [← inclusionL_apply hα f p, hfg, inclusionL_apply]
+
+/-- **Every field is parabolically Hölder.** For `α ≤ 1`, every field `D_t^r D_x^m u` with
+`2 r + m ≤ k` of a map of order `k` is parabolically `α`-Hölder, not only those of top order:
+the map is also of every order `2 r + m ≤ k`, where the field has top order. -/
+theorem memHolder_mixedDerivL_of_le (hα : α ≤ 1) (f : ParabolicCkHolderSpace k α E F hab)
+    {r m : ℕ} (h : 2 * r + m ≤ k) :
+    MemHolder α (mixedDerivL r m f : slab (E := E) a b → E [×m]→L[ℝ] F) := by
+  induction k with
+  | zero => exact f.memHolder_mixedDerivL (by omega)
+  | succ k ih =>
+    rcases h.eq_or_lt with h | h
+    · exact f.memHolder_mixedDerivL h
+    · rw [← mixedDerivL_inclusionL hα f (by omega)]
+      exact ih _ (by omega)
 
 end ParabolicCkHolderSpace
 
