@@ -115,8 +115,7 @@ theorem card_sq_lt_four_mul_card_of_relations_le_span (k : Type*) [Field k] [Alg
   refine sq_lt_four_mul_of_forall_add_mul_le Fintype.card_pos hc0
     ⟨finrank k A, by rintro _ ⟨m, rfl⟩; have := hc m; omega⟩ fun m ↦ ?_
   have := card_mul_finrank_quotient_add_le x y hker (W := P m) (U := P (m + 1)) (T := P (m + 2))
-    (S := P 1) (fun w hw j i ↦ hmem m hw (hy j i)) (fun u hu i ↦ hmem (m + 1) hu (hxI i))
-    hxP1 (hsurj (m + 1))
+    (S := P 1) (fun w hw j i ↦ hmem m hw (hy j i)) hxP1 (hsurj (m + 1))
   simp only [c] at hc1 ⊢
   omega
 

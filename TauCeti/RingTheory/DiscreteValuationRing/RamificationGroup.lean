@@ -154,7 +154,7 @@ uniformizer `ϖ`, the unique unit `u ∈ 1 + 𝔪 ^ i` satisfying `ϖ * u = σ �
 def uniformizerRatio (i : ℕ) {ϖ : B} (hϖ : Irreducible ϖ)
     (σ : ramificationGroup G B (i : ℤ)) : (maximalIdeal B ^ i).principalUnitGroup :=
   ⟨uniformizerChangeUnit ϖ ((σ : G) • ϖ) hϖ (hϖ.smul (σ : G)),
-    uniformizerChangeUnit_smul_mem_principalUnitGroup hϖ σ.2⟩
+    uniformizerChangeUnit_smul_mem_principalUnitGroup hϖ σ.property⟩
 
 /-- As a unit of `B`, `uniformizerRatio i hϖ σ` is the uniformizer change unit from `ϖ` to
 `σ • ϖ`. -/
@@ -232,7 +232,7 @@ def ramificationGroupToPrincipalUnitGroupGraded (i : ℕ) {ϖ : B} (hϖ : Irredu
             (uniformizerRatio i hϖ τ : Bˣ)⁻¹ := by
       rw [mul_inv_rev, mul_assoc, inv_mul_cancel_left, mul_comm]
     rw [hcomm]
-    exact unitsMap_mul_inv_mem_principalUnitGroup σ.2 _
+    exact unitsMap_mul_inv_mem_principalUnitGroup σ.property _
 
 /-- On `σ ∈ G_i`, the graded principal-unit homomorphism gives the class of `uniformizerRatio`. -/
 @[simp]
@@ -278,7 +278,7 @@ theorem ramificationGroupToPrincipalUnitGroupGraded_eq_of_irreducible (i : ℕ) 
     apply mul_right_cancel (b := c)
     rw [mul_inv_cancel_left, mul_assoc, inv_mul_cancel_right, mul_comm _ c, hrel]
   rw [hquot]
-  exact unitsMap_mul_inv_mem_principalUnitGroup σ.2 c
+  exact unitsMap_mul_inv_mem_principalUnitGroup σ.property c
 
 /-- An element `σ ∈ G_i` lies in the kernel of the `i`-th principal-unit homomorphism if and only
 if `σ • ϖ - ϖ ∈ 𝔪 ^ (i + 2)`. -/
@@ -525,7 +525,7 @@ theorem ker_ramificationGroupToPrincipalUnitGroupGraded (A : Type*) [CommRing A]
   refine le_antisymm (fun σ hσ ↦ ?_) (ramificationGroup_succ_subgroupOf_le_ker i hϖ)
   rw [mem_ker_ramificationGroupToPrincipalUnitGroupGraded_iff i hϖ] at hσ
   have hσ₀ : (σ : G) ∈ ramificationGroup G B 0 :=
-    ramificationGroup_antitone G B (Int.natCast_nonneg i) σ.2
+    ramificationGroup_antitone G B (Int.natCast_nonneg i) σ.property
   rw [Subgroup.mem_subgroupOf, ← Nat.cast_succ,
     mem_ramificationGroup_natCast_iff_smul_sub_mem A hϖ hσ₀]
   exact hσ

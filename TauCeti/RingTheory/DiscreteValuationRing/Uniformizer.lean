@@ -211,7 +211,7 @@ theorem maximalIdealPrincipalUnitGroupPowGradedSuccEquivResidueFieldOfUniformize
     residueFieldEquivMaximalIdealGradedOfUniformizer π hπ (n + 1)
         (maximalIdealPrincipalUnitGroupPowGradedSuccEquivResidueFieldOfUniformizer n π hπ
           (Additive.ofMul (QuotientGroup.mk u))) =
-      Submodule.Quotient.mk ⟨((u : Rˣ) : R) - 1, Ideal.mem_principalUnitGroup.mp u.2⟩ := by
+      Submodule.Quotient.mk ⟨((u : Rˣ) : R) - 1, Ideal.mem_principalUnitGroup.mp u.property⟩ := by
   simp [maximalIdealPrincipalUnitGroupPowGradedSuccEquivResidueFieldOfUniformizer,
     AddEquiv.additiveMultiplicative]
 
