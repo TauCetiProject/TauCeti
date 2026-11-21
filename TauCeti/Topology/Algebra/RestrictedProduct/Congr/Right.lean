@@ -57,9 +57,9 @@ def restrictedProductCongrRight {H : ι → Type w} [∀ i, Group (H i)]
     (Πʳ i, [G i, (U i : Set (G i))]) ≃*
       (Πʳ i, [H i, (U' i : Set (H i))]) where
   toFun x := ⟨fun i ↦ φ i (x i), by
-    filter_upwards [x.2, hφ] with i hx hi using hi.mapsTo hx⟩
+    filter_upwards [x.property, hφ] with i hx hi using hi.mapsTo hx⟩
   invFun y := ⟨fun i ↦ (φ i).symm (y i), by
-    filter_upwards [y.2, hφ] with i hy hi using hi.equiv_symm.mapsTo hy⟩
+    filter_upwards [y.property, hφ] with i hy hi using hi.equiv_symm.mapsTo hy⟩
   left_inv x := by
     ext i
     exact (φ i).symm_apply_apply (x i)

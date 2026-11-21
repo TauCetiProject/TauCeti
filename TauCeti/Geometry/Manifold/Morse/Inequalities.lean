@@ -84,9 +84,11 @@ maps `Hₙ₊₁(M_{s (j + 2)}, M_{s (j + 1)}) ⟶ Hₙ(M_{s (j + 1)}, M_{s 0})`
 ## Main results
 
 * `TauCeti.IsMorse.finrank_singularHomology_sublevelPair_le`,
-  `TauCeti.IsMorse.sum_range_neg_one_pow_mul_finrank_singularHomology_sublevelPair_le` and
-  `TauCeti.IsMorse.sum_range_neg_one_pow_mul_finrank_singularHomology_sublevelPair_eq`: the weak
-  and strong Morse inequalities and Euler's equality for a compact band between regular values.
+  `TauCeti.IsMorse.sum_range_neg_one_pow_mul_finrank_singularHomology_sublevelPair_le`,
+  `TauCeti.IsMorse.sum_range_neg_one_pow_mul_finrank_singularHomology_sublevelPair_eq` and
+  `sum_range_neg_one_pow_mul_finrank_singularHomology_sublevelPair_eq_of_manifoldMorseIndex_ne`:
+  the weak and strong Morse inequalities and Euler's equality for a compact band between regular
+  values (for `n ≥ dim M`, or whenever no critical point in `(a, b]` has index `n + 1`).
 * `TauCeti.IsMorse.exists_sum_range_monomial_sublevelPair_eq_add_mul`,
   `TauCeti.IsMorse.sum_range_finrank_singularHomology_sublevelPair_le` and
   `TauCeti.IsMorse.finrank_singularHomology_sublevelPair_eq_of_forall_ne_add_one`: the Morse
@@ -473,6 +475,54 @@ theorem IsMorse.sum_range_neg_one_pow_mul_finrank_singularHomology_sublevelPair_
       finrank k V * ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ i *
         {x ∈ criticalPoints I f ∩ f ⁻¹' Ioc a b | manifoldMorseIndex I f x = i}.ncard :=
   (hf.morseInequalities V hab hcompact ha hb n).2.2.2 hn
+
+namespace IsMorse
+
+/-- **Euler's equality for a band at a degree with no critical point of index `n + 1`.** Let `f` be
+a Morse function, and `a ≤ b` regular values with compact band `f⁻¹[a, b]`. If no critical point of
+`f` with value in `(a, b]` has Morse index `n + 1`, then
+`∑ᵢ₌₀ⁿ (-1)ⁱ bᵢ = (∑ᵢ₌₀ⁿ (-1)ⁱ cᵢ) dim V`, generalizing
+`IsMorse.sum_range_neg_one_pow_mul_finrank_singularHomology_sublevelPair_eq` beyond `n ≥ dim M`.
+-/
+theorem sum_range_neg_one_pow_mul_finrank_singularHomology_sublevelPair_eq_of_manifoldMorseIndex_ne
+    (hf : IsMorse I f) {a b : ℝ} (hab : a ≤ b) (hcompact : IsCompact (f ⁻¹' Icc a b))
+    (ha : IsRegularValue I 𝓘(ℝ) f a) (hb : IsRegularValue I 𝓘(ℝ) f b) {n : ℕ}
+    (hno : ∀ x ∈ criticalPoints I f ∩ f ⁻¹' Ioc a b, manifoldMorseIndex I f x ≠ n + 1) :
+    ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ i *
+        finrank k ((sublevelPair f hab).singularHomology V i : ModuleCat k) =
+      finrank k V * ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ i *
+        {x ∈ criticalPoints I f ∩ f ⁻¹' Ioc a b | manifoldMorseIndex I f x = i}.ncard := by
+  have hc0 : {x ∈ criticalPoints I f ∩ f ⁻¹' Ioc a b |
+      manifoldMorseIndex I f x = n + 1}.ncard = 0 :=
+    bandCount_eq_zero_of_forall fun x hx hIoc ↦ hno x ⟨hx, hIoc⟩
+  have hb0 : finrank k ((sublevelPair f hab).singularHomology V (n + 1) : ModuleCat k) = 0 :=
+    Nat.eq_zero_of_le_zero <|
+      (hf.finrank_singularHomology_sublevelPair_le V hab hcompact ha hb (n + 1)).trans_eq
+        (by rw [hc0, zero_mul])
+  have hle₁ :=
+    hf.sum_range_neg_one_pow_mul_finrank_singularHomology_sublevelPair_le V hab hcompact ha hb n
+  have hle₂ :=
+    hf.sum_range_neg_one_pow_mul_finrank_singularHomology_sublevelPair_le V hab hcompact ha hb
+      (n + 1)
+  rw [sum_range_succ_neg_one_pow_sub_mul (fun i ↦
+        (finrank k ((sublevelPair f hab).singularHomology V i : ModuleCat k) : ℤ)) n,
+      sum_range_succ_neg_one_pow_sub_mul (fun i ↦
+        ({x ∈ criticalPoints I f ∩ f ⁻¹' Ioc a b | manifoldMorseIndex I f x = i}.ncard : ℤ)) n,
+      hb0, hc0] at hle₂
+  have heq : ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ (n - i) *
+        finrank k ((sublevelPair f hab).singularHomology V i : ModuleCat k) =
+      finrank k V * ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ (n - i) *
+        {x ∈ criticalPoints I f ∩ f ⁻¹' Ioc a b | manifoldMorseIndex I f x = i}.ncard := by
+    push_cast at hle₂
+    linarith
+  rw [sum_range_neg_one_pow_sub_mul (fun i ↦
+        (finrank k ((sublevelPair f hab).singularHomology V i : ModuleCat k) : ℤ)) n,
+      sum_range_neg_one_pow_sub_mul (fun i ↦
+        ({x ∈ criticalPoints I f ∩ f ⁻¹' Ioc a b | manifoldMorseIndex I f x = i}.ncard : ℤ)) n,
+      mul_left_comm] at heq
+  exact mul_left_cancel₀ (pow_ne_zero n (neg_ne_zero.2 one_ne_zero)) heq
+
+end IsMorse
 
 /-- **The Morse polynomial identity for a band.** Let `f` be a Morse function, and `a ≤ b` regular
 values with compact band `f⁻¹[a, b]`. Write `bᵢ` for the dimension of `Hᵢ({f ≤ b}, {f ≤ a}; V)`

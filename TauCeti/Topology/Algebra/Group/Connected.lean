@@ -71,7 +71,7 @@ theorem _root_.Subgroup.connectedSpace_of_quotient (H : Subgroup G) [Preconnecte
     intro g
     have hrange : IsConnected (Set.range fun h : H => g * (h : G)) :=
       ⟨Set.range_nonempty _,
-        isPreconnected_range ((continuous_const_smul g).comp continuous_subtype_val)⟩
+        isPreconnected_range ((continuous_const_smul g).comp continuous_subtypeVal)⟩
     convert hrange using 1
     ext x
     simp only [mem_preimage, mem_singleton_iff, mem_range]

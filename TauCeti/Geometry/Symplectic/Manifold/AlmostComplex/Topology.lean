@@ -7,6 +7,10 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.FrameCover
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
+import TauCeti.Geometry.Manifold.ChartedSpace
+import TauCeti.Geometry.Symplectic.Manifold.Flat
+import TauCeti.Topology.VectorBundle.Bilinear
+import TauCeti.Topology.VectorBundle.Hom
 
 /-!
 # The `C^∞` topology on smooth almost complex structures
@@ -21,13 +25,17 @@ As for sections, the topology is supplied explicitly, since the frame domains of
 parameters. For a covering frame system the topology is Hausdorff, the endomorphism section is a
 closed embedding (the identity `J² = -1` is a closed condition on sections), and, for a locally
 compact model space (in particular a finite-dimensional one), the topology does not depend on the
-covering frames. Point evaluation is continuous.
+covering frames. Point evaluation is continuous, and so, for a locally compact model, is applying
+an almost complex structure to a tangent vector, jointly in both.
 
 For a smooth two-form `ω`, the spaces of `ω`-tame and of `ω`-compatible smooth almost complex
 structures are the subtypes `{J // ω.Tames J}` and `{J // ω.Compatible J}` with the subspace
 topology. Invariance of `ω` is a closed condition, so the compatible structures form a closed
-subspace of the tame ones. Tameness is a pointwise open condition, but it is not open for this
-topology on a noncompact manifold, so no openness is asserted. Nonemptiness of these spaces for a
+subspace of the tame ones. For a finite-dimensional model, positivity of `ω(v, J v)` on the nonzero
+tangent vectors over a compact set of base points is an open condition, since `C^∞` convergence is
+uniform on compact sets. So tameness is open on a compact manifold, and a `G_δ` condition on a
+Lindelöf manifold, which is exhausted by countably many compact sets. Nonemptiness of these spaces
+for a
 nondegenerate form on a Hausdorff σ-compact manifold is
 `TauCeti.SmoothTwoForm.IsNondegenerate.exists_compatible`.
 
@@ -39,6 +47,11 @@ nondegenerate form on a Hausdorff σ-compact manifold is
   covering frame system, the endomorphism section is a closed embedding.
 * `TauCeti.SmoothAlmostComplexStructure.frameTopology_eq_of_covers`: for a locally compact model
   space, independence of the covering frames.
+* `TauCeti.SmoothAlmostComplexStructure.continuous_apply_frameTopology`: for a locally compact
+  model space, applying an almost complex structure to a tangent vector is jointly continuous.
+* `TauCeti.SmoothTwoForm.isOpen_setOf_tames_frameTopology`,
+  `TauCeti.SmoothTwoForm.isGδ_setOf_tames_frameTopology`: for a finite-dimensional model,
+  tameness is open on a compact manifold and `G_δ` on a Lindelöf manifold.
 * `TauCeti.SmoothTwoForm.isClosed_setOf_invariant_frameTopology`: invariance of a smooth two-form
   is a closed condition.
 * `TauCeti.SmoothTwoForm.isClosed_setOf_invariant_tames_frameTopology`: compatible structures
@@ -118,6 +131,23 @@ theorem continuous_toEndomorphism_apply_frameTopology (hcover : ∀ x, ∃ i, x 
   let _ := frameTopology e U hU
   exact (ContMDiffSection.continuous_eval_const (I := I) (n := ∞) e U hU hcover x).comp
     (isEmbedding_toEndomorphism_frameTopology e U hU).continuous
+
+/-- For a covering frame system and a locally compact model space, applying a smooth almost complex
+structure to a tangent vector is jointly continuous in the structure, for the `C^∞` topology, and
+the tangent vector. -/
+theorem continuous_apply_frameTopology [LocallyCompactSpace E] (hcover : ∀ x, ∃ i, x ∈ U i) :
+    let _ := frameTopology e U hU
+    Continuous fun p : SmoothAlmostComplexStructure I M × TangentBundle I M ↦
+      TotalSpace.mk' E (E := TangentSpace I) p.2.proj (p.1 p.2.proj p.2.snd) := by
+  let _ := ContMDiffSection.frameTopology (I := I) (n := ∞) e U hU
+  let _ := frameTopology e U hU
+  have hϕ : Continuous fun p : SmoothAlmostComplexStructure I M × TangentBundle I M ↦
+      TotalSpace.mk' (E →L[ℝ] E) (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x)
+        p.2.proj (p.1.toEndomorphism p.2.proj) :=
+    (ContMDiffSection.continuous_totalSpace_eval (I := I) (n := ∞) e U hU hcover).comp
+      (((isEmbedding_toEndomorphism_frameTopology e U hU).continuous.comp continuous_fst).prodMk
+        ((FiberBundle.continuous_proj E (TangentSpace I)).comp continuous_snd))
+  exact hϕ.clm_bundle_apply (v := fun p ↦ p.2.snd) continuous_snd
 
 /-- For a covering frame system, the sections of `End(TM)` squaring to `-1` form a closed set, so
 the endomorphism section is a closed embedding for the `C^∞` topology. -/
@@ -205,7 +235,7 @@ theorem isClosed_setOf_invariant_frameTopology (hcover : ∀ x, ∃ i, x ∈ U i
   have hw : Continuous (fun J : SmoothAlmostComplexStructure I M ↦ J x w) :=
     (continuous_eval_const w).comp hx
   simp only [SmoothBundleForm.eval₂_apply]
-  exact (form.1 x).coe_continuous.comp (continuous_pi fun k ↦ by fin_cases k <;> simpa)
+  exact (form.val x).coe_continuous.comp (continuous_pi fun k ↦ by fin_cases k <;> simpa)
 
 /-- For a covering frame system, the compatible structures form a closed subspace of the space of
 tame smooth almost complex structures with the `C^∞` topology. -/
@@ -214,7 +244,71 @@ theorem isClosed_setOf_invariant_tames_frameTopology (hcover : ∀ x, ∃ i, x �
     let _ := SmoothAlmostComplexStructure.frameTopology e U hU
     IsClosed {J : {J : SmoothAlmostComplexStructure I M // form.Tames J} | form.Invariant J} := by
   let _ := SmoothAlmostComplexStructure.frameTopology e U hU
-  exact (isClosed_setOf_invariant_frameTopology e U hU hcover form).preimage continuous_subtype_val
+  exact (isClosed_setOf_invariant_frameTopology e U hU hcover form).preimage continuous_subtypeVal
+
+variable [FiniteDimensional ℝ E]
+
+/-- For a covering frame system and a finite-dimensional model, positivity of `ω(v, J v)` on the
+nonzero tangent vectors over a compact set `K` of base points is an open condition on smooth almost
+complex structures in the `C^∞` topology. -/
+theorem isOpen_setOf_forall_mem_eval₂_pos_frameTopology (hcover : ∀ x, ∃ i, x ∈ U i)
+    (form : SmoothTwoForm I M) {K : Set M} (hK : IsCompact K) :
+    let _ := SmoothAlmostComplexStructure.frameTopology e U hU
+    IsOpen {J : SmoothAlmostComplexStructure I M |
+      ∀ x ∈ K, ∀ v : TangentSpace I x, v ≠ 0 → 0 < form.eval₂ x v (J x v)} := by
+  let _ := ContMDiffSection.frameTopology (I := I) (n := ∞) e U hU
+  let _ := SmoothAlmostComplexStructure.frameTopology e U hU
+  have hJ : Continuous fun p : SmoothAlmostComplexStructure I M × M ↦
+      TotalSpace.mk' (E →L[ℝ] E) (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x)
+        p.2 (p.1.toEndomorphism p.2) :=
+    (ContMDiffSection.continuous_totalSpace_eval (I := I) (n := ∞) e U hU hcover).comp
+      ((SmoothAlmostComplexStructure.isEmbedding_toEndomorphism_frameTopology e U
+        hU).continuous.prodMap continuous_id)
+  have hω : Continuous fun p : SmoothAlmostComplexStructure I M × M ↦
+      TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) p.2
+        ((-form).flat p.2) :=
+    (-form).contMDiff_flat.continuous.comp continuous_snd
+  -- The bilinear form `(v, w) ↦ -ω(J v, w)` has diagonal `v ↦ ω(v, J v)`.
+  have key (J : SmoothAlmostComplexStructure I M) (x : M) (v : TangentSpace I x) :
+      ((-form).flat x).comp (J.toEndomorphism x) v v = form.eval₂ x v (J x v) := by
+    rw [ContinuousLinearMap.comp_apply, flat_apply, SmoothBundleForm.eval₂_neg,
+      SmoothBundleForm.eval₂_swap, neg_neg]
+  have hc := Continuous.clm_bundle_comp (F₃ := E →L[ℝ] ℝ)
+    (E₃ := fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) hω hJ
+  simpa only [key] using hK.isOpen_setOf_forall_mem_forall_bilinear_apply_self_pos
+    (fun (J : SmoothAlmostComplexStructure I M) x ↦ ((-form).flat x).comp (J.toEndomorphism x)) hc
+
+/-- On a compact manifold with finite-dimensional model, for a covering frame system, tameness by a
+smooth two-form is an open condition on smooth almost complex structures in the `C^∞` topology. -/
+theorem isOpen_setOf_tames_frameTopology [CompactSpace M] (hcover : ∀ x, ∃ i, x ∈ U i)
+    (form : SmoothTwoForm I M) :
+    let _ := SmoothAlmostComplexStructure.frameTopology e U hU
+    IsOpen {J : SmoothAlmostComplexStructure I M | form.Tames J} := by
+  let _ := SmoothAlmostComplexStructure.frameTopology e U hU
+  simpa only [mem_univ, true_imp_iff, ← tames_iff] using
+    isOpen_setOf_forall_mem_eval₂_pos_frameTopology e U hU hcover form isCompact_univ
+
+/-- On a Lindelöf manifold with finite-dimensional model, for a covering frame system, tameness by
+a smooth two-form is a `G_δ` condition on smooth almost complex structures in the `C^∞`
+topology. -/
+theorem isGδ_setOf_tames_frameTopology [LindelofSpace M] (hcover : ∀ x, ∃ i, x ∈ U i)
+    (form : SmoothTwoForm I M) :
+    let _ := SmoothAlmostComplexStructure.frameTopology e U hU
+    IsGδ {J : SmoothAlmostComplexStructure I M | form.Tames J} := by
+  let _ := SmoothAlmostComplexStructure.frameTopology e U hU
+  have : SecondCountableTopology H := I.secondCountableTopology
+  have : LocallyCompactSpace M := Manifold.locallyCompact_of_finiteDimensional I
+  have : SecondCountableTopology M := ChartedSpace.secondCountable_of_lindelof H M
+  have hset : {J : SmoothAlmostComplexStructure I M | form.Tames J} =
+      ⋂ n, {J | ∀ x ∈ compactCovering M n, ∀ v : TangentSpace I x, v ≠ 0 →
+        0 < form.eval₂ x v (J x v)} := by
+    ext J
+    simp only [mem_ofPred_eq, mem_iInter, tames_iff]
+    exact ⟨fun h _ x _ ↦ h x, fun h x ↦ h _ x (exists_mem_compactCovering x).choose_spec⟩
+  rw [hset]
+  exact IsGδ.iInter_of_isOpen fun n ↦ isOpen_setOf_forall_mem_eval₂_pos_frameTopology e U hU
+    hcover form (isCompact_compactCovering M n)
 
 end SmoothTwoForm
 

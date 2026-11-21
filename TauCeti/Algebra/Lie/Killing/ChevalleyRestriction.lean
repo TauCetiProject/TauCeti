@@ -90,7 +90,7 @@ theorem map_coreflection_lieCartanRestriction (i : H.root) {p : _root_.Symmetric
         (lieCartanRestriction H p) =
       lieCartanRestriction H p := by
   let := ratLieAlgebra K L
-  have hα : (i : Weight K H L).IsNonZero := (Finset.mem_filter.mp i.2).2
+  have hα : (i : Weight K H L).IsNonZero := (Finset.mem_filter.mp i.property).2
   obtain ⟨h, e, f, t, heα, hfα⟩ := exists_isSl2Triple_of_weight_isNonZero hα
   have he := isNilpotent_ad_of_mem_rootSpace H (χ := ⇑(i : Weight K H L)) hα heα
   have hf := isNilpotent_ad_of_mem_rootSpace H (χ := ⇑(-(i : Weight K H L))) hα.neg hfα

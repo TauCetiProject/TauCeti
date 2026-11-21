@@ -54,7 +54,7 @@ matrices. -/
 @[fun_prop]
 theorem continuous_toSL : Continuous (toSL : specialUnitaryGroup n α →* SpecialLinearGroup n α) :=
   (Topology.IsInducing.subtypeVal (t := {A : Matrix n n α | A.det = 1})).continuous_iff.mpr <| by
-    exact (continuous_subtype_val (p := (· ∈ specialUnitaryGroup n α))).congr fun A =>
+    exact (continuous_subtypeVal (p := (· ∈ specialUnitaryGroup n α))).congr fun A =>
       (coe_toSL A).symm
 
 /-- The map `SU(n) → PSL(n)` is continuous for the quotient topology on `PSL(n)`. -/

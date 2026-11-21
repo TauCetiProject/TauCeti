@@ -175,7 +175,7 @@ private theorem map_ofTensor_map_subtype_invariants [FiniteDimensional 𝕜 V] (
         (Submodule.map W.subtype σ.invariants) = S := by
   refine Submodule.ext fun B => ⟨?_, fun hB => ?_⟩
   · rintro ⟨_, ⟨x, hx, rfl⟩, rfl⟩
-    exact (hS _).mpr ⟨(isInvariantForm_ofTensor_iff π hπ).mpr ((hσ x).mp hx), (hP _).mpr x.2⟩
+    exact (hS _).mpr ⟨(isInvariantForm_ofTensor_iff π hπ).mpr ((hσ x).mp hx), (hP _).mpr x.property⟩
   · obtain ⟨hBinv, hPB⟩ := (hS B).mp hB
     obtain ⟨t, rfl⟩ := BilinForm.ofTensor_surjective B
     exact ⟨t, ⟨⟨t, (hP t).mp hPB⟩,
