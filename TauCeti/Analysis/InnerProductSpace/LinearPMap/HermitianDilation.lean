@@ -103,9 +103,12 @@ summands. -/
 theorem hermitianDilation_apply_eq_swap (u : (T.withLpProdMap 2 T†).domain) :
     T.hermitianDilation
         ⟨u, mem_hermitianDilation_domain.mpr (mem_withLpProdMap_domain.mp u.property)⟩ =
-      WithLp.toLp 2 ((T.withLpProdMap 2 T† u).snd, (T.withLpProdMap 2 T† u).fst) :=
-  -- `compPMap` keeps the domain and evaluates by `g (f u)`, and the swap is `withLpProdComm`.
-  LinearMap.compPMap_apply _ _ u
+      WithLp.toLp 2 ((T.withLpProdMap 2 T† u).snd, (T.withLpProdMap 2 T† u).fst) := by
+  -- `compPMap` evaluates by `g (f u)`, and the swap `withLpProdComm` exchanges the components.
+  simp only [hermitianDilation, LinearMap.compPMap_apply, LinearEquiv.coe_coe,
+    LinearIsometryEquiv.coe_toLinearEquiv, LinearIsometryEquiv.withLpProdComm_apply]
+  -- What is left is `⟨↑u, _⟩ = u`: `compPMap` keeps the domain, so this is subtype eta.
+  rfl
 
 /-- The first component of `D_T (x, y)` is `T† y`. -/
 @[simp]
@@ -178,15 +181,11 @@ theorem mem_ker_hermitianDilation {u : WithLp 2 (E × F)} :
         (snd_hermitianDilation_apply _).symm.trans hsnd⟩,
       ⟨_, (mem_hermitianDilation_domain.mp hu).2, rfl,
         (fst_hermitianDilation_apply _).symm.trans hfst⟩⟩
-  · rintro ⟨⟨x, hx, hux, hTx⟩, ⟨y, hy, huy, hTy⟩⟩
-    have hu : u ∈ T.hermitianDilation.domain := by
-      rw [mem_hermitianDilation_domain, hux, huy]
-      exact ⟨hx, hy⟩
-    refine ⟨u, hu, rfl, WithLp.ofLp_injective 2 (Prod.ext ?_ ?_)⟩
-    · rw [WithLp.ofLp_fst, fst_hermitianDilation_apply, WithLp.ofLp_zero, Prod.fst_zero, ← hTy]
-      exact congrArg T† (Subtype.ext huy)
-    · rw [WithLp.ofLp_snd, snd_hermitianDilation_apply, WithLp.ofLp_zero, Prod.snd_zero, ← hTx]
-      exact congrArg T (Subtype.ext hux)
+  · rintro ⟨⟨_, hx, rfl, hTx⟩, ⟨_, hy, rfl, hTy⟩⟩
+    refine ⟨u, mem_hermitianDilation_domain.mpr ⟨hx, hy⟩, rfl,
+      WithLp.ofLp_injective 2 (Prod.ext ?_ ?_)⟩
+    · simpa using hTy
+    · simpa using hTx
 
 /-- The domain of the Hermitian dilation is dense when the domains of `T` and of `T†` are. -/
 theorem dense_hermitianDilation_domain (hT : Dense (T.domain : Set E))
@@ -244,11 +243,9 @@ theorem adjoint_hermitianDilation (hT : T.IsClosed) (hd : Dense (T.domain : Set 
   obtain ⟨u, hu⟩ := u
   obtain rfl : u = w := hwu.symm
   refine WithLp.ofLp_injective 2 (Prod.ext ?_ ?_)
-  · rw [WithLp.ofLp_fst, WithLp.ofLp_fst, fst_hermitianDilation_apply]
-    exact (adjoint_apply_eq hd _ (key w).1).symm
-  · rw [WithLp.ofLp_snd, WithLp.ofLp_snd, snd_hermitianDilation_apply,
-      ← adjoint_apply_eq hd' ⟨_, hfst' w⟩ (key w).2]
-    exact adjoint_adjoint_apply hT hd (hermitianDilationFst ⟨w, hu⟩)
+  · simpa using (adjoint_apply_eq hd _ (key w).1).symm
+  · simpa [← adjoint_apply_eq hd' ⟨_, hfst' w⟩ (key w).2] using
+      adjoint_adjoint_apply hT hd (hermitianDilationFst ⟨w, hu⟩)
 
 /-- **The Hermitian dilation of a closed densely defined operator is self-adjoint.** -/
 theorem isSelfAdjoint_hermitianDilation (hT : T.IsClosed) (hd : Dense (T.domain : Set E)) :
