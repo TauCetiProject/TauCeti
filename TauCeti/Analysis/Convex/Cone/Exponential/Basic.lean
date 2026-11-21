@@ -208,12 +208,12 @@ private def halfspaceCone : PointedCone ℝ (ℝ × ℝ × ℝ) where
     rw [Prod.fst_add, Prod.snd_add, Prod.fst_add, Prod.snd_add, hsplit]
     exact add_le_add (hp.2.2 a) (hq.2.2 a)
   smul_mem' c {q} hq := by
-    refine ⟨mul_nonneg c.2 hq.1, mul_nonneg c.2 hq.2.1, fun a ↦ ?_⟩
-    have hscale : Real.exp a * (c.1 * q.2.2 + (1 - a) * (c.1 * q.2.1)) =
-        c.1 * (Real.exp a * (q.2.2 + (1 - a) * q.2.1)) := by
+    refine ⟨mul_nonneg c.property hq.1, mul_nonneg c.property hq.2.1, fun a ↦ ?_⟩
+    have hscale : Real.exp a * (c.val * q.2.2 + (1 - a) * (c.val * q.2.1)) =
+        c.val * (Real.exp a * (q.2.2 + (1 - a) * q.2.1)) := by
       ring
     simpa only [← Nonneg.coe_smul, Prod.smul_fst, Prod.smul_snd, smul_eq_mul, hscale] using
-      mul_le_mul_of_nonneg_left (hq.2.2 a) c.2
+      mul_le_mul_of_nonneg_left (hq.2.2 a) c.property
 
 private theorem coe_halfspaceCone : (halfspaceCone : Set (ℝ × ℝ × ℝ)) = halfspaceSet := rfl
 

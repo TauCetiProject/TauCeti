@@ -243,7 +243,7 @@ theorem mem_range_levelEmbedding_iff {n : ℕ+} {x : puiseuxField K} :
 /-- Every Puiseux series lies in some level. -/
 theorem exists_mem_range_levelEmbedding (x : puiseuxField K) :
     ∃ n : ℕ+, x ∈ (levelEmbedding K n).range := by
-  simpa only [mem_range_levelEmbedding_iff] using mem_puiseuxField_iff.mp x.2
+  simpa only [mem_range_levelEmbedding_iff] using mem_puiseuxField_iff.mp x.property
 
 /-- For `n ∣ m`, the image of level `n` in the Puiseux field is contained in that of level `m`. -/
 theorem range_levelEmbedding_le_of_dvd {n m : ℕ+} (h : n ∣ m) :

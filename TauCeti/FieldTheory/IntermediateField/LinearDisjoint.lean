@@ -158,7 +158,7 @@ theorem _root_.IntermediateField.LinearDisjoint.linearIndependent_sup_of_isAlgeb
     have hk : LinearIndependent k fun p : _ × ι ↦ γ p.1 • β p.2 :=
       linearIndependent_smul γ.linearIndependent hβ
     have hkB : LinearIndependent k fun p : _ × ι ↦
-        (⟨γ p.1 • β p.2, B.mul_mem (hCB (γ p.1).2) (hβB p.2)⟩ : B) :=
+        (⟨γ p.1 • β p.2, B.mul_mem (hCB (γ p.1).property) (hβB p.2)⟩ : B) :=
       .of_comp B.val.toLinearMap hk
     have hA := h.linearIndependent_right hkB
     exact (hA.comp (Equiv.prodComm _ _) (Equiv.injective _))
@@ -171,7 +171,7 @@ theorem _root_.IntermediateField.LinearDisjoint.linearIndependent_sup_of_isAlgeb
       have := Submodule.mem_map_of_mem (f := C.val.toLinearMap) hmem
       rwa [Submodule.map_span, ← Set.range_comp] at this
     exact Submodule.span_le_restrictScalars k A _ hck
-  have hx : (x : L) ∈ ((A ⊔ C : IntermediateField k L) : Set L) := x.2
+  have hx : (x : L) ∈ ((A ⊔ C : IntermediateField k L) : Set L) := x.property
   rw [IntermediateField.coe_sup_eq_span_of_isAlgebraic_left] at hx
   exact Submodule.span_le.mpr hC hx
 
@@ -185,7 +185,7 @@ theorem _root_.IntermediateField.relrank_sup_sup_eq_relrank_of_linearDisjoint
   have hle : A ⊔ C ≤ A ⊔ B := sup_le_sup_left hCB A
   let β₀ := Module.Basis.ofVectorSpace C (IntermediateField.extendScalars hCB)
   let β : _ → L := fun i ↦ (β₀ i : L)
-  have hβB : ∀ i, β i ∈ B := fun i ↦ (β₀ i).2
+  have hβB : ∀ i, β i ∈ B := fun i ↦ (β₀ i).property
   have hβ : LinearIndependent C β :=
     β₀.linearIndependent.map' (IntermediateField.extendScalars hCB).val.toLinearMap
       (LinearMap.ker_eq_bot.2 Subtype.val_injective)
@@ -339,7 +339,7 @@ theorem _root_.IntermediateField.linearDisjoint_of_transcendental_of_linearIndep
   have hγ : LinearIndependent k' (algebraMap k⟮y⟯ E ∘ (γ.map j.toLinearEquiv)) :=
     (IntermediateField.linearDisjoint_adjoin_simple_of_transcendental
       hx').linearIndependent_algebraMap_comp (γ.map j.toLinearEquiv).linearIndependent
-  let γ' : _ → k'⟮y⟯ := fun m ↦ ⟨j (γ m), hle (j (γ m)).2⟩
+  let γ' : _ → k'⟮y⟯ := fun m ↦ ⟨j (γ m), hle (j (γ m)).property⟩
   have hγ' : LinearIndependent k' γ' := LinearIndependent.of_comp (k'⟮y⟯).val.toLinearMap hγ
   have hprod : LinearIndependent k' (algebraMap F E ∘ B) := by
     convert linearIndependent_smul hγ' hb using 1
@@ -440,7 +440,7 @@ theorem _root_.IntermediateField.LinearDisjoint.lift_rank_le_lift_rank_adjoin_al
       (Module.rank (IntermediateField.adjoin k' (Set.range (algebraMap C E))) E) := by
   rw [Module.rank_def]
   exact Cardinal.lift_iSup_le Cardinal.bddAbove_of_small fun s ↦
-    (H.linearIndependent_adjoin_algebraMap_comp C s.2).cardinal_lift_le_rank
+    (H.linearIndependent_adjoin_algebraMap_comp C s.property).cardinal_lift_le_rank
 
 end Rank
 
