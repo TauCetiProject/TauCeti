@@ -42,15 +42,12 @@ variable (p : ℝ≥0∞) (K M₁ M₂ M₃ : Type*) [Semiring K]
 /-- Associativity of iterated `WithLp` binary products as a linear equivalence, with no metric or
 seminorm assumptions. -/
 def withLpProdAssoc :
-    WithLp p (WithLp p (M₁ × M₂) × M₃) ≃ₗ[K] WithLp p (M₁ × WithLp p (M₂ × M₃)) where
-  toFun x := .toLp p ((WithLp.ofLp (WithLp.ofLp x).1).1,
-    .toLp p ((WithLp.ofLp (WithLp.ofLp x).1).2, (WithLp.ofLp x).2))
-  invFun x := .toLp p (.toLp p ((WithLp.ofLp x).1, (WithLp.ofLp (WithLp.ofLp x).2).1),
-    (WithLp.ofLp (WithLp.ofLp x).2).2)
-  left_inv _ := rfl
-  right_inv _ := rfl
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
+    WithLp p (WithLp p (M₁ × M₂) × M₃) ≃ₗ[K] WithLp p (M₁ × WithLp p (M₂ × M₃)) :=
+  (WithLp.linearEquiv p K (WithLp p (M₁ × M₂) × M₃)) ≪≫ₗ
+    ((WithLp.linearEquiv p K (M₁ × M₂)).prodCongr (.refl K M₃)) ≪≫ₗ
+    LinearEquiv.prodAssoc K M₁ M₂ M₃ ≪≫ₗ
+    ((LinearEquiv.refl K M₁).prodCongr (WithLp.linearEquiv p K (M₂ × M₃)).symm) ≪≫ₗ
+    (WithLp.linearEquiv p K (M₁ × WithLp p (M₂ × M₃))).symm
 
 variable {p K M₁ M₂ M₃}
 

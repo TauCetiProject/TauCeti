@@ -264,14 +264,10 @@ theorem cliffordProdTensor_toProd_tmul_apply_tmul (a : CliffordAlgebra Q₁) {j 
     (he : e ∈ γ.eigenspace ((-1 : R) ^ i)) (f : F) :
     cliffordProdTensor ρ₁ γ hγ hγρ ρ₂ (toProd Q₁ Q₂ (a ᵍ⊗ₜ b)) (e ⊗ₜ f) =
       (-1 : R) ^ (i * j.val) • (ρ₁ a e ⊗ₜ ρ₂ b f) := by
-  have hpow : ∀ k : ℕ, (γ ^ k) e = (-1 : R) ^ (i * k) • e := fun k ↦ by
-    induction k with
-    | zero => simp
-    | succ k ih =>
-      rw [pow_succ', mul_apply_eq_comp, ih, map_smul, Module.End.mem_eigenspace_iff.mp he,
-        smul_smul, ← pow_add, mul_add, mul_one, add_comm]
-  rw [cliffordProdTensor_toProd_tmul ρ₁ γ hγ hγρ ρ₂ a hb, map_tmul, mul_apply_eq_comp,
-    hpow j.val, map_smul, smul_tmul']
+  by_cases hne : e = 0
+  · subst hne; simp
+  · rw [cliffordProdTensor_toProd_tmul ρ₁ γ hγ hγρ ρ₂ a hb, map_tmul, mul_apply_eq_comp,
+      Module.End.HasEigenvector.pow_apply ⟨he, hne⟩ j.val, ← pow_mul, map_smul, smul_tmul']
 
 /-- **Bijectivity of the graded tensor product of endomorphism representations.** When `E` and `F`
 are finite projective `R`-modules and `ρ₁`, `ρ₂` are bijective onto `End_R E` and `End_R F`, the
@@ -283,12 +279,7 @@ theorem cliffordProdTensor_bijective [Module.Finite R E] [Module.Projective R E]
     Function.Bijective (cliffordProdTensor ρ₁ γ hγ hγρ ρ₂) := by
   -- Right-multiplying `End_R E` by the involution `γ` is an `R`-linear equivalence.
   let rγ : Module.End R E ≃ₗ[R] Module.End R E :=
-    { toFun f := f * γ
-      invFun f := f * γ
-      left_inv f := (mul_assoc f γ γ).trans ((congrArg (f * ·) hγ).trans (mul_one f))
-      right_inv f := (mul_assoc f γ γ).trans ((congrArg (f * ·) hγ).trans (mul_one f))
-      map_add' f g := add_mul f g γ
-      map_smul' r f := smul_mul_assoc r f γ }
+    Units.mulRightLinearEquiv R ⟨γ, γ, hγ, hγ⟩
   let s₂ : (evenOdd Q₂ 0 × evenOdd Q₂ 1) ≃ₗ[R] CliffordAlgebra Q₂ :=
     (evenOdd Q₂ 0).prodEquivOfIsCompl (evenOdd Q₂ 1) (evenOdd_isCompl Q₂)
   let e₁ : CliffordAlgebra (Q₁.prod Q₂) ≃ₗ[R] CliffordAlgebra Q₁ ⊗[R] CliffordAlgebra Q₂ :=
@@ -308,24 +299,28 @@ theorem cliffordProdTensor_bijective [Module.Finite R E] [Module.Projective R E]
     obtain ⟨b₀, b₁, hbb⟩ : ∃ b₀ b₁, s₂.symm b = (b₀, b₁) := ⟨_, _, rfl⟩
     have hb : b = s₂ (b₀, 0) + s₂ (0, b₁) := by
       rw [← map_add, Prod.mk_add_mk, add_zero, zero_add, ← hbb, s₂.apply_symm_apply]
+    have he₁_symm (x : CliffordAlgebra Q₁) (y : CliffordAlgebra Q₂) :
+        e₁.symm (x ⊗ₜ y) = toProd Q₁ Q₂ (x ᵍ⊗ₜ y) := rfl
     have hs₀ : s₂ (b₀, 0) = (b₀ : CliffordAlgebra Q₂) := by simp [s₂]
     have hs₁ : s₂ (0, b₁) = (b₁ : CliffordAlgebra Q₂) := by simp [s₂]
     have hρ₁_eq x : LinearEquiv.ofBijective ρ₁.toLinearMap hρ₁ x = ρ₁ x := rfl
     have hρ₂_eq y : LinearEquiv.ofBijective ρ₂.toLinearMap hρ₂ y = ρ₂ y := rfl
     rw [hb, tmul_add, map_add, map_add]
     congr 1
-    · change cliffordProdTensor ρ₁ γ hγ hγρ ρ₂ (toProd Q₁ Q₂ (a ᵍ⊗ₜ s₂ (b₀, 0))) = _
-      rw [hs₀, cliffordProdTensor_toProd_tmul ρ₁ γ hγ hγρ ρ₂ a b₀.property, ← hs₀]
+    · rw [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap, he₁_symm, AlgHom.toLinearMap_apply,
+        hs₀, cliffordProdTensor_toProd_tmul ρ₁ γ hγ hγρ ρ₂ a b₀.property, ← hs₀]
       have hp₀ : (prodRight R R (Module.End R E) (evenOdd Q₂ 0) (evenOdd Q₂ 1)).symm
-          (ρ₁ a ⊗ₜ b₀, 0) = ρ₁ a ⊗ₜ (b₀, 0) :=
-        (prodRight R R _ _ _).symm_apply_eq.mpr (by simp)
+          (ρ₁ a ⊗ₜ b₀, 0) = ρ₁ a ⊗ₜ (b₀, 0) := by
+        simpa using prodRight_symm_tmul R R (Module.End R E) (evenOdd Q₂ 0) (evenOdd Q₂ 1)
+          (ρ₁ a) b₀ 0
       ext e f'
       simp [Ψ, rγ, ZMod.val_zero, hρ₁_eq, hρ₂_eq, s₂.symm_apply_eq.mpr hs₀.symm, hp₀, hs₀]
-    · change cliffordProdTensor ρ₁ γ hγ hγρ ρ₂ (toProd Q₁ Q₂ (a ᵍ⊗ₜ s₂ (0, b₁))) = _
-      rw [hs₁, cliffordProdTensor_toProd_tmul ρ₁ γ hγ hγρ ρ₂ a b₁.property, ← hs₁]
+    · rw [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap, he₁_symm, AlgHom.toLinearMap_apply,
+        hs₁, cliffordProdTensor_toProd_tmul ρ₁ γ hγ hγρ ρ₂ a b₁.property, ← hs₁]
       have hp₁ : (prodRight R R (Module.End R E) (evenOdd Q₂ 0) (evenOdd Q₂ 1)).symm
-          (0, (ρ₁ a * γ) ⊗ₜ b₁) = (ρ₁ a * γ) ⊗ₜ (0, b₁) :=
-        (prodRight R R _ _ _).symm_apply_eq.mpr (by simp)
+          (0, (ρ₁ a * γ) ⊗ₜ b₁) = (ρ₁ a * γ) ⊗ₜ (0, b₁) := by
+        simpa using prodRight_symm_tmul R R (Module.End R E) (evenOdd Q₂ 0) (evenOdd Q₂ 1)
+          (ρ₁ a * γ) 0 b₁
       ext e f'
       simp [Ψ, rγ, show (1 : ZMod 2).val = 1 from rfl, hρ₁_eq, hρ₂_eq,
         s₂.symm_apply_eq.mpr hs₁.symm, hp₁, hs₁]

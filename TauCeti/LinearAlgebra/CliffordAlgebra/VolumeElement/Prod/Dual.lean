@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Prod.Orientati
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Dual
 public import TauCeti.LinearAlgebra.TensorProduct.Dual
 import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
+import TauCeti.LinearAlgebra.CliffordAlgebra.Prod.Dual
 
 /-!
 # Reverse duality of graded tensor products of complex Clifford modules
@@ -71,27 +72,33 @@ private theorem dualDistrib_comp_complexProdTensor_of_dualMap
     dualDistrib ℂ E F ∘ₗ
         complexProdTensor hQ o₁' hQ₁ hn ρ₁.cliffordReverseDual ρ₂.cliffordReverseDual a =
       (complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂).cliffordReverseDual a ∘ₗ dualDistrib ℂ E F := by
-  have hgen (z : ℂ ⊗[ℝ] WithLp 2 (V × W)) :
-      dualDistrib ℂ E F ∘ₗ
-          complexProdTensor hQ o₁' hQ₁ hn ρ₁.cliffordReverseDual ρ₂.cliffordReverseDual
-            (ι (Q.baseChange ℂ) z) =
-        (complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂).cliffordReverseDual
-            (ι (Q.baseChange ℂ) (QuadraticMap.Isometry.id (Q.baseChange ℂ) z)) ∘ₗ
-          dualDistrib ℂ E F := by
-    induction z using TensorProduct.inductionOn with
-    | tmul c x =>
-      rcases x with ⟨⟨v, w⟩⟩
-      have hc : c ⊗ₜ[ℝ] WithLp.toLp 2 (v, w) = c • ((1 : ℂ) ⊗ₜ[ℝ] WithLp.toLp 2 (v, w)) := by
-        rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one]
-      simp only [QuadraticMap.Isometry.id_apply, hc, map_smul, LinearMap.comp_smul,
-        LinearMap.smul_comp]
-      congr 1
-      refine TensorProduct.ext' fun φ ψ ↦ TensorProduct.ext' fun e f ↦ ?_
-      simp [complexProdTensor_ι_one_tmul_toLp, hdual, LinearMap.rTensor]
-    | add x y hx hy =>
-      simp only [QuadraticMap.Isometry.id_apply] at hx hy ⊢
-      simp only [map_add, LinearMap.comp_add, LinearMap.add_comp, hx, hy]
-  simpa [CliffordAlgebra.map_id] using comp_eq_map_comp_of_forall_ι hgen a
+  have hcongr : ∀ (γ' : Module.End ℂ (Dual ℂ E)) (h1 : γ' * γ' = 1)
+      (h2 : ∀ v, γ' * ρ₁.cliffordReverseDual (ι (Q₁.baseChange ℂ) v) =
+        -(ρ₁.cliffordReverseDual (ι (Q₁.baseChange ℂ) v) * γ')),
+      γ' = (ρ₁ (complexVolume Q₁ o₁)).dualMap →
+      AlgHom.cliffordProdTensor ρ₁.cliffordReverseDual γ' h1 h2 ρ₂.cliffordReverseDual =
+        AlgHom.cliffordProdTensor ρ₁.cliffordReverseDual (ρ₁ (complexVolume Q₁ o₁)).dualMap
+          (by
+            rw [Module.End.mul_eq_comp, LinearMap.dualMap_comp_dualMap,
+              ← Module.End.mul_eq_comp, map_complexVolume_mul_self o₁ hQ₁ ρ₁]
+            exact LinearMap.dualMap_id)
+          (AlgHom.dualMap_mul_cliffordReverseDual_ι ρ₁ (ρ₁ (complexVolume Q₁ o₁))
+            (map_complexVolume_mul_map_ι o₁ hn ρ₁))
+          ρ₂.cliffordReverseDual := by
+    rintro γ' h1 h2 rfl; rfl
+  have hrev :
+      (complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂).cliffordReverseDual a =
+        (AlgHom.cliffordProdTensor ρ₁ (ρ₁ (complexVolume Q₁ o₁))
+          (map_complexVolume_mul_self o₁ hQ₁ ρ₁) (map_complexVolume_mul_map_ι o₁ hn ρ₁)
+          ρ₂).cliffordReverseDual
+          (equivOfIsometry ((QuadraticMap.IsometryEquiv.withLpProd hQ).baseChangeProd ℂ) a) := by
+    rw [AlgHom.cliffordReverseDual_apply, complexProdTensor_eq_comp, AlgHom.comp_apply,
+      AlgEquiv.coe_toAlgHom, equivOfIsometry_apply, map_reverse, ← equivOfIsometry_apply,
+      ← AlgHom.cliffordReverseDual_apply]
+  rw [complexProdTensor_eq_comp, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
+    hcongr _ _ _ hdual, hrev]
+  exact AlgHom.dualDistrib_cliffordProdTensor ρ₁ (ρ₁ (complexVolume Q₁ o₁))
+    (map_complexVolume_mul_self o₁ hQ₁ ρ₁) (map_complexVolume_mul_map_ι o₁ hn ρ₁) ρ₂ _
 
 /-! ### Even half-dimension (`n = 2ℓ`, `ℓ` even) -/
 

@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Lp.ProdLp
 public import Mathlib.LinearAlgebra.QuadraticForm.Prod
 public import TauCeti.Analysis.Normed.Lp.WithLp
+public import TauCeti.LinearAlgebra.QuadraticForm.Prod
 
 /-!
 # Structural quadratic isometries on `WithLp` products
@@ -15,8 +15,7 @@ public import TauCeti.Analysis.Normed.Lp.WithLp
 When `Q` on `WithLp p (M₁ × M₂)` decomposes as `Q x = Q₁ x.1 + Q₂ x.2`, `WithLp.linearEquiv`
 identifies `Q` with `Q₁.prod Q₂`, and the structural equivalences of binary `WithLp` products
 (swap, associator, and projection away from a subsingleton summand) are quadratic isometries. No
-metric assumption is needed for the isometries; for seminormed modules and `1 ≤ p`, each preserves
-the `Lᵖ` seminorm.
+metric assumption is needed for the isometries.
 
 ## Main definitions
 
@@ -61,45 +60,45 @@ theorem withLpProd_symm_apply (x : M₁ × M₂) : (withLpProd hQ).symm x = With
 
 /-- Projecting `WithLp p (M₁ × M₂)` onto `M₂` is a quadratic isometry when `M₁` is a subsingleton.
 -/
-def withLpSubsingletonProd (hM₁ : Subsingleton M₁ := by infer_instance) : Q.IsometryEquiv Q₂ where
-  toFun x := (WithLp.ofLp x).2
-  invFun m₂ := WithLp.toLp p (0, m₂)
-  left_inv x := WithLp.ofLp_injective p (Prod.ext (hM₁.elim _ _) rfl)
-  right_inv _ := rfl
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
-  map_app' x := by rw [hQ x, hM₁.elim (WithLp.ofLp x).1 0, map_zero, zero_add]
+def withLpSubsingletonProd (hM₁ : Subsingleton M₁ := by infer_instance) : Q.IsometryEquiv Q₂ :=
+  letI : Unique M₁ := @uniqueOfSubsingleton M₁ hM₁ 0
+  (withLpProd hQ).trans (uniqueProd Q₁ Q₂)
 
 /-- `withLpSubsingletonProd` projects onto the second coordinate. -/
 @[simp]
 theorem withLpSubsingletonProd_apply (hM₁ : Subsingleton M₁) (x : WithLp p (M₁ × M₂)) :
-    withLpSubsingletonProd hQ hM₁ x = (WithLp.ofLp x).2 := (rfl)
+    withLpSubsingletonProd hQ hM₁ x = (WithLp.ofLp x).2 := by
+  let : Unique M₁ := @uniqueOfSubsingleton M₁ hM₁ 0
+  exact IsometryEquiv.uniqueProd_apply Q₁ Q₂ (withLpProd hQ x)
 
 /-- The inverse of `withLpSubsingletonProd` embeds `m₂` as `(0, m₂)`. -/
 @[simp]
 theorem withLpSubsingletonProd_symm_apply (hM₁ : Subsingleton M₁) (m₂ : M₂) :
-    (withLpSubsingletonProd hQ hM₁).symm m₂ = WithLp.toLp p (0, m₂) := (rfl)
+    (withLpSubsingletonProd hQ hM₁).symm m₂ = WithLp.toLp p (0, m₂) := by
+  let : Unique M₁ := @uniqueOfSubsingleton M₁ hM₁ 0
+  exact (withLpSubsingletonProd hQ hM₁).symm_apply_eq.mpr
+    (withLpSubsingletonProd_apply hQ hM₁ (WithLp.toLp p (0, m₂))).symm
 
 /-- Projecting `WithLp p (M₁ × M₂)` onto `M₁` is a quadratic isometry when `M₂` is a subsingleton.
 -/
-def withLpProdSubsingleton (hM₂ : Subsingleton M₂ := by infer_instance) : Q.IsometryEquiv Q₁ where
-  toFun x := (WithLp.ofLp x).1
-  invFun m₁ := WithLp.toLp p (m₁, 0)
-  left_inv x := WithLp.ofLp_injective p (Prod.ext rfl (hM₂.elim _ _))
-  right_inv _ := rfl
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
-  map_app' x := by rw [hQ x, hM₂.elim (WithLp.ofLp x).2 0, map_zero, add_zero]
+def withLpProdSubsingleton (hM₂ : Subsingleton M₂ := by infer_instance) : Q.IsometryEquiv Q₁ :=
+  letI : Unique M₂ := @uniqueOfSubsingleton M₂ hM₂ 0
+  (withLpProd hQ).trans (prodUnique Q₁ Q₂)
 
 /-- `withLpProdSubsingleton` projects onto the first coordinate. -/
 @[simp]
 theorem withLpProdSubsingleton_apply (hM₂ : Subsingleton M₂) (x : WithLp p (M₁ × M₂)) :
-    withLpProdSubsingleton hQ hM₂ x = (WithLp.ofLp x).1 := (rfl)
+    withLpProdSubsingleton hQ hM₂ x = (WithLp.ofLp x).1 := by
+  let : Unique M₂ := @uniqueOfSubsingleton M₂ hM₂ 0
+  exact IsometryEquiv.prodUnique_apply Q₁ Q₂ (withLpProd hQ x)
 
 /-- The inverse of `withLpProdSubsingleton` embeds `m₁` as `(m₁, 0)`. -/
 @[simp]
 theorem withLpProdSubsingleton_symm_apply (hM₂ : Subsingleton M₂) (m₁ : M₁) :
-    (withLpProdSubsingleton hQ hM₂).symm m₁ = WithLp.toLp p (m₁, 0) := (rfl)
+    (withLpProdSubsingleton hQ hM₂).symm m₁ = WithLp.toLp p (m₁, 0) := by
+  let : Unique M₂ := @uniqueOfSubsingleton M₂ hM₂ 0
+  exact (withLpProdSubsingleton hQ hM₂).symm_apply_eq.mpr
+    (withLpProdSubsingleton_apply hQ hM₂ (WithLp.toLp p (m₁, 0))).symm
 
 end Prod
 
@@ -165,52 +164,5 @@ theorem withLpProdAssoc_symm_apply (x : WithLp p (M₁ × WithLp p (M₂ × M₃
 end Assoc
 
 end Algebraic
-
-section Norm
-
-variable {p : ℝ≥0∞} [Fact (1 ≤ p)] {R M₁ M₂ M₃ P : Type*} [CommSemiring R]
-  [SeminormedAddCommGroup M₁] [Module R M₁]
-  [SeminormedAddCommGroup M₂] [Module R M₂]
-  [SeminormedAddCommGroup M₃] [Module R M₃]
-  [AddCommMonoid P] [Module R P]
-  {Q₁ : QuadraticMap R M₁ P} {Q₂ : QuadraticMap R M₂ P} {Q₃ : QuadraticMap R M₃ P}
-  {Q : QuadraticMap R (WithLp p (M₁ × M₂)) P}
-  {Q₁₂ : QuadraticMap R (WithLp p (M₁ × M₂)) P} {Q₂₁ : QuadraticMap R (WithLp p (M₂ × M₁)) P}
-  {Q₂₃ : QuadraticMap R (WithLp p (M₂ × M₃)) P}
-  {Q_L : QuadraticMap R (WithLp p (WithLp p (M₁ × M₂) × M₃)) P}
-  {Q_R : QuadraticMap R (WithLp p (M₁ × WithLp p (M₂ × M₃))) P}
-
-/-- `withLpProdComm` preserves the `Lᵖ` seminorm. -/
-theorem norm_withLpProdComm
-    (hQ₁₂ : ∀ x, Q₁₂ x = Q₁ (WithLp.ofLp x).1 + Q₂ (WithLp.ofLp x).2)
-    (hQ₂₁ : ∀ y, Q₂₁ y = Q₂ (WithLp.ofLp y).1 + Q₁ (WithLp.ofLp y).2)
-    (x : WithLp p (M₁ × M₂)) : ‖withLpProdComm hQ₁₂ hQ₂₁ x‖ = ‖x‖ :=
-  (LinearIsometryEquiv.withLpProdComm p R M₁ M₂).norm_map x
-
-/-- `withLpProdAssoc` preserves the `Lᵖ` seminorm. -/
-theorem norm_withLpProdAssoc
-    (hQ₁₂ : ∀ x, Q₁₂ x = Q₁ (WithLp.ofLp x).1 + Q₂ (WithLp.ofLp x).2)
-    (hQ₂₃ : ∀ x, Q₂₃ x = Q₂ (WithLp.ofLp x).1 + Q₃ (WithLp.ofLp x).2)
-    (hQ_L : ∀ x, Q_L x = Q₁₂ (WithLp.ofLp x).1 + Q₃ (WithLp.ofLp x).2)
-    (hQ_R : ∀ x, Q_R x = Q₁ (WithLp.ofLp x).1 + Q₂₃ (WithLp.ofLp x).2)
-    (x : WithLp p (WithLp p (M₁ × M₂) × M₃)) :
-    ‖withLpProdAssoc hQ₁₂ hQ₂₃ hQ_L hQ_R x‖ = ‖x‖ := by
-  rw [← (LinearIsometryEquiv.withLpProdAssoc p R M₁ M₂ M₃).norm_map x]; simp
-
-/-- `withLpSubsingletonProd` preserves the `Lᵖ` seminorm. -/
-theorem norm_withLpSubsingletonProd
-    (hQ : ∀ x, Q x = Q₁ (WithLp.ofLp x).1 + Q₂ (WithLp.ofLp x).2) (hM₁ : Subsingleton M₁)
-    (x : WithLp p (M₁ × M₂)) : ‖withLpSubsingletonProd hQ hM₁ x‖ = ‖x‖ := by
-  let : Unique M₁ := uniqueOfSubsingleton (0 : M₁)
-  exact (LinearIsometryEquiv.withLpUniqueProd p R M₁ M₂).norm_map x
-
-/-- `withLpProdSubsingleton` preserves the `Lᵖ` seminorm. -/
-theorem norm_withLpProdSubsingleton
-    (hQ : ∀ x, Q x = Q₁ (WithLp.ofLp x).1 + Q₂ (WithLp.ofLp x).2) (hM₂ : Subsingleton M₂)
-    (x : WithLp p (M₁ × M₂)) : ‖withLpProdSubsingleton hQ hM₂ x‖ = ‖x‖ := by
-  let : Unique M₂ := uniqueOfSubsingleton (0 : M₂)
-  exact (LinearIsometryEquiv.withLpProdUnique p R M₁ M₂).norm_map x
-
-end Norm
 
 end QuadraticMap.IsometryEquiv

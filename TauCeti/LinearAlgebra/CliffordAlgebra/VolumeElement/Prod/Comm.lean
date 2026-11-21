@@ -10,7 +10,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Prod.Orientati
 public import TauCeti.LinearAlgebra.Eigenspace.TensorProduct.Comm
 public import TauCeti.LinearAlgebra.Orientation.WithLp
 public import TauCeti.LinearAlgebra.QuadraticForm.WithLp
-import Mathlib.Tactic.Module
+import TauCeti.LinearAlgebra.CliffordAlgebra.Prod.Comm
 
 /-!
 # Graded Koszul symmetry of `CliffordAlgebra.complexProdTensor`
@@ -60,46 +60,6 @@ variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
   (ρ₁ : CliffordAlgebra (Q₁.baseChange ℂ) →ₐ[ℂ] Module.End ℂ E)
   (ρ₂ : CliffordAlgebra (Q₂.baseChange ℂ) →ₐ[ℂ] Module.End ℂ F)
 
-/-- **Koszul symmetry of `complexProdTensor` (algebra-map form).** Conjugating `complexProdTensor`
-of `V ⊕ W` on `E ⊗ F` by `Module.End.koszulComm (ρ₁ Γ_V) (ρ₂ Γ_W)` gives `complexProdTensor` of
-`W ⊕ V` on `F ⊗ E` transported along `QuadraticMap.IsometryEquiv.withLpProdComm`. -/
-theorem conjAlgEquiv_koszulComm_complexProdTensor :
-    let K := Module.End.koszulComm (ρ₁ (complexVolume Q₁ o₁)) (ρ₂ (complexVolume Q₂ o₂))
-      (ρ₁.involutive_complexVolume o₁ hQ₁) (ρ₂.involutive_complexVolume o₂ hQ₂)
-    (K.conjAlgEquiv ℂ).toAlgHom.comp (complexProdTensor hQ_VW o₁ hQ₁ hn ρ₁ ρ₂) =
-      (complexProdTensor hQ_WV o₂ hQ₂ hm ρ₂ ρ₁).comp
-        (map ((QuadraticMap.IsometryEquiv.withLpProdComm hQ_VW
-          hQ_WV).toIsometry.baseChange ℂ)) := by
-  intro K
-  have hanti₁ (v : V) (e' : E) :
-      ρ₁ (complexVolume Q₁ o₁) (ρ₁ (ι (Q₁.baseChange ℂ) (1 ⊗ₜ v)) e') =
-        -ρ₁ (ι (Q₁.baseChange ℂ) (1 ⊗ₜ v)) (ρ₁ (complexVolume Q₁ o₁) e') := by
-    simpa [LinearMap.comp_apply, ← Module.End.mul_eq_comp] using congrArg
-      (fun φ : Module.End ℂ E ↦ φ e') (map_complexVolume_mul_map_ι o₁ hn ρ₁ (1 ⊗ₜ v))
-  have hanti₂ (w : W) (f' : F) :
-      ρ₂ (complexVolume Q₂ o₂) (ρ₂ (ι (Q₂.baseChange ℂ) (1 ⊗ₜ w)) f') =
-        -ρ₂ (ι (Q₂.baseChange ℂ) (1 ⊗ₜ w)) (ρ₂ (complexVolume Q₂ o₂) f') := by
-    simpa [LinearMap.comp_apply, ← Module.End.mul_eq_comp] using congrArg
-      (fun φ : Module.End ℂ F ↦ φ f') (map_complexVolume_mul_map_ι o₂ hm ρ₂ (1 ⊗ₜ w))
-  refine AlgHom.toRingHom_injective <| baseChange_ringHom_ext Q_VW (fun _ ↦ by simp) fun x ↦ ?_
-  rcases x with ⟨⟨v, w⟩⟩
-  refine LinearMap.ext fun y ↦ ?_
-  obtain ⟨z, rfl⟩ := K.surjective y
-  simp only [RingHom.coe_coe, AlgHom.coe_comp, AlgEquiv.coe_toAlgHom, Function.comp_apply,
-    complexProdTensor_ι_one_tmul_toLp, map_add, LinearMap.add_apply,
-    LinearEquiv.conjAlgEquiv_apply_apply, LinearEquiv.symm_apply_apply, map_apply_ι,
-    QuadraticMap.Isometry.baseChange_tmul, QuadraticMap.IsometryEquiv.toIsometry_apply,
-    QuadraticMap.IsometryEquiv.withLpProdComm_apply]
-  induction z using TensorProduct.inductionOn with
-  | tmul e f =>
-    have hsq₁ e' := ρ₁.involutive_complexVolume o₁ hQ₁ e'
-    have hsq₂ f' := ρ₂.involutive_complexVolume o₂ hQ₂ f'
-    simp only [TensorProduct.map_tmul, LinearMap.rTensor_tmul, map_add, K,
-      Module.End.koszulComm_tmul, hsq₁, hsq₂, hanti₁, hanti₂,
-      TensorProduct.tmul_neg, TensorProduct.neg_tmul, map_smul, map_sub]
-    module
-  | add a b ha hb => simp only [map_add]; rw [add_add_add_comm, ha, hb, add_add_add_comm]
-
 /-- **Koszul symmetry of `complexProdTensor` (pointwise form).** The Koszul commutor intertwines
 `complexProdTensor` of `V ⊕ W` and `W ⊕ V` for every Clifford element `a` and tensor `z : E ⊗ F`.
 -/
@@ -112,9 +72,47 @@ theorem koszulComm_complexProdTensor
         (map ((QuadraticMap.IsometryEquiv.withLpProdComm hQ_VW hQ_WV).toIsometry.baseChange ℂ) a)
         (K z) := by
   intro K
-  simpa [K, LinearEquiv.conjAlgEquiv_apply] using congrArg
-    (fun φ : CliffordAlgebra (Q_VW.baseChange ℂ) →ₐ[ℂ] Module.End ℂ (F ⊗[ℂ] E) ↦ φ a (K z))
-    (conjAlgEquiv_koszulComm_complexProdTensor hQ_VW hQ_WV o₁ o₂ hQ₁ hn hQ₂ hm ρ₁ ρ₂)
+  have hisom :
+      ((QuadraticMap.IsometryEquiv.withLpProd hQ_WV).baseChangeProd ℂ).toIsometry.comp
+          ((QuadraticMap.IsometryEquiv.withLpProdComm hQ_VW hQ_WV).toIsometry.baseChange ℂ) =
+        (QuadraticMap.IsometryEquiv.prodComm (Q₁.baseChange ℂ) (Q₂.baseChange ℂ)).toIsometry.comp
+          ((QuadraticMap.IsometryEquiv.withLpProd hQ_VW).baseChangeProd ℂ).toIsometry := by
+    refine QuadraticMap.Isometry.ext fun y ↦ ?_
+    induction y using TensorProduct.inductionOn with
+    | tmul c x =>
+      rcases x with ⟨⟨v, w⟩⟩
+      simp [QuadraticMap.Isometry.baseChange_tmul,
+        QuadraticMap.IsometryEquiv.baseChangeProd_tmul]
+    | add a b ha hb => simp only [map_add, ha, hb]
+  have hmap :
+      equivOfIsometry ((QuadraticMap.IsometryEquiv.withLpProd hQ_WV).baseChangeProd ℂ)
+          (map ((QuadraticMap.IsometryEquiv.withLpProdComm hQ_VW hQ_WV).toIsometry.baseChange ℂ)
+            a) =
+        map (QuadraticMap.IsometryEquiv.prodComm (Q₁.baseChange ℂ) (Q₂.baseChange ℂ)).toIsometry
+          (equivOfIsometry ((QuadraticMap.IsometryEquiv.withLpProd hQ_VW).baseChangeProd ℂ) a) := by
+    simp only [equivOfIsometry_apply, ← AlgHom.comp_apply, map_comp_map, hisom]
+  rw [complexProdTensor_eq_comp, complexProdTensor_eq_comp, AlgHom.comp_apply,
+    AlgEquiv.coe_toAlgHom, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, hmap]
+  exact AlgHom.koszulComm_cliffordProdTensor ρ₁ (ρ₁ (complexVolume Q₁ o₁))
+    (ρ₁.involutive_complexVolume o₁ hQ₁) (map_complexVolume_mul_map_ι o₁ hn ρ₁)
+    ρ₂ (ρ₂ (complexVolume Q₂ o₂)) (ρ₂.involutive_complexVolume o₂ hQ₂)
+    (map_complexVolume_mul_map_ι o₂ hm ρ₂) _ z
+
+/-- **Koszul symmetry of `complexProdTensor` (algebra-map form).** Conjugating `complexProdTensor`
+of `V ⊕ W` on `E ⊗ F` by `Module.End.koszulComm (ρ₁ Γ_V) (ρ₂ Γ_W)` gives `complexProdTensor` of
+`W ⊕ V` on `F ⊗ E` transported along `QuadraticMap.IsometryEquiv.withLpProdComm`. -/
+theorem conjAlgEquiv_koszulComm_complexProdTensor :
+    let K := Module.End.koszulComm (ρ₁ (complexVolume Q₁ o₁)) (ρ₂ (complexVolume Q₂ o₂))
+      (ρ₁.involutive_complexVolume o₁ hQ₁) (ρ₂.involutive_complexVolume o₂ hQ₂)
+    (K.conjAlgEquiv ℂ).toAlgHom.comp (complexProdTensor hQ_VW o₁ hQ₁ hn ρ₁ ρ₂) =
+      (complexProdTensor hQ_WV o₂ hQ₂ hm ρ₂ ρ₁).comp
+        (map ((QuadraticMap.IsometryEquiv.withLpProdComm hQ_VW
+          hQ_WV).toIsometry.baseChange ℂ)) := by
+  intro K
+  refine AlgHom.ext fun a ↦ LinearMap.ext fun y ↦ ?_
+  obtain ⟨z, rfl⟩ := K.surjective y
+  simpa [LinearEquiv.conjAlgEquiv_apply] using
+    koszulComm_complexProdTensor hQ_VW hQ_WV o₁ o₂ hQ₁ hn hQ₂ hm ρ₁ ρ₂ a z
 
 section Volume
 

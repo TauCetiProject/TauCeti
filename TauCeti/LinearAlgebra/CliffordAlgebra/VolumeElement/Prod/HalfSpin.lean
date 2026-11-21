@@ -8,32 +8,26 @@ module
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Prod.Orientation
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Eigenspace
 public import TauCeti.LinearAlgebra.Eigenspace.TensorProduct.Involution
-public import TauCeti.LinearAlgebra.QuadraticForm.WithLp
-import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
-import TauCeti.LinearAlgebra.Dual.Lemmas
 
 /-!
-# Graded-algebra comparison and half-spin decomposition of Clifford tensor products
+# Half-spin decomposition of graded Clifford tensor products
 
-Identifies `CliffordAlgebra (Q.baseChange ℂ)` on `WithLp 2 (V × W)` with
-`evenOdd (Q₁.baseChange ℂ) ᵍ⊗[ℂ] evenOdd (Q₂.baseChange ℂ)` via `CliffordAlgebra.prodEquiv`
-(`complexWithLpProdEquiv`), proves the Koszul-signed evaluation and spinor bijectivity of
-`complexProdTensor`, and decomposes the `±1`-eigenspaces of `Γ_(V ⊕ W)` as
-`(E ⊗ F)^μ ≃ (E⁺ ⊗ F^μ) × (E⁻ ⊗ F^(-μ))` with half-spin `finrank` formulas.
+Decomposes the `±1`-eigenspaces of the product chirality `Γ_(V ⊕ W)` on `E ⊗ F` as
+`(E ⊗ F)^μ ≃ (E⁺ ⊗ F^μ) × (E⁻ ⊗ F^(-μ))`, and proves the corresponding complex dimension
+formulas `dim (E ⊗ F)^μ = dim E⁺ · dim F^μ + dim E⁻ · dim F^(-μ)` and `2 ^ ((n + m) / 2 - 1)` for
+spinor modules.
 
 ## Main definitions and results
 
-* `CliffordAlgebra.complexWithLpProdEquiv`: graded-algebra equivalence with
-  `evenOdd (Q₁.baseChange ℂ) ᵍ⊗[ℂ] evenOdd (Q₂.baseChange ℂ)`.
-* `CliffordAlgebra.complexProdTensor_complexWithLpProdEquiv_symm_tmul` and
-  `CliffordAlgebra.complexProdTensor_complexWithLpProdEquiv_symm_tmul_apply_tmul`: Koszul-signed
-  action of homogeneous graded tensors on `E ⊗ F`.
-* `CliffordAlgebra.complexProdTensor_bijective`: tensor product of spinor modules is a spinor
-  module.
-* `CliffordAlgebra.complexProdTensorComplexVolumeEigenspaceEquiv`,
-  `CliffordAlgebra.finrank_eigenspace_complexProdTensor_complexVolume`, and
-  `CliffordAlgebra.finrank_eigenspace_complexProdTensor_complexVolume_of_bijective`: half-spin
-  decomposition and dimension formulas.
+* `CliffordAlgebra.complexProdTensorComplexVolumeEigenspaceEquiv`: half-spin decomposition of the
+  `μ`-eigenspace of `Γ_(V ⊕ W)`.
+* `CliffordAlgebra.complexProdTensorComplexVolumeEigenspaceEquiv_apply` and
+  `CliffordAlgebra.coe_complexProdTensorComplexVolumeEigenspaceEquiv_symm_apply`: forward and
+  inverse maps of the half-spin equivalence.
+* `CliffordAlgebra.finrank_eigenspace_complexProdTensor_complexVolume`: dimension formula in terms
+  of the factors' eigenspaces.
+* `CliffordAlgebra.finrank_eigenspace_complexProdTensor_complexVolume_of_bijective`: half-spin
+  dimension `2 ^ ((n + m) / 2 - 1)` for tensor products of spinor modules.
 
 ## References
 
@@ -55,105 +49,11 @@ variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
   [NormedAddCommGroup W] [InnerProductSpace ℝ W]
   {Q₁ : QuadraticForm ℝ V} {Q₂ : QuadraticForm ℝ W} {Q : QuadraticForm ℝ (WithLp 2 (V × W))}
   (hQ : ∀ x, Q x = Q₁ (WithLp.ofLp x).1 + Q₂ (WithLp.ofLp x).2)
-
-/-! ### Comparison with `CliffordAlgebra.prodEquiv` -/
-
-include hQ in
-/-- The complexified Clifford algebra of `WithLp 2 (V × W)` is isomorphic to the graded tensor
-product `evenOdd (Q₁.baseChange ℂ) ᵍ⊗[ℂ] evenOdd (Q₂.baseChange ℂ)`. -/
-def complexWithLpProdEquiv :
-    CliffordAlgebra (Q.baseChange ℂ) ≃ₐ[ℂ]
-      evenOdd (Q₁.baseChange ℂ) ᵍ⊗[ℂ] evenOdd (Q₂.baseChange ℂ) :=
-  (equivOfIsometry ((QuadraticMap.IsometryEquiv.withLpProd hQ).baseChangeProd ℂ)).trans
-    (prodEquiv (Q₁.baseChange ℂ) (Q₂.baseChange ℂ))
-
-/-- On a real vector `(v, w)`, `complexWithLpProdEquiv` sends `ι (1 ⊗ (v, w))` to
-`ι (1 ⊗ v) ᵍ⊗ 1 + 1 ᵍ⊗ ι (1 ⊗ w)`. -/
-@[simp]
-theorem complexWithLpProdEquiv_ι_one_tmul_toLp (v : V) (w : W) :
-    complexWithLpProdEquiv hQ (ι (Q.baseChange ℂ) (1 ⊗ₜ WithLp.toLp 2 (v, w))) =
-      ι (Q₁.baseChange ℂ) (1 ⊗ₜ v) ᵍ⊗ₜ 1 + 1 ᵍ⊗ₜ ι (Q₂.baseChange ℂ) (1 ⊗ₜ w) := by
-  simp [complexWithLpProdEquiv, equivOfIsometry_apply,
-    QuadraticMap.IsometryEquiv.baseChangeProd_tmul]
-
-/-- The inverse of `complexWithLpProdEquiv` sends `ι u ᵍ⊗ 1` to the left-summand vector. -/
-@[simp]
-theorem complexWithLpProdEquiv_symm_ι_tmul_one (v : V) :
-    (complexWithLpProdEquiv hQ).symm (ι (Q₁.baseChange ℂ) (1 ⊗ₜ v) ᵍ⊗ₜ 1) =
-      ι (Q.baseChange ℂ) (1 ⊗ₜ WithLp.toLp 2 (v, 0)) :=
-  (complexWithLpProdEquiv hQ).injective (by simp [complexWithLpProdEquiv_ι_one_tmul_toLp])
-
-/-- The inverse of `complexWithLpProdEquiv` sends `1 ᵍ⊗ ι w` to the right-summand vector. -/
-@[simp]
-theorem complexWithLpProdEquiv_symm_one_tmul_ι (w : W) :
-    (complexWithLpProdEquiv hQ).symm (1 ᵍ⊗ₜ ι (Q₂.baseChange ℂ) (1 ⊗ₜ w)) =
-      ι (Q.baseChange ℂ) (1 ⊗ₜ WithLp.toLp 2 (0, w)) :=
-  (complexWithLpProdEquiv hQ).injective (by simp [complexWithLpProdEquiv_ι_one_tmul_toLp])
-
-variable [FiniteDimensional ℝ V] {n : ℕ} [Fact (finrank ℝ V = n)] (o₁ : Orientation ℝ V (Fin n))
+  [FiniteDimensional ℝ V] {n : ℕ} [Fact (finrank ℝ V = n)] (o₁ : Orientation ℝ V (Fin n))
   (hQ₁ : ∀ v, Q₁ v = -‖v‖ ^ 2) (hn : Even n)
   {E F : Type*} [AddCommGroup E] [Module ℂ E] [AddCommGroup F] [Module ℂ F]
   (ρ₁ : CliffordAlgebra (Q₁.baseChange ℂ) →ₐ[ℂ] Module.End ℂ E)
   (ρ₂ : CliffordAlgebra (Q₂.baseChange ℂ) →ₐ[ℂ] Module.End ℂ F)
-
-private theorem complexProdTensor_comp_complexWithLpProdEquiv_symm :
-    (complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂).comp (complexWithLpProdEquiv hQ).symm.toAlgHom =
-      (AlgHom.cliffordProdTensor ρ₁ (ρ₁ (complexVolume Q₁ o₁))
-        (map_complexVolume_mul_self o₁ hQ₁ ρ₁) (map_complexVolume_mul_map_ι o₁ hn ρ₁) ρ₂).comp
-        (toProd (Q₁.baseChange ℂ) (Q₂.baseChange ℂ)) := by
-  have h : complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ =
-      ((AlgHom.cliffordProdTensor ρ₁ (ρ₁ (complexVolume Q₁ o₁))
-        (map_complexVolume_mul_self o₁ hQ₁ ρ₁) (map_complexVolume_mul_map_ι o₁ hn ρ₁) ρ₂).comp
-        (toProd (Q₁.baseChange ℂ) (Q₂.baseChange ℂ))).comp
-        (complexWithLpProdEquiv hQ).toAlgHom := by
-    refine AlgHom.toRingHom_injective <| baseChange_ringHom_ext Q (fun _ ↦ by simp) fun x' ↦ ?_
-    rcases x' with ⟨⟨v, w⟩⟩
-    simp
-  exact AlgHom.ext fun x ↦ by rw [h]; simp
-
-/-- **Comparison with Mathlib's `CliffordAlgebra.prodEquiv`.** Under `complexWithLpProdEquiv`, a
-pure tensor `a ᵍ⊗ b` with `b` of parity `j` acts on `E ⊗ F` by `ρ₁ a Γ_V ^ j ⊗ ρ₂ b`. -/
-theorem complexProdTensor_complexWithLpProdEquiv_symm_tmul
-    (a : CliffordAlgebra (Q₁.baseChange ℂ)) {j : ZMod 2}
-    {b : CliffordAlgebra (Q₂.baseChange ℂ)} (hb : b ∈ evenOdd (Q₂.baseChange ℂ) j) :
-    complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ ((complexWithLpProdEquiv hQ).symm (a ᵍ⊗ₜ b)) =
-      TensorProduct.map (ρ₁ a * ρ₁ (complexVolume Q₁ o₁) ^ j.val) (ρ₂ b) :=
-  (AlgHom.congr_fun
-    (complexProdTensor_comp_complexWithLpProdEquiv_symm hQ o₁ hQ₁ hn ρ₁ ρ₂) (a ᵍ⊗ₜ b)).trans
-    (AlgHom.cliffordProdTensor_toProd_tmul ρ₁ (ρ₁ (complexVolume Q₁ o₁))
-      (map_complexVolume_mul_self o₁ hQ₁ ρ₁) (map_complexVolume_mul_map_ι o₁ hn ρ₁) ρ₂ a hb)
-
-/-- **Koszul-signed evaluation on homogeneous spinors.** If `b` has parity `j` and `e` lies in the
-`(-1) ^ i`-eigenspace of `Γ_V`, then `(complexWithLpProdEquiv hQ).symm (a ᵍ⊗ b)` sends `e ⊗ f` to
-`(-1) ^ (i * j.val) • (ρ₁ a e ⊗ ρ₂ b f)`. -/
-theorem complexProdTensor_complexWithLpProdEquiv_symm_tmul_apply_tmul
-    (a : CliffordAlgebra (Q₁.baseChange ℂ)) {j : ZMod 2}
-    {b : CliffordAlgebra (Q₂.baseChange ℂ)} (hb : b ∈ evenOdd (Q₂.baseChange ℂ) j)
-    {i : ℕ} {e : E} (he : e ∈ (ρ₁ (complexVolume Q₁ o₁)).eigenspace ((-1 : ℂ) ^ i)) (f : F) :
-    complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ ((complexWithLpProdEquiv hQ).symm (a ᵍ⊗ₜ b)) (e ⊗ₜ f) =
-      (-1 : ℂ) ^ (i * j.val) • (ρ₁ a e ⊗ₜ ρ₂ b f) :=
-  (LinearMap.congr_fun (AlgHom.congr_fun
-    (complexProdTensor_comp_complexWithLpProdEquiv_symm hQ o₁ hQ₁ hn ρ₁ ρ₂) (a ᵍ⊗ₜ b))
-      (e ⊗ₜ f)).trans
-    (AlgHom.cliffordProdTensor_toProd_tmul_apply_tmul ρ₁ (ρ₁ (complexVolume Q₁ o₁))
-      (map_complexVolume_mul_self o₁ hQ₁ ρ₁) (map_complexVolume_mul_map_ι o₁ hn ρ₁) ρ₂ a hb he f)
-
-/-- **The graded tensor product of spinor modules is a spinor module.** When `W` is
-finite-dimensional and `ρ₁`, `ρ₂` are bijective onto `End_ℂ E` and `End_ℂ F`, `complexProdTensor`
-is bijective onto `End_ℂ (E ⊗ F)`. -/
-theorem complexProdTensor_bijective [FiniteDimensional ℝ W]
-    (hρ₁ : Function.Bijective ρ₁) (hρ₂ : Function.Bijective ρ₂) :
-    Function.Bijective (complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂) := by
-  have : Module.Finite ℂ E := Module.Finite.of_surjective_end ρ₁ hρ₁.surjective
-  have : Module.Finite ℂ F := Module.Finite.of_surjective_end ρ₂ hρ₂.surjective
-  have hbij : Function.Bijective
-      ((complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂).comp (complexWithLpProdEquiv hQ).symm.toAlgHom) := by
-    rw [complexProdTensor_comp_complexWithLpProdEquiv_symm hQ o₁ hQ₁ hn ρ₁ ρ₂]
-    exact (AlgHom.cliffordProdTensor_bijective ρ₁ (ρ₁ (complexVolume Q₁ o₁))
-      (map_complexVolume_mul_self o₁ hQ₁ ρ₁) (map_complexVolume_mul_map_ι o₁ hn ρ₁) ρ₂
-      hρ₁ hρ₂).comp (prodEquiv (Q₁.baseChange ℂ) (Q₂.baseChange ℂ)).symm.bijective
-  convert hbij.comp (complexWithLpProdEquiv hQ).bijective
-  ext a z; simp
 
 /-! ### Half-spin eigenspace decomposition -/
 
@@ -246,13 +146,14 @@ theorem finrank_eigenspace_complexProdTensor_complexVolume_of_bijective
     {μ : ℂ} (hμ : μ = 1 ∨ μ = -1) :
     finrank ℂ ((complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ (complexVolume Q o)).eigenspace μ) =
       2 ^ ((n + m) / 2 - 1) := by
+  -- Equip `E ⊗ F` with the `CliffordAlgebra (Q.baseChange ℂ)`-module structure induced by
+  -- `complexProdTensor` so `finrank_eigenspace_complexVolume_of_bijective_lsmul` applies.
   let : Module (CliffordAlgebra (Q.baseChange ℂ)) (E ⊗[ℂ] F) :=
     Module.compHom (E ⊗[ℂ] F) (complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂).toRingHom
+  have hsmul (a : CliffordAlgebra (Q.baseChange ℂ)) (z : E ⊗[ℂ] F) :
+      a • z = complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ a z := rfl
   have : IsScalarTower ℂ (CliffordAlgebra (Q.baseChange ℂ)) (E ⊗[ℂ] F) :=
-    ⟨fun c a z ↦ by
-      change complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ (c • a) z =
-        c • complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ a z
-      rw [map_smul, LinearMap.smul_apply]⟩
+    ⟨fun c a z ↦ by rw [hsmul, hsmul, map_smul, LinearMap.smul_apply]⟩
   have hQ_norm (x : WithLp 2 (V × W)) : Q x = -‖x‖ ^ 2 := by
     rw [hQ x, hQ₁, hQ₂, WithLp.prod_norm_sq_eq_of_L2]; dsimp only [WithLp.fst, WithLp.snd]; ring
   have hlsmul : (Algebra.lsmul ℂ ℂ (E ⊗[ℂ] F) :

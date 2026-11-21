@@ -29,8 +29,8 @@ the product-volume formulas of `VolumeElement/Prod.lean` to the frame-free produ
 * `CliffordAlgebra.complexProdTensor_complexVolume_of_map_prod` and
   `CliffordAlgebra.complexProdTensor_complexVolume_of_odd_of_map_prod`: frame-free product-volume
   formulas for `(o₁.prod o₂).map _ (WithLp.linearEquiv 2 ℝ (V × W)).symm`.
-* `CliffordAlgebra.complexProdTensor_neg_orientation_complexVolume_neg_of_map_prod`: frame-free
-  version of `complexProdTensor_neg_orientation_complexVolume_neg`.
+* `CliffordAlgebra.complexProdTensor_neg_orientation_complexVolume_neg_of_map_prod`: reversing
+  `o₁` reverses the product orientation `o` and negates the product chirality.
 
 ## References
 
@@ -59,18 +59,14 @@ variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 
 /-! ### Orientation reversal of the first summand -/
 
-private theorem map_neg_left (f : Module.End ℂ E) (g : Module.End ℂ F) :
-    TensorProduct.map (-f) g = -TensorProduct.map f g := by ext; simp [TensorProduct.neg_tmul]
-
-private theorem map_neg_right (f : Module.End ℂ E) (g : Module.End ℂ F) :
-    TensorProduct.map f (-g) = -TensorProduct.map f g := by ext; simp [TensorProduct.tmul_neg]
-
 /-- Reversing the orientation of `V` negates the action of `(0, w)` on `E ⊗ F`:
 `c_{-o₁}(0, w) = -Γ_V ⊗ c_W(w)`. -/
 theorem complexProdTensor_neg_orientation_ι_one_tmul_toLp_inr (w : W) :
     complexProdTensor hQ (-o₁) hQ₁ hn ρ₁ ρ₂ (ι (Q.baseChange ℂ) (1 ⊗ₜ WithLp.toLp 2 (0, w))) =
       -TensorProduct.map (ρ₁ (complexVolume Q₁ o₁)) (ρ₂ (ι (Q₂.baseChange ℂ) (1 ⊗ₜ w))) := by
-  rw [complexProdTensor_ι_one_tmul_toLp_inr, complexVolume_neg_orientation, map_neg, map_neg_left]
+  rw [complexProdTensor_ι_one_tmul_toLp_inr, complexVolume_neg_orientation, map_neg,
+    ← TensorProduct.mapBilinear_apply, map_neg, LinearMap.neg_apply,
+    TensorProduct.mapBilinear_apply]
 
 /-- Reversing the orientation of `V` replaces `c(v, w) = c_V(v) ⊗ 1 + Γ_V ⊗ c_W(w)` by
 `c_V(v) ⊗ 1 - Γ_V ⊗ c_W(w)`. -/
@@ -78,15 +74,18 @@ theorem complexProdTensor_neg_orientation_ι_one_tmul_toLp (v : V) (w : W) :
     complexProdTensor hQ (-o₁) hQ₁ hn ρ₁ ρ₂ (ι (Q.baseChange ℂ) (1 ⊗ₜ WithLp.toLp 2 (v, w))) =
       (ρ₁ (ι (Q₁.baseChange ℂ) (1 ⊗ₜ v))).rTensor F -
         TensorProduct.map (ρ₁ (complexVolume Q₁ o₁)) (ρ₂ (ι (Q₂.baseChange ℂ) (1 ⊗ₜ w))) := by
-  rw [complexProdTensor_ι_one_tmul_toLp, complexVolume_neg_orientation, map_neg, map_neg_left,
-    sub_eq_add_neg]
+  rw [complexProdTensor_ι_one_tmul_toLp, complexVolume_neg_orientation, map_neg,
+    ← TensorProduct.mapBilinear_apply, map_neg, LinearMap.neg_apply,
+    TensorProduct.mapBilinear_apply, sub_eq_add_neg]
 
-private theorem complexProdTensor_neg_orientation_eq_involute :
+/-- Reversing the orientation of `V` in `complexProdTensor` is equivalent to twisting the second
+representation `ρ₂` by `CliffordAlgebra.involute`. -/
+theorem complexProdTensor_neg_orientation_eq_involute :
     complexProdTensor hQ (-o₁) hQ₁ hn ρ₁ ρ₂ =
       complexProdTensor hQ o₁ hQ₁ hn ρ₁ (ρ₂.comp involute) := by
   refine AlgHom.toRingHom_injective <| baseChange_ringHom_ext Q (fun _ ↦ by simp) fun x ↦ ?_
   rcases x with ⟨⟨v, w⟩⟩
-  simp [map_neg_left, map_neg_right]
+  simp [← TensorProduct.mapBilinear_apply]
 
 section SecondFactor
 
@@ -121,12 +120,14 @@ theorem complexProdTensor_complexVolume_of_map_prod (hm : Even m) (hQ₂ : ∀ w
     rcases b₂.toBasis.orientation_eq_or_eq_neg o₂' with rfl | rfl
     · exact hbase
     · rw [Orientation.prod_neg_right, Orientation.map_neg, complexVolume_neg_orientation, map_neg,
-        complexVolume_neg_orientation, map_neg, map_neg_right, hbase]
+        complexVolume_neg_orientation, map_neg, ← TensorProduct.mapBilinear_apply, map_neg,
+        TensorProduct.mapBilinear_apply, hbase]
   subst ho
   rcases b₁.toBasis.orientation_eq_or_eq_neg o₁ with rfl | rfl
   · exact hpos ρ₂ o₂
   · rw [Orientation.prod_neg_left, Orientation.map_neg, complexVolume_neg_orientation, map_neg,
-      complexVolume_neg_orientation, map_neg, map_neg_left,
+      complexVolume_neg_orientation, map_neg, ← TensorProduct.mapBilinear_apply, map_neg,
+      LinearMap.neg_apply, TensorProduct.mapBilinear_apply,
       complexProdTensor_neg_orientation_eq_involute, hpos (ρ₂.comp involute) o₂,
       AlgHom.comp_apply, involute_complexVolume, hm.neg_one_pow, one_smul]
 
@@ -176,7 +177,8 @@ theorem complexProdTensor_neg_orientation_complexVolume_neg_of_map_prod (hm : Ev
     rw [Orientation.prod_neg_left, Orientation.map_neg, ho]
   rw [complexProdTensor_complexVolume_of_map_prod hQ (-o₁) hQ₁ hn ρ₁ ρ₂ o₂ (-o) hm hQ₂ ho',
     complexProdTensor_complexVolume_of_map_prod hQ o₁ hQ₁ hn ρ₁ ρ₂ o₂ o hm hQ₂ ho,
-    complexVolume_neg_orientation, map_neg, map_neg_left]
+    complexVolume_neg_orientation, map_neg, ← TensorProduct.mapBilinear_apply, map_neg,
+    LinearMap.neg_apply, TensorProduct.mapBilinear_apply]
 
 end SecondFactor
 
