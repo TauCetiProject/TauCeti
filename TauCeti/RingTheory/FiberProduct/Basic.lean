@@ -12,7 +12,6 @@ public import Mathlib.RingTheory.Finiteness.Defs
 public import Mathlib.RingTheory.Localization.Away.Basic
 public import Mathlib.RingTheory.LocalRing.Pullback
 
-import TauCeti.RingTheory.Localization.Pullback
 import Mathlib.Algebra.Category.Ring.Constructions
 import Mathlib.CategoryTheory.ConcreteCategory.EpiMono
 import Mathlib.LinearAlgebra.Isomorphisms
@@ -130,8 +129,8 @@ theorem isPushout_pullback {B C D : Type u} [CommRing B] [CommRing C] [CommRing 
       ((congrArg (fun k : B →+* T ↦ k (p.pullbackFst q x)) hl).trans (hfg x))
 
 universe u in
-/-- The tensor comparison for the native fiber-product projections is an isomorphism.
-The algebra and tower data are the ones determined by the four ring maps. -/
+/-- If `p` is surjective, the canonical map `B ⊗[B ×_C D] D → C` is an isomorphism.
+The algebra and tower data are determined by the four ring maps. -/
 theorem isPushout_pullback_algebra {B C D : Type u} [CommRing B] [CommRing C] [CommRing D]
     (p : B →+* C) (q : D →+* C) (hp : Function.Surjective p) :
     letI : Algebra (p.pullback q) B := (p.pullbackFst q).toAlgebra
@@ -155,77 +154,46 @@ theorem isPushout_pullback_algebra {B C D : Type u} [CommRing B] [CommRing C] [C
 
 universe u v w
 
-private theorem bijective_awayMap_pullbackFst_sameUniverse
-    {B C D : Type u} [CommRing B] [CommRing C] [CommRing D]
-    (p : B →+* C) (q : D →+* C) {t : p.pullback q}
-    (ht : t ∈ ker (p.pullbackSnd q)) :
-    Function.Bijective (Localization.awayMap (p.pullbackFst q) t) := by
-  let B' := CommRingCat.of.{u} (Localization.Away (p.pullbackFst q t))
-  let D' := CommRingCat.of.{u} (Localization.Away (p.pullbackSnd q t))
-  let C' := CommRingCat.of.{u} (Localization.Away (p (p.pullbackFst q t)))
-  have hzero : p (p.pullbackFst q t) = 0 :=
-    ((pullbackSndKerEquiv p q ⟨t, ht⟩).property : _)
-  have hcomm : q (p.pullbackSnd q t) = p (p.pullbackFst q t) := t.property.symm
-  let : IsLocalization.Away (q (p.pullbackSnd q t)) C' := hcomm.symm ▸ inferInstance
-  let g' : D' ⟶ C' := CommRingCat.ofHom
-    (IsLocalization.Away.map D' C' q (p.pullbackSnd q t))
-  let : Subsingleton D' := IsLocalization.subsingleton
-    (show 0 ∈ Submonoid.powers (p.pullbackSnd q t) from ⟨1, by simpa using mem_ker.mp ht⟩)
-  let : Subsingleton C' := IsLocalization.subsingleton
-    (show 0 ∈ Submonoid.powers (p (p.pullbackFst q t)) from ⟨1, by simpa using hzero⟩)
-  have hg' : IsIso g' := (ConcreteCategory.isIso_iff_bijective g').mpr
-    ⟨Function.injective_of_subsingleton _, Function.surjective_to_subsingleton _⟩
-  have hpull : IsPullback (CommRingCat.ofHom (p.pullbackFst q))
-      (CommRingCat.ofHom (p.pullbackSnd q)) (CommRingCat.ofHom p) (CommRingCat.ofHom q) :=
-    IsPullback.of_isLimit
-      (CommRingCat.pullbackConeIsLimit (CommRingCat.ofHom p) (CommRingCat.ofHom q))
-  have h := hpull.localizationAway
-      (A' := CommRingCat.of.{u} (Localization.Away t)) (B' := B') (C' := D') (D' := C') t
-      (i' := CommRingCat.ofHom (Localization.awayMap (p.pullbackFst q) t))
-      (j' := CommRingCat.ofHom (Localization.awayMap (p.pullbackSnd q) t))
-      (f' := CommRingCat.ofHom (Localization.awayMap p (p.pullbackFst q t))) (g' := g')
-      (fun x ↦ by simp only [B', ConcreteCategory.hom_ofHom, Localization.awayMap,
-        IsLocalization.Away.map, IsLocalization.map_eq])
-      (fun x ↦ by simp only [D', ConcreteCategory.hom_ofHom, Localization.awayMap,
-        IsLocalization.Away.map, IsLocalization.map_eq])
-      (fun x ↦ by simp only [B', C', ConcreteCategory.hom_ofHom, Localization.awayMap,
-        IsLocalization.Away.map, IsLocalization.map_eq])
-      (fun x ↦ by simp only [g', C', D', ConcreteCategory.hom_ofHom,
-        IsLocalization.Away.map, IsLocalization.map_eq])
-  exact (ConcreteCategory.isIso_iff_bijective _).mp (h.isIso_fst_of_isIso hg')
-
 variable {B : Type u} {C : Type v} {D : Type w} [CommRing B] [CommRing C] [CommRing D]
 variable (p : B →+* C) (q : D →+* C)
 
-/-- The first projection is an isomorphism after inverting an element in the kernel
-of the second projection. This follows by localizing the pullback square: the other
-horizontal map becomes a map between trivial rings. -/
+/-- For `t ∈ ker (p.pullbackSnd q)`, the induced map `(B ×_C D)[1/t] → B[1/(p.pullbackFst q t)]`
+is bijective for arbitrary ring maps `p` and `q`. -/
 theorem bijective_awayMap_pullbackFst {t : p.pullback q} (ht : t ∈ ker (p.pullbackSnd q)) :
     Function.Bijective (Localization.awayMap (p.pullbackFst q) t) := by
-  -- The categorical square lives in one universe. Lift the three rings there and
-  -- transport the algebraic injectivity and surjectivity criteria back down.
-  let p' : ULift.{max u v w} B →+* ULift.{max u v w} C :=
-    (ULift.ringEquiv.symm.toRingHom.comp p).comp ULift.ringEquiv.toRingHom
-  let q' : ULift.{max u v w} D →+* ULift.{max u v w} C :=
-    (ULift.ringEquiv.symm.toRingHom.comp q).comp ULift.ringEquiv.toRingHom
-  let t' : p'.pullback q' := ⟨(ULift.up (p.pullbackFst q t), ULift.up (p.pullbackSnd q t)),
-    congrArg ULift.up t.property⟩
-  have ht' : t' ∈ ker (p'.pullbackSnd q') := congrArg ULift.up (mem_ker.mp ht)
-  have h := bijective_awayMap_pullbackFst_sameUniverse p' q' ht'
   constructor
   · apply Localization.awayMap_injective_iff.mpr
-    intro x hx
-    let x' : p'.pullback q' :=
-      ⟨(ULift.up (p.pullbackFst q x), ULift.up (p.pullbackSnd q x)),
-        congrArg ULift.up x.property⟩
-    obtain ⟨n, hn⟩ := Localization.awayMap_injective_iff.mp h.1 x' (congrArg ULift.up hx)
-    exact ⟨n, Subtype.ext (Prod.ext (congrArg (fun y : p'.pullback q' ↦ y.val.1.down) hn)
-      (congrArg (fun y : p'.pullback q' ↦ y.val.2.down) hn))⟩
+    intro a ha
+    refine ⟨1, Subtype.ext (Prod.ext ?_ ?_)⟩
+    · change (p.pullbackFst q) (t ^ 1 * a) = 0
+      rw [map_mul, map_pow, pow_one, ha, mul_zero]
+    · change (p.pullbackSnd q) (t ^ 1 * a) = 0
+      rw [map_mul, map_pow, pow_one, mem_ker.mp ht, zero_mul]
   · apply Localization.awayMap_surjective_iff.mpr
     intro b
-    obtain ⟨x, n, hn⟩ := Localization.awayMap_surjective_iff.mp h.2 (ULift.up b)
-    refine ⟨⟨(x.val.1.down, x.val.2.down), congrArg ULift.down x.property⟩, n, ?_⟩
-    exact congrArg ULift.down hn
+    have hzero : p (p.pullbackFst q t) = 0 :=
+      (pullbackSndKerEquiv p q ⟨t, ht⟩).property
+    have hb : p.pullbackFst q t * b ∈ ker p := by
+      rw [mem_ker, map_mul, hzero, zero_mul]
+    exact ⟨(pullbackSndKerEquiv p q).symm ⟨_, hb⟩, 1, by simp⟩
+
+/-- If the first coordinate of `a` is the first coordinate of `t` times `b`, the
+inverse of the localized first projection sends the image of `b` to the fraction `a / t`. -/
+theorem awayMap_pullbackFst_symm_algebraMap {t : p.pullback q}
+    (ht : t ∈ ker (p.pullbackSnd q)) {a : p.pullback q} {b : B}
+    (ha : p.pullbackFst q a = p.pullbackFst q t * b) :
+    (RingEquiv.ofBijective (Localization.awayMap (p.pullbackFst q) t)
+      (bijective_awayMap_pullbackFst p q ht)).symm
+        (algebraMap B (Localization.Away (p.pullbackFst q t)) b) =
+      IsLocalization.mk' (Localization.Away t) a ⟨t, Submonoid.mem_powers t⟩ := by
+  apply (RingEquiv.ofBijective (Localization.awayMap (p.pullbackFst q) t)
+    (bijective_awayMap_pullbackFst p q ht)).injective
+  simp only [RingEquiv.apply_symm_apply, RingEquiv.ofBijective_apply,
+    Localization.awayMap, IsLocalization.Away.map, IsLocalization.map_mk']
+  rw [IsLocalization.eq_mk'_iff_mul_eq]
+  rw [← map_mul]
+  exact congrArg (algebraMap B (Localization.Away (p.pullbackFst q t)))
+    (ha.trans (mul_comm _ _)).symm
 
 /-- If the map from the first factor is surjective and the map from the second
 factor is finite, the first projection is finite. -/

@@ -8,8 +8,8 @@ module
 public import Mathlib.Algebra.Category.Ring.Basic
 public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Basic
 public import Mathlib.RingTheory.Localization.Away.Basic
-import Mathlib.Algebra.Category.Ring.Constructions
 import Mathlib.Algebra.Category.Ring.Under.Limits
+import TauCeti.CategoryTheory.Comma.Under.Pushout
 
 /-!
 # Localization of ring pullbacks
@@ -30,26 +30,13 @@ namespace CategoryTheory.IsPullback
 
 universe u
 
-private theorem pushout_map_isoPushout_inv {E F X Y X' Y' : CommRingCat.{u}}
-    {a : E ⟶ F} {x : E ⟶ X} {y : E ⟶ Y} (u : Under.mk x ⟶ Under.mk y)
-    {xx : X ⟶ X'} {yy : Y ⟶ Y'} {x' : F ⟶ X'} {y' : F ⟶ Y'}
-    (hx : IsPushout x a xx x') (hy : IsPushout y a yy y') (v : X' ⟶ Y')
-    (hv : xx ≫ v = u.right ≫ yy) (hbase : x' ≫ v = y') :
-    ((Under.pushout a).map u).right ≫ hy.isoPushout.inv = hx.isoPushout.inv ≫ v := by
-  have hu : x ≫ u.right = y := Under.w u
-  change pushout.desc (u.right ≫ pushout.inl y a) (pushout.inr y a)
-    (by rw [← Category.assoc, hu, pushout.condition]) ≫ hy.isoPushout.inv =
-      hx.isoPushout.inv ≫ v
-  apply pushout.hom_ext
-  · simp only [Category.assoc, pushout.inl_desc_assoc, hy.inl_isoPushout_inv,
-      hx.inl_isoPushout_inv_assoc]
-    exact hv.symm
-  · simp only [pushout.inr_desc_assoc, hy.inr_isoPushout_inv, hx.inr_isoPushout_inv_assoc]
-    exact hbase.symm
-
 /-- Localizing a pullback square of commutative rings at a submonoid of its upper-left
 ring preserves the pullback. The maps on the given localization carriers are specified by
-compatibility with the original arrows on numerators. -/
+compatibility with the original arrows on numerators.
+
+The proof presents localization as base change using
+`CommRingCat.isPushout_of_isLocalization` and applies flat base change via
+`CommRingCat.Under.preservesFiniteLimits_of_flat`. -/
 theorem localization {A B C D A' B' C' D' : CommRingCat.{u}}
     {i : A ⟶ B} {j : A ⟶ C} {f : B ⟶ D} {g : C ⟶ D} (h : IsPullback i j f g)
     (M : Submonoid A) [Algebra A A'] [Algebra B B'] [Algebra C C'] [Algebra D D']
@@ -92,16 +79,17 @@ theorem localization {A B C D A' B' C' D' : CommRingCat.{u}}
   have hw : i' ≫ f' = j' ≫ g' := by
     apply CommRingCat.hom_ext
     apply IsLocalization.ringHom_ext M
-    change (a ≫ i' ≫ f').hom = (a ≫ j' ≫ g').hom
-    rw [← Category.assoc, hi₀, Category.assoc, hf₀, ← Category.assoc, h.w,
-      Category.assoc, ← hg₀, ← Category.assoc, ← hj₀, Category.assoc]
+    ext x
+    change f' (i' (algebraMap A A' x)) = g' (j' (algebraMap A A' x))
+    rw [hi, hj, hf, hg]
+    exact congrArg (algebraMap D D') (ConcreteCategory.congr_hom h.w x)
   -- Identify each chosen localization with its categorical pushout.
   exact hm.of_iso haP.isoPushout.symm hiP.isoPushout.symm hjP.isoPushout.symm
     hdP.isoPushout.symm
-    (pushout_map_isoPushout_inv ii haP hiP i' hi₀ (by simp))
-    (pushout_map_isoPushout_inv jj haP hjP j' hj₀ (by simp))
-    (pushout_map_isoPushout_inv ff hiP hdP f' hf₀ rfl)
-    (pushout_map_isoPushout_inv gg hjP hdP g' hg₀ hw.symm)
+    (Under.pushout_map_isoPushout_inv ii haP hiP i' hi₀ (by simp))
+    (Under.pushout_map_isoPushout_inv jj haP hjP j' hj₀ (by simp))
+    (Under.pushout_map_isoPushout_inv ff hiP hdP f' hf₀ rfl)
+    (Under.pushout_map_isoPushout_inv gg hjP hdP g' hg₀ hw.symm)
 
 /-- A pullback square of commutative rings stays a pullback when localizing at an element of the
 upper-left ring. The four given maps on localizations agree with the original arrows on numerators,

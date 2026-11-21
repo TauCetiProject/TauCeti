@@ -46,7 +46,7 @@ be injective. This is the local reason why an affine blowup changes nothing away
 
 ## Main results
 
-* `AlgebraicGeometry.Spec.appLE_algebraMap`: on arbitrary opens, `Spec.map` sends a constant
+* `AlgebraicGeometry.Spec.map_appLE_algebraMap`: on arbitrary opens, `Spec.map` sends a constant
   section to the constant section of its image.
 * `AlgebraicGeometry.Scheme.isoSpec_inv_appTop`: the global sections of `X.isoSpec.inv` are
   `(Scheme.ΓSpecIso Γ(X, ⊤)).inv`.
@@ -104,7 +104,7 @@ to the constant section `f x`. The algebra structures are the canonical structur
 algebras, as in `IsAffineOpen.algebraMap_Spec_obj`. The rule runs before algebra maps
 are simplified into composites of restriction maps. -/
 @[simp↓]
-theorem Spec.appLE_algebraMap {R S : CommRingCat.{u}} (f : R ⟶ S)
+theorem Spec.map_appLE_algebraMap {R S : CommRingCat.{u}} (f : R ⟶ S)
     (U : (Spec R).Opens) (V : (Spec S).Opens) (e : V ≤ Spec.map f ⁻¹ᵁ U) (x : R) :
     (Spec.map f).appLE U V e (algebraMap R Γ(Spec R, U) x) =
       algebraMap S Γ(Spec S, V) (f x) := by

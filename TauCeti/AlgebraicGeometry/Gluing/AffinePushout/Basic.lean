@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.Morphisms.ClosedImmersion
 public import Mathlib.AlgebraicGeometry.Morphisms.Finite
 public import Mathlib.RingTheory.LocalRing.Pullback
 
@@ -13,6 +12,7 @@ import Mathlib.AlgebraicGeometry.PullbackCarrier
 import Mathlib.CategoryTheory.Limits.Types.Pushouts
 import TauCeti.AlgebraicGeometry.Morphisms.IsoLocus
 import TauCeti.RingTheory.FiberProduct.Basic
+import TauCeti.RingTheory.Spectrum.Prime.Topology
 import TauCeti.Topology.Category.TopCat.Pushout
 
 /-!
@@ -55,11 +55,13 @@ theorem isClosedImmersion_spec_pullbackSnd (hp : Surjective p) :
     IsClosedImmersion (Spec.map (CommRingCat.ofHom (p.pullbackSnd q))) :=
   IsClosedImmersion.spec_of_surjective _ (p.surjective_pullbackSnd_of_surjective q hp)
 
-/-- The map from the spectrum of the original ring to the affine pinch is finite. -/
+/-- The map `Spec B → Spec (B ×_C D)` is finite when `p` is surjective and `q` is finite. -/
 theorem isFinite_spec_pullbackFst (hp : Surjective p) (hq : q.Finite) :
     IsFinite (Spec.map (CommRingCat.ofHom (p.pullbackFst q))) :=
   (IsFinite.SpecMap_iff _).mpr (p.finite_pullbackFst_of_surjective q hp hq)
 
+/-- On a basic open of a kernel element, the restriction is identified with the spectrum map
+of the away localization by `AlgebraicGeometry.SpecMapRestrictBasicOpenIso`. -/
 private theorem isIso_spec_pullbackFst_restrict_basicOpen {t : p.pullback q}
     (ht : t ∈ RingHom.ker (p.pullbackSnd q)) :
     IsIso (Spec.map (CommRingCat.ofHom (p.pullbackFst q)) ∣_ PrimeSpectrum.basicOpen t) :=
@@ -69,9 +71,7 @@ private theorem isIso_spec_pullbackFst_restrict_basicOpen {t : p.pullback q}
 
 /-- The map from `Spec B` is an isomorphism over the complement of
 `V(ker (p.pullbackSnd q))`, with domain the inverse image of that complement.
-When `p` is surjective, this zero locus is the image of `Spec D`.
-On each principal open in the complement, `AlgebraicGeometry.SpecMapRestrictBasicOpenIso`
-compares the restricted map with the map of localized spectra. -/
+When `p` is surjective, this zero locus is the image of `Spec D`. -/
 theorem isIso_spec_pullbackFst_restrict_compl_zeroLocus_ker_pullbackSnd :
     IsIso (Spec.map (CommRingCat.ofHom (p.pullbackFst q)) ∣_
       (⟨(zeroLocus (RingHom.ker (p.pullbackSnd q))).compl,
@@ -82,16 +82,18 @@ theorem isIso_spec_pullbackFst_restrict_compl_zeroLocus_ker_pullbackSnd :
   have hU : (⨆ t, U t) =
       (⟨(zeroLocus (RingHom.ker (p.pullbackSnd q))).compl,
         (isClosed_zeroLocus _).isOpen_compl⟩ : (Spec (CommRingCat.of (p.pullback q))).Opens) := by
-    apply TopologicalSpace.Opens.ext
-    rw [TopologicalSpace.Opens.coe_iSup]
-    -- The underlying space of the affine scheme is the prime spectrum.
-    change (⋃ t : RingHom.ker (p.pullbackSnd q),
-      (PrimeSpectrum.basicOpen t.val : Set (PrimeSpectrum (p.pullback q)))) =
-        (zeroLocus (RingHom.ker (p.pullbackSnd q) : Set (p.pullback q))).compl
-    simp_rw [basicOpen_eq_zeroLocus_compl]
-    rw [← Set.compl_iInter, ← zeroLocus_iUnion]
-    exact congrArg (fun S : Set (p.pullback q) ↦ (zeroLocus S)ᶜ)
-      (Set.iUnion_of_singleton_coe _)
+    apply SetLike.ext
+    intro x
+    rw [TopologicalSpace.Opens.mem_iSup]
+    let x' : PrimeSpectrum (p.pullback q) := x
+    change (∃ t : RingHom.ker (p.pullbackSnd q), x' ∈ PrimeSpectrum.basicOpen t.val) ↔
+      x' ∉ zeroLocus (RingHom.ker (p.pullbackSnd q) : Set (p.pullback q))
+    refine ⟨?_, ?_⟩
+    · rintro ⟨t, ht⟩ hz
+      exact (mem_basicOpen _ _).mp ht ((mem_zeroLocus _ _).mp hz t.property)
+    · intro hx
+      obtain ⟨t, ht, htx⟩ := Set.not_subset.mp (fun h ↦ hx ((mem_zeroLocus _ _).mpr h))
+      exact ⟨⟨t, ht⟩, (mem_basicOpen _ _).mpr htx⟩
   have h : IsIso (f ∣_ iSup U) :=
     f.isIso_morphismRestrict_iSup U fun t ↦ p.isIso_spec_pullbackFst_restrict_basicOpen q t.property
   exact hU ▸ h
@@ -181,34 +183,32 @@ private theorem isClosed_of_isClosed_preimages_comap_pullback (hp : Surjective p
   obtain ⟨J, hJ⟩ := (isClosed_iff_zeroLocus_ideal _).mp hD
   have hComp : comap (p.pullbackFst q) ∘ comap p = comap (p.pullbackSnd q) ∘ comap q := by
     rw [← comap_comp, ← comap_comp, p.pullback_comm_sq q]
-  have hEq := congrArg (fun f : PrimeSpectrum C → PrimeSpectrum (p.pullback q) ↦ f ⁻¹' W) hComp
-  have preimage_zeroLocus {R S : Type u} [CommRing R] [CommRing S] (f : R →+* S) (L : Ideal R) :
-      comap f ⁻¹' zeroLocus L = zeroLocus (L.map f) := by
-    rw [preimage_comap_zeroLocus, Ideal.map, zeroLocus_span]
-  rw [Set.preimage_comp, Set.preimage_comp, hI, hJ, preimage_zeroLocus, preimage_zeroLocus] at hEq
+  have hEq : zeroLocus (I.map p : Set C) = zeroLocus (J.map q : Set C) := by
+    simpa only [Set.preimage_comp, hI, hJ, preimage_comap_zeroLocus_ideal] using
+      congrArg (fun f : PrimeSpectrum C → PrimeSpectrum (p.pullback q) ↦ f ⁻¹' W) hComp
   have hRad := zeroLocus_eq_iff.mp hEq
   let K := I.comap (p.pullbackFst q) ⊓ J.comap (p.pullbackSnd q)
   refine (isClosed_iff_zeroLocus_ideal _).mpr ⟨K, Set.Subset.antisymm ?_ ?_⟩
   · intro x hx
     obtain ⟨y | y, rfl⟩ := p.surjective_sumElim_comap_pullback q hp x
-    · exact (mem_zeroLocus _ _).mpr <|
-        inf_le_left.trans (Ideal.comap_mono ((mem_zeroLocus _ _).mp (hI ▸ hx)))
-    · exact (mem_zeroLocus _ _).mpr <|
-        inf_le_right.trans (Ideal.comap_mono ((mem_zeroLocus _ _).mp (hJ ▸ hx)))
+    · have hy : y ∈ zeroLocus (I : Set B) := hI ▸ Set.mem_preimage.mpr hx
+      exact (mem_zeroLocus _ _).mpr <|
+        inf_le_left.trans (Ideal.comap_mono ((mem_zeroLocus _ _).mp hy))
+    · have hy : y ∈ zeroLocus (J : Set D) := hJ ▸ Set.mem_preimage.mpr hx
+      exact (mem_zeroLocus _ _).mpr <|
+        inf_le_right.trans (Ideal.comap_mono ((mem_zeroLocus _ _).mp hy))
   · intro x hx
     have hxK : K ≤ x.asIdeal := (mem_zeroLocus _ _).mp hx
     by_cases hker : RingHom.ker (p.pullbackSnd q) ≤ x.asIdeal
     · obtain ⟨y, rfl⟩ : x ∈ Set.range (comap (p.pullbackSnd q)) := by
         rwa [range_comap_of_surjective _ _ (p.surjective_pullbackSnd_of_surjective q hp),
           mem_zeroLocus]
-      change y ∈ comap (p.pullbackSnd q) ⁻¹' W
-      rw [hJ, mem_zeroLocus]
-      exact p.le_asIdeal_of_comap_pullbackSnd q hp hRad y hxK
+      exact Set.mem_preimage.mp (hJ.symm ▸ (mem_zeroLocus y _).mpr
+        (p.le_asIdeal_of_comap_pullbackSnd q hp hRad y hxK))
     · obtain ⟨t, ht, htx⟩ := Set.not_subset.mp hker
       obtain ⟨y, rfl, -⟩ := p.existsUnique_comap_pullbackFst_of_notMem q ht htx
-      change y ∈ comap (p.pullbackFst q) ⁻¹' W
-      rw [hI, mem_zeroLocus]
-      exact p.le_asIdeal_of_comap_pullbackFst q y ht htx hxK
+      exact Set.mem_preimage.mp (hI.symm ▸ (mem_zeroLocus y _).mpr
+        (p.le_asIdeal_of_comap_pullbackFst q y ht htx hxK))
 
 private theorem comap_pullbackFst_inj_of_notMem_range (hp : Surjective p)
     (x y : PrimeSpectrum B) (hx : x ∉ Set.range (comap p))
@@ -220,7 +220,18 @@ private theorem comap_pullbackFst_inj_of_notMem_range (hp : Surjective p)
   obtain ⟨_, _, huniq⟩ := p.existsUnique_comap_pullbackFst_of_notMem q ht htx
   exact (huniq x rfl).trans (huniq y hxy.symm).symm
 
-/-- Along a surjection, taking spectra of a ring fiber product gives a pushout in `TopCat`. -/
+private theorem preimage_spec_map {R S : Type u} [CommRing R] [CommRing S]
+    (f : R →+* S) (W : Set (PrimeSpectrum R)) :
+    (Spec.map (CommRingCat.ofHom f)) ⁻¹' W = comap f ⁻¹' W := by
+  -- Compare the point maps on the prime-spectrum carriers before taking preimages.
+  have h : (fun x : PrimeSpectrum S ↦ Spec.map (CommRingCat.ofHom f) x) = comap f := by
+    funext x
+    simpa only [CommRingCat.hom_ofHom] using Spec.map_apply (CommRingCat.ofHom f) x
+  exact congrArg (fun g : PrimeSpectrum S → PrimeSpectrum R ↦ g ⁻¹' W) h
+
+/-- Along a surjection, taking spectra of a ring fiber product gives a pushout in `TopCat`.
+The proof uses Mathlib's `Types.isPushout_of_isPullback_of_mono'` for the pushout of sets and
+Tau Ceti's `CategoryTheory.IsPushout.of_isPushout_forget` for the quotient topology. -/
 theorem isPushout_base_spec_pullback (hp : Surjective p) :
     IsPushout (Spec.map (CommRingCat.ofHom p)).base (Spec.map (CommRingCat.ofHom q)).base
       (Spec.map (CommRingCat.ofHom (p.pullbackFst q))).base
@@ -246,13 +257,15 @@ theorem isPushout_base_spec_pullback (hp : Surjective p) :
       · exact Or.inl (Set.mem_range_self y)
     · exact fun x y hx _ hxy ↦ p.comap_pullbackFst_inj_of_notMem_range q hp x y hx hxy
   · intro W hB hD
-    -- Express the underlying opens on the affine spectra.
+    -- Use the prime-spectrum presentation to apply the closed-set criterion.
     let W' : Set (PrimeSpectrum (p.pullback q)) := W
-    change IsOpen (comap (p.pullbackFst q) ⁻¹' W') at hB
-    change IsOpen (comap (p.pullbackSnd q) ⁻¹' W') at hD
+    have hB' : IsOpen (comap (p.pullbackFst q) ⁻¹' W') :=
+      preimage_spec_map (p.pullbackFst q) W' ▸ hB
+    have hD' : IsOpen (comap (p.pullbackSnd q) ⁻¹' W') :=
+      preimage_spec_map (p.pullbackSnd q) W' ▸ hD
     have h : IsClosed W'ᶜ := p.isClosed_of_isClosed_preimages_comap_pullback q hp
-      (by rw [Set.preimage_compl]; exact hB.isClosed_compl)
-      (by rw [Set.preimage_compl]; exact hD.isClosed_compl)
+      (by rw [Set.preimage_compl]; exact hB'.isClosed_compl)
+      (by rw [Set.preimage_compl]; exact hD'.isClosed_compl)
     change IsOpen W'
     simpa only [compl_compl] using h.isOpen_compl
 

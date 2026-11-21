@@ -14,12 +14,18 @@ import TauCeti.RingTheory.Localization.Pullback
 /-!
 # Sections of the affine Ferrand square
 
-The structure sheaf of the spectrum of a fiber product is the fiber product of the
-pushed-forward structure sheaves. This needs neither surjectivity nor finiteness: the
-principal-open calculation is localization of a ring pullback. The ring square is recognized
-by `CommRingCat.pullbackConeIsLimit`, and `StructureSheaf.IsLocalization.to_basicOpen`
-identifies its principal-open sections with localizations. The passage to all opens uses
-`TopCat.Sheaf.isIso_iff_isIso_basis` to the canonical lift to the sheaf pullback.
+The two public results describe the actual section maps induced by the projections from a
+ring fiber product and the maps to their common target:
+
+* `RingHom.isPullback_spec_pullback_sections_basicOpen` gives the pullback square on each
+  principal open, using `Scheme.Hom.appLE` for its four section maps.
+* `RingHom.isPullback_spec_pullback_sections` gives the pullback square on every open and
+  its inverse images. Its right overlap map uses `Scheme.Hom.appLE` to identify the two
+  equal inverse-image opens over the common ring.
+
+Neither statement requires surjectivity or finiteness. The principal-open statement is
+localization of the ring pullback, and the arbitrary-open statement expresses the same
+property for the pushed-forward structure sheaves.
 
 See [Ferrand, *Conducteur, descente et pincement*][ferrand], Theorem 5.1, and the
 localization argument in the Stacks Project, [Lemma 15.5.3][stacks-01Z8].
@@ -43,7 +49,7 @@ variable (p : B →+* C) (q : D →+* C)
 
 /-- On a principal open of the spectrum of a ring fiber product, the actual section-ring
 maps form a pullback square. -/
-theorem isPullback_spec_pullback_basicOpen (r : p.pullback q) :
+theorem isPullback_spec_pullback_sections_basicOpen (r : p.pullback q) :
     IsPullback
       ((Spec.map (CommRingCat.ofHom (p.pullbackFst q))).appLE
         (PrimeSpectrum.basicOpen r) (PrimeSpectrum.basicOpen (p.pullbackFst q r)) le_rfl)
@@ -78,7 +84,7 @@ theorem isPullback_spec_pullback_basicOpen (r : p.pullback q) :
       PrimeSpectrum.basicOpen (p (p.pullbackFst q r))) :=
     StructureSheaf.IsLocalization.to_basicOpen _ _
   refine h.localizationAway r ?_ ?_ ?_ ?_ <;>
-    exact Spec.appLE_algebraMap _ _ _ _
+    exact Spec.map_appLE_algebraMap _ _ _ _
 
 private def overlapSheaf :
     TopCat.Sheaf CommRingCat.{u} (Spec (CommRingCat.of (p.pullback q))) :=
@@ -91,6 +97,14 @@ private theorem spec_pullback_comm :
       Spec.map (CommRingCat.ofHom q) ≫ Spec.map (CommRingCat.ofHom (p.pullbackSnd q)) := by
   rw [← Spec.map_comp, ← Spec.map_comp]
   exact congrArg Spec.map (CommRingCat.hom_ext (p.pullback_comm_sq q))
+
+private theorem spec_pullback_base_comm :
+    (Spec.map (CommRingCat.ofHom q)).base ≫
+        (Spec.map (CommRingCat.ofHom (p.pullbackSnd q))).base =
+      (Spec.map (CommRingCat.ofHom p)).base ≫
+        (Spec.map (CommRingCat.ofHom (p.pullbackFst q))).base := by
+  exact congrArg (fun f : Spec (CommRingCat.of C) ⟶
+    Spec (CommRingCat.of (p.pullback q)) => f.base) (spec_pullback_comm p q).symm
 
 private theorem overlap_preimage (U : (Spec (CommRingCat.of (p.pullback q))).Opens) :
     Spec.map (CommRingCat.ofHom p) ⁻¹ᵁ
@@ -137,17 +151,20 @@ private def rightSheaf :
     (Spec.map (CommRingCat.ofHom (p.pullbackSnd q))).base).obj (Spec (CommRingCat.of D)).sheaf
 
 private def rightOverlapMap : p.rightSheaf q ⟶ p.overlapSheaf q :=
-  ⟨{ app := fun U ↦ (Spec.map (CommRingCat.ofHom q)).appLE
-        (Spec.map (CommRingCat.ofHom (p.pullbackSnd q)) ⁻¹ᵁ U.unop)
-        (Spec.map (CommRingCat.ofHom p) ⁻¹ᵁ
-          (Spec.map (CommRingCat.ofHom (p.pullbackFst q)) ⁻¹ᵁ U.unop))
-        (p.overlap_le q U.unop)
-     naturality := fun U V i ↦ by
-       -- Pushforward restriction maps evaluate at the inverse-image opens.
-       change (Spec (CommRingCat.of D)).presheaf.map _ ≫ _ =
-         _ ≫ (Spec (CommRingCat.of C)).presheaf.map _
-       rw [Scheme.Hom.map_appLE, Scheme.Hom.appLE_map]
-       rfl }⟩
+  ⟨(TopCat.Presheaf.pushforward _
+      (Spec.map (CommRingCat.ofHom (p.pullbackSnd q))).base).map
+      (Spec.map (CommRingCat.ofHom q)).c ≫
+    (TopCat.Presheaf.Pushforward.comp
+      (Spec.map (CommRingCat.ofHom q)).base
+      (Spec.map (CommRingCat.ofHom (p.pullbackSnd q))).base
+      (Spec (CommRingCat.of C)).presheaf).inv ≫
+    (TopCat.Presheaf.pushforwardEq
+      (spec_pullback_base_comm p q)
+      (Spec (CommRingCat.of C)).presheaf).hom ≫
+    (TopCat.Presheaf.Pushforward.comp
+      (Spec.map (CommRingCat.ofHom p)).base
+      (Spec.map (CommRingCat.ofHom (p.pullbackFst q))).base
+      (Spec (CommRingCat.of C)).presheaf).hom⟩
 
 private def leftMap : (Spec (CommRingCat.of (p.pullback q))).sheaf ⟶ p.leftSheaf q :=
   ⟨(Spec.map (CommRingCat.ofHom (p.pullbackFst q))).c⟩
@@ -182,7 +199,17 @@ private theorem rightOverlapMap_app (V : (Spec (CommRingCat.of (p.pullback q))).
         (Spec.map (CommRingCat.ofHom (p.pullbackSnd q)) ⁻¹ᵁ V)
         (Spec.map (CommRingCat.ofHom p) ⁻¹ᵁ
           (Spec.map (CommRingCat.ofHom (p.pullbackFst q)) ⁻¹ᵁ V))
-        (overlap_le p q V) := rfl
+        (overlap_le p q V) := by
+  -- `erw` unfolds the sheaf-pushforward carriers to their native presheaf carriers.
+  dsimp only [rightOverlapMap]
+  erw [NatTrans.comp_app, NatTrans.comp_app, NatTrans.comp_app,
+    TopCat.Presheaf.pushforwardEq_hom_app,
+    TopCat.Presheaf.Pushforward.comp_inv_app,
+    TopCat.Presheaf.Pushforward.comp_hom_app, Category.id_comp, Category.comp_id,
+    TopCat.Presheaf.pushforward_map_app']
+  -- The equality transport and `appLE` use the same restriction between equal opens.
+  -- Their opposite-category arrows have different presentations, but are unique.
+  congr 2
 
 private theorem sheafSquare_comm :
     p.leftMap q ≫ p.leftOverlapMap q = p.rightMap q ≫ p.rightOverlapMap q := by
@@ -208,27 +235,25 @@ private theorem isPullback_sheafSquare :
     let V : (Spec (CommRingCat.of (p.pullback q))).Opens := PrimeSpectrum.basicOpen x
     let E := TopCat.Sheaf.forget CommRingCat (Spec (CommRingCat.of (p.pullback q))) ⋙
       (evaluation (Opens (Spec (CommRingCat.of (p.pullback q))))ᵒᵖ CommRingCat).obj (Opposite.op V)
-    have h₁ := ((IsPullback.of_hasPullback l r).map
-      (TopCat.Sheaf.forget CommRingCat _)).app (Opposite.op V)
+    -- Evaluation identifies the sheaf morphisms with their section-ring components.
+    have hEval {F G : TopCat.Sheaf CommRingCat
+        (Spec (CommRingCat.of (p.pullback q)))} (f : F ⟶ G) :
+        E.map f = f.hom.app (Opposite.op V) := rfl
     have h₂ : IsPullback (E.map (p.leftMap q)) (E.map (p.rightMap q))
         (E.map l) (E.map r) := by
-      change IsPullback ((p.leftMap q).hom.app (Opposite.op V))
-        ((p.rightMap q).hom.app (Opposite.op V))
-        ((p.leftOverlapMap q).hom.app (Opposite.op V))
-        ((p.rightOverlapMap q).hom.app (Opposite.op V))
-      rw [leftMap_app, rightMap_app, leftOverlapMap_app, rightOverlapMap_app]
-      exact p.isPullback_spec_pullback_basicOpen q x
-    have he : E.map t = h₁.isLimit.lift h₂.cone := by
-      apply h₁.hom_ext
-      · change E.map t ≫ E.map (pullback.fst l r) = _
-        rw [← E.map_comp, pullback.lift_fst]
-        exact (PullbackCone.IsLimit.lift_fst h₁.isLimit _ _ h₂.w).symm
-      · change E.map t ≫ E.map (pullback.snd l r) = _
-        rw [← E.map_comp, pullback.lift_snd]
-        exact (PullbackCone.IsLimit.lift_snd h₁.isLimit _ _ h₂.w).symm
-    change IsIso (E.map t)
-    rw [he]
-    exact h₁.isLimit.nonempty_isLimit_iff_isIso_lift.mp ⟨h₂.isLimit⟩
+      simp only [hEval, l, r, leftMap_app, rightMap_app,
+        leftOverlapMap_app, rightOverlapMap_app]
+      exact p.isPullback_spec_pullback_sections_basicOpen q x
+    have h₁ := ((IsPullback.of_hasPullback l r).map
+      (TopCat.Sheaf.forget CommRingCat _)).app (Opposite.op V)
+    have : IsIso (pullbackComparison E l r) :=
+      (pullbackIsPullback (E.map l) (E.map r)).nonempty_isLimit_iff_isIso_lift.mp
+        ⟨h₁.isLimit⟩
+    rw [← hEval]
+    erw [← isIso_comp_right_iff _ (pullbackComparison E l r),
+      map_lift_pullbackComparison]
+    exact (pullbackIsPullback (E.map l) (E.map r)).nonempty_isLimit_iff_isIso_lift.mp
+      ⟨h₂.isLimit⟩
   refine .of_iso_pullback ⟨sheafSquare_comm p q⟩ (asIso t) ?_ ?_
   · exact pullback.lift_fst (p.leftMap q) (p.rightMap q) (sheafSquare_comm p q)
   · exact pullback.lift_snd (p.leftMap q) (p.rightMap q) (sheafSquare_comm p q)
