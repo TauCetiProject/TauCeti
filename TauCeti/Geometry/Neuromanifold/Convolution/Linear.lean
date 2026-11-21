@@ -30,9 +30,11 @@ every hidden activation of `A` is `id`:
   the image under matrix evaluation of these products;
 * with shared biases, every prefix is affine: its linear part is the same product for the filters
   of the parameters, and its translation is the prefix at the zero input;
-* over an infinite domain, every jointly polynomial presentation of the bias-free network, in
-  particular the bias-free tuple with activation polynomials `X`, has coordinate polynomials that
-  are homogeneous of degree one in the input.
+* over any commutative semiring, the bias-free tuple with activation polynomials `X` has
+  coordinate polynomials that are homogeneous of degree one in the input
+  (`ConvolutionSpec.isHomogeneous_inputPolynomial_polynomialRealizeWeights_X`), and over an
+  infinite domain the same holds for every jointly polynomial presentation of the bias-free
+  network (`isHomogeneous_inputPolynomial_of_polynomialRealization_eq_of_activation_eq_id`).
 
 The parameters are always the complete filter product: different filters may realize the same
 function, and no description of the neuromanifold by rank, dimension, or polynomial
@@ -117,6 +119,16 @@ end Evaluation
 
 section Polynomial
 
+/-- Every collected input polynomial of the bias-free tuple of `A` with activation polynomials `X`
+is homogeneous of degree one, over any commutative semiring. -/
+theorem isHomogeneous_inputPolynomial_polynomialRealizeWeights_X [CommSemiring K]
+    (A : ConvolutionSpec K L) (j : Fin (A.width (Fin.last L))) :
+    (inputPolynomial (A.polynomialRealizeWeights fun _ => Polynomial.X) j).IsHomogeneous 1 := by
+  rw [A.polynomialRealizeWeights_X_eq_polynomialChain]
+  simpa using isHomogeneous_inputPolynomial_polynomialChain
+    (I := fun k => Fin (A.width k))
+    (fun i => isHomogeneous_inputPolynomial_polynomialConvolution (A.length_eq i)) j
+
 variable {R V : Type*} [CommRing R] [IsDomain R] [Infinite R]
 
 /-- Over an infinite domain, every jointly polynomial presentation of a bias-free linear
@@ -132,15 +144,6 @@ theorem isHomogeneous_inputPolynomial_of_polynomialRealization_eq_of_activation_
   isHomogeneous_inputPolynomial_iff.mpr fun v c x => by
     rw [hP, Function.comp_apply, A.realizeWeights_eq_mulVec_of_activation_eq_id h, mulVec_smul,
       pow_one, Pi.smul_apply]
-
-/-- Over an infinite domain, the coordinate polynomials of the bias-free tuple of a convolutional
-network with identity hidden activations, built from the activation polynomials `X`, are
-homogeneous of degree one in the input. -/
-theorem isHomogeneous_inputPolynomial_polynomialRealizeWeights_of_activation_eq_id
-    (A : ConvolutionSpec R L) (h : ∀ j, A.activation j = id) (j : Fin (A.width (Fin.last L))) :
-    (inputPolynomial (A.polynomialRealizeWeights fun _ => Polynomial.X) j).IsHomogeneous 1 :=
-  A.isHomogeneous_inputPolynomial_of_polynomialRealization_eq_of_activation_eq_id h
-    (A.polynomialRealization_polynomialRealizeWeights_of_activation_eq_id h) j
 
 end Polynomial
 
