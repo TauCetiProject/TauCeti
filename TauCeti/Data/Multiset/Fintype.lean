@@ -13,7 +13,8 @@ public import Mathlib.Data.Multiset.Fintype
 Mathlib coerces a multiset `m` to the type of its elements, where an element is a value of `m`
 together with an occurrence index below its multiplicity. When `m` has no duplicates every value
 occurs once, so an element is determined by its value: this file records that the coercion to
-the ambient type is injective.
+the ambient type is injective. It also records that the occurrence index of an element is below
+the multiplicity of its value.
 -/
 
 public section
@@ -21,6 +22,11 @@ public section
 namespace Multiset
 
 variable {α : Type*} [DecidableEq α] {m : Multiset α}
+
+/-- The occurrence index `j` of an element `⟨a, j⟩` of a multiset is below the multiplicity of
+`a`. -/
+theorem ToType.add_one_le_count (i : m.ToType) : (i.2 : ℕ) + 1 ≤ m.count i.1 :=
+  Nat.succ_le_of_lt i.2.isLt
 
 /-- For a multiset without duplicates, an element is determined by its value. -/
 theorem Nodup.coe_injective (h : m.Nodup) : Function.Injective fun x : m ↦ (x : α) := by

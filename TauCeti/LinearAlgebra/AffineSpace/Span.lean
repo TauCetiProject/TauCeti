@@ -21,6 +21,8 @@ For a linear surjection `A : V → V'` and a nonempty set `S ⊆ V'`, the differ
 direction of the affine span of `S`. Taking the product with a fixed nonempty set preserves and
 reflects equality of affine spans, and for nonempty sets also equality of their directions.
 
+A predicate describing a set can be restricted to its own affine span without changing that set.
+
 The vector span of a finite family of points is spanned by its edge vectors from the initial
 point.
 
@@ -105,6 +107,13 @@ theorem direction_affineSpan_preimage {K V V' : Type*} [Ring K] [AddCommGroup V]
 end LinearMap
 
 namespace TauCeti
+
+/-- A set description may be restricted to its own affine span without changing its carrier. -/
+theorem eq_setOf_mem_affineSpan_and {k V : Type*} [Ring k] [AddCommGroup V] [Module k V]
+    {P : Set V} {p : V → Prop} (hP : P = {x | p x}) :
+    P = {x | x ∈ affineSpan k P ∧ p x} := by
+  rw [Set.ofPred_and, SetLike.setOfPred_mem_eq, ← hP]
+  exact (Set.inter_eq_right.mpr (subset_affineSpan k P)).symm
 
 variable {k V E P Q : Type*} [Ring k]
   [AddCommGroup V] [Module k V] [AddTorsor V P]
