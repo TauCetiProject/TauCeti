@@ -295,10 +295,8 @@ theorem finrank_radical_liftHeightHessian (hD : IsRootPlaneDecomposition B t α 
       ∑ i with α i p ≠ 0 ∧ α i X = 0, finrank K (E i) := by
   have hrad := QuadraticForm.sigPos_add_sigNeg_add_radical
     (Q := liftHeightHessian hB (hD.lie_eq_zero X.property p.property))
-  rw [LinearMap.BilinForm.liftHeightHessian] at hrad ⊢
-  rw [QuadraticForm.sigPos_lift, QuadraticForm.sigNeg_lift,
-    hD.sigPos_heightHessian hpos, hD.sigNeg_heightHessian hpos,
-    hD.finrank_quotient_lieAnnihilator hB hsep] at hrad
+  rw [sigPos_liftHeightHessian, sigNeg_liftHeightHessian, hD.sigPos_heightHessian hpos,
+    hD.sigNeg_heightHessian hpos, hD.finrank_quotient_lieAnnihilator hB hsep] at hrad
   -- Each plane with `α_i(p) ≠ 0` is counted by exactly one of the three sums.
   have hsum : (∑ i with α i p * α i X < 0, finrank K (E i)) +
       (∑ i with 0 < α i p * α i X, finrank K (E i)) +

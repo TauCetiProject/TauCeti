@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 public import TauCeti.Algebra.Lie.Coadjoint
 public import TauCeti.Algebra.Lie.InvariantForm.Basic
+public import TauCeti.LinearAlgebra.QuadraticForm.Signature
 
 /-!
 # Root planes and the coadjoint orbit through a torus element
@@ -87,6 +88,8 @@ height Hessian and the dimension of the orbit, is done in
   coordinates.
 * `LinearMap.BilinForm.lieAnnihilator_le_radical_heightHessian`: the height Hessian descends to
   the tangent model `L ⧸ L_ν`.
+* `LinearMap.BilinForm.sigPos_liftHeightHessian`, `LinearMap.BilinForm.sigNeg_liftHeightHessian`:
+  the descent preserves both indices of inertia.
 * `TauCeti.IsRootPlane.le_orthogonal`: for an invariant form, root planes with
   `α(H)² ≠ α'(H)²` for some `H ∈ t` are orthogonal.
 * `TauCeti.IsRootPlane.mem_lieAnnihilator_iff`: a root plane meets the stabilizer of `B p` only
@@ -162,7 +165,7 @@ theorem lieAnnihilator_le_radical_heightHessian (hB : B.lieInvariant L) (hXp : �
 the quadratic form on the algebraic tangent model `L ⧸ L_ν` of the coadjoint orbit through
 `ν = B p` induced by the height Hessian
 (`LinearMap.BilinForm.lieAnnihilator_le_radical_heightHessian`). -/
-@[expose] def liftHeightHessian (hB : B.lieInvariant L) (hXp : ⁅X, p⁆ = 0) :
+def liftHeightHessian (hB : B.lieInvariant L) (hXp : ⁅X, p⁆ = 0) :
     QuadraticForm R (L ⧸ (TauCeti.lieAnnihilator R L (B p)).toSubmodule) :=
   (B.heightHessian p X).lift _ (lieAnnihilator_le_radical_heightHessian hB hXp)
 
@@ -170,6 +173,27 @@ the quadratic form on the algebraic tangent model `L ⧸ L_ν` of the coadjoint 
 theorem liftHeightHessian_mk (hB : B.lieInvariant L) (hXp : ⁅X, p⁆ = 0) (A : L) :
     liftHeightHessian hB hXp (Submodule.Quotient.mk A) = B.heightHessian p X A :=
   lift_mk _ A
+
+section LinearOrderedField
+
+variable {K L : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K] [LieRing L]
+  [LieAlgebra K L] [FiniteDimensional K L] {B : LinearMap.BilinForm K L} {p X : L}
+
+/-- Descending the height Hessian to the tangent model `L ⧸ L_ν` preserves its positive index of
+inertia. -/
+@[simp]
+theorem sigPos_liftHeightHessian (hB : B.lieInvariant L) (hXp : ⁅X, p⁆ = 0) :
+    sigPos (liftHeightHessian hB hXp) = sigPos (B.heightHessian p X) :=
+  QuadraticForm.sigPos_lift _ _ _
+
+/-- Descending the height Hessian to the tangent model `L ⧸ L_ν` preserves its negative index of
+inertia, the Morse index. -/
+@[simp]
+theorem sigNeg_liftHeightHessian (hB : B.lieInvariant L) (hXp : ⁅X, p⁆ = 0) :
+    sigNeg (liftHeightHessian hB hXp) = sigNeg (B.heightHessian p X) :=
+  QuadraticForm.sigNeg_lift _ _ _
+
+end LinearOrderedField
 
 end LinearMap.BilinForm
 
