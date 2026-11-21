@@ -182,9 +182,7 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 
 /-- **Smooth embeddings with the same image differ by a diffeomorphism.** If `f : M → N` and
 `g : P → N` are `C^n` embeddings with the same image, then `g⁻¹ ∘ f` is a `C^n` diffeomorphism from
-`M` to `P`, which may be modelled on a different space. It is continuous because `g` is a
-topological embedding, and `C^n` because smoothness of a map into `P` can be tested after
-composing with the embedding `g`. -/
+`M` to `P`, which may be modelled on a different space. -/
 theorem _root_.Manifold.IsSmoothEmbedding.exists_diffeomorph_of_range_eq
     (hf : IsSmoothEmbedding I J n f) (hg : IsSmoothEmbedding I' J n g) (h : range f = range g) :
     ∃ e : M ≃ₘ^n⟮I, I'⟯ P, ∀ x, g (e x) = f x := by

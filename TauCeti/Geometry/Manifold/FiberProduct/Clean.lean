@@ -139,8 +139,7 @@ theorem range_eq (h : IsCleanComposite I₁ I₂ I₃ K₁ K₂ KC KQ f g a b q 
 
 variable [KC.Boundaryless]
 
-/-- **The clean composite is smooth.** The descended map is smooth because its composite with the
-surjective submersion `q` is. -/
+/-- **The clean composite is smooth.** For smooth `f` and `g`, the descended map `j` is smooth. -/
 theorem contMDiff (h : IsCleanComposite I₁ I₂ I₃ K₁ K₂ KC KQ f g a b q j)
     (hf : ContMDiff K₁ (I₁.prod I₂) ∞ f) (hg : ContMDiff K₂ (I₂.prod I₃) ∞ g) :
     ContMDiff KQ (I₁.prod I₃) ∞ j := by
@@ -152,9 +151,8 @@ variable [FiniteDimensional ℝ E₁] [I₁.Boundaryless] [IsManifold I₁ ∞ M
   [FiniteDimensional ℝ E₃] [I₃.Boundaryless] [IsManifold I₃ ∞ M₃]
   [KQ.Boundaryless] [IsManifold KQ ∞ Q]
 
-/-- **The clean composite is an immersion.** The quotient by `q` removes exactly the kernel of the
-differential of the composite `c ↦ ((f (a c)).1, (g (b c)).2)`, so the descended map has injective
-differential. -/
+/-- **The clean composite is an immersion.** For smooth `f` and `g`, the descended map `j` is an
+immersion. -/
 theorem isImmersion (h : IsCleanComposite I₁ I₂ I₃ K₁ K₂ KC KQ f g a b q j)
     (hf : ContMDiff K₁ (I₁.prod I₂) ∞ f) (hg : ContMDiff K₂ (I₂.prod I₃) ∞ g) :
     IsImmersion KQ (I₁.prod I₃) ∞ j := by
