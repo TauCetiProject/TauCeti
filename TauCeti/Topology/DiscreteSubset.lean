@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.DiscreteSubset
+public import Mathlib.Topology.Separation.Hausdorff
 
 /-!
 # Punctured neighbourhoods of discrete subsets
@@ -15,12 +16,19 @@ If the trace `U ∩ S` of `S` on `U` is discrete, every point `x ∈ U ∩ S` is
 (`IsDiscrete.sdiff_mem_nhdsWithin`). When `U` is open, `𝓝[U \ {x}] x = 𝓝[≠] x`, giving the ambient
 punctured neighbourhood membership `U \ S ∈ 𝓝[≠] x` (`IsOpen.sdiff_mem_nhdsNE_of_isDiscrete`).
 
+A point `x` of a T1 space is isolated as soon as some function `f` into a Hausdorff space, tending
+to `y` along the cofinite filter, is continuous at `x` with `f x ≠ y`
+(`isOpen_singleton_of_tendsto_cofinite`): near `x` the values of `f` stay away from `y`, which
+happens only finitely often. A summable function nonzero at `x` is one such `f`.
+
 ## Main results
 
 * `IsDiscrete.sdiff_mem_nhdsWithin`: `U \ S ∈ 𝓝[U \ {x}] x` whenever `U ∩ S` is discrete and
   `x ∈ U ∩ S`.
 * `IsOpen.sdiff_mem_nhdsNE_of_isDiscrete`: `U \ S ∈ 𝓝[≠] x` whenever `U` is open, `U ∩ S` is
   discrete, and `x ∈ U ∩ S`.
+* `isOpen_singleton_of_tendsto_cofinite`: `{x}` is open if some `f` with `f → y` along the
+  cofinite filter is continuous at `x` with `f x ≠ y`.
 -/
 
 public section
@@ -46,3 +54,13 @@ theorem IsOpen.sdiff_mem_nhdsNE_of_isDiscrete {X : Type*} [TopologicalSpace X] {
   have h := hS.sdiff_mem_nhdsWithin hxU hxS
   rwa [Set.sdiff_eq, Set.inter_comm,
     nhdsWithin_inter_of_mem' (nhdsWithin_le_nhds (hU.mem_nhds hxU))] at h
+
+/-- A point `x` of a T1 space is isolated if some function `f` into a Hausdorff space tends to `y`
+along the cofinite filter and is continuous at `x` with `f x ≠ y`: a neighbourhood of `x` on which
+`f` stays away from `y` is finite. For instance, `f` can be summable and nonzero at `x`. -/
+theorem isOpen_singleton_of_tendsto_cofinite {X Y : Type*} [TopologicalSpace X] [T1Space X]
+    [TopologicalSpace Y] [T2Space Y] {f : X → Y} {y : Y} (hf : Tendsto f cofinite (𝓝 y)) {x : X}
+    (hx : ContinuousAt f x) (hne : f x ≠ y) : IsOpen ({x} : Set X) := by
+  obtain ⟨U, V, hU, hV, hxU, hyV, hUV⟩ := t2_separation hne
+  exact isOpen_singleton_of_finite_mem_nhds x (hx.preimage_mem_nhds (hU.mem_nhds hxU))
+    ((mem_cofinite.1 (hf (hV.mem_nhds hyV))).subset fun _ hz ↦ Set.disjoint_left.1 hUV hz)

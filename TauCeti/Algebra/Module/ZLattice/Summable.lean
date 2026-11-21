@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Algebra.Module.ZLattice.Summable
 import Mathlib.Analysis.SpecialFunctions.Gaussian.PoissonSummation
+import TauCeti.Analysis.Normed.Group.Int
+import TauCeti.Topology.DiscreteSubset
 
 /-!
 # Gaussian and power sums over lattices converge
@@ -22,9 +24,11 @@ power, and `‖x + v‖ → ∞` along the cofinite filter of `L` because `L` is
 This is the majorant behind the convergence of the theta series of a lattice, a sum of
 `exp (π i ‖x + v‖² τ)` over `L` whose terms have norm `exp (-π ‖x + v‖² im τ)`.
 
-For the standard lattice `ℤ^d`, read with the sup norm on `d → ℤ`, the power sum
-`∑ n, ‖n‖ ^ r` converges for `r < -card d` (`TauCeti.summable_pi_int_norm_rpow`). This is the
-majorant used to sum Fourier coefficients on the torus `(ℝ / ℤ)^d`.
+The integer vectors `d → ℤ` are the standard lattice `ℤ^d ⊆ ℝ^d`, so summability over them is
+summability over that lattice (`TauCeti.summable_pi_int_iff_summable_span`). Read with the sup norm
+on `d → ℤ`, the power sum `∑ n, ‖n‖ ^ r` converges for `r < -card d`
+(`TauCeti.summable_pi_int_norm_rpow`). This is the majorant used to sum Fourier coefficients on the
+torus `(ℝ / ℤ)^d`.
 
 ## Main statements
 
@@ -37,8 +41,10 @@ majorant used to sum Fourier coefficients on the torus `(ℝ / ℤ)^d`.
   natural number `r` exceeds the rank of `L`.
 * `ZLattice.summable_one_add_norm_pow_mul_norm_of_decay`: a function decaying faster than every
   power of `1 + ‖x‖` is summable along `L` against every power of `1 + ‖ℓ‖`.
+* `TauCeti.summable_pi_int_iff_summable_span`: summability over `d → ℤ` is summability over the
+  standard lattice `ℤ^d ⊆ ℝ^d`.
 * `TauCeti.summable_pi_int_norm_rpow`: `∑ n : d → ℤ, ‖n‖ ^ r` converges for `r < -card d`.
-* `TauCeti.summable_pi_int_inv_one_add_norm_pow`: `∑ n : d → ℤ, (1 + ‖n‖) ^ (-r)` converges
+* `TauCeti.summable_pi_int_one_add_norm_pow_inv`: `∑ n : d → ℤ, (1 + ‖n‖) ^ (-r)` converges
   once the natural number `r` exceeds `card d`.
 -/
 
@@ -52,27 +58,14 @@ section Discrete
 
 variable {E : Type*} [NormedAddCommGroup E] (L : Submodule ℤ E)
 
-/-- If `exp (-c ‖γ + v‖²)` is summable over a subgroup `L` of a normed group for some `c : ℝ`, then
-`L` is discrete: only finitely many `v ∈ L` have `‖γ + v‖` bounded. For `0 < c` this is the
-Gaussian; for `c ≤ 0` summability even forces `L` to be finite. -/
+/-- If `v ↦ exp (-c ‖γ + v‖²)` is summable over a subgroup `L` of a normed group for some
+`c : ℝ`, then `L` is discrete. The terms are continuous in `v`, positive at `0` and tend to `0`
+along the cofinite filter, so `0` is isolated (`isOpen_singleton_of_tendsto_cofinite`). -/
 theorem discreteTopology_of_summable_exp_neg_mul_norm_add_sq (γ : E) {c : ℝ}
-    (h : Summable fun v : L => Real.exp (-c * ‖γ + (v : E)‖ ^ 2)) : DiscreteTopology L := by
-  -- Only finitely many `v ∈ L` have `‖γ + v‖ ≤ R`, since the terms tend to `0` while being
-  -- at least `exp (-|c| R²)` on that set.
-  have hfin (R : ℝ) : {v : L | ‖γ + (v : E)‖ ≤ R}.Finite := by
-    refine (Filter.eventually_cofinite.mp (h.tendsto_cofinite_zero.eventually
-      (gt_mem_nhds (Real.exp_pos (-|c| * R ^ 2))))).subset fun v hv => ?_
-    simp only [Set.mem_ofPred_eq, not_lt] at hv ⊢
-    have := pow_le_pow_left₀ (norm_nonneg _) hv 2
-    exact Real.exp_le_exp.mpr
-      (by nlinarith [le_abs_self c, abs_nonneg c, sq_nonneg ‖γ + (v : E)‖])
-  have hnhds : {v : L | ‖(v : E)‖ < 1} ∈ 𝓝 (0 : L) :=
-    (isOpen_lt (continuous_norm.comp continuous_subtypeVal) continuous_const).mem_nhds (by simp)
-  refine discreteTopology_of_isOpen_singleton_zero (isOpen_singleton_of_finite_mem_nhds 0 hnhds
-    ((hfin (‖γ‖ + 1)).subset fun v hv => ?_))
-  have := norm_add_le γ (v : E)
-  simp only [Set.mem_ofPred_eq] at hv ⊢
-  linarith
+    (h : Summable fun v : L => Real.exp (-c * ‖γ + (v : E)‖ ^ 2)) : DiscreteTopology L :=
+  discreteTopology_of_isOpen_singleton_zero <|
+    isOpen_singleton_of_tendsto_cofinite h.tendsto_cofinite_zero (by fun_prop)
+      (Real.exp_pos _).ne'
 
 end Discrete
 
@@ -125,32 +118,37 @@ end ZLattice
 
 namespace TauCeti
 
+/-- Through `n ↦ (fun i ↦ (n i : ℝ))`, the integer vectors `d → ℤ` are the standard lattice
+`ℤ^d ⊆ ℝ^d`, the `ℤ`-span of the standard basis. So a function on `d → ℝ` is summable over the
+integer vectors exactly when it is summable over that lattice. -/
+theorem summable_pi_int_iff_summable_span {d : Type*} [Finite d] {α : Type*} [AddCommMonoid α]
+    [TopologicalSpace α] {f : (d → ℝ) → α} :
+    (Summable fun n : d → ℤ ↦ f fun i ↦ (n i : ℝ)) ↔
+      Summable fun ℓ : Submodule.span ℤ (Set.range (Pi.basisFun ℝ d)) ↦ f ℓ := by
+  set e := ((Pi.basisFun ℝ d).restrictScalars ℤ).equivFun
+  rw [← e.symm.toEquiv.summable_iff]
+  refine iff_of_eq (congrArg Summable (funext fun n ↦ congrArg f (funext fun i ↦ ?_)))
+  have h := (Pi.basisFun ℝ d).restrictScalars_repr_apply ℤ (e.symm n) i
+  rw [← Module.Basis.equivFun_apply, LinearEquiv.apply_symm_apply, Pi.basisFun_repr] at h
+  simpa using h
+
 /-- The sup norms of the integer vectors `n : d → ℤ` satisfy `∑ n, ‖n‖ ^ r < ∞` when
 `r < -card d`. Here `‖0‖ ^ r = 0`. -/
 theorem summable_pi_int_norm_rpow {d : Type*} [Fintype d] (r : ℝ) (hr : r < -Fintype.card d) :
     Summable fun n : d → ℤ ↦ ‖n‖ ^ r := by
-  classical
-  set L := Submodule.span ℤ (Set.range (Pi.basisFun ℝ d))
-  have hrank : Module.finrank ℤ L = Fintype.card d := by
-    rw [ZLattice.rank ℝ L, Module.finrank_fintype_fun_eq_card]
-  have hmem (n : d → ℤ) : (fun i ↦ (n i : ℝ)) ∈ L :=
-    (Submodule.mem_span_range_iff_exists_fun ℤ).2 ⟨n, by ext i; simp [Pi.single_apply]⟩
-  have hinj : Function.Injective fun n : d → ℤ ↦ (⟨_, hmem n⟩ : L) := fun m n h ↦ by
-    ext i
-    simpa using congr_fun (congrArg Subtype.val h) i
-  refine ((ZLattice.summable_norm_rpow L r (hrank ▸ hr)).comp_injective hinj).congr fun n ↦ ?_
-  have hn (i : d) : ‖(n i : ℝ)‖₊ = ‖n i‖₊ := NNReal.eq (Int.norm_cast_real _)
-  simp [Pi.norm_def, hn]
+  have hL := ZLattice.summable_norm_rpow (Submodule.span ℤ (Set.range (Pi.basisFun ℝ d))) r
+    (by rwa [ZLattice.rank ℝ, Module.finrank_fintype_fun_eq_card])
+  simpa only [pi_norm_intCast_real] using
+    (summable_pi_int_iff_summable_span (f := fun x ↦ ‖x‖ ^ r)).2 hL
 
 /-- The series `∑ n, (1 + ‖n‖) ^ (-r)` over the integer vectors `n : d → ℤ`, with the sup norm,
 converges once the natural number `r` exceeds `card d`. -/
-theorem summable_pi_int_inv_one_add_norm_pow {d : Type*} [Fintype d] {r : ℕ}
+theorem summable_pi_int_one_add_norm_pow_inv {d : Type*} [Fintype d] {r : ℕ}
     (hr : Fintype.card d < r) : Summable fun n : d → ℤ ↦ ((1 + ‖n‖) ^ r)⁻¹ := by
-  refine Summable.of_norm_bounded_eventually
-    (summable_pi_int_norm_rpow (-(r : ℝ)) (neg_lt_neg (by exact_mod_cast hr))) ?_
-  filter_upwards [(Set.finite_singleton (0 : d → ℤ)).compl_mem_cofinite] with n hn
-  have hpos : 0 < ‖n‖ := norm_pos_iff.2 hn
-  rw [Real.norm_of_nonneg (by positivity), Real.rpow_neg hpos.le, Real.rpow_natCast]
-  exact inv_anti₀ (by positivity) (pow_le_pow_left₀ hpos.le (by linarith) _)
+  have hL := ZLattice.summable_one_add_norm_pow_inv
+    (Submodule.span ℤ (Set.range (Pi.basisFun ℝ d))) (r := r)
+    (by rwa [ZLattice.rank ℝ, Module.finrank_fintype_fun_eq_card])
+  simpa only [pi_norm_intCast_real] using
+    (summable_pi_int_iff_summable_span (f := fun x ↦ ((1 + ‖x‖) ^ r)⁻¹)).2 hL
 
 end TauCeti
