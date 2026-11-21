@@ -163,13 +163,13 @@ private theorem exists_norm_monomialWeight_le (hP₀ : P₀ ≠ 0) {i j : ℕ} (
   obtain ⟨Ci, hCi0, hCi⟩ := _root_.Polynomial.exists_norm_eval_le_mul_one_add_norm_eval (hdeg hi)
   obtain ⟨Cj, hCj0, hCj⟩ := _root_.Polynomial.exists_norm_eval_le_mul_one_add_norm_eval (hdeg hj)
   refine ⟨2 * (Ci * Cj), fun z ↦ ?_⟩
+  have hpos : 0 < 1 + ‖P₀.eval z‖ ^ 2 := by positivity
+  simp only [backgroundDefect_apply, norm_mul, norm_pow, Complex.norm_conj, Complex.norm_real,
+    Real.norm_of_nonneg (inv_nonneg.2 hpos.le)]
+  rw [← div_eq_mul_inv, div_le_iff₀ hpos]
   set a := ‖P₀.eval z‖
   have hzi : ‖z‖ ^ i ≤ Ci * (1 + a) := by simpa using hCi z
   have hzj : ‖z‖ ^ j ≤ Cj * (1 + a) := by simpa using hCj z
-  have hpos : 0 < 1 + a ^ 2 := by positivity
-  rw [backgroundDefect_apply, norm_mul, norm_mul, norm_pow, norm_pow, Complex.norm_conj,
-    Complex.norm_real, Real.norm_of_nonneg (inv_nonneg.2 hpos.le), ← div_eq_mul_inv,
-    div_le_iff₀ hpos]
   calc ‖z‖ ^ i * ‖z‖ ^ j ≤ Ci * (1 + a) * (Cj * (1 + a)) :=
         mul_le_mul hzi hzj (by positivity) (by positivity)
     _ = Ci * Cj * (1 + a) ^ 2 := by ring
@@ -307,20 +307,23 @@ private theorem exists_local_repr (c₀ : Fin m → ℂ) :
         backgroundDefect (monicOfCoeff c₀) * Ring.inverse (ρ c)) ∧
       ∀ c z, σ c z = ((‖(monicOfCoeff c).derivative.eval z‖ ^ 2 : ℝ) : ℂ) *
         backgroundDefect (monicOfCoeff c₀) z := by
-  set P₀ := monicOfCoeff c₀
+  set P₀ := monicOfCoeff c₀ with hP₀c
   have hP₀ : P₀ ≠ 0 := (monic_monicOfCoeff c₀).ne_zero
   have hn : m ≤ P₀.natDegree := (natDegree_monicOfCoeff c₀).ge
   set ρ : (Fin m → ℂ) → ℂ →ᵇ ℂ :=
     fun c ↦ backgroundDefect P₀ + normSqWeight P₀ hP₀ hn fun i ↦ (monicOfCoeff c).coeff i
   have hρ : ContDiff ℝ ∞ ρ := contDiff_const.add (contDiff_normSqWeight P₀ hP₀ hn
     fun i ↦ (contDiff_coeff_monicOfCoeff i).restrict_scalars ℝ)
+  have hρz (c : Fin m → ℂ) (z : ℂ) :
+      ρ c z = ((1 + ‖(monicOfCoeff c).eval z‖ ^ 2 : ℝ) : ℂ) * backgroundDefect P₀ z := by
+    rw [add_apply, normSqWeight_apply P₀ hP₀ hn (natDegree_monicOfCoeff_lt c),
+      Complex.ofReal_add, Complex.ofReal_one, add_mul, one_mul]
   have hρ₀ : ρ c₀ = 1 := by
     ext z
-    rw [add_apply, normSqWeight_apply P₀ hP₀ hn (natDegree_monicOfCoeff_lt c₀),
-      backgroundDefect_apply, one_apply]
-    have hpos : (0 : ℝ) < 1 + ‖P₀.eval z‖ ^ 2 := by positivity
-    rw [← one_add_mul, ← Complex.ofReal_one, ← Complex.ofReal_add, ← Complex.ofReal_mul,
-      mul_inv_cancel₀ hpos.ne', Complex.ofReal_one]
+    rw [hρz, ← hP₀c, backgroundDefect_apply, one_apply]
+    have := one_add_norm_sq_ne_zero P₀ z
+    push_cast
+    field_simp
   -- `ρ` is `1` at `c₀`, so it is a unit near `c₀` and its inverse is smooth there.
   have hinv : ContDiffAt ℝ ∞ (fun c ↦ Ring.inverse (ρ c)) c₀ := by
     have := contDiffAt_ringInverse ℝ (n := ∞) (1 : (ℂ →ᵇ ℂ)ˣ)
@@ -333,9 +336,6 @@ private theorem exists_local_repr (c₀ : Fin m → ℂ) :
       backgroundDefect P₀ * Ring.inverse (ρ c) := by
     filter_upwards [hunit] with c hc
     ext z
-    have hρz : ρ c z = ((1 + ‖(monicOfCoeff c).eval z‖ ^ 2 : ℝ) : ℂ) * backgroundDefect P₀ z := by
-      rw [add_apply, normSqWeight_apply P₀ hP₀ hn (natDegree_monicOfCoeff_lt c),
-        Complex.ofReal_add, Complex.ofReal_one, add_mul, one_mul]
     rw [mul_apply, ringInverse_apply hc, hρz, backgroundDefect_apply, backgroundDefect_apply]
     have := one_add_norm_sq_ne_zero (monicOfCoeff c) z
     have := one_add_norm_sq_ne_zero P₀ z
