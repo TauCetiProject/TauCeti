@@ -60,9 +60,9 @@ theorem mem_relCompFiberProduct {L : Submodule R (M × N)} {K : Submodule R (N �
 /-- The endpoint projection of matching relation vectors onto the composite relation. -/
 def relCompProjection (L : Submodule R (M × N)) (K : Submodule R (N × P)) :
     L.relCompFiberProduct K →ₗ[R] L.relComp K where
-  toFun z := ⟨(z.1.1.1, z.1.2.2),
-    mem_relComp.mpr ⟨z.1.1.2, (mem_relCompFiberProduct.mp z.2).1,
-      (mem_relCompFiberProduct.mp z.2).2.2 ▸ (mem_relCompFiberProduct.mp z.2).2.1⟩⟩
+  toFun z := ⟨(z.val.1.1, z.val.2.2),
+    mem_relComp.mpr ⟨z.val.1.2, (mem_relCompFiberProduct.mp z.property).1,
+      (mem_relCompFiberProduct.mp z.property).2.2 ▸ (mem_relCompFiberProduct.mp z.property).2.1⟩⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
 
@@ -70,7 +70,7 @@ def relCompProjection (L : Submodule R (M × N)) (K : Submodule R (N × P)) :
 @[simp]
 theorem relCompProjection_apply (L : Submodule R (M × N)) (K : Submodule R (N × P))
     (z : L.relCompFiberProduct K) :
-    (L.relCompProjection K z : M × P) = (z.1.1.1, z.1.2.2) := (rfl)
+    (L.relCompProjection K z : M × P) = (z.val.1.1, z.val.2.2) := (rfl)
 
 /-- Every vector in the composite has a matching lift. -/
 theorem relCompProjection_surjective (L : Submodule R (M × N))
@@ -83,7 +83,7 @@ theorem relCompProjection_surjective (L : Submodule R (M × N))
 @[simp]
 theorem relCompProjection_eq_zero {L : Submodule R (M × N)} {K : Submodule R (N × P)}
     {z : L.relCompFiberProduct K} :
-    L.relCompProjection K z = 0 ↔ z.1.1.1 = 0 ∧ z.1.2.2 = 0 := by
+    L.relCompProjection K z = 0 ↔ z.val.1.1 = 0 ∧ z.val.2.2 = 0 := by
   rw [← coe_eq_zero, relCompProjection_apply, Prod.mk_eq_zero]
 
 /-- The endpoint projection onto the composite is onto. -/
@@ -108,7 +108,7 @@ theorem mem_relCompExcess {L : Submodule R (M × N)} {K : Submodule R (N × P)} 
 /-- Embed an excess vector in the matching space by assigning it zero endpoints. -/
 def relCompExcessInclusion (L : Submodule R (M × N)) (K : Submodule R (N × P)) :
     L.relCompExcess K →ₗ[R] L.relCompFiberProduct K where
-  toFun n := ⟨((0, n), (n, 0)), mem_relCompFiberProduct.mpr ⟨n.2.1, n.2.2, rfl⟩⟩
+  toFun n := ⟨((0, n), (n, 0)), mem_relCompFiberProduct.mpr ⟨n.property.1, n.property.2, rfl⟩⟩
   map_add' _ _ := by ext <;> simp
   map_smul' _ _ := by ext <;> simp
 
@@ -135,7 +135,7 @@ theorem relCompProjection_comp_relCompExcessInclusion (L : Submodule R (M × N))
 theorem relCompExcessInclusion_injective (L : Submodule R (M × N))
     (K : Submodule R (N × P)) : Function.Injective (L.relCompExcessInclusion K) := by
   intro n n' h
-  exact Subtype.ext (congrArg (fun z : L.relCompFiberProduct K ↦ z.1.1.2) h)
+  exact Subtype.ext (congrArg (fun z : L.relCompFiberProduct K ↦ z.val.1.2) h)
 
 /-- An embedded excess vector vanishes exactly when the excess vector does. -/
 @[simp]
@@ -156,17 +156,17 @@ theorem ker_relCompProjection (L : Submodule R (M × N)) (K : Submodule R (N × 
   constructor
   · intro hz
     have h := congrArg (fun x : L.relComp K ↦ (x : M × P)) (LinearMap.mem_ker.mp hz)
-    have hm : z.1.1.1 = 0 := congrArg Prod.fst h
-    have hp : z.1.2.2 = 0 := congrArg Prod.snd h
-    obtain ⟨hzL, hzK, hmatch⟩ := mem_relCompFiberProduct.mp z.2
-    have hn : z.1.1.2 ∈ L.relCompExcess K := by
+    have hm : z.val.1.1 = 0 := congrArg Prod.fst h
+    have hp : z.val.2.2 = 0 := congrArg Prod.snd h
+    obtain ⟨hzL, hzK, hmatch⟩ := mem_relCompFiberProduct.mp z.property
+    have hn : z.val.1.2 ∈ L.relCompExcess K := by
       rw [mem_relCompExcess]
       constructor
       · rw [← hm, Prod.eta]
         exact hzL
       · rw [hmatch, ← hp, Prod.eta]
         exact hzK
-    exact ⟨⟨z.1.1.2, hn⟩, by ext <;> simp [hm, hp, hmatch]⟩
+    exact ⟨⟨z.val.1.2, hn⟩, by ext <;> simp [hm, hp, hmatch]⟩
   · rintro ⟨n, rfl⟩
     exact LinearMap.mem_ker.mpr (Subtype.ext rfl)
 
@@ -177,11 +177,11 @@ def relCompExcessEquivKer (L : Submodule R (M × N))
     L.relCompExcess K ≃ₗ[R] LinearMap.ker (L.relCompProjection K) where
   toFun n := ⟨L.relCompExcessInclusion K n,
     LinearMap.mem_ker.mpr (L.relCompProjection_relCompExcessInclusion K n)⟩
-  invFun z := ⟨z.1.1.1.2, by
-    obtain ⟨n, hn⟩ := (L.ker_relCompProjection K ▸ z.2 :
-      z.1 ∈ LinearMap.range (L.relCompExcessInclusion K))
+  invFun z := ⟨z.val.val.1.2, by
+    obtain ⟨n, hn⟩ := (L.ker_relCompProjection K ▸ z.property :
+      z.val ∈ LinearMap.range (L.relCompExcessInclusion K))
     rw [← hn]
-    exact n.2⟩
+    exact n.property⟩
   map_add' _ _ := Subtype.ext (map_add _ _ _)
   map_smul' _ _ := Subtype.ext (map_smul _ _ _)
   left_inv _ := rfl
@@ -202,7 +202,7 @@ theorem relCompExcessEquivKer_apply (L : Submodule R (M × N)) (K : Submodule R 
 @[simp]
 theorem relCompExcessEquivKer_symm_apply (L : Submodule R (M × N)) (K : Submodule R (N × P))
     (z : LinearMap.ker (L.relCompProjection K)) :
-    ((L.relCompExcessEquivKer K).symm z : N) = z.1.1.1.2 := (rfl)
+    ((L.relCompExcessEquivKer K).symm z : N) = z.val.val.1.2 := (rfl)
 
 end Semiring
 

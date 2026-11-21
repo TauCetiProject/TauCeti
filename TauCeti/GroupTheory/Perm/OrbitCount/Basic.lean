@@ -10,6 +10,7 @@ public import TauCeti.GroupTheory.Perm.Partition
 import Mathlib.Logic.Equiv.Option
 import TauCeti.GroupTheory.GroupAction.Closure
 import TauCeti.GroupTheory.Perm.Basic
+import TauCeti.GroupTheory.Perm.ProdCongr
 
 /-!
 # The number of orbits of a permutation
@@ -214,18 +215,9 @@ theorem _root_.Equiv.orbitCount_permCongr (e : α ≃ β) (σ : Equiv.Perm α) :
 has one copy of each orbit of `τ` over every point of `α`. -/
 theorem orbitCount_prodCongrRight_const (τ : Equiv.Perm β) :
     orbitCount (Equiv.prodCongrRight fun _ : α ↦ τ) = Nat.card α * orbitCount τ := by
-  let f : Equiv.Perm β →* Equiv.Perm (α × β) :=
-    { toFun := fun σ ↦ Equiv.prodCongrRight fun _ ↦ σ
-      map_one' := rfl
-      map_mul' := fun _ _ ↦ rfl }
   have hsc : ∀ x y : α × β, SameCycle (Equiv.prodCongrRight fun _ : α ↦ τ) x y ↔
-      (1 : Equiv.Perm α).SameCycle x.1 y.1 ∧ τ.SameCycle x.2 y.2 := by
-    rintro ⟨a, b⟩ ⟨a', b'⟩
-    have hpow (k : ℤ) :
-        (Equiv.prodCongrRight fun _ : α ↦ τ) ^ k = Equiv.prodCongrRight fun _ ↦ τ ^ k :=
-      (map_zpow f τ k).symm
-    simp only [SameCycle, hpow, Equiv.prodCongrRight_apply, Prod.mk.injEq, one_zpow, one_apply]
-    exact ⟨fun ⟨k, ha, hb⟩ ↦ ⟨⟨0, ha⟩, k, hb⟩, fun ⟨⟨_, ha⟩, k, hb⟩ ↦ ⟨k, ha, hb⟩⟩
+      (1 : Equiv.Perm α).SameCycle x.1 y.1 ∧ τ.SameCycle x.2 y.2 := fun _ _ ↦
+    (sameCycle_prodCongrRight_iff _).trans (and_congr_left' sameCycle_one.symm)
   rw [orbitCount_def, Nat.card_congr ((Quotient.congr (rb := (SameCycle.setoid 1).prod
     (SameCycle.setoid τ)) (Equiv.refl _) hsc).trans (Setoid.prodQuotientEquiv _ _).symm),
     Nat.card_prod, ← orbitCount_def, ← orbitCount_def, orbitCount_one]
@@ -315,7 +307,7 @@ theorem orbitCount_le_card_orbitRelQuotient [Finite α] {π : Equiv.Perm α}
       apply Quotient.sound
       rw [MulAction.orbitRel_apply, MulAction.mem_orbit_iff] at hab
       obtain ⟨g, rfl⟩ := hab
-      exact (hH g g.2 b).symm
+      exact (hH g g.property b).symm
   have hf : Function.Surjective f := by
     intro q
     induction q using Quotient.inductionOn'

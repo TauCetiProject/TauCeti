@@ -25,7 +25,9 @@ line bundle; more generally, any indexed family of global sections whose nonvani
 sheaf (`TauCeti.AlgebraicGeometry.hom_ext_of_iSup_nonvanishingLocus_eq_top`,
 `TauCeti.AlgebraicGeometry.epi_freeHomEquiv_symm_of_iSup_nonvanishingLocus_eq_top`). The trivial
 line bundle is globally generated
-(`TauCeti.AlgebraicGeometry.InvertibleSheaf.isGloballyGenerated_trivial`).
+(`TauCeti.AlgebraicGeometry.InvertibleSheaf.isGloballyGenerated_trivial`), and so is every line
+bundle on an affine scheme
+(`TauCeti.AlgebraicGeometry.InvertibleSheaf.isGloballyGenerated_of_isAffine`).
 
 ## References
 
@@ -131,7 +133,7 @@ theorem mem_nonvanishingLocus_of_app_ne_zero {U : X.Opens}
     rw [nonvanishingLocus_eq_basicOpen t j]
     exact (X.mem_basicOpen _ _ hxUV).mpr hr
   rw [nonvanishingLocus_map] at hmem
-  exact hmem.2
+  exact hmem.right
 
 /-- Morphisms out of an invertible sheaf are determined by their values on a family of global
 sections whose nonvanishing loci cover `X`. -/
@@ -299,5 +301,11 @@ theorem isGloballyGenerated_iff_nonempty_generatingSections {L : InvertibleSheaf
 theorem isGloballyGenerated_trivial (X : Scheme.{u}) : (trivial X).IsGloballyGenerated :=
   isGloballyGenerated_iff_nonempty_generatingSections.mpr
     ⟨(trivial_obj X).symm ▸ SheafOfModules.free.generatingSections PUnit⟩
+
+/-- Every line bundle on an affine scheme is globally generated. -/
+theorem isGloballyGenerated_of_isAffine [IsAffine X] (L : InvertibleSheaf X) :
+    L.IsGloballyGenerated := fun x ↦
+  Scheme.Modules.exists_mem_nonvanishingLocus_of_isAffineOpen L.obj (isAffineOpen_top X)
+    (Opens.mem_top x)
 
 end TauCeti.AlgebraicGeometry.InvertibleSheaf

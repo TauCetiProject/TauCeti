@@ -89,7 +89,7 @@ variable (Q : Ideal B) [Q.IsPrime] (p : Ideal A) [Q.LiesOver p]
 
 section Bijection
 
-variable [IsDomain A] [IsIntegrallyClosed A]
+variable [IsIntegrallyClosed A]
 
 /-- **The double coset law over an integrally closed base.** For `M / K` finite Galois with
 group `G`, a subgroup `H` of `G`, the integral closures `B` and `C` of `A` in `M` and in `M ^ H`,
@@ -101,6 +101,7 @@ The class of `σ` corresponds to the contraction `σ Q ∩ C`, by
 noncomputable def doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure :
     DoubleCoset.Quotient (H : Set Gal(M/K)) (stabilizer Gal(M/K) Q : Set Gal(M/K)) ≃
       p.primesOver C :=
+  have := IsDomain.of_faithfulSMul A K
   have := IsGaloisGroup.of_isIntegralClosure Gal(M/K) A B K M
   have := (TauCeti.IsIntegralClosure.isGaloisGroup_fixedField_and_faithfulSMul
     (A := A) (B := B) H C).1
@@ -113,6 +114,7 @@ noncomputable def doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure :
 theorem doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure_mk (σ : Gal(M/K)) :
     (Q.doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure p H C
       (DoubleCoset.mk H _ σ) : Ideal C) = (σ • Q).under C := by
+  have := IsDomain.of_faithfulSMul A K
   have := IsGaloisGroup.of_isIntegralClosure Gal(M/K) A B K M
   obtain ⟨_, _⟩ := TauCeti.IsIntegralClosure.isGaloisGroup_fixedField_and_faithfulSMul
     (A := A) (B := B) H C
@@ -125,7 +127,7 @@ the contraction `σ Q ∩ C`. -/
 theorem doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure_symm_apply_eq_mk_iff
     (q : p.primesOver C) (σ : Gal(M/K)) :
     (Q.doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure p H C).symm q =
-        DoubleCoset.mk H _ σ ↔ q.1 = (σ • Q).under C := by
+        DoubleCoset.mk H _ σ ↔ q.val = (σ • Q).under C := by
   rw [Equiv.symm_apply_eq, Subtype.ext_iff,
     doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure_mk]
 
@@ -152,8 +154,8 @@ theorem doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure_natural
     [Algebra C' C] [IsScalarTower C' C B]
     (q : DoubleCoset.Quotient (H : Set Gal(M/K)) (stabilizer Gal(M/K) Q : Set Gal(M/K))) :
     (Q.doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure p H' C'
-        (DoubleCoset.quotientMapOfLELeft h (stabilizer Gal(M/K) Q) q)).1 =
-      (Q.doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure p H C q).1.under C' := by
+        (DoubleCoset.quotientMapOfLELeft h (stabilizer Gal(M/K) Q) q)).val =
+      (Q.doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure p H C q).val.under C' := by
   induction q using Quotient.inductionOn' with
   | h σ =>
     simp only [DoubleCoset.quotientMapOfLELeft_apply_mk,
@@ -234,7 +236,7 @@ theorem sum_ramificationIdx_mul_inertiaDeg_doubleCosetOfIsIntegralClosure_eq_fin
   have : IsFractionRing C (fixedField H) :=
     IsIntegralClosure.isFractionRing_of_finite_extension A K (fixedField H) C
   rw [finsum_eq_sum_of_fintype, e.sum_comp fun q : p.primesOver C ↦
-      q.1.ramificationIdx A * q.1.inertiaDeg A, sum_ramification_inertia_eq_finrank p C,
+      q.val.ramificationIdx A * q.val.inertiaDeg A, sum_ramification_inertia_eq_finrank p C,
     IsFractionRing.finrank_eq A K C (fixedField H)]
 
 /-- The local degree of the prime attached to a double coset is the relative index of its

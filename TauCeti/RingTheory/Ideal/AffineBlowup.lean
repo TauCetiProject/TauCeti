@@ -179,9 +179,9 @@ theorem isSMulRegular_algebraMap_affineBlowup {b : A} (hb : IsSMulRegular A b) :
     IsSMulRegular (I.affineBlowup a S) (algebraMap A (I.affineBlowup a S) b) := by
   intro u v huv
   apply Subtype.ext
-  have hval : algebraMap A S b * u.1 = algebraMap A S b * v.1 := congrArg Subtype.val huv
-  obtain ⟨x, m, hx⟩ := IsLocalization.exists_mk'_eq (Submonoid.powers a) u.1
-  obtain ⟨y, n, hy⟩ := IsLocalization.exists_mk'_eq (Submonoid.powers a) v.1
+  have hval : algebraMap A S b * u.val = algebraMap A S b * v.val := congrArg Subtype.val huv
+  obtain ⟨x, m, hx⟩ := IsLocalization.exists_mk'_eq (Submonoid.powers a) u.val
+  obtain ⟨y, n, hy⟩ := IsLocalization.exists_mk'_eq (Submonoid.powers a) v.val
   rw [← hx, ← hy] at hval ⊢
   rw [IsLocalization.mul_mk'_eq_mk'_of_mul, IsLocalization.mul_mk'_eq_mk'_of_mul,
     IsLocalization.mk'_eq_iff_eq, IsLocalization.eq_iff_exists (Submonoid.powers a) S] at hval
@@ -277,7 +277,7 @@ noncomputable def affineBlowupLift (hI : I.map (algebraMap A B) ≤ span {algebr
       exact ((Commute.isRegular_iff (Commute.all _)).mpr ha).pow n))).symm.toAlgHom.comp
     (((IsLocalization.Away.mapₐ S (Localization.Away (algebraMap A B a)) (Algebra.ofId A B) a).comp
       (I.affineBlowup a S).val).codRestrict _
-      fun z ↦ map_affineBlowup_le_range (S := S) hI ⟨z.1, z.2, rfl⟩)
+      fun z ↦ map_affineBlowup_le_range (S := S) hI ⟨z.val, z.property, rfl⟩)
 
 end Lift
 
