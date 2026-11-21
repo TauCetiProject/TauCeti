@@ -138,8 +138,9 @@ private lemma exists_ae_norm_sum_expRem_le {X A : ℝ≥0 → Ω → ℝ} {R c :
   obtain ⟨K, hK0, hK⟩ := exists_norm_expRem_le α R hL; refine ⟨K, hK0, fun m ↦ ?_⟩
   let g := uniformGrid s t m
   filter_upwards [ae_all_iff.2 fun k : ℕ ↦ ae_abs_increment_le hXR (g k) (g (k + 1)),
-    ae_all_iff.2 fun k : Fin (m + 1) ↦ (hA_step _ _ (uniformGrid_mono s t m (Nat.le_succ k.1))).mono
-      fun _ hω ↦ by rw [uniformGrid_step hst m k.2, ← mul_div_assoc] at hω; exact hω,
+    ae_all_iff.2 fun k : Fin (m + 1) ↦
+      (hA_step _ _ (uniformGrid_mono s t m (Nat.le_succ k.val))).mono fun _ hω ↦ by
+        rw [uniformGrid_step hst m k.isLt, ← mul_div_assoc] at hω; exact hω,
     ae_all_iff.2 fun k : ℕ ↦ (ae_norm_expProc_le (X := X) hA0 hA_step α (g k)).mono fun _ hω ↦
       hω.trans (Real.exp_le_exp.2 <| mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left
         (NNReal.coe_le_coe.2 (uniformGrid_mem_Icc hst m k).2) hc) (by positivity))]

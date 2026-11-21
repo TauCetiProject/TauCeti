@@ -15,7 +15,7 @@ import Mathlib.Probability.Distributions.Gaussian.Real
 import TauCeti.MeasureTheory.Integral.Bochner.CauchySchwarz
 import TauCeti.MeasureTheory.Measure.CharacteristicFunction.Basic
 import TauCeti.Probability.BrownianMotion.Martingale
-import TauCeti.Probability.BrownianMotion.QuadraticVariation
+import TauCeti.Probability.BrownianMotion.QuadraticVariation.Basic
 import TauCeti.Probability.Independence.CharacteristicFunction
 import TauCeti.Probability.Martingale.Basic
 import TauCeti.Probability.Martingale.Exponential.Local

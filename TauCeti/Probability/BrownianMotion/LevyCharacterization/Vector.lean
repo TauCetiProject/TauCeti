@@ -221,14 +221,15 @@ private lemma iIndepFun_grid_increments [IsProbabilityMeasure P] {ι : Type*} [D
   have hrow := ((hV_adapt.hasIndepIncrements fun _ _ hst ↦ by
       simpa only [Pi.sub_def, sub_sub_sub_cancel_right] using
         indep_comap_sub_pi_of_locally_martingale hYl hQY hYc hst) m g hg).comp
-    (fun _ (f : ι → ℝ) (i : S) ↦ f i) (fun _ ↦ measurable_pi_iff.2 fun i ↦ measurable_pi_apply i.1)
+    (fun _ (f : ι → ℝ) (i : S) ↦ f i)
+    (fun _ ↦ measurable_pi_iff.2 fun i ↦ measurable_pi_apply i.val)
   refine iIndepFun.swap
     (by simpa only [Function.comp_def, Pi.sub_apply, sub_sub_sub_cancel_right] using hrow)
     (fun k ↦ (iIndepFun_iff_hasLaw_pi_pi fun i : S ↦ Locally.hasLaw_sub_gaussianReal (hYl i)
         (by simpa only [↓reduceIte, sq] using hQY i i) (hYc i) (hg (Fin.castSucc_le_succ k))).2
       (hasLaw_sub_pi_gaussianReal_of_locally_martingale (M := fun i : S ↦ Y i)
         (c := fun i : S ↦ c i) (fun i ↦ hYl i)
-        (fun i j ↦ by simpa only [Subtype.ext_iff, ite_mul, zero_mul] using hQY i.1 j.1)
+        (fun i j ↦ by simpa only [Subtype.ext_iff, ite_mul, zero_mul] using hQY i.val j.val)
         (fun i ↦ hYc i) (hg (Fin.castSucc_le_succ k))))
     (fun k i ↦ (((hm i (g k.succ)).mono (ℱ.le _) le_rfl).sub
       ((hm i (g k.castSucc)).mono (ℱ.le _) le_rfl)).aemeasurable)
@@ -261,7 +262,8 @@ theorem iIndepFun_sub_initialValue_of_locally_martingale [IsProbabilityMeasure P
   let e : Fin (T.card - 1 + 1) ≃o T :=
     T.orderIsoOfFin (Nat.sub_add_cancel (Finset.card_pos.2 ⟨0, h0T⟩)).symm
   let idx (i : S) (t : J i) : Fin (T.card - 1 + 1) :=
-    e.symm ⟨t.1, Finset.mem_insert_of_mem (Finset.mem_biUnion.2 ⟨i, Finset.mem_univ i, t.2⟩)⟩
+    e.symm ⟨t.val,
+      Finset.mem_insert_of_mem (Finset.mem_biUnion.2 ⟨i, Finset.mem_univ i, t.property⟩)⟩
   let g (i : S) (d : Fin (T.card - 1) → ℝ) (t : J i) : ℝ :=
     Fin.cases 0 (fun k ↦ ∑ j ∈ Finset.Iic k, d j) (idx i t)
   convert (iIndepFun_grid_increments hYp hYc hYl hQY S fun _ _ h ↦ e.monotone h).comp g
@@ -272,7 +274,7 @@ theorem iIndepFun_sub_initialValue_of_locally_martingale [IsProbabilityMeasure P
   ext i ω t
   have hg0 : (e 0 : ℝ≥0) = 0 := le_antisymm (Subtype.coe_le_coe.2
     ((e.monotone (Fin.zero_le _)).trans_eq (e.apply_symm_apply ⟨0, h0T⟩))) bot_le
-  have ht : (e (idx i t) : ℝ≥0) = t.1 := congrArg Subtype.val (e.apply_symm_apply _)
+  have ht : (e (idx i t) : ℝ≥0) = t.val := congrArg Subtype.val (e.apply_symm_apply _)
   dsimp only [g, Function.comp_apply]; cases hk : idx i t using Fin.cases with
   | zero => rw [hk] at ht; simp [← ht, hg0]
   | succ k => rw [hk] at ht; simpa only [Fin.cases_succ, Pi.sub_apply, ← ht, hg0] using
