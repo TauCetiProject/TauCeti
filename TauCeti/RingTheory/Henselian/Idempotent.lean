@@ -24,9 +24,9 @@ control whether `S` is local. An Artinian ring with only the trivial idempotents
 ring whose quotient by an ideal in its Jacobson radical is local is itself local.
 
 Commuting idempotents congruent modulo the Jacobson radical are equal
-(`IsIdempotentElem.eq_of_sub_mem_jacobson`), so in a commutative ring lifts of idempotents are
-unique modulo any ideal in the Jacobson radical. Along an integral ring map the extension of an
-ideal in the Jacobson radical stays in the Jacobson radical
+(`IsIdempotentElem.eq_of_commute_of_sub_mem_jacobson`), so in a commutative ring lifts of
+idempotents are unique modulo any ideal in the Jacobson radical. Along an integral ring map the
+extension of an ideal in the Jacobson radical stays in the Jacobson radical
 (`Ideal.map_le_jacobson_of_isIntegral`). Since a Henselian ideal lies in the Jacobson radical,
 lifts are unique over a Henselian pair and in every commutative integral, in particular every
 commutative finite, algebra over it.

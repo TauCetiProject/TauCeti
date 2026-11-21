@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Nakayama
+public import Mathlib.RingTheory.Jacobson.Radical
+
+import Mathlib.RingTheory.Nakayama
 import TauCeti.RingTheory.Ideal.Extended
 
 /-!
@@ -14,7 +16,8 @@ import TauCeti.RingTheory.Ideal.Extended
 Let `T` be a not necessarily commutative algebra over a commutative ring `S`, `J` an ideal of `S`
 in the Jacobson radical, and `e` an idempotent of `T` whose summand `e T` is a finitely generated
 `S`-module. If `e T ⊆ S e + JT`, then `e T = S e`: applying left multiplication by `e` to
-`e T ⊆ S e + JT` gives `e T ⊆ S e + J • e T`, and Nakayama's lemma concludes.
+`e T ⊆ S e + JT` gives `e T ⊆ S e + J • e T`, and Nakayama's lemma, in the form of Mathlib's
+`Submodule.le_of_le_smul_of_le_jacobson`, concludes.
 
 The extended ideal `JT` is read as `J • T` through `Ideal.mem_map_algebraMap_iff`, which does not
 need `T` to be commutative.

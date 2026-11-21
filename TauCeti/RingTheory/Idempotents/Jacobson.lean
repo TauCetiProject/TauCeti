@@ -29,8 +29,8 @@ idempotents whose difference lies in the Jacobson radical.
   `Ring.jacobson R` of a not necessarily commutative ring is zero.
 * `IsIdempotentElem.mem_jacobson_iff`: an idempotent lies in `Ring.jacobson R` if and only if it is
   zero.
-* `IsIdempotentElem.eq_of_sub_mem_jacobson`: in a not necessarily commutative ring, commuting
-  idempotents whose difference lies in the Jacobson radical are equal.
+* `IsIdempotentElem.eq_of_commute_of_sub_mem_jacobson`: in a not necessarily commutative ring,
+  commuting idempotents whose difference lies in the Jacobson radical are equal.
 * `Ideal.injOn_quotient_mk_isIdempotentElem`: modulo an ideal in the Jacobson radical of a
   commutative ring, the quotient map is injective on idempotents.
 
@@ -42,10 +42,10 @@ idempotents whose difference lies in the Jacobson radical.
   [pcfawd-formalization](https://github.com/tdupu/pcfawd-formalization) at commit
   `a39c3781b9850b9f3d5cbc9920322a3b8e365ef2` (Apache-2.0),
   `lean/Pcf/Stacks/Purity/HenselianIdempotents.lean`: `eq_zero_of_mem_jacobson` is its
-  `Pcf.Stacks.isIdempotentElem_eq_zero_of_mem_jacobson`, `eq_of_sub_mem_jacobson` generalizes
-  its commutative `Pcf.Stacks.eq_of_isIdempotentElem_of_sub_mem_of_le_jacobson` to commuting
-  idempotents, and `injOn_quotient_mk_isIdempotentElem` restates as `Set.InjOn` the injectivity
-  step of its `Pcf.Stacks.bijective_idempotentQuotientMap_of_henselian`.
+  `Pcf.Stacks.isIdempotentElem_eq_zero_of_mem_jacobson`, `eq_of_commute_of_sub_mem_jacobson`
+  generalizes its commutative `Pcf.Stacks.eq_of_isIdempotentElem_of_sub_mem_of_le_jacobson` to
+  commuting idempotents, and `injOn_quotient_mk_isIdempotentElem` restates as `Set.InjOn` the
+  injectivity step of its `Pcf.Stacks.bijective_idempotentQuotientMap_of_henselian`.
 -/
 
 public section
@@ -69,7 +69,7 @@ theorem IsIdempotentElem.mem_jacobson_iff {R : Type*} [Ring R] {e : R}
 /-- **Idempotent lifts are unique modulo the Jacobson radical.** In a (not necessarily
 commutative) ring, commuting idempotents whose difference lies in the Jacobson radical are
 equal. -/
-theorem IsIdempotentElem.eq_of_sub_mem_jacobson {R : Type*} [Ring R] {e e' : R}
+theorem IsIdempotentElem.eq_of_commute_of_sub_mem_jacobson {R : Type*} [Ring R] {e e' : R}
     (he : IsIdempotentElem e) (he' : IsIdempotentElem e') (hc : Commute e e')
     (h : e - e' ∈ Ring.jacobson R) : e = e' := by
   -- For commuting idempotents `a`, `b` with `a - b` in the radical, `a (1 - b) = a (a - b)` is an
@@ -88,4 +88,5 @@ theorem IsIdempotentElem.eq_of_sub_mem_jacobson {R : Type*} [Ring R] {e e' : R}
 on idempotents. -/
 theorem Ideal.injOn_quotient_mk_isIdempotentElem {R : Type*} [CommRing R] {I : Ideal R}
     (hI : I ≤ Ring.jacobson R) : Set.InjOn (Ideal.Quotient.mk I) {e | IsIdempotentElem e} :=
-  fun _ he _ he' h ↦ he.eq_of_sub_mem_jacobson he' (.all _ _) (hI (Ideal.Quotient.eq.mp h))
+  fun _ he _ he' h ↦
+    he.eq_of_commute_of_sub_mem_jacobson he' (.all _ _) (hI (Ideal.Quotient.eq.mp h))
