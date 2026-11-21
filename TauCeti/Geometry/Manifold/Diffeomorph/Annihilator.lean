@@ -22,8 +22,9 @@ form smooth vector subbundles of the cotangent bundles
 smooth diffeomorphism between them, the **annihilator lift** of `h`
 (`Diffeomorph.annihilatorDiffeomorph`). It is characterized by restricting the cotangent lift
 (`Diffeomorph.annihilatorInclusion_annihilatorDiffeomorph`): it covers `h`, preserves the pairing
-of covectors with tangent vectors, and is linear on fibres. Annihilator lifts preserve identity
-maps, inverses and composition.
+of covectors with tangent vectors, and is linear on fibres
+(`Diffeomorph.annihilatorDiffeomorph_mk_smul`). Annihilator lifts preserve identity maps, inverses
+and composition.
 
 Smoothness of the restriction is inherited from the cotangent lift because the annihilator bundle
 of `D'` is smoothly embedded in `T*N`
@@ -44,7 +45,7 @@ symplectization through this construction, whether or not it preserves a coorien
   annihilating covectors of `D` exactly to annihilating covectors of `D'`.
 * `Diffeomorph.annihilatorInclusion_annihilatorDiffeomorph`: the annihilator lift is the
   restriction of the cotangent lift.
-* `Diffeomorph.symm_annihilatorDiffeomorph`, `Diffeomorph.annihilatorDiffeomorph_refl`,
+* `Diffeomorph.annihilatorDiffeomorph_symm`, `Diffeomorph.annihilatorDiffeomorph_refl`,
   `Diffeomorph.annihilatorDiffeomorph_trans`: functoriality.
 
 ## References
@@ -165,7 +166,7 @@ local instance : IsManifold K ((∞ : WithTop ℕ∞) + 1) P := IsManifold.of_le
 `D⁰ ⊆ T*M` and `D'⁰ ⊆ T*N` sending an annihilating covector `p` at `x` to `p ∘ (dh_x)⁻¹` at
 `h x`. It is the restriction of the cotangent lift of `h`
 (`Diffeomorph.annihilatorInclusion_annihilatorDiffeomorph`), and its inverse is the annihilator
-lift of `h.symm` (`Diffeomorph.symm_annihilatorDiffeomorph`). -/
+lift of `h.symm` (`Diffeomorph.annihilatorDiffeomorph_symm`). -/
 def annihilatorDiffeomorph (h : M ≃ₘ⟮I, J⟯ N) (hD : IsContMDiffDistribution I ∞ k D)
     (hk : k + r = finrank 𝕜 E) (hD' : IsContMDiffDistribution J ∞ k' D')
     (hk' : k' + r = finrank 𝕜 F)
@@ -234,6 +235,19 @@ theorem annihilatorDiffeomorph_snd_apply_mfderiv
       (z.snd : TangentSpace I z.proj →L[𝕜] 𝕜) v :=
   cotangent_snd_apply_mfderiv h (TotalSpace.mk' (E →L[𝕜] 𝕜) z.proj z.snd) v
 
+/-- **Annihilator lifts are linear on fibres:** rescaling a covector before lifting it rescales the
+lifted covector by the same scalar. -/
+theorem annihilatorDiffeomorph_mk_smul
+    (z : TotalSpace (Fin r → 𝕜) fun x ↦ annihilatorSpace I D x) (c : 𝕜) :
+    h.annihilatorDiffeomorph hD hk hD' hk' hh (TotalSpace.mk' (Fin r → 𝕜) z.proj (c • z.snd)) =
+      TotalSpace.mk' (Fin r → 𝕜) (h.annihilatorDiffeomorph hD hk hD' hk' hh z).proj
+        (c • (h.annihilatorDiffeomorph hD hk hD' hk' hh z).snd) :=
+  annihilatorInclusion_injective J D' _ <| by
+    rw [annihilatorInclusion_annihilatorDiffeomorph, annihilatorInclusion_mk',
+      annihilatorInclusion_mk', Submodule.coe_smul, Submodule.coe_smul]
+    exact (cotangent_mk_smul h (TotalSpace.mk' (E →L[𝕜] 𝕜) z.proj z.snd) c).trans
+      (CotangentBundle.ext (proj_cotangent h _) fun _ ↦ rfl)
+
 /-- The annihilator lift sends a covector to zero exactly when the covector is zero. -/
 @[simp]
 theorem annihilatorDiffeomorph_snd_eq_zero_iff
@@ -254,7 +268,7 @@ theorem annihilatorDiffeomorph_zeroSection (x : M) :
 
 /-- The inverse of an annihilator lift is the annihilator lift of the inverse diffeomorphism. -/
 @[simp]
-theorem symm_annihilatorDiffeomorph :
+theorem annihilatorDiffeomorph_symm :
     letI := hD.annihilatorFiberBundle hk
     letI := hD'.annihilatorFiberBundle hk'
     (h.annihilatorDiffeomorph hD hk hD' hk' hh).symm =
@@ -280,6 +294,8 @@ theorem annihilatorDiffeomorph_refl (hD : IsContMDiffDistribution I ∞ k D)
     rfl
 
 /-- **Annihilator lifts commute with composition** of smooth diffeomorphisms. -/
+-- Not `@[simp]`: the intermediate distribution `D'`, its rank and smoothness, and `hh`, `hg`
+-- occur only on the right-hand side, so `simp` could not instantiate them.
 theorem annihilatorDiffeomorph_trans (h : M ≃ₘ⟮I, J⟯ N) (g : N ≃ₘ⟮J, K⟯ P)
     (hD : IsContMDiffDistribution I ∞ k D) (hk : k + r = finrank 𝕜 E)
     (hD' : IsContMDiffDistribution J ∞ k' D') (hk' : k' + r = finrank 𝕜 F)
