@@ -291,8 +291,8 @@ theorem kernelProduct_ofFinsupp_single_val (p₁ : S₁) (p₂ : S₂) :
     obtain ⟨q₁, q₂⟩ := q
     by_cases h₁ : q₁ = p₁
     · have h₂ : q₂ ≠ p₂ := fun h₂ => hq (by rw [h₁, h₂])
-      simp [Finsupp.single_apply, Ne.symm h₂]
-    · simp [Finsupp.single_apply, Ne.symm h₁]]
+      simp [Ne.symm h₂]
+    · simp [Ne.symm h₁]]
   simp
 
 /-- A product kernel whose outputs have finitely many nonzero coefficients maps pairs of finite
