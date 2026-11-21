@@ -40,6 +40,8 @@ span `A` independently is never needed.
 * `TauCeti.mem_homogeneousMatrices_smul_smul_iff` and
   `TauCeti.mem_homogeneousMatrices_smul_right_iff`: translating both gradings by a central
   element `k` keeps the degree, and translating the column grading alone multiplies it by `k`.
+* `TauCeti.homogeneousMatrices_mul_left_eq`: when the parts are invariant under left
+  multiplication by `z`, the degrees `z * c` and `c` have the same homogeneous matrices.
 * `TauCeti.fromBlocks_mem_homogeneousMatrices_iff` and
   `TauCeti.fromCols_mem_homogeneousMatrices_iff`: block matrices on sums of graded index types
   are homogeneous exactly when their blocks are.
@@ -137,6 +139,21 @@ theorem mem_homogeneousMatrices_smul_right_iff {k : G} (hk : k ∈ Subgroup.cent
   refine forall₂_congr fun x x' ↦ ?_
   rw [(Equiv.subtypeEquivRight (h x x')).iSup_congr (f := fun g ↦ Ag g.val) (g := fun g ↦ Ag g.val)
     fun _ ↦ rfl]
+
+/-- **Degrees modulo an element fixing the grading.** If the parts of `A` are invariant under left
+multiplication of the degree by `z`, a matrix is homogeneous of degree `z * c` exactly when it is
+homogeneous of degree `c`. -/
+theorem homogeneousMatrices_mul_left_eq {z : G} (hz : ∀ g, Ag (z * g) = Ag g) (gr : X → T)
+    (gr' : X' → T) (c : G) :
+    homogeneousMatrices Ag gr gr' (z * c) = homogeneousMatrices Ag gr gr' c := by
+  ext F
+  simp only [mem_homogeneousMatrices_iff]
+  refine forall₂_congr fun x x' ↦ ?_
+  -- Multiplying the degree by `z` matches the two index sets of the suprema.
+  let e := (Equiv.mulLeft z).subtypeEquiv (p := fun g : G ↦ g • gr' x' = c • gr x)
+    (q := fun g ↦ g • gr' x' = (z * c) • gr x) fun g ↦ by
+      simp only [Equiv.coe_mulLeft, mul_smul, smul_left_cancel_iff]
+  rw [e.iSup_congr (f := fun g ↦ Ag g.val) (g := fun g ↦ Ag g.val) fun g ↦ hz g.val]
 
 /-- A **block matrix** is homogeneous of degree `c` for the gradings of the sums of the index
 types exactly when its four blocks are. -/

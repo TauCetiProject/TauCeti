@@ -11,6 +11,8 @@ public import Mathlib.GroupTheory.Abelianization.Defs
 public import Mathlib.RingTheory.Polynomial.Cyclotomic.Basic
 import Mathlib.FieldTheory.KummerExtension
 import Mathlib.FieldTheory.Minpoly.IsConjRoot
+import Mathlib.Algebra.Module.Torsion.Free
+import TauCeti.Algebra.Group.Action.Pow
 import Mathlib.NumberTheory.Cyclotomic.PrimitiveRoots
 
 /-!
@@ -36,6 +38,9 @@ Multiplying one `n`-th root of a nonzero `a` by the powers of a primitive `n`-th
 
 If `q²` is a primitive `l`-th root of unity, then `q^(l(l+1)) = (-1)^(l+1)`, the sign that appears
 when quantum binomial coefficients are evaluated at such a `q`.
+
+An eigenvalue `μ` of an element `g` of finite order acting linearly on a nonzero vector is a
+primitive root of unity of order `orderOf g` as soon as `μ ^ l = 1` forces `g ^ l = 1`.
 
 For a primitive `n`-th root of unity `ζ` with `0 < n`, factoring `1 - X ^ n` via the powers of `ζ`
 gives the reciprocal cyclotomic factorization `∏ i < n, (1 - ζ ^ i X) = 1 - X ^ n` and its
@@ -67,6 +72,8 @@ evaluated scalar form.
   `n ≠ 0`, exactly `n` elements have `n`-th power `1`.
 * `IsPrimitiveRoot.pow_mul_add_one_eq_neg_one_pow`: if `q²` is a primitive `l`-th root of unity
   with `l > 0`, then `q^(l(l+1)) = (-1)^(l+1)`.
+* `TauCeti.isPrimitiveRoot_orderOf_of_smul_eq`: if `g • v = μ • v` for a nonzero `v`, and
+  `μ ^ l = 1` forces `g ^ l = 1`, then `μ` is a primitive root of unity of order `orderOf g`.
 * `IsPrimitiveRoot.prod_one_sub_pow_mul_X`: for a primitive `n`-th root of unity `ζ` in a domain
   with `0 < n`, `∏ i ∈ range n, (1 - C (ζ ^ i) * X) = 1 - X ^ n` in `R[X]`.
 * `IsPrimitiveRoot.prod_one_sub_pow_mul`: the evaluated form
@@ -224,6 +231,15 @@ theorem _root_.AlgEquiv.apply_eq_apply_of_abelianization_of_eq {K M : Type*} [Co
   have h' := congrArg (Group.Abelianization.lift (hμ'.autToPow K)) h
   rw [Group.Abelianization.lift_apply_of, Group.Abelianization.lift_apply_of] at h'
   rw [← hμ'.autToPow_spec K σ, ← hμ'.autToPow_spec K τ, h']
+
+/-- If `g` acts on a nonzero vector `v` by the scalar `μ`, and `μ ^ l = 1` forces `g ^ l = 1`, then
+`μ` is a primitive root of unity of order the order of `g`. -/
+theorem isPrimitiveRoot_orderOf_of_smul_eq {G K M : Type*} [Monoid G] [CommRing K] [IsDomain K]
+    [AddCommGroup M] [Module K M] [Module.IsTorsionFree K M] [MulAction G M] [SMulCommClass G K M]
+    {g : G} {v : M} {μ : K} (hv : v ≠ 0) (hg : g • v = μ • v)
+    (h : ∀ l : ℕ, μ ^ l = 1 → g ^ l = 1) : IsPrimitiveRoot μ (orderOf g) := by
+  refine ⟨(smul_left_inj hv).1 ?_, fun l hl ↦ orderOf_dvd_of_pow_eq_one (h l hl)⟩
+  rw [← pow_smul_eq_of_smul_eq hg, pow_orderOf_eq_one, one_smul, one_smul]
 
 open Polynomial in
 /-- **Reciprocal cyclotomic factorization of `1 - X ^ n`.** If `ζ` is a primitive `n`-th root of
