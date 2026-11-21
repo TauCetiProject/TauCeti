@@ -8,6 +8,7 @@ module
 public import TauCeti.Topology.MappingTorus.LocalProduct
 public import TauCeti.Topology.PathSpace.Seamed
 import TauCeti.Algebra.AddCircle
+import TauCeti.Topology.Instances.AddCircle.UnitInterval
 import TauCeti.Topology.MappingSpace.FreeLoop
 
 /-!
@@ -208,8 +209,8 @@ def sectionHomeomorph :
     (Homeomorph.subtype unitAddCircleMapHomeomorphClosedUnitPath fun s ↦ by
       simp only [unitAddCircleMapHomeomorphClosedUnitPath_apply]
       exact ⟨fun h t ↦ h _, fun h θ ↦ by
-        obtain ⟨t, rfl⟩ := exists_coe_unitInterval_eq θ
-        exact h t⟩).symm
+        obtain ⟨t, rfl⟩ := AddCircle.surjective_ofUnitInterval (p := 1) θ
+        simpa using h t⟩).symm
 
 /-- The section of a seamed path passes through `mk φ (γ t) t` at time `t`. -/
 @[simp]
