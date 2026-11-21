@@ -79,8 +79,8 @@ variable [Finite ι]
 bounded away from zero. -/
 theorem finite_image_approxSpan {S₀ : Finset (FinitePlace K)}
     {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
-    (hLinf : ∀ v : InfinitePlace K, LinearIndependent K (L v.1))
-    (hLfin : ∀ v ∈ S₀, LinearIndependent K (L v.1))
+    (hLinf : ∀ v : InfinitePlace K, LinearIndependent K (L v.val))
+    (hLfin : ∀ v ∈ S₀, LinearIndependent K (L v.val))
     (c : AbsoluteValue K ℝ → ι → ℝ) {Q₁ Q₂ : ℝ} (hQ₁ : 0 < Q₁) :
     (approxSpan S₀ L c '' Icc Q₁ Q₂).Finite := by
   have hfinite := finite_biUnion_approxDomain hLinf hLfin c (Q₂ := Q₂) hQ₁
@@ -106,9 +106,9 @@ example (S₀ : Finset (FinitePlace K)) (c : AbsoluteValue K ℝ → ι → ℝ)
   apply mem_approxSpan_of_mem
   refine mem_approxDomain.mpr ⟨?_, ?_, ?_⟩
   · intro v i
-    simpa only [LinearMap.proj_apply, Real.one_rpow, InfinitePlace.coe_apply] using hcoord v.1 j i
+    simpa only [LinearMap.proj_apply, Real.one_rpow, InfinitePlace.coe_apply] using hcoord v.val j i
   · intro v _ i
-    simpa only [LinearMap.proj_apply, Real.one_rpow, FinitePlace.coe_apply] using hcoord v.1 j i
-  · exact fun v _ k ↦ hcoord v.1 j k
+    simpa only [LinearMap.proj_apply, Real.one_rpow, FinitePlace.coe_apply] using hcoord v.val j i
+  · exact fun v _ k ↦ hcoord v.val j k
 
 end TauCeti.NumberField

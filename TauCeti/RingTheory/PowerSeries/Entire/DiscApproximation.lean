@@ -54,9 +54,9 @@ theorem tendsto_polynomialHom_of_isDiscPreparation (hf : f.IsEntire)
       (𝓝 (⟨f, IsEntire.mem_subring.mpr hf⟩ : IsEntire.subring K)) := by
   rw [IsEntire.tendsto_iff]
   intro s
-  let : Fact (0 < (s : ℝ)) := ⟨s.2⟩
+  let : Fact (0 < (s : ℝ)) := ⟨s.property⟩
   rw [tendsto_iff_dist_tendsto_zero]
-  have hlim := tendsto_gaussNorm_sub_of_isDiscPreparation hρ h s.2
+  have hlim := tendsto_gaussNorm_sub_of_isDiscPreparation hρ h s.property
   simpa only [dist_eq_norm_sub', norm_eq_gaussNorm, AddSubgroupClass.coe_sub,
     IsEntire.coe_restrict, IsEntire.coe_polynomialHom] using hlim
 
@@ -76,8 +76,8 @@ theorem exists_discPreparations_tendsto (hf : f.IsEntire) (h0 : constantCoeff f 
     simp [h] at h0
   have hex (r : Set.Ioi (0 : ℝ)) : ∃ (D : ℕ) (p : Polynomial K) (u : PowerSeries K),
       IsDiscPreparation (r : ℝ) D f p u := by
-    obtain ⟨D, hD⟩ := exists_isDistinguished r.2 (hf.isRestricted r) hf0
-    exact ⟨D, hD.exists_isDiscPreparation r.2 (hf.isRestricted r) h0⟩
+    obtain ⟨D, hD⟩ := exists_isDistinguished r.property (hf.isRestricted r) hf0
+    exact ⟨D, hD.exists_isDiscPreparation r.property (hf.isRestricted r) h0⟩
   choose D p u h using hex
   refine ⟨p, u, D, h, tendsto_polynomialHom_of_isDiscPreparation hf ?_
     (Eventually.of_forall h)⟩

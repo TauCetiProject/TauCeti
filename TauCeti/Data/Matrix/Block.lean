@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Star.StarProjection
 public import Mathlib.Data.Matrix.Block
+public import Mathlib.LinearAlgebra.Matrix.Hermitian
 
 /-!
 # Products, powers and idempotents of block matrices
@@ -40,8 +42,11 @@ and empty blocks.
   `Matrix.toBlocks₂₂_mul`: the four blocks of a product of block matrices.
 * `Matrix.fromBlocks_zero₂₁_pow`: the power formula for an upper two-block matrix.
 * `Matrix.fromBlocks_mul_sub_mul`: the four blocks of a difference of products.
-* `IsIdempotentElem.fromBlocks_zero₁₂_zero₂₁`: the direct sum of idempotent matrices is
-  idempotent.
+* `IsIdempotentElem.fromBlocks_zero₁₂_zero₂₁` and `IsStarProjection.fromBlocks_zero₁₂_zero₂₁`:
+  the direct sum of idempotent matrices is idempotent, and that of star projections is a star
+  projection. Conversely, by `Matrix.isIdempotentElem_fromBlocks_zero₁₂_zero₂₁_iff` and
+  `Matrix.isStarProjection_fromBlocks_zero₁₂_zero₂₁_iff`, so are the diagonal blocks of such a
+  direct sum.
 * `Matrix.fromBlocks_one_sub_mul_self_of_mul_eq` and
   `Matrix.fromBlocks_one_sub_mul_fromBlocks_mul_fromBlocks_one_sub_of_mul_eq`: Murray–von Neumann
   equivalent idempotents are conjugate after stabilization.
@@ -136,6 +141,35 @@ public theorem IsIdempotentElem.fromBlocks_zero₁₂_zero₂₁ {m n α : Type*
     (hf : IsIdempotentElem f) : IsIdempotentElem (Matrix.fromBlocks e 0 0 f) := by
   rw [IsIdempotentElem, Matrix.fromBlocks_multiply, he.eq, hf.eq]
   simp
+
+/-- The block-diagonal matrix `Matrix.fromBlocks p 0 0 q` with star projections as diagonal blocks
+is a star projection. -/
+public theorem IsStarProjection.fromBlocks_zero₁₂_zero₂₁ {m n α : Type*} [Fintype m] [Fintype n]
+    [NonUnitalNonAssocSemiring α] [StarAddMonoid α] {p : Matrix m m α} {q : Matrix n n α}
+    (hp : IsStarProjection p) (hq : IsStarProjection q) :
+    IsStarProjection (Matrix.fromBlocks p 0 0 q) :=
+  ⟨hp.isIdempotentElem.fromBlocks_zero₁₂_zero₂₁ hq.isIdempotentElem,
+    (hp.isSelfAdjoint.isHermitian.fromBlocks Matrix.conjTranspose_zero
+      hq.isSelfAdjoint.isHermitian).isSelfAdjoint⟩
+
+/-- This is the `iff` version of `IsIdempotentElem.fromBlocks_zero₁₂_zero₂₁`. -/
+@[simp]
+public theorem Matrix.isIdempotentElem_fromBlocks_zero₁₂_zero₂₁_iff {m n α : Type*} [Fintype m]
+    [Fintype n] [NonUnitalNonAssocSemiring α] {e : Matrix m m α} {f : Matrix n n α} :
+    IsIdempotentElem (Matrix.fromBlocks e 0 0 f) ↔ IsIdempotentElem e ∧ IsIdempotentElem f := by
+  simp only [IsIdempotentElem, Matrix.fromBlocks_multiply, Matrix.mul_zero, Matrix.zero_mul,
+    add_zero, zero_add, Matrix.fromBlocks_inj, true_and]
+
+/-- This is the `iff` version of `IsStarProjection.fromBlocks_zero₁₂_zero₂₁`. -/
+@[simp]
+public theorem Matrix.isStarProjection_fromBlocks_zero₁₂_zero₂₁_iff {m n α : Type*} [Fintype m]
+    [Fintype n] [NonUnitalNonAssocSemiring α] [StarAddMonoid α] {p : Matrix m m α}
+    {q : Matrix n n α} :
+    IsStarProjection (Matrix.fromBlocks p 0 0 q) ↔ IsStarProjection p ∧ IsStarProjection q := by
+  simp only [isStarProjection_iff, Matrix.isIdempotentElem_fromBlocks_zero₁₂_zero₂₁_iff,
+    ← Matrix.isHermitian_iff_isSelfAdjoint, Matrix.isHermitian_fromBlocks_iff,
+    Matrix.conjTranspose_zero, true_and]
+  exact and_and_and_comm
 
 section MurrayVonNeumann
 

@@ -52,7 +52,7 @@ open scoped ENNReal NNReal
 
 namespace TauCeti.CylinderSobolev
 
-open StripSobolev (stripMeasure jet jet_apply continuous_jet jet_smul_fst norm_le_norm_jet)
+open StripSobolev
 
 variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [NormedAddCommGroup W]
   [NormedSpace ℝ W]
@@ -156,19 +156,19 @@ private theorem exists_eLpNorm_jet_smul_fst_le (hM : MemLp M ∞ stripMeasure)
   have hηc : Continuous fun w : ℝ × ℝ ↦ ρ w.1 • ξ w :=
     (hρ.continuous.comp continuous_fst).smul hξ.continuous
   -- The two terms on the right of the semi-Fredholm estimate for `η = ρ ξ`.
-  have hDη : ‖jetOperator M (jetₗ V η)‖ ≤ (eLpNorm G 2 stripMeasure).toReal := by
-    rw [Lp.norm_def, eLpNorm_congr_ae (jetOperator_jetₗ_ae_eq hM η)]
+  have hDη : ‖jetOperator M (jetLp (testSection V) η)‖ ≤ (eLpNorm G 2 stripMeasure).toReal := by
+    rw [Lp.norm_def, eLpNorm_congr_ae (jetOperator_jetLp_ae_eq hM η)]
     refine ENNReal.toReal_mono hG.eLpNorm_ne_top (eLpNorm_mono_ae_real
-      ((Lp.aestronglyMeasurable _).congr (jetOperator_jetₗ_ae_eq hM η)) ?_)
+      ((Lp.aestronglyMeasurable _).congr (jetOperator_jetLp_ae_eq hM η)) ?_)
     filter_upwards [hK] with z hz
     refine (norm_apply_jet_smul_fst_le (hρd z.1) (hρ01 z.1) (hρ'B z.1) (hξd z)).trans ?_
     simp only [G]
     gcongr
-  have hTη : ‖restrictValue T (jetₗ V η)‖ ≤ (eLpNorm ξ 2 stripMeasure).toReal := by
-    have hae : restrictValue T (jetₗ V η) =ᵐ[stripMeasure.restrict (Icc (-T) T ×ˢ Icc 0 1)]
-        fun w ↦ ρ w.1 • ξ w := by
-      filter_upwards [coeFn_restrictValue T (jetₗ V η), ae_restrict_of_ae (coeFn_jetₗ η)]
-        with z h₁ h₂
+  have hTη : ‖restrictValue T (jetLp (testSection V) η)‖ ≤ (eLpNorm ξ 2 stripMeasure).toReal := by
+    have hae : restrictValue T (jetLp (testSection V) η)
+        =ᵐ[stripMeasure.restrict (Icc (-T) T ×ˢ Icc 0 1)] fun w ↦ ρ w.1 • ξ w := by
+      filter_upwards [coeFn_restrictValue T (jetLp (testSection V) η),
+        ae_restrict_of_ae (coeFn_jetLp η)] with z h₁ h₂
       rw [h₁, h₂, jet_apply]
     rw [Lp.norm_def, eLpNorm_congr_ae hae]
     refine ENNReal.toReal_mono hξ2.eLpNorm_ne_top
@@ -177,9 +177,9 @@ private theorem exists_eLpNorm_jet_smul_fst_le (hM : MemLp M ∞ stripMeasure)
     rw [norm_smul, Real.norm_of_nonneg (hρ01 z.1).1]
     exact mul_le_of_le_one_left (norm_nonneg _) (hρ01 z.1).2
   -- Conclude from the semi-Fredholm estimate for `η`.
-  have hη := norm_jetₗ_le hM hest η
-  rw [norm_jetₗ] at hη
-  rw [← ENNReal.ofReal_toReal (memLp_jet η.2).eLpNorm_ne_top]
+  have hη := norm_jetLp_le hM hest η
+  rw [norm_jetLp] at hη
+  rw [← ENNReal.ofReal_toReal (memLp_jet η.property).eLpNorm_ne_top]
   exact ENNReal.ofReal_le_ofReal (hη.trans (by gcongr))
 
 /-- Where a cutoff equals `1` nearby, the cut-off section has the same jet as the section. -/
@@ -233,8 +233,9 @@ theorem toLp_jet_mem_H1_of_hasSemiFredholmEstimate (hM : MemLp M ∞ stripMeasur
   have hB : 0 ≤ B := (abs_nonneg _).trans (hb 0 0)
   have hmem (n : ℕ) : (fun w : ℝ × ℝ ↦ ρ n w.1 • ξ w) ∈ testSection V :=
     smul_fst_mem_testSection (hρ n) (h0 n) hξ hper
-  refine isClosed_H1.mem_of_tendsto (b := atTop)
-    (f := fun n : ℕ ↦ jetₗ V ⟨_, hmem n⟩) ?_ (Eventually.of_forall fun n ↦ jetₗ_mem_H1 _)
+  refine (isClosed_jetClosure (testSection V)).mem_of_tendsto (b := atTop)
+    (f := fun n : ℕ ↦ jetLp (testSection V) ⟨_, hmem n⟩) ?_
+    (Eventually.of_forall fun n ↦ jetLp_mem_jetClosure _)
   -- The cut-off jets converge to the jet of `ξ` in `L²`, dominated by `‖jet ξ‖ + B ‖ξ‖`.
   rw [Lp.tendsto_Lp_iff_tendsto_eLpNorm']
   have hξd : Differentiable ℝ ξ := hξ.differentiable two_ne_zero
@@ -243,7 +244,7 @@ theorem toLp_jet_mem_H1_of_hasSemiFredholmEstimate (hM : MemLp M ∞ stripMeasur
     (hj.norm.add (hξ2.norm.const_mul B)) (Eventually.of_forall fun n ↦
       Eventually.of_forall fun z ↦ ?_)
     (Eventually.of_forall (tendsto_jet_smul_fst h1))).congr fun n ↦
-      eLpNorm_congr_ae (((coeFn_jetₗ ⟨_, hmem n⟩).sub hj.coeFn_toLp).symm)
+      eLpNorm_congr_ae (((coeFn_jetLp ⟨_, hmem n⟩).sub hj.coeFn_toLp).symm)
   rw [ENNReal.coe_one, one_mul, eNorm_le_iff_norm_le, Pi.add_apply,
     Real.norm_of_nonneg (add_nonneg (norm_nonneg _) (mul_nonneg hB (norm_nonneg _))),
     jet_smul_fst (hd n z.1) (hξd z)]

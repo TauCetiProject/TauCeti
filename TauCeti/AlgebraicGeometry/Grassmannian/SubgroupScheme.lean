@@ -103,12 +103,12 @@ theorem subgroupScheme_def :
 /-- The subgroup scheme attached to a point of the Hopf-ideal locus is finite locally free of
 rank `k`. -/
 private theorem finiteLocallyFree_subgroupScheme :
-    IsFinite ((N.subgroupScheme hN).1 : Grp (Over (Spec (CommRingCat.of A)))).X.hom ∧
-      AlgebraicGeometry.Flat ((N.subgroupScheme hN).1 :
+    IsFinite ((N.subgroupScheme hN).val : Grp (Over (Spec (CommRingCat.of A)))).X.hom ∧
+      AlgebraicGeometry.Flat ((N.subgroupScheme hN).val :
         Grp (Over (Spec (CommRingCat.of A)))).X.hom ∧
-      LocallyOfFinitePresentation ((N.subgroupScheme hN).1 :
+      LocallyOfFinitePresentation ((N.subgroupScheme hN).val :
         Grp (Over (Spec (CommRingCat.of A)))).X.hom ∧
-      ∀ s, (((N.subgroupScheme hN).1 :
+      ∀ s, (((N.subgroupScheme hN).val :
         Grp (Over (Spec (CommRingCat.of A)))).X.hom).finrank s = k :=
   (TauCeti.CommHopfAlgCat.finiteLocallyFree_quotientClosedSubgroup_iff _ _).2 <| by
     rw [TauCeti.HopfIdeal.ofIsHopfIdeal_toIdeal]
@@ -116,26 +116,26 @@ private theorem finiteLocallyFree_subgroupScheme :
 
 /-- The subgroup scheme attached to a point of the Hopf-ideal locus is finite over `Spec A`. -/
 instance isFinite_subgroupScheme :
-    IsFinite ((N.subgroupScheme hN).1 : Grp (Over (Spec (CommRingCat.of A)))).X.hom :=
+    IsFinite ((N.subgroupScheme hN).val : Grp (Over (Spec (CommRingCat.of A)))).X.hom :=
   (finiteLocallyFree_subgroupScheme N hN).1
 
 /-- The subgroup scheme attached to a point of the Hopf-ideal locus is flat over `Spec A`. -/
 instance flat_subgroupScheme :
-    AlgebraicGeometry.Flat ((N.subgroupScheme hN).1 :
+    AlgebraicGeometry.Flat ((N.subgroupScheme hN).val :
       Grp (Over (Spec (CommRingCat.of A)))).X.hom :=
   (finiteLocallyFree_subgroupScheme N hN).2.1
 
 /-- The subgroup scheme attached to a point of the Hopf-ideal locus is of finite presentation
 over `Spec A`. -/
 instance locallyOfFinitePresentation_subgroupScheme :
-    LocallyOfFinitePresentation ((N.subgroupScheme hN).1 :
+    LocallyOfFinitePresentation ((N.subgroupScheme hN).val :
       Grp (Over (Spec (CommRingCat.of A)))).X.hom :=
   (finiteLocallyFree_subgroupScheme N hN).2.2.1
 
 /-- The subgroup scheme attached to a point `N` of `G(k, A ⊗[R] H; A)` on the Hopf-ideal locus
 has constant rank `k` over `Spec A`. -/
 theorem finrank_subgroupScheme (s : Spec (CommRingCat.of A)) :
-    (((N.subgroupScheme hN).1 : Grp (Over (Spec (CommRingCat.of A)))).X.hom).finrank s = k :=
+    (((N.subgroupScheme hN).val : Grp (Over (Spec (CommRingCat.of A)))).X.hom).finrank s = k :=
   (finiteLocallyFree_subgroupScheme N hN).2.2.2 s
 
 end SubgroupScheme
@@ -148,10 +148,10 @@ noncomputable def hopfIdealLocusEquivClosedSubgroupScheme :
     {N : G(k, A ⊗[R] H; A) // N.hopfIdealLocus = ⊥} ≃
       {P : TauCeti.ClosedSubgroupScheme
           ((hopfSpec (CommRingCat.of A)).obj (op (CommHopfAlgCat.of A (A ⊗[R] H)))) //
-        IsFinite (P.1 : Grp (Over (Spec (CommRingCat.of A)))).X.hom ∧
-          AlgebraicGeometry.Flat (P.1 : Grp (Over (Spec (CommRingCat.of A)))).X.hom ∧
-          LocallyOfFinitePresentation (P.1 : Grp (Over (Spec (CommRingCat.of A)))).X.hom ∧
-          ∀ s, ((P.1 : Grp (Over (Spec (CommRingCat.of A)))).X.hom).finrank s = k} :=
+        IsFinite (P.val : Grp (Over (Spec (CommRingCat.of A)))).X.hom ∧
+          AlgebraicGeometry.Flat (P.val : Grp (Over (Spec (CommRingCat.of A)))).X.hom ∧
+          LocallyOfFinitePresentation (P.val : Grp (Over (Spec (CommRingCat.of A)))).X.hom ∧
+          ∀ s, ((P.val : Grp (Over (Spec (CommRingCat.of A)))).X.hom).finrank s = k} :=
   hopfIdealLocusEquiv.trans <| Equiv.subtypeEquiv
     (OrderDual.toDual.trans (TauCeti.CommHopfAlgCat.hopfIdealOrderIsoClosedSubgroup
       (CommHopfAlgCat.of A (A ⊗[R] H))).toEquiv)
@@ -165,7 +165,7 @@ noncomputable def hopfIdealLocusEquivClosedSubgroupScheme :
 @[simp↓]
 theorem hopfIdealLocusEquivClosedSubgroupScheme_apply_coe
     (N : {N : G(k, A ⊗[R] H; A) // N.hopfIdealLocus = ⊥}) :
-    (hopfIdealLocusEquivClosedSubgroupScheme N).1 = N.1.subgroupScheme N.2 := by
+    (hopfIdealLocusEquivClosedSubgroupScheme N).val = N.val.subgroupScheme N.property := by
   simp only [hopfIdealLocusEquivClosedSubgroupScheme, Equiv.trans_apply, Equiv.subtypeEquiv_apply,
     OrderIso.coe_toEquiv, hopfIdealLocusEquiv_apply_coe, subgroupScheme_def]
   exact TauCeti.CommHopfAlgCat.hopfIdealOrderIsoClosedSubgroup_apply _ _
@@ -176,13 +176,13 @@ underlying `A`-submodule of its defining Hopf ideal. -/
 theorem hopfIdealLocusEquivClosedSubgroupScheme_symm_apply_toSubmodule
     (P : {P : TauCeti.ClosedSubgroupScheme
           ((hopfSpec (CommRingCat.of A)).obj (op (CommHopfAlgCat.of A (A ⊗[R] H)))) //
-        IsFinite (P.1 : Grp (Over (Spec (CommRingCat.of A)))).X.hom ∧
-          AlgebraicGeometry.Flat (P.1 : Grp (Over (Spec (CommRingCat.of A)))).X.hom ∧
-          LocallyOfFinitePresentation (P.1 : Grp (Over (Spec (CommRingCat.of A)))).X.hom ∧
-          ∀ s, ((P.1 : Grp (Over (Spec (CommRingCat.of A)))).X.hom).finrank s = k}) :
-    (hopfIdealLocusEquivClosedSubgroupScheme.symm P).1.toSubmodule =
+        IsFinite (P.val : Grp (Over (Spec (CommRingCat.of A)))).X.hom ∧
+          AlgebraicGeometry.Flat (P.val : Grp (Over (Spec (CommRingCat.of A)))).X.hom ∧
+          LocallyOfFinitePresentation (P.val : Grp (Over (Spec (CommRingCat.of A)))).X.hom ∧
+          ∀ s, ((P.val : Grp (Over (Spec (CommRingCat.of A)))).X.hom).finrank s = k}) :
+    (hopfIdealLocusEquivClosedSubgroupScheme.symm P).val.toSubmodule =
       (OrderDual.ofDual ((TauCeti.CommHopfAlgCat.hopfIdealOrderIsoClosedSubgroup
-        (CommHopfAlgCat.of A (A ⊗[R] H))).symm P.1)).toIdeal.restrictScalars A := by
+        (CommHopfAlgCat.of A (A ⊗[R] H))).symm P.val)).toIdeal.restrictScalars A := by
   simp only [hopfIdealLocusEquivClosedSubgroupScheme, Equiv.symm_trans_apply,
     Equiv.subtypeEquiv_symm, Equiv.subtypeEquiv_apply, hopfIdealLocusEquiv_symm_apply_toSubmodule,
     OrderIso.coe_symm_toEquiv, OrderDual.toDual_symm_eq]

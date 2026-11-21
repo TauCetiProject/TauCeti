@@ -9,7 +9,7 @@ public import Mathlib.Combinatorics.Graph.Lattice
 public import Mathlib.Combinatorics.Graph.Simple
 public import Mathlib.Combinatorics.SimpleGraph.Subgraph
 public import TauCeti.Combinatorics.Graph.EdgeEnds
-public import TauCeti.Combinatorics.Graph.Isomorphism
+public import TauCeti.Combinatorics.Graph.Isomorphism.Basic
 public import TauCeti.Combinatorics.Graph.Union
 
 /-!
@@ -78,7 +78,7 @@ private theorem edgeEnds_mem_toSimpleGraph_edgeSet [G.Simple] (e : G.edgeSet) :
 
 private theorem edgeEnds_injective [G.Simple] : Function.Injective G.edgeEnds := by
   intro e f hef
-  obtain ⟨x, y, hxy⟩ := G.exists_isLink_of_mem_edgeSet e.2
+  obtain ⟨x, y, hxy⟩ := G.exists_isLink_of_mem_edgeSet e.property
   let x' : G.vertexSet := ⟨x, hxy.left_mem⟩
   let y' : G.vertexSet := ⟨y, hxy.right_mem⟩
   have he : G.edgeEnds e = s(x', y') := (G.edgeEnds_eq_iff_isLink e x' y').2 hxy
@@ -89,16 +89,16 @@ private theorem edgeEnds_surjective [G.Simple] :
     Function.Surjective fun e : G.edgeSet ↦
       (⟨G.edgeEnds e, edgeEnds_mem_toSimpleGraph_edgeSet e⟩ : G.toSimpleGraph.edgeSet) := by
   intro p
-  let x := p.1.out.1
-  let y := p.1.out.2
+  let x := p.val.out.1
+  let y := p.val.out.2
   have hadj : G.toSimpleGraph.Adj x y := by
     rw [← SimpleGraph.mem_edgeSet, Sym2.mk_fst_out_snd_out]
-    exact p.2
+    exact p.property
   obtain ⟨e, he⟩ := (G.toSimpleGraph_adj_iff x y).1 hadj
   let e' : G.edgeSet := ⟨e, he.edge_mem⟩
   refine ⟨e', Subtype.ext ?_⟩
   exact ((G.edgeEnds_eq_iff_isLink e' x y).2 he).trans
-    (Sym2.mk_fst_out_snd_out p.1)
+    (Sym2.mk_fst_out_snd_out p.val)
 
 /-- The actual edges of a simple multigraph are canonically equivalent to the edges of its
 underlying simple graph. The equivalence sends each edge identity to its unordered pair of ends.
@@ -158,14 +158,14 @@ noncomputable def ofSimpleGraphToSimpleGraphIso (G : Graph V E) [G.Simple] :
     simp only [ofSimpleGraph_isLink, coe_ofSimpleGraphEdgeSetEquiv_apply]
     constructor
     · intro h
-      exact ⟨h, by simpa only [edgeSet_ofSimpleGraph] using e.2⟩
+      exact ⟨h, by simpa only [edgeSet_ofSimpleGraph] using e.property⟩
     · exact fun h ↦ h.1
 
 /-- The reverse simple-graph round-trip isomorphism fixes each actual vertex. -/
 @[simp]
 theorem ofSimpleGraphToSimpleGraphIso_vertexEquiv_apply (G : Graph V E) [G.Simple]
     (x : (ofSimpleGraph G.toSimpleGraph).vertexSet) :
-    (G.ofSimpleGraphToSimpleGraphIso.vertexEquiv x : V) = (x.1 : G.vertexSet) :=
+    (G.ofSimpleGraphToSimpleGraphIso.vertexEquiv x : V) = (x.val : G.vertexSet) :=
   (rfl)
 
 /-- The original edge corresponding to an edge of the reconstructed graph has exactly the
@@ -487,8 +487,9 @@ noncomputable def ofSimpleGraphCoeIso (S : G.Subgraph) :
   vertexEquiv := (Equiv.Set.univ S.verts).trans
     (Equiv.subtypeEquivRight fun _ ↦ by rw [S.vertexSet_toGraph]).symm
   edgeEquiv := Equiv.ofBijective
-    (fun e ↦ ⟨e.1.map Subtype.val, by
-      have hm : e.1 ∈ S.coe.edgeSet := by simpa only [Graph.edgeSet_ofSimpleGraph] using e.2
+    (fun e ↦ ⟨e.val.map Subtype.val, by
+      have hm : e.val ∈ S.coe.edgeSet := by simpa only [Graph.edgeSet_ofSimpleGraph] using
+          e.property
       rw [S.edgeSet_toGraph]; rwa [S.edgeSet_coe] at hm⟩)
     ⟨fun _ _ h ↦ Subtype.ext (Sym2.map.injective Subtype.val_injective (Subtype.ext_iff.mp h)),
      fun ⟨f, hf⟩ ↦ by
@@ -497,22 +498,22 @@ noncomputable def ofSimpleGraphCoeIso (S : G.Subgraph) :
       exact ⟨⟨e, by simpa only [Graph.edgeSet_ofSimpleGraph] using he⟩, rfl⟩⟩
   map_isLink_iff e x y := by
     simp only [toGraph_isLink, Graph.ofSimpleGraph_isLink]
-    have hm : e.1 ∈ S.coe.edgeSet := by simpa only [Graph.edgeSet_ofSimpleGraph] using e.2
+    have hm : e.val ∈ S.coe.edgeSet := by simpa only [Graph.edgeSet_ofSimpleGraph] using e.property
     refine ⟨fun ⟨he, _⟩ ↦ ⟨Sym2.map.injective Subtype.val_injective he, hm⟩,
       fun ⟨he, _⟩ ↦ ⟨congrArg (Sym2.map Subtype.val) he, ?_⟩⟩
     rwa [he, SimpleGraph.mem_edgeSet, S.coe_adj] at hm
 
 @[simp] theorem coe_ofSimpleGraphCoeIso_vertexEquiv_apply (S : G.Subgraph)
     (x : V(Graph.ofSimpleGraph S.coe)) :
-    (S.ofSimpleGraphCoeIso.vertexEquiv x : V) = (x.1 : V) := (rfl)
+    (S.ofSimpleGraphCoeIso.vertexEquiv x : V) = (x.val : V) := (rfl)
 
 @[simp] theorem coe_ofSimpleGraphCoeIso_vertexEquiv_symm_apply (S : G.Subgraph)
     (x : V(S.toGraph)) :
-    ((S.ofSimpleGraphCoeIso.vertexEquiv.symm x).1 : V) = (x : V) := (rfl)
+    ((S.ofSimpleGraphCoeIso.vertexEquiv.symm x).val : V) = (x : V) := (rfl)
 
 @[simp] theorem coe_ofSimpleGraphCoeIso_edgeEquiv_apply (S : G.Subgraph)
     (e : E(Graph.ofSimpleGraph S.coe)) :
-    (S.ofSimpleGraphCoeIso.edgeEquiv e : Sym2 V) = e.1.map Subtype.val := (rfl)
+    (S.ofSimpleGraphCoeIso.edgeEquiv e : Sym2 V) = e.val.map Subtype.val := (rfl)
 
 @[simp] theorem map_coe_ofSimpleGraphCoeIso_edgeEquiv_symm_apply (S : G.Subgraph)
     (e : E(S.toGraph)) :
@@ -614,9 +615,9 @@ variable {V : Type u}
 def subgraphOfSimpleGraphOrderIso (G : SimpleGraph V) :
     G.Subgraph ≃o Set.Iic (Graph.ofSimpleGraph G) where
   toFun S := ⟨S.toGraph, S.toGraph_le_ofSimpleGraph⟩
-  invFun K := K.1.toSimpleGraphSubgraph K.2
+  invFun K := K.val.toSimpleGraphSubgraph K.property
   left_inv S := S.toSimpleGraphSubgraph_toGraph _
-  right_inv K := Subtype.ext (K.1.toGraph_toSimpleGraphSubgraph K.2)
+  right_inv K := Subtype.ext (K.val.toGraph_toSimpleGraphSubgraph K.property)
   map_rel_iff' := Subgraph.toGraph_le_toGraph _ _
 
 @[simp] theorem coe_subgraphOfSimpleGraphOrderIso_apply (G : SimpleGraph V) (S : G.Subgraph) :
@@ -624,6 +625,6 @@ def subgraphOfSimpleGraphOrderIso (G : SimpleGraph V) :
 
 @[simp] theorem subgraphOfSimpleGraphOrderIso_symm_apply (G : SimpleGraph V)
     (K : Set.Iic (Graph.ofSimpleGraph G)) :
-    G.subgraphOfSimpleGraphOrderIso.symm K = K.1.toSimpleGraphSubgraph K.2 := (rfl)
+    G.subgraphOfSimpleGraphOrderIso.symm K = K.val.toSimpleGraphSubgraph K.property := (rfl)
 
 end SimpleGraph

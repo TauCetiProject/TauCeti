@@ -60,7 +60,7 @@ theorem idealSummatory_toUnitaryIdealWeight (χ : RayClassCharacter 𝔪) (x : �
   have hmem (J : Ideal (𝓞 K)) : J ∈ integralIdealsPrimeTo 𝔪 ↔ J.IsPrimeTo 𝔪.support :=
     NumberFieldArithmetic.mem_integralIdealsAway_iff_isPrimeTo
   let e : integralIdealsPrimeTo 𝔪 → (Ideal (𝓞 K))⁰ := fun I ↦
-    ⟨I, mem_nonZeroDivisors_of_ne_zero ((hmem I).mp I.2).ne_bot⟩
+    ⟨I, mem_nonZeroDivisors_of_ne_zero ((hmem I).mp I.property).ne_bot⟩
   have hsum : rayClassCharacterPartialSum 𝔪 χ x =
       ∑ I ∈ normLE (fun I : integralIdealsPrimeTo 𝔪 ↦ Ideal.absNorm (I : Ideal (𝓞 K))) x,
         (χ.onIdeals I : ℂ) := by
@@ -74,7 +74,7 @@ theorem idealSummatory_toUnitaryIdealWeight (χ : RayClassCharacter 𝔪) (x : �
   · have hJ𝔪 : ¬ (J : Ideal (𝓞 K)).IsPrimeTo 𝔪.support :=
       fun hJ𝔪 ↦ hJe ⟨⟨J, (hmem J).mpr hJ𝔪⟩, by simpa using hJ, rfl⟩
     simp [toMultiplicativeIdealWeight_apply_of_not_isPrimeTo χ hJ𝔪]
-  · simp [e, toMultiplicativeIdealWeight_apply_of_isPrimeTo χ ((hmem I).mp I.2)]
+  · simp [e, toMultiplicativeIdealWeight_apply_of_isPrimeTo χ ((hmem I).mp I.property)]
 
 /-- **Cancellation for a nontrivial ray class character.** The unitary weight of a nontrivial
 ray class character has ideal partial sums `O(x ^ (1 - 1 / [K : ℚ]))`. -/

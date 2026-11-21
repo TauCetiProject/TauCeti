@@ -84,30 +84,30 @@ theorem isCoveringMapOn_of_equivariant_trivialization (hρ : IsCoveringMap ρ)
     (Homeomorph.setCongr hpreV_eq).trans (e.preimageHomeomorph hWe)
   let hCod : V ≃ₜ W × H := t.preimageHomeomorph hWt
   -- The local unit section `σ` of `e` maps via `t ∘ φ` to a continuous shear `c : W → H`.
-  let σ : W → P := fun y ↦ e.toOpenPartialHomeomorph.symm (y.1, 1)
+  let σ : W → P := fun y ↦ e.toOpenPartialHomeomorph.symm (y.val, 1)
   have hσ_cont : Continuous σ :=
-    e.continuousOn_symm_prodMk_left.comp_continuous continuous_subtype_val fun y ↦ y.2.1
-  have hσ_proj (y : W) : projP (σ y) = y.1 := e.proj_symm_apply' y.2.1
+    e.continuousOn_symm_prodMk_left.comp_continuous continuous_subtypeVal fun y ↦ y.property.1
+  have hσ_proj (y : W) : projP (σ y) = y.val := e.proj_symm_apply' y.property.1
   let c : W → H := fun y ↦ (t (φ (σ y))).2
   have hc_cont : Continuous c :=
     continuous_snd.comp <| t.continuousOn_toFun.comp_continuous
-      (hφ.comp_continuous hσ_cont fun y ↦ by rw [mem_preimage, hσ_proj]; exact y.2)
-      fun y ↦ by rw [t.mem_source, hproj, hσ_proj]; exact y.2.2
+      (hφ.comp_continuous hσ_cont fun y ↦ by rw [mem_preimage, hσ_proj]; exact y.property)
+      fun y ↦ by rw [t.mem_source, hproj, hσ_proj]; exact y.property.2
   let shift : W × H ≃ₜ W × H := TauCeti.prodMulLeftHomeomorph c hc_cont
   -- In trivialized coordinates, `φ` is `Prod.map id ρ` followed by the left-translation shear.
   have hlocal : V.restrictPreimage φ = hCod.symm ∘ shift ∘ Prod.map id ρ ∘ hDom := by
     funext p
     apply hCod.injective
-    have hpW : projP p.1 ∈ W := by simpa only [hpreV_eq, mem_preimage] using p.2
-    let y : W := ⟨projP p.1, hpW⟩
-    let g : G := (e p.1).2
+    have hpW : projP p.val ∈ W := by simpa only [hpreV_eq, mem_preimage] using p.property
+    let y : W := ⟨projP p.val, hpW⟩
+    let g : G := (e p.val).2
     have hDom_p : hDom p = (y, g) := by simp [hDom, y, g]
-    have hp_eq : p.1 = op g • σ y := (e.op_snd_smul_symm_one hprojP_smul he hpW.1).symm
+    have hp_eq : p.val = op g • σ y := (e.op_snd_smul_symm_one hprojP_smul he hpW.1).symm
     have hq_mem : projQ (φ (σ y)) ∈ t.baseSet := by rw [hproj, hσ_proj]; exact hpW.2
     simp only [Function.comp_apply, Homeomorph.apply_symm_apply, hDom_p, Prod.map_apply, id_eq,
       shift, TauCeti.prodMulLeftHomeomorph_apply]
     simp only [hCod, t.preimageHomeomorph_apply hWt, Set.restrictPreimage_coe, c, Prod.mk.injEq]
-    refine ⟨Subtype.ext (hproj p.1), ?_⟩
+    refine ⟨Subtype.ext (hproj p.val), ?_⟩
     rw [hp_eq, hequiv, ht (ρ g) (φ (σ y)) hq_mem]
   rw [hlocal]
   exact (((IsCoveringMap.id.prodMap hρ).homeomorph_comp shift).homeomorph_comp

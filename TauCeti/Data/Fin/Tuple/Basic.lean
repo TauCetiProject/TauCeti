@@ -62,6 +62,8 @@ once.
 * `Fin.update_removeNth_succ_eq_removeNth_castSucc`: deleting entry `j + 1` and then overwriting
   entry `j` by the deleted entry is deleting entry `j`.
 * `Fin.contractNth_castSucc_const`: contracting two adjacent entries of a constant tuple.
+* `Fin.contractNth_castSucc_insertNth_castSucc`: inserting an entry before entry `j` and
+  contracting the two overwrites entry `j` by the contraction.
 * `Fin.insertNth_apply_zero_of_ne_zero`, `Fin.insertNth_apply_last_of_ne_last`: inserting away
   from the first (last) position keeps the first (last) entry.
 * `Fin.contractNth_castSucc_insertNth_succ_castSucc`: contracting the two steps of a path that
@@ -308,6 +310,18 @@ theorem contractNth_castSucc_const (j : Fin n) (x : α) :
   · rw [Function.update_of_ne hkj.ne, contractNth_apply_of_lt _ _ _ _ hkj]
   · rw [Function.update_self, contractNth_apply_of_eq _ _ _ _ rfl]
   · rw [Function.update_of_ne hkj.ne', contractNth_apply_of_gt _ _ _ _ hkj]
+
+/-- Inserting `x` at `j.castSucc` and then contracting the entries `j` and `j + 1` overwrites
+entry `j` of the tuple by `op x (a j)`. -/
+theorem contractNth_castSucc_insertNth_castSucc (j : Fin n) (x : α) (a : Fin n → α) :
+    contractNth j.castSucc op (insertNth (α := fun _ => α) j.castSucc x a) =
+      Function.update a j (op x (a j)) := by
+  funext k
+  rcases eq_or_ne k j with rfl | h
+  · rw [contractNth_apply_of_eq _ _ _ _ rfl, insertNth_apply_same, insertNth_castSucc_apply_succ,
+      Function.update_self]
+  · rw [contractNth_apply_of_ne _ _ _ _ (val_ne_of_ne h).symm, insertNth_apply_succAbove,
+      Function.update_of_ne h]
 
 end ContractNth
 
