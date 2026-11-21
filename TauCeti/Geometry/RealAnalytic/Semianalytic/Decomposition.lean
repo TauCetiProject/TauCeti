@@ -260,7 +260,7 @@ private theorem exists_slab_weierstrass_sign [Finite ι₁]
 `Θ S` of `slabPoly c t₀ ε` gives a cell family `⋃ S ∈ 𝒟, stackCells S (Θ S).2` satisfying both
 parts of the frontier condition, whose cells have preconnected approach regions at every point
 over `U'`, provided the base cells have preconnected approach regions at every point of `U'`. -/
-private theorem frontier_biUnion_slabPoly_stackCells {B₀ U' : Set (Fin n → ℝ)}
+private theorem frontierCondition_biUnion_slabPoly_stackCells {B₀ U' : Set (Fin n → ℝ)}
     {𝒟 : Set (Set (Fin n → ℝ))} {c : ∀ j : ι₁, Fin (d j) → (Fin n → ℝ) → ℝ} {t₀ ε : ℝ}
     (hc : ∀ j k, AnalyticOnNhd ℝ (c j k) B₀) (h𝒟cov : ⋃₀ 𝒟 = U') (hU'B₀ : U' ⊆ B₀)
     (h𝒟cell : ∀ S ∈ 𝒟, IsConnected S ∧ ∃ e, IsAnalyticSubmanifold e S)
@@ -270,7 +270,9 @@ private theorem frontier_biUnion_slabPoly_stackCells {B₀ U' : Set (Fin n → �
     (h𝒟conn : ∀ S ∈ 𝒟, ∀ x ∈ U', IsPreconnectedApproachAt S x)
     {Θ : ∀ S : Set (Fin n → ℝ), Σ k, Fin k → S → ℝ}
     (hΘ : ∀ S ∈ 𝒟, ∃ D : Delineation (fun a (x : S) ↦ slabPoly c t₀ ε a x),
-      Θ S = ⟨D.count, D.root⟩) :
+      Θ S = ⟨D.count, D.root⟩)
+    (hcont : ∀ S ∈ 𝒟, ∀ i, Continuous ((Θ S).2 i))
+    (hmono : ∀ S ∈ 𝒟, ∀ y : S, StrictMono fun i ↦ (Θ S).2 i y) :
     let ℰ := ⋃ S ∈ 𝒟, stackCells S (Θ S).2
     (∀ E' ∈ ℰ, ∀ E ∈ ℰ, (E' ∩ closure E).Nonempty → E' ⊆ closure E) ∧
     (∀ E' ∈ ℰ, ∀ E ∈ ℰ, E' ⊆ closure E → E' ≠ E →
@@ -278,14 +280,6 @@ private theorem frontier_biUnion_slabPoly_stackCells {B₀ U' : Set (Fin n → �
     ∀ E ∈ ℰ, ∀ v : Fin (n + 1) → ℝ, Fin.tail v ∈ U' → IsPreconnectedApproachAt E v := by
   intro ℰ
   have hsub (S : Set (Fin n → ℝ)) (hS : S ∈ 𝒟) : S ⊆ U' := h𝒟cov ▸ subset_sUnion_of_mem hS
-  have hcont : ∀ S ∈ 𝒟, ∀ i, Continuous ((Θ S).2 i) := fun S hS ↦ by
-    obtain ⟨D, hD⟩ := hΘ S hS
-    rw [hD]
-    exact D.continuous_root
-  have hmono : ∀ S ∈ 𝒟, ∀ y : S, StrictMono fun i ↦ (Θ S).2 i y := fun S hS ↦ by
-    obtain ⟨D, hD⟩ := hΘ S hS
-    rw [hD]
-    exact D.strictMono_root
   have hmatch : ∀ B ∈ 𝒟, ∀ C ∈ 𝒟, B ⊆ closure C → B ≠ C →
       ∃ σ : Fin (Θ C).1 → Fin (Θ B).1, ∀ i (x : B),
         Tendsto ((Θ C).2 i) (comap Subtype.val (𝓝 x.val)) (𝓝 ((Θ B).2 (σ i) x)) := by
@@ -351,13 +345,16 @@ private theorem lift_slab_partition [Finite ι₁] {B₀ U' : Set (Fin n → ℝ
     ⟨fun S ↦ if hS : S ∈ 𝒟 then ⟨_, (Classical.choice (hdelin S hS)).root⟩ else ⟨0, Fin.elim0⟩,
       fun S hS ↦ ⟨Classical.choice (hdelin S hS), by simp only [hS, ↓reduceDIte]⟩⟩
   have hU'B₀ : U' ⊆ B₀ := h𝒟cov ▸ sUnion_subset fun S hS ↦ subset_closure.trans (hclos S hS)
-  obtain ⟨hfront, hdim, hconn⟩ := frontier_biUnion_slabPoly_stackCells hc h𝒟cov hU'B₀
-    (fun S hS ↦ ⟨(h𝒟cell S hS).1, (h𝒟cell S hS).2.2.imp fun _ h ↦ h.2⟩) h𝒟front h𝒟dim h𝒟conn hΘ
-  let ℰ := ⋃ S ∈ 𝒟, stackCells S (Θ S).2
-  have hmono : ∀ S ∈ 𝒟, ∀ y : S, StrictMono fun i ↦ (Θ S).2 i y := fun S hS ↦ by
+  have hΘroot : ∀ S ∈ 𝒟,
+      (∀ i, Continuous ((Θ S).2 i)) ∧ ∀ y : S, StrictMono fun i ↦ (Θ S).2 i y := fun S hS ↦ by
     obtain ⟨D, hD⟩ := hΘ S hS
     rw [hD]
-    exact D.strictMono_root
+    exact ⟨D.continuous_root, D.strictMono_root⟩
+  have hmono : ∀ S ∈ 𝒟, ∀ y : S, StrictMono fun i ↦ (Θ S).2 i y := fun S hS ↦ (hΘroot S hS).2
+  obtain ⟨hfront, hdim, hconn⟩ := frontierCondition_biUnion_slabPoly_stackCells hc h𝒟cov hU'B₀
+    (fun S hS ↦ ⟨(h𝒟cell S hS).1, (h𝒟cell S hS).2.2.imp fun _ h ↦ h.2⟩) h𝒟front h𝒟dim h𝒟conn hΘ
+    (fun S hS ↦ (hΘroot S hS).1) hmono
+  let ℰ := ⋃ S ∈ 𝒟, stackCells S (Θ S).2
   -- Each stack cell lies inside or outside the slab and has the expected cell properties.
   have hcell : ∀ E ∈ ℰ, (E ⊆ H ∨ Disjoint E H) ∧ IsConnected E ∧ IsSemianalytic E ∧
       (∃ d' ≤ n + 1, IsAnalyticSubmanifold d' E) ∧
@@ -389,8 +386,8 @@ private theorem lift_slab_partition [Finite ι₁] {B₀ U' : Set (Fin n → ℝ
 /-- Pushing forward a finite partition `𝒞₀` of an open set `W` along a continuous linear equivalence
 `L` of `Fin n → ℝ` preserves both parts of the frontier condition and preconnected approach regions
 at the points of `W`. -/
-private theorem frontier_image_continuousLinearEquiv {n : ℕ} (L : (Fin n → ℝ) ≃L[ℝ] (Fin n → ℝ))
-    {W : Set (Fin n → ℝ)} {𝒞₀ : Set (Set (Fin n → ℝ))}
+private theorem frontierCondition_image_continuousLinearEquiv {n : ℕ}
+    (L : (Fin n → ℝ) ≃L[ℝ] (Fin n → ℝ)) {W : Set (Fin n → ℝ)} {𝒞₀ : Set (Set (Fin n → ℝ))}
     (h₁ : ∀ B ∈ 𝒞₀, ∀ C ∈ 𝒞₀, (B ∩ closure C).Nonempty → B ⊆ closure C)
     (h₂ : ∀ B ∈ 𝒞₀, ∀ C ∈ 𝒞₀, B ⊆ closure C → B ≠ C →
       ∀ d e, IsAnalyticSubmanifold d B → IsAnalyticSubmanifold e C → d < e)
@@ -559,8 +556,9 @@ theorem exists_isAnalyticSubmanifold_partition_signInvariant.{u} {n : ℕ} {ι :
             signInvariant_image_of_slab (fun x hx ↦ (hV₁sub x hx).2) L
               (fun y hy ↦ (hslab y (hWB₀ y (hEW hy)) (hEW hy).2).1)
               (fun y hy j ↦ (hslab y (hWB₀ y (hEW hy)) (hEW hy).2).2 j) hEsign⟩
-    obtain ⟨h𝒞front, h𝒞dim, h𝒞conn⟩ := frontier_image_continuousLinearEquiv L h𝒞₀front h𝒞₀dim
-      fun E hE ↦ (h𝒞₀cell E hE).2.2.2.2
+    obtain ⟨h𝒞front, h𝒞dim, h𝒞conn⟩ :=
+      frontierCondition_image_continuousLinearEquiv L h𝒞₀front h𝒞₀dim
+        fun E hE ↦ (h𝒞₀cell E hE).2.2.2.2
     exact ⟨_, _, hUo, hx₀U, hUV, hUsa, h𝒞fin, h𝒞disj, h𝒞cov, h𝒞cell, h𝒞front, h𝒞dim, h𝒞conn⟩
 
 /-- **Simultaneous local normal decomposition for semianalytic germs in `Fin n → ℝ`.**
