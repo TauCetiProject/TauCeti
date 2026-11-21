@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Limits.FinitePresentation
+public import TauCeti.CategoryTheory.Limits.Shapes.Pullback.Map
 
 /-!
 # Open immersions of finitely presented schemes descend along cofiltered limits
@@ -36,26 +37,6 @@ public section
 universe u
 
 open CategoryTheory Limits AlgebraicGeometry
-
-/-- Base change in two stages, along `v` and then along `u`, is base change along `u ≫ v`, up to
-canonical isomorphisms which are compatible with the base changes of a morphism `g` and with the
-second projections. -/
-private lemma exists_iso_pullback_map_pullback_map {C : Type*} [Category* C] [HasPullbacks C]
-    {A B T X Y : C} (u : A ⟶ B) (v : B ⟶ T) (w : A ⟶ T) (huv : u ≫ v = w) {p : X ⟶ T}
-    {q : Y ⟶ T} (g : X ⟶ Y) (hg : g ≫ q = p) :
-    ∃ (eX : pullback u (pullback.fst v p) ≅ pullback w p)
-      (eY : pullback u (pullback.fst v q) ≅ pullback w q),
-      pullback.map u (pullback.fst v p) u (pullback.fst v q) (𝟙 _)
-          (pullback.map v p v q (𝟙 _) g (𝟙 _) (by simp) (by simp [hg])) (𝟙 _) (by simp)
-          (by simp) =
-        eX.hom ≫ pullback.map w p w q (𝟙 _) g (𝟙 _) (by simp) (by simp [hg]) ≫ eY.inv ∧
-      eY.hom ≫ pullback.map w q v q u (𝟙 _) (𝟙 _) (by simp [huv]) (by simp) =
-        pullback.snd _ _ := by
-  subst huv
-  refine ⟨pullbackRightPullbackFstIso v p u, pullbackRightPullbackFstIso v q u, ?_, ?_⟩
-  · rw [← Category.assoc, Iso.eq_comp_inv]
-    apply pullback.hom_ext <;> simp
-  · apply pullback.hom_ext <;> simp [pullback.condition]
 
 namespace CategoryTheory.Limits.IsLimit
 
@@ -182,32 +163,45 @@ theorem exists_isOpenImmersion_pullbackMap [∀ i, CompactSpace (D.obj i)]
   let φ := pullback.map (c.π.app i) p (c.π.app i) q (𝟙 _) g (𝟙 _) (by simp) (by simp [hg])
   let gl := pullback.map (D.map l.hom) p (D.map l.hom) q (𝟙 _) g (𝟙 _) (by simp) (by simp [hg])
   have hgl : gl ≫ pullback.fst _ _ = pullback.fst _ _ := by simp [gl]
-  -- Base changing `gl` to the limit gives `φ` up to the canonical isomorphisms, under which the
-  -- second projection corresponds to the projection to `Dₗ ×_{Dᵢ} Y`.
-  obtain ⟨eX, eY, hφ, hsnd⟩ := exists_iso_pullback_map_pullback_map (c.π.app l.left)
-    (D.map l.hom) (c.π.app i) (c.w l.hom) g hg
+  -- Base changing `gl` to the limit gives `φ` up to canonical isomorphisms, so it is an open
+  -- immersion.
   have : IsOpenImmersion (pullback.map (c.π.app l.left) (pullback.fst (D.map l.hom) p)
       (c.π.app l.left) (pullback.fst (D.map l.hom) q) (𝟙 _) gl (𝟙 _) (by simp)
-      (by simp [hgl])) := by
-    rw [hφ, MorphismProperty.cancel_left_of_respectsIso (P := @IsOpenImmersion),
-      MorphismProperty.cancel_right_of_respectsIso (P := @IsOpenImmersion)]
-    exact inferInstanceAs (IsOpenImmersion φ)
+      (by simp [hgl])) :=
+    (MorphismProperty.pullbackMap_iff_of_pullbackMap_comp_eq @IsOpenImmersion l.hom (a := φ)
+      (by simp [φ]) hgl (by apply pullback.hom_ext <;> simp [gl, φ])).mpr inferInstance
+  -- These isomorphisms `e` identify the second projection with the projection to `Dₗ ×_{Dᵢ} Y`.
+  let e {Z : Scheme.{u}} (s : Z ⟶ D.obj i) :
+      pullback (c.π.app l.left) (pullback.fst (D.map l.hom) s) ≅ pullback (c.π.app i) s :=
+    pullbackRightPullbackFstIso (D.map l.hom) s (c.π.app l.left) ≪≫
+      pullback.congrHom (c.w l.hom) rfl
+  have hφ : pullback.map (c.π.app l.left) (pullback.fst (D.map l.hom) p) (c.π.app l.left)
+      (pullback.fst (D.map l.hom) q) (𝟙 _) gl (𝟙 _) (by simp) (by simp [hgl]) =
+      (e p).hom ≫ φ ≫ (e q).inv := by
+    rw [← Category.assoc, Iso.eq_comp_inv]
+    apply pullback.hom_ext <;> simp [e, gl, φ]
+  have hsnd : (e q).hom ≫ pullback.map (c.π.app i) q (D.map l.hom) q (c.π.app l.left) (𝟙 _)
+      (𝟙 _) (by simp) (by simp) = pullback.snd _ _ := by
+    apply pullback.hom_ext <;> simp [e, pullback.condition]
   obtain ⟨j, hjl, hj⟩ := hc.exists_isOpenImmersion_pullbackMap_of_le_opensRange gl hgl V hVc hgV
     (by
       intro z hz
-      obtain ⟨x, hx⟩ : eY.hom z ∈ φ.opensRange := by
+      obtain ⟨x, hx⟩ : (e q).hom z ∈ φ.opensRange := by
         rw [← hVφ, Scheme.Hom.mem_preimage, ← Scheme.Hom.comp_apply, hsnd]
         exact hz
-      refine ⟨eX.inv x, ?_⟩
+      refine ⟨(e p).inv x, ?_⟩
       rw [← Scheme.Hom.comp_apply, hφ, Iso.inv_hom_id_assoc, Scheme.Hom.comp_apply]
-      exact (congrArg eY.inv hx).trans (by simp))
+      exact (congrArg (e q).inv hx).trans (by simp))
   -- Transport the open immersion at `Dⱼ ×_{Dₗ} (Dₗ ×_{Dᵢ} -)` back to `Dⱼ ×_{Dᵢ} -`.
-  obtain ⟨eX', eY', hφ', -⟩ := exists_iso_pullback_map_pullback_map (D.map hjl) (D.map l.hom)
-    (D.map (hjl ≫ l.hom)) (D.map_comp hjl l.hom).symm g hg
   refine ⟨j, hjl ≫ l.hom, ?_⟩
-  rw [← MorphismProperty.cancel_left_of_respectsIso (P := @IsOpenImmersion) eX'.hom,
-    ← MorphismProperty.cancel_right_of_respectsIso (P := @IsOpenImmersion) _ eY'.inv,
-    Category.assoc, ← hφ']
-  exact hj
+  have key (w : D.obj j ⟶ D.obj i) (hw : D.map hjl ≫ D.map l.hom = w) :
+      IsOpenImmersion (pullback.map w p w q (𝟙 _) g (𝟙 _) (by simp) (by simp [hg])) := by
+    subst hw
+    rw [← MorphismProperty.cancel_left_of_respectsIso (P := @IsOpenImmersion)
+      (pullbackRightPullbackFstIso (D.map l.hom) p (D.map hjl)).hom,
+      ← pullbackRightPullbackFstIso_hom_naturality p q (D.map l.hom) (D.map hjl) g hg,
+      MorphismProperty.cancel_right_of_respectsIso (P := @IsOpenImmersion)]
+    exact hj
+  exact key _ (D.map_comp hjl l.hom).symm
 
 end CategoryTheory.Limits.IsLimit
