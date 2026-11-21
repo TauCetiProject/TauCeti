@@ -22,8 +22,9 @@ public import Mathlib.Topology.Sheaves.Stalks
 
 Compatible additive maps on sections of an additive-group-valued presheaf induce an additive
 map from each stalk. Its value on a germ is the prescribed value of the section map.
-The canonical map `(f_* F)_{f(x)} ⟶ F_x` is natural in the presheaf, permitting
-transport of complexes through the stalk comparison for an embedding.
+The canonical map `(f_* F)_{f(x)} ⟶ F_x` is natural in the presheaf
+(`TopCat.Presheaf.stalkPushforward_naturality`), permitting transport of complexes through the
+stalk comparison for an embedding.
 
 The stalk of an additive-group-valued presheaf at `x` vanishes exactly when every section over a
 neighbourhood of `x` restricts to zero on a smaller neighbourhood of `x`
@@ -103,10 +104,9 @@ theorem stalkLiftAddHom_germ
 
 section Sheafify
 
-variable {C : Type*} [Category.{u} C] [HasColimits C] [HasTerminal C]
+variable {C : Type*} [Category.{u} C] [HasColimits C]
   [HasWeakSheafify (Opens.grothendieckTopology X) C] (P : X.Presheaf C)
 
-omit [HasTerminal C] in
 /-- Sheafification does not change whether a stalk vanishes. -/
 theorem isZero_stalk_sheafify_iff :
     IsZero (stalk (CategoryTheory.sheafify (Opens.grothendieckTopology X) P) x) ↔
@@ -130,8 +130,7 @@ theorem isZero_stalk_iff :
     obtain ⟨W, hxW, iU, iV, e⟩ := F.germ_eq x hx hx s 0 (Subsingleton.elim _ _)
     exact ⟨W, iU.le, hxW, e.trans (map_zero _)⟩
   · intro h
-    suffices ∀ t : F.stalk x, t = 0 from ⟨fun a b ↦ (this a).trans (this b).symm⟩
-    intro t
+    refine subsingleton_of_forall_eq 0 fun t ↦ ?_
     obtain ⟨U, hx, s, rfl⟩ := F.exists_germ_eq t
     obtain ⟨V, hVU, hxV, hs⟩ := h U s hx
     rw [← F.germ_res_apply (homOfLE hVU) x hxV, hs, map_zero]
@@ -182,9 +181,7 @@ theorem isZero_presheafToSheaf_obj_iff_moduleCat :
 
 end ModuleCat
 
-end TopCat.Presheaf
-
-namespace TauCeti.Topology
+section Pushforward
 
 universe v
 
@@ -194,18 +191,20 @@ variable {C : Type v} [Category.{u} C] [HasColimits C]
 /-- The canonical pushforward map on stalks is natural in the presheaf. -/
 @[reassoc]
 theorem stalkPushforward_naturality (α : F ⟶ G) (x : X) :
-    (TopCat.Presheaf.stalkFunctor C (f x)).map
-        ((TopCat.Presheaf.pushforward C f).map α) ≫ G.stalkPushforward C f x =
-      F.stalkPushforward C f x ≫ (TopCat.Presheaf.stalkFunctor C x).map α := by
-  apply TopCat.Presheaf.stalk_hom_ext
-  intro U hxU
-  erw [TopCat.Presheaf.stalkFunctor_map_germ_assoc,
-    TopCat.Presheaf.stalkPushforward_germ,
-    TopCat.Presheaf.stalkPushforward_germ_assoc,
-    TopCat.Presheaf.stalkFunctor_map_germ]
-  rfl
+    (stalkFunctor C (f x)).map ((pushforward C f).map α) ≫ G.stalkPushforward C f x =
+      F.stalkPushforward C f x ≫ (stalkFunctor C x).map α := by
+  refine stalk_hom_ext _ fun U hxU ↦ ?_
+  -- The composites pass through both `P.stalk x` and `(stalkFunctor C x).obj P`, which agree only
+  -- after unfolding `stalk`, so `rw` and `simp` cannot match the germ lemmas; chain them as terms.
+  -- The middle step uses `pushforward_map_app'`, which holds by `rfl`.
+  exact (stalkFunctor_map_germ_assoc U (f x) hxU _ _).trans
+    ((congrArg (_ ≫ ·) (stalkPushforward_germ C f G U x hxU)).trans
+      ((stalkFunctor_map_germ _ x hxU α).symm.trans
+        (stalkPushforward_germ_assoc C f F U x hxU _).symm))
 
-end TauCeti.Topology
+end Pushforward
+
+end TopCat.Presheaf
 
 namespace CategoryTheory.Functor
 
