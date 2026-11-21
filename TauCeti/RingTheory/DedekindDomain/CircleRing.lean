@@ -231,11 +231,36 @@ theorem span_one_add_x_one_sub_x : Ideal.span ({1 + x, 1 - x} : Set CircleRing) 
   have hmem1 := Ideal.mul_mem_left _ (algebraMap ℝ CircleRing (2⁻¹)) h2
   rwa [h1] at hmem1
 
-/-- Forward map of the stereographic chart `CircleRing[(1 + ε x)⁻¹] →ₐ[ℝ] ℝ[t, (t² + 1)⁻¹]`. -/
-private def stereographicChartHom (ε : ℝ) (hε : ε ^ 2 = 1) :
-    Localization.Away (1 + algebraMap ℝ CircleRing ε * x) →ₐ[ℝ]
-      Localization.Away (Polynomial.X ^ 2 + 1 : ℝ[X]) := by
-  set s : CircleRing := 1 + algebraMap ℝ CircleRing ε * x
+private theorem two_mul_invSelf_mul_inv {R : Type*} [CommRing R] [Algebra ℝ R] (r : R) :
+    (2 : Localization.Away r) * IsLocalization.Away.invSelf r *
+        (algebraMap ℝ (Localization.Away r) (2⁻¹) * algebraMap R (Localization.Away r) r) =
+      1 := by
+  have h2 : (2 : Localization.Away r) * algebraMap ℝ (Localization.Away r) (2⁻¹) = 1 := by
+    rw [← map_ofNat (algebraMap ℝ _) 2, ← map_mul, mul_inv_cancel₀ two_ne_zero, map_one]
+  calc
+    (2 : Localization.Away r) * IsLocalization.Away.invSelf r *
+        (algebraMap ℝ (Localization.Away r) (2⁻¹) * algebraMap R (Localization.Away r) r)
+        = ((2 : Localization.Away r) * algebraMap ℝ (Localization.Away r) (2⁻¹)) *
+            (algebraMap R (Localization.Away r) r * IsLocalization.Away.invSelf r) := by ring
+    _ = 1 := by rw [h2, IsLocalization.Away.mul_invSelf r, mul_one]
+
+private theorem eq_of_two_mul_invSelf_mul_eq_one {R : Type*} [CommRing R] [Algebra ℝ R]
+    (r : R) {z : Localization.Away r}
+    (hz : (2 : Localization.Away r) * IsLocalization.Away.invSelf r * z = 1) :
+    z = algebraMap ℝ (Localization.Away r) (2⁻¹) * algebraMap R (Localization.Away r) r := by
+  calc
+    z = (2 * IsLocalization.Away.invSelf r *
+          (algebraMap ℝ (Localization.Away r) (2⁻¹) *
+            algebraMap R (Localization.Away r) r)) * z := by
+            rw [two_mul_invSelf_mul_inv r, one_mul]
+    _ = algebraMap ℝ (Localization.Away r) (2⁻¹) * algebraMap R (Localization.Away r) r *
+          (2 * IsLocalization.Away.invSelf r * z) := by ring
+    _ = algebraMap ℝ (Localization.Away r) (2⁻¹) * algebraMap R (Localization.Away r) r := by
+          rw [hz, mul_one]
+
+/-- Base `ℝ`-algebra map `CircleRing →ₐ[ℝ] ℝ[t, (t² + 1)⁻¹]` underlying the stereographic chart. -/
+private def stereographicChartBaseHom (ε : ℝ) (hε : ε ^ 2 = 1) :
+    CircleRing →ₐ[ℝ] Localization.Away (Polynomial.X ^ 2 + 1 : ℝ[X]) := by
   set q : ℝ[X] := Polynomial.X ^ 2 + 1
   let B_q := Localization.Away q
   let t : B_q := algebraMap ℝ[X] B_q Polynomial.X
@@ -244,8 +269,6 @@ private def stereographicChartHom (ε : ℝ) (hε : ε ^ 2 = 1) :
     have hq_eq : algebraMap ℝ[X] B_q q = t ^ 2 + 1 := by simp [q, t]
     rw [← hq_eq]
     exact IsLocalization.Away.mul_invSelf q
-  have h2B : (2 : B_q) * algebraMap ℝ B_q (2⁻¹) = 1 := by
-    rw [← map_ofNat (algebraMap ℝ B_q) 2, ← map_mul, mul_inv_cancel₀ two_ne_zero, map_one]
   have hεB : (algebraMap ℝ B_q ε) ^ 2 = 1 := by rw [← map_pow, hε, map_one]
   let xImg : B_q := algebraMap ℝ B_q ε * (1 - t ^ 2) * invQ
   let yImg : B_q := 2 * t * invQ
@@ -256,79 +279,121 @@ private def stereographicChartHom (ε : ℝ) (hε : ε ^ 2 = 1) :
               simp only [xImg, yImg]; ring
       _ = ((t ^ 2 + 1) * invQ) ^ 2 := by rw [hεB]; ring
       _ = 1 := by rw [hq_inv, one_pow]
-  let φ0 : CircleRing →ₐ[ℝ] B_q := liftAlgHom xImg yImg hrel
-  have hφ0s : φ0 s = 2 * invQ := by
-    simp only [s, φ0, map_add, map_one, map_mul, AlgHom.commutes, liftAlgHom_x, xImg]
-    calc
-      1 + algebraMap ℝ B_q ε * (algebraMap ℝ B_q ε * (1 - t ^ 2) * invQ)
-          = 1 + (algebraMap ℝ B_q ε) ^ 2 * (1 - t ^ 2) * invQ := by ring
-      _ = 1 + (1 - t ^ 2) * invQ := by rw [hεB, one_mul]
-      _ = (t ^ 2 + 1) * invQ + (1 - t ^ 2) * invQ := by rw [hq_inv]
-      _ = 2 * invQ := by ring
-  have hsUnit : IsUnit (φ0 s) := by
-    rw [hφ0s]
-    refine isUnit_iff_exists_inv.mpr ⟨algebraMap ℝ B_q (2⁻¹) * (t ^ 2 + 1), ?_⟩
-    calc
-      2 * invQ * (algebraMap ℝ B_q (2⁻¹) * (t ^ 2 + 1))
-          = (2 * algebraMap ℝ B_q (2⁻¹)) * ((t ^ 2 + 1) * invQ) := by ring
-      _ = 1 := by rw [h2B, hq_inv, mul_one]
-  exact IsLocalization.Away.liftAlgHom (S := Localization.Away s) s hsUnit
+  exact liftAlgHom xImg yImg hrel
 
-/-- Inverse map of the stereographic chart `ℝ[t, (t² + 1)⁻¹] →ₐ[ℝ] CircleRing[(1 + ε x)⁻¹]`. -/
-private def stereographicChartInv (ε : ℝ) (hε : ε ^ 2 = 1) :
-    Localization.Away (Polynomial.X ^ 2 + 1 : ℝ[X]) →ₐ[ℝ]
-      Localization.Away (1 + algebraMap ℝ CircleRing ε * x) := by
-  set s : CircleRing := 1 + algebraMap ℝ CircleRing ε * x
+private theorem stereographicChartBaseHom_x (ε : ℝ) (hε : ε ^ 2 = 1) :
+    stereographicChartBaseHom ε hε x =
+      algebraMap ℝ _ ε * (1 - algebraMap ℝ[X] _ Polynomial.X ^ 2) *
+        IsLocalization.Away.invSelf (Polynomial.X ^ 2 + 1 : ℝ[X]) := by
+  simp [stereographicChartBaseHom]
+
+private theorem stereographicChartBaseHom_y (ε : ℝ) (hε : ε ^ 2 = 1) :
+    stereographicChartBaseHom ε hε y =
+      2 * algebraMap ℝ[X] _ Polynomial.X *
+        IsLocalization.Away.invSelf (Polynomial.X ^ 2 + 1 : ℝ[X]) := by
+  simp [stereographicChartBaseHom]
+
+private theorem stereographicChartBaseHom_denom (ε : ℝ) (hε : ε ^ 2 = 1) :
+    stereographicChartBaseHom ε hε (1 + algebraMap ℝ CircleRing ε * x) =
+      2 * IsLocalization.Away.invSelf (Polynomial.X ^ 2 + 1 : ℝ[X]) := by
   set q : ℝ[X] := Polynomial.X ^ 2 + 1
+  let B_q := Localization.Away q
+  let t : B_q := algebraMap ℝ[X] B_q Polynomial.X
+  let invQ : B_q := IsLocalization.Away.invSelf q
+  have hq_inv : (t ^ 2 + 1) * invQ = 1 := by
+    have hq_eq : algebraMap ℝ[X] B_q q = t ^ 2 + 1 := by simp [q, t]
+    rw [← hq_eq]
+    exact IsLocalization.Away.mul_invSelf q
+  have hεB : (algebraMap ℝ B_q ε) ^ 2 = 1 := by rw [← map_pow, hε, map_one]
+  simp only [map_add, map_one, map_mul, AlgHom.commutes, stereographicChartBaseHom_x]
+  calc
+    1 + algebraMap ℝ B_q ε * (algebraMap ℝ B_q ε * (1 - t ^ 2) * invQ)
+        = 1 + (algebraMap ℝ B_q ε) ^ 2 * (1 - t ^ 2) * invQ := by ring
+    _ = 1 + (1 - t ^ 2) * invQ := by rw [hεB, one_mul]
+    _ = (t ^ 2 + 1) * invQ + (1 - t ^ 2) * invQ := by rw [hq_inv]
+    _ = 2 * invQ := by ring
+
+/-- Forward map of the stereographic chart `CircleRing[(1 + ε x)⁻¹] →ₐ[ℝ] ℝ[t, (t² + 1)⁻¹]`. -/
+private def stereographicChartHom (ε : ℝ) (hε : ε ^ 2 = 1) :
+    Localization.Away (1 + algebraMap ℝ CircleRing ε * x) →ₐ[ℝ]
+      Localization.Away (Polynomial.X ^ 2 + 1 : ℝ[X]) :=
+  IsLocalization.Away.liftAlgHom (f := stereographicChartBaseHom ε hε)
+    (1 + algebraMap ℝ CircleRing ε * x) (by
+      rw [stereographicChartBaseHom_denom ε hε]
+      exact isUnit_iff_exists_inv.mpr
+        ⟨_, two_mul_invSelf_mul_inv (Polynomial.X ^ 2 + 1 : ℝ[X])⟩)
+
+/-- Base `ℝ`-algebra map `ℝ[t] →ₐ[ℝ] CircleRing[(1 + ε x)⁻¹]` underlying the inverse chart. -/
+private def stereographicChartInvBaseHom (ε : ℝ) :
+    ℝ[X] →ₐ[ℝ] Localization.Away (1 + algebraMap ℝ CircleRing ε * x) :=
+  Polynomial.aeval
+    (algebraMap CircleRing _ y * IsLocalization.Away.invSelf (1 + algebraMap ℝ CircleRing ε * x))
+
+private theorem stereographicChartInvBaseHom_X (ε : ℝ) :
+    stereographicChartInvBaseHom ε Polynomial.X =
+      algebraMap CircleRing _ y *
+        IsLocalization.Away.invSelf (1 + algebraMap ℝ CircleRing ε * x) := by
+  simp [stereographicChartInvBaseHom]
+
+private theorem stereographicChartInvBaseHom_denom (ε : ℝ) (hε : ε ^ 2 = 1) :
+    stereographicChartInvBaseHom ε (Polynomial.X ^ 2 + 1) =
+      2 * IsLocalization.Away.invSelf (1 + algebraMap ℝ CircleRing ε * x) := by
+  set s : CircleRing := 1 + algebraMap ℝ CircleRing ε * x
   let A_s := Localization.Away s
   let invS : A_s := IsLocalization.Away.invSelf s
   have hs_inv : algebraMap CircleRing A_s s * invS = 1 := IsLocalization.Away.mul_invSelf s
-  have h2A : (2 : A_s) * algebraMap ℝ A_s (2⁻¹) = 1 := by
-    rw [← map_ofNat (algebraMap ℝ A_s) 2, ← map_mul, mul_inv_cancel₀ two_ne_zero, map_one]
   have hεA : (algebraMap ℝ CircleRing ε) ^ 2 = 1 := by rw [← map_pow, hε, map_one]
   have hs_sq_rel : y ^ 2 + s ^ 2 = 2 * s := by
     dsimp only [s]
     linear_combination x_sq_add_y_sq + x ^ 2 * hεA
-  let tImg : A_s := algebraMap CircleRing A_s y * invS
-  let ψ0 : ℝ[X] →ₐ[ℝ] A_s := Polynomial.aeval tImg
-  have hψ0q : ψ0 q = 2 * invS := by
-    simp only [q, ψ0, map_add, map_pow, map_one, Polynomial.aeval_X, tImg]
-    have hmap := congrArg (algebraMap CircleRing A_s) hs_sq_rel
-    simp only [map_add, map_pow, map_mul, map_ofNat] at hmap
-    calc
-      (algebraMap CircleRing A_s y * invS) ^ 2 + 1
-          = (algebraMap CircleRing A_s y ^ 2 + algebraMap CircleRing A_s s ^ 2) * invS ^ 2 := by
-              linear_combination -(1 + algebraMap CircleRing A_s s * invS) * hs_inv
-      _ = (2 * algebraMap CircleRing A_s s) * invS ^ 2 := by rw [hmap]
-      _ = 2 * (algebraMap CircleRing A_s s * invS) * invS := by ring
-      _ = 2 * invS := by rw [hs_inv, mul_one]
-  have hqUnit : IsUnit (ψ0 q) := by
-    rw [hψ0q]
-    refine isUnit_iff_exists_inv.mpr
-      ⟨algebraMap ℝ A_s (2⁻¹) * algebraMap CircleRing A_s s, ?_⟩
-    calc
-      2 * invS * (algebraMap ℝ A_s (2⁻¹) * algebraMap CircleRing A_s s)
-          = (2 * algebraMap ℝ A_s (2⁻¹)) * (algebraMap CircleRing A_s s * invS) := by ring
-      _ = 1 := by rw [h2A, hs_inv, mul_one]
-  exact IsLocalization.Away.liftAlgHom (S := Localization.Away q) q hqUnit
+  have hmap := congrArg (algebraMap CircleRing A_s) hs_sq_rel
+  simp only [map_add, map_pow, map_mul, map_ofNat] at hmap
+  simp only [map_add, map_pow, map_one, stereographicChartInvBaseHom_X]
+  calc
+    (algebraMap CircleRing A_s y * invS) ^ 2 + 1
+        = (algebraMap CircleRing A_s y ^ 2 + algebraMap CircleRing A_s s ^ 2) * invS ^ 2 := by
+            linear_combination -(1 + algebraMap CircleRing A_s s * invS) * hs_inv
+    _ = (2 * algebraMap CircleRing A_s s) * invS ^ 2 := by rw [hmap]
+    _ = 2 * (algebraMap CircleRing A_s s * invS) * invS := by ring
+    _ = 2 * invS := by rw [hs_inv, mul_one]
+
+/-- Inverse map of the stereographic chart `ℝ[t, (t² + 1)⁻¹] →ₐ[ℝ] CircleRing[(1 + ε x)⁻¹]`. -/
+private def stereographicChartInv (ε : ℝ) (hε : ε ^ 2 = 1) :
+    Localization.Away (Polynomial.X ^ 2 + 1 : ℝ[X]) →ₐ[ℝ]
+      Localization.Away (1 + algebraMap ℝ CircleRing ε * x) :=
+  IsLocalization.Away.liftAlgHom (f := stereographicChartInvBaseHom ε)
+    (Polynomial.X ^ 2 + 1 : ℝ[X]) (by
+      rw [stereographicChartInvBaseHom_denom ε hε]
+      exact isUnit_iff_exists_inv.mpr
+        ⟨_, two_mul_invSelf_mul_inv (1 + algebraMap ℝ CircleRing ε * x)⟩)
 
 private theorem stereographicChartHom_x (ε : ℝ) (hε : ε ^ 2 = 1) :
     stereographicChartHom ε hε (algebraMap CircleRing _ x) =
       algebraMap ℝ _ ε * (1 - algebraMap ℝ[X] _ Polynomial.X ^ 2) *
         IsLocalization.Away.invSelf (Polynomial.X ^ 2 + 1 : ℝ[X]) := by
-  simp [stereographicChartHom]
+  simpa [stereographicChartHom] using stereographicChartBaseHom_x ε hε
 
 private theorem stereographicChartHom_y (ε : ℝ) (hε : ε ^ 2 = 1) :
     stereographicChartHom ε hε (algebraMap CircleRing _ y) =
       2 * algebraMap ℝ[X] _ Polynomial.X *
         IsLocalization.Away.invSelf (Polynomial.X ^ 2 + 1 : ℝ[X]) := by
-  simp [stereographicChartHom]
+  simpa [stereographicChartHom] using stereographicChartBaseHom_y ε hε
+
+private theorem stereographicChartHom_denom (ε : ℝ) (hε : ε ^ 2 = 1) :
+    stereographicChartHom ε hε (algebraMap CircleRing _ (1 + algebraMap ℝ CircleRing ε * x)) =
+      2 * IsLocalization.Away.invSelf (Polynomial.X ^ 2 + 1 : ℝ[X]) := by
+  simpa [stereographicChartHom] using stereographicChartBaseHom_denom ε hε
 
 private theorem stereographicChartInv_X (ε : ℝ) (hε : ε ^ 2 = 1) :
     stereographicChartInv ε hε (algebraMap ℝ[X] _ Polynomial.X) =
       algebraMap CircleRing _ y *
         IsLocalization.Away.invSelf (1 + algebraMap ℝ CircleRing ε * x) := by
-  simp [stereographicChartInv]
+  simpa [stereographicChartInv] using stereographicChartInvBaseHom_X ε
+
+private theorem stereographicChartInv_denom (ε : ℝ) (hε : ε ^ 2 = 1) :
+    stereographicChartInv ε hε (algebraMap ℝ[X] _ (Polynomial.X ^ 2 + 1 : ℝ[X])) =
+      2 * IsLocalization.Away.invSelf (1 + algebraMap ℝ CircleRing ε * x) := by
+  simpa [stereographicChartInv] using stereographicChartInvBaseHom_denom ε hε
 
 private theorem stereographicChartHom_comp_inv (ε : ℝ) (hε : ε ^ 2 = 1) :
     (stereographicChartHom ε hε).comp (stereographicChartInv ε hε) = AlgHom.id ℝ _ := by
@@ -343,34 +408,13 @@ private theorem stereographicChartHom_comp_inv (ε : ℝ) (hε : ε ^ 2 = 1) :
     exact IsLocalization.Away.mul_invSelf q
   have h2B : (2 : B_q) * algebraMap ℝ B_q (2⁻¹) = 1 := by
     rw [← map_ofNat (algebraMap ℝ B_q) 2, ← map_mul, mul_inv_cancel₀ two_ne_zero, map_one]
-  have hεB : (algebraMap ℝ B_q ε) ^ 2 = 1 := by rw [← map_pow, hε, map_one]
-  have hΦs : stereographicChartHom ε hε (algebraMap CircleRing _ s) = 2 * invQ := by
-    have hε_alg :
-        algebraMap CircleRing (Localization.Away s) (algebraMap ℝ CircleRing ε) =
-          algebraMap ℝ (Localization.Away s) ε :=
-      (IsScalarTower.algebraMap_apply ℝ CircleRing (Localization.Away s) ε).symm
-    simp only [s, map_add, map_one, map_mul, hε_alg, AlgHom.commutes, stereographicChartHom_x]
-    calc
-      1 + algebraMap ℝ B_q ε * (algebraMap ℝ B_q ε * (1 - t ^ 2) * invQ)
-          = 1 + (algebraMap ℝ B_q ε) ^ 2 * (1 - t ^ 2) * invQ := by ring
-      _ = 1 + (1 - t ^ 2) * invQ := by rw [hεB, one_mul]
-      _ = (t ^ 2 + 1) * invQ + (1 - t ^ 2) * invQ := by rw [hq_inv]
-      _ = 2 * invQ := by ring
   have hΦ_invS :
       stereographicChartHom ε hε (IsLocalization.Away.invSelf s) =
         algebraMap ℝ B_q (2⁻¹) * (t ^ 2 + 1) := by
-    have hmul : stereographicChartHom ε hε (algebraMap CircleRing _ s) *
-        stereographicChartHom ε hε (IsLocalization.Away.invSelf s) = 1 := by
-      rw [← map_mul, IsLocalization.Away.mul_invSelf, map_one]
-    rw [hΦs] at hmul
-    calc
-      stereographicChartHom ε hε (IsLocalization.Away.invSelf s)
-          = (2 * algebraMap ℝ B_q (2⁻¹)) * ((t ^ 2 + 1) * invQ) *
-              stereographicChartHom ε hε (IsLocalization.Away.invSelf s) := by
-                rw [h2B, hq_inv, mul_one, one_mul]
-      _ = algebraMap ℝ B_q (2⁻¹) * (t ^ 2 + 1) *
-            (2 * invQ * stereographicChartHom ε hε (IsLocalization.Away.invSelf s)) := by ring
-      _ = algebraMap ℝ B_q (2⁻¹) * (t ^ 2 + 1) := by rw [hmul, mul_one]
+    have hmul : 2 * invQ * stereographicChartHom ε hε (IsLocalization.Away.invSelf s) = 1 := by
+      rw [← stereographicChartHom_denom ε hε, ← map_mul,
+        IsLocalization.Away.mul_invSelf, map_one]
+    simpa [q, B_q, t] using eq_of_two_mul_invSelf_mul_eq_one q hmul
   apply Localization.algHom_ext (Submonoid.powers q)
   apply Polynomial.algHom_ext
   have hX : Algebra.algHom ℝ ℝ[X] (Localization (Submonoid.powers q)) Polynomial.X =
@@ -392,35 +436,13 @@ private theorem stereographicChartInv_comp_hom (ε : ℝ) (hε : ε ^ 2 = 1) :
   have h2A : (2 : A_s) * algebraMap ℝ A_s (2⁻¹) = 1 := by
     rw [← map_ofNat (algebraMap ℝ A_s) 2, ← map_mul, mul_inv_cancel₀ two_ne_zero, map_one]
   have hεA : (algebraMap ℝ CircleRing ε) ^ 2 = 1 := by rw [← map_pow, hε, map_one]
-  have hΨq : stereographicChartInv ε hε (algebraMap ℝ[X] _ q) = 2 * invS := by
-    have hs_sq_rel : y ^ 2 + s ^ 2 = 2 * s := by
-      dsimp only [s]
-      linear_combination x_sq_add_y_sq + x ^ 2 * hεA
-    have hmap := congrArg (algebraMap CircleRing A_s) hs_sq_rel
-    simp only [map_add, map_pow, map_mul, map_ofNat] at hmap
-    simp only [q, map_add, map_pow, map_one, stereographicChartInv_X]
-    calc
-      (algebraMap CircleRing A_s y * invS) ^ 2 + 1
-          = (algebraMap CircleRing A_s y ^ 2 + algebraMap CircleRing A_s s ^ 2) * invS ^ 2 := by
-              linear_combination -(1 + algebraMap CircleRing A_s s * invS) * hs_inv
-      _ = (2 * algebraMap CircleRing A_s s) * invS ^ 2 := by rw [hmap]
-      _ = 2 * (algebraMap CircleRing A_s s * invS) * invS := by ring
-      _ = 2 * invS := by rw [hs_inv, mul_one]
   have hΨ_invQ :
       stereographicChartInv ε hε (IsLocalization.Away.invSelf q) =
         algebraMap ℝ A_s (2⁻¹) * algebraMap CircleRing A_s s := by
-    have hmul : stereographicChartInv ε hε (algebraMap ℝ[X] _ q) *
-        stereographicChartInv ε hε (IsLocalization.Away.invSelf q) = 1 := by
-      rw [← map_mul, IsLocalization.Away.mul_invSelf, map_one]
-    rw [hΨq] at hmul
-    calc
-      stereographicChartInv ε hε (IsLocalization.Away.invSelf q)
-          = (2 * algebraMap ℝ A_s (2⁻¹)) * (algebraMap CircleRing A_s s * invS) *
-              stereographicChartInv ε hε (IsLocalization.Away.invSelf q) := by
-                rw [h2A, hs_inv, mul_one, one_mul]
-      _ = algebraMap ℝ A_s (2⁻¹) * algebraMap CircleRing A_s s *
-            (2 * invS * stereographicChartInv ε hε (IsLocalization.Away.invSelf q)) := by ring
-      _ = algebraMap ℝ A_s (2⁻¹) * algebraMap CircleRing A_s s := by rw [hmul, mul_one]
+    have hmul : 2 * invS * stereographicChartInv ε hε (IsLocalization.Away.invSelf q) = 1 := by
+      rw [← stereographicChartInv_denom ε hε, ← map_mul,
+        IsLocalization.Away.mul_invSelf, map_one]
+    exact eq_of_two_mul_invSelf_mul_eq_one s hmul
   apply Localization.algHom_ext (Submonoid.powers s)
   refine CircleRing.algHom_ext ?_ ?_
   · have hx : Algebra.algHom ℝ CircleRing (Localization (Submonoid.powers s)) x =

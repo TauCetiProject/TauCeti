@@ -419,8 +419,8 @@ theorem circleRotation_not_mem_elementarySubgroup (N : ℕ) (hN : 2 ≤ N) :
       (1 : C(Circle, SpecialLinearGroup (Fin N) ℝ))
       (CircleRing.evalContinuousMap.toRingHom.mapSLContinuousMap gSL) {1} :=
     CircleRing.evalContinuousMap.toRingHom
-      |>.homotopicRel_one_mapSLContinuousMap_of_toGL_mem_elementarySubgroup hgSL
-          (evalCircleRotationStabilizedSL_one N hN)
+      |>.homotopicRel_one_mapSLContinuousMap_of_toGL_mem_elementarySubgroup
+          (PathConnectedSpace.joined 0 1) hgSL (evalCircleRotationStabilizedSL_one N hN)
   -- Precompose with `u ↦ Circle.exp (2π u)` to get a based nullhomotopy of loops in `SL(N, ℝ)`.
   let circleLoop : C(I, Circle) :=
     ⟨fun u : I ↦ Circle.exp (2 * Real.pi * (u : ℝ)),

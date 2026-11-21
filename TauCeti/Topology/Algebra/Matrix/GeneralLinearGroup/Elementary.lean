@@ -15,18 +15,18 @@ import TauCeti.Topology.Homotopy.Homotopic.Group
 /-!
 # Continuity and nullhomotopy of elementary matrices with continuous entries
 
-For a topological ring `𝕜` carrying a continuous real scalar action (for instance `𝕜 = ℝ` or
-`ℂ`) and a ring homomorphism `f : A →+* C(X, 𝕜)`, entrywise evaluation along `f` defines a group
+For a topological ring `𝕜` in which `0` and `1` are joined by a path (`Joined (0 : 𝕜) 1`) and a
+ring homomorphism `f : A →+* C(X, 𝕜)`, entrywise evaluation along `f` defines a group
 homomorphism `RingHom.mapGLContinuousMap f : GL n A →* C(X, GL n 𝕜)`, and over commutative
 rings a group homomorphism `RingHom.mapSLContinuousMap f : SL n R →* C(X, SL n 𝕜)`.
 
-Every elementary matrix `1 + a Eᵢⱼ` (`i ≠ j`) deforms continuously to the identity by scaling
-its off-diagonal parameter along the unit interval, `t ↦ 1 + (t • f a x) Eᵢⱼ`. Because homotopies
-in a topological group are closed under pointwise multiplication and inversion, every matrix in
-the elementary subgroup `TauCeti.elementarySubgroup n A` maps to a nullhomotopic continuous map
-`X → GL n 𝕜` (and `X → SL n 𝕜` in the commutative case). When the matrix evaluates to the
-identity at a basepoint `x₀ : X`, basepoint correction in the topological group upgrades this to
-a homotopy relative to `{x₀}`.
+Every elementary matrix `1 + a Eᵢⱼ` (`i ≠ j`) deforms continuously to the identity along a path
+`γ : Path (0 : 𝕜) 1` via `t ↦ 1 + (γ t * f a x) Eᵢⱼ`. Because homotopies in a topological group
+are closed under pointwise multiplication and inversion, every matrix in the elementary subgroup
+`TauCeti.elementarySubgroup n A` maps to a nullhomotopic continuous map `X → GL n 𝕜` (and
+`X → SL n 𝕜` in the commutative case). When the matrix evaluates to the identity at a basepoint
+`x₀ : X`, basepoint correction in the topological group upgrades this to a homotopy relative to
+`{x₀}`.
 
 ## Main definitions
 
@@ -157,12 +157,12 @@ theorem mapGLContinuousMap_transvectionUnit (f : A →+* C(X, 𝕜)) {i j : n} (
     Matrix.add_apply, Matrix.one_apply, Matrix.single_apply, map_add, ContinuousMap.add_apply]
   split_ifs <;> simp
 
-/-- **Elementary matrices map to nullhomotopic maps into `GL n 𝕜`.** When `𝕜` carries a
-continuous real scalar action, scaling the parameters of elementary generators along `[0, 1]`
+/-- **Elementary matrices map to nullhomotopic maps into `GL n 𝕜`.** When `0` and `1` are joined
+by a path in `𝕜`, transporting the parameters of elementary generators along `h.somePath`
 contracts the evaluated map of every element of `TauCeti.elementarySubgroup n A` to the constant
 identity map. -/
 theorem homotopic_one_mapGLContinuousMap_of_mem_elementarySubgroup
-    [Module ℝ 𝕜] [ContinuousSMul ℝ 𝕜] (f : A →+* C(X, 𝕜)) {g : GL n A}
+    (f : A →+* C(X, 𝕜)) (h : Joined (0 : 𝕜) 1) {g : GL n A}
     (hg : g ∈ elementarySubgroup n A) :
     ContinuousMap.Homotopic (1 : C(X, GL n 𝕜)) (f.mapGLContinuousMap g) := by
   let H : Subgroup (GL n A) :=
@@ -178,10 +178,10 @@ theorem homotopic_one_mapGLContinuousMap_of_mem_elementarySubgroup
   have hle : elementarySubgroup n A ≤ H := by
     refine elementarySubgroup_le_iff.2 fun i j hij a ↦ ⟨?_⟩
     exact
-      { toFun := fun p : I × X ↦ transvectionUnit hij ((p.1 : ℝ) • f a p.2)
+      { toFun := fun p : I × X ↦ transvectionUnit hij (h.somePath p.1 * f a p.2)
         continuous_toFun :=
           (continuous_transvectionUnit hij).comp
-            ((continuous_subtype_val.comp continuous_fst).smul
+            ((h.somePath.continuous.comp continuous_fst).mul
               ((f a).continuous.comp continuous_snd))
         map_zero_left := fun x ↦ by simp
         map_one_left := fun x ↦ by simp [mapGLContinuousMap_transvectionUnit] }
@@ -191,10 +191,10 @@ theorem homotopic_one_mapGLContinuousMap_of_mem_elementarySubgroup
 to the identity at `x₀ : X`, its evaluated map is homotopic to the constant identity map relative
 to `{x₀}`. -/
 theorem homotopicRel_one_mapGLContinuousMap_of_mem_elementarySubgroup
-    [Module ℝ 𝕜] [ContinuousSMul ℝ 𝕜] (f : A →+* C(X, 𝕜)) {g : GL n A}
+    (f : A →+* C(X, 𝕜)) (h : Joined (0 : 𝕜) 1) {g : GL n A}
     (hg : g ∈ elementarySubgroup n A) {x₀ : X} (hx₀ : f.mapGLContinuousMap g x₀ = 1) :
     ContinuousMap.HomotopicRel (1 : C(X, GL n 𝕜)) (f.mapGLContinuousMap g) {x₀} :=
-  (f.homotopic_one_mapGLContinuousMap_of_mem_elementarySubgroup hg).homotopicRel_singleton
+  (f.homotopic_one_mapGLContinuousMap_of_mem_elementarySubgroup h hg).homotopicRel_singleton
     (by simp [hx₀])
 
 end GeneralLinear
@@ -254,7 +254,7 @@ theorem mapSLContinuousMap_transvection (f : R →+* C(X, 𝕜)) {i j : n} (hij 
 
 /-- **Elementary determinant-one matrices map to nullhomotopic maps into `SL n 𝕜`.** -/
 theorem homotopic_one_mapSLContinuousMap_of_toGL_mem_elementarySubgroup
-    [Module ℝ 𝕜] [ContinuousSMul ℝ 𝕜] (f : R →+* C(X, 𝕜))
+    (f : R →+* C(X, 𝕜)) (h : Joined (0 : 𝕜) 1)
     {g : SpecialLinearGroup n R}
     (hg : SpecialLinearGroup.toGL g ∈ elementarySubgroup n R) :
     ContinuousMap.Homotopic (1 : C(X, SpecialLinearGroup n 𝕜)) (f.mapSLContinuousMap g) := by
@@ -276,10 +276,10 @@ theorem homotopic_one_mapSLContinuousMap_of_toGL_mem_elementarySubgroup
     refine ⟨?_⟩
     exact
       { toFun := fun p : I × X ↦
-          SpecialLinearGroup.transvection t.hij ((p.1 : ℝ) • f t.c p.2)
+          SpecialLinearGroup.transvection t.hij (h.somePath p.1 * f t.c p.2)
         continuous_toFun :=
           (SpecialLinearGroup.continuous_transvection t.hij).comp
-            ((continuous_subtype_val.comp continuous_fst).smul
+            ((h.somePath.continuous.comp continuous_fst).mul
               ((f t.c).continuous.comp continuous_snd))
         map_zero_left := fun x ↦ by simp
         map_one_left := fun x ↦ by simp [TransvectionStruct.toSpecialLinearGroup] }
@@ -292,13 +292,13 @@ theorem homotopic_one_mapSLContinuousMap_of_toGL_mem_elementarySubgroup
 determinant-one matrix is elementary and evaluates to the identity at `x₀ : X`, its evaluated map
 is homotopic to the constant identity map in `SL n 𝕜` relative to `{x₀}`. -/
 theorem homotopicRel_one_mapSLContinuousMap_of_toGL_mem_elementarySubgroup
-    [Module ℝ 𝕜] [ContinuousSMul ℝ 𝕜] (f : R →+* C(X, 𝕜))
+    (f : R →+* C(X, 𝕜)) (h : Joined (0 : 𝕜) 1)
     {g : SpecialLinearGroup n R}
     (hg : SpecialLinearGroup.toGL g ∈ elementarySubgroup n R) {x₀ : X}
     (hx₀ : f.mapSLContinuousMap g x₀ = 1) :
     ContinuousMap.HomotopicRel
       (1 : C(X, SpecialLinearGroup n 𝕜)) (f.mapSLContinuousMap g) {x₀} :=
-  (f.homotopic_one_mapSLContinuousMap_of_toGL_mem_elementarySubgroup hg).homotopicRel_singleton
+  (f.homotopic_one_mapSLContinuousMap_of_toGL_mem_elementarySubgroup h hg).homotopicRel_singleton
     (by simp [hx₀])
 
 end SpecialLinear
