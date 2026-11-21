@@ -50,8 +50,11 @@ nondegenerate solutions that depends only on `n` and `r`.
 
 ## Main definitions and results
 
-* `TauCeti.IsUnitEquationCoverBound K N`: the nondegenerate solutions of `y₁ + ⋯ + yₘ = 1` in
-  every subgroup of `(Kˣ)ᵐ` of rank at most `s` are covered by at most `N m s` proper subspaces.
+* `TauCeti.IsUnitEquationCoverBound K N`: for every `m ≥ 2`, the nondegenerate solutions of
+  `y₁ + ⋯ + yₘ = 1` in every subgroup of `(Kˣ)ᵐ` of rank at most `s` are covered by at most
+  `N m s` proper subspaces.
+* `TauCeti.IsUnitEquationCoverBound.exists_subspaceCover`: the same cover for subgroups of
+  `(ι → Kˣ)` with an arbitrary finite index type `ι` of size at least two.
 * `TauCeti.unitEquationNondegenerateBound N n r`: the recursive bound obtained from the cover
   bound `N`.
 * `TauCeti.encard_isNondegenerateSolution_le_of_subspaceCover`: if `IsUnitEquationCoverBound K N`,
@@ -119,8 +122,10 @@ theorem unitEquationNondegenerateBound_two (r : ℕ) :
 
 /-- `N` bounds the subspace covers for unit equations over `K`: for every `m ≥ 2` and every
 subgroup `Γ ≤ (Fin m → Kˣ)` of rank at most `s` over `ℤ`, the nondegenerate solutions `y ∈ Γ` of
-`y₁ + ⋯ + yₘ = 1` lie in the union of at most `N m s` proper subspaces of `Fin m → K`. This is the
-conclusion of the subspace theorem of Evertse, Schlickewei and Schmidt (their Theorem 2.1). -/
+`y₁ + ⋯ + yₘ = 1` lie in the union of at most `N m s` proper subspaces of `Fin m → K`. The
+subspace theorem of Evertse, Schlickewei and Schmidt (their Theorem 2.1) implies this predicate
+over the field of algebraic numbers with `N m s = exp ((5m)^(3m) (s + 1))`, by taking zero
+perturbation and restricting to nondegenerate solutions. -/
 def IsUnitEquationCoverBound (K : Type u) [Field K] (N : ℕ → ℕ → ℕ) : Prop :=
   ∀ m : ℕ, 2 ≤ m → ∀ (s : ℕ) (Γ : Subgroup (Fin m → Kˣ)),
     Module.rank ℤ (Additive Γ) ≤ s → ∃ 𝒲 : Finset (Submodule K (Fin m → K)),
@@ -128,6 +133,15 @@ def IsUnitEquationCoverBound (K : Type u) [Field K] (N : ℕ → ℕ → ℕ) : 
         ∃ W ∈ 𝒲, (fun i ↦ (y i : K)) ∈ W
 
 variable {K : Type u} [Field K]
+
+/-- The defining property of `TauCeti.IsUnitEquationCoverBound`, for introducing and eliminating
+the predicate. -/
+theorem isUnitEquationCoverBound_iff {N : ℕ → ℕ → ℕ} :
+    IsUnitEquationCoverBound K N ↔ ∀ m : ℕ, 2 ≤ m → ∀ (s : ℕ) (Γ : Subgroup (Fin m → Kˣ)),
+      Module.rank ℤ (Additive Γ) ≤ s → ∃ 𝒲 : Finset (Submodule K (Fin m → K)),
+        #𝒲 ≤ N m s ∧ (∀ W ∈ 𝒲, W ≠ ⊤) ∧ ∀ y ∈ Γ, IsNondegenerateSolution 1 (fun i ↦ (y i : K)) →
+          ∃ W ∈ 𝒲, (fun i ↦ (y i : K)) ∈ W :=
+  Iff.rfl
 
 /-- Under the induction hypothesis `ih`, the nondegenerate solutions of `∑ yᵢ = 1` in `Γ` with
 prescribed ratios `yᵢ / yᵢ₁ = zᵢ` for `i ∈ I \ {i₁}` number at most
@@ -296,9 +310,11 @@ private theorem encard_isNondegenerateSolution_le_sup_zpowers {ι : Type*} [Fint
   · exact mul_mem (Subgroup.mem_sup_right (Subgroup.mem_zpowers u)) (Subgroup.mem_sup_left hx.1)
   · simpa [isNondegenerateSolution_iff] using hx.2
 
-/-- A subspace-cover hypothesis for subgroups of `Fin m → Kˣ` transfers to subgroups of `ι → Kˣ`
-for every index type `ι` with `m` elements. -/
-private theorem exists_subspaceCover {N : ℕ → ℕ → ℕ}
+/-- A subspace-cover bound for subgroups of `Fin m → Kˣ` transfers to subgroups of `ι → Kˣ` for
+every finite index type `ι` with `m ≥ 2` elements: if `IsUnitEquationCoverBound K N`, the
+nondegenerate solutions `y ∈ Γ` of `∑ yᵢ = 1`, for `Γ ≤ (ι → Kˣ)` of rank at most `s`, lie in the
+union of at most `N (card ι) s` proper subspaces of `ι → K`. -/
+theorem IsUnitEquationCoverBound.exists_subspaceCover {N : ℕ → ℕ → ℕ}
     (hN : IsUnitEquationCoverBound K N)
     {ι : Type v} [Fintype ι] (hι : 2 ≤ Fintype.card ι) {s : ℕ} (Γ : Subgroup (ι → Kˣ))
     (hΓ : Module.rank ℤ (Additive Γ) ≤ s) :
@@ -313,7 +329,7 @@ private theorem exists_subspaceCover {N : ℕ → ℕ → ℕ}
   have hrank : Module.rank ℤ (Additive (Γ.map φ)) ≤ s :=
     Cardinal.lift_le_nat_iff.mp <| (Γ.lift_rank_additive_map_le φ).trans
       (Cardinal.lift_le_nat_iff.mpr hΓ)
-  obtain ⟨𝒲, h𝒲N, h𝒲, hcov⟩ := hN _ hι s _ hrank
+  obtain ⟨𝒲, h𝒲N, h𝒲, hcov⟩ := isUnitEquationCoverBound_iff.mp hN _ hι s _ hrank
   let L := LinearEquiv.funCongrLeft K K e
   refine ⟨𝒲.image (Submodule.comap L.toLinearMap), card_image_le.trans h𝒲N, ?_, ?_⟩
   · simp only [mem_image]
@@ -383,7 +399,7 @@ theorem encard_isNondegenerateSolution_le_of_subspaceCover {N : ℕ → ℕ → 
       refine (Γ.rank_additive_sup_le _).trans ?_
       push_cast
       exact add_le_add hΓ (Subgroup.rank_additive_zpowers_le_one u)
-    obtain ⟨𝒲, h𝒲N, h𝒲, hcov⟩ := exists_subspaceCover hN (by omega) _ hΓ'
+    obtain ⟨𝒲, h𝒲N, h𝒲, hcov⟩ := hN.exists_subspaceCover (by omega) _ hΓ'
     let B := fun m ↦ unitEquationNondegenerateBound N m (r + 1)
     calc _ ≤ {y | y ∈ Γ ⊔ Subgroup.zpowers u ∧
             IsNondegenerateSolution 1 fun i ↦ (y i : K)}.encard :=

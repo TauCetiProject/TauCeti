@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Exp
+public import TauCeti.Analysis.SpecialFunctions.Choose
 public import TauCeti.NumberTheory.UnitEquation.Specialization
 public import TauCeti.NumberTheory.UnitEquation.SubspaceCover
 
@@ -113,27 +114,19 @@ private lemma two_mul_five_mul_pow_add_le_six_mul_pow (n : ℕ) :
   rw [hQ]
   linarith [hn]
 
-/-- The index sets of size at least two in `n + 2` unknowns number at most `exp (n + 2)`: the full
-binomial sum is `2^(n+2) ≤ exp (n + 2)`, and the sum here omits its nonnegative terms `j = 0` and
-`j = 1`. -/
+/-- The index sets of size at least two in `n + 2` unknowns number at most `exp (n + 2)`: the
+binomial tail bound `TauCeti.sum_range_choose_add_le_exp` at cutoff two. -/
 private lemma sum_choose_add_two_le_exp (n : ℕ) :
     ∑ k : Fin (n + 1), (((n + 2).choose (k + 2) : ℕ) : ℝ) ≤ exp (n + 2 : ℕ) := by
-  have hfull : ∑ j ∈ range (n + 3), (((n + 2).choose j : ℕ) : ℝ) ≤ exp (n + 2 : ℕ) := by
-    have h := sum_choose_le_exp_pow (le_refl (n + 2))
-    rwa [div_mul_cancel₀ _ (by positivity), ← exp_natCast_mul, mul_one] at h
-  calc _ = ∑ j ∈ range (n + 1), (((n + 2).choose (j + 2) : ℕ) : ℝ) :=
-        Fin.sum_univ_eq_sum_range (fun j ↦ (((n + 2).choose (j + 2) : ℕ) : ℝ)) _
-    _ ≤ ∑ j ∈ range (n + 3), (((n + 2).choose j : ℕ) : ℝ) := by
-        rw [sum_range_succ' _ (n + 2), sum_range_succ' _ (n + 1)]
-        exact (le_add_of_nonneg_right (by positivity)).trans
-          (le_add_of_nonneg_right (by positivity))
-    _ ≤ _ := hfull
+  rw [Fin.sum_univ_eq_sum_range (fun j ↦ (((n + 2).choose (j + 2) : ℕ) : ℝ)),
+    show n + 1 = n + 2 + 1 - 2 by omega]
+  exact sum_range_choose_add_le_exp (n + 2) 2
 
 /-- **The explicit Evertse–Schlickewei–Schmidt bound.** If the cover bound in `m` unknowns and
-rank `s` is at most `exp ((5m)^(3m) (s + 1))` whenever `2 ≤ m ≤ n` and `m + s ≤ n + r + 1`, which
-are the cases the recursion reaches, then the bound `unitEquationNondegenerateBound N n r` for the
-number of nondegenerate solutions in `n` unknowns and rank `r` is at most
-`exp ((6n)^(3n) (r + 1))`. -/
+rank `s` is at most `exp ((5m)^(3m) (s + 1))` whenever `2 ≤ m ≤ n` and `m + s ≤ n + r + 1`, a
+range containing all cases the recursion reaches, then the bound
+`unitEquationNondegenerateBound N n r` for the number of nondegenerate solutions in `n` unknowns
+and rank `r` is at most `exp ((6n)^(3n) (r + 1))`. -/
 theorem unitEquationNondegenerateBound_le_exp {N : ℕ → ℕ → ℕ} (n r : ℕ)
     (hN : ∀ m s, 2 ≤ m → m ≤ n → m + s ≤ n + r + 1 →
       (N m s : ℝ) ≤ exp ((5 * m : ℝ) ^ (3 * m) * (s + 1))) :
@@ -165,7 +158,7 @@ theorem unitEquationNondegenerateBound_le_exp {N : ℕ → ℕ → ℕ} (n r : �
   -- The index sets, of size at least two, of the minimal vanishing subsums of the homogeneous
   -- relation supplied by a covering subspace number at most `2^(n+2) ≤ exp (n + 2)`.
   have hchoose := sum_choose_add_two_le_exp n
-  have hN' := hN (n + 2) (r + 1) (by omega) le_rfl le_rfl
+  have hN' := hN (n + 2) (r + 1) (by omega) le_rfl (by omega)
   set A : ℝ := (5 * (n + 2 : ℕ) : ℝ) ^ (3 * (n + 2))
   have hA : 0 ≤ A := by positivity
   have hkey := two_mul_five_mul_pow_add_le_six_mul_pow n
