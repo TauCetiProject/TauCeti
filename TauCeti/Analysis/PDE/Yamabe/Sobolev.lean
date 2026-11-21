@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Yamabe.ConformalInvariance
 public import TauCeti.Analysis.PDE.Yamabe.PositiveApproximation
 public import TauCeti.Analysis.PDE.Yamabe.UpperBound
+public import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Abs
 public import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Embedding
 public import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Isometry
 public import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Multiplication
@@ -38,6 +39,11 @@ finite, norm-continuous, and positive away from `0`. We establish:
   `forall_hasDerivAt_weakYamabeQuotient_add_smul_iff_exists_energyForm_eq`,
   `forall_ofSmooth_hasDerivAt_weakYamabeQuotient_iff_exists_energyForm_eq`,
   `weakYamabeQuotient_eq_of_energyForm_eq`);
+* **Absolute values** (`energyForm_self_le_of_toLp_eq_abs`,
+  `weakYamabeQuotient_le_of_toLp_eq_abs`, `exists_toLp_eq_abs_and_weakYamabeQuotient_le`,
+  `sInf_weakYamabeQuotient_nonneg_eq`): replacing `w` by its absolute value in `H¹(M)`
+  (`TauCeti.Manifold.SobolevH1.exists_toLp_eq_abs_and_dirichletForm_le`) does not increase the
+  quotient, so the infimum over nonzero `H¹` elements is an infimum over nonnegative ones;
 * **Lower bounds, equality of weak and smooth infima, and Aubin's bound**
   (`neg_integral_scalarCurvature_negPart_rpow_le_weakYamabeQuotient`,
   `sInf_weakYamabeQuotient_eq_sInf_yamabeQuotient`,
@@ -221,6 +227,50 @@ theorem weakYamabeQuotient_nonneg_of_scalarCurvature_nonneg (w : SobolevH1 I M)
     0 ≤ weakYamabeQuotient I w :=
   div_nonneg (energyForm_self_nonneg_of_scalarCurvature_nonneg w hS)
     (Real.rpow_nonneg (integral_nonneg fun _ ↦ Real.rpow_nonneg (abs_nonneg _) _) _)
+
+/-- If the value of `w'` in `L²` is `|w|` and its Dirichlet energy is at most that of `w`, then its
+weak Yamabe energy is at most that of `w`: the scalar-curvature term only depends on `|w|`. -/
+theorem energyForm_self_le_of_toLp_eq_abs {w w' : SobolevH1 I M}
+    (h : SobolevH1.toLp w' = |SobolevH1.toLp w|)
+    (hD : SobolevH1.dirichletForm w' w' ≤ SobolevH1.dirichletForm w w) :
+    energyForm I w' w' ≤ energyForm I w w := by
+  have hae : ⇑(SobolevH1.toLp w') =ᵐ[riemannianVolume I M] fun x ↦ |SobolevH1.toLp w x| :=
+    h ▸ Lp.coeFn_abs _
+  have hS : ∫ x, (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x *
+      SobolevH1.toLp w' x * SobolevH1.toLp w' x ∂riemannianVolume I M =
+      ∫ x, (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x *
+        SobolevH1.toLp w x * SobolevH1.toLp w x ∂riemannianVolume I M :=
+    integral_congr_ae <| hae.mono fun x hx ↦ by
+      dsimp only
+      rw [hx, mul_assoc, mul_assoc, abs_mul_abs_self]
+  rw [energyForm_apply, energyForm_apply, hS]
+  exact add_le_add_left (mul_le_mul_of_nonneg_left hD (conformalCoefficient_nonneg _)) _
+
+/-- If the value of `w'` in `L²` is `|w|` and its Dirichlet energy is at most that of `w`, then its
+weak Yamabe quotient is at most that of `w`. -/
+theorem weakYamabeQuotient_le_of_toLp_eq_abs {w w' : SobolevH1 I M}
+    (h : SobolevH1.toLp w' = |SobolevH1.toLp w|)
+    (hD : SobolevH1.dirichletForm w' w' ≤ SobolevH1.dirichletForm w w) :
+    weakYamabeQuotient I w' ≤ weakYamabeQuotient I w := by
+  have hae : ⇑(SobolevH1.toLp w') =ᵐ[riemannianVolume I M] fun x ↦ |SobolevH1.toLp w x| :=
+    h ▸ Lp.coeFn_abs _
+  have hN : ∫ x, |SobolevH1.toLp w' x| ^ criticalExponent (finrank ℝ E) ∂riemannianVolume I M =
+      ∫ x, |SobolevH1.toLp w x| ^ criticalExponent (finrank ℝ E) ∂riemannianVolume I M :=
+    integral_congr_ae <| hae.mono fun x hx ↦ by
+      dsimp only
+      rw [hx, abs_abs]
+  rw [weakYamabeQuotient_def, weakYamabeQuotient_def, hN]
+  exact div_le_div_of_nonneg_right (energyForm_self_le_of_toLp_eq_abs h hD)
+    (Real.rpow_nonneg (integral_nonneg fun _ ↦ Real.rpow_nonneg (abs_nonneg _) _) _)
+
+/-- **Absolute values do not increase the weak Yamabe quotient.** Every `w ∈ H¹(M)` has an
+absolute value `w' ∈ H¹(M)`, with value `|w|` in `L²`, whose weak Yamabe quotient is at most that
+of `w`. -/
+theorem exists_toLp_eq_abs_and_weakYamabeQuotient_le (w : SobolevH1 I M) :
+    ∃ w' : SobolevH1 I M, SobolevH1.toLp w' = |SobolevH1.toLp w| ∧
+      weakYamabeQuotient I w' ≤ weakYamabeQuotient I w :=
+  (SobolevH1.exists_toLp_eq_abs_and_dirichletForm_le w).imp fun _ h ↦
+    ⟨h.1, weakYamabeQuotient_le_of_toLp_eq_abs h.1 h.2⟩
 
 /-- **Scale invariance of the weak Yamabe quotient.** In dimension `n > 2`, multiplying `w ∈ H¹(M)`
 by a nonzero constant `c` preserves `weakYamabeQuotient`. -/
@@ -887,6 +937,29 @@ theorem sInf_weakYamabeQuotient_eq_sInf_yamabeQuotient_pos (hn : 2 < finrank ℝ
     simpa using (weakYamabeQuotient_ofSmooth (I := I) (0 : C^∞⟮I, M; ℝ⟯))
   · rw [sInf_weakYamabeQuotient_eq_sInf_yamabeQuotient hn,
       ← sInf_yamabeQuotient_pos_eq hn (by simp : (1 : ℕ∞ω) ≤ (∞ : ℕ∞ω))]
+
+/-- **The weak Yamabe invariant is an infimum over nonnegative elements.** On a closed manifold
+of dimension `n > 2`, the infimum of `weakYamabeQuotient` over nonzero `H¹` elements with
+nonnegative value in `L²` equals its infimum over all nonzero `H¹` elements. -/
+theorem sInf_weakYamabeQuotient_nonneg_eq (hn : 2 < finrank ℝ E) :
+    sInf (weakYamabeQuotient I '' {w : SobolevH1 I M | w ≠ 0 ∧ 0 ≤ SobolevH1.toLp w}) =
+      sInf (weakYamabeQuotient I '' {w : SobolevH1 I M | w ≠ 0}) := by
+  have hST : {w : SobolevH1 I M | w ≠ 0 ∧ 0 ≤ SobolevH1.toLp w} ⊆ {w | w ≠ 0} :=
+    fun _ hw ↦ hw.1
+  have hbT := bddBelow_image_weakYamabeQuotient (I := I) (M := M) hn
+  have key (w : SobolevH1 I M) (hw : w ≠ 0) : ∃ w' ∈ {w : SobolevH1 I M | w ≠ 0 ∧
+      0 ≤ SobolevH1.toLp w}, weakYamabeQuotient I w' ≤ weakYamabeQuotient I w := by
+    obtain ⟨w', hw', hQ⟩ := exists_toLp_eq_abs_and_weakYamabeQuotient_le w
+    refine ⟨w', ⟨fun h0 ↦ hw (SobolevH1.toLp_injective ?_), hw' ▸ abs_nonneg _⟩, hQ⟩
+    rw [map_zero, ← norm_eq_zero, ← norm_abs_eq_norm, ← hw', h0, map_zero, norm_zero]
+  rcases eq_empty_or_nonempty {w : SobolevH1 I M | w ≠ 0} with hT | ⟨w₀, hw₀⟩
+  · rw [hT, subset_empty_iff.1 (hST.trans hT.subset)]
+  obtain ⟨w₁, hw₁, -⟩ := key w₀ hw₀
+  refine le_antisymm (le_csInf ⟨_, mem_image_of_mem _ hw₀⟩ ?_)
+    (csInf_le_csInf hbT ⟨_, mem_image_of_mem _ hw₁⟩ (image_mono hST))
+  rintro _ ⟨w, hw, rfl⟩
+  obtain ⟨w', hw'S, hQ⟩ := key w hw
+  exact (csInf_le (hbT.mono (image_mono hST)) (mem_image_of_mem _ hw'S)).trans hQ
 
 /-- **Aubin's universal upper bound for positive smooth functions.** On a closed manifold of
 dimension `n > 2`, for every `ε > 0` there is a strictly positive smooth function `u` with
