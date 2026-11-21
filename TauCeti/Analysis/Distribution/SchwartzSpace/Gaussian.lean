@@ -239,8 +239,7 @@ theorem eLpNorm_fourier_gaussian [FiniteDimensional ℝ V] [MeasurableSpace V] [
   have hc : ‖((Real.pi : ℂ) / b) ^ ((Module.finrank ℝ V : ℂ) / 2)‖ =
       (Real.pi / ‖b‖) ^ ((Module.finrank ℝ V : ℝ) / 2) := by
     have : ((Module.finrank ℝ V : ℂ) / 2) = (((Module.finrank ℝ V : ℝ) / 2 : ℝ) : ℂ) := by
-      push_cast
-      rfl
+      rw [ofReal_div, ofReal_natCast, ofReal_ofNat]
     rw [this, norm_cpow_real, norm_div, norm_real, Real.norm_of_nonneg Real.pi_pos.le]
   rw [hF, eLpNorm_const_smul, eLpNorm_gaussian hb' hq0 hq, ← ofReal_norm, hc,
     ← ENNReal.ofReal_mul (by positivity), hre]
