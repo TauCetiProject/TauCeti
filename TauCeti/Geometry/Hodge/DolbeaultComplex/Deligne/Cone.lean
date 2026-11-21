@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.Homotopy
-public import TauCeti.Geometry.Hodge.DolbeaultComplex.Deligne
+public import TauCeti.Geometry.Hodge.DolbeaultComplex.Deligne.Basic
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -90,6 +90,12 @@ namespace DolbeaultComplex
 variable {A : Type u} [AddCommGroup A] [Module ℂ A] {𝒜 : ℤ × ℤ → Submodule ℂ A}
   (X : DolbeaultComplex 𝒜)
 
+/-- Decide membership of types `(r, s)` in regions cut out by linear inequalities, after unfolding
+the membership in the regions and their unions. -/
+local macro "region_omega" : tactic =>
+  `(tactic| (intros; simp only [Set.mem_union, Set.mem_ofPred_eq, Prod.fst_swap,
+    Prod.snd_swap] at *; omega))
+
 /-- The term `Kⁿ = (Aⁿ ∩ A_ℝ(p)) × (Aⁿ ∩ FᵖA) × Aⁿ⁻¹` of the Deligne cone, where `Aⁿ` is the sum
 of the types `(r, s)` with `r + s = n` and `FᵖA` the sum of those with `p ≤ r`. -/
 def deligneConePiece (p n : ℤ) : Submodule ℝ (A × A × A) :=
@@ -128,24 +134,16 @@ theorem deligneConeDiff_deligneConeDiff (x : A × A × A) :
 
 variable {X}
 
-/-- Sums of type pieces of one total degree: the total differential raises the degree by one. -/
-private theorem d_mem_iSup_degree {n m : ℤ} (h : n + 1 = m) {x : A}
-    (hx : x ∈ ⨆ i : {i : ℤ × ℤ | i.1 + i.2 = n}, 𝒜 i) :
-    X.d x ∈ ⨆ i : {i : ℤ × ℤ | i.1 + i.2 = m}, 𝒜 i :=
-  X.d_mem_iSup (fun i hi ↦ by simp only [Set.mem_ofPred_eq] at hi ⊢; omega) hx
-
 /-- The differential of the Deligne cone carries `Kⁿ` into `Kⁿ⁺¹`. -/
 theorem deligneConeDiff_mem {p n : ℤ} {x : A × A × A} (hx : x ∈ X.deligneConePiece p n) :
     X.deligneConeDiff x ∈ X.deligneConePiece p (n + 1) := by
   obtain ⟨⟨hr, hr'⟩, hf, hω⟩ := mem_deligneConePiece.1 hx
   have hn : {i : ℤ × ℤ | i.1 + i.2 = n ∧ p ≤ i.1} ⊆ {i | i.1 + i.2 = n} := fun _ hi ↦ hi.1
   have hf' : x.2.1 ∈ ⨆ i : {i : ℤ × ℤ | i.1 + i.2 = n}, 𝒜 i := mem_iSup_of_subset hn hf
-  refine mem_deligneConePiece.2 ⟨⟨d_mem_iSup_degree rfl hr,
-    X.conj.map_mem_twist X.conj (conj_d X) hr'⟩, X.d_mem_iSup (fun i hi ↦ ?_) hf, ?_⟩
-  · simp only [Set.mem_ofPred_eq] at hi ⊢
-    omega
+  refine mem_deligneConePiece.2 ⟨⟨X.d_mem_iSup_degree rfl hr,
+    X.conj.map_mem_twist X.conj (conj_d X) hr'⟩, X.d_mem_iSup (by region_omega) hf, ?_⟩
   · rw [add_sub_cancel_right]
-    exact sub_mem (sub_mem hf' hr) (d_mem_iSup_degree (sub_add_cancel n 1) hω)
+    exact sub_mem (sub_mem hf' hr) (X.d_mem_iSup_degree (sub_add_cancel n 1) hω)
 
 variable (X)
 
@@ -173,6 +171,7 @@ theorem deligneCone_X (p n : ℤ) :
 
 /-- The differential of the Deligne cone between degrees `n` and `m = n + 1` is the restriction of
 `TauCeti.Hodge.DolbeaultComplex.deligneConeDiff`. -/
+@[simp]
 theorem deligneCone_d_apply (p : ℤ) {n m : ℤ} (h : n + 1 = m) (x : X.deligneConePiece p n) :
     Subtype.val (p := (· ∈ X.deligneConePiece p m)) ((X.deligneCone p).d n m x) =
       X.deligneConeDiff x := by
@@ -318,9 +317,7 @@ private theorem supportedProj_partition (p : ℤ) (y : A) :
     omega
   conv_rhs => rw [← supportedProj_univ 𝒜 y, hU]
   rw [supportedProj_union, supportedProj_union, supportedProj_union] <;>
-    exact Set.disjoint_left.2 fun i h₁ h₂ ↦ by
-      simp only [Set.mem_union, Set.mem_ofPred_eq] at h₁ h₂
-      omega
+    exact Set.disjoint_left.2 (by region_omega)
 
 variable (𝒜) in
 /-- The projection onto the types `(r, s)` with `p ≤ r` is the sum of the projections onto the
@@ -333,9 +330,7 @@ private theorem supportedProj_hodge (p : ℤ) (y : A) :
     simp only [Set.mem_union, Set.mem_ofPred_eq]
     omega
   rw [hU, supportedProj_union]
-  exact Set.disjoint_left.2 fun i h₁ h₂ ↦ by
-    simp only [Set.mem_ofPred_eq] at h₁ h₂
-    omega
+  exact Set.disjoint_left.2 (by region_omega)
 
 variable (X) in
 /-- `π_S d π_T = 0` when `d` carries no type in `T` into `S`. -/
@@ -344,66 +339,6 @@ private theorem supportedProj_d_supportedProj_eq_zero {S T : Set (ℤ × ℤ)}
     supportedProj 𝒜 S (X.d (supportedProj 𝒜 T y)) = 0 :=
   supportedProj_eq_zero_of_disjoint disjoint_compl_right
     (X.d_mem_iSup (T := Sᶜ) h (supportedProj_mem_iSup 𝒜 T y))
-
-/-- The projection onto the types `(r, s)` with `r < p ≤ s` after `d`. -/
-private theorem supportedProj_mixed_d (p : ℤ) (y : A) :
-    supportedProj 𝒜 {i | i.1 < p ∧ p ≤ i.2} (X.d y) =
-      supportedProj 𝒜 {i | i.1 < p ∧ p ≤ i.2} (X.d (supportedProj 𝒜 {i | i.1 < p ∧ i.2 < p} y)) +
-        X.d (supportedProj 𝒜 {i | i.1 < p ∧ p ≤ i.2} y) -
-        supportedProj 𝒜 {i | p ≤ i.1 ∧ p ≤ i.2}
-          (X.d (supportedProj 𝒜 {i | i.1 < p ∧ p ≤ i.2} y)) := by
-  have hq := supportedProj_partition 𝒜 p (X.d (supportedProj 𝒜 {i | i.1 < p ∧ p ≤ i.2} y))
-  conv_lhs => rw [← supportedProj_partition 𝒜 p y]
-  simp (disch := intro i hi; simp only [Set.mem_ofPred_eq] at hi ⊢; omega) only [map_add,
-    supportedProj_d_supportedProj_eq_zero, add_zero, zero_add] at hq ⊢
-  rw [← eq_sub_iff_add_eq] at hq
-  rw [hq, add_sub_assoc]
-
-/-- The projection onto the types `(r, s)` with `s < p ≤ r` after `d`. -/
-private theorem supportedProj_mixedBar_d (p : ℤ) (y : A) :
-    supportedProj 𝒜 {i | p ≤ i.1 ∧ i.2 < p} (X.d y) =
-      supportedProj 𝒜 {i | p ≤ i.1 ∧ i.2 < p} (X.d (supportedProj 𝒜 {i | i.1 < p ∧ i.2 < p} y)) +
-        X.d (supportedProj 𝒜 {i | p ≤ i.1 ∧ i.2 < p} y) -
-        supportedProj 𝒜 {i | p ≤ i.1 ∧ p ≤ i.2}
-          (X.d (supportedProj 𝒜 {i | p ≤ i.1 ∧ i.2 < p} y)) := by
-  have hq := supportedProj_partition 𝒜 p (X.d (supportedProj 𝒜 {i | p ≤ i.1 ∧ i.2 < p} y))
-  conv_lhs => rw [← supportedProj_partition 𝒜 p y]
-  simp (disch := intro i hi; simp only [Set.mem_ofPred_eq] at hi ⊢; omega) only [map_add,
-    supportedProj_d_supportedProj_eq_zero, add_zero, zero_add] at hq ⊢
-  rw [← eq_sub_iff_add_eq] at hq
-  rw [hq, add_sub_assoc]
-
-/-- The projection onto the types `(r, s)` with `r, s < p` after `d`. -/
-private theorem supportedProj_low_d (p : ℤ) (y : A) :
-    supportedProj 𝒜 {i | i.1 < p ∧ i.2 < p} (X.d y) =
-      X.d (supportedProj 𝒜 {i | i.1 < p ∧ i.2 < p} y) -
-        supportedProj 𝒜 {i | i.1 < p ∧ p ≤ i.2} (X.d (supportedProj 𝒜 {i | i.1 < p ∧ i.2 < p} y)) -
-        supportedProj 𝒜 {i | p ≤ i.1 ∧ i.2 < p}
-          (X.d (supportedProj 𝒜 {i | i.1 < p ∧ i.2 < p} y)) := by
-  have ha := supportedProj_partition 𝒜 p (X.d (supportedProj 𝒜 {i | i.1 < p ∧ i.2 < p} y))
-  conv_lhs => rw [← supportedProj_partition 𝒜 p y]
-  simp (disch := intro i hi; simp only [Set.mem_ofPred_eq] at hi ⊢; omega) only [map_add,
-    supportedProj_d_supportedProj_eq_zero, add_zero] at ha ⊢
-  rw [eq_sub_iff_add_eq, eq_sub_iff_add_eq, add_right_comm, ha]
-
-/-- The projection onto the types `(r, s)` with `p ≤ r` after `d`. -/
-private theorem supportedProj_hodge_d (p : ℤ) (y : A) :
-    supportedProj 𝒜 {i | p ≤ i.1} (X.d y) =
-      supportedProj 𝒜 {i | p ≤ i.1 ∧ i.2 < p} (X.d (supportedProj 𝒜 {i | i.1 < p ∧ i.2 < p} y)) +
-        supportedProj 𝒜 {i | p ≤ i.1 ∧ p ≤ i.2} (X.d (supportedProj 𝒜 {i | i.1 < p ∧ p ≤ i.2} y)) +
-        X.d (supportedProj 𝒜 {i | p ≤ i.1} y) := by
-  have ht := supportedProj_partition 𝒜 p (X.d (supportedProj 𝒜 {i | p ≤ i.1 ∧ p ≤ i.2} y))
-  have hy : supportedProj 𝒜 {i | p ≤ i.1 ∧ p ≤ i.2} (X.d y) =
-      supportedProj 𝒜 {i | p ≤ i.1 ∧ p ≤ i.2} (X.d (supportedProj 𝒜 {i | i.1 < p ∧ p ≤ i.2} y)) +
-        supportedProj 𝒜 {i | p ≤ i.1 ∧ p ≤ i.2} (X.d (supportedProj 𝒜 {i | p ≤ i.1 ∧ i.2 < p} y)) +
-        X.d (supportedProj 𝒜 {i | p ≤ i.1 ∧ p ≤ i.2} y) := by
-    conv_lhs => rw [← supportedProj_partition 𝒜 p y]
-    simp (disch := intro i hi; simp only [Set.mem_ofPred_eq] at hi ⊢; omega) only [map_add,
-      supportedProj_d_supportedProj_eq_zero, add_zero, zero_add] at ht ⊢
-    rw [ht]
-  rw [supportedProj_hodge 𝒜 p (X.d y), supportedProj_hodge 𝒜 p y, supportedProj_mixedBar_d, hy,
-    map_add]
-  abel
 
 /-- Conjugation carries the projection onto the types `(r, s)` with `r < p ≤ s` to the projection
 onto the types with `s < p ≤ r`. -/
@@ -427,13 +362,6 @@ private theorem conj_supportedProj_high (p : ℤ) (y : A) :
   X.conj_supportedProj (fun i ↦ by simp only [Set.mem_ofPred_eq, Prod.fst_swap, Prod.snd_swap,
     and_comm]) y
 
-omit [DirectSum.Decomposition 𝒜] in
-/-- The total differential commutes with the projections to the real twists. -/
-private theorem d_twistProj (p : ℤ) (y : A) :
-    X.d (X.conj.twistProj p y) = X.conj.twistProj p (X.d y) :=
-  X.conj.map_twistProj X.conj X.d (conj_d X) p y
-
-
 /-- Conjugation carries the projection onto the types `(r, s)` with `s < p ≤ r` to the projection
 onto the types with `r < p ≤ s`. -/
 private theorem conj_supportedProj_mixedBar (p : ℤ) (y : A) :
@@ -442,22 +370,77 @@ private theorem conj_supportedProj_mixedBar (p : ℤ) (y : A) :
   X.conj_supportedProj (fun i ↦ by simp only [Set.mem_ofPred_eq, Prod.fst_swap, Prod.snd_swap,
     and_comm]) y
 
+/-- The projection onto the types `(r, s)` with `r < p ≤ s` after `d`. -/
+private theorem supportedProj_mixed_d (p : ℤ) (y : A) :
+    supportedProj 𝒜 {i | i.1 < p ∧ p ≤ i.2} (X.d y) =
+      supportedProj 𝒜 {i | i.1 < p ∧ p ≤ i.2} (X.d (supportedProj 𝒜 {i | i.1 < p ∧ i.2 < p} y)) +
+        X.d (supportedProj 𝒜 {i | i.1 < p ∧ p ≤ i.2} y) -
+        supportedProj 𝒜 {i | p ≤ i.1 ∧ p ≤ i.2}
+          (X.d (supportedProj 𝒜 {i | i.1 < p ∧ p ≤ i.2} y)) := by
+  have hq := supportedProj_partition 𝒜 p (X.d (supportedProj 𝒜 {i | i.1 < p ∧ p ≤ i.2} y))
+  conv_lhs => rw [← supportedProj_partition 𝒜 p y]
+  simp (disch := region_omega) only [map_add,
+    supportedProj_d_supportedProj_eq_zero, add_zero, zero_add] at hq ⊢
+  rw [← eq_sub_iff_add_eq] at hq
+  rw [hq, add_sub_assoc]
+
+/-- The projection onto the types `(r, s)` with `s < p ≤ r` after `d`, the conjugate of the
+identity for the types with `r < p ≤ s`. -/
+private theorem supportedProj_mixedBar_d (p : ℤ) (y : A) :
+    supportedProj 𝒜 {i | p ≤ i.1 ∧ i.2 < p} (X.d y) =
+      supportedProj 𝒜 {i | p ≤ i.1 ∧ i.2 < p} (X.d (supportedProj 𝒜 {i | i.1 < p ∧ i.2 < p} y)) +
+        X.d (supportedProj 𝒜 {i | p ≤ i.1 ∧ i.2 < p} y) -
+        supportedProj 𝒜 {i | p ≤ i.1 ∧ p ≤ i.2}
+          (X.d (supportedProj 𝒜 {i | p ≤ i.1 ∧ i.2 < p} y)) := by
+  -- Conjugate the identity for the types `r < p ≤ s` at the conjugate of `y`.
+  simpa only [map_add, map_sub, conj_supportedProj_mixed, conj_supportedProj_low,
+    conj_supportedProj_high, conj_d, Conjugation.apply_apply] using
+    congrArg X.conj.toEquiv (supportedProj_mixed_d (X := X) p (X.conj.toEquiv y))
+
+/-- The projection onto the types `(r, s)` with `r, s < p` after `d`. -/
+private theorem supportedProj_low_d (p : ℤ) (y : A) :
+    supportedProj 𝒜 {i | i.1 < p ∧ i.2 < p} (X.d y) =
+      X.d (supportedProj 𝒜 {i | i.1 < p ∧ i.2 < p} y) -
+        supportedProj 𝒜 {i | i.1 < p ∧ p ≤ i.2} (X.d (supportedProj 𝒜 {i | i.1 < p ∧ i.2 < p} y)) -
+        supportedProj 𝒜 {i | p ≤ i.1 ∧ i.2 < p}
+          (X.d (supportedProj 𝒜 {i | i.1 < p ∧ i.2 < p} y)) := by
+  have ha := supportedProj_partition 𝒜 p (X.d (supportedProj 𝒜 {i | i.1 < p ∧ i.2 < p} y))
+  conv_lhs => rw [← supportedProj_partition 𝒜 p y]
+  simp (disch := region_omega) only [map_add,
+    supportedProj_d_supportedProj_eq_zero, add_zero] at ha ⊢
+  rw [eq_sub_iff_add_eq, eq_sub_iff_add_eq, add_right_comm, ha]
+
+/-- The projection onto the types `(r, s)` with `p ≤ r` after `d`. -/
+private theorem supportedProj_hodge_d (p : ℤ) (y : A) :
+    supportedProj 𝒜 {i | p ≤ i.1} (X.d y) =
+      supportedProj 𝒜 {i | p ≤ i.1 ∧ i.2 < p} (X.d (supportedProj 𝒜 {i | i.1 < p ∧ i.2 < p} y)) +
+        supportedProj 𝒜 {i | p ≤ i.1 ∧ p ≤ i.2} (X.d (supportedProj 𝒜 {i | i.1 < p ∧ p ≤ i.2} y)) +
+        X.d (supportedProj 𝒜 {i | p ≤ i.1} y) := by
+  have ht := supportedProj_partition 𝒜 p (X.d (supportedProj 𝒜 {i | p ≤ i.1 ∧ p ≤ i.2} y))
+  have hy : supportedProj 𝒜 {i | p ≤ i.1 ∧ p ≤ i.2} (X.d y) =
+      supportedProj 𝒜 {i | p ≤ i.1 ∧ p ≤ i.2} (X.d (supportedProj 𝒜 {i | i.1 < p ∧ p ≤ i.2} y)) +
+        supportedProj 𝒜 {i | p ≤ i.1 ∧ p ≤ i.2} (X.d (supportedProj 𝒜 {i | p ≤ i.1 ∧ i.2 < p} y)) +
+        X.d (supportedProj 𝒜 {i | p ≤ i.1 ∧ p ≤ i.2} y) := by
+    conv_lhs => rw [← supportedProj_partition 𝒜 p y]
+    simp (disch := region_omega) only [map_add,
+      supportedProj_d_supportedProj_eq_zero, add_zero, zero_add] at ht ⊢
+    rw [ht]
+  rw [supportedProj_hodge 𝒜 p (X.d y), supportedProj_hodge 𝒜 p y, supportedProj_mixedBar_d, hy,
+    map_add]
+  abel
+
 /-- A sum of type pieces of total degree `m < 2p` has no part of type `(r, s)` with `p ≤ r, s`. -/
 private theorem supportedProj_high_eq_zero {p m : ℤ} (hm : m < 2 * p) {y : A}
     (hy : y ∈ ⨆ i : {i : ℤ × ℤ | i.1 + i.2 = m}, 𝒜 i) :
     supportedProj 𝒜 {i | p ≤ i.1 ∧ p ≤ i.2} y = 0 :=
-  supportedProj_eq_zero_of_disjoint (Set.disjoint_left.2 fun i h₁ h₂ ↦ by
-    simp only [Set.mem_ofPred_eq] at h₁ h₂
-    omega) hy
+  supportedProj_eq_zero_of_disjoint (Set.disjoint_left.2 (by region_omega)) hy
 
 /-- A sum of type pieces of total degree `m ≥ 2p - 1` has no part of type `(r, s)` with
 `r, s < p`. -/
 private theorem supportedProj_low_eq_zero {p m : ℤ} (hm : 2 * p - 1 ≤ m) {y : A}
     (hy : y ∈ ⨆ i : {i : ℤ × ℤ | i.1 + i.2 = m}, 𝒜 i) :
     supportedProj 𝒜 {i | i.1 < p ∧ i.2 < p} y = 0 :=
-  supportedProj_eq_zero_of_disjoint (Set.disjoint_left.2 fun i h₁ h₂ ↦ by
-    simp only [Set.mem_ofPred_eq] at h₁ h₂
-    omega) hy
+  supportedProj_eq_zero_of_disjoint (Set.disjoint_left.2 (by region_omega)) hy
 
 /-! ### The contraction -/
 
@@ -480,7 +463,8 @@ private theorem d_contractionFst_sub (p : ℤ) (ω : A) :
           (X.d (supportedProj 𝒜 {i | i.1 < p ∧ p ≤ i.2} ω))) := by
   -- `f = (π_Qbar - π_Q) ∘ d` anticommutes with conjugation, so it carries `π_{p-1}` to `π_p`.
   have e := X.conj.map_twistProj_of_conj_eq_neg X.conj
-    ((supportedProj 𝒜 {i | p ≤ i.1 ∧ i.2 < p} - supportedProj 𝒜 {i | i.1 < p ∧ p ≤ i.2}) ∘ₗ X.d)
+    (f := (supportedProj 𝒜 {i | p ≤ i.1 ∧ i.2 < p} - supportedProj 𝒜 {i | i.1 < p ∧ p ≤ i.2}) ∘ₗ
+      X.d)
     (fun y ↦ by simp only [LinearMap.comp_apply, LinearMap.sub_apply, map_sub,
       conj_supportedProj_mixed, conj_supportedProj_mixedBar, conj_d, neg_sub]) (p - 1)
     (supportedProj 𝒜 {i | i.1 < p ∧ i.2 < p} ω)
@@ -534,28 +518,24 @@ private theorem contractionSnd_of_mem_twist {p : ℤ} {r : A} (hr : r ∈ X.conj
     one_smul, supportedProj_hodge 𝒜 p r]
   abel
 
+/-- A projection onto types `(r, s)` with `r < p` kills a sum of type pieces with `p ≤ r`. -/
+private theorem supportedProj_eq_zero_of_mem_hodge {p : ℤ} {P : ℤ × ℤ → Prop}
+    {T : Set (ℤ × ℤ)} (hT : T ⊆ {i | p ≤ i.1}) {f : A} (hf : f ∈ ⨆ i : T, 𝒜 i) :
+    supportedProj 𝒜 {i | i.1 < p ∧ P i} f = 0 :=
+  supportedProj_eq_zero_of_disjoint
+    (Set.disjoint_left.2 fun _ (h₁ : _ ∧ _) h₂ ↦ h₁.1.not_ge (hT h₂)) hf
+
 /-- On `FᵖA`, the first component of the contraction vanishes. -/
 private theorem contractionFst_of_mem_hodge {p : ℤ} {T : Set (ℤ × ℤ)} (hT : T ⊆ {i | p ≤ i.1})
     {f : A} (hf : f ∈ ⨆ i : T, 𝒜 i) : contractionFst X p f = 0 := by
-  rw [contractionFst_apply,
-    supportedProj_eq_zero_of_disjoint (Set.disjoint_left.2 fun i h₁ h₂ ↦ by
-      have := hT h₂
-      simp only [Set.mem_ofPred_eq] at h₁ this
-      omega) hf,
-    supportedProj_eq_zero_of_disjoint (Set.disjoint_left.2 fun i h₁ h₂ ↦ by
-      have := hT h₂
-      simp only [Set.mem_ofPred_eq] at h₁ this
-      omega) hf]
+  rw [contractionFst_apply, supportedProj_eq_zero_of_mem_hodge hT hf,
+    supportedProj_eq_zero_of_mem_hodge hT hf]
   simp
 
 /-- On `FᵖA`, the second component of the contraction is `f ↦ -f`. -/
 private theorem contractionSnd_of_mem_hodge {p : ℤ} {T : Set (ℤ × ℤ)} (hT : T ⊆ {i | p ≤ i.1})
     {f : A} (hf : f ∈ ⨆ i : T, 𝒜 i) : contractionSnd X p f = -f := by
-  rw [contractionSnd_apply,
-    supportedProj_eq_zero_of_disjoint (Set.disjoint_left.2 fun i h₁ h₂ ↦ by
-      have := hT h₂
-      simp only [Set.mem_ofPred_eq] at h₁ this
-      omega) hf,
+  rw [contractionSnd_apply, supportedProj_eq_zero_of_mem_hodge hT hf,
     supportedProj_eq_self_of_subset hT hf]
   simp
 
@@ -604,7 +584,7 @@ theorem deligneToConeMap_mem {p n : ℤ} {x : A} (hx : x ∈ X.delignePiece p n)
   rcases lt_or_ge n (2 * p) with h | h
   · rw [mem_delignePiece_of_lt h] at hx
     have hdx : X.d x ∈ ⨆ i : {i : ℤ × ℤ | i.1 + i.2 = n}, 𝒜 i :=
-      X.d_mem_iSup (fun i hi ↦ by simp only [Set.mem_ofPred_eq] at hi ⊢; omega) hx.1
+      X.d_mem_iSup (by region_omega) hx.1
     -- `(π_Qbar - π_Q) ∘ d` anticommutes with conjugation, so it raises the real twist by one.
     have ht := X.conj.map_mem_twist_add_one X.conj
       (f := (supportedProj 𝒜 {i | p ≤ i.1 ∧ i.2 < p} - supportedProj 𝒜 {i | i.1 < p ∧ p ≤ i.2}) ∘ₗ
@@ -634,9 +614,8 @@ theorem coneToDeligneMap_mem {p n : ℤ} {x : A × A × A} (hx : x ∈ X.deligne
   obtain ⟨⟨hr, hr'⟩, -, hω⟩ := mem_deligneConePiece.1 hx
   rcases lt_or_ge n (2 * p) with h | h
   · have hS : ∀ i ∈ {i : ℤ × ℤ | i.1 + i.2 = n - 1 ∧ i.1 < p ∧ i.2 < p},
-        i.swap ∈ {i : ℤ × ℤ | i.1 + i.2 = n - 1 ∧ i.1 < p ∧ i.2 < p} := fun i hi ↦ by
-      simp only [Set.mem_ofPred_eq, Prod.fst_swap, Prod.snd_swap] at hi ⊢
-      omega
+        i.swap ∈ {i : ℤ × ℤ | i.1 + i.2 = n - 1 ∧ i.1 < p ∧ i.2 < p} := by
+      region_omega
     have hL : ({i : ℤ × ℤ | i.1 < p ∧ i.2 < p} ∩ {i | i.1 + i.2 = n - 1}) ⊆
         {i | i.1 + i.2 = n - 1 ∧ i.1 < p ∧ i.2 < p} := fun _ hi ↦ ⟨hi.2, hi.1⟩
     rw [coneToDeligneMap_of_lt h, mem_delignePiece_of_lt h]
@@ -644,11 +623,10 @@ theorem coneToDeligneMap_mem {p n : ℤ} {x : A × A × A} (hx : x ∈ X.deligne
       (mem_iSup_of_subset hL (supportedProj_mem_iSup_inter hω)), X.conj.twistProj_mem _ _⟩
   · have hdq : X.d (supportedProj 𝒜 {i | i.1 < p ∧ p ≤ i.2} x.2.2) ∈
         ⨆ i : {i : ℤ × ℤ | i.1 + i.2 = n}, 𝒜 i :=
-      d_mem_iSup_degree (sub_add_cancel n 1) (supportedProj_mem_iSup_of_mem hω)
+      X.d_mem_iSup_degree (sub_add_cancel n 1) (supportedProj_mem_iSup_of_mem hω)
     have hS : ∀ i ∈ {i : ℤ × ℤ | i.1 + i.2 = n ∧ p ≤ i.1 ∧ p ≤ i.2},
-        i.swap ∈ {i : ℤ × ℤ | i.1 + i.2 = n ∧ p ≤ i.1 ∧ p ≤ i.2} := fun i hi ↦ by
-      simp only [Set.mem_ofPred_eq, Prod.fst_swap, Prod.snd_swap] at hi ⊢
-      omega
+        i.swap ∈ {i : ℤ × ℤ | i.1 + i.2 = n ∧ p ≤ i.1 ∧ p ≤ i.2} := by
+      region_omega
     have hPP : ({i : ℤ × ℤ | p ≤ i.1 ∧ p ≤ i.2} ∩ {i | i.1 + i.2 = n}) ⊆
         {i | i.1 + i.2 = n ∧ p ≤ i.1 ∧ p ≤ i.2} := fun _ hi ↦ ⟨hi.2, hi.1⟩
     rw [coneToDeligneMap_of_le h, mem_delignePiece_of_le h]
@@ -664,10 +642,8 @@ theorem deligneConeContraction_mem {p n : ℤ} {x : A × A × A}
     X.deligneConeContraction p x ∈ X.deligneConePiece p n := by
   obtain ⟨-, -, hω⟩ := mem_deligneConePiece.1 hx
   rw [add_sub_cancel_right] at hω
-  have hS : ∀ i ∈ {i : ℤ × ℤ | i.1 + i.2 = n}, i.swap ∈ {i : ℤ × ℤ | i.1 + i.2 = n} :=
-    fun i hi ↦ by
-      simp only [Set.mem_ofPred_eq, Prod.fst_swap, Prod.snd_swap] at hi ⊢
-      omega
+  have hS : ∀ i ∈ {i : ℤ × ℤ | i.1 + i.2 = n}, i.swap ∈ {i : ℤ × ℤ | i.1 + i.2 = n} := by
+    region_omega
   have hF : ({i : ℤ × ℤ | p ≤ i.1} ∩ {i | i.1 + i.2 = n}) ⊆ {i | i.1 + i.2 = n ∧ p ≤ i.1} :=
     fun _ hi ↦ ⟨hi.2, hi.1⟩
   have hF' : ({i : ℤ × ℤ | p ≤ i.1 ∧ i.2 < p} ∩ {i | i.1 + i.2 = n}) ⊆
@@ -693,12 +669,12 @@ theorem deligneConeDiff_deligneToConeMap {p n : ℤ} {x : A} (hx : x ∈ X.delig
   rcases lt_trichotomy (n + 1) (2 * p) with h | h | h
   · rw [mem_delignePiece_of_lt (by omega)] at hx
     have hdx : X.d x ∈ ⨆ i : {i : ℤ × ℤ | i.1 + i.2 = n}, 𝒜 i :=
-      X.d_mem_iSup (fun i hi ↦ by simp only [Set.mem_ofPred_eq] at hi ⊢; omega) hx.1
+      X.d_mem_iSup (by region_omega) hx.1
     -- `d (π_S d x) = -π_S d π_L d x` for `S` the types `r < p ≤ s` or `s < p ≤ r`, since
     -- `d d x = 0` and `π_PP` vanishes in degree `n + 1 < 2p`.
     have hQ := supportedProj_mixed_d (X := X) p (X.d x)
     have hQ' := supportedProj_mixedBar_d (X := X) p (X.d x)
-    rw [d_d, map_zero, supportedProj_high_eq_zero h (d_mem_iSup_degree rfl
+    rw [d_d, map_zero, supportedProj_high_eq_zero h (X.d_mem_iSup_degree rfl
       (supportedProj_mem_iSup_of_mem hdx)), sub_zero] at hQ hQ'
     have hpart := supportedProj_partition 𝒜 p (X.d x)
     rw [supportedProj_high_eq_zero (by omega) hdx, add_zero] at hpart
@@ -712,12 +688,10 @@ theorem deligneConeDiff_deligneToConeMap {p n : ℤ} {x : A} (hx : x ∈ X.delig
   · obtain rfl : n = 2 * p - 1 := by omega
     obtain ⟨hx, -⟩ := mem_delignePiece_two_mul_sub_one_iff.1 hx
     have h₁ : (p, p - 1) ∈ {i : ℤ × ℤ | p ≤ i.1 ∧ i.2 < p} := ⟨le_rfl, sub_one_lt p⟩
-    have h₂ : (p - 1, p) ∉ {i : ℤ × ℤ | p ≤ i.1 ∧ i.2 < p} := fun h ↦ by
-      simp only [Set.mem_ofPred_eq] at h
-      omega
-    have h₃ : (p, p - 1) ∉ {i : ℤ × ℤ | i.1 < p ∧ p ≤ i.2} := fun h ↦ by
-      simp only [Set.mem_ofPred_eq] at h
-      omega
+    have h₂ : (p - 1, p) ∉ {i : ℤ × ℤ | p ≤ i.1 ∧ i.2 < p} := by
+      region_omega
+    have h₃ : (p, p - 1) ∉ {i : ℤ × ℤ | i.1 < p ∧ p ≤ i.2} := by
+      region_omega
     have h₄ : (p - 1, p) ∈ {i : ℤ × ℤ | i.1 < p ∧ p ≤ i.2} := ⟨sub_one_lt p, le_rfl⟩
     have hdel := X.del_mem hx
     have hdelBar := X.delBar_mem hx
@@ -760,7 +734,7 @@ theorem deligneToConeMap_coneToDeligneMap {p n : ℤ} {x : A × A × A}
   rw [contraction_deligneConeDiff_add hF hr' hf]
   have hdq : X.d (supportedProj 𝒜 {i | i.1 < p ∧ p ≤ i.2} x.2.2) ∈
       ⨆ i : {i : ℤ × ℤ | i.1 + i.2 = n}, 𝒜 i :=
-    d_mem_iSup_degree (sub_add_cancel n 1) (supportedProj_mem_iSup_of_mem hω)
+    X.d_mem_iSup_degree (sub_add_cancel n 1) (supportedProj_mem_iSup_of_mem hω)
   rcases lt_or_ge n (2 * p) with h | h
   · rw [coneToDeligneMap_of_lt h, deligneToConeMap_of_lt h, supportedProj_high_eq_zero h hdq,
       supportedProj_high_eq_zero h hr]
@@ -882,6 +856,19 @@ noncomputable def deligneConeHomotopy (p : ℤ) :
     exact Subtype.ext ((deligneToConeMap_coneToDeligneMap x.property).trans
       (by rw [← e₁, ← e₂]; rfl))
 
+/-- Between degrees `n` and `m = n - 1`, the homotopy of the Deligne cone is the restriction of
+the contraction `TauCeti.Hodge.DolbeaultComplex.deligneConeContraction`. -/
+theorem deligneConeHomotopy_hom_apply (p : ℤ) {n m : ℤ} (h : m + 1 = n)
+    (x : X.deligneConePiece p n) :
+    Subtype.val (p := (· ∈ X.deligneConePiece p m)) ((X.deligneConeHomotopy p).hom n m x) =
+      X.deligneConeContraction p x :=
+  coneHomotopyHom_apply X h x
+
+/-- Outside the degrees `n` and `m = n - 1`, the homotopy of the Deligne cone vanishes. -/
+theorem deligneConeHomotopy_hom_eq_zero (p : ℤ) {n m : ℤ} (h : ¬m + 1 = n) :
+    (X.deligneConeHomotopy p).hom n m = 0 :=
+  (X.deligneConeHomotopy p).zero n m h
+
 /-- The Deligne complex `D(A, p)` is homotopy equivalent to the Deligne cone
 `fib(A_ℝ(p) ⊕ FᵖA → A)`, through the inclusion `TauCeti.Hodge.DolbeaultComplex.deligneToCone`
 and the projection `TauCeti.Hodge.DolbeaultComplex.coneToDeligne`, whose composite on the Deligne
@@ -892,6 +879,20 @@ noncomputable def deligneHomotopyEquivCone (p : ℤ) :
   inv := X.coneToDeligne p
   homotopyHomInvId := Homotopy.ofEq (X.deligneToCone_comp_coneToDeligne p)
   homotopyInvHomId := X.deligneConeHomotopy p
+
+/-- The homotopy equivalence with the Deligne cone is the inclusion
+`TauCeti.Hodge.DolbeaultComplex.deligneToCone`. -/
+@[simp]
+theorem deligneHomotopyEquivCone_hom (p : ℤ) :
+    (X.deligneHomotopyEquivCone p).hom = X.deligneToCone p :=
+  (rfl)
+
+/-- The inverse of the homotopy equivalence with the Deligne cone is the projection
+`TauCeti.Hodge.DolbeaultComplex.coneToDeligne`. -/
+@[simp]
+theorem deligneHomotopyEquivCone_inv (p : ℤ) :
+    (X.deligneHomotopyEquivCone p).inv = X.coneToDeligne p :=
+  (rfl)
 
 end Decomposition
 

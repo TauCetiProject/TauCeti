@@ -52,9 +52,11 @@ models.
   conjugation acts by the sign `(-1) ^ p`, equal to `c ^ p • W_ℝ` for every nonzero purely
   imaginary `c` (`TauCeti.Hodge.Conjugation.mem_twist_iff_exists`).
 * `TauCeti.Hodge.Conjugation.twistProj`: the projection `x ↦ (x + (-1) ^ p ω x) / 2` onto the real
-  twist `W_ℝ(p)` along `W_ℝ(p + 1)`, which for `p = 0` is the real part
-  (`TauCeti.Hodge.Conjugation.twistProj_zero`); complex-linear maps intertwining or
-  anti-intertwining two conjugations carry it to `twistProj p` or `twistProj (p + 1)`
+  twist `W_ℝ(p)` along `W_ℝ(p + 1)`: the real part relative to the signed conjugation
+  `(-1) ^ p ω`, whose real points are `W_ℝ(p)` (`TauCeti.Hodge.Conjugation.twist_eq_realPoints`),
+  and for `p = 0` the real part (`TauCeti.Hodge.Conjugation.twistProj_zero`); additive maps
+  intertwining or anti-intertwining two conjugations carry it to `twistProj p` or
+  `twistProj (p + 1)`
   (`TauCeti.Hodge.Conjugation.map_twistProj`,
   `TauCeti.Hodge.Conjugation.map_twistProj_of_conj_eq_neg`).
 * `TauCeti.Hodge.Conjugation.dual`: the twisted transpose of a conjugation, again a conjugation,
@@ -404,25 +406,48 @@ theorem toEquiv_real_smul (ω : Conjugation W) (r : ℝ) (x : W) :
     ω.toEquiv (r • x) = r • ω.toEquiv x := by
   rw [← Complex.coe_smul, map_smulₛₗ, Complex.conj_ofReal, Complex.coe_smul]
 
+/-- The real twist `ω.twist p` is the space of real points of the signed conjugation
+`(-1) ^ p ω`. -/
+theorem twist_eq_realPoints (ω : Conjugation W) (p : ℤ) :
+    ω.twist p = realPoints (p.negOnePow • ω.toEquiv.toLinearMap) := by
+  ext x
+  rw [mem_twist, mem_realPoints, LinearMap.smul_apply, LinearEquiv.coe_coe]
+  constructor <;> intro h
+  · rw [h, smul_smul, Int.units_mul_self, one_smul]
+  · rw [← h, smul_smul, Int.units_mul_self, one_smul, h]
+
+/-- The signed conjugation `(-1) ^ p ω` is involutive. -/
+private theorem involutive_negOnePow_smul (ω : Conjugation W) (p : ℤ) :
+    Function.Involutive (p.negOnePow • ω.toEquiv.toLinearMap) := fun x ↦ by
+  rcases Int.units_eq_one_or p.negOnePow with h | h <;> simp [h]
+
 /-- The projection `x ↦ (x + (-1) ^ p ω x) / 2` of `W` onto the real twist `ω.twist p`, along
-`ω.twist (p + 1)`. For `p = 0` it is the real part `x ↦ (x + ω x) / 2`. -/
+`ω.twist (p + 1)`: the real part `TauCeti.conjRealPart` relative to the signed conjugation
+`(-1) ^ p ω`. For `p = 0` it is the real part `x ↦ (x + ω x) / 2`. -/
 noncomputable def twistProj (ω : Conjugation W) (p : ℤ) : W →ₗ[ℝ] W where
-  toFun x := (2⁻¹ : ℝ) • (x + p.negOnePow • ω.toEquiv x)
+  toFun := conjRealPart (p.negOnePow • ω.toEquiv.toLinearMap)
   map_add' x y := by
-    simp only [map_add, smul_add]
+    simp only [conjRealPart_def, map_add, smul_add]
     abel
   map_smul' r x := by
-    rw [RingHom.id_apply, toEquiv_real_smul, smul_comm p.negOnePow r, ← smul_add, smul_comm]
+    rw [conjRealPart_def, conjRealPart_def, LinearMap.smul_apply, LinearMap.smul_apply,
+      LinearEquiv.coe_coe, RingHom.id_apply, toEquiv_real_smul, smul_comm p.negOnePow r,
+      ← smul_add, smul_comm]
+
+/-- The projection to a real twist is the real part relative to the signed conjugation
+`(-1) ^ p ω`. -/
+theorem twistProj_eq_conjRealPart (ω : Conjugation W) (p : ℤ) (x : W) :
+    ω.twistProj p x = conjRealPart (p.negOnePow • ω.toEquiv.toLinearMap) x :=
+  (rfl)
 
 theorem twistProj_apply (ω : Conjugation W) (p : ℤ) (x : W) :
     ω.twistProj p x = (2⁻¹ : ℝ) • (x + p.negOnePow • ω.toEquiv x) :=
-  (rfl)
+  conjRealPart_def x
 
 /-- The projection to the untwisted real twist is the real part `TauCeti.conjRealPart`. -/
 theorem twistProj_zero (ω : Conjugation W) (x : W) :
     ω.twistProj 0 x = conjRealPart ω.toEquiv.toLinearMap x := by
-  rw [twistProj_apply, conjRealPart_def, Int.negOnePow_zero, one_smul]
-  rfl
+  rw [twistProj_eq_conjRealPart, Int.negOnePow_zero, one_smul]
 
 /-- Twice the projection to a real twist is `x + (-1) ^ p ω x`. -/
 theorem two_nsmul_twistProj (ω : Conjugation W) (p : ℤ) (x : W) :
@@ -437,14 +462,14 @@ theorem conj_twistProj (ω : Conjugation W) (p : ℤ) (x : W) :
     simp [twistProj_apply, toEquiv_real_smul, h, add_comm]
 
 /-- The projection to a real twist lands in the real twist. -/
-theorem twistProj_mem (ω : Conjugation W) (p : ℤ) (x : W) : ω.twistProj p x ∈ ω.twist p :=
-  ω.conj_twistProj p x
+theorem twistProj_mem (ω : Conjugation W) (p : ℤ) (x : W) : ω.twistProj p x ∈ ω.twist p := by
+  rw [twistProj_eq_conjRealPart, twist_eq_realPoints]
+  exact conjRealPart_mem (ω.involutive_negOnePow_smul p) x
 
 /-- The projection to a real twist fixes the real twist. -/
 theorem twistProj_of_mem (ω : Conjugation W) {p : ℤ} {x : W} (hx : x ∈ ω.twist p) :
     ω.twistProj p x = x := by
-  rw [twistProj_apply, (mem_twist ω).1 hx, smul_smul, Int.units_mul_self, one_smul]
-  module
+  rw [twistProj_eq_conjRealPart, conjRealPart_of_mem (ω.twist_eq_realPoints p ▸ hx)]
 
 /-- The projections to the real twists `ω.twist p` and `ω.twist (p - 1)` add up to the
 identity. -/
@@ -454,22 +479,24 @@ theorem twistProj_add_twistProj_sub_one (ω : Conjugation W) (p : ℤ) (x : W) :
     simp only [twistProj_apply, Int.negOnePow_sub, Int.negOnePow_one, h, Units.smul_def,
       Units.val_mul, Units.val_neg, Units.val_one] <;> module
 
-variable {W' : Type v} [AddCommGroup W'] [Module ℂ W'] in
-/-- A complex-linear map intertwining two conjugations commutes with the projections to a real
+/-- An additive map intertwining two conjugations commutes with the projections to a real
 twist. -/
-theorem map_twistProj (ω : Conjugation W) (ω' : Conjugation W') (f : W →ₗ[ℂ] W')
+theorem map_twistProj {W' : Type v} [AddCommGroup W'] [Module ℂ W'] {F : Type*} [FunLike F W W']
+    [AddMonoidHomClass F W W'] (ω : Conjugation W) (ω' : Conjugation W') {f : F}
     (hf : ∀ x, ω'.toEquiv (f x) = f (ω.toEquiv x)) (p : ℤ) (x : W) :
     f (ω.twistProj p x) = ω'.twistProj p (f x) := by
-  simp only [twistProj_apply, LinearMap.map_smul_of_tower, map_add, Units.smul_def, map_zsmul, hf]
+  simp only [twistProj_apply, ← Nat.cast_ofNat (R := ℝ) (n := 2), map_inv_natCast_smul f ℝ ℝ,
+    map_add, Units.smul_def, map_zsmul, hf]
 
-variable {W' : Type v} [AddCommGroup W'] [Module ℂ W'] in
-/-- A complex-linear map anti-intertwining two conjugations carries the projection to the real
-twist `ω.twist p` to the projection to `ω'.twist (p + 1)`. -/
-theorem map_twistProj_of_conj_eq_neg (ω : Conjugation W) (ω' : Conjugation W') (f : W →ₗ[ℂ] W')
+/-- An additive map anti-intertwining two conjugations carries the projection to the real twist
+`ω.twist p` to the projection to `ω'.twist (p + 1)`. -/
+theorem map_twistProj_of_conj_eq_neg {W' : Type v} [AddCommGroup W'] [Module ℂ W'] {F : Type*}
+    [FunLike F W W'] [AddMonoidHomClass F W W'] (ω : Conjugation W) (ω' : Conjugation W') {f : F}
     (hf : ∀ x, ω'.toEquiv (f x) = -f (ω.toEquiv x)) (p : ℤ) (x : W) :
     f (ω.twistProj p x) = ω'.twistProj (p + 1) (f x) := by
-  simp only [twistProj_apply, LinearMap.map_smul_of_tower, map_add, Units.smul_def, map_zsmul, hf,
-    Int.negOnePow_succ, Units.val_neg, smul_neg, neg_smul, neg_neg]
+  simp only [twistProj_apply, ← Nat.cast_ofNat (R := ℝ) (n := 2), map_inv_natCast_smul f ℝ ℝ,
+    map_add, Units.smul_def, map_zsmul, hf, Int.negOnePow_succ, Units.val_neg, smul_neg, neg_smul,
+    neg_neg]
 
 /-- For a nonzero purely imaginary `c`, the real twist `ω.twist p` consists of the vectors
 `c ^ p • y` with `y` a real point of `ω`. With `c = 2πi` this is the description
