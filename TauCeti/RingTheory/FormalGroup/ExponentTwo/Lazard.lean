@@ -102,7 +102,7 @@ theorem ofLazardRing_surjective : Function.Surjective ofLazardRing := by
   have hs : S.subtype.comp (lift ⟨_, inferInstance, h2⟩) = RingHom.id _ :=
     hom_ext <| by rw [← FormalGroup.map_comp, map_lift, hF, FormalGroup.map_id]
   intro x
-  obtain ⟨y, hy⟩ := (lift ⟨_, inferInstance, h2⟩ x).2
+  obtain ⟨y, hy⟩ := (lift ⟨_, inferInstance, h2⟩ x).property
   exact ⟨y, hy.trans (RingHom.congr_fun hs x)⟩
 
 /-- **`MO` is the quotient of the Lazard ring by the `2`-series**: the kernel of

@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.Normalize
+public import Mathlib.Topology.Covering.Basic
 public import TauCeti.Topology.Homotopy.HurewiczFibration.LocallyTrivial
 public import TauCeti.Topology.Homotopy.SerreFibration.Connected
 public import TauCeti.Topology.VectorBundle.SphereBundle.Basic
 import TauCeti.AlgebraicTopology.Sphere.HomotopyGroup
+import TauCeti.AlgebraicTopology.Sphere.Zero
 import TauCeti.Topology.Homotopy.HomotopyGroup.Homeomorph
 import TauCeti.Topology.Homotopy.SerreFibration.FiberBundle
 import TauCeti.Topology.VectorBundle.Trivialization
@@ -36,7 +38,9 @@ So the sphere bundle is locally trivial with fibre the unit sphere of the model 
   `n`-connected (`TauCeti.isNConnected_sphereBundleProj`): it induces isomorphisms on `πₖ` for
   `k < n` and a surjection on `πₙ`;
 * in particular, for `n ≥ 2`, the sphere bundle is simply connected exactly when the base is
-  (`TauCeti.simplyConnectedSpace_sphereBundle_iff`).
+  (`TauCeti.simplyConnectedSpace_sphereBundle_iff`);
+* when `F` has dimension one, so that the fibres are pairs of points, the projection is a covering
+  map (`TauCeti.isCoveringMap_sphereBundleProj`).
 
 These are the facts about a bundle `Sⁿ → Q → B` with structure group `O(n + 1)`, realized as the
 unit sphere bundle of a Euclidean vector bundle, that are used to compare the homotopy of `Q` with
@@ -52,6 +56,10 @@ that of its base and fibres.
   fibration over a normal paracompact base.
 * `TauCeti.isNConnected_sphereBundleProj`, `TauCeti.simplyConnectedSpace_sphereBundle_iff`: its
   connectivity.
+* `TauCeti.isCoveringMap_sphereBundleProj`: in rank one it is a covering map.
+* `TauCeti.natCard_sphereBundleProj_preimage_singleton`,
+  `TauCeti.finite_sphereBundleProj_preimage_singleton`: in rank one its fibres have exactly two
+  points.
 
 ## References
 
@@ -86,9 +94,9 @@ private theorem nonempty_sphere_of_sphereBundle (v : sphereBundle F E) :
     Nonempty (sphere (0 : F) 1) := by
   let b := (v : TotalSpace F E).proj
   let L := (trivializationAt F E b).continuousLinearEquivAt ℝ b (mem_baseSet_trivializationAt F E b)
-  have hv : (v : TotalSpace F E).2 ≠ 0 :=
-    norm_ne_zero_iff.1 (by rw [(mem_sphereBundle.1 v.2)]; exact one_ne_zero)
-  have : Nontrivial F := ⟨⟨L (v : TotalSpace F E).2, 0, L.map_ne_zero_iff.2 hv⟩⟩
+  have hv : (v : TotalSpace F E).snd ≠ 0 :=
+    norm_ne_zero_iff.1 (by rw [(mem_sphereBundle.1 v.property)]; exact one_ne_zero)
+  have : Nontrivial F := ⟨⟨L (v : TotalSpace F E).snd, 0, L.map_ne_zero_iff.2 hv⟩⟩
   exact (NormedSpace.sphere_nonempty.2 zero_le_one).to_subtype
 
 /-- A unit vector in the model fibre gives a point of the sphere bundle over every point. -/
@@ -116,7 +124,7 @@ variable {B : Type w} [TopologicalSpace B] {F : Type*} [NormedAddCommGroup F] [N
 private theorem apply_snd_ne_zero_of_mem_sphereBundle {v : TauCeti.sphereBundle F E}
     (hv : (v : TotalSpace F E).proj ∈ e.baseSet) : (e v).2 ≠ 0 :=
   (e.linearEquivAt ℝ _ hv).map_ne_zero_iff.2
-    (norm_ne_zero_iff.1 (by rw [mem_sphereBundle.1 v.2]; exact one_ne_zero))
+    (norm_ne_zero_iff.1 (by rw [mem_sphereBundle.1 v.property]; exact one_ne_zero))
 
 variable [FiberBundle F E] [VectorBundle ℝ F E]
 
@@ -152,7 +160,7 @@ private theorem coe_sphereBundleInv {p : B × sphere (0 : F) 1} (hp : p.1 ∈ e.
 fibre norm is continuous on the total space, a linear bundle chart `e` of `E`, followed by
 normalization of the fibre coordinate, restricts to a chart of the projection `S(E) → B` from the
 unit sphere bundle, with fibre the unit sphere of the model fibre and the same base set. -/
-def sphereBundle (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.2‖) :
+def sphereBundle (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.snd‖) :
     Trivialization (sphere (0 : F) 1) (sphereBundleProj F E) where
   toFun v := (sphereBundleProj F E v, e.sphereBundleCoord v)
   invFun := e.sphereBundleInv
@@ -171,7 +179,7 @@ def sphereBundle (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.2‖) :
     rw [sphereBundleProj_apply, e.coe_sphereBundleInv hv', e.coe_sphereBundleCoord hv',
       NormedSpace.normalize.eq_1 (e v).2, e.symm_apply_smul hv',
       NormedSpace.normalize_smul_of_pos hpos, e.symm_proj_apply _ hv',
-      NormedSpace.normalize_eq_self_of_norm_eq_one (mem_sphereBundle.1 v.2)]
+      NormedSpace.normalize_eq_self_of_norm_eq_one (mem_sphereBundle.1 v.property)]
   right_inv' p hp := by
     have hp' : p.1 ∈ e.baseSet := hp.1
     have hpos : 0 < ‖e.symm p.1 p.2‖⁻¹ := inv_pos.2
@@ -192,7 +200,7 @@ def sphereBundle (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.2‖) :
     rw [(IsInducing.id.prodMap IsInducing.subtypeVal).continuousOn_iff]
     have he : ContinuousOn (fun v : TauCeti.sphereBundle F E ↦ e v)
         (sphereBundleProj F E ⁻¹' e.baseSet) :=
-      e.continuousOn.comp continuous_subtype_val.continuousOn fun v hv ↦
+      e.continuousOn.comp continuous_subtypeVal.continuousOn fun v hv ↦
         e.mem_source.2 (by simpa using hv)
     refine (he.fst.prodMk (((continuous_norm.comp_continuousOn he.snd).inv₀ fun v hv ↦
       norm_ne_zero_iff.2 (e.apply_snd_ne_zero_of_mem_sphereBundle (by simpa using hv))).smul
@@ -208,17 +216,17 @@ def sphereBundle (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.2‖) :
     have hs : ContinuousOn (fun p : B × sphere (0 : F) 1 ↦
         e.toOpenPartialHomeomorph.symm (p.1, (p.2 : F))) (e.baseSet ×ˢ univ) :=
       e.toOpenPartialHomeomorph.continuousOn_symm.comp
-        (continuous_id.prodMap continuous_subtype_val).continuousOn
+        (continuous_id.prodMap continuous_subtypeVal).continuousOn
         fun p (hp : p ∈ e.baseSet ×ˢ univ) ↦ e.mk_mem_target.2 hp.1
     have hn : ContinuousOn (fun p : B × sphere (0 : F) 1 ↦
-        ‖(e.toOpenPartialHomeomorph.symm (p.1, (p.2 : F))).2‖⁻¹) (e.baseSet ×ˢ univ) :=
+        ‖(e.toOpenPartialHomeomorph.symm (p.1, (p.2 : F))).snd‖⁻¹) (e.baseSet ×ˢ univ) :=
       (hnorm.comp_continuousOn hs).inv₀ fun p (hp : p ∈ e.baseSet ×ˢ univ) ↦ by
         rw [Function.comp_apply, ← e.mk_symm hp.1]
         exact norm_ne_zero_iff.2
           ((e.symm_apply_ne_zero_iff ℝ hp.1).2 (ne_zero_of_mem_unit_sphere p.2))
     refine (e.toOpenPartialHomeomorph.continuousOn_symm.comp
       (continuous_fst.continuousOn.prodMk
-        (hn.smul (continuous_subtype_val.comp continuous_snd).continuousOn))
+        (hn.smul (continuous_subtypeVal.comp continuous_snd).continuousOn))
       fun p (hp : p ∈ e.baseSet ×ˢ univ) ↦ e.mk_mem_target.2 hp.1).congr
       fun p (hp : p ∈ e.baseSet ×ˢ univ) ↦ ?_
     simp only [Function.comp_apply, Pi.smul_apply']
@@ -232,7 +240,7 @@ def sphereBundle (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.2‖) :
   target_eq := rfl
   proj_toFun _ _ := rfl
 
-variable (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.2‖)
+variable (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.snd‖)
 
 @[simp]
 theorem sphereBundle_baseSet : (e.sphereBundle hnorm).baseSet = e.baseSet :=
@@ -267,14 +275,14 @@ variable (F E) in
 whose fibre norm is continuous on the total space, every point of the base lies in the base set of
 a chart of `S(E) → B` with fibre the unit sphere of the model fibre `F`. No finite-dimensionality,
 and no separation or paracompactness assumption on the base, is needed. -/
-theorem exists_trivialization_sphereBundleProj (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.2‖)
+theorem exists_trivialization_sphereBundleProj (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.snd‖)
     (b : B) : ∃ e : Trivialization (sphere (0 : F) 1) (sphereBundleProj F E), b ∈ e.baseSet :=
   ⟨(trivializationAt F E b).sphereBundle hnorm, mem_baseSet_trivializationAt F E b⟩
 
 variable (F E) in
 /-- **The sphere bundle of a real vector bundle is a Serre fibration.** -/
 theorem TopCat.mem_serreFibrations_sphereBundleProj
-    (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.2‖) :
+    (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.snd‖) :
     TopCat.serreFibrations (_root_.TopCat.ofHom (sphereBundleProj F E) :
       _root_.TopCat.of (sphereBundle F E) ⟶ _root_.TopCat.of B) :=
   TopCat.mem_serreFibrations_of_exists_trivialization
@@ -284,7 +292,7 @@ variable (F E) in
 /-- **The sphere bundle of a real vector bundle over a normal paracompact base is a Hurewicz
 fibration.** This includes every paracompact Hausdorff base. -/
 theorem isHurewiczFibration_sphereBundleProj [NormalSpace B] [ParacompactSpace B]
-    (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.2‖) :
+    (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.snd‖) :
     IsHurewiczFibration.{v} (sphereBundleProj F E) :=
   isHurewiczFibration_of_exists_trivialization (exists_trivialization_sphereBundleProj F E hnorm)
 
@@ -293,7 +301,7 @@ variable (E) in
 continuous on the total space and the model fibre `F` has dimension `n + 1`, the projection
 `S(E) → B`, whose fibres are `n`-spheres, induces bijections on `πₖ` for `k < n`, path components
 included, and a surjection on `πₙ`. -/
-theorem isNConnected_sphereBundleProj (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.2‖) {n : ℕ}
+theorem isNConnected_sphereBundleProj (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.snd‖) {n : ℕ}
     (hF : finrank ℝ F = n + 1) : (sphereBundleProj F E).IsNConnected n := by
   have : Nontrivial F := Module.nontrivial_of_finrank_eq_succ hF
   refine (TopCat.isNConnected_iff_of_mem_serreFibrations
@@ -310,9 +318,39 @@ variable (E) in
 /-- **An `n`-sphere bundle with `n ≥ 2` is simply connected exactly when its base is.** If the fibre
 norm of a real vector bundle is continuous on the total space and its model fibre `F` has dimension
 `n + 1` with `n ≥ 2`, its unit sphere bundle is simply connected exactly when the base is. -/
-theorem simplyConnectedSpace_sphereBundle_iff (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.2‖)
+theorem simplyConnectedSpace_sphereBundle_iff (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.snd‖)
     {n : ℕ} (hF : finrank ℝ F = n + 1) (hn : 2 ≤ n) :
     SimplyConnectedSpace (sphereBundle F E) ↔ SimplyConnectedSpace B :=
   (isNConnected_sphereBundleProj E hnorm hF).simplyConnectedSpace_iff hn
+
+variable (F E) in
+/-- **The sphere bundle of a line bundle is a covering.** For a real vector bundle of rank one whose
+fibre norm is continuous on the total space, the projection `S(E) → B` is a covering map, with
+fibre the two unit vectors of the model fibre. -/
+theorem isCoveringMap_sphereBundleProj (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.snd‖)
+    (hF : finrank ℝ F = 1) : IsCoveringMap (sphereBundleProj F E) :=
+  haveI := discreteTopology_sphere_of_finrank_eq_one hF (0 : F) 1
+  IsFiberBundle.isCoveringMap (exists_trivialization_sphereBundleProj F E hnorm)
+
+variable (F E) in
+/-- In rank one, every fibre of the sphere bundle `S(E) → B` consists of exactly two points, the two
+unit vectors of the fibre of `E`. -/
+theorem natCard_sphereBundleProj_preimage_singleton (hF : finrank ℝ F = 1) (b : B) :
+    Nat.card (sphereBundleProj F E ⁻¹' {b}) = 2 := by
+  have hE : finrank ℝ (E b) = 1 := ((trivializationAt F E b).continuousLinearEquivAt ℝ b
+    (mem_baseSet_trivializationAt F E b)).toLinearEquiv.finrank_eq.trans hF
+  have : Nontrivial (E b) := Module.nontrivial_of_finrank_eq_succ hE
+  -- The unit sphere of the line `E b` is a unit vector `v` and its antipode `-v ≠ v`.
+  obtain ⟨v, hv⟩ := (NormedSpace.sphere_nonempty (x := (0 : E b))).2 zero_le_one
+  rw [← range_sphereBundleFiberIncl,
+    Nat.card_range_of_injective (isEmbedding_sphereBundleFiberIncl F E b).injective,
+    sphere_eq_pair_of_finrank_eq_one hE hv, Nat.card_coe_set_eq, Set.ncard_pair]
+  exact fun h ↦ ne_neg_of_mem_unit_sphere ℝ ⟨v, hv⟩ (Subtype.ext h)
+
+variable (F E) in
+/-- In rank one, the fibres of the sphere bundle `S(E) → B` are finite. -/
+theorem finite_sphereBundleProj_preimage_singleton (hF : finrank ℝ F = 1) (b : B) :
+    Finite (sphereBundleProj F E ⁻¹' {b}) :=
+  Nat.finite_of_card_ne_zero (by simp [natCard_sphereBundleProj_preimage_singleton F E hF b])
 
 end TauCeti

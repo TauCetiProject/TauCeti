@@ -290,7 +290,7 @@ theorem eventuallyEq_trivializationAt_ofBundleEquivDualDetFiberEquiv_snd
     (p₀ : (ofBundleEquiv b.equivFunL V).dual.det.core.TotalSpace) :
     (fun q : (ofBundleEquiv b.equivFunL V).dual.det.core.TotalSpace ↦
         (trivializationAt (F [⋀^Fin r]→L[𝕜] 𝕜) (fun y ↦ V y [⋀^Fin r]→L[𝕜] 𝕜) p₀.proj
-          ⟨q.proj, ofBundleEquivDualDetFiberEquiv b V q.proj q.2⟩).2) =ᶠ[nhds p₀]
+          ⟨q.proj, ofBundleEquivDualDetFiberEquiv b V q.proj q.snd⟩).2) =ᶠ[nhds p₀]
       fun q ↦
         ((detScalarEquiv (ofBundleEquiv b.equivFunL V).dual).trans b.topFormEquiv.symm)
           (((ofBundleEquiv b.equivFunL V).dual.det.core.localTriv p₀.proj q).2) := by
@@ -305,14 +305,14 @@ theorem eventuallyEq_trivializationAt_ofBundleEquivDualDetFiberEquiv_snd
   filter_upwards [hU] with q hq
   exact trivializationAt_ofBundleEquivDualDetFiberEquiv_snd b V p₀.proj
     ((hbase p₀.proj) ▸
-      ((ofBundleEquiv b.equivFunL V).dual.det.core.mem_localTriv_source p₀.proj q).1 hq) q.2
+      ((ofBundleEquiv b.equivFunL V).dual.det.core.mem_localTriv_source p₀.proj q).1 hq) q.snd
 
 /-- Reading determinant-core coordinates as top-degree alternating forms on `V` is continuous on
 total spaces. -/
 theorem continuous_ofBundleEquivDualDetFiberEquiv :
     Continuous fun p : (ofBundleEquiv b.equivFunL V).dual.det.core.TotalSpace ↦
       TotalSpace.mk' (F [⋀^Fin r]→L[𝕜] 𝕜) (E := fun x ↦ V x [⋀^Fin r]→L[𝕜] 𝕜)
-        p.proj (ofBundleEquivDualDetFiberEquiv b V p.proj p.2) := by
+        p.proj (ofBundleEquivDualDetFiberEquiv b V p.proj p.snd) := by
   refine continuous_iff_continuousAt.2 fun p ↦ ?_
   rw [FiberBundle.continuousAt_totalSpace]
   refine ⟨(ofBundleEquiv b.equivFunL V).dual.det.core.continuous_proj.continuousAt, ?_⟩
@@ -343,14 +343,14 @@ noncomputable def ofBundleEquivDualDetTotalSpaceHomeomorph :
 theorem ofBundleEquivDualDetTotalSpaceHomeomorph_apply
     (p : (ofBundleEquiv b.equivFunL V).dual.det.core.TotalSpace) :
     ofBundleEquivDualDetTotalSpaceHomeomorph b V p =
-      ⟨p.proj, ofBundleEquivDualDetFiberEquiv b V p.proj p.2⟩ :=
+      ⟨p.proj, ofBundleEquivDualDetFiberEquiv b V p.proj p.snd⟩ :=
   bundleHomeomorph_apply _ _ p
 
 @[simp]
 theorem ofBundleEquivDualDetTotalSpaceHomeomorph_symm_apply
     (p : TotalSpace (F [⋀^Fin r]→L[𝕜] 𝕜) (fun x ↦ V x [⋀^Fin r]→L[𝕜] 𝕜)) :
     (ofBundleEquivDualDetTotalSpaceHomeomorph b V).symm p =
-      ⟨p.proj, (ofBundleEquivDualDetFiberEquiv b V p.proj).symm p.2⟩ :=
+      ⟨p.proj, (ofBundleEquivDualDetFiberEquiv b V p.proj).symm p.snd⟩ :=
   bundleHomeomorph_symm_apply _ _ p
 
 end TopFormBundle

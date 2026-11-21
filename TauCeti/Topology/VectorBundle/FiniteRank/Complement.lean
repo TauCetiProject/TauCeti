@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.VectorBundle.FiniteRank.Biproduct
-public import TauCeti.Topology.VectorBundle.FiniteRank.ModelEquiv
 public import TauCeti.Topology.VectorBundle.Complement
 public import TauCeti.Topology.VectorBundle.TrivialEmbedding
 public import Mathlib.Analysis.InnerProductSpace.PiL2
@@ -33,7 +32,7 @@ complex finite-rank core over such a base is a direct summand of a trivial core
 over a compact base be written as a bundle minus a trivial bundle.
 
 The complementary bundle is the one constructed in `TauCeti.Topology.VectorBundle.Complement`
-from the continuous orthogonal range projections, presented as a core by `ofBundleEquiv`; the
+from the continuous orthogonal range projections, presented as a core by `ofBundle`; the
 embedding over a compact base is `TauCeti.exists_continuous_injective_fin_of_compactSpace`.
 
 ## References
@@ -56,7 +55,7 @@ theorem exists_injective_hom_trivial {𝕜 B : Type*} [NontriviallyNormedField �
     (A : FiniteRankBundleCore 𝕜 B) :
     ∃ (N : ℕ) (j : A ⟶ trivial 𝕜 B N), ∀ x, Injective (j.fiberMap x) := by
   obtain ⟨N, f, hf, hinj⟩ : ∃ (N : ℕ) (f : B → (Fin A.rank → 𝕜) →L[𝕜] (Fin N → 𝕜)),
-      Continuous (fun p : A.core.TotalSpace ↦ f p.proj p.2) ∧ ∀ x, Injective (f x) :=
+      Continuous (fun p : A.core.TotalSpace ↦ f p.proj p.snd) ∧ ∀ x, Injective (f x) :=
     exists_continuous_injective_fin_of_compactSpace (F := Fin A.rank → 𝕜) (E := A.core.Fiber)
   exact ⟨N, toTrivial f hf, fun x ↦ by rw [fiberMap_toTrivial]; exact hinj x⟩
 
@@ -76,7 +75,7 @@ private theorem euclideanMap_apply (x : B) (v : Fin A.rank → 𝕜) :
   rfl
 
 private theorem continuous_euclideanMap :
-    Continuous fun p : A.core.TotalSpace ↦ euclideanMap j p.proj p.2 :=
+    Continuous fun p : A.core.TotalSpace ↦ euclideanMap j p.proj p.snd :=
   (EuclideanSpace.equiv (Fin N) 𝕜).symm.continuous.comp (continuous_fiberMap_trivial j)
 
 include hj in
@@ -98,8 +97,7 @@ noncomputable def orthogonal : FiniteRankBundleCore 𝕜 B :=
     (euclideanMap_injective j hj)
   haveI := bundleComplementVectorBundle (euclideanMap j) (continuous_euclideanMap j)
     (euclideanMap_injective j hj)
-  ofBundleEquiv (ContinuousLinearEquiv.refl 𝕜 (Fin (orthogonalRank (A := A) (N := N)) → 𝕜))
-    (OrthogonalFiber j)
+  ofBundle 𝕜 (orthogonalRank (A := A) (N := N)) (OrthogonalFiber j)
 
 @[simp] theorem rank_orthogonal : (orthogonal j hj).rank = N - A.rank := by
   simp [orthogonal, orthogonalRank]
@@ -111,24 +109,22 @@ private noncomputable def orthogonalFiberEquiv (x : B) :
     (euclideanMap_injective j hj)
   haveI := bundleComplementVectorBundle (euclideanMap j) (continuous_euclideanMap j)
     (euclideanMap_injective j hj)
-  ofBundleEquivFiberEquiv
-    (ContinuousLinearEquiv.refl 𝕜 (Fin (orthogonalRank (A := A) (N := N)) → 𝕜))
+  pointIndexedCoreFiberEquiv 𝕜 (Fin (orthogonalRank (A := A) (N := N)) → 𝕜)
     (OrthogonalFiber j) x
 
 private theorem continuous_orthogonalFiberEquiv :
     Continuous fun p : (orthogonal j hj).core.TotalSpace ↦
-      ((orthogonalFiberEquiv j hj p.proj p.2 : OrthogonalFiber j p.proj) :
+      ((orthogonalFiberEquiv j hj p.proj p.snd : OrthogonalFiber j p.proj) :
         EuclideanSpace 𝕜 (Fin N)) :=
   letI := bundleComplementFiberBundle (euclideanMap j) (continuous_euclideanMap j)
     (euclideanMap_injective j hj)
   haveI := bundleComplementVectorBundle (euclideanMap j) (continuous_euclideanMap j)
     (euclideanMap_injective j hj)
   (continuous_snd.comp ((isEmbedding_totalSpace_range _ _).continuous.comp
-    (ofBundleEquivTotalSpaceHomeomorph
-      (ContinuousLinearEquiv.refl 𝕜 (Fin (orthogonalRank (A := A) (N := N)) → 𝕜))
+    (pointIndexedCoreHomeomorph 𝕜 (Fin (orthogonalRank (A := A) (N := N)) → 𝕜)
       (OrthogonalFiber j)).continuous)).congr fun p ↦
-    congrArg (fun q : TotalSpace _ (OrthogonalFiber j) ↦ (q.2 : EuclideanSpace 𝕜 (Fin N)))
-      (ofBundleEquivTotalSpaceHomeomorph_apply _ _ p)
+    congrArg (fun q : TotalSpace _ (OrthogonalFiber j) ↦ (q.snd : EuclideanSpace 𝕜 (Fin N)))
+      (pointIndexedCoreHomeomorph_apply 𝕜 _ _ p)
 
 /-- The fibre maps of the inclusion of the orthogonal complement into `Fin N → 𝕜`. -/
 private noncomputable def orthogonalFiberMap (x : B) :
@@ -225,7 +221,7 @@ theorem mem_range_fiberMap_orthogonalInclusion_iff (x : B) (w : Fin (trivial �
     · rintro ⟨v, rfl⟩
       rw [ContinuousLinearMap.coe_coe, fiberMap_orthogonalInclusion,
         ContinuousLinearEquiv.symm_apply_apply]
-      exact (orthogonalFiberEquiv j hj x v).2
+      exact (orthogonalFiberEquiv j hj x v).property
     · intro h
       refine ⟨(orthogonalFiberEquiv j hj x).symm ⟨_, h⟩, ?_⟩
       rw [ContinuousLinearMap.coe_coe, fiberMap_orthogonalInclusion,

@@ -24,11 +24,6 @@ Applied on each locally constant rank stratum with model `Fin n → 𝕜`, this 
 the reconstruction step in a small coordinate presentation of finite-rank bundles.
 No compactness, separation, or finite-dimensionality assumption is needed.
 
-More generally, `VectorBundleCore.congrModel` transports any core's model fibre
-along a continuous linear equivalence `e : F ≃L[𝕜] F'` by conjugating its transitions,
-and `VectorBundleCore.congrModelHomeomorph` identifies the resulting total space with
-the original core's total space.
-
 The construction uses Mathlib's `Bundle.Trivialization.coordChangeL` and
 `VectorBundleCore` gluing construction.
 -/
@@ -106,8 +101,8 @@ noncomputable def pointIndexedCoreFiberEquiv (b : B) :
 
 private noncomputable def pointIndexedCoreTotalEquiv :
     (pointIndexedCore 𝕜 F E).TotalSpace ≃ TotalSpace F E where
-  toFun p := ⟨p.proj, pointIndexedCoreFiberEquiv 𝕜 F E p.proj p.2⟩
-  invFun p := ⟨p.proj, (pointIndexedCoreFiberEquiv 𝕜 F E p.proj).symm p.2⟩
+  toFun p := ⟨p.proj, pointIndexedCoreFiberEquiv 𝕜 F E p.proj p.snd⟩
+  invFun p := ⟨p.proj, (pointIndexedCoreFiberEquiv 𝕜 F E p.proj).symm p.snd⟩
   left_inv p := by
     dsimp only
     rw [ContinuousLinearEquiv.symm_apply_apply]
@@ -126,7 +121,7 @@ private theorem trivializationAt_pointIndexedCoreTotalEquiv (b : B)
   rw [VectorBundleCore.localTriv_apply, pointIndexedCore_coordChange,
     pointIndexedCore_indexAt]
   exact ((trivializationAt F E p.proj).mk_coordChangeL (trivializationAt F E b)
-    ⟨mem_baseSet_trivializationAt F E p.proj, hp⟩ p.2).symm
+    ⟨mem_baseSet_trivializationAt F E p.proj, hp⟩ p.snd).symm
 
 private theorem continuous_pointIndexedCoreTotalEquiv :
     Continuous (pointIndexedCoreTotalEquiv 𝕜 F E) := by
@@ -134,7 +129,7 @@ private theorem continuous_pointIndexedCoreTotalEquiv :
   rw [FiberBundle.continuousAt_totalSpace]
   refine ⟨(FiberBundle.continuous_proj F (pointIndexedCore 𝕜 F E).Fiber).continuousAt, ?_⟩
   have hp : p ∈ ((pointIndexedCore 𝕜 F E).localTriv p.proj).source :=
-    (pointIndexedCore 𝕜 F E).mem_source_at p.proj p.2
+    (pointIndexedCore 𝕜 F E).mem_source_at p.proj p.snd
   have hc := (((pointIndexedCore 𝕜 F E).localTriv p.proj).continuousOn.continuousAt
     (((pointIndexedCore 𝕜 F E).localTriv p.proj).open_source.mem_nhds hp)).snd
   refine hc.congr_of_eventuallyEq ?_
@@ -170,11 +165,11 @@ noncomputable def pointIndexedCoreHomeomorph :
 
 @[simp] theorem pointIndexedCoreHomeomorph_apply (p : (pointIndexedCore 𝕜 F E).TotalSpace) :
     pointIndexedCoreHomeomorph 𝕜 F E p =
-      ⟨p.proj, pointIndexedCoreFiberEquiv 𝕜 F E p.proj p.2⟩ := (rfl)
+      ⟨p.proj, pointIndexedCoreFiberEquiv 𝕜 F E p.proj p.snd⟩ := (rfl)
 
 @[simp] theorem pointIndexedCoreHomeomorph_symm_apply (p : TotalSpace F E) :
     (pointIndexedCoreHomeomorph 𝕜 F E).symm p =
-      ⟨p.proj, (pointIndexedCoreFiberEquiv 𝕜 F E p.proj).symm p.2⟩ := (rfl)
+      ⟨p.proj, (pointIndexedCoreFiberEquiv 𝕜 F E p.proj).symm p.snd⟩ := (rfl)
 
 /-- The reconstruction homeomorphism intertwines every core chart with its
 original chart, wherever that chart is defined. -/
@@ -195,98 +190,3 @@ theorem localTriv_pointIndexedCoreHomeomorph_symm (b : B) (p : TotalSpace F E)
     congrArg (trivializationAt F E b) ((pointIndexedCoreHomeomorph 𝕜 F E).apply_symm_apply p)
 
 end TauCeti
-
-namespace VectorBundleCore
-
-variable {𝕜 B F F' ι : Type*} [NontriviallyNormedField 𝕜] [TopologicalSpace B]
-  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup F'] [NormedSpace 𝕜 F']
-
-/-- Conjugate the model fibre of a `VectorBundleCore` along a continuous linear equivalence
-`e : F ≃L[𝕜] F'`, keeping the same chart domains and index function. -/
-noncomputable def congrModel (Z : VectorBundleCore 𝕜 B F ι) (e : F ≃L[𝕜] F') :
-    VectorBundleCore 𝕜 B F' ι where
-  baseSet := Z.baseSet
-  isOpen_baseSet := Z.isOpen_baseSet
-  indexAt := Z.indexAt
-  mem_baseSet_at := Z.mem_baseSet_at
-  coordChange i j x :=
-    e.toContinuousLinearMap.comp ((Z.coordChange i j x).comp e.symm.toContinuousLinearMap)
-  coordChange_self i x hx v := by
-    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-      Z.coordChange_self i x hx (e.symm v), ContinuousLinearEquiv.apply_symm_apply]
-  continuousOn_coordChange i j :=
-    (e.arrowCongr e).continuous.comp_continuousOn (Z.continuousOn_coordChange i j)
-  coordChange_comp i j k x hx v := by
-    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-      ContinuousLinearEquiv.symm_apply_apply, Z.coordChange_comp i j k x hx (e.symm v)]
-
-theorem congrModel_baseSet (Z : VectorBundleCore 𝕜 B F ι) (e : F ≃L[𝕜] F') (i : ι) :
-    (Z.congrModel e).baseSet i = Z.baseSet i := (rfl)
-
-@[simp] theorem congrModel_indexAt (Z : VectorBundleCore 𝕜 B F ι) (e : F ≃L[𝕜] F') (x : B) :
-    (Z.congrModel e).indexAt x = Z.indexAt x := (rfl)
-
-@[simp] theorem congrModel_coordChange (Z : VectorBundleCore 𝕜 B F ι) (e : F ≃L[𝕜] F')
-    (i j : ι) (x : B) :
-    (Z.congrModel e).coordChange i j x =
-      e.toContinuousLinearMap.comp ((Z.coordChange i j x).comp e.symm.toContinuousLinearMap) :=
-  (rfl)
-
-@[simp] theorem congrModel_localTriv_baseSet (Z : VectorBundleCore 𝕜 B F ι) (e : F ≃L[𝕜] F')
-    (i : ι) :
-    ((Z.congrModel e).localTriv i).baseSet = Z.baseSet i := (rfl)
-
-/-- Every local trivialization of `Z.congrModel e` is the corresponding local trivialization of `Z`
-conjugated on the fibre coordinate by `e`. -/
-theorem localTriv_congrModel_snd (Z : VectorBundleCore 𝕜 B F ι) (e : F ≃L[𝕜] F') (i : ι)
-    (p : (Z.congrModel e).TotalSpace) :
-    ((Z.congrModel e).localTriv i p).2 = e ((Z.localTriv i ⟨p.proj, e.symm p.2⟩).2) := by
-  rw [localTriv_apply, localTriv_apply, congrModel_indexAt, congrModel_coordChange]
-  exact congrArg (fun v ↦ e (Z.coordChange (Z.indexAt p.proj) i p.proj v)) rfl
-
-/-- Transporting the model fibre of a `VectorBundleCore` along `e : F ≃L[𝕜] F'` induces a
-homeomorphism of total spaces over the identity of the base, acting on fibres by `e.symm`. -/
-noncomputable def congrModelHomeomorph (Z : VectorBundleCore 𝕜 B F ι) (e : F ≃L[𝕜] F') :
-    (Z.congrModel e).TotalSpace ≃ₜ Z.TotalSpace where
-  toFun p := ⟨p.proj, e.symm p.2⟩
-  invFun p := ⟨p.proj, e p.2⟩
-  left_inv p := by rcases p with ⟨x, v⟩; exact congrArg (TotalSpace.mk' F' x) (e.apply_symm_apply v)
-  right_inv p := by rcases p with ⟨x, v⟩; exact congrArg (TotalSpace.mk' F x) (e.symm_apply_apply v)
-  continuous_toFun := continuous_iff_continuousAt.2 fun p₀ ↦ by
-    rw [FiberBundle.continuousAt_totalSpace]
-    refine ⟨(Z.congrModel e).continuous_proj.continuousAt, ?_⟩
-    have hp₀ := (Z.congrModel e).mem_source_at p₀.proj p₀.2
-    have hc :=
-      (((Z.congrModel e).localTriv ((Z.congrModel e).indexAt p₀.proj)).continuousOn.continuousAt
-        (((Z.congrModel e).localTriv ((Z.congrModel e).indexAt p₀.proj)).open_source.mem_nhds
-          hp₀)).snd
-    refine (e.symm.continuous.continuousAt.comp hc).congr_of_eventuallyEq
-      (Filter.Eventually.of_forall fun q ↦ ?_)
-    dsimp only [Function.comp_apply]
-    rw [Z.trivializationAt, ← Z.localTrivAt_def, localTriv_congrModel_snd, e.symm_apply_apply]
-    -- `(Z.congrModel e).indexAt p₀.proj` equals `Z.indexAt p₀.proj` definitionally.
-    rfl
-  continuous_invFun := continuous_iff_continuousAt.2 fun p₀ ↦ by
-    rw [FiberBundle.continuousAt_totalSpace]
-    refine ⟨Z.continuous_proj.continuousAt, ?_⟩
-    have hp₀ := Z.mem_source_at p₀.proj p₀.2
-    have hc := ((Z.localTriv (Z.indexAt p₀.proj)).continuousOn.continuousAt
-      ((Z.localTriv (Z.indexAt p₀.proj)).open_source.mem_nhds hp₀)).snd
-    refine (e.continuous.continuousAt.comp hc).congr_of_eventuallyEq
-      (Filter.Eventually.of_forall fun q ↦ ?_)
-    dsimp only [Function.comp_apply]
-    rw [(Z.congrModel e).trivializationAt, ← (Z.congrModel e).localTrivAt_def,
-      localTriv_congrModel_snd, congrModel_indexAt]
-    exact congrArg (fun v ↦ e ((Z.localTriv (Z.indexAt p₀.proj) ⟨q.proj, v⟩).2))
-      (e.symm_apply_apply q.2)
-
-@[simp] theorem congrModelHomeomorph_apply (Z : VectorBundleCore 𝕜 B F ι) (e : F ≃L[𝕜] F')
-    (p : (Z.congrModel e).TotalSpace) :
-    Z.congrModelHomeomorph e p = ⟨p.proj, e.symm p.2⟩ := (rfl)
-
-@[simp] theorem congrModelHomeomorph_symm_apply (Z : VectorBundleCore 𝕜 B F ι) (e : F ≃L[𝕜] F')
-    (p : Z.TotalSpace) :
-    (Z.congrModelHomeomorph e).symm p = ⟨p.proj, e p.2⟩ := (rfl)
-
-end VectorBundleCore
-

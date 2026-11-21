@@ -213,7 +213,7 @@ theorem exists_continuousMulEquiv_apply_demushkinWordTwoEven_zero_eq_of_forall_c
     obtain ⟨v, hv, hvz⟩ := Submodule.mem_map.mp hzδ
     choose ω hωX hωv using fun i ↦
       mem_gradedPieceOf_iff.mp (Submodule.mem_pi.mp hv i (Set.mem_univ i))
-    refine ⟨ω, fun i ↦ mem_inf.mpr ⟨hωX i, pLowerCentralSeries_antitone hm (ω i).2⟩, ?_⟩
+    refine ⟨ω, fun i ↦ mem_inf.mpr ⟨hωX i, pLowerCentralSeries_antitone hm (ω i).property⟩, ?_⟩
     rw [funext hωv, hvz]
 
 /-- **The even-rank dyadic relators, up to tails.** Let `n ≥ 2` be even and let `r ∈ λ_1(F)` be a

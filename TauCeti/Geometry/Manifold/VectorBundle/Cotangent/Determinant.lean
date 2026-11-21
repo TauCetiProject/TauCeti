@@ -188,12 +188,12 @@ noncomputable def tangentFiniteRankCoreTotalSpaceDiffeomorph (b : Basis (Fin r) 
 @[simp]
 theorem tangentFiniteRankCoreTotalSpaceDiffeomorph_apply (b : Basis (Fin r) 𝕜 E) (n : ℕ∞ω)
     (p : (tangentFiniteRankCore I M b).core.TotalSpace) :
-    tangentFiniteRankCoreTotalSpaceDiffeomorph I M b n p = ⟨p.proj, b.equivFunL.symm p.2⟩ :=
+    tangentFiniteRankCoreTotalSpaceDiffeomorph I M b n p = ⟨p.proj, b.equivFunL.symm p.snd⟩ :=
   (FiniteRankBundleCore.ofBundleEquivTotalSpaceDiffeomorph_apply b.equivFunL (TangentSpace I)
     p).trans <|
     congrArg (TotalSpace.mk' E p.proj) <|
       (FiniteRankBundleCore.ofBundleEquivFiberEquiv_apply b.equivFunL (TangentSpace I) p.proj
-        p.2).trans (TangentBundle.trivializationAt_symm_apply_self p.proj _)
+        p.snd).trans (TangentBundle.trivializationAt_symm_apply_self p.proj _)
 
 /-- The `i`th standard basis vector over `x` in `tangentFiniteRankCore I M b` corresponds to the
 tangent vector `b i` in `TangentBundle I M`. -/
@@ -207,7 +207,7 @@ theorem tangentFiniteRankCoreTotalSpaceDiffeomorph_single (b : Basis (Fin r) �
 @[simp]
 theorem tangentFiniteRankCoreTotalSpaceDiffeomorph_symm_apply (b : Basis (Fin r) 𝕜 E) (n : ℕ∞ω)
     (p : TangentBundle I M) :
-    (tangentFiniteRankCoreTotalSpaceDiffeomorph I M b n).symm p = ⟨p.proj, b.equivFunL p.2⟩ := by
+    (tangentFiniteRankCoreTotalSpaceDiffeomorph I M b n).symm p = ⟨p.proj, b.equivFunL p.snd⟩ := by
   rw [tangentFiniteRankCoreTotalSpaceDiffeomorph,
     FiniteRankBundleCore.ofBundleEquivTotalSpaceDiffeomorph_symm_apply,
     FiniteRankBundleCore.ofBundleEquivFiberEquiv_symm_apply,
@@ -243,7 +243,7 @@ coordinate vector `w` over `x` evaluates on a tangent vector `v` as `∑ k, b.re
 @[simp]
 theorem cotangentFiniteRankCoreTotalSpaceDiffeomorph_apply_snd_apply (b : Basis (Fin r) 𝕜 E)
     (n : ℕ∞ω) (x : M) (w : Fin r → 𝕜) (v : TangentSpace I x) :
-    (cotangentFiniteRankCoreTotalSpaceDiffeomorph I M b n ⟨x, w⟩).2 v =
+    (cotangentFiniteRankCoreTotalSpaceDiffeomorph I M b n ⟨x, w⟩).snd v =
       ∑ k, b.repr v k * w k := by
   rw [cotangentFiniteRankCoreTotalSpaceDiffeomorph,
     FiniteRankBundleCore.ofBundleEquivDualTotalSpaceDiffeomorph_apply]
@@ -256,7 +256,7 @@ theorem cotangentFiniteRankCoreTotalSpaceDiffeomorph_apply_snd_apply (b : Basis 
 to the `i`th coordinate covector `v ↦ b.repr v i`. -/
 theorem cotangentFiniteRankCoreTotalSpaceDiffeomorph_single_apply (b : Basis (Fin r) 𝕜 E)
     (n : ℕ∞ω) (x : M) (i : Fin r) (v : TangentSpace I x) :
-    (cotangentFiniteRankCoreTotalSpaceDiffeomorph I M b n ⟨x, (Pi.single i 1 : Fin r → 𝕜)⟩).2 v =
+    (cotangentFiniteRankCoreTotalSpaceDiffeomorph I M b n ⟨x, (Pi.single i 1 : Fin r → 𝕜)⟩).snd v =
       b.repr v i :=
   (cotangentFiniteRankCoreTotalSpaceDiffeomorph_apply_snd_apply b n x
     (Pi.single i 1 : Fin r → 𝕜) v).trans (by simp [Pi.single_apply])
@@ -266,7 +266,7 @@ theorem cotangentFiniteRankCoreTotalSpaceDiffeomorph_single_apply (b : Basis (Fi
 @[simp]
 theorem cotangentFiniteRankCoreTotalSpaceDiffeomorph_symm_apply_snd_apply (b : Basis (Fin r) 𝕜 E)
     (n : ℕ∞ω) (x : M) (α : TangentSpace I x →L[𝕜] 𝕜) (i : Fin r) :
-    ((cotangentFiniteRankCoreTotalSpaceDiffeomorph I M b n).symm ⟨x, α⟩).2 i = α (b i) := by
+    ((cotangentFiniteRankCoreTotalSpaceDiffeomorph I M b n).symm ⟨x, α⟩).snd i = α (b i) := by
   rw [cotangentFiniteRankCoreTotalSpaceDiffeomorph,
     FiniteRankBundleCore.ofBundleEquivDualTotalSpaceDiffeomorph_symm_apply]
   dsimp only
@@ -330,8 +330,8 @@ theorem detCotangentDiffeomorphDualDetTangent_symm_proj (b : Basis (Fin r) 𝕜 
 theorem detScalarEquiv_detCotangentDiffeomorphDualDetTangent_snd (b : Basis (Fin r) 𝕜 E) (n : ℕ∞ω)
     (p : (cotangentFiniteRankCore I M b).det.core.TotalSpace) :
     FiniteRankBundleCore.detScalarEquiv (tangentFiniteRankCore I M b)
-        (detCotangentDiffeomorphDualDetTangent I M b n p).2 =
-      FiniteRankBundleCore.detScalarEquiv (cotangentFiniteRankCore I M b) p.2 :=
+        (detCotangentDiffeomorphDualDetTangent I M b n p).snd =
+      FiniteRankBundleCore.detScalarEquiv (cotangentFiniteRankCore I M b) p.snd :=
   FiniteRankBundleCore.detScalarEquiv_dualDetDiffeomorphDetDual_snd
     (tangentFiniteRankCore I M b) p
 
@@ -339,8 +339,8 @@ theorem detScalarEquiv_detCotangentDiffeomorphDualDetTangent_snd (b : Basis (Fin
 theorem detScalarEquiv_detCotangentDiffeomorphDualDetTangent_symm_snd (b : Basis (Fin r) 𝕜 E)
     (n : ℕ∞ω) (p : (tangentFiniteRankCore I M b).det.dual.core.TotalSpace) :
     FiniteRankBundleCore.detScalarEquiv (cotangentFiniteRankCore I M b)
-        ((detCotangentDiffeomorphDualDetTangent I M b n).symm p).2 =
-      FiniteRankBundleCore.detScalarEquiv (tangentFiniteRankCore I M b) p.2 :=
+        ((detCotangentDiffeomorphDualDetTangent I M b n).symm p).snd =
+      FiniteRankBundleCore.detScalarEquiv (tangentFiniteRankCore I M b) p.snd :=
   FiniteRankBundleCore.detScalarEquiv_dualDetDiffeomorphDetDual_symm_snd
     (tangentFiniteRankCore I M b) p
 
@@ -406,8 +406,8 @@ theorem detCotangentChangeDiffeomorph_symm_proj (b₁ b₂ : Basis (Fin r) 𝕜 
 theorem detScalarEquiv_detCotangentChangeDiffeomorph_snd (b₁ b₂ : Basis (Fin r) 𝕜 E) (n : ℕ∞ω)
     (p : (cotangentFiniteRankCore I M b₁).det.core.TotalSpace) :
     FiniteRankBundleCore.detScalarEquiv (cotangentFiniteRankCore I M b₂)
-        (detCotangentChangeDiffeomorph I M b₁ b₂ n p).2 =
-      b₁.det b₂ * FiniteRankBundleCore.detScalarEquiv (cotangentFiniteRankCore I M b₁) p.2 :=
+        (detCotangentChangeDiffeomorph I M b₁ b₂ n p).snd =
+      b₁.det b₂ * FiniteRankBundleCore.detScalarEquiv (cotangentFiniteRankCore I M b₁) p.snd :=
   FiniteRankBundleCore.detScalarEquiv_ofBundleEquivDualDetChangeDiffeomorph_snd b₁ b₂
     (TangentSpace I) p
 
@@ -416,8 +416,8 @@ theorem detScalarEquiv_detCotangentChangeDiffeomorph_snd (b₁ b₂ : Basis (Fin
 theorem detScalarEquiv_detCotangentChangeDiffeomorph_symm_snd (b₁ b₂ : Basis (Fin r) 𝕜 E)
     (n : ℕ∞ω) (p : (cotangentFiniteRankCore I M b₂).det.core.TotalSpace) :
     FiniteRankBundleCore.detScalarEquiv (cotangentFiniteRankCore I M b₁)
-        ((detCotangentChangeDiffeomorph I M b₁ b₂ n).symm p).2 =
-      b₂.det b₁ * FiniteRankBundleCore.detScalarEquiv (cotangentFiniteRankCore I M b₂) p.2 :=
+        ((detCotangentChangeDiffeomorph I M b₁ b₂ n).symm p).snd =
+      b₂.det b₁ * FiniteRankBundleCore.detScalarEquiv (cotangentFiniteRankCore I M b₂) p.snd :=
   FiniteRankBundleCore.detScalarEquiv_ofBundleEquivDualDetChangeDiffeomorph_symm_snd b₁ b₂
     (TangentSpace I) p
 
@@ -476,7 +476,7 @@ theorem detCotangentTotalSpaceDiffeomorph_symm_proj (b : Basis (Fin (finrank �
 theorem detCotangentTotalSpaceDiffeomorph_apply_snd_apply (b : Basis (Fin (finrank 𝕜 E)) 𝕜 E)
     (n : ℕ∞ω) (x : M) (v : Fin (cotangentFiniteRankCore I M b).det.rank → 𝕜)
     (u : Fin (finrank 𝕜 E) → TangentSpace I x) :
-    (detCotangentTotalSpaceDiffeomorph I M b n ⟨x, v⟩).2 u =
+    (detCotangentTotalSpaceDiffeomorph I M b n ⟨x, v⟩).snd u =
       FiniteRankBundleCore.detScalarEquiv (cotangentFiniteRankCore I M b) v * b.det u := by
   rw [detCotangentTotalSpaceDiffeomorph,
     FiniteRankBundleCore.ofBundleEquivDualDetTotalSpaceDiffeomorph_apply,
@@ -484,18 +484,18 @@ theorem detCotangentTotalSpaceDiffeomorph_apply_snd_apply (b : Basis (Fin (finra
   simp only [TangentBundle.trivializationAt_apply_self]
 
 /-- Explicit top-exterior-power formula on fibres: `detCotangentTotalSpaceDiffeomorph` sends a
-point `p` over `x` to `detScalarEquiv _ p.2 • CanonicalBundle.coordForm I x b x`. -/
+point `p` over `x` to `detScalarEquiv _ p.snd • CanonicalBundle.coordForm I x b x`. -/
 theorem detCotangentTotalSpaceDiffeomorph_apply_snd (b : Basis (Fin (finrank 𝕜 E)) 𝕜 E) (n : ℕ∞ω)
     (p : (cotangentFiniteRankCore I M b).det.core.TotalSpace) :
-    (detCotangentTotalSpaceDiffeomorph I M b n p).2 =
-      FiniteRankBundleCore.detScalarEquiv (cotangentFiniteRankCore I M b) p.2 •
+    (detCotangentTotalSpaceDiffeomorph I M b n p).snd =
+      FiniteRankBundleCore.detScalarEquiv (cotangentFiniteRankCore I M b) p.snd •
         CanonicalBundle.coordForm I p.proj b p.proj := by
   rw [detCotangentTotalSpaceDiffeomorph,
     FiniteRankBundleCore.ofBundleEquivDualDetTotalSpaceDiffeomorph_apply]
   dsimp only
   ext u
   refine (FiniteRankBundleCore.ofBundleEquivDualDetFiberEquiv_apply_apply b (TangentSpace I)
-    p.proj p.2 u).trans ?_
+    p.proj p.snd u).trans ?_
   rw [ContinuousAlternatingMap.smul_apply, smul_eq_mul, CanonicalBundle.coordForm_apply]
   simp only [TauCeti.Manifold.continuousLinearMapAt_trivializationAt_self,
     TangentBundle.trivializationAt_apply_self]
@@ -516,7 +516,7 @@ constant scalar coordinate `η b`. -/
 theorem detCotangentTotalSpaceDiffeomorph_symm_apply_snd_apply (b : Basis (Fin (finrank 𝕜 E)) 𝕜 E)
     (n : ℕ∞ω) (x : M) (η : CanonicalBundle I M x)
     (i : Fin (cotangentFiniteRankCore I M b).det.rank) :
-    ((detCotangentTotalSpaceDiffeomorph I M b n).symm ⟨x, η⟩).2 i = η b := by
+    ((detCotangentTotalSpaceDiffeomorph I M b n).symm ⟨x, η⟩).snd i = η b := by
   rw [detCotangentTotalSpaceDiffeomorph,
     FiniteRankBundleCore.ofBundleEquivDualDetTotalSpaceDiffeomorph_symm_apply]
   dsimp only
@@ -530,7 +530,7 @@ of `p` as its core chart coordinate at `x₀` times the chart coordinate form
 theorem detCotangentTotalSpaceDiffeomorph_eq_smul_coordForm (b : Basis (Fin (finrank 𝕜 E)) 𝕜 E)
     (n : ℕ∞ω) {x₀ : M} (p : (cotangentFiniteRankCore I M b).det.core.TotalSpace)
     (hx : p.proj ∈ (chartAt H x₀).source) :
-    (detCotangentTotalSpaceDiffeomorph I M b n p).2 =
+    (detCotangentTotalSpaceDiffeomorph I M b n p).snd =
       FiniteRankBundleCore.detScalarEquiv (cotangentFiniteRankCore I M b)
           (((cotangentFiniteRankCore I M b).det.core.localTriv x₀ p).2) •
         CanonicalBundle.coordForm I x₀ b p.proj := by
@@ -539,7 +539,7 @@ theorem detCotangentTotalSpaceDiffeomorph_eq_smul_coordForm (b : Basis (Fin (fin
   refine (CanonicalBundle.eq_smul_coordForm (b := b) hx _).trans ?_
   congr 1
   rw [FiniteRankBundleCore.trivializationAt_ofBundleEquivDualDetFiberEquiv_snd b (TangentSpace I)
-    x₀ (by simpa using hx) p.2, Module.Basis.topFormEquiv_symm_apply, b.det_self, mul_one]
+    x₀ (by simpa using hx) p.snd, Module.Basis.topFormEquiv_symm_apply, b.det_self, mul_one]
 
 /-- Changing the model basis commutes strictly with the canonical-bundle identification
 `detCotangentTotalSpaceDiffeomorph`. -/

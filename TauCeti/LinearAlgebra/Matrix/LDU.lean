@@ -201,7 +201,7 @@ theorem BlockUnitriangular.det_eq_one (h : M.BlockUnitriangular b) : M.det = 1 :
   refine Finset.prod_eq_one fun a _ => ?_
   have : M.toSquareBlock b a = 1 := by
     ext i j
-    rw [toSquareBlock_def, of_apply, h.2 (i.2.trans j.2.symm)]
+    rw [toSquareBlock_def, of_apply, h.2 (i.property.trans j.property.symm)]
     by_cases hij : i = j
     · subst hij
       simp
@@ -264,9 +264,9 @@ private theorem blockTriangular_one_add_rowMultiplier_mul (M : Matrix m m R)
   rw [Matrix.add_mul, Matrix.one_mul, Matrix.add_apply, Matrix.mul_apply,
     ← Fintype.sum_subtype_add_sum_subtype fun k => b k < b i,
     Fintype.sum_eq_zero (fun k : {k // ¬b k < b i} => rowMultiplier b M i k * M k j) fun k => by
-      rw [rowMultiplier_apply_of_not_lt M k.2, zero_mul], add_zero,
+      rw [rowMultiplier_apply_of_not_lt M k.property, zero_mul], add_zero,
     Finset.sum_congr rfl fun (k : {k // b k < b i}) _ => by
-      rw [rowMultiplier_apply_of_lt M k.2, Subtype.coe_eta], hsum, add_neg_cancel]
+      rw [rowMultiplier_apply_of_lt M k.property, Subtype.coe_eta], hsum, add_neg_cancel]
 
 /-- **Block row reduction.** If, for every index `i`, the leading block of `M` on the indices of
 rank strictly below `b i` has a unit determinant, then some block lower unitriangular matrix `P`

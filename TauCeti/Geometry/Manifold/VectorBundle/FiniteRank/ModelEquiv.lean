@@ -81,20 +81,20 @@ noncomputable def ofBundleEquivTotalSpaceDiffeomorph
 theorem ofBundleEquivTotalSpaceDiffeomorph_apply
     (p : (ofBundleEquiv e V).core.TotalSpace) :
     ofBundleEquivTotalSpaceDiffeomorph e V I n p =
-      ⟨p.proj, ofBundleEquivFiberEquiv e V p.proj p.2⟩ :=
+      ⟨p.proj, ofBundleEquivFiberEquiv e V p.proj p.snd⟩ :=
   (congrFun (Diffeomorph.coe_trans ((pointIndexedCore 𝕜 F V).congrModelDiffeomorph e I n)
     (pointIndexedCoreDiffeomorph 𝕜 F V I n)) p).trans <|
     (congrArg (pointIndexedCoreDiffeomorph 𝕜 F V I n)
       (congrModelDiffeomorph_apply (pointIndexedCore 𝕜 F V) e I n p)).trans <|
       (pointIndexedCoreDiffeomorph_apply 𝕜 F V I n _).trans <|
         congrArg (TotalSpace.mk' F p.proj) <|
-          (pointIndexedCoreFiberEquiv_apply 𝕜 F V p.proj (e.symm p.2)).trans
-            (ofBundleEquivFiberEquiv_apply e V p.proj p.2).symm
+          (pointIndexedCoreFiberEquiv_apply 𝕜 F V p.proj (e.symm p.snd)).trans
+            (ofBundleEquivFiberEquiv_apply e V p.proj p.snd).symm
 
 @[simp]
 theorem ofBundleEquivTotalSpaceDiffeomorph_symm_apply (p : TotalSpace F V) :
     (ofBundleEquivTotalSpaceDiffeomorph e V I n).symm p =
-      ⟨p.proj, (ofBundleEquivFiberEquiv e V p.proj).symm p.2⟩ :=
+      ⟨p.proj, (ofBundleEquivFiberEquiv e V p.proj).symm p.snd⟩ :=
   (congrFun (congrArg DFunLike.coe (Diffeomorph.symm_trans'
     ((pointIndexedCore 𝕜 F V).congrModelDiffeomorph e I n)
     (pointIndexedCoreDiffeomorph 𝕜 F V I n))) p).trans <|
@@ -104,8 +104,8 @@ theorem ofBundleEquivTotalSpaceDiffeomorph_symm_apply (p : TotalSpace F V) :
         (pointIndexedCoreDiffeomorph_symm_apply 𝕜 F V I n p)).trans <|
         (congrModelDiffeomorph_symm_apply (pointIndexedCore 𝕜 F V) e I n _).trans <|
           TotalSpace.ext rfl <| heq_of_eq <|
-            (congrArg e (pointIndexedCoreFiberEquiv_symm_apply 𝕜 F V p.proj p.2)).trans
-              (ofBundleEquivFiberEquiv_symm_apply e V p.proj p.2).symm
+            (congrArg e (pointIndexedCoreFiberEquiv_symm_apply 𝕜 F V p.proj p.snd)).trans
+              (ofBundleEquivFiberEquiv_symm_apply e V p.proj p.snd).symm
 
 @[simp]
 theorem ofBundleEquivTotalSpaceDiffeomorph_toHomeomorph :
@@ -142,22 +142,22 @@ noncomputable def ofBundleEquivChangeDiffeomorph
 
 @[simp]
 theorem ofBundleEquivChangeDiffeomorph_apply (p : (ofBundleEquiv e₁ V).core.TotalSpace) :
-    ofBundleEquivChangeDiffeomorph e₁ e₂ V I n p = ⟨p.proj, e₂ (e₁.symm p.2)⟩ :=
+    ofBundleEquivChangeDiffeomorph e₁ e₂ V I n p = ⟨p.proj, e₂ (e₁.symm p.snd)⟩ :=
   (congrFun (coe_toDiffeomorphOfConstFiberMap ..) p).trans <|
     (congrArg (fun f ↦ f p)
         (CoordinateHom.totalSpaceMap_def (ofBundleEquivChangeIso e₁ e₂ V).hom)).trans <|
       congrArg (TotalSpace.mk' (Fin r₂ → 𝕜) p.proj) <|
-        congrArg (fun S : (Fin r₁ → 𝕜) →L[𝕜] (Fin r₂ → 𝕜) ↦ S p.2)
+        congrArg (fun S : (Fin r₁ → 𝕜) →L[𝕜] (Fin r₂ → 𝕜) ↦ S p.snd)
           (fiberMap_ofBundleEquivChangeIso_hom e₁ e₂ V p.proj)
 
 @[simp]
 theorem ofBundleEquivChangeDiffeomorph_symm_apply (p : (ofBundleEquiv e₂ V).core.TotalSpace) :
-    (ofBundleEquivChangeDiffeomorph e₁ e₂ V I n).symm p = ⟨p.proj, e₁ (e₂.symm p.2)⟩ :=
+    (ofBundleEquivChangeDiffeomorph e₁ e₂ V I n).symm p = ⟨p.proj, e₁ (e₂.symm p.snd)⟩ :=
   (congrFun (coe_toDiffeomorphOfConstFiberMap_symm ..) p).trans <|
     (congrArg (fun f ↦ f p)
         (CoordinateHom.totalSpaceMap_def (ofBundleEquivChangeIso e₁ e₂ V).inv)).trans <|
       congrArg (TotalSpace.mk' (Fin r₁ → 𝕜) p.proj) <|
-        congrArg (fun S : (Fin r₂ → 𝕜) →L[𝕜] (Fin r₁ → 𝕜) ↦ S p.2)
+        congrArg (fun S : (Fin r₂ → 𝕜) →L[𝕜] (Fin r₁ → 𝕜) ↦ S p.snd)
           (fiberMap_ofBundleEquivChangeIso_inv e₁ e₂ V p.proj)
 
 /-- Changing the coordinate equivalence commutes with `ofBundleEquivTotalSpaceDiffeomorph`. -/
@@ -167,7 +167,7 @@ theorem ofBundleEquivTotalSpaceDiffeomorph_changeDiffeomorph
       ofBundleEquivTotalSpaceDiffeomorph e₁ V I n p := by
   rw [ofBundleEquivChangeDiffeomorph_apply, ofBundleEquivTotalSpaceDiffeomorph_apply,
     ofBundleEquivTotalSpaceDiffeomorph_apply]
-  have h := ofBundleEquivFiberEquiv_changeIso e₁ e₂ V p.proj p.2
+  have h := ofBundleEquivFiberEquiv_changeIso e₁ e₂ V p.proj p.snd
   rw [fiberMap_ofBundleEquivChangeIso_hom] at h
   exact congrArg (TotalSpace.mk' F p.proj) h
 
@@ -186,7 +186,7 @@ theorem contMDiff_ofBundleEquivDualFiberEquiv :
       (I.prod 𝓘(𝕜, F →L[𝕜] 𝕜)) n
       (fun p : (ofBundleEquiv e V).dual.core.TotalSpace ↦
         TotalSpace.mk' (F →L[𝕜] 𝕜) (E := fun x ↦ V x →L[𝕜] 𝕜) p.proj
-          (ofBundleEquivDualFiberEquiv e V p.proj p.2)) := by
+          (ofBundleEquivDualFiberEquiv e V p.proj p.snd)) := by
   intro p
   rw [contMDiffAt_hom_bundle]
   refine ⟨contMDiffAt_proj _, ?_⟩
@@ -219,14 +219,14 @@ theorem ofBundleEquivDualTotalSpaceDiffeomorph_toHomeomorph :
 theorem ofBundleEquivDualTotalSpaceDiffeomorph_apply
     (p : (ofBundleEquiv e V).dual.core.TotalSpace) :
     ofBundleEquivDualTotalSpaceDiffeomorph e V I n p =
-      ⟨p.proj, ofBundleEquivDualFiberEquiv e V p.proj p.2⟩ :=
+      ⟨p.proj, ofBundleEquivDualFiberEquiv e V p.proj p.snd⟩ :=
   bundleDiffeomorph_apply _ _ p
 
 @[simp]
 theorem ofBundleEquivDualTotalSpaceDiffeomorph_symm_apply
     (p : TotalSpace (F →L[𝕜] 𝕜) (fun x ↦ V x →L[𝕜] 𝕜)) :
     (ofBundleEquivDualTotalSpaceDiffeomorph e V I n).symm p =
-      ⟨p.proj, (ofBundleEquivDualFiberEquiv e V p.proj).symm p.2⟩ :=
+      ⟨p.proj, (ofBundleEquivDualFiberEquiv e V p.proj).symm p.snd⟩ :=
   bundleDiffeomorph_symm_apply _ _ p
 
 end DualBundle
@@ -299,7 +299,7 @@ theorem ofBundleEquivDualTotalSpaceDiffeomorph_changeDiffeomorph
   rw [ofBundleEquivDualChangeDiffeomorph_apply, ofBundleEquivDualTotalSpaceDiffeomorph_apply,
     ofBundleEquivDualTotalSpaceDiffeomorph_apply, CoordinateHom.totalSpaceMap_def]
   exact congrArg (TotalSpace.mk' (F →L[𝕜] 𝕜) p.proj)
-    (ofBundleEquivDualFiberEquiv_dualMap_changeIso e₁ e₂ V p.proj p.2)
+    (ofBundleEquivDualFiberEquiv_dualMap_changeIso e₁ e₂ V p.proj p.snd)
 
 end DualChangeCompat
 

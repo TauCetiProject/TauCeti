@@ -113,7 +113,7 @@ private theorem exists_normal_extension (f : StrongDual ℝ E) (hf : f ≠ 0) (c
     simp [hψ, hx, hw, Real.smoothTransition.zero_of_nonpos h₀]
   · rw [hdivψ x hx, norm_neg, norm_mul]
     exact mul_le_mul (hM _) (hfφ x) (norm_nonneg _) ((norm_nonneg _).trans (hM 0))
-  · rw [hdivψ x hx, Real.smoothTransition.deriv_of_neg (by linarith), zero_mul, neg_zero]
+  · rw [hdivψ x hx, Real.smoothTransition.deriv_of_nonpos (by linarith), zero_mul, neg_zero]
 
 
 variable [MeasurableSpace E] {μ : Measure E} {Ω : Opens E} {s : Set E}

@@ -250,7 +250,7 @@ theorem cochainsMap_id_apply_of_comp_eq {X Y Z : TopRep.{v} k G} (a : X ⟶ Y)
     (cochainsMap (ContinuousMonoidHom.id G) b).f n
         ((cochainsMap (ContinuousMonoidHom.id G) a).f n x) =
       (cochainsMap (ContinuousMonoidHom.id G) e).f n x :=
-  Subtype.ext (resolutionMap_id_apply_of_comp_eq a b h (n + 1) x.1)
+  Subtype.ext (resolutionMap_id_apply_of_comp_eq a b h (n + 1) x.val)
 
 end Composition
 
@@ -605,7 +605,7 @@ theorem resolutionMap_succ_apply (i : ℕ) (F : (TopRep.resolutionX X (i + 1)).V
 of a compatible pair is the image of its underlying element under the resolution map. -/
 theorem coe_cochainsMap_f_apply (i : ℕ) (v : (TopRep.homogeneousCochains X).X i) :
     Subtype.val ((_root_.ContinuousCohomology.cochainsMap φ f).f i v) =
-      (_root_.ContinuousCohomology.resolutionMap φ f (i + 1)) v.1 :=
+      (_root_.ContinuousCohomology.resolutionMap φ f (i + 1)) v.val :=
   rfl
 
 /-- The map on continuous cohomology induced by a compatible pair, on the class of a cocycle: it

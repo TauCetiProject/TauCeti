@@ -32,6 +32,8 @@ the universal property `TauCeti.WedgeSum.lift`.
   `TauCeti.WedgeSum.base` and the inclusions `TauCeti.WedgeSum.incl` of the summands.
 * `TauCeti.WedgeSum.isOpen_iff`, `TauCeti.WedgeSum.isClosed_iff`: a set is open (closed)
   exactly when its preimage in every summand is.
+* `TauCeti.WedgeSum.isOpen_image_incl`: an open subset of a summand avoiding its base point is
+  open in the wedge sum.
 * `TauCeti.WedgeSum.lift`: the universal property, with `TauCeti.WedgeSum.hom_ext`, and
   `TauCeti.WedgeSum.liftProd`, its form for maps out of `Z × ⋁ᵢ Xᵢ`, which builds homotopies out
   of a wedge sum.
@@ -188,6 +190,21 @@ theorem isOpen_iff {S : Set (WedgeSum x)} : IsOpen S ↔ ∀ i, IsOpen (incl x i
 theorem isClosed_iff {S : Set (WedgeSum x)} : IsClosed S ↔ ∀ i, IsClosed (incl x i ⁻¹' S) := by
   simp only [← isOpen_compl_iff, isOpen_iff, preimage_compl]
 
+/-- **Open sets of a summand away from its base point are open in the wedge sum.**  The image of an
+open subset of the `i`-th summand which does not contain the base point `x i` is open: it meets no
+other summand, and in the `i`-th summand it is the set itself. -/
+theorem isOpen_image_incl {i : ι} {S : Set (X i)} (hS : IsOpen S) (hx : x i ∉ S) :
+    IsOpen (incl x i '' S) := by
+  refine isOpen_iff.2 fun j => ?_
+  by_cases hji : j = i
+  · subst hji
+    rwa [(incl_injective j).preimage_image]
+  · convert isOpen_empty
+    refine eq_empty_of_forall_notMem fun z ⟨s, hs, hsz⟩ => ?_
+    obtain ⟨rfl, -⟩ | h := incl_eq_incl_iff.1 hsz
+    · exact hx hs
+    · exact hji (congrArg Sigma.fst h).symm
+
 section Lift
 
 variable {Y : Type w} [TopologicalSpace Y]
@@ -276,7 +293,7 @@ lemma incl_mem_range_subtypeVal_iff {i : ι} {z : X i} :
     obtain ⟨-, rfl⟩ | h := incl_eq_incl_iff.1 hw
     · exact hS i
     · obtain ⟨rfl, h⟩ := Sigma.mk.inj h
-      exact (eq_of_heq h) ▸ a.2
+      exact (eq_of_heq h) ▸ a.property
 
 lemma base_mem_range_subtypeVal : base x ∈ range (subtypeVal hS) :=
   ⟨base _, rfl⟩
@@ -325,7 +342,7 @@ theorem isOpenEmbedding_subtypeVal (hSo : ∀ i, IsOpen (S i)) :
     · rintro ⟨a, ha, rfl⟩
       exact ⟨_, ha, rfl⟩
   rw [hpre]
-  exact (hSo i).isOpenMap_subtype_val _ ((isOpen_iff.1 hO) i)
+  exact (hSo i).isOpenMap_subtypeVal _ ((isOpen_iff.1 hO) i)
 
 end Subspace
 

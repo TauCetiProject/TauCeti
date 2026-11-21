@@ -64,9 +64,9 @@ Centrality is exactly what makes the action `A`-linear rather than merely additi
 `Module.End.smulLeft` packages the individual endomorphism. -/
 def centerToEnd : Subalgebra.center k A →ₐ[k] Module.End A M where
   toFun z := Module.End.smulLeft (M := M) (z : A)
-    (Semigroup.mem_center_iff.mpr (Subalgebra.mem_center_iff.mp z.2))
+    (Semigroup.mem_center_iff.mpr (Subalgebra.mem_center_iff.mp z.property))
   map_one' := by ext m; simp
-  map_mul' z w := by ext m; simp [smul_smul, Subalgebra.mem_center_iff.mp w.2 (z : A)]
+  map_mul' z w := by ext m; simp [smul_smul, Subalgebra.mem_center_iff.mp w.property (z : A)]
   map_zero' := by ext m; simp
   map_add' z w := by ext m; simp [add_smul]
   commutes' r := by ext m; simp [algebraMap_smul]
