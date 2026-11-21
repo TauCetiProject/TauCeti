@@ -58,9 +58,12 @@ relative chains (`TauCeti/AlgebraicTopology/Singular/AlexanderWhitney/RelativeCu
   `TopPair.singularCup_gradedComm`.
 * `TopCat.singularRelativeCup`, characterized by
   `TopCat.homologyMap_cochainComplexMap_singularRelativeCup`, with
-  `TopCat.singularCohomologyπ_singularRelativeCup` and `TopCat.singularRelativeCup_naturality`.
-* `TauCeti.singularRelativeCross`, with `TauCeti.singularRelativeCross_apply`,
-  `TauCeti.singularCohomologyπ_singularRelativeCross` and
+  `TopCat.singularCohomologyπ_singularRelativeCup`, `TopCat.singularRelativeCup_naturality`, and
+  chain-coefficient change `TopCat.singularRelativeCup_precomp` and
+  `TopCat.singularRelativeCup_eq_homologyMap_singularRelativeCup`.
+* `TauCeti.singularRelativeCross`, characterized on small chains by
+  `TauCeti.homologyMap_cochainComplexMap_singularRelativeCross`, with
+  `TauCeti.singularRelativeCross_apply`, `TauCeti.singularCohomologyπ_singularRelativeCross` and
   `TauCeti.singularRelativeCross_naturality`.
 * `TopCat.singularRelativeCupPullback`, the relative cup product of classes pulled back along two
   maps `f₁ : X ⟶ Y₁` and `f₂ : X ⟶ Y₂`, restricted to a subset of the union of the preimages, with
@@ -440,6 +443,51 @@ lemma singularRelativeCup_naturality (u : T ⟶ R ⊗ S) (μ : M ⊗ N ⟶ L) {U
   exact TauCeti.ChainComplex.cup_naturality _ μ _ _ _ _
     (relativeAlexanderWhitneyDiagonal_naturality f hfU hfV u) p q n h a b
 
+open AlgebraicTopology in
+/-- **Compatibility of the relative cup product with change of chain coefficients**: for
+`f : T' ⟶ T` and `u : T ⟶ R ⊗ S`, the relative cup product along `f ≫ u` is the relative cup
+product along `u` followed by the cohomology map precomposing relative cochains with the chain map
+induced by `f`. -/
+lemma singularRelativeCup_precomp {T' : C} (f : T' ⟶ T) (u : T ⟶ R ⊗ S)
+    (μ : M ⊗ N ⟶ L) (U V : Set X) (hU : IsOpen ((↑) ⁻¹' U : Set ↥(U ∪ V)))
+    (hV : IsOpen ((↑) ⁻¹' V : Set ↥(U ∪ V))) (p q n : ℕ) (h : p + q = n)
+    (a : (TopPair.ofSubset U).singularCohomology R k M p)
+    (b : (TopPair.ofSubset V).singularCohomology S k N q) :
+    singularRelativeCup k (f ≫ u) μ U V hU hV p q n h a b =
+      homologyMap
+        ((TauCeti.ChainComplex.linearYonedaFunctor k L).map
+          (((SSetPair.chainComplexFunctor C).map f).app
+            (TopPair.toSSetPair.obj (TopPair.ofSubset (U ∪ V)))).op) n
+        (singularRelativeCup k u μ U V hU hV p q n h a b) := by
+  have := isIso_homologyMap_cochainComplexMap_smallSingularSubcomplexPairToUnion T' k L U V hU hV n
+  apply (ModuleCat.mono_iff_injective (homologyMap (SSetPair.cochainComplexMap (R := T') (k := k)
+    (M := L) (smallSingularSubcomplexPairToUnion U V)) n)).1 inferInstance
+  rw [homologyMap_cochainComplexMap_singularRelativeCup,
+    relativeAlexanderWhitneyDiagonal_comp U V f u, TauCeti.ChainComplex.cup_precomp,
+    ← homologyMap_cochainComplexMap_singularRelativeCup k u μ U V hU hV,
+    ← TauCeti.ChainComplex.homologyMap_linearYonedaFunctor_map_comp_apply,
+    ← ((SSetPair.chainComplexFunctor C).map f).naturality
+      (smallSingularSubcomplexPairToUnion U V)]
+  exact TauCeti.ChainComplex.homologyMap_linearYonedaFunctor_map_comp_apply _ _ n _
+
+open AlgebraicTopology in
+/-- **The relative cup product changes chain coefficients along its coefficient morphism**: for
+`u : T ⟶ R ⊗ S`, the relative cup product along `u` is the relative cup product along `𝟙 (R ⊗ S)`
+followed by the cohomology map precomposing relative cochains with the chain map induced by `u`. -/
+lemma singularRelativeCup_eq_homologyMap_singularRelativeCup (u : T ⟶ R ⊗ S)
+    (μ : M ⊗ N ⟶ L) (U V : Set X) (hU : IsOpen ((↑) ⁻¹' U : Set ↥(U ∪ V)))
+    (hV : IsOpen ((↑) ⁻¹' V : Set ↥(U ∪ V))) (p q n : ℕ) (h : p + q = n)
+    (a : (TopPair.ofSubset U).singularCohomology R k M p)
+    (b : (TopPair.ofSubset V).singularCohomology S k N q) :
+    singularRelativeCup k u μ U V hU hV p q n h a b =
+      homologyMap
+        ((TauCeti.ChainComplex.linearYonedaFunctor k L).map
+          (((SSetPair.chainComplexFunctor C).map u).app
+            (TopPair.toSSetPair.obj (TopPair.ofSubset (U ∪ V)))).op) n
+        (singularRelativeCup k (𝟙 (R ⊗ S)) μ U V hU hV p q n h a b) := by
+  simpa only [Category.comp_id] using
+    singularRelativeCup_precomp k u (𝟙 (R ⊗ S)) μ U V hU hV p q n h a b
+
 /-! ### Relative cup products of pulled-back classes -/
 
 section Pullback
@@ -686,5 +734,37 @@ lemma singularRelativeCross_naturality {X Y X' Y' : TopCat.{w}} {A : Set X} {B :
       _ (f ⊗ₘ g) _ (TopCat.mapsTo_tensorHom_preimage_union f g hf hg)]
   exact DFunLike.congr_fun (DFunLike.congr_fun (TopCat.singularRelativeCupPullback_congr k _ μ
     (tensorHom_fst f g).symm (tensorHom_snd f g).symm hA' hB' _ _ p q n h) a) b
+
+section Cross
+
+open AlgebraicTopology
+
+/-- **Characterization of the relative cohomology cross product on small chains**: under the
+small-chain isomorphism for `fst⁻¹(A)` and `snd⁻¹(B)`, `TauCeti.singularRelativeCross` is the
+cohomological cup product along `TopCat.relativeAlexanderWhitney`. -/
+@[simp]
+lemma homologyMap_cochainComplexMap_singularRelativeCross
+    (X Y : TopCat.{w}) {A : Set X} {B : Set Y} (hA : IsOpen A) (hB : IsOpen B)
+    (μ : M ⊗ N ⟶ L) (p q n : ℕ) (h : p + q = n)
+    (a : (TopPair.ofSubset A).singularCohomology R k M p)
+    (b : (TopPair.ofSubset B).singularCohomology S k N q) :
+    homologyMap (SSetPair.cochainComplexMap (R := R ⊗ S) (k := k) (M := L)
+        (TopCat.smallSingularSubcomplexPairToUnion (fst X Y ⁻¹' A) (snd X Y ⁻¹' B))) n
+        (singularRelativeCross k X Y hA hB μ p q n h a b) =
+      ChainComplex.cup k (TopCat.relativeAlexanderWhitney X Y A B R S) μ p q n h a b := by
+  rw [singularRelativeCross_apply, TopCat.homologyMap_cochainComplexMap_singularRelativeCup]
+  have hid : (ChainComplex.linearYonedaFunctor k L).map
+      (𝟙 (((X ⊗ Y).smallSingularSubcomplex
+        ![fst X Y ⁻¹' A, snd X Y ⁻¹' B]).pair.chainComplex (R ⊗ S))).op = 𝟙 _ :=
+    (congrArg _ op_id).trans ((ChainComplex.linearYonedaFunctor k L).map_id _)
+  exact (ChainComplex.cup_naturality (k := k) (TopCat.relativeAlexanderWhitney X Y A B R S) μ
+    (TopCat.relativeAlexanderWhitneyDiagonal (fst X Y ⁻¹' A) (snd X Y ⁻¹' B) (𝟙 (R ⊗ S))) (𝟙 _)
+    (TopPair.singularChainComplexMap (TopPair.ofSubsetMap (fst X Y) (Set.mapsTo_preimage _ _)) R)
+    (TopPair.singularChainComplexMap (TopPair.ofSubsetMap (snd X Y) (Set.mapsTo_preimage _ _)) S)
+    ((Category.id_comp _).trans (TopCat.relativeAlexanderWhitney_def X Y A B R S)) p q n h
+    a b).trans (ConcreteCategory.congr_hom
+      ((congrArg (homologyMap · n) hid).trans (homologyMap_id _ n)) _)
+
+end Cross
 
 end TauCeti

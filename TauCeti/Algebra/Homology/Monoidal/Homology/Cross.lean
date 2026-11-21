@@ -34,8 +34,9 @@ the right, to preserve cokernels.
 * `HomologicalComplex.homologyCross`: the cross product
   `K.homology p ⊗ L.homology q ⟶ (K ⊗ L).homology n`, characterized by
   `HomologicalComplex.homologyπ_tensorHom_homologyCross` on classes of cycles.
-* `HomologicalComplex.cyclesCross_naturality` and `HomologicalComplex.homologyCross_naturality`:
-  naturality in both complexes.
+* `HomologicalComplex.cyclesCross_naturality`, `HomologicalComplex.homologyCross_naturality`,
+  and `HomologicalComplex.homologyCross_comp_homologyMap_naturality`: naturality in both
+  complexes and along commutative squares of chain maps.
 
 ## References
 
@@ -203,6 +204,24 @@ lemma homologyCross_naturality
   refine homology_tensor_homology_hom_ext K L p q ?_
   rw [tensorHom_comp_tensorHom_assoc]
   simp [← tensorHom_comp_tensorHom_assoc, cyclesCross_naturality_assoc]
+
+/-- **Naturality of the homology cross product composed with chain maps**: a commutative square
+`tensorHom φ ψ ≫ u = v ≫ w` of chain maps induces the corresponding commutative square on
+homology after `HomologicalComplex.homologyCross`. -/
+@[reassoc]
+lemma homologyCross_comp_homologyMap_naturality
+    {M N : HomologicalComplex C c} [M.HasHomology n] [N.HasHomology n]
+    (u : tensorObj K' L' ⟶ N) (v : tensorObj K L ⟶ M) (w : M ⟶ N)
+    [PreservesColimitsOfShape WalkingParallelPair (tensorLeft (K.homology p))]
+    [PreservesColimitsOfShape WalkingParallelPair (tensorRight (L.cycles q))]
+    [PreservesColimitsOfShape WalkingParallelPair (tensorRight (L.X (c.prev q)))]
+    [PreservesColimitsOfShape WalkingParallelPair (tensorLeft (K'.homology p))]
+    [PreservesColimitsOfShape WalkingParallelPair (tensorRight (L'.cycles q))]
+    [PreservesColimitsOfShape WalkingParallelPair (tensorRight (L'.X (c.prev q)))]
+    (hsq : tensorHom φ ψ ≫ u = v ≫ w) :
+    (homologyMap φ p ⊗ₘ homologyMap ψ q) ≫ homologyCross K' L' p q n h ≫ homologyMap u n =
+      homologyCross K L p q n h ≫ homologyMap v n ≫ homologyMap w n := by
+  rw [homologyCross_naturality_assoc, ← homologyMap_comp, hsq, homologyMap_comp]
 
 end Naturality
 

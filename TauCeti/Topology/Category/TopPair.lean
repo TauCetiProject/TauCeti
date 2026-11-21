@@ -68,7 +68,10 @@ them, and so their union, into each other (`TopCat.mapsTo_tensorHom_preimage_fst
 `TopCat.mapsTo_tensorHom_preimage_union`). The pair `(X × Y, X × B)` of `TopPair.prodLeft`
 includes into this pair (`TopPair.prodLeftToPreimageUnion`). The product `A × Y` of the subspace
 `A` with `Y` is homeomorphic to the preimage of `A` under the first projection
-(`TopCat.prodPreimageFstIso`).
+(`TopCat.prodPreimageFstIso`). For points `x₁ : V₁` and `x₂ : V₂`, the union of the preimages of
+`{x₁}ᶜ` and `{x₂}ᶜ` is `{(x₁, x₂)}ᶜ` (`TauCeti.compl_singleton_prod_eq`), and a product of maps
+preserving singleton complements preserves the complement of the pair
+(`TopCat.mapsTo_tensorHom_compl_singleton`).
 
 For a map `π : X → Y`, a subset `Z ⊆ X` and a subset `S ⊆ Y`, the pair `(π⁻¹ S, π⁻¹ S ∩ Z)` over
 `S` includes into `(X, Z)` (`TopCat.restrictPreimagePairMap`), isomorphically when `S` contains
@@ -1011,6 +1014,19 @@ lemma restrictPreimagePairRestrictPreimageIso_inv_fst (hSW : S ⊆ W) :
 
 end RestrictPreimage
 
+/-- The product of two continuous maps carrying `{x₁}ᶜ` into `{y₁}ᶜ` and `{x₂}ᶜ` into `{y₂}ᶜ`
+carries `{(x₁, x₂)}ᶜ` into `{(y₁, y₂)}ᶜ`. -/
+lemma mapsTo_tensorHom_compl_singleton {V₁ V₂ W₁ W₂ : Type u} [TopologicalSpace V₁]
+    [TopologicalSpace V₂] [TopologicalSpace W₁] [TopologicalSpace W₂] {x₁ : V₁} {x₂ : V₂}
+    {y₁ : W₁} {y₂ : W₂} (g₁ : TopCat.of V₁ ⟶ TopCat.of W₁) (g₂ : TopCat.of V₂ ⟶ TopCat.of W₂)
+    (hg₁ : Set.MapsTo g₁ ({x₁}ᶜ : Set V₁) ({y₁}ᶜ : Set W₁))
+    (hg₂ : Set.MapsTo g₂ ({x₂}ᶜ : Set V₂) ({y₂}ᶜ : Set W₂)) :
+    Set.MapsTo (g₁ ⊗ₘ g₂) ({(x₁, x₂)}ᶜ : Set (V₁ × V₂)) ({(y₁, y₂)}ᶜ : Set (W₁ × W₂)) := by
+  rintro ⟨v₁, v₂⟩ hv hvy
+  rcases not_and_or.1 (mt (fun h : v₁ = x₁ ∧ v₂ = x₂ ↦ Prod.ext h.1 h.2) hv) with h₁ | h₂
+  · exact hg₁ h₁ (congrArg Prod.fst hvy)
+  · exact hg₂ h₂ (congrArg Prod.snd hvy)
+
 end TopCat
 
 namespace TopCat.Hom
@@ -1053,3 +1069,37 @@ lemma preimagePairMap_comp_preimagePairMap {E'' : TopCat.{u}} {p'' : E'' ⟶ B} 
   TopPair.hom_ext_of_fst _ (preimageMap_comp_preimageMap f f' hf hf' T)
 
 end TopCat.Hom
+
+namespace TauCeti
+
+section ComplSingletonProd
+
+variable {V₁ V₂ : Type u} [TopologicalSpace V₁] [TopologicalSpace V₂] (x₁ : V₁) (x₂ : V₂)
+
+/-- The complement of `{(x₁, x₂)}` in `V₁ × V₂` is the union of the preimages of `{x₁}ᶜ` and
+`{x₂}ᶜ` under the two projections. -/
+theorem compl_singleton_prod_eq :
+    ({(x₁, x₂)}ᶜ : Set (TopCat.of (V₁ × V₂))) =
+      (TopCat.ofHom (ContinuousMap.fst : C(V₁ × V₂, V₁))) ⁻¹' {x₁}ᶜ ∪
+        (TopCat.ofHom (ContinuousMap.snd : C(V₁ × V₂, V₂))) ⁻¹' {x₂}ᶜ :=
+  Set.ext fun _ ↦ by simp [Prod.ext_iff, imp_iff_not_or]
+
+/-- A point of `V₁ × V₂` distinct from `(x₁, x₂)` differs from `x₁` in its first component or from
+`x₂` in its second component. -/
+theorem compl_singleton_prod_subset :
+    ({(x₁, x₂)}ᶜ : Set (TopCat.of (V₁ × V₂))) ⊆
+      (TopCat.ofHom (ContinuousMap.fst : C(V₁ × V₂, V₁))) ⁻¹' {x₁}ᶜ ∪
+        (TopCat.ofHom (ContinuousMap.snd : C(V₁ × V₂, V₂))) ⁻¹' {x₂}ᶜ :=
+  (compl_singleton_prod_eq x₁ x₂).subset
+
+/-- A point of `V₁ × V₂` that differs from `x₁` in its first component or from `x₂` in its second
+component is distinct from `(x₁, x₂)`. -/
+theorem subset_compl_singleton_prod :
+    (TopCat.ofHom (ContinuousMap.fst : C(V₁ × V₂, V₁))) ⁻¹' {x₁}ᶜ ∪
+      (TopCat.ofHom (ContinuousMap.snd : C(V₁ × V₂, V₂))) ⁻¹' {x₂}ᶜ ⊆
+        ({(x₁, x₂)}ᶜ : Set (TopCat.of (V₁ × V₂))) :=
+  (compl_singleton_prod_eq x₁ x₂).superset
+
+end ComplSingletonProd
+
+end TauCeti

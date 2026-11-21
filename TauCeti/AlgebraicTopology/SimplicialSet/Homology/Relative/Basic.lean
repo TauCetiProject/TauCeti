@@ -21,9 +21,11 @@ forms a natural transformation `SSetPair.homologyδNatTrans`.
 It also records that the quotient maps from ambient to relative chains and homology are natural in
 the pair: they commute with morphisms of simplicial-set pairs. The short exact sequence of chain
 complexes of a pair is split in each degree, because the map `C(X) ⟶ C(Y)` is induced by the
-injection of the `n`-simplices of `X` into those of `Y` (`SSetPair.chainComplexXSplitting`); so
-the relative chains are a retract of the ambient chains (`SSetPair.chainComplexXRetract`), and are
-projective when those are (`SSetPair.projective_chainComplex_X`). The splitting computes the
+injection of the `n`-simplices of `X` into those of `Y` (`SSetPair.chainComplexXSplitting`); so the
+quotient map to relative chains is a split epimorphism in each degree
+(`SSetPair.isSplitEpi_chainComplexπ_f`), the relative chains are a retract of the ambient chains
+(`SSetPair.chainComplexXRetract`), and are projective when those are
+(`SSetPair.projective_chainComplex_X`). The splitting computes the
 connecting morphism on a relative cycle: lift it by the section, take the boundary and retract it
 onto the chains of `X` (`SSetPair.homologyπ_homologyδ`). A morphism of pairs which is a
 quasi-isomorphism on subcomplexes and ambient simplicial sets is a quasi-isomorphism on relative
@@ -93,6 +95,23 @@ chains of the ambient simplicial set is a split monomorphism. -/
 instance (R : C) (P : SSetPair.{w}) (n : ℕ) : IsSplitMono ((SSet.chainComplexMap P.hom R).f n) :=
   TauCeti.isSplitMono_sigmaMap' (fun _ ↦ R) (P.hom.app (op ⦋n⦌))
     ((mono_iff_injective _).1 inferInstance)
+
+/-- In each degree, the quotient map from the chains of the ambient simplicial set of a pair to
+its relative chains is a split epimorphism. -/
+instance isSplitEpi_chainComplexπ_f (R : C) (P : SSetPair.{w}) (n : ℕ) :
+    IsSplitEpi ((P.chainComplexπ R).f n) := by
+  let i : (P.left.chainComplex R).X n ⟶ (P.right.chainComplex R).X n :=
+    (SSet.chainComplexMap P.hom R).f n
+  have hdesc := CokernelCofork.IsColimit.desc' (P.isColimitCokernelCoforkChainComplexX R n)
+    (𝟙 ((P.right.chainComplex R).X n) - retraction i ≫ i)
+    (by simp [Preadditive.comp_sub, IsSplitMono.id_assoc, i])
+  let s : (P.chainComplex R).X n ⟶ (P.right.chainComplex R).X n := hdesc.val
+  have hs : (P.chainComplexπ R).f n ≫ s = 𝟙 _ - retraction i ≫ i := hdesc.property
+  have hsg : s ≫ (P.chainComplexπ R).f n = 𝟙 ((P.chainComplex R).X n) := by
+    rw [← cancel_epi ((P.chainComplexπ R).f n), ← Category.assoc, hs, Preadditive.sub_comp,
+      Category.id_comp, Category.assoc, P.chainComplex_condition_f R n, comp_zero, sub_zero,
+      Category.comp_id]
+  exact ⟨⟨s, hsg⟩⟩
 
 variable {A : Type*} [Category* A] [HasCoproducts.{w} A] [Abelian A]
 

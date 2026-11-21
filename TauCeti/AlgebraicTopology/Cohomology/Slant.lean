@@ -9,7 +9,7 @@ public import TauCeti.Algebra.Homology.Monoidal.Slant
 public import TauCeti.Algebra.Homology.Linear
 public import TauCeti.AlgebraicTopology.Cohomology.CrossProduct
 public import TauCeti.AlgebraicTopology.Cohomology.Kronecker
-public import TauCeti.AlgebraicTopology.Singular.CrossProduct
+public import TauCeti.AlgebraicTopology.Singular.CrossProduct.Basic
 public import TauCeti.AlgebraicTopology.Singular.Reduced
 import TauCeti.AlgebraicTopology.Cohomology.Point
 

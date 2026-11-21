@@ -8,16 +8,18 @@ module
 public import Mathlib.Topology.Category.TopCat.Monoidal
 
 /-!
-# Fibre inclusions and discrete-factor products in `TopCat`
+# Fibre inclusions, projections, and discrete-factor products in `TopCat`
 
 For spaces `X` and `F` and a point `x : X`, `TopCat.prodFiberInclusion X F x : F ⟶ X ⊗ F` is the
 inclusion `f ↦ (x, f)` of the fibre of the first projection over `x`, built from the cartesian
 monoidal structure of `TopCat`. Its composites with the projections are the constant map at `x`
 and the identity, so it is a split monomorphism, and it is natural in `X` and in `F`.
 
-When `X` has the discrete topology, `TopCat.sigmaConstIsoProd X Y` identifies the disjoint union
-`TopCat.of (Σ _ : X, Y)` with the product `X ⊗ Y`, matching each summand inclusion `TopCat.sigmaι`
-with `TopCat.prodFiberInclusion`.
+We also record `TopCat.ofHom_fst` and `TopCat.ofHom_snd`, identifying
+`TopCat.ofHom ContinuousMap.fst` and `TopCat.ofHom ContinuousMap.snd` with the cartesian
+projections `fst` and `snd`. When `X` has the discrete topology, `TopCat.sigmaConstIsoProd X Y`
+identifies the disjoint union `TopCat.of (Σ _ : X, Y)` with the product `X ⊗ Y`, matching each
+summand inclusion `TopCat.sigmaι` with `TopCat.prodFiberInclusion`.
 -/
 
 public section
@@ -27,6 +29,16 @@ open CategoryTheory MonoidalCategory CartesianMonoidalCategory
 universe u
 
 namespace TopCat
+
+/-- `TopCat.ofHom ContinuousMap.fst` is the cartesian first projection `fst (of X) (of Y)`. -/
+lemma ofHom_fst {X Y : Type u} [TopologicalSpace X] [TopologicalSpace Y] :
+    TopCat.ofHom (ContinuousMap.fst : C(X × Y, X)) = fst (of X) (of Y) :=
+  TopCat.ext fun _ ↦ rfl
+
+/-- `TopCat.ofHom ContinuousMap.snd` is the cartesian second projection `snd (of X) (of Y)`. -/
+lemma ofHom_snd {X Y : Type u} [TopologicalSpace X] [TopologicalSpace Y] :
+    TopCat.ofHom (ContinuousMap.snd : C(X × Y, Y)) = snd (of X) (of Y) :=
+  TopCat.ext fun _ ↦ rfl
 
 variable (X F : TopCat.{u})
 

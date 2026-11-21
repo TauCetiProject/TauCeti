@@ -35,6 +35,10 @@ The curried tensor bifunctor on cochain complexes is also identified with `tenso
   the two factors of a homogeneous summand along equalities of indices.
 * `HomologicalComplex.zero_tensorHom` and `HomologicalComplex.tensorHom_zero`: the tensor product
   of morphisms vanishes when either factor does.
+* `HomologicalComplex.isSplitEpi_tensorHom_f`, `HomologicalComplex.epi_tensorHom_of_isSplitEpi_f`,
+  `HomologicalComplex.isSplitEpi_monoidalTensorHom_f`, and
+  `HomologicalComplex.epi_monoidalTensorHom_of_isSplitEpi_f`: the tensor product of two degreewise
+  split epimorphisms is a degreewise split epimorphism, hence an epimorphism of complexes.
 * `HomologicalComplex.tensorHom_eq_mapBifunctorMap`: `⊗ₘ` of homological complexes is the
   totalization `HomologicalComplex.mapBifunctorMap` of the two morphisms.
 * `HomologicalComplex.ι_whiskerLeft` and `HomologicalComplex.ι_whiskerRight`: the two whiskerings
@@ -106,6 +110,26 @@ lemma XIsoOfEq_hom_tensorHom_XIsoOfEq_hom_ιTensorObj (K L : HomologicalComplex 
   subst hp hq
   simp
 
+/-- The tensor product of two morphisms of homological complexes that are split epimorphisms in
+each degree is a split epimorphism in each degree. -/
+instance isSplitEpi_tensorHom_f {K₁ K₂ L₁ L₂ : HomologicalComplex C c} (f₁ : K₁ ⟶ L₁)
+    (f₂ : K₂ ⟶ L₂) [HasTensor K₁ K₂] [HasTensor L₁ L₂]
+    [∀ i₁, IsSplitEpi (f₁.f i₁)] [∀ i₂, IsSplitEpi (f₂.f i₂)] (j : I) :
+    IsSplitEpi ((tensorHom f₁ f₂).f j) :=
+  ⟨⟨mapBifunctorDesc fun p q h ↦
+      (section_ (f₁.f p) ⊗ₘ section_ (f₂.f q)) ≫ ιTensorObj K₁ K₂ p q j h, by
+    refine mapBifunctor.hom_ext fun p q h ↦ ?_
+    rw [ι_mapBifunctorDesc_assoc, Category.assoc, ι_tensorHom, tensorHom_comp_tensorHom_assoc]
+    simp⟩⟩
+
+/-- The tensor product of two morphisms of homological complexes that are split epimorphisms in
+each degree is an epimorphism. -/
+instance epi_tensorHom_of_isSplitEpi_f {K₁ K₂ L₁ L₂ : HomologicalComplex C c} (f₁ : K₁ ⟶ L₁)
+    (f₂ : K₂ ⟶ L₂) [HasTensor K₁ K₂] [HasTensor L₁ L₂]
+    [∀ i₁, IsSplitEpi (f₁.f i₁)] [∀ i₂, IsSplitEpi (f₂.f i₂)] :
+    Epi (tensorHom f₁ f₂) :=
+  epi_of_epi_f _ fun _ ↦ inferInstance
+
 variable [HasZeroObject C] (c) [∀ (X₁ X₂ : GradedObject I C), GradedObject.HasTensor X₁ X₂]
   [∀ X₂, PreservesColimit (CategoryTheory.Functor.empty.{0} C) ((curriedTensor C).flip.obj X₂)]
   [∀ (X₁ X₂ X₃ : GradedObject I C), GradedObject.HasGoodTensor₁₂Tensor X₁ X₂ X₃]
@@ -120,6 +144,22 @@ lemma tensorHom_eq_mapBifunctorMap {K₁ K₂ L₁ L₂ : HomologicalComplex C c
   rfl
 
 variable {c}
+
+/-- In the monoidal category of homological complexes, `f₁ ⊗ₘ f₂` is a split epimorphism in each
+degree when `f₁` and `f₂` are. -/
+instance isSplitEpi_monoidalTensorHom_f {K₁ K₂ L₁ L₂ : HomologicalComplex C c} (f₁ : K₁ ⟶ L₁)
+    (f₂ : K₂ ⟶ L₂) [∀ i₁, IsSplitEpi (f₁.f i₁)] [∀ i₂, IsSplitEpi (f₂.f i₂)] (j : I) :
+    IsSplitEpi ((f₁ ⊗ₘ f₂).f j) := by
+  rw [tensorHom_eq_mapBifunctorMap]
+  exact isSplitEpi_tensorHom_f f₁ f₂ j
+
+/-- In the monoidal category of homological complexes, `f₁ ⊗ₘ f₂` is an epimorphism when `f₁` and
+`f₂` are degreewise split epimorphisms. -/
+instance epi_monoidalTensorHom_of_isSplitEpi_f {K₁ K₂ L₁ L₂ : HomologicalComplex C c}
+    (f₁ : K₁ ⟶ L₁) (f₂ : K₂ ⟶ L₂)
+    [∀ i₁, IsSplitEpi (f₁.f i₁)] [∀ i₂, IsSplitEpi (f₂.f i₂)] :
+    Epi (f₁ ⊗ₘ f₂) :=
+  epi_of_epi_f _ fun _ ↦ inferInstance
 
 /-- Left whiskering of homological complexes is the totalization of the identity and
 the given morphism.  Mathlib defines the monoidal structure on homological complexes through

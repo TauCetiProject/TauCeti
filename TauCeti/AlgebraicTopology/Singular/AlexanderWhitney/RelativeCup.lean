@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicTopology.Singular.AlexanderWhitney.Basic
 public import TauCeti.AlgebraicTopology.Singular.AlexanderWhitney.Relative
 public import TauCeti.AlgebraicTopology.Singular.KoszulBraiding
 public import TauCeti.AlgebraicTopology.Singular.MayerVietoris.Relative
+import TauCeti.CategoryTheory.Monoidal.Category
 
 /-!
 # Alexander–Whitney diagonals for relative cup products
@@ -36,6 +37,10 @@ which relative cup products are taken.
   `C(X; U + V)` with `C(X, U ∪ V)` up to quasi-isomorphism, which gives the relative cup product
   `Hᵖ(X, U) × H^q(X, V) ⟶ Hⁿ(X, U ∪ V)`.
 
+* For pairs `(X, A)` and `(Y, B)`, composing `TopCat.relativeAlexanderWhitneyDiagonal` for
+  `fst⁻¹(A)` and `snd⁻¹(B)` with the projections defines `TopCat.relativeAlexanderWhitney :
+  C(X × Y; A × Y + X × B; R ⊗ S) ⟶ C(X, A; R) ⊗ C(Y, B; S)`.
+
 ## Main definitions and results
 
 * `TopPair.rightAlexanderWhitneyDiagonal`, characterized by
@@ -45,9 +50,13 @@ which relative cup products are taken.
   followed by the Koszul braiding is chain homotopic to the relative diagonal
   `TopPair.alexanderWhitneyDiagonal` of the braided coefficient morphism.
 * `TopCat.relativeAlexanderWhitneyDiagonal`, characterized by
-  `TopCat.chainComplexπ_relativeAlexanderWhitneyDiagonal` and natural in maps of spaces carrying
-  `U` into `U'` and `V` into `V'` (`TopCat.relativeAlexanderWhitneyDiagonal_naturality`, along the
-  maps of pairs `TopCat.smallSingularSubcomplexPairMap`).
+  `TopCat.chainComplexπ_relativeAlexanderWhitneyDiagonal`, natural in maps of spaces
+  (`TopCat.relativeAlexanderWhitneyDiagonal_naturality`), and functorial in the chain coefficient
+  morphism (`TopCat.relativeAlexanderWhitneyDiagonal_comp`).
+* `TopCat.relativeAlexanderWhitney`, characterized by
+  `TopCat.chainComplexπ_relativeAlexanderWhitney` and natural in pairs
+  (`TopCat.relativeAlexanderWhitney_naturality`) and coefficients
+  (`TopCat.relativeAlexanderWhitney_coefficient_naturality`).
 
 ## References
 
@@ -251,15 +260,158 @@ lemma relativeAlexanderWhitneyDiagonal_naturality {U V : Set X} {U' V' : Set Y} 
   have hU := TopPair.singularChainComplexπ_pair_naturality (TopPair.ofSubsetMap f hfU) R
   have hV := TopPair.singularChainComplexπ_pair_naturality (TopPair.ofSubsetMap f hfV) S
   rw [TopPair.ofSubsetMap_fst] at hU hV
-  -- Term-mode steps: `rw` cannot match here, since the ambient chains appear both as
-  -- `(toSSetPair.obj P).right.chainComplex R` and as `(toSSet.obj X).chainComplex R`.
-  refine (alexanderWhitneyDiagonal_naturality_assoc f u _).trans <|
-    (congrArg (_ ≫ ·) ((tensorHom_comp_tensorHom
-      (SSet.chainComplexMap (toSSet.map f) R) (SSet.chainComplexMap (toSSet.map f) S)
-      ((TopPair.ofSubset U').singularChainComplexπ R)
-      ((TopPair.ofSubset V').singularChainComplexπ S)).trans ?_)).trans
-    (Category.assoc _ _ _).symm
-  exact (congrArg₂ (· ⊗ₘ ·) hU hV).trans
-    (tensorHom_comp_tensorHom _ _ _ _).symm
+  -- `calc` with `exact` steps matches `(toSSetPair.obj P).right` with `toSSet.obj X`.
+  calc _ = X.alexanderWhitneyDiagonal u ≫
+          (SSet.chainComplexMap (toSSet.map f) R ⊗ₘ SSet.chainComplexMap (toSSet.map f) S) ≫
+          ((TopPair.ofSubset U').singularChainComplexπ R ⊗ₘ
+            (TopPair.ofSubset V').singularChainComplexπ S) :=
+        alexanderWhitneyDiagonal_naturality_assoc f u _
+    _ = X.alexanderWhitneyDiagonal u ≫
+          ((TopPair.ofSubset U).singularChainComplexπ R ⊗ₘ
+            (TopPair.ofSubset V).singularChainComplexπ S) ≫
+          (TopPair.singularChainComplexMap (TopPair.ofSubsetMap f hfU) R ⊗ₘ
+            TopPair.singularChainComplexMap (TopPair.ofSubsetMap f hfV) S) :=
+        whisker_eq _ (TauCeti.tensorHom_comp_tensorHom_eq hU hV)
+    _ = _ := (Category.assoc _ _ _).symm
+
+/-- Changing chain coefficients along `f : T' ⟶ T` precomposes
+`TopCat.relativeAlexanderWhitneyDiagonal` with the induced map on the small-chain quotient
+complex. -/
+@[reassoc]
+lemma relativeAlexanderWhitneyDiagonal_comp {T' : C} (U V : Set X) (f : T' ⟶ T) (u : T ⟶ R ⊗ S) :
+    relativeAlexanderWhitneyDiagonal U V (f ≫ u) =
+      ((SSetPair.chainComplexFunctor C).map f).app (X.smallSingularSubcomplex ![U, V]).pair ≫
+        relativeAlexanderWhitneyDiagonal U V u := by
+  rw [← cancel_epi ((X.smallSingularSubcomplex ![U, V]).pair.chainComplexπ T'),
+    chainComplexπ_relativeAlexanderWhitneyDiagonal]
+  have hπ := NatTrans.congr_app ((SSetPair.chainComplexFunctorπ C).naturality f)
+    (X.smallSingularSubcomplex ![U, V]).pair
+  have hD : X.alexanderWhitneyDiagonal (f ≫ u) =
+      ((SSet.chainComplexFunctor C).map f).app (toSSet.obj X) ≫ X.alexanderWhitneyDiagonal u := by
+    simp [TauCeti.alexanderWhitneyDiagonal_def]
+  rw [hD, Category.assoc, ← chainComplexπ_relativeAlexanderWhitneyDiagonal]
+  exact (Category.assoc _ _ _).symm.trans <| (eq_whisker hπ _).trans (Category.assoc _ _ _)
+
+section RelativeAlexanderWhitney
+
+open CartesianMonoidalCategory AlgebraicTopology
+
+section Fixed
+
+variable (X Y : TopCat.{w}) (A : Set X) (B : Set Y) (R S : C)
+
+/-- **The relative Alexander–Whitney map**
+`C(X × Y; A × Y + X × B; R ⊗ S) ⟶ C(X, A; R) ⊗ C(Y, B; S)` for subsets `A ⊆ X` and `B ⊆ Y`,
+composing `TopCat.relativeAlexanderWhitneyDiagonal` with projections to `(X, A)` and `(Y, B)`. -/
+def relativeAlexanderWhitney :
+    ((X ⊗ Y).smallSingularSubcomplex ![fst X Y ⁻¹' A, snd X Y ⁻¹' B]).pair.chainComplex (R ⊗ S) ⟶
+      (TopPair.ofSubset A).singularChainComplex R ⊗ (TopPair.ofSubset B).singularChainComplex S :=
+  relativeAlexanderWhitneyDiagonal (fst X Y ⁻¹' A) (snd X Y ⁻¹' B) (𝟙 (R ⊗ S)) ≫
+    (TopPair.singularChainComplexMap (TopPair.ofSubsetMap (fst X Y) (Set.mapsTo_preimage _ _)) R ⊗ₘ
+      TopPair.singularChainComplexMap (TopPair.ofSubsetMap (snd X Y) (Set.mapsTo_preimage _ _)) S)
+
+/-- Definitional unfolding of `TopCat.relativeAlexanderWhitney`. -/
+lemma relativeAlexanderWhitney_def :
+    relativeAlexanderWhitney X Y A B R S =
+      relativeAlexanderWhitneyDiagonal (fst X Y ⁻¹' A) (snd X Y ⁻¹' B) (𝟙 (R ⊗ S)) ≫
+        (TopPair.singularChainComplexMap (TopPair.ofSubsetMap (fst X Y) (Set.mapsTo_preimage _ _)) R
+          ⊗ₘ TopPair.singularChainComplexMap
+            (TopPair.ofSubsetMap (snd X Y) (Set.mapsTo_preimage _ _)) S) :=
+  (rfl)
+
+/-- Precomposing `TopCat.relativeAlexanderWhitney` with the quotient map gives `alexanderWhitney`
+followed by `π_A ⊗ π_B`. -/
+@[reassoc (attr := simp)]
+lemma chainComplexπ_relativeAlexanderWhitney :
+    ((X ⊗ Y).smallSingularSubcomplex ![fst X Y ⁻¹' A, snd X Y ⁻¹' B]).pair.chainComplexπ (R ⊗ S) ≫
+        relativeAlexanderWhitney X Y A B R S =
+      alexanderWhitney X Y R S ≫
+        ((TopPair.ofSubset A).singularChainComplexπ R ⊗ₘ
+          (TopPair.ofSubset B).singularChainComplexπ S) := by
+  have hA := TopPair.singularChainComplexπ_pair_naturality
+    (TopPair.ofSubsetMap (fst X Y) (Set.mapsTo_preimage _ A)) R
+  have hB := TopPair.singularChainComplexπ_pair_naturality
+    (TopPair.ofSubsetMap (snd X Y) (Set.mapsTo_preimage _ B)) S
+  rw [TopPair.ofSubsetMap_fst] at hA hB
+  rw [relativeAlexanderWhitney_def, chainComplexπ_relativeAlexanderWhitneyDiagonal_assoc]
+  exact (Category.assoc _ _ _).trans <|
+    (whisker_eq _ (TauCeti.tensorHom_comp_tensorHom_eq hA.symm hB.symm)).trans <|
+      (Category.assoc _ _ _).symm.trans
+        (eq_whisker (alexanderWhitney_eq_alexanderWhitneyDiagonal_comp X Y R S).symm _)
+
+end Fixed
+
+/-- **Naturality of `relativeAlexanderWhitney`** in maps carrying `A, B` into `A', B'`. -/
+@[reassoc]
+lemma relativeAlexanderWhitney_naturality {X Y X' Y' : TopCat.{w}} {A : Set X} {B : Set Y}
+    {A' : Set X'} {B' : Set Y'} (f : X ⟶ X') (g : Y ⟶ Y')
+    (hf : Set.MapsTo f A A') (hg : Set.MapsTo g B B') (R S : C) :
+    SSetPair.chainComplexMap (smallSingularSubcomplexPairMap (f ⊗ₘ g)
+        (mapsTo_tensorHom_preimage_fst f g hf) (mapsTo_tensorHom_preimage_snd f g hg)) (R ⊗ S) ≫
+        relativeAlexanderWhitney X' Y' A' B' R S =
+      relativeAlexanderWhitney X Y A B R S ≫
+        (TopPair.singularChainComplexMap (TopPair.ofSubsetMap f hf) R ⊗ₘ
+          TopPair.singularChainComplexMap (TopPair.ofSubsetMap g hg) S) := by
+  rw [← cancel_epi (((X ⊗ Y).smallSingularSubcomplex
+      ![fst X Y ⁻¹' A, snd X Y ⁻¹' B]).pair.chainComplexπ (R ⊗ S)),
+    ← SSetPair.chainComplexπ_naturality_assoc, chainComplexπ_relativeAlexanderWhitney,
+    chainComplexπ_relativeAlexanderWhitney_assoc, smallSingularSubcomplexPairMap_right]
+  have hA := TopPair.singularChainComplexπ_pair_naturality (TopPair.ofSubsetMap f hf) R
+  have hB := TopPair.singularChainComplexπ_pair_naturality (TopPair.ofSubsetMap g hg) S
+  rw [TopPair.ofSubsetMap_fst] at hA hB
+  calc _ = alexanderWhitney X Y R S ≫
+          (SSet.chainComplexMap (toSSet.map f) R ⊗ₘ SSet.chainComplexMap (toSSet.map g) S) ≫
+          ((TopPair.ofSubset A').singularChainComplexπ R ⊗ₘ
+            (TopPair.ofSubset B').singularChainComplexπ S) :=
+        alexanderWhitney_naturality_assoc f g R S _
+    _ = alexanderWhitney X Y R S ≫
+          ((TopPair.ofSubset A).singularChainComplexπ R ⊗ₘ
+            (TopPair.ofSubset B).singularChainComplexπ S) ≫
+          (TopPair.singularChainComplexMap (TopPair.ofSubsetMap f hf) R ⊗ₘ
+            TopPair.singularChainComplexMap (TopPair.ofSubsetMap g hg) S) :=
+        whisker_eq _ (TauCeti.tensorHom_comp_tensorHom_eq hA hB)
+    _ = _ := (Category.assoc _ _ _).symm
+
+/-- **Naturality of the relative Alexander–Whitney map** in both coefficient objects. -/
+@[reassoc]
+lemma relativeAlexanderWhitney_coefficient_naturality (X Y : TopCat.{w}) (A : Set X) (B : Set Y)
+    {R S R' S' : C} (φ : R ⟶ R') (ψ : S ⟶ S') :
+    ((SSetPair.chainComplexFunctor C).map (φ ⊗ₘ ψ)).app
+        ((X ⊗ Y).smallSingularSubcomplex ![fst X Y ⁻¹' A, snd X Y ⁻¹' B]).pair ≫
+        relativeAlexanderWhitney X Y A B R' S' =
+      relativeAlexanderWhitney X Y A B R S ≫
+        (((SSetPair.chainComplexFunctor C).map φ).app
+            (TopPair.toSSetPair.obj (TopPair.ofSubset A)) ⊗ₘ
+          ((SSetPair.chainComplexFunctor C).map ψ).app
+            (TopPair.toSSetPair.obj (TopPair.ofSubset B))) := by
+  rw [← cancel_epi (((X ⊗ Y).smallSingularSubcomplex
+      ![fst X Y ⁻¹' A, snd X Y ⁻¹' B]).pair.chainComplexπ (R ⊗ S)),
+    chainComplexπ_relativeAlexanderWhitney_assoc]
+  have hπ := NatTrans.congr_app ((SSetPair.chainComplexFunctorπ C).naturality (φ ⊗ₘ ψ)).symm
+    ((X ⊗ Y).smallSingularSubcomplex ![fst X Y ⁻¹' A, snd X Y ⁻¹' B]).pair
+  have hA := NatTrans.congr_app ((SSetPair.chainComplexFunctorπ C).naturality φ)
+    (TopPair.toSSetPair.obj (TopPair.ofSubset A))
+  have hB := NatTrans.congr_app ((SSetPair.chainComplexFunctorπ C).naturality ψ)
+    (TopPair.toSSetPair.obj (TopPair.ofSubset B))
+  refine (Category.assoc _ _ _).symm.trans <| (eq_whisker hπ _).trans <|
+    (Category.assoc _ _ _).trans <|
+      (whisker_eq _ (chainComplexπ_relativeAlexanderWhitney X Y A B R' S')).trans ?_
+  calc _ = alexanderWhitney X Y R S ≫
+          (((SSet.chainComplexFunctor C).map φ).app (toSSet.obj X) ⊗ₘ
+            ((SSet.chainComplexFunctor C).map ψ).app (toSSet.obj Y)) ≫
+          ((TopPair.ofSubset A).singularChainComplexπ R' ⊗ₘ
+            (TopPair.ofSubset B).singularChainComplexπ S') :=
+        alexanderWhitney_coefficient_naturality_assoc X Y φ ψ _
+    _ = alexanderWhitney X Y R S ≫
+          ((TopPair.ofSubset A).singularChainComplexπ R ⊗ₘ
+            (TopPair.ofSubset B).singularChainComplexπ S) ≫
+          (((SSetPair.chainComplexFunctor C).map φ).app
+              (TopPair.toSSetPair.obj (TopPair.ofSubset A)) ⊗ₘ
+            ((SSetPair.chainComplexFunctor C).map ψ).app
+              (TopPair.toSSetPair.obj (TopPair.ofSubset B))) :=
+        whisker_eq _ (TauCeti.tensorHom_comp_tensorHom_eq hA hB)
+    _ = _ := (Category.assoc _ _ _).symm
+
+end RelativeAlexanderWhitney
 
 end TopCat

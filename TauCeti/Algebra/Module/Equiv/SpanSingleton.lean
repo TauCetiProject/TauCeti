@@ -34,6 +34,9 @@ unit of `K` and `a ↦ a • x` is bijective.
 * `LinearEquiv.isUnit_apply_of_apply_eq_one`, `LinearEquiv.bijective_smul_of_apply_eq_one`: an
   element on which a linear functional takes the value `1` is carried to a unit, and generates
   freely.
+* `LinearEquiv.span_singleton_bilinear_eq_top_iff_of_span_eq_top`: a bilinear map between modules
+  isomorphic to `K` that sends at least one pair to a generator sends `(x, y)` to a generator iff
+  `x` and `y` both generate.
 * `LinearMap.span_singleton_apply_eq_top_of_leftInverse`: a linear map between modules isomorphic
   to the base ring which has a left inverse carries generators to generators.
 * `LinearMap.eq_id_of_apply_eq_self`: over a domain, an endomorphism of a module isomorphic to the
@@ -103,6 +106,28 @@ theorem bijective_smul_of_apply_eq_one {K N : Type*} [CommSemiring K] [AddCommMo
     (Units.mulRight (e.isUnit_apply_of_apply_eq_one Ψ hx).unit).bijective using 1
   funext a
   simp [← smul_eq_mul]
+
+/-- **Bilinear generator criterion for modules isomorphic to the base semiring**: if a `K`-bilinear
+map `B : M₁ →ₗ[K] M₂ →ₗ[K] M₃` between modules `Mᵢ ≃ₗ[K] K` sends some pair `(a, b)` to a
+generator of `M₃`, then `B x y` generates `M₃` if and only if `x` generates `M₁` and `y`
+generates `M₂`. -/
+theorem span_singleton_bilinear_eq_top_iff_of_span_eq_top {K M₁ M₂ M₃ : Type*} [CommSemiring K]
+    [AddCommMonoid M₁] [Module K M₁] [AddCommMonoid M₂] [Module K M₂]
+    [AddCommMonoid M₃] [Module K M₃]
+    (e₁ : M₁ ≃ₗ[K] K) (e₂ : M₂ ≃ₗ[K] K) (e₃ : M₃ ≃ₗ[K] K) (B : M₁ →ₗ[K] M₂ →ₗ[K] M₃)
+    {a : M₁} {b : M₂} (hB : Submodule.span K {B a b} = ⊤) (x : M₁) (y : M₂) :
+    Submodule.span K {B x y} = ⊤ ↔ Submodule.span K {x} = ⊤ ∧ Submodule.span K {y} = ⊤ := by
+  have happly (u : M₁) (v : M₂) :
+      e₃ (B u v) = (e₁ u * e₂ v) * e₃ (B (e₁.symm 1) (e₂.symm 1)) := by
+    have hu : u = e₁ u • e₁.symm 1 := by simp [← map_smul]
+    have hv : v = e₂ v • e₂.symm 1 := by simp [← map_smul]
+    conv_lhs => rw [hu, hv]
+    rw [LinearMap.map_smul, LinearMap.map_smul, LinearMap.smul_apply, LinearEquiv.map_smul,
+      LinearEquiv.map_smul, smul_eq_mul, smul_eq_mul, ← mul_assoc, mul_comm (e₂ v)]
+  have hunit : IsUnit (e₃ (B (e₁.symm 1) (e₂.symm 1))) :=
+    (IsUnit.mul_iff.1 (happly a b ▸ e₃.span_singleton_eq_top_iff_isUnit.1 hB)).2
+  simp only [e₃.span_singleton_eq_top_iff_isUnit, e₁.span_singleton_eq_top_iff_isUnit,
+    e₂.span_singleton_eq_top_iff_isUnit, happly x y, IsUnit.mul_iff, hunit, and_true]
 
 end LinearEquiv
 
