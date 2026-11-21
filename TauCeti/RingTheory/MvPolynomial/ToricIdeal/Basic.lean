@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.MvPolynomial.WeightedHomogeneous
 public import TauCeti.Algebra.Group.Submonoid.Closure
 public import TauCeti.Algebra.MonoidAlgebra.Exactness
 public import Mathlib.RingTheory.FiniteType
+import TauCeti.Data.Finsupp.Weight
 
 /-!
 # Toric ideals and the binomial presentation of semigroup algebras
@@ -38,6 +40,8 @@ every commutative ring: such a family is selected over `ℤ` by noetherianity an
   `A u = A v`.
 * `TauCeti.monomial_sub_monomial_mem_toricIdeal_iff`: over a nontrivial ring,
   `X^u - X^v` lies in the toric ideal exactly when `A u = A v`.
+* `TauCeti.isWeightedHomogeneous_monomial_sub_monomial_of_mem_toricIdeal`: a binomial in the toric
+  ideal is weighted homogeneous for pulled-back weights `deg ∘ a`.
 * `TauCeti.toricIdeal_comp_of_injective`: the toric ideal does not depend on the
   ambient monoid.
 * `TauCeti.toricIdeal_eq_ker_aeval_monomial`: for exponents in `σ →₀ ℕ`, the toric ideal is the
@@ -191,6 +195,23 @@ theorem monomial_sub_monomial_mem_toricIdeal_iff [Nontrivial R] {a : ι → M} {
       Finsupp.linearCombination ℕ a u = Finsupp.linearCombination ℕ a v := by
   rw [mem_toricIdeal_iff, map_sub, aeval_single_monomial, aeval_single_monomial, sub_eq_zero]
   exact (single_left_injective one_ne_zero).eq_iff
+
+/-- A binomial in the toric ideal of `a` is weighted homogeneous for the pulled-back weights
+`deg ∘ a`. -/
+theorem isWeightedHomogeneous_monomial_sub_monomial_of_mem_toricIdeal
+    {D : Type*} [AddCommMonoid D] {a : ι → M} {deg : M →+ D} {u v : ι →₀ ℕ}
+    (h : monomial u (1 : R) - monomial v 1 ∈ toricIdeal R a) :
+    (monomial u (1 : R) - monomial v 1).IsWeightedHomogeneous (deg ∘ a)
+      (Finsupp.weight (deg ∘ a) u) := by
+  rcases subsingleton_or_nontrivial R with hR | hR
+  · rw [Subsingleton.elim (monomial u (1 : R) - monomial v 1) 0]
+    exact isWeightedHomogeneous_zero R _ _
+  have huv : Finsupp.linearCombination ℕ a u = Finsupp.linearCombination ℕ a v :=
+    monomial_sub_monomial_mem_toricIdeal_iff.1 h
+  have hw (x : ι →₀ ℕ) : Finsupp.weight (deg ∘ a) x = deg (Finsupp.linearCombination ℕ a x) :=
+    Finsupp.weight_comp_eq_apply_linearCombination deg a x
+  exact (isWeightedHomogeneous_monomial _ _ _ rfl).sub
+    (isWeightedHomogeneous_monomial _ _ _ (by rw [hw, hw, huv]))
 
 variable (R)
 

@@ -250,6 +250,12 @@ theorem IsWeightedHomogeneous.aeval_pow_mul {A : Type*} [CommSemiring A] [Algebr
       ← pow_mul', Finset.prod_pow_eq_pow_sum, smul_eq_mul]
     ring
 
+/-- Rescaling the variables can only shrink supports, so it preserves weighted homogeneity. -/
+theorem IsWeightedHomogeneous.rescale {M : Type*} [AddCommMonoid M] {w : σ → M}
+    {φ : MvPolynomial σ R} {m : M} (hφ : φ.IsWeightedHomogeneous w m) (a : σ → R) :
+    (MvPolynomial.rescale a φ).IsWeightedHomogeneous w m :=
+  fun _ hd ↦ hφ (mem_support_iff.mp (support_rescale_subset a φ (mem_support_iff.mpr hd)))
+
 section Eval
 
 variable {S M : Type*} [CommSemiring S] [AddCommMonoid M] {w : σ → M} {φ : MvPolynomial σ R}

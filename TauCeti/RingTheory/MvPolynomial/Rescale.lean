@@ -31,11 +31,14 @@ presentation by rescaled generators.
 * `MvPolynomial.rescale_mul`: rescalings compose multiplicatively.
 * `MvPolynomial.rescaleEquiv`: for units `u`, rescaling by `u` as an algebra automorphism, with
   inverse `MvPolynomial.rescaleEquiv u⁻¹`.
-* `MvPolynomial.comap_rescale`: contraction along the rescaling by `a` is extension along the
-  rescaling by an inverse family `b`.
+* `MvPolynomial.comap_rescale`, `MvPolynomial.comap_mapAlgHom_rescale`: contraction along the
+  rescaling by `a` (and its coefficientwise lift to polynomials) is extension along the rescaling
+  by an inverse family `b`.
 -/
 
 public section
+
+open scoped Polynomial
 
 namespace MvPolynomial
 
@@ -136,5 +139,19 @@ theorem comap_rescale {a b : σ → R} (h : ∀ i, a i * b i = 1) (I : Ideal (Mv
   have h' (i : σ) : b i * a i = 1 := by rw [mul_comm, h]
   exact le_antisymm (Ideal.comap_le_map_of_inverse _ _ _ (rescale_rescale_of_mul_eq_one h))
     (Ideal.map_le_comap_of_inverse _ _ _ (rescale_rescale_of_mul_eq_one h'))
+
+/-- If `a i * b i = 1` for every `i`, then contracting an ideal of `(MvPolynomial σ R)[X]` along
+the coefficientwise rescaling by `a` equals extending it along the coefficientwise rescaling by
+`b`. -/
+theorem comap_mapAlgHom_rescale {a b : σ → R} (h : ∀ i, a i * b i = 1)
+    (I : Ideal (MvPolynomial σ R)[X]) :
+    I.comap (Polynomial.mapAlgHom (rescale a)) =
+      I.map (Polynomial.mapAlgHom (rescale b)) := by
+  have hinv {a' b' : σ → R} (hab : ∀ i, a' i * b' i = 1) (p : (MvPolynomial σ R)[X]) :
+      Polynomial.mapAlgHom (rescale b') (Polynomial.mapAlgHom (rescale a') p) = p := by
+    ext n
+    simp [rescale_rescale_of_mul_eq_one hab]
+  exact le_antisymm (Ideal.comap_le_map_of_inverse _ _ _ (hinv h))
+    (Ideal.map_le_comap_of_inverse _ _ _ (hinv fun i ↦ by rw [mul_comm, h]))
 
 end MvPolynomial

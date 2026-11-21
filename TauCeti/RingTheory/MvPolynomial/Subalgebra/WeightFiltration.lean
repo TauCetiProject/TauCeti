@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.MvPolynomial.SAGBI.Weight
 public import TauCeti.RingTheory.GradedAlgebra.CoeffSubalgebra.Flat
+public import TauCeti.RingTheory.MvPolynomial.WeightFiltration
+import TauCeti.Algebra.Polynomial.AlgHom
 
 /-!
 # The induced weight filtration on a polynomial subalgebra
@@ -14,8 +15,13 @@ public import TauCeti.RingTheory.GradedAlgebra.CoeffSubalgebra.Flat
 For a subalgebra `A` of a multivariate polynomial ring, pull back the ambient weight
 filtration to `A`. Its Rees algebra is realized inside `A[t]` using `coeffSubalgebra`.
 The coefficientwise embedding into the ambient polynomial ring identifies it with the
-intersection of the ambient weight Rees algebra and `A[t]`. Thus the existing bounded
-SAGBI certificates identify their Rees presentation with this carrier.
+intersection of the ambient weight Rees algebra and `A[t]`, induces the canonical inclusion
+`Subalgebra.weightReesInclusion` into `TauCeti.MvPolynomial.weightReesAlgebra R w`, and makes
+`A ↦ A.weightReesAlgebra w` functorial in `A ≤ B` (`Subalgebra.weightReesMap`). When each
+`c i ∈ A` has ambient `w`-weight at most `d i`, the Rees presentation map `weightReesAeval c d`
+(`Y i ↦ c i * t ^ d i`, `t ↦ t`) lifts to an `R[t]`-algebra homomorphism
+`TauCeti.MvPolynomial.weightReesAevalLift` into `A.weightReesAlgebra w` with the same kernel as
+`weightReesAeval c d`.
 
 Over a field this Rees algebra is flat over `k[t]`, without any finite generation or SAGBI
 hypothesis. The increasing and exhaustive filtration also permits applying the shared
@@ -106,6 +112,16 @@ theorem one_mem_weightFiltration_one : (1 : A) ∈ A.weightFiltration w 1 := by
 noncomputable abbrev weightReesAlgebra : Subalgebra R A[X] :=
   coeffSubalgebra (A.weightFiltration w)
 
+/-- The induced weight Rees algebra is an algebra over the polynomial parameter ring `R[t]`. -/
+noncomputable instance weightReesAlgebraAlgebra : Algebra R[X] (A.weightReesAlgebra w) :=
+  coeffSubalgebra.algebra (A.weightFiltration w) (A.one_mem_weightFiltration_one w)
+
+/-- The parameter-ring algebra structure on `A.weightReesAlgebra w` extends the `R`-algebra
+structure. -/
+noncomputable instance weightReesAlgebraIsScalarTower :
+    IsScalarTower R R[X] (A.weightReesAlgebra w) :=
+  coeffSubalgebra.isScalarTower (A.weightFiltration w) (A.one_mem_weightFiltration_one w)
+
 /-- The induced Rees algebra embeds as the intersection of the ambient weight Rees algebra
 with the polynomial algebra having coefficients in `A`. -/
 theorem map_weightReesAlgebra :
@@ -123,36 +139,236 @@ theorem map_weightReesAlgebra :
     apply mem_coeffSubalgebra_iff.mpr
     simpa using mem_coeffSubalgebra_iff.mp hp
 
+/-- The canonical inclusion of the subalgebra weight Rees algebra into the ambient polynomial
+weight Rees algebra, as an `R[t]`-algebra homomorphism. -/
+noncomputable def weightReesInclusion :
+    A.weightReesAlgebra w →ₐ[R[X]] TauCeti.MvPolynomial.weightReesAlgebra R w :=
+  coeffSubalgebra.mapPolynomialAlgHom (A.weightFiltration w)
+    (TauCeti.MvPolynomial.weightFiltration R w) A.val
+    (fun _ _ hb ↦ by rw [Subalgebra.coe_val]; exact (A.mem_weightFiltration_iff w).mp hb)
+    (A.one_mem_weightFiltration_one w) (TauCeti.MvPolynomial.one_mem_weightFiltration_one R w)
+
+@[simp]
+theorem coe_weightReesInclusion (g : A.weightReesAlgebra w) :
+    (A.weightReesInclusion w g : (MvPolynomial σ R)[X]) = (g : A[X]).map A.val := by
+  simp [weightReesInclusion]
+
+theorem weightReesInclusion_injective : Function.Injective (A.weightReesInclusion w) :=
+  coeffSubalgebra.mapPolynomialAlgHom_injective _ _ _ Subtype.val_injective
+
+@[simp]
+theorem weightReesInclusion_monomial {n : ℕ} {b : A} (hb : b ∈ A.weightFiltration w n) :
+    A.weightReesInclusion w (coeffSubalgebra.monomial _ n b hb) =
+      coeffSubalgebra.monomial _ n (b : MvPolynomial σ R)
+        ((A.mem_weightFiltration_iff w).mp hb) := by
+  simp [weightReesInclusion]
+
+@[simp]
+theorem weightReesInclusion_X :
+    A.weightReesInclusion w (coeffSubalgebra.X _ (A.one_mem_weightFiltration_one w)) =
+      coeffSubalgebra.X _ (TauCeti.MvPolynomial.one_mem_weightFiltration_one R w) := by
+  simp [weightReesInclusion]
+
+@[simp]
+theorem eval_weightReesInclusion (r : R) (g : A.weightReesAlgebra w) :
+    coeffSubalgebra.eval (TauCeti.MvPolynomial.weightFiltration R w) r (A.weightReesInclusion w g) =
+      (coeffSubalgebra.eval (A.weightFiltration w) r g : MvPolynomial σ R) := by
+  simp [weightReesInclusion]
+
+@[simp]
+theorem evalOne_weightReesInclusion (g : A.weightReesAlgebra w) :
+    coeffSubalgebra.evalOne (TauCeti.MvPolynomial.weightFiltration R w)
+      (A.weightReesInclusion w g) =
+      (coeffSubalgebra.evalOne (A.weightFiltration w) g : MvPolynomial σ R) := by
+  simp [weightReesInclusion]
+
 end Subalgebra
+
+namespace Subalgebra
+
+variable {σ R : Type*} [CommSemiring R]
+
+/-- Functoriality of the weight Rees algebra for an inclusion of subalgebras `A ≤ B`, as a map of
+`R[t]`-algebras. -/
+noncomputable def weightReesMap {A B : Subalgebra R (MvPolynomial σ R)} (h : A ≤ B) (w : σ → ℕ) :
+    A.weightReesAlgebra w →ₐ[R[X]] B.weightReesAlgebra w :=
+  coeffSubalgebra.mapPolynomialAlgHom (A.weightFiltration w) (B.weightFiltration w)
+    (Subalgebra.inclusion h)
+    (fun _ _ hb ↦ (B.mem_weightFiltration_iff w).mpr ((A.mem_weightFiltration_iff w).mp hb))
+    (A.one_mem_weightFiltration_one w) (B.one_mem_weightFiltration_one w)
+
+@[simp]
+theorem coe_weightReesMap {A B : Subalgebra R (MvPolynomial σ R)} (h : A ≤ B) (w : σ → ℕ)
+    (g : A.weightReesAlgebra w) :
+    (weightReesMap h w g : B[X]) = (g : A[X]).map (Subalgebra.inclusion h) := by
+  simp [weightReesMap]
+
+@[simp]
+theorem weightReesInclusion_weightReesMap {A B : Subalgebra R (MvPolynomial σ R)} (h : A ≤ B)
+    (w : σ → ℕ) (g : A.weightReesAlgebra w) :
+    B.weightReesInclusion w (weightReesMap h w g) = A.weightReesInclusion w g := by
+  apply Subtype.ext
+  ext n
+  simp [weightReesInclusion, weightReesMap]
+
+theorem weightReesMap_injective {A B : Subalgebra R (MvPolynomial σ R)} (h : A ≤ B) (w : σ → ℕ) :
+    Function.Injective (weightReesMap h w) :=
+  coeffSubalgebra.mapPolynomialAlgHom_injective _ _ _ (Subalgebra.inclusion_injective h)
+
+@[simp]
+theorem weightReesMap_monomial {A B : Subalgebra R (MvPolynomial σ R)} (h : A ≤ B) (w : σ → ℕ)
+    {n : ℕ} {b : A} (hb : b ∈ A.weightFiltration w n) :
+    weightReesMap h w (coeffSubalgebra.monomial _ n b hb) =
+      coeffSubalgebra.monomial _ n (Subalgebra.inclusion h b)
+        ((B.mem_weightFiltration_iff w).mpr ((A.mem_weightFiltration_iff w).mp hb)) := by
+  simp [weightReesMap]
+
+@[simp]
+theorem weightReesMap_X {A B : Subalgebra R (MvPolynomial σ R)} (h : A ≤ B) (w : σ → ℕ) :
+    weightReesMap h w (coeffSubalgebra.X _ (A.one_mem_weightFiltration_one w)) =
+      coeffSubalgebra.X _ (B.one_mem_weightFiltration_one w) := by
+  simp [weightReesMap]
+
+@[simp]
+theorem weightReesMap_refl (A : Subalgebra R (MvPolynomial σ R)) (w : σ → ℕ) :
+    weightReesMap (le_refl A) w = AlgHom.id R[X] (A.weightReesAlgebra w) := by
+  simp [weightReesMap]
+
+@[simp]
+theorem weightReesMap_weightReesMap {A B C : Subalgebra R (MvPolynomial σ R)}
+    (hAB : A ≤ B) (hBC : B ≤ C) (w : σ → ℕ) (g : A.weightReesAlgebra w) :
+    weightReesMap hBC w (weightReesMap hAB w g) = weightReesMap (hAB.trans hBC) w g := by
+  apply Subtype.ext
+  ext n
+  simp [weightReesMap]
+
+theorem weightReesMap_comp {A B C : Subalgebra R (MvPolynomial σ R)}
+    (hAB : A ≤ B) (hBC : B ≤ C) (w : σ → ℕ) :
+    (weightReesMap hBC w).comp (weightReesMap hAB w) = weightReesMap (hAB.trans hBC) w :=
+  AlgHom.ext (weightReesMap_weightReesMap hAB hBC w)
+
+@[simp]
+theorem eval_weightReesMap {A B : Subalgebra R (MvPolynomial σ R)} (h : A ≤ B) (w : σ → ℕ)
+    (r : R) (g : A.weightReesAlgebra w) :
+    coeffSubalgebra.eval (B.weightFiltration w) r (weightReesMap h w g) =
+      Subalgebra.inclusion h (coeffSubalgebra.eval (A.weightFiltration w) r g) := by
+  simp [weightReesMap]
+
+@[simp]
+theorem evalOne_weightReesMap {A B : Subalgebra R (MvPolynomial σ R)} (h : A ≤ B) (w : σ → ℕ)
+    (g : A.weightReesAlgebra w) :
+    coeffSubalgebra.evalOne (B.weightFiltration w) (weightReesMap h w g) =
+      Subalgebra.inclusion h (coeffSubalgebra.evalOne (A.weightFiltration w) g) := by
+  simp [weightReesMap]
+
+end Subalgebra
+
+namespace TauCeti.MvPolynomial
+
+open _root_.MvPolynomial TauCeti
+
+section ReesLift
+
+attribute [local instance] Polynomial.algebra
+
+variable {σ ι R : Type*} [CommSemiring R] {A : Subalgebra R (MvPolynomial σ R)}
+  {w : σ → ℕ} {c : ι → MvPolynomial σ R} {d : ι → ℕ}
+  (hcA : ∀ i, c i ∈ A) (hc : ∀ i, c i ∈ weightFiltration R w (d i))
+
+/-- The `R`-algebra lift of `weightReesAeval c d` into `A.weightReesAlgebra w` when each `c i`
+lies in `A` and has weight at most `d i`. -/
+private noncomputable def weightReesAevalLiftAux :
+    (MvPolynomial ι R)[X] →ₐ[R] A.weightReesAlgebra w :=
+  Polynomial.aevalTower
+    (aeval fun i ↦ coeffSubalgebra.monomial (A.weightFiltration w) (d i) ⟨c i, hcA i⟩
+      ((A.mem_weightFiltration_iff w).mpr (hc i)))
+    (coeffSubalgebra.X (A.weightFiltration w) (A.one_mem_weightFiltration_one w))
+
+/-- When each `c i` belongs to `A` and has ambient weight at most `d i`, the Rees presentation map
+`weightReesAeval c d` lifts to an `R[t]`-algebra homomorphism from `(MvPolynomial ι R)[t]` into
+`A.weightReesAlgebra w`. -/
+noncomputable def weightReesAevalLift : (MvPolynomial ι R)[X] →ₐ[R[X]] A.weightReesAlgebra w :=
+  (weightReesAevalLiftAux hcA hc).toPolynomialAlgHom (by simp [weightReesAevalLiftAux])
+
+@[simp]
+theorem map_val_coe_weightReesAevalLift (f : (MvPolynomial ι R)[X]) :
+    ((weightReesAevalLift hcA hc f : A.weightReesAlgebra w) : A[X]).map A.val =
+      weightReesAeval c d f := by
+  have h : (Polynomial.mapAlgHom A.val).comp
+        ((A.weightReesAlgebra w).val.comp (weightReesAevalLiftAux hcA hc)) =
+      weightReesAeval c d := by
+    refine Polynomial.algHom_ext' (MvPolynomial.algHom_ext fun i ↦ ?_) ?_
+    · simp [weightReesAevalLiftAux, Polynomial.C_mul_X_pow_eq_monomial]
+    · simp [weightReesAevalLiftAux]
+  simpa [weightReesAevalLift] using congr($h f)
+
+@[simp]
+theorem weightReesAevalLift_C {p : MvPolynomial ι R} :
+    weightReesAevalLift hcA hc (Polynomial.C p) =
+      aeval (fun i ↦ coeffSubalgebra.monomial (A.weightFiltration w) (d i) ⟨c i, hcA i⟩
+        ((A.mem_weightFiltration_iff w).mpr (hc i))) p := by
+  simp [weightReesAevalLift, weightReesAevalLiftAux]
+
+@[simp]
+theorem weightReesAevalLift_X :
+    weightReesAevalLift hcA hc Polynomial.X =
+      coeffSubalgebra.X (A.weightFiltration w) (A.one_mem_weightFiltration_one w) := by
+  simp [weightReesAevalLift, weightReesAevalLiftAux]
+
+/-- On a polynomial `P` of weight at most `n`, `weightReesAevalLift` sends the homogenization of
+`P` in degree `n` to `aeval c P * tⁿ` in `A.weightReesAlgebra w`. -/
+theorem weightReesAevalLift_weightHomogenization {n : ℕ} {P : MvPolynomial ι R}
+    (hP : P ∈ weightFiltration R d n) :
+    weightReesAevalLift hcA hc (weightHomogenization R d n P) =
+      coeffSubalgebra.monomial (A.weightFiltration w) n
+        ⟨aeval c P, Algebra.adjoin_le (Set.range_subset_iff.mpr hcA)
+          (by rw [← aeval_range]; exact ⟨P, rfl⟩)⟩
+        ((A.mem_weightFiltration_iff w).mpr (aeval_mem_weightFiltration hc hP)) := by
+  apply A.weightReesInclusion_injective w
+  apply Subtype.ext
+  rw [A.coe_weightReesInclusion, map_val_coe_weightReesAevalLift,
+    weightReesAeval_weightHomogenization hP, A.weightReesInclusion_monomial,
+    coeffSubalgebra.coe_monomial]
+
+@[simp]
+theorem coe_eval_weightReesAevalLift (r : R) (f : (MvPolynomial ι R)[X]) :
+    (coeffSubalgebra.eval (A.weightFiltration w) r (weightReesAevalLift hcA hc f) :
+      MvPolynomial σ R) = (weightReesAeval c d f).eval (C r) := by
+  rw [← A.eval_weightReesInclusion w r, coeffSubalgebra.eval_apply,
+    A.coe_weightReesInclusion, map_val_coe_weightReesAevalLift, MvPolynomial.algebraMap_eq]
+
+@[simp]
+theorem coe_evalOne_weightReesAevalLift (f : (MvPolynomial ι R)[X]) :
+    (coeffSubalgebra.evalOne (A.weightFiltration w) (weightReesAevalLift hcA hc f) :
+      MvPolynomial σ R) = aeval c (f.eval 1) := by
+  have h : A.val.comp ((coeffSubalgebra.evalOne (A.weightFiltration w)).comp
+        (weightReesAevalLiftAux hcA hc)) =
+      (aeval c).comp ((Polynomial.aeval (1 : MvPolynomial ι R)).restrictScalars R) := by
+    refine Polynomial.algHom_ext' (MvPolynomial.algHom_ext fun i ↦ ?_) ?_ <;>
+      simp [weightReesAevalLiftAux]
+  simpa [weightReesAevalLift] using congr($h f)
+
+/-- The kernel of `weightReesAevalLift hcA hc` equals the kernel of `weightReesAeval c d`. -/
+theorem ker_weightReesAevalLift :
+    RingHom.ker (weightReesAevalLift hcA hc) = RingHom.ker (weightReesAeval c d) := by
+  ext f
+  rw [RingHom.mem_ker, RingHom.mem_ker, ← map_val_coe_weightReesAevalLift hcA hc f,
+    ← A.coe_weightReesInclusion w]
+  exact ⟨fun h ↦ by rw [h, map_zero, ZeroMemClass.coe_zero],
+    fun h ↦ A.weightReesInclusion_injective w (Subtype.ext (by simpa using h))⟩
+
+end ReesLift
+
+end TauCeti.MvPolynomial
 
 namespace Subalgebra
 
 variable {σ R : Type*} [CommRing R] (A : Subalgebra R (MvPolynomial σ R)) (w : σ → ℕ)
 
-/-- Under bounded relation certificates, the SAGBI Rees presentation is exactly the embedded
-Rees algebra of the induced filtration, not merely an algebra with the same generators. -/
-theorem map_weightReesAlgebra_eq_range_weightReesAeval
-    {ι J : Type*} {c g : ι → MvPolynomial σ R} {d : ι → ℕ}
-    {r Q : J → MvPolynomial ι R} {e : J → ℕ}
-    (hA : A = Algebra.adjoin R (Set.range c))
-    (hc : ∀ i, c i ∈ TauCeti.MvPolynomial.weightFiltration R w (d i))
-    (hg : ∀ i, MvPolynomial.weightedHomogeneousComponent w (d i) (c i) = g i)
-    (hJ : RingHom.ker (MvPolynomial.aeval g) = Ideal.span (Set.range r))
-    (hr : ∀ j, (r j).IsWeightedHomogeneous d (e j))
-    (hQ : ∀ j, Q j ∈ TauCeti.MvPolynomial.weightFiltrationLT R d (e j))
-    (hQc : ∀ j, MvPolynomial.aeval c (Q j) = MvPolynomial.aeval c (r j)) :
-    (A.weightReesAlgebra w).map (Polynomial.mapAlgHom A.val) = (weightReesAeval c d).range := by
-  rw [A.map_weightReesAlgebra,
-    range_weightReesAeval_eq_inf hc hg hJ hr hQ hQc]
-  congr 1
-  ext p
-  have hv' : p ∈ (Polynomial.mapAlgHom A.val).range ↔ ∀ n, p.coeff n ∈ A.val.range :=
-    Polynomial.mem_map_rangeS A.val.toRingHom
-  rw [Subalgebra.range_val] at hv'
-  have hc' : p ∈ (Polynomial.mapAlgHom (MvPolynomial.aeval c)).range ↔
-      ∀ n, p.coeff n ∈ (MvPolynomial.aeval (R := R) c).range :=
-    Polynomial.mem_map_rangeS (MvPolynomial.aeval (R := R) c).toRingHom
-  rw [hv', hc', MvPolynomial.aeval_range, hA]
+/-- Over a commutative ring, the subalgebra weight Rees algebra is a commutative ring. -/
+noncomputable instance weightReesAlgebraCommRing : CommRing (A.weightReesAlgebra w) :=
+  letI : CommRing A := A.toCommRing
+  @Subalgebra.toCommRing R A[X] _ _ _ (A.weightReesAlgebra w)
 
 /-- The induced weight Rees algebra is flat over the actual parameter ring. No SAGBI basis,
 finite generation, positivity of weights, or finite-variable hypothesis is needed. -/
