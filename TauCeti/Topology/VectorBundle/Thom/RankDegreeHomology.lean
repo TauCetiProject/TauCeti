@@ -76,6 +76,9 @@ base.
 
 ## Main results
 
+* `TauCeti.complZeroPairGenerator`: the generator of `Hᵣ(F, F ∖ {0}; K)` corresponding to the class
+  of the point, of which every generator is a unit multiple
+  (`TauCeti.exists_eq_units_smul_complZeroPairGenerator`).
 * `TauCeti.thomPairSingularHomologyFinrankIso`: `Hᵣ(E, E₀; K) ≅ H₀(B; K)` for `r` the rank and `K`
   a commutative ring whose only unit is `1`.
 * `TauCeti.thomPairSingularHomologyFinrankIso_hom_apply`: it sends the fibre class over `b` to the
@@ -110,7 +113,7 @@ variable (K : Type w) [CommRing K] (F : Type w) [NormedAddCommGroup F] [NormedSp
   [FiniteDimensional ℝ F]
 
 /-- The generator of `Hᵣ(F, F ∖ {0}; K)` corresponding to the class of the point in `H₀(pt; K)`. -/
-private def complZeroPairGenerator :
+def complZeroPairGenerator :
     ((TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F)).singularHomology (ModuleCat.of K K)
       (finrank ℝ F) : ModuleCat.{w} K) :=
   TopPair.singularHomologyMap (complZeroPairIsoProdThomPair F).inv (ModuleCat.of K K) (finrank ℝ F)
@@ -130,7 +133,7 @@ private theorem singularHomologyMap_prodThomPairFiberMap_complZeroPairGenerator_
 
 /-- The fibre inclusion over a point `x` of `W` carries the generator to the class of `x` under
 `Hᵣ(W × F, W × (F ∖ {0}); K) ≅ H₀(W; K)`. -/
-private theorem singularHomologyMap_prodThomPairFiberMap_complZeroPairGenerator
+theorem singularHomologyMap_prodThomPairFiberMap_complZeroPairGenerator
     {W : Type w} [TopologicalSpace W] (x : W) :
     TopPair.singularHomologyMap (prodThomPairFiberMap F x) (ModuleCat.of K K) (finrank ℝ F)
         (complZeroPairGenerator K F) =
@@ -148,7 +151,8 @@ private theorem singularHomologyMap_prodThomPairFiberMap_complZeroPairGenerator
     singularHomology₀Section_naturality]
   simp
 
-private theorem span_complZeroPairGenerator :
+/-- The generator `complZeroPairGenerator K F` generates `Hᵣ(F, F ∖ {0}; K)`. -/
+theorem span_complZeroPairGenerator :
     Submodule.span K {complZeroPairGenerator K F} = ⊤ := by
   -- The class of the point generates `H₀(pt; K)`, being the inverse of the augmentation `≅ K`
   -- applied to `1`.
@@ -161,7 +165,7 @@ private theorem span_complZeroPairGenerator :
 
 /-- Every generator of `Hᵣ(F, F ∖ {0}; K) ≅ K` is a unit multiple of the generator
 `complZeroPairGenerator K F`. -/
-private theorem exists_eq_units_smul_complZeroPairGenerator {x : ((TopPair.ofSubset
+theorem exists_eq_units_smul_complZeroPairGenerator {x : ((TopPair.ofSubset
     (X := TopCat.of F) ({0}ᶜ : Set F)).singularHomology (ModuleCat.of K K) (finrank ℝ F) :
       ModuleCat.{w} K)} (hx : Submodule.span K {x} = ⊤) :
     ∃ u : Kˣ, x = (u : K) • complZeroPairGenerator K F := by
