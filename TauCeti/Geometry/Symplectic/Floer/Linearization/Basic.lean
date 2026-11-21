@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Energy
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Variation
+public import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 
 /-!
@@ -24,11 +25,13 @@ the derivative is `Y(u)(∂t u - X_Kt)` (`hasDerivAt_floerOperator_add_smul`).
 `floerLinearization` is the map-direction operator with coefficients fixed. For a constant almost
 complex structure `J` and `K = H dt` it is `∂s ξ + J (∂t ξ - dX_H(u) ξ)`
 (`floerLinearization_const_eq`). On a direction multiplied by a cutoff `β(s)` it acts as
-`β D ξ + β' ξ` (`floerLinearization_smul_fst`); in particular, conjugated by an exponential weight
-`e^{δ s}` it becomes `floerLinearization - δ` (`floerLinearization_exp_smul`). Its value at a point
-depends only on the germ of the direction there (`floerLinearization_congr_of_eventuallyEq`), and
-on the Floer data only through their values at that point (`floerLinearization_congr_data`). For
-`C¹` coefficients `J` and `C²`
+`β D ξ + β' ξ` (`floerLinearization_smul_fst`), a case of the same rule for any operator
+`∂s + J ∂t + A` (`TauCeti.cauchyRiemann_smul_fst` in
+`TauCeti.Geometry.Symplectic.JHolomorphic.Line`); in particular, conjugated by an exponential
+weight `e^{δ s}` it becomes `floerLinearization - δ` (`floerLinearization_exp_smul`). Its value at
+a point depends only on the germ of the direction there
+(`floerLinearization_congr_of_eventuallyEq`), and on the Floer data only through their values at
+that point (`floerLinearization_congr_data`). For `C¹` coefficients `J` and `C²`
 Hamiltonians it is continuous wherever the map and the direction are `C¹`
 (`continuousAt_floerLinearization`), and continuous everywhere when they are so everywhere
 (`continuous_floerLinearization`), so its `L²` norms over compact sets are finite.
@@ -38,6 +41,9 @@ It is `∂s ξ + J(z, u z) ∂t ξ` plus a zeroth-order term `floerLinearization
 linearized operators differ pointwise by the differences of their coefficients
 (`norm_floerLinearization_sub_floerLinearization_le`). Translating the data and the direction
 translates the operator (`floerLinearization_comp_add_right`).
+For jointly continuous `J` and jointly `C¹` Hamiltonians, the Floer operator of an almost
+everywhere strongly measurable map is almost everywhere strongly measurable
+(`aestronglyMeasurable_floerOperator`), so its `Lᵖ` norms are defined.
 The universal variation theorem identifies its direction field with the actual parameter derivative
 of the map, using equality of mixed derivatives rather than assuming it. The endomorphism field need
 not square to minus one for differentiation. For an almost complex structure the zero equation
@@ -227,35 +233,6 @@ theorem floerLinearization_zero (ω : SymplecticForm V)
     ω.floerLinearization J Ks Kt u 0 z = 0 := by
   simp [floerLinearization_def]
 
-/-- **Multiplying by a cutoff in `s`.** If `β` has derivative `β'` at `s`, the linearization at
-`z = (s, t)` sends `β(s) ξ` to `β(s) D ξ + β' ξ`: the factor only differentiates in the `s`
-direction, where the operator has the leading term `∂s`. -/
-theorem floerLinearization_smul_fst (ω : SymplecticForm V)
-    (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ)
-    (u ξ : ℝ × ℝ → V) {z : ℝ × ℝ} {β : ℝ → ℝ} {β' : ℝ} (hβ : HasDerivAt β β' z.1)
-    (hξ : DifferentiableAt ℝ ξ z) :
-    ω.floerLinearization J Ks Kt u (fun w ↦ β w.1 • ξ w) z =
-      β z.1 • ω.floerLinearization J Ks Kt u ξ z + β' • ξ z := by
-  have hd : HasFDerivAt (fun w : ℝ × ℝ ↦ β w.1 • ξ w) _ z :=
-    (hβ.hasFDerivAt.comp z hasFDerivAt_fst).smul hξ.hasFDerivAt
-  rw [floerLinearization_def, hd.fderiv, floerLinearization_def]
-  simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply, comp_apply,
-    ContinuousLinearMap.coe_fst', stdComplexLineReal_fst, stdComplexLineImag_fst, map_smul,
-    Function.comp_apply, toSpanSingleton_apply, one_smul, zero_smul, add_zero, map_sub]
-  module
-
-/-- **Conjugating the linearization by an exponential weight.** On maps of the form
-`e^{-δ s} ξ`, the linearized Floer operator acts as `e^{-δ s} (D - δ) ξ`: this is the case
-`β(s) = e^{-δ s}` of `floerLinearization_smul_fst`. -/
-theorem floerLinearization_exp_smul (ω : SymplecticForm V)
-    (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ)
-    (u ξ : ℝ × ℝ → V) {z : ℝ × ℝ} (δ : ℝ) (hξ : DifferentiableAt ℝ ξ z) :
-    ω.floerLinearization J Ks Kt u (fun w ↦ Real.exp (-(δ * w.1)) • ξ w) z =
-      Real.exp (-(δ * z.1)) • (ω.floerLinearization J Ks Kt u ξ z - δ • ξ z) := by
-  rw [floerLinearization_smul_fst ω J Ks Kt u ξ (β := fun s ↦ Real.exp (-(δ * s)))
-    ((hasDerivAt_id' z.1).const_mul δ).neg.exp hξ]
-  module
-
 /-- The linearization at `z` depends only on the germ of the direction at `z`. -/
 theorem floerLinearization_congr_of_eventuallyEq (ω : SymplecticForm V)
     (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ)
@@ -325,6 +302,30 @@ theorem norm_floerLinearization_sub_floerLinearization_le (ω : SymplecticForm V
     show ∀ a b c b' c' : V, a + b + c - (a + b' + c') = (b - b') + (c - c') by
       intro a b c b' c'; abel, ← sub_apply, ← sub_apply]
   exact (norm_add_le _ _).trans (add_le_add (le_opNorm _ _) (le_opNorm _ _))
+
+/-- **Multiplying by a cutoff in `s`.** If `β` has derivative `β'` at `s`, the linearization at
+`z = (s, t)` sends `β(s) ξ` to `β(s) D ξ + β' ξ`: the factor only differentiates in the `s`
+direction, where the operator has the leading term `∂s`. -/
+theorem floerLinearization_smul_fst (ω : SymplecticForm V)
+    (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ)
+    (u ξ : ℝ × ℝ → V) {z : ℝ × ℝ} {β : ℝ → ℝ} {β' : ℝ} (hβ : HasDerivAt β β' z.1)
+    (hξ : DifferentiableAt ℝ ξ z) :
+    ω.floerLinearization J Ks Kt u (fun w ↦ β w.1 • ξ w) z =
+      β z.1 • ω.floerLinearization J Ks Kt u ξ z + β' • ξ z := by
+  simp only [floerLinearization_eq_add]
+  exact cauchyRiemann_smul_fst (fun z ↦ J z (u z)) (ω.floerLinearizationCoeff J Ks Kt u) hβ hξ
+
+/-- **Conjugating the linearization by an exponential weight.** On maps of the form
+`e^{-δ s} ξ`, the linearized Floer operator acts as `e^{-δ s} (D - δ) ξ`: this is the case
+`β(s) = e^{-δ s}` of `floerLinearization_smul_fst`. -/
+theorem floerLinearization_exp_smul (ω : SymplecticForm V)
+    (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ)
+    (u ξ : ℝ × ℝ → V) {z : ℝ × ℝ} (δ : ℝ) (hξ : DifferentiableAt ℝ ξ z) :
+    ω.floerLinearization J Ks Kt u (fun w ↦ Real.exp (-(δ * w.1)) • ξ w) z =
+      Real.exp (-(δ * z.1)) • (ω.floerLinearization J Ks Kt u ξ z - δ • ξ z) := by
+  rw [floerLinearization_smul_fst ω J Ks Kt u ξ (β := fun s ↦ Real.exp (-(δ * s)))
+    ((hasDerivAt_id' z.1).const_mul δ).neg.exp hξ]
+  module
 
 /-- The zeroth-order part of the linearized Floer operator is continuous at `z` when the data are
 `C¹` (and the Hamiltonians `C²`) at `(z, u z)`, and `u` is `C¹` at `z`. -/
@@ -398,6 +399,33 @@ theorem continuous_floerLinearization (ω : SymplecticForm V)
     (hξ : ContDiff ℝ 1 ξ) : Continuous (ω.floerLinearization J Ks Kt u ξ) :=
   continuous_iff_continuousAt.2 fun z ↦
     ω.continuousAt_floerLinearization (hJ z) (hKs z) (hKt z) hu.contDiffAt hξ.contDiffAt
+
+/-- **Measurability of the Floer operator.** Let the coefficients `J` be jointly continuous and the
+Hamiltonians `Ks`, `Kt` jointly `C¹`. Then the Floer operator of an almost everywhere strongly
+measurable map is almost everywhere strongly measurable for the same measure on `ℝ × ℝ`: it is a
+continuous function of the point, the value of the map and its two partial derivatives, which are
+measurable. -/
+theorem aestronglyMeasurable_floerOperator (ω : SymplecticForm V)
+    {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ} (hJ : Continuous (Function.uncurry J))
+    (hKs : ContDiff ℝ 1 (Function.uncurry Ks)) (hKt : ContDiff ℝ 1 (Function.uncurry Kt))
+    {u : ℝ × ℝ → V} {μ : MeasureTheory.Measure (ℝ × ℝ)}
+    (hu : MeasureTheory.AEStronglyMeasurable u μ) :
+    MeasureTheory.AEStronglyMeasurable (ω.floerOperator J Ks Kt u) μ := by
+  borelize V
+  have hS := (ω.contDiff_hamiltonianVectorField_uncurry (n := 0) hKs).continuous
+  have hT := (ω.contDiff_hamiltonianVectorField_uncurry (n := 0) hKt).continuous
+  have hpt : Continuous fun q : (ℝ × ℝ) × V × V × V ↦ (q.1, q.2.1) :=
+    continuous_fst.prodMk continuous_snd.fst
+  have hG : Continuous fun q : (ℝ × ℝ) × V × V × V ↦
+      q.2.2.1 - ω.hamiltonianVectorField (Ks q.1) q.2.1 +
+        J q.1 q.2.1 (q.2.2.2 - ω.hamiltonianVectorField (Kt q.1) q.2.1) :=
+    (continuous_snd.snd.fst.sub (hS.comp hpt)).add
+      ((hJ.comp hpt).clm_apply (continuous_snd.snd.snd.sub (hT.comp hpt)))
+  have hd (e : ℝ × ℝ) : MeasureTheory.AEStronglyMeasurable (fun z ↦ fderiv ℝ u z e) μ :=
+    (measurable_fderiv_apply_const ℝ _ e).aestronglyMeasurable
+  rw [funext (ω.floerOperator_def J Ks Kt u)]
+  exact hG.comp_aestronglyMeasurable (aestronglyMeasurable_id.prodMk
+    (hu.prodMk ((hd stdComplexLineReal).prodMk (hd stdComplexLineImag))))
 
 section Families
 
