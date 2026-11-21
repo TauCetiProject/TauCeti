@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 public import TauCeti.Algebra.Lie.Coadjoint
 public import TauCeti.Algebra.Lie.InvariantForm.Basic
 
@@ -41,6 +42,14 @@ of `t ↦ B(Ad_(exp tA) p, X)` at `t = 0`, computed in
 the Hessian bilinear form `Hess_p f_X(q_p A, q_p C) = -α(X) α(p) B(A, C)`, that is
 `Hess_p f_X(x, y) = -α(X) B(x, y) / α(p)` in tangent vectors.
 
+The **height Hessian** `B.heightHessian p X` is the quadratic form `A ↦ -B(⁅A, p⁆, ⁅A, X⁆)` on
+`L` (`LinearMap.BilinForm.heightHessian`); on a root plane it is `-α(p) α(X) B(A, A)`
+(`TauCeti.IsRootPlane.heightHessian_apply`). For an invariant form and `⁅X, p⁆ = 0` its polar form
+is `-2 B(⁅A, p⁆, ⁅C, X⁆)` (`LinearMap.BilinForm.polar_heightHessian`), and the stabilizer `L_ν`
+of `ν = B p` lies in its radical (`LinearMap.BilinForm.lieAnnihilator_le_radical_heightHessian`),
+so it descends to a quadratic form on `L ⧸ L_ν` (`LinearMap.BilinForm.liftHeightHessian`), the
+Hessian of `f_X` at `p` read in the quotient coordinates `[A] ↦ ⁅A, p⁆`.
+
 For an invariant form, root planes whose roots satisfy `α(H)² ≠ α'(H)²` for some `H ∈ t` are
 orthogonal (`TauCeti.IsRootPlane.le_orthogonal`), and two root planes that are orthogonal for `B`
 contribute no cross terms to either form (`TauCeti.IsRootPlane.apply_lie_eq_zero_of_le_orthogonal`,
@@ -64,6 +73,8 @@ height Hessian and the dimension of the orbit, is done in
 
 * `TauCeti.IsRootPlane B t α E J`: `J` is a `B`-skew complex structure on `E` and every `H ∈ t`
   acts on `E` by `α(H) J`.
+* `LinearMap.BilinForm.heightHessian B p X`: the quadratic form `A ↦ -B(⁅A, p⁆, ⁅A, X⁆)`.
+* `LinearMap.BilinForm.liftHeightHessian`: the height Hessian on the tangent model `L ⧸ L_ν`.
 
 ## Main results
 
@@ -72,6 +83,8 @@ height Hessian and the dimension of the orbit, is done in
 * `TauCeti.IsRootPlane.apply_lie_lie`, `TauCeti.IsRootPlane.mul_apply_lie_lie`: the form
   `B(q_p A, q_X C)` behind the height Hessian on a root plane, in quotient and in tangent
   coordinates.
+* `LinearMap.BilinForm.lieAnnihilator_le_radical_heightHessian`: the height Hessian descends to
+  the tangent model `L ⧸ L_ν`.
 * `TauCeti.IsRootPlane.le_orthogonal`: for an invariant form, root planes with
   `α(H)² ≠ α'(H)²` for some `H ∈ t` are orthogonal.
 * `TauCeti.IsRootPlane.mem_lieAnnihilator_iff`: a root plane meets the stabilizer of `B p` only
@@ -88,6 +101,75 @@ height Hessian and the dimension of the orbit, is done in
 public section
 
 open Module (Dual)
+
+namespace LinearMap.BilinForm
+
+open QuadraticMap
+
+variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+
+/-- The **height Hessian** of `B` at `p` in the direction `X`: the quadratic form
+`A ↦ -B(⁅A, p⁆, ⁅A, X⁆)` on `L`. When `B` is invariant and `⁅X, p⁆ = 0`, its value at `A` is the
+second derivative at `t = 0` of the height `B(·, X)` along the adjoint orbit curve
+`t ↦ Ad_(exp tA) p`, so it is the Hessian at the critical point `p` of the height on the orbit,
+read in the quotient coordinate `A ↦ ⁅A, p⁆`. -/
+def heightHessian (B : LinearMap.BilinForm R L) (p X : L) : QuadraticForm R L :=
+  -LinearMap.BilinMap.toQuadraticMap (B.compl₁₂ (LieAlgebra.ad R L p) (LieAlgebra.ad R L X))
+
+@[simp]
+theorem heightHessian_apply (B : LinearMap.BilinForm R L) (p X A : L) :
+    B.heightHessian p X A = -B ⁅A, p⁆ ⁅A, X⁆ := by
+  simp only [heightHessian, _root_.neg_apply, LinearMap.BilinMap.toQuadraticMap_apply,
+    LinearMap.compl₁₂_apply, LieAlgebra.ad_apply, ← lie_skew A, map_neg, LinearMap.neg_apply,
+    neg_neg]
+
+/-- Negating the direction negates the height Hessian. -/
+@[simp]
+theorem heightHessian_neg_right (B : LinearMap.BilinForm R L) (p X : L) :
+    B.heightHessian p (-X) = -B.heightHessian p X := by
+  ext A
+  simp only [heightHessian_apply, lie_neg, map_neg, neg_neg, _root_.neg_apply]
+
+variable {B : LinearMap.BilinForm R L} {p X : L}
+
+/-- **The polar form of the height Hessian.** For an invariant form and commuting `p` and `X`,
+the symmetric bilinear form of the height Hessian is `(A, C) ↦ -B(⁅A, p⁆, ⁅C, X⁆)` (symmetric by
+`LinearMap.BilinForm.lieInvariant.apply_lie_lie_comm`), so its polar
+form is twice that. -/
+theorem polar_heightHessian (hB : B.lieInvariant L) (hXp : ⁅X, p⁆ = 0) (A C : L) :
+    polar (B.heightHessian p X) A C = -(2 * B ⁅A, p⁆ ⁅C, X⁆) := by
+  simp only [polar, heightHessian_apply, add_lie, map_add, LinearMap.add_apply,
+    hB.apply_lie_lie_comm hXp C A]
+  ring
+
+/-- **The height Hessian descends to the tangent model.** For an invariant form and commuting `p`
+and `X`, the stabilizer `L_ν` of `ν = B p` lies in the radical of the height Hessian, which is
+therefore induced by a quadratic form on the algebraic tangent model `L ⧸ L_ν` of the coadjoint
+orbit through `ν` (`LinearMap.BilinForm.liftHeightHessian`). -/
+theorem lieAnnihilator_le_radical_heightHessian (hB : B.lieInvariant L) (hXp : ⁅X, p⁆ = 0) :
+    (TauCeti.lieAnnihilator R L (B p)).toSubmodule ≤ (B.heightHessian p X).radical := by
+  intro A hA
+  rw [LieSubalgebra.mem_toSubmodule, TauCeti.mem_lieAnnihilator, hB.lie_apply_eq] at hA
+  refine mem_radical_iff'.mpr ⟨by simp [hA], fun C ↦ ?_⟩
+  have hAC : B ⁅C, p⁆ ⁅A, X⁆ = 0 := by rw [← hB.apply_lie_lie_comm hXp, hA, LinearMap.zero_apply]
+  simp only [heightHessian_apply, add_lie, map_add, LinearMap.add_apply, hA, hAC,
+    LinearMap.zero_apply]
+  ring
+
+/-- **The height Hessian on the tangent model.** For an invariant form and commuting `p` and `X`,
+the quadratic form on the algebraic tangent model `L ⧸ L_ν` of the coadjoint orbit through
+`ν = B p` induced by the height Hessian
+(`LinearMap.BilinForm.lieAnnihilator_le_radical_heightHessian`). -/
+@[expose] def liftHeightHessian (hB : B.lieInvariant L) (hXp : ⁅X, p⁆ = 0) :
+    QuadraticForm R (L ⧸ (TauCeti.lieAnnihilator R L (B p)).toSubmodule) :=
+  (B.heightHessian p X).lift _ (lieAnnihilator_le_radical_heightHessian hB hXp)
+
+@[simp]
+theorem liftHeightHessian_mk (hB : B.lieInvariant L) (hXp : ⁅X, p⁆ = 0) (A : L) :
+    liftHeightHessian hB hXp (Submodule.Quotient.mk A) = B.heightHessian p X A :=
+  lift_mk _ A
+
+end LinearMap.BilinForm
 
 namespace TauCeti
 
@@ -173,6 +255,12 @@ theorem apply_lie_lie (h : IsRootPlane B t α E J) (p X : t) (v w : E) :
   simp only [map_neg, map_smul, LinearMap.neg_apply, LinearMap.smul_apply, smul_eq_mul,
     h.apply_map_map]
   ring
+
+/-- **The height Hessian on a root plane.** For `p, X ∈ t` and `A` in a root plane with root `α`,
+the height Hessian is `-α(p) α(X) B(A, A)`. -/
+theorem heightHessian_apply (h : IsRootPlane B t α E J) (p X : t) (v : E) :
+    B.heightHessian p X v = -(α p * α X * B v v) := by
+  rw [LinearMap.BilinForm.heightHessian_apply, h.apply_lie_lie]
 
 /-- **The quotient-coordinate congruence.** For `p ∈ t` and `A, C` in a root plane, the tangent
 vectors `q_p A = ⁅A, p⁆` and `q_p C = ⁅C, p⁆` satisfy `B(q_p A, q_p C) = α(p)² B(A, C)`. -/
