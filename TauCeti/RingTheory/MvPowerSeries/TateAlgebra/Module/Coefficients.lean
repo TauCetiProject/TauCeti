@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Module.Approximation
+public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Module.Norm
 public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Discrete
 import Mathlib.Topology.WithTopology
 
@@ -18,15 +18,14 @@ precisely a null family on the discrete exponent set. Taking coefficients identi
 coefficient equivalence preserves the Gauss seminorm defined in `Module.Norm`. It is a norm when
 the coefficient seminorm is a norm, and it is complete when the coefficient space is complete.
 
-The coefficient comparison is linearly isometric for every bounded coefficient-module action.
-Finite-support inclusions preserve single-coordinate norms, and every restricted family is the
-unconditional sum of its single coefficients. Consequently finite-support families are dense.
-For ring-valued coefficients this norm agrees with the existing unit Gauss norm.
+The coefficient comparison is linearly isometric for every bounded coefficient-module action
+and sends single coefficients to coordinate vectors. The unit Gauss seminorm is attained by
+some coefficient. For unconditional expansion and density at arbitrary positive polyradii, see
+`TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Module.Approximation`.
 
 The scalar coefficient comparison in `TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Coefficients`
 specializes this construction; `IsRestrictedFamily.Gauss.norm_subringLinearEquiv` identifies its
-norm with the scalar Gauss norm. The coefficient comparison uses the coordinate expansion of
-`ZeroAtInftyContinuousMap`.
+norm with the scalar Gauss norm.
 
 The one-field wrapper retains the existing algebraic restricted-family carrier, but its Gauss
 topology is distinct from the subgroup's inherited pointwise topology. Only the additive and
