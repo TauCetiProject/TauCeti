@@ -37,6 +37,14 @@ this says that `F ↦ exp (i F) - 1` has derivative `G ↦ i (1 + (exp (i F) - 1
 (`TauCeti.Vortex.hasFDerivAt_subOne_expGauge`). The derivative is an affine function of the value,
 so the map is smooth (`TauCeti.Vortex.contDiff_subOne_expGauge`), and the embedding `u ↦ u - 1`
 of `G_s` into `H^s(ℂ)` is smooth (`TauCeti.Vortex.SobolevTopologicalGaugeGroup.contMDiff_subOne`).
+So are the real coordinates `Re u - 1 = ((u - 1) + (u⁻¹ - 1)) / 2` and
+`Im u = -i ((u - 1) - (u⁻¹ - 1)) / 2`
+(`TauCeti.Vortex.SobolevTopologicalGaugeGroup.contMDiff_reSubOne`,
+`TauCeti.Vortex.SobolevTopologicalGaugeGroup.contMDiff_imPart`), through which `G_s` acts on the
+framed vortex fields. At the identity, in the exponential chart, their derivatives are `0` and
+`G ↦ G` (`TauCeti.Vortex.hasFDerivAt_reSubOne_expGauge_zero`,
+`TauCeti.Vortex.hasFDerivAt_imPart_expGauge_zero`): `cos F - 1` is quadratic in `F`, and the
+linear part of `sin F` is `F`.
 
 ## Main results
 
@@ -45,10 +53,16 @@ of `G_s` into `H^s(ℂ)` is smooth (`TauCeti.Vortex.SobolevTopologicalGaugeGroup
 * `TauCeti.Vortex.hasFDerivAt_subOne_expGauge`, `TauCeti.Vortex.hasFDerivAt_subOne_expGauge_zero`:
   the derivative of `F ↦ exp (i F) - 1`, which is `G ↦ i G` at `F = 0`.
 * `TauCeti.Vortex.contDiff_subOne_expGauge`: `F ↦ exp (i F) - 1` is smooth.
+* `TauCeti.Vortex.hasFDerivAt_reSubOne_expGauge_zero`,
+  `TauCeti.Vortex.hasFDerivAt_imPart_expGauge_zero`: the derivatives of `F ↦ cos F - 1` and
+  `F ↦ sin F` at `F = 0`.
 * `TauCeti.Vortex.SobolevTopologicalGaugeGroup.instLieGroup`: `G_s` is a Lie group.
 * `TauCeti.Vortex.contMDiff_gaugeChart_symm`, `TauCeti.Vortex.contMDiff_expGauge`: the inverse
   charts `F ↦ u exp (i F)`, and in particular the exponential, are smooth.
 * `TauCeti.Vortex.SobolevTopologicalGaugeGroup.contMDiff_subOne`: `u ↦ u - 1` is smooth.
+* `TauCeti.Vortex.SobolevTopologicalGaugeGroup.contMDiff_reSubOne`,
+  `TauCeti.Vortex.SobolevTopologicalGaugeGroup.contMDiff_imPart`: `u ↦ Re u - 1` and `u ↦ Im u`
+  are smooth.
 
 ## References
 
@@ -191,6 +205,44 @@ theorem contDiff_subOne_expGauge :
       ⟨fun F ↦ Φ (subOne (expGauge hs F)), (hΦ.of_le (by exact_mod_cast le_top)).comp ih,
         hasFDerivAt_subOne_expGauge⟩
 
+/-- At `F = 0` the derivative of `F ↦ exp (-i F) - 1`, the coordinate of the inverse gauge, is
+`G ↦ -i G`. -/
+private theorem hasFDerivAt_subOne_expGauge_neg_zero :
+    HasFDerivAt (fun F ↦ subOne (expGauge hs (-F)))
+      (-(I • (realSubmodule ℂ (zero_le_one.trans hs.le)).subtypeL)) 0 := by
+  have h : HasFDerivAt (fun F ↦ subOne (expGauge hs F))
+      (I • (realSubmodule ℂ (zero_le_one.trans hs.le)).subtypeL) (-0) := by
+    rw [neg_zero]
+    exact hasFDerivAt_subOne_expGauge_zero
+  refine (h.comp (0 : realSubmodule ℂ (zero_le_one.trans hs.le)) (hasFDerivAt_id _).neg)
+    |>.congr_fderiv ?_
+  ext G : 1
+  simp
+
+/-- At `F = 0` the derivative of `F ↦ Re (exp (i F)) - 1` vanishes: in `H^s(ℂ)` this is the
+element `reSubOne (exp (i F)) = cos F - 1`, which is quadratically small in `F`. -/
+theorem hasFDerivAt_reSubOne_expGauge_zero :
+    HasFDerivAt (fun F : realSubmodule ℂ (zero_le_one.trans hs.le) ↦ reSubOne (expGauge hs F))
+      (0 : realSubmodule ℂ (zero_le_one.trans hs.le) →L[ℝ] H^{s}(ℂ)) 0 := by
+  have h := ((hasFDerivAt_subOne_expGauge_zero (hs := hs)).add
+    (hasFDerivAt_subOne_expGauge_neg_zero (hs := hs))).const_smul ((2 : ℂ)⁻¹)
+  refine (h.congr_of_eventuallyEq (Eventually.of_forall fun F ↦ ?_)).congr_fderiv ?_
+  · simp [reSubOne_def, AddChar.map_neg_eq_inv]
+  · simp
+
+/-- At `F = 0` the derivative of `F ↦ Im (exp (i F))` is `G ↦ G`: in `H^s(ℂ)` this is the element
+`imPart (exp (i F)) = sin F`, whose linear part is the phase itself. -/
+theorem hasFDerivAt_imPart_expGauge_zero :
+    HasFDerivAt (fun F : realSubmodule ℂ (zero_le_one.trans hs.le) ↦ imPart (expGauge hs F))
+      (realSubmodule ℂ (zero_le_one.trans hs.le)).subtypeL 0 := by
+  have h := ((hasFDerivAt_subOne_expGauge_zero (hs := hs)).sub
+    (hasFDerivAt_subOne_expGauge_neg_zero (hs := hs))).const_smul (-(I / 2))
+  refine (h.congr_of_eventuallyEq (Eventually.of_forall fun F ↦ ?_)).congr_fderiv ?_
+  · simp [imPart_def, AddChar.map_neg_eq_inv]
+  · ext G ψ
+    simp [smul_smul]
+    linear_combination -((G : H^{s}(ℂ)).toDistr ψ) * I_sq
+
 /-! ### The Lie group structure -/
 
 /-- The inverse `F ↦ u exp (i F)` of the chart of `G_s` at `u` is smooth on the whole space of
@@ -253,6 +305,28 @@ theorem contMDiff_subOne :
   rw [contMDiffAt_iff_source]
   simpa [Function.comp_def, subOne_mul] using
     (contMDiff_iff_contDiff.2 hg).contMDiffAt.contMDiffWithinAt
+
+/-- **The coordinate `Re u - 1` is smooth** from `G_s` to `H^s(ℂ)`: it is
+`((u - 1) + (u⁻¹ - 1)) / 2`, and inversion and `u ↦ u - 1` are smooth. -/
+theorem contMDiff_reSubOne :
+    ContMDiff 𝓘(ℝ, realSubmodule ℂ (zero_le_one.trans hs.le)) 𝓘(ℝ, H^{s}(ℂ)) ∞
+      (reSubOne : SobolevTopologicalGaugeGroup hs → H^{s}(ℂ)) := by
+  have h := (contMDiff_subOne (hs := hs)).add
+    ((contMDiff_subOne (hs := hs)).comp (contMDiff_inv 𝓘(ℝ, realSubmodule ℂ _) ∞))
+  refine (((((2 : ℂ)⁻¹ • ContinuousLinearMap.id ℂ H^{s}(ℂ)).restrictScalars ℝ).contMDiff).comp
+    h).congr fun u ↦ ?_
+  simp [reSubOne_def]
+
+/-- **The coordinate `Im u` is smooth** from `G_s` to `H^s(ℂ)`: it is
+`-i ((u - 1) - (u⁻¹ - 1)) / 2`, and inversion and `u ↦ u - 1` are smooth. -/
+theorem contMDiff_imPart :
+    ContMDiff 𝓘(ℝ, realSubmodule ℂ (zero_le_one.trans hs.le)) 𝓘(ℝ, H^{s}(ℂ)) ∞
+      (imPart : SobolevTopologicalGaugeGroup hs → H^{s}(ℂ)) := by
+  have h := (contMDiff_subOne (hs := hs)).sub
+    ((contMDiff_subOne (hs := hs)).comp (contMDiff_inv 𝓘(ℝ, realSubmodule ℂ _) ∞))
+  refine ((((-(I / 2) • ContinuousLinearMap.id ℂ H^{s}(ℂ)).restrictScalars ℝ).contMDiff).comp
+    h).congr fun u ↦ ?_
+  simp [imPart_def]
 
 end SobolevTopologicalGaugeGroup
 
