@@ -17,7 +17,8 @@ Let `R` be a complete normed ring with an ultrametric norm. The Amice ring `E` o
 the two-sided Laurent series `∑_{n ∈ ℤ} aₙ tⁿ` whose coefficients are bounded and tend to zero as
 `n → -∞`, with the convolution product `(ab)ₙ = ∑_{i ∈ ℤ} aᵢ bₙ₋ᵢ`. These are the bounded functions
 on the "boundary circle" `|t| = 1⁻` with no convergence condition inside: unlike the Robba ring,
-the positive tail is only bounded, so `E` is not a ring of functions on any annulus. Its subring
+the negative tail only tends to zero, with no exponential decay, so the series need not converge on
+any annulus `r < |t| < 1` and `E` is not a ring of functions on an annulus. Its subring
 `O_E` consists of the series with coefficients in the closed unit ball. For a complete discretely
 valued field, `E` is a field with valuation ring `O_E` and residue field the Laurent series over
 the residue field; that structure is not constructed here.
@@ -226,8 +227,9 @@ theorem summable_sigma_addFiber_mul_mul_of_mem_amiceCoeff (ha : a ∈ amiceCoeff
   congr 2
   omega
 
-/-- Over a complete ultrametric ring the Amice coefficient families form a ring under
-convolution. -/
+/-- Over a complete ultrametric seminormed ring the Amice coefficient families satisfy the
+`IsConvolutionRing` hypotheses; they form a ring under convolution when `R` is moreover normed
+(hence `T3`). -/
 instance instIsConvolutionRingAmiceCoeff : IsConvolutionRing (amiceCoeff R) where
   single_mem := single_mem_amiceCoeff
   addRingConvolution_mem := addRingConvolution_mem_amiceCoeff
@@ -241,7 +243,8 @@ end Convolution
 variable (R) in
 /-- **The Amice ring** `E` over `R`: the Laurent series `∑_{n ∈ ℤ} aₙ tⁿ` with bounded
 coefficients tending to zero as `n → -∞`, with the convolution product. Its ring structure needs
-`R` complete and ultrametric (`TauCeti.instIsConvolutionRingAmiceCoeff`). -/
+`R` normed (not just seminormed), complete and ultrametric
+(`TauCeti.instIsConvolutionRingAmiceCoeff` and `TauCeti.IsConvolutionRing.instRing`). -/
 abbrev AmiceRing [SeminormedRing R] : Type _ :=
   amiceCoeff R
 

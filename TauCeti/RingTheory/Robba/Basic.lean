@@ -453,8 +453,9 @@ theorem addConvolutionExists_of_mem_robbaCoeff [CompleteSpace R] {a b : ℤ → 
     (mem_robbaCoeff_iff_eventually.1 ha).and (mem_robbaCoeff_iff_eventually.1 hb)
   exact ha.addConvolutionExists h₀ hb
 
-/-- Over a complete ultrametric ring the Robba coefficient families form a ring under convolution:
-three families converge at a common radius `ρ > 0`, where their triple products are summable. -/
+/-- Over a complete ultrametric seminormed ring the Robba coefficient families satisfy the
+`IsConvolutionRing` hypotheses; they form a ring under convolution when `R` is moreover normed
+(hence `T3`). -/
 instance instIsConvolutionRingRobbaCoeff [CompleteSpace R] : IsConvolutionRing (robbaCoeff R) where
   single_mem n c := annularCoeff_le_robbaCoeff zero_lt_one (single_mem_annularCoeff 0 n c)
   addRingConvolution_mem := addRingConvolution_mem_robbaCoeff
@@ -472,8 +473,9 @@ end Mul
 variable (R) in
 /-- **The Robba ring** `R_R`: the Laurent series `∑_{n ∈ ℤ} aₙ tⁿ` with coefficients in `R`
 converging on some annulus `r < |t| < 1`, with the convolution product
-`(ab)ₙ = ∑_{i ∈ ℤ} aᵢ bₙ₋ᵢ`. Its ring structure needs `R` complete and ultrametric
-(`TauCeti.instIsConvolutionRingRobbaCoeff`). -/
+`(ab)ₙ = ∑_{i ∈ ℤ} aᵢ bₙ₋ᵢ`. Its ring structure needs `R` normed (not just seminormed), complete
+and ultrametric (`TauCeti.instIsConvolutionRingRobbaCoeff` and
+`TauCeti.IsConvolutionRing.instRing`). -/
 abbrev RobbaRing [SeminormedRing R] : Type _ :=
   robbaCoeff R
 
