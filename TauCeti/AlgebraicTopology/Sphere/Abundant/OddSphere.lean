@@ -30,8 +30,9 @@ the source's Propositions 6.29 and 6.33), applied to the rotation group `SO(n + 
   parametrized by `Sⁿ⁻¹ × S¹`, turn `x₀` by the angle of `z ∈ S¹` in the plane spanned by `x₀` and
   a unit tangent vector `v ∈ Sⁿ⁻¹`. They are rotations of determinant `1`
   (`LinearIsometry.det_planeRotation`), so they form a continuous family of special orthogonal
-  matrices, whose evaluation at `x₀` is the rotation family `TauCeti.sphereRotationFamily x₀` of
-  the sphere. On odd spheres the rotation family has degree `2`
+  matrices (`TauCeti.sphereRotationMatrix`), whose evaluation at `x₀` is the rotation family
+  `TauCeti.sphereRotationFamily x₀` of the sphere
+  (`TauCeti.sphereRotationMatrix_smul_self`). On odd spheres the rotation family has degree `2`
   (`Orientation.mapFundamentalClass_sphereRotationFamily`), so the image of the fundamental class
   of `Sⁿ⁻¹ × S¹` in `Hₙ(SO(n + 1); ℤ)` evaluates to `2 • [Sⁿ]`.
 * **A class `α` of positive degree of `Map_*(S², Sⁿ)` with `2 • α ≠ 0`.** The double loops of
@@ -68,40 +69,6 @@ namespace TauCeti
 attribute [local instance] finrank_real_complex_fact'
 attribute [local instance low] chartedSpaceProd
 
-section Rotation
-
-variable {N : ℕ}
-
-/-- The rotations `TauCeti.sphereRotationIsometry p (v, z)` of `ℝᴺ`, as a continuous family of
-special orthogonal matrices parametrized by the unit tangent vectors `v` at `p` and the points `z`
-of the unit circle. -/
-private def sphereRotationMatrix (p : sphere (0 : EuclideanSpace ℝ (Fin N)) 1) :
-    C(sphere (0 : (ℝ ∙ (p : EuclideanSpace ℝ (Fin N)))ᗮ) 1 × sphere (0 : ℂ) 1,
-      specialOrthogonalGroup (Fin N) ℝ) where
-  toFun x := ⟨UnitaryGroup.ofLinearIsometryEquiv (sphereRotationIsometry p x),
-    mem_specialUnitaryGroup_iff.2 ⟨(UnitaryGroup.ofLinearIsometryEquiv _).property, by
-      rw [← UnitaryGroup.det_toLinearIsometryEquiv,
-        UnitaryGroup.toLinearIsometryEquiv_ofLinearIsometryEquiv, sphereRotationIsometry_def]
-      exact LinearIsometry.det_planeRotation _ _⟩⟩
-  continuous_toFun := (continuous_subtypeVal.comp (UnitaryGroup.continuous_ofLinearIsometryEquiv
-    (continuous_sphereRotationIsometry p))).subtype_mk _
-
-private theorem coe_sphereRotationMatrix (p : sphere (0 : EuclideanSpace ℝ (Fin N)) 1)
-    (x : sphere (0 : (ℝ ∙ (p : EuclideanSpace ℝ (Fin N)))ᗮ) 1 × sphere (0 : ℂ) 1) :
-    ((sphereRotationMatrix p x : specialOrthogonalGroup (Fin N) ℝ) : Matrix (Fin N) (Fin N) ℝ) =
-      UnitaryGroup.ofLinearIsometryEquiv (sphereRotationIsometry p x) :=
-  (rfl)
-
-/-- Acting on `p`, the special orthogonal matrix of the rotation `(v, z)` gives the rotation
-family of the sphere. -/
-private theorem sphereRotationMatrix_smul (p : sphere (0 : EuclideanSpace ℝ (Fin N)) 1)
-    (x : sphere (0 : (ℝ ∙ (p : EuclideanSpace ℝ (Fin N)))ᗮ) 1 × sphere (0 : ℂ) 1) :
-    sphereRotationMatrix p x • p = sphereRotationFamily p x := by
-  apply Subtype.ext
-  simp [coe_sphereRotationMatrix, sphereRotationIsometry_apply_self]
-
-end Rotation
-
 /-- **Odd-dimensional spheres are abundant with 2-spheres** (Proposition 6.34 of
 Barraud–Damian–Humilière–Oancea). For odd `n ≥ 3`, the unit sphere `Sⁿ` of `ℝⁿ⁺¹` is abundant
 with 2-spheres at every point `x₀`. -/
@@ -129,7 +96,7 @@ theorem isAbundantWithTwoSpheres_sphere_of_odd {n : ℕ} (hn : Odd n) (h3 : 3 �
     ⟨fun g ↦ g • x₀, by fun_prop⟩
   have hρ : π.comp (sphereRotationMatrix x₀) =
       ⟨sphereRotationFamily x₀, continuous_sphereRotationFamily x₀⟩ :=
-    ContinuousMap.ext (sphereRotationMatrix_smul x₀)
+    ContinuousMap.ext (sphereRotationMatrix_smul_self x₀)
   -- The rotations lift the rotation family through the orbit map, so they carry the fundamental
   -- class of `Sⁿ⁻¹ × S¹` to a class of `SO(n + 1)` over `(1 + (-1) ^ (n - 1)) • [Sⁿ] = 2 • [Sⁿ]`.
   have hA : (((singularHomologyFunctor (ModuleCat.{0} ℤ) (m + 2 + 1)).obj
@@ -150,7 +117,7 @@ theorem isAbundantWithTwoSpheres_sphere_of_odd {n : ℕ} (hn : Odd n) (h3 : 3 �
     finrank_euclideanSpace_fin).isAbundantWithTwoSpheres_of_smul_ne_zero
     finrank_euclideanSpace_fin π (fun _ ↦ rfl)
     (exists_continuousOn_specialOrthogonalGroup_smul_eq (by omega) x₀)
-    (isPathConnected_setOf_specialOrthogonalGroup_smul_eq (by omega) x₀) hA (by omega : 0 < m + 1)
+    (isPathConnected_setOf_specialOrthogonalGroup_smul_eq x₀) hA (by omega : 0 < m + 1)
     hα
 
 end TauCeti
