@@ -128,8 +128,8 @@ theorem homotopic_tensorCochainComplexFunctor_map {M M' : CurvedDGRightModuleCat
     Nonempty (Homotopy ((tensorCochainComplexFunctor hN).map f)
       ((tensorCochainComplexFunctor hN).map g)) := by
   obtain ⟨k, hk⟩ := (quotient_map_eq_iff_exists_homotopy f g).mp hfg
-  exact ⟨BalancedTensorProduct.curvedCochainComplexMapHomotopy (k := k.1.restrictScalars R)
-    (hk := fun a m ↦ k.1.map_smul (op a) m) (hk₁ := dgRightModuleCochains.mem_iff.mp k.2)
+  exact ⟨BalancedTensorProduct.curvedCochainComplexMapHomotopy (k := k.val.restrictScalars R)
+    (hk := fun a m ↦ k.val.map_smul (op a) m) (hk₁ := dgRightModuleCochains.mem_iff.mp k.property)
     (hfk := LinearMap.ext fun x ↦ by
       simpa only [LinearMap.add_apply, LinearMap.comp_apply, LinearMap.restrictScalars_apply,
         ForgetEnrichment.to_of]

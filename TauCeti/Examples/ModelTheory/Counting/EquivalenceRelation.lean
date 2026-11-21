@@ -65,7 +65,7 @@ there are pairwise distinct `y₀, …, yₙ₋₁`, each adjacent to `x`. -/
 private noncomputable def neighborCardGe (n : ℕ) : Language.graph.Sentence :=
   Formula.iAlls (Fin 1) <| Formula.iExs (Fin n) <|
     (Formula.iInf fun p : {p : Fin n × Fin n // p.1 ≠ p.2} =>
-        ∼(Term.equal (Term.var (.inr p.1.1)) (Term.var (.inr p.1.2)))) ⊓
+        ∼(Term.equal (Term.var (.inr p.val.1)) (Term.var (.inr p.val.2)))) ⊓
       Formula.iInf fun i : Fin n =>
         adj.formula₂ (Term.var (.inl (.inr 0))) (Term.var (.inr i))
 
@@ -79,7 +79,7 @@ private theorem realize_neighborCardGe_iff {M : Type*} [Language.graph.Structure
   · obtain ⟨y, hy, hadj⟩ := h fun _ => x
     exact ⟨y, fun i j hij => by_contra fun hne => hy ⟨(i, j), hne⟩ hij, hadj⟩
   · obtain ⟨y, hy, hadj⟩ := h (x 0)
-    exact ⟨y, fun p hp => p.2 (hy hp), hadj⟩
+    exact ⟨y, fun p hp => p.property (hy hp), hadj⟩
 
 /-- The sentence of `L_{ω₁ω}` in the language of graphs saying that adjacency is the graph of an
 equivalence relation all of whose classes are infinite. -/
@@ -158,7 +158,7 @@ class of a model is determined by its number of classes in `ℕ∞`. -/
 theorem countable_quotient_isoSetoidOn_nat_infiniteClassesSentence :
     Countable (Quotient (isoSetoidOn ℕ infiniteClassesSentence)) := by
   choose r hr hinf using fun c : modelsOf (V := ℕ) infiniteClassesSentence =>
-    mem_modelsOf_infiniteClassesSentence_iff.1 c.2
+    mem_modelsOf_infiniteClassesSentence_iff.1 c.property
   refine Function.Injective.countable
     (f := fun q : Quotient (isoSetoidOn ℕ infiniteClassesSentence) =>
       ENat.card (Quotient (r q.out)))
@@ -197,8 +197,8 @@ of a model must be empty. -/
 theorem subsingleton_quotient_isoSetoidOn_infiniteClassesSentence {V : Type*} [Finite V] :
     Subsingleton (Quotient (isoSetoidOn V infiniteClassesSentence)) := by
   refine ⟨fun q q' => Quotient.inductionOn₂ q q' fun c d => Quotient.sound ?_⟩
-  obtain ⟨r, hc, hr⟩ := mem_modelsOf_infiniteClassesSentence_iff.1 c.2
-  obtain ⟨s, hd, -⟩ := mem_modelsOf_infiniteClassesSentence_iff.1 d.2
+  obtain ⟨r, hc, hr⟩ := mem_modelsOf_infiniteClassesSentence_iff.1 c.property
+  obtain ⟨s, hd, -⟩ := mem_modelsOf_infiniteClassesSentence_iff.1 d.property
   have : IsEmpty V := ⟨fun x => hr x (Set.toFinite _)⟩
   refine isoSetoidOn_apply.2 ?_
   rw [hc, hd, isoSetoid_toRelationalConfiguration_fromRel_iff]

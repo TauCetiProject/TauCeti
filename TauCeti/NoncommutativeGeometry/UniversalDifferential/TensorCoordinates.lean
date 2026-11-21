@@ -80,7 +80,7 @@ def tensorEquiv : UniversalOneForms k A ≃ₗ[k] Unitization k A ⊗[k] A :=
 /-- The coordinate map is the restriction of the second-factor projection onto `A`. -/
 theorem tensorEquiv_apply (ω : UniversalOneForms k A) :
     tensorEquiv k A ω =
-      (Unitization.sndHom k k A).lTensor (Unitization k A) ω.1 := (rfl)
+      (Unitization.sndHom k k A).lTensor (Unitization k A) ω.val := (rfl)
 
 /-- A pure tensor corresponds to the one-form `x • d a`. -/
 @[simp]

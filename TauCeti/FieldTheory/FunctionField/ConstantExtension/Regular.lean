@@ -7,10 +7,14 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.ConstantExtension.FractionField
 public import TauCeti.FieldTheory.FunctionField.ConstantExtension.TensorProduct
+public import TauCeti.FieldTheory.Separable.Regular
+import Mathlib.RingTheory.Ideal.GoingUp
+import Mathlib.RingTheory.KrullDimension.Zero
 import TauCeti.FieldTheory.AlgebraicClosure
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic
 import TauCeti.FieldTheory.RatFunc.Transcendental
 import TauCeti.RingTheory.TensorProduct.IsDomain
+import TauCeti.RingTheory.TensorProduct.Reduced
 
 /-!
 # Constant field extensions of regular fields
@@ -24,6 +28,15 @@ isomorphism onto the constant field extension, discharging the domain hypothesis
 that the function field of the curve after an algebraic extension of the constants is
 `F ⊗[k] k'`.
 
+Because `F · k'` is therefore the fraction field of `F ⊗[k] k'`, scalar stability of regular
+extensions (`TauCeti.isIntegrallyClosedIn_right_of_isFractionRing_tensorProduct`) implies that
+`k'` is again the exact constant field of `F · k'`, even when `k' / k` is inseparable. Compare
+`IsIntegrallyClosedIn.of_constantCompositum_eq_top`, which drops geometric reducedness of `F / k`
+at the cost of requiring `k' / k` to be separable. Geometric reducedness of `F · k'` over `k'`
+holds for every geometrically reduced `F / k` and algebraic `k' / k` without assuming exact
+constants, since `F ⊗[k] k'` is reduced, integral over the field `F` (hence zero-dimensional), and
+maps onto `F · k'`, identifying `F · k'` with the localization of `F ⊗[k] k'` at the kernel.
+
 For arbitrary extensions `k' / k`, exactness of constants ascends along any linearly disjoint
 compositum `F · k'`, and when `F` is algebraic over a shared transcendental parameter (or over
 `k(t)`), regularity of `F / k` supplies linear disjointness and degree preservation over `k'(t)`.
@@ -33,6 +46,13 @@ compositum `F · k'`, and when `F` is algebraic over a shared transcendental par
 * `TauCeti.productMap_bijective_of_isGeometricallyReduced` and
   `TauCeti.productMap_bijective_of_separating`: for `F` regular over `k`, multiplication
   `F ⊗[k] k' → F · k'` is an isomorphism for every algebraic extension `k' / k`.
+* `TauCeti.isDomain_tensorProduct_of_constantCompositum_eq_top_of_isGeometricallyReduced`: for any
+  algebraic `k' / k` and domain `k'`-algebra `A`, `(F · k') ⊗[k'] A` is a domain.
+* `TauCeti.isIntegrallyClosedIn_of_constantCompositum_eq_top_of_isGeometricallyReduced`: `k'` is
+  exact in `F · k'` when `F / k` is regular, whether or not `k' / k` is separable.
+* `TauCeti.isGeometricallyReduced_of_constantCompositum_eq_top_of_isGeometricallyReduced`: `F · k'`
+  is geometrically reduced over `k'` whenever `F / k` is geometrically reduced and `k' / k` is
+  algebraic, with no exact-constants or separability hypothesis.
 * `IsIntegrallyClosedIn.of_constantCompositum_eq_top_of_linearDisjoint`: exact constants ascend
   along a linearly disjoint constant extension of a regular field.
 * `TauCeti.linearDisjoint_of_transcendental_of_isDomain`,
@@ -80,6 +100,91 @@ theorem productMap_bijective_of_separating (hex : IsIntegrallyClosedIn k F) {x :
   have := isGeometricallyReduced_of_separating hx
   productMap_bijective_of_isGeometricallyReduced hex h
 
+section Stability
+
+attribute [local instance] Algebra.TensorProduct.rightAlgebra
+  Algebra.TensorProduct.right_isScalarTower
+
+/-- **An algebraic constant field extension of a regular field stays regular.** If `F / k` is
+geometrically reduced with exact constants and `F' = F · k'` for an algebraic extension `k' / k`
+(separable or inseparable), then `F' ⊗[k'] A` is a domain for every domain `k'`-algebra `A`. -/
+theorem isDomain_tensorProduct_of_constantCompositum_eq_top_of_isGeometricallyReduced
+    (hex : IsIntegrallyClosedIn k F) [Algebra.IsGeometricallyReduced k F]
+    (h : constantCompositum F k' F' = ⊤) (A : Type*) [CommRing A] [IsDomain A] [Algebra k' A] :
+    IsDomain (F' ⊗[k'] A) := by
+  have := isDomain_tensorProduct_of_isGeometricallyReduced hex k'
+  let _ : Field (F ⊗[k] k') :=
+    (Algebra.TensorProduct.isField_of_isAlgebraic k F k' (.inr inferInstance)).toField
+  set π := Algebra.TensorProduct.productMap (IsScalarTower.toAlgHom k F F')
+    (IsScalarTower.toAlgHom k k' F')
+  let _ : Algebra (F ⊗[k] k') F' := π.toRingHom.toAlgebra
+  have : IsScalarTower k' (F ⊗[k] k') F' := .of_algebraMap_eq fun c ↦ by
+    simp [RingHom.algebraMap_toAlgebra, π]
+  have hπ : Function.Bijective π :=
+    productMap_bijective_of_isGeometricallyReduced (k := k) hex h
+  have : IsFractionRing (F ⊗[k] k') F' :=
+    .of_algEquiv (AlgEquiv.ofRingEquiv
+      (f := RingEquiv.ofBijective π.toRingHom
+        (by rwa [AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom]))
+      fun x ↦ by simp [RingHom.algebraMap_toAlgebra])
+  exact isDomain_tensorProduct_right_of_isFractionRing_tensorProduct (K := k') (Q := F') hex A
+
+/-- **Exact constants after any algebraic constant extension of a regular field.** If `F / k` is
+geometrically reduced with exact constants and `F' = F · k'` for an algebraic extension `k' / k`
+(separable or inseparable), then `k'` is the exact constant field of `F'`. -/
+theorem isIntegrallyClosedIn_of_constantCompositum_eq_top_of_isGeometricallyReduced
+    (hex : IsIntegrallyClosedIn k F) [Algebra.IsGeometricallyReduced k F]
+    (h : constantCompositum F k' F' = ⊤) :
+    IsIntegrallyClosedIn k' F' := by
+  have := isDomain_tensorProduct_of_constantCompositum_eq_top_of_isGeometricallyReduced
+    hex h (AlgebraicClosure k')
+  exact isIntegrallyClosedIn_of_isDomain_tensorProduct (k := k') (A := F') (AlgebraicClosure k')
+
+/-- **Geometric reducedness after any algebraic constant extension.** If `F / k` is geometrically
+reduced and `F' = F · k'` for an algebraic extension `k' / k` (separable or inseparable), then `F'`
+is geometrically reduced over `k'`, without assuming exact constants. -/
+theorem isGeometricallyReduced_of_constantCompositum_eq_top_of_isGeometricallyReduced
+    [Algebra.IsGeometricallyReduced k F] (h : constantCompositum F k' F' = ⊤) :
+    Algebra.IsGeometricallyReduced k' F' := by
+  have : Algebra.IsGeometricallyReduced k' (F ⊗[k] k') :=
+    isGeometricallyReduced_tensorProduct_right k'
+  have : Algebra.IsIntegral k k' := Algebra.IsAlgebraic.isIntegral
+  have : Ring.KrullDimLE 0 (F ⊗[k] k') := Ring.KrullDimLE.mk₀ fun p hp ↦
+    Ideal.isMaximal_of_isIntegral_of_isMaximal_under (R := F) p (by
+      rw [Ideal.eq_bot_of_prime (p.under F)]
+      exact Ideal.bot_isMaximal)
+  let π₀ := Algebra.TensorProduct.productMap (IsScalarTower.toAlgHom k F F')
+    (IsScalarTower.toAlgHom k k' F')
+  let π : F ⊗[k] k' →ₐ[k'] F' :=
+    { toRingHom := π₀.toRingHom
+      commutes' c := by simp [π₀, Algebra.TensorProduct.right_algebraMap_apply] }
+  have hπ_surj : Function.Surjective π := fun y ↦ by
+    obtain ⟨x, hx⟩ := productMap_surjective_of_constantCompositum_eq_top (k := k) h y
+    exact ⟨x, by simpa [π, π₀] using hx⟩
+  let m : Ideal (F ⊗[k] k') := RingHom.ker π.toRingHom
+  have hm_prime : m.IsPrime := RingHom.ker_isPrime π.toRingHom
+  have hm_min : m ∈ minimalPrimes (F ⊗[k] k') := by
+    rw [Ring.KrullDimLE.minimalPrimes_eq_setOfPred_isPrime]
+    exact hm_prime
+  let L := Localization.AtPrime m
+  have : Algebra.IsGeometricallyReduced k' L :=
+    isGeometricallyReduced_of_isLocalization m.primeCompl L
+  have : IsReduced L := Algebra.isReduced_of_isGeometricallyReduced (k := k') (A := L)
+  have : Ring.KrullDimLE 0 L := Ring.KrullDimLE.of_isLocalization m hm_min L
+  let _ : Field L := Ring.KrullDimLE.isField_of_isReduced.toField
+  let f : L →ₐ[k'] F' :=
+    IsLocalization.liftAlgHom (M := m.primeCompl) (f := π) fun y ↦
+      isUnit_iff_ne_zero.mpr (by simpa [m] using y.property)
+  have hf_inj : Function.Injective f := by
+    rw [← AlgHom.coe_toRingHom]
+    exact (f : L →+* F').injective
+  have hf_surj : Function.Surjective f := fun y ↦ by
+    obtain ⟨x, rfl⟩ := hπ_surj y
+    exact ⟨algebraMap (F ⊗[k] k') L x, by simp [f]⟩
+  exact Algebra.IsGeometricallyReduced.of_algEquiv (AlgEquiv.ofBijective f ⟨hf_inj, hf_surj⟩)
+
+end Stability
+
 end Algebraic
 
 section LinearDisjoint
@@ -124,7 +229,7 @@ theorem linearDisjoint_of_transcendental_of_isDomain {x : F}
     simpa [IntermediateField.adjoin_map] using IntermediateField.mem_adjoin_simple_self k' y
   let ι : k⟮x⟯ →ₐ[k] k'⟮y⟯ :=
     ((IsScalarTower.toAlgHom k F F').comp k⟮x⟯.val).codRestrict
-      ((k'⟮y⟯).restrictScalars k).toSubalgebra fun z ↦ hle ⟨z, z.2, rfl⟩
+      ((k'⟮y⟯).restrictScalars k).toSubalgebra fun z ↦ hle ⟨z, z.property, rfl⟩
   let _ : Algebra k⟮x⟯ k'⟮y⟯ := ι.toRingHom.toAlgebra
   have : IsScalarTower k k⟮x⟯ k'⟮y⟯ := .of_algebraMap_eq fun c ↦ (ι.commutes c).symm
   have : IsScalarTower k⟮x⟯ k'⟮y⟯ F' := .of_algebraMap_eq' rfl
@@ -137,7 +242,7 @@ theorem linearDisjoint_of_transcendental_of_isDomain {x : F}
       IntermediateField.adjoin_simple_le_iff.mpr
         ((constantCompositum k⟮x⟯ k' k'⟮y⟯).algebraMap_mem x₀)
     obtain ⟨w, hw, hwz⟩ : (z : F') ∈ (k'⟮y₀⟯).map (k'⟮y⟯).val := by
-      rw [IntermediateField.adjoin_map, Set.image_singleton]; exact z.2
+      rw [IntermediateField.adjoin_map, Set.image_singleton]; exact z.property
     exact hE (Subtype.ext hwz.symm ▸ hw)
   have HC : (IsScalarTower.toAlgHom k k' k'⟮y⟯).fieldRange.LinearDisjoint k⟮x⟯ := by
     have hle₀ : k⟮x⟯ ≤ (k⟮y₀⟯.map ((k'⟮y⟯).val.restrictScalars k)).comap
@@ -147,7 +252,7 @@ theorem linearDisjoint_of_transcendental_of_isDomain {x : F}
     rw [IntermediateField.linearDisjoint_iff]
     refine Subalgebra.LinearDisjoint.of_le_right_of_flat
       (IntermediateField.linearDisjoint_adjoin_simple_of_transcendental hy₀) ?_
-    rintro _ ⟨z, rfl⟩; obtain ⟨w, hw, hwz⟩ := hle₀ z.2; exact ⟨⟨w, hw⟩, Subtype.ext hwz⟩
+    rintro _ ⟨z, rfl⟩; obtain ⟨w, hw, hwz⟩ := hle₀ z.property; exact ⟨⟨w, hw⟩, Subtype.ext hwz⟩
   let π₀ := Algebra.TensorProduct.productMap
     (IsScalarTower.toAlgHom k k⟮x⟯ k'⟮y⟯) (IsScalarTower.toAlgHom k k' k'⟮y⟯)
   let _ : Algebra (k⟮x⟯ ⊗[k] k') k'⟮y⟯ := π₀.toRingHom.toAlgebra
@@ -155,7 +260,7 @@ theorem linearDisjoint_of_transcendental_of_isDomain {x : F}
     .of_algebraMap_eq (R := k⟮x⟯) (S := k⟮x⟯ ⊗[k] k') (A := k'⟮y⟯) fun _ ↦ by
       simp [π₀, RingHom.algebraMap_toAlgebra]
   have : IsFractionRing _ _ := isFractionRing_tensorProduct_of_linearDisjoint HC hcomp
-  have := isDomain_tensorProduct_of_isLocalization_tensorProduct
+  have := isDomain_tensorProduct_of_isLocalization_tensorProduct_left
     (nonZeroDivisors (k⟮x⟯ ⊗[k] k')) le_rfl k'⟮y⟯ F
   let _ : Field (k'⟮y⟯ ⊗[k⟮x⟯] F) :=
     (Algebra.TensorProduct.isField_of_isAlgebraic k⟮x⟯ k'⟮y⟯ F (.inr inferInstance)).toField

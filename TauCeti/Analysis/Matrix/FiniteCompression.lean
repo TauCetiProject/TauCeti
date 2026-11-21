@@ -78,9 +78,9 @@ theorem tendsto_coeff_charpolyRev_finiteCompression [CommRing R] [TopologicalSpa
       (Subtype.val_injective (p := fun s : Finset ι ↦ s.card = n))).comp
         tendsto_finset_powerset_atTop_atTop using 1
     ext S s
-    simp [mem_powersetCard, s.2]
+    simp [mem_powersetCard, s.property]
   have h : Tendsto (fun S : Finset ι ↦
-      ∑ s ∈ (S.powersetCard n).subtype (fun s ↦ s.card = n), A.principalMinor s.1)
+      ∑ s ∈ (S.powersetCard n).subtype (fun s ↦ s.card = n), A.principalMinor s.val)
       atTop (𝓝 (∑' s : {s : Finset ι // s.card = n}, A.principalMinor s)) :=
     hA.hasSum.comp hcofinal
   simp only [sum_subtype_of_mem _ (fun _ hs ↦ (mem_powersetCard.mp hs).2)] at h
@@ -117,7 +117,7 @@ theorem charPowerSeries_outputTruncation [CommRing R] [TopologicalSpace R]
     · rw [principalMinor_def]
       congr 1
       ext i j
-      simp [submatrix_apply, C, hs i.2]
+      simp [submatrix_apply, C, hs i.property]
     · obtain ⟨i, hi, hiS⟩ := Finset.not_subset.mp hs
       exact det_eq_zero_of_row_eq_zero ⟨i, hi⟩ fun j ↦ by simp [C, submatrix_apply, hiS]
   ext n
@@ -129,7 +129,7 @@ theorem charPowerSeries_outputTruncation [CommRing R] [TopologicalSpace R]
     exact sum_congr rfl fun s hs ↦ by rw [hminor, ite_eq_left (mem_powersetCard.mp hs).1]
   · intro s hs
     rw [hminor, ite_eq_right]
-    simpa only [mem_subtype, mem_powersetCard, s.2, and_true] using hs
+    simpa only [mem_subtype, mem_powersetCard, s.property, and_true] using hs
 
 section Ultrametric
 
