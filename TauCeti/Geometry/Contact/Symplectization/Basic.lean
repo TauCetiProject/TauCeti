@@ -113,6 +113,14 @@ theorem coe_symplectization (α : SmoothForm I M ℝ 1) :
     α.symplectization.val = fun p ↦ Real.exp p.1 • (mpullback Prod.snd contMDiff_snd α).val p :=
   (rfl)
 
+/-- The symplectization form of `-α` is minus that of `α`. -/
+@[simp]
+theorem symplectization_neg (α : SmoothForm I M ℝ 1) :
+    (-α).symplectization = -α.symplectization := by
+  apply Subtype.ext
+  funext p
+  simp only [coe_symplectization, map_neg, NegMemClass.coe_neg, Pi.neg_apply, smul_neg]
+
 /-- The symplectization form sends a tangent vector `(s, v)` at `(t, x)` to `eᵗ α_x(v)`. -/
 @[simp]
 theorem symplectization_apply (α : SmoothForm I M ℝ 1) (p : ℝ × M)

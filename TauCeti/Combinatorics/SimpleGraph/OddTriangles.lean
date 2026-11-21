@@ -9,6 +9,7 @@ public import Mathlib.Combinatorics.SimpleGraph.Clique
 public import Mathlib.Combinatorics.SimpleGraph.DegreeSum
 public import TauCeti.Combinatorics.SimpleGraph.OddTriple
 public import TauCeti.Combinatorics.SimpleGraph.SymmDiff
+import Mathlib.Data.Fintype.BigOperators
 import TauCeti.Order.Hom.PowersetCard
 
 /-!
@@ -39,14 +40,15 @@ In particular, when every vertex has degree at most `1`,
   and invariance of `oddTriangleFinset` under complete-graph cut switching.
 * `SimpleGraph.Iso.map_oddTriangleFinset`, `SimpleGraph.Iso.card_oddTriangleFinset_eq`:
   invariance of `oddTriangleFinset` under graph isomorphism.
+* `SimpleGraph.card_oddTriangleFinset_eq_sum`,
+  `SimpleGraph.card_oddTriangleFinset_eq_card_filter_lt`: over a linear order, the odd triangles
+  are counted by their increasing triples `u < v < w`.
 * `SimpleGraph.mem_oddTriangleFinset_iff_of_cliqueFree`: in a `3`-clique-free graph, an odd
   triangle is a `3`-element vertex set spanning a single edge.
 * `SimpleGraph.card_oddTriangleFinset_add_sum_degree_sq`,
   `SimpleGraph.card_oddTriangleFinset_eq_of_cliqueFree`, and
   `SimpleGraph.card_oddTriangleFinset_of_degree_le_one`: odd-triangle count in `3`-clique-free
   graphs and graphs of maximum degree at most `1`.
-* `SimpleGraph.card_oddTriangleFinset_eq_card_filter_lt`: on a linearly ordered vertex type,
-  `#G.oddTriangleFinset` counts the strictly increasing odd-parity vertex triples.
 -/
 
 public section
@@ -85,14 +87,6 @@ theorem mem_oddTriangleFinset {G : SimpleGraph V} [DecidableRel G.Adj] {s : Fins
     s ∈ G.oddTriangleFinset ↔ #s = 3 ∧ Odd #{e ∈ G.edgeFinset | e.toFinset ⊆ s} := by
   simp [oddTriangleFinset, mem_powersetCard]
 
-/-- Three vertices span an odd triangle of `G` precisely when an odd number of the three pairs are
-adjacent; if two of `a`, `b`, `c` coincide, both sides are false. -/
-@[simp 1100, grind =]
-theorem triple_mem_oddTriangleFinset_iff {G : SimpleGraph V} [DecidableRel G.Adj] {a b c : V} :
-    ({a, b, c} : Finset V) ∈ G.oddTriangleFinset ↔
-      Xor (G.Adj a b) (Xor (G.Adj a c) (G.Adj b c)) := by
-  rw [oddTriangleFinset_eq_oddTripleFinset, triple_mem_oddTripleFinset_iff]
-
 /-- Membership in `G.oddTriangleFinset` in terms of the induced subgraph on `s`. -/
 theorem mem_oddTriangleFinset_iff_induce {G : SimpleGraph V} [DecidableRel G.Adj] {s : Finset V} :
     s ∈ G.oddTriangleFinset ↔ #s = 3 ∧ Odd #(G.induce (s : Set V)).edgeFinset := by
@@ -106,19 +100,6 @@ theorem oddTriangleFinset_bot : (⊥ : SimpleGraph V).oddTriangleFinset = ∅ :=
   intro _
   rw [card_eq_zero.mpr (by ext; simp)]
   simp
-
-/-- Switching a finite graph by a complete-graph cut preserves `oddTriangleFinset`. -/
-@[simp]
-theorem oddTriangleFinset_symmDiff_top_between (G : SimpleGraph V) [DecidableRel G.Adj]
-    (S : Set V) [DecidablePred (· ∈ S)] :
-    (G ∆ (⊤ : SimpleGraph V).between S Sᶜ).oddTriangleFinset = G.oddTriangleFinset := by
-  ext s
-  by_cases hs : #s = 3
-  · obtain ⟨a, b, c, -, -, -, rfl⟩ := card_eq_three.mp hs
-    simp only [triple_mem_oddTriangleFinset_iff]
-    rw [(G ∆ _).adj_comm a c, G.adj_comm a c, xor_comm ((G ∆ _).Adj c a), xor_comm (G.Adj c a)]
-    exact G.xor_symmDiff_top_between_compl_adj S a b c
-  · simp [mem_oddTriangleFinset, hs]
 
 section Iso
 
@@ -445,7 +426,65 @@ theorem card_oddTriangleFinset_of_degree_le_one (G : SimpleGraph V) [DecidableRe
 
 end CliqueFree
 
+section Triples
+
+variable {G : SimpleGraph V} [DecidableRel G.Adj]
+
+/-- Three vertices form an odd triangle exactly when an odd number of the three pairs are adjacent.
+If two of the vertices coincide, both sides are false. -/
+@[simp 1100, grind =]
+theorem triple_mem_oddTriangleFinset_iff {a b c : V} :
+    {a, b, c} ∈ G.oddTriangleFinset ↔ Xor (G.Adj a b) (Xor (G.Adj a c) (G.Adj b c)) := by
+  rw [mem_oddTriangleFinset, filter_edgeFinset_toFinset_subset, ← mem_oddTripleFinset,
+    triple_mem_oddTripleFinset_iff]
+
+end Triples
+
+/-- Switching a finite graph by a complete-graph cut preserves `oddTriangleFinset`. -/
+@[simp]
+theorem oddTriangleFinset_symmDiff_top_between (G : SimpleGraph V) [DecidableRel G.Adj]
+    (S : Set V) [DecidablePred (· ∈ S)] :
+    (G ∆ (⊤ : SimpleGraph V).between S Sᶜ).oddTriangleFinset = G.oddTriangleFinset := by
+  ext s
+  by_cases hs : #s = 3
+  · obtain ⟨a, b, c, -, -, -, rfl⟩ := card_eq_three.mp hs
+    simp only [triple_mem_oddTriangleFinset_iff]
+    rw [(G ∆ _).adj_comm a c, G.adj_comm a c, xor_comm ((G ∆ _).Adj c a), xor_comm (G.Adj c a)]
+    exact G.xor_symmDiff_top_between_compl_adj S a b c
+  · simp [mem_oddTriangleFinset, hs]
+
 end Basic
+
+section Order
+
+variable [Fintype V] [LinearOrder V] (G : SimpleGraph V) [DecidableRel G.Adj]
+
+/-- Over a linear order, the odd triangles are counted by their increasing triples `u < v < w`:
+each odd triangle is `{u, v, w}` for exactly one such triple. -/
+theorem card_oddTriangleFinset_eq_sum :
+    #G.oddTriangleFinset = ∑ u : V, ∑ v : V, ∑ w : V,
+      if u < v ∧ v < w ∧ Xor (G.Adj u v) (Xor (G.Adj u w) (G.Adj v w)) then 1 else 0 := by
+  have h : #G.oddTriangleFinset = #({p : V × V × V | p.1 < p.2.1 ∧ p.2.1 < p.2.2 ∧
+      {p.1, p.2.1, p.2.2} ∈ G.oddTriangleFinset} : Finset _) := by
+    symm
+    refine card_bij (fun p _ => {p.1, p.2.1, p.2.2}) (fun p hp => (mem_filter.mp hp).2.2.2) ?_ ?_
+    · rintro ⟨a, b, c⟩ ha ⟨a', b', c'⟩ hb h
+      obtain ⟨-, hab, hbc, -⟩ := mem_filter.mp ha
+      obtain ⟨-, hab', hbc', -⟩ := mem_filter.mp hb
+      have := Set.powersetCard.ofLtTriple.injective (a₁ := ⟨(a, b, c), hab, hbc⟩)
+        (a₂ := ⟨(a', b', c'), hab', hbc'⟩)
+        (Subtype.ext (by simpa only [Set.powersetCard.val_ofLtTriple] using h))
+      simpa using congrArg Subtype.val this
+    · intro s hs
+      obtain ⟨a, b, c, hab, hbc, hs3⟩ :=
+        Set.powersetCard.exists_lt_lt_val_eq ⟨s, (mem_oddTriangleFinset.mp hs).1⟩
+      refine ⟨(a, b, c), ?_, hs3.symm⟩
+      simp only [mem_filter, mem_univ, true_and]
+      exact ⟨hab, hbc, hs3 ▸ hs⟩
+  rw [h, card_filter]
+  simp only [Fintype.sum_prod_type, triple_mem_oddTriangleFinset_iff]
+
+end Order
 
 /-- On a finite linearly ordered vertex type, `#G.oddTriangleFinset` counts the strictly increasing
 vertex triples `(u, v, w)` around which an odd number of pairs are adjacent in `G`. -/

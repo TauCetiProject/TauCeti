@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.LineBundle.Pullback
 public import TauCeti.AlgebraicGeometry.Modules.Gluing
 public import TauCeti.AlgebraicGeometry.Modules.GradedAlgebra.DegreeOne
+public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.GradedAlgebra.SymmetricAlgebra.Sections
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Restriction
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Functor
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Localization
@@ -57,6 +58,8 @@ trivialize its twisting sheaves.
   invertible when the degree-one standard opens cover every chart.
 * `CategoryTheory.CommMon.isInvertible_relativeProjTwistingSheaf`: `𝒪(n)` is invertible when `A`
   is generated in degree one.
+* `TauCeti.AlgebraicGeometry.isInvertible_relativeProjTwistingSheaf_gradedSymmetricAlgebra`:
+  every twisting sheaf of `Proj_X(Sym F)` is invertible.
 
 ## References
 
@@ -210,3 +213,21 @@ theorem isInvertible_relativeProjTwistingSheaf
     Proj.iSup_basicOpen_eq_top_of_adjoin_eq_top _ (CommMon.isGeneratedInDegreeOne_iff.mp h U hU)) n
 
 end CategoryTheory.CommMon
+
+namespace TauCeti.AlgebraicGeometry
+
+open _root_.AlgebraicGeometry
+
+universe u
+
+variable {X : Scheme.{u}}
+
+/-- Every twisting sheaf `𝒪(n)` on `Proj_X(Sym F)` is invertible. -/
+instance isInvertible_relativeProjTwistingSheaf_gradedSymmetricAlgebra
+    (F : QuasicoherentSheaf X) (n : ℤ) :
+    SheafOfModules.isInvertible ((gradedSymmetricAlgebra X).obj F).obj.relativeProj
+      (((gradedSymmetricAlgebra X).obj F).obj.relativeProjTwistingSheaf n) :=
+  CommMon.isInvertible_relativeProjTwistingSheaf _
+    (isGeneratedInDegreeOne_gradedSymmetricAlgebra F) n
+
+end TauCeti.AlgebraicGeometry

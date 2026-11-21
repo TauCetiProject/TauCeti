@@ -241,6 +241,18 @@ theorem freeze_apply (J : ContMDiffAlmostComplexStructureFamily I M IP P n)
   (DFunLike.congr_fun (J.freeze_toEndomorphism_apply p x) v).trans
     (J.tangentEndomorphism_apply (p, x) v).symm
 
+/-- Domain-dependent structures are equal if their frozen structures agree at every domain point. -/
+theorem ext_of_freeze
+    {J K : ContMDiffAlmostComplexStructureFamily I M IP P n}
+    (h : ∀ p, J.freeze p = K.freeze p) : J = K := by
+  ext q v
+  rcases q with ⟨p, x⟩
+  have he : J.toEndomorphism (p, x) = K.toEndomorphism (p, x) :=
+    (J.freeze_toEndomorphism_apply p x).symm.trans
+      ((congrArg (fun L ↦ L.toEndomorphism x) (h p)).trans
+        (K.freeze_toEndomorphism_apply p x))
+  exact DFunLike.congr_fun he v
+
 /-- A target structure defines a domain-independent family at the same regularity. -/
 def const (J : ContMDiffAlmostComplexStructure I n M) :
     ContMDiffAlmostComplexStructureFamily I M IP P n :=
