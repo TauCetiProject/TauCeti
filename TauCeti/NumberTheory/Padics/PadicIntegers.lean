@@ -55,6 +55,7 @@ This is the shape in which the exponent vector of a relator of a free pro-`p` gr
   `w i₀ = 1` at some index `i₀`.
 * `PadicInt.norm_smul_of_isUnit`: a unit of `ℤ_[p]` acts isometrically on every module with
   contractive scalar action.
+* `PadicInt.norm_smul_le_norm`: scalars in `ℤ_p` do not increase norms.
 * `PadicInt.norm_algebraMap_le_one`: a `p`-adic integer has norm at most `1` in every normed
   field extension of `ℚ_p`.
 * `PadicInt.not_isUnit_iff_dvd`: the nonunits of `ℤ_[p]` are the multiples of `p`; in
@@ -71,6 +72,7 @@ This is the shape in which the exponent vector of a relator of a free pro-`p` gr
   exactly when they are associated in every `ℤ_[p]`.
 * `Int.ideal_eq_iff_forall_map_padicInt_eq`: two ideals of `ℤ` are equal exactly when their
   extensions to every `ℤ_[p]` agree.
+* `Padic.norm_mul_zpow_neg_valuation`: `‖x p ^ (-v(x))‖ = 1` for nonzero `x : ℚ_[p]`.
 * `Padic.exists_eq_zpow_valuation_mul`: every nonzero `x : ℚ_[p]` is `p ^ v(x)` times a unit of
   `ℤ_[p]`.
 * `Padic.valuation_p_zpow_mul`: multiplying a nonzero `x : ℚ_[p]` by `p ^ α` adds `α` to its
@@ -178,6 +180,11 @@ theorem norm_smul_of_isUnit {E : Type*} [SeminormedAddGroup E] [MulActionWithZer
   calc ‖e‖ = ‖((u⁻¹ : ℤ_[p]ˣ) : ℤ_[p]) • (u : ℤ_[p]) • e‖ := by
         rw [smul_smul, Units.inv_mul, one_smul]
     _ ≤ ‖(u : ℤ_[p]) • e‖ := (norm_smul_le _ _).trans_eq (by rw [h1, one_mul])
+
+/-- Scalars in `ℤ_p` do not increase norms, since they all have norm at most `1`. -/
+theorem norm_smul_le_norm {E : Type*} [SeminormedAddGroup E] [MulActionWithZero ℤ_[p] E]
+    [IsBoundedSMul ℤ_[p] E] (r : ℤ_[p]) (e : E) : ‖r • e‖ ≤ ‖e‖ :=
+  (norm_smul_le r e).trans (mul_le_of_le_one_left (norm_nonneg e) (norm_le_one r))
 
 /-- A `p`-adic integer has norm at most `1` in every normed field extension of `ℚ_p`. -/
 theorem norm_algebraMap_le_one {K : Type*} [NormedField K] [NormedAlgebra ℚ_[p] K] (y : ℤ_[p]) :
@@ -326,15 +333,18 @@ namespace Padic
 
 variable {p : ℕ} [Fact p.Prime]
 
+/-- Dividing a nonzero `p`-adic number by `p ^ v(x)` gives an element of norm one. -/
+theorem norm_mul_zpow_neg_valuation {x : ℚ_[p]} (hx : x ≠ 0) :
+    ‖x * (p : ℚ_[p]) ^ (-x.valuation)‖ = 1 := by
+  have hp : (p : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
+  rw [norm_mul, norm_zpow, Padic.norm_p, Padic.norm_eq_zpow_neg_valuation hx, inv_zpow',
+    neg_neg, ← zpow_add₀ hp, neg_add_cancel, _root_.zpow_zero]
+
 /-- Every nonzero `p`-adic number is `p ^ v(x)` times a unit of `ℤ_[p]`. -/
 theorem exists_eq_zpow_valuation_mul {x : ℚ_[p]} (hx : x ≠ 0) :
     ∃ u : ℤ_[p]ˣ, x = (p : ℚ_[p]) ^ x.valuation * u := by
   have hp : (p : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
-  have hy : ‖x * (p : ℚ_[p]) ^ (-x.valuation)‖ = 1 := by
-    have hp' : (p : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
-    rw [norm_mul, norm_zpow, Padic.norm_p, Padic.norm_eq_zpow_neg_valuation hx, inv_zpow',
-      neg_neg, ← zpow_add₀ hp', neg_add_cancel, _root_.zpow_zero]
-  refine ⟨PadicInt.mkUnits hy, ?_⟩
+  refine ⟨PadicInt.mkUnits (norm_mul_zpow_neg_valuation hx), ?_⟩
   rw [PadicInt.mkUnits_eq, mul_left_comm, ← zpow_add₀ hp, add_neg_cancel, _root_.zpow_zero, mul_one]
 
 /-- Multiplying a nonzero `x : ℚ_[p]` by `p ^ α` adds `α` to its valuation. -/

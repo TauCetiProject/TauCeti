@@ -119,7 +119,9 @@ private theorem norm_normRpowSmulDeriv_apply_le {r : ℝ} (hr : 0 ≤ r) (y z : 
     ‖normRpowSmulDeriv r y z‖ ≤ (1 + r) * ‖y‖ ^ r * ‖z‖ := by
   refine ((normRpowSmulDeriv r y).le_opNorm z).trans ?_
   rw [normRpowSmulDeriv]
-  exact mul_le_mul_of_nonneg_right (norm_rpow_smul_id_add_smulRight_le hr y) (norm_nonneg _)
+  have h := norm_rpow_smul_id_add_smulRight_le r y
+  rw [abs_of_nonneg hr] at h
+  exact mul_le_mul_of_nonneg_right h (norm_nonneg _)
 
 omit [μ.IsAddHaarMeasure] in
 private theorem aestronglyMeasurable_normRpowSmulDeriv_apply {w w' : E → F} (hw : Continuous w)
