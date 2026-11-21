@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.Properties
 public import Mathlib.CategoryTheory.Bicategory.Adjunction.Adj
 public import Mathlib.CategoryTheory.Bicategory.Functor.Cat.ObjectProperty
+public import Mathlib.CategoryTheory.Sites.Descent.DescentData
 public import Mathlib.CategoryTheory.Sites.Descent.IsPrestack
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Basic
 public import TauCeti.AlgebraicGeometry.Stack.Basic
@@ -37,6 +38,11 @@ coherence isomorphisms are those of pullback of modules, so they agree with
 * `TauCeti.AlgebraicGeometry.Descent.isQuasicoherent`: quasi-coherence, as a property of objects
   of `modulesPseudofunctor` closed under pullback and isomorphisms.
 * `TauCeti.AlgebraicGeometry.Descent.qcohPseudofunctor`: `T ↦ QuasicoherentSheaf T` with pullback.
+* `TauCeti.AlgebraicGeometry.Descent.qcohDescentDataHom`: the gluing morphisms `u^* E ⟶ v^* E` of a
+  descent datum along `f` on underlying modules, for `u ≫ f = v ≫ f`, with
+  `qcohDescentDataHom_self`, `qcohDescentDataHom_comp`,
+  `pullbackComp_inv_app_comp_pullback_map_qcohDescentDataHom` (compatibility with pullback) and
+  `qcohDescentDataHom_ofObj` (the descent datum of a pulled-back module).
 * `TauCeti.AlgebraicGeometry.Descent.qcohPseudofunctor_not_isGroupoid`: on a nonempty scheme the
   category of quasi-coherent modules is not a groupoid (the zero endomorphism of the structure
   sheaf is not invertible), so `qcohPseudofunctor` is not a pseudofunctor to groupoids.
@@ -316,6 +322,84 @@ theorem qcohPseudofunctor_not_isGroupoid (T : Scheme.{u}) [Nonempty T] :
   have h₃ : (0 : O.obj ⟶ O.obj).val = 0 := rfl
   simp only [SheafOfModules.id_val, h₃, PresheafOfModules.zero_app] at h₂
   exact one_ne_zero (α := Γ(T, ⊤)) h₂
+
+section DescentDataHom
+
+variable {X S : Scheme.{u}} (f : X ⟶ S)
+  (D : qcohPseudofunctor.DescentData (fun _ : PUnit ↦ f))
+
+/-- The gluing morphism `u^* E ⟶ v^* E` of a descent datum `D` along `f` on underlying modules,
+for `u v : Y ⟶ X` with `u ≫ f = v ≫ f`, where `E` is the module of `D`. -/
+def qcohDescentDataHom {Y : Scheme.{u}} (u v : Y ⟶ X) (h : u ≫ f = v ≫ f) :
+    (Scheme.Modules.pullback u).obj (D.obj PUnit.unit).obj ⟶
+      (Scheme.Modules.pullback v).obj (D.obj PUnit.unit).obj :=
+  (D.hom (u ≫ f) u v rfl h.symm).hom
+
+variable {f D}
+
+/-- The gluing morphism from `u^* E` to itself is the identity. -/
+@[simp]
+lemma qcohDescentDataHom_self {Y : Scheme.{u}} (u : Y ⟶ X) :
+    qcohDescentDataHom f D u u rfl = 𝟙 _ := by
+  rw [qcohDescentDataHom, D.hom_self _ _ rfl]
+  rfl
+
+/-- `qcohDescentDataHom` is the underlying morphism of modules of `D.hom q u v` for any `q` through
+which both `u ≫ f` and `v ≫ f` factor. -/
+lemma qcohDescentDataHom_eq {Y : Scheme.{u}} (q : Y ⟶ S) (u v : Y ⟶ X) (hu : u ≫ f = q)
+    (hv : v ≫ f = q) :
+    qcohDescentDataHom f D u v (hu.trans hv.symm) = (D.hom q u v hu hv).hom := by
+  subst hu
+  rfl
+
+/-- The gluing morphisms compose: `δ(u, v) ≫ δ(v, w) = δ(u, w)`. -/
+@[reassoc (attr := simp)]
+lemma qcohDescentDataHom_comp {Y : Scheme.{u}} (u v w : Y ⟶ X) (h : u ≫ f = v ≫ f)
+    (h' : v ≫ f = w ≫ f) :
+    qcohDescentDataHom f D u v h ≫ qcohDescentDataHom f D v w h' =
+      qcohDescentDataHom f D u w (h.trans h') := by
+  rw [qcohDescentDataHom_eq (u ≫ f) v w h.symm (h.trans h').symm, qcohDescentDataHom,
+    qcohDescentDataHom_eq (u ≫ f) u w rfl (h.trans h').symm, ← D.hom_comp (u ≫ f) u v w]
+  rfl
+
+/-- The gluing morphisms are compatible with pullback: `g^* δ(u, v)`, read through
+`g^* u^* ≅ (g ≫ u)^*` and `g^* v^* ≅ (g ≫ v)^*`, is `δ(g ≫ u, g ≫ v)`. -/
+lemma pullbackComp_inv_app_comp_pullback_map_qcohDescentDataHom {Y Y' : Scheme.{u}} (g : Y' ⟶ Y)
+    (u v : Y ⟶ X) (h : u ≫ f = v ≫ f) :
+    (Scheme.Modules.pullbackComp g u).inv.app _ ≫
+        (Scheme.Modules.pullback g).map (qcohDescentDataHom f D u v h) ≫
+          (Scheme.Modules.pullbackComp g v).hom.app _ =
+      qcohDescentDataHom f D (g ≫ u) (g ≫ v) (by simp [h]) := by
+  have H := (qcohPseudofunctor_pullHom_hom (D.hom (u ≫ f) u v rfl h.symm) g (g ≫ u) (g ≫ v) rfl
+    rfl).symm.trans (congrArg InducedCategory.Hom.hom (D.pullHom_hom g (u ≫ f) (g ≫ u ≫ f) rfl
+      (i₁ := PUnit.unit) (i₂ := PUnit.unit) u v rfl h.symm (g ≫ u) (g ≫ v) rfl rfl))
+  have H' := (modulesPseudofunctor_pullHom (M₁ := (D.obj PUnit.unit).obj)
+    (M₂ := (D.obj PUnit.unit).obj) (qcohDescentDataHom f D u v h) g (g ≫ u) (g ≫ v) rfl
+    rfl).symm.trans H
+  -- The identifications `(g ≫ u)^* = (g ≫ u)^*` of `pullHom` are identities.
+  have e {Z : Scheme.{u}} (a : Z ⟶ X) :
+      (Scheme.Modules.pullbackCongr (rfl : a = a)).hom.app (D.obj PUnit.unit).obj = 𝟙 _ ∧
+        (Scheme.Modules.pullbackCongr (rfl : a = a)).inv.app (D.obj PUnit.unit).obj = 𝟙 _ :=
+    ⟨rfl, rfl⟩
+  rw [(e _).1, (e _).2, Category.id_comp, Category.comp_id] at H'
+  rw [H', qcohDescentDataHom_eq (g ≫ u ≫ f) (g ≫ u) (g ≫ v) (by simp) (by simp [h])]
+
+/-- The gluing morphisms of the descent datum of the pullback of a quasi-coherent module `M` on
+`S` are the canonical identifications `u^* f^* M ≅ (u ≫ f)^* M = (v ≫ f)^* M ≅ v^* f^* M`. -/
+lemma qcohDescentDataHom_ofObj (M : QuasicoherentSheaf S) {Y : Scheme.{u}} (u v : Y ⟶ X)
+    (h : u ≫ f = v ≫ f) :
+    qcohDescentDataHom f (.ofObj M) u v h =
+      (Scheme.Modules.pullbackComp u f).hom.app M.obj ≫
+        (Scheme.Modules.pullbackCongr h).hom.app M.obj ≫
+          (Scheme.Modules.pullbackComp v f).inv.app M.obj := by
+  have h₁ := qcohPseudofunctor_mapComp'_inv_toNatTrans_app_hom f u (u ≫ f) rfl M
+  have h₂ := qcohPseudofunctor_mapComp'_hom_toNatTrans_app_hom f v (u ≫ f) h.symm M
+  have e : (Scheme.Modules.pullbackCongr (rfl : u ≫ f = u ≫ f)).hom.app M.obj = 𝟙 _ := rfl
+  rw [e, Category.comp_id] at h₁
+  -- `(v ≫ f)^* ≅ (u ≫ f)^*` read backwards is `(u ≫ f)^* ≅ (v ≫ f)^*`: both are `eqToHom`.
+  exact (congrArg₂ (· ≫ ·) h₁ h₂).trans (Category.assoc _ _ _)
+
+end DescentDataHom
 
 end Descent
 
