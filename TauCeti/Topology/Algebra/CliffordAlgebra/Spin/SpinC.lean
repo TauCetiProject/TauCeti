@@ -26,6 +26,10 @@ and rotation map are continuous; compactness of `Spin(n)` makes their surjective
 quotient map, and its finite kernel gives the covering. Charge conjugation `[s, z] ↦ [s, z⁻¹]`
 is a continuous automorphism (`CliffordAlgebra.spinCGroup.chargeConjContinuousMulEquiv`).
 
+For a positive- or negative-definite form on a finite-dimensional real space, `Spinᶜ(Q)` is
+compact (`CliffordAlgebra.spinCGroup.compactSpace_of_posDef_or_negDef`), as a quotient of the
+compact group `Spin(Q) × U(1)`.
+
 These are topological group covers. No smoothness or covering statement about classifying
 spaces is asserted.
 
@@ -139,6 +143,19 @@ theorem detContinuousMonoidHom_comp_ofCircleContinuousMonoidHom :
       (ContinuousMonoidHom.id Circle) ^ 2 := by
   ext z
   simp [ContinuousMonoidHom.pow_apply, det_ofCircle]
+
+/-- **`Spinᶜ(Q)` is compact** for a positive- or negative-definite form on a finite-dimensional
+real space, such as `Q v = -‖v‖²`: it is a quotient of `Spin(Q) × U(1)`, and `Spin(Q)` is
+compact (`CliffordAlgebra.isCompact_spinGroup_iff_posDef_or_negDef`). -/
+theorem compactSpace_of_posDef_or_negDef [FiniteDimensional ℝ M] (hdef : Q.PosDef ∨ (-Q).PosDef) :
+    CompactSpace (spinCGroup Q hQ) := by
+  have hQn : Q.Nondegenerate := by
+    rcases hdef with hpos | hneg
+    · exact hpos.anisotropic.nondegenerate
+    · exact (QuadraticMap.nondegenerate_neg Q).mp hneg.anisotropic.nondegenerate
+  have : CompactSpace (spinGroup Q) :=
+    isCompact_iff_compactSpace.mp ((isCompact_spinGroup_iff_posDef_or_negDef Q hQn).mpr hdef)
+  infer_instance
 
 section Coordinates
 

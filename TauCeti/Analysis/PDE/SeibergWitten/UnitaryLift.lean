@@ -9,7 +9,11 @@ public import TauCeti.Analysis.PDE.SeibergWitten.CanonicalLine
 public import TauCeti.Geometry.Symplectic.AlmostComplex.UnitaryGroup
 public import TauCeti.Geometry.Symplectic.Complex.Module.Hom
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.CircleLift
+public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.HalfSpin
+public import TauCeti.Topology.Algebra.Module.GeneralLinearGroup
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Surjectivity
+import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Projection
+import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.SpinC
 
 /-!
 # The canonical `Spinᶜ` lift of the unitary group
@@ -50,6 +54,16 @@ of the rotations of that oriented plane
 
 The subgroup fixing the canonical line is defined through the given spin module `W`.
 
+**Continuity.** For the quotient topology on `Spinᶜ(4)` and the topology of `U(V, J)` as a
+subgroup of the linear automorphisms of `V`, the canonical lift is continuous
+(`TauCeti.SeibergWitten.continuous_unitaryLift`). The subgroup fixing the canonical line is cut
+out by equations `x ψ = ψ` in the continuous half-spin action, so it is closed
+(`TauCeti.SeibergWitten.isClosed_canonicalLineFixingSubgroup`), hence compact since `Spinᶜ(4)` is.
+The rotation homomorphism is continuous and `U(V, J)` is Hausdorff, so its restriction to the
+subgroup is a homeomorphism onto `U(V, J)`, whose inverse is the canonical lift. A principal
+bundle is extended along a continuous homomorphism of structure groups, so this is the form of the
+canonical lift through which the unitary frame bundle induces the canonical `Spinᶜ` structure.
+
 The determinant character of the canonical lift is the complex determinant: `det (unitaryLift A)`
 is the determinant of `A` as a `ℂ`-linear map of the complex vector space `(V, J)`
 (`TauCeti.AlmostComplexStructure.complexModule`), as stated in
@@ -70,6 +84,10 @@ negative half-spinors with determinant its determinant character
 * `TauCeti.SeibergWitten.canonicalLineFixingSubgroupEquiv`: the rotation homomorphism, as an
   isomorphism of that subgroup onto `U(V, J)`.
 * `TauCeti.SeibergWitten.unitaryLift`: the canonical lift `U(V, J) → Spinᶜ(4)`.
+* `TauCeti.SeibergWitten.canonicalLineFixingSubgroupContinuousMulEquiv`: the rotation
+  homomorphism, as an isomorphism of topological groups from that subgroup onto `U(V, J)`.
+* `TauCeti.SeibergWitten.unitaryLiftContinuousMonoidHom`: the canonical lift as a continuous
+  homomorphism.
 
 ## Main results
 
@@ -90,6 +108,9 @@ negative half-spinors with determinant its determinant character
   negative half-spinors.
 * `TauCeti.SeibergWitten.det_unitaryLift`: the determinant character of the canonical lift is the
   complex determinant.
+* `TauCeti.SeibergWitten.isClosed_canonicalLineFixingSubgroup` and
+  `TauCeti.SeibergWitten.continuous_unitaryLift`: the subgroup fixing the canonical line is closed,
+  and the canonical lift is continuous.
 
 ## References
 
@@ -183,6 +204,31 @@ theorem spinCCircle_mem_canonicalLineFixingSubgroup (z : Circle) :
     (coe_spinCGroupHalfSpinRep_one_spinCCircle_apply_of_eq_neg_I_smul hQ₀ e hQ he ρ z h)
 
 end FixingSubgroup
+
+/-! ### The subgroup fixing the canonical line is closed -/
+
+section Closed
+
+variable {W : Type*} [NormedAddCommGroup W] [NormedSpace ℂ W]
+  {ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W} {J : AlmostComplexStructure V} (hQ₀ : Q ≠ 0)
+
+variable (o ρ J) in
+/-- **The subgroup fixing the canonical line is closed** in `Spinᶜ(4)` with its quotient topology:
+it is cut out by the equations `x ψ = ψ`, and the half-spin action is continuous. -/
+theorem isClosed_canonicalLineFixingSubgroup :
+    IsClosed (canonicalLineFixingSubgroup o ρ J hQ₀ : Set (spinCGroup Q hQ₀)) := by
+  have h : (canonicalLineFixingSubgroup o ρ J hQ₀ : Set (spinCGroup Q hQ₀)) =
+      ⋂ ψ : eigenspace (ρ (chirality Q o)) 1,
+        ⋂ (_ : ρ (bivectorExterior Q J.kahlerForm) ψ = (-2 * Complex.I) • (ψ : W)),
+          {x | spinCGroupHalfSpinRep o ρ 1 hQ₀ x ψ = ψ} := by
+    ext x
+    simp only [SetLike.mem_coe, mem_canonicalLineFixingSubgroup_iff, Set.mem_iInter,
+      Set.mem_ofPred_eq]
+  rw [h]
+  exact isClosed_iInter fun ψ ↦ isClosed_iInter fun _ ↦
+    isClosed_eq (continuous_spinCGroupHalfSpinRep_apply_const o ρ 1 hQ₀ ψ) continuous_const
+
+end Closed
 
 /-! ### The canonical lift -/
 
@@ -578,6 +624,76 @@ theorem det_unitaryLift (A : J.unitaryGroup Q) :
   exact spinCGroupHalfSpinRep_unitaryLift_halfSpinCliffordMul hQ he h₀ h₂ hQ₀ hW hρ hb A v
 
 end ComplexDeterminant
+
+/-! ### Continuity of the canonical lift -/
+
+section Continuity
+
+variable (hQ₀ : Q ≠ 0) (hW : finrank ℂ (positiveHalfSpinors o ρ) = 2)
+  (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
+
+include hQ he h₀ h₂ hW in
+/-- **The subgroup fixing the canonical line is the unitary group, as a topological group.** The
+isomorphism `canonicalLineFixingSubgroupEquiv` is the restriction of the continuous rotation
+homomorphism `Spinᶜ(4) → SO(4)`, and it is a homeomorphism because the subgroup is closed in the
+compact group `Spinᶜ(4)` and `U(V, J)` is Hausdorff. -/
+def canonicalLineFixingSubgroupContinuousMulEquiv :
+    canonicalLineFixingSubgroup o ρ J hQ₀ ≃ₜ* J.unitaryGroup Q :=
+  have hneg : (-Q).PosDef := fun v hv ↦ by simpa [hQ] using pow_pos (norm_pos_iff.2 hv) 2
+  have : CompactSpace (spinCGroup Q hQ₀) :=
+    spinCGroup.compactSpace_of_posDef_or_negDef Q hQ₀ (Or.inr hneg)
+  have : CompactSpace (canonicalLineFixingSubgroup o ρ J hQ₀) :=
+    isCompact_iff_compactSpace.mp
+      (isClosed_canonicalLineFixingSubgroup o ρ J hQ₀).isCompact
+  have hrot : Continuous (spinCGroup.toSpecialOrthogonal Q hQ₀) :=
+    (QuotientGroup.isQuotientMap_mk (spinCKernel Q hQ₀)).continuous_iff.mpr <| by
+      simpa only [Function.comp_def, ← spinCGroup.mk_apply, spinCGroup.toSpecialOrthogonal_mk]
+        using (TauCeti.CliffordAlgebra.continuous_spinToSpecialOrthogonal Q).comp continuous_fst
+  have hc : Continuous (canonicalLineFixingSubgroupEquiv hQ he h₀ h₂ hQ₀ hW hρ) :=
+    ((hrot.comp continuous_subtypeVal).subtype_mk _)
+  { canonicalLineFixingSubgroupEquiv hQ he h₀ h₂ hQ₀ hW hρ with
+    continuous_toFun := hc
+    continuous_invFun := hc.continuous_symm_of_equiv_compact_to_t2
+      (f := (canonicalLineFixingSubgroupEquiv hQ he h₀ h₂ hQ₀ hW hρ).toEquiv) }
+
+/-- The continuous isomorphism `canonicalLineFixingSubgroupContinuousMulEquiv` is the rotation
+homomorphism, as `canonicalLineFixingSubgroupEquiv` is. -/
+@[simp]
+theorem canonicalLineFixingSubgroupContinuousMulEquiv_apply
+    (x : canonicalLineFixingSubgroup o ρ J hQ₀) :
+    canonicalLineFixingSubgroupContinuousMulEquiv hQ he h₀ h₂ hQ₀ hW hρ x =
+      canonicalLineFixingSubgroupEquiv hQ he h₀ h₂ hQ₀ hW hρ x :=
+  (rfl)
+
+/-- The inverse of `canonicalLineFixingSubgroupContinuousMulEquiv` is the inverse of
+`canonicalLineFixingSubgroupEquiv`. -/
+@[simp]
+theorem canonicalLineFixingSubgroupContinuousMulEquiv_symm_apply (A : J.unitaryGroup Q) :
+    (canonicalLineFixingSubgroupContinuousMulEquiv hQ he h₀ h₂ hQ₀ hW hρ).symm A =
+      (canonicalLineFixingSubgroupEquiv hQ he h₀ h₂ hQ₀ hW hρ).symm A :=
+  (rfl)
+
+/-- **The canonical lift is continuous**: `U(V, J) → Spinᶜ(4)` is the inverse of the continuous
+isomorphism `canonicalLineFixingSubgroupContinuousMulEquiv`, followed by the inclusion. -/
+@[fun_prop]
+theorem continuous_unitaryLift : Continuous (unitaryLift hQ he h₀ h₂ hQ₀ hW hρ) :=
+  continuous_subtypeVal.comp
+    (canonicalLineFixingSubgroupContinuousMulEquiv hQ he h₀ h₂ hQ₀ hW hρ).symm.continuous
+
+/-- **The canonical `Spinᶜ` lift of the unitary group, as a continuous homomorphism**
+`U(V, J) →ₜ* Spinᶜ(4)`: the structure group homomorphism along which the unitary frame bundle of
+an almost Hermitian four-manifold induces its canonical `Spinᶜ` structure. -/
+def unitaryLiftContinuousMonoidHom : J.unitaryGroup Q →ₜ* spinCGroup Q hQ₀ where
+  toMonoidHom := unitaryLift hQ he h₀ h₂ hQ₀ hW hρ
+  continuous_toFun := continuous_unitaryLift hQ he h₀ h₂ hQ₀ hW hρ
+
+/-- The bundled continuous canonical lift is the canonical lift. -/
+@[simp]
+theorem unitaryLiftContinuousMonoidHom_apply (A : J.unitaryGroup Q) :
+    unitaryLiftContinuousMonoidHom hQ he h₀ h₂ hQ₀ hW hρ A = unitaryLift hQ he h₀ h₂ hQ₀ hW hρ A :=
+  (rfl)
+
+end Continuity
 
 end Hermitian
 
