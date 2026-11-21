@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Ring.Action.End
 public import Mathlib.Algebra.SkewMonoidAlgebra.Basic
 public import Mathlib.RingTheory.WittVector.Complete
+public import TauCeti.RingTheory.WittVector.Frobenius
 
 /-!
 # The Dieudonné ring
@@ -213,14 +214,6 @@ theorem val_V :
     val (V p k) = SkewMonoidAlgebra.single (Multiplicative.ofAdd (-1)) (p : 𝕎 k) := by
   rfl
 
-private lemma frobeniusEquiv_inv_frobenius (ξ : 𝕎 k) :
-    (frobeniusEquiv p k)⁻¹ (frobenius ξ) = ξ :=
-  (frobeniusEquiv p k).symm_apply_apply ξ
-
-private lemma frobenius_frobeniusEquiv_inv (ξ : 𝕎 k) :
-    frobenius ((frobeniusEquiv p k)⁻¹ ξ) = ξ :=
-  (frobeniusEquiv p k).apply_symm_apply ξ
-
 /-- `F ξ = σ(ξ) F`. -/
 theorem F_mul_C (ξ : 𝕎 k) : F p k * C p k ξ = C p k (frobenius ξ) * F p k := by
   apply val_injective
@@ -230,8 +223,8 @@ theorem F_mul_C (ξ : 𝕎 k) : F p k * C p k ξ = C p k (frobenius ξ) * F p k 
 theorem V_mul_C_frobenius (ξ : 𝕎 k) : V p k * C p k (frobenius ξ) = C p k ξ * V p k := by
   apply val_injective
   simp only [map_mul, val_V, val_C, SkewMonoidAlgebra.single_mul_single,
-    frobeniusZPowAction_smul_def, toAdd_ofAdd, zpow_neg, zpow_one, frobeniusEquiv_inv_frobenius,
-    one_mul, one_smul, mul_comm]
+    frobeniusZPowAction_smul_def, toAdd_ofAdd, zpow_neg, zpow_one, RingAut.inv_apply,
+    frobeniusEquiv_symm_frobenius, one_mul, one_smul, mul_comm]
 
 /-- `F V = p`. -/
 @[simp]
@@ -348,7 +341,7 @@ private lemma zpowFV_mul_map {g : 𝕎 k →+* R} {f v : R}
   · rw [zpowFV_natCast, zpow_natCast]
     exact pow_mul_map hF n ξ
   · have hV' (ξ : 𝕎 k) : v * g ξ = g ((frobeniusEquiv p k)⁻¹ ξ) * v := by
-      rw [← hV, frobenius_frobeniusEquiv_inv]
+      rw [← hV, RingAut.inv_apply, frobenius_frobeniusEquiv_symm]
     rw [zpowFV_neg_natCast, zpow_neg, zpow_natCast,
       ← inv_pow (frobeniusEquiv p k : RingAut (𝕎 k))]
     exact pow_mul_map hV' n ξ

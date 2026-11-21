@@ -49,7 +49,7 @@ action of `D_k` on the Witt group schemes.
   arXiv:2603.11506, §2.1, Definition 1.
 -/
 
-@[expose] public section
+public section
 
 noncomputable section
 
@@ -137,7 +137,7 @@ theorem Hom.map_V (f : M ⟶ N) (x : M) : f.hom (M.V x) = N.V (f.hom x) :=
 
 /-- An isomorphism of Dieudonné modules from a `𝕎 k`-linear equivalence commuting with `F` and
 `V`. -/
-@[simps]
+@[expose, simps]
 def isoMk (e : M ≃ₗ[𝕎 k] N) (hF : ∀ x, e (M.F x) = N.F (e x))
     (hV : ∀ x, e (M.V x) = N.V (e x)) : M ≅ N where
   hom := ⟨e.toLinearMap, hF, hV⟩
@@ -162,14 +162,6 @@ theorem span_range_V (M : DieudonneModule.{v} p k) :
 
 /-! ### Dieudonné modules as modules over the Dieudonné ring -/
 
-private lemma frobeniusEquiv_symm_frobenius (ξ : 𝕎 k) :
-    (frobeniusEquiv p k).symm (frobenius ξ) = ξ :=
-  (frobeniusEquiv p k).symm_apply_apply ξ
-
-private lemma frobenius_frobeniusEquiv_symm (ξ : 𝕎 k) :
-    frobenius ((frobeniusEquiv p k).symm ξ) = ξ :=
-  (frobeniusEquiv p k).apply_symm_apply ξ
-
 section ModuleDieudonneRing
 
 variable (M : DieudonneModule.{v} p k)
@@ -181,6 +173,8 @@ def toEnd : DieudonneRing p k →+* Module.End ℤ M :=
     M.V.toAddMonoidHom.toIntLinearMap
     (fun ξ ↦ LinearMap.ext fun x ↦ by simp)
     (fun ξ ↦ LinearMap.ext fun x ↦ by
+      -- keep `(frobeniusEquiv p k).symm`, which `M.V` is semilinear for, rather than letting
+      -- simp unfold it to a `WittVector.map`
       simp [-WittVector.frobeniusEquiv_symm_apply, frobeniusEquiv_symm_frobenius])
     (LinearMap.ext fun x ↦ by simp [← Nat.cast_smul_eq_nsmul (𝕎 k)])
     (LinearMap.ext fun x ↦ by simp [← Nat.cast_smul_eq_nsmul (𝕎 k)])
@@ -232,37 +226,41 @@ variable (p k) (N : Type v) [AddCommGroup N] [Module (DieudonneRing p k) N]
 
 /-- A left module over the Dieudonné ring as a Dieudonné module: `ξ ∈ 𝕎 k` acts by `C ξ`, and the
 Frobenius and the Verschiebung are the actions of the generators `F` and `V`. -/
+@[expose]
 def ofModule : DieudonneModule.{v} p k :=
   letI : Module (𝕎 k) N := Module.compHom N (DieudonneRing.C p k)
+  -- the action of `𝕎 k` just defined; stated publicly as `TauCeti.DieudonneModule.ofModule_smul`
+  have smul_eq (ξ : 𝕎 k) (x : N) : ξ • x = DieudonneRing.C p k ξ • x := rfl
   { carrier := N
     isModule := this
     F :=
       { toFun x := DieudonneRing.F p k • x
         map_add' := smul_add _
         map_smul' ξ x := by
-          -- `ξ` acts on `ofModule N` through `DieudonneRing.C`
-          change DieudonneRing.F p k • DieudonneRing.C p k ξ • x =
-            DieudonneRing.C p k (frobenius ξ) • DieudonneRing.F p k • x
+          simp only [smul_eq, RingHom.coe_coe, WittVector.frobeniusEquiv_apply]
           rw [← mul_smul, DieudonneRing.F_mul_C, mul_smul] }
     V :=
       { toFun x := DieudonneRing.V p k • x
         map_add' := smul_add _
         map_smul' ξ x := by
-          -- `ξ` acts on `ofModule N` through `DieudonneRing.C`
-          change DieudonneRing.V p k • DieudonneRing.C p k ξ • x =
-            DieudonneRing.C p k ((frobeniusEquiv p k).symm ξ) • DieudonneRing.V p k • x
+          simp only [smul_eq, RingHom.coe_coe]
           rw [← mul_smul, ← mul_smul, ← DieudonneRing.V_mul_C_frobenius,
             frobenius_frobeniusEquiv_symm] }
     F_V x := by
-      -- `ξ` acts on `ofModule N` through `DieudonneRing.C`
-      change DieudonneRing.F p k • DieudonneRing.V p k • x = DieudonneRing.C p k p • x
+      simp only [smul_eq, LinearMap.coe_mk, AddHom.coe_mk]
       rw [← mul_smul, DieudonneRing.F_mul_V, map_natCast]
     V_F x := by
-      -- `ξ` acts on `ofModule N` through `DieudonneRing.C`
-      change DieudonneRing.V p k • DieudonneRing.F p k • x = DieudonneRing.C p k p • x
+      simp only [smul_eq, LinearMap.coe_mk, AddHom.coe_mk]
       rw [← mul_smul, DieudonneRing.V_mul_F, map_natCast] }
 
 variable {p k N}
+
+/-- `ξ ∈ 𝕎 k` acts on `TauCeti.DieudonneModule.ofModule N` by the scalar `C ξ` of the Dieudonné
+ring. -/
+@[simp]
+theorem ofModule_smul (ξ : 𝕎 k) (x : ofModule p k N) :
+    ξ • x = DieudonneRing.C p k ξ • show N from x :=
+  rfl
 
 @[simp]
 theorem ofModule_F (x : N) : (ofModule p k N).F x = DieudonneRing.F p k • x :=
@@ -276,7 +274,10 @@ theorem ofModule_V (x : N) : (ofModule p k N).V x = DieudonneRing.V p k • x :=
 Frobenius and Verschiebung is the given action on `N`. -/
 theorem toEnd_ofModule :
     (ofModule p k N).toEnd = Module.toModuleEnd ℤ (S := DieudonneRing p k) N := by
-  ext <;> simp [toEnd_apply] <;> rfl
+  ext ξ x
+  · exact (C_smul _ ξ x).trans (ofModule_smul ξ x)
+  · exact (F_smul _ ξ).trans (ofModule_F (N := N) ξ)
+  · exact (V_smul _ ξ).trans (ofModule_V (N := N) ξ)
 
 end OfModule
 
@@ -284,7 +285,7 @@ end OfModule
 
 variable (p k) in
 /-- A Dieudonné module as a left module over the Dieudonné ring. -/
-@[simps obj]
+@[expose, simps obj]
 def toModuleCat : DieudonneModule.{v} p k ⥤ ModuleCat.{v} (DieudonneRing p k) where
   obj M := .of _ M
   map f := ModuleCat.ofHom
@@ -299,7 +300,7 @@ theorem toModuleCat_map_hom_apply (f : M ⟶ N) (x : M) :
 
 variable (p k) in
 /-- A left module over the Dieudonné ring as a Dieudonné module. -/
-@[simps obj]
+@[expose, simps obj]
 def fromModuleCat : ModuleCat.{v} (DieudonneRing p k) ⥤ DieudonneModule.{v} p k where
   obj N := ofModule p k N
   map f :=
@@ -316,6 +317,7 @@ theorem fromModuleCat_map_hom_apply {N N' : ModuleCat.{v} (DieudonneRing p k)} (
   rfl
 
 /-- A Dieudonné module is the Dieudonné module of its module over the Dieudonné ring. -/
+@[expose, simps! hom_hom_apply]
 def unitIso (M : DieudonneModule.{v} p k) :
     M ≅ (fromModuleCat p k).obj ((toModuleCat p k).obj M) :=
   isoMk
@@ -327,7 +329,12 @@ def unitIso (M : DieudonneModule.{v} p k) :
       right_inv _ := rfl }
     (fun x ↦ (F_smul M x).symm) (fun x ↦ (V_smul M x).symm)
 
+@[simp]
+theorem unitIso_inv_hom_apply (M : DieudonneModule.{v} p k) (x : M) : (unitIso M).inv.hom x = x :=
+  rfl
+
 /-- A module over the Dieudonné ring is the module of its Dieudonné module. -/
+@[expose, simps! hom_hom_apply]
 def counitIso (N : ModuleCat.{v} (DieudonneRing p k)) :
     (toModuleCat p k).obj ((fromModuleCat p k).obj N) ≅ N :=
   LinearEquiv.toModuleIso
@@ -339,10 +346,15 @@ def counitIso (N : ModuleCat.{v} (DieudonneRing p k)) :
       left_inv _ := rfl
       right_inv _ := rfl }
 
+@[simp]
+theorem counitIso_inv_hom_apply (N : ModuleCat.{v} (DieudonneRing p k)) (x : N) :
+    (counitIso N).inv.hom x = x :=
+  rfl
+
 variable (p k) in
 /-- **Dieudonné modules are left modules over the Dieudonné ring**: the category of Dieudonné
 modules over `k` is equivalent to the category of left `D_k`-modules. -/
-@[simps functor inverse]
+@[expose, simps functor inverse]
 def equivModuleCat : DieudonneModule.{v} p k ≌ ModuleCat.{v} (DieudonneRing p k) where
   functor := toModuleCat p k
   inverse := fromModuleCat p k
