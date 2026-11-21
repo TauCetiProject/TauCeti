@@ -40,9 +40,9 @@ sets are `DK(τ_{≥ 0} Hom(x, y))` (Lurie, *Higher Algebra*, Construction 1.3.1
 
 ## Implementation notes
 
-The coefficients are `R`-modules, as for `HomologicalComplex.ι_tensorObj_d`: the tensor product of
-cochain complexes indexed by `ℤ` needs countable coproducts commuting with the tensor product,
-which `ModuleCat R` provides; these are also the coefficients of a differential graded category.
+The coefficients are `R`-modules: the tensor product of cochain complexes indexed by `ℤ` needs
+countable coproducts commuting with the tensor product, which `ModuleCat R` provides; these are also
+the coefficients of a differential graded category.
 
 ## References
 
