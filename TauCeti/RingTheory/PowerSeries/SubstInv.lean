@@ -36,6 +36,8 @@ form used to change formal parameters.
   when the constant coefficient is zero.
 * `PowerSeries.substInvOfIsUnit_congr`: `substInvOfIsUnit` respects equality of the input series,
   independently of the `IsUnit` proof witnesses.
+* `PowerSeries.substInvOfIsUnit_eq_of_coeff_eq`: `substInvOfIsUnit` depends only on the
+  positive-degree coefficients of the input series.
 -/
 
 public section
@@ -131,5 +133,56 @@ theorem substInvOfIsUnit_congr {P Q : R⟦X⟧} (h : P = Q)
     (hP : IsUnit (coeff 1 P)) (hQ : IsUnit (coeff 1 Q)) :
     P.substInvOfIsUnit hP = Q.substInvOfIsUnit hQ := by
   subst h; rfl
+
+/-- `substInvFun` depends only on the positive-degree coefficients of the input series. -/
+private theorem substInvFun_congr {P Q : R⟦X⟧}
+    [Invertible (coeff 1 P)] [Invertible (coeff 1 Q)]
+    (h : ∀ k, k ≠ 0 → coeff k P = coeff k Q) (n : ℕ) :
+    substInvFun P n = substInvFun Q n := by
+  have h1 : coeff 1 P = coeff 1 Q := h 1 one_ne_zero
+  have hinv : ⅟(coeff 1 P) = ⅟(coeff 1 Q) :=
+    left_inv_eq_right_inv (invOf_mul_self _) (by rw [h1, mul_invOf_self])
+  have hPQ : P = Q + C (constantCoeff P - constantCoeff Q) := by
+    ext k
+    rcases eq_or_ne k 0 with rfl | hk
+    · simp [coeff_zero_eq_constantCoeff_apply]
+    · simp [h k hk, coeff_C, hk]
+  induction n using Nat.strong_induction_on with
+  | _ n ih =>
+    match n, ih with
+    | 0, _ => simp [substInvFun]
+    | 1, _ => simp [substInvFun, hinv]
+    | m + 2, ih =>
+      have hS : HasSubst (∑ i : Fin (m + 2), C (substInvFun Q i.val) * X ^ i.val) := by
+        refine .of_constantCoeff_zero' ?_
+        rw [map_sum]
+        refine Finset.sum_eq_zero fun i _ ↦ ?_
+        rcases i with ⟨_ | k, hk⟩
+        · simp [substInvFun]
+        · simp [map_pow]
+      have hsum : ∑ i : Fin (m + 2), C (substInvFun P i.val) * X ^ i.val =
+          ∑ i : Fin (m + 2), C (substInvFun Q i.val) * X ^ i.val :=
+        Finset.sum_congr rfl fun i _ ↦ by rw [ih i (by omega)]
+      rw [substInvFun, substInvFun, hinv, hsum]
+      · conv_lhs => rw [hPQ]
+        rw [subst_add hS, subst_C, map_add]
+        have hC : coeff (m + 2) (MvPowerSeries.C (constantCoeff P - constantCoeff Q) : R⟦X⟧) =
+            0 := by
+          change coeff (m + 2) (C (constantCoeff P - constantCoeff Q)) = 0
+          simp
+        rw [hC, add_zero]
+      all_goals omega
+
+/-- The explicit construction `substInvOfIsUnit` depends only on the positive-degree coefficients
+of the input series; in particular, it is invariant under changing the constant coefficient. -/
+theorem substInvOfIsUnit_eq_of_coeff_eq {P Q : R⟦X⟧}
+    (hP : IsUnit (coeff 1 P)) (hQ : IsUnit (coeff 1 Q))
+    (h : ∀ k, k ≠ 0 → coeff k P = coeff k Q) :
+    P.substInvOfIsUnit hP = Q.substInvOfIsUnit hQ := by
+  let := hP.invertible
+  let := hQ.invertible
+  ext n
+  simp only [substInvOfIsUnit, substInv, coeff_mk]
+  exact substInvFun_congr h n
 
 end PowerSeries

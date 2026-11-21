@@ -28,9 +28,9 @@ no analytic convergence. The identity and scalar laws `S_1(z) = 1`, `S_{c a}(z) 
 `TauCeti.IsFreelyIndependent.sSeries_mul`.
 
 The definition also makes sense without normalization, following the convention for
-`momentSeries`; the interpretation as the inverse of `Ψ` and the cumulant comparison use
-`φ 1 = 1`. Requiring a unit mean is the ring-valued form of the nonzero-mean condition over
-a field.
+`momentSeries`; the scalar law `TauCeti.sSeries_smul` holds without normalization, while the
+interpretation as the inverse of `Ψ` and the cumulant comparison use `φ 1 = 1`. Requiring a unit
+mean is the ring-valued form of the nonzero-mean condition over a field.
 
 ## References
 
@@ -187,16 +187,46 @@ variable [Semiring A] [Algebra R A] {φ : A →ₗ[R] R}
 
 /-- Rescaling a variable `a` of unit mean by a unit scalar `c` scales its formal S-series by the
 inverse of `c`: `S_{c a}(z) = c⁻¹ S_a(z)`. -/
-theorem sSeries_smul (hφ : φ 1 = 1) {a : A} (ha : IsUnit (φ a)) {c : R} (hc : IsUnit c) :
+theorem sSeries_smul {a : A} (ha : IsUnit (φ a)) {c : R} (hc : IsUnit c) :
     sSeries φ (c • a) (by simpa [smul_eq_mul] using hc.mul ha) =
       Ring.inverse c • sSeries φ a ha := by
-  apply (eq_sSeries_of_subst_X_mul_eq (c • a) hφ _ ?_).symm
-  have h1 : freeCumulantSeries φ (c • a) - 1 = (freeCumulantSeries φ a - 1).subst (c • X) := by
-    rw [← rescale_eq_subst, map_sub, map_one, ← freeCumulantSeries_smul]
-  have hX : HasSubst (X * (Ring.inverse c • sSeries φ a ha)) := .of_constantCoeff_zero' (by simp)
-  rw [h1, subst_comp_subst_apply (.smul_X' c) hX, subst_smul hX, subst_X hX]
-  simp [smul_smul, Ring.mul_inverse_cancel c hc,
-    freeCumulantSeries_sub_one_subst_X_mul_sSeries a hφ ha]
+  have hca : IsUnit (φ (c • a)) := by simpa [smul_eq_mul] using hc.mul ha
+  set M₀ : R⟦X⟧ := momentSeries φ a - C (constantCoeff (momentSeries φ a))
+  have hM₀₀ : constantCoeff M₀ = 0 := by simp [M₀]
+  have hM₀₁ : IsUnit (coeff 1 M₀) := by simpa [M₀, coeff_C] using ha
+  have hresc₁ : IsUnit (coeff 1 (rescale c M₀)) := by
+    simpa [coeff_rescale] using hc.mul hM₀₁
+  have hresc₀ : constantCoeff (rescale c M₀) = 0 := by
+    rw [← coeff_zero_eq_constantCoeff_apply, coeff_rescale]
+    simpa [coeff_zero_eq_constantCoeff_apply] using hM₀₀
+  have hI : (momentSeries φ a - 1).substInvOfIsUnit
+      (isUnit_coeff_one_momentSeries_sub_one φ a ha) = M₀.substInvOfIsUnit hM₀₁ :=
+    substInvOfIsUnit_eq_of_coeff_eq _ _ fun k hk => by simp [M₀, coeff_C, hk]
+  have hJ : (momentSeries φ (c • a) - 1).substInvOfIsUnit
+      (isUnit_coeff_one_momentSeries_sub_one φ (c • a) hca) =
+      (rescale c M₀).substInvOfIsUnit hresc₁ :=
+    substInvOfIsUnit_eq_of_coeff_eq _ _ fun k hk => by
+      simp [M₀, momentSeries_smul, coeff_rescale, coeff_C, hk]
+  have hS : HasSubst (Ring.inverse c • M₀.substInvOfIsUnit hM₀₁) :=
+    .of_constantCoeff_zero' (by simp)
+  have hinv : (momentSeries φ (c • a) - 1).substInvOfIsUnit
+      (isUnit_coeff_one_momentSeries_sub_one φ (c • a) hca) =
+      Ring.inverse c • (momentSeries φ a - 1).substInvOfIsUnit
+        (isUnit_coeff_one_momentSeries_sub_one φ a ha) := by
+    rw [hJ, hI]
+    refine ((rescale c M₀).eq_substInvOfIsUnit_of_subst_eq_X hresc₀ hresc₁ hS ?_).symm
+    rw [rescale_eq_subst, subst_comp_subst_apply (.smul_X' c) hS, subst_smul hS, subst_X hS,
+      smul_smul, Ring.mul_inverse_cancel c hc, one_smul,
+      M₀.subst_substInvOfIsUnit_right hM₀₀ hM₀₁]
+  rw [sSeries_def, sSeries_def, hinv]
+  have hmk : (mk fun n => coeff (n + 1) (Ring.inverse c •
+      (momentSeries φ a - 1).substInvOfIsUnit (isUnit_coeff_one_momentSeries_sub_one φ a ha))) =
+      Ring.inverse c • mk fun n => coeff (n + 1)
+        ((momentSeries φ a - 1).substInvOfIsUnit
+          (isUnit_coeff_one_momentSeries_sub_one φ a ha)) := by
+    ext n
+    simp
+  rw [hmk, mul_smul_comm]
 
 /-- A scalar variable of unit value has the constant S-series given by its inverse. -/
 @[simp]
@@ -205,7 +235,7 @@ theorem sSeries_algebraMap (hφ : φ 1 = 1) (c : R) (hc : IsUnit c) :
       C (Ring.inverse c) := by
   refine (sSeries_congr _ _ _
     (congrArg (momentSeries φ) (Algebra.algebraMap_eq_smul_one c))).trans
-    ((sSeries_smul hφ (hφ ▸ isUnit_one) hc).trans ?_)
+    ((sSeries_smul (hφ ▸ isUnit_one) hc).trans ?_)
   rw [sSeries_one hφ, Algebra.smul_def, mul_one, algebraMap_eq]
 
 end Algebra

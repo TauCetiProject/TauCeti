@@ -523,15 +523,17 @@ namespace TauCeti
 
 open PowerSeries
 
-/-- For a normalised functional `φ`, the formal S-series `sSeries φ a ha` equals `(1 + X)` times
-the boxed S-series of `momentSeries φ a`, reflecting `C_a = M_a ⊠ μ` and `S_μ = 1 + X`. -/
+/-- The formal S-series `sSeries φ a ha` equals `(1 + X)` times the boxed S-series of
+`momentSeries φ a`; for a normalised functional `φ`, this reflects `C_a = M_a ⊠ μ` and
+`S_μ = 1 + X`. -/
 theorem sSeries_eq_one_add_X_mul_boxedSSeries_momentSeries {R A : Type*} [CommRing R] [Monoid A]
-    {φ : A → R} (hφ : φ 1 = 1) (a : A) (ha : IsUnit (φ a)) :
+    {φ : A → R} (a : A) (ha : IsUnit (φ a)) :
     sSeries φ a ha = (1 + X) * (momentSeries φ a).boxedSSeries (by simpa using ha) := by
-  rw [sSeries_eq_boxedSSeries_freeCumulantSeries hφ a ha]
-  have h := boxedConvolution_momentSeries_mobius a hφ
-  refine (boxedSSeries_congr _ (by simpa [coeff_one_boxedConvolution] using ha)
-    fun k _ => congrArg (coeff k) h.symm).trans ?_
-  rw [boxedSSeries_boxedConvolution (by simpa using ha) (by simp), boxedSSeries_mobius, mul_comm]
+  rw [sSeries_def, boxedSSeries_eq_shift_substInvOfIsUnit]
+  congr 1
+  ext n
+  simp only [coeff_mk]
+  congr 1
+  exact substInvOfIsUnit_eq_of_coeff_eq _ _ fun k hk => by simp [coeff_C, hk]
 
 end TauCeti
