@@ -222,16 +222,12 @@ theorem manifoldMorseIndex_coadjointOrbitMap_apply (hx : ⁅X, ν.coadjointOrbit
   have hsurj : Surjective (a.eval x) := fun v ↦ by
     obtain ⟨ξ, hξ⟩ := Subgroup.surjective_fundamentalVectorField (I := I)
       (isClosed_stabilizer_coadjointRepresentation I ν) x v
-    refine ⟨ξ, ?_⟩
-    rw [InfinitesimalAction.eval_apply, InfinitesimalAction.fundamental_apply]
-    exact hξ
+    exact ⟨ξ, by simpa [a] using hξ⟩
   rw [manifoldMorseIndex_eq_sigNeg_criticalHessian,
     ← QuadraticForm.sigNeg_comp_of_surjective _ hsurj]
   congr 1
   ext ξ
-  rw [QuadraticMap.comp_apply, LinearMap.BilinMap.toQuadraticMap_apply,
-    ContinuousLinearMap.toBilinForm_apply, InfinitesimalAction.eval_apply,
-    InfinitesimalAction.fundamental_apply,
-    criticalHessian_coadjointOrbitMap_apply_fundamentalVectorField hx, hQ]
+  simpa [a] using
+    (criticalHessian_coadjointOrbitMap_apply_fundamentalVectorField hx ξ ξ).trans (hQ ξ).symm
 
 end Module.Dual
