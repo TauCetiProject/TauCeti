@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Order.Cadlag
 public import TauCeti.MeasureTheory.Measure.IntegerValued.Stieltjes
 public import TauCeti.Probability.PointProcess.OccurrenceTime.Reconstruction
+public import TauCeti.Topology.Order.Cadlag
 
 /-!
 # The counting measure of a counting path
@@ -25,7 +25,8 @@ all times simultaneously wherever the path is nondecreasing and right-continuous
 count processes are recognized as random measures, for instance as Poisson random measures.
 
 Conversely, the count path `t ↦ ⌊μ (0,t]⌋` of a locally finite integer-valued measure `μ`
-without an atom at zero has counting measure `μ`, so the two conversions are mutually inverse.
+without an atom at zero has counting measure `μ` (`countingPathMeasure_nat_count`), so every such
+measure is the counting measure of a counting path.
 
 ## References
 
@@ -65,19 +66,13 @@ theorem measurable_pathOccurrenceTime (n : ℕ) :
   exact Measurable.iInf fun q ↦ Measurable.ite
     (measurableSet_lt measurable_const (measurable_pi_apply _)) measurable_const measurable_const
 
-/-- A right-continuous natural-valued path is constant on a right neighbourhood of each time. -/
-private theorem exists_forall_Ioo_eq_of_isRightContinuous {N : ℝ≥0 → ℕ}
-    (hrc : IsRightContinuous N) (t : ℝ≥0) : ∃ u, t < u ∧ ∀ s ∈ Ioo t u, N s = N t := by
-  have h := hrc t
-  rw [ContinuousWithinAt, nhds_discrete, tendsto_pure] at h
-  exact mem_nhdsGT_iff_exists_Ioo_subset.1 h
-
 /-- For a nondecreasing right-continuous path, occurrence `n` has happened by time `t` exactly
 when the path exceeds `n` at `t`. -/
 theorem pathOccurrenceTime_le_iff {N : ℝ≥0 → ℕ} (hmono : Monotone N)
     (hrc : IsRightContinuous N) {n : ℕ} {t : ℝ≥0} :
     pathOccurrenceTime N n ≤ t ↔ n < N t := by
-  obtain ⟨u, htu, hu⟩ := exists_forall_Ioo_eq_of_isRightContinuous hrc t
+  obtain ⟨u, htu, hu⟩ : ∃ u, t < u ∧ ∀ s ∈ Ioo t u, N s = N t :=
+    mem_nhdsGT_iff_exists_Ioo_subset.1 (hrc.eventually_eq t)
   constructor
   · intro h
     by_contra hle
