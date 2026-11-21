@@ -21,7 +21,7 @@ import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.Plane
 import TauCeti.LinearAlgebra.RootSystem.Coxeter.FixedPoints
 import TauCeti.LinearAlgebra.RootSystem.Coxeter.Length
 import TauCeti.LinearAlgebra.RootSystem.LongestElement
-import TauCeti.LinearAlgebra.RootSystem.OrbitSum
+import TauCeti.LinearAlgebra.RootSystem.OrbitSum.Basic
 
 /-!
 # Steinberg's Coxeter orbits on roots and the root-count formula `|Φ| = r · h`
@@ -383,7 +383,7 @@ theorem natCard_eq_card_support_mul_orderOf_wordProd :
   · have : NeZero (2 : R) := ⟨by norm_num⟩
     exact b.natCard_eq_card_support_mul_orderOf_wordProd_of_isFiniteType
       (isFiniteType_cartanMatrix b) (preconnected_diagramGraph_cartanMatrix b) hnd hall
-  · have : IsEmpty ι := not_nonempty_iff.mp hne; have : IsEmpty b.support := ⟨(IsEmpty.false ·.1)⟩
+  · have : IsEmpty ι := not_nonempty_iff.mp hne; have : IsEmpty b.support := ⟨(IsEmpty.false ·.val)⟩
     simp [Nat.card_eq_fintype_card, ← Fintype.card_coe]
 
 /-- **Positive-root count formula `2 |Φ⁺| = r · h`.** Twice the number of positive roots equals
@@ -407,7 +407,7 @@ theorem card_quotient_sameCycle_weylGroupToPerm_wordProd :
   · have : NeZero (2 : R) := ⟨by norm_num⟩
     exact b.card_quotient_sameCycle_weylGroupToPerm_wordProd_of_isFiniteType
       (isFiniteType_cartanMatrix b) (preconnected_diagramGraph_cartanMatrix b) hnd hall
-  · have : IsEmpty ι := not_nonempty_iff.mp hne; have : IsEmpty b.support := ⟨(IsEmpty.false ·.1)⟩
+  · have : IsEmpty ι := not_nonempty_iff.mp hne; have : IsEmpty b.support := ⟨(IsEmpty.false ·.val)⟩
     have : IsEmpty (Quotient (Equiv.Perm.SameCycle.setoid
         (P.weylGroupToPerm (wordProd P b l)))) := ⟨Quotient.ind fun x ↦ IsEmpty.false x⟩
     simp [Nat.card_eq_fintype_card, ← Fintype.card_coe]

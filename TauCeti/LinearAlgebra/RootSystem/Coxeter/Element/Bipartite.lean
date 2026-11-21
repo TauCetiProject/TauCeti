@@ -78,6 +78,7 @@ theorem colorClassMatrix_mul_self (s : Bool) :
 noncomputable def bipartiteCoxeterMatrix : Matrix b.support b.support ℤ :=
   b.colorClassMatrix col true * b.colorClassMatrix col false
 
+omit [CharZero R] [IsDomain R] [Finite ι] in
 /-- Explicit factorization of `b.bipartiteCoxeterMatrix col` into the two colour-class matrices. -/
 theorem bipartiteCoxeterMatrix_def :
     b.bipartiteCoxeterMatrix col = b.colorClassMatrix col true * b.colorClassMatrix col false :=

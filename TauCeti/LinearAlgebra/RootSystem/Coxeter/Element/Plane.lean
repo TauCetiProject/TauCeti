@@ -399,7 +399,7 @@ theorem exists_coxeterPlane_bipartiteCoxeterElement [P.IsIrreducible]
       (∀ φ : ℝ, 0 < φ → φ < Real.pi / h →
         ∀ k : b.support, 0 < b.corootEval ℝ (k : ι) (Real.cos φ • e₁ + Real.sin φ • e₂)) := by
   obtain ⟨i₀, -⟩ := exists_pair_ne b.support
-  have : Nonempty ι := ⟨i₀.1⟩; have : NeZero (2 : R) := ⟨by norm_num⟩
+  have : Nonempty ι := ⟨i₀.val⟩; have : NeZero (2 : R) := ⟨by norm_num⟩
   exact b.exists_coxeterPlane_bipartiteCoxeterElement_of_isFiniteType
     (isFiniteType_cartanMatrix b) (preconnected_diagramGraph_cartanMatrix b) col
 
@@ -569,7 +569,7 @@ private theorem exists_eigenvector_baseChange_isEmpty [P.IsIrreducible] [IsEmpty
       v ≠ 0 ∧ P.weylGroupRootRep.baseChange ℂ c v = ζ • v ∧ IsPrimitiveRoot ζ (orderOf c) ∧
       (∀ j : ι, LinearMap.liftBaseChange ℂ (Algebra.linearMap R ℂ ∘ₗ P.coroot' j) v ≠ 0) ∧
       (∀ g : P.weylGroup, P.weylGroupRootRep.baseChange ℂ g v = v → g = 1) := by
-  dsimp only; have : IsEmpty b.support := ⟨fun i ↦ IsEmpty.false i.1⟩
+  dsimp only; have : IsEmpty b.support := ⟨fun i ↦ IsEmpty.false i.val⟩
   have := IsIrreducible.nontrivial (P := P); obtain ⟨m₀, hm₀⟩ := exists_ne (0 : M)
   obtain ⟨n₀, hr₀⟩ : ∃ n₀ : N, P.toLinearMap m₀ n₀ ≠ 0 := by_contra fun h ↦
     hm₀ ((LinearMap.IsPerfPair.bijective_left P.toLinearMap).injective

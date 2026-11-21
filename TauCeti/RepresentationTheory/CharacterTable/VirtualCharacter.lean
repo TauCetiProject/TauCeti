@@ -11,6 +11,7 @@ public import TauCeti.RepresentationTheory.FDRep.Basic
 import Mathlib.RepresentationTheory.Maschke
 import TauCeti.RepresentationTheory.Intertwining
 import TauCeti.RepresentationTheory.Irreducible
+import TauCeti.SetTheory.Cardinal.Finite
 
 /-!
 # The virtual-character lattice
@@ -244,7 +245,7 @@ theorem virtualCharacters_le_classFunction :
   virtualCharacters_le fun V => by
     have h : (ClassFunction.ofCharacter V.ρ : G → k) = V.character :=
       funext fun g => ClassFunction.ofCharacter_apply V.ρ g
-    exact h ▸ (ClassFunction.ofCharacter V.ρ).2
+    exact h ▸ (ClassFunction.ofCharacter V.ρ).property
 
 end ClassFunctions
 
@@ -293,7 +294,7 @@ end Irreducible
 
 section Lattice
 
-variable {k : Type u} {G : Type v} [Field k] [Group G] [Finite G] [IsAlgClosed k]
+variable {k : Type u} {G : Type v} [Field k] [Group G] [IsAlgClosed k]
   [Invertible (Nat.card G : k)]
 
 /-- **A character is the sum of the irreducible characters weighted by their multiplicities.** The
@@ -303,6 +304,7 @@ natural numbers: the multiplicities with which the irreducibles occur in `V`. -/
 theorem character_eq_sum_nsmul_irreducibleCharacter (V : FDRep k G) :
     V.character = ∑ i, finrank k (Representation.IntertwiningMap V.ρ
       (irreducibleRepresentation k i)) • irreducibleCharacter k i := by
+  have := finite_of_natCast_card_ne_zero (Invertible.ne_zero (Nat.card G : k))
   let _ : Fintype G := Fintype.ofFinite G
   funext y
   have hy := ClassFunction.apply_eq_sum_characterPairing_mul_character
@@ -374,7 +376,8 @@ subring of `k` admitting an additive map `t : A → ℤ` with `t 1 = 1`, such as
 unity `ζ` in characteristic zero (`PowerBasis.exists_linearMap_apply_one`). If `V` is an additive
 subgroup of the virtual characters, then a virtual character that is an `A`-linear combination of
 elements of `V` already lies in `V`: `Submodule.span A V ∩ R(G) = V`. -/
-theorem mem_of_mem_span_of_mem_virtualCharacters (A : Subring k) (t : A →+ ℤ) (ht : t 1 = 1)
+theorem mem_of_mem_span_of_mem_virtualCharacters [Finite G] (A : Subring k) (t : A →+ ℤ)
+    (ht : t 1 = 1)
     {V : AddSubgroup (G → k)} (hV : V ≤ virtualCharacters k G) {f : G → k}
     (hf : f ∈ virtualCharacters k G) (hfA : f ∈ Submodule.span A (V : Set (G → k))) :
     f ∈ V := by
@@ -412,7 +415,7 @@ end Lattice
 
 section Subring
 
-variable {k : Type u} {G : Type v} [Field k] [Group G] [Finite G] [IsAlgClosed k]
+variable {k : Type u} {G : Type v} [Field k] [Group G] [IsAlgClosed k]
   [Invertible (Nat.card G : k)]
 
 /-- **A class function with values in a subring `A` is, once multiplied by `|G|`, an
@@ -426,6 +429,7 @@ theorem natCard_nsmul_mem_span_irreducibleCharacters (A : Subring k) {f : G → 
     (hf : f ∈ ClassFunction k G) (hfA : ∀ g, f g ∈ A)
     (hA : ∀ (i : Fin (Nat.card (ConjClasses G))) (g : G), irreducibleCharacter k i g ∈ A) :
     Nat.card G • f ∈ Submodule.span A (irreducibleCharacters k G) := by
+  have := finite_of_natCast_card_ne_zero (Invertible.ne_zero (Nat.card G : k))
   let _ : Fintype G := Fintype.ofFinite G
   have hexp : Nat.card G • f =
       ∑ i, (∑ g, irreducibleCharacter k i g * f g⁻¹) • irreducibleCharacter k i := by
@@ -595,7 +599,7 @@ private theorem exists_char_sub_eq_of_ne_zero {V W : Type*} [AddCommGroup V] [Mo
         Representation.IntertwiningMap.coe_toLinearMap, map_sub]
       exact sub_eq_zero.mpr (by simpa [ψ] using hxy)
     exact Subtype.ext (sub_eq_zero.mp (Submodule.disjoint_def.mp hC'.disjoint _ hker
-      (C.toSubmodule.sub_mem x.2 y.2)))
+      (C.toSubmodule.sub_mem x.property y.property)))
   obtain ⟨ρ', hρ'⟩ := exists_isCompl ψ.range
   refine ⟨ρ', φ.ker, ?_, ?_⟩
   · -- the image of `ψ` is nonzero, since otherwise `C` is zero and `φ` vanishes

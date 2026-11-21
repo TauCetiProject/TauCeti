@@ -82,7 +82,7 @@ private theorem weightSpan_coact [Module.Flat k C] (v : M) (c : C)
   rw [Subcomodule.subtype_rTensor_coact]
   -- After applying the subtype tensor map, expose the ambient vectors on both sides.
   change coact (R := k) (C := C) (M := M) (x : M) = (x : M) ⊗ₜ[k] c
-  exact coact_eq_tmul_of_mem_span hv x.2
+  exact coact_eq_tmul_of_mem_span hv x.property
 
 /-- The subcomodule spanned by a nonzero weight vector has dimension one. -/
 private theorem weightSpan_finrank (v : M) (c : C)

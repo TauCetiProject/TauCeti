@@ -8,6 +8,7 @@ module
 public import Mathlib.FieldTheory.Galois.IsGaloisGroup
 public import Mathlib.LinearAlgebra.SymmetricAlgebra.Basis
 public import TauCeti.RepresentationTheory.SymmetricAlgebra.FaithfulImage
+import TauCeti.RingTheory.Invariant.Basic
 
 /-!
 # The Galois group of a symmetric algebra over its invariants
@@ -47,7 +48,7 @@ A faithful action on `V` gives a faithful contragredient action on `V*` by
   domain, `Frac(Sym M) / Frac(Sym(M)^G)` is Galois, with no faithfulness assumption.
 * `Representation.finrank_fractionRing_symmetricAlgebraInvariants`: for finite `G`, faithful `ρ`
   and `Sym M` a domain, this extension has degree `|G|`.
-* `Representation.faithfulSMul_quotient_symmetricAlgebra`: for a normal subgroup `H`, the
+* `Representation.faithfulSMul_quotient_symmetricAlgebra`: for a finite normal subgroup `H`, the
   quotient `G ⧸ H` acts faithfully on the `H`-invariants.
 
 ## References
@@ -141,7 +142,8 @@ theorem finrank_fractionRing_symmetricAlgebraInvariants (hρ : Function.Injectiv
   have := ρ.isGaloisGroup_fractionRing_symmetricAlgebraInvariants hρ
   exact (IsGaloisGroup.card_eq_finrank G _ _).symm
 
-/-- For a faithful representation of a finite group with `Sym M` a domain and a normal subgroup
+omit [Finite G] in
+/-- For a faithful representation of a group with `Sym M` a domain and a finite normal subgroup
 `H`, the quotient `G ⧸ H` acts faithfully on the subalgebra of `H`-invariants, with its action
 `g • p` through any representative `g`. Here the `H`-invariants are Mathlib's
 `FixedPoints.subalgebra` for the restricted action, which carries Mathlib's action of `G ⧸ H`; it
@@ -149,35 +151,14 @@ is `symmetricAlgebraInvariants (ρ.comp H.subtype)` by
 `Representation.symmetricAlgebraInvariants_comp_subtype`. Geometrically, for `M = V*`, the
 residual action of `G ⧸ H` on the quotient `V/H` is faithful. -/
 theorem faithfulSMul_quotient_symmetricAlgebra (hρ : Function.Injective ρ) (H : Subgroup G)
-    [H.Normal] :
+    [H.Normal] [Finite H] :
     letI := ρ.symmetricAlgebraMulSemiringAction
     haveI := ρ.smulCommClass_symmetricAlgebraMulSemiringAction
-    FaithfulSMul (G ⧸ H) (FixedPoints.subalgebra R (SymmetricAlgebra R M) H) := by
-  let := ρ.symmetricAlgebraMulSemiringAction
-  have := ρ.smulCommClass_symmetricAlgebraMulSemiringAction
-  have := ρ.isGaloisGroup_symmetricAlgebraInvariants hρ
-  -- Mathlib's `IsGaloisGroup.quotient`, for the tower `Sym(M)^G ≤ Sym(M)^H ≤ Sym M`, with `G`
-  -- acting on the `H`-invariants through `G ⧸ H`.
-  let B := FixedPoints.subalgebra R (SymmetricAlgebra R M) H
-  let := (Subalgebra.inclusion (S := ρ.symmetricAlgebraInvariants) (T := B)
-    fun p hp h ↦ (ρ.mem_symmetricAlgebraInvariants p).1 hp h).toAlgebra
-  have : IsScalarTower ρ.symmetricAlgebraInvariants B (SymmetricAlgebra R M) :=
-    .of_algebraMap_eq fun _ ↦ rfl
-  -- `H` is a Galois group of `Sym M` over its fixed points `B`; each field is a Mathlib instance
-  -- for `FixedPoints.subalgebra R`, as in `fixingSubgroup_symmetricAlgebraInvariants_comp_subtype`.
-  have : IsGaloisGroup H B (SymmetricAlgebra R M) :=
-    { faithful := have := ρ.faithfulSMul_symmetricAlgebraMulSemiringAction_iff.2 hρ; inferInstance
-      commutes := inferInstance
-      isInvariant := inferInstance }
-  let := MulSemiringAction.compHom B (QuotientGroup.mk' H)
-  have : IsScalarTower G (G ⧸ H) B := ⟨fun g q b ↦ by
-    induction q using QuotientGroup.induction_on
-    rw [MulAction.Quotient.smul_mk, smul_eq_mul, QuotientGroup.mk_mul]
-    exact mul_smul _ _ b⟩
-  have : SMulDistribClass G B (SymmetricAlgebra R M) := ⟨fun _ _ _ ↦ smul_mul' _ _ _⟩
-  have := IsGaloisGroup.smulCommClassQuotient G ρ.symmetricAlgebraInvariants B
-    (SymmetricAlgebra R M) H
-  exact (IsGaloisGroup.quotient G ρ.symmetricAlgebraInvariants B (SymmetricAlgebra R M) H).faithful
+    FaithfulSMul (G ⧸ H) (FixedPoints.subalgebra R (SymmetricAlgebra R M) H) :=
+  letI := ρ.symmetricAlgebraMulSemiringAction
+  haveI := ρ.smulCommClass_symmetricAlgebraMulSemiringAction
+  haveI := ρ.faithfulSMul_symmetricAlgebraMulSemiringAction_iff.2 hρ
+  inferInstance
 
 end IsDomain
 
