@@ -63,7 +63,7 @@ theorem card_pi_eq_prod_of_card_eq_one {ι : Type*} {X : ι → Type*} (s : Fins
     (hX : ∀ i ∉ s, Nat.card (X i) = 1) :
     Nat.card (∀ i, X i) = ∏ i ∈ s, Nat.card (X i) := by
   classical
-  have h (i : {i // i ∉ s}) := Nat.card_eq_one_iff_unique.mp (hX i.1 i.2)
+  have h (i : {i // i ∉ s}) := Nat.card_eq_one_iff_unique.mp (hX i.val i.property)
   have (i : {i // i ∉ s}) : Subsingleton (X i) := (h i).1
   have (i : {i // i ∉ s}) : Nonempty (X i) := (h i).2
   rw [Nat.card_congr (Equiv.piEquivPiSubtypeProd (· ∈ s) X), Nat.card_prod,
@@ -83,7 +83,7 @@ theorem card_sigma_eq_finsum {ι : Type*} (β : ι → Type*) [∀ i, Finite (β
     rw [Nat.card_sigma, ← finsum_mem_support, ← finsum_set_coe_eq_finsum_mem,
       finsum_eq_sum_of_fintype]
   · have : Infinite s := Set.infinite_coe_iff.mpr hs
-    have (i : s) : Nonempty (β i) := (Nat.card_ne_zero.mp i.2).1
+    have (i : s) : Nonempty (β i) := (Nat.card_ne_zero.mp i.property).1
     rw [Nat.card_eq_zero_of_infinite, finsum_of_infinite_support hs]
 
 /-- **A sigma type with constant fibre cardinality.** If every fibre `β a` has `Nat.card` equal to

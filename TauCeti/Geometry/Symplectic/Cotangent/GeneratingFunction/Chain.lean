@@ -259,9 +259,9 @@ theorem exists_equiv_periodic_of_generating {S : ZMod N → Q × Q → ℝ} {W :
     ∃ e : {z : ZMod N → CotangentBundle I Q // ∀ i, z i ∈ D i ∧ φ i (z i) = z (i + 1)} ≃
         {q : ZMod N → Q // (∀ i, (q i, q (i + 1)) ∈ W i) ∧
           mvfderiv (ModelWithCorners.pi fun _ : ZMod N ↦ I) (cyclicAction S) q = 0},
-      (∀ z i, (e z : ZMod N → Q) i = (z.1 i).proj) ∧
+      (∀ z i, (e z : ZMod N → Q) i = (z.val i).proj) ∧
         ∀ q i, (e.symm q : ZMod N → CotangentBundle I Q) i =
-          generatingSource I (S i) (q.1 i, q.1 (i + 1)) := by
+          generatingSource I (S i) (q.val i, q.val (i + 1)) := by
   -- Along a periodic chain, each state is the source point and the next state the target point
   -- of the relation over the base pair of consecutive states.
   have hchain (z : ZMod N → CotangentBundle I Q) (hz : ∀ i, z i ∈ D i ∧ φ i (z i) = z (i + 1))
@@ -282,16 +282,18 @@ theorem exists_equiv_periodic_of_generating {S : ZMod N → Q × Q → ℝ} {W :
     rw [h.1, h.2]
     exact ⟨hz, rfl⟩
   refine ⟨
-    { toFun := fun z ↦ ⟨fun i ↦ (z.1 i).proj, fun i ↦ (hchain z.1 z.2 i).1,
-        (mvfderiv_cyclicAction_eq_zero_iff fun i ↦ hS i _ (hchain z.1 z.2 i).1).2 fun i ↦ by
-          have h := (hchain z.1 z.2 (i - 1)).2.2
+    { toFun := fun z ↦ ⟨fun i ↦ (z.val i).proj, fun i ↦ (hchain z.val z.property i).1,
+        (mvfderiv_cyclicAction_eq_zero_iff fun i ↦ hS i _ (hchain z.val z.property i).1).2 fun i ↦
+            by
+          have h := (hchain z.val z.property (i - 1)).2.2
           rw [sub_add_cancel] at h
-          rw [h, (hchain z.1 z.2 i).2.1]⟩
-      invFun := fun q ↦ ⟨fun i ↦ generatingSource I (S i) (q.1 i, q.1 (i + 1)), fun i ↦ by
-        refine ⟨(hedge i _ (q.2.1 i)).1, (hedge i _ (q.2.1 i)).2.trans ?_⟩
-        have h := (mvfderiv_cyclicAction_eq_zero_iff fun i ↦ hS i _ (q.2.1 i)).1 q.2.2 (i + 1)
+          rw [h, (hchain z.val z.property i).2.1]⟩
+      invFun := fun q ↦ ⟨fun i ↦ generatingSource I (S i) (q.val i, q.val (i + 1)), fun i ↦ by
+        refine ⟨(hedge i _ (q.property.1 i)).1, (hedge i _ (q.property.1 i)).2.trans ?_⟩
+        have h := (mvfderiv_cyclicAction_eq_zero_iff fun i ↦ hS i _ (q.property.1 i)).1 q.property.2
+            (i + 1)
         rwa [add_sub_cancel_right] at h⟩
-      left_inv := fun z ↦ Subtype.ext <| funext fun i ↦ (hchain z.1 z.2 i).2.1
+      left_inv := fun z ↦ Subtype.ext <| funext fun i ↦ (hchain z.val z.property i).2.1
       right_inv := fun q ↦ Subtype.ext <| funext fun i ↦ proj_generatingSource _ },
     fun _ _ ↦ rfl, fun _ _ ↦ rfl⟩
 
@@ -309,8 +311,8 @@ theorem exists_equiv_fixedPoints_of_generating {S : Q × Q → ℝ} {W : Set (Q 
     (hW : ∀ x ∈ W, ∃ z ∈ D, (z.proj, (φ z).proj) = x) :
     ∃ e : {z : CotangentBundle I Q // z ∈ D ∧ φ z = z} ≃
         {q : Q // (q, q) ∈ W ∧ mvfderiv I (fun x ↦ S (x, x)) q = 0},
-      (∀ z, (e z : Q) = z.1.proj) ∧
-        ∀ q, (e.symm q : CotangentBundle I Q) = generatingSource I S (q.1, q.1) := by
+      (∀ z, (e z : Q) = z.val.proj) ∧
+        ∀ q, (e.symm q : CotangentBundle I Q) = generatingSource I S (q.val, q.val) := by
   obtain ⟨e, he, he'⟩ := exists_equiv_periodic_of_generating (N := 1) (S := fun _ ↦ S)
     (W := fun _ ↦ W) (D := fun _ ↦ D) (φ := fun _ ↦ φ) (fun _ ↦ hS) (fun _ ↦ hD) (fun _ ↦ hW)
   -- A constant configuration is critical for the cyclic action exactly when its value is
@@ -359,9 +361,9 @@ theorem exists_equiv_iterate_of_generating {S : Q × Q → ℝ} {W : Set (Q × Q
     ∃ e : {z : CotangentBundle I Q // (∀ k < N, φ^[k] z ∈ D) ∧ Function.IsPeriodicPt φ N z} ≃
         {q : ZMod N → Q // (∀ i, (q i, q (i + 1)) ∈ W) ∧
           mvfderiv (ModelWithCorners.pi fun _ : ZMod N ↦ I) (cyclicAction fun _ ↦ S) q = 0},
-      (∀ z i, (e z : ZMod N → Q) i = (φ^[i.val] z.1).proj) ∧
-      (∀ q, (e.symm q : CotangentBundle I Q) = generatingSource I S (q.1 0, q.1 1)) ∧
-      ∀ z z', ((e z' : ZMod N → Q) = fun i ↦ (e z : ZMod N → Q) (i + 1)) ↔ z'.1 = φ z.1 := by
+      (∀ z i, (e z : ZMod N → Q) i = (φ^[i.val] z.val).proj) ∧
+      (∀ q, (e.symm q : CotangentBundle I Q) = generatingSource I S (q.val 0, q.val 1)) ∧
+      ∀ z z', ((e z' : ZMod N → Q) = fun i ↦ (e z : ZMod N → Q) (i + 1)) ↔ z'.val = φ z.val := by
   obtain ⟨e, he, he'⟩ := exists_equiv_periodic_of_generating (N := N) (S := fun _ ↦ S)
     (W := fun _ ↦ W) (D := fun _ ↦ D) (φ := fun _ ↦ φ) (fun _ ↦ hS) (fun _ ↦ hD) (fun _ ↦ hW)
   refine ⟨(Function.periodicChainEquiv φ D N).symm.trans e, fun z i ↦ ?_, fun q ↦ ?_,
@@ -398,11 +400,11 @@ theorem exists_equiv_quot_iterate_of_generating {S : Q × Q → ℝ} {W : Set (Q
       generatingCorrespondence I I S (z.proj, (φ z).proj) = (z, φ z))
     (hW : ∀ x ∈ W, ∃ z ∈ D, (z.proj, (φ z).proj) = x) :
     ∃ e : Quot (fun z z' : {z : CotangentBundle I Q //
-          (∀ k < N, φ^[k] z ∈ D) ∧ Function.IsPeriodicPt φ N z} ↦ z'.1 = φ z.1) ≃
+          (∀ k < N, φ^[k] z ∈ D) ∧ Function.IsPeriodicPt φ N z} ↦ z'.val = φ z.val) ≃
         Quot (fun q q' : {q : ZMod N → Q // (∀ i, (q i, q (i + 1)) ∈ W) ∧
           mvfderiv (ModelWithCorners.pi fun _ : ZMod N ↦ I) (cyclicAction fun _ ↦ S) q = 0} ↦
-            q'.1 = fun i ↦ q.1 (i + 1)),
-      ∀ z q, (∀ i, q.1 i = (φ^[i.val] z.1).proj) → e (Quot.mk _ z) = Quot.mk _ q := by
+            q'.val = fun i ↦ q.val (i + 1)),
+      ∀ z q, (∀ i, q.val i = (φ^[i.val] z.val).proj) → e (Quot.mk _ z) = Quot.mk _ q := by
   obtain ⟨e, he, -, hshift⟩ := exists_equiv_iterate_of_generating (N := N) hS hD hW
   refine ⟨Quot.congr e fun z z' ↦ (hshift z z').symm, fun z q hq ↦ ?_⟩
   rw [Quot.congr_mk]

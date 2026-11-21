@@ -361,8 +361,8 @@ theorem exists_fiberwiseCellReattachment_morseFamily [CompactSpace P]
           fiberwiseCellAttachment (morseFamilyAttachingMap ψ₁ k hk hε.le hball₁ hf₁ hs₁)),
         fiberwiseCellAttachmentIncl _ ≫ ρ = fiberwiseCellAttachmentIncl _ ∧
         fiberwiseCellAttachmentIncl _ ≫ ρ' = fiberwiseCellAttachmentIncl _ ∧
-        (∀ i p (w v : TopCat.disk.{u} (k i)), ‖w.down.1‖ ≤ 1 / 2 →
-          v.down.1 = (2 : ℝ) • w.down.1 →
+        (∀ i p (w v : TopCat.disk.{u} (k i)), ‖w.down.val‖ ≤ 1 / 2 →
+          v.down.val = (2 : ℝ) • w.down.val →
           ρ (fiberwiseCellAttachmentCell _ i (p, w)) =
             fiberwiseCellAttachmentCell _ i (p, (g i p).diskMap v)) ∧
         (∀ y, fiberwiseCellAttachmentProj _ (ρ y) = fiberwiseCellAttachmentProj _ y) ∧

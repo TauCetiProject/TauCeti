@@ -99,7 +99,7 @@ theorem twoGenerator_ne_one : twoGenerator ≠ 1 := by
 
 /-- Every element of `twoSubgroup` is `1` or `twoGenerator`. -/
 theorem eq_one_or_eq_twoGenerator (n : twoSubgroup) : n = 1 ∨ n = twoGenerator := by
-  rcases (mem_twoSubgroup_iff n.1).mp n.2 with h | h
+  rcases (mem_twoSubgroup_iff n.val).mp n.property with h | h
   · exact Or.inl (Subtype.ext h)
   · exact Or.inr (Subtype.ext h)
 

@@ -249,7 +249,7 @@ theorem inner_eq_zero_of_mem_range_of_adjoint_apply_eq_zero {T : AdjointableMap 
     {x y : F} (hx : x ∈ Set.range T) (hy : T.adjoint y = 0) :
     inner A x y = 0 := by
   obtain ⟨z, rfl⟩ := hx
-  rw [← T.adjoint_inner_right, hy, inner_zero_right]
+  rw [← T.adjoint_inner_right, hy, CStarModule.inner_zero_right]
 
 /-! #### Linear structure and composition -/
 
@@ -430,7 +430,7 @@ theorem comp_smul (c : ℂ) (S : AdjointableMap A F G) (T : AdjointableMap A E F
 @[simp] theorem adjoint_comp_self_eq_zero_iff {T : AdjointableMap A E F} :
     T.adjoint.comp T = 0 ↔ T = 0 := by
   refine ⟨fun h ↦ ext fun x ↦ (CStarModule.inner_self (A := A)).mp ?_, fun h ↦ by simp [h]⟩
-  rw [← T.adjoint_inner_right, ← comp_apply, h, zero_apply, inner_zero_right]
+  rw [← T.adjoint_inner_right, ← comp_apply, h, zero_apply, CStarModule.inner_zero_right]
 
 @[simp] theorem self_comp_adjoint_eq_zero_iff {T : AdjointableMap A E F} :
     T.comp T.adjoint = 0 ↔ T = 0 := by
@@ -904,7 +904,8 @@ theorem inner_eq_zero_of_isSelfAdjoint_of_mem_range_of_apply_eq_zero {T : Adjoin
 theorem inner_map_self_eq_zero {T : AdjointableMap A E E} :
     (∀ x : E, inner A x (T x) = 0) ↔ T = 0 :=
   ⟨fun h ↦ CStarModule.eq_of_forall_inner_map_self (A := A) fun x ↦ by
-    rw [h x, zero_apply, inner_zero_right], by rintro rfl x; rw [zero_apply, inner_zero_right]⟩
+    rw [h x, zero_apply, CStarModule.inner_zero_right],
+    by rintro rfl x; rw [zero_apply, CStarModule.inner_zero_right]⟩
 
 end SelfAdjoint
 
@@ -947,7 +948,7 @@ theorem nonneg_iff_forall_inner_nonneg {T : AdjointableMap A E E} :
 theorem le_iff_forall_inner_le {S T : AdjointableMap A E E} :
     S ≤ T ↔ ∀ x : E, inner A x (S x) ≤ inner A x (T x) := by
   rw [← sub_nonneg, nonneg_iff_forall_inner_nonneg]
-  simp_rw [sub_apply, inner_sub_right, sub_nonneg]
+  simp_rw [sub_apply, CStarModule.inner_sub_right, sub_nonneg]
 
 /-- The positive square root `CFC.sqrt T` of a positive operator `T : AdjointableMap A E E`
 satisfies `⟪CFC.sqrt T x, CFC.sqrt T y⟫_A = ⟪x, T y⟫_A`. -/
@@ -1042,7 +1043,7 @@ theorem inner_eq_add_inner_one_sub_of_isStarProjection {P : AdjointableMap A E E
     inner A x y = inner A (P x) (P y) + inner A ((1 - P) x) ((1 - P) y) := by
   rw [inner_map_map_eq_inner_map_right_of_isStarProjection hP,
     inner_map_map_eq_inner_map_right_of_isStarProjection hP.one_sub,
-    ← inner_add_right, ← add_apply, add_sub_cancel, one_apply_eq_self]
+    ← CStarModule.inner_add_right, ← add_apply, add_sub_cancel, one_apply_eq_self]
 
 /-- The range of an adjointable star projection `P` is orthogonal to the range of `1 - P`:
 `⟪P x, y - P y⟫_A = 0`. -/
@@ -1050,7 +1051,7 @@ theorem inner_map_sub_map_eq_zero_of_isStarProjection {P : AdjointableMap A E E}
     (hP : IsStarProjection P) (x y : E) :
     inner A (P x) (y - P y) = 0 := by
   rw [← P.adjoint_inner_right, ← star_eq_adjoint, hP.isSelfAdjoint.star_eq, map_sub,
-    ← mul_apply_eq_comp, hP.isIdempotentElem.eq, sub_self, inner_zero_right]
+    ← mul_apply_eq_comp, hP.isIdempotentElem.eq, sub_self, CStarModule.inner_zero_right]
 
 /-- The range of an adjointable idempotent `P` is its fixed-point locus `{x | P x = x}`. -/
 theorem range_eq_of_isIdempotentElem {P : AdjointableMap A E E} (hP : IsIdempotentElem P) :

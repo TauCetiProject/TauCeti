@@ -238,7 +238,7 @@ private theorem cosetSum_mem_stage {n : ℕ} (a : Fin (n + 1) → stage R q n) :
     cosetSum R q n a ∈ stage R q (n + 1) := by
   rw [cosetSum_apply]
   exact Subalgebra.sum_mem _ fun m _ ↦
-    mul_mem (stage_mono n.le_succ (a m).2) (cosetRep_mem_stage n m)
+    mul_mem (stage_mono n.le_succ (a m).property) (cosetRep_mem_stage n m)
 
 private theorem mul_cosetRep_mem_range {n m : ℕ} (hm : m ≤ n) {a : InfiniteTypeAHeckeAlgebra R q}
     (ha : a ∈ stage R q n) : a * cosetRep q n m ∈ LinearMap.range (cosetSum R q n) :=
@@ -285,7 +285,7 @@ private theorem toSubmodule_stage_succ_le_range (n : ℕ) :
     rintro _ ⟨a, rfl⟩
     rw [cosetSum_apply, Finset.sum_mul]
     exact Submodule.sum_mem _ fun m _ ↦
-      mul_cosetRep_mul_T_mem_range (by omega) (by omega) (a m).2
+      mul_cosetRep_mul_T_mem_range (by omega) (by omega) (a m).property
   intro x hx
   simpa only [one_mul] using hS hx 1 (by
     simpa only [cosetRep_self, one_mul] using mul_cosetRep_mem_range le_rfl (one_mem (stage R q n)))
@@ -298,7 +298,7 @@ private def cosetSumStage (n : ℕ) : (Fin (n + 1) → stage R q n) →ₗ[R] st
 
 private theorem cosetSumStage_bijective (n : ℕ) : Function.Bijective (cosetSumStage R q n) := by
   refine OrzechProperty.bijective_of_surjective_of_finrank_le _ (fun x ↦ ?_) ?_
-  · obtain ⟨a, ha⟩ := toSubmodule_stage_succ_le_range n x.2
+  · obtain ⟨a, ha⟩ := toSubmodule_stage_succ_le_range n x.property
     exact ⟨a, Subtype.ext ha⟩
   · nontriviality R
     rw [Module.finrank_pi_fintype, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
