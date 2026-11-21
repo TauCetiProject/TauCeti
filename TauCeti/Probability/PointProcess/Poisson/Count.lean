@@ -181,8 +181,8 @@ theorem ae_forall_nat_count_finsetSum_eq (I : Finset ι) {M₀ : Ω → Measure 
   refine ae_forall_natFloor_toNNReal_Ioc_finsetSum_eq I
     (fun i hi n ↦ (h i hi).ae_isIntegerValued_restrict measurableSet_Ioc (hΛ i hi n))
     (fun n ↦ ?_) hsum
-  have hfin : ∀ᵐ ω ∂P, ∀ i : I, N i.1 ω (Ioc 0 (n : ℝ≥0)) < ∞ :=
-    ae_all_iff.2 fun i ↦ (h i.1 i.2).ae_lt_top measurableSet_Ioc (hΛ i.1 i.2 n)
+  have hfin : ∀ᵐ ω ∂P, ∀ i : I, N i.val ω (Ioc 0 (n : ℝ≥0)) < ∞ :=
+    ae_all_iff.2 fun i ↦ (h i.val i.property).ae_lt_top measurableSet_Ioc (hΛ i.val i.property n)
   filter_upwards [hfin, hsum] with ω hωfin hωsum
   rw [← hωsum, sum_apply]
   exact ENNReal.sum_lt_top.2 fun i hi ↦ hωfin ⟨i, hi⟩

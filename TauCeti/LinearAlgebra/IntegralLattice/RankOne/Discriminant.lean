@@ -81,7 +81,7 @@ theorem coe_zsmul_rankOneDualGen (k : ℤ) :
 /-- Every dual vector is an integer multiple of the distinguished generator. -/
 theorem exists_zsmul_rankOneDualGen (x : (rankOne a).dualCarrier) :
     ∃ k : ℤ, x = k • rankOneDualGen a := by
-  obtain ⟨k, hk⟩ := (mem_rankOne_dualCarrier_iff a (x : ℚ)).mp x.2
+  obtain ⟨k, hk⟩ := (mem_rankOne_dualCarrier_iff a (x : ℚ)).mp x.property
   exact ⟨k, Subtype.ext (by rw [hk, coe_zsmul_rankOneDualGen])⟩
 
 private theorem bijective_toSpanSingleton_rankOneDualGen :

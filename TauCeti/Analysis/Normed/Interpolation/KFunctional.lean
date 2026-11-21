@@ -56,7 +56,7 @@ compatible couple. It is meaningful for `t ≥ 0`, which the lemmas below assume
 Negative parameters are outside the intended API: for `t < 0` the infimum need not be bounded
 below, and no property of the value is claimed. -/
 def kFunctional (t : ℝ) (u : C.SumSpace) : ℝ :=
-  ⨅ x : {x : X₀ × X₁ // C.fstToSum x.1 + C.sndToSum x.2 = u}, ‖x.1.1‖ + t * ‖x.1.2‖
+  ⨅ x : {x : X₀ × X₁ // C.fstToSum x.1 + C.sndToSum x.2 = u}, ‖x.val.1‖ + t * ‖x.val.2‖
 
 variable {C} {s t : ℝ} {u v : C.SumSpace}
 
@@ -70,7 +70,7 @@ theorem kFunctional_le (ht : 0 ≤ t) {x₀ : X₀} {x₁ : X₁}
     (h : C.fstToSum x₀ + C.sndToSum x₁ = u) : C.kFunctional t u ≤ ‖x₀‖ + t * ‖x₁‖ := by
   rw [kFunctional]
   exact ciInf_le (f := fun x : {x : X₀ × X₁ // C.fstToSum x.1 + C.sndToSum x.2 = u} =>
-    ‖x.1.1‖ + t * ‖x.1.2‖) ⟨0, by rintro _ ⟨x, rfl⟩; positivity⟩ ⟨(x₀, x₁), h⟩
+    ‖x.val.1‖ + t * ‖x.val.2‖) ⟨0, by rintro _ ⟨x, rfl⟩; positivity⟩ ⟨(x₀, x₁), h⟩
 
 /-- `K(t, u)` is the largest lower bound of `‖x₀‖ + t ‖x₁‖` over the decompositions
 `u = x₀ + x₁`. -/
@@ -79,7 +79,7 @@ theorem le_kFunctional_iff (ht : 0 ≤ t) {r : ℝ} :
       ∀ x₀ x₁, C.fstToSum x₀ + C.sndToSum x₁ = u → r ≤ ‖x₀‖ + t * ‖x₁‖ := by
   refine ⟨fun hr x₀ x₁ h => hr.trans (kFunctional_le ht h), fun H => ?_⟩
   have := nonempty_decomposition u
-  exact le_ciInf fun x => H x.1.1 x.1.2 x.2
+  exact le_ciInf fun x => H x.val.1 x.val.2 x.property
 
 theorem kFunctional_lt_iff (ht : 0 ≤ t) {r : ℝ} :
     C.kFunctional t u < r ↔

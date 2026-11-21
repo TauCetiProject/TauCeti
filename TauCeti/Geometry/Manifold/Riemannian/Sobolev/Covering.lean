@@ -162,7 +162,7 @@ theorem toLp_normalizedPullback (hq : IsQuotientCoveringMap q G)
       (toLp (ofSmooth (u.comp ⟨q, hf.contMDiff⟩))),
     toLp_ofSmooth_ae_eq (u.comp ⟨q, hf.contMDiff⟩),
     hq.coeFn_normalizedPullbackLp (𝕜 := ℝ) hf.inner_mfderiv (toLp (ofSmooth u)),
-    (QuasiMeasurePreserving.of_map_le_smul hq.continuous.measurable
+    (QuasiMeasurePreserving.of_map_le_smul hq.continuous.aemeasurable
       (hq.map_riemannianVolume hf.inner_mfderiv).le).ae_eq_comp (toLp_ofSmooth_ae_eq u)]
     with x h₁ h₂ h₃ h₄
   rw [h₁, h₃, Algebra.algebraMap_self_apply, hc, Pi.smul_apply, h₂]

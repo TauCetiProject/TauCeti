@@ -249,14 +249,15 @@ theorem le_re_of_mem_spectrum_of_positive_lyapunov
   have hRR : R * R = C := by
     simpa only [CFC.sqrt_eq_rpow, R] using CFC.sqrt_mul_sqrt_self C hC.nonneg
   -- The inverse-equivalence constructor uses composition; translate at this boundary only.
-  let e := ContinuousLinearEquiv.equivOfInverse' R Rinv
+  let e := ContinuousLinearEquiv.ofContinuousLinearMap R Rinv
     (by simpa only [ContinuousLinearMap.mul_def, ContinuousLinearMap.one_def] using hRRinv)
     (by simpa only [ContinuousLinearMap.mul_def, ContinuousLinearMap.one_def] using hRinvR)
   have he : e.conjContinuousAlgEquiv.toAlgEquiv W = R * W * Rinv := by
     ext x
     simp only [ContinuousAlgEquiv.coe_toAlgEquiv,
       ContinuousLinearEquiv.conjContinuousAlgEquiv_apply_apply,
-      ContinuousLinearEquiv.equivOfInverse'_apply, ContinuousLinearEquiv.symm_equivOfInverse',
+      ContinuousLinearEquiv.coe_ofContinuousLinearMap,
+      ContinuousLinearEquiv.symm_ofContinuousLinearMap,
       mul_apply_eq_comp, e]
   have hz' : z ∈ spectrum ℂ (e.conjContinuousAlgEquiv.toAlgEquiv W) := by
     rwa [AlgEquiv.spectrum_eq]

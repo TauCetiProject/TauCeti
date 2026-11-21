@@ -84,7 +84,7 @@ theorem isZero_singularHomology_preimage_of_relHomotopyGroup (hp : serreFibratio
   isZero_singularHomology_ofSubset_of_relHomotopyGroup
     (exists_joined_preimage_of_mem_serreFibrations hp h₀)
     (fun k hk e ↦ subsingleton_relHomotopyGroup_preimage_of_mem_serreFibrations hp e
-      (h k hk ⟨p e, e.2⟩)) M hm
+      (h k hk ⟨p e, e.property⟩)) M hm
 
 /-- **A Serre fibration over a deformation has acyclic preimage pair.** Let `p : E ⟶ B` be a Serre
 fibration and `A ⊆ S ⊆ B`. If the identity of `S` is homotopic, relative to `A`, to a map with
@@ -131,17 +131,19 @@ theorem isZero_singularHomology_preimage_skeletonLT (hp : serreFibrations p) (R 
   let A : Set (_root_.TopCat.of t) := Subtype.val ⁻¹' s
   have h₀ (b : _root_.TopCat.of t) : ∃ a ∈ A, Joined b a := by
     obtain ⟨a, ha⟩ := exists_joined_skeletonLT hts hst b
-    exact ⟨inclusion hst a, a.2, ha.symm⟩
+    exact ⟨inclusion hst a, a.property, ha.symm⟩
   have h (j : ℕ) (hj : j + 1 < i + 1) (a : A) :
       Subsingleton (RelHomotopyGroup (Fin j) ⟨TopPair.ofSubset A, a⟩) := by
     have := subsingleton_relHomotopyGroup_skeletonLT (N := Fin j) (by simpa using hj) hts hst
-      ⟨a.1.1, a.2⟩
+      ⟨a.val.val, a.property⟩
     -- The pairs `(t, A)` and `(t, s)` are isomorphic, by a basepoint-preserving isomorphism.
     let e := TopPair.ofSubsetPreimageValIso hst
-    let f : (⟨TopPair.ofSubset A, a⟩ : BasedTopPair) ⟶ ⟨TopPair.ofInclusion hst, ⟨a.1.1, a.2⟩⟩ :=
+    let f : (⟨TopPair.ofSubset A, a⟩ : BasedTopPair) ⟶ ⟨TopPair.ofInclusion hst, ⟨a.val.val,
+        a.property⟩⟩ :=
       ⟨e.hom, Subtype.ext (TopPair.ofSubsetPreimageValIso_hom_snd_apply a)⟩
-    let g : (⟨TopPair.ofInclusion hst, ⟨a.1.1, a.2⟩⟩ : BasedTopPair) ⟶ ⟨TopPair.ofSubset A, a⟩ :=
-      ⟨e.inv, Subtype.ext (TopPair.ofSubsetPreimageValIso_inv_snd_apply ⟨a.1.1, a.2⟩)⟩
+    let g : (⟨TopPair.ofInclusion hst, ⟨a.val.val, a.property⟩⟩ : BasedTopPair) ⟶
+        ⟨TopPair.ofSubset A, a⟩ :=
+      ⟨e.inv, Subtype.ext (TopPair.ofSubsetPreimageValIso_inv_snd_apply ⟨a.val.val, a.property⟩)⟩
     exact RelHomotopyGroup.subsingleton_of_comp_eq_id (f := f) (g := g)
       (BasedTopPair.hom_ext e.hom_inv_id)
   -- The restriction of `p` over `t` is a Serre fibration, so its preimage pair has vanishing

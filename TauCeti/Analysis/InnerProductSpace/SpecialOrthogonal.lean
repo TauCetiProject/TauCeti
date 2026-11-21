@@ -104,7 +104,7 @@ theorem isOpen_specialOrthogonalGroup :
       {g : unitary (V →L[ℝ] V) | (0 : ℝ) < (g : V →L[ℝ] V).det} :=
     Set.ext fun _ ↦ mem_specialOrthogonalGroup_iff_det_pos
   rw [this]
-  exact isOpen_lt continuous_const (ContinuousLinearMap.continuous_det.comp continuous_subtype_val)
+  exact isOpen_lt continuous_const (ContinuousLinearMap.continuous_det.comp continuous_subtypeVal)
 
 /-- The special orthogonal group is closed in the orthogonal group `unitary (V →L[ℝ] V)`. -/
 theorem isClosed_specialOrthogonalGroup :
@@ -113,7 +113,7 @@ theorem isClosed_specialOrthogonalGroup :
       {g : unitary (V →L[ℝ] V) | (g : V →L[ℝ] V).det = 1} :=
     Set.ext fun _ ↦ mem_specialOrthogonalGroup_iff
   rw [this]
-  exact isClosed_eq (ContinuousLinearMap.continuous_det.comp continuous_subtype_val)
+  exact isClosed_eq (ContinuousLinearMap.continuous_det.comp continuous_subtypeVal)
     continuous_const
 
 /-- The special orthogonal group is clopen in the orthogonal group `unitary (V →L[ℝ] V)`. -/

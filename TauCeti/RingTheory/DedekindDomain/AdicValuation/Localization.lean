@@ -67,7 +67,7 @@ noncomputable def localizationToCompletionIntegers (v : HeightOneSpectrum R) :
   IsLocalization.lift (M := v.asIdeal.primeCompl)
     (g := algebraMap R (v.adicCompletionIntegers K)) fun y ↦
     IsLocalRing.notMem_maximalIdeal.mp fun hy ↦
-    (Ideal.mem_primeCompl_iff.mp y.2) <| by
+    (Ideal.mem_primeCompl_iff.mp y.property) <| by
       have hunder : (y : R) ∈
           (IsLocalRing.maximalIdeal (v.adicCompletionIntegers K)).under R := hy
       rw [v.under_maximalIdeal_adicCompletionIntegers (K := K)] at hunder
@@ -141,7 +141,7 @@ theorem localizationToCompletionIntegers_mk' (v : HeightOneSpectrum R) (x : R)
     have hy' : algebraMap R (v.adicCompletionIntegers K) y = 0 := Subtype.ext hy
     have : (y : R) = 0 :=
       (FaithfulSMul.algebraMap_injective R (v.adicCompletionIntegers K)) (by simpa using hy')
-    exact (Ideal.mem_primeCompl_iff.mp y.2) (this ▸ v.asIdeal.zero_mem)
+    exact (Ideal.mem_primeCompl_iff.mp y.property) (this ▸ v.asIdeal.zero_mem)
   apply (eq_mul_inv_iff_mul_eq₀ hy).2
   have h := congrArg (v.localizationToCompletionIntegers (K := K))
     (IsLocalization.mk'_spec (Localization.AtPrime v.asIdeal) x y)
