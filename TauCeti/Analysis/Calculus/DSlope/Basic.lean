@@ -134,14 +134,29 @@ theorem eventuallyEq_dslope_update_of_factorization {𝕜 ι F : Type*}
         simpa only [huz] using (hgz hzi).tendsto.mono_left nhdsWithin_le_nhds
       apply Filter.Tendsto.congr' ?_ hgt
       filter_upwards [heq'.filter_mono nhdsWithin_le_nhds, self_mem_nhdsWithin] with w hw hne
-      have hne' : w ≠ x i := hne
+      have hne' : w ≠ x i := Set.mem_compl_singleton_iff.mp hne
       symm
-      rw [slope_def_module, huz, hw]
-      exact inv_smul_smul₀ (sub_ne_zero.mpr hne') _
+      calc
+        slope (fun t ↦ f (Function.update z i t)) (x i) w =
+            slope (fun t ↦ f (Function.update z i t) - f z) (x i) w := by
+          simpa only [vadd_eq_add, sub_eq_add_neg] using
+            (congrFun (congrFun
+              (slope_vadd_const (fun t ↦ f (Function.update z i t)) (-f z)) (x i)) w).symm
+        _ = slope (fun t ↦ (t - x i) • g (Function.update z i t)) (x i) w := by
+          have hmul : (w - x i) •
+              slope (fun t ↦ f (Function.update z i t) - f z) (x i) w =
+                (w - x i) •
+                  slope (fun t ↦ (t - x i) • g (Function.update z i t)) (x i) w := by
+            rw [sub_smul_slope, sub_smul_slope]
+            simp only [vsub_eq_sub, huz, sub_self, zero_smul, sub_zero, hw]
+          exact smul_right_injective _ (sub_ne_zero.mpr hne') hmul
+        _ = g (Function.update z i w) := slope_sub_smul _ hne'.symm
     simpa only [hzi, dslope_same] using hd'.deriv
-  · apply (smul_right_injective _ (sub_ne_zero.mpr hzi))
-    change (z i - x i) • dslope _ _ _ = (z i - x i) • g z
-    rw [sub_smul_dslope, Function.update_eq_self]
-    exact mem_of_mem_nhds hz
+  · have hmul : (z i - x i) •
+        dslope (fun w ↦ f (Function.update z i w)) (x i) (z i) =
+          (z i - x i) • g z := by
+      rw [sub_smul_dslope, Function.update_eq_self]
+      exact mem_of_mem_nhds hz
+    exact smul_right_injective _ (sub_ne_zero.mpr hzi) hmul
 
 end TauCeti

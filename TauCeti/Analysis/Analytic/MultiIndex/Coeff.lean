@@ -9,11 +9,13 @@ public import Mathlib.Algebra.Order.Antidiag.Pi
 public import Mathlib.Analysis.Analytic.Basic
 public import Mathlib.Data.Fintype.Perm
 public import Mathlib.Data.Pi.Interval
+import Mathlib.Algebra.Order.Monoid.Canonical.Basic
 import Mathlib.Algebra.Order.Sub.Prod
 import Mathlib.Analysis.Analytic.Constructions
 import Mathlib.Analysis.Analytic.Uniqueness
 import Mathlib.Analysis.Normed.Ring.InfiniteSum
 import Mathlib.GroupTheory.Perm.DomMulAct
+import TauCeti.Algebra.BigOperators.Pi
 import TauCeti.Algebra.MvPolynomial.Funext
 import TauCeti.Algebra.Order.Antidiag.Pi
 import TauCeti.Algebra.Order.Antidiag.Prod
@@ -299,8 +301,9 @@ theorem summable_norm_shift_single {ι F : Type*} [Fintype ι] [DecidableEq ι] 
   field_simp
 
 /-- A multi-index series whose coefficients vanish below degree `m` in coordinate `i` is
-obtained by multiplying the series with shifted coefficients by the monomial `y i ^ m`.
-The identity only needs a commutative monoid of scalars acting continuously on the target. -/
+obtained by multiplying the series with shifted coefficients by the monomial `y i ^ m`. If the
+shifted series sums to `a`, then the original series sums to `y i ^ m • a`. The commutative monoid
+of scalars acts distributively on the target, and each fixed-scalar map is continuous. -/
 theorem hasSum_monomial_shift_single {𝕜 ι F : Type*} [CommMonoid 𝕜] [Fintype ι]
     [DecidableEq ι] [AddCommMonoid F] [TopologicalSpace F] [DistribMulAction 𝕜 F]
     [ContinuousConstSMul 𝕜 F] {c : (ι → ℕ) → F}
@@ -308,22 +311,18 @@ theorem hasSum_monomial_shift_single {𝕜 ι F : Type*} [CommMonoid 𝕜] [Fint
     (h : HasSum (fun α : ι → ℕ ↦ (∏ j, y j ^ α j) • c (α + Pi.single i m)) a) :
     HasSum (fun α : ι → ℕ ↦ (∏ j, y j ^ α j) • c α) (y i ^ m • a) := by
   let s : ι → ℕ := Pi.single i m
+  have hrange : Set.range (fun β : ι → ℕ ↦ β + s) = Set.Ici s := by
+    simpa using (Set.range_add_eq_image_Ici (f := id) (k := s))
   refine (Function.Injective.hasSum_iff (add_left_injective s) (fun α hα ↦ ?_)).1 ?_
   · have hi : α i < m := by
       by_contra! hmi
+      rw [hrange] at hα
       apply hα
-      have hs : s ≤ α := by
-        intro j
-        by_cases hj : j = i <;> simp [s, hj, Pi.single_eq_of_ne, hmi]
-      obtain ⟨β, hβ⟩ := exists_add_of_le hs
-      exact ⟨β, (add_comm β s).trans hβ.symm⟩
+      intro j
+      by_cases hj : j = i <;> simp [s, hj, Pi.single_eq_of_ne, hmi]
     simp [hzero α hi]
   · refine (h.const_smul (y i ^ m)).congr_fun fun α ↦ ?_
-    have hs : ∏ j, y j ^ s j = y i ^ m := by
-      convert Fintype.prod_pi_mulSingle' i (y i ^ m) using 1
-      congr 1
-      ext j
-      by_cases hj : j = i <;> simp [s, hj, Pi.single_eq_of_ne, Pi.mulSingle_eq_of_ne]
+    have hs : ∏ j, y j ^ s j = y i ^ m := Fintype.prod_pow_pi_single y i m
     simp only [Function.comp_apply, Pi.add_apply, pow_add, prod_mul_distrib, hs, smul_smul]
     rw [mul_comm]
 

@@ -394,25 +394,25 @@ theorem _root_.AnalyticAt.mvTaylorCoeff_comp_update_same [DecidableEq ι]
   · intro y hy
     have hnorm : ‖Function.update y i 0‖ ≤ ‖y‖ := by
       apply (pi_norm_le_iff_of_nonneg (norm_nonneg _)).2
-      change Pi.map (fun _ ↦ norm) (Function.update y i 0) ≤ fun _ ↦ ‖y‖
-      rw [Pi.map_update]
-      exact update_le_iff.2 ⟨by simp, fun j _ ↦ norm_le_pi_norm y j⟩
+      intro j
+      by_cases hj : j = i
+      · simp [hj]
+      · simpa [hj] using norm_le_pi_norm y j
     have hupdate : x + Function.update y i 0 = Function.update (x + y) i (x i) := by
       simpa only [add_zero, Function.update_eq_self] using
         (Function.update_add x y i (x i) 0).symm
     rw [← hupdate]
     refine (hsum _ (hnorm.trans_lt hy)).congr_fun fun β ↦ ?_
     symm
-    change (∏ j, Pi.map (fun j (v : 𝕜) ↦ v ^ β j) (Function.update y i 0) j) •
-      mvTaylorCoeff f x β = _
-    rw [Pi.map_update, prod_update_of_mem (mem_univ i)]
+    simp_rw [← Pi.map_apply (fun j (v : 𝕜) ↦ v ^ β j)]
+    rw [Pi.map_update]
     by_cases hβ : β i = 0
-    · rw [ite_eq_left hβ]
-      congr 1
-      conv_rhs => rw [← Function.update_eq_self i (fun j ↦ y j ^ β j)]
-      rw [prod_update_of_mem (mem_univ i)]
+    · have hpow : (0 : 𝕜) ^ β i = Pi.map (fun j (v : 𝕜) ↦ v ^ β j) y i := by
+        simp [hβ]
+      rw [hpow, Function.update_eq_self]
+      simp [hβ, Pi.map_apply]
+    · rw [prod_update_of_mem (mem_univ i)]
       simp [hβ]
-    · simp [hβ]
 
 /-- **Monomial with a vector coefficient**: at the origin, `z ↦ (∏ i, z i ^ τ i) • v` has Taylor
 coefficient `v` at `τ` and `0` at every other multi-index. -/

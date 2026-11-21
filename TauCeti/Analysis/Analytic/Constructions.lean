@@ -106,6 +106,7 @@ theorem TauCeti.analyticWithinAt_update_iff {s : Set E} :
   exact forall_congr' fun j ↦ forall_congr' fun hj ↦ by simp only [Function.update_of_ne hj]
 
 /-- Updating one component of a finite analytic family by an analytic function is analytic. -/
+@[fun_prop]
 theorem AnalyticAt.update (hf : AnalyticAt 𝕜 f x) (hg : AnalyticAt 𝕜 g x) :
     AnalyticAt 𝕜 (fun z ↦ Function.update (f z) i (g z)) x := by
   rw [← analyticWithinAt_univ, TauCeti.analyticWithinAt_update_iff]
