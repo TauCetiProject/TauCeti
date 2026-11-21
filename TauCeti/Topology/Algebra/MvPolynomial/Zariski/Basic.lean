@@ -17,7 +17,6 @@ import Mathlib.Algebra.MvPolynomial.Funext
 import Mathlib.Algebra.MvPolynomial.Monad
 import Mathlib.Algebra.Polynomial.Roots
 import Mathlib.RingTheory.Polynomial.Basic
-import Mathlib.RingTheory.Spectrum.Prime.Noetherian
 
 /-!
 # The polynomial Zariski topology on coordinate spaces
@@ -33,8 +32,8 @@ basis, the closed sets are exactly the common zero loci of sets of polynomials, 
 is induced from the Zariski topology on `PrimeSpectrum (MvPolynomial σ R)` along evaluation
 kernels. Polynomial maps between coordinate spaces — and in particular coordinate reindexings,
 linear maps, and affine maps from finite-dimensional coordinate spaces — are continuous, so
-invertible linear and affine coordinate changes are homeomorphisms. Over a Noetherian integral
-domain `R`, Hilbert's basis theorem therefore makes it Noetherian whenever `σ` is finite.
+invertible linear and affine coordinate changes are homeomorphisms. Over a Noetherian commutative
+ring `R`, Hilbert's basis theorem therefore makes it Noetherian whenever `σ` is finite.
 
 Over an infinite integral domain `R`, `MvPolynomial.funext` shows that two nonempty basic opens
 always meet, making `σ → R` an irreducible space for every `σ` (including empty `σ`, where the
@@ -59,9 +58,9 @@ complement is open.
   `LinearEquiv.isHomeomorph_polynomialTopology`, and
   `AffineEquiv.isHomeomorph_polynomialTopology`: continuity of polynomial, linear, and
   affine maps and invariance under invertible linear and affine coordinate changes.
-* `TauCeti.polynomialTopology_eq_induced_primeSpectrum` and
+* `TauCeti.polynomialTopology_eq_induced_evalPrimeSpectrum` and
   `TauCeti.noetherianSpace_polynomialTopology`: comparison with `PrimeSpectrum` and Noetherianity
-  for finite `σ` over a Noetherian integral domain.
+  for finite `σ` over a Noetherian commutative ring.
 * `TauCeti.irreducibleSpace_polynomialTopology` and
   `TauCeti.isIrreducible_univ_polynomialTopology`: irreducibility of `σ → R` over an infinite
   integral domain.
@@ -120,7 +119,9 @@ theorem isClosed_polynomialTopology_eval_eq_zero (p : MvPolynomial σ R) :
 
 end MvPolynomial
 
-namespace TauCeti
+namespace Set
+
+open TauCeti
 
 /-- The common zero locus of any set of polynomials is closed in the polynomial Zariski
 topology. -/
@@ -133,6 +134,10 @@ theorem isClosed_polynomialTopology_setOf_forall_eval_eq_zero (S : Set (MvPolyno
     simp
   rw [hEq]
   exact isClosed_biInter fun p _ ↦ p.isClosed_polynomialTopology_eval_eq_zero
+
+end Set
+
+namespace TauCeti
 
 /-- A map whose coordinates are given by multivariate polynomials is continuous for the polynomial
 Zariski topologies. -/
@@ -260,73 +265,6 @@ end TauCeti
 
 end CommSemiring
 
-section Basis
-
-variable {σ R : Type*} [CommSemiring R] [Nontrivial R] [NoZeroDivisors R]
-
-namespace TauCeti
-
-/-- Over a nontrivial commutative semiring without zero divisors, the polynomial nonvanishing loci
-form a topological basis of the polynomial Zariski topology. -/
-theorem isTopologicalBasis_polynomialTopology :
-    @TopologicalSpace.IsTopologicalBasis (σ → R) (polynomialTopology σ R)
-      {U | ∃ p : MvPolynomial σ R, U = {x | MvPolynomial.eval x p ≠ 0}} := by
-  let := polynomialTopology σ R
-  have huniv : (univ : Set (σ → R)) ∈
-      {U | ∃ p : MvPolynomial σ R, U = {x | MvPolynomial.eval x p ≠ 0}} :=
-    ⟨1, by ext x; simp⟩
-  have hbasis := TopologicalSpace.isTopologicalBasis_of_subbasis_of_inter
-    (polynomialTopology_eq_generateFrom σ R) (by
-      rintro _ ⟨p, rfl⟩ _ ⟨q, rfl⟩
-      refine ⟨p * q, ?_⟩
-      ext x
-      simp [map_mul])
-  rwa [insert_eq_of_mem huniv] at hbasis
-
-/-- A set is open in the polynomial Zariski topology exactly when each of its points lies in a
-polynomial nonvanishing locus contained in the set. -/
-theorem isOpen_polynomialTopology_iff {U : Set (σ → R)} :
-    IsOpen[polynomialTopology σ R] U ↔
-      ∀ x ∈ U, ∃ p : MvPolynomial σ R,
-        MvPolynomial.eval x p ≠ 0 ∧ {y : σ → R | MvPolynomial.eval y p ≠ 0} ⊆ U := by
-  let := polynomialTopology σ R
-  rw [isTopologicalBasis_polynomialTopology.isOpen_iff]
-  constructor
-  · intro h x hx
-    obtain ⟨V, ⟨p, rfl⟩, hxp, hVU⟩ := h x hx
-    exact ⟨p, hxp, hVU⟩
-  · intro h x hx
-    obtain ⟨p, hxp, hpU⟩ := h x hx
-    exact ⟨{y | MvPolynomial.eval y p ≠ 0}, ⟨p, rfl⟩, hxp, hpU⟩
-
-/-- A set is closed in the polynomial Zariski topology exactly when it is the common zero locus of
-a set of multivariate polynomials. -/
-theorem isClosed_polynomialTopology_iff {F : Set (σ → R)} :
-    IsClosed[polynomialTopology σ R] F ↔
-      ∃ S : Set (MvPolynomial σ R), F = {x : σ → R | ∀ p ∈ S, MvPolynomial.eval x p = 0} := by
-  let := polynomialTopology σ R
-  constructor
-  · intro hF
-    refine ⟨{p : MvPolynomial σ R | ∀ x ∈ F, MvPolynomial.eval x p = 0}, ?_⟩
-    ext x
-    constructor
-    · intro hx p hp
-      exact hp x hx
-    · intro hx
-      by_contra hxF
-      obtain ⟨p, hxp, hpFc⟩ := isOpen_polynomialTopology_iff.mp hF.isOpen_compl x hxF
-      have hp : p ∈ {p : MvPolynomial σ R | ∀ y ∈ F, MvPolynomial.eval y p = 0} := by
-        intro y hy
-        by_contra hyp
-        exact hpFc hyp hy
-      exact hxp (hx p hp)
-  · rintro ⟨S, rfl⟩
-    exact isClosed_polynomialTopology_setOf_forall_eval_eq_zero S
-
-end TauCeti
-
-end Basis
-
 section PrimeSpectrum
 
 variable {σ R : Type*} [CommSemiring R] [Nontrivial R] [NoZeroDivisors R]
@@ -365,7 +303,7 @@ namespace TauCeti
 /-- Over a nontrivial commutative semiring without zero divisors, the polynomial Zariski topology
 is induced from the Zariski topology on `PrimeSpectrum (MvPolynomial σ R)` along evaluation
 kernels. -/
-theorem polynomialTopology_eq_induced_primeSpectrum :
+theorem polynomialTopology_eq_induced_evalPrimeSpectrum :
     polynomialTopology σ R =
       TopologicalSpace.induced (evalPrimeSpectrum (σ := σ) (R := R))
         PrimeSpectrum.zariskiTopology := by
@@ -384,6 +322,61 @@ end TauCeti
 
 end PrimeSpectrum
 
+section Basis
+
+variable {σ R : Type*} [CommSemiring R] [Nontrivial R] [NoZeroDivisors R]
+
+namespace TauCeti
+
+/-- Over a nontrivial commutative semiring without zero divisors, the polynomial nonvanishing loci
+form a topological basis of the polynomial Zariski topology. -/
+theorem isTopologicalBasis_polynomialTopology :
+    @TopologicalSpace.IsTopologicalBasis (σ → R) (polynomialTopology σ R)
+      {U | ∃ p : MvPolynomial σ R, U = {x | MvPolynomial.eval x p ≠ 0}} := by
+  have hEq : (evalPrimeSpectrum (σ := σ) (R := R) ⁻¹' ·) ''
+      Set.range (fun p : MvPolynomial σ R ↦ (PrimeSpectrum.basicOpen p : Set _)) =
+      {U | ∃ p : MvPolynomial σ R, U = {x | MvPolynomial.eval x p ≠ 0}} := by
+    ext U
+    simp only [mem_image, mem_range, exists_exists_eq_and,
+      MvPolynomial.evalPrimeSpectrum_preimage_basicOpen, mem_ofPred_eq]
+    simp only [eq_comm]
+  rw [← hEq, polynomialTopology_eq_induced_evalPrimeSpectrum]
+  exact (PrimeSpectrum.isTopologicalBasis_basic_opens (R := MvPolynomial σ R)).induced
+    (evalPrimeSpectrum (σ := σ) (R := R))
+
+/-- A set is open in the polynomial Zariski topology exactly when each of its points lies in a
+polynomial nonvanishing locus contained in the set. -/
+theorem isOpen_polynomialTopology_iff {U : Set (σ → R)} :
+    IsOpen[polynomialTopology σ R] U ↔
+      ∀ x ∈ U, ∃ p : MvPolynomial σ R,
+        MvPolynomial.eval x p ≠ 0 ∧ {y : σ → R | MvPolynomial.eval y p ≠ 0} ⊆ U := by
+  let := polynomialTopology σ R
+  rw [isTopologicalBasis_polynomialTopology.isOpen_iff]
+  constructor
+  · intro h x hx
+    obtain ⟨V, ⟨p, rfl⟩, hxp, hVU⟩ := h x hx
+    exact ⟨p, hxp, hVU⟩
+  · intro h x hx
+    obtain ⟨p, hxp, hpU⟩ := h x hx
+    exact ⟨{y | MvPolynomial.eval y p ≠ 0}, ⟨p, rfl⟩, hxp, hpU⟩
+
+/-- A set is closed in the polynomial Zariski topology exactly when it is the common zero locus of
+a set of multivariate polynomials. -/
+theorem isClosed_polynomialTopology_iff {F : Set (σ → R)} :
+    IsClosed[polynomialTopology σ R] F ↔
+      ∃ S : Set (MvPolynomial σ R), F = {x : σ → R | ∀ p ∈ S, MvPolynomial.eval x p = 0} := by
+  rw [polynomialTopology_eq_induced_evalPrimeSpectrum, isClosed_induced_iff]
+  simp_rw [PrimeSpectrum.isClosed_iff_zeroLocus]
+  constructor
+  · rintro ⟨_, ⟨S, rfl⟩, rfl⟩
+    exact ⟨S, by ext x; simp [Set.subset_def]⟩
+  · rintro ⟨S, rfl⟩
+    exact ⟨_, ⟨S, rfl⟩, by ext x; simp [Set.subset_def]⟩
+
+end TauCeti
+
+end Basis
+
 section CommRing
 
 variable {σ τ R : Type*} [CommRing R]
@@ -396,12 +389,7 @@ open TauCeti
 topologies. -/
 theorem continuous_polynomialTopology [Finite σ] (f : (σ → R) →ᵃ[R] (τ → R)) :
     @Continuous _ _ (polynomialTopology σ R) (polynomialTopology τ R) f := by
-  have hfun : (f : (σ → R) → (τ → R)) = fun x ↦ f.linear x + f 0 := by
-    ext x j
-    have h := f.map_vadd (0 : σ → R) x
-    simp only [vadd_eq_add, add_zero] at h
-    exact congrFun h j
-  rw [hfun]
+  rw [f.decomp]
   exact f.linear.continuous_polynomialTopology_add_const (f 0)
 
 end AffineMap
@@ -446,28 +434,60 @@ theorem t1Space_polynomialTopology : @T1Space (σ → R) (polynomialTopology σ 
   exact isClosed_iInter fun i ↦
     (MvPolynomial.X i - MvPolynomial.C (a i)).isClosed_polynomialTopology_eval_eq_zero
 
+/-- Over a Noetherian commutative ring, the polynomial Zariski topology on a finite coordinate
+space is Noetherian. -/
+theorem noetherianSpace_polynomialTopology [Finite σ] [IsNoetherianRing R] :
+    @TopologicalSpace.NoetherianSpace (σ → R) (polynomialTopology σ R) := by
+  let := polynomialTopology σ R
+  rw [TopologicalSpace.noetherianSpace_iff_isCompact]
+  intro s
+  refine isCompact_generateFrom (polynomialTopology_eq_generateFrom σ R) fun P hP hs ↦ ?_
+  let T : Set (MvPolynomial σ R) := {p | {x : σ → R | MvPolynomial.eval x p ≠ 0} ∈ P}
+  obtain ⟨T₀, hT₀T, hspan⟩ := (Submodule.fg_span_iff_fg_span_finset_subset T).mp
+    (IsNoetherian.noetherian (Ideal.span T))
+  refine ⟨(fun p : MvPolynomial σ R ↦ {x : σ → R | MvPolynomial.eval x p ≠ 0}) '' (T₀ : Set _),
+    ?_, (T₀.finite_toSet.image _), ?_⟩
+  · rintro _ ⟨p, hp, rfl⟩
+    exact hT₀T hp
+  · intro x hx
+    obtain ⟨U, hUP, hxU⟩ := mem_sUnion.mp (hs hx)
+    obtain ⟨p, rfl⟩ := hP hUP
+    have hpT : p ∈ Ideal.span (T₀ : Set (MvPolynomial σ R)) := by
+      rw [← show Ideal.span T = Ideal.span (T₀ : Set (MvPolynomial σ R)) from hspan]
+      exact Ideal.subset_span hUP
+    by_contra hxQ
+    have hker : (T₀ : Set (MvPolynomial σ R)) ⊆ RingHom.ker (MvPolynomial.eval x) := by
+      intro q hq
+      by_contra hqx
+      exact hxQ (mem_sUnion.mpr ⟨{y | MvPolynomial.eval y q ≠ 0}, ⟨q, hq, rfl⟩, hqx⟩)
+    have hp0 : p ∈ RingHom.ker (MvPolynomial.eval x) := Ideal.span_le.mpr hker hpT
+    exact hxU hp0
+
 end TauCeti
 
 end CommRing
 
 section Domain
 
-variable {σ τ R : Type*} [CommRing R] [IsDomain R]
-
-namespace TauCeti
-
-/-- Over a Noetherian integral domain, the polynomial Zariski topology on a finite coordinate space
-is Noetherian. -/
-theorem noetherianSpace_polynomialTopology [Finite σ] [IsNoetherianRing R] :
-    @TopologicalSpace.NoetherianSpace (σ → R) (polynomialTopology σ R) := by
-  let := polynomialTopology σ R
-  have hind : IsInducing (evalPrimeSpectrum (σ := σ) (R := R)) :=
-    ⟨polynomialTopology_eq_induced_primeSpectrum (σ := σ) (R := R)⟩
-  exact hind.noetherianSpace
+variable {σ R : Type*} [CommRing R] [IsDomain R]
 
 section Infinite
 
 variable [Infinite R]
+
+namespace MvPolynomial
+
+/-- Over an infinite integral domain, a multivariate polynomial has a nonempty nonvanishing locus
+iff it is nonzero. -/
+theorem nonempty_eval_ne_zero_iff (p : MvPolynomial σ R) :
+    {x : σ → R | MvPolynomial.eval x p ≠ 0}.Nonempty ↔ p ≠ 0 := by
+  refine not_iff_not.mp ?_
+  simp only [Set.not_nonempty_iff_eq_empty, eq_empty_iff_forall_notMem, mem_ofPred_eq, not_not]
+  exact ⟨fun h ↦ MvPolynomial.funext fun x ↦ by simpa using h x, fun hp x ↦ by simp [hp]⟩
+
+end MvPolynomial
+
+namespace TauCeti
 
 /-- Over an infinite integral domain, the polynomial Zariski topology on any coordinate space is
 irreducible. -/
@@ -483,13 +503,8 @@ theorem irreducibleSpace_polynomialTopology :
     have hq : q ≠ 0 := by
       rintro rfl
       simp at hyq
-    have hpq : p * q ≠ 0 := mul_ne_zero hp hq
-    have hne : ∃ z : σ → R, MvPolynomial.eval z (p * q) ≠ 0 := by
-      by_contra h
-      push Not at h
-      exact hpq (MvPolynomial.funext fun z ↦ by simpa using h z)
-    obtain ⟨z, hz⟩ := hne
-    rw [map_mul, mul_ne_zero_iff] at hz
+    obtain ⟨z, hz⟩ := (p * q).nonempty_eval_ne_zero_iff.mpr (mul_ne_zero hp hq)
+    rw [mem_ofPred_eq, map_mul, mul_ne_zero_iff] at hz
     exact ⟨z, mem_univ z, hpU hz.1, hqV hz.2⟩⟩
   exact ⟨⟨0⟩⟩
 
@@ -501,13 +516,7 @@ theorem isIrreducible_univ_polynomialTopology :
   have := irreducibleSpace_polynomialTopology (σ := σ) (R := R)
   exact IrreducibleSpace.isIrreducible_univ (σ → R)
 
-end Infinite
-
 end TauCeti
-
-section Infinite
-
-variable [Infinite R]
 
 namespace MvPolynomial
 
@@ -519,48 +528,10 @@ theorem dense_polynomialTopology_eval_ne_zero_iff (p : MvPolynomial σ R) :
     @Dense (σ → R) (polynomialTopology σ R) {x : σ → R | MvPolynomial.eval x p ≠ 0} ↔ p ≠ 0 := by
   let := polynomialTopology σ R
   have := irreducibleSpace_polynomialTopology (σ := σ) (R := R)
-  constructor
-  · intro hd hp
-    obtain ⟨x, hx⟩ := hd.nonempty
-    simp [hp] at hx
-  · intro hp
-    have hne : {x : σ → R | MvPolynomial.eval x p ≠ 0}.Nonempty := by
-      by_contra h
-      rw [Set.not_nonempty_iff_eq_empty] at h
-      exact hp (MvPolynomial.funext fun x ↦ by
-        by_contra hxp
-        have hx : x ∈ ({y : σ → R | MvPolynomial.eval y p ≠ 0} : Set (σ → R)) := hxp
-        rw [h] at hx
-        exact hx)
-    exact (p.isOpen_polynomialTopology_eval_ne_zero).dense hne
+  exact ⟨fun hd ↦ p.nonempty_eval_ne_zero_iff.mp hd.nonempty,
+    fun hp ↦ (p.isOpen_polynomialTopology_eval_ne_zero).dense (p.nonempty_eval_ne_zero_iff.mpr hp)⟩
 
 end MvPolynomial
-
-namespace TauCeti
-
-/-- A surjective linear map out of a finite coordinate space over an infinite integral domain pulls
-back every nonempty polynomial-Zariski open set to a dense set. -/
-theorem dense_preimage_polynomialTopology_of_surjective_linearMap [Finite σ]
-    {f : (σ → R) →ₗ[R] (τ → R)} (hf : Function.Surjective f) {U : Set (τ → R)}
-    (hU : IsOpen[polynomialTopology τ R] U) (hne : U.Nonempty) :
-    @Dense (σ → R) (polynomialTopology σ R) (f ⁻¹' U) := by
-  let := polynomialTopology σ R
-  let := polynomialTopology τ R
-  have := irreducibleSpace_polynomialTopology (σ := σ) (R := R)
-  exact ((f.continuous_polynomialTopology).isOpen_preimage U hU).dense (hne.preimage hf)
-
-/-- A surjective affine map out of a finite coordinate space over an infinite integral domain pulls
-back every nonempty polynomial-Zariski open set to a dense set. -/
-theorem dense_preimage_polynomialTopology_of_surjective_affineMap [Finite σ]
-    {f : (σ → R) →ᵃ[R] (τ → R)} (hf : Function.Surjective f) {U : Set (τ → R)}
-    (hU : IsOpen[polynomialTopology τ R] U) (hne : U.Nonempty) :
-    @Dense (σ → R) (polynomialTopology σ R) (f ⁻¹' U) := by
-  let := polynomialTopology σ R
-  let := polynomialTopology τ R
-  have := irreducibleSpace_polynomialTopology (σ := σ) (R := R)
-  exact ((f.continuous_polynomialTopology).isOpen_preimage U hU).dense (hne.preimage hf)
-
-end TauCeti
 
 end Infinite
 

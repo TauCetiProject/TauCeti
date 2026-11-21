@@ -14,6 +14,7 @@ import Mathlib.Algebra.MvPolynomial.Monad
 import Mathlib.Algebra.MvPolynomial.Rename
 import Mathlib.Data.Fin.Tuple.Basic
 import Mathlib.LinearAlgebra.Basis.VectorSpace
+import Mathlib.LinearAlgebra.Dual.Basis
 import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
 import Mathlib.LinearAlgebra.Pi
 
@@ -33,15 +34,16 @@ coordinate space `σ → R`, it coincides with `TauCeti.polynomialTopology σ R`
 every finite basis `b : Module.Basis ι R M`, it agrees with the topology transported from
 `TauCeti.polynomialTopology ι R` along `b.equivFun`, proving independence of the choice of basis.
 Over a commutative ring without zero divisors, `modulePolynomialTopology R R` is the cofinite
-topology; over a Noetherian integral domain, every finite free module is a Noetherian space.
+topology; over a Noetherian commutative ring, every finitely generated module is a Noetherian space.
 
 Over an infinite integral domain `R`, restricting to the affine line `t ↦ (1 - t) • x + t • y`
 shows that every `R`-module `M` is an irreducible space (without any finiteness or basis
-hypothesis). Surjective linear and affine maps therefore pull back nonempty open sets to open
-dense sets, and every nonempty affine subspace `A : AffineSubspace R M` is irreducible, so any
-open set meeting `A` cuts out an open dense subset of `A`. Over a field `k`, every injective
-linear map — in particular every submodule inclusion — is a topological embedding for
-`modulePolynomialTopology`, and every nonempty affine subspace is homeomorphic to its direction.
+hypothesis). Continuous maps with dense range — and in particular surjective linear and affine
+maps — therefore pull back nonempty open sets to dense sets, and every nonempty affine subspace
+`A : AffineSubspace R M` is irreducible, so any open set meeting `A` cuts out an open dense subset
+of `A`. Over a field `k`, every injective linear map — in particular every submodule inclusion — is
+a topological embedding for `modulePolynomialTopology`, and every nonempty affine subspace is
+homeomorphic to its direction.
 
 ## Main definitions
 
@@ -64,8 +66,9 @@ linear map — in particular every submodule inclusion — is a topological embe
   polynomial Zariski topology and independence of basis.
 * `TauCeti.modulePolynomialTopology_self_eq_cofinite` and
   `TauCeti.noetherianSpace_modulePolynomialTopology`: cofinite characterization in rank one and
-  Noetherianity for finite free modules over Noetherian domains.
+  Noetherianity for finitely generated modules over Noetherian commutative rings.
 * `TauCeti.irreducibleSpace_modulePolynomialTopology`,
+  `TauCeti.dense_preimage_modulePolynomialTopology_of_denseRange`,
   `TauCeti.dense_preimage_modulePolynomialTopology_of_surjective_linearMap`,
   `AffineSubspace.isIrreducible_modulePolynomialTopology`, and
   `AffineSubspace.dense_preimage_val_modulePolynomialTopology`: irreducibility of modules
@@ -117,19 +120,9 @@ polynomial Zariski topology on `M`. -/
 theorem isOpen_modulePolynomialTopology_eval_ne_zero {ι : Type*}
     (φ : ι → Module.Dual R M) (p : MvPolynomial ι R) :
     IsOpen[modulePolynomialTopology R M] {x : M | MvPolynomial.eval (fun i ↦ φ i x) p ≠ 0} := by
-  obtain ⟨s, q, rfl⟩ := MvPolynomial.exists_finset_rename p
-  let e := Fintype.equivFin {i // i ∈ s}
-  have hEq : {x : M | MvPolynomial.eval (fun i ↦ φ i x) (MvPolynomial.rename Subtype.val q) ≠ 0} =
-      {x : M | MvPolynomial.eval (fun k ↦ φ (e.symm k).1 x) (MvPolynomial.rename e q) ≠ 0} := by
-    ext x
-    simp only [mem_ofPred_eq, MvPolynomial.eval_rename]
-    have hcomp : ((fun k ↦ φ (e.symm k).1 x) ∘ e) = ((fun i ↦ φ i x) ∘ Subtype.val) := by
-      ext i
-      simp
-    rw [hcomp]
-  rw [hEq]
-  exact TopologicalSpace.isOpen_generateFrom_of_mem
-    ⟨Fintype.card {i // i ∈ s}, fun k ↦ φ (e.symm k).1, MvPolynomial.rename e q, rfl⟩
+  obtain ⟨n, f, _, q, rfl⟩ := p.exists_fin_rename
+  simp only [MvPolynomial.eval_rename, Function.comp_def]
+  exact TopologicalSpace.isOpen_generateFrom_of_mem ⟨n, φ ∘ f, q, rfl⟩
 
 /-- Every polynomial zero locus in an arbitrary family of linear functionals is closed in the
 polynomial Zariski topology on `M`. -/
@@ -182,21 +175,6 @@ end LinearMap
 
 namespace TauCeti
 
-/-- A linear map admitting a linear left inverse induces the polynomial Zariski topology on its
-domain. -/
-theorem induced_modulePolynomialTopology_of_leftInverse {f : M →ₗ[R] N} {g : N →ₗ[R] M}
-    (hfg : g.comp f = LinearMap.id) :
-    TopologicalSpace.induced f (modulePolynomialTopology R N) = modulePolynomialTopology R M := by
-  apply le_antisymm
-  · have hcomp := induced_mono (g := (f : M → N))
-      (continuous_iff_le_induced.mp g.continuous_modulePolynomialTopology)
-    rw [induced_compose] at hcomp
-    have hid : (g : N → M) ∘ (f : M → N) = id := by
-      ext x
-      exact LinearMap.congr_fun hfg x
-    simpa only [hid, induced_id] using hcomp
-  · exact continuous_iff_le_induced.mp f.continuous_modulePolynomialTopology
-
 /-- A linear map admitting a linear left inverse is a topological embedding for the polynomial
 Zariski topologies. -/
 theorem isEmbedding_modulePolynomialTopology_of_leftInverse {f : M →ₗ[R] N} {g : N →ₗ[R] M}
@@ -204,8 +182,17 @@ theorem isEmbedding_modulePolynomialTopology_of_leftInverse {f : M →ₗ[R] N} 
     @IsEmbedding _ _ (modulePolynomialTopology R M) (modulePolynomialTopology R N) f := by
   let := modulePolynomialTopology R M
   let := modulePolynomialTopology R N
-  refine ⟨⟨(induced_modulePolynomialTopology_of_leftInverse hfg).symm⟩, ?_⟩
-  exact Function.LeftInverse.injective fun x ↦ LinearMap.congr_fun hfg x
+  exact Function.LeftInverse.isEmbedding (LinearMap.congr_fun hfg)
+    g.continuous_modulePolynomialTopology f.continuous_modulePolynomialTopology
+
+/-- A linear map admitting a linear left inverse induces the polynomial Zariski topology on its
+domain. -/
+theorem induced_modulePolynomialTopology_of_leftInverse {f : M →ₗ[R] N} {g : N →ₗ[R] M}
+    (hfg : g.comp f = LinearMap.id) :
+    TopologicalSpace.induced f (modulePolynomialTopology R N) = modulePolynomialTopology R M := by
+  let := modulePolynomialTopology R M
+  let := modulePolynomialTopology R N
+  exact (isEmbedding_modulePolynomialTopology_of_leftInverse hfg).isInducing.eq_induced.symm
 
 end TauCeti
 
@@ -395,13 +382,8 @@ theorem t1Space_modulePolynomialTopology {M : Type*} [AddCommMonoid M] [Module R
     [Module.Free R M] :
     @T1Space M (modulePolynomialTopology R M) := by
   refine t1Space_modulePolynomialTopology_of_dual_separating fun x y hxy ↦ ?_
-  let b := Module.Free.chooseBasis R M
-  have hrepr : b.repr x ≠ b.repr y := fun h ↦ hxy (b.repr.injective h)
-  obtain ⟨i, hi⟩ : ∃ i, b.repr x i ≠ b.repr y i := by
-    by_contra h
-    push Not at h
-    exact hrepr (Finsupp.ext h)
-  exact ⟨b.coord i, hi⟩
+  by_contra! h
+  exact hxy ((Module.Free.chooseBasis R M).eval_injective (LinearMap.ext h))
 
 end TauCeti
 
@@ -414,11 +396,7 @@ Zariski topologies. -/
 theorem continuous_modulePolynomialTopology {M N : Type*} [AddCommGroup M] [Module R M]
     [AddCommGroup N] [Module R N] (f : M →ᵃ[R] N) :
     @Continuous _ _ (modulePolynomialTopology R M) (modulePolynomialTopology R N) f := by
-  have hfun : (f : M → N) = fun x ↦ f.linear x + f 0 := by
-    ext x
-    have h := f.map_vadd (0 : M) x
-    simpa only [vadd_eq_add, add_zero] using h
-  rw [hfun]
+  rw [f.decomp]
   exact f.linear.continuous_modulePolynomialTopology_add_const (f 0)
 
 end AffineMap
@@ -503,29 +481,27 @@ theorem continuous_modulePolynomialTopology_line {M : Type*} [AddCommMonoid M] [
     (x y : M) :
     @Continuous R M (modulePolynomialTopology R R) (modulePolynomialTopology R M)
       (fun t ↦ (1 - t) • x + t • y) := by
-  let := modulePolynomialTopology R R
-  let := modulePolynomialTopology R M
-  rw [modulePolynomialTopology_eq_generateFrom R M, continuous_generateFrom_iff]
-  rintro U ⟨n, φ, p, rfl⟩
-  let q : Fin n → MvPolynomial (Fin 1) R :=
-    fun i ↦ (1 - MvPolynomial.X 0) * MvPolynomial.C (φ i x) +
-      MvPolynomial.X 0 * MvPolynomial.C (φ i y)
-  have hpre : (fun t : R ↦ (1 - t) • x + t • y) ⁻¹'
-      {z : M | MvPolynomial.eval (fun i ↦ φ i z) p ≠ 0} =
-      {t : R | MvPolynomial.eval (fun _ : Fin 1 ↦ (LinearMap.id : Module.Dual R R) t)
-        (MvPolynomial.bind₁ q p) ≠ 0} := by
+  have hfun : (fun t : R ↦ (1 - t) • x + t • y) =
+      fun t : R ↦ (LinearMap.id : R →ₗ[R] R).smulRight (y + (-1 : R) • x) t + x := by
     ext t
-    simp only [mem_preimage, mem_ofPred_eq, map_add, map_smul, smul_eq_mul]
-    have hbind : MvPolynomial.eval (fun _ : Fin 1 ↦ t) (MvPolynomial.bind₁ q p) =
-        MvPolynomial.eval
-          (fun i ↦ MvPolynomial.eval (fun _ : Fin 1 ↦ t) (q i)) p :=
-      MvPolynomial.eval₂Hom_bind₁ (RingHom.id R) (fun _ : Fin 1 ↦ t) q p
-    have hfun : (fun i ↦ MvPolynomial.eval (fun _ : Fin 1 ↦ t) (q i)) =
-        fun i ↦ (1 - t) * φ i x + t * φ i y := funext fun i ↦ by simp [q]
-    simp only [LinearMap.id_apply, hbind, hfun]
-  rw [hpre]
-  exact isOpen_modulePolynomialTopology_eval_ne_zero (fun _ : Fin 1 ↦ LinearMap.id)
-    (MvPolynomial.bind₁ q p)
+    simp [sub_eq_add_neg, add_smul, smul_add, smul_smul, add_comm, add_left_comm]
+  rw [hfun]
+  exact ((LinearMap.id : R →ₗ[R] R).smulRight
+    (y + (-1 : R) • x)).continuous_modulePolynomialTopology_add_const x
+
+/-- Over a Noetherian commutative ring, every finitely generated module is a Noetherian space in
+the polynomial Zariski topology. -/
+theorem noetherianSpace_modulePolynomialTopology {M : Type*} [IsNoetherianRing R] [AddCommMonoid M]
+    [Module R M] [Module.Finite R M] :
+    @TopologicalSpace.NoetherianSpace M (modulePolynomialTopology R M) := by
+  let := modulePolynomialTopology R M
+  obtain ⟨n, f, hf⟩ := Module.Finite.exists_fin' R M
+  let := modulePolynomialTopology R (Fin n → R)
+  have : @TopologicalSpace.NoetherianSpace (Fin n → R)
+      (modulePolynomialTopology R (Fin n → R)) := by
+    rw [modulePolynomialTopology_pi]
+    exact noetherianSpace_polynomialTopology
+  exact TopologicalSpace.noetherianSpace_of_surjective f f.continuous_modulePolynomialTopology hf
 
 end TauCeti
 
@@ -536,18 +512,6 @@ section Domain
 variable {R : Type*} [CommRing R] [IsDomain R]
 
 namespace TauCeti
-
-/-- Over a Noetherian integral domain, every finite free module is a Noetherian space in the
-polynomial Zariski topology. -/
-theorem noetherianSpace_modulePolynomialTopology {M : Type*} [IsNoetherianRing R] [AddCommMonoid M]
-    [Module R M] [Module.Free R M] [Module.Finite R M] :
-    @TopologicalSpace.NoetherianSpace M (modulePolynomialTopology R M) := by
-  let := modulePolynomialTopology R M
-  let b := Module.Free.chooseBasis R M
-  let := polynomialTopology (Module.Free.ChooseBasisIndex R M) R
-  have := noetherianSpace_polynomialTopology (σ := Module.Free.ChooseBasisIndex R M) (R := R)
-  have hind : IsInducing b.equivFun := ⟨b.modulePolynomialTopology_eq_induced⟩
-  exact hind.noetherianSpace
 
 section Infinite
 
@@ -579,6 +543,17 @@ theorem isIrreducible_univ_modulePolynomialTopology {M : Type*} [AddCommMonoid M
   have := irreducibleSpace_modulePolynomialTopology (R := R) (M := M)
   exact IrreducibleSpace.isIrreducible_univ M
 
+/-- A continuous map out of a module over an infinite integral domain with dense range pulls back
+every nonempty open set to a dense set. -/
+theorem dense_preimage_modulePolynomialTopology_of_denseRange {M X : Type*} [AddCommMonoid M]
+    [Module R M] [τX : TopologicalSpace X] {f : M → X}
+    (hf : @Continuous _ _ (modulePolynomialTopology R M) τX f) (hdr : DenseRange f)
+    {U : Set X} (hU : IsOpen U) (hne : U.Nonempty) :
+    @Dense M (modulePolynomialTopology R M) (f ⁻¹' U) := by
+  let := modulePolynomialTopology R M
+  have := irreducibleSpace_modulePolynomialTopology (R := R) (M := M)
+  exact (hU.preimage hf).dense (hdr.exists_mem_open hU hne)
+
 /-- A surjective linear map between modules over an infinite integral domain pulls back every
 nonempty polynomial-Zariski open set to a dense set. -/
 theorem dense_preimage_modulePolynomialTopology_of_surjective_linearMap {M N : Type*}
@@ -586,10 +561,9 @@ theorem dense_preimage_modulePolynomialTopology_of_surjective_linearMap {M N : T
     {f : M →ₗ[R] N} (hf : Function.Surjective f) {U : Set N}
     (hU : IsOpen[modulePolynomialTopology R N] U) (hne : U.Nonempty) :
     @Dense M (modulePolynomialTopology R M) (f ⁻¹' U) := by
-  let := modulePolynomialTopology R M
   let := modulePolynomialTopology R N
-  have := irreducibleSpace_modulePolynomialTopology (R := R) (M := M)
-  exact (f.continuous_modulePolynomialTopology.isOpen_preimage U hU).dense (hne.preimage hf)
+  exact dense_preimage_modulePolynomialTopology_of_denseRange
+    f.continuous_modulePolynomialTopology hf.denseRange hU hne
 
 /-- A surjective affine map between modules over an infinite integral domain pulls back every
 nonempty polynomial-Zariski open set to a dense set. -/
@@ -598,10 +572,9 @@ theorem dense_preimage_modulePolynomialTopology_of_surjective_affineMap {M N : T
     {f : M →ᵃ[R] N} (hf : Function.Surjective f) {U : Set N}
     (hU : IsOpen[modulePolynomialTopology R N] U) (hne : U.Nonempty) :
     @Dense M (modulePolynomialTopology R M) (f ⁻¹' U) := by
-  let := modulePolynomialTopology R M
   let := modulePolynomialTopology R N
-  have := irreducibleSpace_modulePolynomialTopology (R := R) (M := M)
-  exact (f.continuous_modulePolynomialTopology.isOpen_preimage U hU).dense (hne.preimage hf)
+  exact dense_preimage_modulePolynomialTopology_of_denseRange
+    f.continuous_modulePolynomialTopology hf.denseRange hU hne
 
 end Infinite
 
@@ -623,20 +596,16 @@ theorem isIrreducible_modulePolynomialTopology {M : Type*} [AddCommGroup M]
   let := modulePolynomialTopology R A.direction
   let := modulePolynomialTopology R M
   obtain ⟨p₀, hp₀⟩ := hne
-  let ψ : A.direction → M := fun v ↦ (v : M) + p₀
-  have hcont : Continuous ψ :=
+  have : Nonempty A := ⟨⟨p₀, hp₀⟩⟩
+  let e : A.direction ≃ᵃ[R] A := AffineEquiv.vaddConst R (⟨p₀, hp₀⟩ : A)
+  have hcont : Continuous (Subtype.val ∘ e) :=
     A.direction.subtype.continuous_modulePolynomialTopology_add_const p₀
-  have himg : ψ '' Set.univ = (A : Set M) := by
-    ext x
-    simp only [image_univ, mem_range, SetLike.mem_coe, ψ]
-    constructor
-    · rintro ⟨v, rfl⟩
-      exact AffineSubspace.vadd_mem_of_mem_direction v.2 hp₀
-    · intro hx
-      refine ⟨⟨x - p₀, AffineSubspace.vsub_mem_direction hx hp₀⟩, sub_add_cancel x p₀⟩
+  have himg : (Subtype.val ∘ e) '' Set.univ = (A : Set M) := by
+    rw [Set.image_comp, Set.image_univ_of_surjective e.surjective, Set.image_univ,
+      Subtype.range_coe]
   rw [← himg]
-  exact (isIrreducible_univ_modulePolynomialTopology (R := R) (M := A.direction)).image ψ
-    hcont.continuousOn
+  exact (isIrreducible_univ_modulePolynomialTopology (R := R) (M := A.direction)).image
+    (Subtype.val ∘ e) hcont.continuousOn
 
 /-- Every nonempty affine subspace of a module over an infinite integral domain is an irreducible
 space in the subspace polynomial Zariski topology. -/
@@ -684,14 +653,6 @@ variable {k V W : Type*} [Field k] [AddCommGroup V] [Module k V] [AddCommGroup W
 
 namespace TauCeti
 
-/-- Over a field, every injective linear map induces the polynomial Zariski topology on its
-domain. -/
-theorem induced_modulePolynomialTopology_of_injective_linearMap {f : V →ₗ[k] W}
-    (hf : Function.Injective f) :
-    TopologicalSpace.induced f (modulePolynomialTopology k W) = modulePolynomialTopology k V := by
-  obtain ⟨g, hgf⟩ := f.exists_leftInverse_of_injective (LinearMap.ker_eq_bot.mpr hf)
-  exact induced_modulePolynomialTopology_of_leftInverse hgf
-
 /-- Over a field, every injective linear map is a topological embedding for the polynomial Zariski
 topologies. -/
 theorem isEmbedding_modulePolynomialTopology_of_injective_linearMap {f : V →ₗ[k] W}
@@ -699,6 +660,15 @@ theorem isEmbedding_modulePolynomialTopology_of_injective_linearMap {f : V →�
     @IsEmbedding _ _ (modulePolynomialTopology k V) (modulePolynomialTopology k W) f := by
   obtain ⟨g, hgf⟩ := f.exists_leftInverse_of_injective (LinearMap.ker_eq_bot.mpr hf)
   exact isEmbedding_modulePolynomialTopology_of_leftInverse hgf
+
+/-- Over a field, every injective linear map induces the polynomial Zariski topology on its
+domain. -/
+theorem induced_modulePolynomialTopology_of_injective_linearMap {f : V →ₗ[k] W}
+    (hf : Function.Injective f) :
+    TopologicalSpace.induced f (modulePolynomialTopology k W) = modulePolynomialTopology k V := by
+  let := modulePolynomialTopology k V
+  let := modulePolynomialTopology k W
+  exact (isEmbedding_modulePolynomialTopology_of_injective_linearMap hf).isInducing.eq_induced.symm
 
 end TauCeti
 
