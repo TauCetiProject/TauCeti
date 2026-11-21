@@ -399,7 +399,7 @@ private theorem eNormalForm_ofPath {a b : DoubledQuiver G} (p : Path a b) :
   | @cons b b' q e ih =>
     rw [← ofArrow_mul_ofPath, map_mul, signlessPreprojectiveMk_ofArrow_eq_signlessArrow,
       Path.length_cons]
-    exact eNormalForm_cons k hn ((vertexEquiv G).symm a).2 ((vertexEquiv G).symm b).2
+    exact eNormalForm_cons k hn ((vertexEquiv G).symm a).isLt ((vertexEquiv G).symm b).isLt
       ((diagramGraph_E_adj _ _).1 e.down) ih
 
 /-- **Long paths vanish once long words at the branch node do.** If every product of `M`
@@ -411,16 +411,16 @@ private theorem signlessPreprojectiveMk_ofPath_eq_zero_of_eSpan_pow {M : ℕ}
     signlessPreprojectiveMk k _ (ofPath x) = 0 := by
   obtain ⟨a, b, p⟩ := x
   dsimp only at hx
-  have hb := ((vertexEquiv G).symm b).2
+  have hb := ((vertexEquiv G).symm b).isLt
   rcases eNormalForm_ofPath k hn p with ⟨c, m, s, r, ε, -, hL, hs, hr, -⟩ |
     ⟨c, c', h, t, s₀, ε, w, hw, hs₀, hh, hL, hz⟩
   · -- A valley word on an arm is too short.
-    have := lt_of_eArm_lt hn (hs ▸ ((vertexEquiv G).symm a).2)
+    have := lt_of_eArm_lt hn (hs ▸ ((vertexEquiv G).symm a).isLt)
     have := lt_of_eArm_lt hn (hr ▸ hb)
     omega
   · -- Otherwise the word at the branch node is long enough to vanish.
     have := lt_of_eArm_lt hn (hh ▸ hb)
-    have := lt_of_eArm_lt hn (hs₀ ▸ ((vertexEquiv G).symm a).2)
+    have := lt_of_eArm_lt hn (hs₀ ▸ ((vertexEquiv G).symm a).isLt)
     obtain ⟨e, rfl⟩ : ∃ e, t = M + e := ⟨t - M, by omega⟩
     rw [pow_add, hM, Submodule.bot_mul, Submodule.mem_bot] at hw
     rw [hz, hw, mul_zero, zero_mul]
@@ -642,7 +642,7 @@ instance instFiniteDimensionalPreprojectiveAlgebraE7
       (preprojectiveAlgebra k (OrientedQuiver (diagramGraph DynkinType.E7.cartanMatrix) o)) := by
   let c := fun i : OrientedQuiver (diagramGraph DynkinType.E7.cartanMatrix) o =>
     e7Coloring ((OrientedQuiver.vertexEquiv _ o).symm i)
-  have hc : ∀ ⦃i j⦄ (_ : i ⟶ j), c i ≠ c j := fun _ _ a => e7Coloring.valid a.1
+  have hc : ∀ ⦃i j⦄ (_ : i ⟶ j), c i ≠ c j := fun _ _ a => e7Coloring.valid a.val
   exact ((orientationSignlessPreprojectiveAlgebraEquiv o k).trans
     (symmetrifySignlessPreprojectiveAlgebraEquiv k hc)).toLinearEquiv.finiteDimensional
 

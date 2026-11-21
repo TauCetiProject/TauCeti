@@ -63,7 +63,7 @@ variable {K F : Type*} [Field K] [Field F] [Algebra K F] [IsGalois K F]
 and `v` an infinite place of `K`. Any two absolute values of `F` lying over `v` are conjugate
 under `F ≃ₐ[K] F`. -/
 theorem exists_smul_eq_of_liesOver_infinitePlace (v : InfinitePlace K)
-    (w₁ w₂ : AbsoluteValue F ℝ) [w₁.LiesOver v.1] [w₂.LiesOver v.1] :
+    (w₁ w₂ : AbsoluteValue F ℝ) [w₁.LiesOver v.val] [w₂.LiesOver v.val] :
     ∃ σ : F ≃ₐ[K] F, σ • w₁ = w₂ := by
   obtain ⟨u₁, _, rfl⟩ := (existsUnique_infinitePlace_of_liesOver v w₁).exists
   obtain ⟨u₂, _, rfl⟩ := (existsUnique_infinitePlace_of_liesOver v w₂).exists
@@ -74,8 +74,8 @@ theorem exists_smul_eq_of_liesOver_infinitePlace (v : InfinitePlace K)
 /-- Let `F / K` be a Galois field extension and `v` an infinite place of `K`. The absolute values
 of `F` lying over `v` form a single orbit of `F ≃ₐ[K] F`. -/
 theorem setOf_liesOver_infinitePlace_eq_orbit (v : InfinitePlace K)
-    (w : AbsoluteValue F ℝ) [w.LiesOver v.1] :
-    {w' : AbsoluteValue F ℝ | w'.LiesOver v.1} = MulAction.orbit (F ≃ₐ[K] F) w := by
+    (w : AbsoluteValue F ℝ) [w.LiesOver v.val] :
+    {w' : AbsoluteValue F ℝ | w'.LiesOver v.val} = MulAction.orbit (F ≃ₐ[K] F) w := by
   ext w'
   simp only [Set.mem_ofPred_eq, MulAction.mem_orbit_iff]
   refine ⟨fun _ ↦ exists_smul_eq_of_liesOver_infinitePlace v w w', ?_⟩
@@ -92,7 +92,7 @@ variable {K F : Type*} [Field K] [Field F] [NumberField K] [NumberField F] [Alge
 fields and `v` a finite place of `K`. Any two absolute values of `F` lying over `v` are conjugate
 under `F ≃ₐ[K] F`. -/
 theorem exists_smul_eq_of_liesOver_finitePlace [IsGalois K F] (v : FinitePlace K)
-    (w₁ w₂ : AbsoluteValue F ℝ) [w₁.LiesOver v.1] [w₂.LiesOver v.1] :
+    (w₁ w₂ : AbsoluteValue F ℝ) [w₁.LiesOver v.val] [w₂.LiesOver v.val] :
     ∃ σ : F ≃ₐ[K] F, σ • w₁ = w₂ := by
   obtain ⟨𝔭, rfl⟩ : ∃ 𝔭, FinitePlace.mk 𝔭 = v := ⟨_, v.mk_maximalIdeal⟩
   obtain ⟨𝔓₁, h𝔓₁, hw₁⟩ := exists_liesOver_forall_mem_iff_apply_lt_one (𝔭 := 𝔭) (w := w₁)
@@ -108,8 +108,8 @@ theorem exists_smul_eq_of_liesOver_finitePlace [IsGalois K F] (v : FinitePlace K
 /-- Let `F / K` be a Galois extension of number fields and `v` a finite place of `K`. The absolute
 values of `F` lying over `v` form a single orbit of `F ≃ₐ[K] F`. -/
 theorem setOf_liesOver_finitePlace_eq_orbit [IsGalois K F] (v : FinitePlace K)
-    (w : AbsoluteValue F ℝ) [w.LiesOver v.1] :
-    {w' : AbsoluteValue F ℝ | w'.LiesOver v.1} = MulAction.orbit (F ≃ₐ[K] F) w := by
+    (w : AbsoluteValue F ℝ) [w.LiesOver v.val] :
+    {w' : AbsoluteValue F ℝ | w'.LiesOver v.val} = MulAction.orbit (F ≃ₐ[K] F) w := by
   ext w'
   simp only [Set.mem_ofPred_eq, MulAction.mem_orbit_iff]
   refine ⟨fun _ ↦ exists_smul_eq_of_liesOver_finitePlace v w w', ?_⟩

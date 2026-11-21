@@ -40,7 +40,7 @@ theorem eval_bijective_of_mem_iff_apply_eq_neg {σ : α → α} (hfix : ∀ a', 
   refine ⟨fun g g' hg ↦ Subtype.ext (funext fun a' ↦ ?_), fun r ↦ ?_⟩
   · rcases hcases a' with rfl | rfl
     · exact hg
-    · rw [(hS g).1 g.2, (hS g').1 g'.2]
+    · rw [(hS g).1 g.property, (hS g').1 g'.property]
       exact congrArg Neg.neg hg
   · refine ⟨⟨fun a' ↦ if a' = a then r else -r, (hS _).2 fun a' ↦ ?_⟩, by simp⟩
     rcases hcases a' with rfl | rfl

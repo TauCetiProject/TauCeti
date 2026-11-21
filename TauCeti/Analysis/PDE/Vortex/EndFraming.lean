@@ -81,7 +81,7 @@ theorem tendsto_sectionValue_amplitudeField_mul_inv_phase_iff_log
   have he : (fun z ↦ Real.exp (u z + P.natDegree * Real.log ‖z‖)) =ᶠ[cocompact ℂ]
       (fun z ↦ Real.exp (u z) * ‖z‖ ^ P.natDegree) := by
     filter_upwards [hz] with z hz
-    rw [Real.exp_add, Real.exp_nat_mul, Real.exp_log (norm_pos_iff.mpr hz)]
+    rw [Real.exp_add, Real.exp_natCast_mul, Real.exp_log (norm_pos_iff.mpr hz)]
   constructor
   · intro h
     have hh := (Real.continuousAt_log one_ne_zero).tendsto.comp

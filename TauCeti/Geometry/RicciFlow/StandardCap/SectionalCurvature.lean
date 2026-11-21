@@ -47,7 +47,7 @@ theorem sectionalCurvature_puncturedMetric_nonneg
   have hmetric : hf.puncturedMetric (n := n) V =
       (((riemannianMetricVectorSpace ℝ).ofLE (m := ∞) le_top).restrictOpenTangentSpace
         standardCapRadialDomain).warpedProdTangentSpace (fun r ↦ f r)
-        (hf.contDiff.contMDiff.comp contMDiff_subtype_val)
+        (hf.contDiff.contMDiff.comp contMDiff_subtypeVal)
         (fun r ↦ (hf.apply_pos r.property).ne')
         ((sphereRoundMetric (E := V) (n := n)).ofLE (m := ∞) le_top) := by
     ext q a b
@@ -55,7 +55,7 @@ theorem sectionalCurvature_puncturedMetric_nonneg
   rw [hmetric]
   apply sectionalCurvature_warpedProdTangentSpace_real_sphere_nonneg (n := n)
     standardCapRadialDomain
-    (hf.contDiff.contMDiff.comp contMDiff_subtype_val)
+    (hf.contDiff.contMDiff.comp contMDiff_subtypeVal)
     (fun r ↦ (hf.apply_pos r.property).ne') p
   · exact mul_nonpos_of_nonneg_of_nonpos (hf.apply_nonneg p.1.property.le)
       (hf.deriv_deriv_nonpos p.1.property.le)

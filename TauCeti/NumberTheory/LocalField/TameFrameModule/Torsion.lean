@@ -409,8 +409,8 @@ theorem nonempty_tameFrameModule_torsion_linearEquiv_of_relationMap_injective
         (mem_of_smul_toQuotient_eq_zero hp hinj hJ hc hy₀ hgen' hz))
   refine ⟨(LinearEquiv.ofBijective (φ.codRestrict _ hφT)
     ⟨fun z z' h ↦ hinjφ (congrArg Subtype.val h), fun s ↦ ?_⟩).symm⟩
-  obtain ⟨y, hy⟩ := (tameFrameRelations R G σ τ a b).surjective_toQuotient s.1
-  obtain ⟨d, hd⟩ := exists_smul_toQuotient_eq hp hJ hc hy₀ hgen' (hy ▸ s.2)
+  obtain ⟨y, hy⟩ := (tameFrameRelations R G σ τ a b).surjective_toQuotient s.val
+  obtain ⟨d, hd⟩ := exists_smul_toQuotient_eq hp hJ hc hy₀ hgen' (hy ▸ s.property)
   exact ⟨Submodule.Quotient.mk (single 1 d), Subtype.ext (hd.trans hy)⟩
 
 end Torsion

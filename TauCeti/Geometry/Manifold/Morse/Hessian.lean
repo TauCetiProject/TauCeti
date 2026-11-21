@@ -581,7 +581,7 @@ theorem mvfderiv_mvfderiv_extend_eq_criticalHessian [IsManifold I 2 M]
     (hf.contDiffAt_comp_extChartAt_symm.fderiv_right
       (by norm_num : (1 : ℕ∞ω) + 1 ≤ 2)).differentiableAt one_ne_zero
   -- Near `x`, `df(extend w)` is the coordinate expression of `df` along `w`, read in the chart.
-  rw [(Manifold.mvfderiv_extend_eventuallyEq (hf.of_le one_le_two) w).mvfderiv_eq,
+  rw [(Manifold.mvfderiv_extend_eventuallyEq f BoundarylessManifold.isInteriorPoint w).mvfderiv_eq,
     mvfderiv_comp_apply_of_differentiableAt (hDg.clm_apply (differentiableAt_const w))
       (mdifferentiableAt_extChartAt (mem_chart_source H x)),
     mvfderiv_apply_of_eventuallyEq_extChartAt EventuallyEq.rfl, criticalHessian_def]
@@ -911,11 +911,10 @@ theorem criticalHessian_trivializationAt_symm_apply [IsManifold I 2 M] {x₀ : M
   rw [criticalHessian_apply_eq_of_mem_maximalAtlas (IsManifold.chart_mem_maximalAtlas x₀) hx hf
     hcrit, ← extChartAt, hcoord, hcoord]
 
-/-- **The Morse index is lower semicontinuous on the critical set.** On a boundaryless
-finite-dimensional manifold, if `f` is `C²` at `x`, then at every critical point of `f` near `x`
-the Morse index is at least the Morse index at `x`. The point `x` need not be critical, nor
-nondegenerate. -/
-theorem eventually_manifoldMorseIndex_le [FiniteDimensional ℝ E] [IsManifold I 2 M]
+/-- **The Morse index is lower semicontinuous on the critical set.** On a boundaryless manifold,
+if `f` is `C²` at `x`, then at every critical point of `f` near `x` the Morse index is at least
+the Morse index at `x`. The point `x` need not be critical, nor nondegenerate. -/
+theorem eventually_manifoldMorseIndex_le [IsManifold I 2 M]
     (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) :
     ∀ᶠ y in 𝓝 x, y ∈ criticalPoints I f → manifoldMorseIndex I f x ≤ manifoldMorseIndex I f y := by
   -- Both indices are read in the preferred chart at `x`: at `x` by definition, and at nearby

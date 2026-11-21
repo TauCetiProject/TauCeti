@@ -207,7 +207,7 @@ theorem sameCycle_iff_mem_orbit_zpowers {x y : α} :
   · rintro ⟨i, hi⟩
     exact ⟨⟨σ ^ i, Subgroup.zpow_mem_zpowers σ i⟩, hi⟩
   · rintro ⟨g, hg⟩
-    obtain ⟨i, hi⟩ := Subgroup.mem_zpowers_iff.mp g.2
+    obtain ⟨i, hi⟩ := Subgroup.mem_zpowers_iff.mp g.property
     exact ⟨i, by rw [hi]; exact hg⟩
 
 /-- The number `Set.ncard {y | σ.SameCycle x y}` of points on the cycle of `σ` through `x` is
@@ -454,8 +454,8 @@ def invariantColouringEquiv (π : Perm α) :
     (Quotient (SameCycle.setoid π) → σ) ≃ {f : α → σ // f ∘ π = f} where
   toFun g := ⟨fun a => g (Quotient.mk _ a), funext fun a =>
     congrArg g (Quotient.sound (sameCycle_apply_left.mpr (SameCycle.refl π a)))⟩
-  invFun f := Quotient.lift f.1 fun _ _ h =>
-    SameCycle.apply_eq_of_apply_eq h (congrFun f.2)
+  invFun f := Quotient.lift f.val fun _ _ h =>
+    SameCycle.apply_eq_of_apply_eq h (congrFun f.property)
   left_inv _ := funext fun c => Quotient.inductionOn c fun _ => rfl
   right_inv _ := rfl
 
@@ -471,7 +471,7 @@ the colouring at any point in that cycle. -/
 @[simp]
 theorem invariantColouringEquiv_symm_apply (π : Perm α)
     (f : {f : α → σ // f ∘ π = f}) (a : α) :
-    (invariantColouringEquiv π).symm f (Quotient.mk _ a) = f.1 a :=
+    (invariantColouringEquiv π).symm f (Quotient.mk _ a) = f.val a :=
   congrFun (congrArg Subtype.val ((invariantColouringEquiv π).apply_symm_apply f)) a
 
 /-- Precomposing a function with a permutation preserves the cardinality of each fiber. -/
@@ -638,9 +638,9 @@ theorem exists_perm_apply_eq_of_eq_iff {ι β γ : Type*} [Finite ι] (c : β �
     ∃ σ : Equiv.Perm β, (∀ x, c (σ x) = c x) ∧ ∀ i, σ (a i) = b i := by
   classical
   -- The entries of `b`, read as a function of the entries of `a`.
-  let g : Set.range a → β := fun x => b x.2.choose
+  let g : Set.range a → β := fun x => b x.property.choose
   have hg (i : ι) : g ⟨a i, i, rfl⟩ = b i :=
-    (hab _ _).mp (⟨a i, i, rfl⟩ : Set.range a).2.choose_spec
+    (hab _ _).mp (⟨a i, i, rfl⟩ : Set.range a).property.choose_spec
   have hg_inj : Function.Injective g := by
     rintro ⟨_, i, rfl⟩ ⟨_, j, rfl⟩ hij
     rw [hg, hg] at hij
@@ -650,10 +650,10 @@ theorem exists_perm_apply_eq_of_eq_iff {ι β γ : Type*} [Finite ι] (c : β �
     rw [hg, hc]
   -- Extend `g` separately on each fiber of `c`.
   have hfiber (k : γ) : ∃ τ : Equiv.Perm {y // c y = k},
-      ∀ x : {x : Set.range a // c x = k}, (τ ⟨x.1, x.2⟩ : β) = g x.1 := by
+      ∀ x : {x : Set.range a // c x = k}, (τ ⟨x.val, x.property⟩ : β) = g x.val := by
     obtain ⟨τ, hτ⟩ := Equiv.Perm.exists_extending_pair
-      (fun x : {x : Set.range a // c x = k} => (⟨x.1, x.2⟩ : {y // c y = k}))
-      (fun x => ⟨g x.1, (hcg x.1).trans x.2⟩)
+      (fun x : {x : Set.range a // c x = k} => (⟨x.val, x.property⟩ : {y // c y = k}))
+      (fun x => ⟨g x.val, (hcg x.val).trans x.property⟩)
       (fun _ _ hxy => Subtype.ext (Subtype.ext (Subtype.mk.inj hxy)))
       (fun _ _ hxy => Subtype.ext (hg_inj (Subtype.mk.inj hxy)))
     exact ⟨τ, fun x => congrArg Subtype.val (hτ x)⟩

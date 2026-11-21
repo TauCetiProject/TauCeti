@@ -586,7 +586,7 @@ theorem pairing_e6SimpleIndex (i j : Fin 6) :
 
 /-- Identify the support of the type-`E₆` base with its six Bourbaki-numbered nodes. -/
 private def e6BaseEquiv : e6SimplyConnectedBase.support ≃ Fin 6 where
-  toFun x := ⟨(x : Fin 72), mem_e6SimpleSupport.mp x.2⟩
+  toFun x := ⟨(x : Fin 72), mem_e6SimpleSupport.mp x.property⟩
   invFun i := ⟨e6SimpleIndex i, mem_e6SimpleSupport.mpr (by simp)⟩
   left_inv x := by
     apply Subtype.ext

@@ -217,7 +217,8 @@ theorem mem_range_unitaryTorusDualInclusion_iff {ν : Dual ℝ (unitaryLieAlgebr
   · intro h
     obtain ⟨H, rfl⟩ := (unitaryTracePairingEquiv ι).surjective ν
     rw [unitaryTracePairingEquiv_apply] at h ⊢
-    have hH : (H : Matrix ι ι ℂ).IsHermitian := (H.2 : IsSelfAdjoint (H : Matrix ι ι ℂ)).isHermitian
+    have hH : (H : Matrix ι ι ℂ).IsHermitian := (H.property : IsSelfAdjoint
+        (H : Matrix ι ι ℂ)).isHermitian
     have hdiag : (H : Matrix ι ι ℂ).IsDiag := isDiag_of_forall_commute_unitaryTorusHom fun z =>
       mem_stabilizer_unitaryCoadjointRepresentation_unitaryTracePairing_iff.mp
         (Representation.mem_stabilizer.mpr (h _ (unitaryTorusHom_mem_unitaryTorus z)))

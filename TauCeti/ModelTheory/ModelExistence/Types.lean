@@ -162,7 +162,7 @@ theorem exists_isolatingFormula (h : (realizedTypes (L := L) M n).Countable) (a 
       χ.Realize Empty.elim b ↔ infinitaryType (L := L) M b = infinitaryType M a := by
   -- For each realized type `q`, a formula of the type of `a` that separates it from `q`.
   have hsep : ∀ q : realizedTypes (L := L) M n, ∃ θ ∈ infinitaryType M a,
-      q.1 ≠ infinitaryType M a → θ ∉ q.1 := by
+      q.val ≠ infinitaryType M a → θ ∉ q.val := by
     rintro ⟨_, b, rfl⟩
     by_cases hb : infinitaryType (L := L) M b = infinitaryType M a
     · exact ⟨⊤, BoundedFormulaInf.realize_top.2 trivial, fun hne => (hne hb).elim⟩

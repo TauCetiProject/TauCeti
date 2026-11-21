@@ -142,7 +142,7 @@ private theorem apply_le_of_forall_mem_moreauYosidaResolvent (hφ : LowerSemicon
   set M : ℕ → ℕ := fun k ↦ ⌈s / τ k⌉₊
   set N : ℕ → ℕ := fun k ↦ ⌈t / τ k⌉₊
   set L : ℕ → ℕ := fun k ↦ N k - M k
-  have hMN k : M k ≤ N k := Nat.ceil_mono (div_le_div_of_nonneg_right hst.le (τ k).2)
+  have hMN k : M k ≤ N k := Nat.ceil_mono (div_le_div_of_nonneg_right hst.le (τ k).property)
   have hL : Tendsto (fun k ↦ (L k : ℝ) * τ k) atTop (𝓝 (t - s)) :=
     tendsto_ceil_div_sub_ceil_div_mul hs hst.le (.of_forall fun k ↦ NNReal.coe_pos.2 (hτ k)) hτr
   -- The regularization terms `C k` of the discrete estimates converge to that of the limit.
@@ -163,7 +163,7 @@ private theorem apply_le_of_forall_mem_moreauYosidaResolvent (hφ : LowerSemicon
       simpa using (hτr.const_mul m).const_add 1
     exact (this.eventually (lt_mem_nhds one_pos)).mono fun _ h ↦ h.le
   have hLpos : ∀ᶠ k in atTop, 0 < L k := (hL.eventually (lt_mem_nhds (sub_pos.2 hst))).mono
-    fun k hk ↦ Nat.cast_pos.1 (pos_of_mul_pos_left hk (τ k).2)
+    fun k hk ↦ Nat.cast_pos.1 (pos_of_mul_pos_left hk (τ k).property)
   have hreg : ∀ᶠ k in atTop, φ (U k (N k)) ≤ φ y + ((C k : ℝ) : EReal) := by
     filter_upwards [hconv, hmτ, hLpos] with k hk hmτk hLk
     have := hk.apply_le (hτ k) hmτk (U := fun n ↦ U k (M k + n)) (fun n ↦ hU k (M k + n)) hy hLk

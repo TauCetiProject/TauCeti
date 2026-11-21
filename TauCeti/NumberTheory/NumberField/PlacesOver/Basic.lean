@@ -43,10 +43,10 @@ variable {K F : Type*} [Field K] [Field F] [NumberField K] [Algebra K F]
 /-- No absolute value on `F` can simultaneously lie over an infinite place and a finite place of
 `K`. -/
 theorem not_liesOver_infinitePlace_and_finitePlace (v : InfinitePlace K) (u : FinitePlace K)
-    (w : AbsoluteValue F ℝ) : ¬ (w.LiesOver v.1 ∧ w.LiesOver u.1) := by
+    (w : AbsoluteValue F ℝ) : ¬ (w.LiesOver v.val ∧ w.LiesOver u.val) := by
   rintro ⟨_, _⟩
   exact v.val_ne_finitePlace_val u
-    ((AbsoluteValue.LiesOver.under_eq w v.1).symm.trans (AbsoluteValue.LiesOver.under_eq w u.1))
+    ((AbsoluteValue.LiesOver.under_eq w v.val).symm.trans (AbsoluteValue.LiesOver.under_eq w u.val))
 
 /-- An absolute value `w` on `F` lying over an infinite or finite place `v` of `K` is
 nonarchimedean if and only if `v` is a finite place. -/

@@ -101,7 +101,7 @@ variable
 theorem contMDiffAt_parametrization {f : M → F} {p : radiusDomain × M} {k : ℕ∞ω}
     (hf : ContMDiffAt I 𝓘(ℝ, F) k f p.2) :
     ContMDiffAt ((𝓘(ℝ)).prod I) 𝓘(ℝ, F) k (parametrization f) p := by
-  exact ((contMDiff_subtype_val p.1).comp p contMDiffAt_fst).smul
+  exact ((contMDiff_subtypeVal p.1).comp p contMDiffAt_fst).smul
     (hf.comp p contMDiffAt_snd)
 
 /-- Smoothness of a cone parametrization follows from smoothness of its link. -/
@@ -116,7 +116,7 @@ theorem mdifferentiableAt_parametrization {f : M → F} {p : radiusDomain × M}
     (hf : MDifferentiableAt I 𝓘(ℝ, F) f p.2) :
     MDifferentiableAt ((𝓘(ℝ)).prod I) 𝓘(ℝ, F) (parametrization f) p := by
   unfold parametrization
-  exact ((contMDiff_subtype_val.comp contMDiff_fst).mdifferentiableAt one_ne_zero).smul
+  exact ((contMDiff_subtypeVal.comp contMDiff_fst).mdifferentiableAt one_ne_zero).smul
     (hf.comp p mdifferentiableAt_snd)
 
 /-- Differentiability of a cone parametrization follows from differentiability of its link. -/
@@ -135,7 +135,7 @@ theorem mvfderiv_parametrization_apply {f : M → F} {p : radiusDomain × M}
           (tangentSpaceProdEquiv p v).1 • f p.2 := by
   have hr : MDifferentiableAt ((𝓘(ℝ)).prod I) 𝓘(ℝ)
       (fun q : radiusDomain × M ↦ (q.1 : ℝ)) p := by
-    exact (contMDiff_subtype_val.comp contMDiff_fst).mdifferentiableAt one_ne_zero
+    exact (contMDiff_subtypeVal.comp contMDiff_fst).mdifferentiableAt one_ne_zero
   have hF : MDifferentiableAt ((𝓘(ℝ)).prod I) 𝓘(ℝ, F)
       (fun q : radiusDomain × M ↦ f q.2) p := hf.comp p mdifferentiableAt_snd
   have h₁ := TauCeti.mvfderiv_comp_fst_apply (Subtype.val : radiusDomain → ℝ) p v

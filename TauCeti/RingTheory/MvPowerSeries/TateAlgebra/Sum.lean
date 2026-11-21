@@ -93,7 +93,7 @@ theorem isRestricted_coeff_sumAlgEquiv {f : MvPowerSeries (σ ⊕ τ) R}
 /-- The coefficients of a restricted series in `σ ⊕ τ`, as a formal series in `σ` over the
 restricted series in `τ`. -/
 private noncomputable def sumSlices (f : Flat) : MvPowerSeries σ Inner :=
-  fun a ↦ ⟨coeff a (sumAlgEquiv R σ τ f), isRestricted_coeff_sumAlgEquiv f.2 a⟩
+  fun a ↦ ⟨coeff a (sumAlgEquiv R σ τ f), isRestricted_coeff_sumAlgEquiv f.property a⟩
 
 omit [∀ j, Fact (0 < d j)] in
 private theorem coe_coeff_sumSlices (f : Flat) (a : σ →₀ ℕ) :
@@ -118,7 +118,7 @@ private theorem isRestricted_sumSlices (f : Flat) : IsRestricted c (sumSlices f)
   have h := IsRestrictedFamily.mem_addSubgroup.mp
     (IsRestrictedFamily.Gauss.sumAddEquiv
       (IsRestrictedFamily.Gauss.ofAddSubgroup
-        (IsRestrictedFamily.subringLinearEquiv f))).toAddSubgroup.2
+        (IsRestrictedFamily.subringLinearEquiv f))).toAddSubgroup.property
   apply (isRestrictedFamily_coeff_iff _).mp
   apply isRestrictedFamily_iff.mpr
   simpa only [norm_sumAddEquiv_subringLinearEquiv] using isRestrictedFamily_iff.mp h
@@ -132,7 +132,7 @@ private theorem isRestricted_sumAlgEquiv_symm (g : Iter) :
       (coeff s (g : MvPowerSeries σ Inner)))
   have ha : IsRestrictedFamily c a := by
     apply isRestrictedFamily_iff.mpr
-    have hg := (isRestrictedFamily_coeff_iff _).mpr (IsRestricted.mem_subring.mp g.2)
+    have hg := (isRestrictedFamily_coeff_iff _).mpr (IsRestricted.mem_subring.mp g.property)
     simpa only [a, IsRestrictedFamily.Gauss.norm_subringLinearEquiv] using
       isRestrictedFamily_iff.mp hg
   have h := IsRestrictedFamily.Gauss.isRestrictedFamily_flatten

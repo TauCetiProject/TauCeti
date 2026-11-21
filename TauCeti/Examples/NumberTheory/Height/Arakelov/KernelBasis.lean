@@ -118,7 +118,8 @@ example :
       fun ⟨c, hc⟩ ↦ ⟨![c, 0, 0], hc ▸ by ext i; fin_cases i <;>
         simp [A, mulVec, dotProduct, Fin.sum_univ_three]⟩⟩
   have hrank : A.rank = 1 := by
-    rw [Matrix.rank, hrange, finrank_span_singleton (fun h ↦ one_ne_zero (congrFun h 0))]
+    rw [← Matrix.finrank_range_mulVecLin, hrange,
+      finrank_span_singleton (fun h ↦ one_ne_zero (congrFun h 0))]
   obtain ⟨b, hb_li, hb_span, _, _⟩ := A.exists_linearIndependent_mulVec_eq_zero_prod_absHeight_le
   exact ⟨⟨x, hx0, funext fun i ↦ by simpa [mulVec, dotProduct] using hAx i,
     by norm_num at hxle; linarith⟩, he₃, by simp [hrank], ⟨b, hb_li, hb_span⟩⟩
@@ -135,8 +136,8 @@ example :
     exact ⟨fun h ↦ funext fun i ↦ by fin_cases i; simpa [A, mulVec, dotProduct] using congrFun h 0,
       fun h ↦ by simp [h]⟩
   have h := A.mulVecLin.finrank_range_add_finrank_ker
-  rw [← Matrix.rank, hker, finrank_bot, add_zero, Module.finrank_fintype_fun_eq_card,
-    Fintype.card_fin] at h
+  rw [Matrix.finrank_range_mulVecLin, hker, finrank_bot, add_zero,
+    Module.finrank_fintype_fun_eq_card, Fintype.card_fin] at h
   exact ⟨hker, by simp [h]⟩
 
 /-! ### 4. Gaussian-rational kernel basis over `ℚ(i)` -/
@@ -181,8 +182,8 @@ example (K : Type*) [Field K] [NumberField K] {θ : 𝓞 K}
     · fin_cases i; simp [A, mulVec, dotProduct, Fin.sum_univ_two]; ring
   have hnull : Fintype.card (Fin 2) - A.rank = 1 := by
     have h := A.mulVecLin.finrank_range_add_finrank_ker
-    rw [← Matrix.rank, hker, finrank_span_singleton hv0, Module.finrank_fintype_fun_eq_card,
-      Fintype.card_fin] at h
+    rw [Matrix.finrank_range_mulVecLin, hker, finrank_span_singleton hv0,
+      Module.finrank_fintype_fun_eq_card, Fintype.card_fin] at h
     rw [Fintype.card_fin]; omega
   have hθ_place (w : InfinitePlace K) : w (θ : K) = 1 := by
     have hsq : w (θ : K) ^ 2 = 1 := by

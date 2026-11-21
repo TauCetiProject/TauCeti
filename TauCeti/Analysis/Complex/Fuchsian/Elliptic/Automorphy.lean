@@ -255,7 +255,7 @@ private theorem pointOf_coordinate (τ : stabilizerBall Γ z ε) :
   have hτ : UpperHalfPlane.discCoordinate z (τ : ℍ) ∈ ψ.toEquiv.source := by
     rw [ψ.toEquiv_source, mem_ball_zero_iff]
     exact mem_ball_iff_norm_discCoordinate_lt.mp
-      (mem_ball.mpr ((mem_stabilizerBall Γ z ε).1 τ.2))
+      (mem_ball.mpr ((mem_stabilizerBall Γ z ε).1 τ.property))
   have h := congrArg ((↑) : ℍ → ℂ) ((discCoordinateHomeomorph z).symm_apply_apply (τ : ℍ))
   rw [coe_discCoordinateHomeomorph_symm_apply, coe_discCoordinateHomeomorph_apply] at h
   rw [pointOf, coordinate_def, ψ.toEquiv.left_inv' hτ, h]
@@ -338,7 +338,7 @@ theorem differentiableOn_automorphyUntwist (hfd : MDifferentiableOn 𝓘(ℂ) �
     DifferentiableOn ℂ (ψ.automorphyUntwist k f) ψ.toEquiv.target := by
   intro u hu
   obtain ⟨τ, rfl⟩ := (ψ.mem_target_iff u).mp hu
-  have hτ : (τ : ℍ) ∈ ball z ε := mem_ball.mpr ((mem_stabilizerBall Γ z ε).1 τ.2)
+  have hτ : (τ : ℍ) ∈ ball z ε := mem_ball.mpr ((mem_stabilizerBall Γ z ε).1 τ.property)
   exact (ψ.differentiableAt_automorphyUntwist_coordinate
     ((hfd τ hτ).mdifferentiableAt (isOpen_ball.mem_nhds hτ))).differentiableWithinAt
 
@@ -359,7 +359,7 @@ theorem automorphyUntwist_smul_coordinate
   have hq : stabilizerRotation Γ z q = ζ := by
     rw [← coe_stabilizerRotationEquiv]
     exact (stabilizerRotationEquiv Γ z).apply_symm_apply ζ
-  obtain ⟨g, hgΓ', hgq⟩ := mem_map.mp (hΓ (q : Γ).2)
+  obtain ⟨g, hgΓ', hgq⟩ := mem_map.mp (hΓ (q : Γ).property)
   rw [QuotientGroup.mk'_apply] at hgq
   have hgz := smul_eq_self_of_coe_eq q hgq
   have hζ : ζ • ψ.coordinate τ = ψ.coordinate (q • τ) := by
@@ -387,7 +387,7 @@ theorem automorphyUntwist_smul (hΓ : Γ ≤ Γ'.map (QuotientGroup.mk' (center 
     ψ.automorphyUntwist k f (ζ • u) = ((ζ : ℂˣ) : ℂ) ^ r • ψ.automorphyUntwist k f u := by
   obtain ⟨τ, rfl⟩ := (ψ.mem_target_iff u).mp hu
   exact ψ.automorphyUntwist_smul_coordinate hΓ hk τ
-    (fun g hg hgz ↦ hf g hg hgz τ (mem_ball.mpr ((mem_stabilizerBall Γ z ε).1 τ.2))) ζ
+    (fun g hg hgz ↦ hf g hg hgz τ (mem_ball.mpr ((mem_stabilizerBall Γ z ε).1 τ.property))) ζ
 
 /-- The coordinates of the points of the invariant disc lying in `V`. -/
 private def coordinateSet (V : Set ℍ) : Set ℂ :=
@@ -429,7 +429,7 @@ private theorem differentiableOn_automorphyUntwist_coordinateSet_and_smul
       ∀ u ∈ ψ.coordinateSet V, ∀ ζ : rootsOfUnity (Nat.card (stabilizer Γ z)) ℂ,
         ψ.automorphyUntwist k f (ζ • u) = ((ζ : ℂˣ) : ℂ) ^ r • ψ.automorphyUntwist k f u := by
   have hball : ∀ σ : stabilizerBall Γ z ε, (σ : ℍ) ∈ V → (σ : ℍ) ∈ ball z ε ∩ V :=
-    fun σ hσ ↦ ⟨mem_ball.mpr ((mem_stabilizerBall Γ z ε).1 σ.2), hσ⟩
+    fun σ hσ ↦ ⟨mem_ball.mpr ((mem_stabilizerBall Γ z ε).1 σ.property), hσ⟩
   refine ⟨fun u hu ↦ ?_, fun u hu ζ ↦ ?_⟩ <;>
     obtain ⟨σ, hσ, rfl⟩ := ψ.exists_of_mem_coordinateSet hu
   · exact (ψ.differentiableAt_automorphyUntwist_coordinate ((hfd _ (hball σ hσ)).mdifferentiableAt
@@ -679,7 +679,7 @@ private theorem automorphyUntwist_differentialFrame_mul (j : ℕ) {u : ℂ}
         u ^ (j * (Nat.card (stabilizer Γ z) - 1)) := by
   set m := Nat.card (stabilizer Γ z)
   obtain ⟨τ, rfl⟩ := (ψ.mem_target_iff u).mp hu
-  have hτ : (τ : ℍ) ∈ ball z ε := mem_ball.mpr ((mem_stabilizerBall Γ z ε).1 τ.2)
+  have hτ : (τ : ℍ) ∈ ball z ε := mem_ball.mpr ((mem_stabilizerBall Γ z ε).1 τ.property)
   have hWP : ψ.quotientCoordinateOnComplex ∘ ψ.pointOf =ᶠ[nhds (ψ.coordinate τ)]
       fun u ↦ u ^ m := by
     filter_upwards [ψ.isOpen_target.mem_nhds hu] with v hv
@@ -967,7 +967,7 @@ theorem automorphyDescent_eq_automorphyDescent_automorphyExtension_mul
   -- At the centre both sides are continuous functions of the point, read on `ℂ` near `z`, which
   -- agree at every other point by the first case.
   have hz : (τ : ℍ) = z := ((ψ.automorphyFrame_eq_zero_iff k r τ).mp (not_not.mp hF)).1
-  have hτb : (τ : ℍ) ∈ ball z ε := mem_ball.mpr ((mem_stabilizerBall Γ z ε).1 τ.2)
+  have hτb : (τ : ℍ) ∈ ball z ε := mem_ball.mpr ((mem_stabilizerBall Γ z ε).1 τ.property)
   set M : ℂ → ℍ := fun t ↦ h • ofComplex t
   set L : ℂ → ℂ := fun t ↦ ψ.automorphyDescent k r f (ψ.quotientCoordinateOnComplex t)
   set R : ℂ → ℂ := fun t ↦ ψ.automorphyDescent k r E (ψ.quotientCoordinateOnComplex t) * c' (M t)
@@ -1045,7 +1045,7 @@ theorem automorphyDescent_eq_mul_automorphyDescent
       ψ.automorphyDescent k r (Γ'.automorphyExtension (ball z' ε') k fun σ ↦
           ((σ : ℂ) - conj (z' : ℂ)) ^ (-k) * ψ'.toEquiv (UpperHalfPlane.discCoordinate z' σ) ^ r')
         (ψ.quotientCoordinate τ) * ψ'.automorphyDescent k r' f (ψ'.quotientCoordinate σ) := by
-  have hσb : (σ : ℍ) ∈ ball z' ε' := mem_ball.mpr ((mem_stabilizerBall Γ z' ε').1 σ.2)
+  have hσb : (σ : ℍ) ∈ ball z' ε' := mem_ball.mpr ((mem_stabilizerBall Γ z' ε').1 σ.property)
   -- by its transformation law, `f` is holomorphic on the saturation `Γ' • W`, which contains `σ`
   set W' := (Γ' : Set SL(2, ℝ)) • W
   have hW' : IsOpen W' := hW.smul_left
@@ -1129,7 +1129,7 @@ theorem eqOn_automorphyDescent_automorphyExtension_automorphyFrame_one
       (ψ.mdifferentiableOn_automorphyFrame k r)).mono fun σ hσ ↦
         mem_smul_set_iff_exists_smul_mem.mpr ⟨1, Γ'.one_mem, by rwa [one_smul]⟩)
     hr continuousOn_const fun τ ↦ ?_).symm
-  rw [automorphyExtension_of_mem hF (mem_ball.mpr ((mem_stabilizerBall Γ z ε).1 τ.2)),
+  rw [automorphyExtension_of_mem hF (mem_ball.mpr ((mem_stabilizerBall Γ z ε).1 τ.property)),
     automorphyFrame_eq_toEquiv_discCoordinate, mul_one]
 
 /-- **The transition functions between two elliptic charts are inverse to each other.** Let `ψ`
@@ -1159,7 +1159,7 @@ theorem automorphyDescent_automorphyExtension_mul_eq_one
         (ψ'.quotientCoordinate σ) = 1 := by
   rw [← ψ.automorphyDescent_automorphyExtension_eq_mul ψ' hΓ hk hr hk' hr' hprec' isOpen_ball
     (ψ.automorphyFrame_compatible hΓ.le hk hprec) (ψ.mdifferentiableOn_automorphyFrame k r) hh hσ
-    Γ'.one_mem (by rw [one_smul]; exact mem_ball.mpr ((mem_stabilizerBall Γ z ε).1 τ.2))]
+    Γ'.one_mem (by rw [one_smul]; exact mem_ball.mpr ((mem_stabilizerBall Γ z ε).1 τ.property))]
   exact ψ.eqOn_automorphyDescent_automorphyExtension_automorphyFrame_one hΓ hk hr hprec
     ((ψ.mem_quotientImage_iff _).mpr ⟨τ, rfl⟩)
 

@@ -69,7 +69,7 @@ theorem ginzburgTwoToCompleted_surjective_of_no_arrows
   classical
   intro f
   apply (mem_range_ginzburgTwoToCompleted_iff k Q).mpr
-  obtain ⟨hf, s, hs⟩ := (mem_completedGinzburgTwo_iff k Q).mp f.2
+  obtain ⟨hf, s, hs⟩ := (mem_completedGinzburgTwo_iff k Q).mp f.property
   apply (s.finite_toSet.image (fun p : ℤ => (-2 * p).toNat)).subset
   intro n hn
   have hn' := Function.mem_support.mp hn
@@ -82,7 +82,7 @@ theorem ginzburgTwoToCompleted_surjective_of_no_arrows
     by_contra hp'
     exact hp (hs n p hp')
   obtain ⟨x, hxA, hxC⟩ := exists_path_of_ne_zero_mem_gradeBy_inf hp
-    ⟨isHomogeneous_gradeBy_ginzburgTwoDegree k n p (hf n), z.2⟩
+    ⟨isHomogeneous_gradeBy_ginzburgTwoDegree k n p (hf n), z.property⟩
   refine ⟨p, hp', ?_⟩
   have hw := adamsWeight_eq_neg_two_mul_degree_of_no_arrows Q hQ x.2.2
   rw [hxA, hxC] at hw

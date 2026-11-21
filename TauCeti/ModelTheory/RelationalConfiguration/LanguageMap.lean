@@ -316,10 +316,10 @@ theorem reductConfiguration_symbSublang_surjective
   refine ⟨(@ofStructure L (Option V) S).restrict Option.some, ext fun a => ?_⟩
   induction a using Atom.induction_atom with
   | h r x =>
-    have hiff : @Structure.RelMap L (Option V) S _ r.1 (Option.some ∘ x) ↔
+    have hiff : @Structure.RelMap L (Option V) S _ r.val (Option.some ∘ x) ↔
         c₀.eval (atom r x) = true :=
       ⟨fun ⟨y, _, hy, hc⟩ => by cases (Option.some_injective V).comp_left hy; exact hc,
-        fun hc => ⟨x, r.2, rfl, hc⟩⟩
+        fun hc => ⟨x, r.property, rfl, hc⟩⟩
     simp [LHom.eval_reductConfiguration, @eval_ofStructure L (Option V) S, hiff]
 
 /-- Every set in the product σ-algebra on `RelationalConfiguration L V` is the preimage of a
@@ -341,8 +341,8 @@ theorem exists_countable_sublanguage_of_measurableSet
         choose Rᵢ hRᵢ Eᵢ hEᵢ hEq using hf
         let R₀ : Set (Σ n, L.Relations n) := ⋃ i : ℕ, Rᵢ i
         let incl (i : ℕ) : symbSublang (L := L) ∅ (Rᵢ i) →ᴸ symbSublang ∅ R₀ :=
-          { onFunction := fun _ fn => ⟨fn.1, fn.2⟩
-            onRelation := fun _ r => ⟨r.1, mem_iUnion_of_mem i r.2⟩ }
+          { onFunction := fun _ fn => ⟨fn.val, fn.property⟩
+            onRelation := fun _ r => ⟨r.val, mem_iUnion_of_mem i r.property⟩ }
         have hcomp (i : ℕ) :
             (symbSublangIncl (L := L) ∅ R₀).comp (incl i) = symbSublangIncl ∅ (Rᵢ i) :=
           LHom.funext (funext fun _ => funext fun _ => by simp [incl])
