@@ -25,7 +25,8 @@ The degree only sees `Γ` on the boundary (`TauCeti.squareBoundaryDegree_congr`)
 laws of a winding number:
 
 * **products:** for `Γ` and `Γ'` continuous on the boundary,
-  `deg (Γ * Γ') = deg Γ + deg Γ'` (`TauCeti.squareBoundaryDegree_mul`);
+  `deg (Γ * Γ') = deg Γ + deg Γ'` (`TauCeti.squareBoundaryDegree_mul`), and hence
+  `deg (Γ ^ n) = n deg Γ` (`TauCeti.squareBoundaryDegree_pow`);
 * **maps defined on the whole square:** if `Γ` is continuous on all of `I²`, its boundary loop is
   null-homotopic, so `deg Γ = 0` (`TauCeti.squareBoundaryDegree_eq_zero_of_continuous`);
 * **homotopy:** a family `H (τ, ·)`, `τ ∈ I`, continuous on `I × ∂I²`, has constant degree
@@ -57,7 +58,7 @@ quarter turn, as the arguments of the corners `(±1 ± i) / 2` show.
 
 * `TauCeti.squareBoundaryDegree_eq_degree`: the degree is that of the loop `Γ ∘ ∂I²`.
 * `TauCeti.squareBoundaryDegree_congr`, `TauCeti.squareBoundaryDegree_mul`,
-  `TauCeti.squareBoundaryDegree_eq_zero_of_continuous`,
+  `TauCeti.squareBoundaryDegree_pow`, `TauCeti.squareBoundaryDegree_eq_zero_of_continuous`,
   `TauCeti.squareBoundaryDegree_eq_of_homotopy`, `TauCeti.squareBoundaryDegree_eq_add`: the laws
   above.
 * `TauCeti.squareBoundaryDegree_squareCenterDirection`: the direction from the centre has
@@ -185,6 +186,17 @@ theorem squareBoundaryDegree_mul (hΓ : ContinuousOn Γ (Cube.boundary (Fin 2)))
   rw [squareBoundaryDegree_eq_degree (hΓ.mul hΓ'), squareBoundaryDegree_eq_degree hΓ,
     squareBoundaryDegree_eq_degree hΓ', ← Circle.degree_mul]
   exact Circle.degree_congr _ _ fun _ ↦ rfl
+
+/-- **Powers.** The degree around the boundary of the square of the `n`-th power of a map
+continuous on the boundary is `n` times its degree. -/
+theorem squareBoundaryDegree_pow (hΓ : ContinuousOn Γ (Cube.boundary (Fin 2))) (n : ℕ) :
+    squareBoundaryDegree (Γ ^ n) = n * squareBoundaryDegree Γ := by
+  induction n with
+  | zero => rw [pow_zero, Nat.cast_zero, zero_mul]; exact squareBoundaryDegree_const 1
+  | succ n ih =>
+    rw [pow_succ, squareBoundaryDegree_mul (hΓ.pow n) hΓ, ih]
+    push_cast
+    ring
 
 /-- **Homotopy invariance.** If `H` is continuous on `I × ∂I²`, the maps `H (0, ·)` and
 `H (1, ·)` have the same degree around the boundary of the square. -/

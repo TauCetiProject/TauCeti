@@ -116,7 +116,7 @@ variable {n k : ℕ}
 
 /-- In the coordinates of `ℝⁿ` split into the first `k` and the remaining ones, the normal form
 `c - Σ_{j < k} yⱼ² + Σ_{j ≥ k} yⱼ²` of a chart reads `c - ‖u‖² + ‖v‖²`. -/
-private theorem apply_eq_of_transHomeomorph_sumComplEquivProd
+theorem apply_eq_of_transHomeomorph_sumComplEquivProd
     (ψ : OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n))) {f : M → ℝ} {c : ℝ}
     (hψ : ∀ y ∈ ψ.source, f y = c + ∑ j, (if j.val < k then -1 else 1) * ψ y j ^ 2) :
     ∀ y ∈ (ψ.transHomeomorph
