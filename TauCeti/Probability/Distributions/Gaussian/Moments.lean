@@ -13,16 +13,17 @@ import TauCeti.Probability.Distributions.Gaussian.Symmetry
 /-!
 # Moments of the real Gaussian distribution
 
-This file computes the centered moments of Mathlib's real Gaussian measure `gaussianReal m v`:
-the absolute moments `E|X - m|ⁿ`, the even moments `E (X - m)²ⁿ = vⁿ (2n - 1)‼`, and the
-vanishing of the odd ones. These closed forms are what moment-based arguments about Gaussian
-variables consume, for instance Kolmogorov-type continuity bounds and quadratic-variation
-estimates for Brownian increments, the half-normal mean `E|X| = √(2v/π)`, and comparisons with
-the moments of other laws.
+This file computes the centered moments of a variable `X` with Mathlib's real Gaussian law
+`gaussianReal m v`: the absolute moments `E|X - m|ⁿ`, the even moments
+`E (X - m)²ⁿ = vⁿ (2n - 1)‼`, and the vanishing of the odd ones. These closed forms are what
+moment-based arguments about Gaussian variables consume, for instance Kolmogorov-type continuity
+bounds and quadratic-variation estimates for Brownian increments, the half-normal mean
+`E|X - m| = √(2v/π)`, and comparisons with the moments of other laws.
 
-The absolute centered moment is obtained by folding: after centering, `|X - m|` has the
-half-normal law `chiMeasure 1 √v`, whose moments are known. The even centered moments follow
-from this formula, and the odd ones vanish because a centered Gaussian law is symmetric.
+The absolute centered moment is obtained by folding. For positive variance `v`, after centering,
+`|X - m|` has the half-normal law `chiMeasure 1 √v`, whose moments are known; for `v = 0` the
+folded law is the point mass at `0`. The even centered moments follow from this formula, and the
+odd ones vanish because a centered Gaussian law is symmetric.
 
 The formulas follow the standard calculation in, for example, Johnson, Kotz, and Balakrishnan,
 *Continuous Univariate Distributions*, volume 1, Chapter 13.
