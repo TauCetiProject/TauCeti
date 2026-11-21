@@ -246,6 +246,17 @@ private theorem eventually_imCutoff_arg {z : ℂ} (hz : 0 < z.im) :
       ((tendsto_natCast_atTop_atTop.atTop_add tendsto_const_nhds).atTop_mul_const hz)
   exact h.eventually_gt_atTop 1
 
+/-- A continuous factor supported in the support of a compactly supported `χ` makes a function
+that is locally integrable up to the real axis integrable on the open upper half-plane. -/
+private theorem MemLpLoc.integrableOn_smul_setOf_im_pos {Ω : Opens ℂ} {h : ℂ → F}
+    (hh : MemLpLoc 1 ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) h) {β : Type*} [Zero β] {χ : ℂ → β}
+    (hχc : HasCompactSupport χ) (hχΩ : tsupport χ ∩ {z : ℂ | 0 ≤ z.im} ⊆ Ω) {f : ℂ → ℝ}
+    (hf : Continuous f) (hfχ : tsupport f ⊆ tsupport χ) :
+    IntegrableOn (fun z ↦ f z • h z) {z : ℂ | 0 < z.im} :=
+  (hh.integrableOn_smul hf (hχc.mono' ((subset_tsupport f).trans hfχ))
+    (Complex.isClosed_setOfPred_le_im 0) fun _ hz ↦ ⟨hχΩ ⟨hfχ hz.1, hz.2⟩, hz.2⟩).mono_set
+    (ofPred_subset_ofPred.2 fun _ ↦ le_of_lt)
+
 /-- **Integration by parts up to the real axis.** Let `g'` be a weak derivative of `g` in the
 direction `v` on the upper part of `Ω`, with `g` and `g'` integrable on compact subsets of
 `Ω ∩ {0 ≤ im}`. Then the integration-by-parts identity on the upper half-plane holds against every
@@ -266,15 +277,6 @@ theorem HasWeakLineDerivOn.setIntegral_fderiv_smul_eq_neg {Ω : Opens ℂ} {g g'
   have hK : IsCompact K := hχc.isCompact.inter_right (isClosed_le continuous_const continuous_im)
   have hKU : K ⊆ (Ω : Set ℂ) ∩ {z | 0 ≤ z.im} := fun z hz => ⟨hχΩ hz, hz.2⟩
   have hgK : IntegrableOn g K := memLp_one_iff_integrable.1 (memLpLoc_iff.1 hg K hKU hK)
-  have hHsub : H ⊆ {z : ℂ | 0 ≤ z.im} :=
-    ofPred_subset_ofPred.2 fun _ => le_of_lt
-  have hclosed : IsClosed {z : ℂ | 0 ≤ z.im} := Complex.isClosed_setOfPred_le_im 0
-  -- A continuous factor supported in `tsupport χ` makes `g` or `g'` integrable on `H`.
-  have hint {f : ℂ → ℝ} {h : ℂ → F} (hh : MemLpLoc 1 ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) h)
-      (hf : Continuous f) (hfχ : tsupport f ⊆ tsupport χ) :
-      IntegrableOn (fun z => f z • h z) H :=
-    (hh.integrableOn_smul hf (hχc.mono' ((subset_tsupport f).trans hfχ)) hclosed
-      fun z hz => ⟨hχΩ ⟨hfχ hz.1, hz.2⟩, hz.2⟩).mono_set hHsub
   have hdχ : Continuous fun z => fderiv ℝ χ z v :=
     (hχ.continuous_fderiv (by simp)).clm_apply continuous_const
   have hdst : Continuous (deriv Real.smoothTransition) :=
@@ -283,15 +285,16 @@ theorem HasWeakLineDerivOn.setIntegral_fderiv_smul_eq_neg {Ω : Opens ℂ} {g g'
   set D : ℕ → ℂ → ℝ := fun n z => χ z *
     (deriv Real.smoothTransition (((n : ℝ) + 1) * z.im - 1) * (((n : ℝ) + 1) * v.im)) with hD
   have I1 : IntegrableOn (fun z => fderiv ℝ χ z v • g z) H :=
-    hint hg hdχ (tsupport_fderiv_apply_subset ℝ v)
+    hg.integrableOn_smul_setOf_im_pos hχc hχΩ hdχ (tsupport_fderiv_apply_subset ℝ v)
   have I3 : IntegrableOn (fun z => χ z • g' z) H :=
-    hint hg' hχ.continuous subset_rfl
+    hg'.integrableOn_smul_setOf_im_pos hχc hχΩ hχ.continuous subset_rfl
   have I1' (n : ℕ) : IntegrableOn (fun z => (imCutoff n z * fderiv ℝ χ z v) • g z) H :=
-    hint hg ((contDiff_imCutoff n).continuous.mul hdχ)
+    hg.integrableOn_smul_setOf_im_pos hχc hχΩ ((contDiff_imCutoff n).continuous.mul hdχ)
       (tsupport_mul_subset_right.trans (tsupport_fderiv_apply_subset ℝ v))
   have I2 (n : ℕ) : IntegrableOn (fun z => D n z • g z) H :=
-    hint hg (hχ.continuous.mul ((hdst.comp ((continuous_const.mul continuous_im).sub
-      continuous_const)).mul continuous_const)) tsupport_mul_subset_left
+    hg.integrableOn_smul_setOf_im_pos hχc hχΩ (hχ.continuous.mul ((hdst.comp
+      ((continuous_const.mul continuous_im).sub continuous_const)).mul continuous_const))
+      tsupport_mul_subset_left
   -- The weak derivative identity, tested against `imCutoff n * χ`.
   have key (n : ℕ) : (∫ z in H, (imCutoff n z * fderiv ℝ χ z v) • g z) +
       ∫ z in H, D n z • g z = -∫ z in H, (imCutoff n z * χ z) • g' z := by
@@ -427,24 +430,18 @@ theorem HasWeakLineDerivOn.setIntegral_fderiv_smul_eq_neg_of_complex {G : Type*}
   simp only [hd] at er ei
   simp only [reCLM_apply, imCLM_apply, Pi.smul_apply] at er ei
   -- Each term is integrable on the upper half-plane.
-  have hint {f : ℂ → ℝ} {h : ℂ → G} (hh : MemLpLoc 1 ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) h)
-      (hf : Continuous f) (hfχ : tsupport f ⊆ tsupport χ) :
-      IntegrableOn (fun z ↦ f z • h z) {z : ℂ | 0 < z.im} :=
-    (hh.integrableOn_smul hf (hχc.mono' ((subset_tsupport f).trans hfχ))
-      (Complex.isClosed_setOfPred_le_im 0)
-      fun z hz ↦ ⟨hχΩ ⟨hfχ hz.1, hz.2⟩, hz.2⟩).mono_set fun z (hz : 0 < z.im) ↦ hz.le
   have hdc : Continuous fun z ↦ fderiv ℝ χ z v :=
     (hχ.continuous_fderiv (by simp)).clm_apply continuous_const
   have hds (ℓ : ℂ →L[ℝ] ℝ) : tsupport (fun z ↦ ℓ (fderiv ℝ χ z v)) ⊆ tsupport χ :=
     (tsupport_comp_subset (map_zero ℓ) _).trans (tsupport_fderiv_apply_subset ℝ v)
   have i₁ : IntegrableOn (fun z ↦ (fderiv ℝ χ z v).re • g z) {z : ℂ | 0 < z.im} :=
-    hint hg (reCLM.continuous.comp hdc) (hds reCLM)
+    hg.integrableOn_smul_setOf_im_pos hχc hχΩ (reCLM.continuous.comp hdc) (hds reCLM)
   have i₂ : IntegrableOn (fun z ↦ (fderiv ℝ χ z v).im • (I • g z)) {z : ℂ | 0 < z.im} :=
-    hint hIg (imCLM.continuous.comp hdc) (hds imCLM)
+    hIg.integrableOn_smul_setOf_im_pos hχc hχΩ (imCLM.continuous.comp hdc) (hds imCLM)
   have i₃ : IntegrableOn (fun z ↦ (χ z).re • g' z) {z : ℂ | 0 < z.im} :=
-    hint hg' (reCLM.continuous.comp hχ.continuous) (hℓs reCLM)
+    hg'.integrableOn_smul_setOf_im_pos hχc hχΩ (reCLM.continuous.comp hχ.continuous) (hℓs reCLM)
   have i₄ : IntegrableOn (fun z ↦ (χ z).im • (I • g' z)) {z : ℂ | 0 < z.im} :=
-    hint hIg' (imCLM.continuous.comp hχ.continuous) (hℓs imCLM)
+    hIg'.integrableOn_smul_setOf_im_pos hχc hχΩ (imCLM.continuous.comp hχ.continuous) (hℓs imCLM)
   simp only [← Complex.re_smul_add_im_smul (fderiv ℝ χ _ v), ← Complex.re_smul_add_im_smul (χ _)]
   rw [integral_add i₁ i₂, integral_add i₃ i₄, er, ei, neg_add]
 

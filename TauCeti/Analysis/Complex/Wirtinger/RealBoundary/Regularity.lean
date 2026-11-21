@@ -12,6 +12,7 @@ import TauCeti.Analysis.Complex.Wirtinger.Regularity
 import TauCeti.Analysis.Sobolev.Local.Locality
 import TauCeti.Analysis.Sobolev.Local.Reflection
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
+import TauCeti.Topology.Algebra.Module.Star
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
 /-!
@@ -150,9 +151,7 @@ private theorem memWkpLoc_one_of_mapsTo (hp : 1 < p) (hp_top : p ≠ ⊤)
     (hη : MemLpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) η)
     (h : HasWeakConjWirtingerDerivRealBoundaryOn Ω ξ η) :
     MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) 1 ξ := by
-  -- In finite dimension the real-linear map `star` is continuous.
-  let L : F →ₗ[ℝ] F := { toFun := star, map_add' := star_add, map_smul' := fun r x ↦ by simp }
-  have : ContinuousStar F := ⟨L.continuous_of_finiteDimensional⟩
+  have := FiniteDimensional.continuousStar ℂ F
   exact ((h.hasWeakConjWirtingerDerivOn_starSchwarzReflection hΩ).memWkpLoc_one hp hp_top
     (hξ.starSchwarzReflection hΩ) (hη.starSchwarzReflection hΩ)).congr_mono
     (fun _ hz ↦ (starSchwarzReflection_of_im_nonneg hz.2).symm) inter_subset_left
