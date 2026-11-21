@@ -44,8 +44,9 @@ Main declarations:
   * `DerivedCategory.ghostIdeal`: the two-sided ideal of ghosts in `End X`, defined via
     `TwoSidedIdeal.ker X.cohomologyActionRingHom` independently of any coefficient ring `R`.
 * **Ghost nilpotence and annihilator bounds**:
-  * `TauCeti.DerivedCategory.exists_comp_truncLEι_mul_of_homologyFunctor_map_eq_zero` and
-    `TauCeti.DerivedCategory.exists_comp_truncLEι_list_prod_of_isLE_of_homologyFunctor_map_eq_zero`:
+  * In `TauCeti.DerivedCategory`,
+    `exists_comp_truncLEι_eq_mul_asHom_of_homologyFunctor_map_eq_zero` and
+    `exists_comp_truncLEι_eq_list_prod_asHom_of_isLE_of_homologyFunctor_map_eq_zero`:
     for `X` concentrated in degrees `≤ b` (`X.IsLE b`), an ordered product `l.prod` of
     endomorphisms acting by zero on `H^i(X)` for `a < i ≤ b` (`a + l.length = b`) factors through
     `τ_{≤ a} X ⟶ X`.
@@ -222,7 +223,8 @@ variable {C : Type u} [Category.{v} C] [Abelian C] [HasDerivedCategory.{w} C]
 
 /-- If `e : End X` factors through `τ_{≤ b₁} X ⟶ X` and `f : End X` induces zero on `H^{b₁}(X)`,
 then `f * e` factors through `τ_{≤ b₀} X ⟶ X` whenever `b₀ + 1 = b₁`. -/
-theorem exists_comp_truncLEι_mul_of_homologyFunctor_map_eq_zero {X : _root_.DerivedCategory C}
+theorem exists_comp_truncLEι_eq_mul_asHom_of_homologyFunctor_map_eq_zero
+    {X : _root_.DerivedCategory C}
     (b₀ b₁ : ℤ) {f e : End X} (hf : (homologyFunctor C b₁).map f.asHom = 0)
     (he : ∃ g : X ⟶ (TStructure.t.truncLE b₁).obj X,
       g ≫ (TStructure.t.truncLEι b₁).app X = e.asHom)
@@ -240,7 +242,7 @@ theorem exists_comp_truncLEι_mul_of_homologyFunctor_map_eq_zero {X : _root_.Der
 /-- If `X` is concentrated in degrees `≤ b` and every `f ∈ l` induces zero on `H^i(X)` for
 `a < i ≤ b` (where `a + l.length = b`), then the ordered product `l.prod` factors through
 `τ_{≤ a} X ⟶ X`. -/
-theorem exists_comp_truncLEι_list_prod_of_isLE_of_homologyFunctor_map_eq_zero
+theorem exists_comp_truncLEι_eq_list_prod_asHom_of_isLE_of_homologyFunctor_map_eq_zero
     {X : _root_.DerivedCategory C} (a b : ℤ) [X.IsLE b] (l : List (End X))
     (hl : ∀ f ∈ l, ∀ i : ℤ, a < i → i ≤ b → (homologyFunctor C i).map f.asHom = 0)
     (hab : a + l.length = b := by lia) :
@@ -259,7 +261,8 @@ theorem exists_comp_truncLEι_list_prod_of_isLE_of_homologyFunctor_map_eq_zero
     have hf : (homologyFunctor C (a + 1)).map f.asHom = 0 :=
       hl f List.mem_cons_self (a + 1) (by lia) (by lia)
     rw [List.prod_cons]
-    exact exists_comp_truncLEι_mul_of_homologyFunctor_map_eq_zero a (a + 1) hf (ih (a + 1) hl' hab')
+    exact exists_comp_truncLEι_eq_mul_asHom_of_homologyFunctor_map_eq_zero
+      a (a + 1) hf (ih (a + 1) hl' hab')
 
 /-- Ghost nilpotence for arbitrary ordered lists: if `X` is concentrated in `[a, b]` and every
 `f ∈ l` acts by zero on `H^i(X)` for `a ≤ i ≤ b`, then `l.prod = 0` whenever `b < a + l.length`. -/
@@ -275,7 +278,8 @@ theorem list_prod_eq_zero_of_isGE_of_isLE_of_homologyFunctor_map_eq_zero
     · exact hl f hf i hia hib
     · exact (isZero_of_isGE X a i (by omega)).eq_of_src _ _
   obtain ⟨g, hg⟩ :=
-    exists_comp_truncLEι_list_prod_of_isLE_of_homologyFunctor_map_eq_zero (b - l.length) b l hl'
+    exists_comp_truncLEι_eq_list_prod_asHom_of_isLE_of_homologyFunctor_map_eq_zero
+      (b - l.length) b l hl'
   have hz : IsZero ((TStructure.t.truncLE (b - l.length)).obj X) :=
     TStructure.t.isZero ((TStructure.t.truncLE (b - l.length)).obj X) (b - l.length) a (by omega)
   apply End.ext
@@ -345,7 +349,7 @@ theorem exists_comp_truncLEι_of_isLE_of_le_actionGhostKer_of_mem_pow {H : Type 
       · have hr' : (homologyFunctor C (a + 1)).map (α r).asHom = 0 :=
           mem_actionGhostKer_iff.mp (hI hr) (a + 1)
         rw [map_mul]
-        exact exists_comp_truncLEι_mul_of_homologyFunctor_map_eq_zero a (a + 1) hr'
+        exact exists_comp_truncLEι_eq_mul_asHom_of_homologyFunctor_map_eq_zero a (a + 1) hr'
           (ih (a + 1) hy (by lia))
       · obtain ⟨g₁, hg₁⟩ := hy
         obtain ⟨g₂, hg₂⟩ := hz
