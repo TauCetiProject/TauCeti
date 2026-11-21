@@ -74,8 +74,8 @@ open scoped IntermediateField
 
 namespace TauCeti
 
-open TauCeti.Polynomial (monicOfCoeff monic_monicOfCoeff natDegree_monicOfCoeff coeff_monicOfCoeff
-  map_monicOfCoeff)
+open TauCeti.Polynomial (monicOfCoeff monic_monicOfCoeff natDegree_monicOfCoeff
+  natDegree_eq_of_map_eq_monicOfCoeff coeff_monicOfCoeff map_monicOfCoeff)
 
 section DiscreteValuationRing
 
@@ -459,6 +459,23 @@ theorem IsOreAdmissible.derivative_map_ne_zero_of_isEisensteinAt {n j : ℕ}
   rw [coeff_derivative, hsub, hcast] at hm0
   exact mul_ne_zero hfk hk0 hm0
 
+/-- Any Eisenstein polynomial `f : 𝒪[K][X]` mapping to `monicOfCoeff a` whose coefficients
+satisfy the Ore-admissibility criterion at `j` has separable image over `K`, including in
+positive characteristic. -/
+theorem IsOreAdmissible.separable_map_of_isEisensteinAt {n j : ℕ}
+    (hadm : IsOreAdmissible K n j) {f : 𝒪[K][X]} (hf : f.IsEisensteinAt 𝓂[K])
+    {a : Fin n → K} (hmap : f.map (algebraMap 𝒪[K] K) = monicOfCoeff a)
+    (hcrit : 0 < j % n → addVal 𝒪[K] (f.coeff (j % n)) = oreCoefficientDepth K n j (j % n)) :
+    (f.map (algebraMap 𝒪[K] K)).Separable := by
+  have hdeg : f.natDegree = n :=
+    natDegree_eq_of_map_eq_monicOfCoeff (FaithfulSMul.algebraMap_injective 𝒪[K] K) hmap
+  have ha : a ∈ eisensteinSet K n :=
+    mem_eisensteinSet_iff_exists_isEisensteinAt.mpr ⟨f, hmap, hf⟩
+  have hirr : Irreducible (f.map (algebraMap 𝒪[K] K)) :=
+    hmap ▸ irreducible_monicOfCoeff_of_mem_eisensteinSet hadm.pos ha
+  exact (separable_iff_derivative_ne_zero hirr).mpr
+    (hadm.derivative_map_ne_zero_of_isEisensteinAt hf hdeg hcrit)
+
 /-- Over any field `K` whose valuation ring `𝒪[K]` is a discrete valuation ring, every
 Ore-admissible pair `(n, j)` is realized on the coefficient level by an explicit monic Eisenstein
 polynomial `monicOfCoeff c` (`X ^ n + ϖ` when `j % n = 0`, and `X ^ n + ϖ ^ ν_b * X ^ b + ϖ` when
@@ -604,15 +621,11 @@ theorem exists_mem_totallyRamifiedOfDegree_wildExponent_eq_iff {n j : ℕ} :
     let a : Fin n → K := fun i ↦ (c i : K)
     have hmap : f.map (algebraMap 𝒪[K] K) = monicOfCoeff a := by
       simp [f, a, map_monicOfCoeff, Algebra.coe_algebraMap_ofSubsemiring]
-    have ha : a ∈ eisensteinSet K n :=
-      mem_eisensteinSet_iff_exists_isEisensteinAt.mpr ⟨f, hmap, hf⟩
-    have hirr : Irreducible (f.map (algebraMap 𝒪[K] K)) :=
-      hmap ▸ irreducible_monicOfCoeff_of_mem_eisensteinSet hn ha
     have hsep : (f.map (algebraMap 𝒪[K] K)).Separable :=
-      (separable_iff_derivative_ne_zero hirr).mpr
-        (hadm.derivative_map_ne_zero_of_isEisensteinAt hf hdeg hcrit)
-    obtain ⟨x, hxf⟩ := IsSepClosed.exists_aeval_eq_zero (SeparableClosure K) _
-      (degree_pos_of_irreducible hirr).ne' hsep
+      hadm.separable_map_of_isEisensteinAt hf hmap hcrit
+    have hdeg_pos : (f.map (algebraMap 𝒪[K] K)).degree ≠ 0 :=
+      (natDegree_pos_iff_degree_pos.mp (by simpa [hmap] using hn)).ne'
+    obtain ⟨x, hxf⟩ := IsSepClosed.exists_aeval_eq_zero (SeparableClosure K) _ hdeg_pos hsep
     exact ⟨K⟮x⟯, adjoin_mem_totallyRamifiedOfDegree_of_eisenstein hf hdeg hxf,
       (wildExponent_adjoin_eq_iff_of_eisenstein hf hdeg hxf).mpr ⟨hadm, hcoeff, hcrit⟩⟩
 

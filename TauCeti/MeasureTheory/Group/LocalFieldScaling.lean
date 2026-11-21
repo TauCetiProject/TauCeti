@@ -88,6 +88,13 @@ open scoped ENNReal Pointwise
 
 namespace TauCeti
 
+/-- Adding `m` at coordinate `k ∈ s` increases the sum over `s` by `m`. -/
+theorem sum_update_add_of_mem {ι M : Type*} [DecidableEq ι] [AddCommMonoid M]
+    {s : Finset ι} {k : ι} (hk : k ∈ s) (d : ι → M) (m : M) :
+    ∑ i ∈ s, Function.update d k (d k + m) i = (∑ i ∈ s, d i) + m := by
+  rw [Finset.sum_update_of_mem hk, Finset.sdiff_singleton_eq_erase, add_right_comm,
+    Finset.add_sum_erase s d hk]
+
 variable {K : Type*} [Field K] [ValuativeRel K]
 
 variable (K) in
@@ -334,11 +341,7 @@ theorem measure_univ_pi_image_maximalIdeal_pow_sdiff_update_add_one (μ : Measur
   set d' := Function.update d k (d k + 1)
   have hsub := univ_pi_image_maximalIdeal_pow_subset (K := K) (e' := d) (e := d')
     (le_update_iff.2 ⟨Nat.le_succ _, fun _ _ ↦ le_rfl⟩)
-  have hsum : ∑ i, d' i = (∑ i, d i) + 1 := by
-    rw [Finset.sum_update_of_mem (Finset.mem_univ k),
-      ← Finset.add_sum_erase Finset.univ d (Finset.mem_univ k),
-      Finset.sdiff_singleton_eq_erase]
-    omega
+  have hsum : ∑ i, d' i = (∑ i, d i) + 1 := sum_update_add_of_mem (Finset.mem_univ k) d 1
   have h₁ := measure_univ_pi_image_maximalIdeal_pow μ d
   have h₂ := measure_univ_pi_image_maximalIdeal_pow μ d'
   rw [hsum] at h₂

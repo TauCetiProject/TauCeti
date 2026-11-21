@@ -187,15 +187,10 @@ theorem nonempty_eisensteinBox_iff {n j : ℕ} :
 including in positive characteristic. -/
 theorem separable_monicOfCoeff_of_mem_eisensteinBox {n j : ℕ} {a : Fin n → K}
     (ha : a ∈ eisensteinBox K n j) : (monicOfCoeff a).Separable := by
-  have heis := eisensteinBox_subset_eisensteinSet K n j ha
-  obtain ⟨f, hf, he⟩ := mem_eisensteinSet_iff_exists_isEisensteinAt.mp heis
-  have hdeg : f.natDegree = n :=
-    natDegree_eq_of_map_eq_monicOfCoeff (FaithfulSMul.algebraMap_injective 𝒪[K] K) hf
+  obtain ⟨f, hf, he⟩ := mem_eisensteinSet_iff_exists_isEisensteinAt.mp
+    (eisensteinBox_subset_eisensteinSet K n j ha)
   obtain ⟨hadm, -, -, hcrit⟩ := (mem_eisensteinBox_iff_of_map_eq hf).mp ha
-  refine (separable_iff_derivative_ne_zero
-    (irreducible_monicOfCoeff_of_mem_eisensteinSet hadm.pos heis)).mpr ?_
-  rw [← hf]
-  exact hadm.derivative_map_ne_zero_of_isEisensteinAt he hdeg hcrit
+  exact hf ▸ hadm.separable_map_of_isEisensteinAt he hf hcrit
 
 variable (K) in
 /-- Discriminant boxes for distinct wild exponents are pairwise disjoint. -/
@@ -421,9 +416,7 @@ theorem measure_eisensteinBox {n j : ℕ} (hadm : IsOreAdmissible K n j)
     set e₂ := Function.update e ib (e ib + 1)
     have hib0 : ib ≠ i₀ := fun h ↦ hmod.ne' (congrArg Fin.val h)
     have hsum₂ : ∑ i, e₂ i = N + 1 := by
-      have := Finset.add_sum_erase Finset.univ e (Finset.mem_univ ib)
-      rw [Finset.sum_update_of_mem (Finset.mem_univ ib), Finset.sdiff_singleton_eq_erase]
-      omega
+      rw [sum_update_add_of_mem (Finset.mem_univ ib) e 1, hsum]
     let S (d : Fin n → ℕ) : Set (Fin n → K) :=
       (Set.univ.pi fun i ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ d i)) \
         Set.univ.pi fun i ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ Function.update d i₀ (d i₀ + 1) i)
