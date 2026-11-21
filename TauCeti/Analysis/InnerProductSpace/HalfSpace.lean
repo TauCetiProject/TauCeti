@@ -19,11 +19,11 @@ closed ball `closedBall w r` lies in `{y | ⟪y, ν⟫ < c}` whenever `⟪w, ν�
 `c + r * ‖ν‖ < ⟪w, ν⟫` (`TauCeti.closedBall_subset_setOf_lt_inner`). The projection
 `z - (⟪z, ν⟫ / ‖ν‖²) ν` lands in the boundary hyperplane `{z | ⟪z, ν⟫ = 0}` and does not increase
 norms. In a one-dimensional inner product space, inner product against a nonzero vector separates
-points (`TauCeti.eq_of_inner_eq_of_finrank_eq_one`), so removing a point from a set splits it into
-the two strict half-spaces bounded by the hyperplane through that point
-(`TauCeti.sdiff_singleton_eq_union_setOf_inner_lt_of_finrank_eq_one`). Relative to an
-orthonormal basis `(eᵢ)`, a bilinear form splits into a part along `ν` and a part along the
-projected basis vectors `eᵢ - (⟪eᵢ, ν⟫ / ‖ν‖²) ν`. In rigid coordinates
+points (`TauCeti.eq_of_inner_eq_of_finrank_eq_one`), so removing `x` from a set `s` leaves
+`s \ {x}` as the union of the intersections of `s` with the two strict half-spaces bounded by the
+hyperplane through `x` (`TauCeti.sdiff_singleton_eq_union_setOf_inner_lt_of_finrank_eq_one`).
+Relative to an orthonormal basis `(eᵢ)`, a bilinear form splits into a part along `ν` and a part
+along the projected basis vectors `eᵢ - (⟪eᵢ, ν⟫ / ‖ν‖²) ν`. In rigid coordinates
 `e : F ≃ᵃⁱ ℝ × E`, the normal coordinate `(e x).fst` is `⟪x, ν⟫` plus a constant, so the region
 where it is positive is a half-space.
 -/

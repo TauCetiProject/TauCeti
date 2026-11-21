@@ -46,7 +46,8 @@ blow-ups of `s` at points of `∂*s` in De Giorgi's structure theorem. In dimens
 the inclusion `∂*s ⊆ ∂ᵉs`, while the `n ≤ 1` case comes from
 `TauCeti.reducedBoundary_subset_essentialBoundary_of_finrank_le_one`; combined, the reduced
 boundary lies in the essential boundary in every dimension
-(`TauCeti.reducedBoundary_subset_essentialBoundary`).
+(`TauCeti.reducedBoundary_subset_essentialBoundary`), and hence the perimeter measure `|Dχ_s|` is
+concentrated on `∂ᵉs` (`TauCeti.ae_mem_essentialBoundary`).
 
 Write `m(ρ) = μ(s ∩ ball x ρ)`. Cutting `s` by the ball of radius `ρ` adds at most `m'(ρ)` to its
 perimeter (`TauCeti.ae_perimeter_inter_ball_le`), and at the reduced boundary
@@ -299,5 +300,12 @@ theorem reducedBoundary_subset_essentialBoundary :
   refine hr.trans ?_
   gcongr
   exact fun y hy => ⟨.inl hy.2, hy.1⟩
+
+/-- **The perimeter measure is concentrated on the essential boundary.** Against an additive Haar
+measure on a finite-dimensional real inner product space, `|Dχ_s|`-almost every point of `Ω` lies in
+`∂ᵉs`. -/
+theorem ae_mem_essentialBoundary :
+    ∀ᵐ y : Ω ∂variationMeasure μ Ω (s.indicator 1), (y : E) ∈ essentialBoundary μ s :=
+  ae_mem_reducedBoundary.mono fun _ hy => reducedBoundary_subset_essentialBoundary hy
 
 end TauCeti

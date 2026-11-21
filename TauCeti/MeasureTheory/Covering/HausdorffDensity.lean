@@ -305,33 +305,6 @@ namespace TauCeti
 
 variable {X : Type u} [MetricSpace X] [MeasurableSpace X] [BorelSpace X]
 
-/-- A measurable set of finite `μH[d]` measure has upper `d`-density less than `c` at
-`μH[d]`-almost every point outside it, for each `c ≠ 0`. -/
-private lemma hausdorffMeasure_setOf_frequently_le_eq_zero {d : ℝ} {A : Set X}
-    (hA : MeasurableSet A) (hAfin : μH[d] A ≠ ∞) {c : ℝ≥0∞} (hc : c ≠ 0) :
-    μH[d] {x | x ∉ A ∧ ∃ᶠ r in 𝓝[>] 0,
-      c * ENNReal.ofReal (2 * r) ^ d ≤ μH[d] (A ∩ closedBall x r)} = 0 := by
-  set B := {x | x ∉ A ∧ ∃ᶠ r in 𝓝[>] 0,
-    c * ENNReal.ofReal (2 * r) ^ d ≤ μH[d] (A ∩ closedBall x r)}
-  suffices c * μH[d] B = 0 by simpa [hc] using this
-  refine le_antisymm (ENNReal.le_of_forall_pos_le_add fun ε hε _ => ?_) bot_le
-  -- Approximate `A` from inside by a closed set `F`, using the finite measure `μH[d]|_A`.
-  have : IsFiniteMeasure (μH[d].restrict A) :=
-    ⟨by rw [restrict_apply_univ]; exact hAfin.lt_top⟩
-  obtain ⟨F, hFA, hF, hAF⟩ := hA.exists_isClosed_sdiff_lt (μ := μH[d].restrict A)
-    (by rwa [restrict_apply_self]) (ENNReal.coe_ne_zero.2 hε.ne')
-  rw [Measure.restrict_apply (hA.diff hF.measurableSet), inter_eq_left.2 sdiff_subset] at hAF
-  -- Near a point outside `F`, the part of `A` in a small ball lies in `A \ F`.
-  have key := mul_hausdorffMeasure_le_measure_of_isOpen (μH[d].restrict (A \ F))
-    hF.isOpen_compl (d := d) (c := c) (A := B) (fun x hx => fun hxF => hx.1 (hFA hxF)) fun x hx =>
-      hx.2.mp ((eventually_nhdsWithin_of_eventually_nhds (eventually_closedBall_subset
-        (hF.isOpen_compl.mem_nhds fun hxF => hx.1 (hFA hxF)))).mono fun r hr hle => ?_)
-  · rw [Measure.restrict_apply hF.isOpen_compl.measurableSet,
-      show Fᶜ ∩ (A \ F) = A \ F by grind] at key
-    simpa using key.trans hAF.le
-  · rwa [Measure.restrict_apply measurableSet_closedBall,
-      show closedBall x r ∩ (A \ F) = A ∩ closedBall x r by grind]
-
 /-- **Zero density outside a set.** A null-measurable set `A` of finite `d`-dimensional Hausdorff
 measure has upper `d`-density zero at almost every point outside it:
 `μH[d] (A ∩ closedBall x r) / (2 r) ^ d → 0` as `r → 0⁺` for `μH[d]`-almost every `x ∉ A`. -/
@@ -339,19 +312,12 @@ theorem ae_tendsto_hausdorffMeasure_inter_closedBall_div {d : ℝ} {A : Set X}
     (hA : NullMeasurableSet A μH[d]) (hAfin : μH[d] A ≠ ∞) :
     ∀ᵐ x ∂μH[d], x ∉ A → Tendsto (fun r => μH[d] (A ∩ closedBall x r) /
       ENNReal.ofReal (2 * r) ^ d) (𝓝[>] 0) (𝓝 0) := by
-  obtain ⟨A₀, hA₀A, hA₀, hA₀ae⟩ := hA.exists_measurable_subset_ae_eq
-  have hball (x : X) (r : ℝ) : μH[d] (A ∩ closedBall x r) = μH[d] (A₀ ∩ closedBall x r) :=
-    measure_congr (hA₀ae.symm.inter Filter.EventuallyEqSet.rfl)
-  have hnull := fun n : ℕ => hausdorffMeasure_setOf_frequently_le_eq_zero hA₀
-    (ne_top_of_le_ne_top hAfin (measure_mono hA₀A)) (c := (n : ℝ≥0∞)⁻¹) (by simp)
-  filter_upwards [ae_all_iff.2 fun n => measure_eq_zero_iff_ae_notMem.1 (hnull n)]
-    with x hx hxA
-  refine ENNReal.tendsto_nhds_zero.2 fun ε hε => ?_
-  obtain ⟨n, hn⟩ := ENNReal.exists_inv_nat_lt hε.ne'
-  have := hx n
-  simp only [not_and, not_frequently, not_le] at this
-  filter_upwards [this fun hxA₀ => hxA (hA₀A hxA₀)] with r hr
-  rw [hball]
-  exact ENNReal.div_le_of_le_mul (hr.le.trans (by gcongr))
+  have : IsFiniteMeasure (μH[d].restrict A) :=
+    ⟨by rw [Measure.restrict_apply_univ]; exact hAfin.lt_top⟩
+  have hnull : (μH[d].restrict A) Aᶜ = 0 := by
+    rw [Measure.restrict_apply₀ (hA.compl.mono Measure.restrict_le_self), compl_inter_self,
+      measure_empty]
+  simpa [Measure.restrict_apply measurableSet_closedBall, inter_comm A] using
+    (μH[d].restrict A).ae_tendsto_measure_closedBall_div_of_measure_eq_zero hnull
 
 end TauCeti

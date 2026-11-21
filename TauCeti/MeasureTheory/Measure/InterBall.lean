@@ -40,7 +40,12 @@ integrals of a function integrable on a ball over the concentric balls of smalle
 its integral over the ball (`MeasureTheory.IntegrableOn.tendsto_integral_ball_nhdsLT`), and, for a
 locally finite measure vanishing on points, the integrals of a function integrable on a set `S`
 over the parts of `S` in the balls about a point tend to `0` with the radius
-(`MeasureTheory.IntegrableOn.tendsto_setIntegral_ball_nhds_zero`).
+(`MeasureTheory.IntegrableOn.tendsto_setIntegral_ball_nhds_zero`). Also, for any measure on a
+pseudo-metric space, the variation of `r ↦ μ.real (s ∩ closedBall x r)` is controlled by that of
+`r ↦ μ.real (closedBall x r)` (`MeasureTheory.Measure.dist_real_inter_closedBall_le`), so
+continuity of the closed-ball volume passes to `r ↦ μ.real (s ∩ closedBall x r)` and
+`r ↦ μ (s ∩ closedBall x r)` (`MeasureTheory.Measure.continuousOn_real_inter_closedBall`,
+`MeasureTheory.Measure.continuousOn_inter_closedBall`).
 
 ## Main results
 
@@ -54,6 +59,10 @@ over the parts of `S` in the balls about a point tend to `0` with the radius
   arbitrarily close to `ρ` from the right extends to `ρ` for a right-continuous gauge.
 * `MeasureTheory.Measure.measure_ball_le_of_forall_lt`: a bound on the measures of the open balls
   of radius less than `ρ` bounds the open ball of radius `ρ`.
+* `MeasureTheory.Measure.dist_real_inter_closedBall_le`,
+  `MeasureTheory.Measure.continuousOn_real_inter_closedBall` and
+  `MeasureTheory.Measure.continuousOn_inter_closedBall`: variation bound and continuity of
+  `r ↦ μ (s ∩ closedBall x r)` from continuity of `r ↦ μ (closedBall x r)`.
 * `TauCeti.tendsto_measure_ball_nhdsGT_zero`: shrinking balls about `z` have measures tending to
   `μ {z}`.
 * `MeasureTheory.IntegrableOn.tendsto_integral_ball_nhdsLT`: as `r → R⁻`, the integral over
@@ -158,6 +167,68 @@ theorem measure_ball_le_of_forall_lt (μ : Measure X) {x : X} {ρ : ℝ} {B : �
       mem_iUnion.2 (hlim.eventually (lt_mem_nhds hz)).exists
   rw [← hU, Monotone.measure_iUnion fun i j hij => ball_subset_ball (hr.monotone hij)]
   exact iSup_le fun n => h _ (hrρ n)
+
+section ClosedBallContinuity
+
+variable [OpensMeasurableSpace X]
+
+/-- For radii `r₁, r₂` whose closed balls around `x` have finite `μ`-measure, the variation of
+`r ↦ μ.real (s ∩ closedBall x r)` between `r₁` and `r₂` is bounded by that of
+`r ↦ μ.real (closedBall x r)`, without any measurability assumption on `s`. -/
+theorem dist_real_inter_closedBall_le (μ : Measure X) (x : X) (s : Set X) {r₁ r₂ : ℝ}
+    (hfin₁ : μ (closedBall x r₁) ≠ ∞) (hfin₂ : μ (closedBall x r₂) ≠ ∞) :
+    dist (μ.real (s ∩ closedBall x r₁)) (μ.real (s ∩ closedBall x r₂)) ≤
+      dist (μ.real (closedBall x r₁)) (μ.real (closedBall x r₂)) := by
+  wlog hle : r₁ ≤ r₂ generalizing r₁ r₂
+  · rw [dist_comm, dist_comm (μ.real (closedBall x r₁))]
+    exact this hfin₂ hfin₁ (le_of_not_ge hle)
+  have hsub : closedBall x r₁ ⊆ closedBall x r₂ := closedBall_subset_closedBall hle
+  have hcover : s ∩ closedBall x r₂ ⊆
+      s ∩ closedBall x r₁ ∪ (closedBall x r₂ \ closedBall x r₁) :=
+    fun y ⟨hys, hyr₂⟩ => (em (y ∈ closedBall x r₁)).imp (fun hy => ⟨hys, hy⟩) fun hy => ⟨hyr₂, hy⟩
+  have hmono : μ.real (s ∩ closedBall x r₁) ≤ μ.real (s ∩ closedBall x r₂) :=
+    measureReal_mono (inter_subset_inter_right _ hsub)
+      (measure_ne_top_of_subset inter_subset_right hfin₂)
+  have hup : μ.real (s ∩ closedBall x r₂) ≤
+      μ.real (s ∩ closedBall x r₁) + (μ.real (closedBall x r₂) - μ.real (closedBall x r₁)) := by
+    refine (measureReal_mono hcover (measure_ne_top_of_subset
+      (union_subset (inter_subset_right.trans hsub) sdiff_subset) hfin₂)).trans ?_
+    refine (measureReal_union_le _ _).trans_eq ?_
+    rw [measureReal_sdiff hsub measurableSet_closedBall hfin₂]
+  have hball : μ.real (closedBall x r₁) ≤ μ.real (closedBall x r₂) :=
+    measureReal_mono hsub hfin₂
+  rw [Real.dist_eq, abs_sub_comm, abs_of_nonneg (sub_nonneg.2 hmono), Real.dist_eq, abs_sub_comm,
+    abs_of_nonneg (sub_nonneg.2 hball)]
+  linarith
+
+/-- If `r ↦ μ.real (closedBall x r)` is continuous on `S` and the closed balls of radii in `S` have
+finite `μ`-measure, then `r ↦ μ.real (s ∩ closedBall x r)` is continuous on `S` for every set `s`
+(no measurability is needed). -/
+theorem continuousOn_real_inter_closedBall (μ : Measure X) (x : X) (s : Set X) {S : Set ℝ}
+    (hfin : ∀ r ∈ S, μ (closedBall x r) ≠ ∞)
+    (hcont : ContinuousOn (fun r => μ.real (closedBall x r)) S) :
+    ContinuousOn (fun r => μ.real (s ∩ closedBall x r)) S := by
+  intro r₀ hr₀
+  rw [Metric.continuousWithinAt_iff]
+  intro ε hε
+  obtain ⟨δ, hδ, hδg⟩ := Metric.continuousWithinAt_iff.1 (hcont r₀ hr₀) ε hε
+  exact ⟨δ, hδ, fun r hr hdist =>
+    (μ.dist_real_inter_closedBall_le x s (hfin r hr) (hfin r₀ hr₀)).trans_lt (hδg hr hdist)⟩
+
+/-- If `r ↦ μ (closedBall x r)` is continuous on `S` and finite on `S`, then
+`r ↦ μ (s ∩ closedBall x r)` is continuous on `S` for every set `s` (no measurability is needed).
+-/
+theorem continuousOn_inter_closedBall (μ : Measure X) (x : X) (s : Set X) {S : Set ℝ}
+    (hfin : ∀ r ∈ S, μ (closedBall x r) ≠ ∞)
+    (hcont : ContinuousOn (fun r => μ (closedBall x r)) S) :
+    ContinuousOn (fun r => μ (s ∩ closedBall x r)) S := by
+  have hcontReal : ContinuousOn (fun r => μ.real (closedBall x r)) S :=
+    ENNReal.continuousOn_toReal.comp hcont fun r hr => hfin r hr
+  exact (ENNReal.continuous_ofReal.comp_continuousOn
+    (μ.continuousOn_real_inter_closedBall x s hfin hcontReal)).congr fun r hr =>
+    (ofReal_measureReal (measure_ne_top_of_subset inter_subset_right (hfin r hr))).symm
+
+end ClosedBallContinuity
 
 end MeasureTheory.Measure
 

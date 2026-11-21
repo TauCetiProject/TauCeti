@@ -240,6 +240,24 @@ theorem ofReal_sum_abs_sub_le_totalVariationOn {Ω : Opens ℝ} {u : ℝ → ℝ
     rw [Real.closedBall_eq_Icc]
     exact ⟨by linarith [inv_pos.2 hc0], hy.2⟩
 
+/-- **Two-point variation bound along Lebesgue points.** If `u` is locally integrable on `Ω` and
+has Lebesgue values `v₀` at `x₀` and `v₁` at `x₁`, with `[x₀, x₁] ⊆ Ω` (regardless of order),
+then `|v₁ - v₀| ≤ |Du|(Ω)`. -/
+private theorem ofReal_abs_sub_le_totalVariationOn {Ω : Opens ℝ} {u : ℝ → ℝ}
+    (hu : LocallyIntegrableOn u Ω) {x₀ x₁ v₀ v₁ : ℝ}
+    (hΩ : uIcc x₀ x₁ ⊆ Ω)
+    (hv₀ : Tendsto (fun r => ⨍ y in closedBall x₀ r, ‖u y - v₀‖) (𝓝[>] 0) (𝓝 0))
+    (hv₁ : Tendsto (fun r => ⨍ y in closedBall x₁ r, ‖u y - v₁‖) (𝓝[>] 0) (𝓝 0)) :
+    ENNReal.ofReal |v₁ - v₀| ≤ totalVariationOn volume Ω u := by
+  wlog hle : x₀ ≤ x₁ generalizing x₀ x₁ v₀ v₁
+  · rw [abs_sub_comm]
+    exact this (uIcc_comm x₀ x₁ ▸ hΩ) hv₁ hv₀ (le_of_not_ge hle)
+  have h := ofReal_sum_abs_sub_le_totalVariationOn hu (x := ![x₀, x₁]) (v := ![v₀, v₁])
+    (Fin.monotone_iff_le_succ.2 fun i => by fin_cases i; exact hle)
+    (by simpa [uIcc_of_le hle] using hΩ)
+    fun i => by fin_cases i <;> assumption
+  simpa [Fin.sum_univ_succ] using h
+
 /-- Monotone Lebesgue points of the indicator of a measurable set `s` bound its perimeter from
 below by the number of alternations between `s` and its complement. -/
 private theorem ofReal_sum_le_perimeter {s : Set ℝ} (hs : MeasurableSet s) {m : ℕ}
@@ -420,29 +438,15 @@ theorem measure_inter_Ioo_eq_zero_or_sdiff_eq_zero_of_perimeter_lt_one {a b : �
     (h1eq ▸ hne.1) (ae_restrict_of_ae hae)
   obtain ⟨y₀, ⟨hy₀I, hy₀t⟩, hy₀⟩ := Measure.exists_mem_of_measure_ne_zero_of_ae (s := Ioo a b \ t)
     (h0eq ▸ hne.2) (ae_restrict_of_ae hae)
+  simp only [indicator_of_mem hy₁t, Pi.one_apply] at hy₁
+  simp only [indicator_of_notMem hy₀t] at hy₀
   have hu : LocallyIntegrableOn (t.indicator (1 : ℝ → ℝ)) (Ioo a b) volume := by
     rw [Pi.one_def]
     exact ((locallyIntegrable_const 1).indicator ht).locallyIntegrableOn _
-  have hvar := ofReal_sum_abs_sub_le_totalVariationOn (Ω := ⟨Ioo a b, isOpen_Ioo⟩) hu
-    (x := ![min y₀ y₁, max y₀ y₁])
-    (v := fun i => t.indicator 1 (![min y₀ y₁, max y₀ y₁] i))
-    (Fin.monotone_iff_le_succ.2 fun i => by fin_cases i; exact min_le_max)
-    (fun z hz => ⟨(lt_min hy₀I.1 hy₁I.1).trans_le hz.1, hz.2.trans_lt (max_lt hy₀I.2 hy₁I.2)⟩)
-    fun i => by
-      rcases le_total y₀ y₁ with hle | hle
-      · fin_cases i
-        · simpa [min_eq_left hle] using hy₀
-        · simpa [max_eq_right hle] using hy₁
-      · fin_cases i
-        · simpa [min_eq_right hle] using hy₁
-        · simpa [max_eq_left hle] using hy₀
-  have hsum : |(t.indicator (1 : ℝ → ℝ) (max y₀ y₁) - t.indicator 1 (min y₀ y₁))| = 1 := by
-    rcases le_total y₀ y₁ with hle | hle
-    · simp [min_eq_left hle, max_eq_right hle, hy₀t, hy₁t]
-    · simp [min_eq_right hle, max_eq_left hle, hy₀t, hy₁t]
   have hle1 : (1 : ℝ≥0∞) ≤ perimeter volume ⟨Ioo a b, isOpen_Ioo⟩ s := by
     rw [perimeter_congr_ae hstI, perimeter_def]
-    simpa [Fin.sum_univ_succ, hsum] using hvar
+    simpa using ofReal_abs_sub_le_totalVariationOn hu (ordConnected_Ioo.uIcc_subset hy₀I hy₁I)
+      hy₀ hy₁
   exact (not_le_of_gt hP) hle1
 
 end TauCeti.Real
