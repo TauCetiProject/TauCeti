@@ -411,21 +411,27 @@ theorem splitLinearEquiv_symm_apply (ε : 𝒜.Augmentation)
 theorem reducedPart_koszulTwist (ε : 𝒜.Augmentation) (q : ℤ) (x : A) :
     ε.reducedPart (𝒜.grading.koszulTwist q x) =
       ε.reducedGrading.koszulTwist q (ε.reducedPart x) := by
-  have h := ε.isHomogeneous_reducedPart.koszulTwist_apply q x
-  simpa only [reducedAlgebra_grading, mul_zero, Int.negOnePow_zero, Units.val_one,
-    Int.cast_one, one_smul] using h.symm
+  rw [← ε.reducedAlgebra_grading]
+  exact (ε.isHomogeneous_reducedPart.koszulTwist_apply_zero q x).symm
+
+/-- The reduced-part projection commutes with the unary operation. -/
+@[simp]
+theorem reducedPart_m_one (ε : 𝒜.Augmentation) (x : A) :
+    ε.reducedPart (𝒜.m 1 ![x]) = ε.reducedOperation 1 ![ε.reducedPart x] := by
+  have hm : 𝒜.m 1 ![x] = (ε.reducedOperation 1 ![ε.reducedPart x] : A) := by
+    conv_lhs =>
+      rw [← ε.coe_reducedPart_add_smul_unit x, ← differential_apply, map_add, map_smul,
+        ε.isStrictUnit.differential_eq_zero, smul_zero, add_zero, differential_apply]
+    rw [coe_reducedOperation]
+    congr 1
+    exact funext <| Fin.forall_fin_one.2 (by simp)
+  rw [hm, ε.reducedPart_coe]
 
 /-- The reduced-part projection intertwines the differential with that of the reduced `A∞`
 algebra. -/
 theorem reducedPart_differential (ε : 𝒜.Augmentation) (x : A) :
     ε.reducedPart (𝒜.differential x) = ε.reducedAlgebra.differential (ε.reducedPart x) := by
-  have hd : 𝒜.differential x = (ε.reducedAlgebra.differential (ε.reducedPart x) : A) := by
-    conv_lhs => rw [← ε.coe_reducedPart_add_smul_unit x]
-    rw [map_add, map_smul, ε.isStrictUnit.differential_eq_zero, smul_zero, add_zero,
-      differential_apply, differential_apply, reducedAlgebra_m, coe_reducedOperation]
-    congr 1
-    exact funext <| Fin.forall_fin_one.2 (by simp)
-  rw [hd, ε.reducedPart_coe]
+  simp only [differential_apply, reducedAlgebra_m, reducedPart_m_one]
 
 end Augmentation
 
