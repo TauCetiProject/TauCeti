@@ -53,6 +53,24 @@ theorem expSum_pow (i : α) (r : Relator α) (n : ℕ) : expSum i (.pow r n) = e
 @[simp]
 theorem expSum_comm (i : α) (r s : Relator α) : expSum i (.comm r s) = 0 := by rfl
 
+/-- A conjugate `s⁻¹ r s` has the exponent sums of `r`. -/
+@[simp]
+theorem expSum_conj (i : α) (r s : Relator α) : expSum i (r.conj s) = expSum i r := by
+  simp only [conj, expSum_mul, expSum_inv]
+  omega
+
+/-- The relator `r s⁻¹` has the exponent sums of `r` minus those of `s`. -/
+@[simp]
+theorem expSum_div (i : α) (r s : Relator α) :
+    expSum i (r.div s) = expSum i r - expSum i s := by
+  simp only [div, expSum_mul, expSum_inv]
+  omega
+
+/-- A commutator `r⁻¹ s⁻¹ r s` has exponent sum `0` at every generator. -/
+@[simp]
+theorem expSum_commInvInv (i : α) (r s : Relator α) : expSum i (r.commInvInv s) = 0 := by
+  simp only [commInvInv, expSum_comm]
+
 /-- In a commutative group, a relator evaluates to the product of the generator values raised to
 their exponent sums. -/
 theorem eval_eq_prod_zpow [Fintype α] {G : Type*} [CommGroup G] (f : α → G) (r : Relator α) :
