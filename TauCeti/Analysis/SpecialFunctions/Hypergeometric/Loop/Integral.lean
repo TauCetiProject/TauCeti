@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.SpecialFunctions.Hypergeometric.EulerIntegral
 import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric.Basic
-import Mathlib.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts
 import TauCeti.Analysis.SpecialFunctions.Complex.CircleMap
 import TauCeti.Analysis.SpecialFunctions.Exp.Periodic
 import TauCeti.Analysis.SpecialFunctions.Integrability.Cpow
@@ -42,7 +41,7 @@ boundary throughout the principal cut plane `{z | 1 - z ∈ Complex.slitPlane}`:
   `{p | 1 - p.2.2 ∈ Complex.slitPlane ∧ ‖p.2.2‖ * ρ < 1}`
   (`Complex.analyticOnNhd_hypergeometricLoopZero`).
   `Complex.hypergeometricLoopZero_eq_of_integrableOn` gives radius independence whenever
-  the Euler tail from the smaller radius is integrable: this replaces the global cut-plane
+  the Euler tail from the larger radius is integrable: this replaces the global cut-plane
   condition, while both radii still satisfy `0 < ρᵢ < 1` and `‖z‖ * ρᵢ < 1`.
 
 For `0 < re b < re c` and admissible radii `ρ ∈ (0, 1)` (satisfying
@@ -89,20 +88,10 @@ namespace Complex
 
 /-! ### Internal `(0+)` keyhole functional -/
 
-/-- Reflecting the Euler segment by `t = 1 - u` preserves its slit-plane condition. -/
-private theorem one_sub_sub_neg_mul_ofReal_mem_slitPlane {z : ℂ} (hz : 1 - z ∈ slitPlane)
-    {u : ℝ} (hu : u ∈ Set.Icc 0 1) : (1 - z) - (-z) * (u : ℂ) ∈ slitPlane := by
-  have hreflect : (1 - z) - (-z) * (u : ℂ) = 1 - z * ((1 - u : ℝ) : ℂ) := by
-    push_cast
-    ring
-  rw [hreflect]
-  exact one_sub_mul_ofReal_mem_slitPlane hz
-    ⟨sub_nonneg.mpr hu.2, sub_le_self _ hu.1⟩
-
 private def affineSegIntegrand (a β γ w₀ w₁ : ℂ) (u : ℝ) : ℂ :=
   (u : ℂ) ^ (β - 1) * (1 - (u : ℂ)) ^ (γ - 1) * (w₀ - w₁ * u) ^ (-a)
 
-/-- The unit affine segment is the unnormalized Euler kernel. -/
+/-- The unit affine segment is the unnormalized Euler integrand. -/
 private theorem affineSegIntegrand_unit (a b c z : ℂ) :
     affineSegIntegrand a b (c - b) 1 z = fun t : ℝ =>
       (t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1) * (1 - z * t) ^ (-a) := rfl
@@ -111,7 +100,8 @@ private def affineCircIntegrand (a β γ w₀ w₁ : ℂ) (ρ θ : ℝ) : ℂ :=
   ((ρ : ℂ) ^ (β - 1) * exp (θ * I * (β - 1))) * (1 - ρ * exp (θ * I)) ^ (γ - 1) *
     (w₀ - w₁ * (ρ * exp (θ * I))) ^ (-a) * (I * ρ * exp (θ * I))
 
-/-- The unit affine circle is the continued Euler kernel with its circular derivative. -/
+/-- The unit affine circle is the continued unnormalized Euler integrand with its circular
+derivative. -/
 private theorem affineCircIntegrand_unit (a b c z : ℂ) (ρ : ℝ) :
     affineCircIntegrand a b (c - b) 1 z ρ = fun θ : ℝ =>
       ((ρ : ℂ) ^ (b - 1) * exp (θ * I * (b - 1))) *
@@ -149,7 +139,7 @@ private theorem I_mul_affineLogIntegrand_vertical (a β γ w₀ w₁ : ℂ) {ρ 
       affineCircIntegrand a β γ w₀ w₁ ρ θ := by
   have hρ0 : (ρ : ℂ) ≠ 0 := ofReal_ne_zero.mpr hρ.ne'
   have hexp : exp ((Real.log ρ : ℂ) + θ * I) = ρ * exp (θ * I) := by
-    simpa only [circleMap_zero] using exp_ofReal_log_add_mul_I hρ θ
+    rw [Complex.exp_add, ← Complex.ofReal_exp, Real.exp_log hρ]
   have hpow : exp ((β - 1) * ((Real.log ρ : ℂ) + θ * I)) =
       (ρ : ℂ) ^ (β - 1) * exp (θ * I * (β - 1)) := by
     rw [mul_comm]
@@ -766,23 +756,41 @@ private theorem hypergeometricLoopZero_eq_affineLoopZero (a b c z : ℂ) (ρ : �
   dsimp only [affineCircIntegrand]; ring
 
 /-- The `(0+)` loop is independent of the radius when `0 < ρᵢ < 1` and `‖z‖ * ρᵢ < 1`
-for both radii. Explicit Euler-tail integrability from the smaller radius replaces the
+for both radii. Explicit Euler-tail integrability from the larger radius replaces the
 global cut-plane condition `1 - z ∈ slitPlane`. -/
 theorem hypergeometricLoopZero_eq_of_integrableOn (a b c z : ℂ)
     {ρ₁ ρ₂ : ℝ} (hρ₁ : 0 < ρ₁) (hρ₁1 : ρ₁ < 1) (hρ₂ : 0 < ρ₂) (hρ₂1 : ρ₂ < 1)
     (hz₁ : ‖z‖ * ρ₁ < 1) (hz₂ : ‖z‖ * ρ₂ < 1)
     (hint : IntegrableOn (fun t : ℝ =>
       (t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1) * (1 - z * t) ^ (-a))
-      (Ioo (min ρ₁ ρ₂) 1)) :
+      (Ioo (max ρ₁ ρ₂) 1)) :
     hypergeometricLoopZero a b c z ρ₁ = hypergeometricLoopZero a b c z ρ₂ := by
-  have hint' : IntegrableOn (affineSegIntegrand a b (c - b) 1 z) (Ioo (min ρ₁ ρ₂) 1) := by
+  have hmin1 : min ρ₁ ρ₂ < 1 := (min_le_left _ _).trans_lt hρ₁1
+  have hmax1 : max ρ₁ ρ₂ < 1 := max_lt hρ₁1 hρ₂1
+  have hzmax : ‖z‖ * max ρ₁ ρ₂ < 1 := by
+    rcases le_total ρ₁ ρ₂ with h | h
+    · simpa only [max_eq_right h] using hz₂
+    · simpa only [max_eq_left h] using hz₁
+  have hseg : IntervalIntegrable (affineSegIntegrand a b (c - b) 1 z) volume
+      (min ρ₁ ρ₂) (max ρ₁ ρ₂) :=
+    (continuousOn_affineSegIntegrand_Icc a b (c - b) 1 z (lt_min hρ₁ hρ₂) hmax1
+      (fun u hu => (closedBall_one_subset_slitPlane_iff.mpr hzmax) (by
+        rw [mem_closedBall, dist_eq_norm, sub_sub_cancel_left, norm_neg, norm_mul,
+          Complex.norm_real, Real.norm_of_nonneg ((lt_min hρ₁ hρ₂).le.trans hu.1)]
+        exact mul_le_mul_of_nonneg_left hu.2 (norm_nonneg z)))).intervalIntegrable_of_Icc
+        min_le_max
+  have htail : IntervalIntegrable (affineSegIntegrand a b (c - b) 1 z) volume (max ρ₁ ρ₂) 1 := by
+    apply (intervalIntegrable_iff_integrableOn_Ioo_of_le hmax1.le).mpr
     rwa [affineSegIntegrand_unit]
+  have hint' := hseg.trans htail
   have hint₁ : IntervalIntegrable (affineSegIntegrand a b (c - b) 1 z) volume ρ₁ 1 :=
-    (intervalIntegrable_iff_integrableOn_Ioo_of_le hρ₁1.le).mpr
-      (hint'.mono_set (Ioo_subset_Ioo (min_le_left _ _) le_rfl))
+    hint'.mono_set (by
+      rw [uIcc_of_le hρ₁1.le, uIcc_of_le hmin1.le]
+      exact Icc_subset_Icc (min_le_left _ _) le_rfl)
   have hint₂ : IntervalIntegrable (affineSegIntegrand a b (c - b) 1 z) volume ρ₂ 1 :=
-    (intervalIntegrable_iff_integrableOn_Ioo_of_le hρ₂1.le).mpr
-      (hint'.mono_set (Ioo_subset_Ioo (min_le_right _ _) le_rfl))
+    hint'.mono_set (by
+      rw [uIcc_of_le hρ₂1.le, uIcc_of_le hmin1.le]
+      exact Icc_subset_Icc (min_le_right _ _) le_rfl)
   rw [hypergeometricLoopZero_eq_affineLoopZero, hypergeometricLoopZero_eq_affineLoopZero]
   exact affineLoopZero_eq_of_radius a b (c - b) 1 z hρ₁ hρ₁1 hρ₂ hρ₂1
     (closedBall_one_subset_slitPlane_iff.mpr hz₁) (closedBall_one_subset_slitPlane_iff.mpr hz₂)
@@ -796,9 +804,9 @@ theorem hypergeometricLoopZero_eq (a b c z : ℂ) (hbc : b.re < c.re) (hz : 1 - 
     (hz₁ : ‖z‖ * ρ₁ < 1) (hz₂ : ‖z‖ * ρ₂ < 1) :
     hypergeometricLoopZero a b c z ρ₁ = hypergeometricLoopZero a b c z ρ₂ := by
   apply hypergeometricLoopZero_eq_of_integrableOn a b c z hρ₁ hρ₁1 hρ₂ hρ₂1 hz₁ hz₂
-  exact (intervalIntegrable_iff_integrableOn_Ioo_of_le ((min_le_left ρ₁ ρ₂).trans_lt hρ₁1).le).mp
-    (intervalIntegrable_eulerIntegrand_right a hbc hz (lt_min hρ₁ hρ₂)
-      ((min_le_left ρ₁ ρ₂).trans_lt hρ₁1).le)
+  exact (intervalIntegrable_iff_integrableOn_Ioo_of_le (max_lt hρ₁1 hρ₂1).le).mp
+    (intervalIntegrable_eulerIntegrand_right a hbc hz (hρ₁.trans_le (le_max_left _ _))
+      (max_lt hρ₁1 hρ₂1).le)
 
 /-- **Joint holomorphy of the `(0+)` loop integral along lines of fixed `c - b`.** For fixed `d`
 with `0 < re d` and `ρ ∈ (0, 1)`, `(a, b, z) ↦ hypergeometricLoopZero a b (b + d) z ρ` is jointly

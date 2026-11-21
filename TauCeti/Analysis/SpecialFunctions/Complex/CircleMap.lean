@@ -9,15 +9,17 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 import Mathlib.MeasureTheory.Integral.CircleIntegral
+import TauCeti.Analysis.Complex.SlitPlane
 
 /-!
 # Circles in annuli and punctured discs, arclength circles, and powers of circle maps
 
 ## Main results
 
-* `Complex.exp_ofReal_log_add_mul_I`: logarithmic coordinates parametrize a positive-radius circle.
 * `TauCeti.norm_circleMap_sub_center`: the circle of radius `R ≥ 0` about `c` has distance `R`
   from `c`.
+* `TauCeti.re_one_sub_mul_circleMap_pos`: a scaled circle subtracted from `1` lies in the right
+  half-plane when its radius after scaling is less than `1`.
 * `TauCeti.circleMap_norm_arg`, `TauCeti.circleMap_norm_sub_arg_sub`: polar coordinates about
   `c`, so every point `w` is `circleMap c ‖w - c‖ (arg (w - c))`.
 * `TauCeti.hasDerivAt_circleMap_radius`: along the ray at angle `θ`, the radius derivative of
@@ -33,17 +35,6 @@ import Mathlib.MeasureTheory.Integral.CircleIntegral
 
 public section
 
-namespace Complex
-
-/-- Exponentiating logarithmic polar coordinates gives the circle of positive radius `r`
-about the origin. The angle is unrestricted, so the logarithmic coordinate may continue
-through any number of turns. -/
-theorem exp_ofReal_log_add_mul_I {r : ℝ} (hr : 0 < r) (θ : ℝ) :
-    exp ((Real.log r : ℂ) + θ * I) = circleMap 0 r θ := by
-  rw [exp_add, ← ofReal_exp, Real.exp_log hr, circleMap_zero]
-
-end Complex
-
 namespace TauCeti
 
 open Complex Metric Set
@@ -52,6 +43,13 @@ open Complex Metric Set
 theorem norm_circleMap_sub_center (c : ℂ) {R : ℝ} (hR : 0 ≤ R) (θ : ℝ) :
     ‖circleMap c R θ - c‖ = R := by
   rw [circleMap_sub_center, norm_circleMap_zero, abs_of_nonneg hR]
+
+/-- Subtracting a point of the scaled circle `z * circleMap 0 ρ θ` from `1` gives a point
+in the open right half-plane whenever the scaled radius is less than `1`. -/
+theorem re_one_sub_mul_circleMap_pos {z : ℂ} {ρ : ℝ} (hzρ : ‖z‖ * |ρ| < 1) (θ : ℝ) :
+    0 < (1 - z * circleMap 0 ρ θ).re := by
+  apply re_pos_of_norm_sub_one_lt_one
+  simpa [norm_mul, norm_circleMap_zero] using hzρ
 
 /-- Polar coordinates about `c`: the point at radius `‖w‖` and angle `arg w` about `c` is
 `c + w`. -/

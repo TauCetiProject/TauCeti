@@ -451,6 +451,16 @@ theorem smoothSingularCohomologyIso_hom (n : ℕ) :
         (SSet.cochainComplexMap (smoothSingularSubcomplex I M).ι) n := by
   rw [smoothSingularCohomologyIso, asIso_hom]
 
+/-- Restricting the image of a smooth singular cohomology class under the inverse of
+`smoothSingularCohomologyIso` back to smooth singular chains recovers the class. -/
+@[simp]
+theorem homologyMap_cochainComplexMap_smoothSingularCohomologyIso_inv_apply (n : ℕ)
+    (x : (((smoothSingularSubcomplex I M : SSet).chainComplex R).linearYonedaObj k Y).homology n) :
+    HomologicalComplex.homologyMap
+        (SSet.cochainComplexMap (R := R) (k := k) (M := Y) (smoothSingularSubcomplex I M).ι) n
+        ((smoothSingularCohomologyIso I M R k Y n).inv x) = x := by
+  rw [← smoothSingularCohomologyIso_hom, Iso.inv_hom_id_apply]
+
 /-- The map induced on cohomology by the inverse of `smoothSingularCochainHomotopyEquiv` is the
 inverse of `smoothSingularCohomologyIso`. -/
 @[simp]

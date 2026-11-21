@@ -224,6 +224,8 @@ theorem compRiemannianIsometry_normalizedPullback (hq : IsQuotientCoveringMap q 
   congr 2
   exact ContMDiffMap.ext fun x ↦ congrArg u (hΦ x)
 
+/-! ### The range of the normalized pullback -/
+
 section Range
 
 variable [BoundarylessManifold I M] [IsManifold I ∞ M] [IsManifold I' ∞ N]

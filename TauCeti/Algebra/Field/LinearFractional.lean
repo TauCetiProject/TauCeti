@@ -81,13 +81,17 @@ end RingHom
 
 namespace TauCeti
 
+/-- The chart `u ↦ u / (1 - u)` shifts by one to the inverse denominator. -/
+theorem one_add_div_one_sub {K : Type*} [DivisionRing K] {u : K} (hu : 1 - u ≠ 0) :
+    1 + u / (1 - u) = (1 - u)⁻¹ := by
+  rw [one_add_div hu]
+  simp
+
 /-- An affine factor in the chart `v = u / (1 - u)` has the same denominator. -/
 theorem one_add_div_one_sub_sub_mul_div_one_sub {K : Type*} [DivisionRing K] {u : K}
     (hu : 1 - u ≠ 0) (z : K) :
     1 + u / (1 - u) - z * (u / (1 - u)) = (1 - z * u) * (1 - u)⁻¹ := by
-  rw [one_add_div hu]
-  simp only [div_eq_mul_inv]
-  noncomm_ring
+  rw [one_add_div_one_sub hu, div_eq_mul_inv, ← mul_assoc, sub_mul, one_mul]
 
 /-- **The Möbius difference formula**: if both denominators are nonzero, then
 `(a * t + b) / (c * t + d) - (a * w + b) / (c * w + d) =
