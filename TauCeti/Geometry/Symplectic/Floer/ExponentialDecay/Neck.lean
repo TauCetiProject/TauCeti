@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.ExponentialDecay
-import TauCeti.Analysis.SpecificLimits.DiscreteGronwall
+import TauCeti.Analysis.SpecificLimits.ShiftDoubling
 import TauCeti.Geometry.Symplectic.AlmostComplex.Topology
+import TauCeti.MeasureTheory.Integral.Rectangle
 
 /-!
 # Exponential decay along a long Floer neck near a nondegenerate orbit
@@ -46,7 +47,8 @@ orbit, `|g(s)|` is at most `K` times the energy of the slice at `s`
 (`TauCeti.SymplecticForm.exists_abs_hamiltonianAction_sub_le_mul_setIntegral_floerEnergyDensity`),
 with `K` independent of `u`. Integrating this over a step `[s, s + K]` shows that the positive part
 of `g` doubles forwards and its negative part doubles backwards, `2 g(s) ≤ g(s + K)` and
-`g(s) ≤ 2 g(s + K)`, and `TauCeti.sub_le_mul_exp_add_exp_of_two_mul_le` turns this into the
+`g(s) ≤ 2 g(s + K)` (`TauCeti.two_mul_sub_le_and_sub_le_two_mul_of_abs_sub_le_mul`), and
+`TauCeti.sub_le_mul_exp_add_exp_of_two_mul_le` turns this into the
 two-sided decay at the rate `κ = log 2 / K`. For the `C⁰` estimate, a slice of small energy in a
 short window `[s, s + h]` is uniformly close to `x` by
 `TauCeti.SymplecticForm.exists_forall_norm_sub_le_mul_sqrt_setIntegral_floerEnergyDensity`, and the
@@ -134,25 +136,19 @@ theorem exists_pos_forall_setIntegral_floerEnergyDensity_le_mul_exp_add_exp
     hslice hU (hu.of_le (by norm_num)) (fun t ↦ hab ⟨hr, mem_univ t⟩) (hper r hr)
       (fun t ht ↦ hJc _ ⟨hr, ht⟩) (fun t ht ↦ hJM _ ⟨hr, ht⟩) (fun t ht ↦ hfloer _ ⟨hr, ht⟩)
       fun t ht ↦ hclose _ ⟨hr, ht⟩
-  -- Over a step of length `K`, a lower bound `m ≤ |g|` integrates to `m ≤ g (s + K) - g s`.
-  have hlow (s : ℝ) (hs : a ≤ s) (hsK : s + K ≤ b) (m : ℝ)
-      (hm : ∀ r ∈ Icc s (s + K), m ≤ |g r|) : m ≤ g (s + K) - g s := by
-    rw [← henergy hs (by linarith) hsK]
-    exact ω.le_setIntegral_floerEnergyDensity_of_forall_le_mul hU (hu.of_le (by norm_num))
-      contDiffOn_const (contDiff_uncurry_cylindrical hH1).contDiffOn hK (hrect hs hsK)
-      fun r hr ↦ (hm r hr).trans (hg r ⟨hs.trans hr.1, hr.2.trans hsK⟩)
   -- Hence the positive part of `g` doubles forwards and its negative part doubles backwards.
   have hstep (s : ℝ) (hs : a ≤ s) (hsK : s + K ≤ b) :
       2 * g s ≤ g (s + K) ∧ g s ≤ 2 * g (s + K) := by
-    have hmem (r : ℝ) (hr : r ∈ Icc s (s + K)) : r ∈ Icc a b :=
-      ⟨hs.trans hr.1, hr.2.trans hsK⟩
-    have hsmem : s ∈ Icc a b := hmem s ⟨le_rfl, by linarith⟩
-    have hsKmem : s + K ∈ Icc a b := hmem (s + K) ⟨by linarith, le_rfl⟩
-    have h₁ := hlow s hs hsK (g s) fun r hr ↦
-      (hmono hsmem (hmem r hr) hr.1).trans (le_abs_self _)
-    have h₂ := hlow s hs hsK (-g (s + K)) fun r hr ↦
-      (neg_le_neg (hmono (hmem r hr) hsKmem hr.2)).trans (neg_le_abs _)
-    constructor <;> linarith
+    have hR : IntegrableOn e (Icc s (s + K) ×ˢ Icc 0 1) :=
+      ((ω.continuousOn_floerEnergyDensity hU (hu.of_le (by norm_num)) contDiffOn_const
+        (contDiff_uncurry_cylindrical hH1).contDiffOn).mono (hrect hs hsK)).integrableOn_compact
+        (isCompact_Icc.prod isCompact_Icc)
+    simpa only [sub_zero] using two_mul_sub_le_and_sub_le_two_mul_of_abs_sub_le_mul (a₀ := 0)
+      (σ := fun r ↦ ∫ t in Icc (0 : ℝ) 1, e (r, t)) hK (hmono.mono (Icc_subset_Icc hs hsK))
+      (fun r hr ↦ by simpa only [sub_zero] using hg r ⟨hs.trans hr.1, hr.2.trans hsK⟩)
+      (integrableOn_setIntegral_slice hR)
+      ((setIntegral_setIntegral_slice_eq_setIntegral_rect hR).trans
+        (henergy hs (by linarith) hsK))
   have hab' : a ≤ b := h₁.trans (h₁₂.trans h₂)
   rw [henergy h₁ h₁₂ h₂, henergy le_rfl hab' le_rfl]
   exact sub_le_mul_exp_add_exp_of_two_mul_le hmono hstep h₁ h₁₂ h₂

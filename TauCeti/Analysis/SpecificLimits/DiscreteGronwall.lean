@@ -31,12 +31,7 @@ interval of length `T` decays exponentially, at the rate `-log q / T`
 (`TauCeti.le_div_mul_exp_of_antitoneOn`), and likewise on a bounded interval
 (`TauCeti.le_div_mul_exp_of_antitoneOn_Icc`). This is how a differential inequality `E ≤ K (-E')`
 is integrated without differentiating `E`: when `E (s) - E (s + T) = ∫ₛ^{s + T} g` with `E ≤ K g`,
-monotonicity gives `T E (s + T) ≤ K (E s - E (s + T))`, a drop by the factor `K / (K + T)`. On an
-interval `[a, b]` a nondecreasing `g` with `|g| ≤ T g'` decays exponentially away from both ends:
-its positive part doubles forwards and its negative part doubles backwards over every step of
-length `T`, so its increase over `[s₁, s₂]` is at most `4 (g b - g a)` times
-`exp (-κ (b - s₂)) + exp (-κ (s₁ - a))`, `κ = log 2 / T`
-(`TauCeti.sub_le_mul_exp_add_exp_of_two_mul_le`).
+monotonicity gives `T E (s + T) ≤ K (E s - E (s + T))`, a drop by the factor `K / (K + T)`.
 
 The bound `TauCeti.sq_le_mul_one_add_div_pow_of_sq_le_mul_sub` is the shape of the a priori bound
 for implicit Euler schemes of gradient flows whose energy is not bounded below. A sequence `D n ≥ 0`
@@ -63,10 +58,6 @@ energy dissipated, `d n ² ≤ 2τ (e n - e (n + 1))`, and the energy obeys the 
 * `TauCeti.le_div_mul_exp_of_antitoneOn_Icc`, `TauCeti.le_div_mul_exp_of_antitoneOn`: exponential
   decay of a nonincreasing function which drops by a fixed factor over every interval of a fixed
   length, on a bounded interval and on a half-line.
-* `TauCeti.max_le_two_mul_max_mul_exp_of_two_mul_le`,
-  `TauCeti.sub_le_mul_exp_add_exp_of_two_mul_le`: exponential decay on an interval of a
-  nondecreasing function whose positive part doubles forwards, and whose negative part also
-  doubles backwards, over steps of a fixed length.
 
 ## References
 
@@ -281,121 +272,6 @@ theorem le_div_mul_exp_of_antitoneOn {E : ℝ → ℝ} {s₀ T q : ℝ} (hq : 0 
     E s ≤ E s₀ / q * Real.exp (Real.log q / T * (s - s₀)) :=
   le_div_mul_exp_of_antitoneOn_Icc hq hq1 (hE.mono Set.Icc_subset_Ici_self) h0
     (fun s hs _ ↦ hstep s hs) hs le_rfl
-
-/-- **Decay away from the right end from forward doubling.** Let `g` be nondecreasing on `[a, b]`,
-and suppose that `2 g s ≤ g (s + T)` whenever `a ≤ s` and `s + T ≤ b`. Then the positive part of `g`
-decays exponentially away from `b`: for `s ∈ [a, b]`,
-`max (g s) 0 ≤ 2 max (g b) 0 exp (-(log 2 / T) (b - s))`. -/
-theorem max_le_two_mul_max_mul_exp_of_two_mul_le {g : ℝ → ℝ} {a b T : ℝ}
-    (hg : MonotoneOn g (Set.Icc a b)) (hstep : ∀ s, a ≤ s → s + T ≤ b → 2 * g s ≤ g (s + T))
-    {s : ℝ} (hs : a ≤ s) (hsb : s ≤ b) :
-    max (g s) 0 ≤ 2 * max (g b) 0 * Real.exp (-(Real.log 2 / T * (b - s))) := by
-  -- The positive part, read backwards from `b`, halves over every step of length `T`.
-  have h := le_div_mul_exp_of_antitoneOn_Icc (E := fun r ↦ max (g (b - r)) 0) (s₀ := 0)
-    (s₁ := b - a) (T := T) (s := b - s) (by norm_num : (0 : ℝ) < 1 / 2) (by norm_num)
-    (fun r hr r' hr' hrr' ↦ max_le_max_right 0
-      (hg ⟨by linarith [hr'.2], by linarith [hr'.1]⟩ ⟨by linarith [hr.2], by linarith [hr.1]⟩
-        (by linarith)))
-    (le_max_right _ _)
-    (fun r hr hrT ↦ by
-      have h := hstep (b - (r + T)) (by linarith) (by linarith)
-      rw [show b - (r + T) + T = b - r by ring] at h
-      exact max_le (by linarith [le_max_left (g (b - r)) 0])
-        (mul_nonneg (by norm_num) (le_max_right _ _)))
-    (sub_nonneg.2 hsb) (by linarith)
-  have hlog : Real.log (1 / 2) = -Real.log 2 := by simp
-  calc max (g s) 0 = max (g (b - (b - s))) 0 := by rw [sub_sub_cancel]
-    _ ≤ _ := h
-    _ = _ := by rw [hlog, sub_zero, sub_zero]; ring_nf
-
-/-- On an interval `[a, b]` of length at least `T > 0`, if a nondecreasing `g` satisfies
-`2 g s ≤ g (s + T)` and `g s ≤ 2 g (s + T)` over every step of length `T`, then the positive part of
-`g` at `b` and its negative part at `a` together are at most twice the increase `g b - g a`. -/
-private theorem max_add_max_neg_le_two_mul_sub {g : ℝ → ℝ} {a b T : ℝ}
-    (hg : MonotoneOn g (Set.Icc a b))
-    (hstep : ∀ s, a ≤ s → s + T ≤ b → 2 * g s ≤ g (s + T) ∧ g s ≤ 2 * g (s + T)) (hT : 0 < T)
-    (hlong : T ≤ b - a) : max (g b) 0 + max (-g a) 0 ≤ 2 * (g b - g a) := by
-  have hdbl := hstep a le_rfl (by linarith)
-  have hmono := hg ⟨by linarith, by linarith⟩ ⟨by linarith, le_rfl⟩ (by linarith : a + T ≤ b)
-  have hmono' := hg ⟨le_rfl, by linarith⟩ ⟨by linarith, by linarith⟩ (by linarith : a ≤ b - T)
-  have hdbl' := hstep (b - T) (by linarith) (sub_add_cancel b T).le
-  rw [sub_add_cancel] at hdbl'
-  rcases le_total 0 (g a) with ha | ha <;> rcases le_total 0 (g b) with hb | hb
-  · rw [max_eq_left hb, max_eq_right (by linarith)]
-    linarith [hdbl.1, hmono]
-  · rw [max_eq_right hb, max_eq_right (by linarith)]
-    linarith [hg ⟨le_rfl, by linarith⟩ ⟨by linarith, le_rfl⟩ (by linarith : a ≤ b)]
-  · rw [max_eq_left hb, max_eq_left (by linarith)]
-    linarith
-  · rw [max_eq_right hb, max_eq_left (by linarith)]
-    linarith [hdbl'.2, hmono']
-
-/-- **Two-sided exponential decay on an interval from doubling.** Let `g` be nondecreasing on
-`[a, b]`, and suppose that over every step of length `T` inside `[a, b]` its positive part at
-least doubles forwards and its negative part at least doubles backwards: `2 g s ≤ g (s + T)` and
-`g s ≤ 2 g (s + T)` whenever `a ≤ s` and `s + T ≤ b`. Then the increase of `g` over
-`[s₁, s₂] ⊆ [a, b]` is exponentially small in the distances of `s₂` from `b` and of `s₁` from `a`,
-relative to its total increase over `[a, b]`:
-`g s₂ - g s₁ ≤ 4 (g b - g a) (exp (-κ (b - s₂)) + exp (-κ (s₁ - a)))` with `κ = log 2 / T`.
-
-For a function with `|g| ≤ T g'` the doubling conditions hold, so this integrates the
-differential inequality on an interval. It describes a quantity such as the action along a long
-neck near a nondegenerate critical point, which is positive only near the right end and negative
-only near the left end. -/
-theorem sub_le_mul_exp_add_exp_of_two_mul_le {g : ℝ → ℝ} {a b T : ℝ}
-    (hg : MonotoneOn g (Set.Icc a b))
-    (hstep : ∀ s, a ≤ s → s + T ≤ b → 2 * g s ≤ g (s + T) ∧ g s ≤ 2 * g (s + T))
-    {s₁ s₂ : ℝ} (h₁ : a ≤ s₁) (h₁₂ : s₁ ≤ s₂) (h₂ : s₂ ≤ b) :
-    g s₂ - g s₁ ≤ 4 * (g b - g a) *
-      (Real.exp (-(Real.log 2 / T * (b - s₂))) + Real.exp (-(Real.log 2 / T * (s₁ - a)))) := by
-  set κ := Real.log 2 / T
-  have hab : a ≤ b := h₁.trans (h₁₂.trans h₂)
-  have hmem {s : ℝ} (h : a ≤ s) (h' : s ≤ b) : s ∈ Set.Icc a b := ⟨h, h'⟩
-  have hD : 0 ≤ g b - g a := sub_nonneg.2 (hg (hmem le_rfl hab) (hmem hab le_rfl) hab)
-  have hE₁ := (Real.exp_pos (-(κ * (b - s₂)))).le
-  have hE₂ := (Real.exp_pos (-(κ * (s₁ - a)))).le
-  have hinc : g s₂ - g s₁ ≤ g b - g a := by
-    have := hg (hmem h₁ (h₁₂.trans h₂)) (hmem (h₁.trans h₁₂) h₂) h₁₂
-    have := hg (hmem (h₁.trans h₁₂) h₂) (hmem hab le_rfl) h₂
-    have := hg (hmem le_rfl hab) (hmem h₁ (h₁₂.trans h₂)) h₁
-    linarith
-  rcases le_or_gt T 0 with hT | hT
-  · -- For `T ≤ 0` the exponents are nonnegative and the total increase suffices.
-    have h1 : 1 ≤ Real.exp (-(κ * (b - s₂))) := Real.one_le_exp (by
-      nlinarith [div_nonpos_of_nonneg_of_nonpos (Real.log_nonneg one_le_two) hT])
-    nlinarith
-  rcases lt_or_ge (b - a) T with hshort | hlong
-  · -- On a short interval `exp (-κ (b - s₂)) ≥ 1 / 2` and the total increase suffices.
-    have hκ : κ * (b - s₂) ≤ Real.log 2 := calc
-      κ * (b - s₂) ≤ κ * T :=
-        mul_le_mul_of_nonneg_left (by linarith) (div_nonneg (Real.log_nonneg one_le_two) hT.le)
-      _ = Real.log 2 := div_mul_cancel₀ _ hT.ne'
-    have hhalf : 1 / 2 ≤ Real.exp (-(κ * (b - s₂))) := calc
-      (1 : ℝ) / 2 = Real.exp (-Real.log 2) := by rw [Real.exp_neg, Real.exp_log two_pos, one_div]
-      _ ≤ _ := Real.exp_le_exp.2 (neg_le_neg hκ)
-    nlinarith
-  -- The positive part of `g` decays away from `b`, and its negative part, the positive part of
-  -- the reflection `r ↦ -g (a + b - r)`, decays away from `a`.
-  have hp := max_le_two_mul_max_mul_exp_of_two_mul_le hg (fun s hs hsT ↦ (hstep s hs hsT).1)
-    (h₁.trans h₁₂) h₂
-  have hm := max_le_two_mul_max_mul_exp_of_two_mul_le (g := fun r ↦ -g (a + b - r)) (a := a)
-    (b := b) (T := T)
-    (fun r hr r' hr' hrr' ↦ neg_le_neg (hg ⟨by linarith [hr'.2], by linarith [hr'.1]⟩
-      ⟨by linarith [hr.2], by linarith [hr.1]⟩ (by linarith)))
-    (fun r hr hrT ↦ by
-      have h := (hstep (a + b - (r + T)) (by linarith) (by linarith)).2
-      rw [show a + b - (r + T) + T = a + b - r by ring] at h
-      linarith)
-    (s := a + b - s₁) (by linarith) (by linarith)
-  simp only [show a + b - (a + b - s₁) = s₁ by ring, add_sub_cancel_right,
-    show b - (a + b - s₁) = s₁ - a by ring] at hm
-  -- On a long interval the two parts at the ends are bounded by twice the total increase.
-  have hpm := max_add_max_neg_le_two_mul_sub hg hstep hT hlong
-  have hp0 : 0 ≤ max (g b) 0 := le_max_right _ _
-  have hm0 : 0 ≤ max (-g a) 0 := le_max_right _ _
-  have := le_max_left (g s₂) 0
-  have := le_max_left (-g s₁) 0
-  nlinarith
 
 open Filter Topology in
 /-- Along any filter `l`, if `0 ≤ r`, `0 < τ j` eventually, and `τ j → 0`, then
