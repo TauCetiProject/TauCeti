@@ -101,6 +101,55 @@ lemma ιTwistedChainComplex_twistedAlexanderWhitneyDiagonal_f (n : ℕ)
   simp only [tensorHom_comp_tensorHom_assoc, Category.assoc,
     ιTwistedChainComplex_isoAlternatingFaceMapComplex_hom_f]
 
+/-- Followed by a map that vanishes on the summands of left degree other than `p`, the twisted
+diagonal of a `(p + q)`-simplex is its `(p, q)` summand: the front `p`-face tensored with the back
+`q`-face, with their coefficient transports. -/
+lemma ιTwistedChainComplex_twistedAlexanderWhitneyDiagonal_f_comp_of_ne_left (p q n : ℕ)
+    (h : p + q = n) (σ : (TopCat.toSSet.obj X) _⦋n⦌) {Z : ModuleCat.{max v w} R}
+    (g : (L.twistedChainComplex ⊗ K.twistedChainComplex).X n ⟶ Z)
+    (hg : ∀ (i j : ℕ) (hij : i + j = n), i ≠ p →
+      HomologicalComplex.ιTensorObj L.twistedChainComplex K.twistedChainComplex i j n hij ≫ g =
+        0) :
+    ιTwistedChainComplex (L ⊗ K) n σ ≫ (twistedAlexanderWhitneyDiagonal L K).f n ≫ g =
+      ((L.map (vertexTransport (SimplexCategory.subinterval 0 p (by omega)).op σ) ≫
+          ιTwistedChainComplex L p
+            ((TopCat.toSSet.obj X).map (SimplexCategory.subinterval 0 p (by omega)).op σ)) ⊗ₘ
+        (K.map (vertexTransport (SimplexCategory.subinterval p q (by omega)).op σ) ≫
+          ιTwistedChainComplex K q
+            ((TopCat.toSSet.obj X).map (SimplexCategory.subinterval p q (by omega)).op σ))) ≫
+        HomologicalComplex.ιTensorObj L.twistedChainComplex K.twistedChainComplex p q n h ≫ g := by
+  subst h
+  -- State the surviving term for an arbitrary equal back degree: rewriting `p + q - p` directly
+  -- gives an ill-typed motive because both the subinterval bound and the tensor-summand equality
+  -- depend on that degree.
+  have key : ∀ (j : ℕ) (hj : j = q) (hj' : p + j ≤ p + q) (hj'' : p + j = p + q),
+      ((L.map (vertexTransport (SimplexCategory.subinterval 0 p (by omega)).op σ) ≫
+          ιTwistedChainComplex L p
+            ((TopCat.toSSet.obj X).map (SimplexCategory.subinterval 0 p (by omega)).op σ)) ⊗ₘ
+        (K.map (vertexTransport (SimplexCategory.subinterval p j hj').op σ) ≫
+          ιTwistedChainComplex K j
+            ((TopCat.toSSet.obj X).map (SimplexCategory.subinterval p j hj').op σ))) ≫
+          HomologicalComplex.ιTensorObj L.twistedChainComplex K.twistedChainComplex p j (p + q)
+            hj'' ≫ g =
+        ((L.map (vertexTransport (SimplexCategory.subinterval 0 p (by omega)).op σ) ≫
+            ιTwistedChainComplex L p
+              ((TopCat.toSSet.obj X).map (SimplexCategory.subinterval 0 p (by omega)).op σ)) ⊗ₘ
+          (K.map (vertexTransport (SimplexCategory.subinterval p q (by omega)).op σ) ≫
+            ιTwistedChainComplex K q
+              ((TopCat.toSSet.obj X).map (SimplexCategory.subinterval p q (by omega)).op σ))) ≫
+          HomologicalComplex.ιTensorObj L.twistedChainComplex K.twistedChainComplex p q (p + q)
+            rfl ≫ g := by
+    rintro _ rfl _ _
+    rfl
+  rw [ιTwistedChainComplex_twistedAlexanderWhitneyDiagonal_f_assoc]
+  dsimp only [Monoidal.tensorObj_obj]
+  rw [Preadditive.sum_comp, Finset.sum_eq_single ⟨p, by omega⟩]
+  · simp only [Category.assoc]
+    exact key (p + q - p) (by omega) _ _
+  · rintro i - hi
+    rw [Category.assoc, hg _ _ _ (fun h ↦ hi (Fin.ext h)), comp_zero]
+  · simp
+
 variable {L K} {L' K' : LocalCoefficientSystem.{max v w, v, max v w} R X}
 
 /- Transport a tensor-diagonal naturality equation through the alternating-face comparisons.

@@ -280,6 +280,31 @@ theorem pullbackTensorIso_inv_app {X : TopCat.{v₁}} {Y : TopCat.{v₂}} (f : C
     (pullbackTensorIso f L K).inv.app x = 𝟙 _ := by
   rfl
 
+/-- The tensor product of the constant system `M` with the pullback of `K` along `f` is the
+pullback of the tensor product of the constant system `M` with `K`. -/
+def pullbackConstantTensorIso {X : TopCat.{v₁}} {Y : TopCat.{v₂}} (f : C(X, Y))
+    (M : ModuleCat.{w} S) (K : LocalCoefficientSystem.{w, v₂, w} S Y) :
+    (constantFunctor X).obj M ⊗ (pullback f).obj K ≅
+      (pullback f).obj ((constantFunctor Y).obj M ⊗ K) :=
+  whiskerRightIso (pullbackConstantIso f M).symm _ ≪≫
+    (pullbackTensorIso f ((constantFunctor Y).obj M) K).symm
+
+/-- The comparison `M ⊗ f^*K ≅ f^*(M ⊗ K)` is the identity on each coefficient fibre. -/
+@[simp]
+theorem pullbackConstantTensorIso_hom_app {X : TopCat.{v₁}} {Y : TopCat.{v₂}} (f : C(X, Y))
+    (M : ModuleCat.{w} S) (K : LocalCoefficientSystem.{w, v₂, w} S Y)
+    (x : FundamentalGroupoid X) :
+    (pullbackConstantTensorIso f M K).hom.app x = 𝟙 _ := by
+  simp [pullbackConstantTensorIso]
+
+/-- The inverse comparison `f^*(M ⊗ K) ≅ M ⊗ f^*K` is the identity on each coefficient fibre. -/
+@[simp]
+theorem pullbackConstantTensorIso_inv_app {X : TopCat.{v₁}} {Y : TopCat.{v₂}} (f : C(X, Y))
+    (M : ModuleCat.{w} S) (K : LocalCoefficientSystem.{w, v₂, w} S Y)
+    (x : FundamentalGroupoid X) :
+    (pullbackConstantTensorIso f M K).inv.app x = 𝟙 _ := by
+  simp [pullbackConstantTensorIso]
+
 end Tensor
 
 section Homotopy
