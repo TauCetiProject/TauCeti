@@ -19,7 +19,9 @@ determinant of its values at `1` and `I` in the basis `(1,I)`.
 The real determinant of a complex-linear endomorphism of a complex module is the squared modulus
 of its complex determinant (`LinearMap.det_restrictScalars_eq_normSq`). In particular it is
 nonnegative, and positive for complex-linear automorphisms; this is why complex-linear maps
-preserve real orientations.
+preserve real orientations. On a finite-dimensional complex vector space it is positive exactly
+for the injective complex-linear endomorphisms
+(`LinearMap.det_restrictScalars_pos_iff_injective`).
 -/
 
 public section
@@ -51,6 +53,13 @@ theorem det_restrictScalars_pos {f : E →ₗ[ℂ] E} (hf : f.det ≠ 0) :
     0 < (f.restrictScalars ℝ).det := by
   rw [det_restrictScalars_eq_normSq]
   exact Complex.normSq_pos.mpr hf
+
+/-- A complex-linear endomorphism of a finite-dimensional complex vector space has positive real
+determinant exactly when it is injective. -/
+theorem det_restrictScalars_pos_iff_injective [Module.Finite ℂ E] {f : E →ₗ[ℂ] E} :
+    0 < (f.restrictScalars ℝ).det ↔ Function.Injective f := by
+  rw [det_restrictScalars_eq_normSq, Complex.normSq_pos, ne_eq, det_eq_zero_iff_ker_ne_bot,
+    not_not, ker_eq_bot]
 
 end LinearMap
 

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Colimit.Ring
 public import Mathlib.AlgebraicGeometry.Stalk
-public import TauCeti.AlgebraicGeometry.Limits.AffineTransition
+public import TauCeti.AlgebraicGeometry.Limits.Affine.Transition
 
 import Mathlib.CategoryTheory.Filtered.Final
 import TauCeti.AlgebraicGeometry.Scheme.Opens
