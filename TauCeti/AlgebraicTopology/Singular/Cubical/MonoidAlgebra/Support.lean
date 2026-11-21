@@ -268,7 +268,7 @@ theorem NormalizedCubicalChain.leftAct_mem_supportedIn {S : Set Y}
       refine ofCube_mem_range_map R (f := ContinuousMap.subtypeVal S)
         Topology.IsInducing.subtypeVal ?_
       rintro _ ⟨t, rfl⟩
-      refine ⟨⟨_, hS (a fun i ↦ t (i.castAdd q)) _ (c fun j ↦ t (j.natAdd p)).2⟩, ?_⟩
+      refine ⟨⟨_, hS (a fun i ↦ t (i.castAdd q)) _ (c fun j ↦ t (j.natAdd p)).property⟩, ?_⟩
       simp [leftActMap_apply]
 
 /-- **Chains supported in an invariant subset are stable under the left action**: if `S` is

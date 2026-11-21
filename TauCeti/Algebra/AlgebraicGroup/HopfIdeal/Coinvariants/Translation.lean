@@ -50,9 +50,9 @@ theorem leftTranslationAlgEquiv_mem_coinvariants (g : WithConv (H →ₐ[R] R))
 noncomputable def coinvariantsLeftTranslation (g : WithConv (H →ₐ[R] R)) :
     I.coinvariants ≃ₐ[R] I.coinvariants where
   toFun x := ⟨HopfAlgebra.leftTranslationAlgEquiv g x,
-    I.leftTranslationAlgEquiv_mem_coinvariants g x.2⟩
+    I.leftTranslationAlgEquiv_mem_coinvariants g x.property⟩
   invFun x := ⟨HopfAlgebra.leftTranslationAlgEquiv g⁻¹ x,
-    I.leftTranslationAlgEquiv_mem_coinvariants g⁻¹ x.2⟩
+    I.leftTranslationAlgEquiv_mem_coinvariants g⁻¹ x.property⟩
   left_inv x := by
     apply Subtype.ext
     simp [HopfAlgebra.leftTranslationAlgEquiv_inv]

@@ -46,14 +46,14 @@ noncomputable def closedRegionBetween (e : X ≃ₜ Y) (a b : X → ℝ) (c d : 
     TauCeti.closedRegionBetween a b univ ≃ₜ TauCeti.closedRegionBetween c d univ where
   toFun p := ⟨regionBetweenMap e a b c d p,
     mapsTo_regionBetweenMap_closedRegionBetween (mapsTo_univ _ _)
-      (fun y _ ↦ hcd y) p.2⟩
+      (fun y _ ↦ hcd y) p.property⟩
   invFun p := ⟨regionBetweenMap e.symm c d a b p,
     mapsTo_regionBetweenMap_closedRegionBetween (mapsTo_univ _ _)
-      (fun x _ ↦ hab x) p.2⟩
+      (fun x _ ↦ hab x) p.property⟩
   left_inv p := Subtype.ext <| regionBetweenMap_regionBetweenMap (e.symm_apply_apply _)
-    (hcollapse _).mpr (mem_closedRegionBetween.mp p.2).2
+    (hcollapse _).mpr (mem_closedRegionBetween.mp p.property).2
   right_inv p := Subtype.ext <| regionBetweenMap_regionBetweenMap (e.apply_symm_apply _) (by
-    simpa using (hcollapse (e.symm p.1.1)).mp) (mem_closedRegionBetween.mp p.2).2
+    simpa using (hcollapse (e.symm p.val.1)).mp) (mem_closedRegionBetween.mp p.property).2
   continuous_toFun := (continuousOn_regionBetweenMap e.continuous.continuousOn
     ha.continuousOn hb.continuousOn hc.continuousOn hd.continuousOn (mapsTo_univ _ _)
       (fun x _ ↦ (hcollapse x).mp)).domRestrict.codRestrict _
@@ -98,7 +98,7 @@ theorem closedRegionBetween_refl :
   apply Subtype.ext
   simpa only [coe_closedRegionBetween_apply, Homeomorph.coe_refl, Homeomorph.refl_apply,
     id_eq] using
-    regionBetweenMap_id (mem_closedRegionBetween.mp p.2).2
+    regionBetweenMap_id (mem_closedRegionBetween.mp p.property).2
 
 /-- Closed-band transfer commutes with composition of the base homeomorphisms. -/
 theorem closedRegionBetween_trans (f : Y ≃ₜ Z) (u v : Z → ℝ)

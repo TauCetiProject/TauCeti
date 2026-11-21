@@ -172,7 +172,7 @@ theorem height_eq_sum_rootCoefficients_of_bijOn {κ : Type*} [Fintype κ] {e : �
   refine (Fintype.sum_bijective (fun k ↦ (⟨e k, he.mapsTo trivial⟩ : b.support))
     ⟨fun k l hkl ↦ he.injOn trivial trivial (congrArg Subtype.val hkl), fun j ↦ ?_⟩ _ _
     fun k ↦ rfl).symm
-  obtain ⟨k, -, hk⟩ := he.surjOn j.2
+  obtain ⟨k, -, hk⟩ := he.surjOn j.property
   exact ⟨k, Subtype.ext hk⟩
 
 /-- A root is positive exactly when its column is nonnegative. -/
@@ -206,7 +206,7 @@ theorem root_sub_root_mem_posRootCone_iff {i j : ι} :
     refine AddSubmonoid.sum_mem _ fun k _ ↦ ?_
     rw [← sub_smul, ← Int.toNat_of_nonneg (sub_nonneg.mpr (h k)), natCast_zsmul]
     exact (TauCeti.posRootCone P b).nsmul_mem (TauCeti.root_mem_posRootCone_of_mem_posRoots P b
-      ((TauCeti.mem_posRoots P b _).mpr (isPos_of_mem_support k.2))) _
+      ((TauCeti.mem_posRoots P b _).mpr (isPos_of_mem_support k.property))) _
 
 /-- Two columns compare entrywise along any map `e` from a type `κ` onto the simple roots. -/
 theorem rootCoefficients_le_iff_of_surjOn {κ : Type*} {e : κ → ι} (hmem : ∀ k, e k ∈ b.support)
@@ -214,7 +214,7 @@ theorem rootCoefficients_le_iff_of_surjOn {κ : Type*} {e : κ → ι} (hmem : �
     b.rootCoefficients j ≤ b.rootCoefficients i ↔
       ∀ k, b.rootCoefficients j ⟨e k, hmem k⟩ ≤ b.rootCoefficients i ⟨e k, hmem k⟩ := by
   refine ⟨fun h k ↦ h _, fun h l ↦ ?_⟩
-  obtain ⟨k, -, hk⟩ := he l.2
+  obtain ⟨k, -, hk⟩ := he l.property
   obtain rfl : l = ⟨e k, hmem k⟩ := Subtype.ext hk.symm
   exact h k
 
