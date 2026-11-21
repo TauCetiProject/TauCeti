@@ -203,19 +203,16 @@ variable [Fintype n] [DecidableEq n]
 
 /-- **The filtration of a translated diagonal lattice.** If `B → K` is injective, the filtration
 of `g μ(ξ) Bⁿ` is the image of the coordinate subspace of the `e_i` with `k i ≤ m` under the
-reduction of `g` modulo `ξ`, the linear automorphism of `(B ⧸ ξ)ⁿ` that Mathlib attaches to
-`GeneralLinearGroup.map (Ideal.Quotient.mk _) g`. -/
+reduction of `g` modulo `ξ`, written as `mulVecLin` of the reduced matrix as in
+`latticeFiltration_map_mulVecLin`. -/
 theorem latticeFiltration_map_diagonalLattice_eq
     (hinj : Function.Injective (algebraMap B K)) (hξ : IsUnit (algebraMap B K ξ)) (g : GL n B)
     (k : n → ℤ) (m : ℤ) :
     ((diagonalLattice k hξ).map
         (((g : Matrix n n B).map (algebraMap B K)).mulVecLin.restrictScalars B)).latticeFiltration
         hξ m = (pi {i | m < k i} fun _ ↦ ⊥).map
-          ((GeneralLinearGroup.toLin (GeneralLinearGroup.map (Ideal.Quotient.mk (Ideal.span {ξ}))
-            g)).toLinearEquiv : (n → B ⧸ Ideal.span {ξ}) →ₗ[B ⧸ Ideal.span {ξ}] _) := by
+          ((g : Matrix n n B).map (Ideal.Quotient.mk (Ideal.span {ξ}))).mulVecLin := by
   rw [latticeFiltration_map_mulVecLin, latticeFiltration_diagonalLattice hinj]
-  exact congrArg (map · _) (GeneralLinearGroup.coe_toLin
-    (GeneralLinearGroup.map (Ideal.Quotient.mk (Ideal.span {ξ})) g)).symm
 
 /-- **Rank of the filtration of a translated diagonal lattice.** If `B → K` is injective and `ξ`
 is not a unit of `B`, the filtration `Fil^m (g μ(ξ) Bⁿ)` has rank `#{i | k i ≤ m}` over `B ⧸ ξ`. -/
@@ -234,7 +231,10 @@ theorem finrank_latticeFiltration_map_diagonalLattice [Nontrivial (B ⧸ Ideal.s
       ⨅ i ∈ {i | m < k i}, LinearMap.ker
         (LinearMap.proj i : (n → B ⧸ Ideal.span {ξ}) →ₗ[B ⧸ Ideal.span {ξ}] _) := by
     ext; simp
-  rw [latticeFiltration_map_diagonalLattice_eq hinj, LinearEquiv.finrank_map_eq, h,
+  -- The reduced matrix is invertible: `mulVecLin` of it is Mathlib's `toLin` of the reduction.
+  rw [latticeFiltration_map_diagonalLattice_eq hinj,
+    ← GeneralLinearGroup.val_map_apply, ← GeneralLinearGroup.coe_toLin,
+    ← LinearMap.GeneralLinearGroup.generalLinearEquiv_to_linearMap, LinearEquiv.finrank_map_eq, h,
     (LinearMap.iInfKerProjEquiv (B ⧸ Ideal.span {ξ}) (fun _ ↦ B ⧸ Ideal.span {ξ}) hd
     hu).finrank_eq, Module.finrank_fintype_fun_eq_card]
   exact Fintype.card_congr (Equiv.subtypeEquivRight fun _ ↦ Iff.rfl)
@@ -249,7 +249,9 @@ theorem exists_isCompl_latticeFiltration_map_diagonalLattice
       IsCompl (((diagonalLattice k hξ).map
         (((g : Matrix n n B).map (algebraMap B K)).mulVecLin.restrictScalars B)).latticeFiltration
           hξ m) C := by
-  rw [latticeFiltration_map_diagonalLattice_eq hinj]
+  rw [latticeFiltration_map_diagonalLattice_eq hinj,
+    ← GeneralLinearGroup.val_map_apply, ← GeneralLinearGroup.coe_toLin,
+    ← LinearMap.GeneralLinearGroup.generalLinearEquiv_to_linearMap]
   exact ⟨_, isCompl_map _ (isCompl_pi_bot_compl _)⟩
 
 /-- **Base change of the filtration.** For a ring map `φ : B → B'` and `g ∈ GLₙ(B)`, the
@@ -273,22 +275,18 @@ theorem latticeFiltration_map_diagonalLattice_eq_span_image {B' K' : Type*} [Com
     (Ideal.span_singleton_le_iff_mem _ |>.2 (Ideal.mem_span_singleton_self _))
   set F : (n → B ⧸ Ideal.span {ξ}) → n → B' ⧸ Ideal.span {φ ξ} := fun v i ↦ φbar (v i)
   -- Reduction of `φ` intertwines the two reductions of `g`.
-  have hcomm (v : n → B ⧸ Ideal.span {ξ}) : F (((GeneralLinearGroup.toLin
-      (GeneralLinearGroup.map (Ideal.Quotient.mk (Ideal.span {ξ})) g)).toLinearEquiv :
-        (n → B ⧸ Ideal.span {ξ}) →ₗ[B ⧸ Ideal.span {ξ}] _) v) =
-      ((GeneralLinearGroup.toLin (GeneralLinearGroup.map (Ideal.Quotient.mk (Ideal.span {φ ξ}))
-        (GeneralLinearGroup.map φ g))).toLinearEquiv :
-          (n → B' ⧸ Ideal.span {φ ξ}) →ₗ[B' ⧸ Ideal.span {φ ξ}] _) (F v) := by
+  have hcomm (v : n → B ⧸ Ideal.span {ξ}) :
+      F (((g : Matrix n n B).map (Ideal.Quotient.mk (Ideal.span {ξ}))).mulVecLin v) =
+        (((GeneralLinearGroup.map φ g : Matrix n n B').map
+          (Ideal.Quotient.mk (Ideal.span {φ ξ}))).mulVecLin) (F v) := by
     -- Entrywise, reducing `g` modulo `ξ` and then applying `φbar` is reducing `φ g` modulo `φ ξ`.
-    have hmat : (GeneralLinearGroup.map (Ideal.Quotient.mk (Ideal.span {ξ})) g :
-        Matrix n n (B ⧸ Ideal.span {ξ})).map φbar =
-        GeneralLinearGroup.map (Ideal.Quotient.mk (Ideal.span {φ ξ}))
-          (GeneralLinearGroup.map φ g) := by
+    have hmat : ((g : Matrix n n B).map (Ideal.Quotient.mk (Ideal.span {ξ}))).map φbar =
+        (GeneralLinearGroup.map φ g : Matrix n n B').map
+          (Ideal.Quotient.mk (Ideal.span {φ ξ})) := by
       ext a b
       simp only [map_apply, GeneralLinearGroup.map_apply, φbar, Ideal.quotientMap_mk]
     ext i
-    simp only [F, LinearEquiv.coe_coe, LinearMap.GeneralLinearGroup.coe_toLinearEquiv,
-      GeneralLinearGroup.toLin_apply, mulVecLin_apply, RingHom.map_mulVec, hmat, Function.comp_def]
+    simp only [F, mulVecLin_apply, RingHom.map_mulVec, hmat, Function.comp_def]
   rw [latticeFiltration_map_diagonalLattice_eq hinj, latticeFiltration_map_diagonalLattice_eq hinj',
     map_coe, Set.image_comm hcomm, span_image, span_image_map_pi_bot]
 
