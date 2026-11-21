@@ -420,7 +420,7 @@ private theorem isLittleO_cxDeriv_of_isLittleO_hwPair {u : ℂ → X} {z₀ : �
     (eventually_nhdsWithin_of_forall (s := {z₀}ᶜ) fun z hz ↦
       pow_ne_zero m (sub_ne_zero.2 hz)).frequently
       |>.filter_mono nhdsWithin_le_nhds
-  have hc₁ : c.1 = 0 := eq_zero_of_smul_isLittleO hne <| isLittleO_norm_right.1 <|
+  have hc₁ : c.1 = 0 := (isLittleO_smul_const_self_iff hne).mp <| isLittleO_norm_right.1 <|
     ((hU.sub hlo₁).congr_left fun z ↦ sub_sub_cancel _ _).congr_right fun z ↦ (norm_pow _ _).symm
   exact ⟨fun h ↦ hc (Prod.ext hc₁ h), hlo₂⟩
 
