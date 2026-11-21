@@ -397,6 +397,16 @@ theorem continuous_toWOT :
   ContinuousLinearMapWOT.continuous_ofPointwiseConvergenceCLM.comp
     continuous_toPointwiseConvergenceCLM
 
+/-- A set of operators which is closed in the weak operator topology is closed in the strong-star
+topology. -/
+theorem isClosed_image_ofCLM_of_isClosed_image_wot {s : Set (E →L[𝕜] F)}
+    (hs : IsClosed (ContinuousLinearMapWOT.ofCLM '' s)) : IsClosed (ofCLM '' s) := by
+  -- The preimage is along the continuous identity to the weak operator copy.
+  convert hs.preimage continuous_toWOT using 1
+  ext A
+  rw [Set.mem_preimage, ContinuousLinearMapWOT.ofCLM_injective.mem_set_image]
+  exact ⟨by rintro ⟨x, hx, rfl⟩; exact hx, fun hA ↦ ⟨A.toCLM, hA, rfl⟩⟩
+
 end Comparison
 
 section Normal
