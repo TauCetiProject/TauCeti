@@ -142,6 +142,12 @@ theorem ord_mul (v : _root_.Valuation F ℤᵐ⁰) {f g : F} (hf : v f ≠ 0) (h
   rw [ord_def, ord_def, ord_def, map_mul, WithZero.log_mul hf hg]
   ring
 
+/-- The order is additive on products of units, which lie outside the valuation support. -/
+@[simp]
+theorem ord_units_mul (v : _root_.Valuation F ℤᵐ⁰) (f g : Fˣ) :
+    ord v ((f : F) * (g : F)) = ord v (f : F) + ord v (g : F) :=
+  ord_mul v (f.isUnit.map v.toMonoidHom).ne_zero (g.isUnit.map v.toMonoidHom).ne_zero
+
 private theorem exp_max (a b : ℤ) :
     max (WithZero.exp a) (WithZero.exp b) = WithZero.exp (max a b) := by
   rcases le_total a b with h | h
@@ -382,26 +388,18 @@ theorem isUnit_iff_ord_eq_zero (v : _root_.Valuation F ℤᵐ⁰) {x : v.valuati
     ord_eq_iff_valuation_eq_exp_neg v (v.ne_zero_iff.mpr hx),
     neg_zero, WithZero.exp_zero]
 
-/-- Existence half of the uniformizer expansion for a surjective valuation. -/
-theorem exists_eq_zpow_mul_unit_of_surjective (v : _root_.Valuation F ℤᵐ⁰)
-    [Nontrivial v.valueGroup] (hv : Function.Surjective v)
-    {t : F} (ht : v.IsUniformizer t) {f : F} (hf : f ≠ 0) :
-    ∃ u : v.valuationSubringˣ, f = t ^ ord v f * (u : F) := by
-  have ht1 : ord v t = 1 := (isUniformizer_iff_ord_eq_one_of_surjective v hv).mp ht
-  have ht0 : t ≠ 0 := fun h => by simp [h] at ht1
-  have hne : f / t ^ ord v f ≠ 0 := div_ne_zero hf (zpow_ne_zero _ ht0)
-  have hord : ord v (f / t ^ ord v f) = 0 := by
-    rw [ord_div_zpow v hf ht0, ht1]
-    ring
-  have hmem : f / t ^ ord v f ∈ v.valuationSubring :=
-    (mem_valuationSubring_iff_ord_nonneg v).mpr hord.ge
-  have hunit : IsUnit (⟨_, hmem⟩ : v.valuationSubring) :=
-    (isUnit_iff_ord_eq_zero v hne).mpr hord
-  refine ⟨hunit.unit, ?_⟩
-  have hu : ((hunit.unit : v.valuationSubring) : F) = f / t ^ ord v f := by
-    rw [IsUnit.unit_spec]
-  rw [hu]
-  field_simp
+/-- A field unit belongs to the valuation-ring unit subgroup exactly when its order is zero. -/
+theorem mem_unitGroup_iff_ord_eq_zero (v : _root_.Valuation F ℤᵐ⁰) (f : Fˣ) :
+    f ∈ v.valuationSubring.unitGroup ↔ v.ord (f : F) = 0 := by
+  rw [mem_unitGroup_iff, ord_eq_iff_valuation_eq_exp_neg v (v.ne_zero_iff.mpr f.ne_zero)]
+  simp
+
+/-- Multiplication by a valuation-ring unit does not change the order. -/
+@[simp]
+theorem ord_mul_coe_unitGroup (v : _root_.Valuation F ℤᵐ⁰) (f : F)
+    (u : v.valuationSubring.unitGroup) : ord v (f * (u : Fˣ)) = ord v f := by
+  have hu : v (u : Fˣ) = 1 := (mem_unitGroup_iff F v (u : Fˣ)).mp u.property
+  simp [ord_def, map_mul, hu]
 
 theorem mem_maximalIdeal_iff_ord_pos (v : _root_.Valuation F ℤᵐ⁰)
     {f : v.valuationSubring} (hf : (f : F) ≠ 0) :

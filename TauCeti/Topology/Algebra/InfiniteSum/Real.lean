@@ -47,6 +47,10 @@ analogue of the power-rule integral identity for tails.
   exactly when `∑ i, m i * a i` is.
 * `TauCeti.eventually_mul_le_one_of_summable_sq`: a square-summable family eventually satisfies
   `b i * C ≤ 1`.
+* `TauCeti.summable_pow_natAbs`, `TauCeti.tsum_pow_natAbs`,
+  `TauCeti.tsum_ite_eq_zero_pow_natAbs`, `TauCeti.tendsto_tsum_ite_eq_zero_pow_natAbs`: summability,
+  sum `(1 + r) * (1 - r)⁻¹`, nonzero-mode sum `2 * (r * (1 - r)⁻¹)`, and limit along `𝓝[≥] 0` of
+  the bilateral geometric series `r ^ k.natAbs` on `ℤ` for `0 ≤ r < 1`.
 -/
 
 public section
@@ -213,5 +217,39 @@ theorem eventually_mul_le_one_of_summable_sq {ι : Type*} {b : ι → ℝ}
         rw [inv_mul_le_iff₀ (by positivity)]
         linarith
   nlinarith
+
+private lemma pow_neg_succ_natAbs (r : ℝ) :
+    (fun n : ℕ ↦ r ^ (-(n + 1 : ℤ)).natAbs) = fun n : ℕ ↦ r * r ^ n := by
+  ext n; rw [(by omega : (-(n + 1 : ℤ)).natAbs = n + 1), pow_succ']
+
+/-- For `0 ≤ r < 1`, the bilateral geometric series `k ↦ r ^ k.natAbs` on `ℤ` is summable. -/
+theorem summable_pow_natAbs {r : ℝ} (hr₀ : 0 ≤ r) (hr₁ : r < 1) :
+    Summable fun k : ℤ ↦ r ^ k.natAbs :=
+  Summable.of_nat_of_neg_add_one (summable_geometric_of_lt_one hr₀ hr₁)
+    (pow_neg_succ_natAbs r ▸ (summable_geometric_of_lt_one hr₀ hr₁).mul_left r)
+
+/-- For `0 ≤ r < 1`, `k ↦ r ^ k.natAbs` on `ℤ` sums to `(1 + r) * (1 - r)⁻¹`. -/
+theorem tsum_pow_natAbs {r : ℝ} (hr₀ : 0 ≤ r) (hr₁ : r < 1) :
+    (∑' k : ℤ, r ^ k.natAbs) = (1 + r) * (1 - r)⁻¹ := by
+  have h1 : (fun n : ℕ ↦ r ^ (n : ℤ).natAbs) = fun n : ℕ ↦ r ^ n := by ext n; simp
+  rw [tsum_of_nat_of_neg_add_one (h1 ▸ summable_geometric_of_lt_one hr₀ hr₁)
+    (pow_neg_succ_natAbs r ▸ (summable_geometric_of_lt_one hr₀ hr₁).mul_left r), h1,
+    pow_neg_succ_natAbs, tsum_mul_left, tsum_geometric_of_lt_one hr₀ hr₁]; ring
+
+/-- For `0 ≤ r < 1`, the nonzero modes of `r ^ k.natAbs` sum to `2 * (r * (1 - r)⁻¹)`. -/
+theorem tsum_ite_eq_zero_pow_natAbs {r : ℝ} (hr₀ : 0 ≤ r) (hr₁ : r < 1) :
+    (∑' k : ℤ, if k = 0 then (0 : ℝ) else r ^ k.natAbs) = 2 * (r * (1 - r)⁻¹) := by
+  have hite := (summable_pow_natAbs hr₀ hr₁).tsum_eq_add_tsum_ite (0 : ℤ)
+  rw [tsum_pow_natAbs hr₀ hr₁, Int.natAbs_zero, pow_zero] at hite
+  have : 1 - r ≠ 0 := sub_ne_zero.2 hr₁.ne'; field_simp at hite ⊢; linarith
+
+/-- Along `𝓝[≥] 0`, the nonzero-mode bilateral geometric sum `∑'_{k ≠ 0} r ^ |k|` tends to `0`. -/
+theorem tendsto_tsum_ite_eq_zero_pow_natAbs :
+    Tendsto (fun r : ℝ ↦ ∑' k : ℤ, if k = 0 then (0 : ℝ) else r ^ k.natAbs) (𝓝[≥] 0) (𝓝 0) :=
+  ((by simpa using (((tendsto_id (α := ℝ)).mul (((tendsto_const_nhds (x := (1 : ℝ))).sub
+      tendsto_id).inv₀ (by norm_num : (1 : ℝ) - 0 ≠ 0))).const_mul 2) :
+      Tendsto (fun r : ℝ ↦ 2 * (r * (1 - r)⁻¹)) (𝓝 0) (𝓝 0)).mono_left nhdsWithin_le_nhds).congr'
+    (eventually_of_mem (Ico_mem_nhdsGE zero_lt_one) fun _ hr ↦
+      (tsum_ite_eq_zero_pow_natAbs hr.1 hr.2).symm)
 
 end TauCeti

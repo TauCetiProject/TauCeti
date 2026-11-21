@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Jon Crall, Claude Opus 5, OpenAI gpt-6.1-sol
 -/
 module
 
@@ -61,6 +61,10 @@ zero and Lean's totalized division assigns the harmless value `0`; the measure t
 first restricts away from that point. -/
 def circleCayleyInv (z : Circle) : ℝ :=
   -(z : ℂ).im / (1 - (z : ℂ).re)
+
+/-- The real boundary coordinate in terms of the real and imaginary parts. -/
+theorem circleCayleyInv_def (z : Circle) :
+    circleCayleyInv z = -(z : ℂ).im / (1 - (z : ℂ).re) := (rfl)
 
 /-- Applying the real boundary coordinate after the boundary Cayley map gives the original real
 number. -/
@@ -128,6 +132,15 @@ theorem boundaryCayley_circleCayleyInv {z : Circle} (hz : z ≠ 1) :
     field_simp [hden, hquadpos.ne']
     rw [hquad]
     ring
+
+/-- On the unit circle, the real inverse Cayley coordinate agrees with `TauCeti.circleCayleyInv`. -/
+@[simp] theorem _root_.Complex.inverseCayleyCoord_coe_circle (z : Circle) :
+    Complex.inverseCayleyCoord (z : ℂ) = circleCayleyInv z := by
+  by_cases hz : z = 1
+  · subst z
+    simp [circleCayleyInv_def]
+  conv_lhs => rw [← boundaryCayley_circleCayleyInv hz, coe_boundaryCayley]
+  simp only [Complex.inverseCayleyCoord_cayley, Complex.ofReal_re]
 
 /-- The boundary Cayley map is continuous. -/
 @[fun_prop]

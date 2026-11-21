@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Axel Delaval, Jie Xu, Shitan Xu
 -/
 module
 
@@ -646,3 +646,14 @@ theorem span_singleton_pow_inf_span_singleton_pow_eq_span_singleton_mul [NoZeroD
 end Ideal
 
 end
+
+public section
+
+/-- Adding a positive power of an element in a prime ideal to a power of an element outside
+it stays outside the ideal. The second exponent may be zero. -/
+theorem Ideal.IsPrime.pow_add_pow_notMem {R : Type*} [Ring R] {P : Ideal R}
+    (hP : P.IsPrime) {a b : R} {m n : ℕ} (ha : a ∈ P) (hb : b ∉ P) (hm : 0 < m) :
+    a ^ m + b ^ n ∉ P := by
+  intro h
+  exact hb (hP.mem_of_pow_mem n
+    ((Ideal.add_mem_iff_right P (Ideal.pow_mem_of_mem P ha m hm)).mp h))

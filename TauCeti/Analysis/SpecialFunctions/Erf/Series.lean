@@ -46,11 +46,12 @@ Laplace-type integrals without losing integrability near the origin.
   `Real.tsum_pow_add_div_Gamma_div_two_add_one_lt_two_mul_exp`,
   `Real.abs_tsum_pow_add_div_Gamma_div_two_add_one_lt_two_mul_exp`,
   `Real.abs_tsum_mul_pow_add_div_Gamma_div_two_add_one_le_of_abs_le_one`,
+  `Real.abs_tsum_pow_add_div_Gamma_div_two_add_one_le_mul_exp`,
   `Real.tsum_pow_add_two_mul_div_Gamma_div_two_add_one_le`: for all `x : ℝ`, shifted tails of the
   half-Gamma series are bounded in absolute value by the shifted tail at `|x|`, satisfy the
   uniform polynomial-free bound `|·| < 2 exp(x²)`, the scaled small-argument bound
-  `|·| ≤ 2 exp(x²) |u|^M` for `|u| ≤ 1`, and the `2L`-shifted factorial bound
-  `≤ 2 x^{2L} / L! * exp(x²)`.
+  `|·| ≤ 2 exp(x²) |u|^M` for `|u| ≤ 1`, the global arbitrary-shift bound
+  `|·| ≤ 2 e |x|^M exp(x²)`, and the `2L`-shifted factorial bound `≤ 2 x^{2L} / L! * exp(x²)`.
 * `Real.continuous_tsum_pow_div_Gamma_div_two_add_one`,
   `Real.continuous_tsum_pow_add_div_Gamma_div_two_add_one`: continuity on `ℝ` of the half-Gamma
   series and its `M`-shifted tails.
@@ -370,6 +371,26 @@ theorem tsum_pow_add_two_mul_div_Gamma_div_two_add_one_le (x : ℝ) (L : ℕ) :
           gcongr
           exact (tsum_pow_div_Gamma_div_two_add_one_lt_two_mul_exp |x|).le
     _ = 2 * x ^ (2 * L) / L ! * rexp (x ^ 2) := by rw [sq_abs]; ring
+
+/-- For every `x : ℝ` and any shift `M : ℕ` (even or odd), the `M`-shifted tail of the half-Gamma
+series satisfies `|∑_{k ≥ 0} x^{k + M} / Γ((k + M) / 2 + 1)| ≤ 2 e |x|^M exp(x²)`. -/
+theorem abs_tsum_pow_add_div_Gamma_div_two_add_one_le_mul_exp (x : ℝ) (M : ℕ) :
+    |∑' k : ℕ, x ^ (k + M) / Real.Gamma ((↑(k + M) : ℝ) / 2 + 1)| ≤
+      2 * rexp 1 * |x| ^ M * rexp (x ^ 2) := by
+  rcases le_total |x| 1 with hx | hx
+  · have h := abs_tsum_mul_pow_add_div_Gamma_div_two_add_one_le_of_abs_le_one 1 hx M
+    simp only [one_mul, one_pow] at h
+    exact h.trans (le_mul_of_one_le_right (by positivity) (Real.one_le_exp (sq_nonneg x)))
+  · have h1 : (1 : ℝ) ≤ rexp 1 * |x| ^ M :=
+      calc (1 : ℝ) = 1 * 1 := by ring
+        _ ≤ rexp 1 * |x| ^ M :=
+            mul_le_mul (Real.one_le_exp zero_le_one) (one_le_pow₀ hx) zero_le_one
+              (Real.exp_nonneg 1)
+    calc |∑' k : ℕ, x ^ (k + M) / Real.Gamma ((↑(k + M) : ℝ) / 2 + 1)|
+        ≤ 2 * rexp (x ^ 2) := (abs_tsum_pow_add_div_Gamma_div_two_add_one_lt_two_mul_exp x M).le
+      _ = 2 * 1 * rexp (x ^ 2) := by ring
+      _ ≤ 2 * (rexp 1 * |x| ^ M) * rexp (x ^ 2) := by gcongr
+      _ = 2 * rexp 1 * |x| ^ M * rexp (x ^ 2) := by ring
 
 /-- Continuity on `ℝ` of the `M`-shifted half-Gamma series
 `z ↦ ∑_{k ≥ 0} z^{k + M} / Γ((k + M) / 2 + 1)`. -/
