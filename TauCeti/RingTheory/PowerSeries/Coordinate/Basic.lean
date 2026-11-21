@@ -239,12 +239,24 @@ theorem substAlgEquiv_X (φ : FormalCoordinate R) : φ.substAlgEquiv X = φ.toPo
 theorem substAlgEquiv_symm (φ : FormalCoordinate R) : φ.substAlgEquiv.symm = φ⁻¹.substAlgEquiv :=
   AlgEquiv.ext fun f ↦ by simp [substAlgEquiv, coe_substAlgHom]
 
+@[simp]
+theorem inv_substAlgEquiv (φ : FormalCoordinate R) : (φ.substAlgEquiv)⁻¹ = φ⁻¹.substAlgEquiv := by
+  rw [AlgEquiv.aut_inv, substAlgEquiv_symm]
+
 /-- Substitution automorphisms reverse composition: `σ_(φ ∘ ψ) = σ_ψ ∘ σ_φ`, since
 `f (φ (ψ)) = f (φ) (ψ)`. -/
 @[simp]
 theorem substAlgEquiv_mul (φ ψ : FormalCoordinate R) :
     (φ * ψ).substAlgEquiv = ψ.substAlgEquiv * φ.substAlgEquiv :=
   AlgEquiv.ext fun f ↦ by simp [subst_subst]
+
+open scoped commutatorElement in
+/-- Because `φ ↦ σ_φ` reverses composition, it sends the group commutator `⁅φ, ψ⁆` to
+`⁅σ_{ψ⁻¹}, σ_{φ⁻¹}⁆`. -/
+@[simp]
+theorem substAlgEquiv_commutatorElement (φ ψ : FormalCoordinate R) :
+    (⁅φ, ψ⁆).substAlgEquiv = ⁅ψ⁻¹.substAlgEquiv, φ⁻¹.substAlgEquiv⁆ := by
+  simp [commutatorElement_def, mul_assoc]
 
 @[simp]
 theorem substAlgEquiv_one : (1 : FormalCoordinate R).substAlgEquiv = 1 :=
