@@ -82,15 +82,19 @@ variable {R : Type*} [CommSemiring R] {W C : Type*} [AddCommGroup W] [Module R W
 
 /-- **The factor set of a bilinear map**, specializing `TauCeti.FactorSet.ofBimultiplicative` to the
 case where the bimultiplicative map is a bilinear map written multiplicatively on both the bilinear
-space and the coefficient group. The associated extension
+space and the coefficient group. The bimultiplicative map itself is obtained by composing the
+canonical conversions `LinearMap.toAddMonoidHom'` and `B.toAddMonoidHom` with the type-tag
+equivalence `AddMonoidHom.toMultiplicativeLeftAddEquiv`, then `AddMonoidHom.toMultiplicativeLeft`;
+no preservation-of-one/multiplication proof is repeated by hand. The associated extension
 `TauCeti.FactorSet.Extension (B.bilinearFactorSet)` is the **Heisenberg group of `B`**; its law is
 `(t, w) * (s, v) = (t + s + B w v, w + v)`. -/
 def bilinearFactorSet (B : LinearMap.BilinMap R W C) :
     FactorSet (Multiplicative W) (Multiplicative C) :=
   FactorSet.ofBimultiplicative
-    { toFun w := AddMonoidHom.toMultiplicative (LinearMap.toAddMonoidHom (B w.toAdd))
-      map_one' := by ext; simp
-      map_mul' _ _ := by ext; simp [ofAdd_add] }
+    (AddMonoidHom.toMultiplicativeLeft
+      ((AddMonoidHom.toMultiplicativeLeftAddEquiv (M := W)
+          (N := Multiplicative C)).toAddMonoidHom.comp
+        ((LinearMap.toAddMonoidHom'.comp B.toAddMonoidHom) : W →+ W →+ C)))
     TauCeti.trivialMulDistribMulAction_smul
 
 /-- The value of the factor set of `B` at two multiplicatively written space coordinates is the
@@ -100,7 +104,7 @@ value of the factor set is `B` itself. -/
 theorem bilinearFactorSet_apply (B : LinearMap.BilinMap R W C) (w v : Multiplicative W) :
     B.bilinearFactorSet (w, v) = ofAdd (B w.toAdd v.toAdd) := by
   rw [bilinearFactorSet, FactorSet.ofBimultiplicative_apply]
-  simp [LinearMap.toAddMonoidHom_coe]
+  rfl
 
 end LinearMap.BilinMap
 
