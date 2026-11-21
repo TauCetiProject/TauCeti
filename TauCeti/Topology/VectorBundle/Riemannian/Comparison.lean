@@ -267,13 +267,15 @@ theorem IsCompact.exists_pos_mul_norm_sq_le_bilin_self_and_le [FiniteDimensional
     {K : Set B} (hK : IsCompact K) {b : ∀ x, E x →L[ℝ] E x →L[ℝ] ℝ}
     (hb : ContinuousOn (fun x ↦ TotalSpace.mk' (F →L[ℝ] F →L[ℝ] ℝ) x (b x)) K)
     (hpos : ∀ x ∈ K, ∀ v : E x, v ≠ 0 → 0 < b x v v) :
-    ∃ c C : ℝ, 0 < c ∧ 0 < C ∧ ∀ x ∈ K, ∀ v : E x,
+    ∃ c > 0, ∃ C > 0, ∀ x ∈ K, ∀ v : E x,
       c * ‖v‖ ^ 2 ≤ b x v v ∧ b x v v ≤ C * ‖v‖ ^ 2 := by
-  obtain ⟨b₀, hb₀, hinner⟩ := IsContinuousRiemannianBundle.exists_continuous (F := F) (E := E)
-  have hpos₀ (x : B) (_ : x ∈ K) (v : E x) (hv : v ≠ 0) : 0 < b₀ x v v := by
-    simpa only [← hinner] using real_inner_self_pos.mpr hv
-  simpa only [← hinner, real_inner_self_eq_norm_sq] using
-    hK.exists_pos_mul_bilin_self_le_and_le hb hb₀.continuousOn hpos hpos₀
+  obtain ⟨c, hc, hlower⟩ := hK.exists_pos_forall_mul_norm_sq_le_bundle (b := id) (φ := b) hb hpos
+  obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn_bilinear_bundle (b := id) (φ := b) hb
+  refine ⟨c, hc, max C 1, by positivity, fun x hx v ↦ ⟨hlower x hx v, ?_⟩⟩
+  calc b x v v ≤ ‖b x v v‖ := Real.le_norm_self _
+    _ ≤ ‖b x‖ * ‖v‖ * ‖v‖ := le_opNorm₂ _ _ _
+    _ ≤ max C 1 * ‖v‖ * ‖v‖ := by gcongr; exact (hC x hx).trans (le_max_left _ _)
+    _ = max C 1 * ‖v‖ ^ 2 := by rw [mul_assoc, ← sq]
 
 /-- On a compact set, a continuous metric has positive uniform lower and upper bounds against
 the squared fibre norm of a continuous Riemannian bundle, with no finite-rank assumption. -/

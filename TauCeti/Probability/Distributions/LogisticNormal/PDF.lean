@@ -321,8 +321,8 @@ theorem map_coords_logisticNormalMeasure_eq_withDensity
   simp only [Measure.restrict_univ, det_fderiv_logisticNormalChart_coords,
     abs_of_pos (Finset.prod_pos fun i _ ↦ logisticNormalChart_pos r _ i), image_univ,
     σ, range_logisticNormalChart_coords] at hjac
-  have hmap := Measure.map_withDensity_eq_withDensity hσ (by fun_prop)
-    (measurable_logisticNormalChartPDF m S) hjac
+  have hmap := Measure.map_withDensity_eq_withDensity hσ.aemeasurable (by fun_prop)
+    (measurable_logisticNormalChartPDF m S).aemeasurable hjac
     (ae_of_all _ (jacobian_mul_logisticNormalChartPDF m S))
   have hcomp : (fun (x : EuclideanSpace ℝ ι) (j : {i // i ≠ r}) ↦ x j) ∘ logisticNormalChart r =
       σ ∘ WithLp.ofLp := by

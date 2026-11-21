@@ -252,11 +252,11 @@ theorem IsCompact.exists_pos_mul_bilin_self_le_and_le (hK : IsCompact K)
     (hb₀ : ContinuousOn (fun x ↦ TotalSpace.mk' (F →L[ℝ] F →L[ℝ] ℝ) x (b₀ x)) K)
     (hpos : ∀ x ∈ K, ∀ v : E x, v ≠ 0 → 0 < b x v v)
     (hpos₀ : ∀ x ∈ K, ∀ v : E x, v ≠ 0 → 0 < b₀ x v v) :
-    ∃ c C : ℝ, 0 < c ∧ 0 < C ∧ ∀ x ∈ K, ∀ v : E x,
+    ∃ c > 0, ∃ C > 0, ∀ x ∈ K, ∀ v : E x,
       c * b₀ x v v ≤ b x v v ∧ b x v v ≤ C * b₀ x v v := by
   obtain ⟨c, hc, h⟩ := hK.exists_pos_mul_bilin_self_le hb hb₀ hpos
   obtain ⟨d, hd, h'⟩ := hK.exists_pos_mul_bilin_self_le hb₀ hb hpos₀
-  refine ⟨c, d⁻¹, hc, inv_pos.mpr hd, fun x hx v ↦ ⟨h x hx v, ?_⟩⟩
+  refine ⟨c, hc, d⁻¹, inv_pos.mpr hd, fun x hx v ↦ ⟨h x hx v, ?_⟩⟩
   rw [← div_eq_inv_mul, le_div_iff₀ hd]
   simpa only [mul_comm] using h' x hx v
 

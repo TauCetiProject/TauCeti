@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Axel Delaval, Zhiyuan Zhang, Leheng Chen
 -/
 module
 
@@ -72,6 +72,8 @@ map may lose injectivity or local invertibility, so no canonical smooth global i
   at the base point is the identity.
 * `MDifferentiableAt.hasFDerivAt_riemannianLog_comp_riemannianExp_zero`: the Fréchet derivative at
   `0` of `u ↦ log_{f p} (f (exp_p u))` is `mfderiv I J f p`.
+* `TauCeti.Manifold.IsNormalDomain.mvfderiv_comp_riemannianLog_self`: composition with the
+  logarithm preserves the scalar differential at the base point, without a regularity hypothesis.
 * `TauCeti.Manifold.IsNormalDomain.mem_geodesicInterval` and
   `TauCeti.Manifold.IsNormalDomain.isGeodesicCurveOn_riemannianExp_smul_Icc`: the radial geodesic
   towards a vector of a normal domain is defined and a geodesic on `[0, 1]`.
@@ -83,6 +85,8 @@ map may lose injectivity or local invertibility, so no canonical smooth global i
 
 * M. P. do Carmo, *Riemannian Geometry*, Birkhäuser, 1992, Ch. 3, §3.
 * J. M. Lee, *Introduction to Riemannian Manifolds*, Springer, 2018, Ch. 5 and 6.
+* https://github.com/frenzymath/lean-eval-submissions
+* https://github.com/frenzymath/PoincareConjecture
 -/
 
 public section
@@ -507,6 +511,30 @@ theorem riemannianLog_eq_neg_mfderiv_riemannianExp_radial
   ext v
   simp only [mvfderiv_apply_eq_mfderiv_apply, h.mfderiv_riemannianLog_self_apply,
     ContinuousLinearMap.id_apply]
+
+/-- At the center, composition with the logarithm preserves the scalar differential. -/
+theorem mvfderiv_comp_riemannianLog_self (h : IsNormalDomain I M p U)
+    (P : TangentSpace I p → ℝ) :
+    mvfderiv I (P ∘ riemannianLog I M p U) p = fderiv ℝ P 0 := by
+  by_cases hP : DifferentiableAt ℝ P 0
+  · have hdP : DifferentiableAt ℝ P (riemannianLog I M p U p) := by
+      simpa only [h.riemannianLog_self] using hP
+    ext v
+    rw [mvfderiv_comp_apply_of_differentiableAt hdP
+      (h.mdifferentiableAt_riemannianLog h.self_mem_image), h.mvfderiv_riemannianLog_self,
+      ContinuousLinearMap.id_apply, h.riemannianLog_self]
+  · have heq : (P ∘ riemannianLog I M p U) ∘ riemannianExp I M p =ᶠ[𝓝 0] P := by
+      filter_upwards [h.isOpen.mem_nhds h.zero_mem] with v hv
+      simp only [Function.comp_apply, h.riemannianLog_riemannianExp hv]
+    have hnot : ¬MDifferentiableAt I 𝓘(ℝ) (P ∘ riemannianLog I M p U) p := by
+      intro hcomp
+      have hcomp' : MDifferentiableAt I 𝓘(ℝ) (P ∘ riemannianLog I M p U)
+          (riemannianExp I M p 0) := by simpa only [riemannianExp_zero] using hcomp
+      have hd := hcomp'.comp 0
+        ((contMDiffAt_riemannianExp (zero_mem_expDomain p)).mdifferentiableAt (by simp))
+      exact hP (heq.mdifferentiableAt_iff.mp hd).differentiableAt
+    rw [mvfderiv, mfderiv_zero_of_not_mdifferentiableAt hnot,
+      fderiv_zero_of_not_differentiableAt hP, ContinuousLinearMap.comp_zero]
 
 end IsNormalDomain
 

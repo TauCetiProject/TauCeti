@@ -56,6 +56,10 @@ follows from the inversion `Real.tanh_artanh` together with the addition formula
   `x ≤ artanh x ≤ x / (1 - x ^ 2)` on `[0, 1)`, obtained by bounding that integrand between
   its values at the two endpoints.
 * `Real.tanh_le_self` — the inverse form `tanh x ≤ x` of the lower bound, for `0 ≤ x`.
+* `Real.one_sub_mul_exp_le_one_add_mul_exp_neg` — the same bound written with exponentials,
+  `(1 - u) e^u ≤ (1 + u) e^{-u}` for `0 ≤ u`.
+* `Real.one_add_mul_exp_neg_le_exp_mul_one_sub_mul_exp` — a converse up to a cubic factor,
+  `(1 + u) e^{-u} ≤ e^{(8 / 3) u³} (1 - u) e^u` for `0 ≤ u ≤ 1 / 2`.
 
 The motivation is the hyperbolic (Poincaré) metric on the unit disc. Tau Ceti's
 `TauCeti.hyperbolicDist` is `Real.artanh` of the pseudo-hyperbolic expression, so the additive
@@ -302,7 +306,42 @@ theorem _root_.Real.self_le_artanh {x : ℝ} (hx : 0 ≤ x) (hx₁ : x < 1) : x 
 `Real.self_le_artanh` evaluated at `tanh x`, which lies in `[0, 1)`. -/
 theorem _root_.Real.tanh_le_self {x : ℝ} (hx : 0 ≤ x) : Real.tanh x ≤ x := by
   simpa only [Real.artanh_tanh] using
-    Real.self_le_artanh (Real.tanh_nonneg hx) (Real.tanh_lt_one x)
+    Real.self_le_artanh (Real.tanh_nonneg_iff.2 hx) (Real.tanh_lt_one x)
+
+/-- For `0 ≤ u`, `(1 - u) e^u ≤ (1 + u) e^{-u}`: this is `sinh u ≤ u cosh u`, that is
+`Real.tanh_le_self`. -/
+theorem _root_.Real.one_sub_mul_exp_le_one_add_mul_exp_neg {u : ℝ} (hu : 0 ≤ u) :
+    (1 - u) * Real.exp u ≤ (1 + u) * Real.exp (-u) := by
+  have h := Real.tanh_le_self hu
+  rw [Real.tanh_eq_sinh_div_cosh, div_le_iff₀ (Real.cosh_pos u), Real.sinh_eq,
+    Real.cosh_eq] at h
+  linarith
+
+/-- For `0 ≤ u ≤ 1 / 2`, `(1 + u) e^{-u} ≤ e^{(8 / 3) u³} (1 - u) e^u`: a converse of
+`Real.one_sub_mul_exp_le_one_add_mul_exp_neg` up to the factor `e^{(8 / 3) u³}`, from the bound
+`log ((1 + u) / (1 - u)) ≤ 2 u + (8 / 3) u³` (`Real.log_div_le_sum_range_add`). -/
+theorem _root_.Real.one_add_mul_exp_neg_le_exp_mul_one_sub_mul_exp {u : ℝ} (hu0 : 0 ≤ u)
+    (hu1 : u ≤ 1 / 2) :
+    (1 + u) * Real.exp (-u) ≤ Real.exp (8 / 3 * u ^ 3) * ((1 - u) * Real.exp u) := by
+  have h := Real.log_div_le_sum_range_add hu0 (by linarith) 1
+  norm_num at h
+  have hpos : 0 < 1 - u := by linarith
+  have h3 : u ^ 3 / (1 - u ^ 2) ≤ 4 / 3 * u ^ 3 := by
+    rw [div_le_iff₀ (by nlinarith)]
+    nlinarith [mul_nonneg (pow_nonneg hu0 3) (show 0 ≤ 1 / 4 - u ^ 2 by nlinarith)]
+  have hexp : (1 + u) / (1 - u) ≤ Real.exp (2 * u + 8 / 3 * u ^ 3) := by
+    rw [← Real.exp_log (div_pos (by linarith) hpos)]
+    exact Real.exp_le_exp.2 (by linarith)
+  rw [div_le_iff₀ hpos] at hexp
+  have h1 : Real.exp u * Real.exp (-u) = 1 := by
+    rw [← Real.exp_add, add_neg_cancel, Real.exp_zero]
+  have h2 : Real.exp (2 * u + 8 / 3 * u ^ 3) =
+      Real.exp (8 / 3 * u ^ 3) * Real.exp u * Real.exp u := by
+    rw [← Real.exp_add, ← Real.exp_add]; ring_nf
+  calc (1 + u) * Real.exp (-u) ≤ Real.exp (2 * u + 8 / 3 * u ^ 3) * (1 - u) * Real.exp (-u) := by
+        gcongr
+    _ = Real.exp (8 / 3 * u ^ 3) * ((1 - u) * Real.exp u) := by
+        rw [h2]; linear_combination (Real.exp (8 / 3 * u ^ 3) * (1 - u) * Real.exp u) * h1
 
 /-- **The elementary upper bound `artanh x ≤ x / (1 - x ^ 2)` on `[0, 1)`**: the Poincaré
 density `(1 - t ^ 2)⁻¹` is increasing, so on `[0, x]` it is at most its value at `x`. -/
