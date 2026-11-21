@@ -19,18 +19,17 @@ effective Weil divisor, over `k` itself. Neither an algebraically closed ground 
 rational point is needed. The representative has the same degree as the line bundle, with
 residue-field degrees included in divisor degree.
 
-This is the effective-representative input to surjectivity of the Abel maps. Divisors in this
-file are Weil divisors, or Cartier divisors given by local rational equations; no relative
-closed subscheme or representability assertion is made.
-
-The construction uses `SchemeWeilDivisor.exists_nonempty_iso_sheaf` to pass to divisor sheaves
-and `SchemeWeilDivisor.nonempty_completeLinearSystem_of_genus_le_relativeDegree` for effectivity.
+These effective representatives are an input to surjectivity of the Abel maps. On regular
+curves, the construction uses `SchemeWeilDivisor.exists_nonempty_iso_sheaf` to pass to divisor
+sheaves and `SchemeWeilDivisor.nonempty_completeLinearSystem_of_genus_le_relativeDegree` for
+effectivity.
 The Weil–Cartier correspondence then gives an effective Cartier divisor representative.
 
-For proper integral curves, including singular curves, the section-theoretic construction also
-produces an actual effective Cartier ideal of colength `deg L`, assuming finite-dimensional
-`H⁰(𝒪_X)` and `H¹(𝒪_X)` but not constant global functions. This is the form needed by the
-functor of relative effective Cartier divisors, rather than just the Weil divisor dictionary.
+For proper integral curves, including singular curves, the section-theoretic construction
+produces an effective Cartier ideal whose closed subscheme has rank `deg L` over the field.
+It assumes finite-dimensional `H¹(𝒪_X)` but not constant global functions. This is the form
+needed by the functor of relative effective Cartier divisors. No representability or assertion
+over arbitrary base schemes is made.
 
 ## References
 
@@ -51,28 +50,36 @@ section CartierIdeal
 
 variable (k : Type u) [Field k] {X : Scheme.{u}} [X.Over (Spec (.of k))] [IsIntegral X]
   [IsProper (X ↘ Spec (.of k))] [RelativeDimensionLE 1 (X ↘ Spec (.of k))]
-  [FiniteDimensional k (Scheme.Modules.Cohomology (trivial X).obj 0)]
   [FiniteDimensional k (Scheme.Modules.Cohomology (trivial X).obj 1)]
 
-/-- On a proper integral curve with finite-dimensional `H⁰(𝒪_X)` and `H¹(𝒪_X)`, a line bundle
-of degree at least `dim H¹(𝒪_X)` has an effective Cartier zero subscheme of that degree. The
-ideal sheaf of this subscheme has class `L⁻¹`. Neither regularity, constant global functions,
-nor a rational point is required. -/
+/-- On a proper integral curve with finite-dimensional `H¹(𝒪_X)`, a line bundle `L` of degree
+at least `dim H¹(𝒪_X)` admits an effective Cartier ideal of class `L⁻¹` whose closed subscheme
+has rank `deg L` over `k`. Neither regularity, constant global functions, nor a rational point
+is required. -/
 theorem exists_isEffectiveCartier_eulerDegree_eq_of_genus_le (L : InvertibleSheaf X)
     (hL : (finrank k (Scheme.Modules.Cohomology (trivial X).obj 1) : ℤ) ≤ L.eulerDegree k) :
     ∃ (I : X.IdealSheafData) (hI : I.IsEffectiveCartier),
       LineBundleClass.mk hI.toInvertibleSheaf = (LineBundleClass.mk L)⁻¹ ∧
         L.eulerDegree k = (I.subschemeι ≫ X ↘ Spec (.of k)).finrank default := by
-  let _ : Nonempty (⊤ : X.Opens) := ⟨⟨Classical.choice inferInstance, by simp⟩⟩
-  let M : X.Modules := SheafOfModules.unit X.ringCatSheaf
-  have : Nontrivial Γ(M, ⊤) := inferInstanceAs (Nontrivial Γ(X, ⊤))
-  have : Nontrivial (Scheme.Modules.Cohomology M 0) :=
-    (Scheme.Modules.cohomologyZeroEquiv M).toEquiv.nontrivial
-  have : FiniteDimensional k (Scheme.Modules.Cohomology M 0) :=
-    (Scheme.Modules.finiteDimensional_cohomology_congr k (trivialObjIsoUnit X) 0).mp inferInstance
-  have h₀ : 0 < finrank k (Scheme.Modules.Cohomology (trivial X).obj 0) := by
-    rw [Scheme.Modules.finrank_cohomology_congr k (trivialObjIsoUnit X) 0]
-    exact Module.finrank_pos
+  let _ : Algebra k Γ(X, ⊤) := (Scheme.Modules.baseRingToGlobalSections k X).toAlgebra
+  let _ := (isField_of_universallyClosed k (X ↘ Spec (.of k))).toField
+  have hbase : Scheme.Modules.baseRingToGlobalSections k X =
+      (X ↘ Spec (.of k)).appTop.hom.comp (Scheme.ΓSpecIso (.of k)).inv.hom :=
+    RingHom.ext (Scheme.Modules.baseRingToGlobalSections_apply k X)
+  have hfinite : (Scheme.Modules.baseRingToGlobalSections k X).Finite := by
+    rw [hbase]
+    exact (finite_appTop_of_universallyClosed k (X ↘ Spec (.of k))).comp
+      (RingHom.Finite.of_surjective _
+        (Scheme.ΓSpecIso (.of k)).symm.commRingCatIsoToRingEquiv.surjective)
+  have : Module.Finite k Γ(X, ⊤) := hfinite
+  let H₀ := Scheme.Modules.Cohomology (trivial X).obj 0
+  have : IsScalarTower k Γ(X, ⊤) H₀ := .of_algebraMap_smul fun _ _ ↦ rfl
+  have hrank : finrank Γ(X, ⊤) H₀ = 1 :=
+    Scheme.Modules.finrank_globalSections_cohomology_zero_trivial_eq_one
+  have : Module.Finite Γ(X, ⊤) H₀ := Module.finite_of_finrank_eq_succ hrank
+  have : FiniteDimensional k H₀ := Module.Finite.trans Γ(X, ⊤) _
+  have : Nontrivial H₀ := Module.nontrivial_of_finrank_eq_succ hrank
+  have h₀ : 0 < finrank k (Scheme.Modules.Cohomology (trivial X).obj 0) := Module.finrank_pos
   have hdeg := L.eulerDegree_eq_finrank_sub k
   have hpos : 0 < finrank k (Scheme.Modules.Cohomology L.obj 0) := by omega
   have := Module.nontrivial_of_finrank_pos hpos

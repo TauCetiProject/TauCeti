@@ -7,8 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.LineBundle.Effective
 public import TauCeti.AlgebraicGeometry.PicardFunctor.Abel.PicZero
-public import TauCeti.AlgebraicGeometry.PicardFunctor.PicZero.FieldPoint
-import TauCeti.AlgebraicGeometry.Geometrically.GlobalSections
+import TauCeti.AlgebraicGeometry.PicardFunctor.PicZero.FieldPoint
 
 /-!
 # Field-valued surjectivity of the Abel maps
@@ -44,14 +43,16 @@ variable {S X : Scheme.{u}} (f : X ⟶ S) [IsProper f]
   [SmoothOfRelativeDimension 1 f] [GeometricallyConnected f]
   {k : Type u} [Field k] (g : Spec (.of k) ⟶ S)
 
-/-- Every relative Picard class of degree `d ≥ g(X_k)` over a field has a preimage under the
-Abel map, represented by an actual effective Cartier divisor of rank `d` on the fibre. -/
+/-- Every relative Picard class over a field with degree `d ≥ g(X_k)` at a field-valued
+point `ξ` of `Spec k` has an Abel preimage represented by an effective Cartier divisor of
+rank `d` on `X_k`. -/
 theorem exists_abelMap_app_eq_of_genus_le (d : ℕ)
     (hd : letI : (pullback g f).Over (Spec (.of k)) := ⟨pullback.fst g f⟩
       finrank k (Scheme.Modules.Cohomology
         (InvertibleSheaf.trivial (pullback g f)).obj 1) ≤ d)
+    {Ω : Type u} [Field Ω] {ξ : Spec (.of Ω) ⟶ Spec (.of k)}
     (c : (relativePicardPresheaf f).obj (op (Over.mk g)))
-    (hc : relativePicardFiberDegree f (𝟙 (Spec (.of k))) c = d) :
+    (hc : relativePicardFiberDegree f ξ c = d) :
     ∃ D : (relativeEffectiveCartierDegreeSubfunctor f d).toFunctor.obj (op (Over.mk g)),
       (abelMap f).app (op (Over.mk g)) (ULift.up D.1) = c := by
   let _ : (pullback g f).Over (Spec (.of k)) := ⟨pullback.fst g f⟩
@@ -79,11 +80,6 @@ theorem exists_abelMap_app_eq_of_genus_le (d : ℕ)
     rw [← hquot, relativePicardFiberDegree_mk_eq_eulerDegree f g,
       LineBundleClass.eulerDegree_mk] at hc
     exact hc
-  have h₀ := finrank_cohomology_zero_trivial_eq_one_of_surjective k
-    ((pullback g f).baseRingToGlobalSections_bijective_of_geometricallyIntegral k).surjective
-  have : FiniteDimensional k
-      (Scheme.Modules.Cohomology (InvertibleSheaf.trivial (pullback g f)).obj 0) :=
-    Module.finite_of_finrank_pos (by omega)
   obtain ⟨I, hI, hclass, hdegree⟩ :=
     L.exists_isEffectiveCartier_eulerDegree_eq_of_genus_le k (by rw [hdeg]; exact_mod_cast hd)
   have hrel : I.IsRelativeEffectiveCartier (pullback.fst g f) :=
@@ -101,37 +97,27 @@ theorem exists_abelMap_app_eq_of_genus_le (d : ℕ)
 /-- If `d` is at least the genus of a field-valued fibre, the normalized degree-`d` Abel map
 is surjective onto `Pic⁰` at that field. The section is used only for normalization; neither
 algebraic closedness nor perfectness of the field is assumed. -/
-theorem abelJacobiMapOfDegreeToPicZero_app_surjective {x₀ : S ⟶ X}
+theorem abelJacobiMapOfDegreeToPicZero_app_surjective_of_genus_le {x₀ : S ⟶ X}
     (hx₀ : x₀ ≫ f = 𝟙 S) (d : ℕ)
     (hd : letI : (pullback g f).Over (Spec (.of k)) := ⟨pullback.fst g f⟩
       finrank k (Scheme.Modules.Cohomology
         (InvertibleSheaf.trivial (pullback g f)).obj 1) ≤ d) :
     Function.Surjective ((abelJacobiMapOfDegreeToPicZero f hx₀ d).app (op (Over.mk g))) := by
   rintro ⟨c, hc⟩
-  let _ : (pullback g f).Over (Spec (.of k)) := ⟨pullback.fst g f⟩
-  have : Subsingleton (LineBundleClass (op (Over.mk g)).unop.left) :=
-    inferInstanceAs (Subsingleton (LineBundleClass (Spec (.of k))))
   -- Keep multiplication in the group-valued presheaf, rather than its forgotten carrier.
   let c₀ : (relativePicardPresheaf f).obj (op (Over.mk g)) := c
-  let a : LineBundleClass (pullback g f) :=
-    relativePicardPresheafObjMulEquiv f (op (Over.mk g)) c₀
-  have hquot : (QuotientGroup.mk a : (relativePicardPresheaf f).obj (op (Over.mk g))) = c₀ := by
-    apply (relativePicardPresheafObjMulEquiv f (op (Over.mk g))).injective
-    exact relativePicardPresheafObjMulEquiv_mk f (op (Over.mk g)) a
-  have hzero : LineBundleClass.eulerDegree k a = 0 :=
-    (mem_relativePicardDegreeZeroSubfunctor_obj_iff_eulerDegree_eq_zero f g c₀).mp hc
-  have hc₀ : relativePicardFiberDegree f (𝟙 (Spec (.of k))) c₀ = 0 := by
-    rw [← hquot, relativePicardFiberDegree_mk_eq_eulerDegree f g]
-    exact hzero
+  let ξ := Spec.map (CommRingCat.ofHom (algebraMap k (AlgebraicClosure k)))
+  have hc₀ : relativePicardFiberDegree f ξ c₀ = 0 :=
+    (mem_relativePicardDegreeZeroSubfunctor_obj_iff f).mp hc (AlgebraicClosure k) ξ
   let B := (graphDivisor f).app (op (Over.mk g)) (basePoint hx₀ (Over.mk g))
   have hpow : (abelMap f).app (op (Over.mk g)) (ULift.up B) ^ d =
       (abelMap f).app (op (Over.mk g)) (ULift.up (B ^ d)) := by
     simp only [← abelMapMonoidHom_apply, map_pow]
   let b : (relativePicardPresheaf f).obj (op (Over.mk g)) :=
     (abelMap f).app (op (Over.mk g)) (ULift.up B)
-  have hdeg : relativePicardFiberDegree f (𝟙 (Spec (.of k))) (c₀ * b ^ d) = d := by
+  have hdeg : relativePicardFiberDegree f ξ (c₀ * b ^ d) = d := by
     rw [relativePicardFiberDegree_mul_of_smooth, hc₀, hpow,
-      relativePicardFiberDegree_abelMap_app_of_mem f (𝟙 (Spec (.of k)))
+      relativePicardFiberDegree_abelMap_app_of_mem f ξ
         (graphDivisor_basePoint_pow_mem_relativeEffectiveCartierDegreeSubfunctor_obj
           f hx₀ d (op (Over.mk g))), zero_add]
   obtain ⟨D, hD⟩ := exists_abelMap_app_eq_of_genus_le f g d hd _ hdeg
