@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.Formal
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.Obstruction
 import Mathlib.Tactic.LinearCombination
+import TauCeti.LinearAlgebra.TensorProduct.Basic
 
 /-!
 # Invariance of the first obstruction under `A∞` isomorphisms
@@ -59,6 +60,11 @@ and gives `mₙ₊₂ = δψₙ₊₁` there.  The exponential is where division
 * `IsMinimal.not_isFormal_of_not_exists_hochschildDifferential_eq_obstruction_four`:
   when `2` is invertible, a quartic obstruction which is not a Hochschild coboundary obstructs
   formality.
+* `IsMinimal.exists_obstruction_of_tprod_eq_hochschildDifferential_add_sum_of_isIso`: over any
+  commutative ring, if `𝒜` has `m₃ = ⋯ = mₙ₊₁ = 0` and is `A∞` isomorphic to the graded algebra
+  `ℋ`, then on every pure word of length `n + 2` its obstruction `mₙ₊₂` is `δψ` plus the binary
+  sum `∑_{2 ≤ d ≤ n} m_ℋ(ψ(x₁ ⋯ x_d), ψ(x_{d+1} ⋯ x_{n+2}))` for a degree-zero cochain `ψ`
+  vanishing on letters; for `n ≤ 1` the sum is empty.
 * `TauCeti.AInfinityAlgebra.IsMinimal.exists_hochschildDifferential_eq_obstruction_of_isIso`:
   over a `ℚ`-algebra, the first obstruction `mₙ₊₂` of an `A∞` structure with
   `m₃ = ⋯ = mₙ₊₁ = 0` which is `A∞` isomorphic to the graded algebra `ℋ` is a Hochschild
@@ -284,6 +290,143 @@ theorem IsMinimal.not_isFormal_of_not_exists_hochschildDifferential_eq_obstructi
   exact hobs ⟨φ, hφ, hφo⟩
 
 /-! ### The first obstruction in every arity -/
+
+/-- Quadratic cancellation for `coalgHom (letter + ψ) - id - coderiv ψ` under `ℋ.taylor`: the
+linear and coderivation parts kill all terms involving `letter`, leaving the binary product of `ψ`
+along every cut of `z`. -/
+private theorem taylor_coalgHom_letter_add_sub_sub_coderiv
+    (hℋ : ℋ.IsMinimal) (hm : ∀ k, 3 ≤ k → ℋ.m k = 0)
+    (ψ : ReducedTensorWords R A →ₗ[R] A) (z : ReducedTensorWords R A) :
+    ℋ.taylor (coalgHom R (letter R A + ψ) z - z - coderiv R ψ z) =
+      TensorProduct.lift ℋ.mul
+        (TensorProduct.map (ℋ.grading.koszulTwist 1 ∘ₗ ψ) ψ (deconcatenation R A z)) := by
+  have ht : ℋ.taylor = TensorProduct.lift ℋ.mul ∘ₗ
+      TensorProduct.map (ℋ.grading.koszulTwist 1 ∘ₗ letter R A) (letter R A) ∘ₗ
+        deconcatenation R A := by
+    rw [ℋ.taylor_eq_of_m_eq_zero hm, (ℋ.isMinimal_def).1 hℋ, LinearMap.zero_comp, zero_add]
+  set F := coalgHom R (letter R A + ψ)
+  set D := coderiv R ψ
+  have hkill : letter R A ∘ₗ (F - LinearMap.id - D) = 0 := by
+    rw [LinearMap.comp_sub, LinearMap.comp_sub, letter_comp_coalgHom, LinearMap.comp_id,
+      letter_comp_coderiv]
+    abel
+  have hdiff : letter R A ∘ₗ (F - LinearMap.id) = ψ := by
+    rw [LinearMap.comp_sub, letter_comp_coalgHom, LinearMap.comp_id, add_sub_cancel_left]
+  have hdec : deconcatenation R A (F z - z - D z) =
+      TensorProduct.map (F - LinearMap.id - D) LinearMap.id (deconcatenation R A z) +
+        TensorProduct.map LinearMap.id (F - LinearMap.id - D) (deconcatenation R A z) +
+        TensorProduct.map (F - LinearMap.id) (F - LinearMap.id) (deconcatenation R A z) := by
+    rw [map_sub, map_sub, (isCoalgHom_coalgHom _).deconcatenation_apply,
+      (isCoderivation_coderiv R ψ).deconcatenation_apply]
+    exact TensorProduct.map_sub_sub_add_eq F D (deconcatenation R A z)
+  have hcomp (u v : ReducedTensorWords R A →ₗ[R] ReducedTensorWords R A) :
+      TensorProduct.map (ℋ.grading.koszulTwist 1 ∘ₗ letter R A) (letter R A)
+          (TensorProduct.map u v (deconcatenation R A z)) =
+        TensorProduct.map (ℋ.grading.koszulTwist 1 ∘ₗ (letter R A ∘ₗ u)) (letter R A ∘ₗ v)
+          (deconcatenation R A z) := by
+    rw [← LinearMap.comp_apply, ← TensorProduct.map_comp, LinearMap.comp_assoc]
+  rw [ht, LinearMap.comp_apply, LinearMap.comp_apply, hdec]
+  congr 1
+  simp only [map_add, hcomp, hkill, hdiff, LinearMap.comp_zero, TensorProduct.map_zero_left,
+    TensorProduct.map_zero_right, LinearMap.zero_apply, zero_add]
+
+/-- On a pure tensor word of length `n + 2` (`n ≥ 1`), a cochain `ψ` vanishing on single letters
+evaluates the binary cut sum over `Finset.Icc 2 n`. -/
+private theorem lift_mul_map_deconcatenation_of_tprod (ℋ : AInfinityAlgebra R A)
+    {ψ : ReducedTensorWords R A →ₗ[R] A} (hψ₁ : ∀ w ∈ filtration R A 1, ψ w = 0)
+    {n : ℕ} (hn : 1 ≤ n) (x : Fin (n + 2) → A) :
+    TensorProduct.lift ℋ.mul
+        (TensorProduct.map (ℋ.grading.koszulTwist 1 ∘ₗ ψ) ψ
+          (deconcatenation R A (of R A ⟨n + 2, by omega⟩ (PiTensorProduct.tprod R x)))) =
+      ∑ d ∈ Finset.Icc 2 n, ℋ.taylor (of R A (2 : ℕ+)
+        (PiTensorProduct.tprod R ![ψ (subword R x 0 d), ψ (subword R x d (n + 2 - d))])) := by
+  rw [of_tprod_eq_subword R (by omega) x, deconcatenation_subword, map_sum, map_sum]
+  refine (Finset.sum_subset (fun d hd ↦ Finset.mem_Ioo.2 (by have := Finset.mem_Icc.1 hd; omega))
+    fun d hd hnd ↦ ?_).symm.trans (Finset.sum_congr rfl fun d _ ↦ ?_)
+  · rw [Finset.mem_Ioo] at hd
+    rw [Finset.mem_Icc] at hnd
+    rw [TensorProduct.map_tmul, TensorProduct.lift.tmul, LinearMap.comp_apply]
+    rcases (by omega : d ≤ 1 ∨ n + 2 - d ≤ 1) with h1 | h1
+    · rw [hψ₁ _ (subword_mem_filtration R A x 0 h1), map_zero, map_zero, LinearMap.zero_apply]
+    · rw [hψ₁ _ (subword_mem_filtration R A x (0 + d) h1), map_zero]
+  · rw [TensorProduct.map_tmul, TensorProduct.lift.tmul, LinearMap.comp_apply, zero_add,
+      ℋ.mul_apply, ← ℋ.taylor_of_two]
+
+/-- **Exact binary decomposition of the first obstruction along a normalized morphism.**  Over any
+commutative ring, let `ℋ` be a graded algebra, presented as a minimal `A∞` algebra without
+operations above arity two, let `𝒜` agree with `ℋ` on the words of length at most `n + 1`
+(`n ≥ 1`), and let `f : 𝒜 ⟶ ℋ` be an `A∞` morphism with linear part the identity.  Writing
+`ψ = f.taylor - letter`, the Taylor map of `ℋ` sees `coalgHom (letter + ψ)` only through cuts into
+two nonempty blocks, and the two cuts with a single-letter block combine with `-ψ{m_ℋ}` into the
+Hochschild differential `δψ`; this leaves the cuts into two blocks each of length at least two.
+When `n = 1` (`m₃`), the sum is empty and the obstruction is `δψ` on the nose. -/
+private theorem obstruction_of_tprod_eq_hochschildDifferential_add_sum
+    (hℋ : ℋ.IsMinimal) (hm : ∀ k, 3 ≤ k → ℋ.m k = 0) (hG : 𝒜.grading = ℋ.grading)
+    {n : ℕ} (hn : 1 ≤ n) (h : ∀ z ∈ filtration R A (n + 1), 𝒜.taylor z = ℋ.taylor z)
+    (f : AInfinityHom 𝒜 ℋ) (hf : f.linearPart = LinearMap.id) (x : Fin (n + 2) → A) :
+    𝒜.obstruction ℋ ⟨n + 2, by omega⟩ (of R A ⟨n + 2, by omega⟩ (PiTensorProduct.tprod R x)) =
+      ℋ.hochschildDifferential 0 (f.taylor - letter R A)
+          (of R A ⟨n + 2, by omega⟩ (PiTensorProduct.tprod R x)) +
+        ∑ d ∈ Finset.Icc 2 n, ℋ.taylor (of R A (2 : ℕ+)
+          (PiTensorProduct.tprod R ![(f.taylor - letter R A) (subword R x 0 d),
+            (f.taylor - letter R A) (subword R x d (n + 2 - d))])) := by
+  set ψ := f.taylor - letter R A with hψdef
+  set z := of R A ⟨n + 2, by omega⟩ (PiTensorProduct.tprod R x) with hzdef
+  have hz : z ∈ filtration R A (n + 2) :=
+    of_mem_filtration R A (k := ⟨n + 2, by omega⟩) le_rfl _
+  have hψ₁ : ∀ w ∈ filtration R A 1, ψ w = 0 := fun w hw ↦ by
+    rw [hψdef, LinearMap.sub_apply,
+      AInfinityHom.taylor_apply_eq_letter_of_linearPart_eq_id hf w hw, sub_self]
+  have hℋz : ℋ.taylor z = 0 := by
+    rw [← hℋ.taylor_comp_lengthProj_two hm, LinearMap.comp_apply,
+      lengthProj_of_of_ne R A (by simp only [ne_eq, Subtype.mk.injEq]; omega), map_zero]
+  have key := LinearMap.congr_fun
+    (f.taylor_eq_taylor_comp_coalgHom_sub_brace hG (ψ := ψ) (by rw [hψdef, add_sub_cancel])) z
+  rw [LinearMap.sub_apply, LinearMap.comp_apply,
+    brace_taylor_apply_eq_of_mem_filtration hψ₁ h (by rwa [Nat.add_comm 1 (n + 1)])] at key
+  have hquad := taylor_coalgHom_letter_add_sub_sub_coderiv hℋ hm ψ z
+  rw [map_sub, map_sub, hℋz, sub_zero, hzdef,
+    lift_mul_map_deconcatenation_of_tprod ℋ hψ₁ hn x, ← hzdef] at hquad
+  rw [obstruction_apply_of_mem_filtration h hz, hℋz, sub_zero, key,
+    ℋ.hochschildDifferential_zero_apply, ← hquad]
+  abel
+
+/-- **Exact binary decomposition of the first obstruction of an `A∞` structure isomorphic to a
+graded algebra**, over any commutative ring.  If `𝒜` has the grading and binary operation of the
+graded algebra `ℋ`, satisfies `m₃ = ⋯ = mₙ₊₁ = 0`, and is `A∞` isomorphic to `ℋ`, then there is a
+degree-zero cochain `ψ` vanishing on single letters such that on every pure word of length `n + 2`
+the obstruction `mₙ₊₂` equals `δψ` plus the sum of binary products of `ψ` across all cuts into two
+blocks of length at least two. -/
+theorem IsMinimal.exists_obstruction_of_tprod_eq_hochschildDifferential_add_sum_of_isIso
+    (hℋ : ℋ.IsMinimal) (hm : ∀ k, 3 ≤ k → ℋ.m k = 0) (hG : 𝒜.grading = ℋ.grading)
+    (h₂ : 𝒜.m 2 = ℋ.m 2) {n : ℕ}
+    (hlow : ∀ k, 3 ≤ k → k ≤ n + 1 → 𝒜.m k = 0)
+    {f : AInfinityHom 𝒜 ℋ} (hf : f.IsIso) :
+    ∃ ψ : ReducedTensorWords R A →ₗ[R] A,
+      LinearMap.IsHomogeneous ψ (gradedPiece (ℋ.grading.shift 1)) (ℋ.grading.shift 1).piece 0 ∧
+      (∀ z ∈ filtration R A 1, ψ z = 0) ∧
+      ∀ x : Fin (n + 2) → A,
+        𝒜.obstruction ℋ ⟨n + 2, by omega⟩ (of R A ⟨n + 2, by omega⟩ (PiTensorProduct.tprod R x)) =
+          ℋ.hochschildDifferential 0 ψ
+              (of R A ⟨n + 2, by omega⟩ (PiTensorProduct.tprod R x)) +
+            ∑ d ∈ Finset.Icc 2 n, ℋ.taylor (of R A (2 : ℕ+)
+              (PiTensorProduct.tprod R ![ψ (subword R x 0 d),
+                ψ (subword R x d (n + 2 - d))])) := by
+  have h𝒜 := hf.isMinimal_iff.2 hℋ
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · refine ⟨0, LinearMap.isHomogeneous_zero _ _ _, fun _ _ ↦ rfl, fun x ↦ ?_⟩
+    rw [hochschildDifferential_zero, LinearMap.zero_apply, Finset.Icc_eq_empty (by decide),
+      Finset.sum_empty, add_zero, obstruction_def, LinearMap.comp_apply, LinearMap.sub_apply,
+      sub_eq_zero]
+    exact h𝒜.taylor_apply_eq_of_forall_m_eq_zero hℋ hm hG h₂ (n := 1) (fun _ hk₁ hk₂ ↦ by omega)
+      (lengthProj_mem_filtration R A ⟨0 + 2, by omega⟩ _)
+  obtain ⟨g, hg⟩ := hℋ.exists_linearPart_eq_id_of_isIso hm hG h₂ hf
+  have h : ∀ z ∈ filtration R A (n + 1), 𝒜.taylor z = ℋ.taylor z := fun z hz ↦
+    h𝒜.taylor_apply_eq_of_forall_m_eq_zero hℋ hm hG h₂ hlow hz
+  refine ⟨g.taylor - letter R A, g.isHomogeneous_taylor_sub_letter hG, fun z hz ↦ ?_,
+    obstruction_of_tprod_eq_hochschildDifferential_add_sum hℋ hm hG hn h g hg⟩
+  rw [LinearMap.sub_apply, AInfinityHom.taylor_apply_eq_letter_of_linearPart_eq_id hg z hz,
+    sub_self]
 
 section Rat
 

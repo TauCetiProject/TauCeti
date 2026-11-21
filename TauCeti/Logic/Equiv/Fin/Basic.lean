@@ -26,6 +26,8 @@ It also concatenates two finite blocks with the second block read in reverse ord
 blocks of equal length, laid out as the bottom and the top row of a rectangle and read
 counterclockwise around it, exchanging the two blocks reverses the concatenated order, and
 reversing each block is reversing the concatenated order followed by a rotation by one block.
+Finally, `TauCeti.apply_comp_finCycle` iterates a single-step rotation rule (`Fin.cons` to
+`Fin.snoc`) along `finCycle`.
 `TauCeti.homotopyIndexEquiv` splits `Fin (n + 1) × Fin (n + 2)` into off-diagonal, diagonal, and
 superdiagonal pairs.
 -/
@@ -132,6 +134,26 @@ theorem finSumFinRevEquiv_map_rev {k n : ℕ} (h : k + k = n) (x : Fin k ⊕ Fin
     simp only [Sum.map_inr, finSumFinRevEquiv_inr_val, Fin.coe_finRotate_pow, Fin.val_rev]
     rw [Nat.mod_eq_of_lt (by omega)]
     omega
+
+/-- Shifting a tuple of length `n + 1` cyclically by `r` steps applies `f` `r` times whenever
+moving the first entry to the end (`Fin.cons` to `Fin.snoc`) applies `f`. -/
+theorem apply_comp_finCycle {α β : Type*} {n : ℕ} {a : (Fin (n + 1) → α) → β} {f : β → β}
+    (hrot : ∀ (u : Fin n → α) (e : α), a (Fin.snoc u e) = f (a (Fin.cons e u)))
+    (r : Fin (n + 1)) (w : Fin (n + 1) → α) :
+    a (w ∘ finCycle r) = f^[r.val] (a w) := by
+  have h1 (v : Fin (n + 1) → α) : a (v ∘ finRotate (n + 1)) = f (a v) := by
+    have hv : v ∘ finRotate (n + 1) = Fin.snoc (Fin.tail v) (v 0) :=
+      funext fun i ↦ by rw [Function.comp_apply, Fin.snoc_eq_cons_rotate, Fin.cons_self_tail]
+    rw [hv, hrot, Fin.cons_self_tail]
+  have hiter : ∀ (m : ℕ) (v : Fin (n + 1) → α), a (v ∘ (finRotate (n + 1))^[m]) = f^[m] (a v) := by
+    intro m
+    induction m with
+    | zero => intro v; simp [Function.comp_id]
+    | succ m ih =>
+      intro v
+      rw [Function.iterate_succ', ← Function.comp_assoc, ih, h1, ← Function.iterate_succ_apply]
+  rw [finCycle_eq_finRotate_iterate]
+  exact hiter r.val w
 
 /-- The equivalence `Fin n ≃ Fin (n - r) ⊕ Fin r` sending the first `r` indices to the second
 summand and the last `n - r` indices to the first summand, both in order. It moves an initial

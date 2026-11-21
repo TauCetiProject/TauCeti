@@ -50,8 +50,8 @@ of the nonzero cyclic classes of the preprojective algebras of the affine `E₆`
 graphs.
 
 Some of the quartic deformations are trivial modulo `A∞` isomorphism
-(`TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.Backtrack`) and, when `2` is invertible,
-some are not (`TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.NonFormal`).
+(`TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.Backtrack`) and, over every nontrivial
+commutative ring, some are not (`TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.NonFormal`).
 
 ## Main definitions
 
