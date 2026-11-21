@@ -11,13 +11,13 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import Mathlib.NumberTheory.ModularForms.JacobiTheta.TwoVariable
 public import TauCeti.Analysis.Complex.ThetaSections.Basic
 import Mathlib.Analysis.Analytic.IsolatedZeros
-import Mathlib.Analysis.Complex.Periodic
 import Mathlib.Analysis.Fourier.AddCircle
 import Mathlib.Analysis.Fourier.RiemannLebesgueLemma
 import Mathlib.Analysis.SpecialFunctions.Complex.Log
 import Mathlib.LinearAlgebra.Dimension.Finite
 import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
 import TauCeti.Analysis.Complex.Laurent.Expansion
+import TauCeti.Analysis.Complex.Periodic
 import TauCeti.Analysis.Complex.PowerSeries.FourierCoeff
 import TauCeti.Analysis.Fourier.FourierCoeffOn
 
@@ -123,16 +123,6 @@ theorem thetaFourierCoeff_add {α : ℝ} {s₁ s₂ : ℂ → ℂ}
   refine intervalIntegral.integral_congr fun t _ => ?_
   simp only [Pi.add_apply, mul_add]
 
-private lemma qParam_one (z : ℂ) :
-    Function.Periodic.qParam 1 z = cexp (2 * π * I * z) := by
-  simp [Function.Periodic.qParam]
-
-private lemma qParam_one_zpow (z : ℂ) (n : ℤ) :
-    Function.Periodic.qParam 1 z ^ n = cexp (2 * π * I * n * z) := by
-  rw [qParam_one, ← Complex.exp_int_mul]
-  congr 1
-  ring
-
 private noncomputable def twistedPeriodic (α : ℝ) (s : ℂ → ℂ) (z : ℂ) : ℂ :=
   cexp (-2 * π * I * α * z) * s z
 
@@ -183,11 +173,11 @@ private lemma thetaFourierCoeff_eq_circleLaurentCoeff {α : ℝ} {s : ℂ → �
   rw [← hsub, thetaFourierCoeff_def]
   refine intervalIntegral.integral_congr fun t _ => ?_
   have hcmap : circleMap 0 1 (2 * π * t) = Function.Periodic.qParam 1 (t : ℂ) := by
-    rw [circleMap, qParam_one]
+    rw [circleMap, Periodic.qParam_one]
     simp
     congr 1
     ring
-  rw [hcmap, twistedCusp_qParam h1, twistedPeriodic, qParam_one_zpow, ← mul_assoc,
+  rw [hcmap, twistedCusp_qParam h1, twistedPeriodic, Periodic.qParam_one_zpow, ← mul_assoc,
     ← Complex.exp_add]
   congr 2
   push_cast
@@ -217,7 +207,7 @@ theorem hasSum_thetaFourierCoeff {α : ℝ} {s : ℂ → ℂ} (hs : Differentiab
     simp
   rw [hrhs] at hsum
   refine hsum.congr_fun fun m => ?_
-  simp only [sub_zero, smul_eq_mul, qParam_one_zpow]
+  simp only [sub_zero, smul_eq_mul, Periodic.qParam_one_zpow]
   symm
   calc
     cexp (2 * π * I * α * z) * (cexp (2 * π * I * m * z) * thetaFourierCoeff α s m) =
@@ -322,11 +312,11 @@ private lemma twistedCusp_mul_qParam_eq {k : ℤ} {τ : ℂ} {α β : ℝ} {s : 
   set z := Function.Periodic.invQParam 1 w
   have hqz : Function.Periodic.qParam 1 z = w := Function.Periodic.qParam_right_inv one_ne_zero hw0
   have hqadd : Function.Periodic.qParam 1 τ * w = Function.Periodic.qParam 1 (z + τ) := by
-    rw [← hqz, qParam_one, qParam_one, qParam_one, ← Complex.exp_add]
+    rw [← hqz, Periodic.qParam_one, Periodic.qParam_one, Periodic.qParam_one, ← Complex.exp_add]
     congr 1
     ring
   rw [hqadd, twistedCusp_qParam h1, twistedPeriodic, hτ z, ← hqz, twistedCusp_qParam h1,
-    twistedPeriodic, qParam_one_zpow]
+    twistedPeriodic, Periodic.qParam_one_zpow]
   simp only [← mul_assoc, ← Complex.exp_add]
   congr 2
   push_cast
@@ -370,7 +360,7 @@ private lemma thetaFourierCoeff_add_of_add_tau {k : ℤ} {τ : ℂ} {α β : ℝ
     rw [this, Complex.exp_zero]
   have hsol := congrArg (cexp (2 * π * I * α * τ - 2 * π * I * β + π * I * k * τ) * ·) hm.symm
   rw [← mul_assoc, hinv, one_mul] at hsol
-  rw [hsol, qParam_one_zpow, ← mul_assoc, ← Complex.exp_add]
+  rw [hsol, Periodic.qParam_one_zpow, ← mul_assoc, ← Complex.exp_add]
   congr 2
   ring
 
@@ -651,7 +641,8 @@ private lemma hasLaurentSeriesOnAnnulus_twistedCusp_characteristicTheta {k : ℕ
       exact dvd_mul_left (k : ℤ) n
     have hdiv : ((r + n * (k : ℤ)) - r) / (k : ℤ) = n := by
       rw [add_sub_cancel_left, Int.mul_ediv_cancel n hk0]
-    simp only [hdvd, ↓reduceIte, hdiv, sub_zero, smul_eq_mul, qParam_one_zpow, ← Complex.exp_add]
+    simp only [hdvd, ↓reduceIte, hdiv, sub_zero, smul_eq_mul, Periodic.qParam_one_zpow,
+      ← Complex.exp_add]
     congr 1
     push_cast
     ring
