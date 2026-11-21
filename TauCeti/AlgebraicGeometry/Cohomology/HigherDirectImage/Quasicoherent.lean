@@ -242,32 +242,6 @@ private def cohomologyEquivPreimageTop (M : X.Modules) (n : ℕ) :
       (by rw [cohomologyOnResLinear_comp, cohomologyOnResLinear_refl])
   (cohomologyOnTopLinearEquiv M n).symm.trans res
 
-/-- Evaluating a morphism out of the sheafification of a presheaf of `𝒪_Y`-modules after the
-sheafification unit at `⊤` carries scalar multiplication by the restriction of `r` along `⊤ ⟶ ⊤`
-to scalar multiplication by `r : Γ(Y, ⊤)`. -/
-private lemma sheafification_unit_comp_app_top_smul {P : Y.PresheafOfModules} {N : Y.Modules}
-    (i : ((PresheafOfModules.sheafification (𝟙 Y.ringCatSheaf.obj)).obj P : Y.Modules) ⟶ N)
-    (r : Γ(Y, ⊤)) (y : P.obj (.op ⊤)) :
-    i.val.app (.op ⊤)
-        (((PresheafOfModules.sheafificationAdjunction (𝟙 Y.ringCatSheaf.obj)).unit.app P).app
-          (.op ⊤) ((show Y.ringCatSheaf.obj.obj (.op ⊤) from
-            Y.presheaf.map (⊤ : Y.Opens).leTop.op r) • y)) =
-      r • (show Γ(N, ⊤) from i.val.app (.op ⊤)
-        (((PresheafOfModules.sheafificationAdjunction (𝟙 Y.ringCatSheaf.obj)).unit.app P).app
-          (.op ⊤) y)) := by
-  let η := ((PresheafOfModules.sheafificationAdjunction (𝟙 Y.ringCatSheaf.obj)).unit.app P).app
-    (.op ⊤)
-  have hη : η ((show Y.ringCatSheaf.obj.obj (.op ⊤) from r) • y) =
-      (show Y.ringCatSheaf.obj.obj (.op ⊤) from r) • η y :=
-    η.hom.map_smul _ y
-  simp only [Scheme.presheaf_map_top_leTop, ConcreteCategory.id_apply]
-  -- `i.val.app (.op ⊤)` acts on global sections as `Scheme.Modules.Hom.app i ⊤`,
-  -- over the same scalar ring `Γ(Y, ⊤)`.
-  change Scheme.Modules.Hom.app i ⊤ (η ((show Y.ringCatSheaf.obj.obj (.op ⊤) from r) • y)) =
-    r • Scheme.Modules.Hom.app i ⊤ (η y)
-  rw [hη]
-  exact Scheme.Modules.Hom.app_smul i r (η y)
-
 section AffineGlobalSections
 
 variable [IsAffine Y] [QuasiCompact f] [QuasiSeparated f]
@@ -305,14 +279,14 @@ theorem higherDirectImageGlobalSectionsAddEquiv_smul (M : X.Modules) [M.IsQuasic
     (ConcreteCategory.bijective_of_isIso
       ((f.higherDirectImagePresheafToPresheafIso M n).hom.app (.op ⊤))).2
       (cohomologyEquivPreimageTop f M n x)
-  -- Apply the affine-open comparison at `⊤` and use linearity of sheafification.
+  -- Apply the affine-open comparison at `⊤`, which is already `Γ(Y, ⊤)`-linear.
   simp only [higherDirectImageGlobalSectionsAddEquiv, AddEquiv.trans_apply,
     LinearEquiv.coe_toAddEquiv, LinearEquiv.coe_addEquiv_apply, LinearEquiv.map_smul, ← hy]
   rw [← f.higherDirectImagePresheafToPresheafIso_hom_app_smul M n r ⊤ y,
     f.higherDirectImageSectionsAddEquiv_higherDirectImagePresheafToPresheafIso_hom_app,
     f.higherDirectImageSectionsAddEquiv_higherDirectImagePresheafToPresheafIso_hom_app]
-  exact sheafification_unit_comp_app_top_smul
-    ((f.higherDirectImagePresheafSheafificationIso n).app M).hom r y
+  simp only [Scheme.presheaf_map_top_leTop, ConcreteCategory.id_apply]
+  exact (f.higherDirectImagePresheafSectionsLinearEquiv M n (isAffineOpen_top Y)).map_smul r y
 
 end AffineGlobalSections
 
