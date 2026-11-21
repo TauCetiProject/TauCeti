@@ -29,6 +29,9 @@ of a finite type, and `Set.powersetCard.subsingleton_of_card_eq` together with t
 For `p + 1 = Fintype.card α`, `Set.powersetCard.omitOne` is the equivalence sending `a : α` to the
 `p`-element subset `Finset.univ.erase a` omitting `a`.
 
+`Set.powersetCard.val_ofFinEmb_fin_three` lists the three elements of the subset enumerated by an
+embedding of `Fin 3`.
+
 `Set.powersetCard.fintypeCard` counts the `n`-element subsets of a finite type, and
 `Set.powersetCard.finChooseEquiv m j` enumerates the `j`-element subsets of `Fin m` by
 `Fin (m.choose j)`.
@@ -203,6 +206,12 @@ theorem omitOne_symm_notMem (hm : p + 1 = Fintype.card α) (s : powersetCard α 
   omitOne_symm_apply_eq_iff.mp rfl
 
 end OmitOne
+
+/-- The three-element subset enumerated by an embedding `f : Fin 3 ↪ α` is `{f 0, f 1, f 2}`. -/
+theorem val_ofFinEmb_fin_three {α : Type*} [DecidableEq α] (f : Fin 3 ↪ α) :
+    (ofFinEmb 3 α f : Finset α) = {f 0, f 1, f 2} := by
+  ext v
+  simp [val_ofFinEmb, Fin.exists_fin_succ, eq_comm]
 
 /-- The number of `n`-element subsets of a finite type `α` is `(card α).choose n`. -/
 theorem fintypeCard {α : Type*} [Fintype α] (n : ℕ) :

@@ -35,6 +35,14 @@ namespace TauCeti.AlgebraicGeometry
 
 universe u
 
+/-- The terminal scheme is locally Noetherian since it is the spectrum of the integers. -/
+instance isLocallyNoetherian_terminal : IsLocallyNoetherian (Limits.terminal Scheme.{u}) := by
+  have : IsNoetherianRing (ULift.{u} ℤ) :=
+    isNoetherianRing_of_ringEquiv ℤ ULift.ringEquiv.symm
+  let t : Spec (.of (ULift.{u} ℤ)) ⟶ Limits.terminal Scheme.{u} := Limits.terminal.from _
+  have : IsIso t := Limits.isIso_of_isTerminal specULiftZIsTerminal Limits.terminalIsTerminal t
+  exact isLocallyNoetherian_of_isOpenImmersion (inv t)
+
 /-- A scheme of finite type over a Noetherian scheme is Noetherian. -/
 theorem isNoetherian_of_finiteType {X Y : Scheme.{u}} (f : X ⟶ Y) [LocallyOfFiniteType f]
     [QuasiCompact f] [IsNoetherian Y] : IsNoetherian X where
@@ -67,6 +75,17 @@ instance locallyConnectedSpace_of_isLocallyNoetherian (X : Scheme.{u}) [IsLocall
 end TauCeti.AlgebraicGeometry
 
 open Limits
+
+namespace AlgebraicGeometry.Scheme
+
+universe u
+
+/-- A scheme locally of finite type over the terminal scheme is locally Noetherian. -/
+instance isLocallyNoetherian_of_locallyOfFiniteType_terminal (X : Scheme.{u})
+    [LocallyOfFiniteType (terminal.from X)] : IsLocallyNoetherian X :=
+  LocallyOfFiniteType.isLocallyNoetherian (terminal.from X)
+
+end AlgebraicGeometry.Scheme
 
 namespace AlgebraicGeometry.Scheme.Hom
 

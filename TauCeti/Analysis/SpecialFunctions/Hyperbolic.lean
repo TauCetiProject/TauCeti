@@ -12,6 +12,7 @@ public import Mathlib.Analysis.SpecialFunctions.Artanh
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.DerivHyp
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Series
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
+import Mathlib.Analysis.SpecialFunctions.Arcosh
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import TauCeti.Data.Nat.Factorial.Basic
 
@@ -49,6 +50,7 @@ in terms of the exponentials `exp (± r / 2)`, and the Gaussian bound
   at most a constant times `exp (-(2 * |x|))`: `Real.tanh` converges to `±1` in every `C^k` norm.
 * `Real.tendsto_cosh_atTop` and `Real.tendsto_cosh_atBot` — `Real.cosh` tends to infinity at both
   ends of the line.
+* `Real.bijOn_cosh_sub_one_Ioi` — `u ↦ cosh u - 1` maps `(0, ∞)` bijectively onto `(0, ∞)`.
 * `Real.hasDerivAt_log_cosh` and `Real.abs_sub_log_two_le_log_cosh` — `log (cosh x)` has
   derivative `tanh x` and is at least `|x| - log 2`, so it is a smooth version of `|x|`.
 * `Real.tendsto_cosh_sub_div_cosh_add_atTop` — `cosh (x - a) / cosh (x + a) → exp (-(2 * a))` as
@@ -350,6 +352,16 @@ theorem tendsto_cosh_atTop : Filter.Tendsto cosh Filter.atTop Filter.atTop := by
 /-- The hyperbolic cosine tends to infinity at `-∞`, since it is even. -/
 theorem tendsto_cosh_atBot : Filter.Tendsto cosh Filter.atBot Filter.atTop := by
   simpa [Function.comp_def] using tendsto_cosh_atTop.comp Filter.tendsto_neg_atBot_atTop
+
+/-- The shifted hyperbolic cosine `u ↦ cosh u - 1` maps `(0, ∞)` bijectively onto `(0, ∞)`. -/
+theorem bijOn_cosh_sub_one_Ioi :
+    Set.BijOn (fun u : ℝ ↦ cosh u - 1) (Set.Ioi 0) (Set.Ioi 0) := by
+  refine ⟨fun u hu ↦ sub_pos.mpr (one_lt_cosh.mpr (ne_of_gt hu)),
+    sub_left_injective.comp_injOn coshOpenPartialHomeomorph.injOn, fun τ hτ ↦ ?_⟩
+  have hτ' : 1 < τ + 1 := by linarith [Set.mem_Ioi.mp hτ]
+  refine ⟨arcosh (τ + 1), arcosh_pos hτ', ?_⟩
+  dsimp only
+  rw [cosh_arcosh hτ'.le, add_sub_cancel_right]
 
 /-- The derivative of `log (cosh x)` is `tanh x`. -/
 theorem _root_.Real.hasDerivAt_log_cosh (x : ℝ) :

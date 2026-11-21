@@ -28,7 +28,7 @@ inner horn determines all edges of its filler except, for `Λ[2, 1]`, the long e
 composite of two equivalences. Every Kan complex contained in `X` lies in the core. That the core
 of a quasicategory is itself a Kan complex, hence the largest Kan complex in `X`, follows from
 Joyal's theorem on special outer horns and is proved in
-`TauCeti.AlgebraicTopology.Quasicategory.OuterHorn` (`SSet.core.kanComplex`,
+`TauCeti.AlgebraicTopology.Quasicategory.OuterHorn.Basic` (`SSet.core.kanComplex`,
 `SSet.isGreatest_core`). For the nerve of a category `C`, the core is the nerve of the groupoid
 `Core C`.
 

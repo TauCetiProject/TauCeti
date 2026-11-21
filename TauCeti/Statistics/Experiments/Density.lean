@@ -5,8 +5,8 @@ Authors: Claude
 -/
 module
 
-public import TauCeti.Probability.Density
 public import TauCeti.MeasureTheory.Measure.WithDensity
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
 /-!
 # Real densities of statistical models
@@ -109,17 +109,17 @@ integrand against `μ`. No integrability hypothesis is needed: when `g` is not `
 theorem integral_eq (h : HasDensity P μ f) (g : X → E) :
     ∫ x, g x ∂P = ∫ x, f x • g x ∂μ := by
   rw [h.eq_withDensity]
-  exact Probability.integral_withDensity_ofReal h.measurable.aemeasurable h.ae_nonneg g
+  exact MeasureTheory.integral_withDensity_ofReal h.measurable.aemeasurable h.ae_nonneg g
 
 /-- A function is `P`-integrable iff its product with the density is `μ`-integrable. -/
 theorem integrable_iff (h : HasDensity P μ f) {g : X → E} :
     Integrable g P ↔ Integrable (fun x ↦ f x • g x) μ := by
   rw [h.eq_withDensity]
-  exact Probability.integrable_withDensity_ofReal_iff h.measurable.aemeasurable h.ae_nonneg
+  exact MeasureTheory.integrable_withDensity_ofReal_iff h.measurable.aemeasurable h.ae_nonneg
 
 /-- The density of a finite measure is integrable. -/
 theorem integrable [IsFiniteMeasure P] (h : HasDensity P μ f) : Integrable f μ :=
-  Probability.integrable_of_eq_withDensity h.eq_withDensity h.measurable.aemeasurable h.ae_nonneg
+  MeasureTheory.integrable_of_eq_withDensity h.eq_withDensity h.measurable.aemeasurable h.ae_nonneg
 
 /-- The density of a probability measure has integral `1`. -/
 theorem integral_eq_one [IsProbabilityMeasure P] (h : HasDensity P μ f) : ∫ x, f x ∂μ = 1 := by
