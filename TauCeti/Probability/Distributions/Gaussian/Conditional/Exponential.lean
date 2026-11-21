@@ -53,7 +53,7 @@ theorem integrable_mul_exp_of_indep_gaussian (hm : m ≤ mΩ) (hX : Measurable[m
           |x.1 * exp (μ * x.2 + (v : ℝ) * x.2 ^ 2 / 2)| := by
         simp only [f, norm_mul, Real.norm_eq_abs, abs_exp, integral_const_mul, abs_mul]
         congr 1
-        simpa [mgf] using congrFun (mgf_fun_id_gaussianReal (μ := μ) (v := v)) x.2
+        exact integral_exp_mul_gaussianReal μ v x.2
       simp_rw [heq]
       exact (integrable_map_measure (by fun_prop) hpair.aemeasurable).mpr hi.abs
   rw [← hprod, integrable_map_measure hf.aestronglyMeasurable
@@ -74,10 +74,7 @@ theorem condExp_mul_exp_of_indep_gaussian (hm : m ≤ mΩ) (hX : Measurable[m] X
   have h := condExp_comp_prodMk_ae_eq_integral_of_indep hm (hX.prodMk ha) hY hind
     (f := fun z : (ℝ × ℝ) × ℝ ↦ z.1.1 * exp (z.1.2 * z.2))
     (by fun_prop) (integrable_mul_exp_of_indep_gaussian hm hX ha hY hind hlaw hi)
-  have hi (b : ℝ) : ∫ y, exp (b * y) ∂gaussianReal μ v =
-      exp (μ * b + (v : ℝ) * b ^ 2 / 2) := by
-    simpa [mgf] using congrFun (mgf_fun_id_gaussianReal (μ := μ) (v := v)) b
-  simpa only [hlaw.map_eq, integral_const_mul, hi] using h
+  simpa only [hlaw.map_eq, integral_const_mul, integral_exp_mul_gaussianReal] using h
 
 /-- A normalized independent Gaussian exponential with a known coefficient preserves
 integrability of any integrable known multiplier, without a coefficient bound. -/
