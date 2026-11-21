@@ -49,9 +49,7 @@ theorem isCartanInvolution_cartanInvolution {n : Type*} [Fintype n] [DecidableEq
 principal ideal domain `R` (the Killing form is positive on the diagonal matrix `Eᵢᵢ - Eⱼⱼ`). -/
 theorem not_isCartanInvolution_refl {n : Type*} [Fintype n] [DecidableEq n] [Nontrivial n] :
     ¬ (LieEquiv.refl : sl n R ≃ₗ⁅R⁆ sl n R).IsCartanInvolution := by
-  intro hrefl
-  obtain ⟨i, j, hij⟩ := exists_pair_ne n
-  let H : sl n R := singleSubSingle i j 1
+  intro hrefl; obtain ⟨i, j, hij⟩ := exists_pair_ne n; let H : sl n R := singleSubSingle i j 1
   have hHne : H ≠ 0 := fun h0 ↦ by
     have hval := congrArg (fun M : sl n R ↦ (M : Matrix n n R) i i) h0
     simp [H, val_singleSubSingle, hij.symm] at hval
@@ -65,8 +63,7 @@ theorem not_isCartanInvolution_refl {n : Type*} [Fintype n] [DecidableEq n] [Non
       one_add_one_eq_two]
   have hpos : 0 < killingForm R (sl n R) H H := by
     rw [killingForm_apply, hsq]
-    have : (0 : R) < Fintype.card n := Nat.cast_pos.mpr Fintype.card_pos
-    positivity
+    have : (0 : R) < Fintype.card n := Nat.cast_pos.mpr Fintype.card_pos; positivity
   exact (LieEquiv.isCartanInvolution_refl_iff.mp hrefl H hHne).not_gt hpos
 
 end LieAlgebra.SpecialLinear
@@ -107,12 +104,8 @@ theorem isReductiveCartanInvolution_negTransposeLieEquiv {n : Type*} [Fintype n]
       LieEquiv.ofEq (SpecialLinear.sl n K) (derivedSeries K (Matrix n n K) 1).toLieSubalgebra
         (congrArg SetLike.coe (derivedSeries_one_toLieSubalgebra_eq_sl (R := K) (n := n)).symm)
     have he (X : SpecialLinear.sl n K) : (e X : Matrix n n K) = X := LieEquiv.ofEq_apply _ _ _ X
-    have hes (X : derivedSeries K (Matrix n n K) 1) : (e.symm X : Matrix n n K) = X := by
-      rw [← he (e.symm X), e.apply_symm_apply]
-    rw [show (negTransposeLieEquiv n K).restrictDerivedSeries 1 =
-        e.symm.trans ((SpecialLinear.cartanInvolution n K).trans e) from
-      LieEquiv.ext fun X ↦ Subtype.ext (by simp [he, hes])]
-    exact (SpecialLinear.isCartanInvolution_cartanInvolution (R := K)).conj e
+    exact (SpecialLinear.isCartanInvolution_cartanInvolution (R := K)).of_intertwines e fun X ↦
+      Subtype.ext (by simp [he])
   · have : IsEmpty n := not_nonempty_iff.mp hn
     have : IsLieAbelian (Matrix n n K) := ⟨fun _ _ ↦ Subsingleton.elim _ _⟩
     exact LieEquiv.isReductiveCartanInvolution_iff_involutive_of_isLieAbelian.mpr fun _ ↦ by simp
@@ -130,8 +123,7 @@ namespace TauCeti
 /-- For nonempty `n`, negative transpose on `gl n R` is not a Cartan involution in the semisimple
 sense, because the scalar matrices form a nontrivial centre. -/
 theorem not_isCartanInvolution_negTransposeLieEquiv {n : Type*} [Fintype n] [DecidableEq n]
-    [Nonempty n] :
-    ¬ (negTransposeLieEquiv n R).IsCartanInvolution :=
+    [Nonempty n] : ¬ (negTransposeLieEquiv n R).IsCartanInvolution :=
   fun hθ ↦ center_matrix_ne_bot R n hθ.center_eq_bot
 
 end TauCeti

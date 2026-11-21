@@ -9,7 +9,6 @@ public import TauCeti.Algebra.Lie.CartanInvolution.Basic
 public import TauCeti.Geometry.Lie.Adjoint.Derivation
 public import TauCeti.Geometry.Lie.Exponential.Basic
 import TauCeti.Algebra.Lie.CartanInvolution.Conjugacy
-import TauCeti.Analysis.Normed.Operator.Exponential
 import TauCeti.Geometry.Lie.Adjoint.Exponential.Formula
 
 /-!
@@ -49,23 +48,9 @@ theorem exists_conj_cartanInvolution
       θ' (Ad (I := I) (lieExp Z) Y) = Ad (I := I) (lieExp Z) (θ Y) := by
   let _ : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
     finiteDimensional_leftInvariantDerivation BoundarylessManifold.isInteriorPoint
-  have : CompleteSpace (LeftInvariantDerivation I G) := FiniteDimensional.completeSpace ℝ _
-  obtain ⟨Z, hZP, φ, hconj, heig⟩ := hθ.exists_mem_cartanP_conj_eq hθ'
-  let A : LeftInvariantDerivation I G →L[ℝ] LeftInvariantDerivation I G :=
-    LinearMap.toContinuousLinearMap (ad ℝ (LeftInvariantDerivation I G) Z)
-  have hexp_eq : ∀ Y : LeftInvariantDerivation I G, NormedSpace.exp A Y = φ Y := by
-    have hle : ⨆ μ : ℝ, Module.End.eigenspace (ad ℝ (LeftInvariantDerivation I G) Z) μ ≤
-        LinearMap.eqLocus (NormedSpace.exp A).toLinearMap φ.toLinearEquiv.toLinearMap := by
-      refine iSup_le fun μ v hv ↦ ?_
-      have hZv : ⁅Z, v⁆ = μ • v := Module.End.mem_eigenspace_iff.mp hv
-      have hAv : A v = μ • v := by simp [A, hZv]
-      rw [LinearMap.mem_eqLocus, ContinuousLinearMap.coe_coe,
-        ContinuousLinearMap.exp_apply_of_apply_eq_smul A hAv, ← Real.exp_eq_exp_ℝ]
-      exact (heig μ v hZv).symm
-    rw [hθ.iSup_eigenspace_ad_eq_top hZP, top_le_iff] at hle
-    exact fun Y ↦ LinearMap.mem_eqLocus.mp (hle.symm ▸ Submodule.mem_top)
-  refine ⟨Z, hZP, fun Y ↦ ?_⟩
-  rw [LeftInvariantDerivation.Ad_lieExp_apply, LeftInvariantDerivation.Ad_lieExp_apply,
-    hexp_eq Y, hexp_eq (θ Y), hconj Y]
+  obtain ⟨Z, hZP, hconj⟩ := hθ.exists_mem_cartanP_conj_exp (LinearEquiv.refl ℝ _) hθ'
+  exact ⟨Z, hZP, fun Y ↦ by
+    simpa only [LinearEquiv.refl_apply, LinearEquiv.refl_symm, LinearEquiv.conj_refl,
+      LeftInvariantDerivation.Ad_lieExp_apply] using hconj Y⟩
 
 end TauCeti.Lie

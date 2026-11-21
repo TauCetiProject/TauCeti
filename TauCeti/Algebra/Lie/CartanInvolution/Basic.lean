@@ -36,8 +36,10 @@ reductive; `𝔭 = 𝔨^{⊥_B}` uniquely determines `θ`; commuting Cartan invo
 
 ## Main definitions and results
 
-* `LieEquiv.cartanP`, `LieEquiv.cartanBilinForm`, `LieEquiv.IsCartanInvolution`.
-* `LieEquiv.isCompl_fixedSubalgebra_cartanP`, `LieEquiv.IsCartanInvolution.isSemisimple`,
+* `LieEquiv.cartanP`, `LieEquiv.cartanBilinForm`, `LieEquiv.IsCartanInvolution`,
+  `LieEquiv.ad_mem_selfAdjointSubmodule_cartanBilinForm`, `LieEquiv.isCartanInvolution_conj_iff`,
+  `LieEquiv.IsCartanInvolution.of_intertwines`, `LieEquiv.isCompl_fixedSubalgebra_cartanP`,
+  `LieEquiv.IsCartanInvolution.isSemisimple`,
   `LieEquiv.IsCartanInvolution.hasCentralRadical_fixedSubalgebra`,
   `LieEquiv.IsCartanInvolution.killingForm_derivedSeries_fixedSubalgebra_self_neg`,
   `LieEquiv.IsCartanInvolution.eq_of_fixedSubalgebra_eq`,
@@ -75,36 +77,39 @@ theorem mem_cartanP_iff {θ : L ≃ₗ⁅R⁆ L} {x : L} : x ∈ θ.cartanP ↔ 
 
 /-- `θ.cartanP` is the kernel of `θ + id`. -/
 theorem cartanP_eq_ker (θ : L ≃ₗ⁅R⁆ L) :
-    θ.cartanP = LinearMap.ker ((θ : L →ₗ[R] L) + LinearMap.id) :=
-  (rfl)
+    θ.cartanP = LinearMap.ker ((θ : L →ₗ[R] L) + LinearMap.id) := (rfl)
 
 /-- `θ.cartanP` is the `-1`-eigenspace of the underlying linear endomorphism of `θ`. -/
 theorem cartanP_eq_eigenspace (θ : L ≃ₗ⁅R⁆ L) :
-    θ.cartanP = Module.End.eigenspace (θ : L →ₗ[R] L) (-1) := by
-  ext x; simp
+    θ.cartanP = Module.End.eigenspace (θ : L →ₗ[R] L) (-1) := by ext x; simp
 
 /-- When `2` is a unit, the identity automorphism has trivial `-1`-eigenspace. -/
 @[simp]
-theorem cartanP_refl (h2 : IsUnit (2 : R)) :
-    (LieEquiv.refl : L ≃ₗ⁅R⁆ L).cartanP = ⊥ := by
-  ext x
-  simp only [mem_cartanP_iff, refl_apply, Submodule.mem_bot]
+theorem cartanP_refl (h2 : IsUnit (2 : R)) : (LieEquiv.refl : L ≃ₗ⁅R⁆ L).cartanP = ⊥ := by
+  ext x; simp only [mem_cartanP_iff, refl_apply, Submodule.mem_bot]
   exact ⟨fun hx ↦ h2.smul_eq_zero.mp (by rw [two_smul]; exact add_eq_zero_iff_eq_neg.mpr hx),
     fun hx ↦ by simp [hx]⟩
+
+/-- For an involutive automorphism `θ`, `x + θ x` lies in the fixed subalgebra `𝔨`. -/
+theorem add_apply_mem_fixedSubalgebra {θ : L ≃ₗ⁅R⁆ L} (hθ : Function.Involutive θ) (x : L) :
+    x + θ x ∈ θ.toLieHom.fixedSubalgebra := by
+  rw [LieHom.mem_fixedSubalgebra, coe_toLieHom, map_add, hθ x, add_comm]
+
+/-- For an involutive automorphism `θ`, `x - θ x` lies in `θ.cartanP`. -/
+theorem sub_apply_mem_cartanP {θ : L ≃ₗ⁅R⁆ L} (hθ : Function.Involutive θ) (x : L) :
+    x - θ x ∈ θ.cartanP := by rw [mem_cartanP_iff, map_sub, hθ x, neg_sub]
 
 /-- For an involutive automorphism over a ring where `2` is a unit, `θ.cartanP = ⊥` iff `θ = 1`. -/
 theorem cartanP_eq_bot_iff {θ : L ≃ₗ⁅R⁆ L} (h2 : IsUnit (2 : R)) (hθ : Function.Involutive θ) :
     θ.cartanP = ⊥ ↔ θ = LieEquiv.refl := by
   refine ⟨fun hbot ↦ LieEquiv.ext fun x ↦ ?_, fun h ↦ h ▸ cartanP_refl h2⟩
-  have hx : x - θ x ∈ θ.cartanP := by rw [mem_cartanP_iff, map_sub, hθ x, neg_sub]
-  rw [hbot, Submodule.mem_bot, sub_eq_zero] at hx
-  exact hx.symm
+  have hx := sub_apply_mem_cartanP hθ x
+  rw [hbot, Submodule.mem_bot, sub_eq_zero] at hx; exact hx.symm
 
 /-- An intertwining Lie equivalence maps `θ.cartanP` onto `θ'.cartanP`. -/
 theorem map_cartanP (e : L ≃ₗ⁅R⁆ M) {θ : L ≃ₗ⁅R⁆ L} {θ' : M ≃ₗ⁅R⁆ M}
     (h : ∀ x, θ' (e x) = e (θ x)) : θ.cartanP.map (e : L →ₗ[R] M) = θ'.cartanP := by
-  ext y
-  simp only [Submodule.mem_map, mem_cartanP_iff]
+  ext y; simp only [Submodule.mem_map, mem_cartanP_iff]
   refine ⟨fun ⟨x, hx, hy⟩ ↦ by rw [← hy]; simp [h, hx], fun hy ↦ ⟨e.symm y, ?_, by simp⟩⟩
   exact e.injective (by simp only [coe_toLieHom]; rw [← h, e.apply_symm_apply, hy, map_neg,
     e.apply_symm_apply])
@@ -113,8 +118,8 @@ theorem map_cartanP (e : L ≃ₗ⁅R⁆ M) {θ : L ≃ₗ⁅R⁆ L} {θ' : M �
 `θ.cartanP`. -/
 theorem lie_mem_cartanP_of_mem_fixedSubalgebra_of_mem_cartanP {θ : L ≃ₗ⁅R⁆ L} {x y : L}
     (hx : x ∈ θ.toLieHom.fixedSubalgebra) (hy : y ∈ θ.cartanP) : ⁅x, y⁆ ∈ θ.cartanP := by
-  have hx' : θ x = x := LieHom.mem_fixedSubalgebra.mp hx
-  rw [mem_cartanP_iff, map_lie, hx', mem_cartanP_iff.mp hy, lie_neg]
+  rw [LieHom.mem_fixedSubalgebra, coe_toLieHom] at hx
+  rw [mem_cartanP_iff, map_lie, hx, mem_cartanP_iff.mp hy, lie_neg]
 
 /-- The bracket relation `[𝔭, 𝔭] ⊆ 𝔨`: the bracket of two `-1`-eigenvectors is fixed by `θ`. -/
 theorem lie_mem_fixedSubalgebra_of_mem_cartanP {θ : L ≃ₗ⁅R⁆ L} {x y : L}
@@ -126,20 +131,19 @@ theorem lie_mem_fixedSubalgebra_of_mem_cartanP {θ : L ≃ₗ⁅R⁆ L} {x y : L
 which `2` is a unit, the fixed subalgebra `𝔨` and the `-1`-eigenspace `𝔭` are complementary
 submodules. -/
 theorem isCompl_fixedSubalgebra_cartanP {θ : L ≃ₗ⁅R⁆ L} (h2 : IsUnit (2 : R))
-    (hθ : Function.Involutive θ) :
-    IsCompl θ.toLieHom.fixedSubalgebra.toSubmodule θ.cartanP := by
-  have hlin : θ.toLieHom.toLinearMap = (θ : L →ₗ[R] L) := LinearMap.ext fun _ ↦ rfl
+    (hθ : Function.Involutive θ) : IsCompl θ.toLieHom.fixedSubalgebra.toSubmodule θ.cartanP := by
+  have hlin : θ.toLieHom.toLinearMap = (θ : L →ₗ[R] L) := LinearMap.ext fun x ↦ by
+    rw [LieHom.coe_toLinearMap, coe_toLieHom, LinearEquiv.coe_coe, coe_toLinearEquiv]
   rw [LieHom.fixedSubalgebra_toSubmodule_eq_eigenspace, hlin, cartanP_eq_eigenspace]
   exact TauCeti.isCompl_eigenspace_one_neg_one h2 hθ
 
 /-- The eigenspaces `𝔨` and `𝔭` are orthogonal for the Killing form whenever `2` is a unit. -/
 theorem killingForm_apply_of_mem_fixedSubalgebra_of_mem_cartanP {θ : L ≃ₗ⁅R⁆ L}
-    (h2 : IsUnit (2 : R)) {x y : L}
-    (hx : x ∈ θ.toLieHom.fixedSubalgebra) (hy : y ∈ θ.cartanP) :
+    (h2 : IsUnit (2 : R)) {x y : L} (hx : x ∈ θ.toLieHom.fixedSubalgebra) (hy : y ∈ θ.cartanP) :
     killingForm R L x y = 0 := by
-  have hx' : θ x = x := LieHom.mem_fixedSubalgebra.mp hx
+  rw [LieHom.mem_fixedSubalgebra, coe_toLieHom] at hx
   have hneg : killingForm R L x y = -killingForm R L x y := by
-    conv_lhs => rw [← killingForm_of_equiv_apply θ x y, hx', mem_cartanP_iff.mp hy, map_neg]
+    conv_lhs => rw [← killingForm_of_equiv_apply θ x y, hx, mem_cartanP_iff.mp hy, map_neg]
   exact h2.mul_right_eq_zero.mp (by rw [two_mul]; exact add_eq_zero_iff_eq_neg.mpr hneg)
 
 /-- The twisted Killing form `B_θ(x, y) = -B(x, θ y)` attached to a Lie algebra automorphism `θ`. -/
@@ -149,13 +153,12 @@ noncomputable def cartanBilinForm (θ : L ≃ₗ⁅R⁆ L) : LinearMap.BilinForm
 /-- Evaluation of the twisted Killing form: `B_θ(x, y) = -B(x, θ y)`. -/
 @[simp, grind =]
 theorem cartanBilinForm_apply (θ : L ≃ₗ⁅R⁆ L) (x y : L) :
-    θ.cartanBilinForm x y = -killingForm R L x (θ y) :=
-  (rfl)
+    θ.cartanBilinForm x y = -killingForm R L x (θ y) := (rfl)
 
 /-- On the second argument in `𝔨`, the twisted Killing form is `-B`. -/
 theorem cartanBilinForm_apply_of_mem_fixedSubalgebra {θ : L ≃ₗ⁅R⁆ L} {x y : L}
     (hy : y ∈ θ.toLieHom.fixedSubalgebra) : θ.cartanBilinForm x y = -killingForm R L x y := by
-  rw [cartanBilinForm_apply, show θ y = y from LieHom.mem_fixedSubalgebra.mp hy]
+  rw [LieHom.mem_fixedSubalgebra, coe_toLieHom] at hy; rw [cartanBilinForm_apply, hy]
 
 /-- On the second argument in `𝔭`, the twisted Killing form coincides with `B`. -/
 theorem cartanBilinForm_apply_of_mem_cartanP {θ : L ≃ₗ⁅R⁆ L} {x y : L}
@@ -164,11 +167,10 @@ theorem cartanBilinForm_apply_of_mem_cartanP {θ : L ≃ₗ⁅R⁆ L} {x y : L}
 
 /-- For an involutive automorphism `θ`, the twisted Killing form `B_θ` is symmetric. -/
 theorem cartanBilinForm_isSymm {θ : L ≃ₗ⁅R⁆ L} (hθ : Function.Involutive θ) :
-    θ.cartanBilinForm.IsSymm := by
-  refine LinearMap.BilinForm.isSymm_iff.mpr ⟨fun x y ↦ ?_⟩
+    θ.cartanBilinForm.IsSymm := LinearMap.BilinForm.isSymm_iff.mpr ⟨fun x y ↦ by
   simp only [cartanBilinForm_apply, RingHom.id_apply]
   rw [← killingForm_of_equiv_apply θ x (θ y), hθ y]
-  exact congrArg Neg.neg (LieModule.traceForm_comm R L L (θ x) y)
+  exact congrArg Neg.neg (LieModule.traceForm_comm R L L (θ x) y)⟩
 
 /-- Any intertwining Lie equivalence `e : L ≃ₗ⁅R⁆ M` carries `θ.cartanBilinForm` to
 `θ'.cartanBilinForm`. -/
@@ -193,10 +195,9 @@ theorem cartanBilinForm_ad_left {θ : L ≃ₗ⁅R⁆ L} (hθ : Function.Involut
 theorem ad_mem_skewAdjointSubmodule_cartanBilinForm {θ : L ≃ₗ⁅R⁆ L}
     (hθ : Function.Involutive θ) {x : L} (hx : x ∈ θ.toLieHom.fixedSubalgebra) :
     ad R L x ∈ θ.cartanBilinForm.skewAdjointSubmodule := by
-  have hx' : θ x = x := LieHom.mem_fixedSubalgebra.mp hx
-  rw [LinearMap.mem_skewAdjointSubmodule]
-  intro y z
-  rw [Pi.neg_apply, map_neg, cartanBilinForm_ad_left hθ, hx']
+  rw [LieHom.mem_fixedSubalgebra, coe_toLieHom] at hx
+  rw [LinearMap.mem_skewAdjointSubmodule]; intro y z
+  rw [Pi.neg_apply, map_neg, cartanBilinForm_ad_left hθ, hx]
 
 /-- For `x ∈ 𝔭`, `ad x` is self-adjoint with respect to `B_θ`:
 `B_θ(ad x y, z) = B_θ(y, ad x z)`. -/
@@ -205,6 +206,12 @@ theorem cartanBilinForm_ad_of_mem_cartanP {θ : L ≃ₗ⁅R⁆ L} (hθ : Functi
     θ.cartanBilinForm (ad R L x y) z = θ.cartanBilinForm y (ad R L x z) := by
   rw [cartanBilinForm_ad_left hθ, mem_cartanP_iff.mp hx, map_neg, LinearMap.neg_apply,
     map_neg, neg_neg]
+
+/-- For `x ∈ 𝔭`, `ad x` belongs to the self-adjoint submodule of `B_θ`. -/
+theorem ad_mem_selfAdjointSubmodule_cartanBilinForm {θ : L ≃ₗ⁅R⁆ L}
+    (hθ : Function.Involutive θ) {x : L} (hx : x ∈ θ.cartanP) :
+    ad R L x ∈ θ.cartanBilinForm.selfAdjointSubmodule := by
+  rw [LinearMap.mem_selfAdjointSubmodule]; exact cartanBilinForm_ad_of_mem_cartanP hθ hx
 
 end CommRing
 
@@ -234,35 +241,28 @@ namespace IsCartanInvolution
 variable {θ : L ≃ₗ⁅R⁆ L}
 
 /-- A Cartan involution is involutive. -/
-theorem involutive (hθ : θ.IsCartanInvolution) : Function.Involutive θ :=
-  hθ.1
+theorem involutive (hθ : θ.IsCartanInvolution) : Function.Involutive θ := hθ.1
 
 /-- A Cartan involution is its own inverse. -/
 theorem symm_eq_self (hθ : θ.IsCartanInvolution) : θ.symm = θ := by
-  ext x
-  rw [symm_apply_eq, hθ.involutive x]
+  ext x; rw [symm_apply_eq, hθ.involutive x]
 
 /-- The twisted Killing form `B_θ` of a Cartan involution is positive definite. -/
 theorem posDef_cartanBilinForm (hθ : θ.IsCartanInvolution) :
-    θ.cartanBilinForm.toQuadraticMap.PosDef :=
-  hθ.2
+    θ.cartanBilinForm.toQuadraticMap.PosDef := hθ.2
 
 /-- The twisted Killing form `B_θ` of a Cartan involution is symmetric. -/
 theorem isSymm_cartanBilinForm (hθ : θ.IsCartanInvolution) :
-    θ.cartanBilinForm.IsSymm :=
-  cartanBilinForm_isSymm hθ.involutive
+    θ.cartanBilinForm.IsSymm := cartanBilinForm_isSymm hθ.involutive
 
 /-- Positivity of `B_θ(x, x) = -B(x, θ x)` on nonzero vectors. -/
 theorem cartanBilinForm_self_pos (hθ : θ.IsCartanInvolution) {x : L} (hx : x ≠ 0) :
-    0 < θ.cartanBilinForm x x :=
-  hθ.posDef_cartanBilinForm x hx
+    0 < θ.cartanBilinForm x x := hθ.posDef_cartanBilinForm x hx
 
 /-- The Killing form is positive definite on `θ.cartanP`. -/
 theorem killingForm_self_pos_of_mem_cartanP (hθ : θ.IsCartanInvolution) {x : L}
-    (hx : x ∈ θ.cartanP) (hx0 : x ≠ 0) :
-    0 < killingForm R L x x := by
-  rw [← cartanBilinForm_apply_of_mem_cartanP hx]
-  exact hθ.cartanBilinForm_self_pos hx0
+    (hx : x ∈ θ.cartanP) (hx0 : x ≠ 0) : 0 < killingForm R L x x := by
+  rw [← cartanBilinForm_apply_of_mem_cartanP hx]; exact hθ.cartanBilinForm_self_pos hx0
 
 /-- Conjugating a Cartan involution by a Lie algebra equivalence yields a Cartan involution. -/
 theorem conj (hθ : θ.IsCartanInvolution) (e : L ≃ₗ⁅R⁆ M) :
@@ -273,6 +273,22 @@ theorem conj (hθ : θ.IsCartanInvolution) (e : L ≃ₗ⁅R⁆ M) :
   have hB : killingForm R M y (e (θ (e.symm y))) = killingForm R L (e.symm y) (θ (e.symm y)) := by
     rw [← killingForm_of_equiv_apply e (e.symm y) (θ (e.symm y)), e.apply_symm_apply]
   simpa only [trans_apply, hB, ← cartanBilinForm_apply] using hθ.cartanBilinForm_self_pos he
+
+/-- Conjugation by a Lie algebra equivalence preserves the Cartan involution property. -/
+@[simp]
+theorem _root_.LieEquiv.isCartanInvolution_conj_iff (θ : L ≃ₗ⁅R⁆ L) (e : L ≃ₗ⁅R⁆ M) :
+    (e.symm.trans (θ.trans e)).IsCartanInvolution ↔ θ.IsCartanInvolution := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.conj e⟩
+  have heq : e.symm.symm.trans ((e.symm.trans (θ.trans e)).trans e.symm) = θ := by ext x; simp
+  simpa only [heq] using h.conj e.symm
+
+/-- If `e : L ≃ₗ⁅R⁆ M` intertwines `θ` with `θ'` (`∀ x, θ' (e x) = e (θ x)`), then `θ'` is a
+Cartan involution whenever `θ` is. -/
+theorem of_intertwines (hθ : θ.IsCartanInvolution) (e : L ≃ₗ⁅R⁆ M) {θ' : M ≃ₗ⁅R⁆ M}
+    (h : ∀ x, θ' (e x) = e (θ x)) : θ'.IsCartanInvolution := by
+  have hconj : θ' = e.symm.trans (θ.trans e) :=
+    LieEquiv.ext fun y ↦ by obtain ⟨x, rfl⟩ := e.surjective y; simp [h x]
+  rwa [hconj, isCartanInvolution_conj_iff]
 
 /-- The Killing form of a Lie algebra admitting a Cartan involution is nondegenerate. -/
 theorem killingForm_nondegenerate (hθ : θ.IsCartanInvolution) :
@@ -322,15 +338,13 @@ variable {R L : Type*} [CommRing R] [PartialOrder R] [IsOrderedAddMonoid R]
 theorem IsCartanInvolution.killingForm_self_neg_of_mem_fixedSubalgebra {θ : L ≃ₗ⁅R⁆ L}
     (hθ : θ.IsCartanInvolution) {x : L} (hx : x ∈ θ.toLieHom.fixedSubalgebra) (hx0 : x ≠ 0) :
     killingForm R L x x < 0 := by
-  have h := hθ.cartanBilinForm_self_pos hx0
-  rw [cartanBilinForm_apply_of_mem_fixedSubalgebra hx] at h
-  exact neg_pos.mp h
+  simpa only [neg_pos, cartanBilinForm_apply_of_mem_fixedSubalgebra hx] using
+    hθ.cartanBilinForm_self_pos hx0
 
 /-- The identity automorphism is a Cartan involution if and only if the Killing form is negative
 definite (the compact case). -/
 theorem isCartanInvolution_refl_iff :
-    (LieEquiv.refl : L ≃ₗ⁅R⁆ L).IsCartanInvolution ↔
-      ∀ x : L, x ≠ 0 → killingForm R L x x < 0 := by
+    (LieEquiv.refl : L ≃ₗ⁅R⁆ L).IsCartanInvolution ↔ ∀ x : L, x ≠ 0 → killingForm R L x x < 0 := by
   simp [isCartanInvolution_iff, Function.Involutive]
 
 /-- **Two commuting Cartan involutions are equal.** -/
@@ -342,25 +356,24 @@ theorem IsCartanInvolution.eq_of_commute {θ θ' : L ≃ₗ⁅R⁆ L} (hθ : θ.
     exact (h₁.killingForm_self_neg_of_mem_fixedSubalgebra hz₁ hne).not_gt
       (h₂.killingForm_self_pos_of_mem_cartanP hz₂ hne)
   ext x
-  have hu : (x + θ x) - θ' (x + θ x) = 0 := hzero hθ hθ'
-    (by rw [LieHom.mem_fixedSubalgebra, coe_toLieHom, map_sub, map_add, hθ.involutive, hcomm,
-      map_add, hθ.involutive, add_comm (θ x) x])
-    (by rw [mem_cartanP_iff, map_sub, hθ'.involutive, neg_sub])
-  have hw : (x - θ x) + θ' (x - θ x) = 0 := hzero hθ' hθ
-    (by rw [LieHom.mem_fixedSubalgebra, coe_toLieHom, map_add, hθ'.involutive, add_comm])
-    (by rw [mem_cartanP_iff, map_add, map_sub, hθ.involutive, hcomm, map_sub, hθ.involutive,
-      ← neg_sub x (θ x), map_neg]; abel)
+  have hfix : (x + θ x) - θ' (x + θ x) ∈ θ.toLieHom.fixedSubalgebra := by
+    have h1 : θ (x + θ x) = x + θ x :=
+      LieHom.mem_fixedSubalgebra.mp (add_apply_mem_fixedSubalgebra hθ.involutive x)
+    rw [LieHom.mem_fixedSubalgebra, coe_toLieHom, map_sub, hcomm, h1]
+  have hu := hzero hθ hθ' hfix (sub_apply_mem_cartanP hθ'.involutive (x + θ x))
+  have hP : (x - θ x) + θ' (x - θ x) ∈ θ.cartanP := by
+    have h1 := mem_cartanP_iff.mp (sub_apply_mem_cartanP hθ.involutive x)
+    rw [mem_cartanP_iff, map_add, hcomm, h1, map_neg, neg_add]
+  have hw := hzero hθ' hθ (add_apply_mem_fixedSubalgebra hθ'.involutive (x - θ x)) hP
   have h2 : (θ x - θ' x) + (θ x - θ' x) = 0 := by
     have hcalc : (θ x - θ' x) + (θ x - θ' x) =
         ((x + θ x) - θ' (x + θ x)) - ((x - θ x) + θ' (x - θ x)) := by
       simp only [map_add, map_sub]; abel
     rw [hcalc, hu, hw, sub_self]
-  refine sub_eq_zero.mp ?_
-  by_contra hne
+  refine sub_eq_zero.mp ?_; by_contra hne
   have hpos := hθ.cartanBilinForm_self_pos hne
   have hsum := lt_of_lt_of_le hpos (le_add_of_nonneg_right hpos.le)
-  rw [← map_add, h2, map_zero] at hsum
-  exact lt_irrefl 0 hsum
+  rw [← map_add, h2, map_zero] at hsum; exact lt_irrefl 0 hsum
 
 /-- On a compact Lie algebra (negative definite Killing form), the identity is the unique Cartan
 involution. -/
@@ -396,60 +409,50 @@ private theorem killingForm_restrict_fixedSubalgebra (hθ : θ.IsCartanInvolutio
         θ.toLieHom.fixedSubalgebra.incl.toLinearMap
     Φ.IsSymm ∧ Φ.toQuadraticMap.Anisotropic ∧ Φ.lieInvariant θ.toLieHom.fixedSubalgebra := by
   refine ⟨(LinearMap.BilinForm.isSymm_iff.mpr (LieModule.traceForm_isSymm K L L)).compl₁₂ _,
-    fun x hx ↦ ?_, ?_⟩
-  · by_contra hx0
-    have hpos := hθ.cartanBilinForm_self_pos (fun h ↦ hx0 (Subtype.ext h))
-    have hB : killingForm K L x x = 0 := by
-      simpa only [LinearMap.BilinMap.toQuadraticMap_apply, LinearMap.compl₁₂_apply,
-        LieHom.coe_toLinearMap, LieSubalgebra.coe_incl] using hx
-    rw [cartanBilinForm_apply_of_mem_fixedSubalgebra x.property, hB, neg_zero] at hpos
-    exact lt_irrefl 0 hpos
-  · have hinv : (killingForm K L).lieInvariant L := fun x y z ↦
-      LieModule.traceForm_lieInvariant K L L x y z
-    exact hinv.compl₁₂ θ.toLieHom.fixedSubalgebra.incl
+    fun x hx ↦ ?_, fun x y z ↦ LieModule.traceForm_lieInvariant K L L x y z⟩
+  by_contra hx0
+  have hB : killingForm K L x x = 0 := by
+    simpa only [LinearMap.BilinMap.toQuadraticMap_apply, LinearMap.compl₁₂_apply,
+      LieHom.coe_toLinearMap, LieSubalgebra.coe_incl] using hx
+  exact lt_irrefl 0 (by simpa [cartanBilinForm_apply_of_mem_fixedSubalgebra x.property, hB] using
+    hθ.cartanBilinForm_self_pos (fun h ↦ hx0 (Subtype.ext h)))
 
 /-- The fixed subalgebra `𝔨` of a Cartan involution is the direct sum of its centre and its
 derived ideal. -/
 theorem isCompl_center_derivedSeries_fixedSubalgebra (hθ : θ.IsCartanInvolution) :
-    IsCompl (center K θ.toLieHom.fixedSubalgebra)
-      (derivedSeries K θ.toLieHom.fixedSubalgebra 1) :=
-  have := hθ.finite
-  let ⟨hsymm, hani, hinv⟩ := hθ.killingForm_restrict_fixedSubalgebra
-  LinearMap.BilinForm.isCompl_center_derivedSeries_one_of_anisotropic _ hsymm.isRefl hani hinv
+    IsCompl (center K θ.toLieHom.fixedSubalgebra) (derivedSeries K θ.toLieHom.fixedSubalgebra 1) :=
+  have := hθ.finite; let ⟨hs, ha, hi⟩ := hθ.killingForm_restrict_fixedSubalgebra
+  LinearMap.BilinForm.isCompl_center_derivedSeries_one_of_anisotropic _ hs.isRefl ha hi
 
 /-- The derived ideal of the fixed subalgebra `𝔨` of a Cartan involution is semisimple. -/
 theorem isSemisimple_derivedSeries_fixedSubalgebra (hθ : θ.IsCartanInvolution) :
     IsSemisimple K (derivedSeries K θ.toLieHom.fixedSubalgebra 1) :=
-  have := hθ.finite
-  let ⟨hsymm, hani, hinv⟩ := hθ.killingForm_restrict_fixedSubalgebra
-  LinearMap.BilinForm.isSemisimple_derivedSeries_one_of_anisotropic _ hsymm.isRefl hani hinv
+  have := hθ.finite; let ⟨hs, ha, hi⟩ := hθ.killingForm_restrict_fixedSubalgebra
+  LinearMap.BilinForm.isSemisimple_derivedSeries_one_of_anisotropic _ hs.isRefl ha hi
 
 /-- The fixed subalgebra `𝔨` of a Cartan involution is reductive (its radical equals its
 centre). -/
 theorem hasCentralRadical_fixedSubalgebra (hθ : θ.IsCartanInvolution) :
     HasCentralRadical K θ.toLieHom.fixedSubalgebra :=
-  have := hθ.finite
-  let ⟨hsymm, hani, hinv⟩ := hθ.killingForm_restrict_fixedSubalgebra
-  LinearMap.BilinForm.hasCentralRadical_of_anisotropic _ hsymm.isRefl hani hinv
+  have := hθ.finite; let ⟨hs, ha, hi⟩ := hθ.killingForm_restrict_fixedSubalgebra
+  LinearMap.BilinForm.hasCentralRadical_of_anisotropic _ hs.isRefl ha hi
 
 /-- For a Cartan involution `θ`, the `-1`-eigenspace `𝔭` is the Killing orthogonal complement of
 the fixed subalgebra `𝔨`. -/
 theorem orthogonal_fixedSubalgebra_eq_cartanP [NeZero (2 : K)] (hθ : θ.IsCartanInvolution) :
     (killingForm K L).orthogonal θ.toLieHom.fixedSubalgebra.toSubmodule = θ.cartanP := by
-  have h2 : IsUnit (2 : K) := isUnit_iff_ne_zero.mpr (NeZero.ne 2)
-  ext x; constructor
+  have h2 : IsUnit (2 : K) := isUnit_iff_ne_zero.mpr (NeZero.ne 2); ext x; constructor
   · intro hx
-    have hsplit : x ∈ θ.toLieHom.fixedSubalgebra.toSubmodule ⊔ θ.cartanP :=
-      (isCompl_fixedSubalgebra_cartanP h2 hθ.involutive).sup_eq_top ▸ Submodule.mem_top
-    obtain ⟨k, hk, p, hp, rfl⟩ := Submodule.mem_sup.mp hsplit
+    obtain ⟨k, hk, p, hp, rfl⟩ := Submodule.mem_sup.mp
+      ((isCompl_fixedSubalgebra_cartanP h2 hθ.involutive).sup_eq_top ▸ Submodule.mem_top :
+        x ∈ θ.toLieHom.fixedSubalgebra.toSubmodule ⊔ θ.cartanP)
     have hk0 : k = 0 := by
       by_contra hk0
       have hkx := hx k hk
       rw [map_add, killingForm_apply_of_mem_fixedSubalgebra_of_mem_cartanP h2 hk hp, add_zero]
         at hkx
-      have hpos := hθ.cartanBilinForm_self_pos hk0
-      rw [cartanBilinForm_apply_of_mem_fixedSubalgebra hk, hkx, neg_zero] at hpos
-      exact lt_irrefl 0 hpos
+      exact lt_irrefl 0 (by simpa [cartanBilinForm_apply_of_mem_fixedSubalgebra hk, hkx] using
+        hθ.cartanBilinForm_self_pos hk0)
     simpa [hk0] using hp
   · exact fun hx k hk ↦ killingForm_apply_of_mem_fixedSubalgebra_of_mem_cartanP h2 hk hx
 
@@ -460,15 +463,15 @@ theorem eq_of_fixedSubalgebra_eq [NeZero (2 : K)] (hθ : θ.IsCartanInvolution)
     (h : θ.toLieHom.fixedSubalgebra = θ'.toLieHom.fixedSubalgebra) : θ = θ' := by
   have h2 : IsUnit (2 : K) := isUnit_iff_ne_zero.mpr (NeZero.ne 2)
   have hP : θ.cartanP = θ'.cartanP := by
-    rw [← hθ.orthogonal_fixedSubalgebra_eq_cartanP,
-      ← hθ'.orthogonal_fixedSubalgebra_eq_cartanP, h]
+    rw [← hθ.orthogonal_fixedSubalgebra_eq_cartanP, ← hθ'.orthogonal_fixedSubalgebra_eq_cartanP, h]
   ext x
-  have hsplit : x ∈ θ.toLieHom.fixedSubalgebra.toSubmodule ⊔ θ.cartanP :=
-    (isCompl_fixedSubalgebra_cartanP h2 hθ.involutive).sup_eq_top ▸ Submodule.mem_top
-  obtain ⟨k, hk, p, hp, rfl⟩ := Submodule.mem_sup.mp hsplit
-  have hk1 : θ k = k := LieHom.mem_fixedSubalgebra.mp hk
-  have hk2 : θ' k = k := LieHom.mem_fixedSubalgebra.mp (h ▸ hk)
-  rw [map_add, map_add, hk1, hk2, mem_cartanP_iff.mp hp, mem_cartanP_iff.mp (hP ▸ hp)]
+  obtain ⟨k, hk, p, hp, rfl⟩ := Submodule.mem_sup.mp
+    ((isCompl_fixedSubalgebra_cartanP h2 hθ.involutive).sup_eq_top ▸ Submodule.mem_top :
+      x ∈ θ.toLieHom.fixedSubalgebra.toSubmodule ⊔ θ.cartanP)
+  rw [LieSubalgebra.mem_toSubmodule] at hk
+  have hk' : k ∈ θ'.toLieHom.fixedSubalgebra := h ▸ hk
+  rw [LieHom.mem_fixedSubalgebra, coe_toLieHom] at hk hk'
+  rw [map_add, map_add, hk, hk', mem_cartanP_iff.mp hp, mem_cartanP_iff.mp (hP ▸ hp)]
 
 end IsCartanInvolution
 
@@ -489,25 +492,19 @@ private theorem neg_killingForm_restrict_fixedSubalgebra (hθ : θ.IsCartanInvol
         θ.toLieHom.fixedSubalgebra.incl.toLinearMap
     Φ.IsSymm ∧ Φ.toQuadraticMap.PosDef ∧ Φ.lieInvariant θ.toLieHom.fixedSubalgebra := by
   refine ⟨(LinearMap.BilinForm.isSymm_iff.mpr (LieModule.traceForm_isSymm K L L)).neg.compl₁₂ _,
-    ?_, ?_⟩
-  · rw [LinearMap.BilinForm.posDef_toQuadraticMap_iff]
-    intro x hx
-    simpa only [LinearMap.compl₁₂_apply, LinearMap.neg_apply, LieHom.coe_toLinearMap,
-      LieSubalgebra.coe_incl, neg_pos] using
-      hθ.killingForm_self_neg_of_mem_fixedSubalgebra x.property (fun h ↦ hx (Subtype.ext h))
-  · have hinv : (-killingForm K L).lieInvariant L := fun x y z ↦ by
-      simp [LieModule.traceForm_lieInvariant K L L x y z]
-    exact hinv.compl₁₂ θ.toLieHom.fixedSubalgebra.incl
+    ?_, fun x y z ↦ by simp [LieModule.traceForm_lieInvariant K L L x y z]⟩
+  rw [LinearMap.BilinForm.posDef_toQuadraticMap_iff]; intro x hx
+  simpa only [LinearMap.compl₁₂_apply, LinearMap.neg_apply, LieHom.coe_toLinearMap,
+    LieSubalgebra.coe_incl, neg_pos] using
+    hθ.killingForm_self_neg_of_mem_fixedSubalgebra x.property (fun h ↦ hx (Subtype.ext h))
 
 /-- The Killing form of the derived ideal `⁅𝔨, 𝔨⁆` of the fixed subalgebra of a Cartan involution
 is negative definite. -/
 theorem killingForm_derivedSeries_fixedSubalgebra_self_neg (hθ : θ.IsCartanInvolution)
     {x : derivedSeries K θ.toLieHom.fixedSubalgebra 1} (hx : x ≠ 0) :
     killingForm K (derivedSeries K θ.toLieHom.fixedSubalgebra 1) x x < 0 :=
-  have := hθ.finite
-  let ⟨hsymm, hpos, hinv⟩ := hθ.neg_killingForm_restrict_fixedSubalgebra
-  LinearMap.BilinForm.killingForm_derivedSeries_one_self_neg_of_posDef_of_ne_zero
-    _ hsymm hpos hinv x hx
+  have := hθ.finite; let ⟨hs, hp, hi⟩ := hθ.neg_killingForm_restrict_fixedSubalgebra
+  LinearMap.BilinForm.killingForm_derivedSeries_one_self_neg_of_posDef_of_ne_zero _ hs hp hi x hx
 
 end IsCartanInvolution
 
@@ -534,11 +531,9 @@ theorem IsCartanInvolution.iSup_eigenspace_ad_eq_top {θ : L ≃ₗ⁅ℝ⁆ L}
     ext v; rw [LinearMap.BilinForm.mem_relativeEigenspace_iff, Module.End.mem_eigenspace_iff]
     refine ⟨fun hv ↦ ?_, fun hv w ↦ by simp [q, hv]⟩
     by_contra hne
-    have h0 : θ.cartanBilinForm (ad ℝ L x v - μ • v) (ad ℝ L x v - μ • v) = 0 := by
+    exact (hθ.cartanBilinForm_self_pos (sub_ne_zero.mpr hne)).ne' (by
       rw [map_sub θ.cartanBilinForm, map_smul θ.cartanBilinForm, LinearMap.sub_apply,
-        LinearMap.smul_apply, smul_eq_mul]
-      exact sub_eq_zero.mpr (hv (ad ℝ L x v - μ • v))
-    exact (hθ.cartanBilinForm_self_pos (sub_ne_zero.mpr hne)).ne' h0
+        LinearMap.smul_apply, smul_eq_mul]; exact sub_eq_zero.mpr (hv (ad ℝ L x v - μ • v)))
   have huniv := LinearMap.BilinForm.relativeSpectralSubspace_univ hθ.isSymm_cartanBilinForm
     (fun _ hv ↦ hθ.cartanBilinForm_self_pos hv) hq
   rw [LinearMap.BilinForm.relativeSpectralSubspace_def] at huniv

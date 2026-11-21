@@ -5,19 +5,24 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Algebra.Exponential
 public import Mathlib.Analysis.SpecialFunctions.Exp
+public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import TauCeti.Algebra.Lie.CartanInvolution.Basic
 import Mathlib.Algebra.Lie.Derivation.Killing
 import Mathlib.Analysis.InnerProductSpace.Spectrum
 import TauCeti.Algebra.Lie.Spectral
 import TauCeti.Analysis.InnerProductSpace.Spectral.Relative
+import TauCeti.Analysis.Normed.Operator.Exponential
 
 /-!
 # Conjugacy of Cartan involutions
 
 Any two Cartan involutions `θ` and `θ'` of a real semisimple Lie algebra `L` are conjugate by
 `φ = P^{-1/4} = e^{ad Z}` with `P = (θ ∘ θ')²` and `Z ∈ θ.cartanP`
-(`LieEquiv.IsCartanInvolution.exists_mem_cartanP_conj_eq`).
+(`LieEquiv.IsCartanInvolution.exists_mem_cartanP_conj_eq`, and
+`LieEquiv.IsCartanInvolution.exists_mem_cartanP_conj_exp` for finite-dimensional normed real Lie
+algebras).
 
 ## References
 
@@ -59,17 +64,18 @@ private theorem exists_basis_eigenvector_sq_trans {θ θ' : L ≃ₗ⁅ℝ⁆ L}
     hθ.isSymm_cartanBilinForm (fun _ hv ↦ hθ.cartanBilinForm_self_pos hv)
   let T : Module.End ℝ (EuclideanSpace ℝ (Fin (finrank ℝ L))) :=
     e.symm.toLinearMap.comp ((P : L →ₗ[ℝ] L).comp e.toLinearMap)
+  have heT (x : EuclideanSpace ℝ (Fin (finrank ℝ L))) : e (T x) = P (e x) := by simp [T]
   have hT : T.IsSymmetric := fun x y ↦ by
-    rw [← he (T x) y, ← he x (T y)]
-    simpa [T, P, trans_apply] using (hN_symm (N (e x)) (e y)).trans (hN_symm (e x) (N (e y)))
+    rw [← he (T x) y, ← he x (T y), heT x, heT y]
+    simpa only [P, trans_apply] using (hN_symm (N (e x)) (e y)).trans (hN_symm (e x) (N (e y)))
   have hn : finrank ℝ (EuclideanSpace ℝ (Fin (finrank ℝ L))) = finrank ℝ L :=
     finrank_euclideanSpace_fin
   let ob := hT.eigenvectorBasis hn; let lam := hT.eigenvalues hn
   let b : Module.Basis (Fin (finrank ℝ L)) ℝ L := ob.toBasis.map e
-  have hbP (i : Fin (finrank ℝ L)) : P (b i) = lam i • b i := by
-    have hmap : P (e (ob i)) = e (T (ob i)) := by simp [T]
-    have heq := congrArg e (hT.apply_eigenvectorBasis hn i)
-    rwa [map_smul, ← hmap] at heq
+  have hbP (i : Fin (finrank ℝ L)) : P (b i) = lam i • b i := calc
+    P (b i) = e (T (ob i)) := (heT (ob i)).symm
+    _ = e (lam i • ob i) := congrArg e (hT.apply_eigenvectorBasis hn i)
+    _ = lam i • b i := map_smul e _ _
   refine ⟨b, lam, hbP, fun i ↦ ?_⟩
   have hNne : N (b i) ≠ 0 := fun h0 ↦ b.ne_zero i (N.injective (h0.trans (map_zero N).symm))
   have hpos : 0 < θ.cartanBilinForm (P (b i)) (b i) := by
@@ -78,11 +84,10 @@ private theorem exists_basis_eigenvector_sq_trans {θ θ' : L ≃ₗ⁅ℝ⁆ L}
   exact pos_of_mul_pos_left hpos (hθ.cartanBilinForm_self_pos (b.ne_zero i)).le
 
 /-- Building the inner derivation generator `Z ∈ θ.cartanP` for `log P` scaled by `-(1 / 4)`. -/
-private theorem exists_mem_cartanP_ad_basis {ι : Type*} [Finite ι]
+private theorem exists_mem_cartanP_ad_basis {ι : Type*}
     {θ θ' : L ≃ₗ⁅ℝ⁆ L} (hθ : θ.IsCartanInvolution) (hθ' : Function.Involutive θ')
     (b : Module.Basis ι ℝ L) {lam : ι → ℝ}
-    (hb : ∀ i, ((θ'.trans θ).trans (θ'.trans θ)) (b i) = lam i • b i)
-    (hlam : ∀ i, 0 < lam i) :
+    (hb : ∀ i, ((θ'.trans θ).trans (θ'.trans θ)) (b i) = lam i • b i) (hlam : ∀ i, 0 < lam i) :
     ∃ Z ∈ θ.cartanP, ∀ i, ⁅Z, b i⁆ = (-(1 / 4 : ℝ) * Real.log (lam i)) • b i := by
   have := hθ.finite; have := hθ.isKilling
   let P : L ≃ₗ⁅ℝ⁆ L := (θ'.trans θ).trans (θ'.trans θ); let D := P.logDerivation b hb hlam
@@ -93,8 +98,9 @@ private theorem exists_mem_cartanP_ad_basis {ι : Type*} [Finite ι]
     (fun x ↦ by rw [eq_symm_apply]; simp [P, hθ.involutive _, hθ' _]) y
   have hZ₀P : Z₀ ∈ θ.cartanP := by
     have hcent : θ Z₀ + Z₀ ∈ center ℝ L := (LieModule.mem_maxTrivSubmodule _ _ _ _).mpr fun w ↦ by
-      rw [← lie_skew, add_lie, ← hθ.involutive w, ← map_lie θ, hZ₀_apply, hθ.involutive,
-        hZ₀_apply, hD_anti, map_neg, hθ.involutive, neg_add_cancel, neg_zero]
+      have hθZ₀ : ⁅θ Z₀, w⁆ = θ (D (θ w)) := by
+        nth_rw 1 [← hθ.involutive w]; rw [← map_lie, hZ₀_apply]
+      rw [← lie_skew, add_lie, hθZ₀, hD_anti, map_neg, hθ.involutive, hZ₀_apply]; simp
     rw [hθ.center_eq_bot, LieSubmodule.mem_bot] at hcent
     exact mem_cartanP_iff.mpr (eq_neg_of_add_eq_zero_left hcent)
   refine ⟨(-(1 / 4 : ℝ)) • Z₀, θ.cartanP.smul_mem _ hZ₀P, fun i ↦ ?_⟩
@@ -102,11 +108,10 @@ private theorem exists_mem_cartanP_ad_basis {ι : Type*} [Finite ι]
 
 /-- The conjugate Cartan involution `φ ∘ θ ∘ φ⁻¹` for `φ = P^{-1/4}` commutes with `θ'`, hence
 equals `θ'`. -/
-private theorem conj_rpow_eq {ι : Type*} [Finite ι]
+private theorem conj_rpow_eq {ι : Type*}
     {θ θ' : L ≃ₗ⁅ℝ⁆ L} (hθ : θ.IsCartanInvolution) (hθ' : θ'.IsCartanInvolution)
     (b : Module.Basis ι ℝ L) {lam : ι → ℝ}
-    (hb : ∀ i, ((θ'.trans θ).trans (θ'.trans θ)) (b i) = lam i • b i)
-    (hlam : ∀ i, 0 < lam i) :
+    (hb : ∀ i, ((θ'.trans θ).trans (θ'.trans θ)) (b i) = lam i • b i) (hlam : ∀ i, 0 < lam i) :
     let P := (θ'.trans θ).trans (θ'.trans θ)
     (P.rpow b hb hlam (-(1 / 4 : ℝ))).symm.trans (θ.trans (P.rpow b hb hlam (-(1 / 4 : ℝ)))) =
       θ' := by
@@ -126,13 +131,13 @@ private theorem conj_rpow_eq {ι : Type*} [Finite ι]
   have hcomm_basis (i : ι) : θ₁ (θ' (b i)) = θ' (θ₁ (b i)) := by
     rw [hθ₁_eig (inv_pos.mpr (hlam i)) (hPinv (hlam i).ne' (hb i)).2,
       hθ₁_eig (hlam i) (hb i), map_smul, Real.inv_rpow (hlam i).le, ← Real.rpow_neg (hlam i).le]
+    have hNN : N (N (b i)) = lam i • b i := by rw [← trans_apply]; exact hb i
     have hN : N (b i) = lam i • N.symm (b i) := by
-      simpa only [symm_apply_apply, map_smul] using
-        congrArg N.symm (show N (N (b i)) = lam i • b i from hb i)
+      simpa only [symm_apply_apply, map_smul] using congrArg N.symm hNN
     have hNs : N.symm (b i) = θ' (θ (b i)) := by
       rw [symm_apply_eq]; simp [N, hθ'.involutive _, hθ.involutive _]
-    rw [show θ (θ' (b i)) = lam i • θ' (θ (b i)) by simpa only [N, trans_apply, hNs] using hN,
-      smul_smul, ← Real.rpow_add_one (hlam i).ne']; norm_num
+    have hθθ' : θ (θ' (b i)) = lam i • θ' (θ (b i)) := by simpa only [N, trans_apply, hNs] using hN
+    rw [hθθ', smul_smul, ← Real.rpow_add_one (hlam i).ne']; norm_num
   have hlin : (θ₁ : L →ₗ[ℝ] L).comp (θ' : L →ₗ[ℝ] L) = (θ' : L →ₗ[ℝ] L).comp (θ₁ : L →ₗ[ℝ] L) :=
     b.ext hcomm_basis
   exact (hθ.conj φ).eq_of_commute hθ' (LinearMap.congr_fun hlin)
@@ -151,8 +156,7 @@ of `ad Z` for some `Z ∈ θ.cartanP`. -/
 theorem IsCartanInvolution.exists_mem_cartanP_conj_eq
     {θ θ' : L ≃ₗ⁅ℝ⁆ L} (hθ : θ.IsCartanInvolution) (hθ' : θ'.IsCartanInvolution) :
     ∃ Z ∈ θ.cartanP, ∃ φ : L ≃ₗ⁅ℝ⁆ L,
-      (∀ y, θ' (φ y) = φ (θ y)) ∧
-      (∀ μ v, ⁅Z, v⁆ = μ • v → φ v = Real.exp μ • v) := by
+      (∀ y, θ' (φ y) = φ (θ y)) ∧ (∀ μ v, ⁅Z, v⁆ = μ • v → φ v = Real.exp μ • v) := by
   obtain ⟨b, lam, hb, hlam⟩ := exists_basis_eigenvector_sq_trans hθ hθ'
   obtain ⟨Z, hZP, hZb⟩ := exists_mem_cartanP_ad_basis hθ hθ'.involutive b hb hlam
   let P := (θ'.trans θ).trans (θ'.trans θ); let φ := P.rpow b hb hlam (-(1 / 4 : ℝ))
@@ -161,8 +165,37 @@ theorem IsCartanInvolution.exists_mem_cartanP_conj_eq
     (f := ad ℝ L Z) (g := (φ : L →ₗ[ℝ] L)) hZb
     (fun i hi ↦ by rw [LinearEquiv.coe_coe, coe_toLinearEquiv, rpow_apply_basis,
       Real.rpow_def_of_pos (hlam i), mul_comm, ← hi]) hv⟩
-  simpa only [φ, P, trans_apply, symm_apply_apply] using
-    congrArg (fun e : L ≃ₗ⁅ℝ⁆ L ↦ e (φ y)) hconj.symm
+  simpa only [φ, P, trans_apply, symm_apply_apply] using congrArg (fun e : L ≃ₗ⁅ℝ⁆ L ↦ e (φ y))
+    hconj.symm
+
+/-- **Operator-exponential conjugacy of Cartan involutions**: under any linear identification
+`e : L ≃ₗ[ℝ] E` with a finite-dimensional normed real vector space `E` (specializing to
+`LinearEquiv.refl ℝ L` when `L` itself carries a compatible norm), any two Cartan involutions
+`θ` and `θ'` are conjugate by `exp (e.conj (ad Z))` for some `Z ∈ θ.cartanP`. -/
+theorem IsCartanInvolution.exists_mem_cartanP_conj_exp
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] (e : L ≃ₗ[ℝ] E)
+    {θ θ' : L ≃ₗ⁅ℝ⁆ L} (hθ : θ.IsCartanInvolution) (hθ' : θ'.IsCartanInvolution) :
+    ∃ Z ∈ θ.cartanP, ∀ y,
+      θ' (e.symm (NormedSpace.exp (LinearMap.toContinuousLinearMap (e.conj (ad ℝ L Z))) (e y))) =
+        e.symm (NormedSpace.exp
+          (LinearMap.toContinuousLinearMap (e.conj (ad ℝ L Z))) (e (θ y))) := by
+  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
+  obtain ⟨Z, hZP, φ, hconj, heig⟩ := hθ.exists_mem_cartanP_conj_eq hθ'
+  let A : E →L[ℝ] E := LinearMap.toContinuousLinearMap (e.conj (ad ℝ L Z))
+  have hexp_eq : ∀ y : L, e.symm (NormedSpace.exp A (e y)) = φ y := by
+    have hle : ⨆ μ : ℝ, Module.End.eigenspace (ad ℝ L Z) μ ≤
+        LinearMap.eqLocus ((e.symm.toLinearMap.comp (NormedSpace.exp A).toLinearMap).comp
+          e.toLinearMap) φ.toLinearEquiv.toLinearMap := by
+      refine iSup_le fun μ v hv ↦ ?_
+      have hZv : ⁅Z, v⁆ = μ • v := Module.End.mem_eigenspace_iff.mp hv
+      have hAv : A (e v) = μ • e v := by simp [A, LinearEquiv.conj_apply_apply, hZv]
+      simp only [LinearMap.mem_eqLocus, LinearMap.comp_apply, LinearEquiv.coe_coe,
+        ContinuousLinearMap.coe_coe, LieEquiv.coe_toLinearEquiv]
+      rw [ContinuousLinearMap.exp_apply_of_apply_eq_smul A hAv, ← Real.exp_eq_exp_ℝ,
+        ← map_smul, LinearEquiv.symm_apply_apply]; exact (heig μ v hZv).symm
+    rw [hθ.iSup_eigenspace_ad_eq_top hZP, top_le_iff] at hle
+    exact fun y ↦ LinearMap.mem_eqLocus.mp (hle.symm ▸ Submodule.mem_top)
+  exact ⟨Z, hZP, fun y ↦ by rw [hexp_eq y, hexp_eq (θ y), hconj y]⟩
 
 end Real
 
