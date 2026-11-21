@@ -17,7 +17,8 @@ of objects is joined by a morphism so the fundamental groupoid is connected as a
 when comparing the fundamental groupoid of a space with those of its subspaces, the functor
 induced by an injective continuous map is injective on objects (as
 `CategoryTheory.Subgroupoid.im` requires), membership of a path class in a subgroupoid is
-unchanged by transporting its endpoints along equalities, and the induced functor of a composite
+unchanged by transporting its endpoints along equalities, a path that stays at its start has the
+class of an identity, and the induced functor of a composite
 acts on a single morphism as the composite of the induced functors.
 
 ## Main declarations
@@ -28,6 +29,8 @@ acts on a single morphism as the composite of the induced functors.
   induces a functor of fundamental groupoids that is injective on objects.
 * `Path.Homotopic.Quotient.cast_mem_arrows_iff`: membership of a path class in a
   subgroupoid of the fundamental groupoid is unchanged by casting its endpoints along equalities.
+* `Path.Homotopic.Quotient.mk_eq_eqToHom_of_forall_apply_eq`: a path that stays at its start has
+  the class of an identity, read along the equality of its endpoints.
 * `FundamentalGroupoid.map_comp_map`: the morphism-level form of `FundamentalGroupoid.map_comp`.
 * `FundamentalGroupoidFunctor.homotopicMapsNatIso_app`: the component at `x` of the natural
   isomorphism induced by a homotopy is the class of its trace at `x`.
@@ -62,6 +65,18 @@ theorem cast_mem_arrows_iff
         S.arrows (_root_.FundamentalGroupoid.mk a) (_root_.FundamentalGroupoid.mk b) := by
   subst ha hb
   rw [Path.Homotopic.Quotient.cast_rfl_rfl]
+
+/-- A path whose points all equal its start has the class of an identity, read along the
+equality of its endpoints. -/
+theorem mk_eq_eqToHom_of_forall_apply_eq {X : Type*} [TopologicalSpace X] {a b : X}
+    (p : Path a b) (h : ∀ r, p r = a) :
+    (Path.Homotopic.Quotient.mk p : _root_.FundamentalGroupoid.mk a ⟶
+        _root_.FundamentalGroupoid.mk b) =
+      eqToHom (congrArg _root_.FundamentalGroupoid.mk ((h 1).symm.trans p.target)) := by
+  obtain rfl : b = a := p.target.symm.trans (h 1)
+  obtain rfl : p = Path.refl _ := Path.ext (funext h)
+  rw [eqToHom_refl]
+  exact (_root_.FundamentalGroupoid.id_eq_path_refl _).symm
 
 end Path.Homotopic.Quotient
 
