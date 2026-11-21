@@ -38,7 +38,7 @@ degree reasons, so by the Leibniz rule it sends a cycle of degree `m` to a cycle
   (`TauCeti.DGRightModuleCat.isQuasiIso_ιTruncLE`).
 
 The truncations increase with `m` (`TauCeti.DGRightModuleCat.truncLESubmodule_mono`, with the
-morphisms `TauCeti.DGRightModuleCat.truncLEMap` between them) and exhaust `M`
+morphisms `TauCeti.DGRightModuleCat.truncLEInclusion` between them) and exhaust `M`
 (`TauCeti.DGRightModuleCat.iSup_truncLESubmodule`): every DG module over such an algebra is the
 directed union of sub-DG modules whose cohomology is bounded above, that is, homologically
 bounded below. This reduces statements about DG local systems with cohomology bounded on one
@@ -55,7 +55,7 @@ while `1 · t = t` has degree `1`. For the chains on Moore loops the hypothesis 
 * `TauCeti.DGRightModuleCat.truncLESubmodule`: the elements of `τ^{≤ m} M`, as a right submodule.
 * `TauCeti.DGRightModuleCat.truncLE`: the canonical truncation `τ^{≤ m} M` as a DG right module.
 * `TauCeti.DGRightModuleCat.ιTruncLE`: its inclusion into `M`.
-* `TauCeti.DGRightModuleCat.truncLEMap`: the inclusion `τ^{≤ m} M ⟶ τ^{≤ m'} M` for `m ≤ m'`.
+* `TauCeti.DGRightModuleCat.truncLEInclusion`: the inclusion `τ^{≤ m} M ⟶ τ^{≤ m'} M` for `m ≤ m'`.
 
 ## References
 
@@ -128,14 +128,6 @@ private theorem decompose_mem_truncLECarrier {m : ℤ} {x : M} (hx : x ∈ trunc
     (q : ℤ) : (decompose M.grading x q : M) ∈ truncLECarrier M m := by
   rw [mem_truncLECarrier_iff_of_mem (SetLike.coe_mem _)]
   exact ⟨hx.1 q, fun hq ↦ hq ▸ hx.2⟩
-
-/-- An element whose homogeneous components lie in `τ^{≤ m}` lies in `τ^{≤ m}`. -/
-private theorem mem_truncLECarrier_of_forall_decompose {m : ℤ} {x : M}
-    (hx : ∀ q, (decompose M.grading x q : M) ∈ truncLECarrier M m) :
-    x ∈ truncLECarrier M m := by
-  classical
-  rw [← sum_support_decompose M.grading x]
-  exact Submodule.sum_mem _ fun q _ ↦ hx q
 
 /-- The truncation is stable under the differential. -/
 private theorem differential_mem_truncLECarrier {m : ℤ} {x : M} (hx : x ∈ truncLECarrier M m) :
@@ -228,16 +220,11 @@ theorem mem_truncLESubmodule_of_differential_eq_zero {m : ℤ} {y : M} (hy : y �
     (hdy : M.differential y = 0) : y ∈ M.truncLESubmodule h𝒜 m :=
   (mem_truncLESubmodule_iff_of_mem hy).2 ⟨fun h ↦ absurd h (lt_irrefl m), fun _ ↦ hdy⟩
 
-/-- The homogeneous components of an element of `τ^{≤ m} M` lie in `τ^{≤ m} M`. -/
-theorem decompose_mem_truncLESubmodule {m : ℤ} {x : M} (hx : x ∈ M.truncLESubmodule h𝒜 m)
-    (q : ℤ) : (decompose M.grading x q : M) ∈ M.truncLESubmodule h𝒜 m :=
-  decompose_mem_truncLECarrier hx q
-
-/-- An element lies in `τ^{≤ m} M` exactly when all its homogeneous components do. -/
-theorem mem_truncLESubmodule_iff_forall_decompose {m : ℤ} {x : M} :
-    x ∈ M.truncLESubmodule h𝒜 m ↔
-      ∀ q, (decompose M.grading x q : M) ∈ M.truncLESubmodule h𝒜 m :=
-  ⟨decompose_mem_truncLESubmodule, mem_truncLECarrier_of_forall_decompose⟩
+variable (M h𝒜) in
+/-- `τ^{≤ m} M` is homogeneous: the homogeneous components of its elements lie in it. -/
+theorem isHomogeneous_truncLESubmodule (m : ℤ) :
+    (M.truncLESubmodule h𝒜 m).IsHomogeneous M.grading :=
+  fun q _ hx ↦ decompose_mem_truncLECarrier hx q
 
 /-- The differential of an element of `τ^{≤ m} M` lies in `τ^{≤ m} M`. -/
 theorem differential_mem_truncLESubmodule {m : ℤ} {x : M} (hx : x ∈ M.truncLESubmodule h𝒜 m) :
@@ -247,6 +234,7 @@ theorem differential_mem_truncLESubmodule {m : ℤ} {x : M} (hx : x ∈ M.truncL
 /-- The truncations increase with the truncation degree. -/
 theorem truncLESubmodule_mono : Monotone (M.truncLESubmodule h𝒜) := by
   intro m m' hmm' x hx
+  rw [mem_truncLESubmodule] at hx ⊢
   refine ⟨fun p hp ↦ hx.1 p (lt_of_le_of_lt hmm' hp), ?_⟩
   rcases lt_or_eq_of_le hmm' with hlt | rfl
   · rw [hx.1 m' hlt, map_zero]
@@ -259,7 +247,8 @@ theorem exists_mem_truncLESubmodule (x : M) : ∃ m, x ∈ M.truncLESubmodule h�
   have hzero : ∀ p, b < p → (decompose M.grading x p : M) = 0 := fun p hp ↦ by
     have hp' : p ∉ (decompose M.grading x).support := fun hmem ↦ absurd (hb hmem) (not_le.2 hp)
     rw [DFinsupp.notMem_support_iff.1 hp', ZeroMemClass.coe_zero]
-  exact ⟨b + 1, fun p hp ↦ hzero p (by omega), by rw [hzero (b + 1) (by omega), map_zero]⟩
+  exact ⟨b + 1, mem_truncLESubmodule.2
+    ⟨fun p hp ↦ hzero p (by omega), by rw [hzero (b + 1) (by omega), map_zero]⟩⟩
 
 /-- **The truncations exhaust the module.** -/
 theorem iSup_truncLESubmodule : ⨆ m, M.truncLESubmodule h𝒜 m = ⊤ :=
@@ -286,7 +275,8 @@ private noncomputable instance (m : ℤ) : Decomposition (truncLEGrading M h𝒜
   TauCeti.DirectSum.Decomposition.restrict M.grading (truncLEGrading M h𝒜 m)
     ((M.truncLESubmodule h𝒜 m).subtype.restrictScalars R) Subtype.val_injective
     (fun _ _ ↦ Iff.rfl) fun p x ↦
-      ⟨⟨(decompose M.grading (x : M) p : M), decompose_mem_truncLESubmodule x.property p⟩, rfl⟩
+      ⟨⟨(decompose M.grading (x : M) p : M),
+        M.isHomogeneous_truncLESubmodule h𝒜 m p x.property⟩, rfl⟩
 
 private instance (m : ℤ) :
     SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece
@@ -348,7 +338,8 @@ theorem ιTruncLE_injective (m : ℤ) : Function.Injective (M.ιTruncLE h𝒜 m)
 
 variable (M h𝒜) in
 /-- The inclusion `τ^{≤ m} M ⟶ τ^{≤ m'} M` of truncations for `m ≤ m'`. -/
-noncomputable def truncLEMap {m m' : ℤ} (hmm' : m ≤ m') : M.truncLE h𝒜 m ⟶ M.truncLE h𝒜 m' where
+noncomputable def truncLEInclusion {m m' : ℤ} (hmm' : m ≤ m') :
+    M.truncLE h𝒜 m ⟶ M.truncLE h𝒜 m' where
   toLinearMap := (M.truncLEEquiv h𝒜 m').symm.toLinearMap ∘ₗ
     Submodule.inclusion (truncLESubmodule_mono hmm') ∘ₗ (M.truncLEEquiv h𝒜 m).toLinearMap
   map_mem' hx := hx
@@ -356,25 +347,28 @@ noncomputable def truncLEMap {m m' : ℤ} (hmm' : m ≤ m') : M.truncLE h𝒜 m 
 
 /-- The inclusion of truncations sends an element to itself. -/
 @[simp]
-theorem coe_truncLEEquiv_truncLEMap {m m' : ℤ} (hmm' : m ≤ m') (x : M.truncLE h𝒜 m) :
-    (M.truncLEEquiv h𝒜 m' (M.truncLEMap h𝒜 hmm' x) : M) = M.truncLEEquiv h𝒜 m x :=
+theorem coe_truncLEEquiv_truncLEInclusion {m m' : ℤ} (hmm' : m ≤ m') (x : M.truncLE h𝒜 m) :
+    (M.truncLEEquiv h𝒜 m' (M.truncLEInclusion h𝒜 hmm' x) : M) = M.truncLEEquiv h𝒜 m x :=
   (rfl)
 
 /-- The inclusions of truncations are compatible with the inclusions into `M`. -/
 @[reassoc (attr := simp)]
-theorem truncLEMap_ιTruncLE {m m' : ℤ} (hmm' : m ≤ m') :
-    M.truncLEMap h𝒜 hmm' ≫ M.ιTruncLE h𝒜 m' = M.ιTruncLE h𝒜 m :=
+theorem truncLEInclusion_ιTruncLE {m m' : ℤ} (hmm' : m ≤ m') :
+    M.truncLEInclusion h𝒜 hmm' ≫ M.ιTruncLE h𝒜 m' = M.ιTruncLE h𝒜 m :=
   hom_ext fun _ ↦ by rw [comp_apply]; rfl
 
 /-- The inclusion of a truncation into itself is the identity. -/
 @[simp]
-theorem truncLEMap_refl (m : ℤ) : M.truncLEMap h𝒜 (le_refl m) = 𝟙 (M.truncLE h𝒜 m) :=
+theorem truncLEInclusion_refl (m : ℤ) :
+    M.truncLEInclusion h𝒜 (le_refl m) = 𝟙 (M.truncLE h𝒜 m) :=
   hom_ext fun _ ↦ by rw [id_apply]; rfl
 
 /-- The inclusions of truncations compose. -/
 @[reassoc (attr := simp)]
-theorem truncLEMap_comp_truncLEMap {m m' m'' : ℤ} (hmm' : m ≤ m') (hm'm'' : m' ≤ m'') :
-    M.truncLEMap h𝒜 hmm' ≫ M.truncLEMap h𝒜 hm'm'' = M.truncLEMap h𝒜 (hmm'.trans hm'm'') :=
+theorem truncLEInclusion_comp_truncLEInclusion {m m' m'' : ℤ} (hmm' : m ≤ m')
+    (hm'm'' : m' ≤ m'') :
+    M.truncLEInclusion h𝒜 hmm' ≫ M.truncLEInclusion h𝒜 hm'm'' =
+      M.truncLEInclusion h𝒜 (hmm'.trans hm'm'') :=
   hom_ext fun _ ↦ by rw [comp_apply]; rfl
 
 /-! ### Cohomology of the truncation -/
@@ -403,7 +397,7 @@ theorem injective_cohomologyMap_ιTruncLE (m : ℤ) :
   -- The components of `y` of degree `q ≥ m` are cycles, since `d (y_q) = z_{q + 1} = 0`.
   have hcyc : ∀ q, ¬q < m → M.differential (decompose M.grading y q : M) = 0 := fun q hq ↦ by
     rw [M.isDGRightModule.map_decompose, hy]
-    exact hzτ.1 (q + 1) (by omega)
+    exact (mem_truncLESubmodule.1 hzτ).1 (q + 1) (by omega)
   rw [coe_truncLEEquiv_differential, LinearEquiv.apply_symm_apply, ← hy]
   conv_rhs => rw [← sum_support_decompose M.grading y, map_sum,
     ← Finset.sum_filter_add_sum_filter_not _ (· < m)]
@@ -464,10 +458,10 @@ theorem isQuasiIso_ιTruncLE {m : ℤ}
       exact ⟨y, hy⟩
     · have h0 : (decompose M.isDGRightModule.cohomologyGrading x p :
           M.isDGRightModule.Cohomology) = 0 :=
-        (Submodule.mem_bot R).1 (hM p hpm ▸ SetLike.coe_mem _)
+        (Submodule.mem_bot R).1 ((hM p hpm).le (SetLike.coe_mem _))
       rw [h0]
       exact zero_mem _
-  exact hx
+  exact LinearMap.mem_range.1 hx
 
 end DGRightModuleCat
 
