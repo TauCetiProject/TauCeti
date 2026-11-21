@@ -13,6 +13,7 @@ public import Mathlib.GroupTheory.QuotientGroup.Defs
 public import Mathlib.Data.ZMod.Defs
 public import TauCeti.GroupTheory.GroupAlgGeom.Basic
 import Mathlib.Data.ZMod.Basic
+import Mathlib.Algebra.Group.TypeTags.Finite
 import TauCeti.GroupTheory.FreeGroup.Centralizer
 import Mathlib.GroupTheory.FreeGroup.CyclicallyReduced
 import Mathlib.Order.Concept
@@ -1375,7 +1376,7 @@ generator `a` are the points whose `x`-coordinate is a power of `a`. -/
 theorem V_singleton_commutatorElement_of {α : Type*} (x : X) (a : α) :
     V (.id (FreeGroup α)) {⁅(inr (of x) : GX (FreeGroup α) X), inl (of a)⁆} =
       {v | v x ∈ zpowers (of a)} := by
-  rw [V_singleton_commutatorElement, MonoidHom.id_apply, centralizer_singleton_of]
+  rw [V_singleton_commutatorElement, MonoidHom.id_apply, centralizer_of]
 
 namespace CoordGroup
 
@@ -1408,7 +1409,7 @@ def gHomEquivZPowers {α : Type*} (a : α) : GHom (coeff (.id (FreeGroup α))
     {⁅(inr (of ()) : GX (FreeGroup α) Unit), (inl (of a) : GX (FreeGroup α) Unit)⁆})
     (.id (FreeGroup α)) ≃ zpowers (of a) :=
   (gHomEquivCentralizer (.id _) (of a)).trans <| Equiv.subtypeEquivRight fun h => by
-    rw [MonoidHom.id_apply, centralizer_singleton_of]
+    rw [MonoidHom.id_apply, centralizer_of]
 
 @[simp]
 theorem gHomEquivZPowers_apply_coe {α : Type*} (a : α) (φ : GHom (coeff (.id (FreeGroup α))
