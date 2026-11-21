@@ -5,19 +5,20 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Localization.AtPrime.Basic
-public import Mathlib.Topology.LocallyConstant.Algebra
-public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.Monoidal
-public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.ScalarChange
-public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.StableEquivalent
-public import TauCeti.CategoryTheory.GrothendieckGroup.Monoidal.Basic
+public import Mathlib.RingTheory.Spectrum.Maximal.Defs
+public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.KZero.ScalarChange
 public import TauCeti.RingTheory.Idempotents.Clopen
-public import TauCeti.Topology.LocallyConstant.Connected
 
-import Mathlib.Algebra.Module.FinitePresentation
 import Mathlib.LinearAlgebra.FreeModule.PID
-import Mathlib.LinearAlgebra.TensorProduct.Tower
 import Mathlib.RingTheory.Flat.TorsionFree
+import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.StableEquivalent
+import TauCeti.RingTheory.Flat.Semilocal
+import TauCeti.RingTheory.Idempotents.BaseChange
+import TauCeti.RingTheory.Idempotents.Connected.Rank
+import TauCeti.RingTheory.Idempotents.Module
+import TauCeti.RingTheory.Idempotents.Projective
+import TauCeti.RingTheory.Idempotents.TensorProduct
+import TauCeti.Topology.LocallyConstant.Connected
 
 /-!
 # The locally constant rank homomorphism on `K₀`, reduced `K₀`, and semilocal / PID classification
@@ -42,15 +43,8 @@ a natural ring-homomorphism section `rankSection R` with `(rankHom R).comp (rank
 Thus `K₀(proj R)` splits additively as `LocallyConstant (PrimeSpectrum R) ℤ × reducedK0 R`, where
 `reducedK0 R := RingHom.ker (rankHom R)` is the reduced `K₀` ideal.
 
-Moreover, scalar extension along any ring homomorphism `f : R →+* S` between commutative rings
-upgrades `SplitK0.map f.finiteProjectiveModulesExtendScalars` to a ring homomorphism
-`f.finiteProjectiveModulesSplitK0Extend`, natural with respect to both `rankHom` and
-`rankSection`.
-
 ## Main definitions
 
-* `RingHom.finiteProjectiveModulesSplitK0Extend`: the ring homomorphism
-  `K₀(proj R) →+* K₀(proj S)` induced by scalar extension along `f : R →+* S`.
 * `TauCeti.FiniteProjectiveModules.rankHom`: the locally constant rank ring homomorphism
   `K₀(proj R) →+* LocallyConstant (PrimeSpectrum R) ℤ`.
 * `TauCeti.FiniteProjectiveModules.clopenObj`, `clopenClass`, and `clopenRankObj`: the
@@ -76,7 +70,10 @@ upgrades `SplitK0.map f.finiteProjectiveModulesExtendScalars` to a ring homomorp
 * `TauCeti.FiniteProjectiveModules.rankHom_comp_rankSection`: `rankSection R` is a right inverse
   to `rankHom R`, so `rankHom R` is surjective and `rankSection R` is injective.
 * `TauCeti.FiniteProjectiveModules.mem_reducedK0_iff_forall_localization`: a class in `K₀(proj R)`
-  lies in `reducedK0 R` if and only if its image vanishes in `K₀(proj R_p)` for every prime `p`.
+  lies in `reducedK0 R` if and only if its image vanishes in `K₀(proj R_p)` at every prime `p`.
+* `TauCeti.FiniteProjectiveModules.rankSection_comp_rankHom_eq_id_of_forall_clopenRankModule` and
+  `reducedK0_eq_bot_of_rankSection_comp_rankHom`: general classification criterion via clopen-glued
+  models and its kernel-vanishing consequence.
 * `TauCeti.FiniteProjectiveModules.reducedK0_eq_bot_of_finite_maximalSpectrum` and
   `reducedK0_eq_bot_of_forall_free`: vanishing of reduced `K₀` for semilocal rings and rings whose
   finitely generated projective modules are free.
@@ -95,116 +92,56 @@ open scoped TensorProduct
 
 universe u
 
-/-! ### Scalar extension as a ring homomorphism on split `K₀` -/
-
-namespace RingHom
-
-open TauCeti
-
-variable {R S T : Type u} [CommRing R] [CommRing S] [CommRing T]
-
-/-- Scalar extension preserves multiplication on split `K₀` of finitely generated projective
-modules over commutative rings. -/
-private theorem map_extendScalars_mul (f : R →+* S) :
-    ∀ x y : SplitK0.{u} (finiteProjectiveModules R).FullSubcategory,
-      SplitK0.map.{u, u} f.finiteProjectiveModulesExtendScalars (x * y) =
-        SplitK0.map.{u, u} f.finiteProjectiveModulesExtendScalars x *
-          SplitK0.map.{u, u} f.finiteProjectiveModulesExtendScalars y := by
-  rw [AddMonoidHom.map_mul_iff]
-  refine SplitK0.hom_ext fun P ↦ SplitK0.hom_ext fun Q ↦ ?_
-  let : Algebra R S := f.toAlgebra
-  simp only [AddMonoidHom.compr₂_apply, AddMonoidHom.mul_apply, AddMonoidHom.compl₂_apply,
-    AddMonoidHom.comp_apply, SplitK0.of_mul_of, SplitK0.map_of]
-  let e (X : (finiteProjectiveModules R).FullSubcategory) :
-      S ⊗[R] X.obj ≃ₗ[S] (f.finiteProjectiveModulesExtendScalars.obj X).obj :=
-    (BalancedExtension.equivTensorProduct R S X.obj).symm.trans
-      (eqToIso (f.finiteProjectiveModulesExtendScalars_obj_obj X)).symm.toLinearEquiv
-  exact SplitK0.of_extendScalars_obj (P := P ⊗ Q)
-    (Q := f.finiteProjectiveModulesExtendScalars.obj P ⊗
-      f.finiteProjectiveModulesExtendScalars.obj Q) <|
-    (BalancedExtension.congr f (LinearEquiv.refl R _ : (P ⊗ Q).obj ≃ₗ[R] P.obj ⊗[R] Q.obj)).trans
-      ((BalancedExtension.equivTensorProduct R S (P.obj ⊗[R] Q.obj)).trans
-        ((TensorProduct.AlgebraTensorModule.distribBaseChange R S P.obj Q.obj).trans
-          ((TensorProduct.congr (e P) (e Q)).trans (LinearEquiv.refl S _))))
-
-/-- **Extension of scalars as a ring homomorphism on split `K₀`.** For commutative rings, a ring
-homomorphism `f : R →+* S` induces a ring homomorphism
-`K₀(proj R) →+* K₀(proj S)` extending `SplitK0.map f.finiteProjectiveModulesExtendScalars`. -/
-noncomputable def finiteProjectiveModulesSplitK0Extend (f : R →+* S) :
-    SplitK0.{u} (finiteProjectiveModules R).FullSubcategory →+*
-      SplitK0.{u} (finiteProjectiveModules S).FullSubcategory where
-  __ := SplitK0.map.{u, u} f.finiteProjectiveModulesExtendScalars
-  map_one' := by
-    let : Algebra R S := f.toAlgebra
-    rw [SplitK0.one_def, SplitK0.one_def, AddMonoidHom.toFun_eq_coe, SplitK0.map_of]
-    exact SplitK0.of_extendScalars_obj (Q := 𝟙_ (finiteProjectiveModules S).FullSubcategory)
-      ((BalancedExtension.equivTensorProduct R S R).trans
-        (TensorProduct.AlgebraTensorModule.rid R S S))
-  map_mul' := map_extendScalars_mul f
-
-@[simp]
-theorem finiteProjectiveModulesSplitK0Extend_toAddMonoidHom (f : R →+* S) :
-    (f.finiteProjectiveModulesSplitK0Extend : _ →+ _) =
-      SplitK0.map.{u, u} f.finiteProjectiveModulesExtendScalars := (rfl)
-
-@[simp]
-theorem finiteProjectiveModulesSplitK0Extend_of (f : R →+* S)
-    (P : (finiteProjectiveModules R).FullSubcategory) :
-    f.finiteProjectiveModulesSplitK0Extend (SplitK0.of.{u} P) =
-      SplitK0.of.{u} (f.finiteProjectiveModulesExtendScalars.obj P) :=
-  SplitK0.map_of.{u, u} f.finiteProjectiveModulesExtendScalars P
-
-@[simp]
-theorem finiteProjectiveModulesSplitK0Extend_id :
-    (RingHom.id R).finiteProjectiveModulesSplitK0Extend = RingHom.id _ := by
-  refine SplitK0.ringHom_ext fun P ↦ ?_
-  rw [finiteProjectiveModulesSplitK0Extend_of, RingHom.id_apply]
-  exact SplitK0.of_extendScalars_obj (BalancedExtension.lid R P.obj)
-
-theorem finiteProjectiveModulesSplitK0Extend_comp (g : S →+* T) (f : R →+* S) :
-    (g.comp f).finiteProjectiveModulesSplitK0Extend =
-      g.finiteProjectiveModulesSplitK0Extend.comp f.finiteProjectiveModulesSplitK0Extend := by
-  refine SplitK0.ringHom_ext fun P ↦ ?_
-  simp only [RingHom.comp_apply, finiteProjectiveModulesSplitK0Extend_of]
-  exact (SplitK0.of_extendScalars_obj (P := f.finiteProjectiveModulesExtendScalars.obj P)
-    (Q := (g.comp f).finiteProjectiveModulesExtendScalars.obj P) <|
-    (BalancedExtension.congr g
-        (eqToIso (f.finiteProjectiveModulesExtendScalars_obj_obj P)).toLinearEquiv).trans
-      ((BalancedExtension.cancelBaseChange f g).trans
-        (eqToIso ((g.comp f).finiteProjectiveModulesExtendScalars_obj_obj P)).symm.toLinearEquiv)
-    ).symm
-
-end RingHom
-
-/-! ### The locally constant rank homomorphism -/
-
 namespace TauCeti.FiniteProjectiveModules
 
 section RankHom
 
-variable (R : Type u) [CommRing R]
+variable {R : Type u} [CommRing R]
+
+/-- The underlying module of an object of the subcategory of finitely generated projectives over
+a commutative ring is finitely presented. -/
+instance (P : (finiteProjectiveModules R).FullSubcategory) :
+    Module.FinitePresentation R P.obj :=
+  Module.finitePresentation_of_projective R P.obj
+
+/-- The underlying module of an object of the subcategory of finitely generated projectives over
+a commutative ring is flat. -/
+instance (P : (finiteProjectiveModules R).FullSubcategory) :
+    Module.Flat R P.obj :=
+  Module.Flat.of_projective
+
+variable (R)
+
+-- The monoidal unit in `(finiteProjectiveModules R).FullSubcategory` reduces definitionally to `R`.
+private theorem tensorUnit_obj :
+    (𝟙_ (finiteProjectiveModules R).FullSubcategory).obj = ModuleCat.of R R := rfl
+
+-- The monoidal tensor product in `(finiteProjectiveModules R).FullSubcategory` reduces
+-- definitionally to `⊗[R]`.
+private theorem tensorObj_obj (P Q : (finiteProjectiveModules R).FullSubcategory) :
+    (P ⊗ Q).obj = ModuleCat.of R (P.obj ⊗[R] Q.obj) := rfl
 
 /-- Stalk rank as a biproduct-additive invariant taking values in
 `LocallyConstant (PrimeSpectrum R) ℤ`. -/
 private noncomputable def rankInvariant :
     SplitK0.AdditiveInvariant (finiteProjectiveModules R).FullSubcategory
       (LocallyConstant (PrimeSpectrum R) ℤ) where
-  obj P :=
-    ⟨fun p ↦ (Module.rankAtStalk (R := R) P.obj p : ℤ),
-      have := Module.finitePresentation_of_projective R P.obj
-      have := Module.Flat.of_projective (R := R) (M := P.obj)
-      Module.isLocallyConstant_rankAtStalk.comp (Nat.cast : ℕ → ℤ)⟩
+  obj P := (Module.rankLocallyConstant R P.obj).map (Nat.cast : ℕ → ℤ)
   map_iso {P Q} e := by
     ext p
-    exact congrArg (Nat.cast : ℕ → ℤ) (congrFun (Module.rankAtStalk_eq_of_equiv
-      ((finiteProjectiveModules R).ι.mapIso e).toLinearEquiv) p)
+    simp only [LocallyConstant.map_apply, Function.comp_apply, Module.rankLocallyConstant_apply,
+      Nat.cast_inj]
+    exact congrFun (Module.rankAtStalk_eq_of_equiv
+      ((finiteProjectiveModules R).ι.mapIso e).toLinearEquiv) p
   map_biprod P Q := by
     ext p
-    have := Module.Flat.of_projective (R := R) (M := P.obj)
-    have := Module.Flat.of_projective (R := R) (M := Q.obj)
-    simp only [LocallyConstant.coe_add, Pi.add_apply, LocallyConstant.coe_mk,
-      congrFun (Module.rankAtStalk_eq_of_equiv (biprodLinearEquiv P Q)) p,
-      congrFun (Module.rankAtStalk_prod (R := R) P.obj Q.obj) p, Nat.cast_add]
+    simp [congrFun (Module.rankAtStalk_eq_of_equiv (biprodLinearEquiv P Q)) p,
+      congrFun (Module.rankAtStalk_prod (R := R) P.obj Q.obj) p]
+
+private theorem rankInvariant_apply (P : (finiteProjectiveModules R).FullSubcategory)
+    (p : PrimeSpectrum R) :
+    (rankInvariant R).obj P p = (Module.rankAtStalk (R := R) P.obj p : ℤ) := by
+  simp [rankInvariant]
 
 /-- **The locally constant rank homomorphism.** Stalk rank on finitely generated projective
 `R`-modules descends to a ring homomorphism
@@ -214,22 +151,33 @@ noncomputable def rankHom :
       LocallyConstant (PrimeSpectrum R) ℤ :=
   SplitK0.liftRingHom (rankInvariant R)
     (by
-      ext p; have : Nontrivial R := PrimeSpectrum.nonempty_iff_nontrivial.1 ⟨p⟩
-      change (Module.rankAtStalk (R := R) R p : ℤ) = 1
-      rw [congrFun (Module.rankAtStalk_self (R := R)) p, Pi.one_apply, Nat.cast_one])
+      ext p
+      have : Nontrivial R := PrimeSpectrum.nonempty_iff_nontrivial.1 ⟨p⟩
+      rw [LocallyConstant.one_apply, rankInvariant_apply,
+        congrFun (Module.rankAtStalk_eq_of_equiv (eqToIso (tensorUnit_obj R)).toLinearEquiv) p,
+        congrFun (Module.rankAtStalk_self (R := R)) p, Pi.one_apply, Nat.cast_one])
     (fun P Q ↦ by
       ext p
-      have := Module.Flat.of_projective (R := R) (M := P.obj)
-      have := Module.Flat.of_projective (R := R) (M := Q.obj)
-      change (Module.rankAtStalk (R := R) (P.obj ⊗[R] Q.obj) p : ℤ) =
-        (Module.rankAtStalk (R := R) P.obj p : ℤ) * (Module.rankAtStalk (R := R) Q.obj p : ℤ)
-      rw [congrFun (Module.rankAtStalk_tensorProduct (R := R) (M := P.obj) Q.obj) p,
+      rw [LocallyConstant.mul_apply, rankInvariant_apply, rankInvariant_apply, rankInvariant_apply,
+        congrFun (Module.rankAtStalk_eq_of_equiv (eqToIso (tensorObj_obj R P Q)).toLinearEquiv) p,
+        congrFun (Module.rankAtStalk_tensorProduct (R := R) (M := P.obj) Q.obj) p,
         Pi.mul_apply, Nat.cast_mul])
 
 @[simp]
-theorem rankHom_of (P : (finiteProjectiveModules R).FullSubcategory) (p : PrimeSpectrum R) :
+theorem rankHom_of (P : (finiteProjectiveModules R).FullSubcategory) :
+    rankHom R (SplitK0.of.{u} P) =
+      (Module.rankLocallyConstant R P.obj).map (Nat.cast : ℕ → ℤ) := by
+  rw [rankHom, SplitK0.liftRingHom_of, rankInvariant]
+
+theorem rankHom_of_apply (P : (finiteProjectiveModules R).FullSubcategory) (p : PrimeSpectrum R) :
     rankHom R (SplitK0.of.{u} P) p = (Module.rankAtStalk (R := R) P.obj p : ℤ) := by
-  rw [rankHom, SplitK0.liftRingHom_of]; rfl
+  simp
+
+theorem rankHom_of_free (P : (finiteProjectiveModules R).FullSubcategory) [Module.Free R P.obj] :
+    rankHom R (SplitK0.of.{u} P) =
+      LocallyConstant.const (PrimeSpectrum R) (Module.finrank R P.obj : ℤ) := by
+  ext p
+  simp [congrFun (Module.rankAtStalk_eq_finrank_of_free (R := R) (M := P.obj)) p]
 
 /-- **Naturality of rank under scalar extension.** For `f : R →+* S`, rank commutes with scalar
 extension along `f` and pullback of locally constant functions along `Spec S → Spec R`. -/
@@ -240,15 +188,14 @@ theorem rankHom_comp_extend {S : Type u} [CommRing S] (f : R →+* S) :
   refine SplitK0.ringHom_ext fun P ↦ ?_
   ext q
   let : Algebra R S := f.toAlgebra
-  have := Module.Flat.of_projective (R := R) (M := P.obj)
   rw [RingHom.comp_apply, RingHom.comp_apply, RingHom.finiteProjectiveModulesSplitK0Extend_of,
-    rankHom_of]
+    rankHom_of_apply]
   have h := (congrFun (Module.rankAtStalk_eq_of_equiv
     (eqToIso (f.finiteProjectiveModulesExtendScalars_obj_obj P)).toLinearEquiv) q).trans
     ((congrFun (Module.rankAtStalk_eq_of_equiv
       (BalancedExtension.equivTensorProduct R S P.obj)) q).trans
       (Module.rankAtStalk_baseChange (R := R) (S := S) (M := P.obj) q))
-  exact (congrArg (Nat.cast : ℕ → ℤ) h).trans (rankHom_of R P (q.comap f)).symm
+  exact (congrArg (Nat.cast : ℕ → ℤ) h).trans (rankHom_of_apply R P (q.comap f)).symm
 
 @[simp]
 theorem rankHom_extend_apply {S : Type u} [CommRing S] (f : R →+* S)
@@ -273,6 +220,12 @@ noncomputable def clopenObj (U : Clopens (PrimeSpectrum R)) :
   ⟨ModuleCat.of R (Ideal.span {(isIdempotentElemEquivClopens.symm U).val} : Ideal R),
     finiteProjectiveModules_iff.2 ⟨Module.Finite.iff_fg.2 (Submodule.fg_span_singleton _),
       (isIdempotentElemEquivClopens.symm U).property.projective_span_singleton⟩⟩
+
+-- `clopenObj R U` has underlying module `Ideal.span {(isIdempotentElemEquivClopens.symm U).val}`.
+private theorem clopenObj_obj (U : Clopens (PrimeSpectrum R)) :
+    (clopenObj R U).obj =
+      ModuleCat.of R (Ideal.span {(isIdempotentElemEquivClopens.symm U).val} : Ideal R) :=
+  rfl
 
 /-- The class `[R e_U]` in `K₀(proj R)` attached to a clopen subset `U ⊆ Spec R`. -/
 noncomputable def clopenClass (U : Clopens (PrimeSpectrum R)) :
@@ -342,10 +295,9 @@ theorem clopenClass_add_compl (U : Clopens (PrimeSpectrum R)) :
 theorem rankHom_clopenClass (U : Clopens (PrimeSpectrum R)) :
     rankHom R (clopenClass R U) = LocallyConstant.charFn ℤ U.isClopen := by
   ext p
-  rw [clopenClass, rankHom_of]
-  change (Module.rankAtStalk (R := R)
-    (Ideal.span {(isIdempotentElemEquivClopens.symm U).val} : Ideal R) p : ℤ) = _
-  rw [(isIdempotentElemEquivClopens.symm U).property.rankAtStalk_span_singleton p,
+  rw [clopenClass, rankHom_of_apply,
+    congrFun (Module.rankAtStalk_eq_of_equiv (eqToIso (clopenObj_obj R U)).toLinearEquiv) p,
+    (isIdempotentElemEquivClopens.symm U).property.rankAtStalk_span_singleton p,
     PrimeSpectrum.mem_asIdeal_isIdempotentElemEquivClopens_symm_iff]
   by_cases hp : p ∈ U <;> simp [LocallyConstant.coe_charFn, hp]
 
@@ -421,29 +373,13 @@ private theorem rankSectionFun_eq_sum_of_partition (g : LocallyConstant (PrimeSp
     Set.ne_empty_iff_nonempty.1 fun h ↦ hne (Clopens.ext h)
   exact (LocallyConstant.mem_fiberClopens.1 hpn).symm.trans (hval i hi p hpi)
 
-/-- Pairwise disjointness and covering of the product refinement of the fiber partitions of two
-locally constant functions. -/
-private theorem product_fiber_partition (g h : LocallyConstant (PrimeSpectrum R) ℤ) :
-    let s := g.range_finite.toFinset ×ˢ h.range_finite.toFinset
-    let U : ℤ × ℤ → Clopens (PrimeSpectrum R) := fun ab ↦ g.fiberClopens ab.1 ⊓ h.fiberClopens ab.2
-    (s : Set (ℤ × ℤ)).PairwiseDisjoint U ∧ s.sup U = ⊤ := by
-  refine ⟨fun ab _ cd _ hne ↦ ?_, Clopens.ext <| by
-    rw [Clopens.coe_finset_sup, Clopens.coe_top]
-    exact Set.eq_univ_of_forall fun p ↦ Set.mem_iUnion₂.2 ⟨(g p, h p),
-      Finset.mem_product.2
-        ⟨g.range_finite.mem_toFinset.2 ⟨p, rfl⟩, h.range_finite.mem_toFinset.2 ⟨p, rfl⟩⟩,
-      ⟨LocallyConstant.mem_fiberClopens.2 rfl, LocallyConstant.mem_fiberClopens.2 rfl⟩⟩⟩
-  dsimp only [Function.onFun]; rw [← Clopens.coe_disjoint, Set.disjoint_left]
-  rintro p ⟨hpa, hpb⟩ ⟨hpc, hpd⟩
-  exact hne (Prod.ext
-    ((LocallyConstant.mem_fiberClopens.1 hpa).symm.trans (LocallyConstant.mem_fiberClopens.1 hpc))
-    ((LocallyConstant.mem_fiberClopens.1 hpb).symm.trans (LocallyConstant.mem_fiberClopens.1 hpd)))
-
 private theorem rankSectionFun_add (g h : LocallyConstant (PrimeSpectrum R) ℤ) :
     rankSectionFun R (g + h) = rankSectionFun R g + rankSectionFun R h := by
-  obtain ⟨hdisj, hcover⟩ := product_fiber_partition R g h
   let s := g.range_finite.toFinset ×ˢ h.range_finite.toFinset
   let U : ℤ × ℤ → Clopens (PrimeSpectrum R) := fun ab ↦ g.fiberClopens ab.1 ⊓ h.fiberClopens ab.2
+  have hdisj : (s : Set (ℤ × ℤ)).PairwiseDisjoint U :=
+    (g.pairwise_disjoint_fiberClopens_inf h).set_pairwise _
+  have hcover : s.sup U = ⊤ := g.finset_sup_fiberClopens_inf h
   rw [rankSectionFun_eq_sum_of_partition R (g + h) s U (fun ab ↦ ab.1 + ab.2) hdisj hcover
       (fun _ _ _ hp ↦ by
         simp [LocallyConstant.mem_fiberClopens.1 hp.1, LocallyConstant.mem_fiberClopens.1 hp.2]),
@@ -455,9 +391,11 @@ private theorem rankSectionFun_add (g h : LocallyConstant (PrimeSpectrum R) ℤ)
 
 private theorem rankSectionFun_mul (g h : LocallyConstant (PrimeSpectrum R) ℤ) :
     rankSectionFun R (g * h) = rankSectionFun R g * rankSectionFun R h := by
-  obtain ⟨hdisj, hcover⟩ := product_fiber_partition R g h
   let s := g.range_finite.toFinset ×ˢ h.range_finite.toFinset
   let U : ℤ × ℤ → Clopens (PrimeSpectrum R) := fun ab ↦ g.fiberClopens ab.1 ⊓ h.fiberClopens ab.2
+  have hdisj : (s : Set (ℤ × ℤ)).PairwiseDisjoint U :=
+    (g.pairwise_disjoint_fiberClopens_inf h).set_pairwise _
+  have hcover : s.sup U = ⊤ := g.finset_sup_fiberClopens_inf h
   rw [rankSectionFun_eq_sum_of_partition R (g * h) s U (fun ab ↦ ab.1 * ab.2) hdisj hcover
       (fun _ _ _ hp ↦ by
         simp [LocallyConstant.mem_fiberClopens.1 hp.1, LocallyConstant.mem_fiberClopens.1 hp.2])]
@@ -567,25 +505,20 @@ theorem extend_comp_rankSection {S : Type u} [CommRing S] (f : R →+* S) :
         (LocallyConstant.comapRingHom
           ⟨PrimeSpectrum.comap f, PrimeSpectrum.continuous_comap f⟩) := by
   ext g
-  let g' : LocallyConstant (PrimeSpectrum S) ℤ :=
-    LocallyConstant.comapRingHom ⟨PrimeSpectrum.comap f, PrimeSpectrum.continuous_comap f⟩ g
+  let φ : C(PrimeSpectrum S, PrimeSpectrum R) :=
+    ⟨PrimeSpectrum.comap f, PrimeSpectrum.continuous_comap f⟩
+  let g' : LocallyConstant (PrimeSpectrum S) ℤ := LocallyConstant.comapRingHom φ g
   let s := g.range_finite.toFinset
   let U : ℤ → Clopens (PrimeSpectrum S) := fun n ↦
-    ⟨PrimeSpectrum.comap f ⁻¹' (g.fiberClopens n),
-      (g.fiberClopens n).isClopen.preimage (PrimeSpectrum.continuous_comap f)⟩
-  have hcover : s.sup U = ⊤ := Clopens.ext <| by
-    rw [Clopens.coe_finset_sup, Clopens.coe_top]
-    exact Set.eq_univ_of_forall fun q ↦ Set.mem_iUnion₂.2
-      ⟨g (q.comap f), g.range_finite.mem_toFinset.2 ⟨q.comap f, rfl⟩,
-        LocallyConstant.mem_fiberClopens.2 rfl⟩
+    ⟨φ ⁻¹' g.fiberClopens n, (g.fiberClopens n).isClopen.preimage φ.continuous⟩
   rw [RingHom.comp_apply, RingHom.comp_apply, rankSection_apply, map_sum,
     rankSection_eq_sum_of_partition S g' s U id
-      (fun a _ b _ hab ↦ Clopens.coe_disjoint.1 <| Set.disjoint_left.2 fun q hqa hqb ↦
-        hab ((LocallyConstant.mem_fiberClopens.1 hqa).symm.trans
-          (LocallyConstant.mem_fiberClopens.1 hqb)))
-      hcover (fun _ _ _ hq ↦ (LocallyConstant.mem_fiberClopens (f := g)).1 hq)]
+      ((g.pairwise_disjoint_preimage_fiberClopens φ).set_pairwise _)
+      (g.finset_sup_preimage_fiberClopens φ)
+      (fun _ _ _ hq ↦ (LocallyConstant.mem_fiberClopens (f := g)).1 hq)]
   refine Finset.sum_congr rfl fun n _ ↦ ?_
   rw [map_zsmul, extend_clopenClass R f (g.fiberClopens n), id_eq]
+  rfl
 
 theorem extend_rankSection {S : Type u} [CommRing S] (f : R →+* S)
     (g : LocallyConstant (PrimeSpectrum R) ℤ) :
@@ -650,19 +583,34 @@ section Classification
 
 variable (R : Type u) [CommRing R]
 
+/-- **General clopen-glued classification criterion.** If every finitely generated projective
+`R`-module is isomorphic to its clopen-glued model
+`ClopenRankModule R (Module.rankLocallyConstant R P.obj)`, then `rankSection R` is a left inverse
+to `rankHom R`. -/
+theorem rankSection_comp_rankHom_eq_id_of_forall_clopenRankModule
+    (hiso : ∀ P : (finiteProjectiveModules R).FullSubcategory,
+      Nonempty (P.obj ≃ₗ[R] ClopenRankModule R (Module.rankLocallyConstant R P.obj))) :
+    (rankSection R).comp (rankHom R) = RingHom.id _ := by
+  refine SplitK0.ringHom_ext fun P ↦ ?_
+  obtain ⟨θ⟩ := hiso P
+  rw [RingHom.comp_apply, RingHom.id_apply, rankHom_of, rankSection_map_natCast]
+  exact (SplitK0.of_congr (ObjectProperty.isoMk _ θ.toModuleIso)).symm
+
+/-- Whenever `rankSection R` is a left inverse to `rankHom R`, the reduced `K₀` ideal vanishes. -/
+theorem reducedK0_eq_bot_of_rankSection_comp_rankHom
+    (h : (rankSection R).comp (rankHom R) = RingHom.id _) :
+    reducedK0 R = ⊥ :=
+  eq_bot_iff.2 fun x hx ↦ by
+    have hx' := DFunLike.congr_fun h x
+    rw [RingHom.comp_apply, RingHom.id_apply, mem_reducedK0_iff.1 hx, map_zero] at hx'
+    exact (Submodule.mem_bot _).2 hx'.symm
+
 /-- Over a commutative semilocal ring, `rankSection R` is also a left inverse to `rankHom R`. -/
 @[simp]
 theorem rankSection_comp_rankHom_of_finite_maximalSpectrum [Finite (MaximalSpectrum R)] :
-    (rankSection R).comp (rankHom R) = RingHom.id _ := by
-  refine SplitK0.ringHom_ext fun P ↦ ?_
-  have := Module.finitePresentation_of_projective R P.obj
-  have := Module.Flat.of_projective (R := R) (M := P.obj)
-  obtain ⟨θ⟩ := nonempty_linearEquiv_clopenRankModule_of_finite_maximalSpectrum (R := R) P.obj
-  rw [RingHom.comp_apply, RingHom.id_apply,
-    show rankHom R (SplitK0.of.{u} P) =
-      (Module.rankLocallyConstant R P.obj).map (Nat.cast : ℕ → ℤ) from by ext p; simp,
-    rankSection_map_natCast]
-  exact (SplitK0.of_congr (ObjectProperty.isoMk _ θ.toModuleIso)).symm
+    (rankSection R).comp (rankHom R) = RingHom.id _ :=
+  rankSection_comp_rankHom_eq_id_of_forall_clopenRankModule R fun P ↦
+    nonempty_linearEquiv_clopenRankModule_of_finite_maximalSpectrum (R := R) P.obj
 
 @[simp]
 theorem rankSection_rankHom_of_finite_maximalSpectrum [Finite (MaximalSpectrum R)]
@@ -691,17 +639,16 @@ theorem rankEquivOfFiniteMaximalSpectrum_symm_apply [Finite (MaximalSpectrum R)]
     (rankEquivOfFiniteMaximalSpectrum R).symm g = rankSection R g := (rfl)
 
 theorem rankEquivOfFiniteMaximalSpectrum_of [Finite (MaximalSpectrum R)]
-    (P : (finiteProjectiveModules R).FullSubcategory) (p : PrimeSpectrum R) :
-    rankEquivOfFiniteMaximalSpectrum R (SplitK0.of.{u} P) p =
-      (Module.rankAtStalk (R := R) P.obj p : ℤ) :=
-  rankHom_of R P p
+    (P : (finiteProjectiveModules R).FullSubcategory) :
+    rankEquivOfFiniteMaximalSpectrum R (SplitK0.of.{u} P) =
+      (Module.rankLocallyConstant R P.obj).map (Nat.cast : ℕ → ℤ) :=
+  rankHom_of R P
 
 /-- The reduced `K₀` ideal of a commutative semilocal ring vanishes. -/
 theorem reducedK0_eq_bot_of_finite_maximalSpectrum [Finite (MaximalSpectrum R)] :
     reducedK0 R = ⊥ :=
-  eq_bot_iff.2 fun x hx ↦ by
-    rw [Submodule.mem_bot, ← rankSection_rankHom_of_finite_maximalSpectrum R x,
-      mem_reducedK0_iff.1 hx, map_zero]
+  reducedK0_eq_bot_of_rankSection_comp_rankHom R
+    (rankSection_comp_rankHom_of_finite_maximalSpectrum R)
 
 /-- **Localization-kernel characterization of reduced `K₀`.** A class in `K₀(proj R)` has rank
 zero everywhere on `Spec R` if and only if it maps to zero in `K₀(proj R_p)` at every prime `p`. -/
@@ -733,54 +680,60 @@ inverse to `rankHom R`. -/
 theorem rankSection_comp_rankHom_of_forall_free
     (hfree : ∀ P : (finiteProjectiveModules R).FullSubcategory, Module.Free R P.obj) :
     (rankSection R).comp (rankHom R) = RingHom.id _ := by
-  refine SplitK0.ringHom_ext fun P ↦ ?_
+  refine rankSection_comp_rankHom_eq_id_of_forall_clopenRankModule R fun P ↦ ?_
+  have := hfree P
   rcases subsingleton_or_nontrivial R with _ | _
-  · have : Subsingleton ((finiteProjectiveModules R).ι.obj P) := Module.subsingleton R P.obj
-    have hzero : SplitK0.of.{u} P = 0 :=
-      SplitK0.of_eq_zero_of_isZero (Limits.IsZero.of_full_of_faithful_of_isZero
-        (finiteProjectiveModules R).ι P (ModuleCat.isZero_of_subsingleton _))
-    rw [RingHom.comp_apply, RingHom.id_apply, hzero, map_zero, map_zero]
-  · have := hfree P
-    let n := Fintype.card (Module.Free.ChooseBasisIndex R P.obj)
-    let θ : P.obj ≃ₗ[R] (Fin n → R) :=
-      (Module.Free.chooseBasis R P.obj).equivFun.trans
-        (LinearEquiv.funCongrLeft R R (Fintype.equivFin _).symm)
-    rw [RingHom.comp_apply, RingHom.id_apply,
-      show rankHom R (SplitK0.of.{u} P) = LocallyConstant.const (PrimeSpectrum R) (n : ℤ) from by
-        ext p; rw [rankHom_of, congrFun (Module.rankAtStalk_eq_of_equiv θ) p,
-          Module.rankAtStalk_fin_fun]; rfl,
-      rankSection_const, Int.cast_natCast,
-      SplitK0.of_eq_nsmul_of_linearEquiv_fin
-        (R' := 𝟙_ (finiteProjectiveModules R).FullSubcategory) θ (LinearEquiv.refl R R),
-      ← SplitK0.one_def, nsmul_eq_mul, mul_one]
+  · have := Module.subsingleton R P.obj
+    have := Module.subsingleton R (ClopenRankModule R (Module.rankLocallyConstant R P.obj))
+    exact ⟨LinearEquiv.ofSubsingleton _ _⟩
+  · have hconst : Module.rankLocallyConstant R P.obj =
+        LocallyConstant.const (PrimeSpectrum R) (Module.finrank R P.obj) := by
+      ext p
+      rw [Module.rankLocallyConstant_apply]
+      exact congrFun (Module.rankAtStalk_eq_finrank_of_free (R := R) (M := P.obj)) p
+    exact ⟨(Module.finBasis R P.obj).equivFun.trans <|
+      (ClopenRankModule.constEquiv R (Module.finrank R P.obj)).symm.trans <|
+        ClopenRankModule.equivOfEq R hconst.symm⟩
 
 /-- If every finitely generated projective `R`-module is free, then the reduced `K₀` ideal of `R`
 vanishes. -/
 theorem reducedK0_eq_bot_of_forall_free
     (hfree : ∀ P : (finiteProjectiveModules R).FullSubcategory, Module.Free R P.obj) :
     reducedK0 R = ⊥ :=
-  eq_bot_iff.2 fun x hx ↦ by
-    have h := DFunLike.congr_fun (rankSection_comp_rankHom_of_forall_free R hfree) x
-    rw [RingHom.comp_apply, RingHom.id_apply, mem_reducedK0_iff.1 hx, map_zero] at h
-    exact (Submodule.mem_bot _).2 h.symm
+  reducedK0_eq_bot_of_rankSection_comp_rankHom R
+    (rankSection_comp_rankHom_of_forall_free R hfree)
 
-/-- If `R` is nontrivial and every finitely generated projective `R`-module is free, then `Spec R`
-is connected. -/
-theorem connectedSpace_primeSpectrum_of_forall_free [Nontrivial R]
-    (hfree : ∀ P : (finiteProjectiveModules R).FullSubcategory, Module.Free R P.obj) :
-    ConnectedSpace (PrimeSpectrum R) :=
-  (connectedSpace_primeSpectrum_iff_forall_finite_projective_rankAtStalk_const R).2
-    fun P _ _ _ _ ↦
-      have := hfree ⟨ModuleCat.of R P, finiteProjectiveModules_iff.2 ⟨inferInstance, inferInstance⟩⟩
-      ⟨Module.finrank R P, fun p ↦
-        congrFun (Module.rankAtStalk_eq_finrank_of_free (R := R) (M := P)) p⟩
+/-- Evaluating the integer rank equivalence obtained by composing with constant-function
+identification against `rankHom R`. -/
+private theorem rankEquivInt_apply [ConnectedSpace (PrimeSpectrum R)]
+    (e : SplitK0.{u} (finiteProjectiveModules R).FullSubcategory ≃+*
+      LocallyConstant (PrimeSpectrum R) ℤ)
+    (he : ∀ x, e x = rankHom R x)
+    (x : SplitK0.{u} (finiteProjectiveModules R).FullSubcategory) (p : PrimeSpectrum R) :
+    (e.trans (LocallyConstant.constRingEquiv (PrimeSpectrum R) ℤ).symm) x = rankHom R x p := by
+  rw [RingEquiv.trans_apply, he x, LocallyConstant.constRingEquiv_symm_apply _ _ _ p]
+
+/-- On a finitely generated projective free module `P`, the integer rank equivalence sends `[P]` to
+`Module.finrank R P.obj`. -/
+private theorem rankEquivInt_of_free [ConnectedSpace (PrimeSpectrum R)]
+    (e : SplitK0.{u} (finiteProjectiveModules R).FullSubcategory ≃+*
+      LocallyConstant (PrimeSpectrum R) ℤ)
+    (he : ∀ x, e x = rankHom R x)
+    (P : (finiteProjectiveModules R).FullSubcategory) [Module.Free R P.obj] :
+    (e.trans (LocallyConstant.constRingEquiv (PrimeSpectrum R) ℤ).symm) (SplitK0.of.{u} P) =
+      (Module.finrank R P.obj : ℤ) := by
+  have : Nontrivial R := PrimeSpectrum.nonempty_iff_nontrivial.1 inferInstance
+  obtain ⟨p₀⟩ : Nonempty (PrimeSpectrum R) := inferInstance
+  rw [rankEquivInt_apply R e he (SplitK0.of.{u} P) p₀, rankHom_of_free,
+    LocallyConstant.coe_const, Function.const_apply]
 
 /-- If `R` is nontrivial and every finitely generated projective `R`-module is free, then stalk
 rank gives a ring isomorphism `K₀(proj R) ≃+* ℤ`. -/
 noncomputable def rankEquivIntOfForallFree [Nontrivial R]
     (hfree : ∀ P : (finiteProjectiveModules R).FullSubcategory, Module.Free R P.obj) :
     SplitK0.{u} (finiteProjectiveModules R).FullSubcategory ≃+* ℤ :=
-  haveI := connectedSpace_primeSpectrum_of_forall_free R hfree
+  haveI := TauCeti.connectedSpace_primeSpectrum_of_forall_free R fun P _ _ _ _ ↦
+    hfree ⟨ModuleCat.of R P, finiteProjectiveModules_iff.2 ⟨inferInstance, inferInstance⟩⟩
   (RingEquiv.ofRingHom (rankHom R) (rankSection R)
     (rankHom_comp_rankSection R) (rankSection_comp_rankHom_of_forall_free R hfree)).trans
     (LocallyConstant.constRingEquiv (PrimeSpectrum R) ℤ).symm
@@ -789,13 +742,11 @@ noncomputable def rankEquivIntOfForallFree [Nontrivial R]
 theorem rankEquivIntOfForallFree_of [Nontrivial R]
     (hfree : ∀ P : (finiteProjectiveModules R).FullSubcategory, Module.Free R P.obj)
     (P : (finiteProjectiveModules R).FullSubcategory) :
-    rankEquivIntOfForallFree R hfree (SplitK0.of.{u} P) = (Module.finrank R P.obj : ℤ) := by
-  have := connectedSpace_primeSpectrum_of_forall_free R hfree
-  have := hfree P
-  obtain ⟨p₀⟩ : Nonempty (PrimeSpectrum R) := inferInstance
-  rw [rankEquivIntOfForallFree, RingEquiv.trans_apply, RingEquiv.ofRingHom_apply,
-    LocallyConstant.constRingEquiv_symm_apply _ _ _ p₀, rankHom_of,
-    congrFun (Module.rankAtStalk_eq_finrank_of_free (R := R) (M := P.obj)) p₀]; rfl
+    rankEquivIntOfForallFree R hfree (SplitK0.of.{u} P) = (Module.finrank R P.obj : ℤ) :=
+  letI := TauCeti.connectedSpace_primeSpectrum_of_forall_free R fun P _ _ _ _ ↦
+    hfree ⟨ModuleCat.of R P, finiteProjectiveModules_iff.2 ⟨inferInstance, inferInstance⟩⟩
+  letI := hfree P
+  rankEquivInt_of_free R _ (fun _ ↦ rfl) P
 
 /-- **Connected semilocal / local `K₀` classification.** Over a commutative semilocal ring with
 connected prime spectrum (in particular, over any commutative local ring), stalk rank gives a ring
@@ -810,22 +761,16 @@ noncomputable def rankEquivIntOfFiniteMaximalSpectrum
 theorem rankEquivIntOfFiniteMaximalSpectrum_of
     [Finite (MaximalSpectrum R)] [ConnectedSpace (PrimeSpectrum R)]
     (P : (finiteProjectiveModules R).FullSubcategory) :
-    rankEquivIntOfFiniteMaximalSpectrum R (SplitK0.of.{u} P) = (Module.finrank R P.obj : ℤ) := by
-  have := Module.finitePresentation_of_projective R P.obj
-  have := Module.Flat.of_projective (R := R) (M := P.obj)
+    rankEquivIntOfFiniteMaximalSpectrum R (SplitK0.of.{u} P) = (Module.finrank R P.obj : ℤ) :=
   have : Module.Free R P.obj := free_of_finite_maximalSpectrum_of_preconnectedSpace P.obj
-  obtain ⟨p₀⟩ : Nonempty (PrimeSpectrum R) := inferInstance
-  rw [rankEquivIntOfFiniteMaximalSpectrum, RingEquiv.trans_apply,
-    rankEquivOfFiniteMaximalSpectrum_apply, LocallyConstant.constRingEquiv_symm_apply _ _ _ p₀,
-    rankHom_of, congrFun (Module.rankAtStalk_eq_finrank_of_free (R := R) (M := P.obj)) p₀]; rfl
+  rankEquivInt_of_free R (rankEquivOfFiniteMaximalSpectrum R)
+    (rankEquivOfFiniteMaximalSpectrum_apply R) P
 
 /-- **PID `K₀` classification.** Over a principal ideal domain `R`, every finitely generated
 projective module is free, so stalk rank gives a ring isomorphism `K₀(proj R) ≃+* ℤ`. -/
 noncomputable def rankEquivIntOfIsPrincipalIdealRing [IsDomain R] [IsPrincipalIdealRing R] :
     SplitK0.{u} (finiteProjectiveModules R).FullSubcategory ≃+* ℤ :=
-  rankEquivIntOfForallFree R fun P ↦
-    have := Module.Flat.of_projective (R := R) (M := P.obj)
-    Module.free_of_finite_type_torsion_free'
+  rankEquivIntOfForallFree R fun _ ↦ Module.free_of_finite_type_torsion_free'
 
 @[simp]
 theorem rankEquivIntOfIsPrincipalIdealRing_of [IsDomain R] [IsPrincipalIdealRing R]

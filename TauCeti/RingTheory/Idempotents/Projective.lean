@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.Projective
-public import TauCeti.RingTheory.Idempotents.Primitive.Basic
+public import TauCeti.RingTheory.Idempotents.Quotient.Principal
 
 /-!
 # Projectivity of principal ideals of idempotents
@@ -72,5 +72,18 @@ theorem exists_smul_eq_self_and_mul_eq_zero {R S : Type*} [CommSemiring R] [Semi
   refine ⟨τ e', congrArg Subtype.val (LinearMap.congr_fun hτ e'), fun r hr ↦ ?_⟩
   have hre : r • e' = 0 := Subtype.ext hr
   rw [← smul_eq_mul, ← map_smul, hre, map_zero]
+
+section CommRing
+
+variable {R : Type*} [CommRing R] {e : R}
+
+/-- For an idempotent `e` in a commutative ring `R`, the quotient `R ⧸ (1 - e)` is a projective
+`R`-module. -/
+theorem projective_quotient_span_one_sub (he : IsIdempotentElem e) :
+    Module.Projective R (R ⧸ Ideal.span {1 - e}) :=
+  have := he.projective_span_singleton
+  Module.Projective.of_equiv he.spanSingletonEquivQuotientOneSub
+
+end CommRing
 
 end IsIdempotentElem

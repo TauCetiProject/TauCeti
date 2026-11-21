@@ -11,6 +11,7 @@ public import TauCeti.Algebra.Module.Submodule.Pointwise
 public import TauCeti.Algebra.Star.Projection.Family
 public import TauCeti.LinearAlgebra.Dimension.DirectSum
 public import TauCeti.RingTheory.Idempotents.Corner.Basic
+public import TauCeti.RingTheory.Idempotents.Primitive.Basic
 import Mathlib.LinearAlgebra.Basis.VectorSpace
 
 /-!
@@ -363,5 +364,58 @@ theorem coe_algebraMap_corner_smul {R : Type*} [CommSemiring R] [Algebra R A] (r
       algebraMap R A r • (x : M) := by
   rw [Corner.coe_smul, Corner.val_algebraMap, Algebra.smul_def, mul_smul,
     he.smul_eq_self_of_mem_smul_top x.property]
+
+section Semiring
+
+variable {R' : Type*} [Semiring R'] {e' f' : R'}
+
+/-- For orthogonal idempotents `e` and `f` in a semiring, the principal left ideal `R(e + f)`
+splits as the product `Re × Rf`. -/
+def spanSingletonAddEquivProd (he : IsIdempotentElem e') (hf : IsIdempotentElem f')
+    (hef : e' * f' = 0) (hfe : f' * e' = 0) :
+    (Ideal.span {e' + f'} : Ideal R') ≃ₗ[R']
+      (Ideal.span {e'} : Ideal R') × (Ideal.span {f'} : Ideal R') where
+  toFun x :=
+    (⟨x.val * e', Ideal.mem_span_singleton'.2 ⟨x.val, rfl⟩⟩,
+     ⟨x.val * f', Ideal.mem_span_singleton'.2 ⟨x.val, rfl⟩⟩)
+  map_add' x y :=
+    Prod.ext (Subtype.ext (add_mul x.val y.val e')) (Subtype.ext (add_mul x.val y.val f'))
+  map_smul' r x :=
+    Prod.ext (Subtype.ext (mul_assoc r x.val e')) (Subtype.ext (mul_assoc r x.val f'))
+  invFun p :=
+    ⟨p.1.val + p.2.val, (TauCeti.mem_span_singleton_iff_mul_eq_self
+      (he.add hf (by rw [hef, hfe, add_zero]))).2 <| by
+        have h1 := (TauCeti.mem_span_singleton_iff_mul_eq_self he).1 p.1.property
+        have h2 := (TauCeti.mem_span_singleton_iff_mul_eq_self hf).1 p.2.property
+        rw [add_mul, mul_add, mul_add, ← h1, ← h2]
+        simp [mul_assoc, he.eq, hf.eq, hef, hfe]⟩
+  left_inv x := Subtype.ext <| by
+    dsimp only
+    rw [← mul_add, (TauCeti.mem_span_singleton_iff_mul_eq_self
+      (he.add hf (by rw [hef, hfe, add_zero]))).1 x.property]
+  right_inv p := by
+    have h1 := (TauCeti.mem_span_singleton_iff_mul_eq_self he).1 p.1.property
+    have h2 := (TauCeti.mem_span_singleton_iff_mul_eq_self hf).1 p.2.property
+    exact Prod.ext
+      (Subtype.ext <| by dsimp only; rw [add_mul, h1, ← h2, mul_assoc, hfe, mul_zero, add_zero])
+      (Subtype.ext <| by dsimp only; rw [add_mul, ← h1, mul_assoc, hef, mul_zero, zero_add, h2])
+
+@[simp]
+theorem coe_spanSingletonAddEquivProd_fst (he : IsIdempotentElem e') (hf : IsIdempotentElem f')
+    (hef : e' * f' = 0) (hfe : f' * e' = 0) (x : (Ideal.span {e' + f'} : Ideal R')) :
+    ((he.spanSingletonAddEquivProd hf hef hfe x).1 : R') = x.val * e' := (rfl)
+
+@[simp]
+theorem coe_spanSingletonAddEquivProd_snd (he : IsIdempotentElem e') (hf : IsIdempotentElem f')
+    (hef : e' * f' = 0) (hfe : f' * e' = 0) (x : (Ideal.span {e' + f'} : Ideal R')) :
+    ((he.spanSingletonAddEquivProd hf hef hfe x).2 : R') = x.val * f' := (rfl)
+
+@[simp]
+theorem coe_spanSingletonAddEquivProd_symm (he : IsIdempotentElem e') (hf : IsIdempotentElem f')
+    (hef : e' * f' = 0) (hfe : f' * e' = 0)
+    (p : (Ideal.span {e'} : Ideal R') × (Ideal.span {f'} : Ideal R')) :
+    ((he.spanSingletonAddEquivProd hf hef hfe).symm p : R') = p.1.val + p.2.val := (rfl)
+
+end Semiring
 
 end IsIdempotentElem

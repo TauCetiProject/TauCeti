@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.KrullDimension.Zero
 public import Mathlib.RingTheory.LocalProperties.Reduced
 public import Mathlib.RingTheory.Flat.Localization
 public import TauCeti.LinearAlgebra.FreeModule.Filtration
+public import TauCeti.RingTheory.Idempotents.Quotient.Principal
 
 import Mathlib.RingTheory.Flat.Rank
 import TauCeti.RingTheory.Flat.Pi
@@ -263,6 +264,49 @@ theorem finrank_quotient_tensorProduct_eq_rankAtStalk {R : Type*} (M : Type*) [C
   rw [← hP, ← rankAtStalk_baseChange, rankAtStalk_eq_finrank_of_free, Pi.natCast_apply,
     Nat.cast_id]
 
+section Ranks
+
+variable (R M : Type*) [CommRing R] [AddCommGroup M] [Module R M]
+  [Module.FinitePresentation R M] [Module.Flat R M]
+
+/-- The stalk rank of a finitely presented flat module, bundled as a locally constant function
+on `Spec R`. -/
+noncomputable def rankLocallyConstant : LocallyConstant (PrimeSpectrum R) ℕ :=
+  ⟨rankAtStalk M, isLocallyConstant_rankAtStalk⟩
+
+@[simp]
+theorem rankLocallyConstant_apply (p : PrimeSpectrum R) :
+    rankLocallyConstant R M p = rankAtStalk M p := (rfl)
+
+/-- The finite set of stalk-rank values attained by a finitely presented flat module `M`. -/
+@[expose]
+noncomputable def ranks : Finset ℕ :=
+  (rankLocallyConstant R M).range_finite.toFinset
+
+@[simp]
+theorem mem_ranks_iff {k : ℕ} : k ∈ ranks R M ↔ ∃ p : PrimeSpectrum R, rankAtStalk M p = k := by
+  simp [ranks]
+
+/-- Over a nontrivial commutative ring, `Rⁿ` has rank-value set `{n}`. -/
+theorem ranks_fin_fun [Nontrivial R] (n : ℕ) : ranks R (Fin n → R) = {n} := by
+  obtain ⟨p₀⟩ : Nonempty (PrimeSpectrum R) := inferInstance
+  ext k; simp only [mem_ranks_iff, Finset.mem_singleton, rankAtStalk_fin_fun]
+  exact ⟨fun ⟨_, h⟩ ↦ h.symm, fun h ↦ ⟨p₀, h.symm⟩⟩
+
+/-- Over a nontrivial commutative ring, a subsingleton module has rank-value set `{0}`. -/
+theorem ranks_subsingleton [Nontrivial R] [Subsingleton M] : ranks R M = {0} := by
+  obtain ⟨p₀⟩ : Nonempty (PrimeSpectrum R) := inferInstance
+  ext k; simp only [mem_ranks_iff, Finset.mem_singleton, rankAtStalk_eq_zero_of_subsingleton,
+    Pi.zero_apply]
+  exact ⟨fun ⟨_, h⟩ ↦ h.symm, fun h ↦ ⟨p₀, h.symm⟩⟩
+
+/-- Over the zero ring, every module has empty rank-value set. -/
+theorem ranks_eq_empty_of_subsingleton [Subsingleton R] : ranks R M = ∅ := by
+  ext k; simp only [mem_ranks_iff, Finset.notMem_empty, iff_false, not_exists]
+  exact fun p ↦ (not_nontrivial R (PrimeSpectrum.nonempty_iff_nontrivial.1 ⟨p⟩)).elim
+
+end Ranks
+
 end Module
 
 namespace TauCeti.Module
@@ -369,3 +413,15 @@ theorem subsingleton_of_subsingleton_fiber {R M : Type*} [CommRing R]
   exact (Module.rankAtStalk_eq_zero_iff_subsingleton (R := R) (M := M)).mp hrank
 
 end Ideal
+
+namespace IsIdempotentElem
+
+open scoped Classical in
+/-- The principal ideal `Re` of an idempotent `e` has stalk rank `1` on `D(e)` and `0` off it. -/
+theorem rankAtStalk_span_singleton {R : Type*} [CommRing R] {e : R} (he : IsIdempotentElem e)
+    (p : PrimeSpectrum R) :
+    Module.rankAtStalk (R := R) (Ideal.span {e} : Ideal R) p = if e ∈ p.asIdeal then 0 else 1 :=
+  (congrFun (Module.rankAtStalk_eq_of_equiv he.spanSingletonEquivQuotientOneSub) p).trans
+    (Module.rankAtStalk_quotient_span_one_sub he p)
+
+end IsIdempotentElem

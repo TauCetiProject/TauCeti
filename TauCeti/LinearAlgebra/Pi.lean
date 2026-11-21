@@ -54,6 +54,8 @@ weights.
   splitting `∀ i, M i` into the factors indexed by `p` and by `¬p`.
 * `LinearEquiv.piFinsetUnion`: `Equiv.piFinsetUnion` as a linear equivalence, gluing families on
   disjoint finite sets `s` and `t` into a family on `s ∪ t`.
+* `LinearEquiv.piRestrictOfSubsingleton`: restricting a dependent product along an index-set
+  inclusion `s ⊆ t` is a linear equivalence whenever all omitted factors are subsingletons.
 * `LinearMap.toMatrix_piMap`: in product bases, `LinearMap.piMap f` is block diagonal, including
   when its component maps have different source and target modules.
 * `LinearMap.det_piMap`: the determinant of a coordinatewise endomorphism `LinearMap.piMap f` of a
@@ -282,6 +284,39 @@ public theorem coe_piFinsetUnion_symm (h : Disjoint s t) :
   (rfl)
 
 end FinsetUnion
+
+section RestrictOfSubsingleton
+
+/-- Restricting a dependent product along an inclusion `s ⊆ t` of index sets is a linear
+equivalence whenever every omitted factor `M i` (`i ∈ t`, `i ∉ s`) is subsingleton. -/
+public noncomputable def piRestrictOfSubsingleton {s t : Set ι} (hst : s ⊆ t)
+    (hsub : ∀ i ∈ t, i ∉ s → Subsingleton (M i)) :
+    (∀ i : t, M i) ≃ₗ[R] (∀ i : s, M i) :=
+  open scoped Classical in
+  { toFun x i := x ⟨i.val, hst i.property⟩
+    map_add' _ _ := rfl
+    map_smul' _ _ := rfl
+    invFun y i := if hi : i.val ∈ s then y ⟨i.val, hi⟩ else 0
+    left_inv x := funext fun i ↦ by
+      by_cases hi : i.val ∈ s
+      · simp [hi]
+      · have := hsub i.val i.property hi
+        exact Subsingleton.elim _ _
+    right_inv y := funext fun i ↦ by simp [i.property] }
+
+@[simp]
+public theorem piRestrictOfSubsingleton_apply {s t : Set ι} (hst : s ⊆ t)
+    (hsub : ∀ i ∈ t, i ∉ s → Subsingleton (M i)) (x : ∀ i : t, M i) (i : s) :
+    piRestrictOfSubsingleton R M hst hsub x i = x ⟨i.val, hst i.property⟩ :=
+  (rfl)
+
+@[simp]
+public theorem piRestrictOfSubsingleton_symm_apply_of_mem {s t : Set ι} (hst : s ⊆ t)
+    (hsub : ∀ i ∈ t, i ∉ s → Subsingleton (M i)) (y : ∀ i : s, M i) (i : t) (hi : i.val ∈ s) :
+    (piRestrictOfSubsingleton R M hst hsub).symm y i = y ⟨i.val, hi⟩ := by
+  simp [piRestrictOfSubsingleton, hi]
+
+end RestrictOfSubsingleton
 
 end LinearEquiv
 
