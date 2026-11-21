@@ -42,6 +42,8 @@ on the whole space.
   `TauCeti.tendsto_intervalIntegral_comp_of_tendsto`: for continuous `Φ`, the integrals
   `∫_{t₁}^{t₂} Φ(t, y_i(t)) dt` converge when the `y_i` converge pointwise and `Φ` is bounded
   along them, for instance when they stay in a compact set.
+* `TauCeti.tendsto_intervalIntegral_comp_of_continuousOn`: the same for bounded `Φ` along
+  `u ∘ y_i`, where `u` is continuous on a set containing the values of the `y_i`.
 * `TauCeti.continuousOn_parametric_intervalIntegral_of_continuousOn`: an interval integral of a
   function continuous on `s ×ˢ uIcc a b` is continuous in the parameter on `s`.
 * `TauCeti.tendsto_setIntegral_preimage_Ioo_zero`: integrals of an integrable function over the
@@ -216,6 +218,22 @@ theorem tendsto_intervalIntegral_comp_of_tendsto_of_norm_le {ι V E : Type*} {l 
     (hC.mono fun _ hi ↦ Eventually.of_forall hi) intervalIntegrable_const
     (Eventually.of_forall fun t ht ↦ (hΦ.tendsto (t, x t)).comp
       (tendsto_const_nhds.prodMk_nhds (hyx t ht)))
+
+/-- **Dominated convergence for bounded continuous functions along a map continuous on a set.**
+Let `Φ : ℝ × V → E` be continuous and bounded by `C`, and let `u : X → V` be continuous on `S`. If
+the maps `y i : ℝ → X` are eventually continuous on `uIoc t₁ t₂` with values there in `S`, and the
+`u ∘ y i` converge pointwise on `uIoc t₁ t₂` to `x`, then `∫_{t₁}^{t₂} Φ(t, u(y i t)) dt` tends to
+`∫_{t₁}^{t₂} Φ(t, x t) dt`. -/
+theorem tendsto_intervalIntegral_comp_of_continuousOn {ι X V E : Type*} {l : Filter ι}
+    [l.IsCountablyGenerated] [TopologicalSpace X] [TopologicalSpace V] [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {Φ : ℝ × V → E} (hΦ : Continuous Φ) {C : ℝ} (hC : ∀ p, ‖Φ p‖ ≤ C)
+    {u : X → V} {S : Set X} (hu : ContinuousOn u S) {y : ι → ℝ → X} {x : ℝ → V} {t₁ t₂ : ℝ}
+    (hy : ∀ᶠ i in l, ContinuousOn (y i) (uIoc t₁ t₂))
+    (hyS : ∀ᶠ i in l, MapsTo (y i) (uIoc t₁ t₂) S)
+    (hyx : ∀ t ∈ uIoc t₁ t₂, Tendsto (fun i ↦ u (y i t)) l (𝓝 (x t))) :
+    Tendsto (fun i ↦ ∫ t in t₁..t₂, Φ (t, u (y i t))) l (𝓝 (∫ t in t₁..t₂, Φ (t, x t))) :=
+  tendsto_intervalIntegral_comp_of_tendsto_of_norm_le hΦ
+    ((hy.and hyS).mono fun _ hi ↦ hu.comp hi.1 hi.2) (Eventually.of_forall fun _ _ _ ↦ hC _) hyx
 
 /-- **Dominated convergence for continuous functions of converging maps.** Let `Φ : ℝ × V → E`
 be continuous, and let the maps `y i : ℝ → V` be continuous on `[t₁, t₂]` with values there in a

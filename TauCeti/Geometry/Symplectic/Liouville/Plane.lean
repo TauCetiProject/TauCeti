@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Basis.Fin
 public import TauCeti.Analysis.Calculus.DifferentialForm.Plane
 public import TauCeti.Analysis.Normed.Module.Alternating.Wedge.Specializations
 public import TauCeti.Geometry.Symplectic.Liouville.Linear
@@ -20,6 +21,9 @@ Contracting `d(x dy)` with the vector field `Z = x ∂_x + ∂_y` gives `x dy - 
 (`Prod.curryLeft_extDeriv_realPlaneXDy`), which differs from `x dy`
 (`Prod.curryLeft_extDeriv_realPlaneXDy_ne`).
 
+The area form `dx ∧ dy` takes the value `1` on the standard basis of the plane
+(`Prod.realPlaneDx_wedge_realPlaneDy_finTwoProd`).
+
 The computation of `d(x dy)` reuses the radial primitive calculation for a continuous bilinear
 form from `TauCeti.Geometry.Symplectic.Liouville.Linear`.
 -/
@@ -29,6 +33,17 @@ public section
 noncomputable section
 
 namespace Prod
+
+/-- The area form `dx ∧ dy` takes the value `1` on the standard basis of the plane, so its
+pullback by a linear map evaluates there to the determinant. -/
+@[simp]
+theorem realPlaneDx_wedge_realPlaneDy_finTwoProd (q : ℝ × ℝ) :
+    ((realPlaneDx q).wedge (realPlaneDy q)) (Module.Basis.finTwoProd ℝ) = 1 := by
+  have hbasis : ⇑(Module.Basis.finTwoProd ℝ) = ![((1 : ℝ), (0 : ℝ)), (0, 1)] := by
+    funext i
+    fin_cases i <;> simp
+  rw [hbasis, ContinuousAlternatingMap.wedge_apply_one_one]
+  simp [realPlaneDx_apply, realPlaneDy_apply]
 
 /-- The coordinate one-form `x dy` on `ℝ × ℝ`. -/
 def realPlaneXDy (p : ℝ × ℝ) : (ℝ × ℝ) [⋀^Fin 1]→L[ℝ] ℝ :=

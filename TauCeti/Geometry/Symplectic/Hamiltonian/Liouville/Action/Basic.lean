@@ -7,7 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Integral.CurveIntegral.Poincare
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
-public import TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.Period
+public import TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.Period.Basic
 public import TauCeti.LinearAlgebra.Matrix.TransposeLattice
 import Mathlib.Algebra.Group.Subgroup.Finsupp
 

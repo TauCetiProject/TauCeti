@@ -48,7 +48,8 @@ splitting off the first coordinate identifies the closed unit ball with the cube
 * `TauCeti.cubeRadius_le_one` and `TauCeti.cubeRadius_eq_one_iff`: the radius is at most one,
   with equality exactly on `Cube.boundary N`.
 * `TauCeti.cubeScale`: radial rescaling of a cube point, and `TauCeti.cubeRadius_cubeScale`: it
-  scales the radius.
+  scales the radius. Rescaling by `s ≥ 1` maps the points of radius at most `1 / s` bijectively
+  onto the cube (`TauCeti.cubeScale_injOn`, `TauCeti.exists_cubeScale_eq`).
 * `TauCeti.openBoxContraction`: the contraction of the open box of `I × I^N` onto the centre of
   its top face, which keeps the open box inside itself (`TauCeti.openBoxContraction_mem_openBox`).
 * `TauCeti.openBoxContractionTo`: the contraction of the open box onto an arbitrary point `(1, c)`
@@ -92,8 +93,8 @@ theorem continuous_cubeScale : Continuous fun p : ℝ × (I^N) => cubeScale p.1 
 theorem cubeScale_one (z : I^N) : cubeScale 1 z = z := by
   funext i
   apply Subtype.ext
-  have h0 := (z i).2.1
-  have h1 := (z i).2.2
+  have h0 := (z i).property.1
+  have h1 := (z i).property.2
   simp only [cubeScale]
   rw [Set.coe_projIcc, max_eq_right (by simp; linarith), min_eq_right (by linarith)]
   ring
@@ -120,7 +121,7 @@ theorem continuous_openBoxContraction :
     Continuous fun q : I × (I × I^N) ↦ openBoxContraction q.1 q.2 :=
   (continuous_projIcc.comp' (by fun_prop)).prodMk (continuous_cubeScale.comp
     ((continuous_const.min (continuous_const.sub (continuous_const.mul
-      (continuous_subtype_val.comp continuous_fst)))).prodMk (continuous_snd.comp continuous_snd)))
+      (continuous_subtypeVal.comp continuous_fst)))).prodMk (continuous_snd.comp continuous_snd)))
 
 /-- At time `0` the contraction of the open box is the identity. -/
 @[simp]
@@ -134,7 +135,7 @@ theorem openBoxContraction_zero (z : I × I^N) : openBoxContraction 0 z = z := b
 theorem openBoxContraction_one (z : I × I^N) :
     openBoxContraction 1 z = (1, cubeCenter) := by
   ext1
-  · exact projIcc_eq_one.2 (by simp; linarith [z.1.2.1])
+  · exact projIcc_eq_one.2 (by simp; linarith [z.1.property.1])
   · norm_num [openBoxContraction]
 
 /-- The contraction keeps the open box `{1} × I^N ∪ I × ∂I^N` inside itself. -/
@@ -142,9 +143,9 @@ theorem openBoxContraction_mem_openBox {z : I × I^N} (hz : z.1 = 1 ∨ z.2 ∈ 
     (t : I) : (openBoxContraction t z).1 = 1 ∨ (openBoxContraction t z).2 ∈ Cube.boundary N := by
   by_cases ht : (t : ℝ) ≤ 1 / 2
   · rcases hz with hz | hz
-    · exact .inl (projIcc_eq_one.2 (by simp [hz]; linarith [t.2.1]))
+    · exact .inl (projIcc_eq_one.2 (by simp [hz]; linarith [t.property.1]))
     · exact .inr (by rwa [openBoxContraction, min_eq_left (by linarith), cubeScale_one])
-  · exact .inl (projIcc_eq_one.2 (by linarith [z.1.2.1]))
+  · exact .inl (projIcc_eq_one.2 (by linarith [z.1.property.1]))
 
 /-- The contraction keeps the open box `{1} × I^N ∪ I × ∂I^N` inside the boundary of the cube. -/
 theorem openBoxContraction_mem_prodBoundary {z : I × I^N} (hz : z.1 = 1 ∨ z.2 ∈ Cube.boundary N)
@@ -181,7 +182,7 @@ theorem openBoxContractionTo_zero (c : I^N) (w : I × I^N) :
 theorem openBoxContractionTo_one (c : I^N) (w : I × I^N) :
     openBoxContractionTo c 1 w = (1, c) := by
   ext1
-  · exact projIcc_eq_one.2 (by simp; linarith [w.1.2.1])
+  · exact projIcc_eq_one.2 (by simp; linarith [w.1.property.1])
   · funext i
     simp only [openBoxContractionTo, Set.Icc.coe_one]
     rw [show (w.2 i : ℝ) + max 0 (2 * 1 - 1) * (c i - w.2 i) = c i by norm_num, Set.projIcc_val]
@@ -194,11 +195,11 @@ theorem openBoxContractionTo_mem_prodBoundary (c : I^N) {w : I × I^N}
   refine Cube.mk_mem_prodBoundary ?_
   by_cases ht : (t : ℝ) ≤ 1 / 2
   · rcases hw with hw | hw
-    · exact .inl (projIcc_eq_one.2 (by simp [hw]; linarith [t.2.1]))
+    · exact .inl (projIcc_eq_one.2 (by simp [hw]; linarith [t.property.1]))
     · refine .inr ?_
       have : max (0 : ℝ) (2 * t - 1) = 0 := max_eq_left (by linarith)
       simpa [openBoxContractionTo, this] using hw
-  · exact .inl (projIcc_eq_one.2 (by linarith [w.1.2.1]))
+  · exact .inl (projIcc_eq_one.2 (by linarith [w.1.property.1]))
 
 /-- The contraction onto `(1, c)` keeps the face `t j = c j` inside itself, acting there as the
 contraction onto any point with the same coordinates outside `j`. -/
@@ -251,8 +252,8 @@ theorem cubeRadius_le_one (z : I^N) : cubeRadius z ≤ 1 := by
   rw [dist_pi_le_iff (by norm_num)]
   intro i
   rw [dist_apply_cubeCenter, abs_le]
-  have h0 := (z i).2.1
-  have h1 := (z i).2.2
+  have h0 := (z i).property.1
+  have h1 := (z i).property.2
   constructor <;> linarith
 
 /-- A cube point has radius one exactly when it lies on the boundary of the cube. -/
@@ -265,8 +266,8 @@ theorem cubeRadius_eq_one_iff (z : I^N) : cubeRadius z = 1 ↔ z ∈ Cube.bounda
       rw [dist_pi_lt_iff (by norm_num)]
       intro i
       rw [dist_apply_cubeCenter, abs_lt]
-      have h0 := (z i).2.1
-      have h1 := (z i).2.2
+      have h0 := (z i).property.1
+      have h1 := (z i).property.2
       have e0 : (z i : ℝ) ≠ 0 := fun hc => (hz i).1 (Subtype.ext hc)
       have e1 : (z i : ℝ) ≠ 1 := fun hc => (hz i).2 (Subtype.ext hc)
       constructor <;> [rcases h0.lt_or_eq with h | h; rcases h1.lt_or_eq with h | h] <;>
@@ -326,6 +327,31 @@ theorem cubeRadius_cubeScale {s : ℝ} (hs : 0 ≤ s) {z : I^N} (h : s * cubeRad
     intro i
     rw [dist_apply_cubeCenter, le_div_iff₀' hs0, ← key i, ← dist_apply_cubeCenter]
     exact dist_le_pi_dist _ _ i
+
+/-- Rescaling radially by a positive factor `s` is injective on the points whose rescaled radius
+still fits in the cube. -/
+theorem cubeScale_injOn {s : ℝ} (hs : 0 < s) :
+    Set.InjOn (cubeScale (N := N) s) {z | s * cubeRadius z ≤ 1} := fun z hz z' hz' h ↦
+  funext fun i ↦ Subtype.ext <| by
+    have h₁ := cubeScale_apply_coe hs.le hz i
+    rw [h, cubeScale_apply_coe hs.le hz' i] at h₁
+    exact (sub_left_inj.1 (mul_right_cancel₀ hs.ne' (add_left_cancel h₁))).symm
+
+/-- Rescaling radially by `s ≥ 1` maps the points whose rescaled radius fits in the cube onto the
+cube: `y` is the rescaling of `TauCeti.cubeScale s⁻¹ y`. -/
+theorem exists_cubeScale_eq {s : ℝ} (hs : 1 ≤ s) (y : I^N) :
+    ∃ z, s * cubeRadius z ≤ 1 ∧ cubeScale s z = y := by
+  have hs0 : 0 < s := zero_lt_one.trans_le hs
+  have hy := cubeRadius_le_one y
+  have hinv : s⁻¹ * cubeRadius y ≤ 1 := by
+    nlinarith [inv_le_one_of_one_le₀ hs, cubeRadius_nonneg y]
+  have hr : s * cubeRadius (cubeScale s⁻¹ y) = cubeRadius y := by
+    rw [cubeRadius_cubeScale (inv_nonneg.2 hs0.le) hinv, ← mul_assoc, mul_inv_cancel₀ hs0.ne',
+      one_mul]
+  refine ⟨cubeScale s⁻¹ y, hr ▸ hy, funext fun i ↦ Subtype.ext ?_⟩
+  rw [cubeScale_apply_coe hs0.le (hr ▸ hy), cubeScale_apply_coe (inv_nonneg.2 hs0.le) hinv]
+  field_simp
+  ring
 
 
 /-! ### The cube as the closed unit ball of the sup norm -/

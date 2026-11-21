@@ -86,7 +86,7 @@ include hf hg htrans
 theorem contMDiff_relComp_transverseFiberProduct :
     letI := transverseFiberProductChartedSpace (by simp) hf.snd hg.fst htrans
     ContMDiff KF (I₁.prod I₃) ∞
-      (fun p : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1} ↦ ((f p.1.1).1, (g p.1.2).2)) := by
+      (fun p : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1} ↦ ((f p.val.1).1, (g p.val.2).2)) := by
   let := transverseFiberProductChartedSpace (by simp) hf.snd hg.fst htrans
   have hval := (isSmoothEmbedding_coe_transverseFiberProduct (by simp) hf.snd hg.fst
     htrans).contMDiff
@@ -100,18 +100,18 @@ theorem injective_mfderiv_relComp_transverseFiberProduct_iff
     (p : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1}) :
     letI := transverseFiberProductChartedSpace (by simp) hf.snd hg.fst htrans
     Function.Injective (mfderiv KF (I₁.prod I₃)
-      (fun p : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1} ↦ ((f p.1.1).1, (g p.1.2).2)) p) ↔
-      ∀ u w, (mfderiv K₁ (I₁.prod I₂) f p.1.1 u).2 = (mfderiv K₂ (I₂.prod I₃) g p.1.2 w).1 →
-        (mfderiv K₁ (I₁.prod I₂) f p.1.1 u).1 = 0 → (mfderiv K₂ (I₂.prod I₃) g p.1.2 w).2 = 0 →
+      (fun p : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1} ↦ ((f p.val.1).1, (g p.val.2).2)) p) ↔
+      ∀ u w, (mfderiv K₁ (I₁.prod I₂) f p.val.1 u).2 = (mfderiv K₂ (I₂.prod I₃) g p.val.2 w).1 →
+        (mfderiv K₁ (I₁.prod I₂) f p.val.1 u).1 = 0 → (mfderiv K₂ (I₂.prod I₃) g p.val.2 w).2 = 0 →
           u = 0 ∧ w = 0 := by
   let := transverseFiberProductChartedSpace (by simp) hf.snd hg.fst htrans
   have hval := ((isSmoothEmbedding_coe_transverseFiberProduct (by simp) hf.snd hg.fst
     htrans).contMDiff p).mdifferentiableAt (by simp)
-  have hf' := hf.mdifferentiable (by simp) p.1.1
-  have hg' := hg.mdifferentiable (by simp) p.1.2
+  have hf' := hf.mdifferentiable (by simp) p.val.1
+  have hg' := hg.mdifferentiable (by simp) p.val.2
   -- The differential of the composite reads off the outer components of `df` and `dg`.
   have hd := hf'.mfderiv_prodMk_fst_snd_comp_apply
-    (a := fun q : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1} ↦ q.1.1) (b := fun q ↦ q.1.2) hg'
+    (a := fun q : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1} ↦ q.val.1) (b := fun q ↦ q.val.2) hg'
     hval.fst hval.snd
   rw [injective_iff_map_eq_zero]
   constructor
@@ -123,8 +123,8 @@ theorem injective_mfderiv_relComp_transverseFiberProduct_iff
   · intro hexc ξ hξ0
     rw [hd] at hξ0
     obtain ⟨h₁, h₂⟩ := hexc _ _
-      (hf'.mfderiv_snd_eq_mfderiv_fst_of_fiberProduct_comp (a := fun q ↦ q.1.1)
-        (b := fun q ↦ q.1.2) hg' hval.fst hval.snd (fun q ↦ q.2) ξ)
+      (hf'.mfderiv_snd_eq_mfderiv_fst_of_fiberProduct_comp (a := fun q ↦ q.val.1)
+        (b := fun q ↦ q.val.2) hg' hval.fst hval.snd (fun q ↦ q.property) ξ)
       (congrArg Prod.fst hξ0) (congrArg Prod.snd hξ0)
     exact eq_zero_of_mfderiv_transverseFiberProduct (by simp) hf.snd hg.fst htrans p ξ h₁ h₂
 
@@ -134,21 +134,21 @@ product has injective differential at `(x, y)` exactly when no nonzero `v ∈ T 
 tangent to `f` and `(v, 0)` tangent to `g`. -/
 theorem injective_mfderiv_relComp_transverseFiberProduct_iff_of_injective
     (p : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1})
-    (hfi : Function.Injective (mfderiv K₁ (I₁.prod I₂) f p.1.1))
-    (hgi : Function.Injective (mfderiv K₂ (I₂.prod I₃) g p.1.2)) :
+    (hfi : Function.Injective (mfderiv K₁ (I₁.prod I₂) f p.val.1))
+    (hgi : Function.Injective (mfderiv K₂ (I₂.prod I₃) g p.val.2)) :
     letI := transverseFiberProductChartedSpace (by simp) hf.snd hg.fst htrans
     Function.Injective (mfderiv KF (I₁.prod I₃)
-      (fun p : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1} ↦ ((f p.1.1).1, (g p.1.2).2)) p) ↔
-      ∀ u w, (mfderiv K₁ (I₁.prod I₂) f p.1.1 u).1 = 0 →
-        (mfderiv K₂ (I₂.prod I₃) g p.1.2 w).2 = 0 →
-        (mfderiv K₁ (I₁.prod I₂) f p.1.1 u).2 = (mfderiv K₂ (I₂.prod I₃) g p.1.2 w).1 →
-          (mfderiv K₁ (I₁.prod I₂) f p.1.1 u).2 = 0 := by
+      (fun p : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1} ↦ ((f p.val.1).1, (g p.val.2).2)) p) ↔
+      ∀ u w, (mfderiv K₁ (I₁.prod I₂) f p.val.1 u).1 = 0 →
+        (mfderiv K₂ (I₂.prod I₃) g p.val.2 w).2 = 0 →
+        (mfderiv K₁ (I₁.prod I₂) f p.val.1 u).2 = (mfderiv K₂ (I₂.prod I₃) g p.val.2 w).1 →
+          (mfderiv K₁ (I₁.prod I₂) f p.val.1 u).2 = 0 := by
   rw [injective_mfderiv_relComp_transverseFiberProduct_iff hf hg htrans]
   refine forall₂_congr fun u w ↦ ⟨fun h hu hw hfg ↦ ?_, fun h hfg hu hw ↦ ?_⟩
   · rw [(h hfg hu hw).1, map_zero]
     exact Prod.snd_zero
-  · have hu0 : mfderiv K₁ (I₁.prod I₂) f p.1.1 u = 0 := Prod.ext hu (h hu hw hfg)
-    have hw0 : mfderiv K₂ (I₂.prod I₃) g p.1.2 w = 0 := Prod.ext (hfg ▸ h hu hw hfg) hw
+  · have hu0 : mfderiv K₁ (I₁.prod I₂) f p.val.1 u = 0 := Prod.ext hu (h hu hw hfg)
+    have hw0 : mfderiv K₂ (I₂.prod I₃) g p.val.2 w = 0 := Prod.ext (hfg ▸ h hu hw hfg) hw
     exact ⟨(injective_iff_map_eq_zero _).1 hfi u hu0, (injective_iff_map_eq_zero _).1 hgi w hw0⟩
 
 end TauCeti

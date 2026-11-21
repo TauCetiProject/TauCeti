@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.ModuleCat.FiniteLength
+public import TauCeti.Algebra.Category.ModuleCat.FiniteLength.Basic
 public import TauCeti.Algebra.Category.ModuleCat.MatlisDuality.Basic
 public import TauCeti.RingTheory.Length.Algebra
 public import TauCeti.CategoryTheory.Preadditive.Indecomposable

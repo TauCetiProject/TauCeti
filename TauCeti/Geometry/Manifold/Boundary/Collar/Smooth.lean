@@ -70,7 +70,7 @@ namespace TauCeti
 open _root_.TauCeti.EuclideanHalfSpace
 
 variable {n : ℕ} {k : WithTop ℕ∞} {M : Type*} [TopologicalSpace M]
-  [ChartedSpace (EuclideanHalfSpace (n + 1)) M] [IsManifold (𝓡∂ (n + 1)) 1 M]
+  [ChartedSpace (EuclideanHalfSpace (n + 1)) M]
 
 variable (n k M) in
 /-- A `C^k` **smooth collar** of a manifold with boundary `M`, modeled on the Euclidean

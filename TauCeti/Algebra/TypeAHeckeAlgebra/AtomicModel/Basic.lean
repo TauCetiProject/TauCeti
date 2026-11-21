@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Trace
-public import TauCeti.Algebra.TypeAHeckeAlgebra.OcneanuTrace
+public import TauCeti.Algebra.TypeAHeckeAlgebra.OcneanuTrace.Basic
 public import TauCeti.Algebra.TypeAHeckeAlgebra.SignedCheckedR
 public import TauCeti.LinearAlgebra.Finsupp.ProductDensity
 import Mathlib.Algebra.Ring.GeomSum
