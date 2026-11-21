@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Isogeny.Tangent
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Centralizer.Map
+import TauCeti.Algebra.AlgebraicGroup.Isogeny.Etale
 import TauCeti.Algebra.AlgebraicGroup.Smooth.CharZero
-import TauCeti.RingTheory.Etale.Reduced
 import TauCeti.RingTheory.RingHom.Quotient
 import Mathlib.RingTheory.RingHom.Finite
 
@@ -75,9 +75,8 @@ theorem map_centralizerHopfIdeal_of_charZero [CharZero k]
     (smoothCommHopfAlgProperty_iff _).mp (smoothCommHopfAlgProperty_of_charZero k H)
   let _ : Algebra.Smooth k K :=
     (smoothCommHopfAlgProperty_iff _).mp (smoothCommHopfAlgProperty_of_charZero k K)
-  let Q := _root_.CommHopfAlgCat.quotient K (kernelHopfIdeal f)
-  exact hf.map_centralizerHopfIdeal_of_etaleKernel (algebraEtale_iff_finite_and_isReduced.2
-    ⟨moduleFinite_quotient_kernelHopfIdeal hf.finite, HopfAlgebra.isReduced_of_charZero k Q⟩) x
+  exact hf.map_centralizerHopfIdeal_of_etaleKernel
+    hf.algebraEtale_quotient_kernelHopfIdeal_of_charZero x
 
 private theorem centralizerMap_of_map_eq
     [Module.Finite k (Bialgebra.CotangentSpace k H)]

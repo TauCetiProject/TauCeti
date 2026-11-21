@@ -55,9 +55,6 @@ are not proved here.
 
 ## Main results
 
-* `TauCeti.Vortex.weakGaugeFixedKernel`: the weak `L²` kernel `K_x` of `L_x`.
-* `TauCeti.Vortex.apply_toLp_gaugeFixedOperator_eq_sub_starProjection`: `Q (L_x ψ) = ψ - P_{K_x} ψ`
-  for compactly supported `C¹` fields `ψ`.
 * `TauCeti.Vortex.exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq_of_mul_le`: a
   lower bound on `L_x*` gives a bounded weak right inverse of `L_x` orthogonal to its weak kernel.
 * `TauCeti.Vortex.exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq`: the weak
@@ -123,76 +120,6 @@ private theorem inner_gaugeFixedAdjointToLp (hx : Continuous x)
   exact L2.inner_toLp u
     (memLp_gaugeFixedAdjoint hx (η.contDiff.of_le (by norm_cast)) η.hasCompactSupport)
 
-/-- **The weak `L²` kernel `K_x` of `gaugeFixedOperator x`**, the orthogonal complement of the range
-of `L_x*` on compactly supported `C²` test fields. -/
-noncomputable def weakGaugeFixedKernel (μ : Measure ℂ) [μ.IsAddHaarMeasure] (hx : Continuous x) :
-    Submodule ℝ (Lp (EuclideanSpace ℝ (Fin 4)) 2 μ) :=
-  (LinearMap.range (gaugeFixedAdjointToLp μ hx))ᗮ
-instance instIsClosedWeakGaugeFixedKernel (hx : Continuous x) :
-    IsClosed (weakGaugeFixedKernel μ hx : Set (Lp (EuclideanSpace ℝ (Fin 4)) 2 μ)) :=
-  Submodule.isClosed_orthogonal _
-noncomputable instance instHasOrthogonalProjectionWeakGaugeFixedKernel (hx : Continuous x) :
-    (weakGaugeFixedKernel μ hx).HasOrthogonalProjection :=
-  Submodule.HasOrthogonalProjection.ofCompleteSpace _
-/-- An `L²` field `u` belongs to `weakGaugeFixedKernel μ hx` iff `∫ ⟪u, L_x* η⟫ = 0` for every
-compactly supported `C²` test field `η`. -/
-theorem mem_weakGaugeFixedKernel_iff (hx : Continuous x) (u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ) :
-    u ∈ weakGaugeFixedKernel μ hx ↔ ∀ η : ℂ → EuclideanSpace ℝ (Fin 4),
-      ContDiff ℝ 2 η → HasCompactSupport η → ∫ z, ⟪u z, gaugeFixedAdjoint x η z⟫ ∂μ = 0 := by
-  rw [weakGaugeFixedKernel, Submodule.mem_orthogonal]; refine ⟨fun h η hη hηc ↦ ?_, ?_⟩
-  · let η' : TestField := ⟨η, hη, hηc, by simp⟩
-    have h0 := h (gaugeFixedAdjointToLp μ hx η') ⟨η', rfl⟩
-    rwa [real_inner_comm, inner_gaugeFixedAdjointToLp hx] at h0
-  · rintro h _ ⟨η, rfl⟩
-    rw [real_inner_comm, inner_gaugeFixedAdjointToLp hx]; exact h η η.contDiff η.hasCompactSupport
-/-- An `L²` field `v` is orthogonal to `weakGaugeFixedKernel μ hx` iff `∫ ⟪v, u⟫ = 0` for every
-`u ∈ weakGaugeFixedKernel μ hx`. -/
-theorem mem_orthogonal_weakGaugeFixedKernel_iff (hx : Continuous x)
-    (v : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ) :
-    v ∈ (weakGaugeFixedKernel μ hx)ᗮ ↔
-      ∀ u ∈ weakGaugeFixedKernel μ hx, ∫ z, ⟪v z, u z⟫ ∂μ = 0 := by
-  simp only [Submodule.mem_orthogonal, real_inner_comm, L2.inner_def]
-/-- Every `C¹` `L²` solution of `L_x y = 0` represents an element of `weakGaugeFixedKernel μ hx`. -/
-theorem toLp_mem_weakGaugeFixedKernel_of_gaugeFixedOperator_eq_zero (hx : Continuous x)
-    {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : ContDiff ℝ 1 y) (hy_lp : MemLp y 2 μ)
-    (hy_ker : ∀ z, gaugeFixedOperator x y z = 0) : hy_lp.toLp y ∈ weakGaugeFixedKernel μ hx := by
-  rw [mem_weakGaugeFixedKernel_iff hx]; intro η hη hηc
-  rw [hy_lp.integral_inner_toLp_left,
-    ← integral_inner_gaugeFixedOperator hx hy (hη.of_le (by norm_num)) (.inr hηc)]; simp [hy_ker]
-/-- Every element of `gaugeFixedKernel x` represents an element of `weakGaugeFixedKernel`. -/
-theorem toLp_mem_weakGaugeFixedKernel_of_mem_gaugeFixedKernel (hx : Continuous x)
-    {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : y ∈ gaugeFixedKernel x) :
-    (mem_gaugeFixedKernel.1 hy).2.1.toLp y ∈ weakGaugeFixedKernel volume hx := by
-  rcases mem_gaugeFixedKernel.1 hy with ⟨hyc, hy_lp, hy_ker⟩
-  exact toLp_mem_weakGaugeFixedKernel_of_gaugeFixedOperator_eq_zero hx
-    (hyc.of_le (by norm_num)) hy_lp hy_ker
-/-- If `Q` is a weak right inverse of `L_x` with range orthogonal to `weakGaugeFixedKernel μ hx`,
-then `Q (L_x ψ) = ψ - P_{K_x} ψ` in `L²` for every compactly supported `C¹` field `ψ`. -/
-theorem apply_toLp_gaugeFixedOperator_eq_sub_starProjection (hx : Continuous x)
-    {Q : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ →L[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 μ}
-    (hQsol : ∀ f η, ContDiff ℝ 2 η → HasCompactSupport η →
-      ∫ z, ⟪Q f z, gaugeFixedAdjoint x η z⟫ ∂μ = ∫ z, ⟪f z, η z⟫ ∂μ)
-    (hQorth : ∀ f u, u ∈ weakGaugeFixedKernel μ hx → ∫ z, ⟪Q f z, u z⟫ ∂μ = 0)
-    {ψ : ℂ → EuclideanSpace ℝ (Fin 4)} (hψ : ContDiff ℝ 1 ψ) (hψc : HasCompactSupport ψ) :
-    let hψ_lp : MemLp ψ 2 μ := hψ.continuous.memLp_of_hasCompactSupport hψc
-    let hLψ_lp : MemLp (gaugeFixedOperator x ψ) 2 μ :=
-      (continuous_gaugeFixedOperator hx hψ).memLp_of_hasCompactSupport
-        (hasCompactSupport_gaugeFixedOperator hψc)
-    Q (hLψ_lp.toLp (gaugeFixedOperator x ψ)) =
-      hψ_lp.toLp ψ - (weakGaugeFixedKernel μ hx).starProjection (hψ_lp.toLp ψ) := by
-  intro hψ_lp hLψ_lp; set S := gaugeFixedAdjointToLp μ hx
-  have hQmem : Q (hLψ_lp.toLp (gaugeFixedOperator x ψ)) ∈ (LinearMap.range S)ᗮᗮ :=
-    (mem_orthogonal_weakGaugeFixedKernel_iff hx _).2 (hQorth _)
-  refine LinearMap.eq_of_inner_apply_eq_of_mem_orthogonal S hQmem
-    (Submodule.sub_starProjection_mem_orthogonal _) fun η ↦ ?_
-  have hPK_zero : ⟪(weakGaugeFixedKernel μ hx).starProjection (hψ_lp.toLp ψ), S η⟫ = 0 := by
-    rw [real_inner_comm]
-    exact (Submodule.mem_orthogonal _ _).1 (Submodule.starProjection_apply_mem _ _) (S η) ⟨η, rfl⟩
-  rw [inner_gaugeFixedAdjointToLp hx, hQsol _ η η.contDiff η.hasCompactSupport, inner_sub_left,
-    hPK_zero, sub_zero, inner_gaugeFixedAdjointToLp hx, hLψ_lp.integral_inner_toLp_left,
-    integral_inner_gaugeFixedOperator hx hψ (η.contDiff.of_le (by norm_cast)) (.inl hψc),
-    hψ_lp.integral_inner_toLp_left]
-
 /-- **Weak right inverse from a lower bound on the formal adjoint.** Let `x` be a continuous
 field and suppose that `c ∫ |η|² ≤ ∫ |L_x* η|²` for every compactly supported `C²` field `η`,
 with `c > 0`. Then there is a bounded operator `Q` on `L²(ℂ; ℝ⁴)` with `‖Q‖ ≤ c^(-1/2)` such
@@ -232,7 +159,11 @@ theorem exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq_of_mul_le
   · have h := hQ f ⟨η, hη, hηc, by simp⟩
     rwa [hS, hι] at h
   · -- `u` lies in the weak kernel `(range S)ᗮ`, and `Q f` in its orthogonal complement.
-    have huK : u ∈ (LinearMap.range S)ᗮ := (mem_weakGaugeFixedKernel_iff hx u).2 hu
+    have huK : u ∈ (LinearMap.range S)ᗮ := by
+      rw [Submodule.mem_orthogonal]
+      rintro _ ⟨η, rfl⟩
+      rw [real_inner_comm, hS]
+      exact hu η η.contDiff η.hasCompactSupport
     rw [← L2.inner_def]
     exact Submodule.inner_left_of_mem_orthogonal huK (hQK f)
 
@@ -270,9 +201,18 @@ private theorem exists_integral_norm_sub_gaugeFixedAdjoint_sq_lt (hx : Continuou
     ∃ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ 2 η ∧ HasCompactSupport η ∧
       ∫ z, ‖y z - gaugeFixedAdjoint x η z‖ ^ 2 ∂μ < ε := by
   set S := gaugeFixedAdjointToLp μ hx
-  have hmem : y ∈ (LinearMap.range S)ᗮᗮ :=
-    (mem_orthogonal_weakGaugeFixedKernel_iff hx y).2 fun u hu ↦
-      hy u ((mem_weakGaugeFixedKernel_iff hx u).1 hu)
+  have hS := inner_gaugeFixedAdjointToLp (μ := μ) hx
+  have hmem : y ∈ (LinearMap.range S)ᗮᗮ := by
+    rw [Submodule.mem_orthogonal]
+    intro u hu
+    have hu' (η : ℂ → EuclideanSpace ℝ (Fin 4)) (hη : ContDiff ℝ 2 η)
+        (hηc : HasCompactSupport η) : ∫ z, ⟪u z, gaugeFixedAdjoint x η z⟫ ∂μ = 0 := by
+      have h := hS u ⟨η, hη, hηc, by simp⟩
+      rw [TestFunction.coe_mk] at h
+      rw [← h]
+      exact Submodule.inner_left_of_mem_orthogonal (LinearMap.mem_range_self S _) hu
+    rw [L2.inner_def, ← hy u hu']
+    exact integral_congr_ae (ae_of_all _ fun z ↦ real_inner_comm _ _)
   rw [Submodule.orthogonal_orthogonal_eq_closure, ← SetLike.mem_coe,
     Submodule.topologicalClosure_coe, Metric.mem_closure_iff] at hmem
   obtain ⟨_, ⟨η, rfl⟩, hd⟩ := hmem (√ε) (Real.sqrt_pos.2 hε)
@@ -316,7 +256,7 @@ private theorem integral_sq_mul_inner_gaugeFixedOperator_eq_add
   -- Integration by parts: `∫ V² ⟪L_x L_x* η, η⟫ = ∫ ⟪L_x* η, L_x* (V² η)⟫`.
   have h₁ : ∫ z, V z ^ 2 * ⟪gaugeFixedOperator x (gaugeFixedAdjoint x η) z, η z⟫ ∂μ =
       ∫ z, ⟪gaugeFixedAdjoint x η z, H z⟫ ∂μ := by
-    rw [← integral_inner_gaugeFixedOperator hx.continuous hA (hVη.of_le (by norm_num)) (.inl hAc)]
+    rw [← integral_inner_gaugeFixedOperator hA (hVη.of_le (by norm_num)) (.inl hAc)]
     simp only [real_inner_smul_right]
   have h₂ := hweak _ hVη hVηc
   simp only [real_inner_smul_right] at h₂

@@ -178,7 +178,8 @@ private theorem sum_covariantDeriv_normalConnection_smul_ι
           I * (x z 0 * (normalCoord e v).re + x z 1 * (normalCoord e v).im) *
             Vortex.sectionValue g z := by
     rw [covariantDeriv_apply, ((Vortex.differentiableAt_sectionValue_of_differentiableAt hg)
-      |>.hasFDerivAt.comp p (normalCoord e).hasFDerivAt).fderiv, normalConnection_apply]; simp [z]
+      |>.hasFDerivAt.comp p (normalCoord e).hasFDerivAt).fderiv, normalConnection_apply]
+    simp [z]; ring
   rw [Fin.sum_univ_four, hcov, hcov, hcov, hcov, normalCoord_apply_zero, normalCoord_apply_one,
     normalCoord_apply_two, normalCoord_apply_three]
   simp only [map_zero, zero_re, zero_im, one_re, one_im, I_re, I_im, ofReal_zero, ofReal_one]

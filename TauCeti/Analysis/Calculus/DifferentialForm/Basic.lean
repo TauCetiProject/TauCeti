@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.Calculus.DifferentialForm.Basic
 
+import TauCeti.Analysis.Calculus.FDeriv.Comp
+
 /-!
 # Locality and linear pullback of the exterior derivative
 
@@ -30,7 +32,11 @@ function. `DifferentiableAt.extDerivWithin` is the exterior-derivative version o
 `DifferentiableAt.fderivWithin`, and `TauCeti.tsupport_extDeriv_subset` and
 `HasCompactSupport.extDeriv` are the versions of `tsupport_fderiv_subset` and
 `HasCompactSupport.fderiv`. `TauCeti.extDerivWithin_of_isOpen` is the version of
-`fderivWithin_of_isOpen`. `TauCeti.extDeriv_apply_pair_eq_sum` writes the exterior derivative of a
+`fderivWithin_of_isOpen`. `TauCeti.extDeriv_comp_add_smul` says that precomposing the
+coefficients with an affine dilation `z ↦ x₀ + c • z` multiplies the exterior derivative by `c`.
+`TauCeti.extDeriv_apply_pair` and `TauCeti.extDeriv_apply_triple`
+evaluate the exterior derivative of a one-form and of a two-form in terms of the derivative of the
+form, and `TauCeti.extDeriv_apply_pair_eq_sum` writes the exterior derivative of a
 one-form `∑ᵢ ωᵢ dxᵢ` on `ι → 𝕜` as `∑ᵢ dωᵢ ∧ dxᵢ`.
 -/
 
@@ -62,12 +68,32 @@ lemma extDeriv_zero_of_not_differentiableAt (h : ¬ DifferentiableAt 𝕜 ω x) 
   simp only [extDeriv, fderiv_zero_of_not_differentiableAt h]
   exact map_zero _
 
+/-- **The exterior derivative under an affine dilation of the domain.** Precomposing the
+coefficients of a form with `z ↦ x₀ + c • z` multiplies its exterior derivative by `c`. No
+differentiability is needed: both sides use the junk value `0` of `fderiv` at the same points. -/
+theorem extDeriv_comp_add_smul (x₀ : E) (c : 𝕜) (ω : E → E [⋀^Fin n]→L[𝕜] F) (y : E) :
+    extDeriv (fun z ↦ ω (x₀ + c • z)) y = c • extDeriv ω (x₀ + c • y) := by
+  rw [extDeriv, fderiv_comp_add_smul, ContinuousAlternatingMap.alternatizeUncurryFin_smul,
+    extDeriv]
+
 /-- The exterior derivative of a one-form on an ordered pair is the alternating part of its
 Fréchet derivative. This formula also respects the derivative's junk-value convention. -/
 theorem extDeriv_apply_pair {ω : E → E [⋀^Fin 1]→L[𝕜] F} (x v w : E) :
     extDeriv ω x ![v, w] = (fderiv 𝕜 ω x v) (fun _ ↦ w) -
       (fderiv 𝕜 ω x w) (fun _ ↦ v) := by
   rw [extDeriv, ContinuousAlternatingMap.alternatizeUncurryFin_apply_pair]
+
+/-- The exterior derivative of a two-form on three vectors:
+`dω(u, v, w) = ∂_u ω(v, w) - ∂_v ω(u, w) + ∂_w ω(u, v)`. This formula also respects the
+derivative's junk-value convention. -/
+theorem extDeriv_apply_triple {ω : E → E [⋀^Fin 2]→L[𝕜] F} (x u v w : E) :
+    extDeriv ω x ![u, v, w] = fderiv 𝕜 ω x u ![v, w] - fderiv 𝕜 ω x v ![u, w] +
+      fderiv 𝕜 ω x w ![u, v] := by
+  have h₀ : (0 : Fin 3).removeNth ![u, v, w] = ![v, w] := by funext i; fin_cases i <;> rfl
+  have h₁ : (1 : Fin 3).removeNth ![u, v, w] = ![u, w] := by funext i; fin_cases i <;> rfl
+  have h₂ : (2 : Fin 3).removeNth ![u, v, w] = ![u, v] := by funext i; fin_cases i <;> rfl
+  simp [extDeriv, ContinuousAlternatingMap.alternatizeUncurryFin_apply, Fin.sum_univ_three, h₀,
+    h₁, h₂, sub_eq_add_neg]
 
 /-- The exterior derivative of a zero-form on a single vector is its Fréchet derivative in that
 direction. This formula also respects the derivative's junk-value convention. -/

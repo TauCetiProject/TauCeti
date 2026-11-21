@@ -28,6 +28,9 @@ vanishes for `k > n` (`TauCeti.isZero_singularHomology_of_compactSpace`).
 
 ## Main results
 
+* `TauCeti.isZero_localHomology_of_isCompact_of_forall_mem_nhds`: in a Hausdorff space, with
+  coefficients in any abelian category with coproducts, vanishing of local homology along compact
+  sets above a degree is a local property.
 * `TauCeti.isZero_localHomology_of_isCompact`: `Hₖ(M, M ∖ A) = 0` for compact `A` and `k > n`.
 * `TauCeti.eq_zero_of_forall_localHomologyRestriction_eq_zero`: a class of `Hₙ(M, M ∖ A)` whose
   restriction to every point of `A` vanishes is zero.
@@ -54,6 +57,34 @@ open CategoryTheory Limits Metric Module Set Topology
 universe w v u
 
 namespace TauCeti
+
+section Abelian
+
+variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C) {M : Type w}
+  [TopologicalSpace M] [T2Space M]
+
+/-- **Vanishing of local homology along compact sets is local.** In a Hausdorff space, suppose
+every point has a neighbourhood `U` such that local homology along every compact subset of `U`
+vanishes above degree `n`. Then local homology along every compact set vanishes above degree
+`n`: a compact set is a finite union of compact pieces, each in such a neighbourhood, and the
+intersection of two pieces again lies in one (`TauCeti.isZero_localHomology_biUnion`). -/
+theorem isZero_localHomology_of_isCompact_of_forall_mem_nhds {n : ℕ}
+    (h : ∀ x : M, ∃ U ∈ 𝓝 x, ∀ B ⊆ U, IsCompact B → ∀ k, n < k → IsZero (localHomology R B k))
+    {A : Set M} (hA : IsCompact A) {k : ℕ} (hk : n < k) : IsZero (localHomology R A k) := by
+  choose U hU hUz using h
+  obtain ⟨t, -, hAt⟩ := hA.elim_nhds_subcover (fun x ↦ interior (U x))
+    fun x _ ↦ interior_mem_nhds.2 (hU x)
+  obtain ⟨K, hKc, hKU, rfl⟩ :=
+    hA.finite_compact_cover t _ (fun _ _ ↦ isOpen_interior) hAt
+  refine isZero_localHomology_biUnion (𝒢 := {B | IsCompact B ∧ ∃ x, B ⊆ U x})
+    (fun B hB ↦ hB.1.isClosed) (fun B hB B' hB' ↦ ?_) (fun B hB ↦ ?_) t
+    (fun x _ ↦ ⟨hKc x, x, (hKU x).trans interior_subset⟩) hk
+  · obtain ⟨x, hx⟩ := hB.2
+    exact ⟨hB.1.inter_right hB'.1.isClosed, x, inter_subset_left.trans hx⟩
+  · obtain ⟨x, hx⟩ := hB.2
+    exact hUz x B hx hB.1
+
+end Abelian
 
 section Module
 
@@ -162,7 +193,7 @@ private lemma detects_symm_image_biUnion_closedBall (hn : finrank ℝ E = n)
   rw [← iUnion_subtype (· ∈ t) fun a ↦ closedBall (φ a) (r a)]
   have hconv (a : t) := convex_closedBall (φ a) (r a)
   have hcpt (a : t) := isCompact_closedBall (φ a) (r a)
-  have hφ (a : t) := ht a a.2
+  have hφ (a : t) := ht a a.property
   refine ⟨fun k hk ↦ isZero_localHomology_symm_image_iUnion N φ hn hconv hcpt hφ hk,
     fun α hα ↦ ?_⟩
   have := localHomology_symm_image_iUnion_hom_ext N φ hn hconv hcpt hφ
@@ -182,13 +213,11 @@ private lemma detects_of_subset_source (hn : finrank ℝ E = n) (φ : OpenPartia
     {A : Set M} (hA : IsCompact A) (hAφ : A ⊆ φ.source) : Detects N n A := by
   have hK := detects_symm_image_biUnion_closedBall N hn φ
   have key := exists_finset_closedBall_restriction_eq N φ hA hAφ
-  refine ⟨fun k hk ↦ ?_, fun α hα ↦ ?_⟩
-  · have h (α : (localHomology N A k : ModuleCat.{w} Λ)) : α = 0 := by
-      obtain ⟨t, r, ht, hAK, β, rfl⟩ := key k α
-      rw [(ModuleCat.subsingleton_of_isZero ((hK t r fun a ha ↦ (ht a ha).2.2).isZero k
-        hk)).elim β 0, map_zero]
-    rw [ModuleCat.isZero_iff_subsingleton]
-    exact ⟨fun α β ↦ (h α).trans (h β).symm⟩
+  refine ⟨fun k hk ↦ isZero_localHomology_of_forall_mem_nhdsSet N fun U hU ↦ ?_, fun α hα ↦ ?_⟩
+  · obtain ⟨t, r, ht, hAt⟩ := φ.exists_finset_closedBall_cover hA hAφ hU
+    refine ⟨_, hAt, ?_, (hK t r fun a ha ↦ (ht a ha).2.2.1).isZero k hk⟩
+    rw [image_iUnion₂]
+    exact iUnion₂_subset fun a ha ↦ (ht a ha).2.2.2
   · obtain ⟨t, r, ht, hAK, β, rfl⟩ := key n α
     refine (congrArg _ ((hK t r fun a ha ↦ (ht a ha).2.2).eq_zero β fun y hy ↦ ?_)).trans
       (map_zero _)
@@ -254,7 +283,8 @@ a Hausdorff space modelled on a real normed space of dimension `n`, `Hₖ(M, M �
 `k > n`. This is Hatcher's Lemma 3.27(b). -/
 theorem isZero_localHomology_of_isCompact (hn : finrank ℝ E = n) (hA : IsCompact A) {k : ℕ}
     (hk : n < k) : IsZero (localHomology N A k) :=
-  (detects_of_isCompact N hn hA).isZero k hk
+  isZero_localHomology_of_isCompact_of_forall_mem_nhds N (fun x ↦ ⟨_, chart_source_mem_nhds E x,
+    fun _ hB hBc k hk ↦ (detects_of_subset_source N hn _ hBc hB).isZero k hk⟩) hA hk
 
 /-- **A local homology class of a compact set is detected at its points.** For a compact subset
 `A` of a Hausdorff space modelled on a real normed space of dimension `n`, a class of

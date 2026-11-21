@@ -133,7 +133,7 @@ noncomputable def height : R.posRootCone →+ ℕ :=
 
 /-- The height is the `LinearIndependent.natSpanHeight` of the simple roots. -/
 theorem height_apply (x : R.posRootCone) :
-    R.height x = R.linearIndependent_nat_root.natSpanHeight ⟨x, R.posRootCone_def ▸ x.2⟩ :=
+    R.height x = R.linearIndependent_nat_root.natSpanHeight ⟨x, R.posRootCone_def ▸ x.property⟩ :=
   (rfl)
 
 /-- The height of a natural combination of the simple roots is the sum of its coefficients. -/
@@ -196,7 +196,7 @@ as a named relation because one dual space carries the orders of several realiza
 theorem rootLE_eq_ofAddSubmonoid_le [CharZero K] :
     R.RootLE = (PartialOrder.ofAddSubmonoid R.isPointed_posRootCone).le := by
   ext μ lam
-  simp [rootLE_iff]
+  simp [rootLE_iff, PartialOrder.ofAddSubmonoid_le_iff]
 
 /-- The order on weights is invariant under translation. -/
 @[simp]

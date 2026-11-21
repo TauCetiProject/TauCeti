@@ -113,7 +113,7 @@ theorem exists_eq_finprod_zpow_mul (hf : AnalyticOnNhd ℂ f (closedBall z₀ R)
   have hconn : IsConnected (closedBall z₀ R) :=
     (convex_closedBall z₀ R).isConnected ⟨z₀, hz₀R⟩
   obtain ⟨g, hg, hg0, hfg⟩ := hf.meromorphicOn.extract_zeros_poles
-    (fun u ↦ hf.meromorphicOrderAt_ne_top_of_exists_ne_zero hconn h₀ u.2)
+    (fun u ↦ hf.meromorphicOrderAt_ne_top_of_exists_ne_zero hconn h₀ u.property)
     (D.finiteSupport (isCompact_closedBall z₀ R))
   -- The divisor on the small disc is the restriction of `D`, so `0 ≤ D' ≤ D`.
   have hD' (ρ : ℂ) : D' ρ = if ρ ∈ closedBall z₀ r then D ρ else 0 := by

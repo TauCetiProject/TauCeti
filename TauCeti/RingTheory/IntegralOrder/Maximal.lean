@@ -76,7 +76,7 @@ namespace TauCeti.IntegralOrder
 section Basic
 
 variable {R : Type*} (F : Type*) {E : Type*} [CommRing R] [CommRing F] [Ring E]
-  [Algebra R F] [Algebra F E] [Algebra R E] [IsScalarTower R F E]
+  [Algebra F E] [Algebra R E]
 
 /-- An `R`-subalgebra `Λ` of an `F`-algebra `E` is a maximal `R`-order in `E` if it is an `R`-order
 in `E` and is not properly contained in another `R`-order in `E`. The definition is exposed, so the
@@ -105,7 +105,7 @@ end Basic
 section Commutative
 
 variable {R F E : Type*} [CommRing R] [CommRing F] [CommRing E]
-  [Algebra R F] [Algebra F E] [Algebra R E] [IsScalarTower R F E]
+  [Algebra F E] [Algebra R E]
 
 /-- **Uniqueness of the maximal order of a commutative algebra.** If the integral closure of `R` in
 a commutative `F`-algebra `E` is an `R`-order, then it is the unique maximal `R`-order in `E`. -/

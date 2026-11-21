@@ -91,7 +91,7 @@ theorem spinorCovariantDeriv_smul_const (b : V → V [⋀^Fin 1]→L[ℝ] ℝ) {
     spinorCovariantDeriv b (fun q ↦ α q • ψ₀) p v = covariantDeriv b α p v • ψ₀ := by
   rw [spinorCovariantDeriv_apply, fderiv_smul_const hα ψ₀, ContinuousLinearMap.smulRight_apply,
     covariantDeriv_apply, add_smul, ← Complex.coe_smul, smul_smul, smul_smul]
-  congr 2; ring
+  congr 2; simp only [Complex.real_smul]; ring
 
 omit [FiniteDimensional ℂ W] in variable (o ρ e) in
 /-- **The flat chiral Dirac operator** `D_b χ = ∑ₖ c(eₖ) ∇_{b, eₖ} χ : W⁺ → W⁻`. -/
