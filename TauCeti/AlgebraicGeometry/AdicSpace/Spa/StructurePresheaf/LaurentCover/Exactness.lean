@@ -12,7 +12,7 @@ import Mathlib.CategoryTheory.Sites.Whiskering
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.Laurent.Basic
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.GlobalSections
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.IsSheafFor
-import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.LaurentCover.Basic
+import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.LaurentCover.Basic
 
 /-!
 # Algebraic exactness of simple Laurent covers from sheafiness
@@ -94,6 +94,7 @@ variable {R R₁ R₂ R₁₂ : Type*} [CommRing R] [CommRing R₁] [CommRing R�
   {hT₂ : IsOpen (Ideal.span (({1} : Finset R) : Set R) : Set R)}
   {hT₁₂ : IsOpen (Ideal.span (({f * f, 1} : Finset R) : Set R) : Set R)}
 
+omit [IsUniformAddGroup R] [CompleteSpace R] [T0Space R] in
 private theorem presentationLimitMap_laurentInf_eq {Aplus : Subring R}
     (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a)
     (h₁ : IsRationalCompletion P {f, 1} 1 hT₁ R₁) (h₂ : IsRationalCompletion P {1} f hT₂ R₂)

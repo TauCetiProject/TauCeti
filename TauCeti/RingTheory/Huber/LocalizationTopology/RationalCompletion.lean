@@ -9,7 +9,6 @@ public import TauCeti.RingTheory.Huber.LocalizationTopology.RatLoc
 import TauCeti.RingTheory.Huber.LocalizationTopology.Restriction
 import TauCeti.RingTheory.Huber.LocalizationTopology.Trivial
 import TauCeti.Topology.Algebra.Ring.Basic
-import TauCeti.Topology.Algebra.Ring.Ideal
 
 /-!
 # Models of the completed rational localisation `A⟨T/s⟩`
@@ -39,6 +38,8 @@ and universal properties of `ratLoc`.
   `TauCeti.Huber.IsRationalCompletion.isHuberRing`, and
   `TauCeti.Huber.IsRationalCompletion.isTateRing`: topological ring, completeness, separation,
   Huber, and Tate properties of any model.
+* `TauCeti.Huber.IsRationalCompletion.isPowerBounded_algebraMap_mul_unit_inv`: the distinguished
+  fractions `t / s` (`t ∈ T`) are power-bounded in any model.
 * `TauCeti.Huber.IsRationalCompletion.ringHom_ext_of_continuous`,
   `TauCeti.Huber.IsRationalCompletion.existsUnique_continuous_algHom`,
   `TauCeti.Huber.IsRationalCompletion.existsUnique_continuous_algHom_of_refines`, and
@@ -219,6 +220,33 @@ theorem IsRationalCompletion.algHom_ext_of_continuous (h : IsRationalCompletion 
     {f g : B →ₐ[A] C} (hf : Continuous f) (hg : Continuous g) : f = g :=
   AlgHom.toRingHom_injective <| h.ringHom_ext_of_continuous hf hg
     (RingHom.ext fun a ↦ (f.commutes a).trans (g.commutes a).symm)
+
+/-- For any numerator `t ∈ T`, the fraction `t / s` is power-bounded in any model `B` of
+`A⟨T/s⟩`. -/
+theorem IsRationalCompletion.isPowerBounded_algebraMap_mul_unit_inv
+    (h : IsRationalCompletion P T s hT B) {t : A} (ht : t ∈ T) :
+    IsPowerBounded (algebraMap A B t * ↑h.isUnit_algebraMap.unit⁻¹) := by
+  let S := Localization.Away s
+  let hden := P.hasDenominatorPower_of_isOpen_span T s S hT
+  let _ := P.locUniformSpace T s S hden
+  have _ := P.isUniformAddGroup_locUniformSpace T s S hden
+  have _ := P.isTopologicalRing_locUniformSpace T s S hden
+  obtain ⟨e, he, he'⟩ := id h
+  have hu : IsUnit (P.toCompletionLoc T s S hden s) := by
+    simpa [algebraMap_ratLoc] using isUnit_algebraMap_ratLoc P T s hden
+  have hpow := P.isPowerBounded_toCompletionLoc_mul_unit_inv T s S hden (mul_one s).symm hu
+    (by simpa using ht)
+  rw [← isPowerBounded_ringEquiv_iff e.toRingEquiv he he'] at hpow
+  have ht_eq : e (P.toCompletionLoc T s S hden t) = algebraMap A B t := by
+    rw [← algebraMap_ratLoc]; exact e.commutes t
+  have hmul : algebraMap A B s * e ↑hu.unit⁻¹ = 1 := by
+    rw [← e.commutes s, algebraMap_ratLoc, ← map_mul, IsUnit.mul_val_inv, map_one]
+  have hinv : e ↑hu.unit⁻¹ = (↑h.isUnit_algebraMap.unit⁻¹ : B) := by
+    calc
+      e ↑hu.unit⁻¹ = ↑h.isUnit_algebraMap.unit⁻¹ * (algebraMap A B s * e ↑hu.unit⁻¹) := by
+        rw [← mul_assoc, h.isUnit_algebraMap.val_inv_mul, one_mul]
+      _ = ↑h.isUnit_algebraMap.unit⁻¹ := by rw [hmul, mul_one]
+  simpa only [RingEquiv.coe_toRingHom, AlgEquiv.coe_toRingEquiv, map_mul, ht_eq, hinv] using hpow
 
 /-- **Universal property of a model of `A⟨T/s⟩`.** If `C` is a complete Hausdorff nonarchimedean
 `A`-algebra whose structure map `A → C` is continuous at zero, sends `s` to a unit, and makes each

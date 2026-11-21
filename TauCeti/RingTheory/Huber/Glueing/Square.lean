@@ -7,11 +7,10 @@ module
 
 public import Mathlib.Topology.Maps.Strict.Basic
 public import TauCeti.RingTheory.Huber.Basic
-public import TauCeti.RingTheory.Huber.GlueingDatum
+public import TauCeti.RingTheory.Huber.Glueing.Datum
 import Mathlib.Topology.Algebra.Algebra
 import Mathlib.Topology.Baire.CompleteMetrizable
 import TauCeti.RingTheory.Huber.OpenMapping
-import TauCeti.Topology.Algebra.GroupCompletion
 
 /-!
 # Glueing squares over complete Tate rings

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Exact.Basic
+public import Mathlib.LinearAlgebra.TensorProduct.Lift
 public import Mathlib.LinearAlgebra.TensorProduct.Tower
 public import Mathlib.RingTheory.Flat.Basic
 import Mathlib.LinearAlgebra.TensorProduct.Prod
@@ -26,11 +27,13 @@ canonically as `N ≃ₗ[R] (GlueingDatum.ofModule R₁ R₂ R₁₂ R N).sectio
 
 * `TauCeti.Huber.GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂`: modules `M₁`, `M₂`, `M₁₂` equipped with
   `R₁₂`-linear isomorphisms `ψᵢ : R₁₂ ⊗_{Rᵢ} Mᵢ ≃ₗ[R₁₂] M₁₂`.
-* `TauCeti.Huber.GlueingDatum.sections R D`, `TauCeti.Huber.GlueingDatum.fst`,
-  `TauCeti.Huber.GlueingDatum.snd`, `TauCeti.Huber.GlueingDatum.ofModule`,
-  `TauCeti.Huber.GlueingDatum.toSectionsOfModule`, and
-  `TauCeti.Huber.GlueingDatum.equivSectionsOfModule`: global sections of a glueing datum,
-  projections, the canonical datum of an `R`-module, and recovery for flat modules.
+* `TauCeti.Huber.GlueingDatum.diff`, `TauCeti.Huber.GlueingDatum.sections R D`,
+  `TauCeti.Huber.GlueingDatum.fst`, `TauCeti.Huber.GlueingDatum.snd`,
+  `TauCeti.Huber.GlueingDatum.baseChangeFst`, `TauCeti.Huber.GlueingDatum.baseChangeSnd`,
+  `TauCeti.Huber.GlueingDatum.ofModule`, `TauCeti.Huber.GlueingDatum.toSectionsOfModule`, and
+  `TauCeti.Huber.GlueingDatum.equivSectionsOfModule`: the difference map, global sections of a
+  glueing datum, projections and their base changes, the canonical datum of an `R`-module, and
+  recovery for flat modules.
 
 ## References
 
@@ -102,6 +105,23 @@ def GlueingDatum.sections (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂)
       ← algebraMap_smul R₁₂ (algebraMap R R₂ r), map_smul, map_smul,
       ← IsScalarTower.algebraMap_apply, ← IsScalarTower.algebraMap_apply, hx]
 
+/-- The `R`-linear difference map `(m₁, m₂) ↦ ψ₁ (1 ⊗ m₁) - ψ₂ (1 ⊗ m₂)` out of `M₁ × M₂` whose
+kernel is `D.sections R`. -/
+def GlueingDatum.diff (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂)
+    [Module R M₁₂] [IsScalarTower R R₁₂ M₁₂] :
+    M₁ × M₂ →ₗ[R] M₁₂ where
+  toFun x := D.ψ₁ (1 ⊗ₜ x.1) - D.ψ₂ (1 ⊗ₜ x.2)
+  map_add' x y := by
+    simp only [Prod.fst_add, Prod.snd_add, TensorProduct.tmul_add, map_add]
+    abel
+  map_smul' r x := by
+    simp only [Prod.smul_fst, Prod.smul_snd, RingHom.id_apply]
+    rw [← algebraMap_smul R₁ r x.1, ← algebraMap_smul R₂ r x.2, TensorProduct.tmul_smul,
+      TensorProduct.tmul_smul, ← algebraMap_smul R₁₂ (algebraMap R R₁ r),
+      ← algebraMap_smul R₁₂ (algebraMap R R₂ r), map_smul, map_smul,
+      ← IsScalarTower.algebraMap_apply, ← IsScalarTower.algebraMap_apply,
+      algebraMap_smul, algebraMap_smul, smul_sub]
+
 /-- First projection from the module of sections to `M₁`. -/
 def GlueingDatum.fst (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) : D.sections R →ₗ[R] M₁ :=
   (LinearMap.fst R M₁ M₂).comp (D.sections R).subtype
@@ -109,6 +129,16 @@ def GlueingDatum.fst (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) : D.
 /-- Second projection from the module of sections to `M₂`. -/
 def GlueingDatum.snd (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) : D.sections R →ₗ[R] M₂ :=
   (LinearMap.snd R M₁ M₂).comp (D.sections R).subtype
+
+/-- First base-changed projection `R₁ ⊗[R] D.sections R →ₗ[R₁] M₁`, induced by `D.fst R`. -/
+noncomputable def GlueingDatum.baseChangeFst (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) :
+    R₁ ⊗[R] D.sections R →ₗ[R₁] M₁ :=
+  (D.fst R).liftBaseChange R₁
+
+/-- Second base-changed projection `R₂ ⊗[R] D.sections R →ₗ[R₂] M₂`, induced by `D.snd R`. -/
+noncomputable def GlueingDatum.baseChangeSnd (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) :
+    R₂ ⊗[R] D.sections R →ₗ[R₂] M₂ :=
+  (D.snd R).liftBaseChange R₂
 
 /-- Over a subsingleton overlap module `M₁₂`, the cocycle condition is vacuous and the sections
 identify with `M₁ × M₂`. -/
@@ -125,12 +155,34 @@ theorem GlueingDatum.mem_sections_iff (D : GlueingDatum R₁ R₂ R₁₂ M₁ M
     x ∈ D.sections R ↔ D.ψ₁ (1 ⊗ₜ x.1) = D.ψ₂ (1 ⊗ₜ x.2) := by rfl
 
 @[simp]
+theorem GlueingDatum.diff_apply (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂)
+    [Module R M₁₂] [IsScalarTower R R₁₂ M₁₂] (x : M₁ × M₂) :
+    D.diff R x = D.ψ₁ (1 ⊗ₜ x.1) - D.ψ₂ (1 ⊗ₜ x.2) := by rfl
+
+/-- The sections submodule is the kernel of the difference map `D.diff R`. -/
+theorem GlueingDatum.sections_eq_ker (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂)
+    [Module R M₁₂] [IsScalarTower R R₁₂ M₁₂] :
+    D.sections R = LinearMap.ker (D.diff R) := by
+  ext x
+  simp [sub_eq_zero]
+
+@[simp]
 theorem GlueingDatum.fst_apply (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) (x : D.sections R) :
     D.fst R x = x.val.1 := by rfl
 
 @[simp]
 theorem GlueingDatum.snd_apply (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) (x : D.sections R) :
     D.snd R x = x.val.2 := by rfl
+
+@[simp]
+theorem GlueingDatum.baseChangeFst_tmul (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂)
+    (r₁ : R₁) (x : D.sections R) :
+    D.baseChangeFst R (r₁ ⊗ₜ x) = r₁ • D.fst R x := by rfl
+
+@[simp]
+theorem GlueingDatum.baseChangeSnd_tmul (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂)
+    (r₂ : R₂) (x : D.sections R) :
+    D.baseChangeSnd R (r₂ ⊗ₜ x) = r₂ • D.snd R x := by rfl
 
 /-- The defining overlap compatibility of the two projections of a section `x : D.sections R`. -/
 theorem GlueingDatum.ψ₁_one_tmul_fst (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂)

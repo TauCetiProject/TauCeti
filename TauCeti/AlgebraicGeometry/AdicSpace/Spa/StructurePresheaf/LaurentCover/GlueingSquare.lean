@@ -6,12 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.LaurentCover.Exactness
-public import TauCeti.RingTheory.Huber.GlueingSquare
+public import TauCeti.RingTheory.Huber.Glueing.Square
 public import TauCeti.RingTheory.Huber.LocalizationTopology.Laurent.RationalCompletion
 public import TauCeti.Topology.Algebra.Ring.Ideal
 
+import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.LaurentCover.Basic
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.Proper
-import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.LaurentCover.Basic
 
 /-!
 # Simple Laurent covers of sheafy Tate rings form glueing squares

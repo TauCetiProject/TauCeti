@@ -35,6 +35,8 @@ constructs the unique continuous transition homomorphisms between the pieces and
 * `TauCeti.Huber.IsRationalCompletion.existsUnique_laurentLeftAlgHom` and
   `TauCeti.Huber.IsRationalCompletion.existsUnique_laurentRightAlgHom`: unique continuous
   transition maps from models of `A⟨{f, 1}/1⟩` and `A⟨{1}/f⟩` to a model of `A⟨{f², 1}/f⟩`.
+* `TauCeti.Huber.laurentLeftAlgHom_coe` and `TauCeti.Huber.laurentRightAlgHom_coe`: computation
+  rules for the canonical transition maps on the dense images of the uncompleted localisations.
 
 ## References
 
@@ -310,6 +312,42 @@ theorem continuous_laurentLeftAlgHom (P : PairOfDefinition A) (f : A)
     (isRationalCompletion_ratLoc P {f * f, 1} f
       (isOpen_span_of_one_mem (by simp)))).choose_spec.1
 
+/-- On the dense image of `A₁`, `laurentLeftAlgHom` acts by the localisation map sending `1` to
+`f / f`. -/
+@[simp]
+theorem laurentLeftAlgHom_coe (P : PairOfDefinition A) (f : A)
+    {hden₁ : P.HasDenominatorPower ({f, 1} : Finset A) 1 (Localization.Away (1 : A))}
+    {hden₁₂ : P.HasDenominatorPower ({f * f, 1} : Finset A) f (Localization.Away f)}
+    (x : Localization.Away (1 : A)) :
+    laurentLeftAlgHom P f (hden₁ := hden₁) (hden₁₂ := hden₁₂)
+        (@UniformSpace.Completion.coe' (Localization.Away (1 : A))
+          (P.locUniformSpace ({f, 1} : Finset A) 1 (Localization.Away (1 : A)) hden₁) x) =
+      @UniformSpace.Completion.coe' (Localization.Away f)
+        (P.locUniformSpace ({f * f, 1} : Finset A) f (Localization.Away f) hden₁₂)
+        (IsLocalization.Away.lift (1 : A)
+          (IsLocalization.Away.isUnit_of_dvd f ⟨f, (one_mul f).symm⟩) x) := by
+  let _ := P.locUniformSpace ({f, 1} : Finset A) 1 (Localization.Away (1 : A)) hden₁
+  have _ := P.isUniformAddGroup_locUniformSpace ({f, 1} : Finset A) 1
+    (Localization.Away (1 : A)) hden₁
+  have _ := P.isTopologicalRing_locUniformSpace ({f, 1} : Finset A) 1
+    (Localization.Away (1 : A)) hden₁
+  let _ := P.locUniformSpace ({f * f, 1} : Finset A) f (Localization.Away f) hden₁₂
+  have _ := P.isUniformAddGroup_locUniformSpace ({f * f, 1} : Finset A) f
+    (Localization.Away f) hden₁₂
+  have _ := P.isTopologicalRing_locUniformSpace ({f * f, 1} : Finset A) f
+    (Localization.Away f) hden₁₂
+  have h : (laurentLeftAlgHom P f (hden₁ := hden₁) (hden₁₂ := hden₁₂)).toRingHom.comp
+      UniformSpace.Completion.coeRingHom =
+      UniformSpace.Completion.coeRingHom.comp (IsLocalization.Away.lift (1 : A)
+        (IsLocalization.Away.isUnit_of_dvd f ⟨f, (one_mul f).symm⟩)) := by
+    refine IsLocalization.ringHom_ext (Submonoid.powers (1 : A)) (RingHom.ext fun a ↦ ?_)
+    simp only [RingHom.coe_comp, Function.comp_apply, UniformSpace.Completion.coe_coeRingHom,
+      AlgHom.toRingHom_eq_coe, RingHom.coe_coe, IsLocalization.Away.lift_eq]
+    rw [← P.toCompletionLoc_apply ({f, 1} : Finset A) 1 (Localization.Away (1 : A)) hden₁ a,
+      ← algebraMap_ratLoc, (laurentLeftAlgHom P f).commutes a, algebraMap_ratLoc,
+      P.toCompletionLoc_apply]
+  exact RingHom.congr_fun h x
+
 /-- The canonical continuous `A`-algebra transition map `A⟨{1}/f⟩ →ₐ[A] A⟨{f², 1}/f⟩` between
 the canonical `ratLoc` models of the second Laurent piece and the overlap. -/
 noncomputable def laurentRightAlgHom (P : PairOfDefinition A) (f : A)
@@ -330,6 +368,44 @@ theorem continuous_laurentRightAlgHom (P : PairOfDefinition A) (f : A)
       (isOpen_span_of_one_mem (by simp))).existsUnique_laurentRightAlgHom
     (isRationalCompletion_ratLoc P {f * f, 1} f
       (isOpen_span_of_one_mem (by simp)))).choose_spec.1
+
+/-- On the dense image of `A_f`, `laurentRightAlgHom` fixes each fraction elementwise. -/
+@[simp]
+theorem laurentRightAlgHom_coe (P : PairOfDefinition A) (f : A)
+    {hden₂ : P.HasDenominatorPower ({1} : Finset A) f (Localization.Away f)}
+    {hden₁₂ : P.HasDenominatorPower ({f * f, 1} : Finset A) f (Localization.Away f)}
+    (x : Localization.Away f) :
+    laurentRightAlgHom P f (hden₂ := hden₂) (hden₁₂ := hden₁₂)
+        (@UniformSpace.Completion.coe' (Localization.Away f)
+          (P.locUniformSpace ({1} : Finset A) f (Localization.Away f) hden₂) x) =
+      @UniformSpace.Completion.coe' (Localization.Away f)
+        (P.locUniformSpace ({f * f, 1} : Finset A) f (Localization.Away f) hden₁₂) x := by
+  let c₂ : Localization.Away f →+* ratLoc P {1} f hden₂ :=
+    let _ := P.locUniformSpace ({1} : Finset A) f (Localization.Away f) hden₂
+    have _ := P.isUniformAddGroup_locUniformSpace ({1} : Finset A) f (Localization.Away f) hden₂
+    have _ := P.isTopologicalRing_locUniformSpace ({1} : Finset A) f (Localization.Away f) hden₂
+    UniformSpace.Completion.coeRingHom
+  let c₁₂ : Localization.Away f →+* ratLoc P {f * f, 1} f hden₁₂ :=
+    let _ := P.locUniformSpace ({f * f, 1} : Finset A) f (Localization.Away f) hden₁₂
+    have _ := P.isUniformAddGroup_locUniformSpace ({f * f, 1} : Finset A) f
+      (Localization.Away f) hden₁₂
+    have _ := P.isTopologicalRing_locUniformSpace ({f * f, 1} : Finset A) f
+      (Localization.Away f) hden₁₂
+    UniformSpace.Completion.coeRingHom
+  have h : (laurentRightAlgHom P f (hden₂ := hden₂) (hden₁₂ := hden₁₂)).toRingHom.comp c₂ =
+      c₁₂ := by
+    refine IsLocalization.ringHom_ext (Submonoid.powers f) (RingHom.ext fun a ↦ ?_)
+    have hc₂ : c₂ (algebraMap A (Localization.Away f) a) =
+        algebraMap A (ratLoc P {1} f hden₂) a := by
+      rw [algebraMap_ratLoc, P.toCompletionLoc_apply]
+      rfl
+    have hc₁₂ : c₁₂ (algebraMap A (Localization.Away f) a) =
+        algebraMap A (ratLoc P {f * f, 1} f hden₁₂) a := by
+      rw [algebraMap_ratLoc, P.toCompletionLoc_apply]
+      rfl
+    simp only [RingHom.coe_comp, Function.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
+      hc₂, hc₁₂, (laurentRightAlgHom P f).commutes]
+  exact RingHom.congr_fun h x
 
 end LaurentTransition
 
