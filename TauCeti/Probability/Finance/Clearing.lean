@@ -29,11 +29,11 @@ This file proves that the root exists and is unique under two conditions:
 The margin makes the clearing map grow at least at rate `δ` (`mul_sub_le_clearingMap_sub`), and
 together with the zero limit it gives `δ x ≤ x (1 - H(x))` (`mul_le_clearingMap`). In
 particular the residual reference demand `1 - H(x)` is at least `δ`
-(`le_one_sub_of_clearing_margin`), and the clearing map tends to infinity. The intermediate
-value theorem then shows that the clearing map is a bijection of `(0, ∞)` onto itself
-(`bijOn_clearingMap`), so every positive income level has exactly one positive equilibrium
-price (`existsUnique_clearingMap_eq`, and `existsUnique_div_add_eq_one` in the market form
-`c / x + H x = 1`).
+(`le_one_sub_of_clearing_margin`). The margin alone makes the clearing map tend to infinity
+(`tendsto_clearingMap_atTop`). The intermediate value theorem then shows that the clearing map
+is a bijection of `(0, ∞)` onto itself (`bijOn_clearingMap`), so every positive income level
+has exactly one positive equilibrium price (`existsUnique_clearingMap_eq`, and
+`existsUnique_div_add_eq_one` in the market form `c / x + H x = 1`).
 
 The equilibrium price as a function of `c` is packaged as the order isomorphism
 `clearingOrderIso` of `(0, ∞)`. Its inverse is monotone and Lipschitz with constant `1 / δ`
@@ -78,8 +78,7 @@ theorem div_add_eq_one_iff_clearingMap_eq (hx : x ≠ 0) :
 /-- The derivative of the clearing map is the clearing margin `1 - H x - x H'(x)`. -/
 theorem hasDerivAt_clearingMap {H' : ℝ} (hH : HasDerivAt H H' x) :
     HasDerivAt (clearingMap H) (1 - H x - x * H') x := by
-  have h := (hasDerivAt_id' x).fun_mul (hH.const_sub 1)
-  rwa [show 1 * (1 - H x) + x * -H' = 1 - H x - x * H' by ring] at h
+  exact ((hasDerivAt_id' x).fun_mul (hH.const_sub 1)).congr_deriv (by ring)
 
 /-- The derivative of the clearing map at a point where the demand is differentiable. -/
 theorem deriv_clearingMap (hH : DifferentiableAt ℝ H x) :
@@ -139,15 +138,15 @@ theorem le_one_sub_of_clearing_margin (hH : DifferentiableOn ℝ H (Ioi 0))
   rw [clearingMap_def, mul_comm] at this
   exact le_of_mul_le_mul_left this hx
 
-/-- A positive uniform clearing margin and the zero limit at zero price make the clearing map
-tend to infinity. -/
+/-- A positive uniform clearing margin makes the clearing map tend to infinity. -/
 theorem tendsto_clearingMap_atTop (hδ : 0 < δ) (hH : DifferentiableOn ℝ H (Ioi 0))
-    (hmargin : ∀ x, 0 < x → δ ≤ 1 - H x - x * deriv H x)
-    (hzero : Tendsto (clearingMap H) (𝓝[>] 0) (𝓝 0)) :
+    (hmargin : ∀ x, 0 < x → δ ≤ 1 - H x - x * deriv H x) :
     Tendsto (clearingMap H) atTop atTop := by
-  refine tendsto_atTop_mono' _ ?_ (tendsto_id.const_mul_atTop hδ)
-  filter_upwards [eventually_gt_atTop 0] with x hx
-  exact mul_le_clearingMap hH hmargin hzero hx
+  refine tendsto_atTop_mono' _ ?_ (tendsto_atTop_add_const_right _ (clearingMap H 1)
+    ((tendsto_atTop_add_const_right _ (-1) tendsto_id).const_mul_atTop hδ))
+  filter_upwards [eventually_ge_atTop 1] with x hx
+  rw [id_eq]
+  linarith [mul_sub_le_clearingMap_sub hH hmargin one_pos hx]
 
 /-- A positive uniform clearing margin and the zero limit at zero price make the clearing map a
 bijection of the positive prices onto the positive levels. -/
@@ -162,12 +161,8 @@ theorem bijOn_clearingMap (hδ : 0 < δ) (hH : DifferentiableOn ℝ H (Ioi 0))
   have hx₂ : 0 < y / δ := div_pos hy hδ
   have hyx₂ : y ≤ clearingMap H (y / δ) := by
     simpa [mul_div_cancel₀ y hδ.ne'] using mul_le_clearingMap hH hmargin hzero hx₂
-  obtain ⟨x₁, hx₁y, hx₁⟩ :=
-    ((hzero.eventually (gt_mem_nhds hy)).and (Ioo_mem_nhdsGT hx₂)).exists
-  obtain ⟨x, hx, hxy⟩ := intermediate_value_Icc hx₁.2.le
-    ((differentiableOn_clearingMap hH).continuousOn.mono
-      (Icc_subset_Ioi_iff hx₁.2.le |>.2 hx₁.1)) ⟨hx₁y.le, hyx₂⟩
-  exact ⟨x, hx₁.1.trans_le hx.1, hxy⟩
+  exact isPreconnected_Ioi.intermediate_value_Ioc hx₂ (l := 𝓝[>] 0) inf_le_right
+    (differentiableOn_clearingMap hH).continuousOn hzero ⟨hy, hyx₂⟩
 
 /-- **Global clearing.** Under a positive uniform clearing margin and the zero limit at zero
 price, every positive level `y` is the value of the clearing map at exactly one positive
