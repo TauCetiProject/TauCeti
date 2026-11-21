@@ -186,6 +186,19 @@ theorem sumSpaceEmbed_lpToLebesgueSum (h₀ : p₀ ≤ p) (h₁ : p ≤ p₁) (f
     (lebesgue 𝕜 E μ p₀ p₁).sumSpaceEmbed (lpToLebesgueSum h₀ h₁ f) = L1AddLinfty.ofLp f :=
   sumSpaceEmbed_toSum _ _ _ _ f
 
+/-- Every decomposition `f = g + h` with `g ∈ L^{p₀}` and `h ∈ L^{p₁}` represents the image of `f`
+in the sum space. -/
+theorem lpToLebesgueSum_eq_fstToSum_add_sndToSum (h₀ : p₀ ≤ p) (h₁ : p ≤ p₁) {f : Lp E p μ}
+    {g : Lp E p₀ μ} {h : Lp E p₁ μ} (hgh : ⇑g + ⇑h =ᵐ[μ] f) :
+    lpToLebesgueSum h₀ h₁ f =
+      (lebesgue 𝕜 E μ p₀ p₁).fstToSum g + (lebesgue 𝕜 E μ p₀ p₁).sndToSum h := by
+  refine (lebesgue 𝕜 E μ p₀ p₁).sumSpace_ext ?_
+  apply (l1Linfty 𝕜 E μ).sumSpace_ext
+  simpa only [map_add, sumSpaceEmbed_lpToLebesgueSum, sumSpaceEmbed_fstToSum,
+    sumSpaceEmbed_sndToSum, lebesgue_embed₀, lebesgue_embed₁, L1AddLinfty.sumSpaceEmbed_ofLp,
+    ContinuousLinearMap.coe_coe] using
+    ((L1AddLinfty.lpToAmbient_add_lpToAmbient_eq_iff 𝕜).2 hgh).symm
+
 theorem norm_lpToLebesgueSum_le (h₀ : p₀ ≤ p) (h₁ : p ≤ p₁) (f : Lp E p μ) :
     ‖(lpToLebesgueSum h₀ h₁ f : (lebesgue 𝕜 E μ p₀ p₁).SumSpace)‖ ≤ 2 * ‖f‖ :=
   norm_toSum_le _ _ _ _ f
