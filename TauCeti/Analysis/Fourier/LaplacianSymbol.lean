@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Distribution.FourierMultiplier
 public import Mathlib.Analysis.Fourier.FourierTransformDeriv
 public import Mathlib.Analysis.Fourier.LpSpace
 public import TauCeti.Analysis.Fourier.L2Multiplier
+import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 
 /-!
@@ -32,6 +33,8 @@ symbol identity `(2π ‖ξ‖)² = -(-4π² ‖ξ‖²)` (`TauCeti.sq_sqrtNegLa
 * `TauCeti.laplacianSymbol`: the symbol `-4π² ‖ξ‖²` of the Laplacian.
 * `SchwartzMap.laplacian_eq_fourierMultiplierCLM_laplacianSymbol`: on Schwartz functions, `Δ` is the
   Fourier multiplier with symbol `TauCeti.laplacianSymbol`.
+* `SchwartzMap.fourier_laplacian_apply_eq_laplacianSymbol_smul`: pointwise on the Fourier side,
+  `𝓕 (Δ u) ξ = -4π² ‖ξ‖² 𝓕 u ξ` for Schwartz functions `u`.
 * `TauCeti.hasTemperateGrowth_laplacianSymbol`: it has temperate growth.
 * `TauCeti.sqrtNegLaplacianSymbol`: the symbol `2π ‖ξ‖` of `√(-Δ)`.
 * `TauCeti.sq_sqrtNegLaplacianSymbol`: its square is the symbol of `-Δ`.
@@ -131,9 +134,17 @@ theorem _root_.SchwartzMap.laplacian_eq_fourierMultiplierCLM_laplacianSymbol (f 
     _root_.smul_apply]
 
 omit [CompleteSpace F] in
+/-- `𝓕 (Δ u) ξ = -4π² ‖ξ‖² 𝓕 u ξ` for Schwartz functions, with the symbol of the Laplacian. -/
+theorem _root_.SchwartzMap.fourier_laplacian_apply_eq_laplacianSymbol_smul (u : 𝓢(E, F))
+    (ξ : E) : 𝓕 (Δ u) ξ = (laplacianSymbol ξ : ℂ) • 𝓕 u ξ := by
+  rw [SchwartzMap.fourier_laplacian_apply, ← Complex.coe_smul]
+  congr 1
+  push_cast [laplacianSymbol_apply]
+  ring
+
+omit [CompleteSpace F] in
 /-- **The Laplacian of a Fourier integral.** If `h` has integrable moments `‖ξ‖ⁿ ‖h ξ‖` of order
-`n ≤ 2`, then `𝓕 h` is twice differentiable and its Laplacian is the Fourier integral of
-`-4π² ‖ξ‖² h`. -/
+`n ≤ 2`, then the Laplacian of `𝓕 h` is the Fourier integral of `-4π² ‖ξ‖² h`. -/
 theorem laplacian_fourier {h : E → F} (hh : ∀ n ≤ 2, Integrable (fun ξ ↦ ‖ξ‖ ^ n * ‖h ξ‖))
     (hm : AEStronglyMeasurable h) :
     Δ (𝓕 h) = 𝓕 (fun ξ ↦ (laplacianSymbol ξ : ℂ) • h ξ) := by
@@ -159,9 +170,9 @@ theorem laplacian_fourier {h : E → F} (hh : ∀ n ≤ 2, Integrable (fun ξ �
   congr 1
   rw [← Complex.coe_smul, smul_smul]
   congr 1
+  -- The scalar identity `(-2πi)² ‖v‖² = -4π² ‖v‖²`.
   push_cast [laplacianSymbol_apply]
-  ring_nf
-  simp [Complex.I_sq]
+  linear_combination (4 * π ^ 2 * ‖v‖ ^ 2 : ℂ) * Complex.I_sq
 
 omit [CompleteSpace F] in
 /-- **The Laplacian of an inverse Fourier integral.** If `h` has integrable moments

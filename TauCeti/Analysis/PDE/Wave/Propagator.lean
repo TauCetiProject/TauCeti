@@ -51,6 +51,8 @@ identity and Duhamel's formula.
 * `TauCeti.waveCosSymbol`, `TauCeti.waveSinSymbol`: the symbols, with
   `TauCeti.sqrtNegLaplacianSymbol_mul_waveSinSymbol`: `2π ‖ξ‖ · sin(2π t ‖ξ‖) / (2π ‖ξ‖) =
   sin(2π t ‖ξ‖)`.
+* `TauCeti.integrable_waveCosSymbol_smul`, `TauCeti.integrable_waveSinSymbol_smul`: both symbols
+  are bounded, so multiplying by them preserves integrability.
 * `TauCeti.waveCosPropagator`, `TauCeti.waveSinPropagator`: the operators on `L²(E, F)`, with
   their Fourier-side description, their values at `t = 0` and their norm bounds.
 * `TauCeti.waveCosPropagator_eq_halfWavePropagator`: `cos(tD) = (W₊(t) + W₋(t)) / 2`.
@@ -187,6 +189,30 @@ theorem continuous_waveCosSymbol (t : ℝ) : Continuous (waveCosSymbol (E := E) 
 theorem continuous_waveSinSymbol (t : ℝ) : Continuous (waveSinSymbol (E := E) t) :=
   continuous_const.mul (Complex.continuous_ofReal.comp
     (Real.continuous_sinc.comp (continuous_const.mul sqrtNegLaplacianSymbol.continuous)))
+
+theorem norm_waveCosSymbol_smul_le {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
+    (t : ℝ) (ξ : E) (y : F) : ‖waveCosSymbol t ξ • y‖ ≤ ‖y‖ := by
+  rw [norm_smul]
+  exact mul_le_of_le_one_left (norm_nonneg _) (norm_waveCosSymbol_le t ξ)
+
+theorem norm_waveSinSymbol_smul_le {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
+    (t : ℝ) (ξ : E) (y : F) : ‖waveSinSymbol t ξ • y‖ ≤ |t| * ‖y‖ := by
+  rw [norm_smul]
+  exact mul_le_mul_of_nonneg_right (norm_waveSinSymbol_le t ξ) (norm_nonneg _)
+
+/-- Multiplying an integrable function by the symbol of `cos(tD)` keeps it integrable. -/
+theorem integrable_waveCosSymbol_smul {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
+    [MeasurableSpace E] [OpensMeasurableSpace E] {μ : Measure E} {a : E → F}
+    (ha : Integrable a μ) (t : ℝ) : Integrable (fun ξ ↦ waveCosSymbol t ξ • a ξ) μ :=
+  ha.bdd_smul 1 (continuous_waveCosSymbol t).aestronglyMeasurable
+    (ae_of_all _ (norm_waveCosSymbol_le t))
+
+/-- Multiplying an integrable function by the symbol of `D⁻¹ sin(tD)` keeps it integrable. -/
+theorem integrable_waveSinSymbol_smul {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
+    [MeasurableSpace E] [OpensMeasurableSpace E] {μ : Measure E} {a : E → F}
+    (ha : Integrable a μ) (t : ℝ) : Integrable (fun ξ ↦ waveSinSymbol t ξ • a ξ) μ :=
+  ha.bdd_smul |t| (continuous_waveSinSymbol t).aestronglyMeasurable
+    (ae_of_all _ (norm_waveSinSymbol_le t))
 
 /-- `cos x = (e^{ix} + e^{-ix}) / 2` for the half-wave phases `x = ±2π t ‖ξ‖`. -/
 theorem waveCosSymbol_eq_phaseSymbol (t : ℝ) (ξ : E) :

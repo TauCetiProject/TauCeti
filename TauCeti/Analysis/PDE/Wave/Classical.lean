@@ -28,8 +28,8 @@ with every strong `L²` solution with the same data:
 * **Smoothness** (`TauCeti.contDiff_waveSolution`). `(t, x) ↦ u(t, x)` is `C^∞` on `ℝ × E`.
 * **The equation** (`TauCeti.deriv_deriv_waveSolution`). `∂ₜ²u(t, x) = Δu(t, x)` at every point.
   More precisely, `∂ₜ` maps the solution with data `(f, g)` to the solution with data `(g, Δf)`
-  (`TauCeti.hasDerivAt_waveSolution`), and `Δ` maps it to the solution with data `(Δf, Δg)`
-  (`TauCeti.laplacian_waveSolution`).
+  (`TauCeti.hasDerivAt_waveSolution`, `TauCeti.deriv_waveSolution`), and `Δ` maps it to the
+  solution with data `(Δf, Δg)` (`TauCeti.laplacian_waveSolution`).
 * **The Cauchy data** (`TauCeti.waveSolution_time_zero`, `TauCeti.deriv_waveSolution_time_zero`).
   `u(0, x) = f x` and `∂ₜu(0, x) = g x`.
 * **Agreement with the propagators**
@@ -95,10 +95,9 @@ private theorem continuous_waveIntegrand (f g : 𝓢(E, F)) (t : ℝ) :
     ((continuous_waveSinSymbol t).smul (𝓕 g).continuous)
 
 private theorem norm_waveIntegrand_le (f g : 𝓢(E, F)) (t : ℝ) (ξ : E) :
-    ‖waveCosSymbol t ξ • 𝓕 f ξ + waveSinSymbol t ξ • 𝓕 g ξ‖ ≤ ‖𝓕 f ξ‖ + |t| * ‖𝓕 g ξ‖ := by
-  refine (norm_add_le _ _).trans (add_le_add ?_ ?_) <;> rw [norm_smul]
-  · exact mul_le_of_le_one_left (norm_nonneg _) (norm_waveCosSymbol_le t ξ)
-  · exact mul_le_mul_of_nonneg_right (norm_waveSinSymbol_le t ξ) (norm_nonneg _)
+    ‖waveCosSymbol t ξ • 𝓕 f ξ + waveSinSymbol t ξ • 𝓕 g ξ‖ ≤ ‖𝓕 f ξ‖ + |t| * ‖𝓕 g ξ‖ :=
+  (norm_add_le _ _).trans
+    (add_le_add (norm_waveCosSymbol_smul_le t ξ _) (norm_waveSinSymbol_smul_le t ξ _))
 
 private theorem integrable_pow_mul_waveIntegrand (f g : 𝓢(E, F)) (t : ℝ) (n : ℕ) :
     Integrable fun ξ ↦ ‖ξ‖ ^ n * ‖waveCosSymbol t ξ • 𝓕 f ξ + waveSinSymbol t ξ • 𝓕 g ξ‖ := by
@@ -111,28 +110,6 @@ private theorem integrable_pow_mul_waveIntegrand (f g : 𝓢(E, F)) (t : ℝ) (n
       ≤ ‖ξ‖ ^ n * (‖𝓕 f ξ‖ + |t| * ‖𝓕 g ξ‖) :=
         mul_le_mul_of_nonneg_left (norm_waveIntegrand_le f g t ξ) (by positivity)
     _ = ‖ξ‖ ^ n * ‖𝓕 f ξ‖ + |t| * (‖ξ‖ ^ n * ‖𝓕 g ξ‖) := by ring
-
-private theorem integrable_waveCosSymbol_smul (a : 𝓢(E, F)) (t : ℝ) :
-    Integrable fun ξ ↦ waveCosSymbol t ξ • a ξ :=
-  a.integrable.mono ((continuous_waveCosSymbol t).smul a.continuous).aestronglyMeasurable
-    (ae_of_all _ fun ξ ↦ by
-      rw [norm_smul]
-      exact mul_le_of_le_one_left (norm_nonneg _) (norm_waveCosSymbol_le t ξ))
-
-private theorem integrable_waveSinSymbol_smul (a : 𝓢(E, F)) (t : ℝ) :
-    Integrable fun ξ ↦ waveSinSymbol t ξ • a ξ :=
-  (a.integrable.norm.const_mul |t|).mono'
-    ((continuous_waveSinSymbol t).smul a.continuous).aestronglyMeasurable (ae_of_all _ fun ξ ↦ by
-      rw [norm_smul]
-      exact mul_le_mul_of_nonneg_right (norm_waveSinSymbol_le t ξ) (norm_nonneg _))
-
-/-- `𝓕 (Δ u) ξ = -4π² ‖ξ‖² 𝓕 u ξ` for Schwartz functions, with the symbol of the Laplacian. -/
-private theorem fourier_laplacian_apply_eq_laplacianSymbol_smul (u : 𝓢(E, F)) (ξ : E) :
-    𝓕 (Δ u) ξ = (laplacianSymbol ξ : ℂ) • 𝓕 u ξ := by
-  rw [SchwartzMap.fourier_laplacian_apply, ← Complex.coe_smul]
-  congr 1
-  push_cast [laplacianSymbol_apply]
-  ring
 
 /-- The time derivative of the wave solution with data `(f, g)` is the wave solution with data
 `(g, Δf)`. -/
@@ -156,24 +133,24 @@ theorem hasDerivAt_waveSolution (f g : 𝓢(E, F)) (t : ℝ) (x : E) :
       have := abs_sub_abs_le_abs_sub s t
       rw [Metric.mem_ball, Real.dist_eq] at hs
       linarith
-    refine (norm_add_le _ _).trans (add_le_add ?_ ?_) <;> rw [norm_smul]
-    · rw [norm_mul, Complex.norm_real, Real.norm_eq_abs, laplacianSymbol_apply, abs_neg,
-        abs_of_nonneg (by positivity)]
-      calc 4 * π ^ 2 * ‖ξ‖ ^ 2 * ‖waveSinSymbol s ξ‖ * ‖𝓕 f ξ‖
-          ≤ 4 * π ^ 2 * ‖ξ‖ ^ 2 * (|t| + 1) * ‖𝓕 f ξ‖ := by
-            gcongr
-            exact (norm_waveSinSymbol_le s ξ).trans hs'
-        _ = 4 * π ^ 2 * (|t| + 1) * (‖ξ‖ ^ 2 * ‖𝓕 f ξ‖) := by ring
-    · exact mul_le_of_le_one_left (norm_nonneg _) (norm_waveCosSymbol_le s ξ)
+    refine (norm_add_le _ _).trans (add_le_add ?_ (norm_waveCosSymbol_smul_le s ξ _))
+    rw [norm_smul, norm_mul, Complex.norm_real, Real.norm_eq_abs, laplacianSymbol_apply, abs_neg,
+      abs_of_nonneg (by positivity)]
+    calc 4 * π ^ 2 * ‖ξ‖ ^ 2 * ‖waveSinSymbol s ξ‖ * ‖𝓕 f ξ‖
+        ≤ 4 * π ^ 2 * ‖ξ‖ ^ 2 * (|t| + 1) * ‖𝓕 f ξ‖ := by
+          gcongr
+          exact (norm_waveSinSymbol_le s ξ).trans hs'
+      _ = 4 * π ^ 2 * (|t| + 1) * (‖ξ‖ ^ 2 * ‖𝓕 f ξ‖) := by ring
   have h := hasDerivAt_fourierInv_of_dominated_loc_of_deriv_le (Metric.ball_mem_nhds t one_pos)
     (Eventually.of_forall fun s ↦ (continuous_waveIntegrand f g s).aestronglyMeasurable)
-    ((integrable_waveCosSymbol_smul (𝓕 f) t).add (integrable_waveSinSymbol_smul (𝓕 g) t))
+    ((integrable_waveCosSymbol_smul (𝓕 f).integrable t).add
+      (integrable_waveSinSymbol_smul (𝓕 g).integrable t))
     hcont.aestronglyMeasurable (ae_of_all _ fun ξ s hs ↦ hbd s hs ξ) hb
     (ae_of_all _ fun ξ s _ ↦ hderiv s ξ) x
   refine h.congr_deriv ?_
   rw [waveSolution_def]
   refine congrArg (fun G : E → F ↦ 𝓕⁻ G x) (funext fun ξ ↦ ?_)
-  rw [fourier_laplacian_apply_eq_laplacianSymbol_smul, smul_smul, add_comm, mul_comm]
+  rw [SchwartzMap.fourier_laplacian_apply_eq_laplacianSymbol_smul, smul_smul, add_comm, mul_comm]
 
 /-- The Laplacian of the wave solution with data `(f, g)` is the wave solution with data
 `(Δf, Δg)`. -/
@@ -182,16 +159,20 @@ theorem laplacian_waveSolution (f g : 𝓢(E, F)) (t : ℝ) :
   rw [waveSolution_def, laplacian_fourierInv (fun n _ ↦ integrable_pow_mul_waveIntegrand f g t n)
     (continuous_waveIntegrand f g t).aestronglyMeasurable, waveSolution_def]
   congr 1 with ξ
-  rw [fourier_laplacian_apply_eq_laplacianSymbol_smul,
-    fourier_laplacian_apply_eq_laplacianSymbol_smul, smul_add, smul_comm _ (waveCosSymbol t ξ),
-    smul_comm _ (waveSinSymbol t ξ)]
+  rw [SchwartzMap.fourier_laplacian_apply_eq_laplacianSymbol_smul,
+    SchwartzMap.fourier_laplacian_apply_eq_laplacianSymbol_smul, smul_add,
+    smul_comm _ (waveCosSymbol t ξ), smul_comm _ (waveSinSymbol t ξ)]
+
+/-- The time derivative of the wave solution with data `(f, g)` is the wave solution with data
+`(g, Δf)`. -/
+theorem deriv_waveSolution (f g : 𝓢(E, F)) (t : ℝ) (x : E) :
+    deriv (fun s ↦ waveSolution f g s x) t = waveSolution g (Δ f) t x :=
+  (hasDerivAt_waveSolution f g t x).deriv
 
 /-- **The wave equation.** The wave solution satisfies `∂ₜ²u = Δu` at every point. -/
 theorem deriv_deriv_waveSolution (f g : 𝓢(E, F)) (t : ℝ) (x : E) :
     deriv (fun s ↦ deriv (fun r ↦ waveSolution f g r x) s) t = Δ (waveSolution f g t) x := by
-  have h : (fun s ↦ deriv (fun r ↦ waveSolution f g r x) s) = fun s ↦ waveSolution g (Δ f) s x :=
-    funext fun s ↦ (hasDerivAt_waveSolution f g s x).deriv
-  rw [h, (hasDerivAt_waveSolution g (Δ f) t x).deriv, laplacian_waveSolution]
+  simp only [deriv_waveSolution, laplacian_waveSolution]
 
 /-! ### Smoothness in space and time -/
 
@@ -225,9 +206,8 @@ private theorem integral_fourierChar_smul_eq_fourierIntegral (σ : ℝ) (a : �
     (continuous_fourierChar.comp
       ((spaceTimePairing (E := E)).continuous.clm_apply continuous_const).neg).smul
       (a.continuous.comp continuous_snd)
-  have hL : ∀ v, spaceTimePairing.toLinearMap₁₂ v p = spaceTimePairing v p := fun v ↦ rfl
   rw [VectorFourier.fourierIntegral]
-  simp only [hL]
+  simp only [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply]
   rw [integral_map hΦ.aemeasurable hc.aestronglyMeasurable]
   simp [spaceTimePairing_apply]
 
@@ -253,17 +233,10 @@ omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 private theorem fourierChar_smul_waveCosSymbol_smul (t : ℝ) (ξ x : E) (y : F) :
     𝐞 (inner ℝ ξ x) • waveCosSymbol t ξ • y = (2⁻¹ : ℂ) •
       (𝐞 (1 * ‖ξ‖ * t + inner ℝ ξ x) • y + 𝐞 (-1 * ‖ξ‖ * t + inner ℝ ξ x) • y) := by
-  simp only [Circle.smul_def, smul_smul, ← add_smul]
-  congr 1
-  simp only [fourierChar_apply, waveCosSymbol_apply, sqrtNegLaplacianSymbol_apply,
-    Complex.ofReal_cos, Complex.cos]
-  push_cast
-  have h₁ : 2 * (π : ℂ) * (1 * ‖ξ‖ * t + inner ℝ ξ x) * Complex.I =
-      t * (2 * π * ‖ξ‖) * Complex.I + 2 * π * (inner ℝ ξ x) * Complex.I := by ring
-  have h₂ : 2 * (π : ℂ) * (-1 * ‖ξ‖ * t + inner ℝ ξ x) * Complex.I =
-      -(t * (2 * π * ‖ξ‖)) * Complex.I + 2 * π * (inner ℝ ξ x) * Complex.I := by ring
-  rw [h₁, h₂, Complex.exp_add, Complex.exp_add]
-  ring
+  rw [waveCosSymbol_eq_phaseSymbol, phaseSymbol_apply, phaseSymbol_apply]
+  simp only [Circle.smul_def, smul_smul, ← add_smul, fourierChar_apply]
+  rw [mul_left_comm, mul_add, ← Complex.exp_add, ← Complex.exp_add]
+  congr 4 <;> push_cast [sqrtNegLaplacianSymbol_apply] <;> ring
 
 /-- The `cos` part of the wave solution is smooth in space and time. -/
 private theorem contDiff_fourierInv_waveCosSymbol_smul (a : 𝓢(E, F)) :
@@ -289,11 +262,10 @@ private theorem fourierInv_waveSinSymbol_smul_eq_integral (a : 𝓢(E, F)) (t : 
       (𝓕⁻ (fun ξ ↦ waveCosSymbol s ξ • a ξ) x) s := fun s ↦
     hasDerivAt_fourierInv_of_dominated_loc_of_deriv_le (G := fun r ξ ↦ waveSinSymbol r ξ • a ξ)
       (G' := fun r ξ ↦ waveCosSymbol r ξ • a ξ) Filter.univ_mem
-      (Eventually.of_forall fun r ↦ (integrable_waveSinSymbol_smul a r).1)
-      (integrable_waveSinSymbol_smul a s) (integrable_waveCosSymbol_smul a s).1
-      (ae_of_all _ fun ξ r _ ↦ by
-        rw [norm_smul]
-        exact mul_le_of_le_one_left (norm_nonneg _) (norm_waveCosSymbol_le r ξ))
+      (Eventually.of_forall fun r ↦ (integrable_waveSinSymbol_smul a.integrable r).1)
+      (integrable_waveSinSymbol_smul a.integrable s)
+      (integrable_waveCosSymbol_smul a.integrable s).1
+      (ae_of_all _ fun ξ r _ ↦ norm_waveCosSymbol_smul_le r ξ (a ξ))
       a.integrable.norm (ae_of_all _ fun ξ r _ ↦ (hasDerivAt_waveSinSymbol r ξ).smul_const _) x
   have hc : Continuous fun s ↦ 𝓕⁻ (fun ξ ↦ waveCosSymbol s ξ • a ξ) x :=
     (contDiff_fourierInv_waveCosSymbol_smul a).continuous.comp
@@ -316,8 +288,8 @@ theorem contDiff_waveSolution (f g : 𝓢(E, F)) :
   funext ⟨t, x⟩
   rw [Function.uncurry_apply_pair, waveSolution_def,
     ← fourierInv_waveSinSymbol_smul_eq_integral]
-  exact congrFun (Integrable.fourierInv_add (integrable_waveCosSymbol_smul (𝓕 f) t)
-    (integrable_waveSinSymbol_smul (𝓕 g) t)) x
+  exact congrFun (Integrable.fourierInv_add (integrable_waveCosSymbol_smul (𝓕 f).integrable t)
+    (integrable_waveSinSymbol_smul (𝓕 g).integrable t)) x
 
 /-- The wave solution takes the initial value `f`. -/
 @[simp]
@@ -330,7 +302,7 @@ theorem waveSolution_time_zero (f g : 𝓢(E, F)) : waveSolution f g 0 = ⇑f :=
 /-- The wave solution takes the initial velocity `g`. -/
 theorem deriv_waveSolution_time_zero (f g : 𝓢(E, F)) (x : E) :
     deriv (fun t ↦ waveSolution f g t x) 0 = g x := by
-  rw [(hasDerivAt_waveSolution f g 0 x).deriv, waveSolution_time_zero]
+  rw [deriv_waveSolution, waveSolution_time_zero]
 
 /-! ### Agreement with the `L²` propagators -/
 
@@ -344,8 +316,8 @@ theorem waveSolution_ae_eq_waveCosPropagator_add_waveSinPropagator (f g : 𝓢(E
     waveSolution f g t =ᵐ[volume]
       ⇑(waveCosPropagator F t (f.toLp 2) + waveSinPropagator F t (g.toLp 2) :
         Lp F 2 (volume : Measure E)) := by
-  have hint := (integrable_waveCosSymbol_smul (𝓕 f) t).add
-    (integrable_waveSinSymbol_smul (𝓕 g) t)
+  have hint := (integrable_waveCosSymbol_smul ((𝓕 f).integrable (μ := volume)) t).add
+    (integrable_waveSinSymbol_smul ((𝓕 g).integrable (μ := volume)) t)
   have hfourier (u : 𝓢(E, F)) :
       ⇑(𝓕 (u.toLp 2) : Lp F 2 (volume : Measure E)) =ᵐ[volume] ⇑(𝓕 u : 𝓢(E, F)) := by
     rw [SchwartzMap.toLp_fourier_eq]
