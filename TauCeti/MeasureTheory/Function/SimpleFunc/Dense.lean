@@ -40,6 +40,8 @@ measurable representative.
   function is integrable.
 * `MeasureTheory.SimpleFunc.eLpNorm_eq_top_of_not_memLp` — a simple function outside `Lᵖ` for one
   exponent `p` has infinite `L^q` norm for every `0 < q < ∞`.
+* `MeasureTheory.Lp.simpleFunc.memLp_toSimpleFunc_of_ne_top` — a simple function of `Lᵖ`,
+  `0 < p < ∞`, lies in every `Lʳ`.
 -/
 
 public section
@@ -173,5 +175,13 @@ theorem eLpNorm_eq_top_of_not_memLp {E : Type*} [NormedAddCommGroup E] {p q : �
     ((SimpleFunc.memLp_iff hq0 hq).1 (MeasureTheory.memLp_iff.2 (Ne.lt_top h)))
 
 end SimpleFunc
+
+/-- A simple function of `Lᵖ`, `0 < p < ∞`, has support of finite measure, so it lies in every
+`Lʳ`. -/
+theorem Lp.simpleFunc.memLp_toSimpleFunc_of_ne_top {E : Type*} [NormedAddCommGroup E]
+    {p : ℝ≥0∞} (hp0 : p ≠ 0) (hp : p ≠ ∞) (r : ℝ≥0∞) (f : Lp.simpleFunc E p μ) :
+    MemLp (Lp.simpleFunc.toSimpleFunc f) r μ :=
+  SimpleFunc.memLp_of_finite_measure_preimage r <|
+    SimpleFunc.measure_preimage_lt_top_of_memLp hp0 hp _ (Lp.simpleFunc.memLp f)
 
 end MeasureTheory

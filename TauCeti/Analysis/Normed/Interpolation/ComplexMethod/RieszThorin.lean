@@ -6,14 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Interpolation.ComplexMethod.ToLp
+import TauCeti.MeasureTheory.Function.SimpleFunc.Dense
 
 /-!
 # The Riesz–Thorin theorem for maps of Lebesgue couples
 
 Let `1 ≤ p₀, p₁, q₀, q₁ ≤ ∞`, and let `T₀ : L^{p₀}(μ; E) → L^{q₀}(ν; F)` and
-`T₁ : L^{p₁}(μ; E) → L^{q₁}(ν; F)` be bounded complex-linear operators, for complex Hilbert spaces
-`E` and `F`, that agree on common elements: `T₀ f₀ = T₁ f₁` almost everywhere whenever
-`f₀ = f₁` almost everywhere. Together they define one operator `T` on the sum
+`T₁ : L^{p₁}(μ; E) → L^{q₁}(ν; F)` be bounded complex-linear operators, for a complex Banach space
+`E` and a complex inner product space `F`, that agree on common elements: `T₀ f₀ = T₁ f₁` almost
+everywhere whenever `f₀ = f₁` almost everywhere. Together they define one operator `T` on the sum
 `L^{p₀} + L^{p₁}`, with values in `L^{q₀} + L^{q₁}`, by `T (f₀ + f₁) = T₀ f₀ + T₁ f₁`. For
 `0 < θ < 1` put
 
@@ -31,9 +32,10 @@ and suppose `p, q < ∞` and that `ν` is σ-finite. The **Riesz–Thorin theore
   `‖T f‖_q ≤ M₀ ^ (1 - θ) M₁ ^ θ ‖f‖_p` whenever `M₀` and `M₁` bound `T₀` and `T₁`.
 * `TauCeti.CompatibleCouple.coeFn_lebesgueMap_ae_eq_lebesgueMap`: the operators obtained at two
   parameters `θ` and `θ'` agree on `L^{p_θ} ∩ L^{p_θ'}`, since both are restrictions of `T`.
-* `TauCeti.CompatibleCouple.eq_lebesgueMap`: it is the only bounded operator `Lᵖ → L^q` that
-  agrees with `T₀` on `Lᵖ ∩ L^{p₀}`, because the simple functions of `Lᵖ` lie in `L^{p₀}` and are
-  dense in `Lᵖ`.
+* `TauCeti.CompatibleCouple.eq_lebesgueMap_of_fst`: it is the only bounded operator `Lᵖ → L^q`
+  that agrees with `T₀` on `Lᵖ ∩ L^{p₀}`, because the simple functions of `Lᵖ` lie in `L^{p₀}` and
+  are dense in `Lᵖ`. Likewise it is the only one that agrees with `T₁` on `Lᵖ ∩ L^{p₁}`
+  (`eq_lebesgueMap_of_snd`).
 
 The endpoint exponents may be infinite; only the interpolated exponents `p` and `q` must be
 finite. The scalar form of the theorem for operators defined on simple functions, which allows
@@ -49,7 +51,7 @@ couples, `[L^{p₀}, L^{p₁}]_θ = Lᵖ` and `[L^{q₀}, L^{q₁}]_θ = L^q` wi
 (`lpToLebesgueComplexMethod` and `ComplexMethodSpace.lebesgueToLp`; Bergh–Löfström,
 Theorem 5.1.1), turns it into the operator `Lᵖ → L^q`. All of these maps lie over the embeddings
 of the spaces into `L¹ + L^∞`, which is how the formula `T (f₀ + f₁) = T₀ f₀ + T₁ f₁` is read
-off.
+off. That `(T₀, T₁)` is a map of couples is `lebesgue_fstToSum_eq_sndToSum`.
 
 ## References
 
@@ -69,27 +71,11 @@ open scoped ENNReal
 
 namespace TauCeti.CompatibleCouple
 
-variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E] [CompleteSpace E]
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
   [NormedAddCommGroup F] [InnerProductSpace ℂ F]
   {α β : Type*} {mα : MeasurableSpace α} {mβ : MeasurableSpace β} {μ : Measure α} {ν : Measure β}
   {p₀ p₁ p q₀ q₁ q : ℝ≥0∞} [Fact (1 ≤ p₀)] [Fact (1 ≤ p₁)] [Fact (1 ≤ p)] [Fact (1 ≤ q₀)]
   [Fact (1 ≤ q₁)] [Fact (1 ≤ q)]
-
-omit [InnerProductSpace ℂ E] [CompleteSpace E] [InnerProductSpace ℂ F] [Fact (1 ≤ p)]
-  [Fact (1 ≤ q)] in
-/-- Maps of Lebesgue spaces `T₀ : L^{p₀} → L^{q₀}` and `T₁ : L^{p₁} → L^{q₁}` that agree almost
-everywhere on functions agreeing almost everywhere form a map of the Lebesgue couples: they agree on
-the intersection `L^{p₀} ∩ L^{p₁}`, as maps into the sum `L^{q₀} + L^{q₁}`. -/
-theorem lebesgue_fstToSum_eq_sndToSum {𝕜 : Type*} [NormedField 𝕜] [NormedSpace 𝕜 E]
-    [NormedSpace 𝕜 F] (T₀ : Lp E p₀ μ →L[𝕜] Lp F q₀ ν) (T₁ : Lp E p₁ μ →L[𝕜] Lp F q₁ ν)
-    (h : ∀ (f₀ : Lp E p₀ μ) (f₁ : Lp E p₁ μ), ⇑f₀ =ᵐ[μ] ⇑f₁ → ⇑(T₀ f₀) =ᵐ[ν] ⇑(T₁ f₁))
-    (x : (lebesgue 𝕜 E μ p₀ p₁).inter) :
-    (lebesgue 𝕜 F ν q₀ q₁).fstToSum (T₀ ((lebesgue 𝕜 E μ p₀ p₁).interFst x)) =
-      (lebesgue 𝕜 F ν q₀ q₁).sndToSum (T₁ ((lebesgue 𝕜 E μ p₀ p₁).interSnd x)) := by
-  refine sumSpace_ext _ ?_
-  rw [sumSpaceEmbed_fstToSum, sumSpaceEmbed_sndToSum, lebesgue_embed₀, lebesgue_embed₁,
-    L1AddLinfty.ofLp_eq_ofLp_iff, interFst_apply, interSnd_apply]
-  exact h _ _ (mem_lebesgue_inter_iff.1 x.property)
 
 variable [SigmaFinite ν] (T₀ : Lp E p₀ μ →L[ℂ] Lp F q₀ ν) (T₁ : Lp E p₁ μ →L[ℂ] Lp F q₁ ν)
   (h : ∀ (f₀ : Lp E p₀ μ) (f₁ : Lp E p₁ μ), ⇑f₀ =ᵐ[μ] ⇑f₁ → ⇑(T₀ f₀) =ᵐ[ν] ⇑(T₁ f₁))
@@ -197,25 +183,36 @@ theorem coeFn_lebesgueMap_ae_eq_lebesgueMap {p' q' : ℝ≥0∞} [Fact (1 ≤ p'
   exact (coeFn_lebesgueMap_of_ae_eq_add T₀ T₁ h hθ hp hp_top hq hq_top hf).trans
     (coeFn_lebesgueMap_of_ae_eq_add T₀ T₁ h hθ' hp' hp'_top hq' hq'_top (hfg.symm.trans hf)).symm
 
-omit [InnerProductSpace ℂ E] [CompleteSpace E] in
-/-- A simple function of `Lᵖ`, `p < ∞`, has support of finite measure, so it lies in every `Lʳ`. -/
-private theorem memLp_toSimpleFunc (hp_top : p ≠ ∞) (r : ℝ≥0∞) (f : Lp.simpleFunc E p μ) :
-    MemLp (Lp.simpleFunc.toSimpleFunc f) r μ :=
-  SimpleFunc.memLp_of_finite_measure_preimage r <|
-    SimpleFunc.measure_preimage_lt_top_of_memLp (zero_lt_one.trans_le Fact.out).ne' hp_top _
-      (Lp.simpleFunc.memLp f)
+omit [CompleteSpace E] [SigmaFinite ν] [Fact (1 ≤ p₀)] [Fact (1 ≤ p₁)] [Fact (1 ≤ q₀)]
+  [Fact (1 ≤ q₁)] in
+/-- Two bounded operators `Lᵖ → L^q`, `p < ∞`, that agree on `Lᵖ ∩ Lʳ` are equal, because the
+simple functions of `Lᵖ` lie in `Lʳ` and are dense in `Lᵖ`. -/
+private theorem eq_of_forall_ae_eq (hp_top : p ≠ ∞) {r : ℝ≥0∞}
+    {S S' : Lp E p μ →L[ℂ] Lp F q ν}
+    (hS : ∀ (f : Lp E p μ) (g : Lp E r μ), ⇑f =ᵐ[μ] ⇑g → S f = S' f) : S = S' := by
+  refine ContinuousLinearMap.ext <| congrFun <| (Lp.simpleFunc.denseRange hp_top).equalizer
+    S.continuous S'.continuous (funext fun g => ?_)
+  have hg := Lp.simpleFunc.memLp_toSimpleFunc_of_ne_top (zero_lt_one.trans_le Fact.out).ne' hp_top
+    r g
+  exact hS g (hg.toLp _)
+    ((Lp.simpleFunc.toSimpleFunc_eq_toFun g).symm.trans hg.coeFn_toLp.symm)
 
 /-- **Uniqueness of the Riesz–Thorin operator.** A bounded operator `S : Lᵖ → L^q` that agrees
 with `T₀` on `Lᵖ ∩ L^{p₀}` is the Riesz–Thorin operator. -/
-theorem eq_lebesgueMap {S : Lp E p μ →L[ℂ] Lp F q ν}
+theorem eq_lebesgueMap_of_fst {S : Lp E p μ →L[ℂ] Lp F q ν}
     (hS : ∀ (f : Lp E p μ) (f₀ : Lp E p₀ μ), ⇑f =ᵐ[μ] ⇑f₀ → ⇑(S f) =ᵐ[ν] ⇑(T₀ f₀)) :
-    S = lebesgueMap T₀ T₁ h hθ hp hp_top hq hq_top := by
-  -- Both operators agree on the simple functions of `Lᵖ`, which are dense.
-  refine ContinuousLinearMap.ext <| congrFun <| (Lp.simpleFunc.denseRange hp_top).equalizer
-    S.continuous (lebesgueMap T₀ T₁ h hθ hp hp_top hq hq_top).continuous (funext fun g => ?_)
-  have hg : ⇑(g : Lp E p μ) =ᵐ[μ] ⇑((memLp_toSimpleFunc hp_top p₀ g).toLp _) :=
-    (Lp.simpleFunc.toSimpleFunc_eq_toFun g).symm.trans (MemLp.coeFn_toLp _).symm
-  exact Lp.ext ((hS _ _ hg).trans
-    (coeFn_lebesgueMap_of_ae_eq_fst T₀ T₁ h hθ hp hp_top hq hq_top hg).symm)
+    S = lebesgueMap T₀ T₁ h hθ hp hp_top hq hq_top :=
+  eq_of_forall_ae_eq hp_top fun _ _ hf =>
+    Lp.ext ((hS _ _ hf).trans
+      (coeFn_lebesgueMap_of_ae_eq_fst T₀ T₁ h hθ hp hp_top hq hq_top hf).symm)
+
+/-- **Uniqueness of the Riesz–Thorin operator.** A bounded operator `S : Lᵖ → L^q` that agrees
+with `T₁` on `Lᵖ ∩ L^{p₁}` is the Riesz–Thorin operator. -/
+theorem eq_lebesgueMap_of_snd {S : Lp E p μ →L[ℂ] Lp F q ν}
+    (hS : ∀ (f : Lp E p μ) (f₁ : Lp E p₁ μ), ⇑f =ᵐ[μ] ⇑f₁ → ⇑(S f) =ᵐ[ν] ⇑(T₁ f₁)) :
+    S = lebesgueMap T₀ T₁ h hθ hp hp_top hq hq_top :=
+  eq_of_forall_ae_eq hp_top fun _ _ hf =>
+    Lp.ext ((hS _ _ hf).trans
+      (coeFn_lebesgueMap_of_ae_eq_snd T₀ T₁ h hθ hp hp_top hq hq_top hf).symm)
 
 end TauCeti.CompatibleCouple
