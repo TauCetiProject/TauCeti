@@ -10,9 +10,10 @@ public import Mathlib.Topology.Homeomorph.Lemmas
 public import TauCeti.Algebra.Module.Injective.Cogenerator
 public import TauCeti.Topology.Algebra.Module.Compact
 public import TauCeti.Topology.Algebra.Module.PontryaginDual.Basic
-import Mathlib.GroupTheory.QuotientGroup.Finite
 import Mathlib.Topology.Algebra.Nonarchimedean.Basic
 import Mathlib.Topology.Compactness.Compact
+import TauCeti.RingTheory.Length
+import TauCeti.Topology.Algebra.Module.Submodule
 
 /-!
 # Compact–discrete Pontryagin duality for modules over a compact local ring
@@ -37,78 +38,6 @@ open Filter Topology
 namespace TauCeti
 
 universe u v w w'
-
-section FiniteLength
-
-/-- Every finite module over any ring has finite length. -/
-theorem _root_.IsFiniteLength.of_finite {R M : Type*} [Ring R] [AddCommGroup M] [Module R M]
-    [Finite M] : IsFiniteLength R M := by
-  have : Finite (Submodule R M) := Finite.of_injective (SetLike.coe) SetLike.coe_injective
-  exact isFiniteLength_iff_isNoetherian_isArtinian.mpr ⟨inferInstance, inferInstance⟩
-
-/-- The quotient of a compact topological module by an open submodule is finite. -/
-theorem finite_quotient_of_isOpen {R M : Type*} [Ring R] [AddCommGroup M] [Module R M]
-    [TopologicalSpace M] [SeparatelyContinuousAdd M] [CompactSpace M]
-    (U : Submodule R M) (hU : IsOpen (U : Set M)) : Finite (M ⧸ U) :=
-  have := Submodule.Quotient.discreteTopology_of_isOpen U hU
-  have : CompactSpace (M ⧸ U) :=
-    ⟨Set.image_univ_of_surjective U.mkQ_surjective ▸ isCompact_univ.image U.continuous_mkQ⟩
-  finite_of_compact_of_discrete
-
-section CompactLocal
-
-variable {R : Type*} [CommRing R] [IsLocalRing R] [TopologicalSpace R] [IsTopologicalRing R]
-  [CompactSpace R] [TotallyDisconnectedSpace R]
-
-/-- In a compact totally disconnected commutative local topological ring, the maximal ideal is
-open. -/
-theorem isOpen_maximalIdeal_of_compact : IsOpen (IsLocalRing.maximalIdeal R : Set R) := by
-  have ⟨I, hIopen, h1⟩ : ∃ I : Ideal R, IsOpen (I : Set R) ∧ (1 : R) ∉ I := by
-    by_contra h; push Not at h
-    exact one_ne_zero (IsCompactModule.self.eq_zero_of_forall_mem_of_isOpen h)
-  exact (IsLocalRing.maximalIdeal R).toAddSubgroup.isOpen_of_mem_nhds
-    (mem_of_superset (hIopen.mem_nhds I.zero_mem)
-      (IsLocalRing.le_maximalIdeal fun htop ↦ h1 (htop ▸ Submodule.mem_top)))
-
-/-- Over a compact totally disconnected commutative local topological ring, every module of finite
-length is finite. -/
-theorem finite_of_isFiniteLength {M : Type*} [AddCommGroup M] [Module R M]
-    (hM : IsFiniteLength R M) : Finite M := by
-  have : Finite (R ⧸ IsLocalRing.maximalIdeal R) :=
-    finite_quotient_of_isOpen _ isOpen_maximalIdeal_of_compact
-  induction hM with
-  | of_subsingleton => infer_instance
-  | @of_simple_quotient M _ _ N _ _ ih =>
-    obtain ⟨𝔪, h𝔪, ⟨e⟩⟩ := isSimpleModule_iff_quot_maximal.mp ‹IsSimpleModule R (M ⧸ N)›
-    rw [IsLocalRing.eq_maximalIdeal h𝔪] at e
-    have : Finite (M ⧸ N.toAddSubgroup) := Finite.of_equiv _ e.symm.toEquiv
-    exact Finite.of_addSubgroup_quotient N.toAddSubgroup
-
-/-- Over a compact totally disconnected commutative local topological ring, a module has finite
-length if and only if it is finite. -/
-theorem isFiniteLength_iff_finite {M : Type*} [AddCommGroup M] [Module R M] :
-    IsFiniteLength R M ↔ Finite M :=
-  ⟨finite_of_isFiniteLength, fun _ ↦ IsFiniteLength.of_finite⟩
-
-end CompactLocal
-
-/-- For a discrete module `M` with continuous `R`-action, the annihilator of each element is an
-open ideal of `R`. -/
-theorem isOpen_annihilator_elem {R M : Type*} [CommRing R] [TopologicalSpace R]
-    [AddCommGroup M] [Module R M] [TopologicalSpace M] [DiscreteTopology M]
-    [ContinuousSMul R M] (m : M) :
-    IsOpen (LinearMap.ker (LinearMap.toSpanSingleton R M m) : Set R) :=
-  (isOpen_discrete {(0 : M)}).preimage
-    (continuous_id.smul (continuous_const : Continuous fun _ : R ↦ m))
-
-/-- Over a compact ring, every finitely generated submodule of a discrete module with continuous
-scalar action is finite. -/
-theorem finite_of_fg_of_discrete {R M : Type*} [CommRing R] [TopologicalSpace R] [CompactSpace R]
-    [AddCommGroup M] [Module R M] [TopologicalSpace M] [DiscreteTopology M] [ContinuousSMul R M]
-    {M₀ : Submodule R M} (hM₀ : M₀.FG) : Finite M₀ :=
-  hM₀.isCompact.finite_of_discrete.to_subtype
-
-end FiniteLength
 
 namespace ModulePontryaginDual
 
@@ -384,7 +313,7 @@ def evalEquivOfCompact {N : Type w} [AddCommGroup N] [Module R N] [TopologicalSp
     choose xU hxU using fun U : {U : Submodule R N // IsOpen (U : Set N)} ↦
       show ∃ xU : N ⧸ U.1, ∀ ψ, ψ xU = Φ (map (E := E) U.1.mkQL ψ) by
         have := Submodule.Quotient.discreteTopology_of_isOpen U.1 U.2
-        have := finite_quotient_of_isOpen U.1 U.2
+        have := U.1.finite_quotient_of_isOpen U.2
         obtain ⟨xU, hxU⟩ := (bijective_applyₗ_of_forall_isMaximal hE IsFiniteLength.of_finite).2
           (Φ.1.toLinearMap ∘ₗ (map (E := E) U.1.mkQL).toLinearMap ∘ₗ
             (equivLinearMap R E (N ⧸ U.1)).symm.toLinearMap)
@@ -452,8 +381,8 @@ private theorem finite_torsionBySet_annihilator (m : M) :
     Finite (Submodule.torsionBySet R E
       (LinearMap.ker (LinearMap.toSpanSingleton R M m) : Set R)) := by
   let I : Ideal R := LinearMap.ker (LinearMap.toSpanSingleton R M m)
-  have : Finite (R ⧸ I) := finite_quotient_of_isOpen I (isOpen_annihilator_elem m)
-  refine finite_of_isFiniteLength ((Module.length_ne_top_iff (R := R)).mp ?_)
+  have : Finite (R ⧸ I) := I.finite_quotient_of_isOpen (isOpen_annihilator_elem m)
+  refine IsFiniteLength.finite ((Module.length_ne_top_iff (R := R)).mp ?_)
   rw [← (I.quotientLinearMapEquivTorsionBySet E).length_eq, length_linearMap_of_forall_isMaximal hE]
   exact Module.length_ne_top_iff.mpr IsFiniteLength.of_finite
 
@@ -463,7 +392,8 @@ theorem isCompactModule_of_discrete : IsCompactModule R (ModulePontryaginDual R 
     Submodule.torsionBySet R E (LinearMap.ker (LinearMap.toSpanSingleton R M m) : Set R)
   let ι : ModulePontryaginDual R E M → ∀ m : M, T m := fun φ m ↦
     ⟨φ m, (Submodule.mem_torsionBySet_iff _ _).mpr fun ⟨r, hr⟩ ↦ by
-      change r • φ m = 0; rw [← map_smul, show r • m = 0 from LinearMap.mem_ker.mp hr, map_zero]⟩
+      dsimp only
+      rw [← map_smul, show r • m = 0 from LinearMap.mem_ker.mp hr, map_zero]⟩
   let valPi : (∀ m : M, T m) → M → E := fun f m ↦ (f m : E)
   have hvalPi : IsEmbedding valPi := .piMap fun _ ↦ .subtypeVal
   have hcoe : IsClosedEmbedding (valPi ∘ ι) := isClosedEmbedding_coe (R := R) (E := E) (M := M)
@@ -496,7 +426,7 @@ def evalEquivOfDiscrete : M ≃L[R] ModulePontryaginDual R E (ModulePontryaginDu
     obtain ⟨s, V, hV, hsub⟩ := isOpen_pi_iff.mp hUopen 0
       (show (0 : ModulePontryaginDual R E M) ∈ (⇑) ⁻¹' U by rw [hUeq]; exact Submodule.zero_mem _)
     let M₀ := Submodule.span R (s : Set M)
-    have : Finite M₀ := finite_of_fg_of_discrete (Submodule.fg_span s.finite_toSet)
+    have : Finite M₀ := (Submodule.fg_span s.finite_toSet).finite_of_discrete
     have hker : LinearMap.ker (map (E := E) M₀.subtypeL).toLinearMap ≤
         LinearMap.ker Φ.1.toLinearMap := fun φ hφ ↦ by
       rw [← SetLike.mem_coe, ← hUeq]

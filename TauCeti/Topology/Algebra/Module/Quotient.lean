@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Quotient
 public import Mathlib.Topology.Algebra.Module.Equiv.Basic
 public import TauCeti.Algebra.Module.Submodule.OrbitRelQuotient
+import Mathlib.Topology.Algebra.OpenSubgroup
 
 /-!
 # Quotients of topological modules
@@ -54,6 +55,22 @@ omit [SeparatelyContinuousAdd M] in
 /-- The quotient of a discrete topological module by a submodule is discrete. -/
 instance discreteTopology [DiscreteTopology M] (p : Submodule R M) : DiscreteTopology (M ⧸ p) :=
   discreteTopology_of_isOpen p (isOpen_discrete _)
+
+/-- The quotient of a compact topological module by an open submodule is finite. -/
+theorem _root_.Submodule.finite_quotient_of_isOpen [CompactSpace M] (U : Submodule R M)
+    (hU : IsOpen (U : Set M)) : Finite (M ⧸ U) :=
+  AddSubgroup.quotient_finite_of_isOpen U.toAddSubgroup hU
+
+omit [SeparatelyContinuousAdd M] in
+/-- Scalar multiplication by `A` on `M ⧸ P` is continuous in the second variable when `A` acts
+through an `R`-algebra with continuous `R`-scalar multiplication on `M`. -/
+instance instContinuousConstSMul {A : Type*} [CommSemiring A] [Algebra A R] [Module A M]
+    [IsScalarTower A R M] [ContinuousConstSMul R M] (P : Submodule R M) :
+    ContinuousConstSMul A (M ⧸ P) where
+  continuous_const_smul a := by
+    simpa only [← algebraMap_smul R a] using
+      P.isQuotientMap_mkQ.continuous_iff.mpr
+        (P.continuous_mkQ.comp (continuous_const_smul (algebraMap A R a)))
 
 end Submodule.Quotient
 

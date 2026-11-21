@@ -118,7 +118,8 @@ private def traceDualLiftOfDualFamily {M : Type*} [AddCommGroup M]
         c • mulByTraceDualQuotientMap A K B L (y i) (hy i) q =
           ∑ j, mulByTraceDualQuotientMap A K B L (y j) (hy j) (t i j • q) := by
       obtain ⟨k, rfl⟩ := Submodule.Quotient.mk_surjective _ q
-      change Submodule.Quotient.mk (c • (k • y i)) = ∑ j, Submodule.Quotient.mk ((t i j • k) • y j)
+      simp_rw [← Submodule.Quotient.mk_smul, mulByTraceDualQuotientMap_mk,
+        ← Submodule.Quotient.mk_smul]
       simp_rw [← Submodule.mkQ_apply]; rw [← map_sum]; congr 1
       calc c • (k • y i) = k • (algebraMap B L c * y i) := by simp only [Algebra.smul_def]; ring
         _ = ∑ j, k • (algebraMap A K (t i j) • y j) := by rw [← hty i, Finset.smul_sum]
@@ -133,6 +134,15 @@ private def traceDualLiftOfDualFamily {M : Type*} [AddCommGroup M]
           exact Finset.sum_congr rfl fun j _ ↦ by simp [Finset.sum_smul, smul_assoc]
       _ = ∑ i, c • mulByTraceDualQuotientMap A K B L (y i) (hy i) (ψ (b i • m)) :=
           Finset.sum_congr rfl fun i _ ↦ (hstep i _).symm
+
+omit [IsDomain A] [IsFractionRing A K] in
+@[simp] private theorem traceDualLiftOfDualFamily_apply {M : Type*} [AddCommGroup M]
+    [Module B M] [Module A M] [IsScalarTower A B M] {n : ℕ} (b : Fin n → B) (y : Fin n → L)
+    (hy : ∀ i, y i ∈ Submodule.traceDual A K (1 : Submodule B L))
+    (hsum : ∀ x : L, ∑ i, Algebra.trace K L (x * algebraMap B L (b i)) • y i = x)
+    (ψ : M →ₗ[A] (K ⧸ (1 : Submodule A K))) (m : M) :
+    traceDualLiftOfDualFamily A K B L b y hy hsum ψ m =
+      ∑ i, mulByTraceDualQuotientMap A K B L (y i) (hy i) (ψ (b i • m)) := rfl
 
 omit [IsDomain A] [IsFractionRing A K] in
 /-- Postcomposing `traceDualLiftOfDualFamily` with `traceDualQuotientMap` recovers `ψ`. -/
@@ -155,8 +165,8 @@ private theorem traceDualQuotientMap_traceDualLiftOfDualFamily {M : Type*} [AddC
     rw [mulByTraceDualQuotientMap_mk, traceDualQuotientMap_mk, map_smul, smul_eq_mul, ← ha i,
       mul_comm k, ← Algebra.smul_def]; rfl
   ext m
-  change traceDualQuotientMap A K B L
-      (∑ i, mulByTraceDualQuotientMap A K B L (y i) (hy i) (ψ (b i • m))) = ψ m
+  simp only [LinearMap.comp_apply, LinearMap.restrictScalars_apply,
+    traceDualLiftOfDualFamily_apply]
   rw [map_sum]; simp_rw [hcomp]
   rw [show ∑ i, a i • ψ (b i • m) = ψ ((∑ i, a i • b i) • m) by simp [Finset.sum_smul, smul_assoc],
     ha_sum, one_smul]
@@ -180,8 +190,8 @@ def traceDualLinearMapEquiv (M : Type*) [AddCommGroup M] [Module B M] [Module A 
       ⟨traceDualLiftOfDualFamily A K B L b y hy hsum, fun φ ↦ by
           ext m
           obtain ⟨x, hx⟩ := Submodule.Quotient.mk_surjective _ (φ m)
-          change ∑ i, mulByTraceDualQuotientMap A K B L (y i) (hy i)
-              (traceDualQuotientMap A K B L (φ (b i • m))) = φ m
+          simp only [traceDualLiftOfDualFamily_apply, LinearMap.coe_mk, AddHom.coe_mk,
+            LinearMap.comp_apply, LinearMap.restrictScalars_apply]
           have hbi (i : Fin n) : φ (b i • m) = Submodule.Quotient.mk (algebraMap B L (b i) * x) :=
             by rw [map_smul, ← hx, ← Submodule.Quotient.mk_smul, Algebra.smul_def]
           rw [← hx]; simp only [hbi, traceDualQuotientMap_mk, mulByTraceDualQuotientMap_mk]
@@ -243,7 +253,7 @@ def quotientEquivTraceDualQuotientOfDifferentIdealEqSpan {δ : B}
       map_smul' := fun _ _ ↦ by simp [Algebra.smul_def, mul_assoc] }
   refine LinearEquiv.ofLinearMap
     (Submodule.mapQ _ _ divMap fun x hx ↦ by
-      change x / algebraMap B L δ ∈ Submodule.traceDual A K (1 : Submodule B L)
+      rw [Submodule.mem_comap]; dsimp only [divMap, LinearMap.coe_mk, AddHom.coe_mk]
       rwa [mem_traceDual_one_iff_mul_of_differentIdeal_eq_span hδ, div_mul_cancel₀ _ hδL])
     (Submodule.mapQ _ _ mulMap fun x hx ↦
       (mem_traceDual_one_iff_mul_of_differentIdeal_eq_span hδ).mp hx)
@@ -286,7 +296,7 @@ def directTracePairing : (L ⧸ (1 : Submodule B L)) →ₗ[A] (B →ₗ[A] (K �
 @[simp] theorem directTracePairing_mk_apply (x : L) (b : B) :
     directTracePairing A K B L (Submodule.Quotient.mk x) b =
       Submodule.Quotient.mk (Algebra.trace K L (algebraMap B L b * x)) := by
-  change directTraceQuotientMap A K B L (b • Submodule.Quotient.mk x) = _
+  dsimp only [directTracePairing, LinearMap.coe_mk, AddHom.coe_mk]
   rw [← Submodule.Quotient.mk_smul, directTraceQuotientMap_mk, Algebra.smul_def]
 
 /-- An element `[x] ∈ L ⧸ B` lies in the kernel of `directTracePairing` if and only if `x ∈ Bᵛ`. -/

@@ -19,7 +19,9 @@ For a commutative topological semiring `R` and topological `R`-modules `E` and `
 with the compact-open topology induced from `C(M, E)`. For discrete `M` this coincides with
 pointwise convergence (`isClosedEmbedding_coe`); for compact `M` and discrete `E` it is discrete
 (`instDiscreteTopology`). We provide contravariant (`map`, `congr`) and covariant (`mapCodomain`,
-`congrCodomain`) functoriality and continuous evaluation (`eval`).
+`congrCodomain`) functoriality and evaluation (`eval`, continuous when `M` is discrete via
+`continuous_eval_of_discrete` or when `M` is compact and `E` is discrete via
+`continuous_eval_of_compact`).
 
 ## References
 

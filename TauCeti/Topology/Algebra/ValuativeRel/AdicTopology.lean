@@ -115,6 +115,13 @@ theorem isAdic_maximalIdeal : IsAdic 𝓂[K] := by
     exact ⟨n, fun x hx ↦ hts <| hγ <|
       ((mem_maximalIdeal_pow_iff_valuation_le hπ n x).mp hx).trans_lt hn⟩
 
+/-- Every nonzero ideal of `𝒪[K]` is open in `𝒪[K]`. -/
+theorem isOpen_ideal_of_ne_bot {I : Ideal 𝒪[K]} (hI : I ≠ ⊥) : IsOpen (I : Set 𝒪[K]) := by
+  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
+  obtain ⟨n, hn⟩ := IsDiscreteValuationRing.ideal_eq_span_pow_irreducible hI hϖ
+  rw [hn, ← Ideal.span_singleton_pow, ← hϖ.maximalIdeal_eq]
+  exact (isAdic_maximalIdeal K).isOpen_pow n
+
 /-- **The powers of the maximal ideal form a neighbourhood basis of `0` in `K`**: a subset of `K`
 is a neighbourhood of `0` exactly when it contains `𝓂[K] ^ n` for some `n`. -/
 theorem hasBasis_nhds_zero_maximalIdeal_pow :

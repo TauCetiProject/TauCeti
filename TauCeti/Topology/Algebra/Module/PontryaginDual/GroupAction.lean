@@ -71,7 +71,7 @@ theorem contragredient_eq_inv_smul (ρ : ContRepresentation R G M) {g : G} {u : 
     contragredient E ρ g φ = ((u⁻¹ : Rˣ) : R) • φ := by
   ext x
   have hmul : (u : R) • ρ g⁻¹ x = x := by
-    rw [← hg]; change (ρ g * ρ g⁻¹) x = x; rw [← map_mul, mul_inv_cancel, map_one]; rfl
+    rw [← hg, ← mul_apply_eq_comp, ← map_mul, mul_inv_cancel, map_one, one_apply_eq_self]
   rw [contragredient_apply, show ρ g⁻¹ x = ((u⁻¹ : Rˣ) : R) • x by
     rw [← one_smul R (ρ g⁻¹ x), ← Units.inv_mul u, mul_smul, hmul], map_smul, smul_apply]
 
@@ -95,8 +95,8 @@ theorem continuous_contragredient_of_discrete [DiscreteTopology M]
   refine (((continuous_eval_const (ρ g₀⁻¹ m)).comp continuous_snd).continuousAt).congr
     (Filter.eventually_of_mem ((hU.prod isOpen_univ).mem_nhds ⟨rfl, trivial⟩) ?_)
   rintro ⟨g, φ⟩ ⟨hg, -⟩
-  change φ (ρ g₀⁻¹ m) = contragredient E ρ g φ m
-  rw [contragredient_apply, Set.mem_preimage.mp hg]
+  simp only [Function.comp_apply, contragredient_apply]
+  rw [Set.mem_preimage.mp hg]
 
 /-- For a compact continuous `G`-module `M` and discrete `E`, every level set
 `{g : G | contragredient E ρ g φ = ψ}` is open in `G`. -/
@@ -146,14 +146,21 @@ private theorem bijective_mapIntertwining_of_equiv
   refine Function.bijective_iff_has_inverse.mpr ⟨fun g ↦
     e₂.symm.toContIntertwiningMap.comp ((mapIntertwining E g).comp e₁.toContIntertwiningMap),
     fun f ↦ by
-      ext x; apply e₂.injective
-      change e₂ (e₂.symm (mapIntertwining E (mapIntertwining E f) (e₁ x))) = e₂ (f x)
-      rw [e₂.apply_symm_apply]; exact ext fun φ ↦ by simp [he₁, he₂, mapIntertwining_apply],
+      ext x
+      have h1 : (e₂.symm.toContIntertwiningMap.comp
+          ((mapIntertwining E (mapIntertwining E f)).comp e₁.toContIntertwiningMap)) x =
+          e₂.symm (mapIntertwining E (mapIntertwining E f) (e₁ x)) := rfl
+      have h2 : mapIntertwining E (mapIntertwining E f) (e₁ x) = e₂ (f x) :=
+        ext fun φ ↦ by simp [he₁, he₂, mapIntertwining_apply]
+      simp only [ContIntertwiningMap.toContinuousLinearMap_apply]
+      rw [h1, h2, e₂.symm_apply_apply],
     fun g ↦ by
       ext φ x
+      have h1 : (e₂.symm.toContIntertwiningMap.comp
+          ((mapIntertwining E g).comp e₁.toContIntertwiningMap)) x =
+          e₂.symm (mapIntertwining E g (e₁ x)) := rfl
       simp only [ContIntertwiningMap.toContinuousLinearMap_apply, mapIntertwining_apply]
-      change φ (e₂.symm (mapIntertwining E g (e₁ x))) = g φ x
-      rw [← he₂ _ φ, e₂.apply_symm_apply]; simp [he₁, mapIntertwining_apply]⟩
+      rw [h1, ← he₂ _ φ, e₂.apply_symm_apply]; simp [he₁, mapIntertwining_apply]⟩
 
 end Basic
 

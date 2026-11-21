@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Valued.ValuativeRel
+import TauCeti.Topology.Algebra.Module.Quotient
 
 /-!
 # The inclusion of the valuation ring
@@ -22,6 +23,8 @@ an open embedding.
   image `𝒪[E]`.
 * `TauCeti.isClosedEmbedding_ofId_integer` and `TauCeti.isOpenEmbedding_ofId_integer`: it is a
   closed and open embedding.
+* `TauCeti.isOpen_one_submodule_integerRing` and `TauCeti.instDiscreteTopologyQuotientOne`: the
+  unit `𝒪[E]`-submodule of `E` is open and `E ⧸ 𝒪[E]` is discrete.
 * `TauCeti.completeSpace_integer`: `𝒪[E]` is a complete uniform subspace when `E` is complete.
 -/
 
@@ -59,6 +62,18 @@ theorem isClosedEmbedding_ofId_integer : IsClosedEmbedding (Algebra.ofId 𝒪[E]
 theorem isOpenEmbedding_ofId_integer : IsOpenEmbedding (Algebra.ofId 𝒪[E] E) := by
   rw [coe_ofId_integer]
   exact Valuation.isOpen_integer.isOpenEmbedding_subtypeVal
+
+variable (E) in
+/-- The submodule `(1 : Submodule 𝒪[E] E)` is open in `E`, as it coincides with `𝒪[E]`. -/
+theorem isOpen_one_submodule_integerRing : IsOpen ((1 : Submodule 𝒪[E] E) : Set E) := by
+  have heq : ((1 : Submodule 𝒪[E] E) : Set E) = (𝒪[E] : Set E) := by
+    ext x; rw [SetLike.mem_coe, Submodule.mem_one]
+    exact ⟨fun ⟨a, ha⟩ ↦ ha ▸ a.2, fun hx ↦ ⟨⟨x, hx⟩, rfl⟩⟩
+  rw [heq]; exact Valuation.isOpen_integer
+
+/-- The quotient `E ⧸ (1 : Submodule 𝒪[E] E)` carries the discrete topology. -/
+instance instDiscreteTopologyQuotientOne : DiscreteTopology (E ⧸ (1 : Submodule 𝒪[E] E)) :=
+  Submodule.Quotient.discreteTopology_of_isOpen _ (isOpen_one_submodule_integerRing E)
 
 end TopologicalSpace
 

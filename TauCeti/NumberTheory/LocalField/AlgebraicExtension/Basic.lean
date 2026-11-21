@@ -44,8 +44,8 @@ For finite-dimensional extensions, completeness and local compactness are proved
   topology.
 * `AlgHom.valuativeExtension` and `RingHom.map_vle_map_iff_of_vle_iff`: algebra maps and ring
   homomorphisms extending valuation-preserving base maps preserve the extended valuation.
-* `TauCeti.integerRing_eq_integralClosure`: identification of the valuation ring with the integral
-  closure of `𝒪[K]`.
+* `TauCeti.integerRing_eq_integralClosure` and `TauCeti.isIntegralClosure_integerRing`:
+  identification of the valuation ring with the integral closure of `𝒪[K]`.
 
 ## Implementation notes
 
@@ -408,7 +408,22 @@ theorem integerRing_eq_integralClosure :
       (Valuation.integer.integers (valuation K)),
     Valuation.mem_integer_iff]
 
+variable (K M) in
+/-- `𝒪[M]` is the integral closure of `𝒪[K]` in `M`. -/
+theorem isIntegralClosure_integerRing : IsIntegralClosure 𝒪[M] 𝒪[K] M where
+  algebraMap_injective := Subtype.val_injective
+  isIntegral_iff {x} := by
+    have hmem : x ∈ 𝒪[M] ↔ IsIntegral 𝒪[K] x := by
+      rw [integerRing_eq_integralClosure K M, Subalgebra.mem_toSubring, mem_integralClosure_iff]
+    exact ⟨fun hx ↦ ⟨⟨x, hmem.mpr hx⟩, rfl⟩, fun ⟨b, hb⟩ ↦ hmem.mp (hb ▸ b.2)⟩
+
 end IntegralClosure
+
+/-- The scalar tower `𝒪[K] → 𝒪[M] → M` for a compatible valuative extension. -/
+instance instIsScalarTowerIntegerRing {K M : Type*} [CommRing K] [ValuativeRel K]
+    [CommRing M] [ValuativeRel M] [Algebra K M] [ValuativeExtension K M] :
+    IsScalarTower 𝒪[K] 𝒪[M] M :=
+  .of_algebraMap_eq' rfl
 
 section IntegerRingEquiv
 

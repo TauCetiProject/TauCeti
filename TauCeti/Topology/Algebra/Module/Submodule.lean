@@ -38,6 +38,8 @@ right generality, is not keyed on `Submodule`.
   submodule is discrete, so that the quotient group by a lattice carries the manifold structure
   of a quotient by a discrete subgroup.
 * `Submodule.instDiscreteTopologyProd`: the product of two discrete submodules is discrete.
+* `TauCeti.isOpen_annihilator_elem`: the annihilator of an element in a discrete module with
+  continuous scalar action is open.
 -/
 
 public section
@@ -76,3 +78,13 @@ instance Submodule.instDiscreteTopologyProd {R M M₂ : Type*} [Semiring R] [Add
   DiscreteTopology.of_continuous_injective (f := p.prodEquiv q)
     ((continuous_subtype_val.fst.subtype_mk _).prodMk (continuous_subtype_val.snd.subtype_mk _))
     (p.prodEquiv q).injective
+
+/-- For a discrete module `M` with continuous `R`-action, the annihilator of each element is an
+open ideal of `R`. -/
+theorem TauCeti.isOpen_annihilator_elem {R M : Type*} [CommRing R] [TopologicalSpace R]
+    [AddCommGroup M] [Module R M] [TopologicalSpace M] [DiscreteTopology M]
+    [ContinuousSMul R M] (m : M) :
+    IsOpen (LinearMap.ker (LinearMap.toSpanSingleton R M m) : Set R) :=
+  (isOpen_discrete {(0 : M)}).preimage
+    (continuous_id.smul (continuous_const : Continuous fun _ : R ↦ m))
+

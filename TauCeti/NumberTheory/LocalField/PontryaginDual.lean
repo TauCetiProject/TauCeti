@@ -9,9 +9,11 @@ public import TauCeti.Algebra.Module.Injective.PrincipalIdealRing
 public import TauCeti.NumberTheory.LocalField.Different.Basic
 public import TauCeti.NumberTheory.LocalField.Topology
 public import TauCeti.RingTheory.DedekindDomain.Different.Quotient
+public import TauCeti.NumberTheory.LocalField.AlgebraicExtension.Basic
 public import TauCeti.Topology.Algebra.Module.PontryaginDual.GroupAction
-import TauCeti.NumberTheory.LocalField.AlgebraicExtension.Basic
+public import TauCeti.Topology.Algebra.ValuativeRel.AdicTopology
 import TauCeti.RingTheory.Length
+import TauCeti.Topology.Algebra.Module.Submodule
 
 /-!
 # Coefficient-linear Pontryagin duality over rings of integers of local fields
@@ -45,46 +47,6 @@ section SingleField
 variable (L : Type*) [Field L] [ValuativeRel L] [TopologicalSpace L]
   [IsNonarchimedeanLocalField L]
 
-/-- The submodule `(1 : Submodule 𝒪[L] L)` is open in `L`, as it coincides with `𝒪[L]`. -/
-theorem isOpen_one_submodule_integerRing : IsOpen ((1 : Submodule 𝒪[L] L) : Set L) := by
-  have heq : ((1 : Submodule 𝒪[L] L) : Set L) = (𝒪[L] : Set L) := by
-    ext x; rw [SetLike.mem_coe, Submodule.mem_one]
-    exact ⟨fun ⟨a, ha⟩ ↦ ha ▸ a.2, fun hx ↦ ⟨⟨x, hx⟩, rfl⟩⟩
-  rw [heq]; exact Valuation.isOpen_integer
-
-/-- The quotient `L ⧸ 𝒪[L]` carries the discrete topology. -/
-instance instDiscreteTopologyQuotientOne : DiscreteTopology (L ⧸ (1 : Submodule 𝒪[L] L)) :=
-  Submodule.Quotient.discreteTopology_of_isOpen _ (isOpen_one_submodule_integerRing L)
-
-/-- Every nonzero ideal of `𝒪[L]` is open in `𝒪[L]`. -/
-theorem isOpen_ideal_of_ne_bot {I : Ideal 𝒪[L]} (hI : I ≠ ⊥) : IsOpen (I : Set 𝒪[L]) := by
-  obtain ⟨a, rfl⟩ := IsPrincipalIdealRing.principal I
-  have ha : a ≠ 0 := by rintro rfl; exact hI (by simp)
-  have haL : (a : L) ≠ 0 := fun h ↦ ha (Subtype.ext h)
-  have hpre : ((↑) : 𝒪[L] → L) ⁻¹' ((Homeomorph.mulLeft₀ (a : L) haL) '' (𝒪[L] : Set L)) =
-      (Ideal.span {a} : Set 𝒪[L]) := by
-    ext r
-    simp only [Set.mem_preimage, Set.mem_image, Homeomorph.coe_mulLeft₀, SetLike.mem_coe,
-      Ideal.mem_span_singleton]
-    exact ⟨fun ⟨x, hx, hax⟩ ↦ ⟨⟨x, hx⟩, Subtype.ext hax.symm⟩,
-      fun ⟨c, hc⟩ ↦ hc ▸ ⟨(c : L), c.2, rfl⟩⟩
-  rw [← hpre]
-  exact ((Homeomorph.mulLeft₀ (a : L) haL).isOpenMap _ Valuation.isOpen_integer).preimage
-    continuous_subtype_val
-
-/-- The ring of integers `𝒪[L]` of a nonarchimedean local field is infinite. -/
-private theorem infinite_integerRing : Infinite 𝒪[L] := by
-  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[L]
-  refine Infinite.of_injective (fun n : ℕ ↦ ϖ ^ n) fun m n hmn ↦ ?_
-  wlog hlt : m ≤ n generalizing m n
-  · exact (this n m hmn.symm (le_of_not_ge hlt)).symm
-  rcases eq_or_lt_of_le hlt with rfl | hlt
-  · rfl
-  · have hpow : ϖ ^ (n - m) = 1 := mul_left_cancel₀ (pow_ne_zero m hϖ.ne_zero) <| by
-      rw [← pow_add, Nat.add_sub_of_le hlt.le, mul_one]; exact hmn.symm
-    exact (hϖ.not_isUnit ((isUnit_pow_iff (Nat.sub_ne_zero_of_lt hlt)).mp
-      (hpow ▸ isUnit_one))).elim
-
 variable {L} in
 /-- **Continuity equals torsion on discrete `𝒪[L]`-modules**: a discrete `𝒪[L]`-module has
 continuous `𝒪[L]`-action iff every element is killed by a nonzero element of `𝒪[L]`. -/
@@ -93,8 +55,8 @@ theorem continuousSMul_iff_isTorsion {M : Type*} [AddCommGroup M] [Module 𝒪[L
     ContinuousSMul 𝒪[L] M ↔ Module.IsTorsion 𝒪[L] M := by
   refine ⟨fun _ m ↦ ?_, fun htor ↦ ⟨continuous_iff_continuousAt.mpr fun ⟨r₀, m₀⟩ ↦ ?_⟩⟩
   · let I := LinearMap.ker (LinearMap.toSpanSingleton 𝒪[L] M m)
-    have : Finite (𝒪[L] ⧸ I) := finite_quotient_of_isOpen I (isOpen_annihilator_elem m)
-    have hne : I ≠ ⊥ := fun hbot ↦ (infinite_integerRing L).not_finite <|
+    have : Finite (𝒪[L] ⧸ I) := I.finite_quotient_of_isOpen (isOpen_annihilator_elem m)
+    have hne : I ≠ ⊥ := fun hbot ↦ Infinite.not_finite <|
       Finite.of_equiv (𝒪[L] ⧸ I) (Submodule.quotEquivOfEqBot I hbot).toEquiv
     obtain ⟨r, hrI, hr0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hne
     exact ⟨⟨r, mem_nonZeroDivisors_of_ne_zero hr0⟩, LinearMap.mem_ker.mp hrI⟩
@@ -128,13 +90,14 @@ def quotientMaximalIdealPowEquivTorsionBySet {ϖ : 𝒪[L]} (hϖ : Irreducible �
         rw [← Submodule.Quotient.mk_smul, Algebra.smul_def]; rfl }
   have hker : LinearMap.ker f = 𝓂[L] ^ n := by
     rw [hmn]; ext a; rw [LinearMap.mem_ker, Ideal.mem_span_singleton]
-    change Submodule.Quotient.mk (p := (1 : Submodule 𝒪[L] L)) ((a : L) / (ϖ : L) ^ n) = 0 ↔ _
+    dsimp only [f, LinearMap.coe_mk, AddHom.coe_mk]
     rw [Submodule.Quotient.mk_eq_zero, Submodule.mem_one]
     exact ⟨fun ⟨b, hb⟩ ↦ ⟨b, Subtype.ext <| by
         simpa [mul_comm] using (div_eq_iff hpowL).mp (show (b : L) = _ from hb).symm⟩,
       fun ⟨b, hb⟩ ↦ ⟨b, by
-        change (b : L) = (a : L) / (ϖ : L) ^ n; rw [hb]; push_cast
-        rw [mul_div_cancel_left₀ _ hpowL]⟩⟩
+        simp only [Algebra.algebraMap_ofSubsemiring_apply]
+        have hbL : (a : L) = (ϖ : L) ^ n * (b : L) := by exact_mod_cast hb
+        rw [hbL, mul_div_cancel_left₀ _ hpowL]⟩⟩
   have hrange : LinearMap.range f = Submodule.torsionBySet 𝒪[L] (L ⧸ (1 : Submodule 𝒪[L] L))
       ((𝓂[L] ^ n : Ideal 𝒪[L]) : Set 𝒪[L]) := by
     ext q; obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ q
@@ -142,17 +105,19 @@ def quotientMaximalIdealPowEquivTorsionBySet {ϖ : 𝒪[L]} (hϖ : Irreducible �
     refine ⟨?_, fun h ↦ ?_⟩
     · rintro ⟨a, ha⟩ ⟨r, hr⟩
       obtain ⟨c, rfl⟩ := Ideal.mem_span_singleton.mp (hmn ▸ hr)
-      rw [← ha]; change (ϖ ^ n * c) • Submodule.Quotient.mk ((a : L) / (ϖ : L) ^ n) = 0
+      rw [← ha]; dsimp only [f, LinearMap.coe_mk, AddHom.coe_mk]
       rw [← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero, Submodule.mem_one]
       exact ⟨c * a, by
-        change ((c * a : 𝒪[L]) : L) = ((ϖ ^ n * c : 𝒪[L]) : L) * ((a : L) / (ϖ : L) ^ n)
-        push_cast; field_simp [hpowL]⟩
+        simp only [Algebra.smul_def, Algebra.algebraMap_ofSubsemiring_apply, Subring.coe_mul,
+          SubmonoidClass.coe_pow]
+        field_simp [hpowL]⟩
     · have h0 := h ⟨ϖ ^ n, hmn ▸ Ideal.mem_span_singleton_self _⟩
       rw [← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero, Submodule.mem_one] at h0
       obtain ⟨a, ha⟩ := h0
       refine ⟨a, congrArg Submodule.Quotient.mk ?_⟩
-      change (a : L) = ((ϖ ^ n : 𝒪[L]) : L) * x at ha
-      push_cast at ha; rw [ha, mul_div_cancel_left₀ _ hpowL]
+      simp only [Algebra.smul_def, Algebra.algebraMap_ofSubsemiring_apply,
+        SubmonoidClass.coe_pow] at ha
+      rw [ha, mul_div_cancel_left₀ _ hpowL]
   exact (Submodule.quotEquivOfEq _ _ hker.symm).trans
     (f.quotKerEquivRange.trans (LinearEquiv.ofEq _ _ hrange))
 variable {L} in
@@ -206,7 +171,7 @@ def dualQuotientMaximalIdealPowEquiv {ϖ : 𝒪[L]} (hϖ : Irreducible ϖ) (n : 
   have : DiscreteTopology (𝒪[L] ⧸ (𝓂[L] ^ n : Ideal 𝒪[L])) :=
     Submodule.Quotient.discreteTopology_of_isOpen _ hopen
   have : CompactSpace (𝒪[L] ⧸ (𝓂[L] ^ n : Ideal 𝒪[L])) :=
-    have := finite_quotient_of_isOpen _ hopen; Finite.compactSpace
+    have := (𝓂[L] ^ n : Ideal 𝒪[L]).finite_quotient_of_isOpen hopen; Finite.compactSpace
   exact ⟨(equivLinearMap 𝒪[L] (L ⧸ (1 : Submodule 𝒪[L] L)) _).trans
       (((𝓂[L] ^ n : Ideal 𝒪[L]).quotientLinearMapEquivTorsionBySet _).trans
         (quotientMaximalIdealPowEquivTorsionBySet hϖ n).symm),
@@ -219,28 +184,6 @@ section Extension
 variable (K L : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
   [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L]
-
-omit [TopologicalSpace K] [IsNonarchimedeanLocalField K] [TopologicalSpace L]
-  [IsNonarchimedeanLocalField L] in
-/-- The scalar tower `𝒪[K] → 𝒪[L] → L` for a compatible extension of local fields. -/
-instance instIsScalarTowerIntegerRing : IsScalarTower 𝒪[K] 𝒪[L] L := .of_algebraMap_eq' rfl
-
-/-- `𝒪[L]` is the integral closure of `𝒪[K]` in `L`. -/
-theorem isIntegralClosure_integerRing : IsIntegralClosure 𝒪[L] 𝒪[K] L where
-  algebraMap_injective := Subtype.val_injective
-  isIntegral_iff {x} := by
-    have := finite_of_valuativeExtension K L
-    have hmem : x ∈ 𝒪[L] ↔ IsIntegral 𝒪[K] x := by
-      rw [integerRing_eq_integralClosure K L, Subalgebra.mem_toSubring, mem_integralClosure_iff]
-    exact ⟨fun hx ↦ ⟨⟨x, hmem.mpr hx⟩, rfl⟩, fun ⟨b, hb⟩ ↦ hmem.mp (hb ▸ b.2)⟩
-
-omit [TopologicalSpace K] [IsNonarchimedeanLocalField K] in
-/-- Scalar multiplication by `𝒪[K]` on `L ⧸ P` is continuous in the second variable. -/
-instance instContinuousConstSMulQuotient (P : Submodule 𝒪[L] L) :
-    ContinuousConstSMul 𝒪[K] (L ⧸ P) where
-  continuous_const_smul a := by
-    simpa only [← algebraMap_smul 𝒪[L] a] using
-      (continuous_const_smul (algebraMap 𝒪[K] 𝒪[L] a) : Continuous fun q : L ⧸ P ↦ _)
 
 /-- The inverse different `𝒪[L]ᵛ` is an open `𝒪[L]`-submodule of `L`. -/
 theorem isOpen_traceDual_one :
@@ -277,18 +220,13 @@ def traceDualPontryaginEquiv (M : Type*) [AddCommGroup M] [Module 𝒪[L] M] [Mo
     ⟨mulByTraceDualQuotientMap 𝒪[K] K 𝒪[L] L (y i) (hy i), continuous_of_discreteTopology⟩
   let smulCM (i : Fin n) : C(M, M) := ⟨(b i • ·), continuous_const_smul (b i)⟩
   let toF : ModulePontryaginDual 𝒪[L] DL M → ModulePontryaginDual 𝒪[K] DK M := fun φ ↦
-    ⟨⟨e φ.1.toLinearMap, by
-      change Continuous ⇑(e φ.1.toLinearMap)
-      rw [show ⇑(e φ.1.toLinearMap) = fun m ↦ trCM (φ m) from
-        funext (traceDualLinearMapEquiv_apply 𝒪[K] K 𝒪[L] L _)]
-      exact trCM.continuous.comp (map_continuous φ)⟩⟩
+    ⟨⟨e φ.1.toLinearMap, (trCM.continuous.comp (map_continuous φ)).congr fun m ↦
+      (traceDualLinearMapEquiv_apply 𝒪[K] K 𝒪[L] L _ m).symm⟩⟩
   let invF : ModulePontryaginDual 𝒪[K] DK M → ModulePontryaginDual 𝒪[L] DL M := fun ψ ↦
-    ⟨⟨e.symm ψ.1.toLinearMap, by
-      change Continuous ⇑(e.symm ψ.1.toLinearMap)
-      rw [show ⇑(e.symm ψ.1.toLinearMap) = fun m ↦ ∑ i, mulCM i (ψ (smulCM i m)) from
-        funext (traceDualLinearMapEquiv_symm_apply_of_dualFamily 𝒪[K] K 𝒪[L] L b y hy hsum _)]
-      exact continuous_finsetSum Finset.univ fun i _ ↦
-        (mulCM i).continuous.comp ((map_continuous ψ).comp (smulCM i).continuous)⟩⟩
+    ⟨⟨e.symm ψ.1.toLinearMap,
+      (continuous_finsetSum Finset.univ fun i _ ↦
+        (mulCM i).continuous.comp ((map_continuous ψ).comp (smulCM i).continuous)).congr fun m ↦
+          (traceDualLinearMapEquiv_symm_apply_of_dualFamily 𝒪[K] K 𝒪[L] L b y hy hsum _ m).symm⟩⟩
   refine
     { toFun := toF, invFun := invF,
       left_inv := fun _ ↦ ext fun m ↦ LinearMap.congr_fun (e.symm_apply_apply _) m,
@@ -369,8 +307,8 @@ def quotientEquivTraceDualQuotientOfUniformizer :
     quotientEquivTraceDualQuotientOfUniformizer K L hϖ (Submodule.Quotient.mk x) =
       Submodule.Quotient.mk (x / ((ϖ : L) ^ differentExponent K L)) := by
   have := finite_of_valuativeExtension K L; have := isIntegralClosure_integerRing K L
-  change quotientEquivTraceDualQuotientOfDifferentIdealEqSpan 𝒪[K] K 𝒪[L] L
-    (differentIdeal_eq_span_pow_uniformizer K L hϖ) (Submodule.Quotient.mk x) = _
+  dsimp only [quotientEquivTraceDualQuotientOfUniformizer, ContinuousLinearEquiv.coe_mk,
+    LinearEquiv.coe_toEquiv]
   rw [quotientEquivTraceDualQuotientOfDifferentIdealEqSpan_mk, map_pow]; rfl
 
 /-- **Change of coefficient ring for local-field Pontryagin duals**: choosing a uniformizer `ϖ`,
@@ -396,9 +334,9 @@ variable {M : Type*} [AddCommGroup M] [Module 𝒪[L] M] [Module 𝒪[K] M] [IsS
     pontryaginDualEquivOfUniformizer K L hϖ M φ m =
       traceDualQuotientMap 𝒪[K] K 𝒪[L] L
         (quotientEquivTraceDualQuotientOfUniformizer K L hϖ (φ m)) := by
-  change traceDualPontryaginEquiv K L M
-    (congrCodomain (M := M) (quotientEquivTraceDualQuotientOfUniformizer K L hϖ) φ) m = _
-  rw [traceDualPontryaginEquiv_apply, congrCodomain_apply]
+  dsimp only [pontryaginDualEquivOfUniformizer, ContinuousLinearEquiv.trans_apply]
+  rw [traceDualPontryaginEquiv_apply]
+  exact congrArg _ (congrCodomain_apply (quotientEquivTraceDualQuotientOfUniformizer K L hϖ) φ m)
 
 /-- Compatibility of `pontryaginDualEquivOfUniformizer` with the `𝒪[L]`-action on `M`. -/
 theorem pontryaginDualEquivOfUniformizer_smul_apply (b : 𝒪[L])
@@ -444,7 +382,7 @@ theorem mk_inv_uniformizer_ne_zero {ϖ : 𝒪[L]} (hϖ : Irreducible ϖ) :
   rintro ⟨b, hb⟩
   have hϖL : (ϖ : L) ≠ 0 := fun h ↦ hϖ.ne_zero (Subtype.ext h)
   exact hϖ.not_isUnit (IsUnit.of_mul_eq_one b <| Subtype.ext <| by
-    change (ϖ : L) * (b : L) = 1
+    push_cast
     rw [show (b : L) = (ϖ : L)⁻¹ from hb, mul_inv_cancel₀ hϖL])
 
 /-- **Explicit witness in the kernel of the naive trace pairing**: whenever `L / K` is ramified
@@ -463,10 +401,9 @@ theorem mk_inv_uniformizer_mem_ker_directTracePairing (hram : ¬ IsUnramified K 
     Nat.one_le_iff_ne_zero.mpr (mt (differentExponent_eq_zero_iff K L).mp hram)
   have hϖL : (ϖ : L) ≠ 0 := fun h ↦ hϖ.ne_zero (Subtype.ext h)
   refine Submodule.mem_one.mpr ⟨ϖ ^ (differentExponent K L - 1), ?_⟩
-  change ((ϖ ^ (differentExponent K L - 1) : 𝒪[L]) : L) =
-    (ϖ : L)⁻¹ * ((ϖ ^ differentExponent K L : 𝒪[L]) : L)
-  push_cast
-  rw [show (ϖ : L) ^ differentExponent K L = (ϖ : L) * (ϖ : L) ^ (differentExponent K L - 1) by
+  simp only [map_pow, Algebra.algebraMap_ofSubsemiring_apply]
+  rw [show (ϖ : L) ^ differentExponent K L =
+      (ϖ : L) * (ϖ : L) ^ (differentExponent K L - 1) by
     rw [← pow_succ', Nat.sub_add_cancel hd], inv_mul_cancel_left₀ hϖL]
 
 end Extension
