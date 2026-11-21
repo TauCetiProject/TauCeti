@@ -280,7 +280,7 @@ theorem norm_euclideanSecondOrderCoeff_le
       (ContinuousLinearMap.apply ℝ (EuclideanSpace ℝ ι →L[ℝ] ℝ)
         (EuclideanSpace.single i (1 : ℝ)))‖ ≤ 1 :=
     ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun H ↦ by
-      simpa using H.le_opNorm₂ (EuclideanSpace.single i (1 : ℝ)) (EuclideanSpace.single j 1)
+      simpa using H.abs_apply_single_single_le i j
   exact (ContinuousLinearMap.norm_lsmul_compHolder₂_const_le _ _).trans
     (mul_le_of_le_one_right (norm_nonneg _) he)
 
@@ -293,7 +293,7 @@ theorem norm_euclideanFirstOrderCoeff_le
   -- Evaluation of a covector at a basis vector has norm at most one.
   have he : ‖ContinuousLinearMap.apply ℝ ℝ (EuclideanSpace.single i (1 : ℝ))‖ ≤ 1 :=
     ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun v ↦ by
-      simpa using v.le_opNorm (EuclideanSpace.single i (1 : ℝ))
+      simpa using v.abs_apply_single_le i
   exact (ContinuousLinearMap.norm_lsmul_compHolder₂_const_le _ _).trans
     (mul_le_of_le_one_right (norm_nonneg _) he)
 
