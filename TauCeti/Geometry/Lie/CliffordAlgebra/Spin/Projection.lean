@@ -98,7 +98,8 @@ noncomputable def realCliffordSpecialOrthogonalEmbeddedLieSubgroupData (n : ℕ)
       (SpecialOrthogonalUnitsRange(n)) (SpecialOrthogonalLieModel(n)) :=
   TauCeti.Lie.EmbeddedLieSubgroupData.ofIsClosed (by
     rw [MonoidHom.coe_range]
-    exact QuadraticMap.isClosed_range_specialOrthogonalToGeneralLinear_realCliffordForm n)
+    exact (show QuadraticForm ℝ (Fin n → ℝ) from
+      realCliffordForm n 0).isClosed_range_specialOrthogonalToGeneralLinear)
 
 private noncomputable def spinAmbientCoordinateLieEquiv (n : ℕ) :
     TauCeti.Lie.lieSubalgebraOfSubgroup
@@ -251,20 +252,23 @@ noncomputable def realCliffordSpinToSpecialOrthogonalSmoothRange (n : ℕ) :
       (SpinUnitsRange(n)) (SpecialOrthogonalUnitsRange(n)) :=
   -- The type annotation fixes the target carrier before synthesis chooses its selected chart.
   (show SpinUnitsRange(n) →ₜ* SpecialOrthogonalUnitsRange(n) from
-    realCliffordSpinToSpecialOrthogonalRange n).toContMDiffMonoidMorphism _ _
+    spinToSpecialOrthogonalUnitsRange
+      (show QuadraticForm ℝ (Fin n → ℝ) from realCliffordForm n 0)).toContMDiffMonoidMorphism _ _
 
 /-- The smooth carrier projection has the same underlying map as the continuous projection. -/
 @[simp]
 theorem realCliffordSpinToSpecialOrthogonalSmoothRange_apply (n : ℕ) (x : SpinUnitsRange(n)) :
     realCliffordSpinToSpecialOrthogonalSmoothRange n x =
-      realCliffordSpinToSpecialOrthogonalRange n x :=
+      spinToSpecialOrthogonalUnitsRange
+        (show QuadraticForm ℝ (Fin n → ℝ) from realCliffordForm n 0) x :=
   by
     rw [realCliffordSpinToSpecialOrthogonalSmoothRange]
     exact congrFun
       (ContinuousMonoidHom.coe_toContMDiffMonoidMorphism
         (I := 𝓘(ℝ, SpinLieModel(n))) (I' := 𝓘(ℝ, SpecialOrthogonalLieModel(n)))
         (show SpinUnitsRange(n) →ₜ* SpecialOrthogonalUnitsRange(n) from
-          realCliffordSpinToSpecialOrthogonalRange n)) x
+          spinToSpecialOrthogonalUnitsRange
+            (show QuadraticForm ℝ (Fin n → ℝ) from realCliffordForm n 0))) x
 
 /-- The abstract Lie map of the smooth projection between the two closed range carriers. -/
 noncomputable def realCliffordSpinToSpecialOrthogonalRangeLieMap (n : ℕ) :
@@ -304,13 +308,15 @@ theorem realCliffordSpinToSpecialOrthogonalCoordinateLieHom_apply (n : ℕ)
 /-- The continuous projection between the closed real Spin and special-orthogonal carriers is a
 quotient map. -/
 theorem isQuotientMap_realCliffordSpinToSpecialOrthogonalRange (n : ℕ) :
-    Topology.IsQuotientMap (realCliffordSpinToSpecialOrthogonalRange n) := by
+    Topology.IsQuotientMap (spinToSpecialOrthogonalUnitsRange
+      (show QuadraticForm ℝ (Fin n → ℝ) from realCliffordForm n 0)) := by
   let p : SpinUnitsRange(n) →ₜ* SpecialOrthogonalUnitsRange(n) :=
-    realCliffordSpinToSpecialOrthogonalRange n
+    spinToSpecialOrthogonalUnitsRange
+      (show QuadraticForm ℝ (Fin n → ℝ) from realCliffordForm n 0)
   change Topology.IsQuotientMap p
   let _ : CompactSpace (SpinUnitsRange(n)) :=
     Homeomorph.compactSpace
-      (realCliffordSpinContinuousMulEquivUnitsRange n).toHomeomorph
+      (spinGroupContinuousMulEquivUnitsRange (realCliffordForm n 0)).toHomeomorph
   apply Topology.IsQuotientMap.of_surjective_continuous
   · exact realCliffordSpinToSpecialOrthogonalRange_surjective n
   · exact p.continuous
@@ -322,9 +328,11 @@ theorem realCliffordSpinToSpecialOrthogonalRangeLieMap_eq_continuousMonoidHomLie
         (I := 𝓘(ℝ, SpinLieModel(n)))
         (I' := 𝓘(ℝ, SpecialOrthogonalLieModel(n)))
         (show SpinUnitsRange(n) →ₜ* SpecialOrthogonalUnitsRange(n) from
-          realCliffordSpinToSpecialOrthogonalRange n) := by
+          spinToSpecialOrthogonalUnitsRange
+            (show QuadraticForm ℝ (Fin n → ℝ) from realCliffordForm n 0)) := by
   let p : SpinUnitsRange(n) →ₜ* SpecialOrthogonalUnitsRange(n) :=
-    realCliffordSpinToSpecialOrthogonalRange n
+    spinToSpecialOrthogonalUnitsRange
+      (show QuadraticForm ℝ (Fin n → ℝ) from realCliffordForm n 0)
   -- The two APIs bundle the same function through different opaque morphism structures; expose
   -- their selected smooth and continuous presentations before using the public defining equation.
   change _root_.lieMap (realCliffordSpinToSpecialOrthogonalSmoothRange n) =

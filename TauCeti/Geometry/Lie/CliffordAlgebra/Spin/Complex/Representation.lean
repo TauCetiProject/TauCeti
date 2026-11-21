@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import TauCeti.LinearAlgebra.Matrix.ToLin
 public import TauCeti.Geometry.Lie.AlgebraHom
 public import TauCeti.Algebra.Lie.Subalgebra.RestrictScalars
 public import TauCeti.Geometry.Lie.CliffordAlgebra.Spin.Complex.Basic
@@ -22,6 +23,10 @@ despite being computed using real manifolds.
 For a polarization and any finite basis of its exterior spinor module, we apply this construction
 to the matrix form of the native Fock action. The resulting smooth homomorphism is the native
 `spinRep` in that basis, and its differential is the matrix of the same quadratic Fock operator.
+In quadratic coordinates, this differential upgrades to the `ℂ`-linear Lie algebra homomorphism
+`TauCeti.SpinPolarizationData.complexSpinSmoothMatrixComplexLieHom`, characterized pointwise by
+`complexSpinSmoothMatrixComplexLieHom_apply` and as a Lie homomorphism by
+`complexSpinSmoothMatrixComplexLieHom_eq`.
 Both even and odd ambient dimensions, including dimensions zero and one, are covered.
 The smooth structures require `[Fact Q.Nondegenerate]`. For a polarization `P`, obtain it with
 `letI : Fact Q.Nondegenerate := ⟨P.nondegenerate (.of_ne_zero two_ne_zero)⟩`.
@@ -161,5 +166,59 @@ theorem lieMap_complexSpinSmoothMatrixHom_eq :
         ((((LinearMap.toMatrixAlgEquiv b).toAlgHom).comp (spinAction Q P)).restrictScalars ℝ)).comp
         ((quadraticLieSubalgebra Q).restrictScalarsIncl ℝ) := by
   exact AlgHom.lieMap_complexSpinSmoothHom_eq _
+
+private theorem unitsLieAlgebraLieEquiv_lieMap_complexSpinSmoothMatrixHom_symm
+    (x : quadraticLieSubalgebra Q) :
+    TauCeti.Lie.unitsLieAlgebraLieEquiv
+        (lieMap (P.complexSpinSmoothMatrixHom b)
+          ((complexSpinLieEquivQuadratic (Q := Q)).symm
+            ((RestrictScalars.addEquiv ℝ ℂ (quadraticLieSubalgebra Q)).symm x))) =
+      ((LinearMap.toMatrixAlgEquiv b).toAlgHom.comp (spinAction Q P)) x := by
+  simp [LinearMap.toMatrixAlgEquiv_eq_toMatrix]
+
+/-- The real differential of the smooth Fock representation `P.complexSpinSmoothMatrixHom b`,
+upgraded to a `ℂ`-linear Lie algebra homomorphism on `quadraticLieSubalgebra Q`. -/
+def complexSpinSmoothMatrixComplexLieHom :
+    quadraticLieSubalgebra Q →ₗ⁅ℂ⁆ Matrix ι ι ℂ where
+  toFun x := TauCeti.Lie.unitsLieAlgebraLieEquiv
+    (lieMap (P.complexSpinSmoothMatrixHom b)
+      ((complexSpinLieEquivQuadratic (Q := Q)).symm
+        ((RestrictScalars.addEquiv ℝ ℂ (quadraticLieSubalgebra Q)).symm x)))
+  map_add' x y := by
+    simp only [unitsLieAlgebraLieEquiv_lieMap_complexSpinSmoothMatrixHom_symm, map_add]
+  map_smul' c x := by
+    simp only [unitsLieAlgebraLieEquiv_lieMap_complexSpinSmoothMatrixHom_symm,
+      SetLike.val_smul, map_smul, RingHom.id_apply]
+  map_lie' {x y} := by
+    simp only [unitsLieAlgebraLieEquiv_lieMap_complexSpinSmoothMatrixHom_symm,
+      LieSubalgebra.coe_bracket]
+    exact (((LinearMap.toMatrixAlgEquiv b).toAlgHom.comp (spinAction Q P)).toLieHom).map_lie
+      (x : CliffordAlgebra Q) (y : CliffordAlgebra Q)
+
+private theorem complexSpinSmoothMatrixComplexLieHom_apply' (x : quadraticLieSubalgebra Q) :
+    P.complexSpinSmoothMatrixComplexLieHom b x =
+      TauCeti.Lie.unitsLieAlgebraLieEquiv
+        (lieMap (P.complexSpinSmoothMatrixHom b)
+          ((complexSpinLieEquivQuadratic (Q := Q)).symm
+            ((RestrictScalars.addEquiv ℝ ℂ (quadraticLieSubalgebra Q)).symm x))) :=
+  rfl
+
+/-- In the chosen spinor basis `b`, the `ℂ`-linear differentiated Fock representation acts by the
+matrix of `spinAction Q P x`. -/
+@[simp]
+theorem complexSpinSmoothMatrixComplexLieHom_apply (x : quadraticLieSubalgebra Q) :
+    P.complexSpinSmoothMatrixComplexLieHom b x = LinearMap.toMatrix b b (spinAction Q P x) := by
+  rw [complexSpinSmoothMatrixComplexLieHom_apply',
+    unitsLieAlgebraLieEquiv_lieMap_complexSpinSmoothMatrixHom_symm,
+    AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, LinearMap.toMatrixAlgEquiv_eq_toMatrix]
+
+/-- `P.complexSpinSmoothMatrixComplexLieHom b` equals the `ℂ`-linear matrix Fock algebra
+homomorphism restricted to `quadraticLieSubalgebra Q`. -/
+theorem complexSpinSmoothMatrixComplexLieHom_eq :
+    P.complexSpinSmoothMatrixComplexLieHom b =
+      (((LinearMap.toMatrixAlgEquiv b).toAlgHom.comp (spinAction Q P)).toLieHom).comp
+        (quadraticLieSubalgebra Q).incl := by
+  ext x
+  simp [LinearMap.toMatrixAlgEquiv_eq_toMatrix]
 
 end TauCeti.SpinPolarizationData

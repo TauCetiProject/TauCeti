@@ -12,6 +12,7 @@ public import TauCeti.Algebra.Lie.Orthogonal.Basic
 public import TauCeti.Analysis.Matrix.Normed
 public import TauCeti.Geometry.Lie.Exponential.OneParameter
 public import TauCeti.Geometry.Lie.Exponential.Unitary
+import TauCeti.Geometry.Lie.Exponential.Matrix.SkewAdjoint
 
 /-!
 # Matrix exponential lines in the real special orthogonal group
@@ -23,8 +24,8 @@ subgroups of a concrete special orthogonal carrier with skew-adjoint infinitesim
 The orthogonal group is the unitary group of `Matrix n n ℝ`, so the orthogonal statements are the
 Banach star algebra results `exp_mem_unitary_of_mem_skewAdjoint` and
 `TauCeti.forall_exp_smul_mem_unitary_iff_mem_skewAdjoint` read at that algebra, translated by
-`Matrix.mem_so_iff_mem_skewAdjoint`; only the determinant condition cutting out the special
-orthogonal group is proved from scratch here.
+`Matrix.mem_so_iff_mem_skewAdjoint`, while the determinant condition specializes
+`Matrix.det_exp_eq_one_of_mem_skewAdjointMatricesLieSubalgebra` at `J = 1`.
 
 ## Main results
 
@@ -60,27 +61,10 @@ theorem exp_mem_orthogonalGroup_of_mem_so (A : Matrix n n ℝ)
 
 /-- The exponential of a real skew-symmetric matrix has determinant one. -/
 theorem det_exp_eq_one_of_transpose_eq_neg (A : Matrix n n ℝ) (hA : Aᵀ = -A) :
-    (exp A).det = 1 := by
-  have hAso : A ∈ LieAlgebra.Orthogonal.so n ℝ :=
-    (LieAlgebra.Orthogonal.mem_so n ℝ A).mpr hA
-  have hsq : Set.EqOn ((fun s : ℝ => (exp (s • A)).det) ^ 2)
-      ((fun _ : ℝ => (1 : ℝ)) ^ 2) Set.univ := by
-    intro s _
-    simp only [Pi.pow_apply]
-    have hsso := (LieAlgebra.Orthogonal.so n ℝ).smul_mem s hAso
-    have hdet := Matrix.det_of_mem_unitary
-      (exp_mem_orthogonalGroup_of_mem_so (s • A) hsso)
-    calc
-      (exp (s • A)).det ^ 2 = star (exp (s • A)).det * (exp (s • A)).det := by
-        rw [star_trivial, pow_two]
-      _ = 1 := Unitary.star_mul_self_of_mem hdet
-      _ = (1 : ℝ) ^ 2 := by norm_num
-  have hone := (isPreconnected_univ : IsPreconnected (Set.univ : Set ℝ)).eq_of_sq_eq
-    (f := fun s : ℝ => (exp (s • A)).det) (g := fun _ : ℝ => (1 : ℝ))
-    ((differentiable_exp_smul_const ℝ A).continuous.matrix_det.continuousOn)
-    continuous_const.continuousOn hsq (by intro _ _; norm_num)
-    (y := 0) (by simp) (by simp)
-  simpa using hone (Set.mem_univ (1 : ℝ))
+    (exp A).det = 1 :=
+  det_exp_eq_one_of_mem_skewAdjointMatricesLieSubalgebra (J := 1) (by simp) A <| by
+    simp only [mem_skewAdjointMatricesLieSubalgebra, mem_skewAdjointMatricesSubmodule,
+      Matrix.IsSkewAdjoint, Matrix.IsAdjointPair, mul_one, one_mul, hA]
 
 /-- The exponential of an element of the real orthogonal Lie algebra is special orthogonal. -/
 theorem exp_mem_specialOrthogonalGroup_of_mem_so (A : Matrix n n ℝ)

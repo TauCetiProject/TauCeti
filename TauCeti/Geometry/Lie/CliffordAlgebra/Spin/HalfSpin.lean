@@ -108,8 +108,9 @@ comparison from positive coordinate Spin to the negative-metric Spin group. -/
 theorem realHalfSpinSmoothHom_apply (g : SpinRange) :
     (realHalfSpinSmoothHom o hQ b ρ ε g : S →L[ℂ] S) =
       (halfSpinRep o ρ ε (b.realSpinGroupEquiv hQ
-        ((realCliffordSpinContinuousMulEquivUnitsRange 4).symm g))).toContinuousLinearMap := by
-  obtain ⟨s, rfl⟩ := (realCliffordSpinContinuousMulEquivUnitsRange 4).surjective g
+        ((spinGroupContinuousMulEquivUnitsRange
+          (realCliffordForm 4 0)).symm g))).toContinuousLinearMap := by
+  obtain ⟨s, rfl⟩ := (spinGroupContinuousMulEquivUnitsRange (realCliffordForm 4 0)).surjective g
   simp only [realHalfSpinSmoothHom, AlgHom.realCliffordSpinEvenSmoothHom_apply,
     framedHalfSpinAction, AlgHom.comp_apply, AlgHom.restrictScalars_apply,
     AlgEquiv.coe_toAlgHom, halfSpinRep_apply, OrthonormalBasis.spinGroupToEven_realSpinGroupEquiv,
@@ -118,7 +119,7 @@ theorem realHalfSpinSmoothHom_apply (g : SpinRange) :
       ⟨s, spinGroup.mem_even s.property⟩ :=
     Subtype.ext (coe_spinGroupToEven_apply _ s)
   simp [hs, Module.End.toContinuousLinearMap, LinearMap.toContinuousLinearMap,
-    realCliffordSpinContinuousMulEquivUnitsRange_apply]
+    spinGroupContinuousMulEquivUnitsRange_apply]
 
 /-- In quadratic Clifford coordinates, the differentiated half-spin action is the framed even
 Clifford action restricted to the same chirality eigenspace. -/
@@ -137,7 +138,8 @@ theorem unitsLieAlgebraLieEquiv_lieMap_realHalfSpinSmoothHom
 theorem contMDiff_realHalfSpinRep :
     ContMDiff 𝓘(ℝ, SpinModel) 𝓘(ℝ, S →L[ℂ] S) ∞
       (fun g : SpinRange ↦ (halfSpinRep o ρ ε (b.realSpinGroupEquiv hQ
-        ((realCliffordSpinContinuousMulEquivUnitsRange 4).symm g))).toContinuousLinearMap) := by
+        ((spinGroupContinuousMulEquivUnitsRange
+          (realCliffordForm 4 0)).symm g))).toContinuousLinearMap) := by
   apply (Units.contMDiff_val.comp (realHalfSpinSmoothHom o hQ b ρ ε).contMDiff_toFun).congr
   intro g
   exact (realHalfSpinSmoothHom_apply o hQ b ρ ε g).symm
@@ -146,7 +148,7 @@ theorem contMDiff_realHalfSpinRep :
 theorem contMDiff_realHalfSpinRep_apply :
     ContMDiff (𝓘(ℝ, SpinModel).prod 𝓘(ℝ, S)) 𝓘(ℝ, S) ∞
       (fun p : SpinRange × S ↦ halfSpinRep o ρ ε (b.realSpinGroupEquiv hQ
-        ((realCliffordSpinContinuousMulEquivUnitsRange 4).symm p.1)) p.2) :=
+        ((spinGroupContinuousMulEquivUnitsRange (realCliffordForm 4 0)).symm p.1)) p.2) :=
   (((ContinuousLinearMap.restrictScalarsL ℂ S S ℝ ℝ).contDiff.contMDiff.comp
     (contMDiff_realHalfSpinRep o hQ b ρ ε)).comp contMDiff_fst).clm_apply contMDiff_snd
 
@@ -155,7 +157,8 @@ in operator norm after the frame comparison. -/
 theorem contMDiff_realSpinCHalfSpinRep :
     ContMDiff (𝓘(ℝ, SpinModel).prod (𝓡 1)) 𝓘(ℝ, S →L[ℂ] S) ∞
       (fun p : SpinRange × Circle ↦ (spinCHalfSpinRep o ρ ε
-        (b.realSpinGroupEquiv hQ ((realCliffordSpinContinuousMulEquivUnitsRange 4).symm p.1),
+        (b.realSpinGroupEquiv hQ
+          ((spinGroupContinuousMulEquivUnitsRange (realCliffordForm 4 0)).symm p.1),
           p.2)).toContinuousLinearMap) := by
   have hz : ContMDiff (𝓘(ℝ, SpinModel).prod (𝓡 1)) 𝓘(ℝ, ℂ) ∞
       (fun p : SpinRange × Circle ↦ (p.2 : ℂ)) :=
@@ -172,7 +175,8 @@ half-spinor. -/
 theorem contMDiff_realSpinCHalfSpinRep_apply :
     ContMDiff ((𝓘(ℝ, SpinModel).prod (𝓡 1)).prod 𝓘(ℝ, S)) 𝓘(ℝ, S) ∞
       (fun p : (SpinRange × Circle) × S ↦ spinCHalfSpinRep o ρ ε
-        (b.realSpinGroupEquiv hQ ((realCliffordSpinContinuousMulEquivUnitsRange 4).symm p.1.1),
+        (b.realSpinGroupEquiv hQ
+          ((spinGroupContinuousMulEquivUnitsRange (realCliffordForm 4 0)).symm p.1.1),
           p.1.2) p.2) :=
   (((ContinuousLinearMap.restrictScalarsL ℂ S S ℝ ℝ).contDiff.contMDiff.comp
     (contMDiff_realSpinCHalfSpinRep o hQ b ρ ε)).comp contMDiff_fst).clm_apply contMDiff_snd

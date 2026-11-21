@@ -14,7 +14,7 @@ public import TauCeti.Geometry.Manifold.Instances.Comap
 
 The compact Spin group already has an embedded Lie-group realization in Clifford units.
 Here its charts are pulled back to the original Clifford subtype along
-`realCliffordSpinContinuousMulEquivUnitsRange`. This keeps the original topology and group
+`CliffordAlgebra.spinGroupContinuousMulEquivUnitsRange`. This keeps the original topology and group
 operations and lets constructions on native Spin quotients use the embedded smooth structure.
 
 The comparison is a diffeomorphism, not just an abstract group isomorphism; multiplication
@@ -46,27 +46,29 @@ abbrev realSpinLieModel (n : ℕ) :=
 /-- The charts on native compact Spin pulled back from its embedded units range. -/
 instance instChartedSpaceRealSpin (n : ℕ) :
     ChartedSpace (realSpinLieModel n) (spinGroup (realCliffordForm n 0)) :=
-  (realCliffordSpinContinuousMulEquivUnitsRange n).toHomeomorph.isLocalHomeomorph.chartedSpaceComap
+  (spinGroupContinuousMulEquivUnitsRange
+    (realCliffordForm n 0)).toHomeomorph.isLocalHomeomorph.chartedSpaceComap
 
 /-- The native compact Spin carrier is smooth for the pulled-back charts. -/
 instance instIsManifoldRealSpin (n : ℕ) :
     IsManifold 𝓘(ℝ, realSpinLieModel n) ∞ (spinGroup (realCliffordForm n 0)) :=
   IsLocalHomeomorph.isManifold_chartedSpaceComap
-    (realCliffordSpinContinuousMulEquivUnitsRange n).toHomeomorph.isLocalHomeomorph
+    (spinGroupContinuousMulEquivUnitsRange (realCliffordForm n 0)).toHomeomorph.isLocalHomeomorph
 
 /-- The comparison from native Spin to its embedded units range is a smooth diffeomorphism. -/
 def realSpinDiffeomorphUnitsRange (n : ℕ) :
     Diffeomorph 𝓘(ℝ, realSpinLieModel n) 𝓘(ℝ, realSpinLieModel n)
       (spinGroup (realCliffordForm n 0))
       (MonoidHom.range (spinGroup.toUnits (Q := realCliffordForm n 0))) ∞ :=
-  ((realCliffordSpinContinuousMulEquivUnitsRange n).toHomeomorph.isLocalHomeomorph
+  ((spinGroupContinuousMulEquivUnitsRange (realCliffordForm n 0)).toHomeomorph.isLocalHomeomorph
     |>.isLocalDiffeomorph_chartedSpaceComap (n := ∞)).diffeomorphOfBijective
-      (realCliffordSpinContinuousMulEquivUnitsRange n).bijective
+      (spinGroupContinuousMulEquivUnitsRange (realCliffordForm n 0)).bijective
 
 /-- The smooth comparison is the existing continuous group equivalence. -/
 @[simp]
 theorem realSpinDiffeomorphUnitsRange_apply (n : ℕ) (s : spinGroup (realCliffordForm n 0)) :
-    realSpinDiffeomorphUnitsRange n s = realCliffordSpinContinuousMulEquivUnitsRange n s :=
+    realSpinDiffeomorphUnitsRange n s =
+      spinGroupContinuousMulEquivUnitsRange (realCliffordForm n 0) s :=
   congrFun (IsLocalDiffeomorph.coe_diffeomorphOfBijective _ _) s
 
 /-- The inverse smooth comparison is the inverse continuous group equivalence. -/
@@ -74,8 +76,8 @@ theorem realSpinDiffeomorphUnitsRange_apply (n : ℕ) (s : spinGroup (realCliffo
 theorem realSpinDiffeomorphUnitsRange_symm_apply (n : ℕ)
     (g : MonoidHom.range (spinGroup.toUnits (Q := realCliffordForm n 0))) :
     (realSpinDiffeomorphUnitsRange n).symm g =
-      (realCliffordSpinContinuousMulEquivUnitsRange n).symm g := by
-  apply (realCliffordSpinContinuousMulEquivUnitsRange n).injective
+      (spinGroupContinuousMulEquivUnitsRange (realCliffordForm n 0)).symm g := by
+  apply (spinGroupContinuousMulEquivUnitsRange (realCliffordForm n 0)).injective
   rw [← realSpinDiffeomorphUnitsRange_apply, Diffeomorph.apply_symm_apply,
     ContinuousMulEquiv.apply_symm_apply]
 
@@ -83,11 +85,11 @@ theorem realSpinDiffeomorphUnitsRange_symm_apply (n : ℕ)
 instance instLieGroupRealSpin (n : ℕ) :
     LieGroup 𝓘(ℝ, realSpinLieModel n) ∞ (spinGroup (realCliffordForm n 0)) :=
   IsLocalDiffeomorph.lieGroup (I := 𝓘(ℝ, realSpinLieModel n))
-    (realCliffordSpinContinuousMulEquivUnitsRange n).symm.toMulEquiv.toMonoidHom
+    (spinGroupContinuousMulEquivUnitsRange (realCliffordForm n 0)).symm.toMulEquiv.toMonoidHom
     (by
       convert (realSpinDiffeomorphUnitsRange n).symm.isLocalDiffeomorph using 1
       funext g
       exact (realSpinDiffeomorphUnitsRange_symm_apply n g).symm)
-    (realCliffordSpinContinuousMulEquivUnitsRange n).symm.surjective
+    (spinGroupContinuousMulEquivUnitsRange (realCliffordForm n 0)).symm.surjective
 
 end TauCeti.CliffordAlgebra

@@ -71,6 +71,8 @@ exponentials whenever all their powers agree at those entries.
   in both orientations.
 * `Matrix.trace_exp_neg_mul_mul_exp`, `Matrix.trace_exp_mul_mul_exp_neg`: conjugating by the two
   exponential weights preserves the trace, in both orientations.
+* `Matrix.hasDerivAt_exp_smul_transpose_mul_mul_exp_smul`: the derivative of the congruence curve
+  `s ↦ (exp (s • A))ᵀ * J * exp (s • A)`.
 * `Matrix.exp_eq_mul_exp_half`: the exponential of a matrix is the square of its half.
 * `Matrix.IsHermitian.trace_exp_mul_nonneg` and `Matrix.IsHermitian.trace_exp_pos`: positivity of
   the trace of the exponential of a Hermitian matrix and of the functional `x ↦ Tr (exp K * x)`.
@@ -303,6 +305,24 @@ theorem trace_exp_neg_mul_mul_exp (A x : Matrix m m 𝔸) :
 theorem trace_exp_mul_mul_exp_neg (A x : Matrix m m 𝔸) :
     (NormedSpace.exp A * x * NormedSpace.exp (-A)).trace = x.trace := by
   rw [Matrix.trace_mul_comm (NormedSpace.exp A * x) (NormedSpace.exp (-A)), exp_neg_mul_exp_mul]
+
+/-- Differentiating the exponential congruence curve `s ↦ (exp (s • A))ᵀ * J * exp (s • A)` at `t`
+yields `exp (t • Aᵀ) * (Aᵀ * J + J * A) * exp (t • A)` for arbitrary square matrices `J` and `A`. -/
+theorem hasDerivAt_exp_smul_transpose_mul_mul_exp_smul
+    {𝕂 : Type*} [RCLike 𝕂] [NormedAlgebra 𝕂 𝔸]
+    (J A : Matrix m m 𝔸) (t : 𝕂) :
+    HasDerivAt
+      (fun s : 𝕂 ↦ (exp (s • A))ᵀ * J * exp (s • A))
+      (exp (t • Aᵀ) * (Aᵀ * J + J * A) * exp (t • A)) t := by
+  have hfn : (fun s : 𝕂 ↦ (exp (s • A))ᵀ * J * exp (s • A)) =
+      fun s : 𝕂 ↦ exp (s • Aᵀ) * J * exp (s • A) := by
+    funext s
+    rw [← exp_transpose, ← IsScalarTower.algebraMap_smul 𝔸 s A, Matrix.transpose_smul,
+      IsScalarTower.algebraMap_smul]
+  rw [hfn]
+  have hleft := (hasDerivAt_exp_smul_const Aᵀ t).mul_const J
+  have hright := hasDerivAt_exp_smul_const' A t
+  exact (hleft.fun_mul hright).congr_deriv (by simp only [mul_add, add_mul, mul_assoc]; rfl)
 
 end CommutativeEntries
 

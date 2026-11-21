@@ -9,6 +9,7 @@ import TauCeti.Analysis.SpecialFunctions.Exponential
 import TauCeti.Geometry.Lie.Adjoint.Units.Basic
 public import TauCeti.Geometry.Lie.CliffordAlgebra.Spin.Projection
 public import TauCeti.LinearAlgebra.CliffordAlgebra.StandardBivector
+import TauCeti.LinearAlgebra.QuadraticForm.Standard
 
 /-!
 # The differential of the real Spin projection
@@ -119,26 +120,14 @@ private theorem coe_symm_lieExp_smul_eq_exp (n : ℕ)
     (x : quadraticLieSubalgebra (realCliffordForm n 0)) (t : ℝ) :
     let Q := realCliffordForm n 0
     let X := (realCliffordSpinLieEquivQuadratic n).symm x
-    let s := (realCliffordSpinContinuousMulEquivUnitsRange n).symm (lieExp (t • X))
+    let s := (spinGroupContinuousMulEquivUnitsRange Q).symm (lieExp (t • X))
     (s : CliffordAlgebra Q) = NormedSpace.exp (t • (x : CliffordAlgebra Q)) := by
   intro Q X s
-  have hequiv := (realCliffordSpinContinuousMulEquivUnitsRange n).apply_symm_apply
-    (lieExp (t • X))
-  have hsval : (s : CliffordAlgebra Q) =
-      ((((realCliffordSpinContinuousMulEquivUnitsRange n s).val :
-        (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q)) := by
-    rw [realCliffordSpinContinuousMulEquivUnitsRange_apply]
-    rfl
   calc
     (s : CliffordAlgebra Q) =
-        ((((realCliffordSpinContinuousMulEquivUnitsRange n s).val :
-          (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q)) := hsval
-    _ =
         ((((lieExp (t • X) : SpinUnitsRange(n)).val :
-          (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q)) := by
-      exact congrArg
-        (fun z : SpinUnitsRange(n) ↦
-          ((z.val : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q)) hequiv
+          (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q)) :=
+      coe_spinGroupContinuousMulEquivUnitsRange_symm_apply Q (lieExp (t • X))
     _ = NormedSpace.exp (t • unitsLieAlgebraEquiv
         ((realCliffordSpinEmbeddedLieSubgroupData n).lieMapSubtypeVal X)) :=
       by simpa only [TauCeti.Lie.EmbeddedLieSubgroupData.subtypeVal_apply] using
@@ -171,7 +160,7 @@ private theorem coordinate_exp_mulVec_eq_conjugation (n : ℕ)
   let Y := lieMap (realCliffordSpinToSpecialOrthogonalSmoothRange n) X
   let A := ((realCliffordSpinToSpecialOrthogonalCoordinateLieHom n x :
     LieAlgebra.Orthogonal.so (Fin n) ℝ) : Matrix (Fin n) (Fin n) ℝ)
-  let s := (realCliffordSpinContinuousMulEquivUnitsRange n).symm (lieExp (t • X))
+  let s := (spinGroupContinuousMulEquivUnitsRange Q).symm (lieExp (t • X))
   have hY : Y = realCliffordSpinToSpecialOrthogonalRangeLieMap n X := by
     exact DFunLike.congr_fun
       (realCliffordSpinToSpecialOrthogonalRangeLieMap_eq_lieMap n).symm X
@@ -189,7 +178,8 @@ private theorem coordinate_exp_mulVec_eq_conjugation (n : ℕ)
   have hmatrix : NormedSpace.exp (t • A) *ᵥ v = spinVectorAction Q s v := by
     rw [← htarget]
     rw [realCliffordSpinToSpecialOrthogonalSmoothRange_apply,
-      realCliffordSpinToSpecialOrthogonalRange_apply]
+      spinToSpecialOrthogonalUnitsRange_apply,
+      QuadraticMap.specialOrthogonalContinuousMulEquivRange_apply]
     -- Expose the underlying general-linear matrix so the canonical coordinate-action theorem
     -- can rewrite it to the special-orthogonal linear action.
     change (((QuadraticMap.specialOrthogonalToGeneralLinear Q
