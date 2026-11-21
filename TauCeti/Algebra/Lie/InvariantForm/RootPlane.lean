@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Lie.Coadjoint.RootPlane
 public import TauCeti.Analysis.InnerProductSpace.SkewSymmetric.NormalForm
 import TauCeti.Analysis.InnerProductSpace.Spectral.Relative
+import TauCeti.LinearAlgebra.BilinearForm.LinearIndependent
 
 /-!
 # Existence of root-plane decompositions
@@ -46,7 +47,8 @@ Hessians of coadjoint orbits through `t` take such planes as input.
 The proof transports the problem to Euclidean space through a linear isometry from `B`
 (`LinearMap.BilinForm.exists_linearEquiv_euclideanSpace_apply_apply`) and applies the real normal
 form of a commuting linear family of skew-symmetric maps
-(`TauCeti.exists_orthonormal_apply_eq_smul_of_skew_of_linearMap`) to `H ↦ ad H`. The planes are
+(`TauCeti.exists_orthonormal_apply_eq_smul_of_skew_of_linearMap`) to `H ↦ ad H`, with the
+orthogonal direct sum of its planes (`TauCeti.isInternal_planeDecomposition`). The planes are
 spanned by the images `q_k, p_k` of its orthonormal pairs, and `J_k` is the quarter turn
 `v ↦ B(q_k, v) p_k - B(p_k, v) q_k`.
 
@@ -111,58 +113,7 @@ private theorem quarterTurn_quarterTurn {v : L} (hv : v ∈ Submodule.span ℝ {
     smul_neg, map_neg]
   abel
 
-/-- A `B`-orthonormal pair spans a plane. -/
-private theorem finrank_span_pair : finrank ℝ (Submodule.span ℝ {q, p}) = 2 := by
-  have hli : LinearIndependent ℝ ![q, p] := by
-    refine LinearIndependent.pair_iff.2 fun s u h ↦ ⟨?_, ?_⟩
-    · simpa [hqq, hqp] using congrArg (B q) h
-    · simpa [hpq, hpp] using congrArg (B p) h
-  rw [← Matrix.range_cons_cons_empty q p ![], finrank_span_eq_card hli, Fintype.card_fin]
-
 end Plane
-
-section Euclidean
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {r : ℕ} {q p : Fin r → E}
-
-/-- The summands of the real normal form: the orthogonal complement of the planes, and the
-planes `span(q k, p k)`. -/
-private def planeFamily (q p : Fin r → E) (o : Option (Fin r)) : Submodule ℝ E :=
-  o.elim (Submodule.span ℝ (Set.range (Sum.elim q p)))ᗮ fun k ↦ Submodule.span ℝ {q k, p k}
-
-private theorem span_pair_le_span_range (k : Fin r) :
-    Submodule.span ℝ {q k, p k} ≤ Submodule.span ℝ (Set.range (Sum.elim q p)) :=
-  Submodule.span_mono <| Set.insert_subset ⟨.inl k, rfl⟩ <|
-    Set.singleton_subset_iff.2 ⟨.inr k, rfl⟩
-
-private theorem pairwise_isOrtho_planeFamily (hon : Orthonormal ℝ (Sum.elim q p)) :
-    Pairwise ((· ⟂ ·) on (planeFamily q p)) := by
-  rintro (_ | k) (_ | l) hkl
-  · exact absurd rfl hkl
-  · exact (Submodule.isOrtho_orthogonal_left _).mono_right (span_pair_le_span_range l)
-  · exact (Submodule.isOrtho_orthogonal_right _).mono_left (span_pair_le_span_range k)
-  · have hkl : k ≠ l := fun h ↦ hkl (congrArg some h)
-    refine Submodule.isOrtho_span.2 ?_
-    simp only [Set.mem_insert_iff, Set.mem_singleton_iff]
-    rintro u (rfl | rfl) v (rfl | rfl)
-    · exact hon.2 (i := .inl k) (j := .inl l) (by simpa using hkl)
-    · exact hon.2 (i := .inl k) (j := .inr l) (by simp)
-    · exact hon.2 (i := .inr k) (j := .inl l) (by simp)
-    · exact hon.2 (i := .inr k) (j := .inr l) (by simpa using hkl)
-
-private theorem isInternal_planeFamily [FiniteDimensional ℝ E]
-    (hon : Orthonormal ℝ (Sum.elim q p)) : DirectSum.IsInternal (planeFamily q p) := by
-  classical
-  refine (OrthogonalFamily.isInternal_iff
-    (orthogonalFamily_iff_pairwise.2 (pairwise_isOrtho_planeFamily hon))).2 ?_
-  rw [Submodule.orthogonal_eq_bot_iff, eq_top_iff,
-    ← Submodule.sup_orthogonal_of_hasOrthogonalProjection
-      (K := Submodule.span ℝ (Set.range (Sum.elim q p)))]
-  refine sup_le (Submodule.span_le.2 ?_) (le_iSup (planeFamily q p) none)
-  rintro _ ⟨k | k, rfl⟩ <;>
-    exact le_iSup (planeFamily q p) (some k) (Submodule.subset_span (by simp))
-
-end Euclidean
 
 variable {L : Type*} [LieRing L] [LieAlgebra ℝ L] {B : LinearMap.BilinForm ℝ L}
 
@@ -210,14 +161,14 @@ private theorem exists_isInternal_rootPlaneFamily (hB : B.IsSymm)
     exists_orthonormal_apply_eq_smul_of_skew_of_linearMap ρ hskew hcomm
   -- The summands are the images under `e` of the summands of the normal form.
   have hGE (o : Option (Fin r)) :
-      (planeFamily q p o).map (e : _ →ₗ[ℝ] L) = rootPlaneFamily t (e ∘ q) (e ∘ p) o := by
+      (planeDecomposition q p o).map (e : _ →ₗ[ℝ] L) = rootPlaneFamily t (e ∘ q) (e ∘ p) o := by
     rcases o with _ | k
     · ext x
-      simp only [planeFamily, rootPlaneFamily, Option.elim_none, hker, Submodule.mem_map_equiv,
-        Submodule.mem_iInf, LinearMap.mem_ker, LieAlgebra.ad_apply]
+      simp only [planeDecomposition_none, rootPlaneFamily, Option.elim_none, hker,
+        Submodule.mem_map_equiv, Submodule.mem_iInf, LinearMap.mem_ker, LieAlgebra.ad_apply]
       refine forall_congr' fun H ↦ ?_
       rw [← e.injective.eq_iff, hρ, LinearEquiv.apply_symm_apply, map_zero]
-    · simp [planeFamily, rootPlaneFamily, Submodule.map_span]
+    · simp [rootPlaneFamily, Submodule.map_span]
   refine ⟨r, e ∘ q, e ∘ p, α, fun i j ↦ ?_, fun k H ↦ ⟨?_, ?_⟩, hne, ?_,
     fun o o' hoo' v hv w hw ↦ ?_⟩
   · rw [← Sum.comp_elim, Function.comp_apply, Function.comp_apply, he]
@@ -227,10 +178,10 @@ private theorem exists_isInternal_rootPlaneFamily (hB : B.IsSymm)
   · rw [Function.comp_apply, Function.comp_apply, ← hρ, (hact k H).1, map_smul]
   · rw [Function.comp_apply, Function.comp_apply, ← hρ, (hact k H).2, map_smul, neg_smul]
   · -- The direct sum decomposition is transported from the normal form.
-    have hG := isInternal_planeFamily hon
+    have hG := isInternal_planeDecomposition hon
     rw [DirectSum.isInternal_submodule_iff_iSupIndep_and_iSup_eq_top] at hG ⊢
     have hFG : rootPlaneFamily t (e ∘ q) (e ∘ p) =
-        fun o ↦ Submodule.orderIsoMapComap e (planeFamily q p o) :=
+        fun o ↦ Submodule.orderIsoMapComap e (planeDecomposition q p o) :=
       funext fun o ↦ by rw [Submodule.orderIsoMapComap_apply, hGE]
     rw [hFG]
     exact ⟨(iSupIndep_map_orderIso_iff _).2 hG.1, by
@@ -238,7 +189,7 @@ private theorem exists_isInternal_rootPlaneFamily (hB : B.IsSymm)
   · -- Vectors in distinct summands are `B`-orthogonal.
     rw [← hGE, Submodule.mem_map_equiv] at hv hw
     rw [← e.apply_symm_apply v, ← e.apply_symm_apply w, he]
-    exact (pairwise_isOrtho_planeFamily hon hoo').symm.inner_eq hw hv
+    exact (pairwise_isOrtho_planeDecomposition hon hoo').symm.inner_eq hw hv
 
 /-- **Root-plane decomposition.** Let `B` be a symmetric positive definite invariant bilinear form
 on a finite-dimensional real Lie algebra `L` and let `t` be a subspace whose elements commute. Then
@@ -264,7 +215,7 @@ theorem exists_isInternal_isRootPlane (hB : B.IsSymm) (hpos : ∀ x, x ≠ 0 →
   refine ⟨r, α, fun k ↦ Submodule.span ℝ {q k, p k}, fun k ↦ (quarterTurn B (q k) (p k)).restrict
     fun v _ ↦ quarterTurn_mem_span _ _ v, hint, fun k ↦ ⟨fun v ↦ ?_,
     fun v w ↦ apply_quarterTurn hB _ _ v w, fun H v ↦ ?_⟩, hne,
-    fun k ↦ finrank_span_pair (hqq k) (hqp k) (hpq k) (hpp k),
+    fun k ↦ B.finrank_span_pair_eq_two (hqq k) (hqp k) (hpq k) (hpp k),
     fun k v hv c hc ↦ horth (some k) none (by simp) v hv c hc,
     fun k l hkl v hv w hw ↦ horth (some k) (some l) (by simpa using hkl) v hv w hw⟩
   · exact Subtype.ext (quarterTurn_quarterTurn (hqq k) (hqp k) (hpq k) (hpp k) v.property)

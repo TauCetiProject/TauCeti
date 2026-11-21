@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.Coadjoint.RootPlane
 public import TauCeti.Geometry.Lie.Subgroup.Torus
-import TauCeti.Analysis.InnerProductSpace.SkewSymmetric.RootPlane
+import TauCeti.Algebra.Lie.InvariantForm.RootPlane
 
 /-!
 # The real root planes of a maximal torus
