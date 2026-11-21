@@ -26,17 +26,21 @@ symbol `σ(d) = i ε_ξ` (`TauCeti.HomogeneousSymbol.coefficient_curl_eq_comp_ex
 
 The cross product is skew-adjoint, so `σ(curl)` is self-adjoint: the curl is formally self-adjoint
 (`TauCeti.HomogeneousSymbol.adjoint_curl`). Write `σ(grad) = σ(d) = i ξ` on functions and
-`σ(div) = σ(grad)† = -i ⟪ξ, ·⟫` for the symbol of the divergence `d*`. Then
+`σ(d*) = σ(grad)† = -i ⟪ξ, ·⟫` for the symbol of the codifferential `d* = -div` on one-forms.
+Then
 
-* `curl ∘ grad = 0` and `div ∘ curl = 0` on symbols
+* `curl ∘ grad = 0` and `d* ∘ curl = 0` (that is, `div ∘ curl = 0`) on symbols
   (`TauCeti.HomogeneousSymbol.curl_comp_extDeriv_zero`,
   `TauCeti.HomogeneousSymbol.adjoint_extDeriv_zero_comp_curl`);
-* `σ(curl)² + σ(grad) σ(div) = ‖ξ‖² Id`, the symbol of the identity
-  `curl curl - grad div = -Δ` on vector fields of `ℝ³`
+* `σ(curl)² + σ(grad) σ(d*) = ‖ξ‖² Id`, the symbol of the identity
+  `curl curl + grad d* = curl curl - grad div = -Δ` on vector fields of `ℝ³`
   (`TauCeti.HomogeneousSymbol.curl_comp_curl_add_extDeriv_zero_comp_adjoint`). It is the
   Laplacian of the de Rham symbol complex on one-forms, rewritten with `⋆` and `σ(curl)† = σ(curl)`.
+  Equivalently, the Laplacians of the symbol sequences `σ(grad), σ(curl)` and `σ(curl), σ(d*)`
+  are both `‖ξ‖² Id` (`TauCeti.HomogeneousSymbol.hodgeLaplacian_extDeriv_zero_curl`,
+  `TauCeti.HomogeneousSymbol.hodgeLaplacian_curl_adjoint_extDeriv_zero`).
 
-Consequently the symbol sequence of the complex `grad`, `curl`, `div`,
+Consequently the symbol sequence of the complex `grad`, `curl`, `d*`,
 
 `0 → ℂ → (⋀¹ E)_ℂ → (⋀¹ E)_ℂ → ℂ → 0`,
 
@@ -103,8 +107,11 @@ theorem coefficient_curl_eq_comp_extDeriv (p : X × E) :
           (extDeriv X E 1).coefficient p := by
   rw [coefficient_curl, coefficient_extDeriv, ContinuousLinearMap.comp_smul,
     ← ContinuousLinearMap.complexifyL2_comp]
-  -- what remains is `toContinuousLinearMap (⋆ ∘ₗ ε_ξ) = toContinuousLinearMap ⋆ ∘L ε_ξ`
-  congr 2
+  -- `toContinuousLinearMap (⋆ ∘ₗ ε_ξ) = toContinuousLinearMap ⋆ ∘L toContinuousLinearMap ε_ξ`,
+  -- compared as linear maps
+  refine congrArg (Complex.I • ·) (congrArg _ (ContinuousLinearMap.coe_injective ?_))
+  rw [ContinuousLinearMap.toLinearMap_comp, LinearMap.coe_toContinuousLinearMap,
+    LinearMap.coe_toContinuousLinearMap, LinearMap.coe_toContinuousLinearMap]
 
 /-- **The curl is formally self-adjoint**: the cross product `ξ × ·` is skew-adjoint, so
 `σ(curl)† = σ(curl)`. -/
@@ -134,8 +141,8 @@ theorem curl_comp_extDeriv_zero : (curl X E o).comp (extDeriv X E 0) = 0 := by
   rw [coefficient_comp, coefficient_curl_eq_comp_extDeriv, ContinuousLinearMap.comp_assoc, h,
     ContinuousLinearMap.comp_zero, coefficient_zero, Pi.zero_apply]
 
-/-- **`div ∘ curl = 0`** on symbols, where `σ(div) = σ(grad)†` is the symbol of the
-codifferential on one-forms. -/
+/-- **`div ∘ curl = 0`** on symbols: `σ(d*) σ(curl) = 0`, where `σ(d*) = σ(grad)†` is the symbol
+of the codifferential `d* = -div` on one-forms. -/
 @[simp]
 theorem adjoint_extDeriv_zero_comp_curl : (extDeriv X E 0).adjoint.comp (curl X E o) = 0 := by
   ext1
@@ -147,8 +154,9 @@ theorem adjoint_extDeriv_zero_comp_curl : (extDeriv X E 0).adjoint.comp (curl X 
   rw [ContinuousLinearMap.adjoint_comp, map_zero, hc] at h
   rw [coefficient_comp, coefficient_adjoint, h, coefficient_zero, Pi.zero_apply]
 
-/-- **The symbol of `curl curl - grad div = -Δ`**: `σ(curl)² + σ(grad) σ(div) = ‖ξ‖² Id` on
-complex one-forms. -/
+/-- **The symbol of `curl curl + grad d* = curl curl - grad div = -Δ`**:
+`σ(curl)² + σ(grad) σ(d*) = ‖ξ‖² Id` on complex one-forms, where `σ(d*) = σ(grad)†` is the symbol of
+the codifferential `d* = -div`. -/
 theorem coefficient_curl_comp_curl_add_extDeriv_zero_comp_adjoint (p : X × E) :
     ((curl X E o).comp (curl X E o)).coefficient p +
         ((extDeriv X E 0).comp (extDeriv X E 0).adjoint).coefficient p =
@@ -166,17 +174,14 @@ theorem coefficient_curl_comp_curl_add_extDeriv_zero_comp_adjoint (p : X × E) :
   -- `⋆` is an isometry, so `⋆† ⋆ = 1`
   have hS : ContinuousLinearMap.adjoint S ∘L S = ContinuousLinearMap.id ℂ _ := by
     rw [ContinuousLinearMap.adjoint_complexifyL2, ← ContinuousLinearMap.complexifyL2_comp,
-      ← ContinuousLinearMap.complexifyL2_id]
-    congr 1
-    refine ContinuousLinearMap.ext fun x ↦ ext_inner_right ℝ fun y ↦ ?_
-    rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.adjoint_inner_left]
-    simp
+      ← ContinuousLinearMap.complexifyL2_id, ← ContinuousLinearMap.one_def,
+      (ContinuousLinearMap.norm_map_iff_adjoint_comp_self _).1 (o.norm_hodgeStar _)]
   rw [← ContinuousLinearMap.comp_assoc _ S, hS, ContinuousLinearMap.id_comp, add_comm,
     coefficient_adjoint]
   exact h
 
-/-- **The symbol of `curl curl - grad div = -Δ`**: `σ(curl)² + σ(grad) σ(div)` is the symbol
-`‖ξ‖² Id` of degree `2`. -/
+/-- **The symbol of `curl curl + grad d* = curl curl - grad div = -Δ`**:
+`σ(curl)² + σ(grad) σ(d*)` is the symbol `‖ξ‖² Id` of degree `2`. -/
 theorem curl_comp_curl_add_extDeriv_zero_comp_adjoint :
     (curl X E o).comp (curl X E o) + (extDeriv X E 0).comp (extDeriv X E 0).adjoint =
       normRpow X E _ (1 + 1) :=
@@ -185,41 +190,38 @@ theorem curl_comp_curl_add_extDeriv_zero_comp_adjoint :
       coefficient_curl_comp_curl_add_extDeriv_zero_comp_adjoint,
       coefficient_normRpow_of_ne_zero _ _ _ hξ, one_add_one_eq_two, Real.rpow_two]
 
+/-- The Laplacian `σ(curl) σ(curl)† + σ(d*)† σ(d*)` of the symbol sequence `σ(curl)`, `σ(d*)` is
+the symbol `‖ξ‖² Id` of degree `2`. -/
+theorem hodgeLaplacian_curl_adjoint_extDeriv_zero :
+    (curl X E o).hodgeLaplacian (extDeriv X E 0).adjoint = normRpow X E _ (2 * 1) :=
+  ext_of_ne_zero fun x ξ hξ ↦ by
+    rw [coefficient_hodgeLaplacian, ContinuousLinearMap.hodgeLaplacian_def, ← coefficient_adjoint,
+      ← coefficient_adjoint, adjoint_curl, adjoint_adjoint, ← coefficient_comp, ← coefficient_comp,
+      coefficient_curl_comp_curl_add_extDeriv_zero_comp_adjoint,
+      coefficient_normRpow_of_ne_zero _ _ _ hξ, mul_one, Real.rpow_two]
+
+/-- The Laplacian `σ(grad) σ(grad)† + σ(curl)† σ(curl)` of the symbol sequence `σ(grad)`,
+`σ(curl)` is the symbol `‖ξ‖² Id` of degree `2`. -/
+theorem hodgeLaplacian_extDeriv_zero_curl :
+    (extDeriv X E 0).hodgeLaplacian (curl X E o) = normRpow X E _ (2 * 1) := by
+  have h := hodgeLaplacian_adjoint_adjoint (curl X E o) (extDeriv X E 0).adjoint
+  rw [adjoint_curl, adjoint_adjoint] at h
+  rw [h, hodgeLaplacian_curl_adjoint_extDeriv_zero]
+
 /-- **Exactness at the first one-forms**: at a nonzero covector `ξ`, the kernel of `σ(curl)` is the
 image `ℂ ξ` of `σ(grad)`. -/
 theorem exact_extDeriv_zero_curl {x : X} {ξ : E} (hξ : ξ ≠ 0) :
-    Function.Exact ((extDeriv X E 0).coefficient (x, ξ)) ((curl X E o).coefficient (x, ξ)) := by
-  have hξ' : (‖ξ‖ ^ 2 : ℝ) ≠ 0 := by positivity
-  intro v
-  constructor
-  · intro hv
-    refine ⟨((‖ξ‖ ^ 2)⁻¹ : ℝ) • (extDeriv X E 0).adjoint.coefficient (x, ξ) v, ?_⟩
-    have h := congrArg (· v)
-      (coefficient_curl_comp_curl_add_extDeriv_zero_comp_adjoint o (x, ξ))
-    simp only [add_apply, coefficient_comp, ContinuousLinearMap.comp_apply, hv, map_zero,
-      zero_add, smul_apply, ContinuousLinearMap.id_apply] at h
-    rw [ContinuousLinearMap.map_smul_of_tower, h, smul_smul, inv_mul_cancel₀ hξ', one_smul]
-  · rintro ⟨w, rfl⟩
-    exact congrArg (· w) (coefficient_comp_coefficient_eq_zero (curl_comp_extDeriv_zero o) (x, ξ))
+    Function.Exact ((extDeriv X E 0).coefficient (x, ξ)) ((curl X E o).coefficient (x, ξ)) :=
+  exact_of_isElliptic_hodgeLaplacian _ _ (curl_comp_extDeriv_zero o)
+    (by rw [hodgeLaplacian_extDeriv_zero_curl]; exact isElliptic_normRpow X E _ _) hξ
 
 /-- **Exactness at the second one-forms**: at a nonzero covector `ξ`, the kernel of
-`σ(div) = σ(grad)†` is the image of `σ(curl)`. -/
+`σ(d*) = σ(grad)†` is the image of `σ(curl)`. -/
 theorem exact_curl_adjoint_extDeriv_zero {x : X} {ξ : E} (hξ : ξ ≠ 0) :
     Function.Exact ((curl X E o).coefficient (x, ξ))
-      ((extDeriv X E 0).adjoint.coefficient (x, ξ)) := by
-  have hξ' : (‖ξ‖ ^ 2 : ℝ) ≠ 0 := by positivity
-  intro v
-  constructor
-  · intro hv
-    refine ⟨((‖ξ‖ ^ 2)⁻¹ : ℝ) • (curl X E o).coefficient (x, ξ) v, ?_⟩
-    have h := congrArg (· v)
-      (coefficient_curl_comp_curl_add_extDeriv_zero_comp_adjoint o (x, ξ))
-    simp only [add_apply, coefficient_comp, ContinuousLinearMap.comp_apply, hv, map_zero,
-      add_zero, smul_apply, ContinuousLinearMap.id_apply] at h
-    rw [ContinuousLinearMap.map_smul_of_tower, h, smul_smul, inv_mul_cancel₀ hξ', one_smul]
-  · rintro ⟨w, rfl⟩
-    exact congrArg (· w)
-      (coefficient_comp_coefficient_eq_zero (adjoint_extDeriv_zero_comp_curl o) (x, ξ))
+      ((extDeriv X E 0).adjoint.coefficient (x, ξ)) :=
+  exact_of_isElliptic_hodgeLaplacian _ _ (adjoint_extDeriv_zero_comp_curl o)
+    (by rw [hodgeLaplacian_curl_adjoint_extDeriv_zero]; exact isElliptic_normRpow X E _ _) hξ
 
 /-- **The curl is not elliptic**: at every nonzero covector `ξ`, `σ(curl)(ξ)` kills the gradient
 symbol `σ(grad)(ξ) w = i ξ w`, which is nonzero for `w ≠ 0`. -/
