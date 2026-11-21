@@ -190,22 +190,15 @@ theorem anisotropic_iff_posDef_or_negDef (Q : _root_.QuadraticForm ℝ M) :
     · exact fun x hx ↦ hQ.anisotropic x (by simpa using hx)
 
 /-- For an anisotropic real form, the product of the inverse values of two vectors is a real
-square: nonzero vectors have values of the same sign, since the form is positive or negative
-definite, and the product is `0` as soon as one of the vectors is. -/
+square: all values of the form have the same sign, since it is positive or negative definite. -/
 theorem _root_.QuadraticMap.Anisotropic.isSquare_inv_mul_inv {Q : _root_.QuadraticForm ℝ M}
     (hQ : Q.Anisotropic) (v w : M) : IsSquare ((Q v)⁻¹ * (Q w)⁻¹) := by
-  rcases eq_or_ne v 0 with rfl | hv0
-  · rw [QuadraticMap.map_zero, inv_zero, zero_mul]
-    exact IsSquare.zero
-  rcases eq_or_ne w 0 with rfl | hw0
-  · rw [QuadraticMap.map_zero, inv_zero, mul_zero]
-    exact IsSquare.zero
   rw [Real.isSquare_iff]
   rcases (anisotropic_iff_posDef_or_negDef Q).1 hQ with h | h
-  · exact (mul_pos (inv_pos.2 (h v hv0)) (inv_pos.2 (h w hw0))).le
-  · have hv' : Q v < 0 := neg_pos.1 (h v hv0)
-    have hw' : Q w < 0 := neg_pos.1 (h w hw0)
-    exact (mul_pos_of_neg_of_neg (inv_lt_zero.2 hv') (inv_lt_zero.2 hw')).le
+  · exact mul_nonneg (inv_nonneg.2 (h.nonneg v)) (inv_nonneg.2 (h.nonneg w))
+  · have hv : Q v ≤ 0 := neg_nonneg.1 (h.nonneg v)
+    have hw : Q w ≤ 0 := neg_nonneg.1 (h.nonneg w)
+    exact mul_nonneg_of_nonpos_of_nonpos (inv_nonpos.2 hv) (inv_nonpos.2 hw)
 
 /-- A real quadratic form with trivial radical on a finite-dimensional space is anisotropic if and
 only if one of its two indices of inertia vanishes: an indefinite regular real form is isotropic. -/

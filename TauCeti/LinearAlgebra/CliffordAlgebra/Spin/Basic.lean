@@ -80,9 +80,10 @@ theorem span_range_spinGroupToEven_comp_eq_top_iff {H : Type*} [Monoid H]
     (φ : H →* spinGroup Q) :
     Submodule.span R (Set.range ((spinGroupToEven Q).comp φ)) = ⊤ ↔
       Submodule.span R (Set.range fun h : H ↦ (φ h : CliffordAlgebra Q)) =
-        (even Q).toSubmodule := by
-  rw [← Submodule.span_val_image_eq_iff (even Q).toSubmodule, ← Set.range_comp]
-  simp only [Function.comp_def, MonoidHom.comp_apply, coe_spinGroupToEven_apply]
+        (even Q).toSubmodule :=
+  -- `spinGroupToEven Q x` is `⟨x, _⟩` by definition, so this is Mathlib's subtype-family case.
+  Submodule.span_range_subtype_eq_top_iff (even Q).toSubmodule fun h ↦
+    spinGroup.mem_even (φ h).property
 
 /-- **A product of evenly many vectors whose norms multiply to one lies in the Spin group.** The
 norms are then units, so the product is a unit of the Lipschitz group, and its Clifford norm

@@ -16,9 +16,8 @@ import TauCeti.LinearAlgebra.CliffordAlgebra.ReflectionLift
 -- proofs.
 import TauCeti.LinearAlgebra.ExteriorAlgebra.End
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Subspace
--- Private: the passage from intertwining a spanning set to intertwining its span is used only
--- inside proofs.
-import TauCeti.LinearAlgebra.Span.Basic
+-- Private: the composition maps `LinearMap.llcomp` and `LinearMap.lcomp` are used only in proofs.
+import Mathlib.LinearAlgebra.BilinearMap
 
 /-!
 # Invariant subspaces and intertwiners for the spinor and half-spin actions
@@ -227,16 +226,16 @@ private theorem intertwines_even_of_intertwines_comp {K : Type u} [Field K]
       ψ (F ⟨φ h, spinGroup.mem_even (φ h).property⟩ m) =
         G ⟨φ h, spinGroup.mem_even (φ h).property⟩ (ψ m))
     (x : CliffordAlgebra.even Q) (m : M) : ψ (F x m) = G x (ψ m) := by
-  have hx : x ∈ Submodule.span K (Set.range ((spinGroupToEven Q).comp φ)) := by
-    rw [(span_range_spinGroupToEven_comp_eq_top_iff φ).2 hspan]
-    exact Submodule.mem_top
-  refine LinearMap.congr_fun ((LinearMap.forall_comp_eq_comp_iff_forall_mem_span ψ F.toLinearMap
-    G.toLinearMap _).1 ?_ x hx) m
-  rintro _ ⟨h, rfl⟩
-  have hmk : (spinGroupToEven Q).comp φ h = ⟨φ h, spinGroup.mem_even (φ h).property⟩ :=
-    Subtype.ext (coe_spinGroupToEven_apply Q (φ h))
-  exact LinearMap.ext fun m ↦ by
-    simpa only [LinearMap.comp_apply, AlgHom.toLinearMap_apply, hmk] using hψ h m
+  -- Both sides are linear in `x`: `F x` postcomposed with `ψ`, and `G x` precomposed with `ψ`.
+  have hext : LinearMap.llcomp K M M N ψ ∘ₗ F.toLinearMap =
+      LinearMap.lcomp K N ψ ∘ₗ G.toLinearMap :=
+    LinearMap.ext_on_range ((span_range_spinGroupToEven_comp_eq_top_iff φ).2 hspan) fun h ↦ by
+      have hmk : (spinGroupToEven Q).comp φ h = ⟨φ h, spinGroup.mem_even (φ h).property⟩ :=
+        Subtype.ext (coe_spinGroupToEven_apply Q (φ h))
+      exact LinearMap.ext fun m ↦ by
+        simpa only [hmk, LinearMap.coe_comp, AlgHom.coe_toLinearMap, Function.comp_apply,
+          LinearMap.llcomp_apply, LinearMap.lcomp_apply] using hψ h m
+  exact LinearMap.congr_fun (LinearMap.congr_fun hext x) m
 
 /-! ### The spinor module is a simple Clifford module
 
