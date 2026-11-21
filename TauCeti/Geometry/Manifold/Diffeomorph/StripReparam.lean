@@ -27,7 +27,9 @@ replaces the parameter of these two families by its image under `ρ`:
 `(z, w) ↦ (φ (z, ρ w), w)` for `w ∈ U`, `(z, w) ↦ (z, θ (ρ z, w))` for `z ∈ U`,
 
 and agrees with `F` on the rest of `M × M`. The two formulas agree on `U × U`, where both are the
-identity (`TauCeti.stripReparam_of_mem_right`, `TauCeti.stripReparam_of_mem_left`). The result
+identity (`TauCeti.stripReparam_of_mem_right`, `TauCeti.stripReparam_of_mem_left`). For an
+arbitrary `F`, the three branches of the definition are `TauCeti.stripReparam_of_mem_right`,
+`TauCeti.stripReparam_of_mem_of_notMem` and `TauCeti.stripReparam_of_notMem`. The result
 again preserves the strip leaves (`TauCeti.PreservesStripLeaves.stripReparam`), it is `F` itself
 for `ρ = id` (`TauCeti.stripReparam_id`), and it agrees with `F` wherever `ρ` fixes both
 coordinates (`TauCeti.stripReparam_of_apply_eq`). If `ρ` collapses a set `D ⊆ U` to a point `c`
@@ -38,9 +40,9 @@ and `F` fixes the two leaves through `c` pointwise, the reparametrization is the
 When `ρ` maps `U` into itself, reparametrization is compatible with composition
 (`TauCeti.stripReparam_comp`), provided the inner map does not move points of `Uᶜ × Uᶜ` into the
 strips, which holds for an inverse of a leaf-preserving map
-(`TauCeti.PreservesStripLeaves.mapsTo_compl_prod`); the reparametrization of the identity is the
-identity (`TauCeti.stripReparam_id_right`). So the reparametrizations of a bijection and of its
-inverse are mutually inverse (`TauCeti.leftInverse_stripReparam`).
+(`TauCeti.PreservesStripLeaves.mapsTo_compl_prod_of_leftInverse`); the reparametrization of the
+identity is the identity (`TauCeti.stripReparam_id_right`). So the reparametrizations of a
+bijection and of its inverse are mutually inverse (`TauCeti.leftInverse_stripReparam`).
 
 **Smoothness.** If `F` is `C^n`, and `ρ` is `C^n` and fixes every point outside a closed subset
 `K` of `U`, then the reparametrization is `C^n` (`ContMDiff.stripReparam`). Near a point of a strip
@@ -120,7 +122,7 @@ theorem comp (hF : PreservesStripLeaves U F) (hG : PreservesStripLeaves U G) :
 
 /-- A right inverse `G` of a map `F` preserving the strip leaves maps `Uᶜ × Uᶜ` into itself: a
 point of a strip is mapped by `F` into the same strip. -/
-theorem mapsTo_compl_prod (hF : PreservesStripLeaves U F) (hFG : LeftInverse F G) :
+theorem mapsTo_compl_prod_of_leftInverse (hF : PreservesStripLeaves U F) (hFG : LeftInverse F G) :
     MapsTo G (Uᶜ ×ˢ Uᶜ) (Uᶜ ×ˢ Uᶜ) := by
   rintro ⟨z, w⟩ ⟨hz, hw⟩
   refine ⟨fun h ↦ hz ?_, fun h ↦ hw ?_⟩
@@ -151,6 +153,12 @@ theorem stripReparam_of_mem_right (hw : w ∈ U) :
     stripReparam U ρ F (z, w) = ((F (z, ρ w)).1, w) := by
   simp [stripReparam, hw]
 
+/-- On the part `U × Uᶜ` of the vertical strip off the horizontal strip, the reparametrization
+reads the vertical leaf map of `F` over `ρ z`, for an arbitrary `F`. -/
+theorem stripReparam_of_mem_of_notMem (hz : z ∈ U) (hw : w ∉ U) :
+    stripReparam U ρ F (z, w) = (z, (F (ρ z, w)).2) := by
+  simp [stripReparam, hw, hz]
+
 /-- On the vertical strip `U × M`, the reparametrization reads the vertical leaf map of `F` over
 `ρ z`. -/
 theorem stripReparam_of_mem_left (hF : PreservesStripLeaves U F) (hz : z ∈ U) :
@@ -158,7 +166,7 @@ theorem stripReparam_of_mem_left (hF : PreservesStripLeaves U F) (hz : z ∈ U) 
   by_cases hw : w ∈ U
   · rw [stripReparam_of_mem_right hw, hF.fst_apply_of_mem _ hz,
       hF.snd_apply_of_mem _ _ hw]
-  · simp [stripReparam, hw, hz]
+  · exact stripReparam_of_mem_of_notMem hz hw
 
 /-- Off the two strips, the reparametrization is `F`. -/
 theorem stripReparam_of_notMem (hz : z ∉ U) (hw : w ∉ U) :
@@ -233,7 +241,7 @@ theorem leftInverse_stripReparam (hF : PreservesStripLeaves U F) (hG : Preserves
     LeftInverse (stripReparam U ρ F) (stripReparam U ρ G) := by
   intro x
   rw [← comp_apply (f := stripReparam U ρ F), ← stripReparam_comp hF hG hρ
-    (hF.mapsTo_compl_prod hFG), hFG.comp_eq_id, stripReparam_id_right, id]
+    (hF.mapsTo_compl_prod_of_leftInverse hFG), hFG.comp_eq_id, stripReparam_id_right, id]
 
 end Leaves
 
