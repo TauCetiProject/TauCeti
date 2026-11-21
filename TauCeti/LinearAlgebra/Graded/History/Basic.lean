@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.DirectSum.Component
 public import Mathlib.Algebra.Category.ModuleCat.Semi
 public import Mathlib.CategoryTheory.PathCategory.Basic
+public import TauCeti.Combinatorics.Quiver.LoopPower
 
 /-!
 # Homogeneous histories along paths
@@ -135,6 +136,12 @@ theorem composeLinear_nil : (nil : Path a a).composeLinear T = LinearMap.id := (
 theorem composeLinear_cons {b c : Q} (p : Path a b) (e : b ⟶ c) :
     (p.cons e).composeLinear T = (T e).comp (p.composeLinear T) := (rfl)
 
+/-- The linear composite of a single arrow is its assigned map. -/
+@[simp]
+theorem composeLinear_toPath {b : Q} (e : a ⟶ b) :
+    e.toPath.composeLinear T = T e := by
+  simp [Hom.toPath]
+
 /-- The composite along a concatenation is the composite of the two composites. -/
 @[simp]
 theorem composeLinear_comp {b c : Q} (p : Path a b) (q : Path b c) :
@@ -142,6 +149,15 @@ theorem composeLinear_comp {b c : Q} (p : Path a b) (q : Path b c) :
   rw [composeLinear, Prefunctor.mapPath_comp, CategoryTheory.composePath_comp,
     SemimoduleCat.hom_comp]
   rfl
+
+/-- Repeating a closed path composes its linear map the same number of times. -/
+@[simp]
+theorem composeLinear_loopPow (p : Path a a) (n : ℕ) :
+    (p.loopPow n).composeLinear T = p.composeLinear T ^ n := by
+  induction n with
+  | zero => simp [Module.End.one_eq_id]
+  | succ n ih =>
+    rw [loopPow_succ, composeLinear_comp, ih, pow_succ', Module.End.mul_eq_comp]
 
 variable {ι : Q → Type w} [∀ q, DecidableEq (ι q)] (ℳ : ∀ q, ι q → Submodule R (M q))
   [∀ q, DirectSum.Decomposition (ℳ q)]
