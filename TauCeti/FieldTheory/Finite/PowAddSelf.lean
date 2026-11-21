@@ -9,6 +9,7 @@ public import Mathlib.Algebra.CharP.Lemmas
 public import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.FieldTheory.Finite.Basic
 import Mathlib.GroupTheory.Index
+import TauCeti.FieldTheory.Finite.Frobenius
 
 /-!
 # The fibres of `b ↦ b ^ q + b` over a field with `q²` elements
@@ -54,23 +55,16 @@ namespace FiniteField
 
 variable {K : Type*} [Field K] {p n : ℕ} [ExpChar K p]
 
-/-- A field with `q²` elements, `q = p ^ n` a power of the exponential characteristic, is finite,
-since `Nat.card` of an infinite type is `0`. -/
-private theorem finite_of_natCard_eq_pow_sq (hK : Nat.card K = (p ^ n) ^ 2) : Finite K :=
-  Nat.finite_of_card_ne_zero
-    (by rw [hK]; exact pow_ne_zero 2 (pow_ne_zero n (expChar_pos K p).ne'))
-
 /-- In a field with `q²` elements, `q = p ^ n` a power of the exponential characteristic, every
 `c` with `c ^ q = c` is of the form `b ^ q + b` for exactly `q` elements `b`. -/
 theorem natCard_pow_add_self_eq (hK : Nat.card K = (p ^ n) ^ 2) {c : K}
     (hc : c ^ p ^ n = c) : Nat.card {b : K // b ^ p ^ n + b = c} = p ^ n := by
   classical
-  have := finite_of_natCard_eq_pow_sq hK
+  have := finite_of_natCard_eq_pow (hK.trans (pow_mul p n 2).symm)
   have := Fintype.ofFinite K
+  have hq := one_lt_pow_of_natCard_eq_sq hK
   rw [Nat.card_eq_fintype_card] at hK
   set q := p ^ n with hqdef
-  -- A field has at least two elements, so `q > 1`.
-  have hq : 1 < q := (Nat.one_lt_pow_iff two_ne_zero).mp (hK ▸ Fintype.one_lt_card)
   -- The additive maps `T b = b ^ q + b` and `T' c = c ^ q - c`.
   let T : K →+ K := (iterateFrobenius K p n).toAddMonoidHom + .id K
   let T' : K →+ K := (iterateFrobenius K p n).toAddMonoidHom - .id K
@@ -116,7 +110,7 @@ theorem natCard_pow_add_self_eq (hK : Nat.card K = (p ^ n) ^ 2) {c : K}
 /-- In a field with `q²` elements, every `c` with `c ^ q = c` is of the form `b ^ q + b`. -/
 theorem exists_pow_add_self_eq (hK : Nat.card K = (p ^ n) ^ 2) {c : K}
     (hc : c ^ p ^ n = c) : ∃ b : K, b ^ p ^ n + b = c := by
-  have := finite_of_natCard_eq_pow_sq hK
+  have := finite_of_natCard_eq_pow (hK.trans (pow_mul p n 2).symm)
   have : Finite {b : K // b ^ p ^ n + b = c} := Subtype.finite
   have hpos : 0 < Nat.card {b : K // b ^ p ^ n + b = c} := by
     rw [natCard_pow_add_self_eq hK hc]
@@ -143,11 +137,11 @@ a power of the exponential characteristic, and for `ε = (-1) ^ k`, some nonzero
 `b + ε b ^ q = 0`. -/
 theorem exists_ne_zero_add_neg_one_pow_mul_pow_eq_zero
     (hK : Nat.card K = (p ^ n) ^ 2) (k : ℕ) : ∃ b ≠ (0 : K), b + (-1) ^ k * b ^ p ^ n = 0 := by
-  have := finite_of_natCard_eq_pow_sq hK
+  have := finite_of_natCard_eq_pow (hK.trans (pow_mul p n 2).symm)
   rcases neg_one_pow_eq_or K k with h | h <;> rw [h]
   · -- The `q` roots of `b ^ q + b = 0` are not all zero.
     have : Finite {b : K // b ^ p ^ n + b = 0} := Subtype.finite
-    have hq : 1 < p ^ n := (Nat.one_lt_pow_iff two_ne_zero).mp (hK ▸ Finite.one_lt_card)
+    have hq := one_lt_pow_of_natCard_eq_sq hK
     have hcard : 1 < Nat.card {b : K // b ^ p ^ n + b = 0} := by
       rwa [natCard_pow_add_self_eq hK (zero_pow (pow_pos (expChar_pos K p) n).ne')]
     have : Nontrivial {b : K // b ^ p ^ n + b = 0} := Finite.one_lt_card_iff_nontrivial.mp hcard

@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.AdjoinRoot
 import Mathlib.FieldTheory.Finite.Basic
 import TauCeti.Algebra.CharP.Lemmas
 import TauCeti.Algebra.Group.Pow
+import TauCeti.FieldTheory.Finite.Frobenius
 import TauCeti.FieldTheory.Finite.PowAddSelf
 import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 import TauCeti.FieldTheory.RatFunc.Transcendental
@@ -369,8 +370,7 @@ theorem natCard_hermitianTranslations [Finite K] (hK : Nat.card K = (p ^ n) ^ 2)
     Nat.card (hermitianTranslations K p n x y) = (p ^ n) ^ 3 := by
   classical
   have := Fintype.ofFinite K
-  -- A field has at least two elements, so `q > 1`.
-  have hq : 1 < p ^ n := (Nat.one_lt_pow_iff two_ne_zero).mp (hK ▸ Finite.one_lt_card)
+  have hq := FiniteField.one_lt_pow_of_natCard_eq_sq hK
   have hpow (a : K) : a ^ (p ^ n) ^ 2 = a := by
     rw [← hK, Nat.card_eq_fintype_card]
     exact _root_.FiniteField.pow_card a
