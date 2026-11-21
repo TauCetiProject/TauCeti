@@ -8,7 +8,8 @@ module
 public import TauCeti.MeasureTheory.Group.TupleSpacings
 public import TauCeti.MeasureTheory.Measure.Lebesgue.PartialSums
 public import TauCeti.Probability.Distributions.Dirichlet.Density
-public import TauCeti.Probability.Distributions.OrderStatistic.Joint
+public import TauCeti.Probability.Distributions.OrderStatistic.Density
+import TauCeti.MeasureTheory.MeasurableSpace.StrictMono
 
 /-!
 # Uniform spacings have a Dirichlet law

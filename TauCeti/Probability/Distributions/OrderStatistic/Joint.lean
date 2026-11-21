@@ -7,21 +7,28 @@ module
 
 public import TauCeti.Data.Fin.Tuple.OrderStatistic
 public import TauCeti.MeasureTheory.MeasurableSpace.StrictMono
-public import TauCeti.Probability.Distributions.Uniform.Basic
-import TauCeti.Probability.Independence.InfinitePi
+public import Mathlib.MeasureTheory.Constructions.Pi
+import Mathlib.Data.Fintype.Perm
 
 /-!
 # Joint laws of order statistics
 
-Sorting an iid sample from an atomless law restricts its product law to the strictly
-increasing chamber and multiplies it by the factorial of the sample size. For unit
-uniform samples this gives density `n!` on the ordered open unit cube, relative to
-product Lebesgue measure. The joint density, unlike the individual beta marginals,
-retains the dependence needed to compute the law of the spacings.
+Sorting an iid sample from an atomless σ-finite law restricts its product law to the strictly
+increasing chamber and multiplies it by the factorial of the sample size. No normalization is
+needed, so the formula also holds for Lebesgue measure. The densities of the order statistics,
+including the unit-uniform case, are in
+`TauCeti/Probability/Distributions/OrderStatistic/Density.lean`.
 
 The chamber decomposition uses Mathlib's `Tuple.sort` and measure-preserving
-coordinate permutations. Ties form a null set by
-`TauCeti.Probability.ae_eval_ne_eval_infinitePi`.
+coordinate permutations. Ties form a null set by `TauCeti.Probability.ae_eval_ne_eval_pi`: under
+a finite product of σ-finite measures, two coordinates almost surely differ when the law of one
+of them has no atoms; in particular almost every sample is injective
+(`TauCeti.Probability.ae_injective_pi`).
+
+## Main results
+
+* `TauCeti.Probability.ae_eval_ne_eval_pi`, `TauCeti.Probability.ae_injective_pi` — ties are null;
+* `TauCeti.Probability.map_orderStatistics_pi` — the joint law of the order statistics.
 
 ## References
 
@@ -30,19 +37,54 @@ coordinate permutations. Ties form a null set by
 
 public section
 
-open MeasureTheory ProbabilityTheory Set Function
+open MeasureTheory Set Function
 open scoped ENNReal
 
 namespace TauCeti.Probability
+
+/-- **Two coordinates of a finite product are almost surely distinct when one law is atomless.**
+Under a product of σ-finite measures on a space with a measurable diagonal, two distinct
+coordinates `i` and `j` of a sample almost surely take different values as soon as the measure at
+`j` has no atoms. -/
+theorem ae_eval_ne_eval_pi {n : ℕ} {β : Type*} [MeasurableSpace β] [MeasurableEq β]
+    (μ : Fin n → Measure β) [∀ i, SigmaFinite (μ i)] {i j : Fin n} [NullSingletonClass (μ j)]
+    (hij : i ≠ j) : ∀ᵐ x ∂Measure.pi μ, x i ≠ x j := by
+  cases n with
+  | zero => exact i.elim0
+  | succ n =>
+    obtain ⟨k, rfl⟩ := Fin.exists_succAbove_eq hij
+    have hdiag : MeasurableSet {p : β × (Fin n → β) | p.2 k = p.1} :=
+      measurableSet_eq_fun ((measurable_pi_apply k).comp measurable_snd) measurable_fst
+    -- Splitting off the coordinate `j`, the tie set is a graph over the other coordinates.
+    have hset : {x : Fin (n + 1) → β | ¬x (j.succAbove k) ≠ x j} =
+        MeasurableEquiv.piFinSuccAbove (fun _ => β) j ⁻¹' {p | p.2 k = p.1} := by
+      ext x
+      simp [MeasurableEquiv.piFinSuccAbove, Fin.insertNthEquiv, Fin.removeNth]
+    rw [ae_iff, hset, (measurePreserving_piFinSuccAbove μ j).measure_preimage
+      hdiag.nullMeasurableSet, Measure.prod_apply_symm hdiag]
+    simp
+
+/-- Under a finite product of copies of an atomless σ-finite measure on a space with a
+measurable diagonal, almost every sample has distinct entries. -/
+theorem ae_injective_pi {n : ℕ} {β : Type*} [MeasurableSpace β] [MeasurableEq β]
+    (μ : Measure β) [SigmaFinite μ] [NullSingletonClass μ] :
+    ∀ᵐ x ∂(Measure.pi fun _ : Fin n => μ), Injective x := by
+  have h : ∀ᵐ x ∂(Measure.pi fun _ : Fin n => μ), ∀ i j : Fin n, i ≠ j → x i ≠ x j := by
+    refine ae_all_iff.mpr fun i => ae_all_iff.mpr fun j => ?_
+    by_cases hij : i = j
+    · exact Filter.Eventually.of_forall fun _ h => (h hij).elim
+    · exact (ae_eval_ne_eval_pi (fun _ : Fin n => μ) hij).mono fun _ hx _ => hx
+  filter_upwards [h] with x hx
+  exact injective_iff_pairwise_ne.mpr hx
 
 section Atomless
 
 variable {α : Type*} [LinearOrder α] [TopologicalSpace α] [OrderClosedTopology α]
   [SecondCountableTopology α] [MeasurableSpace α] [BorelSpace α]
-  {n : ℕ} {μ : Measure α} [IsProbabilityMeasure μ] [NullSingletonClass μ]
+  {n : ℕ} {μ : Measure α} [SigmaFinite μ] [NullSingletonClass μ]
 
-/-- Sorting an atomless iid sample multiplies the product law restricted to the strictly
-increasing chamber by `n!`. This includes the empty sample. -/
+/-- Sorting an iid sample from an atomless σ-finite measure multiplies the product measure
+restricted to the strictly increasing chamber by `n!`. This includes the empty sample. -/
 theorem map_orderStatistics_pi :
     (Measure.pi fun _ : Fin n => μ).map (fun x i => orderStatistic i x) =
       n.factorial • (Measure.pi fun _ : Fin n => μ).restrict {x | StrictMono x} := by
@@ -62,16 +104,9 @@ theorem map_orderStatistics_pi :
     have hinj : Injective x := hxσ.injective.of_comp_right σ.surjective
     exact DFunLike.ext _ _ fun i => hinj (congrFun heq i)
   have hcover : ∀ᵐ x ∂ρ, x ∈ ⋃ σ, C σ := by
-    have hne : ∀ᵐ x ∂ρ, ∀ i j : Fin n, i ≠ j → x i ≠ x j := by
-      refine ae_all_iff.mpr fun i => ae_all_iff.mpr fun j => ?_
-      by_cases hij : i = j
-      · exact Filter.Eventually.of_forall fun _ h => (h hij).elim
-      · simpa only [Measure.infinitePi_eq_pi] using
-          (ae_eval_ne_eval_infinitePi (fun _ : Fin n => μ) hij).mono fun _ hx _ => hx
-    filter_upwards [hne] with x hx
+    filter_upwards [ae_injective_pi μ] with x hx
     refine mem_iUnion.mpr ⟨Tuple.sort x, ?_⟩
-    exact (Tuple.monotone_sort x).strictMono_of_injective
-      ((injective_iff_pairwise_ne.mpr hx).comp (Tuple.sort x).injective)
+    exact (Tuple.monotone_sort x).strictMono_of_injective (hx.comp (Tuple.sort x).injective)
   have hpart : ρ = Measure.sum fun σ => ρ.restrict (C σ) := by
     rw [← Measure.restrict_iUnion hdis hC, Measure.restrict_eq_self_of_ae_mem hcover]
   have hmap (σ : Equiv.Perm (Fin n)) :
@@ -97,50 +132,5 @@ theorem map_orderStatistics_pi :
         Fintype.card_fin]
 
 end Atomless
-
-/-- The joint density of the increasingly sorted unit-uniform sample is `n!` on the
-strictly increasing open unit cube and zero elsewhere, relative to product volume.
-The formula also holds for the empty tuple. -/
-theorem map_orderStatistics_pi_uniformMeasure (n : ℕ) :
-    (Measure.pi fun _ : Fin n => uniformMeasure 0 1).map (fun x i => orderStatistic i x) =
-      volume.withDensity
-        ({y : Fin n → ℝ | StrictMono y ∧ ∀ i, y i ∈ Ioo (0 : ℝ) 1}.indicator
-          fun _ => (n.factorial : ℝ≥0∞)) := by
-  classical
-  let _ := isProbabilityMeasure_uniformMeasure (a := 0) (b := 1) zero_lt_one
-  let _ : NullSingletonClass (uniformMeasure 0 1) := by
-    rw [uniformMeasure_eq_withDensity]
-    infer_instance
-  have hunit : uniformMeasure 0 1 = volume.restrict (Ioo (0 : ℝ) 1) := by
-    rw [uniformMeasure_eq_smul]
-    norm_num
-    exact restrict_Ioo_eq_restrict_Ioc.symm
-  have hprod : (Measure.pi fun _ : Fin n => uniformMeasure 0 1) =
-      volume.restrict (univ.pi fun _ : Fin n => Ioo (0 : ℝ) 1) := by
-    simp_rw [hunit]
-    exact (Measure.restrict_pi_pi _ _).symm
-  rw [map_orderStatistics_pi, hprod,
-    withDensity_indicator (measurableSet_strictMono_mem_Ioo n 0 1), withDensity_const]
-  have hsets : {y : Fin n → ℝ | StrictMono y} ∩
-      (univ.pi fun _ : Fin n => Ioo (0 : ℝ) 1) =
-        {y | StrictMono y ∧ ∀ i, y i ∈ Ioo (0 : ℝ) 1} := by
-    ext y
-    simp
-  rw [Measure.restrict_restrict' (MeasurableSet.univ_pi fun _ => measurableSet_Ioo),
-    hsets, Nat.cast_smul_eq_nsmul]
-
-/-- The sorted tuple of independent unit-uniform variables has the ordered-cube joint
-density. No independence is asserted for the sorted coordinates. -/
-theorem hasLaw_orderStatistics_iid_uniformMeasure {Ω : Type*} [MeasurableSpace Ω]
-    {P : Measure Ω} {n : ℕ} {X : Fin n → Ω → ℝ} (hindep : iIndepFun X P)
-    (hlaw : ∀ i, HasLaw (X i) (uniformMeasure 0 1) P) :
-    HasLaw (fun ω i => orderStatistic i (fun j => X j ω))
-      (volume.withDensity
-        ({y : Fin n → ℝ | StrictMono y ∧ ∀ i, y i ∈ Ioo (0 : ℝ) 1}.indicator
-          fun _ => (n.factorial : ℝ≥0∞))) P := by
-  rw [← map_orderStatistics_pi_uniformMeasure]
-  have hs : Measurable (fun x : Fin n → ℝ => fun i => orderStatistic i x) := by fun_prop
-  exact (hasLaw_map hs.aemeasurable).comp
-    (hindep.hasLaw_pi hlaw)
 
 end TauCeti.Probability

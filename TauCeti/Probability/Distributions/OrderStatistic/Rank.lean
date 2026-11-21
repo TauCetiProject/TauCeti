@@ -10,7 +10,8 @@ public import Mathlib.Probability.UniformOn
 public import TauCeti.Data.Fin.Tuple.OrderStatistic
 public import TauCeti.MeasureTheory.MeasurableSpace.StrictMono
 public import TauCeti.MeasureTheory.MeasurableSpace.TupleSort
-import TauCeti.Probability.Independence.InfinitePi
+import Mathlib.Data.Fintype.Perm
+import TauCeti.Probability.Distributions.OrderStatistic.Joint
 
 /-!
 # The ranks of an atomless sample
@@ -19,7 +20,9 @@ For an iid sample of size `n` from an atomless law, the sorting permutation `Tup
 ranks of the sample) is uniformly distributed on the `n!` permutations and independent of the
 vector of order statistics. Equivalently, the event that the sorting permutation is `σ` and the
 order statistics lie in a set `B` has probability `(n!)⁻¹` times that of the second event. No
-measurability of `B` is needed.
+measurability of `B` is needed. These fibre formulas use no normalization: they hold for an iid
+sample from any atomless σ-finite measure, Lebesgue measure included, and the law of the ranks
+also allows any σ-algebra on the permutations.
 
 Ties are null, so the sample is almost surely injective, and then `Tuple.sort x = σ` exactly
 when `x ∘ σ` is strictly increasing. Coordinate permutations preserve the product law and the
@@ -53,24 +56,15 @@ namespace TauCeti.Probability
 
 variable {α : Type*} [LinearOrder α] [TopologicalSpace α] [OrderClosedTopology α]
   [SecondCountableTopology α] [MeasurableSpace α] [OpensMeasurableSpace α]
-  {n : ℕ} {μ : Measure α} [IsProbabilityMeasure μ] [NullSingletonClass μ]
+  {n : ℕ} {μ : Measure α} [SigmaFinite μ] [NullSingletonClass μ]
 
-/-- For an iid sample from an atomless law, almost surely the sorting permutation is `σ` exactly
-when the sample composed with `σ` is strictly increasing: almost every sample has distinct
-entries. -/
+/-- For an iid sample from an atomless σ-finite measure, almost surely the sorting permutation
+is `σ` exactly when the sample composed with `σ` is strictly increasing: almost every sample has
+distinct entries. -/
 theorem setOf_sort_eq_ae_eq_setOf_strictMono_comp (σ : Equiv.Perm (Fin n)) :
     {x : Fin n → α | Tuple.sort x = σ} =ᵐ[Measure.pi fun _ : Fin n => μ]
       {x | StrictMono (x ∘ σ)} := by
-  have hne : ∀ᵐ x ∂(Measure.pi fun _ : Fin n => μ), Injective x := by
-    have h : ∀ᵐ x ∂(Measure.pi fun _ : Fin n => μ), ∀ i j : Fin n, i ≠ j → x i ≠ x j := by
-      refine ae_all_iff.mpr fun i => ae_all_iff.mpr fun j => ?_
-      by_cases hij : i = j
-      · exact Filter.Eventually.of_forall fun _ h => (h hij).elim
-      · simpa only [Measure.infinitePi_eq_pi] using
-          (ae_eval_ne_eval_infinitePi (fun _ : Fin n => μ) hij).mono fun _ hx _ => hx
-    filter_upwards [h] with x hx
-    exact injective_iff_pairwise_ne.mpr hx
-  filter_upwards [hne] with x hx
+  filter_upwards [ae_injective_pi μ] with x hx
   refine ⟨fun h => ?_, fun h => ?_⟩
   · rw [← h]
     exact (Tuple.monotone_sort x).strictMono_of_injective (hx.comp (Tuple.sort x).injective)
@@ -97,9 +91,9 @@ private theorem measure_setOf_sort_eq_inter_eq (σ : Equiv.Perm (Fin n))
   ext x
   simp [he, orderStatistic_comp_perm]
 
-/-- **The ranks and the order statistics.** For an iid sample from an atomless law, the event
-that the sorting permutation is `σ` and the order statistics lie in `B` has probability `(n!)⁻¹`
-times the probability that the order statistics lie in `B`. -/
+/-- **The ranks and the order statistics.** For an iid sample from an atomless σ-finite
+measure, the event that the sorting permutation is `σ` and the order statistics lie in `B` has
+measure `(n!)⁻¹` times the measure of the event that the order statistics lie in `B`. -/
 theorem measure_setOf_sort_eq_inter_preimage_orderStatistics (σ : Equiv.Perm (Fin n))
     (B : Set (Fin n → α)) :
     (Measure.pi fun _ : Fin n => μ)
@@ -142,8 +136,8 @@ theorem measureReal_setOf_sort_eq_inter_preimage_orderStatistics (σ : Equiv.Per
 /-- The event that the sorting permutation lies in `s` and the order statistics lie in a
 measurable set `B` has probability `|s| / n!` times the probability of the second event. -/
 private theorem measure_preimage_sort_inter_preimage_orderStatistics
-    [MeasurableSpace (Equiv.Perm (Fin n))] [MeasurableSingletonClass (Equiv.Perm (Fin n))]
-    (s : Set (Equiv.Perm (Fin n))) {B : Set (Fin n → α)} (hB : MeasurableSet B) :
+    [MeasurableSpace (Equiv.Perm (Fin n))] {s : Set (Equiv.Perm (Fin n))} (hs : MeasurableSet s)
+    {B : Set (Fin n → α)} (hB : MeasurableSet B) :
     (Measure.pi fun _ : Fin n => μ)
         (Tuple.sort ⁻¹' s ∩ (fun x i => orderStatistic i x) ⁻¹' B) =
       Measure.count s * ((n.factorial : ℝ≥0∞)⁻¹ *
@@ -162,23 +156,23 @@ private theorem measure_preimage_sort_inter_preimage_orderStatistics
       (hdisj h).mono inter_subset_left inter_subset_left)
       fun τ _ => (measurableSet_setOf_sort_eq τ).inter (hS hB)]
   simp_rw [measure_setOf_sort_eq_inter_preimage_orderStatistics]
-  rw [Finset.sum_const, nsmul_eq_mul, Measure.count_apply_finite s s.toFinite,
+  rw [Finset.sum_const, nsmul_eq_mul, Measure.count_apply_finite' s.toFinite hs,
     Set.Finite.toFinset_eq_toFinset]
 
 /-- **The law of the ranks.** For an iid sample from an atomless law, the sorting permutation
 is uniformly distributed on the `n!` permutations and independent of the vector of order
 statistics. -/
-theorem map_sort_eq_and_indepFun_orderStatistics [MeasurableSpace (Equiv.Perm (Fin n))]
-    [MeasurableSingletonClass (Equiv.Perm (Fin n))] :
+theorem map_sort_eq_and_indepFun_orderStatistics [IsProbabilityMeasure μ]
+    [MeasurableSpace (Equiv.Perm (Fin n))] :
     (Measure.pi fun _ : Fin n => μ).map Tuple.sort = uniformOn univ ∧
       IndepFun Tuple.sort (fun x i => orderStatistic i x) (Measure.pi fun _ : Fin n => μ) := by
-  have hsort : ∀ s, (Measure.pi fun _ : Fin n => μ) (Tuple.sort ⁻¹' s) =
-      Measure.count s * (n.factorial : ℝ≥0∞)⁻¹ := fun s => by
-    simpa using measure_preimage_sort_inter_preimage_orderStatistics (μ := μ) s MeasurableSet.univ
+  have hsort : ∀ s, MeasurableSet s → (Measure.pi fun _ : Fin n => μ) (Tuple.sort ⁻¹' s) =
+      Measure.count s * (n.factorial : ℝ≥0∞)⁻¹ := fun s hs => by
+    simpa using measure_preimage_sort_inter_preimage_orderStatistics (μ := μ) hs MeasurableSet.univ
   refine ⟨Measure.ext fun s hs => ?_, ?_⟩
-  · rw [Measure.map_apply measurable_sort hs, hsort, uniformOn_univ, Fintype.card_perm,
+  · rw [Measure.map_apply measurable_sort hs, hsort s hs, uniformOn_univ, Fintype.card_perm,
       Fintype.card_fin, ENNReal.div_eq_inv_mul, mul_comm]
-  · refine indepFun_iff_measure_inter_preimage_eq_mul.2 fun s B _ hB => ?_
-    rw [measure_preimage_sort_inter_preimage_orderStatistics s hB, hsort, mul_assoc]
+  · refine indepFun_iff_measure_inter_preimage_eq_mul.2 fun s B hs hB => ?_
+    rw [measure_preimage_sort_inter_preimage_orderStatistics hs hB, hsort s hs, mul_assoc]
 
 end TauCeti.Probability
