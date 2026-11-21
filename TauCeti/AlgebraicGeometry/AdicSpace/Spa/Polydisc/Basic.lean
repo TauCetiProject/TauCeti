@@ -170,6 +170,12 @@ noncomputable def evalAtHom (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i))
   weightedEvalHom isWeightFamily_one_weight continuousAt_id
     ((isWeightBounded_one_weight_iff_forall_isPowerBounded (RingHom.id A) a).2 ha)
 
+/-- `evalAtHom` is `TauCeti.Huber.weightedEvalHom` along `RingHom.id A`. -/
+theorem evalAtHom_eq_weightedEvalHom (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i)) :
+    evalAtHom a ha = weightedEvalHom isWeightFamily_one_weight continuousAt_id
+      ((isWeightBounded_one_weight_iff_forall_isPowerBounded (RingHom.id A) a).2 ha) :=
+  (rfl)
+
 /-- Evaluation at `a` is continuous. -/
 theorem continuous_evalAtHom (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i)) :
     Continuous (evalAtHom a ha) :=

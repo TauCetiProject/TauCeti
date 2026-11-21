@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.GaussPoint.Basic
+public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.Basic
 public import TauCeti.RingTheory.Huber.Restricted.Gauss.Valuation
 
 /-!
@@ -17,9 +17,10 @@ valuation `TauCeti.Huber.weightedGaussValuation` to `NormedField.valuation` yiel
 valuation on `K⟨T₁, …, Tₙ⟩` bounded by `1` on `K⟨T₁, …, Tₙ⟩°`, whose real value is the unit Gauss
 norm `‖∑ a_α T^α‖ = max_α ‖a_α‖`. Its equivalence class is the *unit Gauss point*
 `unitGaussPoint n K : closedPolydisc n K`, which is uniquely characterized by the predicate
-`IsUnitGaussPoint` comparing series by their unit Gauss norms. At `n = 1` it coincides with the
-one-variable Gauss point `gaussPoint zero_lt_one le_rfl`; at `n = 0` it coincides with the unique
-classical point; for `n ≥ 1` it has trivial support and is not classical.
+`IsUnitGaussPoint` comparing series by their unit Gauss norms. At `n = 0` it coincides with the
+unique classical point; for `n ≥ 1` it has trivial support and is not classical (the `n = 1`
+comparison with `gaussPoint zero_lt_one le_rfl` is in
+`TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.GaussPoint.Comparison`).
 
 ## Main definitions
 
@@ -40,8 +41,6 @@ classical point; for `n ≥ 1` it has trivial support and is not classical.
   complete field, `unitGaussPoint n K` is not classical.
 * `TauCeti.ValuationSpectrum.unitGaussPoint_zero_eq_classicalPoint`: in dimension `0`,
   `unitGaussPoint 0 K` equals the unique classical point.
-* `TauCeti.ValuationSpectrum.unitGaussPoint_one_eq_gaussPoint`: in dimension `1`,
-  `unitGaussPoint 1 K` agrees with `gaussPoint zero_lt_one le_rfl`.
 
 ## References
 
@@ -172,27 +171,5 @@ theorem unitGaussPoint_zero_eq_classicalPoint [CompleteSpace K]
   eq_classicalPoint_zero x (unitGaussPoint 0 K)
 
 end UnitGaussPoint
-
-/-- **In dimension `1`, `unitGaussPoint 1 K` coincides with the one-variable Gauss point at radius
-`1`.** -/
-theorem unitGaussPoint_one_eq_gaussPoint {K : Type*} [NontriviallyNormedField K]
-    [IsUltrametricDist K] :
-    unitGaussPoint 1 K = gaussPoint (K := K) zero_lt_one le_rfl := by
-  have hval : ∀ f : weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set K))
-      isWeightFamily_one_weight,
-      (closedDiscGaussValuation (R := K) zero_lt_one le_rfl f : ℝ) =
-        ‖restrictedMvPowerSeriesGaussEquiv f‖ := fun f ↦ by
-    refine le_antisymm ?_ ?_
-    · refine closedDiscGaussValuation_le_of_forall_norm_coeff_le zero_lt_one le_rfl fun ν ↦ ?_
-      rw [← coe_restrictedMvPowerSeriesGaussEquiv]
-      exact MvPowerSeries.norm_coeff_le_norm (restrictedMvPowerSeriesGaussEquiv f) ν
-    · obtain ⟨ν, hν⟩ := MvPowerSeries.exists_norm_coeff_eq_norm
-        (restrictedMvPowerSeriesGaussEquiv f)
-      have hν' : ν = Finsupp.single 0 (ν 0) :=
-        Finsupp.ext fun i ↦ by rw [Subsingleton.elim i 0, Finsupp.single_eq_same]
-      rw [← hν, coe_restrictedMvPowerSeriesGaussEquiv, hν']
-      simpa using norm_coeff_mul_pow_le_closedDiscGaussValuation (R := K) zero_lt_one le_rfl f (ν 0)
-  refine Subtype.ext (ext' fun f g ↦ ?_)
-  rw [unitGaussPoint_vle_iff_norm, gaussPoint_vle_iff, ← NNReal.coe_le_coe, hval f, hval g]
 
 end TauCeti.ValuationSpectrum

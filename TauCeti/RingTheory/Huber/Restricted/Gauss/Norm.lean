@@ -66,6 +66,8 @@ type or norm is introduced here.
   field `K`, the power-bounded subring of `K⟨X₁, …, Xₙ⟩` is `K°⟨X₁, …, Xₙ⟩`.
 * `TauCeti.Huber.exists_units_norm_mul_weightedC_eq_one`: every nonzero restricted series over
   an ultrametric normed field can be normalized to unit Gauss norm by a scalar unit.
+* `TauCeti.Huber.one_le_norm_weightedX_pow_sub_weightedX`: for `q > 1`, `Tᵢ ^ q - Tᵢ` has unit
+  Gauss norm at least `1`.
 * `TauCeti.MvPowerSeries.isAdicHom_algebraMap_isRestrictedSubring_quotient`: for an ultrametric
   normed algebra `A` over a nontrivially normed field, the structure map `A → A⟨X⟩ ⧸ I` is adic
   for the quotient topology.
@@ -210,6 +212,38 @@ theorem continuous_restrictedMvPowerSeriesGaussEquiv_symm :
   apply hU
   simpa only [one_pow, Finsupp.prod, Finset.prod_const_one, mul_one, Set.mem_ofPred_eq] using
     (MvPowerSeries.norm_coeff_mul_prod_le f ν).trans_lt hf
+
+/-- For `q > 1` and any coordinate `i : Fin n`, the restricted series `Tᵢ ^ q - Tᵢ` has
+`Tᵢ`-coefficient `-1`, hence unit Gauss norm at least `1`. -/
+theorem one_le_norm_weightedX_pow_sub_weightedX [NormOneClass R] (i : Fin n) {q : ℕ}
+    (hq : 1 < q) :
+    1 ≤ ‖restrictedMvPowerSeriesGaussEquiv
+      ((weightedX (fun _ : Fin n ↦ ({1} : Set R)) isWeightFamily_one_weight i) ^ q -
+        weightedX (fun _ : Fin n ↦ ({1} : Set R)) isWeightFamily_one_weight i)‖ := by
+  set Tᵢ : weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set R)) isWeightFamily_one_weight :=
+    weightedX _ isWeightFamily_one_weight i
+  have hcoeff_pow : MvPowerSeries.coeff (Finsupp.single i 1)
+      ((Tᵢ ^ q : weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set R))
+        isWeightFamily_one_weight) : MvPowerSeries (Fin n) R) = 0 := by
+    have hXpow : ((Tᵢ ^ q : weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set R))
+        isWeightFamily_one_weight) : MvPowerSeries (Fin n) R) =
+        MvPowerSeries.monomial (Finsupp.single i q) (1 : R) := by
+      rw [Subring.coe_pow, coe_weightedX, MvPowerSeries.X_pow_eq]
+    rw [hXpow, MvPowerSeries.coeff_monomial_ne]
+    intro heq
+    have h1q : 1 = q := by
+      have := congrArg (fun f : Fin n →₀ ℕ ↦ f i) heq
+      simpa using this
+    omega
+  have hcoeff_s : MvPowerSeries.coeff (Finsupp.single i 1)
+      (((Tᵢ ^ q - Tᵢ : weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set R))
+        isWeightFamily_one_weight) : MvPowerSeries (Fin n) R)) = -1 := by
+    rw [AddSubgroupClass.coe_sub, map_sub, hcoeff_pow, coe_weightedX]
+    simp [MvPowerSeries.coeff_X]
+  have hle := MvPowerSeries.norm_coeff_le_norm
+    (restrictedMvPowerSeriesGaussEquiv (Tᵢ ^ q - Tᵢ)) (Finsupp.single i 1)
+  rw [coe_restrictedMvPowerSeriesGaussEquiv, hcoeff_s, norm_neg, norm_one] at hle
+  exact hle
 
 section Complete
 

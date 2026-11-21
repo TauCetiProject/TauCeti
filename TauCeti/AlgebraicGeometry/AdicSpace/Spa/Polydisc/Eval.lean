@@ -6,16 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.Basic
-public import TauCeti.RingTheory.Huber.Restricted.Gauss.Norm
-public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Eval
+public import TauCeti.RingTheory.Huber.Restricted.Comparison
 
 /-!
 # Normed evaluation on the closed polydisc
 
 This file compares Wedhorn's evaluation homomorphism `TauCeti.ValuationSpectrum.evalAtHom` on the
 unit Tate algebra `A⟨T₁, …, Tₖ⟩` with the normed restricted evaluation
-`MvPowerSeries.restrictedEval₂` through the Gauss comparison
-`TauCeti.Huber.restrictedMvPowerSeriesGaussEquiv`, and transfers the Gauss-norm bound,
+`MvPowerSeries.restrictedEval₂` by specializing the Huber evaluation comparison in
+`TauCeti.RingTheory.Huber.Restricted.Comparison`, and transfers the Gauss-norm bound,
 ultrametric Lipschitz estimate, and continuity in the evaluation argument to `evalAtHom`.
 
 ## Main results
@@ -53,22 +52,9 @@ theorem evalAtHom_eq_restrictedEval₂ (a : Fin k → A) (ha : ∀ i, IsPowerBou
     evalAtHom a ha f =
       MvPowerSeries.restrictedEval₂ (RingHom.id A) a (fun _ ↦ le_rfl) ha'
         (restrictedMvPowerSeriesGaussEquiv f) := by
-  have heq : (evalAtHom a ha).comp restrictedMvPowerSeriesGaussEquiv.symm.toRingHom =
-      MvPowerSeries.restrictedEval₂ (RingHom.id A) a (fun _ ↦ le_rfl) ha' := by
-    refine MvPowerSeries.eq_restrictedEval₂ (RingHom.id A) a (fun _ ↦ le_rfl) ha' _
-      ((continuous_evalAtHom a ha).comp continuous_restrictedMvPowerSeriesGaussEquiv_symm)
-      (fun r ↦ ?_) fun i ↦ ?_
-    · have hC : restrictedMvPowerSeriesGaussEquiv.symm
-          (algebraMap A (MvPowerSeries.IsRestricted.subring (R := A) (fun _ : Fin k ↦ 1)) r) =
-          weightedC _ isWeightFamily_one_weight r :=
-        restrictedMvPowerSeriesGaussEquiv.injective (by simp)
-      simp [hC]
-    · have hX : restrictedMvPowerSeriesGaussEquiv.symm
-          ⟨MvPowerSeries.X i, MvPowerSeries.isRestricted_monomial _ (Finsupp.single i 1) 1⟩ =
-          weightedX (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight i :=
-        restrictedMvPowerSeriesGaussEquiv.injective (by simp)
-      simp [hX]
-  simpa using RingHom.congr_fun heq (restrictedMvPowerSeriesGaussEquiv f)
+  rw [evalAtHom_eq_weightedEvalHom,
+    weightedEvalHom_eq_restrictedEval₂OfBound (C := 1) continuousAt_id (fun r ↦ by simp) ha',
+    RingHom.restrictedEval₂OfBound_eq_restrictedEval₂]
 
 /-- **Gauss-norm bound on evaluation.** Evaluating `f ∈ A⟨T⟩` at a point `a` with `‖a i‖ ≤ 1`
 produces an element of norm at most the unit Gauss norm of `f`. -/
@@ -87,9 +73,9 @@ theorem norm_evalAtHom_sub_le {a b : Fin k → A} (ha : ∀ i, IsPowerBounded (a
     {δ : ℝ} (hδ : 0 ≤ δ) (hab : ∀ i, ‖a i - b i‖ ≤ δ)
     (f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight) :
     ‖evalAtHom a ha f - evalAtHom b hb f‖ ≤ δ * ‖restrictedMvPowerSeriesGaussEquiv f‖ := by
-  rw [evalAtHom_eq_restrictedEval₂ a ha ha' f, evalAtHom_eq_restrictedEval₂ b hb hb' f]
-  exact MvPowerSeries.norm_restrictedEval₂_sub_le (RingHom.id A) (fun _ ↦ le_rfl) ha' hb' hδ
-    (fun i ↦ by simpa using hab i) (restrictedMvPowerSeriesGaussEquiv f)
+  rw [evalAtHom_eq_weightedEvalHom a ha, evalAtHom_eq_weightedEvalHom b hb]
+  simpa only [mul_one] using norm_weightedEvalHom_sub_le (φ := RingHom.id A) (C := 1)
+    continuousAt_id (fun r ↦ by simp) ha' hb' _ _ hδ hab f
 
 end NormedCommRing
 

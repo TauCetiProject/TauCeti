@@ -264,38 +264,6 @@ section FiniteResidueField
 
 variable {n : ℕ} {K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
 
-omit [CompleteSpace K] in
-/-- For `q > 1` and `n ≥ 1`, the restricted series `T₀ ^ q - T₀` has `T₀`-coefficient `-1`, hence
-unit Gauss norm at least `1`. -/
-private theorem one_le_norm_weightedX_pow_sub_weightedX [NeZero n] {q : ℕ} (hq : 1 < q) :
-    1 ≤ ‖restrictedMvPowerSeriesGaussEquiv
-      ((weightedX (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight 0) ^ q -
-        weightedX (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight 0)‖ := by
-  set T₀ : weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight :=
-    weightedX _ isWeightFamily_one_weight 0
-  have hcoeff_pow : MvPowerSeries.coeff (Finsupp.single (0 : Fin n) 1)
-      ((T₀ ^ q : weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set K))
-        isWeightFamily_one_weight) : MvPowerSeries (Fin n) K) = 0 := by
-    have hXpow : ((T₀ ^ q : weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set K))
-        isWeightFamily_one_weight) : MvPowerSeries (Fin n) K) =
-        MvPowerSeries.monomial (Finsupp.single (0 : Fin n) q) (1 : K) := by
-      rw [Subring.coe_pow, coe_weightedX, MvPowerSeries.X_pow_eq]
-    rw [hXpow, MvPowerSeries.coeff_monomial_ne]
-    intro heq
-    have h1q : 1 = q := by
-      have := congrArg (fun f : Fin n →₀ ℕ ↦ f 0) heq
-      simpa using this
-    omega
-  have hcoeff_s : MvPowerSeries.coeff (Finsupp.single (0 : Fin n) 1)
-      (((T₀ ^ q - T₀ : weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set K))
-        isWeightFamily_one_weight) : MvPowerSeries (Fin n) K)) = -1 := by
-    rw [AddSubgroupClass.coe_sub, map_sub, hcoeff_pow, coe_weightedX]
-    simp [MvPowerSeries.coeff_X]
-  have hle := MvPowerSeries.norm_coeff_le_norm
-    (restrictedMvPowerSeriesGaussEquiv (T₀ ^ q - T₀)) (Finsupp.single (0 : Fin n) 1)
-  rw [coe_restrictedMvPowerSeriesGaussEquiv, hcoeff_s, norm_neg, norm_one] at hle
-  exact hle
-
 /-- **Failure of Gauss-point closure for finite residue fields.** When `K° / K°°` is finite of
 cardinality `q` and `n ≥ 1`, the rational open `R({1} / (T₀^q - T₀))` is a neighbourhood of
 `unitGaussPoint n K` disjoint from all `K`-rational points, because `a₀^q - a₀` reduces to `0` in
@@ -321,7 +289,7 @@ theorem unitGaussPoint_notMem_closure_range_classicalPoint_of_finite
     rw [← closedPolydisc_def] at h
     exact h
   have hs_norm_ge : 1 ≤ ‖restrictedMvPowerSeriesGaussEquiv s‖ :=
-    one_le_norm_weightedX_pow_sub_weightedX Fintype.one_lt_card
+    one_le_norm_weightedX_pow_sub_weightedX 0 Fintype.one_lt_card
   have hηU : unitGaussPoint n K ∈ U := by
     rw [Set.mem_preimage, mem_rationalSubset_iff, ← closedPolydisc_def]
     refine ⟨(unitGaussPoint n K).property, ?_, ?_⟩
