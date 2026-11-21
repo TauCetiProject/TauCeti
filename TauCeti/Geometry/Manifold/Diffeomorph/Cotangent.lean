@@ -6,9 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.Algebra.LieGroup
+public import Mathlib.Topology.Algebra.ProperAction.Basic
 public import TauCeti.Geometry.Manifold.Algebra.SMul
 public import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Basic
+
+import TauCeti.Topology.Algebra.ProperAction.Basic
+import TauCeti.Topology.FiberBundle.Separation
 
 /-!
 # Cotangent lifts of diffeomorphisms
@@ -43,7 +47,9 @@ By functoriality, a group `G` acting on `M` by smooth maps (`ContMDiffConstSMul 
 (`TauCeti.CotangentBundle.instContMDiffConstSMul`). For a smooth action of a Lie group the lifted
 action is jointly smooth on `G × T*M` (`TauCeti.CotangentBundle.instContMDiffSMul`), since the
 differential of `x ↦ g⁻¹ • x` depends smoothly on `g`. This **cotangent-lifted action** covers the
-action on `M` (`TauCeti.CotangentBundle.proj_smul`), preserves the pairing of covectors with
+action on `M` (`TauCeti.CotangentBundle.proj_smul`), so it is free when the action on `M` is
+(`TauCeti.CotangentBundle.instIsCancelSMul`) and proper when the action on the Hausdorff manifold
+`M` is (`TauCeti.CotangentBundle.instProperSMul`); it preserves the pairing of covectors with
 tangent vectors (`TauCeti.CotangentBundle.smul_snd_apply_mfderiv`) and the zero section, and the
 cotangent lift of each `x ↦ g • x` is the action of `g` on `T*M`
 (`Diffeomorph.cotangent_constSmul`). Cotangent lifts are equivariant for these actions: the
@@ -308,6 +314,22 @@ instance instContMDiffSMul {EG HG : Type*} [NormedAddCommGroup EG] [NormedSpace 
       (Filter.Eventually.of_forall fun q ↦ smul_eq_mk q.1 q.2)
     exact (((contMDiff_inv IG ∞).comp (contMDiff_fst.comp contMDiff_fst)).smul
       contMDiff_snd).contMDiffAt
+
+/-- **The cotangent lift of a free action is free.** An element fixing a covector fixes its base
+point, since the cotangent-lifted action covers the action on the base. -/
+instance instIsCancelSMul [IsCancelSMul G M] : IsCancelSMul G (CotangentBundle I M) :=
+  isCancelSMul_iff_stabilizer_eq_bot.2 fun z ↦ eq_bot_iff.2 fun g hg ↦ by
+    rw [← IsCancelSMul.stabilizer_eq_bot (G := G) z.proj, MulAction.mem_stabilizer_iff, ← proj_smul,
+      MulAction.mem_stabilizer_iff.1 hg]
+
+/-- **The cotangent lift of a proper action is proper.** If `G` acts properly on a Hausdorff
+manifold `M` and the cotangent-lifted action is continuous, as it is for a smooth action of a Lie
+group (`TauCeti.CotangentBundle.instContMDiffSMul`), then the lifted action is proper: the bundle
+projection intertwines it with the action on `M`, and the cotangent bundle is Hausdorff. -/
+instance instProperSMul [TopologicalSpace G] [T2Space M] [ProperSMul G M]
+    [ContinuousSMul G (CotangentBundle I M)] : ProperSMul G (CotangentBundle I M) :=
+  (FiberBundle.continuous_proj (E →L[𝕜] 𝕜) fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜).properSMul
+    proj_smul
 
 end TauCeti.CotangentBundle
 
