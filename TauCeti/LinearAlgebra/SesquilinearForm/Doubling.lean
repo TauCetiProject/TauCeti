@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Matrix.SesquilinearForm
 public import Mathlib.LinearAlgebra.SesquilinearForm.Orthogonal
 public import TauCeti.LinearAlgebra.BilinearForm.Prod
+public import TauCeti.LinearAlgebra.Prod
 
 /-!
 # The doubled sesquilinear form
@@ -25,7 +26,8 @@ The diagonal `D = {(x, x)}` and the antidiagonal `A = {(x, -x)}` (the graphs of 
 are isotropic, each is its own orthogonal as soon as `h` is right separating, and `A` and `D`
 pair through `2 h`: `h_W ((x, -x), (y, y)) = 2 h x y`. When `2` is invertible they are
 complementary, and the coordinates `(x, y) ↦ (x, -x) + (y, y)` give the linear equivalence
-`TauCeti.doublingPolarization` with inverse `(u, v) ↦ (½ (u - v), ½ (u + v))`. In a basis of
+`TauCeti.doublingPolarization` with inverse `(u, v) ↦ (½ (u - v), ½ (u + v))`; this
+form-independent polarization API lives in `TauCeti.LinearAlgebra.Prod`. In a basis of
 `M` the Gram matrix of `h_W` is `diag(H, -H)` in the product basis and the antidiagonal block
 matrix with blocks `2 H` in the polarized basis.
 
@@ -42,14 +44,11 @@ statements apply at once to the split algebra `E = F × F`, which is not a field
 * `LinearMap.orthogonalBilin_doubledForm_graph_id`,
   `LinearMap.orthogonalBilin_doubledForm_graph_neg_id`: for right-separating `h`, the diagonal
   and the antidiagonal are their own orthogonals.
-* `TauCeti.doublingPolarization`: the polarization `M × M ≃ M × M`, `(x, y) ↦ (x, -x) + (y, y)`.
-* `LinearMap.isCompl_graph_neg_id_graph_id`: the antidiagonal and the diagonal are complements.
-* `LinearMap.ext₂_antidiagonal_diagonal`: a form on `M × M` is determined by its four
-  polarization blocks.
 * `LinearMap.toMatrix₂_doubledForm`, `LinearMap.toMatrix₂_doubledForm_polarization`: the Gram
   matrices of the doubled form.
-* `LinearMap.doubledForm_prodMap`: two similitudes with a common multiplier induce a similitude
-  of the doubled forms.
+* `LinearMap.doubledForm_prodMap`: two linear maps scaling `h` by a common factor `c` act
+  blockwise on `M × M`, scaling the doubled form by `c`; this is the identity underlying the
+  block embeddings of isometry and similitude groups.
 
 ## References
 
@@ -61,99 +60,9 @@ statements apply at once to the split algebra `E = F × F`, which is not a field
 
 public section
 
-namespace TauCeti
-
-variable (R M : Type*) [Ring R] [AddCommGroup M] [Module R M] [Invertible (2 : R)]
-
-/-- The polarization of `M × M` into antidiagonal and diagonal coordinates: `(x, y)` is sent to
-`(x, -x) + (y, y)`, with inverse `(u, v) ↦ (½ (u - v), ½ (u + v))`. -/
-def doublingPolarization : (M × M) ≃ₗ[R] M × M where
-  toFun p := (p.1 + p.2, -p.1 + p.2)
-  invFun p := (⅟(2 : R) • (p.1 - p.2), ⅟(2 : R) • (p.1 + p.2))
-  map_add' p q := by ext <;> simp only [Prod.fst_add, Prod.snd_add, neg_add] <;> abel
-  map_smul' c p := by ext <;> simp [smul_add]
-  left_inv p := by
-    ext <;> dsimp only
-    · rw [show p.1 + p.2 - (-p.1 + p.2) = (2 : R) • p.1 by rw [two_smul]; abel, invOf_smul_smul]
-    · rw [show p.1 + p.2 + (-p.1 + p.2) = (2 : R) • p.2 by rw [two_smul]; abel, invOf_smul_smul]
-  right_inv p := by
-    ext <;> dsimp only
-    · rw [← smul_add, show p.1 - p.2 + (p.1 + p.2) = (2 : R) • p.1 by rw [two_smul]; abel,
-        invOf_smul_smul]
-    · rw [← smul_neg, ← smul_add,
-        show -(p.1 - p.2) + (p.1 + p.2) = (2 : R) • p.2 by rw [two_smul]; abel, invOf_smul_smul]
-
-variable {R M}
-
-@[simp]
-theorem doublingPolarization_apply (p : M × M) :
-    doublingPolarization R M p = (p.1 + p.2, -p.1 + p.2) :=
-  (rfl)
-
-@[simp]
-theorem doublingPolarization_symm_apply (p : M × M) :
-    (doublingPolarization R M).symm p = (⅟(2 : R) • (p.1 - p.2), ⅟(2 : R) • (p.1 + p.2)) :=
-  (rfl)
-
-variable (R) in
-include R in
-/-- Every vector of `M × M` is the sum of an antidiagonal and a diagonal vector. -/
-theorem exists_eq_antidiagonal_add_diagonal (p : M × M) :
-    ∃ x y : M, p = (x, -x) + (y, y) :=
-  ⟨_, _, by simpa using ((doublingPolarization R M).apply_symm_apply p).symm⟩
-
-/-- The polarization commutes with the diagonal action of a linear map. -/
-theorem doublingPolarization_prodMap {M' : Type*} [AddCommGroup M'] [Module R M']
-    (f : M →ₗ[R] M') (p : M × M) :
-    doublingPolarization R M' (f.prodMap f p) = f.prodMap f (doublingPolarization R M p) := by
-  simp
-
-end TauCeti
-
 open TauCeti
 
 namespace LinearMap
-
-section Polarization
-
-variable {R S M N : Type*} [Ring R] [AddCommGroup M] [Module R M]
-
-/-- The antidiagonal and the diagonal of `M × M` are complements once `2` is invertible. -/
-theorem isCompl_graph_neg_id_graph_id [Invertible (2 : R)] :
-    IsCompl (-LinearMap.id : M →ₗ[R] M).graph (LinearMap.id : M →ₗ[R] M).graph := by
-  refine ⟨Submodule.disjoint_def.2 fun p hA hD ↦ ?_, Submodule.codisjoint_iff_exists_add_eq.2
-    fun p ↦ ?_⟩
-  · have hA' : p.2 = -p.1 := by simpa using hA
-    have hD' : p.2 = p.1 := by simpa using hD
-    have h2 : (2 : R) • p.1 = 0 := by
-      rw [two_smul]; nth_rw 1 [← hD']; rw [hA', neg_add_cancel]
-    have h1 : p.1 = 0 := by simpa using congrArg (⅟(2 : R) • ·) h2
-    exact Prod.ext h1 (hD'.trans h1)
-  · obtain ⟨x, y, rfl⟩ := exists_eq_antidiagonal_add_diagonal R p
-    exact ⟨(x, -x), (y, y), by simp, by simp, rfl⟩
-
-variable [CommSemiring S] [AddCommMonoid N] [Module S N]
-
-/-- A semilinear map on `M × M` is determined by its values on the antidiagonal and on the
-diagonal. -/
-theorem ext_antidiagonal_diagonal [Invertible (2 : R)] {σ : R →+* S} {f g : M × M →ₛₗ[σ] N}
-    (hA : ∀ x, f (x, -x) = g (x, -x)) (hD : ∀ x, f (x, x) = g (x, x)) : f = g :=
-  ext_on_codisjoint isCompl_graph_neg_id_graph_id.codisjoint
-    (fun p hp ↦ by rw [show p = (p.1, -p.1) from Prod.ext rfl (by simpa using hp)]; exact hA _)
-    fun p hp ↦ by rw [show p = (p.1, p.1) from Prod.ext rfl (by simpa using hp)]; exact hD _
-
-/-- A form on `M × M` is determined by its four polarization blocks, the values on pairs of
-antidiagonal and diagonal vectors. -/
-theorem ext₂_antidiagonal_diagonal [Invertible (2 : R)] {I₁ I₂ : R →+* S}
-    {B B' : M × M →ₛₗ[I₁] M × M →ₛₗ[I₂] N}
-    (hAA : ∀ x y, B (x, -x) (y, -y) = B' (x, -x) (y, -y))
-    (hAD : ∀ x y, B (x, -x) (y, y) = B' (x, -x) (y, y))
-    (hDA : ∀ x y, B (x, x) (y, -y) = B' (x, x) (y, -y))
-    (hDD : ∀ x y, B (x, x) (y, y) = B' (x, x) (y, y)) : B = B' :=
-  ext_antidiagonal_diagonal (fun x ↦ ext_antidiagonal_diagonal (hAA x) (hAD x))
-    fun x ↦ ext_antidiagonal_diagonal (hDA x) (hDD x)
-
-end Polarization
 
 variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] {I : R →+* R}
 
@@ -258,8 +167,11 @@ theorem orthogonalBilin_doubledForm_graph_neg_id (hh : h.SeparatingRight) :
 
 /-- Two linear maps `f g : M → M'` that both scale the forms by a common multiplier `c`,
 `h' (f x) (f y) = c * h x y`, induce blockwise a map `M × M → M' × M'` scaling the doubled forms
-by `c`. For `c = 1` and isometries of `h` this is the embedding `U(V) × U(-V) → U(V ⊕ (-V))`;
-for general `c` it is the equal-multiplier embedding of similitude groups. -/
+by `c`. The maps need not be invertible and `c` may be any scalar, so this is only the pairing
+identity behind the group embeddings: specialized to `h' = h`, with `f` and `g` automorphisms
+of `M` and `c = 1`, it shows that `U(V) × U(-V)` acts on `V ⊕ (-V)` by isometries, and for
+automorphisms with a common invertible multiplier `c` it gives the equal-multiplier embedding of
+similitude groups. -/
 theorem doubledForm_prodMap {M' : Type*} [AddCommGroup M'] [Module R M']
     (h' : M' →ₛₗ[I] M' →ₗ[R] R) {f g : M →ₗ[R] M'} {c : R}
     (hf : ∀ x y, h' (f x) (f y) = c * h x y) (hg : ∀ x y, h' (g x) (g y) = c * h x y)

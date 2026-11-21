@@ -16,7 +16,8 @@ Mathlib builds the product `e₁.prodCongr e₂` of two linear equivalences, act
 componentwise. This file identifies which automorphisms of `M₁ × M₂` arise this way, records the
 determinants of such a product and of a block triangular `skewProd` automorphism, and records
 that scalar multiplication on a product of modules, read as a linear map over the base of a
-scalar tower, is the product map of the two scalar multiplications.
+scalar tower, is the product map of the two scalar multiplications. It also splits `M × M` into
+its antidiagonal and its diagonal when `2` is invertible.
 
 The characterization needs only containment: an automorphism `g` of `M₁ × M₂` that maps
 `M₁ × 0` into `M₁ × 0` and `0 × M₂` into `0 × M₂` already acts componentwise, and each component
@@ -71,6 +72,13 @@ quadratic forms with the subgroup preserving both summands.
   and fixes the third basis vector.
 * `TauCeti.LinearMap.lsmul_restrictScalars_prodMap`: multiplication by a scalar on a product of
   modules, read over the base of a scalar tower, is the product map of the two multiplications.
+* `TauCeti.doublingPolarization`: when `2` is invertible, the polarization `M × M ≃ M × M`,
+  `(x, y) ↦ (x, -x) + (y, y)`, into antidiagonal and diagonal coordinates.
+* `LinearMap.isCompl_graph_neg_id_graph_id`: the antidiagonal and the diagonal, the graphs of
+  `-id` and `id`, are complements.
+* `LinearMap.ext_antidiagonal_diagonal`, `LinearMap.ext₂_antidiagonal_diagonal`: a semilinear
+  map on `M × M` is determined by its restrictions to the antidiagonal and the diagonal, and a
+  form on `M × M` by its four polarization blocks.
 -/
 
 public section
@@ -595,4 +603,93 @@ theorem lsmul_restrictScalars_prodMap (c : S) :
 
 end LinearMap
 
+section Polarization
+
+variable (R M : Type*) [Ring R] [AddCommGroup M] [Module R M] [Invertible (2 : R)]
+
+/-- The polarization of `M × M` into antidiagonal and diagonal coordinates: `(x, y)` is sent to
+`(x, -x) + (y, y)`, with inverse `(u, v) ↦ (½ (u - v), ½ (u + v))`. -/
+def doublingPolarization : (M × M) ≃ₗ[R] M × M where
+  toFun p := (p.1 + p.2, -p.1 + p.2)
+  invFun p := (⅟(2 : R) • (p.1 - p.2), ⅟(2 : R) • (p.1 + p.2))
+  map_add' p q := by ext <;> simp only [Prod.fst_add, Prod.snd_add, neg_add] <;> abel
+  map_smul' c p := by ext <;> simp [smul_add]
+  left_inv p := by ext <;> dsimp only <;> match_scalars <;> simp [one_add_one_eq_two]
+  right_inv p := by ext <;> dsimp only <;> match_scalars <;> simp
+
+variable {R M}
+
+@[simp]
+theorem doublingPolarization_apply (p : M × M) :
+    doublingPolarization R M p = (p.1 + p.2, -p.1 + p.2) :=
+  (rfl)
+
+@[simp]
+theorem doublingPolarization_symm_apply (p : M × M) :
+    (doublingPolarization R M).symm p = (⅟(2 : R) • (p.1 - p.2), ⅟(2 : R) • (p.1 + p.2)) :=
+  (rfl)
+
+variable (R) in
+include R in
+/-- Every vector of `M × M` is the sum of an antidiagonal and a diagonal vector. -/
+theorem exists_eq_antidiagonal_add_diagonal (p : M × M) :
+    ∃ x y : M, p = (x, -x) + (y, y) :=
+  ⟨_, _, by simpa using ((doublingPolarization R M).apply_symm_apply p).symm⟩
+
+/-- The polarization commutes with the diagonal action of a linear map. -/
+theorem doublingPolarization_prodMap {M' : Type*} [AddCommGroup M'] [Module R M']
+    (f : M →ₗ[R] M') (p : M × M) :
+    doublingPolarization R M' (f.prodMap f p) = f.prodMap f (doublingPolarization R M p) := by
+  simp
+
+end Polarization
+
 end TauCeti
+
+namespace LinearMap
+
+section Polarization
+
+variable {R S M N : Type*} [Ring R] [AddCommGroup M] [Module R M]
+
+/-- The antidiagonal and the diagonal of `M × M` are complements once `2` is invertible. -/
+theorem isCompl_graph_neg_id_graph_id [Invertible (2 : R)] :
+    IsCompl (-LinearMap.id : M →ₗ[R] M).graph (LinearMap.id : M →ₗ[R] M).graph := by
+  refine ⟨Submodule.disjoint_def.2 fun p hA hD ↦ ?_, Submodule.codisjoint_iff_exists_add_eq.2
+    fun p ↦ ?_⟩
+  · have hA' : p.2 = -p.1 := by simpa using hA
+    have hD' : p.2 = p.1 := by simpa using hD
+    have h2 : (2 : R) • p.1 = 0 := by
+      rw [two_smul]; nth_rw 1 [← hD']; rw [hA', neg_add_cancel]
+    have h1 : p.1 = 0 := by simpa using congrArg (⅟(2 : R) • ·) h2
+    exact Prod.ext h1 (hD'.trans h1)
+  · obtain ⟨x, y, rfl⟩ := TauCeti.exists_eq_antidiagonal_add_diagonal R p
+    exact ⟨(x, -x), (y, y), by simp, by simp, rfl⟩
+
+variable [AddCommMonoid N]
+
+/-- A semilinear map on `M × M` is determined by its values on the antidiagonal and on the
+diagonal. -/
+theorem ext_antidiagonal_diagonal [Semiring S] [Module S N] [Invertible (2 : R)] {σ : R →+* S}
+    {f g : M × M →ₛₗ[σ] N} (hA : ∀ x, f (x, -x) = g (x, -x)) (hD : ∀ x, f (x, x) = g (x, x)) :
+    f = g :=
+  ext_on_codisjoint isCompl_graph_neg_id_graph_id.codisjoint
+    (fun ⟨x, _⟩ hp ↦ (by simpa using hp : _ = -x) ▸ hA x)
+    fun ⟨x, _⟩ hp ↦ (by simpa using hp : _ = x) ▸ hD x
+
+variable [CommSemiring S] [Module S N]
+
+/-- A form on `M × M` is determined by its four polarization blocks, the values on pairs of
+antidiagonal and diagonal vectors. -/
+theorem ext₂_antidiagonal_diagonal [Invertible (2 : R)] {I₁ I₂ : R →+* S}
+    {B B' : M × M →ₛₗ[I₁] M × M →ₛₗ[I₂] N}
+    (hAA : ∀ x y, B (x, -x) (y, -y) = B' (x, -x) (y, -y))
+    (hAD : ∀ x y, B (x, -x) (y, y) = B' (x, -x) (y, y))
+    (hDA : ∀ x y, B (x, x) (y, -y) = B' (x, x) (y, -y))
+    (hDD : ∀ x y, B (x, x) (y, y) = B' (x, x) (y, y)) : B = B' :=
+  ext_antidiagonal_diagonal (fun x ↦ ext_antidiagonal_diagonal (hAA x) (hAD x))
+    fun x ↦ ext_antidiagonal_diagonal (hDA x) (hDD x)
+
+end Polarization
+
+end LinearMap
