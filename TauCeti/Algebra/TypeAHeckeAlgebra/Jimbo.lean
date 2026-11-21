@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.TypeAHeckeAlgebra.Finite
 public import TauCeti.KnotTheory.Jimbo.Basic
+public import TauCeti.KnotTheory.Jimbo.Enhancement.Basic
 
 /-!
 # The Jimbo representation factors through the type-A Hecke algebra
@@ -37,6 +38,9 @@ algebra, not to be identified with its regular representation.
   strands `i` and `i + 1`.
 * `TauCeti.TypeAHeckeAlgebra.jimbo_braidHom`: the Jimbo representation of the braid group factors
   through the Hecke algebra.
+* `TauCeti.TypeAHeckeAlgebra.commute_jimboEnhancement_jimbo`: Turaev's enhancement
+  `TauCeti.KnotTheory.jimboEnhancement` commutes with the Jimbo action of every element of the
+  Hecke algebra.
 
 ## References
 
@@ -82,5 +86,18 @@ theorem jimbo_braidHom (b : BraidGroup n) :
       KnotTheory.jimbo ι q :=
     BraidGroup.hom_ext fun i ↦ Units.ext <| by simp
   exact congrArg Units.val (DFunLike.congr_fun h b)
+
+variable {q} in
+/-- Turaev's enhancement `μ^{⊗n}` (`TauCeti.KnotTheory.jimboEnhancement`) commutes with the Jimbo
+action of every element of the Hecke algebra. -/
+theorem commute_jimboEnhancement_jimbo {N : ℕ} (x : TypeAHeckeAlgebra R q n) :
+    Commute (KnotTheory.jimboEnhancement (N := N) q) (jimbo (Fin N) q x) := by
+  have hx : jimbo (Fin N) q x ∈
+      Algebra.adjoin R (Set.range (jimbo (Fin N) q ∘ T (n := n) q)) := by
+    rw [Set.range_comp, ← AlgHom.map_adjoin, adjoin_range_T]
+    exact ⟨x, trivial, rfl⟩
+  refine Algebra.commute_of_mem_adjoin_of_forall_mem_commute hx ?_
+  rintro _ ⟨i, rfl⟩
+  simpa using KnotTheory.jimboEnhancement_commute_generator (N := N) q _ _
 
 end TauCeti.TypeAHeckeAlgebra

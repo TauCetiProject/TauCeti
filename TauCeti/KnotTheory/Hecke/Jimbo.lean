@@ -26,9 +26,10 @@ with parameter `z = q ^ N / [N]`, along the embedding into the infinite algebra
 (`TauCeti.TypeAHeckeAlgebra.trace_jimbo_mul_jimboEnhancement_eq_ocneanuTrace`). The proof
 checks the four conditions of the uniqueness theorem
 `TauCeti.TypeAHeckeAlgebra.eq_ocneanuTrace_toInfinite`: the enhancement commutes with the action
-of every element, so the weighted trace is tracial; an uncrossed last strand multiplies it by
-`[N]`; and multiplying by the last generator multiplies it by `q ^ N`. The last two are the
-braid-level identities `TauCeti.KnotTheory.jimboWeightedTrace_strandIncl` and
+of every element (`TauCeti.TypeAHeckeAlgebra.commute_jimboEnhancement_jimbo`), so the weighted
+trace is tracial; an uncrossed last strand multiplies it by `[N]`; and multiplying by the last
+generator multiplies it by `q ^ N`. The last two are the braid-level identities
+`TauCeti.KnotTheory.jimboWeightedTrace_strandIncl` and
 `TauCeti.KnotTheory.jimboWeightedTrace_stabilize`, extended linearly from the images of braids,
 which span the Hecke algebra.
 
@@ -47,8 +48,6 @@ Hecke trace itself (`TauCeti.MarkovBraid.jimboReducedTrace_eq_heckeTrace`).
 
 ## Main results
 
-* `TauCeti.TypeAHeckeAlgebra.commute_jimboEnhancement_jimbo`: the enhancement commutes with the
-  Jimbo action of every element of the Hecke algebra.
 * `TauCeti.TypeAHeckeAlgebra.trace_jimbo_mul_jimboEnhancement_eq_ocneanuTrace`: the normalized
   weighted Jimbo trace on the Hecke algebra on `n` strands is the Ocneanu trace.
 * `TauCeti.KnotTheory.jimboWeightedTrace_eq_ocneanuTrace`: the same statement for braids.
@@ -78,18 +77,6 @@ open KnotTheory
 variable {R : Type*} [CommRing R] {q : Rˣ} {N n : ℕ}
 
 namespace TypeAHeckeAlgebra
-
-/-- The enhancement `μ^{⊗n}` commutes with the Jimbo action of every element of the Hecke
-algebra. -/
-theorem commute_jimboEnhancement_jimbo (x : TypeAHeckeAlgebra R q n) :
-    Commute (jimboEnhancement (N := N) q) (jimbo (Fin N) q x) := by
-  have hx : jimbo (Fin N) q x ∈
-      Algebra.adjoin R (Set.range (jimbo (Fin N) q ∘ T (n := n) q)) := by
-    rw [Set.range_comp, ← AlgHom.map_adjoin, adjoin_range_T]
-    exact ⟨x, trivial, rfl⟩
-  refine Algebra.commute_of_mem_adjoin_of_forall_mem_commute hx ?_
-  rintro _ ⟨i, rfl⟩
-  simpa using jimboEnhancement_commute_generator (N := N) q _ _
 
 /-- The weighted Jimbo trace on the Hecke algebra on `n` strands, as a linear map. -/
 private noncomputable def weightedTrace (N : ℕ) (q : Rˣ) (n : ℕ) :
