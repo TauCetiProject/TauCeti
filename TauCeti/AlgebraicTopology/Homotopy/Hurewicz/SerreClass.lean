@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Basic
 public import TauCeti.AlgebraicTopology.Homotopy.NConnectedCover
 public import TauCeti.AlgebraicTopology.SerreClass.Torsion
 public import TauCeti.AlgebraicTopology.Singular.Fibration.Comparison
@@ -12,21 +13,28 @@ import TauCeti.AlgebraicTopology.ClassifyingSpace.Torsion
 import TauCeti.AlgebraicTopology.ClassifyingSpace.Uniqueness
 import TauCeti.AlgebraicTopology.EilenbergMacLane.SerreClass
 import TauCeti.AlgebraicTopology.Homotopy.CWApproximation.Basic
+import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Absolute
 import TauCeti.AlgebraicTopology.Singular.Cubical.Based.Retraction
 import TauCeti.AlgebraicTopology.Singular.Homotopy.WeakHomotopyEquivalence
 
 /-!
-# From homotopy groups to homology modulo a Serre class
+# Serre's Hurewicz theorem modulo a class
 
 **Theorem** (Serre). Let `P` be a Serre class of abelian groups and `Y` a simply connected space
 whose homotopy groups `πᵢ(Y)` lie in `P` for `2 ≤ i ≤ k`. Then the integral homology groups
 `Hᵢ(Y; ℤ)` lie in `P` for `1 ≤ i ≤ k`
-(`TauCeti.prop_singularHomology_of_prop_homotopyGroup`). This is the direction "homotopy in `P`
-implies homology in `P`" of Serre's Hurewicz theorem modulo a class (Theorem 5.12 of
-Barraud–Damian–Humilière–Oancea). No finite generation and no CW structure is assumed. For the
-class of torsion groups: a simply connected space with torsion homotopy groups through degree `k`
-has torsion integral homology through degree `k`
-(`TauCeti.isAddTorsion_singularHomology_of_isMulTorsion_homotopyGroup`).
+(`TauCeti.prop_singularHomology_of_prop_homotopyGroup`), and the Hurewicz map
+`πₖ₊₁(Y) → Hₖ₊₁(Y; ℤ)` is an isomorphism modulo `P`: its kernel and cokernel lie in `P`
+(`TauCeti.isoModSerre_hurewiczModuleCatHom_of_prop_homotopyGroup`). This is Serre's Hurewicz
+theorem modulo a class: its direction "homotopy in `P` implies homology in `P`" (Theorem 5.12 of
+Barraud–Damian–Humilière–Oancea) and its comparison of `πₖ₊₁` with `Hₖ₊₁`. No finite generation
+and no CW structure is assumed. For the class of torsion groups: a simply connected space with
+torsion homotopy groups through degree `k` has torsion integral homology through degree `k`
+(`TauCeti.isAddTorsion_singularHomology_of_isMulTorsion_homotopyGroup`), and its Hurewicz map in
+degree `k + 1` has torsion kernel and cokernel
+(`TauCeti.isoModSerre_hurewiczModuleCatHom_of_isMulTorsion_homotopyGroup`). The Hurewicz map is
+read as a morphism of `ModuleCat ℤ` (`HomotopyGroup.hurewiczModuleCatHom`), so that being an
+isomorphism modulo `P` is Mathlib's `CategoryTheory.ObjectProperty.isoModSerre`.
 
 The class must satisfy Serre's axiom on Eilenberg--Mac Lane spaces: a `K(G, n)` space with
 `G ∈ P` has its positive-degree homology in `P`. As in the comparison theorem for Serre fibrations
@@ -54,16 +62,26 @@ The proof climbs the Whitehead tower.
   stage is replaced by its CW approximation, which is Hausdorff and changes neither homotopy nor
   homology.
 
-The converse direction, from homology to homotopy, and the comparison of `πₖ` with `Hₖ` modulo
-`P` are not treated here.
+The comparison climbs the same tower. Each projection `Z⟨n⟩ → Z` with `n ≤ k` is bijective on
+`πₖ₊₁` and an isomorphism modulo `P` on `Hₖ₊₁`, and the Hurewicz map is natural, so the Hurewicz
+map of `Z` is an isomorphism modulo `P` as soon as that of `Z⟨n⟩` is. At the top of the tower the
+stage is `k`-connected and the ordinary Hurewicz theorem
+(`HomotopyGroup.hurewiczAddEquiv`) makes the Hurewicz map an isomorphism.
+
+The converse direction, from homology to homotopy, is not treated here.
 
 ## Main results
 
 * `TauCeti.prop_singularHomology_of_nConnectedCover`: one step down the Whitehead tower.
 * `TauCeti.prop_singularHomology_of_prop_homotopyGroup`: Serre's theorem, homotopy groups in `P`
   through degree `k` give homology in `P` through degree `k`.
+* `TauCeti.isoModSerre_hurewiczModuleCatHom_of_prop_homotopyGroup`: Serre's theorem, homotopy
+  groups in `P` through degree `k` make the Hurewicz map in degree `k + 1` an isomorphism
+  modulo `P`.
 * `TauCeti.isAddTorsion_singularHomology_of_isMulTorsion_homotopyGroup`: torsion homotopy groups
   through degree `k` give torsion homology through degree `k`.
+* `TauCeti.isoModSerre_hurewiczModuleCatHom_of_isMulTorsion_homotopyGroup`: torsion homotopy
+  groups through degree `k` make the Hurewicz map in degree `k + 1` an isomorphism modulo torsion.
 
 ## References
 
@@ -225,7 +243,200 @@ theorem prop_singularHomology_of_prop_homotopyGroup (k : ℕ)
   exact prop_singularHomology_of_add P k hK k 0 y (by omega) h₁
     (fun j _ hjk ↦ hY j hjk) i hi0 hik
 
+/-! ### The Hurewicz map modulo a class -/
+
+variable {P} in
+/-- **Naturality of the Hurewicz map modulo `P`.** Along a based map `f : (X, x) → (Z, z)` which is
+bijective on `πₙ₊₂` and an isomorphism modulo `P` on `Hₙ₊₂`, the Hurewicz map of `Z` in degree
+`n + 2` is an isomorphism modulo `P` as soon as that of `X` is. -/
+private theorem isoModSerre_hurewiczModuleCatHom_of_map {X Z : Type} [TopologicalSpace X]
+    [TopologicalSpace Z] {x : X} {z : Z} {n : ℕ} (f : C(X, Z)) (hf : f x = z)
+    (hπ : Function.Bijective (HomotopyGroup.map (N := Fin (n + 2)) f hf))
+    (hH : P.isoModSerre (((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 2)).obj
+      (ModuleCat.of ℤ ℤ)).map (TopCat.ofHom f)))
+    (hX : P.isoModSerre (HomotopyGroup.hurewiczModuleCatHom X x n)) :
+    P.isoModSerre (HomotopyGroup.hurewiczModuleCatHom Z z n) := by
+  let e : ModuleCat.of ℤ (Additive (π_ (n + 2) X x)) ⟶ ModuleCat.of ℤ (Additive (π_ (n + 2) Z z)) :=
+    ModuleCat.ofHom (HomotopyGroup.mapHom f hf).toAdditive.toIntLinearMap
+  have : IsIso e := (ConcreteCategory.isIso_iff_bijective e).2
+    (Additive.ofMul.bijective.comp (hπ.comp Additive.toMul.bijective))
+  rw [← IsIso.inv_hom_id_assoc e (HomotopyGroup.hurewiczModuleCatHom Z z n),
+    HomotopyGroup.hurewiczModuleCatHom_naturality]
+  exact P.isoModSerre.comp_mem _ _ (P.isoModSerre_of_isIso _) (P.isoModSerre.comp_mem _ _ hX hH)
+
+/-- The Hurewicz map of an `(n + 1)`-connected space is an isomorphism, hence an isomorphism
+modulo `P`. -/
+private theorem isoModSerre_hurewiczModuleCatHom_of_subsingleton {X : Type} [TopologicalSpace X]
+    {x : X} {n : ℕ} (hX : ∀ k < n + 2, Subsingleton (π_ k X x)) :
+    P.isoModSerre (HomotopyGroup.hurewiczModuleCatHom X x n) := by
+  have : IsIso (HomotopyGroup.hurewiczModuleCatHom X x n) :=
+    (ConcreteCategory.isIso_iff_bijective _).2 <| by
+      convert (HomotopyGroup.hurewiczAddEquiv hX).bijective using 1
+      funext a
+      exact (HomotopyGroup.hurewiczModuleCatHom_apply X x n a).trans
+        (HomotopyGroup.hurewiczAddEquiv_apply_eq_hurewiczIntHom hX a).symm
+  exact P.isoModSerre_of_isIso _
+
+/-- The Hurewicz map of a path-connected space `Z` is an isomorphism modulo `P` as soon as it is
+for every Hausdorff path-connected space with the homotopy groups of `Z`: the CW approximation of
+`Z` is such a space, and its map to `Z` is bijective on homotopy groups and on homology. -/
+private theorem isoModSerre_hurewiczModuleCatHom_of_cwApproximation {Z : Type}
+    [TopologicalSpace Z] [PathConnectedSpace Z] (z : Z) (n : ℕ)
+    (h : ∀ (X : TopCat.{0}) [T2Space X] [PathConnectedSpace X] (x₀ : X),
+      (∀ j [NeZero j], Nonempty (π_ j X x₀ ≃* π_ j Z z)) →
+        P.isoModSerre (HomotopyGroup.hurewiczModuleCatHom X x₀ n)) :
+    P.isoModSerre (HomotopyGroup.hurewiczModuleCatHom Z z n) := by
+  let f := cwApproximationMap (TopCat.of Z) z
+  have hf : f.hom.IsWeakHomotopyEquivalence :=
+    isWeakHomotopyEquivalence_cwApproximationMap (TopCat.of Z) z
+  have : PathConnectedSpace (cwApproximation (TopCat.of Z) z) :=
+    hf.pathConnectedSpace_iff.2 inferInstance
+  have := hf.isIso_singularHomologyMap (ModuleCat.of ℤ ℤ) (n + 2)
+  refine isoModSerre_hurewiczModuleCatHom_of_map f.hom
+    (cwApproximationMap_cwApproximationBasepoint (TopCat.of Z) z) ?_ (P.isoModSerre_of_isIso _)
+    (h _ (cwApproximationBasepoint (TopCat.of Z) z) fun j _ ↦
+      ⟨cwApproximationHomotopyGroupMulEquiv (TopCat.of Z) z j⟩)
+  convert (cwApproximationHomotopyGroupMulEquiv (TopCat.of Z) z (n + 2)).bijective using 1
+  funext a
+  exact (cwApproximationHomotopyGroupMulEquiv_apply (TopCat.of Z) z (n + 2) a).symm
+
+/-- The induction along the Whitehead tower: for a `(j + 1)`-connected space whose homotopy groups
+`π_{i + 2}` lie in `P` for `j ≤ i < n`, the Hurewicz map `πₙ₊₂ → Hₙ₊₂` is an isomorphism modulo
+`P`. The number of homotopy groups still to be killed is at most `d`, by induction on `d`. -/
+private theorem isoModSerre_hurewiczModuleCatHom_of_add (n : ℕ)
+    (hK : ∀ (G : Type) [CommGroup G], P (ModuleCat.of ℤ (Additive G)) → ∀ m : ℕ,
+      ∃ Q : ObjectProperty (ModuleCat.{0} ℤ), Q ≤ P ∧ Q.IsClosedUnderIsomorphisms ∧
+        Q.ContainsZero ∧ (∀ J : Type, Q.IsClosedUnderColimitsOfShape (Discrete J)) ∧
+        ∀ (Z : Type) [TopologicalSpace Z] (z : Z), IsEilenbergMacLaneSpace G (m + 1) Z z →
+          ∀ q, q ≠ 0 → q ≤ n + 2 →
+            Q (((singularHomologyFunctor (ModuleCat.{0} ℤ) q).obj (ModuleCat.of ℤ ℤ)).obj
+              (TopCat.of Z)))
+    (d : ℕ) :
+    ∀ (j : ℕ) {Z : Type} [TopologicalSpace Z] [PathConnectedSpace Z] (z : Z),
+      n ≤ j + d →
+      (∀ i, i ≠ 0 → i < j + 2 → Subsingleton (π_ i Z z)) →
+      (∀ i, j ≤ i → i < n → P (ModuleCat.of ℤ (Additive (π_ (i + 2) Z z)))) →
+        P.isoModSerre (HomotopyGroup.hurewiczModuleCatHom Z z n) := by
+  induction d with
+  | zero =>
+    -- No homotopy group is left: `Z` is `(n + 1)`-connected, and Hurewicz is an isomorphism.
+    intro j Z _ _ z hnj hZ _
+    refine isoModSerre_hurewiczModuleCatHom_of_subsingleton P fun i hi ↦ ?_
+    rcases eq_or_ne i 0 with rfl | hi0
+    · exact (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero z).1 inferInstance
+    · exact hZ i hi0 (by omega)
+  | succ d ih =>
+    intro j Z _ _ z hnj hZ hπ
+    -- Replace `Z` by a Hausdorff model `X` with the same homotopy groups.
+    refine isoModSerre_hurewiczModuleCatHom_of_cwApproximation P z n fun X _ _ x₀ e ↦ ?_
+    have hX : ∀ i, i ≠ 0 → i < j + 2 → Subsingleton (π_ i X x₀) := fun i hi0 hi ↦ by
+      have : NeZero i := ⟨hi0⟩
+      have := hZ i hi0 hi
+      exact (e i).some.toEquiv.subsingleton
+    have hπX (i : ℕ) (hji : j ≤ i) (hin : i < n) :
+        P (ModuleCat.of ℤ (Additive (π_ (i + 2) X x₀))) :=
+      P.prop_of_iso (LinearEquiv.toModuleIso (e (i + 2)).some.toAdditive.toIntLinearEquiv).symm
+        (hπ i hji hin)
+    rcases le_or_gt n j with hnj' | hjn
+    · -- No homotopy group of `X` in the range is left: `X` is `(n + 1)`-connected.
+      exact ih j x₀ (by omega) hX hπX
+    -- The `(j + 2)`-connected cover `C` of `X` is `(j + 2)`-connected.
+    let C := nConnectedCover (j + 2) X x₀
+    let c₀ := nConnectedCoverBasepoint (j + 2) X x₀
+    have hC : ∀ i, i ≠ 0 → i < j + 1 + 2 → Subsingleton (π_ i C c₀) := fun i _ hi ↦
+      subsingleton_homotopyGroup_nConnectedCover_of_pathConnectedSpace (j + 2) X x₀ c₀
+        (by omega)
+    -- The cover has the homotopy groups of `X` above dimension `j + 2`.
+    have hπC (i : ℕ) (hji : j + 1 ≤ i) (hin : i < n) :
+        P (ModuleCat.of ℤ (Additive (π_ (i + 2) C c₀))) :=
+      P.prop_of_iso (LinearEquiv.toModuleIso
+        (nConnectedCoverHomotopyGroupMulEquiv (j + 2) X x₀ (i + 2)
+          (by omega)).toAdditive.toIntLinearEquiv).symm (hπX i (by omega) hin)
+    -- The fibres of `C → X` are `K(π_{j + 2}(X), j + 1)` spaces, with homology in some `Q ≤ P`
+    -- through degree `n + 2`, so the projection is an isomorphism on `Hₙ₊₂` modulo `P`.
+    obtain ⟨Q, hQP, _, _, _, hQ⟩ := hK _ (hπX j le_rfl hjn) j
+    have hfib (b : X) := isEilenbergMacLaneSpace_fiber_nConnectedCoverProj X x₀ j hX b
+    refine isoModSerre_hurewiczModuleCatHom_of_map (nConnectedCoverProj (j + 2) X x₀).hom
+      (nConnectedCoverProj_nConnectedCoverBasepoint (j + 2) X x₀)
+      (bijective_homotopyGroupMap_nConnectedCoverProj (j + 2) X x₀ _ _ (by omega))
+      (TopCat.isoModSerre_singularHomologyMap_of_prop_fiber P Q hQP
+        (serreFibrations_nConnectedCoverProj (j + 2) X x₀) (n + 2)
+        (fun b ↦ (hfib b).choose_spec.pathConnectedSpace)
+        (fun b q hq0 hqn ↦ hQ _ _ (hfib b).choose_spec q hq0 hqn))
+      (ih (j + 1) c₀ (by omega) hC hπC)
+
+/-- **Serre's Hurewicz theorem modulo a class.** Let `P` be a Serre class of abelian groups such
+that for every `G ∈ P` and `m ≥ 1` there is a property `Q ≤ P` closed under isomorphisms and
+direct sums containing the integral homology in degrees `1, …, n + 2` of every `K(G, m)` space.
+Let `Y` be a simply connected space whose homotopy groups `πᵢ(Y)` lie in `P` for
+`2 ≤ i ≤ n + 1`. Then the Hurewicz map `πₙ₊₂(Y) → Hₙ₊₂(Y; ℤ)` is an isomorphism modulo `P`: its
+kernel and cokernel lie in `P`. -/
+theorem isoModSerre_hurewiczModuleCatHom_of_prop_homotopyGroup (n : ℕ)
+    (hK : ∀ (G : Type) [CommGroup G], P (ModuleCat.of ℤ (Additive G)) → ∀ m : ℕ,
+      ∃ Q : ObjectProperty (ModuleCat.{0} ℤ), Q ≤ P ∧ Q.IsClosedUnderIsomorphisms ∧
+        Q.ContainsZero ∧ (∀ J : Type, Q.IsClosedUnderColimitsOfShape (Discrete J)) ∧
+        ∀ (Z : Type) [TopologicalSpace Z] (z : Z), IsEilenbergMacLaneSpace G (m + 1) Z z →
+          ∀ q, q ≠ 0 → q ≤ n + 2 →
+            Q (((singularHomologyFunctor (ModuleCat.{0} ℤ) q).obj (ModuleCat.of ℤ ℤ)).obj
+              (TopCat.of Z)))
+    {Y : Type} [TopologicalSpace Y] [SimplyConnectedSpace Y] (y : Y)
+    (hY : ∀ i, i < n → P (ModuleCat.of ℤ (Additive (π_ (i + 2) Y y)))) :
+    P.isoModSerre (HomotopyGroup.hurewiczModuleCatHom Y y n) := by
+  -- `Y` is `1`-connected: its fundamental group is trivial.
+  have h₁ (i : ℕ) (hi0 : i ≠ 0) (hi : i < 2) : Subsingleton (π_ i Y y) := by
+    obtain rfl : i = 1 := by omega
+    exact HomotopyGroup.pi1MulEquivFundamentalGroup.toEquiv.subsingleton
+  exact isoModSerre_hurewiczModuleCatHom_of_add P n hK n 0 y (by omega) h₁
+    (fun i _ hin ↦ hY i hin)
+
 /-! ### Torsion homotopy groups -/
+
+/-- The torsion `ℤ`-modules, read as the inverse image of `AddCommGrpCat.isTorsion` in
+`ModuleCat ℤ`. Stated for `ModuleCat ℤ` so that the homology objects keep their own module
+structures, which `simp` does not identify with those of their underlying groups. -/
+private theorem prop_isTorsion_iff (M : ModuleCat.{0} ℤ) :
+    AddCommGrpCat.isTorsion.inverseImage (forget₂ (ModuleCat.{0} ℤ) AddCommGrpCat) M ↔
+      IsAddTorsion M :=
+  (ObjectProperty.prop_inverseImage_iff _ _ _).trans (AddCommGrpCat.prop_isTorsion_iff _)
+
+/-- Serre's axiom for the torsion groups, in the form taken by the theorems above: for a torsion
+abelian group `G`, the positive-degree homology of every `K(G, m + 1)` space is torsion, and the
+torsion groups are closed under direct sums, so they serve as `Q`. The axiom holds because the
+positive-degree homology of the classifying space of a torsion abelian group is torsion. -/
+private theorem exists_isTorsion_singularHomology_of_isEilenbergMacLaneSpace (k : ℕ) (G : Type)
+    [CommGroup G] (hG : AddCommGrpCat.isTorsion.inverseImage (forget₂ (ModuleCat.{0} ℤ)
+      AddCommGrpCat) (ModuleCat.of ℤ (Additive G))) (m : ℕ) :
+    ∃ Q : ObjectProperty (ModuleCat.{0} ℤ),
+      Q ≤ AddCommGrpCat.isTorsion.inverseImage (forget₂ (ModuleCat.{0} ℤ) AddCommGrpCat) ∧
+      Q.IsClosedUnderIsomorphisms ∧ Q.ContainsZero ∧
+      (∀ J : Type, Q.IsClosedUnderColimitsOfShape (Discrete J)) ∧
+      ∀ (Z : Type) [TopologicalSpace Z] (z : Z), IsEilenbergMacLaneSpace G (m + 1) Z z →
+        ∀ q, q ≠ 0 → q ≤ k →
+          Q (((singularHomologyFunctor (ModuleCat.{0} ℤ) q).obj (ModuleCat.of ℤ ℤ)).obj
+            (TopCat.of Z)) := by
+  refine ⟨_, le_rfl, inferInstance, inferInstance, inferInstance, fun Z _ z hZ q hq _ ↦ ?_⟩
+  refine IsEilenbergMacLaneSpace.prop_singularHomology_of_one _ (fun Z _ z hZ q hq ↦ ?_) m hZ hq
+  -- A `K(G, 1)` space receives a weak homotopy equivalence from the classifying space of `G`,
+  -- a locally finite group.
+  have : Group.IsLocallyFinite G := Group.isLocallyFinite_iff_isMulTorsion.2 fun g ↦
+    isOfFinAddOrder_ofMul_iff.1 ((prop_isTorsion_iff _).1 hG (Additive.ofMul g))
+  obtain ⟨f, hf⟩ :=
+    (isEilenbergMacLaneSpace_one_iff.1 hZ).exists_isWeakHomotopyEquivalence_classifyingSpace
+  have := hf.isIso_singularHomologyMap (ModuleCat.of ℤ ℤ) q
+  obtain ⟨q, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hq
+  exact ObjectProperty.prop_of_iso _ (asIso (((singularHomologyFunctor (ModuleCat.{0} ℤ)
+    (q + 1)).obj (ModuleCat.of ℤ ℤ)).map (TopCat.ofHom f)))
+    ((prop_isTorsion_iff _).2 (by
+      rw [singularHomologyFunctor_obj_obj]
+      exact isAddTorsion_classifyingSpace_singularHomology ℤ q))
+
+/-- A torsion homotopy group, read as a `ℤ`-module, lies in the torsion class. -/
+private theorem prop_isTorsion_homotopyGroup {Y : Type} [TopologicalSpace Y] {y : Y} {j : ℕ}
+    (h : IsMulTorsion (π_ (j + 2) Y y)) :
+    AddCommGrpCat.isTorsion.inverseImage (forget₂ (ModuleCat.{0} ℤ) AddCommGrpCat)
+      (ModuleCat.of ℤ (Additive (π_ (j + 2) Y y))) :=
+  (prop_isTorsion_iff _).2 fun a : Additive (π_ (j + 2) Y y) ↦
+    (isOfFinAddOrder_ofMul_iff (x := a.toMul)).2 (h _)
 
 /-- **Torsion homotopy groups give torsion homology** (Serre). Let `Y` be a simply connected space
 whose homotopy groups `πᵢ(Y)` are torsion groups for `2 ≤ i ≤ k`. Then the integral homology
@@ -236,31 +447,22 @@ theorem isAddTorsion_singularHomology_of_isMulTorsion_homotopyGroup {Y : Type}
     [TopologicalSpace Y] [SimplyConnectedSpace Y] (y : Y) (k : ℕ)
     (hY : ∀ j, j + 2 ≤ k → IsMulTorsion (π_ (j + 2) Y y)) {i : ℕ} (hi0 : i ≠ 0) (hik : i ≤ k) :
     IsAddTorsion (((singularChains ℤ).obj (TopCat.of Y)).homology i) := by
-  -- The torsion `ℤ`-modules, as an object property of `ModuleCat ℤ`.
-  have hP (M : ModuleCat.{0} ℤ) :
-      (AddCommGrpCat.isTorsion.inverseImage (forget₂ (ModuleCat.{0} ℤ) AddCommGrpCat)) M ↔
-        IsAddTorsion M :=
-    (ObjectProperty.prop_inverseImage_iff _ _ _).trans (AddCommGrpCat.prop_isTorsion_iff _)
   rw [← singularHomologyFunctor_obj_obj]
-  refine (hP _).1 (prop_singularHomology_of_prop_homotopyGroup _ k ?_ y
-    (fun j hj ↦ (hP _).2 fun a : Additive (π_ (j + 2) Y y) ↦
-      (isOfFinAddOrder_ofMul_iff (x := a.toMul)).2 (hY j hj _)) hi0 hik)
-  -- Torsion groups are closed under direct sums, so they serve as `Q` at every stage.
-  intro G _ hG n
-  refine ⟨_, le_rfl, inferInstance, inferInstance, inferInstance, fun Z _ z hZ q hq _ ↦ ?_⟩
-  refine IsEilenbergMacLaneSpace.prop_singularHomology_of_one _ (fun Z _ z hZ q hq ↦ ?_) n hZ hq
-  -- A `K(G, 1)` space receives a weak homotopy equivalence from the classifying space of `G`,
-  -- a locally finite group.
-  have : Group.IsLocallyFinite G := Group.isLocallyFinite_iff_isMulTorsion.2 fun g ↦
-    isOfFinAddOrder_ofMul_iff.1 ((hP _).1 hG (Additive.ofMul g))
-  obtain ⟨f, hf⟩ :=
-    (isEilenbergMacLaneSpace_one_iff.1 hZ).exists_isWeakHomotopyEquivalence_classifyingSpace
-  have := hf.isIso_singularHomologyMap (ModuleCat.of ℤ ℤ) q
-  obtain ⟨q, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hq
-  exact ObjectProperty.prop_of_iso _ (asIso (((singularHomologyFunctor (ModuleCat.{0} ℤ)
-    (q + 1)).obj (ModuleCat.of ℤ ℤ)).map (TopCat.ofHom f)))
-    ((hP _).2 (by
-      rw [singularHomologyFunctor_obj_obj]
-      exact isAddTorsion_classifyingSpace_singularHomology ℤ q))
+  exact (prop_isTorsion_iff _).1 (prop_singularHomology_of_prop_homotopyGroup _ k
+    (exists_isTorsion_singularHomology_of_isEilenbergMacLaneSpace k) y
+    (fun j hj ↦ prop_isTorsion_homotopyGroup (hY j hj)) hi0 hik)
+
+/-- **The Hurewicz map modulo torsion** (Serre). Let `Y` be a simply connected space whose
+homotopy groups `πᵢ(Y)` are torsion groups for `2 ≤ i ≤ n + 1`. Then the Hurewicz map
+`πₙ₊₂(Y) → Hₙ₊₂(Y; ℤ)` is an isomorphism modulo torsion: its kernel and cokernel are torsion
+groups. -/
+theorem isoModSerre_hurewiczModuleCatHom_of_isMulTorsion_homotopyGroup {Y : Type}
+    [TopologicalSpace Y] [SimplyConnectedSpace Y] (y : Y) (n : ℕ)
+    (hY : ∀ i, i < n → IsMulTorsion (π_ (i + 2) Y y)) :
+    (AddCommGrpCat.isTorsion.inverseImage (forget₂ (ModuleCat.{0} ℤ) AddCommGrpCat)).isoModSerre
+      (HomotopyGroup.hurewiczModuleCatHom Y y n) :=
+  isoModSerre_hurewiczModuleCatHom_of_prop_homotopyGroup _ n
+    (exists_isTorsion_singularHomology_of_isEilenbergMacLaneSpace (n + 2)) y
+    (fun i hi ↦ prop_isTorsion_homotopyGroup (hY i hi))
 
 end TauCeti
