@@ -41,6 +41,10 @@ representative.
   function is integrable.
 * `MeasureTheory.SimpleFunc.eLpNorm_eq_top_of_not_memLp` — a simple function outside `Lᵖ` for one
   exponent `p` has infinite `L^q` norm for every `0 < q < ∞`.
+* `MeasureTheory.Lp.simpleFunc.memLp_toSimpleFunc_of_ne_top` — a simple function of `Lᵖ`,
+  `0 < p < ∞`, lies in every `Lʳ`.
+* `MeasureTheory.Lp.continuousLinearMap_ext_of_memLp` — two continuous semilinear maps out of
+  `Lᵖ`, `1 ≤ p < ∞`, that agree on `Lᵖ ∩ Lʳ` are equal.
 -/
 
 public section
@@ -175,5 +179,24 @@ theorem eLpNorm_eq_top_of_not_memLp {p q : ℝ≥0∞} {f : SimpleFunc α E} (hq
     ((SimpleFunc.memLp_iff hq0 hq).1 (MeasureTheory.memLp_iff.2 (Ne.lt_top h)))
 
 end SimpleFunc
+
+/-- A simple function of `Lᵖ`, `0 < p < ∞`, has support of finite measure, so it lies in every
+`Lʳ`. -/
+theorem Lp.simpleFunc.memLp_toSimpleFunc_of_ne_top {E : Type*} [NormedAddCommGroup E]
+    {p : ℝ≥0∞} (hp0 : p ≠ 0) (hp : p ≠ ∞) (r : ℝ≥0∞) (f : Lp.simpleFunc E p μ) :
+    MemLp (Lp.simpleFunc.toSimpleFunc f) r μ :=
+  SimpleFunc.memLp_of_finite_measure_preimage r <|
+    SimpleFunc.measure_preimage_lt_top_of_memLp hp0 hp _ (Lp.simpleFunc.memLp f)
+
+/-- Two continuous semilinear maps out of `Lᵖ`, `1 ≤ p < ∞`, that agree on `Lᵖ ∩ Lʳ` are
+equal, because the simple functions of `Lᵖ` lie in `Lʳ` and are dense in `Lᵖ`. -/
+theorem Lp.continuousLinearMap_ext_of_memLp {𝕜 R E G : Type*} [NormedRing 𝕜] [Semiring R]
+    {σ : 𝕜 →+* R} [NormedAddCommGroup E] [Module 𝕜 E] [IsBoundedSMul 𝕜 E] [AddCommMonoid G]
+    [Module R G] [TopologicalSpace G] [T2Space G] {p r : ℝ≥0∞} [Fact (1 ≤ p)] (hp : p ≠ ∞)
+    {S S' : Lp E p μ →SL[σ] G} (h : ∀ f : Lp E p μ, MemLp f r μ → S f = S' f) : S = S' :=
+  ContinuousLinearMap.ext <| congrFun <| (Lp.simpleFunc.denseRange hp).equalizer
+    S.continuous S'.continuous <| funext fun g => h g <|
+      (Lp.simpleFunc.memLp_toSimpleFunc_of_ne_top (zero_lt_one.trans_le Fact.out).ne' hp r
+        g).ae_eq (Lp.simpleFunc.toSimpleFunc_eq_toFun g)
 
 end MeasureTheory
