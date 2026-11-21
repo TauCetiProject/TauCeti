@@ -40,7 +40,9 @@ converge to its integral over the strip as `a i → -∞` and `b i → ∞`
 
 If nonnegative functions `f` and `g` satisfy `∫_{φ i} f ≤ ∫_{φ i} g + e i` along an exhaustion `φ`
 with errors `e i → 0`, and `g` is integrable, then `f` is integrable with `∫ f ≤ ∫ g`
-(`MeasureTheory.AECover.integrable_and_integral_le_of_setIntegral_le_add`). For the truncations
+(`MeasureTheory.AECover.integrable_and_integral_le_of_setIntegral_le_add`). Along any countably
+generated exhaustion, the integral of a Bochner-integrable function over the complements `(φ i)ᶜ`
+tends to `0` (`MeasureTheory.AECover.tendsto_setIntegral_compl_zero`). For the truncations
 `[-n, n] × T` of a strip `ℝ × T` this is
 `TauCeti.integrableOn_univ_prod_and_setIntegral_le_of_setIntegral_Icc_prod_le_add`.
 
@@ -217,15 +219,16 @@ end Ray
 
 namespace MeasureTheory.AECover
 
-variable {α ι : Type*} [MeasurableSpace α] {μ : Measure α} {l : Filter ι} [l.NeBot]
+variable {α ι : Type*} [MeasurableSpace α] {μ : Measure α} {l : Filter ι}
   [l.IsCountablyGenerated] {φ : ι → Set α}
 
 /-- **Integral bounds from an exhaustion.** Let `φ` cover `μ`-almost everything along `l`, and
 let `f` and `g` be almost everywhere nonnegative, with `g` integrable and `f` integrable on each
 `φ i`. If eventually `∫_{φ i} f ≤ ∫_{φ i} g + e i` with errors `e i → 0`, then `f` is integrable
 and `∫ f ≤ ∫ g`. -/
-theorem integrable_and_integral_le_of_setIntegral_le_add (hφ : AECover μ l φ) {f g : α → ℝ}
-    {e : ι → ℝ} (hf : 0 ≤ᵐ[μ] f) (hg : 0 ≤ᵐ[μ] g) (hfi : ∀ i, IntegrableOn f (φ i) μ)
+theorem integrable_and_integral_le_of_setIntegral_le_add [l.NeBot] (hφ : AECover μ l φ)
+    {f g : α → ℝ} {e : ι → ℝ} (hf : 0 ≤ᵐ[μ] f) (hg : 0 ≤ᵐ[μ] g)
+    (hfi : ∀ i, IntegrableOn f (φ i) μ)
     (hgi : Integrable g μ) (he : Tendsto e l (𝓝 0))
     (hle : ∀ᶠ i in l, ∫ x in φ i, f x ∂μ ≤ ∫ x in φ i, g x ∂μ + e i) :
     Integrable f μ ∧ ∫ x, f x ∂μ ≤ ∫ x, g x ∂μ := by
@@ -235,6 +238,18 @@ theorem integrable_and_integral_le_of_setIntegral_le_add (hφ : AECover μ l φ)
     exact hi.trans (add_le_add (setIntegral_le_integral hgi hg) hei.le)
   refine ⟨hfint, le_of_tendsto_of_tendsto (hφ.integral_tendsto_of_countably_generated hfint) ?_ hle⟩
   simpa using (hφ.integral_tendsto_of_countably_generated hgi).add he
+
+/-- Along a countably generated exhaustion `φ` covering `μ`-almost everything, the integral of a
+Bochner-integrable function over the complements `(φ i)ᶜ` tends to `0`. -/
+theorem tendsto_setIntegral_compl_zero {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (hφ : AECover μ l φ) {f : α → E} (hf : Integrable f μ) :
+    Tendsto (fun i => ∫ x in (φ i)ᶜ, f x ∂μ) l (𝓝 0) := by
+  have hsub : (fun i => ∫ x in (φ i)ᶜ, f x ∂μ) =
+      fun i => (∫ x, f x ∂μ) - ∫ x in φ i, f x ∂μ := by
+    ext i
+    rw [eq_sub_iff_add_eq', integral_add_compl (hφ.measurableSet i) hf]
+  rw [hsub, ← sub_self (∫ x, f x ∂μ)]
+  exact tendsto_const_nhds.sub (hφ.integral_tendsto_of_countably_generated hf)
 
 end MeasureTheory.AECover
 

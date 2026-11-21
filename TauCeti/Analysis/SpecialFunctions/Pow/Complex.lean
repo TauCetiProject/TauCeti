@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Meromorphic.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
 public import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
@@ -100,6 +101,9 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
   limit at `∞` of `t ↦ -2 (t + x) ^ (1/2) (t + y)⁻¹`. Continuity holds for arbitrary `x` and
   `y ≠ 0`; the derivative needs `x, y ∈ slitPlane ∪ {0}`; the limit holds for arbitrary `x` and `y`.
 * `Complex.norm_ofReal_cpow_le_exp` -- for `a > 0`, `‖a ^ w‖ ≤ exp (|log a| ‖w‖)`.
+* `AnalyticAt.const_cpow` -- `y ↦ w ^ f y` is analytic at `x` whenever `f` is analytic at `x` and
+  either `w ≠ 0` or `f x ≠ 0`.
+* `Complex.meromorphic_const_cpow` -- for every fixed `w : ℂ`, `t ↦ w ^ t` is meromorphic on `ℂ`.
 * `Complex.norm_one_sub_mul_ofReal_cpow_le` -- for `‖z‖ ≤ 1`, `0 ≤ t < 1`, and any `s : ℂ`,
   `‖(1 - z * t) ^ s‖ ≤ exp (π |s.im|) (2 ^ s.re + (1 - t) ^ s.re)`.
 * `Complex.inv_cpow_half_cpow` -- `((z ^ (1/2))⁻¹) ^ w = z ^ (-w / 2)` for all `z, w : ℂ`.
@@ -717,6 +721,28 @@ theorem norm_ofReal_cpow_le_exp {a : ℝ} (ha : 0 < a) (w : ℂ) :
   exact Real.exp_le_exp.mpr <| (le_abs_self _).trans <| by
     rw [abs_mul]
     exact mul_le_mul_of_nonneg_left (abs_re_le_norm w) (abs_nonneg _)
+
+/-- For a fixed complex base `w`, the exponential `y ↦ w ^ f y` is analytic at `x` whenever `f` is
+analytic at `x` and either `w ≠ 0` or `f x ≠ 0`. -/
+theorem _root_.AnalyticAt.const_cpow {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    {f : E → ℂ} {x : E} {w : ℂ} (hf : AnalyticAt ℂ f x) (h : w ≠ 0 ∨ f x ≠ 0) :
+    AnalyticAt ℂ (fun y => w ^ f y) x := by
+  rcases h with hw | hfx
+  · exact ((differentiable_id.const_cpow (Or.inl hw)).analyticAt (f x)).comp hf
+  · exact ((differentiableOn_id.const_cpow (Or.inr fun _ ht => ht)).analyticAt
+      (isOpen_ne.mem_nhds hfx)).comp hf
+
+/-- For every fixed complex base `w`, `t ↦ w ^ t` is meromorphic everywhere on `ℂ` (entire when
+`w ≠ 0`, and equal to `0` away from `t = 0` when `w = 0`). -/
+theorem meromorphic_const_cpow (w : ℂ) : Meromorphic (fun t : ℂ => w ^ t) := by
+  intro t₀
+  by_cases h : w ≠ 0 ∨ t₀ ≠ 0
+  · exact (analyticAt_id.const_cpow h).meromorphicAt
+  · push Not at h
+    rcases h with ⟨rfl, rfl⟩
+    refine (analyticAt_const (v := (0 : ℂ))).meromorphicAt.congr ?_
+    filter_upwards [self_mem_nhdsWithin] with t ht
+    simp [Complex.zero_cpow ht]
 
 /-- On the closed unit disk `‖z‖ ≤ 1` and for `0 ≤ t < 1`, the principal power `(1 - z * t) ^ s`
 has norm at most `exp (π * |s.im|) * (2 ^ s.re + (1 - t) ^ s.re)` for any complex exponent `s`. -/

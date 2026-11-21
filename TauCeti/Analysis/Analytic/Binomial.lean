@@ -32,6 +32,8 @@ of `1 / 2` is a square root of `1 + y` for `‖y‖ < 1`, in any Banach algebra 
   series on the open unit interval.
 * `TauCeti.hasSum_multichoose_mul_geometric_complex_of_norm_lt_one` — the complex-valued
   multichoose binomial series on the open unit disk.
+* `TauCeti.summable_norm_multichoose_mul_pow` — absolute convergence of the complex multichoose
+  binomial series on the open unit disk `‖z‖ < 1` for arbitrary complex parameter `r`.
 * `TauCeti.summable_multichoose_mul_geometric_iff_norm_lt_one` — exact summability of
   `∑ n, multichoose r n * q ^ n` for `0 < r`.
 * `TauCeti.norm_multichoose_le_of_norm_le` — norm bound
@@ -93,6 +95,19 @@ theorem hasSum_multichoose_mul_geometric_complex_of_norm_lt_one {r z : ℂ}
     rwa [Metric.mem_eball, edist_zero_right, ← ofReal_norm, ENNReal.ofReal_lt_one]
   simpa [Ring.multichoose_eq, mul_comm] using
     (Complex.one_div_one_sub_cpow_hasFPowerSeriesOnBall_zero r).hasSum_sub hmem
+
+/-- For any complex parameter `r` and `‖z‖ < 1`, the complex multichoose power series converges
+absolutely. -/
+theorem summable_norm_multichoose_mul_pow {r z : ℂ} (hz : ‖z‖ < 1) :
+    Summable fun n : ℕ => ‖Ring.multichoose r n * z ^ n‖ := by
+  have hmem : z ∈ Metric.eball (0 : ℂ)
+      (FormalMultilinearSeries.ofScalars ℂ fun n => Ring.choose (r + n - 1) n).radius := by
+    rw [Metric.mem_eball, edist_zero_right, ← ofReal_norm]
+    exact lt_of_lt_of_le (ENNReal.ofReal_lt_one.2 hz)
+      (Complex.one_div_one_sub_cpow_hasFPowerSeriesOnBall_zero r).r_le
+  simpa [Ring.multichoose_eq, FormalMultilinearSeries.ofScalars_apply_eq, mul_comm] using
+    (FormalMultilinearSeries.ofScalars ℂ fun n => Ring.choose (r + n - 1) n).summable_norm_apply
+      hmem
 
 /-- For positive real `r`, the generalized multichoose power series is unconditionally summable
 at a real or complex argument `q` exactly when `q` lies in the open unit ball. -/

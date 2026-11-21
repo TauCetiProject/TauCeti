@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.Basic
+import TauCeti.Topology.Order.Interval
 
 /-!
 # Complex conjugation: invariant discs, symmetric norms and unit-norm quotients
@@ -45,7 +46,11 @@ The scalar Cayley expression `1 + (z - conj z) / (r - z)` has unit norm for real
 When `z ≠ r`, it is the quotient `(r - conj z) / (r - z)` of a complex number's conjugate
 by itself; at `z = r`, Lean's totalized inverse gives value one.
 
-Two integers whose images in `ℂ` are at distance less than `1` are equal.
+Two integers whose images in `ℂ` are at distance less than `1` are equal, and the natural numbers
+embedded in `ℂ` form a closed set (`Complex.isClosed_range_natCast`). For a closed set `s ⊆ ℝ`
+avoiding `w₀.re`, an open ball around `w₀` avoids `s` in real part and preserves strict order
+against every element of `s` (`Complex.exists_ball_re_notMem_and_lt_iff`). Negating `x + y * I`
+reflects both real coordinates (`Complex.neg_ofReal_add_mul_I`).
 
 A shift `s + μ` stays off the real axis when `|Im μ| < |Im s|`
 (`Complex.add_im_ne_zero_of_abs_im_lt`).
@@ -336,6 +341,41 @@ theorem norm_mul_add_div_natCast_le (M : ℕ) (a b : ℂ) {z : ℂ} {C : ℝ} (h
   rw [norm_div, Complex.norm_natCast]
   exact (div_nat_le_self_of_nonneg (norm_nonneg _) M).trans
     (norm_add_le_of_le (norm_mul_le_of_le le_rfl hz) le_rfl)
+
+/-- The natural numbers embedded in `ℂ` form a closed set, complementing Mathlib's
+`Complex.isClosed_range_intCast`. -/
+theorem isClosed_range_natCast : IsClosed (Set.range ((↑) : ℕ → ℂ)) := by
+  have h : Set.range ((↑) : ℕ → ℂ) = Set.range ((↑) : ℤ → ℂ) ∩ {z : ℂ | 0 ≤ z.re} := by
+    ext z
+    constructor
+    · rintro ⟨n, rfl⟩
+      exact ⟨⟨n, by simp⟩, by simp⟩
+    · rintro ⟨⟨k, rfl⟩, hk⟩
+      have hk' : 0 ≤ k := by simpa using hk
+      lift k to ℕ using hk'
+      exact ⟨k, by simp⟩
+  rw [h]
+  exact isClosed_range_intCast.inter (isClosed_le continuous_const continuous_re)
+
+/-- Negating a complex number written as `x + y * I` reflects both real coordinates:
+`-(x + y * I) = (-x : ℝ) + (-y : ℝ) * I`. -/
+theorem neg_ofReal_add_mul_I (x y : ℝ) :
+    -((x : ℂ) + (y : ℂ) * I) = ((-x : ℝ) : ℂ) + ((-y : ℝ) : ℂ) * I := by
+  rw [ofReal_neg, ofReal_neg, neg_add, neg_mul]
+
+/-- For a closed set `s ⊆ ℝ` and `w₀ : ℂ` with `w₀.re ∉ s`, there is `δ > 0` such that on
+`Metric.ball w₀ δ`, the real part `w.re` avoids `s` and stays on the same side of every `y ∈ s`
+as `w₀.re`. -/
+theorem exists_ball_re_notMem_and_lt_iff (w₀ : ℂ) {s : Set ℝ} (hs : IsClosed s)
+    (hw₀ : w₀.re ∉ s) :
+    ∃ δ : ℝ, 0 < δ ∧ ∀ w ∈ Metric.ball w₀ δ,
+      w.re ∉ s ∧ ∀ y ∈ s, y < w₀.re ↔ y < w.re := by
+  obtain ⟨a, b, ⟨ha, hb⟩, h⟩ := hs.exists_Ioo_disjoint_and_lt_iff hw₀
+  refine ⟨min (w₀.re - a) (b - w₀.re), lt_min (sub_pos.2 ha) (sub_pos.2 hb), fun w hw => ?_⟩
+  have hre : |w.re - w₀.re| < min (w₀.re - a) (b - w₀.re) :=
+    (abs_re_le_norm (w - w₀)).trans_lt (mem_ball_iff_norm.1 hw)
+  exact h w.re ⟨by linarith [(abs_lt.1 hre).1, min_le_left (w₀.re - a) (b - w₀.re)],
+    by linarith [(abs_lt.1 hre).2, min_le_right (w₀.re - a) (b - w₀.re)]⟩
 
 /-- The real coordinates `equivRealProdCLM` do not increase distances, so they map the disc of
 radius `r` about `equivRealProdCLM.symm z₀` into the square `B_r(z₀)` of `ℝ × ℝ`. -/

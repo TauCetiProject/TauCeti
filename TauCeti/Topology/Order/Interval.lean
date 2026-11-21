@@ -53,6 +53,9 @@ A function continuous on `[a, b]` and strictly monotone or antitone on `(a, b)` 
 * `TauCeti.exists_Icc_subset_uIcc_disjoint` — a point of the open interval between `a` and `b`
   outside a closed set `s` lies in the interior of a closed subinterval of `[[a, b]]` whose
   interior is disjoint from `s`.
+* `IsClosed.exists_Ioo_disjoint_and_lt_iff` — a point outside a closed set `s` lies in an open
+  interval `Ioo a b` disjoint from `s` on which every element lies on the same side of every
+  element of `s` as `x₀`.
 * `TauCeti.exists_Icc_mem_subset_of_mem_nhdsWithin_Icc` — every neighbourhood of `t₀ ∈ [u, v]`
   (`u < v`) within `[u, v]` contains a nondegenerate closed subinterval `[p, q] ⊆ [u, v]` that is
   itself a neighbourhood of `t₀` within `[u, v]`.
@@ -168,6 +171,23 @@ theorem exists_Icc_subset_uIcc_disjoint {α : Type*} [LinearOrder α] [Topologic
     fun x hx => hsub ⟨hlc.trans_le hx.1, hx.2.trans_lt hdu⟩
   refine ⟨c, d, ⟨hct, htd⟩, fun x hx => Icc_min_max.subset (Ioo_subset_Icc_self (hcd hx).1),
     disjoint_right.mpr fun x hx => (hcd (Ioo_subset_Icc_self hx)).2⟩
+
+/-- Around any point `x₀` outside a closed set `s` in a linearly ordered space with order topology
+and no endpoints, there is an open interval `Ioo a b` containing `x₀` and disjoint from `s` on
+which every element lies on the same side of every `y ∈ s` as `x₀` does (`y < x₀ ↔ y < x`). -/
+theorem _root_.IsClosed.exists_Ioo_disjoint_and_lt_iff {α : Type*} [LinearOrder α]
+    [TopologicalSpace α] [OrderTopology α] [NoMinOrder α] [NoMaxOrder α]
+    {s : Set α} (hs : IsClosed s) {x₀ : α} (hx₀ : x₀ ∉ s) :
+    ∃ a b : α, x₀ ∈ Ioo a b ∧ ∀ x ∈ Ioo a b, x ∉ s ∧ ∀ y ∈ s, y < x₀ ↔ y < x := by
+  obtain ⟨a, b, hx₀_mem, hsub⟩ :=
+    (mem_nhds_iff_exists_Ioo_subset' (exists_lt x₀) (exists_gt x₀)).mp
+      (hs.isOpen_compl.mem_nhds hx₀)
+  refine ⟨a, b, hx₀_mem, fun x hx => ⟨hsub hx, fun y hy => ?_⟩⟩
+  have hy_not : y ∉ Ioo a b := fun h => hsub h hy
+  rw [mem_Ioo, not_and_or, not_lt, not_lt] at hy_not
+  rcases hy_not with hya | hby
+  · exact iff_of_true (hya.trans_lt hx₀_mem.1) (hya.trans_lt hx.1)
+  · exact iff_of_false (hx₀_mem.2.trans_le hby).not_gt (hx.2.trans_le hby).not_gt
 
 /-- Every neighbourhood of `t₀ ∈ [u, v]` (with `u < v`) within `[u, v]` contains a nondegenerate
 closed subinterval `[p, q] ⊆ [u, v]` around `t₀` that is itself a neighbourhood of `t₀` within

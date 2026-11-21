@@ -11,11 +11,13 @@ public import Mathlib.Analysis.Real.Sqrt
 /-!
 # Elementary bounds for the real logarithm
 
-From `log x ≤ x - 1` for `x > 0` (`Real.log_le_sub_one_of_pos`) applied at `x = 2` and `x / 2`,
-one obtains `log 4 = 2 log 2 ≤ 2` and `log x / x ≤ 1 / 2` for every real `x ≥ 0` (holding at
-`x = 0` via `0 / 0 = 0`). The first compares explicit prime-counting constants involving `log 4`
-with rational constants, and the second bounds the contribution `log p / p` of a single prime at a
-real cutoff `x` when passing between inclusive and strict prime sums.
+From `log x ≤ x - 1` for `x > 0` (`Real.log_le_sub_one_of_pos`) applied at `x = 2`, `x / 2`, and
+`η * x`, one obtains `log 4 = 2 log 2 ≤ 2`, `log x / x ≤ 1 / 2` for every real `x ≥ 0` (holding at
+`x = 0` via `0 / 0 = 0`), and the scaled tangent-line bound `log x ≤ η * x - log η - 1` for every
+`x > 0` and slope `η > 0`. The first compares explicit prime-counting constants involving `log 4`
+with rational constants, the second bounds the contribution `log p / p` of a single prime at a
+real cutoff `x` when passing between inclusive and strict prime sums, and the third bounds
+logarithmic growth linearly with arbitrarily small slope `η`.
 
 `Real.neg_log_le_sqrt_two_div` bounds `-log x` by `sqrt (2 / x)` for every `x ≥ 0`,
 including the totalized value at zero. `Real.posLog_le_sqrt_two_mul_abs` bounds
@@ -28,6 +30,7 @@ in Hadamard minimum-modulus estimates.
 
 * `Real.log_four_le_two`: `log 4 ≤ 2`.
 * `Real.log_div_self_le_half`: `log x / x ≤ 1 / 2` for every nonnegative real `x`.
+* `Real.log_le_mul_sub_log_sub_one`: `log x ≤ η * x - log η - 1` for `x > 0` and `η > 0`.
 * `Real.neg_log_le_sqrt_two_div`: `-log x ≤ sqrt (2 / x)` for every nonnegative real `x`.
 * `Real.posLog_le_sqrt_two_mul_abs`: `posLog x ≤ sqrt (2 * |x|)` for every real `x`.
 * `Real.mul_log_natCast_div_le_log_of_pow_le_mul_pow`: a logarithmic bound from a
@@ -53,6 +56,14 @@ theorem log_div_self_le_half {x : ℝ} (hx : 0 ≤ x) : log x / x ≤ 1 / 2 := b
   rw [log_div hx.ne' two_ne_zero] at h
   rw [div_le_iff₀ hx]
   linarith [log_le_sub_one_of_pos zero_lt_two]
+
+/-- For `x > 0` and any positive slope `η > 0`, `log x ≤ η * x - log η - 1`. This is the
+tangent-line inequality `log (η * x) ≤ η * x - 1` rearranged for `log x`. -/
+theorem log_le_mul_sub_log_sub_one {x η : ℝ} (hx : 0 < x) (hη : 0 < η) :
+    log x ≤ η * x - log η - 1 := by
+  have h := log_le_sub_one_of_pos (mul_pos hη hx)
+  rw [log_mul hη.ne' hx.ne'] at h
+  linarith
 
 /-- The negative logarithm is bounded by an inverse-square-root majorant on the nonnegative
 half-line, including its totalized value at zero. -/

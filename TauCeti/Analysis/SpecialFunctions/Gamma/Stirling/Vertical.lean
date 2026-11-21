@@ -12,6 +12,7 @@ import TauCeti.Analysis.Asymptotics.VerticalStrip
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical
 import TauCeti.Analysis.SpecialFunctions.Log.Basic
+import TauCeti.Analysis.SpecialFunctions.Log.Bounds
 import TauCeti.Analysis.SpecialFunctions.Log.GrowthScale
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Arctan
@@ -68,6 +69,8 @@ Negative `t` reduces to positive `t` by `Γ(conj s) = conj (Γ s)`.
   `TauCeti.exists_norm_inv_Gamma_and_deriv_ball_add_I_le`: uniform upper bounds for `‖(Γ s)⁻¹‖`
   and `‖deriv (Γ ·)⁻¹ s‖` across the strip `Re s ∈ [a, b]` and on shifted vertical lines over unit
   balls.
+* `TauCeti.exists_norm_Gamma_add_mul_I_le`: uniform exponential bounds for `‖Γ(w + i y)‖` and
+  `‖(Γ(w + i y))⁻¹‖` on bounded boxes `|Re w|, |Im w| ≤ R` for large `|y|`.
 -/
 
 public section
@@ -614,5 +617,63 @@ theorem exists_norm_inv_Gamma_and_deriv_ball_add_I_le (w₀ : ℂ) :
             mul_le_mul_of_nonneg_left (hshift _ him_le y) hCd.le
       _ ≤ C * (1 + |y|) ^ (5 / 2 - w₀.re) * Real.exp (π * |y| / 2) := by
             rw [← mul_assoc, ← mul_assoc]; gcongr; exact le_max_right _ _
+
+/-- Uniform vertical-strip exponential bounds for `‖Γ(w + i y)‖` and `‖(Γ(w + i y))⁻¹‖`: for any
+`R : ℝ` and `ε > 0`, there exist `A` and `Y₀ ≥ 1` such that whenever `|w.re| ≤ R`, `|w.im| ≤ R`,
+and `Y₀ ≤ |y|`,
+`‖Γ(w + i y)‖ ≤ exp (A + (-π / 2 + ε) * |y|)` and
+`‖(Γ(w + i y))⁻¹‖ ≤ exp (A + (π / 2 + ε) * |y|)`. -/
+theorem exists_norm_Gamma_add_mul_I_le (R : ℝ) {ε : ℝ} (hε : 0 < ε) :
+    ∃ A Y₀ : ℝ, 1 ≤ Y₀ ∧ ∀ (w : ℂ) (y : ℝ), |w.re| ≤ R → |w.im| ≤ R → Y₀ ≤ |y| →
+      ‖Complex.Gamma (w + y * I)‖ ≤ Real.exp (A + (-π / 2 + ε) * |y|) ∧
+        ‖(Complex.Gamma (w + y * I))⁻¹‖ ≤ Real.exp (A + (π / 2 + ε) * |y|) := by
+  let M : ℝ := max R 0
+  have : 0 ≤ M := le_max_right R 0
+  obtain ⟨C, T, hST⟩ := exists_abs_log_norm_Gamma_vertical_sub_le (-M) M
+  let η : ℝ := ε / (M + 1)
+  have hη : 0 < η := div_pos hε (by positivity)
+  let Y₀ : ℝ := max 1 (max T 1 + M + 1)
+  let A : ℝ := |C| + |Real.log (2 * π) / 2| + π * M / 2 + ε * M - (M + 1) * Real.log η
+  refine ⟨A, Y₀, le_max_left _ _, fun w y hwre hwim hy => ?_⟩
+  have hwreM : |w.re| ≤ M := hwre.trans (le_max_left R 0)
+  have hwimM : |w.im| ≤ M := hwim.trans (le_max_left R 0)
+  set s : ℂ := w + y * I
+  have hs_re : s.re ∈ Icc (-M) M := by
+    simpa [s, mem_Icc] using abs_le.1 hwreM
+  have hs_im_sub : |(|s.im| - |y|)| ≤ M := by
+    simpa [s] using (abs_abs_sub_abs_le_abs_sub (w.im + y) y).trans (by simpa using hwimM)
+  have hyT : max T 1 + M + 1 ≤ |y| := (le_max_right _ _).trans hy
+  have hs_im_ge : 1 ≤ |s.im| := by linarith [(abs_le.1 hs_im_sub).1, le_max_right T 1]
+  have hmain := hST s hs_re (by linarith [(abs_le.1 hs_im_sub).1, le_max_left T 1])
+  have hdiv : C / |s.im| ≤ |C| := (le_abs_self _).trans (by
+    rw [abs_div, abs_of_pos (zero_lt_one.trans_le hs_im_ge)]
+    exact div_le_self (abs_nonneg C) hs_im_ge)
+  have hlog_le : |(s.re - 1 / 2) * Real.log (|s.im|)| ≤
+      ε * |y| + ε * M - (M + 1) * Real.log η := by
+    have hlog_ge : 0 ≤ Real.log |s.im| := Real.log_nonneg hs_im_ge
+    have hsre : |s.re - 1 / 2| ≤ M + 1 := abs_le.2 ⟨by linarith [hs_re.1], by linarith [hs_re.2]⟩
+    have hlog_ub : Real.log |s.im| ≤ η * (|y| + M) - Real.log η := by
+      have h := Real.log_le_mul_sub_log_sub_one (zero_lt_one.trans_le hs_im_ge) hη
+      linarith [mul_le_mul_of_nonneg_left (by linarith [(abs_le.1 hs_im_sub).2] : |s.im| ≤ |y| + M)
+        hη.le]
+    rw [abs_mul, abs_of_nonneg hlog_ge]
+    refine (mul_le_mul hsre hlog_ub hlog_ge (by positivity)).trans_eq ?_
+    have hmul : (M + 1) * η = ε := mul_div_cancel₀ ε (by positivity)
+    linear_combination (|y| + M) * hmul
+  have hpi : |π * |s.im| / 2 - π * |y| / 2| ≤ π * M / 2 := by
+    rw [mul_div_right_comm π |s.im| 2, mul_div_right_comm π |y| 2, ← mul_sub, abs_mul,
+      abs_of_pos (by positivity)]
+    linarith [mul_le_mul_of_nonneg_left hs_im_sub (by positivity : 0 ≤ π / 2)]
+  have hpos : 0 < ‖Complex.Gamma s‖ := norm_pos_iff.2 (Complex.Gamma_ne_zero fun n hn => by
+    have him0 : s.im = 0 := by simp [hn]
+    rw [him0, abs_zero] at hs_im_ge; linarith)
+  refine ⟨?_, ?_⟩
+  · rw [← Real.exp_log hpos]; refine Real.exp_le_exp.2 ?_; dsimp only [A]
+    linarith [(abs_le.1 hmain).2, (abs_le.1 hlog_le).2, (abs_le.1 hpi).1,
+      le_abs_self (Real.log (2 * π) / 2)]
+  · rw [norm_inv, ← Real.exp_log hpos, ← Real.exp_neg]; refine Real.exp_le_exp.2 ?_
+    dsimp only [A]
+    linarith [(abs_le.1 hmain).1, (abs_le.1 hlog_le).1, (abs_le.1 hpi).2,
+      neg_le_abs (Real.log (2 * π) / 2)]
 
 end TauCeti
