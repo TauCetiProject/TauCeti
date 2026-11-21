@@ -90,6 +90,24 @@ theorem amplitudeDirections_def (α γ β : List (Fin n)) :
         β.map (fun j ↦ (0, 0, EuclideanSpace.single j 1)) := by
   simp [amplitudeDirections, mixedDirections_def, Function.comp_def, List.append_assoc]
 
+/-- Appending an output-position direction, when there are no other directions. -/
+theorem amplitudeDirections_append_singleton_left (α : List (Fin n)) (j : Fin n) :
+    amplitudeDirections (α ++ [j]) [] [] =
+      amplitudeDirections α [] [] ++ [(EuclideanSpace.single j 1, 0, 0)] := by
+  simp [amplitudeDirections_def, Prod.mk_zero_zero]
+
+/-- Appending an input-position direction, when there are no frequency directions. -/
+theorem amplitudeDirections_append_singleton_mid (α γ : List (Fin n)) (j : Fin n) :
+    amplitudeDirections α (γ ++ [j]) [] =
+      amplitudeDirections α γ [] ++ [(0, EuclideanSpace.single j 1, 0)] := by
+  simp [amplitudeDirections_def]
+
+/-- Appending a frequency direction. -/
+theorem amplitudeDirections_append_singleton_right (α γ β : List (Fin n)) (j : Fin n) :
+    amplitudeDirections α γ (β ++ [j]) =
+      amplitudeDirections α γ β ++ [(0, 0, EuclideanSpace.single j 1)] := by
+  simp [amplitudeDirections_def]
+
 @[simp]
 theorem length_amplitudeDirections (α γ β : List (Fin n)) :
     (amplitudeDirections α γ β).length = α.length + γ.length + β.length := by
@@ -699,6 +717,23 @@ theorem HasProperInputSupport.exists_bound {a : Amplitude n V W m}
 
 /-! ### The Fourier transform in the input position -/
 
+/-- The derivatives of the input-position slices of an amplitude with proper input support grow
+at most like `⟨ξ⟩ ^ m`, uniformly for output positions in a compact set and all input positions. -/
+theorem HasProperInputSupport.exists_norm_iteratedFDeriv_slice_le {a : Amplitude n V W m}
+    (ha : a.HasProperInputSupport) {K : Set (CoordinateSpace n)} (hK : IsCompact K) (k : ℕ) :
+    ∃ D, 0 ≤ D ∧ ∀ x ∈ K, ∀ y ξ,
+      ‖iteratedFDeriv ℝ k (fun y ↦ a.coefficient (x, y, ξ)) y‖ ≤
+        D * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
+  choose C hC0 hC using fun r : Fin k → Fin n ↦ ha.exists_bound hK [] (List.ofFn r) []
+  refine ⟨∑ r, C r, Finset.sum_nonneg fun r _ ↦ hC0 r, fun x hx y ξ ↦ ?_⟩
+  have hsmooth : ContDiff ℝ ∞ fun y ↦ a.coefficient (x, y, ξ) :=
+    a.contDiff_coefficient.comp (by fun_prop)
+  rw [Finset.sum_mul]
+  refine (norm_iteratedFDeriv_le_sum_coordinateDeriv (hsmooth.of_le (by simp)) y).trans
+    (Finset.sum_le_sum fun r _ ↦ ?_)
+  rw [coordinateDeriv_slice_snd]
+  simpa using hC r x hx y ξ
+
 /-- The `L¹` norms of the derivatives of the input-position slices of an amplitude with proper
 input support grow at most like `⟨ξ⟩ ^ m`, uniformly for output positions in a compact set. -/
 private theorem HasProperInputSupport.exists_integral_norm_iteratedFDeriv_slice_le
@@ -708,22 +743,15 @@ private theorem HasProperInputSupport.exists_integral_norm_iteratedFDeriv_slice_
       ∫ y, ‖iteratedFDeriv ℝ k (fun y ↦ a.coefficient (x, y, ξ)) y‖ ≤
         B * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
   obtain ⟨L, hL, hLa⟩ := ha K hK
-  choose C hC0 hC using fun r : Fin k → Fin n ↦ ha.exists_bound hK [] (List.ofFn r) []
-  set D := ∑ r, C r
-  have hD : 0 ≤ D := Finset.sum_nonneg fun r _ ↦ hC0 r
+  obtain ⟨D, hD, hDb⟩ := ha.exists_norm_iteratedFDeriv_slice_le hK k
   refine ⟨D * (volume L).toReal, mul_nonneg hD ENNReal.toReal_nonneg, fun x hx ξ ↦ ?_⟩
-  have hsmooth : ContDiff ℝ ∞ fun y ↦ a.coefficient (x, y, ξ) :=
-    a.contDiff_coefficient.comp (by fun_prop)
   -- The `k`-th derivative is bounded by `D ⟨ξ⟩ ^ m` and vanishes outside `L`.
   have hpt : ∀ y, ‖iteratedFDeriv ℝ k (fun y ↦ a.coefficient (x, y, ξ)) y‖ ≤
       L.indicator (fun _ ↦ D * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) y := by
     intro y
     by_cases hy : y ∈ L
-    · rw [Set.indicator_of_mem hy, Finset.sum_mul]
-      refine (norm_iteratedFDeriv_le_sum_coordinateDeriv (hsmooth.of_le (by simp)) y).trans
-        (Finset.sum_le_sum fun r _ ↦ ?_)
-      rw [coordinateDeriv_slice_snd]
-      simpa using hC r x hx y ξ
+    · rw [Set.indicator_of_mem hy]
+      exact hDb x hx y ξ
     · rw [Set.indicator_of_notMem hy, norm_le_zero_iff]
       exact image_eq_zero_of_notMem_tsupport fun hmem ↦ hy <|
         (closure_minimal (s := Function.support fun y ↦ a.coefficient (x, y, ξ))

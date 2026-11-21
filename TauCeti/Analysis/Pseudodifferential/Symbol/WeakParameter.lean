@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Pseudodifferential.Symbol.Topology
 import Mathlib.Analysis.Calculus.Deriv.ZPow
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.IteratedDeriv.Indicator
+import TauCeti.Analysis.Calculus.IteratedDeriv.Leibniz
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Reciprocal
 import TauCeti.Analysis.Complex.SectorBounds
@@ -53,7 +54,19 @@ The symbol at the spectral parameter `λ` is `a(x, ξ, λ⁻¹)`. This is the cl
 * `TauCeti.WeakParameterSymbol.inclusion`: the class grows with `m` and with `d`, and it is a
   complex vector space.
 * `TauCeti.WeakParameterSymbol.ofSymbol`: a symbol independent of the parameter is weakly
-  parameter-dependent for every anisotropy.
+  parameter-dependent for every anisotropy; its higher parameter derivatives vanish.
+* `TauCeti.WeakParameterSymbol.ofIteratedDerivSymbol`,
+  `TauCeti.WeakParameterSymbol.ofIteratedDerivSymbolOn`: conversely, a family holomorphic on `R`
+  whose parameter derivatives are symbols of order `m + d j` with seminorms bounded uniformly in
+  `r` is weakly parameter-dependent (the second extends a family on `R` by zero).
+* `TauCeti.WeakParameterSymbol.ofParameter`: for `d ≥ 0`, an operator-valued function of the
+  parameter alone, holomorphic with bounded derivatives on `R`, is a symbol of order `0`.
+* `TauCeti.WeakParameterSymbol.comp`: the pointwise composition `b ∘ a` of symbols `b` of order
+  `m'` and `a` of order `m` has order `m' + m`. Its parameter derivatives are given by Leibniz's
+  rule in `r` (`TauCeti.WeakParameterSymbol.iteratedDerivSymbol_comp`, from
+  `ContinuousLinearMap.iteratedDeriv_of_bilinear` applied to `ContinuousLinearMap.compL`), each
+  term `∂_r^i b ∘ ∂_r^(j - i) a` having order `m' + d i + m + d (j - i) = m' + m + d j`.
+  Composition is bilinear, commutes with the order inclusions and is associative.
 * `TauCeti.WeakParameterSymbol.shiftedLaplacianNormalizedResolvent`: on a sector
   `Re r ≤ c ‖r‖`, `c < 1`, of reciprocal parameters, the normalized resolvent symbol
   `(1 - r (1 + ‖ξ‖²))⁻¹` of `1 - Δ` has frequency order `0` and anisotropy `2`. Its `j`-th
@@ -382,6 +395,14 @@ theorem toSymbol_inclusion (hm : m ≤ m') (hd : d ≤ d') (a : WeakParameterSym
     {r : ℂ} (hr : r ∈ R) : (inclusion hm hd a).toSymbol hr = Symbol.inclusion hm (a.toSymbol hr) :=
   Symbol.ext (Symbol.coefficient_inclusion hm (a.toSymbol hr)).symm
 
+@[simp]
+theorem iteratedDerivSymbol_inclusion (hm : m ≤ m') (hd : d ≤ d')
+    (a : WeakParameterSymbol n R V W d m) (j : ℕ) {r : ℂ} (hr : r ∈ R) :
+    (inclusion hm hd a).iteratedDerivSymbol j hr =
+      Symbol.inclusion (add_le_add hm (mul_le_mul_of_nonneg_right hd (Nat.cast_nonneg j)))
+        (a.iteratedDerivSymbol j hr) :=
+  Symbol.ext (Symbol.coefficient_inclusion _ (a.iteratedDerivSymbol j hr)).symm
+
 theorem inclusion_injective (hm : m ≤ m') (hd : d ≤ d') :
     Function.Injective (inclusion (n := n) (R := R) (V := V) (W := W) hm hd) :=
   fun _ _ hab => WeakParameterSymbol.ext (by simpa using congrArg coefficient hab)
@@ -420,6 +441,284 @@ theorem coefficient_ofSymbol (b : Symbol n V W m) (p : CoordinateSpace n × Coor
 theorem toSymbol_ofSymbol (b : Symbol n V W m) {r : ℂ} (hr : r ∈ R) :
     (ofSymbol b : WeakParameterSymbol n R V W d m).toSymbol hr = b :=
   Symbol.ext (funext fun p => coefficient_ofSymbol (d := d) b p hr)
+
+@[simp]
+theorem iteratedDerivSymbol_ofSymbol_zero (b : Symbol n V W m) {r : ℂ} (hr : r ∈ R) :
+    (ofSymbol b : WeakParameterSymbol n R V W d m).iteratedDerivSymbol 0 hr =
+      Symbol.inclusion (by simp) b :=
+  Symbol.ext (funext fun p => by simp [hr])
+
+/-- The parameter derivatives of a parameter-independent symbol vanish. -/
+@[simp]
+theorem iteratedDerivSymbol_ofSymbol_succ (b : Symbol n V W m) (j : ℕ) {r : ℂ} (hr : r ∈ R) :
+    (ofSymbol b : WeakParameterSymbol n R V W d m).iteratedDerivSymbol (j + 1) hr = 0 :=
+  Symbol.ext (funext fun p => by
+    simp [ofSymbol, iteratedDeriv_indicator_of_mem R.isOpen hr, iteratedDeriv_const])
+
+/-! ### Symbols from their parameter derivatives -/
+
+section OfIteratedDerivSymbol
+
+variable (b : CoordinateSpace n × CoordinateSpace n → ℂ → V →L[ℂ] W)
+  (hb : ∀ p, ContDiffOn ℂ ∞ (b p) R) (hb₀ : ∀ p, ∀ r ∉ R, b p r = 0)
+  (s : (j : ℕ) → (r : ℂ) → r ∈ R → Symbol n V W (m + d * j))
+  (hs : ∀ j r (hr : r ∈ R) p, (s j r hr).coefficient p = iteratedDeriv j (b p) r)
+  (hbound : ∀ (j : ℕ) (K : TopologicalSpace.Compacts (CoordinateSpace n)) (α β : List (Fin n)),
+    ∃ C, ∀ r (hr : r ∈ R), Symbol.seminorm K α β (s j r hr) ≤ C)
+
+/-- A family `b`, holomorphic in the parameter on `R` and vanishing outside `R`, whose derivatives
+`∂_r^j b(·, ·, r)` are the coefficients of symbols `s j r` of order `m + d j` with seminorms bounded
+uniformly in `r ∈ R`, is a weakly parameter-dependent symbol. -/
+def ofIteratedDerivSymbol : WeakParameterSymbol n R V W d m where
+  coefficient := b
+  contDiffOn_coefficient := hb
+  coefficient_of_notMem := hb₀
+  contDiff_iteratedDeriv j r hr := by
+    rw [show (fun p ↦ iteratedDeriv j (b p) r) = (s j r hr).coefficient from
+      funext fun p ↦ (hs j r hr p).symm]
+    exact (s j r hr).contDiff_coefficient
+  exists_bound K hK j α β := by
+    obtain ⟨C, hC⟩ := hbound j ⟨K, hK⟩ α β
+    refine ⟨max C 0, le_max_right C 0, fun x hx ξ r hr ↦ ?_⟩
+    have h := Symbol.le_seminorm ⟨K, hK⟩ α β (s j r hr) hx ξ
+    simp only [funext (hs j r hr)] at h
+    exact h.trans (mul_le_mul_of_nonneg_right ((hC r hr).trans (le_max_left C 0))
+      (rpow_weight_pos ξ _).le)
+
+@[simp]
+theorem coefficient_ofIteratedDerivSymbol :
+    (ofIteratedDerivSymbol b hb hb₀ s hs hbound).coefficient = b := (rfl)
+
+@[simp]
+theorem iteratedDerivSymbol_ofIteratedDerivSymbol (j : ℕ) {r : ℂ} (hr : r ∈ R) :
+    (ofIteratedDerivSymbol b hb hb₀ s hs hbound).iteratedDerivSymbol j hr = s j r hr :=
+  Symbol.ext (funext fun p ↦ (hs j r hr p).symm)
+
+end OfIteratedDerivSymbol
+
+section OfIteratedDerivSymbolOn
+
+variable (g : CoordinateSpace n × CoordinateSpace n → ℂ → V →L[ℂ] W)
+  (hg : ∀ p, ContDiffOn ℂ ∞ (g p) R)
+  (s : (j : ℕ) → (r : ℂ) → r ∈ R → Symbol n V W (m + d * j))
+  (hs : ∀ j r (hr : r ∈ R) p, (s j r hr).coefficient p = iteratedDeriv j (g p) r)
+  (hbound : ∀ (j : ℕ) (K : TopologicalSpace.Compacts (CoordinateSpace n)) (α β : List (Fin n)),
+    ∃ C, ∀ r (hr : r ∈ R), Symbol.seminorm K α β (s j r hr) ≤ C)
+
+/-- A family `g`, holomorphic in the parameter on `R`, whose derivatives `∂_r^j g(·, ·, r)` are
+the coefficients of symbols `s j r` of order `m + d j` with seminorms bounded uniformly in `r ∈ R`,
+gives a weakly parameter-dependent symbol, equal to `g` on `R` and extended by zero outside `R`.
+Unlike `TauCeti.WeakParameterSymbol.ofIteratedDerivSymbol`, `g` need not vanish outside `R`. -/
+def ofIteratedDerivSymbolOn : WeakParameterSymbol n R V W d m :=
+  ofIteratedDerivSymbol (fun p ↦ (R : Set ℂ).indicator (g p))
+    (fun p ↦ (hg p).congr fun _ hr ↦ indicator_of_mem hr _)
+    (fun _ _ hr ↦ indicator_of_notMem hr _) s
+    (fun j r hr p ↦ by rw [hs, iteratedDeriv_indicator_of_mem R.isOpen hr])
+    hbound
+
+@[simp]
+theorem coefficient_ofIteratedDerivSymbolOn (p : CoordinateSpace n × CoordinateSpace n) {r : ℂ}
+    (hr : r ∈ R) : (ofIteratedDerivSymbolOn g hg s hs hbound).coefficient p r = g p r :=
+  indicator_of_mem hr _
+
+@[simp]
+theorem iteratedDerivSymbol_ofIteratedDerivSymbolOn (j : ℕ) {r : ℂ} (hr : r ∈ R) :
+    (ofIteratedDerivSymbolOn g hg s hs hbound).iteratedDerivSymbol j hr = s j r hr :=
+  iteratedDerivSymbol_ofIteratedDerivSymbol ..
+
+end OfIteratedDerivSymbolOn
+
+/-! ### Functions of the parameter alone -/
+
+section OfParameter
+
+/-- A function `g` of the parameter alone, holomorphic on `R` with every derivative bounded on
+`R`, as a weakly parameter-dependent symbol of frequency order `0`, for an anisotropy `d ≥ 0`:
+its coefficient is `g(r)` for every position and frequency. Its parameter derivatives are the
+constant symbols `∂_r^j g(r)` of order `0 ≤ d j`. -/
+def ofParameter (hd : 0 ≤ d) (g : ℂ → V →L[ℂ] W) (hg : ContDiffOn ℂ ∞ g R)
+    (hbound : ∀ j : ℕ, ∃ C, ∀ r ∈ R, ‖iteratedDeriv j g r‖ ≤ C) :
+    WeakParameterSymbol n R V W d 0 :=
+  ofIteratedDerivSymbolOn (fun _ ↦ g) (fun _ ↦ hg)
+    (fun j r _ ↦ Symbol.inclusion (by positivity) (Symbol.const (iteratedDeriv j g r)))
+    (fun j r _ p ↦ by simp)
+    (fun j K α β ↦ (hbound j).imp fun _ hC r hr ↦ (Symbol.seminorm_inclusion_le _ K α β _).trans
+      ((Symbol.seminorm_const_le K α β _).trans (hC r hr)))
+
+@[simp]
+theorem coefficient_ofParameter (hd : 0 ≤ d) (g : ℂ → V →L[ℂ] W) (hg : ContDiffOn ℂ ∞ g R)
+    (hbound : ∀ j : ℕ, ∃ C, ∀ r ∈ R, ‖iteratedDeriv j g r‖ ≤ C)
+    (p : CoordinateSpace n × CoordinateSpace n) {r : ℂ} (hr : r ∈ R) :
+    (ofParameter hd g hg hbound).coefficient p r = g r :=
+  coefficient_ofIteratedDerivSymbolOn _ _ _ _ _ p hr
+
+@[simp]
+theorem iteratedDerivSymbol_ofParameter (hd : 0 ≤ d) (g : ℂ → V →L[ℂ] W)
+    (hg : ContDiffOn ℂ ∞ g R) (hbound : ∀ j : ℕ, ∃ C, ∀ r ∈ R, ‖iteratedDeriv j g r‖ ≤ C) (j : ℕ)
+    {r : ℂ} (hr : r ∈ R) :
+    (ofParameter (n := n) hd g hg hbound).iteratedDerivSymbol j hr =
+      Symbol.inclusion (by positivity) (Symbol.const (iteratedDeriv j g r)) :=
+  iteratedDerivSymbol_ofIteratedDerivSymbolOn ..
+
+end OfParameter
+
+/-! ### Composition -/
+
+section Comp
+
+variable {U : Type*} [NormedAddCommGroup U] [NormedSpace ℂ U]
+
+/-- For `i ≤ j`, `m' + d i + (m + d (j - i)) = m' + m + d j`: the order of the term
+`∂_r^i b ∘ ∂_r^(j - i) a` of Leibniz's rule is `m' + m + d j`. -/
+theorem add_mul_add_add_mul_sub_eq {j : ℕ} (i : Fin (j + 1)) :
+    m' + d * i + (m + d * ↑(j - i : ℕ)) = m' + m + d * j := by
+  rw [Nat.cast_sub i.is_le]
+  ring
+
+/-- Every seminorm of the parameter derivatives is bounded uniformly in `r ∈ R`, in the form used
+by `TauCeti.Symbol.exists_seminorm_comp_le`. -/
+private theorem exists_seminorm_iteratedDerivSymbol_le (a : WeakParameterSymbol n R V W d m)
+    (j : ℕ) (K : TopologicalSpace.Compacts (CoordinateSpace n)) (α β : List (Fin n)) :
+    ∃ C, ∀ r : R, Symbol.seminorm K α β (a.iteratedDerivSymbol j r.property) ≤ C := by
+  obtain ⟨C, hC⟩ := a.bddAbove_seminorm_iteratedDerivSymbol j K α β
+  exact ⟨C, fun r ↦ hC ⟨r, rfl⟩⟩
+
+/-- **Composition.** The pointwise composition `(x, ξ, r) ↦ b(x, ξ, r) ∘ a(x, ξ, r)` of weakly
+parameter-dependent symbols `b` of frequency order `m'` and `a` of frequency order `m` has
+frequency order `m' + m`. By Leibniz's rule in `r`
+(`ContinuousLinearMap.iteratedDeriv_of_bilinear`,
+`TauCeti.WeakParameterSymbol.iteratedDerivSymbol_comp`) its `j`-th parameter derivative is a sum
+of the compositions `∂_r^i b ∘ ∂_r^(j - i) a`, each of order
+`m' + d i + m + d (j - i) = m' + m + d j`. -/
+def comp (b : WeakParameterSymbol n R W U d m') (a : WeakParameterSymbol n R V W d m) :
+    WeakParameterSymbol n R V U d (m' + m) :=
+  ofIteratedDerivSymbol (fun p r ↦ (b.coefficient p r).comp (a.coefficient p r))
+    (fun p ↦ (b.contDiffOn_coefficient p).clm_comp (a.contDiffOn_coefficient p))
+    (fun p r hr ↦ by simp [b.coefficient_of_notMem p r hr])
+    (fun j r hr ↦ ∑ i : Fin (j + 1),
+      (j.choose i : ℂ) •
+        Symbol.inclusion (add_mul_add_add_mul_sub_eq i).le
+          ((b.iteratedDerivSymbol i hr).comp (a.iteratedDerivSymbol (j - i) hr)))
+    (fun j r hr p ↦ by
+      have hL := (ContinuousLinearMap.compL ℂ V W U).iteratedDeriv_of_bilinear
+        (b.contDiffAt_coefficient p hr) (a.contDiffAt_coefficient p hr) (n := j)
+      simp only [ContinuousLinearMap.compL_apply] at hL
+      rw [hL, Symbol.coefficient_sum, Finset.sum_apply,
+        ← Fin.sum_univ_eq_sum_range (fun i ↦ j.choose i •
+          (iteratedDeriv i (b.coefficient p) r).comp (iteratedDeriv (j - i) (a.coefficient p) r))]
+      refine Finset.sum_congr rfl fun i _ ↦ ?_
+      simp [Nat.cast_smul_eq_nsmul])
+    (fun j K α β ↦ by
+      choose C hC using fun i : Fin (j + 1) ↦ Symbol.exists_seminorm_comp_le K
+        (b := fun r : R ↦ b.iteratedDerivSymbol i r.property)
+        (a := fun r : R ↦ a.iteratedDerivSymbol (j - i) r.property)
+        (b.exists_seminorm_iteratedDerivSymbol_le i K)
+        (a.exists_seminorm_iteratedDerivSymbol_le (j - i) K) α β
+      refine ⟨∑ i : Fin (j + 1), ‖(j.choose i : ℂ)‖ * C i, fun r hr ↦ ?_⟩
+      refine (Finset.le_sum_of_subadditive _ (map_zero _).le (map_add_le_add _) _ _).trans
+        (Finset.sum_le_sum fun i _ ↦ ?_)
+      rw [map_smul_eq_mul]
+      exact mul_le_mul_of_nonneg_left
+        ((Symbol.seminorm_inclusion_le _ K α β _).trans (hC i ⟨r, hr⟩)) (norm_nonneg _))
+
+@[simp]
+theorem coefficient_comp (b : WeakParameterSymbol n R W U d m')
+    (a : WeakParameterSymbol n R V W d m) (p : CoordinateSpace n × CoordinateSpace n) (r : ℂ) :
+    (b.comp a).coefficient p r = (b.coefficient p r).comp (a.coefficient p r) := (rfl)
+
+/-- **Leibniz's rule for the parameter derivatives of a composition**, as symbols: the `j`-th
+parameter derivative of `b ∘ a` is the sum of the compositions
+`(j choose i) ∂_r^i b ∘ ∂_r^(j - i) a`, each of order `m' + m + d j`. -/
+@[simp]
+theorem iteratedDerivSymbol_comp (b : WeakParameterSymbol n R W U d m')
+    (a : WeakParameterSymbol n R V W d m) (j : ℕ) {r : ℂ} (hr : r ∈ R) :
+    (b.comp a).iteratedDerivSymbol j hr = ∑ i : Fin (j + 1), (j.choose i : ℂ) •
+      Symbol.inclusion (add_mul_add_add_mul_sub_eq i).le
+        ((b.iteratedDerivSymbol i hr).comp (a.iteratedDerivSymbol (j - i) hr)) :=
+  iteratedDerivSymbol_ofIteratedDerivSymbol ..
+
+theorem comp_add (b : WeakParameterSymbol n R W U d m') (a₁ a₂ : WeakParameterSymbol n R V W d m) :
+    b.comp (a₁ + a₂) = b.comp a₁ + b.comp a₂ := by
+  ext p r
+  simp
+
+theorem add_comp (b₁ b₂ : WeakParameterSymbol n R W U d m') (a : WeakParameterSymbol n R V W d m) :
+    (b₁ + b₂).comp a = b₁.comp a + b₂.comp a := by
+  ext p r
+  simp
+
+@[simp]
+theorem comp_smul (c : ℂ) (b : WeakParameterSymbol n R W U d m')
+    (a : WeakParameterSymbol n R V W d m) : b.comp (c • a) = c • b.comp a := by
+  ext p r
+  simp
+
+@[simp]
+theorem smul_comp (c : ℂ) (b : WeakParameterSymbol n R W U d m')
+    (a : WeakParameterSymbol n R V W d m) : (c • b).comp a = c • b.comp a := by
+  ext p r
+  simp
+
+@[simp]
+theorem comp_zero (b : WeakParameterSymbol n R W U d m') :
+    b.comp (0 : WeakParameterSymbol n R V W d m) = 0 := by
+  ext p r
+  simp
+
+@[simp]
+theorem zero_comp (a : WeakParameterSymbol n R V W d m) :
+    (0 : WeakParameterSymbol n R W U d m').comp a = 0 := by
+  ext p r
+  simp
+
+@[simp]
+theorem comp_neg (b : WeakParameterSymbol n R W U d m') (a : WeakParameterSymbol n R V W d m) :
+    b.comp (-a) = -b.comp a := by
+  ext p r
+  simp
+
+@[simp]
+theorem neg_comp (b : WeakParameterSymbol n R W U d m') (a : WeakParameterSymbol n R V W d m) :
+    (-b).comp a = -b.comp a := by
+  ext p r
+  simp
+
+theorem comp_sub (b : WeakParameterSymbol n R W U d m') (a₁ a₂ : WeakParameterSymbol n R V W d m) :
+    b.comp (a₁ - a₂) = b.comp a₁ - b.comp a₂ := by
+  ext p r
+  simp [ContinuousLinearMap.comp_sub]
+
+theorem sub_comp (b₁ b₂ : WeakParameterSymbol n R W U d m') (a : WeakParameterSymbol n R V W d m) :
+    (b₁ - b₂).comp a = b₁.comp a - b₂.comp a := by
+  ext p r
+  simp [ContinuousLinearMap.sub_comp]
+
+variable {m'' : ℝ}
+
+/-- Composing after raising the order of the outer symbol raises the order of the composition. -/
+theorem inclusion_comp (h : m' ≤ m'') (b : WeakParameterSymbol n R W U d m')
+    (a : WeakParameterSymbol n R V W d m) :
+    (inclusion h le_rfl b).comp a = inclusion (by linarith) le_rfl (b.comp a) := by
+  ext p r
+  simp
+
+/-- Composing after raising the order of the inner symbol raises the order of the composition. -/
+theorem comp_inclusion (h : m ≤ m'') (b : WeakParameterSymbol n R W U d m')
+    (a : WeakParameterSymbol n R V W d m) :
+    b.comp (inclusion h le_rfl a) = inclusion (by linarith) le_rfl (b.comp a) := by
+  ext p r
+  simp
+
+/-- Composition of weakly parameter-dependent symbols is associative, up to the identification of
+the orders `(m'' + m') + m = m'' + (m' + m)`. -/
+theorem comp_assoc {U' : Type*} [NormedAddCommGroup U'] [NormedSpace ℂ U']
+    (c : WeakParameterSymbol n R U U' d m'') (b : WeakParameterSymbol n R W U d m')
+    (a : WeakParameterSymbol n R V W d m) :
+    (c.comp b).comp a = inclusion (add_assoc m'' m' m).ge le_rfl (c.comp (b.comp a)) := by
+  ext p r
+  simp [ContinuousLinearMap.comp_assoc]
+
+end Comp
 
 /-! ### The normalized resolvent of `1 - Δ` -/
 

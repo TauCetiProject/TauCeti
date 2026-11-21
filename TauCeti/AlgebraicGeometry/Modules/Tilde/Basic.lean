@@ -50,6 +50,8 @@ out of `M~` is determined by where it sends the global sections coming from `M`.
 * `TauCeti.AlgebraicGeometry.additive_tildeFunctor` and
   `TauCeti.AlgebraicGeometry.preservesFiniteLimits_tildeFunctor`: the functor `M ↦ M~` is additive
   and preserves finite limits, hence (with its preservation of colimits) short exact sequences;
+* `TauCeti.AlgebraicGeometry.subsingleton_tilde_basicOpen_of_smul_eq_zero`: the sections of
+  `M~` over `D(f)` vanish when `f` annihilates `M`;
 * `TauCeti.AlgebraicGeometry.modulesSpecToSheafCompForgetIso`: forgetting `R`-module structures
   after `modulesSpecToSheaf` recovers `Scheme.Modules.toSheaf`;
 * `TauCeti.AlgebraicGeometry.additive_modulesSpecToSheaf`,
@@ -183,6 +185,15 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.tildeKernelIso_hom_comp_ι
   erw [Iso.trans_hom, Category.assoc, kernel.mapIso_hom]
   simp only [kernel.lift_ι, PreservesKernel.iso_hom]
   exact kernelComparison_comp_ι_assoc _ _ _
+
+/-- If `f` annihilates the `R`-module `M`, the sections of `M~` over the basic open `D(f)`
+vanish: they form the localization `M_f`, which is zero. -/
+theorem subsingleton_tilde_basicOpen_of_smul_eq_zero {M : ModuleCat.{u} R} (f : R)
+    (hf : ∀ m : M, f • m = 0) :
+    Subsingleton Γ(tilde M, (PrimeSpectrum.basicOpen f : (Spec R).Opens)) :=
+  (IsLocalizedModule.subsingleton_iff (Submonoid.powers f)
+    (tilde.toOpen M (PrimeSpectrum.basicOpen f)).hom).2
+    fun m ↦ ⟨f, Submonoid.mem_powers f, hf m⟩
 
 /-- The functor `M ↦ M~` is additive. -/
 instance additive_tildeFunctor : (tilde.functor R).Additive :=
