@@ -116,9 +116,7 @@ private theorem contMDiff_graphEndomorphism :
   rw [graphEndomorphism_apply, graphLinear_apply]
   simp only [Manifold.tangentSpaceProdEquiv_apply, Manifold.tangentSpaceProdEquiv_symm_apply,
     Function.comp_apply]
-  -- `(equivTangentBundleProd IP P I M).symm` reassembles a pair of tangent vectors over `q.1` and
-  -- `q.2` into the tangent vector over `q` with these components, by its definition.
-  rfl
+  rw [Equiv.eq_symm_apply, equivTangentBundleProd_apply]
 
 /-- **Gromov's graph structure** on `P × M`: the skew product of a `Cⁿ` structure `j` on `P` and a
 jointly `Cⁿ` domain-dependent structure `J` on `M` along a native `Cⁿ` Hom section `A`, sending

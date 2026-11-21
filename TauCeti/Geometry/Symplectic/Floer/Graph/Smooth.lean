@@ -95,7 +95,8 @@ theorem contMDiff_hamiltonianOneForm (hω : ω.IsNondegenerate)
   have hξ : ContMDiff ((𝓘(ℝ, ℝ × ℝ).prod I).prod 𝓘(ℝ, ℝ × ℝ)) 𝓘(ℝ, ℝ × ℝ) n
       (fun p : TotalSpace (ℝ × ℝ) (horizontalTangentBundle I M 𝓘(ℝ, ℝ × ℝ) (ℝ × ℝ)) ↦
         (p.snd : ℝ × ℝ)) :=
-    ((contMDiff_snd_tangentBundle_modelSpace (ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ)).comp hlift).congr fun _ ↦ rfl
+    ((contMDiff_snd_tangentBundle_modelSpace (ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ)).comp hlift).congr fun p ↦
+      (Pullback.lift_snd _ p).symm
   -- The two terms `ξ₁ X_{K_s}` and `ξ₂ X_{K_t}` of `X_K ξ`, as fields of tangent vectors of `M`.
   have hs : ContMDiff ((𝓘(ℝ, ℝ × ℝ).prod I).prod 𝓘(ℝ, ℝ × ℝ)) I.tangent n
       (fun p : TotalSpace (ℝ × ℝ) (horizontalTangentBundle I M 𝓘(ℝ, ℝ × ℝ) (ℝ × ℝ)) ↦
