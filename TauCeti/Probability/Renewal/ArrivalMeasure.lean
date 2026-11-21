@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.Renewal.Exponential.Basic
 public import TauCeti.Probability.Renewal.Measure
-public import TauCeti.Probability.PointProcess.OccurrenceTime.Interarrival
+public import TauCeti.Probability.PointProcess.OccurrenceTime.Gap
 public import Mathlib.MeasureTheory.Measure.GiryMonad
 import TauCeti.MeasureTheory.Measure.Typeclasses.Finite
 
@@ -96,30 +96,30 @@ theorem occurrenceTime_renewalArrivalMeasure (ω : Ω) (n : ℕ) :
     occurrenceTime_occurrenceTimeMeasure (fun _ _ h => by
       exact_mod_cast monotone_arrival T ω (Nat.succ_le_succ h))]
 
-/-- Extracting interarrivals from the arrival measure recovers every increment pointwise,
-even with zero increments or explosion. -/
+/-- Extracting interarrival gaps from the arrival measure recovers every renewal increment,
+including zero increments and explosive paths. -/
 @[simp]
-theorem interarrival_renewalArrivalMeasure (ω : Ω) (n : ℕ) :
-    (renewalArrivalMeasure T ω).interarrival n = (T n ω : ℝ≥0∞) := by
+theorem occurrenceGap_renewalArrivalMeasure (ω : Ω) (n : ℕ) :
+    (renewalArrivalMeasure T ω).occurrenceGap n = (T n ω : ℝ≥0∞) := by
   cases n with
   | zero => simp [arrival_succ]
   | succ n =>
-    rw [Measure.interarrival_succ_of_ne_top (by simp),
+    rw [Measure.occurrenceGap_succ_of_ne_top (by simp),
       occurrenceTime_renewalArrivalMeasure, occurrenceTime_renewalArrivalMeasure,
       arrival_succ, ENNReal.coe_add, ENNReal.add_sub_cancel_left ENNReal.coe_ne_top]
 
-/-- A locally finite counting measure with all interarrivals finite is the renewal arrival
-measure of its finite interarrivals. Zero interarrivals and repeated occurrences are retained. -/
-theorem renewalArrivalMeasure_toNNReal_interarrival_eq {N : Ω → Measure ℝ≥0} {ω : Ω}
+/-- A locally finite counting measure with all interarrival gaps finite is the renewal arrival
+measure of its nonnegative-real gaps. Zero gaps and repeated occurrences are retained. -/
+theorem renewalArrivalMeasure_toNNReal_occurrenceGap_eq {N : Ω → Measure ℝ≥0} {ω : Ω}
     [IsLocallyFiniteMeasure (N ω)] (hN : (N ω).IsIntegerValued)
-    (hfin : ∀ n, (N ω).interarrival n ≠ ∞) :
-    renewalArrivalMeasure (fun n ω => ((N ω).interarrival n).toNNReal) ω = N ω := by
+    (hfin : ∀ n, (N ω).occurrenceGap n ≠ ∞) :
+    renewalArrivalMeasure (fun n ω => ((N ω).occurrenceGap n).toNNReal) ω = N ω := by
   rw [renewalArrivalMeasure_eq_occurrenceTimeMeasure]
-  have harr : (fun n => (arrival (fun k ω => ((N ω).interarrival k).toNNReal) (n + 1) ω :
+  have harr : (fun n => (arrival (fun k ω => ((N ω).occurrenceGap k).toNNReal) (n + 1) ω :
       ℝ≥0∞)) = (N ω).occurrenceTime := by
     funext n
-    have hn : (N ω).occurrenceTime n ≠ ∞ := ((N ω).interarrival_eq_top_iff n).not.mp (hfin n)
-    rw [arrival_def, Measure.sum_range_succ_toNNReal_interarrival hn, ENNReal.coe_toNNReal hn]
+    have hn : (N ω).occurrenceTime n ≠ ∞ := ((N ω).occurrenceGap_eq_top_iff n).not.mp (hfin n)
+    rw [arrival_def, Measure.coe_sum_range_succ_toNNReal_occurrenceGap hn]
   rw [harr]
   exact hN.eq_occurrenceTimeMeasure.symm
 
@@ -201,11 +201,11 @@ theorem measurable_renewalArrivalMeasure (hT : ∀ n, Measurable (T n)) :
 theorem measurable_renewalArrivalMeasure_iff :
     Measurable (renewalArrivalMeasure T) ↔ ∀ n, Measurable (T n) := by
   refine ⟨fun h n => ?_, measurable_renewalArrivalMeasure⟩
-  have hcomp : T n = fun ω => ((renewalArrivalMeasure T ω).interarrival n).toNNReal := by
+  have hcomp : T n = fun ω => ((renewalArrivalMeasure T ω).occurrenceGap n).toNNReal := by
     funext ω
     simp
   rw [hcomp]
-  exact ENNReal.measurable_toNNReal.comp ((Measure.measurable_interarrival n).comp h)
+  exact ENNReal.measurable_toNNReal.comp ((Measure.measurable_occurrenceGap n).comp h)
 
 variable {P : Measure Ω}
 

@@ -8,6 +8,7 @@ module
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Janko.One.PermutationModel
 public import TauCeti.GroupTheory.GroupAction.Stabilizer.Chain
 public import Mathlib.GroupTheory.GroupAction.Transitive
+import TauCeti.GroupTheory.Perm.InvariantRelation
 import Mathlib.Data.Fin.VecNotation
 import Mathlib.Data.Nat.Bits
 
@@ -497,8 +498,8 @@ theorem orbit_stabilizerChain_one :
   ext x
   constructor
   · rintro ⟨g, rfl⟩
-    have hg0 : (g : Equiv.Perm (Fin 266)) 0 = 0 := mem_stabilizer_iff.mp g.2.2
-    have h := related_apply g.2.1 0 1
+    have hg0 : (g : Equiv.Perm (Fin 266)) 0 = 0 := mem_stabilizer_iff.mp g.property.2
+    have h := related_apply g.property.1 0 1
     rw [hg0] at h
     exact (related_zero _).mp (h.trans (by decide +kernel))
   · intro hx
@@ -525,21 +526,6 @@ theorem card_eq_29260_mul_card_stabilizerChain :
     (J1.prod_ncard_orbit_mul_card_stabilizerChain pointSequence 2).symm
 
 /-! ### Common-neighbor counts and rigidity -/
-
--- Counts of common neighbors are preserved by every automorphism of the relation.
-private def commonCount (l : List (Fin 266)) (x : Fin 266) : ℕ :=
-  (Finset.univ.filter fun y => related x y = true ∧ ∀ z ∈ l, related z y = true).card
-
-private theorem commonCount_apply {g : Equiv.Perm (Fin 266)} (hg : g ∈ J1)
-    {l : List (Fin 266)} (hl : ∀ z ∈ l, g z = z) (x : Fin 266) :
-    commonCount l (g x) = commonCount l x := by
-  symm
-  apply Finset.card_equiv g
-  intro y
-  have h (z : Fin 266) (hz : z ∈ l) : related z (g y) = related z y := by
-    simpa only [hl z hz] using related_apply hg z y
-  simp only [Finset.mem_filter, Finset.mem_univ, true_and, related_apply hg]
-  exact and_congr_right fun _ => forall_congr' fun z => forall_congr' fun hz => by rw [h z hz]
 
 -- Four counts, in base 64, for the anchor lists [0,1], [0,2], [1,2], [0,1,2].
 -- The table is only an evaluation shortcut; commonCounts_eq checks every entry against
@@ -590,14 +576,14 @@ private def commonCounts (x : Fin 266) (j : Fin 4) : ℕ :=
   commonCountsCode x / 64 ^ j.val % 64
 
 private theorem commonCounts_eq : ∀ (x : Fin 266) (j : Fin 4),
-    commonCounts x j = commonCount (![[0, 1], [0, 2], [1, 2], [0, 1, 2]] j) x := by
+    commonCounts x j = commonNeighborCount related (![[0, 1], [0, 2], [1, 2], [0, 1, 2]] j) x := by
   decide +kernel
 
 private theorem commonCounts_zero_apply {g : Equiv.Perm (Fin 266)} (hg : g ∈ J1)
     (h0 : g 0 = 0) (h1 : g 1 = 1) (x : Fin 266) :
     commonCounts (g x) 0 = commonCounts x 0 := by
   simp only [commonCounts_eq, Matrix.cons_val_zero]
-  exact commonCount_apply hg (by simp_all) x
+  exact commonNeighborCount_apply (related_apply hg) (by simp_all) x
 
 private theorem fixed242 {g : Equiv.Perm (Fin 266)} (hg : g ∈ J1)
     (h0 : g 0 = 0) (h1 : g 1 = 1) : g 242 = 242 := by
@@ -620,7 +606,7 @@ private theorem signature_apply {g : Equiv.Perm (Fin 266)} (hg : g ∈ J1)
     signature (g x) = signature x := by
   have hc (j : Fin 4) : commonCounts (g x) j = commonCounts x j := by
     rw [commonCounts_eq, commonCounts_eq]
-    apply commonCount_apply hg
+    apply commonNeighborCount_apply (related_apply hg)
     fin_cases j <;> simp_all
   have hr0 := related_apply hg 0 x
   have hr1 := related_apply hg 1 x
@@ -685,7 +671,7 @@ theorem orbit_stabilizerChain_two :
   ext x
   constructor
   · rintro ⟨g, rfl⟩
-    obtain ⟨hg, hfix⟩ := (Subgroup.mem_stabilizerChain_iff _ _).mp g.2
+    obtain ⟨hg, hfix⟩ := (Subgroup.mem_stabilizerChain_iff _ _).mp g.property
     have h0 : (g : Equiv.Perm (Fin 266)) 0 = 0 := hfix 0 (by decide)
     have h1 : (g : Equiv.Perm (Fin 266)) 1 = 1 := hfix 1 (by decide)
     apply thirdOrbit_bound

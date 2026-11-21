@@ -144,7 +144,7 @@ lemma det_rightCosetRep_pos (hΓ₂ : Γ₂ ≤ Matrix.GLPos (Fin 2) ℚ)
     (hD : (D.out : GL (Fin 2) ℚ) ∈ Matrix.GLPos (Fin 2) ℚ)
     (v : DecompQuotient Γ₂ Γ₁ (D.out : GL (Fin 2) ℚ)⁻¹) :
     0 < (↑(rightCosetRep D v) : Matrix (Fin 2) (Fin 2) ℚ).det := by
-  have hv : ((v.out : GL (Fin 2) ℚ))⁻¹ ∈ Γ₂ := inv_mem v.out.2
+  have hv : ((v.out : GL (Fin 2) ℚ))⁻¹ ∈ Γ₂ := inv_mem v.out.property
   have h := mul_mem hD (hΓ₂ hv)
   rw [rightCosetRep_def]
   simpa using h

@@ -18,12 +18,13 @@ public import TauCeti.Analysis.Normed.Operator.Compact.Finite.Rank
 # Bounded diagonal operators on sequence spaces
 
 A bounded scalar family defines coordinatewise multiplication on `lp` for every exponent
-`1 ≤ p ≤ ∞`. The operator norm is the supremum of the coefficient norms. Finite coordinate
-truncations have rank at most the number of retained coordinates, and the discarded coefficients
-bound their error in operator norm. These estimates provide finite-rank approximations of
-diagonal operators. Over a locally compact scalar field, coefficients tending to
-zero along the cofinite filter give a compact diagonal operator. Over `RCLike 𝕜`, every antitone
-`ℕ → ℝ≥0` sequence defines a nonnegative bounded sequence (`lp.ofAntitone`).
+`1 ≤ p ≤ ∞`. The operator norm is the supremum of the coefficient norms, and the operator is
+injective exactly when no coefficient vanishes. Finite coordinate truncations have rank at most
+the number of retained coordinates, and the discarded coefficients bound their error in operator
+norm. These estimates provide finite-rank approximations of diagonal operators. Over a locally
+compact scalar field, coefficients tending to zero along the cofinite filter give a compact
+diagonal operator. Over `RCLike 𝕜`, every antitone `ℕ → ℝ≥0` sequence defines a nonnegative
+bounded sequence (`lp.ofAntitone`).
 
 The construction uses Mathlib's `lp.mapCLM` for uniformly bounded families of operators.
 -/
@@ -107,6 +108,17 @@ theorem diagonalCLM_mul (d e : ℓ^∞(ι, 𝕜)) :
     diagonalCLM (p := p) (d * e) = (diagonalCLM d).comp (diagonalCLM e) := by
   ext x i
   simp [mul_assoc]
+
+/-- A diagonal operator is injective exactly when none of its coefficients vanishes. -/
+theorem injective_diagonalCLM_iff (d : ℓ^∞(ι, 𝕜)) :
+    Function.Injective (diagonalCLM (p := p) d) ↔ ∀ i, d i ≠ 0 := by
+  classical
+  refine ⟨fun h i hi ↦ ?_, fun hd ↦ (injective_iff_map_eq_zero _).2 fun x hx ↦ ?_⟩
+  · -- The coordinate vector at a vanishing coefficient is sent to `0`.
+    have h0 : lp.single p i (1 : 𝕜) = 0 := h (by simp [hi])
+    simpa using congr_arg (· i) h0
+  · ext i
+    simpa [hd i] using congr_arg (· i) hx
 
 variable [DecidableEq ι]
 

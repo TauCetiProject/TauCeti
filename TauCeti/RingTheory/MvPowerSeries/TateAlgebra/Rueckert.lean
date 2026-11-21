@@ -77,7 +77,7 @@ theorem isRueckert_polynomialToRestricted {σ : Type*} [Finite σ] :
     obtain ⟨e, s, hd, hu⟩ := exists_algEquiv_isDistinguished_isUnit _ hf
     -- Weierstrass preparation: `Φ (e f) = u * ω` with `u` a unit and `ω` monic.
     obtain ⟨u, ω, hu', hm, hmul⟩ :=
-      hd.exists_isUnit_isMonicOfDegree_mul_eq hu zero_lt_one (Φ (e (Φ.symm b))).2
+      hd.exists_isUnit_isMonicOfDegree_mul_eq hu zero_lt_one (Φ (e (Φ.symm b))).property
     have hg : Φ (e (Φ.symm b)) = u * PowerSeries.polynomialToRestricted 1 ω :=
       Subtype.ext (by rw [← hmul, Subring.coe_mul, PowerSeries.coe_polynomialToRestricted])
     have hω : PowerSeries.IsDistinguished 1 s (ω : _root_.PowerSeries (Tate σ)) :=
