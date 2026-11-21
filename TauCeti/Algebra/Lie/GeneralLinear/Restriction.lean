@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Lie.GeneralLinear.Basic
 public import TauCeti.Algebra.Lie.GeneralLinear.HighestWeight
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
 import TauCeti.Algebra.Lie.Weights.Central
+import TauCeti.Data.Fintype.Fin
 
 /-!
 # Restricting representations between `gl n` and `sl n`
@@ -59,11 +60,7 @@ private theorem sup_center_eq_top (hn : n ≠ 0 → (n : K) ≠ 0) :
   apply top_unique
   intro A _
   obtain ⟨X, r, hA⟩ := exists_sl_add_smul_one_eq (n := Fin n)
-    (fun (h : Nonempty (Fin n)) ↦ by
-      let _ := h
-      rw [Fintype.card_fin, isUnit_iff_ne_zero]
-      exact hn (by simpa only [Fintype.card_fin] using
-        (Fintype.card_ne_zero : Fintype.card (Fin n) ≠ 0))) A
+    (isUnit_card_fin hn) A
   refine Submodule.mem_sup.mpr ⟨X, X.property, r • 1, ?_, hA⟩
   rw [LieSubmodule.mem_toSubmodule]
   exact mem_center_matrix_iff.mpr ⟨r, rfl⟩
@@ -79,7 +76,7 @@ theorem isIrreducible_restrict_sl_of_forall_one_lie_eq_smul {c : K}
     LieModule.IsIrreducible K (LieAlgebra.SpecialLinear.sl (Fin n) K) M := by
   refine isIrreducible_of_sup_center_eq_top_of_forall_exists_lie_eq_smul K
     (Matrix (Fin n) (Fin n) K) M _ (sup_center_eq_top hn) fun z => ?_
-  obtain ⟨r, hr⟩ := mem_center_matrix_iff.mp z.2
+  obtain ⟨r, hr⟩ := mem_center_matrix_iff.mp z.property
   exact ⟨r * c, fun m => by rw [hr, smul_lie, hc, smul_smul]⟩
 
 /-- **An irreducible `gl n` module carrying a highest weight vector stays irreducible on restriction
@@ -110,7 +107,7 @@ end Restriction
 
 section Upgrade
 
-variable {K : Type*} [Field K] [CharZero K]
+variable {K : Type*} [Field K]
 variable {n : ℕ} {M M' : Type u}
 variable [AddCommGroup M] [Module K M]
   [LieRingModule (Matrix (Fin n) (Fin n) K) M]
@@ -120,9 +117,9 @@ variable [AddCommGroup M'] [Module K M']
   [LieModule K (Matrix (Fin n) (Fin n) K) M']
 
 /-- An equivalence of `sl n`-modules upgrades to an equivalence of `gl n`-modules when the identity
-matrix acts by the same scalar on both modules. No irreducibility or finite-dimensionality is
-needed. -/
-theorem gl_equiv_of_sl_equiv_of_central_scalar (c : K)
+matrix acts by the same scalar on both modules, the rank being invertible. No irreducibility or
+finite-dimensionality is needed. -/
+theorem gl_equiv_of_sl_equiv_of_central_scalar (hn : n ≠ 0 → (n : K) ≠ 0) (c : K)
     (hM : ∀ m : M, ⁅(1 : Matrix (Fin n) (Fin n) K), m⁆ = c • m)
     (hM' : ∀ m : M', ⁅(1 : Matrix (Fin n) (Fin n) K), m⁆ = c • m)
     (e : Nonempty (M ≃ₗ⁅K, LieAlgebra.SpecialLinear.sl (Fin n) K⁆ M')) :
@@ -134,7 +131,7 @@ theorem gl_equiv_of_sl_equiv_of_central_scalar (c : K)
   -- unfolded; the restricted `sl n` action is then definitionally the ambient matrix action.
   change e ⁅A, m⁆ = ⁅A, e m⁆
   obtain ⟨X, r, hA⟩ := exists_sl_add_smul_one_eq (n := Fin n)
-    (fun _ => isUnit_iff_ne_zero.mpr (Nat.cast_ne_zero.mpr Fintype.card_ne_zero)) A
+    (isUnit_card_fin hn) A
   have hXaction :
       e ⁅(X : Matrix (Fin n) (Fin n) K), m⁆ = ⁅(X : Matrix (Fin n) (Fin n) K), e m⁆ := by
     simpa only [LieSubalgebra.coe_bracket_of_module, LieModuleEquiv.coe_toLieModuleHom]

@@ -61,7 +61,7 @@ instance isIntegrallyClosedIn_tensorProduct [Algebra.Smooth R S] :
     clear hw hx'
     induction w with
     | tmul a b =>
-      obtain ⟨r, hr⟩ := hint b.2
+      obtain ⟨r, hr⟩ := hint b.property
       refine ⟨r • a, ?_⟩
       simp [← hr, Algebra.TensorProduct.algebraMap_apply, Algebra.algebraMap_eq_smul_one r,
         TensorProduct.smul_tmul]

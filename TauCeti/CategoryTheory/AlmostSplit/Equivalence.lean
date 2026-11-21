@@ -11,9 +11,12 @@ public import TauCeti.CategoryTheory.AlmostSplit.Sequence
 # Almost-split sequences and equivalences
 
 Equivalences preserve and reflect almost-split morphisms and almost-split sequences.
-The essential surjectivity is needed for preservation: the factorization property must hold
-for every object of the target category. This allows almost-split sequences to be transported
-between module categories and equivalent categories of representations.
+For almost-split morphisms, reflection holds for any fully faithful functor, for instance the
+inclusion of a full subcategory (`CategoryTheory.Functor.isRightAlmostSplit_of_map`,
+`CategoryTheory.Functor.isLeftAlmostSplit_of_map`). The essential surjectivity is needed for
+preservation: the factorization property must hold for every object of the target category. This
+allows almost-split sequences to be transported between module categories and equivalent categories
+of representations.
 -/
 
 public section
@@ -25,19 +28,31 @@ namespace CategoryTheory.Functor
 universe u₁ u₂ v₁ v₂
 
 variable {C : Type u₁} {D : Type u₂} [Category.{v₁} C] [Category.{v₂} D]
-  (F : C ⥤ D) [F.IsEquivalence] {X Y : C} (f : X ⟶ Y)
+  (F : C ⥤ D) {X Y : C} (f : X ⟶ Y)
+
+/-- A fully faithful functor reflects right almost-split morphisms. -/
+theorem isRightAlmostSplit_of_map [F.Full] [F.Faithful] (hf : IsRightAlmostSplit (F.map f)) :
+    IsRightAlmostSplit f := by
+  refine isRightAlmostSplit_iff.mpr ⟨fun hs ↦ hf.not_isSplitEpi
+    ((F.isSplitEpi_iff f).mpr hs), fun Z g hg ↦ ?_⟩
+  obtain ⟨h, hh⟩ := hf.factors (F.obj Z) (F.map g)
+    (fun hs ↦ hg ((F.isSplitEpi_iff g).mp hs))
+  exact ⟨F.preimage h, F.map_injective (by simpa using hh)⟩
+
+/-- A fully faithful functor reflects left almost-split morphisms. -/
+theorem isLeftAlmostSplit_of_map [F.Full] [F.Faithful] (hf : IsLeftAlmostSplit (F.map f)) :
+    IsLeftAlmostSplit f :=
+  isRightAlmostSplit_op_iff.mp
+    (F.op.isRightAlmostSplit_of_map f.op (isRightAlmostSplit_op_iff.mpr hf))
+
+variable [F.IsEquivalence]
 
 /-- An equivalence preserves and reflects right almost-split morphisms. -/
 @[simp]
 theorem isRightAlmostSplit_map_iff : IsRightAlmostSplit (F.map f) ↔ IsRightAlmostSplit f := by
   classical
   constructor
-  · intro hf
-    refine isRightAlmostSplit_iff.mpr ⟨fun hs ↦ hf.not_isSplitEpi
-      ((F.isSplitEpi_iff f).mpr hs), fun Z g hg ↦ ?_⟩
-    obtain ⟨h, hh⟩ := hf.factors (F.obj Z) (F.map g)
-      (fun hs ↦ hg ((F.isSplitEpi_iff g).mp hs))
-    exact ⟨F.preimage h, F.map_injective (by simpa using hh)⟩
+  · exact F.isRightAlmostSplit_of_map f
   · intro hf
     refine isRightAlmostSplit_iff.mpr ⟨fun hs ↦ hf.not_isSplitEpi
       ((F.isSplitEpi_iff f).mp hs), fun Z g hg ↦ ?_⟩

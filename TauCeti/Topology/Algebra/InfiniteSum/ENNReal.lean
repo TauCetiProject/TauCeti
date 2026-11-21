@@ -6,6 +6,8 @@ Authors: Codex
 module
 
 public import Mathlib.Topology.Algebra.InfiniteSum.ENNReal
+import Mathlib.Algebra.BigOperators.Fin
+import Mathlib.Data.Fin.Tuple.Basic
 
 /-!
 # Sums of extended nonnegative series
@@ -21,11 +23,15 @@ Every `y : ℝ≥0∞` is bounded by the dyadic series `1 + ∑ₖ 2^(k+1) 1{2^k
 a nonnegative function and integrated, this bounds its integral by a weighted sum of the measures
 of its dyadic level sets.
 
+A finite product of infinite sums in `ℝ≥0∞` expands as the infinite sum over the dependent
+product type of the products of terms (`ENNReal.prod_tsum`).
+
 ## Main declarations
 
 * `HasSum.toReal`: a series in `ℝ≥0∞` with finite sum has the termwise `toReal` sum.
 * `ENNReal.tsum_indicator_one`: summing the indicator of `s` with value one gives `s.encard`.
 * `ENNReal.le_one_add_tsum_pow_indicator`: `y ≤ 1 + ∑ₖ 2^(k+1) 1{2^k < y}`.
+* `ENNReal.prod_tsum`: `∏ i, ∑' y, f i y = ∑' x : ∀ i, κ i, ∏ i, f i (x i)`.
 -/
 
 public section
@@ -64,3 +70,33 @@ theorem ENNReal.le_one_add_tsum_pow_indicator (y : ℝ≥0∞) :
   have : (n : ℝ≥0∞) < 2 ^ (n + 1) := by
     exact_mod_cast (Nat.lt_two_pow_self).trans (Nat.pow_lt_pow_right (by norm_num) (by omega))
   exact (hn.trans (this.trans_le h2)).false
+
+private theorem ENNReal.prod_tsum_fin :
+    ∀ {m : ℕ} {κ : Fin m → Type*} (f : ∀ i, κ i → ℝ≥0∞),
+      ∏ i, ∑' y : κ i, f i y = ∑' x : ∀ i, κ i, ∏ i, f i (x i)
+  | 0, _, f => by simp
+  | m + 1, κ, f => by
+    rw [← (Fin.consEquiv κ).tsum_eq]
+    simp_rw [Fin.consEquiv_apply, Fin.prod_univ_succ, Fin.cons_zero, Fin.cons_succ]
+    rw [tsum_prod' (f := fun p : κ 0 × (∀ i : Fin m, κ i.succ) ↦
+      f 0 p.1 * ∏ i : Fin m, f i.succ (p.2 i))]
+    simp_rw [ENNReal.tsum_mul_left]
+    rw [ENNReal.tsum_mul_right, ← ENNReal.prod_tsum_fin fun i ↦ f i.succ]
+
+/-- A finite product of infinite sums in `ℝ≥0∞` equals the infinite sum over the dependent
+product type of the products of terms. -/
+theorem ENNReal.prod_tsum {ι : Type*} [Fintype ι] {κ : ι → Type*}
+    (f : ∀ i, κ i → ℝ≥0∞) :
+    ∏ i, ∑' y : κ i, f i y = ∑' x : ∀ i, κ i, ∏ i, f i (x i) := by
+  let e := (Fintype.equivFin ι).symm
+  rw [← (Equiv.piCongrLeft κ e).tsum_eq]
+  have hprod (x : ∀ j : Fin (Fintype.card ι), κ (e j)) :
+      (∏ i : ι, f i (Equiv.piCongrLeft κ e x i)) =
+        ∏ j : Fin (Fintype.card ι), f (e j) (x j) :=
+    (Fintype.prod_equiv e (fun j ↦ f (e j) (x j))
+      (fun i ↦ f i (Equiv.piCongrLeft κ e x i)) fun j ↦ by
+        simp [Equiv.piCongrLeft_apply_apply (P := κ) (e := e) x j]).symm
+  simp_rw [hprod]
+  rw [← ENNReal.prod_tsum_fin]
+  exact (Fintype.prod_equiv e (fun j ↦ ∑' y : κ (e j), f (e j) y) (fun i ↦ ∑' y : κ i, f i y)
+    fun _ ↦ rfl).symm

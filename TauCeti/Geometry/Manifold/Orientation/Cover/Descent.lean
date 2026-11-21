@@ -125,19 +125,19 @@ theorem exists_mextDerivₗ_eq_of_mextDerivₗ_eq_mpullback_proj {φ : SmoothFor
     (hη : mextDerivₗ I k η =
       SmoothForm.mpullback VectorBundleOrientationCover.proj contMDiff_proj φ) :
     ∃ ψ : SmoothForm I M F k, mextDerivₗ I k ψ = φ ∧
-      mpullback I I VectorBundleOrientationCover.proj ψ.1 =
-        invariantPart (F := F) (k := k) VectorBundleOrientationCover.deck η.1 := by
+      mpullback I I VectorBundleOrientationCover.proj ψ.val =
+        invariantPart (F := F) (k := k) VectorBundleOrientationCover.deck η.val := by
   let τ : OrientationCover I M → OrientationCover I M := VectorBundleOrientationCover.deck
   -- The deck-invariant part of `η`, as a smooth form.
   let η' : SmoothForm I (OrientationCover I M) F k :=
     (2 : ℝ)⁻¹ • (η + SmoothForm.mpullback τ contMDiff_deck η)
-  have hη' : η'.1 = invariantPart (I := I) (F := F) (k := k) τ η.1 := by
+  have hη' : η'.val = invariantPart (I := I) (F := F) (k := k) τ η.val := by
     rw [invariantPart_def, ← SmoothForm.coe_mpullback τ contMDiff_deck, SetLike.val_smul,
       Submodule.coe_add]
   have hτη' : SmoothForm.mpullback τ contMDiff_deck η' = η' := Subtype.ext <| by
     rw [SmoothForm.coe_mpullback, hη']
     exact mpullback_invariantPart (I := I) (F := F) (k := k) VectorBundleOrientationCover.deck_deck
-      (contMDiff_deck.mdifferentiable one_ne_zero) η.1
+      (contMDiff_deck.mdifferentiable one_ne_zero) η.val
   obtain ⟨ψ, hψ⟩ := exists_smoothForm_mpullback_proj_eq_iff.mpr hτη'
   refine ⟨ψ, smoothForm_mpullback_proj_injective ?_, by
     rw [← SmoothForm.coe_mpullback _ contMDiff_proj, hψ, hη']⟩
