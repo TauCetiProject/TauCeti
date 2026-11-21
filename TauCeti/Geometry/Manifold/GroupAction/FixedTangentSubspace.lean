@@ -198,15 +198,16 @@ theorem map_fromTangentSpace_fixedTangentSubspace {p : E} (hp : p ∈ fixedPoint
   · rintro ⟨v, hv, rfl⟩ k
     have := mvfderiv_smul_left (𝕜 := ℝ) k p v
     rw [mvfderiv_apply_eq_mfderiv_apply,
-      (mem_fixedTangentSubspace_iff_of_mem_fixedPoints hp).1 hv k] at this
-    -- `fromTangentSpace` is the identity of `E` at every base point, here `k • p = p`.
+      (mem_fixedTangentSubspace_iff_of_mem_fixedPoints hp).1 hv k,
+      NormedSpace.fromTangentSpace_apply] at this
+    rw [LinearEquiv.coe_coe, ContinuousLinearEquiv.coe_toLinearEquiv,
+      NormedSpace.fromTangentSpace_apply]
     exact this.symm
   · intro hw
     refine ⟨(NormedSpace.fromTangentSpace p).symm w,
       (mem_fixedTangentSubspace_iff_of_mem_fixedPoints hp).2 fun k ↦ ?_, by simp⟩
     rw [← mvfderiv_apply_eq_mfderiv_apply, mvfderiv_smul_left,
-      ContinuousLinearEquiv.apply_symm_apply]
-    -- `(fromTangentSpace p).symm` is the identity of `E`.
+      ContinuousLinearEquiv.apply_symm_apply, NormedSpace.fromTangentSpace_symm_apply]
     exact hw k
 
 /-- For a group acting on a normed space by continuous linear maps, the fixed tangent subspace at
