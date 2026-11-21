@@ -85,8 +85,7 @@ theorem add [AddCommSemigroup K] [LE K] [IsTrans K (· ≤ ·)] [AddLeftMono K] 
   calc
     (f (a ⊔ b) + g (a ⊔ b)) + (f (a ⊓ b) + g (a ⊓ b)) =
         (f (a ⊔ b) + f (a ⊓ b)) + (g (a ⊔ b) + g (a ⊓ b)) := add_add_add_comm ..
-    _ ≤ (f a + f b) + (g (a ⊔ b) + g (a ⊓ b)) := add_le_add_left (hf a b) _
-    _ ≤ (f a + f b) + (g a + g b) := add_le_add_right (hg a b) _
+    _ ≤ (f a + f b) + (g a + g b) := act_rel_act_of_rel_of_rel (mu := (· + ·)) (hf a b) (hg a b)
     _ = (f a + g a) + (f b + g b) := add_add_add_comm ..
 
 /-- Precomposition with a lattice homomorphism (any map in a `LatticeHomClass`, such as an order
