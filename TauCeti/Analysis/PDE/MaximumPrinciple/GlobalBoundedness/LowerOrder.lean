@@ -19,9 +19,9 @@ measurable and nonnegative. This file proves the weak maximum principle with dat
 subsolutions of the operator with a drift (Gilbarg–Trudinger, Theorem 8.16, for bounded
 coefficients): if `u ∈ H¹(Ω)` satisfies
 
-`-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u ≤ g + ∂ᵢFⁱ` in `Ω`, with `g ∈ L^{q/2}(Ω)`, `F ∈ L^q(Ω; ℝⁿ)`, `q > n`,
+`-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u ≤ g + ∂ᵢFⁱ` in `Ω`, with `g ∈ L^{q/2}(Ω)`, `F ∈ L^q(Ω; ℝⁿ)`,
 
-weakly, and `u ≤ k` on `∂Ω` for a level `k ≥ 0`, then
+weakly, where `q > n` and `q > 2`, and `u ≤ k` on `∂Ω` for a level `k ≥ 0`, then
 
 `u ≤ k + C (‖g‖_{q/2} |Ω| ^ (2/n - 2/q) + ‖F‖_q |Ω| ^ (1/n - 1/q)) / λ`
 
