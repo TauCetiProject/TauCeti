@@ -924,6 +924,25 @@ theorem det_one_sub_dysonSeriesLeft_sub_zero_smul_ne_zero_of_isNondegenerateFixe
   simpa only [zero_smul, sub_zero] using
     ω.det_one_sub_dysonSeriesLeft_ne_zero_of_isNondegenerateFixedPt hX hH hx hnd
 
+/-- **The shifted return map at small weights.** At an orbit `x` as in
+`det_one_sub_dysonSeriesLeft_ne_zero_of_isNondegenerateFixedPt` and for a continuous family `J_t`
+of almost complex structures, the return map of the shifted field `S_t - δ J_t` satisfies
+`det (1 - Ψ(1)) ≠ 0` for every weight `δ` close enough to `0`. -/
+theorem eventually_det_one_sub_dysonSeriesLeft_sub_smul_ne_zero_of_isNondegenerateFixedPt
+    (ω : SymplecticForm V) {H : ℝ → V → ℝ} {K : ℝ≥0}
+    (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H))
+    (hH : ContDiff ℝ 2 (uncurry H)) {x : ℝ → V}
+    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t)
+    (hnd : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0))
+    {J : ℝ → AlmostComplexStructure V} (hJc : Continuous J) :
+    ∀ᶠ δ in 𝓝 (0 : ℝ), LinearMap.det ((1 - dysonSeriesLeft
+      (fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t) -
+        δ • LinearMap.toContinuousLinearMap (J t).toLinearMap) 1 : V →L[ℝ] V) : V →ₗ[ℝ] V) ≠ 0 :=
+  Floer.eventually_det_one_sub_dysonSeriesLeft_sub_smul_ne_zero
+    (ω.continuous_fderiv_hamiltonianVectorField_comp hH
+      (continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt))
+    hJc (ω.det_one_sub_dysonSeriesLeft_ne_zero_of_isNondegenerateFixedPt hX hH hx hnd)
+
 /-- **Small weights preserve nondegeneracy.** At a nondegenerate one-periodic orbit `x` of a
 one-periodic, jointly `C²` time-dependent Hamiltonian `H` whose suspended vector field is globally
 Lipschitz, and for continuous one-periodic almost complex structures `J_t`, the weighted

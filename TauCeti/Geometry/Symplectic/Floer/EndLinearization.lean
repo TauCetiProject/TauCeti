@@ -314,6 +314,21 @@ private theorem continuous_fderiv_hamiltonianVectorField_sub_smul (ω : Symplect
   (ω.continuous_fderiv_hamiltonianVectorField_comp hH hxc).sub
     ((hJ.continuous.comp (continuous_id.prodMk hxc)).const_smul δ)
 
+/-- The weighted linearized operator `D_u ξ - δ ξ` of the datum `K = H_t dt` is continuous at `z`
+when `u` is `C¹` at `z` and `ξ` is `C²`. -/
+private theorem continuousAt_floerLinearization_sub_smul (ω : SymplecticForm V) {H : ℝ → V → ℝ}
+    (hH : ContDiff ℝ 2 (Function.uncurry H)) {J : ℝ → V → AlmostComplexStructure V}
+    (hJ : ContDiff ℝ 1 fun p : ℝ × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
+    {u ξ : ℝ × ℝ → V} {z : ℝ × ℝ} (hu : ContDiffAt ℝ 1 u z) (hξ : ContDiff ℝ 2 ξ) (δ : ℝ) :
+    ContinuousAt (fun z ↦ ω.floerLinearization
+      (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun w ↦ H w.2) u ξ z -
+        δ • ξ z) z :=
+  (ω.continuousAt_floerLinearization
+    (J := fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap) (Ks := fun _ _ ↦ 0)
+    (Kt := fun w ↦ H w.2) (hJ.comp (contDiff_fst.snd.prodMk contDiff_snd)).contDiffAt
+    contDiffAt_const (hH.comp (contDiff_fst.snd.prodMk contDiff_snd)).contDiffAt
+    hu (hξ.contDiffAt.of_le one_le_two)).sub (hξ.continuous.continuousAt.const_smul δ)
+
 /-- **The weighted `L²` estimate of the linearized operator on an end, at a fixed weight.** Let `x`
 be a continuous loop, `H` a jointly `C²` Hamiltonian and `J_t(y)` a `C¹` family of almost complex
 structures that are `ω`-compatible along `x`, and let `δ` be a weight for which the shifted field
@@ -380,12 +395,8 @@ theorem exists_mem_forall_setIntegral_le_mul_setIntegral_floerLinearization_sub_
     fun ξ hξ hper a b hab hU ha hb ↦ hpert (hξ.of_le one_le_two) (hest hξ hper hab ha hb)
       (fun z hz ↦ ?_) fun z hz ↦ (hU hz.1).1 z.2 hz.2 ξ⟩
   -- `D_u ξ - δ ξ` is continuous where `u` is `C¹`.
-  exact ((ω.continuousAt_floerLinearization
-    (J := fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap) (Ks := fun _ _ ↦ 0)
-    (Kt := fun w ↦ H w.2) (hJ.comp (contDiff_fst.snd.prodMk contDiff_snd)).contDiffAt
-    contDiffAt_const (hH.comp (contDiff_fst.snd.prodMk contDiff_snd)).contDiffAt
-    ((hU hz.1).2 z.2 hz.2) (hξ.contDiffAt.of_le one_le_two)).sub
-    (hξ.continuous.continuousAt.const_smul δ)).continuousWithinAt
+  exact (ω.continuousAt_floerLinearization_sub_smul hH hJ ((hU hz.1).2 z.2 hz.2) hξ
+    δ).continuousWithinAt
 
 /-- **The weighted `L²` estimate of the linearized operator on an end, conjugated form.** Let `x`
 be an orbit of a jointly `C²` Hamiltonian `H` whose suspended vector field is globally Lipschitz,
@@ -437,10 +448,10 @@ theorem eventually_exists_mem_forall_setIntegral_le_mul_setIntegral_floerLineari
               (fun _ _ ↦ 0) (fun w ↦ H w.2) u ξ z - δ • ξ z) := by
   have hxc : Continuous x := continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt
   -- The return map of `S_t - δ J_t` stays nondegenerate for `δ` close to `0`.
-  filter_upwards [Floer.eventually_det_one_sub_dysonSeriesLeft_sub_smul_ne_zero
-    (ω.continuous_fderiv_hamiltonianVectorField_comp hH hxc)
-    (AlmostComplexStructure.continuous_iff.2 (hJ.continuous.comp (continuous_id.prodMk hxc)))
-    (ω.det_one_sub_dysonSeriesLeft_ne_zero_of_isNondegenerateFixedPt hX hH hx hnd)] with δ hdet
+  filter_upwards
+    [ω.eventually_det_one_sub_dysonSeriesLeft_sub_smul_ne_zero_of_isNondegenerateFixedPt hX hH hx
+      hnd (AlmostComplexStructure.continuous_iff.2 (hJ.continuous.comp (continuous_id.prodMk hxc)))]
+    with δ hdet
   exact ω.exists_mem_forall_setIntegral_le_mul_setIntegral_floerLinearization_sub_smul hH hxc hJ hJx
     hdet hu hux hδ
 
@@ -620,10 +631,10 @@ theorem eventually_exists_mem_forall_setIntegral_exp_mul_le_mul_setIntegral_floe
                 (fun _ _ ↦ 0) (fun w ↦ H w.2) u η z) := by
   have hxc : Continuous x := continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt
   -- The return map of `S_t - δ J_t` stays nondegenerate for `δ` close to `0`.
-  filter_upwards [Floer.eventually_det_one_sub_dysonSeriesLeft_sub_smul_ne_zero
-    (ω.continuous_fderiv_hamiltonianVectorField_comp hH hxc)
-    (AlmostComplexStructure.continuous_iff.2 (hJ.continuous.comp (continuous_id.prodMk hxc)))
-    (ω.det_one_sub_dysonSeriesLeft_ne_zero_of_isNondegenerateFixedPt hX hH hx hnd)] with δ hdet
+  filter_upwards
+    [ω.eventually_det_one_sub_dysonSeriesLeft_sub_smul_ne_zero_of_isNondegenerateFixedPt hX hH hx
+      hnd (AlmostComplexStructure.continuous_iff.2 (hJ.continuous.comp (continuous_id.prodMk hxc)))]
+    with δ hdet
   exact ω.exists_mem_forall_setIntegral_exp_mul_le_mul_setIntegral_floerLinearization hH hxc hJ hJx
     hdet hu hux hδ
 
@@ -672,12 +683,8 @@ theorem exists_mem_forall_setIntegral_le_mul_setIntegral_norm_floerLinearization
   have hD : ContinuousOn (fun z ↦ ω.floerLinearization
       (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun w ↦ H w.2) u ξ z -
         δ • ξ z) (Icc a b ×ˢ Icc (0 : ℝ) 1) := fun z hz ↦
-    ((ω.continuousAt_floerLinearization
-      (J := fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap) (Ks := fun _ _ ↦ 0)
-      (Kt := fun w ↦ H w.2) (hJ.comp (contDiff_fst.snd.prodMk contDiff_snd)).contDiffAt
-      contDiffAt_const (hH.comp (contDiff_fst.snd.prodMk contDiff_snd)).contDiffAt
-      ((hUab hz.1).2 z.2 hz.2) (hξ.contDiffAt.of_le one_le_two)).sub
-      (hξ.continuous.continuousAt.const_smul δ)).continuousWithinAt
+    (ω.continuousAt_floerLinearization_sub_smul hH hJ ((hUab hz.1).2 z.2 hz.2) hξ
+      δ).continuousWithinAt
   exact hconv (hξ.of_le one_le_two) hD hC₁ (hest hξ hper hab (fun s hs ↦ (hUab hs).1) ha hb)
 
 /-- **The end estimate in the norm of `V`.** Let `x` be an orbit of a jointly `C²` Hamiltonian

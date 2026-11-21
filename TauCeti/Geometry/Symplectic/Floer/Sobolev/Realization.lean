@@ -441,6 +441,36 @@ theorem memLp_floerJetCoeff_sub_smul_fst (ω : SymplecticForm V) {J : ℝ × ℝ
   exact (mul_le_mul_of_nonneg_left (norm_fst_le ℝ V (V × V)) (norm_nonneg _)).trans
     ((mul_one _).trans_le (hB z.1))
 
+/-- **The coefficients of the weighted operator are essentially bounded for Floer data cylindrical
+near the ends.** Under the hypotheses of `memLp_floerJetCoeff_of_cylindrical`, for a continuous
+slope `c` equal to `δm` for `s ≤ -R` and to `δp` for `s ≥ R`, the coefficient field of `D_u - c(s)`
+on jets is essentially bounded. -/
+theorem memLp_floerJetCoeff_sub_smul_fst_of_cylindrical (ω : SymplecticForm V)
+    {J : ℝ × ℝ → V → AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ}
+    {Hm Hp : ℝ → V → ℝ} {Jm Jp : ℝ → V → AlmostComplexStructure V} {R : ℝ} {u : ℝ × ℝ → V}
+    (hcyl : Floer.IsCylindricalNearEnds J Ks Kt Jm Jp Hm Hp R u) (hu : ContDiff ℝ 1 u)
+    (hHm : ContDiff ℝ 2 (Function.uncurry Hm))
+    (hJm : ContDiff ℝ 1 fun p : ℝ × V ↦ (Jm p.1 p.2).toLinearMap.toContinuousLinearMap)
+    {xm : ℝ → V} (huxm : TendstoUniformlyOn (fun s t ↦ u (s, t)) xm atBot (Icc 0 1))
+    (hδm : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hm t)) u (s, t)) 0 atBot
+        (Icc 0 1))
+    (hHp : ContDiff ℝ 2 (Function.uncurry Hp))
+    (hJp : ContDiff ℝ 1 fun p : ℝ × V ↦ (Jp p.1 p.2).toLinearMap.toContinuousLinearMap)
+    {xp : ℝ → V} (huxp : TendstoUniformlyOn (fun s t ↦ u (s, t)) xp atTop (Icc 0 1))
+    (hδp : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hp t)) u (s, t)) 0 atTop
+        (Icc 0 1))
+    {c : ℝ → ℝ} (hc : Continuous c) {δm δp : ℝ} (hcm : ∀ s ≤ -R, c s = δm)
+    (hcp : ∀ s, R ≤ s → c s = δp) :
+    MemLp (fun z ↦ ω.floerJetCoeff (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u z -
+      c z.1 • fst ℝ V (V × V)) ∞ stripMeasure := by
+  obtain ⟨B, hB⟩ := exists_forall_norm_le_of_eventually_eq hc
+    (eventually_atBot.2 ⟨-R, hcm⟩) (eventually_atTop.2 ⟨R, hcp⟩)
+  exact ω.memLp_floerJetCoeff_sub_smul_fst
+    (ω.memLp_floerJetCoeff_of_cylindrical hcyl hu hHm hJm huxm hδm hHp hJp huxp hδp)
+    hc.measurable hB
+
 /-- **The weighted semi-Fredholm estimate for Floer data cylindrical near the ends**, in the form
 `TauCeti.CylinderSobolev.HasSemiFredholmEstimate` consumed by Peetre's argument on the cylinder:
 the estimate
@@ -527,11 +557,9 @@ theorem finiteDimensional_ker_floerWeightedSobolevOperator_of_cylindrical
   obtain ⟨C, T, hest⟩ :=
     ω.exists_hasSemiFredholmEstimate_floerJetCoeff_sub_smul_fst_of_cylindrical
       hcyl hu hJu hc hcm hcp hHm hxm hJm hJxm hdetm huxm hδm hHp hxp hJp hJxp hdetp huxp hδp
-  obtain ⟨B, hB⟩ := exists_forall_norm_le_of_eventually_eq hc
-    (eventually_atBot.2 ⟨-R, hcm⟩) (eventually_atTop.2 ⟨R, hcp⟩)
-  exact finiteDimensional_ker_jetOperator_comp_subtypeL (ω.memLp_floerJetCoeff_sub_smul_fst
-    (ω.memLp_floerJetCoeff_of_cylindrical hcyl hu hHm hJm huxm hδm hHp hJp huxp hδp)
-    hc.measurable hB) hest
+  exact finiteDimensional_ker_jetOperator_comp_subtypeL
+    (ω.memLp_floerJetCoeff_sub_smul_fst_of_cylindrical hcyl hu hHm hJm huxm hδm hHp hJp huxp hδp
+      hc hcm hcp) hest
 
 /-- **The weighted linearized Floer operator for data cylindrical near the ends has closed
 range.** Under the hypotheses of
@@ -571,11 +599,9 @@ theorem isClosed_range_floerWeightedSobolevOperator_of_cylindrical
   obtain ⟨C, T, hest⟩ :=
     ω.exists_hasSemiFredholmEstimate_floerJetCoeff_sub_smul_fst_of_cylindrical
       hcyl hu hJu hc hcm hcp hHm hxm hJm hJxm hdetm huxm hδm hHp hxp hJp hJxp hdetp huxp hδp
-  obtain ⟨B, hB⟩ := exists_forall_norm_le_of_eventually_eq hc
-    (eventually_atBot.2 ⟨-R, hcm⟩) (eventually_atTop.2 ⟨R, hcp⟩)
-  exact isClosed_range_jetOperator_comp_subtypeL (ω.memLp_floerJetCoeff_sub_smul_fst
-    (ω.memLp_floerJetCoeff_of_cylindrical hcyl hu hHm hJm huxm hδm hHp hJp huxp hδp)
-    hc.measurable hB) hest
+  exact isClosed_range_jetOperator_comp_subtypeL
+    (ω.memLp_floerJetCoeff_sub_smul_fst_of_cylindrical hcyl hu hHm hJm huxm hδm hHp hJp huxp hδp
+      hc hcm hcp) hest
 
 /-- **The weighted linearized Floer operator along a Floer trajectory has finite-dimensional
 kernel.** Let `u` be a Floer trajectory of `K = H_t dt`, with loops converging uniformly to
