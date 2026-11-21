@@ -42,9 +42,10 @@ chain rule: if `Dφ(x) v = ∑ᵢ cᵢ(x) bᵢ` in a basis `b`, then
 
 If `φ` pushes `μ` forward to at most a finite multiple of `μ`, the pullback of the distribution of
 `u ∈ Lᵖ(μ)` is that of the `Lᵖ` precomposition `Lp.compOfMapLeSmul`
-(`compCLM_toTemperedDistribution_eq_compOfMapLeSmul`). If the Jacobian of `φ` is bounded below,
-`c ≤ |det Dφ|` with `c > 0`, the pullback maps every `Lᵖ` space to itself, with norm at most
-`c^{-1/p}` (`exists_compCLM_toTemperedDistribution_eq_and_norm_le`).
+(`compCLM_toTemperedDistribution_eq_compOfMapLeSmul`), which for measure-preserving `φ` is
+`Lp.compMeasurePreserving` (`compCLM_toTemperedDistribution_eq_compMeasurePreserving`). If the
+Jacobian of `φ` is bounded below, `c ≤ |det Dφ|` with `c > 0`, the pullback maps every `Lᵖ` space
+to itself, with norm at most `c^{-1/p}` (`exists_compCLM_toTemperedDistribution_eq_and_norm_le`).
 
 This is the global change of variables on `𝓢'` against which the Bessel-potential spaces `H^s` and
 Besov spaces `B^s_{p, q}`, which are subspaces of `𝓢'`, are compared under diffeomorphisms of `E`.
@@ -250,6 +251,22 @@ theorem compCLM_toTemperedDistribution_eq_compOfMapLeSmul [CompleteSpace F] {p :
     ((Lp.coeFn_compOfMapLeSmul (𝕜 := ℂ) hφ.1.continuous.aemeasurable hC hmap u).mono fun x hx ↦ ?_)
   dsimp only
   rw [hx, Function.comp_apply]
+
+open scoped ENNReal in
+/-- If `φ` preserves `μ`, pulling back the distribution of `u ∈ Lᵖ(μ)` along `φ` gives the
+distribution of the `Lᵖ` precomposition `Lp.compMeasurePreserving`, for every `1 ≤ p ≤ ∞`. -/
+theorem compCLM_toTemperedDistribution_eq_compMeasurePreserving [CompleteSpace F] {p : ℝ≥0∞}
+    [Fact (1 ≤ p)] (hφ : (φ : E → E).HasTemperateGrowth)
+    (hψ : (φ.symm : E → E).HasTemperateGrowth) (hm : MeasurePreserving φ μ μ) (u : Lp F p μ) :
+    compCLM F φ hφ hψ (u : 𝓢'(E, F)) = (Lp.compMeasurePreserving φ hm u : 𝓢'(E, F)) := by
+  rw [compCLM_toTemperedDistribution_eq_compOfMapLeSmul μ hφ hψ ENNReal.one_ne_top
+    (by rw [hm.map_eq, one_smul]) u]
+  congr 1
+  ext1
+  filter_upwards [Lp.coeFn_compOfMapLeSmul (𝕜 := ℂ) hφ.1.continuous.aemeasurable
+    ENNReal.one_ne_top (by rw [hm.map_eq, one_smul]) u,
+    Lp.coeFn_compMeasurePreserving u hm] with x h₁ h₂
+  rw [h₁, h₂]
 
 open scoped ENNReal in
 /-- **The pullback on `Lᵖ`.** If `c ≤ |det Dφ|` everywhere, with `c > 0`, the pullback of the
