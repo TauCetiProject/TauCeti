@@ -243,8 +243,14 @@ theorem exists_topRegularOverMostPolyads_scheduledRank [Finite κ] [Fintype κ�
     (D.isPolyadDecomposition_of_polyads_eq_univ hDpol) (hDV.trans hCV.symm).le f
     (fun p ↦ (hf p).symm) hgap (by positivity) hδ (by linarith [pow_pos hδ 2])
   refine hreg.mono le_rfl ?_ le_rfl
-  -- The exceptional proportion is at most `(ε δ² / 4 + q γ) / (δ² / 2) ≤ ε`.
-  rw [Real.sqrt_sq hγ.le, ← Nat.card_eq_fintype_card, div_le_iff₀ (by nlinarith [pow_pos hδ 2])]
+  -- The exceptional proportion is at most `(ε δ² / 4 + √(q γ²)) / (δ² / 2) ≤ ε`.
+  rw [← Nat.card_eq_fintype_card, div_le_iff₀ (by nlinarith [pow_pos hδ 2])]
+  have hsqrt : √(q * γ ^ 2) ≤ q * γ := by
+    rw [← Real.sqrt_sq (mul_nonneg (Nat.cast_nonneg _) hγ.le)]
+    refine Real.sqrt_le_sqrt ?_
+    have hq : (Nat.card κ : ℝ) ≤ (Nat.card κ : ℝ) ^ 2 :=
+      mod_cast Nat.le_self_pow two_ne_zero (Nat.card κ)
+    nlinarith [pow_pos hγ 2]
   have hqγ : q * γ ≤ ε * δ ^ 2 / 4 := by
     rw [mul_div_assoc', div_le_div_iff₀ (by positivity) (by positivity)]
     nlinarith [mul_pos hε (pow_pos hδ 2)]

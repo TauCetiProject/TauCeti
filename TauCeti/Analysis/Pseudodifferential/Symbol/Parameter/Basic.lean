@@ -14,6 +14,7 @@ import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Bilinear
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
 import TauCeti.Analysis.Calculus.IteratedFDeriv.ContinuousLinearMapInverse
+import TauCeti.Analysis.Complex.SectorBounds
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
@@ -947,25 +948,11 @@ private theorem mul_parameterWeight_sq_le_norm_laplacianSymbol {s c δ : ℝ} (h
   set c₀ := max c (-1)
   set r := s + ‖ξ‖ ^ 2
   set a := ‖z‖
-  have hc₀ : -1 ≤ c₀ := le_max_right _ _
   have hc₀' : c₀ < 1 := max_lt hc (by norm_num)
-  have _ : 0 ≤ r := by positivity
   have ha : 0 ≤ a := norm_nonneg z
-  have hre : z.re ≤ c₀ * a := hz.trans (mul_le_mul_of_nonneg_right (le_max_left _ _) ha)
-  -- `‖r - z‖² = r² - 2 r Re z + ‖z‖²`.
-  have hsq : ‖laplacianSymbol s ((x, ξ), z)‖ ^ 2 = r ^ 2 - 2 * r * z.re + a ^ 2 := by
-    simp only [laplacianSymbol, a, r, Complex.sq_norm, Complex.normSq_apply, Complex.sub_re,
-      Complex.sub_im, Complex.ofReal_re, Complex.ofReal_im]
-    ring
   -- Sector estimate: `‖r - z‖ ≥ (1 - c₀) / 2 * (r + ‖z‖)`.
-  have hsector : (1 - c₀) / 2 * (r + a) ≤ ‖laplacianSymbol s ((x, ξ), z)‖ := by
-    have h1 : ((1 - c₀) / 2 * (r + a)) ^ 2 ≤ ‖laplacianSymbol s ((x, ξ), z)‖ ^ 2 := by
-      rw [hsq]
-      nlinarith [mul_le_mul_of_nonneg_left hre (by positivity : 0 ≤ 2 * r),
-        mul_nonneg (by linarith : 0 ≤ 1 + c₀) (sq_nonneg (r - a)),
-        mul_nonneg (mul_nonneg (by linarith : 0 ≤ 1 - c₀) (by linarith : 0 ≤ 1 + c₀))
-          (sq_nonneg (r + a))]
-    exact le_of_pow_le_pow_left₀ two_ne_zero (norm_nonneg _) h1
+  have hsector : (1 - c₀) / 2 * (r + a) ≤ ‖laplacianSymbol s ((x, ξ), z)‖ :=
+    Complex.mul_add_norm_le_norm_ofReal_sub (by positivity) hz
   -- Weight estimate: `w² ≤ 3 (1 + δ⁻¹) (r + ‖z‖)`.
   have hw : parameterWeight ξ z ^ 2 ≤ 3 * (1 + δ⁻¹) * (r + a) := by
     have hsqrt := Real.sq_sqrt ha

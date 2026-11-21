@@ -31,6 +31,8 @@ interior regularity arguments pass from a weak solution on `Ω` to smaller open 
 * `TauCeti.W1p.value_restrictL_ofTestFunctionₗ_ae`: a restricted test function has its original
   value almost everywhere on the smaller open set.
 * `TauCeti.W1p.restrictL_self` and `TauCeti.W1p.restrictL_restrictL`: restriction is functorial.
+* `TauCeti.W1p.norm_gradient_restrictL_le`: restriction does not increase the `Lᵖ` norm of the
+  weak gradient.
 * `TauCeti.W1p.setIntegral_norm_gradient_sub_sq_eq`: the `L²` distance on the smaller set between
   the weak gradients of a function and of a function defined only there.
 * `TauCeti.W1p.continuous_setAverage_value`: the mean of the value component over a fixed
@@ -230,6 +232,13 @@ theorem W1p.gradient_restrictL_ae (hU : U ≤ Omega) (u : W1p mu Omega p) :
   exact Lp.coeFn_LpToLpOfMeasureLeSMul (by simp)
     (by simpa only [one_smul] using
       Measure.restrict_mono_set mu (SetLike.coe_subset_coe.mpr hU)) (W1p.gradient u)
+
+/-- Restriction does not increase the `Lᵖ` norm of the weak gradient. -/
+theorem W1p.norm_gradient_restrictL_le (hU : U ≤ Omega) (u : W1p mu Omega p) :
+    ‖W1p.gradient (W1p.restrictL hU u)‖ ≤ ‖W1p.gradient u‖ := by
+  rw [Lp.norm_def, Lp.norm_def, eLpNorm_congr_ae (W1p.gradient_restrictL_ae hU u)]
+  exact ENNReal.toReal_mono (Lp.eLpNorm_ne_top _) (eLpNorm_mono_measure _
+    (Measure.restrict_mono_set mu (SetLike.coe_subset_coe.mpr hU)))
 
 /-- Restriction does not increase the Sobolev norm. -/
 theorem W1p.norm_restrictL_le (hU : U ≤ Omega) (u : W1p mu Omega p) :

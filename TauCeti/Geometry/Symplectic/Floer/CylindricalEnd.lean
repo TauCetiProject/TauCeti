@@ -16,7 +16,7 @@ import TauCeti.MeasureTheory.Integral.Lebesgue.ReProdIm
 import TauCeti.MeasureTheory.Integral.Lebesgue.Strip
 import TauCeti.Algebra.Order.Floor.Ring
 import TauCeti.Geometry.Symplectic.Floer.Breaking
-import TauCeti.Geometry.Symplectic.Floer.Graph
+import TauCeti.Geometry.Symplectic.Floer.Graph.Basic
 import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.MeanValue
 import TauCeti.Analysis.Calculus.FDeriv.WithLp
 import Mathlib.Analysis.Calculus.ContDiff.WithLp

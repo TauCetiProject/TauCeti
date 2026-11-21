@@ -15,7 +15,9 @@ For an inclusion of discrete Fuchsian groups, compatible normalized cusp data gi
 coordinates in which the induced map of compactified quotients is a power map. Consequently its
 local multiplicity at the adjoined cusp is the canonical cusp width index. Since that index is the
 relative index of the cusp stabilizers, the local multiplicity at the orbit of a cusp point `c`
-is `[stabilizer Γ c : stabilizer Δ c]`, with no choice of cusp data.
+is `[stabilizer Γ c : stabilizer Δ c]`, with no choice of cusp data. When `Δ` is normal in `Γ`,
+conjugating the stabilizers shows that all cusps of `Δ` over one cusp of `Γ` have the same local
+multiplicity.
 
 The cusp-coordinate and width conventions follow Diamond and Shurman, *A First Course in Modular
 Forms*, §2.4.
@@ -90,5 +92,28 @@ theorem localMultiplicity_compactifiedQuotientMap_ofCusp_cuspOrbitMk [DiscreteTo
   have hD : D.cuspOrbit = Δ.cuspOrbitMk c := Subtype.ext (by simp [hDc])
   rw [← hD, localMultiplicity_compactifiedQuotientMap_ofCusp_eq_widthIndex h D E
     (hDσ.trans hEσ.symm), widthIndex_eq_relIndex, hEc]
+
+/-- **Cusps over one cusp of a normal cover have the same local multiplicity.** When `Δ` is normal
+in `Γ`, two cusps of `Δ` over the same cusp of `Γ` are translates `c₁ = g • c₂` by some `g ∈ Γ`.
+Conjugation by `g` carries the stabilizer of `c₂` to that of `c₁` and preserves `Δ`, so the
+relative indices of the stabilizers agree. -/
+theorem localMultiplicity_compactifiedQuotientMap_ofCusp_eq_of_cuspOrbitMap_eq
+    [DiscreteTopology Γ] (h : Δ ≤ Γ) [(Δ.subgroupOf Γ).Normal] {C₁ C₂ : Δ.CuspOrbit}
+    (hC : cuspOrbitMap h C₁ = cuspOrbitMap h C₂) :
+    letI : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
+    localMultiplicity (compactifiedQuotientMap h) (ofCusp C₁) =
+      localMultiplicity (compactifiedQuotientMap h) (ofCusp C₂) := by
+  obtain ⟨c₁, rfl⟩ := cuspOrbitMk_surjective C₁
+  obtain ⟨c₂, rfl⟩ := cuspOrbitMk_surjective C₂
+  rw [cuspOrbitMap_cuspOrbitMk, cuspOrbitMap_cuspOrbitMk, cuspOrbitMk_eq_iff] at hC
+  obtain ⟨g, hg⟩ := mem_orbit_iff.mp hC
+  dsimp only at hg
+  rw [localMultiplicity_compactifiedQuotientMap_ofCusp_cuspOrbitMk,
+    localMultiplicity_compactifiedQuotientMap_ofCusp_cuspOrbitMk, ← hg,
+    stabilizer_smul_eq_stabilizer_map_conj]
+  have hΔ : (Δ.subgroupOf Γ).map (MulAut.conj g).toMonoidHom = Δ.subgroupOf Γ :=
+    normal_iff_map_conj_eq.mp ‹_› g
+  conv_lhs => rw [← hΔ]
+  exact relIndex_map_map_of_injective _ _ (MulAut.conj g).injective
 
 end Subgroup.CompactifiedQuotient
