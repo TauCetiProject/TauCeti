@@ -1387,7 +1387,7 @@ theorem IsSmoothing.comp_left {a : Symbol n V W m} (ha : a.IsSmoothing) (b : Sym
 /-- **Uniform estimates for compact families vanishing at large frequencies.** Smooth `f y`, for `y`
 in a compact `Y`, with jointly continuous jets, vanishing on each compact `K` of positions beyond a
 radius `R_K` independent of `y`, satisfy the estimates of every order on `K`, uniformly in `y`. -/
-theorem exists_bound_of_continuous_jets_of_eq_zero {Y : Type*} [TopologicalSpace Y]
+theorem exists_bound_of_continuous_iteratedFDeriv_of_eq_zero {Y : Type*} [TopologicalSpace Y]
     [CompactSpace Y] {f : Y → CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W}
     (hf : ∀ y, ContDiff ℝ ∞ (f y)) (hjets : ∀ k : ℕ, Continuous
       (fun p : Y × (CoordinateSpace n × CoordinateSpace n) ↦ iteratedFDeriv ℝ k (f p.1) p.2))
@@ -1425,8 +1425,8 @@ def ofBoundedFrequencySupport (f : CoordinateSpace n × CoordinateSpace n → V 
     (hf : ContDiff ℝ ∞ f) (R : ℝ) (hR : ∀ x ξ, R ≤ ‖ξ‖ → f (x, ξ) = 0) : Symbol n V W m where
   coefficient := f
   contDiff_coefficient := hf
-  exists_bound _ hK α β := (exists_bound_of_continuous_jets_of_eq_zero (Y := Unit) (fun _ => hf)
-    (fun _ => (hf.continuous_iteratedFDeriv (by simp)).comp continuous_snd)
+  exists_bound _ hK α β := (exists_bound_of_continuous_iteratedFDeriv_of_eq_zero (Y := Unit)
+    (fun _ => hf) (fun _ => (hf.continuous_iteratedFDeriv (by simp)).comp continuous_snd)
     (fun _ _ => ⟨R, fun _ x _ ξ hξ => hR x ξ hξ⟩) m hK α β).imp fun _ h => ⟨h.1, h.2 ()⟩
 
 @[simp]
@@ -1451,7 +1451,7 @@ theorem isSmoothing_of_forall_isCompact_coefficient_eq_zero {a : Symbol n V W m}
     (ha : ∀ K : Set (CoordinateSpace n), IsCompact K →
       ∃ R, ∀ x ∈ K, ∀ ξ, R ≤ ‖ξ‖ → a.coefficient (x, ξ) = 0) : a.IsSmoothing :=
   isSmoothing_iff_forall_exists_bound.2 fun m' _ hK α β =>
-    (exists_bound_of_continuous_jets_of_eq_zero (Y := Unit) (fun _ => a.contDiff_coefficient)
+    (exists_bound_of_continuous_iteratedFDeriv_of_eq_zero (fun _ : Unit => a.contDiff_coefficient)
       (fun _ => (a.contDiff_coefficient.continuous_iteratedFDeriv (by simp)).comp continuous_snd)
       (fun K hK => (ha K hK).imp fun _ h _ => h) m' hK α β).imp fun _ h => ⟨h.1, h.2 ()⟩
 
