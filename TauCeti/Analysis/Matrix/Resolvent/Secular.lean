@@ -92,7 +92,8 @@ theorem star_inv_sub_smul_one_mulVec_dotProduct {z : 𝕜} (hz : z ∉ spectrum 
       ← map_mul, star_eq_conjTranspose, diagonal_conjTranspose, diagonal_mul_diagonal]
     congr 2
     ext j
-    rw [Pi.star_apply, RCLike.star_def, RCLike.conj_mul, norm_inv, ← RCLike.ofReal_pow, inv_pow]
+    simp only [Pi.star_apply, RCLike.star_def, RCLike.conj_mul, norm_inv, RCLike.ofReal_inv,
+      RCLike.ofReal_pow, inv_pow]
   rw [star_mulVec, ← dotProduct_mulVec, mulVec_mulVec, hRR, conjStarAlgAut_apply,
     star_eq_conjTranspose, star_dotProduct_mul_diagonal_mul_conjTranspose_mulVec]
   push_cast
@@ -127,8 +128,9 @@ theorem norm_star_dotProduct_sq_eq_inv (c : ℝ) {u x : n → 𝕜} {μ : ℝ} (
       ∑ j, ‖((hA.eigenvectorUnitary : Matrix n n 𝕜)ᴴ *ᵥ u) j‖ ^ 2 /
         (hA.eigenvalues j - μ) ^ 2) : ℝ) : 𝕜) := by
     conv_lhs => rw [hxw]
-    rw [star_smul, smul_dotProduct, dotProduct_smul, smul_eq_mul, smul_eq_mul, ← mul_assoc,
-      RCLike.star_def, RCLike.conj_mul, hA.star_inv_sub_smul_one_mulVec_dotProduct hμ]
+    simp only [star_smul, smul_dotProduct, dotProduct_smul, smul_eq_mul, ← mul_assoc,
+      RCLike.star_def, RCLike.mul_conj]
+    rw [hA.star_inv_sub_smul_one_mulVec_dotProduct hμ]
     have hsub (j : n) : ‖(hA.eigenvalues j : 𝕜) - μ‖ ^ 2 = (hA.eigenvalues j - μ) ^ 2 := by
       rw [← RCLike.ofReal_sub, RCLike.norm_ofReal, sq_abs]
     simp only [hsub, norm_neg, norm_mul, RCLike.norm_ofReal, ← RCLike.ofReal_pow, mul_pow, sq_abs]
@@ -142,11 +144,8 @@ of `A + c • u uᴴ` exceeds every eigenvalue of the Hermitian matrix `A`. -/
 theorem notMem_spectrum_add_smul_vecMulVec_of_nonpos {c : ℝ} (hc : c ≤ 0) (u : n → 𝕜) {μ : ℝ}
     (hμA : ∀ j, hA.eigenvalues j < μ) :
     μ ∉ spectrum ℝ (A + (c : 𝕜) • vecMulVec u (star u)) := by
-  have hμ : μ ∉ spectrum ℝ A := by
-    rw [hA.spectrum_real_eq_range_eigenvalues]
-    rintro ⟨j, rfl⟩
-    exact lt_irrefl _ (hμA j)
-  rw [hA.mem_spectrum_add_smul_vecMulVec_iff c u hμ]
+  rw [hA.mem_spectrum_add_smul_vecMulVec_iff c u
+    (hA.notMem_spectrum_of_forall_eigenvalues_lt hμA)]
   -- Above the spectrum every term of the secular sum is nonpositive.
   have hsum : ∑ j, ‖((hA.eigenvectorUnitary : Matrix n n 𝕜)ᴴ *ᵥ u) j‖ ^ 2 /
       (hA.eigenvalues j - μ) ≤ 0 :=
@@ -164,12 +163,10 @@ theorem eq_of_mem_spectrum_add_smul_vecMulVec (c : ℝ) (u : n → 𝕜) {μ ν 
     (hμA : ∀ j, hA.eigenvalues j < μ) (hνA : ∀ j, hA.eigenvalues j < ν) : μ = ν := by
   rcases le_or_gt c 0 with hc | hc
   · exact absurd hμ (hA.notMem_spectrum_add_smul_vecMulVec_of_nonpos hc u hμA)
-  have hnot {t : ℝ} (ht : ∀ j, hA.eigenvalues j < t) : t ∉ spectrum ℝ A := by
-    rw [hA.spectrum_real_eq_range_eigenvalues]
-    rintro ⟨j, rfl⟩
-    exact lt_irrefl _ (ht j)
-  rw [hA.mem_spectrum_add_smul_vecMulVec_iff c u (hnot hμA)] at hμ
-  rw [hA.mem_spectrum_add_smul_vecMulVec_iff c u (hnot hνA)] at hν
+  rw [hA.mem_spectrum_add_smul_vecMulVec_iff c u
+    (hA.notMem_spectrum_of_forall_eigenvalues_lt hμA)] at hμ
+  rw [hA.mem_spectrum_add_smul_vecMulVec_iff c u
+    (hA.notMem_spectrum_of_forall_eigenvalues_lt hνA)] at hν
   have hw (j : n) : 0 ≤ ‖((hA.eigenvectorUnitary : Matrix n n 𝕜)ᴴ *ᵥ u) j‖ ^ 2 := by positivity
   -- Some weight is positive, since otherwise the secular equation reads `1 = 0`.
   have hw₀ : ∃ j ∈ Finset.univ, 0 < ‖((hA.eigenvectorUnitary : Matrix n n 𝕜)ᴴ *ᵥ u) j‖ ^ 2 := by
