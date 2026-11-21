@@ -20,6 +20,8 @@ real line onto the circle with kernel `2πℤ`, and a quotient map. So a continu
 
 ## Main declarations
 
+* `Circle.isQuotientMap_exp`, `Circle.isQuotientMap_expContinuousMonoidHom`: `Circle.exp` and its
+  packaging as a continuous homomorphism are quotient maps.
 * `ContinuousMonoidHom.ext_circleExp`: continuous homomorphisms out of the circle agreeing on
   every `Circle.exp t` are equal.
 * `ContinuousMonoidHom.circleLift`: the continuous homomorphism `Circle →ₜ* G` induced by a
@@ -34,6 +36,22 @@ noncomputable section
 
 open Real
 
+namespace Circle
+
+/-- `Circle.exp` is a quotient map from the real line onto the circle. -/
+theorem isQuotientMap_exp : Topology.IsQuotientMap exp :=
+  isCoveringMap_exp.isQuotientMap exp_surjective
+
+/-- `Circle.expContinuousMonoidHom` is a quotient map from the real line onto the circle. -/
+theorem isQuotientMap_expContinuousMonoidHom :
+    Topology.IsQuotientMap expContinuousMonoidHom := by
+  rw [show ⇑expContinuousMonoidHom = exp ∘ Multiplicative.toAdd from
+    funext expContinuousMonoidHom_apply]
+  exact isQuotientMap_exp.comp
+    (isOpenMap_toAdd.isQuotientMap continuous_toAdd Multiplicative.toAdd.surjective)
+
+end Circle
+
 namespace ContinuousMonoidHom
 
 variable {G : Type*} [Monoid G] [TopologicalSpace G]
@@ -45,18 +63,11 @@ theorem ext_circleExp {ψ φ : Circle →ₜ* G} (h : ∀ t : ℝ, ψ (Circle.ex
     obtain ⟨t, rfl⟩ := Circle.exp_surjective z
     exact h t
 
-private theorem isQuotientMap_expContinuousMonoidHom :
-    Topology.IsQuotientMap Circle.expContinuousMonoidHom := by
-  rw [show ⇑Circle.expContinuousMonoidHom = Circle.exp ∘ Multiplicative.toAdd from
-    funext Circle.expContinuousMonoidHom_apply]
-  exact (Circle.isCoveringMap_exp.isQuotientMap Circle.exp_surjective).comp
-    (isOpenMap_toAdd.isQuotientMap continuous_toAdd Multiplicative.toAdd.surjective)
-
 /-- **Descent through `Circle.exp`.** A continuous homomorphism `f : ℝ → G` with `f (2π) = 1`
 induces the continuous homomorphism `Circle.exp t ↦ f t` from the circle
 (`ContinuousMonoidHom.circleLift_circleExp`). -/
 def circleLift (f : Multiplicative ℝ →ₜ* G) (hf : f (.ofAdd (2 * π)) = 1) : Circle →ₜ* G :=
-  liftOfIsQuotientMap Circle.expContinuousMonoidHom isQuotientMap_expContinuousMonoidHom f
+  liftOfIsQuotientMap Circle.expContinuousMonoidHom Circle.isQuotientMap_expContinuousMonoidHom f
     fun t ht ↦ by
       change Circle.expContinuousMonoidHom t = 1 at ht
       change f t = 1
