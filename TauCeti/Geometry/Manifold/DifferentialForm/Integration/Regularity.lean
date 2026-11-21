@@ -149,15 +149,4 @@ theorem integralTopForm_add_of_compactSpace [CompactSpace M] (o : Manifold.Orien
     integralTopForm o (φ + ψ) = integralTopForm o φ + integralTopForm o ψ :=
   integralTopForm_add o hφ hψ (isClosed_tsupport _).isCompact (isClosed_tsupport _).isCompact
 
-omit [MeasurableSpace E] [BorelSpace E] in
-/-- The oriented integral is subtractive for compactly supported C0 top forms. -/
-theorem integralTopForm_sub (o : Manifold.Orientation I M (Fin k))
-    {ψ : RoughForm I M ℝ k} (hφ : IsSmoothForm I 0 φ) (hψ : IsSmoothForm I 0 ψ)
-    (hcφ : IsCompact (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ) φ)) (hcψ : IsCompact
-    (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ) ψ)) :
-    integralTopForm o (φ - ψ) = integralTopForm o φ - integralTopForm o ψ := by
-  let b := Module.finBasisOfFinrankEq ℝ E (by simpa using o.card_eq.symm)
-  exact integralTopForm_sub_of_integrable o
-    (hφ.integrableTopForm hcφ b) (hψ.integrableTopForm hcψ b)
-
 end TauCeti

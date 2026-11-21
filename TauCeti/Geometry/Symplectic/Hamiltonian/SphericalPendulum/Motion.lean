@@ -169,15 +169,17 @@ theorem mfderiv_coe_sphericalPendulumPhaseSpace_hamiltonianVectorField_spherical
   -- tangent to the phase space.
   have hE : (fun y : sphericalPendulumPhaseSpace ↦ sphericalPendulumHamiltonian y) =
       extendedEnergy ∘ Subtype.val :=
-    funext fun y ↦ (extendedEnergy_eq y.2).symm
-  have hd : DifferentiableAt ℝ extendedEnergy x := (hasFDerivAt_extendedEnergy x.2).differentiableAt
+    funext fun y ↦ (extendedEnergy_eq y.property).symm
+  have hd : DifferentiableAt ℝ extendedEnergy x :=
+      (hasFDerivAt_extendedEnergy x.property).differentiableAt
   have hk : (SymplecticForm.constSmooth stdSymplecticForm).hamiltonianVectorField extendedEnergy
       x ∈ (mfderiv 𝓘(ℝ, Fin 4 → ℝ) 𝓘(ℝ, EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3))
         Subtype.val x).range := by
     rw [range_mfderiv_coe_sphericalPendulumPhaseSpace,
-      SymplecticForm.hamiltonianVectorField_constSmooth, hamiltonianVectorField_extendedEnergy x.2]
-    exact sphericalPendulumVectorField_mem_ker_fderiv_sphericalPendulumConstraint x.2
-  rw [hE, ← hamiltonianVectorField_extendedEnergy x.2]
+      SymplecticForm.hamiltonianVectorField_constSmooth, hamiltonianVectorField_extendedEnergy
+          x.property]
+    exact sphericalPendulumVectorField_mem_ker_fderiv_sphericalPendulumConstraint x.property
+  rw [hE, ← hamiltonianVectorField_extendedEnergy x.property]
   simpa only [SymplecticForm.hamiltonianVectorField_constSmooth] using
     isSymplectic_sphericalPendulumSymplecticForm.isNondegenerate
       |>.mfderiv_hamiltonianVectorField_comp_of_mem_range
@@ -275,7 +277,7 @@ theorem sub_eq_integral_inv_sqrt_of_isMIntegralCurveOn_sphericalPendulum {t₁ t
       |(γ t : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).2 2| =
           √(2 * (h - z t) * (1 - z t ^ 2) - j ^ 2) ∧
         (γ t : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).2 2 ≠ 0 := by
-    have hsq := sq_snd_two_eq_of_mem_sphericalPendulumPhaseSpace (γ t).2
+    have hsq := sq_snd_two_eq_of_mem_sphericalPendulumPhaseSpace (γ t).property
     rw [sphericalPendulumEnergyMomentum_eq_of_isMIntegralCurveOn isPreconnected_Icc hγ
       (left_mem_Icc.2 ht) (hIoo htI), hF] at hsq
     have hR := hpos _ (hmem t htI)

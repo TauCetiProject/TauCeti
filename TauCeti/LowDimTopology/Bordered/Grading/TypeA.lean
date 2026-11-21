@@ -171,7 +171,7 @@ theorem IsUngradedDGAlgebra.isGraded_toUngradedAInfinityRightModule [CharP R 2]
     ⟨fun {s g m a} hm ha ↦ ?_, fun {s m} hm ↦ ?_⟩
   · rw [op_smul_eq_mul, smul_eq_mul, mul_inv_rev, inv_inv]
     exact hA hm ha
-  · rw [smul_eq_mul, mul_inv_rev, inv_inv, Subgroup.mem_center_iff.mp l.2 s⁻¹]
+  · rw [smul_eq_mul, mul_inv_rev, inv_inv, Subgroup.mem_center_iff.mp l.property s⁻¹]
     exact hdl hm
 
 /-! ### Gradings of box tensor products -/
@@ -215,7 +215,7 @@ theorem IsGraded.matrixAct_mem_boxGradedPart {l : Subgroup.center G}
   choose g hg using ha
   refine Submodule.mem_iSup_of_mem ⟨_, ?_⟩ (hMm.act_mem (g := fun i ↦ (g i : G)) hg hm)
   rw [← hz, BalancedProduct.mk_inv_prod_ofFn_zpow_smul l (fun i ↦ (g i : G)) (fun j ↦ gr (x j))
-    (fun i ↦ (g i).2), hs]
+    (fun i ↦ (g i).property), hs]
 
 /-- **The twisted differential of the matrix module along a homogeneous matrix.** For a graded
 `A∞` module with differentials of central degree `l` and a matrix `C` homogeneous of degree `l`,
@@ -268,12 +268,12 @@ theorem typeABoxMap_mem_boxGradedPart {l : Subgroup.center G} (hMm : Mm.IsGraded
   -- degree `l`, so the induced map is a component of a homogeneous box tensor differential.
   set k : Subgroup.center G := l * c⁻¹
   have hF' : F ∈ homogeneousMatrices Ag gr (fun y ↦ (k : G) • gr' y) l := by
-    simpa [k] using (mem_homogeneousMatrices_smul_right_iff k.2).2 hF
+    simpa [k] using (mem_homogeneousMatrices_smul_right_iff k.property).2 hF
   have hC : Matrix.fromBlocks N.coeff F 0 N'.coeff ∈
       homogeneousMatrices Ag (Sum.elim gr fun y ↦ (k : G) • gr' y)
         (Sum.elim gr fun y ↦ (k : G) • gr' y) l :=
     fromBlocks_mem_homogeneousMatrices_iff.2
-      ⟨hN, hF', zero_mem _, (mem_homogeneousMatrices_smul_smul_iff k.2).2 hN'⟩
+      ⟨hN, hF', zero_mem _, (mem_homogeneousMatrices_smul_smul_iff k.property).2 hN'⟩
   rw [mem_boxGradedPart_iff]
   intro z
   rw [typeABoxMap_apply]
@@ -310,11 +310,12 @@ theorem typeABoxCompHomotopy_mem_boxGradedPart [Fintype X''] [DecidableEq X'']
   set k : Subgroup.center G := l * c⁻¹
   set k' : Subgroup.center G := l * c'⁻¹ * k
   have hF' : F ∈ homogeneousMatrices Ag gr (fun y ↦ (k : G) • gr' y) l := by
-    simpa [k] using (mem_homogeneousMatrices_smul_right_iff k.2).2 hF
+    simpa [k] using (mem_homogeneousMatrices_smul_right_iff k.property).2 hF
   have hG'' : G' ∈ homogeneousMatrices Ag (fun y ↦ (k : G) • gr' y)
       (fun z ↦ (k' : G) • gr'' z) l := by
-    have h := (mem_homogeneousMatrices_smul_right_iff (l * c'⁻¹ : Subgroup.center G).2
-      (gr' := fun z ↦ (k : G) • gr'' z)).2 ((mem_homogeneousMatrices_smul_smul_iff k.2).2 hG')
+    have h := (mem_homogeneousMatrices_smul_right_iff (l * c'⁻¹ : Subgroup.center G).property
+      (gr' := fun z ↦ (k : G) • gr'' z)).2 ((mem_homogeneousMatrices_smul_smul_iff k.property).2
+          hG')
     simpa [k', mul_smul] using h
   have hC : Matrix.fromBlocks N.coeff (Matrix.fromCols F 0) 0
       (Matrix.fromBlocks N'.coeff G' 0 N''.coeff) ∈
@@ -323,14 +324,15 @@ theorem typeABoxCompHomotopy_mem_boxGradedPart [Fintype X''] [DecidableEq X'']
         (Sum.elim gr (Sum.elim (fun y ↦ (k : G) • gr' y) fun z ↦ (k' : G) • gr'' z)) l :=
     fromBlocks_mem_homogeneousMatrices_iff.2 ⟨hN,
       fromCols_mem_homogeneousMatrices_iff.2 ⟨hF', zero_mem _⟩, zero_mem _,
-      fromBlocks_mem_homogeneousMatrices_iff.2 ⟨(mem_homogeneousMatrices_smul_smul_iff k.2).2 hN',
-        hG'', zero_mem _, (mem_homogeneousMatrices_smul_smul_iff k'.2).2 hN''⟩⟩
+      fromBlocks_mem_homogeneousMatrices_iff.2 ⟨(mem_homogeneousMatrices_smul_smul_iff k.property).2
+          hN',
+        hG'', zero_mem _, (mem_homogeneousMatrices_smul_smul_iff k'.property).2 hN''⟩⟩
   rw [mem_boxGradedPart_iff]
   intro z
   rw [typeABoxCompHomotopy_apply]
   have hk : k'⁻¹ * l = l⁻¹ * c * c' := by
     have hcomm (a b : Subgroup.center G) : a * b = b * a :=
-      Subtype.ext (Subgroup.mem_center_iff.mp b.2 a)
+      Subtype.ext (Subgroup.mem_center_iff.mp b.property a)
     rw [← hcomm c l⁻¹]
     simp only [k', k]
     group

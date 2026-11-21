@@ -382,7 +382,7 @@ theorem IsCellularSet.exists_homeomorph_image [ChartedSpace E M] {X : Set M}
   obtain ⟨e, he⟩ := exists_homeomorph_image_of_forall_eq_iff hφ hK (hcK.restrict c K K)
     (hcc.restrict hcK) hcKs fun a b ↦ by
       rw [Subtype.ext_iff]
-      exact (hcf a b).trans (hφK a a.2 b b.2).symm
+      exact (hcf a b).trans (hφK a a.property b b.property).symm
   have hψ (a : K) : (e.symm (hcK.restrict c K K a) : Y) = φ a := by
     rw [← he, e.symm_apply_apply]
   -- Outside `U` the collapse is the identity, so `e.symm` agrees with `φ` there.
@@ -392,7 +392,7 @@ theorem IsCellularSet.exists_homeomorph_image [ChartedSpace E M] {X : Set M}
     obtain ⟨a, rfl⟩ := hcKs x
     rw [hψ]
     refine ⟨fun ⟨u, hu, hua⟩ ↦ hcUU a ?_, fun hx ↦ mem_image_of_mem φ (hcU' a hx)⟩
-    rcases (hφK u (hUK hu) a a.2).1 hua with h | h
+    rcases (hφK u (hUK hu) a a.property).1 hua with h | h
     · exact h ▸ hu
     · exact hXU h.2
   exact ⟨e.symm, hoff, hin⟩
@@ -461,7 +461,7 @@ theorem IsCellularSet.nonempty_homeomorph_of_isOpenEmbedding {X Y : Type*} [Topo
       exact ⟨.inl, fun h ↦ h.resolve_right fun h ↦ hx (image_subset_range _ _ h.1)⟩
   -- So `f` identifies the image of `G`, which is `X`, with `Y`.
   obtain ⟨h, -⟩ := exists_homeomorph_image_of_forall_eq_iff hG.continuousOn isCompact_univ
-    (fun x : (univ : Set X) ↦ f x) (hf.comp continuous_subtype_val)
+    (fun x : (univ : Set X) ↦ f x) (hf.comp continuous_subtypeVal)
     (fun y ↦ let ⟨x, hx⟩ := hfs y; ⟨⟨x, mem_univ x⟩, hx⟩) fun x y ↦ (hGf x y).symm
   exact ⟨((Homeomorph.setCongr (image_univ_of_surjective hGs)).trans
     (Homeomorph.Set.univ X)).symm.trans h⟩

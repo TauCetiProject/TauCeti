@@ -54,8 +54,9 @@ variable (ι) in
 sent to its underlying set `ι V`, viewed inside `ι U`. -/
 def restrictEmbedding (U : B) : Set.Iic U ↪o Set (ι U) :=
   .ofMapLEIff (fun V ↦ (↑) ⁻¹' ι V) fun V W ↦ by
-    rw [Subtype.preimage_val_subset_preimage_val_iff, Set.inter_eq_right.mpr (ι.monotone V.2),
-      Set.inter_eq_right.mpr (ι.monotone W.2), ι.le_iff_le, Subtype.coe_le_coe]
+    rw [Subtype.preimage_val_subset_preimage_val_iff, Set.inter_eq_right.mpr
+        (ι.monotone V.property),
+      Set.inter_eq_right.mpr (ι.monotone W.property), ι.le_iff_le, Subtype.coe_le_coe]
 
 @[simp]
 theorem restrictEmbedding_apply (U : B) (V : Set.Iic U) :
@@ -65,7 +66,7 @@ theorem restrictEmbedding_apply (U : B) (V : Set.Iic U) :
 theorem image_restrictEmbedding (U : B) (V : Set.Iic U) :
     (↑) '' restrictEmbedding ι U V = ι V := by
   rw [restrictEmbedding_apply, Subtype.image_preimage_coe,
-    Set.inter_eq_right.mpr (ι.monotone V.2)]
+    Set.inter_eq_right.mpr (ι.monotone V.property)]
 
 /-- A subset of `ι U` is an admissible open of the induced G-topology exactly when its image in
 `X` is an admissible open. -/
@@ -98,7 +99,7 @@ def restrict (U : B) : GTopology (restrictEmbedding ι U) where
     -- Extend `T` to all admissible opens of `G` by sending `W` to the cover of `W ⊓ U`.
     let T' (W : B) : Set B := (↑) '' T ⟨W ⊓ U, inf_le_right⟩
     have hT' (W : Set.Iic U) : T' W = (↑) '' T W := by
-      simp only [T', inf_eq_left.mpr W.2]
+      simp only [T', inf_eq_left.mpr W.property]
     have h' := G.transitive (T := T') h (by
       rintro _ ⟨W, hW, rfl⟩
       rw [hT']
@@ -212,7 +213,7 @@ instance isContinuous_iicFunctor (U : B) :
     (iicFunctor U).IsContinuous (G.restrict U).grothendieckTopology G.grothendieckTopology :=
   Functor.isContinuous_of_coverPreserving
     (compatiblePreservingOfDownwardsClosed (F := iicFunctor U) _ fun {V W} g ↦
-      ⟨⟨W, (leOfHom g).trans V.2⟩, Iso.refl _⟩)
+      ⟨⟨W, (leOfHom g).trans V.property⟩, Iso.refl _⟩)
     (G.coverPreserving_iicFunctor U)
 
 end Site

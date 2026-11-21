@@ -317,7 +317,7 @@ subset is relatively open in the adic spectrum. -/
 theorem isOpen_val_preimage_rationalSubset (Aplus : Subring A) (T : Finset A) (s : A) :
     IsOpen (Subtype.val ⁻¹' rationalSubset Aplus T s : Set (spa Aplus)) := by
   rw [val_preimage_rationalSubset]
-  exact (isOpen_basicOpenFinset T s).preimage continuous_subtype_val
+  exact (isOpen_basicOpenFinset T s).preimage continuous_subtypeVal
 
 /-- **The basic open `R(T/s)`, as an `Opens` of `spa A⁺`.** This packages
 `rationalSubset` with its openness; it is a *rational* subset in Wedhorn's sense exactly when

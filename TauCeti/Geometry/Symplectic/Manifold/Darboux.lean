@@ -171,11 +171,11 @@ theorem exists_darbouxChart_of_nondegenerate_of_isInteriorPoint
   have : IsManifold I 1 M := IsManifold.of_le (n := ∞) (by simp)
   have : IsManifold I 2 M := IsManifold.of_le (n := ∞) (by simp)
   have : IsManifold I ((∞ : WithTop ℕ∞) + 1) M := IsManifold.of_le (n := ∞) (by simp)
-  let η : E → E [⋀^Fin 2]→L[ℝ] ℝ := RoughForm.inChartAt form.1 x₀
+  let η : E → E [⋀^Fin 2]→L[ℝ] ℝ := RoughForm.inChartAt form.val x₀
   let W : Set E := interior (extChartAt I x₀).target
   let y₀ : E := extChartAt I x₀ x₀
   have hy₀W : y₀ ∈ W := (ModelWithCorners.isInteriorPoint_iff (I := I)).mp hx₀
-  have hηy₀ : η y₀ = form.1 x₀ := RoughForm.inChartAt_extChartAt_self form.1 x₀
+  have hηy₀ : η y₀ = form.val x₀ := RoughForm.inChartAt_extChartAt_self form.val x₀
   -- `TangentSpace I x₀` carries the model vector-space structure of `E`.
   let form₀ : SymplecticForm E :=
     { toBilinForm := form.bilinFormAt x₀
@@ -210,7 +210,7 @@ theorem exists_darbouxChart_of_nondegenerate_of_isInteriorPoint
       ![mvfderiv I (extChartAt I x₀) x v, mvfderiv I (extChartAt I x₀) x w] := by
     ext i
     fin_cases i <;> rfl
-  rw [SmoothBundleForm.eval₂_apply, RoughForm.apply_eq_inChartAt_mvfderiv form.1 hxS.1, hvec,
+  rw [SmoothBundleForm.eval₂_apply, RoughForm.apply_eq_inChartAt_mvfderiv form.val hxS.1, hvec,
     hmvf x hx v, hmvf x hx w]
   rw [hform₀_apply, hη_inv (extChartAt I x₀ x) hxS.2]
   simp only [ContinuousAlternatingMap.compContinuousLinearMap_apply]

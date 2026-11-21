@@ -62,11 +62,11 @@ theorem exists_seq_mem_and_sub_sum_mem {F : Type*} [FunLike F M N] [AddHomClass 
   -- The recursion carries the residual, whose type depends on the stage.
   let state : ∀ n, {z : N // z ∈ closure (f '' V n)} :=
     fun n ↦ Nat.rec (motive := fun n ↦ {z : N // z ∈ closure (f '' V n)}) ⟨y, hy⟩
-      (fun m r ↦ ⟨r.1 - f (x m r), hxres m r⟩) n
-  have state_succ : ∀ m, (state (m + 1)).1 = (state m).1 - f (x m (state m)) := fun _ ↦ rfl
+      (fun m r ↦ ⟨r.val - f (x m r), hxres m r⟩) n
+  have state_succ : ∀ m, (state (m + 1)).val = (state m).val - f (x m (state m)) := fun _ ↦ rfl
   refine ⟨fun n ↦ x n (state n), fun n ↦ hxV n (state n), fun n ↦ ?_⟩
   -- The residual after `n + 1` steps is `y` minus the image of the `n`-th partial sum.
-  have key : ∀ m, (state (m + 1)).1
+  have key : ∀ m, (state (m + 1)).val
       = y - f (∑ i ∈ Finset.range (m + 1), x i (state i)) := by
     intro m
     induction m with

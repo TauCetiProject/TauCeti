@@ -61,22 +61,7 @@ theorem isWeightBounded_iff_of_finite {φ : A →+* B} {T : Fin k → Set A}
   isWeightBounded_iff_isWeightedVarPowerBounded.trans
     (isWeightedVarPowerBounded_iff_of_finite hT)
 
-/-- For singleton weights `Tᵢ = {tᵢ}`, coordinatewise power-boundedness of the weighted
-variables reduces to power-boundedness of each `φ (t i) * b i`. -/
-@[simp]
-theorem isWeightedVarPowerBounded_singleton_iff_forall_isPowerBounded (φ : A →+* B)
-    (t : Fin k → A) (b : Fin k → B) :
-    IsWeightedVarPowerBounded φ (fun i ↦ ({t i} : Set A)) b ↔
-      ∀ i, IsPowerBounded (φ (t i) * b i) := by
-  simp [isWeightedVarPowerBounded_iff_of_finite fun i ↦ Set.finite_singleton (t i)]
-
-/-- For singleton weights `Tᵢ = {tᵢ}`, a tuple `b` is weight-bounded precisely when each
-weighted variable `φ (t i) * b i` is power-bounded. -/
-@[simp]
-theorem isWeightBounded_singleton_iff_forall_isPowerBounded (φ : A →+* B) (t : Fin k → A)
-    (b : Fin k → B) :
-    IsWeightBounded φ (fun i ↦ ({t i} : Set A)) b ↔
-      ∀ i, IsPowerBounded (φ (t i) * b i) := by
-  simp [isWeightBounded_iff_of_finite fun i ↦ Set.finite_singleton (t i)]
+attribute [simp] isWeightedVarPowerBounded_singleton_iff_forall_isPowerBounded
+  isWeightBounded_singleton_iff_forall_isPowerBounded
 
 end TauCeti.Huber

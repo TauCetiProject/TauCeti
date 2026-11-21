@@ -155,7 +155,7 @@ theorem integrable_exp_mul_stableMeasure_iff (hα : α ∈ Ioc 0 2) (hβ : |β| 
   have hsign : β * ((s : ℝ) * t) ≤ 0 ↔ β * t ≤ 0 := by
     rw [mul_left_comm]
     exact ⟨fun h ↦ nonpos_of_mul_nonpos_right h (NNReal.coe_pos.mpr hs),
-      mul_nonpos_of_nonneg_of_nonpos s.2⟩
+      mul_nonpos_of_nonneg_of_nonpos s.property⟩
   simp only [mul_eq_zero, NNReal.coe_eq_zero, hs.ne', false_or, hsign, hα2.ne]
 
 /-- The exponential-integrability domain of a valid stable law: all of `ℝ` for Gaussian

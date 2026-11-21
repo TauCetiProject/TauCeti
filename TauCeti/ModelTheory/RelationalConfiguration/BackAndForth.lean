@@ -36,6 +36,8 @@ counting the countable models of an infinitary sentence.
 * `TauCeti.RelationalConfiguration.bfEquivSetoid_anti` — the levels decrease with `α`;
 * `TauCeti.RelationalConfiguration.bfEquivSetoid_lift` — lifting `α` across universes leaves
   `bfEquivSetoid` unchanged;
+* `TauCeti.RelationalConfiguration.comap_bfEquivSetoid_eq_comap_bfTupleSetoid` — restricting
+  `bfEquivSetoid` to a set of configurations pulls back the arity-`0` `bfTupleSetoid`;
 * `TauCeti.RelationalConfiguration.isoSetoid_le_bfEquivSetoid` — isomorphic configurations are
   equivalent at every level;
 * `Equiv.bfEquivSetoid_encodeVia_iff` — encodings of two structures on a common carrier are
@@ -101,7 +103,8 @@ theorem measurableSet_setOf_bfEquiv [Countable V] [∀ n, Countable (L.Relations
     -- Limit below `ω₁`: a conjunction over the countably many smaller levels.
     have : Countable (Set.Iio α) := (Cardinal.countable_Iio_of_lt_omega_one hα).to_subtype
     simp only [BFEquiv.limit hlim]
-    have h := Measurable.forall (ι := Set.Iio α) fun β => ih β.1 β.2 (β.2.trans hα) a b
+    have h := Measurable.forall (ι := Set.Iio α) fun β => ih β.val β.property
+        (β.property.trans hα) a b
     simpa only [Subtype.forall, Set.mem_Iio] using h
 
 variable (L V) in
@@ -122,6 +125,18 @@ theorem bfEquivSetoid_apply {α : Ordinal.{o}} {c d : RelationalConfiguration L 
     bfEquivSetoid L V α c d ↔
       @BFEquiv L _ V V c.toStructure d.toStructure α 0 Fin.elim0 Fin.elim0 :=
   Iff.rfl
+
+/-- Restricting `bfEquivSetoid L V α` to a set `C` of configurations coincides with pulling back
+the arity-`0` `bfTupleSetoid` of the decoded structures along `c ↦ ⟨c, Fin.elim0⟩`. -/
+theorem comap_bfEquivSetoid_eq_comap_bfTupleSetoid (C : Set (RelationalConfiguration L V))
+    (α : Ordinal.{o}) :
+    (bfEquivSetoid L V α).comap (Subtype.val : C → _) =
+      (@bfTupleSetoid L _ C (fun _ => V) (fun c => c.val.toStructure) α 0).comap
+        fun c => ⟨c, Fin.elim0⟩ :=
+  Setoid.ext fun c d => by
+    simp only [Setoid.comap_rel]
+    exact bfEquivSetoid_apply.trans (@bfTupleSetoid_apply L _ C (fun _ => V)
+      (fun c => c.val.toStructure) α 0 ⟨c, Fin.elim0⟩ ⟨d, Fin.elim0⟩).symm
 
 /-- The back-and-forth levels decrease: equivalence at a level implies equivalence at every lower
 level. -/

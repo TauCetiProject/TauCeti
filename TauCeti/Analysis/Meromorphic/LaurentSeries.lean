@@ -56,10 +56,10 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {a : 𝕜}
 
 /-- Every meromorphic germ at `a` is the germ of `(z - a)⁻ᴺ h z` for some `N` and some `h`
 analytic at `a`. -/
-private theorem exists_eq_inv_pow_mul (φ : meromorphicGerms 𝕜 a) :
+theorem exists_eq_inv_pow_mul (φ : meromorphicGerms 𝕜 a) :
     ∃ N : ℕ, ∃ h : 𝕜 → 𝕜, AnalyticAt 𝕜 h a ∧
       (φ : Germ (𝓝[≠] a) 𝕜) = (fun z ↦ ((z - a) ^ N)⁻¹ * h z : 𝕜 → 𝕜) := by
-  obtain ⟨f, ⟨N, hN⟩, hφ⟩ := mem_meromorphicGerms_iff.1 φ.2
+  obtain ⟨f, ⟨N, hN⟩, hφ⟩ := mem_meromorphicGerms_iff.1 φ.property
   refine ⟨N, _, hN, hφ.symm.trans (Germ.coe_eq.2 ?_)⟩
   filter_upwards [self_mem_nhdsWithin] with z (hz : z ≠ a)
   rw [smul_eq_mul, inv_mul_cancel_left₀ (pow_ne_zero N (sub_ne_zero.2 hz))]

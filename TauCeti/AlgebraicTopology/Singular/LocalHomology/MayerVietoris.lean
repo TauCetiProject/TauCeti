@@ -175,7 +175,7 @@ private lemma exists_homologyMap_preimage_eq_of_subset {U W : Set M} (hUW : U �
   obtain ⟨γU, hγU⟩ := hU
   let U' : Set (TopCat.of W) := Subtype.val ⁻¹' U
   let jU : TopCat.of ↥U ⟶ TopCat.of ↥U' :=
-    TopCat.ofHom ⟨fun x ↦ ⟨⟨x.1, hUW x.2⟩, x.2⟩, by fun_prop⟩
+    TopCat.ofHom ⟨fun x ↦ ⟨⟨x.val, hUW x.property⟩, x.property⟩, by fun_prop⟩
   have hfac : jU ≫ TopCat.ofHom (ContinuousMap.subtypeVal U') ≫
       TopCat.ofHom (ContinuousMap.subtypeVal W) = TopCat.ofHom (ContinuousMap.subtypeVal U) := by
     ext; rfl
@@ -199,7 +199,7 @@ private lemma eq_zero_of_disjoint_isOpen_cover {W : TopCat.{w}} {U' V' : Set W}
   have : IsEmpty (TopCat.of ↥(U' ∩ V')) := ⟨fun ⟨_, hxU, hxV⟩ ↦ hUV'd.le_bot ⟨hxU, hxV⟩⟩
   have hZeroUV : IsZero ((TopCat.toSSet.obj (TopCat.of ↥(U' ∩ V'))).homology N k) := by
     rw [← singularHomologyFunctor_obj_obj_eq_toSSet_homology]
-    exact isZero_singularHomologyFunctor_of_isEmpty N (TopCat.of ↥(U' ∩ V')) k
+    exact isZero_singularHomology_of_isEmpty N (TopCat.of ↥(U' ∩ V')) k
   have hMV := (TopCat.mayerVietoris_exact₂ N hU'o hV'o hUV' k).mono_g (hZeroUV.eq_of_src _ _)
   let HU := (TopCat.toSSet.obj (TopCat.of ↥U')).homology N k
   let HV := (TopCat.toSSet.obj (TopCat.of ↥V')).homology N k
@@ -242,8 +242,8 @@ theorem eq_zero_of_disjoint_isOpen_of_isZero_localHomology {D U V : Set M}
   have hEqW := (ModuleCat.mono_iff_injective _).1 hMonoW (hU'α.trans hV'α.symm)
   -- Mayer–Vietoris on the disjoint open cover of `W` then kills the class on `W`, hence `α`.
   have hZero := eq_zero_of_disjoint_isOpen_cover N (W := TopCat.of ↥(Dᶜ : Set M))
-    (hUo.preimage continuous_subtype_val) (hVo.preimage continuous_subtype_val)
-    (hUV.preimage _) (eq_univ_of_forall fun x ↦ hUVD.symm.subset x.2) hEqW
+    (hUo.preimage continuous_subtypeVal) (hVo.preimage continuous_subtypeVal)
+    (hUV.preimage _) (eq_univ_of_forall fun x ↦ hUVD.symm.subset x.property) hEqW
   rw [← hU'α, hZero, map_zero]
 
 end DisjointOpen

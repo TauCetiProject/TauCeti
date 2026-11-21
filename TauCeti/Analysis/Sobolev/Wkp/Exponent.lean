@@ -74,16 +74,16 @@ private def ofExponentLEAux (hpq : p ≤ q) : (k : ℕ) → (u : Wkp mu Omega q 
         (W1p.coeFn_gradient_ofExponentLE hpq u).eventuallyEq⟩
   | k + 1, u =>
       let v := ofExponentLEAux hpq k (lowerOrder (k + 1) u)
-      ⟨mk k v.1 (Lp.ofExponentLEL ℝ _ hpq (iteratedGradient (k + 1) u))
-          (((hasWeakFDerivOn_iteratedGradient k u).congr_ae v.2.2.symm).congr_ae_deriv
+      ⟨mk k v.val (Lp.ofExponentLEL ℝ _ hpq (iteratedGradient (k + 1) u))
+          (((hasWeakFDerivOn_iteratedGradient k u).congr_ae v.property.2.symm).congr_ae_deriv
             (by rw [Lp.coeFn_ofExponentLEL])),
-        by rw [value_mk, value_succ (k + 1) u]; exact v.2.1,
+        by rw [value_mk, value_succ (k + 1) u]; exact v.property.1,
         by rw [iteratedGradient_mk, Lp.coeFn_ofExponentLEL]⟩
 
 /-- The underlying function of `TauCeti.Wkp.ofExponentLEL`. -/
 private def ofExponentLEFun (hpq : p ≤ q) : (k : ℕ) → Wkp mu Omega q k → Wkp mu Omega p k
   | 0, u => Lp.ofExponentLEL ℝ ℝ hpq u
-  | k + 1, u => (ofExponentLEAux hpq k u).1
+  | k + 1, u => (ofExponentLEAux hpq k u).val
 
 private theorem value_ofExponentLEFun_ae (hpq : p ≤ q) (k : ℕ) (u : Wkp mu Omega q k) :
     ⇑(value k (ofExponentLEFun hpq k u)) =ᵐ[mu.restrict Omega] value k u := by
@@ -91,7 +91,7 @@ private theorem value_ofExponentLEFun_ae (hpq : p ≤ q) (k : ℕ) (u : Wkp mu O
   | zero =>
       simp only [value_zero]
       exact Filter.EventuallyEq.of_eq (Lp.coeFn_ofExponentLEL hpq u)
-  | succ k => exact (ofExponentLEAux hpq k u).2.1
+  | succ k => exact (ofExponentLEAux hpq k u).property.1
 
 private theorem value_ofExponentLEFun (hpq : p ≤ q) (k : ℕ) (u : Wkp mu Omega q k) :
     value k (ofExponentLEFun hpq k u) = Lp.ofExponentLEL ℝ ℝ hpq (value k u) :=
@@ -107,7 +107,7 @@ private theorem iteratedGradient_ofExponentLEFun (hpq : p ≤ q) (k : ℕ)
     (u : Wkp mu Omega q (k + 1)) :
     iteratedGradient k (ofExponentLEFun hpq (k + 1) u) =
       Lp.ofExponentLEL ℝ _ hpq (iteratedGradient k u) :=
-  Lp.ext (by rw [Lp.coeFn_ofExponentLEL]; exact (ofExponentLEAux hpq k u).2.2)
+  Lp.ext (by rw [Lp.coeFn_ofExponentLEL]; exact (ofExponentLEAux hpq k u).property.2)
 
 private theorem continuous_ofExponentLEFun (hpq : p ≤ q) :
     ∀ k : ℕ, Continuous (ofExponentLEFun (mu := mu) (Omega := Omega) hpq k)
@@ -152,7 +152,7 @@ theorem iteratedGradient_ofExponentLEL (hpq : p ≤ q) (k : ℕ) (u : Wkp mu Ome
 theorem iteratedGradient_ofExponentLEL_ae (hpq : p ≤ q) (k : ℕ) (u : Wkp mu Omega q (k + 1)) :
     ⇑(iteratedGradient k (ofExponentLEL hpq (k + 1) u)) =ᵐ[mu.restrict Omega]
       iteratedGradient k u :=
-  (ofExponentLEAux hpq k u).2.2
+  (ofExponentLEAux hpq k u).property.2
 
 /-- Lowering the exponent commutes with forgetting the highest derivative.
 Use `rw` with this lemma: `simp` does not match its dependently indexed left-hand side. -/
