@@ -343,6 +343,11 @@ variable {X : Type*} [TopologicalSpace X] {x y : X}
 def _root_.Path.toMoorePath (p : Path x y) : MoorePath X :=
   MoorePath.ofUnitPath p.toContinuousMap
 
+/-- The Moore path of a path `p` is the Moore path of length one of its underlying map. -/
+theorem _root_.Path.toMoorePath_eq_ofUnitPath (p : Path x y) :
+    p.toMoorePath = MoorePath.ofUnitPath p.toContinuousMap :=
+  (rfl)
+
 /-- The Moore path of a path `p` is `p.extend`. -/
 @[simp]
 theorem _root_.Path.toMoorePath_apply (p : Path x y) (t : ℝ≥0) : p.toMoorePath t = p.extend t :=

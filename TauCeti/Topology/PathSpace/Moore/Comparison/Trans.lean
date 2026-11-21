@@ -20,6 +20,12 @@ preserves the end points: `p.toMoorePath.trans q.toMoorePath` is `(p.trans q).to
 homotopy (`Path.transMoorePathHomotopy`).  This is the compatibility of the comparison with the
 concatenation actions of the loop spaces on the path spaces.
 
+For two composable Moore paths `γ` and `δ` the comparison goes the other way: the concatenation on
+the unit interval of `γ.toPath` and `δ.toPath` is homotopic to the unit-interval path of
+`γ.trans δ`, continuously in the pair and through paths from `γ.source` to `δ.target`
+(`TauCeti.MoorePath.toUnitPathTransHomotopy`), by reading `γ.trans δ` along a family
+`TauCeti.MoorePath.concatTime` of reparametrizations of the unit interval fixing both ends.
+
 For loops, this says that `Path.toMooreLoop : Path x x → MooreLoopSpace X x` is a monoid
 homomorphism up to homotopy (`Path.transMooreLoopHomotopy`), and, through the homotopy
 equivalence, so is `MooreLoopSpace.toPath` in the other direction
@@ -33,6 +39,9 @@ equivalence, so is `MooreLoopSpace.toPath` in the other direction
 * `Path.transMoorePathHomotopy`: the homotopy from `(p.trans q).toMoorePath` to
   `p.toMoorePath.trans q.toMoorePath`, continuous in `(p, q)`, through paths from `x` to `z`
   (`transMoorePathHomotopy_source`, `transMoorePathHomotopy_target`).
+* `TauCeti.MoorePath.toUnitPathTransHomotopy`: the homotopy from the concatenation on the unit
+  interval of `γ.toPath` and `δ.toPath` to `(γ.trans δ).toUnitPath`, continuous in the composable
+  pair `(γ, δ)`.
 * `Path.transMooreLoopHomotopy`: `Path.toMooreLoop` is multiplicative up to homotopy.
 * `Path.homotopic_mooreLoopTrans_comp_prodMap`: the same for families of loops.
 * `TauCeti.MooreLoopSpace.mulToPathHomotopy`: `MooreLoopSpace.toPath` is multiplicative up to
@@ -208,6 +217,168 @@ theorem homotopic_mooreLoopTrans_comp_prodMap {A B : Type*} [TopologicalSpace A]
 end Path
 
 namespace TauCeti
+
+namespace MoorePath
+
+variable {X : Type*} [TopologicalSpace X]
+
+/-! ### Two composable Moore paths read on the unit interval -/
+
+/-- The time at which `MoorePath.toUnitPathTransHomotopy` at stage `τ` reads the concatenation
+`γ.trans δ` at `s ∈ [0, 1]`, for `γ` of length `L` and `δ` of length `M`. At `τ = 0` it runs
+through `γ` on `[0, 1/2]` and through `δ` on `[1/2, 1]`, as the concatenation of paths on the unit
+interval does; at `τ = 1` it runs through `γ.trans δ` at constant speed. -/
+def concatTime (τ s : I) (L M : ℝ≥0) : ℝ≥0 :=
+  toNNReal (σ τ) * (L * min (2 * toNNReal s) 1 + M * (2 * toNNReal s - 1)) +
+    toNNReal τ * ((L + M) * toNNReal s)
+
+theorem continuous_concatTime :
+    Continuous fun q : (I × I) × ℝ≥0 × ℝ≥0 ↦ concatTime q.1.1 q.1.2 q.2.1 q.2.2 := by
+  unfold concatTime
+  fun_prop
+
+theorem continuous_concatTime_right (τ : I) (L M : ℝ≥0) :
+    Continuous fun s ↦ concatTime τ s L M := by
+  unfold concatTime
+  fun_prop
+
+@[simp]
+theorem concatTime_zero_right (τ : I) (L M : ℝ≥0) : concatTime τ 0 L M = 0 := by
+  simp [concatTime]
+
+@[simp]
+theorem concatTime_one_right (τ : I) (L M : ℝ≥0) : concatTime τ 1 L M = L + M := by
+  have h : (2 : ℝ≥0) - 1 = 1 := by
+    rw [← one_add_one_eq_two, add_tsub_cancel_right]
+  rw [concatTime, toNNReal_one, mul_one, h, min_eq_right one_le_two]
+  simp only [mul_one]
+  rw [← add_mul, toNNReal_symm_add_toNNReal, one_mul]
+
+theorem concatTime_zero_left (s : I) (L M : ℝ≥0) :
+    concatTime 0 s L M = L * min (2 * toNNReal s) 1 + M * (2 * toNNReal s - 1) := by
+  simp [concatTime]
+
+theorem concatTime_one_left (s : I) (L M : ℝ≥0) :
+    concatTime 1 s L M = (L + M) * toNNReal s := by
+  simp [concatTime]
+
+/-- The concatenation on the unit interval of the unit-interval paths of two composable Moore
+paths, as a continuous map of the pair. -/
+def transToUnitPath :
+    C({q : MoorePath X × MoorePath X // q.1.target = q.2.source}, C(I, X)) where
+  toFun q := (q.val.1.toPath.trans (q.val.2.toPath.cast q.property rfl)).toContinuousMap
+  continuous_toFun := by
+    apply ContinuousMap.continuous_of_continuous_uncurry
+    have h₁ : Continuous fun q : {q : MoorePath X × MoorePath X // q.1.target = q.2.source} × I ↦
+        q.1.val.1.toPath q.2 := by
+      simp only [toPath_apply, ← toUnitPath_apply]
+      exact ((continuous_toUnitPath.comp continuous_subtypeVal.fst).comp continuous_fst).eval
+        continuous_snd
+    have h₂ : Continuous fun q : {q : MoorePath X × MoorePath X // q.1.target = q.2.source} × I ↦
+        (q.1.val.2.toPath.cast q.1.property rfl) q.2 := by
+      simp only [Path.cast_coe, toPath_apply, ← toUnitPath_apply]
+      exact ((continuous_toUnitPath.comp continuous_subtypeVal.snd).comp continuous_fst).eval
+        continuous_snd
+    exact Path.trans_continuous_family
+      (fun q : {q : MoorePath X × MoorePath X // q.1.target = q.2.source} ↦ q.val.1.toPath) h₁
+      (fun q ↦ q.val.2.toPath.cast q.property rfl) h₂
+
+@[simp]
+theorem transToUnitPath_apply (q : {q : MoorePath X × MoorePath X // q.1.target = q.2.source}) :
+    transToUnitPath q =
+      (q.val.1.toPath.trans (q.val.2.toPath.cast q.property rfl)).toContinuousMap :=
+  (rfl)
+
+/-- The unit-interval path of the concatenation of two composable Moore paths, as a continuous
+map of the pair. -/
+def toUnitPathTrans :
+    C({q : MoorePath X × MoorePath X // q.1.target = q.2.source}, C(I, X)) :=
+  ⟨fun q ↦ (q.val.1.trans q.val.2 q.property).toUnitPath, continuous_toUnitPath.comp
+    (continuous_subtypeVal.fst.moorePath_trans continuous_subtypeVal.snd fun q ↦ q.property)⟩
+
+@[simp]
+theorem toUnitPathTrans_apply (q : {q : MoorePath X × MoorePath X // q.1.target = q.2.source}) :
+    toUnitPathTrans q = (q.val.1.trans q.val.2 q.property).toUnitPath :=
+  (rfl)
+
+/-- At stage `0`, reading `γ.trans δ` at `concatTime 0 s` is the concatenation on the unit
+interval of the unit-interval paths of `γ` and `δ`. -/
+theorem trans_apply_concatTime_zero (γ δ : MoorePath X) (h : γ.target = δ.source) (s : I) :
+    γ.trans δ h (concatTime 0 s γ.length δ.length) =
+      (γ.toPath.trans (δ.toPath.cast h rfl)) s := by
+  rw [concatTime_zero_left, Path.trans_apply]
+  split_ifs with hs
+  · -- On `[0, 1/2]` the reparametrization stays in `γ`, at double speed.
+    have h₂ : 2 * toNNReal s ≤ 1 := by
+      rw [← NNReal.coe_le_coe, NNReal.coe_mul, coe_toNNReal, NNReal.coe_ofNat, NNReal.coe_one]
+      linarith
+    have hL : γ.length * (2 * toNNReal s) ≤ γ.length :=
+      mul_le_of_le_one_right zero_le h₂
+    rw [min_eq_left h₂, tsub_eq_zero_of_le h₂, mul_zero, add_zero, trans_apply_of_le _ _ _ hL,
+      toPath_apply]
+    refine congrArg (fun t ↦ γ (γ.length * t)) (NNReal.eq ?_)
+    simp
+  · -- On `[1/2, 1]` it runs through `δ`, after the whole of `γ`.
+    have h₂ : 1 ≤ 2 * toNNReal s := by
+      rw [← NNReal.coe_le_coe, NNReal.coe_mul, coe_toNNReal, NNReal.coe_ofNat, NNReal.coe_one]
+      linarith
+    rw [min_eq_right h₂, mul_one, trans_apply_length_add, Path.cast_coe, toPath_apply]
+    refine congrArg (fun t ↦ δ (δ.length * t)) (NNReal.eq ?_)
+    simp [NNReal.coe_sub h₂]
+
+/-- **Concatenation on the unit interval and concatenation of Moore paths agree up to
+homotopy**: for composable Moore paths `γ` and `δ`, the homotopy from the concatenation on the
+unit interval of `γ.toPath` and `δ.toPath` to the unit-interval path of `γ.trans δ`, continuous in
+the pair. At each stage it reads `γ.trans δ` along a reparametrization `concatTime` of the unit
+interval fixing both ends, so it runs through paths from `γ.source` to `δ.target`
+(`toUnitPathTransHomotopy_apply_zero_right`, `toUnitPathTransHomotopy_apply_one_right`). -/
+def toUnitPathTransHomotopy :
+    ContinuousMap.Homotopy (transToUnitPath (X := X)) toUnitPathTrans where
+  toFun q := ⟨fun s ↦
+      q.2.val.1.trans q.2.val.2 q.2.property (concatTime q.1 s q.2.val.1.length q.2.val.2.length),
+    (q.2.val.1.trans q.2.val.2 q.2.property).continuous.comp (continuous_concatTime_right _ _ _)⟩
+  continuous_toFun := by
+    apply ContinuousMap.continuous_of_continuous_uncurry
+    -- Uncurried, the map is `((τ, (γ, δ)), s) ↦ (γ.trans δ) (concatTime τ s L M)`.
+    exact continuous_eval.comp
+      (((continuous_subtypeVal.fst.moorePath_trans continuous_subtypeVal.snd
+        fun q ↦ q.property).comp (continuous_snd.comp continuous_fst)).prodMk
+        (continuous_concatTime.comp
+          (((continuous_fst.comp continuous_fst).prodMk continuous_snd).prodMk
+          ((continuous_length.comp (continuous_subtypeVal.fst.comp
+            (continuous_snd.comp continuous_fst))).prodMk
+            (continuous_length.comp (continuous_subtypeVal.snd.comp
+              (continuous_snd.comp continuous_fst)))))))
+  map_zero_left q := ContinuousMap.ext fun s ↦ by
+    rw [transToUnitPath_apply, Path.coe_toContinuousMap]
+    exact trans_apply_concatTime_zero _ _ _ s
+  map_one_left q := ContinuousMap.ext fun s ↦ by
+    -- Unbundle the path of the homotopy at stage `1`, read at `s`.
+    change q.val.1.trans q.val.2 q.property (concatTime 1 s _ _) = _
+    rw [concatTime_one_left, toUnitPathTrans_apply, toUnitPath_apply, length_trans]
+
+/-- The path of `toUnitPathTransHomotopy` at stage `τ` reads `γ.trans δ` at `concatTime τ s`. -/
+@[simp]
+theorem toUnitPathTransHomotopy_apply (τ : I)
+    (q : {q : MoorePath X × MoorePath X // q.1.target = q.2.source}) (s : I) :
+    toUnitPathTransHomotopy (τ, q) s =
+      q.val.1.trans q.val.2 q.property (concatTime τ s q.val.1.length q.val.2.length) :=
+  (rfl)
+
+/-- Every stage of `toUnitPathTransHomotopy` starts at the source of the first path. -/
+theorem toUnitPathTransHomotopy_apply_zero_right (τ : I)
+    (q : {q : MoorePath X × MoorePath X // q.1.target = q.2.source}) :
+    toUnitPathTransHomotopy (τ, q) 0 = q.val.1.source := by
+  rw [toUnitPathTransHomotopy_apply, concatTime_zero_right, ← source_def, source_trans]
+
+/-- Every stage of `toUnitPathTransHomotopy` ends at the target of the second path. -/
+theorem toUnitPathTransHomotopy_apply_one_right (τ : I)
+    (q : {q : MoorePath X × MoorePath X // q.1.target = q.2.source}) :
+    toUnitPathTransHomotopy (τ, q) 1 = q.val.2.target := by
+  rw [toUnitPathTransHomotopy_apply, concatTime_one_right, ← length_trans _ _ q.property,
+    ← target_def, target_trans]
+
+end MoorePath
 
 variable {X : Type*} [TopologicalSpace X] {x : X}
 

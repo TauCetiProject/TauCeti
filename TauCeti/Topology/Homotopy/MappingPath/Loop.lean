@@ -21,7 +21,6 @@ unital only up to reparametrization. The Moore-path model of the same fibre,
 
 ## Main definitions
 
-* `TauCeti.MappingPathFiber.toPath`: the path of a point of the fibre, as a `Path (f x) k`.
 * `TauCeti.MappingPathFiber.transLoop`: `((x, γ), ℓ) ↦ (x, γ.trans ℓ)`.
 
 ## References
@@ -39,14 +38,6 @@ namespace TauCeti.MappingPathFiber
 
 variable {B : Type u} {K : Type v} [TopologicalSpace B] [TopologicalSpace K] (f : C(B, K)) (k : K)
 
-/-- The path of a point of the mapping-path fibre, as a path from `f x` to `k`. -/
-def toPath (q : MappingPathFiber f k) : Path (f q.val.1) k :=
-  ⟨q.val.2, q.property.1, q.property.2⟩
-
-@[simp]
-theorem coe_toPath (q : MappingPathFiber f k) : ⇑(toPath f k q) = q.val.2 :=
-  (rfl)
-
 /-- **Concatenation of loops onto the mapping-path fibre**: the path of `(x, γ)` followed by a loop
 `ℓ` at `k`, `((x, γ), ℓ) ↦ (x, γ.trans ℓ)`, continuous in the pair and the loop. -/
 def transLoop : C(MappingPathFiber f k × Path k k, MappingPathFiber f k) where
@@ -55,8 +46,11 @@ def transLoop : C(MappingPathFiber f k × Path k k, MappingPathFiber f k) where
   continuous_toFun := by
     refine ((continuous_subtypeVal.fst.comp continuous_fst).prodMk ?_).subtype_mk _
     apply ContinuousMap.continuous_of_continuous_uncurry
-    exact Path.trans_continuous_family (fun q : MappingPathFiber f k × Path k k ↦ toPath f k q.1)
-      (((continuous_subtypeVal.snd.comp continuous_fst).comp continuous_fst).eval continuous_snd)
+    have h : Continuous fun q : (MappingPathFiber f k × Path k k) × I ↦ toPath f k q.1.1 q.2 := by
+      simp only [coe_toPath]
+      exact ((continuous_subtypeVal.snd.comp continuous_fst).comp continuous_fst).eval
+        continuous_snd
+    exact Path.trans_continuous_family (fun q : MappingPathFiber f k × Path k k ↦ toPath f k q.1) h
       (fun q ↦ q.2) ((continuous_snd.comp continuous_fst).eval continuous_snd)
 
 /-- Concatenating a loop keeps the source point. -/
