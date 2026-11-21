@@ -10,6 +10,8 @@ public import Mathlib.Data.Finset.Lattice.Fold
 public import Mathlib.Data.Fintype.BigOperators
 public import Mathlib.Order.ConditionallyCompleteLattice.Indexed
 
+import Mathlib.Algebra.Order.Group.CompleteLattice
+
 /-!
 # Sums of componentwise maxima and mixed-choice sums
 
@@ -71,9 +73,9 @@ theorem sum_ciSup_le_iff_forall_choice {ι κ β : Type*} [Fintype ι] [Nonempty
       simpa using hb fun _ => Classical.arbitrary κ
     | @insert j s hj ih =>
       intro b hb
-      rw [sum_insert hj, ← le_sub_iff_add_le]
+      rw [sum_insert hj, ciSup_add (hbdd j)]
       refine ciSup_le fun i => ?_
-      rw [le_sub_iff_add_le, add_comm, ← le_sub_iff_add_le]
+      rw [← le_sub_iff_add_le']
       refine ih (b - f j i) fun choice => ?_
       rw [le_sub_iff_add_le']
       have hch := hb (Function.update choice j i)

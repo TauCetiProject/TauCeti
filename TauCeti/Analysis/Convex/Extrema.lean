@@ -20,11 +20,12 @@ neighbourhood of `x` in the domain is a subgradient relative to the whole domain
 The same holds when the function touching `u` from below at `x` is only differentiable there
 rather than affine: if `u - g` has a local minimum at `x` relative to `s` and `g` has derivative
 `ℓ` at `x` within `s`, then `x' ↦ u x + ℓ (x' - x)` lies below `u` on all of `s`
-(`ConvexOn.add_le_of_isLocalMinOn_sub`). No differentiability of `u` is needed. Taking `g = u`
+(`ConvexOn.add_le_of_isLocalMinOn_sub`). No differentiability of `u` is needed; in particular,
+`ConvexOn.add_le_of_isLocalMinOn_sub` gives the first-order condition used for transport costs
+`h (x - y)` with `h` convex but not differentiable, as in Gangbo and McCann. Taking `g = u`
 yields the first-order tangent-support inequality for a differentiable convex function
 (`ConvexOn.add_le_of_hasFDerivWithinAt` and `ConvexOn.add_le_of_hasFDerivAt`), without any
-interior-point or open-domain assumption. This is also the first-order condition used for
-transport costs `h (x - y)` with `h` convex but not differentiable, as in Gangbo and McCann.
+interior-point or open-domain assumption.
 
 All results hold for functions on a real topological vector space with values in an ordered real
 vector space. `ConvexOn.add_le_of_isLocalMinOn_sub` and the two first-order tangent-support

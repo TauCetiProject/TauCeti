@@ -39,12 +39,14 @@ approximation `TauCeti.sharedOA`, and its refinement `TauCeti.sharedOAOn` imposi
 equality `y j = Gᵢ(x) j` on a selected set `J` of coordinates.
 
 When `g` maps `D` into `E`, `h` is convex on `E`, each coordinate `g · j` off `J` is convex on `D`,
-the component rows are exact on `J`, and each `Dh i` is nonnegative on nonnegative directions
-vanishing on `J`, the feasible set, the projection of `sharedOAOn J`, and `directOA` are nested
-(`TauCeti.affine_coordinate_comparison`). Taking `J = ∅` gives the monotone-derivative comparison
-(`TauCeti.analytic_comparison`), and global monotonicity of `h` on `Set.univ` supplies derivative
-monotonicity automatically (`TauCeti.fullspace_analytic_comparison`). All analytic results hold on
-arbitrary real topological vector spaces and arbitrary index types.
+the component rows are exact on `J`, every anchor `a i` lies in `D` with actual Fréchet derivatives
+`Dg i` of `g` at `a i` and `Dh i` of `h` at `g (a i)`, and each `Dh i` is nonnegative on
+nonnegative directions vanishing on `J`, the feasible set, the projection of `sharedOAOn J`, and
+`directOA` are nested (`TauCeti.affine_coordinate_comparison`). Taking `J = ∅` gives the
+monotone-derivative comparison (`TauCeti.analytic_comparison`), and global monotonicity of `h` on
+`Set.univ` supplies derivative monotonicity automatically
+(`TauCeti.fullspace_analytic_comparison`). All analytic results hold on arbitrary real topological
+vector spaces and arbitrary index types.
 
 ## References
 
@@ -187,8 +189,12 @@ theorem mem_sharedOAOn {J : Set ι} {D : Set X} {E : Set (ι → ℝ)} {g : X �
 theorem sharedOAOn_subset_sharedOA (J : Set ι) (D : Set X) (E : Set (ι → ℝ))
     (g : X → ι → ℝ) (h : (ι → ℝ) → ℝ) (a : κ → X) (Dg : κ → X →L[ℝ] (ι → ℝ))
     (Dh : κ → (ι → ℝ) →L[ℝ] ℝ) (b : ℝ) :
-    sharedOAOn J D E g h a Dg Dh b ⊆ sharedOA D E g h a Dg Dh b :=
-  fun _ hz => ⟨hz.1, hz.2.1, fun i => ⟨(hz.2.2 i).1, (hz.2.2 i).2.2⟩⟩
+    sharedOAOn J D E g h a Dg Dh b ⊆ sharedOA D E g h a Dg Dh b := by
+  intro z hz
+  obtain ⟨hzD, hzE, hrow⟩ := mem_sharedOAOn.1 hz
+  exact mem_sharedOA.2 ⟨hzD, hzE, fun i =>
+    let ⟨hcomp, _, houter⟩ := hrow i
+    ⟨hcomp, houter⟩⟩
 
 /-- With no selected equality coordinates, `sharedOAOn ∅` coincides with `sharedOA`. -/
 @[simp]
@@ -202,9 +208,12 @@ theorem sharedOAOn_empty (D : Set X) (E : Set (ι → ℝ)) (g : X → ι → �
 theorem sharedOAOn_anti {J' J : Set ι} (hJ : J' ⊆ J) (D : Set X) (E : Set (ι → ℝ))
     (g : X → ι → ℝ) (h : (ι → ℝ) → ℝ) (a : κ → X) (Dg : κ → X →L[ℝ] (ι → ℝ))
     (Dh : κ → (ι → ℝ) →L[ℝ] ℝ) (b : ℝ) :
-    sharedOAOn J D E g h a Dg Dh b ⊆ sharedOAOn J' D E g h a Dg Dh b :=
-  fun _ hz => ⟨hz.1, hz.2.1, fun i =>
-    ⟨(hz.2.2 i).1, fun j hj => (hz.2.2 i).2.1 j (hJ hj), (hz.2.2 i).2.2⟩⟩
+    sharedOAOn J D E g h a Dg Dh b ⊆ sharedOAOn J' D E g h a Dg Dh b := by
+  intro z hz
+  obtain ⟨hzD, hzE, hrow⟩ := mem_sharedOAOn.1 hz
+  exact mem_sharedOAOn.2 ⟨hzD, hzE, fun i =>
+    let ⟨hcomp, heq, houter⟩ := hrow i
+    ⟨hcomp, fun j hj => heq j (hJ hj), houter⟩⟩
 
 /-- When all coordinates are selected (`J = Set.univ`), every component row holds with equality. -/
 theorem mem_sharedOAOn_univ {D : Set X} {E : Set (ι → ℝ)} {g : X → ι → ℝ} {h : (ι → ℝ) → ℝ}
@@ -213,11 +222,13 @@ theorem mem_sharedOAOn_univ {D : Set X} {E : Set (ι → ℝ)} {g : X → ι →
     z ∈ sharedOAOn Set.univ D E g h a Dg Dh b ↔
       z.1 ∈ D ∧ z.2 ∈ E ∧ ∀ i,
         z.2 = componentRow g (a i) (Dg i) z.1 ∧ outerRow g h (a i) (Dh i) z.2 ≤ b := by
-  refine ⟨fun hz => ⟨hz.1, hz.2.1, fun i =>
-    ⟨funext fun j => (hz.2.2 i).2.1 j (mem_univ j), (hz.2.2 i).2.2⟩⟩,
-    fun hz => ⟨hz.1, hz.2.1, fun i => ?_⟩⟩
-  obtain ⟨heq, hle⟩ := hz.2.2 i
-  exact ⟨heq.ge, fun j _ => congrFun heq j, hle⟩
+  rw [mem_sharedOAOn]
+  refine ⟨fun ⟨hzD, hzE, hrow⟩ => ⟨hzD, hzE, fun i =>
+    let ⟨_, heq, houter⟩ := hrow i
+    ⟨funext fun j => heq j (mem_univ j), houter⟩⟩,
+    fun ⟨hzD, hzE, hrow⟩ => ⟨hzD, hzE, fun i =>
+      let ⟨heq, houter⟩ := hrow i
+      ⟨heq.ge, fun j _ => congrFun heq j, houter⟩⟩⟩
 
 /-- With no anchors, `directOA` retains the domain `D`. -/
 @[simp]
@@ -276,7 +287,8 @@ theorem graph_mem_sharedOAOn {J : Set ι} {D : Set X} {E : Set (ι → ℝ)} {g 
     (hcomp : ∀ i, ∀ j ∉ J, componentRow g (a i) (Dg i) x j ≤ g x j)
     (houter : ∀ i, outerRow g h (a i) (Dh i) (g x) ≤ b) :
     (x, g x) ∈ sharedOAOn J D E g h a Dg Dh b := by
-  refine ⟨hxD, hxE, fun i => ⟨fun j => ?_, fun j hj => (haff i j hj).symm, houter i⟩⟩
+  refine mem_sharedOAOn.2 ⟨hxD, hxE, fun i => ⟨fun j => ?_, fun j hj => (haff i j hj).symm,
+    houter i⟩⟩
   by_cases hj : j ∈ J
   · exact (haff i j hj).le
   · exact hcomp i j hj
@@ -289,7 +301,7 @@ theorem graph_mem_sharedOA {D : Set X} {E : Set (ι → ℝ)} {g : X → ι → 
     (hcomp : ∀ i, componentRow g (a i) (Dg i) x ≤ g x)
     (houter : ∀ i, outerRow g h (a i) (Dh i) (g x) ≤ b) :
     (x, g x) ∈ sharedOA D E g h a Dg Dh b :=
-  ⟨hxD, hxE, fun i => ⟨hcomp i, houter i⟩⟩
+  mem_sharedOA.2 ⟨hxD, hxE, fun i => ⟨hcomp i, houter i⟩⟩
 
 /-- Purely algebraic projection containment: if every `Dh i` is nonnegative on nonnegative
 directions vanishing on `J`, then the first coordinate of any point in `sharedOAOn J` lies in
@@ -300,8 +312,9 @@ theorem fst_mem_directOA_of_mem_sharedOAOn {J : Set ι} {D : Set X} {E : Set (ι
     (hD : ∀ i v, 0 ≤ v → (∀ j ∈ J, v j = 0) → 0 ≤ Dh i v)
     {z : X × (ι → ℝ)} (hz : z ∈ sharedOAOn J D E g h a Dg Dh b) :
     z.1 ∈ directOA D g h a Dg Dh b := by
-  refine ⟨hz.1, fun i => ?_⟩
-  obtain ⟨hcomp, heq, houter⟩ := hz.2.2 i
+  obtain ⟨hzD, _, hrow⟩ := mem_sharedOAOn.1 hz
+  refine mem_directOA.2 ⟨hzD, fun i => ?_⟩
+  obtain ⟨hcomp, heq, houter⟩ := hrow i
   set v : ι → ℝ := z.2 - componentRow g (a i) (Dg i) z.1
   have hv0 : 0 ≤ v := sub_nonneg.2 hcomp
   have hvJ : ∀ j ∈ J, v j = 0 := fun j hj => sub_eq_zero.2 (heq j hj)
@@ -399,10 +412,11 @@ theorem affine_coordinate_comparison {J : Set ι} {D : Set X} {E : Set (ι → �
     (fun i => (outerRow_le_of_convexOn hhc (hgE (ha i)) (hgE hxD) (hh i)).trans hxb)
 
 /-- **Matched outer approximation comparison with monotone outer derivatives.**
-Specialization of `affine_coordinate_comparison` to `J = ∅`: with every component convex on `D`,
-`h` convex on `E`, actual Fréchet derivatives at anchors in `D`, and monotone outer linear
-derivatives `Dh i`, the original feasible set, the projection of `sharedOA`, and `directOA` are
-nested. Monotonicity of `h` itself is not assumed. -/
+Specialization of `affine_coordinate_comparison` to `J = ∅`: when `g` maps `D` into `E`, every
+component is convex on `D`, `h` is convex on `E`, `g` and `h` have actual Fréchet derivatives
+`Dg i` and `Dh i` at anchors `a i ∈ D`, and each outer linear derivative `Dh i` is monotone, the
+original feasible set, the projection of `sharedOA`, and `directOA` are nested. Monotonicity of `h`
+itself is not assumed. -/
 theorem analytic_comparison {D : Set X} {E : Set (ι → ℝ)}
     {g : X → ι → ℝ} {h : (ι → ℝ) → ℝ} {a : κ → X}
     {Dg : κ → X →L[ℝ] (ι → ℝ)} {Dh : κ → (ι → ℝ) →L[ℝ] ℝ} (b : ℝ)
@@ -418,8 +432,10 @@ theorem analytic_comparison {D : Set X} {E : Set (ι → ℝ)}
       (fun i v hv _ => (monotone_iff_map_nonneg _).1 (hD i) v hv)
 
 /-- **Full-space matched outer approximation comparison.**
-When `h` is globally monotone and convex on `Set.univ`, every actual Fréchet derivative `Dh i` is
-monotone, yielding both outer-approximation containments on `E = Set.univ`. -/
+Inherits the inner-map convexity, anchor membership in `D`, and Fréchet-derivative hypotheses of
+`analytic_comparison` on `E = Set.univ`, while replacing monotonicity of each `Dh i` with global
+monotonicity of `h` (together with convexity of `h` on `Set.univ`), which supplies derivative
+monotonicity automatically and yields both outer-approximation containments. -/
 theorem fullspace_analytic_comparison {D : Set X} {g : X → ι → ℝ}
     {h : (ι → ℝ) → ℝ} {a : κ → X} {Dg : κ → X →L[ℝ] (ι → ℝ)}
     {Dh : κ → (ι → ℝ) →L[ℝ] ℝ} (b : ℝ)
@@ -432,9 +448,10 @@ theorem fullspace_analytic_comparison {D : Set X} {g : X → ι → ℝ}
     fun i => (hh i).monotone_of_monotone hm
 
 /-- Weak objective-value ordering across the nested outer approximations of
-`affine_coordinate_comparison`: if `xU` minimizes `f` on `directOA`, `zT` is feasible in and
-minimizes `f ∘ Prod.fst` on `sharedOAOn J`, and `xS` is feasible in `{x ∈ D | h (g x) ≤ b}` (in
-particular, any feasible minimizer), then `f xU ≤ f zT.1 ≤ f xS`. Attainment is not inferred. -/
+`affine_coordinate_comparison`: if `f xU` bounds `f` from below on `directOA` (with no
+feasibility requirement on `xU`), `zT` is feasible in and minimizes `f ∘ Prod.fst` on
+`sharedOAOn J`, and `xS` is feasible in `{x ∈ D | h (g x) ≤ b}` (in particular, any feasible
+minimizer), then `f xU ≤ f zT.1 ≤ f xS`. Attainment is not inferred. -/
 theorem objective_le_of_affine_coordinate_comparison {β : Type*} [Preorder β] {f : X → β}
     {J : Set ι} {D : Set X} {E : Set (ι → ℝ)} {g : X → ι → ℝ} {h : (ι → ℝ) → ℝ} {a : κ → X}
     {Dg : κ → X →L[ℝ] (ι → ℝ)} {Dh : κ → (ι → ℝ) →L[ℝ] ℝ} {b : ℝ}

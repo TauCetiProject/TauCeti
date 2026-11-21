@@ -23,31 +23,37 @@ import TauCeti.Algebra.Order.BigOperators.Sum.Sup
 # Finite support elimination for shared and independent height systems
 
 Given a finite index set `ι` of separable components and families of componentwise lower bounds,
-there are two canonical lifted polyhedral systems with free height variables:
+there are two canonical lifted inequality systems with free height variables (specializing to
+polyhedral systems when the rows are affine, `D` is polyhedral, and the anchor and support index
+sets are finite):
 
 * `TauCeti.sharedRows`: a single height vector `y : ι → β` simultaneously dominates every active
   support row `row j i x ≤ y j` (`i ∈ H j`) subject to the sum budget `∑ j, y j ≤ b`.
 * `TauCeti.independentRows`: each anchor `a : κ` carries its own independent height vector
   `y a : ι → β` dominating `row a j x ≤ y a j` subject to its own budget `∑ j, y a j ≤ b a`.
 
-When every support set `H j` is nonempty, projecting `sharedRows` eliminates the free heights
-exactly, yielding both the sum of componentwise maxima
-(`TauCeti.exists_mem_sharedRows_iff_sum_sup'_le`) and the system of all mixed-choice row sums
+When every support set `H j` is nonempty and addition preserves order (`IsOrderedAddMonoid`),
+projecting `sharedRows` eliminates the free heights exactly: over a semilattice sup this yields the
+sum of componentwise maxima (`TauCeti.exists_mem_sharedRows_iff_sum_sup'_le`), while over a linear
+order it yields the system of all mixed-choice row sums
 (`TauCeti.exists_mem_sharedRows_iff_forall_choice`).
-If some component has empty support `H j₀ = ∅` and heights range over an ordered directed group,
-the projection collapses to `D` (`TauCeti.exists_mem_sharedRows_iff_of_exists_empty`). By contrast,
-projecting `independentRows` recovers only the same-anchor diagonal sums
-(`TauCeti.exists_mem_independentRows_iff`).
+If some component has empty support `H j₀ = ∅` and heights range over a directed preordered
+additive commutative group, the projection collapses to `D`
+(`TauCeti.exists_mem_sharedRows_iff_of_exists_empty`). By contrast, over a preordered additive
+commutative monoid with order-preserving addition, projecting `independentRows` recovers only the
+same-anchor diagonal sums (`TauCeti.exists_mem_independentRows_iff`).
 
-For the sum outer function `y ↦ ∑ j, y j` with free height domain `E = Set.univ`, without
-assuming convexity or differentiability, `TauCeti.directOA` coincides algebraically with the
-projection `Prod.fst '' independentRows` (`TauCeti.directOA_sum_eq_fst_image_independentRows`),
-and for a nonempty finite anchor set `TauCeti.sharedOA` coincides with `TauCeti.sharedRows`
-(`TauCeti.sharedOA_sum_eq_sharedRows`). For any nonempty anchor family (finite or infinite), the
-projection of `TauCeti.sharedOA` is characterized by all mixed-choice sums
-(`TauCeti.mem_fst_image_sharedOA_sum_iff_forall_choice`). A concrete two-anchor squared-component
-witness (`TauCeti.exists_strict_sharedOA_ssubset_directOA`) shows that both inclusions
-`{x ∈ D | h (g x) ≤ b} ⊂ Prod.fst '' sharedOA ⊂ directOA` can be strict.
+For the sum outer function `y ↦ ∑ j, y j` with its outer linear map fixed at every anchor to the
+sum of coordinate projections `∑ j, ContinuousLinearMap.proj j` and free height domain
+`E = Set.univ`, without assuming convexity or differentiability, `TauCeti.directOA` coincides
+algebraically with the projection `Prod.fst '' independentRows`
+(`TauCeti.directOA_sum_eq_fst_image_independentRows`), and for a nonempty finite anchor set
+`TauCeti.sharedOA` coincides with `TauCeti.sharedRows` (`TauCeti.sharedOA_sum_eq_sharedRows`). For
+any nonempty anchor family (finite or infinite), the projection of `TauCeti.sharedOA` is
+characterized by all mixed-choice sums (`TauCeti.mem_fst_image_sharedOA_sum_iff_forall_choice`). A
+concrete two-anchor squared-component witness (`TauCeti.exists_strict_sharedOA_ssubset_directOA`)
+shows that both inclusions `{x ∈ D | h (g x) ≤ b} ⊂ Prod.fst '' sharedOA ⊂ directOA` can be
+strict.
 
 ## References
 
@@ -126,11 +132,11 @@ theorem exists_mem_sharedRows_iff_sum_sup'_le [AddCommMonoid β] [SemilatticeSup
     (hne : ∀ j, (H j).Nonempty) {b : β} {x : X} :
     (∃ y, (x, y) ∈ sharedRows D row H b) ↔
       x ∈ D ∧ ∑ j, (H j).sup' (hne j) (fun i => row j i x) ≤ b := by
-  refine ⟨fun ⟨y, hxD, hy, hsum⟩ =>
-      ⟨hxD, (sum_le_sum fun j _ => sup'_le _ _ fun i hi => hy j i hi).trans hsum⟩,
-    fun ⟨hxD, hsum⟩ =>
-      ⟨fun j => (H j).sup' (hne j) (fun i => row j i x), hxD,
-        fun j i hi => le_sup' (fun i => row j i x) hi, hsum⟩⟩
+  refine ⟨fun ⟨_, hy⟩ => ?_, fun ⟨hxD, hsum⟩ => ?_⟩
+  · obtain ⟨hxD, hy, hsum⟩ := mem_sharedRows.1 hy
+    exact ⟨hxD, (sum_le_sum fun j _ => sup'_le _ _ fun i hi => hy j i hi).trans hsum⟩
+  · exact ⟨fun j => (H j).sup' (hne j) (fun i => row j i x),
+      mem_sharedRows.2 ⟨hxD, fun j i hi => le_sup' (fun i => row j i x) hi, hsum⟩⟩
 
 /-- **Shared-row projection (all mixed choices).** Over a linearly ordered additive commutative
 monoid, when every support set `H j` is nonempty, `x` lifts to a point of `sharedRows` if and only
@@ -152,7 +158,7 @@ theorem exists_mem_sharedRows_iff_of_exists_empty [AddCommGroup β] [Preorder β
     (hempty : ∃ j₀, H j₀ = ∅) :
     (∃ y, (x, y) ∈ sharedRows D row H b) ↔ x ∈ D := by
   classical
-  refine ⟨fun ⟨_, hxD, _⟩ => hxD, fun hxD => ?_⟩
+  refine ⟨fun ⟨_, hy⟩ => (mem_sharedRows.1 hy).1, fun hxD => ?_⟩
   obtain ⟨j₀, hj₀⟩ := hempty
   have hbound : ∀ j, ∃ u : β, ∀ i ∈ H j, row j i x ≤ u := fun j => by
     obtain ⟨u, hu⟩ := Finset.exists_le ((H j).image fun i => row j i x)
@@ -169,9 +175,12 @@ theorem exists_mem_sharedRows_iff_of_exists_empty [AddCommGroup β] [Preorder β
 the heights yields exactly `x ∈ D` together with each same-anchor diagonal sum inequality. -/
 theorem exists_mem_independentRows_iff [AddCommMonoid β] [Preorder β] [IsOrderedAddMonoid β]
     {D : Set X} {row : κ → ι → X → β} {b : κ → β} {x : X} :
-    (∃ y, (x, y) ∈ independentRows D row b) ↔ x ∈ D ∧ ∀ a, ∑ j, row a j x ≤ b a :=
-  ⟨fun ⟨_, hxD, ha⟩ => ⟨hxD, fun a => (sum_le_sum fun j _ => (ha a).1 j).trans (ha a).2⟩,
-    fun ⟨hxD, hsum⟩ => ⟨fun a j => row a j x, hxD, fun a => ⟨fun _ => le_rfl, hsum a⟩⟩⟩
+    (∃ y, (x, y) ∈ independentRows D row b) ↔ x ∈ D ∧ ∀ a, ∑ j, row a j x ≤ b a := by
+  refine ⟨fun ⟨_, hy⟩ => ?_, fun ⟨hxD, hsum⟩ => ?_⟩
+  · obtain ⟨hxD, ha⟩ := mem_independentRows.1 hy
+    exact ⟨hxD, fun a => (sum_le_sum fun j _ => (ha a).1 j).trans (ha a).2⟩
+  · exact ⟨fun a j => row a j x,
+      mem_independentRows.2 ⟨hxD, fun a => ⟨fun _ => le_rfl, hsum a⟩⟩⟩
 
 end Elimination
 
@@ -187,16 +196,18 @@ theorem outerRow_sum {X ι : Type*} [Fintype ι] (g : X → ι → ℝ) (a : X) 
 
 variable {X ι κ : Type*} [AddCommGroup X] [TopologicalSpace X] [Module ℝ X] [Fintype ι]
 
-/-- For the sum outer function `v ↦ ∑ j, v j`, the direct row is the sum of the component rows at
-the same anchor. -/
+/-- For the sum outer function `v ↦ ∑ j, v j` with outer linear map
+`∑ j, ContinuousLinearMap.proj j`, the direct row is the sum of the component rows at the same
+anchor. -/
 @[simp]
 theorem directRow_sum (g : X → ι → ℝ) (a : X) (Dg : X →L[ℝ] (ι → ℝ)) (x : X) :
     directRow g (fun v => ∑ j, v j) a Dg (∑ j, ContinuousLinearMap.proj (R := ℝ) j) x =
       ∑ j, componentRow g a Dg x j := by
   rw [← outerRow_componentRow, outerRow_sum]
 
-/-- Purely algebraic identification of `directOA` for the sum outer function with the projection of
-`independentRows`. No convexity or differentiability of `g` is assumed. -/
+/-- Purely algebraic identification of `directOA` for the sum outer function (with outer linear map
+`∑ j, ContinuousLinearMap.proj j` at every anchor) with the projection of `independentRows`. No
+convexity or differentiability of `g` is assumed. -/
 theorem directOA_sum_eq_fst_image_independentRows (D : Set X) (g : X → ι → ℝ) (a : κ → X)
     (Dg : κ → X →L[ℝ] (ι → ℝ)) (b : ℝ) :
     directOA D g (fun v => ∑ j, v j) a Dg
@@ -207,9 +218,9 @@ theorem directOA_sum_eq_fst_image_independentRows (D : Set X) (g : X → ι → 
   simp only [mem_directOA, directRow_sum, mem_image, Prod.exists, exists_and_right,
     exists_eq_right, exists_mem_independentRows_iff]
 
-/-- Purely algebraic identification of `sharedOA` on `E = Set.univ` for the sum outer function with
-`sharedRows` over a nonempty finite anchor set. No convexity or differentiability of `g` is
-assumed. -/
+/-- Purely algebraic identification of `sharedOA` on `E = Set.univ` for the sum outer function
+(with outer linear map `∑ j, ContinuousLinearMap.proj j` at every anchor) with `sharedRows` over a
+nonempty finite anchor set. No convexity or differentiability of `g` is assumed. -/
 theorem sharedOA_sum_eq_sharedRows [Fintype κ] [Nonempty κ] (D : Set X) (g : X → ι → ℝ)
     (a : κ → X) (Dg : κ → X →L[ℝ] (ι → ℝ)) (b : ℝ) :
     sharedOA D Set.univ g (fun v => ∑ j, v j) a Dg
@@ -221,8 +232,9 @@ theorem sharedOA_sum_eq_sharedRows [Fintype κ] [Nonempty κ] (D : Set X) (g : X
   exact ⟨fun ⟨hxD, hcomp, hsum⟩ => ⟨hxD, fun j i => hcomp i j, hsum⟩,
     fun ⟨hxD, hcomp, hsum⟩ => ⟨hxD, fun i j => hcomp j i, hsum⟩⟩
 
-/-- For the sum outer function with free heights (`E = Set.univ`) and a nonempty finite anchor set,
-the projection of `sharedOA` is given by the sum of componentwise maxima of component rows. -/
+/-- For the sum outer function (with outer linear map `∑ j, ContinuousLinearMap.proj j` at every
+anchor), free heights `E = Set.univ`, and a nonempty finite anchor set, the projection of `sharedOA`
+is given by the sum of componentwise maxima of component rows. -/
 theorem mem_fst_image_sharedOA_sum_iff_sum_sup'_le [Fintype κ] [Nonempty κ] {D : Set X}
     {g : X → ι → ℝ} {a : κ → X} {Dg : κ → X →L[ℝ] (ι → ℝ)} {b : ℝ} {x : X} :
     x ∈ Prod.fst '' sharedOA D Set.univ g (fun v => ∑ j, v j) a Dg
@@ -236,9 +248,9 @@ theorem mem_fst_image_sharedOA_sum_iff_sum_sup'_le [Fintype κ] [Nonempty κ] {D
       (row := fun j i x => componentRow g (a i) (Dg i) x j)
       (fun _ : ι => Finset.univ_nonempty (α := κ)) (D := D) (b := b) (x := x)
 
-/-- For the sum outer function with free heights (`E = Set.univ`) and any nonempty anchor family
-(finite or infinite), the projection of `sharedOA` is given by all mixed-choice sums of component
-rows across anchors. -/
+/-- For the sum outer function (with outer linear map `∑ j, ContinuousLinearMap.proj j` at every
+anchor), free heights `E = Set.univ`, and any nonempty anchor family (finite or infinite), the
+projection of `sharedOA` is given by all mixed-choice sums of component rows across anchors. -/
 theorem mem_fst_image_sharedOA_sum_iff_forall_choice [Nonempty κ] {D : Set X}
     {g : X → ι → ℝ} {a : κ → X} {Dg : κ → X →L[ℝ] (ι → ℝ)} {b : ℝ} {x : X} :
     x ∈ Prod.fst '' sharedOA D Set.univ g (fun v => ∑ j, v j) a Dg
@@ -316,25 +328,30 @@ theorem exists_strict_sharedOA_ssubset_directOA :
       pj).subset (subset_univ _) (convex_pi fun _ _ => convex_Icc (-1) 1)
   have hcmp := fullspace_analytic_comparison (1 / 2)
     (fun _ _ hxy => sum_le_sum fun j _ => hxy j) hc hhc ha hg hh
+  have hrow0 (x : Fin 2 → ℝ) (j : Fin 2) : componentRow g (a 0) (Dg 0) x j = 2 * x j - 1 := by
+    simp [componentRow_apply, g, a, Dg]; ring
+  have hrow1 (x : Fin 2 → ℝ) (j : Fin 2) : componentRow g (a 1) (Dg 1) x j = -2 * x j - 1 := by
+    simp [componentRow_apply, g, a, Dg]; ring
   have hstrict1 : ¬ Prod.fst '' sharedOA D Set.univ g h a Dg Dh (1 / 2) ⊆
       {x ∈ D | h (g x) ≤ 1 / 2} := fun hsub => by
     have horig := (hsub ⟨(![1, 1 / 4], ![1, -1 / 2]), mem_sharedOA.2 ⟨fun j _ => by
         fin_cases j <;> norm_num, Set.mem_univ _, fun i => ⟨fun j => by
-          fin_cases i <;> fin_cases j <;>
-            norm_num [componentRow_apply, g, a, Dg, Matrix.vecTail, Matrix.vecHead,
-              Function.comp_def],
+          rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl <;>
+            [rw [hrow0]; rw [hrow1]] <;> fin_cases j <;> norm_num,
         by simp only [h, Dh]; rw [outerRow_sum]; norm_num [Fin.sum_univ_two]⟩⟩, rfl⟩).2
     norm_num [h, g, Fin.sum_univ_two] at horig
   have hstrict2 : ¬ directOA D g h a Dg Dh (1 / 2) ⊆
       Prod.fst '' sharedOA D Set.univ g h a Dg Dh (1 / 2) := fun hsub => by
     have hmem : (![1, -1] : Fin 2 → ℝ) ∈ directOA D g h a Dg Dh (1 / 2) :=
       mem_directOA.2 ⟨fun j _ => by fin_cases j <;> norm_num, fun i => by
-        simp only [h, Dh]; rw [directRow_sum]
-        fin_cases i <;> norm_num [Fin.sum_univ_two, componentRow_apply, g, a, Dg,
-          Matrix.vecTail, Matrix.vecHead, Function.comp_def]⟩
+        simp only [h, Dh]; rw [directRow_sum, Fin.sum_univ_two]
+        rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl <;>
+          [rw [hrow0, hrow0]; rw [hrow1, hrow1]] <;> norm_num⟩
     have hsh := (mem_fst_image_sharedOA_sum_iff_forall_choice.1 (hsub hmem)).2 ![0, 1]
-    norm_num [Fin.sum_univ_two, componentRow_apply, g, a, Dg,
-      Matrix.vecTail, Matrix.vecHead, Function.comp_def] at hsh
+    rw [Fin.sum_univ_two] at hsh
+    change componentRow g (a 0) (Dg 0) ![1, -1] 0 +
+      componentRow g (a 1) (Dg 1) ![1, -1] 1 ≤ 1 / 2 at hsh
+    rw [hrow0, hrow1] at hsh; norm_num at hsh
   exact ⟨D, g, h, a, Dg, Dh, 1 / 2, ha, hg, hh,
     ssubset_iff_subset_ne.2 ⟨hcmp.1, fun heq => hstrict1 heq.symm.subset⟩,
     ssubset_iff_subset_ne.2 ⟨hcmp.2, fun heq => hstrict2 heq.symm.subset⟩⟩

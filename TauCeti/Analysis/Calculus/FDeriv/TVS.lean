@@ -21,12 +21,15 @@ Mathlib defines `HasFDerivAtFilter` and `HasFDerivAt` on arbitrary topological v
 * `ContinuousAffineMap.hasFDerivAtFilter` / `ContinuousAffineMap.hasFDerivAt` in
   `Mathlib.Analysis.Calculus.FDeriv.Affine` assume normed spaces on both domain and codomain, and
 * `hasFDerivAtFilter_pi'` / `hasFDerivAt_pi'` in `Mathlib.Analysis.Calculus.FDeriv.Prod` assume
-  normed spaces on `E` and each coordinate space `F i`.
+  normed spaces on `E` and each coordinate space `F i` (and a finite index type for the full
+  product equivalence).
 
 This module provides the topological-vector-space versions directly via `Asymptotics.IsLittleOTVS`,
-adapting the proofs from those Mathlib modules to drop the norm hypotheses. Where Mathlib already
-exposes a normed-space theorem under the unsuffixed name, we use the `_tvs` suffix to avoid name
-collisions.
+adapting the proofs from those Mathlib modules to drop the norm hypotheses—specifically, for
+products, `HasFDerivAtFilter.proj` and `HasFDerivAt.proj` give the TVS forward projection
+implication (for arbitrary, possibly infinite index types) rather than the full finite-product
+equivalence. Where Mathlib already exposes a normed-space theorem under the unsuffixed name, we
+use the `_tvs` suffix to avoid name collisions.
 
 ## Main results
 
@@ -35,8 +38,9 @@ collisions.
 * `ContinuousLinearMap.comp_hasFDerivAtFilter_tvs`, `ContinuousLinearMap.comp_hasFDerivAt_tvs`:
   postcomposing a differentiable map with a continuous linear map composes the derivative, with no
   continuity hypotheses on addition or scalar multiplication.
-* `HasFDerivAtFilter.proj`, `HasFDerivAt.proj`: coordinatewise Fréchet derivative for maps into
-  arbitrary (possibly infinite) products `∀ i, F i`.
+* `HasFDerivAtFilter.proj`, `HasFDerivAt.proj`: TVS forward projection rule giving the
+  coordinatewise Fréchet derivative for maps into arbitrary (possibly infinite) products
+  `∀ i, F i`.
 * `HasFDerivAtFilter.comp_tvs`, `HasFDerivAt.comp_tvs`: the chain rule on topological vector
   spaces.
 -/
