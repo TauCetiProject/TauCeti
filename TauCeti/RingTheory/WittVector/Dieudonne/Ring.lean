@@ -39,6 +39,7 @@ Since `p` is a non-zero-divisor on `W`, this ring is spanned freely as a left `W
 * `TauCeti.DieudonneRing.lift`: the universal property: a ring homomorphism `g : W → R` with
   elements `f v : R` satisfying the defining relations extends uniquely
   (`TauCeti.DieudonneRing.ringHom_ext`) to a ring homomorphism `E → R`.
+* `TauCeti.DieudonneRing.induction_on`: `E` is generated as a ring by the scalars, `F` and `V`.
 
 ## References
 
@@ -597,6 +598,27 @@ theorem ringHom_ext {R : Type*} [Ring R] {a b : DieudonneRing p k →+* R}
   simp only [AddMonoidHom.coe_ofClass]
   rw [smul_def, map_mul, map_mul, basis_eq_word, word, map_zpowFV, map_zpowFV, hF, hV,
     ← RingHom.comp_apply, hC, RingHom.comp_apply]
+
+/-- **Induction principle for the Dieudonné ring**: a property of elements of `D_k` that holds
+for the scalars `C ξ` and the generators `F` and `V`, and is closed under sums and products,
+holds for every element. -/
+@[elab_as_elim]
+theorem induction_on {P : DieudonneRing p k → Prop} (x : DieudonneRing p k)
+    (hC : ∀ ξ : 𝕎 k, P (C p k ξ)) (hF : P (F p k)) (hV : P (V p k))
+    (hadd : ∀ x y, P x → P y → P (x + y)) (hmul : ∀ x y, P x → P y → P (x * y)) : P x := by
+  have hpow {y : DieudonneRing p k} (hy : P y) (n : ℕ) : P (y ^ n) := by
+    induction n with
+    | zero => simpa using hC 1
+    | succ n ih => simpa [pow_succ] using hmul _ _ ih hy
+  induction (basis p k).mem_span x using Submodule.span_induction with
+  | mem y hy =>
+    obtain ⟨n, rfl⟩ := hy
+    obtain ⟨m, rfl | rfl⟩ := Int.eq_nat_or_neg n
+    · simpa using hpow hF m
+    · simpa using hpow hV m
+  | zero => simpa using hC 0
+  | add y z _ _ hy hz => exact hadd y z hy hz
+  | smul ξ y _ hy => simpa [smul_def] using hmul _ _ (hC ξ) hy
 
 end DieudonneRing
 
