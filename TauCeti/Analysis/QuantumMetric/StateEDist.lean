@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Module.Spaces.WeakDual
+public import TauCeti.Analysis.Normed.Module.Basic
 public import TauCeti.Analysis.QuantumMetric.ExtendedLipschitzSeminorm
 
 /-!
@@ -47,13 +48,6 @@ public section
 open scoped ENNReal NNReal
 
 namespace TauCeti
-
-/-- Evaluating two linear maps at `r • a` scales their extended distance by `‖r‖ₑ`. -/
-theorem edist_map_smul {𝕜 E G H : Type*} [SeminormedRing 𝕜] [AddCommGroup E] [Module 𝕜 E]
-    [SeminormedAddCommGroup G] [Module 𝕜 G] [NormSMulClass 𝕜 G] [FunLike H E G]
-    [LinearMapClass H 𝕜 E G] (φ ψ : H) (r : 𝕜) (a : E) :
-    edist (φ (r • a)) (ψ (r • a)) = ‖r‖ₑ * edist (φ a) (ψ a) := by
-  rw [map_smul, map_smul, edist_smul₀, ENNReal.smul_def, smul_eq_mul, eNorm_eq_nnNorm]
 
 namespace ExtendedLipschitzSeminorm
 

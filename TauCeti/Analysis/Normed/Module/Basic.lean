@@ -34,6 +34,8 @@ normed spaces:
   multiple `a • v`, with `|a| * (2 * K) ≤ ‖v‖`, still has norm at least half of `|a| * ‖v‖`.
 * `TauCeti.norm_smul_le_mul_norm_of_support_subset`: a multiplier bounded by `K` on a set
   containing the support of `f` gives `‖g • f‖ ≤ K ‖f‖` everywhere.
+* `TauCeti.edist_map_smul`: evaluating two linear maps at `r • a` scales their extended
+  distance by `‖r‖ₑ`.
 * `IsOpen.diam_pos`: a nonempty bounded open set in a nontrivial real normed space has positive
   diameter.
 -/
@@ -132,6 +134,13 @@ theorem norm_smul_le_mul_norm_of_support_subset {α A E : Type*} [SeminormedAddG
   · simp [hx]
   · exact (norm_smul_le _ _).trans
       (mul_le_mul_of_nonneg_right (hK x (hsupp hx)) (norm_nonneg _))
+
+/-- Evaluating two linear maps at `r • a` scales their extended distance by `‖r‖ₑ`. -/
+theorem edist_map_smul {𝕜 E G H : Type*} [SeminormedRing 𝕜] [AddCommGroup E] [Module 𝕜 E]
+    [SeminormedAddCommGroup G] [Module 𝕜 G] [NormSMulClass 𝕜 G] [FunLike H E G]
+    [LinearMapClass H 𝕜 E G] (φ ψ : H) (r : 𝕜) (a : E) :
+    edist (φ (r • a)) (ψ (r • a)) = ‖r‖ₑ * edist (φ a) (ψ a) := by
+  rw [map_smul, map_smul, edist_smul₀, ENNReal.smul_def, smul_eq_mul, eNorm_eq_nnNorm]
 
 end TauCeti
 
