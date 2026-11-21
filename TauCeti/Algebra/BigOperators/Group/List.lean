@@ -25,7 +25,9 @@ of the `f i` times the product of the `g i`, in a commutative monoid. The same s
 any monoid as soon as the second factors are central, since each `g i` can then be moved past the
 remaining first factors. Erasing an entry whose image is `1` does not change the product of the
 images, in any monoid. Two orderings of a list have the same product of images when every pair of
-entries whose relative order differs has commuting images.
+entries whose relative order differs has commuting images. When the images pairwise commute, the
+product of their `n`-th powers is the `n`-th power of their product. The components of a product
+along a list of pairs are the products of the components.
 
 In a commutative monoid (and additively in an `AddCommMonoid`), products indexed by the positions
 `i : Fin l.length` of a list split across concatenation (`List.prod_get_append`), reduce on a
@@ -46,6 +48,10 @@ entries are multiplied together first (`Fin.contractNth`), by associativity.
 * `List.prod_map_erase_of_eq_one`: `∏_{i ∈ l.erase a} f i = ∏_{i ∈ l} f i` when `f a = 1`.
 * `List.prod_map_eq_of_perm`: two orderings of the same entries have the same product of images if
   the images of every inverted pair commute.
+* `List.prod_map_pow_of_pairwise_commute`: `∏ f i ^ n = (∏ f i) ^ n` along a list whose images
+  pairwise commute.
+* `Prod.fst_list_prod`, `Prod.snd_list_prod` (and their additive counterparts): the components of
+  a product along a list of pairs.
 * `List.prod_get_append`, `List.prod_get_replicate`, `List.prod_get_flatMap_replicate_range` (and
   their additive counterparts): position-indexed products over appended, replicated, and
   block-replicated lists.
@@ -129,6 +135,18 @@ theorem prod_map_eq_of_perm (f : ι → M) {l l' : List ι} (hp : l.Perm l')
       ih hp' fun x y hxy hyx => h x y (hxy.trans (sublist_cons_self a t))
         (hyx.trans ((sublist_cons_self a v).append_left u))]
 
+/-- Along a list whose images under `f` pairwise commute, the product of the `n`-th powers of the
+images is the `n`-th power of the product of the images. -/
+theorem prod_map_pow_of_pairwise_commute {l : List ι} {f : ι → M}
+    (hl : l.Pairwise fun i j ↦ Commute (f i) (f j)) (n : ℕ) :
+    (l.map fun i ↦ f i ^ n).prod = (l.map f).prod ^ n := by
+  induction l with
+  | nil => simp
+  | cons a l ih =>
+    rw [pairwise_cons] at hl
+    rw [map_cons, prod_cons, map_cons, prod_cons, ih hl.2,
+      (Commute.list_prod_right _ _ (forall_mem_map.2 hl.1)).mul_pow]
+
 section Indexed
 
 variable {α N : Type*} [CommMonoid N]
@@ -209,3 +227,23 @@ theorem prod_ofFn_contractNth {n : ℕ} (b : Fin (n + 1) → M) (l : Fin n) :
 end OfFn
 
 end List
+
+namespace Prod
+
+variable {M N : Type*} [Monoid M] [Monoid N]
+
+/-- The first component of a product along a list of pairs is the product of the first
+components. -/
+@[to_additive (attr := simp) /-- The first component of a sum along a list of pairs is the sum of
+the first components. -/]
+theorem fst_list_prod (l : List (M × N)) : l.prod.1 = (l.map Prod.fst).prod :=
+  map_list_prod (MonoidHom.fst M N) l
+
+/-- The second component of a product along a list of pairs is the product of the second
+components. -/
+@[to_additive (attr := simp) /-- The second component of a sum along a list of pairs is the sum of
+the second components. -/]
+theorem snd_list_prod (l : List (M × N)) : l.prod.2 = (l.map Prod.snd).prod :=
+  map_list_prod (MonoidHom.snd M N) l
+
+end Prod

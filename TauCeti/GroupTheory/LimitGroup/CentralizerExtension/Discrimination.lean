@@ -9,6 +9,7 @@ public import TauCeti.GroupTheory.LimitGroup.CentralizerExtension.Basic
 public import TauCeti.GroupTheory.LimitGroup.ResiduallyFree
 public import Mathlib.Data.Matrix.Mul
 import TauCeti.Data.Matrix.DotProduct
+import TauCeti.GroupTheory.GroupAlgGeom.FreeDiscrimination
 
 /-!
 # Extensions of centralizers are discriminated by the base group
@@ -19,7 +20,9 @@ and let `u ≠ 1`. The retractions `G(u, ℤⁿ) →* G`, `tᵢ ↦ u ^ kᵢ`, o
 precisely, a nonidentity element of `G(u, ℤⁿ)` survives under `tᵢ ↦ u ^ (m * wᵢ)` for all large
 `m`, along every direction `w ∈ ℤⁿ` off finitely many hyperplanes. Since finitely many hyperplanes
 never cover `ℤⁿ`, any finite family of nonidentity elements survives under a single such
-retraction. In particular `G(u, ℤⁿ)` is fully residually free whenever `G` is.
+retraction. In particular `G(u, ℤⁿ)` is fully residually free whenever `G` is. For nonabelian
+fully residually free `G`, the free product `G(u, ℤⁿ)[X] = G(u, ℤⁿ) ∗ F(X)` with a free group is
+then discriminated by `G` over `G` as well.
 
 For `n = 1` every nonzero direction qualifies, so a nonidentity element of `G(u, ℤ)` survives
 under `t ↦ u ^ k` for every large `k`. For `n ≥ 2` the directions matter: the retractions with all
@@ -42,6 +45,8 @@ such an extension is therefore not fully residually free.
   `G`.
 * `TauCeti.LimitGroup.isFullyResiduallyFree_centralizerExt`: an extension of the centralizer of a
   nonidentity element of a fully residually free group is fully residually free.
+* `TauCeti.LimitGroup.CentralizerExt.isDiscriminatedBy_inl_comp_of`: for nonabelian fully
+  residually free `G`, the free product `G(u, ℤⁿ)[X]` is discriminated by `G` over `G`.
 * `TauCeti.LimitGroup.CentralizerExt.exists_ne_one_forall_retraction_const_eq_one`: in rank at
   least two, the retractions with one common exponent do not separate `G(u, ℤⁿ)`.
 * `TauCeti.LimitGroup.CentralizerExt.commute_map_of_of_map_t_ne_one`: a homomorphism to a
@@ -300,6 +305,21 @@ free group `G` is fully residually free. -/
 theorem isFullyResiduallyFree_centralizerExt {G : Type*} [Group G] (h : IsFullyResiduallyFree G)
     {u : G} (hu : u ≠ 1) {n : ℕ} : IsFullyResiduallyFree (CentralizerExt u n) :=
   h.of_isDiscriminatedBy (CentralizerExt.isDiscriminatedBy h.isBP h.isCSA hu)
+
+/-- The free product `G(u, ℤⁿ)[X] = G(u, ℤⁿ) ∗ F(X)` of an extension of the centralizer of a
+nonidentity element `u` of a nonabelian fully residually free group `G` with a free group is
+discriminated by `G` over `G`. For nonempty `X` the hypothesis that `G` is nonabelian cannot be
+dropped: for abelian `G` every retraction to `G` kills the commutator of `u` with a letter of `X`,
+which is not trivial. -/
+theorem CentralizerExt.isDiscriminatedBy_inl_comp_of {G : Type*} [Group G]
+    (hG : IsFullyResiduallyFree G) (hna : ¬IsMulCommutative G) {u : G} (hu : u ≠ 1) {n : ℕ}
+    {X : Type*} :
+    IsDiscriminatedBy (Monoid.Coprod.inl.comp of : G →* GX (CentralizerExt u n) X) (.id G) := by
+  have hK := isFullyResiduallyFree_centralizerExt hG hu (n := n)
+  have hKna : ¬IsMulCommutative (CentralizerExt u n) := fun h ↦ hna ⟨⟨fun g g' ↦
+    of_injective (by rw [map_mul, map_mul]; exact h.is_comm.comm _ _)⟩⟩
+  exact ((GX.isDiscriminatedBy hK.isBP hK.isCSA hKna).comp of).trans
+    (isDiscriminatedBy hG.isBP hG.isCSA hu)
 
 /-- Extending, in positive rank, the centralizer of a central element `u` of a nonabelian group `G`
 (for instance `u = 1`) never gives a fully residually free group: for noncommuting `a, b ∈ G`, a
