@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Translate
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Liouville
 
 import TauCeti.Analysis.Normed.Module.FiniteDimension
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 import TauCeti.Geometry.Symplectic.Darboux.Momenta
 
 /-!
@@ -27,7 +28,8 @@ the coordinate vectors, and then `ξ = ∑ j, I_j dθ_j`. This file studies the 
 (`TauCeti.CotangentBundle.actionAngleCover`), which reads a covector in angle coordinates
 `θ ∈ ℝ^ι`, defined modulo `p ℤ^ι`, and action coordinates `I ∈ ℝ^ι`.
 
-* The actions of `κ(θ, I)` are `I` (`TauCeti.CotangentBundle.actionAngleCover_snd_apply_single`).
+* The actions `I_j = ξ(e_j)` of a covector (`TauCeti.CotangentBundle.torusActions`) of `κ(θ, I)`
+  are `I` (`TauCeti.CotangentBundle.torusActions_actionAngleCover`).
 * `κ` is surjective, and `κ(θ, I) = κ(θ', I')` exactly when `I' = I` and `θ' - θ ∈ p ℤ^ι`
   (`TauCeti.CotangentBundle.surjective_actionAngleCover`,
   `TauCeti.CotangentBundle.actionAngleCover_eq_actionAngleCover_iff`).
@@ -36,7 +38,9 @@ the coordinate vectors, and then `ξ = ∑ j, I_j dθ_j`. This file studies the 
   symplectic form `ω = -dλ` back to `∑ j, dθ_j ∧ dI_j`
   (`TauCeti.CotangentBundle.eval₂_symplecticForm_mfderiv_actionAngleCover`).
 * Since `∑ j, dθ_j ∧ dI_j` is nondegenerate, `κ` is a local diffeomorphism
-  (`TauCeti.CotangentBundle.isLocalDiffeomorph_actionAngleCover`).
+  (`TauCeti.CotangentBundle.isLocalDiffeomorph_actionAngleCover`). Hence the action map is smooth
+  (`TauCeti.CotangentBundle.contMDiff_torusActions`), since its composite with `κ` is the
+  projection `(θ, I) ↦ I`.
 
 So `(θ mod p, I)` are global coordinates on `T*Tⁿ` in which `ω = ∑ j, dθ_j ∧ dI_j`. These are the
 coordinates in which the Liouville–Arnold theorem states its normal form near a compact regular
@@ -92,11 +96,30 @@ theorem actionAngleCover_snd_apply (x : (ι → ℝ) × (ι → ℝ)) (v : ι �
   -- Definitionally `w = v`, and `•` on `ℝ` is `*`.
   rfl
 
-/-- **The actions of `κ(θ, I)` are `I`.** The covector `κ(θ, I)` takes the value `I_i` on the
-`i`-th coordinate vector of the torus. -/
-theorem actionAngleCover_snd_apply_single [DecidableEq ι] (x : (ι → ℝ) × (ι → ℝ)) (i : ι) :
-    (actionAngleCover p x).snd (Pi.single i 1) = x.2 i := by
-  simp [Pi.single_apply]
+/-- The **actions** of a covector `ξ` of the torus `ι → AddCircle p`: its values `ξ(e_j)` on the
+coordinate vectors. -/
+def torusActions [DecidableEq ι]
+    (z : CotangentBundle (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (ι → AddCircle p)) : ι → ℝ :=
+  fun j ↦ z.snd (Pi.single j 1)
+
+/-- The `j`-th action of a covector is its value on the `j`-th coordinate vector. -/
+theorem torusActions_apply [DecidableEq ι]
+    (z : CotangentBundle (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (ι → AddCircle p)) (j : ι) :
+    torusActions p z j = z.snd (Pi.single j 1) :=
+  (rfl)
+
+/-- **The actions of `κ(θ, I)` are `I`.** The covector `κ(θ, I)` takes the value `I_j` on the
+`j`-th coordinate vector of the torus. -/
+@[simp]
+theorem torusActions_actionAngleCover [DecidableEq ι] (x : (ι → ℝ) × (ι → ℝ)) :
+    torusActions p (actionAngleCover p x) = x.2 :=
+  funext fun j ↦ by simp [torusActions_apply, Pi.single_apply]
+
+/-- In action–angle coordinates the action map is the projection `(θ, I) ↦ I`. -/
+@[simp]
+theorem torusActions_comp_actionAngleCover [DecidableEq ι] :
+    torusActions p ∘ actionAngleCover (ι := ι) p = Prod.snd :=
+  funext (torusActions_actionAngleCover p)
 
 /-- **The fibres of the action–angle covering map.** Two pairs of angles and actions give the same
 covector exactly when they have the same actions and their angles differ by an element of
@@ -114,13 +137,11 @@ theorem actionAngleCover_eq_actionAngleCover_iff {x y : (ι → ℝ) × (ι → 
       exact ⟨m, fun i ↦ by rw [← zsmul_eq_mul, hm i]; ring⟩
     · rw [hm i, AddCircle.coe_add, ← zsmul_eq_mul, AddCircle.coe_zsmul, AddCircle.coe_period,
         smul_zero, add_zero]
-  refine ⟨fun h ↦ ⟨funext fun i ↦ ?_, hbase.1 (congrArg TotalSpace.proj h)⟩,
+  classical
+  refine ⟨fun h ↦ ⟨?_, hbase.1 (congrArg TotalSpace.proj h)⟩,
     fun ⟨h2, h1⟩ ↦ CotangentBundle.ext (hbase.2 h1) fun v ↦ ?_⟩
-  · classical
-    -- Compare the actions, which are the values on the coordinate vectors.
-    have h := congrArg (fun z : CotangentBundle (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
-      (ι → AddCircle p) ↦ z.snd (Pi.single i 1)) h
-    simpa [Pi.single_apply] using h.symm
+  · -- Compare the actions.
+    simpa using (congrArg (torusActions p) h).symm
   · exact (actionAngleCover_snd_apply p x v).trans
       ((congrArg (fun I : ι → ℝ ↦ ∑ j, I j * v j) h2.symm).trans
         (actionAngleCover_snd_apply p y v).symm)
@@ -142,7 +163,7 @@ theorem surjective_actionAngleCover :
   obtain ⟨θ, hθ⟩ : ∃ θ : ι → ℝ, (fun i ↦ (θ i : AddCircle p)) = z.proj :=
     ⟨fun i ↦ (QuotientAddGroup.mk_surjective (z.proj i)).choose,
       funext fun i ↦ (QuotientAddGroup.mk_surjective (z.proj i)).choose_spec⟩
-  refine ⟨(θ, fun i ↦ z.snd (Pi.single i 1)), CotangentBundle.ext hθ fun v ↦ ?_⟩
+  refine ⟨(θ, torusActions p z), CotangentBundle.ext hθ fun v ↦ ?_⟩
   -- A covector is determined by its values on the coordinate vectors.
   refine (actionAngleCover_snd_apply p _ v).trans ?_
   refine ((LinearMap.pi_apply_eq_sum_univ z.snd.toLinearMap v).trans ?_).symm
@@ -288,6 +309,23 @@ theorem isLocalDiffeomorph_actionAngleCover :
       exact LinearMap.map_zero₂ _ _)
   exact eq_of_forall_sum_mul_sub_mul_eq (c := (0 : (ι → ℝ) × (ι → ℝ))) fun w ↦ by
     simpa using h w
+
+/-- The action map of the cotangent bundle of the torus is smooth. -/
+theorem contMDiff_torusActions [DecidableEq ι] :
+    ContMDiff ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ, (ι → ℝ) →L[ℝ] ℝ))
+      𝓘(ℝ, ι → ℝ) ∞ (torusActions (ι := ι) p) := by
+  rw [← (isLocalDiffeomorph_actionAngleCover (ι := ι) p).contMDiff_comp_iff
+    (surjective_actionAngleCover p) le_rfl, torusActions_comp_actionAngleCover]
+  exact contMDiff_iff_contDiff.2 contDiff_snd
+
+/-- A function of the actions is differentiable where its profile is differentiable at the actions.
+-/
+theorem mdifferentiableAt_comp_torusActions [DecidableEq ι] {h : (ι → ℝ) → ℝ}
+    {z : CotangentBundle (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (ι → AddCircle p)}
+    (hh : DifferentiableAt ℝ h (torusActions p z)) :
+    MDifferentiableAt ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ, (ι → ℝ) →L[ℝ] ℝ)) 𝓘(ℝ)
+      (h ∘ torusActions p) z :=
+  hh.mdifferentiableAt.comp z ((contMDiff_torusActions p z).mdifferentiableAt (by simp))
 
 end CotangentBundle
 
