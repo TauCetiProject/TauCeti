@@ -27,10 +27,12 @@ Changes of variables preserve ellipticity over any commutative ring
 isomorphism, so they also preserve the order of the marked point. The pointed elliptic curves whose
 marked point has exact order `N` therefore form a sub-action
 (`TauCeti.PointedWeierstrassCurve.exactOrder`); its orbits are the isomorphism classes of elliptic
-curves with a point of exact order `N`, the moduli problem of the congruence subgroup `Γ₁(N)`.
+curves with a point of exact order `N`. Here `exactOrder F 0` marks points of infinite order.
+For `N > 0`, these points specify constant cyclic markings, the point-marked moduli problem
+of the congruence subgroup `Γ₁(N)`.
 Multiplying the marked point by an integer commutes with changes of variables. This gives the two
-operations on that moduli problem: the units `d` modulo `N` act by `P ↦ d • P`, which is the action
-of the diamond operators, and for `M ≠ 0` the map `P ↦ M • P` lowers the exact order from `N * M`
+operations on pointed curves. At positive levels, the units `d` modulo `N` act by
+`P ↦ d • P`, the diamond action. For `M ≠ 0`, the map `P ↦ M • P` lowers exact order from `N * M`
 to `N`, which corresponds to the inclusion `Γ₁(N M) ≤ Γ₁(N)`.
 
 ## Main definitions
@@ -221,11 +223,12 @@ theorem mk_nsmul_point_mem_exactOrder_of_mem_mul {M : ℕ} (hM : M ≠ 0)
 
 variable (N) in
 /-- **Lowering the level**: for `M ≠ 0`, multiplying the marked point by `M` sends an elliptic
-curve with a point of exact order `N * M` to one with a point of exact order `N`. At positive
-levels these points specify constant cyclic markings. Over ℂ, choosing compatible primitive roots
+curve with a point of exact order `N * M` to one with a point of exact order `N`. For `N > 0`,
+these points specify constant cyclic markings, and the map corresponds to
+`Γ₁(N M) ≤ Γ₁(N)`. Over ℂ at these positive levels, choosing compatible primitive roots
 `ζ_N = ζ_{NM}^M` identifies them with embeddings `α : μ_{NM} ↪ E[NM]`; the map then restricts
-`α` to `μ_N`. It commutes with changes of variables, giving the moduli map for
-`Γ₁(N M) ≤ Γ₁(N)`. -/
+`α` to `μ_N`. The point operation commutes with changes of variables also at `N = 0`,
+where it preserves infinite order. -/
 def nsmulExactOrder (M : ℕ) [NeZero M] :
     exactOrder F (N * M) →[VariableChange F] exactOrder F N where
   toFun X := ⟨⟨X.val.curve, M • X.val.point⟩,
@@ -298,8 +301,10 @@ instance instSMulCommClassVariableChangeUnitsZModExactOrder :
 order `N`, through their commuting action on marked curves. -/
 instance instSMulUnitsZModExactOrderQuotient :
     SMul (ZMod N)ˣ (MulAction.orbitRel.Quotient (VariableChange F) (exactOrder F N)) where
-  smul d := (show exactOrder F N →[VariableChange F] exactOrder F N from
-    ⟨(d • ·), fun C X ↦ (smul_comm C d X).symm⟩).orbitRelQuotientMap
+  smul d :=
+    let f : exactOrder F N →[VariableChange F] exactOrder F N :=
+      ⟨(d • ·), fun C X ↦ (smul_comm C d X).symm⟩
+    f.orbitRelQuotientMap
 
 /-- The diamond action on isomorphism classes multiplies the marked point on representatives. -/
 @[simp]
@@ -318,6 +323,34 @@ instance instMulActionUnitsZModExactOrderQuotient :
   mul_smul d e q := by
     induction q using Quotient.inductionOn with
     | h X => rw [units_smul_quotient_mk, units_smul_quotient_mk, units_smul_quotient_mk, mul_smul]
+
+/-- Multiplication of the marked point by `M` commutes with diamonds after reducing
+units from modulus `N * M` to modulus `N`. -/
+theorem nsmulExactOrder_units_smul (M : ℕ) [NeZero M] (d : (ZMod (N * M))ˣ)
+    (X : exactOrder F (N * M)) :
+    nsmulExactOrder N M (d • X) =
+      ZMod.unitsMap (dvd_mul_right N M) d • nsmulExactOrder N M X := by
+  have hd : (((d : ZMod (N * M)).valMinAbs : ℤ) : ZMod N) =
+      ZMod.unitsMap (dvd_mul_right N M) d := by
+    simp only [ZMod.unitsMap_def, Units.coe_map, MonoidHom.coe_ofClass]
+    simpa only [map_intCast] using congrArg (ZMod.castHom (dvd_mul_right N M) (ZMod N))
+      (ZMod.coe_valMinAbs (d : ZMod (N * M)))
+  apply Subtype.ext
+  rw [val_nsmulExactOrder_apply, val_units_smul,
+    val_units_smul_of_intCast_eq _ _ hd, val_nsmulExactOrder_apply]
+  exact mk_inj.mpr (smul_comm _ _ _)
+
+/-- Level lowering on isomorphism classes commutes with diamonds, reducing the unit
+modulo `N`. -/
+theorem nsmulExactOrder_orbitRelQuotientMap_units_smul (M : ℕ) [NeZero M]
+    (d : (ZMod (N * M))ˣ)
+    (q : MulAction.orbitRel.Quotient (VariableChange F) (exactOrder F (N * M))) :
+    (nsmulExactOrder N M).orbitRelQuotientMap (d • q) =
+      ZMod.unitsMap (dvd_mul_right N M) d • (nsmulExactOrder N M).orbitRelQuotientMap q := by
+  induction q using Quotient.inductionOn with
+  | h X =>
+    rw [units_smul_quotient_mk, MulActionHom.orbitRelQuotientMap_mk,
+      MulActionHom.orbitRelQuotientMap_mk, units_smul_quotient_mk, nsmulExactOrder_units_smul]
 
 end Units
 

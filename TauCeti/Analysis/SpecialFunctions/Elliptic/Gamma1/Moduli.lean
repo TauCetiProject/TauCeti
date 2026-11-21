@@ -7,14 +7,15 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Pointed
 public import TauCeti.Analysis.SpecialFunctions.Elliptic.LatticeClassification
-public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
+public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Diamond
 import TauCeti.NumberTheory.ModularForms.EisensteinSeries.GammaSet
 
 /-!
 # The complex moduli of elliptic curves with a point of order `N`
 
-A point `z` of the upper half-plane gives the complex elliptic curve `E_z = ℂ / (ℤ z + ℤ)`, in its
-Weierstrass model `y² = x³ - (g₂ / 4) x - g₃ / 4` (`PeriodPair.weierstrassCurve`), together with
+Fix a positive level `N`. A point `z` of the upper half-plane gives the complex elliptic curve
+`E_z = ℂ / (ℤ z + ℤ)`, in its Weierstrass model `y² = x³ - (g₂ / 4) x - g₃ / 4`
+(`PeriodPair.weierstrassCurve`), together with
 the point `P_z` of exact order `N` given by `1 / N`
 (`UpperHalfPlane.pointedWeierstrassCurve`). This file proves that `z ↦ (E_z, P_z)` induces a
 bijection from `Γ₁(N) \ ℍ` onto the isomorphism classes of pairs `(E, P)` of an elliptic curve
@@ -40,8 +41,9 @@ input that identifies `Γ₁(N) \ ℍ` with the complex points of the modular cu
   `1 / N` to `u / N`, which is `1 / N` modulo `ℤ z' + ℤ` exactly when `c ≡ 0` and `d ≡ 1 mod N`,
   that is, when `γ ∈ Γ₁(N)`.
 
-The bijection is natural. For `γ ∈ Γ₀(N)` with lower-right entry `d`, the point `(c z + d) / N`
-is `d / N` modulo `ℤ z + ℤ`, so the class of `γ z` corresponds to `(E_z, d • P_z)`: the diamond
+At positive levels the bijection is natural. For `γ ∈ Γ₀(N)` with lower-right entry `d`, the point
+`(c z + d) / N` is `d / N` modulo `ℤ z + ℤ`, so the class of `γ z` corresponds to
+`(E_z, d • P_z)`: the diamond
 operator `⟨d⟩` multiplies the marked point by `d`, that is, it precomposes the embedding
 `μ_N ↪ E[N]` with multiplication by `d`. For `M ≠ 0`, the map `Γ₁(N M) \ ℍ → Γ₁(N) \ ℍ`
 corresponds to multiplying the marked point by `M`, since `M / (N M) = 1 / N`: it restricts an
@@ -131,7 +133,7 @@ theorem pointedWeierstrassCurve_mem_exactOrder [NeZero N] (z : ℍ) :
 variable (N) in
 /-- **Rescaling by `(c z + d)⁻¹` gives `(E_{γ z}, P_{γ z})`**: the change of variables with
 `u = (c z + d)⁻¹` carries `E_z` with the point of `(c z + d) / N` to `E_{γ z}` with the point of
-`1 / N`. -/
+`1 / N`. At `N = 0`, both marked points are zero by Lean’s division-by-zero convention. -/
 theorem smul_mk_weierstrassPoint_denom_div (γ : SL(2, ℤ)) (z : ℍ) :
     (⟨(Units.mk0 _ (denom_ne_zero γ z))⁻¹, 0, 0, 0⟩ : VariableChange ℂ) •
         (⟨z.periodPair.weierstrassCurve, z.periodPair.weierstrassPoint (denom γ z / N)⟩ :
@@ -142,7 +144,8 @@ theorem smul_mk_weierstrassPoint_denom_div (γ : SL(2, ℤ)) (z : ℍ) :
     div_div_cancel_left₀ (denom_ne_zero γ z), one_div]
 
 /-- If `m ≡ c` and `n ≡ d` modulo `N` for the bottom row `(c, d)` of `γ`, then `(m z + n) / N` is
-`(c z + d) / N` modulo `ℤ z + ℤ`, so both give the same point of `E_z`. -/
+`(c z + d) / N` modulo `ℤ z + ℤ`, so both give the same point of `E_z`. At `N = 0`, the identity
+uses Lean’s convention that division by zero is zero. -/
 private lemma weierstrassPoint_div_eq_weierstrassPoint_denom_div {γ : SL(2, ℤ)} {z : ℍ} {m n : ℤ}
     (hm : ((γ 1 0 : ℤ) : ZMod N) = m) (hn : ((γ 1 1 : ℤ) : ZMod N) = n) :
     z.periodPair.weierstrassPoint ((m * z + n) / N) =
@@ -260,7 +263,9 @@ theorem exists_smul_pointedWeierstrassCurve_eq_iff [NeZero N] {z z' : ℍ} :
 variable (N) in
 /-- **Diamond operators on `(E_z, P_z)`**: for `γ ∈ Γ₀(N)` with lower-right entry `d`, rescaling
 by `(c z + d)⁻¹` carries `E_z` with the point `d • P_z` to `(E_{γ z}, P_{γ z})`. Indeed
-`(c z + d) / N` is `d / N` modulo `ℤ z + ℤ`, since `N ∣ c`. -/
+`(c z + d) / N` is `d / N` modulo `ℤ z + ℤ`, since `N ∣ c`. This is the diamond
+interpretation for `N > 0`; at `N = 0`, both points are zero by Lean’s division-by-zero
+convention. -/
 theorem smul_mk_zsmul_weierstrassPoint_one_div {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 N) (z : ℍ) :
     (⟨(Units.mk0 _ (denom_ne_zero γ z))⁻¹, 0, 0, 0⟩ : VariableChange ℂ) •
         (⟨z.periodPair.weierstrassCurve, γ 1 1 • z.periodPair.weierstrassPoint (1 / N)⟩ :
@@ -280,39 +285,6 @@ end UpperHalfPlane
 namespace TauCeti
 
 variable (N : ℕ)
-
-/-- The normalizer action of `Γ₀(N)` on `Γ₁(N) \ ℍ` descends along the lower-right-entry
-map to an action of `(ℤ/Nℤ)ˣ`, represented as a homomorphism to permutations. -/
-noncomputable def gamma1QuotientDiamond :
-    (ZMod N)ˣ →* Equiv.Perm (MulAction.orbitRel.Quotient (Gamma1 N) ℍ) :=
-  (Gamma0Map N).toHomUnits.liftOfSurjective Gamma0Map_toHomUnits_surjective
-    ⟨(MulAction.normalizerOrbitRelQuotientPermHom (X := ℍ) (Gamma1 N)).comp
-      (Subgroup.inclusion (Gamma0_le_normalizer_Gamma1 N)), fun γ hγ ↦
-        MulAction.normalizerOrbitRelQuotientPermHom_eq_one_of_mem (Gamma1 N) _
-          ((mem_Gamma1_iff_toHomUnits_eq_one γ).mpr hγ)⟩
-
-/-- The diamond permutation associated to the lower-right entry of `γ ∈ Γ₀(N)` translates a
-representative by `γ`. -/
-@[simp]
-theorem gamma1QuotientDiamond_apply_mk (γ : Gamma0 N) (z : ℍ) :
-    gamma1QuotientDiamond N ((Gamma0Map N).toHomUnits γ) ⟦z⟧ =
-      ⟦(γ : SL(2, ℤ)) • z⟧ := by
-  simp only [gamma1QuotientDiamond, MonoidHom.liftOfSurjective,
-    MonoidHom.liftOfRightInverse_comp_apply, MonoidHom.comp_apply,
-    MulAction.normalizerOrbitRelQuotientPermHom_apply, Subgroup.coe_inclusion]
-
-/-- Units modulo `N` act on `Γ₁(N) \ ℍ` by the descended normalizer action. -/
-noncomputable instance instMulActionUnitsZModGamma1Quotient :
-    MulAction (ZMod N)ˣ (MulAction.orbitRel.Quotient (Gamma1 N) ℍ) :=
-  MulAction.compHom _ (gamma1QuotientDiamond N)
-
-/-- The diamond action translates representatives by any lift of its unit to `Γ₀(N)`. -/
-@[simp]
-theorem units_smul_gamma1Quotient_mk (γ : Gamma0 N) (z : ℍ) :
-    (Gamma0Map N).toHomUnits γ •
-        (⟦z⟧ : MulAction.orbitRel.Quotient (Gamma1 N) ℍ) =
-      ⟦(γ : SL(2, ℤ)) • z⟧ :=
-  gamma1QuotientDiamond_apply_mk N γ z
 
 variable [NeZero N]
 
