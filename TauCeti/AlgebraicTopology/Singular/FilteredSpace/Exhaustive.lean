@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Singular.FilteredSpace.Basic
 public import TauCeti.AlgebraicTopology.Singular.DirectedUnion
 public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.Exhaustive
-import TauCeti.Algebra.Homology.Embedding.ExtendSubobject
+import TauCeti.Algebra.Homology.Embedding.Extend.Subobject
 
 /-!
 # Exhaustive filtrations of a space

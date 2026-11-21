@@ -16,7 +16,7 @@ bounded-below `ℤ`-indexed cochain complexes under minimal categorical hypothes
 * `TauCeti.CochainComplex.Plus.singleFunctor` and `singleFunctorCompιIso`: the single-object
   embedding `C ⥤ CochainComplex.Plus C` in degree `n : ℤ` (for `[HasZeroMorphisms C]` and
   `[HasZeroObject C]`).
-* `TauCeti.CochainComplex.Plus.mappingCone`, `mappingConeTriangle`, and
+* `CochainComplex.Plus.mappingCone`, `mappingConeTriangle`, and
   `mappingConeTriangleιIso`: mapping cones and mapping cone triangles in `CochainComplex.Plus C`
   (for `[Preadditive C]` and `[HasBinaryBiproducts C]`).
 * `CochainComplex.Plus.truncLE`, `truncGE`, `ιTruncLE`, and `πTruncGE`: canonical truncations on
@@ -43,14 +43,13 @@ variable (C : Type u₁) [Category.{v₁} C] [HasZeroMorphisms C] [HasZeroObject
 
 /-- The functor `C ⥤ CochainComplex.Plus C` sending `X` to the cochain complex concentrated in
 degree `n : ℤ`. -/
-@[expose]
+@[expose, implicit_reducible]
 def singleFunctor (n : ℤ) : C ⥤ _root_.CochainComplex.Plus C :=
   ObjectProperty.lift _ (HomologicalComplex.single C (.up ℤ) n)
     (fun _ ↦ ⟨n, inferInstance⟩)
 
 /-- Inclusion into `CochainComplex C ℤ` identifies `singleFunctor C n` with
 `HomologicalComplex.single C (.up ℤ) n`. -/
-@[expose]
 def singleFunctorCompιIso (n : ℤ) :
     singleFunctor C n ⋙ _root_.CochainComplex.Plus.ι C ≅
       HomologicalComplex.single C (.up ℤ) n :=
@@ -71,14 +70,18 @@ lemma singleFunctor_map_hom (n : ℤ) {X Y : C} (f : X ⟶ Y) :
 @[simp]
 lemma singleFunctorCompιIso_hom_app (n : ℤ) (X : C) :
     (singleFunctorCompιIso C n).hom.app X = 𝟙 _ :=
-  rfl
+  (rfl)
 
 @[simp]
 lemma singleFunctorCompιIso_inv_app (n : ℤ) (X : C) :
     (singleFunctorCompιIso C n).inv.app X = 𝟙 _ :=
-  rfl
+  (rfl)
 
 end Single
+
+end TauCeti.CochainComplex.Plus
+
+namespace CochainComplex.Plus
 
 section MappingCone
 
@@ -87,8 +90,8 @@ variable {C : Type u₁} [Category.{v₁} C] [Preadditive C] [HasBinaryBiproduct
 /-- The mapping cone of a morphism `f : K ⟶ L` in `CochainComplex.Plus C`, as a bounded-below
 cochain complex. -/
 @[expose]
-def mappingCone {K L : _root_.CochainComplex.Plus C} (f : K ⟶ L) :
-    _root_.CochainComplex.Plus C :=
+def mappingCone {K L : CochainComplex.Plus C} (f : K ⟶ L) :
+    CochainComplex.Plus C :=
   ⟨_root_.CochainComplex.mappingCone f.hom, by
     obtain ⟨n₁, _⟩ := K.property
     obtain ⟨n₂, _⟩ := L.property
@@ -96,65 +99,64 @@ def mappingCone {K L : _root_.CochainComplex.Plus C} (f : K ⟶ L) :
       (min (n₁ - 1) n₂) (by omega) (by omega)⟩⟩
 
 @[simp]
-lemma mappingCone_obj {K L : _root_.CochainComplex.Plus C} (f : K ⟶ L) :
+lemma mappingCone_obj {K L : CochainComplex.Plus C} (f : K ⟶ L) :
     (mappingCone f).obj = _root_.CochainComplex.mappingCone f.hom :=
   rfl
 
 /-- The mapping cone triangle `K ⟶ L ⟶ cone(f) ⟶ K⟦1⟧` in `CochainComplex.Plus C`. -/
 @[expose]
-def mappingConeTriangle {K L : _root_.CochainComplex.Plus C} (f : K ⟶ L) :
-    Triangle (_root_.CochainComplex.Plus C) :=
+def mappingConeTriangle {K L : CochainComplex.Plus C} (f : K ⟶ L) :
+    Triangle (CochainComplex.Plus C) :=
   Triangle.mk f
     (ObjectProperty.homMk (_root_.CochainComplex.mappingCone.inr f.hom) :
       L ⟶ mappingCone f)
-    ((_root_.CochainComplex.Plus.fullyFaithfulι C).preimage
+    ((CochainComplex.Plus.fullyFaithfulι C).preimage
       ((_root_.CochainComplex.mappingCone.triangle f.hom).mor₃ ≫
-        ((_root_.CochainComplex.Plus.ι C).commShiftIso (1 : ℤ)).inv.app K))
+        ((CochainComplex.Plus.ι C).commShiftIso (1 : ℤ)).inv.app K))
 
 @[simp]
-lemma mappingConeTriangle_obj₁ {K L : _root_.CochainComplex.Plus C} (f : K ⟶ L) :
+lemma mappingConeTriangle_obj₁ {K L : CochainComplex.Plus C} (f : K ⟶ L) :
     (mappingConeTriangle f).obj₁ = K :=
   rfl
 
 @[simp]
-lemma mappingConeTriangle_obj₂ {K L : _root_.CochainComplex.Plus C} (f : K ⟶ L) :
+lemma mappingConeTriangle_obj₂ {K L : CochainComplex.Plus C} (f : K ⟶ L) :
     (mappingConeTriangle f).obj₂ = L :=
   rfl
 
 @[simp]
-lemma mappingConeTriangle_obj₃ {K L : _root_.CochainComplex.Plus C} (f : K ⟶ L) :
+lemma mappingConeTriangle_obj₃ {K L : CochainComplex.Plus C} (f : K ⟶ L) :
     (mappingConeTriangle f).obj₃ = mappingCone f :=
   rfl
 
 @[simp]
-lemma mappingConeTriangle_mor₁ {K L : _root_.CochainComplex.Plus C} (f : K ⟶ L) :
+lemma mappingConeTriangle_mor₁ {K L : CochainComplex.Plus C} (f : K ⟶ L) :
     (mappingConeTriangle f).mor₁ = f :=
   rfl
 
 @[simp]
-lemma mappingConeTriangle_mor₂_hom {K L : _root_.CochainComplex.Plus C} (f : K ⟶ L) :
+lemma mappingConeTriangle_mor₂_hom {K L : CochainComplex.Plus C} (f : K ⟶ L) :
     (mappingConeTriangle f).mor₂.hom = _root_.CochainComplex.mappingCone.inr f.hom :=
   rfl
 
 /-- Characterizing equation for the connecting morphism of `mappingConeTriangle f` after inclusion
 into `CochainComplex C ℤ`. -/
 @[reassoc (attr := simp)]
-lemma mappingConeTriangle_mor₃_hom_comp {K L : _root_.CochainComplex.Plus C} (f : K ⟶ L) :
+lemma mappingConeTriangle_mor₃_hom_comp {K L : CochainComplex.Plus C} (f : K ⟶ L) :
     (mappingConeTriangle f).mor₃.hom ≫
-        ((_root_.CochainComplex.Plus.ι C).commShiftIso (1 : ℤ)).hom.app K =
+        ((CochainComplex.Plus.ι C).commShiftIso (1 : ℤ)).hom.app K =
       (_root_.CochainComplex.mappingCone.triangle f.hom).mor₃ := by
-  have h := (_root_.CochainComplex.Plus.fullyFaithfulι C).map_preimage
+  have h := (CochainComplex.Plus.fullyFaithfulι C).map_preimage
     (X := mappingCone f) (Y := K⟦(1 : ℤ)⟧)
     ((_root_.CochainComplex.mappingCone.triangle f.hom).mor₃ ≫
-      ((_root_.CochainComplex.Plus.ι C).commShiftIso (1 : ℤ)).inv.app K)
+      ((CochainComplex.Plus.ι C).commShiftIso (1 : ℤ)).inv.app K)
   simpa [mappingConeTriangle] using
-    congrArg (· ≫ ((_root_.CochainComplex.Plus.ι C).commShiftIso (1 : ℤ)).hom.app K) h
+    congrArg (· ≫ ((CochainComplex.Plus.ι C).commShiftIso (1 : ℤ)).hom.app K) h
 
 /-- Inclusion into `CochainComplex C ℤ` identifies `mappingConeTriangle f` with
 `CochainComplex.mappingCone.triangle f.hom`. -/
-@[expose]
-def mappingConeTriangleιIso {K L : _root_.CochainComplex.Plus C} (f : K ⟶ L) :
-    (_root_.CochainComplex.Plus.ι C).mapTriangle.obj (mappingConeTriangle f) ≅
+def mappingConeTriangleιIso {K L : CochainComplex.Plus C} (f : K ⟶ L) :
+    (CochainComplex.Plus.ι C).mapTriangle.obj (mappingConeTriangle f) ≅
       _root_.CochainComplex.mappingCone.triangle f.hom :=
   Triangle.isoMk _ _ (Iso.refl _) (Iso.refl _) (Iso.refl _)
     (by simp [Triangle.mk])
@@ -162,48 +164,44 @@ def mappingConeTriangleιIso {K L : _root_.CochainComplex.Plus C} (f : K ⟶ L) 
     (by
       dsimp [Triangle.mk, mappingConeTriangle]
       rw [CategoryTheory.Functor.map_id, Category.comp_id, Category.id_comp]
-      have h := (_root_.CochainComplex.Plus.fullyFaithfulι C).map_preimage
+      have h := (CochainComplex.Plus.fullyFaithfulι C).map_preimage
         (X := mappingCone f) (Y := K⟦(1 : ℤ)⟧)
         ((_root_.CochainComplex.mappingCone.triangle f.hom).mor₃ ≫
-          ((_root_.CochainComplex.Plus.ι C).commShiftIso (1 : ℤ)).inv.app K)
+          ((CochainComplex.Plus.ι C).commShiftIso (1 : ℤ)).inv.app K)
       simpa using
-        congrArg (· ≫ ((_root_.CochainComplex.Plus.ι C).commShiftIso (1 : ℤ)).hom.app K) h)
+        congrArg (· ≫ ((CochainComplex.Plus.ι C).commShiftIso (1 : ℤ)).hom.app K) h)
 
 @[simp]
-lemma mappingConeTriangleιIso_hom_hom₁ {K L : _root_.CochainComplex.Plus C} (f : K ⟶ L) :
+lemma mappingConeTriangleιIso_hom_hom₁ {K L : CochainComplex.Plus C} (f : K ⟶ L) :
     (mappingConeTriangleιIso f).hom.hom₁ = 𝟙 K.obj :=
-  rfl
+  (rfl)
 
 @[simp]
-lemma mappingConeTriangleιIso_hom_hom₂ {K L : _root_.CochainComplex.Plus C} (f : K ⟶ L) :
+lemma mappingConeTriangleιIso_hom_hom₂ {K L : CochainComplex.Plus C} (f : K ⟶ L) :
     (mappingConeTriangleιIso f).hom.hom₂ = 𝟙 L.obj :=
-  rfl
+  (rfl)
 
 @[simp]
-lemma mappingConeTriangleιIso_hom_hom₃ {K L : _root_.CochainComplex.Plus C} (f : K ⟶ L) :
+lemma mappingConeTriangleιIso_hom_hom₃ {K L : CochainComplex.Plus C} (f : K ⟶ L) :
     (mappingConeTriangleιIso f).hom.hom₃ = 𝟙 (_root_.CochainComplex.mappingCone f.hom) :=
-  rfl
+  (rfl)
 
 @[simp]
-lemma mappingConeTriangleιIso_inv_hom₁ {K L : _root_.CochainComplex.Plus C} (f : K ⟶ L) :
+lemma mappingConeTriangleιIso_inv_hom₁ {K L : CochainComplex.Plus C} (f : K ⟶ L) :
     (mappingConeTriangleιIso f).inv.hom₁ = 𝟙 K.obj :=
-  rfl
+  (rfl)
 
 @[simp]
-lemma mappingConeTriangleιIso_inv_hom₂ {K L : _root_.CochainComplex.Plus C} (f : K ⟶ L) :
+lemma mappingConeTriangleιIso_inv_hom₂ {K L : CochainComplex.Plus C} (f : K ⟶ L) :
     (mappingConeTriangleιIso f).inv.hom₂ = 𝟙 L.obj :=
-  rfl
+  (rfl)
 
 @[simp]
-lemma mappingConeTriangleιIso_inv_hom₃ {K L : _root_.CochainComplex.Plus C} (f : K ⟶ L) :
+lemma mappingConeTriangleιIso_inv_hom₃ {K L : CochainComplex.Plus C} (f : K ⟶ L) :
     (mappingConeTriangleιIso f).inv.hom₃ = 𝟙 (_root_.CochainComplex.mappingCone f.hom) :=
-  rfl
+  (rfl)
 
 end MappingCone
-
-end TauCeti.CochainComplex.Plus
-
-namespace CochainComplex.Plus
 
 section Trunc
 
@@ -244,13 +242,11 @@ instance hasHomology_truncGE (K : CochainComplex.Plus C) [∀ i, K.obj.HasHomolo
   inferInstanceAs ((K.obj.truncGE n).HasHomology i)
 
 /-- The canonical morphism `τ_{≤ n} K ⟶ K` in `CochainComplex.Plus C`. -/
-@[expose]
 def ιTruncLE (K : CochainComplex.Plus C) [∀ i, K.obj.HasHomology i] (n : ℤ) :
     K.truncLE n ⟶ K :=
   ObjectProperty.homMk (K.obj.ιTruncLE n)
 
 /-- The canonical morphism `K ⟶ τ_{≥ n} K` in `CochainComplex.Plus C`. -/
-@[expose]
 def πTruncGE (K : CochainComplex.Plus C) [∀ i, K.obj.HasHomology i] (n : ℤ) :
     K ⟶ K.truncGE n :=
   ObjectProperty.homMk (K.obj.πTruncGE n)
@@ -258,12 +254,12 @@ def πTruncGE (K : CochainComplex.Plus C) [∀ i, K.obj.HasHomology i] (n : ℤ)
 @[simp]
 lemma ιTruncLE_hom (K : CochainComplex.Plus C) [∀ i, K.obj.HasHomology i] (n : ℤ) :
     (K.ιTruncLE n).hom = K.obj.ιTruncLE n :=
-  rfl
+  (rfl)
 
 @[simp]
 lemma πTruncGE_hom (K : CochainComplex.Plus C) [∀ i, K.obj.HasHomology i] (n : ℤ) :
     (K.πTruncGE n).hom = K.obj.πTruncGE n :=
-  rfl
+  (rfl)
 
 instance quasiIso_ιTruncLE_hom (K : CochainComplex.Plus C) [∀ i, K.obj.HasHomology i]
     (n : ℤ) [K.obj.IsLE n] : QuasiIso (K.ιTruncLE n).hom :=
@@ -286,7 +282,6 @@ variable {A : Type u₁} [Category.{v₁} A] {B : Type u₂} [Category.{v₂} B]
 
 /-- Natural isomorphism `F.mapCochainComplexPlus ⋙ G.mapCochainComplexPlus ≅
 (F ⋙ G).mapCochainComplexPlus` for functors preserving zero morphisms. -/
-@[expose]
 def mapCochainComplexPlusCompIso [HasZeroMorphisms A] [HasZeroMorphisms B] [HasZeroMorphisms E]
     (F : A ⥤ B) (G : B ⥤ E) [F.PreservesZeroMorphisms] [G.PreservesZeroMorphisms] :
     F.mapCochainComplexPlus ⋙ G.mapCochainComplexPlus ≅ (F ⋙ G).mapCochainComplexPlus :=
@@ -297,14 +292,14 @@ lemma mapCochainComplexPlusCompIso_hom_app_hom [HasZeroMorphisms A] [HasZeroMorp
     [HasZeroMorphisms E] (F : A ⥤ B) (G : B ⥤ E) [F.PreservesZeroMorphisms]
     [G.PreservesZeroMorphisms] (K : CochainComplex.Plus A) :
     ((F.mapCochainComplexPlusCompIso G).hom.app K).hom = 𝟙 _ :=
-  rfl
+  (rfl)
 
 @[simp]
 lemma mapCochainComplexPlusCompIso_inv_app_hom [HasZeroMorphisms A] [HasZeroMorphisms B]
     [HasZeroMorphisms E] (F : A ⥤ B) (G : B ⥤ E) [F.PreservesZeroMorphisms]
     [G.PreservesZeroMorphisms] (K : CochainComplex.Plus A) :
     ((F.mapCochainComplexPlusCompIso G).inv.app K).hom = 𝟙 _ :=
-  rfl
+  (rfl)
 
 instance [Preadditive A] [Preadditive B] [Preadditive E]
     (F : A ⥤ B) (G : B ⥤ E) [F.Additive] [G.Additive] :

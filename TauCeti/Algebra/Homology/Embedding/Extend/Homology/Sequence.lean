@@ -6,7 +6,7 @@ Authors: Claude
 module
 
 public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
-public import TauCeti.Algebra.Homology.Embedding.ExtendHomology.Basic
+public import TauCeti.Algebra.Homology.Embedding.Extend.Homology.Basic
 
 /-!
 # The homology sequence of an extended short exact sequence

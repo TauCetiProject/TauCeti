@@ -10,7 +10,7 @@ public import Mathlib.CategoryTheory.Abelian.RightDerived
 public import Mathlib.CategoryTheory.Functor.Derived.RightDerivedCommShift
 public import TauCeti.Algebra.Homology.DerivedCategory.Plus.Functor
 public import TauCeti.Algebra.Homology.DerivedCategory.Plus.RightDerived
-public import TauCeti.Algebra.Homology.Embedding.Extend
+public import TauCeti.Algebra.Homology.Embedding.Extend.Basic
 
 /-!
 # Comparison theorems for bounded-below right derived functors
@@ -284,7 +284,9 @@ private lemma extendResolution_naturality {X Y : C} (f : X ⟶ Y)
       (TauCeti.CochainComplex.Plus.singleFunctor C 0).map f ≫ extendResolution IY := by
   apply (CochainComplex.Plus.ι C).map_injective
   dsimp [extendResolution]
-  simp only [Category.id_comp, Category.assoc]
+  simp only [TauCeti.CochainComplex.Plus.singleFunctorCompιIso_hom_app, Functor.comp_obj,
+    ObjectProperty.ι_obj, TauCeti.CochainComplex.Plus.singleFunctor_obj_obj, Category.id_comp,
+    Category.assoc]
   rw [← HomologicalComplex.extendMap_comp, hφ, HomologicalComplex.extendMap_comp]
   dsimp only [CochainComplex.single₀]
   rw [← ComplexShape.embeddingUpNat.extendSingleIso_inv_naturality_assoc f (i := 0) (i' := 0)

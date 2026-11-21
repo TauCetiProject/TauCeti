@@ -11,7 +11,7 @@ public import Mathlib.Algebra.Homology.TotalComplexSymmetry
 public import Mathlib.CategoryTheory.GradedObject.Monoidal
 public import TauCeti.Algebra.Homology.ComplexShape.Signs
 public import TauCeti.Algebra.Homology.Embedding.DownNatAdd
-public import TauCeti.Algebra.Homology.Embedding.ExtendHomology.Basic
+public import TauCeti.Algebra.Homology.Embedding.Extend.Homology.Basic
 public import TauCeti.Algebra.Homology.HomologySequenceLemmas
 
 /-!

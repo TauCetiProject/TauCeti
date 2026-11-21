@@ -30,7 +30,7 @@ complex is set up.
 * `HomologicalComplex.mono_extendMap_of_mono_f`: extension preserves degreewise monomorphisms.
 * `HomologicalComplex.mono_extendMap`: when the category has pullbacks, extension preserves
   monomorphisms, and `e.extendFunctor C` preserves monomorphisms. This is the dual of
-  `HomologicalComplex.epi_extendMap` (`ExtendHomology/Sequence.lean`), which needs an abelian
+  `HomologicalComplex.epi_extendMap` (`Extend/Homology/Sequence.lean`), which needs an abelian
   category.
 * `HomologicalComplex.mem_range_extendMap_f_iff`: for complexes of modules, in the degree `e.f i`
   the range of an extended chain map is the range of the chain map in degree `i`.

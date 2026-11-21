@@ -156,8 +156,9 @@ lemma ι_map_singleFunctorIsoCompQ_hom_app (n : ℤ) (X : C) :
         (_root_.DerivedCategory.Plus.QCompιIso C).inv.app
           ((TauCeti.CochainComplex.Plus.singleFunctor C n).obj X) =
       (_root_.DerivedCategory.Plus.QCompιIso C).inv.app
-        ((TauCeti.CochainComplex.Plus.singleFunctor C n).obj X) :=
-    (congrArg (· ≫ _) (_root_.DerivedCategory.Q.map_id _)).trans (Category.id_comp _)
+        ((TauCeti.CochainComplex.Plus.singleFunctor C n).obj X) := by
+    rw [TauCeti.CochainComplex.Plus.singleFunctorCompιIso_inv_app,
+      _root_.DerivedCategory.Q.map_id, Category.id_comp]
   rw [h1] at h
   exact h
 
@@ -165,7 +166,7 @@ lemma ι_map_singleFunctorIsoCompQ_hom_app (n : ℤ) (X : C) :
 is distinguished. -/
 lemma mappingConeTriangle_distinguished {K L : _root_.CochainComplex.Plus C} (f : K ⟶ L) :
     _root_.DerivedCategory.Plus.Q.mapTriangle.obj
-        (TauCeti.CochainComplex.Plus.mappingConeTriangle f) ∈
+        (_root_.CochainComplex.Plus.mappingConeTriangle f) ∈
       distTriang (_root_.DerivedCategory.Plus C) := by
   rw [← _root_.DerivedCategory.Plus.ι.map_distinguished_iff]
   refine isomorphic_distinguished _
@@ -176,6 +177,6 @@ lemma mappingConeTriangle_distinguished {K L : _root_.CochainComplex.Plus C} (f 
     (Functor.mapTriangleCompIso (_root_.CochainComplex.Plus.ι C)
       _root_.DerivedCategory.Q).app _ ≪≫
     _root_.DerivedCategory.Q.mapTriangle.mapIso
-      (TauCeti.CochainComplex.Plus.mappingConeTriangleιIso f)
+      (_root_.CochainComplex.Plus.mappingConeTriangleιIso f)
 
 end TauCeti.DerivedCategory.Plus

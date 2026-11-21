@@ -214,14 +214,18 @@ lemma mapDerivedCategoryPlusCompHomologyFunctorIso_hom_app_Q_obj
         (DerivedCategory.Plus.QCompιIso C₂).inv.app (F.mapCochainComplexPlus.obj K) =
         F.mapDerivedCategoryFactors.hom.app K.obj := by
       have h2a : DerivedCategory.Q.map (F.mapCochainComplexPlusCompι.inv.app K) ≫
-          (DerivedCategory.Plus.QCompιIso C₂).inv.app (F.mapCochainComplexPlus.obj K) = 𝟙 _ :=
-        (congrArg (· ≫ _) (DerivedCategory.Q.map_id _)).trans (Category.id_comp _)
+          (DerivedCategory.Plus.QCompιIso C₂).inv.app (F.mapCochainComplexPlus.obj K) = 𝟙 _ := by
+        dsimp [Functor.mapCochainComplexPlus]
+        rw [Functor.mapCochainComplexPlusCompι_inv_app, DerivedCategory.Plus.QCompιIso_inv_app,
+          DerivedCategory.Q.map_id, Category.id_comp]
+        rfl
       rw [h2a]
       exact Category.comp_id _
     have h1 : F.mapDerivedCategory.map ((DerivedCategory.Plus.QCompιIso C₁).hom.app K) ≫
         F.mapDerivedCategoryFactors.hom.app K.obj =
-        F.mapDerivedCategoryFactors.hom.app K.obj :=
-      (congrArg (· ≫ _) (F.mapDerivedCategory.map_id _)).trans (Category.id_comp _)
+        F.mapDerivedCategoryFactors.hom.app K.obj := by
+      dsimp [DerivedCategory.Plus.Q]
+      rw [DerivedCategory.Plus.QCompιIso_hom_app, F.mapDerivedCategory.map_id, Category.id_comp]
     rw [h2, h1] at h
     exact h
   have hH : (DerivedCategory.Plus.homologyFunctor C₂ n).map
