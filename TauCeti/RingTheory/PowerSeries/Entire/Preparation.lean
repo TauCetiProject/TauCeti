@@ -55,6 +55,8 @@ entire factor.
   polynomial of degree `d`.
 * `TauCeti.PowerSeries.IsEntirePreparation.isCoprime`: the two factors are coprime in the ring
   of entire series.
+* `TauCeti.PowerSeries.IsEntirePreparation.isCoprime_of_isCoprime_mul_eq`: a factor `g` of a
+  coprime factorization `P = g * a` is coprime to `a * G` in the ring of entire series.
 * `TauCeti.PowerSeries.IsEntirePreparation.mono`: a normalised preparation at `c` is one at every
   smaller radius.
 * `TauCeti.PowerSeries.IsEntirePreparation.dvd_of_le`: over a coefficient ring with multiplicative
@@ -231,6 +233,21 @@ theorem IsEntirePreparation.isCoprime [CompleteSpace R] (h : IsEntirePreparation
   simp only [Subring.coe_add, Subring.coe_mul, Subring.coe_one]
   rw [hP, Polynomial.coe_smul, smul_mul_smul_comm, h.isUnit_leadingCoeff.val_inv_mul, one_smul]
   linear_combination hωGq
+
+/-- **Coprime factors of the polynomial factor.** Over a complete ultrametric normed commutative
+ring, let `F = P * G` be a normalised entire preparation at `c > 0`, with `F` multiplicatively
+distinguished of degree `d` at `c`. If `P = g * a` with `g` and `a` coprime polynomials, then `g`
+is coprime to `a * G` in the ring of entire series. -/
+theorem IsEntirePreparation.isCoprime_of_isCoprime_mul_eq [CompleteSpace R]
+    (h : IsEntirePreparation c d F P G) (hF : IsMulDistinguished c d F) (hc : 0 < c)
+    {g a : Polynomial R} (hga : IsCoprime g a) (hgaP : g * a = P) :
+    IsCoprime (⟨g, IsEntire.mem_subring.mpr (isEntire_coe g)⟩ : IsEntire.subring R)
+      ⟨a * G, IsEntire.mem_subring.mpr ((isEntire_coe a).mul h.isEntire)⟩ := by
+  -- `g` is coprime to `a`, and to `G` since `g ∣ P`.
+  have hgP : IsEntire.polynomialHom g ∣ ⟨P, IsEntire.mem_subring.mpr (isEntire_coe P)⟩ :=
+    ⟨IsEntire.polynomialHom a, Subtype.ext (by simp [← hgaP])⟩
+  convert (hga.map IsEntire.polynomialHom).mul_right
+    ((h.isCoprime hF hc).of_isCoprime_of_dvd_left hgP) using 1 <;> exact Subtype.ext (by simp)
 
 /-- **Nested normalised preparations.** Over an ultrametric normed commutative ring with
 multiplicative norm, let `F` be distinguished of degree `d` at a positive radius `c ≤ c'`. Then the

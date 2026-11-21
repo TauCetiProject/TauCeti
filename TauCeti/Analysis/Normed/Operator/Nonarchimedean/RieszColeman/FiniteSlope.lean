@@ -42,6 +42,8 @@ its cofactor in `H_u`, and the Riesz–Coleman summand `ker g*(u)` has dimension
 
 ## Main results
 
+* `ContinuousLinearMap.IsPrCompact.isMulDistinguished_finsum_newtonSlopeMultiplicity`: over a
+  field, the Fredholm series is multiplicatively distinguished at `b ^ h` in the degree `N_h`.
 * `ContinuousLinearMap.IsPrCompact.exists_isRieszColemanProjection_of_isMulDistinguished`: the
   finite projective rank-`N` summand attached to a multiplicatively distinguished Fredholm series
   over a coefficient ring.
@@ -108,6 +110,18 @@ variable {K M : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [Comple
 
 include hb hv
 
+omit [IsBoundedSMul K M] in
+/-- **The distinguished degree of a Fredholm series.** The Fredholm series `H_u` of a
+`(Pr)`-compact endomorphism over a complete ultrametric field whose norm comes from `v` with base
+`b` is multiplicatively distinguished at the radius `b ^ h` in the degree
+`N_h = ∑ᶠ s ∈ Set.Iic h, H_u.newtonSlopeMultiplicity v s`, the number of slopes of the Fredholm
+polygon at most `h`, counted with multiplicity. -/
+theorem IsPrCompact.isMulDistinguished_finsum_newtonSlopeMultiplicity (hu : u.IsPrCompact)
+    (h : ℝ) :
+    IsMulDistinguished (b ^ h)
+      (∑ᶠ s ∈ Set.Iic h, u.charPowerSeries.newtonSlopeMultiplicity v s) u.charPowerSeries :=
+  hu.isEntire_charPowerSeries.isMulDistinguished_finsum_newtonSlopeMultiplicity v hb hv (by simp) h
+
 /-- **The finite-slope decomposition at a cutoff.** Let `u` be a `(Pr)`-compact endomorphism over a
 complete ultrametric field whose norm comes from `v` with base `b`, and let `h` be a real cutoff.
 Write `N_h = ∑ᶠ s ∈ Set.Iic h, H_u.newtonSlopeMultiplicity v s` for the number of slopes of the
@@ -126,8 +140,7 @@ theorem IsPrCompact.exists_isRieszColemanProjection_finiteSlope (hu : u.IsPrComp
       IsRieszColemanProjection u Q E ∧
       Module.finrank K E.range =
         ∑ᶠ s ∈ Set.Iic h, u.charPowerSeries.newtonSlopeMultiplicity v s := by
-  have hN := hu.isEntire_charPowerSeries.isMulDistinguished_finsum_newtonSlopeMultiplicity v hb hv
-    (by simp) h
+  have hN := hu.isMulDistinguished_finsum_newtonSlopeMultiplicity v hb hv h
   have hc : 0 < b ^ h := Real.rpow_pos_of_pos (zero_lt_one.trans hb) h
   obtain ⟨Q, S, E, hQS, hE, -⟩ := hu.exists_isRieszColemanProjection_of_isMulDistinguished hc hN
   refine ⟨Q, S, E, hQS, hQS.newtonSlopeMultiplicity_left v hb hv hN.toIsDistinguished,
@@ -147,8 +160,7 @@ theorem IsPrCompact.range_le_range_of_le (hu : u.IsPrCompact) {h h' : ℝ} (hhh'
     (hQS' : IsEntirePreparation (b ^ h') d' u.charPowerSeries Q' S')
     (hE : IsRieszColemanProjection u Q E) (hE' : IsRieszColemanProjection u Q' E') :
     E.range ≤ E'.range := by
-  have hN := hu.isEntire_charPowerSeries.isMulDistinguished_finsum_newtonSlopeMultiplicity v hb hv
-    (by simp) h
+  have hN := hu.isMulDistinguished_finsum_newtonSlopeMultiplicity v hb hv h
   have hb0 : 0 < b := zero_lt_one.trans hb
   exact hE.range_le_range_of_dvd hE' hQS.isUnit_leadingCoeff <|
     hQS.dvd_of_le hQS' hN.toIsDistinguished (Real.rpow_pos_of_pos hb0 h)
@@ -169,8 +181,7 @@ theorem IsPrCompact.exists_isRieszColemanProjection_pureSlope (hu : u.IsPrCompac
       IsRieszColemanProjection u g E ∧
       Module.finrank K E.range = u.charPowerSeries.newtonSlopeMultiplicity v σ ∧
       ∀ E' : M →L[K] M, IsRieszColemanProjection u Q E' → E.range ≤ E'.range := by
-  have hN := hu.isEntire_charPowerSeries.isMulDistinguished_finsum_newtonSlopeMultiplicity v hb hv
-    (by simp) h
+  have hN := hu.isMulDistinguished_finsum_newtonSlopeMultiplicity v hb hv h
   have hc : 0 < b ^ h := Real.rpow_pos_of_pos (zero_lt_one.trans hb) h
   -- Split off the slope-`σ` factor `g σ` of `Q` together with a coprime cofactor `c`.
   obtain ⟨g, hg⟩ := Polynomial.exists_isPureSlopeFactorization v hb hv hQS.coeff_zero_eq_one
@@ -184,19 +195,7 @@ theorem IsPrCompact.exists_isRieszColemanProjection_pureSlope (hu : u.IsPrCompac
   have hcS : ((c : K⟦X⟧) * S).IsEntire := (PowerSeries.isEntire_coe c).mul hQS.isEntire
   have hH : u.charPowerSeries = (g σ : K⟦X⟧) * ((c : K⟦X⟧) * S) := by
     rw [hQS.eq_mul, ← hgcQ, Polynomial.coe_mul, mul_assoc]
-  -- Coprimality in the ring of entire series: `g σ` is coprime to `c`, and to `S` since `g σ ∣ Q`.
-  have hcop : IsCoprime (⟨g σ, IsEntire.mem_subring.mpr (PowerSeries.isEntire_coe _)⟩ :
-      IsEntire.subring K) ⟨(c : K⟦X⟧) * S, IsEntire.mem_subring.mpr hcS⟩ := by
-    have hQ := hQS.isCoprime hN hc
-    rw [show (⟨Q, _⟩ : IsEntire.subring K) = IsEntire.polynomialHom Q from
-      Subtype.ext (IsEntire.coe_polynomialHom Q).symm] at hQ
-    rw [show (⟨g σ, _⟩ : IsEntire.subring K) = IsEntire.polynomialHom (g σ) from
-        Subtype.ext (IsEntire.coe_polynomialHom _).symm,
-      show (⟨(c : K⟦X⟧) * S, _⟩ : IsEntire.subring K) =
-        IsEntire.polynomialHom c * ⟨S, IsEntire.mem_subring.mpr hQS.isEntire⟩ from
-        Subtype.ext (by simp)]
-    exact (hgc.map _).mul_right
-      (hQ.of_isCoprime_of_dvd_left (map_dvd _ ⟨c, hgcQ.symm⟩))
+  have hcop := hQS.isCoprime_of_isCoprime_mul_eq hN hc hgc hgcQ
   obtain ⟨E, hE⟩ := hu.exists_isRieszColemanProjection (hg.coeff_zero σ) hlc hcS hH hcop
   refine ⟨g σ, E, hg.coeff_zero σ, hg.newtonSlopes_eq σ, hdeg, ⟨c, hgcQ.symm⟩, hE, ?_,
     fun E' hE' ↦ hE.range_le_range_of_dvd hE' hlc ⟨c, hgcQ.symm⟩⟩
