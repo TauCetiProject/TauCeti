@@ -21,7 +21,7 @@ at a prime.
 ## Main definitions and results
 
 * `AdicCompletion.factor_evalₐ`: the projections `evalₐ I n` are compatible with the transition
-  maps `S ⧸ I ^ n → S ⧸ I ^ m`.
+  maps `S ⧸ I ^ n → S ⧸ I ^ m`; in terms of representatives, `AdicCompletion.evalₐ_eq_mk_of_le`.
 * `AdicCompletion.mapₐ`: the map of completions induced by an algebra homomorphism, with
   `AdicCompletion.evalₐ_mapₐ` and `AdicCompletion.mapₐ_of`, and the functoriality laws
   `AdicCompletion.mapₐ_id` and `AdicCompletion.mapₐ_comp`.
@@ -49,6 +49,12 @@ theorem factor_evalₐ {m n : ℕ} (hle : m ≤ n) (x : AdicCompletion I S) :
     Ideal.Quotient.factor (Ideal.pow_le_pow_right hle) (evalₐ I n x) = evalₐ I m x := by
   obtain ⟨c, rfl⟩ := mk_surjective I S x
   simp [AdicCompletion.Ideal.mk_eq_mk I hle]
+
+/-- If the projection of `x` to `S ⧸ I ^ n` is the class of `a`, then so is its projection to
+`S ⧸ I ^ m` for every `m ≤ n`. -/
+theorem evalₐ_eq_mk_of_le {m n : ℕ} (hle : m ≤ n) {x : AdicCompletion I S} {a : S}
+    (h : evalₐ I n x = Ideal.Quotient.mk _ a) : evalₐ I m x = Ideal.Quotient.mk _ a := by
+  rw [← factor_evalₐ hle x, h, Ideal.Quotient.factor_mk]
 
 private theorem mapₐ_aux (f : S →ₐ[R] S') (hf : I ≤ I'.comap f) {m n : ℕ} (hle : m ≤ n) :
     (Ideal.Quotient.factorₐ R (Ideal.pow_le_pow_right hle)).comp

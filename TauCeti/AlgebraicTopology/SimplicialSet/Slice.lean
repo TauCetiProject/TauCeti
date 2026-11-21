@@ -438,10 +438,11 @@ lemma map_comp {L' D' : SSet.{u}} {q' : L' ⟶ D'} (i : L ⟶ K) (g : C ⟶ D) (
     ← Category.id_comp (map (i' ≫ i) _ _), homEquiv_comp_map_coe, homEquiv_comp_map_coe]
   simp only [Category.assoc, ← join.map_comp_assoc, Category.id_comp]
 
-/-- Pushing cones forward along an isomorphism is an isomorphism of slices. -/
-instance isIso_map (g : C ⟶ D) [IsIso g] {r : K ⟶ D} (h : 𝟙 K ≫ p ≫ g = r) :
-    IsIso (map (𝟙 K) g h) :=
-  ⟨map (𝟙 K) (inv g) (by simp [← h]), hom_ext (by simp), hom_ext (by simp)⟩
+/-- Restricting cones along an isomorphism and pushing them forward along an isomorphism is an
+isomorphism of slices. -/
+instance isIso_map (i : L ⟶ K) [IsIso i] (g : C ⟶ D) [IsIso g] (h : i ≫ p ≫ g = q) :
+    IsIso (map i g h) :=
+  ⟨map (inv i) (inv g) (by simp [← h]), hom_ext (by simp), hom_ext (by simp)⟩
 
 /-- Slices preserve pullbacks: for a pullback square of simplicial sets with top-left corner `C'`,
 the slices over a diagram `p' : K ⟶ C'` and over its images in the other corners form a pullback
