@@ -26,17 +26,17 @@ element `u` that is not a proper power and an element `g ∉ C_H(u)` exist by ro
 `H[X]` and `H ∗ ℤⁿ` embed over `H` in one admissible extension of a centralizer of `H`. These are
 the free and the free abelian levels of a normalized tower over `H`.
 
-Without any hypothesis on `u`, a letter `tᵢ` is free over every subgroup of `G` meeting `C`
-trivially: if `f : K →* G` maps no nontrivial element of `K` into `C`, then the homomorphism
-`K ∗ ⟨z⟩ →* G(u, ℤⁿ)` that is `f` on `K` and sends `z` to `tᵢ` is injective.
+Without any hypothesis on `u`, the new letters are free over every subgroup of `G` meeting `C`
+trivially: if `f : K →* G` maps no nontrivial element of `K` into `C`, then for an embedding
+`ι : A →* ℤⁿ` the homomorphism `K ∗ A →* G(u, ℤⁿ)` that is `f` on `K` and `ι` on `A` is injective.
 
 ## Main results
 
 * `TauCeti.LimitGroup.CentralizerExt.coprodPiLift_injective`: `K ∗ A` embeds in `G(u, ℤⁿ)`.
 * `TauCeti.LimitGroup.CentralizerExt.coprodFreeGroupLift_injective`: `K ∗ F(X)` embeds in
   `G(u, ℤⁿ)`.
-* `TauCeti.LimitGroup.CentralizerExt.coprodLift_injective_of_forall_mem_centralizer`: `K ∗ ⟨tᵢ⟩`
-  embeds in `G(u, ℤⁿ)` when `K` meets `C_G(u)` trivially.
+* `TauCeti.LimitGroup.CentralizerExt.coprodLift_injective_of_comap_centralizer_eq_bot`: `K ∗ A`
+  embeds in `G(u, ℤⁿ)`, without conjugation, when `K` meets `C_G(u)` trivially.
 * `TauCeti.LimitGroup.exists_ice_embedding_GX`: `H[X]` embeds over `H` in an ICE group over `H`.
 * `TauCeti.LimitGroup.exists_ice_embedding_coprod_pi`: `H ∗ ℤⁿ` embeds over `H` in an ICE group
   over `H`.
@@ -48,11 +48,11 @@ letter `g⁻¹ f(k) g` of `G` when `f k ∈ C`, since `tᵢ` centralizes `C`, an
 malnormality. Otherwise it is the five letters `g⁻¹, tᵢ⁻¹, f k, tᵢ, g`. A nontrivial `a ∈ A` goes
 to the single letter `a` of the factor `C × ℤⁿ`. A nontrivial `w ∈ F(X)`, written with syllables
 `x₁^{e₁} ⋯ x_r^{e_r}` (consecutive `xⱼ` distinct, `eⱼ ≠ 0`), goes to the word
-`tᵢ^{m x₁}, g, tᵢ^{e₁}, g⁻¹, tᵢ^{m x₂ - m x₁}, g, …, g⁻¹, tᵢ^{-m x_r}`. For the free letter `tᵢ`, no
-conjugation is needed: `k ≠ 1` goes to the single letter `f k ∉ C` of `G` and `zᵉ`, `e ≠ 0`, to
-the single letter `tᵢᵉ` of `C × ℤⁿ`. All these letters lie outside the amalgamated subgroup, and
+`tᵢ^{m x₁}, g, tᵢ^{e₁}, g⁻¹, tᵢ^{m x₂ - m x₁}, g, …, g⁻¹, tᵢ^{-m x_r}`. When `K` meets `C`
+trivially, no conjugation is needed: `k ≠ 1` goes to the single letter `f k ∉ C` of `G` and `a ≠ 1`
+to the single letter `ι a` of `C × ℤⁿ`. All these letters lie outside the amalgamated subgroup, and
 the images of the letters of `K` start and end in `G` while the others start and end in `C × ℤⁿ`.
-So the image of a nonempty reduced word of `K ∗ A`, `K ∗ F(X)` or `K ∗ ⟨z⟩`
+So the image of a nonempty reduced word of `K ∗ A` or `K ∗ F(X)`
 (`Monoid.Coprod.exists_reduced_list_mk_eq`) is a nonempty reduced word of the amalgam, which is not
 `1` by the normal form theorem (`Monoid.PushoutI.Reduced.eq_empty_of_mem_range`).
 
@@ -253,17 +253,17 @@ theorem coprodPiLift_injective (hf : Function.Injective f) (hι : Function.Injec
     Function.Injective (coprodPiLift u f ι g i) :=
   injective_lift_conj i hf hC hg fun _ ha => isBlock_zpowersPiHom ((map_ne_one_iff ι hι).2 ha)
 
-/-- **A free letter.** If `f : K →* G` maps no nontrivial element of `K` into `C_G(u)`, then the
-homomorphism `K ∗ ⟨z⟩ →* G(u, ℤⁿ)` that is `f` on `K` and sends `z` to the letter `tᵢ` is
-injective: `f(K)` and `tᵢ` generate their free product. -/
-theorem coprodLift_injective_of_forall_mem_centralizer (hK : ∀ k, f k ∈ centralizer {u} → k = 1) :
+/-- **Free letters.** If `f : K →* G` maps no nontrivial element of `K` into `C_G(u)`, then for an
+embedding `ι : A →* ℤⁿ` the homomorphism `K ∗ A →* G(u, ℤⁿ)` that is `f` on `K` and sends `a ∈ A`
+to `ι a ∈ ℤⁿ = ⟨t₀, …, tₙ₋₁⟩` is injective: `f(K)` and a subgroup of `⟨t₀, …, tₙ₋₁⟩`, for instance
+`⟨tᵢ⟩`, generate their free product. -/
+theorem coprodLift_injective_of_comap_centralizer_eq_bot (hK : (centralizer {u}).comap f = ⊥)
+    (hι : Function.Injective ι) :
     Function.Injective (Monoid.Coprod.lift ((of : G →* CentralizerExt u n).comp f)
-      (FreeGroup.lift fun _ : Unit => t i)) := by
-  refine coprodLift_injective_of_isBlock (fun k hk => isBlock_of_notMem (mt (hK k) hk))
-    fun z hz => ?_
-  obtain ⟨e, rfl⟩ : ∃ e : ℤ, FreeGroup.of () ^ e = z :=
-    ⟨FreeGroup.freeGroupUnitEquivInt z, FreeGroup.freeGroupUnitEquivInt.symm_apply_apply z⟩
-  simpa using isBlock_t_zpow i (by rintro rfl; exact hz (zpow_zero _))
+      ((zpowersPiHom t commute_t_t).comp ι)) :=
+  coprodLift_injective_of_isBlock
+    (fun k hk => isBlock_of_notMem fun h => hk ((eq_bot_iff_forall _).1 hK k h))
+    fun _ ha => isBlock_zpowersPiHom ((map_ne_one_iff ι hι).2 ha)
 
 end Lift
 
