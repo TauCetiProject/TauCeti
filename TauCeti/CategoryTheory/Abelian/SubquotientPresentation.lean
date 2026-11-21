@@ -191,6 +191,11 @@ lemma ofEpi_Z : (ofEpi le g hg).Z = Z := (rfl)
 lemma π_ofEpi : (ofEpi le g hg).π = g :=
   (cokernelIsCokernel _).comp_coconePointUniqueUpToIso_hom _ WalkingParallelPair.one
 
+/-- The projection of the presentation given by `g`, as a morphism out of `Z`. -/
+lemma π_ofEpi' : (ofEpi le g hg).π = ofLE _ Z (ofEpi_Z le g hg).le ≫ g := by
+  rw [π_ofEpi]
+  exact (ofLE_self_comp _ _).symm
+
 end OfEpi
 
 /-- Every subquotient presentation is the one given by its projection. -/
@@ -671,12 +676,15 @@ lemma MapsTo.le_pullback_preimage (h : P.MapsTo P' φ g) (K : Subobject X') :
     P.preimage ((Subobject.pullback g).obj K) ≤ (Subobject.pullback φ).obj (P'.preimage K) := by
   obtain ⟨ψ, hψ, hψπ⟩ := h
   set S := P.preimage ((Subobject.pullback g).obj K)
-  have hS : S ≤ P.Z := P.preimage_le_Z _
+  -- The inclusion of `S` into the larger subobject of `P`, and its composite with `ψ`.
+  let ι := ofLE S P.Z (P.preimage_le_Z _)
+  have hι : ((Subobject.pullback g).obj K).Factors (ι ≫ P.π) := by
+    rw [← P.factors_preimage_iff, ofLE_arrow]
+    exact factors_self S
+  have hφ : S.arrow ≫ φ = (ι ≫ ψ) ≫ P'.Z.arrow := by simp [ι, hψ]
   refine le_of_factors ((pullback_factors_iff _ _ _).2 ?_)
-  rw [← ofLE_arrow hS, Category.assoc, ← hψ, ← Category.assoc, P'.factors_preimage_iff,
-    Category.assoc, hψπ, ← Category.assoc, ← pullback_factors_iff, ← P.factors_preimage_iff,
-    ofLE_arrow]
-  exact factors_self S
+  rw [hφ, P'.factors_preimage_iff, Category.assoc, hψπ, ← Category.assoc, ← pullback_factors_iff]
+  exact hι
 
 /-- If `φ` maps `P` to `P'`, it maps the larger subobject of `P` into that of `P'`. -/
 lemma MapsTo.Z_le_pullback (h : P.MapsTo P' φ g) : P.Z ≤ (Subobject.pullback φ).obj P'.Z := by

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Homology.SpectralSequence.Basic
+public import TauCeti.Algebra.Homology.SpectralSequence.Basic
 public import TauCeti.Algebra.Homology.ShortComplex.SubquotientPresentation
 
 /-!
@@ -49,8 +49,8 @@ sequences identifies the towers.
 * `CategoryTheory.SpectralSequence.cycles_add_one`,
   `CategoryTheory.SpectralSequence.boundaries_add_one`: `Z_{r+1}` and `B_{r+1}` are the preimages
   of the kernel of the leaving differential and of the image of the entering one.
-* `CategoryTheory.SpectralSequence.cycles_antitone`,
-  `CategoryTheory.SpectralSequence.boundaries_monotone`,
+* `CategoryTheory.SpectralSequence.cycles_anti`,
+  `CategoryTheory.SpectralSequence.boundaries_mono`,
   `CategoryTheory.SpectralSequence.boundaries_le_cycles`: the cycle tower decreases, the boundary
   tower increases, and every boundary subobject lies below every cycle subobject.
 * `CategoryTheory.SpectralSequence.cycles_add_one_eq_iff`,
@@ -145,16 +145,18 @@ the kernel of the differential of the page `r` leaving `pq`. -/
 lemma cycles_add_one (r : ℤ) (hr : r₀ ≤ r) :
     E.cycles pq (r + 1) (Int.le_add_one hr) =
       (E.pagePresentation pq r hr).preimage (kernelSubobject ((E.page r).dFrom pq)) := by
-  rw [cycles, pagePresentation_add_one]
-  rfl
+  rw [cycles, pagePresentation_add_one _ _ r hr, SubquotientPresentation.mapIso_Z,
+    SubquotientPresentation.trans_Z, ShortComplex.homologyPresentation_Z,
+    HomologicalComplex.shortComplexFunctor_obj_g]
 
 /-- The boundaries of the page `r + 1` are the preimage, under the presentation of the page `r`,
 of the image of the differential of the page `r` entering `pq`. -/
 lemma boundaries_add_one (r : ℤ) (hr : r₀ ≤ r) :
     E.boundaries pq (r + 1) (Int.le_add_one hr) =
       (E.pagePresentation pq r hr).preimage (imageSubobject ((E.page r).dTo pq)) := by
-  rw [boundaries, pagePresentation_add_one]
-  rfl
+  rw [boundaries, pagePresentation_add_one _ _ r hr, SubquotientPresentation.mapIso_B,
+    SubquotientPresentation.trans_B, ShortComplex.homologyPresentation_B,
+    HomologicalComplex.shortComplexFunctor_obj_f]
 
 /-- On each page, every boundary is a cycle. -/
 lemma boundaries_le_cycles_self (r : ℤ) (hr : r₀ ≤ r) : E.boundaries pq r ≤ E.cycles pq r :=
@@ -173,14 +175,14 @@ lemma boundaries_le_boundaries_add_one (r : ℤ) (hr : r₀ ≤ r) :
   exact (E.pagePresentation pq r hr).B_le_preimage _
 
 /-- The cycle tower is decreasing. -/
-lemma cycles_antitone {r r' : ℤ} (hr : r₀ ≤ r) (hrr' : r ≤ r') :
+lemma cycles_anti {r r' : ℤ} (hr : r₀ ≤ r) (hrr' : r ≤ r') :
     E.cycles pq r' (hr.trans hrr') ≤ E.cycles pq r := by
   induction r', hrr' using Int.leInduction with
   | base => exact le_rfl
   | succ s hrs ih => exact (E.cycles_add_one_le pq s (hr.trans hrs)).trans ih
 
 /-- The boundary tower is increasing. -/
-lemma boundaries_monotone {r r' : ℤ} (hr : r₀ ≤ r) (hrr' : r ≤ r') :
+lemma boundaries_mono {r r' : ℤ} (hr : r₀ ≤ r) (hrr' : r ≤ r') :
     E.boundaries pq r ≤ E.boundaries pq r' (hr.trans hrr') := by
   induction r', hrr' using Int.leInduction with
   | base => exact le_rfl
@@ -191,8 +193,8 @@ pages `r` and `r'`. -/
 lemma boundaries_le_cycles (r r' : ℤ) (hr : r₀ ≤ r) (hr' : r₀ ≤ r') :
     E.boundaries pq r ≤ E.cycles pq r' := by
   rcases le_total r r' with h | h
-  · exact (E.boundaries_monotone pq hr h).trans (E.boundaries_le_cycles_self pq r' hr')
-  · exact (E.boundaries_le_cycles_self pq r hr).trans (E.cycles_antitone pq hr' h)
+  · exact (E.boundaries_mono pq hr h).trans (E.boundaries_le_cycles_self pq r' hr')
+  · exact (E.boundaries_le_cycles_self pq r hr).trans (E.cycles_anti pq hr' h)
 
 /-- The cycles do not change from the page `r` to the page `r + 1` exactly when the differential
 of the page `r` leaving `pq` vanishes. -/
@@ -252,25 +254,19 @@ lemma boundaries_le_pullback (f : E ⟶ E') (r : ℤ) (hr : r₀ ≤ r) :
     E.boundaries pq r ≤ (Subobject.pullback ((f.hom r₀).f pq)).obj (E'.boundaries pq r) :=
   (pagePresentation_mapsTo pq f r hr).B_le_pullback
 
-/-- The first-page components of an isomorphism of spectral sequences are inverse. -/
-private lemma hom_f_inv_f (e : E ≅ E') :
-    (e.hom.hom r₀).f pq ≫ (e.inv.hom r₀).f pq = 𝟙 _ := by
-  rw [← HomologicalComplex.comp_f, ← comp_hom _ _ r₀ le_rfl, e.hom_inv_id, id_hom,
-    HomologicalComplex.id_f]
-
 /-- Under an isomorphism of spectral sequences, the cycles of `E` are the pullback of the cycles
 of `E'` along the first-page component. -/
 lemma pullback_cycles_of_iso (e : E ≅ E') (r : ℤ) (hr : r₀ ≤ r) :
     (Subobject.pullback ((e.hom.hom r₀).f pq)).obj (E'.cycles pq r) = E.cycles pq r :=
-  pullback_eq_of_comp_eq_id (hom_f_inv_f pq e) (cycles_le_pullback pq e.hom r hr)
-    (cycles_le_pullback pq e.inv r hr)
+  pullback_eq_of_comp_eq_id (hom_inv_id_hom_f e r₀ le_rfl pq)
+    (cycles_le_pullback pq e.hom r hr) (cycles_le_pullback pq e.inv r hr)
 
 /-- Under an isomorphism of spectral sequences, the boundaries of `E` are the pullback of the
 boundaries of `E'` along the first-page component. -/
 lemma pullback_boundaries_of_iso (e : E ≅ E') (r : ℤ) (hr : r₀ ≤ r) :
     (Subobject.pullback ((e.hom.hom r₀).f pq)).obj (E'.boundaries pq r) = E.boundaries pq r :=
-  pullback_eq_of_comp_eq_id (hom_f_inv_f pq e) (boundaries_le_pullback pq e.hom r hr)
-    (boundaries_le_pullback pq e.inv r hr)
+  pullback_eq_of_comp_eq_id (hom_inv_id_hom_f e r₀ le_rfl pq)
+    (boundaries_le_pullback pq e.hom r hr) (boundaries_le_pullback pq e.inv r hr)
 
 end Naturality
 

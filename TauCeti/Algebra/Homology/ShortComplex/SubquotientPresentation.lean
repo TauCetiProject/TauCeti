@@ -97,14 +97,8 @@ lemma π_homologyPresentation :
 `kernelSubobject S.g`. -/
 lemma π_homologyPresentation' :
     S.homologyPresentation.π = ofLE _ (kernelSubobject S.g) S.homologyPresentation_Z.le ≫
-      S.kernelSubobjectIsoCycles.hom ≫ S.homologyπ := by
-  -- The larger subobject is `kernelSubobject S.g` by definition, but not syntactically, so the
-  -- inclusion is removed by `ofLE_refl` at a type where both ends are `kernelSubobject S.g`.
-  have h (le : kernelSubobject S.g ≤ kernelSubobject S.g)
-      (f : (kernelSubobject S.g : C) ⟶ S.homology) : ofLE _ _ le ≫ f = f := by
-    rw [ofLE_refl, Category.id_comp]
-  rw [π_homologyPresentation]
-  exact (h _ _).symm
+      S.kernelSubobjectIsoCycles.hom ≫ S.homologyπ :=
+  TauCeti.SubquotientPresentation.π_ofEpi' _ _ _
 
 /-- A morphism of short complexes maps the presentation of the homology of its source to that of
 its target, through its middle component and over the induced morphism in homology. -/
