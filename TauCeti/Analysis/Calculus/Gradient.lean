@@ -50,6 +50,7 @@ chain rule for the gradient of a real profile composed with a real function.
 * `TauCeti.gradient_const_smul`: `∇ (c • f) x = conj c • ∇ f x`.
 * `TauCeti.gradient_neg` and `TauCeti.gradient_sub`: the gradient of a negative and of a
   difference.
+* `TauCeti.gradient_mul`: over `ℝ`, the Leibniz rule `∇ (f g) = f ∇ g + g ∇ f`.
 * `TauCeti.gradient_comp_linearIsometryEquiv_right`: `∇ (f ∘ l) x = l⁻¹ (∇ f (l x))` for a
   linear isometry equivalence `l`.
 * `TauCeti.gradient_of_notMem_tsupport`: the gradient vanishes off the topological support.
@@ -154,6 +155,13 @@ theorem gradient_neg : ∇ (-f) x = -∇ f x := by
 theorem gradient_sub (hf : DifferentiableAt 𝕜 f x) (hg : DifferentiableAt 𝕜 g x) :
     ∇ (f - g) x = ∇ f x - ∇ g x := by
   rw [sub_eq_add_neg, gradient_add hf hg.neg, gradient_neg, sub_eq_add_neg]
+
+/-- **The Leibniz rule for the gradient.** Over `ℝ`, where the Riesz isomorphism is linear, the
+gradient of a product of real functions differentiable at `x` is `f x • ∇ g x + g x • ∇ f x`. -/
+theorem gradient_mul {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
+    {f g : E → ℝ} {x : E} (hf : DifferentiableAt ℝ f x) (hg : DifferentiableAt ℝ g x) :
+    ∇ (fun y => f y * g y) x = f x • ∇ g x + g x • ∇ f x := by
+  simp only [gradient, fderiv_fun_mul hf hg, map_add, map_smul]
 
 /-- The gradient transforms under right composition by a linear isometry equivalence `l` as
 `∇ (f ∘ l) x = l⁻¹ (∇ f (l x))`. No differentiability hypothesis is needed. -/
