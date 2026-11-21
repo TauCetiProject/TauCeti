@@ -730,10 +730,8 @@ private theorem ofReal_inv_mul_eLpNorm_ball_le {p q : ℝ≥0}
       R * V := by
     rw [finrank_euclideanSpace_fin, one_div, one_div, hpq, add_sub_cancel_left,
       Real.mul_rpow (by positivity) measureReal_nonneg,
-      show ((n : ℝ) + 1) = ((n + 1 : ℕ) : ℝ) by push_cast; rfl,
-      Real.pow_rpow_inv_natCast hR.le n.succ_ne_zero, NNReal.coe_rpow]
-    push_cast
-    rfl
+      ← Nat.cast_succ, Real.pow_rpow_inv_natCast hR.le n.succ_ne_zero, NNReal.coe_rpow,
+      measureReal_def, ENNReal.coe_toNNReal_eq_toReal, Nat.cast_succ]
   have hH := Measure.eLpNorm_ball_le_mul_rpow volume (x₀ := x₀) (p := p) hq0
     (by exact_mod_cast hqp) hG
   rw [hfac, ENNReal.ofReal_mul hR.le] at hH
@@ -758,7 +756,7 @@ private theorem mul_add_mul_add_le_mul_add {CW CD V : ℝ≥0} {c₀ Lam R : ℝ
   set ρ := ENNReal.ofReal R⁻¹
   have hk : ENNReal.ofReal (c₀ * R⁻¹) = κ * ρ := ENNReal.ofReal_mul hc₀
   have hk' : ENNReal.ofReal (Lam * (c₀ * R⁻¹)) = L * (κ * ρ) := by
-    rw [ENNReal.ofReal_mul hLam, hk, ENNReal.ofReal]
+    rw [ENNReal.ofReal_mul hLam, hk, ENNReal.ofReal.eq_1]
   have h1 : (1 : ℝ≥0) ≤ 1 + κ * (L + CD + CD * L) := le_self_add
   have h2 : L * κ ≤ 1 + κ * (L + CD + CD * L) := calc
     L * κ = κ * L := mul_comm _ _
