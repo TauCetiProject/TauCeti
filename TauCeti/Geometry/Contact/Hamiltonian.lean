@@ -313,14 +313,10 @@ theorem contactFlat_apply_eq_smul_sub_mvfderiv_iff_of_isContactFormAt
       α.val x ![v] = f x ∧ ∀ w, mextDeriv α.val x ![v, w] =
         mvfderiv I f x (α.reebVectorField x) * α.val x ![w] - mvfderiv I f x w := by
   refine ⟨fun hv ↦ ?_, fun ⟨hf, hd⟩ ↦ ?_⟩
-  · have hc := isContactFormAt_iff_isContact.1 h
-    have hR1 : α.val x ![α.reebVectorField x] = 1 := by
-      simpa using apply_characteristicVectorField hc
-    have hR2 : mextDeriv α.val x ![v, α.reebVectorField x] = 0 := by
-      simpa using apply_characteristicVectorField_right hc v
-    -- Evaluating at the Reeb vector recovers `α(v) = f`.
+  · -- Evaluating at the Reeb vector recovers `α(v) = f`.
     have hR := DFunLike.congr_fun hv (α.reebVectorField x)
-    simp only [contactFlat_apply, hR1, hR2, sub_apply, smul_apply,
+    simp only [contactFlat_apply, apply_reebVectorField_of_isContactFormAt h,
+      mextDeriv_reebVectorField_right_of_isContactFormAt h, sub_apply, smul_apply,
       degreeOneEquiv_apply_apply_vec, smul_eq_mul] at hR
     have hf : α.val x ![v] = f x := by linarith
     refine ⟨hf, fun w ↦ ?_⟩

@@ -218,12 +218,10 @@ contact flat map. -/
 theorem reebVectorField_eq_inverse_contactFlat_of_isContactFormAt [FiniteDimensional ℝ E]
     {x : M} (h : IsContactFormAt α.val x) :
     α.reebVectorField x = (α.contactFlat x).inverse (degreeOneEquiv α x) := by
-  have hc := isContactFormAt_iff_isContact.1 h
   rw [← (contactFlat_apply_eq_iff_of_isContactFormAt h).2
-    ⟨apply_characteristicVectorField hc, fun w ↦ by
-      simpa using apply_characteristicVectorField_left hc w⟩,
-    (isInvertible_contactFlat_of_isContactFormAt h).inverse_apply_self,
-    characteristicVectorField_mextDerivₗ]
+    ⟨apply_reebVectorField_of_isContactFormAt h,
+      mextDeriv_reebVectorField_left_of_isContactFormAt h⟩,
+    (isInvertible_contactFlat_of_isContactFormAt h).inverse_apply_self]
 
 /-! ### Contact flat maps of contact forms -/
 
