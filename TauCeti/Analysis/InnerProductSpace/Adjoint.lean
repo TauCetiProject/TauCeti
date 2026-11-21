@@ -60,7 +60,8 @@ Compression is its inverse on this corner, and extension preserves composition a
   same operator norm (`ContinuousLinearEquiv.norm_adjointEquiv`).
 * `ContinuousLinearMap.adjointRealCLM`: the adjoint `T ↦ T†` of operators between real or complex
   Hilbert spaces as a real-linear continuous map.
-* `ContDiff.clm_adjoint`: the pointwise adjoint of a `C^n` family of operators is `C^n`.
+* `ContDiff.clm_adjoint`: the pointwise adjoint of a `C^n` family of operators is `C^n`; for a
+  continuous family it is continuous (`Continuous.clm_adjoint`).
 * `ContinuousLinearMap.adjointCompL`, `ContinuousLinearMap.compAdjointL`: the real-bilinear
   continuous maps `(S, T) ↦ S† ∘ T` and `(T, S) ↦ S ∘ T†`.
 
@@ -119,6 +120,13 @@ theorem adjoint_apply_mem_orthogonal_ker [CompleteSpace E] [CompleteSpace F]
     (u : E →L[𝕜] F) (y : F) : (u†) y ∈ u.kerᗮ := by
   rw [orthogonal_ker]
   exact Submodule.le_topologicalClosure _ (LinearMap.mem_range_self _ y)
+
+/-- The pointwise adjoint `x ↦ (f x)†` of a continuous family of operators between Hilbert spaces
+is continuous. -/
+theorem _root_.Continuous.clm_adjoint [CompleteSpace E] [CompleteSpace F] {X : Type*}
+    [TopologicalSpace X] {f : X → E →L[𝕜] F} (hf : Continuous f) :
+    Continuous fun x ↦ adjoint (f x) :=
+  (adjoint : (E →L[𝕜] F) ≃ₗᵢ⋆[𝕜] (F →L[𝕜] E)).continuous.comp hf
 
 /-- Real scalars act on operators through `𝕜`, so they commute with adjoints. Mathlib records
 only `StarModule 𝕜` here. -/
@@ -416,7 +424,7 @@ theorem continuous_adjointEquiv [CompleteSpace E] [CompleteSpace F] {X : Type*}
     [TopologicalSpace X] {A : X → E ≃L[𝕜] F} (hA : Continuous fun x ↦ (A x : E →L[𝕜] F)) :
     Continuous fun x ↦ ((A x).adjointEquiv : F →L[𝕜] E) := by
   simp_rw [coe_adjointEquiv]
-  exact ContinuousLinearMap.adjoint.continuous.comp hA
+  exact hA.clm_adjoint
 
 /-- The adjoint equivalence has the same operator norm as the equivalence. -/
 @[simp]

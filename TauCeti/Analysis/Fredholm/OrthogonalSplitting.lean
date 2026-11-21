@@ -275,8 +275,7 @@ private theorem orthogonal_ker_projection_of_ker_parametrization {X : Type*} [To
   set eL := (euclideanEquiv (T x₀).ker).toContinuousLinearMap
   have hGc : Continuous fun κ : EuclideanSpace 𝕜 (Fin (finrank 𝕜 (T x₀).ker)) →L[𝕜] E ↦
       adjoint (ι ∘L κ) ∘L (ι ∘L κ) :=
-    ((adjoint : _ ≃ₗᵢ⋆[𝕜] _).continuous.comp (compL 𝕜 _ E H ι).continuous).clm_comp
-      (compL 𝕜 _ E H ι).continuous
+    (compL 𝕜 _ E H ι).continuous.clm_adjoint.clm_comp (compL 𝕜 _ E H ι).continuous
   refine ⟨U ∩ (fun x ↦ κ x ∘L eL) ⁻¹' {κ | IsUnit (adjoint (ι ∘L κ) ∘L (ι ∘L κ))},
     inter_subset_left, (hκ.clm_comp continuousOn_const).isOpen_inter_preimage hU
       (Units.isOpen.preimage hGc), ⟨hx₀U, ?_⟩, fun x hx ↦ ⟨hx.2, fun hker ↦ ?_⟩⟩
