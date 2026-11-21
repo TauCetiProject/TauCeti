@@ -57,9 +57,9 @@ makes the span of `s` and `r` isotropic for `B`. It is an explicit formula in `f
 
 Every such normal form carries the contact pairing to the projection `(q, p, z) ↦ (p, z)`
 (`Module.Dual.contactPairing_apply_eq_snd`) and sends `∂_z = (0, 0, 1)` to the Reeb vector
-(`Module.Dual.IsContact.apply_eq_reebVector`). Two normal forms differ by a symmetric shear
+(`Module.Dual.apply_eq_reebVector_of_jetContact`). Two normal forms differ by a symmetric shear
 `(q, p, z) ↦ (q + S p, p, z)` with `p' (S p) = p (S p')`
-(`Module.Dual.IsContact.exists_symm_apply_eq`), so the normal form is unique up to the choice of
+(`Module.Dual.exists_symm_apply_eq_of_jetContact`), so the normal form is unique up to the choice of
 a Lagrangian complement of `f(U)` in `ker a`.
 
 ## Main declarations
@@ -73,7 +73,7 @@ a Lagrangian complement of `f(U)` in `ker a`.
 * `Module.Dual.jetMap`: the explicit normal form built from a section `s` of the contact pairing.
 * `Module.Dual.IsLegendrian.exists_linearEquiv_jetContact`,
   `Module.Dual.isLegendrian_iff_exists_linearEquiv_jetContact`: the linear normal form.
-* `Module.Dual.IsContact.exists_symm_apply_eq`: uniqueness up to symmetric shears.
+* `Module.Dual.exists_symm_apply_eq_of_jetContact`: uniqueness up to symmetric shears.
 
 ## References
 
@@ -426,22 +426,28 @@ theorem contactPairing_apply_eq_snd {e : U × Module.Dual K U × K →ₗ[K] V}
   · simpa using LinearMap.congr_fun ha x
 
 /-- **A one-jet normal form sends `∂_z` to the Reeb vector.** -/
-theorem IsContact.apply_eq_reebVector [FiniteDimensional K V] (hB : B.IsAlt) (h : a.IsContact B)
+theorem apply_eq_reebVector_of_jetContact [FiniteDimensional K V]
     (e : (U × Module.Dual K U × K) ≃ₗ[K] V)
     (ha : a ∘ₗ e.toLinearMap = jetContactCovector K U)
     (hB' : B.compl₁₂ e.toLinearMap e.toLinearMap = jetContactBilinForm K U) :
     e (0, 0, 1) = a.reebVector B := by
-  refine (h.eq_reebVector_iff_of_isAlt hB).2 ⟨by simpa using LinearMap.congr_fun ha (0, 0, 1),
-    LinearMap.ext fun w ↦ ?_⟩
-  obtain ⟨y, rfl⟩ := e.surjective w
-  simpa using LinearMap.congr_fun₂ hB' (0, 0, 1) y
+  have : FiniteDimensional K (U × Module.Dual K U × K) := e.symm.finiteDimensional
+  have : FiniteDimensional K U :=
+    Module.Finite.of_injective (LinearMap.inl K U (Module.Dual K U × K)) LinearMap.inl_injective
+  -- `a` is contact because its pullback by `e` is the one-jet model.
+  have h : a.IsContact B := (isContact_comp_linearEquiv_compl₁₂_iff e).1 (by
+    rw [ha, hB']
+    exact isContact_jetContactCovector K U)
+  have hr := h.reebVector_comp_linearEquiv_compl₁₂ e
+  rw [ha, hB', reebVector_jetContactCovector] at hr
+  rw [hr, e.apply_symm_apply]
 
 /-- **One-jet normal forms are unique up to symmetric shears.** Two linear equivalences
 `e, e' : U × U^* × K ≃ V` restricting to the same `f` on the zero section and pulling `a` back
 to `dz` and `B` back to `dq ∧ dp` differ by a shear `(q, p, z) ↦ (q + S p, p, z)`, where
 `S : U^* → U` is symmetric, `p' (S p) = p (S p')`. The image of `{0} × U^* × {0}` under a normal
 form is a Lagrangian complement of `f(U)` in `ker a`, and `S` records the change of complement. -/
-theorem IsContact.exists_symm_apply_eq [FiniteDimensional K V] (hB : B.IsAlt) (h : a.IsContact B)
+theorem exists_symm_apply_eq_of_jetContact [FiniteDimensional K V]
     {e e' : (U × Module.Dual K U × K) ≃ₗ[K] V}
     (he : e.toLinearMap ∘ₗ LinearMap.inl K U _ = f)
     (ha : a ∘ₗ e.toLinearMap = jetContactCovector K U)
@@ -464,7 +470,8 @@ theorem IsContact.exists_symm_apply_eq [FiniteDimensional K V] (hB : B.IsAlt) (h
     rw [e.symm_apply_eq]
     exact (LinearMap.congr_fun he' q).trans (LinearMap.congr_fun he q).symm
   have hreeb : e.symm (e' (0, 0, 1)) = (0, 0, 1) := by
-    rw [e.symm_apply_eq, h.apply_eq_reebVector hB e ha hB', h.apply_eq_reebVector hB e' ha' hB'']
+    rw [e.symm_apply_eq, apply_eq_reebVector_of_jetContact e ha hB',
+      apply_eq_reebVector_of_jetContact e' ha' hB'']
   have hS (p : Module.Dual K U) : e.symm (e' (0, p, 0)) = (S p, p, 0) :=
     Prod.ext (by simp [S]) (by simpa using hsnd (0, p, 0))
   have hx (x : U × Module.Dual K U × K) : e.symm (e' x) = (x.1 + S x.2.1, x.2) := by
