@@ -89,16 +89,11 @@ variable {n : ℕ}
 
 /-! ### Plane waves -/
 
-/-- The plane wave `x ↦ 𝐞 ⟪η, x⟫` of frequency `η` has temperate growth. -/
-private theorem hasTemperateGrowth_planeWave (η : CoordinateSpace n) :
-    (fun x : CoordinateSpace n ↦ (𝐞 ⟪η, x⟫ : ℂ)).HasTemperateGrowth := by
-  simpa only [real_inner_comm η] using Real.hasTemperateGrowth_fourierChar_inner η
-
 /-- The derivatives of order at most `N` of the plane wave of frequency `η` are bounded by
 `(2π) ^ N (1 + ‖η‖) ^ N`. -/
 private theorem norm_iteratedFDeriv_fourierChar_inner_le_pow (η : CoordinateSpace n) {N k : ℕ}
     (hk : k ≤ N) (x : CoordinateSpace n) :
-    ‖iteratedFDeriv ℝ k (fun x : CoordinateSpace n ↦ (𝐞 ⟪η, x⟫ : ℂ)) x‖ ≤
+    ‖iteratedFDeriv ℝ k (fun x : CoordinateSpace n ↦ (𝐞 ⟪x, η⟫ : ℂ)) x‖ ≤
       (2 * π) ^ N * (1 + ‖η‖) ^ N := by
   refine (Real.norm_iteratedFDeriv_fourierChar_inner_le η k x).trans ?_
   have h1 : 1 ≤ 2 * π * (1 + ‖η‖) := by
@@ -173,11 +168,11 @@ private theorem HasCompactSpatialSupport.exists_norm_sliceMultiplier_le
 
 /-! ### The superposition of modulated multipliers -/
 
-/-- The modulated piece `x ↦ exp(2πi ⟪η, x⟫) (g_η(D) u)(x)` with the Fourier multiplier
+/-- The modulated piece `x ↦ exp(2πi ⟪x, η⟫) (g_η(D) u)(x)` with the Fourier multiplier
 `g_η(ζ) = â(η, 2πζ)`. Its integral over `η` is `Op(a) u`. -/
 private def modulatedPiece (a : Symbol n ℂ ℂ m) (u : 𝓢(CoordinateSpace n, ℂ))
     (η : CoordinateSpace n) : 𝓢(CoordinateSpace n, ℂ) :=
-  SchwartzMap.smulLeftCLM ℂ (fun x ↦ (𝐞 ⟪η, x⟫ : ℂ))
+  SchwartzMap.smulLeftCLM ℂ (fun x ↦ (𝐞 ⟪x, η⟫ : ℂ))
     (SchwartzMap.fourierMultiplierCLM ℂ (sliceMultiplier a η) u)
 
 private theorem HasCompactSpatialSupport.modulatedPiece_apply (ha : a.HasCompactSpatialSupport)
@@ -185,10 +180,10 @@ private theorem HasCompactSpatialSupport.modulatedPiece_apply (ha : a.HasCompact
     modulatedPiece a u η x =
       (𝐞 ⟪η, x⟫ : ℂ) • ∫ ζ, (𝐞 ⟪ζ, x⟫ : ℂ) • (sliceMultiplier a η ζ • 𝓕 u ζ) := by
   rw [modulatedPiece,
-    SchwartzMap.smulLeftCLM_apply_apply (hasTemperateGrowth_planeWave η),
+    SchwartzMap.smulLeftCLM_apply_apply (Real.hasTemperateGrowth_fourierChar_inner η),
     SchwartzMap.fourierMultiplierCLM_apply, SchwartzMap.fourierInv_coe, Real.fourierInv_eq]
   simp only [SchwartzMap.smulLeftCLM_apply_apply (ha.hasTemperateGrowth_sliceMultiplier η),
-    Circle.smul_def]
+    Circle.smul_def, real_inner_comm η x]
 
 /-- The modulated pieces are bounded by `C ⟨η⟩ ^ (-(n + 1))`, uniformly in the position. -/
 private theorem HasCompactSpatialSupport.exists_norm_modulatedPiece_le
@@ -380,7 +375,7 @@ private theorem HasCompactSpatialSupport.exists_norm_toBesovSpaceCLM_modulatedPi
     exact Finset.single_le_sum (fun i _ ↦ hB0 i) (Finset.mem_range.2 (by omega))
   obtain ⟨v₁, hv₁, hv₁n⟩ :=
     hCf (ha.hasTemperateGrowth_sliceMultiplier η) hW (SchwartzMap.toBesovSpaceCLM ℂ φ s p q u)
-  obtain ⟨v₂, hv₂, hv₂n⟩ := hCm (hasTemperateGrowth_planeWave η)
+  obtain ⟨v₂, hv₂, hv₂n⟩ := hCm (Real.hasTemperateGrowth_fourierChar_inner η)
     (fun k hk x ↦ norm_iteratedFDeriv_fourierChar_inner_le_pow η hk x) v₁
   have hv : SchwartzMap.toBesovSpaceCLM ℂ φ (s - m) p q (modulatedPiece a u η) = v₂ :=
     BesovSpace.ext <| by
