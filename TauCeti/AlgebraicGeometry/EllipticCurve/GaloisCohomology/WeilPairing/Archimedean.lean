@@ -721,6 +721,16 @@ theorem infiniteTateKerWeilPairing_of_isComplex (hw : w.IsComplex) :
     φ.infiniteTateKerWeilPairing = 0 := by
   ext a b; simp [hw]
 
+/-- In `ℚ/ℤ`, `infiniteTateKerWeilPairing` is the archimedean Brauer invariant of the
+Brauer-valued isogeny Weil cup. -/
+theorem toRatAddCircle_infiniteTateKerWeilPairing (hn : IsUnit (φ.degree : w.Completion))
+    (a : H1 (Gal w.Completion) (ofIsogeny φ).KerCoeff)
+    (b : H1 (Gal w.Completion) (ofIsogeny φ.dual).KerCoeff) :
+    ZMod.toRatAddCircle φ.degree (φ.infiniteTateKerWeilPairing a b) =
+      infiniteInvMap w (φ.kerWeilBrauerPairing hn a b) := by
+  rw [infiniteTateKerWeilPairing_apply, kerWeilBrauerPairing_apply,
+    toRatAddCircle_infiniteH2MuToZMod]
+
 /-- Compatibility of `infiniteTateKerWeilPairing` with torsion inclusion and dual projection. -/
 theorem infiniteTateKerWeilPairing_explicitCoeff1_torsionCoeffToDualKerCoeff
     (a : H1 (Gal w.Completion) (ofIsogeny φ).KerCoeff)

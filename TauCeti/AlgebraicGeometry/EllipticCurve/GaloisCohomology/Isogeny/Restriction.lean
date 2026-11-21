@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Isogeny.Map
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.BaseChange.Separability
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.Basic
 
 /-!
 # Restriction of the Galois cohomology of the kernel of an isogeny
@@ -32,13 +33,16 @@ the image of a local Kummer map of `φ` serve as the local condition of the `φ`
 
 * `TauCeti.Isogeny.kerCoeffBaseChange`: the equivariant map `E₁(Kˢ)[φ] → E₁(Lˢ)[φ]` along `τ`.
 * `TauCeti.Isogeny.kerRes`: restriction `H¹(G_K, E₁[φ]) → H¹(G_L, E₁[φ])`.
+* `TauCeti.Isogeny.dualKerRes`: restriction `H¹(G_K, E₂[φ̂]) → H¹(G_L, E₂[(φ_L)^])` into the
+  kernel of the dual of the base change `φ_L` of `φ`, the form paired with `kerRes` by local
+  Tate duality over `L`.
 
 ## Main results
 
 * `TauCeti.Isogeny.pointCoeffMap_baseChange_pointCoeffBaseChange`: the action of an isogeny over
   `K` on the points over the separable closures commutes with restriction along `τ`.
-* `TauCeti.Isogeny.pointRes_kerCoeffIncl`: restriction commutes with
-  `H¹(G, E₁[φ]) → H¹(G, E₁)`.
+* `TauCeti.Isogeny.pointRes_kerCoeffIncl`, `TauCeti.Isogeny.pointRes_dualKerCoeffIncl`:
+  restriction commutes with `H¹(G, E₁[φ]) → H¹(G, E₁)` and `H¹(G, E₂[φ̂]) → H¹(G, E₂)`.
 * `TauCeti.Isogeny.kerRes_kummerMap`: restriction commutes with the Kummer maps of `φ`.
 
 ## References
@@ -126,6 +130,77 @@ theorem pointRes_kerCoeffIncl (c : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).Ker
         (φ.kerRes τ c) := by
   rw [explicitCoeff1_eq_explicitMap1, explicitCoeff1_eq_explicitMap1, pointRes_eq_explicitMap1,
     kerRes_eq_explicitMap1]
+  exact explicitMap1_explicitMap1_of_comp_eq _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+    (by ext; rfl) (by ext; simp) c
+
+/-! ### Restriction of the dual kernel
+
+The dual of the base change of `φ` is the base change of the dual `φ̂` (`dual_map`), so
+restriction along `τ` also carries `E₂(Kˢ)[φ̂]` into the kernel of `(φ_L)^`, the dual isogeny of
+the base change. This is the form in which the dual-kernel classes enter local Tate duality over
+`L`, which pairs the kernels of `φ_L` and of its dual. -/
+
+/-- **The coordinate map along `τ` carries `E₂(Kˢ)[φ̂]` into `E₂(Lˢ)[(φ_L)^]`**, the kernel of
+the dual of the base change of `φ`. -/
+theorem pointCoeffBaseChange_mem_kerCoeff_dual {P : W₂.PointCoeff}
+    (hP : P ∈ ((ofIsogeny φ.dual).pointCoeffMap : W₂.PointCoeff →+ W₁.PointCoeff).ker) :
+    W₂.pointCoeffBaseChange τ P ∈
+      ((ofIsogeny (φ.baseChange L).dual).pointCoeffMap :
+        (W₂⁄L).PointCoeff →+ (W₁⁄L).PointCoeff).ker := by
+  rw [show (φ.baseChange L).dual = φ.dual.baseChange L from (dual_map φ _).symm]
+  exact φ.dual.pointCoeffBaseChange_mem_kerCoeff τ hP
+
+/-- **The map `E₂(Kˢ)[φ̂] → E₂(Lˢ)[(φ_L)^]`** along `τ`, the restriction of
+`pointCoeffBaseChange τ` to the kernel of the dual isogeny. -/
+def dualKerCoeffBaseChange :
+    (ofIsogeny φ.dual).KerCoeff →+ (ofIsogeny (φ.baseChange L).dual).KerCoeff :=
+  ((W₂.pointCoeffBaseChange τ).comp
+      ((ofIsogeny φ.dual).pointCoeffMap : W₂.PointCoeff →+ W₁.PointCoeff).ker.subtype).codRestrict
+    _ fun P ↦ φ.pointCoeffBaseChange_mem_kerCoeff_dual τ P.property
+
+@[simp]
+theorem coe_dualKerCoeffBaseChange (P : (ofIsogeny φ.dual).KerCoeff) :
+    (φ.dualKerCoeffBaseChange τ P : (W₂⁄L).PointCoeff) = W₂.pointCoeffBaseChange τ P :=
+  (rfl)
+
+/-- **`dualKerCoeffBaseChange τ` is equivariant** along `absoluteGaloisGroupMap τ : G_L → G_K`. -/
+@[simp]
+theorem dualKerCoeffBaseChange_smul (g : AbsoluteGaloisGroup L)
+    (P : (ofIsogeny φ.dual).KerCoeff) :
+    φ.dualKerCoeffBaseChange τ (absoluteGaloisGroupMap τ g • P) =
+      g • φ.dualKerCoeffBaseChange τ P :=
+  Subtype.ext <| by
+    rw [coe_dualKerCoeffBaseChange, Hom.coe_smul_kerCoeff, Hom.coe_smul_kerCoeff,
+      coe_dualKerCoeffBaseChange, pointCoeffBaseChange_smul]
+
+/-- **Restriction `H¹(G_K, E₂[φ̂]) → H¹(G_L, E₂[(φ_L)^])`** along `τ`: pullback along the
+compatible pair `(absoluteGaloisGroupMap τ, dualKerCoeffBaseChange τ)`. It is `φ.dual.kerRes τ`
+with the kernel of the base change of `φ̂` read as the kernel of the dual of the base change
+of `φ`. -/
+def dualKerRes :
+    H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff →+
+      H1 (AbsoluteGaloisGroup L) (ofIsogeny (φ.baseChange L).dual).KerCoeff :=
+  explicitMap1 _ _ _ _ (absoluteGaloisGroupMap τ) (φ.dualKerCoeffBaseChange τ)
+    continuous_of_discreteTopology (φ.dualKerCoeffBaseChange_smul τ)
+
+/-- `dualKerRes τ` is the pullback along `(absoluteGaloisGroupMap τ, dualKerCoeffBaseChange τ)`. -/
+theorem dualKerRes_eq_explicitMap1 :
+    φ.dualKerRes τ = explicitMap1 _ _ _ _ (absoluteGaloisGroupMap τ)
+      (φ.dualKerCoeffBaseChange τ) continuous_of_discreteTopology
+      (φ.dualKerCoeffBaseChange_smul τ) :=
+  (rfl)
+
+/-- **Restriction of the dual kernel commutes with `H¹(G, E₂[φ̂]) → H¹(G, E₂)`.** Together with
+`pointRes_kerCoeffIncl` for `φ̂`, this identifies the local Selmer conditions of `φ̂` with the
+kernel conditions of the dual of the base change of `φ`. Not `@[simp]`: `pointRes_kerCoeffIncl`
+already rewrites its left-hand side, into the kernel of the base change of `φ̂`. -/
+theorem pointRes_dualKerCoeffIncl (c : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff) :
+    W₂.pointRes τ
+        (explicitCoeff1 _ _ (ofIsogeny φ.dual).kerCoeffIncl continuous_of_discreteTopology c) =
+      explicitCoeff1 _ _ (ofIsogeny (φ.baseChange L).dual).kerCoeffIncl
+        continuous_of_discreteTopology (φ.dualKerRes τ c) := by
+  rw [explicitCoeff1_eq_explicitMap1, explicitCoeff1_eq_explicitMap1, pointRes_eq_explicitMap1,
+    dualKerRes_eq_explicitMap1]
   exact explicitMap1_explicitMap1_of_comp_eq _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
     (by ext; rfl) (by ext; simp) c
 
