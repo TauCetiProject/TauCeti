@@ -132,6 +132,13 @@ theorem exists_le_nsmul (hS : IsScale S) {g : G} (hg : 0 ≤ g) :
     ∃ s ∈ S, ∃ n : ℕ, g ≤ n • s :=
   hS.exists_le_nsmul_of_mem_closure (hS.mem_closure_of_nonneg hg)
 
+/-- An upper bound `u` of a scale dominates the positive cone: every positive element lies below
+a multiple of `u`. In particular the top `u` of a scale `[0, u]` is an order unit. -/
+theorem exists_le_nsmul_of_mem_upperBounds (hS : IsScale S) {u : G} (hu : u ∈ upperBounds S)
+    {g : G} (hg : 0 ≤ g) : ∃ n : ℕ, g ≤ n • u := by
+  obtain ⟨s, hs, n, hgs⟩ := hS.exists_le_nsmul hg
+  exact ⟨n, hgs.trans (nsmul_le_nsmul_right (hu hs) n)⟩
+
 end OrderedAddCommMonoid
 
 /-- **Domination form of a scale, converse**: in a group with Riesz interpolation, a hereditary
@@ -204,14 +211,13 @@ of `u`. -/
 theorem isScale_Icc_iff [AddCommGroup G] [Preorder G] [IsOrderedAddMonoid G]
     (h : HasRieszInterpolation G) {u : G} :
     IsScale (Set.Icc 0 u) ↔ 0 ≤ u ∧ ∀ ⦃g : G⦄, 0 ≤ g → ∃ n : ℕ, g ≤ n • u := by
-  refine ⟨fun hS ↦ ⟨hS.zero_mem.2, fun g hg ↦ ?_⟩, fun ⟨hu, hdom⟩ ↦ ?_⟩
-  · obtain ⟨s, hs, n, hgs⟩ := hS.exists_le_nsmul hg
-    exact ⟨n, hgs.trans (nsmul_le_nsmul_right hs.2 n)⟩
-  · refine IsScale.of_forall_exists_le h (Set.left_mem_Icc.2 hu) (fun _ hs ↦ hs.1)
-      (fun _ hs _ ht ↦ ⟨u, Set.right_mem_Icc.2 hu, hs.2, ht.2⟩)
-      (fun _ _ hg hgs hs ↦ ⟨hg, hgs.trans hs.2⟩) fun g hg ↦ ?_
-    obtain ⟨n, hn⟩ := hdom hg
-    exact ⟨n • u, nsmul_mem (AddSubmonoid.subset_closure (Set.right_mem_Icc.2 hu)) n, hn⟩
+  refine ⟨fun hS ↦ ⟨hS.zero_mem.2, fun _ ↦ hS.exists_le_nsmul_of_mem_upperBounds fun _ ↦ And.right⟩,
+    fun ⟨hu, hdom⟩ ↦ ?_⟩
+  refine IsScale.of_forall_exists_le h (Set.left_mem_Icc.2 hu) (fun _ hs ↦ hs.1)
+    (fun _ hs _ ht ↦ ⟨u, Set.right_mem_Icc.2 hu, hs.2, ht.2⟩)
+    (fun _ _ hg hgs hs ↦ ⟨hg, hgs.trans hs.2⟩) fun g hg ↦ ?_
+  obtain ⟨n, hn⟩ := hdom hg
+  exact ⟨n • u, nsmul_mem (AddSubmonoid.subset_closure (Set.right_mem_Icc.2 hu)) n, hn⟩
 
 /-- `{0}` is a scale exactly when the positive cone is trivial. -/
 theorem isScale_singleton_zero_iff [AddMonoid G] [Preorder G] :
