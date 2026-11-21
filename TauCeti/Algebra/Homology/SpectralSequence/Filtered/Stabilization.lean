@@ -76,7 +76,7 @@ lemma isZero_spectralObject_H_top (b m : ℤ)
       (filtrationFunctorObjIso F hF b).hom ≫ (filtrationEInt F b).arrow := by
     rw [reassoc_of% filtrationFunctor_map_comp_objIso_hom, Subobject.ofLE_arrow]
   refine IsZero.of_iso ?_ ((HomologicalComplex.homologyFunctor C _ m).mapIso
-    ((cokernelCompIsIso _ (filtrationFunctorArrow F hF ⊤)).symm ≪≫ cokernelIsoOfEq e ≪≫
+    ((cokernelCompIsIso (filtrationFunctorArrow F hF ⊤) _).symm ≪≫ cokernelIsoOfEq e ≪≫
       cokernelEpiComp _ _))
   rw [HomologicalComplex.homologyFunctor_obj]
   convert h using 1

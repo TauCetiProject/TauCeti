@@ -30,6 +30,8 @@ compact set.
 
 * `TauCeti.flowDomain`: the domain of the maximal flow, in `(time, point)` order.
 * `TauCeti.flowOf`: the maximal flow, total with junk values outside `flowDomain`.
+* `TauCeti.ordConnected_setOf_mem_flowDomain`: the times of the flow through a point form an
+  interval.
 * `TauCeti.isOpen_flowDomain`: openness of the domain for complete model spaces.
 * `TauCeti.contMDiffOn_flowOf`: joint regularity of the flow for complete model spaces.
 * `TauCeti.contMDiffAt_flowOf_comp`: flowing `C^n` families of points for `C^n` families of times.
@@ -112,6 +114,18 @@ theorem mfderiv_flowOf_zero_apply_eq_self (v : (x : M) → TangentSpace I x) (x 
   have h0 : flowOf v 0 = id := funext (flowOf_zero v)
   rw [h0, mfderiv_id]
   exact ContinuousLinearMap.id_apply w
+
+/-- The times at which the flow through `x` is defined form an interval. -/
+theorem ordConnected_setOf_mem_flowDomain (v : (x : M) → TangentSpace I x) (x : M) :
+    {t | (t, x) ∈ flowDomain v}.OrdConnected := by
+  simpa only [mem_flowDomain, ofPred_mem_eq] using
+    (ordConnected_maximalIntegralCurveInterval (v := v) (x := x))
+
+/-- The times between `0` and a time at which the flow through `x` is defined are times at which
+it is defined. -/
+theorem uIcc_subset_setOf_mem_flowDomain {v : (x : M) → TangentSpace I x} {t : ℝ} {x : M}
+    (ht : (t, x) ∈ flowDomain v) : uIcc 0 t ⊆ {s | (s, x) ∈ flowDomain v} :=
+  (ordConnected_setOf_mem_flowDomain v x).uIcc_subset (mem_flowDomain_zero_of_mem ht) ht
 
 variable [T2Space M] [BoundarylessManifold I M] [CompleteSpace E]
 

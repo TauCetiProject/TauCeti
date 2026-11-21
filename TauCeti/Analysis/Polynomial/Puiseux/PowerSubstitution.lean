@@ -52,7 +52,7 @@ theorem exists_continuousMap_isRoot_powerSubstitution
     exact ⟨fun _ => 0, fun b => isEmptyElim b⟩
   let B := U × ↥(ball (0 : ℂ) R \ {0})
   let Z := {q : B × ℂ // (F q.1).IsRoot q.2}
-  let p : Z → B := fun q => q.1.1
+  let p : Z → B := fun q => q.val.1
   let q := powerSubstitution U hn hR
   -- Lift all points of one fibre, then use their root coordinates as the global labels.
   have hp : IsCoveringMap p := isCoveringMap_fst_isRoot hF hdeg hsep
@@ -64,11 +64,11 @@ theorem exists_continuousMap_isRoot_powerSubstitution
   let e : Fin d ≃ p ⁻¹' {q a} :=
     (Fintype.equivFinOfCardEq (by rwa [← Nat.card_eq_fintype_card])).symm
   let r : Fin d → C(U × ↥(ball (0 : ℂ) R' \ {0}), ℂ) := fun i =>
-    ⟨fun b => (L (e i) b).1.2,
+    ⟨fun b => (L (e i) b).val.2,
       ((continuous_snd : Continuous (Prod.snd : B × ℂ → ℂ)).comp
-        (continuous_subtype_val : Continuous (Subtype.val : Z → B × ℂ))).comp (L (e i)).continuous⟩
+        (continuous_subtypeVal : Continuous (Subtype.val : Z → B × ℂ))).comp (L (e i)).continuous⟩
   have hbase : ∀ i b, p (L (e i) b) = q b := fun i b => congrFun (hL (e i)).2 b
-  refine ⟨r, fun b => ⟨?_, fun i => (hbase i b) ▸ (L (e i) b).2⟩⟩
+  refine ⟨r, fun b => ⟨?_, fun i => (hbase i b) ▸ (L (e i) b).property⟩⟩
   intro i j hij
   apply e.injective
   apply hinj b

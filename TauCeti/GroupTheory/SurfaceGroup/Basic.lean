@@ -401,7 +401,7 @@ def homEquiv :
       {t : (Fin g → G) × (Fin g → G) × (Fin m → G) // orientableWord t.1 t.2.1 t.2.2 = 1} where
   toFun f := ⟨(fun i ↦ f (a g m i), fun i ↦ f (b g m i), fun j ↦ f (peripheral g m j)), by
     rw [← map_orientableWord, orientableWord_a_b_peripheral, map_one]⟩
-  invFun t := lift t.1.1 t.1.2.1 t.1.2.2 t.2
+  invFun t := lift t.val.1 t.val.2.1 t.val.2.2 t.property
   left_inv f := by ext <;> simp
   right_inv t := by ext <;> simp
 
@@ -413,7 +413,7 @@ theorem homEquiv_apply (f : Orientable g m →* G) :
 @[simp]
 theorem homEquiv_symm_apply
     (t : {t : (Fin g → G) × (Fin g → G) × (Fin m → G) // orientableWord t.1 t.2.1 t.2.2 = 1}) :
-    homEquiv.symm t = lift t.1.1 t.1.2.1 t.1.2.2 t.2 := (rfl)
+    homEquiv.symm t = lift t.val.1 t.val.2.1 t.val.2.2 t.property := (rfl)
 
 open Equiv in
 /-- The orientable surface group of a surface of negative Euler characteristic is not
@@ -531,7 +531,7 @@ def homEquiv :
       {t : (Fin g → G) × (Fin m → G) // nonorientableWord t.1 t.2 = 1} where
   toFun f := ⟨(fun i ↦ f (c g m i), fun j ↦ f (peripheral g m j)), by
     rw [← map_nonorientableWord, nonorientableWord_c_peripheral, map_one]⟩
-  invFun t := lift t.1.1 t.1.2 t.2
+  invFun t := lift t.val.1 t.val.2 t.property
   left_inv f := by ext <;> simp
   right_inv t := by ext <;> simp
 
@@ -543,7 +543,7 @@ theorem homEquiv_apply (f : Nonorientable g m →* G) :
 @[simp]
 theorem homEquiv_symm_apply
     (t : {t : (Fin g → G) × (Fin m → G) // nonorientableWord t.1 t.2 = 1}) :
-    homEquiv.symm t = lift t.1.1 t.1.2 t.2 := (rfl)
+    homEquiv.symm t = lift t.val.1 t.val.2 t.property := (rfl)
 
 /-- Two generators `cᵢ` and `cⱼ` of the nonorientable surface group `S⁻(g, m)` commute only when
 they are equal. In particular `S⁻(g, m)` is not commutative for `g ≥ 2`. -/

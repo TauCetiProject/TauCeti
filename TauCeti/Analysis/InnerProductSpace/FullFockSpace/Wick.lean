@@ -271,8 +271,8 @@ and vectors `f, g : α → H`, the vacuum expectation of the ordered product of
 directed-arc inner products `∏_{(i, j) ∈ P} ⟪g i, f j⟫_𝕜`. -/
 theorem inner_vacuum_prod_creation_add_annihilation (s : Finset α) (f g : α → H) :
     ⟪vacuum, ((s.sort.map fun i => creation 𝕜 (f i) + annihilation 𝕜 (g i)).prod) vacuum⟫_𝕜 =
-      ∑ P : {P : NoncrossingPartition s // P.1.IsPairing},
-        ∏ p ∈ P.1.1.orderedPairs, ⟪g p.1, f p.2⟫_𝕜 := by
+      ∑ P : {P : NoncrossingPartition s // P.val.IsPairing},
+        ∏ p ∈ P.val.val.orderedPairs, ⟪g p.1, f p.2⟫_𝕜 := by
   rw [← wickWordOp]
   induction hn : #s using Nat.strong_induction_on generalizing s with
   | _ n ih =>
@@ -292,31 +292,31 @@ theorem inner_vacuum_prod_creation_add_annihilation (s : Finset α) (f g : α �
 /-- **Fock-space vacuum Wick formula** (`vacuumState` form on `Finset α`). -/
 theorem vacuumState_prod_creation_add_annihilation (s : Finset α) (f g : α → H) :
     vacuumState 𝕜 H ((s.sort.map fun i => creation 𝕜 (f i) + annihilation 𝕜 (g i)).prod) =
-      ∑ P : {P : NoncrossingPartition s // P.1.IsPairing},
-        ∏ p ∈ P.1.1.orderedPairs, ⟪g p.1, f p.2⟫_𝕜 := by
+      ∑ P : {P : NoncrossingPartition s // P.val.IsPairing},
+        ∏ p ∈ P.val.val.orderedPairs, ⟪g p.1, f p.2⟫_𝕜 := by
   rw [vacuumState_apply, inner_vacuum_prod_creation_add_annihilation]
 
 /-- **Fock-space vacuum Wick formula** for words indexed by `Fin n`. -/
 theorem vacuumState_prod_ofFn_creation_add_annihilation {n : ℕ} (f g : Fin n → H) :
     vacuumState 𝕜 H ((List.ofFn fun i => creation 𝕜 (f i) + annihilation 𝕜 (g i)).prod) =
-      ∑ P : {P : NoncrossingPartition (univ : Finset (Fin n)) // P.1.IsPairing},
-        ∏ p ∈ P.1.1.orderedPairs, ⟪g p.1, f p.2⟫_𝕜 := by
+      ∑ P : {P : NoncrossingPartition (univ : Finset (Fin n)) // P.val.IsPairing},
+        ∏ p ∈ P.val.val.orderedPairs, ⟪g p.1, f p.2⟫_𝕜 := by
   rw [List.ofFn_eq_map, ← Fin.sort_univ]
   exact vacuumState_prod_creation_add_annihilation univ f g
 
 /-- Vacuum Wick formula for ordered products of self-adjoint field operators `field 𝕜 (f i)`. -/
 theorem vacuumState_prod_field (s : Finset α) (f : α → H) :
     vacuumState 𝕜 H ((s.sort.map fun i => field 𝕜 (f i)).prod) =
-      ∑ P : {P : NoncrossingPartition s // P.1.IsPairing},
-        ∏ p ∈ P.1.1.orderedPairs, ⟪f p.1, f p.2⟫_𝕜 := by
+      ∑ P : {P : NoncrossingPartition s // P.val.IsPairing},
+        ∏ p ∈ P.val.val.orderedPairs, ⟪f p.1, f p.2⟫_𝕜 := by
   simp_rw [field_def]
   exact vacuumState_prod_creation_add_annihilation s f f
 
 /-- Vacuum Wick formula for words of self-adjoint field operators indexed by `Fin n`. -/
 theorem vacuumState_prod_ofFn_field {n : ℕ} (f : Fin n → H) :
     vacuumState 𝕜 H ((List.ofFn fun i => field 𝕜 (f i)).prod) =
-      ∑ P : {P : NoncrossingPartition (univ : Finset (Fin n)) // P.1.IsPairing},
-        ∏ p ∈ P.1.1.orderedPairs, ⟪f p.1, f p.2⟫_𝕜 := by
+      ∑ P : {P : NoncrossingPartition (univ : Finset (Fin n)) // P.val.IsPairing},
+        ∏ p ∈ P.val.val.orderedPairs, ⟪f p.1, f p.2⟫_𝕜 := by
   simp_rw [field_def]
   exact vacuumState_prod_ofFn_creation_add_annihilation f f
 
@@ -340,7 +340,7 @@ theorem vacuumState_field_pow (h : H) (n : ℕ) :
   rw [card_univ, Fintype.card_fin] at hc
   rw [← hc]
   refine sum_congr rfl fun P _ => ?_
-  rw [← P.2.prod_orderedPairs]
+  rw [← P.property.prod_orderedPairs]
   simp [inner_self_eq_norm_sq_to_K]
 
 end Wick

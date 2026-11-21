@@ -10,6 +10,7 @@ import TauCeti.Algebra.Star.Basic
 import TauCeti.Analysis.CStarAlgebra.Compression
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Instances
 import Mathlib.LinearAlgebra.Matrix.DotProduct
+import Mathlib.Data.Matrix.Composition
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
 
@@ -29,37 +30,25 @@ Hilbert C⋆-module.
 
 The file also collects basic algebraic API for `CStarMatrix` that Mathlib lacks: entries of finite
 sums and of `1 × 1` matrices, entrywise images under sums and scalar multiples of linear maps,
-and the transpose as a linear map. It also restates `Matrix`'s lemmas on rectangular products and
-conjugate transposes for `CStarMatrix`: associativity, distributivity over subtraction, the
-conjugate transpose of sums and products, entrywise maps of products and conjugate transposes,
-and `conjTranspose_mul_self_eq_zero`. From these it shows that a rectangular matrix `v` with
-`vᴴ * v` or `v * vᴴ` idempotent satisfies `v * vᴴ * v = v`. Finally, it defines the block sum
-`M ⊕ N` of rectangular C⋆-matrices, with zero off-diagonal blocks.
+the transpose as a linear map, the star algebra isomorphism `M_m(M_n(A)) ≃ M_{m × n}(A)` and the
+diagonal embedding `b ↦ diag(b, …, b)`.
 
 ## Main declarations
 
 * `CStarMatrix.instNonUnitalContinuousFunctionalCalculusReal`: the real continuous functional
   calculus of `CStarMatrix n n A`, which instance search does not find on its own.
 * `CStarMatrix.ofMatrix_symm_mul`, `CStarMatrix.ofMatrix_symm_star`: reading a C⋆-matrix as an
-  ordinary matrix respects multiplication and sends `star` to the conjugate transpose.
-* `CStarMatrix.of_mul_of`, `CStarMatrix.conjTranspose_of`: rectangular products and conjugate
-  transposes of C⋆-matrices are those of the underlying matrices.
-* `CStarMatrix.mul_assoc`, `CStarMatrix.conjTranspose_mul`, `CStarMatrix.map_mul`,
-  `CStarMatrix.conjTranspose_map`, `CStarMatrix.conjTranspose_mul_self_eq_zero`: the rectangular
-  product and conjugate-transpose calculus of `Matrix`, restated for `CStarMatrix`.
-* `CStarMatrix.mul_conjTranspose_mul_self_of_isIdempotentElem_conjTranspose_mul_self` and
-  `CStarMatrix.mul_conjTranspose_mul_self_of_isIdempotentElem_mul_conjTranspose_self`: a
-  rectangular matrix whose initial or final matrix is idempotent is a partial isometry.
-* `CStarMatrix.conjTranspose_mul_eq_zero_of_orthogonal` and
-  `CStarMatrix.mul_conjTranspose_eq_zero_of_orthogonal`: partial isometries `v` and `w` with
-  orthogonal final matrices have orthogonal ranges, `vᴴ * w = 0`, and those with orthogonal
-  initial matrices satisfy `v * wᴴ = 0`.
-* `CStarMatrix.blockSum`: the block sum `M ⊕ N` of rectangular C⋆-matrices, with
-  `CStarMatrix.conjTranspose_blockSum`, `CStarMatrix.blockSum_mul_blockSum`,
-  `CStarMatrix.blockSum_map` and `CStarMatrix.isStarProjection_blockSum`.
+  ordinary matrix respects multiplication and sends `star` to the conjugate transpose; the
+  companions `CStarMatrix.ofMatrix_symm_zero`, `ofMatrix_symm_one`, `ofMatrix_symm_add`,
+  `ofMatrix_symm_neg`, `ofMatrix_symm_sub` and `ofMatrix_symm_smul` do the same for the other
+  algebraic operations.
 * `CStarMatrix.sum_apply`, `CStarMatrix.toOneByOne_apply`: entries of finite sums and of
   `1 × 1` C⋆-matrices.
 * `CStarMatrix.transposeₗ`: the transpose of C⋆-matrices, as a linear map.
+* `CStarMatrix.compStarAlgEquiv`: `Matrix.comp` as a star algebra isomorphism
+  `M_m(M_n(A)) ≃ M_{m × n}(A)`.
+* `CStarMatrix.diagonalNonUnitalStarAlgHom`: the diagonal embedding `b ↦ diag(b, …, b)` of `B`
+  in `M_n(B)`, with `CStarMatrix.norm_diagonalNonUnitalStarAlgHom_le`.
 * `CStarMatrix.map_zero_linearMap`, `CStarMatrix.map_add_linearMap`,
   `CStarMatrix.map_smul_linearMap`: applying `0`, `f + g` or `c • f` to every entry.
 * `CStarMatrix.isSelfAdjoint_of_forall_isSelfAdjoint_sum`: a matrix all of whose quadratic forms
@@ -70,6 +59,12 @@ and `conjTranspose_mul_self_eq_zero`. From these it shows that a rectangular mat
 * `CStarMatrix.submatrix_nonneg` and `CStarMatrix.extend_nonneg`: reindexing a positive matrix
   along any map of indices, or extending it by zero along an injective one, gives a positive
   matrix.
+* `WithCStarModule.norm_equiv_symm_pi_smul`: the vector `(vᵢ a)ᵢ` of the Hilbert `A`-module `Aᵐ`
+  has norm `‖v‖ ‖a‖`.
+* `CStarMatrix.norm_sum_smul_le`: compressing `x ∈ M_{m,n}(A)` by scalar vectors `v`, `w` gives
+  `‖∑ i j, (vᵢ wⱼ*) xᵢⱼ‖ ≤ ‖v‖ ‖x‖ ‖w‖`. The proof tests `x` against the vectors `(vᵢ a)ᵢ` and
+  `(wⱼ b)ⱼ` of `Aᵐ` and `Aⁿ`, which bounds `‖a z b*‖` for the compression `z`, and takes `a = z*`,
+  `b = z* z`; no unit is needed.
 
 ## References
 
@@ -81,6 +76,74 @@ public section
 open Matrix
 
 namespace CStarMatrix
+
+section Comp
+
+variable (R m n A : Type*) [Fintype m] [Fintype n] [AddCommMonoid A] [Mul A] [Star A] [SMul R A]
+
+/-- An `m × m` matrix of `n × n` matrices is an `(m × n) × (m × n)` matrix: `Matrix.comp` as a
+star algebra isomorphism of C⋆-matrices. Multiplication of C⋆-matrices is multiplication of the
+underlying matrices, so it is preserved by `Matrix.compRingEquiv`. -/
+def compStarAlgEquiv :
+    CStarMatrix m m (CStarMatrix n n A) ≃⋆ₐ[R] CStarMatrix (m × n) (m × n) A where
+  toFun M := ofMatrix (Matrix.comp m m n n A M)
+  invFun M := (Matrix.comp m m n n A).symm (ofMatrix.symm M)
+  left_inv := (Matrix.comp m m n n A).left_inv
+  right_inv := (Matrix.comp m m n n A).right_inv
+  map_add' _ _ := rfl
+  map_mul' := (Matrix.compRingEquiv m n A).map_mul
+  map_smul' _ _ := rfl
+  map_star' M := by
+    ext ⟨i, k⟩ ⟨j, l⟩
+    -- `Matrix.comp` takes a `Matrix` of `Matrix`es, so `Matrix.comp_apply` does not rewrite it at
+    -- the C⋆-matrix `star M`; `change` reads both entries through the definition of `comp`.
+    change (star M) i j k l = star (M j i l k)
+    simp only [CStarMatrix.star_apply]
+
+variable {R m n A}
+
+@[simp]
+theorem compStarAlgEquiv_apply (M : CStarMatrix m m (CStarMatrix n n A)) (i j : m × n) :
+    compStarAlgEquiv R m n A M i j = M i.1 j.1 i.2 j.2 :=
+  (rfl)
+
+@[simp]
+theorem compStarAlgEquiv_symm_apply (M : CStarMatrix (m × n) (m × n) A) (i j : m) (k l : n) :
+    (compStarAlgEquiv R m n A).symm M i j k l = M (i, k) (j, l) :=
+  (rfl)
+
+/-- Applying a map entrywise commutes with `compStarAlgEquiv`. -/
+theorem compStarAlgEquiv_map {B : Type*} [AddCommMonoid B] [Mul B] [Star B] [SMul R B]
+    (M : CStarMatrix m m (CStarMatrix n n A)) (f : A → B) :
+    compStarAlgEquiv R m n B (M.map (·.map f)) = (compStarAlgEquiv R m n A M).map f :=
+  (rfl)
+
+end Comp
+
+section Diagonal
+
+variable (R n B : Type*) [Fintype n] [DecidableEq n] [Monoid R] [NonUnitalNonAssocSemiring B]
+  [StarAddMonoid B] [DistribMulAction R B]
+
+/-- The diagonal embedding `b ↦ diag(b, …, b)` of `B` in `CStarMatrix n n B`. The operations of
+C⋆-matrices are those of the underlying matrices, so each field is the corresponding identity
+for `Matrix.diagonal`. -/
+def diagonalNonUnitalStarAlgHom : B →⋆ₙₐ[R] CStarMatrix n n B where
+  toFun b := ofMatrix (Matrix.diagonal fun _ => b)
+  map_smul' c b := congrArg ofMatrix (Matrix.diagonal_smul c fun _ : n => b)
+  map_zero' := congrArg ofMatrix Matrix.diagonal_zero
+  map_add' a b := congrArg ofMatrix (Matrix.diagonal_add (fun _ : n => a) fun _ => b).symm
+  map_mul' a b := congrArg ofMatrix (Matrix.diagonal_mul_diagonal (fun _ : n => a) fun _ => b).symm
+  map_star' b := congrArg ofMatrix (Matrix.diagonal_conjTranspose fun _ : n => b).symm
+
+variable {R n B}
+
+@[simp]
+theorem diagonalNonUnitalStarAlgHom_apply (b : B) (i j : n) :
+    diagonalNonUnitalStarAlgHom R n B b i j = if i = j then b else 0 :=
+  Matrix.diagonal_apply ..
+
+end Diagonal
 
 section Algebraic
 
@@ -108,200 +171,34 @@ lemma ofMatrix_symm_mul [Fintype n] [Mul A] [AddCommMonoid A] (M N : CStarMatrix
 lemma ofMatrix_symm_star [Star A] (M : CStarMatrix n n A) :
     ofMatrix.symm (star M) = (ofMatrix.symm M)ᴴ := (rfl)
 
-/-! ### Rectangular products and conjugate transposes -/
-
-section Rectangular
-
-variable {l m o B : Type*}
-
-/-- Products of rectangular C⋆-matrices are the products of the underlying matrices. -/
+/-- Reading a C⋆-matrix as an ordinary matrix sends `0` to `0`. -/
 @[simp]
-theorem of_mul_of [Fintype m] [Mul A] [AddCommMonoid A] (M : Matrix l m A) (N : Matrix m n A) :
-    ofMatrix M * ofMatrix N = ofMatrix (M * N) :=
-  (rfl)
+lemma ofMatrix_symm_zero [Zero A] : ofMatrix.symm (0 : CStarMatrix n n A) = 0 := (rfl)
 
-/-- The conjugate transpose of a C⋆-matrix is that of the underlying matrix. -/
+/-- Reading a C⋆-matrix as an ordinary matrix sends `1` to `1`. -/
 @[simp]
-theorem conjTranspose_of [Star A] (M : Matrix m n A) :
-    (ofMatrix M).conjTranspose = ofMatrix Mᴴ :=
-  (rfl)
+lemma ofMatrix_symm_one [DecidableEq n] [Zero A] [One A] :
+    ofMatrix.symm (1 : CStarMatrix n n A) = 1 := (rfl)
 
-/-- The conjugate transpose of C⋆-matrices is an involution. -/
+/-- Reading a C⋆-matrix as an ordinary matrix respects addition. -/
 @[simp]
-theorem conjTranspose_conjTranspose [InvolutiveStar A] (M : CStarMatrix m n A) :
-    M.conjTranspose.conjTranspose = M :=
-  Matrix.conjTranspose_conjTranspose M
+lemma ofMatrix_symm_add [Add A] (M N : CStarMatrix n n A) :
+    ofMatrix.symm (M + N) = ofMatrix.symm M + ofMatrix.symm N := (rfl)
 
-/-- The conjugate transpose of a sum of rectangular C⋆-matrices. -/
+/-- Reading a C⋆-matrix as an ordinary matrix respects negation. -/
 @[simp]
-theorem conjTranspose_add [AddMonoid A] [StarAddMonoid A] (M N : CStarMatrix m n A) :
-    (M + N).conjTranspose = M.conjTranspose + N.conjTranspose :=
-  Matrix.conjTranspose_add M N
+lemma ofMatrix_symm_neg [Neg A] (M : CStarMatrix n n A) :
+    ofMatrix.symm (-M) = -ofMatrix.symm M := (rfl)
 
-/-- The conjugate transpose of a difference of rectangular C⋆-matrices. -/
+/-- Reading a C⋆-matrix as an ordinary matrix respects subtraction. -/
 @[simp]
-theorem conjTranspose_sub [AddGroup A] [StarAddMonoid A] (M N : CStarMatrix m n A) :
-    (M - N).conjTranspose = M.conjTranspose - N.conjTranspose :=
-  Matrix.conjTranspose_sub M N
+lemma ofMatrix_symm_sub [Sub A] (M N : CStarMatrix n n A) :
+    ofMatrix.symm (M - N) = ofMatrix.symm M - ofMatrix.symm N := (rfl)
 
-/-- The conjugate transpose of a product of rectangular C⋆-matrices. -/
+/-- Reading a C⋆-matrix as an ordinary matrix respects scalar multiplication. -/
 @[simp]
-theorem conjTranspose_mul [Fintype m] [NonUnitalNonAssocSemiring A] [StarRing A]
-    (M : CStarMatrix l m A) (N : CStarMatrix m n A) :
-    (M * N).conjTranspose = N.conjTranspose * M.conjTranspose :=
-  Matrix.conjTranspose_mul M N
-
-/-- Multiplication of rectangular C⋆-matrices is associative. -/
-protected theorem mul_assoc [Fintype m] [Fintype n] [NonUnitalSemiring A]
-    (L : CStarMatrix l m A) (M : CStarMatrix m n A) (N : CStarMatrix n o A) :
-    L * M * N = L * (M * N) :=
-  Matrix.mul_assoc L M N
-
-/-- Left multiplication of rectangular C⋆-matrices distributes over subtraction. -/
-protected theorem mul_sub [Fintype n] [NonUnitalNonAssocRing A]
-    (L : CStarMatrix m n A) (M N : CStarMatrix n o A) :
-    L * (M - N) = L * M - L * N :=
-  Matrix.mul_sub L M N
-
-/-- Right multiplication of rectangular C⋆-matrices distributes over subtraction. -/
-protected theorem sub_mul [Fintype m] [NonUnitalNonAssocRing A]
-    (L M : CStarMatrix l m A) (N : CStarMatrix m n A) :
-    (L - M) * N = L * N - M * N :=
-  Matrix.sub_mul L M N
-
-/-- Applying a non-unital ring homomorphism to every entry respects products of rectangular
-C⋆-matrices. -/
-theorem map_mul [Fintype m] [NonUnitalNonAssocSemiring A] [NonUnitalNonAssocSemiring B]
-    {F : Type*} [FunLike F A B] [NonUnitalRingHomClass F A B] (f : F)
-    (M : CStarMatrix l m A) (N : CStarMatrix m n A) :
-    (M * N).map f = M.map f * N.map f :=
-  Matrix.map_mul
-
-/-- Applying a star-preserving map to every entry commutes with the conjugate transpose. -/
-theorem conjTranspose_map [Star A] [Star B] {F : Type*} [FunLike F A B] [StarHomClass F A B]
-    (f : F) (M : CStarMatrix m n A) :
-    M.conjTranspose.map f = (M.map f).conjTranspose :=
-  Matrix.conjTranspose_map f (map_star f)
-
-/-- Over a star-ordered ring with proper star, a rectangular C⋆-matrix `M` vanishes as soon as
-`Mᴴ * M` does. -/
-@[simp]
-theorem conjTranspose_mul_self_eq_zero [Fintype m] [PartialOrder A] [NonUnitalRing A]
-    [StarRing A] [StarOrderedRing A] [IsProperStar A] {M : CStarMatrix m n A} :
-    M.conjTranspose * M = 0 ↔ M = 0 :=
-  Matrix.conjTranspose_mul_self_eq_zero
-
-/-- Partial isometries with orthogonal final matrices have orthogonal ranges: if
-`v * vᴴ * v = v`, `w * wᴴ * w = w` and `(v * vᴴ) * (w * wᴴ) = 0`, then `vᴴ * w = 0`. -/
-theorem conjTranspose_mul_eq_zero_of_orthogonal [NonUnitalSemiring A] [StarRing A] [Fintype l]
-    [Fintype m] [Fintype n] {v : CStarMatrix n m A} {w : CStarMatrix n l A}
-    (hv : v * v.conjTranspose * v = v) (hw : w * w.conjTranspose * w = w)
-    (h : v * v.conjTranspose * (w * w.conjTranspose) = 0) : v.conjTranspose * w = 0 := by
-  have hv' : v.conjTranspose * v * v.conjTranspose = v.conjTranspose := by
-    simpa [CStarMatrix.mul_assoc] using congrArg conjTranspose hv
-  calc v.conjTranspose * w
-      = v.conjTranspose * v * v.conjTranspose * (w * w.conjTranspose * w) := by rw [hv', hw]
-    _ = v.conjTranspose * (v * v.conjTranspose * (w * w.conjTranspose)) * w := by
-      simp only [CStarMatrix.mul_assoc]
-    _ = 0 := by rw [h, CStarMatrix.mul_zero, CStarMatrix.zero_mul]
-
-/-- The dual of `conjTranspose_mul_eq_zero_of_orthogonal`, for orthogonal initial matrices: if
-`v * vᴴ * v = v`, `w * wᴴ * w = w` and `(vᴴ * v) * (wᴴ * w) = 0`, then `v * wᴴ = 0`. -/
-theorem mul_conjTranspose_eq_zero_of_orthogonal [NonUnitalSemiring A] [StarRing A] [Fintype l]
-    [Fintype m] [Fintype n] {v : CStarMatrix n m A} {w : CStarMatrix l m A}
-    (hv : v * v.conjTranspose * v = v) (hw : w * w.conjTranspose * w = w)
-    (h : v.conjTranspose * v * (w.conjTranspose * w) = 0) : v * w.conjTranspose = 0 := by
-  have hw' : w.conjTranspose * w * w.conjTranspose = w.conjTranspose := by
-    simpa [CStarMatrix.mul_assoc] using congrArg conjTranspose hw
-  calc v * w.conjTranspose
-      = v * v.conjTranspose * v * (w.conjTranspose * w * w.conjTranspose) := by rw [hv, hw']
-    _ = v * (v.conjTranspose * v * (w.conjTranspose * w)) * w.conjTranspose := by
-      simp only [CStarMatrix.mul_assoc]
-    _ = 0 := by rw [h, CStarMatrix.mul_zero, CStarMatrix.zero_mul]
-
-section Proper
-
-variable [Fintype m] [Fintype n] [NonUnitalRing A] [StarRing A] [PartialOrder A]
-  [StarOrderedRing A] [IsProperStar A]
-
-/-- If `vᴴ * v` is idempotent then `v * vᴴ * v = v`: a rectangular matrix whose initial matrix is
-a projection is a partial isometry. -/
-theorem mul_conjTranspose_mul_self_of_isIdempotentElem_conjTranspose_mul_self
-    {v : CStarMatrix n m A} (hv : IsIdempotentElem (v.conjTranspose * v)) :
-    v * v.conjTranspose * v = v := by
-  rw [CStarMatrix.mul_assoc]
-  -- With `x = v * (vᴴ * v) - v`, idempotence gives `vᴴ * x = 0`, hence `xᴴ * x = 0`.
-  have h₁ : v.conjTranspose * (v * (v.conjTranspose * v) - v) = 0 := by
-    rw [CStarMatrix.mul_sub, ← CStarMatrix.mul_assoc, hv.eq, sub_self]
-  have h₂ : (v * (v.conjTranspose * v) - v).conjTranspose * v = 0 := by
-    simpa using congrArg conjTranspose h₁
-  rw [← sub_eq_zero, ← conjTranspose_mul_self_eq_zero, CStarMatrix.mul_sub,
-    ← CStarMatrix.mul_assoc, h₂, CStarMatrix.zero_mul, sub_zero]
-
-/-- If `v * vᴴ` is idempotent then `v * vᴴ * v = v`: a rectangular matrix whose final matrix is
-a projection is a partial isometry. -/
-theorem mul_conjTranspose_mul_self_of_isIdempotentElem_mul_conjTranspose_self
-    {v : CStarMatrix n m A} (hv : IsIdempotentElem (v * v.conjTranspose)) :
-    v * v.conjTranspose * v = v := by
-  have := mul_conjTranspose_mul_self_of_isIdempotentElem_conjTranspose_mul_self
-    (v := v.conjTranspose) (by rwa [conjTranspose_conjTranspose])
-  simpa [CStarMatrix.mul_assoc] using congrArg conjTranspose this
-
-end Proper
-
-/-! ### Block sums -/
-
-/-- The block sum `M ⊕ N` of two rectangular C⋆-matrices: the block matrix with `M` and `N` on
-the diagonal and zero off-diagonal blocks. -/
-@[expose] def blockSum [Zero A] (M : CStarMatrix l m A) (N : CStarMatrix n o A) :
-    CStarMatrix (l ⊕ n) (m ⊕ o) A :=
-  ofMatrix (Matrix.fromBlocks (ofMatrix.symm M) 0 0 (ofMatrix.symm N))
-
-/-- Reading a block sum of C⋆-matrices as an ordinary matrix gives `Matrix.fromBlocks` with zero
-off-diagonal blocks. -/
-@[simp]
-theorem ofMatrix_symm_blockSum [Zero A] (M : CStarMatrix l m A) (N : CStarMatrix n o A) :
-    ofMatrix.symm (blockSum M N) = Matrix.fromBlocks (ofMatrix.symm M) 0 0 (ofMatrix.symm N) :=
-  (rfl)
-
-/-- The conjugate transpose of a block sum is the block sum of the conjugate transposes. -/
-@[simp]
-theorem conjTranspose_blockSum [AddMonoid A] [StarAddMonoid A] (M : CStarMatrix l m A)
-    (N : CStarMatrix n o A) :
-    (blockSum M N).conjTranspose = blockSum M.conjTranspose N.conjTranspose := by
-  change ofMatrix (Matrix.fromBlocks (ofMatrix.symm M) 0 0 (ofMatrix.symm N))ᴴ = _
-  simp only [Matrix.fromBlocks_conjTranspose, Matrix.conjTranspose_zero]
-  rfl
-
-/-- Block sums multiply blockwise. -/
-@[simp]
-theorem blockSum_mul_blockSum {p q : Type*} [Fintype m] [Fintype o] [NonUnitalNonAssocSemiring A]
-    (M : CStarMatrix l m A) (N : CStarMatrix n o A) (M' : CStarMatrix m p A)
-    (N' : CStarMatrix o q A) : blockSum M N * blockSum M' N' = blockSum (M * M') (N * N') := by
-  change ofMatrix (Matrix.fromBlocks (ofMatrix.symm M) 0 0 (ofMatrix.symm N) *
-    Matrix.fromBlocks (ofMatrix.symm M') 0 0 (ofMatrix.symm N')) = _
-  rw [Matrix.fromBlocks_multiply]
-  simp only [Matrix.mul_zero, Matrix.zero_mul, add_zero, zero_add]
-  rfl
-
-/-- Applying a zero-preserving map to every entry of a block sum gives the block sum of the
-entrywise images. -/
-theorem blockSum_map [Zero A] [Zero B] (M : CStarMatrix l m A) (N : CStarMatrix n o A)
-    {f : A → B} (hf : f 0 = 0) : (blockSum M N).map f = blockSum (M.map f) (N.map f) := by
-  change ofMatrix ((Matrix.fromBlocks (ofMatrix.symm M) 0 0 (ofMatrix.symm N)).map f) = _
-  simp only [Matrix.fromBlocks_map, Matrix.map_zero f hf]
-  rfl
-
-/-- The block sum of two star projections is a star projection. -/
-theorem isStarProjection_blockSum [Fintype m] [Fintype n] [NonUnitalNonAssocSemiring A]
-    [StarAddMonoid A] {p : CStarMatrix m m A} {q : CStarMatrix n n A} (hp : IsStarProjection p)
-    (hq : IsStarProjection q) : IsStarProjection (blockSum p q) := by
-  refine ⟨?_, ?_⟩
-  · rw [IsIdempotentElem, blockSum_mul_blockSum, hp.isIdempotentElem.eq, hq.isIdempotentElem.eq]
-  · rw [IsSelfAdjoint, star_eq_conjTranspose, conjTranspose_blockSum, ← star_eq_conjTranspose,
-      ← star_eq_conjTranspose, hp.isSelfAdjoint.star_eq, hq.isSelfAdjoint.star_eq]
-
-end Rectangular
+lemma ofMatrix_symm_smul [SMul R A] (r : R) (M : CStarMatrix n n A) :
+    ofMatrix.symm (r • M) = r • ofMatrix.symm M := (rfl)
 
 /-- Entries of a finite sum of C⋆-matrices are the sums of the entries. -/
 theorem sum_apply {m : Type*} [AddCommMonoid A] {ι : Type*} (s : Finset ι)
@@ -485,5 +382,61 @@ theorem extend_nonneg {m : Type*} [Fintype m] {f : m → n} (hf : Function.Injec
   refine Fintype.sum_of_injective f hf _ _ (fun l hl => ?_) fun j => ?_
   · simp [hf.extend_apply, Function.extend_apply' _ _ _ (by simpa using hl : ¬∃ a, f a = l)]
   simp [hf.extend_apply]
+
+/-- The diagonal matrix `diag(a, …, a)` has norm at most `‖a‖`. -/
+theorem norm_diagonalNonUnitalStarAlgHom_le [DecidableEq n] (a : A) :
+    ‖diagonalNonUnitalStarAlgHom ℂ n A a‖ ≤ ‖a‖ :=
+  NonUnitalStarAlgHom.norm_apply_le _ a
+
+section Compression
+
+open WithCStarModule CStarModule
+open scoped InnerProductSpace ComplexOrder
+
+variable {m n A : Type*} [Fintype m] [Fintype n] [NonUnitalCStarAlgebra A] [PartialOrder A]
+  [StarOrderedRing A]
+
+/-- The vector `(v i • a)ᵢ` of the Hilbert `A`-module `Aᵐ` has norm `‖v‖ ‖a‖`, for a vector `v`
+of the Hilbert space `ℂᵐ` and `a ∈ A`. -/
+theorem _root_.WithCStarModule.norm_equiv_symm_pi_smul (v : C⋆ᵐᵒᵈ(ℂ, m → ℂ)) (a : A) :
+    ‖(equiv A (m → A)).symm fun i => v i • a‖ = ‖v‖ * ‖a‖ := by
+  rw [← sq_eq_sq₀ (norm_nonneg _) (by positivity), mul_pow, norm_sq_eq A, norm_sq_eq ℂ,
+    pi_inner, pi_inner]
+  simp only [equiv_symm_pi_apply, inner_def, smul_mul_smul_comm, star_smul, ← Finset.sum_smul,
+    norm_smul, CStarRing.norm_self_mul_star, sq]
+
+/-- Compressing a matrix over a C⋆-algebra by scalar vectors does not increase norms:
+`‖∑ i j, (vᵢ wⱼ*) xᵢⱼ‖ ≤ ‖v‖ ‖x‖ ‖w‖`. -/
+theorem norm_sum_smul_le (x : CStarMatrix m n A) (v : C⋆ᵐᵒᵈ(ℂ, m → ℂ))
+    (w : C⋆ᵐᵒᵈ(ℂ, n → ℂ)) :
+    ‖∑ i, ∑ j, (v i * star (w j)) • x i j‖ ≤ ‖v‖ * ‖x‖ * ‖w‖ := by
+  set z := ∑ i, ∑ j, (v i * star (w j)) • x i j
+  set K := ‖v‖ * ‖x‖ * ‖w‖
+  have key (a b : A) : ‖a * z * star b‖ ≤ K * (‖a‖ * ‖b‖) := by
+    let V : C⋆ᵐᵒᵈ(A, m → A) := (equiv A (m → A)).symm fun i => v i • a
+    let W : C⋆ᵐᵒᵈ(A, n → A) := (equiv A (n → A)).symm fun j => w j • b
+    have hz : ⟪W, toCLM x V⟫_A = a * z * star b := by
+      simp only [pi_inner, toCLM_apply_eq_sum, equiv_symm_pi_apply, inner_def, V, W, z,
+        Finset.sum_mul, Finset.mul_sum, star_smul, smul_mul_assoc, mul_smul_comm,
+        Finset.smul_sum, smul_smul, mul_comm (star (w _))]
+      exact Finset.sum_comm
+    rw [← hz]
+    calc ‖⟪W, toCLM x V⟫_A‖ ≤ ‖W‖ * ‖toCLM x V‖ := norm_inner_le _
+      _ ≤ ‖W‖ * (‖x‖ * ‖V‖) := by gcongr; exact (toCLM x).le_opNorm V
+      _ = K * (‖a‖ * ‖b‖) := by
+        rw [norm_equiv_symm_pi_smul, norm_equiv_symm_pi_smul]; simp only [K]; ring
+  have hs : star (star z * z) = star z * z := by simp
+  have h := key (star z) (star z * z)
+  have e : ‖star z * z * (star z * z)‖ = ‖star z * z‖ * ‖star z * z‖ := by
+    nth_rw 1 [← hs]
+    exact CStarRing.norm_star_mul_self (x := star z * z)
+  rw [hs, ← mul_assoc, mul_assoc (star z * z), norm_star, e, CStarRing.norm_star_mul_self] at h
+  rcases (norm_nonneg z).eq_or_lt with hz | hz
+  · rw [← hz]
+    positivity
+  have h3 : 0 < ‖z‖ * (‖z‖ * ‖z‖) := by positivity
+  nlinarith
+
+end Compression
 
 end CStarMatrix

@@ -62,7 +62,7 @@ namespace TauCeti
 variable {B : Type u} [TopologicalSpace B] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {E : B → Type u} [∀ b, NormedAddCommGroup (E b)] [∀ b, NormedSpace ℝ (E b)]
   [TopologicalSpace (TotalSpace F E)] [FiberBundle F E] [VectorBundle ℝ F E]
-  (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.2‖) (hF : Module.finrank ℝ F = 1)
+  (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.snd‖) (hF : Module.finrank ℝ F = 1)
 
 variable {R : Type u} [Ring R] {L : LocalCoefficientSystem.{u, u, u} R (TopCat.of B)}
   {ι : L ⟶ (isCoveringMap_sphereBundleProj F E hnorm hF).permutationLocalSystem
@@ -81,7 +81,7 @@ def thomPairSingularHomologySuccIsoTwistedHomology (n : ℕ) :
     (ModuleCat.of R R) (n + 1)
   (asIso (TopPair.singularHomologyMap (gaugeDiscSpherePairMap (isFiberGauge_norm hnorm))
       (ModuleCat.of R R) (n + 1))).symm ≪≫
-    (gaugeDiscSpherePair fun v : TotalSpace F E ↦ ‖v.2‖).singularHomologySuccIsoTwistedHomology
+    (gaugeDiscSpherePair fun v : TotalSpace F E ↦ ‖v.snd‖).singularHomologySuccIsoTwistedHomology
       (isCoveringMap_sphereBundleProj F E hnorm hF)
       (TopCat.ofHom (gaugeDiscBundleProjHomotopyEquiv (isFiberGauge_norm hnorm)).toFun)
       (gaugeDiscSpherePair_map_comp_gaugeDiscBundleProjHomotopyEquiv_norm hnorm)
@@ -94,7 +94,7 @@ theorem gaugeDiscSpherePairMap_comp_thomPairSingularHomologySuccIsoTwistedHomolo
     TopPair.singularHomologyMap (gaugeDiscSpherePairMap (isFiberGauge_norm hnorm))
         (ModuleCat.of R R) (n + 1) ≫
         (thomPairSingularHomologySuccIsoTwistedHomology hnorm hF hι n).hom =
-      ((gaugeDiscSpherePair fun v : TotalSpace F E ↦ ‖v.2‖).singularHomologySuccIsoTwistedHomology
+      ((gaugeDiscSpherePair fun v : TotalSpace F E ↦ ‖v.snd‖).singularHomologySuccIsoTwistedHomology
         (isCoveringMap_sphereBundleProj F E hnorm hF)
         (TopCat.ofHom (gaugeDiscBundleProjHomotopyEquiv (isFiberGauge_norm hnorm)).toFun)
         (gaugeDiscSpherePair_map_comp_gaugeDiscBundleProjHomotopyEquiv_norm hnorm)
@@ -118,7 +118,7 @@ theorem gaugeDiscSpherePairMap_comp_thomPairSingularHomologySuccIsoTwistedHomolo
           LocalCoefficientSystem.twistedHomologyCoefficientMap ι n ≫
             ((isCoveringMap_sphereBundleProj F E hnorm hF).singularHomologyPermutationIso
               (p := TopCat.ofHom (sphereBundleProj F E)) R n).inv =
-      (gaugeDiscSpherePair fun v : TotalSpace F E ↦ ‖v.2‖).singularHomologyδ
+      (gaugeDiscSpherePair fun v : TotalSpace F E ↦ ‖v.snd‖).singularHomologyδ
         (ModuleCat.of R R) (n + 1) n := by
   rw [gaugeDiscSpherePairMap_comp_thomPairSingularHomologySuccIsoTwistedHomology_hom_assoc]
   exact TopPair.singularHomologySuccIsoTwistedHomology_hom_comp _ _ _ _ _ _ n
