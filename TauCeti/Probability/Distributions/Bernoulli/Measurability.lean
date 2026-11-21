@@ -6,13 +6,14 @@ Authors: Claude
 module
 
 public import Mathlib.Probability.Distributions.Bernoulli
+public import Mathlib.Probability.Kernel.Basic
 
 /-!
 # Parameter measurability for the Bernoulli distribution
 
 The Bernoulli measure `Ber(x, y, p)` depends measurably on its two atoms and its success
 probability jointly, so measurable parameter maps produce measurable measure-valued Bernoulli
-families, in particular kernels.
+families, in particular the Markov kernel `ProbabilityTheory.Kernel.bernoulli`.
 -/
 
 public section
@@ -28,3 +29,64 @@ theorem Measurable.bernoulliMeasure {α X : Type*} [MeasurableSpace α] [Measura
   refine Measure.measurable_of_measurable_coe _ fun s hs => ?_
   simp only [bernoulliMeasure_def, add_apply, smul_apply, Measure.dirac_apply' _ hs]
   fun_prop (disch := exact hs)
+
+namespace ProbabilityTheory.Kernel
+
+/-- The location-dependent Bernoulli Markov kernel placing mass `p x` at `a` and `1 - p x` at
+`b`. Endpoint values `0` and `1` and coinciding points `a = b` are allowed. -/
+noncomputable def bernoulli {X E : Type*} [MeasurableSpace X] [MeasurableSpace E]
+    (a b : E) {p : X → unitInterval} (hp : Measurable p) : Kernel X E where
+  toFun x := bernoulliMeasure a b (p x)
+  measurable' := measurable_const.bernoulliMeasure measurable_const hp
+
+/-- Evaluating `Kernel.bernoulli` at a location yields the corresponding Bernoulli measure. -/
+@[simp]
+theorem bernoulli_apply {X E : Type*} [MeasurableSpace X] [MeasurableSpace E]
+    (a b : E) {p : X → unitInterval} (hp : Measurable p) (x : X) :
+    Kernel.bernoulli a b hp x = bernoulliMeasure a b (p x) := (rfl)
+
+/-- A location-dependent Bernoulli kernel is a Markov kernel. -/
+instance {X E : Type*} [MeasurableSpace X] [MeasurableSpace E]
+    (a b : E) {p : X → unitInterval} (hp : Measurable p) :
+    IsMarkovKernel (Kernel.bernoulli a b hp) where
+  isProbabilityMeasure x := by
+    rw [bernoulli_apply]
+    infer_instance
+
+/-- A constant success probability recovers the constant Bernoulli kernel. -/
+@[simp]
+theorem bernoulli_const {X E : Type*} [MeasurableSpace X] [MeasurableSpace E]
+    (a b : E) (p : unitInterval) :
+    Kernel.bernoulli a b (p := fun _ : X => p) measurable_const =
+      Kernel.const X (bernoulliMeasure a b p) := by
+  ext x s _
+  rfl
+
+/-- Evaluating `Kernel.bernoulli a b hp` at `{a}` when `a ≠ b` gives `p x`. -/
+theorem bernoulli_apply_singleton_left {X E : Type*} [MeasurableSpace X] [MeasurableSpace E]
+    [MeasurableSingletonClass E] {a b : E} (hab : a ≠ b) {p : X → unitInterval}
+    (hp : Measurable p) (x : X) :
+    Kernel.bernoulli a b hp x {a} = (unitInterval.toNNReal (p x) : ENNReal) :=
+  bernoulliMeasure_apply_of_mem_of_notMem (p x) (measurableSet_singleton a) rfl hab.symm
+
+/-- Evaluating `Kernel.bernoulli a b hp` at `{b}` when `a ≠ b` gives `1 - p x`
+(`unitInterval.symm (p x)`). -/
+theorem bernoulli_apply_singleton_right {X E : Type*} [MeasurableSpace X] [MeasurableSpace E]
+    [MeasurableSingletonClass E] {a b : E} (hab : a ≠ b) {p : X → unitInterval}
+    (hp : Measurable p) (x : X) :
+    Kernel.bernoulli a b hp x {b} = (unitInterval.toNNReal (unitInterval.symm (p x)) : ENNReal) :=
+  bernoulliMeasure_apply_of_notMem_of_mem (p x) (measurableSet_singleton b) hab rfl
+
+/-- Evaluating the Boolean Bernoulli kernel `Kernel.bernoulli true false hp` at `{b}` gives
+`p x` for `b = true` and `unitInterval.symm (p x)` for `b = false`. -/
+theorem bernoulli_apply_singleton_bool {X : Type*} [MeasurableSpace X]
+    {p : X → unitInterval} (hp : Measurable p) (x : X) (b : Bool) :
+    Kernel.bernoulli true false hp x {b} =
+      (unitInterval.toNNReal (if b then p x else unitInterval.symm (p x)) : ENNReal) := by
+  cases b
+  · simp only [Bool.false_eq_true, ↓reduceIte]
+    exact bernoulli_apply_singleton_right (by decide) hp x
+  · simp only [↓reduceIte]
+    exact bernoulli_apply_singleton_left (by decide) hp x
+
+end ProbabilityTheory.Kernel

@@ -6,20 +6,27 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.PointProcess.Marking.Tuple
+public import TauCeti.Probability.PointProcess.Marking.Tuple
+public import TauCeti.MeasureTheory.Measure.Count.Enumeration
+import TauCeti.Probability.ProductMeasure
 import TauCeti.Probability.RandomMeasure.Determination
 
 /-!
 # Enumeration independence of independent marking
 
-The law of independently marking a countable family of occurrences depends only on its
-counting measure. Conversely, its ground projection recovers that measure, so equality of
-marked laws is equivalent to equality of the original measures. This makes the tuple
-construction usable without retaining an arbitrary labeling of the occurrences.
+The law of independently marking a countable family of occurrences — whether every entry is
+present (`Kernel.tupleMarking`) or some entries are absent (`Kernel.optionalTupleMarking`) —
+depends only on its counting measure. Conversely, its ground projection recovers that measure,
+so equality of marked laws is equivalent to equality of the original measures. This makes the
+tuple constructions usable without retaining an arbitrary labeling of the occurrences or
+distinguishing absent padding entries.
 
 Using Laplace-functional determinacy on `Kernel.optionalTupleMarking`, both optional and total
 occurrence enumerations enjoy enumeration independence on any measurable ground space, with no
 measurable-singleton, standard Borel, nonemptiness, simplicity, or local-finiteness hypothesis,
-and with gaps (`none`) and infinite multiplicities allowed.
+and with gaps (`none`) and infinite multiplicities allowed. Dropping absent entries also reduces
+`Kernel.optionalTupleMarking` directly to `Kernel.tupleMarking` over the present (`isSome`)
+indices (`Kernel.optionalTupleMarking_eq_tupleMarking_isSome`).
 
 ## References
 
@@ -36,6 +43,40 @@ namespace ProbabilityTheory.Kernel
 
 variable {X E : Type*} [MeasurableSpace X] [MeasurableSpace E]
   (κ : Kernel X E) [IsMarkovKernel κ]
+
+/-- Dropping absent entries from an optional tuple does not change its independent marking law.
+No measurable-singleton or local-finiteness assumption on the ground space is required. -/
+theorem optionalTupleMarking_eq_tupleMarking_isSome {ι : Type*} [Countable ι]
+    (x : ι → Option X) :
+    κ.optionalTupleMarking ι x =
+      κ.tupleMarking {i : ι // (x i).isSome} (fun i => (x i.val).get i.property) := by
+  let pad : ({i : ι // (x i).isSome} → Measure (X × E)) → (ι → Measure (X × E)) :=
+    fun z i => if h : (x i).isSome then z ⟨i, h⟩ else 0
+  have hpad : Measurable pad := Measurable.of_eval fun i => by
+    dsimp [pad]
+    split_ifs with h
+    · exact measurable_pi_apply (⟨i, h⟩ : {i : ι // (x i).isSome})
+    · exact measurable_const
+  -- Absent entries carry `Measure.dirac 0`, so padding the restricted product recovers the full
+  -- infinite product.
+  have hpi : (Measure.infinitePi fun i : {i : ι // (x i).isSome} =>
+        κ.optionalMark (some ((x i.val).get i.property))).map pad =
+      Measure.infinitePi fun i : ι => κ.optionalMark (x i) := by
+    have hcongr :
+        (fun i : {i : ι // (x i).isSome} => κ.optionalMark (some ((x i.val).get i.property))) =
+        fun i : {i : ι // (x i).isSome} => κ.optionalMark (x i.val) := by
+      funext i
+      rw [Option.some_get]
+    rw [hcongr]
+    exact Measure.infinitePi_subtype_map_dite_const (fun i => κ.optionalMark (x i))
+      (a₀ := fun _ => 0) fun i hi => by
+        rw [Option.not_isSome_iff_eq_none.mp hi, optionalMark_none]
+  -- Superposing a zero-padded family drops the zero entries (`Measure.sum_dite_zero`).
+  rw [← optionalTupleMarking_some, optionalTupleMarking_apply, optionalTupleMarking_apply,
+    ← hpi, Measure.map_map TauCeti.MeasureTheory.measurable_measure_sum hpad]
+  congr 1
+  funext z
+  exact Measure.sum_dite_zero z
 
 /-- Independently marking two optional occurrence enumerations of the same measure gives the same
 marked law, even across different countable index types and different arrangements of `none` gaps.

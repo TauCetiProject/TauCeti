@@ -8,16 +8,20 @@ module
 public import TauCeti.Probability.PointProcess.Poisson.Basic
 public import TauCeti.MeasureTheory.Measure.Prod
 public import TauCeti.MeasureTheory.Measure.NNReal
-public import Mathlib.Probability.Distributions.Bernoulli
+public import TauCeti.Probability.Kernel.Composition.MeasureCompProd
+public import TauCeti.Probability.Distributions.Bernoulli.Measurability
 public import TauCeti.Topology.UnitInterval.NNReal
 
 /-!
 # Poisson acceptance regions and monotone coupling
 
 Restrict a Poisson random measure on a product to a measurable acceptance region, then project
-onto the first coordinate. The resulting intensity is the ground measure weighted by the
-masses of the vertical sections. For Lebesgue marks and a region below a measurable density,
-this is precisely the measure with that density. Infinite density values are allowed.
+onto the first coordinate. For a product intensity `Λ.prod Q` or a composition-product intensity
+`Λ ⊗ₘ κ`, the resulting intensity is the ground measure weighted by the masses of the vertical
+sections. In particular, selecting a mark from a location-dependent Bernoulli kernel
+`Kernel.bernoulli` weights `Λ` by `p` or `unitInterval.symm ∘ p`, while a null mark region
+projects to the zero measure almost surely. For Lebesgue marks and a region below a measurable
+density, this is precisely the measure with that density. Infinite density values are allowed.
 
 Using the same Poisson measure for two ordered densities gives an ordered pair of random
 measures on the original sample space. This is the acceptance-region construction of monotone
@@ -36,7 +40,7 @@ open scoped ENNReal NNReal
 namespace TauCeti.Probability
 
 variable {Ω X E : Type*} [MeasurableSpace Ω] [MeasurableSpace X] [MeasurableSpace E]
-  {P : Measure Ω} {Λ : Measure X} {Q : Measure E} {M : Ω → Measure (X × E)}
+  {P : Measure Ω} {Λ : Measure X} {Q : Measure E} {κ : Kernel X E} {M : Ω → Measure (X × E)}
 
 /-- Projecting the accepted occurrences of a product-intensity Poisson random measure is
 Poisson, with density equal to the mark measure of each acceptance section. Multiplicities
@@ -58,6 +62,56 @@ theorem IsPoissonRandomMeasure.acceptance_univ_prod [SFinite Q]
       (Q A • Λ) := by
   simpa only [mk_preimage_prod_right (mem_univ _), withDensity_const] using
     hM.acceptance (MeasurableSet.univ.prod hA)
+
+/-- Selecting the first atom `a` from a Poisson random measure with Bernoulli kernel intensity
+`Λ ⊗ₘ Kernel.bernoulli a b hp` (with `a ≠ b`) weights `Λ` by `p`. -/
+theorem IsPoissonRandomMeasure.acceptance_compProd_bernoulli_left [SFinite Λ]
+    [MeasurableSingletonClass E] {a b : E} (hab : a ≠ b) {p : X → unitInterval} {hp : Measurable p}
+    (hM : IsPoissonRandomMeasure P M (Λ ⊗ₘ Kernel.bernoulli a b hp)) :
+    IsPoissonRandomMeasure P (fun ω ↦ ((M ω).restrict (univ ×ˢ {a})).map Prod.fst)
+      (Λ.withDensity fun x ↦ (unitInterval.toNNReal (p x) : ℝ≥0∞)) := by
+  simpa only [Measure.map_fst_restrict_compProd_eq_withDensity Λ (Kernel.bernoulli a b hp)
+        (MeasurableSet.univ.prod (measurableSet_singleton a)),
+      mk_preimage_prod_right (mem_univ _), Kernel.bernoulli_apply_singleton_left hab] using
+    (hM.restrict (MeasurableSet.univ.prod (measurableSet_singleton a))).map measurable_fst
+
+/-- Selecting the second atom `b` from a Poisson random measure with Bernoulli kernel intensity
+`Λ ⊗ₘ Kernel.bernoulli a b hp` (with `a ≠ b`) weights `Λ` by `unitInterval.symm ∘ p`. -/
+theorem IsPoissonRandomMeasure.acceptance_compProd_bernoulli_right [SFinite Λ]
+    [MeasurableSingletonClass E] {a b : E} (hab : a ≠ b) {p : X → unitInterval} {hp : Measurable p}
+    (hM : IsPoissonRandomMeasure P M (Λ ⊗ₘ Kernel.bernoulli a b hp)) :
+    IsPoissonRandomMeasure P (fun ω ↦ ((M ω).restrict (univ ×ˢ {b})).map Prod.fst)
+      (Λ.withDensity fun x ↦ (unitInterval.toNNReal (unitInterval.symm (p x)) : ℝ≥0∞)) := by
+  simpa only [Measure.map_fst_restrict_compProd_eq_withDensity Λ (Kernel.bernoulli a b hp)
+        (MeasurableSet.univ.prod (measurableSet_singleton b)),
+      mk_preimage_prod_right (mem_univ _), Kernel.bernoulli_apply_singleton_right hab] using
+    (hM.restrict (MeasurableSet.univ.prod (measurableSet_singleton b))).map measurable_fst
+
+/-- Selecting colour `b : Bool` from a Poisson random measure with Boolean Bernoulli kernel
+intensity `Λ ⊗ₘ Kernel.bernoulli true false hp` weights `Λ` by `p` (for `true`) or
+`unitInterval.symm ∘ p` (for `false`). Endpoint values `0` and `1` are allowed. -/
+theorem IsPoissonRandomMeasure.acceptance_compProd_bernoulli [SFinite Λ]
+    {M : Ω → Measure (X × Bool)} {p : X → unitInterval} {hp : Measurable p}
+    (hM : IsPoissonRandomMeasure P M (Λ ⊗ₘ Kernel.bernoulli true false hp)) (b : Bool) :
+    IsPoissonRandomMeasure P (fun ω ↦ ((M ω).restrict (univ ×ˢ {b})).map Prod.fst)
+      (Λ.withDensity fun x ↦
+        (unitInterval.toNNReal (if b then p x else unitInterval.symm (p x)) : ℝ≥0∞)) := by
+  simpa only [Measure.map_fst_restrict_compProd_eq_withDensity Λ (Kernel.bernoulli true false hp)
+        (MeasurableSet.univ.prod (measurableSet_singleton b)),
+      mk_preimage_prod_right (mem_univ _), Kernel.bernoulli_apply_singleton_bool] using
+    (hM.restrict (MeasurableSet.univ.prod (measurableSet_singleton b))).map measurable_fst
+
+/-- If a product-space Poisson random measure has zero intensity on `univ ×ˢ B`, then the
+ground projection of its restriction to `univ ×ˢ B` vanishes almost surely. No measurability
+assumption on `B` is required. -/
+theorem IsPoissonRandomMeasure.ae_map_fst_restrict_univ_prod_eq_zero
+    {Γ : Measure (X × E)} (hM : IsPoissonRandomMeasure P M Γ) {B : Set E}
+    (hzero : Γ (univ ×ˢ B) = 0) :
+    ∀ᵐ ω ∂P, ((M ω).restrict (univ ×ˢ B)).map Prod.fst = 0 := by
+  filter_upwards [hM.ae_eq_zero hzero] with ω hω
+  rw [← Measure.measure_univ_eq_zero, Measure.map_fst_restrict_prod_apply _ _ _ MeasurableSet.univ,
+    univ_inter]
+  exact hω
 
 /-- Selecting a finite-mass mark set from a scaled product intensity multiplies the ground
 scale by the mass of that mark set, including scale zero. -/

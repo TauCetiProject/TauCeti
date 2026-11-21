@@ -13,6 +13,7 @@ public import Mathlib.Probability.Independence.InfinitePi
 public import TauCeti.Probability.RandomMeasure.Superposition
 public import TauCeti.MeasureTheory.MeasurableSpace.Option
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Real
+import Mathlib.Probability.Kernel.Composition.MeasureComp
 import Mathlib.Probability.Kernel.MeasurableLIntegral
 import TauCeti.MeasureTheory.Integral.Lebesgue.ExpNeg
 import TauCeti.Probability.Kernel.Composition.MeasureCompProd
@@ -28,7 +29,9 @@ in an enumeration, and repeated locations are all allowed.
 
 The construction first samples zero or one marked occurrence at each index with
 `Kernel.optionalMark`, and then superposes the independently sampled measures.
-The intensity and infinite-product Laplace formula require neither local finiteness
+The intensity (`Kernel.bind_optionalTupleMarking`, `Kernel.join_optionalTupleMarking`) and
+infinite-product / exponential Laplace formulas (`Kernel.lintegral_expNeg_optionalTupleMarking`,
+`Kernel.laplaceFunctional_optionalTupleMarking`) require neither local finiteness
 nor finite test integrals. These identities allow optional occurrence enumerations
 to be used for independent marking of integer-valued measures.
 
@@ -85,7 +88,33 @@ theorem lintegral_optionalMark [IsSFiniteKernel κ] (x : Option X) {f : Measure 
     -- Beta reduction identifies `hfd` composed with `Prod.mk a` with the displayed integrand.
     rfl
 
+/-- The negative log mark Laplace transform `a ↦ (-log ∫⁻ e, expNeg (f (a, e)) ∂κ a).toENNReal`
+is measurable whenever `f` is measurable and `κ` is s-finite. -/
+@[fun_prop]
+theorem measurable_toENNReal_neg_log_lintegral_expNeg [IsSFiniteKernel κ]
+    {f : X × E → ℝ≥0∞} (hf : Measurable f) :
+    Measurable fun a =>
+      (-ENNReal.log (∫⁻ e, (ENNReal.expNeg (f (a, e)) : ℝ≥0∞) ∂κ a)).toENNReal := by
+  have hp : Measurable fun a => ∫⁻ e, (ENNReal.expNeg (f (a, e)) : ℝ≥0∞) ∂κ a :=
+    (measurable_coe_nnreal_ennreal.comp
+      (ENNReal.measurable_expNeg.comp hf)).lintegral_kernel_prod_right'
+  exact ((ENNReal.continuous_log.measurable.comp hp).neg).ereal_toENNReal
+
 variable [IsMarkovKernel κ]
+
+/-- Applying `ENNReal.expNeg` to the negative log mark Laplace transform recovers the mark Laplace
+transform `∫⁻ e, expNeg (f (a, e)) ∂κ a`, including when the integral is zero. -/
+theorem coe_expNeg_toENNReal_neg_log_lintegral_expNeg (f : X × E → ℝ≥0∞) (a : X) :
+    (ENNReal.expNeg (-ENNReal.log
+        (∫⁻ e, (ENNReal.expNeg (f (a, e)) : ℝ≥0∞) ∂κ a)).toENNReal : ℝ≥0∞) =
+      ∫⁻ e, (ENNReal.expNeg (f (a, e)) : ℝ≥0∞) ∂κ a := by
+  have hle : ∫⁻ e, (ENNReal.expNeg (f (a, e)) : ℝ≥0∞) ∂κ a ≤ 1 := by
+    calc
+      ∫⁻ e, (ENNReal.expNeg (f (a, e)) : ℝ≥0∞) ∂κ a
+          ≤ ∫⁻ _ : E, (1 : ℝ≥0∞) ∂κ a :=
+            lintegral_mono fun e => ENNReal.coe_le_one_iff.mpr (ENNReal.expNeg_le_one _)
+      _ = 1 := by simp
+  exact ENNReal.coe_expNeg_toENNReal_neg_log hle
 
 /-- Marking an optional occurrence is a probability kernel, also when the ground
 or mark space is empty. -/
@@ -161,6 +190,27 @@ theorem lintegral_expNeg_optionalTupleMarking {ι : Type*} [Countable ι]
     lintegral_optionalMark κ (x i) hL]
   cases x i <;> simp [lintegral_dirac' _ hf]
 
+/-- The Laplace functional of an optional tuple marking is the negative exponential of the
+counting-measure integral of the negative log mark transform, including infinite test values. -/
+theorem laplaceFunctional_optionalTupleMarking {ι : Type*} [Countable ι] (x : ι → Option X)
+    {f : X × E → ℝ≥0∞} (hf : Measurable f) :
+    (κ.optionalTupleMarking ι x).laplaceFunctional id f =
+      (ENNReal.expNeg (∫⁻ a, (-ENNReal.log
+        (∫⁻ e, (ENNReal.expNeg (f (a, e)) : ℝ≥0∞) ∂κ a)).toENNReal
+          ∂(Measure.sum fun i => (x i).elim 0 Measure.dirac)) : ℝ≥0∞) := by
+  have hg : Measurable fun a =>
+      (-ENNReal.log (∫⁻ e, (ENNReal.expNeg (f (a, e)) : ℝ≥0∞) ∂κ a)).toENNReal :=
+    κ.measurable_toENNReal_neg_log_lintegral_expNeg hf
+  rw [Measure.laplaceFunctional_def]
+  simp only [id_eq]
+  rw [κ.lintegral_expNeg_optionalTupleMarking x hf, lintegral_sum_measure, ENNReal.coe_expNeg_tsum]
+  refine tprod_congr fun i => ?_
+  cases x i with
+  | none => simp
+  | some a =>
+    simp only [Option.elim_some]
+    rw [lintegral_dirac' a hg, κ.coe_expNeg_toENNReal_neg_log_lintegral_expNeg f a]
+
 /-- An entirely absent tuple gives the empty configuration almost surely. -/
 @[simp]
 theorem optionalTupleMarking_none (ι : Type*) [Countable ι] :
@@ -191,6 +241,25 @@ theorem bind_optionalTupleMarking {ι : Type*} [Countable ι] (x : ι → Option
     rw [optionalMark_some,
       MeasureTheory.lintegral_map (Measure.measurable_coe hset) Measure.measurable_dirac]
     simp [Measure.dirac_apply' _ hset, lintegral_indicator hset]
+
+/-- The mean measure (`Measure.join`) of independently marking an optional tuple is the
+composition-product of its underlying counting measure with the mark kernel. No separation or
+local-finiteness assumption on the ground space is needed. -/
+theorem join_optionalTupleMarking {ι : Type*} [Countable ι] (x : ι → Option X) :
+    (κ.optionalTupleMarking ι x).join =
+      (Measure.sum fun i => (x i).elim 0 Measure.dirac) ⊗ₘ κ := by
+  have hsf : ∀ i : ι, SFinite ((x i).elim (0 : Measure X) Measure.dirac) := fun i => by
+    cases x i <;> simp only [Option.elim_none, Option.elim_some] <;> infer_instance
+  have hjoin : (κ.optionalTupleMarking ι x).join = (κ.optionalTupleMarking ι x).bind id := by
+    rw [Measure.bind, Measure.map_id]
+  rw [hjoin, κ.bind_optionalTupleMarking x, Measure.compProd_sum_left]
+  congr 1
+  funext i
+  cases x i with
+  | none => simp
+  | some a =>
+    rw [Option.elim_some, Option.elim_some, Measure.compProd_eq_comp_prod,
+      Measure.dirac_bind (Kernel.id ×ₖ κ).measurable]
 
 /-- Forgetting the mark of one optional occurrence recovers that occurrence. -/
 @[simp]
