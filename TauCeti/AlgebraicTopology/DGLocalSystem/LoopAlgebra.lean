@@ -134,6 +134,12 @@ def loopChainMap (f : C(B, B')) (hf : f b = b') :
     DGAlgHom (loopChain_isDGAlgebra B b R) (loopChain_isDGAlgebra B' b' R) :=
   cubicalChainDGAlgHom R (MooreLoopSpace.map f hf)
 
+/-- `C_*(Ωf)` is the morphism of cubical chain algebras induced by the continuous monoid
+homomorphism `Ωf`. -/
+theorem loopChainMap_def (f : C(B, B')) (hf : f b = b') :
+    loopChainMap R f hf = cubicalChainDGAlgHom R (MooreLoopSpace.map f hf) :=
+  (rfl)
+
 /-- `C_*(Ωf)` on a chain of dimension `n` is the push-forward along `Ωf`. -/
 @[simp]
 theorem loopChainMap_lof (f : C(B, B')) (hf : f b = b') (n : ℕ)

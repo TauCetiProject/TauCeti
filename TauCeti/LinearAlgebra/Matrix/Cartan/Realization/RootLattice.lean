@@ -36,6 +36,8 @@ integral coroot coordinates are nonnegative, so dominance is decidable on the we
 * `TauCeti.CartanRealization.height`: the height on `Q₊`.
 * `TauCeti.CartanRealization.RootLE`: the order `μ ≤ λ` given by `λ - μ ∈ Q₊`.
 * `TauCeti.CartanRealization.IsDominant`: the dominance predicate `λ(hᵢ) ≥ 0` for all `i`.
+* `TauCeti.CartanRealization.restrictRootLatticeEquiv`: the canonical isomorphism
+  `R.rootLattice ≃ₗ[ℤ] (R.restrict M hc hs).rootLattice` induced by restriction of functionals.
 
 ## Main results
 
@@ -112,6 +114,54 @@ theorem rootLattice_eq_bot [IsEmpty I] : R.rootLattice = ⊥ := by
 @[simp]
 theorem posRootCone_eq_bot [IsEmpty I] : R.posRootCone = ⊥ := by
   simp [posRootCone]
+
+section Restrict
+
+variable (M : Submodule K H) (hc : R.corootSpan ≤ M) (hs : M ⊔ R.cartanCenter = ⊤)
+
+/-- Restriction of functionals to `M` maps `R.rootLattice` onto
+`(R.restrict M hc hs).rootLattice`. -/
+theorem range_domRestrict_dualRestrict_rootLattice :
+    LinearMap.range ((M.dualRestrict.restrictScalars ℤ).domRestrict R.rootLattice) =
+      (R.restrict M hc hs).rootLattice := by
+  rw [LinearMap.range_domRestrict, rootLattice_def, rootLattice_def, Submodule.map_span,
+    ← Set.range_comp]
+  exact congrArg (Submodule.span ℤ) <| congrArg Set.range <| funext fun i ↦
+    LinearMap.ext fun m ↦ (R.restrict_root_apply M hc hs i m).symm
+
+/-- Restriction of functionals to `M` maps `R.rootLattice` isomorphically onto
+`(R.restrict M hc hs).rootLattice`. -/
+noncomputable def restrictRootLatticeEquiv :
+    R.rootLattice ≃ₗ[ℤ] (R.restrict M hc hs).rootLattice :=
+  (LinearEquiv.ofInjective ((M.dualRestrict.restrictScalars ℤ).domRestrict R.rootLattice) <|
+    (injective_iff_map_eq_zero _).mpr fun φ hφ ↦ Subtype.ext <| by
+      have hker : ∀ ξ ∈ R.rootLattice, ∀ z ∈ R.cartanCenter, ξ z = 0 := fun ξ hξ ↦ by
+        rw [rootLattice_def] at hξ
+        induction hξ using Submodule.span_induction with
+        | mem _ hα => obtain ⟨i, rfl⟩ := hα; exact fun z hz ↦ (R.mem_cartanCenter_iff z).mp hz i
+        | zero => exact fun _ _ ↦ rfl
+        | add _ _ _ _ ih₁ ih₂ => exact fun z hz ↦ by simp [ih₁ z hz, ih₂ z hz]
+        | smul _ _ _ ih => exact fun z hz ↦ by simp [ih z hz]
+      ext x
+      obtain ⟨m, hm, z, hz, rfl⟩ := Submodule.mem_sup.mp (hs ▸ Submodule.mem_top : x ∈ _)
+      have hm' : (φ : Dual K H) m = 0 := congr($(hφ) ⟨m, hm⟩)
+      simp [hm', hker φ φ.property z hz]).trans
+    (LinearEquiv.ofEq _ _ (R.range_domRestrict_dualRestrict_rootLattice M hc hs))
+
+/-- Under `restrictRootLatticeEquiv`, a root-lattice functional is restricted along `M.subtype`. -/
+@[simp]
+theorem coe_restrictRootLatticeEquiv_apply (φ : R.rootLattice) :
+    (R.restrictRootLatticeEquiv M hc hs φ : Dual K M) = (φ : Dual K H).comp M.subtype := (rfl)
+
+/-- `restrictRootLatticeEquiv` sends each simple root of `R` to the corresponding simple root of
+`R.restrict M hc hs`. -/
+@[simp]
+theorem restrictRootLatticeEquiv_root (i : I) :
+    R.restrictRootLatticeEquiv M hc hs ⟨R.root i, R.root_mem_rootLattice i⟩ =
+      ⟨(R.restrict M hc hs).root i, (R.restrict M hc hs).root_mem_rootLattice i⟩ :=
+  Subtype.ext <| LinearMap.ext fun m ↦ (R.restrict_root_apply M hc hs i m).symm
+
+end Restrict
 
 section CharZero
 

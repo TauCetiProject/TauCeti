@@ -753,6 +753,18 @@ theorem poissonBracket_fun_sum_right {ι : Type*} {s : Finset ι} {G : ι → M 
   simp only [poissonBracket_def, hamiltonianVectorField_fun_sum hG,
     ← SmoothForm.bilinFormAt_apply, map_sum]
 
+/-- The Poisson bracket `{f, g}` is minus the derivative of `g` along the Hamiltonian vector
+field of `f`. If the flat map `σ.flat x` is not invertible, both Hamiltonian vector fields vanish
+at `x` and both sides are zero. -/
+theorem poissonBracket_eq_neg_mvfderiv (σ : SmoothTwoForm I M) (f g : M → ℝ) (x : M) :
+    σ.poissonBracket f g x = -mvfderiv I g x (σ.hamiltonianVectorField f x) := by
+  by_cases hx : (σ.flat x).IsInvertible
+  · rw [← neg_poissonBracket, poissonBracket_def, ← flat_apply]
+    simp [hamiltonianVectorField_def, hx.self_apply_inverse]
+  · simp only [poissonBracket_def, hamiltonianVectorField_def,
+      ContinuousLinearMap.inverse_of_not_isInvertible hx, zero_apply, map_zero, neg_zero]
+    rw [← flat_apply, map_zero]
+
 namespace IsNondegenerate
 
 variable [FiniteDimensional ℝ E] (h : σ.IsNondegenerate)
@@ -763,12 +775,6 @@ include h
 theorem poissonBracket_eq_mvfderiv (f g : M → ℝ) (x : M) :
     σ.poissonBracket f g x = mvfderiv I f x (σ.hamiltonianVectorField g x) :=
   h.eval₂_hamiltonianVectorField f x _
-
-/-- The Poisson bracket `{f, g}` is minus the derivative of `g` along the Hamiltonian vector
-field of `f`. -/
-theorem poissonBracket_eq_neg_mvfderiv (f g : M → ℝ) (x : M) :
-    σ.poissonBracket f g x = -mvfderiv I g x (σ.hamiltonianVectorField f x) := by
-  rw [← neg_poissonBracket, h.poissonBracket_eq_mvfderiv]
 
 /-- **Regularity of the Poisson bracket.** For a nondegenerate two-form on a finite-dimensional
 manifold, the Poisson bracket of two `C^(n+1)` functions is `C^n`, for `n ≤ ∞`. -/
