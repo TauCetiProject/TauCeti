@@ -64,8 +64,6 @@ and that a pointwise bound `m ≤ K σ` on `[a, a + K]` gives `m ≤ ∫_a^{a+K}
 * `ContinuousOn.integrableOn_insertNth_Icc`: continuity on a closed box `Set.Icc a b` gives
   integrability on every coordinate slice `x i = c` (`c ∈ Set.Icc (a i) (b i)`) against any
   measure finite on compact sets.
-* `TendstoUniformlyOn.tendsto_setIntegral`: integrable functions converging uniformly on a set of
-  finite measure to an integrable limit have converging integrals over it.
 -/
 
 public section
@@ -354,29 +352,6 @@ theorem norm_setIntegral_le_add_of_disjoint {f : α → E} {H S T : Set α}
   calc ‖b‖ = ‖a + (b + c) - a - c‖ := by congr 1; abel
     _ ≤ ‖a + (b + c) - a‖ + ‖c‖ := norm_sub_le _ _
     _ ≤ ‖a + (b + c)‖ + ‖a‖ + ‖c‖ := by gcongr; exact norm_sub_le _ _
-
-open Filter Topology in
-/-- **Uniform convergence on a set of finite measure.** If `F i → f` uniformly on a set `S` of
-finite measure, where eventually every `F i` and the limit `f` are integrable on `S`, then
-`∫_S F i → ∫_S f`: the difference of the integrals is at most `sup_S ‖F i - f‖ μ(S)`. Mathlib's
-`TendstoUniformlyOn.tendsto_intervalIntegral_of_continuousOn` is the case of an interval. -/
-theorem _root_.TendstoUniformlyOn.tendsto_setIntegral {ι : Type*} {l : Filter ι} {F : ι → α → E}
-    {f : α → E} {S : Set α} (hS : μ S ≠ ∞) (hF : ∀ᶠ i in l, IntegrableOn (F i) S μ)
-    (hf : IntegrableOn f S μ) (h : TendstoUniformlyOn F f l S) :
-    Tendsto (fun i ↦ ∫ x in S, F i x ∂μ) l (𝓝 (∫ x in S, f x ∂μ)) := by
-  rw [Metric.tendsto_nhds]
-  intro ε hε
-  have hS0 : 0 ≤ μ.real S := measureReal_nonneg
-  have hη : 0 < ε / (μ.real S + 1) := div_pos hε (by linarith)
-  filter_upwards [hF, Metric.tendstoUniformlyOn_iff.1 h _ hη] with i hFi hi
-  rw [dist_eq_norm, ← integral_sub hFi hf]
-  calc ‖∫ x in S, (F i x - f x) ∂μ‖ ≤ ε / (μ.real S + 1) * μ.real S :=
-        norm_setIntegral_le_of_norm_le_const hS.lt_top fun x hx ↦ by
-          rw [← dist_eq_norm, dist_comm]
-          exact (hi x hx).le
-    _ < ε := by
-        rw [div_mul_eq_mul_div, div_lt_iff₀ (by linarith)]
-        nlinarith [hS0]
 
 end MeasureTheory
 

@@ -12,6 +12,7 @@ import Mathlib.MeasureTheory.Constructions.BorelSpace.Metric
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.Topology.Order.Compact
 import TauCeti.MeasureTheory.Integral.Average
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Integral.Bochner.Fatou
 import TauCeti.MeasureTheory.Integral.Bochner.Set
 import TauCeti.MeasureTheory.Measure.InterBall
@@ -479,10 +480,10 @@ private theorem tendsto_setIntegral_ball_of_tendsto_setIntegral_ball {e : ℕ �
   have hCc : IsCompact (closedBall z r \ ball z ε) := (isCompact_closedBall z r).diff isOpen_ball
   have hRC : R ⊆ closedBall z r \ ball z ε := sdiff_subset_sdiff_left ball_subset_closedBall
   have hR : Tendsto (fun n ↦ ∫ y in R, e n y ∂μ) atTop (𝓝 (∫ y in R, f y ∂μ)) :=
-    (((tendstoLocallyUniformlyOn_iff_forall_isCompact hS).1 hlim _ hCS hCc).mono
-      hRC).tendsto_setIntegral ((measure_mono hRC).trans_lt hCc.measure_lt_top).ne
+    tendsto_integral_of_L1 f (hf.mono_set (hRC.trans hCS)).aestronglyMeasurable
       (.of_forall fun n ↦ (hint n).mono_set (sdiff_subset.trans hrΩ'))
-      (hf.mono_set (hRC.trans hCS))
+      ((((tendstoLocallyUniformlyOn_iff_forall_isCompact hS).1 hlim _ hCS hCc).mono
+        hRC).tendsto_setLIntegral_enorm_sub ((measure_mono hRC).trans_lt hCc.measure_lt_top).ne)
   have hεr : ball z ε ⊆ ball z r := ball_subset_ball hε.2
   have hset : (ball z r \ {z}) \ (ball z ε \ {z}) = R := by
     ext y
