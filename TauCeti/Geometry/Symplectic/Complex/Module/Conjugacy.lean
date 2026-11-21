@@ -8,8 +8,10 @@ module
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.InnerProductSpace.PiL2
+import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Geometry.Symplectic.Complex.Module.Basic
+import TauCeti.LinearAlgebra.Complex.Module
 
 /-!
 # Real-linear complex structures are conjugate to multiplication by `i`
@@ -34,6 +36,8 @@ close to `i`.
   `A Φ = Φ i` for some real-linear isomorphism `Φ : ℂⁿ → E`, on a real normed space `E`.
 * `ContinuousLinearEquiv.symm_apply_eq_I_smul_symm_of_comp_eq`: in such a frame,
   `Φ⁻¹ A = i Φ⁻¹`.
+* `TauCeti.exists_euclideanSpace_bijective_coprod`: complex frames of a complement of a complex
+  line `D (ℂ)`, for `D : ℂ → E` real-linear with `D 1 + A (D i) = 0`.
 
 ## References
 
@@ -120,3 +124,48 @@ theorem symm_apply_eq_I_smul_symm_of_comp_eq (Φ : V ≃L[ℝ] E) {A : E →L[�
   rw [h, symm_apply_apply]
 
 end ContinuousLinearEquiv
+
+namespace TauCeti
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
+
+/-- **Complex normal frames.** Let `A` be a complex structure on a finite-dimensional real normed
+space `V`, `A² = -1`, and `D : ℂ → V` a nonzero real-linear map satisfying the Cauchy–Riemann
+equation `D 1 + A (D i) = 0`. Then some real-linear `W : ℂⁿ → V` intertwines `i` with `A` and
+spans a complement of the line `D (ℂ)`: the map `(α, w) ↦ D α + W w` is bijective. This is the
+frame consumed by `TauCeti.exists_holomorphicAdaptedChart`, for `D` the derivative of a
+pseudoholomorphic disc at an immersed point. -/
+theorem exists_euclideanSpace_bijective_coprod {A : V →L[ℝ] V}
+    (hA : A ∘L A = -ContinuousLinearMap.id ℝ V) {D : ℂ →L[ℝ] V} (hD : D 1 + A (D I) = 0)
+    (hD0 : D ≠ 0) :
+    ∃ (n : ℕ) (W : EuclideanSpace ℂ (Fin n) →L[ℝ] V),
+      (∀ w, A (W w) = W (I • w)) ∧ Function.Bijective (D.coprod W) := by
+  obtain ⟨m, Ψ, hΨ⟩ := A.exists_continuousLinearEquiv_euclideanSpace_comp_eq_comp_I_smul hA
+  have hΨI (x : EuclideanSpace ℂ (Fin m)) : A (Ψ x) = Ψ (I • x) := by simpa using congr($hΨ x)
+  have hA' (v : V) : A (A v) = -v := by simpa using congr($hA v)
+  -- in the frame `Ψ`, the map `D` is `α ↦ α v`
+  set v := Ψ.symm (D 1) with hv
+  have hDI : D I = A (D 1) := by
+    rw [eq_neg_of_add_eq_zero_left hD, map_neg, hA', neg_neg]
+  have hDα (α : ℂ) : D α = Ψ (α • v) := by
+    rw [← re_smul_add_im_smul, map_add, map_smul, map_smul, ← hΨI, hv,
+      ContinuousLinearEquiv.apply_symm_apply, ← hDI]
+    exact LinearMap.apply_eq_re_smul_one_add_im_smul_I (D : ℂ →ₗ[ℝ] V) α
+  have hv0 : v ≠ 0 := fun h ↦ hD0 (ContinuousLinearMap.ext fun α ↦ by simp [hDα, h])
+  -- the frame is an orthonormal frame of the orthogonal complement of the line `ℂ v`, and
+  -- `(α, w) ↦ α v + w` is the decomposition of `ℂᵐ` as that line plus its complement
+  set P := ℂ ∙ v
+  let b := stdOrthonormalBasis ℂ Pᗮ
+  let φ : (ℂ × EuclideanSpace ℂ (Fin (Module.finrank ℂ Pᗮ))) ≃ₗ[ℂ] EuclideanSpace ℂ (Fin m) :=
+    (LinearEquiv.prodCongr (LinearEquiv.toSpanNonzeroSingleton ℂ _ v hv0)
+      b.repr.symm.toLinearEquiv).trans (P.prodEquivOfIsCompl Pᗮ P.isCompl_orthogonal)
+  refine ⟨Module.finrank ℂ Pᗮ, (Ψ : EuclideanSpace ℂ (Fin m) →L[ℝ] V) ∘L
+    (Pᗮ.subtypeL ∘L (b.repr.symm : _ →L[ℂ] Pᗮ)).restrictScalars ℝ, fun w ↦ by simp [hΨI], ?_⟩
+  have hcoprod : ⇑(D.coprod ((Ψ : EuclideanSpace ℂ (Fin m) →L[ℝ] V) ∘L
+      (Pᗮ.subtypeL ∘L (b.repr.symm : _ →L[ℂ] Pᗮ)).restrictScalars ℝ)) = Ψ ∘ ⇑φ := by
+    ext p
+    simp [φ, hDα, Submodule.coe_prodEquivOfIsCompl']
+  rw [hcoprod]
+  exact Ψ.bijective.comp φ.bijective
+
+end TauCeti
