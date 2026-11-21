@@ -203,7 +203,7 @@ products `∏_{B ∈ π} κ_{|B|}(a, …, a)` of the coefficients of the free cu
 theorem apply_pow_eq_sum_prod_coeff_freeCumulantSeries (hφ : φ 1 = 1) {α : Type*}
     [LinearOrder α] (s : Finset α) :
     φ (a ^ #s) =
-      ∑ π : NoncrossingPartition s, ∏ B ∈ π.1.parts, coeff #B (freeCumulantSeries φ a) := by
+      ∑ π : NoncrossingPartition s, ∏ B ∈ π.val.parts, coeff #B (freeCumulantSeries φ a) := by
   obtain rfl | hs := s.eq_empty_or_nonempty
   · rw [card_empty, pow_zero, hφ, Fintype.sum_unique,
       Finpartition.parts_eq_empty_iff.2 rfl, prod_empty]

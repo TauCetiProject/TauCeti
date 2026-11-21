@@ -8,7 +8,6 @@ module
 public import TauCeti.NumberTheory.BinaryQuadraticForm.Content
 public import TauCeti.NumberTheory.QuadraticOrder.NormOne
 import Mathlib.Tactic.LinearCombination
-import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ConjAct
 import TauCeti.LinearAlgebra.Matrix.Trace.FinTwo
 import TauCeti.NumberTheory.BinaryQuadraticForm.OfMatrix
 
@@ -97,7 +96,7 @@ private theorem generatorMatrix_eq (hfD : f.discrim = D) :
 
 private theorem det_generatorMatrix (hfD : f.discrim = D) :
     (generatorMatrix f hfD).det = -((D - D ^ 2) / 4) :=
-  ((ofMatrixEquiv _ _).symm _).2.2
+  ((ofMatrixEquiv _ _).symm _).property.2
 
 /-! ### The regular representation over a coefficient ring -/
 
@@ -180,15 +179,9 @@ private theorem regularRep_smul_eq (hfD : f.discrim = D)
     {z : QuadraticAlgebra R (((D - D ^ 2) / 4 : ℤ) : R) D} {γ : SL(2, R)}
     (hγ : (γ : Matrix (Fin 2) (Fin 2) R) = regularRep R f hfD z) :
     γ • f.map (Int.castRingHom R) = f.map (Int.castRingHom R) := by
-  have hc : (γ : Matrix (Fin 2) (Fin 2) R) * castGeneratorMatrix R f hfD =
-      castGeneratorMatrix R f hfD * γ := by
-    have hω : regularRep R f hfD ω = castGeneratorMatrix R f hfD := by simp [regularRep_apply]
-    rw [hγ, ← hω, ← map_mul, ← map_mul, mul_comm]
-  have hinv :
-      (γ : Matrix (Fin 2) (Fin 2) R) * ((γ⁻¹ : SL(2, R)) : Matrix (Fin 2) (Fin 2) R) = 1 := by
-    rw [← SpecialLinearGroup.coe_mul, mul_inv_cancel, SpecialLinearGroup.coe_one]
-  rw [← ofMatrix_castGeneratorMatrix f hfD, ← ofMatrix_conj, hc, Matrix.mul_assoc, hinv,
-    Matrix.mul_one]
+  have hω : regularRep R f hfD ω = castGeneratorMatrix R f hfD := by simp [regularRep_apply]
+  rw [← ofMatrix_castGeneratorMatrix f hfD, ← hω]
+  exact smul_ofMatrix_eq_self_of_commute (hγ ▸ (Commute.all z ω).map (regularRep R f hfD))
 
 /-- The norm-one elements of the order act on `R²` by automorphs of `f`. -/
 private def unitaryToStabilizer (hfD : f.discrim = D) :
@@ -198,7 +191,7 @@ private def unitaryToStabilizer (hfD : f.discrim = D) :
       rw [det_regularRep, norm_eq_one_iff_mem_unitary]
       exact z.prop⟩, mem_stabilizer_iff.mpr <| regularRep_smul_eq f hfD (z := z) rfl⟩
   map_one' := Subtype.ext <| Subtype.ext <| map_one (regularRep R f hfD)
-  map_mul' z w := Subtype.ext <| Subtype.ext <| map_mul (regularRep R f hfD) z.1 w.1
+  map_mul' z w := Subtype.ext <| Subtype.ext <| map_mul (regularRep R f hfD) z.val w.val
 
 private theorem coe_unitaryToStabilizer (hfD : f.discrim = D)
     (z : unitary (QuadraticAlgebra R (((D - D ^ 2) / 4 : ℤ) : R) D)) :
@@ -232,25 +225,17 @@ private theorem regularRep_injective (hfD : f.discrim = D)
   · linear_combination h₀₀ - (((D - f.b) / 2 : ℤ) : R) * him
   · exact him
 
-/-- When `2` is not a zero divisor, an automorph of `f = Q_M` commutes with the generator matrix
-`M`, since `Q_M` and the trace determine `M`. Its coordinates against `M` lie in `R` because the
-coefficients of `f` generate the unit ideal, so it is the image of a norm-one element of the
-order. -/
+/-- When `2` is not a zero divisor and the coefficients of `f` generate the unit ideal of `R`,
+every automorph of `f` over `R` is the image of a norm-one element of the order. -/
 private theorem unitaryToStabilizer_surjective (hfD : f.discrim = D)
     (hf : Ideal.span {(f.a : R), (f.b : R), (f.c : R)} = ⊤) (h2 : IsLeftRegular (2 : R)) :
     Function.Surjective (unitaryToStabilizer (R := R) f hfD) := by
   rintro ⟨γ, hγ⟩
-  rw [mem_stabilizer_iff] at hγ
-  have hconj : (γ : Matrix (Fin 2) (Fin 2) R) * castGeneratorMatrix R f hfD *
-      ((γ⁻¹ : SL(2, R)) : Matrix (Fin 2) (Fin 2) R) = castGeneratorMatrix R f hfD := by
-    refine (ofMatrix_inj_of_trace_eq h2 ?_).mp ?_
-    · exact ConjAct.trace_specialLinearGroup_smul (ConjAct.toConjAct γ) _
-    · rw [ofMatrix_conj, ofMatrix_castGeneratorMatrix, hγ]
+  -- An automorph of `f = Q_M` commutes with the generator matrix `M`.
   have hcomm : (γ : Matrix (Fin 2) (Fin 2) R) * castGeneratorMatrix R f hfD =
       castGeneratorMatrix R f hfD * γ := by
-    conv_rhs => rw [← hconj]
-    rw [Matrix.mul_assoc _ _ (γ : Matrix (Fin 2) (Fin 2) R), ← SpecialLinearGroup.coe_mul,
-      inv_mul_cancel, SpecialLinearGroup.coe_one, Matrix.mul_one]
+    rw [← commute_iff_eq, ← mem_stabilizer_ofMatrix_iff_commute h2, ofMatrix_castGeneratorMatrix]
+    exact hγ
   have he := two_mul_ediv_two_of_discrim_eq (discrim_eq_sq_sub_four_mul f hfD)
   have he' := congrArg (Int.cast : ℤ → R) he
   rw [castGeneratorMatrix_eq] at hcomm
@@ -359,7 +344,7 @@ theorem map_stabilizerEquivUnitary_symm_apply {S : Type*} [CommRing S] (φ : R �
           simpa [Ideal.map_span, Ideal.map_top, Set.image_insert_eq] using
             congrArg (Ideal.map φ) hf) hfD hS).symm w : SL(2, S)) := by
   ext i j
-  rw [SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply,
+  rw [SpecialLinearGroup.map_apply_coe,
     coe_stabilizerEquivUnitary_symm_apply, coe_stabilizerEquivUnitary_symm_apply]
   fin_cases i <;> fin_cases j <;> simp [hre, him]
 
@@ -408,9 +393,9 @@ theorem map_stabilizerEquivNormOneUnits_symm_apply (hf : f.IsPrimitive) (hfD : f
   rw [hsymm, coe_stabilizerEquivUnitary_symm_apply, hu, QuadraticOrder.lift_apply]
   ext i j
   fin_cases i <;> fin_cases j <;> simp
-  · linear_combination (z.1.im : ℚ) / 2 * he
+  · linear_combination (z.val.im : ℚ) / 2 * he
   · ring
   · ring
-  · linear_combination (z.1.im : ℚ) / 2 * he'
+  · linear_combination (z.val.im : ℚ) / 2 * he'
 
 end TauCeti.BinaryQuadraticForm

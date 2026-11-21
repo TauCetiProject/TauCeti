@@ -116,7 +116,7 @@ theorem IsPLWithinAt.exists_eventually_eq_add_homogeneous (hf : IsPLWithinAt f s
   have hcell := (locallyFinite_of_finite C).eventually_subset (fun i => (hC i).isClosed) x
   -- The cells through `x`, and the polyhedral cone of each of them at `x`.
   let ι := {i : Fin n // x ∈ C i}
-  choose K hKpoly hKcone hKsub hKnhds using fun i : ι => (hC i).exists_cone i.2
+  choose K hKpoly hKcone hKsub hKnhds using fun i : ι => (hC i).exists_cone i.property
   have hlim (v : E) : Tendsto (fun c : ℝ => x + c • v) (𝓝 0) (𝓝 x) :=
     (by fun_prop : Continuous fun c : ℝ => x + c • v).tendsto' 0 x (by simp)
   -- Along a ray in a cone, close to `x`, the values of `f` are read off the linear part.
@@ -127,7 +127,7 @@ theorem IsPLWithinAt.exists_eventually_eq_add_homogeneous (hf : IsPLWithinAt f s
     have hci : x + c • v ∈ C i := hcK (by simpa using hKcone i c (le_of_lt hc) v hv)
     have hlin := (A i).contLinear_apply_vsub (x + c • v) x
     rw [vsub_eq_sub, vsub_eq_sub, add_sub_cancel_left, map_smul] at hlin
-    rw [heq i ⟨hcV, hci⟩, heq i ⟨hxV, i.2⟩, hlin, add_sub_cancel]
+    rw [heq i ⟨hcV, hci⟩, heq i ⟨hxV, i.property⟩, hlin, add_sub_cancel]
   -- Two cones containing `v` give the same value of the linear parts at `v`.
   have hcompat (i j : ι) {v : E} (hi : v ∈ K i) (hj : v ∈ K j) :
       (A i).contLinear v = (A j).contLinear v := by

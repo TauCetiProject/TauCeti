@@ -250,9 +250,9 @@ theorem map_mem_normalizedSubmonoid {S : Type*} [CommSemiring S] (f : R →+* S)
 `f : R →+* S`. -/
 noncomputable def mapNormalized {S : Type*} [CommSemiring S] (f : R →+* S) :
     normalizedSubmonoid R →* normalizedSubmonoid S where
-  toFun x := ⟨map f x.1, map_mem_normalizedSubmonoid f x.2⟩
+  toFun x := ⟨map f x.val, map_mem_normalizedSubmonoid f x.property⟩
   map_one' := Subtype.ext (map_one (map f))
-  map_mul' x y := Subtype.ext (map_mul (map f) x.1 y.1)
+  map_mul' x y := Subtype.ext (map_mul (map f) x.val y.val)
 
 @[simp]
 theorem coe_mapNormalized {S : Type*} [CommSemiring S] (f : R →+* S)

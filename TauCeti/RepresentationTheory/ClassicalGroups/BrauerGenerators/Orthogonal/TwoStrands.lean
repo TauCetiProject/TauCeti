@@ -280,10 +280,11 @@ theorem range_brauerActionOrth_two_eq_centralizer_of_noZeroDivisors [NoZeroDivis
 hypotheses of `TauCeti.range_brauerActionOrth_two_eq_centralizer_of_noZeroDivisors`: it is the
 image of the Brauer algebra `B₂(n)`, on which the action is faithful, and `B₂(n)` is free on its
 three diagrams. -/
-theorem finrank_centralizer_stdOrthogonalRep_tensorPower_two [IsDomain R] {n : ℕ} (hn : 2 ≤ n)
+theorem finrank_centralizer_stdOrthogonalRep_tensorPower_two [NoZeroDivisors R] {n : ℕ} (hn : 2 ≤ n)
     (h2 : (2 : R) ≠ 0) (hrot : ∃ c s : R, c ^ 2 + s ^ 2 = 1 ∧ c * s ≠ 0) :
     Module.finrank R
       (Subalgebra.centralizer R (Set.range ((stdOrthogonalRep R n).tensorPower 2))) = 3 := by
+  have := nontrivial_of_ne _ _ h2
   rw [← range_brauerActionOrth_two_eq_centralizer_of_noZeroDivisors R n h2 hrot,
     ← (AlgEquiv.ofInjective _ (brauerActionOrth_injective R n 2 hn)).toLinearEquiv.finrank_eq,
     BrauerAlgebra.finrank_eq_doubleFactorial]

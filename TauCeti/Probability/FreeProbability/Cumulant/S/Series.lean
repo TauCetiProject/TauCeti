@@ -109,7 +109,7 @@ theorem X_mul_boxedSSeries (f : R⟦X⟧) (hf : IsUnit (coeff 1 f)) :
       (f - C (constantCoeff f)).substInvOfIsUnit (by simpa [coeff_C] using hf) := by
   rw [boxedSSeries, boxedSSeriesUnit, FormalCoordinate.X_mul_val_unitsEquiv,
     FormalCoordinate.toPowerSeries_inv]
-  exact substInvOfIsUnit_congr (toPowerSeries_toFormalCoordinate f hf)
+  exact substInvOfIsUnit_congr (toPowerSeries_toFormalCoordinate f hf) _ _
 
 /-- The boxed S-series as the coefficient shift of the compositional inverse of
 `f - C (constantCoeff f)`. -/

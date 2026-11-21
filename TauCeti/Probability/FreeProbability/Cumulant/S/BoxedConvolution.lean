@@ -394,12 +394,12 @@ theorem normalizedUnit_boxedConvolution {f g : R⟦X⟧}
 /-- An element of `BoxedConvolution.normalizedSubmonoid R` is a unit if and only if its linear
 coefficient is a unit of `R`. -/
 theorem isUnit_normalizedSubmonoid_iff {x : normalizedSubmonoid R} :
-    IsUnit x ↔ IsUnit (coeff 1 x.1.ofBoxed) := by
+    IsUnit x ↔ IsUnit (coeff 1 x.val.ofBoxed) := by
   refine ⟨fun hx => ?_, fun hx => ?_⟩
   · simpa using (hx.map (normalizedSubmonoid R).subtype).map coeffOneHom
-  · have hu := (normalizedUnit x.1.ofBoxed (mem_normalizedSubmonoid_iff.mp x.2) hx).isUnit
-    have hx' : (normalizedUnit x.1.ofBoxed (mem_normalizedSubmonoid_iff.mp x.2) hx :
-        normalizedSubmonoid R) = x := Subtype.ext (toBoxed_ofBoxed x.1)
+  · have hu := (normalizedUnit x.val.ofBoxed (mem_normalizedSubmonoid_iff.mp x.property) hx).isUnit
+    have hx' : (normalizedUnit x.val.ofBoxed (mem_normalizedSubmonoid_iff.mp x.property) hx :
+        normalizedSubmonoid R) = x := Subtype.ext (toBoxed_ofBoxed x.val)
     rwa [hx'] at hu
 
 /-- *The one-variable boxed-convolution / S-series group isomorphism*: the formal S-series
@@ -408,27 +408,27 @@ identifies the group of units of `BoxedConvolution.normalizedSubmonoid R` (norma
 multiplicative group `R⟦X⟧ˣ` of unit formal power series (under Cauchy multiplication). Its inverse
 sends `v : R⟦X⟧ˣ` to `1 + (X v)⁻¹`, where `(X v)⁻¹` denotes the compositional inverse of `X v`. -/
 noncomputable def sSeriesMulEquiv : (normalizedSubmonoid R)ˣ ≃* R⟦X⟧ˣ where
-  toFun u := (u : normalizedSubmonoid R).1.ofBoxed.boxedSSeriesUnit
+  toFun u := (u : normalizedSubmonoid R).val.ofBoxed.boxedSSeriesUnit
     (isUnit_normalizedSubmonoid_iff.mp u.isUnit)
   invFun v := normalizedUnit (ofBoxedSSeriesUnit v) (constantCoeff_ofBoxedSSeriesUnit v)
     (isUnit_coeff_one_ofBoxedSSeriesUnit v)
   left_inv u := Units.ext <| Subtype.ext <| BoxedConvolution.ext <| by
     rw [coe_val_normalizedUnit, ofBoxed_toBoxed]
     exact ofBoxedSSeriesUnit_boxedSSeriesUnit_of_constantCoeff_eq_one
-      (mem_normalizedSubmonoid_iff.mp (u : normalizedSubmonoid R).2)
+      (mem_normalizedSubmonoid_iff.mp (u : normalizedSubmonoid R).property)
       (isUnit_normalizedSubmonoid_iff.mp u.isUnit)
   right_inv v := boxedSSeriesUnit_ofBoxedSSeriesUnit v
   map_mul' _ _ := boxedSSeriesUnit_boxedConvolution _ _
 
 theorem sSeriesMulEquiv_apply (u : (normalizedSubmonoid R)ˣ) :
     sSeriesMulEquiv u =
-      (u : normalizedSubmonoid R).1.ofBoxed.boxedSSeriesUnit
+      (u : normalizedSubmonoid R).val.ofBoxed.boxedSSeriesUnit
         (isUnit_normalizedSubmonoid_iff.mp u.isUnit) := (rfl)
 
 @[simp]
 theorem val_sSeriesMulEquiv (u : (normalizedSubmonoid R)ˣ) :
     (sSeriesMulEquiv u : R⟦X⟧) =
-      (u : normalizedSubmonoid R).1.ofBoxed.boxedSSeries
+      (u : normalizedSubmonoid R).val.ofBoxed.boxedSSeries
         (isUnit_normalizedSubmonoid_iff.mp u.isUnit) :=
   val_boxedSSeriesUnit _ _
 
@@ -515,7 +515,8 @@ theorem unitsMulEquiv_unitOfIsUnit (x : BoxedConvolution R)
 theorem unitsMulEquiv_map_subtype (u : (normalizedSubmonoid R)ˣ) :
     unitsMulEquiv (Units.map (normalizedSubmonoid R).subtype u) = (1, sSeriesMulEquiv u) :=
   Prod.ext
-    (Units.ext <| by simpa using mem_normalizedSubmonoid_iff.mp (u : normalizedSubmonoid R).2)
+    (Units.ext <| by
+      simpa using mem_normalizedSubmonoid_iff.mp (u : normalizedSubmonoid R).property)
     (by simp [sSeriesMulEquiv_apply])
 
 @[simp]
@@ -638,14 +639,15 @@ theorem IsFreelyIndependent.freeCumulantSeriesNormalizedUnit_list_prod {B : ι �
     (hu : ∀ p ∈ l, IsUnit (φ p.2)) :
     freeCumulantSeriesNormalizedUnit φ (l.map Prod.snd).prod
         (h.isUnit_apply_list_prod hφ hnodup hl hu) =
-      (l.attach.map fun p => freeCumulantSeriesNormalizedUnit φ p.1.2 (hu p.1 p.2)).prod := by
+      (l.attach.map fun p =>
+        freeCumulantSeriesNormalizedUnit φ p.val.2 (hu p.val p.property)).prod := by
   apply Units.ext
   apply Subtype.ext
   rw [coe_val_freeCumulantSeriesNormalizedUnit,
     h.toBoxed_freeCumulantSeries_list_prod hφ hnodup hl]
   simpa [Function.comp_def, ← l.attach_map_val] using
     (map_list_prod ((normalizedSubmonoid R).subtype.comp (Units.coeHom _))
-      (l.attach.map fun p => freeCumulantSeriesNormalizedUnit φ p.1.2 (hu p.1 p.2))).symm
+      (l.attach.map fun p => freeCumulantSeriesNormalizedUnit φ p.val.2 (hu p.val p.property))).symm
 
 /-- *Multiplicativity of `freeCumulantSeriesNormalizedUnit` on finite products of free elements*:
 for a duplicate-free list `l` of indices of a freely independent family `c` with unit means under a
@@ -656,7 +658,8 @@ theorem IsFreelyIndependentElements.freeCumulantSeriesNormalizedUnit_list_prod {
     (hu : ∀ i ∈ l, IsUnit (φ (c i))) :
     freeCumulantSeriesNormalizedUnit φ (l.map c).prod
         (h.isUnit_apply_list_prod hφ hnodup hu) =
-      (l.attach.map fun i => freeCumulantSeriesNormalizedUnit φ (c i.1) (hu i.1 i.2)).prod := by
+      (l.attach.map fun i =>
+        freeCumulantSeriesNormalizedUnit φ (c i.val) (hu i.val i.property)).prod := by
   have h1 := (isFreelyIndependentElements_iff.mp h).freeCumulantSeriesNormalizedUnit_list_prod hφ
     (l := l.map fun i => (i, c i))
     (by simpa [Function.comp_def] using hnodup)

@@ -73,6 +73,8 @@ group, so the definition and most of its API are stated over a commutative semir
   harmonic.
 * `TauCeti.harmonicTensors_eq_top_of_le_one`: on at most one strand there is no arc, so every
   tensor is harmonic.
+* `TauCeti.harmonicTensors_rankOne_eq_bot_of_two_le`: on the line `k¹` there is no nonzero
+  harmonic tensor of degree at least two.
 * `TauCeti.harmonicTensors_two_eq_ker_orthogonalCupCap` and
   `TauCeti.harmonicTensors_two_eq_ker_orthogonalCap`: on two strands the harmonic tensors are the
   kernel of the single arc, and hence of the cap alone -- the traceless tensors.
@@ -159,6 +161,19 @@ theorem harmonicTensors_eq_top_of_le_one (hd : d ≤ 1) : harmonicTensors k n d 
   have hi := i.isLt
   have hj := j.isLt
   exact Fin.ext (by omega)
+
+/-- On the line `k¹` there are no nonzero harmonic tensors of degree at least two: the tensor
+power is spanned by `e^{⊗d}`, and the arc on the first two strands fixes it because
+`cap (e ⊗ e) = 1`. -/
+theorem harmonicTensors_rankOne_eq_bot_of_two_le (hd : 2 ≤ d) : harmonicTensors k 1 d = ⊥ := by
+  have hid : orthogonalCupCapAt k 1 d ⟨0, by omega⟩ ⟨1, by omega⟩ = LinearMap.id :=
+    (tensorPowerBasis k 1 d).ext fun f => by
+      rw [orthogonalCupCapAt_tensorPowerBasis, ite_eq_left (Subsingleton.elim _ _),
+        Fintype.sum_unique, LinearMap.id_apply]
+      exact congrArg _ (Subsingleton.elim _ _)
+  refine eq_bot_iff.mpr fun x hx => (Submodule.mem_bot k).mpr ?_
+  rw [← LinearMap.id_apply (R := k) x, ← hid]
+  exact orthogonalCupCapAt_apply_eq_zero_of_mem_harmonicTensors hx (by simp [Fin.ext_iff])
 
 /-- On two strands there is a single arc, joining the two of them, so the harmonic tensors are
 the kernel of the Brauer generator `e`. -/

@@ -10,6 +10,7 @@ public import Mathlib.AlgebraicTopology.Quasicategory.InnerFibration
 public import Mathlib.AlgebraicTopology.SimplicialSet.Monoidal
 public import Mathlib.AlgebraicTopology.SimplicialSet.Nerve
 public import Mathlib.AlgebraicTopology.SimplicialSet.PiZero
+public import TauCeti.AlgebraicTopology.SimplicialSet.Op
 public import TauCeti.CategoryTheory.Core
 import Mathlib.AlgebraicTopology.SimplicialSet.HornColimits
 
@@ -21,16 +22,23 @@ An edge `e : x₀ ⟶ x₁` of a simplicial set `X` is an *equivalence* when it 
 exactly that `e` becomes an isomorphism in the homotopy category of `X`.
 
 The *core* `X.core` of `X` is the subcomplex of the simplices all of whose edges are equivalences.
-When `X` is a quasicategory, its core is again a quasicategory: an inner horn determines all edges
-of its filler except, for `Λ[2, 1]`, the long edge, which is a composite of two equivalences. Every
-Kan complex contained in `X` lies in the core. That the core of a quasicategory is itself a Kan
-complex, hence the largest Kan complex in `X`, is Joyal's theorem on special outer horns, which is
-not proved here. For the nerve of a category `C`, the core is the nerve of the groupoid `Core C`.
+Every edge of `X.core` is already an equivalence in `X.core` itself, so taking the core is
+idempotent (`SSet.core_core`). When `X` is a quasicategory, its core is again a quasicategory: an
+inner horn determines all edges of its filler except, for `Λ[2, 1]`, the long edge, which is a
+composite of two equivalences. Every Kan complex contained in `X` lies in the core. That the core
+of a quasicategory is itself a Kan complex, hence the largest Kan complex in `X`, follows from
+Joyal's theorem on special outer horns and is proved in
+`TauCeti.AlgebraicTopology.Quasicategory.OuterHorn.Basic` (`SSet.core.kanComplex`,
+`SSet.isGreatest_core`). For the nerve of a category `C`, the core is the nerve of the groupoid
+`Core C`.
 
 ## Main definitions
 
 * `SSet.Edge.IsEquivalence`: an edge admitting an inverse up to `2`-simplices.
-* `SSet.core`: the subcomplex of simplices all of whose edges are equivalences.
+* `SSet.core`, `SSet.core.map`, `SSet.coreFunctor`: the subcomplex of simplices all of whose edges
+  are equivalences, functorial in `X`.
+* `SSet.coreHomEquiv`: maps from a Kan complex into `X.core` are maps into `X`.
+* `SSet.stdSimplex.π₀CoreEquiv`: the connected components of `(Δ[n]).core` are `Fin (n + 1)`.
 * `CategoryTheory.Core.nerveIso`: the nerve of `Core C` is the core of the nerve of `C`.
 
 ## Main results
@@ -40,15 +48,18 @@ not proved here. For the nerve of a category `C`, the core is the nerve of the g
 * `SSet.Edge.CompStruct.isEquivalence₀₂`, `isEquivalence₀₁`, `isEquivalence₁₂`: equivalences in
   a quasicategory satisfy two-out-of-three.
 * `SSet.Edge.isEquivalence_of_kanComplex`: every edge of a Kan complex is an equivalence. Hence
-  every Kan complex contained in `X` lies in its core (`SSet.le_core_of_kanComplex`), and two
-  vertices of a Kan complex lie in the same connected component exactly when an edge joins them
+  every Kan complex contained in `X` lies in its core (`SSet.le_core_of_kanComplex`), maps from
+  a Kan complex factor through the core (`SSet.range_le_core_of_kanComplex`), and two vertices of
+  a Kan complex lie in the same connected component exactly when an edge joins them
   (`SSet.π₀.mk_eq_mk_iff_nonempty_edge`).
 * `SSet.le_core_iff`: the core is the largest subcomplex all of whose edges are equivalences.
+* `SSet.core.isEquivalence`, `SSet.core_core`: every edge of `X.core` is an equivalence in
+  `X.core`, so the core of the core is everything.
+* `SSet.Edge.isEquivalence_opEquiv_iff`, `SSet.op_core`, `SSet.core.opIso`: equivalences are
+  invariant under reversing edges, and the opposite of the core is the core of the opposite.
 * `SSet.Edge.isEquivalence_tensor_iff`, `SSet.core_tensor`: an edge of a product is an
   equivalence exactly when both of its projections are, so the core of a product is the product
   of the cores. This makes the cores of function complexes closed under composition.
-* `SSet.range_le_core_of_unit`: maps from `𝟙_ SSet` factor through the core, so the cores of
-  function complexes contain the identities.
 * `SSet.hasLiftingProperty_horn_ι_core_ι`: the inclusion of the core of a quasicategory is an
   inner fibration, so `SSet.core.quasicategory`: the core of a quasicategory is a quasicategory.
 * `CategoryTheory.nerve.mem_core_iff`: a simplex of the nerve of a category lies in the core
@@ -217,6 +228,28 @@ lemma isEquivalence_mk'_δ_one [Quasicategory X] (s : X _⦋2⦌)
   rw [isEquivalence_iff_of_edge_eq (e' := e₀₂) (by rw [mk'_edge, h.d₁])]
   exact h.isEquivalence₀₂ h₂ h₀
 
+/-- In a quasicategory, if the faces `δ 2 s` and `δ 1 s` of a `2`-simplex `s` are equivalences,
+then so is the face `δ 0 s`. -/
+lemma isEquivalence_mk'_δ_zero [Quasicategory X] (s : X _⦋2⦌)
+    (h₂ : (mk' (X.δ 2 s)).IsEquivalence) (h₁ : (mk' (X.δ 1 s)).IsEquivalence) :
+    (mk' (X.δ 0 s)).IsEquivalence := by
+  obtain ⟨_, _, _, e₀₁, e₁₂, e₀₂, h, rfl⟩ := CompStruct.exists_of_simplex s
+  rw [isEquivalence_iff_of_edge_eq (e' := e₀₁) (by rw [mk'_edge, h.d₂])] at h₂
+  rw [isEquivalence_iff_of_edge_eq (e' := e₀₂) (by rw [mk'_edge, h.d₁])] at h₁
+  rw [isEquivalence_iff_of_edge_eq (e' := e₁₂) (by rw [mk'_edge, h.d₀])]
+  exact h.isEquivalence₁₂ h₂ h₁
+
+/-- In a quasicategory, if the faces `δ 0 s` and `δ 1 s` of a `2`-simplex `s` are equivalences,
+then so is the face `δ 2 s`. -/
+lemma isEquivalence_mk'_δ_two [Quasicategory X] (s : X _⦋2⦌)
+    (h₀ : (mk' (X.δ 0 s)).IsEquivalence) (h₁ : (mk' (X.δ 1 s)).IsEquivalence) :
+    (mk' (X.δ 2 s)).IsEquivalence := by
+  obtain ⟨_, _, _, e₀₁, e₁₂, e₀₂, h, rfl⟩ := CompStruct.exists_of_simplex s
+  rw [isEquivalence_iff_of_edge_eq (e' := e₁₂) (by rw [mk'_edge, h.d₀])] at h₀
+  rw [isEquivalence_iff_of_edge_eq (e' := e₀₂) (by rw [mk'_edge, h.d₁])] at h₁
+  rw [isEquivalence_iff_of_edge_eq (e' := e₀₁) (by rw [mk'_edge, h.d₂])]
+  exact h.isEquivalence₀₁ h₀ h₁
+
 /-- The edge of a simplex `s` along a map `f : ⦋1⦌ ⟶ n` selecting the same vertex index twice is
 degenerate, hence an equivalence. -/
 lemma isEquivalence_mk'_map_of_eq {n : SimplexCategoryᵒᵖ} (s : X.obj n) (f : ⦋1⦌ ⟶ n.unop)
@@ -230,6 +263,28 @@ lemma isEquivalence_mk'_map_of_eq {n : SimplexCategoryᵒᵖ} (s : X.obj n) (f :
   rw [isEquivalence_iff_of_edge_eq (e' := id (X.map (SimplexCategory.const _ _ i).op s))
     (by rw [mk'_edge, id_edge, this, op_comp, Functor.map_comp_apply, SimplicialObject.σ_def])]
   exact isEquivalence_id _
+
+/-- An edge of `X` is an equivalence if and only if its opposite edge in `Xᵒᵖ` is an
+equivalence. -/
+@[simp]
+lemma isEquivalence_opEquiv_iff (e : Edge x₀ x₁) :
+    (Edge.opEquiv e).IsEquivalence ↔ e.IsEquivalence :=
+  InvStruct.opEquiv.symm.nonempty_congr
+
+/-- A `1`-simplex of `X`, read in `Xᵒᵖ`, is an equivalence if and only if it is an equivalence in
+`X`. -/
+@[simp]
+lemma isEquivalence_mk'_opObjEquiv_symm_iff (s : X _⦋1⦌) :
+    (mk' (X.opObjEquiv.symm s)).IsEquivalence ↔ (mk' s).IsEquivalence :=
+  (isEquivalence_iff_of_edge_eq (e' := opEquiv (mk' s)) (by simp)).trans
+    (isEquivalence_opEquiv_iff _)
+
+/-- A `1`-simplex of `Xᵒᵖ`, read in `X`, is an equivalence if and only if it is an equivalence in
+`Xᵒᵖ`. -/
+@[simp]
+lemma isEquivalence_mk'_opObjEquiv_iff (s : X.op _⦋1⦌) :
+    (mk' (X.opObjEquiv s)).IsEquivalence ↔ (mk' s).IsEquivalence := by
+  rw [← isEquivalence_mk'_opObjEquiv_symm_iff, Equiv.symm_apply_apply]
 
 end Edge
 
@@ -267,7 +322,7 @@ lemma mem_core_obj_zero (x : X _⦋0⦌) : x ∈ X.core.obj (op ⦋0⦌) :=
 /-- An edge lies in the core exactly when it is an equivalence. -/
 @[simp]
 lemma Edge.edge_mem_core_iff {x₀ x₁ : X _⦋0⦌} (e : Edge x₀ x₁) :
-    e.edge ∈ X.core.obj (op ⦋1⦌) ↔ e.IsEquivalence := by
+    e.edge ∈ X.core.obj (Opposite.op ⦋1⦌) ↔ e.IsEquivalence := by
   refine ⟨fun h ↦ (isEquivalence_iff_of_edge_eq (by simp)).1 (h (𝟙 _)), fun h f ↦ ?_⟩
   obtain ⟨a, rfl⟩ | rfl := SimplexCategory.eq_of_one_to_one f
   · exact isEquivalence_mk'_map_of_eq _ _ rfl
@@ -292,6 +347,47 @@ lemma image_core_le (f : X ⟶ Y) : X.core.image f ≤ Y.core := by
   rintro _ ⟨s, hs, rfl⟩
   exact (isEquivalence_iff_of_edge_eq (by simp)).1 (((edge_mem_core_iff (mk' s)).1 hs).map f)
 
+/-- The map `X.core ⟶ Y.core` induced by a map of simplicial sets `f : X ⟶ Y`. -/
+def core.map (f : X ⟶ Y) : (X.core : SSet.{u}) ⟶ (Y.core : SSet.{u}) :=
+  Subcomplex.lift (X.core.ι ≫ f) (by simpa [Subcomplex.range_comp] using image_core_le f)
+
+@[reassoc (attr := simp)]
+lemma core.map_ι (f : X ⟶ Y) : core.map f ≫ Y.core.ι = X.core.ι ≫ f :=
+  (rfl)
+
+@[simp]
+lemma core.map_id (X : SSet.{u}) : core.map (𝟙 X) = 𝟙 (X.core : SSet.{u}) := by
+  rw [← cancel_mono X.core.ι]
+  simp
+
+@[reassoc, simp]
+lemma core.map_comp {Z : SSet.{u}} (f : X ⟶ Y) (g : Y ⟶ Z) :
+    core.map (f ≫ g) = core.map f ≫ core.map g := by
+  rw [← cancel_mono Z.core.ι]
+  simp
+
+/-- The isomorphism of cores induced by an isomorphism of simplicial sets. -/
+def core.mapIso (e : X ≅ Y) : (X.core : SSet.{u}) ≅ (Y.core : SSet.{u}) where
+  hom := core.map e.hom
+  inv := core.map e.inv
+  hom_inv_id := by rw [← core.map_comp, e.hom_inv_id, core.map_id]
+  inv_hom_id := by rw [← core.map_comp, e.inv_hom_id, core.map_id]
+
+@[simp]
+lemma core.mapIso_hom (e : X ≅ Y) : (core.mapIso e).hom = core.map e.hom :=
+  (rfl)
+
+@[simp]
+lemma core.mapIso_inv (e : X ≅ Y) : (core.mapIso e).inv = core.map e.inv :=
+  (rfl)
+
+/-- Sending a simplicial set to its core is an endofunctor of `SSet`. -/
+-- Exposed so `coreFunctor.obj X` reduces to `X.core` in the generated `@[simps]` lemmas.
+@[expose, simps]
+def coreFunctor : SSet.{u} ⥤ SSet.{u} where
+  obj X := X.core
+  map := core.map
+
 /-- The core of `X` is all of `X` exactly when every edge of `X` is an equivalence. -/
 lemma core_eq_top_iff : X.core = ⊤ ↔ ∀ s : X _⦋1⦌, (mk' s).IsEquivalence := by
   rw [← top_le_iff, le_core_iff]
@@ -302,39 +398,57 @@ lemma core_eq_top_iff : X.core = ⊤ ↔ ∀ s : X _⦋1⦌, (mk' s).IsEquivalen
 lemma core_eq_top [KanComplex X] : X.core = ⊤ :=
   core_eq_top_iff.2 fun _ ↦ isEquivalence_of_kanComplex _
 
+/-- Every map from a Kan complex into `X` factors through `X.core`. -/
+lemma range_le_core_of_kanComplex [KanComplex Y] (f : Y ⟶ X) :
+    Subcomplex.range f ≤ X.core :=
+  (range_le_core_iff f).2 fun y ↦
+    (isEquivalence_iff_of_edge_eq (by simp)).1 ((isEquivalence_of_kanComplex (mk' y)).map f)
+
 /-- Every Kan complex contained in `X` lies in the core of `X`. -/
 lemma le_core_of_kanComplex (A : X.Subcomplex) [KanComplex (A : SSet)] : A ≤ X.core := by
-  rw [le_core_iff]
-  intro s hs
-  exact (isEquivalence_iff_of_edge_eq (by simp)).1
-    ((isEquivalence_of_kanComplex (mk' (⟨s, hs⟩ : (A : SSet) _⦋1⦌))).map A.ι)
+  simpa using range_le_core_of_kanComplex A.ι
 
-/-- Every map from the unit `𝟙_ SSet` factors through the core. -/
-lemma range_le_core_of_unit (f : 𝟙_ SSet.{u} ⟶ X) : Subcomplex.range f ≤ X.core := by
-  rw [range_le_core_iff]
-  intro y
-  -- The only `1`-simplex of `𝟙_ SSet` is degenerate, so its image is a degenerate edge.
-  have : f.app _ y = X.map (SimplexCategory.const ⦋1⦌ ⦋0⦌ 0).op (f.app _ PUnit.unit) :=
-    NatTrans.naturality_apply f (SimplexCategory.const ⦋1⦌ ⦋0⦌ 0).op PUnit.unit
-  rw [this]
-  exact isEquivalence_mk'_map_of_eq _ _ (Subsingleton.elim (α := Fin 1) _ _)
-
-variable (X) in
-/-- Maps from the unit `𝟙_ SSet` into the core of `X` are the same as maps into `X`. -/
-noncomputable def coreUnitHomEquiv : (𝟙_ SSet.{u} ⟶ X.core) ≃ (𝟙_ SSet.{u} ⟶ X) where
+/-- Maps from a Kan complex `Y` into the core of `X` are the same as maps from `Y` into `X`. -/
+def coreHomEquiv (Y X : SSet.{u}) [KanComplex Y] : (Y ⟶ X.core) ≃ (Y ⟶ X) where
   toFun f := f ≫ X.core.ι
-  invFun f := Subcomplex.lift f (range_le_core_of_unit f)
+  invFun f := Subcomplex.lift f (range_le_core_of_kanComplex f)
   left_inv f := by rw [← cancel_mono X.core.ι, Subcomplex.lift_ι]
   right_inv f := Subcomplex.lift_ι _ _
 
 @[simp]
-lemma coreUnitHomEquiv_apply (f : 𝟙_ SSet.{u} ⟶ X.core) : X.coreUnitHomEquiv f = f ≫ X.core.ι :=
+lemma coreHomEquiv_apply [KanComplex Y] (f : Y ⟶ X.core) :
+    coreHomEquiv Y X f = f ≫ X.core.ι :=
   (rfl)
 
 @[reassoc (attr := simp)]
-lemma coreUnitHomEquiv_symm_apply_ι (f : 𝟙_ SSet.{u} ⟶ X) :
-    X.coreUnitHomEquiv.symm f ≫ X.core.ι = f :=
+lemma coreHomEquiv_symm_apply_ι [KanComplex Y] (f : Y ⟶ X) :
+    (coreHomEquiv Y X).symm f ≫ X.core.ι = f :=
   (rfl)
+
+variable (X) in
+/-- The opposite of the core of `X` is the core of `Xᵒᵖ`: reversing a simplex reverses each of its
+edges, and an edge is an equivalence if and only if its opposite is. -/
+@[simp]
+lemma op_core : X.core.op = X.op.core := by
+  ext n s
+  simp only [Subcomplex.mem_op_obj_iff, mem_core_iff, op_map, Opposite.unop_op]
+  exact ⟨fun h f ↦ (isEquivalence_mk'_opObjEquiv_symm_iff _).2 (h (SimplexCategory.rev.map f)),
+    fun h f ↦ SimplexCategory.rev_map_rev_map f ▸
+      (isEquivalence_mk'_opObjEquiv_symm_iff _).1 (h (SimplexCategory.rev.map f))⟩
+
+/-- Reversing simplices identifies the opposite of `X.core` with `(Xᵒᵖ).core`. -/
+def core.opIso (X : SSet.{u}) : (X.core : SSet.{u}).op ≅ (X.op.core : SSet.{u}) :=
+  Subcomplex.opIso X.core ≪≫ Subcomplex.eqToIso (op_core X)
+
+@[reassoc (attr := simp)]
+lemma core.opIso_hom_ι (X : SSet.{u}) :
+    (core.opIso X).hom ≫ X.op.core.ι = opFunctor.map X.core.ι := by
+  simp [opIso]
+
+@[reassoc (attr := simp)]
+lemma core.opIso_inv_opFunctor_map_ι (X : SSet.{u}) :
+    (core.opIso X).inv ≫ opFunctor.map X.core.ι = X.op.core.ι := by
+  simp [opIso]
 
 /-- An edge of a product `X ⊗ Y` is an equivalence exactly when both of its projections are. -/
 lemma Edge.isEquivalence_tensor_iff {p₀ p₁ : (X ⊗ Y) _⦋0⦌} (e : Edge p₀ p₁) :
@@ -373,7 +487,7 @@ private lemma isEquivalence_of_horn₂₁ [Quasicategory X] {a : (Λ[2, 1] : SSe
       rw [← stdSimplex.δ_comp_yonedaEquiv_symm, ← horn.ι_ι 1 j hj, Category.assoc, sq.w]
     rw [← edge_mem_core_iff, mk'_edge, ← yonedaEquiv.apply_symm_apply (X.δ j s), h,
       yonedaEquiv_comp]
-    exact (a.app _ _).2
+    exact (a.app _ _).property
   -- The only edge of `Δ[2]` outside `Λ[2, 1]` is the long edge `δ 1`; constant edges are
   -- degenerate.
   obtain ⟨f, rfl⟩ : ∃ f : ⦋1⦌ ⟶ ⦋2⦌, stdSimplex.objEquiv.symm f = y :=
@@ -395,8 +509,8 @@ lemma hasLiftingProperty_horn_ι_core_ι [Quasicategory X] {n : ℕ} (i : Fin (n
       rw [range_le_core_iff]
       intro y
       by_cases hy : y ∈ Λ[_, i].obj (op ⦋1⦌)
-      · have : b.app _ y = (a.app _ ⟨y, hy⟩).1 := congr($(sq.w).app _ ⟨y, hy⟩).symm
-        exact (edge_mem_core_iff (mk' _)).1 (this ▸ (a.app _ ⟨y, hy⟩).2)
+      · have : b.app _ y = (a.app _ ⟨y, hy⟩).val := congr($(sq.w).app _ ⟨y, hy⟩).symm
+        exact (edge_mem_core_iff (mk' _)).1 (this ▸ (a.app _ ⟨y, hy⟩).property)
       obtain _ | n := n
       · obtain rfl : i = 1 := by
           rw [Fin.lt_def] at h0 hn
@@ -418,6 +532,106 @@ instance [Quasicategory X] : InnerFibration X.core.ι where
 /-- The core of a quasicategory is a quasicategory. -/
 instance core.quasicategory [Quasicategory X] : Quasicategory (X.core : SSet) :=
   quasicategory_of_innerFibration X.core.ι
+
+/-- A `2`-simplex lies in the core if and only if its three faces are equivalences. -/
+lemma mem_core_obj_two_iff (s : X _⦋2⦌) :
+    s ∈ X.core.obj (op ⦋2⦌) ↔
+      (mk' (X.δ 0 s)).IsEquivalence ∧ (mk' (X.δ 1 s)).IsEquivalence ∧
+        (mk' (X.δ 2 s)).IsEquivalence := by
+  rw [mem_core_iff]
+  refine ⟨fun h ↦ ⟨h (SimplexCategory.δ 0), h (SimplexCategory.δ 1), h (SimplexCategory.δ 2)⟩, ?_⟩
+  rintro ⟨h₀, h₁, h₂⟩ f
+  obtain rfl | rfl | rfl | ⟨k, rfl⟩ := SimplexCategory.eq_of_one_to_two' f
+  · exact h₀
+  · exact h₁
+  · exact h₂
+  · exact isEquivalence_mk'_map_of_eq _ _ rfl
+
+/-- A `2`-simplex witnessing a composition of equivalences as an equivalence lies in the core. -/
+lemma Edge.CompStruct.simplex_mem_core {x₀ x₁ x₂ : X _⦋0⦌}
+    {e₀₁ : Edge x₀ x₁} {e₁₂ : Edge x₁ x₂} {e₀₂ : Edge x₀ x₂} (c : CompStruct e₀₁ e₁₂ e₀₂)
+    (h₀₁ : e₀₁.IsEquivalence) (h₁₂ : e₁₂.IsEquivalence) (h₀₂ : e₀₂.IsEquivalence) :
+    c.simplex ∈ X.core.obj (Opposite.op ⦋2⦌) :=
+  (mem_core_obj_two_iff c.simplex).2
+    ⟨(isEquivalence_iff_of_edge_eq (e := mk' (X.δ 0 c.simplex)) c.d₀).2 h₁₂,
+      (isEquivalence_iff_of_edge_eq (e := mk' (X.δ 1 c.simplex)) c.d₁).2 h₀₂,
+      (isEquivalence_iff_of_edge_eq (e := mk' (X.δ 2 c.simplex)) c.d₂).2 h₀₁⟩
+
+/-- Every edge of `X.core` is an equivalence in `X.core` itself: an inverse structure in `X` has
+all its edges invertible, so both the inverse edge and the `2`-simplices witnessing it already lie
+in `X.core`. -/
+lemma core.isEquivalence {x₀ x₁ : (X.core : SSet) _⦋0⦌} (e : Edge x₀ x₁) :
+    e.IsEquivalence := by
+  have he : (e.map X.core.ι).IsEquivalence :=
+    (edge_mem_core_iff (e.map X.core.ι)).1 e.edge.property
+  let I := he.invStruct
+  have hinv_eq : I.inv.IsEquivalence := I.invStructInv.isEquivalence
+  have hinv : I.inv.edge ∈ X.core.obj (op ⦋1⦌) := (edge_mem_core_iff I.inv).2 hinv_eq
+  let g : Edge x₁ x₀ := Edge.mk ⟨I.inv.edge, hinv⟩ (Subtype.ext I.inv.src_eq)
+    (Subtype.ext I.inv.tgt_eq)
+  have h₁ : I.homInvId.simplex ∈ X.core.obj (op ⦋2⦌) :=
+    I.homInvId.simplex_mem_core he hinv_eq (isEquivalence_id _)
+  have h₂ : I.invHomId.simplex ∈ X.core.obj (op ⦋2⦌) :=
+    I.invHomId.simplex_mem_core hinv_eq he (isEquivalence_id _)
+  exact ⟨{ inv := g
+           homInvId := CompStruct.mk ⟨I.homInvId.simplex, h₁⟩ (Subtype.ext I.homInvId.d₂)
+             (Subtype.ext I.homInvId.d₀) (Subtype.ext I.homInvId.d₁)
+           invHomId := CompStruct.mk ⟨I.invHomId.simplex, h₂⟩ (Subtype.ext I.invHomId.d₂)
+             (Subtype.ext I.invHomId.d₀) (Subtype.ext I.invHomId.d₁) }⟩
+
+/-- Taking the core of a simplicial set is idempotent: every edge of `X.core` is already an
+equivalence in `X.core`. -/
+@[simp]
+lemma core_core (X : SSet.{u}) : (X.core : SSet).core = ⊤ :=
+  core_eq_top_iff.2 fun _ ↦ core.isEquivalence _
+
+/-- An edge of `Δ[n]` lies in its core if and only if its two endpoints coincide. -/
+lemma stdSimplex.mem_core_obj_one_iff {n : ℕ} (s : Δ[n] _⦋1⦌) :
+    s ∈ (Δ[n] : SSet.{u}).core.obj (op ⦋1⦌) ↔ s 0 = s 1 := by
+  rw [← mk'_edge s, Edge.edge_mem_core_iff, mk'_edge]
+  refine ⟨fun ⟨I⟩ ↦ ?_, fun h ↦ ?_⟩
+  · have hs : s 0 ≤ s 1 := (stdSimplex.objEquiv s).toOrderHom.monotone (Fin.zero_le 1)
+    have hg : I.inv.edge 0 ≤ I.inv.edge 1 :=
+      (stdSimplex.objEquiv I.inv.edge).toOrderHom.monotone (Fin.zero_le 1)
+    exact le_antisymm hs (by simpa [stdSimplex.δ_apply] using hg)
+  · have hs : s = (Δ[n] : SSet.{u}).map (SimplexCategory.const ⦋1⦌ ⦋0⦌ 0).op
+        (stdSimplex.obj₀Equiv.symm (s 0)) := by
+      refine stdSimplex.ext _ _ fun k ↦ ?_
+      fin_cases k
+      · simp [stdSimplex.obj₀Equiv_symm_apply]
+      · simpa [stdSimplex.obj₀Equiv_symm_apply] using h.symm
+    rw [hs]
+    exact isEquivalence_mk'_map_of_eq _ _ rfl
+
+/-- The connected components of the core of `Δ[n]` are the `n + 1` vertices of `Δ[n]`: every edge
+in `(Δ[n]).core` has equal endpoints. -/
+def stdSimplex.π₀CoreEquiv (n : ℕ) : π₀ ((Δ[n] : SSet.{u}).core : SSet.{u}) ≃ Fin (n + 1) where
+  toFun := π₀.lift (fun x ↦ stdSimplex.obj₀Equiv x.val) fun x y e ↦ by
+    have he : e.edge.val 0 = e.edge.val 1 := (stdSimplex.mem_core_obj_one_iff e.edge.val).1
+        e.edge.property
+    have hx : e.edge.val 0 = x.val 0 := stdSimplex.edge_edge_apply_zero (e.map (Δ[n]).core.ι)
+    have hy : e.edge.val 1 = y.val 0 := stdSimplex.edge_edge_apply_one (e.map (Δ[n]).core.ι)
+    exact congrArg stdSimplex.obj₀Equiv
+      (stdSimplex.ext _ _ fun k ↦ by fin_cases k; exact hx.symm.trans (he.trans hy))
+  invFun i :=
+    π₀.mk (X := ((Δ[n] : SSet.{u}).core : SSet.{u}))
+      ⟨stdSimplex.obj₀Equiv.symm i, mem_core_obj_zero _⟩
+  left_inv c := by
+    induction c using π₀.rec with | mk x =>
+    exact congrArg π₀.mk (Subtype.ext (stdSimplex.obj₀Equiv.symm_apply_apply x.val))
+  right_inv i := stdSimplex.obj₀Equiv.{u}.apply_symm_apply i
+
+@[simp]
+lemma stdSimplex.π₀CoreEquiv_mk {n : ℕ} (x : ((Δ[n] : SSet.{u}).core : SSet.{u}) _⦋0⦌) :
+    stdSimplex.π₀CoreEquiv n (π₀.mk x) = stdSimplex.obj₀Equiv x.val :=
+  (rfl)
+
+@[simp]
+lemma stdSimplex.π₀CoreEquiv_symm_apply {n : ℕ} (i : Fin (n + 1)) :
+    (stdSimplex.π₀CoreEquiv.{u} n).symm i =
+      π₀.mk (X := ((Δ[n] : SSet.{u}).core : SSet.{u}))
+        ⟨stdSimplex.obj₀Equiv.symm i, mem_core_obj_zero _⟩ :=
+  (rfl)
 
 end SSet
 
@@ -475,10 +689,10 @@ noncomputable def nerveIso : nerve (Core C) ≅ ((nerve C).core : SSet) where
     rw [nerve.isEquivalence_mk'_iff]
     exact (ComposableArrows.hom y).iso.isIso_hom
   inv :=
-    { app _ := ↾fun s ↦ functorToCoreOfIsIso s.1 ((nerve.mem_core_iff s.1).1 s.2)
+    { app _ := ↾fun s ↦ functorToCoreOfIsIso s.val ((nerve.mem_core_iff s.val).1 s.property)
       naturality _ _ g := by
         ext s
-        exact functorToCoreOfIsIso_comp_left (SimplexCategory.toCat.map g.unop).toFunctor s.1 _ }
+        exact functorToCoreOfIsIso_comp_left (SimplexCategory.toCat.map g.unop).toFunctor s.val _ }
   hom_inv_id := by
     ext n y
     exact functorToCoreOfIsIso_comp_inclusion_self y

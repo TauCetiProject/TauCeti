@@ -74,19 +74,19 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
 /-- The integrand of the flux form of the flow of a symplectic vector field `X`, at time `s` of the
 flow: `σ(a X, dψ_s ·)` at `ψ_s x` is `a ι_X σ` at `x`, because the flow preserves the closed form
 `ι_X σ`, whose contraction `σ(X, X)` with `X` vanishes. -/
-private theorem apply_vecCons_smul_mfderiv_flowOf {σ : SmoothTwoForm I M}
+theorem apply_vecCons_smul_mfderiv_flowOf {σ : SmoothTwoForm I M}
     (hX : X ∈ σ.symplecticVectorFields) (hc : IsCompleteVectorField X) (a s : ℝ) (x : M)
     (v : Fin 1 → TangentSpace I x) :
-    σ.1 (flowOf X s x) (Matrix.vecCons (a • X (flowOf X s x))
-      fun i ↦ mfderiv I I (flowOf X s) x (v i)) = a • (σ.interiorₗ X).1 x v := by
-  have hinv : mpullback I I (flowOf X s) (σ.interiorₗ X).1 x = (σ.interiorₗ X).1 x :=
+    σ.val (flowOf X s x) (Matrix.vecCons (a • X (flowOf X s x))
+      fun i ↦ mfderiv I I (flowOf X s) x (v i)) = a • (σ.interiorₗ X).val x v := by
+  have hinv : mpullback I I (flowOf X s) (σ.interiorₗ X).val x = (σ.interiorₗ X).val x :=
     mpullback_flowOf_apply_of_mextDeriv_interior_eq_zero (X.contMDiff.of_le (by simp))
       (by
         rw [SmoothForm.isClosed_def, SmoothTwoForm.coe_interiorₗ]
         exact SmoothTwoForm.mem_symplecticVectorFields_iff.1 hX)
       (by rw [SmoothTwoForm.coe_interiorₗ, RoughForm.interior_self, mextDeriv_zero])
       (hc.mem_flowDomain s x)
-  refine ((σ.1 _).vecCons_smul _ a _).trans (congrArg (a • ·) ?_)
+  refine ((σ.val _).vecCons_smul _ a _).trans (congrArg (a • ·) ?_)
   rw [← hinv, mpullback_apply, SmoothTwoForm.coe_interiorₗ, RoughForm.interior_apply]
 
 /-- **The flux form of a symplectic flow.** Let `X` be a complete smooth vector field whose
@@ -101,7 +101,7 @@ theorem fluxForm_globalFlowDiffeotopy {σ : SmoothTwoForm I M}
   -- The integrand is the constant `a ι_X σ`, read in the model space `E [⋀^Fin 1]→L[ℝ] ℝ` of the
   -- integral.
   refine (intervalIntegral.integral_congr
-    (g := fun _ ↦ show E [⋀^Fin 1]→L[ℝ] ℝ from a • (σ.interiorₗ X).1 x)
+    (g := fun _ ↦ show E [⋀^Fin 1]→L[ℝ] ℝ from a • (σ.interiorₗ X).val x)
     fun t _ ↦ ?_).trans ?_
   · refine ContinuousAlternatingMap.ext fun v ↦ ?_
     rw [curryLeft_mfderiv_cylinderMap_apply, mfderiv_cylinderMap_globalFlowDiffeotopy_time]
@@ -131,11 +131,11 @@ theorem timeSlice_globalFlowDiffeotopy_mem_diffeomorphStabilizer {σ : SmoothTwo
 /-- **The flux of a symplectic flow.** For a closed two-form `σ` and a complete symplectic vector
 field `X`, the diffeotopy which runs the flow of `X` for duration `a` has flux `a [ι_X σ]`. -/
 theorem flux_globalFlowDiffeotopy (σ : closedForms I M 2)
-    (hX : X ∈ SmoothTwoForm.symplecticVectorFields σ.1) (hc : IsCompleteVectorField X) (a : ℝ)
+    (hX : X ∈ SmoothTwoForm.symplecticVectorFields σ.val) (hc : IsCompleteVectorField X) (a : ℝ)
     (hΦ : (globalFlowDiffeotopy le_top X.contMDiff hc a).final ∈
-      SmoothForm.diffeomorphStabilizer σ.1) :
+      SmoothForm.diffeomorphStabilizer σ.val) :
     (globalFlowDiffeotopy le_top X.contMDiff hc a).flux σ hΦ =
-      a • SmoothTwoForm.interiorClass σ.1 ⟨X, hX⟩ := by
+      a • SmoothTwoForm.interiorClass σ.val ⟨X, hX⟩ := by
   rw [flux_def, SmoothTwoForm.interiorClass_apply, ← map_smul]
   congr 1
   exact Subtype.ext (fluxForm_globalFlowDiffeotopy hX hc a)
@@ -145,14 +145,14 @@ two-form `σ`, every class in `H¹_dR(M)` is the flux of a diffeotopy all of who
 `σ`: the time-one flow of the symplectic vector field `(σ♭)⁻¹ α`, for a closed representative
 `α` of the class. -/
 theorem exists_flux_eq [CompactSpace M] (σ : closedForms I M 2)
-    (hσ : SmoothTwoForm.IsNondegenerate σ.1) (c : deRhamCohomology I M 1) :
-    ∃ (Φ : Diffeotopy I ∞ M) (hΦ : Φ.final ∈ SmoothForm.diffeomorphStabilizer σ.1),
-      (∀ t, Φ.timeSlice t ∈ SmoothForm.diffeomorphStabilizer σ.1) ∧ Φ.flux σ hΦ = c := by
+    (hσ : SmoothTwoForm.IsNondegenerate σ.val) (c : deRhamCohomology I M 1) :
+    ∃ (Φ : Diffeotopy I ∞ M) (hΦ : Φ.final ∈ SmoothForm.diffeomorphStabilizer σ.val),
+      (∀ t, Φ.timeSlice t ∈ SmoothForm.diffeomorphStabilizer σ.val) ∧ Φ.flux σ hΦ = c := by
   obtain ⟨⟨X, hX⟩, rfl⟩ := hσ.interiorClass_surjective c
   have hc : IsCompleteVectorField X :=
     isCompleteVectorField_of_compactSpace (X.contMDiff.of_le (by simp))
-  have hσc : SmoothForm.IsClosed σ.1 :=
-    (SmoothForm.isClosed_def _).2 ((mem_closedForms I σ.1).1 σ.2)
+  have hσc : SmoothForm.IsClosed σ.val :=
+    (SmoothForm.isClosed_def _).2 ((mem_closedForms I σ.val).1 σ.property)
   have hslice := timeSlice_globalFlowDiffeotopy_mem_diffeomorphStabilizer hσc hX hc 1
   refine ⟨globalFlowDiffeotopy le_top X.contMDiff hc 1, ?_, hslice, ?_⟩
   · rw [final_def]

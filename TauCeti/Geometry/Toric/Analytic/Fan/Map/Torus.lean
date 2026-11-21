@@ -40,14 +40,14 @@ variable {N N' V V' : Type u} [AddCommGroup N] [AddCommGroup N']
 /-- The map between affine charts is equivariant for the torus homomorphism induced by the
 lattice map of the fan morphism. -/
 theorem analyticChartMap_smul {σ : Φ.cones} {τ : Ψ.cones}
-    (h : Set.MapsTo f.realMap (σ.1 : Set V) (τ.1 : Set V'))
+    (h : Set.MapsTo f.realMap (σ.val : Set V) (τ.val : Set V'))
     (t : ComplexTorus N) (x : (Φ.analyticAffineChartDiagram).obj σ) :
     f.analyticChartMap h (t • x) =
       complexTorusMap f.latticeMap t • f.analyticChartMap h x := by
   rw [analyticChartMap_apply, analyticChartMap_apply]
   -- The bundled chart carriers and their actions are the affine complex-point carriers and
   -- actions; restate the goal there so the monomial evaluation API applies.
-  change AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1) at x
+  change AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.val) at x
   change AffineSemigroupComplexPoint.comap
       (dualSemigroupMap Φ.lattice Ψ.lattice f.latticeMap f.realMap f.map_lattice h) (t • x) =
     complexTorusMap f.latticeMap t • AffineSemigroupComplexPoint.comap
@@ -77,16 +77,16 @@ source nonemptiness; any other target witness gives a definitionally equal inclu
 @[simp]
 theorem analyticMap_analyticTorusι (hΦ0 : Nonempty Φ.cones) (t : ComplexTorus N) :
     f.analyticMap hΦ hΨ (Φ.analyticTorusι hΦ hΦ0 t) =
-      Ψ.analyticTorusι hΨ ⟨⟨f.leastCone hΦ0.some.2, f.leastCone_mem hΦ0.some.2⟩⟩
+      Ψ.analyticTorusι hΨ ⟨⟨f.leastCone hΦ0.some.property, f.leastCone_mem hΦ0.some.property⟩⟩
         (complexTorusMap f.latticeMap t) := by
   let σ := hΦ0.some
-  let τ : Ψ.cones := ⟨f.leastCone σ.2, f.leastCone_mem σ.2⟩
+  let τ : Ψ.cones := ⟨f.leastCone σ.property, f.leastCone_mem σ.property⟩
   rw [Φ.analyticTorusι_eq_analyticAffineChartι hΦ hΦ0 σ,
     Ψ.analyticTorusι_eq_analyticAffineChartι hΨ ⟨τ⟩ τ]
   -- The chart formula uses the bundled `TopCat` carrier, whereas the torus formula uses its
   -- underlying affine complex points. Full transparency identifies these carriers and actions.
   erw [f.analyticMap_analyticAffineChartι_of_mapsTo hΦ hΨ (υ := τ)
-    (f.mapsTo_leastCone σ.2), f.analyticChartMap_smul]
+    (f.mapsTo_leastCone σ.property), f.analyticChartMap_smul]
   congr 2
   erw [analyticChartMap_apply, AffineSemigroupComplexPoint.comap_default]
 
@@ -97,7 +97,7 @@ statement by definitional equality. -/
 theorem eq_analyticMap_iff (hΦ0 : Nonempty Φ.cones)
     {g : Φ.analyticRealization hΦ ⟶ Ψ.analyticRealization hΨ} :
     g = f.analyticMap hΦ hΨ ↔ ∀ t, g (Φ.analyticTorusι hΦ hΦ0 t) =
-      Ψ.analyticTorusι hΨ ⟨⟨f.leastCone hΦ0.some.2, f.leastCone_mem hΦ0.some.2⟩⟩
+      Ψ.analyticTorusι hΨ ⟨⟨f.leastCone hΦ0.some.property, f.leastCone_mem hΦ0.some.property⟩⟩
         (complexTorusMap f.latticeMap t) := by
   constructor
   · rintro rfl t

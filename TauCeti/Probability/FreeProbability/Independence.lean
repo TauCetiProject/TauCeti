@@ -506,7 +506,7 @@ private theorem centeredAlternatingProds_mul_subset (g : ι → κ) (k : κ) :
   let f : {i // g i = k} × A → ι × A := Prod.map Subtype.val id
   have hfst : ((z :: w₁).map f).map Prod.fst = ((z :: w₁).map Prod.fst).map Subtype.val := by
     simp [f]
-  refine ⟨(z :: w₁).map f ++ w₂, by simp, ?_, ?_, ?_, by simp [f, z.1.2],
+  refine ⟨(z :: w₁).map f ++ w₂, by simp, ?_, ?_, ?_, by simp [f, z.1.property],
     by simp [f, Function.comp_def, mul_assoc]⟩
   · rw [List.map_append, List.isChain_append, hfst, List.isChain_map]
     refine ⟨halt₁.imp fun _ _ hab h => hab (Subtype.val_injective h), halt₂,
@@ -514,7 +514,7 @@ private theorem centeredAlternatingProds_mul_subset (g : ι → κ) (k : κ) :
     obtain ⟨t, -, rfl⟩ := List.mem_map.1 (List.mem_of_mem_getLast? ha)
     rw [List.head?_map, Option.mem_map] at hb
     obtain ⟨y, hy, rfl⟩ := hb
-    exact hg₂ y hy (hab ▸ t.2)
+    exact hg₂ y hy (hab ▸ t.property)
   · simp only [List.mem_append, List.mem_map]
     rintro x (⟨x, hx, rfl⟩ | hx)
     exacts [hw₁ x hx, hw₂ x hx]
