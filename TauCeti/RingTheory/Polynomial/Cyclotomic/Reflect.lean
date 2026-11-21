@@ -9,7 +9,7 @@ public import Mathlib.RingTheory.Polynomial.Cyclotomic.Basic
 import TauCeti.Algebra.Polynomial.Reverse
 
 /-!
-# Cyclotomic polynomials are palindromic
+# Cyclotomic polynomials are palindromic and reciprocal root-of-unity factorizations
 
 For `n ≠ 1` the coefficient sequence of the cyclotomic polynomial `Φ_n` reads the same in both
 directions: over any commutative ring, reflecting `cyclotomic n R` at its degree `φ(n)` returns
@@ -19,12 +19,21 @@ exception is `Φ_1 = X - 1`, whose reflection `1 - X` is `-Φ_1`.
 Palindromicity is what makes the two-variable cyclotomic values `Φ_n(a, b)` symmetric in `a`
 and `b` for `n ≠ 1`.
 
+When a domain contains a primitive `n`-th root of unity (`n > 0`), reversing Mathlib's factorization
+`X ^ n - 1 = ∏ μ ∈ nthRootsFinset n 1, (X - C μ)` yields the reciprocal factorization
+`∏ μ ∈ nthRootsFinset n 1, (1 - C μ * X) = 1 - X ^ n`, and the same product indexed by the group
+`rootsOfUnity n R`.
+
 ## Main results
 
 * `Polynomial.reflect_cyclotomic`: `(cyclotomic n R).reflect n.totient = cyclotomic n R` for
   `n ≠ 1`.
 * `Polynomial.coeff_cyclotomic_totient_sub`: for `n ≠ 1` and `k ≤ φ(n)`, the coefficients of
   `cyclotomic n R` of index `φ(n) - k` and `k` agree.
+* `Polynomial.prod_one_sub_C_mul_X_nthRootsFinset`:
+  `∏ μ ∈ nthRootsFinset n (1 : R), (1 - C μ * X) = 1 - X ^ n`.
+* `Polynomial.finprod_one_sub_C_mul_X_rootsOfUnity`:
+  `∏ᶠ μ : rootsOfUnity n R, (1 - C ((μ : Rˣ) : R) * X) = 1 - X ^ n`.
 -/
 
 public section
@@ -86,5 +95,34 @@ theorem coeff_cyclotomic_totient_sub {n k : ℕ} (hn : n ≠ 1) (hk : k ≤ n.to
     (cyclotomic n R).coeff (n.totient - k) = (cyclotomic n R).coeff k := by
   conv_rhs => rw [← reflect_cyclotomic hn]
   rw [coeff_reflect, revAt_le hk]
+
+/-- **Reciprocal factorization of `1 - X ^ n` over `nthRootsFinset`.** If a domain `R` contains a
+primitive `n`-th root of unity (`0 < n`), then
+`∏ μ ∈ nthRootsFinset n 1, (1 - C μ * X) = 1 - X ^ n`. This is the reversal of Mathlib's
+`Polynomial.X_pow_sub_one_eq_prod`. -/
+theorem prod_one_sub_C_mul_X_nthRootsFinset [IsDomain R] {ζ : R} {n : ℕ}
+    (hpos : 0 < n) (hζ : IsPrimitiveRoot ζ n) :
+    ∏ μ ∈ nthRootsFinset n (1 : R), (1 - C μ * X) = 1 - X ^ n := by
+  have hrev := congrArg Polynomial.reverse (X_pow_sub_one_eq_prod hpos hζ)
+  rw [reverse_prod_of_monic _ _ fun _ _ ↦ monic_X_sub_C _] at hrev
+  simpa [show (X ^ n - 1 : R[X]).reverse = 1 - X ^ n by simpa using reverse_X_pow_sub_C n (1 : R)]
+    using hrev.symm
+
+/-- **Reciprocal factorization of `1 - X ^ n` over `rootsOfUnity`.** If a domain `R` contains a
+primitive `n`-th root of unity (`0 < n`), then
+`∏ᶠ μ : rootsOfUnity n R, (1 - C μ * X) = 1 - X ^ n`. -/
+theorem finprod_one_sub_C_mul_X_rootsOfUnity [IsDomain R] {ζ : R} {n : ℕ}
+    (hpos : 0 < n) (hζ : IsPrimitiveRoot ζ n) :
+    ∏ᶠ μ : rootsOfUnity n R, (1 - C ((μ : Rˣ) : R) * X) = 1 - X ^ n := by
+  have : NeZero n := ⟨hpos.ne'⟩
+  have := Fintype.ofFinite (rootsOfUnity n R)
+  let e : rootsOfUnity n R ≃ nthRootsFinset n (1 : R) :=
+    (rootsOfUnityEquivNthRoots R n).trans <|
+      Equiv.subtypeEquivRight fun _ ↦ (mem_nthRoots hpos).trans (mem_nthRootsFinset hpos 1).symm
+  rw [finprod_eq_prod_of_fintype,
+    Fintype.prod_equiv e (fun μ : rootsOfUnity n R ↦ 1 - C ((μ : Rˣ) : R) * X)
+      (fun μ : nthRootsFinset n (1 : R) ↦ 1 - C μ.val * X) (fun _ ↦ rfl),
+    Finset.prod_coe_sort (nthRootsFinset n (1 : R)) (fun μ ↦ 1 - C μ * X)]
+  exact prod_one_sub_C_mul_X_nthRootsFinset hpos hζ
 
 end Polynomial

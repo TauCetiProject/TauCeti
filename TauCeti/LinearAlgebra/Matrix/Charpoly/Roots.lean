@@ -158,8 +158,7 @@ theorem charpolyRev_eq_prod_roots_charpoly_of_splits (hA : A.charpoly.Splits) :
       obtain ⟨μ, -, rfl⟩ := Multiset.mem_map.1 hq
       exact monic_X_sub_C μ,
     Multiset.map_map, roots_multiset_prod_X_sub_C]
-  simpa using congrArg Multiset.prod (Multiset.map_congr rfl fun μ _ ↦ by
-    simpa using reverse_X_pow_sub_C 1 μ)
+  simp
 
 /-- **Vieta's formula for `det (1 - X A)`.** If the characteristic polynomial of `A` splits, the
 `r`-th coefficient of `det (1 - X A)` is `(-1) ^ r` times the `r`-th elementary symmetric function

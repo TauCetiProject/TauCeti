@@ -44,6 +44,10 @@ complete list of linear characters.
 * `CommGroup.finsum_domRestrictHom`: for a subgroup `H` of a finite commutative group `G`, a
   function of the restriction to `H`, summed over the characters of `G`, is `#(G ⧸ H)` times its
   sum over the characters of `H`.
+* `CommGroup.exists_monoidHom_apply_eq`: evaluation at `a : G` maps the characters of `G`
+  surjectively onto `rootsOfUnity (orderOf a) M`.
+* `CommGroup.finprod_monoidHom_apply`: the product of `g (χ a)` over all characters of `G` is the
+  product of `g ζ` over `rootsOfUnity (orderOf a) M`, raised to `#(G ⧸ Subgroup.zpowers a)`.
 * `MonoidHom.exists_comp_eq_iff_ker_le_ker`: a character extends along a homomorphism into a
   finite commutative group exactly when it kills the kernel of that homomorphism. This is
   Mathlib's `MonoidHom.domRestrict_surjective` applied to the range of the homomorphism.
@@ -106,6 +110,62 @@ theorem finsum_domRestrictHom {N : Type*} [AddCommMonoid N] (H : Subgroup G)
   simpa only [Function.comp_apply, toAdd_prod, toAdd_pow, toAdd_ofAdd] using
     congrArg Multiplicative.toAdd <| MonoidHom.prod_comp_of_surjective _
       (MonoidHom.domRestrict_surjective M H) (Multiplicative.ofAdd ∘ g)
+
+/-- Evaluation of a character at `a : G`, valued in the `(orderOf a)`-th roots of unity. -/
+private def evalRootsOfUnityHom (a : G) : (G →* Mˣ) →* rootsOfUnity (orderOf a) M where
+  toFun χ := ⟨χ a, (mem_rootsOfUnity (orderOf a) (χ a)).mpr <| by
+    rw [← map_pow, pow_orderOf_eq_one, map_one]⟩
+  map_one' := Subtype.ext (MonoidHom.one_apply a)
+  map_mul' χ ψ := Subtype.ext (MonoidHom.mul_apply χ ψ a)
+
+omit [Finite G] [HasEnoughRootsOfUnity M (Monoid.exponent G)] in
+/-- The kernel of evaluation at `a` is the kernel of restriction to `Subgroup.zpowers a`. -/
+private theorem ker_evalRootsOfUnityHom (a : G) :
+    (evalRootsOfUnityHom M a).ker = (MonoidHom.domRestrictHom (Subgroup.zpowers a) Mˣ).ker := by
+  ext χ
+  simp only [MonoidHom.mem_ker, evalRootsOfUnityHom, MonoidHom.coe_mk, OneHom.coe_mk,
+    Subtype.ext_iff, OneMemClass.coe_one, MonoidHom.domRestrictHom_apply, MonoidHom.ext_iff,
+    MonoidHom.domRestrict_apply, MonoidHom.one_apply]
+  refine ⟨fun h ⟨x, hx⟩ ↦ ?_, fun h ↦ h ⟨a, Subgroup.mem_zpowers a⟩⟩
+  obtain ⟨k, rfl⟩ := Subgroup.mem_zpowers_iff.mp hx
+  rw [map_zpow, h, one_zpow]
+
+/-- Evaluation at `a : G` maps `G →* Mˣ` surjectively onto `rootsOfUnity (orderOf a) M`. -/
+private theorem surjective_evalRootsOfUnityHom (a : G) :
+    Function.Surjective (evalRootsOfUnityHom M a) := by
+  have : NeZero (orderOf a) := ⟨(orderOf_pos a).ne'⟩
+  have : HasEnoughRootsOfUnity M (orderOf a) :=
+    HasEnoughRootsOfUnity.of_dvd M (Monoid.order_dvd_exponent a)
+  refine MonoidHom.surjective_of_card_ker_le_div _ (le_of_eq ?_)
+  rw [card_monoidHom_of_hasEnoughRootsOfUnity G M, HasEnoughRootsOfUnity.natCard_rootsOfUnity,
+    ker_evalRootsOfUnityHom, card_domRestrictHom_ker,
+    (Subgroup.zpowers a).card_eq_card_quotient_mul_card_subgroup, Nat.card_zpowers,
+    Nat.mul_div_cancel _ (orderOf_pos a)]
+
+/-- **Every `(orderOf a)`-th root of unity is attained by a character at `a`.** If `M` has enough
+roots of unity for the finite commutative group `G`, then for any `a : G` and any
+`ζ ∈ rootsOfUnity (orderOf a) M`, there exists `χ : G →* Mˣ` with `χ a = ζ`. -/
+theorem exists_monoidHom_apply_eq (a : G) (ζ : rootsOfUnity (orderOf a) M) :
+    ∃ χ : G →* Mˣ, χ a = ζ := by
+  obtain ⟨χ, hχ⟩ := surjective_evalRootsOfUnityHom M a ζ
+  exact ⟨χ, congrArg Subtype.val hχ⟩
+
+/-- **Products over characters through evaluation at an element.** If `M` has enough roots of unity,
+evaluation at `a : G` maps `G →* Mˣ` surjectively onto `rootsOfUnity (orderOf a) M` with fibers of
+size `#(G ⧸ Subgroup.zpowers a)`. So the product of `g (χ a)` over all characters of `G` is the
+product of `g ζ` over `rootsOfUnity (orderOf a) M`, raised to `#(G ⧸ Subgroup.zpowers a)`. -/
+theorem finprod_monoidHom_apply {N : Type*} [CommMonoid N] (a : G) (g : Mˣ → N) :
+    ∏ᶠ χ : G →* Mˣ, g (χ a) =
+      (∏ᶠ ζ : rootsOfUnity (orderOf a) M, g ζ) ^ Nat.card (G ⧸ Subgroup.zpowers a) := by
+  have : NeZero (orderOf a) := ⟨(orderOf_pos a).ne'⟩
+  have : HasEnoughRootsOfUnity M (orderOf a) :=
+    HasEnoughRootsOfUnity.of_dvd M (Monoid.order_dvd_exponent a)
+  have := Fintype.ofFinite (G →* Mˣ)
+  have := Fintype.ofFinite (rootsOfUnity (orderOf a) M)
+  rw [finprod_eq_prod_of_fintype, finprod_eq_prod_of_fintype, ← card_domRestrictHom_ker M
+    (Subgroup.zpowers a), ← ker_evalRootsOfUnityHom]
+  exact MonoidHom.prod_comp_of_surjective (evalRootsOfUnityHom M a)
+    (surjective_evalRootsOfUnityHom M a) (fun ζ ↦ g ζ)
 
 end CommGroup
 

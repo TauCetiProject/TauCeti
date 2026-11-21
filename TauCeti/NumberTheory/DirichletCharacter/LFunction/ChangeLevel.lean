@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.LSeries.DirichletContinuation
+public import TauCeti.NumberTheory.DirichletCharacter.Conductor
+public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Basic
 public import TauCeti.NumberTheory.PrimeFactors.Bounds
 
 /-!
-# Uniform bounds for deleted Euler factors
+# Uniform bounds for deleted Euler factors and primitive-character `L`-functions
 
 Raising the level of a Dirichlet character deletes finitely many Euler factors. On every
 half-plane `Re(s) ≥ δ > 0`, the correction and its reciprocal are bounded by `C N ^ ε`,
@@ -20,6 +22,13 @@ characters at their common level, including primes dividing both conductors.
 
 The factors are nonzero on `Re(s) > 0`, so this passage also preserves zeros there. At `s = 1`
 the L-function comparison requires nonprincipal characters, as in the native continuation API.
+
+Passing to `χ.primitiveCharacter` expresses `χ.LFunction` in terms of
+`χ.primitiveCharacter.LFunction`
+(`DirichletCharacter.LFunction_eq_LFunction_primitiveCharacter_mul`), and records regularity for
+`χ.primitiveCharacter.LFunction`
+(`DirichletCharacter.differentiable_LFunction_primitiveCharacter`,
+`DirichletCharacter.analyticAt_LFunction_primitiveCharacter`).
 
 The exact identity is Mathlib's `DirichletCharacter.LFunction_changeLevel`,
 by David Loeffler and Michael Stoll.
@@ -122,5 +131,33 @@ theorem exists_norm_LFunction_changeLevel_le_rpow {δ ε : ℝ} (hδ : 0 < δ) (
       rw [he, mul_assoc, mul_inv_cancel₀ hne, mul_one]
     rw [hi, norm_mul, mul_comm]
     exact mul_le_mul_of_nonneg_right hinv (norm_nonneg _)
+
+/-! ### Primitive-character `L`-functions -/
+
+/-- The continued `L`-function of a Dirichlet character `χ` of nonzero level equals that of its
+primitive character multiplied by the missing Euler factors at primes dividing the level. -/
+theorem LFunction_eq_LFunction_primitiveCharacter_mul {N : ℕ} [NeZero N]
+    (χ : DirichletCharacter ℂ N) {s : ℂ} (h : χ ≠ 1 ∨ s ≠ 1) :
+    χ.LFunction s =
+      χ.primitiveCharacter.LFunction s *
+        ∏ p ∈ N.primeFactors, (1 - χ.primitiveCharacter p * (p : ℂ) ^ (-s)) := by
+  have h' := LFunction_changeLevel χ.conductor_dvd_level χ.primitiveCharacter
+    (h.imp_left χ.primitiveCharacter_eq_one_iff.not.mpr)
+  rwa [χ.changeLevel_primitiveCharacter] at h'
+
+/-- For a nonprincipal character `χ` of nonzero level, `χ.primitiveCharacter.LFunction` is
+entire. -/
+theorem differentiable_LFunction_primitiveCharacter {N : ℕ} [NeZero N]
+    {χ : DirichletCharacter ℂ N} (hχ : χ ≠ 1) :
+    Differentiable ℂ χ.primitiveCharacter.LFunction :=
+  differentiable_LFunction (χ.primitiveCharacter_eq_one_iff.not.mpr hχ)
+
+/-- For every character `χ` of nonzero level, `χ.primitiveCharacter.LFunction` is analytic at every
+point `s ≠ 1`, and at `s = 1` as well when `χ ≠ 1`. -/
+theorem analyticAt_LFunction_primitiveCharacter {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N)
+    {s : ℂ} (h : χ ≠ 1 ∨ s ≠ 1) :
+    AnalyticAt ℂ χ.primitiveCharacter.LFunction s :=
+  analyticAt_LFunction χ.primitiveCharacter
+    (h.symm.imp_right χ.primitiveCharacter_eq_one_iff.not.mpr)
 
 end DirichletCharacter

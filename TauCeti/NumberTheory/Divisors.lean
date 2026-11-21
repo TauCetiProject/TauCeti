@@ -41,6 +41,9 @@ by their sum and by a positive square discriminant.
 For radical `P`, `Nat.pairwiseDisjoint_divisors_pow_filter_dvd` states that the families of
 divisors of `d ^ M` divisible by `d` are pairwise disjoint as `d` ranges over the divisors of `P`.
 
+`Nat.divisorsAntidiagonal_prime_pow` identifies the factor pairs of a prime power `p ^ k` with the
+image of `Finset.antidiagonal k` under `(i, j) ↦ (p ^ i, p ^ j)`.
+
 `TauCeti.nontrivialDivisorEquiv` identifies divisors greater than one with the subtype of
 `N.divisors` omitting the unit divisor. `TauCeti.pnatDvdEquivDivisors`,
 `TauCeti.pnatMulDvdEquivSigma`, and `TauCeti.pnatMulDvdAndEquivSigma` identify positive divisors
@@ -170,6 +173,19 @@ theorem injOn_add_divisorsAntidiagonal_filter_lt (n : ℕ) :
   rcases _root_.mul_eq_zero.mp hprod with h | h
   · exact Prod.ext (by omega) (by omega)
   · omega
+
+/-- The factor pairs of a prime power `p ^ k` are the pairs `(p ^ i, p ^ j)` with `i + j = k`. -/
+theorem divisorsAntidiagonal_prime_pow {p : ℕ} (hp : p.Prime) (k : ℕ) :
+    letI ι : ℕ ↪ ℕ := ⟨(p ^ ·), Nat.pow_right_injective hp.one_lt⟩
+    (p ^ k).divisorsAntidiagonal = (Finset.antidiagonal k).map (.prodMap ι ι) := by
+  refine Finset.Subset.antisymm (fun ⟨a, b⟩ hab ↦ ?_)
+    (Nat.antidiagonal_map_subset_divisorsAntidiagonal_pow hp.one_lt k)
+  obtain ⟨hmul, -⟩ := Nat.mem_divisorsAntidiagonal.mp hab
+  obtain ⟨i, -, rfl⟩ := (Nat.dvd_prime_pow hp).mp (Dvd.intro b hmul)
+  obtain ⟨j, -, rfl⟩ := (Nat.dvd_prime_pow hp).mp (Dvd.intro_left (p ^ i) hmul)
+  rw [← pow_add] at hmul
+  exact Finset.mem_map.mpr ⟨(i, j),
+    Finset.mem_antidiagonal.mpr (Nat.pow_right_injective hp.one_lt hmul), rfl⟩
 
 end Nat
 

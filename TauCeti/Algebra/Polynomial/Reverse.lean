@@ -328,6 +328,12 @@ theorem reverse_X_pow_sub_C [Ring R] (n : ℕ) (a : R) :
   rw [sub_eq_add_neg, ← C_neg, reverse_add_C, hX, natDegree_X_pow, C_neg, neg_mul,
     ← sub_eq_add_neg]
 
+/-- The reverse of `X - C a` is `1 - C a * X`. -/
+@[simp]
+theorem reverse_X_sub_C [Ring R] (a : R) :
+    (X - C a).reverse = 1 - C a * X := by
+  simpa using reverse_X_pow_sub_C 1 a
+
 /-- The reverse of a product of monic polynomials is the product of their reverses. -/
 theorem reverse_multiset_prod_of_monic [CommSemiring R] {s : Multiset R[X]}
     (hs : ∀ p ∈ s, p.Monic) : s.prod.reverse = (s.map reverse).prod := by
@@ -341,6 +347,14 @@ theorem reverse_multiset_prod_of_monic [CommSemiring R] {s : Multiset R[X]}
     rw [Multiset.prod_cons, Multiset.map_cons, Multiset.prod_cons,
       reverse_mul (by rw [hp.leadingCoeff, hprod.leadingCoeff, one_mul]; exact one_ne_zero),
       ih hs']
+
+/-- The reverse of a finite product of monic polynomials is the product of their reverses. -/
+theorem reverse_prod_of_monic [CommSemiring R] {ι : Type*} (s : Finset ι) (f : ι → R[X])
+    (hf : ∀ i ∈ s, (f i).Monic) :
+    (∏ i ∈ s, f i).reverse = ∏ i ∈ s, (f i).reverse := by
+  rw [Finset.prod, Finset.prod, reverse_multiset_prod_of_monic (by simpa using hf),
+    Multiset.map_map]
+  rfl
 
 /-- The reverse of `(X - C a) ^ n` is `(1 - C a * X) ^ n`. -/
 @[simp]
@@ -418,12 +432,8 @@ theorem reverse_C_mul_prod_X_sub_C {K ι : Type*} [Field K] (s : Finset ι) (r :
     (C c * ∏ i ∈ s, (X - C (r i))).reverse =
       C (c * ∏ i ∈ s, -r i) * ∏ i ∈ s, (X - C (r i)⁻¹) := by
   have hrev : (∏ i ∈ s, (X - C (r i))).reverse = ∏ i ∈ s, (1 - C (r i) * X) := by
-    have h := reverse_multiset_prod_of_monic (s := s.val.map fun i ↦ X - C (r i))
-      (by simp [monic_X_sub_C])
-    have hf (i : ι) : (X - C (r i)).reverse = 1 - C (r i) * X := by
-      simpa using reverse_X_pow_sub_C 1 (r i)
-    rw [Finset.prod, Finset.prod, h, Multiset.map_map]
-    exact congrArg Multiset.prod (Multiset.map_congr rfl fun i _ ↦ hf i)
+    rw [reverse_prod_of_monic _ _ fun _ _ ↦ monic_X_sub_C _]
+    simp
   have hlin (i : ι) (hi : i ∈ s) :
       1 - C (r i) * X = C (-r i) * (X - C (r i)⁻¹) := by
     rw [mul_sub, ← C_mul, neg_mul, mul_inv_cancel₀ (hr0 i hi)]
