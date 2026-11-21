@@ -259,7 +259,7 @@ private def comparisonOfEquiv (c : SmoothCollar n ∞ M) (ε : ℝ) (h0 : 0 < ε
     (hE : ContMDiff (((𝓡 n).prod (𝓡∂ 1)).prod 𝓘(ℝ, F))
       (((𝓡 n).prod (𝓡∂ 1)).prod 𝓘(ℝ, F)) ∞
       (fun v : TotalSpace F ((sourceBase c ε : _ → M) *ᵖ V) ↦
-        TotalSpace.mk' F (E := (targetBase c h1 : _ → M) *ᵖ V) v.proj (e v.proj v.2)))
+        TotalSpace.mk' F (E := (targetBase c h1 : _ → M) *ᵖ V) v.proj (e v.proj v.snd)))
     (hzero : ∀ (y : ↥((𝓡∂ (n + 1)).boundary M)) (v : V (y : M)),
       TotalSpace.mk' F (E := V) (targetBase c h1 (y, normalIioOpensZero h0))
         (e (y, normalIioOpensZero h0) v) = TotalSpace.mk' F (E := V) (y : M) v) :
@@ -382,9 +382,9 @@ theorem exists_bundleComparison (c : SmoothCollar n ∞ M) :
       ((hI (j q) v).trans (congrArg (Complex.I • ·) (hev q v).symm))
   have hE : ContMDiff (IP.prod 𝓘(ℝ, F)) (IP.prod 𝓘(ℝ, F)) ∞
       (fun v : TotalSpace F ((f₀ : Q → M) *ᵖ V) ↦
-        TotalSpace.mk' F (E := (f₁ : Q → M) *ᵖ V) v.proj (e v.proj v.2)) :=
+        TotalSpace.mk' F (E := (f₁ : Q → M) *ᵖ V) v.proj (e v.proj v.snd)) :=
     (Pullback.contMDiff_fiberwise_comp_of_hom b₀ b₁ A hA j).congr fun v ↦
-      congrArg (TotalSpace.mk' F (E := (f₁ : Q → M) *ᵖ V) v.proj) (hev v.proj v.2)
+      congrArg (TotalSpace.mk' F (E := (f₁ : Q → M) *ᵖ V) v.proj) (hev v.proj v.snd)
   exact ⟨ε, hε0, hε1, ⟨comparisonOfEquiv F V c ε hε0 hε1 e hComm hE
     (restrictedMap_zero F V c ε hε0 hε1 A hZ e hev)⟩⟩
 

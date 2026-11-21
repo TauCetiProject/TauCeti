@@ -391,12 +391,12 @@ omit [IsManifold IM ∞ M] [IsManifold IP ∞ P]
 theorem lift_localTransport (v : TotalSpace F ((b₀ : P → M) *ᵖ V))
     (hv : b₀ v.proj ∈ e.baseSet ∧ b₁ v.proj ∈ e.baseSet) :
     Pullback.lift b₁ (TotalSpace.mk' F (E := (b₁ : P → M) *ᵖ V)
-      v.proj (localTransport b₀ b₁ e v.proj v.2)) =
+      v.proj (localTransport b₀ b₁ e v.proj v.snd)) =
     e.toOpenPartialHomeomorph.symm (b₁ v.proj, (e (Pullback.lift b₀ v)).2) := by
   -- The pullback total-space constructor and its projection are retyped in the original
   -- fibres, so the explicit transport and chart evaluation laws apply without inferred
   -- pullback-family instances. This reduction changes no vector or base point.
-  let u : V (b₀ v.proj) := v.2
+  let u : V (b₀ v.proj) := v.snd
   change (TotalSpace.mk' F (E := V) (b₁ v.proj)
     (localTransport b₀ b₁ e v.proj u)) =
       e.toOpenPartialHomeomorph.symm (b₁ v.proj, (e ⟨b₀ v.proj, u⟩).2)
@@ -412,7 +412,7 @@ theorem contMDiffOn_localTransport :
     ContMDiffOn (IP.prod 𝓘(ℝ, F)) (IP.prod 𝓘(ℝ, F)) ∞
       (fun v : TotalSpace F ((b₀ : P → M) *ᵖ V) ↦
         TotalSpace.mk' F (E := (b₁ : P → M) *ᵖ V)
-          v.proj (localTransport b₀ b₁ e v.proj v.2))
+          v.proj (localTransport b₀ b₁ e v.proj v.snd))
       {v | b₀ v.proj ∈ e.baseSet ∧ b₁ v.proj ∈ e.baseSet} := by
   intro v hv
   have hp : ContMDiffAt (IP.prod 𝓘(ℝ, F)) IP ∞
@@ -427,7 +427,7 @@ theorem contMDiffOn_localTransport :
       (e.open_baseSet.preimage (b₁.contMDiff.continuous.comp (continuous_proj _ _)))
   have heq : (fun v : TotalSpace F ((b₀ : P → M) *ᵖ V) ↦
       Pullback.lift b₁ (TotalSpace.mk' F (E := (b₁ : P → M) *ᵖ V)
-        v.proj (localTransport b₀ b₁ e v.proj v.2))) =ᶠ[𝓝 v]
+        v.proj (localTransport b₀ b₁ e v.proj v.snd))) =ᶠ[𝓝 v]
       (fun v ↦ e.toOpenPartialHomeomorph.symm (b₁ v.proj, (e (Pullback.lift b₀ v)).2)) := by
     filter_upwards [hU.mem_nhds hv] with w hw
     exact lift_localTransport b₀ b₁ e w hw
@@ -524,7 +524,7 @@ theorem contMDiff_fiberwise_comp_of_hom [FiniteDimensional ℝ F]
       (fun p ↦ TotalSpace.mk' (F →L[ℝ] F) p (A p))) (j : C^∞⟮IQ, Q; IP, P⟯) :
     ContMDiff (IQ.prod 𝓘(ℝ, F)) (IQ.prod 𝓘(ℝ, F)) ∞
       (fun v : TotalSpace F ((b₀.comp j : Q → M) *ᵖ V) ↦
-        TotalSpace.mk' F (E := (b₁.comp j : Q → M) *ᵖ V) v.proj (A (j v.proj) v.2)) := by
+        TotalSpace.mk' F (E := (b₁.comp j : Q → M) *ᵖ V) v.proj (A (j v.proj) v.snd)) := by
   have hAt := (TauCeti.contMDiff_hom_bundle_iff
     (IB := IP) (F₁ := F) (F₂ := F)
     (E₁ := (b₀ : P → M) *ᵖ V) (E₂ := (b₁ : P → M) *ᵖ V) A).1 hA
