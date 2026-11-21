@@ -15,6 +15,7 @@ public import Mathlib.NumberTheory.Real.Irrational
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.ContinuousMap.Star
 import Mathlib.Analysis.SpecialFunctions.Complex.Circle
+import Mathlib.Topology.Instances.AddCircle.DenseSubgroup
 import Mathlib.Analysis.Calculus.FDeriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.Linear
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
@@ -36,7 +37,8 @@ that the circle is two closed intervals glued at their endpoints `±1`.
 ## Main declarations
 
 * `Circle.homeomorphSphere`: `Circle ≃ₜ sphere (0 : ℂ) 1`, the identity on underlying complex
-  numbers.
+  numbers, with `Circle.coe_homeomorphSphere_exp_re` and `Circle.coe_homeomorphSphere_exp_im`
+  computing the real and imaginary parts of `exp (i x)` on the sphere.
 * `Circle.expContinuousMonoidHom`: `t ↦ exp (i t)` as a continuous homomorphism
   `Multiplicative ℝ →ₜ* Circle`.
 * `Circle.coordinate`: the coordinate function `z ↦ z` in `C(S¹, ℂ)`, and
@@ -54,6 +56,8 @@ that the circle is two closed intervals glued at their endpoints `±1`.
   integer multiple of `2π / n`.
 * `Circle.isOfFinOrder_exp_two_pi_mul_iff`: `exp (2π i x)` has finite order exactly when `x` is
   rational.
+* `Circle.denseRange_zpow_of_not_isOfFinOrder`: the integer powers of a point of infinite order are
+  dense in the circle.
 * `Circle.exp_neg_arg_mul_self`: rotating `x : ℂ` by `exp (-i arg x)` gives `‖x‖`.
 * `Circle.inv_eq_self_iff`: the points of the circle equal to their inverses are `1` and `-1`.
 * `Circle.im_coe_eq_zero_iff`: the real points of the circle are `1` and `-1`.
@@ -89,6 +93,16 @@ theorem coe_homeomorphSphere_apply (z : Circle) : (homeomorphSphere z : ℂ) = z
 theorem coe_homeomorphSphere_symm_apply (z : sphere (0 : ℂ) 1) :
     (homeomorphSphere.symm z : ℂ) = z :=
   (rfl)
+
+/-- The real part of `exp (i x)`, read on the unit sphere of `ℂ`, is `cos x`. -/
+theorem coe_homeomorphSphere_exp_re (x : ℝ) : (homeomorphSphere (exp x) : ℂ).re = Real.cos x := by
+  rw [coe_homeomorphSphere_apply, coe_exp]
+  exact Complex.exp_ofReal_mul_I_re x
+
+/-- The imaginary part of `exp (i x)`, read on the unit sphere of `ℂ`, is `sin x`. -/
+theorem coe_homeomorphSphere_exp_im (x : ℝ) : (homeomorphSphere (exp x) : ℂ).im = Real.sin x := by
+  rw [coe_homeomorphSphere_apply, coe_exp]
+  exact Complex.exp_ofReal_mul_I_im x
 
 /-- The real and imaginary parts of a point of the circle satisfy `Re z ^ 2 + Im z ^ 2 = 1`. -/
 theorem re_sq_add_im_sq (z : Circle) : (z : ℂ).re ^ 2 + (z : ℂ).im ^ 2 = 1 := by
@@ -201,6 +215,25 @@ theorem isOfFinOrder_exp_two_pi_mul_iff {x : ℝ} :
     rw [Rat.cast_def]
     field_simp
 
+/-- **Irrational rotations have dense orbits.** The integer powers of a point of the circle of
+infinite order are dense in the circle. -/
+theorem denseRange_zpow_of_not_isOfFinOrder {c : Circle} (hc : ¬IsOfFinOrder c) :
+    DenseRange (c ^ · : ℤ → Circle) := by
+  set x := Complex.arg c / (2 * Real.pi)
+  have hcx : exp (2 * Real.pi * x) = c := by
+    rw [mul_div_cancel₀ _ (by positivity : 2 * Real.pi ≠ 0), exp_arg]
+  have hx : Irrational x := by
+    by_contra h
+    exact hc (hcx ▸ isOfFinOrder_exp_two_pi_mul_iff.2 h)
+  have hd : DenseRange (· • (x : AddCircle (1 : ℝ)) : ℤ → AddCircle (1 : ℝ)) :=
+    AddCircle.denseRange_zsmul_coe_iff.2 (by simpa using hx)
+  have hsurj : Function.Surjective (AddCircle.toCircle : AddCircle (1 : ℝ) → Circle) := by
+    simpa only [← funext (AddCircle.homeomorphCircle_apply one_ne_zero)] using
+      (AddCircle.homeomorphCircle (one_ne_zero (α := ℝ))).surjective
+  convert hsurj.denseRange.comp hd AddCircle.continuous_toCircle using 1
+  funext k
+  simp [AddCircle.toCircle_zsmul, AddCircle.toCircle_apply_mk, hcx]
+
 /-- Rotating a complex number by minus its argument puts it on the nonnegative real axis. -/
 theorem exp_neg_arg_mul_self (x : ℂ) : (exp (-Complex.arg x) : ℂ) * x = ‖x‖ := by
   rw [coe_exp]
@@ -208,6 +241,11 @@ theorem exp_neg_arg_mul_self (x : ℂ) : (exp (-Complex.arg x) : ℂ) * x = ‖x
   rw [mul_left_comm, ← Complex.exp_add]
   push_cast
   rw [neg_mul, neg_add_cancel, Complex.exp_zero, mul_one]
+
+/-- For unit complex numbers, `a⁻¹ b - 1 = a⁻¹ (b - a)`. -/
+theorem coe_inv_mul_sub_one (a b : Circle) :
+    ((a⁻¹ * b : Circle) : ℂ) - 1 = ((a⁻¹ : Circle) : ℂ) * ((b : ℂ) - a) := by
+  rw [mul_sub, ← coe_mul, ← coe_mul, inv_mul_cancel, coe_one]
 
 /-- The pointwise inverse of a circle-valued map that is differentiable at `z`, as a map into `ℂ`,
 is differentiable at `z`. -/

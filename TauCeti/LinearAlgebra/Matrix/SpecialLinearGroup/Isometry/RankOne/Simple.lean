@@ -16,6 +16,7 @@ import TauCeti.FieldTheory.Finite.Frobenius
 import TauCeti.FieldTheory.Finite.PowAddSelf
 import TauCeti.FieldTheory.Finite.PowNeOne
 import TauCeti.GroupTheory.Commutator
+import TauCeti.GroupTheory.SpecificGroups.Heisenberg.Unitary.Commutator
 
 /-!
 # Normal generation, perfectness, and simplicity of rank-one unitary groups
@@ -288,17 +289,9 @@ private theorem unipotentHom_unitaryMk_zero_mem_commutator (hσ : Function.Invol
     unipotentHom K σ (HeisenbergGroup.unitaryMk σ hσ 0 z₀ (by simpa using hz₀)) ∈
       commutator
         ((typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).specialIsometryGroup σ) := by
-  obtain ⟨t₁, ht₁⟩ := htr 1 (map_one σ)
-  let x₂ : K := -z₀ * σ t₁
-  obtain ⟨t₂, ht₂⟩ := htr (x₂ * σ x₂) (by simp only [map_mul, hσ x₂]; ring)
-  let a₁ := HeisenbergGroup.unitaryMk σ hσ 1 t₁ (by simpa using ht₁)
-  let a₂ := HeisenbergGroup.unitaryMk σ hσ x₂ t₂ ht₂
-  have hcomm : ⁅a₁, a₂⁆ = HeisenbergGroup.unitaryMk σ hσ 0 z₀ (by simpa using hz₀) := by
-    rw [HeisenbergGroup.commutatorElement_unitaryMk, HeisenbergGroup.unitaryMk_inj]
-    refine ⟨rfl, ?_⟩
-    simp only [x₂, map_neg, map_mul, map_one, hσ t₁]
-    linear_combination z₀ * ht₁ - t₁ * hz₀
-  rw [← hcomm, map_commutatorElement]
+  obtain ⟨b, c, hbc⟩ := HeisenbergGroup.unitarySubgroup.exists_commutatorElement_eq_of_mem_zAxis
+    hσ (htr 1 (map_one σ)) (HeisenbergGroup.unitaryMk σ hσ 0 z₀ (by simpa using hz₀)) (by simp)
+  rw [← hbc, map_commutatorElement]
   exact Subgroup.commutator_mem_commutator (Subgroup.mem_top _) (Subgroup.mem_top _)
 
 private theorem exists_unipotentHom_mem_commutator_x_eq (hσ : Function.Involutive σ)

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Data.Finset.Card
 public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 public import Mathlib.Data.Sym.Sym2
 public import Mathlib.Logic.Equiv.Fin.Rotate
@@ -191,9 +192,7 @@ as steps. Loops count as edges. -/
 theorem two_mul_card_cyclic_edges_le_of_no_singleton_edge {k : ℕ} (w : Fin k → α)
     (h : ∀ i, ∃ j ≠ i, s(w j, w (finRotate k j)) = s(w i, w (finRotate k i))) :
     2 * #(univ.image fun i => s(w i, w (finRotate k i))) ≤ k := by
-  simpa only [card_univ, Fintype.card_fin] using
-    mul_card_image_le_card (univ : Finset (Fin k)) 2
-      (two_le_card_cyclic_edge_fiber_of_no_singleton_edge w h)
+  simpa only [Fintype.card_fin] using two_mul_card_image_le_of_no_singleton_fiber h
 
 /-- A word of length `k` with no singleton edge visits at most `k / 2 + 1` vertices.
 Edges are unordered, and loops count as edges. -/

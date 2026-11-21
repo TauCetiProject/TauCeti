@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Group.Subgroup.ZPowers
-public import TauCeti.GroupTheory.SpecificGroups.Heisenberg.Unitary
+public import TauCeti.GroupTheory.SpecificGroups.Heisenberg.Unitary.Basic
 public import TauCeti.GroupTheory.TitsSystem.RankOne
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.RankOne.Points
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.UnitaryRankOne
