@@ -8,7 +8,6 @@ module
 public import TauCeti.Probability.Process.Progressive
 public import TauCeti.Probability.Process.Stopping
 public import TauCeti.Topology.Order.Cadlag
-import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 
 /-!

@@ -19,12 +19,14 @@ A step function taking its right-hand value at its jump time is càdlàg (`TauCe
 and stopping any càdlàg path at a deterministic horizon preserves the càdlàg property
 (`IsCadlag.comp_min_const`).
 
-For a càdlàg path into a regular space, the strict left limit `Function.leftLim` converges from the
-right at `x` to `f x` (`IsCadlag.tendsto_nhdsGT_leftLim`). Consequently, the first time at which a
-càdlàg path or its left limit enters a closed set is attained whenever such a time exists
+If a function converges from the right at `x` in a regular space, its strict left limit
+`Function.leftLim` also converges from the right to the same limit
+(`Filter.Tendsto.leftLim_nhdsGT`), and in particular for a càdlàg path it converges to `f x`
+(`IsCadlag.tendsto_nhdsGT_leftLim`). Consequently, the first time at which a càdlàg path or its left
+limit enters a closed set is attained whenever such a time exists and is bounded below
 (`IsClosed.csInf_mem_or_leftLim_mem_of_isCadlag`). On a compact initial interval `[⊥, T]`, crossing
-a level `ε` in value or left limit for a càdlàg function into a densely ordered complete linear
-order is equivalent to the supremum of values and left limits reaching `ε`
+a level `ε` in value or left limit for a càdlàg function into a complete linear order with the order
+topology is equivalent to the supremum of values and left limits reaching `ε`
 (`IsCadlag.exists_le_or_le_leftLim_iff_le_sup_biSup`). In a second-countable order topology, a
 single countable subset of `(-∞, T]` realizes that supremum through function values alone
 (`IsCadlag.exists_countable_subset_Iic_biSup_eq`).
@@ -75,28 +77,37 @@ theorem isCadlag_ite_le {ι E : Type*} [LinearOrder ι] [TopologicalSpace ι]
 
 end TauCeti
 
+/-- Along times approaching `x` strictly from the right, if `f` converges to `y` in a regular
+space, then its strict left limit `f.leftLim` also converges to `y`. -/
+theorem Filter.Tendsto.leftLim_nhdsGT {X Y : Type*} [LinearOrder X] [TopologicalSpace X]
+    [OrderTopology X] [TopologicalSpace Y] [RegularSpace Y] {f : X → Y} {x : X} {y : Y}
+    (h : Tendsto f (𝓝[>] x) (𝓝 y)) :
+    Tendsto f.leftLim (𝓝[>] x) (𝓝 y) := by
+  rcases eq_or_neBot (𝓝[>] x) with hbot | _
+  · simp [hbot]
+  apply (closed_nhds_basis y).tendsto_right_iff.2
+  rintro V ⟨hV_mem, hV_closed⟩
+  obtain ⟨b, hb⟩ : (Ioi x).Nonempty := nonempty_of_mem (self_mem_nhdsWithin (a := x))
+  obtain ⟨u, hxu, hu⟩ : ∃ u, x < u ∧ Ioo x u ⊆ {t | f t ∈ V} := by
+    have hpre := (closed_nhds_basis y).tendsto_right_iff.1 h V ⟨hV_mem, hV_closed⟩
+    simpa using (mem_nhdsGT_iff_exists_Ioo_subset' hb).1 hpre
+  filter_upwards [Ioo_mem_nhdsGT hxu] with r hr
+  rcases eq_or_neBot (𝓝[<] r) with hr_bot | _
+  · simpa [leftLim_eq_of_eq_bot f hr_bot] using hu hr
+  by_cases hr_lim : ∃ l, Tendsto f (𝓝[<] r) (𝓝 l)
+  · apply hV_closed.mem_of_tendsto (tendsto_leftLim_of_tendsto hr_lim)
+    filter_upwards [Ioo_mem_nhdsLT hr.1] with s hs
+    exact hu ⟨hs.1, hs.2.trans hr.2⟩
+  · simpa [leftLim_eq_of_not_tendsto f hr_lim] using hu hr
+
 namespace IsCadlag
 
 /-- Along times approaching `x` strictly from the right, the strict left limit of a càdlàg
 function into a regular space converges to `f x`. -/
 theorem tendsto_nhdsGT_leftLim {X Y : Type*} [LinearOrder X] [TopologicalSpace X]
     [OrderTopology X] [TopologicalSpace Y] [RegularSpace Y] {f : X → Y} (hf : IsCadlag f)
-    (x : X) : Tendsto f.leftLim (𝓝[>] x) (𝓝 (f x)) := by
-  rcases eq_or_neBot (𝓝[>] x) with hbot | _
-  · simp [hbot]
-  apply (closed_nhds_basis (f x)).tendsto_right_iff.2
-  rintro V ⟨hV_mem, hV_closed⟩
-  obtain ⟨b, hb⟩ : (Ioi x).Nonempty := nonempty_of_mem (self_mem_nhdsWithin (a := x))
-  obtain ⟨u, hxu, hu⟩ : ∃ u, x < u ∧ Ioo x u ⊆ {t | f t ∈ V} := by
-    have hpre := (closed_nhds_basis (f x)).tendsto_right_iff.1 (hf.isRightContinuous x) V
-      ⟨hV_mem, hV_closed⟩
-    simpa using (mem_nhdsGT_iff_exists_Ioo_subset' hb).1 hpre
-  filter_upwards [Ioo_mem_nhdsGT hxu] with r hr
-  rcases eq_or_neBot (𝓝[<] r) with hr_bot | _
-  · simpa [leftLim_eq_of_eq_bot f hr_bot] using hu hr
-  apply hV_closed.mem_of_tendsto (hf.tendsto_nhdsLT_leftLim r)
-  filter_upwards [Ioo_mem_nhdsLT hr.1] with s hs
-  exact hu ⟨hs.1, hs.2.trans hr.2⟩
+    (x : X) : Tendsto f.leftLim (𝓝[>] x) (𝓝 (f x)) :=
+  (hf.isRightContinuous x).tendsto.leftLim_nhdsGT
 
 /-- Stopping a càdlàg path at a deterministic horizon preserves the càdlàg property. -/
 theorem comp_min_const {X Y : Type*} [LinearOrder X] [TopologicalSpace X] [OrderTopology X]
@@ -145,13 +156,13 @@ theorem exists_countable_subset_Iic_biSup_eq {X α : Type*} [LinearOrder X] [Top
       obtain ⟨s, hsS, has⟩ := hS (fun v _ => hg.isRightContinuous v) ((le_of_lt hut).trans ht) hau
       exact has.trans_le (le_biSup g hsS)
 
-/-- On a compact initial interval `[⊥, T]`, a càdlàg function into a densely ordered complete
-linear order reaches `ε` in value or left limit at some time `t ≤ T` if and only if the supremum
+/-- On a compact initial interval `[⊥, T]`, a càdlàg function into a complete linear order with the
+order topology reaches `ε` in value or left limit at some time `t ≤ T` if and only if the supremum
 of its values and left limits up to `T` is at least `ε`. -/
 theorem exists_le_or_le_leftLim_iff_le_sup_biSup {X α : Type*}
-    [ConditionallyCompleteLinearOrderBot X] [TopologicalSpace X] [OrderTopology X]
+    [LinearOrder X] [OrderBot X] [TopologicalSpace X] [OrderTopology X]
     [CompactIccSpace X] [CompleteLinearOrder α] [TopologicalSpace α] [OrderTopology α]
-    [DenselyOrdered α] {g : X → α} (hg : IsCadlag g) (T : X) (ε : α) :
+    {g : X → α} (hg : IsCadlag g) (T : X) (ε : α) :
     (∃ t ≤ T, ε ≤ g t ∨ ε ≤ g.leftLim t) ↔
       ε ≤ (⨆ t ≤ T, g t) ⊔ (⨆ t ≤ T, g.leftLim t) := by
   constructor
@@ -160,15 +171,26 @@ theorem exists_le_or_le_leftLim_iff_le_sup_biSup {X α : Type*}
     · exact hlt.trans (le_sup_of_le_right (le_iSup₂_of_le t ht le_rfl))
   · intro hsup
     by_contra! hlt
-    have hc_ex (t : Icc (⊥ : X) T) : ∃ c, max (g t.val) (g.leftLim t.val) < c ∧ c < ε :=
-      exists_between (max_lt (hlt t.val t.property.2).1 (hlt t.val t.property.2).2)
-    choose c hc_gt hc_lt using hc_ex
-    have hnhds (t : Icc (⊥ : X) T) : {x | g x < c t} ∈ 𝓝 t.val := by
+    have hc_ex (t : Icc (⊥ : X) T) :
+        ∃ c < ε, Iic c ∈ 𝓝 (g t.val) ∧ Iic c ∈ 𝓝 (g.leftLim t.val) := by
+      have hm_lt : max (g t.val) (g.leftLim t.val) < ε :=
+        max_lt (hlt t.val t.property.2).1 (hlt t.val t.property.2).2
+      by_cases hbet : ∃ c, max (g t.val) (g.leftLim t.val) < c ∧ c < ε
+      · obtain ⟨c, hc_gt, hc_lt⟩ := hbet
+        exact ⟨c, hc_lt,
+          mem_of_superset (Iio_mem_nhds ((le_max_left _ _).trans_lt hc_gt)) Iio_subset_Iic_self,
+          mem_of_superset (Iio_mem_nhds ((le_max_right _ _).trans_lt hc_gt)) Iio_subset_Iic_self⟩
+      · have hsub : Iio ε ⊆ Iic (max (g t.val) (g.leftLim t.val)) := fun y hy =>
+          not_lt.mp fun hy_gt => hbet ⟨y, hy_gt, hy⟩
+        exact ⟨max (g t.val) (g.leftLim t.val), hm_lt,
+          mem_of_superset (Iio_mem_nhds (hlt t.val t.property.2).1) hsub,
+          mem_of_superset (Iio_mem_nhds (hlt t.val t.property.2).2) hsub⟩
+    choose c hc_lt hc_val hc_lim using hc_ex
+    have hnhds (t : Icc (⊥ : X) T) : {x | g x ≤ c t} ∈ 𝓝 t.val := by
       rw [← nhdsLT_sup_nhdsGE t.val, mem_sup]
-      refine ⟨(hg.tendsto_nhdsLT_leftLim t.val).eventually
-          (Iio_mem_nhds ((le_max_right _ _).trans_lt (hc_gt t))),
+      refine ⟨(hg.tendsto_nhdsLT_leftLim t.val).eventually (hc_lim t),
         (isRightContinuous_iff_continuousWithinAt_Ici.mp hg.isRightContinuous t.val).eventually
-          (Iio_mem_nhds ((le_max_left _ _).trans_lt (hc_gt t)))⟩
+          (hc_val t)⟩
     choose U hU_sub hU_open htU using fun t => mem_nhds_iff.mp (hnhds t)
     obtain ⟨F, hF⟩ := isCompact_Icc.elim_finite_subcover U hU_open fun x hx =>
       mem_iUnion.mpr ⟨⟨x, hx⟩, htU ⟨x, hx⟩⟩
@@ -180,7 +202,7 @@ theorem exists_le_or_le_leftLim_iff_le_sup_biSup {X α : Type*}
     have hg_le (x : X) (hx : x ≤ T) : g x ≤ C := by
       have hx_mem : x ∈ ⋃ i ∈ F, U i := hF ⟨bot_le, hx⟩
       obtain ⟨i, hiF, hxi⟩ := mem_iUnion₂.mp hx_mem
-      exact (hU_sub i hxi).le.trans (Finset.le_sup' c (Finset.mem_insert_of_mem hiF))
+      exact (hU_sub i hxi).trans (Finset.le_sup' c (Finset.mem_insert_of_mem hiF))
     have hleft_le (x : X) (hx : x ≤ T) : g.leftLim x ≤ C := by
       rcases eq_or_neBot (𝓝[<] x) with hbot | _
       · simpa [leftLim_eq_of_eq_bot g hbot] using hg_le x hx
@@ -194,11 +216,12 @@ end IsCadlag
 
 /-- For a càdlàg path into a regular space and a closed set `C`, the infimum of times at which
 either the path or its strict left limit lies in `C` belongs to that same set whenever it is
-nonempty. -/
+nonempty and bounded below. -/
 theorem IsClosed.csInf_mem_or_leftLim_mem_of_isCadlag {X Y : Type*}
-    [ConditionallyCompleteLinearOrderBot X] [TopologicalSpace X] [OrderTopology X]
+    [ConditionallyCompleteLinearOrder X] [TopologicalSpace X] [OrderTopology X]
     [TopologicalSpace Y] [RegularSpace Y] {C : Set Y} (hC : IsClosed C) {f : X → Y}
-    (hf : IsCadlag f) (hne : {t | f t ∈ C ∨ f.leftLim t ∈ C}.Nonempty) :
+    (hf : IsCadlag f) (hne : {t | f t ∈ C ∨ f.leftLim t ∈ C}.Nonempty)
+    (hbdd : BddBelow {t | f t ∈ C ∨ f.leftLim t ∈ C}) :
     f (sInf {t | f t ∈ C ∨ f.leftLim t ∈ C}) ∈ C ∨
       f.leftLim (sInf {t | f t ∈ C ∨ f.leftLim t ∈ C}) ∈ C := by
   let A := {t | f t ∈ C ∨ f.leftLim t ∈ C}
@@ -206,7 +229,7 @@ theorem IsClosed.csInf_mem_or_leftLim_mem_of_isCadlag {X Y : Type*}
   by_contra hs
   have hfs : f s ∈ Cᶜ := fun h => hs (Or.inl h)
   have hlt_all {x : X} (hx : x ∈ A) : s < x :=
-    lt_of_le_of_ne (csInf_le ⟨⊥, fun _ _ => bot_le⟩ hx) fun heq => hs (by rwa [← heq] at hx)
+    lt_of_le_of_ne (csInf_le hbdd hx) fun heq => hs (by rwa [← heq] at hx)
   have ⟨x₀, hx₀⟩ := hne
   have hsx₀ : s < x₀ := hlt_all hx₀
   rcases eq_or_neBot (𝓝[>] s) with hbot | _
@@ -425,7 +448,7 @@ theorem mem_of_oscillationExitAfter_eq_coe {f : X → E} (hf : IsCadlag f) {ε :
     dsimp only [A]
     rw [hA_eq]
     exact isClosed_Ici.csInf_mem_or_leftLim_mem_of_isCadlag
-      (TauCeti.isCadlag_stoppedDist hf u) (hA_eq ▸ hne)
+      (TauCeti.isCadlag_stoppedDist hf u) (hA_eq ▸ hne) ⟨⊥, fun _ _ => bot_le⟩
   exact hs_eq ▸ hmem
 
 /-- After any finite time `u`, the next `ε`-oscillation exit (`ε > 0`) of a càdlàg path occurs
