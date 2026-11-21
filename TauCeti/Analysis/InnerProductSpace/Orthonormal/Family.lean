@@ -138,6 +138,24 @@ theorem toLinearMap_starProjection_eq_frameOperator (hv : Orthonormal 𝕜 v) {U
   ext x
   simp [hv.starProjection_apply_eq_sum hU]
 
+omit [Fintype ι] in
+/-- **Bessel's identity**: subtracting from `x` its components `⟪vᵢ, x⟫ vᵢ` along finitely many
+members of an orthonormal family removes their squared lengths `‖⟪vᵢ, x⟫‖²` from `‖x‖²`. This is
+the identity behind Mathlib's Bessel inequality `Orthonormal.sum_inner_products_le`. -/
+theorem norm_sub_sum_inner_smul_sq (hv : Orthonormal 𝕜 v) (s : Finset ι) (x : E) :
+    ‖x - ∑ i ∈ s, ⟪v i, x⟫_𝕜 • v i‖ ^ 2 = ‖x‖ ^ 2 - ∑ i ∈ s, ‖⟪v i, x⟫_𝕜‖ ^ 2 := by
+  have h₂ : (∑ i ∈ s, ∑ j ∈ s, ⟪v i, x⟫_𝕜 * ⟪x, v j⟫_𝕜 * ⟪v j, v i⟫_𝕜) =
+      (∑ k ∈ s, ⟪v k, x⟫_𝕜 * ⟪x, v k⟫_𝕜 : 𝕜) :=
+    hv.inner_left_right_finset
+  have h₃ (z : 𝕜) : RCLike.re (z * (starRingEnd 𝕜) z) = ‖z‖ ^ 2 := by
+    simp only [RCLike.mul_conj]
+    norm_cast
+  rw [@norm_sub_sq 𝕜, sub_add]
+  simp only [@InnerProductSpace.norm_sq_eq_re_inner 𝕜 E, inner_sum, sum_inner]
+  simp only [inner_smul_right, two_mul, inner_smul_left, inner_conj_symm, ← mul_assoc, h₂,
+    add_sub_cancel_right, sub_right_inj]
+  simp only [map_sum, ← inner_conj_symm x, ← h₃]
+
 /-- **Parseval's identity** on the span `U` of a finite orthonormal family: the orthogonal
 projection of `x` onto `U` has squared norm `∑ᵢ ‖⟪vᵢ, x⟫‖²`. -/
 theorem norm_starProjection_sq_eq_sum (hv : Orthonormal 𝕜 v) {U : Submodule 𝕜 E}
