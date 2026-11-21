@@ -12,9 +12,8 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.Slice
 public import TauCeti.Geometry.Symplectic.Lagrangian.CoisotropicModel.Equivariant
 
 import Mathlib.RepresentationTheory.Maschke
-import TauCeti.Geometry.Lie.Adjoint.Smooth
+import TauCeti.Geometry.Manifold.GroupAction.EquivariantSlice
 import TauCeti.RepresentationTheory.Continuous.Basic
-import TauCeti.RepresentationTheory.Compact.Semisimple
 import TauCeti.RepresentationTheory.Semisimple
 
 /-!
@@ -59,10 +58,11 @@ that `ρ` is equivariant, and `𝔪`, `𝔮` are invariant, the identification c
 action on `𝔪*` and the induced action on `V`
 (`SymplecticForm.exists_equivariant_isSymplectomorphism_cotangent_prod_kirillov_prod_reduction`).
 The orbit directions together with an equivariant lift of the slice, obtained from an equivariant
-projection onto the radical of `W^ω`, form an equivariant embedding of `(𝔪 × 𝔮) × V` into `T`
-with coisotropic image `W + W^ω`, on which `ω` is the restriction of the model form. Its image in
-the model, `(𝔪 × 0) × (𝔮 × V)`, is coisotropic as well, so the equivariant Witt extension from
-coisotropic subspaces
+projection onto the radical of `W^ω`
+(`TauCeti.SymplecticForm.exists_equivariant_lift_reducedSpace`), form an equivariant embedding of
+`(𝔪 × 𝔮) × V` into `T` with coisotropic image `W + W^ω`, on which `ω` is the restriction of the
+model form. Its image in the model, `(𝔪 × 0) × (𝔮 × V)`, is coisotropic as well, so the
+equivariant Witt extension from coisotropic subspaces
 (`TauCeti.SymplecticForm.exists_equivariant_isSymplectomorphism_extend_of_isCoisotropic`) extends
 one to the other. The non-equivariant normal form is the case of the trivial group.
 
@@ -274,54 +274,11 @@ private theorem isCoisotropic_range_prodMap_inl {V V' : Type*} [AddCommGroup V] 
     simpa [prod_apply] using h ((0, 0), w') ⟨(0, w'), rfl⟩
   exact ⟨(ξ, w), by simp [ha, hw]⟩
 
-/-- **An equivariant lift of the reduced space.** For a semisimple representation preserving `ω`
-and a subspace `U` it preserves, the reduced space `U ⧸ (U ∩ U^ω)` has a linear lift to `U`
-intertwining a representation `πV` induced on the reduced space with the action on `U`. It is
-`u ↦ u - P u` for an equivariant projection `P` onto the radical `U ∩ U^ω`. -/
-private theorem exists_equivariant_lift [πT.IsSemisimpleRepresentation]
-    (hπT : Representation.IsInvariantForm πT ω.toBilinForm) {U : Submodule ℝ T}
-    (hU : ∀ k, ∀ u ∈ U, πT k u ∈ U)
-    {πV : Representation ℝ K (ω.ReducedSpace U)}
-    (hπV : ∀ k (u u' : U), (u' : T) = πT k u →
-      πV k (Submodule.Quotient.mk u) = Submodule.Quotient.mk u') :
-    ∃ s : ω.ReducedSpace U →ₗ[ℝ] U, (∀ v, Submodule.Quotient.mk (s v) = v) ∧
-      ∀ k v, (s (πV k v) : T) = πT k (s v) := by
-  let SU : Subrepresentation πT := ⟨U, fun k _ hu ↦ hU k _ hu⟩
-  have : SU.toRepresentation.IsSemisimpleRepresentation :=
-    (U.subtype.intertwiningMap_of_isIntertwiningMap SU.toRepresentation πT
-      fun _ _ ↦ rfl).isSemisimpleRepresentation_of_injective U.injective_subtype
-  -- The radical `U ∩ U^ω` is a subrepresentation, with an equivariant projection `P`.
-  let N : Subrepresentation SU.toRepresentation :=
-    ⟨LinearMap.ker (ω.toBilinForm.restrict U), fun k u hu ↦ by
-      rw [mem_ker_restrict_iff] at hu ⊢
-      exact apply_mem_orthogonal (fun k u v ↦ hπT.apply k u v) hU k hu⟩
-  obtain ⟨P, hP, hPπ⟩ := Subrepresentation.exists_equivariant_projection N
-  refine ⟨N.toSubmodule.liftQ (LinearMap.id - N.toSubmodule.subtype ∘ₗ P) fun u hu ↦ ?_,
-    fun v ↦ ?_, fun k v ↦ ?_⟩
-  · simp [hP ⟨u, hu⟩]
-  · induction v using Submodule.Quotient.induction_on with
-    | H u =>
-      rw [Submodule.liftQ_apply, Submodule.Quotient.eq]
-      simp
-  · induction v using Submodule.Quotient.induction_on with
-    | H u =>
-      rw [hπV k u ⟨πT k u, hU k u u.property⟩ rfl, Submodule.liftQ_apply, Submodule.liftQ_apply]
-      have h := congrArg Subtype.val (hPπ k u)
-      simp only [LinearMap.sub_apply, LinearMap.id_apply, LinearMap.comp_apply,
-        Submodule.subtype_apply, Submodule.coe_sub, map_sub] at h ⊢
-      exact congrArg (fun t ↦ πT k u - t) h
-
 section Model
 
 variable {π𝔤 : Representation ℝ K 𝔤} (hπT : Representation.IsInvariantForm πT ω.toBilinForm)
   (hρπ : ∀ k ξ, ρ (π𝔤 k ξ) = πT k (ρ ξ))
 include hπT hρπ
-
-/-- The symplectic complement `W^ω` of the image `W` of an equivariant map is invariant. -/
-private theorem apply_mem_orthogonal_range (k : K) {u : T}
-    (hu : u ∈ ω.orthogonal (LinearMap.range ρ)) : πT k u ∈ ω.orthogonal (LinearMap.range ρ) :=
-  apply_mem_orthogonal (fun k u v ↦ hπT.apply k u v)
-    (by rintro k _ ⟨ξ, rfl⟩; exact ⟨π𝔤 k ξ, hρπ k ξ⟩) k hu
 
 /-- Under the moment identity, an equivariant `ρ` makes the Kirillov form `ν ⁅ξ, ζ⁆` invariant. -/
 private theorem apply_lie_apply (hρ : ∀ ξ ζ, ω (ρ ξ) (ρ ζ) = ν ⁅ξ, ζ⁆) (k : K) (ξ ζ : 𝔤) :
@@ -351,10 +308,11 @@ private theorem isInvariantForm_model (hρ : ∀ ξ ζ, ω (ρ ξ) (ρ ζ) = ν 
   refine Representation.isInvariantForm_iff.2 fun k ⟨⟨ξ, a⟩, ζ, v⟩ ⟨⟨ξ', a'⟩, ζ', v'⟩ ↦ ?_
   induction v using Submodule.Quotient.induction_on with | H u => ?_
   induction v' using Submodule.Quotient.induction_on with | H u' => ?_
-  have h := hπV k u ⟨πT k u, apply_mem_orthogonal_range hπT hρπ k u.property⟩ rfl
-  have h' := hπV k u' ⟨πT k u', apply_mem_orthogonal_range hπT hρπ k u'.property⟩ rfl
-  have hq (ζ : 𝔮.toSubmodule) : ((𝔮.toRepresentation k ζ : 𝔮.toSubmodule) : 𝔤) = π𝔤 k ζ := rfl
-  simp [prod_apply, h, h', Module.Dual.transpose_apply, Representation.inv_self_apply, hq,
+  have h := hπV k u ⟨πT k u,
+    apply_mem_orthogonal_range (fun k u v ↦ hπT.apply k u v) hρπ k u.property⟩ rfl
+  have h' := hπV k u' ⟨πT k u',
+    apply_mem_orthogonal_range (fun k u v ↦ hπT.apply k u v) hρπ k u'.property⟩ rfl
+  simp [prod_apply, h, h', Module.Dual.transpose_apply, Representation.inv_self_apply,
     apply_lie_apply hπT hρπ hρ, hπT.apply]
 
 /-- The model representation on `(𝔪 × 𝔪*) × (𝔮 × V)` is semisimple when `πT` is: `𝔪`, `𝔮` and `V`
@@ -390,8 +348,8 @@ private theorem isSemisimpleRepresentation_model [FiniteDimensional ℝ T]
         fun k t ↦ LinearMap.ext fun ξ ↦ ?_).isSemisimpleRepresentation_of_surjective ?_
     · simp only [LinearMap.comp_apply, LinearMap.dualMap_apply, Submodule.subtype_apply,
         Representation.dual_apply, Module.Dual.transpose_apply]
-      rw [← hπT.apply k⁻¹, Representation.inv_self_apply, ← hρπ]
-      rfl
+      rw [← hπT.apply k⁻¹, Representation.inv_self_apply, ← hρπ,
+        Subrepresentation.coe_toRepresentation_apply]
     · refine (LinearMap.dualMap_surjective_of_injective (hinj h𝔪)).comp fun f ↦ ?_
       obtain ⟨t, rfl⟩ := (ω.toBilinForm.toDual ω.nondegenerate).surjective f
       exact ⟨t, LinearMap.ext fun t' ↦ (LinearMap.BilinForm.toDual_def _).symm⟩
@@ -434,11 +392,9 @@ theorem exists_equivariant_isSymplectomorphism_cotangent_prod_kirillov_prod_redu
         e ((0, 0), (0, Submodule.Quotient.mk u)) - u ∈ LinearMap.range ρ) ∧
       ∀ k x, e (((𝔪.toRepresentation.prod 𝔪.toRepresentation.dual).prod
         (𝔮.toRepresentation.prod πV)) k x) = πT k (e x) := by
-  obtain ⟨s, hs, hsπ⟩ := exists_equivariant_lift hπT
-    (fun k _ hu ↦ apply_mem_orthogonal_range hπT hρπ k hu) hπV
+  obtain ⟨s, hs, hsπ⟩ := exists_equivariant_lift_reducedSpace (fun k u v ↦ hπT.apply k u v)
+    (fun k _ hu ↦ apply_mem_orthogonal_range (fun k u v ↦ hπT.apply k u v) hρπ k hu) hπV
   have := isSemisimpleRepresentation_model hπT hρπ hρ h𝔪 h𝔮 s hs hsπ
-  have hcoe (S : Subrepresentation π𝔤) (k : K) (a : S.toSubmodule) :
-      ((S.toRepresentation k a : S.toSubmodule) : 𝔤) = π𝔤 k a := rfl
   -- `F` sends the orbit directions of `𝔪 × 𝔮` and the lifted slice to `T`, and `G` includes the
   -- same space into the model with zero cotangent component. Both are injective and equivariant,
   -- `ω` pulls back along them to the same form, and their ranges are coisotropic, so the
@@ -461,7 +417,7 @@ theorem exists_equivariant_isSymplectomorphism_cotangent_prod_kirillov_prod_redu
       simp [G, prod_apply])
     (isCoisotropic_range_prodMap_inl _) (isCoisotropic_range_coprod_coprod h𝔪' h𝔮 s hs)
     (fun k ⟨a, b, v⟩ ↦ by simp [G])
-    (fun k ⟨a, b, v⟩ ↦ by simp [hF, hcoe, hρπ, hsπ])
+    (fun k ⟨a, b, v⟩ ↦ by simp [hF, hρπ, hsπ])
   refine ⟨e, he, fun ξ ↦ ?_, fun ζ ↦ ?_, fun u ↦ ?_, heπ⟩
   · simpa [G, hF] using heι (ξ, 0, 0)
   · simpa [G, hF] using heι (0, ζ, 0)
@@ -517,6 +473,13 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
   {𝔤 : Type*} [LieRing 𝔤] [LieAlgebra ℝ 𝔤]
   {σ : SmoothTwoForm I M} {a : InfinitesimalAction 𝔤 I M} {μ : M → Dual ℝ 𝔤} {x : M}
 
+/-- Where the cocycle of `μ` vanishes, `σ_x(ξ_M, ζ_M) = μ(x) ⁅ξ, ζ⁆`. -/
+private theorem symplecticFormAt_eval_eval (hσ : σ.IsNondegenerate)
+    (hc : σ.momentCocycle a μ x = 0) (ξ ζ : 𝔤) :
+    hσ.symplecticFormAt x (a.eval x ξ) (a.eval x ζ) = μ x ⁅ξ, ζ⁆ := by
+  rw [symplecticFormAt_apply, InfinitesimalAction.eval_apply, InfinitesimalAction.eval_apply]
+  exact momentCocycle_eq_zero_iff.1 hc ξ ζ
+
 /-- **The linear normal form of a Hamiltonian action at a point.** Let `σ` be a nondegenerate
 two-form on a finite-dimensional manifold, carrying an infinitesimal action `Z ↦ Z_M` of `𝔤`, and
 let `μ : M → 𝔤*` have vanishing cocycle at `x`, so that `σ_x(ξ_M, ζ_M) = μ(x) ⁅ξ, ζ⁆`. Let `𝔪` be a
@@ -551,9 +514,7 @@ theorem exists_isSymplectomorphism_cotangent_prod_kirillov_prod_symplecticSlice
   subst hW
   obtain ⟨e, he, h₁, h₂, h₃⟩ :=
     (hσ.symplecticFormAt x).exists_isSymplectomorphism_cotangent_prod_kirillov_prod_reduction
-      (a.eval x) (μ x) (fun ξ ζ ↦ by
-        rw [symplecticFormAt_apply, InfinitesimalAction.eval_apply, InfinitesimalAction.eval_apply]
-        exact momentCocycle_eq_zero_iff.1 hc ξ ζ) h𝔪 h𝔪' h𝔮
+      (a.eval x) (μ x) (symplecticFormAt_eval_eval hσ hc) h𝔪 h𝔪' h𝔮
   exact ⟨e, he, fun ξ ↦ (h₁ ξ).trans (a.eval_apply x _), fun ζ ↦ (h₂ ζ).trans (a.eval_apply x _),
     h₃⟩
 
@@ -604,29 +565,6 @@ private theorem isInvariantForm_tangentRepresentation (hσ : σ.IsNondegenerate)
     simpa only [ContRepresentation.toRepresentation_apply] using
       hσ.symplecticFormAt_tangentRepresentation hσG _ k u v
 
-/-- Where the cocycle of `μ` vanishes, `σ_x(ξ_M, ζ_M) = μ(x) ⁅ξ, ζ⁆`. -/
-private theorem symplecticFormAt_eval_eval (hσ : σ.IsNondegenerate)
-    (hc : σ.momentCocycle (InfinitesimalAction.fundamental I G I' M) μ x = 0)
-    (ξ ζ : GroupLieAlgebra I G) :
-    hσ.symplecticFormAt x ((InfinitesimalAction.fundamental I G I' M).eval x ξ)
-      ((InfinitesimalAction.fundamental I G I' M).eval x ζ) = μ x ⁅ξ, ζ⁆ := by
-  rw [symplecticFormAt_apply, InfinitesimalAction.eval_apply, InfinitesimalAction.eval_apply]
-  exact momentCocycle_eq_zero_iff.1 hc ξ ζ
-
-omit [FiniteDimensional ℝ E] in
-/-- The tangent representation of a compact stabilizer is continuous, hence semisimple. It is read
-on the model space `E'` of `T_x M`, which carries the norm. -/
-private theorem isSemisimpleRepresentation_tangentRepresentation
-    (hx : IsCompact (stabilizer G x : Set G)) :
-    Representation.IsSemisimpleRepresentation ((tangentRepresentation fun (g : G) _ ↦
-      ContMDiffSMul.mdifferentiable_const_smul (I := I) (n := ∞) (by simp) g x).toRepresentation :
-        Representation ℝ _ (TangentSpace I' x)) := by
-  have : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
-  have : CompactSpace (stabilizer G x) := isCompact_iff_compactSpace.mp hx
-  let ρ : ContRepresentation ℝ (stabilizer G x) E' := tangentRepresentation (I := I')
-    fun (g : G) _ ↦ ContMDiffSMul.mdifferentiable_const_smul (I := I) (n := ∞) (by simp) g x
-  exact ρ.isSemisimpleRepresentation_of_continuous (continuous_tangentRepresentation (I := I') I _)
-
 /-- The stabilizer acts on the symplectic slice by `[u] ↦ [u']` whenever `u' = dh_x u`. -/
 private theorem toLinearMapMonoidHom_comp_symplecticSliceRepresentation_mk
     (hσ : σ.IsNondegenerate)
@@ -662,16 +600,7 @@ theorem exists_subrepresentation_complements :
       ((InfinitesimalAction.fundamental I G I' M).isotropy x).toSubmodule ⊔ 𝔪.toSubmodule =
         (lieAnnihilator ℝ (GroupLieAlgebra I G) (μ x)).toSubmodule ∧
       IsCompl (lieAnnihilator ℝ (GroupLieAlgebra I G) (μ x)).toSubmodule 𝔮.toSubmodule := by
-  have : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
-  have : CompactSpace (stabilizer G x) := isCompact_iff_compactSpace.mp hx
-  -- The adjoint representation of the compact group `H` is continuous, hence semisimple.
-  have : Representation.IsSemisimpleRepresentation
-      ((Lie.adjointRepresentation ℝ I G).comp (stabilizer G x).subtype) := by
-    refine Representation.isSemisimpleRepresentation_of_continuous _ fun f ξ ↦ ?_
-    simp only [MonoidHom.comp_apply, Subgroup.coe_subtype, Lie.adjointRepresentation_apply]
-    exact (LinearMap.continuous_of_finiteDimensional f).comp
-      (((Lie.contMDiff_adjointContinuousLinearMap (I := I) (G := G)).continuous.comp
-        continuous_subtypeVal).clm_apply continuous_const)
+  have := Lie.isSemisimpleRepresentation_adjointRepresentation_comp_subtype (I := I) hx
   have hρ := symplecticFormAt_eval_eval hσ hc
   let A : Subrepresentation ((Lie.adjointRepresentation ℝ I G).comp (stabilizer G x).subtype) :=
     ⟨((InfinitesimalAction.fundamental I G I' M).isotropy x).toSubmodule, fun k ξ hξ ↦ by
@@ -732,7 +661,8 @@ theorem exists_equivariant_isSymplectomorphism_cotangent_prod_kirillov_prod_symp
           (hσ.symplecticSliceRepresentation hσG)))) k y) =
         tangentRepresentation (fun (g : G) _ ↦
           ContMDiffSMul.mdifferentiable_const_smul (I := I) (n := ∞) (by simp) g x) k (e y) := by
-  have := isSemisimpleRepresentation_tangentRepresentation (I := I) (I' := I') hx
+  have := isSemisimpleRepresentation_tangentRepresentation_of_isCompact_stabilizer I (I' := I') hx
+    fun (g : G) _ ↦ ContMDiffSMul.mdifferentiable_const_smul (I := I) (n := ∞) (by simp) g x
   rw [InfinitesimalAction.isotropy_toSubmodule] at h𝔪 h𝔪'
   -- `a.orbitTangent x` occurs in the types of `e`, `u` and the slice representation, so a plain
   -- `rw` with `orbitTangent_eq_range` fails on the motive; we prove the statement for every

@@ -9,6 +9,9 @@ public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 public import Mathlib.LinearAlgebra.Quotient.Bilinear
 public import TauCeti.Geometry.Symplectic.ExistsCompatible
 public import TauCeti.Geometry.Symplectic.Lagrangian.Constructions
+public import TauCeti.RepresentationTheory.Subrepresentation.Semisimple
+
+import TauCeti.Geometry.Symplectic.Invariants
 
 /-!
 # Linear symplectic reduction
@@ -30,6 +33,10 @@ symplectomorphism of reduced spaces, compatibly with identities and composition
 (`TauCeti.SymplecticForm.reducedSpaceCongr`). Hence a group acting by linear symplectomorphisms
 preserving `U` acts by symplectomorphisms on the reduced space
 (`TauCeti.SymplecticForm.reducedSpaceRepresentation`).
+
+For a semisimple representation preserving `ω` and `U`, the quotient map `U → U_red` has an
+equivariant linear right inverse (`TauCeti.SymplecticForm.exists_equivariant_lift_reducedSpace`):
+an equivariant projection onto the radical `U ∩ U^ω` splits it off.
 
 Reduction also acts on subspaces: the image of `L ∩ U` in the reduced space is isotropic when `L`
 is, and for coisotropic `U` it is Lagrangian when `L` is
@@ -68,6 +75,8 @@ form on `V ⧸ ker B` (`LinearMap.BilinForm.IsAlt.symplecticFormQuotKer`).
 * `TauCeti.SymplecticForm.subsingleton_reducedSpace_iff`,
   `TauCeti.SymplecticForm.isSymplectomorphism_quotEquivOfEqBot`: the reduced space is trivial
   exactly for isotropic `U`, and is `U` itself with the restricted form for symplectic `U`.
+* `TauCeti.SymplecticForm.exists_equivariant_lift_reducedSpace`: an equivariant lift of the
+  reduced space for a semisimple representation.
 * `TauCeti.SymplecticForm.IsIsotropic.reduction_map`,
   `TauCeti.SymplecticForm.IsLagrangian.reduction_map`: reduction of isotropic and Lagrangian
   subspaces.
@@ -414,6 +423,43 @@ theorem isSymplectomorphism_reducedSpaceRepresentation {G : Type*} [Group G]
     IsSymplectomorphism (ω.reduction U) (ω.reduction U)
       (ω.reducedSpaceRepresentation ρ hρ U hU g) :=
   isSymplectomorphism_reducedSpaceCongr _ (hρ g) _
+
+/-- **An equivariant lift of the reduced space.** For a semisimple representation `πT` preserving
+`ω` and a subspace `U` it preserves, the reduced space `U ⧸ (U ∩ U^ω)` has a linear lift to `U`
+intertwining a representation `πV` induced on the reduced space with the action on `U`. It is
+`u ↦ u - P u` for an equivariant projection `P` onto the radical `U ∩ U^ω`. -/
+theorem exists_equivariant_lift_reducedSpace {K : Type*} [Group K] {πT : Representation ℝ K V}
+    [πT.IsSemisimpleRepresentation] (hπT : ∀ k u v, ω (πT k u) (πT k v) = ω u v)
+    {U : Submodule ℝ V} (hU : ∀ k, ∀ u ∈ U, πT k u ∈ U)
+    {πV : Representation ℝ K (ω.ReducedSpace U)}
+    (hπV : ∀ k (u u' : U), (u' : V) = πT k u →
+      πV k (Submodule.Quotient.mk u) = Submodule.Quotient.mk u') :
+    ∃ s : ω.ReducedSpace U →ₗ[ℝ] U, (∀ v, Submodule.Quotient.mk (s v) = v) ∧
+      ∀ k v, (s (πV k v) : V) = πT k (s v) := by
+  let SU : Subrepresentation πT := ⟨U, fun k _ hu ↦ hU k _ hu⟩
+  have : SU.toRepresentation.IsSemisimpleRepresentation :=
+    (U.subtype.intertwiningMap_of_isIntertwiningMap SU.toRepresentation πT
+      fun _ _ ↦ rfl).isSemisimpleRepresentation_of_injective U.injective_subtype
+  -- The radical `U ∩ U^ω` is a subrepresentation, with an equivariant projection `P`.
+  let N : Subrepresentation SU.toRepresentation :=
+    ⟨LinearMap.ker (ω.toBilinForm.restrict U), fun k u hu ↦ by
+      rw [mem_ker_restrict_iff] at hu ⊢
+      exact apply_mem_orthogonal hπT hU k hu⟩
+  obtain ⟨P, hP, hPπ⟩ := Subrepresentation.exists_equivariant_projection N
+  refine ⟨N.toSubmodule.liftQ (LinearMap.id - N.toSubmodule.subtype ∘ₗ P) fun u hu ↦ ?_,
+    fun v ↦ ?_, fun k v ↦ ?_⟩
+  · simp [hP ⟨u, hu⟩]
+  · induction v using Submodule.Quotient.induction_on with
+    | H u =>
+      rw [Submodule.liftQ_apply, Submodule.Quotient.eq]
+      simp
+  · induction v using Submodule.Quotient.induction_on with
+    | H u =>
+      rw [hπV k u ⟨πT k u, hU k u u.property⟩ rfl, Submodule.liftQ_apply, Submodule.liftQ_apply]
+      have h := congrArg Subtype.val (hPπ k u)
+      simp only [LinearMap.sub_apply, LinearMap.id_apply, LinearMap.comp_apply,
+        Submodule.subtype_apply, Submodule.coe_sub, map_sub] at h ⊢
+      exact congrArg (fun t ↦ πT k u - t) h
 
 end Functoriality
 

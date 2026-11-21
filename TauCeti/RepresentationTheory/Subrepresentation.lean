@@ -17,8 +17,9 @@ operations — `Subrepresentation.toSubmodule_sup` and `Subrepresentation.toSubm
 `@[simp]` and both true by `rfl` — but not how it interacts with the bounded-lattice structure,
 nor how it interacts with the order relations themselves, nor how it interacts with membership.
 This file adds the six missing counterparts, in the same shape. It also records that the
-representation action on a subrepresentation is the restriction of the original action, when an
-intertwining map is zero and when it is surjective in terms of the subrepresentation its range is,
+representation action on a subrepresentation is the restriction of the original action and
+coerces to it, when an intertwining map is zero and when it is surjective in terms of the
+subrepresentation its range is,
 the inclusion of a subrepresentation as an intertwining map, that the group-algebra action on a
 subrepresentation coerces to the original action, the canonical equivalence between the module of
 the restricted representation and the corresponding submodule, and that a subrepresentation is
@@ -74,6 +75,7 @@ irreducibility, as does restriction along a monoid isomorphism.
 * `Subrepresentation.isCompl_toSubmodule`
 * `Subrepresentation.instIsModularLattice`
 * `Subrepresentation.toRepresentation_apply`
+* `Subrepresentation.coe_toRepresentation_apply`
 * `Representation.IntertwiningMap.eq_zero_iff_range_eq_bot`
 * `Representation.IntertwiningMap.surjective_iff_range_eq_top`
 * `Subrepresentation.subtype`
@@ -155,6 +157,12 @@ instance instIsModularLattice {A W : Type*} [Ring A] [AddCommGroup W] [Module A 
 /-- The action on a subrepresentation is the restriction of the original action. -/
 theorem toRepresentation_apply (S : Subrepresentation ρ) (g : G) :
     S.toRepresentation g = (ρ g).restrict (S.apply_mem_toSubmodule g) :=
+  rfl
+
+/-- The action on a subrepresentation coerces to the original action. -/
+@[simp]
+theorem coe_toRepresentation_apply (S : Subrepresentation ρ) (g : G) (v : S.toSubmodule) :
+    (S.toRepresentation g v : W) = ρ g v :=
   rfl
 
 /-- An intertwining map is zero exactly when its range is the bottom subrepresentation. -/
