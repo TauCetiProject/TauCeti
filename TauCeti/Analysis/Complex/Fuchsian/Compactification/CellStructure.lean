@@ -67,7 +67,8 @@ local notation "π" => (Quotient.mk'' : ℍ → orbitRel.Quotient Γ ℍ)
 
 variable (P Γ) in
 private def finiteVertexOrbits : Set Γ.CompactifiedQuotient :=
-  range fun j : {i : Fin n // (P.vertex i).isLeft} ↦ ofQuotient (π ((P.vertex j).getLeft j.2))
+  range fun j : {i : Fin n // (P.vertex i).isLeft} ↦
+    ofQuotient (π ((P.vertex j).getLeft j.property))
 
 variable (Γ) in
 private def midpointOrbits : Set Γ.CompactifiedQuotient :=
@@ -91,7 +92,7 @@ private theorem natCard_zeroCells :
   have hd₁ : Disjoint (finiteVertexOrbits P Γ) (σ.midpointOrbits Γ) := by
     rw [disjoint_left]; rintro _ ⟨j, rfl⟩ ⟨i, hi⟩
     exact σ.quotientMk_vertex_ne_selfPairedSideFixedPoint hmap hdisj
-      (Sum.inl_getLeft _ j.2).symm i (ofQuotient_injective hi.symm)
+      (Sum.inl_getLeft _ j.property).symm i (ofQuotient_injective hi.symm)
   have hd₂ : Disjoint (finiteVertexOrbits P Γ ∪ σ.midpointOrbits Γ) (range (ofCusp (Γ := Γ))) := by
     rw [disjoint_left]; rintro _ (⟨j, rfl⟩ | ⟨i, rfl⟩) ⟨C, hC⟩ <;> cases hC
   rw [zeroCells, Nat.card_coe_set_eq,
@@ -100,7 +101,7 @@ private theorem natCard_zeroCells :
     ← Nat.card_coe_set_eq, ← Nat.card_coe_set_eq, ← Nat.card_coe_set_eq]
   have hV : Nat.card (finiteVertexOrbits P Γ) = Nat.card σ.FiniteVertexCycle := by
     have hfv : finiteVertexOrbits P Γ = ofQuotient '' range
-        (fun j : {i : Fin n // (P.vertex i).isLeft} ↦ π ((P.vertex j).getLeft j.2)) := by
+        (fun j : {i : Fin n // (P.vertex i).isLeft} ↦ π ((P.vertex j).getLeft j.property)) := by
       ext; simp [finiteVertexOrbits]
     rw [hfv, Nat.card_image_of_injective ofQuotient_injective,
       Nat.card_congr (σ.finiteVertexCycleEquiv hmap hdisj)]
@@ -116,12 +117,12 @@ private theorem ofQuotient_mk_edgeArc_notMem_zeroCells {i : Fin n} {u : ℝ} (hu
     ofQuotient (π (σ.edgeArc i u)) ∉ σ.zeroCells Γ := by
   rintro ((⟨j, hj⟩ | ⟨j, hj⟩) | ⟨C, hC⟩)
   · obtain ⟨k, hk⟩ := σ.exists_vertex_eq_inl_of_quotientMk_eq hmap hdisj
-      (Sum.inl_getLeft _ j.2).symm (P.side_subset_carrier i (σ.edgeArc_mem_side i hu))
+      (Sum.inl_getLeft _ j.property).symm (P.side_subset_carrier i (σ.edgeArc_mem_side i hu))
       (ofQuotient_injective hj.symm)
     exact σ.vertex_ne_inl_edgeArc i hu k hk
   · rcases σ.eq_or_eq_map_smul_of_quotientMk_eq (hmap i) hdisj (σ.edgeArc_mem_side i hu)
         (σ.vertex_ne_inl_edgeArc i hu i) (σ.vertex_ne_inl_edgeArc i hu (i + 1))
-        (P.side_subset_carrier j.1 (σ.selfPairedSideFixedPoint_spec j).1)
+        (P.side_subset_carrier j.val (σ.selfPairedSideFixedPoint_spec j).1)
         (ofQuotient_injective hj) with heq | heq
     exacts [σ.edgeArc_ne_selfPairedSideFixedPoint i hu j heq.symm,
       σ.map_smul_edgeArc_ne_selfPairedSideFixedPoint i hu j heq.symm]
@@ -214,8 +215,8 @@ private theorem disjoint_image_edgeMap_ball {i j : σ.SideRepresentative} (hij :
       (σ.vertex_ne_inl_edgeArc j hv j) (σ.vertex_ne_inl_edgeArc j hv (j + 1))
       (ofQuotient_injective h) with ⟨heq, -⟩ | ⟨heq, -⟩
   · exact hij (Subtype.ext heq.symm)
-  · have hj := j.2; rw [heq, σ.pair_pair] at hj
-    exact hij (Subtype.ext (heq.trans (le_antisymm hj i.2)).symm)
+  · have hj := j.property; rw [heq, σ.pair_pair] at hj
+    exact hij (Subtype.ext (heq.trans (le_antisymm hj i.property)).symm)
 
 private theorem continuousOn_edgeMap [DiscreteTopology Γ] (i : Fin n) :
     ContinuousOn (σ.edgeMap hmap hlf i) (closedBall 0 1) := by
@@ -243,7 +244,7 @@ private theorem continuousOn_edgeMap [DiscreteTopology Γ] (i : Fin n) :
       · obtain ⟨D, hcell, hgη⟩ := σ.exists_cuspDatum_vertexZeroCell hmap hlf hq'
         rw [hcell]; exact (tendsto_ofQuotient_quotientMk_nhds_ofCusp D).comp
           (σ.tendsto_edgeArc_one_atImInfty_of_eq_inr hi hq' hgη)
-  refine (continuousOn_Icc_extendIoo hlt (hq.comp_continuousOn (σ.continuousOn_edgeArc i))
+  refine (continuousOn_Icc_extendIoo (hq.comp_continuousOn (σ.continuousOn_edgeArc i))
     hl hr).comp (continuous_apply 0).continuousOn fun _ hx ↦ ?_
   rw [Pi.mem_closedBall_unique, Fin.default_eq_zero, Pi.zero_apply, Real.closedBall_eq_Icc,
     zero_sub, zero_add] at hx
@@ -298,7 +299,7 @@ private def faceEquiv :
 private def facePoint :
     P.carrier ⊕ {i : Fin n // (P.vertex i).isRight} → Γ.CompactifiedQuotient
   | .inl z => ofQuotient (π z)
-  | .inr i => σ.vertexZeroCell hmap hlf i.1
+  | .inr i => σ.vertexZeroCell hmap hlf i.val
 
 open scoped Classical in
 private def faceMap (x : Fin 2 → ℝ) : Γ.CompactifiedQuotient :=
@@ -307,7 +308,7 @@ private def faceMap (x : Fin 2 → ℝ) : Γ.CompactifiedQuotient :=
 
 private theorem faceMap_of_mem (x : closedBall (0 : Fin 2 → ℝ) 1) :
     σ.faceMap hmap hlf x = σ.facePoint hmap hlf (faceEquiv P x) := by
-  rw [faceMap, dite_eq_left x.2]
+  rw [faceMap, dite_eq_left x.property]
 
 private theorem diskEquiv_faceEquiv (x : closedBall (0 : Fin 2 → ℝ) 1) :
     diskEquiv P (faceEquiv P x) = diskHomeo x := by simp [faceEquiv]
@@ -356,7 +357,7 @@ private theorem injOn_faceMap : InjOn (σ.faceMap hmap hlf) (ball 0 1) := by
   obtain ⟨zy, hzy, -⟩ := exists_faceEquiv_eq_inl_of_mem_ball (P := P) hy
   rw [σ.faceMap_of_mem hmap hlf ⟨x, ball_subset_closedBall hx⟩,
     σ.faceMap_of_mem hmap hlf ⟨y, ball_subset_closedBall hy⟩, hzx, hzy, facePoint, facePoint] at h
-  have hz_eq := P.eq_of_quotientMk_eq_of_mem_interior hdisj hzx_int zy.2
+  have hz_eq := P.eq_of_quotientMk_eq_of_mem_interior hdisj hzx_int zy.property
     (ofQuotient_injective h).symm
   have hfe : faceEquiv P ⟨x, ball_subset_closedBall hx⟩ =
       faceEquiv P ⟨y, ball_subset_closedBall hy⟩ := by rw [hzx, hzy, Subtype.ext hz_eq.symm]
@@ -374,7 +375,7 @@ private theorem faceMap_mem_zeroCells_or_edgeMap_of_mem_sphere {x : Fin 2 → �
       rw [← he, diskEquiv_faceEquiv]; exact (diskHomeo_mem_sphere_iff xc).2 hx
     obtain ⟨j, hj⟩ := (hsphere_inl z).1 hs
     exact σ.mem_zeroCells_or_exists_edgeMap_of_mem_side hmap hlf hj
-  · exact Or.inl (σ.vertexZeroCell_mem_zeroCells hmap hlf i.1)
+  · exact Or.inl (σ.vertexZeroCell_mem_zeroCells hmap hlf i.val)
 
 private theorem continuousOn_faceMap [DiscreteTopology Γ] :
     ContinuousOn (σ.faceMap hmap hlf) (closedBall 0 1) := by
@@ -399,8 +400,8 @@ private theorem continuousOn_faceMap [DiscreteTopology Γ] :
       congrFun hcomp z₀
     rw [hcomp, hval]
     exact (continuous_ofQuotient.comp
-      (continuous_quotient_mk'.comp continuous_subtype_val)).tendsto z₀
-  · obtain ⟨ξ, hξ⟩ := Sum.isRight_iff.1 i.2
+      (continuous_quotient_mk'.comp continuous_subtypeVal)).tendsto z₀
+  · obtain ⟨ξ, hξ⟩ := Sum.isRight_iff.1 i.property
     obtain ⟨D, hcell, hgξ⟩ := σ.exists_cuspDatum_vertexZeroCell hmap hlf hξ
     rw [ContinuousAt, hx₀, facePoint, hcell]
     refine (nhds_basis_cuspNhd D 0).tendsto_right_iff.2 fun A _ ↦ ?_
@@ -425,13 +426,13 @@ private abbrev Cell : ℕ → Type
   | _ + 3 => PEmpty
 
 private def cellMap : (m : ℕ) → σ.Cell Γ m → PartialEquiv (Fin m → ℝ) Γ.CompactifiedQuotient
-  | 0, q => .single 0 q.1
+  | 0, q => .single 0 q.val
   | 1, i => InjOn.toPartialEquiv _ _ (σ.injOn_edgeMap hmap hlf hdisj i)
   | 2, _ => InjOn.toPartialEquiv _ _ (σ.injOn_faceMap hmap hlf hdisj)
   | _ + 3, i => PEmpty.elim i
 
 private theorem image_cellMap_zero (q : σ.Cell Γ 0) {s : Set (Fin 0 → ℝ)} (hs : s.Nonempty) :
-    σ.cellMap hmap hlf hdisj 0 q '' s = {q.1} := hs.image_const _
+    σ.cellMap hmap hlf hdisj 0 q '' s = {q.val} := hs.image_const _
 
 private theorem coe_cellMap_one (i : σ.Cell Γ 1) :
     ⇑(σ.cellMap hmap hlf hdisj 1 i) = σ.edgeMap hmap hlf i := rfl
@@ -446,7 +447,8 @@ private theorem zeroCell_notMem_image_faceMap_ball {q : Γ.CompactifiedQuotient}
   rcases hq with (⟨j, rfl⟩ | ⟨i, rfl⟩) | ⟨C, rfl⟩
   · rintro ⟨_, hmem, heq⟩
     exact P.quotientMk_notMem_image_interior_of_mem_frontier hdisj
-      (P.side_subset_frontier_carrier j (P.mem_side_of_vertex_eq_inl (Sum.inl_getLeft _ j.2).symm))
+      (P.side_subset_frontier_carrier j
+        (P.mem_side_of_vertex_eq_inl (Sum.inl_getLeft _ j.property).symm))
       (ofQuotient_injective heq ▸ hmem)
   · rintro ⟨_, hmem, heq⟩
     exact P.quotientMk_notMem_image_interior_of_mem_frontier hdisj
@@ -462,17 +464,17 @@ private theorem pairwiseDisjoint_cellMap :
       (σ.cellMap hmap hlf hdisj 0 q '' ball 0 1) (σ.cellMap hmap hlf hdisj 1 i '' ball 0 1) := by
     rw [σ.image_cellMap_zero hmap hlf hdisj q hb0, coe_cellMap_one, σ.image_edgeMap_ball,
       disjoint_singleton_left]
-    rintro ⟨u, hu, h⟩; exact σ.ofQuotient_mk_edgeArc_notMem_zeroCells hmap hdisj hu (h ▸ q.2)
+    rintro ⟨u, hu, h⟩; exact σ.ofQuotient_mk_edgeArc_notMem_zeroCells hmap hdisj hu (h ▸ q.property)
   have h02 (q : σ.Cell Γ 0) (i : σ.Cell Γ 2) : Disjoint
       (σ.cellMap hmap hlf hdisj 0 q '' ball 0 1) (σ.cellMap hmap hlf hdisj 2 i '' ball 0 1) := by
     rw [σ.image_cellMap_zero hmap hlf hdisj q hb0, coe_cellMap_two, disjoint_singleton_left]
-    exact σ.zeroCell_notMem_image_faceMap_ball hmap hlf hdisj q.2
+    exact σ.zeroCell_notMem_image_faceMap_ball hmap hlf hdisj q.property
   have h12 (i : σ.Cell Γ 1) (k : σ.Cell Γ 2) : Disjoint
       (σ.cellMap hmap hlf hdisj 1 i '' ball 0 1) (σ.cellMap hmap hlf hdisj 2 k '' ball 0 1) := by
     rw [coe_cellMap_one, coe_cellMap_two, σ.image_edgeMap_ball, σ.image_faceMap_ball, disjoint_left]
     rintro _ ⟨u, hu, rfl⟩ ⟨_, hmem, heq⟩
     exact P.quotientMk_notMem_image_interior_of_mem_frontier hdisj
-      (P.side_subset_frontier_carrier i.1 (σ.edgeArc_mem_side i.1 hu))
+      (P.side_subset_frontier_carrier i.val (σ.edgeArc_mem_side i.val hu))
       (ofQuotient_injective heq ▸ hmem)
   rintro ⟨m, c⟩ - ⟨m', c'⟩ - hne
   match m, c, m', c' with
@@ -518,7 +520,7 @@ private theorem iUnion_image_cellMap :
     obtain ⟨γ, z, hz, rfl⟩ :=
       mem_iUnion.1 ((σ.iUnion_smul_carrier_eq_univ hmap hlf).symm ▸ mem_univ w)
     let u := (faceEquiv P).symm (.inl ⟨z, hz⟩)
-    refine mem_iUnion₂.2 ⟨2, ⟨⟩, u, u.2, ?_⟩
+    refine mem_iUnion₂.2 ⟨2, ⟨⟩, u, u.property, ?_⟩
     rw [coe_cellMap_two, σ.faceMap_of_mem hmap hlf u, Equiv.apply_symm_apply]
     exact congrArg ofQuotient (Quotient.sound (mem_orbit z γ)).symm
 
@@ -547,7 +549,7 @@ private theorem continuousOn_cellMap_symm :
     · rw [σ.image_edgeMap_ball] at hi; obtain ⟨u, hu, hu_eq⟩ := hi
       rw [← hu_eq, σ.image_faceMap_ball] at hmem; obtain ⟨_, hint, heq⟩ := hmem
       exact P.quotientMk_notMem_image_interior_of_mem_frontier hdisj
-        (P.side_subset_frontier_carrier i.1 (σ.edgeArc_mem_side i.1 hu))
+        (P.side_subset_frontier_carrier i.val (σ.edgeArc_mem_side i.val hu))
         (ofQuotient_injective heq ▸ hint)
   | _ + 3, i => PEmpty.elim i
 

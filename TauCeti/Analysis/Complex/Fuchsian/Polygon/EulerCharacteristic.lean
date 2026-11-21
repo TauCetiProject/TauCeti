@@ -227,7 +227,7 @@ private theorem half_mem_Ioo (i : Fin n) : sideLength P i / 2 ∈ Ioo 0 (sideLen
 /-- The fixed point of a self-paired side is its midpoint. -/
 private theorem selfPairedSideFixedPoint_eq_sideLine (i : {i : Fin n // σ.pair i = i}) :
     σ.selfPairedSideFixedPoint i = sideLine P i (sideLength P i / 2) :=
-  σ.selfPairedSideFixedPoint_eq i (by rw [map_smul_sideLine_of_pair_eq σ i.2, sub_half])
+  σ.selfPairedSideFixedPoint_eq i (by rw [map_smul_sideLine_of_pair_eq σ i.property, sub_half])
 
 include hmap hdisj in
 /-- No point strictly inside an edge is a `0`-cell. -/
@@ -271,7 +271,8 @@ private theorem natCard_zeroCells :
     Nat.card (σ.zeroCells Γ) =
       Nat.card σ.FiniteVertexCycle + Nat.card {i : Fin n // σ.pair i = i} := by
   have hV : vertexOrbits P Γ = range fun j : {i : Fin n // (P.toConvexPolygon.vertex i).isLeft} ↦
-      (Quotient.mk'' ((P.toConvexPolygon.vertex j).getLeft j.2) : orbitRel.Quotient Γ ℍ) := by
+      (Quotient.mk'' ((P.toConvexPolygon.vertex j).getLeft j.property) : orbitRel.Quotient Γ ℍ)
+          := by
     ext q
     simp [vertexOrbits]
   rw [zeroCells, Nat.card_coe_set_eq, ncard_union_eq (σ.disjoint_vertexOrbits_midpointOrbits
@@ -398,9 +399,9 @@ private theorem disjoint_image_edgeMap_ball {i j : σ.SideRepresentative} (hij :
       (vertex_ne_sideLine ht' j) (vertex_ne_sideLine ht' (j + 1)) h with
     ⟨h, -⟩ | ⟨h, -⟩
   · exact hij (Subtype.ext h.symm)
-  · have hj := j.2
+  · have hj := j.property
     rw [h, σ.pair_pair] at hj
-    exact hij (Subtype.ext (h.trans (le_antisymm hj i.2)).symm)
+    exact hij (Subtype.ext (h.trans (le_antisymm hj i.property)).symm)
 
 /-! ### The `2`-cell -/
 
@@ -440,11 +441,11 @@ private def faceMap (x : Fin 2 → ℝ) : orbitRel.Quotient Γ ℍ :=
 
 private theorem faceMap_of_mem (x : closedBall (0 : Fin 2 → ℝ) 1) :
     faceMap (P := P) Γ x = π (faceHomeomorph P x) := by
-  simp [faceMap, x.2]
+  simp [faceMap, x.property]
 
 private theorem continuousOn_faceMap : ContinuousOn (faceMap (P := P) Γ) (closedBall 0 1) := by
   rw [continuousOn_iff_continuous_domRestrict]
-  exact (continuous_quotient_mk'.comp (continuous_subtype_val.comp
+  exact (continuous_quotient_mk'.comp (continuous_subtypeVal.comp
     (faceHomeomorph P).continuous)).congr fun x ↦ (faceMap_of_mem x).symm
 
 private theorem image_faceMap_ball :
@@ -470,11 +471,11 @@ private theorem image_faceMap_closedBall :
   · rintro ⟨x, hx, rfl⟩
     refine ⟨_, ?_, (faceMap_of_mem ⟨x, hx⟩).symm⟩
     rw [P.carrier_toConvexPolygon]
-    exact (faceHomeomorph P ⟨x, hx⟩).2
+    exact (faceHomeomorph P ⟨x, hx⟩).property
   · rintro ⟨z, hz, rfl⟩
     rw [P.carrier_toConvexPolygon] at hz
     set x := (faceHomeomorph P).symm ⟨z, hz⟩
-    refine ⟨x, x.2, ?_⟩
+    refine ⟨x, x.property, ?_⟩
     rw [faceMap_of_mem]
     simp [x]
 
@@ -486,7 +487,7 @@ private theorem injOn_faceMap : InjOn (faceMap (P := P) Γ) (ball 0 1) := by
   rw [faceMap_of_mem ⟨x, hx'⟩, faceMap_of_mem ⟨y, hy'⟩] at h
   have := P.toConvexPolygon.eq_of_quotientMk_eq_of_mem_interior hdisj
     ((faceHomeomorph_mem_interior_iff ⟨x, hx'⟩).2 hx)
-    (by rw [P.carrier_toConvexPolygon]; exact (faceHomeomorph P ⟨y, hy'⟩).2) h.symm
+    (by rw [P.carrier_toConvexPolygon]; exact (faceHomeomorph P ⟨y, hy'⟩).property) h.symm
   exact (congrArg Subtype.val ((faceHomeomorph P).injective (Subtype.ext this))).symm
 
 /-! ### Disjointness of the open cells -/
@@ -512,7 +513,7 @@ private abbrev Cell : ℕ → Type
 
 /-- The characteristic maps of the cells of the quotient. -/
 private def cellMap : (m : ℕ) → σ.Cell Γ m → PartialEquiv (Fin m → ℝ) (orbitRel.Quotient Γ ℍ)
-  | 0, q => .single 0 q.1
+  | 0, q => .single 0 q.val
   | 1, i => InjOn.toPartialEquiv _ _ (σ.injOn_edgeMap hmap hdisj i)
   | 2, _ => InjOn.toPartialEquiv _ _ (injOn_faceMap (P := P) hdisj)
   | _ + 3, i => PEmpty.elim i
@@ -520,7 +521,7 @@ private def cellMap : (m : ℕ) → σ.Cell Γ m → PartialEquiv (Fin m → ℝ
 section CellMap
 
 private theorem image_cellMap_zero (q : σ.Cell Γ 0) {s : Set (Fin 0 → ℝ)} (hs : s.Nonempty) :
-    σ.cellMap hmap hdisj 0 q '' s = {q.1} :=
+    σ.cellMap hmap hdisj 0 q '' s = {q.val} :=
   hs.image_const _
 
 private theorem coe_cellMap_one (i : σ.Cell Γ 1) :
@@ -542,13 +543,13 @@ private theorem pairwiseDisjoint_cellMap :
       disjoint_singleton_left]
     rintro ⟨t, ht, h⟩
     dsimp only at h
-    exact σ.mk_sideLine_notMem_zeroCells hmap hdisj ht (h ▸ q.2)
+    exact σ.mk_sideLine_notMem_zeroCells hmap hdisj ht (h ▸ q.property)
   -- the open face misses the `0`-cells
   have h02 (q : σ.Cell Γ 0) (i : σ.Cell Γ 2) :
       Disjoint (σ.cellMap hmap hdisj 0 q '' ball 0 1) (σ.cellMap hmap hdisj 2 i '' ball 0 1) := by
     rw [image_cellMap_zero _ _ _ _ (hb 0), coe_cellMap_two, image_faceMap_ball,
       disjoint_singleton_left]
-    obtain ⟨j, z, hz, hq⟩ := σ.exists_mem_side_of_mem_zeroCells q.2
+    obtain ⟨j, z, hz, hq⟩ := σ.exists_mem_side_of_mem_zeroCells q.property
     exact hq ▸ P.toConvexPolygon.quotientMk_notMem_image_interior_of_mem_frontier hdisj
       (P.toConvexPolygon.side_subset_frontier_carrier j hz)
   -- the open face misses the open edges
@@ -557,7 +558,7 @@ private theorem pairwiseDisjoint_cellMap :
     rw [coe_cellMap_one, coe_cellMap_two, image_edgeMap_ball, image_faceMap_ball, disjoint_left]
     rintro _ ⟨t, ht, rfl⟩
     exact P.toConvexPolygon.quotientMk_notMem_image_interior_of_mem_frontier hdisj
-      (P.toConvexPolygon.side_subset_frontier_carrier i.1
+      (P.toConvexPolygon.side_subset_frontier_carrier i.val
         (sideLine_mem_side (σ.Icc_edgeLength_subset i (Ioo_subset_Icc_self ht))))
   rintro ⟨m, c⟩ - ⟨m', c'⟩ - hne
   match m, c, m', c' with

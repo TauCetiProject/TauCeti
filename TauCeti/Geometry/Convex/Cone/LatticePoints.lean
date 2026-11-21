@@ -16,7 +16,9 @@ particular, when a positive multiple of a primitive vector lies in the cone,
 the primitive vector itself lies in the cone. These statements require neither
 rationality nor salience, and the additive map need not be injective.
 The monoid construction allows ordered semirings; the positive-multiple
-characterizations use an ordered field.
+characterizations use an ordered field. In addition, over any ordered semiring,
+the pointed cone hull of the image of `AddSubmonoid.closure s` along an additive
+homomorphism coincides with that of the image of `s`.
 
 Adapted from `Mei/Geometry/Convex/Cone/LatticePoints.lean` in
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), commit
@@ -80,3 +82,19 @@ theorem zsmul_mem_latticePoints_iff {G U : Type*} [AddCommGroup G]
   exact σ.smul_mem_iff (by exact_mod_cast ha)
 
 end PointedCone
+
+namespace AddMonoidHom
+
+open PointedCone
+
+/-- Over an ordered semiring `R`, the pointed cone hull of the image of `AddSubmonoid.closure s`
+agrees with that of `i '' s`. -/
+@[simp]
+theorem hull_image_coe_addSubmonoid_closure {R N V : Type*} [Semiring R] [PartialOrder R]
+    [IsOrderedRing R] [AddCommMonoid N] [AddCommMonoid V] [Module R V]
+    (i : N →+ V) (s : Set N) :
+    hull R (i '' (AddSubmonoid.closure s : Set N)) = hull R (i '' s) := by
+  rw [← AddSubmonoid.coe_map, AddMonoidHom.map_mclosure]
+  exact Submodule.span_closure
+
+end AddMonoidHom

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.HeatKernel.HeatEquation
-import TauCeti.Analysis.Calculus.ParametricIntegral
+import TauCeti.Analysis.Calculus.ParametricIntegral.Basic
 import TauCeti.Analysis.PDE.HeatKernel.ApproximateIdentity
 import TauCeti.Analysis.PDE.HeatKernel.Derivatives
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
@@ -213,7 +213,7 @@ theorem exists_stronglyMeasurable_eq_iteratedFDeriv_heatKernel_convolution
   rw [iteratedFDeriv_heatKernel_convolution (g := f s) hτ
     (hf.comp_measurable measurable_prodMk_left).aestronglyMeasurable hB m x]
   refine integral_congr_ae (ae_of_all _ fun z => ?_)
-  simp only [Ψ, iteratedFDeriv_heatKernel_eq_rpow_smul hτ]
+  simp only [Ψ, iteratedFDeriv_heatKernel_eq_rpow_smul hτ.le]
 
 /-- For jointly measurable essentially bounded `f`, the spatial derivatives
 `D^m (K_{t-s} ⋆ f(s, ·))(x)` are measurable in `s`. -/
@@ -686,7 +686,7 @@ private theorem exists_norm_iteratedFDeriv_two_heatDuhamelPotential_sub_le {α :
       2 / (2 - α) * K * H * h ^ ((α : ℝ) / 2) := by
     simpa only [mul_assoc, ← hh_def, show 2 * t' - t = t' - h by rw [hh_def]; ring] using
       norm_integral_le_of_ae_norm_le_mul_sub_rpow (A := K * H)
-        (by positivity) hh hbig hα₂' (hK hfM hH htt' |>.mono fun s hs hsI => hs hsI x)
+        hh hbig hα₂' (hK hfM hH htt' |>.mono fun s hs hsI => hs hsI x)
   have hb := norm_intervalIntegral_sub_le_of_sub_le (c := C₁ * H) (β := (α : ℝ) / 2)
     (mul_nonneg hC₁₀ H.coe_nonneg) (by positivity) (by linarith) hs₀ htt'.le (hint ht le_rfl)
     (hint (by linarith) htt'.le) hfar

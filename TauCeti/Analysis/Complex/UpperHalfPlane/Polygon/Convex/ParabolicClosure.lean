@@ -222,14 +222,14 @@ section Normalized
 variable (P : ConvexPolygon n) (h₀ : PSL(2, ℝ))
   (hQne : ∀ j, (h₀ • P).vertex j ≠ .inr ∞)
   (x : {i : Fin n // (P.vertex i).isRight} → ℝ)
-  (hx : ∀ i, (h₀ • P).vertex i.1 = .inr (x i : OnePoint ℝ))
+  (hx : ∀ i, (h₀ • P).vertex i.val = .inr (x i : OnePoint ℝ))
 
 private def equivClosureParabolaMapImage :
     P.carrier ⊕ {i : Fin n // (P.vertex i).isRight} ≃
       closure (parabolaMap '' (h₀ • P).carrier) := by
   set Q := h₀ • P
   let toCls : P.carrier ⊕ {i : Fin n // (P.vertex i).isRight} → closure (parabolaMap '' Q.carrier)
-    | .inl z => ⟨parabolaMap (h₀ • (z : ℍ)), subset_closure ⟨h₀ • z, by simp [Q, z.2], rfl⟩⟩
+    | .inl z => ⟨parabolaMap (h₀ • (z : ℍ)), subset_closure ⟨h₀ • z, by simp [Q, z.property], rfl⟩⟩
     | .inr i => ⟨⟨x i, (x i) ^ 2⟩, mk_sq_mem_closure_parabolaMap_image_carrier (hx i)⟩
   refine Equiv.ofBijective toCls ⟨?_, ?_⟩
   · rintro (z₁ | i₁) (z₂ | i₂) h
@@ -287,7 +287,7 @@ private theorem isOpenEmbedding_equivClosureParabolaMapImage_inl :
         Subtype.ext ?_⟩
       rw [coe_equivClosureParabolaMapImage_inl, smul_inv_smul]
   rw [hrange]
-  exact hf.isOpen_range.preimage continuous_subtype_val
+  exact hf.isOpen_range.preimage continuous_subtypeVal
 
 private theorem eventually_horodisc_of_equivClosureParabolaMapImage
     {Y : Type*} [TopologicalSpace Y] [T1Space Y]
@@ -301,23 +301,23 @@ private theorem eventually_horodisc_of_equivClosureParabolaMapImage
   let Q := h₀ • P; let eCls := equivClosureParabolaMapImage P h₀ hQne x hx
   let e := eCls.trans φCls.toEquiv
   obtain ⟨gQ, hgQ⟩ := exists_smul_vertex_eq_infty Q
-  let g' : Fin n → PSL(2, ℝ) := Function.update gQ i.1 (g * h₀⁻¹)
+  let g' : Fin n → PSL(2, ℝ) := Function.update gQ i.val (g * h₀⁻¹)
   have hg' (j : Fin n) (η : OnePoint ℝ) (hj : Q.vertex j = .inr η) : g' j • η = ∞ := by
-    by_cases hji : j = i.1
+    by_cases hji : j = i.val
     · subst hji
       have hη : η = h₀ • ξ := Sum.inr.inj (hj.symm.trans (by simp [Q, hξ]))
       simp [g', hη, mul_smul, hgξ]
     · simpa [g', hji] using hgQ j η hj
-  let A : Fin n → ℝ := Function.update (fun _ ↦ (1 : ℝ)) i.1 (max B 1)
+  let A : Fin n → ℝ := Function.update (fun _ ↦ (1 : ℝ)) i.val (max B 1)
   have hA (j : Fin n) (hj : Q.vertex j ≠ .inr (x i : OnePoint ℝ)) : 1 ≤ A j := by
-    by_cases hji : j = i.1
+    by_cases hji : j = i.val
     · exact (hj (hji ▸ hx i)).elim
     · simp [A, hji]
   have hval_i : (φCls.symm (e (.inr i)) : ℂ) = ⟨x i, (x i) ^ 2⟩ := by
     rw [Equiv.trans_apply, Homeomorph.coe_toEquiv, φCls.symm_apply_apply,
       coe_equivClosureParabolaMapImage_inr]
   have hpull : Tendsto (fun u : Y ↦ (φCls.symm u : ℂ)) (𝓝 (e (.inr i))) (𝓝 ⟨x i, (x i) ^ 2⟩) :=
-    hval_i ▸ continuous_subtype_val.continuousAt.comp (φCls.symm.continuous.tendsto _)
+    hval_i ▸ continuous_subtypeVal.continuousAt.comp (φCls.symm.continuous.tendsto _)
   have hsep : ∀ᶠ u in 𝓝 (e (.inr i)),
       ∀ j : {k : Fin n // (P.vertex k).isRight}, j ≠ i → u ≠ e (.inr j) :=
     Filter.eventually_all.2 fun j ↦ by
@@ -334,8 +334,8 @@ private theorem eventually_horodisc_of_equivClosureParabolaMapImage
       have hval_z : (φCls.symm u : ℂ) = parabolaMap (h₀ • (z : ℍ)) := by
         rw [← huz, Equiv.trans_apply, Homeomorph.coe_toEquiv, φCls.symm_apply_apply,
           coe_equivClosureParabolaMapImage_inl]
-      obtain ⟨k, hk, hAk⟩ := hu (h₀ • z) (by simp [z.2]) hval_z.symm
-      obtain rfl : k = i.1 := Q.vertex_injective (hk.trans (hx i).symm)
+      obtain ⟨k, hk, hAk⟩ := hu (h₀ • z) (by simp [z.property]) hval_z.symm
+      obtain rfl : k = i.val := Q.vertex_injective (hk.trans (hx i).symm)
       simp only [A, g', Function.update_self, mul_smul, inv_smul_smul] at hAk
       exact Or.inr ⟨z, huz, (le_max_left B 1).trans_lt hAk⟩
     · have huj : u = e (.inr j) := by rw [← hsurj, e.apply_symm_apply]
@@ -370,10 +370,10 @@ theorem exists_equiv_closedBall (P : ConvexPolygon n) :
       ((Q.nonempty_interior_carrier.image parabolaMap).mono (hf.isOpenMap.image_interior_subset _))
       hbdd
   have hideal (i : {i : Fin n // (P.vertex i).isRight}) :
-      ∃ x : ℝ, Q.vertex i.1 = .inr (x : OnePoint ℝ) := by
-    obtain ⟨ξ, hξ⟩ := Sum.isRight_iff.1 i.2
-    have hQξ : Q.vertex i.1 = .inr (h₀ • ξ) := by simp [Q, hξ]
-    obtain ⟨x, hx⟩ := OnePoint.ne_infty_iff_exists.1 fun h ↦ hQne i.1 (hQξ.trans (congrArg _ h))
+      ∃ x : ℝ, Q.vertex i.val = .inr (x : OnePoint ℝ) := by
+    obtain ⟨ξ, hξ⟩ := Sum.isRight_iff.1 i.property
+    have hQξ : Q.vertex i.val = .inr (h₀ • ξ) := by simp [Q, hξ]
+    obtain ⟨x, hx⟩ := OnePoint.ne_infty_iff_exists.1 fun h ↦ hQne i.val (hQξ.trans (congrArg _ h))
     exact ⟨x, hQξ.trans (congrArg _ hx.symm)⟩
   choose x hx using hideal
   let φCls : closure s ≃ₜ closedBall (0 : ℂ) 1 :=

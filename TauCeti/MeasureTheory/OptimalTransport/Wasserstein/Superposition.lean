@@ -177,9 +177,9 @@ private theorem exists_map_IccExtend_eq_lintegral_curveAction_eq_of_normedSpace 
       (ae_of_all _ fun γ ↦ γ.continuous)
   have hcont_μ : Continuous fun t : Icc a b ↦ (μ t : ProbabilityMeasure E) :=
     WassersteinSpace.continuous_toProbabilityMeasure.comp
-      (hμ.continuousOn'.comp_continuous continuous_subtype_val fun t ↦ by
+      (hμ.continuousOn'.comp_continuous continuous_subtypeVal fun t ↦ by
         rw [uIcc_of_le hab.le]
-        exact t.2)
+        exact t.property)
   have hmarg (t : ℝ) (ht : t ∈ Icc a b) :
       (ηlim : Measure C(Icc a b, E)).map (fun γ : C(Icc a b, E) ↦ IccExtend hab.le γ t) =
         ((μ t : ProbabilityMeasure E) : Measure E) := by
@@ -235,7 +235,7 @@ theorem exists_map_IccExtend_eq_lintegral_curveAction_eq (hp1 : 1 < p) (hp : p �
   have hD (t : Icc a b) : ∀ᵐ γ ∂η, γ t ∈ range ι := by
     have := ae_map_mem_range hιm.measurableSet_range hιm.measurable.aemeasurable
       (μ := ((μ t : ProbabilityMeasure X) : Measure X))
-    rw [← hιWμ, ← hηmarg t t.2] at this
+    rw [← hιWμ, ← hηmarg t t.property] at this
     filter_upwards [ae_of_ae_map (measurable_IccExtend_apply hab.le _).aemeasurable this]
       with γ hγ
     rwa [IccExtend_val] at hγ

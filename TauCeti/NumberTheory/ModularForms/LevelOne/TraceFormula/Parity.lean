@@ -69,12 +69,13 @@ variable {n : ℤ}
 /-- The conjugate `ε A ε` of a determinant-`n` matrix `A = (a b; c d)` by the parity matrix
 `ε = !![-1, 0; 0, 1]`: the matrix `(a -b; -c d)`, again of determinant `n`. -/
 def TraceFormulaMatrix.parityConj (A : TraceFormulaMatrix n) : TraceFormulaMatrix n :=
-  ⟨!![-1, 0; 0, 1] * A.1 * !![-1, 0; 0, 1], by rw [det_mul, det_mul, A.2, det_fin_two_of]; ring⟩
+  ⟨!![-1, 0; 0, 1] * A.val * !![-1, 0; 0, 1],
+      by rw [det_mul, det_mul, A.property, det_fin_two_of]; ring⟩
 
 /-- The underlying matrix of `TraceFormulaMatrix.parityConj A` is `ε A ε`. -/
 @[simp]
 theorem TraceFormulaMatrix.val_parityConj (A : TraceFormulaMatrix n) :
-    (TraceFormulaMatrix.parityConj A).1 = !![-1, 0; 0, 1] * A.1 * !![-1, 0; 0, 1] := (rfl)
+    (TraceFormulaMatrix.parityConj A).val = !![-1, 0; 0, 1] * A.val * !![-1, 0; 0, 1] := (rfl)
 
 /-- Conjugation by the parity matrix commutes with negation. -/
 @[simp]

@@ -312,8 +312,8 @@ theorem edgeArc_ne_selfPairedSideFixedPoint (i : Fin n) {u : ℝ} (hu : u ∈ Io
   obtain ⟨hside, -, hmid⟩ := σ.edgeArc_props i hu
   obtain ⟨hs_j, hp_j, hq_j, -⟩ := σ.selfPairedSideFixedPoint_spec j
   obtain rfl := P.eq_of_mem_side_of_mem_side hs_j hp_j hq_j (h ▸ hside)
-  rw [edgeArc, ← σ.geodesicLine_midParam j.2] at h
-  exact (hmid j.2).ne (geodesicLine_injective _ h)
+  rw [edgeArc, ← σ.geodesicLine_midParam j.property] at h
+  exact (hmid j.property).ne (geodesicLine_injective _ h)
 
 /-- No side-paired image `σ.map i • σ.edgeArc i u` (`u ∈ Ioo (-1) 1`) equals the fixed point of a
 self-paired side. -/
@@ -323,9 +323,9 @@ theorem map_smul_edgeArc_ne_selfPairedSideFixedPoint (i : Fin n) {u : ℝ} (hu :
   intro h
   obtain ⟨hside, -, hmid⟩ := σ.edgeArc_props i hu
   obtain ⟨hs_j, hp_j, hq_j, -⟩ := σ.selfPairedSideFixedPoint_spec j
-  have hj_eq : j.1 = σ.pair i :=
+  have hj_eq : j.val = σ.pair i :=
     P.eq_of_mem_side_of_mem_side hs_j hp_j hq_j (h ▸ σ.map_smul_mem_side hside)
-  have hij : j.1 = i := by have h1 := congrArg σ.pair hj_eq; rwa [j.2, σ.pair_pair] at h1
+  have hij : j.val = i := by have h1 := congrArg σ.pair hj_eq; rwa [j.property, σ.pair_pair] at h1
   have hii : σ.pair i = i := hj_eq.symm.trans hij
   have hj : j = ⟨i, hii⟩ := Subtype.ext hij
   rw [hj, ← σ.geodesicLine_midParam hii, edgeArc,
