@@ -7,6 +7,10 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Exp
 public import Mathlib.MeasureTheory.Integral.DominatedConvergence
+public import Mathlib.Analysis.Asymptotics.Defs
+public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+public import Mathlib.MeasureTheory.Function.LocallyIntegrable
+import Mathlib.Analysis.SpecialFunctions.Integrability.Basic
 
 /-!
 # Vanishing exponential damping of a half-line integral
@@ -31,13 +35,16 @@ term of the Wiener--Ikehara identity.
   `(0, ∞)`, so is the more strongly damped `e^{-xt} G(t)` for every `x ≥ σ`.
 * `TauCeti.norm_setIntegral_Ioi_exp_neg_mul_smul_le`: on `(δ, ∞)` the extra damping
   `e^{-(x-σ)t}` is at most `e^{-(x-σ)δ}`, which bounds the tail of a Laplace integral.
+* `TauCeti.integrableOn_exp_neg_mul_smul_iff`: if `q(t) = O(t^{a-1})` as `t → 0+` with `a > 0`,
+  then `e^{-σt} q(t)` is integrable on `(0, ∞)` exactly when `q` is locally integrable on
+  `(0, ∞)` and `e^{-σt} q(t)` is integrable on `(1, ∞)`.
 -/
 
 public section
 
 namespace TauCeti
 
-open Filter MeasureTheory Set
+open Asymptotics Filter MeasureTheory Set
 open scoped Topology
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {μ : Measure ℝ} {f : ℝ → E}
@@ -88,5 +95,38 @@ theorem norm_setIntegral_Ioi_exp_neg_mul_smul_le {G : ℝ → E} {σ x δ : ℝ}
   rw [norm_smul, norm_smul, Real.norm_of_nonneg (Real.exp_pos _).le,
     Real.norm_of_nonneg (Real.exp_pos _).le, ← mul_assoc, ← Real.exp_add]
   exact mul_le_mul_of_nonneg_right (Real.exp_le_exp.mpr (by nlinarith)) (norm_nonneg _)
+
+/-- The two forms of the integrability hypothesis of Watson's lemma. If `q(t) = O(t^{a-1})` as
+`t → 0+` with `a > 0`, then `t ↦ e^{-σt} q(t)` is integrable on `(0, ∞)` if and only if `q` is
+locally integrable on `(0, ∞)` and `t ↦ e^{-σt} q(t)` is integrable on `(1, ∞)`. -/
+theorem integrableOn_exp_neg_mul_smul_iff {q : ℝ → E} {a σ : ℝ} (ha : 0 < a)
+    (hq : q =O[𝓝[>] 0] fun t => t ^ (a - 1)) :
+    IntegrableOn (fun t => Real.exp (-σ * t) • q t) (Ioi 0) ↔
+      LocallyIntegrableOn q (Ioi 0) ∧ IntegrableOn (fun t => Real.exp (-σ * t) • q t) (Ioi 1) := by
+  refine ⟨fun h => ⟨?_, h.mono_set (Ioi_subset_Ioi zero_le_one)⟩, fun ⟨hloc, h1⟩ => ?_⟩
+  · refine (h.locallyIntegrableOn.continuousOn_smul isOpen_Ioi.isLocallyClosed
+      (g := fun t => Real.exp (σ * t)) (by fun_prop)).congr (Eventually.of_forall fun t => ?_)
+    simp [smul_smul, ← Real.exp_add]
+  -- `q` is integrable on `(0, b]` by the bound, and on `[b, 1]` by local integrability
+  obtain ⟨K, hK⟩ := hq.bound
+  obtain ⟨δ, hδ0, hδ⟩ := mem_nhdsGT_iff_exists_Ioc_subset.mp hK
+  set b := min δ 1
+  have hb0 : 0 < b := lt_min hδ0 one_pos
+  have hq0 : IntegrableOn q (Ioc 0 b) := by
+    refine Integrable.mono' ((intervalIntegral.intervalIntegrable_rpow'
+      (r := a - 1) (by linarith)).1.const_mul K)
+      ((hloc.aestronglyMeasurable).mono_set Ioc_subset_Ioi_self) ?_
+    filter_upwards [ae_restrict_mem measurableSet_Ioc] with t ht
+    simpa [abs_of_nonneg (Real.rpow_nonneg ht.1.le _)] using
+      hδ ⟨ht.1, ht.2.trans (min_le_left _ _)⟩
+  have hq1 : IntegrableOn q (Ioc b 1) :=
+    (hloc.integrableOn_compact_subset (t := Icc b 1) (fun t ht => hb0.trans_le ht.1)
+      isCompact_Icc).mono_set Ioc_subset_Icc_self
+  have hq01 : IntegrableOn q (Ioc 0 1) := by
+    rw [← Ioc_union_Ioc_eq_Ioc hb0.le (min_le_right _ _)]
+    exact hq0.union hq1
+  rw [← Ioc_union_Ioi_eq_Ioi zero_le_one]
+  exact (hq01.continuousOn_smul_of_subset (by fun_prop) isCompact_Icc measurableSet_Ioc
+    Ioc_subset_Icc_self).union h1
 
 end TauCeti

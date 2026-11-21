@@ -39,15 +39,14 @@ together with integrability of `e^{-σt} q(t)` on `(1, ∞)`.
 
 * `Asymptotics.isBigO_integral_exp_neg_mul_smul`: if `G(t) = O(t^{s-1})` as `t → 0+`, then
   `∫₀^∞ e^{-xt} G(t) dt = O(x^{-s})` as `x → +∞`.
-* `Asymptotics.integrableOn_exp_neg_mul_smul_iff`: the two forms of the integrability
-  hypothesis.
 * `Asymptotics.hasAsymptoticExpansion_laplace`: Watson's lemma, and
   `Asymptotics.hasAsymptoticExpansion_laplace_of_locallyIntegrableOn`, the same with the second
   form of the integrability hypothesis.
 
-The integrability of `e^{-xt} G(t)` for `x ≥ σ` and the tail bound beyond `δ` are in
-`TauCeti.MeasureTheory.Integral.Exp.Damped`, the bound near `0` through the Gamma integral in
-`TauCeti.MeasureTheory.Integral.RpowLaplace`.
+The integrability of `e^{-xt} G(t)` for `x ≥ σ`, the equivalence of the two forms of the
+integrability hypothesis (`TauCeti.integrableOn_exp_neg_mul_smul_iff`) and the tail bound beyond
+`δ` are in `TauCeti.MeasureTheory.Integral.Exp.Damped`, the bound near `0` through the Gamma
+integral in `TauCeti.MeasureTheory.Integral.RpowLaplace`.
 
 The proofs are adapted from the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>),
 file `DLMFMathlib/Analysis/Asymptotics/Watson.lean`, and generalized from exponents in steps
@@ -173,39 +172,6 @@ theorem hasAsymptoticExpansion_laplace {q : ℝ → ℂ} {α c : ℕ → ℂ} {�
     ← integral_cpow_mul_exp_neg_mul_Ioi_of_re_pos (hα s) hx', ← integral_mul_const]
   exact setIntegral_congr_fun measurableSet_Ioi fun t _ => by ring
 
-/-- The two forms of the integrability hypothesis of Watson's lemma. If `q(t) = O(t^{a-1})` as
-`t → 0+` with `a > 0`, then `t ↦ e^{-σt} q(t)` is integrable on `(0, ∞)` if and only if `q` is
-locally integrable on `(0, ∞)` and `t ↦ e^{-σt} q(t)` is integrable on `(1, ∞)`. -/
-theorem integrableOn_exp_neg_mul_smul_iff {q : ℝ → E} {a σ : ℝ} (ha : 0 < a)
-    (hq : q =O[𝓝[>] 0] fun t => t ^ (a - 1)) :
-    IntegrableOn (fun t => Real.exp (-σ * t) • q t) (Ioi 0) ↔
-      LocallyIntegrableOn q (Ioi 0) ∧ IntegrableOn (fun t => Real.exp (-σ * t) • q t) (Ioi 1) := by
-  refine ⟨fun h => ⟨?_, h.mono_set (Ioi_subset_Ioi zero_le_one)⟩, fun ⟨hloc, h1⟩ => ?_⟩
-  · refine (h.locallyIntegrableOn.continuousOn_smul isOpen_Ioi.isLocallyClosed
-      (g := fun t => Real.exp (σ * t)) (by fun_prop)).congr (Eventually.of_forall fun t => ?_)
-    simp [smul_smul, ← Real.exp_add]
-  -- `q` is integrable on `(0, b]` by the bound, and on `[b, 1]` by local integrability
-  obtain ⟨K, hK⟩ := hq.bound
-  obtain ⟨δ, hδ0, hδ⟩ := mem_nhdsGT_iff_exists_Ioc_subset.mp hK
-  set b := min δ 1
-  have hb0 : 0 < b := lt_min hδ0 one_pos
-  have hq0 : IntegrableOn q (Ioc 0 b) := by
-    refine Integrable.mono' ((intervalIntegral.intervalIntegrable_rpow'
-      (r := a - 1) (by linarith)).1.const_mul K)
-      ((hloc.aestronglyMeasurable).mono_set Ioc_subset_Ioi_self) ?_
-    filter_upwards [ae_restrict_mem measurableSet_Ioc] with t ht
-    simpa [abs_of_nonneg (Real.rpow_nonneg ht.1.le _)] using
-      hδ ⟨ht.1, ht.2.trans (min_le_left _ _)⟩
-  have hq1 : IntegrableOn q (Ioc b 1) :=
-    (hloc.integrableOn_compact_subset (t := Icc b 1) (fun t ht => hb0.trans_le ht.1)
-      isCompact_Icc).mono_set Ioc_subset_Icc_self
-  have hq01 : IntegrableOn q (Ioc 0 1) := by
-    rw [← Ioc_union_Ioc_eq_Ioc hb0.le (min_le_right _ _)]
-    exact hq0.union hq1
-  rw [← Ioc_union_Ioi_eq_Ioi zero_le_one]
-  exact (hq01.continuousOn_smul_of_subset (by fun_prop) isCompact_Icc measurableSet_Ioc
-    Ioc_subset_Icc_self).union h1
-
 /-- **Watson's lemma** with the integrability hypothesis in its second form: `q` locally
 integrable on `(0, ∞)` and `t ↦ e^{-σt} q(t)` integrable on `(1, ∞)`. -/
 theorem hasAsymptoticExpansion_laplace_of_locallyIntegrableOn {q : ℝ → ℂ} {α c : ℕ → ℂ} {σ : ℝ}
@@ -217,6 +183,6 @@ theorem hasAsymptoticExpansion_laplace_of_locallyIntegrableOn {q : ℝ → ℂ} 
       fun x : ℝ => ∫ t in Ioi (0 : ℝ), cexp (-(x * t)) * q t := by
   have hq0 : q =O[𝓝[>] 0] fun t => t ^ ((α 0).re - 1) := by simpa using hq 0
   exact hasAsymptoticExpansion_laplace hα
-    ((integrableOn_exp_neg_mul_smul_iff (hα 0) hq0).mpr ⟨hloc, hint⟩) hq
+    ((TauCeti.integrableOn_exp_neg_mul_smul_iff (hα 0) hq0).mpr ⟨hloc, hint⟩) hq
 
 end Asymptotics

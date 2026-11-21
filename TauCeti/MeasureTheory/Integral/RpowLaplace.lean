@@ -291,9 +291,8 @@ theorem integral_Ioi_exp_neg_mul_mul_exp_sub_one_add_sin {s a : ℝ}
 theorem norm_setIntegral_Ioc_exp_neg_mul_smul_le {G : ℝ → E} {s x K δ : ℝ} (hs : 0 < s)
     (hx : 0 < x) (hK : 0 ≤ K) (hGb : ∀ t ∈ Ioc 0 δ, ‖G t‖ ≤ K * t ^ (s - 1)) :
     ‖∫ t in Ioc 0 δ, Real.exp (-x * t) • G t‖ ≤ K * Real.Gamma s * x ^ (-s) := by
-  have hint : IntegrableOn (fun t : ℝ => t ^ (s - 1) * Real.exp (-(x * t))) (Ioi 0) := by
-    simpa [neg_mul] using integrableOn_rpow_mul_exp_neg_mul_rpow (p := 1) (s := s - 1) (b := x)
-      (by linarith) one_pos hx
+  have hint : IntegrableOn (fun t : ℝ => t ^ (s - 1) * Real.exp (-(x * t))) (Ioi 0) :=
+    integrableOn_rpow_mul_exp_neg_mul_Ioi hs hx
   calc ‖∫ t in Ioc 0 δ, Real.exp (-x * t) • G t‖
       ≤ ∫ t in Ioc 0 δ, K * (t ^ (s - 1) * Real.exp (-(x * t))) := by
         refine norm_integral_le_of_norm_le ((hint.mono_set Ioc_subset_Ioi_self).const_mul K) ?_
