@@ -98,23 +98,23 @@ theorem mpullback_timeDependentFlowOf_apply_eq_of_mem
       (SmoothForm.mpullback (Prod.mk (⟨u, hst hu⟩ : J)) (contMDiff_const.prodMk contMDiff_id)
         σ).IsClosed)
     (hα : ∀ u (hu : u ∈ uIcc s t), TauCeti.mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk (⟨u, hst hu⟩ : J))
-        (mlieDerivForm (fun _ ↦ ((1 : ℝ), (0 : E))) σ.1) =
+        (mlieDerivForm (fun _ ↦ ((1 : ℝ), (0 : E))) σ.val) =
       mextDeriv (SmoothForm.mpullback (Prod.mk (⟨u, hst hu⟩ : J))
-        (contMDiff_const.prodMk contMDiff_id) α).1)
+        (contMDiff_const.prodMk contMDiff_id) α).val)
     {X : ℝ → (x : M) → TangentSpace I x}
     (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 2
       (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
     (hXeq : ∀ u (hu : u ∈ uIcc s t), RoughForm.interior (X u)
         (SmoothForm.mpullback (Prod.mk (⟨u, hst hu⟩ : J)) (contMDiff_const.prodMk contMDiff_id)
-          σ).1 =
+          σ).val =
       -(SmoothForm.mpullback (Prod.mk (⟨u, hst hu⟩ : J)) (contMDiff_const.prodMk contMDiff_id)
-          α).1)
+          α).val)
     {x : M} (hx : ((s, t), x) ∈ timeDependentFlowDomain X) :
     TauCeti.mpullback I I (timeDependentFlowOf X s t)
         (SmoothForm.mpullback (Prod.mk (⟨t, hst right_mem_uIcc⟩ : J))
-          (contMDiff_const.prodMk contMDiff_id) σ).1 x =
+          (contMDiff_const.prodMk contMDiff_id) σ).val x =
       (SmoothForm.mpullback (Prod.mk (⟨s, hst left_mem_uIcc⟩ : J))
-        (contMDiff_const.prodMk contMDiff_id) σ).1 x := by
+        (contMDiff_const.prodMk contMDiff_id) σ).val x := by
   -- Read the family through a smooth map `g : ℝ → J` which is the identity near the times
   -- between `s` and `t`, so as to obtain the family `σ' = (g × id)^* σ` on `ℝ × M`.
   obtain ⟨g, hg, hgid⟩ := exists_contMDiff_eventuallyEq_id hst
@@ -122,20 +122,20 @@ theorem mpullback_timeDependentFlowOf_apply_eq_of_mem
     Subtype.ext (hgid u hu).self_of_nhds
   set σ' := SmoothForm.mpullback (Prod.map g id) (hg.prodMap contMDiff_id) σ
   have hslice {u : ℝ} (hu : u ∈ uIcc s t) :
-      TauCeti.mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk u) σ'.1 =
+      TauCeti.mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk u) σ'.val =
         (SmoothForm.mpullback (Prod.mk (⟨u, hst hu⟩ : J)) (contMDiff_const.prodMk contMDiff_id)
-          σ).1 := by
+          σ).val := by
     have h := mpullback_comp (F := ℝ) (I := I) (I' := 𝓘(ℝ, ℝ).prod I) (I'' := 𝓘(ℝ, ℝ).prod I)
       (f := Prod.mk u) (g := Prod.map g id)
       ((contMDiff_const.prodMk contMDiff_id).mdifferentiable one_ne_zero)
-      ((hg.prodMap contMDiff_id).mdifferentiable (by simp)) σ.1
+      ((hg.prodMap contMDiff_id).mdifferentiable (by simp)) σ.val
     rw [SmoothForm.coe_mpullback, SmoothForm.coe_mpullback, ← h, ← hgu hu]
     rfl
   -- Along the trajectory, the rate `ι_u^* L_{∂_t} σ' + L_{X_u} σ'_u = dα_u - dα_u` vanishes.
   have hL (u : ℝ) (hu : u ∈ uIcc s t) :
       (TauCeti.mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk u)
-          (mlieDerivForm (fun _ ↦ ((1 : ℝ), (0 : E))) σ'.1) +
-        mlieDerivForm (X u) (TauCeti.mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk u) σ'.1))
+          (mlieDerivForm (fun _ ↦ ((1 : ℝ), (0 : E))) σ'.val) +
+        mlieDerivForm (X u) (TauCeti.mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk u) σ'.val))
         (timeDependentFlowOf X s u x) = 0 := by
     have hXu : MDifferentiable I I.tangent (fun y ↦ (⟨y, X u y⟩ : TangentBundle I M)) :=
       (hX.comp (contMDiff_const.prodMk contMDiff_id)).mdifferentiable (by norm_num)
@@ -162,9 +162,9 @@ theorem exists_contMDiff_interior_eq_neg (σ : SmoothForm (𝓘(ℝ, ℝ).prod I
         (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)) ∧
       ∀ u (hu : u ∈ uIcc a b), RoughForm.interior (X u)
           (SmoothForm.mpullback (Prod.mk (⟨u, hab hu⟩ : J)) (contMDiff_const.prodMk contMDiff_id)
-            σ).1 =
+            σ).val =
         -(SmoothForm.mpullback (Prod.mk (⟨u, hab hu⟩ : J)) (contMDiff_const.prodMk contMDiff_id)
-            α).1 := by
+            α).val := by
   obtain ⟨g, hg, hgid⟩ := exists_contMDiff_eventuallyEq_id hab
   refine ⟨fun u ↦ (hσ (g u)).interiorEquiv.symm
     (SmoothForm.mpullback (Prod.mk (g u)) (contMDiff_const.prodMk contMDiff_id) (-α)),
@@ -185,9 +185,9 @@ theorem exists_isotopy_mpullback_eq_of_uIcc_subset [CompactSpace M]
       (SmoothForm.mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) σ))
     {a b : ℝ} (hab : uIcc a b ⊆ J)
     (hα : ∀ t (ht : t ∈ uIcc a b), TauCeti.mpullback I (𝓘(ℝ, ℝ).prod I)
-        (Prod.mk (⟨t, hab ht⟩ : J)) (mlieDerivForm (fun _ ↦ ((1 : ℝ), (0 : E))) σ.1) =
+        (Prod.mk (⟨t, hab ht⟩ : J)) (mlieDerivForm (fun _ ↦ ((1 : ℝ), (0 : E))) σ.val) =
       mextDeriv (SmoothForm.mpullback (Prod.mk (⟨t, hab ht⟩ : J))
-        (contMDiff_const.prodMk contMDiff_id) α).1) :
+        (contMDiff_const.prodMk contMDiff_id) α).val) :
     ∃ ψ : ℝ → M ≃ₘ⟮I, I⟯ M, ContMDiff (𝓘(ℝ, ℝ).prod I) I ∞ (fun p : ℝ × M ↦ ψ p.1 p.2) ∧
       (∀ x, ψ a x = x) ∧
       ∀ t (ht : t ∈ uIcc a b), SmoothForm.mpullback (ψ t) (ψ t).contMDiff

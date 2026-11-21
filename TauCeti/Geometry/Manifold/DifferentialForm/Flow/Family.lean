@@ -230,18 +230,18 @@ theorem hasDerivAt_mpullback_prodMk_comp {β : RoughForm (𝓘(ℝ, ℝ).prod I)
   have hnear : ∀ᶠ q in 𝓝 p₀, (fun v ↦ (g v : ℝ)) =ᶠ[𝓝 (q.1 : ℝ)] id := by
     have hc : Tendsto (fun q : J × M ↦ (q.1 : ℝ)) (𝓝 p₀) (𝓝 u) := by
       have hcont : Continuous fun q : J × M ↦ (q.1 : ℝ) :=
-        continuous_subtype_val.comp continuous_fst
+        continuous_subtypeVal.comp continuous_fst
       simpa [p₀, hgu] using hcont.continuousAt.tendsto (x := p₀)
     exact hc.eventually hu.eventually_nhds
   have hid : ∀ᶠ q in 𝓝 p₀, ψ 0 q = q := by
     filter_upwards [hnear] with q hq
     exact Prod.ext (Subtype.ext (by simp only [ψ, add_zero]; exact hq.self_of_nhds)) rfl
   have hψs (r : ℝ) : ContMDiff (𝓘(ℝ, ℝ).prod I) (𝓘(ℝ, ℝ).prod I) 2 (ψ r) :=
-    (hg.comp ((contMDiff_subtype_val.comp contMDiff_fst).add contMDiff_const)).prodMk
+    (hg.comp ((contMDiff_subtypeVal.comp contMDiff_fst).add contMDiff_const)).prodMk
       contMDiff_snd
   have hsmooth : ContMDiffAt (𝓘(ℝ, ℝ).prod (𝓘(ℝ, ℝ).prod I)) (𝓘(ℝ, ℝ).prod I) 2
       (fun p : ℝ × (J × M) ↦ ψ p.1 p.2) (0, p₀) :=
-    ((hg.comp ((contMDiff_subtype_val.comp (contMDiff_fst.comp contMDiff_snd)).add
+    ((hg.comp ((contMDiff_subtypeVal.comp (contMDiff_fst.comp contMDiff_snd)).add
       contMDiff_fst)).prodMk (contMDiff_snd.comp contMDiff_snd)).contMDiffAt
   have hvel : ∀ᶠ q in 𝓝 p₀, HasMFDerivAt 𝓘(ℝ, ℝ) (𝓘(ℝ, ℝ).prod I) (fun r ↦ ψ r q) 0
       ((1 : ℝ →L[ℝ] ℝ).smulRight (((1 : ℝ), (0 : E)) : ℝ × E)) := by
@@ -278,9 +278,9 @@ theorem mpullback_prodMk_mlieDerivForm_mpullback_prodMap
     (β : SmoothForm (𝓘(ℝ, ℝ).prod I) (J × M) F k) {g : ℝ → J}
     (hg : ContMDiff 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ) ∞ g) {u : ℝ} (hu : (fun v ↦ (g v : ℝ)) =ᶠ[𝓝 u] id) :
     mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk u) (mlieDerivForm (fun _ ↦ ((1 : ℝ), (0 : E)))
-        (SmoothForm.mpullback (Prod.map g id) (hg.prodMap contMDiff_id) β).1) =
+        (SmoothForm.mpullback (Prod.map g id) (hg.prodMap contMDiff_id) β).val) =
       mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk (g u))
-        (mlieDerivForm (fun _ ↦ ((1 : ℝ), (0 : E))) β.1) := by
+        (mlieDerivForm (fun _ ↦ ((1 : ℝ), (0 : E))) β.val) := by
   funext x
   refine (hasDerivAt_mpullback_prodMk u x
     ((SmoothForm.mpullback _ (hg.prodMap contMDiff_id) β).mdifferentiableAt (u, x))).unique ?_
@@ -290,7 +290,7 @@ theorem mpullback_prodMk_mlieDerivForm_mpullback_prodMap
   have h := mpullback_comp (F := F) (I := I) (I' := 𝓘(ℝ, ℝ).prod I) (I'' := 𝓘(ℝ, ℝ).prod I)
     (f := Prod.mk v) (g := Prod.map g id)
     ((contMDiff_const.prodMk contMDiff_id).mdifferentiable one_ne_zero)
-    ((hg.prodMap contMDiff_id).mdifferentiable (by simp)) β.1
+    ((hg.prodMap contMDiff_id).mdifferentiable (by simp)) β.val
   simp only [SmoothForm.coe_mpullback]
   exact (congrFun h x).symm
 
