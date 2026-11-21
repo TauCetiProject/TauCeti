@@ -115,8 +115,8 @@ theorem encodingEquiv_apply (a : Fin 6 → ZMod 3) : (encodingEquiv a : Fin 12 �
 /-- The inverse encoding equivalence reads the first six coordinates of a codeword. -/
 @[simp]
 theorem encodingEquiv_symm_apply (x : code) (i : Fin 6) :
-    encodingEquiv.symm x i = x.1 (i.castAdd 6) := by
-  have h := congrArg (fun y : code ↦ y.1 (i.castAdd 6)) (encodingEquiv.apply_symm_apply x)
+    encodingEquiv.symm x i = x.val (i.castAdd 6) := by
+  have h := congrArg (fun y : code ↦ y.val (i.castAdd 6)) (encodingEquiv.apply_symm_apply x)
   simpa only [encodingEquiv_apply, vecMul_generator_castAdd] using h
 
 /-- The code has 729 words. -/

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.ModuleCat.Presheaf.ExteriorPower.Basic
+public import TauCeti.Algebra.Category.ModuleCat.Presheaf.ChangeOfRings
 public import Mathlib.CategoryTheory.Adjunction.Mates
 
 /-!
@@ -22,7 +23,8 @@ isomorphism of exterior powers. When the coefficient map is an isomorphism, the 
 comparison is invertible.
 
 In degree one the pushforward comparison is the identity, read through the identifications
-`⋀¹ M ≅ M`.
+`⋀¹ M ≅ M`. In degree zero it is the unit map `S ⟶ α_* R` of the lax monoidal pushforward, read
+through the identifications `⋀⁰ M ≅ R`.
 
 The construction uses the module-level restriction-of-scalars comparison and Mathlib's
 `CategoryTheory.mateEquiv` for the pullback--pushforward adjunction. The wedge formula specifies
@@ -138,6 +140,28 @@ theorem pushforwardExteriorPowerComparison_app_comp_map_exteriorPowerOneIso
     (hR.trans (ModuleCat.exteriorPower.iso₁_hom_apply
       (M := PresheafOfModulesOfCommRing.obj M (F.op.obj U)) m))).trans
       (hS.trans (ModuleCat.exteriorPower.iso₁_hom_apply m)).symm
+
+/-- In degree zero, the pushforward comparison is the unit map `S ⟶ α_* R` of the lax monoidal
+pushforward, read through the identifications `⋀⁰ M ≅ R`. -/
+@[reassoc (attr := simp)]
+theorem pushforwardExteriorPowerComparison_app_comp_map_exteriorPowerZeroIso
+    (M : PresheafOfModulesOfCommRing.{u} R) :
+    (pushforwardExteriorPowerComparison α 0).app M ≫
+        (PresheafOfModulesOfCommRing.pushforward α).map
+          ((PresheafOfModulesOfCommRing.exteriorPowerZeroIso R).hom.app M) =
+      (PresheafOfModulesOfCommRing.exteriorPowerZeroIso S).hom.app
+          ((PresheafOfModulesOfCommRing.pushforward α).obj M) ≫
+        Functor.LaxMonoidal.ε (PresheafOfModulesOfCommRing.pushforward α) := by
+  ext U x
+  -- As in degree one, evaluation identifies both pushforward modules with the same underlying
+  -- type only up to unfolding, so the section formulas are rewritten with `erw`.
+  erw [PresheafOfModules.comp_app, ModuleCat.comp_apply, PresheafOfModules.comp_app,
+    ModuleCat.comp_apply, PresheafOfModules.pushforward_map_app_apply,
+    PresheafOfModulesOfCommRing.exteriorPowerZeroIso_hom_app_app M (F.op.obj U),
+    PresheafOfModulesOfCommRing.exteriorPowerZeroIso_hom_app_app
+      ((PresheafOfModulesOfCommRing.pushforward α).obj M) U]
+  exact (TauCeti.ModuleCat.iso₀_hom_restrictScalarsExteriorPowerComparison_app_apply
+    (α.app U).hom (M.obj (F.op.obj U)) x).trans (pushforward_ε_app_apply F α U _).symm
 
 -- Adapted from `TauCeti.PresheafOfModules.isIso_pushforwardSymmetricPowerComparison`.
 /-- Pushforward along an isomorphism of coefficient presheaves preserves exterior powers

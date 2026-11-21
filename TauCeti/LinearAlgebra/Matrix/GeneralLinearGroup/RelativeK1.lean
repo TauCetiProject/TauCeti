@@ -118,7 +118,7 @@ theorem coe_projection_apply (x : AlgebraicK1 (Unitization R A)) :
 @[simp]
 theorem projection_coe (x : relativeAlgebraicK1 R A) : projection R A x = x := by
   ext
-  simp [coe_projection_apply, (mem_relativeAlgebraicK1_iff.1 x.2)]
+  simp [coe_projection_apply, (mem_relativeAlgebraicK1_iff.1 x.property)]
 
 /-- The projection kills the classes of scalar matrices. -/
 @[simp]
@@ -148,7 +148,7 @@ def map (f : A →ₙₐ[R] B) : relativeAlgebraicK1 R A →* relativeAlgebraicK
     (relativeAlgebraicK1 R A).subtype).codRestrict _ fun x ↦ by
       rw [mem_relativeAlgebraicK1_iff, MonoidHom.comp_apply, AlgebraicK1.map_map,
         ← AlgHom.comp_toRingHom, Unitization.fstHom_comp_map]
-      exact mem_relativeAlgebraicK1_iff.1 x.2
+      exact mem_relativeAlgebraicK1_iff.1 x.property
 
 /-- The induced homomorphism of relative `K₁` is the induced homomorphism of `K₁(A⁺)`. -/
 @[simp]

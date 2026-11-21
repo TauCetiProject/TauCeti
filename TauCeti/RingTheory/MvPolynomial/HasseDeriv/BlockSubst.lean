@@ -192,7 +192,8 @@ theorem coeff_blockSubst_hasseDeriv_eq_zero_of_forall_coeff_add [Finite κ]
   have := Fintype.ofFinite κ
   rw [blockSubst_inv_hasseDeriv hA, coeff_sum]
   refine sum_eq_zero fun e he ↦ ?_
-  rw [coeff_smul, hasseDeriv_coeff, hP e (mem_filter.1 he).2, mul_zero, smul_zero]
+  rw [AddMonoidAlgebra.coeff_smul_apply, hasseDeriv_coeff, hP e (mem_filter.1 he).2, mul_zero,
+    smul_zero]
 
 /-- **Vanishing along a form passes to Hasse derivatives** (Bombieri–Gubler, §7.5.14). Fix a
 row `i` of the invertible matrix `A` and a multidegree `d`. If the coefficients of

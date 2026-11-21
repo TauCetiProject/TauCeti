@@ -199,9 +199,9 @@ have the rank and determinant of `L`, so this is the finiteness of positive defi
 given rank and bounded determinant. -/
 theorem IsPosDef.finite_genusClasses {L : IntegralLattice V} (hL : L.IsPosDef) :
     L.genusClasses.Finite := by
-  have hgen (c : L.genusClasses) : L.SameGenus c.1.out := mem_genusClasses_iff.mp c.2
+  have hgen (c : L.genusClasses) : L.SameGenus c.val.out := mem_genusClasses_iff.mp c.property
   exact Set.finite_coe_iff.mp <| finite_of_pairwise_isEmpty_isometry
-    (fun c : L.genusClasses ↦ c.1.out) (fun c ↦ (hgen c).isPosDef_iff.mp hL)
+    (fun c : L.genusClasses ↦ c.val.out) (fun c ↦ (hgen c).isPosDef_iff.mp hL)
     (fun c ↦ (hgen c).finrank_eq.symm) (fun c ↦ (hgen c).determinant_eq.symm.le)
     fun c d hcd ↦ ⟨fun e ↦ hcd (Subtype.ext (IsometryQuotient.eq_of_isometry_out e))⟩
 
@@ -215,16 +215,16 @@ classes in the genus of `L` injectively into the classes in the positive definit
 theorem IsNegDef.finite_genusClasses {L : IntegralLattice V} (hL : L.IsNegDef) :
     L.genusClasses.Finite := by
   have := ((isPosDef_neg_iff L).mpr hL).finite_genusClasses.to_subtype
-  have hgen (c : L.genusClasses) : (-L).SameGenus (-c.1.out) :=
-    (mem_genusClasses_iff.mp c.2).smul (by norm_num)
+  have hgen (c : L.genusClasses) : (-L).SameGenus (-c.val.out) :=
+    (mem_genusClasses_iff.mp c.property).smul (by norm_num)
   refine Set.finite_coe_iff.mp <| Finite.of_injective
-    (fun c : L.genusClasses ↦ (⟨(-c.1.out).isometryClass,
+    (fun c : L.genusClasses ↦ (⟨(-c.val.out).isometryClass,
       isometryClass_mem_genusClasses_iff.mpr (hgen c)⟩ : (-L).genusClasses)) fun c d hcd ↦ ?_
   obtain ⟨e⟩ := isometryClass_eq_isometryClass_iff.mp (congrArg Subtype.val hcd)
   -- `-L` is `(-1 : ℤ) • L` by definition, so `e.smul (-1)` is an isometry of the negations.
-  have e' : Isometry (-(-c.1.out)) (-(-d.1.out)) := e.smul (-1)
+  have e' : Isometry (-(-c.val.out)) (-(-d.val.out)) := e.smul (-1)
   exact Subtype.ext <| IsometryQuotient.eq_of_isometry_out <|
-    (Isometry.ofEq (neg_neg c.1.out).symm).trans <| e'.trans (Isometry.ofEq (neg_neg d.1.out))
+    (Isometry.ofEq (neg_neg c.val.out).symm).trans <| e'.trans (Isometry.ofEq (neg_neg d.val.out))
 
 /-- A negative definite lattice has positive class number. -/
 theorem IsNegDef.classNumber_pos {L : IntegralLattice V} (hL : L.IsNegDef) :

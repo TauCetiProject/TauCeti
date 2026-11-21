@@ -72,7 +72,7 @@ theorem classField_maximalAbelianLayer_eq_hilbertClassField
     exact (classField_le_classField_iff K V.maximalAbelianLayer _).2
       (OpenNormalSubgroup.maximalAbelianLayer_le
         ((classField_le_classField_iff K V _).1 hH)
-        (globalClassField (rayNormSubgroup (Modulus.one K))).2)
+        (globalClassField (rayNormSubgroup (Modulus.one K))).property)
 
 /-- In an everywhere-unramified finite Galois extension containing the Hilbert class field,
 the preimage of the finite Galois group's commutator fixes exactly the Hilbert class field.
