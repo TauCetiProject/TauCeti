@@ -68,28 +68,59 @@ theorem mem_eval_iff_exists_forall_ge {x : α} {y : β} :
   rw [P.mem_eval_iff]
   exact ⟨fun ⟨s, h⟩ => ⟨s, fun _ hs => P.persistent hs h⟩, fun ⟨s, h⟩ => ⟨s, h s le_rfl⟩⟩
 
-/-- Changing the successful output by a total function preserves persistence. -/
-def map (f : β → γ) : StagedPartial α γ where
-  stage x s := (P.stage x s).map f
+/-- Precompose the inputs to a stage table. -/
+def comap {δ : Type*} (f : δ → α) : StagedPartial δ β where
+  stage x := P.stage (f x)
+  persistent := P.persistent
+
+/-- A precomposed table observes the original table at the mapped input. -/
+@[simp]
+theorem stage_comap {δ : Type*} (f : δ → α) (x : δ) (s : ℕ) :
+    (P.comap f).stage x s = P.stage (f x) s := (rfl)
+
+/-- Evaluating a precomposed table evaluates the original table at the mapped input. -/
+@[simp]
+theorem eval_comap {δ : Type*} (f : δ → α) (x : δ) :
+    (P.comap f).eval x = P.eval (f x) := (rfl)
+
+/-- Change or discard successful outputs using an optional output map. -/
+def filterMap (f : β → Option γ) : StagedPartial α γ where
+  stage x s := (P.stage x s).bind f
   persistent hst h := by
-    obtain ⟨y, hy, rfl⟩ := Option.map_eq_some_iff.1 h
-    simp [P.persistent hst hy]
+    obtain ⟨y, hy, hz⟩ := Option.bind_eq_some_iff.1 h
+    simpa only [P.persistent hst hy, Option.bind_some] using hz
+
+/-- Optional output mapping binds each stage observation to the output map. -/
+@[simp]
+theorem stage_filterMap (f : β → Option γ) (x : α) (s : ℕ) :
+    (P.filterMap f).stage x s = (P.stage x s).bind f := (rfl)
+
+/-- Optional output mapping commutes with evaluation, with discarded outputs giving undefined
+values. -/
+@[simp]
+theorem eval_filterMap (f : β → Option γ) (x : α) :
+    (P.filterMap f).eval x = (P.eval x).bind (fun y => (f y : Part γ)) := by
+  ext z
+  simp only [mem_eval_iff, stage_filterMap, Option.bind_eq_some_iff, Part.mem_bind_iff,
+    Part.mem_coe, Option.mem_def]
+  exact ⟨fun ⟨s, y, hy, hz⟩ => ⟨y, ⟨s, hy⟩, hz⟩,
+    fun ⟨y, ⟨s, hy⟩, hz⟩ => ⟨s, y, hy, hz⟩⟩
+
+/-- Changing the successful output by a total function preserves persistence. -/
+def map (f : β → γ) : StagedPartial α γ :=
+  P.filterMap (some ∘ f)
 
 /-- Mapping a stage table maps each present value. -/
 @[simp]
 theorem stage_map (f : β → γ) (x : α) (s : ℕ) :
-    (P.map f).stage x s = (P.stage x s).map f := (rfl)
+    (P.map f).stage x s = (P.stage x s).map f := by
+  rw [map, stage_filterMap, Option.map_eq_bind]
 
 /-- Mapping observations commutes with taking the partial function. -/
 @[simp]
 theorem eval_map (f : β → γ) (x : α) : (P.map f).eval x = (P.eval x).map f := by
-  ext z
-  simp only [mem_eval_iff, stage_map, Option.map_eq_some_iff, Part.mem_map_iff]
-  constructor
-  · rintro ⟨s, y, hy, rfl⟩
-    exact ⟨y, ⟨s, hy⟩, rfl⟩
-  · rintro ⟨y, ⟨s, hy⟩, rfl⟩
-    exact ⟨s, y, hy, rfl⟩
+  rw [map, eval_filterMap]
+  simp only [Function.comp_apply, Part.coe_some, Part.bind_some_eq_map]
 
 /-- Observe the table at stages given by a monotone clock. -/
 def reindex (t : ℕ → ℕ) (ht : Monotone t) : StagedPartial α β where
@@ -122,21 +153,8 @@ theorem recursiveIn_eval (hP : ComputableIn₂ G P.stage) : RecursiveIn G P.eval
 /-- Mapping by an oracle-computable function preserves the relative effectivity of a table. -/
 theorem computableIn₂_stage_map [Primcodable γ] (hP : ComputableIn₂ G P.stage)
     {f : β → γ} (hf : ComputableIn G f) : ComputableIn₂ G (P.map f).stage := by
-  rcases isEmpty_or_nonempty β with hβ | hβ
-  · refine RecursiveIn.of_eq (ComputableIn.const (none : Option γ)) fun p => ?_
-    simp only [Part.some_inj, stage_map]
-    cases P.stage p.1 p.2 with
-    | none => rfl
-    | some a => exact (hβ.false a).elim
-  · obtain ⟨b⟩ := hβ
-    have hget : ComputableIn G fun p : α × ℕ => (P.stage p.1 p.2).getD b :=
-      (Primrec.option_getD.comp Primrec.id (Primrec.const b)).computableIn.comp hP
-    have htag : Primrec fun p : Bool × γ => cond p.1 (some p.2) none :=
-      Primrec.cond Primrec.fst (Primrec.option_some.comp Primrec.snd) (Primrec.const none)
-    refine RecursiveIn.of_eq (htag.computableIn.comp
-      ((Primrec.option_isSome.computableIn.comp hP).pair (hf.comp hget))) fun p => ?_
-    simp only [Part.some_inj, stage_map]
-    cases P.stage p.1 p.2 <;> rfl
+  simpa only [ComputableIn₂, stage_map] using
+    hP.option_map (g := fun (_ : α × ℕ) y => f y) (hf.comp ComputableIn.snd)
 
 /-- Reindexing by an oracle-computable monotone clock preserves relative effectivity. -/
 theorem computableIn₂_stage_reindex (hP : ComputableIn₂ G P.stage)

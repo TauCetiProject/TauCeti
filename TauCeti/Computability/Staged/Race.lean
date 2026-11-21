@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Computability.RecursiveIn
+public import Mathlib.Computability.Primrec.Basic
 
 /-!
 # Earliest-discovery races
@@ -19,8 +19,8 @@ No persistence hypothesis on the streams is needed for these finite-data results
 for partial computations requires sound observations; in particular, retaining a transient
 observation from a moving oracle need not give a computation in the limit oracle.
 
-The race preserves primitive recursiveness and relative computability of the observations.
-Its application to fixed-oracle computations is in `TauCeti.Computability.SingleOracle.Race`.
+The race is primitive recursive uniformly in primitive-recursive streams. Its application to
+fixed-oracle computations is in `TauCeti.Computability.SingleOracle.Race`.
 -/
 
 public section
@@ -46,6 +46,17 @@ theorem race_zero (l : ℕ → Option α) (r : ℕ → Option β) :
 theorem race_succ (l : ℕ → Option α) (r : ℕ → Option β) (s : ℕ) :
     race l r (s + 1) =
       (race l r s <|> ((l (s + 1)).map Sum.inl <|> (r (s + 1)).map Sum.inr)) := (rfl)
+
+/-- The race depends only on the observations up to and including its current stage. -/
+theorem race_congr {l' : ℕ → Option α} {r' : ℕ → Option β}
+    (hl : ∀ t ≤ s, l t = l' t) (hr : ∀ t ≤ s, r t = r' t) :
+    race l r s = race l' r' s := by
+  induction s with
+  | zero => simp only [race_zero, hl 0 le_rfl, hr 0 le_rfl]
+  | succ s ih =>
+    have heq := ih (fun t ht => hl t (ht.trans s.le_succ))
+      (fun t ht => hr t (ht.trans s.le_succ))
+    simp only [race_succ, heq, hl (s + 1) le_rfl, hr (s + 1) le_rfl]
 
 /-- The race has no winner exactly when neither stream has succeeded at any inspected stage. -/
 @[simp]
@@ -149,38 +160,5 @@ theorem primrec_race {γ : Type*} [Primcodable α] [Primcodable β] [Primcodable
       rw [race_succ]
       exact congrArg (fun o => o <|> ((l a (s + 1)).map Sum.inl <|>
         (r a (s + 1)).map Sum.inr)) ih
-
-/-- Racing uniformly effective streams is effective in the same oracle family. -/
-theorem computableIn₂_race {γ : Type*} [Primcodable α] [Primcodable β] [Primcodable γ]
-    {G : Set (ℕ →. ℕ)} {l : γ → ℕ → Option α} {r : γ → ℕ → Option β}
-    (hl : ComputableIn₂ G l) (hr : ComputableIn₂ G r) :
-    ComputableIn₂ G fun x s => race (l x) (r x) s := by
-  let left (L : List (Option α × Option β)) (t : ℕ) := L[t]?.bind Prod.fst
-  let right (L : List (Option α × Option β)) (t : ℕ) := L[t]?.bind Prod.snd
-  have hleft : Primrec₂ left :=
-    (Primrec.option_bind₁ Primrec.fst).comp Primrec.list_getElem?
-  have hright : Primrec₂ right :=
-    (Primrec.option_bind₁ Primrec.snd).comp Primrec.list_getElem?
-  have hobs : ComputableIn₂ G fun x t => (l x t, r x t) := hl.pair hr
-  have hprefix : ComputableIn₂ G fun x s => (List.range (s + 1)).map (fun t => (l x t, r x t)) :=
-    hobs.list_range_map.comp
-      (ComputableIn.fst.pair (Primrec.succ.computableIn.comp ComputableIn.snd))
-  refine RecursiveIn.of_eq ((primrec_race hleft hright).computableIn.comp
-    (hprefix.pair ComputableIn.snd)) ?_
-  rintro ⟨x, s⟩
-  let L := (List.range (s + 1)).map (fun t => (l x t, r x t))
-  have hl' (t : ℕ) (ht : t ≤ s) : left L t = l x t := by
-    simp [left, L, Nat.lt_succ_of_le ht]
-  have hr' (t : ℕ) (ht : t ≤ s) : right L t = r x t := by
-    simp [right, L, Nat.lt_succ_of_le ht]
-  simp only [L] at hl' hr'
-  apply congrArg Part.some
-  ext z
-  simp only [race_eq_some_iff]
-  constructor <;> rintro ⟨t, ht, hbefore, hval⟩ <;> refine ⟨t, ht, fun u hu => ?_, ?_⟩
-  · simpa only [hl' u (hu.le.trans ht), hr' u (hu.le.trans ht)] using hbefore u hu
-  · simpa only [hl' t ht, hr' t ht] using hval
-  · simpa only [hl' u (hu.le.trans ht), hr' u (hu.le.trans ht)] using hbefore u hu
-  · simpa only [hl' t ht, hr' t ht] using hval
 
 end TauCeti.Staged

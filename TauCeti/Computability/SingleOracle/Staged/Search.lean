@@ -75,9 +75,7 @@ theorem primrec_searchStages : Primrec searchStages :=
 private theorem eval_searchStages_index (c : Code) (x : ℕ) :
     eval O (comp (rfind' (comp stageSearchTest c)) (pair (pair left right) zero)) x =
       Nat.rfind fun s => (eval O c (Nat.pair x s)).map (fun n => decide (n ≠ 0)) := by
-  have hp : eval O (pair (pair left right) zero) x = Part.some (Nat.pair x 0) := by
-    simp [Seq.seq]
-  rw [eval_comp, hp, PFun.some_bind, eval_rfind']
+  rw [eval_comp, eval_pair_left_right_zero, PFun.some_bind, eval_rfind']
   simp only [Nat.add_zero, Part.map_eq_map, Part.map_id' (fun _ => rfl)]
   congr 1
   funext s
@@ -92,10 +90,9 @@ private theorem eval_searchStages_bind (c : Code) (x : ℕ) :
     eval O c.searchStages x =
       (Nat.rfind fun s => (eval O c (Nat.pair x s)).map (fun n => decide (n ≠ 0))).bind
         fun s => (eval O c (Nat.pair x s)).map Nat.pred := by
-  have hid : eval O (pair left right) x = Part.some x := by simp [Seq.seq]
   have hout : eval O stageSearchOutput = fun n => Part.some n.pred := funext eval_stageSearchOutput
-  rw [searchStages, eval_comp, eval_pair, hid, eval_searchStages_index]
-  simp only [Seq.seq, Part.map_eq_map, Part.map_some, Part.bind_some]
+  rw [searchStages, eval_comp, eval_pair, eval_pair_left_right, eval_searchStages_index]
+  rw [← Part.pure_eq_some x, map_pure, pure_seq, Part.map_eq_map]
   refine (Part.bind_map _ _ _).trans ?_
   congr 1
   funext s

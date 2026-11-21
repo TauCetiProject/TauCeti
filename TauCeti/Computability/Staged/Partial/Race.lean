@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Computability.Staged.Partial
-public import TauCeti.Computability.Staged.Race
+public import TauCeti.Computability.Staged.Race.Relative
 
 /-!
 # Earliest-discovery races of staged partial functions

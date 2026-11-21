@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import TauCeti.Computability.SingleOracle.Staged.Basic
+import TauCeti.Computability.SingleOracle.Staged.Search
 import TauCeti.Computability.Staged.Partial.Race
 
 /-!

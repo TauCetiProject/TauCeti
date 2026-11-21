@@ -35,20 +35,21 @@ namespace TauCeti.Oracle.Single.Code
 
 open Encodable
 
-/-- Oracle evaluation at stage `s`: raw evaluation with fuel `s`, retaining only computations whose
-program index and output are below `s`. Raw evaluation already bounds the input and the use.
+/-- Keep a bounded run only if its program index and output are below the stage. -/
+def normalizeStage (s : ℕ) (c : Code) (run : Option Halt) : Option Halt :=
+  if encode c < s then
+    run.bind fun d => if d.output < s then some d else none
+  else none
+
+/-- Oracle evaluation at stage `s` runs with fuel `s` and retains computations whose program
+index and output are below `s`. Raw evaluation already bounds the input and the use.
 Failure is `none`, distinct from a successful computation with use zero. -/
 def evalStage (σ : ℕ → Option ℕ) (s : ℕ) (c : Code) (n : ℕ) : Option Halt :=
-  if encode c < s then
-    (evaln σ s c n).bind fun d => if d.output < s then some d else none
-  else none
+  normalizeStage s c (evaln σ s c n)
 
 /-- Stage evaluation filters the bounded run by the stage bounds. -/
 theorem evalStage_def (σ : ℕ → Option ℕ) (s : ℕ) (c : Code) (n : ℕ) :
-    evalStage σ s c n =
-      if encode c < s then
-        (evaln σ s c n).bind fun d => if d.output < s then some d else none
-      else none := (rfl)
+    evalStage σ s c n = normalizeStage s c (evaln σ s c n) := (rfl)
 
 variable {σ τ : ℕ → Option ℕ} {s t k n : ℕ} {c : Code} {d : Halt}
 
@@ -58,25 +59,25 @@ theorem evalStage_eq_some_iff :
     evalStage σ s c n = some d ↔
       encode c < s ∧ evaln σ s c n = some d ∧ d.output < s := by
   by_cases hc : encode c < s
-  · simp only [evalStage, hc, ↓reduceIte, true_and, Option.bind_eq_some_iff]
+  · simp only [evalStage_def, normalizeStage, hc, ↓reduceIte, true_and, Option.bind_eq_some_iff]
     constructor
     · rintro ⟨d', hd', h⟩
       split_ifs at h with hd
       grind
     · rintro ⟨h, hd⟩
       exact ⟨d, h, by simp [hd]⟩
-  · simp [evalStage, hc]
+  · simp [evalStage_def, normalizeStage, hc]
 
 /-- Stage zero has no successful computations. -/
 @[simp]
 theorem evalStage_zero (σ : ℕ → Option ℕ) (c : Code) (n : ℕ) :
     evalStage σ 0 c n = none := by
-  simp [evalStage]
+  simp [evalStage_def, normalizeStage]
 
 /-- Programs whose indices are at least the stage have no successful stage computations. This
 bounds the program indices that a finite-priority search needs to inspect. -/
 theorem evalStage_eq_none_of_le_encode (hs : s ≤ encode c) : evalStage σ s c n = none := by
-  simp [evalStage, not_lt.mpr hs]
+  simp [evalStage_def, normalizeStage, not_lt.mpr hs]
 
 /-- A successful stage computation has program index below the stage. -/
 theorem evalStage_index_lt (h : evalStage σ s c n = some d) : encode c < s :=
@@ -172,10 +173,7 @@ variable {α : Type*} [Primcodable α]
 
 /-- Filtering a bounded run by the stage bounds is primitive recursive. -/
 theorem primrec_normalizeStage :
-    Primrec fun p : (ℕ × Code) × Option Halt =>
-      if encode p.1.2 < p.1.1 then
-        p.2.bind fun d => if d.output < p.1.1 then some d else none
-      else none :=
+    Primrec fun p : (ℕ × Code) × Option Halt => normalizeStage p.1.1 p.1.2 p.2 :=
   Primrec.ite (nat_lt.comp (Primrec.encode.comp (snd.comp fst)) (fst.comp fst))
     (option_bind snd <| Primrec₂.mk <|
       Primrec.ite (nat_lt.comp (Halt.primrec_output.comp snd) (fst.comp (fst.comp fst)))
@@ -185,7 +183,7 @@ theorem primrec_normalizeStage :
 oracle answers. The normalization tests require no unbounded search. -/
 theorem primrec_evalStage {σ : α → ℕ → Option ℕ} (hσ : Primrec₂ σ) :
     Primrec fun p : α × ℕ × Code × ℕ => evalStage (σ p.1) p.2.1 p.2.2.1 p.2.2.2 := by
-  simpa only [evalStage] using primrec_normalizeStage.comp
+  simpa only [evalStage_def] using primrec_normalizeStage.comp
     (((fst.comp snd).pair (fst.comp (snd.comp snd))).pair (primrec_evaln hσ))
 
 /-- Normalized evaluation on finite strings is primitive recursive. Missing answers are not

@@ -8,6 +8,7 @@ module
 public import Mathlib.Computability.PartrecCode
 public import Mathlib.Computability.TuringDegree
 import TauCeti.Computability.RecursiveIn
+import TauCeti.Data.PFun.Basic
 
 /-!
 # Programs with one oracle
@@ -326,9 +327,24 @@ theorem eval_pair (cf cg : Code) (n : ℕ) :
     eval O (pair cf cg) n = Nat.pair <$> eval O cf n <*> eval O cg n :=
   (rfl)
 
+/-- Pairing the two projections reconstructs the input. -/
+@[simp high]
+theorem eval_pair_left_right (n : ℕ) :
+    eval O (pair left right) n = Part.some n := by
+  simp [eval_pair, Seq.seq]
+
 /-- Pairing zero with the reconstructed input supplies an initial argument for recursion. -/
+@[simp high]
 theorem eval_pair_zero_left_right (n : ℕ) :
     eval O (pair zero (pair left right)) n = Part.some (Nat.pair 0 n) := by
+  rw [eval_pair, eval_pair_left_right, eval_zero]
+  simp [Seq.seq]
+
+/-- Pairing the reconstructed input with zero supplies a zero starting index for search. -/
+@[simp high]
+theorem eval_pair_left_right_zero (n : ℕ) :
+    eval O (pair (pair left right) zero) n = Part.some (Nat.pair n 0) := by
+  rw [eval_pair, eval_pair_left_right, eval_zero]
   simp [Seq.seq]
 
 /-- The outputs of `pair cf cg` are the pairings of outputs of `cf` and `cg`. -/
@@ -448,7 +464,8 @@ theorem exists_code_of_recursiveIn {f : ℕ →. ℕ} (hf : Nat.RecursiveIn {O} 
     obtain ⟨cf, rfl⟩ := ihf
     -- search from zero: run `rfind' cf` on `Nat.pair a 0`
     refine ⟨comp (rfind' cf) (pair (pair left right) zero), funext fun a => ?_⟩
-    simp [eval, Seq.seq, pure, PFun.pure, Part.map_id']
+    rw [eval_comp, eval_pair_left_right_zero, PFun.some_bind, eval_rfind']
+    simp [Part.map_id']
 
 /-- **Adequacy.** For every oracle `O`, a partial function is recursive in `O` exactly when some
 program computes it relative to `O`. -/

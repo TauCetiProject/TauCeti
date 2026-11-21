@@ -11,10 +11,11 @@ public import TauCeti.Computability.RecursiveIn
 /-!
 # Oracle-relative computability of bounded simulation
 
-Bounded simulation against a uniformly oracle-computable family of total oracles is itself
-uniformly oracle-computable. The simulator first computes a finite initial segment of the
-oracle and then uses the primitive-recursive finite-string evaluator. Only the first `k`
-answers are needed for fuel `k`, including to certify failure.
+Bounded and normalized stage evaluation accept optional answers uniformly computable in the
+same oracle family as the evaluation. The simulator computes a finite initial segment of
+those answers and then uses the primitive-recursive evaluator. Only the first `k` answers
+are needed for fuel or stage `k`, including to certify failure. Total oracles are the
+special case in which every answer is present.
 
 This allows a computable approximation of an oracle to be passed to a bounded simulator,
 without assuming that its oracle answers are primitive recursive. In particular it supports
@@ -28,8 +29,8 @@ namespace TauCeti.Oracle.Single.Code
 
 variable {α : Type*} [Primcodable α] {G : Set (ℕ →. ℕ)}
 
-/-- Bounded evaluation is uniformly oracle-computable from a uniformly computable family of
-optional answers. With fuel `k`, the simulator needs only the first `k` answers. -/
+/-- Bounded evaluation of optional answers uniformly computable in `G` is uniformly computable
+in `G`. With fuel `k`, the simulator needs only the first `k` answers. -/
 theorem computableIn_evaln_option {σ : α → ℕ → Option ℕ} (hσ : ComputableIn₂ G σ) :
     ComputableIn G fun p : α × ℕ × Code × ℕ =>
       evaln (σ p.1) p.2.1 p.2.2.1 p.2.2.2 := by
@@ -38,10 +39,7 @@ theorem computableIn_evaln_option {σ : α → ℕ → Option ℕ} (hσ : Comput
   have hlookup : Primrec₂ fun (l : List (Option ℕ)) z => l[z]?.bind id :=
     (Primrec.option_bind₁ Primrec.id).comp Primrec.list_getElem?
   refine RecursiveIn.of_eq ((primrec_evaln hlookup).computableIn.comp (hp.pair ComputableIn.snd))
-    fun p => congrArg Part.some ?_
-  ext d
-  constructor <;> intro hd <;> refine evaln_eq_some_of_eqOn hd fun z hz => ?_
-  all_goals simp [(Set.mem_Iio.1 hz).trans_le (evaln_use_le hd)]
+    fun p => congrArg Part.some (evaln_range_map_option _ _ _ _)
 
 /-- Bounded evaluation against a uniformly oracle-computable family of total oracles is
 oracle-computable, uniformly in the family parameter, fuel, program and input. -/
@@ -51,8 +49,8 @@ theorem computableIn_evaln {σ : α → ℕ → ℕ} (hσ : ComputableIn₂ G σ
   computableIn_evaln_option (σ := fun a z => some (σ a z))
     (Primrec.option_some.computableIn.comp hσ)
 
-/-- Normalized stage evaluation is uniformly oracle-computable from a uniformly computable
-family of optional answers. To simulate stage `s` it suffices to read the first `s` answers. -/
+/-- Normalized stage evaluation of optional answers uniformly computable in `G` is uniformly
+computable in `G`. To simulate stage `s` it suffices to read the first `s` answers. -/
 theorem computableIn_evalStage {σ : α → ℕ → Option ℕ} (hσ : ComputableIn₂ G σ) :
     ComputableIn G fun p : α × ℕ × Code × ℕ =>
       evalStage (σ p.1) p.2.1 p.2.2.1 p.2.2.2 := by
