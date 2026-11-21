@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Pullback.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.Geometry.Manifold.Algebra.Structures
+import TauCeti.Geometry.Manifold.Boundary.TangentSpace
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Immersion.Projection
 import TauCeti.Geometry.Manifold.VectorBundle.Scalar
@@ -236,11 +237,6 @@ namespace TauCeti
 
 /-! ### The induced Riemannian metric and volume measure on the boundary -/
 
-private lemma lindelof_boundary {n : ℕ} {M : Type*} [TopologicalSpace M]
-    [ChartedSpace (EuclideanHalfSpace (n + 1)) M] [IsManifold (𝓡∂ (n + 1)) 1 M] [LindelofSpace M] :
-    LindelofSpace ((𝓡∂ (n + 1)).boundary M) :=
-  ((𝓡∂ (n + 1)).isClosed_boundary one_ne_zero).isClosedEmbedding_subtypeVal.LindelofSpace
-
 section BoundaryMetric
 
 variable {n : ℕ} {M : Type*} [TopologicalSpace M]
@@ -311,13 +307,11 @@ variable [MeasurableSpace M] [BorelSpace M] [LindelofSpace M]
 `TauCeti.riemannianVolume` of `TauCeti.halfSpaceBoundaryMetric` (`LindelofSpace` descends). -/
 noncomputable def halfSpaceBoundaryVolume : Measure ((𝓡∂ (n + 1)).boundary M) :=
   let _ := isManifold_boundary (n := n) (k := 1) M
-  let _ := lindelof_boundary (n := n) (M := M)
   riemannianVolume 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) ((𝓡∂ (n + 1)).boundary M)
 
 /-- Unfold `TauCeti.halfSpaceBoundaryVolume` as `TauCeti.riemannianVolume` on the boundary. -/
 theorem halfSpaceBoundaryVolume_eq_riemannianVolume
-    [IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 1 ((𝓡∂ (n + 1)).boundary M)]
-    [LindelofSpace ((𝓡∂ (n + 1)).boundary M)] :
+    [IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 1 ((𝓡∂ (n + 1)).boundary M)] :
     halfSpaceBoundaryVolume (n := n) (M := M) =
       riemannianVolume 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) ((𝓡∂ (n + 1)).boundary M) := by rfl
 
@@ -325,7 +319,6 @@ theorem halfSpaceBoundaryVolume_eq_riemannianVolume
 instance isLocallyFiniteMeasure_halfSpaceBoundaryVolume :
     IsLocallyFiniteMeasure (halfSpaceBoundaryVolume (n := n) (M := M)) := by
   let _ := isManifold_boundary (n := n) (k := 1) M
-  let _ := lindelof_boundary (n := n) (M := M)
   rw [halfSpaceBoundaryVolume_eq_riemannianVolume]; infer_instance
 
 end BoundaryMetric
@@ -343,7 +336,6 @@ variable {M : Type*} [TopologicalSpace M] [ChartedSpace (EuclideanHalfSpace 1) M
 theorem halfSpaceBoundaryVolume_zero_eq_count :
     halfSpaceBoundaryVolume (n := 0) (M := M) = Measure.count := by
   let _ := isManifold_boundary (n := 0) (k := 1) M
-  let _ := lindelof_boundary (n := 0) (M := M)
   exact riemannianVolume_eq_count_of_subsingleton
 
 /-- Each boundary point of a one-dimensional Riemannian manifold with boundary has measure `1`. -/
@@ -367,46 +359,7 @@ private abbrev ambTriv (n : ℕ) {M : Type*} [TopologicalSpace M]
 
 variable {n : ℕ} {M : Type*} [TopologicalSpace M]
   [ChartedSpace (EuclideanHalfSpace (n + 1)) M] [IsManifold (𝓡∂ (n + 1)) 1 M]
-
-/-- Adding a boundary tangent vector preserves `IsOutwardPointing`, since boundary tangent vectors
-have zero constrained coordinate. -/
-theorem isOutwardPointing_add_mfderiv_subtypeVal_boundary (x : (𝓡∂ (n + 1)).boundary M)
-    (v : TangentSpace (𝓡∂ (n + 1)) (x : M)) (w : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) x) :
-    IsOutwardPointing (x : M) (v + mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
-        (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) x w) ↔ IsOutwardPointing (x : M) v := by
-  let _ := isManifold_boundary (n := n) (k := 1) M
-  rw [isOutwardPointing_iff, isOutwardPointing_iff, and_iff_right x.property,
-    and_iff_right x.property, map_add, map_add, PiLp.add_apply]
-  have hz : (NormedSpace.fromTangentSpace (𝕜 := ℝ) (extChartAt (𝓡∂ (n + 1)) (x : M) (x : M))
-      (mfderiv (𝓡∂ (n + 1)) 𝓘(ℝ, Espace (n + 1)) (extChartAt (𝓡∂ (n + 1)) (x : M)) (x : M)
-        (mfderiv (bdryI n) (𝓡∂ (n + 1)) (Subtype.val : _ → M) x w))) 0 = 0 := by
-    rw [mfderiv_subtypeVal_boundary, mfderiv_extChartAt_self]
-    exact euclideanHalfSpaceBoundaryParam_apply_zero w
-  rw [hz, add_zero]
-
-/-- In any tangent-bundle trivialization at `α` containing a boundary point `y`, the image of
-`-e₀` under `symmL` points outward at `y`. -/
-theorem isOutwardPointing_trivializationAt_symmL_neg_single_zero
-    {α : M} {y : (𝓡∂ (n + 1)).boundary M}
-    (hy : (y : M) ∈ (trivializationAt (EuclideanSpace ℝ (Fin (n + 1)))
-      (TangentSpace (𝓡∂ (n + 1))) α).baseSet) :
-    IsOutwardPointing (y : M) ((trivializationAt (EuclideanSpace ℝ (Fin (n + 1)))
-      (TangentSpace (𝓡∂ (n + 1))) α).symmL ℝ (y : M) (-EuclideanSpace.single 0 1)) := by
-  let v₀ : Espace (n + 1) := -EuclideanSpace.single 0 1
-  have hyc : (y : M) ∈ (chartAt (EuclideanHalfSpace (n + 1)) α).source := by
-    simpa only [TangentBundle.trivializationAt_baseSet] using hy
-  have hy' : (y : M) ∈ (extChartAt (𝓡∂ (n + 1)) α).source := by rwa [extChartAt_source]
-  rw [isOutwardPointing_iff_tangentCoordChange y.property hy']
-  have hWs : ((ambTriv n α).symmL ℝ (y : M) v₀ : Espace (n + 1)) =
-      tangentCoordChange (𝓡∂ (n + 1)) α (y : M) (y : M) v₀ :=
-    congrArg (· v₀) (TangentBundle.symmL_trivializationAt_eq_core (I := 𝓡∂ (n + 1)) hyc)
-  have hcoord : tangentCoordChange (𝓡∂ (n + 1)) (y : M) α (y : M)
-      ((ambTriv n α).symmL ℝ (y : M) v₀) = v₀ := by
-    rw [hWs, tangentCoordChange_comp ⟨⟨hy', mem_extChartAt_source (y : M)⟩, hy'⟩,
-      tangentCoordChange_self hy']
-  rw [hcoord]; simp [v₀]
-
-variable [RiemannianBundle (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x)]
+  [RiemannianBundle (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x)]
 
 /-- Orthogonal projection onto the normal complement of `T_x(∂M)` preserves outwardness. -/
 theorem IsOutwardPointing.starProjection_orthogonal_range_mfderiv_subtypeVal

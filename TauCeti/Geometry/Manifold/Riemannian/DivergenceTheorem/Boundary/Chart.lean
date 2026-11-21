@@ -434,8 +434,6 @@ private theorem neg_integral_stdChartFlux_zero_eq_boundaryFlux (α₀ : (𝓡∂
     -(∫ y : Fin n → ℝ, stdChartFluxE (α₀ : M) X 0 (piToE (n + 1) (Fin.cons 0 y))) =
       ∫ x : (𝓡∂ (n + 1)).boundary M, inner ℝ (X (x : M)) (halfSpaceOutwardUnitNormal x)
         ∂halfSpaceBoundaryVolume (n := n) (M := M) := by
-  let _ : LindelofSpace ((𝓡∂ (n + 1)).boundary M) :=
-    ((𝓡∂ (n + 1)).isClosed_boundary one_ne_zero).isClosedEmbedding_subtypeVal.LindelofSpace
   set e₀ := extChartAt (bdryI n) α₀
   let bE : Espace n → ℝ := e₀.target.indicator fun w ↦
     stdChartVolumeDensity (I := bdryI n) α₀ (e₀.symm w) *

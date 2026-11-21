@@ -367,8 +367,6 @@ theorem integral_divergence_eq_tsum_boundaryFlux {X : (x : M) → TangentSpace (
     (hc : HasCompactSupport (β := EuclideanSpace ℝ (Fin 1)) X) :
     (∫ x, divergence (𝓡∂ 1) X x ∂riemannianVolume (𝓡∂ 1) M) =
       ∑' x : (𝓡∂ 1).boundary M, inner ℝ (X (x : M)) (halfSpaceOutwardUnitNormal x) := by
-  let _ : LindelofSpace ((𝓡∂ 1).boundary M) :=
-    ((𝓡∂ 1).isClosed_boundary (by simp : (∞ : ℕ∞ω) ≠ 0)).isClosedEmbedding_subtypeVal.LindelofSpace
   have _ := ChartedSpace.discreteTopology (EuclideanSpace ℝ (Fin 0)) ((𝓡∂ 1).boundary M)
   have _ : Countable ((𝓡∂ 1).boundary M) := countable_of_Lindelof_of_discrete
   have _ : T1Space ((𝓡∂ 1).boundary M) := ChartedSpace.t1Space (EuclideanSpace ℝ (Fin 0)) _
@@ -434,8 +432,6 @@ theorem integralTopForm_mextDeriv_interior_riemannianVolumeForm
           (boundaryRestriction ((riemannianVolumeForm o).interior X)) =
         ∫ x : (𝓡∂ (n + 1)).boundary M, inner ℝ (X (x : M)) (halfSpaceOutwardUnitNormal x)
           ∂halfSpaceBoundaryVolume (n := n) (M := M) := by
-  let _ : LindelofSpace ((𝓡∂ (n + 1)).boundary M) :=
-    ((𝓡∂ (n + 1)).isClosed_boundary one_ne_zero).isClosedEmbedding_subtypeVal.LindelofSpace
   refine ⟨?_, ?_⟩
   · rw [mextDeriv_interior_riemannianVolumeForm o (hX.mdifferentiable one_ne_zero)]
     exact integralTopForm_smul_riemannianVolumeForm o

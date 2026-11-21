@@ -212,6 +212,12 @@ theorem isClosed_boundary_of_finiteDimensional [FiniteDimensional 𝕜 E] :
 
 end ModelWithCorners
 
+/-- The boundary of a Lindelöf charted space modelled with corners on a finite-dimensional
+space is Lindelöf, as a closed subspace. -/
+instance ModelWithCorners.lindelofSpace_boundary [FiniteDimensional 𝕜 E] [LindelofSpace M] :
+    LindelofSpace (I.boundary M) :=
+  (I.isClosed_boundary_of_finiteDimensional M).isClosedEmbedding_subtypeVal.LindelofSpace
+
 end ChartIndependence
 
 namespace OpenPartialHomeomorph
