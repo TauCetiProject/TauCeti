@@ -595,7 +595,8 @@ theorem exists_periodic_hasDerivAt_of_tendsto_setLIntegral_comp_add
   -- By periodicity, `x` solves Hamilton's equation everywhere.
   set Y : ℝ → V := fun t ↦ ω.hamiltonianVectorField (H t) (x t)
   have hYper : Periodic Y 1 := fun t ↦ by simp only [Y, hHper t, hxper t]
-  refine ⟨x, hxper, hasDerivAt_of_periodic_of_hasDerivWithinAt one_pos hxper hYper hder,
+  refine ⟨x, hxper,
+    hasDerivAt_of_periodic_of_hasDerivWithinAt one_pos hxper hYper 0 (by rwa [zero_add]),
     fun t ↦ hK.mem_of_tendsto (hat (0, t)) ?_, hvx⟩
   filter_upwards [hmem 0] with k hk
   simpa only [hzs] using huK k _ hk t
