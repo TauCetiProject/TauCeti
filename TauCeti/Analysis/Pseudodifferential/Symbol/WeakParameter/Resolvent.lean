@@ -7,8 +7,10 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.Symbol.WeakParameter.Basic
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Frequency
+import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 import TauCeti.Analysis.Calculus.IteratedDeriv.Indicator
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Calculus.IteratedFDeriv.ContinuousLinearMapInverse
 import TauCeti.Analysis.Complex.SectorBounds
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
@@ -44,10 +46,12 @@ like `(⟨ξ⟩ ^ d + ‖λ‖)⁻¹`.
   has frequency order `d j`.
 * `TauCeti.WeakParameterSymbol.coefficient_normalizedResolvent_inv`: at the spectral parameter
   `λ = r⁻¹` it is `-λ (p(x, ξ) - λ)⁻¹`.
-* `TauCeti.Symbol.isParameterElliptic_besselPotential`: the Bessel weight `⟨ξ / 2π⟩ ^ d` of every
-  real order `d` (`TauCeti.Symbol.besselPotential`) is parameter-elliptic on every sector
-  `Re r ≤ c ‖r‖` with `c < 1`, so that the normalized resolvent of the Bessel potential
-  `(1 - Δ / 4π²) ^ (d / 2)` is a weakly parameter-dependent symbol.
+* `TauCeti.Symbol.isParameterElliptic_of_coefficient_eq_smul`: an elliptic scalar symbol
+  `w(x, ξ) • id` with `w ≥ 0` is parameter-elliptic on every sector `Re r ≤ c ‖r‖` with `c < 1`.
+* `TauCeti.Symbol.isParameterElliptic_besselPotential`: in particular the Bessel weight
+  `⟨ξ / 2π⟩ ^ d` of every real order `d` (`TauCeti.Symbol.besselPotential`) is, so that the
+  normalized resolvent of the Bessel potential `(1 - Δ / 4π²) ^ (d / 2)` is a weakly
+  parameter-dependent symbol.
 
 ## Implementation notes
 
@@ -79,137 +83,6 @@ open scoped ContDiff Topology Nat Real
 namespace TauCeti
 
 variable {n : ℕ}
-
-/-! ### Frequency dilations of mixed derivatives -/
-
-section Dilation
-
-variable {A : Type*} [NormedAddCommGroup A] [NormedSpace ℝ A]
-
-/-- **Mixed derivatives under a frequency dilation.** Dilating the frequency by `t` about `ξ`
-multiplies a mixed derivative by `t` for each frequency direction: the mixed derivative
-`∂_y^α ∂_v^β` at `(0, 0)` of `(y, v) ↦ a(x + y, ξ + t v)` is `t ^ |β|` times
-`∂_x^α ∂_ξ^β a(x, ξ)`. -/
-theorem mixedDeriv_comp_add_smul {a : CoordinateSpace n × CoordinateSpace n → A}
-    {α β : List (Fin n)} (ha : ContDiff ℝ (α.length + β.length) a) (x ξ : CoordinateSpace n)
-    (t : ℝ) :
-    mixedDeriv α β (fun q => a (x + q.1, ξ + t • q.2)) 0 0 =
-      t ^ β.length • mixedDeriv α β a x ξ := by
-  have h : (fun q : CoordinateSpace n × CoordinateSpace n => a (x + q.1, ξ + t • q.2)) =
-      (fun q => a ((x, ξ) + q)) ∘ (ContinuousLinearMap.id ℝ (CoordinateSpace n)).prodMap
-        (t • ContinuousLinearMap.id ℝ (CoordinateSpace n)) := by
-    funext q
-    rfl
-  rw [h, mixedDeriv_comp_prodMap (a := fun q => a ((x, ξ) + q)) _ _
-      (ha.comp (contDiff_const.add contDiff_id)) 0 0,
-    mixedDeriv_eq_iteratedFDeriv_append α β ha x ξ, iteratedFDeriv_comp_add_left]
-  have hv : (Fin.append (fun i => ((ContinuousLinearMap.id ℝ (CoordinateSpace n))
-        (EuclideanSpace.single (α.get i) 1), (0 : CoordinateSpace n)))
-      fun i => ((0 : CoordinateSpace n), (t • ContinuousLinearMap.id ℝ (CoordinateSpace n))
-        (EuclideanSpace.single (β.get i) 1))) =
-      fun i => (Fin.append (fun _ => (1 : ℝ)) fun _ => t) i •
-        Fin.append (fun i => (EuclideanSpace.single (α.get i) 1, (0 : CoordinateSpace n)))
-          (fun i => ((0 : CoordinateSpace n), EuclideanSpace.single (β.get i) 1)) i := by
-    funext i
-    refine Fin.addCases (fun i => ?_) (fun i => ?_) i <;> simp
-  have hprod : ∏ i, (Fin.append (fun _ : Fin α.length => (1 : ℝ))
-      fun _ : Fin β.length => t) i = t ^ β.length := by
-    simp [Fin.prod_univ_add]
-  simp only [ContinuousLinearMap.coe_id', id_eq, map_zero, Prod.mk_zero_zero, add_zero] at hv ⊢
-  rw [hv, ContinuousMultilinearMap.map_smul_univ, hprod]
-
-end Dilation
-
-/-! ### Bounds for products at a point -/
-
-section Leibniz
-
-variable {E V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup V]
-  [NormedSpace ℂ V]
-
-/-- If the derivatives of order at most `k` of `f` and `g` at `y` are bounded by `a` and `b`,
-those of `f g` are bounded by `2 ^ k a b`. -/
-private theorem norm_iteratedFDeriv_mul_le_of_forall_le {f g : E → V →L[ℂ] V} {k : ℕ}
-    (hf : ContDiff ℝ k f) (hg : ContDiff ℝ k g) {y : E} {a b : ℝ}
-    (ha : ∀ i ≤ k, ‖iteratedFDeriv ℝ i f y‖ ≤ a) (hb : ∀ i ≤ k, ‖iteratedFDeriv ℝ i g y‖ ≤ b) :
-    ∀ i ≤ k, ‖iteratedFDeriv ℝ i (fun z => f z * g z) y‖ ≤ 2 ^ k * a * b := by
-  intro i hi
-  have ha0 : 0 ≤ a := (norm_nonneg _).trans (ha 0 (Nat.zero_le _))
-  have hb0 : 0 ≤ b := (norm_nonneg _).trans (hb 0 (Nat.zero_le _))
-  calc ‖iteratedFDeriv ℝ i (fun z => f z * g z) y‖
-      ≤ ∑ l ∈ Finset.range (i + 1), (i.choose l : ℝ) * ‖iteratedFDeriv ℝ l f y‖ *
-          ‖iteratedFDeriv ℝ (i - l) g y‖ :=
-        norm_iteratedFDeriv_mul_le hf hg y (by exact_mod_cast hi)
-    _ ≤ ∑ l ∈ Finset.range (i + 1), (i.choose l : ℝ) * a * b := by
-        refine Finset.sum_le_sum fun l hl => ?_
-        have hl' : l ≤ i := Nat.lt_succ_iff.1 (Finset.mem_range.1 hl)
-        gcongr
-        · exact ha l (hl'.trans hi)
-        · exact hb (i - l) ((Nat.sub_le i l).trans hi)
-    _ = 2 ^ i * a * b := by
-        rw [← Finset.sum_mul, ← Finset.sum_mul]
-        exact_mod_cast congrArg (fun m : ℕ => (m : ℝ) * a * b) (Nat.sum_range_choose i)
-    _ ≤ 2 ^ k * a * b := by
-        gcongr
-        · norm_num
-
-/-- If the derivatives of order at most `k` of `f` at `y` are bounded by `a`, those of `f ^ j`
-are bounded by `(2 ^ k a) ^ j`. -/
-private theorem norm_iteratedFDeriv_pow_le_of_forall_le {f : E → V →L[ℂ] V} {k : ℕ}
-    (hf : ContDiff ℝ ∞ f) {y : E} {a : ℝ} (ha : ∀ i ≤ k, ‖iteratedFDeriv ℝ i f y‖ ≤ a) (j : ℕ) :
-    ∀ i ≤ k, ‖iteratedFDeriv ℝ i (fun z => f z ^ j) y‖ ≤ (2 ^ k * a) ^ j := by
-  induction j with
-  | zero =>
-    intro i _
-    simp only [pow_zero]
-    rcases eq_or_ne i 0 with rfl | hi
-    · rw [norm_iteratedFDeriv_zero]
-      exact ContinuousLinearMap.norm_id_le
-    · simp [iteratedFDeriv_const_of_ne hi]
-  | succ j ih =>
-    intro i hi
-    have h := norm_iteratedFDeriv_mul_le_of_forall_le ((hf.pow j).of_le (by exact_mod_cast le_top))
-      (hf.of_le (by exact_mod_cast le_top)) ih ha i hi
-    simp only [pow_succ] at h ⊢
-    linarith
-
-end Leibniz
-
-/-! ### Parameter derivatives of `(1 - r P)⁻¹` -/
-
-section ParameterDeriv
-
-variable {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℂ 𝔸] [CompleteSpace 𝔸]
-
-omit [CompleteSpace 𝔸] in
-private theorem commute_ringInverse_one_sub_smul (P : 𝔸) (r : ℂ) :
-    Commute P (Ring.inverse (1 - r • P)) := by
-  by_cases hr : IsUnit (1 - r • P)
-  · obtain ⟨u, hu⟩ := hr
-    have hc : Commute P (u : 𝔸) :=
-      hu ▸ (Commute.one_right P).sub_right ((Commute.refl P).smul_right r)
-    rw [← hu, Ring.inverse_unit]
-    exact hc.units_inv_right
-  · rw [Ring.inverse_non_unit _ hr]
-    exact Commute.zero_right P
-
-/-- `∂_r^j (1 - r P)⁻¹ = j! P ^ j ((1 - r P)⁻¹) ^ (j + 1)` where `1 - r P` is invertible: the
-commutative form of `TauCeti.iteratedDeriv_ringInverse_add_smul`, as `P` commutes with
-`(1 - r P)⁻¹`. -/
-private theorem iteratedDeriv_ringInverse_one_sub_smul (P : 𝔸) (j : ℕ) {r : ℂ}
-    (hr : IsUnit (1 - r • P)) :
-    iteratedDeriv j (fun s : ℂ => Ring.inverse (1 - s • P)) r =
-      (j ! : ℂ) • (P ^ j * Ring.inverse (1 - r • P) ^ (j + 1)) := by
-  have h1 (s : ℂ) : 1 - s • P = 1 + s • -P := by rw [smul_neg, sub_eq_add_neg]
-  have hc := commute_ringInverse_one_sub_smul P r
-  simp only [h1] at hr hc ⊢
-  have hI : Ring.inverse (1 + r • -P) * (P * Ring.inverse (1 + r • -P)) ^ j =
-      P ^ j * Ring.inverse (1 + r • -P) ^ (j + 1) := by
-    rw [hc.mul_pow, ← mul_assoc, ← (hc.pow_left j).eq, mul_assoc, ← pow_succ']
-  rw [iteratedDeriv_ringInverse_add_smul 1 (-P) j hr, neg_mul, ← hI]
-  rcases Nat.even_or_odd j with h | h <;> simp [h.neg_one_pow, h.neg_pow]
-
-end ParameterDeriv
 
 /-! ### Parameter-elliptic symbols -/
 
@@ -253,6 +126,11 @@ section Estimates
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [CompleteSpace V] {d : ℝ}
   {p : Symbol n V V d} {R : Set ℂ}
 
+/-- The frequency dilation `(y, v) ↦ (x + y, ξ + t v)` is smooth. -/
+private theorem contDiff_dilate (x ξ : CoordinateSpace n) (t : ℝ) :
+    ContDiff ℝ ∞ fun q : CoordinateSpace n × CoordinateSpace n => (x + q.1, ξ + t • q.2) :=
+  (contDiff_const.add contDiff_fst).prodMk (contDiff_const.add (contDiff_snd.const_smul t))
+
 /-- With `t = ⟨ξ⟩`, `t ^ i * (1 + ‖ξ‖²) ^ ((d - i) / 2) = (1 + ‖ξ‖²) ^ (d / 2)`. -/
 private theorem japaneseBracket_pow_mul_rpow (ξ : CoordinateSpace n) (i : ℕ) (d : ℝ) :
     ((1 + ‖ξ‖ ^ 2) ^ ((1 : ℝ) / 2)) ^ i * (1 + ‖ξ‖ ^ 2) ^ ((d - i) / 2) =
@@ -261,6 +139,11 @@ private theorem japaneseBracket_pow_mul_rpow (ξ : CoordinateSpace n) (i : ℕ) 
   rw [← Real.rpow_natCast, ← Real.rpow_mul hu.le, ← Real.rpow_add hu]
   congr 1
   ring
+
+omit [CompleteSpace V] in
+private theorem norm_one_clm_le : ‖(1 : V →L[ℂ] V)‖ ≤ 1 := by
+  rw [ContinuousLinearMap.one_def]
+  exact ContinuousLinearMap.norm_id_le
 
 omit [CompleteSpace V] in
 /-- **Dilated symbol estimates.** With `t = ⟨ξ⟩`, the derivatives of order at most `k` at `(0, 0)`
@@ -280,8 +163,7 @@ private theorem exists_norm_iteratedFDeriv_dilate_le (p : Symbol n V V d)
   have ht : 0 < t := Real.rpow_pos_of_pos (by positivity) _
   have hsmooth : ContDiff ℝ ∞ fun q : CoordinateSpace n × CoordinateSpace n =>
       p.coefficient (x + q.1, ξ + t • q.2) :=
-    p.contDiff_coefficient.comp ((contDiff_const.add contDiff_fst).prodMk
-      (contDiff_const.add (contDiff_snd.const_smul t)))
+    p.contDiff_coefficient.comp (contDiff_dilate x ξ t)
   refine (norm_iteratedFDeriv_le_sum_mixedDeriv (hsmooth.of_le (by exact_mod_cast le_top)) 0).trans
     ?_
   calc ∑ w : Fin i → Fin n ⊕ Fin n,
@@ -316,11 +198,8 @@ private theorem norm_iteratedFDeriv_one_sub_smul_le {E : Type*} [NormedAddCommGr
     rw [fun_iteratedFDeriv_sub_apply contDiff_const.contDiffAt
       ((hP.const_smul r).of_le (by exact_mod_cast le_top)).contDiffAt,
       iteratedFDeriv_const_smul_apply' ((hP.of_le (by exact_mod_cast le_top)).contDiffAt)]
-  have hone : ‖iteratedFDeriv ℝ i (fun _ : E => (1 : V →L[ℂ] V)) y‖ ≤ 1 := by
-    rcases eq_or_ne i 0 with rfl | hi0
-    · rw [norm_iteratedFDeriv_zero]
-      exact ContinuousLinearMap.norm_id_le
-    · simp [iteratedFDeriv_const_of_ne hi0]
+  have hone : ‖iteratedFDeriv ℝ i (fun _ : E => (1 : V →L[ℂ] V)) y‖ ≤ 1 :=
+    (norm_iteratedFDeriv_const_le i _ y).trans norm_one_clm_le
   rw [hsub]
   refine (norm_sub_le _ _).trans ?_
   rw [norm_smul]
@@ -348,8 +227,7 @@ private theorem exists_norm_iteratedFDeriv_dilate_inverse_le (hp : p.IsParameter
   set t : ℝ := (1 + ‖ξ‖ ^ 2) ^ ((1 : ℝ) / 2)
   set P : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] V :=
     fun q => p.coefficient (x + q.1, ξ + t • q.2)
-  have hP : ContDiff ℝ ∞ P := p.contDiff_coefficient.comp ((contDiff_const.add contDiff_fst).prodMk
-    (contDiff_const.add (contDiff_snd.const_smul t)))
+  have hP : ContDiff ℝ ∞ P := p.contDiff_coefficient.comp (contDiff_dilate x ξ t)
   have hF0 : 1 - r • P 0 = 1 - r • p.coefficient (x, ξ) := by simp [P]
   have hFinvb : ‖(1 - r • P 0).inverse‖ ≤ B / s := by
     rw [le_div_iff₀ (by positivity), mul_comm, hF0]
@@ -387,16 +265,12 @@ private theorem exists_norm_mixedDeriv_pow_mul_inverse_pow_le (hp : p.IsParamete
   -- The dilation of `g` is a product of the dilations of `p` and of the inverse, whose derivatives
   -- at `0` are of size `⟨ξ⟩ ^ d` and `1`; by the Leibniz rule its derivatives are of size
   -- `⟨ξ⟩ ^ (d j)`.
-  have hD : ContDiff ℝ ∞ fun q : CoordinateSpace n × CoordinateSpace n =>
-      (x + q.1, ξ + t • q.2) :=
-    (contDiff_const.add contDiff_fst).prodMk (contDiff_const.add (contDiff_snd.const_smul t))
-  have hP := p.contDiff_coefficient.comp hD
-  have hG := hinv.comp hD
-  have hprod := norm_iteratedFDeriv_mul_le_of_forall_le
-    ((hP.pow j).of_le (by exact_mod_cast le_top))
-    ((hG.pow (j + 1)).of_le (by exact_mod_cast le_top))
-    (norm_iteratedFDeriv_pow_le_of_forall_le hP (hS x hx ξ) j)
-    (norm_iteratedFDeriv_pow_le_of_forall_le hG (hc x hx ξ r hr) (j + 1)) k le_rfl
+  have hD := contDiff_dilate x ξ t
+  have hP := (p.contDiff_coefficient.comp hD).of_le (m := k) (by exact_mod_cast le_top)
+  have hG := (hinv.comp hD).of_le (m := k) (by exact_mod_cast le_top)
+  have hprod := (hP.pow j).norm_iteratedFDeriv_mul_le_two_pow (hG.pow (j + 1))
+    (hP.norm_iteratedFDeriv_pow_le_two_pow norm_one_clm_le (hS x hx ξ) j)
+    (hG.norm_iteratedFDeriv_pow_le_two_pow norm_one_clm_le (hc x hx ξ r hr) (j + 1)) k le_rfl
   -- Undo the dilation: each frequency derivative costs a factor `t = ⟨ξ⟩`.
   have hkey : t ^ β.length * ‖mixedDeriv α β g x ξ‖ ≤ M * (u ^ (d / 2)) ^ j := by
     have h1 := norm_mixedDeriv_le α β ((hg.comp hD).of_le (by exact_mod_cast le_top)) 0 0
@@ -507,13 +381,12 @@ theorem coefficient_normalizedResolvent_inv (q : CoordinateSpace n × Coordinate
     (hμ : μ⁻¹ ∈ R) (hμ0 : μ ≠ 0) :
     (normalizedResolvent p hp).coefficient q μ⁻¹ = (-μ) • (p.coefficient q - μ • 1).inverse := by
   have h : 1 - μ⁻¹ • p.coefficient q = (-μ⁻¹) • (p.coefficient q - μ • 1) := by
-    rw [smul_sub, smul_smul, neg_mul, inv_mul_cancel₀ hμ0, neg_smul, neg_smul, one_smul,
-      sub_neg_eq_add, neg_add_eq_sub]
+    simp [smul_sub, smul_smul, hμ0, neg_add_eq_sub]
   rw [coefficient_normalizedResolvent q hμ, h, ContinuousLinearMap.inverse_smul, inv_neg, inv_inv]
 
 end WeakParameterSymbol
 
-/-! ### The Bessel weight -/
+/-! ### Scalar symbols and the Bessel weight -/
 
 namespace Symbol
 
@@ -545,47 +418,63 @@ private theorem rpow_le_two_pi_rpow_abs_mul_rpow (d : ℝ) (ξ : CoordinateSpace
     exact (Real.rpow_le_rpow_of_nonpos (by positivity) hbase (by linarith)).trans
       (le_mul_of_one_le_left (by positivity) (Real.one_le_rpow hπ1 (abs_nonneg d)))
 
-/-- **The Bessel weight is parameter-elliptic on sectors.** For every real `d`, the Bessel weight
-`⟨ξ / 2π⟩ ^ d` of order `d` (`TauCeti.Symbol.besselPotential`), the symbol of
-`(1 - Δ / 4π²) ^ (d / 2)`, is parameter-elliptic on every set of reciprocal parameters in a sector
+/-- **Scalar symbols are parameter-elliptic on sectors.** A symbol `p(x, ξ) = w(x, ξ) • id` of order
+`d` with a nonnegative real weight `w` that is elliptic, `⟨ξ⟩ ^ d ≤ C w(x, ξ)` for positions in
+each compact set, is parameter-elliptic on every set of reciprocal parameters in a sector
 `Re r ≤ c ‖r‖` with `c < 1`: such a sector avoids the positive real axis, where the values
 `r = 1 / λ` with `λ` in the spectrum lie. -/
-theorem isParameterElliptic_besselPotential (d : ℝ) {c : ℝ} (hc : c < 1)
-    {R : Set ℂ} (hR : ∀ r ∈ R, r.re ≤ c * ‖r‖) :
-    (besselPotential d : Symbol n V V d).IsParameterElliptic R := by
+theorem isParameterElliptic_of_coefficient_eq_smul {d : ℝ} {p : Symbol n V V d}
+    {w : CoordinateSpace n × CoordinateSpace n → ℝ}
+    (hpw : ∀ q, p.coefficient q = (w q : ℂ) • ContinuousLinearMap.id ℂ V) (hw : ∀ q, 0 ≤ w q)
+    (hell : ∀ K : Set (CoordinateSpace n), IsCompact K →
+      ∃ C, ∀ x ∈ K, ∀ ξ, (1 + ‖ξ‖ ^ 2) ^ (d / 2) ≤ C * w (x, ξ))
+    {c : ℝ} (hc : c < 1) {R : Set ℂ} (hR : ∀ r ∈ R, r.re ≤ c * ‖r‖) :
+    p.IsParameterElliptic R := by
   have hκ : 0 < (1 - max c (-1)) / 2 := by linarith [max_lt hc (show (-1 : ℝ) < 1 by norm_num)]
-  refine fun K _ => ⟨(2 * π) ^ |d| / ((1 - max c (-1)) / 2), fun x _ ξ r hr => ?_⟩
-  set w : ℝ := (1 + ‖(2 * π)⁻¹ • ξ‖ ^ 2) ^ (d / 2)
-  have hw : 0 ≤ w := by positivity
-  have hcoef : 1 - r • (besselPotential d : Symbol n V V d).coefficient (x, ξ) =
-      (1 - r * w) • ContinuousLinearMap.id ℂ V := by
-    rw [coefficient_besselPotential, smul_smul, sub_smul, one_smul]
-    rfl
-  have hlow : (1 - max c (-1)) / 2 * (1 + ‖r‖ * w) ≤ ‖1 - r * w‖ := by
-    have hnorm : ‖r * (w : ℂ)‖ = ‖r‖ * w := by
-      rw [norm_mul, Complex.norm_real, Real.norm_of_nonneg hw]
-    have h := Complex.mul_add_norm_le_norm_ofReal_sub (z := r * w) (c := c) zero_le_one (by
+  refine fun K hK => ?_
+  obtain ⟨C, hC⟩ := hell K hK
+  refine ⟨max C 1 / ((1 - max c (-1)) / 2), fun x hx ξ r hr => ?_⟩
+  set w₀ : ℝ := w (x, ξ)
+  have hw₀ : 0 ≤ w₀ := hw (x, ξ)
+  have hcoef : 1 - r • p.coefficient (x, ξ) = (1 - r * w₀) • ContinuousLinearMap.id ℂ V := by
+    rw [hpw, smul_smul, sub_smul, one_smul, ContinuousLinearMap.one_def]
+  have hlow : (1 - max c (-1)) / 2 * (1 + ‖r‖ * w₀) ≤ ‖1 - r * w₀‖ := by
+    have hnorm : ‖r * (w₀ : ℂ)‖ = ‖r‖ * w₀ := by
+      rw [norm_mul, Complex.norm_real, Real.norm_of_nonneg hw₀]
+    have h := Complex.mul_add_norm_le_norm_ofReal_sub (z := r * w₀) (c := c) zero_le_one (by
       rw [hnorm, Complex.re_mul_ofReal]
-      nlinarith [mul_le_mul_of_nonneg_right (hR r hr) hw])
+      nlinarith [mul_le_mul_of_nonneg_right (hR r hr) hw₀])
     rwa [hnorm, Complex.ofReal_one] at h
-  have hpos : 0 < ‖1 - r * w‖ := (mul_pos hκ (by positivity)).trans_le hlow
+  have hpos : 0 < ‖1 - r * w₀‖ := (mul_pos hκ (by positivity)).trans_le hlow
   rw [hcoef]
   refine ⟨(ContinuousLinearMap.isInvertible_smul_iff (norm_pos_iff.1 hpos)).2
     (by simpa using ContinuousLinearMap.isInvertible_equiv (f := ContinuousLinearEquiv.refl ℂ V)),
     ?_⟩
-  have hinv : ‖((1 - r * w) • ContinuousLinearMap.id ℂ V).inverse‖ ≤ ‖1 - r * w‖⁻¹ := by
+  have hinv : ‖((1 - r * w₀) • ContinuousLinearMap.id ℂ V).inverse‖ ≤ ‖1 - r * w₀‖⁻¹ := by
     rw [ContinuousLinearMap.inverse_smul, ContinuousLinearMap.inverse_id, norm_smul, norm_inv]
     exact mul_le_of_le_one_right (by positivity) ContinuousLinearMap.norm_id_le
-  have hT := rpow_le_two_pi_rpow_abs_mul_rpow d ξ
-  have h2π : 1 ≤ (2 * π) ^ |d| := Real.one_le_rpow (by linarith [Real.two_le_pi]) (abs_nonneg d)
-  calc (1 + ‖r‖ * (1 + ‖ξ‖ ^ 2) ^ (d / 2)) * ‖((1 - r * w) • ContinuousLinearMap.id ℂ V).inverse‖
-      ≤ ((2 * π) ^ |d| * (1 + ‖r‖ * w)) * ‖1 - r * w‖⁻¹ := by
+  have hT := hC x hx ξ
+  calc (1 + ‖r‖ * (1 + ‖ξ‖ ^ 2) ^ (d / 2)) * ‖((1 - r * w₀) • ContinuousLinearMap.id ℂ V).inverse‖
+      ≤ (max C 1 * (1 + ‖r‖ * w₀)) * ‖1 - r * w₀‖⁻¹ := by
         gcongr
-        nlinarith [norm_nonneg r, mul_le_mul_of_nonneg_left hT (norm_nonneg r)]
-    _ ≤ ((2 * π) ^ |d| * (1 + ‖r‖ * w)) * ((1 - max c (-1)) / 2 * (1 + ‖r‖ * w))⁻¹ := by
+        nlinarith [norm_nonneg r, le_max_left C 1, le_max_right C 1,
+          mul_le_mul_of_nonneg_left (hT.trans (mul_le_mul_of_nonneg_right (le_max_left C 1) hw₀))
+            (norm_nonneg r)]
+    _ ≤ (max C 1 * (1 + ‖r‖ * w₀)) * ((1 - max c (-1)) / 2 * (1 + ‖r‖ * w₀))⁻¹ := by
         gcongr
-    _ = (2 * π) ^ |d| / ((1 - max c (-1)) / 2) := by
+    _ = max C 1 / ((1 - max c (-1)) / 2) := by
         field_simp
+
+/-- **The Bessel weight is parameter-elliptic on sectors.** For every real `d`, the Bessel weight
+`⟨ξ / 2π⟩ ^ d` of order `d` (`TauCeti.Symbol.besselPotential`), the symbol of
+`(1 - Δ / 4π²) ^ (d / 2)`, is parameter-elliptic on every set of reciprocal parameters in a sector
+`Re r ≤ c ‖r‖` with `c < 1`. -/
+theorem isParameterElliptic_besselPotential (d : ℝ) {c : ℝ} (hc : c < 1)
+    {R : Set ℂ} (hR : ∀ r ∈ R, r.re ≤ c * ‖r‖) :
+    (besselPotential d : Symbol n V V d).IsParameterElliptic R :=
+  isParameterElliptic_of_coefficient_eq_smul (coefficient_besselPotential d)
+    (fun _ => by positivity)
+    (fun _ _ => ⟨_, fun _ _ ξ => rpow_le_two_pi_rpow_abs_mul_rpow d ξ⟩) hc hR
 
 end Symbol
 

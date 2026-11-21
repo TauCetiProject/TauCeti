@@ -157,10 +157,11 @@ private theorem hasTemperateGrowth_and_norm_iteratedFDeriv_repr_fderiv_mul_le {�
           2 ^ M * (L * ‖w‖ * G) := by
   have hc : (fun x ↦ ((b.toBasis.repr (fderiv ℝ Φ x w) i : ℝ) : ℂ)).HasTemperateGrowth :=
     hΦ.basis_repr_fderiv_apply b.toBasis w i
-  exact ⟨hc.mul hg, (hc.1.of_le (mod_cast le_top)).norm_iteratedFDeriv_mul_le_two_pow
-    (hg.1.of_le (mod_cast le_top)) (fun n hn x ↦
+  exact ⟨hc.mul hg, fun n hn x ↦ (hc.1.of_le (mod_cast le_top)).norm_iteratedFDeriv_mul_le_two_pow
+    (hg.1.of_le (mod_cast le_top)) (fun n hn ↦
       (hΦ.1.norm_iteratedFDeriv_basis_repr_fderiv_apply_le (mod_cast le_top) b w i x).trans
-        (mul_le_mul_of_nonneg_right (hΦL (n + 1) (by omega) (by omega) x) (norm_nonneg w))) hgG⟩
+        (mul_le_mul_of_nonneg_right (hΦL (n + 1) (by omega) (by omega) x) (norm_nonneg w)))
+    (fun n hn ↦ hgG n hn x) n hn⟩
 
 omit [MeasurableSpace E] [BorelSpace E] [CompleteSpace F] in
 /-- One derivative of `g Φ^* T`, by the Leibniz rule and the chain rule:
@@ -378,9 +379,10 @@ private theorem hasTemperateGrowth_and_norm_iteratedFDeriv_repr_fderiv_comp_mul_
           2 ^ M * (M.factorial * (L * ‖v‖) * max 1 L ^ M * G) := by
   have hd : (fun x ↦ ((b.toBasis.repr (fderiv ℝ Φ.symm (Φ x) v) l : ℝ) : ℂ)).HasTemperateGrowth :=
     (hΨ.basis_repr_fderiv_apply b.toBasis v l).comp hΦ
-  exact ⟨hd.mul hg, (hd.1.of_le (mod_cast le_top)).norm_iteratedFDeriv_mul_le_two_pow
-    (hg.1.of_le (mod_cast le_top)) (norm_iteratedFDeriv_repr_fderiv_comp_le b hΦ.1 hΨ.1 hΦL hΨL v l)
-    hgG⟩
+  exact ⟨hd.mul hg, fun n hn x ↦ (hd.1.of_le (mod_cast le_top)).norm_iteratedFDeriv_mul_le_two_pow
+    (hg.1.of_le (mod_cast le_top))
+    (fun n hn ↦ norm_iteratedFDeriv_repr_fderiv_comp_le b hΦ.1 hΨ.1 hΦL hΨL v l n hn x)
+    (fun n hn ↦ hgG n hn x) n hn⟩
 
 omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
   [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F] in
