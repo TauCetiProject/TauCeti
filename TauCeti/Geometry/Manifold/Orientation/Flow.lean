@@ -58,26 +58,26 @@ theorem isOrientationPreservingAt_flowOf (o : Manifold.Orientation I M ι)
   have : PreconnectedSpace U :=
     Subtype.preconnectedSpace isPreconnected_maximalIntegralCurveInterval
   have hF (s : U) : ContMDiffAt (𝓘(ℝ, ℝ).prod I) I 1
-      (fun q : U × M ↦ flowOf v q.1.1 q.2) (s, x) :=
+      (fun q : U × M ↦ flowOf v q.1.val q.2) (s, x) :=
     ((contMDiffOn_flowOf le_rfl hv).contMDiffAt
-      ((isOpen_flowDomain hv).mem_nhds (mem_flowDomain.2 s.2))).comp (s, x)
-      ((contMDiff_subtype_val.comp contMDiff_fst).prodMk contMDiff_snd).contMDiffAt
-  have hD (s : U) : (mfderiv I I (flowOf v s.1) x).IsInvertible := by
-    have hs : (s.1, x) ∈ flowDomain v := mem_flowDomain.2 s.2
-    have hneg : (-s.1, flowOf v s.1 x) ∈ flowDomain v := neg_mem_flowDomain_flowOf hv hs
-    have hd₁ : MDifferentiableAt I I (flowOf v s.1) x :=
+      ((isOpen_flowDomain hv).mem_nhds (mem_flowDomain.2 s.property))).comp (s, x)
+      ((contMDiff_subtypeVal.comp contMDiff_fst).prodMk contMDiff_snd).contMDiffAt
+  have hD (s : U) : (mfderiv I I (flowOf v s.val) x).IsInvertible := by
+    have hs : (s.val, x) ∈ flowDomain v := mem_flowDomain.2 s.property
+    have hneg : (-s.val, flowOf v s.val x) ∈ flowDomain v := neg_mem_flowDomain_flowOf hv hs
+    have hd₁ : MDifferentiableAt I I (flowOf v s.val) x :=
       (((contMDiffOn_flowOf le_rfl hv).contMDiffAt
         ((isOpen_flowDomain hv).mem_nhds hs)).comp x
         (contMDiffAt_const.prodMk contMDiffAt_id)).mdifferentiableAt one_ne_zero
-    have hd₂ : MDifferentiableAt I I (flowOf v (-s.1)) (flowOf v s.1 x) :=
+    have hd₂ : MDifferentiableAt I I (flowOf v (-s.val)) (flowOf v s.val x) :=
       (((contMDiffOn_flowOf le_rfl hv).contMDiffAt
-        ((isOpen_flowDomain hv).mem_nhds hneg)).comp (flowOf v s.1 x)
+        ((isOpen_flowDomain hv).mem_nhds hneg)).comp (flowOf v s.val x)
         (contMDiffAt_const.prodMk contMDiffAt_id)).mdifferentiableAt one_ne_zero
-    have hev : flowOf v (-s.1) ∘ flowOf v s.1 =ᶠ[𝓝 x] id := by
+    have hev : flowOf v (-s.val) ∘ flowOf v s.val =ᶠ[𝓝 x] id := by
       filter_upwards [((isOpen_flowDomain hv).preimage
         (continuous_const.prodMk continuous_id)).mem_nhds hs] with y hy
       exact flowOf_neg_flowOf hv hy
-    have hcomp : (mfderiv I I (flowOf v (-s.1) ∘ flowOf v s.1) x).IsInvertible := by
+    have hcomp : (mfderiv I I (flowOf v (-s.val) ∘ flowOf v s.val) x).IsInvertible := by
       rw [hev.mfderiv_eq, mfderiv_id, ContinuousLinearMap.comp_id]
       exact ⟨tangentSpaceCast I _ _, rfl⟩
     exact (isInvertible_mfderiv_of_isInvertible_mfderiv_comp rfl hd₂ hd₁ hcomp).1

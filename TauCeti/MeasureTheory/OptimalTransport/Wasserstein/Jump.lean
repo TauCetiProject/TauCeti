@@ -79,7 +79,7 @@ theorem map_jumpPath (t : I) : volume.map (fun a ↦ jumpPath a t) = Ber((1 : �
   rw [hpath]
   have hparam : (⟨volume.real (Iic t), by simp⟩ : I) = t := by
     ext
-    simp [measureReal_def, unitInterval.volume_Iic, ENNReal.toReal_ofReal t.2.1]
+    simp [measureReal_def, unitInterval.volume_Iic, ENNReal.toReal_ofReal t.property.1]
   simpa only [hparam] using
     (hasLaw_indicator_one_bernoulliMeasure
       (P := volume) (M := ℝ) (s := Iic t) measurableSet_Iic.nullMeasurableSet).map_eq

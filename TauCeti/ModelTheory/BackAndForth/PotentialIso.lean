@@ -43,15 +43,15 @@ variable [L.Structure M] [L.Structure N]
 equivalences admits extensions containing every element on either side. -/
 def PotentialIso (M : Type w) (N : Type w') [L.Structure M] [L.Structure N] : Prop :=
   ∃ S : Set (L.FGEquiv M N), S.Nonempty ∧
-    (∀ f ∈ S, ∀ m : M, ∃ g ∈ S, m ∈ g.1.dom ∧ f ≤ g) ∧
-    (∀ f ∈ S, ∀ n : N, ∃ g ∈ S, n ∈ g.1.cod ∧ f ≤ g)
+    (∀ f ∈ S, ∀ m : M, ∃ g ∈ S, m ∈ g.val.dom ∧ f ≤ g) ∧
+    (∀ f ∈ S, ∀ n : N, ∃ g ∈ S, n ∈ g.val.cod ∧ f ≤ g)
 
 /-- Potential isomorphism is witnessed by a nonempty family closed under extensions on both
 sides. -/
 theorem potentialIso_def : PotentialIso (L := L) M N ↔
     ∃ S : Set (L.FGEquiv M N), S.Nonempty ∧
-      (∀ f ∈ S, ∀ m : M, ∃ g ∈ S, m ∈ g.1.dom ∧ f ≤ g) ∧
-      (∀ f ∈ S, ∀ n : N, ∃ g ∈ S, n ∈ g.1.cod ∧ f ≤ g) :=
+      (∀ f ∈ S, ∀ m : M, ∃ g ∈ S, m ∈ g.val.dom ∧ f ≤ g) ∧
+      (∀ f ∈ S, ∀ n : N, ∃ g ∈ S, n ∈ g.val.cod ∧ f ≤ g) :=
   Iff.rfl
 
 /-- An isomorphism gives a potential isomorphism by restricting it to finitely generated
@@ -59,38 +59,38 @@ substructures. -/
 theorem _root_.FirstOrder.Language.Equiv.potentialIso (e : M ≃[L] N) :
     PotentialIso (L := L) M N := by
   let F : M ≃ₚ[L] N := e.toEmbedding.toPartialEquiv
-  refine ⟨{f | f.1 ≤ F}, ?_, ?_, ?_⟩
+  refine ⟨{f | f.val ≤ F}, ?_, ?_, ?_⟩
   · have hbot : (⊥ : L.Substructure M) ≤ F.dom := bot_le
     exact ⟨⟨F.domRestrict hbot, Substructure.fg_bot⟩, F.domRestrict_le hbot⟩
   · intro f hf m
-    let A : L.Substructure M := Substructure.closure L {m} ⊔ f.1.dom
+    let A : L.Substructure M := Substructure.closure L {m} ⊔ f.val.dom
     have hA : A ≤ F.dom := le_top
     let g : L.FGEquiv M N :=
-      ⟨F.domRestrict hA, (Substructure.fg_closure_singleton m).sup f.2⟩
+      ⟨F.domRestrict hA, (Substructure.fg_closure_singleton m).sup f.property⟩
     refine ⟨g, F.domRestrict_le hA, ?_, ?_⟩
     · have hm : m ∈ Substructure.closure L {m} :=
         Substructure.subset_closure (Set.mem_singleton m)
       exact mem_of_le_of_mem le_sup_left hm
-    · exact PartialEquiv.le_domRestrict f.1 F le_sup_right hA hf
+    · exact PartialEquiv.le_domRestrict f.val F le_sup_right hA hf
   · intro f hf n
-    let A : L.Substructure N := Substructure.closure L {n} ⊔ f.1.cod
+    let A : L.Substructure N := Substructure.closure L {n} ⊔ f.val.cod
     have hFcod : F.cod = ⊤ := by
       exact Hom.range_eq_top.mpr e.surjective
     have hA : A ≤ F.cod := hFcod.symm ▸ le_top
     have hfg : (F.codRestrict hA).dom.FG :=
       (F.codRestrict hA).dom_fg_iff_cod_fg.mpr ((Substructure.fg_closure_singleton n).sup
-        (f.1.dom_fg_iff_cod_fg.mp f.2))
+        (f.val.dom_fg_iff_cod_fg.mp f.property))
     let g : L.FGEquiv M N := ⟨F.codRestrict hA, hfg⟩
     refine ⟨g, F.codRestrict_le hA, ?_, ?_⟩
     · have hn : n ∈ Substructure.closure L {n} :=
         Substructure.subset_closure (Set.mem_singleton n)
       exact mem_of_le_of_mem le_sup_left hn
-    · exact PartialEquiv.le_codRestrict f.1 F le_sup_right hA hf
+    · exact PartialEquiv.le_codRestrict f.val F le_sup_right hA hf
 
 /-- Inverting a finitely generated partial equivalence twice gives it back. -/
 @[simp]
 theorem _root_.FirstOrder.Language.FGEquiv.symm_symm (f : L.FGEquiv M N) : f.symm.symm = f :=
-  Subtype.ext f.1.symm_symm
+  Subtype.ext f.val.symm_symm
 
 /-- Potential isomorphism is symmetric. -/
 theorem PotentialIso.symm (h : PotentialIso (L := L) M N) :
@@ -115,30 +115,30 @@ theorem PotentialIso.trans {P : Type*} [L.Structure P] (h₁ : PotentialIso (L :
   obtain ⟨S, ⟨f₀, hf₀⟩, hSf, hSb⟩ := h₁
   obtain ⟨T, ⟨g₀, hg₀⟩, hTf, hTb⟩ := h₂
   -- The composites of compatible members of `S` and `T` form the required family.
-  let comp (f : L.FGEquiv M N) (g : L.FGEquiv N P) (h : f.1.cod ≤ g.1.dom) : L.FGEquiv M P :=
-    ⟨g.1.comp f.1 h, by rw [PartialEquiv.dom_comp]; exact f.2⟩
+  let comp (f : L.FGEquiv M N) (g : L.FGEquiv N P) (h : f.val.cod ≤ g.val.dom) : L.FGEquiv M P :=
+    ⟨g.val.comp f.val h, by rw [PartialEquiv.dom_comp]; exact f.property⟩
   refine ⟨{k | ∃ f ∈ S, ∃ g ∈ T, ∃ h, k = comp f g h}, ?_, ?_, ?_⟩
   · obtain ⟨g, hg, h, -⟩ :=
-      FGEquiv.exists_le_and_le_dom_of_fg hTf hg₀ (f₀.1.dom_fg_iff_cod_fg.1 f₀.2)
+      FGEquiv.exists_le_and_le_dom_of_fg hTf hg₀ (f₀.val.dom_fg_iff_cod_fg.1 f₀.property)
     exact ⟨_, f₀, hf₀, g, hg, h, rfl⟩
   · rintro _ ⟨f, hf, g, hg, h, rfl⟩ m
     obtain ⟨f', hf', hm, hff'⟩ := hSf f hf m
     obtain ⟨g', hg', h', hgg'⟩ :=
-      FGEquiv.exists_le_and_le_dom_of_fg hTf hg (f'.1.dom_fg_iff_cod_fg.1 f'.2)
+      FGEquiv.exists_le_and_le_dom_of_fg hTf hg (f'.val.dom_fg_iff_cod_fg.1 f'.property)
     exact ⟨_, ⟨f', hf', g', hg', h', rfl⟩, by rwa [PartialEquiv.dom_comp],
       PartialEquiv.comp_le_comp hff' hgg' h h'⟩
   · rintro _ ⟨f, hf, g, hg, h, rfl⟩ p
     -- Extend `g` to reach `p`, extend `f` to reach the preimage `y` of `p`, then extend the first
     -- extension of `g` over the codomain of the extension of `f`.
     obtain ⟨g₁, hg₁, hp, hgg₁⟩ := hTb g hg p
-    let y := g₁.1.toEquiv.symm ⟨p, hp⟩
+    let y := g₁.val.toEquiv.symm ⟨p, hp⟩
     obtain ⟨f', hf', hy, hff'⟩ := hSb f hf y
     obtain ⟨g', hg', h', hg₁g'⟩ :=
-      FGEquiv.exists_le_and_le_dom_of_fg hTf hg₁ (f'.1.dom_fg_iff_cod_fg.1 f'.2)
+      FGEquiv.exists_le_and_le_dom_of_fg hTf hg₁ (f'.val.dom_fg_iff_cod_fg.1 f'.property)
     refine ⟨_, ⟨f', hf', g', hg', h', rfl⟩, (PartialEquiv.mem_cod_comp _ _ h').2 ⟨⟨y, hy⟩, ?_⟩,
       PartialEquiv.comp_le_comp hff' (hgg₁.trans hg₁g') h h'⟩
     -- The extension `g'` agrees with `g₁` at `y`, which `g₁` sends to `p`.
-    exact (PartialEquiv.toEquiv_apply_of_le hg₁g' y.2).trans (by simp [y])
+    exact (PartialEquiv.toEquiv_apply_of_le hg₁g' y.property).trans (by simp [y])
 
 /-- Mathlib's global two-sided extension property gives a potential isomorphism when there is an
 initial finitely generated partial equivalence. -/

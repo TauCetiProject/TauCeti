@@ -39,7 +39,8 @@ the symbol calculus needs:
   classical symbols multiply;
 * the rescaled cutoff `(x, ξ) ↦ χ(ξ / R)` on a product `X × E` is smooth
   (`FrequencyCutoff.contDiff_comp_inv_smul_snd`), multiplying by it gives a function vanishing
-  near `‖ξ / R‖ < 1` (`FrequencyCutoff.comp_inv_smul_snd_smul_eventuallyEq_zero`), and on `ℝⁿ`
+  near `‖ξ / R‖ < 1` (`FrequencyCutoff.comp_inv_smul_snd_smul_eventuallyEq_zero`, and
+  `FrequencyCutoff.comp_snd_smul_eventuallyEq_zero` for `R = 1`), and on `ℝⁿ`
   it satisfies the symbol estimates of order `0`
   (`FrequencyCutoff.exists_bound_mixedDeriv_comp_inv_smul_snd`), for every radius `R`.
 
@@ -340,6 +341,13 @@ theorem comp_inv_smul_snd_smul_eventuallyEq_zero {X : Type*} [TopologicalSpace X
     with q hq
   simp only [Function.comp_apply, Pi.zero_apply] at hq
   simp [hq]
+
+/-- A function on phase space multiplied by the cutoff `χ(ξ)` vanishes near every point with
+`‖ξ‖ < 1`. -/
+theorem comp_snd_smul_eventuallyEq_zero {X : Type*} [TopologicalSpace X] {A : Type*}
+    [NormedAddCommGroup A] [NormedSpace ℝ A] (f : X × E → A) {p : X × E} (hp : ‖p.2‖ < 1) :
+    (fun q => χ q.2 • f q) =ᶠ[𝓝 p] 0 := by
+  simpa using χ.comp_inv_smul_snd_smul_eventuallyEq_zero 1 f (by simpa using hp)
 
 variable {n : ℕ} (χ : FrequencyCutoff (CoordinateSpace n)) (R : ℝ)
 

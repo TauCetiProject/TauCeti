@@ -242,18 +242,18 @@ noncomputable def deckMulEquivOfRangeEq : deck p ≃* deck q :=
 conjugation by the comparison homeomorphism. -/
 @[simp]
 theorem deckMulEquivOfRangeEq_apply_coe (φ : deck p) (f : F) :
-    ((IsCoveringMap.deckMulEquivOfRangeEq hp hq hpe hqf hrange φ).1 f) =
+    ((IsCoveringMap.deckMulEquivOfRangeEq hp hq hpe hqf hrange φ).val f) =
       IsCoveringMap.totalSpaceHomeomorphOfRangeEq hp hq hpe hqf hrange
-        (φ.1 ((IsCoveringMap.totalSpaceHomeomorphOfRangeEq hp hq hpe hqf hrange).symm f)) :=
+        (φ.val ((IsCoveringMap.totalSpaceHomeomorphOfRangeEq hp hq hpe hqf hrange).symm f)) :=
   TauCeti.Deck.conjMulEquiv_apply_coe _ _ φ f
 
 /-- The inverse of that deck-group isomorphism is conjugation by the inverse comparison
 homeomorphism. -/
 @[simp]
 theorem deckMulEquivOfRangeEq_symm_apply_coe (ψ : deck q) (e : E) :
-    (((IsCoveringMap.deckMulEquivOfRangeEq hp hq hpe hqf hrange).symm ψ).1 e) =
+    (((IsCoveringMap.deckMulEquivOfRangeEq hp hq hpe hqf hrange).symm ψ).val e) =
       (IsCoveringMap.totalSpaceHomeomorphOfRangeEq hp hq hpe hqf hrange).symm
-        (ψ.1 (IsCoveringMap.totalSpaceHomeomorphOfRangeEq hp hq hpe hqf hrange e)) :=
+        (ψ.val (IsCoveringMap.totalSpaceHomeomorphOfRangeEq hp hq hpe hqf hrange e)) :=
   TauCeti.Deck.conjMulEquiv_symm_apply_coe _ _ ψ e
 
 end

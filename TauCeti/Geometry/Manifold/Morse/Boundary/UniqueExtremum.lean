@@ -521,7 +521,7 @@ theorem exists_trajectorySign_eq_one_and_eq_neg_one_of_stableSet [Orientable �
       φq.coord.symm_apply_apply (a • (u₀ : E)) ▸ hrT _ har
     have hysrc : y ∈ φq.toChart.source := φq.toChart.map_target htar
     have hyapp : φq.toChart y = a • (u₀ : E) := φq.toChart.right_inv htar
-    have hu : a • (u₀ : E) ∈ φq.stableSubspace := φq.stableSubspace.smul_mem a u₀.2
+    have hu : a • (u₀ : E) ∈ φq.stableSubspace := φq.stableSubspace.smul_mem a u₀.property
     have h0 : 0 ∈ hX.linearForwardTimes φq y :=
       hX.zero_mem_linearForwardTimes_toChart_symm hrT hu har
     have hys : y ∈ hX.flow.stableSet q :=
@@ -587,7 +587,7 @@ theorem exists_trajectorySign_eq_one_and_eq_neg_one_of_stableSet [Orientable �
     rw [hmap₂, hmap₁]
     exact o₁.map_eq_neg_map_of_snd_eq_of_fst_mul_neg hcard
       (fun w ↦ by rw [hΨ₁ w, hΨ₂ w])
-      (by rw [hΨ₁]; exact φq.mem_stableSubspace_iff_negativeCoord_eq_zero.1 u₀.2)
+      (by rw [hΨ₁]; exact φq.mem_stableSubspace_iff_negativeCoord_eq_zero.1 u₀.property)
       (by
         rw [hΨ₁, hΨ₂, hDsymm₁, hDsymm₂, map_smul, map_smul, smul_eq_mul, smul_eq_mul]
         exact mul_neg_of_pos_of_neg
@@ -644,13 +644,14 @@ private theorem mem_unstableSet_of_unique_index_finrank {p q : M}
   have hle : manifoldMorseIndex 𝓘(ℝ, E) f p' ≤ Module.finrank ℝ E := manifoldMorseIndex_le_finrank
   rwa [← huniq p' hp' (by omega)]
 
-/-- Every point of `W^u(q) - {q}` at a critical point `q` of index `1` goes to the unique critical
-point of index `0`. -/
-private theorem mem_stableSet_of_unique_index_zero {q m : M}
+/-- **Trajectories out of index one go to the only critical point of index zero.** Under the
+Morse–Smale condition, if `m` is the only critical point of index `0`, then every point of the
+unstable manifold of a critical point `q` of index `1`, other than `q`, flows to `m`: its
+trajectory ends at a critical point of smaller index. -/
+theorem mem_stableSet_of_unique_index_zero {q m : M}
     (hind : manifoldMorseIndex 𝓘(ℝ, E) f q = 1)
     (huniq : ∀ y, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y = 0 → manifoldMorseIndex 𝓘(ℝ, E) f y = 0 → y = m)
-    {y : M} (hyu : y ∈ hX.flow.unstableSet q) (hyq : y ≠ q) :
-    y ∈ hX.flow.stableSet m := by
+    {y : M} (hyu : y ∈ hX.flow.unstableSet q) (hyq : y ≠ q) : y ∈ hX.flow.stableSet m := by
   obtain ⟨m', hm', hym'⟩ := mem_iUnion₂.1 ((hX.iUnion_stableSet hf).symm ▸ mem_univ y :
     y ∈ ⋃ x ∈ {x : M | mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0}, hX.flow.stableSet x)
   have hqm' : q ≠ m' := by
@@ -693,7 +694,7 @@ theorem morseBoundaryCoeff_eq_zero_of_unique_index_finrank {p : criticalPoints �
   by_cases hind : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1
   · rw [h.morseBoundaryCoeff_eq_ncard hf hind,
       h.ncard_morseTrajectorySlice_eq_two_of_unique_index_finrank hf
-        (mem_criticalPoints_iff_mfderiv_eq_zero.1 q.2) (by omega) huniq]
+        (mem_criticalPoints_iff_mfderiv_eq_zero.1 q.property) (by omega) huniq]
     exact ZMod.natCast_self 2
   · exact h.morseBoundaryCoeff_eq_zero_of_morseIndex_ne_add_one hf hind
 
@@ -717,7 +718,7 @@ theorem morseBoundaryCoeff_eq_zero_of_unique_index_zero {m : criticalPoints 𝓘
   by_cases hind : manifoldMorseIndex 𝓘(ℝ, E) f q = manifoldMorseIndex 𝓘(ℝ, E) f m + 1
   · rw [h.morseBoundaryCoeff_eq_ncard hf hind,
       h.ncard_morseTrajectorySlice_eq_two_of_unique_index_zero hf
-        (mem_criticalPoints_iff_mfderiv_eq_zero.1 q.2) (by omega) huniq]
+        (mem_criticalPoints_iff_mfderiv_eq_zero.1 q.property) (by omega) huniq]
     exact ZMod.natCast_self 2
   · exact h.morseBoundaryCoeff_eq_zero_of_morseIndex_ne_add_one hf hind
 
@@ -744,8 +745,8 @@ theorem morseBoundary_eq_zero_of_finrank_eq_two (hE : Module.finrank ℝ E = 2)
     by_cases hind : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1
     · have hle : manifoldMorseIndex 𝓘(ℝ, E) f p ≤ Module.finrank ℝ E :=
         manifoldMorseIndex_le_finrank
-      have hp := mem_criticalPoints_iff_mfderiv_eq_zero.1 p.2
-      have hq := mem_criticalPoints_iff_mfderiv_eq_zero.1 q.2
+      have hp := mem_criticalPoints_iff_mfderiv_eq_zero.1 p.property
+      have hq := mem_criticalPoints_iff_mfderiv_eq_zero.1 q.property
       -- On a surface, the indices of `p` and `q` are `2` and `1`, or `1` and `0`.
       rcases (by omega : manifoldMorseIndex 𝓘(ℝ, E) f p = 2 ∨
           manifoldMorseIndex 𝓘(ℝ, E) f q = 0) with hp2 | hq0

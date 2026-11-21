@@ -93,7 +93,7 @@ theorem pow_ne_radicand (b : constants p) : b ^ p ≠ radicand p := by
     rw [← coe_radicand, ← h, IntermediateField.coe_pow]
   have hsub := sub_pow_char (b : RatFunc (ZMod p)) RatFunc.X (p := p)
   rw [h', sub_self, pow_eq_zero_iff hp.out.ne_zero, sub_eq_zero] at hsub
-  exact X_notMem_constants p (hsub ▸ b.2)
+  exact X_notMem_constants p (hsub ▸ b.property)
 
 /-- `X ^ p - t` is irreducible over `k`. -/
 theorem irreducible_X_pow_sub_C_radicand : Irreducible (X ^ p - C (radicand p)) :=
@@ -106,7 +106,7 @@ theorem not_isSeparable_constants : ¬ Algebra.IsSeparable (constants p) (RatFun
     obtain ⟨b, hb⟩ := IsPurelyInseparable.surjective_algebraMap_of_isSeparable (constants p)
       (RatFunc (ZMod p)) RatFunc.X
     have hb' : (b : RatFunc (ZMod p)) = RatFunc.X := hb
-    exact hb' ▸ b.2)
+    exact hb' ▸ b.property)
 
 /-! ### The function fields `F = k(x, y) ⊆ F' = k'(w)` -/
 

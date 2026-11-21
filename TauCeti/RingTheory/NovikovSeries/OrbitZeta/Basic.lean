@@ -68,6 +68,10 @@ linearized return maps `f` is in `TauCeti.RingTheory.NovikovSeries.OrbitZeta.Ret
 * `TauCeti.NovikovSeries.isUnit_orbitZeta`,
   `TauCeti.NovikovSeries.orbitZeta_sub_one_mem_periodFiltration`: the orbit zeta function is a unit
   congruent to `1` above every positive lower bound of the periods.
+* `TauCeti.NovikovSeries.orbitLog_sub_orbitLog_mem_periodFiltration`,
+  `TauCeti.NovikovSeries.orbitZeta_sub_orbitZeta_mem_periodFiltration`: below a period cutoff `C`,
+  the orbit logarithm and the orbit zeta function only depend on the signs of the iterates of
+  period below `C`.
 * `TauCeti.NovikovSeries.orbitZeta_eq_eulerProduct`: the product formula.
 * `TauCeti.NovikovSeries.orbitZeta_eq_mapRingHom_eulerProduct`: integrality of the orbit zeta
   function.
@@ -193,6 +197,47 @@ theorem isUnit_orbitZeta (hpos : ∀ i, 0 < N (γ i)) (ε : ι → ℕ → ℤ) 
     ← coe_expMulEquiv_apply (K := K) (N := N) ⟨_, orbitLog_mem_posIdeal hpos ε⟩]
   exact (Units.isUnit _).map (nonnegSubring K N).subtype
 
+/-- **Orbit logarithms agree below a cutoff.** If two sign assignments agree on every iterate of
+period below `C`, that is `ε i n = ε' i n` whenever `n ≠ 0` and `n * N (γ i) < C`, then their
+orbit logarithms agree below `C`. -/
+theorem orbitLog_sub_orbitLog_mem_periodFiltration (hpos : ∀ i, 0 < N (γ i))
+    (hfin : Tendsto (fun i => N (γ i)) cofinite atTop) {C : ℝ} {ε ε' : ι → ℕ → ℤ}
+    (hε : ∀ i (n : ℕ), n ≠ 0 → n * N (γ i) < C → ε i n = ε' i n) :
+    orbitLog K N γ ε - orbitLog K N γ ε' ∈ periodFiltration K N C := by
+  have h := (hasSum_orbitLog (K := K) hpos hfin ε).sub (hasSum_orbitLog hpos hfin ε')
+  refine h.tsum_eq ▸ tsum_mem (isClosed_periodFiltration C) fun ⟨i, k⟩ => ?_
+  by_cases hk : ((k : ℝ) + 1) * N (γ i) < C
+  · rw [hε i (k + 1) k.succ_ne_zero (by push_cast; exact hk), sub_self]
+    exact zero_mem _
+  -- Otherwise both terms lie above the period `(k + 1) * N (γ i) ≥ C` of the iterate.
+  have hC : C ≤ N ((k + 1) • γ i) := by
+    rw [period_succ_nsmul]
+    exact not_lt.1 hk
+  exact sub_mem (antitone_periodFiltration hC (single_mem_periodFiltration _ _))
+    (antitone_periodFiltration hC (single_mem_periodFiltration _ _))
+
+/-- **Orbit zeta functions agree below a cutoff.** If two sign assignments agree on every iterate
+of period below `C`, that is `ε i n = ε' i n` whenever `n ≠ 0` and `n * N (γ i) < C`, then their
+orbit zeta functions agree below `C`: the coefficients of `exp L` below `C` only see those of `L`
+below `C`. -/
+theorem orbitZeta_sub_orbitZeta_mem_periodFiltration (hpos : ∀ i, 0 < N (γ i))
+    (hfin : Tendsto (fun i => N (γ i)) cofinite atTop) {C : ℝ} {ε ε' : ι → ℕ → ℤ}
+    (hε : ∀ i (n : ℕ), n ≠ 0 → n * N (γ i) < C → ε i n = ε' i n) :
+    orbitZeta K N γ ε - orbitZeta K N γ ε' ∈ periodFiltration K N C := by
+  -- In the nonnegative subring `exp` is multiplicative on the positive ideal, so
+  -- `exp L - exp L' = exp L' * (exp (L - L') - 1)` with `L - L'` above `C`.
+  have hL' := orbitLog_mem_posIdeal (K := K) hpos ε'
+  have hd := isTopologicallyNilpotent_of_mem_posIdeal' (sub_mem (orbitLog_mem_posIdeal hpos ε) hL')
+  have h := (isTopologicallyNilpotent_of_mem_posIdeal' hL').exp_add hd
+  rw [add_sub_cancel] at h
+  have hmem := (periodIdeal K N C).mul_mem_left (NormedSpace.exp
+    (⟨orbitLog K N γ ε', orbitLog_mem_nonnegSubring (fun i => (hpos i).le) ε'⟩ :
+      nonnegSubring K N))
+    (hd.exp_sub_one_mem (I := periodIdeal K N C)
+      (mem_periodIdeal.2 (orbitLog_sub_orbitLog_mem_periodFiltration hpos hfin hε)))
+  rw [mul_sub_one, ← h] at hmem
+  simpa [orbitZeta_def] using mem_periodIdeal.1 hmem
+
 /-- The orbit logarithm of a single orbit whose iterates have signs `ε (k + 1) = ε 1 * σ ^ k` is
 `-(ε 1 * σ)` times the logarithm of `1 - σ e^g`. -/
 private theorem hasSum_single_iterate {g : H} (hg : 0 < N g) (ε : ℕ → ℤ) (σ : ℤˣ)
@@ -202,7 +247,7 @@ private theorem hasSum_single_iterate {g : H} (hg : 0 < N g) (ε : ℕ → ℤ) 
         ((NormedSpace.log ((unitsOneSubSingle hg ((σ : ℤ) : K) : nonnegSubring K N)) :
           nonnegSubring K N) : NovikovSeries K H N)) := by
   have h := ((isTopologicallyNilpotent_of_mem_posIdeal' (single_mem_posIdeal hg ((σ : ℤ) : K))
-    ).hasSum_log_one_sub.map (nonnegSubring K N).subtype continuous_subtype_val).const_smul
+    ).hasSum_log_one_sub.map (nonnegSubring K N).subtype continuous_subtypeVal).const_smul
       (-(ε 1 * σ) : ℤ)
   rw [Subring.coe_subtype] at h
   rw [val_unitsOneSubSingle]
@@ -250,13 +295,13 @@ theorem orbitZeta_eq_eulerProduct (hpos : ∀ i, 0 < N (γ i))
     exact hasSum_single_iterate (hpos i) (ε i) (σ i) (hε i)
   -- So its exponential is the product of the `exp (ℓ i) = u i ^ (-(ε i 1 * σ i))`.
   have hprod := HasSum.exp_of_mem_ideal (S := nonnegSubring K N) (I := posIdeal K N)
-    (fun _ => isTopologicallyNilpotent_of_mem_posIdeal') hsum (fun i => (ℓ i).2) hLpos
+    (fun _ => isTopologicallyNilpotent_of_mem_posIdeal') hsum (fun i => (ℓ i).property) hLpos
   have hexp (i : ι) : NormedSpace.exp (ℓ i : nonnegSubring K N) =
       (↑(u i ^ (-(ε i 1 * σ i))) : nonnegSubring K N) := by
     have h1 : expMulEquiv K N (.ofAdd (ℓ i)) = ⟨u i, hu i⟩ ^ (-(ε i 1 * σ i)) := by
       rw [ofAdd_zsmul, map_zpow, ofAdd_toAdd, MulEquiv.apply_symm_apply]
     rw [← coe_expMulEquiv_apply (K := K) (N := N) (ℓ i), h1, SubgroupClass.coe_zpow]
-  have h := hprod.map (nonnegSubring K N).subtype continuous_subtype_val
+  have h := hprod.map (nonnegSubring K N).subtype continuous_subtypeVal
   rw [Subring.coe_subtype] at h
   rw [orbitZeta_def, ← coe_exp_nonnegSubring ⟨orbitLog K N γ ε, _⟩]
   exact h.unique ((hasProd_eulerProduct hfin _ _).congr_fun fun i => by simp [hexp, u])

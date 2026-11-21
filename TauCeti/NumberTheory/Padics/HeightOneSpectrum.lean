@@ -44,7 +44,7 @@ variable {R : Type*} [CommRing R] [Algebra R ℚ] [IsIntegralClosure R ℤ ℚ] 
 valuation vanishes, for `p` the rational prime corresponding to `v`. -/
 theorem valuation_eq_one_iff_padicValRat_eq_zero (v : HeightOneSpectrum R) {x : ℚ}
     (hx : x ≠ 0) : v.valuation ℚ x = 1 ↔ padicValRat (primesEquiv v) x = 0 := by
-  have : Fact (primesEquiv v : ℕ).Prime := ⟨(primesEquiv v).2⟩
+  have : Fact (primesEquiv v : ℕ).Prime := ⟨(primesEquiv v).property⟩
   rw [(valuation_equiv_padicValuation v).eq_one_iff_eq_one]
   simp [Rat.padicValuation, hx]
 
