@@ -280,7 +280,7 @@ theorem conj_natDiagGL_mem_doubleCoset_of_dvd (hp : 0 < p) {g : SL(2, ℤ)} (hg 
   have hσ : g 0 0 * f * (p : ℤ) - g 0 1 * c' * (N : ℤ) = 1 := by
     linear_combination g.fin_two_mul_sub_mul_eq_one - g 0 0 * hf + g 0 1 * hc'
   -- the last right coset's twisted representative, with bottom row `(N, p)`
-  let σ : SL(2, ℤ) := ⟨!![g 0 0 * f, g 0 1 * c'; N, p], (Matrix.det_fin_two_of _ _ _ _).trans hσ⟩
+  let σ : SL(2, ℤ) := .mk !![g 0 0 * f, g 0 1 * c'; N, p] ((Matrix.det_fin_two_of _ _ _ _).trans hσ)
   obtain ⟨γ, hγ, hγeq⟩ := exists_mem_Gamma1_natDiagGL_mul_eq_primeRep_none (σ := σ) hp rfl rfl
   obtain ⟨τ, hτ, hτeq⟩ := exists_mem_Gamma1_mul_twistedRep_eq_conjDiag_of_bezout hσ
   refine mem_doubleCoset.mpr ⟨_, Subgroup.mem_map_of_mem _ hτ, _, Subgroup.mem_map_of_mem _ hγ, ?_⟩
