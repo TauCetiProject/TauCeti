@@ -25,13 +25,16 @@ records that Mathlib's image `TopologicalSpace.Compacts.map` is monotone, which 
 with compact supports covariant in open embeddings. A compact set lies in one member of a
 directed open cover (`TopologicalSpace.Compacts.exists_subset_of_iSup_eq_top`). A compact set
 whose interior contains `K` is a compact neighbourhood of `K`
-(`TopologicalSpace.Compacts.compactNhdsOfSubsetInterior`), and open sets containing two compact sets
-together contain their union (`TopologicalSpace.Compacts.coe_sup_subset_coe_sup`). In a
-Hausdorff space, viewing a compact set as a closed set is monotone, and so a functor
+(`TopologicalSpace.Compacts.compactNhdsOfSubsetInterior`); in a weakly locally compact space every
+compact set has one. Open sets containing two compact sets
+together contain their union (`TopologicalSpace.Compacts.coe_sup_subset_coe_sup`). In an R₁
+space, for instance a Hausdorff space, a compact set covered by two open sets is the union of two
+compact sets, one inside each of them (`TopologicalSpace.Compacts.exists_sup_eq_of_subset_union`).
+In a Hausdorff space, viewing a compact set as a closed set is monotone, and so a functor
 (`TopologicalSpace.Compacts.toClosedsFunctor`). Finally, in a
 locally compact space, a closed set disjoint from a compact set `K` misses some compact
-neighbourhood of `K` (`TopologicalSpace.Compacts.exists_mem_compactNhds_disjoint`), so the compact
-neighbourhoods of `K` form a nonempty family; local homology along `K` is the colimit over them.
+neighbourhood of `K` (`TopologicalSpace.Compacts.exists_mem_compactNhds_disjoint`); local homology
+along `K` is the colimit over the compact neighbourhoods of `K`.
 -/
 
 public section
@@ -128,11 +131,24 @@ lemma coe_compactNhdsOfSubsetInterior {K : Compacts α} (L : Compacts α)
     (h : (K : Set α) ⊆ interior L) : (compactNhdsOfSubsetInterior L h : Compacts α) = L :=
   (rfl)
 
+/-- In a weakly locally compact space, every compact set has a compact neighbourhood. -/
+instance [WeaklyLocallyCompactSpace α] (K : Compacts α) : Nonempty K.compactNhds :=
+  let ⟨L, hL, hKL⟩ := exists_compact_superset K.isCompact
+  ⟨compactNhdsOfSubsetInterior ⟨L, hL⟩ hKL⟩
+
 /-- An open set containing `K` and an open set containing `L` together contain `K ⊔ L`. -/
 lemma coe_sup_subset_coe_sup {K L : Compacts α} {U V : Opens α} (hK : (K : Set α) ⊆ U)
     (hL : (L : Set α) ⊆ V) : ((K ⊔ L : Compacts α) : Set α) ⊆ (U ⊔ V : Opens α) := by
   rw [coe_sup, Opens.coe_sup]
   exact union_subset_union hK hL
+
+/-- In an `R₁` space, for instance a Hausdorff space, a compact set covered by two open sets is the
+union of two compact sets, one inside each of them. -/
+lemma exists_sup_eq_of_subset_union [R1Space α] {K : Compacts α} {U V : Set α} (hU : IsOpen U)
+    (hV : IsOpen V) (h : (K : Set α) ⊆ U ∪ V) :
+    ∃ K₁ K₂ : Compacts α, (K₁ : Set α) ⊆ U ∧ (K₂ : Set α) ⊆ V ∧ K₁ ⊔ K₂ = K := by
+  obtain ⟨K₁, K₂, hK₁, hK₂, h₁, h₂, hK⟩ := K.isCompact.binary_compact_cover hU hV h
+  exact ⟨⟨K₁, hK₁⟩, ⟨K₂, hK₂⟩, h₁, h₂, Compacts.ext hK.symm⟩
 
 lemma toCloseds_mono [T2Space α] : Monotone (Compacts.toCloseds (α := α)) :=
   fun _ _ h ↦ h
@@ -159,11 +175,6 @@ lemma exists_mem_compactNhds_disjoint (K : Compacts α) {T : Set α} (hT : IsClo
     hKT.subset_compl_right
   exact ⟨⟨L, hL⟩, fun x ↦ mem_interior_iff_mem_nhds.1 (hKL x.property),
     disjoint_compl_left.mono_left hLT⟩
-
-/-- In a locally compact space, every compact set has a compact neighbourhood. -/
-instance (K : Compacts α) : Nonempty K.compactNhds :=
-  let ⟨L, hL, _⟩ := K.exists_mem_compactNhds_disjoint isClosed_empty (disjoint_empty _)
-  ⟨⟨L, hL⟩⟩
 
 end CompactNhds
 
