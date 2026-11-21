@@ -73,9 +73,7 @@ theorem holderWith_iteratedFDeriv_sin (hα : α ≤ 1) (k : ℕ) :
   have h₁ : HolderWith 1 1 (iteratedDeriv k sin) :=
     holderWith_one.2 (lipschitzWith_iteratedDeriv_sin k)
   have h₀ : HolderWith (2 * 1) 0 (iteratedDeriv k sin) :=
-    holderWith_zero_of_nnnorm_le fun x ↦ by
-      rw [← NNReal.coe_le_coe, coe_nnNorm, Real.norm_eq_abs, NNReal.coe_one]
-      exact abs_iteratedDeriv_sin_le_one k x
+    holderWith_zero_of_nnnorm_le (nnnorm_iteratedDeriv_sin_le_one k)
   have h := h₁.interpolate h₀ (add_tsub_cancel_of_le hα)
   simpa [NNReal.coe_sub hα] using h
 
@@ -104,7 +102,9 @@ theorem two_div_pi_rpow_le_nnHolderNorm_iteratedFDeriv_sin (hα : α ≤ 1) (k :
     abs_of_pos pi_pos] at h
   rw [div_le_iff₀ (by positivity)]
   calc (2 : ℝ) = |-iteratedDeriv k sin x - iteratedDeriv k sin x| := by
-        rw [neg_sub_left, abs_neg, ← two_mul, abs_mul, hx, abs_two, mul_one]
+        rw [show -iteratedDeriv k sin x - iteratedDeriv k sin x = -(2 * iteratedDeriv k sin x) by
+          ring]
+        simp [abs_mul, hx]
     _ ≤ C * π ^ (α : ℝ) := h
 
 namespace CkHolderSpace
@@ -113,9 +113,7 @@ variable {k : ℕ}
 
 /-- For `α ≤ 1`, the sine function is a bounded `C^{k,α}` map on `ℝ` for every `k`. -/
 theorem exists_coe_eq_sin (hα : α ≤ 1) : ∃ f : CkHolderSpace k α ℝ ℝ, ⇑f = sin :=
-  ⟨ofContDiff sin contDiff_sin (fun i _ ↦ ⟨1, fun x ↦ by
-      rw [norm_iteratedFDeriv_eq_norm_iteratedDeriv, Real.norm_eq_abs]
-      exact abs_iteratedDeriv_sin_le_one i x⟩)
+  ⟨ofContDiff sin contDiff_sin (fun i _ ↦ ⟨1, norm_iteratedFDeriv_sin_le_one i⟩)
     (holderWith_iteratedFDeriv_sin hα k).memHolder, coe_ofContDiff _ _ _ _⟩
 
 /-- Every derivative field of `sin` in `C_b^{k,α}(ℝ)` has supremum norm `1`. -/
@@ -124,8 +122,8 @@ theorem norm_iteratedFDeriv_eq_one_of_coe_eq_sin {f : CkHolderSpace k α ℝ ℝ
   have hval (x : ℝ) : ‖f.iteratedFDeriv i x‖ = |iteratedDeriv i sin x| := by
     rw [coe_iteratedFDeriv, hf, norm_iteratedFDeriv_eq_norm_iteratedDeriv, Real.norm_eq_abs]
   refine le_antisymm ((BoundedContinuousFunction.norm_le zero_le_one).2 fun x ↦ ?_) ?_
-  · rw [hval]
-    exact abs_iteratedDeriv_sin_le_one i x
+  · rw [coe_iteratedFDeriv, hf]
+    exact norm_iteratedFDeriv_sin_le_one i x
   · obtain ⟨x, hx⟩ := exists_abs_iteratedDeriv_sin_eq_one i
     rw [← hx, ← hval]
     exact (f.iteratedFDeriv i).norm_coe_le_norm x
