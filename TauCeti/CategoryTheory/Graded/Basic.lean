@@ -145,7 +145,7 @@ def grHomReindex {n k : ℤ} (h : n = k) (f : grHom R X Y n) : grHom R X Y k :=
 /-- Reindexing a homogeneous morphism does not change the underlying morphism. -/
 @[simp, grind =]
 theorem val_grHomReindex (h : n = k) (f : grHom R X Y n) :
-    (grHomReindex (R := R) (C := C) h f).1 = f.1 := by
+    (grHomReindex (R := R) (C := C) h f).val = f.val := by
   rw [grHomReindex]
 
 /-- A homogeneous morphism reindexed by reflexivity is the morphism itself. -/

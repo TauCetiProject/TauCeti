@@ -269,6 +269,12 @@ theorem IsModular.isPerfPair_of_smul_eq (h : B.IsModular a) (ha : a ∈ nonZeroD
     simpa using LinearMap.congr_fun₂ (hC.trans hC'.symm) x y)
   exact this ▸ hperf
 
+/-- The rescaling of a modular form by its regular scale has unit Gram determinant. -/
+theorem IsModular.isUnit_det_of_smul_eq (h : B.IsModular a) (ha : a ∈ nonZeroDivisors R)
+    {C : BilinForm R M} (hC : a • C = B) {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (b : Module.Basis ι R M) : IsUnit (C.toMatrix b).det :=
+  b.isUnit_det_of_isPerfPair b C (h.isPerfPair_of_smul_eq ha hC)
+
 /-- **Divisibility in a modular form.** If `B` is `a`-modular, with `a` and `r` non-zero-divisors,
 and `a * r` divides `B x y` for every `y`, then `x` is `r` times a vector. -/
 theorem IsModular.exists_eq_smul_of_forall_dvd (h : B.IsModular a) (ha : a ∈ nonZeroDivisors R)
@@ -295,28 +301,28 @@ theorem IsModular.restrict_sup (hB : B.IsSymm) (ha : a ∈ nonZeroDivisors R)
       B (s + t) (s' + t') = B s s' + B t t' := fun s hs t ht s' hs' t' ht' ↦ by
     simp [hST s hs t' ht', hTS t ht s' hs']
   refine (isModular_iff (hB.restrict _) ha).mpr ⟨fun x y ↦ ?_, fun x hx ↦ ?_, fun f ↦ ?_⟩
-  · obtain ⟨s, hs, t, ht, hx⟩ := Submodule.mem_sup.mp x.2
-    obtain ⟨s', hs', t', ht', hy⟩ := Submodule.mem_sup.mp y.2
+  · obtain ⟨s, hs, t, ht, hx⟩ := Submodule.mem_sup.mp x.property
+    obtain ⟨s', hs', t', ht', hy⟩ := Submodule.mem_sup.mp y.property
     have := dvd_add (dS ⟨s, hs⟩ ⟨s', hs'⟩) (dT ⟨t, ht⟩ ⟨t', ht'⟩)
     simp only [restrict_apply, domRestrict_apply] at this ⊢
     rwa [← hx, ← hy, hsplit s hs t ht s' hs' t' ht']
-  · obtain ⟨s, hs, t, ht, hst⟩ := Submodule.mem_sup.mp x.2
+  · obtain ⟨s, hs, t, ht, hst⟩ := Submodule.mem_sup.mp x.property
     have h0 : ∀ y ∈ S ⊔ T, B x y = 0 := fun y hy ↦ by simpa using hx ⟨y, hy⟩
     have hs0 : s = 0 := congrArg Subtype.val (sepS ⟨s, hs⟩ fun y ↦ by
-      simpa [← hst, hTS t ht y y.2] using h0 y (Submodule.mem_sup_left y.2))
+      simpa [← hst, hTS t ht y y.property] using h0 y (Submodule.mem_sup_left y.property))
     have ht0 : t = 0 := congrArg Subtype.val (sepT ⟨t, ht⟩ fun y ↦ by
-      simpa [← hst, hST s hs y y.2] using h0 y (Submodule.mem_sup_right y.2))
+      simpa [← hst, hST s hs y y.property] using h0 y (Submodule.mem_sup_right y.property))
     exact Subtype.ext (by simp [← hst, hs0, ht0])
   · obtain ⟨s, hs⟩ := repS (f ∘ₗ Submodule.inclusion le_sup_left)
     obtain ⟨t, ht⟩ := repT (f ∘ₗ Submodule.inclusion le_sup_right)
-    refine ⟨⟨s + t, Submodule.add_mem_sup s.2 t.2⟩, fun y ↦ ?_⟩
-    obtain ⟨s', hs', t', ht', hy⟩ := Submodule.mem_sup.mp y.2
+    refine ⟨⟨s + t, Submodule.add_mem_sup s.property t.property⟩, fun y ↦ ?_⟩
+    obtain ⟨s', hs', t', ht', hy⟩ := Submodule.mem_sup.mp y.property
     have hy' : y = Submodule.inclusion le_sup_left ⟨s', hs'⟩ +
         Submodule.inclusion le_sup_right ⟨t', ht'⟩ := Subtype.ext hy.symm
     have h1 := hs ⟨s', hs'⟩
     have h2 := ht ⟨t', ht'⟩
     simp only [restrict_apply, domRestrict_apply, LinearMap.comp_apply] at h1 h2 ⊢
-    rw [← hy, hsplit s s.2 t t.2 s' hs' t' ht', h1, h2, ← mul_add, ← map_add, ← hy']
+    rw [← hy, hsplit s s.property t t.property s' hs' t' ht', h1, h2, ← mul_add, ← map_add, ← hy']
 
 /-- **A modular submodule splits off.** If a non-zero-divisor `a` divides every value of a
 form `B` and the restriction of `B` to `S` is `a`-modular, then `S` is complementary to
@@ -509,7 +515,7 @@ theorem exists_basis_toMatrix_mul_eq_of_isInternal [Module.Free R M] [Module.Fin
     · exact ((h2.trans (dvd_pow_self π (by omega)))).mul_right _
     · -- A summand of scale `π ^ j` is even, and so is the inverse of its rescaled Gram matrix.
       refine dvd_mul_of_dvd_right ((hUs i).two_dvd_inv_apply_self (hUdet i) (fun a ↦ ?_) a) _
-      obtain ⟨c, hc⟩ := heven i hij (d i a) (d i a).2
+      obtain ⟨c, hc⟩ := heven i hij (d i a) (d i a).property
       refine ⟨c, (mul_cancel_left_mem_nonZeroDivisors (pow_mem hπ' (e i))).mp ?_⟩
       simp only [U, toMatrix_apply]
       rw [hCapp, hc, ← hij]

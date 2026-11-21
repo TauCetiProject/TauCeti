@@ -77,7 +77,7 @@ theorem unblockedHomologyTransposeEquiv_unblockedHomologyClass
       G.transpose.unblockedHomologyClass R
         ⟨G.transposeRenameEquiv R z,
           G.map_mem_ker_unblockedDifferential_of_intertwining R _ _
-            (G.unblockedDifferential_transpose_transposeRenameEquiv R) z.2⟩ :=
+            (G.unblockedDifferential_transpose_transposeRenameEquiv R) z.property⟩ :=
   G.unblockedHomologyEquivOfIntertwining_unblockedHomologyClass R _ _ _ z
 
 /-- The inverse of the reflection sends the class of a cycle `w` of `GC⁻(G.transpose)` to the
@@ -89,7 +89,7 @@ theorem unblockedHomologyTransposeEquiv_symm_unblockedHomologyClass
       G.unblockedHomologyClass R
         ⟨G.transpose.transposeRenameEquiv R w,
           G.transpose.map_mem_ker_unblockedDifferential_of_intertwining R _ _
-            (G.unblockedDifferential_transposeRenameEquiv R) w.2⟩ := by
+            (G.unblockedDifferential_transposeRenameEquiv R) w.property⟩ := by
   rw [LinearEquiv.symm_apply_eq, unblockedHomologyTransposeEquiv_unblockedHomologyClass]
   -- `G.transpose.transpose` is `G` by definition, so the involution law applies as stated.
   exact congrArg _ (Subtype.ext
@@ -107,17 +107,17 @@ variable {n : ℕ} (G : OddComponentGridDiagram n) (R : Type*) [CommSemiring R]
 preserves the full `O`-Maslov--Alexander bigrading of unblocked chains. -/
 theorem transposeRenameEquiv_mem_bigradedChainMinusPiece {g : ℤ × ℤ} {c : GridChainMinus R n}
     (hc : c ∈ G.bigradedChainMinusPiece R g) :
-    G.1.transposeRenameEquiv R c ∈ G.transpose.bigradedChainMinusPiece R g := by
+    G.val.transposeRenameEquiv R c ∈ G.transpose.bigradedChainMinusPiece R g := by
   classical
   rw [mem_bigradedChainMinusPiece] at hc ⊢
   intro x e he
   rw [GridDiagram.transposeRenameEquiv_apply,
-    support_rename_of_injective G.1.O.toPerm.injective, Finset.mem_image] at he
+    support_rename_of_injective G.val.O.toPerm.injective, Finset.mem_image] at he
   obtain ⟨e, he, rfl⟩ := he
-  have hM := G.1.maslovOℤ_transpose x.transpose
+  have hM := G.val.maslovOℤ_transpose x.transpose
   have hA := G.alexanderℤ_transpose x.transpose
   rw [GridState.transpose_transpose] at hM hA
-  have hdegree : G.transpose.monomialBidegree x (e.mapDomain G.1.O.toPerm) =
+  have hdegree : G.transpose.monomialBidegree x (e.mapDomain G.val.O.toPerm) =
       G.monomialBidegree x.transpose e := by
     apply Prod.ext <;>
       simp only [monomialBidegree_fst, monomialBidegree_snd, hM, hA,
@@ -129,12 +129,12 @@ theorem transposeRenameEquiv_mem_bigradedChainMinusPiece {g : ℤ × ℤ} {c : G
 preserves the Alexander grading of unblocked chains. -/
 theorem transposeRenameEquiv_mem_alexanderChainMinusPiece {a : ℤ} {c : GridChainMinus R n}
     (hc : c ∈ G.alexanderChainMinusPiece R a) :
-    G.1.transposeRenameEquiv R c ∈ G.transpose.alexanderChainMinusPiece R a := by
+    G.val.transposeRenameEquiv R c ∈ G.transpose.alexanderChainMinusPiece R a := by
   classical
   rw [mem_alexanderChainMinusPiece] at hc ⊢
   intro x e he
   rw [GridDiagram.transposeRenameEquiv_apply,
-    support_rename_of_injective G.1.O.toPerm.injective, Finset.mem_image] at he
+    support_rename_of_injective G.val.O.toPerm.injective, Finset.mem_image] at he
   obtain ⟨e, he, rfl⟩ := he
   have hx := G.alexanderℤ_transpose x.transpose
   rw [GridState.transpose_transpose] at hx
@@ -147,9 +147,9 @@ variable {n : ℕ} (G : OddComponentGridDiagram n) (R : Type*) [CommRing R] [Cha
 
 /-- The equivalence induced by the diagonal reflection preserves the Alexander grading on
 homology. -/
-theorem unblockedHomologyTransposeEquiv_mem_piece {a : ℤ} {y : G.1.unblockedHomology R}
+theorem unblockedHomologyTransposeEquiv_mem_piece {a : ℤ} {y : G.val.unblockedHomology R}
     (hy : y ∈ (G.alexanderUnblockedHomologyGrading R).piece a) :
-    G.1.unblockedHomologyTransposeEquiv R y ∈
+    G.val.unblockedHomologyTransposeEquiv R y ∈
       (G.transpose.alexanderUnblockedHomologyGrading R).piece a :=
   G.unblockedHomologyEquivOfIntertwining_mem_piece R G.transpose _ _
     (fun _ _ hc => G.transposeRenameEquiv_mem_alexanderChainMinusPiece R hc) hy

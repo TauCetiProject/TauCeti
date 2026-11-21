@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Pseudodifferential.Quantization
+public import TauCeti.Analysis.Pseudodifferential.Symbol.Map
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Topology
 public import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
 public import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication
@@ -15,8 +16,8 @@ import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 import TauCeti.Analysis.Fourier.Continuous
 import TauCeti.Analysis.Fourier.Parametric
+import TauCeti.Analysis.Pseudodifferential.FourierSchur
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
-import TauCeti.MeasureTheory.Integral.SchurTest
 
 /-!
 # Sobolev mapping of pseudodifferential operators with compact spatial support
@@ -49,6 +50,9 @@ the position give, for every `N`,
 `k(η) = (1 + ‖η‖) ^ (|s - m| - N)`, `N > n + |s - m|`, and Schur's test bounds the right side in
 `L²`
 (`TauCeti.Symbol.HasCompactSpatialSupport.exists_eLpNorm_smul_fourier_quantizeSchwartzValue_le`).
+These steps use only the continuity of `a`, its compact spatial support and the decay of `â`; they
+are proved for general coefficients in `TauCeti.Analysis.Pseudodifferential.FourierSchur`
+(`TauCeti.exists_eLpNorm_smul_fourier_quantizeSchwartzValue_le_of_decay`).
 Since the `H^s` norm is the `L²` norm of `⟨ξ⟩ ^ s 𝓕 u`, this is the estimate
 `‖Op(a) u‖_{H^{s-m}} ≤ C ‖u‖_{H^s}` on Schwartz functions, and density of Schwartz functions in
 `H^s` gives the bounded extension.
@@ -78,7 +82,10 @@ families of operators.
   (`TauCeti.Symbol.HasCompactSpatialSupport.continuous_fourier_slice`), differentiability in `ξ`
   with the Fourier transform of `∂_ξ a` as derivative
   (`TauCeti.Symbol.HasCompactSpatialSupport.hasFDerivAt_fourier_slice`,
-  `TauCeti.Symbol.HasCompactSpatialSupport.coordinateDeriv_fourier_slice`), and
+  `TauCeti.Symbol.HasCompactSpatialSupport.coordinateDeriv_fourier_slice`), smoothness in `ξ`
+  with the symbol estimates `‖D_ξ^k â(η, ξ)‖ ≤ C ⟨ξ⟩ ^ (m - k) ⟨η⟩ ^ (-r)`
+  (`TauCeti.Symbol.HasCompactSpatialSupport.contDiff_fourier_slice`,
+  `TauCeti.Symbol.HasCompactSpatialSupport.exists_norm_iteratedFDeriv_fourier_slice_le`), and
   `(∂_{x_j} a)^(η, ξ) = 2πi ηⱼ â(η, ξ)`
   (`TauCeti.Symbol.HasCompactSpatialSupport.fourier_spatialDeriv_slice`).
 * `TauCeti.Symbol.HasCompactSpatialSupport.fourier_quantizeSchwartzValue`: the Fourier transform
@@ -88,19 +95,24 @@ families of operators.
 * `TauCeti.Symbol.HasCompactSpatialSupport.exists_eLpNorm_smul_fourier_quantizeSchwartzValue_le`:
   the Sobolev estimate on Schwartz functions, on the Fourier side.
 * `TauCeti.Symbol.quantizeSobolev`: the bounded operator `H^s → H^{s - m}`, with
-  `TauCeti.Symbol.toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply` identifying its values
-  on Schwartz functions.
+  `TauCeti.Symbol.toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply` and
+  `TauCeti.Symbol.HasCompactSpatialSupport.quantizeSobolev_toBesselPotentialSpaceCLM` identifying
+  its values on Schwartz functions.
 * `TauCeti.Symbol.toDistr_postcomp_comp_comp_postcomp_toBesselPotentialSpaceCLM_apply`: Sobolev
   extensions of quantizations are compatible with isomorphisms of the fibres.
 * `TauCeti.Symbol.exists_quantizeSobolev`: the mapping property for finite-dimensional normed
   `V` and `W`.
-* `TauCeti.Symbol.exists_one_add_norm_pow_mul_norm_fourier_le_sum_seminorm` and
+* `TauCeti.Symbol.exists_one_add_norm_pow_mul_norm_fourier_le_sum_seminorm`,
+  `TauCeti.Symbol.exists_norm_fourier_slice_le_sum_seminorm` and
   `TauCeti.Symbol.exists_norm_quantizeSobolev_le_sum_seminorm`: the decay of `â` and the operator
   norm of `Op(a)` are bounded by finitely many seminorms of the position derivatives of `a`,
   uniformly over the symbols vanishing outside a fixed compact set.
 * `TauCeti.Symbol.quantizeSobolev_add`, `TauCeti.Symbol.quantizeSobolev_smul`,
   `TauCeti.Symbol.quantizeSobolev_sub`, `TauCeti.Symbol.toDistr_quantizeSobolev_sub_apply`:
   linearity of `Op(a)` in the symbol.
+* `TauCeti.Symbol.toDistr_apply_eq_toDistr_quantizeSobolev`: every bounded operator `H^s → H^r`
+  agreeing with `Op(a)` on Schwartz functions gives the same tempered distributions as
+  `Op(a) : H^s → H^{s - m}`.
 * `TauCeti.Symbol.quantizeSobolev_inclusion`, `TauCeti.Symbol.quantizeSobolev_comp_inclusion`:
   compatibility with the inclusions of symbol classes and of Bessel-potential spaces, so that the
   tempered distribution `Op(a) u` depends neither on the order of the symbol nor on the space in
@@ -121,6 +133,8 @@ families of operators.
   `H^r → H^s` for arbitrary orders `r` and `s`.
 * `TauCeti.Symbol.IsSmoothing.memSobolev_toDistr_quantizeSobolev`: such a symbol quantizes every
   element of `H^s` into `H^t` for all real `s` and `t`.
+* `TauCeti.Symbol.memSobolev_toDistr_quantizeSobolev`: `Op(a)` sends a tempered distribution in
+  `H^s` into `H^{s - m}`, whichever Bessel-potential space it is applied on.
 
 ## References
 
@@ -321,24 +335,40 @@ theorem HasCompactSpatialSupport.exists_one_add_norm_pow_mul_norm_fourier_le
   exact ⟨C * ∑ α ∈ t, Symbol.seminorm ⟨K, hK⟩ α [] a,
     mul_nonneg hC (Finset.sum_nonneg fun _ _ ↦ apply_nonneg _ _), h a hKa⟩
 
+/-- **Rapid decay with seminorm constants.** For a compact set `K` and every `r` there are finitely
+many words `α` and a constant `C` such that every symbol `a` of order `m` vanishing at positions
+outside `K` satisfies `‖â(η, ξ)‖ ≤ C (∑_α p_{K,α,[]}(a)) ⟨ξ⟩ ^ m ⟨η⟩ ^ (-r)`. -/
+theorem exists_norm_fourier_slice_le_sum_seminorm (K : Compacts (CoordinateSpace n)) (r : ℝ) :
+    ∃ (t : Finset (List (Fin n))) (C : ℝ), 0 ≤ C ∧ ∀ a : Symbol n V W m,
+      (∀ x ∉ K, ∀ ξ, a.coefficient (x, ξ) = 0) → ∀ η ξ : CoordinateSpace n,
+        ‖𝓕 (fun y ↦ a.coefficient (y, ξ)) η‖ ≤
+          C * (∑ α ∈ t, Symbol.seminorm K α [] a) * (1 + ‖ξ‖ ^ 2) ^ (m / 2) *
+            (1 + ‖η‖ ^ 2) ^ (-r / 2) := by
+  obtain ⟨t, C, hC0, hC⟩ :=
+    exists_one_add_norm_pow_mul_norm_fourier_le_sum_seminorm (V := V) (W := W) (m := m) K ⌈r⌉₊
+  refine ⟨t, C, hC0, fun a haK η ξ ↦ ?_⟩
+  -- `⟨η⟩ ^ r ≤ (1 + ‖η‖) ^ ⌈r⌉₊`
+  have hw : (1 + ‖η‖ ^ 2) ^ (r / 2) ≤ (1 + ‖η‖) ^ ⌈r⌉₊ :=
+    one_add_norm_sq_rpow_le_one_add_norm_pow_of_le η (Nat.le_ceil r)
+  have hpos : 0 < (1 + ‖η‖ ^ 2) ^ (r / 2) := by positivity
+  rw [show -r / 2 = -(r / 2) by ring, Real.rpow_neg (by positivity), ← div_eq_mul_inv,
+    le_div_iff₀ hpos]
+  calc ‖𝓕 (fun y ↦ a.coefficient (y, ξ)) η‖ * (1 + ‖η‖ ^ 2) ^ (r / 2)
+      ≤ ‖𝓕 (fun y ↦ a.coefficient (y, ξ)) η‖ * (1 + ‖η‖) ^ ⌈r⌉₊ := by gcongr
+    _ ≤ C * (∑ α ∈ t, Symbol.seminorm K α [] a) * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
+      rw [mul_comm]; exact hC a haK η ξ
+
 /-- **Rapid decay.** For every `r`, the Fourier transform of the position slice satisfies
 `‖â(η, ξ)‖ ≤ C ⟨ξ⟩ ^ m ⟨η⟩ ^ (-r)`. -/
 theorem HasCompactSpatialSupport.exists_norm_fourier_slice_le (ha : a.HasCompactSpatialSupport)
     (r : ℝ) : ∃ C, 0 ≤ C ∧ ∀ η ξ : CoordinateSpace n,
       ‖𝓕 (fun y ↦ a.coefficient (y, ξ)) η‖ ≤
         C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) * (1 + ‖η‖ ^ 2) ^ (-r / 2) := by
-  obtain ⟨C, hC0, hC⟩ := ha.exists_one_add_norm_pow_mul_norm_fourier_le ⌈r⌉₊
-  refine ⟨C, hC0, fun η ξ ↦ ?_⟩
-  -- `⟨η⟩ ^ r ≤ (1 + ‖η‖) ^ ⌈r⌉₊`
-  have hw : (1 + ‖η‖ ^ 2) ^ (r / 2) ≤ (1 + ‖η‖) ^ ⌈r⌉₊ :=
-    (Real.rpow_le_rpow_of_exponent_le (by nlinarith [sq_nonneg ‖η‖])
-      (by linarith [Nat.le_ceil r])).trans (one_add_norm_sq_rpow_le_one_add_norm_pow η ⌈r⌉₊)
-  have hpos : 0 < (1 + ‖η‖ ^ 2) ^ (r / 2) := by positivity
-  rw [show -r / 2 = -(r / 2) by ring, Real.rpow_neg (by positivity), ← div_eq_mul_inv,
-    le_div_iff₀ hpos]
-  calc ‖𝓕 (fun y ↦ a.coefficient (y, ξ)) η‖ * (1 + ‖η‖ ^ 2) ^ (r / 2)
-      ≤ ‖𝓕 (fun y ↦ a.coefficient (y, ξ)) η‖ * (1 + ‖η‖) ^ ⌈r⌉₊ := by gcongr
-    _ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by rw [mul_comm]; exact hC η ξ
+  obtain ⟨K, hK, hKa⟩ := hasCompactSpatialSupport_iff.mp ha
+  obtain ⟨t, C, hC, h⟩ :=
+    exists_norm_fourier_slice_le_sum_seminorm (V := V) (W := W) (m := m) ⟨K, hK⟩ r
+  exact ⟨C * ∑ α ∈ t, Symbol.seminorm ⟨K, hK⟩ α [] a,
+    mul_nonneg hC (Finset.sum_nonneg fun _ _ ↦ apply_nonneg _ _), h a hKa⟩
 
 /-! ### Regularity of the Fourier transform in the position -/
 
@@ -375,7 +405,8 @@ theorem HasCompactSpatialSupport.hasFDerivAt_fourier_slice (ha : a.HasCompactSpa
       (∫ y, (𝐞 (-⟪y, η⟫) : ℂ) • fderiv ℝ (fun ξ ↦ a.coefficient (y, ξ)) ξ₀) ξ₀ := by
   obtain ⟨K, hK, hKa⟩ := hasCompactSpatialSupport_iff.mp ha
   simpa only [Real.fourier_eq, Circle.smul_def] using
-    hasFDerivAt_integral_fourierChar_smul (a.contDiff_coefficient.of_le (by simp)) hK hKa η ξ₀
+    hasFDerivAt_integral_fourierChar_smul (ξ₀ := ξ₀) (a.contDiff_coefficient.of_le (by simp)) hK
+      (.of_forall fun ξ y hy ↦ hKa y hy ξ) η
 
 /-- The coordinate derivative `∂_{ξ_j} â(η, ξ)` is the Fourier transform of the position slice of
 the frequency derivative `∂_{ξ_j} a`. -/
@@ -385,10 +416,79 @@ theorem HasCompactSpatialSupport.coordinateDeriv_fourier_slice (ha : a.HasCompac
       𝓕 (fun y ↦ (Symbol.frequencyDeriv j a).coefficient (y, ξ)) η := by
   obtain ⟨K, hK, hKa⟩ := hasCompactSpatialSupport_iff.mp ha
   rw [coordinateDeriv_cons, coordinateDeriv_nil, (ha.hasFDerivAt_fourier_slice η ξ).fderiv,
-    integral_fourierChar_smul_fderiv_apply (a.contDiff_coefficient.of_le (by simp)) hK hKa η ξ,
+    integral_fourierChar_smul_fderiv_apply (ξ := ξ) (a.contDiff_coefficient.of_le (by simp)) hK
+      (.of_forall fun ξ y hy ↦ hKa y hy ξ) η,
     Real.fourier_eq]
   simp only [Circle.smul_def, coefficient_frequencyDeriv, coordinateDeriv_cons,
     coordinateDeriv_nil]
+
+/-- **Smoothness in the frequency.** The Fourier transform `â(η, ξ)` of the position slice of a
+symbol with compact spatial support is smooth in the frequency `ξ`. -/
+theorem HasCompactSpatialSupport.contDiff_fourier_slice (ha : a.HasCompactSpatialSupport)
+    (η : CoordinateSpace n) :
+    ContDiff ℝ ∞ fun ξ ↦ 𝓕 (fun y ↦ a.coefficient (y, ξ)) η := by
+  refine contDiff_infty.2 fun k ↦ ?_
+  induction k generalizing m with
+  | zero =>
+    rw [Nat.cast_zero, contDiff_zero]
+    -- Elaborating the composition first, without the expected type, avoids unfolding `𝓕`.
+    have hc := ha.continuous_fourier_slice.comp (Continuous.prodMk_right (X := CoordinateSpace n) η)
+    exact hc
+  | succ k ih =>
+    -- The derivative is `v ↦ ∑ⱼ vⱼ (∂_{ξⱼ} a)^(η, ξ)`, built from the slices of the frequency
+    -- derivatives, which are `C^k` by induction.
+    set D : CoordinateSpace n → CoordinateSpace n →L[ℝ] (V →L[ℂ] W) := fun ξ ↦
+      ∑ j, (EuclideanSpace.proj j : CoordinateSpace n →L[ℝ] ℝ).smulRight
+        (𝓕 (fun y ↦ (Symbol.frequencyDeriv j a).coefficient (y, ξ)) η)
+    rw [Nat.cast_succ]
+    refine contDiff_succ_iff_hasFDerivAt.2 ⟨D, ?_, fun ξ ↦ ?_⟩
+    · exact ContDiff.sum fun j _ ↦
+        contDiff_const.smulRight (ih (ha.frequencyDeriv j))
+    · convert ha.hasFDerivAt_fourier_slice η ξ using 1
+      refine ContinuousLinearMap.coe_injective
+        ((EuclideanSpace.basisFun (Fin n) ℝ).toBasis.ext fun j ↦ ?_)
+      have h := ha.coordinateDeriv_fourier_slice j η ξ
+      rw [coordinateDeriv_cons, coordinateDeriv_nil,
+        (ha.hasFDerivAt_fourier_slice η ξ).fderiv] at h
+      simp [D, h, EuclideanSpace.proj, Finset.sum_apply]
+
+/-- **Frequency derivatives of `â`.** For a symbol `a` of order `m` with compact spatial support,
+the coordinate derivative of `ξ ↦ â(η, ξ)` along a word `w` satisfies
+`‖∂_ξ^w â(η, ξ)‖ ≤ C ⟨ξ⟩ ^ (m - |w|) ⟨η⟩ ^ (-r)`, for every `r`. -/
+theorem HasCompactSpatialSupport.exists_norm_coordinateDeriv_fourier_slice_le
+    (ha : a.HasCompactSpatialSupport) (w : List (Fin n)) (r : ℝ) :
+    ∃ C, 0 ≤ C ∧ ∀ η ξ : CoordinateSpace n,
+      ‖coordinateDeriv w (fun ξ ↦ 𝓕 (fun y ↦ a.coefficient (y, ξ)) η) ξ‖ ≤
+        C * (1 + ‖ξ‖ ^ 2) ^ ((m - w.length) / 2) * (1 + ‖η‖ ^ 2) ^ (-r / 2) := by
+  induction w using List.reverseRecOn generalizing m with
+  | nil => simpa using ha.exists_norm_fourier_slice_le r
+  | append_singleton w j ih =>
+    obtain ⟨C, hC0, hC⟩ := ih (ha.frequencyDeriv j)
+    refine ⟨C, hC0, fun η ξ ↦ ?_⟩
+    have hd : coordinateDeriv [j] (fun ξ ↦ 𝓕 (fun y ↦ a.coefficient (y, ξ)) η) =
+        fun ξ ↦ 𝓕 (fun y ↦ (Symbol.frequencyDeriv j a).coefficient (y, ξ)) η :=
+      funext (ha.coordinateDeriv_fourier_slice j η)
+    rw [coordinateDeriv_append, hd]
+    convert hC η ξ using 4
+    rw [List.length_append, List.length_singleton]
+    push_cast
+    ring
+
+/-- **Fréchet derivatives of `â` in the frequency.** For a symbol `a` of order `m` with compact
+spatial support, `‖D_ξ^k â(η, ξ)‖ ≤ C ⟨ξ⟩ ^ (m - k) ⟨η⟩ ^ (-r)`, for every `k` and `r`. -/
+theorem HasCompactSpatialSupport.exists_norm_iteratedFDeriv_fourier_slice_le
+    (ha : a.HasCompactSpatialSupport) (k : ℕ) (r : ℝ) :
+    ∃ C, 0 ≤ C ∧ ∀ η ξ : CoordinateSpace n,
+      ‖iteratedFDeriv ℝ k (fun ξ ↦ 𝓕 (fun y ↦ a.coefficient (y, ξ)) η) ξ‖ ≤
+        C * (1 + ‖ξ‖ ^ 2) ^ ((m - k) / 2) * (1 + ‖η‖ ^ 2) ^ (-r / 2) := by
+  choose C hC0 hC using fun w : Fin k → Fin n ↦
+    ha.exists_norm_coordinateDeriv_fourier_slice_le (List.ofFn w) r
+  refine ⟨∑ w, C w, Finset.sum_nonneg fun w _ ↦ hC0 w, fun η ξ ↦ ?_⟩
+  refine (norm_iteratedFDeriv_le_sum_coordinateDeriv
+    ((ha.contDiff_fourier_slice η).of_le (mod_cast le_top)) ξ).trans ?_
+  rw [Finset.sum_mul, Finset.sum_mul]
+  refine Finset.sum_le_sum fun w _ ↦ ?_
+  simpa using hC w η ξ
 
 end Decay
 
@@ -398,33 +498,6 @@ section Quantization
 
 variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W]
   [NormedSpace ℂ W] {a : Symbol n V W m}
-
-/-- The integrand of the double integral giving the Fourier transform of
-`x ↦ ∫ exp(2πi ⟪ζ, x⟫) a(x, g ζ) (𝓕 u ζ) dζ` is integrable in the position and the frequency: it is
-dominated by the indicator of the spatial support of `a` times the integrable function
-`⟨g ζ⟩ ^ m ‖𝓕 u ζ‖` of the frequency. -/
-private theorem HasCompactSpatialSupport.integrable_fourierChar_smul_apply
-    (ha : a.HasCompactSpatialSupport) (u : 𝓢(CoordinateSpace n, V))
-    {g : CoordinateSpace n → CoordinateSpace n} (hg : Continuous g)
-    (hgu : Integrable fun ζ ↦ (1 + ‖g ζ‖ ^ 2) ^ (m / 2) * ‖𝓕 u ζ‖) (ξ : CoordinateSpace n) :
-    Integrable (fun p : CoordinateSpace n × CoordinateSpace n ↦
-      𝐞 (-⟪p.1, ξ - p.2⟫) • a.coefficient (p.1, g p.2) (𝓕 u p.2)) (volume.prod volume) := by
-  obtain ⟨K, hK, hKa⟩ := hasCompactSpatialSupport_iff.mp ha
-  obtain ⟨C, _, hC⟩ := a.exists_bound_coefficient K hK
-  have hFcont : Continuous fun p : CoordinateSpace n × CoordinateSpace n ↦
-      𝐞 (-⟪p.1, ξ - p.2⟫) • a.coefficient (p.1, g p.2) (𝓕 u p.2) :=
-    (Real.continuous_fourierChar.comp (by fun_prop)).smul
-      ((a.contDiff_coefficient.continuous.comp (by fun_prop)).clm_apply
-        ((𝓕 u).continuous.comp continuous_snd))
-  have hK1 : Integrable (K.indicator fun _ ↦ (1 : ℝ)) :=
-    (integrable_indicator_iff hK.measurableSet).2 (integrableOn_const hK.measure_lt_top.ne)
-  refine (hK1.mul_prod (hgu.const_mul C)).mono' hFcont.aestronglyMeasurable
-    (.of_forall fun p ↦ ?_)
-  by_cases hx : p.1 ∈ K
-  · rw [Set.indicator_of_mem hx, one_mul, Circle.norm_smul, ← mul_assoc]
-    exact ((a.coefficient _).le_opNorm _).trans (by gcongr; exact hC _ hx _)
-  · rw [Set.indicator_of_notMem hx, zero_mul]
-    simp [hKa p.1 hx]
 
 /-- **The Fourier transform of a quantization integral.** For a symbol `a` with compact spatial
 support and a continuous frequency map `g` such that `⟨g ζ⟩ ^ m ‖𝓕 u ζ‖` is integrable, the Fourier
@@ -439,30 +512,9 @@ theorem HasCompactSpatialSupport.fourier_integral_fourierChar_smul_apply
     𝓕 (fun x ↦ ∫ ζ, 𝐞 ⟪ζ, x⟫ • a.coefficient (x, g ζ) (𝓕 u ζ)) ξ =
       ∫ ζ, 𝓕 (fun x ↦ a.coefficient (x, g ζ)) (ξ - ζ) (𝓕 u ζ) := by
   obtain ⟨K, hK, hKa⟩ := hasCompactSpatialSupport_iff.mp ha
-  set F : CoordinateSpace n × CoordinateSpace n → W := fun p ↦
-    𝐞 (-⟪p.1, ξ - p.2⟫) • a.coefficient (p.1, g p.2) (𝓕 u p.2) with hF
-  have hFint : Integrable F (volume.prod volume) := ha.integrable_fourierChar_smul_apply u hg hgu ξ
-  calc 𝓕 (fun x ↦ ∫ ζ, 𝐞 ⟪ζ, x⟫ • a.coefficient (x, g ζ) (𝓕 u ζ)) ξ =
-        ∫ x, ∫ ζ, F (x, ζ) := by
-        rw [Real.fourier_eq]
-        refine integral_congr_ae (.of_forall fun x ↦ ?_)
-        simp only [hF]
-        rw [Circle.smul_def, ← integral_smul]
-        refine integral_congr_ae (.of_forall fun ζ ↦ ?_)
-        simp only [Circle.smul_def, smul_smul, ← Circle.coe_mul, ← AddChar.map_add_eq_mul]
-        congr 3
-        rw [inner_sub_right, real_inner_comm ζ x]
-        ring
-    _ = ∫ ζ, ∫ x, F (x, ζ) := integral_integral_swap hFint
-    _ = _ := by
-        refine integral_congr_ae (.of_forall fun ζ ↦ ?_)
-        have hint : Integrable fun x ↦ 𝐞 (-⟪x, ξ - ζ⟫) • a.coefficient (x, g ζ) :=
-          ((Real.continuous_fourierChar.comp (by fun_prop)).smul
-            (a.contDiff_coefficient_slice _).continuous).integrable_of_hasCompactSupport
-              (HasCompactSupport.intro hK fun x hx ↦ by simp [hKa x hx, Circle.smul_def])
-        dsimp only
-        rw [Real.fourier_eq, ContinuousLinearMap.integral_apply hint]
-        simp only [hF, Circle.smul_def, smul_apply]
+  obtain ⟨C, -, hC⟩ := a.exists_bound_coefficient K hK
+  exact TauCeti.fourier_integral_fourierChar_smul_apply a.contDiff_coefficient.continuous hK hC hKa
+    u hg hgu ξ
 
 /-- **The Fourier transform of the quantization.** For a symbol `a` with compact spatial support,
 `𝓕 (Op(a) u) ξ = ∫ â(ξ - ζ, 2πζ) (𝓕 u ζ) dζ`, where `â(η, ξ)` is the Fourier transform of the
@@ -471,163 +523,9 @@ theorem HasCompactSpatialSupport.fourier_quantizeSchwartzValue (ha : a.HasCompac
     (u : 𝓢(CoordinateSpace n, V)) (ξ : CoordinateSpace n) :
     𝓕 (quantizeSchwartzValue a.coefficient u) ξ =
       ∫ ζ, 𝓕 (fun x ↦ a.coefficient (x, (2 * π) • ζ)) (ξ - ζ) (𝓕 u ζ) := by
-  have hcont : Continuous fun ζ : CoordinateSpace n ↦
-      (1 + ‖(2 * π) • ζ‖ ^ 2) ^ (m / 2) * ‖𝓕 u ζ‖ :=
-    ((by fun_prop : Continuous fun ζ : CoordinateSpace n ↦ 1 + ‖(2 * π) • ζ‖ ^ 2).rpow_const
-      fun _ ↦ Or.inl (by positivity)).mul (𝓕 u).continuous.norm
-  have hgu : Integrable fun ζ : CoordinateSpace n ↦ (1 + ‖(2 * π) • ζ‖ ^ 2) ^ (m / 2) * ‖𝓕 u ζ‖ :=
-    (((𝓕 u).integrable_one_add_norm_sq_rpow_mul_norm (m / 2)).const_mul ((2 * π) ^ |m|)).mono'
-      hcont.aestronglyMeasurable (.of_forall fun ζ ↦ by
-        rw [Real.norm_of_nonneg (by positivity), ← mul_assoc]
-        gcongr
-        exact one_add_norm_smul_sq_rpow_le (c := 2 * π) (by linarith [Real.two_le_pi]) m ζ)
-  have hq : quantizeSchwartzValue a.coefficient u =
-      fun x ↦ ∫ ζ, 𝐞 ⟪ζ, x⟫ • a.coefficient (x, (2 * π) • ζ) (𝓕 u ζ) :=
-    funext (quantizeSchwartzValue_def _ u)
-  rw [hq]
-  exact ha.fourier_integral_fourierChar_smul_apply u (continuous_const_smul _) hgu ξ
-
-/-- The pointwise kernel bound behind the Sobolev estimate: Peetre's inequality and the decay of
-`â` give `⟨ξ⟩ ^ (s - m) ‖â(ξ - ζ, 2πζ) v‖ ≤ B k(ξ - ζ) ⟨ζ⟩ ^ s ‖v‖` with
-`k(η) = (1 + ‖η‖) ^ (|s - m| - N)`. -/
-private theorem rpow_mul_norm_fourier_apply_le {s C₀ : ℝ} {N : ℕ} (hC₀ : 0 ≤ C₀)
-    (hdecay : ∀ η ξ : CoordinateSpace n,
-      (1 + ‖η‖) ^ N * ‖𝓕 (fun x ↦ a.coefficient (x, ξ)) η‖ ≤ C₀ * (1 + ‖ξ‖ ^ 2) ^ (m / 2))
-    (ξ ζ : CoordinateSpace n) (v : V) :
-    (1 + ‖ξ‖ ^ 2) ^ ((s - m) / 2) * ‖𝓕 (fun x ↦ a.coefficient (x, (2 * π) • ζ)) (ξ - ζ) v‖ ≤
-      2 ^ (|s - m| / 2) * C₀ * (2 * π) ^ |m| * (1 + ‖ξ - ζ‖) ^ (-((N : ℝ) - |s - m|)) *
-        ((1 + ‖ζ‖ ^ 2) ^ (s / 2) * ‖v‖) := by
-  set A := 𝓕 (fun x ↦ a.coefficient (x, (2 * π) • ζ)) (ξ - ζ)
-  set t := 1 + ‖ξ - ζ‖
-  have ht : 0 < t := by positivity
-  have hA : ‖A‖ ≤ C₀ * (1 + ‖(2 * π) • ζ‖ ^ 2) ^ (m / 2) * (t ^ N)⁻¹ := by
-    rw [le_mul_inv_iff₀ (by positivity), mul_comm]
-    exact hdecay _ _
-  have hscale := one_add_norm_smul_sq_rpow_le (c := 2 * π) (by linarith [Real.two_le_pi]) m ζ
-  have hpeetre := one_add_norm_sq_rpow_le_mul_sub (s - m) ξ ζ
-  -- The bracket `⟨η⟩ ^ |s - m|` is at most `(1 + ‖η‖) ^ |s - m|`.
-  have hbr : (1 + ‖ξ - ζ‖ ^ 2) ^ (|s - m| / 2) ≤ t ^ |s - m| :=
-    one_add_norm_sq_rpow_le_one_add_norm_rpow _ (abs_nonneg _)
-  have hk : t ^ |s - m| * (t ^ N)⁻¹ = t ^ (-((N : ℝ) - |s - m|)) := by
-    rw [← Real.rpow_natCast, ← Real.rpow_neg ht.le, ← Real.rpow_add ht]
-    ring_nf
-  have hw : (1 + ‖ζ‖ ^ 2) ^ ((s - m) / 2) * (1 + ‖ζ‖ ^ 2) ^ (m / 2) = (1 + ‖ζ‖ ^ 2) ^ (s / 2) := by
-    rw [← Real.rpow_add (by positivity)]
-    ring_nf
-  calc (1 + ‖ξ‖ ^ 2) ^ ((s - m) / 2) * ‖A v‖
-      ≤ (2 ^ (|s - m| / 2) * (1 + ‖ξ - ζ‖ ^ 2) ^ (|s - m| / 2) * (1 + ‖ζ‖ ^ 2) ^ ((s - m) / 2)) *
-          ((C₀ * ((2 * π) ^ |m| * (1 + ‖ζ‖ ^ 2) ^ (m / 2)) * (t ^ N)⁻¹) * ‖v‖) := by
-        gcongr
-        refine (A.le_opNorm v).trans ?_
-        gcongr
-        exact hA.trans (by gcongr)
-    _ ≤ (2 ^ (|s - m| / 2) * t ^ |s - m| * (1 + ‖ζ‖ ^ 2) ^ ((s - m) / 2)) *
-          ((C₀ * ((2 * π) ^ |m| * (1 + ‖ζ‖ ^ 2) ^ (m / 2)) * (t ^ N)⁻¹) * ‖v‖) := by gcongr
-    _ = 2 ^ (|s - m| / 2) * C₀ * (2 * π) ^ |m| * (t ^ |s - m| * (t ^ N)⁻¹) *
-          (((1 + ‖ζ‖ ^ 2) ^ ((s - m) / 2) * (1 + ‖ζ‖ ^ 2) ^ (m / 2)) * ‖v‖) := by ring
-    _ = _ := by rw [hk, hw]
-
-/-- The pointwise form of the Sobolev estimate: `⟨ξ⟩ ^ (s - m) ‖𝓕 (Op(a) u) ξ‖` is bounded by the
-integral of the kernel `B k(ξ - ζ)` of `rpow_mul_norm_fourier_apply_le` against
-`⟨ζ⟩ ^ s ‖𝓕 u ζ‖`. -/
-private theorem HasCompactSpatialSupport.enorm_smul_fourier_quantizeSchwartzValue_le
-    (ha : a.HasCompactSpatialSupport) {s C₀ : ℝ} {N : ℕ} (hC₀ : 0 ≤ C₀)
-    (hdecay : ∀ η ξ : CoordinateSpace n,
-      (1 + ‖η‖) ^ N * ‖𝓕 (fun x ↦ a.coefficient (x, ξ)) η‖ ≤ C₀ * (1 + ‖ξ‖ ^ 2) ^ (m / 2))
-    (u : 𝓢(CoordinateSpace n, V)) (ξ : CoordinateSpace n) :
-    ‖(((1 + ‖ξ‖ ^ 2) ^ ((s - m) / 2) : ℝ) : ℂ) • 𝓕 (quantizeSchwartzValue a.coefficient u) ξ‖ₑ ≤
-      ∫⁻ ζ, ENNReal.ofReal (2 ^ (|s - m| / 2) * C₀ * (2 * π) ^ |m| *
-          (1 + ‖ξ - ζ‖) ^ (-((N : ℝ) - |s - m|))) *
-        ‖(((1 + ‖ζ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) • 𝓕 u ζ‖ₑ := by
-  rw [ha.fourier_quantizeSchwartzValue, eNorm_smul]
-  calc ‖(((1 + ‖ξ‖ ^ 2) ^ ((s - m) / 2) : ℝ) : ℂ)‖ₑ *
-        ‖∫ ζ, 𝓕 (fun x ↦ a.coefficient (x, (2 * π) • ζ)) (ξ - ζ) (𝓕 u ζ)‖ₑ
-      ≤ ‖(((1 + ‖ξ‖ ^ 2) ^ ((s - m) / 2) : ℝ) : ℂ)‖ₑ *
-        ∫⁻ ζ, ‖𝓕 (fun x ↦ a.coefficient (x, (2 * π) • ζ)) (ξ - ζ) (𝓕 u ζ)‖ₑ := by
-        gcongr
-        exact eNorm_integral_le_lintegral_eNorm _
-    _ = ∫⁻ ζ, ENNReal.ofReal ((1 + ‖ξ‖ ^ 2) ^ ((s - m) / 2) *
-          ‖𝓕 (fun x ↦ a.coefficient (x, (2 * π) • ζ)) (ξ - ζ) (𝓕 u ζ)‖) := by
-        rw [← lintegral_const_mul' _ _ eNorm_ne_top]
-        refine lintegral_congr fun ζ ↦ ?_
-        rw [ENNReal.ofReal_mul (by positivity), ofReal_norm, ← ofReal_norm, Complex.norm_real,
-          Real.norm_of_nonneg (by positivity)]
-    _ ≤ _ := by
-        refine lintegral_mono fun ζ ↦ ?_
-        rw [eNorm_smul, ← ofReal_norm, ← ofReal_norm, Complex.norm_real,
-          Real.norm_of_nonneg (by positivity), ← ENNReal.ofReal_mul (by positivity),
-          ← ENNReal.ofReal_mul (by positivity)]
-        exact ENNReal.ofReal_le_ofReal (rpow_mul_norm_fourier_apply_le hC₀ hdecay ξ ζ (𝓕 u ζ))
-
-/-- The factor `2 ^ (|s - m| / 2) (2π) ^ |m| ∫ (1 + ‖η‖) ^ (|s - m| - N) dη`,
-`N = ⌈|s - m|⌉₊ + n + 1`, by which the Sobolev estimate multiplies the decay constant of `â`. -/
-private def sobolevFactor (n : ℕ) (m s : ℝ) : ℝ :=
-  2 ^ (|s - m| / 2) * (2 * π) ^ |m| *
-    ∫ η : CoordinateSpace n, (1 + ‖η‖) ^ (-(((⌈|s - m|⌉₊ + n + 1 : ℕ) : ℝ) - |s - m|))
-
-private theorem sobolevFactor_nonneg (n : ℕ) (m s : ℝ) : 0 ≤ sobolevFactor n m s :=
-  mul_nonneg (by positivity) (integral_nonneg fun η ↦ by positivity)
-
-/-- The Sobolev estimate on Schwartz functions, with constant `sobolevFactor n m s * C₀` for a
-decay constant `C₀` of `â` with `N = ⌈|s - m|⌉₊ + n + 1`. -/
-private theorem HasCompactSpatialSupport.eLpNorm_smul_fourier_quantizeSchwartzValue_le
-    (ha : a.HasCompactSpatialSupport) {s C₀ : ℝ} (hC₀ : 0 ≤ C₀)
-    (hdecay : ∀ η ξ : CoordinateSpace n,
-      (1 + ‖η‖) ^ (⌈|s - m|⌉₊ + n + 1) * ‖𝓕 (fun x ↦ a.coefficient (x, ξ)) η‖ ≤
-        C₀ * (1 + ‖ξ‖ ^ 2) ^ (m / 2))
-    (u : 𝓢(CoordinateSpace n, V)) :
-    eLpNorm (fun ξ ↦ (((1 + ‖ξ‖ ^ 2) ^ ((s - m) / 2) : ℝ) : ℂ) •
-        𝓕 (quantizeSchwartzValue a.coefficient u) ξ) 2 volume ≤
-      ENNReal.ofReal (sobolevFactor n m s * C₀) *
-        eLpNorm (fun ξ ↦ (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) • 𝓕 u ξ) 2 volume := by
-  set N : ℕ := ⌈|s - m|⌉₊ + n + 1
-  set k : CoordinateSpace n → ℝ := fun η ↦ (1 + ‖η‖) ^ (-((N : ℝ) - |s - m|))
-  have hk_int : Integrable k := integrable_one_add_norm (by
-    rw [finrank_euclideanSpace, Fintype.card_fin]
-    have := Nat.le_ceil |s - m|
-    push_cast [N]
-    linarith)
-  set B := 2 ^ (|s - m| / 2) * C₀ * (2 * π) ^ |m|
-  have hB : 0 ≤ B := by positivity
-  set A := ENNReal.ofReal (B * ∫ η, k η)
-  have hA : sobolevFactor n m s * C₀ = B * ∫ η, k η := by
-    simp only [sobolevFactor, B, k, N]
-    ring
-  rw [hA]
-  -- The pointwise bound by the kernel `B k(ξ - ζ)` acting on `⟨ζ⟩ ^ s ‖𝓕 u ζ‖`.
-  have hpt := ha.enorm_smul_fourier_quantizeSchwartzValue_le (s := s) hC₀ hdecay u
-  -- Schur's test for the kernel `B k(ξ - ζ)`, whose row and column integrals are `A`.
-  have hint : ∫⁻ η, ENNReal.ofReal (B * k η) = A := by
-    rw [← ofReal_integral_eq_lintegral_ofReal (hk_int.const_mul B)
-      (.of_forall fun η ↦ mul_nonneg hB (Real.rpow_nonneg (by positivity) _)), integral_const_mul]
-  have hkcont : Continuous k :=
-    (continuous_const.add continuous_norm).rpow_const fun x ↦
-      Or.inl (add_pos_of_pos_of_nonneg one_pos (norm_nonneg x)).ne'
-  have hkmeas : AEMeasurable (Function.uncurry fun x y : CoordinateSpace n ↦
-      ENNReal.ofReal (B * k (x - y))) (volume.prod volume) :=
-    (ENNReal.continuous_ofReal.comp (continuous_const.mul
-      (hkcont.comp (continuous_fst.sub continuous_snd)))).measurable.aemeasurable
-  have hw (r : ℝ) : Continuous fun x : CoordinateSpace n ↦ (((1 + ‖x‖ ^ 2) ^ (r / 2) : ℝ) : ℂ) :=
-    (by fun_prop : (fun x : CoordinateSpace n ↦
-      (((1 + ‖x‖ ^ 2) ^ (r / 2) : ℝ) : ℂ)).HasTemperateGrowth).1.continuous
-  have hgmeas : AEStronglyMeasurable
-      (fun ζ : CoordinateSpace n ↦ (((1 + ‖ζ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) • 𝓕 u ζ) :=
-    ((hw s).smul (𝓕 u).continuous).aestronglyMeasurable
-  have hschur := TauCeti.eLpNorm_lintegral_mul_le hkmeas hgmeas.eNorm
-    (p := 2) one_le_two (A := A) (B := A)
-    (.of_forall fun x ↦ (lintegral_sub_left_eq_self (fun η ↦ ENNReal.ofReal (B * k η)) x).trans
-      hint |>.le)
-    (.of_forall fun y ↦ (lintegral_sub_right_eq_self (fun η ↦ ENNReal.ofReal (B * k η)) y).trans
-      hint |>.le)
-  calc _ ≤ eLpNorm (fun ξ ↦ ∫⁻ ζ, ENNReal.ofReal (B * k (ξ - ζ)) *
-          ‖(((1 + ‖ζ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) • 𝓕 u ζ‖ₑ) 2 volume :=
-        eLpNorm_mono_eNorm ((hw (s - m)).smul
-          (ha.integrable_quantizeSchwartzValue u).continuous_fourier).aestronglyMeasurable
-          fun ξ ↦ by rw [eNorm_eq_self]; exact hpt ξ
-    _ ≤ _ := hschur
-    _ = _ := by
-        rw [← ENNReal.rpow_add_of_nonneg _ _ (by norm_num) (by norm_num), eLpNorm_eNorm _ hgmeas,
-          sub_add_cancel, ENNReal.rpow_one]
+  obtain ⟨K, hK, hKa⟩ := hasCompactSpatialSupport_iff.mp ha
+  obtain ⟨C, -, hC⟩ := a.exists_bound_coefficient K hK
+  exact TauCeti.fourier_quantizeSchwartzValue a.contDiff_coefficient.continuous hK hC hKa u ξ
 
 /-- **The Sobolev estimate on Schwartz functions.** For a symbol `a` of order `m` with compact
 spatial support and every real `s`, there is a constant `C` with
@@ -640,9 +538,13 @@ theorem HasCompactSpatialSupport.exists_eLpNorm_smul_fourier_quantizeSchwartzVal
           𝓕 (quantizeSchwartzValue a.coefficient u) ξ) 2 volume ≤
         ENNReal.ofReal C *
           eLpNorm (fun ξ ↦ (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) • 𝓕 u ξ) 2 volume := by
+  obtain ⟨K, hK, hKa⟩ := hasCompactSpatialSupport_iff.mp ha
+  obtain ⟨C', -, hC'⟩ := a.exists_bound_coefficient K hK
   obtain ⟨C₀, hC₀, hdecay⟩ := ha.exists_one_add_norm_pow_mul_norm_fourier_le (⌈|s - m|⌉₊ + n + 1)
-  exact ⟨sobolevFactor n m s * C₀, mul_nonneg (sobolevFactor_nonneg n m s) hC₀,
-    ha.eLpNorm_smul_fourier_quantizeSchwartzValue_le hC₀ hdecay⟩
+  obtain ⟨C, hC, h⟩ :=
+    exists_eLpNorm_smul_fourier_quantizeSchwartzValue_le_of_decay (V := V) (W := W) n m s
+  exact ⟨C * C₀, mul_nonneg hC hC₀,
+    h a.coefficient K C' C₀ a.contDiff_coefficient.continuous hK hC' hKa hdecay⟩
 
 /-- The symbol `φ(x) id` of multiplication by a compactly supported Schwartz function `φ` has
 compact spatial support. -/
@@ -795,6 +697,18 @@ theorem toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply
   exact integral_congr_ae ((ha.memLp_quantizeSchwartzValue u 2).coeFn_toLp.mono fun x hx ↦ by
     simp only [hx])
 
+/-- On a Schwartz function `u`, the operator `Op(a) : H^s → H^{s - m}` gives the element of
+`H^{s - m}` defined by the Schwartz function `Op(a) u`, which has compact support. -/
+theorem HasCompactSpatialSupport.quantizeSobolev_toBesselPotentialSpaceCLM
+    (ha : a.HasCompactSpatialSupport) (s : ℝ) (u : 𝓢(CoordinateSpace n, V)) :
+    a.quantizeSobolev ha s (SchwartzMap.toBesselPotentialSpaceCLM s 2 u) =
+      SchwartzMap.toBesselPotentialSpaceCLM (s - m) 2
+        ((ha.hasCompactSupport_quantizeSchwartzValue u).toSchwartzMap
+          (a.contDiff_quantizeSchwartzValue u)) := by
+  refine BesselPotentialSpace.ext ?_
+  ext φ
+  simp
+
 /-- The operator norm of `Op(a) : H^s → H^{s - m}` is at most any constant of the Sobolev
 estimate on the Fourier side. -/
 private theorem norm_quantizeSobolev_le_of_eLpNorm_le (ha : a.HasCompactSpatialSupport) (s : ℝ)
@@ -820,13 +734,14 @@ theorem exists_norm_quantizeSobolev_le_sum_seminorm (K : Compacts (CoordinateSpa
           ‖a.quantizeSobolev ha s‖ ≤ C * ∑ α ∈ t, Symbol.seminorm K α [] a := by
   obtain ⟨t, C, hC, h⟩ := exists_one_add_norm_pow_mul_norm_fourier_le_sum_seminorm
     (V := V) (W := W) (m := m) K (⌈|s - m|⌉₊ + n + 1)
-  refine ⟨t, sobolevFactor n m s * C, mul_nonneg (sobolevFactor_nonneg n m s) hC,
-    fun a ha haK ↦ ?_⟩
+  obtain ⟨D, hD, hE⟩ :=
+    exists_eLpNorm_smul_fourier_quantizeSchwartzValue_le_of_decay (V := V) (W := W) n m s
+  refine ⟨t, D * C, mul_nonneg hD hC, fun a ha haK ↦ ?_⟩
   have hP : 0 ≤ ∑ α ∈ t, Symbol.seminorm K α [] a := Finset.sum_nonneg fun _ _ ↦ apply_nonneg _ _
+  obtain ⟨C', -, hC'⟩ := a.exists_bound_coefficient K K.isCompact
   rw [mul_assoc]
-  exact norm_quantizeSobolev_le_of_eLpNorm_le ha s
-    (mul_nonneg (sobolevFactor_nonneg n m s) (mul_nonneg hC hP))
-    (ha.eLpNorm_smul_fourier_quantizeSchwartzValue_le (mul_nonneg hC hP) (h a haK))
+  exact norm_quantizeSobolev_le_of_eLpNorm_le ha s (mul_nonneg hD (mul_nonneg hC hP))
+    (hE a.coefficient K C' _ a.contDiff_coefficient.continuous K.isCompact hC' haK (h a haK))
 
 /-- The operator `Op(a)` does not depend on the proof that `a` has compact spatial support, and
 equal symbols give equal operators. -/
@@ -923,6 +838,29 @@ theorem continuous_quantizeSobolev {X : Type*} [TopologicalSpace X] {a : X → S
           (hcont.sub continuous_const)).tendsto' t₀ 0 (by simp)
     simpa using h.const_mul C
 
+/-- **Extensions of a quantization agree as distributions.** If a bounded operator
+`T : H^s(ℝⁿ; V) → H^r(ℝⁿ; W)` agrees on Schwartz functions with the quantization of a symbol `a`
+with compact spatial support, then `T u` and `Op(a) u ∈ H^{s - m}` are the same tempered
+distribution for every `u ∈ H^s`, whatever the target order `r`. -/
+theorem toDistr_apply_eq_toDistr_quantizeSobolev (ha : a.HasCompactSpatialSupport) {s r : ℝ}
+    {T : H^{s}(CoordinateSpace n, V) →L[ℂ] H^{r}(CoordinateSpace n, W)}
+    (hT : ∀ (u : 𝓢(CoordinateSpace n, V)) (φ : 𝓢(CoordinateSpace n, ℂ)),
+      (T (SchwartzMap.toBesselPotentialSpaceCLM s 2 u)).toDistr φ =
+        ∫ x, φ x • quantizeSchwartzValue a.coefficient u x)
+    (u : H^{s}(CoordinateSpace n, V)) :
+    (T u).toDistr = (a.quantizeSobolev ha s u).toDistr := by
+  -- Both operators, followed by the inclusions into `H^{min r (s - m)}`, agree on Schwartz
+  -- functions, which are dense in `H^s`.
+  have h : BesselPotentialSpace.inclusion (min_le_left r (s - m)) ∘L T =
+      BesselPotentialSpace.inclusion (min_le_right r (s - m)) ∘L a.quantizeSobolev ha s :=
+    BesselPotentialSpace.continuousLinearMap_ext ENNReal.ofNat_ne_top fun v ↦
+      BesselPotentialSpace.ext <| by
+        ext φ
+        simp only [ContinuousLinearMap.comp_apply, BesselPotentialSpace.toDistr_inclusion, hT,
+          toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply]
+  simpa only [ContinuousLinearMap.comp_apply, BesselPotentialSpace.toDistr_inclusion] using
+    congrArg BesselPotentialSpace.toDistr (DFunLike.congr_fun h u)
+
 /-- On Schwartz functions the operators of two symbols with the same coefficient agree, so their
 Sobolev extensions agree on `H^s ⊆ H^t`, `t ≤ s`. -/
 private theorem toDistr_quantizeSobolev_inclusion {m' : ℝ} {b : Symbol n V W m'}
@@ -976,7 +914,7 @@ theorem toDistr_quantizeSobolev_ofSpatial_smul_id (φ : 𝓢(CoordinateSpace n, 
     have hc : (ofSpatial (fun x ↦ φ x • ContinuousLinearMap.id ℂ V)
         ((φ.smooth ⊤).smul contDiff_const)).coefficient =
           fun p ↦ φ p.1 • ContinuousLinearMap.id ℂ V :=
-      funext (coefficient_ofSpatial _ _)
+      coefficient_ofSpatial_eq _ _
     simp only [toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply, hc,
       ContinuousLinearMap.comp_apply, BesselPotentialSpace.toDistr_inclusion,
       BesselPotentialSpace.toDistr_smulLeftCLM, SchwartzMap.toDistr_toBesselPotentialSpaceCLM,
@@ -1037,7 +975,7 @@ theorem quantizeSobolev_ofSpatial_smul {ψ : 𝓢(CoordinateSpace n, ℂ)} (hψ 
     BesselPotentialSpace.ext ?_
   have hc : (ofSpatial (fun x ↦ ψ x • ContinuousLinearMap.id ℂ V) hψ).coefficient =
       fun p ↦ ψ p.1 • ContinuousLinearMap.id ℂ V :=
-    funext (coefficient_ofSpatial _ hψ)
+    coefficient_ofSpatial_eq _ hψ
   have hq (x : CoordinateSpace n) :
       quantizeSchwartzValue (fun p ↦ ψ p.1 • ContinuousLinearMap.id ℂ V) u x = ψ x • u x := by
     simpa using quantizeSchwartzValue_comp_fst (fun y ↦ ψ y • ContinuousLinearMap.id ℂ V) u x
@@ -1058,6 +996,15 @@ theorem IsSmoothing.memSobolev_toDistr_quantizeSobolev (ha : a.IsSmoothing)
   have hbc := hc.of_coefficient_eq hb
   rw [toDistr_quantizeSobolev_congr hb.symm hc hbc (v := u) rfl]
   simpa only [sub_sub_cancel] using (b.quantizeSobolev hbc s u).memSobolev_toDistr
+
+/-- **A symbol of order `m` costs `m` derivatives at every Sobolev order.** If `u ∈ H^t` has a
+tempered distribution lying in `H^s`, then `Op(a) u ∈ H^{s - m}`, whatever the order `t` at which
+`Op(a)` is applied. -/
+theorem memSobolev_toDistr_quantizeSobolev (ha : a.HasCompactSpatialSupport) {s t : ℝ}
+    {u : H^{t}(CoordinateSpace n, V)} (hu : MemSobolev s 2 u.toDistr) :
+    MemSobolev (s - m) 2 (a.quantizeSobolev ha t u).toDistr := by
+  rw [toDistr_quantizeSobolev_congr rfl ha ha hu.toBesselPotentialSpace_toDistr.symm]
+  exact (a.quantizeSobolev ha s _).memSobolev_toDistr
 
 end Sobolev
 

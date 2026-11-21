@@ -9,6 +9,7 @@ public import TauCeti.Analysis.BoundedVariation.Perimeter
 public import Mathlib.Geometry.Euclidean.Volume.Measure
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Geometry.Euclidean.Volume.Measure
+import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 import TauCeti.MeasureTheory.Integral.DivergenceTheorem.InnerHalfSpace
 import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 
@@ -170,11 +171,10 @@ theorem perimeter_ball_setOf_inner_lt (hν : ‖ν‖ = 1) (x : F) {r : ℝ} (hr
     simp
   -- An orthonormal basis identifies `(ℝ ∙ ν)ᗮ` with `ℝ^(n-1)`, preserving volume and unit balls.
   have hball : volume (ball (0 : (ℝ ∙ ν)ᗮ) 1) =
-      volume (ball (0 : EuclideanSpace ℝ (Fin (finrank ℝ F - 1))) 1) := by
-    let e := ((stdOrthonormalBasis ℝ (ℝ ∙ ν)ᗮ).reindex (finCongr
-      (Submodule.finrank_orthogonal_span_singleton (n := finrank ℝ F - 1) hν0))).repr
-    rw [← e.measurePreserving.measure_preimage measurableSet_ball.nullMeasurableSet,
-      e.preimage_ball, map_zero]
+      volume (ball (0 : EuclideanSpace ℝ (Fin (finrank ℝ F - 1))) 1) :=
+    TauCeti.volume_ball_eq_of_finrank_eq
+      ((Submodule.finrank_orthogonal_span_singleton (n := finrank ℝ F - 1) hν0).trans
+        finrank_euclideanSpace_fin.symm) 0 0 1
   rw [perimeter_setOf_inner_lt hν, Opens.coe_mk,
     ← Measure.restrict_apply' (measurableSet_eq_fun (by fun_prop) measurable_const),
     euclideanHausdorffMeasure_restrict_setOf_inner_eq hν,

@@ -41,8 +41,8 @@ private def spanSingletonPairing :
       (Ideal.span {f} : Ideal A) →ₗ[k] cornerSubmodule k e f where
   toFun m :=
     { toFun n := ⟨unop (m : Aᵐᵒᵖ) * (n : A), by
-        obtain ⟨a, ha⟩ := Ideal.mem_span_singleton'.mp m.2
-        obtain ⟨b, hb⟩ := Ideal.mem_span_singleton'.mp n.2
+        obtain ⟨a, ha⟩ := Ideal.mem_span_singleton'.mp m.property
+        obtain ⟨b, hb⟩ := Ideal.mem_span_singleton'.mp n.property
         rw [cornerSubmodule_def, LinearMap.mem_range]
         refine ⟨unop a * b, ?_⟩
         simp only [LinearMap.mulLeftRight_apply, ← ha, ← hb, unop_mul, unop_op,
@@ -66,7 +66,7 @@ private theorem spanSingletonPairing_balanced (a : A)
 
 private def cornerToSpanSingleton :
     cornerSubmodule k e f →ₗ[k] (Ideal.span {f} : Ideal A) where
-  toFun x := ⟨(x : A), mem_span_singleton_of_mem_cornerSubmodule x.2⟩
+  toFun x := ⟨(x : A), mem_span_singleton_of_mem_cornerSubmodule x.property⟩
   map_add' _ _ := (rfl)
   map_smul' _ _ := (rfl)
 
@@ -100,7 +100,7 @@ def spanSingletonBalancedTensorProductEquivCorner
       simpa only [LinearMap.comp_apply, BalancedTensorProduct.lift_tmul,
         BalancedTensorProduct.mk_apply, coe_spanSingletonPairing_apply,
         coe_spanSingletonGenerator, unop_op, coe_cornerToSpanSingleton_apply,
-        LinearMap.id_apply] using mul_eq_self_of_mem_cornerSubmodule he x.2)
+        LinearMap.id_apply] using mul_eq_self_of_mem_cornerSubmodule he x.property)
     (by
       apply BalancedTensorProduct.hom_ext
       intro m n
@@ -132,7 +132,7 @@ theorem spanSingletonBalancedTensorProductEquivCorner_symm_apply
     (he : IsIdempotentElem e) (x : cornerSubmodule k e f) :
     (spanSingletonBalancedTensorProductEquivCorner k he).symm x =
       BalancedTensorProduct.tmul k A (spanSingletonGenerator (op e))
-        ⟨(x : A), mem_span_singleton_of_mem_cornerSubmodule x.2⟩ := by
+        ⟨(x : A), mem_span_singleton_of_mem_cornerSubmodule x.property⟩ := by
   simp only [spanSingletonBalancedTensorProductEquivCorner, LinearEquiv.symm_ofLinearMap,
     LinearEquiv.coe_ofLinearMap, LinearMap.comp_apply, BalancedTensorProduct.mk_apply]
   exact congrArg (BalancedTensorProduct.tmul k A (spanSingletonGenerator (op e)))
