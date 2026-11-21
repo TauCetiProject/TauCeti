@@ -16,9 +16,10 @@ import TauCeti.Geometry.Manifold.CoordinateBall
 
 On a compact Hausdorff complex curve, finitely many fibre evaluations determine every
 holomorphic section of a vector bundle with arbitrary complex normed model fibre. If the model
-fibre is finite-dimensional, its native holomorphic section module is finite-dimensional. The proof uses nested coordinate discs, bounds for the actual bundle
-transitions on compact overlaps, and the vector-valued Schwarz lemma at a finite set of
-sample points. It chooses no topology on the section module.
+fibre is finite-dimensional, its native holomorphic section module is finite-dimensional. The
+proof uses nested coordinate discs, bounds for the actual bundle transitions on compact
+overlaps, and the vector-valued Schwarz lemma at a finite set of sample points. It chooses no
+topology on the section module.
 
 The complex chart model is the ordinary boundaryless model. Neither connectedness nor
 nonemptiness of the base nor positive rank of the bundle is required.
