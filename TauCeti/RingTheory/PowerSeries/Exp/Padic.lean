@@ -12,6 +12,7 @@ public import Mathlib.NumberTheory.Padics.PadicNumbers
 import TauCeti.NumberTheory.Padics.Basic
 import TauCeti.NumberTheory.Padics.Factorial
 import TauCeti.NumberTheory.Padics.PadicIntegers
+import Mathlib.Analysis.Normed.Algebra.Ultra
 import Mathlib.Analysis.SpecificLimits.Basic
 
 /-!
@@ -28,6 +29,10 @@ the dyadic case: there it reads `‖x‖ * c < 1 / 2`. At the critical radius th
 coefficients in degrees `p ^ k` have constant positive norm, proving failure of restrictedness.
 Both series nevertheless have a Gauss norm, i.e. bounded weighted coefficients, there: the
 exponential has one exactly on the closed disc `‖x‖ * c ≤ p ^ (-1 / (p - 1))`.
+
+The same bounds hold for a finite combination `∑ aᵢ exp(xᵢX)` of such series, an exponential
+polynomial: it is restricted on every closed disc strictly inside the exponential discs of all
+the `xᵢ`, and its Gauss norm there is at most `max ‖aᵢ‖`, by the ultrametric inequality.
 
 For `x = log u`, these estimates give discs of radius greater than one for normal series
 interpolating powers of sufficiently deep units. A quantitative Gauss norm, rather than just
@@ -209,5 +214,42 @@ theorem gaussNorm_rescale_exp_sub_one_le {x : K} {c : ℝ} (hc : 0 ≤ c)
       (p : ℝ) ^ ((p - 1 : ℝ)⁻¹) * ‖x‖ * c := by
   rw [gaussNorm_eq]
   exact ciSup_le (norm_coeff_rescale_exp_sub_one_mul_pow_le hc hxc)
+
+section ExpPolynomial
+
+variable {ι : Type*}
+
+/-- An exponential polynomial `∑ aᵢ exp(xᵢX)` is restricted on every closed disc strictly inside
+the p-adic exponential discs of all its frequencies `xᵢ`. -/
+theorem isRestricted_sum_smul_rescale_exp (s : Finset ι) (a x : ι → K) {c : ℝ} (hc : 0 ≤ c)
+    (hxc : ∀ i ∈ s, ‖x i‖ * c < (p : ℝ) ^ (-(p - 1 : ℝ)⁻¹)) :
+    (∑ i ∈ s, a i • rescale (x i) (exp K)).IsRestricted c :=
+  MvPowerSeries.IsRestricted.sum fun i hi ↦ (isRestricted_rescale_exp hc (hxc i hi)).smul (a i)
+
+/-- On a closed disc inside the p-adic exponential discs of all its frequencies `xᵢ`, the Gauss
+norm of an exponential polynomial `∑ aᵢ exp(xᵢX)` is at most any common bound `A` for the
+`‖aᵢ‖`. This includes the boundary of the discs. -/
+theorem gaussNorm_sum_smul_rescale_exp_le (s : Finset ι) (a x : ι → K) {c A : ℝ} (hc : 0 ≤ c)
+    (hxc : ∀ i ∈ s, ‖x i‖ * c ≤ (p : ℝ) ^ (-(p - 1 : ℝ)⁻¹)) (hA : 0 ≤ A)
+    (ha : ∀ i ∈ s, ‖a i‖ ≤ A) :
+    (∑ i ∈ s, a i • rescale (x i) (exp K)).gaussNorm norm c ≤ A := by
+  have : IsUltrametricDist K := .of_normedAlgebra ℚ_[p]
+  rw [gaussNorm_eq]
+  refine ciSup_le fun n ↦ ?_
+  rw [map_sum]
+  rcases s.eq_empty_or_nonempty with rfl | hs
+  · simpa using hA
+  -- the ultrametric inequality bounds the coefficient by that of a single summand
+  obtain ⟨i, hi, hle⟩ := IsUltrametricDist.exists_norm_finsetSum_le_of_nonempty hs
+    fun i ↦ coeff n (a i • rescale (x i) (exp K))
+  calc
+    _ ≤ ‖coeff n (a i • rescale (x i) (exp K))‖ * c ^ n := by gcongr
+    _ = ‖a i‖ * (‖coeff n (rescale (x i) (exp K))‖ * c ^ n) := by
+      rw [coeff_smul, smul_eq_mul, norm_mul, mul_assoc]
+    _ ≤ A * 1 := mul_le_mul (ha i hi) (norm_coeff_rescale_exp_mul_pow_le_one hc (hxc i hi) n)
+      (by positivity) hA
+    _ = A := mul_one A
+
+end ExpPolynomial
 
 end PowerSeries
