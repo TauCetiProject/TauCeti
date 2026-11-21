@@ -23,6 +23,8 @@ displacement smaller than the distance to a pole also gives a slit-plane quotien
 points in the right half-plane lies in the slit plane as well, and positive real scaling preserves
 it.
 
+For a point `z ≠ 1` of the unit circle, `-z` lies in the slit plane.
+
 Translating a point of the slit plane by a nonnegative real number keeps it in the slit plane,
 and translating a point of `slitPlane ∪ {0}` by a positive one lands in the slit plane.
 The module also records a locally uniform lower bound for the distance from a point of the slit
@@ -45,6 +47,7 @@ preserved under scaling by `[0, 1]`. So, for every `m`, the pullback
 
 * `Complex.closedBall_one_subset_slitPlane_iff`
 * `Complex.conj_mem_slitPlane`, `Complex.mem_slitPlane_iff_add_ofReal_ne_zero`
+* `Complex.neg_mem_slitPlane_of_norm_eq_one`
 * `Complex.one_sub_mul_ofReal_mem_slitPlane`, `Complex.one_sub_ofReal_mul_mem_slitPlane`,
   `IsCompact.exists_le_norm_one_sub_ofReal_mul`, `IsCompact.exists_le_norm_one_sub_mul_exp_neg`,
   `Complex.one_sub_mul_exp_neg_mem_slitPlane`, `Complex.one_sub_mul_exp_neg_ne_zero`
@@ -369,6 +372,15 @@ theorem mem_slitPlane_iff_add_ofReal_ne_zero {z : ℂ} :
   have hre : z.re ≤ 0 := le_of_not_gt fun hp ↦ hz (mem_slitPlane_iff.mpr (Or.inl hp))
   refine h (-z.re) (neg_nonneg.mpr hre) ?_
   apply Complex.ext <;> simp [him]
+
+open scoped ComplexOrder in
+/-- A point `z ≠ 1` of the unit circle has `-z` in the slit plane: `-z` is a nonpositive real
+number only if `z` is a nonnegative real number of modulus one, that is, `z = 1`. -/
+theorem neg_mem_slitPlane_of_norm_eq_one {z : ℂ} (hz : ‖z‖ = 1) (hz1 : z ≠ 1) :
+    -z ∈ slitPlane := by
+  rw [mem_slitPlane_iff_not_le_zero, neg_nonpos]
+  intro h
+  exact hz1 (by rw [eq_coe_norm_of_nonneg h, hz, ofReal_one])
 
 /-- Scaling `z` by a real number in `[0, 1]` preserves slit-plane membership of `1 - z`. -/
 theorem one_sub_mul_ofReal_mem_slitPlane {z : ℂ} (hz : 1 - z ∈ slitPlane)

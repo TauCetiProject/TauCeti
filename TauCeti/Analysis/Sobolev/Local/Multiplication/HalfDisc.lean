@@ -23,9 +23,9 @@ half-disc, and elliptic bootstrapping must control nonlinear terms that are bili
 and its derivatives, in local Sobolev classes whose bounds reach the real axis. These theorems
 supply that control: a product of an `Lᵖ_loc` factor with a `W^{1,q}_loc` factor stays in
 `L^q_loc`, and a product of `W^{1,p}_loc` and `W^{1,q}_loc` factors stays in `W^{1,q}_loc`, all up
-to the boundary, provided the `W^{1,p}_loc` factor is also in `L^∞_loc` or has finite-dimensional
-values. For finite-dimensional factors and `q = p`, `W^{1,p}_loc` on half-discs is closed under
-continuous bilinear maps, such as multiplication of matrix-valued maps.
+to the boundary, provided the `W^{1,p}_loc` factor is also in `L^∞_loc`. Products of
+finite-dimensional factors at every positive order, including order one, are
+`TauCeti.MemWkpLoc.bilin_succ_halfPlane`.
 
 ## Main declarations
 
@@ -34,9 +34,6 @@ continuous bilinear maps, such as multiplication of matrix-valued maps.
 * `TauCeti.MemLpLoc.bilin_of_memWkpLoc_halfPlane`: order zero, `Lᵖ · W^{1,q} ⊂ L^q`.
 * `TauCeti.MemWkpLoc.bilin_of_memLpLoc_top_halfPlane`: order one, `W^{1,p} · W^{1,q} ⊂ W^{1,q}`
   for a first factor that is also in `L^∞_loc`.
-* `TauCeti.MemWkpLoc.bilin_halfPlane`: order one, `W^{1,p} · W^{1,q} ⊂ W^{1,q}` for
-  finite-dimensional factors. At `q = p` this is the algebra property of `W^{1,p}_loc` on
-  half-discs.
 
 ## Implementation notes
 
@@ -125,19 +122,5 @@ theorem MemWkpLoc.bilin_of_memLpLoc_top_halfPlane [CompleteSpace H] (B : F →L[
       (MemWkpLoc.planarReflection_higherReflectionCoeff_ball hq1 x r
         (hg.mono (inter_subset_inter_left _ hΩ))))
     (fun z hz => by simp [planarReflection_of_nonneg _ _ hz.2]) inter_subset_left
-
-/-- **Order-one mixed products on half-discs with finite-dimensional factors.** For `p > 2` and
-`1 < q ≤ p`, the product of a `W^{1,p}_loc` map with a `W^{1,q}_loc` map on `Ω ∩ {0 ≤ im}`, both
-with finite-dimensional values, is in `W^{1,q}_loc` there, with bounds up to the real axis. At
-`q = p` this is the algebra property of `W^{1,p}_loc` on half-discs under continuous bilinear
-maps. -/
-theorem MemWkpLoc.bilin_halfPlane [FiniteDimensional ℝ F] [CompleteSpace H]
-    (B : F →L[ℝ] G →L[ℝ] H) (hp : 2 < p) (hq : 1 < q) (hqp : q ≤ p) {f : ℂ → F} {g : ℂ → G}
-    (hf : MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) 1 f)
-    (hg : MemWkpLoc q ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) 1 g) :
-    MemWkpLoc q ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) 1 (fun z => B (f z) (g z)) := by
-  let _ : Fact (1 ≤ (p : ℝ≥0∞)) := ⟨by exact_mod_cast hq.le.trans hqp⟩
-  exact hf.bilin_of_memLpLoc_top_halfPlane B hp hq hqp
-    (hf.memLpLoc_of_holderTriple_halfPlane hp) hg
 
 end TauCeti

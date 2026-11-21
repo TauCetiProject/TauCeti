@@ -24,9 +24,9 @@ The Hilbert transform is the model Calderón–Zygmund operator. This file compu
 norm and shows, on an explicit example, that it is not bounded on `L¹`:
 
 * `H` is an isometry of `L²(ℝ)`, and more generally `‖R_v f‖ = |v| ‖f‖`
-  (`TauCeti.norm_rieszTransform_real_apply`), so `‖R_v‖ = |v|`
-  (`TauCeti.norm_rieszTransform_real`). In higher dimensions only the sum
-  `∑ⱼ ‖Rⱼ f‖² = ‖f‖²` survives.
+  (`TauCeti.norm_rieszTransform_real_apply`). In higher dimensions a single Riesz transform is
+  not a multiple of an isometry: only the operator norm `‖R_v‖ = ‖v‖`
+  (`TauCeti.norm_rieszTransform`) and the sum `∑ⱼ ‖Rⱼ f‖² = ‖f‖²` survive.
 * The Hilbert transform of the indicator of an interval `[a, b]` is
   `H 1_{[a, b]} (x) = π⁻¹ log |(x - a) / (x - b)|` off `[a, b]`
   (`TauCeti.ae_rieszTransform_indicatorConstLp_eq_log_smul`). This decays like
@@ -34,8 +34,8 @@ norm and shows, on an explicit example, that it is not bounded on `L¹`:
   (`TauCeti.not_integrable_rieszTransform_indicatorConstLp`).
 * Hence `R_v` is not bounded on `L¹` for `v ≠ 0`: no estimate `‖R_v f‖₁ ≤ C ‖f‖₁` holds on
   `L² ∩ L¹` (`TauCeti.not_exists_eLpNorm_one_rieszTransform_real_le`). At `p = 1` the weak type
-  `(1, 1)` bound `TauCeti.exists_mul_volume_lt_enorm_rieszTransform_le` cannot be upgraded to a
-  strong type bound.
+  `(1, 1)` bound, `TauCeti.HasStandardKernel.exists_mul_volume_lt_enorm_le` applied to
+  `TauCeti.hasStandardKernel_rieszTransform`, cannot be upgraded to a strong type bound.
 
 ## References
 
@@ -102,20 +102,6 @@ theorem norm_rieszTransform_real_apply (v : ℝ) (f : Lp F 2 (volume : Measure �
     simpa using rieszTransform_smul (F := F) v (1 : ℝ)
   rw [hv, smul_apply, norm_smul, h1]
   simp
-
-/-- On the real line the Riesz transform in the direction `v` has operator norm `|v|` on
-`L²(ℝ, F)` for nonzero `F`. In particular the Hilbert transform has norm `1`. -/
-theorem norm_rieszTransform_real [Nontrivial F] (v : ℝ) :
-    ‖rieszTransform (E := ℝ) F v‖ = |v| := by
-  refine le_antisymm (by simpa using norm_rieszTransform_le (F := F) v) ?_
-  obtain ⟨c, hc⟩ := exists_ne (0 : F)
-  set f : Lp F 2 (volume : Measure ℝ) :=
-    indicatorConstLp 2 measurableSet_Icc (by simp : volume (Icc (0 : ℝ) 1) ≠ ∞) c
-  have hf : ‖f‖ ≠ 0 := by
-    simp [f, norm_indicatorConstLp, hc]
-  have := (rieszTransform (E := ℝ) F v).le_opNorm f
-  rw [norm_rieszTransform_real_apply] at this
-  exact le_of_mul_le_mul_right this ((norm_nonneg f).lt_of_ne' hf)
 
 /-! ### The Hilbert transform of an interval -/
 
@@ -194,7 +180,8 @@ theorem not_integrable_rieszTransform_indicatorConstLp {v : ℝ} (hv : v ≠ 0) 
 /-- **The Hilbert transform is not bounded on `L¹`.** On the real line, for `v ≠ 0` and nonzero
 `F`, there is no constant `C` with `‖R_v f‖₁ ≤ C ‖f‖₁` for every `f ∈ L²`: the indicator of
 `[0, 1]` is integrable while its Riesz transform is not. The weak type `(1, 1)` bound
-`TauCeti.exists_mul_volume_lt_enorm_rieszTransform_le` is the substitute at this endpoint. -/
+(`TauCeti.HasStandardKernel.exists_mul_volume_lt_enorm_le` applied to
+`TauCeti.hasStandardKernel_rieszTransform`) is the substitute at this endpoint. -/
 theorem not_exists_eLpNorm_one_rieszTransform_real_le [Nontrivial F] {v : ℝ} (hv : v ≠ 0) :
     ¬ ∃ C : ℝ≥0, ∀ f : Lp F 2 (volume : Measure ℝ),
       eLpNorm (rieszTransform F v f) 1 volume ≤ C * eLpNorm f 1 volume := by
