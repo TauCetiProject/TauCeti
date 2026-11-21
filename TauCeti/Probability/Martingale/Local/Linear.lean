@@ -9,6 +9,7 @@ public import Mathlib.Probability.Martingale.Basic
 public import Mathlib.Probability.Process.LocalProperty
 public import Mathlib.Topology.Order.Cadlag
 import TauCeti.Probability.Martingale.ContinuousStopping
+import TauCeti.Probability.Process.Stopping
 
 /-!
 # Linear combinations of native local martingales
@@ -45,9 +46,7 @@ theorem martingale_smul {ι : Type*} [LinearOrder ι] [OrderBot ι] [Topological
     Locally (fun Y ↦ Martingale Y ℱ P) ℱ (fun t ω ↦ a • X t ω) P :=
   ⟨hX.localSeq, hX.isLocalizingSequence_localSeq, fun n ↦ by
     convert (hX.stoppedProcess_localSeq n).smul a using 1
-    ext t ω
-    simp only [Pi.smul_apply, stoppedProcess_indicator_comm, Set.indicator_apply]
-    split_ifs <;> simp [stoppedProcess]⟩
+    exact stoppedProcess_indicator_pos_smul a X (hX.localSeq n)⟩
 
 variable [IsFiniteMeasure P] {ℱ : Filtration ℝ≥0 mΩ}
 
@@ -62,16 +61,17 @@ theorem martingale_add {X Y : ℝ≥0 → Ω → E}
     Locally (fun U ↦ Martingale U ℱ P) ℱ (fun t ω ↦ X t ω + Y t ω) P := by
   have hτ := hX.isLocalizingSequence_localSeq.min hY.isLocalizingSequence_localSeq
   refine ⟨min hX.localSeq hY.localSeq, hτ, fun n ↦ ?_⟩
-  convert ((hX.stoppedProcess_localSeq n).stoppedProcess_indicator_of_le_of_ae_isRightContinuous
-      hXp hXc (hX.isLocalizingSequence_localSeq.isStoppingTime n) (hτ.isStoppingTime n)
-      (fun _ ↦ min_le_left _ _)).add
-    ((hY.stoppedProcess_localSeq n).stoppedProcess_indicator_of_le_of_ae_isRightContinuous
-      hYp hYc (hY.isLocalizingSequence_localSeq.isStoppingTime n) (hτ.isStoppingTime n)
-      (fun _ ↦ min_le_right _ _)) using 1
+  have hXn := (hX.stoppedProcess_localSeq n).stoppedProcess_indicator_of_le_of_ae_isRightContinuous
+    hXp hXc (hX.isLocalizingSequence_localSeq.isStoppingTime n) (hτ.isStoppingTime n)
+    (fun _ ↦ min_le_left _ _)
+  have hYn := (hY.stoppedProcess_localSeq n).stoppedProcess_indicator_of_le_of_ae_isRightContinuous
+    hYp hYc (hY.isLocalizingSequence_localSeq.isStoppingTime n) (hτ.isStoppingTime n)
+    (fun _ ↦ min_le_right _ _)
+  convert hXn.add hYn using 1
   ext t ω
-  simp only [Pi.add_apply, stoppedProcess_indicator_comm, Set.indicator_apply, Set.mem_ofPred_eq,
-    bot_eq_zero]
-  split_ifs <;> simp [stoppedProcess]
+  have hadd := stoppedProcess_indicator_pos_add X Y ((hX.localSeq ⊓ hY.localSeq) n)
+  rw [bot_eq_zero] at hadd
+  exact congrFun (congrFun hadd t) ω
 
 /-- The difference of two strongly progressive, almost-surely right-continuous native local
 martingales on a finite measure space is a native local martingale. -/

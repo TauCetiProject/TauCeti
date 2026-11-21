@@ -89,9 +89,11 @@ theorem indep_comap_of_setIntegral_exp_inner_mul_I [IsZeroOrProbabilityMeasure P
       ∫ ω in A, exp ((⟪X ω, t⟫ : ℂ) * I) ∂P = ((P A).toReal : ℂ) * φ t) :
     Indep (.comap X inferInstance) m P := by
   rcases eq_zero_or_isProbabilityMeasure P with rfl | hP; · simp [Indep_iff]
+  have hφ (t : E) : charFun (P.map X) t = φ t := by
+    simpa [charFun_map_eq_integral hX t] using h t Set.univ MeasurableSet.univ
   exact (indep_comap_iff_forall_setIntegral_exp_inner_mul_I hm hX).2 fun t A hA ↦ by
-    rw [show charFun (P.map X) t = φ t by
-      simpa [charFun_map_eq_integral hX t] using h t Set.univ MeasurableSet.univ]; exact h t A hA
+    rw [hφ t]
+    exact h t A hA
 
 /-- A random variable in a complete second-countable real inner product space is independent
 of a sub-sigma-algebra `m` if and only if its conditional characteristic function given `m`

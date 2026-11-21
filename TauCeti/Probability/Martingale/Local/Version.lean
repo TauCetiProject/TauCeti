@@ -103,13 +103,12 @@ theorem TauCeti.Probability.exists_isStronglyPredictable_indist_prod_sub_initial
         (fun t ω ↦ Y i t ω * Y j t ω - Y i 0 ω * Y j 0 ω - A i j t ω) P) := by
   choose Y hYp hYc hYM hYl using fun i ↦
     (hM i).exists_isStronglyPredictable_indist_locally_martingale_of_ae_continuous (hcont i)
+  have hY0 i : StronglyMeasurable[ℱ ⊥] (Y i 0) := by
+    simpa only [bot_eq_zero] using (hYp i).isStronglyProgressive.stronglyAdapted 0
   have hQp i j : IsStronglyPredictable ℱ
       (fun t ω ↦ Y i t ω * Y j t ω - Y i 0 ω * Y j 0 ω - A i j t ω) :=
     StronglyMeasurable.sub (StronglyMeasurable.sub ((hYp i).mul (hYp j))
-      (StronglyAdapted.isStronglyPredictable_of_continuous
-        (fun _ ↦ (((hYp i).isStronglyProgressive.stronglyAdapted 0).mul
-          ((hYp j).isStronglyProgressive.stronglyAdapted 0)).mono (ℱ.mono bot_le))
-        fun _ ↦ continuous_const)) (hA i j)
+      ((hY0 i).mul (hY0 j)).isStronglyPredictable_snd) (hA i j)
   exact ⟨Y, hYp, hYM, hYc, hYl, hQp, fun i j ↦
     (hQp i j).isStronglyProgressive.locally_martingale_of_indist (hQ i j) <|
       (hYM i).mp <| (hYM j).mp <| (hQM i j).mono fun _ hq hj hi t ↦ by

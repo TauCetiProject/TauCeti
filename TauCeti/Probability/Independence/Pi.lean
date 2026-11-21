@@ -102,9 +102,10 @@ theorem iIndepFun.swap {α' β' : Type*} {E : α' → β' → Type*}
       (g := fun (p : Sigma fun _ : β' ↦ α') ↦ (p.2, p.1))
       fun ⟨_, _⟩ ⟨_, _⟩ h ↦ by simp only [Prod.mk.injEq] at h; cases h.1; cases h.2; rfl
   have hYswap : iIndepFun (fun b ω a ↦ Y a b ω) P := by
-    rw [iIndepFun_iff_map_fun_eq_infinitePi_map (by fun_prop),
-      show (fun ω b a ↦ Y a b ω) = (MeasurableEquiv.piCurry (fun b a ↦ E a b)) ∘
-        (fun ω (p : Sigma fun _ : β' ↦ α') ↦ Y p.2 p.1 ω) by ext; simp [Sigma.curry],
+    have hcurry : (fun ω b a ↦ Y a b ω) = (MeasurableEquiv.piCurry (fun b a ↦ E a b)) ∘
+        (fun ω (p : Sigma fun _ : β' ↦ α') ↦ Y p.2 p.1 ω) := by
+      ext; simp [Sigma.curry]
+    rw [iIndepFun_iff_map_fun_eq_infinitePi_map (by fun_prop), hcurry,
       ← Measure.map_map (by fun_prop) (by fun_prop),
       (iIndepFun_iff_map_fun_eq_infinitePi_map (by fun_prop)).1 hsig,
       Measure.infinitePi_map_piCurry (fun b a ↦ P.map (Y a b))]

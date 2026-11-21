@@ -75,10 +75,10 @@ theorem IsPreBrownianReal.const_mul_add_const_mul_of_indepFun {B₁ B₂ : ℝ�
   refine HasIndepIncrements.isPreBrownianReal_of_hasLaw (fun t ↦ ?_) (fun n g hg ↦ ?_)
   · have h1 := gaussianReal_const_mul (hB₁.hasLaw_eval t) a
     have h2 := gaussianReal_const_mul (hB₂.hasLaw_eval t) b
+    have hvar : NNReal.mk (a ^ 2) (sq_nonneg a) * t + NNReal.mk (b ^ 2) (sq_nonneg b) * t = t := by
+      ext; push_cast; rw [← add_mul, hab, one_mul]
     refine ⟨h1.aemeasurable.add h2.aemeasurable, by
-      simpa only [Pi.add_def, Pi.mul_apply, mul_zero, add_zero, Function.comp_def,
-        show NNReal.mk (a ^ 2) (sq_nonneg a) * t + NNReal.mk (b ^ 2) (sq_nonneg b) * t = t by
-          ext; push_cast; rw [← add_mul, hab, one_mul]] using
+      simpa only [Pi.add_def, Pi.mul_apply, mul_zero, add_zero, Function.comp_def, hvar] using
         gaussianReal_add_gaussianReal_of_indepFun (hind.comp
           (measurable_const.mul (measurable_pi_apply t))
           (measurable_const.mul (measurable_pi_apply t))) h1 h2⟩

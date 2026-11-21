@@ -286,16 +286,18 @@ theorem Martingale.setIntegral_sub_smul_eq_zero [SigmaFiniteFiltration μ ℱ] (
     {s t : ι} (hst : s ≤ t) {S : Set Ω} (hS : MeasurableSet[ℱ s] S) {Z : Ω → E}
     (hZ : AEStronglyMeasurable[ℱ s] Z μ) (hint : IntegrableOn (fun ω ↦ (Y t ω - Y s ω) • Z ω) S μ) :
     ∫ ω in S, (Y t ω - Y s ω) • Z ω ∂μ = 0 := by
+  have hind : S.indicator (fun ω ↦ (Y t ω - Y s ω) • Z ω) = (Y t - Y s) • S.indicator Z := by
+    ext ω; exact congrFun (Set.indicator_smul S (fun ω ↦ Y t ω - Y s ω) Z) ω
+  have hZS : AEStronglyMeasurable[ℱ s] (S.indicator Z) μ := by
+    obtain ⟨g, hg, hZg⟩ := hZ
+    exact ⟨S.indicator g, hg.indicator hS,
+      hZg.mono fun ω hω ↦ by by_cases h : ω ∈ S <;> simp [h, hω]⟩
   have hint' : Integrable ((Y t - Y s) • S.indicator Z) μ :=
-    ((integrable_indicator_iff (ℱ.le s S hS)).2 hint).congr
-      (ae_of_all μ fun ω ↦ by by_cases h : ω ∈ S <;> simp [h])
+    hind ▸ (integrable_indicator_iff (ℱ.le s S hS)).2 hint
   have hpull := condExp_smul_of_aestronglyMeasurable_right ((hY.integrable t).sub (hY.integrable s))
-    hint' ⟨S.indicator (hZ.mk Z), hZ.stronglyMeasurable_mk.indicator hS,
-      hZ.ae_eq_mk.mono fun ω hω ↦ by by_cases h : ω ∈ S <;> simp [h, hω]⟩
-  rw [← integral_indicator (ℱ.le s S hS),
-    show S.indicator (fun ω ↦ (Y t ω - Y s ω) • Z ω) = (Y t - Y s) • S.indicator Z by
-      ext ω; by_cases h : ω ∈ S <;> simp [h],
-    ← integral_condExp (ℱ.le s), integral_congr_ae (g := fun _ ↦ (0 : E)) ?_, integral_zero]
+    hint' hZS
+  rw [← integral_indicator (ℱ.le s S hS), hind, ← integral_condExp (ℱ.le s),
+    integral_congr_ae (g := fun _ ↦ (0 : E)) ?_, integral_zero]
   filter_upwards [hpull, condExp_sub (m := ℱ s) (hY.integrable t) (hY.integrable s),
     hY.condExp_ae_eq hst] with ω hp hd hm
   simp only [Pi.smul_apply', Pi.sub_apply] at *
@@ -312,10 +314,11 @@ theorem Martingale.setIntegral_sq_sub_smul_eq_zero [SigmaFiniteFiltration μ ℱ
     (hintQ : IntegrableOn (fun ω ↦ ((Y t ω ^ 2 - A t ω) - (Y s ω ^ 2 - A s ω)) • Z ω) S μ)
     (hintY : IntegrableOn (fun ω ↦ (Y t ω - Y s ω) • (Y s ω • Z ω)) S μ) :
     ∫ ω in S, ((Y t ω - Y s ω) ^ 2 - (A t ω - A s ω)) • Z ω ∂μ = 0 := by
-  simp_rw [show ∀ ω, ((Y t ω - Y s ω) ^ 2 - (A t ω - A s ω)) • Z ω =
+  have hid (ω : Ω) : ((Y t ω - Y s ω) ^ 2 - (A t ω - A s ω)) • Z ω =
       ((Y t ω ^ 2 - A t ω) - (Y s ω ^ 2 - A s ω)) • Z ω -
-        (2 : ℝ) • ((Y t ω - Y s ω) • (Y s ω • Z ω))
-    from fun _ ↦ by rw [smul_smul, smul_smul, ← sub_smul]; congr 1; ring]
+        (2 : ℝ) • ((Y t ω - Y s ω) • (Y s ω • Z ω)) := by
+    rw [smul_smul, smul_smul, ← sub_smul]; congr 1; ring
+  simp_rw [hid]
   rw [integral_sub (g := fun ω ↦ (2 : ℝ) • ((Y t ω - Y s ω) • (Y s ω • Z ω))) hintQ
       (hintY.smul (2 : ℝ)), integral_smul, hQ.setIntegral_sub_smul_eq_zero hst hS hZ hintQ,
     hY.setIntegral_sub_smul_eq_zero hst hS (Z := fun ω ↦ Y s ω • Z ω)

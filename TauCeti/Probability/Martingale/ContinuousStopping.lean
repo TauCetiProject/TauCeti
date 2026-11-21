@@ -132,19 +132,9 @@ theorem Martingale.stoppedProcess_indicator_of_le_of_ae_isRightContinuous
     Martingale (stoppedProcess (fun t ↦ {ω | 0 < τ ω}.indicator (M t)) τ) ℱ μ := by
   convert hM.stoppedProcess_indicator_of_ae_isRightContinuous
     (by simpa only [bot_eq_zero] using hprog.stoppedProcess_indicator_pos hσ)
-    (hcont.mono fun ω hω ↦ by
-      rw [show (stoppedProcess (fun t ↦ {ω | 0 < σ ω}.indicator (M t)) σ · ω) =
-          fun t ↦ if 0 < σ ω then stoppedProcess M σ t ω else 0 by
-        funext t; simp [stoppedProcess_indicator_comm, Set.indicator_apply]]
-      split_ifs
-      · exact fun _ ↦ ContinuousWithinAt.stoppedProcess (hω _)
-      · exact continuous_const.isRightContinuous) hτ using 1
-  simp only [stoppedProcess_indicator_comm', stoppedProcess_stoppedProcess]
-  ext t ω
-  by_cases hω : 0 < τ ω
-  · simp [Set.indicator_of_mem, hω, lt_of_lt_of_le hω (hle ω), stoppedProcess,
-      min_eq_left (hle ω)]
-  · simp [Set.indicator_of_notMem, hω]
+    (hcont.mono fun ω hω t ↦
+      ContinuousWithinAt.stoppedProcess_indicator (s := {ω | 0 < σ ω}) (hω t)) hτ using 1
+  simpa only [bot_eq_zero] using stoppedProcess_indicator_pos_of_le M hle
 
 /-- For a strongly progressive martingale with almost surely right-continuous paths and a
 bounded stopping time τ ≤ T of arbitrary range, `stoppedValue M τ` equals M T conditioned on

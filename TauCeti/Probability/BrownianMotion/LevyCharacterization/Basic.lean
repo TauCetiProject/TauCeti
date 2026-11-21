@@ -22,7 +22,9 @@ import TauCeti.Probability.Martingale.Exponential.Local
 import TauCeti.Probability.Martingale.Local.Dominated
 import TauCeti.Probability.Martingale.Local.Version
 import TauCeti.Probability.Martingale.MaximalInequality.Lp
+import TauCeti.Probability.Martingale.QuadraticVariation
 import TauCeti.Probability.Process.LocalProperty
+import TauCeti.Topology.Instances.Real.UniformGrid
 
 /-!
 # Scalar Lévy characterization of Brownian motion
@@ -30,8 +32,10 @@ import TauCeti.Probability.Process.LocalProperty
 Proves Lévy's characterization for an almost-surely continuous real local martingale `M` on a raw
 filtration `ℱ` with `t ↦ M t ^ 2 - M 0 ^ 2 - c * t` a local martingale: Gaussian increment laws,
 increment independence from `ℱ s`, filtered and law-form Brownian characterizations (arbitrary start
-and zero start), strongly predictable indistinguishable Brownian versions, and the converse that a
-Brownian motion adapted and locally martingale on `ℱ` is a filtered pre-Brownian motion on `ℱ`.
+and zero start), strongly predictable indistinguishable Brownian versions (arbitrary start and zero
+start), and the converse that a Brownian motion on `ℱ` which is a local martingale admits a
+strongly predictable filtered pre-Brownian version and (when adapted) is a filtered pre-Brownian
+motion on `ℱ`.
 
 ## References
 
@@ -95,13 +99,47 @@ theorem isFilteredPreBrownianReal_sub_initialValue [IsProbabilityMeasure P] {M :
     IsFilteredPreBrownianReal ℱ (fun t ω ↦ M t ω - M 0 ω) P :=
   have hQ1 : Locally (fun Y ↦ Martingale Y ℱ P) ℱ
       (fun t ω ↦ M t ω ^ 2 - M 0 ω ^ 2 - ((1 : ℝ≥0) : ℝ) * (t : ℝ)) P := by simpa using hQ
-  (show Adapted ℱ (fun t ω ↦ M t ω - M 0 ω) from fun t ↦
-      (hA t).sub ((hA 0).mono (ℱ.mono bot_le) le_rfl)).isFilteredPreBrownianReal
-    (ae_of_all P fun _ ↦ sub_self _) (fun _ _ hst ↦ by
+  have hsub_adapt : Adapted ℱ (fun t ω ↦ M t ω - M 0 ω) := fun t ↦
+    (hA t).sub ((hA 0).mono (ℱ.mono bot_le) le_rfl)
+  hsub_adapt.isFilteredPreBrownianReal (ae_of_all P fun _ ↦ sub_self _)
+    (fun _ _ hst ↦ by
       simpa only [Pi.sub_def, sub_sub_sub_cancel_right, one_mul] using
         hasLaw_sub_gaussianReal hM hQ1 hcont hst)
     (fun _ _ hst ↦ by
       simpa only [Pi.sub_def, sub_sub_sub_cancel_right] using indep_comap_sub hM hQ1 hcont hst)
+
+/-- **Predictable centered Brownian version and initial-value decomposition (arbitrary start).**
+Without assuming literal adaptation of `M`, if `M` is an almost-surely continuous real local
+martingale on a probability space and `t ↦ M t ^ 2 - M 0 ^ 2 - t` is a local martingale, then
+there exist an `ℱ 0`-strongly measurable initial random variable `Y₀` and a strongly predictable
+process `W` such that `M` is indistinguishable from `t ↦ Y₀ + W t`, `W` is indistinguishable
+from `t ↦ M t - M 0`, `W` is a real Brownian motion, and `W` is a filtered pre-Brownian motion
+relative to `ℱ`. -/
+theorem exists_isStronglyPredictable_indist_sub_initialValue_isFilteredPreBrownianReal
+    [IsProbabilityMeasure P] {M : ℝ≥0 → Ω → ℝ}
+    (hM : Locally (fun Y ↦ Martingale Y ℱ P) ℱ M P)
+    (hQ : Locally (fun Y ↦ Martingale Y ℱ P) ℱ (fun t ω ↦ M t ω ^ 2 - M 0 ω ^ 2 - (t : ℝ)) P)
+    (hcont : ∀ᵐ ω ∂P, Continuous (M · ω)) :
+    ∃ Y₀ : Ω → ℝ, ∃ W : ℝ≥0 → Ω → ℝ,
+      StronglyMeasurable[ℱ 0] Y₀ ∧ IsStronglyPredictable ℱ W ∧
+      M ≡ᵐ[P] (fun t ω ↦ Y₀ ω + W t ω) ∧ W ≡ᵐ[P] (fun t ω ↦ M t ω - M 0 ω) ∧
+      IsBrownianReal W P ∧ IsFilteredPreBrownianReal ℱ W P := by
+  obtain ⟨Y, hYp, hYM, hYc, hYl, _, hQY⟩ :=
+    hM.exists_isStronglyPredictable_indist_sq_sub_initialValue_sub (A := fun t _ ↦ (t : ℝ)) hQ
+      NNReal.continuous_coe.isStronglyPredictable_fst hcont (ae_of_all P fun _ _ ↦ rfl)
+  have hY0 : StronglyMeasurable[ℱ ⊥] (Y 0) := by
+    simpa only [bot_eq_zero] using hYp.isStronglyProgressive.stronglyAdapted 0
+  have hY0' : StronglyMeasurable[ℱ 0] (Y 0) := by simpa only [← bot_eq_zero] using hY0
+  have hWp : IsStronglyPredictable ℱ (fun t ω ↦ Y t ω - Y 0 ω) :=
+    StronglyMeasurable.sub hYp hY0.isStronglyPredictable_snd
+  have hFW : IsFilteredPreBrownianReal ℱ (fun t ω ↦ Y t ω - Y 0 ω) P :=
+    isFilteredPreBrownianReal_sub_initialValue hYl hQY hYc
+      hYp.isStronglyProgressive.stronglyAdapted.adapted
+  have hWc : ∀ᵐ ω ∂P, Continuous (fun t ↦ Y t ω - Y 0 ω) :=
+    hYc.mono fun _ h ↦ h.sub continuous_const
+  exact ⟨Y 0, fun t ω ↦ Y t ω - Y 0 ω, hY0', hWp,
+    hYM.mono fun _ hω t ↦ by simp [hω t], hYM.mono fun _ hω t ↦ by simp [hω t, hω 0],
+    ⟨hFW.toIsPreBrownianReal, hWc⟩, hFW⟩
 
 /-- **Lévy's characterization (law form, arbitrary start, no literal adaptation).**
 If `M` is an almost-surely continuous real local martingale on a probability space and
@@ -111,13 +149,10 @@ theorem isBrownianReal_sub_initialValue [IsProbabilityMeasure P] {M : ℝ≥0 �
     (hM : Locally (fun Y ↦ Martingale Y ℱ P) ℱ M P)
     (hQ : Locally (fun Y ↦ Martingale Y ℱ P) ℱ (fun t ω ↦ M t ω ^ 2 - M 0 ω ^ 2 - (t : ℝ)) P)
     (hcont : ∀ᵐ ω ∂P, Continuous (M · ω)) : IsBrownianReal (fun t ω ↦ M t ω - M 0 ω) P := by
-  obtain ⟨Y, hYp, hYM, hYc, hYl, _, hQY⟩ :=
-    hM.exists_isStronglyPredictable_indist_sq_sub_initialValue_sub (A := fun t _ ↦ (t : ℝ)) hQ
-      (NNReal.continuous_coe.stronglyMeasurable.comp_measurable ℱ.measurable_fst_predictable)
-      hcont (ae_of_all P fun _ _ ↦ rfl)
-  exact ⟨(isFilteredPreBrownianReal_sub_initialValue hYl hQY hYc
-    hYp.isStronglyProgressive.stronglyAdapted.adapted).toIsPreBrownianReal.congr fun t ↦
-      hYM.mono fun _ hω ↦ by simp [hω t, hω 0], hcont.mono fun _ hω ↦ hω.sub continuous_const⟩
+  obtain ⟨_, W, _, _, _, hWM, hBW, _⟩ :=
+    exists_isStronglyPredictable_indist_sub_initialValue_isFilteredPreBrownianReal hM hQ hcont
+  exact ⟨hBW.toIsPreBrownianReal.congr fun t ↦ hWM.mono fun _ hω ↦ hω t,
+    hcont.mono fun _ hω ↦ hω.sub continuous_const⟩
 
 /-- **Predictable Brownian version under bare native locality.**
 Without assuming literal adaptation of `M`, if `M` is an almost-surely continuous real local
@@ -132,8 +167,7 @@ theorem exists_isStronglyPredictable_indist_isFilteredPreBrownianReal [IsProbabi
       IsBrownianReal W P ∧ IsFilteredPreBrownianReal ℱ W P := by
   obtain ⟨Y, hYp, hYM, hYc, hYl, _, hQY⟩ :=
     hM.exists_isStronglyPredictable_indist_sq_sub_initialValue_sub (A := fun t _ ↦ (t : ℝ)) hQ
-      (NNReal.continuous_coe.stronglyMeasurable.comp_measurable ℱ.measurable_fst_predictable)
-      hcont (h0.mono fun _ h0ω _ ↦ by simp [h0ω])
+      NNReal.continuous_coe.isStronglyPredictable_fst hcont (h0.mono fun _ h0ω _ ↦ by simp [h0ω])
   have hYa := hYp.isStronglyProgressive.stronglyAdapted.adapted
   have hFY := (isFilteredPreBrownianReal_sub_initialValue hYl hQY hYc hYa).congr hYa fun _ ↦
     h0.mp <| hYM.mono fun _ heq h0ω ↦ by simp [heq 0, h0ω]
@@ -184,30 +218,6 @@ private lemma martingale_of_locally_martingale (hB : IsBrownianReal B P) (hA : A
   rw [← ENNReal.toReal_ofReal (norm_nonneg _), ofReal_norm]
   exact ENNReal.toReal_mono hfin.ne (le_iSup₂_of_le s hs le_rfl)
 
-private lemma setIntegral_sq_sub_eq_quadraticSum (hB : IsBrownianReal B P)
-    (hBM : Martingale B ℱ P) {s t : ℝ≥0} {E : Set Ω} (hE : MeasurableSet[ℱ s] E)
-    {n : ℕ} {g : Fin (n + 1) → ℝ≥0} (hg : Monotone g) (hg0 : g 0 = s) (hgl : g (Fin.last n) = t) :
-    ∫ ω in E, (B t ω ^ 2 - B s ω ^ 2) ∂P = ∫ ω in E, quadraticSum B g ω ∂P := by
-  have := (hB.hasLaw_eval 0).isProbabilityMeasure
-  have hI2 u := (hB.integrable_pow_eval u 2).integrableOn (s := E)
-  have hstep (i : Fin n) : ∫ ω in E, (B (g i.succ) ω ^ 2 - B (g i.castSucc) ω ^ 2) ∂P =
-      ∫ ω in E, (B (g i.succ) ω - B (g i.castSucc) ω) ^ 2 ∂P := by
-    have hEu : MeasurableSet[ℱ (g i.castSucc)] E := ℱ.mono (hg0 ▸ hg (Fin.zero_le _)) E hE
-    have h1 := setIntegral_congr_ae (ℱ.le _ E hEu) ((hBM.condExp_sq (hg (Fin.castSucc_le_succ i))
-      (hB.memLp_eval _ (by simp))).mono fun _ hω _ ↦ hω)
-    rw [setIntegral_condExp (ℱ.le _) (hB.integrable_pow_eval _ 2) hEu,
-      integral_add (hI2 _) integrable_condExp.integrableOn,
-      setIntegral_condExp (ℱ.le _) (hB.integrable_pow_sub _ _ 2) hEu] at h1
-    rw [integral_sub (hI2 _) (hI2 _)]; linarith
-  rw [quadraticSum_def, integral_finsetSum _ fun _ _ ↦ (hB.integrable_pow_sub _ _ 2).integrableOn,
-    ← Finset.sum_congr rfl fun i _ ↦ hstep i, ← integral_finsetSum Finset.univ
-      (f := fun (i : Fin n) ω ↦ B (g i.succ) ω ^ 2 - B (g i.castSucc) ω ^ 2)
-      fun i _ ↦ show IntegrableOn _ E P from (hI2 (g i.succ)).sub (hI2 (g i.castSucc))]
-  congr 1; funext ω; rw [Finset.sum_sub_distrib]
-  linarith [Fin.sum_univ_succ (fun i ↦ B (g i) ω ^ 2),
-    Fin.sum_univ_castSucc (fun i ↦ B (g i) ω ^ 2),
-    congrArg (fun u ↦ B u ω ^ 2) hg0, congrArg (fun u ↦ B u ω ^ 2) hgl]
-
 /-- **Filtered Brownian-law corollary.**
 A real Brownian motion `B` (in law) that is adapted to a filtration `ℱ` and is a local martingale
 on `ℱ` is automatically a filtered pre-Brownian motion relative to `ℱ`: in particular, every
@@ -219,32 +229,50 @@ theorem isFilteredPreBrownianReal_of_locally_martingale (hB : IsBrownianReal B P
   have hBM := martingale_of_locally_martingale hB hA hloc
   refine Locally.isFilteredPreBrownianReal hloc (Locally.of_prop ?_) hB.eval_zero_ae_eq_zero
     hB.cont hA
-  rw [(show StronglyAdapted ℱ (fun t ω ↦ B t ω ^ 2 - (t : ℝ)) from fun t ↦
-      ((hA t).pow_const 2 |>.sub measurable_const).stronglyMeasurable).martingale_iff_setIntegral_eq
+  have hQ_adapt : StronglyAdapted ℱ (fun t ω ↦ B t ω ^ 2 - (t : ℝ)) := fun t ↦
+    ((hA t).pow_const 2 |>.sub measurable_const).stronglyMeasurable
+  rw [hQ_adapt.martingale_iff_setIntegral_eq
     fun t ↦ (hB.integrable_pow_eval t 2).sub (integrable_const (t : ℝ))]
   intro s t hst E hE
-  let g (k : ℕ) (i : Fin (k + 2)) : ℝ≥0 := s + (i : ℝ≥0) / ((k + 1 : ℕ) : ℝ≥0) * (t - s)
-  have hg k : Monotone (g k) := fun _ _ hij ↦ by dsimp only [g]; gcongr; exact_mod_cast hij
   have hsq_lim := hB.toIsPreBrownianReal.tendsto_integral_sq_quadraticSum_sub (a := s) (b := t)
-    (δ := fun k ↦ ((t : ℝ) - s) / ((k + 1 : ℕ) : ℝ)) hg (fun _ ↦ by simp [g])
-    (fun _ ↦ by simp [g, add_tsub_cancel_of_le hst]) (fun _ _ ↦ le_of_eq <| by
-      simp [g, NNReal.coe_sub hst]; ring)
-    (by simpa only [Nat.cast_add, Nat.cast_one, mul_one_div, mul_zero] using
-      (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ)).const_mul ((t : ℝ) - s))
+    (grid := uniformGridFin s t) (δ := fun k ↦ ((t : ℝ) - s) / ((k + 1 : ℕ) : ℝ))
+    (uniformGridFin_monotone s t) (fun _ ↦ uniformGridFin_zero s t _)
+    (fun _ ↦ uniformGridFin_last hst _)
+    (fun k i ↦ by simpa only [Nat.cast_add, Nat.cast_one] using
+      (coe_uniformGridFin_succ_sub_castSucc hst k i).le)
+    (tendsto_uniformGrid_mesh s t)
   have hEq k : ∫ ω in E, (B t ω ^ 2 - B s ω ^ 2) ∂P - ∫ _ in E, ((t : ℝ) - s) ∂P =
-      ∫ ω in E, (quadraticSum B (g k) ω - ((t : ℝ) - s)) ∂P := by
+      ∫ ω in E, (quadraticSum B (uniformGridFin s t k) ω - ((t : ℝ) - s)) ∂P := by
     rw [integral_sub ((hB.memLp_quadraticSum _).integrable one_le_two).integrableOn
-      (integrable_const _).integrableOn, ← setIntegral_sq_sub_eq_quadraticSum hB hBM hE
-      (t := t) (hg k) (by simp [g]) (by simp [g, add_tsub_cancel_of_le hst])]
+      (integrable_const _).integrableOn, ← hBM.setIntegral_sq_sub_eq_quadraticSum hE
+      (uniformGridFin_monotone s t k) (uniformGridFin_zero s t k) (uniformGridFin_last hst k)
+      (fun _ ↦ hB.memLp_eval _ (by simp))]
   have hzero : ∫ ω in E, (B t ω ^ 2 - B s ω ^ 2) ∂P - ∫ _ in E, ((t : ℝ) - s) ∂P = 0 :=
     tendsto_nhds_unique (tendsto_const_nhds.congr hEq) (squeeze_zero_norm (fun k ↦
       (Real.norm_eq_abs _).trans_le <| abs_setIntegral_le_sqrt_integral_sq_mul_sqrt_measureReal
-        ((hB.memLp_quadraticSum (g k)).sub (memLp_const ((t : ℝ) - s))) (measure_ne_top P E)) <| by
+        ((hB.memLp_quadraticSum (uniformGridFin s t k)).sub (memLp_const ((t : ℝ) - s)))
+        (measure_ne_top P E)) <| by
       simpa only [Function.comp_def, Real.sqrt_zero, zero_mul] using
         (Real.continuous_sqrt.continuousAt.tendsto.comp hsq_lim).mul_const √(P.real E))
   have hI2 u := (hB.integrable_pow_eval u 2).integrableOn (s := E)
   simp only [integral_sub (hI2 _) (hI2 _), integral_sub (integrable_const _).integrableOn
     (integrable_const _).integrableOn, integral_sub (hI2 _) (integrable_const _).integrableOn]
     at hzero ⊢; linarith
+
+/-- **Predictable filtered Brownian version from a Brownian local martingale.**
+Without assuming literal adaptation of `B`, if `B` is a real Brownian motion (in law) that is a
+native local martingale on `ℱ`, then `B` admits a strongly predictable indistinguishable version
+`W` that is both a real Brownian motion and a filtered pre-Brownian motion relative to `ℱ`. -/
+theorem exists_isStronglyPredictable_indist_isFilteredPreBrownianReal (hB : IsBrownianReal B P)
+    (hloc : Locally (fun Y ↦ Martingale Y ℱ P) ℱ B P) :
+    ∃ W : ℝ≥0 → Ω → ℝ, IsStronglyPredictable ℱ W ∧ W ≡ᵐ[P] B ∧
+      IsBrownianReal W P ∧ IsFilteredPreBrownianReal ℱ W P := by
+  obtain ⟨W, hWp, hWc, hWB, hWloc⟩ :=
+    hloc.exists_isStronglyPredictable_indist_locally_martingale_of_ae_continuous hB.cont
+  have hBW : IsBrownianReal W P :=
+    ⟨hB.toIsPreBrownianReal.congr fun t ↦ hWB.mono fun _ hω ↦ (hω t).symm, hWc⟩
+  exact ⟨W, hWp, hWB, hBW,
+    hBW.isFilteredPreBrownianReal_of_locally_martingale
+      hWp.isStronglyProgressive.stronglyAdapted.adapted hWloc⟩
 
 end ProbabilityTheory.IsBrownianReal

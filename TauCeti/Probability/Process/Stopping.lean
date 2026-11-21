@@ -91,6 +91,41 @@ theorem ContinuousWithinAt.stoppedProcess {ι Ω E : Type*} [LinearOrder ι] [No
       · exact MeasureTheory.stoppedProcess_eq_of_ge (by simpa [hτ] using hut.trans hs.le)
       · exact MeasureTheory.stoppedProcess_eq_of_ge (by simpa [hτ] using hut)
 
+/-- Stopping a process restricted to an event preserves continuity of a path. -/
+theorem Continuous.stoppedProcess_indicator {ι Ω E : Type*} [LinearOrder ι] [Nonempty ι]
+    [TopologicalSpace ι] [OrderClosedTopology ι] [TopologicalSpace E] [Zero E]
+    {X : ι → Ω → E} {s : Set Ω} {τ : Ω → WithTop ι} {ω : Ω} (hX : Continuous (X · ω)) :
+    Continuous (MeasureTheory.stoppedProcess (fun t ↦ s.indicator (X t)) τ · ω) := by
+  classical
+  by_cases h : ω ∈ s
+  · have heq : (fun t ↦ MeasureTheory.stoppedProcess (fun u ↦ s.indicator (X u)) τ t ω) =
+        fun t ↦ MeasureTheory.stoppedProcess X τ t ω := by
+      ext t; simp [MeasureTheory.stoppedProcess_indicator_comm, h]
+    rw [heq]; exact hX.stoppedProcess
+  · have heq : (fun t ↦ MeasureTheory.stoppedProcess (fun u ↦ s.indicator (X u)) τ t ω) =
+        fun _ ↦ (0 : E) := by
+      ext t; simp [MeasureTheory.stoppedProcess_indicator_comm, h]
+    rw [heq]; exact continuous_const
+
+/-- Stopping a process restricted to an event preserves right continuity of a path at each
+time. -/
+theorem ContinuousWithinAt.stoppedProcess_indicator {ι Ω E : Type*} [LinearOrder ι] [Nonempty ι]
+    [TopologicalSpace ι] [OrderTopology ι] [TopologicalSpace E] [Zero E]
+    {X : ι → Ω → E} {s : Set Ω} {τ : Ω → WithTop ι} {ω : Ω} {t : ι}
+    (hX : ContinuousWithinAt (X · ω) (Ioi t) t) :
+    ContinuousWithinAt
+      (MeasureTheory.stoppedProcess (fun u ↦ s.indicator (X u)) τ · ω) (Ioi t) t := by
+  classical
+  by_cases h : ω ∈ s
+  · have heq : (fun u ↦ MeasureTheory.stoppedProcess (fun v ↦ s.indicator (X v)) τ u ω) =
+        fun u ↦ MeasureTheory.stoppedProcess X τ u ω := by
+      ext u; simp [MeasureTheory.stoppedProcess_indicator_comm, h]
+    rw [heq]; exact hX.stoppedProcess
+  · have heq : (fun u ↦ MeasureTheory.stoppedProcess (fun v ↦ s.indicator (X v)) τ u ω) =
+        fun _ ↦ (0 : E) := by
+      ext u; simp [MeasureTheory.stoppedProcess_indicator_comm, h]
+    rw [heq]; exact continuousWithinAt_const
+
 namespace MeasureTheory
 
 /-- A path that stays in a set up to a random time also stays in that set when stopped.
@@ -114,6 +149,53 @@ theorem stoppedProcess_indicator_pos_apply {ι Ω E : Type*} [LinearOrder ι] [O
   rw [stoppedProcess_indicator_comm]
   simp only [Set.indicator_apply, Set.mem_ofPred_eq, stoppedProcess]
 
+/-- Scalar multiplication commutes with stopping on `{⊥ < τ}`. -/
+theorem stoppedProcess_indicator_pos_smul {R ι Ω E : Type*} [LinearOrder ι] [OrderBot ι]
+    [Zero E] [SMulZeroClass R E] (a : R) (X : ι → Ω → E) (τ : Ω → WithTop ι) :
+    stoppedProcess (fun t ↦ {ω | (⊥ : WithTop ι) < τ ω}.indicator (fun ω ↦ a • X t ω)) τ =
+      fun t ω ↦ a • stoppedProcess (fun t ↦ {ω | (⊥ : WithTop ι) < τ ω}.indicator (X t)) τ t ω := by
+  ext t ω
+  simp only [stoppedProcess_indicator_pos_apply]
+  split_ifs <;> simp
+
+/-- Pointwise addition commutes with stopping on `{⊥ < τ}`. -/
+theorem stoppedProcess_indicator_pos_add {ι Ω E : Type*} [LinearOrder ι] [OrderBot ι]
+    [AddMonoid E] (X Y : ι → Ω → E) (τ : Ω → WithTop ι) :
+    stoppedProcess (fun t ↦ {ω | (⊥ : WithTop ι) < τ ω}.indicator (fun ω ↦ X t ω + Y t ω)) τ =
+      fun t ω ↦ stoppedProcess (fun t ↦ {ω | (⊥ : WithTop ι) < τ ω}.indicator (X t)) τ t ω +
+        stoppedProcess (fun t ↦ {ω | (⊥ : WithTop ι) < τ ω}.indicator (Y t)) τ t ω := by
+  ext t ω
+  simp only [stoppedProcess_indicator_pos_apply]
+  split_ifs <;> simp
+
+/-- Pointwise subtraction commutes with stopping on `{⊥ < τ}`. -/
+theorem stoppedProcess_indicator_pos_sub {ι Ω E : Type*} [LinearOrder ι] [OrderBot ι]
+    [AddGroup E] (X Y : ι → Ω → E) (τ : Ω → WithTop ι) :
+    stoppedProcess (fun t ↦ {ω | (⊥ : WithTop ι) < τ ω}.indicator (fun ω ↦ X t ω - Y t ω)) τ =
+      fun t ω ↦ stoppedProcess (fun t ↦ {ω | (⊥ : WithTop ι) < τ ω}.indicator (X t)) τ t ω -
+        stoppedProcess (fun t ↦ {ω | (⊥ : WithTop ι) < τ ω}.indicator (Y t)) τ t ω := by
+  ext t ω
+  simp only [stoppedProcess_indicator_pos_apply]
+  split_ifs <;> simp
+
+/-- Pointwise multiplication commutes with stopping on `{⊥ < τ}`. -/
+theorem stoppedProcess_indicator_pos_mul {ι Ω E : Type*} [LinearOrder ι] [OrderBot ι]
+    [MulZeroClass E] (X Y : ι → Ω → E) (τ : Ω → WithTop ι) :
+    stoppedProcess (fun t ↦ {ω | (⊥ : WithTop ι) < τ ω}.indicator (fun ω ↦ X t ω * Y t ω)) τ =
+      fun t ω ↦ stoppedProcess (fun t ↦ {ω | (⊥ : WithTop ι) < τ ω}.indicator (X t)) τ t ω *
+        stoppedProcess (fun t ↦ {ω | (⊥ : WithTop ι) < τ ω}.indicator (Y t)) τ t ω := by
+  ext t ω
+  simp only [stoppedProcess_indicator_pos_apply]
+  split_ifs <;> simp
+
+/-- Squaring minus another process commutes with stopping on `{⊥ < τ}`. -/
+theorem stoppedProcess_indicator_pos_sq_sub {ι Ω E : Type*} [LinearOrder ι] [OrderBot ι]
+    [Ring E] (X A : ι → Ω → E) (τ : Ω → WithTop ι) :
+    stoppedProcess (fun t ↦ {ω | (⊥ : WithTop ι) < τ ω}.indicator (fun ω ↦ X t ω ^ 2 - A t ω)) τ =
+      fun t ω ↦ stoppedProcess (fun t ↦ {ω | (⊥ : WithTop ι) < τ ω}.indicator (X t)) τ t ω ^ 2 -
+        stoppedProcess (fun t ↦ {ω | (⊥ : WithTop ι) < τ ω}.indicator (A t)) τ t ω := by
+  simp only [sq, stoppedProcess_indicator_pos_sub, stoppedProcess_indicator_pos_mul]
+
 /-- At the initial time, stopping leaves any process unchanged. -/
 @[simp]
 theorem stoppedProcess_bot {ι Ω E : Type*} [LinearOrder ι] [OrderBot ι]
@@ -121,6 +203,47 @@ theorem stoppedProcess_bot {ι Ω E : Type*} [LinearOrder ι] [OrderBot ι]
     stoppedProcess u τ ⊥ = u ⊥ := by
   ext ω
   exact stoppedProcess_eq_of_le (by simp)
+
+/-- At the initial time, an indicator-stopped process equals the indicator of the initial value. -/
+theorem stoppedProcess_indicator_bot {ι Ω E : Type*} [LinearOrder ι] [OrderBot ι] [Zero E]
+    (u : ι → Ω → E) (s : Set Ω) (τ : Ω → WithTop ι) :
+    stoppedProcess (fun t ↦ s.indicator (u t)) τ ⊥ = s.indicator (u ⊥) :=
+  stoppedProcess_bot _ τ
+
+/-- Evaluating an indicator-stopped process at `τ ≤ σ` factors through the stopped process at
+`σ` evaluated at `(min t (τ ω)).untopA`. -/
+theorem stoppedProcess_indicator_pos_stoppedProcess_of_le {ι Ω E : Type*} [LinearOrder ι]
+    [OrderBot ι] [Zero E] (X : ι → Ω → E) {σ τ : Ω → WithTop ι} (hle : τ ≤ σ) (t : ι) (ω : Ω) :
+    stoppedProcess (fun u ↦ {ω | (⊥ : WithTop ι) < τ ω}.indicator (X u)) τ t ω =
+      if (⊥ : WithTop ι) < τ ω then
+        stoppedProcess (fun u ↦ {ω | (⊥ : WithTop ι) < σ ω}.indicator (X u)) σ
+          (min (t : WithTop ι) (τ ω)).untopA ω
+      else 0 := by
+  by_cases hω : (⊥ : WithTop ι) < τ ω
+  · have hσω : (⊥ : WithTop ι) < σ ω := lt_of_lt_of_le hω (hle ω)
+    have hmin_coe :
+        ((min (t : WithTop ι) (τ ω)).untopA : WithTop ι) = min (t : WithTop ι) (τ ω) := by
+      cases hτω : τ ω with
+      | top => simp [WithTop.untopA, WithTop.untopD_coe]
+      | coe u => rw [← WithTop.coe_min, WithTop.untopA, WithTop.untopD_coe, WithTop.coe_min]
+    have hmin_le : min ((min (t : WithTop ι) (τ ω)).untopA : WithTop ι) (σ ω) =
+        min (t : WithTop ι) (τ ω) := by
+      rw [hmin_coe, min_eq_left ((min_le_right _ _).trans (hle ω))]
+    simp only [stoppedProcess_indicator_pos_apply, hω, ↓reduceIte, hσω, hmin_le]
+  · simp [stoppedProcess_indicator_pos_apply, hω]
+
+/-- Restopping an indicator-stopped process at an earlier random time `τ ≤ σ` agrees with
+indicator-stopping directly at `τ`. -/
+theorem stoppedProcess_indicator_pos_of_le {ι Ω E : Type*} [LinearOrder ι] [OrderBot ι]
+    [Zero E] (X : ι → Ω → E) {σ τ : Ω → WithTop ι} (hle : τ ≤ σ) :
+    stoppedProcess (fun t ↦ {ω | (⊥ : WithTop ι) < τ ω}.indicator (X t)) τ =
+      stoppedProcess (fun t ↦ {ω | (⊥ : WithTop ι) < τ ω}.indicator
+        (stoppedProcess (fun u ↦ {ω | (⊥ : WithTop ι) < σ ω}.indicator (X u)) σ t)) τ := by
+  ext t ω
+  by_cases hω : (⊥ : WithTop ι) < τ ω
+  · rw [stoppedProcess_indicator_pos_stoppedProcess_of_le X hle t ω]
+    simp only [stoppedProcess_indicator_pos_apply, hω, ↓reduceIte]
+  · simp [stoppedProcess_indicator_pos_apply, hω]
 
 variable {ι Ω E : Type*} [LinearOrder ι] [Nonempty ι] [Zero E] [Preorder E]
   {mΩ : MeasurableSpace Ω} {P : Measure Ω} {X : ι → Ω → E} {s : Set Ω}

@@ -13,6 +13,7 @@ public import Mathlib.Probability.Independence.Basic
 public import Mathlib.Probability.Martingale.Basic
 public import Mathlib.Probability.Process.LocalProperty
 public import TauCeti.Probability.BrownianMotion.Filtered
+public import TauCeti.Probability.BrownianMotion.Vector.Basic
 public import TauCeti.Probability.Process.Predictable.Basic
 import Mathlib.Algebra.BigOperators.Intervals
 import Mathlib.Analysis.InnerProductSpace.PiL2
@@ -38,9 +39,10 @@ Multivariate Lévy characterization for a family `M : ι → ℝ≥0 → Ω → 
 real local martingales on a raw filtration `ℱ` with local-martingale cross-brackets
 `M i t * M j t - M i 0 * M j 0 - C i j * t`: Cramér–Wold characteristic-function factorization,
 joint increment independence from `ℱ s`, product Gaussian increment laws, global pathwise
-coordinate independence, strongly predictable indistinguishable vector Brownian versions, and the
-converse cross-product martingale (`ProbabilityTheory.IsBrownianReal.martingale_mul_of_indepFun`)
-and vector increment independence theorems for independent Brownian local martingales.
+coordinate independence, coordinate vector Brownian law (`IsBrownianVector`), strongly predictable
+indistinguishable vector Brownian versions, and the converse cross-product martingale
+(`ProbabilityTheory.IsBrownianReal.martingale_mul_of_indepFun`) and vector increment independence
+theorems for independent Brownian local martingales.
 
 ## References
 
@@ -93,11 +95,6 @@ private lemma exp_inner_toLp_mul_I {κ : Type*} [Fintype κ] (x : κ → ℝ) (v
   simp only [MeasurableEquiv.toLp_apply, PiLp.inner_apply, RCLike.inner_apply, conj_trivial]
   congr 1; push_cast; ring
 
-private lemma isStronglyPredictable_const_mul_time (c : ℝ) :
-    IsStronglyPredictable ℱ (fun t _ ↦ c * (t : ℝ)) :=
-  (continuous_const.mul NNReal.continuous_coe).stronglyMeasurable.comp_measurable
-    ℱ.measurable_fst_predictable
-
 /-- **Cramér–Wold characteristic-function factorization for vector continuous local martingales.**
 If `M : ι → ℝ≥0 → Ω → ℝ` is a finite family of almost-surely continuous local martingales on `ℱ`
 whose cross-brackets `M i t * M j t - M i 0 * M j 0 - C i j * t` are local martingales, then for
@@ -117,7 +114,7 @@ theorem setIntegral_exp_I_mul_sum_sub_of_locally_martingale [IsFiniteMeasure P] 
   obtain ⟨Y, hYp, hYM, hYc, hYl, hQp, hQY⟩ :=
     exists_isStronglyPredictable_indist_prod_sub_initialValue_sub
       (A := fun i j t _ ↦ C i j * (t : ℝ)) hM hQ
-      (fun i j ↦ isStronglyPredictable_const_mul_time (C i j)) hcont
+      (fun i j ↦ (continuous_const.mul NNReal.continuous_coe).isStronglyPredictable_fst) hcont
       (fun _ _ ↦ ae_of_all P fun _ _ ↦ rfl)
   have hYv_l := Finset.locally_martingale_sum (Finset.univ : Finset ι)
     (fun i _ ↦ by simpa only [smul_eq_mul] using (hYl i).martingale_smul (v i))
@@ -251,7 +248,7 @@ theorem iIndepFun_sub_initialValue_of_locally_martingale [IsProbabilityMeasure P
   obtain ⟨Y, hYp, hYM, hYc, hYl, _, hQY⟩ :=
     exists_isStronglyPredictable_indist_prod_sub_initialValue_sub
       (A := fun i j t _ ↦ (if i = j then (c i : ℝ) else 0) * (t : ℝ)) hM hQ
-      (fun i j ↦ isStronglyPredictable_const_mul_time _) hcont
+      (fun _ _ ↦ (continuous_const.mul NNReal.continuous_coe).isStronglyPredictable_fst) hcont
       (fun _ _ ↦ ae_of_all P fun _ _ ↦ by simp)
   have hYm i t : Measurable (Y i t) :=
     ((hYp i).isStronglyProgressive.stronglyAdapted t).measurable.mono (ℱ.le t) le_rfl
@@ -295,7 +292,7 @@ theorem iIndepFun_of_locally_martingale [IsProbabilityMeasure P] {ι : Type*} [D
   obtain ⟨Y, _, hYM, hYc, hYl, _, hQY⟩ :=
     exists_isStronglyPredictable_indist_prod_sub_initialValue_sub
       (A := fun i j t _ ↦ (if i = j then (c i : ℝ) else 0) * (t : ℝ)) hM hQ
-      (fun i j ↦ isStronglyPredictable_const_mul_time _) hcont
+      (fun _ _ ↦ (continuous_const.mul NNReal.continuous_coe).isStronglyPredictable_fst) hcont
       (fun i j ↦ (h0 i).mp ((h0 j).mono fun _ h0j h0i _ ↦ by simp [h0i, h0j]))
   exact (iIndepFun_sub_initialValue_of_locally_martingale hYl
     (fun i j ↦ by simpa only [ite_mul, zero_mul] using hQY i j) hYc).process_congr fun i t ↦
@@ -305,22 +302,22 @@ theorem iIndepFun_of_locally_martingale [IsProbabilityMeasure P] {ι : Type*} [D
 Without assuming literal adaptation of `M`, if `M : ι → ℝ≥0 → Ω → ℝ` is a family of
 almost-surely continuous local martingales on `ℱ` with `M i 0 = 0` almost surely and
 `M i t * M j t - δ_{ij} t` a local martingale for all `i, j`, then `M` admits a strongly
-predictable indistinguishable family `W` whose coordinates are mutually independent
-filtered Brownian motions relative to `ℱ` with vector increments independent of `ℱ s`. -/
-theorem exists_isStronglyPredictable_indist_pi_isFilteredPreBrownianReal_of_locally_martingale
+predictable indistinguishable family `W` that is a coordinate vector Brownian motion
+(`IsBrownianVector W P`), whose coordinates are filtered pre-Brownian motions relative to `ℱ`,
+and whose vector increments are independent of `ℱ s`. -/
+theorem exists_isStronglyPredictable_indist_isBrownianVector_of_locally_martingale
     [IsProbabilityMeasure P] {ι : Type*} [DecidableEq ι] {M : ι → ℝ≥0 → Ω → ℝ}
     (hM : ∀ i, Locally (fun Y ↦ Martingale Y ℱ P) ℱ (M i) P)
     (hQ : ∀ i j, Locally (fun Y ↦ Martingale Y ℱ P) ℱ
       (fun t ω ↦ M i t ω * M j t ω - if i = j then (t : ℝ) else 0) P)
     (h0 : ∀ i, ∀ᵐ ω ∂P, M i 0 ω = 0) (hcont : ∀ i, ∀ᵐ ω ∂P, Continuous (M i · ω)) :
     ∃ W : ι → ℝ≥0 → Ω → ℝ, (∀ i, IsStronglyPredictable ℱ (W i)) ∧ (∀ i, W i ≡ᵐ[P] M i) ∧
-      (∀ i, IsBrownianReal (W i) P) ∧ (∀ i, IsFilteredPreBrownianReal ℱ (W i) P) ∧
-      iIndepFun (fun i ω t ↦ W i t ω) P ∧
+      IsBrownianVector W P ∧ (∀ i, IsFilteredPreBrownianReal ℱ (W i) P) ∧
       (∀ s t, s ≤ t → Indep (.comap (fun ω i ↦ W i t ω - W i s ω) inferInstance) (ℱ s) P) := by
   obtain ⟨W, hWp, hWM, hWc, hWl, _, hQW⟩ :=
     exists_isStronglyPredictable_indist_prod_sub_initialValue_sub
       (A := fun i j t _ ↦ (if i = j then (1 : ℝ) else 0) * (t : ℝ)) hM hQ
-      (fun i j ↦ isStronglyPredictable_const_mul_time _) hcont
+      (fun _ _ ↦ (continuous_const.mul NNReal.continuous_coe).isStronglyPredictable_fst) hcont
       (fun i j ↦ (h0 i).mp ((h0 j).mono fun _ h0j h0i _ ↦ by simp [h0i, h0j]))
   have hW0 i : ∀ᵐ ω ∂P, W i 0 ω = 0 := (h0 i).mp <| (hWM i).mono fun _ heq h0ω ↦ by rw [heq 0, h0ω]
   have hWa i := (hWp i).isStronglyProgressive.stronglyAdapted.adapted
@@ -328,11 +325,27 @@ theorem exists_isStronglyPredictable_indist_pi_isFilteredPreBrownianReal_of_loca
     (Locally.isFilteredPreBrownianReal_sub_initialValue (hWl i)
       (by simpa only [sq, ↓reduceIte, one_mul] using hQW i i) (hWc i) (hWa i)).congr (hWa i)
       fun _ ↦ (hW0 i).mono fun _ h0ω ↦ by simp [h0ω]
-  refine ⟨W, hWp, hWM, fun i ↦ ⟨(hFB i).toIsPreBrownianReal, hWc i⟩, hFB,
+  have hWind : iIndepFun (fun i ω t ↦ W i t ω) P :=
     (iIndepFun_sub_initialValue_of_locally_martingale (c := fun _ ↦ 1) hWl
       (fun i j ↦ by simpa only [NNReal.coe_one, one_mul, ite_mul, zero_mul] using hQW i j)
-      hWc).process_congr fun i _ ↦ (hW0 i).mono fun _ h0ω ↦ by simp [h0ω],
-    fun _ _ hst ↦ indep_comap_sub_pi_of_locally_martingale hWl hQW hWc hst⟩
+      hWc).process_congr fun i _ ↦ (hW0 i).mono fun _ h0ω ↦ by simp [h0ω]
+  exact ⟨W, hWp, hWM, .of_isBrownianReal (fun i ↦ ⟨(hFB i).toIsPreBrownianReal, hWc i⟩) hWind,
+    hFB, fun _ _ hst ↦ indep_comap_sub_pi_of_locally_martingale hWl hQW hWc hst⟩
+
+/-- **Vector Lévy characterization (law form, started at zero, no literal adaptation).**
+If `M : ι → ℝ≥0 → Ω → ℝ` is a family of almost-surely continuous local martingales on `ℱ` with
+`M i 0 = 0` almost surely and cross-brackets `M i t * M j t - δ_{ij} t` local martingales for all
+`i, j`, then `M` is a coordinate vector Brownian motion (`IsBrownianVector M P`). -/
+theorem isBrownianVector_of_locally_martingale [IsProbabilityMeasure P] {ι : Type*}
+    [DecidableEq ι] {M : ι → ℝ≥0 → Ω → ℝ}
+    (hM : ∀ i, Locally (fun Y ↦ Martingale Y ℱ P) ℱ (M i) P)
+    (hQ : ∀ i j, Locally (fun Y ↦ Martingale Y ℱ P) ℱ
+      (fun t ω ↦ M i t ω * M j t ω - if i = j then (t : ℝ) else 0) P)
+    (h0 : ∀ i, ∀ᵐ ω ∂P, M i 0 ω = 0) (hcont : ∀ i, ∀ᵐ ω ∂P, Continuous (M i · ω)) :
+    IsBrownianVector M P :=
+  let ⟨_, _, hWM, hBW, _, _⟩ :=
+    exists_isStronglyPredictable_indist_isBrownianVector_of_locally_martingale hM hQ h0 hcont
+  hBW.congr_indist hWM
 
 /-- **Filtered vector Brownian-law corollary.**
 If `B : ι → ℝ≥0 → Ω → ℝ` is a family of mutually independent real Brownian motions that
@@ -351,7 +364,8 @@ theorem indep_comap_sub_pi_of_iIndepFun_isBrownianReal_locally_martingale
       (fun u ω ↦ B i u ω * B j u ω - B i 0 ω * B j 0 ω - C i j * (u : ℝ)) := fun u ↦
     ((((hA i u).mul (hA j u)).sub (((hA i 0).mul (hA j 0)).mono
       (ℱ.mono bot_le) le_rfl)).sub measurable_const).stronglyMeasurable
-  have h0ae := (hB i).eval_zero_ae_eq_zero.mono fun ω hω ↦ show B i 0 ω * B j 0 ω = 0 by simp [hω]
+  have h0ae : ∀ᵐ ω ∂P, B i 0 ω * B j 0 ω = 0 :=
+    (hB i).eval_zero_ae_eq_zero.mono fun ω hω ↦ by simp [hω]
   refine Locally.of_prop ?_; by_cases hij : i = j
   · subst hij; exact ((hB i).isFilteredPreBrownianReal_of_locally_martingale (hA i)
       (hloc i)).martingale_sq_sub.congr hsm fun _ ↦ h0ae.mono fun _ h0ω ↦ by simp [C, sq, h0ω]
