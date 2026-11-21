@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Star.Unitary
 public import TauCeti.Analysis.StarAlgebra.GNS.Bounded
 
 /-!

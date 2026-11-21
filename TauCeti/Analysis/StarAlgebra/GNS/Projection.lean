@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Star.StarProjection
 public import TauCeti.Analysis.StarAlgebra.GNS.Bounded
 
 /-!
@@ -67,10 +66,14 @@ theorem apply_star_mul_mul_nonneg_of_isStarProjection {p : A} (hp : IsStarProjec
 element from the square `star (b - p * b) * (b - p * b)`. -/
 theorem apply_star_mul_mul_le_of_isStarProjection {p : A} (hp : IsStarProjection p) (b : A) :
     φ (star b * p * b) ≤ φ (star b * b) := by
+  have hp_mul : p * (p * b) = p * b := by
+    rw [← mul_assoc, hp.isIdempotentElem.eq]
+  have hp_sub : p * (b - p * b) = 0 := by
+    rw [mul_sub, hp_mul, sub_self]
   have heq : star (b - p * b) * (b - p * b) = star b * b - star b * p * b := by
-    rw [star_sub, star_mul, hp.isSelfAdjoint.star_eq, sub_mul, mul_sub, mul_sub, ← mul_assoc,
-      ← mul_assoc, mul_assoc (star b) p p, hp.isIdempotentElem.eq]
-    abel
+    suffices star (b - p * b) * (b - p * b) = star b * (b - p * b) by
+      rw [this, mul_sub, mul_assoc]
+    simp [hp.isSelfAdjoint.star_eq, sub_mul, mul_assoc, hp_sub]
   have h : 0 ≤ φ (star (b - p * b) * (b - p * b)) := by
     simpa only [φ.toLinearMap_apply] using φ.square_nonneg (b - p * b)
   rw [heq, map_sub] at h

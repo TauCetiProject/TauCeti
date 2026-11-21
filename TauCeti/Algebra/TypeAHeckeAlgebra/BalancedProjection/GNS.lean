@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.StarAlgebra.GNS.Projection
+public import TauCeti.Algebra.TypeAHeckeAlgebra.BalancedProjection.MarkovTrace
 public import TauCeti.Algebra.TypeAHeckeAlgebra.BalancedProjection.Star
 public import TauCeti.Algebra.TypeAHeckeAlgebra.BalancedProjection.Collapse
 public import TauCeti.Algebra.TypeAHeckeAlgebra.BalancedProjection.Zero
+import Mathlib.Analysis.CStarAlgebra.Basic
 
 /-!
 # GNS representations and positive Markov traces of the balanced projection algebra
@@ -88,6 +90,10 @@ def gnsRepresentation :
     BalancedProjectionAlgebra ℂ τ →⋆ₐ[ℂ] (φ.HilbertGNS →L[ℂ] φ.HilbertGNS) :=
   φ.boundedRepresentation (continuous_leftMul φ)
 
+/-- `gnsRepresentation φ` agrees with `φ.boundedRepresentation (continuous_leftMul φ)`. -/
+theorem gnsRepresentation_eq_boundedRepresentation :
+    gnsRepresentation φ = φ.boundedRepresentation (continuous_leftMul φ) := (rfl)
+
 @[simp]
 theorem gnsRepresentation_hilbertClassMap (x y : BalancedProjectionAlgebra ℂ τ) :
     gnsRepresentation φ x (φ.hilbertClassMap y) = φ.hilbertClassMap (x * y) :=
@@ -110,7 +116,7 @@ theorem isStarProjection_gnsRepresentation_e (i : ℕ) :
 
 /-- Every generator `e τ i` acts on `φ.HilbertGNS` with operator norm at most `1`. -/
 theorem norm_gnsRepresentation_e_le_one (i : ℕ) : ‖gnsRepresentation φ (e τ i)‖ ≤ 1 := by
-  rw [gnsRepresentation, φ.boundedRepresentation_apply]
+  rw [gnsRepresentation_eq_boundedRepresentation, φ.boundedRepresentation_apply]
   exact φ.norm_hilbertLeftMul_le_one_of_isStarProjection (isStarProjection_e i)
 
 end Functional
@@ -167,8 +173,9 @@ theorem commute_gnsRepresentation_of_zero
     (φ : StarPositiveFunctional (BalancedProjectionAlgebra ℂ 0))
     (x y : BalancedProjectionAlgebra ℂ 0) :
     Commute (gnsRepresentation φ x) (gnsRepresentation φ y) := by
-  have : IsProperStar (φ.HilbertGNS →L[ℂ] φ.HilbertGNS) :=
-    ⟨ContinuousLinearMap.adjoint_comp_self_eq_zero_iff.mp⟩
+  have : IsProperStar (φ.HilbertGNS →L[ℂ] φ.HilbertGNS) := by
+    let _ : CStarAlgebra (φ.HilbertGNS →L[ℂ] φ.HilbertGNS) := inferInstance
+    exact inferInstance
   exact commute_map_of_zero (gnsRepresentation φ) (isStarProjection_gnsRepresentation_e φ) x y
 
 /-- At `τ = 0`, every algebraically positive linear functional is automatically tracial. -/

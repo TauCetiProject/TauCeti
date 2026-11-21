@@ -554,6 +554,53 @@ theorem heckeEquiv_mem_stage_iff {n : ℕ} {w : BalancedProjectionAlgebra R τ} 
   rw [← map_stage_heckeEquiv hτ, Subalgebra.mem_map]
   exact ⟨fun ⟨v, hv, h⟩ ↦ (heckeEquiv q hτ).injective h ▸ hv, fun h ↦ ⟨w, h, rfl⟩⟩
 
+/-- When `τ * (q + q⁻¹) ^ 2 = 1`, the sum `q + q⁻¹` as a unit with inverse `τ * (q + q⁻¹)`. -/
+def addInvUnit : Rˣ :=
+  Units.mkOfMulEqOne ((q : R) + ↑q⁻¹) (τ * ((q : R) + ↑q⁻¹)) (by linear_combination hτ)
+
+/-- The underlying element of `addInvUnit hτ` is `q + q⁻¹`. -/
+@[simp]
+theorem val_addInvUnit : (addInvUnit hτ : R) = q + ↑q⁻¹ :=
+  Units.val_mkOfMulEqOne _
+
+/-- The inverse of `addInvUnit hτ` is `τ * (q + q⁻¹)`. -/
+@[simp]
+theorem val_inv_addInvUnit : (↑(addInvUnit hτ)⁻¹ : R) = τ * ((q : R) + ↑q⁻¹) :=
+  Units.inv_eq_of_mul_eq_one_right (by rw [val_addInvUnit]; linear_combination hτ)
+
+/-- Under `heckeEquiv`, the Hecke index character `T i ↦ q` pulls back to `e i ↦ 1`. -/
+@[simp]
+theorem indexCharacter_heckeEquiv (x : BalancedProjectionAlgebra R τ) :
+    InfiniteTypeAHeckeAlgebra.indexCharacter R q (heckeEquiv q hτ x) = character 1 .one x :=
+  DFunLike.congr_fun
+    (hom_ext (F := (InfiniteTypeAHeckeAlgebra.indexCharacter R q).comp (heckeEquiv q hτ).toAlgHom)
+      (G := character 1 .one)
+      fun i ↦ by
+        simp only [AlgHom.comp_apply, AlgEquiv.toAlgHom_apply, heckeEquiv_e, map_smul, map_add,
+          InfiniteTypeAHeckeAlgebra.indexCharacter_T, AlgHom.commutes, Algebra.algebraMap_self,
+          RingHom.id_apply, smul_eq_mul, character_e]
+        linear_combination hτ) x
+
+/-- Under `heckeEquiv`, the Hecke sign character `T i ↦ -q⁻¹` pulls back to `e i ↦ 0`. -/
+@[simp]
+theorem signCharacter_heckeEquiv (x : BalancedProjectionAlgebra R τ) :
+    InfiniteTypeAHeckeAlgebra.signCharacter R q (heckeEquiv q hτ x) = character 0 .zero x :=
+  DFunLike.congr_fun
+    (hom_ext (F := (InfiniteTypeAHeckeAlgebra.signCharacter R q).comp (heckeEquiv q hτ).toAlgHom)
+      (G := character 0 .zero) fun i ↦ by simp) x
+
+@[simp]
+theorem character_one_heckeEquiv_symm (x : InfiniteTypeAHeckeAlgebra R q) :
+    character 1 .one ((heckeEquiv q hτ).symm x) =
+      InfiniteTypeAHeckeAlgebra.indexCharacter R q x := by
+  simpa using (indexCharacter_heckeEquiv hτ ((heckeEquiv q hτ).symm x)).symm
+
+@[simp]
+theorem character_zero_heckeEquiv_symm (x : InfiniteTypeAHeckeAlgebra R q) :
+    character 0 .zero ((heckeEquiv q hτ).symm x) =
+      InfiniteTypeAHeckeAlgebra.signCharacter R q x := by
+  simpa using (signCharacter_heckeEquiv hτ ((heckeEquiv q hτ).symm x)).symm
+
 end HeckeEquiv
 
 end BalancedProjectionAlgebra
@@ -585,16 +632,6 @@ end InfiniteTypeAHeckeAlgebra.IsMarkovTrace
 namespace InfiniteTypeAHeckeAlgebra
 
 variable {R} {q : Rˣ} (s : Rˣ)
-
-/-- The eigenprojection `P = (q + q⁻¹)⁻¹ • (T i + q⁻¹)` is idempotent: it is the image of the
-projection `e i` under the isomorphism with the balanced projection algebra. -/
-theorem isIdempotentElem_eigenprojection (hs : (s : R) = q + ↑q⁻¹) (i : ℕ) :
-    IsIdempotentElem ((↑s⁻¹ : R) • (T q i + algebraMap R _ (↑q⁻¹ : R))) := by
-  have hτ : (↑s⁻¹ : R) ^ 2 * ((q : R) + ↑q⁻¹) ^ 2 = 1 := by
-    rw [← hs, ← mul_pow, s.inv_mul, one_pow]
-  have h := (BalancedProjectionAlgebra.isIdempotentElem_e (τ := (↑s⁻¹ : R) ^ 2) i).map
-    (BalancedProjectionAlgebra.heckeEquiv q hτ)
-  rwa [BalancedProjectionAlgebra.heckeEquiv_e, ← hs, sq, mul_assoc, s.inv_mul, mul_one] at h
 
 /-- The generator `T i` is `q` on its eigenprojection `P` and `-q⁻¹` on the complement:
 `T i = q • P - q⁻¹ • (1 - P)`. -/

@@ -271,4 +271,17 @@ theorem dist_equivRealProdCLM_le (y : ℂ) (z₀ : ℝ × ℝ) :
   conv_lhs => rw [← equivRealProdCLM.apply_symm_apply z₀]
   exact (lipschitz_equivRealProd.dist_le_mul y _).trans (by simp)
 
+/-- For a self-adjoint complex unit `q`, `q + q⁻¹ ≠ 0`. -/
+theorem add_inv_ne_zero_of_isSelfAdjoint {q : ℂˣ} (hq : IsSelfAdjoint (q : ℂ)) :
+    (q : ℂ) + ↑q⁻¹ ≠ 0 := by
+  obtain ⟨r, hr⟩ := Complex.conj_eq_iff_real.mp hq
+  intro h0
+  have hcomplex : (r : ℂ) ^ 2 + 1 = 0 := by
+    calc (r : ℂ) ^ 2 + 1
+        = (q : ℂ) * (q : ℂ) + (q : ℂ) * ↑q⁻¹ := by rw [← hr, sq, q.mul_inv]
+      _ = (q : ℂ) * ((q : ℂ) + ↑q⁻¹) := by rw [mul_add]
+      _ = 0 := by rw [h0, mul_zero]
+  have hreal : r ^ 2 + 1 = 0 := by exact_mod_cast hcomplex
+  nlinarith
+
 end Complex

@@ -228,4 +228,36 @@ theorem signCharacter_star (x : InfiniteTypeAHeckeAlgebra R q) :
       Unitary.coe_star] using
       (-star ⟨(q : R), hq.out⟩ : unitary R).prop) x
 
+/-- In the unit-circle fiber, `indexCharacter` (`T i ↦ q`) is a `⋆`-algebra homomorphism. -/
+def indexCharacterStarAlgHom : InfiniteTypeAHeckeAlgebra R q →⋆ₐ[R] R :=
+  { indexCharacter R q with map_star' := indexCharacter_star }
+
+@[simp]
+theorem indexCharacterStarAlgHom_apply (x : InfiniteTypeAHeckeAlgebra R q) :
+    indexCharacterStarAlgHom x = indexCharacter R q x := (rfl)
+
+/-- In the unit-circle fiber, `signCharacter` (`T i ↦ -q⁻¹`) is a `⋆`-algebra homomorphism. -/
+def signCharacterStarAlgHom : InfiniteTypeAHeckeAlgebra R q →⋆ₐ[R] R :=
+  { signCharacter R q with map_star' := signCharacter_star }
+
+@[simp]
+theorem signCharacterStarAlgHom_apply (x : InfiniteTypeAHeckeAlgebra R q) :
+    signCharacterStarAlgHom x = signCharacter R q x := (rfl)
+
+/-- In the unit-circle fiber, `star (T i + q⁻¹) = T i + q⁻¹`, so the eigenprojection
+`P = (q + q⁻¹)⁻¹ • (T i + q⁻¹)` is a star projection whenever `s = q + q⁻¹` is a unit. -/
+theorem isStarProjection_eigenprojection (s : Rˣ) (hs : (s : R) = q + ↑q⁻¹) (i : ℕ) :
+    IsStarProjection ((↑s⁻¹ : R) • (T q i + algebraMap R _ (↑q⁻¹ : R))) where
+  isIdempotentElem := isIdempotentElem_eigenprojection s hs i
+  isSelfAdjoint := by
+    have hs_sa : IsSelfAdjoint (s : R) := hs ▸ Units.isSelfAdjoint_add_inv_of_mem_unitary hq.out
+    have hsinv : IsSelfAdjoint (↑s⁻¹ : R) := by
+      rw [← Ring.inverse_unit]
+      exact hs_sa.ringInverse
+    have hT : IsSelfAdjoint (T q i + algebraMap R _ (↑q⁻¹ : R)) := by
+      rw [IsSelfAdjoint, star_add, UnitCircle.star_T, val_inv_unitT, ← algebraMap_star_comm,
+        Units.star_inv_eq_of_mem_unitary hq.out, map_sub]
+      abel
+    rw [IsSelfAdjoint, star_smul, hsinv.star_eq, hT.star_eq]
+
 end TauCeti.InfiniteTypeAHeckeAlgebra.UnitCircle

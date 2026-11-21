@@ -165,6 +165,38 @@ theorem signCharacter_star (x : InfiniteTypeAHeckeAlgebra R q) :
   map_star_iff.mpr (fun i ↦ by
     simpa only [signCharacter_T, Ring.inverse_unit] using hq.out.ringInverse.neg) x
 
+/-- In the real-parameter fiber, `indexCharacter` (`T i ↦ q`) is a `⋆`-algebra homomorphism. -/
+def indexCharacterStarAlgHom : InfiniteTypeAHeckeAlgebra R q →⋆ₐ[R] R :=
+  { indexCharacter R q with map_star' := indexCharacter_star }
+
+@[simp]
+theorem indexCharacterStarAlgHom_apply (x : InfiniteTypeAHeckeAlgebra R q) :
+    indexCharacterStarAlgHom x = indexCharacter R q x := (rfl)
+
+/-- In the real-parameter fiber, `signCharacter` (`T i ↦ -q⁻¹`) is a `⋆`-algebra homomorphism. -/
+def signCharacterStarAlgHom : InfiniteTypeAHeckeAlgebra R q →⋆ₐ[R] R :=
+  { signCharacter R q with map_star' := signCharacter_star }
+
+@[simp]
+theorem signCharacterStarAlgHom_apply (x : InfiniteTypeAHeckeAlgebra R q) :
+    signCharacterStarAlgHom x = signCharacter R q x := (rfl)
+
+/-- In the real-parameter fiber, the eigenprojection `P = (q + q⁻¹)⁻¹ • (T i + q⁻¹)` is a star
+projection. -/
+theorem isStarProjection_eigenprojection (s : Rˣ) (hs : (s : R) = q + ↑q⁻¹) (i : ℕ) :
+    IsStarProjection ((↑s⁻¹ : R) • (T q i + algebraMap R _ (↑q⁻¹ : R))) where
+  isIdempotentElem := isIdempotentElem_eigenprojection s hs i
+  isSelfAdjoint := by
+    have hqinv : IsSelfAdjoint (↑q⁻¹ : R) := by
+      rw [← Ring.inverse_unit]
+      exact hq.out.ringInverse
+    have hs_sa : IsSelfAdjoint (s : R) := hs ▸ hq.out.add hqinv
+    have hsinv : IsSelfAdjoint (↑s⁻¹ : R) := by
+      rw [← Ring.inverse_unit]
+      exact hs_sa.ringInverse
+    rw [IsSelfAdjoint, star_smul, hsinv.star_eq, star_add, star_T, ← algebraMap_star_comm,
+      hqinv.star_eq]
+
 end TauCeti.InfiniteTypeAHeckeAlgebra
 
 namespace TauCeti.TypeAHeckeAlgebra

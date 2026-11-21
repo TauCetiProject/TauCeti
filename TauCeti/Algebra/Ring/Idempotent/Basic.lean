@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.Defs
 public import Mathlib.Algebra.Ring.Idempotent
 import Mathlib.Tactic.Abel
 import Mathlib.Tactic.LinearCombination
@@ -28,6 +29,9 @@ self-adjoint unitary `IsStarProjection.two_mul_sub_one_mem_unitary`. Conversely,
 * `IsIdempotentElem.mul_add_one_sub_mul`: elements of the form `e x + (1 - e) y` multiply
   componentwise.
 * `IsIdempotentElem.two_mul_sub_one_mul_self`: `(2 p - 1) * (2 p - 1) = 1`.
+* `IsIdempotentElem.one_sub_mul_mul_sub_smul_sub`, `IsIdempotentElem.one_sub_mul_mul_sub_smul_eq`:
+  replacing idempotents `p` and `q` by `1 - p` and `1 - q` negates and preserves the balanced
+  defect.
 * `TauCeti.one_add_mul_self_of_mul_self_eq_one`: if `u * u = 1`, then
   `(1 + u) * (1 + u) = (1 + u) + (1 + u)`.
 * `TauCeti.one_add_mul_one_add_mul_one_add_of_mul_self_eq_one`: if `u * u = 1` and
@@ -58,6 +62,23 @@ variable {R : Type*} [Ring R] {p : R}
 theorem two_mul_sub_one_mul_self (hp : IsIdempotentElem p) : (2 * p - 1) * (2 * p - 1) = 1 := by
   simp only [two_mul, add_mul, mul_add, sub_mul, mul_sub, one_mul, mul_one, hp.eq]
   abel
+
+variable {S A : Type*} [Ring S] [Ring A] [Module S A] {t : S} {p q : A}
+
+/-- Replacing idempotents `p` and `q` by `1 - p` and `1 - q` negates their balanced defect. -/
+theorem one_sub_mul_mul_sub_smul_sub (hp : IsIdempotentElem p) (hq : IsIdempotentElem q) :
+    ((1 - p) * (1 - q) * (1 - p) - t • (1 - p)) -
+        ((1 - q) * (1 - p) * (1 - q) - t • (1 - q)) =
+      -((p * q * p - t • p) - (q * p * q - t • q)) := by
+  simp only [sub_mul, mul_sub, one_mul, mul_one, mul_assoc, hp.eq, hq.eq, smul_sub]
+  abel
+
+/-- If idempotents `p` and `q` satisfy the balanced relation with parameter `t`, so do `1 - p` and
+`1 - q`. -/
+theorem one_sub_mul_mul_sub_smul_eq (hp : IsIdempotentElem p) (hq : IsIdempotentElem q)
+    (h : p * q * p - t • p = q * p * q - t • q) :
+    (1 - p) * (1 - q) * (1 - p) - t • (1 - p) = (1 - q) * (1 - p) * (1 - q) - t • (1 - q) :=
+  sub_eq_zero.mp <| by rw [hp.one_sub_mul_mul_sub_smul_sub hq, sub_eq_zero.mpr h, neg_zero]
 
 end Ring
 

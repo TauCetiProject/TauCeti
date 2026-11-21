@@ -55,28 +55,40 @@ section Star
 
 variable {R : Type*} [CommRing R] [StarRing R] {τ : R} [hτ : Fact (IsSelfAdjoint τ)]
 
-/-- The conjugate-linear anti-automorphism fixing every generator `e i`, bundled into the opposite
-algebra. -/
-private def conjugateReverse :
-    BalancedProjectionAlgebra R τ →+* (BalancedProjectionAlgebra R τ)ᵐᵒᵖ := by
+/-- The conjugate-linear anti-automorphism fixing every generator `e i`, bundled with its
+generator and scalar evaluation laws so the twisted opposite algebra remains local. -/
+private def conjugateReverseData :
+    { f : BalancedProjectionAlgebra R τ →+* (BalancedProjectionAlgebra R τ)ᵐᵒᵖ //
+      (∀ i, f (e τ i) = op (e τ i)) ∧
+      (∀ r, f (algebraMap R _ r) = op (algebraMap R _ (star r))) } := by
   letI : Algebra R (BalancedProjectionAlgebra R τ)ᵐᵒᵖ := Algebra.compHom _ (starRingEnd R)
-  exact (lift (fun i ↦ op (e τ i))
-    (fun i ↦ unop_injective <| by
-      simpa only [unop_mul, unop_op] using e_mul_self (R := R) (τ := τ) i)
-    (fun i ↦ unop_injective <| by
-      simp only [unop_sub, unop_mul, unop_op, Algebra.smul_def,
-        Algebra.compHom_algebraMap_apply, starRingEnd_apply, MulOpposite.algebraMap_apply,
-        hτ.out.star_eq, ← Algebra.commutes]
-      simpa only [Algebra.smul_def, mul_assoc] using e_balanced (R := R) (τ := τ) i)
-    (fun h ↦ unop_injective <| (commute_e (R := R) (τ := τ) (Or.inl h)).eq.symm)).toRingHom
+  let f : BalancedProjectionAlgebra R τ →ₐ[R] (BalancedProjectionAlgebra R τ)ᵐᵒᵖ :=
+    lift (fun i ↦ op (e τ i))
+      (fun i ↦ unop_injective <| by
+        simpa only [unop_mul, unop_op] using e_mul_self (R := R) (τ := τ) i)
+      (fun i ↦ unop_injective <| by
+        simp only [unop_sub, unop_mul, unop_op, Algebra.smul_def,
+          Algebra.compHom_algebraMap_apply, starRingEnd_apply, MulOpposite.algebraMap_apply,
+          hτ.out.star_eq, ← Algebra.commutes]
+        simpa only [Algebra.smul_def, mul_assoc] using e_balanced (R := R) (τ := τ) i)
+      (fun h ↦ unop_injective <| (commute_e (R := R) (τ := τ) (Or.inl h)).eq.symm)
+  refine ⟨f.toRingHom, fun i ↦ ?_, fun r ↦ ?_⟩
+  · rw [AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
+    exact lift_e _ _ _ _ i
+  · rw [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, AlgHom.commutes]
+    simp [Algebra.compHom_algebraMap_apply, starRingEnd_apply]
+
+private def conjugateReverse :
+    BalancedProjectionAlgebra R τ →+* (BalancedProjectionAlgebra R τ)ᵐᵒᵖ :=
+  (conjugateReverseData (R := R) (τ := τ)).val
 
 private theorem conjugateReverse_e (i : ℕ) : conjugateReverse (e (R := R) τ i) = op (e τ i) :=
-  @lift_e R _ τ _ _ (Algebra.compHom _ (starRingEnd R)) _ _ _ _ i
+  (conjugateReverseData (R := R) (τ := τ)).property.left i
 
 private theorem conjugateReverse_algebraMap (r : R) :
     conjugateReverse (algebraMap R (BalancedProjectionAlgebra R τ) r) =
-      op (algebraMap R _ (star r)) := by
-  simp [conjugateReverse, Algebra.compHom_algebraMap_apply, starRingEnd_apply]
+      op (algebraMap R _ (star r)) :=
+  (conjugateReverseData (R := R) (τ := τ)).property.right r
 
 private theorem conjugateReverse_involutive (x : BalancedProjectionAlgebra R τ) :
     unop (conjugateReverse (unop (conjugateReverse x))) = x := by
@@ -191,6 +203,11 @@ theorem toAlgEquiv_complementStarAlgEquiv :
     (complementStarAlgEquiv (R := R) τ).toAlgEquiv = complementEquiv τ := (rfl)
 
 @[simp]
+theorem complementStarAlgEquiv_symm :
+    (complementStarAlgEquiv (R := R) τ).symm = complementStarAlgEquiv τ :=
+  StarAlgEquiv.toAlgEquiv_injective (complementEquiv_symm τ)
+
+@[simp]
 theorem complementStarAlgEquiv_e (i : ℕ) :
     complementStarAlgEquiv (R := R) τ (e τ i) = 1 - e τ i := complementEquiv_e τ i
 
@@ -226,12 +243,10 @@ private theorem heckeEquiv_star_of_eigenprojection {q : Rˣ}
     (hP : ∀ s : Rˣ, (s : R) = q + ↑q⁻¹ →
       ∀ i, IsSelfAdjoint ((↑s⁻¹ : R) • (InfiniteTypeAHeckeAlgebra.T q i + algebraMap R _ ↑q⁻¹)))
     (x : BalancedProjectionAlgebra R τ) :
-    heckeEquiv q hτ (star x) = star (heckeEquiv q hτ x) := by
-  let s : Rˣ := Units.mkOfMulEqOne ((q : R) + ↑q⁻¹) (τ * ((q : R) + ↑q⁻¹))
-    (by linear_combination hτ)
-  have hsinv : (↑s⁻¹ : R) = τ * ((q : R) + ↑q⁻¹) := rfl
-  exact map_star_iff (F := (heckeEquiv q hτ).toAlgHom) |>.mpr (fun i ↦ by
-    simpa only [AlgEquiv.toAlgHom_apply, heckeEquiv_e, ← hsinv] using hP s rfl i) x
+    heckeEquiv q hτ (star x) = star (heckeEquiv q hτ x) :=
+  map_star_iff (F := (heckeEquiv q hτ).toAlgHom) |>.mpr (fun i ↦ by
+    simpa only [AlgEquiv.toAlgHom_apply, heckeEquiv_e, ← val_inv_addInvUnit hτ] using
+      hP (addInvUnit hτ) (val_addInvUnit hτ) i) x
 
 end Star
 
@@ -244,21 +259,6 @@ section RealHecke
 open InfiniteTypeAHeckeAlgebra (T)
 
 variable {R : Type*} [CommRing R] [StarRing R] {q : Rˣ} [hq : Fact (IsSelfAdjoint (q : R))]
-
-namespace InfiniteTypeAHeckeAlgebra
-
-/-- In the real-parameter fiber, the eigenprojection `P = (q + q⁻¹)⁻¹ • (T i + q⁻¹)` is a star
-projection. -/
-theorem isStarProjection_eigenprojection (s : Rˣ) (hs : (s : R) = q + ↑q⁻¹) (i : ℕ) :
-    IsStarProjection ((↑s⁻¹ : R) • (T q i + algebraMap R _ (↑q⁻¹ : R))) where
-  isIdempotentElem := isIdempotentElem_eigenprojection s hs i
-  isSelfAdjoint := by
-    have hqinv : IsSelfAdjoint (↑q⁻¹ : R) := hq.out.units_inv
-    have hsinv : IsSelfAdjoint (↑s⁻¹ : R) := (hs ▸ hq.out.add hqinv).units_inv
-    rw [IsSelfAdjoint, star_smul, hsinv.star_eq, star_add, star_T, ← algebraMap_star_comm,
-      hqinv.star_eq]
-
-end InfiniteTypeAHeckeAlgebra
 
 namespace BalancedProjectionAlgebra
 
@@ -308,27 +308,9 @@ end RealHecke
 
 section UnitCircleHecke
 
-open InfiniteTypeAHeckeAlgebra (T unitT val_inv_unitT)
+open InfiniteTypeAHeckeAlgebra (T)
 
 variable {R : Type*} [CommRing R] [StarRing R] {q : Rˣ} [hq : Fact ((q : R) ∈ unitary R)]
-
-namespace InfiniteTypeAHeckeAlgebra.UnitCircle
-
-/-- In the unit-circle fiber, `star (T i + q⁻¹) = T i + q⁻¹`, so the eigenprojection
-`P = (q + q⁻¹)⁻¹ • (T i + q⁻¹)` is a star projection whenever `s = q + q⁻¹` is a unit. -/
-theorem isStarProjection_eigenprojection (s : Rˣ) (hs : (s : R) = q + ↑q⁻¹) (i : ℕ) :
-    IsStarProjection ((↑s⁻¹ : R) • (T q i + algebraMap R _ (↑q⁻¹ : R))) where
-  isIdempotentElem := isIdempotentElem_eigenprojection s hs i
-  isSelfAdjoint := by
-    have hsinv : IsSelfAdjoint (↑s⁻¹ : R) :=
-      (hs ▸ Units.isSelfAdjoint_add_inv_of_mem_unitary hq.out).units_inv
-    have hT : IsSelfAdjoint (T q i + algebraMap R _ (↑q⁻¹ : R)) := by
-      rw [IsSelfAdjoint, star_add, UnitCircle.star_T, val_inv_unitT, ← algebraMap_star_comm,
-        Units.star_inv_eq_of_mem_unitary hq.out, map_sub]
-      abel
-    rw [IsSelfAdjoint, star_smul, hsinv.star_eq, hT.star_eq]
-
-end InfiniteTypeAHeckeAlgebra.UnitCircle
 
 namespace BalancedProjectionAlgebra.UnitCircle
 
