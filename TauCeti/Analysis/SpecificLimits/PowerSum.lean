@@ -13,10 +13,11 @@ import Mathlib.LinearAlgebra.Vandermonde
 /-!
 # The power-sum lemma
 
-Let `ω_1, …, ω_k` be elements of a normed field of characteristic zero. If the power sums
-`∑ i, ω_i ^ n` are `O(ρ ^ n)`, that is `‖∑ i, ω_i ^ n‖ ≤ C ρ ^ n` for all `n ≥ n₀`, then every
-`‖ω_i‖ ≤ ρ`. This is how the Weil bound for a character sum follows from the root-power identity
-for its `L`-polynomial: a bound for the sums over all extension fields bounds each reciprocal root.
+Let `ω_1, …, ω_k` be elements of a normed field of characteristic zero, and let `0 ≤ ρ`. If the
+power sums `∑ i, ω_i ^ n` are `O(ρ ^ n)`, that is `‖∑ i, ω_i ^ n‖ ≤ C ρ ^ n` for all `n ≥ n₀`, then
+every `‖ω_i‖ ≤ ρ`. This is how the Weil bound for a character sum follows from the root-power
+identity for its `L`-polynomial: a bound for the sums over all extension fields bounds each
+reciprocal root.
 
 The proof groups equal values. For distinct `z_1, …, z_l` with coefficients `c_j`, the Vandermonde
 matrix `(z_j ^ h)` for `0 ≤ h < l` is invertible, and its inverse writes each `c_j z_j ^ n` as a
@@ -25,7 +26,7 @@ fixed linear combination of the `l` consecutive sums `∑ j, c_j z_j ^ (n + h)`.
 
 ## Main results
 
-* `TauCeti.norm_le_of_norm_sum_mul_pow_le`: for distinct bases `z_j`, if
+* `TauCeti.norm_le_of_norm_sum_mul_pow_le`: for distinct bases `z_j` and `0 ≤ ρ`, if
   `‖∑ j, c_j z_j ^ n‖ ≤ C ρ ^ n` for all `n ≥ n₀`, then `‖z_j‖ ≤ ρ` whenever `c_j ≠ 0`.
 * `TauCeti.norm_le_of_norm_sum_pow_le`: the power-sum lemma.
 
@@ -41,8 +42,9 @@ namespace TauCeti
 
 variable {𝕜 : Type*} [NormedField 𝕜]
 
-/-- If the bases `z j` for `j ∈ s` are distinct and `‖∑ j ∈ s, c j * z j ^ n‖ ≤ C * ρ ^ n` for all
-`n ≥ n₀`, then `‖z j‖ ≤ ρ` for every `j ∈ s` with `c j ≠ 0`. -/
+/-- If the bases `z j` for `j ∈ s` are distinct, `0 ≤ ρ`, and
+`‖∑ j ∈ s, c j * z j ^ n‖ ≤ C * ρ ^ n` for all `n ≥ n₀`, then `‖z j‖ ≤ ρ` for every `j ∈ s` with
+`c j ≠ 0`. -/
 theorem norm_le_of_norm_sum_mul_pow_le {ι : Type*} {s : Finset ι} {z c : ι → 𝕜}
     (hz : Set.InjOn z s) {ρ C : ℝ} (hρ : 0 ≤ ρ) {n₀ : ℕ}
     (hsum : ∀ n ≥ n₀, ‖∑ j ∈ s, c j * z j ^ n‖ ≤ C * ρ ^ n) {j : ι} (hj : j ∈ s) (hc : c j ≠ 0) :
@@ -87,7 +89,7 @@ theorem norm_le_of_norm_sum_mul_pow_le {ι : Type*} {s : Finset ι} {z c : ι �
     exact hD n hn
   exact hc (norm_le_zero_iff.1 (ge_of_tendsto hlim hle))
 
-/-- **The power-sum lemma.** In a normed field of characteristic zero, if
+/-- **The power-sum lemma.** In a normed field of characteristic zero, if `0 ≤ ρ` and
 `‖∑ i, ω i ^ n‖ ≤ C * ρ ^ n` for all `n ≥ n₀`, then `‖ω i‖ ≤ ρ` for every `i`. -/
 theorem norm_le_of_norm_sum_pow_le [CharZero 𝕜] {ι : Type*} [Fintype ι] {ω : ι → 𝕜}
     {ρ C : ℝ} (hρ : 0 ≤ ρ) {n₀ : ℕ} (hsum : ∀ n ≥ n₀, ‖∑ i, ω i ^ n‖ ≤ C * ρ ^ n) (i : ι) :
