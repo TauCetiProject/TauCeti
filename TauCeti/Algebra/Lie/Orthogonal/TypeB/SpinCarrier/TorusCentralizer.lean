@@ -64,7 +64,7 @@ def diagonalPoints (K : Type u) [CommRing K] : Subgroup (points n K) :=
 /-- A spin-carrier point belongs to `diagonalPoints` exactly when its ambient matrix is diagonal. -/
 @[simp]
 theorem mem_diagonalPoints_iff {K : Type u} [CommRing K] {g : points n K} :
-    g ∈ diagonalPoints n K ↔ g.1.1.IsDiag := by
+    g ∈ diagonalPoints n K ↔ g.val.val.IsDiag := by
   rw [diagonalPoints, Subgroup.mem_comap, mem_diagonalTorus_iff]
   rfl
 

@@ -51,8 +51,8 @@ of `Z` eventually carries energy at least `δ`.
 **Along the ends.** Breaking along an end `q` concerns windows that move off to the puncture: a
 sequence of solutions `uₖ` is read at heights `Rₖ` through the translated ends
 `vₖ(z) = uₖ(φ'_q(z + (Rₖ, 0)))` of the positive end chart `TauCeti.Floer.positiveEndChart`. For a
-perturbation `K` equal to `H_q(t) dt` beyond a height `T₀` on each end, and structures `J` equal to
-`J_q(t, x)` on the end `q` beyond `T₀`, every translated end solves the same cylindrical Floer
+perturbation `K` equal to `H_q(t) dt` beyond a height `T₀` on the end `q`, and structures `J` equal
+to `J_q(t, x)` on the end `q` beyond `T₀`, every translated end solves the same cylindrical Floer
 equation for the datum `H'_q(t) dt` of the positive end, whatever the height
 (`TauCeti.SmoothTwoForm.isComplexLinearMap_perturbedMFDeriv_comp_positiveEndChart_add`), with energy
 over a window of angular width one at most the energy of `uₖ`
@@ -235,10 +235,10 @@ lies in a set `C` where the end structures are tamed, is a `C³` solution of the
 equation of the positive end on `Ω`, with integrable energy density and energy over `Ω` at most the
 energy `E` of `u`. -/
 private theorem contMDiffOn_and_isComplexLinearMap_and_integral_le_comp_positiveEndChart_add
-    (hω : ω.IsNondegenerate) {K : ℂ → M → ℂ →L[ℝ] ℝ} {T₀ : ℝ}
-    (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
+    (hω : ω.IsNondegenerate) {K : ℂ → M → ℂ →L[ℝ] ℝ} {T₀ : ℝ} {q : Puncture}
+    (hKH : ∀ w x, T₀ ≤ q.endSign * (q.endCoord w).re →
       K w x = H q (q.endCoord w).im x • q.endAngularForm w)
-    (hH : ∀ q, Periodic (H q) 1) (hHd : ∀ q t, MDifferentiable I 𝓘(ℝ) (H q t)) {q : Puncture}
+    (hH : Periodic (H q) 1) (hHd : ∀ t, MDifferentiable I 𝓘(ℝ) (H q t))
     (hHq : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 3 (uncurry (H q)))
     {Jq : ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)}
     (hJ : ∀ s t x, T₀ ≤ s → J (endChart q (q.endSign * s, t)) x = Jq t x) {C : Set M}
@@ -285,8 +285,8 @@ private theorem contMDiffOn_and_isComplexLinearMap_and_integral_le_comp_positive
       ((hu.contMDiffAt (isOpen_thricePuncturedSphereReal.mem_nhds (hS z hz))).mdifferentiableAt
         (by norm_num)) h
   -- The energy of `v` over `Ω` is at most the energy of `u` over `S`.
-  have hlin := (setLIntegral_floerEnergyDensity_comp_positiveEndChart_add_le hKH hH hHd
-    (hu.mdifferentiableOn (by norm_num)) q R hΩ.measurableSet hΩT).trans hE
+  have hlin := (setLIntegral_floerEnergyDensity_comp_positiveEndChart_add_le q hKH hH hHd
+    (hu.mdifferentiableOn (by norm_num)) R hΩ.measurableSet hΩT).trans hE
   -- The Hamiltonian vector fields of `0` and of `H'_q(t)` are continuous, so the energy bound
   -- over `Ω` is one for the Bochner integral.
   have hX {F : ℝ × ℝ → M → ℝ} (hF : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 2 (uncurry F)) :
@@ -302,9 +302,9 @@ private theorem contMDiffOn_and_isComplexLinearMap_and_integral_le_comp_positive
     (fun z hz ↦ floerEnergyDensity_nonneg (u := v) hω (hJt _ _ (huC hz)) (hvfl z hz)) hE0 hlin⟩
 
 /-- **The translated ends of Floer pairs of pants in a symplectic chart of a manifold converge
-off finitely many bubbling points.** Let `K` be equal to `H_r(t) dt` beyond `T₀` on each end `r`,
-for period-one Hamiltonians `H_r` which are differentiable on `M`, and `C³` on `ℝ × M` on the end
-`q`. Let `J(z, x)` be structures on the tangent spaces of `M`, `z ∈ S = ℂ ∖ {0, 1}` read in real
+off finitely many bubbling points.** Let `K` be equal to `H_q(t) dt` beyond `T₀` on the end `q`,
+for a period-one Hamiltonian `H_q` which is differentiable on `M` and `C³` on `ℝ × M`. Let
+`J(z, x)` be structures on the tangent spaces of `M`, `z ∈ S = ℂ ∖ {0, 1}` read in real
 coordinates, which on the end `q` beyond `T₀` are `J(φ_q(±s, t), x) = J_q(t, x)`. Let `φ` be a
 smooth partial diffeomorphism from `M` onto an open subset of `V`, let `C ⊆ φ.source` be compact,
 let `φ` pull the symplectic form `ω₀` back to `ω` at the points of `C`, let every `J_q(t, x)` with
@@ -320,10 +320,10 @@ energy at least `δ` for the cylindrical datum `H'_q dt`, the differentials of t
 `φ ∘ v_{ψ n}` are uniformly bounded on every compact subset of `Ω \ Z`, the coordinate maps converge
 to `φ ∘ v` locally uniformly on `Ω \ Z`, and `v_{ψ n} → v` pointwise on `Ω \ Z`. -/
 theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_comp_positiveEndChart
-    (hω : ω.IsNondegenerate) {K : ℂ → M → ℂ →L[ℝ] ℝ} {T₀ : ℝ}
-    (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
+    (hω : ω.IsNondegenerate) {K : ℂ → M → ℂ →L[ℝ] ℝ} {T₀ : ℝ} {q : Puncture}
+    (hKH : ∀ w x, T₀ ≤ q.endSign * (q.endCoord w).re →
       K w x = H q (q.endCoord w).im x • q.endAngularForm w)
-    (hH : ∀ q, Periodic (H q) 1) (hHd : ∀ q t, MDifferentiable I 𝓘(ℝ) (H q t)) {q : Puncture}
+    (hH : Periodic (H q) 1) (hHd : ∀ t, MDifferentiable I 𝓘(ℝ) (H q t))
     (hHq : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 3 (uncurry (H q)))
     {Jq : ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)}
     (hJ : ∀ s t x, T₀ ≤ s → J (endChart q (q.endSign * s, t)) x = Jq t x)

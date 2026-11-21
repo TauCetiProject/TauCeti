@@ -79,10 +79,10 @@ instance flat_obj_of_projective (P : PresheafOfModulesOfCommRing.{u} R) [Project
   let s : P ⟶ F := Projective.factorThru (𝟙 P) P.fromFreeYonedaCoproduct
   have hs : s ≫ P.fromFreeYonedaCoproduct = 𝟙 P := Projective.factorThru_comp _ _
   have := (PresheafOfModules.freeAdjunction (R ⋙ forget₂ _ _)).leftAdjoint_preservesColimits
-  let e : F ≅ (PresheafOfModules.free _).obj (∐ fun m : P.Elements ↦ yoneda.obj m.1.unop) :=
+  let e : F ≅ (PresheafOfModules.free _).obj (∐ fun m : P.Elements ↦ yoneda.obj m.obj.unop) :=
     (PreservesCoproduct.iso (PresheafOfModules.free _) _).symm
   let e' : PresheafOfModulesOfCommRing.obj F X ≃ₗ[R.obj X] PresheafOfModulesOfCommRing.obj
-      (PresheafOfModules.freeObj (∐ fun m : P.Elements ↦ yoneda.obj m.1.unop)) X :=
+      (PresheafOfModules.freeObj (∐ fun m : P.Elements ↦ yoneda.obj m.obj.unop)) X :=
     ((PresheafOfModules.evaluation _ X).mapIso e).toLinearEquiv
   have : Module.Flat (R.obj X) (PresheafOfModulesOfCommRing.obj F X) :=
     (Module.Flat.equiv_iff e').2 (flat_freeObj_obj _ X)

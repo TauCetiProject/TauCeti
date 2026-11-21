@@ -48,6 +48,9 @@ For partial diffeomorphisms `ψ`, `χ`, `φ` into normed spaces, such as charts,
   linear equivalence.
 * `PartialDiffeomorph.bijective_mvfderiv`: for a partial diffeomorphism into a normed space, the
   differential read in that space is bijective at a point of the source.
+* `PartialDiffeomorph.hasDerivAt_comp_symm_of_mfderiv_eq_zero`: at a critical point of a map into a
+  normed space, read through a partial diffeomorphism into a normed space, the derivative along a
+  curve `t ↦ φ⁻¹ (L t)` vanishes.
 * `PartialDiffeomorph.differentiableAt_comp_symm`: for partial diffeomorphisms into normed spaces,
   the transition `ψ ∘ φ⁻¹` is differentiable.
 * `PartialDiffeomorph.fderiv_comp_symm_eq_comp`: the derivatives of transitions compose, the
@@ -138,6 +141,22 @@ theorem bijective_mvfderiv (Φ : PartialDiffeomorph I 𝓘(𝕜, F) M F n) (hn :
   refine ⟨TauCeti.injective_mvfderiv_iff.2 h.injective, fun w ↦ ?_⟩
   obtain ⟨v, hv⟩ := h.surjective w
   exact ⟨v, (mvfderiv_apply_eq_mfderiv_apply _ _ _).trans hv⟩
+
+/-- At a critical point `φ⁻¹ (L t₀)` of a map `g` into a normed space, read through a partial
+diffeomorphism `φ` into a normed space, the derivative of `g` along the curve `t ↦ φ⁻¹ (L t)`
+vanishes at `t₀`. -/
+theorem hasDerivAt_comp_symm_of_mfderiv_eq_zero {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace 𝕜 G] (φ : PartialDiffeomorph I 𝓘(𝕜, F) M F n) (hn : n ≠ 0) {g : M → G}
+    {L : 𝕜 → F} {t₀ : 𝕜} (hL : DifferentiableAt 𝕜 L t₀) (ht₀ : L t₀ ∈ φ.target)
+    (hg : MDifferentiableAt I 𝓘(𝕜, G) g (φ.symm (L t₀)))
+    (h0 : mfderiv I 𝓘(𝕜, G) g (φ.symm (L t₀)) = 0) :
+    HasDerivAt (fun t ↦ g (φ.symm (L t))) 0 t₀ := by
+  have hγ : MDifferentiableAt 𝓘(𝕜) I (fun t ↦ φ.symm (L t)) t₀ :=
+    (φ.symm.mdifferentiableAt hn ht₀).comp t₀ (mdifferentiableAt_iff_differentiableAt.2 hL)
+  have hd : HasFDerivAt (fun t ↦ g (φ.symm (L t))) (0 : 𝕜 →L[𝕜] G) t₀ := by
+    have h := hg.hasMFDerivAt.comp t₀ hγ.hasMFDerivAt
+    rwa [h0, ContinuousLinearMap.zero_comp, hasMFDerivAt_iff_hasFDerivAt] at h
+  simpa using hd.hasDerivAt
 
 section Transition
 

@@ -186,7 +186,7 @@ private theorem card_finset_cuspOrbit_le_covolume [DiscreteTopology Γ] (s : Fin
       Γ.cuspOrbitMk ⟨D.cusp, mem_cuspPoints.mpr D.isCuspPoint⟩ = C := by
     intro C
     obtain ⟨c, rfl⟩ := cuspOrbitMk_surjective C
-    obtain ⟨D, hD⟩ := (mem_cuspPoints.mp c.2).exists_cuspDatum_cusp_eq
+    obtain ⟨D, hD⟩ := (mem_cuspPoints.mp c.property).exists_cuspDatum_cusp_eq
     exact ⟨D, by simp only [hD]⟩
   choose D hD using hex
   have hne : ∀ C C' : Γ.CuspOrbit, C ≠ C' → (D C').cusp ∉ orbit Γ (D C).cusp := by

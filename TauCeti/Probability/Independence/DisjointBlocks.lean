@@ -131,7 +131,7 @@ theorem indepFun_of_measurable_blockSigma {μ : Measure Ω} {Z : ∀ i, Ω → �
   have hm_block (A : Set ι) (hA : A ⊆ S ∪ T) :
       blockSigma (fun i : ↥(S ∪ T) => Z i) (Subtype.val ⁻¹' A) = blockSigma Z A :=
     le_antisymm
-      (iSup₂_le fun i hi => le_iSup₂_of_le i.1 hi le_rfl)
+      (iSup₂_le fun i hi => le_iSup₂_of_le i.val hi le_rfl)
       (iSup₂_le fun i hi => le_iSup₂_of_le ⟨i, hA hi⟩ hi le_rfl)
   have hblocks := indep_blockSigma_of_disjoint hZ (fun i => hZ_meas i i.property)
     (hST.preimage (Subtype.val : ↥(S ∪ T) → ι))

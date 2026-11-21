@@ -181,8 +181,8 @@ theorem isComplexLinearMap_perturbedFDeriv_comp_positiveEndChart
   -- This is the manifold statement for the constant form.
   rw [← toLinearMap_perturbedMFDeriv_constSmooth] at hfloer ⊢
   exact SmoothTwoForm.isComplexLinearMap_perturbedMFDeriv_comp_positiveEndChart
-    (ω := ω.constSmooth) hKH hH (fun q t ↦ (hHd q t).mdifferentiable) hζ hu.mdifferentiableAt
-    hfloer
+    (ω := ω.constSmooth) (hKH q) (hH q) (fun t ↦ (hHd q t).mdifferentiable) hζ
+    hu.mdifferentiableAt hfloer
 
 /-- **A cylindrical end of a Floer pair of pants is a Floer half-cylinder.** Let `K` be equal to
 `H_q(t) dt` beyond `T₀` on each end `q`, and let `u` be differentiable on `S` and solve the Floer
@@ -234,8 +234,8 @@ theorem setLIntegral_floerEnergyDensity_comp_positiveEndChart_le_of_subset
   -- This is the manifold statement for the constant form.
   simpa only [floerEnergyDensity_constSmooth] using
     SmoothTwoForm.setLIntegral_floerEnergyDensity_comp_positiveEndChart_le_of_subset
-      (ω := ω.constSmooth) hKH hH (fun q t ↦ (hHd q t).mdifferentiable) hu.mdifferentiableOn q hs
-      hst
+      (ω := ω.constSmooth) q (hKH q) (hH q) (fun t ↦ (hHd q t).mdifferentiable)
+      hu.mdifferentiableOn hs hst
 
 /-- **The translated ends of a Floer pair of pants solve one cylindrical Floer equation.** Let
 `K` be equal to `H_q(t) dt` beyond `T₀` on each end `q`, and let `u` be differentiable on `S` and
@@ -269,7 +269,7 @@ theorem isComplexLinearMap_perturbedFDeriv_comp_positiveEndChart_add
   simp only [Prod.snd_add, add_zero, comp_apply] at hJz
   rw [← hJz, ← toLinearMap_perturbedMFDeriv_constSmooth]
   exact SmoothTwoForm.isComplexLinearMap_perturbedMFDeriv_comp_positiveEndChart_add
-    (ω := ω.constSmooth) hKH hH (fun q t ↦ (hHd q t).mdifferentiable) R
+    (ω := ω.constSmooth) (hKH q) (hH q) (fun t ↦ (hHd q t).mdifferentiable) R
     ((le_max_left _ _).trans hz'.le)
     ((hu _ hmem).differentiableAt
       (isOpen_thricePuncturedSphereReal.mem_nhds hmem)).mdifferentiableAt
@@ -296,8 +296,8 @@ theorem setLIntegral_floerEnergyDensity_comp_positiveEndChart_add_le
   -- This is the manifold statement for the constant form.
   simpa only [floerEnergyDensity_constSmooth] using
     SmoothTwoForm.setLIntegral_floerEnergyDensity_comp_positiveEndChart_add_le
-      (ω := ω.constSmooth) hKH hH (fun q t ↦ (hHd q t).mdifferentiable) hu.mdifferentiableOn q R hs
-      hst
+      (ω := ω.constSmooth) q (hKH q) (hH q) (fun t ↦ (hHd q t).mdifferentiable)
+      hu.mdifferentiableOn R hs hst
 
 /-- **The energy of an end of a Floer pair of pants.** Under the hypotheses of
 `TauCeti.SymplecticForm.isComplexLinearMap_perturbedFDeriv_comp_positiveEndChart`, the energy of
@@ -317,7 +317,7 @@ theorem setLIntegral_floerEnergyDensity_comp_positiveEndChart_le
   -- This is the manifold statement for the constant form.
   simpa only [floerEnergyDensity_constSmooth] using
     SmoothTwoForm.setLIntegral_floerEnergyDensity_comp_positiveEndChart_le (ω := ω.constSmooth)
-      hKH hH (fun q t ↦ (hHd q t).mdifferentiable) hu.mdifferentiableOn q ha₀ haT
+      q (hKH q) (hH q) (fun t ↦ (hHd q t).mdifferentiable) hu.mdifferentiableOn ha₀ haT
 
 /-- **A cylindrical end of a finite-energy Floer pair of pants is a finite-energy Floer
 half-cylinder.** Let `K` be equal to `H_q(t) dt` beyond `T₀` on each end `q`, and let `u` be `Cⁿ`

@@ -133,13 +133,11 @@ form they recover the vector-space definitions.
 * `SmoothTwoForm.hamiltonianCurvature_eq_deriv_mul_of_eventuallyEq`: a datum which is the
   continuation datum `β(s) H(t) dt` near a point has curvature `β'(s) H(t)` there.
 * `SmoothTwoForm.hamiltonianCurvature_comp_add_right`,
-  `SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_comp_add_right`,
   `SmoothTwoForm.perturbedMFDeriv_comp_add_right`,
   `SmoothTwoForm.floerEnergyDensity_comp_add_right`,
-  `SmoothTwoForm.floerEnergyDensity_cylindrical_comp_add_right`,
-  `SmoothTwoForm.lintegral_floerEnergyDensity_comp_add_right`: translations of the domain
-  translate the curvature, the perturbed derivative and the energy density, and preserve the
-  curvature allowance and the energy along a map.
+  `SmoothTwoForm.floerEnergyDensity_cylindrical_comp_add_right`: translations of the domain
+  translate the curvature, the perturbed derivative and the energy density; the integrated
+  statements are in `TauCeti.Geometry.Symplectic.Floer.Manifold.Translation`.
 
 ## References
 
@@ -279,6 +277,14 @@ theorem isComplexLinearMap_perturbedMFDeriv_iff (ω : SmoothTwoForm I M)
     rw [add_eq_zero_iff_eq_neg] at h
     rw [h, map_neg, AlmostComplexStructure.apply_apply, neg_neg]
 
+/-- The perturbed derivative at `z` only depends on the values `K_s(z)` and `K_t(z)` of the
+perturbation at `z`, not on its derivatives. -/
+theorem perturbedMFDeriv_congr_perturbation (ω : SmoothTwoForm I M)
+    {Ks Kt Ks' Kt' : ℝ × ℝ → M → ℝ} (u : ℝ × ℝ → M) {z : ℝ × ℝ} (hs : Ks z = Ks' z)
+    (ht : Kt z = Kt' z) :
+    ω.perturbedMFDeriv Ks Kt u z = ω.perturbedMFDeriv Ks' Kt' u z :=
+  ContinuousLinearMap.ext fun v ↦ by rw [perturbedMFDeriv_apply, perturbedMFDeriv_apply, hs, ht]
+
 /-- **The perturbed derivative of a translate.** The perturbed derivative of `w ↦ u (w + v)` for
 the translated data `w ↦ K (w + v)` at `z` is the perturbed derivative of `u` for `K` at `z + v`. -/
 theorem perturbedMFDeriv_comp_add_right (ω : SmoothTwoForm I M) (Ks Kt : ℝ × ℝ → M → ℝ)
@@ -303,6 +309,14 @@ theorem floerEnergyDensity_def (ω : SmoothTwoForm I M) (Ks Kt : ℝ × ℝ → 
       SmoothBundleForm.eval₂ ω (u z) (ω.perturbedMFDeriv Ks Kt u z stdComplexLineReal)
         (ω.perturbedMFDeriv Ks Kt u z stdComplexLineImag) :=
   (rfl)
+
+/-- The Floer energy density at `z` only depends on the values `K_s(z)` and `K_t(z)` of the
+perturbation at `z`, not on its derivatives. -/
+theorem floerEnergyDensity_congr_perturbation (ω : SmoothTwoForm I M)
+    {Ks Kt Ks' Kt' : ℝ × ℝ → M → ℝ} (u : ℝ × ℝ → M) {z : ℝ × ℝ} (hs : Ks z = Ks' z)
+    (ht : Kt z = Kt' z) :
+    ω.floerEnergyDensity Ks Kt u z = ω.floerEnergyDensity Ks' Kt' u z := by
+  rw [floerEnergyDensity_def, floerEnergyDensity_def, ω.perturbedMFDeriv_congr_perturbation u hs ht]
 
 /-- At a point where the perturbation vanishes, the Floer energy density is the symplectic area
 density `ω(∂_s u, ∂_t u)`. -/
@@ -383,7 +397,7 @@ theorem continuousOn_floerEnergyDensity (ω : SmoothTwoForm I M) {Ks Kt : ℝ ×
     (hXt : ContinuousOn (fun p : (ℝ × ℝ) × M ↦
       (⟨p.2, ω.hamiltonianVectorField (Kt p.1) p.2⟩ : TangentBundle I M)) (U ×ˢ univ)) :
     ContinuousOn (ω.floerEnergyDensity Ks Kt u) U := by
-  have hfun : ω.floerEnergyDensity Ks Kt u = fun z ↦ ω.1 (u z)
+  have hfun : ω.floerEnergyDensity Ks Kt u = fun z ↦ ω.val (u z)
       ![ω.perturbedMFDeriv Ks Kt u z stdComplexLineReal,
         ω.perturbedMFDeriv Ks Kt u z stdComplexLineImag] :=
     funext fun z ↦ by rw [floerEnergyDensity_def, SmoothBundleForm.eval₂_apply]
@@ -519,7 +533,7 @@ theorem IsNondegenerate.continuous_floerEnergyDensity_zero_left [FiniteDimension
     (hω : ω.IsNondegenerate) (hKt : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry Kt))
     (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) :
     Continuous (ω.floerEnergyDensity (fun _ _ ↦ 0) Kt u) := by
-  have hω₀ : IsSmoothForm I 0 ω.1 := ω.isSmoothForm.of_le (by simp)
+  have hω₀ : IsSmoothForm I 0 ω.val := ω.isSmoothForm.of_le (by simp)
   -- The three terms of the pointwise energy identity are continuous.
   have harea : Continuous fun z ↦ SmoothBundleForm.eval₂ ω (u z)
       (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
@@ -906,29 +920,6 @@ theorem lintegral_enorm_hamiltonianCurvature_image (ω : SmoothTwoForm I M)
     (fun w hw ↦ (hφ w hw).differentiableAt (by norm_num)) fun w hw ↦
       ω.hamiltonianCurvature_perturbationPullback (hφ w hw) (hKs w hw) (hKt w hw) (hKs' w hw)
         (hKt' w hw)
-
-/-- Translations of the domain preserve the integrated curvature along a map. -/
-theorem lintegral_enorm_hamiltonianCurvature_comp_add_right (ω : SmoothTwoForm I M)
-    (Ks Kt : ℝ × ℝ → M → ℝ) (u : ℝ × ℝ → M) (v : ℝ × ℝ) :
-    ∫⁻ z, ‖ω.hamiltonianCurvature (fun w ↦ Ks (w + v)) (fun w ↦ Kt (w + v)) z (u (z + v))‖ₑ =
-      ∫⁻ z, ‖ω.hamiltonianCurvature Ks Kt z (u z)‖ₑ := by
-  have hv : MeasurePreserving (· + v) volume volume :=
-    (measurePreserving_add_right volume v.1).prod (measurePreserving_add_right volume v.2)
-  simp only [hamiltonianCurvature_comp_add_right]
-  exact hv.lintegral_comp_emb (measurableEmbedding_addRight v)
-    (fun z ↦ ‖ω.hamiltonianCurvature Ks Kt z (u z)‖ₑ)
-
-/-- **Translations preserve the energy.** The energy of the translate of the map and the
-perturbation data by `v` over `(· + v) ⁻¹' S` is the energy of the original over `S`. -/
-theorem lintegral_floerEnergyDensity_comp_add_right (ω : SmoothTwoForm I M)
-    (Ks Kt : ℝ × ℝ → M → ℝ) (u : ℝ × ℝ → M) (v : ℝ × ℝ) (S : Set (ℝ × ℝ)) :
-    ∫⁻ z in (· + v) ⁻¹' S, ENNReal.ofReal
-        (ω.floerEnergyDensity (fun w ↦ Ks (w + v)) (fun w ↦ Kt (w + v)) (fun w ↦ u (w + v)) z) =
-      ∫⁻ z in S, ENNReal.ofReal (ω.floerEnergyDensity Ks Kt u z) := by
-  have hv : MeasurePreserving (· + v) volume volume :=
-    (measurePreserving_add_right volume v.1).prod (measurePreserving_add_right volume v.2)
-  simp only [floerEnergyDensity_comp_add_right]
-  exact hv.setLIntegral_comp_preimage_emb (measurableEmbedding_addRight v) (ENNReal.ofReal ∘ _) S
 
 /-- **The energy identity on a rectangle, for a manifold target.** Let `u` and the perturbation
 data `K = K_s ds + K_t dt` be `C¹` over an open neighbourhood `U` of a rectangle

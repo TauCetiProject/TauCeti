@@ -303,7 +303,7 @@ theorem isIntegral_powerBoundedMap (f : A →ₐ[K] B) (hA : IsAffinoidAlgebra K
   -- An integral equation of `b` over `A` whose coefficients have `|·|sup ≤ 1`.
   obtain ⟨p, hp, hpb, hc⟩ := hA.exists_monic_aeval_eq_zero_supSeminorm_coeff_le hB (b : B)
   have hb : supSeminorm K (b : B) ≤ 1 :=
-    hB.isPowerBounded_iff_supSeminorm_le_one.mp (mem_powerBoundedSubring.mp b.2)
+    hB.isPowerBounded_iff_supSeminorm_le_one.mp (mem_powerBoundedSubring.mp b.property)
   have hlifts : p ∈ Polynomial.lifts (powerBoundedSubring A).subtype :=
     (Polynomial.lifts_iff_coeff_lifts p).mpr fun i ↦
       ⟨⟨p.coeff i, mem_powerBoundedSubring.mpr <| hA.isPowerBounded_iff_supSeminorm_le_one.mpr <|
@@ -457,7 +457,7 @@ theorem bijective_reductionMap_of_surjective_of_ker_le_nilradical (f : A →ₐ[
   obtain ⟨a, ha⟩ := hf b
   have ha' : a ∈ powerBoundedSubring A := by
     rw [mem_powerBoundedSubring, hA.isPowerBounded_iff_supSeminorm_le_one, ← hsup, ha]
-    exact hB.isPowerBounded_iff_supSeminorm_le_one.mp (mem_powerBoundedSubring.mp b.2)
+    exact hB.isPowerBounded_iff_supSeminorm_le_one.mp (mem_powerBoundedSubring.mp b.property)
   refine ⟨Ideal.Quotient.mk _ ⟨a, ha'⟩, ?_⟩
   rw [reductionMap_mk]
   exact congrArg (Ideal.Quotient.mk _) (Subtype.ext ha)
@@ -568,7 +568,7 @@ theorem reductionMap_mul_eq_zero_iff [IsDomain A] [IsIntegrallyClosed A]
     obtain ⟨b, rfl⟩ := Ideal.Quotient.mk_surjective y
     have ha1 : supSeminorm K (a : A) = 1 := by
       have hle : supSeminorm K (a : A) ≤ 1 :=
-        hA.isPowerBounded_iff_supSeminorm_le_one.mp (mem_powerBoundedSubring.mp a.2)
+        hA.isPowerBounded_iff_supSeminorm_le_one.mp (mem_powerBoundedSubring.mp a.property)
       have hge : ¬ supSeminorm K (a : A) < 1 := fun hlt ↦ hx <|
         Ideal.Quotient.eq_zero_iff_mem.mpr <| mem_topologicallyNilpotentIdeal.mpr
           (hA.isTopologicallyNilpotent_iff_supSeminorm_lt_one.mpr hlt)
@@ -792,17 +792,17 @@ theorem finiteType_canonicalReduction (hA : IsAffinoidAlgebra K A) :
   have := hA.isNoetherianRing
   have : _root_.Finite (minimalPrimes A) :=
     (minimalPrimes.finite_of_isNoetherianRing A).to_subtype
-  have hclosed (𝔭 : minimalPrimes A) : IsClosed (𝔭.1 : Set A) := hA.isClosed_ideal 𝔭.1
-  have hprime (𝔭 : minimalPrimes A) : 𝔭.1.IsPrime := 𝔭.2.1.1
-  have hdom (𝔭 : minimalPrimes A) : IsDomain (A ⧸ 𝔭.1) := Ideal.Quotient.isDomain 𝔭.1
-  have hft (𝔭 : minimalPrimes A) : Algebra.FiniteType 𝓀[K] (CanonicalReduction (A ⧸ 𝔭.1)) :=
-    finiteType_canonicalReduction_of_isDomain (hA.quotient 𝔭.1)
-  let P := ∀ 𝔭 : minimalPrimes A, CanonicalReduction (A ⧸ 𝔭.1)
+  have hclosed (𝔭 : minimalPrimes A) : IsClosed (𝔭.val : Set A) := hA.isClosed_ideal 𝔭.val
+  have hprime (𝔭 : minimalPrimes A) : 𝔭.val.IsPrime := 𝔭.property.1.1
+  have hdom (𝔭 : minimalPrimes A) : IsDomain (A ⧸ 𝔭.val) := Ideal.Quotient.isDomain 𝔭.val
+  have hft (𝔭 : minimalPrimes A) : Algebra.FiniteType 𝓀[K] (CanonicalReduction (A ⧸ 𝔭.val)) :=
+    finiteType_canonicalReduction_of_isDomain (hA.quotient 𝔭.val)
+  let P := ∀ 𝔭 : minimalPrimes A, CanonicalReduction (A ⧸ 𝔭.val)
   let hAlg (𝔭 : minimalPrimes A) :
-      Algebra (CanonicalReduction A) (CanonicalReduction (A ⧸ 𝔭.1)) :=
-    ((Ideal.Quotient.mkₐ K 𝔭.1).reductionMap hA (hA.quotient 𝔭.1)).toRingHom.toAlgebra
+      Algebra (CanonicalReduction A) (CanonicalReduction (A ⧸ 𝔭.val)) :=
+    ((Ideal.Quotient.mkₐ K 𝔭.val).reductionMap hA (hA.quotient 𝔭.val)).toRingHom.toAlgebra
   have hTower (𝔭 : minimalPrimes A) :
-      IsScalarTower 𝓀[K] (CanonicalReduction A) (CanonicalReduction (A ⧸ 𝔭.1)) :=
+      IsScalarTower 𝓀[K] (CanonicalReduction A) (CanonicalReduction (A ⧸ 𝔭.val)) :=
     IsScalarTower.of_algebraMap_eq fun c ↦ by
       rw [RingHom.algebraMap_toAlgebra, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, AlgHom.commutes]
   have hinj : Function.Injective (algebraMap (CanonicalReduction A) P) := by
@@ -818,7 +818,7 @@ theorem finiteType_canonicalReduction (hA : IsAffinoidAlgebra K A) :
       hA.isTopologicallyNilpotent_iff_supSeminorm_lt_one.mpr h0
   have : Algebra.IsIntegral (CanonicalReduction A) P :=
     ⟨fun y ↦ TauCeti.isIntegral_pi_iff.mpr fun 𝔭 ↦
-      (Ideal.Quotient.mkₐ K 𝔭.1).isIntegral_reductionMap hA (hA.quotient 𝔭.1)
+      (Ideal.Quotient.mkₐ K 𝔭.val).isIntegral_reductionMap hA (hA.quotient 𝔭.val)
         (RingHom.isIntegral_of_surjective _ Ideal.Quotient.mk_surjective) (y 𝔭)⟩
   have : Algebra.FiniteType (CanonicalReduction A) P :=
     .of_restrictScalars_finiteType 𝓀[K] (CanonicalReduction A) P
