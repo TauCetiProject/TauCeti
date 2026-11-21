@@ -28,6 +28,9 @@ This file supplies general constructions for Lie modules that are missing from M
   module.
 * `LieHom.lieIdealComap`: a Lie homomorphism restricted to the preimage of a Lie ideal, as a
   Lie homomorphism into that ideal.
+* `Submodule.lieStabilizer`: the Lie subalgebra of endomorphisms preserving a submodule `p`.
+* `Submodule.lieStabilizerLieSubmodule`: a submodule `p`, as a Lie submodule over its stabilizer.
+* `Submodule.lieStabilizerQuotientAction`: the action of the stabilizer of `p` on `M ⧸ p`.
 
 ## Main results
 
@@ -69,6 +72,9 @@ This file supplies general constructions for Lie modules that are missing from M
   preimage of a Lie ideal is injective.
 * `LieSubmodule.lie_iSup`: bracketing with a Lie ideal distributes over suprema of Lie submodules.
 * `TauCeti.ad_pow_succ_apply`: an additional adjoint action can be applied to the argument.
+* `TauCeti.ad_pow_succ_apply'`: the last adjoint action can be taken outside the preceding powers.
+* `Module.End.commutator_apply` and `Module.End.apply_apply_eq_apply_apply_add_lie`: the
+  commutator of two endomorphisms, evaluated at a vector.
 * `TauCeti.ad_neg_pow_apply_eq_zero`: negating the acting element preserves adjoint vanishing.
 * `LieSubalgebra.engel_neg`: negating the acting element preserves the Engel subalgebra.
 * `TauCeti.ad_pow_apply_eq_ad_pow_apply`: iterating the adjoint action gives the same element
@@ -162,6 +168,78 @@ theorem LieSubalgebra.apply_mem_of_mem {K V : Type*} [CommRing K] [AddCommGroup 
     (L : LieSubalgebra K (Module.End K V)) {z : Module.End K V} (hz : z ∈ L)
     (W : LieSubmodule K L V) : ∀ w ∈ W, z w ∈ W :=
   fun w hw ↦ by simpa using W.lie_mem (x := ⟨z, hz⟩) hw
+
+/-- The commutator of two endomorphisms, evaluated at a vector. -/
+@[simp]
+theorem Module.End.commutator_apply {R M : Type*} [Semiring R] [AddCommGroup M] [Module R M]
+    (X Y : Module.End R M) (v : M) : ⁅X, Y⁆ v = X (Y v) - Y (X v) := by
+  rw [LieRing.of_associative_ring_bracket, LinearMap.sub_apply, mul_apply_eq_comp,
+    mul_apply_eq_comp]
+
+/-- Two endomorphisms can be swapped at the cost of their commutator. -/
+theorem Module.End.apply_apply_eq_apply_apply_add_lie {R M : Type*} [Semiring R] [AddCommGroup M]
+    [Module R M] (X Y : Module.End R M) (v : M) : X (Y v) = Y (X v) + ⁅X, Y⁆ v := by
+  rw [Module.End.commutator_apply]
+  abel
+
+section Stabilizer
+
+variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] (p : Submodule R M)
+
+/-- The endomorphisms preserving a submodule `p` form a Lie subalgebra of `𝔤𝔩(M)`, whose
+underlying submodule is `p.compatibleMaps p`. -/
+def Submodule.lieStabilizer : LieSubalgebra R (Module.End R M) where
+  __ := p.compatibleMaps p
+  lie_mem' {X Y} hX hY v hv := by
+    rw [Submodule.mem_carrier, SetLike.mem_coe, Submodule.mem_compatibleMaps] at hX hY
+    rw [Submodule.mem_comap, Module.End.commutator_apply]
+    exact sub_mem (Submodule.mem_comap.1 (hX (Submodule.mem_comap.1 (hY hv))))
+      (Submodule.mem_comap.1 (hY (Submodule.mem_comap.1 (hX hv))))
+
+/-- The submodule underlying `p.lieStabilizer` is `p.compatibleMaps p`. -/
+@[simp]
+theorem Submodule.toSubmodule_lieStabilizer :
+    p.lieStabilizer.toSubmodule = p.compatibleMaps p :=
+  (rfl)
+
+/-- An endomorphism lies in the stabilizer of `p` exactly when it maps `p` into itself. -/
+@[simp]
+theorem Submodule.mem_lieStabilizer {X : Module.End R M} :
+    X ∈ p.lieStabilizer ↔ ∀ v ∈ p, X v ∈ p := by
+  rw [← LieSubalgebra.mem_toSubmodule, Submodule.toSubmodule_lieStabilizer,
+    Submodule.mem_compatibleMaps, IsConcreteLE.le_iff]
+  simp only [Submodule.mem_comap]
+
+/-- A submodule `p`, as a Lie submodule over its stabilizer `p.lieStabilizer`. -/
+def Submodule.lieStabilizerLieSubmodule : LieSubmodule R p.lieStabilizer M where
+  __ := p
+  lie_mem {X v} hv := by
+    simpa using p.mem_lieStabilizer.1 X.2 v hv
+
+/-- The submodule underlying `p.lieStabilizerLieSubmodule` is `p`. -/
+@[simp]
+theorem Submodule.toSubmodule_lieStabilizerLieSubmodule :
+    p.lieStabilizerLieSubmodule.toSubmodule = p :=
+  (rfl)
+
+/-- A vector lies in `p.lieStabilizerLieSubmodule` exactly when it lies in `p`. -/
+@[simp]
+theorem Submodule.mem_lieStabilizerLieSubmodule {v : M} :
+    v ∈ p.lieStabilizerLieSubmodule ↔ v ∈ p := by
+  rw [← LieSubmodule.mem_toSubmodule, Submodule.toSubmodule_lieStabilizerLieSubmodule]
+
+/-- The action of the stabilizer of a submodule `p` on the quotient `M ⧸ p`. -/
+def Submodule.lieStabilizerQuotientAction : p.lieStabilizer →ₗ⁅R⁆ Module.End R (M ⧸ p) :=
+  LieSubmodule.Quotient.actionAsEndoMap p.lieStabilizerLieSubmodule
+
+/-- An element of the stabilizer acts on the class of `v` in `M ⧸ p` through its action on `v`. -/
+@[simp]
+theorem Submodule.lieStabilizerQuotientAction_mk (X : p.lieStabilizer) (v : M) :
+    p.lieStabilizerQuotientAction X (Submodule.Quotient.mk v) =
+      Submodule.Quotient.mk ((X : Module.End R M) v) :=
+  (rfl)
+
+end Stabilizer
 
 end EndSubalgebra
 
@@ -427,6 +505,11 @@ variable {R L L' : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
 theorem ad_pow_succ_apply (x y : L) (n : ℕ) :
     (LieAlgebra.ad R L x ^ (n + 1)) y = (LieAlgebra.ad R L x ^ n) ⁅x, y⁆ := by
   rw [pow_succ, _root_.mul_apply_eq_comp, LieAlgebra.ad_apply]
+
+/-- The last adjoint action in `(ad x) ^ (n + 1) y` can be taken outside the preceding powers. -/
+theorem ad_pow_succ_apply' (x y : L) (n : ℕ) :
+    (LieAlgebra.ad R L x ^ (n + 1)) y = ⁅x, (LieAlgebra.ad R L x ^ n) y⁆ := by
+  rw [pow_succ', _root_.mul_apply_eq_comp, LieAlgebra.ad_apply]
 
 /-- If the `n`-fold adjoint action of `x` annihilates `y`, then so does that of `-x`. -/
 theorem ad_neg_pow_apply_eq_zero {x y : L} {n : ℕ} (h : (LieAlgebra.ad R L x ^ n) y = 0) :
