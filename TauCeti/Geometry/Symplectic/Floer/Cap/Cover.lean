@@ -268,11 +268,11 @@ variable [PathConnectedSpace X] [LocallyPathConnectedSpace (contractibleLoops X)
 variable (ω c) in
 /-- **The deck group of the cap cover is the spherical period group** `Γ`: the period
 homomorphism `π₁(𝓛₀X, x) → Γ` is onto with kernel `capCoverSubgroup ω c x`, and the deck group of
-the cover attached to a normal subgroup is the quotient by it. -/
+the cover attached to the kernel of a surjective homomorphism is its target. -/
 def capCoverDeckEquiv (x : X) :
     Multiplicative (SphericalPeriodGroup ω c) ≃* deck (capCoverProj ω c x) :=
-  ((deckSubgroupQuotientProjEquivOfNormal _ (fundamentalGroupPeriodHom x).ker).symm.trans
-    (QuotientGroup.quotientKerEquivOfSurjective _ (fundamentalGroupPeriodHom_surjective x))).symm
+  (deckSubgroupQuotientProjKerEquivOfSurjective _ (fundamentalGroupPeriodHom x)
+    (fundamentalGroupPeriodHom_surjective x)).symm
 
 /-- The deck transformation of the period class of a loop `a` of contractible free loops acts on
 the cap cover through the action of `a` on the universal cover of `𝓛₀X`. -/
@@ -284,14 +284,10 @@ theorem capCoverDeckEquiv_ofContractibleLoopsHomotopyGroup_apply_mk (x : X)
         (SphericalPeriodGroup.ofContractibleLoopsHomotopyGroup ω c x (Additive.ofMul a)))).val
         (Quotient.mk'' e) =
       Quotient.mk'' (HomotopyGroup.pi1MulEquivFundamentalGroup a • e) := by
-  have h := deckSubgroupQuotientProjEquivOfNormal_mk_apply _
-    (fundamentalGroupPeriodHom (ω := ω) (c := c) x).ker (pi1MulEquivFundamentalGroup a) e
-  rw [← TauCeti.QuotientGroup.quotientKerEquivOfSurjective_symm_apply _
-      (fundamentalGroupPeriodHom_surjective x),
-    fundamentalGroupPeriodHom_pi1MulEquivFundamentalGroup] at h
-  -- `capCoverDeckEquiv` is the inverse of the composite of the two equivalences in `h`, and
-  -- `capCoverSubgroup` is by definition the kernel of `fundamentalGroupPeriodHom x`
-  exact h
+  rw [← fundamentalGroupPeriodHom_pi1MulEquivFundamentalGroup, capCoverDeckEquiv]
+  -- the cap cover is the cover attached to `capCoverSubgroup ω c x`, which is by definition the
+  -- kernel of `fundamentalGroupPeriodHom x`
+  exact deckSubgroupQuotientProjKerEquivOfSurjective_symm_apply_mk _ _ _ _ e
 
 /-- The spherical period group `Γ` acts on the cap cover through its deck group. -/
 noncomputable instance instAddActionCapCover :
