@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.Deriv.Basic
+public import TauCeti.RingTheory.PowerSeries.HasFPowerSeriesOnBall
 public import TauCeti.RingTheory.PowerSeries.OpenDisc.Radius
 public import TauCeti.Topology.MetricSpace.Ultra.EBall
 import Mathlib.Analysis.Analytic.Uniqueness
 import TauCeti.Analysis.Analytic.OfScalars
+import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.RingTheory.PowerSeries.OpenDisc.Eval
 
 /-!
@@ -32,13 +34,16 @@ Over a complete ultrametric field every point `b` of the disc is a centre of it,
 translate of the series to `b` converges on the whole disc. Hence the subalgebra does not depend
 on the chosen centre, restriction to a smaller disc about an interior point preserves it, and a
 function analytic on the disc that vanishes near one point vanishes everywhere. Over a nontrivially
-normed field, membership is exactly Mathlib's `HasFPowerSeriesOnBall` on the ball, the series is
-unique, and derivatives of functions analytic on the disc are again analytic on the disc.
+normed field and for `0 < r`, membership is exactly Mathlib's `HasFPowerSeriesOnBall` on the ball
+and the series is unique; derivatives of functions analytic on the disc are again analytic on the
+disc.
 
 ## Main definitions
 
 * `TauCeti.discAnalytic K a r`: the subalgebra of functions on `Metric.eball a r` given by one
   power series in `z - a` of radius at least `r`.
+* `TauCeti.discAnalytic.series f`: a power series in `z - a` representing `f`, its coefficient
+  sequence at the centre `a`.
 
 ## Main results
 
@@ -48,11 +53,8 @@ unique, and derivatives of functions analytic on the disc are again analytic on 
 * `TauCeti.domRestrict_mem_discAnalytic_iff`: for `0 < r`, the restriction of `F : K → K` to the
   disc is analytic on the disc exactly when `F` has a power series on the ball
   (`HasFPowerSeriesOnBall`).
-* `TauCeti.eq_of_forall_evalAt_sub_eq` and `TauCeti.existsUnique_series_of_mem_discAnalytic`: for
+* `TauCeti.discAnalytic.series_eq` and `TauCeti.existsUnique_series_of_mem_discAnalytic`: for
   `0 < r`, the representing series is unique.
-* `TauCeti.evalAt_sub_eq_evalAt_taylor_sub` and `TauCeti.le_radius_taylor_sub`: over an ultrametric
-  field, the Taylor translate of the series to any point of the disc represents the same function
-  on the whole disc.
 * `TauCeti.comp_inclusion_mem_discAnalytic` and `TauCeti.comp_inclusion_mem_discAnalytic_iff`:
   over an ultrametric field, restriction to the disc of radius `r' ≤ r` about an interior point
   preserves analyticity, and analyticity on the disc does not depend on the centre.
@@ -79,22 +81,6 @@ section NormedField
 
 variable {K : Type*} [NormedField K]
 
-/-- Two series whose radii are at least `r` both lie on one open disc of real radius containing a
-given point of norm less than `r`. -/
-private theorem exists_onOpenDisc_of_le_radius {f g : K⟦X⟧} {r : ℝ≥0∞} (hf : r ≤ f.radius)
-    (hg : r ≤ g.radius) {y : K} (hy : ‖y‖ₑ < r) :
-    ∃ R₀ : ℝ, ‖y‖ < R₀ ∧ f.OnOpenDisc R₀ ∧ g.OnOpenDisc R₀ := by
-  obtain ⟨R₁, hR₁, hf₁⟩ := exists_onOpenDisc_of_ofReal_lt_radius (f := f) (t := ‖y‖)
-    (by rw [ofReal_norm]; exact hy.trans_le hf)
-  obtain ⟨R₂, hR₂, hg₂⟩ := exists_onOpenDisc_of_ofReal_lt_radius (f := g) (t := ‖y‖)
-    (by rw [ofReal_norm]; exact hy.trans_le hg)
-  exact ⟨min R₁ R₂, lt_min hR₁ hR₂, hf₁.mono (min_le_left _ _), hg₂.mono (min_le_right _ _)⟩
-
-/-- A point of the open disc `Metric.eball a r` lies at distance less than `r` from the centre. -/
-private theorem enorm_sub_lt {a : K} {r : ℝ≥0∞} (z : eball a r) : ‖(z : K) - a‖ₑ < r := by
-  have := z.property
-  rwa [mem_eball, eDist_eq_eNorm_sub] at this
-
 variable [CompleteSpace K]
 
 variable (K) in
@@ -106,12 +92,14 @@ def discAnalytic (a : K) (r : ℝ≥0∞) : Subalgebra K (eball a r → K) where
   mul_mem' := by
     rintro f₁ f₂ ⟨g₁, hg₁, h₁⟩ ⟨g₂, hg₂, h₂⟩
     refine ⟨g₁ * g₂, (le_min hg₁ hg₂).trans (min_radius_le_radius_mul g₁ g₂), fun z ↦ ?_⟩
-    obtain ⟨R₀, hR₀, hf₁, hf₂⟩ := exists_onOpenDisc_of_le_radius hg₁ hg₂ (enorm_sub_lt z)
+    obtain ⟨R₀, hR₀, hf₁, hf₂⟩ :=
+      exists_onOpenDisc_of_le_radius hg₁ hg₂ (mem_eball_iff_eNorm.mp z.property)
     rw [Pi.mul_apply, h₁, h₂, hf₁.evalAt_mul hf₂ hR₀]
   add_mem' := by
     rintro f₁ f₂ ⟨g₁, hg₁, h₁⟩ ⟨g₂, hg₂, h₂⟩
     refine ⟨g₁ + g₂, (le_min hg₁ hg₂).trans (min_radius_le_radius_add g₁ g₂), fun z ↦ ?_⟩
-    obtain ⟨R₀, hR₀, hf₁, hf₂⟩ := exists_onOpenDisc_of_le_radius hg₁ hg₂ (enorm_sub_lt z)
+    obtain ⟨R₀, hR₀, hf₁, hf₂⟩ :=
+      exists_onOpenDisc_of_le_radius hg₁ hg₂ (mem_eball_iff_eNorm.mp z.property)
     rw [Pi.add_apply, h₁, h₂, hf₁.evalAt_add hf₂ hR₀]
   algebraMap_mem' c := ⟨C c, by simp [radius_eq_top_iff.mpr (isEntire_C c)], fun z ↦ by simp⟩
 
@@ -121,6 +109,22 @@ theorem mem_discAnalytic_iff {a : K} {r : ℝ≥0∞} {f : eball a r → K} :
     f ∈ discAnalytic K a r ↔
       ∃ g : K⟦X⟧, r ≤ g.radius ∧ ∀ z : eball a r, f z = g.evalAt ((z : K) - a) :=
   Iff.rfl
+
+/-- **The coefficient sequence at the centre.** A power series in `z - a` of radius at least `r`
+representing a function analytic on the open disc of radius `r` about `a`. For `0 < r` it is the
+unique such series (`TauCeti.discAnalytic.series_eq`). -/
+noncomputable def discAnalytic.series {a : K} {r : ℝ≥0∞} (f : discAnalytic K a r) : K⟦X⟧ :=
+  f.property.choose
+
+/-- The representing series of a function analytic on the disc has radius at least `r`. -/
+theorem discAnalytic.le_radius_series {a : K} {r : ℝ≥0∞} (f : discAnalytic K a r) :
+    r ≤ (discAnalytic.series f).radius :=
+  f.property.choose_spec.1
+
+/-- A function analytic on the disc is the value at `z - a` of its representing series. -/
+theorem discAnalytic.apply_eq_evalAt_series {a : K} {r : ℝ≥0∞} (f : discAnalytic K a r)
+    (z : eball a r) : (f : eball a r → K) z = (discAnalytic.series f).evalAt ((z : K) - a) :=
+  f.property.choose_spec.2 z
 
 /-- A power series whose radius is at least `r` defines a function analytic on the open disc of
 radius `r` about any centre. -/
@@ -142,32 +146,7 @@ section Ultrametric
 
 variable {K : Type*} [NormedField K] [IsUltrametricDist K]
 
-/-- The Taylor translate of a series of radius at least `r` to a point of the open disc of radius
-`r` has radius at least `r`. -/
-theorem le_radius_taylor_sub {g : K⟦X⟧} {a b : K} {r : ℝ≥0∞} (hg : r ≤ g.radius)
-    (hb : b ∈ eball a r) : r ≤ (taylor (b - a) g).radius :=
-  hg.trans (radius_le_radius_taylor
-    ((by simpa [eDist_eq_eNorm_sub] using hb : ‖b - a‖ₑ < r).trans_le hg))
-
 variable [CompleteSpace K]
-
-/-- **Recentring a series on an open disc.** Over a complete ultrametric field, if `g` has radius
-at least `r` and `b` lies in the open disc of radius `r` about `a`, then the expansion of `g` about
-`a` and the expansion of its Taylor translate to `b` about `b` agree on the whole disc. -/
-theorem evalAt_sub_eq_evalAt_taylor_sub {g : K⟦X⟧} {a b z : K} {r : ℝ≥0∞} (hg : r ≤ g.radius)
-    (hb : b ∈ eball a r) (hz : z ∈ eball a r) :
-    g.evalAt (z - a) = (taylor (b - a) g).evalAt (z - b) := by
-  have hba : ‖b - a‖ₑ < r := by simpa [eDist_eq_eNorm_sub] using hb
-  have hza : ‖z - a‖ₑ < r := by simpa [eDist_eq_eNorm_sub] using hz
-  -- A real radius beyond `‖b - a‖` and `‖z - a‖`, hence beyond `‖z - b‖`, on which `g` lies.
-  obtain ⟨R₀, hR₀, hR⟩ := exists_onOpenDisc_of_ofReal_lt_radius (f := g)
-    (t := max ‖b - a‖ ‖z - a‖)
-    (by rw [ENNReal.ofReal_max, ofReal_norm, ofReal_norm]; exact (max_lt hba hza).trans_le hg)
-  have hzb : ‖z - b‖ < R₀ := by
-    have := dist_triangle_max z a b
-    rw [dist_eq_norm, dist_eq_norm, dist_eq_norm, norm_sub_rev a b] at this
-    exact this.trans_lt (by rwa [max_comm])
-  rw [hR.evalAt_taylor ((le_max_left _ _).trans_lt hR₀) hzb, sub_add_sub_cancel]
 
 /-- **Restriction to a smaller disc.** Over a complete ultrametric field, if `b` lies in the open
 disc of radius `r` about `a` and `r' ≤ r`, then the restriction of a function analytic on
@@ -191,22 +170,13 @@ theorem comp_inclusion_mem_discAnalytic_iff {a b : K} {r : ℝ≥0∞} {f : ebal
   refine ⟨fun h ↦ ?_, fun h ↦ comp_inclusion_mem_discAnalytic h hb le_rfl⟩
   convert comp_inclusion_mem_discAnalytic h (mem_eball_comm.mp hb) le_rfl using 1
   ext z
-  rfl
+  simp
 
 end Ultrametric
 
 section NontriviallyNormedField
 
 variable {K : Type*} [NontriviallyNormedField K] [CompleteSpace K]
-
-/-- If `F` agrees on the open disc of radius `r > 0` about `a` with `z ↦ g(z - a)` for a series `g`
-of radius at least `r`, then `F` has the scalar power series of `g` on that ball. Values of `F` off
-the disc are irrelevant. -/
-theorem hasFPowerSeriesOnBall_of_forall_eq_evalAt_sub {a : K} {r : ℝ≥0∞} (hr : 0 < r) {F : K → K}
-    {g : K⟦X⟧} (hg : r ≤ g.radius) (hF : ∀ z : eball a r, F z = g.evalAt ((z : K) - a)) :
-    HasFPowerSeriesOnBall F (FormalMultilinearSeries.ofScalars K fun n ↦ coeff n g) a r :=
-  ((hasFPowerSeriesOnBall_evalAt_sub g (hr.trans_le hg) a).mono hr hg).congr
-    fun z hz ↦ (hF ⟨z, hz⟩).symm
 
 /-- **Comparison with `HasFPowerSeriesOnBall`.** For `0 < r`, the restriction of `F : K → K` to the
 open disc of radius `r` about `a` is analytic on the disc exactly when `F` has a power series on
@@ -218,19 +188,6 @@ theorem domRestrict_mem_discAnalytic_iff {a : K} {r : ℝ≥0∞} (hr : 0 < r) {
     fun ⟨P, hP⟩ ↦ ⟨mk P.coeff, hP.le_radius_mk_coeff, fun z ↦ ?_⟩⟩
   exact (hP.evalAt_mk_coeff_sub z.property).symm
 
-/-- Two power series of radius at least `r > 0` that agree, as functions of `z - a`, on the open
-disc of radius `r` about `a` are equal. -/
-theorem eq_of_forall_evalAt_sub_eq {a : K} {r : ℝ≥0∞} (hr : 0 < r) {g₁ g₂ : K⟦X⟧}
-    (hg₁ : r ≤ g₁.radius) (hg₂ : r ≤ g₂.radius)
-    (h : ∀ z : eball a r, g₁.evalAt ((z : K) - a) = g₂.evalAt ((z : K) - a)) : g₁ = g₂ := by
-  have h₁ := hasFPowerSeriesOnBall_of_forall_eq_evalAt_sub hr hg₁ (F := fun z ↦ g₁.evalAt (z - a))
-    fun _ ↦ rfl
-  have h₂ := hasFPowerSeriesOnBall_of_forall_eq_evalAt_sub hr hg₂ (F := fun z ↦ g₁.evalAt (z - a))
-    fun z ↦ h z
-  have := h₁.hasFPowerSeriesAt.eq_formalMultilinearSeries h₂.hasFPowerSeriesAt
-  ext n
-  simpa using congrArg (fun P ↦ P.coeff n) this
-
 /-- For `0 < r`, a function analytic on the open disc of radius `r` about `a` determines its power
 series in `z - a`. -/
 theorem existsUnique_series_of_mem_discAnalytic {a : K} {r : ℝ≥0∞} (hr : 0 < r)
@@ -239,6 +196,15 @@ theorem existsUnique_series_of_mem_discAnalytic {a : K} {r : ℝ≥0∞} (hr : 0
   obtain ⟨g, hg, hfg⟩ := hf
   exact ⟨g, ⟨hg, hfg⟩, fun g' ⟨hg', hfg'⟩ ↦
     eq_of_forall_evalAt_sub_eq hr hg' hg fun z ↦ (hfg' z).symm.trans (hfg z)⟩
+
+/-- For `0 < r`, the representing series of a function analytic on the disc is any series of
+radius at least `r` that represents it. -/
+theorem discAnalytic.series_eq {a : K} {r : ℝ≥0∞} (hr : 0 < r) (f : discAnalytic K a r)
+    {g : K⟦X⟧} (hg : r ≤ g.radius)
+    (hfg : ∀ z : eball a r, (f : eball a r → K) z = g.evalAt ((z : K) - a)) :
+    discAnalytic.series f = g :=
+  eq_of_forall_evalAt_sub_eq hr (discAnalytic.le_radius_series f) hg fun z ↦
+    (discAnalytic.apply_eq_evalAt_series f z).symm.trans (hfg z)
 
 /-- **Derivatives.** The derivative of a function whose restriction to an open disc is analytic on
 the disc again restricts to a function analytic on the disc. -/
@@ -274,10 +240,11 @@ theorem discAnalytic.eq_zero_of_eventuallyEq_zero {a : K} {r : ℝ≥0∞} {f : 
     filter_upwards [h, hopen] with z hz hzr
     rw [← hfg₀ ⟨z, hzr⟩]
     exact hz ⟨z, hzr⟩ rfl
-  have hcoeff := hP.hasFPowerSeriesAt.eq_zero_of_eventually hzero
+  have hcoeff : (fun n ↦ coeff n g₀) = 0 := by
+    simpa using hP.hasFPowerSeriesAt.eq_zero_of_eventually hzero
   have hg₀0 : g₀ = 0 := by
     ext n
-    simpa using congrArg (fun P ↦ P.coeff n) hcoeff
+    simpa using congrFun hcoeff n
   ext z
   rw [hfg₀, hg₀0, evalAt_zero, Pi.zero_apply]
 

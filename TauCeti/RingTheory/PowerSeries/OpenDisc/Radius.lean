@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Analytic.Basic
 public import TauCeti.RingTheory.PowerSeries.OpenDisc.Taylor
 public import TauCeti.RingTheory.PowerSeries.Radius
+import TauCeti.Analysis.Normed.Group.Basic
 
 /-!
 # Series on an open disc and the radius of convergence
@@ -18,18 +18,26 @@ whereas the radius lives in `ℝ≥0∞`, so this comparison lets statements abo
 infinite radius use the open-disc algebra at every finite smaller radius.
 
 Over an ultrametric normed commutative ring, Taylor translation by a point `a` with `‖a‖` strictly
-below the radius does not decrease the radius. Over the complex numbers the translate only
-converges on the largest disc about `a` inside the original disc, so this is a genuinely
-nonarchimedean phenomenon: in an ultrametric space every point of an open ball is a centre.
+below the radius does not decrease the radius. Over the complex numbers the translate is in general
+only guaranteed to converge on the largest disc about `a` inside the original disc, so this is a
+genuinely nonarchimedean phenomenon: in an ultrametric space every point of an open ball is a
+centre. Consequently, over a complete ultrametric ring, the expansion of a series about `a` and the
+expansion of its Taylor translate about any point `b` of the open disc of radius `r` about `a`
+agree on that whole disc.
 
 ## Main results
 
 * `PowerSeries.onOpenDisc_iff_ofReal_le_radius`: `f` lies on the open disc of radius `R₀` exactly
   when `R₀ ≤ radius f`.
-* `PowerSeries.exists_onOpenDisc_of_ofReal_lt_radius`: below the radius, a point lies in some
-  open disc of real radius on which the series lies.
+* `PowerSeries.exists_onOpenDisc_of_ofReal_lt_radius` and
+  `PowerSeries.exists_onOpenDisc_of_le_radius`: below the radius, a point lies in some open disc of
+  real radius on which the series (or two series) lie.
 * `PowerSeries.radius_le_radius_taylor`: Taylor translation by a point inside the radius does not
   decrease the radius of a series over an ultrametric ring.
+* `PowerSeries.le_radius_taylor_sub` and `PowerSeries.evalAt_sub_eq_evalAt_taylor_sub`: over a
+  complete ultrametric ring, the Taylor translate of a series of radius at least `r` to any point
+  `b` of the open disc of radius `r` about `a` has radius at least `r` and represents the same
+  function on that whole disc.
 
 ## References
 
@@ -38,6 +46,7 @@ nonarchimedean phenomenon: in an ultrametric space every point of an open ball i
 
 public section
 
+open Metric
 open scoped ENNReal
 
 namespace PowerSeries
@@ -67,6 +76,17 @@ theorem exists_onOpenDisc_of_ofReal_lt_radius {t : ℝ} (ht : ENNReal.ofReal t <
   obtain ⟨R₀, -, htR, hR⟩ := ENNReal.lt_iff_exists_real_btwn.mp ht
   exact ⟨R₀, (ENNReal.ofReal_lt_ofReal_iff'.mp htR).1, onOpenDisc_iff_ofReal_le_radius.mpr hR.le⟩
 
+/-- Two series whose radii are at least `r` both lie on one open disc of real radius containing a
+given point of norm less than `r`. -/
+theorem exists_onOpenDisc_of_le_radius {g : R⟦X⟧} {r : ℝ≥0∞} (hf : r ≤ f.radius)
+    (hg : r ≤ g.radius) {y : R} (hy : ‖y‖ₑ < r) :
+    ∃ R₀ : ℝ, ‖y‖ < R₀ ∧ f.OnOpenDisc R₀ ∧ g.OnOpenDisc R₀ := by
+  obtain ⟨R₁, hR₁, hf₁⟩ := exists_onOpenDisc_of_ofReal_lt_radius (f := f) (t := ‖y‖)
+    (by rw [ofReal_norm]; exact hy.trans_le hf)
+  obtain ⟨R₂, hR₂, hg₂⟩ := exists_onOpenDisc_of_ofReal_lt_radius (f := g) (t := ‖y‖)
+    (by rw [ofReal_norm]; exact hy.trans_le hg)
+  exact ⟨min R₁ R₂, lt_min hR₁ hR₂, hf₁.mono (min_le_left _ _), hg₂.mono (min_le_right _ _)⟩
+
 end NormedRing
 
 section Ultrametric
@@ -86,43 +106,31 @@ theorem radius_le_radius_taylor (ha : ‖a‖ₑ < f.radius) : f.radius ≤ (tay
   rw [← ENNReal.ofReal_coe_nnreal]
   exact ENNReal.ofReal_le_ofReal ((le_max_left _ _).trans hR₀.le)
 
+/-- The Taylor translate of a series of radius at least `r` to a point of the open disc of radius
+`r` has radius at least `r`. -/
+theorem le_radius_taylor_sub {b : R} {r : ℝ≥0∞} (hf : r ≤ f.radius) (hb : b ∈ eball a r) :
+    r ≤ (taylor (b - a) f).radius :=
+  hf.trans (radius_le_radius_taylor ((TauCeti.mem_eball_iff_eNorm.mp hb).trans_le hf))
+
+/-- **Recentring a series on an open disc.** Over a complete ultrametric normed commutative ring,
+if `f` has radius at least `r` and `b` lies in the open disc of radius `r` about `a`, then the
+expansion of `f` about `a` and the expansion of its Taylor translate to `b` about `b` agree on the
+whole disc. -/
+theorem evalAt_sub_eq_evalAt_taylor_sub [CompleteSpace R] {b z : R} {r : ℝ≥0∞}
+    (hf : r ≤ f.radius) (hb : b ∈ eball a r) (hz : z ∈ eball a r) :
+    f.evalAt (z - a) = (taylor (b - a) f).evalAt (z - b) := by
+  have hba := TauCeti.mem_eball_iff_eNorm.mp hb
+  have hza := TauCeti.mem_eball_iff_eNorm.mp hz
+  -- A real radius beyond `‖b - a‖` and `‖z - a‖`, hence beyond `‖z - b‖`, on which `f` lies.
+  obtain ⟨R₀, hR₀, hR⟩ := exists_onOpenDisc_of_ofReal_lt_radius (f := f)
+    (t := max ‖b - a‖ ‖z - a‖)
+    (by rw [ENNReal.ofReal_max, ofReal_norm, ofReal_norm]; exact (max_lt hba hza).trans_le hf)
+  have hzb : ‖z - b‖ < R₀ := by
+    have := dist_triangle_max z a b
+    rw [dist_eq_norm, dist_eq_norm, dist_eq_norm, norm_sub_rev a b] at this
+    exact this.trans_lt (by rwa [max_comm])
+  rw [hR.evalAt_taylor ((le_max_left _ _).trans_lt hR₀) hzb, sub_add_sub_cancel]
+
 end Ultrametric
-
-section Field
-
-variable {K : Type*} [NontriviallyNormedField K]
-
-/-- **Comparison with `HasFPowerSeriesOnBall`.** A series `g` of positive radius is the power
-series at `a` of the function `z ↦ g(z - a)` on the open ball of radius `radius g` about `a`. -/
-theorem hasFPowerSeriesOnBall_evalAt_sub [CompleteSpace K] (g : K⟦X⟧) (hg : 0 < g.radius) (a : K) :
-    HasFPowerSeriesOnBall (fun z ↦ g.evalAt (z - a))
-      (FormalMultilinearSeries.ofScalars K fun n ↦ coeff n g) a g.radius := by
-  have hrad := radius_eq_radius_ofScalars K g
-  have h := ((FormalMultilinearSeries.ofScalars K fun n ↦ coeff n g).hasFPowerSeriesOnBall
-    (hrad ▸ hg)).comp_sub a
-  rw [zero_add, ← hrad] at h
-  convert h using 2 with z
-  exact evalAt_eq_ofScalarsSum g (z - a)
-
-/-- If `F` has the power series `P` on the open ball of radius `r` about `a`, then the series with
-the coefficients of `P` has radius at least `r`. -/
-theorem _root_.HasFPowerSeriesOnBall.le_radius_mk_coeff {F : K → K}
-    {P : FormalMultilinearSeries K K K} {a : K} {r : ℝ≥0∞} (hF : HasFPowerSeriesOnBall F P a r) :
-    r ≤ (mk P.coeff).radius := by
-  rw [radius_eq_radius_of_norm_eq P fun n ↦ by simp]
-  exact hF.r_le
-
-/-- **Comparison with `HasFPowerSeriesOnBall`, converse.** If `F` has the power series `P` on the
-open ball of radius `r` about `a`, then the series with the coefficients of `P` takes the value
-`F z` at `z - a` for every `z` in that ball. -/
-theorem _root_.HasFPowerSeriesOnBall.evalAt_mk_coeff_sub {F : K → K}
-    {P : FormalMultilinearSeries K K K} {a : K} {r : ℝ≥0∞} (hF : HasFPowerSeriesOnBall F P a r)
-    {z : K} (hz : z ∈ Metric.eball a r) : (mk P.coeff).evalAt (z - a) = F z := by
-  have h := hF.hasSum (y := z - a) (by simpa [eDist_eq_eNorm_sub] using hz)
-  rw [add_sub_cancel] at h
-  rw [evalAt_def, ← h.tsum_eq]
-  simp [mul_comm]
-
-end Field
 
 end PowerSeries

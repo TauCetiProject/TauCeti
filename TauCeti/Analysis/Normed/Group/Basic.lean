@@ -18,7 +18,8 @@ In a seminormed additive group, the squared distance between two points is at mo
 of their squared distances to any third point: the triangle inequality through `c`, squared with
 `(x + y) ^ 2 ≤ 2 (x ^ 2 + y ^ 2)`; likewise the squared norm of a sum of three vectors is at most
 three times the sum of their squared norms. The extended norm satisfies the triangle inequality
-`‖u - w‖ₑ ≤ ‖u - v‖ₑ + ‖v - w‖ₑ`. Through the point `b`, a bound `c ‖a - b‖² ≤ r` with
+`‖u - w‖ₑ ≤ ‖u - v‖ₑ + ‖v - w‖ₑ`, and membership in an open ball of extended radius is an
+extended-norm bound. Through the point `b`, a bound `c ‖a - b‖² ≤ r` with
 `c > 0` bounds `‖a‖²` by `2 / c * r + 2 ‖b‖²`. The reciprocal transform `(1 + ‖x - a‖²)⁻¹` of a
 squared distance is at most `1`.
 
@@ -53,6 +54,7 @@ A point off a finite set stays farther than `ε` from all of its points for ever
   point.
 * `TauCeti.norm_add_add_sq_le_three_mul` -- the squared triangle inequality for three summands.
 * `TauCeti.eNorm_sub_le_eNorm_sub_add_eNorm_sub` -- the triangle inequality for the extended norm.
+* `TauCeti.mem_eball_iff_eNorm` -- `b ∈ eball a r ↔ ‖b - a‖ₑ < r`.
 * `TauCeti.norm_sq_le_of_mul_norm_sub_sq_le` -- `c ‖a - b‖² ≤ r` with `c > 0` bounds `‖a‖²` by
   `2 / c * r + 2 ‖b‖²`.
 * `TauCeti.inv_one_add_norm_sub_sq_le_one` -- the reciprocal transform of a squared distance is at
@@ -104,6 +106,12 @@ extended-norm form of `norm_sub_le_norm_sub_add_norm_sub`. -/
 theorem eNorm_sub_le_eNorm_sub_add_eNorm_sub {G : Type*} [SeminormedAddCommGroup G] (u v w : G) :
     ‖u - w‖ₑ ≤ ‖u - v‖ₑ + ‖v - w‖ₑ := by
   simpa only [eDist_eq_eNorm_sub] using edist_triangle u v w
+
+/-- A point lies in the open ball `Metric.eball a r` of extended radius exactly when its extended
+norm distance to `a` is less than `r`, the extended-radius form of `mem_ball_iff_norm`. -/
+theorem mem_eball_iff_eNorm {E : Type*} [SeminormedAddCommGroup E] {a b : E} {r : ℝ≥0∞} :
+    b ∈ eball a r ↔ ‖b - a‖ₑ < r := by
+  rw [mem_eball, eDist_eq_eNorm_sub]
 
 /-- If `c ‖a - b‖² ≤ r` with `c > 0`, then `‖a‖² ≤ 2 / c * r + 2 ‖b‖²`: the squared triangle
 inequality through `b`. -/
