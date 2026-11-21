@@ -10,7 +10,13 @@ public import Mathlib.Algebra.Polynomial.Monic
 public import TauCeti.Algebra.Order.Ring.IsPowMul
 
 /-!
-# Roots of monic polynomials under nonarchimedean power-multiplicative functions
+# Evaluation of polynomials under nonarchimedean functions
+
+For a nonarchimedean function `f` on a ring that is invariant under negation, such as a valuation
+or a nonarchimedean absolute value or ring seminorm, the leading term of a polynomial `p` dominates
+its value at `t` as soon as it dominates each lower term:
+`f (p.eval t) = f (leadingCoeff p * t ^ natDegree p)`
+(`IsNonarchimedean.apply_eval_eq_leadingCoeff_mul_pow`).
 
 Let `f` be a nonnegative, submultiplicative, power-multiplicative and nonarchimedean function on a
 nontrivial ring `R`, with values in a linearly ordered monoid with zero in which multiplication
@@ -27,6 +33,21 @@ For real-valued `f` with `f 0 = 0`, taking `(d - i)`-th roots gives the root bou
 -/
 
 public section
+
+open Polynomial
+
+/-- **The leading term of a polynomial dominates its value when it dominates each lower term**:
+for a nonarchimedean function `f` on a ring that is invariant under negation, if
+`f (p.coeff i * t ^ i) < f (leadingCoeff p * t ^ natDegree p)` for every `i < natDegree p`, then
+`f (p.eval t) = f (leadingCoeff p * t ^ natDegree p)`. -/
+theorem IsNonarchimedean.apply_eval_eq_leadingCoeff_mul_pow {R Γ : Type*} [Ring R]
+    [LinearOrder Γ] {f : R → Γ} (hf_na : IsNonarchimedean f) (hf_neg : ∀ a, f (-a) = f a)
+    {p : R[X]} {t : R}
+    (hp : ∀ i < p.natDegree, f (p.coeff i * t ^ i) < f (p.leadingCoeff * t ^ p.natDegree)) :
+    f (p.eval t) = f (p.leadingCoeff * t ^ p.natDegree) := by
+  rw [eval_eq_sum_range]
+  exact hf_na.apply_sum_eq_of_lt _ hf_neg (Finset.self_mem_range_succ _) fun j hj hjd ↦
+    hp j ((Finset.mem_range_succ_iff.mp hj).lt_of_ne hjd)
 
 namespace Polynomial.Monic
 
@@ -45,10 +66,13 @@ theorem exists_apply_pow_le_apply_coeff_of_eval_eq_zero [Nontrivial R] (hp : p.M
   set d := p.natDegree
   have hd : 0 < d := natDegree_pos_of_eval₂_root hp.ne_zero (RingHom.id R) hx fun _ ↦ id
   by_contra! h
-  -- Every lower term `aᵢ xⁱ` is strictly smaller than `xᵈ`, which is impossible in the
-  -- ultrametric relation `xᵈ = -∑_{i < d} aᵢ xⁱ`.
+  have hf_neg (a : R) : f (-a) = f a := (hf_pm.map_neg_le hf_nn hf_mul a).antisymm <| by
+    simpa using hf_pm.map_neg_le hf_nn hf_mul (-a)
+  -- Every lower term `aᵢ xⁱ` is strictly smaller than the leading term `xᵈ`, which therefore
+  -- dominates `p.eval x = 0`; but `f 0 ≤ f a₀ < f (xᵈ)` by the ultrametric inequality.
   have hxd0 : 0 < f x ^ d := (hf_nn _).trans_lt (by simpa using h 0 hd)
-  have hterm (i : ℕ) (hi : i < d) : f (p.coeff i * x ^ i) < f x ^ d := by
+  have hterm (i : ℕ) (hi : i < d) : f (p.coeff i * x ^ i) < f (p.leadingCoeff * x ^ d) := by
+    rw [hp.leadingCoeff, one_mul, hf_pm x hd]
     rcases Nat.eq_zero_or_pos i with rfl | hi0
     · simpa using h 0 hi
     have hxi : f (x ^ i) = f x ^ i := hf_pm x hi0
@@ -59,13 +83,10 @@ theorem exists_apply_pow_le_apply_coeff_of_eval_eq_zero [Nontrivial R] (hp : p.M
     calc f (p.coeff i * x ^ i) ≤ f (p.coeff i) * f x ^ i := hxi ▸ hf_mul _ _
       _ < f x ^ (d - i) * f x ^ i := mul_lt_mul_of_pos_right (h i hi) hxi0
       _ = f x ^ d := hpow
-  obtain ⟨i, hi, hsum⟩ := hf_na.finset_image_add_of_nonempty (fun i ↦ p.coeff i * x ^ i)
-    (Finset.nonempty_range_iff.mpr hd.ne')
-  have hxd : x ^ d = -∑ i ∈ Finset.range d, p.coeff i * x ^ i := by
-    rw [eval_eq_sum_range, Finset.sum_range_succ, hp.coeff_natDegree, one_mul] at hx
-    exact eq_neg_of_add_eq_zero_right hx
-  have := (hsum.trans_lt (hterm i (Finset.mem_range.mp hi))).trans_eq (hf_pm x hd).symm
-  rw [hxd] at this
-  exact (this.trans_le (hf_pm.map_neg_le hf_nn hf_mul _)).false
+  have heval := hf_na.apply_eval_eq_leadingCoeff_mul_pow hf_neg hterm
+  rw [hx] at heval
+  have h0 := hf_na (p.coeff 0 * x ^ 0) (-(p.coeff 0 * x ^ 0))
+  rw [add_neg_cancel, hf_neg, max_self] at h0
+  exact (h0.trans_lt (hterm 0 hd)).ne heval
 
 end Polynomial.Monic

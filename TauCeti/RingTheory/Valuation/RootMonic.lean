@@ -16,6 +16,7 @@ import Mathlib.Algebra.Polynomial.Monic
 import Mathlib.Tactic.ComputeDegree
 import Mathlib.Tactic.IntervalCases
 import Mathlib.Tactic.LinearCombination
+import TauCeti.Algebra.Polynomial.Eval.Nonarchimedean
 
 /-!
 # Valuations of roots of monic polynomials
@@ -90,21 +91,14 @@ lemma eq_one_of_mul_eq_one (ha : ν a ≤ 1) (hb : ν b ≤ 1) (hab : ν (a * b)
 
 /-- **The leading term of a polynomial dominates its value when it dominates each lower term**:
 if `ν (p.coeff i) * ν t ^ i < ν (leadingCoeff p) * ν t ^ natDegree p` for every
-`i < natDegree p`, then `ν (p.eval t) = ν (leadingCoeff p) * ν t ^ natDegree p`. -/
+`i < natDegree p`, then `ν (p.eval t) = ν (leadingCoeff p) * ν t ^ natDegree p`. This is the
+valuation form of `IsNonarchimedean.apply_eval_eq_leadingCoeff_mul_pow`. -/
 lemma map_eval_eq_leadingCoeff_mul_pow {p : L[X]}
     (hp : ∀ i < p.natDegree, ν (p.coeff i) * ν t ^ i < ν p.leadingCoeff * ν t ^ p.natDegree) :
     ν (p.eval t) = ν p.leadingCoeff * ν t ^ p.natDegree := by
-  set n := p.natDegree with hn
-  rcases Nat.eq_zero_or_pos n with h0 | h0
-  · simp [eval_eq_sum_range, ← hn, h0, leadingCoeff]
-  have heval : p.eval t = (∑ i ∈ Finset.range n, p.coeff i * t ^ i) + p.leadingCoeff * t ^ n := by
-    rw [eval_eq_sum_range, Finset.sum_range_succ, leadingCoeff]
-  have hlt : ν (∑ i ∈ Finset.range n, p.coeff i * t ^ i) < ν (p.leadingCoeff * t ^ n) := by
-    rw [map_mul, map_pow]
-    refine ν.map_sum_lt (zero_le.trans_lt (hp 0 h0)).ne' fun i hi ↦ ?_
-    rw [map_mul, map_pow]
-    exact hp i (Finset.mem_range.mp hi)
-  rw [heval, ν.map_add_eq_of_lt_right hlt, map_mul, map_pow]
+  have h := IsNonarchimedean.apply_eval_eq_leadingCoeff_mul_pow (f := ν) ν.map_add ν.map_neg
+    (p := p) (t := t) fun i hi ↦ by simpa only [map_mul, map_pow] using hp i hi
+  rwa [map_mul, map_pow] at h
 
 /-- If `p` is monic with coefficients that are integral for the valuation `ν` and `1 < ν t`,
 then the value of `p` at `t` is dominated by the leading term: `ν (p.eval t) = ν t ^ p.natDegree`.

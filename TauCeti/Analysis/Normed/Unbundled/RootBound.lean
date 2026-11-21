@@ -18,9 +18,10 @@ function on a ring `R` with `f 0 = 0`, such as a nonarchimedean power-multiplica
 seminorm, and let `x : R` be a root of a monic polynomial `p = X ^ d + ∑_{i < d} aᵢ X ^ i` over `R`
 itself. Then `f x` is controlled by the coefficients: over every ring,
 
-`f x ≤ max_{i < d} f aᵢ ^ (1 / (d - i))`.
+`f x ≤ ⨆ i < d, f aᵢ ^ (1 / (d - i))`,
 
-Over the zero ring, `d = 0` and the maximum is `0`. Over a nontrivial ring this follows from
+a real supremum over the finitely many `i < d`, which is `0` when `d = 0`. Over the zero ring,
+`d = 0` and `f x = f 0 = 0`. Over a nontrivial ring this follows from
 `Polynomial.Monic.exists_apply_pow_le_apply_coeff_of_eval_eq_zero`, which gives some `i < d`
 with `f x ^ (d - i) ≤ f aᵢ`.
 
@@ -30,11 +31,12 @@ an algebra over it. Here the coefficients and the root live in the same ring, as
 equations used to bound supremum seminorms of affinoid algebras.
 
 Conversely, for a nonarchimedean ring seminorm `f` with `f 1 ≤ 1`, if `p` has `d` roots in a
-domain, counted with multiplicity, then each coefficient is bounded by the largest root:
-`f aᵢ ≤ M ^ (d - i)` whenever `f a ≤ M` for every root `a`. For a power-multiplicative such `f`,
-the two bounds together identify `max_{i < d} f aᵢ ^ (1 / (d - i))` with the largest value of `f`
-on the roots of a split monic polynomial. This adapts the second half of the proof of Mathlib's
-`max_norm_root_eq_spectralValue` ([BGR] §3.1.2, Proposition 1(2)) to ring seminorms.
+domain, counted with multiplicity, then each coefficient is bounded by the values of `f` on the
+roots: `f aᵢ ≤ M ^ (d - i)` whenever `f a ≤ M` for every root `a`. For a power-multiplicative such
+`f` and a split monic polynomial of positive degree `d`, the two bounds together identify the
+supremum `⨆ i < d, f aᵢ ^ (1 / (d - i))` with the largest value of `f` on the roots. This adapts
+the second half of the proof of Mathlib's `max_norm_root_eq_spectralValue` ([BGR] §3.1.2,
+Proposition 1(2)) to ring seminorms.
 
 ## Main results
 
