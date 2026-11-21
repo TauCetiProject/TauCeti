@@ -67,9 +67,11 @@ involution, and the product for `-o₁` is the conjugate of that for `o₁`
 ## Main results
 
 * `CliffordAlgebra.complexProdTensor_ι_one_tmul_toLp`: `c(v, w) = c_V(v) ⊗ 1 + Γ_V ⊗ c_W(w)`.
-* `CliffordAlgebra.complexProdTensor_baseChangeWithLpProdEquiv_symm_tmul` and
-  `CliffordAlgebra.complexProdTensor_baseChangeWithLpProdEquiv_symm_tmul_apply_tmul`: Koszul-signed
-  action of homogeneous graded tensors on `E ⊗ F`.
+* `CliffordAlgebra.complexProdTensor_comp_baseChangeWithLpProdEquiv_symm`,
+  `CliffordAlgebra.complexProdTensor_baseChangeWithLpProdEquiv_symm_tmul`, and
+  `CliffordAlgebra.complexProdTensor_baseChangeWithLpProdEquiv_symm_tmul_apply_tmul`: whole-map
+  and pure-tensor comparison with `CliffordAlgebra.prodEquiv`, giving the Koszul-signed action of
+  homogeneous graded tensors on `E ⊗ F`.
 * `CliffordAlgebra.complexProdTensor_bijective`: the graded tensor product of spinor modules is a
   spinor module.
 * `CliffordAlgebra.complexProdTensor_complexVolume`: for `m` even,
@@ -126,13 +128,6 @@ def complexProdTensor : CliffordAlgebra (Q.baseChange ℂ) →ₐ[ℂ] Module.En
       (map_complexVolume_mul_self o₁ hQ₁ ρ₁) (map_complexVolume_mul_map_ι o₁ hn ρ₁) ρ₂).comp
     (equivOfIsometry ((QuadraticMap.IsometryEquiv.withLpProd hQ).baseChangeProd ℂ)).toAlgHom
 
-private theorem complexProdTensor_apply (x : CliffordAlgebra (Q.baseChange ℂ)) :
-    complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ x =
-      AlgHom.cliffordProdTensor ρ₁ (ρ₁ (complexVolume Q₁ o₁))
-        (map_complexVolume_mul_self o₁ hQ₁ ρ₁) (map_complexVolume_mul_map_ι o₁ hn ρ₁) ρ₂
-        (equivOfIsometry ((QuadraticMap.IsometryEquiv.withLpProd hQ).baseChangeProd ℂ) x) :=
-  (rfl)
-
 /-- `complexProdTensor` factors as `AlgHom.cliffordProdTensor` composed with the scalar-extended
 `WithLp` orthogonal-sum isometry. -/
 theorem complexProdTensor_eq_comp :
@@ -163,15 +158,18 @@ theorem complexProdTensor_ι_one_tmul_toLp_inr (w : W) :
       TensorProduct.map (ρ₁ (complexVolume Q₁ o₁)) (ρ₂ (ι (Q₂.baseChange ℂ) (1 ⊗ₜ w))) := by
   simp [complexProdTensor_ι_one_tmul_toLp]
 
-private theorem complexProdTensor_comp_baseChangeWithLpProdEquiv_symm :
+/-- **Whole-map comparison with Mathlib's `CliffordAlgebra.prodEquiv`.** Pulling back
+`complexProdTensor` along the inverse of `baseChangeWithLpProdEquiv` recovers
+`AlgHom.cliffordProdTensor` composed with `CliffordAlgebra.toProd`. -/
+theorem complexProdTensor_comp_baseChangeWithLpProdEquiv_symm :
     (complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂).comp
         (baseChangeWithLpProdEquiv ℂ hQ).symm.toAlgHom =
       (AlgHom.cliffordProdTensor ρ₁ (ρ₁ (complexVolume Q₁ o₁))
         (map_complexVolume_mul_self o₁ hQ₁ ρ₁) (map_complexVolume_mul_map_ι o₁ hn ρ₁) ρ₂).comp
         (toProd (Q₁.baseChange ℂ) (Q₂.baseChange ℂ)) :=
   AlgHom.ext fun x ↦ by
-    simp [-equivOfIsometry_apply, -equivOfIsometry_symm, complexProdTensor_apply,
-      baseChangeWithLpProdEquiv_symm_apply]
+    simp only [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, complexProdTensor_eq_comp,
+      baseChangeWithLpProdEquiv_symm_apply, AlgEquiv.apply_symm_apply]
 
 /-- **Comparison with Mathlib's `CliffordAlgebra.prodEquiv`.** Under
 `baseChangeWithLpProdEquiv`, a pure tensor `a ᵍ⊗ b` with `b` of parity `j` acts on `E ⊗ F` by
@@ -211,15 +209,11 @@ theorem complexProdTensor_bijective [FiniteDimensional ℝ W]
     Function.Bijective (complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂) := by
   have : Module.Finite ℂ E := Module.Finite.of_surjective_end ρ₁ hρ₁.surjective
   have : Module.Finite ℂ F := Module.Finite.of_surjective_end ρ₂ hρ₂.surjective
-  have hbij : Function.Bijective
-      ((complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂).comp
-        (baseChangeWithLpProdEquiv ℂ hQ).symm.toAlgHom) := by
-    rw [complexProdTensor_comp_baseChangeWithLpProdEquiv_symm hQ o₁ hQ₁ hn ρ₁ ρ₂]
-    exact (AlgHom.cliffordProdTensor_bijective ρ₁ (ρ₁ (complexVolume Q₁ o₁))
-      (map_complexVolume_mul_self o₁ hQ₁ ρ₁) (map_complexVolume_mul_map_ι o₁ hn ρ₁) ρ₂
-      hρ₁ hρ₂).comp (prodEquiv (Q₁.baseChange ℂ) (Q₂.baseChange ℂ)).symm.bijective
-  convert hbij.comp (baseChangeWithLpProdEquiv ℂ hQ).bijective
-  ext a z; simp
+  rw [complexProdTensor_eq_comp, AlgHom.coe_comp]
+  exact (AlgHom.cliffordProdTensor_bijective ρ₁ (ρ₁ (complexVolume Q₁ o₁))
+    (map_complexVolume_mul_self o₁ hQ₁ ρ₁) (map_complexVolume_mul_map_ι o₁ hn ρ₁) ρ₂
+    hρ₁ hρ₂).comp
+    (equivOfIsometry ((QuadraticMap.IsometryEquiv.withLpProd hQ).baseChangeProd ℂ)).bijective
 
 variable [FiniteDimensional ℝ W] {m : ℕ} [Fact (finrank ℝ W = m)] (o₂ : Orientation ℝ W (Fin m))
   [Fact (finrank ℝ (WithLp 2 (V × W)) = n + m)] (o : Orientation ℝ (WithLp 2 (V × W)) (Fin (n + m)))
@@ -267,8 +261,9 @@ private theorem complexProdTensor_complexVolume_eq_map (b₁ : OrthonormalBasis 
   -- Split the frame product of `V ⊕ W` into its `V` block and its `W` block.
   rw [complexVolume_eq o _ ho hQb, hl, List.map_append, List.prod_append]
   -- Move each block into its summand, where the two Clifford algebras act.
-  rw [map_smul, complexProdTensor_apply, map_mul, h₁, h₂]
-  simp only [map_mul, AlgHom.cliffordProdTensor_map_inl, AlgHom.cliffordProdTensor_map_inr_prod,
+  rw [map_smul, complexProdTensor_eq_comp, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
+    map_mul, map_mul, h₁, h₂]
+  simp only [AlgHom.cliffordProdTensor_map_inl, AlgHom.cliffordProdTensor_map_inr_prod,
     LinearMap.rTensor, ← Module.End.one_eq_id, ← TensorProduct.map_mul, one_mul]
   simp [List.map_map, Function.comp_def]
 
@@ -328,7 +323,7 @@ theorem lTensor_complexVolume_mul_complexProdTensor (hm : Even m)
     (x : CliffordAlgebra (Q.baseChange ℂ)) :
     (ρ₂ (complexVolume Q₂ o₂)).lTensor E * complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ x =
       complexProdTensor hQ (-o₁) hQ₁ hn ρ₁ ρ₂ x * (ρ₂ (complexVolume Q₂ o₂)).lTensor E := by
-  rw [complexProdTensor_apply, complexProdTensor_apply]
+  rw [complexProdTensor_eq_comp, complexProdTensor_eq_comp, AlgHom.comp_apply, AlgHom.comp_apply]
   exact AlgHom.lTensor_mul_cliffordProdTensor_of_eq_neg _ _ _ _ _ _ _ ρ₂
     (map_complexVolume_mul_map_ι o₂ hm ρ₂) (by rw [complexVolume_neg_orientation, map_neg]) _
 
@@ -341,7 +336,7 @@ theorem complexProdTensor_neg_orientation (hQ₂ : ∀ w, Q₂ w = -‖w‖ ^ 2)
     complexProdTensor hQ (-o₁) hQ₁ hn ρ₁ ρ₂ x =
       (ρ₂ (complexVolume Q₂ o₂)).lTensor E * complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ x *
         (ρ₂ (complexVolume Q₂ o₂)).lTensor E := by
-  rw [complexProdTensor_apply, complexProdTensor_apply]
+  rw [complexProdTensor_eq_comp, complexProdTensor_eq_comp, AlgHom.comp_apply, AlgHom.comp_apply]
   exact AlgHom.cliffordProdTensor_of_eq_neg _ _ _ _ _ _ _ ρ₂
     (map_complexVolume_mul_map_ι o₂ hm ρ₂) (map_complexVolume_mul_self o₂ hQ₂ ρ₂)
     (by rw [complexVolume_neg_orientation, map_neg]) _

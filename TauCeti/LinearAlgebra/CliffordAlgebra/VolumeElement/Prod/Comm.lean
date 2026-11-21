@@ -5,11 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Eigenspace
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Prod.Orientation
 public import TauCeti.LinearAlgebra.Eigenspace.TensorProduct.Comm
 public import TauCeti.LinearAlgebra.Orientation.WithLp
-public import TauCeti.LinearAlgebra.QuadraticForm.WithLp
+import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
 import TauCeti.LinearAlgebra.CliffordAlgebra.Prod.Comm
 
 /-!
@@ -72,27 +71,11 @@ theorem koszulComm_complexProdTensor
         (map ((QuadraticMap.IsometryEquiv.withLpProdComm hQ_VW hQ_WV).toIsometry.baseChange ℂ) a)
         (K z) := by
   intro K
-  have hisom :
-      ((QuadraticMap.IsometryEquiv.withLpProd hQ_WV).baseChangeProd ℂ).toIsometry.comp
-          ((QuadraticMap.IsometryEquiv.withLpProdComm hQ_VW hQ_WV).toIsometry.baseChange ℂ) =
-        (QuadraticMap.IsometryEquiv.prodComm (Q₁.baseChange ℂ) (Q₂.baseChange ℂ)).toIsometry.comp
-          ((QuadraticMap.IsometryEquiv.withLpProd hQ_VW).baseChangeProd ℂ).toIsometry := by
-    refine QuadraticMap.Isometry.ext fun y ↦ ?_
-    induction y using TensorProduct.inductionOn with
-    | tmul c x =>
-      rcases x with ⟨⟨v, w⟩⟩
-      simp [QuadraticMap.Isometry.baseChange_tmul,
-        QuadraticMap.IsometryEquiv.baseChangeProd_tmul]
-    | add a b ha hb => simp only [map_add, ha, hb]
-  have hmap :
-      equivOfIsometry ((QuadraticMap.IsometryEquiv.withLpProd hQ_WV).baseChangeProd ℂ)
-          (map ((QuadraticMap.IsometryEquiv.withLpProdComm hQ_VW hQ_WV).toIsometry.baseChange ℂ)
-            a) =
-        map (QuadraticMap.IsometryEquiv.prodComm (Q₁.baseChange ℂ) (Q₂.baseChange ℂ)).toIsometry
-          (equivOfIsometry ((QuadraticMap.IsometryEquiv.withLpProd hQ_VW).baseChangeProd ℂ) a) := by
-    simp only [equivOfIsometry_apply, ← AlgHom.comp_apply, map_comp_map, hisom]
   rw [complexProdTensor_eq_comp, complexProdTensor_eq_comp, AlgHom.comp_apply,
-    AlgEquiv.coe_toAlgHom, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, hmap]
+    AlgEquiv.coe_toAlgHom, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, equivOfIsometry_apply,
+    equivOfIsometry_apply,
+    map_map_of_comp_eq
+      (QuadraticMap.IsometryEquiv.withLpProdComm_toIsometry_baseChange ℂ hQ_VW hQ_WV)]
   exact AlgHom.koszulComm_cliffordProdTensor ρ₁ (ρ₁ (complexVolume Q₁ o₁))
     (ρ₁.involutive_complexVolume o₁ hQ₁) (map_complexVolume_mul_map_ι o₁ hn ρ₁)
     ρ₂ (ρ₂ (complexVolume Q₂ o₂)) (ρ₂.involutive_complexVolume o₂ hQ₂)

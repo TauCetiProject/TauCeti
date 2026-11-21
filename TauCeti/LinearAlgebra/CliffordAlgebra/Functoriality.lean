@@ -27,6 +27,8 @@ Clifford algebra is faithful.
 
 ## Main results
 
+* `CliffordAlgebra.map_map_of_comp_eq` lifts commuting squares of quadratic isometries to
+  Clifford-algebra maps.
 * `CliffordAlgebra.map_involute` proves naturality of the grade involution.
 * `CliffordAlgebra.map_reverse` proves naturality of Clifford reversal.
 * `CliffordAlgebra.map_star` proves naturality of Clifford conjugation.
@@ -66,6 +68,16 @@ variable {R : Type u} [CommRing R]
   {M₁ : Type v} [AddCommGroup M₁] [Module R M₁]
   {M₂ : Type w} [AddCommGroup M₂] [Module R M₂]
   {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂}
+
+/-- Commuting squares of quadratic isometries lift to commuting squares of Clifford-algebra
+maps: if `g₂.comp f₁ = f₂.comp g₁`, then `map g₂ (map f₁ a) = map f₂ (map g₁ a)`. -/
+theorem map_map_of_comp_eq
+    {M₁' : Type*} [AddCommGroup M₁'] [Module R M₁'] {Q₁' : QuadraticForm R M₁'}
+    {M₂' : Type*} [AddCommGroup M₂'] [Module R M₂'] {Q₂' : QuadraticForm R M₂'}
+    {f₁ : Q₁ →qᵢ Q₁'} {g₁ : Q₁ →qᵢ Q₂} {f₂ : Q₂ →qᵢ Q₂'} {g₂ : Q₁' →qᵢ Q₂'}
+    (h : g₂.comp f₁ = f₂.comp g₁) (a : CliffordAlgebra Q₁) :
+    map g₂ (map f₁ a) = map f₂ (map g₁ a) := by
+  rw [← AlgHom.comp_apply, ← AlgHom.comp_apply, map_comp_map, map_comp_map, h]
 
 /-- The grade involution commutes with the algebra map induced by a quadratic isometry. -/
 @[simp]

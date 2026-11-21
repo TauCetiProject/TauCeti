@@ -57,8 +57,9 @@ the positive orientation and `-1` for the negative one.
   `CliffordAlgebra.complexVolume_mul_self_of_forall_eq_zero`: `Γ² = 0` for the zero form in
   positive dimension.
 * `CliffordAlgebra.complexVolume_smul_complexVolume_smul`,
-  `CliffordAlgebra.lsmul_complexVolume_involutive`: `Γ` acts as an involution on every module, and
-  `CliffordAlgebra.map_complexVolume_mul_self`: in every representation.
+  `CliffordAlgebra.lsmul_complexVolume_involutive`: `Γ` acts as an involution on every module,
+  `CliffordAlgebra.map_complexVolume_mul_self` and `AlgHom.involutive_complexVolume`: in every
+  representation.
 * `CliffordAlgebra.conjStar_complexVolume`: `Γ` is fixed by the conjugate-linear Clifford
   involution, while `CliffordAlgebra.star_complexVolume` computes the complex-linear Clifford
   conjugation `star Γ = (-1) ^ ⌊(n + 1) / 2⌋ Γ`; in dimension `2ℓ` this is `(-1) ^ ℓ Γ`.
@@ -346,3 +347,19 @@ theorem complexVolume_mul_mul_complexVolume (hn : Even n) (x : CliffordAlgebra (
 end Form
 
 end CliffordAlgebra
+
+namespace AlgHom
+
+open CliffordAlgebra Module.End
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+  {n : ℕ} [Fact (finrank ℝ V = n)] {Q : QuadraticForm ℝ V} {S : Type*} [AddCommGroup S]
+  [Module ℂ S] (ρ : CliffordAlgebra (Q.baseChange ℂ) →ₐ[ℂ] Module.End ℂ S)
+  (o : Orientation ℝ V (Fin n)) (hQ : ∀ v, Q v = -‖v‖ ^ 2)
+include hQ
+
+/-- For `Q v = -‖v‖²`, the element `Γ` acts as an involution in every representation. -/
+theorem involutive_complexVolume : Function.Involutive (ρ (complexVolume Q o)) := fun s ↦ by
+  rw [← mul_apply_eq_comp, map_complexVolume_mul_self o hQ ρ, one_apply_eq_self]
+
+end AlgHom

@@ -45,7 +45,7 @@ and `ρ₁`, `ρ₂` are bijective onto `End E` and `End F`, the graded product 
 
 For the spinor modules of oriented even-dimensional Euclidean spaces, `γ` is the chirality
 operator, and the normalized volume element of `V ⊕ W` then acts by the tensor grading; see
-`TauCeti/LinearAlgebra/CliffordAlgebra/VolumeElement/Prod.lean`.
+`TauCeti/LinearAlgebra/CliffordAlgebra/VolumeElement/Prod/Basic.lean`.
 
 ## Main definitions
 
@@ -285,14 +285,16 @@ theorem cliffordProdTensor_bijective [Module.Finite R E] [Module.Projective R E]
   let e₁ : CliffordAlgebra (Q₁.prod Q₂) ≃ₗ[R] CliffordAlgebra Q₁ ⊗[R] CliffordAlgebra Q₂ :=
     (CliffordAlgebra.prodEquiv Q₁ Q₂).toLinearEquiv.trans
       (GradedTensorProduct.of R (evenOdd Q₁) (evenOdd Q₂)).symm
+  let hρ₁' : Function.Bijective ρ₁.toLinearMap := hρ₁
+  let hρ₂' : Function.Bijective ρ₂.toLinearMap := hρ₂
   -- Assemble the equivalence `CliffordAlgebra (Q₁.prod Q₂) ≃ₗ[R] End_R (E ⊗ F)` by untwisting the
   -- odd summand of `CliffordAlgebra Q₂` by `rγ` and applying `homTensorHomEquiv`.
   let Ψ : CliffordAlgebra (Q₁.prod Q₂) ≃ₗ[R] Module.End R (E ⊗[R] F) :=
-    e₁ ≪≫ₗ TensorProduct.congr (LinearEquiv.ofBijective ρ₁.toLinearMap hρ₁) s₂.symm ≪≫ₗ
+    e₁ ≪≫ₗ TensorProduct.congr (LinearEquiv.ofBijective ρ₁.toLinearMap hρ₁') s₂.symm ≪≫ₗ
       TensorProduct.prodRight R R (Module.End R E) (evenOdd Q₂ 0) (evenOdd Q₂ 1) ≪≫ₗ
       LinearEquiv.prodCongr (.refl R _) (rγ.rTensor (evenOdd Q₂ 1)) ≪≫ₗ
       (TensorProduct.prodRight R R (Module.End R E) (evenOdd Q₂ 0) (evenOdd Q₂ 1)).symm ≪≫ₗ
-      TensorProduct.congr (.refl R _) (s₂.trans (LinearEquiv.ofBijective ρ₂.toLinearMap hρ₂)) ≪≫ₗ
+      TensorProduct.congr (.refl R _) (s₂.trans (LinearEquiv.ofBijective ρ₂.toLinearMap hρ₂')) ≪≫ₗ
       homTensorHomEquiv R E F E F
   have hlin : (cliffordProdTensor ρ₁ γ hγ hγρ ρ₂).toLinearMap = Ψ.toLinearMap := by
     refine e₁.symm.surjective.injective_linearMapComp_right (TensorProduct.ext' fun a b ↦ ?_)
@@ -300,11 +302,10 @@ theorem cliffordProdTensor_bijective [Module.Finite R E] [Module.Projective R E]
     have hb : b = s₂ (b₀, 0) + s₂ (0, b₁) := by
       rw [← map_add, Prod.mk_add_mk, add_zero, zero_add, ← hbb, s₂.apply_symm_apply]
     have he₁_symm (x : CliffordAlgebra Q₁) (y : CliffordAlgebra Q₂) :
-        e₁.symm (x ⊗ₜ y) = toProd Q₁ Q₂ (x ᵍ⊗ₜ y) := rfl
+        e₁.symm (x ⊗ₜ y) = toProd Q₁ Q₂ (x ᵍ⊗ₜ y) := by
+      simp [e₁]
     have hs₀ : s₂ (b₀, 0) = (b₀ : CliffordAlgebra Q₂) := by simp [s₂]
     have hs₁ : s₂ (0, b₁) = (b₁ : CliffordAlgebra Q₂) := by simp [s₂]
-    have hρ₁_eq x : LinearEquiv.ofBijective ρ₁.toLinearMap hρ₁ x = ρ₁ x := rfl
-    have hρ₂_eq y : LinearEquiv.ofBijective ρ₂.toLinearMap hρ₂ y = ρ₂ y := rfl
     rw [hb, tmul_add, map_add, map_add]
     congr 1
     · rw [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap, he₁_symm, AlgHom.toLinearMap_apply,
@@ -314,7 +315,7 @@ theorem cliffordProdTensor_bijective [Module.Finite R E] [Module.Projective R E]
         simpa using prodRight_symm_tmul R R (Module.End R E) (evenOdd Q₂ 0) (evenOdd Q₂ 1)
           (ρ₁ a) b₀ 0
       ext e f'
-      simp [Ψ, rγ, ZMod.val_zero, hρ₁_eq, hρ₂_eq, s₂.symm_apply_eq.mpr hs₀.symm, hp₀, hs₀]
+      simp [Ψ, rγ, ZMod.val_zero, s₂.symm_apply_eq.mpr hs₀.symm, hp₀, hs₀]
     · rw [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap, he₁_symm, AlgHom.toLinearMap_apply,
         hs₁, cliffordProdTensor_toProd_tmul ρ₁ γ hγ hγρ ρ₂ a b₁.property, ← hs₁]
       have hp₁ : (prodRight R R (Module.End R E) (evenOdd Q₂ 0) (evenOdd Q₂ 1)).symm
@@ -322,8 +323,7 @@ theorem cliffordProdTensor_bijective [Module.Finite R E] [Module.Projective R E]
         simpa using prodRight_symm_tmul R R (Module.End R E) (evenOdd Q₂ 0) (evenOdd Q₂ 1)
           (ρ₁ a * γ) 0 b₁
       ext e f'
-      simp [Ψ, rγ, show (1 : ZMod 2).val = 1 from rfl, hρ₁_eq, hρ₂_eq,
-        s₂.symm_apply_eq.mpr hs₁.symm, hp₁, hs₁]
+      simp [Ψ, rγ, ZMod.val_one_eq_one_mod, s₂.symm_apply_eq.mpr hs₁.symm, hp₁, hs₁]
   exact congrArg DFunLike.coe hlin ▸ Ψ.bijective
 
 end AlgHom

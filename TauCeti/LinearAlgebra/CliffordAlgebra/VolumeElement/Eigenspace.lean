@@ -356,10 +356,6 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDim
   (o : Orientation ℝ V (Fin n)) (hQ : ∀ v, Q v = -‖v‖ ^ 2)
 include hQ
 
-/-- For `Q v = -‖v‖²`, the element `Γ` acts as an involution in every representation. -/
-theorem involutive_complexVolume : Function.Involutive (ρ (complexVolume Q o)) := fun s ↦ by
-  rw [← mul_apply_eq_comp, map_complexVolume_mul_self o hQ ρ, one_apply_eq_self]
-
 /-- **The chirality decomposition of a representation**: for `Q v = -‖v‖²`, the `1`- and
 `-1`-eigenspaces of `ρ(Γ)` are complementary. -/
 theorem isCompl_eigenspace_complexVolume :

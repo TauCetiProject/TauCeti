@@ -154,13 +154,12 @@ theorem finrank_eigenspace_complexProdTensor_complexVolume_of_bijective
       a • z = complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ a z := rfl
   have : IsScalarTower ℂ (CliffordAlgebra (Q.baseChange ℂ)) (E ⊗[ℂ] F) :=
     ⟨fun c a z ↦ by rw [hsmul, hsmul, map_smul, LinearMap.smul_apply]⟩
-  have hQ_norm (x : WithLp 2 (V × W)) : Q x = -‖x‖ ^ 2 := by
-    rw [hQ x, hQ₁, hQ₂, WithLp.prod_norm_sq_eq_of_L2]; dsimp only [WithLp.fst, WithLp.snd]; ring
   have hlsmul : (Algebra.lsmul ℂ ℂ (E ⊗[ℂ] F) :
       CliffordAlgebra (Q.baseChange ℂ) →ₐ[ℂ] Module.End ℂ (E ⊗[ℂ] F)) =
       complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ := by ext a z; rfl
   rw [← hlsmul]
-  exact finrank_eigenspace_complexVolume_of_bijective_lsmul o hQ_norm
+  exact finrank_eigenspace_complexVolume_of_bijective_lsmul o
+    (QuadraticForm.withLpProd_eq_neg_norm_sq hQ hQ₁ hQ₂)
     (hlsmul.symm ▸ complexProdTensor_bijective hQ o₁ hQ₁ hn ρ₁ ρ₂ hρ₁ hρ₂) hnm hμ
 
 end HalfSpin

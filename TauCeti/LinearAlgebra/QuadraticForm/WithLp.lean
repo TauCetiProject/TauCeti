@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.QuadraticForm.Prod
+public import Mathlib.Analysis.Normed.Lp.ProdLp
 public import TauCeti.Analysis.Normed.Lp.WithLp
+public import TauCeti.LinearAlgebra.QuadraticForm.BaseChange
 public import TauCeti.LinearAlgebra.QuadraticForm.Prod
 
 /-!
@@ -15,7 +16,9 @@ public import TauCeti.LinearAlgebra.QuadraticForm.Prod
 When `Q` on `WithLp p (M₁ × M₂)` decomposes as `Q x = Q₁ x.1 + Q₂ x.2`, `WithLp.linearEquiv`
 identifies `Q` with `Q₁.prod Q₂`, and the structural equivalences of binary `WithLp` products
 (swap, associator, and projection away from a subsingleton summand) are quadratic isometries. No
-metric assumption is needed for the isometries.
+metric assumption is needed for the isometries or for their scalar-extension compatibility laws
+with `QuadraticMap.IsometryEquiv.uniqueProd`, `prodUnique`, `prodComm`, and `prodAssoc`. For
+`p = 2`, the `L²` norm formula gives `Q x = -‖x‖ ^ 2` from the factors' formulas.
 
 ## Main definitions
 
@@ -24,6 +27,16 @@ metric assumption is needed for the isometries.
 * `QuadraticMap.IsometryEquiv.withLpProdAssoc`: `Q_L.IsometryEquiv Q_R` reassociating triple sums.
 * `QuadraticMap.IsometryEquiv.withLpSubsingletonProd` and
   `QuadraticMap.IsometryEquiv.withLpProdSubsingleton`: deleting a subsingleton summand.
+
+## Main results
+
+* `QuadraticMap.IsometryEquiv.withLpSubsingletonProd_toIsometry_baseChange`,
+  `QuadraticMap.IsometryEquiv.withLpProdSubsingleton_toIsometry_baseChange`,
+  `QuadraticMap.IsometryEquiv.withLpProdComm_toIsometry_baseChange`, and
+  `QuadraticMap.IsometryEquiv.withLpProdAssoc_toIsometry_baseChange`: compatibility of the
+  structural `WithLp` isometries with `baseChange` and `baseChangeProd`.
+* `QuadraticForm.withLpProd_eq_neg_norm_sq` and
+  `QuadraticForm.eq_neg_norm_sq_of_subsingleton`: `L²` negative-norm-squared formulas.
 -/
 
 public section
@@ -165,4 +178,109 @@ end Assoc
 
 end Algebraic
 
+section BaseChange
+
+open scoped TensorProduct
+
+variable {p : ℝ≥0∞} {R : Type*} (A : Type*) [CommRing R] [Invertible (2 : R)]
+  [CommRing A] [Algebra R A]
+  {M₁ M₂ M₃ : Type*} [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂]
+  [AddCommGroup M₃] [Module R M₃]
+  {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂} {Q₃ : QuadraticForm R M₃}
+
+/-- Scalar extension of `withLpSubsingletonProd` commutes with `baseChangeProd` and `uniqueProd`. -/
+theorem withLpSubsingletonProd_toIsometry_baseChange
+    {Q : QuadraticForm R (WithLp p (M₁ × M₂))}
+    (hQ : ∀ x, Q x = Q₁ (WithLp.ofLp x).1 + Q₂ (WithLp.ofLp x).2)
+    (hM₁ : Subsingleton M₁) [Unique (A ⊗[R] M₁)] :
+    (uniqueProd (Q₁.baseChange A) (Q₂.baseChange A)).toIsometry.comp
+        ((withLpProd hQ).baseChangeProd A).toIsometry =
+      (withLpSubsingletonProd hQ hM₁).toIsometry.baseChange A :=
+  QuadraticMap.Isometry.ext fun y ↦
+    DFunLike.congr_fun (TensorProduct.AlgebraTensorModule.ext fun c x ↦ by
+      rcases x with ⟨⟨v, w⟩⟩
+      simp [baseChangeProd_tmul]) y
+
+/-- Scalar extension of `withLpProdSubsingleton` commutes with `baseChangeProd` and `prodUnique`. -/
+theorem withLpProdSubsingleton_toIsometry_baseChange
+    {Q : QuadraticForm R (WithLp p (M₁ × M₂))}
+    (hQ : ∀ x, Q x = Q₁ (WithLp.ofLp x).1 + Q₂ (WithLp.ofLp x).2)
+    (hM₂ : Subsingleton M₂) [Unique (A ⊗[R] M₂)] :
+    (prodUnique (Q₁.baseChange A) (Q₂.baseChange A)).toIsometry.comp
+        ((withLpProd hQ).baseChangeProd A).toIsometry =
+      (withLpProdSubsingleton hQ hM₂).toIsometry.baseChange A :=
+  QuadraticMap.Isometry.ext fun y ↦
+    DFunLike.congr_fun (TensorProduct.AlgebraTensorModule.ext fun c x ↦ by
+      rcases x with ⟨⟨v, w⟩⟩
+      simp [baseChangeProd_tmul]) y
+
+/-- Scalar extension of `withLpProdComm` commutes with `baseChangeProd` and `prodComm`. -/
+theorem withLpProdComm_toIsometry_baseChange
+    {Q₁₂ : QuadraticForm R (WithLp p (M₁ × M₂))} {Q₂₁ : QuadraticForm R (WithLp p (M₂ × M₁))}
+    (hQ₁₂ : ∀ x, Q₁₂ x = Q₁ (WithLp.ofLp x).1 + Q₂ (WithLp.ofLp x).2)
+    (hQ₂₁ : ∀ y, Q₂₁ y = Q₂ (WithLp.ofLp y).1 + Q₁ (WithLp.ofLp y).2) :
+    ((withLpProd hQ₂₁).baseChangeProd A).toIsometry.comp
+        ((withLpProdComm hQ₁₂ hQ₂₁).toIsometry.baseChange A) =
+      (prodComm (Q₁.baseChange A) (Q₂.baseChange A)).toIsometry.comp
+        ((withLpProd hQ₁₂).baseChangeProd A).toIsometry :=
+  QuadraticMap.Isometry.ext fun y ↦
+    DFunLike.congr_fun (TensorProduct.AlgebraTensorModule.ext fun c x ↦ by
+      rcases x with ⟨⟨v, w⟩⟩
+      simp [baseChangeProd_tmul]) y
+
+/-- Scalar extension of `withLpProdAssoc` commutes with `baseChangeProd` and `prodAssoc`. -/
+theorem withLpProdAssoc_toIsometry_baseChange
+    {Q₁₂ : QuadraticForm R (WithLp p (M₁ × M₂))}
+    {Q₂₃ : QuadraticForm R (WithLp p (M₂ × M₃))}
+    {Q_L : QuadraticForm R (WithLp p (WithLp p (M₁ × M₂) × M₃))}
+    {Q_R : QuadraticForm R (WithLp p (M₁ × WithLp p (M₂ × M₃)))}
+    (hQ₁₂ : ∀ x, Q₁₂ x = Q₁ (WithLp.ofLp x).1 + Q₂ (WithLp.ofLp x).2)
+    (hQ₂₃ : ∀ x, Q₂₃ x = Q₂ (WithLp.ofLp x).1 + Q₃ (WithLp.ofLp x).2)
+    (hQ_L : ∀ x, Q_L x = Q₁₂ (WithLp.ofLp x).1 + Q₃ (WithLp.ofLp x).2)
+    (hQ_R : ∀ x, Q_R x = Q₁ (WithLp.ofLp x).1 + Q₂₃ (WithLp.ofLp x).2) :
+    (prodAssoc (Q₁.baseChange A) (Q₂.baseChange A) (Q₃.baseChange A)).toIsometry.comp
+        ((((withLpProd hQ₁₂).baseChangeProd A).toIsometry.prodMap
+            (QuadraticMap.Isometry.id (Q₃.baseChange A))).comp
+          ((withLpProd hQ_L).baseChangeProd A).toIsometry) =
+      (((QuadraticMap.Isometry.id (Q₁.baseChange A)).prodMap
+            ((withLpProd hQ₂₃).baseChangeProd A).toIsometry).comp
+          ((withLpProd hQ_R).baseChangeProd A).toIsometry).comp
+        ((withLpProdAssoc hQ₁₂ hQ₂₃ hQ_L hQ_R).toIsometry.baseChange A) :=
+  QuadraticMap.Isometry.ext fun y ↦
+    DFunLike.congr_fun (TensorProduct.AlgebraTensorModule.ext fun c x ↦ by
+      rcases x with ⟨⟨⟨⟨u, v⟩⟩, w⟩⟩
+      simp [baseChangeProd_tmul]) y
+
+end BaseChange
+
 end QuadraticMap.IsometryEquiv
+
+namespace QuadraticForm
+
+section L2
+
+/-- If `Q` on `WithLp 2 (V × W)` decomposes as `Q (v, w) = Q₁ v + Q₂ w` with `Q₁ v = -‖v‖ ^ 2`
+and `Q₂ w = -‖w‖ ^ 2`, then `Q x = -‖x‖ ^ 2`. -/
+theorem withLpProd_eq_neg_norm_sq
+    {V W : Type*} [SeminormedAddCommGroup V] [Module ℝ V]
+    [SeminormedAddCommGroup W] [Module ℝ W]
+    {Q₁ : QuadraticForm ℝ V} {Q₂ : QuadraticForm ℝ W} {Q : QuadraticForm ℝ (WithLp 2 (V × W))}
+    (hQ : ∀ x, Q x = Q₁ (WithLp.ofLp x).1 + Q₂ (WithLp.ofLp x).2)
+    (hQ₁ : ∀ v, Q₁ v = -‖v‖ ^ 2) (hQ₂ : ∀ w, Q₂ w = -‖w‖ ^ 2)
+    (x : WithLp 2 (V × W)) : Q x = -‖x‖ ^ 2 := by
+  rw [hQ x, hQ₁, hQ₂, WithLp.prod_norm_sq_eq_of_L2]
+  dsimp only [WithLp.fst, WithLp.snd]
+  ring
+
+/-- On a subsingleton normed space, every real quadratic form satisfies `Q v = -‖v‖ ^ 2`. -/
+theorem eq_neg_norm_sq_of_subsingleton
+    {V : Type*} [SeminormedAddCommGroup V] [Module ℝ V] [Subsingleton V]
+    (Q : QuadraticForm ℝ V) (v : V) :
+    Q v = -‖v‖ ^ 2 := by
+  rw [Subsingleton.elim v 0, map_zero, norm_zero]
+  ring
+
+end L2
+
+end QuadraticForm
+
