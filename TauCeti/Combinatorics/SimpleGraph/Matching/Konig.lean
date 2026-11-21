@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.SimpleGraph.Matching.Basic
-public import TauCeti.Combinatorics.SimpleGraph.VertexCover
 
 import Mathlib.Combinatorics.SimpleGraph.Hall
 import TauCeti.Combinatorics.Graph.Bipartition

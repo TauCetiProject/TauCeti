@@ -5,7 +5,6 @@ Authors: Claude
 -/
 module
 
-public import Mathlib.Combinatorics.SimpleGraph.Maps
 public import Mathlib.Combinatorics.SimpleGraph.Subgraph
 
 /-!

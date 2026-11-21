@@ -37,11 +37,11 @@ Mathlib's `SimpleGraph.vertexCoverNum`:
   matching whose edge set has `encard` at least that of every matching of `G`. Unconditionally, a
   matching is maximum if and only if its edge-set `encard` equals `G.matchingNum`; every perfect
   matching is automatically maximum, even on an infinite vertex type.
-* **Optimality certificates**: whenever equality holds for a matching `M` and a vertex cover `c`,
-  `M` is a maximum matching
+* **Optimality certificates**: whenever `M.edgeSet.encard = c.encard` in `ℕ∞` for a matching `M`
+  and a vertex cover `c`, `M` is a maximum matching
   (`SimpleGraph.Subgraph.IsMatching.isMaximumMatching_of_encard_edgeSet_eq`) and `c` is a minimum
   vertex cover (`SimpleGraph.IsVertexCover.isMinimumVertexCover_of_encard_eq`), with `Set.ncard`
-  forms for finite covers.
+  forms for finite covers (`c.Finite`).
 
 ## Main definitions
 
@@ -173,8 +173,7 @@ theorem IsMatching.ncard_verts (hM : M.IsMatching) :
   have hb : Nat.card Bool = 2 := by simp
   rw [hb, mul_comm]
 
-/-- Twice the number of edges of a matching is at most the number of vertices of the ambient
-graph. -/
+/-- Twice `Set.encard` of the edge set of a matching is at most `ENat.card V`. -/
 theorem IsMatching.two_mul_encard_edgeSet_le_card (hM : M.IsMatching) :
     2 * M.edgeSet.encard ≤ ENat.card V := by
   rw [← hM.encard_verts]
@@ -187,7 +186,7 @@ theorem IsMatching.finite_verts_iff (hM : M.IsMatching) : M.verts.Finite ↔ M.e
     (ENat.mul_right_strictMono (a := 2) (by simp) (by simp)).lt_iff_lt
       (a := M.edgeSet.encard) (b := ⊤)
 
-/-- Twice the number of edges of a perfect matching equals the cardinality of the vertex type. -/
+/-- Twice `Set.encard` of the edge set of a perfect matching equals `ENat.card V`. -/
 theorem IsPerfectMatching.two_mul_encard_edgeSet (hM : M.IsPerfectMatching) :
     2 * M.edgeSet.encard = ENat.card V := by
   rw [← hM.1.encard_verts, hM.2.verts_eq_univ, Set.encard_univ]
@@ -470,7 +469,7 @@ theorem two_mul_matchingNum_le_card : 2 * G.matchingNum ≤ ENat.card V := by
   rw [← hM.encard_verts]
   exact Set.encard_le_card
 
-/-- The matching number is at most the cardinality of the vertex type. -/
+/-- The matching number `G.matchingNum` (defined via `Set.encard`) is at most `ENat.card V`. -/
 theorem matchingNum_le_card : G.matchingNum ≤ ENat.card V :=
   (le_mul_of_one_le_left zero_le one_le_two).trans two_mul_matchingNum_le_card
 
@@ -529,7 +528,8 @@ namespace Subgraph
 variable {M M' : G.Subgraph}
 
 /-- A subgraph `M` of `G` is a *maximum matching* if it is a matching whose edge set has
-cardinality at least that of every matching of `G`. -/
+extended cardinality `Set.encard` in `ℕ∞` at least that of every matching of `G` (every infinite
+edge set counts as `⊤`). -/
 def IsMaximumMatching (M : G.Subgraph) : Prop :=
   M.IsMatching ∧ ∀ ⦃M' : G.Subgraph⦄, M'.IsMatching → M'.edgeSet.encard ≤ M.edgeSet.encard
 
@@ -542,29 +542,31 @@ theorem isMaximumMatching_def :
 theorem IsMaximumMatching.isMatching (hM : M.IsMaximumMatching) : M.IsMatching :=
   hM.1
 
-/-- Every matching has edge-set cardinality at most that of a maximum matching. -/
+/-- Every matching has edge-set `Set.encard` at most that of a maximum matching. -/
 theorem IsMaximumMatching.le_encard_edgeSet (hM : M.IsMaximumMatching) (hM' : M'.IsMatching) :
     M'.edgeSet.encard ≤ M.edgeSet.encard :=
   hM.2 hM'
 
-/-- A matching is maximum if and only if its edge-set cardinality equals the matching number. -/
+/-- A matching is maximum if and only if its edge-set `Set.encard` equals the matching number. -/
 theorem isMaximumMatching_iff_encard_edgeSet_eq :
     M.IsMaximumMatching ↔ M.IsMatching ∧ M.edgeSet.encard = G.matchingNum := by
   refine and_congr_right fun hM ↦ ⟨fun h ↦ ?_, fun h M' hM' ↦ ?_⟩
   · exact le_antisymm hM.encard_edgeSet_le_matchingNum (matchingNum_le_iff.mpr fun _ hM' ↦ h hM')
   · exact hM'.encard_edgeSet_le_matchingNum.trans_eq h.symm
 
-/-- Every maximum matching has edge-set cardinality equal to the matching number. -/
+/-- Every maximum matching has edge-set `Set.encard` equal to the matching number. -/
 theorem IsMaximumMatching.encard_edgeSet_eq (hM : M.IsMaximumMatching) :
     M.edgeSet.encard = G.matchingNum :=
   (isMaximumMatching_iff_encard_edgeSet_eq.mp hM).2
 
-/-- Any two maximum matchings of the same graph have the same number of edges. -/
+/-- Any two maximum matchings of the same graph have the same edge-set `Set.encard` (with every
+infinite edge set counting as `⊤`). -/
 theorem IsMaximumMatching.encard_edgeSet_eq_of_isMaximumMatching (hM : M.IsMaximumMatching)
     (hM' : M'.IsMaximumMatching) : M.edgeSet.encard = M'.edgeSet.encard :=
   hM.encard_edgeSet_eq.trans hM'.encard_edgeSet_eq.symm
 
-/-- The edge-set cardinality of a maximum matching is the greatest among all matchings. -/
+/-- The edge-set `Set.encard` of a maximum matching is the greatest `Set.encard` among all
+matchings. -/
 theorem IsMaximumMatching.isGreatest_encard_edgeSet (hM : M.IsMaximumMatching) :
     IsGreatest {n : ℕ∞ | ∃ M' : G.Subgraph, M'.IsMatching ∧ M'.edgeSet.encard = n}
       M.edgeSet.encard :=
@@ -662,12 +664,14 @@ section Certificates
 
 variable {M : G.Subgraph} {c : Set V}
 
-/-- Every matching of a simple graph has at most `G.vertexCoverNum` edges. -/
+/-- The extended edge-set cardinality `M.edgeSet.encard` (in `ℕ∞`) of any matching `M` of a
+simple graph is at most `G.vertexCoverNum`. -/
 theorem Subgraph.IsMatching.encard_edgeSet_le_vertexCoverNum (hM : M.IsMatching) :
     M.edgeSet.encard ≤ G.vertexCoverNum :=
   hM.encard_edgeSet_le_matchingNum.trans G.matchingNum_le_vertexCoverNum
 
-/-- The matching number of a simple graph is at most the cardinality of any vertex cover. -/
+/-- The matching number `G.matchingNum` of a simple graph is at most the extended cardinality
+`c.encard` (in `ℕ∞`) of any vertex cover `c`. -/
 theorem IsVertexCover.matchingNum_le_encard (hc : G.IsVertexCover c) : G.matchingNum ≤ c.encard :=
   G.matchingNum_le_vertexCoverNum.trans hc.vertexCoverNum_le
 
@@ -676,21 +680,22 @@ theorem matchingNum_ne_top_of_vertexCoverNum_ne_top (h : G.vertexCoverNum ≠ �
     G.matchingNum ≠ ⊤ :=
   ne_top_of_le_ne_top h G.matchingNum_le_vertexCoverNum
 
-/-- A matching whose edge-set cardinality equals that of some vertex cover is a maximum matching. -/
+/-- A matching whose edge-set `Set.encard` equals the `Set.encard` of some vertex cover (in
+`ℕ∞`) is a maximum matching. -/
 theorem Subgraph.IsMatching.isMaximumMatching_of_encard_edgeSet_eq (hM : M.IsMatching)
     (hc : G.IsVertexCover c) (h : M.edgeSet.encard = c.encard) : M.IsMaximumMatching :=
   Subgraph.isMaximumMatching_def.mpr
     ⟨hM, fun _ hM' ↦ (hM'.encard_edgeSet_le_encard_of_isVertexCover hc).trans_eq h.symm⟩
 
-/-- A vertex cover whose cardinality equals the edge-set cardinality of some matching is a minimum
-vertex cover. -/
+/-- A vertex cover whose `Set.encard` equals the edge-set `Set.encard` of some matching (in `ℕ∞`)
+is a minimum vertex cover. -/
 theorem IsVertexCover.isMinimumVertexCover_of_encard_eq (hc : G.IsVertexCover c) (hM : M.IsMatching)
     (h : M.edgeSet.encard = c.encard) : G.IsMinimumVertexCover c :=
   isMinimumVertexCover_def.mpr
     ⟨hc, fun _ hc' ↦ h.symm.trans_le (hM.encard_edgeSet_le_encard_of_isVertexCover hc')⟩
 
-/-- If some matching and some vertex cover have equal cardinalities, then the matching number equals
-the vertex cover number. -/
+/-- If some matching `M` and some vertex cover `c` have equal extended counts
+`M.edgeSet.encard = c.encard` (in `ℕ∞`), then `G.matchingNum = G.vertexCoverNum`. -/
 theorem matchingNum_eq_vertexCoverNum_of_encard_eq (hM : M.IsMatching) (hc : G.IsVertexCover c)
     (h : M.edgeSet.encard = c.encard) : G.matchingNum = G.vertexCoverNum :=
   le_antisymm G.matchingNum_le_vertexCoverNum

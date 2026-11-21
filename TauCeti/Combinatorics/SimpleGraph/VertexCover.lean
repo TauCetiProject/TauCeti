@@ -10,12 +10,14 @@ public import Mathlib.Combinatorics.SimpleGraph.VertexCover
 /-!
 # Minimum vertex covers of simple graphs
 
-A *minimum vertex cover* of a simple graph `G` is a vertex cover whose cardinality in `ℕ∞` is at
-most that of every vertex cover of `G`. Formulating minimality through `Set.encard` avoids the
-degeneracy of `Set.ncard` on infinite sets and aligns directly with Mathlib's `ℕ∞`-valued
-`SimpleGraph.vertexCoverNum`: a vertex cover is minimum if and only if its `encard` equals
-`G.vertexCoverNum`, and every simple graph admits a minimum vertex cover without any finiteness
-hypothesis. On finite vertex types, minimality agrees with comparison by `Set.ncard`.
+A *minimum vertex cover* of a simple graph `G` is a vertex cover whose extended cardinality
+`Set.encard` in `ℕ∞` is at most that of every vertex cover of `G`. Formulating minimality through
+`Set.encard` avoids the degeneracy of `Set.ncard` on infinite sets and aligns directly with
+Mathlib's `ℕ∞`-valued `SimpleGraph.vertexCoverNum`: a vertex cover is minimum if and only if its
+`Set.encard` equals `G.vertexCoverNum`, and every simple graph admits a minimum vertex cover without
+any finiteness hypothesis. Note that in `ℕ∞` all infinite covers count as `⊤` (infinite
+cardinalities are not distinguished, so when `G.vertexCoverNum = ⊤`, every infinite vertex cover is
+minimum). On finite vertex types, minimality agrees with comparison by `Set.ncard`.
 
 ## Main definitions
 
@@ -38,8 +40,9 @@ namespace SimpleGraph
 
 variable {V W : Type*} {G : SimpleGraph V} {H : SimpleGraph W} {c c' : Set V}
 
-/-- A vertex set `c` is a *minimum vertex cover* of `G` if it is a vertex cover whose cardinality
-is at most that of every vertex cover of `G`. -/
+/-- A vertex set `c` is a *minimum vertex cover* of `G` if it is a vertex cover whose extended
+cardinality `Set.encard` in `ℕ∞` is at most that of every vertex cover of `G` (with every infinite
+cover counting as `⊤`). -/
 def IsMinimumVertexCover (G : SimpleGraph V) (c : Set V) : Prop :=
   G.IsVertexCover c ∧ ∀ ⦃c' : Set V⦄, G.IsVertexCover c' → c.encard ≤ c'.encard
 
@@ -52,12 +55,12 @@ theorem isMinimumVertexCover_def :
 theorem IsMinimumVertexCover.isVertexCover (hc : G.IsMinimumVertexCover c) : G.IsVertexCover c :=
   hc.1
 
-/-- A minimum vertex cover has cardinality at most that of any vertex cover. -/
+/-- A minimum vertex cover has `Set.encard` at most that of any vertex cover. -/
 theorem IsMinimumVertexCover.encard_le (hc : G.IsMinimumVertexCover c) (hc' : G.IsVertexCover c') :
     c.encard ≤ c'.encard :=
   hc.2 hc'
 
-/-- A vertex cover is minimum if and only if its cardinality equals the vertex cover number. -/
+/-- A vertex cover is minimum if and only if its `Set.encard` equals the vertex cover number. -/
 theorem isMinimumVertexCover_iff_encard_eq :
     G.IsMinimumVertexCover c ↔ G.IsVertexCover c ∧ c.encard = G.vertexCoverNum := by
   refine and_congr_right fun hc ↦ ⟨fun h ↦ ?_, fun h c' hc' ↦ ?_⟩
@@ -65,17 +68,19 @@ theorem isMinimumVertexCover_iff_encard_eq :
     exact le_antisymm (hs_eq ▸ h hs) hc.vertexCoverNum_le
   · exact h.trans_le hc'.vertexCoverNum_le
 
-/-- Every minimum vertex cover has cardinality equal to the vertex cover number. -/
+/-- Every minimum vertex cover has `Set.encard` equal to the vertex cover number. -/
 theorem IsMinimumVertexCover.encard_eq (hc : G.IsMinimumVertexCover c) :
     c.encard = G.vertexCoverNum :=
   (isMinimumVertexCover_iff_encard_eq.mp hc).2
 
-/-- Any two minimum vertex covers of the same graph have the same cardinality. -/
+/-- Any two minimum vertex covers of the same graph have the same `Set.encard` (with every
+infinite cover counting as `⊤`). -/
 theorem IsMinimumVertexCover.encard_eq_of_isMinimumVertexCover (hc : G.IsMinimumVertexCover c)
     (hc' : G.IsMinimumVertexCover c') : c.encard = c'.encard :=
   hc.encard_eq.trans hc'.encard_eq.symm
 
-/-- The cardinality of a minimum vertex cover is the least cardinality among all vertex covers. -/
+/-- The `Set.encard` of a minimum vertex cover is the least `Set.encard` among all vertex
+covers. -/
 theorem IsMinimumVertexCover.isLeast_encard (hc : G.IsMinimumVertexCover c) :
     IsLeast {n : ℕ∞ | ∃ s : Set V, G.IsVertexCover s ∧ s.encard = n} c.encard :=
   ⟨⟨c, hc.1, rfl⟩, fun _ ⟨_, hs, hsn⟩ ↦ hsn ▸ hc.2 hs⟩
