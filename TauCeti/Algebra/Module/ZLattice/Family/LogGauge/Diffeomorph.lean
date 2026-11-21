@@ -22,7 +22,7 @@ so that the cyclic quotient `Q = X / C_m` carries its quotient atlas
 (`TauCeti.isManifold_torusFamilyAffineQuotient`).
 
 The punctured parts `Q* = {t ≠ 0}` of `Q` (`TauCeti.logTranslationQuotientNonzeroOpens`) and
-`Y* = {t ≠ 0}` of `Y` (`TauCeti.torusFamilyBallNonzeroOpens`) are open subsets, and carry the
+`Y* = {t ≠ 0}` of `Y` (`TauCeti.torusFamilyNonzeroOpens`) are open subsets, and carry the
 induced open-subset atlases. This file proves that the logarithmic gauge
 `TauCeti.torusFamilyLogGaugeEquiv : Q* ≃ Y*`,
 `[[z, e]] ↦ [z ^ m, e - (log z / 2πi) • P (z ^ m) l]`, is a `C^n` diffeomorphism
@@ -229,7 +229,8 @@ private theorem contMDiff_torusFamilyLogGaugeEquiv :
     letI := logTranslationMulAction P l
     letI := logTranslationQuotientChartedSpace P hinj (fun l' ↦ (hP l').continuous) l hfree
     letI := Opens.instChartedSpace (H := ModelProd ℂ E) (logTranslationQuotientNonzeroOpens P l)
-    letI := Opens.instChartedSpace (H := ModelProd ℂ E) (torusFamilyBallNonzeroOpens P)
+    letI := Opens.instChartedSpace (H := ModelProd ℂ E)
+      (torusFamilyNonzeroOpens Subtype.val P continuous_subtypeVal)
     ContMDiff (𝓘(ℂ).prod 𝓘(ℂ, E)) (𝓘(ℂ).prod 𝓘(ℂ, E)) n (torusFamilyLogGaugeEquiv P l hr) := by
   let _ := periodAddAction P
   let _ := torusFamilyChartedSpace (H := ℂ) P (fun l ↦ (hP l).continuous) hinj
@@ -240,10 +241,12 @@ private theorem contMDiff_torusFamilyLogGaugeEquiv :
   let _ := logTranslationMulAction P l
   let _ := logTranslationQuotientChartedSpace P hinj (fun l' ↦ (hP l').continuous) l hfree
   let _ := Opens.instChartedSpace (H := ModelProd ℂ E) (logTranslationQuotientNonzeroOpens P l)
-  let _ := Opens.instChartedSpace (H := ModelProd ℂ E) (torusFamilyBallNonzeroOpens P)
+  let _ := Opens.instChartedSpace (H := ModelProd ℂ E)
+    (torusFamilyNonzeroOpens Subtype.val P continuous_subtypeVal)
   intro q
   -- Pass to the ambient manifolds, through the inclusions of the open subsets.
-  refine (TauCeti.ContMDiffAt.subtypeVal_comp_iff (torusFamilyBallNonzeroOpens P)
+  refine (TauCeti.ContMDiffAt.subtypeVal_comp_iff
+    (torusFamilyNonzeroOpens Subtype.val P continuous_subtypeVal)
     (torusFamilyLogGaugeEquiv P l hr) q).1 ?_
   refine (contMDiffAt_extend_subtypeVal_iff (U := logTranslationQuotientNonzeroOpens P l)
     (fun _ ↦ (torusFamilyLogGaugeEquiv P l hr q).val)).1 ?_
@@ -265,7 +268,8 @@ private theorem contMDiff_torusFamilyLogGaugeEquiv_symm :
     letI := logTranslationMulAction P l
     letI := logTranslationQuotientChartedSpace P hinj (fun l' ↦ (hP l').continuous) l hfree
     letI := Opens.instChartedSpace (H := ModelProd ℂ E) (logTranslationQuotientNonzeroOpens P l)
-    letI := Opens.instChartedSpace (H := ModelProd ℂ E) (torusFamilyBallNonzeroOpens P)
+    letI := Opens.instChartedSpace (H := ModelProd ℂ E)
+      (torusFamilyNonzeroOpens Subtype.val P continuous_subtypeVal)
     ContMDiff (𝓘(ℂ).prod 𝓘(ℂ, E)) (𝓘(ℂ).prod 𝓘(ℂ, E)) n
       (torusFamilyLogGaugeEquiv P l hr).symm := by
   let _ := periodAddAction P
@@ -277,11 +281,13 @@ private theorem contMDiff_torusFamilyLogGaugeEquiv_symm :
   let _ := logTranslationMulAction P l
   let _ := logTranslationQuotientChartedSpace P hinj (fun l' ↦ (hP l').continuous) l hfree
   let _ := Opens.instChartedSpace (H := ModelProd ℂ E) (logTranslationQuotientNonzeroOpens P l)
-  let _ := Opens.instChartedSpace (H := ModelProd ℂ E) (torusFamilyBallNonzeroOpens P)
+  let _ := Opens.instChartedSpace (H := ModelProd ℂ E)
+    (torusFamilyNonzeroOpens Subtype.val P continuous_subtypeVal)
   intro y
   refine (TauCeti.ContMDiffAt.subtypeVal_comp_iff (logTranslationQuotientNonzeroOpens P l)
     (torusFamilyLogGaugeEquiv P l hr).symm y).1 ?_
-  refine (contMDiffAt_extend_subtypeVal_iff (U := torusFamilyBallNonzeroOpens P)
+  refine (contMDiffAt_extend_subtypeVal_iff
+    (U := torusFamilyNonzeroOpens Subtype.val P continuous_subtypeVal)
     (fun _ ↦ ((torusFamilyLogGaugeEquiv P l hr).symm y).val)).1 ?_
   obtain ⟨y, hy⟩ := y
   obtain ⟨⟨t, e⟩, rfl⟩ := Quotient.exists_rep y
@@ -308,9 +314,11 @@ noncomputable def torusFamilyLogGaugeDiffeomorph :
     letI := logTranslationMulAction P l
     letI := logTranslationQuotientChartedSpace P hinj (fun l' ↦ (hP l').continuous) l hfree
     letI := Opens.instChartedSpace (H := ModelProd ℂ E) (logTranslationQuotientNonzeroOpens P l)
-    letI := Opens.instChartedSpace (H := ModelProd ℂ E) (torusFamilyBallNonzeroOpens P)
+    letI := Opens.instChartedSpace (H := ModelProd ℂ E)
+      (torusFamilyNonzeroOpens Subtype.val P continuous_subtypeVal)
     Diffeomorph (𝓘(ℂ).prod 𝓘(ℂ, E)) (𝓘(ℂ).prod 𝓘(ℂ, E))
-      (logTranslationQuotientNonzeroOpens P l) (torusFamilyBallNonzeroOpens P) n :=
+      (logTranslationQuotientNonzeroOpens P l)
+      (torusFamilyNonzeroOpens Subtype.val P continuous_subtypeVal) n :=
   letI := periodAddAction P
   letI := torusFamilyChartedSpace (H := ℂ) P (fun l ↦ (hP l).continuous) hinj
   letI := periodAddAction (powPullbackPeriod m r P)
@@ -320,7 +328,8 @@ noncomputable def torusFamilyLogGaugeDiffeomorph :
   letI := logTranslationMulAction P l
   letI := logTranslationQuotientChartedSpace P hinj (fun l' ↦ (hP l').continuous) l hfree
   letI := Opens.instChartedSpace (H := ModelProd ℂ E) (logTranslationQuotientNonzeroOpens P l)
-  letI := Opens.instChartedSpace (H := ModelProd ℂ E) (torusFamilyBallNonzeroOpens P)
+  letI := Opens.instChartedSpace (H := ModelProd ℂ E)
+    (torusFamilyNonzeroOpens Subtype.val P continuous_subtypeVal)
   { toEquiv := torusFamilyLogGaugeEquiv P l hr
     contMDiff_toFun := contMDiff_torusFamilyLogGaugeEquiv P hP hinj l hr hfree
     contMDiff_invFun := contMDiff_torusFamilyLogGaugeEquiv_symm P hP hinj l hr hfree }
@@ -336,7 +345,8 @@ noncomputable def torusFamilyLogGaugeDiffeomorph :
     letI := logTranslationMulAction P l
     letI := logTranslationQuotientChartedSpace P hinj (fun l' ↦ (hP l').continuous) l hfree
     letI := Opens.instChartedSpace (H := ModelProd ℂ E) (logTranslationQuotientNonzeroOpens P l)
-    letI := Opens.instChartedSpace (H := ModelProd ℂ E) (torusFamilyBallNonzeroOpens P)
+    letI := Opens.instChartedSpace (H := ModelProd ℂ E)
+      (torusFamilyNonzeroOpens Subtype.val P continuous_subtypeVal)
     (torusFamilyLogGaugeDiffeomorph P hP hinj l hr hfree).toEquiv =
       torusFamilyLogGaugeEquiv P l hr :=
   (rfl)
@@ -353,7 +363,8 @@ underlying map. -/
     letI := logTranslationMulAction P l
     letI := logTranslationQuotientChartedSpace P hinj (fun l' ↦ (hP l').continuous) l hfree
     letI := Opens.instChartedSpace (H := ModelProd ℂ E) (logTranslationQuotientNonzeroOpens P l)
-    letI := Opens.instChartedSpace (H := ModelProd ℂ E) (torusFamilyBallNonzeroOpens P)
+    letI := Opens.instChartedSpace (H := ModelProd ℂ E)
+      (torusFamilyNonzeroOpens Subtype.val P continuous_subtypeVal)
     ⇑(torusFamilyLogGaugeDiffeomorph P hP hinj l hr hfree) = torusFamilyLogGaugeEquiv P l hr :=
   (rfl)
 
@@ -369,7 +380,8 @@ underlying map. -/
     letI := logTranslationMulAction P l
     letI := logTranslationQuotientChartedSpace P hinj (fun l' ↦ (hP l').continuous) l hfree
     letI := Opens.instChartedSpace (H := ModelProd ℂ E) (logTranslationQuotientNonzeroOpens P l)
-    letI := Opens.instChartedSpace (H := ModelProd ℂ E) (torusFamilyBallNonzeroOpens P)
+    letI := Opens.instChartedSpace (H := ModelProd ℂ E)
+      (torusFamilyNonzeroOpens Subtype.val P continuous_subtypeVal)
     ⇑(torusFamilyLogGaugeDiffeomorph P hP hinj l hr hfree).symm =
       (torusFamilyLogGaugeEquiv P l hr).symm :=
   (rfl)
@@ -386,7 +398,8 @@ underlying map. -/
     letI := logTranslationMulAction P l
     letI := logTranslationQuotientChartedSpace P hinj (fun l' ↦ (hP l').continuous) l hfree
     letI := Opens.instChartedSpace (H := ModelProd ℂ E) (logTranslationQuotientNonzeroOpens P l)
-    letI := Opens.instChartedSpace (H := ModelProd ℂ E) (torusFamilyBallNonzeroOpens P)
+    letI := Opens.instChartedSpace (H := ModelProd ℂ E)
+      (torusFamilyNonzeroOpens Subtype.val P continuous_subtypeVal)
     (torusFamilyLogGaugeDiffeomorph P hP hinj l hr hfree).toHomeomorph =
       torusFamilyLogGaugeHomeomorph P l hr (fun l' ↦ (hP l').continuous) := by
   let _ := periodAddAction P
@@ -398,7 +411,8 @@ underlying map. -/
   let _ := logTranslationMulAction P l
   let _ := logTranslationQuotientChartedSpace P hinj (fun l' ↦ (hP l').continuous) l hfree
   let _ := Opens.instChartedSpace (H := ModelProd ℂ E) (logTranslationQuotientNonzeroOpens P l)
-  let _ := Opens.instChartedSpace (H := ModelProd ℂ E) (torusFamilyBallNonzeroOpens P)
+  let _ := Opens.instChartedSpace (H := ModelProd ℂ E)
+    (torusFamilyNonzeroOpens Subtype.val P continuous_subtypeVal)
   exact Homeomorph.ext fun q ↦ by
     rw [Diffeomorph.coe_toHomeomorph, coe_torusFamilyLogGaugeDiffeomorph,
       coe_torusFamilyLogGaugeHomeomorph]
@@ -416,7 +430,8 @@ theorem torusFamilyLogGaugeDiffeomorph_mk
     letI := logTranslationMulAction P l
     letI := logTranslationQuotientChartedSpace P hinj (fun l' ↦ (hP l').continuous) l hfree
     letI := Opens.instChartedSpace (H := ModelProd ℂ E) (logTranslationQuotientNonzeroOpens P l)
-    letI := Opens.instChartedSpace (H := ModelProd ℂ E) (torusFamilyBallNonzeroOpens P)
+    letI := Opens.instChartedSpace (H := ModelProd ℂ E)
+      (torusFamilyNonzeroOpens Subtype.val P continuous_subtypeVal)
     (torusFamilyLogGaugeDiffeomorph P hP hinj l hr hfree ⟨Quotient.mk _ x, hx⟩ :
         AddAction.orbitRel.Quotient Λ (Metric.ball (0 : ℂ) (r ^ m) × E)) =
       torusFamilyLogGauge P l x :=
@@ -435,7 +450,8 @@ theorem coe_torusFamilyProjection_torusFamilyLogGaugeDiffeomorph
     letI := logTranslationMulAction P l
     letI := logTranslationQuotientChartedSpace P hinj (fun l' ↦ (hP l').continuous) l hfree
     letI := Opens.instChartedSpace (H := ModelProd ℂ E) (logTranslationQuotientNonzeroOpens P l)
-    letI := Opens.instChartedSpace (H := ModelProd ℂ E) (torusFamilyBallNonzeroOpens P)
+    letI := Opens.instChartedSpace (H := ModelProd ℂ E)
+      (torusFamilyNonzeroOpens Subtype.val P continuous_subtypeVal)
     ((torusFamilyProjection P (torusFamilyLogGaugeDiffeomorph P hP hinj l hr hfree q).val :
       Metric.ball (0 : ℂ) (r ^ m)) : ℂ) =
       torusFamilyCyclicQuotientProjection (fun _ _ ↦ AddMonoidHom.id E) (fun _ _ ↦ rfl)
@@ -459,7 +475,8 @@ theorem torusFamilyLogGaugeDiffeomorph_symm_mk {t : Metric.ball (0 : ℂ) (r ^ m
     letI := logTranslationMulAction P l
     letI := logTranslationQuotientChartedSpace P hinj (fun l' ↦ (hP l').continuous) l hfree
     letI := Opens.instChartedSpace (H := ModelProd ℂ E) (logTranslationQuotientNonzeroOpens P l)
-    letI := Opens.instChartedSpace (H := ModelProd ℂ E) (torusFamilyBallNonzeroOpens P)
+    letI := Opens.instChartedSpace (H := ModelProd ℂ E)
+      (torusFamilyNonzeroOpens Subtype.val P continuous_subtypeVal)
     ((torusFamilyLogGaugeDiffeomorph P hP hinj l hr hfree).symm ⟨Quotient.mk _ (t, e), ht⟩ :
         orbitRel.Quotient (rootsOfUnity m ℂ)
           (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E))) =

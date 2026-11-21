@@ -51,6 +51,8 @@ trivialization of the family built from it is in
 * `TauCeti.periodBasis`: the periods at `y` of a `ℤ`-basis of `Λ`, as a real basis of `E`.
 * `TauCeti.periodAddAction`: the period translation action of `Λ` on `Y × E`.
 * `TauCeti.torusFamilyProjection`: the projection `(Y × E)/Λ → Y` descended from `Prod.fst`.
+* `TauCeti.torusFamilyNonzeroOpens`: the punctured locus `{φ ∘ p ≠ 0}` as an open subset of
+  `(Y × E)/Λ`.
 
 ## Main results
 
@@ -67,6 +69,8 @@ trivialization of the family built from it is in
   covering map, the quotient map of the period translation action.
 * `TauCeti.mem_orbit_periodAddAction_iff`: two points lie in one orbit exactly when they have the
   same parameter `y` and differ by a period at `y`.
+* `TauCeti.torusFamily_mk_add_period`: adding a period at `y` to the fibre coordinate does not
+  change the quotient class.
 * `TauCeti.exists_eq_period_of_mem_range`: a continuous family of periods over a preconnected
   space is a single period, by uniqueness of lifts through the orbit map.
 * `TauCeti.continuous_torusFamilyProjection`, `TauCeti.isOpenMap_torusFamilyProjection`: the
@@ -275,6 +279,14 @@ theorem mem_orbit_periodAddAction_iff {p q : Y × E} :
   · rintro ⟨h, l, hl⟩
     exact ⟨l, h.symm, by rw [hl, add_sub_cancel]⟩
 
+/-- Adding a period at `y` to the fibre coordinate does not change the quotient class. -/
+@[simp] theorem torusFamily_mk_add_period (y : Y) (v : E) (l : Λ) :
+    letI := periodAddAction P
+    (Quotient.mk _ (y, v + P y l) : AddAction.orbitRel.Quotient Λ (Y × E)) =
+      Quotient.mk _ (y, v) := by
+  let _ := periodAddAction P
+  exact Quotient.sound (AddAction.orbitRel_apply.2 ⟨l, rfl⟩)
+
 /-- The period translation action is free when each period map is injective. -/
 theorem isCancelVAdd_periodAddAction (hinj : ∀ y, Injective (P y)) :
     letI := periodAddAction P
@@ -323,6 +335,17 @@ theorem isOpenMap_torusFamilyProjection [TopologicalSpace Y] [TopologicalSpace E
     IsOpenMap (torusFamilyProjection P) :=
   let _ := periodAddAction P
   IsOpenMap.of_comp continuous_quot_mk Quotient.mk_surjective isOpenMap_fst
+
+/-- The punctured locus `{φ ∘ p ≠ 0}` as an open subset of the torus family `(Y × E) / Λ`. -/
+@[expose, reducible]
+def torusFamilyNonzeroOpens {Y Λ E F : Type*} [AddCommGroup Λ] [AddCommGroup E]
+    [TopologicalSpace Y] [TopologicalSpace E] [TopologicalSpace F] [Zero F] [T1Space F]
+    (φ : Y → F) (P : Y → Λ →ₗ[ℤ] E) (hφ : Continuous φ) :
+    letI := periodAddAction P
+    TopologicalSpace.Opens (AddAction.orbitRel.Quotient Λ (Y × E)) :=
+  letI := periodAddAction P
+  ⟨{y | φ (torusFamilyProjection P y) ≠ 0},
+    isOpen_compl_singleton.preimage (hφ.comp (continuous_torusFamilyProjection P))⟩
 
 /-- **A family of tori over a second-countable base is second countable.** If the periods depend
 continuously on the parameter, the orbit space `(Y × E)/Λ` of the period translation action is

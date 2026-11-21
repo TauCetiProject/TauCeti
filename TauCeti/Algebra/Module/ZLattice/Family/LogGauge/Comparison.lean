@@ -63,7 +63,8 @@ theorem torusFamilyLogGauge_add_nsmul (l μ : Λ)
   rw [torusFamilyLogGauge_mk, torusFamilyLogGauge_mk,
     torusFamilyLogTwistMap_mk_of_exp_eq Subtype.val P (-μ) hexp]
   congr 2
-  rw [map_add, map_nsmul, map_neg, smul_add, smul_neg, div_two_pi_I_smul_nsmul]
+  simp only [map_add, map_nsmul, map_neg, smul_add, smul_neg, ← Nat.cast_smul_eq_nsmul ℂ,
+    smul_smul, mul_div_assoc, mul_comm _ (m : ℂ), sub_eq_add_neg]
   abel
 
 /-- Downstairs, replacing `l` by `l + m • μ` changes the logarithmic gauge equivalence `Q* ≃ Y*` by
@@ -109,7 +110,8 @@ theorem torusFamilyLogGaugeDiffeomorph_add_nsmul (l μ : Λ) (hr : 0 ≤ r)
         (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E))) :
     letI := periodAddAction P
     letI := torusFamilyChartedSpace (H := ℂ) P (fun l' ↦ (hP l').continuous) hinj
-    letI := Opens.instChartedSpace (H := ModelProd ℂ E) (torusFamilyBallNonzeroOpens P)
+    letI := Opens.instChartedSpace (H := ModelProd ℂ E)
+      (torusFamilyNonzeroOpens Subtype.val P continuous_subtypeVal)
     letI := periodAddAction (powPullbackPeriod m r P)
     letI : ChartedSpace (ModelProd ℂ E)
         (letI := logTranslationMulAction P (l + m • μ);
@@ -139,7 +141,8 @@ theorem torusFamilyLogGaugeDiffeomorph_add_nsmul (l μ : Λ) (hr : 0 ≤ r)
             contMDiff_subtypeVal_ball hP (-μ))) := by
   let _ := periodAddAction P
   let _ := torusFamilyChartedSpace (H := ℂ) P (fun l' ↦ (hP l').continuous) hinj
-  let _ := Opens.instChartedSpace (H := ModelProd ℂ E) (torusFamilyBallNonzeroOpens P)
+  let _ := Opens.instChartedSpace (H := ModelProd ℂ E)
+    (torusFamilyNonzeroOpens Subtype.val P continuous_subtypeVal)
   let _ := periodAddAction (powPullbackPeriod m r P)
   let _ : ChartedSpace (ModelProd ℂ E)
       (letI := logTranslationMulAction P (l + m • μ);

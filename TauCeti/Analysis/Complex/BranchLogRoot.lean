@@ -16,6 +16,7 @@ import Mathlib.Analysis.Convex.Contractible
 import Mathlib.Analysis.Normed.Module.Ball.Pointwise
 import Mathlib.Analysis.Normed.Module.Connected
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
+import TauCeti.Analysis.SpecialFunctions.Complex.Log.Branch
 
 /-!
 # Holomorphic branches of `log` and of `n`-th roots on a simply connected domain
@@ -195,8 +196,7 @@ theorem exists_contDiffOn_eqOn_exp_comp {U : Set ℂ} (hUc : IsSimplyConnected U
     Complex.exists_continuousOn_eqOn_exp_comp hUc hUo hg.continuousOn hU₀
   refine ⟨L, fun z hz => ?_, hLeq⟩
   have hbranch : ContDiffAt ℂ n (logBranch (L z)) (g z) :=
-    contDiffAt_const.add ((Complex.contDiffAt_log (div_exp_mem_slitPlane hLeq hz)).comp (g z)
-      (contDiffAt_id.div_const _))
+    Complex.contDiffAt_logBranch (div_exp_mem_slitPlane hLeq hz)
   exact (((hbranch.restrict_scalars ℝ).comp z ((hg z hz).contDiffAt (hUo.mem_nhds hz)))
     |>.congr_of_eventuallyEq (eventuallyEq_logBranch_comp hUo hLc hLeq hz)).contDiffWithinAt
 

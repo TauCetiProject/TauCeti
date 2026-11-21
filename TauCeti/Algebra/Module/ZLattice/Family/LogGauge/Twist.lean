@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Module.ZLattice.Family.Gauge
 public import TauCeti.Analysis.SpecialFunctions.Exp.Periodic
 public import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 import Mathlib.Geometry.Manifold.Algebra.Structures
+import TauCeti.Algebra.Module.ZLattice.Family.LogGauge.Branch
 import TauCeti.Analysis.SpecialFunctions.Complex.Log.Branch
 
 /-!
@@ -28,7 +29,6 @@ globally well-defined and locally given by any `C^n` (or holomorphic) branch of 
   `[y, e] ↦ [y, e + (log (φ y) / 2πi) • P y μ]` on `(Y × E) / Λ`.
 * `TauCeti.torusFamilyLogTwistMap_mk_of_exp_eq`: branch-independence of `torusFamilyLogTwistMap`
   whenever `exp L = φ y`.
-* `TauCeti.torusFamilyNonzeroOpens`: the punctured open subset `{φ ∘ p ≠ 0}` of `(Y × E) / Λ`.
 * `TauCeti.torusFamilyLogTwistEquiv`: restriction of `torusFamilyLogTwistMap` to the punctured
   family `{φ ∘ p ≠ 0}`.
 * `TauCeti.torusFamilyLogTwistDiffeomorph`: the logarithmic twist as a `C^n` diffeomorphism (and
@@ -55,16 +55,6 @@ section LogTwist
 
 variable {Y Λ E : Type*} [AddCommGroup Λ] [AddCommGroup E] [Module ℂ E]
   (φ : Y → ℂ) (P : Y → Λ →ₗ[ℤ] E)
-
-/-- The punctured locus `{φ ∘ p ≠ 0}` as an open subset of the torus family `(Y × E) / Λ`. -/
-@[expose, reducible]
-noncomputable def torusFamilyNonzeroOpens [TopologicalSpace Y] [TopologicalSpace E]
-    (hφ : Continuous φ) :
-    letI := periodAddAction P
-    Opens (AddAction.orbitRel.Quotient Λ (Y × E)) :=
-  letI := periodAddAction P
-  ⟨{y | φ (torusFamilyProjection P y) ≠ 0},
-    isOpen_ne_fun (hφ.comp (continuous_torusFamilyProjection P)) continuous_const⟩
 
 /-- The fibrewise logarithmic twist `[y, e] ↦ [y, e + (log (φ y) / 2πi) • P y μ]` on the torus
 family `(Y × E) / Λ`. On the locus `{φ ≠ 0}` it is independent of the branch of the logarithm
@@ -95,14 +85,10 @@ theorem torusFamilyLogTwistMap_mk_of_exp_eq (μ : Λ) {y : Y} {L : ℂ} (hL : ex
     letI := periodAddAction P
     torusFamilyLogTwistMap φ P μ (Quotient.mk _ (y, e)) =
       Quotient.mk _ (y, e + (L / (2 * π * I)) • P y μ) := by
-  let _ := periodAddAction P
   have hφ : φ y ≠ 0 := hL ▸ Complex.exp_ne_zero L
-  obtain ⟨k, hk⟩ := exists_div_two_pi_I_smul_eq_add_zsmul (hL.trans (Complex.exp_log hφ).symm)
-    (P y μ)
-  rw [torusFamilyLogTwistMap_mk, Quotient.eq, AddAction.orbitRel_apply,
-    mem_orbit_periodAddAction_iff]
-  refine ⟨rfl, -(k • μ), ?_⟩
-  rw [hk, map_neg, map_zsmul, ← add_assoc, sub_add_cancel_left]
+  have hexp : exp (log (φ y)) = exp L := (Complex.exp_log hφ).trans hL.symm
+  rw [torusFamilyLogTwistMap_mk]
+  exact torusFamily_mk_add_div_two_pi_I_smul_eq_of_exp_eq P μ hexp y e
 
 /-- The logarithmic twist for `0 : Λ` is the identity. -/
 @[simp] theorem torusFamilyLogTwistMap_zero :
@@ -150,16 +136,13 @@ noncomputable def torusFamilyLogTwistEquiv (μ : Λ) :
 /-- The punctured logarithmic twist for `0 : Λ` is the identity. -/
 @[simp] theorem torusFamilyLogTwistEquiv_zero :
     torusFamilyLogTwistEquiv φ P 0 = Equiv.refl _ := by
-  ext y
-  simp [torusFamilyLogTwistMap_zero]
+  simp only [torusFamilyLogTwistEquiv, torusFamilyLogTwistMap_zero, Equiv.subtypeEquiv_refl]
 
 /-- Composing punctured logarithmic twists adds their period parameters. -/
 @[simp] theorem torusFamilyLogTwistEquiv_trans (μ₁ μ₂ : Λ) :
     (torusFamilyLogTwistEquiv φ P μ₁).trans (torusFamilyLogTwistEquiv φ P μ₂) =
       torusFamilyLogTwistEquiv φ P (μ₁ + μ₂) := by
-  ext y
-  simp only [Equiv.trans_apply, coe_torusFamilyLogTwistEquiv]
-  exact congrFun (congrArg DFunLike.coe (torusFamilyLogTwistMap_trans φ P μ₁ μ₂)) y.val
+  simp only [torusFamilyLogTwistEquiv, Equiv.subtypeEquiv_trans, torusFamilyLogTwistMap_trans]
 
 /-- The inverse of a punctured logarithmic twist negates its period parameter. -/
 @[simp] theorem torusFamilyLogTwistEquiv_symm (μ : Λ) :
@@ -212,25 +195,25 @@ theorem contMDiffAt_torusFamilyLogTwistMap (μ : Λ)
     (contDiffAt_log_add_log_div hx).contMDiffAt.comp y₀ hφ.contMDiffAt
   have hproj : ContMDiff (I.prod 𝓘(ℂ, E)) I n (torusFamilyProjection P) :=
     contMDiff_torusFamilyProjection P hinj hP
-  have hc : ContMDiffAt (I.prod 𝓘(ℂ, E)) 𝓘(ℂ, E) n
-      (fun x' ↦ (L (torusFamilyProjection P x') / (2 * π * Complex.I)) •
-        P (torusFamilyProjection P x') μ) x :=
-    ((hL.comp x hproj.contMDiffAt).div_const (2 * π * Complex.I)).smul
-      ((hP μ).comp hproj).contMDiffAt
-  refine (hc.vadd contMDiffAt_id).congr_of_eventuallyEq ?_
-  have hopen : IsOpen {x' : AddAction.orbitRel.Quotient Λ (Y × E) |
-      φ (torusFamilyProjection P x') ≠ 0} :=
-    isOpen_ne_fun (hφ.continuous.comp (continuous_torusFamilyProjection P)) continuous_const
-  filter_upwards [hopen.mem_nhds hx] with x' hx'
-  induction x' using Quotient.inductionOn with
-  | h p =>
-    obtain ⟨y, e⟩ := p
-    change torusFamilyLogTwistMap φ P μ ⟦(y, e)⟧ =
-      (L (torusFamilyProjection P ⟦(y, e)⟧) / (2 * π * Complex.I)) •
-        P (torusFamilyProjection P ⟦(y, e)⟧) μ +ᵥ ⟦(y, e)⟧
-    rw [torusFamilyProjection_mk] at hx'
-    rw [torusFamilyLogTwistMap_mk_of_exp_eq φ P μ (exp_log_add_log_div hx hx') e,
-      torusFamilyProjection_mk, torusFamilyTranslationAddAction_vadd_mk, add_comm]
+  let g : AddAction.orbitRel.Quotient Λ (Y × E) →
+      AddAction.orbitRel.Quotient Λ (Y × E) := fun x' ↦
+    (L (torusFamilyProjection P x') / (2 * π * Complex.I)) •
+      P (torusFamilyProjection P x') μ +ᵥ x'
+  have hg_mk (y : Y) (e : E) :
+      g (Quotient.mk _ (y, e)) =
+        Quotient.mk _ (y, e + (L y / (2 * π * Complex.I)) • P y μ) := by
+    dsimp only [g]
+    rw [torusFamilyProjection_mk, torusFamilyTranslationAddAction_vadd_mk, add_comm]
+  have hg : ContMDiffAt (I.prod 𝓘(ℂ, E)) (I.prod 𝓘(ℂ, E)) n g x :=
+    (((hL.comp x hproj.contMDiffAt).div_const (2 * π * Complex.I)).smul
+      ((hP μ).comp hproj).contMDiffAt).vadd contMDiffAt_id
+  refine hg.congr_of_eventuallyEq ?_
+  filter_upwards [(torusFamilyNonzeroOpens φ P hφ.continuous).isOpen.mem_nhds hx] with x' hx'
+  obtain ⟨⟨y, e⟩, rfl⟩ := Quotient.exists_rep x'
+  have hx'y : φ y ≠ 0 := by
+    have h : φ (torusFamilyProjection P ⟦(y, e)⟧) ≠ 0 := hx'
+    rwa [torusFamilyProjection_mk] at h
+  rw [hg_mk, torusFamilyLogTwistMap_mk_of_exp_eq φ P μ (exp_log_add_log_div hx hx'y) e]
 
 /-- The punctured logarithmic twist is `C^n` on the open submanifold `{φ ∘ p ≠ 0}`. -/
 private theorem contMDiff_torusFamilyLogTwistEquiv (μ : Λ) :
