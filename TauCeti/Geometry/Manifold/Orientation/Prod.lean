@@ -120,6 +120,7 @@ theorem prod_signAt_of_mem (o : OrientationLift I M (Fin m)) (o' : OrientationLi
 
 /-- A product with the lift of a model space all of whose chart signs are `1` has the total chart
 signs of its first factor. -/
+@[simp]
 theorem prod_ofHasGroupoid_signAt (o : OrientationLift I M (Fin m))
     (model : _root_.Orientation ℝ E' (Fin n)) (hn : Fintype.card (Fin n) = Module.finrank ℝ E')
     (α p : M × E') :
