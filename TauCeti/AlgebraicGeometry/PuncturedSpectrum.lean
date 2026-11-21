@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Scheme
+public import Mathlib.AlgebraicGeometry.Stalk
 public import Mathlib.RingTheory.Spectrum.Prime.Topology
 public import TauCeti.RingTheory.LocalRing.Spectrum
 
@@ -34,6 +35,9 @@ by finitely many basic opens, so that covers can be described and glued chart by
 * `TauCeti.IsLocalRing.preimage_puncturedSpectrum`: for an algebra `A'` over `A` whose closed
   point is the only point over the closed point of `Spec A`, the punctured spectrum of `A'` is the
   preimage of that of `A`.
+* `AlgebraicGeometry.Scheme.preimage_fromSpecStalk_eq_puncturedSpectrum`: if `x ∉ U` and every
+  strict generalization of `x` lies in `U`, then `X.fromSpecStalk x ⁻¹ᵁ U` is the punctured
+  spectrum of `𝒪_{X, x}`.
 
 ## References
 
@@ -161,3 +165,27 @@ theorem preimage_puncturedSpectrum
 end
 
 end TauCeti.IsLocalRing
+
+namespace AlgebraicGeometry.Scheme
+
+/-- If `x ∉ U` and every strict generalization of `x` lies in `U`, then the preimage of `U` under
+`X.fromSpecStalk x : Spec 𝒪_{X, x} ⟶ X` is the punctured spectrum of `𝒪_{X, x}`. -/
+theorem preimage_fromSpecStalk_eq_puncturedSpectrum {X : Scheme.{u}} (U : X.Opens) {x : X}
+    (hx : x ∉ U) (hgen : ∀ y : X, y ⤳ x → y ≠ x → y ∈ U) :
+    X.fromSpecStalk x ⁻¹ᵁ U = TauCeti.IsLocalRing.puncturedSpectrum (X.presheaf.stalk x) := by
+  ext p
+  have hiff : (X.fromSpecStalk x) p ∈ U ↔ p ≠ IsLocalRing.closedPoint (X.presheaf.stalk x) := by
+    constructor
+    · intro hp heq
+      rw [heq, Scheme.fromSpecStalk_closedPoint] at hp
+      exact hx hp
+    · intro hp
+      have hspec : X.fromSpecStalk x p ⤳ x := by
+        have : X.fromSpecStalk x p ∈ Set.range (X.fromSpecStalk x) := ⟨p, rfl⟩
+        rwa [Scheme.range_fromSpecStalk] at this
+      refine hgen (X.fromSpecStalk x p) hspec fun heq ↦ hp ?_
+      exact (X.fromSpecStalk x).isEmbedding.injective
+        (heq.trans Scheme.fromSpecStalk_closedPoint.symm)
+  exact hiff.trans (TauCeti.IsLocalRing.mem_puncturedSpectrum_iff _ p).symm
+
+end AlgebraicGeometry.Scheme

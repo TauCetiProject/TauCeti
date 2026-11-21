@@ -7,6 +7,8 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Basic
 public import TauCeti.AlgebraicGeometry.Gluing.Pushout
+public import TauCeti.CategoryTheory.Comma.Over.Pullback
+import TauCeti.AlgebraicGeometry.Gluing.Extension
 
 /-!
 # Gluing schemes and morphisms over a two-open cover
@@ -21,8 +23,6 @@ and morphisms over `U₁` and `U₂` that agree over `V` glue uniquely to a morp
 
 ## Main declarations
 
-* `TauCeti.AlgebraicGeometry.pullbackSquareIso`: canonical natural isomorphism between the two
-  ways of pulling back around a commutative square of schemes.
 * `TauCeti.AlgebraicGeometry.glueOver`: the glued scheme over `B`.
 * `TauCeti.AlgebraicGeometry.glueOverPullbackLeftIso`,
   `TauCeti.AlgebraicGeometry.glueOverPullbackRightIso`: canonical identifications of the pullbacks
@@ -33,7 +33,6 @@ and morphisms over `U₁` and `U₂` that agree over `V` glue uniquely to a morp
   property passes from the two charts to `glueOver`.
 * `TauCeti.AlgebraicGeometry.glueOverHom`, `TauCeti.AlgebraicGeometry.glueOverIso`: gluing
   morphisms and isomorphisms over a two-open cover.
-* `AlgebraicGeometry.Scheme.opensRange_homOfLE_sup`: the inclusions of `U` and `W` cover `U ⊔ W`.
 
 ## References
 
@@ -48,54 +47,7 @@ universe u
 
 open CategoryTheory Limits AlgebraicGeometry
 
-namespace AlgebraicGeometry.Scheme
-
-/-- The inclusions of `U` and `W` into `U ⊔ W` cover `U ⊔ W`. -/
-lemma opensRange_homOfLE_sup (S : Scheme.{u}) (U W : S.Opens) :
-    (S.homOfLE (le_sup_left : U ≤ U ⊔ W)).opensRange ⊔
-      (S.homOfLE (le_sup_right : W ≤ U ⊔ W)).opensRange = ⊤ := by
-  rw [Scheme.opensRange_homOfLE, Scheme.opensRange_homOfLE, ← Scheme.Hom.preimage_sup]
-  simpa only [Scheme.Opens.opensRange_ι] using Scheme.Hom.preimage_opensRange (U ⊔ W).ι
-
-end AlgebraicGeometry.Scheme
-
 namespace TauCeti.AlgebraicGeometry
-
-/-- Canonical natural isomorphism between the two ways of pulling back around a commutative square
-`i₁ ≫ j₁ = i₂ ≫ j₂` of schemes. -/
-def pullbackSquareIso {B U₁ U₂ V : Scheme.{u}} {i₁ : V ⟶ U₁} {i₂ : V ⟶ U₂}
-    {j₁ : U₁ ⟶ B} {j₂ : U₂ ⟶ B} (w : i₁ ≫ j₁ = i₂ ≫ j₂) :
-    Over.pullback j₁ ⋙ Over.pullback i₁ ≅ Over.pullback j₂ ⋙ Over.pullback i₂ :=
-  (Over.pullbackComp i₁ j₁).symm ≪≫
-    NatIso.ofComponents (F := Over.pullback (i₁ ≫ j₁)) (G := Over.pullback (i₂ ≫ j₂))
-      (fun Y ↦ Over.isoMk (pullback.congrHom rfl w) (by simp))
-      (fun _ ↦ by ext1; apply pullback.hom_ext <;> simp) ≪≫
-    Over.pullbackComp i₂ j₂
-
-private lemma pullbackComp_hom_app_left_fst {V U B : Scheme.{u}} (i : V ⟶ U) (j : U ⟶ B)
-    (Y : Over B) :
-    ((Over.pullbackComp i j).hom.app Y).left ≫ pullback.fst (pullback.snd Y.hom j) i =
-      pullback.lift (pullback.fst Y.hom (i ≫ j)) (pullback.snd Y.hom (i ≫ j) ≫ i)
-        (by simp [pullback.condition]) := by
-  apply pullback.hom_ext <;> simp [Over.pullbackComp]
-
-/-- The forward map of `pullbackSquareIso` commutes with the double first projections to `Y`. -/
-@[reassoc (attr := simp)]
-theorem pullbackSquareIso_hom_app_left_fst_fst {B U₁ U₂ V : Scheme.{u}} {i₁ : V ⟶ U₁}
-    {i₂ : V ⟶ U₂} {j₁ : U₁ ⟶ B} {j₂ : U₂ ⟶ B} (w : i₁ ≫ j₁ = i₂ ≫ j₂) (Y : Over B) :
-    ((pullbackSquareIso w).hom.app Y).left ≫
-        pullback.fst (pullback.snd Y.hom j₂) i₂ ≫ pullback.fst Y.hom j₂ =
-      pullback.fst (pullback.snd Y.hom j₁) i₁ ≫ pullback.fst Y.hom j₁ := by
-  simp [pullbackSquareIso, Over.pullbackComp]
-
-/-- The inverse map of `pullbackSquareIso` commutes with the double first projections to `Y`. -/
-@[reassoc (attr := simp)]
-theorem pullbackSquareIso_inv_app_left_fst_fst {B U₁ U₂ V : Scheme.{u}} {i₁ : V ⟶ U₁}
-    {i₂ : V ⟶ U₂} {j₁ : U₁ ⟶ B} {j₂ : U₂ ⟶ B} (w : i₁ ≫ j₁ = i₂ ≫ j₂) (Y : Over B) :
-    ((pullbackSquareIso w).inv.app Y).left ≫
-        pullback.fst (pullback.snd Y.hom j₁) i₁ ≫ pullback.fst Y.hom j₁ =
-      pullback.fst (pullback.snd Y.hom j₂) i₂ ≫ pullback.fst Y.hom j₂ := by
-  simp [pullbackSquareIso, Over.pullbackComp]
 
 section GlueObjects
 
@@ -247,32 +199,27 @@ lemma glueOverPullbackRightIso_inv_left_fst (hpb : IsPullback i₁ i₂ j₁ j�
 lemma glueOverPullback_compat (hpb : IsPullback i₁ i₂ j₁ j₂) (X₁ : Over U₁) (X₂ : Over U₂)
     (e : (Over.pullback i₁).obj X₁ ≅ (Over.pullback i₂).obj X₂) :
     (Over.pullback i₁).map (glueOverPullbackLeftIso hpb X₁ X₂ e).inv ≫
-        (pullbackSquareIso hpb.w).hom.app (glueOver hpb X₁ X₂ e) ≫
+        (Over.pullbackSquareIso hpb.w).hom.app (glueOver hpb X₁ X₂ e) ≫
         (Over.pullback i₂).map (glueOverPullbackRightIso hpb X₁ X₂ e).hom =
       e.hom := by
   have ⟨_, _⟩ := overlap_open hpb X₁ X₂ e
   suffices (Over.pullback i₁).map (glueOverPullbackLeftIso hpb X₁ X₂ e).inv ≫
-      (pullbackSquareIso hpb.w).hom.app (glueOver hpb X₁ X₂ e) =
+      (Over.pullbackSquareIso hpb.w).hom.app (glueOver hpb X₁ X₂ e) =
     e.hom ≫ (Over.pullback i₂).map (glueOverPullbackRightIso hpb X₁ X₂ e).inv by
     rw [← Category.assoc, this, Category.assoc, ← CategoryTheory.Functor.map_comp, Iso.inv_hom_id,
       CategoryTheory.Functor.map_id, Category.comp_id]
   ext1; apply pullback.hom_ext
   · apply pullback.hom_ext
-    · simp only [Over.comp_left, Category.assoc, pullbackSquareIso_hom_app_left_fst_fst,
+    · simp only [Over.comp_left, Category.assoc, Over.pullbackSquareIso_hom_app_left_fst_fst,
         Over.pullback_map_left, Over.pullback_obj_hom, pullback.lift_fst_assoc,
         glueOverPullbackLeftIso_inv_left_fst, glueOverPullbackRightIso_inv_left_fst]
       rw [← Category.assoc]; exact pushout.condition
-    · have hsnd : ((pullbackSquareIso hpb.w).hom.app (glueOver hpb X₁ X₂ e)).left ≫
-          pullback.snd (pullback.snd (glueOver hpb X₁ X₂ e).hom j₂) i₂ =
-          pullback.snd (pullback.snd (glueOver hpb X₁ X₂ e).hom j₁) i₁ := Over.w _
-      have hwe : e.hom.left ≫ pullback.snd X₂.hom i₂ = pullback.snd X₁.hom i₁ := Over.w _
-      simp only [Over.comp_left, Category.assoc, pullback.condition, reassoc_of% hsnd,
-        Over.pullback_map_left, Over.pullback_obj_hom, pullback.lift_snd_assoc, reassoc_of% hwe]
-  · have hsnd : ((pullbackSquareIso hpb.w).hom.app (glueOver hpb X₁ X₂ e)).left ≫
-        pullback.snd (pullback.snd (glueOver hpb X₁ X₂ e).hom j₂) i₂ =
-        pullback.snd (pullback.snd (glueOver hpb X₁ X₂ e).hom j₁) i₁ := Over.w _
-    simp only [Over.comp_left, Category.assoc, hsnd, Over.pullback_map_left, Over.pullback_obj_hom,
-      pullback.lift_snd]
+    · have hwe : e.hom.left ≫ pullback.snd X₂.hom i₂ = pullback.snd X₁.hom i₁ := Over.w _
+      simp only [Over.comp_left, Category.assoc, pullback.condition,
+        Over.pullbackSquareIso_hom_app_left_snd_assoc, Over.pullback_map_left,
+        Over.pullback_obj_hom, pullback.lift_snd_assoc, reassoc_of% hwe]
+  · simp only [Over.comp_left, Category.assoc, Over.pullbackSquareIso_hom_app_left_snd,
+      Over.pullback_map_left, Over.pullback_obj_hom, pullback.lift_snd]
     exact (Over.w e.hom).symm
 
 end GlueObjects
@@ -357,32 +304,25 @@ def glueOverHom (hpb : IsPullback i₁ i₂ j₁ j₂) (hcover : j₁.opensRange
     {Y₁ Y₂ : Over B}
     (φ₁ : (Over.pullback j₁).obj Y₁ ⟶ (Over.pullback j₁).obj Y₂)
     (φ₂ : (Over.pullback j₂).obj Y₁ ⟶ (Over.pullback j₂).obj Y₂)
-    (hφ : (Over.pullback i₁).map φ₁ ≫ (pullbackSquareIso hpb.w).hom.app Y₂ =
-      (pullbackSquareIso hpb.w).hom.app Y₁ ≫ (Over.pullback i₂).map φ₂) :
+    (hφ : (Over.pullback i₁).map φ₁ ≫ (Over.pullbackSquareIso hpb.w).hom.app Y₂ =
+      (Over.pullbackSquareIso hpb.w).hom.app Y₁ ≫ (Over.pullback i₂).map φ₂) :
     Y₁ ⟶ Y₂ := by
   have ⟨_, _⟩ := chartOverlap_open hpb Y₁
   have := isIso_chartPushoutDesc hpb hcover Y₁
   have hcomm : chartOverlapLeft (i₁ := i₁) (j₁ := j₁) Y₁ ≫ φ₁.left ≫ pullback.fst Y₂.hom j₁ =
       chartOverlapRight hpb Y₁ ≫ φ₂.left ≫ pullback.fst Y₂.hom j₂ := by
-    have hfst := congrArg (fun k ↦ ((Over.pullbackComp i₁ j₁).hom.app Y₁).left ≫ k.left ≫
-      pullback.fst (pullback.snd Y₂.hom j₂) i₂ ≫ pullback.fst Y₂.hom j₂) hφ
-    have hright : ((Over.pullbackComp i₁ j₁).hom.app Y₁).left ≫
-        ((pullbackSquareIso hpb.w).hom.app Y₁).left ≫
+    have hconj := (Over.pullbackSquareIso_iff_conjPullback (rfl : i₁ ≫ j₁ = _) hpb.w.symm hpb.w
+      φ₁ φ₂).mp hφ
+    have hfst := congrArg (fun k ↦ k.left ≫ pullback.fst Y₂.hom (i₁ ≫ j₁)) hconj
+    have hL : ((Over.pullbackCompIso (rfl : i₁ ≫ j₁ = _)).inv.app Y₁).left ≫
+        pullback.fst (pullback.snd Y₁.hom j₁) i₁ = chartOverlapLeft (i₁ := i₁) (j₁ := j₁) Y₁ := by
+      apply pullback.hom_ext <;> simp
+    have hR : ((Over.pullbackCompIso hpb.w.symm).inv.app Y₁).left ≫
         pullback.fst (pullback.snd Y₁.hom j₂) i₂ = chartOverlapRight hpb Y₁ := by
-      apply pullback.hom_ext
-      · rw [Category.assoc, Category.assoc, pullbackSquareIso_hom_app_left_fst_fst,
-          ← Category.assoc, pullbackComp_hom_app_left_fst, pullback.lift_fst, pullback.lift_fst]
-      · have hsnd : ((pullbackSquareIso hpb.w).hom.app Y₁).left ≫
-            pullback.snd (pullback.snd Y₁.hom j₂) i₂ =
-            pullback.snd (pullback.snd Y₁.hom j₁) i₁ := Over.w _
-        have hw : ((Over.pullbackComp i₁ j₁).hom.app Y₁).left ≫
-            pullback.snd (pullback.snd Y₁.hom j₁) i₁ = pullback.snd Y₁.hom (i₁ ≫ j₁) := Over.w _
-        rw [Category.assoc, Category.assoc, pullback.condition, reassoc_of% hsnd, reassoc_of% hw]
-        exact (pullback.lift_snd ..).symm
-    simp only [Over.comp_left, Category.assoc, pullbackSquareIso_hom_app_left_fst_fst,
-      Over.pullback_map_left, Over.pullback_obj_hom, pullback.lift_fst_assoc] at hfst
-    rw [← Category.assoc ((Over.pullbackComp i₁ j₁).hom.app Y₁).left,
-      pullbackComp_hom_app_left_fst, reassoc_of% hright] at hfst
+      apply pullback.hom_ext <;> simp
+    simp only [Over.conjPullback_eq, Over.comp_left, Category.assoc,
+      Over.pullbackCompIso_hom_app_left_fst, Over.pullback_map_left, Over.pullback_obj_hom,
+      pullback.lift_fst_assoc, reassoc_of% hL, reassoc_of% hR] at hfst
     exact hfst
   refine Over.homMk (inv (chartPushoutDesc hpb Y₁) ≫
     pushout.desc (φ₁.left ≫ pullback.fst Y₂.hom j₁) (φ₂.left ≫ pullback.fst Y₂.hom j₂) hcomm) ?_
@@ -401,8 +341,8 @@ lemma pullback_map_glueOverHom_left (hpb : IsPullback i₁ i₂ j₁ j₂)
     (hcover : j₁.opensRange ⊔ j₂.opensRange = ⊤) {Y₁ Y₂ : Over B}
     (φ₁ : (Over.pullback j₁).obj Y₁ ⟶ (Over.pullback j₁).obj Y₂)
     (φ₂ : (Over.pullback j₂).obj Y₁ ⟶ (Over.pullback j₂).obj Y₂)
-    (hφ : (Over.pullback i₁).map φ₁ ≫ (pullbackSquareIso hpb.w).hom.app Y₂ =
-      (pullbackSquareIso hpb.w).hom.app Y₁ ≫ (Over.pullback i₂).map φ₂) :
+    (hφ : (Over.pullback i₁).map φ₁ ≫ (Over.pullbackSquareIso hpb.w).hom.app Y₂ =
+      (Over.pullbackSquareIso hpb.w).hom.app Y₁ ≫ (Over.pullback i₂).map φ₂) :
     (Over.pullback j₁).map (glueOverHom hpb hcover φ₁ φ₂ hφ) = φ₁ := by
   have ⟨_, _⟩ := chartOverlap_open hpb Y₁
   have := isIso_chartPushoutDesc hpb hcover Y₁
@@ -419,8 +359,8 @@ lemma pullback_map_glueOverHom_right (hpb : IsPullback i₁ i₂ j₁ j₂)
     (hcover : j₁.opensRange ⊔ j₂.opensRange = ⊤) {Y₁ Y₂ : Over B}
     (φ₁ : (Over.pullback j₁).obj Y₁ ⟶ (Over.pullback j₁).obj Y₂)
     (φ₂ : (Over.pullback j₂).obj Y₁ ⟶ (Over.pullback j₂).obj Y₂)
-    (hφ : (Over.pullback i₁).map φ₁ ≫ (pullbackSquareIso hpb.w).hom.app Y₂ =
-      (pullbackSquareIso hpb.w).hom.app Y₁ ≫ (Over.pullback i₂).map φ₂) :
+    (hφ : (Over.pullback i₁).map φ₁ ≫ (Over.pullbackSquareIso hpb.w).hom.app Y₂ =
+      (Over.pullbackSquareIso hpb.w).hom.app Y₁ ≫ (Over.pullback i₂).map φ₂) :
     (Over.pullback j₂).map (glueOverHom hpb hcover φ₁ φ₂ hφ) = φ₂ := by
   have ⟨_, _⟩ := chartOverlap_open hpb Y₁
   have := isIso_chartPushoutDesc hpb hcover Y₁
@@ -437,11 +377,11 @@ def glueOverIso (hpb : IsPullback i₁ i₂ j₁ j₂) (hcover : j₁.opensRange
     {Y₁ Y₂ : Over B}
     (e₁ : (Over.pullback j₁).obj Y₁ ≅ (Over.pullback j₁).obj Y₂)
     (e₂ : (Over.pullback j₂).obj Y₁ ≅ (Over.pullback j₂).obj Y₂)
-    (he : (Over.pullback i₁).map e₁.hom ≫ (pullbackSquareIso hpb.w).hom.app Y₂ =
-      (pullbackSquareIso hpb.w).hom.app Y₁ ≫ (Over.pullback i₂).map e₂.hom) :
+    (he : (Over.pullback i₁).map e₁.hom ≫ (Over.pullbackSquareIso hpb.w).hom.app Y₂ =
+      (Over.pullbackSquareIso hpb.w).hom.app Y₁ ≫ (Over.pullback i₂).map e₂.hom) :
     Y₁ ≅ Y₂ := by
-  have he_inv : (Over.pullback i₁).map e₁.inv ≫ (pullbackSquareIso hpb.w).hom.app Y₁ =
-      (pullbackSquareIso hpb.w).hom.app Y₂ ≫ (Over.pullback i₂).map e₂.inv := by
+  have he_inv : (Over.pullback i₁).map e₁.inv ≫ (Over.pullbackSquareIso hpb.w).hom.app Y₁ =
+      (Over.pullbackSquareIso hpb.w).hom.app Y₂ ≫ (Over.pullback i₂).map e₂.inv := by
     rw [← cancel_epi ((Over.pullback i₁).map e₁.hom), ← CategoryTheory.Functor.map_comp_assoc,
       Iso.hom_inv_id, CategoryTheory.Functor.map_id, Category.id_comp, reassoc_of% he,
       ← CategoryTheory.Functor.map_comp, Iso.hom_inv_id, CategoryTheory.Functor.map_id,
@@ -458,8 +398,8 @@ lemma pullback_mapIso_glueOverIso_left (hpb : IsPullback i₁ i₂ j₁ j₂)
     (hcover : j₁.opensRange ⊔ j₂.opensRange = ⊤) {Y₁ Y₂ : Over B}
     (e₁ : (Over.pullback j₁).obj Y₁ ≅ (Over.pullback j₁).obj Y₂)
     (e₂ : (Over.pullback j₂).obj Y₁ ≅ (Over.pullback j₂).obj Y₂)
-    (he : (Over.pullback i₁).map e₁.hom ≫ (pullbackSquareIso hpb.w).hom.app Y₂ =
-      (pullbackSquareIso hpb.w).hom.app Y₁ ≫ (Over.pullback i₂).map e₂.hom) :
+    (he : (Over.pullback i₁).map e₁.hom ≫ (Over.pullbackSquareIso hpb.w).hom.app Y₂ =
+      (Over.pullbackSquareIso hpb.w).hom.app Y₁ ≫ (Over.pullback i₂).map e₂.hom) :
     (Over.pullback j₁).mapIso (glueOverIso hpb hcover e₁ e₂ he) = e₁ :=
   Iso.ext (pullback_map_glueOverHom_left hpb hcover e₁.hom e₂.hom he)
 
@@ -469,8 +409,8 @@ lemma pullback_mapIso_glueOverIso_right (hpb : IsPullback i₁ i₂ j₁ j₂)
     (hcover : j₁.opensRange ⊔ j₂.opensRange = ⊤) {Y₁ Y₂ : Over B}
     (e₁ : (Over.pullback j₁).obj Y₁ ≅ (Over.pullback j₁).obj Y₂)
     (e₂ : (Over.pullback j₂).obj Y₁ ≅ (Over.pullback j₂).obj Y₂)
-    (he : (Over.pullback i₁).map e₁.hom ≫ (pullbackSquareIso hpb.w).hom.app Y₂ =
-      (pullbackSquareIso hpb.w).hom.app Y₁ ≫ (Over.pullback i₂).map e₂.hom) :
+    (he : (Over.pullback i₁).map e₁.hom ≫ (Over.pullbackSquareIso hpb.w).hom.app Y₂ =
+      (Over.pullbackSquareIso hpb.w).hom.app Y₁ ≫ (Over.pullback i₂).map e₂.hom) :
     (Over.pullback j₂).mapIso (glueOverIso hpb hcover e₁ e₂ he) = e₂ :=
   Iso.ext (pullback_map_glueOverHom_right hpb hcover e₁.hom e₂.hom he)
 
@@ -491,17 +431,12 @@ theorem IsZariskiLocalAtTarget.of_glueOver
     (e : (Over.pullback i₁).obj X₁ ≅ (Over.pullback i₂).obj X₂)
     (h₁ : P X₁.hom) (h₂ : P X₂.hom) :
     P (TauCeti.AlgebraicGeometry.glueOver hpb X₁ X₂ e).hom := by
-  let Y := TauCeti.AlgebraicGeometry.glueOver hpb X₁ X₂ e
   refine IsZariskiLocalAtTarget.of_iSup_eq_top (P := P)
     (fun b ↦ cond b j₁.opensRange j₂.opensRange) (by rwa [iSup_bool_eq]) fun b ↦ ?_
   cases b
-  · refine (P.arrow_mk_iso_iff (morphismRestrictOpensRange Y.hom j₂)).mpr ?_
-    rw [← (TauCeti.AlgebraicGeometry.isPullback_glueOverInr hpb X₁ X₂ e).flip.isoPullback_hom_snd]
-      at h₂
-    exact (P.cancel_left_of_respectsIso _ _).mp h₂
-  · refine (P.arrow_mk_iso_iff (morphismRestrictOpensRange Y.hom j₁)).mpr ?_
-    rw [← (TauCeti.AlgebraicGeometry.isPullback_glueOverInl hpb X₁ X₂ e).flip.isoPullback_hom_snd]
-      at h₁
-    exact (P.cancel_left_of_respectsIso _ _).mp h₁
+  · exact IsZariskiLocalAtTarget.morphismRestrict_opensRange_of_isPullback
+      (TauCeti.AlgebraicGeometry.isPullback_glueOverInr hpb X₁ X₂ e) h₂
+  · exact IsZariskiLocalAtTarget.morphismRestrict_opensRange_of_isPullback
+      (TauCeti.AlgebraicGeometry.isPullback_glueOverInl hpb X₁ X₂ e) h₁
 
 end AlgebraicGeometry

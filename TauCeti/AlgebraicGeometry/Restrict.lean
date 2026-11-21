@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.IsIso
 public import Mathlib.AlgebraicGeometry.Morphisms.RingHomProperties
+public import Mathlib.CategoryTheory.Comma.Over.Pullback
 
 /-!
 # Restricting local properties of scheme morphisms
@@ -40,6 +41,11 @@ global functions of the base change.
 * `CategoryTheory.IsPullback.isIso_appLE`: in a pullback square of the inclusion of an open `U`
   along `f`, pullback along the top morphism identifies the functions on `f ⁻¹ᵁ U` with the
   global functions of the base change.
+* `AlgebraicGeometry.Scheme.opensRange_homOfLE_sup`: the inclusions of `U` and `W` cover `U ⊔ W`.
+* `TauCeti.AlgebraicGeometry.pullbackMapOpenIso`: pulling back an `Over U`-object pushed forward
+  to `S` commutes with restricting `f` to `U`.
+* `TauCeti.AlgebraicGeometry.infImageOpenIso`: canonical isomorphism between `U ⊓ (W₁.ι ''ᵁ V)`
+  and `V.ι ⁻¹ᵁ (W₁.ι ⁻¹ᵁ U)`.
 -/
 
 public section
@@ -111,6 +117,13 @@ theorem Scheme.Hom.congr_appLE {g : X ⟶ Y} (e : f = g) (U : Y.Opens) (V : X.Op
   subst e
   rfl
 
+/-- The inclusions of `U` and `W` into `U ⊔ W` cover `U ⊔ W`. -/
+lemma Scheme.opensRange_homOfLE_sup (S : Scheme.{u}) (U W : S.Opens) :
+    (S.homOfLE (le_sup_left : U ≤ U ⊔ W)).opensRange ⊔
+      (S.homOfLE (le_sup_right : W ≤ U ⊔ W)).opensRange = ⊤ := by
+  rw [Scheme.opensRange_homOfLE, Scheme.opensRange_homOfLE, ← Scheme.Hom.preimage_sup]
+  simpa only [Scheme.Opens.opensRange_ι] using Scheme.Hom.preimage_opensRange (U ⊔ W).ι
+
 end AlgebraicGeometry
 
 namespace CategoryTheory
@@ -158,3 +171,64 @@ theorem IsPullback.isIso_appLE (h : IsPullback j g f U.ι) :
   infer_instance
 
 end CategoryTheory
+
+namespace TauCeti.AlgebraicGeometry
+
+open _root_.AlgebraicGeometry Limits
+
+/-- Pulling back a scheme over an open subscheme `U ⊆ S` pushed forward to `S` along `f : T ⟶ S`
+is naturally isomorphic to pulling back along `f ∣_ U` and pushing forward along `(f ⁻¹ᵁ U).ι`. -/
+noncomputable def pullbackMapOpenIso {S T : Scheme.{u}} (f : T ⟶ S) (U : S.Opens) :
+    Over.map U.ι ⋙ Over.pullback f ≅ Over.pullback (f ∣_ U) ⋙ Over.map (f ⁻¹ᵁ U).ι :=
+  NatIso.ofComponents
+    (fun A ↦
+      let h := (IsPullback.of_hasPullback A.hom (f ∣_ U)).paste_vert
+        (isPullback_morphismRestrict f U)
+      Over.isoMk h.isoPullback.symm (by
+        simp only [Iso.symm_hom, Functor.comp_obj, Over.map_obj_hom, Over.pullback_obj_hom,
+          Iso.inv_comp_eq, h.isoPullback_hom_snd]))
+    fun {A B} g ↦ by
+      ext1
+      simp only [Functor.comp_map, Over.comp_left, Over.isoMk_hom_left, Iso.symm_hom]
+      rw [Iso.comp_inv_eq, Category.assoc, Iso.eq_inv_comp]
+      apply pullback.hom_ext
+      · simp only [Category.assoc, Over.map_obj_hom, IsPullback.isoPullback_hom_fst,
+          IsPullback.isoPullback_hom_fst_assoc, Over.pullback_map_left, Over.map_map_left,
+          pullback.lift_fst]
+      · simp only [Category.assoc, Over.map_obj_hom, IsPullback.isoPullback_hom_snd,
+          Over.map_map_left, Over.pullback_map_left, pullback.lift_snd_assoc, pullback.lift_snd]
+
+/-- For opens `U, W₁ ⊆ S` and `V ⊆ W₁`, canonical isomorphism between `U ⊓ (W₁.ι ''ᵁ V)` and
+`V.ι ⁻¹ᵁ (W₁.ι ⁻¹ᵁ U)`. -/
+noncomputable def infImageOpenIso {S : Scheme.{u}} (U W₁ : S.Opens) (V : W₁.toScheme.Opens) :
+    (U ⊓ (W₁.ι ''ᵁ V)).toScheme ≅ (V.ι ⁻¹ᵁ (W₁.ι ⁻¹ᵁ U)).toScheme :=
+  IsOpenImmersion.isoOfRangeEq
+    (S.homOfLE (inf_le_left : U ⊓ (W₁.ι ''ᵁ V) ≤ U) ≫ U.ι)
+    ((V.ι ⁻¹ᵁ (W₁.ι ⁻¹ᵁ U)).ι ≫ V.ι ≫ W₁.ι) <| by
+    rw [Scheme.homOfLE_ι, Scheme.Opens.range_ι]
+    ext x
+    simp only [Scheme.Hom.comp_base, TopCat.coe_comp, Set.mem_range, Function.comp_apply]
+    constructor
+    · rintro ⟨hxU, y, hyV, rfl⟩; exact ⟨⟨⟨y, hyV⟩, hxU⟩, rfl⟩
+    · rintro ⟨⟨⟨y, hyV⟩, hyU⟩, rfl⟩; exact ⟨hyU, y, hyV, rfl⟩
+
+/-- `infImageOpenIso` identifies the restriction of `V.ι ∣_ (W₁.ι ⁻¹ᵁ U) ≫ W₁.ι ∣_ U` with the
+inclusion `U ⊓ (W₁.ι ''ᵁ V) ≤ U`. -/
+@[reassoc]
+theorem infImageOpenIso_hom_comp_left {S : Scheme.{u}} (U W₁ : S.Opens) (V : W₁.toScheme.Opens) :
+    (infImageOpenIso U W₁ V).hom ≫ (V.ι ∣_ (W₁.ι ⁻¹ᵁ U)) ≫ (W₁.ι ∣_ U) =
+      S.homOfLE (inf_le_left : U ⊓ (W₁.ι ''ᵁ V) ≤ U) := by
+  rw [← cancel_mono U.ι, Category.assoc, Category.assoc, morphismRestrict_ι,
+    ← Category.assoc (V.ι ∣_ (W₁.ι ⁻¹ᵁ U)), morphismRestrict_ι, Category.assoc]
+  exact IsOpenImmersion.isoOfRangeEq_hom_fac _ _ _
+
+/-- `infImageOpenIso` identifies `(V.ι ∣_ (W₁.ι ⁻¹ᵁ U)) ≫ (W₁.ι ⁻¹ᵁ U).ι` with the inclusion
+`U ⊓ (W₁.ι ''ᵁ V) ≤ W₁.ι ''ᵁ V ≤ W₁`. -/
+@[reassoc]
+theorem infImageOpenIso_hom_comp_right {S : Scheme.{u}} (U W₁ : S.Opens) (V : W₁.toScheme.Opens) :
+    (infImageOpenIso U W₁ V).hom ≫ (V.ι ∣_ (W₁.ι ⁻¹ᵁ U)) ≫ (W₁.ι ⁻¹ᵁ U).ι =
+      S.homOfLE (inf_le_right : U ⊓ (W₁.ι ''ᵁ V) ≤ W₁.ι ''ᵁ V) ≫
+        S.homOfLE (W₁.ι_image_le V) := by
+  rw [← cancel_mono W₁.ι]; simp [infImageOpenIso, Category.assoc]
+
+end TauCeti.AlgebraicGeometry

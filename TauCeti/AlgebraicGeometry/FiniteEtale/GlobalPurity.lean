@@ -36,9 +36,6 @@ satisfies purity.
 
 ## Main results
 
-* `AlgebraicGeometry.Scheme.preimage_fromSpecStalk_eq_puncturedSpectrum`: if `x ∉ U` and every
-  strict generalization of `x` lies in `U`, then `X.fromSpecStalk x ⁻¹ᵁ U` is the punctured
-  spectrum of `𝒪_{X, x}`.
 * `TauCeti.FiniteEtaleScheme.essSurj_pullback_ι_of_purityHolds`: over a Noetherian topological
   space, local purity outside an open `U` implies that restriction of finite étale covers to `U` is
   essentially surjective (Stacks, Lemma 58.21.6, Tag 0EY7).
@@ -59,32 +56,34 @@ universe u
 
 open CategoryTheory AlgebraicGeometry TopologicalSpace
 
-namespace AlgebraicGeometry.Scheme
-
-/-- If `x ∉ U` and every strict generalization of `x` lies in `U`, then the preimage of `U` under
-`X.fromSpecStalk x : Spec 𝒪_{X, x} ⟶ X` is the punctured spectrum of `𝒪_{X, x}`. -/
-theorem preimage_fromSpecStalk_eq_puncturedSpectrum {X : Scheme.{u}} (U : X.Opens) {x : X}
-    (hx : x ∉ U) (hgen : ∀ y : X, y ⤳ x → y ≠ x → y ∈ U) :
-    X.fromSpecStalk x ⁻¹ᵁ U = TauCeti.IsLocalRing.puncturedSpectrum (X.presheaf.stalk x) := by
-  ext p
-  refine Iff.trans ?_
-    (TauCeti.IsLocalRing.mem_puncturedSpectrum_iff (X.presheaf.stalk x) p).symm
-  change X.fromSpecStalk x p ∈ U ↔ p ≠ IsLocalRing.closedPoint (X.presheaf.stalk x)
-  constructor
-  · intro hp heq
-    rw [heq, Scheme.fromSpecStalk_closedPoint] at hp
-    exact hx hp
-  · intro hp
-    have hspec : X.fromSpecStalk x p ⤳ x := by
-      have : X.fromSpecStalk x p ∈ Set.range (X.fromSpecStalk x) := ⟨p, rfl⟩
-      rwa [Scheme.range_fromSpecStalk] at this
-    refine hgen (X.fromSpecStalk x p) hspec fun heq ↦ hp ?_
-    exact (X.fromSpecStalk x).isEmbedding.injective
-      (heq.trans Scheme.fromSpecStalk_closedPoint.symm)
-
-end AlgebraicGeometry.Scheme
-
 namespace TauCeti.FiniteEtaleScheme
+
+private lemma notMem_of_specializes_of_ne_genericPoint {X : Type*} [TopologicalSpace X]
+    [T0Space X] [QuasiSober X] {Z : Set X} (hZ : IsClosed Z) {x : X} (hxZ : x ∈ Z)
+    (hx_gen : (⟨x, hxZ⟩ : Z) ∈ genericPoints Z) {y : X} (hyx : y ⤳ x) (hyne : y ≠ x) :
+    y ∉ Z := by
+  have : QuasiSober Z := hZ.isClosedEmbedding_subtypeVal.quasiSober
+  intro hyZ
+  have hspec : (⟨y, hyZ⟩ : Z) ⤳ ⟨x, hxZ⟩ :=
+    Topology.IsInducing.subtypeVal.specializes_iff.mp hyx
+  exact hyne (congrArg Subtype.val ((TauCeti.mem_genericPoints_iff.mp hx_gen) _ hspec))
+
+private def extendPullbackIsoOfEq {X : Scheme.{u}} (U₀ : X.Opens) (x : X)
+    (heq : X.fromSpecStalk x ⁻¹ᵁ U₀ = IsLocalRing.puncturedSpectrum (X.presheaf.stalk x))
+    (YU₀ : FiniteEtaleScheme U₀.toScheme)
+    (Yx : FiniteEtaleScheme (Spec (X.presheaf.stalk x)))
+    (ex : (pullback (IsLocalRing.puncturedSpectrum (X.presheaf.stalk x)).ι).obj Yx ≅
+      (pullback ((Spec (X.presheaf.stalk x)).isoOfEq heq).inv).obj
+        ((pullback (X.fromSpecStalk x ∣_ U₀)).obj YU₀)) :
+    (pullback (X.fromSpecStalk x ∣_ U₀)).obj YU₀ ≅
+      (pullback (X.fromSpecStalk x ⁻¹ᵁ U₀).ι).obj Yx :=
+  let j := (Spec (X.presheaf.stalk x)).isoOfEq heq
+  (pullbackId.app _).symm ≪≫
+    eqToIso (congrArg (fun g ↦ (pullback g).obj _) j.hom_inv_id.symm) ≪≫
+    (pullbackComp j.hom j.inv).app _ ≪≫
+    (pullback j.hom).mapIso ex.symm ≪≫
+    (pullbackComp j.hom (IsLocalRing.puncturedSpectrum (X.presheaf.stalk x)).ι).symm.app Yx ≪≫
+    eqToIso (congrArg (fun g ↦ (pullback g).obj Yx) (Scheme.isoOfEq_hom_ι _ heq))
 
 /-- **Extension of finite étale covers across points where purity holds.** Let `X` be a scheme
 whose underlying topological space is Noetherian and `U ⊆ X` an open subscheme. If purity holds
@@ -96,6 +95,7 @@ theorem essSurj_pullback_ι_of_purityHolds {X : Scheme.{u}} [NoetherianSpace X] 
     (pullback U.ι).EssSurj := by
   constructor
   intro Y
+  -- Take a maximal open subscheme `U₀ ⊇ U` to which `Y` extends.
   let S : Set X.Opens :=
     { V | ∃ hUV : U ≤ V, ∃ YV : FiniteEtaleScheme V.toScheme,
       Nonempty ((pullback (X.homOfLE hUV)).obj YV ≅ Y) }
@@ -106,6 +106,7 @@ theorem essSurj_pullback_ι_of_purityHolds {X : Scheme.{u}} [NoetherianSpace X] 
   obtain ⟨U₀, ⟨hUU₀, YU₀, ⟨eU₀⟩⟩, hmax⟩ := wellFounded_gt.has_min S ⟨U, hUS⟩
   have hU₀_top : U₀ = ⊤ := by
     by_contra hne
+    -- Choose a generic point `x` of an irreducible component of `X \ U₀`.
     let Z : Set X := (U₀ : Set X)ᶜ
     have hZ_closed : IsClosed Z := U₀.isOpen.isClosed_compl
     have hZ_ne : Z.Nonempty := by
@@ -117,29 +118,21 @@ theorem essSurj_pullback_ι_of_purityHolds {X : Scheme.{u}} [NoetherianSpace X] 
       exact hempty ⟨z, hz⟩
     obtain ⟨z, hz⟩ := hZ_ne
     obtain ⟨⟨x, hxU₀⟩, hx_gen, -⟩ := hZ_closed.exists_genericPoint_specializes hz
-    have : QuasiSober Z := hZ_closed.isClosedEmbedding_subtypeVal.quasiSober
-    have hgen : ∀ y : X, y ⤳ x → y ≠ x → y ∈ U₀ := by
-      intro y hyx hyne
+    have hgen : ∀ y : X, y ⤳ x → y ≠ x → y ∈ U₀ := fun y hyx hyne ↦ by
       by_contra hyU₀
-      have hspec : (⟨y, hyU₀⟩ : Z) ⤳ ⟨x, hxU₀⟩ :=
-        Topology.IsInducing.subtypeVal.specializes_iff.mp hyx
-      exact hyne (congrArg Subtype.val ((TauCeti.mem_genericPoints_iff.mp hx_gen) _ hspec))
+      exact notMem_of_specializes_of_ne_genericPoint hZ_closed hxU₀ hx_gen hyx hyne hyU₀
+    -- By purity at `x`, `YU₀` extends across the closed point of `Spec 𝒪_{X, x}`.
     have heq : X.fromSpecStalk x ⁻¹ᵁ U₀ =
         IsLocalRing.puncturedSpectrum (X.presheaf.stalk x) :=
       X.preimage_fromSpecStalk_eq_puncturedSpectrum U₀ hxU₀ hgen
-    let j := (Spec (X.presheaf.stalk x)).isoOfEq heq
     let Yp : FiniteEtaleScheme (IsLocalRing.puncturedSpectrum (X.presheaf.stalk x)).toScheme :=
-      (pullback j.inv).obj ((pullback (X.fromSpecStalk x ∣_ U₀)).obj YU₀)
+      (pullback ((Spec (X.presheaf.stalk x)).isoOfEq heq).inv).obj
+        ((pullback (X.fromSpecStalk x ∣_ U₀)).obj YU₀)
     obtain ⟨Yx, ⟨ex⟩⟩ :=
       (IsLocalRing.purityHolds_iff _).mp (h x fun hxU ↦ hxU₀ (hUU₀ hxU)) Yp
-    let e : (pullback (X.fromSpecStalk x ∣_ U₀)).obj YU₀ ≅
-        (pullback (X.fromSpecStalk x ⁻¹ᵁ U₀).ι).obj Yx :=
-      (pullbackId.app _).symm ≪≫
-        eqToIso (congrArg (fun g ↦ (pullback g).obj _) j.hom_inv_id.symm) ≪≫
-        (pullbackComp j.hom j.inv).app _ ≪≫
-        (pullback j.hom).mapIso ex.symm ≪≫
-        (pullbackComp j.hom (IsLocalRing.puncturedSpectrum _).ι).symm.app Yx ≪≫
-        eqToIso (congrArg (fun g ↦ (pullback g).obj Yx) (Scheme.isoOfEq_hom_ι _ heq))
+    let e := extendPullbackIsoOfEq U₀ x heq YU₀ Yx ex
+    -- Spread `Yx` to an affine open `W ∋ x` and glue with `YU₀` over `U₀ ⊔ W`, contradicting
+    -- maximality of `U₀`.
     have : NoetherianSpace U₀.toScheme := U₀.ι.isOpenEmbedding.isInducing.noetherianSpace
     have : QuasiCompact U₀.ι := ⟨fun V _ _ ↦ NoetherianSpace.isCompact (U₀.ι ⁻¹' V)⟩
     obtain ⟨W, _, hxW, Y', ⟨e'⟩, -⟩ := exists_spread_of_iso_fromSpecStalk U₀ x YU₀ Yx e
@@ -152,6 +145,7 @@ theorem essSurj_pullback_ι_of_purityHolds {X : Scheme.{u}} [NoetherianSpace X] 
     have hlt : U₀ < U₀ ⊔ W :=
       lt_of_le_of_ne le_sup_left fun heq' ↦ hxU₀ (heq'.symm ▸ Opens.mem_sup.mpr (Or.inr hxW))
     exact hmax (U₀ ⊔ W) hmem hlt
+  -- Transport the extension on `⊤` to `X` along `X.topIso`.
   subst hU₀_top
   refine ⟨(pullback X.topIso.inv).obj YU₀, ⟨?_⟩⟩
   have hUι : U.ι ≫ X.topIso.inv = X.homOfLE hUU₀ := by

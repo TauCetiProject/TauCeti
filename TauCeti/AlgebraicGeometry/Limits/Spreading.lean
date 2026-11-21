@@ -12,7 +12,8 @@ public import Mathlib.CategoryTheory.Category.ULift
 public import Mathlib.CategoryTheory.Limits.Final
 public import TauCeti.AlgebraicGeometry.Gluing.Over
 import Mathlib.CategoryTheory.Limits.Constructions.Over.Connected
-import TauCeti.CategoryTheory.Comma.Over.Basic
+import TauCeti.AlgebraicGeometry.Restrict
+import TauCeti.CategoryTheory.Comma.Over
 
 /-!
 # Spreading out morphisms and isomorphisms across cofiltered limits
@@ -23,7 +24,7 @@ schemes with affine transition maps, whose terms remain quasi-compact (resp. qua
 the terms of `D` and the morphism `X ⟶ S` are. Applying Mathlib's spreading-out lemmas from
 `Mathlib.AlgebraicGeometry.AffineTransitionLimit` to this pulled-back limit cone gives spreading
 of equalities of morphisms, morphisms, and isomorphisms between pullbacks of `S`-schemes across
-the limit (Stacks, Propositions 32.8.10 (01ZM) and 32.8.11 (01ZN)).
+the limit (Stacks, Tags 01ZM and 01ZN).
 
 For any scheme `S` and point `s : S`, the local scheme `Spec 𝒪_{S, s}` is the cofiltered limit in
 `Over S` of the affine open neighbourhoods `W` of `s`. Specializing the general limit-spreading
@@ -35,8 +36,8 @@ this with two-open gluing in `Over` spreads compatible isomorphisms given over a
 
 ## Main declarations
 
-* `TauCeti.AlgebraicGeometry.pullbackCompIso`: canonical natural isomorphism
-  `Over.pullback g ⋙ Over.pullback f ≅ Over.pullback h` for `f ≫ g = h`.
+* `AlgebraicGeometry.Scheme.Opens.fromSpecStalkOfMem_homOfLE`: functoriality of
+  `fromSpecStalkOfMem` with respect to open inclusions `W ≤ W'`.
 * `TauCeti.AlgebraicGeometry.exists_pullback_map_eq_of_isLimit`: two morphisms between pullbacks
   at a stage of `D` that agree over the limit already agree at some finer stage.
 * `TauCeti.AlgebraicGeometry.exists_pullback_hom_of_isLimit`: a morphism between pullbacks over
@@ -51,16 +52,18 @@ this with two-open gluing in `Over` spreads compatible isomorphisms given over a
   `TauCeti.AlgebraicGeometry.exists_pullback_hom_fromSpecStalk`,
   `TauCeti.AlgebraicGeometry.exists_pullback_iso_fromSpecStalk`: spreading equalities, morphisms,
   and isomorphisms from `Spec 𝒪_{S, s}` to an affine open neighbourhood of `s`.
-* `TauCeti.AlgebraicGeometry.pullbackMapOpenIso`,
-  `TauCeti.AlgebraicGeometry.stalkOpenRestriction`,
-  `TauCeti.AlgebraicGeometry.infImageOpenIso`: open-subscheme compatibility helpers for spreading
-  and gluing.
+* `TauCeti.AlgebraicGeometry.stalkOpenRestriction`: open-subscheme compatibility helper for
+  restricting `Spec 𝒪_{S, s}` along open inclusions.
+* `TauCeti.AlgebraicGeometry.quasiCompact_ι_preimage`,
+  `TauCeti.AlgebraicGeometry.affineImage_fromSpecStalkOfMem`: shared open-image and
+  quasi-compactness helpers for spreading out across local rings.
 * `TauCeti.AlgebraicGeometry.exists_iso_of_iso_fromSpecStalk`: spreading compatible isomorphisms
   over a quasi-compact open `U` and `Spec 𝒪_{S, s}` to `U ⊔ W` (Stacks, Lemma 32.20.3 (0BQ5)).
 
 ## References
 
-* [The Stacks Project, Section 32.8, Limits of schemes](https://stacks.math.columbia.edu/tag/01ZM)
+* [The Stacks Project, Tag 01ZM](https://stacks.math.columbia.edu/tag/01ZM)
+* [The Stacks Project, Tag 01ZN](https://stacks.math.columbia.edu/tag/01ZN)
 * [The Stacks Project, Lemma 32.20.3](https://stacks.math.columbia.edu/tag/0BQ5)
 -/
 
@@ -72,176 +75,19 @@ universe u
 
 open CategoryTheory Limits AlgebraicGeometry Opposite TopologicalSpace
 
+namespace AlgebraicGeometry.Scheme.Opens
+
+/-- `fromSpecStalkOfMem` is compatible with open inclusions `W ≤ W'`. -/
+@[reassoc (attr := simp)]
+theorem fromSpecStalkOfMem_homOfLE {S : Scheme.{u}} (W : S.Opens) {W' : S.Opens}
+    (h : W ≤ W') (s : S) (hs : s ∈ W) :
+    W.fromSpecStalkOfMem s hs ≫ S.homOfLE h = W'.fromSpecStalkOfMem s (h hs) := by
+  rw [← cancel_mono W'.ι, Category.assoc, Scheme.homOfLE_ι, Scheme.Opens.fromSpecStalkOfMem_ι,
+    Scheme.Opens.fromSpecStalkOfMem_ι]
+
+end AlgebraicGeometry.Scheme.Opens
+
 namespace TauCeti.AlgebraicGeometry
-
-/-- Canonical natural isomorphism between pulling back along `g` then `f` and pulling back along
-`h`, given `w : f ≫ g = h`. -/
-def pullbackCompIso {A B C : Scheme.{u}} {f : A ⟶ B} {g : B ⟶ C} {h : A ⟶ C}
-    (w : f ≫ g = h) :
-    Over.pullback g ⋙ Over.pullback f ≅ Over.pullback h :=
-  (Over.pullbackComp f g).symm ≪≫
-    NatIso.ofComponents (fun X ↦ Over.isoMk (pullback.congrHom rfl w) (by simp))
-      (fun _ ↦ by ext1; apply pullback.hom_ext <;> simp)
-
-/-- The forward map of `pullbackCompIso` commutes with the first projections to `X`. -/
-@[reassoc (attr := simp)]
-theorem pullbackCompIso_hom_app_left_fst {A B C : Scheme.{u}} {f : A ⟶ B} {g : B ⟶ C}
-    {h : A ⟶ C} (w : f ≫ g = h) (X : Over C) :
-    ((pullbackCompIso w).hom.app X).left ≫ pullback.fst X.hom h =
-      pullback.fst (pullback.snd X.hom g) f ≫ pullback.fst X.hom g := by
-  simp [pullbackCompIso, Over.pullbackComp]
-
-/-- The inverse map of `pullbackCompIso` commutes with the double first projections to `X`. -/
-@[reassoc (attr := simp)]
-theorem pullbackCompIso_inv_app_left_fst_fst {A B C : Scheme.{u}} {f : A ⟶ B} {g : B ⟶ C}
-    {h : A ⟶ C} (w : f ≫ g = h) (X : Over C) :
-    ((pullbackCompIso w).inv.app X).left ≫
-        pullback.fst (pullback.snd X.hom g) f ≫ pullback.fst X.hom g =
-      pullback.fst X.hom h := by
-  simp [pullbackCompIso, Over.pullbackComp]
-
-/-- Composing the inverse map of `pullbackCompIso` with the projection to `B` agrees with
-pulling back along `h` followed by `f`. -/
-@[reassoc (attr := simp)]
-theorem pullbackCompIso_inv_app_left_fst_snd {A B C : Scheme.{u}} {f : A ⟶ B} {g : B ⟶ C}
-    {h : A ⟶ C} (w : f ≫ g = h) (X : Over C) :
-    ((pullbackCompIso w).inv.app X).left ≫
-        pullback.fst (pullback.snd X.hom g) f ≫ pullback.snd X.hom g =
-      pullback.snd X.hom h ≫ f := by
-  simp [pullbackCompIso, Over.pullbackComp]
-
-private lemma over_pullback_hom_ext {B T : Scheme.{u}} {f : T ⟶ B} {Z : Over T} {Y : Over B}
-    {φ ψ : Z ⟶ (Over.pullback f).obj Y}
-    (h : φ.left ≫ pullback.fst Y.hom f = ψ.left ≫ pullback.fst Y.hom f) : φ = ψ := by
-  ext1; exact pullback.hom_ext h ((Over.w φ).trans (Over.w ψ).symm)
-
-private abbrev conjPullback {A B C : Scheme.{u}} {f : A ⟶ B} {g : B ⟶ C} {h : A ⟶ C}
-    (w : f ≫ g = h) {X Y : Over C}
-    (φ : (Over.pullback g).obj X ⟶ (Over.pullback g).obj Y) :
-    (Over.pullback h).obj X ⟶ (Over.pullback h).obj Y :=
-  (pullbackCompIso w).inv.app X ≫ (Over.pullback f).map φ ≫ (pullbackCompIso w).hom.app Y
-
-private lemma conjPullback_injective {A B C : Scheme.{u}} {f : A ⟶ B} {g : B ⟶ C} {h : A ⟶ C}
-    (w : f ≫ g = h) {X Y : Over C}
-    {φ ψ : (Over.pullback g).obj X ⟶ (Over.pullback g).obj Y}
-    (H : conjPullback w φ = conjPullback w ψ) :
-    (Over.pullback f).map φ = (Over.pullback f).map ψ := by
-  rwa [← cancel_epi ((pullbackCompIso w).inv.app X),
-    ← cancel_mono ((pullbackCompIso w).hom.app Y), Category.assoc, Category.assoc]
-
-private lemma conjPullback_comp {A B C : Scheme.{u}} {f : A ⟶ B} {g : B ⟶ C} {h : A ⟶ C}
-    (w : f ≫ g = h) {X Y Z : Over C}
-    (a : (Over.pullback g).obj X ⟶ (Over.pullback g).obj Y)
-    (b : (Over.pullback g).obj Y ⟶ (Over.pullback g).obj Z) :
-    conjPullback w a ≫ conjPullback w b = conjPullback w (a ≫ b) := by
-  simp only [conjPullback, Category.assoc, CategoryTheory.Functor.map_comp]
-  rw [← Category.assoc ((pullbackCompIso w).hom.app Y), Iso.hom_inv_id_app, Category.id_comp]
-
-private lemma conjPullback_id {A B C : Scheme.{u}} {f : A ⟶ B} {g : B ⟶ C} {h : A ⟶ C}
-    (w : f ≫ g = h) (X : Over C) :
-    conjPullback w (𝟙 ((Over.pullback g).obj X)) = 𝟙 ((Over.pullback h).obj X) := by
-  simp [conjPullback]
-
-private lemma conjPullback_conjPullback {A B C D : Scheme.{u}}
-    {f : A ⟶ B} {g : B ⟶ C} {h : C ⟶ D} {fg : A ⟶ C} {gh : B ⟶ D} {fgh : A ⟶ D}
-    (hfg : f ≫ g = fg) (hgh : g ≫ h = gh) (hfgh₁ : f ≫ gh = fgh) (hfgh₂ : fg ≫ h = fgh)
-    {X Y : Over D} (ψ : (Over.pullback h).obj X ⟶ (Over.pullback h).obj Y) :
-    conjPullback hfgh₁ (conjPullback hgh ψ) = conjPullback hfgh₂ ψ := by
-  apply over_pullback_hom_ext
-  simp only [conjPullback, Over.comp_left, Category.assoc, pullbackCompIso_hom_app_left_fst,
-    Over.pullback_map_left, Over.pullback_obj_hom, pullback.lift_fst_assoc]
-  have hkey : ((pullbackCompIso hfgh₁).inv.app X).left ≫
-        pullback.fst (pullback.snd X.hom gh) f ≫
-        ((pullbackCompIso hgh).inv.app X).left ≫
-        pullback.fst (pullback.snd X.hom h) g =
-      ((pullbackCompIso hfgh₂).inv.app X).left ≫
-        pullback.fst (pullback.snd X.hom h) fg := by
-    apply pullback.hom_ext <;> simp [← hfg]
-  rw [reassoc_of% hkey]
-
-private lemma conjPullback_conjIso {A B C D : Scheme.{u}}
-    {f : A ⟶ B} {g : B ⟶ C} {h : C ⟶ D} {fg : A ⟶ C} {gh : B ⟶ D} {fgh : A ⟶ D}
-    (hfg : f ≫ g = fg) (hgh : g ≫ h = gh) (hfgh₁ : f ≫ gh = fgh) (hfgh₂ : fg ≫ h = fgh)
-    {X Y : Over D} (φ : (Over.pullback gh).obj X ⟶ (Over.pullback gh).obj Y) :
-    (pullbackCompIso hfgh₂).inv.app X ≫
-        conjPullback hfg ((pullbackCompIso hgh).hom.app X ≫ φ ≫
-          (pullbackCompIso hgh).inv.app Y) ≫
-        (pullbackCompIso hfgh₂).hom.app Y =
-      conjPullback hfgh₁ φ := by
-  apply over_pullback_hom_ext
-  have hfg_hom : ((pullbackCompIso hfg).hom.app ((Over.pullback h).obj Y)).left ≫
-      pullback.fst (pullback.snd Y.hom h) fg =
-      pullback.fst (pullback.snd (pullback.snd Y.hom h) g) f ≫
-        pullback.fst (pullback.snd Y.hom h) g :=
-    pullbackCompIso_hom_app_left_fst hfg ((Over.pullback h).obj Y)
-  have hfg_inv : ((pullbackCompIso hfg).inv.app ((Over.pullback h).obj X)).left ≫
-      pullback.fst (pullback.snd (pullback.snd X.hom h) g) f ≫
-        pullback.fst (pullback.snd X.hom h) g =
-      pullback.fst (pullback.snd X.hom h) fg :=
-    pullbackCompIso_inv_app_left_fst_fst hfg ((Over.pullback h).obj X)
-  simp only [conjPullback, CategoryTheory.Functor.map_comp, Over.comp_left, Category.assoc,
-    pullbackCompIso_hom_app_left_fst, reassoc_of% hfg_hom, Over.pullback_map_left,
-    Over.pullback_obj_hom, pullback.lift_fst_assoc, pullbackCompIso_inv_app_left_fst_fst]
-  have hkey : ((pullbackCompIso hfgh₂).inv.app X).left ≫
-        ((pullbackCompIso hfg).inv.app ((Over.pullback h).obj X)).left ≫
-        pullback.fst (pullback.snd (pullback.snd X.hom h) g) f ≫
-        ((pullbackCompIso hgh).hom.app X).left =
-      ((pullbackCompIso hfgh₁).inv.app X).left ≫ pullback.fst (pullback.snd X.hom gh) f := by
-    apply pullback.hom_ext
-    · simp only [Category.assoc, pullbackCompIso_hom_app_left_fst, reassoc_of% hfg_inv,
-        pullbackCompIso_inv_app_left_fst_fst]
-    · have h1 : ((pullbackCompIso hgh).hom.app X).left ≫ pullback.snd X.hom gh =
-          pullback.snd (pullback.snd X.hom h) g := Over.w _
-      have h2 : ((pullbackCompIso hfg).inv.app ((Over.pullback h).obj X)).left ≫
-          pullback.snd (pullback.snd (pullback.snd X.hom h) g) f =
-          pullback.snd (pullback.snd X.hom h) fg := Over.w _
-      have h3 : ((pullbackCompIso hfgh₂).inv.app X).left ≫
-          pullback.snd (pullback.snd X.hom h) fg = pullback.snd X.hom fgh := Over.w _
-      have h4 : ((pullbackCompIso hfgh₁).inv.app X).left ≫
-          pullback.snd (pullback.snd X.hom gh) f = pullback.snd X.hom fgh := Over.w _
-      simp only [Category.assoc, h1, pullback.condition, reassoc_of% h2, reassoc_of% h3,
-        reassoc_of% h4]
-  rw [reassoc_of% hkey]
-
-private lemma pullbackSquareIso_eq_pullbackCompIso {B U₁ U₂ V : Scheme.{u}}
-    {i₁ : V ⟶ U₁} {i₂ : V ⟶ U₂} {j₁ : U₁ ⟶ B} {j₂ : U₂ ⟶ B} {h : V ⟶ B}
-    (w₁ : i₁ ≫ j₁ = h) (w₂ : i₂ ≫ j₂ = h) (w : i₁ ≫ j₁ = i₂ ≫ j₂) (X : Over B) :
-    (pullbackSquareIso w).hom.app X =
-      (pullbackCompIso w₁).hom.app X ≫ (pullbackCompIso w₂).inv.app X := by
-  ext1; apply pullback.hom_ext
-  · apply pullback.hom_ext
-    · simp
-    · have h1 : ((pullbackSquareIso w).hom.app X).left ≫
-          pullback.snd (pullback.snd X.hom j₂) i₂ = pullback.snd (pullback.snd X.hom j₁) i₁ :=
-        Over.w _
-      have h2 : ((pullbackCompIso w₁).hom.app X).left ≫ pullback.snd X.hom h =
-          pullback.snd (pullback.snd X.hom j₁) i₁ := Over.w _
-      have h3 : ((pullbackCompIso w₂).inv.app X).left ≫
-          pullback.snd (pullback.snd X.hom j₂) i₂ = pullback.snd X.hom h := Over.w _
-      simp only [Over.comp_left, Over.pullback_obj_hom, Category.assoc, pullback.condition,
-        reassoc_of% h1, reassoc_of% h3, reassoc_of% h2]
-  · exact (Over.w _).trans (Over.w _).symm
-
-private lemma pullbackSquareIso_iff_conjPullback {B U₁ U₂ V : Scheme.{u}}
-    {i₁ : V ⟶ U₁} {i₂ : V ⟶ U₂} {j₁ : U₁ ⟶ B} {j₂ : U₂ ⟶ B} {h : V ⟶ B}
-    (w₁ : i₁ ≫ j₁ = h) (w₂ : i₂ ≫ j₂ = h) (w : i₁ ≫ j₁ = i₂ ≫ j₂) {X Y : Over B}
-    (φ₁ : (Over.pullback j₁).obj X ⟶ (Over.pullback j₁).obj Y)
-    (φ₂ : (Over.pullback j₂).obj X ⟶ (Over.pullback j₂).obj Y) :
-    (Over.pullback i₁).map φ₁ ≫ (pullbackSquareIso w).hom.app Y =
-        (pullbackSquareIso w).hom.app X ≫ (Over.pullback i₂).map φ₂ ↔
-      conjPullback w₁ φ₁ = conjPullback w₂ φ₂ := by
-  rw [pullbackSquareIso_eq_pullbackCompIso w₁ w₂ w X,
-    pullbackSquareIso_eq_pullbackCompIso w₁ w₂ w Y]
-  constructor
-  · intro H
-    rw [← cancel_mono ((pullbackCompIso w₂).inv.app Y)]
-    simp only [conjPullback, Category.assoc, Iso.hom_inv_id_app, Functor.comp_obj, Category.comp_id]
-    rw [H, ← Category.assoc, Iso.inv_hom_id_app_assoc]
-  · intro H
-    rw [← cancel_epi ((pullbackCompIso w₁).inv.app X),
-      ← cancel_mono ((pullbackCompIso w₂).hom.app Y)]
-    simpa only [conjPullback, Category.assoc, Iso.inv_hom_id_app_assoc, Iso.inv_hom_id_app,
-      Category.comp_id] using H
 
 section LimitSpreading
 
@@ -270,7 +116,7 @@ private def pullbackToBaseNatTrans (D : I ⥤ Over S) (X : Over S) :
 
 private lemma pullbackSymmetry_comp_pullbackCompIso_inv {T' T : Over S} (u : T' ⟶ T) (X : Over S) :
     (pullbackSymmetry T'.hom X.hom).hom ≫
-        ((pullbackCompIso (Over.w u)).inv.app X).left ≫
+        ((Over.pullbackCompIso (Over.w u)).inv.app X).left ≫
           pullback.fst (pullback.snd X.hom T.hom) u.left =
       ((Over.pullback X.hom).map u).left ≫ (pullbackSymmetry T.hom X.hom).hom := by
   apply pullback.hom_ext <;> simp [Over.pullback_map_left]
@@ -311,14 +157,14 @@ theorem exists_pullback_map_eq_of_isLimit
     rw [reassoc_of% hcomp_eq]
   obtain ⟨k, hik, heq⟩ := Scheme.exists_hom_comp_eq_comp_of_locallyOfFiniteType
     DX (pullbackToBaseNatTrans D X) Y.hom cX hcX (mk a) (mk b) (hmk a) (hmk b) hab'
-  refine ⟨k, hik, over_pullback_hom_ext ?_⟩
+  refine ⟨k, hik, Over.pullback_hom_ext ?_⟩
   simp only [Over.pullback_map_left, Over.pullback_obj_hom, pullback.lift_fst]
   apply pullback.hom_ext
   · have hsym := pullbackSymmetry_comp_pullbackCompIso_inv (D.map hik) X
-    have heq' := congrArg (fun m ↦ ((pullbackCompIso (Over.w (D.map hik))).hom.app X).left ≫
+    have heq' := congrArg (fun m ↦ ((Over.pullbackCompIso (Over.w (D.map hik))).hom.app X).left ≫
       (pullbackSymmetry (D.obj k).hom X.hom).inv ≫ m) heq
-    have hid : ((pullbackCompIso (Over.w (D.map hik))).hom.app X).left ≫
-        ((pullbackCompIso (Over.w (D.map hik))).inv.app X).left = 𝟙 _ := by
+    have hid : ((Over.pullbackCompIso (Over.w (D.map hik))).hom.app X).left ≫
+        ((Over.pullbackCompIso (Over.w (D.map hik))).inv.app X).left = 𝟙 _ := by
       rw [← Over.comp_left, Iso.hom_inv_id_app]; rfl
     simp only [DX, mk, Functor.comp_map, Over.forget_map, ← reassoc_of% hsym,
       Iso.inv_hom_id_assoc, reassoc_of% hid] at heq'
@@ -339,11 +185,11 @@ theorem exists_pullback_hom_of_isLimit
     {X Y : Over S} [QuasiCompact X.hom] [QuasiSeparated X.hom] [LocallyOfFinitePresentation Y.hom]
     (φ : (Over.pullback c.pt.hom).obj X ⟶ (Over.pullback c.pt.hom).obj Y) :
     ∃ (i : I) (ψ : (Over.pullback (D.obj i).hom).obj X ⟶ (Over.pullback (D.obj i).hom).obj Y),
-      (pullbackCompIso (Over.w (c.π.app i) : (c.π.app i).left ≫ (D.obj i).hom = c.pt.hom)).inv.app
-          X ≫
+      (Over.pullbackCompIso
+          (Over.w (c.π.app i) : (c.π.app i).left ≫ (D.obj i).hom = c.pt.hom)).inv.app X ≫
         (Over.pullback (c.π.app i).left).map ψ ≫
-        (pullbackCompIso (Over.w (c.π.app i) : (c.π.app i).left ≫ (D.obj i).hom = c.pt.hom)).hom.app
-          Y = φ := by
+        (Over.pullbackCompIso
+          (Over.w (c.π.app i) : (c.π.app i).left ≫ (D.obj i).hom = c.pt.hom)).hom.app Y = φ := by
   have : IsConnected I := IsCofiltered.isConnected I
   let DX := D ⋙ Over.pullback X.hom ⋙ Over.forget X.left
   let cX := (Over.pullback X.hom ⋙ Over.forget X.left).mapCone c
@@ -365,8 +211,8 @@ theorem exists_pullback_hom_of_isLimit
     Over.homMk (pullback.lift ((pullbackSymmetry (D.obj i).hom X.hom).inv ≫ g)
       (pullback.snd X.hom (D.obj i).hom) (by
         rw [Category.assoc, hg']; simp [pullbackToBaseNatTrans, pullback.condition])) (by simp)
-  refine ⟨i, ψ, over_pullback_hom_ext ?_⟩
-  simp only [Over.comp_left, Category.assoc, pullbackCompIso_hom_app_left_fst,
+  refine ⟨i, ψ, Over.pullback_hom_ext ?_⟩
+  simp only [Over.comp_left, Category.assoc, Over.pullbackCompIso_hom_app_left_fst,
     Over.pullback_map_left, Over.pullback_obj_hom, pullback.lift_fst_assoc, pullback.lift_fst,
     ψ, Over.homMk_left]
   have hsym := pullbackSymmetry_comp_pullbackCompIso_inv (T' := c.pt) (c.π.app i) X
@@ -386,43 +232,49 @@ theorem exists_pullback_iso_of_isLimit
     [QuasiCompact Y.hom] [QuasiSeparated Y.hom] [LocallyOfFinitePresentation Y.hom]
     (e : (Over.pullback c.pt.hom).obj X ≅ (Over.pullback c.pt.hom).obj Y) :
     ∃ (i : I) (eᵢ : (Over.pullback (D.obj i).hom).obj X ≅ (Over.pullback (D.obj i).hom).obj Y),
-      ((pullbackCompIso (Over.w (c.π.app i) :
+      ((Over.pullbackCompIso (Over.w (c.π.app i) :
           (c.π.app i).left ≫ (D.obj i).hom = c.pt.hom)).app X).symm ≪≫
         (Over.pullback (c.π.app i).left).mapIso eᵢ ≪≫
-        (pullbackCompIso (Over.w (c.π.app i) :
+        (Over.pullbackCompIso (Over.w (c.π.app i) :
           (c.π.app i).left ≫ (D.obj i).hom = c.pt.hom)).app Y = e := by
   obtain ⟨i₁, ψ₁, hψ₁⟩ := exists_pullback_hom_of_isLimit hc e.hom
   obtain ⟨i₂, ψ₂, hψ₂⟩ := exists_pullback_hom_of_isLimit hc e.inv
+  rw [← Over.conjPullback_eq] at hψ₁ hψ₂
   let i₀ := IsCofiltered.min i₁ i₂
   let f₁ : i₀ ⟶ i₁ := IsCofiltered.minToLeft i₁ i₂
   let f₂ : i₀ ⟶ i₂ := IsCofiltered.minToRight i₁ i₂
-  let g := conjPullback (Over.w (D.map f₁)) ψ₁
-  let h := conjPullback (Over.w (D.map f₂)) ψ₂
-  have hg : conjPullback (Over.w (c.π.app i₀)) g = e.hom :=
-    (conjPullback_conjPullback (congrArg (·.left) (c.w f₁)) _ _ _ ψ₁).trans hψ₁
-  have hh : conjPullback (Over.w (c.π.app i₀)) h = e.inv :=
-    (conjPullback_conjPullback (congrArg (·.left) (c.w f₂)) _ _ _ ψ₂).trans hψ₂
+  let g := Over.conjPullback (Over.w (D.map f₁)) ψ₁
+  let h := Over.conjPullback (Over.w (D.map f₂)) ψ₂
+  have hg : Over.conjPullback (Over.w (c.π.app i₀)) g = e.hom :=
+    (Over.conjPullback_conjPullback (congrArg (·.left) (c.w f₁)) _ _ _ ψ₁).trans hψ₁
+  have hh : Over.conjPullback (Over.w (c.π.app i₀)) h = e.inv :=
+    (Over.conjPullback_conjPullback (congrArg (·.left) (c.w f₂)) _ _ _ ψ₂).trans hψ₂
   have hgh : (Over.pullback (c.π.app i₀).left).map (g ≫ h) =
       (Over.pullback (c.π.app i₀).left).map (𝟙 _) :=
-    conjPullback_injective (Over.w (c.π.app i₀)) (by
-      rw [← conjPullback_comp, hg, hh, Iso.hom_inv_id, conjPullback_id])
+    Over.conjPullback_injective (Over.w (c.π.app i₀)) (by
+      rw [← Over.conjPullback_comp, hg, hh, Iso.hom_inv_id, Over.conjPullback_id])
   obtain ⟨k₁, fk₁, hfk₁⟩ := exists_pullback_map_eq_of_isLimit hc (g ≫ h) (𝟙 _) hgh
-  let g₁ := conjPullback (Over.w (D.map fk₁)) g
-  let h₁ := conjPullback (Over.w (D.map fk₁)) h
-  have hg₁h₁ : g₁ ≫ h₁ = 𝟙 _ := by rw [conjPullback_comp]; simp [conjPullback, hfk₁]
-  have hg₁ : conjPullback (Over.w (c.π.app k₁)) g₁ = e.hom :=
-    (conjPullback_conjPullback (congrArg (·.left) (c.w fk₁)) _ _ _ g).trans hg
-  have hh₁ : conjPullback (Over.w (c.π.app k₁)) h₁ = e.inv :=
-    (conjPullback_conjPullback (congrArg (·.left) (c.w fk₁)) _ _ _ h).trans hh
+  let g₁ := Over.conjPullback (Over.w (D.map fk₁)) g
+  let h₁ := Over.conjPullback (Over.w (D.map fk₁)) h
+  have hg₁h₁ : g₁ ≫ h₁ = 𝟙 _ := by
+    rw [Over.conjPullback_comp, Over.conjPullback_eq, hfk₁, ← Over.conjPullback_eq,
+      Over.conjPullback_id]
+  have hg₁ : Over.conjPullback (Over.w (c.π.app k₁)) g₁ = e.hom :=
+    (Over.conjPullback_conjPullback (congrArg (·.left) (c.w fk₁)) _ _ _ g).trans hg
+  have hh₁ : Over.conjPullback (Over.w (c.π.app k₁)) h₁ = e.inv :=
+    (Over.conjPullback_conjPullback (congrArg (·.left) (c.w fk₁)) _ _ _ h).trans hh
   have hh₁g₁ : (Over.pullback (c.π.app k₁).left).map (h₁ ≫ g₁) =
       (Over.pullback (c.π.app k₁).left).map (𝟙 _) :=
-    conjPullback_injective (Over.w (c.π.app k₁)) (by
-      rw [← conjPullback_comp, hh₁, hg₁, Iso.inv_hom_id, conjPullback_id])
+    Over.conjPullback_injective (Over.w (c.π.app k₁)) (by
+      rw [← Over.conjPullback_comp, hh₁, hg₁, Iso.inv_hom_id, Over.conjPullback_id])
   obtain ⟨k, fk, hfk⟩ := exists_pullback_map_eq_of_isLimit hc (h₁ ≫ g₁) (𝟙 _) hh₁g₁
-  refine ⟨k, ⟨conjPullback (Over.w (D.map fk)) g₁, conjPullback (Over.w (D.map fk)) h₁,
-    by rw [conjPullback_comp, hg₁h₁, conjPullback_id],
-    by rw [conjPullback_comp]; simp [conjPullback, hfk]⟩, Iso.ext ?_⟩
-  exact (conjPullback_conjPullback (congrArg (·.left) (c.w fk)) _ _ _ g₁).trans hg₁
+  refine ⟨k, ⟨Over.conjPullback (Over.w (D.map fk)) g₁, Over.conjPullback (Over.w (D.map fk)) h₁,
+    by rw [Over.conjPullback_comp, hg₁h₁, Over.conjPullback_id],
+    by rw [Over.conjPullback_comp, Over.conjPullback_eq, hfk, ← Over.conjPullback_eq,
+      Over.conjPullback_id]⟩, Iso.ext ?_⟩
+  simpa only [Iso.trans_hom, Iso.symm_hom, Functor.mapIso_hom, Iso.app_inv, Iso.app_hom,
+    ← Over.conjPullback_eq] using
+    (Over.conjPullback_conjPullback (congrArg (·.left) (c.w fk)) _ _ _ g₁).trans hg₁
 
 end LimitSpreading
 
@@ -514,10 +366,9 @@ def fromSpecStalkOverCone (S : Scheme.{u}) (s : S) :
         (by simp [fromSpecStalkOverDiagram])
       naturality W₁ W₂ f := by
         ext1
-        change 𝟙 _ ≫ W₂.objDown.opens.fromSpecStalkOfMem s W₂.objDown.mem =
-          W₁.objDown.opens.fromSpecStalkOfMem s W₁.objDown.mem ≫ S.homOfLE f.down.le
-        rw [Category.id_comp, ← cancel_mono W₂.objDown.opens.ι]
-        simp }
+        dsimp only [Functor.const_obj_obj, Functor.const_obj_map, fromSpecStalkOverDiagram,
+          Over.comp_left, Over.id_left, Over.homMk, CostructuredArrow.homMk, Over.Hom.left]
+        rw [Category.id_comp, Scheme.Opens.fromSpecStalkOfMem_homOfLE] }
 
 instance (S : Scheme.{u}) (s : S) : IsCofiltered (ULiftHom.{u} (AffineOpenNhds S s)) :=
   IsCofiltered.of_equivalence ULiftHom.equiv
@@ -552,13 +403,16 @@ def isLimitFromSpecStalkOverCone (S : Scheme.{u}) (s : S) :
   let eDiag : (fromSpecStalkOverDiagram S s ⋙ Over.forget S) ≅
       (K.op ⋙ (OpenNhds.inclusion s).op ⋙ S.presheaf).rightOp ⋙ Scheme.Spec :=
     NatIso.ofComponents (fun W ↦ W.objDown.isAffineOpen.isoSpec) fun {W₁ W₂} f ↦ by
-      change S.homOfLE f.down.le ≫ W₂.objDown.opens.toSpecΓ =
-        W₁.objDown.opens.toSpecΓ ≫ Spec.map (S.presheaf.map (homOfLE f.down.le).op)
+      simp only [Functor.comp_map, fromSpecStalkOverDiagram_map, IsAffineOpen.isoSpec_hom,
+        Functor.rightOp_map, Scheme.Spec_map, Functor.op_map]
       exact (Scheme.Opens.toSpecΓ_SpecMap_presheaf_map W₁.objDown.opens W₂.objDown.opens
         f.down.le).symm
   let eCone : (Over.forget S).mapCone (fromSpecStalkOverCone S s) ≅
       (Cone.postcompose eDiag.inv).obj specCone :=
     Cone.ext (Iso.refl _) fun W ↦ by
+      -- Unfold `fromSpecStalkOverCone`, `eDiag`, and `specCone`; `Over.homMk` and
+      -- `NatIso.ofComponents` store non-reducible `fromSpecStalkOverDiagram` endpoints that `rw`
+      -- cannot match under `implicit` transparency.
       change 𝟙 _ ≫ W.objDown.opens.fromSpecStalkOfMem s W.objDown.mem =
         Spec.map (S.presheaf.germ W.objDown.opens s W.objDown.mem) ≫
           W.objDown.isAffineOpen.isoSpec.inv
@@ -577,15 +431,11 @@ theorem exists_pullback_map_eq_fromSpecStalk {S : Scheme.{u}} (s : S)
     ∃ (W : S.Opens) (_ : IsAffineOpen W), s ∈ W ∧
       (Over.pullback W.ι).map a = (Over.pullback W.ι).map b := by
   obtain ⟨W₀⟩ := IsCofiltered.nonempty (C := ULiftHom.{u} (AffineOpenNhds S s))
-  have hlim : (Over.pullback ((fromSpecStalkOverCone S s).π.app W₀).left).map
-        ((Over.pullback ((fromSpecStalkOverDiagram S s).obj W₀).hom).map a) =
-      (Over.pullback ((fromSpecStalkOverCone S s).π.app W₀).left).map
-        ((Over.pullback ((fromSpecStalkOverDiagram S s).obj W₀).hom).map b) := by
-    let e := pullbackCompIso (W₀.objDown.opens.fromSpecStalkOfMem_ι s W₀.objDown.mem)
-    change (Over.pullback (W₀.objDown.opens.fromSpecStalkOfMem s W₀.objDown.mem)).map
+  have hlim : (Over.pullback (W₀.objDown.opens.fromSpecStalkOfMem s W₀.objDown.mem)).map
         ((Over.pullback W₀.objDown.opens.ι).map a) =
       (Over.pullback (W₀.objDown.opens.fromSpecStalkOfMem s W₀.objDown.mem)).map
-        ((Over.pullback W₀.objDown.opens.ι).map b)
+        ((Over.pullback W₀.objDown.opens.ι).map b) := by
+    let e := Over.pullbackCompIso (W₀.objDown.opens.fromSpecStalkOfMem_ι s W₀.objDown.mem)
     rw [← cancel_mono (e.hom.app Y)]
     have ha := e.hom.naturality a
     have hb := e.hom.naturality b
@@ -595,7 +445,7 @@ theorem exists_pullback_map_eq_fromSpecStalk {S : Scheme.{u}} (s : S)
     ((Over.pullback ((fromSpecStalkOverDiagram S s).obj W₀).hom).map a)
     ((Over.pullback ((fromSpecStalkOverDiagram S s).obj W₀).hom).map b) hlim
   refine ⟨W.objDown.opens, W.objDown.isAffineOpen, W.objDown.mem, ?_⟩
-  let e := pullbackCompIso (S.homOfLE_ι hW.down.le)
+  let e := Over.pullbackCompIso (S.homOfLE_ι hW.down.le)
   rw [← cancel_epi (e.hom.app X)]
   have ha := e.hom.naturality a
   have hb := e.hom.naturality b
@@ -610,9 +460,9 @@ theorem exists_pullback_hom_fromSpecStalk {S : Scheme.{u}} (s : S)
     (φ : (Over.pullback (S.fromSpecStalk s)).obj X ⟶ (Over.pullback (S.fromSpecStalk s)).obj Y) :
     ∃ (W : S.Opens) (_ : IsAffineOpen W) (hs : s ∈ W)
       (ψ : (Over.pullback W.ι).obj X ⟶ (Over.pullback W.ι).obj Y),
-      (pullbackCompIso (W.fromSpecStalkOfMem_ι s hs)).inv.app X ≫
+      (Over.pullbackCompIso (W.fromSpecStalkOfMem_ι s hs)).inv.app X ≫
         (Over.pullback (W.fromSpecStalkOfMem s hs)).map ψ ≫
-        (pullbackCompIso (W.fromSpecStalkOfMem_ι s hs)).hom.app Y = φ := by
+        (Over.pullbackCompIso (W.fromSpecStalkOfMem_ι s hs)).hom.app Y = φ := by
   obtain ⟨W, ψ, hψ⟩ := exists_pullback_hom_of_isLimit (isLimitFromSpecStalkOverCone S s) φ
   exact ⟨W.objDown.opens, W.objDown.isAffineOpen, W.objDown.mem, ψ, hψ⟩
 
@@ -626,9 +476,9 @@ theorem exists_pullback_iso_fromSpecStalk {S : Scheme.{u}} (s : S)
     (e : (Over.pullback (S.fromSpecStalk s)).obj X ≅ (Over.pullback (S.fromSpecStalk s)).obj Y) :
     ∃ (W : S.Opens) (_ : IsAffineOpen W) (hs : s ∈ W)
       (eW : (Over.pullback W.ι).obj X ≅ (Over.pullback W.ι).obj Y),
-      ((pullbackCompIso (W.fromSpecStalkOfMem_ι s hs)).app X).symm ≪≫
+      ((Over.pullbackCompIso (W.fromSpecStalkOfMem_ι s hs)).app X).symm ≪≫
         (Over.pullback (W.fromSpecStalkOfMem s hs)).mapIso eW ≪≫
-        (pullbackCompIso (W.fromSpecStalkOfMem_ι s hs)).app Y = e := by
+        (Over.pullbackCompIso (W.fromSpecStalkOfMem_ι s hs)).app Y = e := by
   obtain ⟨W, eW, heW⟩ := exists_pullback_iso_of_isLimit (isLimitFromSpecStalkOverCone S s) e
   exact ⟨W.objDown.opens, W.objDown.isAffineOpen, W.objDown.mem, eW, heW⟩
 
@@ -636,33 +486,15 @@ end LocalSchemeLimit
 
 section LocalSpreading
 
-/-- Pulling back a scheme over an open subscheme `U ⊆ S` pushed forward to `S` along `f : T ⟶ S`
-is naturally isomorphic to pulling back along `f ∣_ U` and pushing forward along `(f ⁻¹ᵁ U).ι`. -/
-def pullbackMapOpenIso {S T : Scheme.{u}} (f : T ⟶ S) (U : S.Opens) :
-    Over.map U.ι ⋙ Over.pullback f ≅ Over.pullback (f ∣_ U) ⋙ Over.map (f ⁻¹ᵁ U).ι :=
-  NatIso.ofComponents
-    (fun A ↦
-      let h := (IsPullback.of_hasPullback A.hom (f ∣_ U)).paste_vert
-        (isPullback_morphismRestrict f U)
-      Over.isoMk h.isoPullback.symm (by
-        change h.isoPullback.inv ≫ pullback.snd A.hom (f ∣_ U) ≫ (f ⁻¹ᵁ U).ι =
-          pullback.snd (A.hom ≫ U.ι) f
-        rw [Iso.inv_comp_eq, IsPullback.isoPullback_hom_snd]))
-    fun {A B} g ↦ by
-      ext1
-      let hA := (IsPullback.of_hasPullback A.hom (f ∣_ U)).paste_vert
-        (isPullback_morphismRestrict f U)
-      let hB := (IsPullback.of_hasPullback B.hom (f ∣_ U)).paste_vert
-        (isPullback_morphismRestrict f U)
-      change ((Over.pullback f).map ((Over.map U.ι).map g)).left ≫ hB.isoPullback.inv =
-        hA.isoPullback.inv ≫ ((Over.pullback (f ∣_ U)).map g).left
-      rw [Iso.comp_inv_eq, Category.assoc, Iso.eq_inv_comp]
-      apply pullback.hom_ext
-      · simp only [Category.assoc, Over.map_obj_hom, IsPullback.isoPullback_hom_fst,
-          IsPullback.isoPullback_hom_fst_assoc, Over.pullback_map_left, Over.map_map_left,
-          pullback.lift_fst]
-      · simp only [Category.assoc, Over.map_obj_hom, IsPullback.isoPullback_hom_snd,
-          Over.pullback_map_left, pullback.lift_snd_assoc, pullback.lift_snd]
+private def stalkMapSpec {S : Scheme.{u}} (W₁ : S.Opens) (s : S) (hs₁ : s ∈ W₁) :
+    Spec (W₁.toScheme.presheaf.stalk (⟨s, hs₁⟩ : W₁.toScheme)) ⟶ Spec (S.presheaf.stalk s) :=
+  Spec.map (W₁.ι.stalkMap (⟨s, hs₁⟩ : W₁.toScheme))
+
+private lemma stalkMapSpec_comp_fromSpecStalk {S : Scheme.{u}} (W₁ : S.Opens) (s : S)
+    (hs₁ : s ∈ W₁) :
+    stalkMapSpec W₁ s hs₁ ≫ S.fromSpecStalk s =
+      W₁.toScheme.fromSpecStalk ⟨s, hs₁⟩ ≫ W₁.ι :=
+  Scheme.SpecMap_stalkMap_fromSpecStalk W₁.ι (x := ⟨s, hs₁⟩)
 
 /-- The canonical comparison morphism from the preimage of `W₁.ι ⁻¹ᵁ U` in `Spec 𝒪_{W₁, s}` to
 the preimage of `U` in `Spec 𝒪_{S, s}`. -/
@@ -670,12 +502,9 @@ def stalkOpenRestriction {S : Scheme.{u}} (U W₁ : S.Opens) (s : S) (hs₁ : s 
     (W₁.toScheme.fromSpecStalk (⟨s, hs₁⟩ : W₁.toScheme) ⁻¹ᵁ (W₁.ι ⁻¹ᵁ U)).toScheme ⟶
       (S.fromSpecStalk s ⁻¹ᵁ U).toScheme :=
   let s₁ : W₁.toScheme := ⟨s, hs₁⟩
-  let σ : Spec (W₁.toScheme.presheaf.stalk s₁) ⟶ Spec (S.presheaf.stalk s) :=
-    Spec.map (W₁.ι.stalkMap s₁)
-  have hσ_S : σ ≫ S.fromSpecStalk s = W₁.toScheme.fromSpecStalk s₁ ≫ W₁.ι :=
-    Scheme.SpecMap_stalkMap_fromSpecStalk W₁.ι (x := s₁)
+  let σ := stalkMapSpec W₁ s hs₁
   have hpre : W₁.toScheme.fromSpecStalk s₁ ⁻¹ᵁ (W₁.ι ⁻¹ᵁ U) = σ ⁻¹ᵁ (S.fromSpecStalk s ⁻¹ᵁ U) := by
-    rw [← Scheme.Hom.comp_preimage, ← Scheme.Hom.comp_preimage, hσ_S]
+    rw [← Scheme.Hom.comp_preimage, ← Scheme.Hom.comp_preimage, stalkMapSpec_comp_fromSpecStalk]
   ((Spec _).isoOfEq hpre).hom ≫ (σ ∣_ (S.fromSpecStalk s ⁻¹ᵁ U))
 
 /-- `stalkOpenRestriction` commutes with restriction of `fromSpecStalk` to `U`. -/
@@ -684,16 +513,13 @@ theorem stalkOpenRestriction_comp_morphismRestrict {S : Scheme.{u}} (U W₁ : S.
     (hs₁ : s ∈ W₁) :
     stalkOpenRestriction U W₁ s hs₁ ≫ (S.fromSpecStalk s ∣_ U) =
       (W₁.toScheme.fromSpecStalk (⟨s, hs₁⟩ : W₁.toScheme) ∣_ (W₁.ι ⁻¹ᵁ U)) ≫ (W₁.ι ∣_ U) := by
-  let s₁ : W₁.toScheme := ⟨s, hs₁⟩
-  let σ : Spec (W₁.toScheme.presheaf.stalk s₁) ⟶ Spec (S.presheaf.stalk s) :=
-    Spec.map (W₁.ι.stalkMap s₁)
-  have hσ_S : σ ≫ S.fromSpecStalk s = W₁.toScheme.fromSpecStalk s₁ ≫ W₁.ι :=
-    Scheme.SpecMap_stalkMap_fromSpecStalk W₁.ι (x := s₁)
   rw [← cancel_mono U.ι]
   dsimp only [stalkOpenRestriction]
   simp only [Category.assoc, morphismRestrict_ι, morphismRestrict_ι_assoc,
     Scheme.isoOfEq_hom_ι_assoc]
-  exact congrArg ((W₁.toScheme.fromSpecStalk s₁ ⁻¹ᵁ (W₁.ι ⁻¹ᵁ U)).ι ≫ ·) hσ_S
+  exact congrArg
+    ((W₁.toScheme.fromSpecStalk ⟨s, hs₁⟩ ⁻¹ᵁ (W₁.ι ⁻¹ᵁ U)).ι ≫ ·)
+    (stalkMapSpec_comp_fromSpecStalk W₁ s hs₁)
 
 /-- `stalkOpenRestriction` commutes with `fromSpecStalkOfMem` into `W₁`. -/
 @[reassoc]
@@ -703,12 +529,10 @@ theorem stalkOpenRestriction_comp_ι_fromSpecStalkOfMem {S : Scheme.{u}} (U W₁
         W₁.fromSpecStalkOfMem s hs₁ =
       (W₁.toScheme.fromSpecStalk (⟨s, hs₁⟩ : W₁.toScheme) ∣_ (W₁.ι ⁻¹ᵁ U)) ≫ (W₁.ι ⁻¹ᵁ U).ι := by
   let s₁ : W₁.toScheme := ⟨s, hs₁⟩
-  let σ : Spec (W₁.toScheme.presheaf.stalk s₁) ⟶ Spec (S.presheaf.stalk s) :=
-    Spec.map (W₁.ι.stalkMap s₁)
-  have hσ_S : σ ≫ S.fromSpecStalk s = W₁.toScheme.fromSpecStalk s₁ ≫ W₁.ι :=
-    Scheme.SpecMap_stalkMap_fromSpecStalk W₁.ι (x := s₁)
-  have hσ : σ ≫ W₁.fromSpecStalkOfMem s hs₁ = W₁.toScheme.fromSpecStalk s₁ := by
-    rw [← cancel_mono W₁.ι, Category.assoc, Scheme.Opens.fromSpecStalkOfMem_ι, hσ_S]
+  have hσ : stalkMapSpec W₁ s hs₁ ≫ W₁.fromSpecStalkOfMem s hs₁ =
+      W₁.toScheme.fromSpecStalk s₁ := by
+    rw [← cancel_mono W₁.ι, Category.assoc, Scheme.Opens.fromSpecStalkOfMem_ι]
+    exact stalkMapSpec_comp_fromSpecStalk W₁ s hs₁
   dsimp only [stalkOpenRestriction]
   simp only [Category.assoc, morphismRestrict_ι_assoc, Scheme.isoOfEq_hom_ι_assoc,
     morphismRestrict_ι]
@@ -727,38 +551,120 @@ theorem stalkOpenRestriction_comp_ι_fromSpecStalk {S : Scheme.{u}} (U W₁ : S.
         simp only [Category.assoc, Scheme.Opens.fromSpecStalkOfMem_ι]
     _ = _ := by rw [stalkOpenRestriction_comp_ι_fromSpecStalkOfMem, Category.assoc]
 
-/-- For opens `U, W₁ ⊆ S` and `V ⊆ W₁`, canonical isomorphism between `U ⊓ (W₁.ι ''ᵁ V)` and
-`V.ι ⁻¹ᵁ (W₁.ι ⁻¹ᵁ U)`. -/
-def infImageOpenIso {S : Scheme.{u}} (U W₁ : S.Opens) (V : W₁.toScheme.Opens) :
-    (U ⊓ (W₁.ι ''ᵁ V)).toScheme ≅ (V.ι ⁻¹ᵁ (W₁.ι ⁻¹ᵁ U)).toScheme :=
-  IsOpenImmersion.isoOfRangeEq
-    (S.homOfLE (inf_le_left : U ⊓ (W₁.ι ''ᵁ V) ≤ U) ≫ U.ι)
-    ((V.ι ⁻¹ᵁ (W₁.ι ⁻¹ᵁ U)).ι ≫ V.ι ≫ W₁.ι) <| by
-    rw [Scheme.homOfLE_ι, Scheme.Opens.range_ι]
-    ext x
-    simp only [Scheme.Hom.comp_base, TopCat.coe_comp, Set.mem_range, Function.comp_apply]
-    constructor
-    · rintro ⟨hxU, y, hyV, rfl⟩; exact ⟨⟨⟨y, hyV⟩, hxU⟩, rfl⟩
-    · rintro ⟨⟨⟨y, hyV⟩, hyU⟩, rfl⟩; exact ⟨hyU, y, hyV, rfl⟩
+/-- The preimage of a quasi-compact open under a scheme morphism is quasi-compact. -/
+theorem quasiCompact_ι_preimage {W S : Scheme.{u}} (j : W ⟶ S) (U : S.Opens)
+    [QuasiCompact U.ι] : QuasiCompact (j ⁻¹ᵁ U).ι :=
+  MorphismProperty.of_isPullback (P := @QuasiCompact) (isPullback_morphismRestrict j U)
+    inferInstance
 
-/-- `infImageOpenIso` identifies the restriction of `V.ι ∣_ (W₁.ι ⁻¹ᵁ U) ≫ W₁.ι ∣_ U` with the
-inclusion `U ⊓ (W₁.ι ''ᵁ V) ≤ U`. -/
-@[reassoc]
-theorem infImageOpenIso_hom_comp_left {S : Scheme.{u}} (U W₁ : S.Opens) (V : W₁.toScheme.Opens) :
-    (infImageOpenIso U W₁ V).hom ≫ (V.ι ∣_ (W₁.ι ⁻¹ᵁ U)) ≫ (W₁.ι ∣_ U) =
-      S.homOfLE (inf_le_left : U ⊓ (W₁.ι ''ᵁ V) ≤ U) := by
-  rw [← cancel_mono U.ι, Category.assoc, Category.assoc, morphismRestrict_ι,
-    ← Category.assoc (V.ι ∣_ (W₁.ι ⁻¹ᵁ U)), morphismRestrict_ι, Category.assoc]
-  exact IsOpenImmersion.isoOfRangeEq_hom_fac _ _ _
+/-- Pushing an affine open neighbourhood `V ⊆ W₁` of `⟨s, hs₁⟩` forward to `S` gives an affine
+open neighbourhood `W := W₁.ι ''ᵁ V ≤ W₁` of `s` together with the `fromSpecStalkOfMem`
+compatibilities into `U ⊔ W` and `W₁`. -/
+theorem affineImage_fromSpecStalkOfMem {S : Scheme.{u}} (U W₁ : S.Opens) {s : S}
+    (hs₁ : s ∈ W₁) {V : W₁.toScheme.Opens} (hV : IsAffineOpen V)
+    (hsV : (⟨s, hs₁⟩ : W₁.toScheme) ∈ V) :
+    IsAffineOpen (W₁.ι ''ᵁ V) ∧ W₁.ι ''ᵁ V ≤ W₁ ∧ ∃ hsW : s ∈ W₁.ι ''ᵁ V,
+      (W₁.ι ''ᵁ V).fromSpecStalkOfMem s hsW ≫ S.homOfLE (le_sup_right : _ ≤ U ⊔ _) =
+        (U ⊔ (W₁.ι ''ᵁ V)).fromSpecStalkOfMem s (Opens.mem_sup.mpr (Or.inr hsW)) ∧
+      (W₁.ι ''ᵁ V).fromSpecStalkOfMem s hsW ≫ S.homOfLE (W₁.ι_image_le V) =
+        W₁.fromSpecStalkOfMem s hs₁ := by
+  have hsW : s ∈ W₁.ι ''ᵁ V := ⟨⟨s, hs₁⟩, hsV, rfl⟩
+  exact ⟨hV.image_of_isOpenImmersion W₁.ι, W₁.ι_image_le V, hsW,
+    Scheme.Opens.fromSpecStalkOfMem_homOfLE _ _ s hsW,
+    Scheme.Opens.fromSpecStalkOfMem_homOfLE _ _ s hsW⟩
 
-/-- `infImageOpenIso` identifies `(V.ι ∣_ (W₁.ι ⁻¹ᵁ U)) ≫ (W₁.ι ⁻¹ᵁ U).ι` with the inclusion
-`U ⊓ (W₁.ι ''ᵁ V) ≤ W₁.ι ''ᵁ V ≤ W₁`. -/
-@[reassoc]
-theorem infImageOpenIso_hom_comp_right {S : Scheme.{u}} (U W₁ : S.Opens) (V : W₁.toScheme.Opens) :
-    (infImageOpenIso U W₁ V).hom ≫ (V.ι ∣_ (W₁.ι ⁻¹ᵁ U)) ≫ (W₁.ι ⁻¹ᵁ U).ι =
-      S.homOfLE (inf_le_right : U ⊓ (W₁.ι ''ᵁ V) ≤ W₁.ι ''ᵁ V) ≫
-        S.homOfLE (W₁.ι_image_le V) := by
-  rw [← cancel_mono W₁.ι]; simp [infImageOpenIso, Category.assoc]
+private lemma pullback_stalkOpenRestriction_eq {S : Scheme.{u}} (U W₁ : S.Opens) (s : S)
+    (hs₁ : s ∈ W₁) {Y₁ Y₂ : Over S}
+    (eU : (Over.pullback U.ι).obj Y₁ ≅ (Over.pullback U.ι).obj Y₂)
+    (es : (Over.pullback (S.fromSpecStalk s)).obj Y₁ ≅
+      (Over.pullback (S.fromSpecStalk s)).obj Y₂)
+    (eW₁ : (Over.pullback W₁.ι).obj Y₁ ≅ (Over.pullback W₁.ι).obj Y₂)
+    (heW₁_hom : Over.conjPullback (W₁.fromSpecStalkOfMem_ι s hs₁) eW₁.hom = es.hom)
+    (he_conj : Over.conjPullback (morphismRestrict_ι (S.fromSpecStalk s) U) eU.hom =
+      Over.conjPullback (rfl : (S.fromSpecStalk s ⁻¹ᵁ U).ι ≫ S.fromSpecStalk s = _) es.hom) :
+    (Over.pullback (W₁.toScheme.fromSpecStalk ⟨s, hs₁⟩ ∣_ (W₁.ι ⁻¹ᵁ U))).map
+        (Over.conjPullback (rfl : (W₁.ι ⁻¹ᵁ U).ι ≫ W₁.ι = _) eW₁.hom) =
+      (Over.pullback (W₁.toScheme.fromSpecStalk ⟨s, hs₁⟩ ∣_ (W₁.ι ⁻¹ᵁ U))).map
+        (Over.conjPullback (morphismRestrict_ι W₁.ι U) eU.hom) := by
+  let U₁ : W₁.toScheme.Opens := W₁.ι ⁻¹ᵁ U
+  let p₁ : Spec (W₁.toScheme.presheaf.stalk ⟨s, hs₁⟩) ⟶ W₁.toScheme :=
+    W₁.toScheme.fromSpecStalk ⟨s, hs₁⟩
+  have hτU := stalkOpenRestriction_comp_morphismRestrict U W₁ s hs₁
+  have hτW₁ := stalkOpenRestriction_comp_ι_fromSpecStalkOfMem U W₁ s hs₁
+  have hτS := stalkOpenRestriction_comp_ι_fromSpecStalk U W₁ s hs₁
+  refine Over.conjPullback_injective (rfl : (p₁ ∣_ U₁) ≫ (U₁.ι ≫ W₁.ι) = _) ?_
+  have hw_a : (p₁ ∣_ U₁ ≫ U₁.ι) ≫ W₁.ι = p₁ ∣_ U₁ ≫ U₁.ι ≫ W₁.ι := Category.assoc ..
+  have hw_b : (p₁ ∣_ U₁ ≫ W₁.ι ∣_ U) ≫ U.ι = p₁ ∣_ U₁ ≫ U₁.ι ≫ W₁.ι := by
+    rw [Category.assoc, morphismRestrict_ι]
+  have hw_s : ((S.fromSpecStalk s ⁻¹ᵁ U).ι ≫ W₁.fromSpecStalkOfMem s hs₁) ≫ W₁.ι =
+      (S.fromSpecStalk s ⁻¹ᵁ U).ι ≫ S.fromSpecStalk s := by simp
+  calc Over.conjPullback rfl (Over.conjPullback (rfl : U₁.ι ≫ W₁.ι = _) eW₁.hom)
+      = Over.conjPullback hw_a eW₁.hom :=
+        Over.conjPullback_conjPullback rfl rfl rfl hw_a eW₁.hom
+    _ = Over.conjPullback hτS (Over.conjPullback hw_s eW₁.hom) :=
+        (Over.conjPullback_conjPullback hτW₁ hw_s hτS hw_a eW₁.hom).symm
+    _ = Over.conjPullback hτS (Over.conjPullback rfl es.hom) := by
+        rw [← Over.conjPullback_conjPullback rfl (W₁.fromSpecStalkOfMem_ι s hs₁) rfl hw_s eW₁.hom,
+          heW₁_hom]
+    _ = Over.conjPullback hτS
+          (Over.conjPullback (morphismRestrict_ι (S.fromSpecStalk s) U) eU.hom) := by
+        rw [he_conj]
+    _ = Over.conjPullback hw_b eU.hom :=
+        Over.conjPullback_conjPullback hτU (morphismRestrict_ι (S.fromSpecStalk s) U) hτS hw_b
+          eU.hom
+    _ = Over.conjPullback rfl (Over.conjPullback (morphismRestrict_ι W₁.ι U) eU.hom) :=
+        (Over.conjPullback_conjPullback rfl (morphismRestrict_ι W₁.ι U) rfl hw_b eU.hom).symm
+
+private lemma conjPullback_infImage_compat {S : Scheme.{u}} (U W₁ : S.Opens)
+    (V : W₁.toScheme.Opens) (hWW₁ : W₁.ι ''ᵁ V ≤ W₁) {Y₁ Y₂ : Over S}
+    (eU : (Over.pullback U.ι).obj Y₁ ≅ (Over.pullback U.ι).obj Y₂)
+    (eW₁ : (Over.pullback W₁.ι).obj Y₁ ≅ (Over.pullback W₁.ι).obj Y₂)
+    (hab_V : (Over.pullback (V.ι ∣_ (W₁.ι ⁻¹ᵁ U))).map
+        (Over.conjPullback (rfl : (W₁.ι ⁻¹ᵁ U).ι ≫ W₁.ι = _) eW₁.hom) =
+      (Over.pullback (V.ι ∣_ (W₁.ι ⁻¹ᵁ U))).map
+        (Over.conjPullback (morphismRestrict_ι W₁.ι U) eU.hom)) :
+    Over.conjPullback (S.homOfLE_ι (inf_le_left : U ⊓ (W₁.ι ''ᵁ V) ≤ U)) eU.hom =
+      Over.conjPullback (S.homOfLE_ι (inf_le_right : U ⊓ (W₁.ι ''ᵁ V) ≤ W₁.ι ''ᵁ V))
+        (Over.conjPullback (S.homOfLE_ι hWW₁) eW₁.hom) := by
+  let U₁ : W₁.toScheme.Opens := W₁.ι ⁻¹ᵁ U
+  let W : S.Opens := W₁.ι ''ᵁ V
+  let isoInf := infImageOpenIso U W₁ V
+  have hisoInf_U := infImageOpenIso_hom_comp_left U W₁ V
+  have hisoInf_W := infImageOpenIso_hom_comp_right U W₁ V
+  have hw_V : isoInf.hom ≫ (V.ι ∣_ U₁) ≫ U₁.ι ≫ W₁.ι = (U ⊓ W).ι := by
+    calc isoInf.hom ≫ (V.ι ∣_ U₁) ≫ U₁.ι ≫ W₁.ι
+        = (isoInf.hom ≫ (V.ι ∣_ U₁) ≫ U₁.ι) ≫ W₁.ι := by simp only [Category.assoc]
+      _ = (S.homOfLE (inf_le_right : U ⊓ W ≤ W) ≫ S.homOfLE hWW₁) ≫ W₁.ι := by rw [hisoInf_W]
+      _ = (U ⊓ W).ι := by simp only [Category.assoc, Scheme.homOfLE_ι]
+  have hw_aV : (V.ι ∣_ U₁ ≫ U₁.ι) ≫ W₁.ι = V.ι ∣_ U₁ ≫ U₁.ι ≫ W₁.ι := Category.assoc ..
+  have hw_bV : (V.ι ∣_ U₁ ≫ W₁.ι ∣_ U) ≫ U.ι = V.ι ∣_ U₁ ≫ U₁.ι ≫ W₁.ι := by
+    rw [Category.assoc, morphismRestrict_ι]
+  have hw_W₁ : (S.homOfLE (inf_le_right : U ⊓ W ≤ W) ≫ S.homOfLE hWW₁) ≫ W₁.ι = (U ⊓ W).ι := by
+    rw [Category.assoc, S.homOfLE_ι, S.homOfLE_ι]
+  have hV_conj : Over.conjPullback (rfl : (V.ι ∣_ U₁) ≫ (U₁.ι ≫ W₁.ι) = _)
+        (Over.conjPullback (rfl : U₁.ι ≫ W₁.ι = _) eW₁.hom) =
+      Over.conjPullback (rfl : (V.ι ∣_ U₁) ≫ (U₁.ι ≫ W₁.ι) = _)
+        (Over.conjPullback (morphismRestrict_ι W₁.ι U) eU.hom) := by
+    rw [Over.conjPullback_eq (w := (rfl : (V.ι ∣_ U₁) ≫ (U₁.ι ≫ W₁.ι) = _)),
+      Over.conjPullback_eq (w := (rfl : (V.ι ∣_ U₁) ≫ (U₁.ι ≫ W₁.ι) = _)), hab_V]
+  calc Over.conjPullback (S.homOfLE_ι inf_le_left) eU.hom
+      = Over.conjPullback hw_V (Over.conjPullback hw_bV eU.hom) :=
+        (Over.conjPullback_conjPullback hisoInf_U hw_bV hw_V (S.homOfLE_ι inf_le_left)
+          eU.hom).symm
+    _ = Over.conjPullback hw_V
+          (Over.conjPullback rfl (Over.conjPullback (morphismRestrict_ι W₁.ι U) eU.hom)) := by
+        rw [Over.conjPullback_conjPullback rfl (morphismRestrict_ι W₁.ι U) rfl hw_bV eU.hom]
+    _ = Over.conjPullback hw_V
+          (Over.conjPullback rfl (Over.conjPullback (rfl : U₁.ι ≫ W₁.ι = _) eW₁.hom)) := by
+        rw [hV_conj]
+    _ = Over.conjPullback hw_V (Over.conjPullback hw_aV eW₁.hom) := by
+        rw [Over.conjPullback_conjPullback rfl rfl rfl hw_aV eW₁.hom]
+    _ = Over.conjPullback hw_W₁ eW₁.hom :=
+        Over.conjPullback_conjPullback hisoInf_W hw_aV hw_V hw_W₁ eW₁.hom
+    _ = Over.conjPullback (S.homOfLE_ι inf_le_right)
+          (Over.conjPullback (S.homOfLE_ι hWW₁) eW₁.hom) :=
+        (Over.conjPullback_conjPullback rfl (S.homOfLE_ι hWW₁) (S.homOfLE_ι inf_le_right) hw_W₁
+          eW₁.hom).symm
 
 /-- **Spreading out an isomorphism from a local ring.** Given two quasi-compact, quasi-separated
 schemes `Y₁, Y₂` locally of finite presentation over `S`, equipped with compatible isomorphisms
@@ -773,37 +679,35 @@ theorem exists_iso_of_iso_fromSpecStalk {S : Scheme.{u}} (U : S.Opens)
     (es : (Over.pullback (S.fromSpecStalk s)).obj Y₁ ≅
       (Over.pullback (S.fromSpecStalk s)).obj Y₂)
     (he : (Over.pullback (S.fromSpecStalk s ∣_ U)).map eU.hom ≫
-        (pullbackSquareIso (morphismRestrict_ι (S.fromSpecStalk s) U)).hom.app Y₂ =
-      (pullbackSquareIso (morphismRestrict_ι (S.fromSpecStalk s) U)).hom.app Y₁ ≫
+        (Over.pullbackSquareIso (morphismRestrict_ι (S.fromSpecStalk s) U)).hom.app Y₂ =
+      (Over.pullbackSquareIso (morphismRestrict_ι (S.fromSpecStalk s) U)).hom.app Y₁ ≫
         (Over.pullback (S.fromSpecStalk s ⁻¹ᵁ U).ι).map es.hom) :
     ∃ (W : S.Opens) (_ : IsAffineOpen W) (hs : s ∈ W)
       (eUW : (Over.pullback (U ⊔ W).ι).obj Y₁ ≅ (Over.pullback (U ⊔ W).ι).obj Y₂),
-      (pullbackCompIso (S.homOfLE_ι (le_sup_left : U ≤ U ⊔ W))).inv.app Y₁ ≫
+      (Over.pullbackCompIso (S.homOfLE_ι (le_sup_left : U ≤ U ⊔ W))).inv.app Y₁ ≫
           (Over.pullback (S.homOfLE le_sup_left)).map eUW.hom ≫
-          (pullbackCompIso (S.homOfLE_ι (le_sup_left : U ≤ U ⊔ W))).hom.app Y₂ =
+          (Over.pullbackCompIso (S.homOfLE_ι (le_sup_left : U ≤ U ⊔ W))).hom.app Y₂ =
         eU.hom ∧
-      (pullbackCompIso ((U ⊔ W).fromSpecStalkOfMem_ι s (Opens.mem_sup.mpr (Or.inr hs)))).inv.app
-          Y₁ ≫
+      (Over.pullbackCompIso
+          ((U ⊔ W).fromSpecStalkOfMem_ι s (Opens.mem_sup.mpr (Or.inr hs)))).inv.app Y₁ ≫
           (Over.pullback ((U ⊔ W).fromSpecStalkOfMem s (Opens.mem_sup.mpr (Or.inr hs)))).map
             eUW.hom ≫
-          (pullbackCompIso ((U ⊔ W).fromSpecStalkOfMem_ι s (Opens.mem_sup.mpr (Or.inr hs)))).hom.app
-            Y₂ =
+          (Over.pullbackCompIso
+            ((U ⊔ W).fromSpecStalkOfMem_ι s (Opens.mem_sup.mpr (Or.inr hs)))).hom.app Y₂ =
         es.hom := by
   -- Spread `es` to an affine open neighbourhood `W₁` of `s`.
   obtain ⟨W₁, _, hs₁, eW₁, heW₁⟩ := exists_pullback_iso_fromSpecStalk (X := Y₁) (Y := Y₂) s es
-  have heW₁_hom : conjPullback (W₁.fromSpecStalkOfMem_ι s hs₁) eW₁.hom = es.hom := by
-    simpa [conjPullback] using congrArg Iso.hom heW₁
-  have he_conj : conjPullback (morphismRestrict_ι (S.fromSpecStalk s) U) eU.hom =
-      conjPullback (rfl : (S.fromSpecStalk s ⁻¹ᵁ U).ι ≫ S.fromSpecStalk s = _) es.hom :=
-    (pullbackSquareIso_iff_conjPullback (morphismRestrict_ι (S.fromSpecStalk s) U) rfl _
+  have heW₁_hom : Over.conjPullback (W₁.fromSpecStalkOfMem_ι s hs₁) eW₁.hom = es.hom := by
+    simpa [Over.conjPullback_eq] using congrArg Iso.hom heW₁
+  have he_conj : Over.conjPullback (morphismRestrict_ι (S.fromSpecStalk s) U) eU.hom =
+      Over.conjPullback (rfl : (S.fromSpecStalk s ⁻¹ᵁ U).ι ≫ S.fromSpecStalk s = _) es.hom :=
+    (Over.pullbackSquareIso_iff_conjPullback (morphismRestrict_ι (S.fromSpecStalk s) U) rfl _
       eU.hom es.hom).mp he
   -- Compare `eW₁` and `eU` on `U₁ := W₁.ι ⁻¹ᵁ U`, pushed forward to `Over W₁`.
   let U₁ : W₁.toScheme.Opens := W₁.ι ⁻¹ᵁ U
-  have hqcU₁ : QuasiCompact U₁.ι :=
-    MorphismProperty.of_isPullback (P := @QuasiCompact) (isPullback_morphismRestrict W₁.ι U)
-      inferInstance
-  let a := conjPullback (rfl : U₁.ι ≫ W₁.ι = _) eW₁.hom
-  let b := conjPullback (morphismRestrict_ι W₁.ι U) eU.hom
+  have hqcU₁ : QuasiCompact U₁.ι := quasiCompact_ι_preimage W₁.ι U
+  let a := Over.conjPullback (rfl : U₁.ι ≫ W₁.ι = _) eW₁.hom
+  let b := Over.conjPullback (morphismRestrict_ι W₁.ι U) eU.hom
   let X₁ : Over W₁.toScheme := (Over.map U₁.ι).obj ((Over.pullback (U₁.ι ≫ W₁.ι)).obj Y₁)
   let Z₁ : Over W₁.toScheme := (Over.map U₁.ι).obj ((Over.pullback (U₁.ι ≫ W₁.ι)).obj Y₂)
   have : QuasiCompact X₁.hom :=
@@ -813,29 +717,8 @@ theorem exists_iso_of_iso_fromSpecStalk {S : Scheme.{u}} (U : S.Opens)
   -- Show `a` and `b` agree over `Spec 𝒪_{W₁, s}`.
   let s₁ : W₁.toScheme := ⟨s, hs₁⟩
   let p₁ : Spec (W₁.toScheme.presheaf.stalk s₁) ⟶ W₁.toScheme := W₁.toScheme.fromSpecStalk s₁
-  have hτU := stalkOpenRestriction_comp_morphismRestrict U W₁ s hs₁
-  have hτW₁ := stalkOpenRestriction_comp_ι_fromSpecStalkOfMem U W₁ s hs₁
-  have hτS := stalkOpenRestriction_comp_ι_fromSpecStalk U W₁ s hs₁
-  have hab_p₁ : (Over.pullback (p₁ ∣_ U₁)).map a = (Over.pullback (p₁ ∣_ U₁)).map b := by
-    refine conjPullback_injective (rfl : (p₁ ∣_ U₁) ≫ (U₁.ι ≫ W₁.ι) = _) ?_
-    have hw_a : (p₁ ∣_ U₁ ≫ U₁.ι) ≫ W₁.ι = p₁ ∣_ U₁ ≫ U₁.ι ≫ W₁.ι := Category.assoc ..
-    have hw_b : (p₁ ∣_ U₁ ≫ W₁.ι ∣_ U) ≫ U.ι = p₁ ∣_ U₁ ≫ U₁.ι ≫ W₁.ι := by
-      rw [Category.assoc, morphismRestrict_ι]
-    have hw_s : ((S.fromSpecStalk s ⁻¹ᵁ U).ι ≫ W₁.fromSpecStalkOfMem s hs₁) ≫ W₁.ι =
-        (S.fromSpecStalk s ⁻¹ᵁ U).ι ≫ S.fromSpecStalk s := by simp
-    calc conjPullback rfl a
-        = conjPullback hw_a eW₁.hom := conjPullback_conjPullback rfl rfl rfl hw_a eW₁.hom
-      _ = conjPullback hτS (conjPullback hw_s eW₁.hom) :=
-          (conjPullback_conjPullback hτW₁ hw_s hτS hw_a eW₁.hom).symm
-      _ = conjPullback hτS (conjPullback rfl es.hom) := by
-          rw [← conjPullback_conjPullback rfl (W₁.fromSpecStalkOfMem_ι s hs₁) rfl hw_s eW₁.hom,
-            heW₁_hom]
-      _ = conjPullback hτS (conjPullback (morphismRestrict_ι (S.fromSpecStalk s) U) eU.hom) := by
-          rw [he_conj]
-      _ = conjPullback hw_b eU.hom :=
-          conjPullback_conjPullback hτU (morphismRestrict_ι (S.fromSpecStalk s) U) hτS hw_b eU.hom
-      _ = conjPullback rfl b :=
-          (conjPullback_conjPullback rfl (morphismRestrict_ι W₁.ι U) rfl hw_b eU.hom).symm
+  have hab_p₁ : (Over.pullback (p₁ ∣_ U₁)).map a = (Over.pullback (p₁ ∣_ U₁)).map b :=
+    pullback_stalkOpenRestriction_eq U W₁ s hs₁ eU es eW₁ heW₁_hom he_conj
   have hab_map : (Over.pullback p₁).map ((Over.map U₁.ι).map a) =
       (Over.pullback p₁).map ((Over.map U₁.ι).map b) := by
     rw [← cancel_mono ((pullbackMapOpenIso p₁ U₁).hom.app _)]
@@ -855,74 +738,49 @@ theorem exists_iso_of_iso_fromSpecStalk {S : Scheme.{u}} (U : S.Opens)
     rw [← ha, ← hb, hVeq]
   -- Push `V` forward to `W := W₁.ι ''ᵁ V` and glue `eU` and `eW₁|_W` over `U ⊔ W`.
   let W : S.Opens := W₁.ι ''ᵁ V
-  have hW : IsAffineOpen W := hV.image_of_isOpenImmersion W₁.ι
-  have hWW₁ : W ≤ W₁ := W₁.ι_image_le V
-  have hsW : s ∈ W := ⟨s₁, hsV, rfl⟩
+  obtain ⟨hW, hWW₁, hsW, hstalk_sup, hstalk_W₁⟩ :=
+    affineImage_fromSpecStalkOfMem U W₁ hs₁ hV hsV
   let eW : (Over.pullback W.ι).obj Y₁ ≅ (Over.pullback W.ι).obj Y₂ :=
-    ((pullbackCompIso (S.homOfLE_ι hWW₁)).app Y₁).symm ≪≫
+    ((Over.pullbackCompIso (S.homOfLE_ι hWW₁)).app Y₁).symm ≪≫
       (Over.pullback (S.homOfLE hWW₁)).mapIso eW₁ ≪≫
-      (pullbackCompIso (S.homOfLE_ι hWW₁)).app Y₂
-  have heW_hom : eW.hom = conjPullback (S.homOfLE_ι hWW₁) eW₁.hom := by simp [eW, conjPullback]
+      (Over.pullbackCompIso (S.homOfLE_ι hWW₁)).app Y₂
+  have heW_hom : eW.hom = Over.conjPullback (S.homOfLE_ι hWW₁) eW₁.hom := by
+    simp [eW, Over.conjPullback_eq]
   let e₁ : (Over.pullback (S.homOfLE (le_sup_left : U ≤ U ⊔ W))).obj
         ((Over.pullback (U ⊔ W).ι).obj Y₁) ≅
       (Over.pullback (S.homOfLE (le_sup_left : U ≤ U ⊔ W))).obj
         ((Over.pullback (U ⊔ W).ι).obj Y₂) :=
-    (pullbackCompIso (S.homOfLE_ι le_sup_left)).app Y₁ ≪≫
-      eU ≪≫ ((pullbackCompIso (S.homOfLE_ι le_sup_left)).app Y₂).symm
+    (Over.pullbackCompIso (S.homOfLE_ι le_sup_left)).app Y₁ ≪≫
+      eU ≪≫ ((Over.pullbackCompIso (S.homOfLE_ι le_sup_left)).app Y₂).symm
   let e₂ : (Over.pullback (S.homOfLE (le_sup_right : W ≤ U ⊔ W))).obj
         ((Over.pullback (U ⊔ W).ι).obj Y₁) ≅
       (Over.pullback (S.homOfLE (le_sup_right : W ≤ U ⊔ W))).obj
         ((Over.pullback (U ⊔ W).ι).obj Y₂) :=
-    (pullbackCompIso (S.homOfLE_ι le_sup_right)).app Y₁ ≪≫
-      eW ≪≫ ((pullbackCompIso (S.homOfLE_ι le_sup_right)).app Y₂).symm
+    (Over.pullbackCompIso (S.homOfLE_ι le_sup_right)).app Y₁ ≪≫
+      eW ≪≫ ((Over.pullbackCompIso (S.homOfLE_ι le_sup_right)).app Y₂).symm
   have hpb := isPullback_opens_inf_le (X := S) (le_sup_left : U ≤ U ⊔ W) (le_sup_right : W ≤ U ⊔ W)
   have hcov := S.opensRange_homOfLE_sup U W
   -- Verify compatibility of `e₁` and `e₂` over `U ⊓ W` from `hab_V`.
   have he_compat : (Over.pullback (S.homOfLE (inf_le_left : U ⊓ W ≤ U))).map e₁.hom ≫
-        (pullbackSquareIso hpb.w).hom.app ((Over.pullback (U ⊔ W).ι).obj Y₂) =
-      (pullbackSquareIso hpb.w).hom.app ((Over.pullback (U ⊔ W).ι).obj Y₁) ≫
+        (Over.pullbackSquareIso hpb.w).hom.app ((Over.pullback (U ⊔ W).ι).obj Y₂) =
+      (Over.pullbackSquareIso hpb.w).hom.app ((Over.pullback (U ⊔ W).ι).obj Y₁) ≫
         (Over.pullback (S.homOfLE (inf_le_right : U ⊓ W ≤ W))).map e₂.hom := by
     have hU : U ≤ U ⊔ W := le_sup_left
     have hWle : W ≤ U ⊔ W := le_sup_right
     have hLU : U ⊓ W ≤ U := inf_le_left
     have hRW : U ⊓ W ≤ W := inf_le_right
-    rw [pullbackSquareIso_iff_conjPullback (S.homOfLE_homOfLE hLU hU)
+    rw [Over.pullbackSquareIso_iff_conjPullback (S.homOfLE_homOfLE hLU hU)
       (S.homOfLE_homOfLE hRW hWle) hpb.w]
-    have hL := conjPullback_conjIso (S.homOfLE_homOfLE hLU hU) (S.homOfLE_ι hU)
+    have hL := Over.conjPullback_conjIso (S.homOfLE_homOfLE hLU hU) (S.homOfLE_ι hU)
       (S.homOfLE_ι hLU) (S.homOfLE_ι (hLU.trans hU)) eU.hom
-    have hR := conjPullback_conjIso (S.homOfLE_homOfLE hRW hWle) (S.homOfLE_ι hWle)
+    have hR := Over.conjPullback_conjIso (S.homOfLE_homOfLE hRW hWle) (S.homOfLE_ι hWle)
       (S.homOfLE_ι hRW) (S.homOfLE_ι (hLU.trans hU)) eW.hom
-    rw [← cancel_epi ((pullbackCompIso (S.homOfLE_ι (hLU.trans hU))).inv.app Y₁),
-      ← cancel_mono ((pullbackCompIso (S.homOfLE_ι (hLU.trans hU))).hom.app Y₂)]
+    rw [← cancel_epi ((Over.pullbackCompIso (S.homOfLE_ι (hLU.trans hU))).inv.app Y₁),
+      ← cancel_mono ((Over.pullbackCompIso (S.homOfLE_ι (hLU.trans hU))).hom.app Y₂)]
     refine (Category.assoc ..).trans
       (hL.trans (Eq.trans ?_ (hR.symm.trans (Category.assoc ..).symm)))
     rw [heW_hom]
-    let isoInf := infImageOpenIso U W₁ V
-    have hisoInf_U := infImageOpenIso_hom_comp_left U W₁ V
-    have hisoInf_W := infImageOpenIso_hom_comp_right U W₁ V
-    have hw_V : isoInf.hom ≫ (V.ι ∣_ U₁) ≫ U₁.ι ≫ W₁.ι = (U ⊓ W).ι := by
-      simp [isoInf, infImageOpenIso, U₁, W]
-    have hw_aV : (V.ι ∣_ U₁ ≫ U₁.ι) ≫ W₁.ι = V.ι ∣_ U₁ ≫ U₁.ι ≫ W₁.ι := Category.assoc ..
-    have hw_bV : (V.ι ∣_ U₁ ≫ W₁.ι ∣_ U) ≫ U.ι = V.ι ∣_ U₁ ≫ U₁.ι ≫ W₁.ι := by
-      rw [Category.assoc, morphismRestrict_ι]
-    have hw_W₁ : (S.homOfLE (inf_le_right : U ⊓ W ≤ W) ≫ S.homOfLE hWW₁) ≫ W₁.ι = (U ⊓ W).ι := by
-      rw [Category.assoc, S.homOfLE_ι, S.homOfLE_ι]
-    have hV_conj : conjPullback (rfl : (V.ι ∣_ U₁) ≫ (U₁.ι ≫ W₁.ι) = _) a =
-        conjPullback (rfl : (V.ι ∣_ U₁) ≫ (U₁.ι ≫ W₁.ι) = _) b := by
-      dsimp only [conjPullback]; rw [hab_V]
-    calc conjPullback (S.homOfLE_ι inf_le_left) eU.hom
-        = conjPullback hw_V (conjPullback hw_bV eU.hom) :=
-          (conjPullback_conjPullback hisoInf_U hw_bV hw_V (S.homOfLE_ι inf_le_left) eU.hom).symm
-      _ = conjPullback hw_V (conjPullback rfl b) := by
-          rw [conjPullback_conjPullback rfl (morphismRestrict_ι W₁.ι U) rfl hw_bV eU.hom]
-      _ = conjPullback hw_V (conjPullback rfl a) := by rw [hV_conj]
-      _ = conjPullback hw_V (conjPullback hw_aV eW₁.hom) := by
-          rw [conjPullback_conjPullback rfl rfl rfl hw_aV eW₁.hom]
-      _ = conjPullback hw_W₁ eW₁.hom :=
-          conjPullback_conjPullback hisoInf_W hw_aV hw_V hw_W₁ eW₁.hom
-      _ = conjPullback (S.homOfLE_ι inf_le_right) (conjPullback (S.homOfLE_ι hWW₁) eW₁.hom) :=
-          (conjPullback_conjPullback rfl (S.homOfLE_ι hWW₁) (S.homOfLE_ι inf_le_right) hw_W₁
-            eW₁.hom).symm
+    exact conjPullback_infImage_compat U W₁ V hWW₁ eU eW₁ hab_V
   -- Glue `e₁` and `e₂` to an isomorphism over `U ⊔ W`.
   let eUW : (Over.pullback (U ⊔ W).ι).obj Y₁ ≅ (Over.pullback (U ⊔ W).ι).obj Y₂ :=
     glueOverIso hpb hcov e₁ e₂ he_compat
@@ -930,27 +788,23 @@ theorem exists_iso_of_iso_fromSpecStalk {S : Scheme.{u}} (U : S.Opens)
   · have hL : (Over.pullback (S.homOfLE (le_sup_left : U ≤ U ⊔ W))).map eUW.hom = e₁.hom :=
       congrArg Iso.hom (pullback_mapIso_glueOverIso_left hpb hcov e₁ e₂ he_compat)
     rw [hL]; simp [e₁]
-  · have hR : conjPullback (S.homOfLE_ι (le_sup_right : W ≤ U ⊔ W)) eUW.hom = eW.hom := by
+  · have hR : Over.conjPullback (S.homOfLE_ι (le_sup_right : W ≤ U ⊔ W)) eUW.hom = eW.hom := by
       have h : (Over.pullback (S.homOfLE (le_sup_right : W ≤ U ⊔ W))).map eUW.hom = e₂.hom :=
         congrArg Iso.hom (pullback_mapIso_glueOverIso_right hpb hcov e₁ e₂ he_compat)
-      dsimp only [conjPullback]; rw [h]; simp [e₂]
-    have hstalk_sup : W.fromSpecStalkOfMem s hsW ≫ S.homOfLE le_sup_right =
-        (U ⊔ W).fromSpecStalkOfMem s (Opens.mem_sup.mpr (Or.inr hsW)) := by
-      rw [← cancel_mono (U ⊔ W).ι]; simp
-    have hstalk_W₁ : W.fromSpecStalkOfMem s hsW ≫ S.homOfLE hWW₁ =
-        W₁.fromSpecStalkOfMem s hs₁ := by
-      rw [← cancel_mono W₁.ι]; simp
-    calc conjPullback ((U ⊔ W).fromSpecStalkOfMem_ι s (Opens.mem_sup.mpr (Or.inr hsW))) eUW.hom
-        = conjPullback (W.fromSpecStalkOfMem_ι s hsW)
-            (conjPullback (S.homOfLE_ι le_sup_right) eUW.hom) :=
-          (conjPullback_conjPullback hstalk_sup (S.homOfLE_ι le_sup_right)
+      rw [Over.conjPullback_eq, h]; simp [e₂]
+    rw [← Over.conjPullback_eq]
+    calc Over.conjPullback
+          ((U ⊔ W).fromSpecStalkOfMem_ι s (Opens.mem_sup.mpr (Or.inr hsW))) eUW.hom
+        = Over.conjPullback (W.fromSpecStalkOfMem_ι s hsW)
+            (Over.conjPullback (S.homOfLE_ι le_sup_right) eUW.hom) :=
+          (Over.conjPullback_conjPullback hstalk_sup (S.homOfLE_ι le_sup_right)
             (W.fromSpecStalkOfMem_ι s hsW) _ eUW.hom).symm
-      _ = conjPullback (W.fromSpecStalkOfMem_ι s hsW)
-            (conjPullback (S.homOfLE_ι hWW₁) eW₁.hom) := by
+      _ = Over.conjPullback (W.fromSpecStalkOfMem_ι s hsW)
+            (Over.conjPullback (S.homOfLE_ι hWW₁) eW₁.hom) := by
           rw [hR, heW_hom]
-      _ = conjPullback (W₁.fromSpecStalkOfMem_ι s hs₁) eW₁.hom :=
-          conjPullback_conjPullback hstalk_W₁ (S.homOfLE_ι hWW₁) (W.fromSpecStalkOfMem_ι s hsW)
-            (W₁.fromSpecStalkOfMem_ι s hs₁) eW₁.hom
+      _ = Over.conjPullback (W₁.fromSpecStalkOfMem_ι s hs₁) eW₁.hom :=
+          Over.conjPullback_conjPullback hstalk_W₁ (S.homOfLE_ι hWW₁)
+            (W.fromSpecStalkOfMem_ι s hsW) (W₁.fromSpecStalkOfMem_ι s hs₁) eW₁.hom
       _ = es.hom := heW₁_hom
 
 end LocalSpreading

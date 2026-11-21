@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Comma.Over.Pullback
+public import Mathlib.CategoryTheory.Functor.FullyFaithful
 public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Basic
 
 /-!
@@ -18,6 +19,9 @@ a comma category, so instance search does not see through it to the comma statem
 supplies the missing `Over` form, which lets `infer_instance` discharge `IsIso φ.left` goals
 that otherwise have to name the forgetful functor by hand.
 
+For any monomorphism `j : U ⟶ S` in a category `C`, postcomposition along `j` defines a fully
+faithful functor `Over.map j : Over U ⥤ Over S`.
+
 Base change `Over.pullback f` along `f : T ⟶ S` sends a morphism `g : A ⟶ B` over `S` to the
 induced morphism `A ×_S T ⟶ B ×_S T`, which is the pullback of `g` along the projection
 `B ×_S T ⟶ B`. For `f : X ⟶ S` and `g : S' ⟶ S`, the two base changes of `X` to an object
@@ -28,6 +32,8 @@ induced morphism `A ×_S T ⟶ B ×_S T`, which is the pullback of `g` along the
 
 * `CategoryTheory.Over.isIso_left`: the underlying morphism of an isomorphism over a base is
   an isomorphism.
+* `CategoryTheory.Over.fullyFaithfulMap`: `Over.map j` is fully faithful when `j` is a
+  monomorphism.
 * `CategoryTheory.Over.isPullback_pullback_map_left`: base change of a morphism over `S` is a
   pullback of it.
 * `CategoryTheory.Over.pullbackRightPullbackFstIso_inv_comp_pullback_map`: the identification
@@ -48,6 +54,16 @@ namespace Over
 instance isIso_left {T : Type u} [Category.{v} T] {X : T} {f g : Over X} (φ : f ⟶ g)
     [IsIso φ] : IsIso φ.left :=
   (Over.forget X).map_isIso φ
+
+/-- For a monomorphism `j : U ⟶ S`, the postcomposition functor `Over.map j : Over U ⥤ Over S` is
+fully faithful. -/
+def fullyFaithfulMap {C : Type u} [Category.{v} C] {U S : C} (j : U ⟶ S) [Mono j] :
+    (Over.map j).FullyFaithful where
+  preimage {A B} φ := Over.homMk φ.left (by
+    rw [← cancel_mono j, Category.assoc]
+    exact Over.w φ)
+  map_preimage _ := rfl
+  preimage_map _ := rfl
 
 /-- Base change along `f : T ⟶ S` of a morphism `g : A ⟶ B` over `S` is the pullback of `g.left`
 along the projection `B ×_S T ⟶ B`: the square formed by `A ×_S T ⟶ B ×_S T`, the two first

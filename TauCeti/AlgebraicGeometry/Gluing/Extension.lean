@@ -27,6 +27,9 @@ inside `U` (such as a sequence of blowups at closed points of `U`) is extended t
 
 * `AlgebraicGeometry.Scheme.Hom.exists_isPullback_isIso_morphismRestrict`: the extension `f'` of
   `f` along `j`, with `f` its base change along `j` and `f'` an isomorphism over `V`.
+* `AlgebraicGeometry.IsZariskiLocalAtTarget.morphismRestrict_opensRange_of_isPullback`: a
+  property respecting isomorphisms passes from a pullback `f` along an open immersion `j` to the
+  restriction `f' ∣_ j.opensRange`.
 * `AlgebraicGeometry.IsZariskiLocalAtTarget.of_isPullback_of_isIso_morphismRestrict`: a property
   local on the target and holding for isomorphisms passes from `f` to such an extension `f'`.
 
@@ -134,6 +137,17 @@ theorem exists_isPullback_isIso_morphismRestrict :
 
 end Scheme.Hom
 
+/-- A morphism property respecting isomorphisms passes from the pullback `f` along an open
+immersion `j` to the restriction `f' ∣_ j.opensRange`. -/
+theorem IsZariskiLocalAtTarget.morphismRestrict_opensRange_of_isPullback
+    {P : MorphismProperty Scheme.{u}} [P.RespectsIso]
+    {U B Y Y' : Scheme.{u}} {j : U ⟶ B} [IsOpenImmersion j] {f : Y ⟶ U}
+    {ι : Y ⟶ Y'} {f' : Y' ⟶ B} (h : IsPullback f ι j f') (hf : P f) :
+    P (f' ∣_ j.opensRange) := by
+  refine (P.arrow_mk_iso_iff (morphismRestrictOpensRange f' j)).mpr ?_
+  rw [← h.flip.isoPullback_hom_snd] at hf
+  exact (P.cancel_left_of_respectsIso _ _).mp hf
+
 /-- Let `j : U ⟶ B` be an open immersion and `V` an open of `B` with `j(U) ∪ V = B`, and let
 `f' : Y' ⟶ B` be an isomorphism over `V` whose base change along `j` is `f : Y ⟶ U`. A property
 local on the target and holding for isomorphisms passes from `f` to `f'`. -/
@@ -147,8 +161,6 @@ theorem IsZariskiLocalAtTarget.of_isPullback_of_isIso_morphismRestrict
   cases b
   · have : IsIso (f' ∣_ V) := hV
     exact P.of_isIso (f' ∣_ V)
-  · refine (P.arrow_mk_iso_iff (morphismRestrictOpensRange f' j)).mpr ?_
-    rw [← h.flip.isoPullback_hom_snd] at hf
-    exact (P.cancel_left_of_respectsIso _ _).mp hf
+  · exact IsZariskiLocalAtTarget.morphismRestrict_opensRange_of_isPullback h hf
 
 end AlgebraicGeometry
