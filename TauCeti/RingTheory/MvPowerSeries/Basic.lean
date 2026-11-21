@@ -24,7 +24,9 @@ records that every coordinate variable `X s` is nonzero over a nontrivial semiri
 `R⟦X, Y⟧` (the power-series counterpart of `MvPolynomial.coeff_add_pow`, over any semiring), and
 `MvPowerSeries.mem_support` together with `support_zero`, `support_add`, `support_smul_subset`,
 `support_neg`, and `support_sub` bridges `Function.support` with `MvPowerSeries.coeff` and the
-algebraic operations on `MvPowerSeries`.
+algebraic operations on `MvPowerSeries`. Finally, `MvPowerSeries.liftOfSurjective` lifts a
+multivariate power series coefficientwise along a surjective map, yielding
+`MvPowerSeries.map_surjective`.
 -/
 
 public section
@@ -118,5 +120,36 @@ theorem support_sub {σ S : Type*} [Ring S] (f g : MvPowerSeries σ S) :
   simpa only [Set.mem_union, Function.mem_support, ← mem_support] using
     Function.support_sub (coeff · f) (coeff · g)
       (by rwa [Function.mem_support, ← map_sub, ← mem_support])
+
+section Surjective
+
+variable {σ A k : Type*} [Semiring A] [Semiring k]
+
+/-- Coefficientwise lift of a multivariate power series along a surjective map `π : A → k`. -/
+noncomputable def liftOfSurjective {π : A → k} (hπ : Function.Surjective π)
+    (f : MvPowerSeries σ k) : MvPowerSeries σ A :=
+  fun d ↦ Function.surjInv hπ (coeff d f)
+
+/-- Each coefficient of `liftOfSurjective hπ f` is the chosen preimage of the corresponding
+coefficient of `f`. -/
+@[simp]
+theorem coeff_liftOfSurjective {π : A → k} (hπ : Function.Surjective π)
+    (f : MvPowerSeries σ k) (d : σ →₀ ℕ) :
+    coeff d (liftOfSurjective hπ f) = Function.surjInv hπ (coeff d f) := by
+  rfl
+
+/-- Mapping `liftOfSurjective hπ f` back along `π` recovers `f`. -/
+@[simp]
+theorem map_liftOfSurjective {π : A →+* k} (hπ : Function.Surjective π)
+    (f : MvPowerSeries σ k) :
+    MvPowerSeries.map π (liftOfSurjective hπ f) = f :=
+  MvPowerSeries.ext fun d ↦ by rw [coeff_map, coeff_liftOfSurjective, Function.surjInv_eq hπ]
+
+/-- Base change of multivariate power series along a surjective ring homomorphism is surjective. -/
+theorem map_surjective {π : A →+* k} (hπ : Function.Surjective π) :
+    Function.Surjective (MvPowerSeries.map (σ := σ) π) :=
+  fun f ↦ ⟨liftOfSurjective hπ f, map_liftOfSurjective hπ f⟩
+
+end Surjective
 
 end MvPowerSeries

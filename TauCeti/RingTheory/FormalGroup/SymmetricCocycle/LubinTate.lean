@@ -145,9 +145,8 @@ theorem coeff_deformationCocycle_mem_iff {F G : FormalGroup A} {I : Ideal A} :
 theorem two_le_order_deformationCocycle (F G : FormalGroup A) :
     ((2 : ℕ) : ℕ∞) ≤ (F.deformationCocycle G).order := by
   have hord : ((2 : ℕ) : ℕ∞) ≤ (G.toPowerSeries - F.toPowerSeries).order := by
-    rw [show G.toPowerSeries - F.toPowerSeries = -(F.homDefect G PowerSeries.X) by
-      rw [homDefect_X, neg_sub], order_neg]
-    exact F.two_le_order_homDefect_X (G := G)
+    rw [← G.homDefect_X F]
+    exact G.two_le_order_homDefect_X F
   exact (_root_.zero_add _).symm.le.trans ((add_le_add zero_le hord).trans le_order_mul)
 
 /-- **Additivity of the deformation cocycle across square-zero steps.** If `G ≡ F (mod I)` and
@@ -242,11 +241,12 @@ private theorem mul_assocDefect_add_eq_cocycle {I : Ideal A} (hI : I * I = ⊥)
   have h01 := hasSubst_finTwo (hX 0) (hX 1); have h12 := hasSubst_finTwo (hX 1) (hX 2)
   have haL := hasSubst_finTwo (F.hasSubst_subst_pair (hX 0) (hX 1)) (hX 2)
   have haR := hasSubst_finTwo (hX 0) (F.hasSubst_subst_pair (hX 1) (hX 2))
+  have hPΔ : PowerSeries.subst F.toPowerSeries F.invariantDifferential * Δ = Φ := by
+    dsimp only [Δ]; rw [← mul_assoc, F.subst_invariantDifferential_mul_inv hF, one_mul]
   have hPΔ_sub {b : Fin 2 → MvPowerSeries (Fin 3) A} (hb : HasSubst b) :
       PowerSeries.subst (F.toPowerSeries.subst b) F.invariantDifferential * Δ.subst b =
         Φ.subst b := by
-    rw [← subst_powerSeriesSubst hb hF, ← subst_mul hb, show _ * Δ = Φ by
-      dsimp only [Δ]; rw [← mul_assoc, F.subst_invariantDifferential_mul_inv hF, one_mul]]
+    rw [← subst_powerSeriesSubst hb hF, ← subst_mul hb, hPΔ]
   have inv0 := congrArg (subst ![F₀₁, X 2]) F.subst_invariantDifferential_mul_pderiv
   rw [subst_mul haL, subst_powerSeriesSubst haL hF, subst_powerSeriesSubst haL (.X 0),
     subst_X haL, Matrix.cons_val_zero] at inv0
@@ -436,7 +436,8 @@ theorem deformationCocycle_smul_eq_homDefect_𝔾ₐ (F : FormalGroup A) [F.IsCo
     (hφ : ∀ n, PowerSeries.coeff n (φ.toPowerSeries - PowerSeries.X) ∈ I) :
     F.deformationCocycle (φ • F) =
       F.homDefect 𝔾ₐ (F.invariantDifferential * (φ.toPowerSeries - PowerSeries.X)) := by
-  set δ := φ.toPowerSeries - PowerSeries.X; set Δ := (φ • F).toPowerSeries - F.toPowerSeries
+  set δ := φ.toPowerSeries - PowerSeries.X
+  set Δ := (φ • F).toPowerSeries - F.toPowerSeries with hΔ
   have hF := PowerSeries.HasSubst.of_constantCoeff_zero F.zero_constantCoeff
   have hX (i : Fin 2) := PowerSeries.HasSubst.X (S := A) i
   have hhom := subst_toPowerSeries_eq_subst_smul_toPowerSeries φ F
@@ -462,10 +463,9 @@ theorem deformationCocycle_smul_eq_homDefect_𝔾ₐ (F : FormalGroup A) [F.IsCo
       PowerSeries.subst (X 1) δ * pderiv 1 F.toPowerSeries := by
     simp only [δv, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one] at hhom
     linear_combination -hhom
-  rw [deformationCocycle, show (φ • F).toPowerSeries - F.toPowerSeries = Δ from rfl, hΔeq,
-    homDefect_𝔾ₐ, PowerSeries.subst_mul hF, PowerSeries.subst_mul (hX 0),
-    PowerSeries.subst_mul (hX 1), ← F.subst_invariantDifferential_mul_pderiv,
-    ← F.subst_invariantDifferential_mul_pderiv_one]
+  rw [deformationCocycle, ← hΔ, hΔeq, homDefect_𝔾ₐ, PowerSeries.subst_mul hF,
+    PowerSeries.subst_mul (hX 0), PowerSeries.subst_mul (hX 1),
+    ← F.subst_invariantDifferential_mul_pderiv, ← F.subst_invariantDifferential_mul_pderiv_one]
   ring
 
 /-- For an infinitesimal coordinate `φ` (`φ ≡ X (mod I)` with `I * I = ⊥`), `φ • F = G` if and only
@@ -493,7 +493,7 @@ theorem exists_smul_eq_iff_exists_deformationCocycle_eq_homDefect_𝔾ₐ
     PowerSeries.coeff_mul_mem_ideal_of_coeff_right_mem_ideal' hφI,
     F.deformationCocycle_smul_eq_homDefect_𝔾ₐ hI hφI⟩,
     fun ⟨g, hg₀, hgI, hcoc⟩ ↦ ?_⟩
-  set δ := F.invInvariantDifferential * g
+  set δ := F.invInvariantDifferential * g with hδ
   have hδI := PowerSeries.coeff_mul_mem_ideal_of_coeff_right_mem_ideal'
     (f := F.invInvariantDifferential) hgI
   have hnil : IsNilpotent (PowerSeries.coeff 1 δ) :=
@@ -501,10 +501,10 @@ theorem exists_smul_eq_iff_exists_deformationCocycle_eq_homDefect_𝔾ₐ
   let φ : FormalCoordinate A :=
     ⟨PowerSeries.X + δ, by simp [δ, hg₀], by simpa using hnil.isUnit_one_add⟩
   have hφX : φ.toPowerSeries - PowerSeries.X = δ := by simp [φ]
+  have hinv_mul : F.invariantDifferential * δ = g := by
+    rw [hδ, ← mul_assoc, F.invariantDifferential_mul_subst_pderiv, one_mul]
   refine ⟨φ, fun n ↦ hφX ▸ hδI n, ?_⟩
-  rw [F.smul_eq_iff_deformationCocycle_eq_homDefect_𝔾ₐ G hI (fun n ↦ hφX ▸ hδI n), hφX,
-    show F.invariantDifferential * δ = g by
-      dsimp only [δ]; rw [← mul_assoc, F.invariantDifferential_mul_subst_pderiv, one_mul]]
+  rw [F.smul_eq_iff_deformationCocycle_eq_homDefect_𝔾ₐ G hI (fun n ↦ hφX ▸ hδI n), hφX, hinv_mul]
   exact hcoc
 
 end CoordinateChange
@@ -732,11 +732,12 @@ theorem homogeneousComponent_lubinTateCocycle {R : Type*} [CommRing R] (F : Form
         simp [P1, PowerSeries.constantCoeff_subst_of_constantCoeff_zero
           formalGroup.zero_constantCoeff, formalGroup.constantCoeff_invariantDifferential]))
         (le_order_universalShiftSeries n)).trans le_order_mul
+  have huniv_eq : universalLubinTateCocycle n =
+      universalShiftSeries n + P1 * universalShiftSeries n := by
+    dsimp only [universalLubinTateCocycle, P1]; ring
   have huniv : homogeneousComponent ((n : ℕ) + 1) (universalLubinTateCocycle n) =
       ↑(TauCeti.lazardCocycle ((n : ℕ) + 1) LazardRing) := by
-    rw [show universalLubinTateCocycle n = universalShiftSeries n + P1 * universalShiftSeries n by
-        dsimp only [universalLubinTateCocycle, P1]; ring,
-      map_add, homogeneousComponent_of_lt_order_eq_zero hrem, _root_.add_zero,
+    rw [huniv_eq, map_add, homogeneousComponent_of_lt_order_eq_zero hrem, _root_.add_zero,
       homogeneousComponent_universalShiftSeries]
   ext d; rw [coeff_homogeneousComponent, lubinTateCocycle, coeff_map, MvPolynomial.coeff_coe]
   have hd := congrArg (coeff d) huniv

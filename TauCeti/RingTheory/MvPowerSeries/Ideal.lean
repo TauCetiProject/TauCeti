@@ -5,12 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Basis.Defs
 public import Mathlib.RingTheory.AdicCompletion.Completeness
 public import Mathlib.RingTheory.Ideal.Span
 public import Mathlib.RingTheory.MvPowerSeries.Basic
 public import Mathlib.RingTheory.MvPowerSeries.Inverse
 public import Mathlib.RingTheory.MvPowerSeries.Order
 public import TauCeti.RingTheory.Ideal.Order
+public import TauCeti.RingTheory.MvPowerSeries.Basic
+public import TauCeti.RingTheory.MvPowerSeries.Substitution
 
 /-!
 # Ideals and local order of multivariate power series
@@ -70,6 +73,11 @@ by an arbitrary series preserves membership of coefficients in any left ideal
   coefficients in `I` and a series with coefficients in `J` vanishes.
 * `MvPowerSeries.coeff_mul_mem_of_right`: if every coefficient of `g` lies in a left ideal `I`,
   then so does every coefficient of `f * g`.
+* `MvPowerSeries.basisComp`, `MvPowerSeries.eq_sum_smul_liftOfSurjective`,
+  `MvPowerSeries.basisComp_eq_map_of_eq_sum_smul`, `MvPowerSeries.map_eq_of_sum_smul_eq`,
+  `MvPowerSeries.sum_smul_eq_of_map_eq`, `MvPowerSeries.basisComp_subst`: coefficientwise basis
+  decomposition and lifting of multivariate power series with coefficients in an ideal `I`
+  equipped with a compatible `k`-basis.
 -/
 
 public section
@@ -130,6 +138,124 @@ theorem coeff_mul_mem_of_right {I : Ideal R} {f g : MvPowerSeries σ R}
   exact Ideal.sum_mem I fun pq _ ↦ I.mul_mem_left _ (hg pq.2)
 
 end Semiring
+
+section Basis
+
+variable {σ A k ι : Type*}
+
+/-- Given a `k`-basis `b` of an ideal `I ≤ A` and a power series `f : MvPowerSeries σ A` with all
+coefficients in `I`, the `i`-th coordinate series `basisComp b hf i : MvPowerSeries σ k` has `d`-th
+coefficient equal to the `i`-th coordinate of `coeff d f` in `b`. -/
+noncomputable def basisComp [Semiring A] [Semiring k] {I : Ideal A} [Module k I]
+    (b : Module.Basis ι k I) {f : MvPowerSeries σ A} (hf : ∀ d, coeff d f ∈ I) (i : ι) :
+    MvPowerSeries σ k :=
+  fun d ↦ b.coord i ⟨coeff d f, hf d⟩
+
+/-- The coefficients of `basisComp b hf i` are the `b`-coordinates of the coefficients of `f`. -/
+@[simp]
+theorem coeff_basisComp [Semiring A] [Semiring k] {I : Ideal A} [Module k I]
+    (b : Module.Basis ι k I) {f : MvPowerSeries σ A} (hf : ∀ d, coeff d f ∈ I) (i : ι)
+    (d : σ →₀ ℕ) :
+    coeff d (basisComp b hf i) = b.coord i ⟨coeff d f, hf d⟩ := by
+  rfl
+
+/-- `basisComp` is independent of the coefficientwise ideal-membership proof and respects equality
+of series. -/
+theorem basisComp_congr [Semiring A] [Semiring k] {I : Ideal A} [Module k I]
+    (b : Module.Basis ι k I) {f₁ f₂ : MvPowerSeries σ A} {hf₁ : ∀ d, coeff d f₁ ∈ I}
+    {hf₂ : ∀ d, coeff d f₂ ∈ I} (h : f₁ = f₂) (i : ι) :
+    basisComp b hf₁ i = basisComp b hf₂ i := by
+  subst h; rfl
+
+/-- `basisComp` commutes with addition of power series with coefficients in `I`. -/
+theorem basisComp_add [Semiring A] [Semiring k] {I : Ideal A} [Module k I]
+    (b : Module.Basis ι k I) {f g : MvPowerSeries σ A} (hf : ∀ d, coeff d f ∈ I)
+    (hg : ∀ d, coeff d g ∈ I) (i : ι) :
+    basisComp b (f := f + g) (fun d ↦ by rw [map_add]; exact I.add_mem (hf d) (hg d)) i =
+      basisComp b hf i + basisComp b hg i := by
+  ext d
+  have hadd : (⟨coeff d (f + g), by rw [map_add]; exact I.add_mem (hf d) (hg d)⟩ : I) =
+      ⟨coeff d f, hf d⟩ + ⟨coeff d g, hg d⟩ := Subtype.ext (map_add _ f g)
+  rw [map_add, coeff_basisComp, coeff_basisComp, coeff_basisComp, hadd, map_add]
+
+/-- A power series with coefficients in `I` decomposes as
+`∑ i, (b i : A) • liftOfSurjective hπ (basisComp b hf i)` when the `k`-module structure on `I` is
+compatible with `π : A →+* k`. -/
+theorem eq_sum_smul_liftOfSurjective [CommSemiring A] [Semiring k] {π : A →+* k}
+    (hπ : Function.Surjective π) {I : Ideal A} [Module k I]
+    (hsmul : ∀ (a : A) (y : I), ((π a • y : I) : A) = a * y.1) [Fintype ι]
+    (b : Module.Basis ι k I) {f : MvPowerSeries σ A} (hf : ∀ d, coeff d f ∈ I) :
+    f = ∑ i, (b i : A) • liftOfSurjective hπ (basisComp b hf i) := by
+  ext d
+  have hrepr : coeff d f = ∑ i, ((b.repr ⟨coeff d f, hf d⟩ i • b i : I) : A) := by
+    simpa only [Submodule.coe_sum] using (congrArg Subtype.val (b.sum_repr ⟨coeff d f, hf d⟩)).symm
+  rw [hrepr, map_sum]
+  exact Finset.sum_congr rfl fun i _ ↦ by
+    rw [coeff_smul, mul_comm, ← hsmul, ← coeff_map, map_liftOfSurjective,
+      coeff_basisComp, Module.Basis.coord_apply]
+
+/-- If `f = ∑ j, (b j : A) • gA j`, then the `i`-th basis component of `f` is
+`MvPowerSeries.map π (gA i)`. -/
+theorem basisComp_eq_map_of_eq_sum_smul [CommSemiring A] [Semiring k] {π : A →+* k}
+    {I : Ideal A} [Module k I] (hsmul : ∀ (a : A) (y : I), ((π a • y : I) : A) = a * y.1)
+    [Fintype ι] (b : Module.Basis ι k I) {f : MvPowerSeries σ A} (hf : ∀ d, coeff d f ∈ I)
+    (gA : ι → MvPowerSeries σ A) (hsum : f = ∑ j, (b j : A) • gA j) (i : ι) :
+    basisComp b hf i = MvPowerSeries.map π (gA i) := by
+  classical
+  ext d
+  have hmem : (⟨coeff d f, hf d⟩ : I) = ∑ j, π (coeff d (gA j)) • b j := Subtype.ext <| by
+    rw [Subtype.coe_mk, hsum, map_sum, Submodule.coe_sum]
+    exact Finset.sum_congr rfl fun j _ ↦ by rw [coeff_smul, mul_comm, hsmul]
+  rw [coeff_basisComp, coeff_map, hmem, map_sum]
+  simp [Module.Basis.coord_apply, b.repr_self, Finsupp.single_apply]
+
+/-- Linear independence of `b` descends to `MvPowerSeries.map π`: an equality
+`∑ j, (b j : A) • gA j = ∑ j, (b j : A) • hA j` forces `map π (gA i) = map π (hA i)` for every
+`i`. -/
+theorem map_eq_of_sum_smul_eq [CommSemiring A] [Semiring k] {π : A →+* k} {I : Ideal A}
+    [Module k I] (hsmul : ∀ (a : A) (y : I), ((π a • y : I) : A) = a * y.1) [Fintype ι]
+    (b : Module.Basis ι k I) {gA hA : ι → MvPowerSeries σ A}
+    (heq : ∑ j, (b j : A) • gA j = ∑ j, (b j : A) • hA j) (i : ι) :
+    MvPowerSeries.map π (gA i) = MvPowerSeries.map π (hA i) := by
+  have hmem (d : σ →₀ ℕ) : coeff d (∑ j, (b j : A) • gA j) ∈ I := by
+    rw [map_sum]
+    exact Ideal.sum_mem _ fun j _ ↦ by
+      rw [coeff_smul]; exact I.mul_mem_right _ (b j).2
+  rw [← basisComp_eq_map_of_eq_sum_smul hsmul b hmem gA rfl i,
+    basisComp_eq_map_of_eq_sum_smul hsmul b hmem hA heq i]
+
+/-- Conversely, if `MvPowerSeries.map π (gA i) = MvPowerSeries.map π (hA i)` for every `i`, then
+`∑ j, (v j : A) • gA j = ∑ j, (v j : A) • hA j` for any `v : ι → I`. -/
+theorem sum_smul_eq_of_map_eq [CommSemiring A] [Semiring k] {π : A →+* k} {I : Ideal A}
+    [Module k I] (hsmul : ∀ (a : A) (y : I), ((π a • y : I) : A) = a * y.1) [Fintype ι]
+    (v : ι → I) {gA hA : ι → MvPowerSeries σ A}
+    (hmap : ∀ i, MvPowerSeries.map π (gA i) = MvPowerSeries.map π (hA i)) :
+    ∑ j, (v j : A) • gA j = ∑ j, (v j : A) • hA j := by
+  ext d; rw [map_sum, map_sum]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  have hd : π (coeff d (gA j)) = π (coeff d (hA j)) := by
+    simpa [coeff_map] using congrArg (coeff d) (hmap j)
+  rw [coeff_smul, coeff_smul, mul_comm (v j : A), mul_comm (v j : A),
+    ← hsmul, ← hsmul, hd]
+
+/-- `basisComp` commutes with substitution: the `i`-th basis component of `f.subst a` is the
+`i`-th basis component of `f` substituted with `fun s ↦ MvPowerSeries.map π (a s)`. -/
+theorem basisComp_subst {τ : Type*} [CommRing A] [CommRing k] {π : A →+* k}
+    (hπ : Function.Surjective π) {I : Ideal A} [Module k I]
+    (hsmul : ∀ (a : A) (y : I), ((π a • y : I) : A) = a * y.1) [Finite ι]
+    (b : Module.Basis ι k I) {f : MvPowerSeries σ A} (hf : ∀ d, coeff d f ∈ I)
+    {a : σ → MvPowerSeries τ A} (ha : HasSubst a) (i : ι) :
+    basisComp b (coeff_subst_mem_of_coeff_mem ha hf) i =
+      (basisComp b hf i).subst (fun s ↦ MvPowerSeries.map π (a s)) := by
+  let := Fintype.ofFinite ι
+  rw [basisComp_eq_map_of_eq_sum_smul hsmul b _
+      (fun j ↦ (liftOfSurjective hπ (basisComp b hf j)).subst a) ?_ i,
+    map_subst ha, map_liftOfSurjective]
+  conv_lhs => rw [eq_sum_smul_liftOfSurjective hπ hsmul b hf]
+  rw [← coe_substAlgHom ha, map_sum]
+  exact Finset.sum_congr rfl fun j _ ↦ map_smul (substAlgHom ha) (b j : A) _
+
+end Basis
 
 section CommRing
 

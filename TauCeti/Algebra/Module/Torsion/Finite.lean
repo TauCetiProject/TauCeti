@@ -7,14 +7,19 @@ module
 
 public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.RingTheory.Finiteness.Basic
+public import TauCeti.Algebra.Module.Torsion.ScalarAction
 
 /-!
-# Finiteness for modules killed by a scalar
+# Finiteness for modules killed by a scalar or ideal
 
 If an `S`-module is killed by `f`, its scalar action factors through `S ⧸ (f)`. Thus a finite
 `S`-module killed by `f` is finite over a coefficient semiring `A` whenever `S ⧸ (f)` is finite
 over `A`. This transfers quotient-finiteness results to modules annihilated by distinguished
 power series.
+
+Similarly, if `π : A →+* k` is a surjective ring homomorphism and `M` is an `A`-module annihilated
+by `RingHom.ker π`, then `M` is finite over `k` (via `Module.IsTorsionBySet.moduleOfSurjective`)
+if and only if it is finite over `A` (`Module.IsTorsionBySet.finite_iff_of_surjective`).
 -/
 
 public section
@@ -34,3 +39,28 @@ theorem finite_of_finite_quotient {A S M : Type*} [CommSemiring A] [CommRing S] 
   exact Module.Finite.trans (S ⧸ Ideal.span {f}) M
 
 end Module.IsTorsionBy
+
+namespace Module.IsTorsionBySet
+
+/-- An `A`-module annihilated by `RingHom.ker π` for a surjective ring homomorphism `π : A →+* k`
+is finite over `k` if and only if it is finite over `A`. -/
+theorem finite_iff_of_surjective {A k M : Type*} [Ring A] [Ring k] [AddCommGroup M]
+    [Module A M] {π : A →+* k} (hM : Module.IsTorsionBySet A M (RingHom.ker π))
+    (hπ : Function.Surjective π) :
+    letI := hM.moduleOfSurjective hπ
+    Module.Finite A M ↔ Module.Finite k M :=
+  letI := hM.moduleOfSurjective hπ
+  have : RingHomSurjective π := ⟨hπ⟩
+  (hM.semilinearMapOfSurjective hπ).finite_iff_of_bijective Function.bijective_id
+
+/-- An `A`-module annihilated by `RingHom.ker π` for a surjective ring homomorphism `π : A →+* k`
+is finite over `k` whenever it is finite over `A`. -/
+theorem finite_of_surjective {A k M : Type*} [Ring A] [Ring k] [AddCommGroup M]
+    [Module A M] {π : A →+* k} (hM : Module.IsTorsionBySet A M (RingHom.ker π))
+    (hπ : Function.Surjective π) [Module.Finite A M] :
+    letI := hM.moduleOfSurjective hπ
+    Module.Finite k M :=
+  letI := hM.moduleOfSurjective hπ
+  Module.Finite.of_surjective (hM.semilinearMapOfSurjective hπ) Function.surjective_id
+
+end Module.IsTorsionBySet
