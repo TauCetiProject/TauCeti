@@ -13,6 +13,7 @@ import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
 import TauCeti.GroupTheory.Perm.Fin
 import TauCeti.GroupTheory.Perm.ProdCongr
+import TauCeti.KnotTheory.Grid.Rectangle.Count
 
 /-!
 # The multi-pointed Heegaard diagram of a grid diagram
@@ -123,23 +124,16 @@ variable {x y : GridState n}
 theorem toGridRectangle_domain_injective :
     Function.Injective fun R : GridRectangleBetween x y => R.toGridRectangle.domain := by
   intro R S h
-  refine GridRectangleBetween.left_injective (by_contra fun hne => ?_)
-  have hne : R.left ≠ S.left := hne
-  -- The side columns of `S` are the columns in which `x` and `y` differ, those of `R`.
-  have hmove : ∀ c, c ≠ R.left → c ≠ R.right → y c = x c := R.map_of_ne
-  have hSl : S.left = R.right := by_contra fun h' =>
-    S.left_ne_right (x.toPerm.injective ((hmove _ (Ne.symm hne) h').symm.trans S.map_left))
-  have hSr : S.right = R.left := by_contra fun h' =>
-    S.left_ne_right (x.toPerm.injective (S.map_right.symm.trans
-      (hmove _ h' (hSl ▸ S.left_ne_right.symm))))
-  -- The square at the lower-left corner of `R` is covered by `R` and not by `S`.
+  rcases R.eq_or_eq_swapSides S with rfl | rfl
+  · rfl
+  -- The square at the lower-left corner of `R` is covered by `R` and not by `R.swapSides`.
   have h₁ := congrFun h (R.left, R.bottom)
-  simp only [GridRectangle.domain_apply_mk, GridRectangleBetween.toGridRectangle_left,
-    GridRectangleBetween.toGridRectangle_right, GridRectangleBetween.toGridRectangle_bottom,
-    GridRectangleBetween.toGridRectangle_top, Grid.left_mem_cIco R.left_ne_right,
-    Grid.left_mem_cIco R.bottom_ne_top, hSl, hSr, Grid.right_notMem_cIco, ite_true, ite_false,
-    one_mul, zero_mul] at h₁
-  exact one_ne_zero h₁
+  simp only [GridRectangle.domain_apply_mk, GridRectangleBetween.swapSides_toGridRectangle,
+    GridRectangleBetween.toGridRectangle_left, GridRectangleBetween.toGridRectangle_right,
+    GridRectangleBetween.toGridRectangle_bottom, GridRectangleBetween.toGridRectangle_top,
+    Grid.left_mem_cIco R.left_ne_right, Grid.left_mem_cIco R.bottom_ne_top,
+    Grid.right_notMem_cIco, ite_true, ite_false, one_mul, zero_mul] at h₁
+  exact absurd h₁ one_ne_zero
 
 
 end GridRectangleBetween

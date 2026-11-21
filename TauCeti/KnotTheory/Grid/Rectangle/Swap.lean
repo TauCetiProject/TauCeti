@@ -41,6 +41,8 @@ a Maslov or Alexander grading-change computation across a rectangle rests on, an
   together with its own two corners.
 * `TauCeti.GridRectangleBetween.card_pointSet_inter`: the two states share exactly `n - 2`
   grid points.
+* `TauCeti.GridState.eq_swapColumns_of_agree`: conversely, two states which agree away from two
+  columns and exchange a row across them differ by the transposition of these columns.
 * `TauCeti.GridState.rectangle_induction_on`: any two grid states are joined by a sequence of
   rectangle moves.
 
@@ -232,6 +234,41 @@ end GridRectangleBetween
 namespace GridState
 
 variable {n : ℕ}
+
+/-- Two different grid states differ in two distinct columns `c₁` and `c₂` with `x c₂ = y c₁`:
+take for `c₁` a column where they differ and for `c₂` the column in which `x` occupies the row
+`y c₁`. -/
+theorem exists_ne_of_ne {x y : GridState n} (hxy : x ≠ y) :
+    ∃ c₁ c₂, c₁ ≠ c₂ ∧ x c₁ ≠ y c₁ ∧ x c₂ ≠ y c₂ ∧ x c₂ = y c₁ := by
+  obtain ⟨c₁, hc₁⟩ : ∃ c, x c ≠ y c := by
+    by_contra h
+    exact hxy (GridState.ext fun c => by_contra fun hc => h ⟨c, hc⟩)
+  have hxc₂ : x (x.toPerm.symm (y c₁)) = y c₁ := x.toPerm.apply_symm_apply _
+  have hc₁₂ : c₁ ≠ x.toPerm.symm (y c₁) := fun h => hc₁ (by rw [← hxc₂, ← h])
+  exact ⟨c₁, _, hc₁₂, hc₁, fun h => hc₁₂ (y.toPerm.injective (hxc₂.symm.trans h)), hxc₂⟩
+
+/-- Two grid states which agree away from the columns `c₁` and `c₂`, differ in `c₁` and satisfy
+`x c₂ = y c₁` differ by the transposition of these two columns. This is the converse of
+`TauCeti.GridRectangleBetween.target_eq_swapColumns`. -/
+theorem eq_swapColumns_of_agree {x y : GridState n} {c₁ c₂ : Fin n} (hc₁ : x c₁ ≠ y c₁)
+    (hxc₂ : x c₂ = y c₁) (hagree : ∀ c, c ≠ c₁ → c ≠ c₂ → x c = y c) :
+    y = x.swapColumns c₁ c₂ := by
+  -- The column of `y` occupying the row `x c₁` can only be `c₂`.
+  have hyc₂ : y c₂ = x c₁ := by
+    have hyd : y (y.toPerm.symm (x c₁)) = x c₁ := y.toPerm.apply_symm_apply _
+    by_cases hd₁ : y.toPerm.symm (x c₁) = c₁
+    · rw [hd₁] at hyd
+      exact absurd hyd.symm hc₁
+    by_cases hd₂ : y.toPerm.symm (x c₁) = c₂
+    · rwa [hd₂] at hyd
+    · exact absurd (x.toPerm.injective ((hagree _ hd₁ hd₂).trans hyd)) hd₁
+  refine GridState.ext fun c => ?_
+  rw [GridState.swapColumns_apply]
+  by_cases h₁ : c = c₁
+  · rw [h₁, Equiv.swap_apply_left, hxc₂]
+  by_cases h₂ : c = c₂
+  · rw [h₂, Equiv.swap_apply_right, hyc₂]
+  · rw [Equiv.swap_apply_of_ne_of_ne h₁ h₂, hagree c h₁ h₂]
 
 /-- **Any two grid states are joined by rectangle moves.** A property of grid states that holds
 at one state `x₀` and passes from the source to the target of every oriented rectangle holds at

@@ -235,9 +235,12 @@ private theorem eq_zero_of_periodic {E : Fin n × Fin n → ℤ}
   simp only [heegaardRegionSystem_beta, heegaardRegionSystem_alpha] at h₁ h₂ h₃ h₄
   rw [Pi.zero_apply, h₁, ← h₂, h₃, ← h₄, hp]
 
-omit [NeZero n] in
-private theorem cornerSum_nonneg (hD₀ : 0 ≤ D) (c r : Fin n) : 0 ≤ cornerSum D c r :=
-  add_nonneg (add_nonneg (add_nonneg (hD₀ _) (hD₀ _)) (hD₀ _)) (hD₀ _)
+include G in
+/-- The corner sum of a nonnegative domain, four times its point measure, is nonnegative. -/
+private theorem cornerSum_nonneg (hD₀ : 0 ≤ D) (c r : Fin n) : 0 ≤ cornerSum D c r := by
+  have h := G.heegaardRegionSystem.pointMeasure_nonneg hD₀ (c, r)
+  rw [G.pointMeasure_eq_cornerSum] at h
+  exact_mod_cast (by linarith : (0 : ℚ) ≤ cornerSum D c r)
 
 omit [NeZero n] in
 /-- A nonnegative domain with corner sum zero at a grid point vanishes in the four squares around
@@ -340,18 +343,30 @@ private theorem eq_domain_of_corner
     (fun _ hc => G.exists_sub_domain_eq_of_ne_column hD₀ R hR hfix hβ hc)
     (p := (c₁, x c₁)) (by rw [Pi.sub_apply, hp, sub_self])
 
+/-- At a corner of the boundary of a nonnegative domain, the corner sum is at least one, since
+the boundary there is bounded by four times the point measure. -/
+private theorem one_le_cornerSum_of_abs_eq_one (hD₀ : 0 ≤ D) {c r : Fin n}
+    (h : |(G.heegaardRegionSystem.alphaArcBoundary (G.heegaardRegionSystem.alphaBoundary D)
+      (c, r) : ℚ)| = 1) :
+    1 ≤ cornerSum D c r := by
+  have hle := G.heegaardRegionSystem.abs_alphaArcBoundary_alphaBoundary_le_four_mul_pointMeasure
+    hD₀ (c, r)
+  rw [h, G.pointMeasure_eq_cornerSum] at hle
+  exact_mod_cast (by linarith : (1 : ℚ) ≤ cornerSum D c r)
+
 /-- At a point of `x` which is not a point of `y`, a nonnegative domain from `x` to `y` has corner
 sum at least one. -/
 private theorem one_le_cornerSum_source
     (hD : G.heegaardRegionSystem.IsDomainBetween (G.gridStateEquivGenerator x)
       (G.gridStateEquivGenerator y) D) (hD₀ : 0 ≤ D) {c : Fin n} (hc : x c ≠ y c) :
     1 ≤ cornerSum D c (x c) := by
-  have h := G.corner_of_isDomainBetween hD c (x c)
-  rw [ite_eq_right (Ne.symm hc), ite_eq_left rfl] at h
-  have : 0 ≤ D ((finRotate n).symm c, x c) := hD₀ _
-  have : 0 ≤ D (c, (finRotate n).symm (x c)) := hD₀ _
-  simp only [cornerSum]
-  linarith
+  have hp : G.heegaardRegionSystem.point (G.gridStateEquivGenerator x) (x c) = (c, x c) := by
+    rw [point_gridStateEquivGenerator, x.toPerm.symm_apply_apply]
+  refine G.one_le_cornerSum_of_abs_eq_one hD₀ ?_
+  rw [← hp, hD.alphaArcBoundary_alphaBoundary_point_left ?_]
+  · simp
+  rw [hp, point_gridStateEquivGenerator]
+  exact fun h => hc (y.toPerm.symm_apply_eq.1 (Prod.ext_iff.1 h).1.symm)
 
 /-- At a point of `y` which is not a point of `x`, a nonnegative domain from `x` to `y` has corner
 sum at least one. -/
@@ -359,12 +374,13 @@ private theorem one_le_cornerSum_target
     (hD : G.heegaardRegionSystem.IsDomainBetween (G.gridStateEquivGenerator x)
       (G.gridStateEquivGenerator y) D) (hD₀ : 0 ≤ D) {c : Fin n} (hc : x c ≠ y c) :
     1 ≤ cornerSum D c (y c) := by
-  have h := G.corner_of_isDomainBetween hD c (y c)
-  rw [ite_eq_left rfl, ite_eq_right hc] at h
-  have : 0 ≤ D ((finRotate n).symm c, (finRotate n).symm (y c)) := hD₀ _
-  have : 0 ≤ D (c, y c) := hD₀ _
-  simp only [cornerSum]
-  linarith
+  have hp : G.heegaardRegionSystem.point (G.gridStateEquivGenerator y) (y c) = (c, y c) := by
+    rw [point_gridStateEquivGenerator, y.toPerm.symm_apply_apply]
+  refine G.one_le_cornerSum_of_abs_eq_one hD₀ ?_
+  rw [← hp, hD.alphaArcBoundary_alphaBoundary_point_right ?_]
+  · simp
+  rw [hp, point_gridStateEquivGenerator]
+  exact fun h => hc (x.toPerm.symm_apply_eq.1 (Prod.ext_iff.1 h).1).symm
 
 /-- **The corner count.** If the corner sums of a nonnegative domain from `x` to `y` at the points
 of `x` and `y` add up to four, and `x` and `y` differ in the distinct columns `c₁` and `c₂`, then
@@ -380,7 +396,7 @@ private theorem cornerSum_eq_of_sum_eq_four
     (mem_erase.2 ⟨hc₁₂.symm, mem_univ c₂⟩)
   rw [← add_sum_erase _ _ (mem_univ c₁), ← hsplit] at hsum
   have hrest : ∀ c ∈ (univ.erase c₁).erase c₂, 0 ≤ cornerSum D c (x c) + cornerSum D c (y c) :=
-    fun c _ => add_nonneg (cornerSum_nonneg hD₀ _ _) (cornerSum_nonneg hD₀ _ _)
+    fun c _ => add_nonneg (G.cornerSum_nonneg hD₀ _ _) (G.cornerSum_nonneg hD₀ _ _)
   have h₁ := G.one_le_cornerSum_source hD hD₀ hc₁
   have h₂ := G.one_le_cornerSum_target hD hD₀ hc₁
   have h₃ := G.one_le_cornerSum_source hD hD₀ hc₂
@@ -390,43 +406,10 @@ private theorem cornerSum_eq_of_sum_eq_four
       (cornerSum D c (x c) + cornerSum D c (y c)) = 0)
   refine ⟨by linarith [sum_nonneg hrest], fun c h₁ h₂ => ?_⟩
   have := hrest₀ c (by simp [h₁, h₂])
-  have := cornerSum_nonneg hD₀ c (x c)
-  have := cornerSum_nonneg hD₀ c (y c)
+  have := G.cornerSum_nonneg hD₀ c (x c)
+  have := G.cornerSum_nonneg hD₀ c (y c)
   refine ⟨by_contra fun h => ?_, by linarith⟩
   linarith [G.one_le_cornerSum_source hD hD₀ h, G.one_le_cornerSum_target hD hD₀ h]
-
-omit [NeZero n] in
-/-- Two different grid states differ in two distinct columns `c₁` and `c₂` with `x c₂ = y c₁`. -/
-private theorem exists_ne_of_ne (hxy : x ≠ y) :
-    ∃ c₁ c₂, c₁ ≠ c₂ ∧ x c₁ ≠ y c₁ ∧ x c₂ ≠ y c₂ ∧ x c₂ = y c₁ := by
-  obtain ⟨c₁, hc₁⟩ : ∃ c, x c ≠ y c := by
-    by_contra h
-    exact hxy (GridState.ext fun c => by_contra fun hc => h ⟨c, hc⟩)
-  have hxc₂ : x (x.toPerm.symm (y c₁)) = y c₁ := x.toPerm.apply_symm_apply _
-  have hc₁₂ : c₁ ≠ x.toPerm.symm (y c₁) := fun h => hc₁ (by rw [← hxc₂, ← h])
-  exact ⟨c₁, _, hc₁₂, hc₁, fun h => hc₁₂ (y.toPerm.injective (hxc₂.symm.trans h)), hxc₂⟩
-
-omit [NeZero n] in
-/-- Two grid states which agree away from the columns `c₁ ≠ c₂`, with `x c₂ = y c₁`, differ by
-the transposition of these two columns. -/
-private theorem eq_swapColumns_of_agree {c₁ c₂ : Fin n} (hc₁ : x c₁ ≠ y c₁) (hxc₂ : x c₂ = y c₁)
-    (hagree : ∀ c, c ≠ c₁ → c ≠ c₂ → x c = y c) : y = x.swapColumns c₁ c₂ := by
-  -- The column of `y` occupying the row `x c₁` can only be `c₂`.
-  have hyc₂ : y c₂ = x c₁ := by
-    have hyd : y (y.toPerm.symm (x c₁)) = x c₁ := y.toPerm.apply_symm_apply _
-    by_cases hd₁ : y.toPerm.symm (x c₁) = c₁
-    · rw [hd₁] at hyd
-      exact absurd hyd.symm hc₁
-    by_cases hd₂ : y.toPerm.symm (x c₁) = c₂
-    · rwa [hd₂] at hyd
-    · exact absurd (x.toPerm.injective ((hagree _ hd₁ hd₂).trans hyd)) hd₁
-  refine GridState.ext fun c => ?_
-  rw [GridState.swapColumns_apply]
-  by_cases h₁ : c = c₁
-  · rw [h₁, Equiv.swap_apply_left, hxc₂]
-  by_cases h₂ : c = c₂
-  · rw [h₂, Equiv.swap_apply_right, hyc₂]
-  · rw [Equiv.swap_apply_of_ne_of_ne h₁ h₂, hagree c h₁ h₂]
 
 /-- At the corner `(c₁, x c₁)` with corner sum one, the multiplicity one lies above and to the
 right, and then the domain is that of the rectangle `R` with left side `c₁`, or below and to the
@@ -496,10 +479,10 @@ theorem exists_gridRectangleBetween_isEmpty_domain_eq
     obtain ⟨k, hk⟩ := G.four_dvd_sum_cornerSum hD
     rw [sum_add_distrib, hk] at hsum
     omega
-  obtain ⟨c₁, c₂, hc₁₂, hc₁, hc₂, hxc₂⟩ := exists_ne_of_ne hxy
+  obtain ⟨c₁, c₂, hc₁₂, hc₁, hc₂, hxc₂⟩ := GridState.exists_ne_of_ne hxy
   obtain ⟨hcorner, hfix⟩ := G.cornerSum_eq_of_sum_eq_four hD hD₀ hsum hc₁₂ hc₁ hc₂
   let R := GridRectangleBetween.ofSwapColumns x y c₁ c₂ hc₁₂
-    (eq_swapColumns_of_agree hc₁ hxc₂ fun c h₁ h₂ => (hfix c h₁ h₂).1)
+    (GridState.eq_swapColumns_of_agree hc₁ hxc₂ fun c h₁ h₂ => (hfix c h₁ h₂).1)
   have hRl : R.left = c₁ := GridRectangleBetween.ofSwapColumns_left ..
   have hRr : R.right = c₂ := GridRectangleBetween.ofSwapColumns_right ..
   obtain ⟨S, hS⟩ : ∃ S : GridRectangleBetween x y, D = S.toGridRectangle.domain :=
