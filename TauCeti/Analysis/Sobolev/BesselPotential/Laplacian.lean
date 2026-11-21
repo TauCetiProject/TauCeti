@@ -32,10 +32,10 @@ Sobolev orders once `F(f) ∈ H^s` is known.
 The same weak equation, in its distributional form
 (`TauCeti.neg_laplacian_add_eq_of_integral_mul_neg_laplacian_add_mul_eq`), identifies the two
 Laplacians as tempered distributions when `f` and `Δf` are square integrable
-(`TemperedDistribution.laplacian_toTemperedDistribution_ofRealCLM_compLp`). Hence, if `f` is the
-`L²` function of `u ∈ H^(s+2)(E)`, the `L²` function of the Laplacian
-`BesselPotentialSpace.laplacianCLM s u ∈ H^s(E)` is `Δf`
-(`BesselPotentialSpace.coeFn_inclusionLp_laplacianCLM_ae_eq`).
+(`TemperedDistribution.laplacian_toTemperedDistribution_ofRealCLM_compLp`). For the `L²` function
+`f` of an element `u ∈ H^(s+2)(E)`, the `L²` function of `BesselPotentialSpace.laplacianCLM s u` is
+`Δf` without assuming `Δf ∈ L²` (`BesselPotentialSpace.coeFn_inclusionLp_laplacianCLM_ae_eq`, in
+`TauCeti.Analysis.Sobolev.BesselPotential.Operator`).
 
 ## References
 
@@ -106,38 +106,3 @@ theorem laplacian_toTemperedDistribution_ofRealCLM_compLp {f : E → ℝ} (hf : 
   abel
 
 end TemperedDistribution
-
-namespace BesselPotentialSpace
-
-open TemperedDistribution MeasureTheory Laplacian
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E]
-
-/-- **The Laplacian of a real element of `H^{s+2}`.** For `s ≥ 0`, if the `L²` function of
-`u ∈ H^{s+2}(E)` is almost everywhere a real `C²` function `f` whose classical Laplacian is square
-integrable, then the `L²` function of `Δu ∈ H^s(E)` is almost everywhere `Δf`. -/
-theorem coeFn_inclusionLp_laplacianCLM_ae_eq {s : ℝ} (hs : 0 ≤ s) {f : E → ℝ}
-    (hf : ContDiff ℝ 2 f) (hΔ : MemLp (Δ f) 2 volume) {u : H^{s + 2}(E)}
-    (hu : ⇑(inclusionLp (by linarith) u) =ᵐ[volume] fun x ↦ (f x : ℂ)) :
-    ⇑(inclusionLp hs (laplacianCLM s u)) =ᵐ[volume] fun x ↦ (Δ f x : ℂ) := by
-  have hf2 : MemLp f 2 volume := by
-    have h := ((Lp.memLp (inclusionLp (by linarith) u)).ae_eq hu).re
-    simpa only [RCLike.re_to_complex, Complex.ofReal_re] using h
-  -- The `L²` function of `u` is the complexification of the class of `f`.
-  have hu' : inclusionLp (by linarith) u = Complex.ofRealCLM.compLp (hf2.toLp f) := by
-    refine Lp.ext ?_
-    filter_upwards [hu, Complex.ofRealCLM.coeFn_compLp (p := 2) (μ := volume) (hf2.toLp f),
-      hf2.coeFn_toLp] with x h₁ h₂ h₃
-    rw [h₁, h₂, Complex.ofRealCLM_apply, h₃]
-  have hL : inclusionLp hs (laplacianCLM s u) = Complex.ofRealCLM.compLp (hΔ.toLp (Δ f)) := by
-    rw [inclusionLp_eq_iff, toDistr_laplacianCLM, ← toTemperedDistribution_inclusionLp
-      (by linarith : (0 : ℝ) ≤ s + 2), hu']
-    exact (laplacian_toTemperedDistribution_ofRealCLM_compLp hf hf2.coeFn_toLp
-      hΔ.coeFn_toLp).symm
-  rw [hL]
-  filter_upwards [Complex.ofRealCLM.coeFn_compLp (p := 2) (μ := volume) (hΔ.toLp (Δ f)),
-    hΔ.coeFn_toLp] with x h₁ h₂
-  rw [h₁, Complex.ofRealCLM_apply, h₂]
-
-end BesselPotentialSpace
