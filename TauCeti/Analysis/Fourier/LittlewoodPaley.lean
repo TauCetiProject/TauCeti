@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Fourier.L2Multiplier
 public import TauCeti.Analysis.Calculus.BumpFunction.LittlewoodPaley
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
-import TauCeti.Analysis.MeanInequalities
 import TauCeti.Analysis.Normed.Lp.Basic
 import TauCeti.Analysis.Distribution.SchwartzSpace.BandLimited
 import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
@@ -21,6 +20,7 @@ import TauCeti.MeasureTheory.Function.Lp.One
 import TauCeti.MeasureTheory.Function.Lp.SequenceValued
 import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 import TauCeti.MeasureTheory.Integral.CalderonZygmund.InnerProductSpace
+import TauCeti.MeasureTheory.Integral.SchurTest
 
 /-!
 # The Littlewood–Paley square function theorem

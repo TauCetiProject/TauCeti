@@ -419,12 +419,12 @@ theorem le_rpow_mul_rpow_of_le_of_le {P A B δ : ℝ} (hP : 0 ≤ P) (hA : P ≤
 `(s ^ p u) ^ θ u ^ (1 - θ)`. -/
 theorem rpow_mul_mul_le_rpow_mul_rpow {s u M p θ : ℝ} (hs : 0 ≤ s) (hu : 0 ≤ u) (hθ : 0 ≤ θ)
     (hM : s ^ p * u ≤ M) : s ^ (p * θ) * u ≤ M ^ θ * u ^ (1 - θ) := by
-  have hsp : s ^ (p * θ) = (s ^ p) ^ θ := rpow_mul hs p θ
-  have hu1 : u = u ^ θ * u ^ (1 - θ) := by
-    rw [← rpow_of_add_eq hu one_ne_zero (add_sub_cancel θ 1), rpow_one]
-  calc s ^ (p * θ) * u = (s ^ p * u) ^ θ * u ^ (1 - θ) := by
-        rw [mul_rpow (rpow_nonneg hs p) hu, hsp, mul_assoc, ← hu1]
-    _ ≤ M ^ θ * u ^ (1 - θ) := by gcongr
+  calc s ^ (p * θ) * u = (u * s ^ p) ^ θ * (u * 1) ^ (1 - θ) := by
+        rw [mul_rpow_mul_mul_rpow_of_add_eq_one hu (add_sub_cancel θ 1), one_rpow,
+          mul_one ((s ^ p) ^ θ), rpow_mul hs, mul_comm u]
+    _ ≤ M ^ θ * u ^ (1 - θ) := by
+        rw [mul_comm u (s ^ p), mul_one u]
+        gcongr
 
 /-- For `a, C, I ≥ 0` and `q > 0`, `a ≤ C * I ^ (1 / q)` if and only if `a ^ q ≤ C ^ q * I`. -/
 theorem le_mul_rpow_one_div_iff {a C I q : ℝ} (ha : 0 ≤ a) (hC : 0 ≤ C) (hI : 0 ≤ I)
