@@ -430,6 +430,15 @@ theorem vectorSobolevSingularSupport_smulLeftCLM_subset (s : ℝ) (T : 𝓓'(Ω,
     ← image_inter_preimage, ← prod_univ]
   exact image_mono (vectorSobolevWaveFrontSet_smulLeftCLM_subset s T hg)
 
+/-- At a point where `g ≠ 0`, the smooth multiple `g T` has the same `H^s` singular support as
+`T`. -/
+theorem mem_vectorSobolevSingularSupport_smulLeftCLM_iff {s : ℝ} {T : 𝓓'(Ω, F)} {g : E → ℝ}
+    {x : E} (hg : ContDiff ℝ ∞ g) (hx : g x ≠ 0) :
+    x ∈ (smulLeftCLM hg T).vectorSobolevSingularSupport s ↔
+      x ∈ T.vectorSobolevSingularSupport s := by
+  simp only [mem_vectorSobolevSingularSupport_iff, mapCLM_smulLeftCLM,
+    mem_sobolevSingularSupport_smulLeftCLM_iff hg hx]
+
 /-- Multiplying by a smooth function that vanishes nowhere on `Ω` does not change the `H^s`
 singular support. -/
 theorem vectorSobolevSingularSupport_smulLeftCLM_of_ne_zero (s : ℝ) (T : 𝓓'(Ω, F)) {g : E → ℝ}

@@ -56,11 +56,8 @@ such a sum is contained in that of `T`
   restriction to open subsets and linear changes of coordinates.
 * `Distribution.vectorWaveFrontSet_mapCLM_toSpanSingleton_delta`: the point mass `δ_{x₀} v` with
   `v ≠ 0` has wave front set `{x₀} × (E \ {0})`.
-* `Distribution.mapCLM_restrictScalars_eq_smul`, `Distribution.mapCLM_restrictScalars_smul`,
-  `Distribution.mapCLM_restrictScalars_mapCLM_toSpanSingleton_delta`: the components of a complex
-  distribution, of a complex multiple and of a point mass.
-* `Distribution.mapCLM_restrictScalars_id`, `Distribution.mapCLM_restrictScalars_symm_mapCLM`: the
-  identity of the values acts trivially, and an isomorphism of the values is undone by its inverse.
+* `Distribution.mapCLM_restrictScalars_mapCLM_toSpanSingleton_delta`: the components of a point
+  mass.
 
 ## References
 
@@ -110,20 +107,6 @@ theorem smul_mem_vectorWaveFrontSet_iff {T : 𝓓'(Ω, F)} {x ξ : E} {t : ℝ} 
 
 /-! ### Scalar distributions -/
 
-/-- A component of a complex distribution `T` is a scalar multiple of `T`: a complex-linear
-functional `ℓ` on `ℂ` is multiplication by `ℓ 1`. -/
-theorem mapCLM_restrictScalars_eq_smul (ℓ : ℂ →L[ℂ] ℂ) (T : 𝓓'(Ω, ℂ)) :
-    mapCLM (ℓ.restrictScalars ℝ) T = ℓ 1 • T := by
-  ext φ
-  simpa [mul_comm] using ℓ.map_smul (T φ) (1 : ℂ)
-
-/-- The identity of the values acts trivially on `T`. -/
-@[simp]
-theorem mapCLM_restrictScalars_id (T : 𝓓'(Ω, F)) :
-    mapCLM ((ContinuousLinearMap.id ℂ F).restrictScalars ℝ) T = T := by
-  ext φ
-  simp
-
 /-- For a complex distribution the wave front set of `T` as a vector-valued distribution is its
 wave front set: every component is a scalar multiple of `T`. -/
 @[simp]
@@ -141,14 +124,6 @@ theorem vectorWaveFrontSet_mapCLM_subset (A : F →L[ℂ] F') (T : 𝓓'(Ω, F))
     (mapCLM (A.restrictScalars ℝ) T).vectorWaveFrontSet ⊆ T.vectorWaveFrontSet :=
   iUnion_subset fun ℓ ↦ waveFrontSet_mapCLM_subset_vectorWaveFrontSet (ℓ.comp A) T
 
-/-- Applying an isomorphism `A` of the values and then its inverse gives back `T`. -/
-@[simp]
-theorem mapCLM_restrictScalars_symm_mapCLM (A : F ≃L[ℂ] F') (T : 𝓓'(Ω, F)) :
-    mapCLM ((A.symm : F' →L[ℂ] F).restrictScalars ℝ)
-      (mapCLM ((A : F →L[ℂ] F').restrictScalars ℝ) T) = T := by
-  ext φ
-  simp
-
 /-- An isomorphism of the values preserves the wave front set. -/
 @[simp]
 theorem vectorWaveFrontSet_mapCLM_equiv (A : F ≃L[ℂ] F') (T : 𝓓'(Ω, F)) :
@@ -159,13 +134,6 @@ theorem vectorWaveFrontSet_mapCLM_equiv (A : F ≃L[ℂ] F') (T : 𝓓'(Ω, F)) 
   exact vectorWaveFrontSet_mapCLM_subset _ _
 
 /-! ### Scalar multiples -/
-
-/-- A complex-linear map of the values commutes with complex scalar multiplication. -/
-@[simp]
-theorem mapCLM_restrictScalars_smul (A : F →L[ℂ] F') (c : ℂ) (T : 𝓓'(Ω, F)) :
-    mapCLM (A.restrictScalars ℝ) (c • T) = c • mapCLM (A.restrictScalars ℝ) T := by
-  ext φ
-  simp
 
 /-- A scalar multiple of `T` has wave front set contained in that of `T`. -/
 theorem vectorWaveFrontSet_smul_subset (c : ℂ) (T : 𝓓'(Ω, F)) :
