@@ -8,7 +8,7 @@ module
 public import Mathlib.NumberTheory.Padics.PadicIntegers
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.SpecificLimits.Basic
-import Mathlib.Data.Nat.Factorial.Basic
+import TauCeti.Data.Nat.Factorial.Basic
 import TauCeti.NumberTheory.Padics.PadicIntegers
 
 /-!
@@ -136,8 +136,7 @@ theorem norm_factorial_mul (k : ℕ) :
 This controls Cauchy products of factorial-weighted moment sequences. -/
 theorem norm_factorial_div_add_le (d i j : ℕ) :
     ‖(((i + j) / d)! : ℚ_[p])‖ ≤ ‖((i / d)! : ℚ_[p])‖ * ‖((j / d)! : ℚ_[p])‖ := by
-  obtain ⟨k, hk⟩ := (Nat.factorial_mul_factorial_dvd_factorial_add (i / d) (j / d)).trans
-    (Nat.factorial_dvd_factorial Nat.div_add_div_le_add_div)
+  obtain ⟨k, hk⟩ := Nat.factorial_div_mul_factorial_div_dvd d i j
   have hcast : (((i + j) / d)! : ℚ_[p]) = (i / d)! * (j / d)! * (k : ℚ_[p]) := by
     exact_mod_cast hk
   rw [hcast, norm_mul, norm_mul]

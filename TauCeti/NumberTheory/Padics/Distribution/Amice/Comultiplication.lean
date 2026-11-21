@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.Padics.Distribution.Amice.Basis
 public import TauCeti.NumberTheory.Padics.Distribution.Comul
+import TauCeti.Data.Nat.Factorial.Basic
 
 /-!
 # Comultiplication on Amice's basis vectors
@@ -22,11 +23,16 @@ For `E = ℤ_p`, this is proved directly from `eval_eval_comulCurried`, `eval_am
 `Ring.add_choose_eq` via `eval_injective`. Coefficient functoriality along `r ↦ r • e`
 (`comulCurried_compLeft` and `compLeft_amiceTerm`) then transfers the identity to arbitrary
 complete ultrametric `ℤ_p`-modules `E`, without assuming torsion-freeness or `n < p ^ h`.
+For `n < p ^ h`, where the factorial weight `⌊n / pʰ⌋!` equals `1`, uncurrying yields the
+Vandermonde expansion of `comul S (amiceTerm p h n 1)` into outer products `prodMul`
+(`TauCeti.AnalyticStage.comul_amiceTerm_of_lt`).
 
 ## Main results
 
 * `TauCeti.AnalyticStage.comulCurried_amiceTerm`: Vandermonde comultiplication formula for
   `amiceTerm p h n e` at arbitrary stage level `h` and degree `n`.
+* `TauCeti.AnalyticStage.comul_amiceTerm_of_lt`: Vandermonde expansion of `comul` on unweighted
+  Amice basis vectors `amiceTerm p h n 1` for `n < p ^ h`.
 
 ## References
 
@@ -36,21 +42,17 @@ complete ultrametric `ℤ_p`-modules `E`, without assuming torsion-freeness or `
 
 public section
 
+open ZeroAtInftyContinuousMap
 open scoped Nat ZeroAtInfty
 
 namespace TauCeti.AnalyticStage
+
+section Curried
 
 variable {p : ℕ} [hp : Fact p.Prime] {h : ℕ}
   {E : Type*} [NormedAddCommGroup E] [Module ℤ_[p] E] [IsBoundedSMul ℤ_[p] E]
   [IsUltrametricDist E] [CompleteSpace E]
   (S : Type*) [Semiring S] [Module S E] [ContinuousConstSMul S E] [SMulCommClass ℤ_[p] S E]
-
-private theorem factorial_div_mul_factorial_div_dvd (h : ℕ) {i j n : ℕ} (hij : i + j = n) :
-    (i / p ^ h)! * (j / p ^ h)! ∣ (n / p ^ h)! := by
-  have hle : i / p ^ h + j / p ^ h ≤ n / p ^ h := by
-    rw [Nat.le_div_iff_mul_le (pow_pos hp.out.pos h), add_mul, ← hij]
-    exact add_le_add (Nat.div_mul_le_self i (p ^ h)) (Nat.div_mul_le_self j (p ^ h))
-  exact (Nat.factorial_mul_factorial_dvd_factorial_add _ _).trans (Nat.factorial_dvd_factorial hle)
 
 private theorem comulCurried_amiceTerm_padicInt (h n : ℕ) :
     comulCurried (p := p) (h := h) ℤ_[p] (amiceTerm p h n (1 : ℤ_[p])) =
@@ -66,7 +68,8 @@ private theorem comulCurried_amiceTerm_padicInt (h n : ℕ) :
       (Commute.all x y),
     nsmul_eq_mul, smul_eq_mul, mul_one, Finset.sum_mul]
   refine Finset.sum_congr rfl fun ij hij ↦ ?_
-  have hdvd := factorial_div_mul_factorial_div_dvd (p := p) h (Finset.mem_antidiagonal.mp hij)
+  have hdvd := Finset.mem_antidiagonal.mp hij ▸
+    Nat.factorial_div_mul_factorial_div_dvd (p ^ h) ij.1 ij.2
   have hfac : (((n / p ^ h)! / ((ij.1 / p ^ h)! * (ij.2 / p ^ h)!)) : ℤ_[p]) *
       ((ij.1 / p ^ h)! : ℤ_[p]) * ((ij.2 / p ^ h)! : ℤ_[p]) = ((n / p ^ h)! : ℤ_[p]) := by
     rw [mul_assoc, ← Nat.cast_mul, ← Nat.cast_mul, Nat.div_mul_cancel hdvd]
@@ -89,11 +92,34 @@ theorem comulCurried_amiceTerm (n : ℕ) (e : E) :
   have hu : ∃ C, ∀ r : ℤ_[p], ‖u r‖ ≤ C * ‖r‖ :=
     ContinuousLinearMap.exists_norm_toSpanSingleton_apply_le ℤ_[p] e
   have he : amiceTerm p h n e =
-      ZeroAtInftyContinuousMap.compLeft u hu (amiceTerm p h n (1 : ℤ_[p])) := by
+      compLeft u hu (amiceTerm p h n (1 : ℤ_[p])) := by
     simp [u]
   rw [comulCurried_eq_comulCurried_padicInt S, he, comulCurried_compLeft ℤ_[p] u hu,
-    comulCurried_amiceTerm_padicInt, map_sum (ZeroAtInftyContinuousMap.compLeft _ _)]
+    comulCurried_amiceTerm_padicInt, map_sum (compLeft _ _)]
   refine Finset.sum_congr rfl fun ij _ ↦ ?_
   simp [u]
+
+end Curried
+
+/-- **Vandermonde formula for `comul` on unweighted Amice basis vectors.** When `n < p ^ h`, so
+that `⌊n / pʰ⌋! = 1` and `amiceTerm p h n 1` represents `x choose n`, stage comultiplication
+expands `amiceTerm p h n 1` into `∑_{i + j = n} prodMul (amiceTerm p h i 1) (amiceTerm p h j 1)`. -/
+theorem comul_amiceTerm_of_lt {p : ℕ} [Fact p.Prime] {h n : ℕ}
+    {R : Type*} [NormedRing R] [Algebra ℤ_[p] R] [IsBoundedSMul ℤ_[p] R] [IsUltrametricDist R]
+    [CompleteSpace R] (S : Type*) [Semiring S] [Module S R] [ContinuousConstSMul S R]
+    [SMulCommClass ℤ_[p] S R] (hn : n < p ^ h) :
+    comul S (amiceTerm p h n (1 : R)) =
+      ∑ ij ∈ Finset.antidiagonal n,
+        prodMul (amiceTerm p h ij.1 (1 : R)) (amiceTerm p h ij.2 (1 : R)) := by
+  rw [comul_eq_comul_padicInt S, ← comul_eq_comul_padicInt R]
+  apply (curryEquiv R R).injective
+  rw [curryEquiv_comul, comulCurried_amiceTerm, map_sum]
+  refine Finset.sum_congr rfl fun ij hij ↦ ?_
+  have hij' := Finset.mem_antidiagonal.mp hij
+  have hn0 : n / p ^ h = 0 := Nat.div_eq_of_lt hn
+  have hi0 : ij.1 / p ^ h = 0 := Nat.div_eq_of_lt (by omega)
+  have hj0 : ij.2 / p ^ h = 0 := Nat.div_eq_of_lt (by omega)
+  ext q r
+  simp [hn0, hi0, hj0, curryEquiv_prodMul, ← amiceTerm_smul]
 
 end TauCeti.AnalyticStage

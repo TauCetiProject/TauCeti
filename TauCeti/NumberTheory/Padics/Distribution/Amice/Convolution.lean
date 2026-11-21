@@ -20,15 +20,16 @@ with point masses `dirac x` and with its stage-by-stage additive convolution `K`
 This file shows that the Amice transform intertwines this intrinsic convolution with formal power
 series multiplication:
 
-* at analytic level `h`, for `n < p ^ h` (where the factorial weight `⌊n / pʰ⌋!` equals `1`),
-  stage comultiplication expands Amice's polynomial `e_{h,n}` into the Vandermonde sum of outer
-  products `∑_{i + j = n} prodMul e_{h,i} e_{h,j}` (`TauCeti.AnalyticStage.comul_amiceTerm_of_lt`);
-* evaluating at level `h = n` proves `amiceTransform (μ * ν) = amiceTransform μ * amiceTransform ν`
-  over any such field `K`, including in positive characteristic, bundling `amiceTransform` into the
-  injective `K`-algebra homomorphism `amiceTransformAlgHom` (whence
-  `LocallyAnalyticDistribution p K` is an integral domain);
+* stage comultiplication in `TauCeti.NumberTheory.Padics.Distribution.Amice.Comultiplication`
+  expands Amice's polynomial `e_{h,n}` into the Vandermonde sum of outer products
+  `∑_{i + j = n} prodMul e_{h,i} e_{h,j}` for `n < p ^ h`
+  (`TauCeti.AnalyticStage.comul_amiceTerm_of_lt`);
 * right convolution acts on locally analytic Mahler terms via the Vandermonde formula with the
-  moments of `ν` (`TauCeti.LocallyAnalyticDistribution.convolveFunRight_mahlerTerm`);
+  moments of `ν` (`TauCeti.LocallyAnalyticDistribution.convolveFunRight_mahlerTerm`), proving
+  `amiceTransform (μ * ν) = amiceTransform μ * amiceTransform ν` over any such field `K`,
+  including in positive characteristic, and bundling `amiceTransform` into the injective
+  `K`-algebra homomorphism `amiceTransformAlgHom` (whence `LocallyAnalyticDistribution p K` is an
+  integral domain);
 * composing `amiceTransformAlgHom` with `ofMulMeasure` recovers Mathlib's measure-algebra Amice
   transform `AbstractMeasure.amiceTransformₐ`;
 * when `K` is a normed `ℚ_p`-algebra, `amiceTransformEquiv` upgrades to the `K`-algebra
@@ -45,8 +46,6 @@ series multiplication:
 
 ## Main results
 
-* `TauCeti.AnalyticStage.comul_amiceTerm_of_lt`: Vandermonde expansion of `comul` on unweighted
-  Amice basis vectors `amiceTerm p h n 1` for `n < p ^ h`.
 * `TauCeti.LocallyAnalyticDistribution.convolveFunRight_mahlerTerm`: Vandermonde action of
   `convolveFunRight` on locally analytic Mahler terms.
 * `TauCeti.LocallyAnalyticDistribution.amiceTransform_dirac`: the Amice transform of `dirac x` is
@@ -71,53 +70,6 @@ open scoped AbstractMeasure PowerSeries ZeroAtInfty
 namespace TauCeti
 
 variable {p : ℕ} [hp : Fact p.Prime]
-
-namespace AnalyticStage
-
-private theorem comul_amiceTerm_padicInt_of_lt {h n : ℕ} (hn : n < p ^ h) :
-    comul ℤ_[p] (amiceTerm p h n (1 : ℤ_[p])) =
-      ∑ ij ∈ Finset.antidiagonal n,
-        prodMul (amiceTerm p h ij.1 (1 : ℤ_[p])) (amiceTerm p h ij.2 (1 : ℤ_[p])) := by
-  apply (curryEquiv ℤ_[p] ℤ_[p]).injective
-  rw [curryEquiv_comul, map_sum]
-  apply eval_injective ℤ_[p] PadicInt.isSMulRegular_natCast_p.zeroAtInftyContinuousMap
-  refine ContinuousMap.ext fun x ↦ ?_
-  apply eval_injective ℤ_[p] PadicInt.isSMulRegular_natCast_p
-  refine ContinuousMap.ext fun y ↦ ?_
-  rw [eval_eval_comulCurried ℤ_[p], eval_amiceTerm ℤ_[p]]
-  simp only [Nat.div_eq_of_lt hn, Nat.factorial_zero, one_smul, PadicInt.mahlerTerm_apply,
-    mahler_apply, smul_eq_mul, mul_one, Ring.add_choose_eq n (Commute.all x y), map_sum,
-    ContinuousMap.coe_sum, Finset.sum_apply]
-  refine Finset.sum_congr rfl fun ij hij ↦ ?_
-  have hij' := Finset.mem_antidiagonal.mp hij
-  have hij1 : ij.1 < p ^ h := by omega
-  have hij2 : ij.2 < p ^ h := by omega
-  rw [eval_curryEquiv_prodMul, map_smul, ContinuousMap.smul_apply, eval_amiceTerm ℤ_[p],
-    eval_amiceTerm ℤ_[p]]
-  simp [Nat.div_eq_of_lt hij1, Nat.div_eq_of_lt hij2, mahler_apply]
-
-/-- **Vandermonde formula for `comul` on unweighted Amice basis vectors.** When `n < p ^ h`, so
-that `⌊n / pʰ⌋! = 1` and `amiceTerm p h n 1` represents `x choose n`, stage comultiplication
-expands `amiceTerm p h n 1` into `∑_{i + j = n} prodMul (amiceTerm p h i 1) (amiceTerm p h j 1)`. -/
-theorem comul_amiceTerm_of_lt {h n : ℕ} {R : Type*} [NormedRing R] [Algebra ℤ_[p] R]
-    [IsBoundedSMul ℤ_[p] R] [IsUltrametricDist R] [CompleteSpace R]
-    (S : Type*) [Semiring S] [Module S R] [ContinuousConstSMul S R] [SMulCommClass ℤ_[p] S R]
-    (hn : n < p ^ h) :
-    comul S (amiceTerm p h n (1 : R)) =
-      ∑ ij ∈ Finset.antidiagonal n,
-        prodMul (amiceTerm p h ij.1 (1 : R)) (amiceTerm p h ij.2 (1 : R)) := by
-  let φ : ℤ_[p] →L[ℤ_[p]] R := ContinuousLinearMap.toSpanSingleton ℤ_[p] (1 : R)
-  have hφ : ∃ C, ∀ r : ℤ_[p], ‖φ r‖ ≤ C * ‖r‖ :=
-    ContinuousLinearMap.exists_norm_toSpanSingleton_apply_le ℤ_[p] (1 : R)
-  have hterm (m : ℕ) : compLeft φ hφ (amiceTerm p h m (1 : ℤ_[p])) = amiceTerm p h m (1 : R) := by
-    ext i
-    simp [φ]
-  rw [comul_eq_comul_padicInt S, ← hterm n, comul_compLeft ℤ_[p] φ hφ,
-    comul_amiceTerm_padicInt_of_lt hn, map_sum]
-  refine Finset.sum_congr rfl fun ij _ ↦ ZeroAtInftyContinuousMap.ext fun q ↦ ?_
-  simp [φ, ← Algebra.algebraMap_eq_smul_one]
-
-end AnalyticStage
 
 namespace LocallyAnalyticDistribution
 
@@ -171,15 +123,10 @@ characteristic. -/
 theorem amiceTransform_mul (μ ν : LocallyAnalyticDistribution p K) :
     amiceTransform (μ * ν) = amiceTransform μ * amiceTransform ν := by
   ext n
-  have hn : n < p ^ n := Nat.lt_pow_self hp.out.one_lt
-  rw [coeff_amiceTransform, mahlerTerm_def, ← stage_apply, stage_mul,
-    ContinuousLinearMap.comp_apply, comul_amiceTerm_of_lt K hn, map_sum, PowerSeries.coeff_mul]
-  refine Finset.sum_congr rfl fun ij hij ↦ ?_
-  have hij' := Finset.mem_antidiagonal.mp hij
-  have hij1 : ij.1 < p ^ n := by omega
-  have hij2 : ij.2 < p ^ n := by omega
-  rw [prodFunctional_prodMul, stage_amiceTerm, stage_amiceTerm]
-  simp [Nat.div_eq_of_lt hij1, Nat.div_eq_of_lt hij2]
+  rw [coeff_amiceTransform, coe_mul_apply, convolveFunRight_mahlerTerm, map_sum,
+    PowerSeries.coeff_mul]
+  refine Finset.sum_congr rfl fun ij _ ↦ ?_
+  simp [mul_comm]
 
 /-- **The Amice transform as a `K`-algebra homomorphism** from locally analytic distributions under
 additive convolution to formal power series. -/

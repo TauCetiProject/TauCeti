@@ -22,10 +22,10 @@ transitions (`AnalyticStage.transition_translate`, `AnalyticStage.transitionLE_t
 descends via `Module.DirectLimit.congr` to the linear equivalence
 `TauCeti.LocallyAnalytic.translate S x : LA(ℤ_p, E) ≃ₗ[S] LA(ℤ_p, E)`.
 
-Structural identities for `translate` (`translate_zero`, `translate_add`) are proved first for
-`E = ℤ_p` using `AnalyticStage.eval_injective` and then transferred to arbitrary complete
-ultrametric `ℤ_p`-modules `E` (including torsion and positive-characteristic coefficients) by
-`ZeroAtInftyContinuousMap.continuousLinearMap_ext` and `ZeroAtInftyContinuousMap.compLeft_single`.
+Structural identities for `translate` (`translate_zero`, `translate_add`) follow directly from the
+counit (`eval_apply_zero`, `comulCurried_apply_zero`) and coassociativity
+(`comulCurried_comulCurried`) for arbitrary complete ultrametric `ℤ_p`-modules `E` (including
+torsion and positive-characteristic coefficients).
 
 ## Main definitions
 
@@ -116,50 +116,28 @@ private theorem translateCLM_compLeft {F R : Type*} [NormedAddCommGroup F] [Modu
     comulCurried_compLeft ℤ_[p] u' hu', eval_compLeft ℤ_[p]]
 
 private theorem translateCLM_zero (c : AnalyticStage p h E) : translateCLM S 0 c = c := by
-  have hpadic : ∀ d : AnalyticStage p h ℤ_[p], translateCLM ℤ_[p] 0 d = d := fun d ↦ by
-    apply eval_injective ℤ_[p] PadicInt.isSMulRegular_natCast_p
-    ext y
-    rw [eval_translateCLM, zero_add]
-  have hEq : translateCLM (p := p) (h := h) (E := E) ℤ_[p] 0 = ContinuousLinearMap.id ℤ_[p] _ :=
-    continuousLinearMap_ext fun s e ↦ by
-      let φ : ℤ_[p] →L[ℤ_[p]] E := ContinuousLinearMap.toSpanSingleton ℤ_[p] e
-      let hφ := ContinuousLinearMap.exists_norm_toSpanSingleton_apply_le ℤ_[p] e
-      have hs : compLeft φ hφ (single s (1 : ℤ_[p])) = single s e := by simp [φ]
-      rw [← hs, ContinuousLinearMap.id_apply, translateCLM_compLeft ℤ_[p] ℤ_[p], hpadic]
-  rw [translateCLM_eq_translateCLM_padicInt S]
-  exact DFunLike.congr_fun hEq c
+  rw [translateCLM_apply, eval_apply_zero, comulCurried_apply_zero]
 
 private theorem translateCLM_add (x y : ℤ_[p]) (c : AnalyticStage p h E) :
     translateCLM S (x + y) c = translateCLM S x (translateCLM S y c) := by
-  have hpadic : ∀ d : AnalyticStage p h ℤ_[p],
-      translateCLM ℤ_[p] (x + y) d = translateCLM ℤ_[p] x (translateCLM ℤ_[p] y d) := fun d ↦ by
-    apply eval_injective ℤ_[p] PadicInt.isSMulRegular_natCast_p
-    ext z
-    rw [eval_translateCLM, eval_translateCLM, eval_translateCLM, add_left_comm, add_assoc]
-  have hEq : translateCLM (p := p) (h := h) (E := E) ℤ_[p] (x + y) =
-      (translateCLM ℤ_[p] x).comp (translateCLM ℤ_[p] y) :=
-    continuousLinearMap_ext fun s e ↦ by
-      let φ : ℤ_[p] →L[ℤ_[p]] E := ContinuousLinearMap.toSpanSingleton ℤ_[p] e
-      let hφ := ContinuousLinearMap.exists_norm_toSpanSingleton_apply_le ℤ_[p] e
-      have hs : compLeft φ hφ (single s (1 : ℤ_[p])) = single s e := by simp [φ]
-      rw [← hs, ContinuousLinearMap.comp_apply, translateCLM_compLeft ℤ_[p] ℤ_[p],
-        translateCLM_compLeft ℤ_[p] ℤ_[p], translateCLM_compLeft ℤ_[p] ℤ_[p], hpadic]
-  rw [translateCLM_eq_translateCLM_padicInt S, translateCLM_eq_translateCLM_padicInt S,
-    translateCLM_eq_translateCLM_padicInt S]
-  exact DFunLike.congr_fun hEq c
+  simp only [translateCLM_eq_translateCLM_padicInt S]
+  rw [add_comm x y, translateCLM_apply, ← eval_eval_comulCurried ℤ_[p] (comulCurried ℤ_[p] c) y x,
+    comulCurried_comulCurried ℤ_[p] c,
+    eval_compLeft ℤ_[p] (comulCurried (p := p) (h := h) (E := E) ℤ_[p])
+      (exists_norm_comulCurried_le ℤ_[p]) (comulCurried ℤ_[p] c) y]
+  rfl
 
 /-- **Translation on an analytic stage.** Translating the argument by `x : ℤ_p` defines a linear
 isometry equivalence `LA_h(E) ≃ₗᵢ[S] LA_h(E)` with `eval (translate S x c) y = eval c (x + y)`. -/
-noncomputable def translate (x : ℤ_[p]) : AnalyticStage p h E ≃ₗᵢ[S] AnalyticStage p h E where
-  toFun := translateCLM S x
-  map_add' := map_add (translateCLM S x)
-  map_smul' := map_smul (translateCLM S x)
-  invFun := translateCLM S (-x)
-  left_inv c := by rw [← translateCLM_add, neg_add_cancel, translateCLM_zero]
-  right_inv c := by rw [← translateCLM_add, add_neg_cancel, translateCLM_zero]
-  norm_map' c := le_antisymm (norm_translateCLM_le S x c) <| by
-    have h := norm_translateCLM_le S (-x) (translateCLM S x c)
-    rwa [← translateCLM_add, neg_add_cancel, translateCLM_zero] at h
+noncomputable def translate (x : ℤ_[p]) : AnalyticStage p h E ≃ₗᵢ[S] AnalyticStage p h E :=
+  LinearIsometryEquiv.ofBounds
+    { toFun := translateCLM S x
+      map_add' := map_add (translateCLM S x)
+      map_smul' := map_smul (translateCLM S x)
+      invFun := translateCLM S (-x)
+      left_inv c := by rw [← translateCLM_add, neg_add_cancel, translateCLM_zero]
+      right_inv c := by rw [← translateCLM_add, add_neg_cancel, translateCLM_zero] }
+    (norm_translateCLM_le S x) (norm_translateCLM_le S (-x))
 
 private theorem translate_apply_eq_translateCLM (x : ℤ_[p]) (c : AnalyticStage p h E) :
     translate S x c = translateCLM S x c :=
@@ -172,21 +150,20 @@ theorem translate_eq_eval_comulCurried (x : ℤ_[p]) (c : AnalyticStage p h E) :
 
 /-- Evaluating the `i`-th inner slice `comulCurried S c i` at `x` gives the `i`-th coordinate of
 `translate S x c`. -/
+@[simp]
 theorem eval_comulCurried_apply (c : AnalyticStage p h E) (i : ZMod (p ^ h) × ℕ) (x : ℤ_[p]) :
     eval S (comulCurried S c i) x = translate S x c i := by
-  rw [translate_eq_eval_comulCurried]
-  have h1 := hasSum_eval_apply S (comulCurried S c i) x
-  have h2 := (hasSum_eval_apply S (comulCurried S c) x).mapL
-    (ZeroAtInftyContinuousMap.evalCLM ℤ_[p] i)
-  rw [ZeroAtInftyContinuousMap.evalCLM_apply] at h2
-  refine h1.unique (h2.congr_fun fun n ↦ ?_)
-  simp only [ZeroAtInftyContinuousMap.evalCLM_apply, comulCurried_apply_apply,
-    FunLike.coe_smul, Pi.smul_apply]
-  have hcomm := congrArg (fun d ↦ d (i, (PadicInt.toZModPow h x, n)))
-    (congrLeft_prodComm_comul S c)
-  simpa only [congrLeft_apply, Homeomorph.prodComm_symm, Homeomorph.coe_prodComm,
-    Prod.swap_prod_mk] using congrArg (((PadicInt.discHomeomorph p h).symm x).2 ^ n • ·)
-      hcomm.symm
+  rw [eval_eq_eval_padicInt S, comulCurried_eq_comulCurried_padicInt S,
+    translate_apply_eq_translateCLM, translateCLM_eq_translateCLM_padicInt S, translateCLM_apply]
+  have hrow : compLeft (ZeroAtInftyContinuousMap.evalCLM ℤ_[p] i)
+        ⟨1, fun d ↦ by simpa only [evalCLM_apply, one_mul] using d.norm_coe_le_norm i⟩
+        (comulCurried ℤ_[p] c) =
+      comulCurried ℤ_[p] c i := by
+    ext j
+    simp only [compLeft_apply, evalCLM_apply, comulCurried_apply_apply]
+    rw [← DFunLike.congr_fun (congrLeft_prodComm_comul ℤ_[p] c) (j, i), congrLeft_apply]
+    rfl
+  rw [← hrow, eval_compLeft ℤ_[p], evalCLM_apply]
 
 /-- Evaluating the translate of `c` by `x` at `y` gives `eval S c (x + y)`. -/
 @[simp]

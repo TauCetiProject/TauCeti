@@ -6,10 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Padics.Measure.Monoid
-public import TauCeti.NumberTheory.Padics.Distribution.Comul
 public import TauCeti.NumberTheory.Padics.Distribution.Dual
 public import TauCeti.NumberTheory.Padics.Distribution.Translation
-public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Bilinear
 import TauCeti.NumberTheory.Padics.Measure.Pushforward
 
 /-!
@@ -26,6 +24,7 @@ pairing `ZeroAtInftyContinuousMap.prodFunctional`, this file equips the space
   analytic level `h`;
 * `One (LocallyAnalyticDistribution p K)` and `Mul (LocallyAnalyticDistribution p K)`: the unit
   `1 = dirac 0` and the additive convolution `μ * ν`, defined on each analytic stage `LA_h(K)` by
+  `(stage h μ) ∘ convolveFunRightStage (stage h ν)`, equivalently
   `(stage h μ ⊗ stage h ν) ∘ comul`;
 * `TauCeti.LocallyAnalyticDistribution.stageSeminorm_mul_le`: submultiplicativity of every stage
   seminorm, `stageSeminorm h (μ * ν) ≤ stageSeminorm h μ * stageSeminorm h ν`;
@@ -58,14 +57,19 @@ pairing `ZeroAtInftyContinuousMap.prodFunctional`, this file equips the space
 * `TauCeti.LocallyAnalyticDistribution.stageSeminorm_dirac`: every point mass has stage seminorm
   `1` at every level.
 * `TauCeti.LocallyAnalyticDistribution.dirac_injective`: `dirac` is injective.
+* `TauCeti.LocallyAnalyticDistribution.eval_convolveFunRightStage_zero`,
+  `TauCeti.LocallyAnalyticDistribution.convolveFunRightStage_injective`: zero-evaluation recovery
+  and faithfulness of `convolveFunRightStage`.
 * `TauCeti.LocallyAnalyticDistribution.stage_mul`: stage restriction of `μ * ν` is
   `prodFunctional (stage h μ) (stage h ν) _ ∘L comul K`.
 * `TauCeti.LocallyAnalyticDistribution.stageSeminorm_mul_le`: stage seminorms are submultiplicative.
 * `TauCeti.LocallyAnalyticDistribution.dirac_add`: `dirac (x + y) = dirac x * dirac y`.
 * `TauCeti.LocallyAnalyticDistribution.coe_mul_apply`,
+  `TauCeti.LocallyAnalyticDistribution.eval_convolveFunRight_zero`,
+  `TauCeti.LocallyAnalyticDistribution.convolveFunRight_injective`,
   `TauCeti.LocallyAnalyticDistribution.convolveFunRight_dirac`,
-  `TauCeti.LocallyAnalyticDistribution.convolveFunRight_mul`: evaluation, Dirac specialization,
-  and module action for right convolution.
+  `TauCeti.LocallyAnalyticDistribution.convolveFunRight_mul`: evaluation, zero-evaluation recovery,
+  faithfulness, Dirac specialization, and module action for right convolution.
 * `TauCeti.LocallyAnalyticDistribution.ofMeasure_map_add_prodMk'`: `ofMeasure` intertwines
   pushforward product-measure convolution along `+ : ℤ_p × ℤ_p → ℤ_p` with distribution
   convolution.
@@ -160,6 +164,128 @@ theorem dirac_injective : Function.Injective (dirac (p := p) (K := K)) := by
 theorem dirac_inj {x y : ℤ_[p]} : dirac (p := p) (K := K) x = dirac y ↔ x = y :=
   dirac_injective.eq_iff
 
+/-! ### Stage-level right convolution -/
+
+/-- The stage-level right convolution operator of a continuous functional `φ : LA_h(K) →L[K] K`:
+postcomposing `AnalyticStage.comulCurried K` coordinatewise with `φ` sends `c` to the
+coefficient vector of `x ↦ φ (y ↦ c (x + y))`. -/
+noncomputable def convolveFunRightStage {h : ℕ} :
+    (AnalyticStage p h K →L[K] K) →ₗ[K] (AnalyticStage p h K →L[K] AnalyticStage p h K) where
+  toFun φ := (compLeft φ (φ.bound.imp fun _ hb ↦ hb.2)).comp (comulCurried K)
+  map_add' φ ψ := by ext c i; simp
+  map_smul' a φ := by ext c i; simp
+
+/-- Coordinatewise formula for `convolveFunRightStage φ`. -/
+@[simp]
+theorem convolveFunRightStage_apply {h : ℕ} (φ : AnalyticStage p h K →L[K] K)
+    (c : AnalyticStage p h K) (i : ZMod (p ^ h) × ℕ) :
+    convolveFunRightStage φ c i = φ (comulCurried K c i) := by
+  simp [convolveFunRightStage]
+
+private theorem convolveFunRightStage_apply_eq {h : ℕ} (φ : AnalyticStage p h K →L[K] K)
+    (c : AnalyticStage p h K) :
+    convolveFunRightStage φ c =
+      compLeft φ (φ.bound.imp fun _ hb ↦ hb.2) (comulCurried K c) :=
+  (rfl)
+
+/-- `convolveFunRightStage φ` is bounded by `‖φ‖`. -/
+theorem norm_convolveFunRightStage_apply_le {h : ℕ} (φ : AnalyticStage p h K →L[K] K)
+    (c : AnalyticStage p h K) :
+    ‖convolveFunRightStage φ c‖ ≤ ‖φ‖ * ‖c‖ := by
+  rw [convolveFunRightStage_apply_eq]
+  exact (norm_compLeft_apply_le φ φ.le_opNorm _).trans (by rw [norm_comulCurried])
+
+/-- The operator norm of `convolveFunRightStage φ` is at most `‖φ‖`. -/
+theorem opNorm_convolveFunRightStage_le {h : ℕ} (φ : AnalyticStage p h K →L[K] K) :
+    ‖convolveFunRightStage φ‖ ≤ ‖φ‖ :=
+  ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg φ) (norm_convolveFunRightStage_apply_le φ)
+
+/-- Evaluating `convolveFunRightStage φ c` at `x` applies `φ` to the translate of `c` by `x`. -/
+@[simp]
+theorem eval_convolveFunRightStage {h : ℕ} (φ : AnalyticStage p h K →L[K] K)
+    (c : AnalyticStage p h K) (x : ℤ_[p]) :
+    AnalyticStage.eval K (convolveFunRightStage φ c) x = φ (AnalyticStage.translate K x c) := by
+  rw [convolveFunRightStage_apply_eq, eval_compLeft K, translate_eq_eval_comulCurried]
+
+/-- Evaluating `convolveFunRightStage φ c` at `0` recovers `φ c`. -/
+theorem eval_convolveFunRightStage_zero {h : ℕ} (φ : AnalyticStage p h K →L[K] K)
+    (c : AnalyticStage p h K) :
+    AnalyticStage.eval K (convolveFunRightStage φ c) 0 = φ c := by
+  simp
+
+/-- The stage-level right convolution action `convolveFunRightStage` is injective. -/
+theorem convolveFunRightStage_injective {h : ℕ} :
+    Function.Injective (convolveFunRightStage (p := p) (K := K) (h := h)) := by
+  intro φ ψ hφψ
+  ext c
+  simpa only [eval_convolveFunRightStage_zero] using
+    congrArg (fun T ↦ AnalyticStage.eval K (T c) 0) hφψ
+
+/-- Stage-level right convolution commutes with adjacent stage transitions: applying `ψ` after
+refining equals refining after applying `ψ ∘ transition`. -/
+theorem convolveFunRightStage_transition {h : ℕ} (ψ : AnalyticStage p (h + 1) K →L[K] K)
+    (c : AnalyticStage p h K) :
+    convolveFunRightStage ψ (transition K c) =
+      transition K (convolveFunRightStage (ψ.comp (transition K)) c) := by
+  rw [convolveFunRightStage_apply_eq, convolveFunRightStage_apply_eq,
+    ← transition_compLeft_transition_comulCurried K c, ← transition_compLeft K]
+  refine congrArg (transition K) ?_
+  ext i
+  simp
+
+/-- Stage-level right convolution commutes with multi-level stage transitions. -/
+theorem convolveFunRightStage_transitionLE {h k : ℕ} (hhk : h ≤ k)
+    (ψ : AnalyticStage p k K →L[K] K) (c : AnalyticStage p h K) :
+    convolveFunRightStage ψ (transitionLE K hhk c) =
+      transitionLE K hhk (convolveFunRightStage (ψ.comp (transitionLE K hhk)) c) := by
+  induction k, hhk using Nat.le_induction with
+  | base => simp
+  | succ k hhk ih =>
+    rw [transitionLE_succ K hhk, ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
+      convolveFunRightStage_transition, ih, ← ContinuousLinearMap.comp_assoc]
+
+/-- For a distribution `ν`, the stage-level right convolution operators commute with adjacent
+transitions. -/
+theorem convolveFunRightStage_stage_transition (ν : LocallyAnalyticDistribution p K) {h : ℕ}
+    (c : AnalyticStage p h K) :
+    convolveFunRightStage (stage (h + 1) ν) (transition K c) =
+      transition K (convolveFunRightStage (stage h ν) c) := by
+  rw [convolveFunRightStage_transition, stage_comp_transition]
+
+/-- For a distribution `ν`, the stage-level right convolution operators commute with multi-level
+transitions. -/
+theorem convolveFunRightStage_stage_transitionLE (ν : LocallyAnalyticDistribution p K) {h k : ℕ}
+    (hhk : h ≤ k) (c : AnalyticStage p h K) :
+    convolveFunRightStage (stage k ν) (transitionLE K hhk c) =
+      transitionLE K hhk (convolveFunRightStage (stage h ν) c) := by
+  rw [convolveFunRightStage_transitionLE, stage_comp_transitionLE]
+
+/-- Stage-level right convolution is associative with respect to composition of stage
+functionals. -/
+theorem convolveFunRightStage_comp {h : ℕ} (φ ψ : AnalyticStage p h K →L[K] K) :
+    convolveFunRightStage (φ.comp (convolveFunRightStage ψ)) =
+      (convolveFunRightStage φ).comp (convolveFunRightStage ψ) := by
+  ext c i
+  simp only [convolveFunRightStage_apply, ContinuousLinearMap.comp_apply]
+  rw [convolveFunRightStage_apply_eq, convolveFunRightStage_apply_eq, comulCurried_compLeft K,
+    comulCurried_comulCurried K, compLeft_apply, compLeft_apply]
+
+/-- Stage-level right convolution with a Dirac distribution at `x` is translation by `x`. -/
+@[simp]
+theorem convolveFunRightStage_stage_dirac_apply (x : ℤ_[p]) {h : ℕ} (c : AnalyticStage p h K) :
+    convolveFunRightStage (stage h (dirac x)) c = AnalyticStage.translate K x c := by
+  ext i
+  simp
+
+/-- Stage-level right convolution with coordinate evaluation at `(0, 0)` is the identity
+operator. -/
+@[simp]
+theorem convolveFunRightStage_evalCLM_zero (h : ℕ) :
+    convolveFunRightStage (evalCLM K (0, 0) : AnalyticStage p h K →L[K] K) =
+      ContinuousLinearMap.id K _ := by
+  ext c i
+  simp
+
 /-! ### Stage-by-stage additive convolution and `CommRing` / `Algebra` structure -/
 
 /-- The convolution unit of `LocallyAnalyticDistribution p K` is the point mass `dirac 0`. -/
@@ -184,26 +310,14 @@ instance : Nontrivial (LocallyAnalyticDistribution p K) :=
   nontrivial_of_ne 1 0 (dirac_ne_zero 0)
 
 /-- **Additive convolution of locally analytic distributions**, defined on each analytic stage
-`LA_h(K)` by pairing `prodFunctional (stage h μ) (stage h ν)` against `AnalyticStage.comul K`. -/
+`LA_h(K)` by composing `stage h μ` with `convolveFunRightStage (stage h ν)`. -/
 noncomputable instance : Mul (LocallyAnalyticDistribution p K) where
   mul μ ν := stagesEquiv.symm
-    ⟨fun h ↦ (prodFunctional (stage h μ) (stage h ν)
-      ((stage h ν).bound.imp fun _ hb ↦ hb.2)).comp (comul K),
+    ⟨fun h ↦ (stage h μ).comp (convolveFunRightStage (stage h ν)),
       mem_compatibleStageFunctionals_iff.mpr fun h ↦ by
         ext c
-        simp only [ContinuousLinearMap.comp_apply, prodFunctional_apply, curryEquiv_comul]
-        rw [← transition_compLeft_transition_comulCurried K c]
-        have hrow : compLeft (stage (h + 1) ν) ((stage (h + 1) ν).bound.imp fun _ hb ↦ hb.2)
-              (transition K (compLeft (transition K) (exists_norm_transition_le K)
-                (comulCurried K c))) =
-            transition K (compLeft (stage h ν) ((stage h ν).bound.imp fun _ hb ↦ hb.2)
-              (comulCurried K c)) := by
-          rw [← transition_compLeft K]
-          refine congrArg (transition (p := p) (h := h) (E := K) K) ?_
-          ext u
-          simp [← stage_comp_transition ν h]
-        rw [hrow, ← ContinuousLinearMap.comp_apply (stage (h + 1) μ) (transition K),
-          stage_comp_transition μ h]⟩
+        simp only [ContinuousLinearMap.comp_apply, convolveFunRightStage_stage_transition]
+        rw [← ContinuousLinearMap.comp_apply (stage (h + 1) μ), stage_comp_transition μ h]⟩
 
 /-- On the stage `LA_h(K)`, the convolution unit `1` evaluates the `(0, 0)`-coordinate. -/
 @[simp]
@@ -212,12 +326,10 @@ theorem stage_one (h : ℕ) :
   ext c
   rw [one_def, stage_dirac_apply, eval_apply_zero, evalCLM_apply]
 
-/-- On the stage `LA_h(K)`, `μ * ν` is the two-variable product functional of `stage h μ` and
-`stage h ν` composed with `comul K`. -/
-theorem stage_mul (h : ℕ) (μ ν : LocallyAnalyticDistribution p K) :
-    stage h (μ * ν) =
-      (prodFunctional (stage h μ) (stage h ν)
-        ((stage h ν).bound.imp fun _ hb ↦ hb.2)).comp (comul K) :=
+/-- Restricting the convolution `μ * ν` to stage `h` composes `stage h μ` with the stage-level
+right convolution operator of `stage h ν`. -/
+theorem stage_mul_eq_comp_convolveFunRightStage (h : ℕ) (μ ν : LocallyAnalyticDistribution p K) :
+    stage h (μ * ν) = (stage h μ).comp (convolveFunRightStage (stage h ν)) :=
   stage_stagesEquiv_symm _ h
 
 /-- Pointwise form of `stage_mul` in terms of `comulCurried`: `μ * ν` applies `stage h ν` to each
@@ -225,8 +337,17 @@ row of `comulCurried K c` and `stage h μ` to the resulting column. -/
 theorem stage_mul_apply (h : ℕ) (μ ν : LocallyAnalyticDistribution p K) (c : AnalyticStage p h K) :
     stage h (μ * ν) c =
       stage h μ (compLeft (stage h ν)
-        ((stage h ν).bound.imp fun _ hb ↦ hb.2) (comulCurried K c)) := by
-  rw [stage_mul, ContinuousLinearMap.comp_apply, prodFunctional_apply, curryEquiv_comul]
+        ((stage h ν).bound.imp fun _ hb ↦ hb.2) (comulCurried K c)) :=
+  congrArg (fun T ↦ T c) (stage_mul_eq_comp_convolveFunRightStage h μ ν)
+
+/-- On the stage `LA_h(K)`, `μ * ν` is the two-variable product functional of `stage h μ` and
+`stage h ν` composed with `comul K`. -/
+theorem stage_mul (h : ℕ) (μ ν : LocallyAnalyticDistribution p K) :
+    stage h (μ * ν) =
+      (prodFunctional (stage h μ) (stage h ν)
+        ((stage h ν).bound.imp fun _ hb ↦ hb.2)).comp (comul K) := by
+  ext c
+  rw [stage_mul_apply, ContinuousLinearMap.comp_apply, prodFunctional_apply, curryEquiv_comul]
 
 /-- **Submultiplicativity of the stage seminorms** under additive convolution. -/
 theorem stageSeminorm_mul_le (h : ℕ) (μ ν : LocallyAnalyticDistribution p K) :
@@ -242,19 +363,16 @@ theorem stageSeminorm_one (h : ℕ) :
   simp
 
 noncomputable instance : MulZeroClass (LocallyAnalyticDistribution p K) where
-  zero_mul ν := LocallyAnalyticDistribution.ext fun h ↦ ContinuousLinearMap.ext fun c ↦ by
-    simp only [stage_mul_apply, map_zero, _root_.zero_apply]
-  mul_zero μ := LocallyAnalyticDistribution.ext fun h ↦ ContinuousLinearMap.ext fun c ↦ by
-    simp only [stage_mul_apply, map_zero, _root_.zero_apply, compLeft_zero]
+  zero_mul ν := LocallyAnalyticDistribution.ext fun h ↦ by
+    simp [stage_mul_eq_comp_convolveFunRightStage]
+  mul_zero μ := LocallyAnalyticDistribution.ext fun h ↦ by
+    simp [stage_mul_eq_comp_convolveFunRightStage]
 
 noncomputable instance : Distrib (LocallyAnalyticDistribution p K) where
-  left_distrib μ ν₁ ν₂ := LocallyAnalyticDistribution.ext fun h ↦ ContinuousLinearMap.ext fun c ↦ by
-    simp only [stage_mul_apply, map_add, _root_.add_apply,
-      compLeft_add _ _ ((stage h ν₁).bound.imp fun _ hb ↦ hb.2)
-        ((stage h ν₂).bound.imp fun _ hb ↦ hb.2)]
-  right_distrib μ₁ μ₂ ν :=
-    LocallyAnalyticDistribution.ext fun h ↦ ContinuousLinearMap.ext fun c ↦ by
-      simp only [stage_mul_apply, map_add, _root_.add_apply]
+  left_distrib μ ν₁ ν₂ := LocallyAnalyticDistribution.ext fun h ↦ by
+    simp [stage_mul_eq_comp_convolveFunRightStage]
+  right_distrib μ₁ μ₂ ν := LocallyAnalyticDistribution.ext fun h ↦ by
+    simp [stage_mul_eq_comp_convolveFunRightStage]
 
 noncomputable instance : NonUnitalNonAssocRing (LocallyAnalyticDistribution p K) where
   left_distrib := left_distrib
@@ -263,18 +381,15 @@ noncomputable instance : NonUnitalNonAssocRing (LocallyAnalyticDistribution p K)
   mul_zero := mul_zero
 
 noncomputable instance : Ring (LocallyAnalyticDistribution p K) where
-  mul_assoc μ ν ρ := LocallyAnalyticDistribution.ext fun h ↦ ContinuousLinearMap.ext fun c ↦ by
-    rw [stage_mul_apply, stage_mul_apply, stage_mul_apply, comulCurried_compLeft K,
-      comulCurried_comulCurried K]
-    refine congrArg (stage h μ) (ZeroAtInftyContinuousMap.ext fun u ↦ ?_)
-    simp only [compLeft_apply, stage_mul_apply]
+  mul_assoc μ ν ρ := LocallyAnalyticDistribution.ext fun h ↦ by
+    simp only [stage_mul_eq_comp_convolveFunRightStage, convolveFunRightStage_comp,
+      ContinuousLinearMap.comp_assoc]
   one_mul ν := LocallyAnalyticDistribution.ext fun h ↦ ContinuousLinearMap.ext fun c ↦ by
     rw [stage_mul_apply]
     simp
-  mul_one μ := LocallyAnalyticDistribution.ext fun h ↦ ContinuousLinearMap.ext fun c ↦ by
-    rw [stage_mul_apply]
-    refine congrArg (stage h μ) (ZeroAtInftyContinuousMap.ext fun x ↦ ?_)
-    simp
+  mul_one μ := LocallyAnalyticDistribution.ext fun h ↦ by
+    rw [stage_mul_eq_comp_convolveFunRightStage, stage_one, convolveFunRightStage_evalCLM_zero,
+      ContinuousLinearMap.comp_id]
 
 /-- Locally analytic distributions form a commutative ring under additive convolution, with unit
 `1 = dirac 0`. -/
@@ -417,125 +532,11 @@ theorem stageSeminorm_ofMulMeasure_le (μ : D(Multiplicative ℤ_[p], K)) (h : �
 
 /-! ### Right convolution on test functions -/
 
-/-- The stage-level right convolution operator of a continuous functional `φ : LA_h(K) →L[K] K`:
-postcomposing `AnalyticStage.comulCurried K` coordinatewise with `φ` sends `c` to the
-coefficient vector of `x ↦ φ (y ↦ c (x + y))`. -/
-noncomputable def convolveFunRightStage {h : ℕ} :
-    (AnalyticStage p h K →L[K] K) →ₗ[K] (AnalyticStage p h K →L[K] AnalyticStage p h K) where
-  toFun φ := (compLeft φ (φ.bound.imp fun _ hb ↦ hb.2)).comp (comulCurried K)
-  map_add' φ ψ := by ext c i; simp
-  map_smul' a φ := by ext c i; simp
-
-/-- Coordinatewise formula for `convolveFunRightStage φ`. -/
-@[simp]
-theorem convolveFunRightStage_apply {h : ℕ} (φ : AnalyticStage p h K →L[K] K)
-    (c : AnalyticStage p h K) (i : ZMod (p ^ h) × ℕ) :
-    convolveFunRightStage φ c i = φ (comulCurried K c i) := by
-  simp [convolveFunRightStage]
-
-private theorem convolveFunRightStage_apply_eq {h : ℕ} (φ : AnalyticStage p h K →L[K] K)
-    (c : AnalyticStage p h K) :
-    convolveFunRightStage φ c =
-      compLeft φ (φ.bound.imp fun _ hb ↦ hb.2) (comulCurried K c) :=
-  (rfl)
-
-/-- `convolveFunRightStage φ` is bounded by `‖φ‖`. -/
-theorem norm_convolveFunRightStage_apply_le {h : ℕ} (φ : AnalyticStage p h K →L[K] K)
-    (c : AnalyticStage p h K) :
-    ‖convolveFunRightStage φ c‖ ≤ ‖φ‖ * ‖c‖ := by
-  rw [convolveFunRightStage_apply_eq]
-  exact (norm_compLeft_apply_le φ φ.le_opNorm _).trans (by rw [norm_comulCurried])
-
-/-- The operator norm of `convolveFunRightStage φ` is at most `‖φ‖`. -/
-theorem opNorm_convolveFunRightStage_le {h : ℕ} (φ : AnalyticStage p h K →L[K] K) :
-    ‖convolveFunRightStage φ‖ ≤ ‖φ‖ :=
-  ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg φ) (norm_convolveFunRightStage_apply_le φ)
-
-/-- Evaluating `convolveFunRightStage φ c` at `x` applies `φ` to the translate of `c` by `x`. -/
-@[simp]
-theorem eval_convolveFunRightStage {h : ℕ} (φ : AnalyticStage p h K →L[K] K)
-    (c : AnalyticStage p h K) (x : ℤ_[p]) :
-    AnalyticStage.eval K (convolveFunRightStage φ c) x = φ (AnalyticStage.translate K x c) := by
-  rw [convolveFunRightStage_apply_eq, eval_compLeft K, translate_eq_eval_comulCurried]
-
-/-- Stage-level right convolution commutes with adjacent stage transitions: applying `ψ` after
-refining equals refining after applying `ψ ∘ transition`. -/
-theorem convolveFunRightStage_transition {h : ℕ} (ψ : AnalyticStage p (h + 1) K →L[K] K)
-    (c : AnalyticStage p h K) :
-    convolveFunRightStage ψ (transition K c) =
-      transition K (convolveFunRightStage (ψ.comp (transition K)) c) := by
-  rw [convolveFunRightStage_apply_eq, convolveFunRightStage_apply_eq,
-    ← transition_compLeft_transition_comulCurried K c, ← transition_compLeft K]
-  refine congrArg (transition K) ?_
-  ext i
-  simp
-
-/-- Stage-level right convolution commutes with multi-level stage transitions. -/
-theorem convolveFunRightStage_transitionLE {h k : ℕ} (hhk : h ≤ k)
-    (ψ : AnalyticStage p k K →L[K] K) (c : AnalyticStage p h K) :
-    convolveFunRightStage ψ (transitionLE K hhk c) =
-      transitionLE K hhk (convolveFunRightStage (ψ.comp (transitionLE K hhk)) c) := by
-  induction k, hhk using Nat.le_induction with
-  | base => simp
-  | succ k hhk ih =>
-    rw [transitionLE_succ K hhk, ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
-      convolveFunRightStage_transition, ih, ← ContinuousLinearMap.comp_assoc]
-
-/-- For a distribution `ν`, the stage-level right convolution operators commute with adjacent
-transitions. -/
-theorem convolveFunRightStage_stage_transition (ν : LocallyAnalyticDistribution p K) {h : ℕ}
-    (c : AnalyticStage p h K) :
-    convolveFunRightStage (stage (h + 1) ν) (transition K c) =
-      transition K (convolveFunRightStage (stage h ν) c) := by
-  rw [convolveFunRightStage_transition, stage_comp_transition]
-
-/-- For a distribution `ν`, the stage-level right convolution operators commute with multi-level
-transitions. -/
-theorem convolveFunRightStage_stage_transitionLE (ν : LocallyAnalyticDistribution p K) {h k : ℕ}
-    (hhk : h ≤ k) (c : AnalyticStage p h K) :
-    convolveFunRightStage (stage k ν) (transitionLE K hhk c) =
-      transitionLE K hhk (convolveFunRightStage (stage h ν) c) := by
-  rw [convolveFunRightStage_transitionLE, stage_comp_transitionLE]
-
-/-- Stage-level right convolution is associative with respect to composition of stage
-functionals. -/
-theorem convolveFunRightStage_comp {h : ℕ} (φ ψ : AnalyticStage p h K →L[K] K) :
-    convolveFunRightStage (φ.comp (convolveFunRightStage ψ)) =
-      (convolveFunRightStage φ).comp (convolveFunRightStage ψ) := by
-  ext c i
-  simp only [convolveFunRightStage_apply, ContinuousLinearMap.comp_apply]
-  rw [convolveFunRightStage_apply_eq, convolveFunRightStage_apply_eq, comulCurried_compLeft K,
-    comulCurried_comulCurried K, compLeft_apply, compLeft_apply]
-
-/-- Stage-level right convolution with a Dirac distribution at `x` is translation by `x`. -/
-@[simp]
-theorem convolveFunRightStage_stage_dirac_apply (x : ℤ_[p]) {h : ℕ} (c : AnalyticStage p h K) :
-    convolveFunRightStage (stage h (dirac x)) c = AnalyticStage.translate K x c := by
-  ext i
-  simp [eval_comulCurried_apply]
-
-/-- Stage-level right convolution with coordinate evaluation at `(0, 0)` is the identity
-operator. -/
-@[simp]
-theorem convolveFunRightStage_evalCLM_zero (h : ℕ) :
-    convolveFunRightStage (evalCLM K (0, 0) : AnalyticStage p h K →L[K] K) =
-      ContinuousLinearMap.id K _ := by
-  ext c
-  rw [← stage_one (p := p) h, one_def, convolveFunRightStage_stage_dirac_apply,
-    AnalyticStage.translate_zero, ContinuousLinearMap.id_apply]
-
 /-- Stage-level right convolution with the identity distribution `1` is the identity operator. -/
 theorem convolveFunRightStage_stage_one (h : ℕ) :
     convolveFunRightStage (stage h (1 : LocallyAnalyticDistribution p K)) =
       ContinuousLinearMap.id K _ := by
   rw [stage_one, convolveFunRightStage_evalCLM_zero]
-
-/-- Restricting the convolution `μ * ν` to stage `h` composes `stage h μ` with the stage-level
-right convolution operator of `stage h ν`. -/
-theorem stage_mul_eq_comp_convolveFunRightStage (h : ℕ) (μ ν : LocallyAnalyticDistribution p K) :
-    stage h (μ * ν) = (stage h μ).comp (convolveFunRightStage (stage h ν)) := by
-  ext c
-  exact stage_mul_apply h μ ν c
 
 /-- Stage-level right convolution is associative with respect to distribution convolution. -/
 theorem convolveFunRightStage_stage_mul (μ ν : LocallyAnalyticDistribution p K) (h : ℕ) :
@@ -578,6 +579,21 @@ theorem eval_convolveFunRight (ν : LocallyAnalyticDistribution p K) (f : Locall
   obtain ⟨h, c, rfl⟩ := Module.DirectLimit.exists_of f
   rw [← ofStage_def, convolveFunRight_ofStage, eval_ofStage, eval_convolveFunRightStage,
     LocallyAnalytic.translate_ofStage, stage_apply]
+
+/-- Evaluating `convolveFunRight ν f` at `0` recovers `ν f`. -/
+theorem eval_convolveFunRight_zero (ν : LocallyAnalyticDistribution p K)
+    (f : LocallyAnalytic p K K) :
+    LocallyAnalytic.eval K (convolveFunRight ν f) 0 =
+      (ν : Module.Dual K (LocallyAnalytic p K K)) f := by
+  simp
+
+/-- The right convolution action `convolveFunRight` is injective. -/
+theorem convolveFunRight_injective :
+    Function.Injective (convolveFunRight (p := p) (K := K)) := by
+  intro μ ν hμν
+  refine Subtype.ext <| LinearMap.ext fun f ↦ ?_
+  simpa only [eval_convolveFunRight_zero] using
+    congrArg (fun T ↦ LocallyAnalytic.eval K (T f) 0) hμν
 
 /-- Right convolution with a Dirac distribution at `x` is translation by `x`. -/
 @[simp]
