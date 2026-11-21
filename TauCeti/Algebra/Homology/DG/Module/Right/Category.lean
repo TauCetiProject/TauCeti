@@ -112,6 +112,11 @@ theorem id_apply (M : DGRightModuleCat.{uR, uA, uM} h) (x : M) : (𝟙 M) x = x 
 theorem comp_apply (f : M ⟶ N) (g : N ⟶ P) (x : M) : (f ≫ g) x = g (f x) :=
   DGRightModuleHom.comp_apply g f x
 
+/-- The categorical identity is the identity of unbundled DG-module morphisms. -/
+theorem id_eq_id (M : DGRightModuleCat.{uR, uA, uM} h) :
+    𝟙 M = DGRightModuleHom.id M.isDGRightModule :=
+  (rfl)
+
 /-- Categorical composition agrees with composition of unbundled DG-module morphisms. -/
 theorem comp_eq_comp (f : M ⟶ N) (g : N ⟶ P) : f ≫ g = g.comp f := by
   ext x

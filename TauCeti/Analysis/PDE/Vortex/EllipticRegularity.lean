@@ -52,6 +52,9 @@ multiplication by the transposed matrix.
   bootstrap. If `x` is smooth and its coordinates have bounded derivatives through order `k`, a
   weak `L²` solution of `L_x y = f` with `f ∈ H^k` lies in `H^(k+1)`. The multiplication by the
   coefficients of `L_x - L₀` preserves `H^k` (`mulVec_mem_sobolevFields_natCast`).
+* `mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedAdjoint_eq_add`: the same for weak
+  solutions of `L_x y = f + A y`, where `A` is a matrix of smooth coefficients with bounded
+  derivatives through order `k`, such as the commutator of `L_x` with a weight.
 * `mem_sobolevFields_one_of_mem_framedFieldSpace_of_integral_inner_gaugeFixedAdjoint_eq`: a
   continuous field of `A_m^s`, `s > 1`, is bounded (`exists_norm_le_of_mem_framedFieldSpace`), so
   there weak `L²` solutions of `L_x y = f` with `f ∈ L²`, in particular the weak `L²` kernel of
@@ -430,6 +433,35 @@ theorem mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedAdjoint_eq
     (fun x η z v ↦ by
       rw [inner_gaugeFixedAdjoint_eq_add_inner_gaugeFixedZerothOrder x vacuumField,
         gaugeFixedZerothOrder_eq_toEuclideanLin]) hx hbound hy hf hweak
+
+/-- **The elliptic bootstrap with a zeroth-order term.** Let `x` be a smooth field whose
+coordinates have bounded derivatives through order `k`, and let `A` be a `4 × 4` matrix of smooth
+real functions with bounded derivatives through order `k`. A square-integrable weak solution `y`
+of `L_x y = f + A y` with `f ∈ H^k`, in the sense that `∫ ⟪y, L_x* η⟫ = ∫ ⟪f + A y, η⟫` for every
+smooth compactly supported test field `η`, lies in `H^(k+1)`. -/
+theorem mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedAdjoint_eq_add (k : ℕ)
+    {x y f : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiff ℝ ∞ x)
+    (hbound : ∀ i, ∀ n ≤ k, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C)
+    {A : Fin 4 → Fin 4 → ℂ → ℝ} (hA : ∀ i j, ContDiff ℝ ∞ (A i j))
+    (hAbound : ∀ i j, ∃ M ≥ 0, ∀ n ≤ k, ∀ z, ‖iteratedFDeriv ℝ n (A i j) z‖ ≤ M)
+    (hy : MemLp y 2 volume) (hf : f ∈ sobolevFields k)
+    (hweak : ∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ ∞ η → HasCompactSupport η →
+      ∫ z, ⟪y z, gaugeFixedAdjoint x η z⟫ =
+        ∫ z, ⟪f z + WithLp.toLp 2 (fun i ↦ ∑ j : Fin 4, A i j z * y z j), η z⟫) :
+    y ∈ sobolevFields (k + 1) := by
+  -- One step: `y ∈ H^j` puts the right side `f + A y` in `H^j`, hence `y ∈ H^(j+1)`.
+  have hstep (j : ℕ) (hj : j ≤ k) (hyj : y ∈ sobolevFields j) : y ∈ sobolevFields (j + 1) :=
+    mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedAdjoint_eq j hx
+      (fun i n hn ↦ hbound i n (hn.trans hj)) hy
+      (add_mem (sobolevFields_mono (by exact_mod_cast hj) hf)
+        (mulVec_mem_sobolevFields_natCast j hA (fun i' j' ↦ (hAbound i' j').imp
+          fun _ hM ↦ ⟨hM.1, fun n hn ↦ hM.2 n (hn.trans hj)⟩) hyj))
+      hweak
+  have hall (j : ℕ) (hj : j ≤ k) : y ∈ sobolevFields (j + 1) := by
+    induction j with
+    | zero => simpa using hstep 0 hj (by simpa using hy)
+    | succ j ih => exact_mod_cast hstep (j + 1) hj (by exact_mod_cast ih (by omega))
+  exact hall k le_rfl
 
 /-! ### Weak solutions of `L_x* η = g` -/
 
