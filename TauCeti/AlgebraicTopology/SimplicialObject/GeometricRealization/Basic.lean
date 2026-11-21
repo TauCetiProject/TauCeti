@@ -7,11 +7,8 @@ module
 
 public import Mathlib.AlgebraicTopology.SimplicialObject.Basic
 public import Mathlib.Topology.Compactness.CompactlyGeneratedSpace
-public import Mathlib.Topology.Compactness.Lindelof
 public import TauCeti.AlgebraicTopology.FatRealization
-import Mathlib.Geometry.Convex.ConvexSpace.CompactSpaceStdSimplex
-import TauCeti.AlgebraicTopology.TopologicalSimplex
-import TauCeti.Topology.Compactness.Lindelof
+public import TauCeti.Topology.Compactness.Lindelof
 import TauCeti.Topology.Convenient.CompactlyGenerated
 
 /-!
@@ -97,28 +94,17 @@ theorem continuous_iff {Z : Type*} [TopologicalSpace Z] {g : X.geometricRealizat
 instance [∀ n : ℕ, LindelofSpace (X _⦋n⦌ × toTop.{u}.obj ⦋n⦌)] :
     LindelofSpace X.geometricRealization := Quot.lindelofSpace
 
-/-- If each level `X _⦋n⦌` is Lindelöf, `X.geometricRealization` is Lindelöf in its colimit
-topology. -/
-theorem lindelofSpace [∀ n : ℕ, LindelofSpace (X _⦋n⦌)] :
-    LindelofSpace X.geometricRealization :=
-  inferInstance
-
 instance [∀ n : ℕ, UCompactlyGeneratedSpace.{v} (X _⦋n⦌ × toTop.{u}.obj ⦋n⦌)] :
     UCompactlyGeneratedSpace.{v} X.geometricRealization :=
   uCompactlyGeneratedSpace_of_coinduced continuous_quot_mk rfl
 
-/-- If each level `X _⦋n⦌` is compactly generated, `X.geometricRealization` is compactly
-generated in its colimit topology (for every test-space universe `v`). -/
+/-- For any fixed test-space universe `v`, if each level `X _⦋n⦌` satisfies
+`UCompactlyGeneratedSpace.{v}`, then `X.geometricRealization` satisfies
+`UCompactlyGeneratedSpace.{v}` in its colimit topology. -/
 theorem uCompactlyGeneratedSpace [∀ n : ℕ, UCompactlyGeneratedSpace.{v} (X _⦋n⦌)] :
     UCompactlyGeneratedSpace.{v} X.geometricRealization :=
-  have : ∀ n : ℕ, UCompactlyGeneratedSpace.{v} (X _⦋n⦌ × toTop.{u}.obj ⦋n⦌) := fun n ↦ by
-    let e : X _⦋n⦌ × ULift.{v} (Convexity.StdSimplex ℝ (Fin (n + 1))) ≃ₜ
-        X _⦋n⦌ × toTop.{u}.obj ⦋n⦌ :=
-      Homeomorph.prodCongr (.refl _) (Homeomorph.ulift.trans Homeomorph.ulift.symm)
-    have : UCompactlyGeneratedSpace.{v}
-        (X _⦋n⦌ × ULift.{v} (Convexity.StdSimplex ℝ (Fin (n + 1)))) :=
-      UCompactlyGeneratedSpace.prod_right
-    exact uCompactlyGeneratedSpace_of_coinduced e.continuous e.isQuotientMap.eq_coinduced
+  have : ∀ n : ℕ, UCompactlyGeneratedSpace.{v} (X _⦋n⦌ × toTop.{u}.obj ⦋n⦌) :=
+    fun _ ↦ UCompactlyGeneratedSpace.prod_right
   inferInstance
 
 section Desc
