@@ -24,7 +24,7 @@ fundamental domain for the coadjoint action.
 
 We write `unitaryConjRepresentation ι` for the conjugation representation of `U(n)` on the
 Hermitian matrices, which the trace pairing intertwines with the coadjoint representation
-(`TauCeti.unitaryTracePairing_unitaryConjRepresentation`). Its orbit space
+(`TauCeti.unitaryCoadjointRepresentation_unitaryTracePairing`). Its orbit space
 `Quotient (unitaryConjRepresentation ι).orbitRel` carries the quotient topology, and it is
 Hausdorff since `U(n)` is compact. The topology is stated in this Hermitian model because
 `Module.Dual` carries no topology.
@@ -33,9 +33,10 @@ Hausdorff since `U(n)` is compact. The topology is stated in this Hermitian mode
   unitary conjugation preserves the characteristic polynomial, which determines it
   (`Matrix.IsHermitian.eigenvalues₀_mul_mul_star`).
 * Two Hermitian matrices with the same eigenvalue list are unitarily conjugate, by the spectral
-  theorem (`TauCeti.unitaryConjRepresentation_orbitRel_iff`).
+  theorem (`Matrix.IsHermitian.exists_unitary_conj_of_eigenvalues₀_eq`), so the eigenvalue list
+  classifies the orbits (`TauCeti.unitaryConjRepresentation_orbitRel_iff`).
 * A decreasing list `s` is the eigenvalue list of the real diagonal matrix `diag(s)`
-  (`TauCeti.eigenvalues₀_unitaryChamberDiagonal`).
+  (`TauCeti.hermitianEigenvalues₀_unitaryChamberDiagonal`).
 
 Hence the eigenvalue list is a homeomorphism from the orbit space onto the closed chamber
 `{s : Fin n → ℝ // Antitone s}` (`TauCeti.unitaryConjOrbitHomeomorph`). It is continuous because
@@ -47,9 +48,10 @@ covector `⟨diag(s), ·⟩` (`TauCeti.unitaryCoadjointOrbitEquiv_symm_apply`). 
 coadjoint orbit contains `⟨diag(s), ·⟩` for exactly one decreasing `s`
 (`TauCeti.existsUnique_antitone_orbitRel_unitaryTorusDualInclusion`).
 
-The center of `𝔲(n)` is the line of scalar matrices, dual to the line of constant lists in `𝔱*`.
-The chamber is invariant under adding a constant list, so it is the product of this central line
-with the decreasing lists of sum zero, the closed chamber of `𝔰𝔲(n)`.
+As an informal remark, not formalized here: the center of `𝔲(n)` is the line `iℝ·1` of imaginary
+scalar matrices, dual to the line of constant lists in `𝔱*`. The chamber is invariant under adding a
+constant list, so it is the product of this central line with the decreasing lists of sum zero, the
+closed chamber of `𝔰𝔲(n)`.
 
 ## Main definitions
 
@@ -83,7 +85,7 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 variable (ι) in
 /-- The **conjugation representation** of `U(n)` on the Hermitian matrices, `H ↦ U H Uᴴ`. The trace
 pairing identifies it with the coadjoint representation
-(`TauCeti.unitaryTracePairing_unitaryConjRepresentation`). -/
+(`TauCeti.unitaryCoadjointRepresentation_unitaryTracePairing`). -/
 def unitaryConjRepresentation :
     Representation ℝ (unitaryGroup ι ℂ) (selfAdjoint.submodule ℝ (Matrix ι ι ℂ)) where
   toFun U :=
@@ -99,14 +101,6 @@ theorem coe_unitaryConjRepresentation_apply (U : unitaryGroup ι ℂ)
     (H : selfAdjoint.submodule ℝ (Matrix ι ι ℂ)) :
     (unitaryConjRepresentation ι U H : Matrix ι ι ℂ) = U * H * star (U : Matrix ι ι ℂ) :=
   (rfl)
-
-/-- **The trace pairing intertwines conjugation with the coadjoint action**:
-`⟨U H Uᴴ, ·⟩ = Ad*_U ⟨H, ·⟩`. -/
-theorem unitaryTracePairing_unitaryConjRepresentation (U : unitaryGroup ι ℂ)
-    (H : selfAdjoint.submodule ℝ (Matrix ι ι ℂ)) :
-    unitaryTracePairing ι (unitaryConjRepresentation ι U H) =
-      unitaryCoadjointRepresentation ι U (unitaryTracePairing ι H) :=
-  (unitaryCoadjointRepresentation_unitaryTracePairing U H).symm
 
 /-- The conjugation action `(U, H) ↦ U H Uᴴ` is jointly continuous. -/
 theorem continuous_unitaryConjRepresentation :
@@ -139,35 +133,13 @@ theorem unitaryConjRepresentation_orbitRel_iff {H K : selfAdjoint.submodule ℝ 
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · obtain ⟨U, hU⟩ := (Representation.orbitRel_apply _).mp h
     exact hU ▸ hermitianEigenvalues₀_unitaryConjRepresentation U K
-  set hH := (H.property : IsSelfAdjoint (H : Matrix ι ι ℂ)).isHermitian
-  set hK := (K.property : IsSelfAdjoint (K : Matrix ι ι ℂ)).isHermitian
-  -- Both are conjugate to the same real diagonal matrix by the spectral theorem.
-  have he : hH.eigenvalues = hK.eigenvalues := by
-    funext i
-    simp only [IsHermitian.eigenvalues]
-    exact congrFun h _
-  -- Both are conjugate to the same real diagonal matrix `D` by the spectral theorem.
-  obtain ⟨D, V, W, hV, hW⟩ : ∃ (D : Matrix ι ι ℂ) (V W : unitaryGroup ι ℂ),
-      (H : Matrix ι ι ℂ) = V * D * star (V : Matrix ι ι ℂ) ∧
-        (K : Matrix ι ι ℂ) = W * D * star (W : Matrix ι ι ℂ) :=
-    ⟨_, hH.eigenvectorUnitary, hK.eigenvectorUnitary, by simpa [he] using hH.spectral_theorem,
-      by simpa using hK.spectral_theorem⟩
-  refine (Representation.orbitRel_apply _).mpr ⟨V * star W, Subtype.ext ?_⟩
-  have hu : star (W : Matrix ι ι ℂ) * W = 1 := Unitary.star_mul_self_of_mem W.property
-  rw [coe_unitaryConjRepresentation_apply, hV, hW]
-  simp only [Submonoid.coe_mul, Unitary.coe_star, star_mul, star_star]
-  calc (V : Matrix ι ι ℂ) * star (W : Matrix ι ι ℂ) *
-        ((W : Matrix ι ι ℂ) * D * star (W : Matrix ι ι ℂ)) *
-          ((W : Matrix ι ι ℂ) * star (V : Matrix ι ι ℂ))
-      = V * (star (W : Matrix ι ι ℂ) * W) * D * (star (W : Matrix ι ι ℂ) * W) *
-          star (V : Matrix ι ι ℂ) := by
-        simp only [Matrix.mul_assoc]
-    _ = _ := by rw [hu, Matrix.mul_one, Matrix.mul_one]
+  obtain ⟨U, hU, hKH⟩ := IsHermitian.exists_unitary_conj_of_eigenvalues₀_eq _ _ h.symm
+  exact (Representation.orbitRel_apply _).mpr ⟨⟨U, hU⟩, Subtype.ext hKH.symm⟩
 
 variable (ι) in
 /-- The real diagonal matrix `diag(s)` of a list `s` indexed by `Fin n`, transported to the index
 type `ι` along the equivalence used by `Matrix.IsHermitian.eigenvalues`. For decreasing `s` its
-eigenvalue list is `s` (`TauCeti.eigenvalues₀_unitaryChamberDiagonal`). -/
+eigenvalue list is `s` (`TauCeti.hermitianEigenvalues₀_unitaryChamberDiagonal`). -/
 def unitaryChamberDiagonal (s : Fin (Fintype.card ι) → ℝ) :
     selfAdjoint.submodule ℝ (Matrix ι ι ℂ) :=
   ⟨diagonal fun k ↦ (s ((Fintype.equivOfCardEq (Fintype.card_fin _)).symm k) : ℂ),
@@ -180,28 +152,18 @@ theorem coe_unitaryChamberDiagonal (s : Fin (Fintype.card ι) → ℝ) :
   (rfl)
 
 /-- **A decreasing list is the eigenvalue list of its diagonal matrix.** -/
-theorem eigenvalues₀_unitaryChamberDiagonal {s : Fin (Fintype.card ι) → ℝ} (hs : Antitone s) :
-    hermitianEigenvalues₀ (unitaryChamberDiagonal ι s) = s := by
-  set e := Fintype.equivOfCardEq (α := Fin (Fintype.card ι)) (β := ι) (Fintype.card_fin _)
-  rw [← List.ofFn_inj, ← IsHermitian.sort_roots_charpoly_eq_eigenvalues₀,
-    coe_unitaryChamberDiagonal, charpoly_diagonal, Polynomial.roots_prod _ _ (by
-      simp [Finset.prod_ne_zero_iff, Polynomial.X_sub_C_ne_zero])]
-  simp only [Polynomial.roots_X_sub_C, Multiset.bind_singleton, Multiset.map_map,
-    Function.comp_def, RCLike.re_to_complex, ofReal_re]
-  rw [show (Finset.univ.val.map fun k ↦ s (e.symm k)) = Finset.univ.val.map s by
-    rw [← Multiset.map_univ_val_equiv e.symm, Multiset.map_map, Function.comp_def]]
-  rw [Fin.univ_val_map, Multiset.coe_sort]
-  apply List.mergeSort_of_pairwise
-  simp_rw [decide_eq_true_eq, ← List.sortedGE_iff_pairwise]
-  exact hs.sortedGE_ofFn
+theorem hermitianEigenvalues₀_unitaryChamberDiagonal {s : Fin (Fintype.card ι) → ℝ}
+    (hs : Antitone s) : hermitianEigenvalues₀ (unitaryChamberDiagonal ι s) = s :=
+  IsHermitian.eigenvalues₀_diagonal hs _
 
 /-! ### The orbit space -/
 
 variable (ι) in
-/-- **The orbit space of the coadjoint action of `U(n)` is the closed Weyl chamber.** The decreasing
-eigenvalue list is a homeomorphism from the orbit space of the conjugation action of `U(n)` on the
-Hermitian matrices onto the decreasing lists, the closed positive chamber of `𝔱* = ℝⁿ`. Its inverse
-sends `s` to the orbit of the diagonal matrix `diag(s)`. -/
+/-- **The orbit space of the conjugation action of `U(n)` on Hermitian matrices is homeomorphic to
+the closed Weyl chamber.** The decreasing eigenvalue list is a homeomorphism from this orbit space
+onto the decreasing lists, the closed positive chamber of `𝔱* = ℝⁿ`. Its inverse sends `s` to the
+orbit of the diagonal matrix `diag(s)`. On the coadjoint side this gives the bijection
+`TauCeti.unitaryCoadjointOrbitEquiv`, since `Module.Dual` carries no topology. -/
 def unitaryConjOrbitHomeomorph :
     Quotient (unitaryConjRepresentation ι).orbitRel ≃ₜ
       {s : Fin (Fintype.card ι) → ℝ // Antitone s} where
@@ -211,9 +173,9 @@ def unitaryConjOrbitHomeomorph :
   left_inv := by
     rintro ⟨H⟩
     exact Quotient.sound (unitaryConjRepresentation_orbitRel_iff.mpr
-      (eigenvalues₀_unitaryChamberDiagonal (IsHermitian.eigenvalues₀_antitone
+      (hermitianEigenvalues₀_unitaryChamberDiagonal (IsHermitian.eigenvalues₀_antitone
         (H.property : IsSelfAdjoint (H : Matrix ι ι ℂ)).isHermitian)))
-  right_inv s := Subtype.ext (eigenvalues₀_unitaryChamberDiagonal s.property)
+  right_inv s := Subtype.ext (hermitianEigenvalues₀_unitaryChamberDiagonal s.property)
   continuous_toFun := by
     refine continuous_quot_lift _ (Continuous.subtype_mk ?_ _)
     exact continuous_eigenvalues₀.comp
@@ -244,7 +206,7 @@ def unitaryConjOrbitEquivCoadjointOrbit :
       Quotient (unitaryCoadjointRepresentation ι).orbitRel :=
   Quotient.congr (unitaryTracePairingEquiv ι).toEquiv fun H K ↦ by
     simp only [Representation.orbitRel_apply, LinearEquiv.coe_toEquiv,
-      unitaryTracePairingEquiv_apply, ← unitaryTracePairing_unitaryConjRepresentation]
+      unitaryTracePairingEquiv_apply, unitaryCoadjointRepresentation_unitaryTracePairing]
     exact exists_congr fun U ↦ (unitaryTracePairing_injective (ι := ι)).eq_iff.symm
 
 @[simp]
@@ -255,7 +217,7 @@ theorem unitaryConjOrbitEquivCoadjointOrbit_mk (H : selfAdjoint.submodule ℝ (M
     unitaryTracePairingEquiv_apply]
 
 variable (ι) in
-/-- **The coadjoint orbits of `U(n)` are parametrized by the closed Weyl chamber.** Read through
+/-- **The coadjoint orbits of `U(n)` are in bijection with the closed Weyl chamber.** Read through
 the trace pairing, the coadjoint orbit of `⟨H, ·⟩` corresponds to the decreasing eigenvalue list
 of `H` (`TauCeti.unitaryCoadjointOrbitEquiv_mk`), and a decreasing list `s` to the orbit of the
 torus-fixed covector `⟨diag(s), ·⟩` (`TauCeti.unitaryCoadjointOrbitEquiv_symm_apply`). -/
@@ -280,7 +242,8 @@ theorem unitaryCoadjointOrbitEquiv_symm_apply (s : {s : Fin (Fintype.card ι) �
   rw [unitaryCoadjointOrbitEquiv, Equiv.symm_trans_apply, Equiv.symm_symm,
     Homeomorph.coe_symm_toEquiv, unitaryConjOrbitHomeomorph_symm_apply,
     unitaryConjOrbitEquivCoadjointOrbit_mk, unitaryTorusDualInclusion_apply]
-  rfl
+  -- `unitaryChamberDiagonal ι s` is the diagonal matrix of `s ∘ e.symm`.
+  exact congrArg _ (congrArg _ (Subtype.ext (coe_unitaryChamberDiagonal _)))
 
 /-- **The closed chamber is a fundamental domain for the coadjoint action of `U(n)`.** Every
 coadjoint orbit contains the torus-fixed covector `⟨diag(s), ·⟩` of exactly one decreasing list

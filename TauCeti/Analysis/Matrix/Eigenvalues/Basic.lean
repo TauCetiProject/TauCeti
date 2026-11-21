@@ -28,7 +28,10 @@ The norm in these threshold results is the Euclidean operator norm, selected by
 
 The decreasing eigenvalue list is determined by the characteristic polynomial
 (`Matrix.IsHermitian.eigenvalues₀_eq_eigenvalues₀_iff`), so it is unchanged by unitary
-conjugation (`Matrix.IsHermitian.eigenvalues₀_mul_mul_star`).
+conjugation (`Matrix.IsHermitian.eigenvalues₀_mul_mul_star`). Conversely, by the spectral theorem,
+Hermitian matrices with the same decreasing eigenvalue list are unitarily conjugate
+(`Matrix.IsHermitian.exists_unitary_conj_of_eigenvalues₀_eq`), and a decreasing list is the
+eigenvalue list of its real diagonal matrix (`Matrix.IsHermitian.eigenvalues₀_diagonal`).
 
 All statements use Mathlib's decreasing enumeration `Matrix.IsHermitian.eigenvalues₀`,
 including multiplicities. For positive-semidefinite matrices its nonzero entries form an
@@ -95,6 +98,40 @@ theorem IsHermitian.eigenvalues₀_mul_mul_star (hA : A.IsHermitian) {U : Matrix
     hUA.eigenvalues₀ = hA.eigenvalues₀ :=
   (hUA.eigenvalues₀_eq_eigenvalues₀_iff hA).2 <| by
     rw [charpoly_mul_comm, ← Matrix.mul_assoc, Unitary.star_mul_self_of_mem hU, Matrix.one_mul]
+
+/-- **Hermitian matrices with the same sorted eigenvalues are unitarily conjugate**, by the
+spectral theorem. This is the converse of `Matrix.IsHermitian.eigenvalues₀_mul_mul_star`. -/
+theorem IsHermitian.exists_unitary_conj_of_eigenvalues₀_eq (hA : A.IsHermitian)
+    (hB : B.IsHermitian) (h : hA.eigenvalues₀ = hB.eigenvalues₀) :
+    ∃ U ∈ unitaryGroup ι 𝕜, B = U * A * star U := by
+  -- Equal sorted eigenvalues give equal matrix-indexed eigenvalues.
+  have he : hA.eigenvalues = hB.eigenvalues := by
+    funext i
+    simp only [IsHermitian.eigenvalues]
+    exact congrFun h _
+  -- Both are conjugate to the same real diagonal matrix by the spectral theorem.
+  have hBA := hB.spectral_theorem
+  rw [← he, ← hA.conjStarAlgAut_star_eigenvectorUnitary, ← Unitary.conjStarAlgAut_mul_apply,
+    Unitary.conjStarAlgAut_apply] at hBA
+  exact ⟨_, (hB.eigenvectorUnitary * star hA.eigenvectorUnitary).property, hBA⟩
+
+/-- **A decreasing list is the sorted eigenvalue list of its diagonal matrix**, transported to the
+index type `ι` along the equivalence used by `Matrix.IsHermitian.eigenvalues`. -/
+theorem IsHermitian.eigenvalues₀_diagonal {s : Fin (Fintype.card ι) → ℝ} (hs : Antitone s)
+    (h : (diagonal fun k ↦
+      (s ((Fintype.equivOfCardEq (Fintype.card_fin _)).symm k) : 𝕜)).IsHermitian) :
+    h.eigenvalues₀ = s := by
+  set e := Fintype.equivOfCardEq (α := Fin (Fintype.card ι)) (β := ι) (Fintype.card_fin _)
+  rw [← List.ofFn_inj, ← IsHermitian.sort_roots_charpoly_eq_eigenvalues₀, charpoly_diagonal,
+    Polynomial.roots_prod _ _ (by simp [Finset.prod_ne_zero_iff, Polynomial.X_sub_C_ne_zero])]
+  simp only [Polynomial.roots_X_sub_C, Multiset.bind_singleton, Multiset.map_map,
+    Function.comp_def, RCLike.ofReal_re]
+  rw [show (Finset.univ.val.map fun k ↦ s (e.symm k)) = Finset.univ.val.map s by
+    rw [← Multiset.map_univ_val_equiv e.symm, Multiset.map_map, Function.comp_def]]
+  rw [Fin.univ_val_map, Multiset.coe_sort]
+  apply List.mergeSort_of_pairwise
+  simp_rw [decide_eq_true_eq, ← List.sortedGE_iff_pairwise]
+  exact hs.sortedGE_ofFn
 
 /-- Entrywise perturbations of size `ε` change every sorted eigenvalue of a Hermitian matrix
 by at most `card ι * ε`. -/
