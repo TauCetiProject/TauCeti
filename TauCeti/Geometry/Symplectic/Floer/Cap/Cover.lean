@@ -42,8 +42,10 @@ attached to this kernel (`TauCeti.Floer.capCoverSubgroup`), the quotient of the 
 at `x` to `γ`, modulo loops sweeping out tori of zero area and zero first Chern number. When `𝓛₀X`
 is locally path-connected and semilocally simply connected, for instance when `X` is locally
 equiconnected, such as a closed manifold, the projection is a covering map
-(`TauCeti.Floer.isCoveringMap_capCoverProj`), so paths and their homotopies in `𝓛₀X` lift. The
-kernel is normal, and over a path-connected `X` the cover is regular, with deck group `Γ`
+(`TauCeti.Floer.isCoveringMap_capCoverProj`), so paths and their homotopies in `𝓛₀X` lift, and a
+loop lifts to a loop of the cover exactly when the torus it sweeps out has zero area and zero first
+Chern number (`TauCeti.Floer.mem_range_mapOfEq_capCoverProj_iff`). The kernel is normal, and over
+a path-connected `X` the cover is regular, with deck group `Γ`
 (`TauCeti.Floer.capCoverDeckEquiv`): the period class of a loop `Λ` acts by transport around `Λ`
 (`TauCeti.Floer.ofContractibleLoopsHomotopyGroup_vadd_mk`). So `Γ` acts on the cap cover, and every
 fibre is a torsor under `Γ` (`TauCeti.Floer.instAddTorsorCapCoverFiber`): the difference of two
@@ -75,6 +77,8 @@ fibre over a loop based at `x` with its cap classes is not constructed here.
   homomorphism is onto for a path-connected `X`.
 * `TauCeti.Floer.isCoveringMap_capCoverProj`, `TauCeti.Floer.isRegular_capCoverProj`: the cap
   cover is a covering space, regular over a path-connected `X`.
+* `TauCeti.Floer.mem_range_mapOfEq_capCoverProj_iff`: the loops of `𝓛₀X` lifting to loops of
+  the cap cover are those sweeping out tori of zero area and zero first Chern number.
 * `TauCeti.Floer.ofContractibleLoopsHomotopyGroup_vadd_mk`: the period class of a loop of
   contractible free loops acts on the cap cover as the loop acts on the universal cover.
 * `TauCeti.Floer.CapCover.vsub_mk`: the difference of two points of a fibre is the period class of
@@ -259,6 +263,24 @@ theorem isRegular_capCoverProj [PathConnectedSpace X]
     [SemilocallySimplyConnectedSpace (contractibleLoops X)] (x : X) :
     Deck.IsRegular (capCoverProj ω c x) :=
   (isRegular_subgroupQuotientProj_iff_normal _ _).mpr inferInstance
+
+/-- **A loop of contractible free loops lifts to a loop of the cap cover**, at its base point,
+exactly when the torus it sweeps out has zero area and zero first Chern number: the subgroup of
+`π₁(𝓛₀X)` recovered by the cap cover is `TauCeti.Floer.capCoverSubgroup`. -/
+theorem mem_range_mapOfEq_capCoverProj_iff [LocallyPathConnectedSpace (contractibleLoops X)]
+    [SemilocallySimplyConnectedSpace (contractibleLoops X)] (x : X)
+    (g : FundamentalGroup (contractibleLoops X) (constContractibleLoop x)) :
+    g ∈ (FundamentalGroup.mapOfEq (x := SubgroupQuotient.basepoint _ (capCoverSubgroup ω c x))
+        ⟨capCoverProj ω c x, continuous_subgroupQuotientProj _ _⟩
+        (subgroupQuotientProj_basepoint _ _)).range ↔
+      ω (freeLoopTorusClassHom X (ContinuousMap.const Circle x) (Additive.ofMul
+          (contractibleLoopsHomotopyGroupMulEquiv x
+            (HomotopyGroup.pi1MulEquivFundamentalGroup.symm g)))) = 0 ∧
+        c (freeLoopTorusClassHom X (ContinuousMap.const Circle x) (Additive.ofMul
+          (contractibleLoopsHomotopyGroupMulEquiv x
+            (HomotopyGroup.pi1MulEquivFundamentalGroup.symm g)))) = 0 := by
+  rw [range_mapOfEq_subgroupQuotientProj, mem_capCoverSubgroup_iff,
+    SphericalPeriodGroup.ofContractibleLoopsHomotopyGroup_eq_zero_iff, toMul_ofMul]
 
 section Deck
 
