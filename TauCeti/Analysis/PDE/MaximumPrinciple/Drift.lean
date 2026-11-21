@@ -110,8 +110,11 @@ variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)}
 
 variable [DecidableEq ι]
 
-/-- Pointwise, ellipticity and `c ≥ 0` leave only the drift term to balance `λ ‖∇v‖²`. -/
-private theorem ae_sub_le_energyIntegrand_jetField
+/-- **The energy density with a bounded drift.** For uniformly elliptic `a`, a drift `‖b‖ ≤ β` and
+`c ≥ 0`, the energy density of `v ∈ H¹(Ω)` is at least `λ ‖∇v‖² - β ‖∇v‖ |v|` almost everywhere
+on `Ω`: ellipticity bounds the principal part below, `c v² ≥ 0`, and only the drift term
+`⟪b, ∇v⟫ v` can be negative. -/
+theorem ae_sub_le_energyIntegrand_jetField
     (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
     (hb_bound : ∀ x ∈ Omega, ‖b x‖ ≤ beta) (hc_nonneg : ∀ x ∈ Omega, 0 ≤ c x)
     (v : W1p mu Omega 2) :

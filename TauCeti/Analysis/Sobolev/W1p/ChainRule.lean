@@ -279,6 +279,28 @@ theorem W1p.hasWeakFDerivOn_comp (hp : p ≠ ∞) (hF : ContDiff ℝ 1 F)
   hasWeakFDerivOn_iff_forall_isCompact_closure.2 fun _ hVc hVO =>
     hasWeakFDerivOn_comp_aux hp hF hM u hVc hVO
 
+/-- A `C¹` function agrees near `[-M, M]` with a `C¹` function with bounded derivative, namely its
+product with a bump function equal to one on a neighbourhood of `[-M, M]`; the product vanishes at
+`0` when the function does. -/
+private theorem exists_contDiff_eventuallyEq_of_abs_le {Φ : ℝ → ℝ} (hΦ : ContDiff ℝ 1 Φ)
+    (M : ℝ) :
+    ∃ F : ℝ → ℝ, ∃ K : ℝ≥0, ContDiff ℝ 1 F ∧ (∀ t, ‖deriv F t‖₊ ≤ K) ∧
+      (∀ t, |t| ≤ M → F =ᶠ[𝓝 t] Φ) ∧ (Φ 0 = 0 → F 0 = 0) := by
+  set R := |M| + 1
+  let ψ : ContDiffBump (0 : ℝ) := ⟨R, R + 1, by positivity, by linarith⟩
+  have hF : ContDiff ℝ 1 fun t => ψ t * Φ t := ψ.contDiff.mul hΦ
+  obtain ⟨K, hK⟩ := (hF.continuous_deriv le_rfl).bounded_above_of_compact_support
+    (ψ.hasCompactSupport.mul_right (f' := Φ)).deriv
+  refine ⟨fun t => ψ t * Φ t, K.toNNReal, hF, fun t => ?_, fun t ht => ?_,
+    fun h0 => by simp [h0]⟩
+  · rw [← NNReal.coe_le_coe, coe_nnNorm]
+    exact (hK t).trans (Real.le_coe_toNNReal K)
+  · have ht' : t ∈ Metric.ball (0 : ℝ) R := by
+      rw [Metric.mem_ball, Real.dist_eq, sub_zero]
+      linarith [le_abs_self M]
+    filter_upwards [Metric.isOpen_ball.mem_nhds ht'] with s hs
+    rw [ψ.one_of_mem_closedBall (Metric.ball_subset_closedBall hs), one_mul]
+
 /-- **The chain rule for essentially bounded Sobolev functions.** Let `1 ≤ p < ∞` and let
 `u ∈ W^{1,p}(Ω)` be essentially bounded on `Ω`. For every `C¹` function `Φ`, the composition
 `Φ ∘ u` has the weak gradient `Φ'(u) ∇u` on `Ω`.
@@ -290,22 +312,8 @@ theorem W1p.hasWeakFDerivOn_comp_of_ae_abs_le (hp : p ≠ ∞) {Φ : ℝ → ℝ
     (hM : ∀ᵐ x ∂mu.restrict Omega, |W1p.value u x| ≤ M) :
     HasWeakFDerivOn mu Omega (fun x => Φ (W1p.value u x))
       fun x => innerSL ℝ (deriv Φ (W1p.value u x) • W1p.gradient u x) := by
-  -- Replace `Φ` by `F = ψ Φ`, with `ψ` a bump equal to one near `[-M, M]`; `F'` is bounded.
-  set R := |M| + 1
-  let ψ : ContDiffBump (0 : ℝ) := ⟨R, R + 1, by positivity, by linarith⟩
-  have hF : ContDiff ℝ 1 fun t => ψ t * Φ t := ψ.contDiff.mul hΦ
-  obtain ⟨K, hK⟩ := (hF.continuous_deriv le_rfl).bounded_above_of_compact_support
-    (ψ.hasCompactSupport.mul_right (f' := Φ)).deriv
-  have hFΦ : ∀ t, |t| ≤ M → (fun s => ψ s * Φ s) =ᶠ[𝓝 t] Φ := fun t ht => by
-    have ht' : t ∈ Metric.ball (0 : ℝ) R := by
-      rw [Metric.mem_ball, Real.dist_eq, sub_zero]
-      linarith [le_abs_self M]
-    filter_upwards [Metric.isOpen_ball.mem_nhds ht'] with s hs
-    rw [ψ.one_of_mem_closedBall (Metric.ball_subset_closedBall hs), one_mul]
-  refine ((W1p.hasWeakFDerivOn_comp hp hF (M := K.toNNReal) (fun t => ?_) u).congr_ae
-    ?_).congr_ae_deriv ?_
-  · rw [← NNReal.coe_le_coe, coe_nnNorm]
-    exact (hK t).trans (Real.le_coe_toNNReal K)
+  obtain ⟨F, K, hF, hK, hFΦ, -⟩ := exists_contDiff_eventuallyEq_of_abs_le hΦ M
+  refine ((W1p.hasWeakFDerivOn_comp hp hF hK u).congr_ae ?_).congr_ae_deriv ?_
   · filter_upwards [hM] with x hx using (hFΦ _ hx).eq_of_nhds
   · filter_upwards [hM] with x hx
     rw [(hFΦ _ hx).deriv_eq]
@@ -343,6 +351,27 @@ theorem W1p.gradient_contDiffComp_ae (hp : p ≠ ∞) (hF : ContDiff ℝ 1 F)
       fun x => deriv F (W1p.value u x) • W1p.gradient u x := by
   rw [W1p.contDiffComp, W1p.gradient_mk]
   exact MemLp.coeFn_toLp _
+
+/-- **Composition of an essentially bounded Sobolev function with a `C¹` function.** Let
+`1 ≤ p < ∞` and let `u ∈ W^{1,p}(Ω)` be essentially bounded on `Ω`. For every `C¹` function `Φ`
+with `Φ 0 = 0`, the composition `Φ ∘ u` lies in `W^{1,p}(Ω)`, with weak gradient `Φ'(u) ∇u`.
+
+Unlike `TauCeti.W1p.contDiffComp`, no bound on `Φ'` is assumed: only the values of `Φ` near the
+essential range of `u` matter. The weak gradient alone is
+`TauCeti.W1p.hasWeakFDerivOn_comp_of_ae_abs_le`. -/
+theorem W1p.exists_value_gradient_ae_eq_comp_of_ae_abs_le (hp : p ≠ ∞) {Φ : ℝ → ℝ}
+    (hΦ : ContDiff ℝ 1 Φ) (hΦ0 : Φ 0 = 0) {u : W1p mu Omega p} {M : ℝ}
+    (hM : ∀ᵐ x ∂mu.restrict Omega, |W1p.value u x| ≤ M) :
+    ∃ w : W1p mu Omega p,
+      W1p.value w =ᵐ[mu.restrict Omega] (fun x => Φ (W1p.value u x)) ∧
+        W1p.gradient w =ᵐ[mu.restrict Omega]
+          fun x => deriv Φ (W1p.value u x) • W1p.gradient u x := by
+  obtain ⟨F, K, hF, hK, hFΦ, hF0⟩ := exists_contDiff_eventuallyEq_of_abs_le hΦ M
+  refine ⟨W1p.contDiffComp hp hF hK (hF0 hΦ0) u, ?_, ?_⟩
+  · filter_upwards [W1p.value_contDiffComp_ae hp hF hK (hF0 hΦ0) u, hM] with x hx hxM
+    rw [hx, (hFΦ _ hxM).eq_of_nhds]
+  · filter_upwards [W1p.gradient_contDiffComp_ae hp hF hK (hF0 hΦ0) u, hM] with x hx hxM
+    rw [hx, (hFΦ _ hxM).deriv_eq]
 
 end ChainRule
 
