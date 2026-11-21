@@ -111,12 +111,12 @@ noncomputable def restrictedEval₂ (hφ : ∀ r, ‖φ r‖ ≤ ‖r‖) (ha : 
     have : NonarchimedeanRing S :=
       { toIsTopologicalRing := inferInstance
         is_nonarchimedean := NonarchimedeanAddGroup.is_nonarchimedean }
-    have hf := f.2.summable_weightedEvalTerm φ a hφ ha
-    have hg := g.2.summable_weightedEvalTerm φ a hφ ha
+    have hf := f.property.summable_weightedEvalTerm φ a hφ ha
+    have hg := g.property.summable_weightedEvalTerm φ a hφ ha
     exact weightedEval_mul_of_summable hf hg (hf.mul_of_nonarchimedean hg)
   map_zero' := weightedEval_zero φ a
-  map_add' f g := weightedEval_add_of_summable (f.2.summable_weightedEvalTerm φ a hφ ha)
-    (g.2.summable_weightedEvalTerm φ a hφ ha)
+  map_add' f g := weightedEval_add_of_summable (f.property.summable_weightedEvalTerm φ a hφ ha)
+    (g.property.summable_weightedEvalTerm φ a hφ ha)
 
 variable (hφ : ∀ r, ‖φ r‖ ≤ ‖r‖) (ha : ∀ i, ‖a i‖ ≤ c i)
 
@@ -128,7 +128,7 @@ theorem restrictedEval₂_apply (f : IsRestricted.subring (R := R) c) :
 theorem hasSum_restrictedEval₂ (f : IsRestricted.subring (R := R) c) :
     HasSum (weightedEvalTerm φ a f) (restrictedEval₂ φ a hφ ha f) := by
   rw [restrictedEval₂_apply, weightedEval_def]
-  exact (f.2.summable_weightedEvalTerm φ a hφ ha).hasSum
+  exact (f.property.summable_weightedEvalTerm φ a hφ ha).hasSum
 
 /-- The evaluation of a monomial `r Xᵗ` is `φ(r) aᵗ`. -/
 @[simp]

@@ -45,7 +45,7 @@ This file tests `TauCeti.MemWkpLoc` against explicit planar functions.
   interior contains the origin: away from the origin its second derivative has norm between
   `‖z‖⁻¹` and `2 ‖z‖⁻¹`, and `‖z‖ ^ (-p)` is integrable near the origin of the plane exactly when
   `p < 2`. For `p < 2` the weak second derivative across the origin is that of the unit radial
-  field `z / ‖z‖` (`TauCeti.hasWeakFDerivOn_norm_rpow_neg_one_mul_inner`).
+  field `z / ‖z‖` (`TauCeti.hasWeakFDerivOn_norm_rpow_mul_inner`).
 * The indicator of the right half-plane `{z | 0 < z.re}` or a horizontal upper half-plane
   `{z | t₀ < z.im}` has no weak derivative on any open set meeting its boundary line, so it is in
   every local `Lᵖ` class but in no local `W^{k,p}` class of positive order there.
@@ -177,17 +177,17 @@ the local class `W^{1,p}` on every set: it is bounded, and its weak derivative h
 private theorem memWkpLoc_one_norm_rpow_neg_one_mul_inner (hp : p < 2) (e : ℂ) :
     MemWkpLoc p U 1 (fun z : ℂ => ‖z‖ ^ (-1 : ℝ) * ⟪z, e⟫) := by
   refine memWkpLoc_succ_iff.2 ⟨memLpLoc_iff.2 fun K _ hK => ?_, _,
-    hasWeakFDerivOn_norm_rpow_neg_one_mul_inner (by simp [Complex.finrank_real_complex]) e _,
+    hasWeakFDerivOn_norm_rpow_mul_inner (by norm_num [Complex.finrank_real_complex]) e _,
     memWkpLoc_zero_iff.2 (memLpLoc_iff.2 fun K _ hK => ?_)⟩
   · have : IsFiniteMeasure (volume.restrict K) := ⟨by simpa using hK.measure_lt_top⟩
     exact MemLp.of_bound (by fun_prop : Measurable _).aestronglyMeasurable ‖e‖
-      (Eventually.of_forall fun z => abs_norm_rpow_neg_one_mul_inner_le e z)
+      (Eventually.of_forall fun z => by simpa using abs_norm_rpow_mul_inner_le (-1) e z)
   · have hker : MemLp (fun z : ℂ => ‖z‖⁻¹) p (volume.restrict K) :=
-      hK.memLp_norm_inv_restrict (by simpa [Complex.finrank_real_complex] using hp)
-    refine (hker.const_mul (2 * ‖e‖)).of_le (by fun_prop : Measurable _).aestronglyMeasurable
-      (Eventually.of_forall fun z => ?_)
+      hK.isBounded.memLp_norm_inv_restrict (by simpa [Complex.finrank_real_complex] using hp)
+    refine (hker.const_mul ((1 + |(-1 : ℝ)|) * ‖e‖)).of_le
+      (by fun_prop : Measurable _).aestronglyMeasurable (Eventually.of_forall fun z => ?_)
     rw [Real.norm_of_nonneg (by positivity), ← Real.rpow_neg_one]
-    exact norm_norm_rpow_neg_one_smul_innerSL_sub_le e z
+    exact norm_norm_rpow_smul_innerSL_add_le (-1) e z
 
 /-- The norm `z ↦ ‖z‖` is in the local class `W^{2,p}` on every set for `p < 2`: its second
 weak derivative has size `‖z‖⁻¹`, which is `Lᵖ` near the origin of the plane exactly when
@@ -473,7 +473,7 @@ theorem memWkpLoc_sqrt_im_ball_inter_im_pos :
 theorem memLpLoc_norm_inv_iff (hU : U ∈ 𝓝 0) :
     MemLpLoc p U (fun z : ℂ => ‖z‖⁻¹) ↔ p < 2 := by
   refine ⟨fun h => ?_, fun h => memLpLoc_iff.2 fun K _ hK =>
-    hK.memLp_norm_inv_restrict (by simpa [Complex.finrank_real_complex] using h)⟩
+    hK.isBounded.memLp_norm_inv_restrict (by simpa [Complex.finrank_real_complex] using h)⟩
   by_contra! hp2
   obtain ⟨ε, hε, hεU⟩ := nhds_basis_closedBall.mem_iff.1 hU
   exact not_memLp_norm_inv_closedBall hε (by simpa [Complex.finrank_real_complex] using hp2)

@@ -30,6 +30,10 @@ the points which lie in `s` as soon as they lie in `t`.
   the value `e n` at every negative integer `n`.
 * `Function.Injective.extend_comp_extend`: extension along a composite `f₂₃ ∘ f₁₂` is the iterated
   extension, provided only the outer map `f₂₃` is injective.
+* `Function.extend_eq_of_forall`, `Function.extend_subtypeVal_eq`, and
+  `Function.extend_prodMap_subtypeVal_eq`: `Function.extend` evaluates to the fallback at a point
+  whenever the extended function agrees with the fallback on every preimage of that point (including
+  vacuously off the range).
 * `Function.extend_subtypeVal_comp_inclusion`: extending a function on `t` and extending its
   restriction to `s ⊆ t` agree at every point of `s` and every point outside `t`.
 -/
@@ -77,6 +81,37 @@ theorem extend_natCast_sub_natCast {α : Sort*} (a : ℕ → α) (e : α) (s : �
     have hcast : (s : ℤ) + (k : ℤ) = ((s + k : ℕ) : ℤ) := by omega
     rw [hcast, Injective.extend_apply (fun _ _ h => Int.natCast_inj.mp h)]
 
+/-- If `g` agrees with the fallback `e` at every preimage of `b` under `f` (including vacuously
+when `b` has no preimage), then `Function.extend f g e b = e b`. -/
+theorem extend_eq_of_forall {α β γ : Sort*} {f : α → β} (g : α → γ) (e : β → γ) {b : β}
+    (hb : ∀ a, f a = b → g a = e b) :
+    extend f g e b = e b := by
+  classical
+  by_cases h : ∃ a, f a = b
+  · rw [extend_def, dite_eq_left_of_eq_true (eq_true h)]
+    exact hb _ (Classical.choose_spec h)
+  · exact extend_apply' g e b h
+
+/-- Extending `g : Subtype p → γ` along `Subtype.val` with fallback `e` gives `e x` whenever `g`
+agrees with `e x` on every witness of `p x` (including vacuously when `¬ p x`). -/
+theorem extend_subtypeVal_eq {α γ : Sort*} {p : α → Prop} (g : Subtype p → γ) (e : α → γ) {x : α}
+    (hg : ∀ hx : p x, g ⟨x, hx⟩ = e x) :
+    extend Subtype.val g e x = e x := by
+  refine extend_eq_of_forall g e ?_
+  rintro ⟨_, hx⟩ rfl
+  exact hg hx
+
+/-- Extending `g : Subtype p × β → γ` along `Prod.map Subtype.val id` with fallback `e` gives
+`e (x, y)` whenever `g (⟨x, hx⟩, y) = e (x, y)` for every `hx : p x` (including vacuously when
+`¬ p x`). -/
+theorem extend_prodMap_subtypeVal_eq {α β : Type*} {γ : Sort*} {p : α → Prop}
+    (g : Subtype p × β → γ) (e : α × β → γ) {x : α} (y : β)
+    (hg : ∀ hx : p x, g (⟨x, hx⟩, y) = e (x, y)) :
+    extend (Prod.map Subtype.val id) g e (x, y) = e (x, y) :=
+  extend_eq_of_forall g e fun ⟨⟨_, hx⟩, _⟩ h ↦ by
+    obtain ⟨rfl, rfl⟩ := Prod.ext_iff.1 h
+    exact hg hx
+
 /-- Extending a function on `t` along `Subtype.val`, or first restricting it to a subset `s ⊆ t`,
 gives the same value at a point `a` that lies in `s` whenever it lies in `t`: both are `g a` if
 `a ∈ s`, and both are the fallback `e a` if `a ∉ t`. -/
@@ -87,8 +122,8 @@ theorem extend_subtypeVal_comp_inclusion {α β : Type*} {s t : Set α} (h : s �
   · exact (Subtype.val_injective.extend_apply _ e ⟨a, ha hat⟩).trans
       (Subtype.val_injective.extend_apply g e ⟨a, hat⟩).symm
   · have has : a ∉ s := fun has ↦ hat (h has)
-    rw [extend_apply' _ _ _ fun ⟨b, hb⟩ ↦ has (hb ▸ b.2),
-      extend_apply' _ _ _ fun ⟨b, hb⟩ ↦ hat (hb ▸ b.2)]
+    rw [extend_apply' _ _ _ fun ⟨b, hb⟩ ↦ has (hb ▸ b.property),
+      extend_apply' _ _ _ fun ⟨b, hb⟩ ↦ hat (hb ▸ b.property)]
 
 /-- `Function.extend` along a composite `f₂₃ ∘ f₁₂` is the iterated extension, provided only the
 outer map `f₂₃` is injective. The inner extension of `g` along `f₁₂` uses the fallback `e' ∘ f₂₃`,

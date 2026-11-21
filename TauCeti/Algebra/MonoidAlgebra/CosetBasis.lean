@@ -11,7 +11,6 @@ public import Mathlib.RingTheory.Finiteness.Basic
 public import TauCeti.GroupTheory.Coset.Basic
 import Mathlib.Algebra.MonoidAlgebra.Basic
 import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
-import TauCeti.Algebra.Module.Projective.Trans
 
 /-!
 # Coset bases of group algebras
@@ -127,7 +126,7 @@ theorem _root_.Subgroup.restrictSubgroup_isScalarTower_finite_projective (C : Su
   have hAX : IsScalarTower R[C] R[G] X := ⟨fun r s x ↦ by
     rw [hX r (s • x)]
     exact mul_smul (φ r) s x⟩
-  refine ⟨hAA, hAX, ⟨fun a r x ↦ ?_⟩, .trans R[G] X, .trans R[G] X⟩
+  refine ⟨hAA, hAX, ⟨fun a r x ↦ ?_⟩, .trans R[G] X, .trans R[C] R[G] X⟩
   rw [hX (a • r) x, hX r x]
   exact (congrArg (· • x) (map_smul φ a r)).trans (smul_assoc a (φ r) x)
 

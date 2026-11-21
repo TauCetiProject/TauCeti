@@ -8,7 +8,13 @@ module
 public import Mathlib.Analysis.Normed.Lp.ProdLp
 public import Mathlib.Analysis.Normed.Operator.NNNorm
 public import Mathlib.LinearAlgebra.Dimension.LinearMap
+public import Mathlib.Algebra.Algebra.Spectrum.Basic
+public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
+public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
+import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
+import Mathlib.Analysis.Normed.Operator.Prod
 import TauCeti.LinearAlgebra.Dimension.Submodule
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
 # The `ℓ^p` product: coordinate bounds, components of indicators, and block sums
@@ -28,8 +34,10 @@ of the two factors.
 Finally, it bundles the componentwise action of two continuous linear maps `f` and `g` on
 `WithLp p (α × β)` as a continuous linear map `f.withLpProdMap p g`, the continuous counterpart of
 Mathlib's `LinearIsometry.withLpProdMap`. For `p = 2` and inner product spaces this is the
-orthogonal block sum `f ⊕ g`. It is additive in the pair `(f, g)`, its rank is the sum of the
-ranks of `f` and `g`, and its operator norm is the larger of the two operator norms. The
+orthogonal block sum `f ⊕ g`. It is compatible with the algebraic operations on the pair
+`(f, g)` and continuous in it, its rank is the sum of the ranks of `f` and `g`, it is invertible
+exactly when `f` and `g` are, so the spectrum of a block sum of endomorphisms is the union of
+their spectra, and its operator norm is the larger of the two operator norms. The
 projections onto the factors and the inclusions of the factors are contractions, and fixing one
 coordinate embeds the other factor isometrically into `WithLp p (α × β)`.
 
@@ -54,6 +62,12 @@ coordinate embeds the other factor isometrically into `WithLp p (α × β)`.
   continuous-linear bundlings `(f, g) ↦ f ⊕ g` and `f ↦ f ⊕ f`.
 * `LinearMap.rank_withLpMap` — lifting a linear map to `WithLp` preserves its rank.
 * `ContinuousLinearMap.rank_withLpProdMap` — `rank (f ⊕ g) = rank f + rank g`.
+* `ContinuousLinearMap.finrank_range_withLpProdMap`,
+  `ContinuousLinearMap.finiteDimensional_range_withLpProdMap_iff` — the same for finite ranks.
+* `ContinuousLinearMap.isInvertible_withLpProdMap_iff` — `f ⊕ g` is invertible exactly when `f`
+  and `g` are.
+* `ContinuousLinearMap.spectrum_withLpProdMap` — the spectrum of `f ⊕ g` is the union of the
+  spectra of `f` and `g`.
 * `ContinuousLinearMap.norm_withLpProdMap` — `‖f ⊕ g‖ = max ‖f‖ ‖g‖`.
 * `WithLp.norm_fstL_le_one`, `WithLp.norm_sndL_le_one`,
   `WithLp.norm_prodContinuousLinearEquiv_symm_comp_inl_le_one`,
@@ -262,6 +276,14 @@ def withLpProdMap (f : α →L[𝕜] α') (g : β →L[𝕜] β') :
   (WithLp.prodContinuousLinearEquiv p 𝕜 α' β').symm.toContinuousLinearMap ∘L f.prodMap g ∘L
     (WithLp.prodContinuousLinearEquiv p 𝕜 α β).toContinuousLinearMap
 
+/-- The block sum `f ⊕ g` is `f.prodMap g`, conjugated by the identification of
+`WithLp p (α × β)` with `α × β`. -/
+theorem withLpProdMap_def (f : α →L[𝕜] α') (g : β →L[𝕜] β') :
+    f.withLpProdMap p g =
+      (WithLp.prodContinuousLinearEquiv p 𝕜 α' β').symm.toContinuousLinearMap ∘L f.prodMap g ∘L
+        (WithLp.prodContinuousLinearEquiv p 𝕜 α β).toContinuousLinearMap :=
+  (rfl)
+
 variable {p}
 
 @[simp]
@@ -281,6 +303,43 @@ theorem withLpProdMap_zero :
     (0 : α →L[𝕜] α').withLpProdMap p (0 : β →L[𝕜] β') = 0 := by
   ext x
   simp
+
+/-- The block sum of the identities is the identity. -/
+@[simp]
+theorem withLpProdMap_id :
+    (ContinuousLinearMap.id 𝕜 α).withLpProdMap p (ContinuousLinearMap.id 𝕜 β) =
+      ContinuousLinearMap.id 𝕜 (WithLp p (α × β)) :=
+  (rfl)
+
+/-- The block sum of the units is the unit. -/
+@[simp]
+theorem withLpProdMap_one : (1 : α →L[𝕜] α).withLpProdMap p (1 : β →L[𝕜] β) = 1 :=
+  (rfl)
+
+/-- The block sum of composites is the composite of the block sums. -/
+theorem withLpProdMap_comp {α'' β'' : Type*} [TopologicalSpace α''] [AddCommGroup α'']
+    [Module 𝕜 α''] [TopologicalSpace β''] [AddCommGroup β''] [Module 𝕜 β''] (f' : α' →L[𝕜] α'')
+    (f : α →L[𝕜] α') (g' : β' →L[𝕜] β'') (g : β →L[𝕜] β') :
+    (f'.comp f).withLpProdMap p (g'.comp g) = (f'.withLpProdMap p g').comp (f.withLpProdMap p g) :=
+  (rfl)
+
+/-- The block sum of products is the product of the block sums. -/
+theorem withLpProdMap_mul (f f' : α →L[𝕜] α) (g g' : β →L[𝕜] β) :
+    (f * f').withLpProdMap p (g * g') = f.withLpProdMap p g * f'.withLpProdMap p g' :=
+  (rfl)
+
+/-- A block sum is invertible exactly when both blocks are. -/
+@[simp]
+theorem isInvertible_withLpProdMap_iff {f : α →L[𝕜] α'} {g : β →L[𝕜] β'} :
+    (f.withLpProdMap p g).IsInvertible ↔ f.IsInvertible ∧ g.IsInvertible := by
+  simp only [withLpProdMap_def, isInvertible_equiv_comp, isInvertible_comp_equiv,
+    isInvertible_prodMap_iff]
+
+/-- A block sum of endomorphisms is a unit exactly when both blocks are. -/
+@[simp]
+theorem isUnit_withLpProdMap_iff {f : α →L[𝕜] α} {g : β →L[𝕜] β} :
+    IsUnit (f.withLpProdMap p g) ↔ IsUnit f ∧ IsUnit g := by
+  simp only [← isInvertible_iff_isUnit, isInvertible_withLpProdMap_iff]
 
 end Topological
 
@@ -332,6 +391,35 @@ theorem rank_withLpProdMap {p : ℝ≥0∞} {𝕜 α β : Type*} {α' : Type u} 
     (f.withLpProdMap p g).rank = Cardinal.lift.{v} f.rank + Cardinal.lift.{u} g.rank := by
   rw [coe_withLpProdMap, LinearMap.rank_withLpMap, LinearMap.rank_prodMap]
 
+section DivisionRing
+
+variable {p : ℝ≥0∞} {𝕜 α β α' β' : Type*} [DivisionRing 𝕜]
+  [TopologicalSpace α] [AddCommGroup α] [Module 𝕜 α]
+  [TopologicalSpace β] [AddCommGroup β] [Module 𝕜 β]
+  [TopologicalSpace α'] [AddCommGroup α'] [Module 𝕜 α']
+  [TopologicalSpace β'] [AddCommGroup β'] [Module 𝕜 β']
+
+/-- The rank of a block sum is the sum of the ranks of its blocks, when these are finite. -/
+theorem finrank_range_withLpProdMap (f : α →L[𝕜] α') (g : β →L[𝕜] β')
+    [FiniteDimensional 𝕜 f.range] [FiniteDimensional 𝕜 g.range] :
+    Module.finrank 𝕜 (f.withLpProdMap p g).range =
+      Module.finrank 𝕜 f.range + Module.finrank 𝕜 g.range := by
+  have h := rank_withLpProdMap (p := p) f g
+  rw [LinearMap.rank, LinearMap.rank, LinearMap.rank] at h
+  rw [Module.finrank, Module.finrank, Module.finrank, h]
+  exact Cardinal.toNat_lift_add_lift (Module.rank_lt_aleph0 _ _) (Module.rank_lt_aleph0 _ _)
+
+/-- A block sum has finite rank exactly when both blocks do. -/
+@[simp]
+theorem finiteDimensional_range_withLpProdMap_iff {f : α →L[𝕜] α'} {g : β →L[𝕜] β'} :
+    FiniteDimensional 𝕜 (f.withLpProdMap p g).range ↔
+      FiniteDimensional 𝕜 f.range ∧ FiniteDimensional 𝕜 g.range := by
+  have h := rank_withLpProdMap (p := p) f g
+  rw [LinearMap.rank, LinearMap.rank, LinearMap.rank] at h
+  simp only [← Module.rank_lt_aleph0_iff, h, Cardinal.add_lt_aleph0_iff, Cardinal.lift_lt_aleph0]
+
+end DivisionRing
+
 section Normed
 
 variable {p : ℝ≥0∞} [Fact (1 ≤ p)] {𝕜 α β α' β' : Type*} [NontriviallyNormedField 𝕜]
@@ -360,10 +448,10 @@ theorem nnnorm_withLpProdMap (f : α →L[𝕜] α') (g : β →L[𝕜] β') :
     ‖f.withLpProdMap p g‖₊ = max ‖f‖₊ ‖g‖₊ :=
   NNReal.eq <| by simp
 
-/-- Scalar multiplication distributes over an `L^p` block sum. -/
+/-- The block sum of scalar multiples is the scalar multiple of the block sum. -/
 theorem withLpProdMap_smul (c : 𝕜) (f : α →L[𝕜] α') (g : β →L[𝕜] β') :
-    (c • f).withLpProdMap p (c • g) = c • f.withLpProdMap p g := by
-  ext x; simp [← WithLp.toLp_smul]
+    (c • f).withLpProdMap p (c • g) = c • f.withLpProdMap p g :=
+  (rfl)
 
 variable (p 𝕜 α β α' β') in
 /-- Bundling `ContinuousLinearMap.withLpProdMap` as a continuous linear map on operator pairs. -/
@@ -392,6 +480,41 @@ noncomputable def withLpDiagL :
 @[simp]
 theorem withLpDiagL_apply (f : α →L[𝕜] α') :
     withLpDiagL p 𝕜 α α' f = f.withLpProdMap p f := (rfl)
+
+/-- The block sum depends continuously on its blocks. -/
+@[fun_prop]
+theorem _root_.Continuous.withLpProdMap {X : Type*} [TopologicalSpace X] {f : X → α →L[𝕜] α'}
+    {g : X → β →L[𝕜] β'} (hf : Continuous f) (hg : Continuous g) :
+    Continuous fun x ↦ (f x).withLpProdMap p (g x) :=
+  continuous_const.clm_comp
+    (((prodMapL 𝕜 α α' β β').continuous.comp (hf.prodMk hg)).clm_comp continuous_const)
+
+/-- The block sum depends continuously on its blocks. -/
+@[fun_prop]
+theorem _root_.ContinuousOn.withLpProdMap {X : Type*} [TopologicalSpace X] {f : X → α →L[𝕜] α'}
+    {g : X → β →L[𝕜] β'} {s : Set X} (hf : ContinuousOn f s) (hg : ContinuousOn g s) :
+    ContinuousOn (fun x ↦ (f x).withLpProdMap p (g x)) s :=
+  continuousOn_const.clm_comp
+    (((prodMapL 𝕜 α α' β β').continuous.comp_continuousOn (hf.prodMk hg)).clm_comp
+      continuousOn_const)
+
+/-- The spectrum of a block sum of endomorphisms is the union of the spectra of its blocks. -/
+@[simp]
+theorem spectrum_withLpProdMap {R : Type*} [CommSemiring R] [Algebra R 𝕜] [Algebra R (α →L[𝕜] α)]
+    [Algebra R (β →L[𝕜] β)] [Algebra R (WithLp p (α × β) →L[𝕜] WithLp p (α × β))]
+    [IsScalarTower R 𝕜 (α →L[𝕜] α)] [IsScalarTower R 𝕜 (β →L[𝕜] β)]
+    [IsScalarTower R 𝕜 (WithLp p (α × β) →L[𝕜] WithLp p (α × β))] (f : α →L[𝕜] α)
+    (g : β →L[𝕜] β) :
+    spectrum R (f.withLpProdMap p g) = spectrum R f ∪ spectrum R g := by
+  ext r
+  have h : algebraMap R (WithLp p (α × β) →L[𝕜] WithLp p (α × β)) r =
+      (algebraMap R (α →L[𝕜] α) r).withLpProdMap p (algebraMap R (β →L[𝕜] β) r) := by
+    rw [IsScalarTower.algebraMap_apply R 𝕜, IsScalarTower.algebraMap_apply R 𝕜 (α →L[𝕜] α),
+      IsScalarTower.algebraMap_apply R 𝕜 (β →L[𝕜] β)]
+    generalize algebraMap R 𝕜 r = k
+    simp only [Algebra.algebraMap_eq_smul_one, withLpProdMap_smul, withLpProdMap_one]
+  simp only [spectrum.mem_iff, Set.mem_union, h, ← withLpProdMap_sub, isUnit_withLpProdMap_iff,
+    not_and_or]
 
 end Normed
 

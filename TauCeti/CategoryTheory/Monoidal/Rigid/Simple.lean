@@ -7,7 +7,9 @@ module
 
 public import Mathlib.CategoryTheory.Preadditive.Schur
 public import TauCeti.CategoryTheory.Monoidal.Rigid.Mate
+public import TauCeti.CategoryTheory.Linear.Endomorphism
 public import TauCeti.CategoryTheory.Monoidal.Rigid.Preadditive
+public import TauCeti.CategoryTheory.Semisimple.Basic
 
 /-!
 # Duals of simple objects
@@ -30,7 +32,8 @@ zero tensor product.
 For a split simple member of an exact pairing, Frobenius reciprocity and Schur's lemma show
 that every morphism from the paired tensor product to the unit is a scalar multiple of the
 evaluation. Both choices of the simple member are available; they control the two categorical
-trace pairings.
+trace pairings. In a finite semisimple category with simple unit, every nonzero morphism
+`η : 𝟙_ C ⟶ Y ⊗ X` then splits, and composing it with the evaluation gives an invertible scalar.
 
 ## References
 
@@ -128,5 +131,35 @@ theorem hom_tensorUnit_eq_smul_evaluation_of_simple_left (k : Type*) [Field k] [
   simp only [e, LinearEquiv.trans_apply, Linear.homCongr_apply, Iso.refl_inv,
     Category.id_comp, tensorLeftHomLinearEquiv_apply]
   simp [tensorLeftHomEquiv, ExactPairing.evaluation_coevaluation]
+
+section FiniteSemisimple
+
+variable (k : Type*) [Field k] [IsAlgClosed k] [Abelian C] [MonoidalPreadditive C] [Linear k C]
+  [MonoidalLinear k C] [IsFiniteSemisimpleCategory C] [Simple (𝟙_ C)]
+
+include k in
+/-- **Schur's lemma for an exact pairing with simple right member**: if `Y` is simple with
+finite-dimensional endomorphisms, every nonzero `η : 𝟙_ C ⟶ Y ⊗ X` closes up with the evaluation
+of an exact pairing of `X` and `Y` to an invertible scalar. Indeed `η` splits, and its retraction
+is a scalar multiple of the evaluation. -/
+theorem isIso_comp_evaluation_of_simple_right {X Y : C} [ExactPairing X Y] [Simple Y]
+    [FiniteDimensional k (Y ⟶ Y)] {η : 𝟙_ C ⟶ Y ⊗ X} (hη : η ≠ 0) : IsIso (η ≫ ε_ X Y) := by
+  have : IsSplitMono η := isSplitMono_of_nonzero_from_simple hη
+  obtain ⟨c, hc⟩ := hom_tensorUnit_eq_smul_evaluation_of_simple_right k (retraction η)
+  refine Linear.isIso_of_smul_eq_id (c := c) ?_
+  rw [← Linear.comp_smul, ← hc, IsSplitMono.id]
+
+include k in
+/-- **Schur's lemma for an exact pairing with simple left member**: if `X` is simple with
+finite-dimensional endomorphisms, every nonzero `η : 𝟙_ C ⟶ Y ⊗ X` closes up with the evaluation
+of an exact pairing of `X` and `Y` to an invertible scalar. -/
+theorem isIso_comp_evaluation_of_simple_left {X Y : C} [ExactPairing X Y] [Simple X]
+    [FiniteDimensional k (X ⟶ X)] {η : 𝟙_ C ⟶ Y ⊗ X} (hη : η ≠ 0) : IsIso (η ≫ ε_ X Y) := by
+  have : IsSplitMono η := isSplitMono_of_nonzero_from_simple hη
+  obtain ⟨c, hc⟩ := hom_tensorUnit_eq_smul_evaluation_of_simple_left k (retraction η)
+  refine Linear.isIso_of_smul_eq_id (c := c) ?_
+  rw [← Linear.comp_smul, ← hc, IsSplitMono.id]
+
+end FiniteSemisimple
 
 end TauCeti

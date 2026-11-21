@@ -26,6 +26,8 @@ For the residue `a = 𝔑𝔭` of a prime `𝔭 ∤ ℓ` of a number field, this
 of `𝔭` in the cyclotomic extension of level `ℓ ^ r`, so the statement says that these residue
 degrees become divisible by any given power of `ℓ` along the cyclotomic tower.
 
+Unless `n` is `1` or `2`, the residue `-1` has order `2`, so `2` divides the exponent of `(ℤ/n)ˣ`.
+
 For `n ≠ 0`, a residue whose order is `φ(n)` is a primitive root modulo `n`. A primitive root
 modulo `n` is one modulo every divisor of `n`, and for an odd prime `p` a primitive root modulo
 `p ²` is one modulo every power of `p`.
@@ -37,10 +39,14 @@ multiples `k` of `m`; for `b = 1` this decides which `q ^ k + 1` are divisible b
 
 ## Main results
 
+* `ZMod.orderOf_natCast_pos_iff`, `ZMod.orderOf_natCast_pos_of_not_dvd`: `(a : ZMod n)` has
+  positive multiplicative order iff `a.Coprime n`, and in particular whenever `a` is a prime not
+  dividing `n`.
 * `ZMod.orderOf_natCast_dvd_orderOf_natCast`: for `m ∣ n`, the order of `a` modulo `m` divides its
   order modulo `n`.
 * `ZMod.eventually_pow_dvd_orderOf_natCast`: for every `j`, `ℓ ^ j` divides the order of `a`
   modulo `ℓ ^ r` for all large `r`.
+* `ZMod.two_dvd_exponent_units`: for `n ≠ 1, 2`, `2` divides the exponent of `(ℤ/n)ˣ`.
 * `ZMod.isUnit_of_orderOf_eq_totient`, `ZMod.zpowers_eq_top_of_orderOf_eq_totient`: a residue of
   order `φ(n)` is a unit, and generates `(ℤ/n)ˣ`.
 * `ZMod.exists_orderOf_natCast_eq_totient`: if `(ℤ/n)ˣ` is cyclic, some natural number has order
@@ -66,6 +72,22 @@ multiples `k` of `m`; for `b = 1` this decides which `q ^ k + 1` are divisible b
 public section
 
 namespace ZMod
+
+/-- For any natural numbers `a` and `n` (including `n = 0`), the residue of `a` modulo `n` has
+positive multiplicative order if and only if `a` and `n` are coprime. -/
+theorem orderOf_natCast_pos_iff {n a : ℕ} :
+    0 < orderOf (a : ZMod n) ↔ a.Coprime n := by
+  have : Finite (ZMod n)ˣ := by
+    obtain rfl | _ := eq_zero_or_neZero n
+    · exact inferInstanceAs (Finite ℤˣ)
+    · infer_instance
+  rw [orderOf_pos_iff, isOfFinOrder_iff_isUnit, isUnit_iff_coprime]
+
+/-- If a prime `p` does not divide `m`, then the residue of `p` modulo `m` has positive
+multiplicative order. -/
+theorem orderOf_natCast_pos_of_not_dvd {m p : ℕ} (hp : p.Prime) (hm : ¬ p ∣ m) :
+    0 < orderOf (p : ZMod m) :=
+  orderOf_natCast_pos_iff.mpr (hp.coprime_iff_not_dvd.mpr hm)
 
 /-- For `m ∣ n`, the order of a natural number `a` modulo `m` divides its order modulo `n`, since
 reduction modulo `m` is a ring homomorphism `ZMod n →+* ZMod m`. -/
@@ -130,6 +152,13 @@ theorem eventually_pow_dvd_orderOf_natCast {ℓ : ℕ} (hℓ : ℓ.Prime) {a : �
   have hlt : r < ℓ ^ r := Nat.lt_pow_self hℓ.one_lt
   have := Nat.le_of_dvd haB hdvd'
   omega
+
+/-- Unless `n` is `1` or `2`, the residue `-1` has order `2` in `(ℤ/n)ˣ` (for `n = 0` this is
+`ℤˣ = {±1}`), so `2` divides the exponent of the unit group. -/
+theorem two_dvd_exponent_units {n : ℕ} (h1 : n ≠ 1) (h2 : n ≠ 2) :
+    2 ∣ Monoid.exponent (ZMod n)ˣ := by
+  have : Nontrivial (ZMod n) := nontrivial_iff.2 h1
+  simpa [ringChar_zmod_n, h2] using Monoid.order_dvd_exponent (-1 : (ZMod n)ˣ)
 
 /-! ### Primitive roots -/
 

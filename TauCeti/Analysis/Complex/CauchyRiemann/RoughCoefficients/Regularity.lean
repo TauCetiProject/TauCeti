@@ -297,7 +297,7 @@ private theorem isWeakCRSolution_of_hasWeakFDerivOn_ae {Ω : Opens ℂ} {p : ℝ
   refine (isWeakCRSolution_congr_ae hJJ' .rfl .rfl .rfl .rfl).2 <|
     isWeakCRSolution_iff.2 ⟨hξ2, hη, fun φ =>
       ⟨hc'.integrable_inner_crFormalAdjoint hp2.le hξ2 φ, ?_⟩⟩
-  rw [hc'.integral_inner_crFormalAdjoint_eq_sub_add hp2.le hξ2 φ]
+  rw [hc'.integral_inner_crFormalAdjoint_eq_terms hp2.le hξ2 φ]
   -- Integrate `J' ξ` by parts in direction `I` by mollifying `J'` on a precompact `W ⊆ Ω`.
   have hibpI : (∫ z, ⟪fderiv ℝ (φ : ℂ → E) z I, J' z (ξ z)⟫_ℝ) +
       (∫ z, ⟪(φ : ℂ → E) z, DJ z I (ξ z)⟫_ℝ) = -∫ z, ⟪(φ : ℂ → E) z, J' z (Dξ z I)⟫_ℝ := by
@@ -338,22 +338,15 @@ private theorem isWeakCRSolution_of_hasWeakFDerivOn_ae {Ω : Opens ℂ} {p : ℝ
           ContinuousLinearMap.precompL_apply, ContinuousLinearMap.flip_apply,
           ContinuousLinearMap.adjointRealCLM_apply, TestFunction.lineDerivOp_apply_eq_fderiv,
           inner_add_left, ContinuousLinearMap.adjoint_inner_left, add_comm]
-      have hDJ_eq (z : ℂ) :
-          ⟪(φ : ℂ → E) z, fderiv ℝ (J_n n) z I (ξ z)⟫_ℝ = ⟪(φ : ℂ → E) z, DJ_n n z I (ξ z)⟫_ℝ := by
-        by_cases hz : z ∈ tsupport (φ : ℂ → E)
-        · have hd := (hc'.hasWeakFDerivOn.mono
-              (subset_closure.trans hWΩ)).fderiv_indicator_convolution_normed
-            hJW hDJW hp1 hp1 (ρ n) z (hball n z hz)
-          simp only [convolution_flip] at hd; rw [hd]
-        · simp [image_eq_zero_of_notMem_tsupport hz]
       have hi1 := (∂_{I} φ).integrable_inner (hDξ.locallyIntegrableOn.continuousOn_clm_apply hloc
         (hJn_smooth n).continuous.continuousOn)
       have hi2 := φ.integrable_inner (hDξ.locallyIntegrableOn.continuousOn_clm_apply hloc
         (((hJn_smooth n).continuous_fderiv (by simp)).clm_apply
           (continuous_const (y := I))).continuousOn)
       simp_rw [hpt] at hweak
-      rw [integral_add hi1 hi2] at hweak
-      simp_rw [hDJ_eq] at hweak
+      rw [integral_add hi1 hi2,
+        hc'.hasWeakFDerivOn.integral_inner_mollified_fderiv_eq hp1
+          hWΩ hJW hDJW (ρ n) φ (hball n) (fun z M => M I (ξ z))] at hweak
       simpa only [Ψ, TestFunction.bilinLeftCLM_apply, B, ContinuousLinearMap.flip_apply,
         ContinuousLinearMap.adjointRealCLM_apply, ContinuousLinearMap.adjoint_inner_left]
         using hweak

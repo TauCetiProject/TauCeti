@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.LocalFrame
+public import Mathlib.Topology.VectorBundle.FiniteDimensional
 public import TauCeti.Geometry.Manifold.VectorBundle.MaximalAtlas
 
 /-!
@@ -47,6 +48,9 @@ holomorphic section.
 * `IsLocalFrameOn.contMDiffOn_coeff`: a Cᵐ section has Cᵐ coefficients in a Cⁿ frame, for m ≤ n.
 * `IsLocalFrameOn.continuousOn_coeff_totalSpace`: the coefficients of a vector in a frame depend
   continuously on the vector, as a point of the total space.
+* `IsLocalFrameOn.coeff_sum_smul`: the coefficients of a combination of frame vectors are its
+  coefficients.
+* `IsLocalFrameOn.card_eq_finrank`: a frame has as many members as the dimension of the fibre.
 * `IsLocalFrameOn.trivialization_mem_maximalAtlas`: the trivialization of a `C^n` local frame lies
   in the maximal atlas of `C^n` trivializations.
 * `Bundle.Trivialization.isLocalFrameOn_symm_of_mem_maximalAtlas`: a member of the maximal atlas
@@ -141,7 +145,7 @@ variable [Fintype ι] (s) (b : Basis ι 𝕜 F)
 /-- The frame `s` at `x`, read in a trivialization `e'`, as the operator of `F` sending `w` to the
 coordinates in `e'` of the combination of the frame with coefficients `b.repr w`. -/
 private def frameOperator (e' : Trivialization F (π F V)) (x : B) : F →L[𝕜] F :=
-  ∑ i, ContinuousLinearMap.smulRightL 𝕜 F F
+  ∑ i, ContinuousLinearMap.smulRightL 𝕜 𝕜 𝕜 F F
     ((ContinuousLinearMap.proj i).comp (b.equivFunL : F →L[𝕜] ι → 𝕜)) (e' ⟨x, s i x⟩).2
 
 variable {s} (e' : Trivialization F (π F V)) [e'.IsLinear 𝕜] {x : B}
@@ -194,7 +198,7 @@ include hs in
 private theorem continuousOn_frameOperator :
     ContinuousOn (frameOperator s b e') (U ∩ e'.baseSet) := by
   refine continuousOn_finsetSum _ fun i _ ↦ ?_
-  refine (ContinuousLinearMap.smulRightL 𝕜 F F _).continuous.comp_continuousOn ?_
+  refine (ContinuousLinearMap.smulRightL 𝕜 𝕜 𝕜 F F _).continuous.comp_continuousOn ?_
   exact continuous_snd.comp_continuousOn (e'.continuousOn.comp
     ((hs.contMDiffOn i).continuousOn.mono inter_subset_left) fun y hy ↦ e'.mem_source.2 hy.2)
 
@@ -219,7 +223,7 @@ variable [VectorBundle 𝕜 F V] [Finite ι] (hs : IsLocalFrameOn IB F n s U) (h
 
 include hU in
 private theorem continuousAt_coords {p : TotalSpace F V} (hp : p.proj ∈ U) :
-    ContinuousAt (fun q : TotalSpace F V ↦ hs.coords b q.proj q.2) p := by
+    ContinuousAt (fun q : TotalSpace F V ↦ hs.coords b q.proj q.snd) p := by
   let := Fintype.ofFinite ι
   set e' := trivializationAt F V p.proj
   have hp' : p.proj ∈ e'.baseSet := FiberBundle.mem_baseSet_trivializationAt' p.proj
@@ -228,7 +232,7 @@ private theorem continuousAt_coords {p : TotalSpace F V} (hp : p.proj ∈ U) :
     (e'.continuousAt (e'.mem_source.2 hp')).snd).congr ?_
   filter_upwards [hproj.preimage_mem_nhds ((hU.inter e'.open_baseSet).mem_nhds ⟨hp, hp'⟩)]
     with q hq
-  exact (coords_eq_inverse b e' hs hq.1 hq.2 q.2).symm
+  exact (coords_eq_inverse b e' hs hq.1 hq.2 q.snd).symm
 
 include hU in
 private theorem continuousAt_vec {q : B × F} (hq : q.1 ∈ U) :
@@ -248,7 +252,7 @@ private theorem continuousAt_vec {q : B × F} (hq : q.1 ∈ U) :
 `b` of the model fibre: over `U`, a vector of `V x` is sent to the vector of `F` with the same
 coordinates in `b` as it has in the frame `s · x`. -/
 def trivialization : Trivialization F (π F V) where
-  toFun p := (p.proj, hs.coords b p.proj p.2)
+  toFun p := (p.proj, hs.coords b p.proj p.snd)
   invFun q := TotalSpace.mk' F q.1 (hs.vec b q.1 q.2)
   source := π F V ⁻¹' U
   target := U ×ˢ univ
@@ -277,7 +281,7 @@ theorem baseSet_trivialization : (hs.trivialization hU b).baseSet = U :=
   (rfl)
 
 private theorem trivialization_apply_eq (p : TotalSpace F V) :
-    hs.trivialization hU b p = (p.proj, hs.coords b p.proj p.2) :=
+    hs.trivialization hU b p = (p.proj, hs.coords b p.proj p.snd) :=
   (rfl)
 
 private theorem trivialization_symm_apply_eq (q : B × F) :
@@ -334,7 +338,7 @@ theorem trivialization_mem_maximalAtlas [ContMDiffVectorBundle n F V IB] :
   -- Read in `e'`, the frame is a `C^n` family of operators, its coordinates in `e'` being `C^n`.
   have hframe : ContMDiffOn IB 𝓘(𝕜, F →L[𝕜] F) n (frameOperator s b e') (U ∩ e'.baseSet) := by
     refine contMDiffOn_finsetSum fun i _ ↦ ?_
-    refine (ContinuousLinearMap.smulRightL 𝕜 F F _).contMDiff.comp_contMDiffOn ?_
+    refine (ContinuousLinearMap.smulRightL 𝕜 𝕜 𝕜 F F _).contMDiff.comp_contMDiffOn ?_
     exact (Trivialization.contMDiffOn_section_iff_of_mem_maximalAtlas
       (Trivialization.mem_maximalAtlas_of_memTrivializationAtlas IB n e')
       inter_subset_right).1 ((hs.contMDiffOn i).mono inter_subset_left)
@@ -381,7 +385,7 @@ theorem contMDiffOn_coeff [VectorBundle 𝕜 F V] [FiniteDimensional 𝕜 F]
 vector, as a point of the total space over `U`. -/
 theorem continuousOn_coeff_totalSpace [VectorBundle 𝕜 F V] [FiniteDimensional 𝕜 F]
     (hs : IsLocalFrameOn IB F n s U) (hU : IsOpen U) (i : ι) :
-    ContinuousOn (fun p : TotalSpace F V ↦ hs.coeff i p.proj p.2) (π F V ⁻¹' U) := by
+    ContinuousOn (fun p : TotalSpace F V ↦ hs.coeff i p.proj p.snd) (π F V ⁻¹' U) := by
   intro p hp
   let := hs.fintypeOfFiniteDimensional hp
   let b : Basis ι 𝕜 F := (hs.toBasisAt hp).map
@@ -391,12 +395,32 @@ theorem continuousOn_coeff_totalSpace [VectorBundle 𝕜 F V] [FiniteDimensional
       (π F V ⁻¹' U) :=
     continuous_snd.comp_continuousOn (hs.trivialization hU b).continuousOn_toFun
   have heq (q : TotalSpace F V) (hq : q ∈ π F V ⁻¹' U) :
-      hs.coeff i q.proj q.2 = b.coord i (hs.trivialization hU b q).2 := by
+      hs.coeff i q.proj q.snd = b.coord i (hs.trivialization hU b q).2 := by
     obtain ⟨x, v⟩ := q
     rw [hs.trivialization_apply hU b hq]
     simp [IsLocalFrameOn.coeff, mem_preimage.mp hq, Basis.coord_apply, Basis.equiv]
   exact (((b.coord i).toContinuousLinearMap.continuous.comp_continuousOn htriv) p hp).congr
     heq (heq p hp)
+
+omit [CompleteSpace 𝕜] in
+/-- The coefficient `i` of the frame vector `s j x` is `1` if `j = i` and `0` otherwise. -/
+theorem coeff_apply_self [DecidableEq ι] (hs : IsLocalFrameOn IB F n s U) {x : B} (hx : x ∈ U)
+    (i j : ι) : hs.coeff i x (s j x) = if j = i then 1 else 0 := by
+  rw [hs.coeff_apply_of_mem hx (s j), ← hs.toBasisAt_coe hx, Basis.repr_self, Finsupp.single_apply]
+
+omit [CompleteSpace 𝕜] in
+/-- The coefficients of a combination `∑ j, c j • s j x` of frame vectors are `c`. -/
+theorem coeff_sum_smul [Fintype ι] (hs : IsLocalFrameOn IB F n s U) {x : B} (hx : x ∈ U)
+    (c : ι → 𝕜) (i : ι) : hs.coeff i x (∑ j, c j • s j x) = c i := by
+  classical
+  simp only [map_sum, map_smul, hs.coeff_apply_self hx, smul_eq_mul, mul_ite, mul_one, mul_zero,
+    Finset.sum_ite_eq', Finset.mem_univ, ite_true]
+
+omit [CompleteSpace 𝕜] in
+/-- A frame of a bundle with fibre `F` has as many members as the dimension of `F`. -/
+theorem card_eq_finrank [Fintype ι] [VectorBundle 𝕜 F V] (hs : IsLocalFrameOn IB F n s U)
+    {x : B} (hx : x ∈ U) : Fintype.card ι = finrank 𝕜 F :=
+  (finrank_eq_card_basis (hs.toBasisAt hx)).symm.trans (VectorBundle.finrank_eq 𝕜 F V x)
 
 end IsLocalFrameOn
 

@@ -27,8 +27,17 @@ is at most `2 b`.
 * `ENNReal.toReal_one_sub_div`: `(1 - a / b).toReal = 1 - a.toReal / b.toReal` for `a ≤ b`.
 * `ENNReal.one_sub_one_div_toReal_nonneg`: for `1 ≤ p`, the Hölder exponent `1 - 1 / p.toReal`
   is nonnegative.
+* `ENNReal.one_le_toReal_sub_one`: a finite exponent `2 ≤ r` has `1 ≤ r.toReal - 1`.
 * `ENNReal.one_div_toReal_sub_one_div_toReal_nonneg`: for `0 < p ≤ q`, the exponent
   `1 / p.toReal - 1 / q.toReal` is nonnegative.
+* `ENNReal.two_le_of_toReal_inv_le`: an exponent `r ≠ 0` with `1 / r ≤ 1 / 2` satisfies `2 ≤ r`.
+* `ENNReal.one_sub_one_div_toReal_nonneg`, `ENNReal.toReal_inv_lt_one`: for `1 ≤ p` (resp.
+  `1 < p`), the Hölder exponent `1 - 1 / p.toReal` is nonnegative (resp. `p.toReal⁻¹ < 1`).
+* `ENNReal.one_div_toReal_sub_one_div_toReal_nonneg`, `ENNReal.toReal_inv_sub_toReal_inv_le_one`,
+  `ENNReal.toReal_inv_sub_toReal_inv_lt_one`: bounds in `[0, 1]` and `[0, 1)` on the reciprocal
+  exponent gap `p.toReal⁻¹ - q.toReal⁻¹`.
+* `ENNReal.natCast_lt_natCast_mul_iff`: `(n : ℝ≥0∞) < k * p ↔ (n : ℝ) * p.toReal⁻¹ < k` for
+  `p ≠ 0`.
 * `ENNReal.toNNReal_one_sub_div_pos`: `0 < (1 - a / b).toNNReal` for `a < b`.
 * `ENNReal.inv_le_inv_mul_add_and_inv_mul_le_inv`: for `n ≤ (j + 1) p`, the exponent
   `q = (j + 1) p` satisfies `1/p ≤ 1/q + j/n` and `1/q ≤ 1/p`.
@@ -92,6 +101,12 @@ theorem one_sub_one_div_toReal_nonneg {p : ℝ≥0∞} (hp : 1 ≤ p) : 0 ≤ 1 
       simpa using ENNReal.toReal_mono hp_top hp
     exact sub_nonneg.2 (div_le_one_of_le₀ h1p (by positivity))
 
+/-- A finite exponent `2 ≤ r` has `1 ≤ r - 1`, read in `ℝ`. -/
+theorem one_le_toReal_sub_one {r : ℝ≥0∞} (hr : r ≠ ∞) (hr2 : 2 ≤ r) : 1 ≤ r.toReal - 1 := by
+  have := toReal_mono hr hr2
+  simp only [toReal_ofNat] at this
+  linarith
+
 /-- For `0 < p ≤ q`, the difference `1 / p - 1 / q` of reciprocal exponents is nonnegative (with
 `1 / ∞` read as `0`). It is the exponent of the measure factor in the inclusion `L^q ⊆ Lᵖ` on a
 finite measure space. -/
@@ -99,6 +114,56 @@ theorem one_div_toReal_sub_one_div_toReal_nonneg {p q : ℝ≥0∞} (hp : p ≠ 
     0 ≤ 1 / p.toReal - 1 / q.toReal := by
   simpa only [one_div, toReal_inv, sub_nonneg] using
     toReal_mono (inv_ne_top.2 hp) (ENNReal.inv_le_inv.2 hpq)
+
+/-- An exponent `r ≠ 0` with `1 / r ≤ 1 / 2` satisfies `2 ≤ r`. Along a Strichartz admissible
+pair this is the fact that the space exponent `r` lies on the `L^r` side of `L²`. -/
+theorem two_le_of_toReal_inv_le {r : ℝ≥0∞} (hr : r ≠ 0) (h : (r⁻¹).toReal ≤ 2⁻¹) : 2 ≤ r := by
+  rw [← ENNReal.inv_le_inv, ← ofReal_toReal (inv_ne_top.2 hr),
+    ← ofReal_toReal (a := 2⁻¹) (by simp)]
+  exact ofReal_le_ofReal (h.trans_eq (by simp))
+
+/-- For `1 < p`, the reciprocal exponent `p.toReal⁻¹` is strictly less than `1` (with `p = ∞`
+giving `0`). -/
+theorem toReal_inv_lt_one {p : ℝ≥0∞} (hp : 1 < p) : p.toReal⁻¹ < 1 := by
+  simpa only [toReal_inv, toReal_one] using
+    (toReal_lt_toReal (inv_ne_top.2 (zero_lt_one.trans hp).ne') one_ne_top).2
+      (ENNReal.inv_lt_one.2 hp)
+
+/-- For `1 ≤ p` and any `q`, the difference `p.toReal⁻¹ - q.toReal⁻¹` is at most `1`. -/
+theorem toReal_inv_sub_toReal_inv_le_one {p : ℝ≥0∞} (hp : 1 ≤ p) (q : ℝ≥0∞) :
+    p.toReal⁻¹ - q.toReal⁻¹ ≤ 1 := by
+  have hp1 : p.toReal⁻¹ ≤ 1 := by
+    simpa only [one_div, sub_nonneg] using one_sub_one_div_toReal_nonneg hp
+  have hq0 : 0 ≤ q.toReal⁻¹ := inv_nonneg.2 toReal_nonneg
+  linarith
+
+/-- When `1 ≤ p`, `q ≠ 0`, and `¬ (p = 1 ∧ q = ∞)`, the reciprocal gap `p.toReal⁻¹ - q.toReal⁻¹` is
+strictly below `1`. -/
+theorem toReal_inv_sub_toReal_inv_lt_one {p q : ℝ≥0∞} (hp : 1 ≤ p) (hq : q ≠ 0)
+    (hp1q : ¬ (p = 1 ∧ q = ∞)) : p.toReal⁻¹ - q.toReal⁻¹ < 1 := by
+  have hq0 : 0 ≤ q.toReal⁻¹ := inv_nonneg.2 toReal_nonneg
+  refine (toReal_inv_sub_toReal_inv_le_one hp q).lt_of_ne fun h1 => hp1q ?_
+  have hp_eq : p = 1 := by
+    by_contra hp_ne
+    linarith [toReal_inv_lt_one (hp.lt_of_ne' hp_ne)]
+  refine ⟨hp_eq, ?_⟩
+  by_contra hq_ne
+  have hq_pos : 0 < q.toReal⁻¹ := inv_pos.2 (toReal_pos hq hq_ne)
+  subst hp_eq
+  simp only [toReal_one, inv_one] at h1
+  linarith
+
+/-- For `p ≠ 0` in `ℝ≥0∞` and natural numbers `n` and `k`, `(n : ℝ≥0∞) < k * p` holds if and only
+if `(n : ℝ) * p.toReal⁻¹ < k` (with `∞.toReal⁻¹ = 0`). -/
+theorem natCast_lt_natCast_mul_iff {n k : ℕ} {p : ℝ≥0∞} (hp : p ≠ 0) :
+    (n : ℝ≥0∞) < k * p ↔ (n : ℝ) * p.toReal⁻¹ < k := by
+  rcases eq_or_ne k 0 with rfl | hk0
+  · simp [not_lt.2 (mul_nonneg (Nat.cast_nonneg n) (inv_nonneg.2 toReal_nonneg))]
+  rcases eq_or_ne p ∞ with rfl | hp_top
+  · simp [ENNReal.mul_top (Nat.cast_ne_zero.2 hk0), Nat.pos_of_ne_zero hk0]
+  rw [← toReal_lt_toReal (natCast_ne_top _) (mul_ne_top (natCast_ne_top _) hp_top),
+    toReal_natCast, toReal_mul, toReal_natCast, ← div_lt_iff₀ (toReal_pos hp hp_top),
+    div_eq_mul_inv]
 
 /-- **Absorption**: a finite quantity bounded by `b` plus half of itself is at most `2 b`. -/
 theorem le_mul_two_of_le_add_div_two {a b : ℝ≥0∞} (ha : a ≠ ∞) (h : a ≤ b + a / 2) :

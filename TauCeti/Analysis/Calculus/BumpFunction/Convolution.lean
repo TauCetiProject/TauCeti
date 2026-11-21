@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Axel Delaval, Zhiyuan Zhang, Leheng Chen
 -/
 module
 
@@ -25,6 +25,8 @@ simultaneous approximation of the derivatives of a compactly supported smooth fu
 Normalized-bump convolution also preserves a uniform bound on a function
 (`ContDiffBump.norm_normed_convolution_le`) and its Lipschitz constant, since it averages the
 differences of translates (`ContDiffBump.dist_normed_convolution_le_of_dist_sub_le`).
+For `K`-Lipschitz data, the pointwise approximation error is at most `K * ρ.rOut`
+(`LipschitzWith.dist_normed_convolution_le`).
 
 Integrals against the mollifications of a uniformly continuous function converge, along any filter
 of bump indices with radii tending to zero, to the integral against the function
@@ -41,6 +43,11 @@ radius selection and uniform indicator approximation on compact subsets of open 
 `ContDiffBump.tendstoUniformlyOn_normed_convolution_indicator`). These bumps are all
 rescalings of the first one (`ContDiffBump.shrinking_apply_eq`), so integrals against their
 normalized forms reduce to one kernel (`ContDiffBump.integral_shrinking_normed_mul`).
+
+## References
+
+* https://github.com/frenzymath/lean-eval-submissions
+* https://github.com/frenzymath/PoincareConjecture
 -/
 
 public section
@@ -340,3 +347,14 @@ theorem LipschitzWith.normed_convolution {G F : Type*} [NormedAddCommGroup G]
     LipschitzWith K (ρ.normed μ ⋆[lsmul ℝ ℝ, μ] g) :=
   LipschitzWith.of_dist_le_mul fun x y ↦ ρ.dist_normed_convolution_le_of_dist_sub_le hg.continuous
     fun t ↦ by simpa only [dist_sub_right] using hg.dist_le_mul (x - t) (y - t)
+
+/-- A normalized bump of outer radius `r` changes a Lipschitz function by at most `K * r`. -/
+theorem LipschitzWith.dist_normed_convolution_le {E F : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure] [NormedAddCommGroup F]
+    [NormedSpace ℝ F] [CompleteSpace F] {f : E → F} {K : ℝ≥0} (hf : LipschitzWith K f)
+    (φ : ContDiffBump (0 : E)) (x : E) :
+    dist ((φ.normed μ ⋆[lsmul ℝ ℝ, μ] f) x) (f x) ≤ K * φ.rOut :=
+  φ.dist_normed_convolution_le hf.continuous.aestronglyMeasurable fun y hy ↦
+    (hf.dist_le_mul y x).trans
+      (mul_le_mul_of_nonneg_left (mem_ball.1 hy).le K.coe_nonneg)

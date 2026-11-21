@@ -77,11 +77,11 @@ theorem mem_lpTwoSubmodule (f : Lp E p μ) :
 
 /-- The `L²` membership proof carried by an element of `Lᵖ ∩ L²`. -/
 theorem lpTwoSubmodule.memLp (f : lpTwoSubmodule (E := E) (p := p) (μ := μ)) :
-    MemLp (f.1 : α → E) 2 μ := f.property
+    MemLp (f.val : α → E) 2 μ := f.property
 
 /-- An `Lᵖ ∩ L²` function, read as an element of `L²`. -/
 def lpTwoSubmodule.toL2 : lpTwoSubmodule (E := E) (p := p) (μ := μ) →ₗ[ℝ] Lp E 2 μ where
-  toFun f := (lpTwoSubmodule.memLp f).toLp (f.1 : α → E)
+  toFun f := (lpTwoSubmodule.memLp f).toLp (f.val : α → E)
   map_add' := by
     intro f g
     apply Lp.ext
@@ -89,13 +89,13 @@ def lpTwoSubmodule.toL2 : lpTwoSubmodule (E := E) (p := p) (μ := μ) →ₗ[ℝ
     have hf := lpTwoSubmodule.memLp f
     have hg := lpTwoSubmodule.memLp g
     filter_upwards [hfg.coeFn_toLp, hf.coeFn_toLp, hg.coeFn_toLp,
-      Lp.coeFn_add (f.1 : Lp E p μ) g.1,
-      Lp.coeFn_add (hf.toLp (f.1 : α → E)) (hg.toLp (g.1 : α → E))]
+      Lp.coeFn_add (f.val : Lp E p μ) g.val,
+      Lp.coeFn_add (hf.toLp (f.val : α → E)) (hg.toLp (g.val : α → E))]
       with x h₁ h₂ h₃ h₄ h₅
     calc
-      _ = (f.1 : α → E) x + (g.1 : α → E) x := h₁.trans h₄
-      _ = (hf.toLp (f.1 : α → E) : α → E) x +
-          (hg.toLp (g.1 : α → E) : α → E) x := by rw [h₂, h₃]
+      _ = (f.val : α → E) x + (g.val : α → E) x := h₁.trans h₄
+      _ = (hf.toLp (f.val : α → E) : α → E) x +
+          (hg.toLp (g.val : α → E) : α → E) x := by rw [h₂, h₃]
       _ = _ := h₅.symm
   map_smul' := by
     intro c f
@@ -103,17 +103,17 @@ def lpTwoSubmodule.toL2 : lpTwoSubmodule (E := E) (p := p) (μ := μ) →ₗ[ℝ
     have hcf := lpTwoSubmodule.memLp (c • f)
     have hf := lpTwoSubmodule.memLp f
     filter_upwards [hcf.coeFn_toLp, hf.coeFn_toLp,
-      Lp.coeFn_smul c (f.1 : Lp E p μ),
-      Lp.coeFn_smul c (hf.toLp (f.1 : α → E))] with x h₁ h₂ h₃ h₄
+      Lp.coeFn_smul c (f.val : Lp E p μ),
+      Lp.coeFn_smul c (hf.toLp (f.val : α → E))] with x h₁ h₂ h₃ h₄
     calc
-      _ = ((c • f).1 : α → E) x := h₁
-      _ = c • (f.1 : α → E) x := h₃
-      _ = c • (hf.toLp (f.1 : α → E) : α → E) x := by rw [h₂]
+      _ = ((c • f).val : α → E) x := h₁
+      _ = c • (f.val : α → E) x := h₃
+      _ = c • (hf.toLp (f.val : α → E) : α → E) x := by rw [h₂]
       _ = _ := h₄.symm
 
 /-- The `L²` and `Lᵖ` views of an intersection function agree almost everywhere. -/
 theorem lpTwoSubmodule.toL2_ae (f : lpTwoSubmodule (E := E) (p := p) (μ := μ)) :
-    (lpTwoSubmodule.toL2 f : α → E) =ᵐ[μ] (f.1 : α → E) := by
+    (lpTwoSubmodule.toL2 f : α → E) =ᵐ[μ] (f.val : α → E) := by
   have hf := lpTwoSubmodule.memLp f
   exact hf.coeFn_toLp
 
@@ -154,22 +154,22 @@ def strongTypeOnIntersection (T : Lp E 2 μ →L[ℝ] Lp F 2 μ) (C : ℝ≥0)
   toFun f := (memLp_apply_of_eLpNorm_le T C hT (lpTwoSubmodule.toL2 f)
     (by
       have hf := lpTwoSubmodule.memLp f
-      exact (Lp.memLp f.1).ae_eq hf.coeFn_toLp.symm)).toLp (T (lpTwoSubmodule.toL2 f))
+      exact (Lp.memLp f.val).ae_eq hf.coeFn_toLp.symm)).toLp (T (lpTwoSubmodule.toL2 f))
   map_add' := by
     intro f g
     apply Lp.ext
     let hfg := memLp_apply_of_eLpNorm_le T C hT (lpTwoSubmodule.toL2 (f + g))
       (by
         have h := lpTwoSubmodule.memLp (f + g)
-        exact (Lp.memLp (f + g).1).ae_eq h.coeFn_toLp.symm)
+        exact (Lp.memLp (f + g).val).ae_eq h.coeFn_toLp.symm)
     let hf := memLp_apply_of_eLpNorm_le T C hT (lpTwoSubmodule.toL2 f)
       (by
         have h := lpTwoSubmodule.memLp f
-        exact (Lp.memLp f.1).ae_eq h.coeFn_toLp.symm)
+        exact (Lp.memLp f.val).ae_eq h.coeFn_toLp.symm)
     let hg := memLp_apply_of_eLpNorm_le T C hT (lpTwoSubmodule.toL2 g)
       (by
         have h := lpTwoSubmodule.memLp g
-        exact (Lp.memLp g.1).ae_eq h.coeFn_toLp.symm)
+        exact (Lp.memLp g.val).ae_eq h.coeFn_toLp.symm)
     filter_upwards [hfg.coeFn_toLp, hf.coeFn_toLp, hg.coeFn_toLp,
       Lp.coeFn_add (T (lpTwoSubmodule.toL2 f)) (T (lpTwoSubmodule.toL2 g)),
       Lp.coeFn_add (hf.toLp _) (hg.toLp _)] with x h₁ h₂ h₃ h₄ h₅
@@ -187,11 +187,11 @@ def strongTypeOnIntersection (T : Lp E 2 μ →L[ℝ] Lp F 2 μ) (C : ℝ≥0)
     let hcf := memLp_apply_of_eLpNorm_le T C hT (lpTwoSubmodule.toL2 (c • f))
       (by
         have h := lpTwoSubmodule.memLp (c • f)
-        exact (Lp.memLp (c • f).1).ae_eq h.coeFn_toLp.symm)
+        exact (Lp.memLp (c • f).val).ae_eq h.coeFn_toLp.symm)
     let hf := memLp_apply_of_eLpNorm_le T C hT (lpTwoSubmodule.toL2 f)
       (by
         have h := lpTwoSubmodule.memLp f
-        exact (Lp.memLp f.1).ae_eq h.coeFn_toLp.symm)
+        exact (Lp.memLp f.val).ae_eq h.coeFn_toLp.symm)
     filter_upwards [hcf.coeFn_toLp, hf.coeFn_toLp,
       Lp.coeFn_smul c (T (lpTwoSubmodule.toL2 f)), Lp.coeFn_smul c (hf.toLp _)]
       with x h₁ h₂ h₃ h₄
@@ -210,7 +210,7 @@ theorem strongTypeOnIntersection_ae (T : Lp E 2 μ →L[ℝ] Lp F 2 μ) (C : ℝ
     (f : lpTwoSubmodule (E := E) (p := p) (μ := μ)) :
     (strongTypeOnIntersection T C hT f : α → F) =ᵐ[μ] T (lpTwoSubmodule.toL2 f) := by
   have hf : MemLp (lpTwoSubmodule.toL2 f : α → E) p μ :=
-    (Lp.memLp f.1).ae_eq (lpTwoSubmodule.toL2_ae f).symm
+    (Lp.memLp f.val).ae_eq (lpTwoSubmodule.toL2_ae f).symm
   exact (memLp_apply_of_eLpNorm_le T C hT (lpTwoSubmodule.toL2 f) hf).coeFn_toLp
 
 variable [Fact (1 ≤ p)]
@@ -223,11 +223,11 @@ theorem norm_strongTypeOnIntersection_le (T : Lp E 2 μ →L[ℝ] Lp F 2 μ) (C 
     ‖strongTypeOnIntersection T C hT f‖ ≤ C * ‖f‖ := by
   have hf := lpTwoSubmodule.memLp f
   have hfp : MemLp (lpTwoSubmodule.toL2 f : α → E) p μ :=
-    (Lp.memLp f.1).ae_eq hf.coeFn_toLp.symm
+    (Lp.memLp f.val).ae_eq hf.coeFn_toLp.symm
   have hTp := memLp_apply_of_eLpNorm_le T C hT (lpTwoSubmodule.toL2 f) hfp
   have h := ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.coe_ne_top hfp.ne)
     (hT (lpTwoSubmodule.toL2 f) hfp)
-  have heq : eLpNorm (lpTwoSubmodule.toL2 f : α → E) p μ = eLpNorm (f.1 : α → E) p μ :=
+  have heq : eLpNorm (lpTwoSubmodule.toL2 f : α → E) p μ = eLpNorm (f.val : α → E) p μ :=
     eLpNorm_congr_ae hf.coeFn_toLp
   -- The bundled map applies by turning its `L²` value into the corresponding `Lᵖ` class.
   change ‖hTp.toLp (T (lpTwoSubmodule.toL2 f))‖ ≤ (C : ℝ) * ‖(f : Lp E p μ)‖
@@ -250,9 +250,9 @@ theorem strongTypeExtension_apply (T : Lp E 2 μ →L[ℝ] Lp F 2 μ) (C : ℝ�
     (hT : ∀ f : Lp E 2 μ, MemLp f p μ →
       eLpNorm (T f) p μ ≤ C * eLpNorm f p μ) (hp : p ≠ ∞)
     (f : lpTwoSubmodule (E := E) (p := p) (μ := μ)) :
-    strongTypeExtension T C hT hp f.1 = strongTypeOnIntersection T C hT f := by
+    strongTypeExtension T C hT hp f.val = strongTypeOnIntersection T C hT f := by
   apply LinearMap.extendOfNorm_eq
-  · exact (denseRange_subtype_val).2 (dense_lpTwoSubmodule (E := E) (p := p) (μ := μ) hp)
+  · exact (denseRange_subtypeVal).2 (dense_lpTwoSubmodule (E := E) (p := p) (μ := μ) hp)
   · exact ⟨C, norm_strongTypeOnIntersection_le T C hT⟩
 
 /-- The operator norm of the extended map is bounded by the strong-type constant. -/
@@ -261,7 +261,7 @@ theorem norm_strongTypeExtension_le (T : Lp E 2 μ →L[ℝ] Lp F 2 μ) (C : ℝ
       eLpNorm (T f) p μ ≤ C * eLpNorm f p μ) (hp : p ≠ ∞) :
     ‖strongTypeExtension T C hT hp‖ ≤ C := by
   apply LinearMap.opNorm_extendOfNorm_le
-  · exact (denseRange_subtype_val).2 (dense_lpTwoSubmodule (E := E) (p := p) (μ := μ) hp)
+  · exact (denseRange_subtypeVal).2 (dense_lpTwoSubmodule (E := E) (p := p) (μ := μ) hp)
   · exact C.property
   · exact norm_strongTypeOnIntersection_le T C hT
 
@@ -287,11 +287,11 @@ theorem strongTypeExtension_unique (T : Lp E 2 μ →L[ℝ] Lp F 2 μ) (C : ℝ�
       eLpNorm (T f) p μ ≤ C * eLpNorm f p μ) (hp : p ≠ ∞)
     (S : Lp E p μ →L[ℝ] Lp F p μ)
     (hS : ∀ f : lpTwoSubmodule (E := E) (p := p) (μ := μ),
-      S f.1 = strongTypeOnIntersection T C hT f) :
+      S f.val = strongTypeOnIntersection T C hT f) :
     S = strongTypeExtension T C hT hp := by
   symm
   apply LinearMap.extendOfNorm_unique
-    ((denseRange_subtype_val).2 (dense_lpTwoSubmodule (E := E) (p := p) (μ := μ) hp))
+    ((denseRange_subtypeVal).2 (dense_lpTwoSubmodule (E := E) (p := p) (μ := μ) hp))
     C (norm_strongTypeOnIntersection_le T C hT)
   apply LinearMap.ext
   intro f
@@ -309,8 +309,8 @@ theorem strongTypeExtension_unique_of_ae (T : Lp E 2 μ →L[ℝ] Lp F 2 μ) (C 
   intro g
   have h₂ := lpTwoSubmodule.memLp g
   have hp' : MemLp (lpTwoSubmodule.toL2 g : α → E) p μ :=
-    (Lp.memLp g.1).ae_eq h₂.coeFn_toLp.symm
-  have heq : hp'.toLp (lpTwoSubmodule.toL2 g : α → E) = g.1 :=
+    (Lp.memLp g.val).ae_eq h₂.coeFn_toLp.symm
+  have heq : hp'.toLp (lpTwoSubmodule.toL2 g : α → E) = g.val :=
     Lp.ext (hp'.coeFn_toLp.trans h₂.coeFn_toLp)
   have hSg := hS (lpTwoSubmodule.toL2 g) hp'
   rw [heq] at hSg

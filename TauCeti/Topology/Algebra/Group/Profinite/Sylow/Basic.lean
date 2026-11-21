@@ -111,7 +111,7 @@ theorem map_continuousMulEquiv {H : Type v} [Group H] [TopologicalSpace H]
   · rw [Subgroup.coe_map]
     exact e.toHomeomorph.isClosedMap _ hP.isClosed
   · exact hP.isProP.of_surjective ((e : G →* H).subgroupMap P)
-      (continuous_induced_rng.mpr (e.continuous.comp continuous_subtype_val))
+      (continuous_induced_rng.mpr (e.continuous.comp continuous_subtypeVal))
       ((e : G →* H).subgroupMap_surjective P)
   · -- The image of `P.map e` in `H ⧸ U` has the same index as the image of `P` in
     -- `G ⧸ U.comap e`, since both indices are those of `P ⊔ U.comap e` transported along `e`.

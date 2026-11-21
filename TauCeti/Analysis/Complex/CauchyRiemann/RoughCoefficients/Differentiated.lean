@@ -325,28 +325,30 @@ private theorem integral_commutator_of_contDiff [FiniteDimensional ℝ V] {p q :
   simp_rw [hsymm] at h1
   linarith [hibp I 1]
 
-/-- On the support of `Θ`, if every `ρ.rOut`-ball around `tsupport Θ` lies in `W ⊆ Ω`, the Fréchet
-derivative of `ρ.normed ⋆ 1_W ξ` agrees with `ρ.normed ⋆ 1_W Dξ`, so their inner-product pairings
-against `z ↦ A z (· v)` are equal. -/
-private theorem integral_inner_clm_mollified_fderiv_eq {q : ℝ≥0∞} (hq1 : 1 ≤ q)
-    {W : Opens ℂ} (hWΩ : closure (W : Set ℂ) ⊆ Ω) {ξ : ℂ → V} {Dξ : ℂ → ℂ →L[ℝ] V}
-    (hDξ : HasWeakFDerivOn volume Ω ξ Dξ)
-    (hξW : MemLp ξ q (volume.restrict W)) (hDξW : MemLp Dξ q (volume.restrict W))
+/-- On the support of a test function `Θ`, when every `ρ.rOut`-ball around `tsupport Θ` lies in
+`W ⊆ Ω`, the Fréchet derivative of `ρ.normed ⋆ 1_W u` agrees with `ρ.normed ⋆ 1_W Du`, so their
+inner-product pairings against `z ↦ B z ·` are equal. -/
+theorem HasWeakFDerivOn.integral_inner_mollified_fderiv_eq
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {p : ℝ≥0∞} (hp1 : 1 ≤ p) {W : Opens ℂ} (hWΩ : closure (W : Set ℂ) ⊆ Ω)
+    {u : ℂ → F} {Du : ℂ → ℂ →L[ℝ] F} (hDu : HasWeakFDerivOn volume Ω u Du)
+    (huW : MemLp u p (volume.restrict W)) (hDuW : MemLp Du p (volume.restrict W))
     (ρ : ContDiffBump (0 : ℂ)) (Θ : 𝓓(Ω, V))
     (hball : ∀ z ∈ tsupport (Θ : ℂ → V), closedBall z ρ.rOut ⊆ W)
-    (A : ℂ → V →L[ℝ] V) (v : ℂ) :
-    (∫ z, ⟪(Θ : ℂ → V) z, A z (fderiv ℝ
-        (ρ.normed volume ⋆[ContinuousLinearMap.lsmul ℝ ℝ, volume] (W : Set ℂ).indicator ξ)
-        z v)⟫_ℝ) =
-      ∫ z, ⟪(Θ : ℂ → V) z, A z
-        ((ρ.normed volume ⋆[ContinuousLinearMap.lsmul ℝ ℝ, volume] (W : Set ℂ).indicator Dξ)
-          z v)⟫_ℝ := by
+    (B : ℂ → (ℂ →L[ℝ] F) → V) :
+    (∫ z, ⟪(Θ : ℂ → V) z, B z (fderiv ℝ
+        (ρ.normed volume ⋆[ContinuousLinearMap.lsmul ℝ ℝ, volume] (W : Set ℂ).indicator u)
+        z)⟫_ℝ) =
+      ∫ z, ⟪(Θ : ℂ → V) z, B z
+        ((ρ.normed volume ⋆[ContinuousLinearMap.lsmul ℝ ℝ, volume] (W : Set ℂ).indicator Du)
+          z)⟫_ℝ := by
   refine integral_congr_ae (.of_forall fun z => ?_)
   by_cases hz : z ∈ tsupport (Θ : ℂ → V)
-  · have hd := (hDξ.mono (subset_closure.trans hWΩ)).fderiv_indicator_convolution_normed
-      hξW hDξW hq1 hq1 ρ z (hball z hz)
+  · have hd := (hDu.mono (subset_closure.trans hWΩ)).fderiv_indicator_convolution_normed
+      huW hDuW hp1 hp1 ρ z (hball z hz)
     simp only [convolution_flip] at hd
-    dsimp only; rw [hd]
+    dsimp only
+    rw [hd]
   · simp [image_eq_zero_of_notMem_tsupport hz]
 
 /-- Distributional commutator identity for `J ∈ W^{1,p}_loc(Ω)` and `ξ ∈ W^{1,q}_loc(Ω)` when
@@ -386,10 +388,13 @@ private theorem integral_commutator_of_hasWeakFDerivOn [FiniteDimensional ℝ V]
         (hξext.locallyIntegrable hq1)
     have hc_n := integral_commutator_of_contDiff hp hq hpq hc φ hψ_smooth
     simp_rw [← TestFunction.lineDerivOp_apply_eq_fderiv] at hc_n
-    have hrew := integral_inner_clm_mollified_fderiv_eq hq1 hWΩ hDξ hξW hDξW (ρ n)
-    rwa [hrew (∂_{I} φ) (fun z hz => hball n z (φ.tsupport_lineDerivOp_subset I hz)) J 1,
-      hrew φ (hball n) (fun z => DJ z I) 1, hrew φ (hball n) (fun z => DJ z 1) I,
-      hrew (∂_{(1 : ℂ)} φ) (fun z hz => hball n z (φ.tsupport_lineDerivOp_subset 1 hz)) J I] at hc_n
+    have hrew := hDξ.integral_inner_mollified_fderiv_eq (V := V) hq1 hWΩ hξW hDξW (ρ n)
+    rwa [hrew (∂_{I} φ) (fun z hz => hball n z (φ.tsupport_lineDerivOp_subset I hz))
+        (fun z M => J z (M 1)),
+      hrew φ (hball n) (fun z M => DJ z I (M 1)),
+      hrew φ (hball n) (fun z M => DJ z 1 (M I)),
+      hrew (∂_{(1 : ℂ)} φ) (fun z hz => hball n z (φ.tsupport_lineDerivOp_subset 1 hz))
+        (fun z M => J z (M I))] at hc_n
   let B (v : ℂ) : (ℂ →L[ℝ] V) →L[ℝ] (V →L[ℝ] V) →L[ℝ] V :=
     (ContinuousLinearMap.id ℝ (V →L[ℝ] V)).flip.comp (ContinuousLinearMap.apply ℝ V v)
   have hconv (Θ : 𝓓(Ω, V)) (hΘW : tsupport (Θ : ℂ → V) ⊆ W) {A : ℂ → V →L[ℝ] V}
@@ -529,13 +534,13 @@ private theorem integral_inner_crFormalAdjoint_differentiated_aux [FiniteDimensi
   have hrow1 : (∫ z, ⟪crFormalAdjoint J DJ S φ₁ z, Dξ z 1⟫_ℝ) +
       (∫ z, ⟪(φ₁ : ℂ → V) z, DJ z 1 (Dξ z I)⟫_ℝ) =
       ∫ z, ⟪(φ₁ : ℂ → V) z, Dη z 1 - DS z 1 (ξ z)⟫_ℝ := by
-    rw [hc.integral_inner_crFormalAdjoint_eq_sub_add hpq (hDξv 1) φ₁]
+    rw [hc.integral_inner_crFormalAdjoint_eq_terms hpq (hDξv 1) φ₁]
     linarith [integral_commutator_of_hasWeakFDerivOn hp hq hpq hc hDξ hξ.memLpLoc hDξq φ₁,
       integral_lineDeriv_crEquation hp hq hpq hc.memLpLoc_coeff hS hDS hξ hDξ hDη heq 1 φ₁]
   have hrow2 : (∫ z, ⟪crFormalAdjoint J DJ S φ₂ z, Dξ z I⟫_ℝ) +
       (∫ z, ⟪(φ₂ : ℂ → V) z, DJ z I (Dξ z I)⟫_ℝ) =
       ∫ z, ⟪(φ₂ : ℂ → V) z, Dη z I - DS z I (ξ z)⟫_ℝ := by
-    rw [hc.integral_inner_crFormalAdjoint_eq_sub_add hpq (hDξv I) φ₂,
+    rw [hc.integral_inner_crFormalAdjoint_eq_terms hpq (hDξv I) φ₂,
       hDξ.integral_inner_fderiv_comm 1 I φ₂]
     linarith [integral_lineDeriv_crEquation hp hq hpq hc.memLpLoc_coeff hS hDS hξ hDξ hDη heq I φ₂]
   have hloc := locallyIntegrableOn_differentiatedCR_coord hpq hS hDS hξ.memLpLoc hDη

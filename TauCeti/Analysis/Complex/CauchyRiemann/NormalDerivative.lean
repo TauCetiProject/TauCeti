@@ -116,8 +116,8 @@ theorem memWkpLoc_succ_of_ae_cauchyRiemann [FiniteDimensional ℝ V] {Ω : Opens
     (ae_cauchyRiemann_iff_ae_apply_I_eq
       (ae_restrict_of_forall_mem isOpen_interior.measurableSet hJJ)).1 heq
   let D' : ℂ → ℂ →L[ℝ] V := fun z =>
-    ContinuousLinearMap.smulRightL ℝ ℂ V reCLM (D z 1) +
-      ContinuousLinearMap.smulRightL ℝ ℂ V imCLM (N z)
+    StrongDual.smulRightL ℝ ℂ V reCLM (D z 1) +
+      StrongDual.smulRightL ℝ ℂ V imCLM (N z)
   have hD' : HasWeakFDerivOn volume (Opens.interior U) ξ D' := by
     refine hD.congr_ae_deriv ?_
     filter_upwards [hae] with z hz
