@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Bialgebra.TensorProduct
 public import TauCeti.Algebra.Coalgebra.Comodule.Finite.Basic
+public import TauCeti.Algebra.Coalgebra.Comodule.Fixed
 public import TauCeti.Algebra.Coalgebra.Comodule.TensorProduct
 public import TauCeti.Algebra.Coalgebra.Comodule.Trivial
 
@@ -16,8 +17,9 @@ public import TauCeti.Algebra.Coalgebra.Comodule.Trivial
 This file packages the regular right comodule of a coalgebra as a bundled object of
 `ComoduleCat`, and, when the coalgebra is finitely generated as a module, as an object of
 `FGComoduleCat`. It also records the canonical morphism from the group-like comodule on
-the rank-one free module `R` into the regular comodule, and multiplication of a bialgebra
-as a morphism from the tensor square of its regular comodule.
+the rank-one free module `R` into the regular comodule, multiplication of a bialgebra
+as a morphism from the tensor square of its regular comodule, and the coinvariants of the regular
+right comodule of a bialgebra.
 
 ## Main definitions
 
@@ -27,6 +29,9 @@ as a morphism from the tensor square of its regular comodule.
 * `TauCeti.Comodule.Hom.trivialToRegular`: the bialgebraic special case `g = 1`.
 * `TauCeti.Comodule.Hom.regularMul`: bialgebra multiplication as a morphism from the
   tensor square of the regular comodule.
+* `TauCeti.Comodule.mem_fixedSubcomodule_self` and
+  `TauCeti.Comodule.algebraMap_mem_fixedSubcomodule_self`: coinvariants of the regular right
+  comodule of a bialgebra are the scalar multiples of `1`.
 * `TauCeti.FGComoduleCat.regular`: the regular comodule as a finitely generated comodule,
   when the underlying coalgebra is finitely generated as an `R`-module.
 
@@ -174,6 +179,30 @@ theorem regularMul_tmul (x y : H) : regularMul (R := R) (H := H) (x ⊗ₜ[R] y)
 end Multiplication
 
 end Hom
+
+section Bialgebra
+
+variable {R : Type u} {H : Type v} [CommSemiring R] [Semiring H] [Bialgebra R H]
+
+/-- The coinvariants of the regular right comodule `H` over itself are the scalar multiples of
+`1`. -/
+theorem mem_fixedSubcomodule_self {x : H} :
+    x ∈ fixedSubcomodule R H H ↔ x = algebraMap R H (Coalgebra.counit (R := R) x) := by
+  rw [mem_fixedSubcomodule, instSelf_coact]
+  refine ⟨fun hx ↦ ?_, fun hx ↦ ?_⟩
+  · have h := congrArg
+      ((TensorProduct.lid R H).toLinearMap ∘ₗ (Coalgebra.counit (R := R)).rTensor H) hx
+    simpa [Coalgebra.rTensor_counit_comul, Algebra.algebraMap_eq_smul_one] using h
+  · rw [hx, Algebra.algebraMap_eq_smul_one, map_smul, Bialgebra.comul_one,
+      Algebra.TensorProduct.one_def, TensorProduct.smul_tmul']
+
+/-- Every scalar multiple `algebraMap R H r` is fixed in the regular right comodule `H`. -/
+@[simp high]
+theorem algebraMap_mem_fixedSubcomodule_self (r : R) :
+    algebraMap R H r ∈ fixedSubcomodule R H H := by
+  rw [mem_fixedSubcomodule_self, Bialgebra.counit_algebraMap]
+
+end Bialgebra
 
 end Comodule
 

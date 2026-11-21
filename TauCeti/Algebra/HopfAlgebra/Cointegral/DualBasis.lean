@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.FiniteType
 public import TauCeti.Algebra.HopfAlgebra.Integral
 public import TauCeti.Algebra.HopfAlgebra.InverseAntipode
 import TauCeti.LinearAlgebra.BilinearForm.Dual.Reconstruction
@@ -12,7 +13,8 @@ import TauCeti.LinearAlgebra.BilinearForm.Dual.Reconstruction
 /-!
 # Basis-free Frobenius dual-basis reconstruction from integrals and cointegrals
 
-Over an arbitrary commutative semiring (and for the partner formulas, over any commutative ring),
+Over an arbitrary commutative semiring (and for the partner formulas, over any commutative semiring
+satisfying `OrzechProperty`, such as any commutative ring or finite commutative semiring),
 normalized integrals and cointegrals on a Hopf algebra `H` satisfy explicit basis-free Frobenius
 dual-basis reconstruction formulas without assuming finite-dimensionality or a base field.
 
@@ -34,7 +36,8 @@ dual-basis reconstruction formulas without assuming finite-dimensionality or a b
   `TauCeti.IsLeftCointegral.sum_apply_mul_antipode_smul`,
   `TauCeti.IsRightCointegral.sum_apply_mul_inverseAntipode_smul`,
   `TauCeti.IsLeftCointegral.sum_apply_inverseAntipode_mul_smul`: dual-basis partner formulas over
-  a commutative ring via `LinearMap.BilinForm.sum_apply_smul_eq_of_forall`.
+  a commutative semiring satisfying `OrzechProperty` via
+  `LinearMap.BilinForm.sum_apply_smul_eq_of_forall`.
 
 ## References
 
@@ -135,9 +138,10 @@ theorem IsLeftCointegral.sum_apply_mul_smul_inverseAntipode {φ : Module.Dual R 
 
 end Semiring
 
-section CommRing
+section Orzech
 
-variable {R : Type u} {H : Type v} [CommRing R] [Semiring H] [HopfAlgebra R H]
+variable {R : Type u} {H : Type v} [CommSemiring R] [OrzechProperty R] [Semiring H]
+  [HopfAlgebra R H]
 
 /-- Dual-basis partner of `IsRightCointegral.sum_apply_mul_smul_antipode`: for a right cointegral
 `φ` and a left integral `t` with `φ t = 1`, `∑ φ (S(t₂) * x) • t₁ = x`. -/
@@ -181,6 +185,6 @@ theorem IsLeftCointegral.sum_apply_inverseAntipode_mul_smul {φ : Module.Dual R 
     r.index r.right (fun i ↦ TauCeti.HopfAlgebra.inverseAntipode hS (r.left i))
     (hφ.sum_apply_mul_smul_inverseAntipode ht htφ hS r) x
 
-end CommRing
+end Orzech
 
 end TauCeti

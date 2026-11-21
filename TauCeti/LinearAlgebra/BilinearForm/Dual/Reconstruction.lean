@@ -6,31 +6,33 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.BilinearMap
-import Mathlib.RingTheory.FiniteType
+public import Mathlib.RingTheory.FiniteType
 
 /-!
 # Finite dual-family reconstruction for bilinear forms
 
-Over a commutative ring, if a bilinear form `B` on an `R`-module `M` satisfies a finite left-side
-reconstruction formula `∑ i ∈ s, B (a i) y • b i = y` for all `y : M`, then `M` is finitely
-generated and the Orzech property forces the partner right-side reconstruction formula
+Over a commutative semiring satisfying the Orzech property (for instance, any commutative ring or
+any finite commutative semiring), if a bilinear form `B` on an `R`-module `M` satisfies a finite
+left-side reconstruction formula `∑ i ∈ s, B (a i) y • b i = y` for all `y : M`, then `M` is
+finitely generated and the Orzech property forces the partner right-side reconstruction formula
 `∑ i ∈ s, B x (b i) • a i = x`.
 
 ## Main results
 
 * `LinearMap.BilinForm.sum_apply_smul_eq_of_forall`: a finite left-side reconstruction formula
-  for a bilinear form over a commutative ring implies the partner right-side reconstruction
-  formula.
+  for a bilinear form over a commutative semiring with the Orzech property implies the partner
+  right-side reconstruction formula.
 -/
 
 public section
 
 namespace LinearMap.BilinForm
 
-/-- If a bilinear form `B` on an `R`-module `M` over a commutative ring satisfies a finite
-left-side reconstruction formula `∑ i ∈ s, B (a i) y • b i = y`, then it satisfies the partner
-formula `∑ i ∈ s, B x (b i) • a i = x`. -/
-theorem sum_apply_smul_eq_of_forall {R M ι : Type*} [CommRing R] [AddCommMonoid M] [Module R M]
+/-- If a bilinear form `B` on an `R`-module `M` over a commutative semiring satisfying the Orzech
+property satisfies a finite left-side reconstruction formula `∑ i ∈ s, B (a i) y • b i = y`, then
+it satisfies the partner formula `∑ i ∈ s, B x (b i) • a i = x`. -/
+theorem sum_apply_smul_eq_of_forall {R M ι : Type*} [CommSemiring R] [OrzechProperty R]
+    [AddCommMonoid M] [Module R M]
     (B : LinearMap.BilinForm R M) (s : Finset ι) (a b : ι → M)
     (h : ∀ y : M, ∑ i ∈ s, B (a i) y • b i = y) (x : M) :
     ∑ i ∈ s, B x (b i) • a i = x := by

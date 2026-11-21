@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Coalgebra.Comodule.Cofree.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.Fixed
+public import TauCeti.Algebra.Coalgebra.Comodule.Regular
 public import TauCeti.Algebra.Coalgebra.Comodule.TensorProduct
 public import TauCeti.Algebra.HopfAlgebra.Antipode
 import TauCeti.Algebra.Coalgebra.Comodule.Inverse
@@ -213,6 +214,15 @@ instance instSelf : IsRightHopfModule R H H where
         | tmul h₁ h₂ =>
           simp [Algebra.TensorProduct.tmul_mul_tmul]
     simpa [Comodule.instSelf_coact, Bialgebra.comul_mul] using hmul.symm
+
+/-- On the regular right `H`-Hopf module, `opSMulHom` coincides with `Comodule.Hom.regularMul`. -/
+@[simp]
+theorem opSMulHom_self :
+    letI := Comodule.tensor R H H H
+    opSMulHom R H H = Comodule.Hom.regularMul (R := R) (H := H) := by
+  let := Comodule.tensor R H H H
+  refine Comodule.Hom.toLinearMap_injective (TensorProduct.ext' fun x y => ?_)
+  simp
 
 end Self
 
