@@ -9,6 +9,7 @@ public import Mathlib.Probability.Distributions.Gaussian.Real
 import TauCeti.Probability.Distributions.Chi.Gaussian
 import TauCeti.Probability.Distributions.Chi.Moments
 import TauCeti.Probability.Distributions.Gaussian.Symmetry
+import TauCeti.Probability.Moments.Basic
 
 /-!
 # Moments of the real Gaussian distribution
@@ -109,18 +110,14 @@ theorem integral_sub_pow_two_mul_gaussianReal (m : ℝ) (v : ℝ≥0) (n : ℕ) 
   field_simp [Real.sqrt_ne_zero'.mpr pi_pos]
   simp only [mul_pow]
 
-/-- The `n`th centered moment of `gaussianReal m v` is the integral of `(x - m) ^ n`. -/
-theorem centralMoment_id_gaussianReal (m : ℝ) (v : ℝ≥0) (n : ℕ) :
-    centralMoment id n (gaussianReal m v) = ∫ x, (x - m) ^ n ∂gaussianReal m v := by
-  simp only [centralMoment, Pi.sub_apply, Pi.pow_apply, id_eq, integral_id_gaussianReal]
-
 /-- The `2n`th centered moment of a real Gaussian distribution is
 `vⁿ (2n - 1)‼`. -/
 @[simp]
 theorem centralMoment_id_two_mul_gaussianReal (m : ℝ) (v : ℝ≥0) (n : ℕ) :
     centralMoment id (2 * n) (gaussianReal m v) =
-      (v : ℝ) ^ n * (2 * n - 1 : ℕ)‼ := by
-  rw [centralMoment_id_gaussianReal, integral_sub_pow_two_mul_gaussianReal]
+      (v : ℝ) ^ n * (2 * n - 1 : ℕ)‼ :=
+  (centralMoment_eq_integral_sub_pow (X := id) integral_id_gaussianReal _).trans
+    (integral_sub_pow_two_mul_gaussianReal m v n)
 
 /-- The second moment of a real Gaussian distribution is its variance plus its squared mean. -/
 theorem integral_sq_gaussianReal (m : ℝ) (v : ℝ≥0) :
@@ -149,7 +146,8 @@ theorem integral_sub_pow_two_mul_add_one_gaussianReal (m : ℝ) (v : ℝ≥0) (n
 /-- Every odd centered moment of a real Gaussian distribution vanishes. -/
 @[simp]
 theorem centralMoment_id_two_mul_add_one_gaussianReal (m : ℝ) (v : ℝ≥0) (n : ℕ) :
-    centralMoment id (2 * n + 1) (gaussianReal m v) = 0 := by
-  rw [centralMoment_id_gaussianReal, integral_sub_pow_two_mul_add_one_gaussianReal]
+    centralMoment id (2 * n + 1) (gaussianReal m v) = 0 :=
+  (centralMoment_eq_integral_sub_pow (X := id) integral_id_gaussianReal _).trans
+    (integral_sub_pow_two_mul_add_one_gaussianReal m v n)
 
 end TauCeti.Probability

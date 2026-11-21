@@ -13,9 +13,9 @@ import Mathlib.Analysis.Convex.SpecificFunctions.Basic
 import Mathlib.MeasureTheory.Integral.Prod
 
 /-!
-# Basic facts about moment-generating functions
+# Basic facts about moments and moment-generating functions
 
-This file supplements Mathlib's basic moment-generating-function API.
+This file supplements Mathlib's basic API for moments and moment-generating functions.
 
 ## Main results
 
@@ -23,6 +23,8 @@ This file supplements Mathlib's basic moment-generating-function API.
   moment-generating function of any real-valued statistic equals `1` at zero.
 * `TauCeti.isFiniteMeasure_of_zero_mem_integrableExpSet`: a measure with an exponential moment at
   `0` is finite.
+* `TauCeti.centralMoment_eq_integral_sub_pow`: the central moment of a variable with known mean
+  `m` is the integral of `(X - m) ^ n`.
 * `TauCeti.mgf_lt_one_of_nonneg_of_neg`: under a probability measure, the moment-generating
   function of a nonnegative random variable that is not almost surely zero is strictly less than
   `1` at every negative argument.
@@ -70,6 +72,11 @@ theorem isFiniteMeasure_of_zero_mem_integrableExpSet (h : (0 : ℝ) ∈ integrab
     IsFiniteMeasure μ :=
   (integrable_const_iff_isFiniteMeasure one_ne_zero).mp <| by
     simpa using integrable_of_mem_integrableExpSet h
+
+/-- The `n`th central moment of `X` is the integral of `(X - m) ^ n` when `X` has mean `m`. -/
+theorem centralMoment_eq_integral_sub_pow {m : ℝ} (hmean : ∫ ω, X ω ∂μ = m) (n : ℕ) :
+    centralMoment X n μ = ∫ ω, (X ω - m) ^ n ∂μ := by
+  simp only [centralMoment, Pi.sub_apply, Pi.pow_apply, hmean]
 
 /-- Under a probability measure, the moment-generating function of an almost surely nonnegative
 random variable that is positive with positive probability is strictly less than `1` at every
@@ -172,8 +179,7 @@ private lemma memLp_exp_of_integrable_exp_mul {Z : Ω → ℝ} {p : ℝ} (hp : 0
     (hZ : Integrable (fun ω ↦ exp (p * Z ω)) μ) :
     MemLp (fun ω ↦ exp (Z ω)) (ENNReal.ofReal p) μ := by
   have hmeas : AEStronglyMeasurable (fun ω ↦ exp (Z ω)) μ :=
-    (hZ.1.aemeasurable.pow_const p⁻¹).aestronglyMeasurable.congr (.of_forall fun ω ↦ by
-      dsimp only; rw [← exp_mul, mul_comm p, mul_inv_cancel_right₀ hp.ne'])
+    (aemeasurable_of_aemeasurable_exp_mul hp.ne' hZ.1.aemeasurable).exp.aestronglyMeasurable
   rw [← integrable_norm_rpow_iff hmeas (by simpa using hp) ENNReal.ofReal_ne_top,
     ENNReal.toReal_ofReal hp.le]
   refine hZ.congr (.of_forall fun ω ↦ ?_)
