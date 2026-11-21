@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.VectorBundle.FiniteDimensional
 public import TauCeti.Topology.VectorBundle.EulerClass
 public import TauCeti.Topology.VectorBundle.OrthonormalFrame.Basic
+import Mathlib.Analysis.Normed.Module.Ball.Action
+import TauCeti.Analysis.Normed.Module.FiniteDimension
 import TauCeti.Topology.Homotopy.DeformationRetract
 import TauCeti.Topology.VectorBundle.Smul
 
@@ -31,8 +34,11 @@ on the negative normal bundle. Dividing a fibre gauge by a continuous positive r
 disc and sphere bundles are `{v | ρ v ≤ r v.proj}` and `{v | ρ v = r v.proj}`
 (`TauCeti.gaugeDiscBundle_div`, `TauCeti.gaugeSphereBundle_div`). Each point of `S(E)` gives a
 unit vector in its fibre (`TauCeti.unitSphereOfSphereBundle`), and the unit sphere bundle projects
-continuously onto the base (`TauCeti.sphereBundleProj`). The pair `(D(E), S(E))`
-(`TauCeti.discSpherePair`) is the gauge disc-sphere pair of the fibre norm
+continuously onto the base (`TauCeti.sphereBundleProj`), onto every point when the model fibre is
+nonzero (`TauCeti.sphereBundleProj_surjective`). Fibrewise negation `v ↦ -v` is a fixed-point-free
+involution of it over the base (`TauCeti.sphereBundleNeg`); for a line bundle it exchanges the two
+unit vectors of each fibre (`TauCeti.eq_or_eq_sphereBundleNeg_of_sphereBundleProj_eq`). The pair
+`(D(E), S(E))` (`TauCeti.discSpherePair`) is the gauge disc-sphere pair of the fibre norm
 (`TauCeti.discSpherePair_eq_gaugeDiscSpherePair`). In rank zero every vector is zero, so the unit
 sphere bundle is empty and the unit disc bundle is the whole total space
 (`TauCeti.isEmpty_sphereBundle_of_subsingleton`, `TauCeti.discBundle_eq_univ_of_subsingleton`).
@@ -196,6 +202,12 @@ theorem mem_sphereBundle {v : TotalSpace F E} : v ∈ sphereBundle F E ↔ ‖v.
 /-- The unit sphere bundle lies in the unit disc bundle. -/
 theorem sphereBundle_subset_discBundle : sphereBundle F E ⊆ discBundle F E :=
   gaugeSphereBundle_subset_gaugeDiscBundle _
+
+variable {F E} in
+/-- A vector of the unit sphere bundle is nonzero. -/
+theorem snd_ne_zero_of_mem_sphereBundle {v : TotalSpace F E} (hv : v ∈ sphereBundle F E) :
+    v.snd ≠ 0 :=
+  norm_ne_zero_iff.1 ((mem_sphereBundle.1 hv).trans_ne one_ne_zero)
 
 variable {F E} in
 /-- The vectors of norm less than one miss the sphere bundle. -/
@@ -428,6 +440,77 @@ theorem isEmbedding_sphereBundleFiberIncl (b : B) :
     fun _ _ h ↦ Subtype.ext (TotalSpace.mk_inj.1 (congrArg Subtype.val h))⟩
 
 end Proj
+
+section Neg
+
+variable {B : Type w} [TopologicalSpace B] (F : Type*) [NormedAddCommGroup F] [NormedSpace ℝ F]
+  (E : B → Type w) [TopologicalSpace (TotalSpace F E)] [∀ b, NormedAddCommGroup (E b)]
+  [∀ b, NormedSpace ℝ (E b)] [FiberBundle F E] [VectorBundle ℝ F E]
+
+/-- Fibrewise negation `v ↦ -v` of the unit sphere bundle: a fixed-point-free involution over the
+base, the deck involution of the sphere bundle of a line bundle. -/
+def sphereBundleNeg : C(sphereBundle F E, sphereBundle F E) where
+  toFun v := ⟨⟨(v : TotalSpace F E).proj, -(v : TotalSpace F E).snd⟩,
+    mem_sphereBundle.2 ((norm_neg _).trans (mem_sphereBundle.1 v.property))⟩
+  continuous_toFun := by
+    refine Continuous.subtype_mk ?_ _
+    -- Negation is the scalar multiplication by `-1`, which is continuous on the total space.
+    refine ((VectorBundle.continuous_smul ℝ F E).comp
+      ((continuous_const (y := (-1 : ℝ))).prodMk continuous_subtypeVal)).congr fun v ↦ ?_
+    simp only [Function.comp_apply, TotalSpace.mk', neg_one_smul (R := ℝ)]
+
+@[simp]
+theorem coe_sphereBundleNeg_apply (v : sphereBundle F E) :
+    (sphereBundleNeg F E v : TotalSpace F E) =
+      ⟨(v : TotalSpace F E).proj, -(v : TotalSpace F E).snd⟩ :=
+  (rfl)
+
+/-- Negation of the sphere bundle lies over the identity of the base. -/
+@[simp]
+theorem sphereBundleProj_comp_sphereBundleNeg :
+    ⇑(sphereBundleProj F E) ∘ ⇑(sphereBundleNeg F E) = ⇑(sphereBundleProj F E) :=
+  (rfl)
+
+/-- Negation of the sphere bundle is an involution. -/
+theorem sphereBundleNeg_involutive : Function.Involutive (sphereBundleNeg F E) :=
+  fun ⟨⟨b, x⟩, _⟩ ↦ Subtype.ext (congrArg (TotalSpace.mk b) (neg_neg x))
+
+/-- Negating a unit vector twice gives it back. -/
+@[simp]
+theorem sphereBundleNeg_sphereBundleNeg (v : sphereBundle F E) :
+    sphereBundleNeg F E (sphereBundleNeg F E v) = v :=
+  sphereBundleNeg_involutive F E v
+
+/-- Negation of the sphere bundle has no fixed points: a unit vector is not its own negative. -/
+theorem sphereBundleNeg_ne_self (v : sphereBundle F E) : sphereBundleNeg F E v ≠ v := fun h ↦ by
+  obtain ⟨⟨b, x⟩, hx⟩ := v
+  have h₂ : -x = x := TotalSpace.mk_inj.1 (congrArg Subtype.val h)
+  exact ne_neg_of_mem_unit_sphere ℝ ⟨x, mem_sphere_zero_iff_norm.2 (mem_sphereBundle.1 hx)⟩
+    (Subtype.ext h₂.symm)
+
+/-- If the model fibre is nonzero, the unit sphere bundle has a unit vector over every point. -/
+theorem sphereBundleProj_surjective [Nontrivial F] : Function.Surjective (sphereBundleProj F E) :=
+  fun b ↦ by
+    have : Nontrivial (E b) := ((trivializationAt F E b).continuousLinearEquivAt ℝ b
+      (FiberBundle.mem_baseSet_trivializationAt' b)).toEquiv.nontrivial
+    obtain ⟨x, hx⟩ := (NormedSpace.sphere_nonempty (x := (0 : E b)) (r := 1)).2 zero_le_one
+    exact ⟨⟨⟨b, x⟩, mem_sphereBundle.2 (mem_sphere_zero_iff_norm.1 hx)⟩, rfl⟩
+
+variable {F E}
+
+/-- In a bundle of rank one, two unit vectors in the same fibre are equal or opposite. -/
+theorem eq_or_eq_sphereBundleNeg_of_sphereBundleProj_eq (hF : Module.finrank ℝ F = 1)
+    {v w : sphereBundle F E} (h : sphereBundleProj F E w = sphereBundleProj F E v) :
+    w = v ∨ w = sphereBundleNeg F E v := by
+  obtain ⟨⟨b, x⟩, hx⟩ := v
+  obtain ⟨⟨b', y⟩, hy⟩ := w
+  obtain rfl : b' = b := by simpa only [sphereBundleProj_apply] using h
+  rcases eq_or_eq_neg_of_norm_eq_of_finrank_eq_one ((VectorBundle.finrank_eq ℝ F E _).trans hF)
+    ((mem_sphereBundle.1 hy).trans (mem_sphereBundle.1 hx).symm) with h | h
+  · exact .inl (Subtype.ext (congrArg (TotalSpace.mk _) h))
+  · exact .inr (Subtype.ext (congrArg (TotalSpace.mk _) h))
+
+end Neg
 
 section Closed
 
