@@ -5,35 +5,41 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.AlgCat.Basic
 public import Mathlib.Algebra.Category.ModuleCat.Limits
 public import Mathlib.Algebra.Category.ModuleCat.Products
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Reverse
 import Mathlib.Tactic.Ring
 
 /-!
-# The cup product on Čech cochains
+# The cup product on Čech complexes
 
-Let `C` be a category with finite products, `U : ι → C` a family of objects, `R` a commutative
-ring, and `P, Q, S : Cᵒᵖ ⥤ ModuleCat R` presheaves of `R`-modules equipped with a natural
-`R`-bilinear pairing `μ : ∀ X, P(X) →ₗ[R] Q(X) →ₗ[R] S(X)`.
+Let `C` be a category with finite products, `U : ι → C` a family of objects, for instance an open
+cover of a topological space, and `R` a commutative ring.
 
-On a `(p + q + 1)`-tuple `c : Fin (p + q + 1) → ι`, the Alexander–Whitney front/back face formula
+For presheaves of `R`-modules `P, Q, S : Cᵒᵖ ⥤ ModuleCat R` equipped with a natural `R`-bilinear
+pairing `μ : ∀ X, P(X) →ₗ[R] Q(X) →ₗ[R] S(X)`, the Alexander–Whitney front/back face formula
 restricts a `p`-cochain `a ∈ Čᵖ(U, P)` along the front projection from
 `U(c 0) × ⋯ × U(c (p + q))` to `U(c 0) × ⋯ × U(c p)` and a `q`-cochain `b ∈ Č^q(U, Q)` along the
 back projection to `U(c p) × ⋯ × U(c (p + q))`, and pairs them via `μ`. This defines an
 `R`-bilinear cup product `TauCeti.CategoryTheory.cechCupCochain` on Čech cochains satisfying:
 
-* the graded Leibniz rule `d (a ⌣ b) = d a ⌣ b + (-1)^p • (a ⌣ d b)`
+* the **graded Leibniz rule** `d (a ⌣ b) = d a ⌣ b + (-1)^p • (a ⌣ d b)`
   (`TauCeti.CategoryTheory.d_cechCupCochain`);
-* associativity for associative pairings (`TauCeti.CategoryTheory.cechCupCochain_assoc`);
-* left and right unit laws for compatible families of unit sections
+* **associativity** for associative pairings (`TauCeti.CategoryTheory.cechCupCochain_assoc`);
+* **left and right unit laws** for compatible families of unit sections
   (`TauCeti.CategoryTheory.cechCupCochain_unit_left`,
   `TauCeti.CategoryTheory.cechCupCochain_unit_right`);
-* naturality with respect to morphisms of families
+* **naturality** with respect to morphisms of families
   (`TauCeti.CategoryTheory.cechComplexMap_cechCupCochain`) and morphisms of presheaves
   (`TauCeti.CategoryTheory.cechComplexFunctor_map_cechCupCochain`);
-* the reversal identity with signed tuple reversal `TauCeti.CategoryTheory.cechReverse`
+* the **reversal identity** with signed tuple reversal `TauCeti.CategoryTheory.cechReverse`
   (`TauCeti.CategoryTheory.cechReverse_cechCupCochain`).
+
+Specializing to a presheaf of `R`-algebras `F : Cᵒᵖ ⥤ AlgCat R` (`cechAlgebraComplex U F`) with
+multiplication `LinearMap.mul R (F.obj X)` yields the cup product `TauCeti.CategoryTheory.cechCup`
+and unit cochain `TauCeti.CategoryTheory.cechOne`, together with their factor/face API
+(`TauCeti.CategoryTheory.cechComponent`, `TauCeti.CategoryTheory.cechFace`).
 
 No thinness hypothesis on `C` and no ordering on `ι` are needed. The passage to fixed-family Čech
 cohomology is in `TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Cup.Homology`.
@@ -47,16 +53,9 @@ cohomology is in `TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Cup.Homology
 * `TauCeti.CategoryTheory.cechCupCochain`: the `R`-bilinear cup product on Čech cochains.
 * `TauCeti.CategoryTheory.cechUnitCochain`: the `0`-cochain determined by a compatible family of
   sections.
-
-## Main results
-
-* `TauCeti.CategoryTheory.d_cechCupCochain`: the graded Leibniz rule on Čech cochains.
-* `TauCeti.CategoryTheory.cechCupCochain_assoc`: associativity on cochains.
-* `TauCeti.CategoryTheory.cechReverse_cechCupCochain`: compatibility with signed tuple reversal.
-* `TauCeti.CategoryTheory.cechComplexMap_cechCupCochain`: compatibility with morphisms of families.
-* `TauCeti.CategoryTheory.cechComplexFunctor_map_cechCupCochain`: naturality in presheaves.
-* `TauCeti.CategoryTheory.cechCupCochain_unit_left`,
-  `TauCeti.CategoryTheory.cechCupCochain_unit_right`: left and right unit laws on cochains.
+* `TauCeti.CategoryTheory.cechAlgebraComplex`: the Čech complex of a presheaf of `R`-algebras.
+* `TauCeti.CategoryTheory.cechCup` and `TauCeti.CategoryTheory.cechOne`: the cup product and unit
+  cochain for a presheaf of `R`-algebras.
 
 ## References
 
@@ -214,7 +213,7 @@ private lemma cechComplexπ_cechAugmentation (U : ι → C) {T : C} (hT : IsTerm
 
 end Helpers
 
-/-! ### The cup product on Čech cochains -/
+/-! ### The cup product on Čech cochains for general bilinear pairings -/
 
 section Cochain
 
@@ -529,5 +528,351 @@ theorem cechAugmentation_f_zero_eq_cechUnitCochain {T : C} (hT : IsTerminal T)
   rw [cechComplexπ_cechAugmentation, cechUnitCochain_π]
 
 end Cochain
+
+/-! ### Specialization to presheaves of algebras -/
+
+section Algebra
+
+variable {C : Type u} [Category.{v} C] [HasFiniteProducts C] {ι : Type w} {U : ι → C}
+  {R : Type u'} [CommRing R] {F : Cᵒᵖ ⥤ AlgCat.{w} R}
+
+section Components
+
+variable (U F) in
+/-- The Čech complex, for the family `U`, of the presheaf of `R`-modules underlying a presheaf of
+`R`-algebras `F`. Its degree `m` term is the product over `a : Fin (m + 1) → ι` of the algebras
+`F(U (a 0) × ⋯ × U (a m))`. -/
+abbrev cechAlgebraComplex : CochainComplex (ModuleCat.{w} R) ℕ :=
+  (cechComplexFunctor U).obj (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))
+
+/-- The factor indexed by `a` of a Čech `m`-cochain, an element of `F(U (a 0) × ⋯ × U (a m))`. -/
+def cechComponent {m : ℕ} (a : Fin (m + 1) → ι) :
+    (cechAlgebraComplex U F).X m →ₗ[R] F.obj (op (∏ᶜ fun j ↦ U (a j))) :=
+  (cechComplexπ U (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)) m a).hom
+
+/-- A Čech cochain is determined by its factors. -/
+theorem cechCochain_ext {m : ℕ} {c c' : (cechAlgebraComplex U F).X m}
+    (h : ∀ a, cechComponent a c = cechComponent a c') : c = c' :=
+  cechComplex_ext h
+
+/-- The Čech cochain with prescribed factors. -/
+def cechOfComponents {m : ℕ}
+    (f : ∀ a : Fin (m + 1) → ι, F.obj (op (∏ᶜ fun j ↦ U (a j)))) :
+    (cechAlgebraComplex U F).X m :=
+  cechCochainMk U (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)) m f
+
+/-- The factors of the cochain with prescribed factors are the prescribed ones. -/
+@[simp]
+theorem cechComponent_cechOfComponents {m : ℕ}
+    (f : ∀ a : Fin (m + 1) → ι, F.obj (op (∏ᶜ fun j ↦ U (a j)))) (a : Fin (m + 1) → ι) :
+    cechComponent a (cechOfComponents f) = f a :=
+  cechComplexπ_cechCochainMk U (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)) m f a
+
+/-- The restriction of a Čech `m`-cochain `c` along a map `σ : Fin (m + 1) → Fin (n + 1)` of
+vertices, at `k : Fin (n + 1) → ι`: the factor of `c` indexed by `k ∘ σ`, restricted along the
+projection `U (k 0) × ⋯ × U (k n) ⟶ U (k (σ 0)) × ⋯ × U (k (σ m))`. For the coface maps
+`σ = j.succAbove` these are the terms of the Čech differential (`cechFace_d`), and the cup product
+multiplies the restrictions along the front and back faces (`cechComponent_cechCup`). -/
+def cechFace {m n : ℕ} (k : Fin (n + 1) → ι) (σ : Fin (m + 1) → Fin (n + 1)) :
+    (cechAlgebraComplex U F).X m →ₗ[R] F.obj (op (∏ᶜ fun j ↦ U (k j))) :=
+  (F.map (Pi.lift fun x ↦ Pi.π (fun j ↦ U (k j)) (σ x)).op).hom.toLinearMap ∘ₗ
+    cechComponent (k ∘ σ)
+
+/-- The restriction along `σ` is the restriction of the factor indexed by `k ∘ σ`. -/
+theorem cechFace_apply {m n : ℕ} (k : Fin (n + 1) → ι) (σ : Fin (m + 1) → Fin (n + 1))
+    (c : (cechAlgebraComplex U F).X m) :
+    cechFace k σ c =
+      (F.map (Pi.lift fun x ↦ Pi.π (fun j ↦ U (k j)) (σ x)).op).hom (cechComponent (k ∘ σ) c) :=
+  (rfl)
+
+/-- Restricting along the identity of the vertices is taking the factor. -/
+@[simp]
+theorem cechFace_id {m : ℕ} (k : Fin (m + 1) → ι) (c : (cechAlgebraComplex U F).X m) :
+    cechFace k id c = cechComponent k c := by
+  simp [cechFace_apply]
+
+/-- Restrictions along composable maps of vertices compose. -/
+theorem map_cechFace {l m n : ℕ} (k : Fin (n + 1) → ι) (τ : Fin (m + 1) → Fin (n + 1))
+    (σ : Fin (l + 1) → Fin (m + 1)) (c : (cechAlgebraComplex U F).X l) :
+    (F.map (Pi.lift fun x ↦ Pi.π (fun j ↦ U (k j)) (τ x)).op).hom (cechFace (k ∘ τ) σ c) =
+      cechFace k (τ ∘ σ) c := by
+  have : (Pi.lift fun x ↦ Pi.π (fun j ↦ U (k j)) (τ x)) ≫
+      (Pi.lift fun x ↦ Pi.π (fun j ↦ U ((k ∘ τ) j)) (σ x)) =
+      Pi.lift fun x ↦ Pi.π (fun j ↦ U (k j)) ((τ ∘ σ) x) :=
+    Pi.hom_ext _ _ fun _ ↦ by simp
+  rw [cechFace_apply, cechFace_apply, ← AlgCat.comp_apply, ← F.map_comp, ← op_comp]
+  exact congrArg (fun g ↦ (F.map g.op).hom (cechComponent (k ∘ τ ∘ σ) c)) this
+
+/-- The factors of the Čech differential: the factor of `d c` indexed by `k : Fin (n + 2) → ι` is
+the alternating sum of the restrictions of `c` along the coface maps `m.succAbove`. -/
+theorem cechComponent_d {n : ℕ} (k : Fin (n + 2) → ι) (c : (cechAlgebraComplex U F).X n) :
+    cechComponent k (((cechAlgebraComplex U F).d n (n + 1)).hom c) =
+      ∑ m : Fin (n + 2), (-1 : ℤ) ^ (m : ℕ) • cechFace k m.succAbove c :=
+  cechComplexπ_d U (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)) n c k
+
+/-- The restrictions of the Čech differential of a cochain are alternating sums of restrictions of
+the cochain. -/
+theorem cechFace_d {m n : ℕ} (k : Fin (n + 1) → ι) (σ : Fin (m + 2) → Fin (n + 1))
+    (c : (cechAlgebraComplex U F).X m) :
+    cechFace k σ (((cechAlgebraComplex U F).d m (m + 1)).hom c) =
+      ∑ j : Fin (m + 2), (-1 : ℤ) ^ (j : ℕ) • cechFace k (σ ∘ j.succAbove) c := by
+  rw [cechFace_apply, cechComponent_d, map_sum]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  rw [map_zsmul, map_cechFace]
+
+end Components
+
+section Maps
+
+/-- The factors of the map of Čech complexes `Č(V, F) ⟶ Č(U, F)` induced by a morphism of families
+`φ : U ⟶ V`: the factor indexed by `k` is the factor indexed by `φ.f ∘ k`, restricted along the
+product of the morphisms `φ.φ (k j)`. -/
+@[simp]
+theorem cechComponent_cechComplexMap {κ : Type w} {V : κ → C}
+    (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) {m : ℕ} (k : Fin (m + 1) → ι)
+    (c : (cechAlgebraComplex V F).X m) :
+    cechComponent k
+        (((cechComplexMap (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)) φ).f m).hom c) =
+      (F.map (Limits.Pi.map fun j ↦ φ.φ (k j)).op).hom (cechComponent (φ.f ∘ k) c) :=
+  cechComplexπ_cechComplexMap φ (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)) m c k
+
+/-- The restrictions of the map of Čech complexes induced by a morphism of families `φ : U ⟶ V`
+are the restrictions along the product of the morphisms `φ.φ (k j)`. -/
+@[simp]
+theorem cechFace_cechComplexMap {κ : Type w} {V : κ → C}
+    (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) {m l : ℕ} (k : Fin (l + 1) → ι)
+    (σ : Fin (m + 1) → Fin (l + 1)) (c : (cechAlgebraComplex V F).X m) :
+    cechFace k σ
+        (((cechComplexMap (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)) φ).f m).hom c) =
+      (F.map (Limits.Pi.map fun j ↦ φ.φ (k j)).op).hom (cechFace (φ.f ∘ k) σ c) := by
+  have : (Pi.lift fun x ↦ Pi.π (fun j ↦ U (k j)) (σ x)) ≫
+      Limits.Pi.map (fun j ↦ φ.φ ((k ∘ σ) j)) =
+      Limits.Pi.map (fun j ↦ φ.φ (k j)) ≫
+        Pi.lift fun x ↦ Pi.π (fun j ↦ V ((φ.f ∘ k) j)) (σ x) :=
+    Pi.hom_ext _ _ fun _ ↦ by simp
+  rw [cechFace_apply, cechComponent_cechComplexMap, cechFace_apply, ← AlgCat.comp_apply,
+    ← AlgCat.comp_apply, ← F.map_comp, ← F.map_comp, ← op_comp, ← op_comp, this]
+  rfl
+
+/-- The factors of the map of Čech complexes induced by a morphism of presheaves of algebras
+`α : F ⟶ G` are the images of the factors under the components of `α`. -/
+@[simp]
+theorem cechComponent_cechComplexFunctor_map {G : Cᵒᵖ ⥤ AlgCat.{w} R} (α : F ⟶ G) {m : ℕ}
+    (k : Fin (m + 1) → ι) (c : (cechAlgebraComplex U F).X m) :
+    cechComponent k ((((cechComplexFunctor U).map
+      (Functor.whiskerRight α (forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)))).f m).hom c) =
+      (α.app (op (∏ᶜ fun j ↦ U (k j)))).hom (cechComponent k c) :=
+  cechComplexπ_cechComplexFunctor_map U
+    (Functor.whiskerRight α (forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))) m c k
+
+/-- The restrictions of the map of Čech complexes induced by a morphism of presheaves of algebras
+`α : F ⟶ G` are the images of the restrictions under the components of `α`. -/
+@[simp]
+theorem cechFace_cechComplexFunctor_map {G : Cᵒᵖ ⥤ AlgCat.{w} R} (α : F ⟶ G) {m l : ℕ}
+    (k : Fin (l + 1) → ι) (σ : Fin (m + 1) → Fin (l + 1)) (c : (cechAlgebraComplex U F).X m) :
+    cechFace k σ ((((cechComplexFunctor U).map
+      (Functor.whiskerRight α (forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)))).f m).hom c) =
+      (α.app (op (∏ᶜ fun j ↦ U (k j)))).hom (cechFace k σ c) := by
+  rw [cechFace_apply, cechComponent_cechComplexFunctor_map, cechFace_apply, ← AlgCat.comp_apply,
+    ← AlgCat.comp_apply, α.naturality]
+  rfl
+
+end Maps
+
+section Cup
+
+private abbrev algMod (F : Cᵒᵖ ⥤ AlgCat.{w} R) : Cᵒᵖ ⥤ ModuleCat.{w} R :=
+  F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)
+
+private def algMul (F : Cᵒᵖ ⥤ AlgCat.{w} R) (X : Cᵒᵖ) :
+    (algMod F).obj X →ₗ[R] (algMod F).obj X →ₗ[R] (algMod F).obj X :=
+  LinearMap.mul R (F.obj X)
+
+omit [HasFiniteProducts C] in
+private lemma algCat_mul_naturality (F : Cᵒᵖ ⥤ AlgCat.{w} R) {X Y : Cᵒᵖ} (f : X ⟶ Y)
+    (x y : (algMod F).obj X) :
+    algMul F Y ((algMod F).map f x) ((algMod F).map f y) =
+      (algMod F).map f (algMul F X x y) := by
+  let x' : F.obj X := x
+  let y' : F.obj X := y
+  exact (map_mul (F.map f).hom x' y').symm
+
+variable (p q n : ℕ) (h : p + q = n)
+
+/-- The **cup product** of Čech cochains of a presheaf of algebras: for `a` of degree `p` and `b` of
+degree `q`, the factor of `a ⌣ b` indexed by `k : Fin (p + q + 1) → ι` is
+`a(k 0, …, k p) · b(k p, …, k (p + q))`, the factor of `a` on the front `p`-face and the factor of
+`b` on the back `q`-face, both restricted to `U (k 0) × ⋯ × U (k (p + q))`
+(`cechComponent_cechCup`). -/
+def cechCup : (cechAlgebraComplex U F).X p →ₗ[R] (cechAlgebraComplex U F).X q →ₗ[R]
+    (cechAlgebraComplex U F).X n :=
+  cechCupCochain U (algMul F) p q n h
+
+variable {p q n}
+
+/-- The factors of a cup product: the factor of `a` on the front face times the factor of `b` on the
+back face. -/
+@[simp]
+theorem cechComponent_cechCup (k : Fin (n + 1) → ι) (a : (cechAlgebraComplex U F).X p)
+    (b : (cechAlgebraComplex U F).X q) :
+    cechComponent k (cechCup p q n h a b) =
+      cechFace k (Fin.castLE (by omega)) a *
+        cechFace k (fun i ↦ Fin.cast (by omega) (Fin.natAdd p i)) b := by
+  exact cechCupCochain_π U (algMul F) p q n h a b k
+
+/-- The restrictions of a cup product are the products of the restrictions along the front and back
+faces. -/
+@[simp]
+theorem cechFace_cechCup {m : ℕ} (k : Fin (m + 1) → ι) (σ : Fin (n + 1) → Fin (m + 1))
+    (a : (cechAlgebraComplex U F).X p) (b : (cechAlgebraComplex U F).X q) :
+    cechFace k σ (cechCup p q n h a b) =
+      cechFace k (σ ∘ Fin.castLE (by omega)) a *
+        cechFace k (σ ∘ fun i ↦ Fin.cast (by omega) (Fin.natAdd p i)) b := by
+  rw [cechFace_apply, cechComponent_cechCup, map_mul, map_cechFace, map_cechFace]
+
+/-- The **Leibniz rule** for the Čech cup product:
+`d (a ⌣ b) = d a ⌣ b + (-1) ^ p a ⌣ d b` for a cochain `a` of degree `p`. -/
+theorem d_cechCup (a : (cechAlgebraComplex U F).X p) (b : (cechAlgebraComplex U F).X q) :
+    ((cechAlgebraComplex U F).d n (n + 1)).hom (cechCup p q n h a b) =
+      cechCup (p + 1) q (n + 1) (by omega) (((cechAlgebraComplex U F).d p (p + 1)).hom a) b +
+        (-1 : ℤ) ^ p • cechCup p (q + 1) (n + 1) (by omega) a
+          (((cechAlgebraComplex U F).d q (q + 1)).hom b) :=
+  d_cechCupCochain U (algMul F) (algCat_mul_naturality F) p q n h a b
+
+/-- The cup product of two cocycles is a cocycle. -/
+theorem d_cechCup_eq_zero {a : (cechAlgebraComplex U F).X p} {b : (cechAlgebraComplex U F).X q}
+    (ha : ((cechAlgebraComplex U F).d p (p + 1)).hom a = 0)
+    (hb : ((cechAlgebraComplex U F).d q (q + 1)).hom b = 0) :
+    ((cechAlgebraComplex U F).d n (n + 1)).hom (cechCup p q n h a b) = 0 := by
+  rw [d_cechCup, ha, hb, map_zero, map_zero, LinearMap.zero_apply, smul_zero, add_zero]
+
+/-- A coboundary times a cocycle is a coboundary: `d x ⌣ b = d (x ⌣ b)` when `d b = 0`. -/
+theorem cechCup_d_left (x : (cechAlgebraComplex U F).X p) {b : (cechAlgebraComplex U F).X q}
+    (hb : ((cechAlgebraComplex U F).d q (q + 1)).hom b = 0) :
+    cechCup (p + 1) q (n + 1) (by omega) (((cechAlgebraComplex U F).d p (p + 1)).hom x) b =
+      ((cechAlgebraComplex U F).d n (n + 1)).hom (cechCup p q n h x b) := by
+  rw [d_cechCup, hb, map_zero, smul_zero, add_zero]
+
+/-- A cocycle times a coboundary is a coboundary: `a ⌣ d y = (-1) ^ p d (a ⌣ y)` when `d a = 0`
+and `a` has degree `p`. -/
+theorem cechCup_d_right {a : (cechAlgebraComplex U F).X p} (y : (cechAlgebraComplex U F).X q)
+    (ha : ((cechAlgebraComplex U F).d p (p + 1)).hom a = 0) :
+    cechCup p (q + 1) (n + 1) (by omega) a (((cechAlgebraComplex U F).d q (q + 1)).hom y) =
+      (-1 : ℤ) ^ p • ((cechAlgebraComplex U F).d n (n + 1)).hom (cechCup p q n h a y) := by
+  rw [d_cechCup, ha, map_zero, LinearMap.zero_apply, zero_add, smul_smul, ← pow_add, ← two_mul,
+    pow_mul, neg_one_sq, one_pow, one_smul]
+
+/-- **Associativity** of the Čech cup product, at the level of cochains. -/
+theorem cechCup_assoc {r m l : ℕ} (h₁ : p + q = m) (h₂ : m + r = n) (h₃ : q + r = l)
+    (h₄ : p + l = n) (a : (cechAlgebraComplex U F).X p) (b : (cechAlgebraComplex U F).X q)
+    (c : (cechAlgebraComplex U F).X r) :
+    cechCup m r n h₂ (cechCup p q m h₁ a b) c = cechCup p l n h₄ a (cechCup q r l h₃ b c) :=
+  cechCupCochain_assoc U (algMul F) (algMul F) (algMul F) (algMul F)
+    (algCat_mul_naturality F) (algCat_mul_naturality F)
+    (fun _ (x y z : F.obj _) ↦ mul_assoc x y z) p q r m l n h₁ h₃ h₂ a b c
+
+/-- **Reversal identity** for `cechCup` when multiplication in `F` is commutative. -/
+theorem cechReverse_cechCup (hcomm : ∀ X (x y : F.obj X), x * y = y * x)
+    (a : (cechAlgebraComplex U F).X p) (b : (cechAlgebraComplex U F).X q) :
+    ((cechReverse U).app (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))).f n
+        (cechCup q p n (by omega)
+          (((cechReverse U).app (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))).f q b)
+          (((cechReverse U).app (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))).f p a)) =
+      (-1 : ℤ) ^ (p * q) • cechCup p q n h a b :=
+  cechReverse_cechCupCochain U (algMul F) (algMul F) (algCat_mul_naturality F)
+    (fun X (x y : F.obj X) ↦ hcomm X y x) p q n h a b
+
+variable (U F) in
+/-- The **unit cochain**: the Čech `0`-cochain all of whose factors are `1`. -/
+def cechOne : (cechAlgebraComplex U F).X 0 :=
+  cechUnitCochain U (algMod F) fun X ↦ (1 : F.obj X)
+
+/-- Every factor of the unit cochain is `1`. -/
+@[simp]
+theorem cechComponent_cechOne (a : Fin 1 → ι) : cechComponent a (cechOne U F) = 1 :=
+  cechUnitCochain_π U (algMod F) (fun X ↦ (1 : F.obj X)) a
+
+/-- Every restriction of the unit cochain is `1`. -/
+@[simp]
+theorem cechFace_cechOne {m : ℕ} (k : Fin (m + 1) → ι) (σ : Fin 1 → Fin (m + 1)) :
+    cechFace k σ (cechOne U F) = 1 := by
+  rw [cechFace_apply, cechComponent_cechOne, map_one]
+
+/-- The unit cochain is a cocycle. -/
+@[simp]
+theorem d_cechOne : ((cechAlgebraComplex U F).d 0 1).hom (cechOne U F) = 0 :=
+  d_cechUnitCochain U (algMod F) (fun X ↦ (1 : F.obj X))
+    fun f ↦ map_one (F.map f).hom
+
+/-- The unit cochain is a left unit for the cup product. -/
+@[simp]
+theorem cechOne_cechCup (b : (cechAlgebraComplex U F).X q) :
+    cechCup 0 q q (zero_add q) (cechOne U F) b = b :=
+  cechCupCochain_unit_left U (algMul F) (fun X ↦ (1 : F.obj X))
+    (fun f ↦ map_one (F.map f).hom) (fun _ (y : F.obj _) ↦ one_mul y) q b
+
+/-- The unit cochain is a right unit for the cup product. -/
+@[simp]
+theorem cechCup_cechOne (a : (cechAlgebraComplex U F).X p) :
+    cechCup p 0 p (add_zero p) a (cechOne U F) = a :=
+  cechCupCochain_unit_right U (algMul F) (fun X ↦ (1 : F.obj X))
+    (fun f ↦ map_one (F.map f).hom) (fun _ (x : F.obj _) ↦ mul_one x) p a
+
+section Naturality
+
+/-- **Naturality under refinement.** The map of Čech complexes `Č(V, F) ⟶ Č(U, F)` induced by a
+morphism of families `φ : U ⟶ V`, such as a refinement of open covers, preserves cup products. -/
+theorem cechComplexMap_cechCup {κ : Type w} {V : κ → C}
+    (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) (a : (cechAlgebraComplex V F).X p)
+    (b : (cechAlgebraComplex V F).X q) :
+    ((cechComplexMap (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)) φ).f n).hom
+        (cechCup p q n h a b) =
+      cechCup p q n h ((cechComplexMap (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)) φ).f p a)
+        ((cechComplexMap (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)) φ).f q b) :=
+  cechComplexMap_cechCupCochain U φ (algMul F) (algCat_mul_naturality F) p q n h a b
+
+/-- **Naturality in the coefficients.** A morphism of presheaves of algebras `α : F ⟶ G` induces a
+map of Čech complexes preserving cup products. -/
+theorem cechComplexFunctor_map_cechCup {G : Cᵒᵖ ⥤ AlgCat.{w} R} (α : F ⟶ G)
+    (a : (cechAlgebraComplex U F).X p) (b : (cechAlgebraComplex U F).X q) :
+    (((cechComplexFunctor U).map
+      (Functor.whiskerRight α (forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)))).f n).hom
+        (cechCup p q n h a b) =
+      cechCup p q n h (((cechComplexFunctor U).map
+          (Functor.whiskerRight α (forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)))).f p a)
+        (((cechComplexFunctor U).map
+          (Functor.whiskerRight α (forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)))).f q b) :=
+  cechComplexFunctor_map_cechCupCochain U (algMul F) (algMul G)
+    (Functor.whiskerRight α (forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)))
+    (Functor.whiskerRight α (forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)))
+    (Functor.whiskerRight α (forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)))
+    (fun X (x y : F.obj X) ↦ map_mul (α.app X).hom x y) p q n h a b
+
+/-- The map of Čech complexes induced by a morphism of families, such as a refinement of open
+covers, preserves the unit cochain. -/
+@[simp]
+theorem cechComplexMap_cechOne {κ : Type w} {V : κ → C}
+    (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) :
+    ((cechComplexMap (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)) φ).f 0).hom (cechOne V F) =
+      cechOne U F :=
+  cechComplexMap_cechUnitCochain U φ (algMod F) (fun X ↦ (1 : F.obj X))
+    fun f ↦ map_one (F.map f).hom
+
+/-- The map of Čech complexes induced by a morphism of presheaves of algebras preserves the unit
+cochain. -/
+@[simp]
+theorem cechComplexFunctor_map_cechOne {G : Cᵒᵖ ⥤ AlgCat.{w} R} (α : F ⟶ G) :
+    (((cechComplexFunctor U).map
+      (Functor.whiskerRight α (forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)))).f 0).hom (cechOne U F) =
+      cechOne U G :=
+  cechComplexFunctor_map_cechUnitCochain U
+    (Functor.whiskerRight α (forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)))
+    (fun X ↦ (1 : F.obj X)) (fun X ↦ (1 : G.obj X)) fun X ↦ map_one (α.app X).hom
+
+end Naturality
+
+end Cup
+
+end Algebra
 
 end TauCeti.CategoryTheory

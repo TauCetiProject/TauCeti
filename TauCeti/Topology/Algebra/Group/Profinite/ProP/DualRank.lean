@@ -120,31 +120,31 @@ private theorem exists_dual_basis {ι : Type u}
       exact hcon ⟨w, hw, h⟩
     -- Compactness restricts the hypothesis to a finite set `F` of indices.
     obtain ⟨F, hF⟩ := exists_finset_iInter_ker_subset
-      (fun j : {j : ι // j ≠ i} ↦ Additive.toMul (b j.1))
+      (fun j : {j : ι // j ≠ i} ↦ Additive.toMul (b j.val))
       ((MonoidHom.continuous_iff_isOpen_ker _).mp (Additive.toMul (b i)).continuous)
       (fun w hw ↦ continuousZModDualToDual_eq_zero_iff.mp
         (hsub (Additive.ofMul w) fun j hj ↦ continuousZModDualToDual_eq_zero_iff.mpr
           (by simpa using Set.mem_iInter.mp hw ⟨j, hj⟩)))
     -- On the finite subfamily, `b i` is a linear combination of the others.
     have hker : ⨅ j : {j : {j : ι // j ≠ i} // j ∈ F},
-        LinearMap.ker (continuousZModDualToDual (b j.1.1)) ≤
+        LinearMap.ker (continuousZModDualToDual (b j.val.val)) ≤
           LinearMap.ker (continuousZModDualToDual (b i)) := fun w hw ↦ by
       rw [Submodule.mem_iInf] at hw
       exact continuousZModDualToDual_eq_zero_iff.mpr
         (hF (Set.mem_iInter₂.mpr fun j hj ↦ continuousZModDualToDual_eq_zero_iff.mp (hw ⟨j, hj⟩)))
     have hspan := mem_span_of_iInf_ker_le_ker hker
-    set S : Set ι := (fun j : {j : ι // j ≠ i} ↦ j.1) '' (F : Set {j : ι // j ≠ i})
+    set S : Set ι := (fun j : {j : ι // j ≠ i} ↦ j.val) '' (F : Set {j : ι // j ≠ i})
     have hsubset : Set.range (fun j : {j : {j : ι // j ≠ i} // j ∈ F} ↦
-        continuousZModDualToDual (b j.1.1)) ⊆ continuousZModDualToDual '' (b '' S) := by
+        continuousZModDualToDual (b j.val.val)) ⊆ continuousZModDualToDual '' (b '' S) := by
       rintro _ ⟨j, rfl⟩
-      exact ⟨b j.1.1, ⟨j.1.1, ⟨j.1, j.2, rfl⟩, rfl⟩, rfl⟩
+      exact ⟨b j.val.val, ⟨j.val.val, ⟨j.val, j.property, rfl⟩, rfl⟩, rfl⟩
     have hmem : continuousZModDualToDual (b i) ∈
         Submodule.map continuousZModDualToDual (Submodule.span (ZMod p) (b '' S)) := by
       rw [← Submodule.span_image]
       exact Submodule.span_mono hsubset hspan
     obtain ⟨y, hy, hyeq⟩ := hmem
     exact b.linearIndependent.notMem_span_image
-      (s := S) (fun ⟨j, _, hji⟩ ↦ j.2 hji) (continuousZModDualToDual_injective hyeq ▸ hy)
+      (s := S) (fun ⟨j, _, hji⟩ ↦ j.property hji) (continuousZModDualToDual_injective hyeq ▸ hy)
   obtain ⟨w, hw0, hwi⟩ := hexists
   refine ⟨(continuousZModDualToDual (b i) w)⁻¹ • w, ?_, fun j hj ↦ ?_⟩
   · rw [LinearMap.map_smul, smul_eq_mul, inv_mul_cancel₀ hwi]

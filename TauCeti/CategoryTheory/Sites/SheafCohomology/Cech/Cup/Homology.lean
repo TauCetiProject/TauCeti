@@ -7,15 +7,17 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import TauCeti.Algebra.Homology.ModuleCat.Basic
+public import TauCeti.Algebra.Homology.ModuleCat.Bilinear
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Cup.Basic
 
 /-!
 # The cup product on fixed-family Čech cohomology
 
 Passing the cochain cup product `TauCeti.CategoryTheory.cechCupCochain` of
-`TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Cup.Basic` to cocycles and cohomology yields an
-`R`-bilinear pairing `TauCeti.CategoryTheory.cechComplexCup` on the cohomology of the fixed-family
-Čech complex `Č(U, -)`.
+`TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Cup.Basic` to cocycles and cohomology via
+`TauCeti.CochainComplex.moduleCatHomologyMap₂` yields an `R`-bilinear pairing
+`TauCeti.CategoryTheory.cechComplexCup` on the cohomology of the fixed-family Čech complex
+`Č(U, -)`.
 
 Because `d_cechCupCochain` gives the graded Leibniz rule, the cup product of cocycles is a cocycle
 and the cup product of a cocycle with a coboundary is a coboundary. The induced cohomology pairing
@@ -24,6 +26,11 @@ compatibility with the degree-`0` augmentation, and graded commutativity
 (`TauCeti.CategoryTheory.cechComplexCup_comm`) via
 `TauCeti.CategoryTheory.homologyMap_cechReverse_app`.
 
+Specializing to a presheaf of `R`-algebras `F : Cᵒᵖ ⥤ AlgCat R` yields the cohomology cup product
+`TauCeti.CategoryTheory.cechCupHomology` and unit class `TauCeti.CategoryTheory.cechOneHomology`,
+together with graded commutativity `TauCeti.CategoryTheory.cechCupHomology_comm` when `F` has
+commutative multiplication.
+
 ## Main definitions
 
 * `TauCeti.CategoryTheory.cechCupCycles`: the `R`-bilinear cup product on Čech cocycles.
@@ -31,6 +38,8 @@ compatibility with the degree-`0` augmentation, and graded commutativity
   cohomology `Hᵖ(Č(U, P)) × H^q(Č(U, Q)) → Hⁿ(Č(U, S))` for `p + q = n`.
 * `TauCeti.CategoryTheory.cechUnitClass`: the degree-`0` Čech cohomology class of a compatible
   family of sections.
+* `TauCeti.CategoryTheory.cechCupHomology` and `TauCeti.CategoryTheory.cechOneHomology`: the
+  specialization to a presheaf of `R`-algebras `F`.
 
 ## Main results
 
@@ -44,6 +53,8 @@ compatibility with the degree-`0` augmentation, and graded commutativity
   `TauCeti.CategoryTheory.cechComplexCup_unit_right`: left and right unit laws on cohomology.
 * `TauCeti.CategoryTheory.cechComplexCup_homologyMap_cechAugmentation`: compatibility with the
   degree-`0` augmentation from global sections.
+* `TauCeti.CategoryTheory.cechCupHomology_comm`: graded commutativity for a presheaf of
+  commutative `R`-algebras.
 
 ## References
 
@@ -66,21 +77,6 @@ section Homology
 variable {R : Type uR} [CommRing R] {C : Type u} [Category.{v} C] [HasFiniteProducts C]
   {ι : Type w} (U : ι → C) {P Q S : Cᵒᵖ ⥤ ModuleCat.{w} R}
 
-/-- Descend a linear map on degree-`n` cycles of a cochain complex of modules that kills incoming
-boundaries to a linear map on degree-`n` homology. -/
-private def descHomology (K : CochainComplex (ModuleCat.{w} R) ℕ) (n : ℕ) {M : ModuleCat.{w} R}
-    (f : K.cycles n →ₗ[R] M) (hf : ∀ x, f (K.toCycles ((ComplexShape.up ℕ).prev n) n x) = 0) :
-    K.homology n →ₗ[R] M :=
-  (CokernelCofork.IsColimit.desc' (K.homologyIsCokernel _ n rfl) (ModuleCat.ofHom f)
-    (by ext x; exact hf x)).1.hom
-
-private lemma descHomology_homologyπ (K : CochainComplex (ModuleCat.{w} R) ℕ) (n : ℕ)
-    {M : ModuleCat.{w} R} (f : K.cycles n →ₗ[R] M)
-    (hf : ∀ x, f (K.toCycles ((ComplexShape.up ℕ).prev n) n x) = 0) (z : K.cycles n) :
-    descHomology K n f hf (K.homologyπ n z) = f z :=
-  ConcreteCategory.congr_hom (CokernelCofork.IsColimit.desc' (K.homologyIsCokernel _ n rfl)
-    (ModuleCat.ofHom f) (by ext x; exact hf x)).2 z
-
 section Descent
 
 variable (μ : ∀ X : Cᵒᵖ, P.obj X →ₗ[R] Q.obj X →ₗ[R] S.obj X)
@@ -92,17 +88,8 @@ def cechCupCycles :
     ((cechComplexFunctor U).obj P).cycles p →ₗ[R]
       ((cechComplexFunctor U).obj Q).cycles q →ₗ[R]
         ((cechComplexFunctor U).obj S).cycles n :=
-  LinearMap.mk₂ R
-    (fun a b ↦ moduleCatCyclesMk ((cechComplexFunctor U).obj S)
-      (cechCupCochain U μ p q n h (((cechComplexFunctor U).obj P).iCycles p a)
-        (((cechComplexFunctor U).obj Q).iCycles q b)) (n + 1) (by simp) (by
-          simpa [iCycles_d_apply] using d_cechCupCochain U μ hμ p q n h
-            (((cechComplexFunctor U).obj P).iCycles p a)
-            (((cechComplexFunctor U).obj Q).iCycles q b)))
-    (fun _ _ _ ↦ moduleCat_iCycles_injective _ _ <| by simp)
-    (fun _ _ _ ↦ moduleCat_iCycles_injective _ _ <| by simp)
-    (fun _ _ _ ↦ moduleCat_iCycles_injective _ _ <| by simp)
-    (fun _ _ _ ↦ moduleCat_iCycles_injective _ _ <| by simp)
+  TauCeti.CochainComplex.moduleCatCyclesMap₂ (fun p q n h ↦ cechCupCochain U μ p q n h)
+    (fun p q n h a b ↦ d_cechCupCochain U μ hμ p q n h a b) p q n h
 
 /-- On underlying cochains, `cechCupCycles` is `cechCupCochain`. -/
 @[simp]
@@ -110,52 +97,10 @@ theorem iCycles_cechCupCycles (a : ((cechComplexFunctor U).obj P).cycles p)
     (b : ((cechComplexFunctor U).obj Q).cycles q) :
     ((cechComplexFunctor U).obj S).iCycles n (cechCupCycles U μ hμ p q n h a b) =
       cechCupCochain U μ p q n h (((cechComplexFunctor U).obj P).iCycles p a)
-        (((cechComplexFunctor U).obj Q).iCycles q b) := by
-  simp [cechCupCycles]
-
-private lemma homologyπ_cechCupCycles_toCycles_right (a : ((cechComplexFunctor U).obj P).cycles p)
-    (i : ℕ) (x : ((cechComplexFunctor U).obj Q).X i) :
-    ((cechComplexFunctor U).obj S).homologyπ n
-      (cechCupCycles U μ hμ p q n h a (((cechComplexFunctor U).obj Q).toCycles i q x)) = 0 := by
-  by_cases hiq : (ComplexShape.up ℕ).Rel i q
-  · obtain rfl : i + 1 = q := hiq
-    obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨p + i, by omega⟩
-    rw [((cechComplexFunctor U).obj S).moduleCat_homologyπ_eq_zero_iff (m := m) (by simp)]
-    refine ⟨(-1 : ℤ) ^ p • cechCupCochain U μ p i m (by omega)
-        (((cechComplexFunctor U).obj P).iCycles p a) x, moduleCat_iCycles_injective _ _ ?_⟩
-    have hd := d_cechCupCochain U μ hμ p i m (by omega)
-      (((cechComplexFunctor U).obj P).iCycles p a) x
-    simp only [iCycles_d_apply, LinearMap.map_zero₂, zero_add] at hd
-    simp [hd, smul_smul, ← mul_pow]
-  · simp [((cechComplexFunctor U).obj Q).toCycles_eq_zero hiq]
-
-private lemma homologyπ_cechCupCycles_toCycles_left (i : ℕ)
-    (x : ((cechComplexFunctor U).obj P).X i) (b : ((cechComplexFunctor U).obj Q).cycles q) :
-    ((cechComplexFunctor U).obj S).homologyπ n
-      (cechCupCycles U μ hμ p q n h (((cechComplexFunctor U).obj P).toCycles i p x) b) = 0 := by
-  by_cases hip : (ComplexShape.up ℕ).Rel i p
-  · obtain rfl : i + 1 = p := hip
-    obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨i + q, by omega⟩
-    rw [((cechComplexFunctor U).obj S).moduleCat_homologyπ_eq_zero_iff (m := m) (by simp)]
-    refine ⟨cechCupCochain U μ i q m (by omega) x (((cechComplexFunctor U).obj Q).iCycles q b),
-      moduleCat_iCycles_injective _ _ ?_⟩
-    have hd := d_cechCupCochain U μ hμ i q m (by omega) x
-      (((cechComplexFunctor U).obj Q).iCycles q b)
-    simp only [iCycles_d_apply, map_zero, smul_zero, add_zero] at hd
-    simp [hd]
-  · simp [((cechComplexFunctor U).obj P).toCycles_eq_zero hip]
-
-private def cechComplexCupLeft (a : ((cechComplexFunctor U).obj P).cycles p) :
-    ((cechComplexFunctor U).obj Q).homology q →ₗ[R] ((cechComplexFunctor U).obj S).homology n :=
-  descHomology ((cechComplexFunctor U).obj Q) q
-    ((((cechComplexFunctor U).obj S).homologyπ n).hom ∘ₗ cechCupCycles U μ hμ p q n h a)
-    (fun x ↦ homologyπ_cechCupCycles_toCycles_right U μ hμ p q n h a _ x)
-
-private lemma cechComplexCupLeft_homologyπ (a : ((cechComplexFunctor U).obj P).cycles p)
-    (b : ((cechComplexFunctor U).obj Q).cycles q) :
-    cechComplexCupLeft U μ hμ p q n h a (((cechComplexFunctor U).obj Q).homologyπ q b) =
-      ((cechComplexFunctor U).obj S).homologyπ n (cechCupCycles U μ hμ p q n h a b) :=
-  descHomology_homologyπ _ q _ _ b
+        (((cechComplexFunctor U).obj Q).iCycles q b) :=
+  TauCeti.CochainComplex.iCycles_moduleCatCyclesMap₂
+    (fun p q n h ↦ cechCupCochain U μ p q n h)
+    (fun p q n h a b ↦ d_cechCupCochain U μ hμ p q n h a b) p q n h a b
 
 /-- **The cup product on fixed-family Čech cohomology.** For a natural `R`-bilinear pairing `μ`
 and `p + q = n`, this is the `R`-bilinear pairing
@@ -164,19 +109,8 @@ def cechComplexCup :
     ((cechComplexFunctor U).obj P).homology p →ₗ[R]
       ((cechComplexFunctor U).obj Q).homology q →ₗ[R]
         ((cechComplexFunctor U).obj S).homology n :=
-  descHomology ((cechComplexFunctor U).obj P) p
-    (M := ModuleCat.of R (((cechComplexFunctor U).obj Q).homology q →ₗ[R]
-      ((cechComplexFunctor U).obj S).homology n))
-    { toFun := cechComplexCupLeft U μ hμ p q n h
-      map_add' _ _ := LinearMap.ext fun β ↦ by
-        obtain ⟨b, rfl⟩ := moduleCat_homologyπ_surjective _ q β; simp [cechComplexCupLeft_homologyπ]
-      map_smul' _ _ := LinearMap.ext fun β ↦ by
-        obtain ⟨b, rfl⟩ := moduleCat_homologyπ_surjective _ q β
-        simp [cechComplexCupLeft_homologyπ] }
-    fun x ↦ LinearMap.ext fun β ↦ by
-      obtain ⟨b, rfl⟩ := moduleCat_homologyπ_surjective _ q β
-      exact (cechComplexCupLeft_homologyπ U μ hμ p q n h _ b).trans
-        (homologyπ_cechCupCycles_toCycles_left U μ hμ p q n h _ x b)
+  TauCeti.CochainComplex.moduleCatHomologyMap₂ (fun p q n h ↦ cechCupCochain U μ p q n h)
+    (fun p q n h a b ↦ d_cechCupCochain U μ hμ p q n h a b) p q n h
 
 /-- On cohomology classes of cocycles, `cechComplexCup` is the class of `cechCupCycles`. -/
 @[simp]
@@ -185,8 +119,10 @@ theorem cechComplexCup_homologyπ (a : ((cechComplexFunctor U).obj P).cycles p)
     cechComplexCup U μ hμ p q n h
         (((cechComplexFunctor U).obj P).homologyπ p a)
         (((cechComplexFunctor U).obj Q).homologyπ q b) =
-      ((cechComplexFunctor U).obj S).homologyπ n (cechCupCycles U μ hμ p q n h a b) := by
-  rw [cechComplexCup, descHomology_homologyπ]; exact cechComplexCupLeft_homologyπ U μ hμ p q n h a b
+      ((cechComplexFunctor U).obj S).homologyπ n (cechCupCycles U μ hμ p q n h a b) :=
+  TauCeti.CochainComplex.moduleCatHomologyMap₂_homologyπ
+    (fun p q n h ↦ cechCupCochain U μ p q n h)
+    (fun p q n h a b ↦ d_cechCupCochain U μ hμ p q n h a b) p q n h a b
 
 end Descent
 
@@ -274,9 +210,13 @@ theorem cechComplexCup_cechComplexMap {κ : Type w} {V : κ → C}
     homologyMap (cechComplexMap S φ) n (cechComplexCup V μ hμ p q n h x y) =
       cechComplexCup U μ hμ p q n h
         (homologyMap (cechComplexMap P φ) p x) (homologyMap (cechComplexMap Q φ) q y) :=
-  homologyMap_cechComplexCup_of_f V μ μ hμ hμ
-    (cechComplexMap P φ) (cechComplexMap Q φ) (cechComplexMap S φ) p q n h
-    (cechComplexMap_cechCupCochain U φ μ hμ p q n h) x y
+  TauCeti.CochainComplex.homologyMap_moduleCatHomologyMap₂
+    (fun p q n h ↦ cechCupCochain V μ p q n h)
+    (fun p q n h a b ↦ d_cechCupCochain V μ hμ p q n h a b)
+    (fun p q n h ↦ cechCupCochain U μ p q n h)
+    (fun p q n h a b ↦ d_cechCupCochain U μ hμ p q n h a b)
+    (cechComplexMap P φ) (cechComplexMap Q φ) (cechComplexMap S φ)
+    (fun p q n h a b ↦ cechComplexMap_cechCupCochain U φ μ hμ p q n h a b) p q n h x y
 
 /-- Naturality of the cup product on fixed-family Čech cohomology with respect to morphisms of
 presheaves. -/
@@ -294,9 +234,14 @@ theorem cechComplexCup_naturality {P' Q' S' : Cᵒᵖ ⥤ ModuleCat.{w} R}
       cechComplexCup U μ' hμ' p q n h
         (homologyMap ((cechComplexFunctor U).map α) p x)
         (homologyMap ((cechComplexFunctor U).map β) q y) :=
-  homologyMap_cechComplexCup_of_f U μ μ' hμ hμ'
+  TauCeti.CochainComplex.homologyMap_moduleCatHomologyMap₂
+    (fun p q n h ↦ cechCupCochain U μ p q n h)
+    (fun p q n h a b ↦ d_cechCupCochain U μ hμ p q n h a b)
+    (fun p q n h ↦ cechCupCochain U μ' p q n h)
+    (fun p q n h a b ↦ d_cechCupCochain U μ' hμ' p q n h a b)
     ((cechComplexFunctor U).map α) ((cechComplexFunctor U).map β) ((cechComplexFunctor U).map γ)
-    p q n h (cechComplexFunctor_map_cechCupCochain U μ μ' α β γ hγ p q n h) x y
+    (fun p q n h a b ↦ cechComplexFunctor_map_cechCupCochain U μ μ' α β γ hγ p q n h a b)
+    p q n h x y
 
 /-- The degree-`0` Čech cohomology class of a compatible family of sections `e`. -/
 def cechUnitClass (P : Cᵒᵖ ⥤ ModuleCat.{w} R) (e : ∀ X : Cᵒᵖ, P.obj X)
@@ -398,5 +343,201 @@ theorem cechComplexCup_homologyMap_cechAugmentation {T : C} (hT : IsTerminal T)
     ← Q.map_comp, ← op_comp, hT.hom_ext (_ ≫ hT.from _) (hT.from _), hμ]
 
 end Homology
+
+/-! ### Specialization to presheaves of algebras -/
+
+section Algebra
+
+variable {C : Type u} [Category.{v} C] [HasFiniteProducts C] {ι : Type w} (U : ι → C)
+  {R : Type u'} [CommRing R] (F : Cᵒᵖ ⥤ AlgCat.{w} R)
+
+/-- **The cup product on Čech cohomology of a family** for a presheaf of `R`-algebras `F`:
+`Hᵖ(U, F) →ₗ[R] H^q(U, F) →ₗ[R] Hⁿ(U, F)` for `p + q = n`. On classes of cocycles it is the
+class of the cup product of cocycles (`TauCeti.CategoryTheory.cechCupHomology_homologyπ`). -/
+def cechCupHomology (p q n : ℕ) (h : p + q = n) :
+    (cechAlgebraComplex U F).homology p →ₗ[R] (cechAlgebraComplex U F).homology q →ₗ[R]
+      (cechAlgebraComplex U F).homology n :=
+  TauCeti.CochainComplex.moduleCatHomologyMap₂ (fun p q n h ↦ cechCup p q n h)
+    (fun _ _ _ h a b ↦ d_cechCup h a b) p q n h
+
+/-- **The cup product on classes**: the cup product of the classes of two cocycles is the class of
+the cup product of the cocycles. -/
+@[simp]
+theorem cechCupHomology_homologyπ {p q n : ℕ} (h : p + q = n)
+    (a : (cechAlgebraComplex U F).cycles p) (b : (cechAlgebraComplex U F).cycles q) :
+    cechCupHomology U F p q n h (((cechAlgebraComplex U F).homologyπ p).hom a)
+        (((cechAlgebraComplex U F).homologyπ q).hom b) =
+      ((cechAlgebraComplex U F).homologyπ n).hom ((cechAlgebraComplex U F).moduleCatCyclesMk
+        (cechCup p q n h (((cechAlgebraComplex U F).iCycles p).hom a)
+          (((cechAlgebraComplex U F).iCycles q).hom b)) (n + 1) (by simp)
+        (d_cechCup_eq_zero h (moduleCat_d_iCycles_apply _ _ _ a)
+          (moduleCat_d_iCycles_apply _ _ _ b))) := by
+  rw [cechCupHomology, TauCeti.CochainComplex.moduleCatHomologyMap₂_homologyπ]
+  congr 1
+  apply moduleCat_iCycles_injective
+  simp
+
+/-- **The cup product on classes of cochains**: the cup product of the classes of two cocycles
+given as cochains is the class of their cup product. -/
+theorem cechCupHomology_homologyπ_moduleCatCyclesMk {p q n : ℕ} (h : p + q = n)
+    (x : (cechAlgebraComplex U F).X p) (m₁ : ℕ) (hm₁ : (ComplexShape.up ℕ).next p = m₁)
+    (hx : ((cechAlgebraComplex U F).d p m₁).hom x = 0) (y : (cechAlgebraComplex U F).X q)
+    (m₂ : ℕ) (hm₂ : (ComplexShape.up ℕ).next q = m₂)
+    (hy : ((cechAlgebraComplex U F).d q m₂).hom y = 0) :
+    cechCupHomology U F p q n h
+        (((cechAlgebraComplex U F).homologyπ p).hom
+          ((cechAlgebraComplex U F).moduleCatCyclesMk x m₁ hm₁ hx))
+        (((cechAlgebraComplex U F).homologyπ q).hom
+          ((cechAlgebraComplex U F).moduleCatCyclesMk y m₂ hm₂ hy)) =
+      ((cechAlgebraComplex U F).homologyπ n).hom ((cechAlgebraComplex U F).moduleCatCyclesMk
+        (cechCup p q n h x y) (n + 1) (by simp)
+        (d_cechCup_eq_zero h (by subst hm₁; rwa [CochainComplex.next] at hx)
+          (by subst hm₂; rwa [CochainComplex.next] at hy))) :=
+  TauCeti.CochainComplex.moduleCatHomologyMap₂_homologyπ_moduleCatCyclesMk _ _ h x m₁ hm₁ hx y m₂
+    hm₂ hy
+
+/-- **Associativity** of the cup product on Čech cohomology. -/
+theorem cechCupHomology_assoc {p q r m l n : ℕ} (h₁ : p + q = m) (h₂ : m + r = n)
+    (h₃ : q + r = l) (h₄ : p + l = n) (α : (cechAlgebraComplex U F).homology p)
+    (β : (cechAlgebraComplex U F).homology q) (γ : (cechAlgebraComplex U F).homology r) :
+    cechCupHomology U F m r n h₂ (cechCupHomology U F p q m h₁ α β) γ =
+      cechCupHomology U F p l n h₄ α (cechCupHomology U F q r l h₃ β γ) := by
+  obtain ⟨a, rfl⟩ := moduleCat_homologyπ_surjective _ p α
+  obtain ⟨b, rfl⟩ := moduleCat_homologyπ_surjective _ q β
+  obtain ⟨c, rfl⟩ := moduleCat_homologyπ_surjective _ r γ
+  simp only [cechCupHomology_homologyπ]
+  congr 1
+  apply moduleCat_iCycles_injective
+  simp [cechCup_assoc h₁ h₂ h₃ h₄]
+
+/-- **Graded commutativity** of the cup product on Čech cohomology for a presheaf of commutative
+`R`-algebras. -/
+theorem cechCupHomology_comm {F : Cᵒᵖ ⥤ AlgCat.{w} R}
+    (hcomm : ∀ X (x y : F.obj X), x * y = y * x) {p q n : ℕ} (h : p + q = n)
+    (α : (cechAlgebraComplex U F).homology p) (β : (cechAlgebraComplex U F).homology q) :
+    cechCupHomology U F q p n (by omega) β α =
+      (-1 : ℤ) ^ (p * q) • cechCupHomology U F p q n h α β := by
+  obtain ⟨a, rfl⟩ := moduleCat_homologyπ_surjective _ p α
+  obtain ⟨b, rfl⟩ := moduleCat_homologyπ_surjective _ q β
+  trans homologyMap ((cechReverse U).app (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))) n
+    (cechCupHomology U F q p n (by omega)
+      (homologyMap ((cechReverse U).app (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))) q
+        ((cechAlgebraComplex U F).homologyπ q b))
+      (homologyMap ((cechReverse U).app (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))) p
+        ((cechAlgebraComplex U F).homologyπ p a)))
+  · simp [homologyMap_cechReverse_app]
+  simp only [moduleCat_homologyMap_homologyπ]
+  change (homologyMap ((cechReverse U).app (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))) n).hom
+      (cechCupHomology U F q p n (by omega)
+        (((cechAlgebraComplex U F).homologyπ q).hom _)
+        (((cechAlgebraComplex U F).homologyπ p).hom _)) =
+    (-1 : ℤ) ^ (p * q) • cechCupHomology U F p q n h
+      (((cechAlgebraComplex U F).homologyπ p).hom a)
+      (((cechAlgebraComplex U F).homologyπ q).hom b)
+  rw [cechCupHomology_homologyπ, cechCupHomology_homologyπ]
+  rw [← show (cechAlgebraComplex U F).homologyπ n
+      ((cechAlgebraComplex U F).moduleCatCyclesMk _ _ _ _) =
+      ((cechAlgebraComplex U F).homologyπ n).hom _ from rfl,
+    moduleCat_homologyMap_homologyπ, ← map_zsmul]
+  congr 1
+  apply moduleCat_iCycles_injective
+  simpa using cechReverse_cechCup (U := U) (F := F) (h := h) hcomm _ _
+
+/-- The **unit class** of Čech cohomology: the class in `H⁰(U, F)` of the unit cocycle, all of
+whose factors are `1`. -/
+def cechOneHomology : (cechAlgebraComplex U F).homology 0 :=
+  ((cechAlgebraComplex U F).homologyπ 0).hom
+    ((cechAlgebraComplex U F).moduleCatCyclesMk (cechOne U F) 1 (by simp) d_cechOne)
+
+/-- The unit class is the class of the unit cocycle. -/
+theorem cechOneHomology_def :
+    cechOneHomology U F = ((cechAlgebraComplex U F).homologyπ 0).hom
+      ((cechAlgebraComplex U F).moduleCatCyclesMk (cechOne U F) 1 (by simp) d_cechOne) :=
+  (rfl)
+
+/-- The unit class is a left unit for the cup product on Čech cohomology. -/
+@[simp]
+theorem cechOneHomology_cechCupHomology {q : ℕ} (β : (cechAlgebraComplex U F).homology q) :
+    cechCupHomology U F 0 q q (zero_add q) (cechOneHomology U F) β = β := by
+  obtain ⟨b, rfl⟩ := moduleCat_homologyπ_surjective _ q β
+  rw [cechOneHomology_def, cechCupHomology_homologyπ]
+  congr 1
+  apply moduleCat_iCycles_injective
+  simp
+
+/-- The unit class is a right unit for the cup product on Čech cohomology. -/
+@[simp]
+theorem cechCupHomology_cechOneHomology {p : ℕ} (α : (cechAlgebraComplex U F).homology p) :
+    cechCupHomology U F p 0 p (add_zero p) α (cechOneHomology U F) = α := by
+  obtain ⟨a, rfl⟩ := moduleCat_homologyπ_surjective _ p α
+  rw [cechOneHomology_def, cechCupHomology_homologyπ]
+  congr 1
+  apply moduleCat_iCycles_injective
+  simp
+
+section Naturality
+
+variable {U F}
+
+/-- **Naturality under refinement.** The map on Čech cohomology `Hⁿ(V, F) ⟶ Hⁿ(U, F)` induced by a
+morphism of families `φ : U ⟶ V`, such as a refinement of open covers, preserves cup products. -/
+@[simp]
+theorem homologyMap_cechComplexMap_cechCupHomology {κ : Type w} {V : κ → C}
+    (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) {p q n : ℕ} (h : p + q = n)
+    (α : (cechAlgebraComplex V F).homology p) (β : (cechAlgebraComplex V F).homology q) :
+    (homologyMap (cechComplexMap (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)) φ) n).hom
+        (cechCupHomology V F p q n h α β) =
+      cechCupHomology U F p q n h
+        ((homologyMap (cechComplexMap (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)) φ) p).hom α)
+        ((homologyMap (cechComplexMap (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)) φ) q).hom
+          β) :=
+  TauCeti.CochainComplex.homologyMap_moduleCatHomologyMap₂ _ _ _ _ _ _ _
+    (fun _ _ _ h a b ↦ cechComplexMap_cechCup h φ a b) p q n h α β
+
+/-- The map on Čech cohomology induced by a morphism of families, such as a refinement of open
+covers, preserves the unit class. -/
+@[simp]
+theorem homologyMap_cechComplexMap_cechOneHomology {κ : Type w} {V : κ → C}
+    (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) :
+    (homologyMap (cechComplexMap (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)) φ) 0).hom
+        (cechOneHomology V F) =
+      cechOneHomology U F := by
+  rw [cechOneHomology_def, cechOneHomology_def, homologyMap_homologyπ_moduleCatCyclesMk]
+  congr 2
+  exact cechComplexMap_cechOne φ
+
+/-- **Naturality in the coefficients.** The map on Čech cohomology induced by a morphism of
+presheaves of algebras `α : F ⟶ G` preserves cup products. -/
+@[simp]
+theorem homologyMap_cechComplexFunctor_map_cechCupHomology {G : Cᵒᵖ ⥤ AlgCat.{w} R} (α : F ⟶ G)
+    {p q n : ℕ} (h : p + q = n) (x : (cechAlgebraComplex U F).homology p)
+    (y : (cechAlgebraComplex U F).homology q) :
+    (homologyMap ((cechComplexFunctor U).map
+        (Functor.whiskerRight α (forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)))) n).hom
+        (cechCupHomology U F p q n h x y) =
+      cechCupHomology U G p q n h
+        ((homologyMap ((cechComplexFunctor U).map
+          (Functor.whiskerRight α (forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)))) p).hom x)
+        ((homologyMap ((cechComplexFunctor U).map
+          (Functor.whiskerRight α (forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)))) q).hom y) :=
+  TauCeti.CochainComplex.homologyMap_moduleCatHomologyMap₂ _ _ _ _ _ _ _
+    (fun _ _ _ h a b ↦ cechComplexFunctor_map_cechCup h α a b) p q n h x y
+
+/-- The map on Čech cohomology induced by a morphism of presheaves of algebras preserves the unit
+class. -/
+@[simp]
+theorem homologyMap_cechComplexFunctor_map_cechOneHomology {G : Cᵒᵖ ⥤ AlgCat.{w} R}
+    (α : F ⟶ G) :
+    (homologyMap ((cechComplexFunctor U).map
+        (Functor.whiskerRight α (forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)))) 0).hom
+        (cechOneHomology U F) =
+      cechOneHomology U G := by
+  rw [cechOneHomology_def, cechOneHomology_def, homologyMap_homologyπ_moduleCatCyclesMk]
+  congr 2
+  exact cechComplexFunctor_map_cechOne α
+
+end Naturality
+
+end Algebra
 
 end TauCeti.CategoryTheory

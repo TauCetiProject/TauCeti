@@ -228,10 +228,8 @@ private theorem exists_eLpNorm_fourierMultiplierCLM_mihlinTrunc_le {N : ℕ}
   set T := (Lp.fourierMultiplierCLM F (σ.toLp ∞ (volume : Measure V))).restrictScalars ℝ
   have hT : adjoint T =
       (Lp.fourierMultiplierCLM F (σ'.toLp ∞ (volume : Measure V))).restrictScalars ℝ := by
-    refine ((eq_adjoint_iff _ _).2 fun f g ↦ ?_).symm
-    rw [L2.real_inner_eq_re_inner, L2.real_inner_eq_re_inner, coe_restrictScalars',
-      coe_restrictScalars', ← star_toLp_mihlinTrunc hm hm',
-      ← Lp.adjoint_fourierMultiplierCLM, adjoint_inner_left]
+    rw [L2.adjoint_restrictScalars, Lp.adjoint_fourierMultiplierCLM,
+      star_toLp_mihlinTrunc hm hm']
   have hTn : ‖T‖ₑ ≤ 1 := by
     rw [← ofReal_norm, norm_restrictScalars, ← ENNReal.ofReal_one]
     exact ENNReal.ofReal_le_ofReal
