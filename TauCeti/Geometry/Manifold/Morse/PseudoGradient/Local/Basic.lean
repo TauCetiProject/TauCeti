@@ -196,7 +196,7 @@ theorem sum_weight_mul_linearFlow_sq_le {z : Fin (Module.finrank ℝ E) → ℝ}
         nlinarith [sq_nonneg (φ.linearFlow T z i), sq_nonneg ε]
       · rw [hi, one_mul, φ.linearFlow_of_weight_eq_one hi, mul_pow, add_zero]
         have hexp1 : Real.exp (-T) ^ 2 ≤ 1 := by
-          rw [← Real.exp_nat_mul, Real.exp_le_one_iff]; push_cast; linarith
+          rw [← Real.exp_natCast_mul, Real.exp_le_one_iff]; push_cast; linarith
         have hzi2 : z i ^ 2 ≤ ε ^ 2 := by
           rw [← sq_abs]; exact pow_le_pow_left₀ (abs_nonneg _) (hz i) 2
         nlinarith [sq_nonneg (z i), sq_nonneg (Real.exp (-T))]

@@ -161,7 +161,7 @@ theorem starSubdivisionCone_mono {S T : Set (Option (ToricRay τ))} (h : S ⊆ T
 theorem starSubdivisionGenerator_mem (k : Option (ToricRay τ)) :
     i (starSubdivisionGenerator hi A hτ k) ∈ τ := by
   have hu (ρ : ToricRay τ) : i (primitiveGenerator hi hτ ρ) ∈ τ :=
-    ρ.1.isFaceOf.le (primitiveGenerator_mem hi hτ ρ)
+    ρ.val.isFaceOf.le (primitiveGenerator_mem hi hτ ρ)
   cases k with
   | none =>
     rw [starSubdivisionGenerator_none, map_sum]
@@ -394,7 +394,7 @@ noncomputable def starSubdivision : Fan i where
         (hτ.linearIndependent_primitiveGenerator hi) hS)
       (C := PointedCone.hull ℝ
         ((fun k ↦ i (starSubdivisionGenerator hi A hτ.toIsToricCone k)) '' S))
-      (by rw [image_eq_range]) {k : S | k.1 ∈ T}
+      (by rw [image_eq_range]) {k : S | k.val ∈ T}
     convert h using 2
     ext x
     simp only [mem_image, mem_inter_iff, mem_ofPred_eq, Subtype.exists, exists_and_right,
@@ -790,7 +790,7 @@ theorem starSubdivisionAlongRay_le_starSubdivisionCone (hσ0 : σ ≠ ⊥) {τ :
 theorem starSubdivisionAlongRay_le_iff_le_leastCone (hσ0 : σ ≠ ⊥)
     (C : (Φ.starSubdivisionAlong hΦ hσ).cones) :
     (Φ.starSubdivisionAlongRay hΦ hσ hσ0).toCone ≤ C ↔
-      σ ≤ (Φ.starSubdivisionAlong_isSubdivision hΦ hσ hσ0).toFanHom.leastCone C.2 := by
+      σ ≤ (Φ.starSubdivisionAlong_isSubdivision hΦ hσ hσ0).toFanHom.leastCone C.property := by
   have hsub := Φ.starSubdivisionAlong_isSubdivision hΦ hσ hσ0
   have hσt := Φ.isToricCone hσ
   constructor
@@ -799,8 +799,8 @@ theorem starSubdivisionAlongRay_le_iff_le_leastCone (hσ0 : σ ≠ ⊥)
       Submodule.span_singleton_le_iff_mem] at hu
     -- The face `σ ⊓ L` of `σ` contains `u_σ`, hence contains `σ`.
     exact (hσt.le_of_isFaceOf_of_sum_primitiveGenerator_mem Φ.lattice
-      (Φ.inf_isFaceOf_left hσ (hsub.toFanHom.leastCone_mem C.2))
-      ⟨starSubdivisionGenerator_mem Φ.lattice _ hσt none, hsub.le_leastCone C.2 hu⟩).trans
+      (Φ.inf_isFaceOf_left hσ (hsub.toFanHom.leastCone_mem C.property))
+      ⟨starSubdivisionGenerator_mem Φ.lattice _ hσt none, hsub.le_leastCone C.property hu⟩).trans
         inf_le_right
   · intro hσL
     obtain ⟨C, hC⟩ := C

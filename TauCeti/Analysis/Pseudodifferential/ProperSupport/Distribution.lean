@@ -142,7 +142,7 @@ private theorem IsUniform.exists_norm_iteratedFDeriv_quantize_le {m' : ℝ} {V' 
     ((schwartz_withSeminorms ℂ _ _).continuous_seminorm (0, i)).comp L.continuous
   obtain ⟨s, C, -, hC⟩ :=
     Seminorm.bound_of_continuous (ContDiffMapSupportedIn.withSeminorms ℂ _ _ ⊤ K) q hq
-  refine ⟨s, C, C.2, fun f x ↦ ?_⟩
+  refine ⟨s, C, C.property, fun f x ↦ ?_⟩
   rw [← coe_quantizeUniformCLM b hb]
   exact (SchwartzMap.norm_iteratedFDeriv_le_seminorm ℂ _ i x).trans (hC f)
 

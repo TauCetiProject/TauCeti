@@ -125,7 +125,7 @@ private theorem exists_paths_vertexSeparator_sum_eq_of_finite [Finite V] [Decida
   -- A mixed separator of weight below `M` contains no arrows.
   obtain rfl : F = ∅ := by
     by_contra hF
-    obtain ⟨a, ha⟩ := nonempty_iff_ne_empty.2 hF
+    obtain ⟨a, ha⟩ := ne_empty_iff_nonempty.1 hF
     have hMF : M ≤ ∑ _ ∈ F, M := single_le_sum (f := fun _ ↦ M) (fun _ _ ↦ hM) ha
     have hX : 0 ≤ ∑ v ∈ X, (c v : ℤ) := by positivity
     omega

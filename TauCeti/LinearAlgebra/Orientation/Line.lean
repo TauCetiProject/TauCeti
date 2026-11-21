@@ -90,7 +90,7 @@ theorem mem_orientationLine_iff {g : Orientation 𝕜 M ι → R} :
 @[simp]
 theorem orientationLine_apply_neg (g : orientationLine R 𝕜 M ι) (o : Orientation 𝕜 M ι) :
     (g : Orientation 𝕜 M ι → R) (-o) = -(g : Orientation 𝕜 M ι → R) o :=
-  g.2 o
+  g.property o
 
 end CommRing
 

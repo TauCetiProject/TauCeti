@@ -56,7 +56,7 @@ theorem tendsto_iff_tendsto_apply {l : Filter α} {M : α → SpecialLinearGroup
 on column vectors, by restricting the action of all square matrices. -/
 instance instContinuousSMulVec [ContinuousAdd R] [ContinuousMul R] :
     ContinuousSMul (SpecialLinearGroup n R) (n → R) :=
-  IsInducing.id.continuousSMul (M := Matrix n n R) continuous_subtype_val
+  IsInducing.id.continuousSMul (M := Matrix n n R) continuous_subtypeVal
     (SpecialLinearGroup.smul_def _ _)
 
 /-- Over a σ-compact `T1` topological ring, `SL(n, R)` is σ-compact, as a closed subset of the

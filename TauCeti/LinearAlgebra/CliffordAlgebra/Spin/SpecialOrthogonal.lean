@@ -27,7 +27,8 @@ remains canonical.
   inducing a determinant-one isometry is even.
 * `CliffordAlgebra.det_lipschitzToOrthogonal_eq_one_of_mem_even` gives the converse: an even
   Lipschitz element acts with determinant one.
-* `CliffordAlgebra.coe_spinToSpecialOrthogonal_apply` identifies its underlying action
+* `CliffordAlgebra.coe_spinToSpecialOrthogonal` and
+  `CliffordAlgebra.coe_spinToSpecialOrthogonal_apply` identify its underlying action
   with the Spin action on the quadratic module.
 * `CliffordAlgebra.specialOrthogonalToOrthogonal_spinToSpecialOrthogonal`: followed by the
   inclusion of `SO(Q)` into `O(Q)`, it is the orthogonal Spin action.
@@ -149,7 +150,7 @@ private theorem det_lipschitzToOrthogonal_eq_one_of_mem_even_of_finite_free
     (Q : QuadraticForm R M) (x : lipschitzGroup Q)
     (hx : ((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) ∈ even Q) :
     QuadraticMap.orthogonalDet Q (lipschitzToOrthogonal Q x) = 1 := by
-  have hinv := involute_eq_det_smul_of_mem_lipschitz Q x.2
+  have hinv := involute_eq_det_smul_of_mem_lipschitz Q x.property
   have hxe : ((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) ∈ evenOdd Q 0 := by
     rwa [← even_toSubmodule Q]
   rw [involute_eq_of_mem_even hxe] at hinv
@@ -190,7 +191,7 @@ theorem mem_even_of_det_lipschitzToOrthogonal_eq_one [Module.Free R M] [Module.F
     (Q : QuadraticForm R M) (x : lipschitzGroup Q)
     (hdet : QuadraticMap.orthogonalDet Q (lipschitzToOrthogonal Q x) = 1) :
     ((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) ∈ even Q := by
-  have hinv := involute_eq_det_smul_of_mem_lipschitz Q x.2
+  have hinv := involute_eq_det_smul_of_mem_lipschitz Q x.property
   have hdet' : lipschitzDet Q x = 1 := by
     rw [lipschitzDet]
     simp only [MonoidHom.comp_apply]
@@ -218,7 +219,7 @@ private theorem det_spinToOrthogonal_eq_one_of_finite_free
     rw [coe_pinToLipschitz_apply, coe_spinToPin_apply]
   have h := det_lipschitzToOrthogonal_eq_one_of_mem_even_of_finite_free Q l (by
     rw [hlcoe]
-    exact spinGroup.mem_even x.2)
+    exact spinGroup.mem_even x.property)
   rw [QuadraticMap.orthogonalDet_apply, ← pinToOrthogonal_eq_lipschitzToOrthogonal,
     pinToOrthogonal_spinToPin] at h
   exact h
@@ -260,7 +261,7 @@ noncomputable def spinToSpecialOrthogonal (Q : QuadraticForm R M) :
   (((QuadraticMap.orthogonalGroup Q).subtype.comp (spinToOrthogonal Q)).codRestrict
     (QuadraticMap.specialOrthogonalGroup Q) fun x =>
       (QuadraticMap.mem_specialOrthogonalGroup_iff).2
-        ⟨(spinToOrthogonal Q x).2, det_spinToOrthogonal_eq_one Q x⟩)
+        ⟨(spinToOrthogonal Q x).property, det_spinToOrthogonal_eq_one Q x⟩)
 
 /-- Restricting the codomain of the Spin action to the special orthogonal group does not change
 its kernel. -/
@@ -279,6 +280,13 @@ theorem coe_spinToSpecialOrthogonal_apply (Q : QuadraticForm R M) (x : spinGroup
   -- The codomain restriction does not change the underlying orthogonal action.
   change (((spinToOrthogonal Q x : QuadraticMap.orthogonalGroup Q) : M ≃ₗ[R] M) m) = _
   rw [coe_spinToOrthogonal_apply]
+
+/-- The underlying linear equivalence of the special orthogonal Spin action is
+`CliffordAlgebra.spinVectorAction`. -/
+theorem coe_spinToSpecialOrthogonal (Q : QuadraticForm R M) (x : spinGroup Q) :
+    ((spinToSpecialOrthogonal Q x : QuadraticMap.specialOrthogonalGroup Q) : M ≃ₗ[R] M) =
+      spinVectorAction Q x :=
+  LinearEquiv.ext (coe_spinToSpecialOrthogonal_apply Q x)
 
 /-- The Spin action into `SO(Q)`, followed by the inclusion `SO(Q) →* O(Q)`, is the Spin action
 into `O(Q)`. -/

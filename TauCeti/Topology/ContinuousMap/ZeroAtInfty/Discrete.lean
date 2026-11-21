@@ -534,7 +534,7 @@ theorem finite_setOf_single_one_mem [StrongRankCondition R] {Q : Submodule R C�
   obtain ⟨s, rfl⟩ := hQ
   have := (linearIndependent_single_one.comp _ Subtype.val_injective).finite_of_le_span_finite _
     (s : Set C₀(I, R)) <| Set.range_subset_iff.2
-      fun i : {i | single i (1 : R) ∈ Submodule.span R s} ↦ i.2
+      fun i : {i | single i (1 : R) ∈ Submodule.span R s} ↦ i.property
   exact Set.toFinite _
 
 /-- Continuous linear maps out of `C₀(I, R)` agreeing on the unit vectors `single i 1` are

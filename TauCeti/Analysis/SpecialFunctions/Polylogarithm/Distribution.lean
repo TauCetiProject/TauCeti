@@ -149,7 +149,7 @@ theorem polylog_distribution_of_nonpos (n : ℤ) (hn : n ≤ 0) (m : ℕ) {z : �
   have hexp :
       Complex.exp (2 * Real.pi * Complex.I / m) ^ j =
         Complex.exp (2 * Real.pi * Complex.I * j / m) := by
-    rw [← Complex.exp_nat_mul]
+    rw [← Complex.exp_natCast_mul]
     congr 1
     ring
   rw [hexp]

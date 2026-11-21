@@ -366,8 +366,8 @@ theorem normalize_eq_normalize_iff :
     normalize 𝕜 l₁ = normalize 𝕜 l₂ ↔ EqvGen (Move 𝕜) l₁ l₂ := by
   constructor
   · intro h
-    have h₁ := EqvGen.reflTransGen_le_eqvGen _ _ _ (reflTransGen_move_normalize (𝕜 := 𝕜) l₁)
-    have h₂ := EqvGen.reflTransGen_le_eqvGen _ _ _ (reflTransGen_move_normalize (𝕜 := 𝕜) l₂)
+    have h₁ := Relation.reflTransGen_le_eqvGen _ _ _ (reflTransGen_move_normalize (𝕜 := 𝕜) l₁)
+    have h₂ := Relation.reflTransGen_le_eqvGen _ _ _ (reflTransGen_move_normalize (𝕜 := 𝕜) l₂)
     exact h₁.trans _ _ _ (h ▸ h₂.symm _ _)
   · intro h
     induction h with
@@ -379,7 +379,7 @@ theorem normalize_eq_normalize_iff :
 theorem normalize_reverse_map_neg (l : List V) :
     normalize 𝕜 (l.map Neg.neg).reverse = ((normalize 𝕜 l).map Neg.neg).reverse := by
   rw [← (isReduced_normalize l).reverse_map_neg.normalize_eq, normalize_eq_normalize_iff]
-  exact EqvGen.reflTransGen_le_eqvGen _ _ _
+  exact Relation.reflTransGen_le_eqvGen _ _ _
     ((reflTransGen_move_normalize l).lift _ fun _ _ h ↦ h.reverse_map_neg)
 
 end PLPath
@@ -637,7 +637,7 @@ theorem Move.map {l m : List V} (h : Move 𝕜 l m) (g : V →ₗ[𝕜] W) :
 theorem ofSegments_map_normalize (g : V →ₗ[𝕜] W) (l : List V) :
     ofSegments 𝕜 ((normalize 𝕜 l).map g) = ofSegments 𝕜 (l.map g) := by
   apply ofSegments_eq_ofSegments_iff.mpr
-  exact (EqvGen.reflTransGen_le_eqvGen _ _ _
+  exact (Relation.reflTransGen_le_eqvGen _ _ _
     ((reflTransGen_move_normalize l).lift _ fun _ _ h ↦ h.map g)).symm _ _
 
 /-- The linear image of a piecewise-linear path, with any collapsed segments removed. -/

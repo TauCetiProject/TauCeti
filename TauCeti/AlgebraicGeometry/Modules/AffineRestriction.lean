@@ -155,18 +155,19 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.isBaseChange_sectionsRestriction
   let F : Γ(X, V) ⊗[Γ(X, U)] Γ(M, U) →ₗ[Γ(X, V)] Γ(M, V) := ρ.liftBaseChange Γ(X, V)
   suffices hF : Function.Bijective F from IsBaseChange.of_equiv (.ofBijective F hF) fun x ↦ by
     rw [LinearEquiv.ofBijective_apply, LinearMap.liftBaseChange_tmul, one_smul]
-  let G (g : s) : Γ(M, V) →ₗ[Γ(X, V)] Γ(M, X.basicOpen g.1) := M.basicOpenRestrict g.1
-  have _ (g : s) : IsLocalizedModule.Away g.1 (G g) := M.isLocalizedModule_basicOpenRestrict hV g.1
-  have _ : ∀ g : s, IsLocalizedModule.Away g.1 (G g ∘ₗ F) := by
+  let G (g : s) : Γ(M, V) →ₗ[Γ(X, V)] Γ(M, X.basicOpen g.val) := M.basicOpenRestrict g.val
+  have _ (g : s) : IsLocalizedModule.Away g.val (G g) := M.isLocalizedModule_basicOpenRestrict hV
+      g.val
+  have _ : ∀ g : s, IsLocalizedModule.Away g.val (G g ∘ₗ F) := by
     rintro ⟨_, f, hfV, rfl⟩
     exact isLocalizedModule_basicOpenRestrict_comp_liftBaseChange M hU hV hVU hA ρ hρ hfV
   refine bijective_of_isLocalized_span s (hU.span_restrict_basicOpen_le_eq_top hV hVU)
-    (fun g ↦ Γ(M, X.basicOpen g.1)) (fun g ↦ G g ∘ₗ F) (fun g ↦ Γ(M, X.basicOpen g.1)) G F
+    (fun g ↦ Γ(M, X.basicOpen g.val)) (fun g ↦ G g ∘ₗ F) (fun g ↦ Γ(M, X.basicOpen g.val)) G F
     fun g ↦ ?_
   -- Both localizations of `F` at `g` land in `Γ(M, X.basicOpen g)`, where the localized map is
   -- the identity.
-  have h : IsLocalizedModule.map (Submonoid.powers g.1) (G g ∘ₗ F) (G g) F = LinearMap.id :=
-    IsLocalizedModule.linearMap_ext (Submonoid.powers g.1) (G g ∘ₗ F) (G g ∘ₗ F)
+  have h : IsLocalizedModule.map (Submonoid.powers g.val) (G g ∘ₗ F) (G g) F = LinearMap.id :=
+    IsLocalizedModule.linearMap_ext (Submonoid.powers g.val) (G g ∘ₗ F) (G g ∘ₗ F)
       (IsLocalizedModule.map_comp _ _ _ _)
   rw [h]
   exact Function.bijective_id
@@ -254,7 +255,7 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.Hom.isIso_of_bijective_app
     refine Opens.isBasis_iff_nbhd.mpr fun {W x} hx ↦ ?_
     obtain ⟨i, hi⟩ := Opens.mem_iSup.mp (hcover.ge (Set.mem_univ x))
     obtain ⟨_, ⟨V, hV, rfl⟩, hxV, hVW⟩ :=
-      X.isBasis_affineOpens.exists_subset_of_mem_open (Opens.mem_inf.2 ⟨hx, hi⟩) (W ⊓ U i).2
+      X.isBasis_affineOpens.exists_subset_of_mem_open (Opens.mem_inf.2 ⟨hx, hi⟩) (W ⊓ U i).is_open'
     exact ⟨V, ⟨⟨V, hV, i, hVW.trans inf_le_right⟩, rfl⟩, hxV, hVW.trans inf_le_left⟩
   let ψ : (⟨M.presheaf, M.isSheaf⟩ : TopCat.Sheaf AddCommGrpCat X) ⟶ ⟨N.presheaf, N.isSheaf⟩ :=
     ObjectProperty.homMk φ.mapPresheaf

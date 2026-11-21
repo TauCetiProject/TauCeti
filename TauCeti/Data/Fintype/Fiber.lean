@@ -198,7 +198,7 @@ theorem occCount_subtype_ne (f : X → S) {z a : S} (ha : a ≠ z) :
 occurs. -/
 theorem occCount_subtype_ne_self (f : X → S) (z : S) :
     occCount (fun x : {x // f x ≠ z} => f x) z = 0 :=
-  occCount_of_notMem_range _ _ fun ⟨x, hx⟩ => x.2 hx
+  occCount_of_notMem_range _ _ fun ⟨x, hx⟩ => x.property hx
 
 /-- Two finite families with the same occurrence counts away from a value `z` are related by a
 bijection between the indices at which they do not take the value `z`. -/

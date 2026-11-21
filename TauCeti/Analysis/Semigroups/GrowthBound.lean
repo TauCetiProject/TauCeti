@@ -186,7 +186,7 @@ theorem StronglyContinuousSemigroup.existsGrowthBound (S : StronglyContinuousSem
         apply mul_le_mul_of_nonneg_left _ (by linarith)
         calc (M : ℝ) ^ n
             = Real.exp (↑n * Real.log M) := by
-              rw [Real.exp_nat_mul, Real.exp_log hM_pos]
+              rw [Real.exp_natCast_mul, Real.exp_log hM_pos]
           _ ≤ Real.exp (Real.log M * t) := by
               apply Real.exp_le_exp.mpr
               calc ↑n * Real.log M ≤ t * Real.log M :=

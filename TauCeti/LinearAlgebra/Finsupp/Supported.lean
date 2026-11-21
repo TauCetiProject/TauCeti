@@ -61,13 +61,13 @@ supported on `t`, where every point of `s` satisfying `p` lies in `t`. -/
 def filterSupported {s t : Set α} (p : α → Prop) [DecidablePred p] (h : ∀ a ∈ s, p a → a ∈ t) :
     supported M R s →ₗ[R] supported M R t :=
   LinearMap.codRestrict _
-    { toFun := fun f ↦ filter p f.1
+    { toFun := fun f ↦ filter p f.val
       map_add' := fun _ _ ↦ filter_add
       map_smul' := fun _ _ ↦ filter_smul }
     fun f ↦ (mem_supported R _).2 fun a ha ↦ by
-      have ha : a ∈ (filter p f.1).support := ha
+      have ha : a ∈ (filter p f.val).support := ha
       rw [support_filter, Finset.mem_filter] at ha
-      exact h a ((mem_supported R f.1).1 f.2 ha.1) ha.2
+      exact h a ((mem_supported R f.val).1 f.property ha.1) ha.2
 
 /-- `TauCeti.Finsupp.filterSupported p h` filters the underlying finitely supported function. -/
 @[simp]

@@ -24,12 +24,12 @@ transport almost-everywhere descriptions `⇑u =ᵐ[μ] g` of the summands, whic
 representatives of linear combinations.
 
 Mathlib composes `f : Lp E p μ` with `L : E →SL[σ] F` both as an element `L.compLp f` and through
-the bundled continuous semilinear map `L.compLpL p μ`; this file records that the two agree, and
-that for `1 ≤ p` the postcomposition `LinearIsometry.compLpₗᵢ` by a semilinear isometry underlies
-`ContinuousLinearMap.compLpL`. Specializing `compLpₗᵢ` and `compLpL` to `RCLike.ofRealLI`,
-`RCLike.reCLM`, and `RCLike.imCLM` defines the scalar inclusion `MeasureTheory.Lp.ofRealLI` and the
-real and imaginary coordinate operators `MeasureTheory.Lp.reCLM` and `MeasureTheory.Lp.imCLM`
-between `Lp ℝ p μ` and `Lp 𝕜 p μ`.
+the bundled continuous semilinear map `L.compLpL p μ`; this file records that the two agree, their
+composition and identity laws, and that for `1 ≤ p` the postcomposition
+`LinearIsometry.compLpₗᵢ` by a semilinear isometry underlies `ContinuousLinearMap.compLpL`.
+Specializing `compLpₗᵢ` and `compLpL` to `RCLike.ofRealLI`, `RCLike.reCLM`, and `RCLike.imCLM`
+defines the scalar inclusion `MeasureTheory.Lp.ofRealLI` and the real and imaginary coordinate
+operators `MeasureTheory.Lp.reCLM` and `MeasureTheory.Lp.imCLM` between `Lp ℝ p μ` and `Lp 𝕜 p μ`.
 
 ## Main declarations
 
@@ -40,6 +40,10 @@ between `Lp ℝ p μ` and `Lp 𝕜 p μ`.
   `MeasureTheory.Lp.coeFn_neg_ae_eq_of_ae_eq`, `MeasureTheory.Lp.coeFn_smul_ae_eq_of_ae_eq`: if
   `⇑u =ᵐ[μ] g` and `⇑v =ᵐ[μ] h`, then `⇑(u + v) =ᵐ[μ] g + h`, and similarly for `-` and `•`.
 * `ContinuousLinearMap.compLpL_apply`: the bundled composition applied to `f` is `L.compLp f`.
+* `ContinuousLinearMap.compLp_compLp`, `ContinuousLinearMap.compLpL_comp_compLpL`,
+  `ContinuousLinearMap.compLpL_compLpL`: composition laws for `compLp` and `compLpL`.
+* `ContinuousLinearMap.id_compLp`, `ContinuousLinearMap.id_compLpL`: identity laws for `compLp` and
+  `compLpL`.
 * `LinearIsometry.toContinuousLinearMap_compLpₗᵢ`: postcomposition of `Lp` classes by a
   semilinear isometry (`LinearIsometry.compLpₗᵢ`) underlies `ContinuousLinearMap.compLpL`.
 * `MeasureTheory.Lp.instUniqueZero`: `Unique (Lp E p (0 : Measure α))`.
@@ -100,6 +104,8 @@ namespace ContinuousLinearMap
 
 open MeasureTheory
 
+section Apply
+
 variable {α E F 𝕜 𝕜' : Type*} {_ : MeasurableSpace α} {μ : Measure α} {p : ℝ≥0∞}
   [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜'] {σ : 𝕜 →+* 𝕜'} [RingHomIsometric σ]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜' F]
@@ -109,6 +115,62 @@ variable {α E F 𝕜 𝕜' : Type*} {_ : MeasurableSpace α} {μ : Measure α} 
 theorem compLpL_apply [Fact (1 ≤ p)] (L : E →SL[σ] F) (f : Lp E p μ) :
     L.compLpL p μ f = L.compLp f :=
   rfl
+
+end Apply
+
+section Comp
+
+variable {α E F G 𝕜₁ 𝕜₂ 𝕜₃ : Type*} {_ : MeasurableSpace α} {μ : Measure α} {p : ℝ≥0∞}
+  [NormedAddCommGroup E] [NormedAddCommGroup F] [NormedAddCommGroup G]
+  [NontriviallyNormedField 𝕜₁] [NontriviallyNormedField 𝕜₂] [NontriviallyNormedField 𝕜₃]
+  [NormedSpace 𝕜₁ E] [NormedSpace 𝕜₂ F] [NormedSpace 𝕜₃ G]
+  {σ₁₂ : 𝕜₁ →+* 𝕜₂} {σ₂₃ : 𝕜₂ →+* 𝕜₃} {σ₁₃ : 𝕜₁ →+* 𝕜₃}
+  [RingHomCompTriple σ₁₂ σ₂₃ σ₁₃] [RingHomIsometric σ₁₂] [RingHomIsometric σ₂₃]
+  [RingHomIsometric σ₁₃]
+
+/-- Composing `Lp` pushforwards of continuous semilinear maps agrees with the pushforward of their
+composition. -/
+theorem compLp_compLp (L : F →SL[σ₂₃] G) (M : E →SL[σ₁₂] F) (f : Lp E p μ) :
+    L.compLp (M.compLp f) = (L.comp M).compLp f := by
+  ext1
+  filter_upwards [L.coeFn_compLp (M.compLp f), M.coeFn_compLp f, (L.comp M).coeFn_compLp f] with
+    x hx1 hx2 hx3
+  rw [hx1, hx2, hx3, comp_apply]
+
+/-- Composing `compLpL` operators agrees with `compLpL` of the composed continuous semilinear
+operator. -/
+theorem compLpL_comp_compLpL [Fact (1 ≤ p)] (L : F →SL[σ₂₃] G) (M : E →SL[σ₁₂] F) :
+    (L.compLpL p μ).comp (M.compLpL p μ) = (L.comp M).compLpL p μ := by
+  ext1 f
+  exact L.compLp_compLp M f
+
+/-- Applying `compLpL` in succession agrees with `compLpL` of the composed continuous semilinear
+operator. -/
+theorem compLpL_compLpL [Fact (1 ≤ p)] (L : F →SL[σ₂₃] G) (M : E →SL[σ₁₂] F) (f : Lp E p μ) :
+    L.compLpL p μ (M.compLpL p μ f) = (L.comp M).compLpL p μ f :=
+  L.compLp_compLp M f
+
+end Comp
+
+section Id
+
+variable {α E 𝕜 : Type*} {_ : MeasurableSpace α} {μ : Measure α} {p : ℝ≥0∞}
+  [NormedAddCommGroup E] [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 E]
+
+/-- Pushing an `Lp` function forward along the identity map returns it unchanged. -/
+@[simp]
+theorem id_compLp (f : Lp E p μ) : (ContinuousLinearMap.id 𝕜 E).compLp f = f := by
+  ext1
+  exact (ContinuousLinearMap.id 𝕜 E).coeFn_compLp f
+
+/-- The `compLpL` operator of the identity map is the identity operator on `Lp`. -/
+@[simp]
+theorem id_compLpL [Fact (1 ≤ p)] :
+    (ContinuousLinearMap.id 𝕜 E).compLpL p μ = ContinuousLinearMap.id 𝕜 (Lp E p μ) := by
+  ext1 f
+  exact id_compLp f
+
+end Id
 
 end ContinuousLinearMap
 

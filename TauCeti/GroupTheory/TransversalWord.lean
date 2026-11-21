@@ -294,7 +294,7 @@ theorem factorizationTransversal_def (x : G ⧸ U) :
 @[simp]
 theorem factorizationTransversal_mk (x : G ⧸ U) :
     (QuotientGroup.mk (factorizationTransversal w x) : G ⧸ U) = x := by
-  rw [factorizationTransversal, QuotientGroup.mk_mul_of_mem _ (w _).2, QuotientGroup.out_eq']
+  rw [factorizationTransversal, QuotientGroup.mk_mul_of_mem _ (w _).property, QuotientGroup.out_eq']
 
 include hwmul
 
@@ -333,21 +333,21 @@ variable {G : Type*} [Group G] (U : Subgroup G) (t : G ⧸ U → G)
 
 /-- Representatives supplied by Mathlib's bundled left transversal. -/
 noncomputable def leftTransversalRep (s : U.LeftTransversal) : G ⧸ U → G :=
-  fun x => (s.2.leftQuotientEquiv x : G)
+  fun x => (s.property.leftQuotientEquiv x : G)
 
 /-- The representative of a coset from a bundled left transversal. -/
 theorem leftTransversalRep_apply (s : U.LeftTransversal) (x : G ⧸ U) :
-    leftTransversalRep U s x = (s.2.leftQuotientEquiv x : G) := (rfl)
+    leftTransversalRep U s x = (s.property.leftQuotientEquiv x : G) := (rfl)
 
 /-- The chosen representative belongs to the left transversal. -/
 theorem leftTransversalRep_mem (s : U.LeftTransversal) (x : G ⧸ U) :
     leftTransversalRep U s x ∈ (s : Set G) :=
-  (s.2.leftQuotientEquiv x).2
+  (s.property.leftQuotientEquiv x).property
 
 /-- The chosen representative maps back to its coset. -/
 @[simp] theorem leftTransversalRep_mk (s : U.LeftTransversal) (x : G ⧸ U) :
     (QuotientGroup.mk (leftTransversalRep U s x) : G ⧸ U) = x :=
-  s.2.quotientGroupMk_leftQuotientEquiv x
+  s.property.quotientGroupMk_leftQuotientEquiv x
 
 /-- Packaging a section as a left transversal recovers the original representative map. -/
 @[simp] theorem leftTransversalRep_range
@@ -359,7 +359,7 @@ theorem leftTransversalRep_mem (s : U.LeftTransversal) (x : G ⧸ U) :
 /-- The representative of the coset of an element of the left transversal is that element. -/
 @[simp] theorem leftTransversalRep_mk_of_mem (s : U.LeftTransversal) {g : G}
     (hg : g ∈ (s : Set G)) : leftTransversalRep U s (g : G ⧸ U) = g :=
-  congrArg Subtype.val <| (isComplement_subgroup_right_iff_bijective.mp s.2).injective
+  congrArg Subtype.val <| (isComplement_subgroup_right_iff_bijective.mp s.property).injective
     (a₁ := ⟨_, leftTransversalRep_mem U s g⟩) (a₂ := ⟨g, hg⟩) (leftTransversalRep_mk U s g)
 
 variable {U} {V : Subgroup G} (hVU : V ≤ U)
@@ -402,8 +402,8 @@ theorem coe_compositeLeftTransversal (s : U.LeftTransversal)
     rw [compositeTransversal_apply, e.apply_symm_apply]
     -- A coset of an element of a transversal is represented by that element.
     exact congrArg₂ (fun (x : G) (y : U) ↦ x * y)
-      (congrArg Subtype.val (s.2.leftQuotientEquiv.apply_symm_apply ⟨a, ha⟩))
-      (congrArg Subtype.val (t.2.leftQuotientEquiv.apply_symm_apply ⟨b, hb⟩))
+      (congrArg Subtype.val (s.property.leftQuotientEquiv.apply_symm_apply ⟨a, ha⟩))
+      (congrArg Subtype.val (t.property.leftQuotientEquiv.apply_symm_apply ⟨b, hb⟩))
 
 /-- An element lies in the composite left transversal of `V ≤ U ≤ G` exactly when it is a product
 `a * b` of an element `a` of `s` and an element `b` of `t`. -/
