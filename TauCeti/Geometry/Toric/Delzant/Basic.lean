@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Convex.KreinMilman
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
-public import TauCeti.Algebra.Module.Primitive
+public import TauCeti.Algebra.Module.Primitive.Basic
 public import TauCeti.Analysis.Convex.Polyhedron.Extreme
 
 import Mathlib.Analysis.LocallyConvex.SeparatingDual

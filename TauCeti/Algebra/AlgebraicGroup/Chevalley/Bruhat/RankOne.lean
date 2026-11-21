@@ -9,6 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Borel
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.RankOne
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.SimplyConnected
 public import TauCeti.Algebra.Group.Subgroup.Map
+import TauCeti.Algebra.AlgebraicGroup.Chevalley.OrderedProduct
 
 /-!
 # Uniqueness in a simple Bruhat cell
@@ -27,7 +28,7 @@ not a Bruhat decomposition of the entire point group.
 
 The central inputs are the native opposite-intersection theorem in `Chevalley.Borel`, the
 rank-one collection theorem `ChevalleyDatum.mem_sup_simpleRootPair_torus_iff`, and the
-simply connected integral root-map injectivity theorem.
+integral root-map injectivity theorem `ChevalleyDatum.rootSubgroupPoints_injective`.
 
 ## References
 
@@ -124,7 +125,7 @@ theorem scChevalleyDatum_rootSubgroupPoints_ofAdd_mul_weylElement_mul_borelSubgr
     (t.scChevalleyDatum ht) i A (a₁ := (⟨_, ⟨Multiplicative.ofAdd p.1, rfl⟩⟩, p.2))
     (a₂ := (⟨_, ⟨Multiplicative.ofAdd q.1, rfl⟩⟩, q.2)) h
   have hpq := congrArg (fun z => (z.1 : (t.scChevalleyDatum ht).points A)) he
-  have ha := t.scChevalleyDatum_rootSubgroupPoints_injective ht (t.simpleIndex ht i) A hpq
+  have ha := (t.scChevalleyDatum ht).rootSubgroupPoints_injective (t.simpleIndex ht i) A hpq
   exact Prod.ext (congrArg Multiplicative.toAdd ha) (congrArg (fun z => z.2) he)
 
 /-- Over a field, a simply connected opposite-simple-root-pair/torus word outside the Borel

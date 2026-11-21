@@ -11,6 +11,7 @@ public import Mathlib.Algebra.Module.Projective
 public import Mathlib.LinearAlgebra.FreeModule.Basic
 public import Mathlib.RingTheory.PrincipalIdealDomain
 import Mathlib.LinearAlgebra.Basis.Prod
+import Mathlib.LinearAlgebra.FreeModule.PID
 import Mathlib.SetTheory.Cardinal.Order
 
 /-!
@@ -30,6 +31,12 @@ module, so every submodule of a projective module is free as well
 projective module (`Module.Free.of_injective_of_projective_of_isPrincipalIdealRing`), and any
 middle term of an exact sequence `0 → M → N → P` with `M` free and `P` projective
 (`Function.Exact.free_of_injective_of_projective_of_isPrincipalIdealRing`).
+
+Over a commutative principal ideal ring, every submodule `N` of any module `M` also admits a
+linear functional `ϕ : M →ₗ[R] R` whose image `N.map ϕ` is greatest among all functional images
+`N.map ψ` (`Submodule.exists_forall_map_le`): any maximal functional image automatically contains
+every other functional image (`Submodule.map_le_of_maximal_map`). In particular, a generator of
+`N.map ϕ` is attained by `ϕ` on `N` and divides `ψ x` for every functional `ψ` and every `x ∈ N`.
 -/
 
 public section
@@ -148,3 +155,62 @@ theorem Function.Exact.free_of_injective_of_projective_of_isPrincipalIdealRing
     Module.projective_lifting_property g.rangeRestrict .id g.surjective_rangeRestrict
   have hex : Function.Exact f g.rangeRestrict := fun x ↦ Subtype.ext_iff.trans (h x)
   exact .of_equiv (hex.splitSurjectiveEquiv hf ⟨l, hl⟩).val.symm
+
+namespace Submodule
+
+section CommRing
+
+variable {R M : Type*} [CommRing R] [IsPrincipalIdealRing R] [AddCommGroup M] [Module R M]
+
+/-- Over a commutative principal ideal ring, a linear functional `ϕ : M →ₗ[R] R` whose image
+`N.map ϕ` is maximal among all functional images of `N` in fact attains the greatest such image:
+`N.map ψ ≤ N.map ϕ` for every `ψ : M →ₗ[R] R`. -/
+theorem map_le_of_maximal_map (N : Submodule R M) {ϕ : M →ₗ[R] R}
+    (hϕ : ∀ ψ : M →ₗ[R] R, ¬N.map ϕ < N.map ψ) (ψ : M →ₗ[R] R) :
+    N.map ψ ≤ N.map ϕ := by
+  let e := Submodule.topEquiv (R := R) (M := M)
+  have hsub (η : M →ₗ[R] R) : (η.comp e.toLinearMap).submoduleImage N = N.map η := by
+    ext r
+    simp [LinearMap.mem_submoduleImage_of_le le_top, e]
+  have hϕ' : ∀ χ : (⊤ : Submodule R M) →ₗ[R] R,
+      ¬(ϕ.comp e.toLinearMap).submoduleImage N < χ.submoduleImage N := by
+    intro χ
+    have hχ : χ = (χ.comp e.symm.toLinearMap).comp e.toLinearMap := by
+      ext x
+      simp
+    rw [hsub ϕ, hχ, hsub]
+    exact hϕ _
+  have hdvd_gen {z : M} (hzN : z ∈ N) (hϕz : ϕ z = generator (N.map ϕ)) :
+      generator (N.map ϕ) ∣ ψ z := by
+    have h := generator_maximal_submoduleImage_dvd (O := (⊤ : Submodule R M)) le_top hϕ' z hzN
+      (by simpa [hsub ϕ, e] using hϕz) (ψ.comp e.toLinearMap)
+    simpa [hsub ϕ, e] using h
+  obtain ⟨y, hyN, hϕy⟩ := mem_map.mp (generator_mem (N.map ϕ))
+  have hdvd_y : generator (N.map ϕ) ∣ ψ y := hdvd_gen hyN hϕy
+  rintro _ ⟨x, hxN, rfl⟩
+  rw [mem_iff_generator_dvd]
+  obtain ⟨q, hq⟩ := (mem_iff_generator_dvd (N.map ϕ)).mp (mem_map_of_mem hxN)
+  have hzN : y + (x - q • y) ∈ N := N.add_mem hyN (N.sub_mem hxN (N.smul_mem q hyN))
+  have hϕz : ϕ (y + (x - q • y)) = generator (N.map ϕ) := by
+    rw [map_add, map_sub, map_smul, hϕy, hq, smul_eq_mul]
+    ring
+  have hdvd_z : generator (N.map ϕ) ∣ ψ y + (ψ x - q * ψ y) := by
+    simpa [map_add, map_sub, map_smul, smul_eq_mul] using hdvd_gen hzN hϕz
+  have hdvd_sub : generator (N.map ϕ) ∣ ψ x - q * ψ y := (dvd_add_right hdvd_y).mp hdvd_z
+  have hsum : generator (N.map ϕ) ∣ (ψ x - q * ψ y) + q * ψ y :=
+    dvd_add hdvd_sub (dvd_mul_of_dvd_right hdvd_y q)
+  rwa [sub_add_cancel] at hsum
+
+/-- Over a commutative principal ideal ring, every submodule `N` of a module `M` admits a linear
+functional `ϕ : M →ₗ[R] R` whose image `N.map ϕ` contains `N.map ψ` for every `ψ : M →ₗ[R] R`. -/
+theorem exists_forall_map_le (N : Submodule R M) :
+    ∃ ϕ : M →ₗ[R] R, ∀ ψ : M →ₗ[R] R, N.map ψ ≤ N.map ϕ := by
+  obtain ⟨I, hI, hmax⟩ :=
+    set_has_maximal_iff_noetherian.mpr (inferInstance : IsNoetherian R R)
+      (Set.range fun ψ : M →ₗ[R] R ↦ N.map ψ) ⟨_, ⟨0, rfl⟩⟩
+  obtain ⟨ϕ, rfl⟩ := hI
+  exact ⟨ϕ, N.map_le_of_maximal_map fun ψ hlt ↦ hmax _ ⟨ψ, rfl⟩ hlt⟩
+
+end CommRing
+
+end Submodule

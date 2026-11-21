@@ -7,24 +7,38 @@ module
 
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.Basic
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Torus.Basic
-public import TauCeti.Algebra.Module.Primitive
+public import TauCeti.Algebra.Module.Primitive.Basic
+import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Triangular
 import TauCeti.LinearAlgebra.SymmetricAlgebra.Basic
 import TauCeti.LinearAlgebra.Basis.Basic
 
 /-!
-# Closed root subgroups detected by primitive strings
+# Closed root subgroups detected by primitive images
 
-Let a nilpotent root operator preserve an integral lattice through all its divided powers.
-If a lattice vector `m` satisfies `e² m = 0` and `e m` is primitive, its exponential defines a
-closed immersion `𝔾ₐ → GLₙ` in **any** integral basis of the lattice. Neither `m` nor `e m`
-has to be a member of that basis. This is useful for weight bases, which need not contain a
-prescribed rank-one string.
+Let a nilpotent root operator `op` preserve an integral lattice through all its divided powers. This
+module provides two integral closed-immersion criteria for the induced root morphism `𝔾ₐ ⟶ GLₙ`
+over `ℤ`:
 
-An integral functional `ℓ` with `ℓ(e m) = 1` recovers the additive parameter from the regular
-matrix coefficient `g ↦ ℓ(g m) - ℓ(m)`. Thus the root-subgroup coordinate map hits the generator
-of the additive coordinate algebra. The basis-step criterion in
-`TauCeti/Algebra/Lie/UniversalEnveloping/Kostant/RootSubgroup/Scheme/ClosedImmersion.lean`
-is a special case, with the same represented subgroup and chosen coordinates.
+* **Two-step string criterion** (for any integral lattice basis): if a lattice vector `m` satisfies
+  `op (op m) = 0` and `op m` is primitive in the lattice, then the root coordinate map is
+  surjective and the root morphism is a closed immersion. This subsumes the basis-step criterion in
+  `TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ClosedImmersion`.
+* **Cartan weight-basis criterion** (without `op (op m) = 0`): in a Cartan weight basis for a
+  nonzero integral root `α`, the existence of any lattice vector `m` with `op m` primitive already
+  makes the root coordinate map surjective and the root morphism a closed immersion. This covers
+  higher-length root strings such as the adjoint representation of `PSL₂`, where no primitive image
+  vector lies in `op(ker op²)`.
+
+## Main results
+
+* `kostantRootSubgroupCoordinateMap_surjective_of_isPrimitive` and
+  `isClosedImmersion_kostantRootSubgroup_of_isPrimitive`: coordinate surjectivity and closed
+  immersion from a primitive two-step string in any lattice basis.
+* `kostantRootSubgroupCoordinateMap_genericMatrix_of_weight_eq`: pullback of single-root-shift
+  generic matrix entries in a Cartan weight basis.
+* `kostantRootSubgroupCoordinateMap_surjective_of_isPrimitive_of_isCartanWeightVector` and
+  `isClosedImmersion_kostantRootSubgroup_of_isPrimitive_of_isCartanWeightVector`: coordinate
+  surjectivity and closed immersion from a primitive image vector in a Cartan weight basis.
 
 ## References
 
@@ -142,5 +156,112 @@ theorem isClosedImmersion_kostantRootSubgroup_of_isPrimitive (m : M)
   exact (CommHopfAlgCat.isClosedImmersion_eqToHom_comp_hopfSpec_map_comp_eqToHom_iff
     (AdditiveGroup.groupScheme_def ℤ) (GeneralLinear.groupScheme_def ℤ n) _).2
     (kostantRootSubgroupCoordinateMap_surjective_of_isPrimitive e h ρ M hM i hnil b m hsq hprim)
+
+/-- In a Cartan weight basis for a nonzero integral root `α`, every generic matrix entry
+connecting weight `μ` to weight `μ + α` pulls back along the root coordinate map to a linear
+multiple of the additive generator, with no constant or higher-degree divided-power terms. -/
+theorem kostantRootSubgroupCoordinateMap_genericMatrix_of_weight_eq
+    {wt : Fin n → κ → ℤ} (hwt : ∀ j, IsCartanWeightVector h ρ (wt j) ((b j : M) : V))
+    {α : κ → ℤ} (hα : ∀ c, ⁅h c, e i⁆ = (α c : ℚ) • e i) (hα0 : α ≠ 0)
+    {r s : Fin n} (hrs : wt r = wt s + α) :
+    (kostantRootSubgroupCoordinateMap e h ρ M hM i hnil b).hom.toAlgHom
+        (GeneralLinear.genericMatrix ℤ n r s) =
+      b.repr (op (b s)) r • SymmetricAlgebra.ι ℤ ℤ 1 := by
+  let N := nilpotencyClass (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)))
+  let D : ℕ → Matrix (Fin n) (Fin n) ℤ := fun k => LinearMap.toMatrix b b
+    (integralDividedPower (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) M k
+      (fun _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM i k hv))
+  have hmat := congrArg (fun M => M r s)
+    (map_genericMatrix_eq_kostantRootSubgroupMatrix e h ρ M hM i hnil b)
+  simp only [Matrix.map_apply] at hmat
+  rw [hmat, kostantRootSubgroupMatrix_eq_sum e h ρ M hM i hnil b (N + 2) D (by omega)
+    (fun k _ s' => by simp [D, LinearMap.toMatrix_apply])]
+  simp only [Matrix.sum_apply, Matrix.smul_apply, Matrix.map_apply,
+    AdditiveGroup.toAdd_gaPointsMulEquiv, SymmetricAlgebra.lift_ι_apply,
+    LinearMap.toSpanSingleton_apply, one_smul]
+  rw [Finset.sum_eq_single 1]
+  · simp only [D, LinearMap.toMatrix_apply, pow_one]
+    rw [← kostantRootOperator_def, smul_eq_mul, zsmul_eq_mul, mul_comm]
+  · intro k _ hk1
+    have hne : wt r ≠ wt s + k • α := by
+      intro heq
+      have heq' : (1 : ℕ) • α = k • α := by
+        simpa only [one_nsmul] using add_left_cancel (hrs.symm.trans heq)
+      exact hk1 (IsAddTorsionFree.nsmul_left_injective hα0 heq').symm
+    have hzero : D k r s = 0 := by
+      simp only [D, LinearMap.toMatrix_apply]
+      exact repr_integralDividedPower_eq_zero_of_weight_ne e h ρ M hM b wt hwt hα hne
+    simp [hzero]
+  · intro hmem
+    exact False.elim (hmem (Finset.mem_range.mpr (by omega)))
+
+/-- In a Cartan weight basis for a nonzero integral root `α`, any lattice vector `m` whose image
+`op m` is primitive makes the root-subgroup coordinate map surjective, without requiring
+`op (op m) = 0`. -/
+theorem kostantRootSubgroupCoordinateMap_surjective_of_isPrimitive_of_isCartanWeightVector
+    {wt : Fin n → κ → ℤ} (hwt : ∀ j, IsCartanWeightVector h ρ (wt j) ((b j : M) : V))
+    {α : κ → ℤ} (hα : ∀ c, ⁅h c, e i⁆ = (α c : ℚ) • e i) (hα0 : α ≠ 0)
+    (m : M) (hprim : IsPrimitive (op m)) :
+    Function.Surjective (kostantRootSubgroupCoordinateMap e h ρ M hM i hnil b).hom := by
+  classical
+  obtain ⟨ℓ, hℓ⟩ := isPrimitive_def.mp hprim
+  let C := GeneralLinear.coordinateHopfAlgebra ℤ n
+  let f := (kostantRootSubgroupCoordinateMap e h ρ M hM i hnil b).hom.toAlgHom
+  let z : C := ∑ s, ∑ r with wt r = wt s + α,
+    (ℓ (b r) * b.repr m s) • GeneralLinear.genericMatrix ℤ n r s
+  have hop_zero {r s : Fin n} (hrs : wt r ≠ wt s + α) : b.repr (op (b s)) r = 0 := by
+    rw [kostantRootOperator_def]
+    exact repr_integralDividedPower_eq_zero_of_weight_ne e h ρ M hM b wt hwt hα
+      (by simpa only [one_nsmul] using hrs)
+  have hinner (s : Fin n) :
+      (∑ r with wt r = wt s + α, (ℓ (b r) * b.repr m s) * b.repr (op (b s)) r) =
+        b.repr m s * ℓ (op (b s)) := by
+    rw [Finset.sum_subset (Finset.filter_subset _ Finset.univ)]
+    · calc
+        (∑ r, (ℓ (b r) * b.repr m s) * b.repr (op (b s)) r) =
+            b.repr m s * ∑ r, b.repr (op (b s)) r • ℓ (b r) := by
+          rw [Finset.mul_sum]
+          refine Finset.sum_congr rfl fun r _ => ?_
+          rw [smul_eq_mul]
+          ring
+        _ = b.repr m s * ℓ (op (b s)) := by rw [← b.apply_eq_sum_repr_zsmul]
+    · intro r _ hr
+      rw [Finset.mem_filter] at hr
+      rw [hop_zero (not_and.mp hr (Finset.mem_univ r)), mul_zero]
+  have hsum_one :
+      (∑ s, ∑ r with wt r = wt s + α, (ℓ (b r) * b.repr m s) * b.repr (op (b s)) r) = 1 := by
+    calc
+      _ = ∑ s, b.repr m s • ℓ (op (b s)) := by
+        refine Finset.sum_congr rfl fun s _ => ?_
+        rw [hinner s]
+        rfl
+      _ = ℓ (op (∑ s, b.repr m s • b s)) := by simp only [map_sum, map_zsmul]
+      _ = 1 := by rw [b.sum_repr m, hℓ]
+  apply f.surjective_of_ι_one_mem_range
+  refine ⟨z, ?_⟩
+  calc
+    f z = ∑ s, ∑ r with wt r = wt s + α,
+        ((ℓ (b r) * b.repr m s) * b.repr (op (b s)) r) • SymmetricAlgebra.ι ℤ ℤ 1 := by
+      simp only [z, map_sum, map_zsmul]
+      refine Finset.sum_congr rfl fun s _ => Finset.sum_congr rfl fun r hr => ?_
+      rw [kostantRootSubgroupCoordinateMap_genericMatrix_of_weight_eq e h ρ M hM i hnil b
+        hwt hα hα0 (Finset.mem_filter.mp hr).2, smul_smul]
+    _ = (∑ s, ∑ r with wt r = wt s + α,
+          (ℓ (b r) * b.repr m s) * b.repr (op (b s)) r) • SymmetricAlgebra.ι ℤ ℤ 1 := by
+      simp_rw [← Finset.sum_smul]
+    _ = SymmetricAlgebra.ι ℤ ℤ 1 := by rw [hsum_one, one_smul]
+
+/-- In a Cartan weight basis for a nonzero integral root `α`, the root morphism is a closed
+immersion whenever `op` has a primitive vector in its image. -/
+theorem isClosedImmersion_kostantRootSubgroup_of_isPrimitive_of_isCartanWeightVector
+    {wt : Fin n → κ → ℤ} (hwt : ∀ j, IsCartanWeightVector h ρ (wt j) ((b j : M) : V))
+    {α : κ → ℤ} (hα : ∀ c, ⁅h c, e i⁆ = (α c : ℚ) • e i) (hα0 : α ≠ 0)
+    (m : M) (hprim : IsPrimitive (op m)) :
+    IsClosedImmersion (kostantRootSubgroup e h ρ M hM i hnil b).hom.hom.left := by
+  rw [kostantRootSubgroup_def]
+  exact (CommHopfAlgCat.isClosedImmersion_eqToHom_comp_hopfSpec_map_comp_eqToHom_iff
+    (AdditiveGroup.groupScheme_def ℤ) (GeneralLinear.groupScheme_def ℤ n) _).2
+    (kostantRootSubgroupCoordinateMap_surjective_of_isPrimitive_of_isCartanWeightVector
+      e h ρ M hM i hnil b hwt hα hα0 m hprim)
 
 end TauCeti.UniversalEnvelopingAlgebra

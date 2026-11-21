@@ -35,8 +35,12 @@ and `(f - μ • 1) ^ k` kills `w`, then applying `(f - μ • 1) ^ k` stays ins
   scaled by `(ν - μ) ^ k` under `(f - μ • 1) ^ k`.
 * `Module.End.biSup_inf_genEigenspace_eq_of_mem`: a summand whose scalar is attained only by
   itself is cut out of the sum by the corresponding generalized eigenspace.
-* `Module.End.genEigenspace_eq_of_iSup_eq_top`: if the summands span the whole space and the
-  scalars are pairwise distinct, every summand is a generalized eigenspace.
+* `Module.End.genEigenspace_eq_of_iSup_eq_top` and
+  `Module.End.genEigenspace_eq_bot_of_iSup_eq_top`: if the summands span the whole space, every
+  distinct-scalar summand is a generalized eigenspace and every scalar outside their range has
+  trivial generalized eigenspace.
+* `Module.End.eq_zero_of_apply_eq_smul_of_span_eq_top`: an eigenvector whose eigenvalue does not
+  occur in a spanning family of eigenvectors is zero.
 * `TauCeti.isCompl_eigenspace_one_neg_one`: the `1`- and `-1`-eigenspaces of an involution are
   complementary over a commutative ring in which `2` is a unit.
 -/
@@ -132,5 +136,30 @@ theorem genEigenspace_eq_of_iSup_eq_top {ι : Type w} (A : Module.End K V)
     A.genEigenspace (g k) n = W k :=
   (congrFun (((A.independent_genEigenspace n).comp hg).le_iff_eq_of_iSup_eq_top htop |>.mp hW)
     k).symm
+
+/-- **Scalars outside a spanning family of generalized eigenspaces have trivial generalized
+eigenspace.** Fix an exponent `n : ℕ∞`. If the `W j` span `V` and every `W j` lies in the
+generalized eigenspace `A.genEigenspace (g j) n`, then `A.genEigenspace μ n = ⊥` for every scalar
+`μ` outside `Set.range g`. -/
+theorem genEigenspace_eq_bot_of_iSup_eq_top {ι : Type w} (A : Module.End K V)
+    {W : ι → Submodule K V} {g : ι → K} {n : ℕ∞} (hW : ∀ j, W j ≤ A.genEigenspace (g j) n)
+    (htop : ⨆ j, W j = ⊤) {μ : K} (hμ : μ ∉ Set.range g) :
+    A.genEigenspace μ n = ⊥ := by
+  have hle : ⊤ ≤ ⨆ (c : K) (_ : c ≠ μ), A.genEigenspace c n :=
+    htop ▸ iSup_le fun j ↦ (hW j).trans (le_iSup₂_of_le (g j) (fun h ↦ hμ ⟨j, h⟩) le_rfl)
+  exact disjoint_top.mp ((A.independent_genEigenspace n μ).mono_right hle)
+
+/-- **An eigenvector whose eigenvalue misses a spanning family of eigenvectors is zero.** If
+`V` is spanned by vectors `b j` satisfying `A (b j) = g j • b j`, then any vector `v` with
+`A v = μ • v` and `∀ j, g j ≠ μ` vanishes. -/
+theorem eq_zero_of_apply_eq_smul_of_span_eq_top {ι : Type w} (A : Module.End K V)
+    {b : ι → V} (hspan : Submodule.span K (Set.range b) = ⊤) {g : ι → K}
+    (hb : ∀ j, A (b j) = g j • b j) {μ : K} {v : V}
+    (hv : A v = μ • v) (hμ : ∀ j, g j ≠ μ) : v = 0 := by
+  have hbot : A.genEigenspace μ 1 = ⊥ :=
+    A.genEigenspace_eq_bot_of_iSup_eq_top (W := fun j ↦ Submodule.span K {b j})
+      (fun j ↦ (Submodule.span_singleton_le_iff_mem _ _).mpr (mem_eigenspace_iff.mpr (hb j)))
+      (by rwa [← Submodule.span_range_eq_iSup]) (by rintro ⟨j, rfl⟩; exact hμ j rfl)
+  simpa [hbot] using (mem_eigenspace_iff.mpr hv : v ∈ A.genEigenspace μ 1)
 
 end Module.End

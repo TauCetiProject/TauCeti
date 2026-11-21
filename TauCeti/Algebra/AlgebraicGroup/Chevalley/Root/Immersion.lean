@@ -5,28 +5,26 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.SimplyConnected
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Scheme
-import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.SimplyConnectedModule.RootSubgroup
+import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Primitive
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.Primitive
 
 /-!
-# Closed simple-root subgroups of the full-weight Chevalley scheme
+# Closed simple-root subgroups of a Chevalley group scheme
 
-The numbered positive and negative simple-root morphisms into the full-weight Chevalley
-scheme over `ℤ` are closed immersions. This is an integral statement, not just injectivity
-on points over fields; it remains valid after arbitrary base change, including to nonreduced
-rings and rings of small characteristic.
+For **any** Chevalley datum `D`, the numbered positive and negative simple-root morphisms into
+`D.groupScheme` over `ℤ` are closed immersions. This is an integral scheme-theoretic statement,
+not merely injectivity on points over fields; it remains valid after arbitrary base change,
+including to nonreduced rings and rings of small characteristic, and across all isogeny types.
 
-The morphisms are the existing `kostantRootSubgroupToToral` on
-`TauCeti.DynkinType.scChevalleyDatum`, with target `TauCeti.DynkinType.chevalleyGroupScheme`,
-and the canonical `TauCeti.DynkinType.ChevalleyDatum.rootSubgroup` at the corresponding roots.
-For each signed simple root, the fundamental summand at its node supplies a primitive two-step
-string (`TauCeti.DynkinType.exists_isPrimitive_kostantRootOperator_scLattice`). The
-basis-independent criterion
-`TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupCoordinateMap_surjective_of_isPrimitive`
-then proves that the root coordinate map is surjective. Factoring through the coordinate algebra
-of the toral closure preserves surjectivity.
+## Main results
+
+* `TauCeti.DynkinType.ChevalleyDatum.isClosedImmersion_kostantRootSubgroupToToral`: every numbered
+  positive or negative simple-root morphism into `D.groupScheme` is a closed immersion over `ℤ`.
+* `TauCeti.DynkinType.ChevalleyDatum.isClosedImmersion_rootSubgroup_simpleIndex` and
+  `TauCeti.DynkinType.ChevalleyDatum.isClosedImmersion_rootSubgroup_reflectionPerm_simpleIndex`:
+  closed-immersion instances for the canonical positive and negative simple-root morphisms,
+  supplying the base case for `TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.ClosedImmersion`.
 
 ## References
 
@@ -37,56 +35,48 @@ of the toral closure preserves surjectivity.
 public section
 
 open AlgebraicGeometry CategoryTheory
+open TauCeti.UniversalEnvelopingAlgebra
 
-namespace TauCeti.DynkinType
-
-open _root_.TauCeti.UniversalEnvelopingAlgebra
+namespace TauCeti.DynkinType.ChevalleyDatum
 
 noncomputable section
 
-variable (t : DynkinType) (ht : t.Valid)
+variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
 
-local notation "D" => t.scChevalleyDatum ht
-
-/-- Every numbered positive or negative simple-root morphism into the full-weight Chevalley
-scheme is a closed immersion over `ℤ`. In particular its parameter is faithful over all
-commutative value rings, not merely over fields. -/
-instance isClosedImmersion_kostantRootSubgroupToToral_scChevalleyDatum
-    (i : Fin t.rank ⊕ Fin t.rank) :
+/-- Every numbered positive or negative simple-root morphism into the group scheme of a Chevalley
+datum is a closed immersion over `ℤ`. -/
+instance isClosedImmersion_kostantRootSubgroupToToral (i : Fin t.rank ⊕ Fin t.rank) :
     IsClosedImmersion
       (kostantRootSubgroupToToral (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
-        (D).representation (D).lattice (D).representation_mem_lattice
-        (D).isNilpotent_representation_rootGenerator (D).basis
-        (D).coordinateWeight i).hom.hom.left := by
+        D.representation D.lattice D.representation_mem_lattice
+        D.isNilpotent_representation_rootGenerator D.basis
+        D.coordinateWeight i).hom.hom.left := by
   apply isClosedImmersion_kostantRootSubgroupToToral_of_surjective
   apply kostantRootSubgroupToralCoordinateMap_surjective_of_surjective
-  -- Expose the datum fields once, before using the primitive string on its actual lattice.
-  dsimp only [scChevalleyDatum]
-  -- Term elimination keeps the large represented-module signature out of tactic reversion.
-  exact (t.exists_isPrimitive_kostantRootOperator_scLattice ht i).elim fun v hv =>
-    kostantRootSubgroupCoordinateMap_surjective_of_isPrimitive
+  exact (D.exists_isPrimitive_kostantRootOperator i).elim fun m hm =>
+    kostantRootSubgroupCoordinateMap_surjective_of_isPrimitive_of_isCartanWeightVector
       (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
-      (representation ℚ (t.lieAlgebra ht) (t.scModule ht)) (t.scLattice ht).toAddSubgroup
-      (t.kostantForm_apply_mem_scLattice ht) i
-      (t.isNilpotent_representation_scModule_rootGenerator ht i) (t.scWeightBasis ht) v hv.1 hv.2
+      D.representation D.lattice D.representation_mem_lattice i
+      (D.isNilpotent_representation_rootGenerator i) D.basis
+      D.isCartanWeightVector_basis (t.lie_lieBasis_h_rootGenerator ht i)
+      (t.rootGeneratorWeight_ne_zero ht i) m hm
 
-/-- The canonical positive simple-root morphism of the full-weight datum is a closed
-immersion over `ℤ`. -/
-instance isClosedImmersion_rootSubgroup_simpleIndex_scChevalleyDatum (i : Fin t.rank) :
-    IsClosedImmersion ((D).rootSubgroup (t.simpleIndex ht i)).hom.hom.left := by
-  rw [ChevalleyDatum.rootSubgroup_simpleIndex_eq_kostantRootSubgroupToToral]
+/-- The canonical positive simple-root morphism of a Chevalley datum is a closed immersion over
+`ℤ`. -/
+instance isClosedImmersion_rootSubgroup_simpleIndex (i : Fin t.rank) :
+    IsClosedImmersion (D.rootSubgroup (t.simpleIndex ht i)).hom.hom.left := by
+  rw [D.rootSubgroup_simpleIndex_eq_kostantRootSubgroupToToral]
   infer_instance
 
-/-- The canonical negative simple-root morphism of the full-weight datum is a closed
-immersion over `ℤ`. -/
-instance isClosedImmersion_rootSubgroup_reflectionPerm_simpleIndex_scChevalleyDatum
-    (i : Fin t.rank) :
-    IsClosedImmersion ((D).rootSubgroup
+/-- The canonical negative simple-root morphism of a Chevalley datum is a closed immersion over
+`ℤ`. -/
+instance isClosedImmersion_rootSubgroup_reflectionPerm_simpleIndex (i : Fin t.rank) :
+    IsClosedImmersion (D.rootSubgroup
       ((t.simplyConnectedRootDatum ht).reflectionPerm
         (t.simpleIndex ht i) (t.simpleIndex ht i))).hom.hom.left := by
-  rw [ChevalleyDatum.rootSubgroup_reflectionPerm_simpleIndex_eq_kostantRootSubgroupToToral]
+  rw [D.rootSubgroup_reflectionPerm_simpleIndex_eq_kostantRootSubgroupToToral]
   infer_instance
 
 end
 
-end TauCeti.DynkinType
+end TauCeti.DynkinType.ChevalleyDatum

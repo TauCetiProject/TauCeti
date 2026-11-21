@@ -32,11 +32,9 @@ over nonreduced rings and rings of characteristic two.
 * positive and negative simple root subgroups match the numbered raising and lowering subgroups of
   `SpStd 1` across `lengthPermRankTwo`, with the additive parameter unchanged;
 * torus points `b2ChevalleyDatum.torusPoints A s` match
-  `weightTorusPoints 1 A (s ∘ lengthPermRankTwo)`;
+  `weightTorusPoints 1 A (s ∘ lengthPermRankTwo)`; and
 * functorial ring-change maps and `p ^ k`-power Frobenius endomorphisms commute with the
-  identification; and
-* every root subgroup `b2ChevalleyDatum.rootSubgroupPoints γ A` (across all eight roots of `B₂`) is
-  injective over every commutative ring `A`.
+  identification.
 
 ## Main definitions
 
@@ -56,8 +54,6 @@ over nonreduced rings and rings of characteristic two.
 * `TauCeti.SpStd.b2ChevalleyDatumPointsEquiv_map` and
   `TauCeti.SpStd.b2ChevalleyDatumPointsEquiv_frobenius`: naturality in the value ring and
   intertwining of Frobenius endomorphisms.
-* `TauCeti.SpStd.b2ChevalleyDatum_rootSubgroupPoints_injective`: injectivity of all eight root
-  subgroups of `b2ChevalleyDatum` over every commutative ring.
 
 ## References
 
@@ -296,19 +292,6 @@ theorem b2ChevalleyDatumPointsEquiv_symm_frobenius (p k : ℕ) (A : Type v) [Com
     (b2ChevalleyDatumPointsEquiv A).symm (frobenius 1 p k A g) =
       b2ChevalleyDatum.frobenius p k A ((b2ChevalleyDatumPointsEquiv A).symm g) := by
   rw [MulEquiv.symm_apply_eq, b2ChevalleyDatumPointsEquiv_frobenius, MulEquiv.apply_symm_apply]
-
-/-! ## Injectivity of all root subgroups over every commutative ring -/
-
-/-- **Every root subgroup of `b2ChevalleyDatum` is injective**, across all eight roots of `B₂` and
-over every commutative ring `A` (including nonreduced rings and rings of characteristic two). -/
-theorem b2ChevalleyDatum_rootSubgroupPoints_injective (γ : Fin (DynkinType.B 2).numRoots)
-    (A : Type v) [CommRing A] :
-    Function.Injective (b2ChevalleyDatum.rootSubgroupPoints γ A) := by
-  refine b2ChevalleyDatum.rootSubgroupPoints_injective_of_simple A (fun i => ?_) γ
-  intro u v huv
-  exact rootSubgroupPoints_injective 1 (.inl (lengthPermRankTwo i)) A (by
-    simpa only [b2ChevalleyDatumPointsEquiv_rootSubgroupPoints_simpleIndex] using
-      congrArg (b2ChevalleyDatumPointsEquiv A) huv)
 
 end
 

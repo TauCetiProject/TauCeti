@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.PositiveDegrees.Basic
-public import TauCeti.Algebra.Module.Primitive
+public import TauCeti.Algebra.Module.Primitive.Basic
 public import Mathlib.GroupTheory.Subgroup.Saturated
 
 /-!
