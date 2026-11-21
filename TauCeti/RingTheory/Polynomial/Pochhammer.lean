@@ -19,8 +19,9 @@ import Mathlib.RingTheory.Binomial
 
 This module provides basic lemmas for descending Pochhammer polynomials `descPochhammer R n`
 over general rings, together with their sums over integer intervals and their forward
-differences, and evaluation identities for ascending Pochhammer polynomials `ascPochhammer R n`
-over general rings, and the Chu–Vandermonde identity over commutative rings.
+differences, evaluation identities for ascending Pochhammer polynomials `ascPochhammer R n`
+over general rings, the Chu–Vandermonde identity over commutative rings, and the nonvanishing of
+ascending Pochhammer polynomials off the nonpositive integers.
 
 The monicity result holds over any ring, and the degree results require only a nontrivial ring.
 The summation identity also holds over arbitrary rings; no division by `m + 1` is needed.
@@ -66,6 +67,8 @@ The summation identity also holds over arbitrary rings; no division by `m + 1` i
 * `TauCeti.ascPochhammer_eval_neg_sub_add_one`: `(−b − k + 1)ₖ = (−1)ᵏ (b)ₖ`.
 * `TauCeti.sum_neg_one_pow_mul_choose_ascPochhammer`: the Chu–Vandermonde identity
   `∑ₖ (−1)ᵏ C(n, k) (b)ₖ (c + k)ₙ₋ₖ = (c − b)ₙ`, from Mathlib's `Ring.descPochhammer_smeval_add`.
+* `TauCeti.ascPochhammer_eval_ne_zero`: over a domain, the rising factorial `(c)ₖ` does not
+  vanish when `c` is not a nonpositive integer.
 -/
 
 public section
@@ -318,6 +321,13 @@ theorem pow_eq_sum_stirlingSecond_mul_descPochhammer_eval {R : Type*} [Ring R] (
   have hD (j : ℕ) : aeval x (descPochhammer ℤ j) = (descPochhammer R j).eval x := by
     rw [aeval_def, algebraMap_int_eq, eval₂_eq_eval_map, descPochhammer_map]
   simpa [hD] using congrArg (aeval x) hP
+
+/-- The Pochhammer symbol `(c)ₖ` does not vanish when `c` is not a nonpositive integer. -/
+theorem ascPochhammer_eval_ne_zero {R : Type*} [Ring R] [IsDomain R] {c : R}
+    (hc : ∀ m : ℕ, c ≠ -m) (k : ℕ) : (ascPochhammer R k).eval c ≠ 0 := by
+  rw [Ne, ascPochhammer_eval_eq_zero_iff]
+  rintro ⟨m, -, hm⟩
+  exact hc m (by rw [hm, neg_neg])
 
 section Ascending
 
