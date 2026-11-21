@@ -13,8 +13,8 @@ public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Cotangent
 public import Mathlib.Topology.Instances.AddCircle.Defs
 public import TauCeti.RingTheory.RootsOfUnity.Sawtooth
 import TauCeti.Algebra.AddCircle
-import Mathlib.RingTheory.Artinian.Algebra
 import Mathlib.RingTheory.IntegralClosure.IsIntegralClosure.Basic
+import TauCeti.RingTheory.Adjoin.Unit
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
 import Mathlib.Tactic.NormNum
@@ -241,8 +241,8 @@ private theorem sawtoothSum_mul {a : AddCircle (1 : ℚ)} {n : ℕ} (hn : 0 < n)
     fun N ↦ ∑ j ∈ range N, AddMonoidAlgebra.single (j • a) (j : ℚ)
   -- the sawtooth sum in terms of `T` and `U`
   have hS (N : ℕ) (hN : 0 < N) :
-      sawtoothSum a N = (N : ℚ)⁻¹ • T N - (1 / 2 : ℚ) • U N + (1 / 2 : ℚ) • 1 :=
-    sum_Ico_single_div_sub_half hN
+      sawtoothSum a N = (N : ℚ)⁻¹ • T N - (1 / 2 : ℚ) • U N + (1 / 2 : ℚ) • 1 := by
+    simpa only [sawtoothSum, T, U] using sum_Ico_single_div_sub_half hN
   -- translating by a multiple of `n` does not move `j • a`
   have hshift (q x : ℕ) : (n * q + x) • a = x • a := by
     rw [add_nsmul, mul_nsmul, ha, nsmul_zero, zero_add]
@@ -412,14 +412,22 @@ theorem lift_eisenstein_eq_cot (χ : Multiplicative (AddCircle (1 : ℚ)) →* �
 
 /-! ### Generation of the rational torsion group algebra -/
 
+/-- `c e(j a) = c • e(a) ^ j`. -/
+private theorem single_nsmul_eq_smul_pow (a : AddCircle (1 : ℚ)) (j : ℕ) (c : ℚ) :
+    AddMonoidAlgebra.single (j • a) c = c • AddMonoidAlgebra.single a 1 ^ j := by
+  rw [AddMonoidAlgebra.single_pow, one_pow, AddMonoidAlgebra.smul_single', mul_one]
+
+/-- `e(a) ^ N = 1` when `N a = 0`. -/
+private theorem single_one_pow_eq_one_of_nsmul_eq_zero {a : AddCircle (1 : ℚ)} {N : ℕ}
+    (ha : N • a = 0) : AddMonoidAlgebra.single a (1 : ℚ) ^ N = 1 := by
+  rw [AddMonoidAlgebra.single_pow, ha, one_pow, AddMonoidAlgebra.one_def]
+
 /-- `e₁,ₐ` as a rational polynomial in `e(a)`, at any annihilating level `N > 0`. -/
 private theorem firstEisenstein_eq_sum_smul_pow {a : AddCircle (1 : ℚ)} {N : ℕ} (hN : 0 < N)
     (ha : N • a = 0) :
     firstEisenstein a =
       ∑ j ∈ Ico 1 N, ((j : ℚ) / N - 1 / 2) • AddMonoidAlgebra.single a (1 : ℚ) ^ j := by
-  rw [firstEisenstein_eq_sum hN ha]
-  refine sum_congr rfl fun j _ ↦ ?_
-  rw [AddMonoidAlgebra.single_pow, one_pow, AddMonoidAlgebra.smul_single', mul_one]
+  simp_rw [firstEisenstein_eq_sum hN ha, single_nsmul_eq_smul_pow]
 
 /-- **The Cayley relation.** For every `N > 0` with `N a = 0`,
 `(2 e₁,ₐ - 1) (e(a) - 1) = 2 - (2 / N) ∑_{j < N} e(j a)`. The sum on the right is `N` times the
@@ -430,13 +438,9 @@ theorem two_mul_firstEisenstein_sub_one_mul_single_sub_one {a : AddCircle (1 : �
     (2 * firstEisenstein a - 1) * (AddMonoidAlgebra.single a 1 - 1) =
       2 - (2 / N : ℚ) • ∑ j ∈ range N, AddMonoidAlgebra.single (j • a) (1 : ℚ) := by
   have hN' : (N : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr hN.ne'
-  have hpow (j : ℕ) (c : ℚ) :
-      AddMonoidAlgebra.single (j • a) c = c • AddMonoidAlgebra.single a 1 ^ j := by
-    rw [AddMonoidAlgebra.single_pow, one_pow, AddMonoidAlgebra.smul_single', mul_one]
-  have hu : AddMonoidAlgebra.single a (1 : ℚ) ^ N = 1 := by
-    rw [AddMonoidAlgebra.single_pow, ha, one_pow, AddMonoidAlgebra.one_def]
+  have hu := single_one_pow_eq_one_of_nsmul_eq_zero ha
   rw [firstEisenstein_eq_sum hN ha, sum_Ico_single_div_sub_half hN]
-  simp_rw [hpow, one_smul]
+  simp_rw [single_nsmul_eq_smul_pow a, one_smul]
   generalize AddMonoidAlgebra.single a (1 : ℚ) = u at hu ⊢
   set G := ∑ j ∈ range N, u ^ j
   set T := ∑ j ∈ range N, (j : ℚ) • u ^ j with hT_def
@@ -449,16 +453,22 @@ theorem two_mul_firstEisenstein_sub_one_mul_single_sub_one {a : AddCircle (1 : �
   have hT : T * (u - 1) = (N : ℚ) • 1 - G := by
     have h := sum_range_mul_geometric_add u N
     rw [hu, hIcc, mul_one] at h
-    rw [← h, hT_def, sum_mul]
-    simp only [Nat.cast_smul_eq_nsmul, nsmul_eq_mul, mul_one]
-    rw [sub_add_cancel_right, ← sum_neg_distrib]
-    exact sum_congr rfl fun j _ ↦ by ring
+    have hsum : T * (u - 1) = -∑ k ∈ range N, (k : AddMonoidAlgebra ℚ (AddCircle (1 : ℚ))) *
+        (u ^ k * (1 - u)) := by
+      rw [hT_def, sum_mul, ← sum_neg_distrib]
+      exact sum_congr rfl fun j _ ↦ by rw [Nat.cast_smul_eq_nsmul, nsmul_eq_mul]; ring
+    rw [hsum, Nat.cast_smul_eq_nsmul, nsmul_eq_mul, mul_one]
+    linear_combination -h
   have h2 : 2 * ((N : ℚ)⁻¹ • T - (1 / 2 : ℚ) • G + (1 / 2 : ℚ) • 1) - 1 =
       (2 / N : ℚ) • T - G := by
     rw [two_mul]
     module
-  rw [h2, sub_mul, smul_mul_assoc, hT, hG, sub_zero, smul_sub, smul_smul,
-    div_mul_cancel₀ _ hN', two_smul, one_add_one_eq_two]
+  have hc : algebraMap ℚ (AddMonoidAlgebra ℚ (AddCircle (1 : ℚ))) (2 / N) *
+      algebraMap ℚ _ N = 2 := by
+    rw [← map_mul, div_mul_cancel₀ _ hN', map_ofNat]
+  rw [h2]
+  simp only [Algebra.smul_def, mul_one] at hT ⊢
+  linear_combination algebraMap ℚ _ (2 / N) * hT - hG + hc
 
 /-- The averaging idempotent `π = N⁻¹ ∑_{j < N} e(j a)` at the order `N` of `a`: it is fixed by
 `e(a)`, killed by `e₁,ₐ`, and is the defect in the Cayley relation. -/
@@ -470,13 +480,9 @@ private theorem exists_idempotent_firstEisenstein_mul_eq_zero (a : AddCircle (1 
   have hN : 0 < N := (AddCircle.isOfFinAddOrder_rat a).addOrderOf_pos
   have ha : N • a = 0 := addOrderOf_nsmul_eq_zero a
   have hN' : (N : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr hN.ne'
-  have hpow (j : ℕ) :
-      AddMonoidAlgebra.single (j • a) (1 : ℚ) = AddMonoidAlgebra.single a 1 ^ j := by
-    rw [AddMonoidAlgebra.single_pow, one_pow]
-  have hu : AddMonoidAlgebra.single a (1 : ℚ) ^ N = 1 := by
-    rw [← hpow, ha, AddMonoidAlgebra.one_def]
+  have hu := single_one_pow_eq_one_of_nsmul_eq_zero ha
   have hrel := two_mul_firstEisenstein_sub_one_mul_single_sub_one hN ha
-  simp_rw [hpow] at hrel
+  simp_rw [single_nsmul_eq_smul_pow a, one_smul] at hrel
   rw [firstEisenstein_eq_sum_smul_pow hN ha] at hrel ⊢
   generalize AddMonoidAlgebra.single a (1 : ℚ) = u at hrel hu ⊢
   set G := ∑ j ∈ range N, u ^ j with hG_def
@@ -522,9 +528,7 @@ theorem two_mul_firstEisenstein_sub_one_sq_mul_single_two_nsmul (a : AddCircle (
     (2 * firstEisenstein a - 1) ^ 2 * AddMonoidAlgebra.single (2 • a) 1 =
       (2 * firstEisenstein a + 1) ^ 2 := by
   obtain ⟨P, hPP, -, hfP, h1⟩ := exists_idempotent_firstEisenstein_mul_eq_zero a
-  have hsq : AddMonoidAlgebra.single (2 • a) (1 : ℚ) = AddMonoidAlgebra.single a 1 ^ 2 := by
-    rw [AddMonoidAlgebra.single_pow, one_pow]
-  rw [hsq]
+  rw [single_nsmul_eq_smul_pow, one_smul]
   linear_combination ((2 * firstEisenstein a - 1) * AddMonoidAlgebra.single a 1 +
     (2 * firstEisenstein a + 1 - 2 * P)) * h1 + 4 * hPP - 8 * hfP
 
@@ -534,32 +538,28 @@ theorem single_two_nsmul_mem_adjoin_firstEisenstein (a : AddCircle (1 : ℚ)) :
   have hN : 0 < addOrderOf a := (AddCircle.isOfFinAddOrder_rat a).addOrderOf_pos
   have hu : IsIntegral ℚ (AddMonoidAlgebra.single a (1 : ℚ)) := by
     refine IsIntegral.of_pow hN ?_
-    rw [AddMonoidAlgebra.single_pow, addOrderOf_nsmul_eq_zero, one_pow,
-      ← AddMonoidAlgebra.one_def]
+    rw [single_one_pow_eq_one_of_nsmul_eq_zero (addOrderOf_nsmul_eq_zero a)]
     exact isIntegral_one
   have hf : IsIntegral ℚ (firstEisenstein a) := by
     rw [firstEisenstein_eq_sum_smul_pow hN (addOrderOf_nsmul_eq_zero a)]
     exact IsIntegral.sum _ fun j _ ↦ (hu.pow j).smul _
   set f := firstEisenstein a
   set B := Algebra.adjoin ℚ {f}
-  have : Module.Finite ℚ B := Algebra.finite_adjoin_simple_of_isIntegral hf
   have hfB : f ∈ B := Algebra.self_mem_adjoin_singleton ℚ f
   have h2B : (2 : AddMonoidAlgebra ℚ (AddCircle (1 : ℚ))) ∈ B := by simp
   have hDB : 2 * f - 1 ∈ B := sub_mem (mul_mem h2B hfB) (one_mem B)
-  -- `2 e₁,ₐ - 1` is a unit of `ℚ[ℚ/ℤ]`, hence a non-zero-divisor of the finite-dimensional
-  -- algebra `B`, hence a unit of `B`
-  obtain ⟨⟨_, y, hy, -⟩, rfl⟩ := IsArtinianRing.isUnit_of_isIntegral_of_nonZeroDivisor (R := ℚ)
-    (Algebra.IsIntegral.isIntegral (⟨2 * f - 1, hDB⟩ : B))
-    (comap_nonZeroDivisors_le_of_injective (f := B.val) Subtype.val_injective
-      (isUnit_two_mul_firstEisenstein_sub_one a).mem_nonZeroDivisors)
-  have hy' : (2 * f - 1) * y = 1 := congrArg Subtype.val hy
+  -- the inverse of the integral unit `2 e₁,ₐ - 1` is a polynomial in it, hence in `e₁,ₐ`
+  obtain ⟨v, hv⟩ := isUnit_two_mul_firstEisenstein_sub_one a
+  obtain ⟨y, hyB, hy'⟩ : ∃ y ∈ B, (2 * f - 1) * y = 1 :=
+    ⟨_, Algebra.adjoin_le (Set.singleton_subset_iff.mpr (hv ▸ hDB))
+      (v.inv_mem_adjoin (hv ▸ ((isIntegral_algebraMap.mul hf).sub isIntegral_one))),
+      by rw [← hv, Units.mul_inv]⟩
   have hsq := two_mul_firstEisenstein_sub_one_sq_mul_single_two_nsmul a
-  have : AddMonoidAlgebra.single (2 • a) (1 : ℚ) =
-      (y : AddMonoidAlgebra ℚ (AddCircle (1 : ℚ))) ^ 2 * (2 * f + 1) ^ 2 := by
+  have : AddMonoidAlgebra.single (2 • a) (1 : ℚ) = y ^ 2 * (2 * f + 1) ^ 2 := by
     linear_combination (-AddMonoidAlgebra.single (2 • a) 1 * ((2 * f - 1) * y + 1)) * hy' +
-      (y : AddMonoidAlgebra ℚ (AddCircle (1 : ℚ))) ^ 2 * hsq
+      y ^ 2 * hsq
   rw [this]
-  exact mul_mem (pow_mem y.property 2) (pow_mem (add_mem (mul_mem h2B hfB) (one_mem B)) 2)
+  exact mul_mem (pow_mem hyB 2) (pow_mem (add_mem (mul_mem h2B hfB) (one_mem B)) 2)
 
 /-- **The first trigonometric Eisenstein functions generate `ℚ[ℚ/ℤ]`** as a `ℚ`-algebra. Every
 `b ∈ ℚ/ℤ` is `2 a` for some `a`, and `e(2 a)` is a polynomial in `e₁,ₐ`. -/
