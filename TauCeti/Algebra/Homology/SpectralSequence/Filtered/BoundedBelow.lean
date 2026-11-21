@@ -319,8 +319,7 @@ lemma filtrationSpectralSequencePageXToGraded_naturality {L : CochainComplex (Mo
         abutmentGradedMap (spectralObjectMap α) pq.2 (pq.1 + pq.2) := by
   simp only [filtrationSpectralSequencePageXToGraded_def, spectralSequenceMap_hom,
     spectralSequencePageMap_f]
-  rw [spectralSequencePageXToEInfty_naturality_assoc, EInftyIsoCokernel_hom_naturality,
-    Category.assoc]
+  rw [Category.assoc, spectralSequencePageXToEInfty_comp_EInftyIsoCokernel_hom_naturality]
 
 /-- **An analogue of Weibel's Classical Convergence Theorem for filtrations bounded below**, for
 the canonical maps `spectralSequencePageXToPageX` between pages. Let `pq = (p, q)` and

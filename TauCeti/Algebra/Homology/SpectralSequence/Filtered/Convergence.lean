@@ -201,8 +201,7 @@ lemma filtrationSpectralSequencePageXIsoGradedOfFinite_hom_naturality
   simp only [filtrationSpectralSequencePageXIsoGradedOfFinite, Iso.trans_hom,
     filtrationSpectralSequencePageXIsoEInftyOfFinite_hom, spectralSequenceMap_hom,
     spectralSequencePageMap_f]
-  rw [spectralSequencePageXToEInfty_naturality_assoc, EInftyIsoCokernel_hom_naturality,
-    Category.assoc]
+  rw [Category.assoc, spectralSequencePageXToEInfty_comp_EInftyIsoCokernel_hom_naturality]
 
 end Naturality
 

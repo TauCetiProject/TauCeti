@@ -225,8 +225,7 @@ lemma filtrationSpectralSequencePageXIsoGradedOfExhaustive_hom_naturality
   simp only [filtrationSpectralSequencePageXIsoGradedOfExhaustive, Iso.trans_hom,
     filtrationSpectralSequencePageXIsoEInfty_hom, spectralSequenceMap_hom,
     spectralSequencePageMap_f]
-  rw [spectralSequencePageXToEInfty_naturality_assoc, EInftyIsoCokernel_hom_naturality,
-    Category.assoc]
+  rw [Category.assoc, spectralSequencePageXToEInfty_comp_EInftyIsoCokernel_hom_naturality]
 
 /-- **The comparison theorem for exhaustive filtrations.** Let `α` be a morphism between the
 functors of filtrations `F` of `K` and `G` of `L`, and let `n` be a degree. Suppose that the

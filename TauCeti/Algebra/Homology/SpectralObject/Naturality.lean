@@ -40,6 +40,8 @@ objects `E^n(⊥ ≤ q ≤ q + 1 ≤ ⊤)`:
   the graded piece of the abutment.
 * `CategoryTheory.Abelian.SpectralObject.spectralSequencePageXToEInfty_naturality`: the maps from
   the pages onto `E∞` are natural.
+* `spectralSequencePageXToEInfty_comp_EInftyIsoCokernel_hom_naturality`: the maps from the pages
+  onto the graded pieces are natural.
 * `CategoryTheory.Abelian.SpectralObject.spectralSequencePageXToPageX_naturality`: the maps to
   the later pages are natural.
 -/
@@ -166,6 +168,24 @@ lemma spectralSequencePageXToEInfty_naturality
   rw [spectralSequencePageXToEInfty_def, spectralSequencePageXToEInfty_def,
     spectralSequencePageXIsoEBot_hom_naturality_assoc φ r hr pq n hn hX₀ hY₀, Category.assoc,
     map_EMap]
+
+/-- **The maps from the pages onto the graded pieces are natural.** When `H^{n+1}(⊥ ≤ q - r + 2)`
+vanishes for `X` and `Y`, the epimorphisms `spectralSequencePageXToEInfty` followed by
+`EInftyIsoCokernel`, from the objects at `pq = (p, q)` on page `r` onto the graded pieces
+`F_{q+1} H^n / F_q H^n`, intertwine `spectralSequencePageXMap coreE₂Cohomological φ` with
+`abutmentGradedMap φ`. -/
+@[reassoc]
+lemma spectralSequencePageXToEInfty_comp_EInftyIsoCokernel_hom_naturality
+    (hX₀ : IsZero ((X.H (n + 1)).obj
+      (mk₁ (homOfLE (bot_le : (⊥ : EInt) ≤ ((pq.2 - r + 2 : ℤ) : EInt))))))
+    (hY₀ : IsZero ((Y.H (n + 1)).obj
+      (mk₁ (homOfLE (bot_le : (⊥ : EInt) ≤ ((pq.2 - r + 2 : ℤ) : EInt)))))) :
+    spectralSequencePageXMap coreE₂Cohomological φ r hr pq ≫
+        Y.spectralSequencePageXToEInfty r hr pq n hn hY₀ ≫ (Y.EInftyIsoCokernel pq.2 n).hom =
+      X.spectralSequencePageXToEInfty r hr pq n hn hX₀ ≫ (X.EInftyIsoCokernel pq.2 n).hom ≫
+        abutmentGradedMap φ pq.2 n := by
+  rw [spectralSequencePageXToEInfty_naturality_assoc φ r hr pq n hn hX₀ hY₀,
+    EInftyIsoCokernel_hom_naturality]
 
 /-- **The maps to the later pages are natural.** When `H^{n+1}(⊥ ≤ q - r + 2)` and
 `H^{n+1}(⊥ ≤ q - r' + 2)` vanish for `X` and `Y`, the maps `spectralSequencePageXToPageX` from
