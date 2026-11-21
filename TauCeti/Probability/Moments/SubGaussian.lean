@@ -12,7 +12,6 @@ public import TauCeti.Analysis.Matrix.L2OpNorm
 public import TauCeti.Probability.Moments.SubGaussian.Basic
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import TauCeti.MeasureTheory.Integral.Prod
-import TauCeti.Probability.Concentration.SubgaussianTail
 import TauCeti.Probability.Distributions.Gaussian.Moments
 import TauCeti.Probability.Distributions.Gaussian.QuadraticForm
 import TauCeti.Probability.Moments.SubExponential
@@ -278,6 +277,24 @@ theorem measureReal_abs_sum_mul_ge_le_of_iIndepFun
       (c := fun i ↦ a2 i * c i) (s := Finset.univ) (by
         intro i _
         exact hY i)
+  have hset : {ω | t ≤ |S ω|} =
+      {ω | t ≤ S ω} ∪ {ω | t ≤ -S ω} := by
+    ext ω
+    simpa only [Set.mem_ofPred_eq, Set.mem_union] using (le_abs : t ≤ |S ω| ↔ _)
+  have hset' : {ω | t ≤ |∑ i, a i * X i ω|} =
+      {ω | t ≤ S ω} ∪ {ω | t ≤ -S ω} := hset
+  have hbound : μ.real {ω | t ≤ |∑ i, a i * X i ω|} ≤
+      2 * Real.exp (-t ^ 2 / (2 * ∑ i, a2 i * c i)) := by
+    calc
+      μ.real {ω | t ≤ |∑ i, a i * X i ω|} =
+          μ.real ({ω | t ≤ S ω} ∪ {ω | t ≤ -S ω}) := by
+            rw [hset']
+      _ ≤ μ.real {ω | t ≤ S ω} + μ.real {ω | t ≤ -S ω} :=
+        measureReal_union_le _ _
+      _ ≤ Real.exp (-t ^ 2 / (2 * ∑ i, a2 i * c i)) +
+          Real.exp (-t ^ 2 / (2 * ∑ i, a2 i * c i)) :=
+        add_le_add (hS.measure_ge_le ht) (hS.neg.measure_ge_le ht)
+      _ = 2 * Real.exp (-t ^ 2 / (2 * ∑ i, a2 i * c i)) := by ring
   have hproxy : ((∑ i, a2 i * c i : ℝ≥0) : ℝ) =
       ∑ i, (a i) ^ 2 * (c i : ℝ) := by
     rw [NNReal.coe_sum]
@@ -285,7 +302,7 @@ theorem measureReal_abs_sum_mul_ge_le_of_iIndepFun
     intro i _
     rw [NNReal.coe_mul]
     rfl
-  simpa only [hproxy] using hS.measureReal_abs_ge_le ht
+  simpa only [hproxy] using hbound
 
 /-- The linear-form tail bound when all coordinates have the same variance proxy. -/
 theorem measureReal_abs_sum_mul_ge_le_of_iIndepFun_const

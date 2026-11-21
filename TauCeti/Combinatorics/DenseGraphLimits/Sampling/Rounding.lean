@@ -10,7 +10,6 @@ public import TauCeti.Combinatorics.DenseGraphLimits.Sampling.Exposure
 public import TauCeti.Combinatorics.DenseGraphLimits.StepGraphon.FiniteGraph.Basic
 import Mathlib.Probability.ProductMeasure
 import TauCeti.Combinatorics.DenseGraphLimits.CutMetric.Triangle
-import TauCeti.Probability.Concentration.SubgaussianTail
 import TauCeti.Probability.McDiarmid.Basic
 
 /-!
@@ -231,10 +230,24 @@ private theorem coinLaw_le_abs_rectEdgeCount_sub_le (W : Graphon Ω μ) (y : Fin
   have hσ : ((∑ _ : Fin n × Fin n, (2 : ℝ).toNNReal ^ 2 / 4 : ℝ≥0) : ℝ) = n ^ 2 := by
     simp [Finset.card_univ, Fintype.card_prod, sq]
     ring
-  have htail := hsub.measureReal_abs_ge_le hs
-  rw [hσ] at htail
-  rw [← ofReal_measureReal (measure_ne_top _ _)]
-  exact ENNReal.ofReal_le_ofReal htail
+  have htail : ∀ t : Set (Fin n × Fin n → ℝ),
+      (coinLaw n).real t ≤ Real.exp (-s ^ 2 / (2 * n ^ 2)) →
+        coinLaw n t ≤ ENNReal.ofReal (Real.exp (-s ^ 2 / (2 * n ^ 2))) := fun t ht => by
+    rw [← ofReal_measureReal (measure_ne_top _ t)]
+    exact ENNReal.ofReal_le_ofReal ht
+  have h₁ := htail _ ((hsub.measure_ge_le hs).trans_eq (by rw [hσ]))
+  have h₂ := htail _ ((hsub.neg.measure_ge_le hs).trans_eq (by rw [hσ]))
+  calc coinLaw n {u | s ≤ |f u - rectWeight W S T y|}
+      ≤ coinLaw n ({u | s ≤ f u - rectWeight W S T y} ∪
+          {u | s ≤ (-fun u => f u - rectWeight W S T y) u}) := by
+        refine measure_mono fun u (hu : s ≤ |f u - rectWeight W S T y|) => ?_
+        rcases le_abs'.mp hu with h | h
+        · exact Or.inr (by simp only [Pi.neg_apply, Set.mem_ofPred_eq]; linarith)
+        · exact Or.inl h
+    _ ≤ _ := measure_union_le _ _
+    _ ≤ _ := add_le_add h₁ h₂
+    _ = ENNReal.ofReal (2 * Real.exp (-s ^ 2 / (2 * n ^ 2))) := by
+        rw [← ENNReal.ofReal_add (Real.exp_pos _).le (Real.exp_pos _).le, ← two_mul]
 
 open Classical in
 /-- The loopless graph and the weights differ on the diagonal only, so replacing the rectangle sum

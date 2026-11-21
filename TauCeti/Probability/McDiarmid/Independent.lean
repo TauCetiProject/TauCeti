@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Probability.McDiarmid.Basic
-import TauCeti.Probability.Concentration.SubgaussianTail
+import TauCeti.MeasureTheory.Measure.Tail
 
 /-!
 # Bounded differences for independent random variables
@@ -103,7 +103,11 @@ theorem measureReal_abs_sub_integral_ge_le_of_bounded_differences (h : iIndepFun
     {t : ℝ} (ht : 0 ≤ t) :
     P.real {ω | t ≤ |f (fun i => X i ω) - ∫ ω', f (fun i => X i ω') ∂P|} ≤
       2 * Real.exp (-2 * t ^ 2 / (∑ i, (c i : ℝ) ^ 2)) := by
-  simpa only [exponent_variance_proxy] using
-    (h.hasSubgaussianMGF_of_bounded_differences hX f hf c hbd).measureReal_abs_ge_le ht
+  have hsub := h.hasSubgaussianMGF_of_bounded_differences hX f hf c hbd
+  have hu := hsub.measure_ge_le ht
+  have hl := hsub.neg.measure_ge_le ht
+  simp only [Pi.neg_apply] at hl
+  rw [exponent_variance_proxy] at hu hl
+  exact (TauCeti.measureReal_le_abs_le_add).trans (by linarith)
 
 end ProbabilityTheory.iIndepFun

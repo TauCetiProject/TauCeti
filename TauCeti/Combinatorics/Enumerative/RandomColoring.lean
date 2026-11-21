@@ -10,7 +10,6 @@ public import Mathlib.MeasureTheory.Constructions.Pi
 public import Mathlib.Probability.ProbabilityMassFunction.Constructions
 import Mathlib.MeasureTheory.Integral.Bochner.Set
 import Mathlib.Probability.Moments.SubGaussian
-import TauCeti.Probability.Concentration.SubgaussianTail
 import TauCeti.Probability.McDiarmid.Basic
 
 /-!
@@ -123,9 +122,20 @@ theorem measureReal_le_abs_card_filter_sub_le [Fintype ι] [MeasurableSpace κ]
     rw [sum_ite_mem, univ_inter, sum_const, nsmul_eq_mul]
     ring
   have hexp : -a ^ 2 / (2 * (#T / 4 : ℝ)) = -2 * a ^ 2 / #T := by ring
-  have htail := hsub.measureReal_abs_ge_le ha
-  rw [hmean, hvar, hexp] at htail
-  simpa only [hf, sum_boole] using htail
+  have h₁ := hsub.measure_ge_le ha
+  have h₂ := hsub.neg.measure_ge_le ha
+  rw [hmean, hvar, hexp] at h₁ h₂
+  -- A deviation of at least `a` is an excess or a shortfall of at least `a`.
+  calc μ.real {x | a ≤ |(#{e ∈ T | x e = c} : ℝ) - (q c).toReal * #T|}
+      ≤ μ.real ({x | a ≤ f x - (q c).toReal * #T} ∪
+          {x | a ≤ (-fun x ↦ f x - (q c).toReal * #T) x}) := by
+        refine measureReal_mono fun x (hx : a ≤ |_|) ↦ ?_
+        rw [← sum_boole] at hx
+        rcases le_abs'.1 hx with h | h
+        · exact Or.inr (by simp only [Pi.neg_apply, Set.mem_ofPred_eq]; linarith)
+        · exact Or.inl h
+    _ ≤ _ := measureReal_union_le _ _
+    _ ≤ 2 * exp (-2 * a ^ 2 / #T) := by linarith
 
 /-- The finite case of `TauCeti.exists_forall_abs_card_filter_sub_mul_card_lt`, by a union bound
 under the product measure. -/

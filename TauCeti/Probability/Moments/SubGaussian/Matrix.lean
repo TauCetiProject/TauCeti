@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.Matrix
 public import Mathlib.Probability.Moments.SubGaussian
-import TauCeti.Probability.Concentration.SubgaussianTail
 import TauCeti.Probability.Moments.SubGaussian.Net
 import TauCeti.Analysis.InnerProductSpace.BilinearNet
 import TauCeti.Analysis.Normed.Module.CoveringNumber
@@ -117,17 +116,31 @@ private lemma measureReal_matrixBilinear_abs_ge_le
     μ.real {ω | 4 * K * s ≤ |matrixBilinear (A ω) x y|} ≤ 2 * exp (-(4 * s ^ 2)) := by
   have hsum := hasSubgaussianMGF_matrixBilinear hindep hA hx hy
   have hu : 0 ≤ 4 * (K : ℝ) * s := by positivity
-  have htail := hsum.measureReal_abs_ge_le hu
+  have hright := hsum.measure_ge_le hu
+  have hleft := hsum.neg.measure_ge_le hu
   have hexponent : exp (-(4 * (K : ℝ) * s) ^ 2 / (2 * (K ^ 2 : ℝ≥0))) =
       exp (-(8 * s ^ 2)) := by
     congr 1
     rw [NNReal.coe_pow]
     field_simp [ne_of_gt hK]
     ring
-  rw [hexponent] at htail
-  refine htail.trans ?_
-  gcongr
-  nlinarith [sq_nonneg s]
+  rw [hexponent] at hright hleft
+  have hsplit : {ω | 4 * K * s ≤ |matrixBilinear (A ω) x y|} =
+      {ω | 4 * K * s ≤ matrixBilinear (A ω) x y} ∪
+        {ω | 4 * K * s ≤ -matrixBilinear (A ω) x y} := by
+    ext ω
+    simp only [Set.mem_ofPred_eq, Set.mem_union, le_abs]
+  rw [hsplit]
+  calc
+    μ.real ({ω | 4 * K * s ≤ matrixBilinear (A ω) x y} ∪
+        {ω | 4 * K * s ≤ -matrixBilinear (A ω) x y}) ≤
+        μ.real {ω | 4 * K * s ≤ matrixBilinear (A ω) x y} +
+          μ.real {ω | 4 * K * s ≤ -matrixBilinear (A ω) x y} := measureReal_union_le _ _
+    _ ≤ exp (-(8 * s ^ 2)) + exp (-(8 * s ^ 2)) := add_le_add hright hleft
+    _ ≤ 2 * exp (-(4 * s ^ 2)) := by
+      have he : exp (-(8 * s ^ 2)) ≤ exp (-(4 * s ^ 2)) :=
+        exp_le_exp.2 (by nlinarith [sq_nonneg s])
+      linarith
 
 omit [MeasurableSpace Ω] in
 /-- An unusually large matrix norm is witnessed by one pair of points in the two quarter-nets. -/
