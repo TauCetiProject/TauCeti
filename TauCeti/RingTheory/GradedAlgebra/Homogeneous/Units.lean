@@ -238,7 +238,7 @@ theorem ShiftClassGroup.mk_eq_mk_iff {d e : ι} :
 
 variable {𝒜}
 
-/-- In a ring graded by an additive commutative group, if a left-regular homogeneous element
+/-- In a semiring graded by an additive commutative group, if a left-regular homogeneous element
 `b ∈ 𝒜 db` is associated to `a ∈ 𝒜 da`, then `da - db ∈ homogeneousUnitDegrees 𝒜`: the unit
 cofactor on the right is homogeneous of degree `da - db`. -/
 theorem sub_mem_homogeneousUnitDegrees_of_associated_of_isLeftRegular {a b : A} {da db : ι}

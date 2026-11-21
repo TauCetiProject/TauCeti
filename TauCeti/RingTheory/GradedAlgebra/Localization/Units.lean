@@ -33,7 +33,7 @@ therefore gives `ShiftClassGroup (awayGrading 𝒜 hf) ≃+ ZMod e.natAbs`.
 
 * `TauCeti.shiftClassGroupAwayPrimeEquiv`: the equivalence
   `ShiftClassGroup (awayGrading 𝒜 hf) ≃+ ZMod e.natAbs` for a `ℤ`-graded domain with trivial
-  homogeneous unit degrees localized at a homogeneous prime `f ∈ 𝒜 e`.
+  homogeneous unit degrees localized away from the homogeneous prime element `f ∈ 𝒜 e`.
 
 ## Main results
 
@@ -235,6 +235,9 @@ theorem shiftClassGroupAwayPrimeEquiv_symm_intCast {f : A} {e : ℤ} (hf : f ∈
     (shiftClassGroupAwayPrimeEquiv hf hprime hbot).symm d = QuotientAddGroup.mk d := by
   rw [AddEquiv.symm_apply_eq, shiftClassGroupAwayPrimeEquiv_mk]
 
+/-- The inverse of `shiftClassGroupAwayPrimeEquiv` sends `x : ZMod e.natAbs` to the shift class
+of `ZMod.cast x`: for positive modulus `e.natAbs` (`e ≠ 0`), this is the least nonnegative
+integer representative of `x`, and at modulus zero (`e = 0`) it is the integer `x` itself. -/
 theorem shiftClassGroupAwayPrimeEquiv_symm_apply {f : A} {e : ℤ} (hf : f ∈ 𝒜 e)
     (hprime : Prime f) (hbot : homogeneousUnitDegrees 𝒜 = ⊥) (x : ZMod e.natAbs) :
     (shiftClassGroupAwayPrimeEquiv hf hprime hbot).symm x =
