@@ -149,7 +149,7 @@ theorem isIntegral_map_unitClosedBall_iff_supSeminorm_le_one (π : Tate σ →�
     have hyc : algebraMap _ A (q.coeff i) = π y := hyc.symm
     rw [coeff_map, hyc]
     exact (TauCeti.isAffinoidAlgebra_tate.supSeminorm_map_le hA π y).trans
-      ((TauCeti.isAffinoidAlgebra_tate.supSeminorm_le_norm y).trans
+      ((TauCeti.supSeminorm_le_norm y).trans
         (Subring.mem_unitClosedBall.mp hy))
   · refine TauCeti.isIntegral_of_forall_isMinimalPrime fun 𝔭 h𝔭 ↦ ?_
     have := h𝔭.isPrime
@@ -179,7 +179,7 @@ theorem isPowerBounded_iff_supSeminorm_le_one (hA : IsAffinoidAlgebra K A) {f : 
     refine (hC _ ⟨n + 1, rfl⟩).not_gt (hn.trans_le ?_)
     calc supSeminorm K f ^ n ≤ supSeminorm K f ^ (n + 1) := pow_le_pow_right₀ h.le n.le_succ
       _ = supSeminorm K (f ^ (n + 1)) := (supSeminorm_pow f n.succ_ne_zero).symm
-      _ ≤ ‖f ^ (n + 1)‖ := hA.supSeminorm_le_norm _
+      _ ≤ ‖f ^ (n + 1)‖ := supSeminorm_le_norm _
   · -- `f` is integral over the image of the Gauss unit ball, which is power-bounded.
     obtain ⟨n, π, hπ⟩ := (isAffinoidAlgebra_iff K A).mp hA
     have := (isAffinoidAlgebra_tate (K := K) (σ := Fin n)).isNoetherianRing
@@ -203,7 +203,7 @@ theorem isTopologicallyNilpotent_iff_supSeminorm_lt_one (hA : IsAffinoidAlgebra 
     obtain ⟨N, hN⟩ := eventually_atTop.mp (hf.eventually (Metric.ball_mem_nhds 0 one_pos))
     rw [← pow_lt_one_iff_of_nonneg (supSeminorm_nonneg f) N.succ_ne_zero,
       ← supSeminorm_pow f N.succ_ne_zero]
-    exact (hA.supSeminorm_le_norm _).trans_lt (mem_ball_zero_iff.mp (hN _ N.le_succ))
+    exact (supSeminorm_le_norm _).trans_lt (mem_ball_zero_iff.mp (hN _ N.le_succ))
   · -- Write `f ^ n = c * u` with `|c| < 1` and `u` power-bounded.
     obtain ⟨c, hc0, hc1⟩ := NormedField.exists_norm_lt_one K
     obtain ⟨n, hn⟩ := exists_pow_lt_of_lt_one hc0 hf

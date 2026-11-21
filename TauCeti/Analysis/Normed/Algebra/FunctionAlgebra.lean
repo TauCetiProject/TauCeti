@@ -51,7 +51,8 @@ over `B` with continuous structure map `B → A`.
 
 ## Main results
 
-* `TauCeti.gelfandRadius_eq_spectralValue_minpoly` and
+* `TauCeti.gelfandRadius_eq_spectralValue_minpoly`,
+  `TauCeti.reducedSpectralAlgNorm_one_tmul_eq_spectralValue_minpoly`, and
   `TauCeti.smoothingFun_eq_reducedSpectralAlgNorm`: minimal-polynomial and base-change formulas in
   finite torsion-free extensions.
 * `TauCeti.exists_pos_norm_le_mul_smoothingFun_of_isWeaklyStable`,
@@ -70,6 +71,23 @@ open Filter Polynomial Topology
 open scoped TensorProduct nonZeroDivisors
 
 namespace TauCeti
+
+/-- For a reduced finite torsion-free algebra `A` over an integrally closed normed commutative
+ring `B` and a fraction field `F` of `B` extending the norm isometrically, `reducedSpectralAlgNorm`
+of `1 ⊗ₜ a` in `F ⊗[B] A` equals `spectralValue (minpoly B a)`. -/
+theorem reducedSpectralAlgNorm_one_tmul_eq_spectralValue_minpoly
+    {B F A : Type*} [NormedCommRing B] [IsIntegrallyClosed B]
+    [NormedField F] [IsUltrametricDist F] [Algebra B F] [IsFractionRing B F]
+    (hBF : ∀ b : B, ‖algebraMap B F b‖ = ‖b‖)
+    [CommRing A] [IsReduced A] [Algebra B A] [Module.Finite B A] [Module.IsTorsionFree B A]
+    (a : A) :
+    reducedSpectralAlgNorm F (F ⊗[B] A) ((1 : F) ⊗ₜ[B] a) = spectralValue (minpoly B a) := by
+  let φ : A →ₐ[B] F ⊗[B] A := Algebra.TensorProduct.includeRight
+  have hφ : Function.Injective φ := Algebra.TensorProduct.includeRight_injective_of_isFractionRing
+  have hmin : minpoly F ((1 : F) ⊗ₜ[B] a) = (minpoly B a).map (algebraMap B F) :=
+    TauCeti.minpoly.isIntegrallyClosed_eq_field_fractions_of_injective F φ hφ
+      (Algebra.IsIntegral.isIntegral a)
+  rw [reducedSpectralAlgNorm_def, hmin, (algebraMap B F).spectralValue_map_of_norm_eq hBF]
 
 section Extension
 
@@ -161,14 +179,9 @@ theorem smoothingFun_eq_reducedSpectralAlgNorm [IsReduced A]
     (hBF : ∀ b : B, ‖algebraMap B F b‖ = ‖b‖) (hBA : Continuous (algebraMap B A)) (a : A) :
     smoothingFun (normRingSeminorm A) a =
       reducedSpectralAlgNorm F (F ⊗[B] A) ((1 : F) ⊗ₜ[B] a) := by
-  let φ : A →ₐ[B] F ⊗[B] A := Algebra.TensorProduct.includeRight
-  have hφ : Function.Injective φ := Algebra.TensorProduct.includeRight_injective_of_isFractionRing
-  have hmin : minpoly F ((1 : F) ⊗ₜ[B] a) = (minpoly B a).map (algebraMap B F) :=
-    TauCeti.minpoly.isIntegrallyClosed_eq_field_fractions_of_injective F φ hφ
-      (Algebra.IsIntegral.isIntegral a)
   rw [smoothingFun_normRingSeminorm_eq_gelfandRadius,
-    gelfandRadius_eq_spectralValue_minpoly K hBF hBA a, reducedSpectralAlgNorm_def, hmin,
-    (algebraMap B F).spectralValue_map_of_norm_eq hBF]
+    gelfandRadius_eq_spectralValue_minpoly K hBF hBA a,
+    reducedSpectralAlgNorm_one_tmul_eq_spectralValue_minpoly hBF a]
 
 /-- **Bosch–Güntzer–Remmert, §3.8.3, Theorem 7.** Over a nontrivially normed field `K`, let `B` be
 a Noetherian integrally closed ultrametric Banach `K`-algebra domain whose fraction field `F`

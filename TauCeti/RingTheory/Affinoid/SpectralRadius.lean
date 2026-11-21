@@ -33,8 +33,7 @@ The lower bound `|f|sup ≤ ‖f ^ n‖ ^ (1 / n)` combines power-multiplicativi
 
 ## Main results
 
-* `TauCeti.IsAffinoidAlgebra.supSeminorm_le_norm_pow_rpow`: `|f|sup ≤ ‖f ^ n‖ ^ (1 / n)` for
-  `n ≠ 0`.
+* `TauCeti.supSeminorm_le_norm_pow_rpow`: `|f|sup ≤ ‖f ^ n‖ ^ (1 / n)` for `n ≠ 0`.
 * `TauCeti.IsAffinoidAlgebra.exists_norm_pow_le_mul_supSeminorm_pow`: if `|f|sup > 0`, then
   `‖f ^ n‖ ≤ C |f|sup ^ n` for some constant `C` and every `n`.
 * `TauCeti.IsAffinoidAlgebra.pow_norm_pow_one_div_tendsto_nhds_supSeminorm`: the sequence
@@ -50,7 +49,7 @@ The lower bound `|f|sup ≤ ‖f ^ n‖ ^ (1 / n)` combines power-multiplicativi
 
 public section
 
-namespace TauCeti.IsAffinoidAlgebra
+namespace TauCeti
 
 open Filter Topology
 
@@ -58,10 +57,12 @@ open Filter Topology
 algebra norm over a complete ultrametric field `K`, `|f|sup ≤ ‖f ^ n‖ ^ (1 / n)` for `n ≠ 0`. -/
 theorem supSeminorm_le_norm_pow_rpow {K A : Type*} [NormedField K] [IsUltrametricDist K]
     [CompleteSpace K] [NormedCommRing A] [NormedAlgebra K A] [CompleteSpace A]
-    (_hA : IsAffinoidAlgebra K A) (f : A) {n : ℕ} (hn : n ≠ 0) :
+    (f : A) {n : ℕ} (hn : n ≠ 0) :
     supSeminorm K f ≤ ‖f ^ n‖ ^ (1 / n : ℝ) :=
   ((AlgHom.id K A).supSeminorm_apply_le_gelfandRadius f).trans <| by
     simpa only [one_div] using gelfandRadius_le_norm_pow f hn
+
+namespace IsAffinoidAlgebra
 
 variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
   {A : Type*} [NormedCommRing A] [NormedAlgebra K A] [IsUltrametricDist A] [CompleteSpace A]
@@ -128,7 +129,7 @@ theorem pow_norm_pow_one_div_tendsto_nhds_supSeminorm (hA : IsAffinoidAlgebra K 
         tendsto_one_div_atTop_nhds_zero_nat).mul_const (supSeminorm K f)
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hup ?_ ?_
     · filter_upwards [eventually_ne_atTop 0] with n hn
-      exact hA.supSeminorm_le_norm_pow_rpow f hn
+      exact supSeminorm_le_norm_pow_rpow f hn
     · filter_upwards [eventually_ne_atTop 0] with n hn
       calc ‖f ^ n‖ ^ (1 / n : ℝ) ≤ (C * supSeminorm K f ^ n) ^ (1 / n : ℝ) :=
             Real.rpow_le_rpow (norm_nonneg _) (hC n) (by positivity)
@@ -142,7 +143,7 @@ norm on an affinoid algebra, `|f|sup = inf_{n ≥ 1} ‖f ^ n‖ ^ (1 / n)`, whi
 theorem supSeminorm_eq_smoothingFun (hA : IsAffinoidAlgebra K A) (f : A) :
     supSeminorm K f = smoothingFun (normRingSeminorm A) f := by
   -- `normRingSeminorm A` is the norm itself, so the terms of the infimum are `‖f ^ n‖ ^ (1 / n)`.
-  refine le_antisymm (le_ciInf fun n ↦ hA.supSeminorm_le_norm_pow_rpow f n.ne_zero) ?_
+  refine le_antisymm (le_ciInf fun n ↦ supSeminorm_le_norm_pow_rpow f n.ne_zero) ?_
   refine ge_of_tendsto (hA.pow_norm_pow_one_div_tendsto_nhds_supSeminorm f) ?_
   filter_upwards [eventually_ne_atTop 0] with n hn
   exact smoothingFun_le (normRingSeminorm A) f ⟨n, Nat.pos_of_ne_zero hn⟩
@@ -168,4 +169,6 @@ theorem supSeminorm_eq_norm_of_normMulClass [NormOneClass A] [NormMulClass A]
   exact smoothingFun_apply_of_map_mul_eq_mul (normRingSeminorm A)
     (le_of_eq norm_one) (fun g ↦ norm_mul f g)
 
-end TauCeti.IsAffinoidAlgebra
+end IsAffinoidAlgebra
+
+end TauCeti

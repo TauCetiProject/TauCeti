@@ -48,8 +48,8 @@ Jacobson rings.
 
 ## Main results
 
-* `TauCeti.IsAffinoidAlgebra.pointNorm_le_norm`: `|f(x)| ≤ ‖f‖` for every complete algebra norm on
-  an affinoid algebra.
+* `TauCeti.pointNorm_le_norm` and `TauCeti.supSeminorm_le_norm`: `|f(x)| ≤ ‖f‖` and
+  `|f|sup ≤ ‖f‖` for every complete algebra norm.
 * `TauCeti.IsAffinoidAlgebra.isUnit_iff_forall_pointNorm_ne_zero`: `f` is a unit if and only if
   `|f(x)| ≠ 0` at every classical point `x`.
 * `TauCeti.IsAffinoidAlgebra.bddAbove_range_pointNorm`: the point norms of `f` are bounded.
@@ -222,6 +222,14 @@ theorem _root_.AlgHom.pointNorm_apply_le_gelfandRadius [IsUltrametricDist K] [Co
     (ψ := Ideal.Quotient.mkₐ K x.asIdeal) (Ideal.Quotient.mkₐ_ker K x.asIdeal).ge]
   exact ((Ideal.Quotient.mkₐ K x.asIdeal).comp φ).spectralNorm_apply_le_gelfandRadius b
 
+/-- **Point norms are bounded by complete algebra norms.** On a commutative algebra with a
+complete algebra norm over a complete ultrametric field `K`, `|f(x)| ≤ ‖f‖` at every classical
+point `x`. -/
+theorem pointNorm_le_norm [IsUltrametricDist K] [CompleteSpace K]
+    {A : Type*} [NormedCommRing A] [NormedAlgebra K A] [CompleteSpace A]
+    (x : MaximalSpectrum A) (f : A) : pointNorm K x f ≤ ‖f‖ :=
+  ((AlgHom.id K A).pointNorm_apply_le_gelfandRadius x f).trans (gelfandRadius_le_norm f)
+
 namespace IsAffinoidAlgebra
 
 variable [IsUltrametricDist K] [CompleteSpace K]
@@ -276,14 +284,6 @@ theorem pointNorm_inverse (hA : IsAffinoidAlgebra K A) (x : MaximalSpectrum A) {
   eq_inv_of_mul_eq_one_left <| by rw [← hA.pointNorm_mul, Ring.inverse_mul_cancel u hu,
     pointNorm_one]
 
-/-- **Point norms are bounded by complete algebra norms.** On an affinoid algebra with a complete
-algebra norm over a complete ultrametric field `K`, `|f(x)| ≤ ‖f‖` at every classical point
-`x`. -/
-theorem pointNorm_le_norm {A : Type*} [NormedCommRing A] [NormedAlgebra K A]
-    [CompleteSpace A] (_hA : IsAffinoidAlgebra K A) (x : MaximalSpectrum A)
-    (f : A) : pointNorm K x f ≤ ‖f‖ :=
-  ((AlgHom.id K A).pointNorm_apply_le_gelfandRadius x f).trans (gelfandRadius_le_norm f)
-
 end IsAffinoidAlgebra
 
 end PointNorm
@@ -316,6 +316,12 @@ theorem _root_.AlgHom.supSeminorm_apply_le_norm [IsUltrametricDist K] [CompleteS
     [NormedRing B] [NormedAlgebra K B] [CompleteSpace B] (φ : B →ₐ[K] A) (b : B) :
     supSeminorm K (φ b) ≤ ‖b‖ :=
   (φ.supSeminorm_apply_le_gelfandRadius b).trans (gelfandRadius_le_norm b)
+
+/-- The supremum seminorm is bounded by every complete algebra norm. -/
+theorem supSeminorm_le_norm [IsUltrametricDist K] [CompleteSpace K]
+    {A : Type*} [NormedCommRing A] [NormedAlgebra K A] [CompleteSpace A] (f : A) :
+    supSeminorm K f ≤ ‖f‖ :=
+  (AlgHom.id K A).supSeminorm_apply_le_norm f
 
 /-- If the absolute values of `f` at the classical points are bounded, then each of them is at
 most the supremum seminorm: `|f(x)| ≤ |f|sup`. -/
@@ -429,7 +435,7 @@ theorem bddAbove_range_pointNorm (hA : IsAffinoidAlgebra K A) (f : A) :
   rintro _ ⟨x, rfl⟩
   dsimp only
   rw [← hA.pointNorm_maximalSpectrumComap π x t]
-  exact (isAffinoidAlgebra_tate (K := K) (σ := Fin n)).pointNorm_le_norm _ t
+  exact pointNorm_le_norm _ t
 
 /-- Each absolute value `|f(x)|` is bounded by the supremum seminorm `|f|sup`. -/
 theorem pointNorm_le_supSeminorm (hA : IsAffinoidAlgebra K A) (x : MaximalSpectrum A) (f : A) :
@@ -439,12 +445,6 @@ theorem pointNorm_le_supSeminorm (hA : IsAffinoidAlgebra K A) (x : MaximalSpectr
 theorem supSeminorm_le_iff (hA : IsAffinoidAlgebra K A) {f : A} {r : ℝ} (hr : 0 ≤ r) :
     supSeminorm K f ≤ r ↔ ∀ x, pointNorm K x f ≤ r :=
   ⟨fun h x ↦ (hA.pointNorm_le_supSeminorm x f).trans h, supSeminorm_le hr⟩
-
-/-- The supremum seminorm is bounded by every complete algebra norm. -/
-theorem supSeminorm_le_norm {A : Type*} [NormedCommRing A] [NormedAlgebra K A]
-    [CompleteSpace A] (_hA : IsAffinoidAlgebra K A) (f : A) :
-    supSeminorm K f ≤ ‖f‖ :=
-  (AlgHom.id K A).supSeminorm_apply_le_norm f
 
 /-- The supremum seminorm is submultiplicative: `|f * g|sup ≤ |f|sup * |g|sup`. -/
 theorem supSeminorm_mul_le (hA : IsAffinoidAlgebra K A) (f g : A) :

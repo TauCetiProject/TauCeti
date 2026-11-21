@@ -34,7 +34,7 @@ be an affinoid `K`-algebra. When `A` is reduced, its supremum seminorm `supSemin
 `A` (`TauCeti.IsAffinoidAlgebra.isReduced_iff_supSeminorm_eq_zero`). This file proves **Bosch,
 Güntzer, Remmert, §6.2.4, Theorem 1**: on every reduced affinoid `K`-algebra `A` carrying any
 complete ultrametric `K`-algebra norm, the supremum norm is equivalent to the Banach norm:
-`supSeminorm K f ≤ ‖f‖` (`TauCeti.IsAffinoidAlgebra.supSeminorm_le_norm`) and
+`supSeminorm K f ≤ ‖f‖` (`TauCeti.supSeminorm_le_norm`) and
 `∃ C > 0, ∀ f : A, ‖f‖ ≤ C * supSeminorm K f`
 (`TauCeti.IsAffinoidAlgebra.exists_norm_le_mul_supSeminorm`).
 
@@ -43,8 +43,8 @@ In particular:
   (`TauCeti.IsAffinoidAlgebra.isUniform`).
 * Equipping a reduced affinoid algebra `A` (without any prior norm) with `supSeminorm K` produces a
   complete uniform ultrametric Banach `K`-algebra (`TauCeti.IsAffinoidAlgebra.SupNormModel`), and
-  for any complete ultrametric `K`-algebra norm on `A` the identity is a topological `K`-algebra
-  isomorphism (`TauCeti.IsAffinoidAlgebra.supNormContinuousAlgEquiv`).
+  for any complete ultrametric `K`-algebra norm on `A` the identity is a bi-Lipschitz topological
+  `K`-algebra isomorphism (`TauCeti.IsAffinoidAlgebra.supNormContinuousAlgEquiv`).
 * Combining the equivalence with `AlgHom.supSeminorm_apply_le_gelfandRadius`, every `K`-algebra
   homomorphism `φ : B →ₐ[K] A` from an arbitrary Banach `K`-algebra `B` (not assumed commutative,
   ultrametric, Noetherian, or unital-norm-normalized) into a completely normed reduced affinoid
@@ -53,14 +53,17 @@ In particular:
 
 ## Main definitions and results
 
-* `TauCeti.supSeminorm_eq_spectralValue_minpoly` and
+* `TauCeti.IsAffinoidAlgebra.supSeminorm_eq_spectralValue_minpoly`,
+  `TauCeti.supSeminorm_eq_spectralValue_minpoly`, and
   `TauCeti.supSeminorm_eq_reducedSpectralAlgNorm`: minimal-polynomial and base-change formulas for
-  `supSeminorm K` along a finite torsion-free Tate normalization.
+  `supSeminorm K`.
 * `TauCeti.IsAffinoidAlgebra.exists_norm_le_mul_supSeminorm`: [BGR, §6.2.4, Theorem 1].
 * `TauCeti.IsAffinoidAlgebra.isUniform`: reduced completely normed affinoid algebras are uniform.
 * `TauCeti.IsAffinoidAlgebra.SupNormModel` and
   `TauCeti.IsAffinoidAlgebra.supNormContinuousAlgEquiv`: the canonical complete supremum-normed
-  Banach algebra model of a reduced affinoid algebra.
+  Banach algebra model of a reduced affinoid algebra, with explicit Lipschitz comparisons
+  (`TauCeti.IsAffinoidAlgebra.SupNormModel.lipschitzWith_toSupNorm` and
+  `TauCeti.IsAffinoidAlgebra.SupNormModel.exists_pos_lipschitzWith_ofSupNorm`).
 * `TauCeti.IsAffinoidAlgebra.exists_pos_norm_apply_le_mul_gelfandRadius_of_isReduced` and
   `TauCeti.IsAffinoidAlgebra.continuous_algHom_of_isReduced`: quantitative spectral-radius bound and
   automatic continuity from arbitrary Banach `K`-algebras into completely normed reduced affinoid
@@ -85,6 +88,38 @@ variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [Complete
 local notation "Tate " σ:max =>
   _root_.MvPowerSeries.IsRestricted.subring (R := K) (fun _ : σ ↦ 1)
 
+/-- **Bosch–Güntzer–Remmert, §6.2.1, Proposition 4(iii).**
+Over a complete nontrivially normed ultrametric field `K`, let `A` be an affinoid `K`-algebra
+integral and torsion-free over an integrally closed seminormed domain `B` whose supremum seminorm
+agrees with its norm. Then for every `f : A`, `supSeminorm K f = spectralValue (minpoly B f)`. -/
+theorem IsAffinoidAlgebra.supSeminorm_eq_spectralValue_minpoly
+    {B : Type*} [SeminormedCommRing B] [IsDomain B] [IsIntegrallyClosed B] [Algebra K B]
+    {A : Type*} [CommRing A] [Algebra K A] (hA : IsAffinoidAlgebra K A)
+    [Algebra B A] [IsScalarTower K B A] [Module.IsTorsionFree B A] [Algebra.IsIntegral B A]
+    (hB : ∀ b : B, supSeminorm K b = ‖b‖) (f : A) :
+    supSeminorm K f = spectralValue (minpoly B f) := by
+  open Polynomial in
+  rw [hA.supSeminorm_eq_iSup_minpoly_coeff_rpow (A := B) f]
+  simp_rw [hB]
+  set p := minpoly B f
+  rcases Nat.eq_zero_or_pos p.natDegree with h0 | hpos
+  · have hp1 : p = 1 :=
+      (minpoly.monic (Algebra.IsIntegral.isIntegral (R := B) f)).natDegree_eq_zero.mp h0
+    have : IsEmpty (Fin p.natDegree) := h0 ▸ Fin.isEmpty'
+    rw [Real.iSup_of_isEmpty, hp1, Polynomial.spectralValue_one]
+  · have : Nonempty (Fin p.natDegree) := ⟨⟨0, hpos⟩⟩
+    refine le_antisymm ?_ ?_
+    · refine Real.iSup_le (fun i ↦ ?_) (spectralValue_nonneg p)
+      rw [← spectralValueTerms_of_lt_natDegree p i.isLt]
+      exact le_ciSup (spectralValueTerms_bddAbove p) (i : ℕ)
+    · refine ciSup_le fun n ↦ ?_
+      by_cases hn : n < p.natDegree
+      · rw [spectralValueTerms_of_lt_natDegree p hn]
+        exact le_ciSup (Finite.bddAbove_range
+          (fun i : Fin p.natDegree ↦ ‖p.coeff i‖ ^ (1 / (p.natDegree - i : ℝ)))) ⟨n, hn⟩
+      · rw [spectralValueTerms_of_natDegree_le p (not_lt.mp hn)]
+        exact Real.iSup_nonneg fun _ ↦ Real.rpow_nonneg (norm_nonneg _) _
+
 /-- **Bosch–Güntzer–Remmert, §6.2.2, Proposition 1 / §6.2.1, Proposition 4(iii).**
 Over a complete nontrivially normed ultrametric field `K`, let `A` be a commutative `K`-algebra
 (with no choice of norm or reducedness assumption) that is finite and torsion-free over a
@@ -102,26 +137,7 @@ theorem supSeminorm_eq_spectralValue_minpoly {σ : Type*} [Finite σ]
   have hsup (t : Tate σ) : supSeminorm K t = ‖t‖ := by
     rw [← AlgEquiv.supSeminorm_eq e t, MvPowerSeries.supSeminorm_eq_norm,
       _root_.MvPowerSeries.IsRestricted.norm_renameAlgEquiv]
-  rw [hA.supSeminorm_eq_iSup_minpoly_coeff_rpow (A := Tate σ) f]
-  simp_rw [hsup]
-  set p := minpoly (Tate σ) f
-  rcases Nat.eq_zero_or_pos p.natDegree with h0 | hpos
-  · have hp1 : p = 1 :=
-      (minpoly.monic (Algebra.IsIntegral.isIntegral (R := Tate σ) f)).natDegree_eq_zero.mp h0
-    have : IsEmpty (Fin p.natDegree) := h0 ▸ Fin.isEmpty'
-    rw [Real.iSup_of_isEmpty, hp1, Polynomial.spectralValue_one]
-  · have : Nonempty (Fin p.natDegree) := ⟨⟨0, hpos⟩⟩
-    refine le_antisymm ?_ ?_
-    · refine Real.iSup_le (fun i ↦ ?_) (spectralValue_nonneg p)
-      rw [← spectralValueTerms_of_lt_natDegree p i.isLt]
-      exact le_ciSup (spectralValueTerms_bddAbove p) (i : ℕ)
-    · refine ciSup_le fun n ↦ ?_
-      by_cases hn : n < p.natDegree
-      · rw [spectralValueTerms_of_lt_natDegree p hn]
-        exact le_ciSup (Finite.bddAbove_range
-          (fun i : Fin p.natDegree ↦ ‖p.coeff i‖ ^ (1 / (p.natDegree - i : ℝ)))) ⟨n, hn⟩
-      · rw [spectralValueTerms_of_natDegree_le p (not_lt.mp hn)]
-        exact Real.iSup_nonneg fun _ ↦ Real.rpow_nonneg (norm_nonneg _) _
+  exact hA.supSeminorm_eq_spectralValue_minpoly hsup f
 
 /-- Over a complete nontrivially normed ultrametric field `K`, when `A` is a reduced commutative
 `K`-algebra that is finite and torsion-free over a finite-variable Tate algebra
@@ -135,14 +151,8 @@ theorem supSeminorm_eq_reducedSpectralAlgNorm {σ : Type*} [Finite σ]
     [IsScalarTower K (Tate σ) A] [Module.Finite (Tate σ) A] [Module.IsTorsionFree (Tate σ) A]
     (f : A) :
     supSeminorm K f = reducedSpectralAlgNorm F (F ⊗[Tate σ] A) (1 ⊗ₜ[Tate σ] f) := by
-  let φ : A →ₐ[Tate σ] F ⊗[Tate σ] A := Algebra.TensorProduct.includeRight
-  have hφ : Function.Injective φ := Algebra.TensorProduct.includeRight_injective_of_isFractionRing
-  have hmin : minpoly F ((1 : F) ⊗ₜ[Tate σ] f) =
-      (minpoly (Tate σ) f).map (algebraMap (Tate σ) F) :=
-    TauCeti.minpoly.isIntegrallyClosed_eq_field_fractions_of_injective F φ hφ
-      (Algebra.IsIntegral.isIntegral f)
-  rw [supSeminorm_eq_spectralValue_minpoly (σ := σ) f, reducedSpectralAlgNorm_def, hmin,
-    (algebraMap (Tate σ) F).spectralValue_map_of_norm_eq hF]
+  rw [supSeminorm_eq_spectralValue_minpoly (σ := σ) f,
+    reducedSpectralAlgNorm_one_tmul_eq_spectralValue_minpoly hF f]
 
 end TorsionFreeNormalization
 
@@ -296,7 +306,7 @@ Let `A` be a reduced affinoid algebra over a complete nontrivially normed ultram
 arbitrary characteristic), equipped with any complete ultrametric `K`-algebra norm. Then the Banach
 norm on `A` is bounded by a constant multiple of the supremum norm `supSeminorm K`: there exists
 `C > 0` such that `‖f‖ ≤ C * supSeminorm K f` for every `f : A`. Combined with
-`TauCeti.IsAffinoidAlgebra.supSeminorm_le_norm`, the two norms are equivalent. -/
+`TauCeti.supSeminorm_le_norm`, the two norms are equivalent. -/
 theorem exists_norm_le_mul_supSeminorm {A : Type*} [NormedCommRing A] [NormedAlgebra K A]
     [IsUltrametricDist A] [CompleteSpace A] [IsReduced A] (hA : IsAffinoidAlgebra K A) :
     ∃ C : ℝ, 0 < C ∧ ∀ f : A, ‖f‖ ≤ C * supSeminorm K f := by
@@ -368,6 +378,8 @@ section SupNormBanach
 
 namespace SupNormModel
 
+section
+
 variable {A : Type*} [CommRing A] [Algebra K A] {hA : IsAffinoidAlgebra K A}
 
 noncomputable instance : SeminormedCommRing hA.SupNormModel where
@@ -414,6 +426,34 @@ noncomputable instance [IsReduced A] : NormedCommRing hA.SupNormModel :=
       rw [dist_eq_norm, norm_def, ofSupNorm_sub] at hxy
       exact ext (sub_eq_zero.mp (hA.isReduced_iff_supSeminorm_eq_zero.mp ‹_› _ hxy)) }
 
+end
+
+section NormComparison
+
+variable {A : Type*} [NormedCommRing A] [NormedAlgebra K A] {hA : IsAffinoidAlgebra K A}
+
+/-- `toSupNorm : A → hA.SupNormModel` is `1`-Lipschitz for any complete algebra norm on `A`. -/
+theorem lipschitzWith_toSupNorm [CompleteSpace A] :
+    LipschitzWith 1 (toSupNorm : A → hA.SupNormModel) :=
+  LipschitzWith.of_dist_le_mul fun x y ↦ by
+    simpa only [NNReal.coe_one, one_mul, dist_eq_norm_neg_add, norm_def, ofSupNorm_add,
+      ofSupNorm_neg, ofSupNorm_toSupNorm] using supSeminorm_le_norm (-x + y)
+
+/-- `ofSupNorm : hA.SupNormModel → A` is Lipschitz for any complete ultrametric algebra norm on a
+reduced affinoid algebra `A`. -/
+theorem exists_pos_lipschitzWith_ofSupNorm [IsUltrametricDist A] [CompleteSpace A] [IsReduced A] :
+    ∃ C : NNReal, 0 < C ∧ LipschitzWith C (ofSupNorm : hA.SupNormModel → A) := by
+  obtain ⟨C, hC, hbound⟩ := hA.exists_norm_le_mul_supSeminorm
+  refine ⟨Real.toNNReal C, Real.toNNReal_pos.mpr hC, LipschitzWith.of_dist_le_mul fun x y ↦ ?_⟩
+  simpa only [Real.coe_toNNReal C hC.le, dist_eq_norm_neg_add, norm_def, ofSupNorm_add,
+    ofSupNorm_neg] using hbound (-x.ofSupNorm + y.ofSupNorm)
+
+end NormComparison
+
+section
+
+variable {A : Type*} [CommRing A] [Algebra K A] {hA : IsAffinoidAlgebra K A}
+
 /-- **Completeness of the supremum norm on a reduced affinoid algebra**
 ([BGR, §6.2.4, Corollary 2]): for any reduced affinoid algebra `A` over a complete nontrivially
 normed ultrametric field `K`, `hA.SupNormModel` is a complete Banach `K`-algebra. -/
@@ -422,23 +462,17 @@ instance [IsReduced A] : CompleteSpace hA.SupNormModel := by
   let : NormedAlgebra K A := hA.residueNormedAlgebra
   have : IsUltrametricDist A := hA.isUltrametricDist_residueNormedCommRing
   have : CompleteSpace A := hA.completeSpace_residueNormedCommRing
-  obtain ⟨C, hC, hbound⟩ := hA.exists_norm_le_mul_supSeminorm
-  have hlip₁ : LipschitzWith 1 (toSupNorm : A → hA.SupNormModel) :=
-    LipschitzWith.of_dist_le_mul fun x y ↦ by
-      simpa only [NNReal.coe_one, one_mul, dist_eq_norm_neg_add, norm_def, ofSupNorm_add,
-        ofSupNorm_neg, ofSupNorm_toSupNorm] using hA.supSeminorm_le_norm (-x + y)
-  have hlip₂ : LipschitzWith (Real.toNNReal C) (ofSupNorm : hA.SupNormModel → A) :=
-    LipschitzWith.of_dist_le_mul fun x y ↦ by
-      simpa only [Real.coe_toNNReal C hC.le, dist_eq_norm_neg_add, norm_def, ofSupNorm_add,
-        ofSupNorm_neg] using hbound (-x.ofSupNorm + y.ofSupNorm)
+  obtain ⟨_, _, hlip₂⟩ := exists_pos_lipschitzWith_ofSupNorm (hA := hA)
   let e : A ≃ᵤ hA.SupNormModel :=
     { toEquiv := (algEquiv hA).toEquiv
-      uniformContinuous_toFun := hlip₁.uniformContinuous
+      uniformContinuous_toFun := (lipschitzWith_toSupNorm (hA := hA)).uniformContinuous
       uniformContinuous_invFun := hlip₂.uniformContinuous }
   exact e.completeSpace_iff.mp inferInstance
 
 instance [IsReduced A] : Huber.IsUniform hA.SupNormModel :=
   (isAffinoidAlgebra hA).isUniform
+
+end
 
 end SupNormModel
 
@@ -475,6 +509,23 @@ theorem supNormContinuousAlgEquiv_symm_apply {A : Type*} [NormedCommRing A] [Nor
     hA.supNormContinuousAlgEquiv.symm x = x.ofSupNorm := by
   rw [ContinuousAlgEquiv.symm_apply_eq, coe_supNormContinuousAlgEquiv,
     SupNormModel.toSupNorm_ofSupNorm]
+
+/-- `supNormContinuousAlgEquiv` is `1`-Lipschitz. -/
+theorem lipschitzWith_supNormContinuousAlgEquiv {A : Type*} [NormedCommRing A]
+    [NormedAlgebra K A] [IsUltrametricDist A] [CompleteSpace A] [IsReduced A]
+    (hA : IsAffinoidAlgebra K A) :
+    LipschitzWith 1 hA.supNormContinuousAlgEquiv := by
+  rw [coe_supNormContinuousAlgEquiv]
+  exact SupNormModel.lipschitzWith_toSupNorm
+
+/-- The inverse of `supNormContinuousAlgEquiv` is Lipschitz. -/
+theorem exists_pos_lipschitzWith_supNormContinuousAlgEquiv_symm {A : Type*} [NormedCommRing A]
+    [NormedAlgebra K A] [IsUltrametricDist A] [CompleteSpace A] [IsReduced A]
+    (hA : IsAffinoidAlgebra K A) :
+    ∃ C : NNReal, 0 < C ∧ LipschitzWith C hA.supNormContinuousAlgEquiv.symm := by
+  simpa only [show ⇑hA.supNormContinuousAlgEquiv.symm = SupNormModel.ofSupNorm from
+      funext hA.supNormContinuousAlgEquiv_symm_apply] using
+    SupNormModel.exists_pos_lipschitzWith_ofSupNorm (hA := hA)
 
 end SupNormBanach
 

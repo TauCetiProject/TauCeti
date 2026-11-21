@@ -367,7 +367,7 @@ theorem comap_ker_reductionMap_eq_radical (f : A →ₐ[K] B) (hA : IsAffinoidAl
     have hfb : f b = f ((a : A) ^ n) := by simpa [g] using congr_arg Subtype.val hbn
     -- The element `b` has `|b|sup ≤ ‖b‖ < 1`, and `a ^ n - b` lies in the kernel of `f`.
     have hbsup : supSeminorm K b < 1 :=
-      (hA.supSeminorm_le_norm b).trans_lt (mem_ball_zero_iff.mp hb)
+      (supSeminorm_le_norm b).trans_lt (mem_ball_zero_iff.mp hb)
     have hbA : b ∈ powerBoundedSubring A := mem_powerBoundedSubring.mpr <|
       hA.isPowerBounded_iff_supSeminorm_le_one.mpr hbsup.le
     refine ⟨n, ?_⟩

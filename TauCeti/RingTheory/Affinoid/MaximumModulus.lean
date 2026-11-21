@@ -117,7 +117,7 @@ theorem exists_pointNorm_eq_norm (f : T) : ∃ x : MaximalSpectrum T, pointNorm 
 @[simp]
 theorem supSeminorm_eq_norm (f : T) : supSeminorm K f = ‖f‖ := by
   obtain ⟨x, hx⟩ := exists_pointNorm_eq_norm f
-  exact le_antisymm (isAffinoidAlgebra_tate.supSeminorm_le_norm f)
+  exact le_antisymm (supSeminorm_le_norm f)
     (hx ▸ isAffinoidAlgebra_tate.pointNorm_le_supSeminorm x f)
 
 end MvPowerSeries

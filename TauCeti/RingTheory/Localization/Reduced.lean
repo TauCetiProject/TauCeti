@@ -18,8 +18,9 @@ import Mathlib.RingTheory.Localization.BaseChange
 # Localizations and total quotient rings of reduced rings
 
 Every localization of a reduced ring is reduced (`IsLocalization.isReduced`); in particular,
-base-changing a reduced `B`-algebra to a total ring of fractions of `B` preserves reducedness
-(`TauCeti.isReduced_tensorProduct_of_isFractionRing`).
+base-changing a reduced `B`-algebra to a localization of `B` at any submonoid preserves
+reducedness (`IsLocalization.isReduced_tensorProduct`, and for total rings of fractions
+`TauCeti.isReduced_tensorProduct_of_isFractionRing`).
 
 A prime ideal of a reduced Noetherian ring consists of zero divisors exactly when it is minimal
 (`Ideal.mem_minimalPrimes_iff_disjoint_nonZeroDivisors`). Consequently the total quotient ring
@@ -46,12 +47,19 @@ theorem IsLocalization.isReduced [IsReduced A] (M : Submonoid A) (S : Type*) [Co
   isReduced_of_injective e e.injective
 
 attribute [local instance] Algebra.TensorProduct.rightAlgebra in
+/-- Base-changing a reduced commutative `B`-algebra `A` to a localization `F` of `B` at a
+submonoid `S` preserves reducedness. -/
+theorem IsLocalization.isReduced_tensorProduct {B F A : Type*} [CommRing B]
+    (S : Submonoid B) [CommRing F] [Algebra B F] [IsLocalization S F] [CommRing A] [Algebra B A]
+    [IsReduced A] : IsReduced (F ⊗[B] A) :=
+  IsLocalization.isReduced (Algebra.algebraMapSubmonoid A S) (F ⊗[B] A)
+
 /-- Base-changing a reduced commutative `B`-algebra `A` to a total ring of fractions `F` of `B`
 preserves reducedness. -/
-instance TauCeti.isReduced_tensorProduct_of_isFractionRing {B F A : Type*} [CommRing B] [CommRing F]
-    [Algebra B F] [IsFractionRing B F] [CommRing A] [Algebra B A] [IsReduced A] :
+instance TauCeti.isReduced_tensorProduct_of_isFractionRing {B F A : Type*} [CommRing B]
+    [CommRing F] [Algebra B F] [IsFractionRing B F] [CommRing A] [Algebra B A] [IsReduced A] :
     IsReduced (F ⊗[B] A) :=
-  IsLocalization.isReduced (Algebra.algebraMapSubmonoid A B⁰) (F ⊗[B] A)
+  IsLocalization.isReduced_tensorProduct B⁰
 
 namespace IsFractionRing
 
