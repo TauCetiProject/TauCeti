@@ -128,9 +128,10 @@ private theorem rightOuterPartner_contract {j : ℕ} (y : PlanarMatching (n + j 
       simp only [joinN]
       split_ifs <;> omega
     -- The strand enters the middle at its innermost right point and leaves through `n + j`.
-    rw [hj, show unskipN (n + j) (pv y (n + j)) = pv y (n + j) from ite_eq_left (by omega),
-      ite_eq_right (by omega), ite_eq_right (by omega), ite_eq_right (by omega),
-      ite_eq_left (by omega)]
+    obtain ⟨hu₁, hu₂, hu₃, hv₃, hv₄⟩ : pv y (n + j) < n + j ∧ ¬ n + 2 * j ≤ pv y (n + j) ∧
+        ¬ n + j ≤ pv y (n + j) ∧ ¬ n + 2 * (j + 1) ≤ v ∧ n + (j + 1) ≤ v := by omega
+    rw [hj, unskipN, ite_eq_left hu₁, ite_eq_right hu₂, ite_eq_right hu₃, ite_eq_right hv₃,
+      ite_eq_left hv₄]
     congr 1
     omega
   · have hj : joinN y (n + j) v = v := by
@@ -139,16 +140,16 @@ private theorem rightOuterPartner_contract {j : ℕ} (y : PlanarMatching (n + j 
     rw [hj]
     by_cases hv₂ : v < n
     · -- The strand already ends on the left outer boundary.
-      rw [show unskipN (n + j) v = v from ite_eq_left (by omega), ite_eq_right (by omega),
-        ite_eq_right (by omega), ite_eq_right (by omega), ite_eq_right (by omega)]
-    · rw [show unskipN (n + j) v = v - 2 from ite_eq_right (by omega)]
+      simp only [unskipN]
+      split_ifs <;> omega
+    · rw [unskipN, ite_eq_right (show ¬ v < n + j by omega)]
       by_cases hv₃ : n + 2 * (j + 1) ≤ v
       · -- The strand ends on the right outer boundary.
-        rw [ite_eq_left (by omega), ite_eq_left hv₃]
-        omega
+        split_ifs <;> omega
       · -- The strand enters the middle at an outer right point and leaves through its mirror.
-        rw [ite_eq_right (by omega), ite_eq_left (by omega), ite_eq_right hv₃,
-          ite_eq_left (by omega), pv_contract_of_middle_lt y hy (by omega) (by omega)]
+        obtain ⟨h₂, h₃, h₄⟩ : ¬ n + 2 * j ≤ v - 2 ∧ n + j ≤ v - 2 ∧ n + (j + 1) ≤ v := by omega
+        rw [ite_eq_right h₂, ite_eq_left h₃, ite_eq_right hv₃, ite_eq_left h₄,
+          pv_contract_of_middle_lt y hy (by omega) (by omega)]
         congr 1
         omega
 
@@ -253,9 +254,13 @@ theorem topHalf_comp_val_of_through_eq_left {f : TLDiagram n m} (hf : f.through 
         ((f.comp g).matching.val.val ⟨n + p - 1 - j, by omega⟩ : ℕ) < n) := by
     rw [hA]
     by_cases hw' : m ≤ PlanarMatching.pv g.matching (m + t)
-    · exact Or.inl ⟨hw', by rw [ite_eq_left (by omega)]; omega⟩
-    · exact Or.inr ⟨by omega, by
-        rw [ite_eq_right (by omega), ite_eq_left (by omega)]; exact hdown (by omega)⟩
+    · refine Or.inl ⟨hw', ?_⟩
+      split_ifs <;> omega
+    · refine Or.inr ⟨by omega, ?_⟩
+      split_ifs with h₁ h₂
+      · omega
+      · exact hdown (by omega)
+      · omega
   split_ifs <;> simp only <;> omega
 
 /-- Composing with a string-surjective diagram below keeps the number of through strands. -/
