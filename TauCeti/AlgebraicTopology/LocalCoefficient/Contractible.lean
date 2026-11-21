@@ -70,6 +70,8 @@ theorem pullbackIsoConstantOfHomotopy_hom_app (H : f.Homotopy (ContinuousMap.con
     (pullbackIsoConstantOfHomotopy H L).hom.app x = L.map ⟦H.evalAt x.as⟧ := by
   simp only [pullbackIsoConstantOfHomotopy, Iso.trans_hom, NatTrans.comp_app, Iso.app_hom,
     pullbackHomotopyIso_hom_app_app, pullbackConstIso_hom_app]
+  -- The component of `pullbackConstIso` is an identity between objects that are only
+  -- definitionally equal, so the unit law is applied by `exact`.
   exact Category.comp_id _
 
 end Pullback
