@@ -27,7 +27,8 @@ holds with an explicit constant
 (`TauCeti.Wkp.norm_iteratedGradient_lowerOrder_le_of_mem_wkp0Submodule` and
 `TauCeti.Wkp.norm_iteratedGradient_lowerOrder_le`); between concentric balls it holds with
 cutoff terms (`TauCeti.Wkp.exists_lpNorm_gradient_ball_le`). Up to the boundary, without a boundary
-condition, the Lipschitz hypothesis is what makes it true.
+condition, some regularity of `Ω` is needed; here it is supplied by the Lipschitz hypothesis through
+Rellich–Kondrachov.
 
 These inequalities absorb lower-order terms in global a priori estimates. A global estimate of a
 second-order operator `L` on a domain usually comes first in the form
