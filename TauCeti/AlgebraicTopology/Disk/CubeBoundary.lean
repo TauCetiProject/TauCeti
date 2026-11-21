@@ -134,7 +134,7 @@ def upperInclusion (n : ℕ) : C((cubeBoundaryPair.{u} n).snd, (cubeBoundaryPair
     · simpa only [Fin.snoc_last] using (continuous_const : Continuous fun _ : (cubeBoundaryPair.{u}
       n).snd ↦ (1 : unitInterval))
     · have h : Continuous (fun x : (cubeBoundaryPair.{u} n).snd ↦ x.val.down j) :=
-        (continuous_apply j).comp (continuous_uliftDown.comp continuous_subtype_val)
+        (continuous_apply j).comp (continuous_uliftDown.comp continuous_subtypeVal)
       simpa only [Fin.snoc_castSucc] using h
 
 /-- The upper inclusion preserves every lower coordinate. -/
