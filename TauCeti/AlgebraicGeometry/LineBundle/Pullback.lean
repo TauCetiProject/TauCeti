@@ -97,6 +97,12 @@ instance isInvertible_pullback (M : Y.Modules) [hM : isInvertible Y M] :
       ⟨Scheme.Modules.unitIsoRestrictPullback f le_rfl (e i).some⟩⟩
   rw [IsOpenCover, ← Scheme.Hom.preimage_iSup, hV.iSup_eq_top, Scheme.Hom.preimage_top]
 
+/-- Restriction of an invertible sheaf along an open immersion is invertible. -/
+instance isInvertible_restrict [IsOpenImmersion f] (M : Y.Modules) [isInvertible Y M] :
+    isInvertible X (M.restrict f) :=
+  (isInvertible X).prop_of_iso ((Scheme.Modules.restrictFunctorIsoPullback f).app M).symm
+    inferInstance
+
 /-- **Invertibility is local**: a sheaf of modules on a scheme is invertible exactly when its
 restriction to every member of an open cover is invertible. -/
 theorem isInvertible_iff_forall_restrict (𝒰 : X.OpenCover) (M : X.Modules) :

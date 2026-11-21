@@ -260,4 +260,32 @@ theorem residueFieldPullbackSectionsEquiv_tmul_germ [M.IsQuasicoherent] {V : X.O
   rw [residueFieldPullbackSectionsEquiv, LinearEquiv.ofBijective_apply, fibreMap,
     LinearMap.liftBaseChange_tmul, fibreStalkMap_germ]
 
+-- Adapted from roed-math/TauCeti-w2-fresh, lookahead/StableReduction/relative-ampleness,
+-- commit efa6fc8f3735.
+/-- Pulling back global sections of a quasi-coherent module from the spectrum of a field to
+the spectrum of a nonzero algebra is injective. In particular this applies to residue-field
+extensions. -/
+theorem injective_pullbackSections_SpecMap {k K : Type u} [Field k] [CommRing K] [Nontrivial K]
+    (φ : CommRingCat.of k ⟶ CommRingCat.of K) (N : (Spec (.of k)).Modules)
+    [N.IsQuasicoherent] : Function.Injective (Scheme.Hom.pullbackSections (Spec.map φ) N ⊤) := by
+  have hk : IsField Γ(Spec (.of k), ⊤) :=
+    (Scheme.ΓSpecIso _).commRingCatIsoToRingEquiv.toMulEquiv.isField
+      (Field.toIsField k)
+  let := ((Spec.map φ).app ⊤).hom.toAlgebra
+  have : Nontrivial Γ(Spec (.of K), Spec.map φ ⁻¹ᵁ ⊤) :=
+    (Scheme.ΓSpecIso _).commRingCatIsoToRingEquiv.symm.nontrivial
+  -- A nonzero algebra over a field is faithfully flat.
+  have : Module.FaithfullyFlat Γ(Spec (.of k), ⊤)
+      Γ(Spec (.of K), Spec.map φ ⁻¹ᵁ ⊤) := by
+    let := hk.toField
+    infer_instance
+  intro s t hst
+  have hU := isAffineOpen_top (Spec (.of k))
+  have hV := hU.preimage (Spec.map φ)
+  rw [← Scheme.Hom.pullbackSectionsEquiv_one_tmul _ _ hU hV,
+    ← Scheme.Hom.pullbackSectionsEquiv_one_tmul _ _ hU hV] at hst
+  exact Module.FaithfullyFlat.tensorProduct_mk_injective (A := Γ(Spec (.of k), ⊤))
+    (B := Γ(Spec (.of K), Spec.map φ ⁻¹ᵁ ⊤)) Γ(N, ⊤)
+    ((Scheme.Hom.pullbackSectionsEquiv _ _ hU hV).injective hst)
+
 end AlgebraicGeometry.Scheme.Modules

@@ -67,6 +67,23 @@ theorem tmulRight_apply {U : X.Opens} (e : Γ(L, U)) (t : Γ(F, U)) :
     tmulRight F e t = Functor.LaxMonoidal.μ (sectionsFunctor U) F L (t ⊗ₜ e) :=
   (rfl)
 
+/-- Under the identification of the monoidal tensor product with the sheafification of the
+sectionwise tensor product, `s ⊗ t` is the image of the pure tensor under sheafification. -/
+theorem tensorUnderlyingIso_hom_app_tmulRight {U : X.Opens} (e : Γ(L, U)) (t : Γ(F, U)) :
+    (F.tensorUnderlyingIso L).hom.val.app (op U) (tmulRight F e t) =
+      (((PresheafOfModules.sheafificationAdjunction (𝟙 X.ringCatSheaf.obj)).unit.app
+        (F.val ⊗ L.val)).app (op U) (t ⊗ₜ e)) := by
+  have h := TauCeti.SheafOfModules.forget_μ_comp_map (R := X.sheaf)
+    (F.tensorUnderlyingIso L).hom
+  -- The scheme and site presentations of the coefficient sheaf agree by unfolding,
+  -- so rewriting the comparison requires elaborator transparency.
+  erw [Iso.inv_hom_id,
+    (TauCeti.SheafOfModules.sheafificationForgetAdjunction X.sheaf).homEquiv_unit,
+    CategoryTheory.Functor.map_id, Category.comp_id,
+    TauCeti.SheafOfModules.sheafificationForgetAdjunction_unit_app X.sheaf (F.val ⊗ L.val)] at h
+  rw [tmulRight_apply]
+  exact congrArg (fun φ ↦ (φ.app (op U)).hom (t ⊗ₜ e)) h
+
 /-- Tensoring with `e` is linear in `e`. -/
 @[simp]
 theorem tmulRight_smul {U : X.Opens} (r : Γ(X, U)) (e : Γ(L, U)) (t : Γ(F, U)) :
