@@ -162,18 +162,6 @@ theorem continuousOn_polylog_closedBall {n : ℤ} (hn : 2 ≤ n) :
   exact (continuousAt_polylog_of_im_ne_zero_or_re_le_one (Or.inr hn)
     (Or.inr ((Complex.re_le_norm z).trans hz))).continuousWithinAt
 
-/-- Continuity of `w ↦ Log (1 - t * w)` within the closed lower half-plane when `t ≥ 0` and
-`1 - t * z ≠ 0`. -/
-private lemma continuousWithinAt_log_one_sub_ofReal_mul_im_nonpos {t : ℝ} (ht : 0 ≤ t) {z : ℂ}
-    (htz : 1 - (t : ℂ) * z ≠ 0) :
-    ContinuousWithinAt (fun w : ℂ ↦ Complex.log (1 - (t : ℂ) * w)) {w : ℂ | w.im ≤ 0} z := by
-  have hlin : ContinuousWithinAt (fun w : ℂ ↦ 1 - (t : ℂ) * w) {w : ℂ | w.im ≤ 0} z :=
-    (by fun_prop : Continuous fun w : ℂ ↦ 1 - (t : ℂ) * w).continuousWithinAt
-  refine hlin.clog_of_im_nonneg (eventually_nhdsWithin_of_forall fun w (hw : w.im ≤ 0) ↦ ?_) htz
-  simp only [Complex.sub_im, Complex.one_im, Complex.mul_im, Complex.ofReal_re,
-    Complex.ofReal_im, zero_mul, add_zero, zero_sub]
-  nlinarith [ht, hw]
-
 /-- Every integer-weight polylogarithm is continuous within the closed lower half-plane
 `{w | w.im ≤ 0}` at every point `z` with `z ≠ 1 ∨ 2 ≤ n`. -/
 theorem continuousWithinAt_polylog_im_nonpos (n : ℤ) {z : ℂ} (hz : z ≠ 1 ∨ 2 ≤ n) :
