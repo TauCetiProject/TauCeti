@@ -15,6 +15,8 @@ public import Mathlib.Analysis.RCLike.Basic
 * `RCLike.re_eq_self_of_im_eq_zero`: a scalar with zero imaginary part equals its real part.
 * `RCLike.norm_le_abs_re_add_abs_im`: `‖z‖ ≤ |re z| + |im z|`, the `RCLike` counterpart of
   `Complex.norm_le_abs_re_add_abs_im`.
+* `RCLike.mem_unitary_iff_norm_eq_one`: an element of an `RCLike` field is unitary iff its norm
+  is `1`.
 * `RCLike.continuousSMul_of_continuousConstSMul`: on an `RCLike`-module with continuous addition
   and real scalar multiplication, continuous constant `K`-scalar multiplication upgrades to
   jointly continuous `K`-scalar multiplication.
@@ -39,6 +41,16 @@ theorem norm_le_abs_re_add_abs_im (z : K) : ‖z‖ ≤ |re z| + |im z| := by
 /-- A scalar with zero imaginary part is the image of its real part. -/
 theorem re_eq_self_of_im_eq_zero {z : K} (h : im z = 0) : (re z : K) = z :=
   conj_eq_iff_re.mp (conj_eq_iff_im.mpr h)
+
+/-- An element of `ℝ` or `ℂ` is unitary if and only if it has norm `1`. -/
+theorem mem_unitary_iff_norm_eq_one {z : K} : z ∈ unitary K ↔ ‖z‖ = 1 := by
+  rw [Unitary.mem_iff_star_mul_self, star_def, conj_mul]
+  constructor
+  · intro h
+    have hsq : ‖z‖ ^ 2 = 1 := by exact_mod_cast h
+    nlinarith [norm_nonneg z]
+  · intro h
+    simp [h]
 
 /-- On an `RCLike`-module whose addition and real scalar multiplication are jointly continuous,
 continuous multiplication by constant `K`-scalars upgrades to joint continuity of `K`-scalar
