@@ -25,8 +25,7 @@ whose numerator is divisible by `r`. This file takes that integer quotient as th
 on `n` only through its parity, as `ε_n = (n + 1) mod 2` is the power of the sign representation
 in the twisted coefficients `V ^ ⊗ m ⊗ sgn ^ ε_n` of a configuration space. In Browning–Sawin
 they are the exponents of the generating function of the stable twisted cohomology of the
-configuration spaces of `ℂ`, which is also the Poincaré series of the double loop space of a
-bouquet of `N` spheres of dimension `n`.
+configuration spaces of `ℂ`.
 
 ## Main definitions
 
