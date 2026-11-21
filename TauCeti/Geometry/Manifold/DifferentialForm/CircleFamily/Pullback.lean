@@ -89,7 +89,7 @@ def angleForm : SmoothForm (IB.prod 𝓘(ℝ)) (Pullback p) ℝ 1 :=
 tangent lines of the unit-period circle. -/
 @[simp]
 theorem angleForm_apply (z : Pullback p) (v : Fin 1 → TangentSpace (IB.prod 𝓘(ℝ)) z) :
-    (angleForm p IB).1 z v =
+    (angleForm p IB).val z v =
       mfderiv (IB.prod 𝓘(ℝ)) 𝓘(ℝ) (fun z ↦ (normalization p IB ∞ z).2) z (v 0) := by
   rw [angleForm, SmoothForm.mpullback_apply, AddCircle.timeForm_apply]
 
@@ -152,7 +152,7 @@ theorem mpullback_toCircleFamily_timeForm (hp : ContMDiff IB 𝓘(ℝ) ∞ p) :
 @[simp]
 theorem timeForm_apply (hp : ContMDiff IB 𝓘(ℝ) ∞ p) (z : Pullback p)
     (v : Fin 1 → TangentSpace (IB.prod 𝓘(ℝ)) z) :
-    (timeForm p IB hp).1 z v = p z.base * (angleForm p IB).1 z v := by
+    (timeForm p IB hp).val z v = p z.base * (angleForm p IB).val z v := by
   have h := DFunLike.congr_fun
     (congrFun (congrArg Subtype.val (mpullback_toCircleFamily_angleForm p IB hp)) z) v
   rw [SmoothForm.mpullback_apply] at h
@@ -175,11 +175,11 @@ theorem mpullback_mk_timeForm (hp : ContMDiff IB 𝓘(ℝ) ∞ p) (b : B) :
 
 /-- The exterior derivative of the time form is `d(p ∘ base) ∧ β`. -/
 theorem mextDeriv_timeForm (hp : ContMDiff IB 𝓘(ℝ) ∞ p) :
-    mextDeriv (timeForm p IB hp).1 =
+    mextDeriv (timeForm p IB hp).val =
       RoughForm.wedge
         (mextDeriv (RoughForm.ofFunction (IB.prod 𝓘(ℝ))
           fun z : Pullback p ↦ (p z.base : ℝ)))
-        (angleForm p IB).1 := by
+        (angleForm p IB).val := by
   have hf := contMDiff_toCircleFamily p IB hp
   have hcomp : (fun w : CircleFamily ↦ (w.period : ℝ)) ∘ toCircleFamily p =
       fun z ↦ (p z.base : ℝ) :=
@@ -258,8 +258,8 @@ theorem mpullback_rescale_angleForm :
 to `(q / p) • η_p`. -/
 theorem mpullback_rescale_timeForm (hp : ContMDiff IB 𝓘(ℝ) ∞ p) (hq : ContMDiff IB 𝓘(ℝ) ∞ q) :
     (SmoothForm.mpullback (rescale p IB q ∞) (rescale p IB q ∞).contMDiff
-        (timeForm q IB hq)).1 =
-      fun z ↦ ((q z.base : ℝ) / p z.base) • (timeForm p IB hp).1 z := by
+        (timeForm q IB hq)).val =
+      fun z ↦ ((q z.base : ℝ) / p z.base) • (timeForm p IB hp).val z := by
   refine funext fun z ↦ ContinuousAlternatingMap.ext fun v ↦ ?_
   have h := DFunLike.congr_fun
     (congrFun (congrArg Subtype.val (mpullback_rescale_angleForm p IB q)) z) v

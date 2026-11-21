@@ -103,8 +103,8 @@ theorem measure_continuity_modulus_le_lintegral_curveAction (hab : a ≤ b)
   have hbad : ∀ᵐ γ ∂P, γ ∈ {γ : C(Icc a b, X) | ∃ s t, dist s t < δ ∧ η ≤ dist (γ s) (γ t)} →
       γ ∈ {γ | ENNReal.ofReal η ^ p ≤ ENNReal.ofReal δ ^ (p - 1) * A γ} := by
     filter_upwards [hAC] with γ hγ ⟨s, t, hst, hη⟩
-    have hs : (s : ℝ) ∈ uIcc a b := Icc_subset_uIcc s.2
-    have ht : (t : ℝ) ∈ uIcc a b := Icc_subset_uIcc t.2
+    have hs : (s : ℝ) ∈ uIcc a b := Icc_subset_uIcc s.property
+    have ht : (t : ℝ) ∈ uIcc a b := Icc_subset_uIcc t.property
     have hHölder := hγ.edist_rpow_le_mul_curveAction hp hs ht
     rw [IccExtend_val, IccExtend_val] at hHölder
     calc ENNReal.ofReal η ^ p ≤ edist (γ s) (γ t) ^ p := by

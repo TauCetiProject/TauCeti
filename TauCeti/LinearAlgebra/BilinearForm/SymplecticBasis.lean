@@ -12,6 +12,7 @@ public import Mathlib.LinearAlgebra.SymplecticGroup
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import TauCeti.LinearAlgebra.BilinearForm.LinearIndependent
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
+import TauCeti.LinearAlgebra.Dimension.Basis
 
 /-!
 # Symplectic bases of nondegenerate alternating forms
@@ -51,6 +52,8 @@ hyperbolic pair `e, f` hold over any commutative ring and are stated at that lev
   alternating form on a compatibly graded space has a homogeneous symplectic basis.**
 * `LinearMap.BilinForm.IsAlt.exists_basis_toMatrix_eq_J`: **a nondegenerate alternating form has
   a symplectic basis.**
+* `LinearMap.BilinForm.nondegenerate_of_toMatrix_eq_J`: a finite basis in which `B` has matrix
+  `Matrix.J` witnesses `B.Nondegenerate`.
 * `LinearMap.BilinForm.basis_det_eq_one_of_toMatrix_eq_J`: two symplectic bases of the same form
   have relative determinant `1`.
 * `LinearMap.BilinForm.IsAlt.even_finrank`: a space carrying a nondegenerate alternating form has
@@ -110,7 +113,7 @@ theorem IsAlt.restrict_nondegenerate_orthogonal_span_pair (hnd : B.Nondegenerate
     rw [restrict_apply] at h ⊢
     exact hB.isRefl x y h
   refine (IsRefl.nondegenerate_iff_separatingLeft hrefl).2 fun z hz => ?_
-  obtain ⟨hez, hfz⟩ : B e z = 0 ∧ B f z = 0 := by simpa [orthogonal] using z.2
+  obtain ⟨hez, hfz⟩ : B e z = 0 ∧ B f z = 0 := by simpa [orthogonal] using z.property
   suffices key : (z : M) = 0 from Submodule.coe_eq_zero.1 key
   refine hnd.1 z fun u => ?_
   have hz' := hz ⟨_, hB.sub_smul_add_smul_mem_orthogonal_span_pair hfe u⟩
@@ -156,7 +159,7 @@ private theorem IsAlt.iSup_comap_orthogonal_span_pair_eq_top {ι : Type*} {W : �
       exact add_mem hx hy
   -- The projection fixes `Z` pointwise.
   refine eq_top_iff.2 fun z _ => ?_
-  obtain ⟨hez, hfz⟩ : B e z = 0 ∧ B f z = 0 := by simpa [Z, orthogonal] using z.2
+  obtain ⟨hez, hfz⟩ : B e z = 0 ∧ B f z = 0 := by simpa [Z, orthogonal] using z.property
   have hz : (⟨p z, hpZ z⟩ : Z) = z := Subtype.ext (by simp [hpu, hez, hfz])
   exact hz ▸ hp z
 
@@ -181,6 +184,16 @@ end CommRing
 section Determinant
 
 variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+
+/-- If a finite basis puts `B` in standard symplectic form `Matrix.J`, then `B` is
+nondegenerate. -/
+theorem nondegenerate_of_toMatrix_eq_J {l : Type*} [Fintype l] [DecidableEq l]
+    {B : BilinForm R M} {b : Basis (l ⊕ l) R M} (hb : BilinForm.toMatrix b B = Matrix.J l R) :
+    B.Nondegenerate := by
+  refine (BilinForm.nondegenerate_toMatrix_iff b).mp ?_
+  rw [hb]
+  exact Matrix.Nondegenerate.of_det_mem_nonZeroDivisors
+    (Matrix.isUnit_det_J l R).mem_nonZeroDivisors
 
 /-- **Symplectic bases have unit relative determinant.** Two bases in which `B` has the standard
 symplectic matrix `Matrix.J` differ by a symplectic matrix, so `b.det c = 1`. -/
@@ -251,18 +264,14 @@ theorem IsAlt.exists_basis_apply_eq_J_of_basis_orthogonal_span_pair {m : ℕ}
   have : FiniteDimensional K V :=
     Module.Finite.equiv (Submodule.prodEquivOfIsCompl _ _ (hB.isCompl_span_pair_orthogonal hfe))
   have hecf : ∀ x, B e (c x) = 0 ∧ B f (c x) = 0 := fun x => by
-    simpa [orthogonal] using (c x).2
+    simpa [orthogonal] using (c x).property
   have hec : ∀ x, B e (c x) = 0 := fun x => (hecf x).1
   have hfc : ∀ x, B f (c x) = 0 := fun x => (hecf x).2
   let d : Fin (m + 1) ⊕ Fin (m + 1) → V :=
     Sum.elim (Fin.cons e fun a => c (Sum.inl a)) (Fin.cons f fun a => c (Sum.inr a))
   have hd : ∀ x y, B (d x) (d y) = Matrix.J (Fin (m + 1)) K x y :=
     hB.apply_cons_cons_eq_J hfe hc hec hfc
-  have hG : (Matrix.of fun x y => B (d x) (d y)) = Matrix.J (Fin (m + 1)) K := Matrix.ext hd
-  have hli : LinearIndependent K d := by
-    refine B.linearIndependent_of_det_ne_zero ?_
-    rw [hG]
-    exact (Matrix.isUnit_det_J _ _).ne_zero
+  have hli : LinearIndependent K d := B.linearIndependent_of_apply_eq_J hd
   have hcard : Fintype.card (Fin (m + 1) ⊕ Fin (m + 1)) = finrank K V := by
     rw [← hB.finrank_orthogonal_span_pair_add_two hfe, finrank_eq_card_basis c]
     simp only [Fintype.card_sum, Fintype.card_fin]
@@ -343,7 +352,8 @@ theorem IsAlt.exists_basis_toMatrix_eq_J :
 /-- A finite-dimensional space carrying a nondegenerate alternating form has even dimension. -/
 theorem IsAlt.even_finrank : Even (finrank K V) := by
   obtain ⟨m, b, -⟩ := hB.exists_basis_toMatrix_eq_J hnd
-  exact ⟨m, by rw [finrank_eq_card_basis b, Fintype.card_sum, Fintype.card_fin]⟩
+  rw [Module.finrank_eq_two_mul_card_of_basis_sum b]
+  exact even_two_mul _
 
 /-- **Every nonzero vector heads a symplectic basis.** For a nondegenerate alternating form on a
 finite-dimensional space and a nonzero vector `e`, there is a basis indexed by

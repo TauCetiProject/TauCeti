@@ -80,14 +80,14 @@ of `π`, and its constant coefficient is `f₀ g₀`. -/
 noncomputable def boxedConvolution (f g : R⟦X⟧) : R⟦X⟧ :=
   mk fun n => if n = 0 then constantCoeff f * constantCoeff g else
     ∑ π : NoncrossingPartition (univ : Finset (Fin n)),
-      (∏ B ∈ π.1.parts, coeff #B f) * ∏ B ∈ (kreweras π).1.parts, coeff #B g
+      (∏ B ∈ π.val.parts, coeff #B f) * ∏ B ∈ (kreweras π).val.parts, coeff #B g
 
 /-- The coefficient of index `n ≥ 1` of the boxed convolution of `f` and `g` is
 `∑_{π ∈ NC(n)} (∏_{B ∈ π} f_{|B|}) (∏_{B ∈ K(π)} g_{|B|})`. -/
 theorem coeff_boxedConvolution {n : ℕ} (hn : n ≠ 0) (f g : R⟦X⟧) :
     coeff n (boxedConvolution f g) =
       ∑ π : NoncrossingPartition (univ : Finset (Fin n)),
-        (∏ B ∈ π.1.parts, coeff #B f) * ∏ B ∈ (kreweras π).1.parts, coeff #B g := by
+        (∏ B ∈ π.val.parts, coeff #B f) * ∏ B ∈ (kreweras π).val.parts, coeff #B g := by
   rw [boxedConvolution, coeff_mk, ite_eq_right hn]
 
 /-- A positive coefficient of boxed convolution depends only on the positive coefficients
@@ -98,8 +98,8 @@ theorem coeff_boxedConvolution_congr {n : ℕ} (hn : n ≠ 0) {f g f' g' : R⟦X
     coeff n (f.boxedConvolution g) = coeff n (f'.boxedConvolution g') := by
   rw [coeff_boxedConvolution hn, coeff_boxedConvolution hn]
   refine sum_congr rfl fun π _ => congrArg₂ (· * ·) ?_ ?_
-  · exact prod_congr rfl fun B hB => hf #B (π.1.nonempty_of_mem_parts hB).card_pos.ne'
-  · exact prod_congr rfl fun B hB => hg #B ((kreweras π).1.nonempty_of_mem_parts hB).card_pos.ne'
+  · exact prod_congr rfl fun B hB => hf #B (π.val.nonempty_of_mem_parts hB).card_pos.ne'
+  · exact prod_congr rfl fun B hB => hg #B ((kreweras π).val.nonempty_of_mem_parts hB).card_pos.ne'
 
 /-- The constant coefficient of the boxed convolution of `f` and `g` is `f₀ g₀`. -/
 @[simp]
@@ -144,9 +144,9 @@ theorem boxedConvolution_comm (f g : R⟦X⟧) : boxedConvolution f g = boxedCon
 products over the parts of a noncrossing partition detect the partition into singletons. -/
 private theorem prod_parts_coeff_one_add_X {α : Type*} [LinearOrder α] {s : Finset α}
     (σ : NoncrossingPartition s) :
-    ∏ B ∈ σ.1.parts, coeff #B (1 + X : R⟦X⟧) = if σ = ⊥ then 1 else 0 := by
+    ∏ B ∈ σ.val.parts, coeff #B (1 + X : R⟦X⟧) = if σ = ⊥ then 1 else 0 := by
   rw [prod_congr rfl fun B hB => show coeff #B (1 + X : R⟦X⟧) = if #B = 1 then 1 else 0 by
-    simp [coeff_one, coeff_X, (σ.1.nonempty_of_mem_parts hB).card_pos.ne'], prod_boole]
+    simp [coeff_one, coeff_X, (σ.val.nonempty_of_mem_parts hB).card_pos.ne'], prod_boole]
   exact if_congr (by rw [← Finpartition.eq_bot_iff_forall_card_eq_one, ← coe_bot, Subtype.coe_inj])
     rfl rfl
 

@@ -113,8 +113,8 @@ omit [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
 /-- Multiplication by `e^{t f}` is symmetric for the pointwise inner product of forms. -/
 private theorem alternatingFormInner_expSMulEquiv (f : C^∞⟮I, M; ℝ⟯) (t : ℝ)
     (α β : SmoothForm I M ℝ k) (x : M) :
-    alternatingFormInner (TangentSpace I x) k ((expSMulEquiv k f t α).1 x) (β.1 x) =
-      alternatingFormInner (TangentSpace I x) k (α.1 x) ((expSMulEquiv k f t β).1 x) := by
+    alternatingFormInner (TangentSpace I x) k ((expSMulEquiv k f t α).val x) (β.val x) =
+      alternatingFormInner (TangentSpace I x) k (α.val x) ((expSMulEquiv k f t β).val x) := by
   simp only [coe_expSMulEquiv, LinearMap.map_smul, LinearMap.smul_apply]
 
 /-- The Hodge star commutes with multiplication by `e^{t f}`. -/
@@ -222,8 +222,8 @@ theorem wittenCodifferential_eq_add_smul (o : Manifold.Orientation I M (Fin m))
 /-- The Witten codifferential does not enlarge supports. -/
 theorem tsupport_wittenCodifferential_subset (o : Manifold.Orientation I M (Fin m))
     (f : C^∞⟮I, M; ℝ⟯) (t : ℝ) (hkl : k + 1 + l = m) (β : SmoothForm I M ℝ (k + 1)) :
-    _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) (wittenCodifferential o f t hkl β).1 ⊆
-      _root_.tsupport (α := E [⋀^Fin (k + 1)]→L[ℝ] ℝ) β.1 := by
+    _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) (wittenCodifferential o f t hkl β).val ⊆
+      _root_.tsupport (α := E [⋀^Fin (k + 1)]→L[ℝ] ℝ) β.val := by
   rw [wittenCodifferential_def, tsupport_expSMulEquiv, ← tsupport_expSMulEquiv f (-t) β]
   exact SmoothForm.tsupport_codifferential_subset o hkl _
 
@@ -302,8 +302,8 @@ theorem wittenLaplacian_neg_orientation (o : Manifold.Orientation I M (Fin m))
 /-- The Witten Laplacian does not enlarge supports. -/
 theorem tsupport_wittenLaplacian_subset (o : Manifold.Orientation I M (Fin m))
     (f : C^∞⟮I, M; ℝ⟯) (t : ℝ) (hkl : k + l = m) (α : SmoothForm I M ℝ k) :
-    _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) (wittenLaplacian o f t hkl α).1 ⊆
-      _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) α.1 :=
+    _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) (wittenLaplacian o f t hkl α).val ⊆
+      _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) α.val :=
   SmoothForm.tsupport_laplacian_subset (tsupport_wittenExtDerivₗ_subset f t)
     (tsupport_wittenCodifferential_subset o f t) hkl α
 
@@ -340,9 +340,9 @@ theorem integralTopForm_inner_wittenExtDerivₗ_eq_inner_wittenCodifferential
     (α : SmoothForm I M ℝ k) (β : SmoothForm I M ℝ (k + 1))
     (h : α ∈ compactlySupportedForms I M k ∨ β ∈ compactlySupportedForms I M (k + 1)) :
     integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) (k + 1)
-        ((wittenExtDerivₗ f t k α).1 x) (β.1 x) • riemannianVolumeForm o x) =
+        ((wittenExtDerivₗ f t k α).val x) (β.val x) • riemannianVolumeForm o x) =
       integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k
-        (α.1 x) ((wittenCodifferential o f t hkl β).1 x) • riemannianVolumeForm o x) := by
+        (α.val x) ((wittenCodifferential o f t hkl β).val x) • riemannianVolumeForm o x) := by
   -- Move `e^{-t f}` from `d (e^{t f} α)` onto `β`, use that `d^*` is the adjoint of `d`, and
   -- move `e^{t f}` from `e^{t f} α` onto `d^* (e^{-t f} β)`.
   simp_rw [wittenExtDerivₗ_def, alternatingFormInner_expSMulEquiv, wittenCodifferential_def,
@@ -359,10 +359,10 @@ theorem integralTopForm_inner_wittenCodifferential_wittenExtDerivₗ
     (α β : SmoothForm I M ℝ k)
     (h : α ∈ compactlySupportedForms I M k ∨ β ∈ compactlySupportedForms I M k) :
     integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k
-        ((wittenCodifferential o f t hkl (wittenExtDerivₗ f t k α)).1 x) (β.1 x) •
+        ((wittenCodifferential o f t hkl (wittenExtDerivₗ f t k α)).val x) (β.val x) •
           riemannianVolumeForm o x) =
       integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) (k + 1)
-        ((wittenExtDerivₗ f t k α).1 x) ((wittenExtDerivₗ f t k β).1 x) •
+        ((wittenExtDerivₗ f t k α).val x) ((wittenExtDerivₗ f t k β).val x) •
           riemannianVolumeForm o x) :=
   SmoothForm.integralTopForm_inner_codiff_diff o (wittenExtDerivₗ_mem_compactlySupportedForms f t)
     (integralTopForm_inner_wittenExtDerivₗ_eq_inner_wittenCodifferential o f t) hkl α β h
@@ -375,10 +375,10 @@ theorem integralTopForm_inner_wittenExtDerivₗ_wittenCodifferential
     (α β : SmoothForm I M ℝ (k + 1))
     (h : α ∈ compactlySupportedForms I M (k + 1) ∨ β ∈ compactlySupportedForms I M (k + 1)) :
     integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) (k + 1)
-        ((wittenExtDerivₗ f t k (wittenCodifferential o f t hkl α)).1 x) (β.1 x) •
+        ((wittenExtDerivₗ f t k (wittenCodifferential o f t hkl α)).val x) (β.val x) •
           riemannianVolumeForm o x) =
       integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k
-        ((wittenCodifferential o f t hkl α).1 x) ((wittenCodifferential o f t hkl β).1 x) •
+        ((wittenCodifferential o f t hkl α).val x) ((wittenCodifferential o f t hkl β).val x) •
           riemannianVolumeForm o x) :=
   SmoothForm.integralTopForm_inner_diff_codiff o
     (wittenCodifferential_mem_compactlySupportedForms o f t)
@@ -393,12 +393,12 @@ theorem integralTopForm_inner_wittenLaplacian_add_one_add_one
     (hkl : k + 1 + (l + 1) = m) (α β : SmoothForm I M ℝ (k + 1))
     (h : α ∈ compactlySupportedForms I M (k + 1) ∨ β ∈ compactlySupportedForms I M (k + 1)) :
     integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) (k + 1)
-        ((wittenLaplacian o f t hkl α).1 x) (β.1 x) • riemannianVolumeForm o x) =
+        ((wittenLaplacian o f t hkl α).val x) (β.val x) • riemannianVolumeForm o x) =
       integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) (k + 1 + 1)
-        ((wittenExtDerivₗ f t (k + 1) α).1 x) ((wittenExtDerivₗ f t (k + 1) β).1 x) •
+        ((wittenExtDerivₗ f t (k + 1) α).val x) ((wittenExtDerivₗ f t (k + 1) β).val x) •
           riemannianVolumeForm o x) +
       integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k
-        ((wittenCodifferential o f t hkl α).1 x) ((wittenCodifferential o f t hkl β).1 x) •
+        ((wittenCodifferential o f t hkl α).val x) ((wittenCodifferential o f t hkl β).val x) •
           riemannianVolumeForm o x) :=
   SmoothForm.integralTopForm_inner_laplacian_add_one_add_one o
     (wittenExtDerivₗ_mem_compactlySupportedForms f t)
@@ -413,9 +413,9 @@ theorem integralTopForm_inner_wittenLaplacian_eq_inner_wittenLaplacian
     (α β : SmoothForm I M ℝ k)
     (h : α ∈ compactlySupportedForms I M k ∨ β ∈ compactlySupportedForms I M k) :
     integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k
-        ((wittenLaplacian o f t hkl α).1 x) (β.1 x) • riemannianVolumeForm o x) =
+        ((wittenLaplacian o f t hkl α).val x) (β.val x) • riemannianVolumeForm o x) =
       integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k
-        (α.1 x) ((wittenLaplacian o f t hkl β).1 x) • riemannianVolumeForm o x) :=
+        (α.val x) ((wittenLaplacian o f t hkl β).val x) • riemannianVolumeForm o x) :=
   SmoothForm.integralTopForm_inner_laplacian_eq_inner_laplacian o
     (wittenExtDerivₗ_mem_compactlySupportedForms f t)
     (wittenCodifferential_mem_compactlySupportedForms o f t)
@@ -427,7 +427,7 @@ theorem integralTopForm_inner_wittenLaplacian_self_nonneg (o : Manifold.Orientat
     (f : C^∞⟮I, M; ℝ⟯) (t : ℝ) (hkl : k + l = m) {α : SmoothForm I M ℝ k}
     (hα : α ∈ compactlySupportedForms I M k) :
     0 ≤ integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k
-      ((wittenLaplacian o f t hkl α).1 x) (α.1 x) • riemannianVolumeForm o x) :=
+      ((wittenLaplacian o f t hkl α).val x) (α.val x) • riemannianVolumeForm o x) :=
   SmoothForm.integralTopForm_inner_laplacian_self_nonneg o
     (integralTopForm_inner_wittenExtDerivₗ_eq_inner_wittenCodifferential o f t) hkl hα
 

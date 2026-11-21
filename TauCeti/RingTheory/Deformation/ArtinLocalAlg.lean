@@ -328,13 +328,13 @@ def pullbackAugmentation : AlgHom.pullback f.hom.left.hom g.hom.left.hom →ₐ[
 /-- The augmentation of the fibre product is that of its first component. -/
 @[simp]
 theorem pullbackAugmentation_apply (x : AlgHom.pullback f.hom.left.hom g.hom.left.hom) :
-    pullbackAugmentation f g x = A'.augmentation x.1.1 :=
+    pullbackAugmentation f g x = A'.augmentation x.val.1 :=
   (rfl)
 
 /-- The two components of a point of the fibre product have the same augmentation. -/
 theorem augmentation_snd_pullback (x : AlgHom.pullback f.hom.left.hom g.hom.left.hom) :
-    A''.augmentation x.1.2 = A'.augmentation x.1.1 := by
-  have hx : f.hom.left.hom x.1.1 = g.hom.left.hom x.1.2 :=
+    A''.augmentation x.val.2 = A'.augmentation x.val.1 := by
+  have hx : f.hom.left.hom x.val.1 = g.hom.left.hom x.val.2 :=
     AlgHom.congr_fun (AlgHom.pullback_comm_sq _ _) x
   rw [← augmentation_hom_apply g, ← hx, augmentation_hom_apply]
 
@@ -411,13 +411,13 @@ def pullbackSnd : pullback f g hg ⟶ A'' :=
 /-- The first projection takes a pair to its first component. -/
 @[simp]
 theorem pullbackFst_hom_left_hom_apply (x : (pullback f g hg).obj.left) :
-    (pullbackFst f g hg).hom.left.hom x = x.1.1 :=
+    (pullbackFst f g hg).hom.left.hom x = x.val.1 :=
   (rfl)
 
 /-- The second projection takes a pair to its second component. -/
 @[simp]
 theorem pullbackSnd_hom_left_hom_apply (x : (pullback f g hg).obj.left) :
-    (pullbackSnd f g hg).hom.left.hom x = x.1.2 :=
+    (pullbackSnd f g hg).hom.left.hom x = x.val.2 :=
   (rfl)
 
 /-- The fibre product square commutes. -/

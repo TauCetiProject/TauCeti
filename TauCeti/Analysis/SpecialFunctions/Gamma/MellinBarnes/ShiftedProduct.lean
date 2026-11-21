@@ -13,7 +13,7 @@ import TauCeti.Analysis.Contour.Residue.SimplePole
 import TauCeti.Analysis.Contour.Winding.Number.Rectangle
 import TauCeti.Analysis.SpecialFunctions.Gamma.Order
 import TauCeti.Analysis.SpecialFunctions.Gamma.Stirling.Vertical
-import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric
+import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric.Basic
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 import TauCeti.MeasureTheory.Integral.Exp.Decay
 
