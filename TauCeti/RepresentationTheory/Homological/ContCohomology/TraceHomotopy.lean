@@ -63,8 +63,8 @@ is unbounded as `G` grows.
 * `TauCeti.ContCohomology.subsingleton_H1_of_sum_smul_eq_one`: a finite group with a trace-one
   weight has vanishing continuous `H¹`.
 * `TauCeti.ContCohomology.subsingleton_H1_of_isUnit_natCard`: continuous `H¹` vanishes when the
-  order of `G` is a unit in a ring acting linearly on the coefficients; for instance for a finite
-  group acting continuously and linearly on a topological vector space over a field of
+  order of `G` is a unit in a semiring acting linearly on the coefficients; for instance for a
+  finite group acting continuously and linearly on a topological vector space over a field of
   characteristic zero.
 
 ## References
@@ -192,14 +192,14 @@ theorem subsingleton_H1_of_sum_smul_eq_one [Fintype G] {A : Type*} [Semiring A]
     exact d0_mem_B1 _
 
 /-- **`H¹` vanishes when the order of the group is invertible on the coefficients.** If `M` is a
-module over a ring `k` on which `G` acts `k`-linearly, and `Nat.card G` is a unit of `k`, then
-`H¹(G, M) = 0`. This covers a finite group acting continuously and linearly on a topological
+module over a semiring `k` on which `G` acts `k`-linearly, and `Nat.card G` is a unit of `k`,
+then `H¹(G, M) = 0`. This covers a finite group acting continuously and linearly on a topological
 vector space over a field of characteristic zero. An infinite `G` has `Nat.card G = 0`, which is a
 unit only of the zero ring. The algebraic counterpart for `Rep k G`, in every positive degree, is
 `groupCohomology.subsingleton_of_isUnit_natCard`; here the coefficients carry an arbitrary
 topology and the classes are those of continuous cocycles. -/
-theorem subsingleton_H1_of_isUnit_natCard {k : Type*} [Ring k] [Module k M] [SMulCommClass G k M]
-    (hG : IsUnit (Nat.card G : k)) : Subsingleton (H1 G M) := by
+theorem subsingleton_H1_of_isUnit_natCard {k : Type*} [Semiring k] [Module k M]
+    [SMulCommClass G k M] (hG : IsUnit (Nat.card G : k)) : Subsingleton (H1 G M) := by
   cases finite_or_infinite G with
   | inl _ =>
     cases nonempty_fintype G
