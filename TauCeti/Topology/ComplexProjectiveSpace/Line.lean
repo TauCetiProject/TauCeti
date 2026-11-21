@@ -39,7 +39,8 @@ computation is not part of this file.
 ## Main declarations
 
 * `TauCeti.ComplexProjectiveSpace.lineVector`: the embedding `(a, b) ↦ a f₀ + b f₁` of unit
-  spheres `S³ → S²ⁿ⁺¹`, with `coe_lineVector_apply` and `lineVector_smul`.
+  spheres `S³ → S²ⁿ⁺¹`, with `coe_lineVector_apply`, `lineVector_smul`, `isometry_lineVector`
+  and `lineVector_injective`.
 * `TauCeti.ComplexProjectiveSpace.lineMap`: `(f, [a : b]) ↦ [a f₀ + b f₁]`, jointly continuous,
   with `lineMap_mk_lineVector`, `lineMap_mk` and `lineMap_mk_single_zero`.
 * `TauCeti.ComplexProjectiveSpace.lineSphereFamily`: the projective line of a frame as a map
@@ -92,9 +93,14 @@ theorem lineVector_smul (f : finiteOrthonormalFrame ℂ 2 (n + 1)) (c : sphere (
     (v : sphere (0 : EuclideanSpace ℂ (Fin 2)) 1) : lineVector f (c • v) = c • lineVector f v :=
   Subtype.ext <| by simp [lineVector]
 
-private theorem lineVector_injective (f : finiteOrthonormalFrame ℂ 2 (n + 1)) :
+/-- The embedding of unit spheres of `f` is an isometry. -/
+theorem isometry_lineVector (f : finiteOrthonormalFrame ℂ 2 (n + 1)) : Isometry (lineVector f) :=
+  LinearIsometry.isometry_unitSphereMap _
+
+/-- The embedding of unit spheres of `f` is injective. -/
+theorem lineVector_injective (f : finiteOrthonormalFrame ℂ 2 (n + 1)) :
     Function.Injective (lineVector f) :=
-  (LinearIsometry.isometry_unitSphereMap _).injective
+  (isometry_lineVector f).injective
 
 private theorem continuous_lineVector :
     Continuous fun q : finiteOrthonormalFrame ℂ 2 (n + 1) ×
