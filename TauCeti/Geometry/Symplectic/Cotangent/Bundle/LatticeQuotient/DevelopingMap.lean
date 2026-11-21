@@ -102,6 +102,14 @@ theorem degreeOneEquiv_developingForm_apply (p : ℝ) (a : C^∞⟮I, B; 𝓘(�
       -- `rfl`: the tangent space of `ℝ^ι` at `a x` is `ℝ^ι` itself, and `proj i` evaluates at `i`.
       rfl)
 
+/-- The developing form `p • d a_i` evaluates the one-element family `![v]` to `p * (da_x v)_i`;
+this is the simp normal form of `degreeOneEquiv_developingForm_apply`. -/
+@[simp]
+theorem developingForm_apply_vec (p : ℝ) (a : C^∞⟮I, B; 𝓘(ℝ, ι → ℝ), ι → ℝ⟯) (i : ι) (x : B)
+    (v : TangentSpace I x) :
+    (developingForm p a i).1 x ![v] = p * mfderiv I 𝓘(ℝ, ι → ℝ) a x v i := by
+  rw [← SmoothForm.degreeOneEquiv_apply_apply_vec, degreeOneEquiv_developingForm_apply]
+
 /-- The developing forms are closed, being multiples of exact forms. -/
 theorem isClosed_developingForm (p : ℝ) (a : C^∞⟮I, B; 𝓘(ℝ, ι → ℝ), ι → ℝ⟯) (i : ι) :
     (developingForm p a i).IsClosed := by
