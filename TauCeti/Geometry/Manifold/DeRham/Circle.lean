@@ -7,12 +7,10 @@ module
 
 public import TauCeti.Geometry.Manifold.DeRham.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.ContinuousPath
-public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Path
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.TopForm
-public import TauCeti.Geometry.Manifold.DifferentialForm.LocalPrimitive
 public import TauCeti.Geometry.Manifold.DifferentialForm.LogDeriv
 public import TauCeti.Geometry.Manifold.Orientation.TopForm
-public import TauCeti.Topology.Circle.Degree
+public import TauCeti.Topology.Circle.Loop
 public import Mathlib.Geometry.Manifold.Instances.Sphere
 
 import Mathlib.Analysis.SpecialFunctions.Complex.Circle

@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.Topology.Homotopy.Lifting
 public import Mathlib.Topology.Homotopy.Path
+public import TauCeti.Topology.Circle.Loop
 
 import TauCeti.Analysis.Normed.Module.Normalize
 
@@ -61,8 +62,7 @@ continuous part of the Maslov index of a path of Lagrangian frames.
   of the degrees, and reversing a loop negates its degree.
 * `Circle.degree_mul`: the degree of a pointwise product of loops is the sum of the degrees.
 * `Circle.degree_map_pow`: the pointwise `n`-th power of a loop has `n` times its degree.
-* `Circle.expLoop`, `Circle.degree_expLoop`: the loop `t ↦ exp(2πit)`, going once
-  counterclockwise around the circle, has degree `1`.
+* `Circle.degree_expLoop`: the loop `Circle.expLoop` (`t ↦ exp(2πit)`) has degree `1`.
 * `Circle.degree_eq_of_forall_eq_pow`: for `a`, `b` of the same sign the loop `t ↦ (z / ‖z‖)ⁿ`,
   `z = a cos 2πt + i b sin 2πt`, has degree `n`.
 * `Circle.degree_inv`: the pointwise inverse of a loop has the opposite degree.
@@ -415,23 +415,12 @@ theorem degree_map_pow {x : Circle} (γ : Path x x) (n : ℕ) :
     push_cast
     ring
 
-/-- The loop `t ↦ exp(2πit)` at `1`, going once counterclockwise around the unit circle. -/
-noncomputable def expLoop : Path (1 : Circle) 1 where
-  toFun t := exp (2 * π * t)
-  continuous_toFun := by fun_prop
-  source' := by simp
-  target' := by simp
-
-@[simp]
-theorem expLoop_apply (t : I) : expLoop t = exp (2 * π * t) :=
-  (rfl)
-
 /-- The counterclockwise loop `t ↦ exp(2πit)` has degree `1`: its angle lift `t ↦ 2πt` gains one
 full turn. -/
 @[simp]
 theorem degree_expLoop : degree expLoop = 1 :=
-  degree_eq_of_sub_eq expLoop (θ := fun t => 2 * π * t) (by fun_prop) (fun _ => rfl)
-    (n := 1) (by simp)
+  degree_eq_of_sub_eq expLoop (θ := fun t => 2 * π * t) (by fun_prop)
+    (fun _ => (expLoop_apply _).symm) (n := 1) (by simp)
 
 /-- The numbers `a cos θ` and `b sin θ` do not vanish together for `a ≠ 0` and `b ≠ 0`. -/
 private theorem mul_cos_sq_add_mul_sin_sq_pos {a b : ℝ} (ha : a ≠ 0) (hb : b ≠ 0) (θ : ℝ) :

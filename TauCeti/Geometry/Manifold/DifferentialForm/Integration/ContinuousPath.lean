@@ -5,13 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.DifferentialForm.LocalPrimitive
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Path
 public import TauCeti.Geometry.Manifold.Topology
-public import Mathlib.MeasureTheory.Integral.CurveIntegral.Basic
 public import Mathlib.Topology.Homotopy.Lifting
 import TauCeti.Algebra.BigOperators.Fin
-import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 
 /-!
 # Integrals of `1`-forms with local primitives along continuous paths

@@ -27,6 +27,8 @@ on the torus `S¹ × S¹` winding `p` times around the first circle and `q` time
 ## Main definitions
 
 * `TauCeti.unitToCircle`: the standard quotient `C(I, Circle)`, `t ↦ Circle.exp (2 * π * t)`.
+* `Circle.expLoop`: the loop `t ↦ exp(2πit)` at `1`, going once counterclockwise around the unit
+  circle.
 * `Path.toCircle`: a loop, read as a map from the unit circle.
 * `ContinuousMap.toBasedLoop`: the loop `t ↦ f(e^{2πit})` at `f 1` of a circle map `f`, a right
   inverse of `Path.toCircle` (`ContinuousMap.toBasedLoop_toCircle`).
@@ -121,6 +123,21 @@ theorem eq_or_of_unitToCircle_eq {s t : I} (h : unitToCircle s = unitToCircle t)
       Subtype.ext (by simpa using (by linarith [s.property.2, t.property.1] : (t : ℝ) = 0))⟩
 
 end TauCeti
+
+namespace Circle
+
+/-- The loop `t ↦ exp(2πit)` at `1`, going once counterclockwise around the unit circle. -/
+def expLoop : Path (1 : Circle) 1 where
+  toFun t := exp (2 * Real.pi * t)
+  continuous_toFun := by fun_prop
+  source' := by simp
+  target' := by simp
+
+@[simp]
+theorem expLoop_apply (t : I) : expLoop t = exp (2 * Real.pi * t) :=
+  (rfl)
+
+end Circle
 
 /-- Two maps out of the circle agreeing on every `unitToCircle t = exp (2πit)` are equal. -/
 theorem ContinuousMap.ext_unitToCircle {X : Type*} [TopologicalSpace X] {f g : C(Circle, X)}

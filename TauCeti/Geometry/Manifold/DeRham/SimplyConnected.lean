@@ -5,11 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.DeRham.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.ContinuousPath
-public import TauCeti.Geometry.Manifold.DifferentialForm.LocalPrimitive
-public import TauCeti.Geometry.Manifold.Topology
-public import Mathlib.Topology.Homotopy.Lifting
 
 /-!
 # Exactness of `1`-forms on simply connected manifolds
