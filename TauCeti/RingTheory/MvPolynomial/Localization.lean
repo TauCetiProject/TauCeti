@@ -108,7 +108,7 @@ theorem awayProdPrimesUnitsMulEquiv_apply {J : Type*} (S : Type*) [CommSemiring 
     [IsLocalization.Away (∏ j ∈ s, p j) S] (c : Rˣ) (m : s → Multiplicative ℤ) :
     awayProdPrimesUnitsMulEquiv S s hp hs (c, m) =
       Units.map ((algebraMap (_root_.MvPolynomial σ R) S).comp C : R →* S) c *
-        ∏ j : s, awayUnitOfDvd S (Finset.dvd_prod_of_mem p j.2) ^ (m j).toAdd := by
+        ∏ j : s, awayUnitOfDvd S (Finset.dvd_prod_of_mem p j.property) ^ (m j).toAdd := by
   ext
   simp [awayProdPrimesUnitsMulEquiv, MulEquiv.prodCongr]
 
@@ -120,7 +120,7 @@ theorem coe_awayProdPrimesUnitsMulEquiv_apply {J : Type*} (S : Type*) [CommSemir
     ((awayProdPrimesUnitsMulEquiv S s hp hs (c, m) : Sˣ) : S) =
       algebraMap (_root_.MvPolynomial σ R) S (C (c : R)) *
         ((∏ j : s,
-          awayUnitOfDvd S (Finset.dvd_prod_of_mem p j.2) ^ (m j).toAdd : Sˣ) : S) := by
+          awayUnitOfDvd S (Finset.dvd_prod_of_mem p j.property) ^ (m j).toAdd : Sˣ) : S) := by
   simp
 
 @[simp]
@@ -142,7 +142,7 @@ theorem awayProdPrimesUnitsMulEquiv_symm_awayUnitOfDvd {J : Type*} [DecidableEq 
     (hs : (s : Set J).Pairwise fun i j ↦ ¬Associated (p i) (p j))
     [IsLocalization.Away (∏ j ∈ s, p j) S] (j : s) :
     (awayProdPrimesUnitsMulEquiv S s hp hs).symm
-        (awayUnitOfDvd S (Finset.dvd_prod_of_mem p j.2)) =
+        (awayUnitOfDvd S (Finset.dvd_prod_of_mem p j.property)) =
       (1, Pi.mulSingle j (Multiplicative.ofAdd 1)) := by
   rw [MulEquiv.symm_apply_eq, awayProdPrimesUnitsMulEquiv_apply, map_one, one_mul,
     Finset.prod_eq_single j]
@@ -194,7 +194,7 @@ theorem isUnit_away_prod_mvPolynomial_primes_iff {J : Type*} {S : Type*} [CommSe
       ∃ (c : Rˣ) (m : s → ℤ),
         algebraMap (MvPolynomial σ R) S (C (c : R)) *
             ((∏ j : s,
-              TauCeti.Localization.awayUnitOfDvd S (dvd_prod_of_mem p j.2) ^ m j : Sˣ) : S) =
+              TauCeti.Localization.awayUnitOfDvd S (dvd_prod_of_mem p j.property) ^ m j : Sˣ) : S) =
           y := by
   rw [s.isUnit_away_prod_primes_iff (S := S) hp]
   refine ⟨fun ⟨u, m, hy⟩ ↦ ?_,
