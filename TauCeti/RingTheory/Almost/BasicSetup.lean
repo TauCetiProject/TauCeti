@@ -532,6 +532,24 @@ theorem IsAlmostIso.exists_comp_eq_smul_id {f : M →ₗ[V] N} (hf : S.IsAlmostI
     exact ⟨g₁ + g₂, by rw [LinearMap.comp_add, hg₁, hg₂, add_smul],
       by rw [LinearMap.add_comp, hg₁', hg₂', add_smul]⟩
 
+variable {S} in
+/-- A map is an almost isomorphism exactly when it has a two-sided inverse up to each scalar
+in the basic ideal. -/
+theorem isAlmostIso_iff_forall_exists_comp_eq_smul_id {f : M →ₗ[V] N} :
+    S.IsAlmostIso f ↔ ∀ ε ∈ S.ideal, ∃ g : N →ₗ[V] M,
+      f ∘ₗ g = ε • LinearMap.id ∧ g ∘ₗ f = ε • LinearMap.id := by
+  refine ⟨fun h _ hε ↦ h.exists_comp_eq_smul_id hε, fun h ↦ ⟨?_, ?_⟩⟩
+  · refine isAlmostZero_iff.mpr fun ε hε x ↦ Subtype.ext ?_
+    obtain ⟨g, _, hg⟩ := h ε hε
+    have hx := LinearMap.congr_fun hg x.val
+    simpa [LinearMap.mem_ker.mp x.property] using hx.symm
+  · refine isAlmostZero_iff.mpr fun ε hε x ↦ ?_
+    obtain ⟨g, hg, _⟩ := h ε hε
+    induction x using Submodule.Quotient.induction_on with
+    | _ y =>
+      rw [← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero]
+      exact ⟨g y, LinearMap.congr_fun hg y⟩
+
 end IsAlmostIso
 
 /-! ### The classical and the zero setups -/
