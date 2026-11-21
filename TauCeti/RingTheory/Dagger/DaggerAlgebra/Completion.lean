@@ -91,14 +91,6 @@ theorem algebraMap_completionAlgebra_apply (a : A) :
     algebraMap A (completion K A) a = toCompletion K A a :=
   (rfl)
 
-/-- Under `completionAlgebra K A`, the scalar actions of `K` and `A` on `completion K A` are
-compatible, since `toCompletion K A` is a `K`-algebra homomorphism. -/
-theorem isScalarTower_completionAlgebra :
-    letI := completionAlgebra K A
-    IsScalarTower K A (completion K A) :=
-  letI := completionAlgebra K A
-  IsScalarTower.of_algebraMap_eq fun r ↦ ((toCompletion K A).commutes r).symm
-
 variable {K A}
 
 /-- The completion map sends the image of a series `f ∈ W_n` under the chosen presentation to the

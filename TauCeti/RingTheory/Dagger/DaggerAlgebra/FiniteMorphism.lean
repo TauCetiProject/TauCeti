@@ -11,11 +11,11 @@ public import TauCeti.RingTheory.Dagger.DaggerAlgebra.Map
 import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
 import Mathlib.RingTheory.TensorProduct.Finite
 import Mathlib.Topology.Baire.CompleteMetrizable
+import TauCeti.RingTheory.Affinoid.FiniteMap
 import TauCeti.RingTheory.Affinoid.Integral.Basic
 import TauCeti.RingTheory.Dagger.DaggerAlgebra.FaithfullyFlat
 import TauCeti.RingTheory.Dagger.DaggerAlgebra.ModuleTopology
 import TauCeti.RingTheory.Huber.OpenMapping
-import TauCeti.RingTheory.Huber.StrictMorphism
 import TauCeti.Topology.Algebra.Ring.Basic
 
 /-!
@@ -47,7 +47,7 @@ The isomorphism also compares topologies. Give `A` and `B` the topologies induce
 finite `A`-algebra `B` is its `A`-module topology (`TauCeti.Dagger.isModuleTopology_of_isInducing`):
 the `A`-module topology of `B` is induced from the `Â`-module topology of `Â ⊗[A] B`, which the
 isomorphism identifies with the topology of the finite `Â`-module `B̂`. Consequently a finite
-morphism `φ` is strict (`AlgHom.isStrictMap_of_isInducing`), and so is `φ̂`
+morphism `φ` is strict (`AlgHom.Finite.isStrictMap_of_isInducing`), and so is `φ̂`
 (`AlgHom.isStrictMap_daggerCompletionMap`), by the open mapping theorem over the Tate ring `Â`.
 
 ## Main definitions
@@ -61,8 +61,8 @@ morphism `φ` is strict (`AlgHom.isStrictMap_of_isInducing`), and so is `φ̂`
   `AlgHom.daggerCompletionMap_surjective_iff`, `AlgHom.daggerCompletionMap_bijective_iff`:
   finiteness, injectivity and surjectivity of a finite morphism and of its completion.
 * `TauCeti.Dagger.isModuleTopology_of_isInducing`: a finite algebra carries its module topology.
-* `AlgHom.isStrictMap_of_isInducing`, `AlgHom.isStrictMap_daggerCompletionMap`: a finite morphism
-  and its completion are strict.
+* `AlgHom.Finite.isStrictMap_of_isInducing`, `AlgHom.isStrictMap_daggerCompletionMap`: a finite
+  morphism and its completion are strict.
 
 ## References
 
@@ -82,7 +82,7 @@ variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [Complete
   {A B : Type*} [CommRing A] [Algebra K A] [IsDaggerAlgebra K A]
   [CommRing B] [Algebra K B] [IsDaggerAlgebra K B] [Algebra A B] [IsScalarTower K A B]
 
-attribute [local instance] completionAlgebra isScalarTower_completionAlgebra
+attribute [local instance] completionAlgebra
 
 /-- The `A`-algebra structure on `completion K B` through `A → B → B̂`. -/
 private noncomputable abbrev completionAlgebraOfTower : Algebra A (completion K B) :=
@@ -149,7 +149,6 @@ variable (K A B) in
 where `φ̂` is the completion of the structure map `A → B`. -/
 noncomputable def completionTensorAlgEquiv :
     letI := completionAlgebra K A
-    haveI := isScalarTower_completionAlgebra K A
     completion K A ⊗[A] B ≃ₐ[K] completion K B :=
   AlgEquiv.ofAlgHom completionTensorToCompletion completionToCompletionTensor
     (completion_algHom_ext fun b ↦ by
@@ -174,6 +173,13 @@ theorem completionTensorAlgEquiv_tmul (x : completion K A) (b : B) :
 theorem completionTensorAlgEquiv_symm_toCompletion (b : B) :
     (completionTensorAlgEquiv K A B).symm (toCompletion K B b) = (1 : completion K A) ⊗ₜ[A] b :=
   completionToCompletionTensor_toCompletion (K := K) (A := A) b
+
+/-- The inverse of `completionTensorAlgEquiv` sends `φ̂ x` to `x ⊗ 1`. -/
+@[simp]
+theorem completionTensorAlgEquiv_symm_daggerCompletionMap (x : completion K A) :
+    (completionTensorAlgEquiv K A B).symm ((IsScalarTower.toAlgHom K A B).daggerCompletionMap x) =
+      x ⊗ₜ[A] (1 : B) :=
+  completionToCompletionTensor_daggerCompletionMap x
 
 /-- The completed structure map `Â → B̂` factors as `x ↦ x ⊗ 1` followed by
 `completionTensorAlgEquiv`. -/
@@ -225,7 +231,7 @@ variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [Complete
   [CommRing B] [Algebra K B] [IsDaggerAlgebra K B] [Algebra A B] [IsScalarTower K A B]
   [Module.Finite A B]
 
-attribute [local instance] completionAlgebra isScalarTower_completionAlgebra
+attribute [local instance] completionAlgebra
 
 /-- The `completion K A`-algebra structure on `completion K B` through the completed structure
 map. -/
@@ -255,6 +261,8 @@ private theorem isModuleTopology_completionAlgebraOfMap :
     continuousSMul_of_algebraMap _ _
       (IsScalarTower.toAlgHom K A B).continuous_daggerCompletionMap
   have := Huber.IsTateRing.of_normedAlgebra K (completion K A)
+  -- Instance search fails to unify the topology of `completion K B` with the one coming from its
+  -- seminormed ring structure, so the metrizability instance is passed by name.
   have : BaireSpace (completion K B) :=
     @BaireSpace.of_completelyPseudoMetrizable _ _
       (PseudoMetricSpace.toIsCompletelyPseudoMetrizableSpace (X := completion K B))
@@ -301,22 +309,6 @@ private theorem isStrictMap_algebraMap_of_isInducing [TopologicalSpace A] [Topol
   have : IsTopologicalRing A := hA.isTopologicalRing (toCompletion K A)
   isStrictMap_of_linearMap hA (Algebra.linearMap A B)
 
-/-- The completion of the structure map of a finite algebra is strict. -/
-private theorem isStrictMap_daggerCompletionMap_toAlgHom :
-    Topology.IsStrictMap (IsScalarTower.toAlgHom K A B).daggerCompletionMap :=
-  letI := (IsScalarTower.toAlgHom K A B).daggerCompletionMap.toAlgebra
-  have : Module.Finite (completion K A) (completion K B) := finite_daggerCompletionMap_toAlgHom
-  have : ContinuousSMul (completion K A) (completion K B) :=
-    continuousSMul_of_algebraMap _ _
-      (IsScalarTower.toAlgHom K A B).continuous_daggerCompletionMap
-  have := (isAffinoidAlgebra_completion (K := K) (A := A)).isNoetherianRing
-  have := Huber.IsTateRing.of_normedAlgebra K (completion K A)
-  have : (uniformity (completion K A)).IsCountablyGenerated :=
-    EMetric.instIsCountablyGeneratedUniformity
-  have : (uniformity (completion K B)).IsCountablyGenerated :=
-    EMetric.instIsCountablyGeneratedUniformity
-  LinearMap.isStrictMap_of_module_finite (Algebra.linearMap (completion K A) (completion K B))
-
 end Topology
 
 end TauCeti.Dagger
@@ -334,21 +326,13 @@ theorem injective_of_daggerCompletionMap_injective
     (h : Function.Injective φ.daggerCompletionMap) : Function.Injective φ := fun x y hxy ↦
   toCompletion_injective (K := K) (A := A) <| h <| by simp [hxy]
 
-omit [IsUltrametricDist K] [CompleteSpace K] [IsDaggerAlgebra K A] [IsDaggerAlgebra K B] in
-/-- `φ` is the structure map of `B` as an `A`-algebra through `φ`. -/
-private theorem toAlgHom_eq_self (φ : A →ₐ[K] B) :
-    letI := φ.toAlgebra
-    letI := IsScalarTower.of_algHom φ
-    IsScalarTower.toAlgHom K A B = φ :=
-  (rfl)
-
 /-- **The completion of a finite morphism of dagger algebras is finite.** -/
 theorem Finite.daggerCompletionMap (hφ : φ.Finite) : φ.daggerCompletionMap.Finite := by
   let := φ.toAlgebra
   let := IsScalarTower.of_algHom φ
   have : Module.Finite A B := hφ
-  have h := finite_daggerCompletionMap_toAlgHom (K := K) (A := A) (B := B)
-  rwa [toAlgHom_eq_self] at h
+  -- Under `φ.toAlgebra`, `IsScalarTower.toAlgHom K A B` and `algebraMap A B` are `φ` by definition.
+  exact finite_daggerCompletionMap_toAlgHom (K := K) (A := A) (B := B)
 
 /-- **A finite morphism of dagger algebras is injective iff its completion is.** -/
 theorem daggerCompletionMap_injective_iff (hφ : φ.Finite) :
@@ -356,9 +340,7 @@ theorem daggerCompletionMap_injective_iff (hφ : φ.Finite) :
   let := φ.toAlgebra
   let := IsScalarTower.of_algHom φ
   have : Module.Finite A B := hφ
-  have h := daggerCompletionMap_toAlgHom_injective_iff (K := K) (A := A) (B := B)
-  rwa [toAlgHom_eq_self, RingHom.algebraMap_toAlgebra, AlgHom.toRingHom_eq_coe,
-    AlgHom.coe_toRingHom] at h
+  exact daggerCompletionMap_toAlgHom_injective_iff (K := K) (A := A) (B := B)
 
 /-- **A finite morphism of dagger algebras is surjective iff its completion is.** -/
 theorem daggerCompletionMap_surjective_iff (hφ : φ.Finite) :
@@ -366,9 +348,7 @@ theorem daggerCompletionMap_surjective_iff (hφ : φ.Finite) :
   let := φ.toAlgebra
   let := IsScalarTower.of_algHom φ
   have : Module.Finite A B := hφ
-  have h := daggerCompletionMap_toAlgHom_surjective_iff (K := K) (A := A) (B := B)
-  rwa [toAlgHom_eq_self, RingHom.algebraMap_toAlgebra, AlgHom.toRingHom_eq_coe,
-    AlgHom.coe_toRingHom] at h
+  exact daggerCompletionMap_toAlgHom_surjective_iff (K := K) (A := A) (B := B)
 
 /-- **A finite morphism of dagger algebras is bijective iff its completion is.** -/
 theorem daggerCompletionMap_bijective_iff (hφ : φ.Finite) :
@@ -378,24 +358,20 @@ theorem daggerCompletionMap_bijective_iff (hφ : φ.Finite) :
 /-- **The completion of a finite morphism of dagger algebras is strict** (Grosse-Klönne,
 Theorem 1.12 (e)). -/
 theorem isStrictMap_daggerCompletionMap (hφ : φ.Finite) :
-    Topology.IsStrictMap φ.daggerCompletionMap := by
-  let := φ.toAlgebra
-  let := IsScalarTower.of_algHom φ
-  have : Module.Finite A B := hφ
-  have h := isStrictMap_daggerCompletionMap_toAlgHom (K := K) (A := A) (B := B)
-  rwa [toAlgHom_eq_self] at h
+    Topology.IsStrictMap φ.daggerCompletionMap :=
+  have := (isAffinoidAlgebra_completion (K := K) (A := A)).isNoetherianRing
+  IsAffinoidAlgebra.isStrictMap_of_finite (K := K) (A := completion K A) (B := completion K B)
+    isAffinoidAlgebra_completion φ.daggerCompletionMap hφ.daggerCompletionMap
 
 /-- **A finite morphism of dagger algebras is strict** (Grosse-Klönne, Theorem 1.12 (e)), for the
 topologies induced by the completion maps. -/
-theorem isStrictMap_of_isInducing [TopologicalSpace A] [TopologicalSpace B] (hφ : φ.Finite)
-    (hA : Topology.IsInducing (toCompletion K A)) (hB : Topology.IsInducing (toCompletion K B)) :
-    Topology.IsStrictMap φ := by
+theorem Finite.isStrictMap_of_isInducing [TopologicalSpace A] [TopologicalSpace B]
+    (hφ : φ.Finite) (hA : Topology.IsInducing (toCompletion K A))
+    (hB : Topology.IsInducing (toCompletion K B)) : Topology.IsStrictMap φ := by
   let := φ.toAlgebra
   let := IsScalarTower.of_algHom φ
   have : Module.Finite A B := hφ
-  have h := isStrictMap_algebraMap_of_isInducing (K := K) hA hB
-  rwa [RingHom.algebraMap_toAlgebra, AlgHom.toRingHom_eq_coe,
-    AlgHom.coe_toRingHom] at h
+  exact isStrictMap_algebraMap_of_isInducing (K := K) hA hB
 
 /-- The completion of a surjective morphism of dagger algebras is surjective. -/
 theorem daggerCompletionMap_surjective (hφ : Function.Surjective φ) :
