@@ -325,7 +325,7 @@ theorem memLp_id_of_mgf_trace_mul_eq_det_rpow (q : ℝ≥0) :
         symmetricCoordinates p A) q μ :=
     MemLp.of_eval fun ij => by
       simpa only [symmetricCoordinates_apply] using
-        memLp_coe_apply_of_mgf_trace_mul_eq_det_rpow hmgf ij.1.1 ij.1.2 q
+        memLp_coe_apply_of_mgf_trace_mul_eq_det_rpow hmgf ij.val.1 ij.val.2 q
   have hcomp :
       ((symmetricCoordinates p).symm.toContinuousLinearMap ∘
         fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) => symmetricCoordinates p A) =

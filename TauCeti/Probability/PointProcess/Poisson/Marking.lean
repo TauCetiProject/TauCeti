@@ -5,17 +5,24 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.PointProcess.Marking.Measure
-public import TauCeti.Probability.PointProcess.Poisson.Acceptance
-public import TauCeti.Probability.PointProcess.Poisson.Independence
-public import Mathlib.Probability.Kernel.Composition.MeasureComp
 public import Mathlib.MeasureTheory.Constructions.UnitInterval
+public import Mathlib.Probability.Kernel.Composition.MeasureComp
+public import Mathlib.Probability.Kernel.Composition.MeasureCompProd
+public import TauCeti.Probability.PointProcess.Marking.Measure
+public import TauCeti.Probability.PointProcess.Marking.Optional
+public import TauCeti.Probability.PointProcess.Poisson.Acceptance
+public import TauCeti.Probability.PointProcess.Poisson.Basic
+public import TauCeti.Probability.PointProcess.Poisson.Independence
+import Mathlib.Data.Bool.Set
+import Mathlib.MeasureTheory.Constructions.BorelSpace.Real
+import Mathlib.MeasureTheory.Integral.Lebesgue.Sub
+import Mathlib.Probability.Kernel.MeasurableLIntegral
+import TauCeti.MeasureTheory.Integral.Lebesgue.ExpNeg
+import TauCeti.MeasureTheory.Measure.IntegerValued.Enumeration.LocallyFinite
 import TauCeti.Probability.PointProcess.Poisson.IntegerValued
 import TauCeti.Probability.PointProcess.Poisson.Laplace
 import TauCeti.Probability.PointProcess.Poisson.LaplaceCharacterization
 import TauCeti.Topology.UnitInterval.NNReal
-import Mathlib.Data.Bool.Set
-import Mathlib.MeasureTheory.Integral.Lebesgue.Sub
 
 /-!
 # The Poisson marking theorem and independent thinning
@@ -26,13 +33,16 @@ Markov kernel `κ : Kernel X E` produces a Poisson random measure on `X × E` wi
 
 The theorem is proved at three levels of generality:
 
-* Given any measurable optional occurrence enumeration of `N`, marking via
-  `Kernel.optionalTupleMarking` yields a Poisson random measure of intensity `Λ ⊗ₘ κ` for any
-  s-finite intensity `Λ`, with no separation or topological assumption on `X`.
-* On any standard Borel space `X` with sigma-finite intensity `Λ`, intrinsic marking via
-  `Kernel.markingOfCover` gives the marked law, the joint realization on `Ω × Measure (X × E)`
-  with almost-sure ground projection `p.2.map Prod.fst = N p.1`, and transfer to any
-  realization on an arbitrary probability space with that joint or marginal law.
+* Given any measurable optional occurrence enumeration `e : Ω → ι → Option X` representing `N`
+  almost everywhere, `IsPoissonRandomMeasure.compProd_optionalTupleMarking` and
+  `IsPoissonRandomMeasure.bind_optionalTupleMarking` yield a Poisson random measure of intensity
+  `Λ ⊗ₘ κ` for any s-finite intensity `Λ`, with no separation or topological assumption on `X`.
+* On any standard Borel space `X` with sigma-finite intensity `Λ`,
+  `IsPoissonRandomMeasure.exists_isMarkovKernel_marking` gives an existential realization-level
+  marking kernel, while intrinsic marking via `Kernel.markingOfCover` gives the marked law,
+  the joint realization on `Ω × Measure (X × E)` with almost-sure ground projection
+  `p.2.map Prod.fst = N p.1`, and transfer to any realization on an arbitrary probability space
+  with that joint or marginal law.
 * On a sigma-compact Hausdorff standard Borel space with intensity finite on compact sets, the
   canonical cover-free `Kernel.marking` applies directly; for constant mark kernel
   `Kernel.const X Q`, the intensity reduces to `Λ.prod Q`.
@@ -59,85 +69,77 @@ open scoped ENNReal NNReal
 
 namespace TauCeti.Probability
 
+section Enumeration
+
+variable {Ω X E ι : Type*} [MeasurableSpace Ω] [MeasurableSpace X] [MeasurableSpace E]
+  [Countable ι] {P : Measure Ω} {N : Ω → Measure X} {Λ : Measure X}
+
+/-- **Enumeration-relative Poisson Marking Theorem.** Independently marking an almost-everywhere
+optional occurrence enumeration of a Poisson random measure with s-finite intensity `Λ` by a
+Markov kernel `κ` produces a Poisson random measure with intensity `Λ ⊗ₘ κ`. Neither standard
+Borel structure on `X` nor simplicity of `N` is required. -/
+theorem IsPoissonRandomMeasure.compProd_optionalTupleMarking [SFinite Λ]
+    (hN : IsPoissonRandomMeasure P N Λ) (κ : Kernel X E) [IsMarkovKernel κ]
+    {e : Ω → ι → Option X} (he : Measurable e)
+    (hae : ∀ᵐ ω ∂P, N ω = Measure.sum (fun i ↦ (e ω i).elim 0 Measure.dirac)) :
+    IsPoissonRandomMeasure (P ⊗ₘ (κ.optionalTupleMarking ι).comap e he) Prod.snd (Λ ⊗ₘ κ) := by
+  let := hN.isProbabilityMeasure
+  refine isPoissonRandomMeasure_of_laplaceFunctional measurable_snd fun f hf ↦ ?_
+  rw [Measure.laplaceFunctional_def, Measure.lintegral_compProd (by fun_prop)]
+  simp_rw [Kernel.comap_apply,
+    Kernel.lintegral_expNeg_optionalTupleMarking_eq_expNeg_lintegral κ _ hf]
+  rw [lintegral_congr_ae (hae.mono fun ω hω ↦ by rw [← hω]),
+    ← Measure.laplaceFunctional_def, hN.laplaceFunctional_eq_expNeg (by fun_prop),
+    Measure.lintegral_compProd (by fun_prop)]
+  congr 2
+  refine lintegral_congr fun a ↦ ?_
+  have hle := lintegral_coe_expNeg_le_one (μ := κ a) fun b ↦ f (a, b)
+  rw [ENNReal.coe_expNeg_toENNReal_neg_log hle,
+    lintegral_sub (by fun_prop) (hle.trans_lt ENNReal.one_lt_top).ne
+      (ae_of_all _ fun _ ↦ ENNReal.coe_le_one_iff.mpr (ENNReal.expNeg_le_one _)),
+    lintegral_const, measure_univ, one_mul]
+
+/-- Marginal form of `IsPoissonRandomMeasure.compProd_optionalTupleMarking`: the mixture of
+marked laws over `P` along an almost-everywhere measurable optional enumeration is a canonical
+Poisson random measure on `Measure (X × E)` with intensity `Λ ⊗ₘ κ`. -/
+theorem IsPoissonRandomMeasure.bind_optionalTupleMarking [SFinite Λ]
+    (hN : IsPoissonRandomMeasure P N Λ) (κ : Kernel X E) [IsMarkovKernel κ]
+    {e : Ω → ι → Option X} (he : AEMeasurable e P)
+    (hae : ∀ᵐ ω ∂P, N ω = Measure.sum (fun i ↦ (e ω i).elim 0 Measure.dirac)) :
+    IsPoissonRandomMeasure (P.bind fun ω ↦ κ.optionalTupleMarking ι (e ω)) id (Λ ⊗ₘ κ) := by
+  let := hN.isProbabilityMeasure
+  have hbind : (P.bind fun ω ↦ κ.optionalTupleMarking ι (e ω)) =
+      P.bind fun ω ↦ κ.optionalTupleMarking ι (he.mk e ω) :=
+    Measure.bind_congr_right (he.ae_eq_mk.mono fun _ hω ↦ congrArg (κ.optionalTupleMarking ι) hω)
+  rw [hbind]
+  let η := (κ.optionalTupleMarking ι).comap (he.mk e) he.measurable_mk
+  have hmap : (P ⊗ₘ η).map Prod.snd = P.bind (fun ω ↦ κ.optionalTupleMarking ι (he.mk e ω)) := by
+    rw [← Measure.snd, Measure.snd_compProd]
+    simp only [η, Kernel.coe_comap, Function.comp_def]
+  have hae' : ∀ᵐ ω ∂P, N ω = Measure.sum (fun i ↦ (he.mk e ω i).elim 0 Measure.dirac) := by
+    filter_upwards [hae, he.ae_eq_mk] with ω hω hmk
+    simpa only [← hmk] using hω
+  exact (hN.compProd_optionalTupleMarking κ he.measurable_mk hae').of_identDistrib measurable_id
+    ⟨measurable_snd.aemeasurable, measurable_id.aemeasurable, by rw [Measure.map_id, hmap]⟩
+
+/-- On a countably generated ground space with σ-finite intensity `Λ`, projecting an optional-tuple
+marked realization onto the first coordinate recovers the entire ground realization `N z.1` almost
+surely. -/
+theorem IsPoissonRandomMeasure.ae_map_fst_compProd_optionalTupleMarking
+    [MeasurableSpace.CountablyGenerated X] [SigmaFinite Λ]
+    (hN : IsPoissonRandomMeasure P N Λ) (κ : Kernel X E) [IsMarkovKernel κ]
+    {e : Ω → ι → Option X} (he : Measurable e)
+    (hae : ∀ᵐ ω ∂P, N ω = Measure.sum (fun i ↦ (e ω i).elim 0 Measure.dirac)) :
+    ∀ᵐ z ∂(P ⊗ₘ (κ.optionalTupleMarking ι).comap e he), z.2.map Prod.fst = N z.1 :=
+  κ.ae_map_fst_compProd_optionalTupleMarking he hae (measurableSet_spanningSets Λ)
+    (iUnion_spanningSets Λ) hN.ae_ne_top_spanningSets
+
+end Enumeration
+
 section General
 
 variable {Ω X E : Type*} [MeasurableSpace Ω] [MeasurableSpace X] [MeasurableSpace E]
   {P : Measure Ω} {N : Ω → Measure X} {Λ : Measure X} {κ : Kernel X E}
-
-/-- **Poisson marking theorem for an enumerated realization.** Independently marking any
-measurable optional occurrence enumeration of a Poisson random measure of s-finite intensity `Λ`
-produces a Poisson random measure of intensity `Λ ⊗ₘ κ`. No separation or topological
-assumption on `X` is required. -/
-theorem IsPoissonRandomMeasure.isPoissonRandomMeasure_comp_optionalTupleMarking
-    [SFinite Λ] [IsMarkovKernel κ]
-    (h : IsPoissonRandomMeasure P N Λ) {ι : Type*} [Countable ι]
-    {e : Ω → ι → Option X} (he : Measurable e)
-    (hrep : ∀ᵐ ω ∂P, N ω = Measure.sum fun i => (e ω i).elim 0 Measure.dirac) :
-    IsPoissonRandomMeasure
-      (((κ.optionalTupleMarking ι).comap e he) ∘ₘ P) id (Λ ⊗ₘ κ) := by
-  let := h.isProbabilityMeasure
-  let K : Kernel Ω (Measure (X × E)) := (κ.optionalTupleMarking ι).comap e he
-  apply isPoissonRandomMeasure_of_laplaceFunctional measurable_id
-  intro f hf
-  let g : X → ℝ≥0∞ := fun a =>
-    (-ENNReal.log (∫⁻ y, (ENNReal.expNeg (f (a, y)) : ℝ≥0∞) ∂κ a)).toENNReal
-  have hg_meas : Measurable g := κ.measurable_toENNReal_neg_log_lintegral_expNeg hf
-  have hexp_g (a : X) :
-      (ENNReal.expNeg (g a) : ℝ≥0∞) = ∫⁻ y, (ENNReal.expNeg (f (a, y)) : ℝ≥0∞) ∂κ a :=
-    κ.coe_expNeg_toENNReal_neg_log_lintegral_expNeg f a
-  have hsub (a : X) :
-      1 - (ENNReal.expNeg (g a) : ℝ≥0∞) =
-        ∫⁻ y, 1 - (ENNReal.expNeg (f (a, y)) : ℝ≥0∞) ∂κ a := by
-    have hfa : Measurable (fun y : E => (ENNReal.expNeg (f (a, y)) : ℝ≥0∞)) :=
-      measurable_coe_nnreal_ennreal.comp
-        (ENNReal.measurable_expNeg.comp (hf.comp measurable_prodMk_left))
-    have hfin : ∫⁻ y, (ENNReal.expNeg (f (a, y)) : ℝ≥0∞) ∂κ a ≠ ∞ := by
-      rw [← hexp_g a]
-      exact ENNReal.coe_ne_top
-    have hle : (fun y : E => (ENNReal.expNeg (f (a, y)) : ℝ≥0∞)) ≤ᵐ[κ a]
-        (fun _ => (1 : ℝ≥0∞)) :=
-      ae_of_all _ fun y => ENNReal.coe_le_one_iff.mpr (ENNReal.expNeg_le_one _)
-    rw [hexp_g a, lintegral_sub hfa hfin hle, lintegral_const, one_mul, measure_univ]
-  have hL : (K ∘ₘ P).laplaceFunctional id f = P.laplaceFunctional N g := by
-    have hexp_meas := Measure.measurable_expNeg_lintegral (N := (id : Measure (X × E) → _))
-      measurable_id hf
-    rw [Measure.laplaceFunctional_def, Measure.lintegral_bind K.aemeasurable hexp_meas.aemeasurable]
-    calc
-      ∫⁻ ω, ∫⁻ μ, (ENNReal.expNeg (∫⁻ q, f q ∂μ) : ℝ≥0∞) ∂K ω ∂P
-          = ∫⁻ ω, (ENNReal.expNeg (∫⁻ a, g a ∂(Measure.sum fun i =>
-              (e ω i).elim 0 Measure.dirac)) : ℝ≥0∞) ∂P := by
-        refine lintegral_congr fun ω => ?_
-        simpa only [K, Kernel.comap_apply, Measure.laplaceFunctional_def, id_eq] using
-          κ.laplaceFunctional_optionalTupleMarking (e ω) hf
-      _ = ∫⁻ ω, (ENNReal.expNeg (∫⁻ a, g a ∂N ω) : ℝ≥0∞) ∂P := by
-        refine lintegral_congr_ae ?_
-        filter_upwards [hrep] with ω hω
-        rw [hω]
-      _ = P.laplaceFunctional N g := (Measure.laplaceFunctional_def P N g).symm
-  rw [hL, h.laplaceFunctional_eq_expNeg hg_meas]
-  congr 2
-  have hsub_meas : Measurable (fun q : X × E => 1 - (ENNReal.expNeg (f q) : ℝ≥0∞)) :=
-    measurable_const.sub (measurable_coe_nnreal_ennreal.comp (ENNReal.measurable_expNeg.comp hf))
-  rw [Measure.lintegral_compProd (f := fun q : X × E => 1 - (ENNReal.expNeg (f q) : ℝ≥0∞))
-    hsub_meas]
-  exact lintegral_congr hsub
-
-/-- Joint product-space form of the enumerated Poisson marking theorem. -/
-theorem IsPoissonRandomMeasure.isPoissonRandomMeasure_compProd_optionalTupleMarking
-    [SFinite Λ] [IsMarkovKernel κ]
-    (h : IsPoissonRandomMeasure P N Λ) {ι : Type*} [Countable ι]
-    {e : Ω → ι → Option X} (he : Measurable e)
-    (hrep : ∀ᵐ ω ∂P, N ω = Measure.sum fun i => (e ω i).elim 0 Measure.dirac) :
-    IsPoissonRandomMeasure (P ⊗ₘ ((κ.optionalTupleMarking ι).comap e he))
-      Prod.snd (Λ ⊗ₘ κ) := by
-  let := h.isProbabilityMeasure
-  have hsnd : IdentDistrib Prod.snd (id : Measure (X × E) → Measure (X × E))
-      (P ⊗ₘ ((κ.optionalTupleMarking ι).comap e he))
-      (((κ.optionalTupleMarking ι).comap e he) ∘ₘ P) := by
-    refine ⟨measurable_snd.aemeasurable, measurable_id.aemeasurable, ?_⟩
-    rw [Measure.map_id, ← Measure.snd, Measure.snd_compProd]
-  exact (h.isPoissonRandomMeasure_comp_optionalTupleMarking he hrep).of_identDistrib
-    measurable_snd hsnd.symm
 
 /-- **Independent location-dependent Bernoulli thinning from a marked Poisson realization.**
 Given any Poisson random measure `M` on `X × Bool` with intensity
@@ -275,7 +277,7 @@ theorem IsPoissonRandomMeasure.isPoissonRandomMeasure_comp_markingOfCover
     simp only [Kernel.comap_apply, Function.comp_apply]
     rw [κ.markingOfCover_eq_optionalTupleMarking hs hcover hωint (fun n => (hωfin n).ne) hωrep]
   rw [hcomp]
-  exact h.isPoissonRandomMeasure_comp_optionalTupleMarking (he.comp h.measurable) hrep
+  exact h.bind_optionalTupleMarking κ (he.comp h.measurable).aemeasurable hrep
 
 /-- Joint realization of independent marking on `Ω × Measure (X × E)` via `markingOfCover`:
 the second coordinate is a Poisson random measure of intensity `Λ ⊗ₘ κ`. -/
@@ -591,5 +593,54 @@ theorem ae_map_fst_restrict_false_eq_zero_and_true_eq_of_const_bernoulliMeasure_
 end IsPoissonRandomMeasure
 
 end CompactCovering
+
+section StandardBorelExists
+
+variable {Ω X E : Type*} [MeasurableSpace Ω] [MeasurableSpace X] [StandardBorelSpace X]
+  [MeasurableSpace E] {P : Measure Ω} {N : Ω → Measure X} {Λ : Measure X} [SigmaFinite Λ]
+
+/-- **The Poisson Marking Theorem** (Last–Penrose, Theorem 5.6). For any Poisson random measure `N`
+with σ-finite intensity `Λ` on a standard Borel space `X` and any Markov kernel `κ : Kernel X E`,
+there exists a realization-level Markov kernel `η : Kernel (Measure X) (Measure (X × E))` such that
+under `P ⊗ₘ η.comap N hN.measurable`, the second coordinate is a Poisson random measure with
+intensity `Λ ⊗ₘ κ` whose ground projection almost surely equals `N`. Because `η` acts on `Measure X`
+alone, the marked realization is conditionally independent of `Ω` given `N`. Atomic intensities and
+multiple occurrences at one location are allowed. -/
+theorem IsPoissonRandomMeasure.exists_isMarkovKernel_marking
+    (hN : IsPoissonRandomMeasure P N Λ) (κ : Kernel X E) [IsMarkovKernel κ] :
+    ∃ η : Kernel (Measure X) (Measure (X × E)),
+      IsMarkovKernel η ∧
+      IsPoissonRandomMeasure (P ⊗ₘ η.comap N hN.measurable) Prod.snd (Λ ⊗ₘ κ) ∧
+      ∀ᵐ z ∂(P ⊗ₘ η.comap N hN.measurable), z.2.map Prod.fst = N z.1 := by
+  have hN' : IsPoissonRandomMeasure (P.map N) id Λ :=
+    hN.of_identDistrib measurable_id
+      ⟨hN.measurable.aemeasurable, measurable_id.aemeasurable, Measure.map_id.symm⟩
+  obtain ⟨e, he, hae⟩ := measurable_id.aemeasurable.exists_ae_occurrence_enumeration_of_cover
+    hN'.ae_isIntegerValued (spanningSets Λ) (measurableSet_spanningSets Λ) (iUnion_spanningSets Λ)
+    hN'.ae_ne_top_spanningSets
+  have haeN : ∀ᵐ ω ∂P, N ω = Measure.sum (fun i ↦ (e (N ω) i).elim 0 Measure.dirac) :=
+    ae_of_ae_map hN.measurable.aemeasurable hae
+  refine ⟨(κ.optionalTupleMarking ℕ).comap e he, inferInstance, ?_, ?_⟩
+  · rw [← Kernel.comap_comp_right]
+    exact hN.compProd_optionalTupleMarking κ (he.comp hN.measurable) haeN
+  · rw [← Kernel.comap_comp_right]
+    exact hN.ae_map_fst_compProd_optionalTupleMarking κ (he.comp hN.measurable) haeN
+
+/-- Independent i.i.d. marking specialization of
+`IsPoissonRandomMeasure.exists_isMarkovKernel_marking`: attaching independent marks with common
+probability law `Q` via a realization-level Markov kernel produces a Poisson random measure with
+product intensity `Λ.prod Q` whose ground projection recovers `N` almost surely. -/
+theorem IsPoissonRandomMeasure.exists_isMarkovKernel_marking_prod
+    (hN : IsPoissonRandomMeasure P N Λ) (Q : Measure E) [IsProbabilityMeasure Q] :
+    ∃ η : Kernel (Measure X) (Measure (X × E)),
+      IsMarkovKernel η ∧
+      IsPoissonRandomMeasure (P ⊗ₘ η.comap N hN.measurable) Prod.snd (Λ.prod Q) ∧
+      ∀ᵐ z ∂(P ⊗ₘ η.comap N hN.measurable), z.2.map Prod.fst = N z.1 := by
+  let := hN.isProbabilityMeasure
+  obtain ⟨η, hη, hP, hproj⟩ := hN.exists_isMarkovKernel_marking (Kernel.const X Q)
+  rw [Measure.compProd_const] at hP
+  exact ⟨η, hη, hP, hproj⟩
+
+end StandardBorelExists
 
 end TauCeti.Probability

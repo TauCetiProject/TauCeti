@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Probability.Kernel.Composition.MeasureCompProd
 public import Mathlib.MeasureTheory.Measure.WithDensity
+public import Mathlib.Probability.Kernel.Composition.MeasureCompProd
 public import Mathlib.MeasureTheory.Measure.Typeclasses.Finite
+import Mathlib.Probability.Kernel.Composition.Lemmas
 
 /-!
 # Operations on the base of a composition-product
@@ -29,11 +30,14 @@ vertical sections, and finite kernels bound rectangle masses in terms of the bas
   `κ : Kernel Y Z`, `(μ ⊗ₘ κ.comap f hf).map (Prod.map f id) = μ.map f ⊗ₘ κ`.
 * `MeasureTheory.Measure.map_prod_compProd_comap` — Markov-kernel form expressing the right-hand
   side in terms of the pushed-forward first marginal `(μ ⊗ₘ κ.comap f hf).map (f ∘ Prod.fst)`.
+* `MeasureTheory.Measure.compProd_comap_map` — pushing a kernel forward along `g` before pulling
+  its input back along `f` pushes the composition-product forward along `Prod.map id g`.
 * `MeasureTheory.Measure.compProd_restrict_left` — restricting the base to `s` restricts the
   composition-product to `s ×ˢ univ`.
-* `MeasureTheory.Measure.map_fst_restrict_compProd_eq_withDensity` — projecting
-  `(μ ⊗ₘ κ).restrict A` onto the first coordinate gives
-  `μ.withDensity fun x => κ x (Prod.mk x ⁻¹' A)`.
+* `MeasureTheory.Measure.map_fst_restrict_compProd_eq_withDensity` — restricting `μ ⊗ₘ κ` to `A`
+  and projecting onto the first coordinate gives `μ.withDensity (fun x ↦ κ x (Prod.mk x ⁻¹' A))`.
+* `MeasureTheory.Measure.quasiMeasurePreserving_fst_compProd` — `Prod.fst` is quasi-measure
+  preserving from `μ ⊗ₘ κ` to `μ` without finiteness or Markov hypotheses.
 * `MeasureTheory.Measure.compProd_prod_le_bound_mul` and
   `MeasureTheory.Measure.compProd_Ioc_prod_lt_top` — rectangle mass bounds for finite kernels.
 -/
@@ -48,6 +52,22 @@ open scoped ENNReal
 namespace MeasureTheory.Measure
 
 variable {W Y Z : Type*} [MeasurableSpace W] [MeasurableSpace Y] [MeasurableSpace Z]
+
+/-- Projecting a composition-product onto its first coordinate is quasi-measure preserving for any
+measure `μ` and kernel `κ`, with no s-finiteness or Markov hypothesis. -/
+@[fun_prop]
+theorem quasiMeasurePreserving_fst_compProd (μ : Measure W) (κ : Kernel W Z) :
+    QuasiMeasurePreserving Prod.fst (μ ⊗ₘ κ) μ := by
+  refine ⟨measurable_fst.aemeasurable, AbsolutelyContinuous.mk fun s hs hμs ↦ ?_⟩
+  by_cases hμ : SFinite μ
+  swap
+  · simp [compProd_of_not_sfinite _ _ hμ]
+  by_cases hκ : IsSFiniteKernel κ
+  swap
+  · simp [compProd_of_not_isSFiniteKernel _ _ hκ]
+  rw [map_apply measurable_fst hs, compProd_apply (measurable_fst hs)]
+  exact (lintegral_eq_zero_iff (Kernel.measurable_kernel_prodMk_left (measurable_fst hs))).2
+    ((measure_eq_zero_iff_ae_notMem.1 hμs).mono fun a ha ↦ by simp [Set.preimage, ha])
 
 /-- If a kernel factors through a measurable map `f : W → Y`, then pushing the base of the
 composition-product forward along `f` gives back the composition-product over the pushed-forward
@@ -75,6 +95,18 @@ theorem map_prod_compProd_comap (μ : Measure W) [SFinite μ] (κ : Kernel Y Z)
   rw [hfst]
   exact μ.map_prodMap_compProd_comap κ hf
 
+/-- Pushing a kernel forward along `g` before pulling its input back along `f` pushes the second
+factor of the composition-product forward along `Prod.map id g`, with no s-finiteness assumption on
+the base measure `μ`. -/
+theorem compProd_comap_map {T : Type*} [MeasurableSpace T] (μ : Measure W)
+    (κ : Kernel Y Z) [IsSFiniteKernel κ] {f : W → Y} (hf : Measurable f)
+    {g : Z → T} (hg : Measurable g) :
+    μ ⊗ₘ (κ.map g).comap f hf = (μ ⊗ₘ κ.comap f hf).map (Prod.map id g) := by
+  by_cases hμ : SFinite μ
+  swap
+  · simp [compProd_of_not_sfinite _ _ hμ]
+  rw [Kernel.comap_map_comm κ hf hg, compProd_map hg]
+
 /-- Restricting the base of a composition-product to `s` restricts the product to `s ×ˢ univ`.
 This is the measure counterpart of Mathlib's `ProbabilityTheory.Kernel.compProd_restrict_left`. -/
 theorem compProd_restrict_left (μ : Measure W) [SFinite μ] (κ : Kernel W Z)
@@ -86,18 +118,19 @@ theorem compProd_restrict_left (μ : Measure W) [SFinite μ] (κ : Kernel W Z)
   rw [compProd, compProd, ← Kernel.restrict_const hs, ← Kernel.restrict_apply _ (hs.prod .univ),
     Kernel.compProd_restrict_left]
 
-/-- Projecting a measurable restriction of a composition-product `μ ⊗ₘ κ` onto the first
-factor weights `μ` by the kernel masses of the vertical sections. -/
+/-- Restricting a composition-product `μ ⊗ₘ κ` to a measurable set `A` and projecting onto the
+first coordinate weights the base measure `μ` by the kernel masses of the sections of `A`.
+This generalizes the product-measure identity `map_fst_restrict_prod_eq_withDensity` to
+location-dependent s-finite kernels. -/
 theorem map_fst_restrict_compProd_eq_withDensity (μ : Measure W) [SFinite μ]
     (κ : Kernel W Z) [IsSFiniteKernel κ] {A : Set (W × Z)} (hA : MeasurableSet A) :
-    ((μ ⊗ₘ κ).restrict A).map Prod.fst =
-      μ.withDensity fun x => κ x (Prod.mk x ⁻¹' A) := by
+    ((μ ⊗ₘ κ).restrict A).map Prod.fst = μ.withDensity (fun x ↦ κ x (Prod.mk x ⁻¹' A)) := by
   ext s hs
-  rw [map_apply measurable_fst hs, restrict_apply (measurable_fst hs),
-    compProd_apply ((measurable_fst hs).inter hA), withDensity_apply _ hs,
-    ← lintegral_indicator hs]
-  refine lintegral_congr fun x => ?_
-  by_cases hx : x ∈ s <;> simp [Set.preimage, hx]
+  rw [map_apply measurable_fst hs, restrict_apply (hs.preimage measurable_fst),
+    compProd_apply ((hs.preimage measurable_fst).inter hA),
+    withDensity_apply _ hs, ← lintegral_indicator hs]
+  refine lintegral_congr fun x ↦ ?_
+  by_cases hx : x ∈ s <;> simp [Set.preimage_preimage, hx]
 
 /-- The mass of a rectangle under a composition-product with a finite kernel is bounded by the
 kernel's uniform bound times the base mass, without measurability or s-finiteness assumptions on

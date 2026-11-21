@@ -28,7 +28,8 @@ not its square. `ℚ(i)`, with its two ideals of norm `5`, is such a field.
 For the rational field the ring of integers is isomorphic to `ℤ`.  Mapping an ideal through this
 isomorphism and using `Int.ideal_span_absNorm_eq_self` shows that there is exactly one ideal of
 each positive norm.  Thus the trivial ideal weight over `ℚ` regroups to the constant coefficient
-`1` at every positive index, as for the Riemann zeta function.
+`1` at every positive index, so `dedekindZeta ℚ` is `LSeries 1` (`TauCeti.dedekindZeta_rat`) and
+its residue at `s = 1` is `1` (`TauCeti.dedekindZeta_residue_rat`).
 
 The exact abscissa of convergence of the trivial weight is not asserted here; it is
 `TauCeti.abscissaOfAbsConv_normCoeff_one` in
@@ -64,11 +65,11 @@ theorem dedekindZeta_eq_LSeries_dedekindZetaCoeff (s : ℂ) :
 private def normFiberSubtypeEquiv {n : ℕ} (hn : n ≠ 0) :
     {I : (Ideal (𝓞 K))⁰ // Ideal.absNorm (I : Ideal (𝓞 K)) = n} ≃
       {I : Ideal (𝓞 K) // Ideal.absNorm I = n} where
-  toFun I := ⟨I.1, I.2⟩
+  toFun I := ⟨I.val, I.property⟩
   invFun I :=
-    ⟨⟨I.1, by
+    ⟨⟨I.val, by
       rw [← Ideal.absNorm_ne_zero_iff_mem_nonZeroDivisors]
-      exact fun hzero ↦ hn (I.2.symm.trans hzero)⟩, I.2⟩
+      exact fun hzero ↦ hn (I.property.symm.trans hzero)⟩, I.property⟩
   left_inv _ := rfl
   right_inv _ := rfl
 
@@ -129,17 +130,17 @@ private theorem rat_normFiber_subsingleton (n : ℕ) :
   constructor
   intro I J
   apply Subtype.ext
-  have hmap : I.1.map Rat.ringOfIntegersEquiv = J.1.map Rat.ringOfIntegersEquiv := by
-    rw [← Int.ideal_span_absNorm_eq_self (I.1.map Rat.ringOfIntegersEquiv),
-      ← Int.ideal_span_absNorm_eq_self (J.1.map Rat.ringOfIntegersEquiv),
-      Ideal.absNorm_map_of_ringEquiv Rat.ringOfIntegersEquiv I.1,
-      Ideal.absNorm_map_of_ringEquiv Rat.ringOfIntegersEquiv J.1, I.2, J.2]
+  have hmap : I.val.map Rat.ringOfIntegersEquiv = J.val.map Rat.ringOfIntegersEquiv := by
+    rw [← Int.ideal_span_absNorm_eq_self (I.val.map Rat.ringOfIntegersEquiv),
+      ← Int.ideal_span_absNorm_eq_self (J.val.map Rat.ringOfIntegersEquiv),
+      Ideal.absNorm_map_of_ringEquiv Rat.ringOfIntegersEquiv I.val,
+      Ideal.absNorm_map_of_ringEquiv Rat.ringOfIntegersEquiv J.val, I.property, J.property]
   calc
-    I.1 = Ideal.comap Rat.ringOfIntegersEquiv (I.1.map Rat.ringOfIntegersEquiv) :=
+    I.val = Ideal.comap Rat.ringOfIntegersEquiv (I.val.map Rat.ringOfIntegersEquiv) :=
       (Ideal.comap_map_of_bijective _ Rat.ringOfIntegersEquiv.bijective).symm
-    _ = Ideal.comap Rat.ringOfIntegersEquiv (J.1.map Rat.ringOfIntegersEquiv) :=
+    _ = Ideal.comap Rat.ringOfIntegersEquiv (J.val.map Rat.ringOfIntegersEquiv) :=
       congrArg (Ideal.comap Rat.ringOfIntegersEquiv) hmap
-    _ = J.1 := Ideal.comap_map_of_bijective _ Rat.ringOfIntegersEquiv.bijective
+    _ = J.val := Ideal.comap_map_of_bijective _ Rat.ringOfIntegersEquiv.bijective
 
 private theorem rat_normFiber_nonempty (n : ℕ) :
     Nonempty {I : Ideal (𝓞 ℚ) // Ideal.absNorm I = n} := by
@@ -178,5 +179,31 @@ theorem normCoeff_toIdealArithmeticFunction_one_rat_apply {n : ℕ} (hn : 0 < n)
     normCoeff ℚ (1 : UnitaryIdealWeight ℚ).toIdealArithmeticFunction n = 1 := by
   rw [normCoeff_toIdealArithmeticFunction_one_apply, ite_eq_right hn.ne', dedekindZetaCoeff_rat]
   norm_num
+
+/-- Over `ℚ`, the Dedekind zeta function is `LSeries 1`, the Dirichlet series with constant
+coefficient `1`. -/
+@[simp]
+theorem dedekindZeta_rat (s : ℂ) : NumberField.dedekindZeta ℚ s = LSeries 1 s := by
+  rw [dedekindZeta_eq_LSeries_dedekindZetaCoeff]
+  exact congrArg (LSeries · s) (funext fun n ↦ by simp)
+
+/-- The Dedekind zeta function of `ℚ` has residue `1` at `s = 1`. -/
+@[simp]
+theorem dedekindZeta_residue_rat : NumberField.dedekindZeta_residue ℚ = 1 := by
+  have hsum : Filter.Tendsto (fun n : ℕ ↦ (∑ _k ∈ Finset.Icc 1 n, (1 : ℝ)) / (n : ℝ))
+      Filter.atTop (nhds 1) := by
+    refine tendsto_const_nhds.congr' ?_
+    filter_upwards [Filter.eventually_ge_atTop 1] with n hn
+    have hn0 : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.one_le_iff_ne_zero.mp hn)
+    simp [hn0]
+  have hL := LSeries_tendsto_sub_mul_nhds_one_of_tendsto_sum_div_and_nonneg (fun _ ↦ (1 : ℝ)) hsum
+    fun _ ↦ zero_le_one
+  have hζ : Filter.Tendsto (fun s : ℝ ↦ ((s : ℂ) - 1) * NumberField.dedekindZeta ℚ s)
+      (nhdsWithin 1 (Set.Ioi 1)) (nhds ((1 : ℝ) : ℂ)) := by
+    refine hL.congr fun s ↦ ?_
+    rw [dedekindZeta_rat]
+    exact congrArg (((s : ℂ) - 1) * LSeries · s) (funext fun _ ↦ by simp)
+  exact Complex.ofReal_injective
+    (tendsto_nhds_unique (NumberField.tendsto_sub_one_mul_dedekindZeta_nhdsGT ℚ) hζ)
 
 end TauCeti

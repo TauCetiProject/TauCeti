@@ -124,20 +124,20 @@ theorem incident_eq_iff (d : W.End) (v : W.Vertex) :
 /-- Each incidence fibre is exactly the three local end occurrences. -/
 def incidenceEquiv (v : W.Vertex) : Fin 3 ≃ {d : W.End // W.incident d = v} where
   toFun i := ⟨W.ends (v, i), W.incident_ends v i⟩
-  invFun d := (W.ends.symm d.1).2
+  invFun d := (W.ends.symm d.val).2
   left_inv i := by simp
   right_inv d := by
     apply Subtype.ext
-    have h : (v, (W.ends.symm d.1).2) = W.ends.symm d.1 :=
-      Prod.ext d.2.symm rfl
-    exact (congrArg W.ends h).trans (W.ends.apply_symm_apply d.1)
+    have h : (v, (W.ends.symm d.val).2) = W.ends.symm d.val :=
+      Prod.ext d.property.symm rfl
+    exact (congrArg W.ends h).trans (W.ends.apply_symm_apply d.val)
 
 @[simp] theorem incidenceEquiv_apply_coe (v : W.Vertex) (i : Fin 3) :
-    (W.incidenceEquiv v i).1 = W.ends (v, i) := (rfl)
+    (W.incidenceEquiv v i).val = W.ends (v, i) := (rfl)
 
 @[simp] theorem incidenceEquiv_symm_apply (v : W.Vertex)
     (d : {d : W.End // W.incident d = v}) :
-    (W.incidenceEquiv v).symm d = (W.ends.symm d.1).2 := (rfl)
+    (W.incidenceEquiv v).symm d = (W.ends.symm d.val).2 := (rfl)
 
 /-- Trivalence counts ends, not edges, so loops contribute twice. -/
 @[simp] theorem card_incident (v : W.Vertex) :

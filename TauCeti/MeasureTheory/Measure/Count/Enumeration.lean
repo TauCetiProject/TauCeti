@@ -32,7 +32,7 @@ namespace MeasureTheory.Measure
 /-- Dropping indices at which a family of measures vanishes leaves `Measure.sum` unchanged. -/
 theorem sum_eq_sum_subtype {ι X : Type*} [MeasurableSpace X] {p : ι → Prop}
     (μ : ι → Measure X) (hzero : ∀ i, ¬ p i → μ i = 0) :
-    Measure.sum μ = Measure.sum fun i : {i : ι // p i} => μ i.1 := by
+    Measure.sum μ = Measure.sum fun i : {i : ι // p i} => μ i.val := by
   ext A hA
   rw [Measure.sum_apply _ hA, Measure.sum_apply _ hA,
     ← tsum_subtype_eq_of_support_subset (s := {i : ι | p i}) fun i hi => by
@@ -48,13 +48,13 @@ theorem sum_dite_zero {ι X : Type*} [MeasurableSpace X] {p : ι → Prop} [Deci
   rw [sum_eq_sum_subtype (p := p) _ fun i hi => by simp [hi]]
   congr 1
   funext i
-  simp [i.2]
+  simp [i.property]
 
 /-- Summing optional Dirac occurrences agrees with summing the Dirac occurrences over the
 present (`isSome`) indices. -/
 theorem sum_elim_dirac_eq_sum_isSome {ι X : Type*} [MeasurableSpace X] (x : ι → Option X) :
     (Measure.sum fun i => (x i).elim 0 Measure.dirac) =
-      Measure.sum fun i : {i : ι // (x i).isSome} => Measure.dirac ((x i.1).get i.2) := by
+      Measure.sum fun i : {i : ι // (x i).isSome} => Measure.dirac ((x i.val).get i.property) := by
   rw [sum_eq_sum_subtype (p := fun i => (x i).isSome) _ fun i hi => by
     rw [Option.not_isSome_iff_eq_none.mp hi, Option.elim_none]]
   congr 1

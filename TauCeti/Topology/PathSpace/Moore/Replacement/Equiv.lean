@@ -195,22 +195,22 @@ variable {X : Type u} [TopologicalSpace X]
 theorem source_path_mem {A : Set X} (x : MooreReplacement (ContinuousMap.subtypeVal A)) :
     x.path.source ∈ A := by
   rw [source_path]
-  exact x.point.2
+  exact x.point.property
 
 /-- The Moore paths starting in `A` are the Moore-path replacement of the inclusion `A → X`. -/
 def homeomorphPathsFrom (A : Set X) :
     MooreReplacement (ContinuousMap.subtypeVal A) ≃ₜ {γ : MoorePath X // γ.source ∈ A} where
   toFun x := ⟨x.path, source_path_mem x⟩
-  invFun γ := mk ⟨γ.1.source, γ.2⟩ γ.1 rfl
+  invFun γ := mk ⟨γ.val.source, γ.property⟩ γ.val rfl
   left_inv x := ext (Subtype.ext (by simp)) (by simp)
   right_inv γ := Subtype.ext (path_mk _ _ _)
   continuous_toFun := continuous_path.subtype_mk _
   continuous_invFun := continuous_mk ((MoorePath.continuous_source.comp
-    continuous_subtype_val).subtype_mk _) continuous_subtype_val _
+    continuous_subtypeVal).subtype_mk _) continuous_subtypeVal _
 
 @[simp]
 theorem path_homeomorphPathsFrom_symm (A : Set X) (γ : {γ : MoorePath X // γ.source ∈ A}) :
-    ((homeomorphPathsFrom A).symm γ).path = γ.1 :=
+    ((homeomorphPathsFrom A).symm γ).path = γ.val :=
   path_mk _ _ _
 
 end MooreReplacement
@@ -218,7 +218,7 @@ end MooreReplacement
 /-- The **endpoint evaluation** `P_{A→X} X → X` of the Moore paths starting in a subset `A` is a
 Hurewicz fibration. -/
 theorem MoorePath.isHurewiczFibration_target {X : Type u} [TopologicalSpace X] (A : Set X) :
-    IsHurewiczFibration.{w} fun γ : {γ : MoorePath X // γ.source ∈ A} ↦ γ.1.target := by
+    IsHurewiczFibration.{w} fun γ : {γ : MoorePath X // γ.source ∈ A} ↦ γ.val.target := by
   convert (MooreReplacement.isHurewiczFibration_endpoint.{w} _).comp_homeomorph
     (MooreReplacement.homeomorphPathsFrom A).symm using 1
   funext γ
