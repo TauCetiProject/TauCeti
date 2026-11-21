@@ -140,7 +140,7 @@ stopping-time assumption on the random time. At an infinite time the path is unc
 finite time `u` it freezes at `X u ω` on `[u, ∞)` while retaining the existence of left limits
 everywhere. -/
 theorem IsCadlag.stoppedProcess {ι Ω E : Type*} [LinearOrder ι] [Nonempty ι]
-    [TopologicalSpace ι] [OrderTopology ι] [TopologicalSpace E]
+    [TopologicalSpace ι] [OrderClosedTopology ι] [TopologicalSpace E]
     {X : ι → Ω → E} {τ : Ω → WithTop ι} {ω : Ω}
     (hX : IsCadlag (X · ω)) :
     IsCadlag (MeasureTheory.stoppedProcess X τ · ω) := by

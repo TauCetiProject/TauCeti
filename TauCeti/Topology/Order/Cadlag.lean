@@ -110,7 +110,7 @@ theorem tendsto_nhdsGT_leftLim {X Y : Type*} [LinearOrder X] [TopologicalSpace X
   (hf.isRightContinuous x).tendsto.leftLim_nhdsGT
 
 /-- Stopping a càdlàg path at a deterministic horizon preserves the càdlàg property. -/
-theorem comp_min_const {X Y : Type*} [LinearOrder X] [TopologicalSpace X] [OrderTopology X]
+theorem comp_min_const {X Y : Type*} [LinearOrder X] [TopologicalSpace X] [OrderClosedTopology X]
     [TopologicalSpace Y] {f : X → Y} (hf : IsCadlag f) (u : X) :
     IsCadlag (fun t => f (min t u)) where
   isRightContinuous t := by
