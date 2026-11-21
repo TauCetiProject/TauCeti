@@ -13,9 +13,9 @@ public import TauCeti.Algebra.Group.Prod
 
 A multiplicative character of `M × N` is the same as a pair of multiplicative characters of `M`
 and `N`: a character `χ` gives its restrictions `m ↦ χ (m, 1)` and `n ↦ χ (1, n)`, and a pair
-`(χ₁, χ₂)` gives `(m, n) ↦ χ₁ m * χ₂ n`. The restrictions are characters because `(m, 1)` is a
-unit only when `m` is one. For finite commutative rings `R₁` and `R₂`, this describes the
-characters of `R₁ × R₂`.
+`(χ₁, χ₂)` gives `(m, n) ↦ χ₁ m * χ₂ n`. The restrictions are characters because `(m, 1)` is
+a unit if and only if `m` is a unit, and `(1, n)` is a unit if and only if `n` is a unit. For
+finite commutative rings `R₁` and `R₂`, this describes the characters of `R₁ × R₂`.
 
 The equivalence is Tau Ceti's `MonoidHom.coprodEquiv` for the unit groups, transported along
 Mathlib's `MulChar.mulEquivToUnitHom` and `MulEquiv.prodUnits`.
@@ -64,6 +64,6 @@ theorem coprodEquiv_symm_apply_snd (χ : MulChar (M × N) R) (n : N) :
     (coprodEquiv.symm χ).2 n = χ (1, n) := by
   have h := coprodEquiv_apply (coprodEquiv.symm χ) (1, n)
   rw [MulEquiv.apply_symm_apply] at h
-  simpa [-coprodEquiv_symm_apply_fst] using h.symm
+  simpa only [MulChar.map_one, one_mul] using h.symm
 
 end MulChar

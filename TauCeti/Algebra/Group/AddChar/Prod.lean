@@ -16,7 +16,9 @@ An additive character of `A × B` is the same as a pair of additive characters o
 character `ψ` gives its restrictions `a ↦ ψ (a, 0)` and `b ↦ ψ (0, b)`, and a pair `(ψ₁, ψ₂)` gives
 `(a, b) ↦ ψ₁ a * ψ₂ b`. Since Mathlib's `AddChar A M` is a commutative monoid, written
 multiplicatively, this is a multiplicative equivalence. It is Tau Ceti's `MonoidHom.coprodEquiv`
-transported along Mathlib's `AddChar.toMonoidHomMulEquiv`.
+transported along Mathlib's `AddChar.toMonoidHomMulEquiv`, with Mathlib's
+`MulEquiv.prodMultiplicative` for the identification of `Multiplicative (A × B)` with
+`Multiplicative A × Multiplicative B`.
 
 ## Main definitions
 
