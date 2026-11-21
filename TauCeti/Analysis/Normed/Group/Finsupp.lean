@@ -15,9 +15,10 @@ public import Mathlib.Data.Finsupp.SMulWithZero
 For a finitely supported function `f : α →₀ E` into a seminormed group, the sum
 `f.sum fun _ a ↦ ‖a‖` of the norms of its values is its `ℓ¹`-norm. This file records the
 estimates that make this sum a seminorm on `α →₀ E` and control it under the operations on finitely
-supported functions: it is subadditive, invariant under negation, multiplied by at most `‖d‖`
-under multiplication by an integer `d`, does not increase under `Finsupp.mapDomain`, and is
-multiplied by at most `C` under `Finsupp.mapRange` along a map multiplying norms by at most `C`.
+supported functions: it dominates every coordinate norm, is subadditive on binary and finite sums,
+is invariant under negation, is multiplied by at most `‖d‖` under multiplication by an integer `d`,
+does not increase under `Finsupp.mapDomain`, and is multiplied by at most `C` under
+`Finsupp.mapRange` along a map multiplying norms by at most `C`.
 
 These are the estimates on the `ℓ¹`-norm of simplicial chains, which are finitely supported
 functions on simplices.
@@ -33,6 +34,13 @@ variable {α β E F : Type*} [SeminormedAddCommGroup E] [SeminormedAddCommGroup 
 theorem sum_norm_nonneg (f : α →₀ E) : 0 ≤ f.sum fun _ a ↦ ‖a‖ :=
   Finset.sum_nonneg fun _ _ ↦ norm_nonneg _
 
+/-- The `ℓ¹`-sum of norms dominates the norm of every coordinate value. -/
+theorem norm_apply_le_sum_norm (f : α →₀ E) (a : α) : ‖f a‖ ≤ f.sum fun _ x ↦ ‖x‖ := by
+  by_cases ha : a ∈ f.support
+  · exact Finset.single_le_sum (fun _ _ ↦ norm_nonneg _) ha
+  · rw [notMem_support_iff.mp ha, norm_zero]
+    exact sum_norm_nonneg f
+
 /-- The `ℓ¹`-sum of norms can be computed over any finite set containing the support. -/
 theorem sum_norm_eq_sum_of_support_subset (f : α →₀ E) {s : Finset α} (hs : f.support ⊆ s) :
     (f.sum fun _ a ↦ ‖a‖) = ∑ a ∈ s, ‖f a‖ :=
@@ -46,6 +54,16 @@ theorem sum_norm_add_le (f g : α →₀ E) :
     sum_norm_eq_sum_of_support_subset f Finset.subset_union_left,
     sum_norm_eq_sum_of_support_subset g Finset.subset_union_right, ← Finset.sum_add_distrib]
   exact Finset.sum_le_sum fun a _ ↦ norm_add_le (f a) (g a)
+
+/-- **The finite-sum triangle inequality** for the `ℓ¹`-sum of norms. -/
+theorem sum_norm_sum_le {ι : Type*} (f : ι → α →₀ E) (s : Finset ι) :
+    ((∑ i ∈ s, f i).sum fun _ a ↦ ‖a‖) ≤ ∑ i ∈ s, (f i).sum fun _ a ↦ ‖a‖ := by
+  classical
+  induction s using Finset.induction with
+  | empty => simp
+  | insert i s hi ih =>
+    rw [Finset.sum_insert hi, Finset.sum_insert hi]
+    exact (sum_norm_add_le _ _).trans (add_le_add_right ih _)
 
 /-- The `ℓ¹`-sum of norms is invariant under negation. -/
 @[simp]
