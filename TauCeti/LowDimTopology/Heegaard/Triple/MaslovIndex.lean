@@ -95,8 +95,10 @@ Theorem 4.1, and is not formalized here.
   `TauCeti.HeegaardTripleRegionSystem.IsBetaGammaDomainBetween.maslovIndex_add` and
   `TauCeti.HeegaardTripleRegionSystem.IsTriangleDomain.maslovIndex_add`: additivity under
   juxtaposition with a disk domain at the corners `x`, `y` and `w`.
-* `TauCeti.HeegaardTripleRegionSystem.IsTriangleDomain.maslovIndex_one_add`: adding the whole
-  surface adds two to the Maslov index of a triangle domain on a closed surface of genus `n`.
+* `TauCeti.HeegaardTripleRegionSystem.IsTriangleDomain.maslovIndex_zsmul_one_add` and
+  `TauCeti.HeegaardTripleRegionSystem.IsTriangleDomain.maslovIndex_one_add`: adding `k` copies of
+  the whole surface adds `2 k` to the Maslov index of a triangle domain on a closed surface of
+  genus `n`.
 
 ## References
 
@@ -678,6 +680,22 @@ theorem IsTriangleDomain.maslovIndex_add (χ : Region → ℤ) (hE : T.IsTriangl
   simp only [maslovIndex_apply, map_add, AddMonoidHom.add_apply, h₂]
   linarith
 
+/-- Adding `k` copies of the whole surface to a triangle domain adds `2 k` to its Maslov index,
+when the region Euler characteristics are those of a closed surface of genus `n`. -/
+theorem IsTriangleDomain.maslovIndex_zsmul_one_add {χ : Region → ℤ}
+    (hχ : ∑ r, χ r - Fintype.card PointAB - Fintype.card PointBC - Fintype.card PointAC =
+      2 - 2 * (n : ℤ))
+    (hE : T.IsTriangleDomain x y w E) (k : ℤ) :
+    T.maslovIndex χ x w (k • 1 + E) = T.maslovIndex χ x w E + 2 * k := by
+  have hD : T.IsAlphaBetaDomainBetween x x (k • 1) := by
+    simp only [isAlphaBetaDomainBetween_iff, map_zsmul, alphaBoundary_one, betaBoundary_one,
+      gammaBoundary_one, smul_zero, map_zero, sub_self, Sum.elim_zero_zero, and_self]
+  have hχ' : ∑ r, (χ r : ℚ) - Fintype.card PointAB - Fintype.card PointBC -
+      Fintype.card PointAC = 2 - 2 * n := by exact_mod_cast hχ
+  rw [hD.maslovIndex_add χ hE, map_zsmul, map_zsmul, eulerMeasure_one,
+    alphaBetaGeneratorPointMeasure_one, zsmul_eq_mul, zsmul_eq_mul]
+  linear_combination (k : ℚ) * hχ'
+
 /-- Adding the whole surface to a triangle domain adds two to its Maslov index, when the region
 Euler characteristics are those of a closed surface of genus `n`, that is
 `∑ χ(R) - #(α ∩ β) - #(β ∩ γ) - #(α ∩ γ) = 2 - 2n`. -/
@@ -686,11 +704,7 @@ theorem IsTriangleDomain.maslovIndex_one_add {χ : Region → ℤ}
       2 - 2 * (n : ℤ))
     (hE : T.IsTriangleDomain x y w E) :
     T.maslovIndex χ x w (1 + E) = T.maslovIndex χ x w E + 2 := by
-  have hχ' : ∑ r, (χ r : ℚ) - Fintype.card PointAB - Fintype.card PointBC -
-      Fintype.card PointAC = 2 - 2 * n := by exact_mod_cast hχ
-  rw [(isAlphaBetaDomainBetween_one x).maslovIndex_add χ hE, eulerMeasure_one,
-    alphaBetaGeneratorPointMeasure_one]
-  linarith
+  simpa using hE.maslovIndex_zsmul_one_add hχ 1
 
 end MaslovIndex
 

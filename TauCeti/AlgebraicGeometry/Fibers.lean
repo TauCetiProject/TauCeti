@@ -22,9 +22,6 @@ residue field. The projection identities and pullback witnesses expose the defin
 When `R` is a discrete valuation ring and `K` is a fraction ring, the generic fibre is an open
 subscheme of the total space. The special fibre over any local ring is a closed subscheme.
 
-Mathlib's scheme-theoretic fibre `f.fiber y` is the pullback of `f` along `Spec κ(y) ⟶ Y`
-(`AlgebraicGeometry.Scheme.Hom.isPullback_fiberι`), and it is a scheme over `Spec (.of κ(y))`
-(`AlgebraicGeometry.Scheme.Hom.fiberOverSpecOfResidueField`).
 For a domain, the generic fibre is canonically isomorphic to Mathlib's scheme-theoretic fibre at
 the generic point, so its image in the total space is the preimage of the generic point
 (`TauCeti.range_genericFiberι`). Iterated scalar extension is also canonically isomorphic to
@@ -155,19 +152,6 @@ lemma isClosedImmersion_specialFiberι (R : Type u) [CommRing R] [IsLocalRing R]
       (Spec.map (CommRingCat.ofHom (algebraMap R (ResidueField R)))) :=
     isClosedImmersion_Spec_map_residue R
   exact inferInstance
-
-/-- The scheme-theoretic fibre `X_y` of `f : X ⟶ Y` is the pullback of `f` along
-`Spec κ(y) ⟶ Y`, with projections `f.fiberι y` and `f.fiberToSpecResidueField y`. -/
-lemma _root_.AlgebraicGeometry.Scheme.Hom.isPullback_fiberι {X Y : Scheme.{u}} (f : X ⟶ Y)
-    (y : Y) : IsPullback (f.fiberι y) (f.fiberToSpecResidueField y) f (Y.fromSpecResidueField y) :=
-  IsPullback.of_hasPullback _ _
-
-/-- The scheme-theoretic fibre `X_y` of `f : X ⟶ Y` is a scheme over `κ(y)` through
-`f.fiberToSpecResidueField y`. This is `Scheme.Hom.fiberOverSpecResidueField` with the base
-written as `Spec (.of κ(y))`, the form APIs over the spectrum of a field `k` take. -/
-instance _root_.AlgebraicGeometry.Scheme.Hom.fiberOverSpecOfResidueField {X Y : Scheme.{u}}
-    (f : X ⟶ Y) (y : Y) : (f.fiber y).Over (Spec (.of (Y.residueField y))) :=
-  f.fiberOverSpecResidueField y
 
 section GenericPoint
 
