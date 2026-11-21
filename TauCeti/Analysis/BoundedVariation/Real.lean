@@ -56,6 +56,8 @@ up to a null set.
   points in `Ω` is at most `|Du|(Ω)`.
 * `TauCeti.Real.two_le_perimeter`, `TauCeti.Real.four_le_perimeter`,
   `TauCeti.Real.perimeter_Ioo` and `TauCeti.Real.perimeter_eq_two_iff`.
+* `TauCeti.Real.measure_inter_Ioo_eq_zero_or_sdiff_eq_zero_of_perimeter_lt_one`: a null-measurable
+  set on `(a, b)` of perimeter strictly less than `1` in `(a, b)` is either null or conull there.
 
 ## References
 
@@ -387,5 +389,60 @@ theorem perimeter_le_two_iff {s : Set ℝ} (hs : NullMeasurableSet s) (hfin : vo
     · obtain ⟨a, b, hab, hIab⟩ := hI.exists_ae_eq_Ioo
         ((measure_congr hsI).symm ▸ hzero) ((measure_congr hsI).symm ▸ hfin)
       exact (perimeter_eq_two_iff hs hfin).mpr ⟨a, b, hab, hsI.trans hIab⟩ |>.le
+
+/-- **Local constancy below unit perimeter.** If a set `s ⊆ ℝ` is null-measurable on `(a, b)` and
+has perimeter strictly less than `1` in `(a, b)`, then either `s ∩ (a, b)` or `(a, b) \ s` has
+measure zero. -/
+theorem measure_inter_Ioo_eq_zero_or_sdiff_eq_zero_of_perimeter_lt_one {a b : ℝ} {s : Set ℝ}
+    (hs : NullMeasurableSet s (volume.restrict (Ioo a b)))
+    (hP : perimeter volume ⟨Ioo a b, isOpen_Ioo⟩ s < 1) :
+    volume (s ∩ Ioo a b) = 0 ∨ volume (Ioo a b \ s) = 0 := by
+  have hsI : NullMeasurableSet (s ∩ Ioo a b) volume :=
+    (nullMeasurableSet_restrict measurableSet_Ioo.nullMeasurableSet).1 hs
+  set t := toMeasurable volume (s ∩ Ioo a b)
+  have ht : MeasurableSet t := measurableSet_toMeasurable _ _
+  have hst : (s ∩ Ioo a b : Set ℝ) =ᵐ[volume] t := hsI.toMeasurable_ae_eq.symm
+  have hstI : s =ᵐ[volume.restrict (Ioo a b)] t :=
+    eventuallyEqSet_iff.2 ((ae_restrict_iff' measurableSet_Ioo).2
+      ((eventuallyEqSet_iff.1 hst).mono fun _ hy hyI => by simpa [hyI] using hy))
+  have h1eq : volume (s ∩ Ioo a b) = volume (t ∩ Ioo a b) := by
+    simpa [inter_assoc] using measure_congr (hst.inter (.refl _ (Ioo a b)))
+  have h0eq : volume (Ioo a b \ s) = volume (Ioo a b \ t) := by
+    have hdiff : Ioo a b \ (s ∩ Ioo a b) = Ioo a b \ s := by ext y; simp
+    rw [← hdiff]
+    exact measure_congr ((Filter.EventuallyEqSet.refl _ (Ioo a b)).diff hst)
+  -- Otherwise Lebesgue points of `t` and of its complement in `(a, b)` contribute at least `1`
+  -- to the total variation on `(a, b)`.
+  by_contra! hne
+  have hae := IsUnifLocDoublingMeasure.ae_tendsto_average_closedBall_norm_sub volume
+    (f := t.indicator (1 : ℝ → ℝ)) ((locallyIntegrable_const 1).indicator ht)
+  obtain ⟨y₁, ⟨hy₁t, hy₁I⟩, hy₁⟩ := Measure.exists_mem_of_measure_ne_zero_of_ae (s := t ∩ Ioo a b)
+    (h1eq ▸ hne.1) (ae_restrict_of_ae hae)
+  obtain ⟨y₀, ⟨hy₀I, hy₀t⟩, hy₀⟩ := Measure.exists_mem_of_measure_ne_zero_of_ae (s := Ioo a b \ t)
+    (h0eq ▸ hne.2) (ae_restrict_of_ae hae)
+  have hu : LocallyIntegrableOn (t.indicator (1 : ℝ → ℝ)) (Ioo a b) volume := by
+    rw [Pi.one_def]
+    exact ((locallyIntegrable_const 1).indicator ht).locallyIntegrableOn _
+  have hvar := ofReal_sum_abs_sub_le_totalVariationOn (Ω := ⟨Ioo a b, isOpen_Ioo⟩) hu
+    (x := ![min y₀ y₁, max y₀ y₁])
+    (v := fun i => t.indicator 1 (![min y₀ y₁, max y₀ y₁] i))
+    (Fin.monotone_iff_le_succ.2 fun i => by fin_cases i; exact min_le_max)
+    (fun z hz => ⟨(lt_min hy₀I.1 hy₁I.1).trans_le hz.1, hz.2.trans_lt (max_lt hy₀I.2 hy₁I.2)⟩)
+    fun i => by
+      rcases le_total y₀ y₁ with hle | hle
+      · fin_cases i
+        · simpa [min_eq_left hle] using hy₀
+        · simpa [max_eq_right hle] using hy₁
+      · fin_cases i
+        · simpa [min_eq_right hle] using hy₁
+        · simpa [max_eq_left hle] using hy₀
+  have hsum : |(t.indicator (1 : ℝ → ℝ) (max y₀ y₁) - t.indicator 1 (min y₀ y₁))| = 1 := by
+    rcases le_total y₀ y₁ with hle | hle
+    · simp [min_eq_left hle, max_eq_right hle, hy₀t, hy₁t]
+    · simp [min_eq_right hle, max_eq_left hle, hy₀t, hy₁t]
+  have hle1 : (1 : ℝ≥0∞) ≤ perimeter volume ⟨Ioo a b, isOpen_Ioo⟩ s := by
+    rw [perimeter_congr_ae hstI, perimeter_def]
+    simpa [Fin.sum_univ_succ, hsum] using hvar
+  exact (not_le_of_gt hP) hle1
 
 end TauCeti.Real

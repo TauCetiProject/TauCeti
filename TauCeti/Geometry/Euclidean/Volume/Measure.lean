@@ -40,8 +40,11 @@ volume gives one inequality, and the isodiametric inequality the other
 reads `c * μHE[k] A ≤ μ U` whenever `μ (closedBall x r) ≥ c ω_k r ^ k` along arbitrarily small radii
 at every `x ∈ A` (`MeasureTheory.Measure.mul_euclideanHausdorffMeasure_le_measure_of_isOpen`),
 conversely `μ A ≤ 2 ^ k c μHE[k] A` whenever `μ (closedBall x r) ≤ c ω_k r ^ k` for all small radii
-at every `x ∈ A` (`MeasureTheory.Measure.measure_le_mul_euclideanHausdorffMeasure`), and a
-null-measurable set `A` of finite `μHE[k]` measure satisfies
+at every `x ∈ A` (`MeasureTheory.Measure.measure_le_mul_euclideanHausdorffMeasure`), an outer
+regular measure `μ` satisfies `μ (closedBall x r) / (ω_k r ^ k) → 0` for `μHE[k]`-almost every
+`x ∈ A` whenever `μ A = 0`
+(`MeasureTheory.Measure.ae_tendsto_measure_closedBall_div_volume_closedBall_of_measure_eq_zero`),
+and a null-measurable set `A` of finite `μHE[k]` measure satisfies
 `μHE[k] (A ∩ closedBall x r) / (ω_k r ^ k) → 0` for `μHE[k]`-almost every `x ∉ A`
 (`TauCeti.ae_tendsto_euclideanHausdorffMeasure_inter_closedBall_div`). In a proper metric space,
 local finiteness of the restricted measure suffices for this zero-density assertion
@@ -295,6 +298,30 @@ theorem measure_le_mul_euclideanHausdorffMeasure (μ : Measure X) (k : ℕ) {c :
     rw [ENNReal.rpow_natCast] at key
     exact key.trans_eq (by ring)
   · rwa [EuclideanSpace.volume_closedBall_eq_div_mul 0 hr.le, ← mul_assoc] at hle
+
+/-- **Zero density on a null set**, Euclidean normalization. An outer regular measure `μ` satisfies
+`μ (closedBall x r) / (ω_k r ^ k) → 0` as `r → 0⁺` for `μHE[k]`-almost every `x ∈ A` whenever
+`μ A = 0`, where `ω_k r ^ k` is the volume of a ball of radius `r` in `EuclideanSpace ℝ (Fin k)`.
+No measurability of `A` is needed. -/
+theorem ae_tendsto_measure_closedBall_div_volume_closedBall_of_measure_eq_zero (μ : Measure X)
+    [μ.OuterRegular] (k : ℕ) {A : Set X} (hA : μ A = 0) :
+    ∀ᵐ x ∂μHE[k], x ∈ A → Tendsto (fun r => μ (closedBall x r) /
+      volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) r)) (𝓝[>] 0) (𝓝 0) := by
+  set ω' := volume (ball (0 : EuclideanSpace ℝ (Fin k)) 1) / 2 ^ k with hω'
+  have hω0 : ω' ≠ 0 := EuclideanSpace.volume_ball_div_two_pow_ne_zero k
+  have hωtop : ω' ≠ ∞ := EuclideanSpace.volume_ball_div_two_pow_ne_top k
+  rw [TauCeti.euclideanHausdorffMeasure_eq_smul_hausdorffMeasure]
+  refine ae_smul_measure ?_ _
+  filter_upwards [μ.ae_tendsto_measure_closedBall_div_of_measure_eq_zero hA]
+    with x hx hxA
+  have hmul : Tendsto (fun r => ω'⁻¹ * (μ (closedBall x r) / ENNReal.ofReal (2 * r) ^ (k : ℝ)))
+      (𝓝[>] 0) (𝓝 0) := by
+    simpa using ENNReal.Tendsto.const_mul (hx hxA) (.inr (ENNReal.inv_ne_top.2 hω0))
+  refine hmul.congr' (eventually_mem_nhdsWithin.mono fun r (hr : 0 < r) => ?_)
+  dsimp only
+  rw [EuclideanSpace.volume_closedBall_eq_div_mul 0 hr.le, ← hω']
+  simp only [div_eq_mul_inv, ENNReal.mul_inv (.inl hω0) (.inl hωtop)]
+  ring
 
 end MeasureTheory.Measure
 

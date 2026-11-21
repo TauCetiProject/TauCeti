@@ -99,6 +99,9 @@ gives a set of measure one.
 * `MeasureTheory.Measure.addHaar_real_closedBall_sdiff_ball`: the shell between the open ball of
   radius `r > 0` and the concentric closed ball of radius `s ≥ r` has measure `(sⁿ - rⁿ)` times
   that of the unit ball.
+* `MeasureTheory.Measure.continuousOn_addHaar_real_inter_closedBall`,
+  `MeasureTheory.Measure.continuousOn_addHaar_inter_closedBall`: for any set `s`, the functions
+  `r ↦ μ.real (s ∩ closedBall x r)` and `r ↦ μ (s ∩ closedBall x r)` are continuous on `(0, ∞)`.
 * `MeasureTheory.Measure.addHaar_real_ball_sdiff_closedBall`: the open annulus between the closed
   ball of radius `r ≥ 0` and the concentric open ball of radius `s ≥ r` has measure `(sⁿ - rⁿ)`
   times that of the unit ball.
@@ -857,6 +860,68 @@ theorem addHaar_eq_zero_of_prod_mk_preimage_image_eq_zero (μH : Measure H) [IsA
     Set.preimage_image_eq _ e.injective] at this
 
 end Fubini
+
+section ClosedBallContinuity
+
+open scoped ENNReal
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] (μ : Measure E) [μ.IsAddHaarMeasure]
+
+/-- For positive radii `r₁, r₂`, the variation of `r ↦ μ.real (s ∩ closedBall x r)` is bounded by
+`|r₁ ^ n - r₂ ^ n| * μ.real (ball 0 1)` without any measurability assumption on `s`. -/
+theorem dist_addHaar_real_inter_closedBall_le (x : E) (s : Set E) {r₁ r₂ : ℝ}
+    (hr₁ : 0 < r₁) (hr₂ : 0 < r₂) :
+    dist (μ.real (s ∩ closedBall x r₁)) (μ.real (s ∩ closedBall x r₂)) ≤
+      dist (r₁ ^ finrank ℝ E * μ.real (ball 0 1)) (r₂ ^ finrank ℝ E * μ.real (ball 0 1)) := by
+  wlog hle : r₁ ≤ r₂ generalizing r₁ r₂
+  · rw [dist_comm, dist_comm (_ * _)]
+    exact this hr₂ hr₁ (le_of_not_ge hle)
+  have hsub : s ∩ closedBall x r₂ ⊆ s ∩ closedBall x r₁ ∪ (closedBall x r₂ \ ball x r₁) :=
+    fun y ⟨hys, hyr₂⟩ => (em (y ∈ ball x r₁)).imp
+      (fun hy => ⟨hys, ball_subset_closedBall hy⟩) fun hy => ⟨hyr₂, hy⟩
+  have hfin₂ : μ (s ∩ closedBall x r₂) ≠ ∞ :=
+    measure_ne_top_of_subset Set.inter_subset_right measure_closedBall_lt_top.ne
+  have hmono : μ.real (s ∩ closedBall x r₁) ≤ μ.real (s ∩ closedBall x r₂) :=
+    measureReal_mono (Set.inter_subset_inter_right _ (closedBall_subset_closedBall hle)) hfin₂
+  have hup : μ.real (s ∩ closedBall x r₂) ≤
+      μ.real (s ∩ closedBall x r₁) + (r₂ ^ finrank ℝ E - r₁ ^ finrank ℝ E) * μ.real (ball 0 1) :=
+    (measureReal_mono hsub (measure_ne_top_of_subset
+      (Set.union_subset (Set.inter_subset_right.trans (closedBall_subset_closedBall hle))
+        Set.sdiff_subset) measure_closedBall_lt_top.ne)).trans
+      ((measureReal_union_le _ _).trans_eq
+        (by rw [μ.addHaar_real_closedBall_sdiff_ball x hr₁ hle]))
+  have hpow : r₁ ^ finrank ℝ E * μ.real (ball 0 1) ≤ r₂ ^ finrank ℝ E * μ.real (ball 0 1) :=
+    mul_le_mul_of_nonneg_right (pow_le_pow_left₀ hr₁.le hle _) measureReal_nonneg
+  rw [Real.dist_eq, abs_sub_comm, abs_of_nonneg (sub_nonneg.2 hmono), Real.dist_eq, abs_sub_comm,
+    abs_of_nonneg (sub_nonneg.2 hpow), ← sub_mul]
+  linarith
+
+/-- For an additive Haar measure `μ` on a finite-dimensional real normed space, the real measure
+`r ↦ μ.real (s ∩ closedBall x r)` is continuous on `(0, ∞)` for every set `s` (no measurability is
+needed). -/
+theorem continuousOn_addHaar_real_inter_closedBall (x : E) (s : Set E) :
+    ContinuousOn (fun r => μ.real (s ∩ closedBall x r)) (Set.Ioi 0) := by
+  have hg : Continuous fun r : ℝ => r ^ finrank ℝ E * μ.real (ball 0 1) :=
+    (continuous_pow _).mul continuous_const
+  intro r₀ hr₀
+  rw [Metric.continuousWithinAt_iff]
+  intro ε hε
+  obtain ⟨δ, hδ, hδg⟩ := Metric.continuousAt_iff.1 hg.continuousAt ε hε
+  exact ⟨δ, hδ, fun r hr hdist =>
+    (μ.dist_addHaar_real_inter_closedBall_le x s hr hr₀).trans_lt (hδg hdist)⟩
+
+/-- For an additive Haar measure `μ` on a finite-dimensional real normed space, the measure
+`r ↦ μ (s ∩ closedBall x r)` is continuous on `(0, ∞)` for every set `s` (no measurability is
+needed). -/
+theorem continuousOn_addHaar_inter_closedBall (x : E) (s : Set E) :
+    ContinuousOn (fun r => μ (s ∩ closedBall x r)) (Set.Ioi 0) :=
+  (ENNReal.continuous_ofReal.comp_continuousOn
+    (μ.continuousOn_addHaar_real_inter_closedBall x s)).congr fun _ _ =>
+    (ofReal_measureReal
+      (measure_ne_top_of_subset Set.inter_subset_right measure_closedBall_lt_top.ne)).symm
+
+end ClosedBallContinuity
 
 end MeasureTheory.Measure
 

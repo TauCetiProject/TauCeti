@@ -18,7 +18,10 @@ closed ball `closedBall w r` lies in `{y | ⟪y, ν⟫ < c}` whenever `⟪w, ν�
 (`TauCeti.closedBall_subset_setOf_inner_lt`) and in `{y | c < ⟪y, ν⟫}` whenever
 `c + r * ‖ν‖ < ⟪w, ν⟫` (`TauCeti.closedBall_subset_setOf_lt_inner`). The projection
 `z - (⟪z, ν⟫ / ‖ν‖²) ν` lands in the boundary hyperplane `{z | ⟪z, ν⟫ = 0}` and does not increase
-norms. Relative to an
+norms. In a one-dimensional inner product space, inner product against a nonzero vector separates
+points (`TauCeti.eq_of_inner_eq_of_finrank_eq_one`), so removing a point from a set splits it into
+the two strict half-spaces bounded by the hyperplane through that point
+(`TauCeti.sdiff_singleton_eq_union_setOf_inner_lt_of_finrank_eq_one`). Relative to an
 orthonormal basis `(eᵢ)`, a bilinear form splits into a part along `ν` and a part along the
 projected basis vectors `eᵢ - (⟪eᵢ, ν⟫ / ‖ν‖²) ν`. In rigid coordinates
 `e : F ≃ᵃⁱ ℝ × E`, the normal coordinate `(e x).fst` is `⟪x, ν⟫` plus a constant, so the region
@@ -98,6 +101,31 @@ theorem norm_sub_div_norm_sq_smul_self_le {E : Type*} [NormedAddCommGroup E]
   simp only [RCLike.ofReal_real_eq_id, id_eq] at h
   rw [real_inner_comm, ← h, ← Submodule.starProjection_orthogonal_val]
   exact Submodule.norm_starProjection_apply_le _ z
+
+/-- In a one-dimensional inner product space, two vectors with the same inner product against a
+nonzero vector are equal. -/
+theorem eq_of_inner_eq_of_finrank_eq_one {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E]
+    [InnerProductSpace 𝕜 E] (hn : Module.finrank 𝕜 E = 1) {ν : E} (hν : ν ≠ 0) {x y : E}
+    (h : ⟪x, ν⟫_𝕜 = ⟪y, ν⟫_𝕜) : x = y := by
+  obtain ⟨c, hc⟩ := (finrank_eq_one_iff_of_ne_zero' ν hν).1 hn (x - y)
+  have h0 : ⟪c • ν, ν⟫_𝕜 = 0 := by rw [hc, inner_sub_left, h, sub_self]
+  rw [inner_smul_left, mul_eq_zero, map_eq_zero, inner_self_eq_zero] at h0
+  exact sub_eq_zero.1 (hc ▸ (h0.resolve_right hν).symm ▸ zero_smul 𝕜 ν)
+
+/-- In a one-dimensional real inner product space, removing `x` from a set `s` splits it into the
+two halves bounded by `{y | ⟪y, ν⟫ = ⟪x, ν⟫}` (`ν ≠ 0`). -/
+theorem sdiff_singleton_eq_union_setOf_inner_lt_of_finrank_eq_one {E : Type*}
+    [NormedAddCommGroup E] [InnerProductSpace ℝ E] (hn : Module.finrank ℝ E = 1)
+    {ν : E} (hν : ν ≠ 0) (s : Set E) (x : E) :
+    s \ {x} = (s ∩ {y | ⟪y, ν⟫_ℝ < ⟪x, ν⟫_ℝ}) ∪ (s ∩ {y | ⟪x, ν⟫_ℝ < ⟪y, ν⟫_ℝ}) := by
+  ext y
+  simp only [Set.mem_sdiff, Set.mem_union, Set.mem_inter_iff, Set.mem_ofPred_eq,
+    Set.mem_singleton_iff]
+  refine ⟨fun ⟨hys, hyx⟩ => ?_, fun h => h.elim
+    (fun ⟨hys, hlt⟩ => ⟨hys, fun hy => lt_irrefl _ (hy ▸ hlt)⟩)
+    fun ⟨hys, hgt⟩ => ⟨hys, fun hy => lt_irrefl _ (hy ▸ hgt)⟩⟩
+  exact (lt_or_gt_of_ne fun heq => hyx (eq_of_inner_eq_of_finrank_eq_one hn hν heq)).imp
+    (fun h => ⟨hys, h⟩) fun h => ⟨hys, h⟩
 
 end TauCeti
 
