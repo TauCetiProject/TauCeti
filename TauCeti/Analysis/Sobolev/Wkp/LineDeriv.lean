@@ -491,9 +491,10 @@ theorem W1p.exists_lowerOrder_eq_of_gradient_eq_of_hasWeakLineDerivOn {ι : Type
 /-- **The weak Hessian is controlled by its entries.** Let `U ∈ W^{2,p}(Ω)` and fix an orthonormal
 basis `e` of `E`. If `gᵢⱼ ∈ Lᵖ(Ω)` is a weak derivative in the direction `eᵢ` of the component
 `⟪∇U, eⱼ⟫` of the weak gradient, then the `Lᵖ` norm of the weak Hessian of `U` is at most
-`∑ᵢ ∑ⱼ ‖gᵢⱼ‖`. Together with `TauCeti.W1p.exists_lowerOrder_eq_of_forall_hasWeakLineDerivOn`, this
-bounds the norm in `W^{2,p}(Ω)` of a function by the norms of its componentwise second weak
-derivatives. -/
+`∑ᵢ ∑ⱼ ‖gᵢⱼ‖`. Together with `TauCeti.Wkp.norm_le_norm_lowerOrder_add_norm_iteratedGradient`, this
+bounds the norm of `U` in `W^{2,p}(Ω)` by the `W^{1,p}(Ω)` norm of its first-order part plus
+`∑ᵢ ∑ⱼ ‖gᵢⱼ‖`; `TauCeti.W1p.exists_lowerOrder_eq_of_forall_hasWeakLineDerivOn` supplies such a `U`
+from these componentwise second weak derivatives. -/
 theorem Wkp.norm_iteratedGradient_one_le_sum {ι : Type*} [Fintype ι] (U : Wkp mu Omega p 2)
     (b : OrthonormalBasis ι ℝ E) {g : ι → ι → Lp ℝ p (mu.restrict Omega)}
     (hg : ∀ i j, HasWeakLineDerivOn mu Omega
