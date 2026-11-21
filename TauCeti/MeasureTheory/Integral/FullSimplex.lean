@@ -188,11 +188,13 @@ def squareLowerHalf : Set (ℝ × ℝ) := {z | 0 ≤ z.2 ∧ z.2 ≤ z.1 ∧ z.1
 def squareUpperHalf : Set (ℝ × ℝ) := {z | 0 ≤ z.1 ∧ z.1 ≤ z.2 ∧ z.2 ≤ 1}
 
 /-- A point `(s, t)` lies in the lower half of the unit square when `0 ≤ t ≤ s ≤ 1`. -/
+@[simp]
 theorem mem_squareLowerHalf_iff {z : ℝ × ℝ} :
     z ∈ squareLowerHalf ↔ 0 ≤ z.2 ∧ z.2 ≤ z.1 ∧ z.1 ≤ 1 :=
   Iff.rfl
 
 /-- A point `(s, t)` lies in the upper half of the unit square when `0 ≤ s ≤ t ≤ 1`. -/
+@[simp]
 theorem mem_squareUpperHalf_iff {z : ℝ × ℝ} :
     z ∈ squareUpperHalf ↔ 0 ≤ z.1 ∧ z.1 ≤ z.2 ∧ z.2 ≤ 1 :=
   Iff.rfl
