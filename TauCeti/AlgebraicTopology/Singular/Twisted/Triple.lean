@@ -338,4 +338,47 @@ theorem isIso_twistedHomologyMap_innerToTotal_of_isZero (n : ℕ)
     (T.twistedHomology_exact_total L n).epi_f (hn.eq_of_tgt _ _)
   exact isIso_of_mono_of_epi _
 
+/-- The quotient `Hₖ(X,B;L) ⟶ Hₖ(X,A;L)` is an isomorphism when the inner relative groups
+`Hₖ(A,B;L|A)` and, for `k > 0`, `Hₖ₋₁(A,B;L|A)` vanish. -/
+theorem isIso_twistedHomologyTotalToOuter_of_isZero (k : ℕ)
+    (hk : IsZero ((innerPair.obj T).twistedHomology ((outerPair.obj T).subspaceSystem L) k))
+    (hk' : ∀ m, m + 1 = k →
+      IsZero ((innerPair.obj T).twistedHomology ((outerPair.obj T).subspaceSystem L) m)) :
+    IsIso (T.twistedHomologyTotalToOuter L k) := by
+  have : Mono (T.twistedHomologyTotalToOuter L k) :=
+    (T.twistedHomology_exact_total L k).mono_g (hk.eq_of_src _ _)
+  have : Epi (T.twistedHomologyTotalToOuter L k) := by
+    cases k with
+    | zero => infer_instance
+    | succ m => exact (T.twistedHomology_exact_outer L (m + 1) m).epi_f ((hk' m rfl).eq_of_tgt _ _)
+  exact isIso_of_mono_of_epi _
+
+/-- For nested subsets `C ⊆ B ⊆ A` of `X`, the quotients `C(X,C;L) ⟶ C(X,B;L) ⟶ C(X,A;L)` compose
+to the quotient `C(X,C;L) ⟶ C(X,A;L)`. -/
+@[simp, reassoc]
+lemma twistedChainComplexTotalToOuter_ofSubset_comp {X : TopCat.{v}} {A B C : Set X}
+    (hCB : C ⊆ B) (hBA : B ⊆ A) (L : LocalCoefficientSystem.{u, v, max v w} R X) :
+    (ofSubset hCB).twistedChainComplexTotalToOuter L ≫
+        (ofSubset hBA).twistedChainComplexTotalToOuter L =
+      (ofSubset (hCB.trans hBA)).twistedChainComplexTotalToOuter L := by
+  refine (totalPair.obj (ofSubset hCB)).twistedChainComplex_hom_ext L ?_
+  -- All three quotients are induced by the identity of `C(X;L)`, but their pairs agree with
+  -- `TopPair.ofSubset` only up to unfolding, so `rw` cannot match them and `erw` is needed.
+  erw [twistedChainComplexπ_comp_totalToOuter_assoc,
+    (ofSubset hBA).twistedChainComplexπ_comp_totalToOuter L,
+    (ofSubset (hCB.trans hBA)).twistedChainComplexπ_comp_totalToOuter L]
+  rfl
+
+/-- For nested subsets `C ⊆ B ⊆ A` of `X`, the quotients `Hₖ(X,C;L) ⟶ Hₖ(X,B;L) ⟶ Hₖ(X,A;L)`
+compose to the quotient `Hₖ(X,C;L) ⟶ Hₖ(X,A;L)`. -/
+@[simp, reassoc]
+lemma twistedHomologyTotalToOuter_ofSubset_comp {X : TopCat.{v}} {A B C : Set X}
+    (hCB : C ⊆ B) (hBA : B ⊆ A) (L : LocalCoefficientSystem.{u, v, max v w} R X) (k : ℕ) :
+    (ofSubset hCB).twistedHomologyTotalToOuter L k ≫
+        (ofSubset hBA).twistedHomologyTotalToOuter L k =
+      (ofSubset (hCB.trans hBA)).twistedHomologyTotalToOuter L k :=
+  (HomologicalComplex.homologyMap_comp _ _ k).symm.trans
+    (congrArg (HomologicalComplex.homologyMap · k)
+      (twistedChainComplexTotalToOuter_ofSubset_comp hCB hBA L))
+
 end TauCeti.TopTriple

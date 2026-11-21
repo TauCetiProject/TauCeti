@@ -34,6 +34,7 @@ space contains such a family, which gives coordinates on the space.
   through `x`.
 * `Module.Dual.smulRight_smul_eq_smul_id`: if `f x = 1` and `r` annihilates `ker f`, then
   `r • id` factors through `f` as `y ↦ (r • f) y • x`.
+* `Module.Dual.eval_eq_applyₗ`: evaluation into the double dual is `LinearMap.applyₗ`.
 * `Module.Dual.linearIndependent_proj` and `Module.Dual.span_range_proj_eq_top`: the coordinate
   projections on `ι → R` are linearly independent in the dual space, and span it when `ι` is
   finite.
@@ -123,6 +124,11 @@ end CommRing
 section CommSemiring
 
 variable (R ι : Type*) [CommSemiring R]
+
+/-- Evaluation into the double dual is evaluation into the double `R`-valued `Hom`. -/
+theorem eval_eq_applyₗ (M : Type*) [AddCommMonoid M] [Module R M] :
+    Dual.eval R M = LinearMap.applyₗ :=
+  LinearMap.ext fun _ ↦ LinearMap.ext fun _ ↦ by simp
 
 /-- The coordinate projections on `ι → R` are linearly independent in the dual space. -/
 theorem linearIndependent_proj :
