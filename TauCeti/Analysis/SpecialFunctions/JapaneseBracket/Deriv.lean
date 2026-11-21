@@ -42,6 +42,8 @@ factor, so `(1 + ‖c x‖ ^ 2) ^ r` satisfies the same bounds.
   bracket power `(1 + ‖x‖ ^ 2) ^ r` and its complex version are smooth.
 * `TauCeti.exists_norm_iteratedFDeriv_ofReal_one_add_norm_sq_rpow_half_le`: the bounds for the
   complex Bessel weight `(1 + ‖x‖ ^ 2) ^ (s / 2)`, in the form of symbol estimates of order `s`.
+* `TauCeti.exists_pow_mul_norm_iteratedFDeriv_ofReal_one_add_norm_sq_rpow_neg_le`: for `k ≤ N`,
+  `‖x‖ ^ k` times a derivative of `(1 + ‖x‖ ^ 2) ^ (-N)` is bounded.
 * `TauCeti.exists_norm_iteratedFDeriv_inner_mul_one_add_norm_sq_rpow_le`: the derivative bounds
   for `⟪x, v⟫ (1 + ‖x‖ ^ 2) ^ r`.
 * `TauCeti.exists_norm_iteratedFDeriv_inner_mul_one_add_norm_sq_rpow_le_of_le_neg_half`: for
@@ -399,6 +401,33 @@ theorem exists_norm_iteratedFDeriv_ofReal_one_add_norm_sq_rpow_half_le (s : ℝ)
         Complex.ofRealLI.norm_iteratedFDeriv_comp_left
           (contDiff_one_add_norm_sq_rpow (s / 2)).contDiffAt le_rfl
     _ ≤ _ := (hC x).trans_eq (by rw [sub_div])
+
+/-- **Weighted derivative bounds for a negative bracket power.** For `k ≤ N`, the product of
+`‖x‖ ^ k` with any derivative of the complex bracket power `(1 + ‖x‖ ^ 2) ^ (-N)` is bounded. -/
+theorem exists_pow_mul_norm_iteratedFDeriv_ofReal_one_add_norm_sq_rpow_neg_le {k N : ℕ}
+    (hkN : k ≤ N) (i : ℕ) :
+    ∃ C, ∀ x : E, ‖x‖ ^ k *
+      ‖iteratedFDeriv ℝ i (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (-(N : ℝ)) : ℝ) : ℂ)) x‖ ≤ C := by
+  obtain ⟨C, hC⟩ := exists_norm_iteratedFDeriv_one_add_norm_sq_rpow_le (E := E) (-(N : ℝ)) i
+  refine ⟨|C|, fun x ↦ ?_⟩
+  have h1 : (1 : ℝ) ≤ 1 + ‖x‖ ^ 2 := by nlinarith [sq_nonneg ‖x‖]
+  have hx : ‖x‖ ≤ 1 + ‖x‖ ^ 2 := by nlinarith [sq_nonneg (‖x‖ - 1)]
+  -- The derivative is bounded by the weight `(1 + ‖x‖ ^ 2) ^ (-N)`, which absorbs `‖x‖ ^ k`.
+  have hD : ‖iteratedFDeriv ℝ i (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (-(N : ℝ)) : ℝ) : ℂ)) x‖ ≤
+      |C| * (1 + ‖x‖ ^ 2) ^ (-(N : ℝ)) := by
+    rw [show ‖iteratedFDeriv ℝ i (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (-(N : ℝ)) : ℝ) : ℂ)) x‖ =
+        ‖iteratedFDeriv ℝ i (fun x : E ↦ (1 + ‖x‖ ^ 2) ^ (-(N : ℝ))) x‖ from
+      Complex.ofRealLI.norm_iteratedFDeriv_comp_left
+        (contDiff_one_add_norm_sq_rpow _).contDiffAt le_rfl]
+    refine (hC x).trans (mul_le_mul (le_abs_self C) (Real.rpow_le_rpow_of_exponent_le h1 ?_)
+      (by positivity) (abs_nonneg C))
+    linarith [(Nat.cast_nonneg i : (0 : ℝ) ≤ i)]
+  calc _ ≤ (1 + ‖x‖ ^ 2) ^ N * (|C| * (1 + ‖x‖ ^ 2) ^ (-(N : ℝ))) := by
+        gcongr
+        exact (pow_le_pow_left₀ (norm_nonneg x) hx k).trans (pow_le_pow_right₀ h1 hkN)
+    _ = |C| := by
+        rw [Real.rpow_neg (by positivity), Real.rpow_natCast]
+        field_simp
 
 /-- **Derivative bounds for a linear function times a bracket power.** For every `v`, every real
 `r` and every `k`, `‖D^k (⟪x, v⟫ (1 + ‖x‖ ^ 2) ^ r)‖ ≤ C (1 + ‖x‖ ^ 2) ^ (r + 1 / 2 - k / 2)`. -/

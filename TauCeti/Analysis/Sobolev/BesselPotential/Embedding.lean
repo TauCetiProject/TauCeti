@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.BesselPotential.Basic
+public import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
 public import TauCeti.Analysis.Sobolev.Wkp.ZeroAtInfty
 public import Mathlib.Topology.ContinuousMap.ZeroAtInfty
 public import Mathlib.Analysis.FunctionalSpaces.BesselPotentialSpace
@@ -13,7 +14,6 @@ import Mathlib.Analysis.Fourier.FourierTransformDeriv
 import Mathlib.Analysis.Fourier.RiemannLebesgueLemma
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
-import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
 import TauCeti.Analysis.Sobolev.Wkp.Classical
 import TauCeti.MeasureTheory.Function.Lp.CastMeasure
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Lp
@@ -113,7 +113,9 @@ spaces.
 * `TemperedDistribution.MemSobolev.tendsto_iteratedFDeriv_cocompact_of_ae_eq`: its derivatives
   of order `j`, `s > j + n / 2`, vanish at infinity.
 * `TemperedDistribution.exists_norm_iteratedFDeriv_le_mul_norm_toBesselPotentialSpace`: the bound
-  `‖D^j u(x)‖ ≤ C ‖u‖_{H^s}` for `j ≤ k`, `s > k + n / 2`.
+  `‖D^j u(x)‖ ≤ C ‖u‖_{H^s}` for `j ≤ k`, `s > k + n / 2`, and
+  `SchwartzMap.exists_norm_iteratedFDeriv_le_mul_norm_toBesselPotentialSpaceCLM`, its form for
+  Schwartz functions.
 * `TemperedDistribution.tendstoUniformly_of_tendsto_toBesselPotentialSpace`: convergence in
   `H^s`, `2s > n`, implies uniform convergence of the continuous representatives.
 * `TemperedDistribution.contDiff_of_forall_memSobolev_of_ae_eq`,
@@ -626,6 +628,27 @@ theorem exists_contDiff_eq_integral_of_forall_memSobolev {f : 𝓢'(E, F)}
   refine ⟨g, contDiff_of_forall_memSobolev_of_ae_eq hf g.continuous hg, fun φ => ?_⟩
   rw [Lp.toTemperedDistribution_apply]
   exact integral_congr_ae (hg.mono fun x hx => by simp only [hx])
+
+
+open scoped ContDiff in
+/-- **The quantitative Sobolev embedding on Schwartz functions.** For `s > k + n / 2` there is a
+constant `C` with `‖D^j ψ x‖ ≤ C ‖ψ‖_{H^s}` for every Schwartz function `ψ`, every `j ≤ k` and
+every `x`. -/
+theorem _root_.SchwartzMap.exists_norm_iteratedFDeriv_le_mul_norm_toBesselPotentialSpaceCLM
+    {s : ℝ} {k : ℕ} (hs : finrank ℝ E < 2 * (s - k)) :
+    ∃ C, 0 ≤ C ∧ ∀ (ψ : 𝓢(E, F)), ∀ j ≤ k, ∀ x,
+      ‖iteratedFDeriv ℝ j ψ x‖ ≤ C * ‖SchwartzMap.toBesselPotentialSpaceCLM s 2 ψ‖ := by
+  obtain ⟨C, hC0, hC⟩ := exists_norm_iteratedFDeriv_le_mul_norm_toBesselPotentialSpace (F := F) hs
+  refine ⟨C, hC0, fun ψ j hj x ↦ ?_⟩
+  have hu : MemSobolev s 2 ((ψ.toLp 2 : Lp F 2 (volume : Measure E)) : 𝓢'(E, F)) := by
+    rw [Lp.toTemperedDistribution_toLp_eq]
+    exact ψ.memSobolev
+  have hn : hu.toBesselPotentialSpace = SchwartzMap.toBesselPotentialSpaceCLM s 2 ψ :=
+    BesselPotentialSpace.ext (by
+      rw [MemSobolev.toBesselPotentialSpace_toDistr,
+        SchwartzMap.toDistr_toBesselPotentialSpaceCLM, Lp.toTemperedDistribution_toLp_eq])
+  have h := hC hu ψ.continuous (ψ.coeFn_toLp 2 volume) j hj x
+  rwa [hn] at h
 
 end TemperedDistribution
 

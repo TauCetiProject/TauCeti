@@ -34,6 +34,8 @@ a function of temperate growth. By duality this is the Leibniz rule for Schwartz
   tempered distributions extends multiplication by `g` on Schwartz functions.
 * `TemperedDistribution.lineDerivOp_smulLeftCLM`: the Leibniz rule for the product of a tempered
   distribution with a function of temperate growth.
+* `TemperedDistribution.smulLeftCLM_one_add_norm_sq_apply`: on Euclidean space, multiplication by
+  `1 + ‖x‖ ^ 2` is the identity plus multiplication by each coordinate twice.
 * `TemperedDistribution.smulLeftCLM_delta`: multiplication of the Dirac mass by a function of
   temperate growth, `g • δ_ξ = g(ξ) δ_ξ`.
 -/
@@ -105,5 +107,33 @@ theorem smulLeftCLM_toTemperedDistributionCLM_eq {μ : Measure E} [μ.HasTempera
   · simp only [smulLeftCLM_apply_apply, SchwartzMap.toTemperedDistributionCLM_apply_apply,
       SchwartzMap.smulLeftCLM_apply_apply hg, smul_smul, smul_eq_mul, mul_comm]
   · simp [SchwartzMap.smulLeftCLM_of_not_hasTemperateGrowth hg]
+
+section Euclidean
+
+variable {ι F : Type*} [Fintype ι] [AddCommGroup F] [Module ℂ F] [TopologicalSpace F]
+  [IsTopologicalAddGroup F] [ContinuousConstSMul ℂ F]
+
+/-- On Euclidean space, multiplication by `1 + ‖x‖ ^ 2 = 1 + ∑ⱼ xⱼ ^ 2` is the identity plus
+multiplication by each coordinate twice. -/
+theorem smulLeftCLM_one_add_norm_sq_apply (T : 𝓢'(EuclideanSpace ℝ ι, F)) :
+    smulLeftCLM F (fun x : EuclideanSpace ℝ ι ↦ ((1 + ‖x‖ ^ 2 : ℝ) : ℂ)) T =
+      T + ∑ j, smulLeftCLM F (fun x : EuclideanSpace ℝ ι ↦ ((x j : ℝ) : ℂ))
+        (smulLeftCLM F (fun x : EuclideanSpace ℝ ι ↦ ((x j : ℝ) : ℂ)) T) := by
+  have hx (j : ι) : (fun x : EuclideanSpace ℝ ι ↦ ((x j : ℝ) : ℂ)).HasTemperateGrowth :=
+    (Complex.ofRealCLM.comp (EuclideanSpace.proj j)).hasTemperateGrowth
+  set c : ι → EuclideanSpace ℝ ι → ℂ := fun j x ↦ ((x j : ℝ) : ℂ) * ((x j : ℝ) : ℂ)
+  have hc (j : ι) : (c j).HasTemperateGrowth := (hx j).mul (hx j)
+  have hfun : (fun x : EuclideanSpace ℝ ι ↦ ((1 + ‖x‖ ^ 2 : ℝ) : ℂ)) =
+      (fun _ ↦ (1 : ℂ)) + fun x ↦ ∑ j ∈ Finset.univ, c j x := by
+    funext x
+    rw [Pi.add_apply, EuclideanSpace.real_norm_sq_eq]
+    push_cast
+    simp [c, sq]
+  rw [hfun, smulLeftCLM_add (by fun_prop) (Function.HasTemperateGrowth.sum fun j _ ↦ hc j),
+    smulLeftCLM_sum fun j _ ↦ hc j]
+  simp only [add_apply, smulLeftCLM_const, one_smul, sum_apply,
+    smulLeftCLM_smulLeftCLM_apply (hx _) (hx _), c, Pi.mul_def]
+
+end Euclidean
 
 end TemperedDistribution
