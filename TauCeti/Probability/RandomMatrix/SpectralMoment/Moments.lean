@@ -19,8 +19,10 @@ Combining the quantitative expected-moment convergence from
 `TauCeti.Probability.RandomMatrix.SpectralMoment.Expected` with the `O((n + 1)⁻²)` trace
 variance bounds from `TauCeti.Probability.RandomMatrix.SpectralMoment.Variance`, this file derives
 both convergence in probability (on possibly varying probability spaces) and almost-sure convergence
-(for a sequence of independent-corner Wigner arrays as well as for a single infinite array) of every
-`k`-th empirical spectral moment to the `k`-th moment of `semicircleReal 0 s`.
+(for a sequence of Wigner arrays whose diagonal and strictly upper-triangular entries are jointly
+independent within each corner, with no independence required across sizes, as well as for a single
+infinite array) of every `k`-th empirical spectral moment to the `k`-th moment of
+`semicircleReal 0 s`.
 
 ## Main results
 
@@ -211,9 +213,10 @@ private theorem tendsto_expected_of_two_mul
     hξsq
 
 /-- **Convergence in probability of empirical spectral moments.** On possibly varying probability
-spaces, under corner-local independence, unit-or-common variance `s`, and uniform `2k`-th moment
-bounds, the `k`-th empirical spectral moment converges in probability to the `k`-th moment of
-`semicircleReal 0 s`. -/
+spaces, when all entries in each corner are centered, the diagonal and strictly upper-triangular
+entries are jointly independent within each corner, the strictly upper-triangular entries have
+common second absolute moment `s`, and the `2k`-th moments are uniformly bounded, the `k`-th
+empirical spectral moment converges in probability to the `k`-th moment of `semicircleReal 0 s`. -/
 theorem tendsto_integral_pow_spectralMeasure_wignerMatrix_sub_semicircleReal_probability
     (hξsq : ∀ n (ij : StrictUpper), ij.val.2 < n + 1 → ∫ ω, ‖ξ n ij ω‖ ^ 2 ∂P n = s)
     (hξp : ∀ n (ij : StrictUpper), ij.val.2 < n + 1 → MemLp (ξ n ij) (2 * k : ℕ) (P n))

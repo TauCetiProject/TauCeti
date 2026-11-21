@@ -52,9 +52,10 @@ private theorem semicircleReal_compl_Icc_eq_zero (s : ℝ≥0) :
   ae_iff.mp (ae_mem_Icc_semicircleReal 0 s)
 
 /-- **Wigner's semicircle law (almost surely, sequence of arrays).** Empirical spectral measures of
-`(n + 1) × (n + 1)` Wigner matrices with independent centered corners, off-diagonal second moment
-`s`, and uniformly bounded even moments converge weakly a.s. to `semicircleReal 0 s`, without
-assuming independence across matrix sizes or identically distributed entries. -/
+`(n + 1) × (n + 1)` Wigner matrices with centered entries whose diagonal and strictly
+upper-triangular entries are jointly independent within each corner, off-diagonal second absolute
+moment `s`, and uniformly bounded even moments converge weakly a.s. to `semicircleReal 0 s`,
+without assuming independence across matrix sizes or identically distributed entries. -/
 theorem ae_tendsto_spectralMeasure_wignerMatrix_of_seq
     {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
     {ξ : ℕ → StrictUpper → Ω → ℂ} {η : ℕ → ℕ → Ω → ℝ} {s : ℝ≥0}
@@ -152,7 +153,7 @@ theorem tendsto_integral_spectralMeasure_wignerMatrix_sub_semicircleReal_probabi
   ProbabilityMeasure.tendsto_measure_abs_integral_sub_ge_of_isCompact
     (ν := fun n ω ↦ (wignerMatrix (ξ n) (η n) (n + 1) ω).spectralMeasure
       (wignerMatrix_isHermitian (ξ n) (η n) ω (n + 1)))
-    (μ := ⟨semicircleReal 0 s, inferInstance⟩) isCompact_Icc (semicircleReal_compl_Icc_eq_zero s)
+    ⟨semicircleReal 0 s, inferInstance⟩ isCompact_Icc (semicircleReal_compl_Icc_eq_zero s)
     (Eventually.of_forall fun _ ↦ .of_forall fun _ k ↦ Matrix.integrable_pow_spectralMeasure _ _ k)
     (fun k {_} hη_pos ↦
       let ⟨B₁, hB₁⟩ := hξ k; let ⟨B₂, hB₂⟩ := hη k

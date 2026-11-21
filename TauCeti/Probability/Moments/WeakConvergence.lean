@@ -25,10 +25,12 @@ ensemble, is turned into weak convergence of the corresponding laws.
   convergence of the integral of every real polynomial.
 * `MeasureTheory.ProbabilityMeasure.tendsto_of_tendsto_integral_pow` — the method of moments:
   moment convergence to a compactly supported limit implies weak convergence.
-* `MeasureTheory.ProbabilityMeasure.exists_nat_and_pos_of_isCompact` — finitary method of moments:
-  finitely many moments within `η > 0` control `|∫ f dν - ∫ f dμ| < ε` for compactly supported `μ`.
+* `MeasureTheory.ProbabilityMeasure.exists_forall_abs_integral_sub_lt_of_isCompact` — finitary
+  method of moments: for `ν` under which every monomial is integrable, finitely many moments within
+  `η > 0` control `|∫ f dν - ∫ f dμ| < ε` for compactly supported `μ`.
 * `MeasureTheory.ProbabilityMeasure.tendsto_measure_abs_integral_sub_ge_of_isCompact` — method of
-  moments in measure: convergence in measure of all moments implies convergence of `∫ f d(ν i ω)`.
+  moments in measure: when eventually almost every `ν i ω` makes every monomial integrable,
+  convergence in measure of all moments implies convergence in measure of `∫ f d(ν i ω)`.
 
 ## Implementation notes
 
@@ -220,9 +222,10 @@ theorem tendsto_of_tendsto_integral_pow {μs : ι → ProbabilityMeasure ℝ}
     abs_sub_le (∫ x, p.eval x ∂(μs i : Measure ℝ)) (∫ x, p.eval x ∂(μ : Measure ℝ))
       (∫ x, f x ∂(μ : Measure ℝ))]
 
-/-- Quantitative finitary consequence of `tendsto_of_tendsto_integral_pow`: finitely many moments
-within some `η > 0` uniformly control `|∫ f dν - ∫ f dμ| < ε` around compactly supported `μ`. -/
-theorem exists_nat_and_pos_of_isCompact {μ : ProbabilityMeasure ℝ} {K : Set ℝ}
+/-- Quantitative finitary consequence of `tendsto_of_tendsto_integral_pow`: for any `ν` under which
+every monomial `x ↦ x ^ k` is integrable, finitely many moments within some `η > 0` uniformly
+control `|∫ f dν - ∫ f dμ| < ε` around compactly supported `μ`. -/
+theorem exists_forall_abs_integral_sub_lt_of_isCompact (μ : ProbabilityMeasure ℝ) {K : Set ℝ}
     (hK : IsCompact K) (hμK : (μ : Measure ℝ) Kᶜ = 0) (f : ℝ →ᵇ ℝ) {ε : ℝ} (hε : 0 < ε) :
     ∃ N : ℕ, ∃ η : ℝ, 0 < η ∧ ∀ ν : ProbabilityMeasure ℝ,
       (∀ k : ℕ, Integrable (fun x : ℝ => x ^ k) (ν : Measure ℝ)) →
@@ -251,11 +254,12 @@ theorem exists_nat_and_pos_of_isCompact {μ : ProbabilityMeasure ℝ} {K : Set �
       (fun k => Eventually.of_forall fun m => hνint m k) hmom)) f) ε hε).exists
   exact (not_lt_of_ge (hνbad m)) (by rwa [Real.dist_eq] at hm)
 
-/-- **Method of moments in measure.** Convergence in measure of all moments of `ν i ω` to a
-compactly supported `μ` implies convergence in measure of `∫ f d(ν i ω)` for all `f : ℝ →ᵇ ℝ`. -/
+/-- **Method of moments in measure.** When eventually almost every `ν i ω` makes every monomial
+`x ↦ x ^ k` integrable, convergence in measure of all moments of `ν i ω` to those of a compactly
+supported `μ` implies convergence in measure of `∫ f d(ν i ω)` for all `f : ℝ →ᵇ ℝ`. -/
 theorem tendsto_measure_abs_integral_sub_ge_of_isCompact
     {Ω : ι → Type*} [∀ i, MeasurableSpace (Ω i)] {P : ∀ i, Measure (Ω i)}
-    {ν : ∀ i, Ω i → ProbabilityMeasure ℝ} {μ : ProbabilityMeasure ℝ} {K : Set ℝ}
+    {ν : ∀ i, Ω i → ProbabilityMeasure ℝ} (μ : ProbabilityMeasure ℝ) {K : Set ℝ}
     (hK : IsCompact K) (hμK : (μ : Measure ℝ) Kᶜ = 0)
     (hν : ∀ᶠ i in l, ∀ᵐ ω ∂P i, ∀ k : ℕ, Integrable (fun x : ℝ => x ^ k) (ν i ω : Measure ℝ))
     (hmom : ∀ (k : ℕ) {η : ℝ}, 0 < η → Tendsto (fun i => P i {ω | η ≤
@@ -263,7 +267,7 @@ theorem tendsto_measure_abs_integral_sub_ge_of_isCompact
     (f : ℝ →ᵇ ℝ) {ε : ℝ} (hε : 0 < ε) :
     Tendsto (fun i => P i {ω | ε ≤
       |(∫ x, f x ∂(ν i ω : Measure ℝ)) - ∫ x, f x ∂(μ : Measure ℝ)|}) l (𝓝 0) := by
-  obtain ⟨N, η, hη, hctrl⟩ := exists_nat_and_pos_of_isCompact hK hμK f hε
+  obtain ⟨N, η, hη, hctrl⟩ := μ.exists_forall_abs_integral_sub_lt_of_isCompact hK hμK f hε
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
     (by simpa only [sum_const_zero] using tendsto_finsetSum (range (N + 1)) fun k _ => hmom k hη)
     (Eventually.of_forall fun _ => bot_le) ?_
