@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Lie.Adjoint.Representation.Subgroup
 public import TauCeti.Geometry.Symplectic.Hamiltonian.EquivariantMomentMap.Basic
 
 import TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.Map
@@ -40,6 +41,14 @@ restriction of a Hamiltonian action to a Lie subgroup `L ≤ G`, where `φ` is t
 (`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.comp_subtype`). This is the moment map of a normal
 subgroup used in reduction in stages, and the moment map of a subtorus of a torus action.
 
+For a subgroup `K` with Lie algebra `𝔨 = Subgroup.groupLieSubalgebra K`, the zero level of the
+restricted moment map is where `μ` takes values in the annihilator `𝔨⁰`
+(`TauCeti.Lie.comp_groupLieAlgebraMap_subtype_eq_zero_iff`, for any finite-dimensional Lie group
+structure on `K`). The coadjoint action of the normalizer of `K` preserves `𝔨⁰`, so the normalizer
+preserves this zero level: for a coadjoint-equivariant `μ`, if `μ x ∈ 𝔨⁰` and `g` normalizes `K`,
+then `μ` sends the translated point `g • x` into `𝔨⁰` as well
+(`TauCeti.apply_smul_mem_dualAnnihilator_groupLieSubalgebra`).
+
 ## Main results
 
 * `TauCeti.momentDefect_comp_groupLieAlgebraMap`: the defect of `μ ∘ dφ` is the restriction of
@@ -50,6 +59,8 @@ subgroup used in reduction in stages, and the moment map of a subtorus of a toru
   moment map along a homomorphism.
 * `TauCeti.SmoothTwoForm.IsEquivariantMomentMap.comp_subtype`: restriction of a group-level moment
   map to a Lie subgroup.
+* `TauCeti.apply_smul_mem_dualAnnihilator_groupLieSubalgebra`: the zero level of the moment map of
+  a subgroup `K` is invariant under the normalizer of `K`.
 
 ## References
 
@@ -154,5 +165,26 @@ theorem comp_subtype {L : Subgroup G} [ChartedSpace HK L] [LieGroup J (minSmooth
 end IsEquivariantMomentMap
 
 end SmoothTwoForm
+
+section ZeroLevel
+
+variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I ∞ G] [T2Space G]
+  {M : Type*} [SMul G M] {μ : M → Module.Dual ℝ (GroupLieAlgebra I G)}
+
+attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
+
+/-- **The zero level of the moment map of a subgroup is invariant under its normalizer.** If
+`μ x` annihilates the Lie algebra `𝔨` of a subgroup `K`, `g` lies in the normalizer of `K`, and `μ`
+is coadjoint-equivariant for `g` at `x`, then `μ (g • x)` annihilates `𝔨`. -/
+theorem apply_smul_mem_dualAnnihilator_groupLieSubalgebra {K : Subgroup G} {g : G}
+    (hg : g ∈ Subgroup.normalizer (K : Set G)) {x : M}
+    (hμ : μ (g • x) = Lie.coadjointRepresentation ℝ I G g (μ x))
+    (hx : μ x ∈ (K.groupLieSubalgebra (I := I)).toSubmodule.dualAnnihilator) :
+    μ (g • x) ∈ (K.groupLieSubalgebra (I := I)).toSubmodule.dualAnnihilator :=
+  hμ ▸ Lie.coadjointRepresentation_apply_mem_dualAnnihilator_groupLieSubalgebra hg hx
+
+end ZeroLevel
 
 end TauCeti

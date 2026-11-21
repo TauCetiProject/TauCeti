@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RepresentationTheory.Basic
 public import TauCeti.Geometry.Lie.Adjoint.Basic
+public import TauCeti.Geometry.Lie.Adjoint.Representation.Basic
 
 import TauCeti.Geometry.Lie.Adjoint.Infinitesimal
 import TauCeti.Geometry.Lie.Adjoint.Smooth
@@ -14,12 +15,13 @@ import TauCeti.Geometry.Lie.InvariantVectorField.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
-# The adjoint and coadjoint representations on the tangent Lie algebra
+# The coadjoint representation on the dual of the tangent Lie algebra
 
 The tangent-space adjoint maps `Ad_g = d(conj_g)_1` of a Lie group `G` form a representation of
 `G` on its tangent Lie algebra `𝔤 = GroupLieAlgebra I G`
-(`TauCeti.Lie.adjointRepresentation`). Its dual is the **coadjoint representation** of `G` on
-`𝔤* = Module.Dual 𝕜 𝔤` (`TauCeti.Lie.coadjointRepresentation`),
+(`TauCeti.Lie.adjointRepresentation`, in `TauCeti.Geometry.Lie.Adjoint.Representation.Basic`).
+Its dual is the **coadjoint representation** of `G` on `𝔤* = Module.Dual 𝕜 𝔤`
+(`TauCeti.Lie.coadjointRepresentation`),
 
 `Ad*_g ν = ν ∘ Ad_{g⁻¹}`,
 
@@ -28,7 +30,6 @@ moment maps of Hamiltonian group actions are equivariant.
 
 ## Main definitions
 
-* `TauCeti.Lie.adjointRepresentation`: the representation `g ↦ Ad_g` of `G` on `𝔤`.
 * `TauCeti.Lie.coadjointRepresentation`: the representation `g ↦ Ad*_g` of `G` on `𝔤*`.
 
 ## Main results
@@ -62,33 +63,22 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I 1 G]
 
 variable (𝕜 I G) in
-/-- The **adjoint representation** of a Lie group `G` on its tangent Lie algebra: `g` acts by the
-differential `Ad_g` of conjugation by `g` at the identity. -/
-def adjointRepresentation : Representation 𝕜 G (GroupLieAlgebra I G) where
-  toFun g := adjointContinuousLinearMap (I := I) g
-  map_one' := by
-    ext X
-    simp
-  map_mul' g h := by
-    ext X
-    simp
-
-@[simp]
-theorem adjointRepresentation_apply (g : G) (X : GroupLieAlgebra I G) :
-    adjointRepresentation 𝕜 I G g X = adjointContinuousLinearMap (I := I) g X :=
-  (rfl)
-
-variable (𝕜 I G) in
 /-- The **coadjoint representation** of a Lie group `G` on the dual `𝔤*` of its tangent Lie
 algebra: `Ad*_g ν = ν ∘ Ad_{g⁻¹}`. -/
 def coadjointRepresentation : Representation 𝕜 G (Module.Dual 𝕜 (GroupLieAlgebra I G)) :=
   (adjointRepresentation 𝕜 I G).dual
 
+/-- The coadjoint representation is the dual of the adjoint representation. -/
+theorem coadjointRepresentation_eq_dual :
+    coadjointRepresentation 𝕜 I G = (adjointRepresentation 𝕜 I G).dual :=
+  (rfl)
+
 @[simp]
 theorem coadjointRepresentation_apply (g : G) (ν : Module.Dual 𝕜 (GroupLieAlgebra I G))
     (X : GroupLieAlgebra I G) :
-    coadjointRepresentation 𝕜 I G g ν X = ν (adjointContinuousLinearMap (I := I) g⁻¹ X) :=
-  (rfl)
+    coadjointRepresentation 𝕜 I G g ν X = ν (adjointContinuousLinearMap (I := I) g⁻¹ X) := by
+  rw [coadjointRepresentation_eq_dual, Representation.dual_apply, Module.Dual.transpose_apply,
+    LinearMap.comp_apply, adjointRepresentation_apply]
 
 /-- **The coadjoint action of a commutative Lie group is trivial**, since its adjoint action is
 (`TauCeti.Lie.adjointContinuousLinearMap_eq_id`). -/

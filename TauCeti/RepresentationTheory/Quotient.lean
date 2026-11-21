@@ -13,6 +13,11 @@ public import Mathlib.RepresentationTheory.Basic
 Mathlib's `Representation.ofQuotient` descends a representation through a normal subgroup
 acting trivially. The kernel always acts trivially, and quotienting by it gives a faithful
 representation on the original module, with the caller's scalar and additive structures.
+
+An element `g` acts trivially on the quotient representation on `V ⧸ W` by a `G`-stable submodule
+`W` exactly when it moves every vector by an element of `W`, `ρ g v - v ∈ W`
+(`Representation.quotient_apply_eq_id_iff`); this is how a subgroup comes to act trivially on a
+quotient module, so that `Representation.ofQuotient` applies to it.
 -/
 
 public section
@@ -45,5 +50,21 @@ theorem injective_ofQuotient_iff (S : Subgroup G) [S.Normal]
     ext q x
     simp
   rw [h, QuotientGroup.injective_lift_iff]
+
+section QuotientModule
+
+variable {k G V : Type*} [Ring k] [Monoid G] [AddCommGroup V] [Module k V]
+  {ρ : Representation k G V} {W : Submodule k V} {g : G}
+
+/-- An element `g` acts trivially on `V ⧸ W`, for an invariant submodule `W`, exactly when it
+moves every vector by an element of `W`: `ρ g v - v ∈ W`. -/
+theorem quotient_apply_eq_id_iff (hW : ∀ g, W ≤ W.comap (ρ g)) :
+    ρ.quotient W hW g = LinearMap.id ↔ ∀ v, ρ g v - v ∈ W := by
+  refine ⟨fun h v ↦ ?_, fun h ↦ ?_⟩
+  · simpa [Submodule.Quotient.eq] using LinearMap.congr_fun h (Submodule.Quotient.mk v)
+  · ext v
+    simpa [Submodule.Quotient.eq] using h v
+
+end QuotientModule
 
 end Representation
