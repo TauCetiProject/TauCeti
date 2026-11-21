@@ -33,8 +33,8 @@ through the standard generator of the homology of `TopCat.sphere 1`.
   `ℝ²`, the class of the standard loop.
 * `TauCeti.hurewicz_circleGenLoop`: the Hurewicz class of the standard loop is minus the
   fundamental class.
-* `TauCeti.uliftCircleFundamentalClass`: the fundamental class of the circle lifted to an arbitrary
-  universe, with `TauCeti.uliftCircleFundamentalClass_comp_map_down` identifying it with
+* `TauCeti.uliftSphere1FundamentalClass`: the fundamental class of the circle lifted to an arbitrary
+  universe, with `TauCeti.uliftSphere1FundamentalClass_comp_map_down` identifying it with
   `TauCeti.circleFundamentalClass` in the smallest universe.
 * `Circle.singularHomologyOneIso`: `H₁(S¹; A) ≅ A` for the complex unit circle `Circle`;
   `Circle.singularHomologyOneIso_inv`: its inverse is the standard generator of the sphere.
@@ -107,8 +107,7 @@ def uliftSphere1GenLoop : Ω^ (Fin 1) (ULift.{w} Sphere1) (ULift.up Sphere1.east
 @[simp]
 theorem uliftSphere1GenLoop_apply (t : Fin 1 → unitInterval) :
     uliftSphere1GenLoop.{w} t = ULift.up (circleLoop t) := by
-  rw [uliftSphere1GenLoop, GenLoop.map_apply, circleGenLoop_apply]
-  rfl
+  rw [uliftSphere1GenLoop, GenLoop.map_apply, circleGenLoop_apply, ContinuousMap.coe_mk]
 
 variable {C : Type u} [Category.{v} C] [Abelian C] (A : C)
 
@@ -118,8 +117,8 @@ coefficients in an abelian category with coproducts indexed by `Type w`. Like
 `TauCeti.circleFundamentalClass`, it is minus the Hurewicz class of the standard loop
 (`TauCeti.hurewicz_uliftSphere1GenLoop`); in the smallest universe it is carried to
 `TauCeti.circleFundamentalClass` by `ULift.down`
-(`TauCeti.uliftCircleFundamentalClass_comp_map_down`). -/
-def uliftCircleFundamentalClass [HasCoproducts.{w} C] :
+(`TauCeti.uliftSphere1FundamentalClass_comp_map_down`). -/
+def uliftSphere1FundamentalClass [HasCoproducts.{w} C] :
     A ⟶ ((AlgebraicTopology.singularHomologyFunctor C 1).obj A).obj
       (TopCat.of (ULift.{w} Sphere1)) :=
   -GenLoop.hurewicz A uliftSphere1GenLoop
@@ -127,22 +126,22 @@ def uliftCircleFundamentalClass [HasCoproducts.{w} C] :
 /-- The Hurewicz class of the lifted standard loop is minus the fundamental class of the lifted
 circle. -/
 theorem hurewicz_uliftSphere1GenLoop [HasCoproducts.{w} C] :
-    GenLoop.hurewicz A uliftSphere1GenLoop.{w} = -uliftCircleFundamentalClass.{w} A := by
-  rw [uliftCircleFundamentalClass, neg_neg]
+    GenLoop.hurewicz A uliftSphere1GenLoop.{w} = -uliftSphere1FundamentalClass.{w} A := by
+  rw [uliftSphere1FundamentalClass, neg_neg]
 
 /-- **The lifted fundamental class is the fundamental class of the circle**: in the smallest
-universe, `ULift.down : ULift Sphere1 → Sphere1` carries `TauCeti.uliftCircleFundamentalClass` to
+universe, `ULift.down : ULift Sphere1 → Sphere1` carries `TauCeti.uliftSphere1FundamentalClass` to
 `TauCeti.circleFundamentalClass`. -/
 @[reassoc (attr := simp)]
-theorem uliftCircleFundamentalClass_comp_map_down [HasCoproducts.{0} C] :
-    uliftCircleFundamentalClass.{0} A ≫ ((AlgebraicTopology.singularHomologyFunctor C 1).obj A).map
+theorem uliftSphere1FundamentalClass_comp_map_down [HasCoproducts.{0} C] :
+    uliftSphere1FundamentalClass.{0} A ≫ ((AlgebraicTopology.singularHomologyFunctor C 1).obj A).map
         (TopCat.ofHom ⟨ULift.down, continuous_uliftDown⟩) = circleFundamentalClass A := by
   have h : GenLoop.map ⟨ULift.down, continuous_uliftDown⟩ rfl uliftSphere1GenLoop.{0} =
       circleGenLoop :=
     DFunLike.ext _ _ fun t => by
-      rw [GenLoop.map_apply, uliftSphere1GenLoop_apply, circleGenLoop_apply]
-      rfl
-  rw [uliftCircleFundamentalClass, Preadditive.neg_comp, ← GenLoop.hurewicz_map A _ rfl, h,
+      rw [GenLoop.map_apply, uliftSphere1GenLoop_apply, circleGenLoop_apply, ContinuousMap.coe_mk,
+        ULift.down_up]
+  rw [uliftSphere1FundamentalClass, Preadditive.neg_comp, ← GenLoop.hurewicz_map A _ rfl, h,
     hurewicz_circleGenLoop, neg_neg]
 
 end ULift

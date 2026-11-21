@@ -21,7 +21,7 @@ the circle.
 
 Let `X` be a based space in a universe `u`, `R` a commutative ring in the same universe and `M`
 an `R`-module, also in `u`. The circle is lifted to `ULift.{u} Sphere1`, so that it lives in the
-universe of `X`, with fundamental class `TauCeti.uliftCircleFundamentalClass`. On singular homology
+universe of `X`, with fundamental class `TauCeti.uliftSphere1FundamentalClass`. On singular homology
 with coefficients in `M`, composing the cross product with this fundamental class (with
 coefficients in the unit `R` of `ModuleCat R`), the unitor `R ⊗ M ≅ M` and the map induced by the
 evaluation gives the degree-raising map
@@ -93,7 +93,7 @@ def degreeRaising :
         (TopCat.of (X.iteratedLoopSpace 2).carrier) ⟶
       ((singularHomologyFunctor (ModuleCat.{u} R) n).obj M).obj
         (TopCat.of X.loopSpace.carrier) :=
-  (λ_ _).inv ≫ (uliftCircleFundamentalClass.{u} (𝟙_ (ModuleCat.{u} R)) ▷ _) ≫
+  (λ_ _).inv ≫ (uliftSphere1FundamentalClass.{u} (𝟙_ (ModuleCat.{u} R)) ▷ _) ≫
     TopCat.singularHomologyCross (TopCat.of (ULift.{u} Sphere1))
       (TopCat.of (X.iteratedLoopSpace 2).carrier) (𝟙_ _) M 1 p n h ≫
     ((singularHomologyFunctor (ModuleCat.{u} R) n).map (λ_ M).hom).app _ ≫
@@ -105,7 +105,7 @@ induced by the evaluation `S¹ × Ω²X → ΩX`. The definition body is not unf
 module, so this equation is how consumers reach the composite. -/
 theorem degreeRaising_def :
     degreeRaising M X p n h =
-      (λ_ _).inv ≫ (uliftCircleFundamentalClass.{u} (𝟙_ (ModuleCat.{u} R)) ▷ _) ≫
+      (λ_ _).inv ≫ (uliftSphere1FundamentalClass.{u} (𝟙_ (ModuleCat.{u} R)) ▷ _) ≫
         TopCat.singularHomologyCross (TopCat.of (ULift.{u} Sphere1))
           (TopCat.of (X.iteratedLoopSpace 2).carrier) (𝟙_ _) M 1 p n h ≫
         ((singularHomologyFunctor (ModuleCat.{u} R) n).map (λ_ M).hom).app _ ≫
@@ -119,7 +119,7 @@ theorem degreeRaising_def :
 theorem map_comp_degreeRaising {A : TopCat.{u}}
     (ℓ : A ⟶ TopCat.of (X.iteratedLoopSpace 2).carrier) :
     ((singularHomologyFunctor (ModuleCat.{u} R) p).obj M).map ℓ ≫ degreeRaising M X p n h =
-      (λ_ _).inv ≫ (uliftCircleFundamentalClass.{u} (𝟙_ (ModuleCat.{u} R)) ▷ _) ≫
+      (λ_ _).inv ≫ (uliftSphere1FundamentalClass.{u} (𝟙_ (ModuleCat.{u} R)) ▷ _) ≫
         TopCat.singularHomologyCross (TopCat.of (ULift.{u} Sphere1)) A (𝟙_ _) M 1 p n h ≫
         ((singularHomologyFunctor (ModuleCat.{u} R) n).map (λ_ M).hom).app _ ≫
         ((singularHomologyFunctor (ModuleCat.{u} R) n).obj M).map
@@ -174,10 +174,18 @@ theorem degreeRaising_coefficient_naturality (X : BasedTopologicalSpace.{u}) (φ
     (TopCat.of (ULift.{u} Sphere1)) (TopCat.of (X.iteratedLoopSpace 2).carrier)
     (𝟙 (𝟙_ (ModuleCat.{u} R))) φ 1 p n h
   rw [CategoryTheory.Functor.map_id, NatTrans.id_app, id_tensorHom] at hc
-  rw [degreeRaising_def, degreeRaising_def, leftUnitor_inv_naturality_assoc,
-    whisker_exchange_assoc, reassoc_of% hc, ← NatTrans.comp_app_assoc,
-    ← CategoryTheory.Functor.map_comp, id_tensorHom, leftUnitor_naturality,
-    CategoryTheory.Functor.map_comp, NatTrans.comp_app_assoc, ← NatTrans.naturality]
+  rw [degreeRaising_def, degreeRaising_def]
+  -- Move `φ` past the inverse unitor and the whiskered fundamental class, into the coefficient
+  -- slot of the cross product.
+  rw [leftUnitor_inv_naturality_assoc, whisker_exchange_assoc]
+  -- Naturality of the cross product in the coefficients carries `𝟙 ⊗ φ` to its output.
+  rw [reassoc_of% hc]
+  -- Naturality of the unitor: `(𝟙 ⊗ φ) ≫ (λ_ M').hom = (λ_ M).hom ≫ φ`, applied inside the
+  -- homology functor.
+  rw [← NatTrans.comp_app_assoc, ← CategoryTheory.Functor.map_comp, id_tensorHom,
+    leftUnitor_naturality, CategoryTheory.Functor.map_comp, NatTrans.comp_app_assoc]
+  -- The map induced by `φ` commutes with the map induced by the evaluation.
+  rw [← NatTrans.naturality]
   simp only [Category.assoc]
 
 end Raising
@@ -221,7 +229,7 @@ theorem map_comp_degreeRaising_eq_evalCircle {A : TopCat.{0}}
     n h
   rw [CategoryTheory.Functor.map_id, tensorHom_id] at hn
   rw [map_comp_degreeRaising, he, ← NatTrans.naturality_assoc, ← reassoc_of% hn,
-    ← comp_whiskerRight_assoc, uliftCircleFundamentalClass_comp_map_down]
+    ← comp_whiskerRight_assoc, uliftSphere1FundamentalClass_comp_map_down]
 
 end UniverseZero
 
