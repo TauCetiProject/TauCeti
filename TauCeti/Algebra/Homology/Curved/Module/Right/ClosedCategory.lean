@@ -164,22 +164,6 @@ theorem closedHom_add {M N : CurvedDGRightModuleCat.{u, u, u} h}
   rw [dgClosedHom_add R f g, map_add]
   rfl
 
-/-- Negation of closed morphisms is negation of their underlying linear maps. -/
-@[simp]
-theorem closedHom_neg {M N : CurvedDGRightModuleCat.{u, u, u} h}
-    (f : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M ⟶
-      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N) :
-    closedHom (-f) = -closedHom f :=
-  eq_neg_of_add_eq_zero_left (by rw [← closedHom_add, neg_add_cancel, closedHom_zero])
-
-/-- Subtraction of closed morphisms is subtraction of their underlying linear maps. -/
-@[simp]
-theorem closedHom_sub {M N : CurvedDGRightModuleCat.{u, u, u} h}
-    (f g : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M ⟶
-      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N) :
-    closedHom (f - g) = closedHom f - closedHom g :=
-  eq_sub_of_add_eq (by rw [← closedHom_add, sub_add_cancel])
-
 /-- A graded right-linear equivalence commuting with differentials is a closed isomorphism. -/
 noncomputable def closedIsoOf (e : M ≃ₗ[Aᵐᵒᵖ] N)
     (he : ∀ p x, x ∈ M.grading p ↔ e x ∈ N.grading p)

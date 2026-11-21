@@ -148,10 +148,8 @@ instance : (gradedProjective R h).ContainsZero where
 module of a cohomological shift is a grading shift. -/
 instance : (gradedProjective R h).IsStableUnderShift ℤ where
   isStableUnderShiftBy n := ⟨fun X hX ↦ (gradedProjective_iff _).2 <|
-    have := (gradedProjective_iff X).1 hX
-    Projective.of_iso ((closedShiftFunctorCompForgetDifferentialIso (h := h) n).app
-      (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) X.underlying)).symm
-      (GradedModuleCat.projective_shiftObj (toGradedModuleCat X.underlying) (-n))⟩
+    have : Projective (toGradedModuleCat X.underlying) := (gradedProjective_iff X).1 hX
+    projective_toGradedModuleCat_shift X.underlying n⟩
 
 /-- Mapping cones of morphisms between graded-projective curved modules are graded-projective up
 to homotopy equivalence. -/
