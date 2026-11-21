@@ -40,6 +40,9 @@ The homogeneous symbols `TauCeti.HomogeneousSymbol.adjointTerm k a` and the form
 * `TauCeti.ClassicalSymbol.adjointTerm a k`: the term of order `m - k` of the adjoint expansion of
   a classical symbol `a`, again classical, with full symbol `TauCeti.Symbol.adjointTerm`
   (`TauCeti.ClassicalSymbol.toSymbol_adjointTerm`).
+* `TauCeti.ClassicalSymbol.exists_remainder_adjointTerms_of_isAsymptoticSum`: a symbol that is an
+  asymptotic sum of the terms `adjointTerm a k` has remainders of order `m - N` after the first `N`
+  homogeneous terms `adjointTerms a.term`.
 * `TauCeti.ClassicalSymbol.adjoint`: **the adjoint of a classical symbol is classical**, with full
   symbol the adjoint symbol (`TauCeti.ClassicalSymbol.toSymbol_adjoint`) and homogeneous terms
   `adjointTerms a.term` (`TauCeti.ClassicalSymbol.term_adjoint`).
@@ -137,25 +140,31 @@ section Adjoint
 
 variable {m : ℝ}
 
-/-- The remainder of the adjoint symbol of a classical symbol after `N` terms has order `m - N`:
-it is the remainder of the adjoint expansion after `N` terms, plus the remainder after `N - k`
-homogeneous terms of each term `adjointTerm a k`, `k < N`. -/
-private theorem exists_remainder_adjoint (a : ClassicalSymbol n V W m)
-    (ha : a.toSymbol.HasCompactSpatialSupport) (χ : FrequencyCutoff (CoordinateSpace n)) (N : ℕ) :
+/-- **Classical remainders of the adjoint expansion.** If a symbol `c` of order `m` is an
+asymptotic sum `c ∼ ∑ₖ adjointTerm a k` of the terms of the adjoint expansion of a classical symbol
+`a`, then its remainder after the first `N` homogeneous terms `adjointTerms a.term` has order
+`m - N`: it is the remainder of the asymptotic sum after `N` terms, plus the remainder after
+`N - k` homogeneous terms of each term `adjointTerm a k`, `k < N`. -/
+theorem exists_remainder_adjointTerms_of_isAsymptoticSum (a : ClassicalSymbol n V W m)
+    {c : Symbol n W V m}
+    (hc : (Symbol.inclusion (by simp) c : Symbol n W V (m - ((0 : ℕ) : ℝ))).IsAsymptoticSum
+      a.toSymbol.adjointTerm)
+    (χ : FrequencyCutoff (CoordinateSpace n)) (N : ℕ) :
     ∃ r : Symbol n W V (m - N), ∀ p, r.coefficient p =
-      (a.toSymbol.adjoint ha).coefficient p -
-        ∑ j ∈ range N, χ p.2 • (adjointTerms a.term j).coefficient p := by
+      c.coefficient p - ∑ j ∈ range N, χ p.2 • (adjointTerms a.term j).coefficient p := by
+  obtain ⟨r₀, hr₀⟩ := Symbol.isAsymptoticSum_iff.1 hc N
   -- The remainder of `adjointTerm a k` after `N - k` terms has order `m - N` for `k ≤ N`.
   have hord (k : ℕ) : m - k - ((N - k : ℕ) : ℝ) ≤ m - N := by
     have : (N : ℝ) ≤ k + ((N - k : ℕ) : ℝ) := by exact_mod_cast le_add_tsub
     linarith
-  refine ⟨a.toSymbol.adjointRemainder ha N +
-    ∑ k ∈ range N, Symbol.inclusion (hord k) ((a.adjointTerm k).remainder χ (N - k)),
+  refine ⟨r₀ + ∑ k ∈ range N, Symbol.inclusion (hord k) ((a.adjointTerm k).remainder χ (N - k)),
     fun p ↦ ?_⟩
+  have hp := congrFun hr₀ p
+  simp only [Pi.sub_apply, Finset.sum_apply, Symbol.coefficient_inclusion] at hp
   simp only [Symbol.coefficient_add, Symbol.coefficient_sum, Symbol.coefficient_inclusion,
-    Symbol.coefficient_adjointRemainder, Pi.add_apply, Pi.sub_apply, Finset.sum_apply,
-    coefficient_remainder, toSymbol_adjointTerm, term_adjointTerm, coefficient_castDegree,
-    coefficient_adjointTerms, Finset.smul_sum, Finset.sum_sub_distrib]
+    Pi.add_apply, Finset.sum_apply, ← hp, coefficient_remainder, toSymbol_adjointTerm,
+    term_adjointTerm, coefficient_castDegree, coefficient_adjointTerms, Finset.smul_sum,
+    Finset.sum_sub_distrib]
   -- Reindex the double sum over `k + i = j < N` by `k < N`, `i < N - k`.
   rw [Finset.sum_range_diag_flip N
     fun k i ↦ χ p.2 • (HomogeneousSymbol.adjointTerm k (a.term i)).coefficient p]
@@ -170,7 +179,8 @@ def adjoint (a : ClassicalSymbol n V W m) (ha : a.toSymbol.HasCompactSpatialSupp
     ClassicalSymbol n W V m where
   toSymbol := a.toSymbol.adjoint ha
   term := adjointTerms a.term
-  exists_remainder' := ⟨default, exists_remainder_adjoint a ha default⟩
+  exists_remainder' := ⟨default,
+    exists_remainder_adjointTerms_of_isAsymptoticSum a (Symbol.isAsymptoticSum_adjoint ha) default⟩
 
 variable (a : ClassicalSymbol n V W m) (ha : a.toSymbol.HasCompactSpatialSupport)
 
