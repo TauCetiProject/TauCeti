@@ -24,6 +24,7 @@ de Rham complexes `TauCeti.DeRham.complexMap f : complex A B ⟶ complex A C`, f
 ## Main definitions
 
 * `TauCeti.DeRham.pullback f n`: the `f`-semilinear pullback `Ωⁿ_(B/A) → Ωⁿ_(C/A)`.
+* `TauCeti.DeRham.pullbackLinear f n`: the pullback as an `A`-linear map.
 * `TauCeti.DeRham.complexMap f`: the induced morphism of de Rham complexes.
 
 ## Main results
@@ -103,9 +104,7 @@ images of the `ωᵢ` under `KaehlerDifferential.mapSemilinear f`. -/
 theorem pullback_ιMulti (v : Fin n → Ω[B⁄A]) :
     pullback f n (ιMulti B n v) = ιMulti C n (mapSemilinear f ∘ v) := by
   ext
-  rw [coe_pullback, ιMulti_apply_coe, ιMulti_apply_coe, ExteriorAlgebra.ιMulti_apply,
-    ExteriorAlgebra.ιMulti_apply, map_list_prod, List.map_ofFn]
-  simp [Function.comp_def]
+  simp [ExteriorAlgebra.ιMulti_apply, map_list_prod, Function.comp_def]
 
 /-- **Pullback of elementary forms**: `f* (c • dv₀ ∧ ⋯ ∧ dvₙ₋₁) = f c • d(f v₀) ∧ ⋯ ∧ d(f vₙ₋₁)`.
 -/
@@ -115,13 +114,16 @@ theorem pullback_elementary (c : B) (v : Fin n → B) :
   simp only [elementary_def, map_smulₛₗ, RingHom.coe_coe, pullback_ιMulti, Function.comp_def,
     mapSemilinear_D]
 
-/-- Pullback as an `A`-linear map, the form in which it enters the de Rham complexes. -/
-private noncomputable def pullbackₗ (n : ℕ) : Forms A B n →ₗ[A] Forms A C n where
+/-- Pullback as an `A`-linear map `Ωⁿ_(B/A) →ₗ[A] Ωⁿ_(C/A)`, the form in which it enters the
+de Rham complexes (`complexMap_f_hom`). -/
+noncomputable def pullbackLinear (n : ℕ) : Forms A B n →ₗ[A] Forms A C n where
   toFun := pullback f n
   map_add' := map_add (pullback f n)
   map_smul' := pullback_base_smul f
 
-private theorem pullbackₗ_apply (ω : Forms A B n) : pullbackₗ f n ω = pullback f n ω :=
+/-- The `A`-linear pullback agrees with `pullback f n` pointwise. -/
+@[simp]
+theorem pullbackLinear_apply (ω : Forms A B n) : pullbackLinear f n ω = pullback f n ω :=
   (rfl)
 
 /-- **Uniqueness of pullback.** An `A`-linear map `Ωⁿ_(B/A) → Ωⁿ_(C/A)` sending every elementary
@@ -129,9 +131,9 @@ form `c • dv₀ ∧ ⋯ ∧ dvₙ₋₁` to `f c • d(f v₀) ∧ ⋯ ∧ d(f
 theorem pullback_unique (g : Forms A B n →ₗ[A] Forms A C n)
     (hg : ∀ (c : B) (v : Fin n → B), g (elementary A c v) = elementary A (f c) (f ∘ v)) :
     ⇑g = pullback f n := by
-  have h : g = pullbackₗ f n :=
-    forms_hom_ext fun c v => by rw [hg, pullbackₗ_apply, pullback_elementary]
-  exact funext fun ω => (LinearMap.congr_fun h ω).trans (pullbackₗ_apply f ω)
+  have h : g = pullbackLinear f n :=
+    forms_hom_ext fun c v => by rw [hg, pullbackLinear_apply, pullback_elementary]
+  exact funext fun ω => (LinearMap.congr_fun h ω).trans (pullbackLinear_apply f ω)
 
 /-- In degree zero, pullback is `f`: under `Ω⁰_(B/A) ≃ B` and `Ω⁰_(C/A) ≃ C`, it sends `b` to
 `f b`. -/
@@ -155,9 +157,9 @@ theorem oneEquiv_pullback (ω : Forms A B 1) :
 @[simp]
 theorem pullback_d (ω : Forms A B n) :
     pullback f (n + 1) (d A B n ω) = d A C n (pullback f n ω) := by
-  have h : pullbackₗ f (n + 1) ∘ₗ d A B n = d A C n ∘ₗ pullbackₗ f n :=
+  have h : pullbackLinear f (n + 1) ∘ₗ d A B n = d A C n ∘ₗ pullbackLinear f n :=
     forms_hom_ext fun c v => by
-      simp only [LinearMap.comp_apply, pullbackₗ_apply, d_elementary, pullback_ιMulti,
+      simp only [LinearMap.comp_apply, pullbackLinear_apply, d_elementary, pullback_ιMulti,
         pullback_elementary, Fin.comp_cons]
       simp only [Function.comp_def, mapSemilinear_D]
   exact LinearMap.congr_fun h ω
@@ -202,7 +204,7 @@ public section
 `A`-algebra homomorphism `f : B →ₐ[A] C`; its degree-`n` component is `pullback f n`
 (`complexMap_f_apply`). -/
 noncomputable def complexMap (f : B →ₐ[A] C) : complex A B ⟶ complex A C :=
-  CochainComplex.ofHom (fun n => ModuleCat.ofHom (pullbackₗ f n)) fun n => by
+  CochainComplex.ofHom (fun n => ModuleCat.ofHom (pullbackLinear f n)) fun n => by
     rw [complex_d, complex_d]
     ext ω
     exact (pullback_d f ω).symm
@@ -211,6 +213,11 @@ noncomputable def complexMap (f : B →ₐ[A] C) : complex A B ⟶ complex A C :
 @[simp]
 theorem complexMap_f_apply (f : B →ₐ[A] C) (n : ℕ) (ω : Forms A B n) :
     ((complexMap f).f n).hom ω = pullback f n ω :=
+  (rfl)
+
+/-- The degree-`n` component of `complexMap f` is the `A`-linear pullback `pullbackLinear f n`. -/
+theorem complexMap_f_hom (f : B →ₐ[A] C) (n : ℕ) :
+    ((complexMap f).f n).hom = pullbackLinear f n :=
   (rfl)
 
 /-- The identity of `B` induces the identity of its de Rham complex. -/
