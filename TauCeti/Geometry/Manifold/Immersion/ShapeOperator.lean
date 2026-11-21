@@ -484,7 +484,8 @@ theorem ker_criticalHessian_norm_sq_sub_add_smul_comp (hi : ContMDiffAt I 𝓘(�
           TangentSpace I x →ₗ[ℝ] TangentSpace I x →L[ℝ] ℝ) =
       eigenspace (manifoldShapeOperator I i x ν) t⁻¹ := by
   rw [ker_criticalHessian_norm_sq_sub_comp hi h (by simpa using Submodule.smul_mem _ (-t) hν),
-    add_sub_cancel_left, manifoldShapeOperator_smul, ← eigenspace_smul _ ht t⁻¹, mul_inv_cancel₀ ht]
+    add_sub_cancel_left, manifoldShapeOperator_smul,
+    ← eigenspace_smul _ (.of_ne_zero ht) t⁻¹, mul_inv_cancel₀ ht]
 
 /-- The base point `i x` is not a focal point: squared distance from `i x` has trivial critical
 Hessian kernel at `x` along a `C²` immersion. -/
@@ -530,7 +531,7 @@ theorem isManifoldNondegenerateCriticalPoint_norm_sq_sub_add_smul_comp_iff
   have hmem : i x - (i x + t • ν) ∈ normalSubspace I i x := by
     simpa using Submodule.smul_mem _ (-t) hν
   simp only [hmem, true_and, add_sub_cancel_left, manifoldShapeOperator_smul,
-    Module.End.hasEigenvalue_iff, ← eigenspace_smul _ ht t⁻¹, mul_inv_cancel₀ ht]
+    Module.End.hasEigenvalue_iff, ← eigenspace_smul _ (.of_ne_zero ht) t⁻¹, mul_inv_cancel₀ ht]
 
 /-- Squared distance from `i x` has a nondegenerate critical point at `x` along any `C²`
 immersion. -/

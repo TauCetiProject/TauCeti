@@ -96,7 +96,7 @@ theorem isNondegenerateCriticalPoint_norm_sq_sub_add_smul_comp_iff (hi : ContDif
     simpa using Submodule.smul_mem _ (-t) hν
   rw [isNondegenerateCriticalPoint_norm_sq_sub_comp_iff hi h, and_iff_right ha,
     add_sub_cancel_left, Module.End.hasEigenvalue_iff, Module.End.hasEigenvalue_iff,
-    shapeOperator_smul, ← eigenspace_smul _ ht t⁻¹, mul_inv_cancel₀ ht]
+    shapeOperator_smul, ← eigenspace_smul _ (.of_ne_zero ht) t⁻¹, mul_inv_cancel₀ ht]
 
 /-- Squared distance from `i x` itself has a nondegenerate critical point at `x` along any `C²`
 immersion. -/

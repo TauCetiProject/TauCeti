@@ -7,14 +7,16 @@ module
 
 public import Mathlib.Data.Set.Countable
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
+import Mathlib.Algebra.GroupWithZero.Action.Regular
 import Mathlib.Algebra.Polynomial.Roots
 import Mathlib.LinearAlgebra.Eigenspace.Minpoly
 
 /-!
 # Eigenspaces of a scalar multiple
 
-Scaling an endomorphism `f` by a nonzero scalar `c` scales its eigenvalues by `c` and leaves the
-eigenspaces unchanged: the `c μ`-eigenspace of `c • f` is the `μ`-eigenspace of `f`, and likewise
+Scaling an endomorphism `f` by a scalar `c` that acts injectively on the module (for example a
+nonzero scalar on a vector space) scales its eigenvalues by `c` and leaves the eigenspaces
+unchanged: the `c μ`-eigenspace of `c • f` is the `μ`-eigenspace of `f`, and likewise
 for the generalized eigenspaces of every order (`Module.End.genEigenspace_smul`). For example,
 the eigenspaces of the acceleration operator `(κ / m) • H` of a spring system are those of its
 force matrix `H`.
@@ -36,27 +38,27 @@ public section
 
 namespace Module.End
 
-variable {R M : Type*} [CommRing R] [IsDomain R] [AddCommGroup M] [Module R M]
-  [Module.IsTorsionFree R M]
+variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
 
-/-- The generalized `c μ`-eigenspace of `c • f` is the generalized `μ`-eigenspace of `f`, for
-`c ≠ 0`. -/
-theorem genEigenspace_smul (f : End R M) {c : R} (hc : c ≠ 0) (μ : R) (k : ℕ∞) :
+/-- The generalized `c μ`-eigenspace of `c • f` is the generalized `μ`-eigenspace of `f`, for `c`
+acting injectively on `M`. -/
+theorem genEigenspace_smul (f : End R M) {c : R} (hc : IsSMulRegular M c) (μ : R) (k : ℕ∞) :
     (c • f).genEigenspace (c * μ) k = f.genEigenspace μ k := by
   refine le_antisymm (fun x hx ↦ ?_) (genEigenspace_le_smul f μ c k)
   obtain ⟨l, hlk, hl⟩ := mem_genEigenspace.1 hx
-  -- `(c • f - (c * μ) • 1) ^ l = c ^ l • (f - μ • 1) ^ l`, and `c ^ l` is not a zero divisor.
-  rw [LinearMap.mem_ker, mul_smul, ← smul_sub, smul_pow, LinearMap.smul_apply,
-    smul_eq_zero_iff_right (pow_ne_zero l hc)] at hl
-  exact mem_genEigenspace.2 ⟨l, hlk, LinearMap.mem_ker.2 hl⟩
+  -- `(c • f - (c * μ) • 1) ^ l = c ^ l • (f - μ • 1) ^ l`, and `c ^ l` acts injectively on `M`.
+  rw [LinearMap.mem_ker, mul_smul, ← smul_sub, smul_pow, LinearMap.smul_apply] at hl
+  exact mem_genEigenspace.2 ⟨l, hlk, LinearMap.mem_ker.2 ((hc.pow l).right_eq_zero_of_smul hl)⟩
 
-/-- The `c μ`-eigenspace of `c • f` is the `μ`-eigenspace of `f`, for `c ≠ 0`. -/
-theorem eigenspace_smul (f : End R M) {c : R} (hc : c ≠ 0) (μ : R) :
+/-- The `c μ`-eigenspace of `c • f` is the `μ`-eigenspace of `f`, for `c` acting injectively on
+`M`. -/
+theorem eigenspace_smul (f : End R M) {c : R} (hc : IsSMulRegular M c) (μ : R) :
     eigenspace (c • f) (c * μ) = eigenspace f μ :=
   genEigenspace_smul f hc μ 1
 
-/-- For `c ≠ 0`, `c • f` has the eigenvalue `c * μ` exactly when `f` has the eigenvalue `μ`. -/
-theorem hasEigenvalue_smul_iff (f : End R M) {c : R} (hc : c ≠ 0) (μ : R) :
+/-- For `c` acting injectively on `M`, `c • f` has the eigenvalue `c * μ` exactly when `f` has the
+eigenvalue `μ`. -/
+theorem hasEigenvalue_smul_iff (f : End R M) {c : R} (hc : IsSMulRegular M c) (μ : R) :
     (c • f).HasEigenvalue (c * μ) ↔ f.HasEigenvalue μ := by
   rw [hasEigenvalue_iff, hasEigenvalue_iff, eigenspace_smul f hc]
 
@@ -73,7 +75,7 @@ of `f` has the eigenvalue `(c ^ m)⁻¹`. -/
 theorem hasEigenvalue_one_pow_smul_iff (f : End K V) {c : K} (hc : c ≠ 0) (m : ℕ) :
     ((c • f) ^ m).HasEigenvalue 1 ↔ (f ^ m).HasEigenvalue (c ^ m)⁻¹ := by
   have hcm := pow_ne_zero m hc
-  have h := hasEigenvalue_smul_iff (f ^ m) hcm (c ^ m)⁻¹
+  have h := hasEigenvalue_smul_iff (f ^ m) (.of_ne_zero hcm) (c ^ m)⁻¹
   rwa [mul_inv_cancel₀ hcm, ← smul_pow] at h
 
 /-- For `m ≠ 0`, only finitely many rescalings `c • f` of an endomorphism `f` of a
