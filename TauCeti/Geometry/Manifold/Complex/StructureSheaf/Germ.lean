@@ -92,16 +92,16 @@ private def toFilterGermHom (x : X) (l : Filter X) (hl : l ≤ 𝓝 x) :
       (holomorphicStructureSheaf I X).presheaf)
     { pt := CommRingCat.of (Germ l ℂ)
       ι :=
-        { app := fun U ↦ CommRingCat.ofHom (sectionToFilterGerm I X (unop U).2 hl)
+        { app := fun U ↦ CommRingCat.ofHom (sectionToFilterGerm I X (unop U).property hl)
           naturality := by
             intro U V h
             apply CommRingCat.hom_ext
             apply RingHom.ext
             intro f
             -- Both composites send `f` to the germ of its extension by zero.
-            exact coe_extend_eq I X (unop V).2 hl _ _ fun y ↦
+            exact coe_extend_eq I X (unop V).property hl _ _ fun y ↦
               (map_apply (I := I) (X := X)
-                (U := op (α := Opens X) (unop U).1) (V := op (α := Opens X) (unop V).1)
+                (U := op (α := Opens X) (unop U).val) (V := op (α := Opens X) (unop V).val)
                 ((OpenNhds.inclusion (X := TopCat.of X) x).map h.unop).op f y).trans
                 (Subtype.val_injective.extend_apply _ (0 : X → ℂ) _).symm } }
 
@@ -134,7 +134,7 @@ theorem toFilterGerm_germ {x : X} {l : Filter X} (hl : l ≤ 𝓝 x) {U : Opens 
 def germOfContMDiff (f : X → ℂ) (hf : ContMDiff I 𝓘(ℂ) ω f) (x : X) :
     (holomorphicStructureSheaf I X).presheaf.stalk x :=
   ConcreteCategory.hom ((holomorphicStructureSheaf I X).presheaf.germ ⊤ x trivial)
-    (ofContMDiff (fun y : (⊤ : Opens X) ↦ f y) (hf.comp contMDiff_subtype_val))
+    (ofContMDiff (fun y : (⊤ : Opens X) ↦ f y) (hf.comp contMDiff_subtypeVal))
 
 /-- The holomorphic germ of a globally analytic function `f` is the germ of `f`. -/
 @[simp]
@@ -164,7 +164,7 @@ theorem exists_toFilterGerm_eq_of_eventually_contMDiffAt {x : X} {f : X → ℂ}
   obtain ⟨t, ht, hto, hxt⟩ := eventually_nhds_iff.1 hf
   let U : Opens X := ⟨t, hto⟩
   let fU : (holomorphicStructureSheaf I X).obj.obj (op U) :=
-    ofContMDiff (fun y : U ↦ f y) fun y ↦ contMDiffAt_subtype_iff.2 (ht y y.2)
+    ofContMDiff (fun y : U ↦ f y) fun y ↦ contMDiffAt_subtype_iff.2 (ht y y.property)
   exact ⟨ConcreteCategory.hom ((holomorphicStructureSheaf I X).presheaf.germ U x hxt) fU,
     fun l hl ↦ toFilterGerm_germ hl hxt fU f fun y ↦ ofContMDiff_apply _ _ y⟩
 
@@ -197,7 +197,7 @@ theorem toFilterGerm_nhds_injective (x : X) :
   refine TopCat.Presheaf.germ_ext _ W hxt (homOfLE hWU) (homOfLE hWU) (ext fun y ↦ ?_)
   rw [map_apply, map_apply, zero_apply]
   exact (Subtype.val_injective.extend_apply _ (0 : X → ℂ) (Opens.inclusion hWU y)).symm.trans
-    (ht y y.2).1
+    (ht y y.property).1
 
 /-- A holomorphic germ vanishes exactly when a function with the same germ along `𝓝 x` vanishes
 near `x`. -/
@@ -309,7 +309,7 @@ theorem toFilterGerm_stalkPrecomp (f : X → Y) (hf : ContMDiff I J ω f) (x : X
     fun y ↦ (Subtype.val_injective.extend_apply _ (0 : Y → ℂ) y).symm
   rw [stalkPrecomp_germ, toFilterGerm_germ le_rfl hx g _ hg]
   exact (toFilterGerm_germ (U := (Opens.map (TopCat.ofHom ⟨f, hf.continuous⟩)).obj U) le_rfl hx _
-    _ fun y ↦ (precomp_apply I X f hf (op U) g y).trans (hg ⟨f y.1, y.2⟩)).trans
+    _ fun y ↦ (precomp_apply I X f hf (op U) g y).trans (hg ⟨f y.val, y.property⟩)).trans
     (Germ.coe_compTendsto _ _).symm
 
 /-- Pulling back the holomorphic germ of a globally analytic function `g` along a complex analytic

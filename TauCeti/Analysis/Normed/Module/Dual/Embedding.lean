@@ -32,9 +32,9 @@ variable (𝕜 E : Type*) [RCLike 𝕜] [SeminormedAddCommGroup E] [NormedSpace 
 /-- The canonical norm-preserving evaluation map into `ℓ∞` of the dual unit ball. -/
 noncomputable def dualBallEmbedding :
     E →ₗᵢ[𝕜] lp (fun _ : Metric.closedBall (0 : StrongDual 𝕜 E) 1 ↦ 𝕜) ∞ := by
-  let f (φ : Metric.closedBall (0 : StrongDual 𝕜 E) 1) : E →L[𝕜] 𝕜 := φ.1
+  let f (φ : Metric.closedBall (0 : StrongDual 𝕜 E) 1) : E →L[𝕜] 𝕜 := φ.val
   have hf (φ : Metric.closedBall (0 : StrongDual 𝕜 E) 1) : ‖f φ‖₊ ≤ 1 := by
-    exact_mod_cast mem_closedBall_zero_iff.mp φ.2
+    exact_mod_cast mem_closedBall_zero_iff.mp φ.property
   let J := ContinuousLinearMap.piLpInfty f 1 hf
   refine ⟨J.toLinearMap, fun x ↦ le_antisymm ?_ ?_⟩
   · have hJ : ‖J‖ ≤ 1 := by

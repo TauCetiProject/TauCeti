@@ -40,12 +40,18 @@ centraliser. Over a field of characteristic zero the same holds when `x` only ki
 `⁅x, ⁅x, y⁆⁆ = 0`: then `x` acts by an endomorphism commuting with the commutator of the two
 actions, and `LinearMap.trace_mul_eq_zero_of_isNilpotent_of_lie_lie_eq_zero` applies.
 
+A representation with a nonzero trace form has a finite basis, because on a module with no finite
+basis every trace vanishes. This is what makes a Lie algebra with nondegenerate Killing form finite
+and free over the base ring.
+
 Finally, the trace of the action of a commutator vanishes on every representation, so every element
 of a perfect Lie subalgebra `L` of `𝔤𝔩(V)` has trace zero on each `L`-submodule of `V`.
 
 ## Main results
 
 * `TauCeti.traceForm_lie_lie_cyclic_eq_zero`: the four-element cyclic identity above.
+* `TauCeti.exists_basis_of_traceForm_ne_zero`: a representation with a nonzero trace form has a
+  finite basis.
 * `TauCeti.traceForm_eq_zero_of_isNilpotent_of_lie_eq_zero`: elements bracketing to zero, one of
   them acting nilpotently, are orthogonal for the trace form.
 * `TauCeti.traceForm_eq_zero_of_isNilpotent_of_lie_lie_eq_zero`: in characteristic zero, the same
@@ -90,6 +96,15 @@ theorem traceForm_lie_lie_cyclic_eq_zero (a b c d : L) :
   linear_combination hmap
 
 end Cyclic
+
+/-- A representation whose trace form is not zero has a finite basis: without one every trace
+vanishes, so the trace form would be zero. -/
+theorem exists_basis_of_traceForm_ne_zero {R L M : Type*} [CommRing R] [LieRing L]
+    [LieAlgebra R L] [AddCommGroup M] [Module R M] [LieRingModule L M] [LieModule R L M]
+    (h : traceForm R L M ≠ 0) : ∃ s : Finset M, Nonempty (Module.Basis s R M) := by
+  by_contra hb
+  exact h <| LinearMap.ext₂ fun x y ↦ by
+    simp [traceForm_apply_apply, LinearMap.trace_eq_zero_of_not_exists_basis hb]
 
 section Nilpotent
 

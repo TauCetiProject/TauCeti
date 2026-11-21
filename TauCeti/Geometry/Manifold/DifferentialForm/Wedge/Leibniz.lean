@@ -28,6 +28,13 @@ derivatives there, so it applies at boundary and corner points. The degrees `k +
 With this rule the wedge product descends to closed and exact forms, which is what makes de Rham
 cohomology a ring.
 
+For a smooth function `f`, exterior multiplication `ε_f = df ∧ ·` by its differential
+(`TauCeti.SmoothForm.extDerivWedgeₗ`) is the commutator of `d` with multiplication by `f`: the
+Leibniz rule reads `d (f φ) = f dφ + df ∧ φ` (`TauCeti.SmoothForm.mextDerivₗ_funSMulₗ`), and
+`ε_f` is linear over smooth functions (`TauCeti.SmoothForm.extDerivWedgeₗ_funSMulₗ`). Since this
+commutator is fibrewise, `d` has order one: `[[d, f], g] = 0`
+(`TauCeti.SmoothForm.mextDerivₗ_lie_lie_funSMulₗ_eq_zero`).
+
 ## References
 
 * John M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Proposition 14.23.
@@ -200,10 +207,10 @@ namespace SmoothForm
 theorem mextDeriv_wedgeWith_apply (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (φ : SmoothForm I M F₁ k) (ψ : SmoothForm I M F₂ l) (x : M)
     (v : Fin (k + l + 1) → TangentSpace I x) :
-    mextDeriv (RoughForm.wedgeWith μ φ.1 ψ.1) x v =
-      RoughForm.wedgeWith μ (mextDeriv φ.1) ψ.1 x
+    mextDeriv (RoughForm.wedgeWith μ φ.val ψ.val) x v =
+      RoughForm.wedgeWith μ (mextDeriv φ.val) ψ.val x
           (v ∘ Fin.cast (show k + 1 + l = k + l + 1 by omega)) +
-        (-1 : ℝ) ^ k • RoughForm.wedgeWith μ φ.1 (mextDeriv ψ.1) x
+        (-1 : ℝ) ^ k • RoughForm.wedgeWith μ φ.val (mextDeriv ψ.val) x
           (v ∘ Fin.cast (show k + (l + 1) = k + l + 1 by omega)) := by
   exact TauCeti.mextDeriv_wedgeWith μ (φ.mdifferentiableAt x) (ψ.mdifferentiableAt x) v
 
@@ -212,10 +219,10 @@ smooth forms, evaluated on tangent vectors. See `SmoothForm.mextDerivₗ_wedge` 
 law. -/
 theorem mextDeriv_wedge_apply (φ : SmoothForm I M ℝ k) (ψ : SmoothForm I M ℝ l) (x : M)
     (v : Fin (k + l + 1) → TangentSpace I x) :
-    mextDeriv (RoughForm.wedge φ.1 ψ.1) x v =
-      RoughForm.wedge (mextDeriv φ.1) ψ.1 x
+    mextDeriv (RoughForm.wedge φ.val ψ.val) x v =
+      RoughForm.wedge (mextDeriv φ.val) ψ.val x
           (v ∘ Fin.cast (show k + 1 + l = k + l + 1 by omega)) +
-        (-1 : ℝ) ^ k • RoughForm.wedge φ.1 (mextDeriv ψ.1) x
+        (-1 : ℝ) ^ k • RoughForm.wedge φ.val (mextDeriv ψ.val) x
           (v ∘ Fin.cast (show k + (l + 1) = k + l + 1 by omega)) := by
   simpa only [RoughForm.wedge_def] using
     mextDeriv_wedgeWith_apply (ContinuousLinearMap.mul ℝ ℝ) φ ψ x v
@@ -256,28 +263,77 @@ evaluated on tangent vectors. The degree `0 + 1 + k` of `df ∧ φ` is identifie
 `Fin.cast`. -/
 theorem mextDerivₗ_funSMulₗ_apply [IsManifold I 2 M] (f : C^∞⟮I, M; ℝ⟯)
     (φ : SmoothForm I M ℝ k) (x : M) (v : Fin (k + 1) → TangentSpace I x) :
-    (mextDerivₗ I k (funSMulₗ f φ)).1 x v =
-      (mextDeriv (RoughForm.ofFunction I f)).wedge φ.1 x
+    (mextDerivₗ I k (funSMulₗ f φ)).val x v =
+      (mextDeriv (RoughForm.ofFunction I f)).wedge φ.val x
           (v ∘ Fin.cast (show 0 + 1 + k = k + 1 by omega)) +
-        f x * (mextDerivₗ I k φ).1 x v := by
+        f x * (mextDerivₗ I k φ).val x v := by
   simp only [mextDerivₗ_apply, coe_funSMulₗ]
   exact mextDeriv_fun_smul (f.contMDiff.mdifferentiableAt (by simp)) (φ.mdifferentiableAt x) v
 
-/-- The Leibniz rule `d (f φ) = df ∧ φ + f dφ` for a smooth function `f` times a smooth form `φ`,
-as an identity of smooth forms. The degree `0 + 1 + k` of `df ∧ φ` is identified with `k + 1` by
-`LinearEquiv.cast`. -/
-theorem mextDerivₗ_funSMulₗ [IsManifold I 2 M] (f : C^∞⟮I, M; ℝ⟯) (φ : SmoothForm I M ℝ k) :
-    mextDerivₗ I k (funSMulₗ f φ) =
+/-! ### Exterior multiplication by the differential of a function -/
+
+variable [IsManifold I 2 M]
+
+/-- **Exterior multiplication by `df`**, `ε_f φ = df ∧ φ`, as a linear map from smooth `k`-forms
+to smooth `(k + 1)`-forms, for a smooth function `f`. The degree `0 + 1 + k` of the wedge is
+identified with `k + 1`. It is the commutator `[d, f]` of the exterior derivative with
+multiplication by `f` (`TauCeti.SmoothForm.mextDerivₗ_funSMulₗ`). -/
+def extDerivWedgeₗ (f : C^∞⟮I, M; ℝ⟯) (k : ℕ) :
+    SmoothForm I M ℝ k →ₗ[ℝ] SmoothForm I M ℝ (k + 1) :=
+  (LinearEquiv.cast (R := ℝ) (M := fun q : ℕ ↦ SmoothForm I M ℝ q)
+    (show 0 + 1 + k = k + 1 by omega)).toLinearMap ∘ₗ wedge (mextDerivₗ I 0 (ofFunction f))
+
+/-- `ε_f φ = df ∧ φ`, with the degree `0 + 1 + k` of the wedge identified with `k + 1`. -/
+theorem extDerivWedgeₗ_def (f : C^∞⟮I, M; ℝ⟯) (φ : SmoothForm I M ℝ k) :
+    extDerivWedgeₗ f k φ =
       LinearEquiv.cast (R := ℝ) (M := fun q : ℕ ↦ SmoothForm I M ℝ q)
-          (show 0 + 1 + k = k + 1 by omega)
-          (SmoothForm.wedge (mextDerivₗ I 0 (ofFunction f)) φ) +
-        funSMulₗ f (mextDerivₗ I k φ) := by
+        (show 0 + 1 + k = k + 1 by omega) (wedge (mextDerivₗ I 0 (ofFunction f)) φ) :=
+  (rfl)
+
+/-- Evaluation of `ε_f φ = df ∧ φ` on tangent vectors. -/
+theorem extDerivWedgeₗ_apply (f : C^∞⟮I, M; ℝ⟯) (φ : SmoothForm I M ℝ k) (x : M)
+    (v : Fin (k + 1) → TangentSpace I x) :
+    (extDerivWedgeₗ f k φ).val x v =
+      (mextDeriv (RoughForm.ofFunction I f)).wedge φ.val x
+        (v ∘ Fin.cast (show 0 + 1 + k = k + 1 by omega)) := by
+  rw [extDerivWedgeₗ_def, cast_apply]
+  simp [mextDerivₗ_apply]
+
+/-- **The Leibniz rule** `d (f φ) = df ∧ φ + f dφ` for a smooth function `f` times a smooth form
+`φ`, as an identity of smooth forms: the commutator `[d, f]` is exterior multiplication by `df`. -/
+theorem mextDerivₗ_funSMulₗ (f : C^∞⟮I, M; ℝ⟯) (φ : SmoothForm I M ℝ k) :
+    mextDerivₗ I k (funSMulₗ f φ) = extDerivWedgeₗ f k φ + funSMulₗ f (mextDerivₗ I k φ) := by
   apply Subtype.ext
   ext x v
-  rw [mextDerivₗ_funSMulₗ_apply, Submodule.coe_add, Pi.add_apply,
-    ContinuousAlternatingMap.add_apply, cast_apply, coe_wedge, coe_funSMulₗ,
+  simp only [Submodule.coe_add, Pi.add_apply, ContinuousAlternatingMap.add_apply,
+    mextDerivₗ_funSMulₗ_apply, extDerivWedgeₗ_apply, coe_funSMulₗ,
     ContinuousAlternatingMap.smul_apply, smul_eq_mul]
-  simp only [mextDerivₗ_apply, coe_ofFunction]
+
+/-- Exterior multiplication by `df` is linear over smooth functions:
+`df ∧ (g φ) = g (df ∧ φ)`. -/
+@[simp]
+theorem extDerivWedgeₗ_funSMulₗ (f g : C^∞⟮I, M; ℝ⟯) (φ : SmoothForm I M ℝ k) :
+    extDerivWedgeₗ f k (funSMulₗ g φ) = funSMulₗ g (extDerivWedgeₗ f k φ) := by
+  apply Subtype.ext
+  ext x v
+  simp only [extDerivWedgeₗ_apply, coe_funSMulₗ, RoughForm.wedge_def,
+    RoughForm.wedgeWith_apply', ContinuousAlternatingMap.pairedWedge_smul_right,
+    ContinuousAlternatingMap.smul_apply]
+
+/-- **The exterior derivative has order one**: its double commutator with multiplication by
+smooth functions `f` and `g` vanishes, `[[d, f], g] = 0`. Since `d` changes the degree, the
+commutators are written out as differences of composites. -/
+theorem mextDerivₗ_lie_lie_funSMulₗ_eq_zero (f g : C^∞⟮I, M; ℝ⟯) (k : ℕ) :
+    (mextDerivₗ I k ∘ₗ funSMulₗ (F := ℝ) f - funSMulₗ f ∘ₗ mextDerivₗ I k) ∘ₗ funSMulₗ g -
+      funSMulₗ g ∘ₗ (mextDerivₗ I k ∘ₗ funSMulₗ f - funSMulₗ f ∘ₗ mextDerivₗ I k) = 0 := by
+  refine LinearMap.ext fun α ↦ Subtype.ext (funext fun x ↦ ?_)
+  ext v
+  simp only [LinearMap.sub_apply, LinearMap.comp_apply, Submodule.coe_sub, Pi.sub_apply,
+    ContinuousAlternatingMap.sub_apply, LinearMap.zero_apply, Submodule.coe_zero, Pi.zero_apply,
+    ContinuousAlternatingMap.coe_zero, mextDerivₗ_funSMulₗ_apply, coe_funSMulₗ,
+    ContinuousAlternatingMap.smul_apply, smul_eq_mul, RoughForm.wedge_def,
+    RoughForm.wedgeWith_apply', ContinuousAlternatingMap.pairedWedge_smul_right]
+  ring
 
 end SmoothForm
 

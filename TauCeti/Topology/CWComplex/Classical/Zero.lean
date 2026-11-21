@@ -30,9 +30,13 @@ variable {X : Type w} [TopologicalSpace X] [T2Space X] (C : Set X) [CWComplex C]
 def zeroCellPoint (i : cell C 0) : ↑(skeletonLT C ((1 : ℕ) : ℕ∞)) :=
   ⟨map 0 i ![], closedCell_subset_skeletonLT 0 i (by simp [closedCell_zero_eq_singleton])⟩
 
+/-- Distinct zero-cells have distinct points. -/
+theorem zeroCellPoint_injective : Function.Injective (zeroCellPoint C) :=
+  fun _ _ h ↦ injective_map_zero C (congrArg Subtype.val h)
+
 /-- The zero-cells are in bijection with the points of the zero-skeleton. -/
 def zeroCellEquiv : cell C 0 ≃ ↑(skeletonLT C ((1 : ℕ) : ℕ∞)) :=
-  Equiv.ofBijective (zeroCellPoint C) ⟨fun _ _ h ↦ injective_map_zero C (congrArg Subtype.val h),
+  Equiv.ofBijective (zeroCellPoint C) ⟨zeroCellPoint_injective C,
     fun ⟨x, hx⟩ ↦ by
       obtain ⟨m, hm, i, hi⟩ := CWComplex.mem_skeletonLT_iff.mp hx
       obtain rfl : m = 0 := by simpa using hm
@@ -53,13 +57,21 @@ instance zeroSkeletonDiscreteTopology :
     (CWComplex.closed E (Subtype.val '' A) (Subtype.coe_image_subset _ A)).2 fun n j ↦ by
       obtain rfl : n = 0 := by
         rw [CWComplex.Subcomplex.cell_def] at j
-        simpa [E, skeletonLT_I] using j.2
+        simpa [E, skeletonLT_I] using j.property
       rw [closedCell_zero_eq_singleton]
       exact ((Set.finite_singleton _).subset Set.inter_subset_right).isClosed
-  exact Subtype.val_injective.preimage_image A ▸ hc.preimage continuous_subtype_val
+  exact Subtype.val_injective.preimage_image A ▸ hc.preimage continuous_subtypeVal
+
+variable {C} in
+/-- An open cell containing a point of the zero-skeleton is a zero-cell. -/
+lemma eq_zero_of_mem_skeletonLT_one_of_mem_openCell {y : X} (hy : y ∈ skeletonLT C 1) {n : ℕ}
+    {j : cell C n} (h : y ∈ openCell n j) : n = 0 := by
+  by_contra hn
+  exact Set.disjoint_left.1 (CWComplex.disjoint_skeletonLT_openCell
+    (by exact_mod_cast Nat.one_le_iff_ne_zero.2 hn)) hy h
 
 /-- The stage before the zero-skeleton is empty for an absolute CW complex. -/
 instance zeroSkeletonPreviousIsEmpty : IsEmpty (↑(skeletonLT C ((0 : ℕ) : ℕ∞))) :=
-  ⟨fun x ↦ by simpa [← SetLike.mem_coe, CWComplex.skeletonLT_zero_eq_empty] using x.2⟩
+  ⟨fun x ↦ by simpa [← SetLike.mem_coe, CWComplex.skeletonLT_zero_eq_empty] using x.property⟩
 
 end TauCeti

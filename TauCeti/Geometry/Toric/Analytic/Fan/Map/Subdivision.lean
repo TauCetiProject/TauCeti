@@ -59,9 +59,9 @@ theorem isProperMap_analyticMap (h : Φ.IsSubdivision Ψ) (hΦ : Φ.IsRegular)
   apply h.toFanHom.isProperMap_analyticMap_of_preimage_realMap_subset hΦ hΨ
   intro τ x hx
   rw [h.toFanHom_realMap] at hx
-  have hxτ : x ∈ (τ.1 : Set V) := by
+  have hxτ : x ∈ (τ.val : Set V) := by
     simpa only [Set.mem_preimage, LinearMap.id_coe, id_eq] using hx
-  obtain ⟨σ, hσ, hστ, hxσ⟩ := h.exists_mem_cone τ.2 hxτ
+  obtain ⟨σ, hσ, hστ, hxσ⟩ := h.exists_mem_cone τ.property hxτ
   refine mem_iUnion₂.2 ⟨⟨σ, hσ⟩, ?_, hxσ⟩
   simpa only [h.toFanHom_realMap, PointedCone.map_id] using hστ
 

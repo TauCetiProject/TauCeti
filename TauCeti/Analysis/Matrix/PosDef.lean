@@ -119,7 +119,7 @@ theorem isOpen_setOfPred_posDef_selfAdjoint {n 𝕜 : Type*} [Finite n]
   classical
   let : Fintype n := Fintype.ofFinite n
   have hopen := (TauCeti.isOpen_setOfPred_re_dotProduct_pos (ι := n) (𝕜 := 𝕜)).preimage
-    (continuous_subtype_val : Continuous (fun A : selfAdjoint (Matrix n n 𝕜) ↦
+    (continuous_subtypeVal : Continuous (fun A : selfAdjoint (Matrix n n 𝕜) ↦
       (A : Matrix n n 𝕜)))
   convert hopen using 1
   ext A
@@ -171,7 +171,7 @@ theorem continuous_inv_segment_pairs {s : Set X} (H : X → Matrix ι ι ℝ)
   exact continuousAt_inv_segment
     (hH.domRestrict.comp (continuous_fst.comp continuous_fst)).continuousAt
     (hH.domRestrict.comp (continuous_snd.comp continuous_fst)).continuousAt
-    (continuous_subtype_val.comp continuous_snd).continuousAt
+    (continuous_subtypeVal.comp continuous_snd).continuousAt
     (hpos z.1.1 z.1.1.property) (hpos z.1.2 z.1.2.property) z.2.property
 
 /-- Inverse segments between all pairs in a compact positive-definite field have a common

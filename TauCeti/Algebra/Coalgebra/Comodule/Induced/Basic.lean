@@ -88,11 +88,6 @@ variable [AddCommMonoid N] [Module R N]
 
 attribute [local instance] cofree
 
-/-- Evaluation `M ⊗[R] C → M` by the counit of `C`. -/
-private noncomputable abbrev counitEval (M : Type*) [AddCommMonoid M] [Module R M] :
-    M ⊗[R] C →ₗ[R] M :=
-  (TensorProduct.rid R M).toLinearMap ∘ₗ (Coalgebra.counit (R := R) (A := C)).lTensor M
-
 variable [Module.Flat R C] [Comodule R D M] [Comodule R D M'] [Comodule R C N]
 
 variable (M) in
@@ -124,17 +119,17 @@ theorem mem_induced_iff {t : M ⊗[R] C} :
           (((f : C →ₗ[R] D).rTensor C ∘ₗ Coalgebra.comul).lTensor M t) := by
   rw [mem_induced_iff_cofreeLift, Hom.cofreeLift_lTensor_apply]
 
-/-- **The key identity on `Ind_f M`.** Coacting on the counit evaluation of `t ∈ Ind_f M` gives
+/-- **The key identity on `Ind_f M`.** Coacting on the counit projection of `t ∈ Ind_f M` gives
 `(id ⊗ f) t`. -/
-private theorem coact_counitEval_of_mem {t : M ⊗[R] C} (ht : t ∈ induced f M) :
-    coact (R := R) (C := D) (M := M) (counitEval (C := C) M t) =
+private theorem coact_cofreeCounit_of_mem {t : M ⊗[R] C} (ht : t ∈ induced f M) :
+    coact (R := R) (C := D) (M := M) (cofreeCounit R C M t) =
       (f : C →ₗ[R] D).lTensor M t := by
-  -- Apply the counit evaluation of `(M ⊗[R] D) ⊗[R] C` to the two sides of the equalizer.
-  have h := congrArg (counitEval (C := C) (M ⊗[R] D)) ((mem_induced_iff_cofreeLift f).mp ht)
-  rw [← LinearMap.comp_apply (counitEval (C := C) (M ⊗[R] D)), LinearMap.comp_assoc,
-    rid_comp_lTensor_counit_comp_rTensor, LinearMap.comp_apply] at h
+  -- Apply the counit projection of `(M ⊗[R] D) ⊗[R] C` to the two sides of the equalizer.
+  have h := congrArg (cofreeCounit R C (M ⊗[R] D)) ((mem_induced_iff_cofreeLift f).mp ht)
+  rw [← LinearMap.comp_apply (cofreeCounit R C (M ⊗[R] D)), cofreeCounit_comp_rTensor,
+    LinearMap.comp_apply] at h
   rw [h]
-  exact LinearMap.congr_fun (Hom.rid_comp_lTensor_counit_comp_cofreeLift (C := C) _) t
+  exact LinearMap.congr_fun (Hom.cofreeCounit_comp_cofreeLift (C := C) _) t
 
 /-- **Evaluation at the identity.** The counit of `C` evaluates the induced comodule into `M`,
 `t ↦ (id ⊗ ε) t`. After corestricting `Ind_f M` along `f`, this is a morphism of
@@ -143,39 +138,38 @@ noncomputable def inducedEval :
     letI := Corestrict (M := induced f M) f
     Hom R D (induced f M) M :=
   letI := Corestrict (M := induced f M) f
-  { toLinearMap := counitEval (C := C) M ∘ₗ SMulMemClass.subtype (induced f M)
+  { toLinearMap := cofreeCounit R C M ∘ₗ SMulMemClass.subtype (induced f M)
     map_coact := by
       refine LinearMap.ext fun t ↦ ?_
       have hsub := Subcomodule.subtype_rTensor_coact (induced f M) t
-      have hev : (counitEval (C := C) M).rTensor C (cofreeCoact R C M (t : M ⊗[R] C)) = t :=
+      have hev : (cofreeCounit R C M).rTensor C (cofreeCoact R C M (t : M ⊗[R] C)) = t :=
         LinearMap.congr_fun
-          (rTensor_rid_comp_lTensor_counit_comp_cofreeCoact (R := R) (C := C) (M := M)) _
+          (rTensor_cofreeCounit_comp_cofreeCoact (R := R) (C := C) (M := M)) _
       simp only [LinearMap.comp_apply, corestrict_coact_apply, SMulMemClass.subtype_apply]
-      calc TensorProduct.map (counitEval (C := C) M ∘ₗ SMulMemClass.subtype (induced f M))
+      calc TensorProduct.map (cofreeCounit R C M ∘ₗ SMulMemClass.subtype (induced f M))
               LinearMap.id (TensorProduct.map LinearMap.id (f : C →ₗ[R] D)
                 (coact (R := R) (C := C) (M := induced f M) t))
-          = TensorProduct.map (counitEval (C := C) M) (f : C →ₗ[R] D)
+          = TensorProduct.map (cofreeCounit R C M) (f : C →ₗ[R] D)
               ((SMulMemClass.subtype (induced f M)).rTensor C
                 (coact (R := R) (C := C) (M := induced f M) t)) := by
             simp [LinearMap.rTensor_def, TensorProduct.map_map]
-        _ = (f : C →ₗ[R] D).lTensor M ((counitEval (C := C) M).rTensor C
+        _ = (f : C →ₗ[R] D).lTensor M ((cofreeCounit R C M).rTensor C
               (cofreeCoact R C M (t : M ⊗[R] C))) := by
             rw [hsub, ← LinearMap.comp_apply ((f : C →ₗ[R] D).lTensor M),
               LinearMap.lTensor_comp_rTensor, cofree_coact, cofreeCoact_def]
-        _ = coact (R := R) (C := D) (M := M) (counitEval (C := C) M (t : M ⊗[R] C)) := by
-            rw [hev, coact_counitEval_of_mem f t.2] }
+        _ = coact (R := R) (C := D) (M := M) (cofreeCounit R C M (t : M ⊗[R] C)) := by
+            rw [hev, coact_cofreeCounit_of_mem f t.property] }
 
 private theorem inducedEval_toLinearMap :
     letI := Corestrict (M := induced f M) f
-    (inducedEval f).toLinearMap = counitEval (C := C) M ∘ₗ SMulMemClass.subtype (induced f M) :=
+    (inducedEval f).toLinearMap = cofreeCounit R C M ∘ₗ SMulMemClass.subtype (induced f M) :=
   rfl
 
 /-- Evaluation at the identity applies the counit of `C` to the second factor. -/
 @[simp]
 theorem inducedEval_apply (t : induced f M) :
     letI := Corestrict (M := induced f M) f
-    inducedEval f t =
-      TensorProduct.rid R M ((Coalgebra.counit (R := R) (A := C)).lTensor M t) :=
+    inducedEval f t = cofreeCounit R C M t :=
   (rfl)
 
 /-- The comodule morphism `N → M ⊗[R] C` attached to a morphism of `D`-comodules lands in the
@@ -224,12 +218,12 @@ noncomputable def inducedEquiv :
       rw [coe_inducedLift_apply, Hom.comp_toLinearMap, corestrictHom_toLinearMap,
         inducedEval_toLinearMap]
       have h := LinearMap.congr_fun (congrArg Hom.toLinearMap
-        (Hom.cofreeLift_rid_comp_lTensor_counit_comp (Hom.comp (Subcomodule.subtype _) φ))) n
+        (Hom.cofreeLift_cofreeCounit_comp (Hom.comp (Subcomodule.subtype _) φ))) n
       rw [Hom.comp_toLinearMap, Subcomodule.subtype_toLinearMap, Hom.cofreeLift_toLinearMap] at h
       exact h
     right_inv g := Hom.ext fun n ↦ by
       rw [Hom.comp_apply, corestrictHom_apply, inducedEval_apply, coe_inducedLift_apply]
-      exact LinearMap.congr_fun (Hom.rid_comp_lTensor_counit_comp_cofreeLift
+      exact LinearMap.congr_fun (Hom.cofreeCounit_comp_cofreeLift
         (C := C) g.toLinearMap) n }
 
 /-- The forward map of Frobenius reciprocity composes with evaluation at the identity. -/
@@ -245,6 +239,18 @@ theorem inducedEquiv_apply (φ : Hom R C N (induced f M)) :
 theorem inducedEquiv_symm_apply (g : letI := Corestrict (M := N) f; Hom R D N M) :
     (inducedEquiv f).symm g = inducedLift f g :=
   (rfl)
+
+/-- Coacting on an induced element and evaluating the first factor recovers its ambient
+tensor. -/
+theorem rTensor_inducedEval_coact (t : induced f M) :
+    letI := Corestrict (M := induced f M) f
+    (inducedEval f).toLinearMap.rTensor C (coact (R := R) (C := C) t) =
+      (t : M ⊗[R] C) := by
+  have ht := congrArg (fun k ↦ (k t : M ⊗[R] C))
+    ((inducedEquiv f).symm_apply_apply (Hom.id R C (induced f M)))
+  simpa only [inducedEquiv_symm_apply, coe_inducedLift_apply, inducedEquiv_apply,
+    Hom.comp_toLinearMap, corestrictHom_toLinearMap, Hom.id_toLinearMap,
+    LinearMap.comp_id, Hom.id_apply] using ht
 
 /-- **Naturality of Frobenius reciprocity in the source.** -/
 theorem inducedEquiv_comp {P : Type*} [AddCommMonoid P] [Module R P] [Comodule R C P]
@@ -269,9 +275,9 @@ noncomputable def inducedMap (h : Hom R D M M') : Hom R C (induced f M) (induced
 theorem coe_inducedMap_apply (h : Hom R D M M') (t : induced f M) :
     (inducedMap f h t : M' ⊗[R] C) = h.toLinearMap.rTensor C t := by
   let _ := Corestrict (M := induced f M) f
-  have hev : (counitEval (C := C) M).rTensor C (cofreeCoact R C M (t : M ⊗[R] C)) = t :=
+  have hev : (cofreeCounit R C M).rTensor C (cofreeCoact R C M (t : M ⊗[R] C)) = t :=
     LinearMap.congr_fun
-      (rTensor_rid_comp_lTensor_counit_comp_cofreeCoact (R := R) (C := C) (M := M)) _
+      (rTensor_cofreeCounit_comp_cofreeCoact (R := R) (C := C) (M := M)) _
   rw [inducedMap, coe_inducedLift_apply, Hom.comp_toLinearMap, LinearMap.rTensor_comp_apply,
     inducedEval_toLinearMap, LinearMap.rTensor_comp_apply, Subcomodule.subtype_rTensor_coact]
   exact congrArg (h.toLinearMap.rTensor C) hev
@@ -296,10 +302,19 @@ theorem inducedEquiv_inducedMap_comp (h : Hom R D M M') (φ : Hom R C N (induced
     inducedEquiv f (Hom.comp (inducedMap f h) φ) = Hom.comp h (inducedEquiv f φ) := by
   let _ := Corestrict (M := N) f
   refine Hom.ext fun n ↦ ?_
-  have key := LinearMap.congr_fun (rid_comp_lTensor_counit_comp_rTensor (C := C) h.toLinearMap)
+  have key := LinearMap.congr_fun (cofreeCounit_comp_rTensor (C := C) h.toLinearMap)
     (φ n : M ⊗[R] C)
   simp only [LinearMap.comp_apply] at key
   simpa using key
+
+/-- Counit evaluation is natural in the coefficient comodule. -/
+theorem inducedEval_inducedMap (h : Hom R D M M') (t : induced f M) :
+    letI := Corestrict (M := induced f M) f
+    letI := Corestrict (M := induced f M') f
+    inducedEval f (inducedMap f h t) = h (inducedEval f t) := by
+  have ht := congrArg (fun k ↦ k t)
+    (inducedEquiv_inducedMap_comp f h (Hom.id R C (induced f M)))
+  simpa only [inducedEquiv_apply, Hom.comp_apply, corestrictHom_apply, Hom.id_apply] using ht
 
 end Comodule
 

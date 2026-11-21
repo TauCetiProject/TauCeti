@@ -83,7 +83,7 @@ theorem Filter.Tendsto.isEntire_polynomialHom_one_sub_C_inv_mul_X {ι : Type*} {
   simp only [norm_eq_gaussNorm, AddSubgroupClass.coe_sub, coe_restrict,
     OneMemClass.coe_one, IsEntire.coe_polynomialHom, Polynomial.coe_sub, Polynomial.coe_one,
     Polynomial.coe_mul, Polynomial.coe_C, Polynomial.coe_X]
-  rw [gaussNorm_one_sub_C_mul_X_sub_one _ r.2.le, norm_inv]
+  rw [gaussNorm_one_sub_C_mul_X_sub_one _ r.property.le, norm_inv]
 
 end WeierstrassFactors
 
@@ -103,16 +103,16 @@ multiplicities has fiber cardinality `(taylor y f).order` at every nonzero `y : 
 `0`. -/
 private theorem encard_sigma_zeros_eq {f : K⟦X⟧} (hf : f.IsEntire) (hf0 : f ≠ 0) (y : K) :
     {p : Σ x : {x : K // x ≠ 0 ∧ f.evalAt x = 0},
-      Fin (_root_.PowerSeries.taylor x.1 f).order.toNat | p.1.1 = y}.encard =
+      Fin (_root_.PowerSeries.taylor x.val f).order.toNat | p.1.val = y}.encard =
       if y = 0 then 0 else (_root_.PowerSeries.taylor y f).order := by
   split_ifs with hy0
   · subst hy0
     rw [Set.encard_eq_zero, Set.eq_empty_iff_forall_notMem]
-    exact fun p hp ↦ p.1.2.1 hp
+    exact fun p hp ↦ p.1.property.1 hp
   · by_cases hyz : f.evalAt y = 0
     · let z₀ : {x : K // x ≠ 0 ∧ f.evalAt x = 0} := ⟨y, hy0, hyz⟩
       let e : {p : Σ x : {x : K // x ≠ 0 ∧ f.evalAt x = 0},
-          Fin (_root_.PowerSeries.taylor x.1 f).order.toNat | p.1.1 = y} ≃
+          Fin (_root_.PowerSeries.taylor x.val f).order.toNat | p.1.val = y} ≃
           Fin (_root_.PowerSeries.taylor y f).order.toNat :=
         { toFun := fun ⟨⟨x, k⟩, hx⟩ ↦ Fin.cast (by rw [hx]) k
           invFun := fun k ↦ ⟨⟨z₀, k⟩, rfl⟩
@@ -133,7 +133,7 @@ private theorem encard_sigma_zeros_eq {f : K⟦X⟧} (hf : f.IsEntire) (hf0 : f 
           (by rwa [constantCoeff_taylor]))
       rw [hord0, Set.encard_eq_zero, Set.eq_empty_iff_forall_notMem]
       intro p hp
-      exact hyz (hp ▸ p.1.2.2)
+      exact hyz (hp ▸ p.1.property.2)
 
 /-- **Canonical unlabelled Weierstrass product for `f(0) = 1`.** Every entire series `f` with
 `f(0) = 1` over an algebraically closed complete ultrametric normed field `K` is the unconditional
@@ -141,8 +141,8 @@ product in `PowerSeries.IsEntire.subring K` of `1 - x⁻¹ X` indexed directly b
 with `f(x) = 0` and `k < (taylor x f).order.toNat`, choosing no enumeration of the zeros. -/
 theorem hasProd_polynomialHom_zeros (hf : f.IsEntire) (h0 : constantCoeff f = 1) :
     HasProd (fun p : Σ x : {x : K // x ≠ 0 ∧ f.evalAt x = 0},
-        Fin (_root_.PowerSeries.taylor x.1 f).order.toNat ↦
-      IsEntire.polynomialHom (1 - Polynomial.C (p.1.1)⁻¹ * Polynomial.X))
+        Fin (_root_.PowerSeries.taylor x.val f).order.toNat ↦
+      IsEntire.polynomialHom (1 - Polynomial.C (p.1.val)⁻¹ * Polynomial.X))
       ⟨f, IsEntire.mem_subring.mpr hf⟩ := by
   have hf0 : f ≠ 0 := by
     rintro rfl
@@ -216,10 +216,10 @@ zeros `x`, each repeated according to its Taylor multiplicity `(taylor x f).orde
 theorem eq_C_mul_X_pow_mul_tprod_zeros (hf : f.IsEntire) (hf0 : f ≠ 0) :
     f = C (coeff f.order.toNat f) * X ^ f.order.toNat *
       ((∏' p : Σ x : {x : K // x ≠ 0 ∧ f.evalAt x = 0},
-          Fin (_root_.PowerSeries.taylor x.1 f).order.toNat,
-        IsEntire.polynomialHom (1 - Polynomial.C (p.1.1)⁻¹ * Polynomial.X) :
+          Fin (_root_.PowerSeries.taylor x.val f).order.toNat,
+        IsEntire.polynomialHom (1 - Polynomial.C (p.1.val)⁻¹ * Polynomial.X) :
         IsEntire.subring K) : K⟦X⟧) :=
-  hf.eq_C_mul_X_pow_mul_tprod_of_order_taylor_eq hf0 (fun p ↦ p.1.2.1) fun x hx ↦ by
+  hf.eq_C_mul_X_pow_mul_tprod_of_order_taylor_eq hf0 (fun p ↦ p.1.property.1) fun x hx ↦ by
     rw [encard_sigma_zeros_eq hf hf0 x]
     simp [hx]
 

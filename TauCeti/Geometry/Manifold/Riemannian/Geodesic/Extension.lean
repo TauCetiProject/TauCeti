@@ -40,8 +40,10 @@ superset. For a smooth metric, near any closed subset of an open preconnected ge
 also agrees with a curve smooth on the whole line.
 
 The finite-endpoint and open-superset geodesic extensions need a `C²` metric on a `C³` Hausdorff
-manifold without boundary. The maximal-geodesic identifications and globally smooth curve extensions
-require a smooth metric and manifold without boundary. No completeness assumption is needed.
+manifold without boundary. The smooth extensions on open preconnected sets require only a smooth
+metric and manifold; the closed-interval and maximal-geodesic smooth extensions and the
+maximal-geodesic identifications also assume a Hausdorff manifold without boundary. No completeness
+assumption is needed.
 
 ## Main results
 
@@ -103,7 +105,7 @@ variable
 
 section SmoothExtension
 
-variable [I.Boundaryless] [IsManifold I ∞ M]
+variable [IsManifold I ∞ M]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
 
 /-- A geodesic on an open preconnected set `U` agrees near any set closed in `ℝ` and contained
@@ -169,7 +171,7 @@ theorem exists_mapClusterPt_curveVelocityLiftWithin {s : Set ℝ} (hγ : IsGeode
   obtain ⟨τ, hτ⟩ := l.nonempty_of_mem hl
   obtain ⟨K, hK, hpK⟩ := exists_compact_mem_nhds p
   have hmem : Tendsto (curveVelocityLiftWithin I γ s) l
-      (𝓟 {z : TangentBundle I M | z.proj ∈ K ∧ ‖z.2‖ ≤ ‖curveVelocityWithin I γ s τ‖}) := by
+      (𝓟 {z : TangentBundle I M | z.proj ∈ K ∧ ‖z.snd‖ ≤ ‖curveVelocityWithin I γ s τ‖}) := by
     refine tendsto_principal.2 ?_
     filter_upwards [hp.eventually hpK, hl] with t ht hts
     rw [curveVelocityLiftWithin_apply]
@@ -396,7 +398,8 @@ theorem IsGeodesicCurveOnFrom.subset_geodesicInterval_of_isPreconnected
     (hγ : IsGeodesicCurveOnFrom I γ s p v) (hs : IsPreconnected s) :
     s ⊆ geodesicInterval I M p v := by
   intro t ht
-  have hdom := congrArg (fun z : TangentBundle I M ↦ geodesicInterval I M z.proj z.2) hγ.initial_eq
+  have hdom := congrArg (fun z : TangentBundle I M ↦ geodesicInterval I M z.proj z.snd)
+      hγ.initial_eq
   dsimp only at hdom
   have hmem := hγ.isGeodesicCurveOn.sub_mem_geodesicInterval_of_isPreconnected hs hγ.zero_mem ht
   rw [sub_zero, hdom] at hmem
@@ -430,7 +433,8 @@ theorem IsGeodesicCurveOnFrom.eqOn_maximalGeodesic_of_isPreconnected
     (hγ : IsGeodesicCurveOnFrom I γ s p v) (hs : IsPreconnected s) :
     EqOn (maximalGeodesic I M p v) γ s := by
   intro t ht
-  have hval := congrArg (fun z : TangentBundle I M ↦ maximalGeodesic I M z.proj z.2 t) hγ.initial_eq
+  have hval := congrArg (fun z : TangentBundle I M ↦ maximalGeodesic I M z.proj z.snd t)
+      hγ.initial_eq
   dsimp only at hval
   refine hval.symm.trans ?_
   simpa only [sub_zero] using

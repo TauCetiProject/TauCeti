@@ -9,12 +9,12 @@ public import Mathlib.Algebra.Module.Submodule.Pointwise
 public import Mathlib.RingTheory.Localization.Away.Basic
 public import Mathlib.RingTheory.Localization.AtPrime.Basic
 public import Mathlib.RingTheory.Noetherian.Defs
-import TauCeti.RingTheory.Support
+import TauCeti.RingTheory.Support.Basic
 import Mathlib.Algebra.GroupWithZero.Action.Regular
 import TauCeti.RingTheory.Ideal.Maps
 
 /-!
-# Ideals that become principal in an away localization
+# Ideals and localizations
 
 If `r • I ≤ (t)` for an element `t` of an ideal `I`, then `I` and `(t)` agree after inverting
 `r`. This is how a local equation of an ideal is read off from a relation holding up to a
@@ -39,6 +39,10 @@ effective Cartier divisor.
 The contraction of an extended ideal from a localization away from `r` is described by
 `IsLocalization.Away.algebraMap_mem_map_algebraMap_iff`: it consists of the elements which some
 power of `r` multiplies into the ideal, that is, the saturation of the ideal by `r`.
+
+When `R` is localized at a submonoid containing every positive integer, for instance to a total
+ring of fractions of `R` when every positive integer is a non-zero-divisor of `R`, every quotient
+of the localization by a proper ideal has characteristic zero (`IsLocalization.charZero_quotient`).
 -/
 
 public section
@@ -119,7 +123,7 @@ theorem exists_notMem_smul_le_span_singleton_of_map_eq [IsNoetherianRing A] {P :
       have hb' : algebraMap A S b = 0 := isSMulRegular_iff_right_eq_zero_of_smul.mp hreg _ <| by
         rw [smul_eq_mul, ← map_mul, mul_comm a b, hb, map_zero]
       obtain ⟨u, hu⟩ := (IsLocalization.map_eq_zero_iff P.primeCompl S b).mp hb'
-      exact ⟨u, u.2, Subtype.ext hu⟩
+      exact ⟨u, u.property, Subtype.ext hu⟩
   refine ⟨r₁ * r₂, fun h ↦ (‹P.IsPrime›.mem_or_mem h).elim hr₁P hr₂P, fun x hx ↦ ?_, fun b hb ↦ ?_⟩
   · obtain ⟨b, hb, rfl⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).mp hx
     have := hr₁ (Submodule.smul_mem_pointwise_smul b r₁ q hb)
@@ -145,3 +149,22 @@ theorem algebraMap_mem_map_algebraMap_iff (I : Ideal R) (x : R) :
     Submonoid.mem_powers_iff]
 
 end IsLocalization.Away
+
+namespace IsLocalization
+
+variable (A K : Type*) [CommSemiring A] [CommRing K] [Algebra A K] {M : Submonoid A}
+  [IsLocalization M K]
+
+/-- If every positive integer of `A` lies in `M`, then every quotient of the localization `K` of `A`
+at `M` by a proper ideal has characteristic zero. For instance, `K` may be a total ring of
+fractions of `A` when every positive integer is a non-zero-divisor of `A`. -/
+theorem charZero_quotient (h : ∀ n : ℕ, n ≠ 0 → (n : A) ∈ M) {I : Ideal K} (hI : I ≠ ⊤) :
+    CharZero (K ⧸ I) := by
+  refine charZero_of_inj_zero fun n hn ↦ ?_
+  by_contra h0
+  have hu : IsUnit (n : K) := by
+    simpa using map_units K ⟨(n : A), h n h0⟩
+  have := Ideal.Quotient.nontrivial_iff.mpr hI
+  exact (hu.map (Ideal.Quotient.mk I)).ne_zero (by simpa using hn)
+
+end IsLocalization
