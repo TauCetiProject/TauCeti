@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.SpectralSequence.SerreClass
+public import TauCeti.Algebra.Homology.SpectralSequence.Tower
 
 /-!
 # Vanishing and survival of objects on later pages of a spectral sequence
@@ -16,12 +17,12 @@ vanishes on every later page (`CategoryTheory.SpectralSequence.isZero_page_X_of_
 
 Conversely, suppose that on the page `r` every object joined to the position `pq` by a
 differential of some later page vanishes. Then on every later page both differentials at `pq`
-vanish, because their other ends are already zero, so the object at `pq` is its own homology and
-survives unchanged to every page `r' ≥ r`
-(`CategoryTheory.SpectralSequence.pageXIsoOfLEOfIsZero`). This is how sparseness of an early
-page, for instance a lacunary pattern of nonzero total degrees, makes a spectral sequence
-degenerate: all differentials from the page `r` on vanish
-(`CategoryTheory.SpectralSequence.page_d_eq_zero_of_le`).
+vanish, because their other ends are already zero, so `E` stabilises at `pq` from page `r`
+(`CategoryTheory.SpectralSequence.stabilisesAt_of_forall_isZero`), and
+`CategoryTheory.SpectralSequence.pageXIsoOfStabilises` identifies the object at `pq` across all
+pages `r' ≥ r`. This is how sparseness of an early page, for instance a lacunary pattern of
+nonzero total degrees, makes a spectral sequence degenerate: all differentials from the page `r`
+on vanish (`CategoryTheory.SpectralSequence.page_d_eq_zero_of_le`).
 
 ## Main results
 
@@ -30,10 +31,8 @@ degenerate: all differentials from the page `r` on vanish
   positions one of which is zero on an earlier page vanishes.
 * `CategoryTheory.SpectralSequence.page_d_eq_zero_of_forall_isZero`: the differentials at a
   position whose neighbours vanish are zero on all later pages.
-* `CategoryTheory.SpectralSequence.pageXIsoOfLEOfIsZero`: an object whose neighbours vanish
-  survives unchanged to all later pages, with
-  `CategoryTheory.SpectralSequence.pageXIsoOfLEOfIsZero_self` and
-  `CategoryTheory.SpectralSequence.pageXIsoOfLEOfIsZero_add_one`.
+* `CategoryTheory.SpectralSequence.stabilisesAt_of_forall_isZero`: an object whose neighbours
+  vanish stabilises from page `r`.
 
 ## References
 
@@ -80,47 +79,16 @@ lemma page_d_eq_zero_of_forall_isZero {r : ℤ} (hr : r₀ ≤ r) {pq : κ}
     · exact E.page_d_eq_zero_of_le hr (Or.inl (h s hrs i (Or.inr hrel))) s hrs
   · exact (E.page s (hr.trans hrs)).shape i j hrel
 
-/-- **Objects with vanishing neighbours survive.** Suppose that on the page `r` every object
-joined to the position `pq` by a differential of some page `s ≥ r` is zero. Then the object at
-`pq` on every later page `r' ≥ r` is isomorphic to the object at `pq` on the page `r`: on each
-page in between, both differentials at `pq` vanish
-(`CategoryTheory.SpectralSequence.page_d_eq_zero_of_forall_isZero`), so the object is its own
-homology. The isomorphism is built page by page, see
-`CategoryTheory.SpectralSequence.pageXIsoOfLEOfIsZero_self` and
-`CategoryTheory.SpectralSequence.pageXIsoOfLEOfIsZero_add_one`. -/
-noncomputable def pageXIsoOfLEOfIsZero {r : ℤ} (hr : r₀ ≤ r) {pq : κ}
-    (h : ∀ s, r ≤ s → ∀ pq', (c s).Rel pq pq' ∨ (c s).Rel pq' pq → IsZero ((E.page r).X pq'))
-    (r' : ℤ) (hrr' : r ≤ r') : (E.page r' (hr.trans hrr')).X pq ≅ (E.page r).X pq :=
-  Int.leInduction (motive := fun r' hrr' ↦ (E.page r' (hr.trans hrr')).X pq ≅ (E.page r).X pq)
-    (Iso.refl _)
-    (fun s hrs e ↦ (E.iso s (s + 1) pq rfl (hr.trans hrs)).symm ≪≫
-      ((E.page s (hr.trans hrs)).isoHomologyπ _ pq rfl
-        (E.page_d_eq_zero_of_forall_isZero hr h s hrs (Or.inr rfl))).symm ≪≫
-      (E.page s (hr.trans hrs)).iCyclesIso pq _ rfl
-        (E.page_d_eq_zero_of_forall_isZero hr h s hrs (Or.inl rfl)) ≪≫ e)
-    r' hrr'
-
-/-- On the page `r` itself, `CategoryTheory.SpectralSequence.pageXIsoOfLEOfIsZero` is the
-identity. -/
-@[simp]
-lemma pageXIsoOfLEOfIsZero_self {r : ℤ} (hr : r₀ ≤ r) {pq : κ}
+/-- **Objects with vanishing neighbours stabilise.** Suppose that on the page `r` every object
+joined to the position `pq` by a differential of some page `s ≥ r` is zero. Then `E` stabilises
+at `pq` from page `r` (`CategoryTheory.SpectralSequence.StabilisesAt`), so
+`CategoryTheory.SpectralSequence.pageXIsoOfStabilises` identifies `(E.page r).X pq` with
+`(E.page r').X pq` for every `r' ≥ r`. -/
+lemma stabilisesAt_of_forall_isZero {r : ℤ} (hr : r₀ ≤ r) {pq : κ}
     (h : ∀ s, r ≤ s → ∀ pq', (c s).Rel pq pq' ∨ (c s).Rel pq' pq → IsZero ((E.page r).X pq')) :
-    E.pageXIsoOfLEOfIsZero hr h r le_rfl = Iso.refl _ :=
-  Int.leInduction_base _ _
-
-/-- From the page `s` to the page `s + 1`,
-`CategoryTheory.SpectralSequence.pageXIsoOfLEOfIsZero` identifies the object at `pq` with its
-homology on the page `s`, which is the object itself since both differentials at `pq` vanish. -/
-lemma pageXIsoOfLEOfIsZero_add_one {r : ℤ} (hr : r₀ ≤ r) {pq : κ}
-    (h : ∀ s, r ≤ s → ∀ pq', (c s).Rel pq pq' ∨ (c s).Rel pq' pq → IsZero ((E.page r).X pq'))
-    (s : ℤ) (hrs : r ≤ s) :
-    E.pageXIsoOfLEOfIsZero hr h (s + 1) (Int.le_add_one hrs) =
-      (E.iso s (s + 1) pq rfl (hr.trans hrs)).symm ≪≫
-        ((E.page s (hr.trans hrs)).isoHomologyπ _ pq rfl
-          (E.page_d_eq_zero_of_forall_isZero hr h s hrs (Or.inr rfl))).symm ≪≫
-        (E.page s (hr.trans hrs)).iCyclesIso pq _ rfl
-          (E.page_d_eq_zero_of_forall_isZero hr h s hrs (Or.inl rfl)) ≪≫
-        E.pageXIsoOfLEOfIsZero hr h s hrs :=
-  Int.leInduction_add_one _ _ s hrs
+    E.StabilisesAt pq r hr :=
+  (E.stabilisesAt_iff_forall_d_eq_zero pq r hr).mpr fun s hrs _pq' ↦
+    ⟨E.page_d_eq_zero_of_forall_isZero hr h s hrs (Or.inl rfl),
+     E.page_d_eq_zero_of_forall_isZero hr h s hrs (Or.inr rfl)⟩
 
 end CategoryTheory.SpectralSequence

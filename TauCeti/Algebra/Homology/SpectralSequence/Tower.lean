@@ -57,11 +57,14 @@ theorem fromPage_iso (s : ℤ) (hs : r₀ ≤ s) (r r' : ℤ) (pq : κ) (hrr' : 
     (E.fromPage s hs).iso r r' pq hrr' hr = E.iso r r' pq hrr' (hs.trans hr) := rfl
 
 /-- Restrict a morphism of spectral sequences to start at a later page `s ≥ r₀`. -/
-@[expose, simps]
 def Hom.fromPage {E E' : SpectralSequence C c r₀} (f : E ⟶ E') (s : ℤ) (hs : r₀ ≤ s := by lia) :
     E.fromPage s hs ⟶ E'.fromPage s hs where
   hom r hr := f.hom r (hs.trans hr)
   comm r r' pq hrr' hr := f.comm r r' pq hrr' (hs.trans hr)
+
+@[simp]
+theorem Hom.fromPage_hom {E E' : SpectralSequence C c r₀} (f : E ⟶ E') (s : ℤ) (hs : r₀ ≤ s)
+    (r : ℤ) (hr : s ≤ r) : (f.fromPage s hs).hom r hr = f.hom r (hs.trans hr) := by rfl
 
 /-- Rebasing spectral sequences from page `r₀` to page `s ≥ r₀`, as a functor. -/
 @[expose, simps]
@@ -252,16 +255,18 @@ private theorem mapInduced_pagePresentation_aux (r : ℤ) (hr : r₀ ≤ r) :
       hmap.symm ▸ ShortComplex.exists_imageSubobject_le φ
     have hZ' := (p.exists_preimage_le_preimage_iff p' f₀ hZ hB _ _).mpr hZ_s
     have hB' := (p.exists_preimage_le_preimage_iff p' f₀ hZ hB _ _).mpr hB_s
+    have hhom : ((E.page r hr).sc pq).homologyPresentation.mapInduced
+          ((E'.page r hr).sc pq).homologyPresentation (p.mapInduced p' f₀ hZ hB) hZ_s hB_s =
+        HomologicalComplex.homologyMap (f.hom r hr) pq :=
+      (SubquotientPresentation.mapInduced_congr rfl rfl hmap _ _ _ _).trans
+        (ShortComplex.mapInduced_homologyPresentation φ)
     refine ⟨by rwa [cyclesSubobject_add_one, cyclesSubobject_add_one],
       by rwa [boundariesSubobject_add_one, boundariesSubobject_add_one], ?_⟩
     rw [SubquotientPresentation.mapInduced_congr (pagePresentation_add_one E pq r hr)
         (pagePresentation_add_one E' pq r hr) rfl _ _ hZ' hB',
       SubquotientPresentation.mapInduced_comp_presentation p p' _ _ f₀ hZ hB hZ_s hB_s,
-      SubquotientPresentation.mapInduced_transIso,
-      show _ = HomologicalComplex.homologyMap (f.hom r hr) pq from
-        (SubquotientPresentation.mapInduced_congr rfl rfl hmap _ _ _ _).trans
-          (ShortComplex.mapInduced_homologyPresentation φ),
-      f.comm r (r + 1) pq rfl hr, Iso.inv_hom_id_assoc]
+      SubquotientPresentation.mapInduced_transIso, hhom, f.comm r (r + 1) pq rfl hr,
+      Iso.inv_hom_id_assoc]
 
 /-- Naturality of the cycle tower: `f : E ⟶ E'` maps `Z_r(E, pq)` into `Z_r(E', pq)`. -/
 theorem Hom.exists_cyclesSubobject_le (r : ℤ) (hr : r₀ ≤ r := by lia) :
@@ -305,9 +310,9 @@ private theorem exists_eq_of_iso_aux {S : Subobject ((E.page r₀).X pq)}
     (Subobject.exists ((e.hom.hom r₀).f pq)).obj S = S' := by
   refine le_antisymm h1 ?_
   have h := (Subobject.exists ((e.hom.hom r₀).f pq)).monotone h2
-  rw [← Subobject.exists_comp, show (e.inv.hom r₀).f pq ≫ (e.hom.hom r₀).f pq = 𝟙 _ from
-    ((pageFunctor C c r₀ r₀ le_rfl ⋙ HomologicalComplex.eval C (c r₀) pq).mapIso e).inv_hom_id,
-    Subobject.exists_id] at h
+  have hid : (e.inv.hom r₀).f pq ≫ (e.hom.hom r₀).f pq = 𝟙 ((E'.page r₀).X pq) :=
+    ((pageFunctor C c r₀ r₀ le_rfl ⋙ HomologicalComplex.eval C (c r₀) pq).mapIso e).inv_hom_id
+  rw [← Subobject.exists_comp, hid, Subobject.exists_id] at h
   exact h
 
 /-- An isomorphism `e : E ≅ E'` carries `Z_r(E, pq)` onto `Z_r(E', pq)`. -/
@@ -334,25 +339,41 @@ variable (E : SpectralSequence C c r₀)
 
 /-- `E` *stabilises at `pq` from page `s`* if on every page `r ≥ s`, both the differential leaving
 `pq` and the differential entering `pq` vanish. -/
-@[expose]
 def StabilisesAt (pq : κ) (s : ℤ) (hs : r₀ ≤ s := by lia) : Prop :=
   ∀ (r : ℤ) (hsr : s ≤ r),
     (E.page r (hs.trans hsr)).dFrom pq = 0 ∧ (E.page r (hs.trans hsr)).dTo pq = 0
 
 /-- `E` is *regular at `pq`* if the differentials leaving `pq` vanish from some page onward. -/
-@[expose]
 def IsRegularAt (pq : κ) : Prop :=
   ∃ (s : ℤ) (hs : r₀ ≤ s), ∀ (r : ℤ) (hsr : s ≤ r), (E.page r (hs.trans hsr)).dFrom pq = 0
 
 /-- `E` is *coregular at `pq`* if the differentials entering `pq` vanish from some page onward. -/
-@[expose]
 def IsCoregularAt (pq : κ) : Prop :=
   ∃ (s : ℤ) (hs : r₀ ≤ s), ∀ (r : ℤ) (hsr : s ≤ r), (E.page r (hs.trans hsr)).dTo pq = 0
 
 /-- `E` *degenerates at page `s`* if every differential on every page `r ≥ s` vanishes. -/
-@[expose]
 def DegeneratesAt (s : ℤ) (hs : r₀ ≤ s := by lia) : Prop :=
   ∀ (r : ℤ) (hsr : s ≤ r) (i j : κ), (E.page r (hs.trans hsr)).d i j = 0
+
+theorem stabilisesAt_iff (pq : κ) (s : ℤ) (hs : r₀ ≤ s := by lia) :
+    E.StabilisesAt pq s hs ↔ ∀ (r : ℤ) (hsr : s ≤ r),
+      (E.page r (hs.trans hsr)).dFrom pq = 0 ∧ (E.page r (hs.trans hsr)).dTo pq = 0 :=
+  Iff.rfl
+
+theorem isRegularAt_iff (pq : κ) :
+    E.IsRegularAt pq ↔ ∃ (s : ℤ) (hs : r₀ ≤ s), ∀ (r : ℤ) (hsr : s ≤ r),
+      (E.page r (hs.trans hsr)).dFrom pq = 0 :=
+  Iff.rfl
+
+theorem isCoregularAt_iff (pq : κ) :
+    E.IsCoregularAt pq ↔ ∃ (s : ℤ) (hs : r₀ ≤ s), ∀ (r : ℤ) (hsr : s ≤ r),
+      (E.page r (hs.trans hsr)).dTo pq = 0 :=
+  Iff.rfl
+
+theorem degeneratesAt_iff (s : ℤ) (hs : r₀ ≤ s := by lia) :
+    E.DegeneratesAt s hs ↔ ∀ (r : ℤ) (hsr : s ≤ r) (i j : κ),
+      (E.page r (hs.trans hsr)).d i j = 0 :=
+  Iff.rfl
 
 end
 
@@ -384,6 +405,11 @@ theorem StabilisesAt.isRegularAt : E.IsRegularAt pq := ⟨s, hs, fun r hsr ↦ (
 theorem StabilisesAt.isCoregularAt : E.IsCoregularAt pq := ⟨s, hs, fun r hsr ↦ (h r hsr).2⟩
 
 end
+
+theorem DegeneratesAt.d_eq_zero {E : SpectralSequence C c r₀} {s : ℤ} {hs : r₀ ≤ s}
+    (hd : E.DegeneratesAt s hs) {r : ℤ} (hsr : s ≤ r) (i j : κ) :
+    (E.page r (hs.trans hsr)).d i j = 0 :=
+  hd r hsr i j
 
 /-- Degeneration at page `s` persists to every later page `s' ≥ s`. -/
 theorem DegeneratesAt.of_le {E : SpectralSequence C c r₀} {s : ℤ} {hs : r₀ ≤ s}

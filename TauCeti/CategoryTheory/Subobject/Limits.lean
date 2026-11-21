@@ -40,8 +40,8 @@ theorem kernelSubobject_eq_top_iff [HasZeroMorphisms C] {X Y : C} (f : X ⟶ Y) 
 theorem imageSubobject_eq_bot_iff [HasZeroMorphisms C] [HasZeroObject C] {X Y : C} (f : X ⟶ Y)
     [HasImage f] : imageSubobject f = ⊥ ↔ f = 0 :=
   ⟨fun h ↦ by
-    rw [← imageSubobject_arrow_comp f,
-      show (imageSubobject f).arrow = 0 by rw [h, Subobject.bot_arrow], comp_zero],
+    have harrow : (imageSubobject f).arrow = 0 := by rw [h, Subobject.bot_arrow]
+    rw [← imageSubobject_arrow_comp f, harrow, comp_zero],
    fun h ↦ h ▸ imageSubobject_zero⟩
 
 /-- In a normal-mono category, the kernel subobject of `cokernel.π f` for a mono `f` is `mk f`. -/
@@ -74,8 +74,9 @@ theorem isGLB_kernelSubobject_piLift [HasZeroMorphisms C] [HasCokernels C] [IsNo
     rw [← ofLE_arrow (hT (Set.mem_range_self i)), Category.assoc, cokernel.condition, comp_zero])⟩
   rintro _ ⟨i, rfl⟩
   have hcomp : (kernelSubobject φ).arrow ≫ cokernel.π (S i).arrow = 0 := by
-    simpa [φ] using show (kernelSubobject φ).arrow ≫ φ ≫ Pi.π (fun j ↦ cokernel (S j).arrow) i = 0
-      by rw [kernelSubobject_arrow_comp_assoc, zero_comp]
+    have hpi : (kernelSubobject φ).arrow ≫ φ ≫ Pi.π (fun j ↦ cokernel (S j).arrow) i = 0 := by
+      rw [kernelSubobject_arrow_comp_assoc, zero_comp]
+    simpa [φ] using hpi
   obtain ⟨hf⟩ := IsNormalMonoCategory.normalMonoOfMono (S i).arrow
   obtain ⟨l, hl⟩ := NormalMono.lift' (S i).arrow (kernelSubobject φ).arrow (by
     rw [← cokernel.π_desc (S i).arrow hf.g hf.w, reassoc_of% hcomp, zero_comp])

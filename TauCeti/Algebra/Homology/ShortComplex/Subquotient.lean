@@ -26,15 +26,41 @@ namespace CategoryTheory.ShortComplex
 
 universe v u
 
-variable {C : Type u} [Category.{v} C] [Abelian C]
+variable {C : Type u} [Category.{v} C]
+
+section
+
+/-- `imageSubobject S.f ≤ kernelSubobject S.g` for any short complex `S`. -/
+theorem imageSubobject_le_kernelSubobject [HasZeroMorphisms C] (S : ShortComplex C)
+    [HasImage S.f] [HasEqualizers C] [HasKernel S.g] :
+    imageSubobject S.f ≤ kernelSubobject S.g :=
+  le_kernelSubobject S.g _ (imageSubobject_arrow_comp_eq_zero S.zero)
+
+/-- A morphism `φ : S ⟶ S'` maps `kernelSubobject S.g` into `kernelSubobject S'.g`. -/
+theorem exists_kernelSubobject_le [HasZeroMorphisms C] [HasImages C] [HasEqualizers C]
+    {S S' : ShortComplex C} (φ : S ⟶ S') [HasKernel S.g] [HasKernel S'.g] :
+    (Subobject.exists φ.τ₂).obj (kernelSubobject S.g) ≤ kernelSubobject S'.g := by
+  rw [Subobject.exists_eq_imageSubobject]
+  exact le_kernelSubobject S'.g _ (imageSubobject_arrow_comp_eq_zero
+    (by rw [Category.assoc, φ.comm₂₃, kernelSubobject_arrow_comp_assoc, zero_comp]))
+
+/-- A morphism `φ : S ⟶ S'` maps `imageSubobject S.f` into `imageSubobject S'.f`. -/
+theorem exists_imageSubobject_le [HasZeroMorphisms C] [HasImages C] [HasImageMaps C]
+    {S S' : ShortComplex C} (φ : S ⟶ S') :
+    (Subobject.exists φ.τ₂).obj (imageSubobject S.f) ≤ imageSubobject S'.f := by
+  rw [Subobject.exists_eq_imageSubobject]
+  exact imageSubobject_le _ (imageSubobjectMap (Arrow.homMk (f := Arrow.mk S.f) (g := Arrow.mk S'.f)
+    φ.τ₁ φ.τ₂ φ.comm₁₂)) (imageSubobjectMap_arrow _)
+
+end
+
+section Abelian
+
+variable [Abelian C]
 
 section
 
 variable (S : ShortComplex C)
-
-/-- In an abelian category, `imageSubobject S.f ≤ kernelSubobject S.g` for any short complex `S`. -/
-theorem imageSubobject_le_kernelSubobject : imageSubobject S.f ≤ kernelSubobject S.g :=
-  le_kernelSubobject S.g _ (imageSubobject_arrow_comp_eq_zero S.zero)
 
 /-- `imageSubobject S.f ⟶ kernelSubobject S.g` vanishes upon composition with the homology map. -/
 theorem ofLE_comp_homologyPresentation_π :
@@ -92,18 +118,6 @@ theorem homologyPresentation_eq_id_transIso (hf : S.f = 0) (hg : S.g = 0) :
 
 end
 
-/-- A morphism `φ : S ⟶ S'` maps `kernelSubobject S.g` into `kernelSubobject S'.g`. -/
-theorem exists_kernelSubobject_le {S S' : ShortComplex C} (φ : S ⟶ S') :
-    (Subobject.exists φ.τ₂).obj (kernelSubobject S.g) ≤ kernelSubobject S'.g := by
-  rw [Subobject.exists_eq_imageSubobject]
-  exact le_kernelSubobject S'.g _ (imageSubobject_arrow_comp_eq_zero
-    (by rw [Category.assoc, φ.comm₂₃, kernelSubobject_arrow_comp_assoc, zero_comp]))
-
-/-- A morphism `φ : S ⟶ S'` maps `imageSubobject S.f` into `imageSubobject S'.f`. -/
-theorem exists_imageSubobject_le {S S' : ShortComplex C} (φ : S ⟶ S') :
-    (Subobject.exists φ.τ₂).obj (imageSubobject S.f) ≤ imageSubobject S'.f := by
-  rw [Subobject.exists_obj_imageSubobject, ← φ.comm₁₂]; exact imageSubobject_comp_le φ.τ₁ S'.f
-
 /-- Naturality of `homologyPresentation`: the induced map is `ShortComplex.homologyMap φ`. -/
 theorem mapInduced_homologyPresentation {S S' : ShortComplex C} (φ : S ⟶ S') :
     S.homologyPresentation.mapInduced S'.homologyPresentation φ.τ₂
@@ -117,5 +131,7 @@ theorem mapInduced_homologyPresentation {S S' : ShortComplex C} (φ : S ⟶ S') 
   simp only [cyclesIsoKernel_inv, Category.assoc, liftCycles_comp_cyclesMap, liftCycles_i,
     kernelSubobject_arrow_assoc, kernelSubobject_arrow]
   exact (S.homologyPresentation.liftZ_comp_arrow S'.homologyPresentation φ.τ₂ _).symm
+
+end Abelian
 
 end CategoryTheory.ShortComplex

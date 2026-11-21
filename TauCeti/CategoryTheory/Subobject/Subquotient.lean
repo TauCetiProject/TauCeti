@@ -10,6 +10,7 @@ public import Mathlib.CategoryTheory.Subobject.Lattice
 public import TauCeti.CategoryTheory.Subobject.Basic
 public import TauCeti.CategoryTheory.Subobject.Image
 public import TauCeti.CategoryTheory.Subobject.Limits
+import TauCeti.CategoryTheory.Subobject.Pullback
 
 /-!
 # Subquotient presentations in abelian categories
@@ -95,8 +96,8 @@ theorem ext {p q : SubquotientPresentation A X} (hZ : p.Z = q.Z)
     (hπ : p.π = (Subobject.isoOfEq p.Z q.Z hZ).hom ≫ q.π) : p = q := by
   rcases p with ⟨B, Z, le, iso⟩; rcases q with ⟨B', Z', le', iso'⟩
   dsimp only at hZ hπ; subst hZ
-  rw [show (Subobject.isoOfEq Z Z rfl).hom = 𝟙 (Z : C) by rw [← cancel_mono Z.arrow]; simp,
-    Category.id_comp] at hπ
+  have hiso : (Subobject.isoOfEq Z Z rfl).hom = 𝟙 (Z : C) := by rw [← cancel_mono Z.arrow]; simp
+  rw [hiso, Category.id_comp] at hπ
   have hB : B = B' := ((mk B Z le iso).map_kernelSubobject_π.symm.trans
     (congrArg (fun f ↦ (Subobject.map Z.arrow).obj (kernelSubobject f)) hπ)).trans
     (mk B' Z le' iso').map_kernelSubobject_π
@@ -107,9 +108,9 @@ theorem isZero_iff : IsZero X ↔ p.B = p.Z := by
   refine ⟨fun hX ↦ ?_, fun hBZ ↦ ?_⟩
   · rw [← p.map_kernelSubobject_π, hX.eq_of_tgt p.π 0, kernelSubobject_zero, Subobject.map_top,
       Subobject.mk_arrow]
-  · have : IsIso (Subobject.ofLE p.B p.Z p.le) :=
-      (show Subobject.ofLE p.B p.Z p.le = (Subobject.isoOfEq p.B p.Z hBZ).hom by
-        rw [← cancel_mono p.Z.arrow]; simp) ▸ inferInstance
+  · have heq : Subobject.ofLE p.B p.Z p.le = (Subobject.isoOfEq p.B p.Z hBZ).hom := by
+      rw [← cancel_mono p.Z.arrow]; simp
+    have : IsIso (Subobject.ofLE p.B p.Z p.le) := heq ▸ inferInstance
     exact IsZero.of_iso (Limits.isZero_cokernel_of_epi _) p.iso.symm
 
 end Basic
@@ -221,10 +222,7 @@ theorem preimage_mono : Monotone p.preimage := fun _ _ h ↦
 
 @[simp]
 theorem preimage_bot : p.preimage ⊥ = p.B := by
-  rw [preimage, show (Subobject.pullback p.π).obj ⊥ = kernelSubobject p.π from
-      le_antisymm (le_kernelSubobject p.π _ (by
-          rw [← (Subobject.isPullback p.π ⊥).w, Subobject.bot_arrow, comp_zero]))
-        (Subobject.le_pullback_of_comm p.π 0 (by simp)), p.map_kernelSubobject_π]
+  rw [preimage, Subobject.pullback_bot, p.map_kernelSubobject_π]
 
 @[simp]
 theorem preimage_top : p.preimage ⊤ = p.Z := by
@@ -266,12 +264,12 @@ theorem image_mono {T₁ T₂ : Subobject A} (h₁₂ : T₁ ≤ T₂) (h₂ : T
 
 @[simp]
 theorem image_preimage (S : Subobject X) : p.image (p.preimage S) (p.preimage_le S) = S := by
-  rw [image, ← Subobject.exists_mk_eq_imageSubobject,
-    show Subobject.mk (Subobject.ofLE (p.preimage S) p.Z (p.preimage_le S)) =
-      (Subobject.pullback p.π).obj S from Subobject.map_obj_injective p.Z.arrow
-        (by rw [Subobject.map_mk_ofLE]; rfl),
-    Subobject.exists_eq_imageSubobject, ← (Subobject.isPullback p.π S).w,
-    imageSubobject_comp_eq_of_epi, imageSubobject_mono, Subobject.mk_arrow]
+  have hmk : Subobject.mk (Subobject.ofLE (p.preimage S) p.Z (p.preimage_le S)) =
+      (Subobject.pullback p.π).obj S :=
+    Subobject.map_obj_injective p.Z.arrow (by rw [Subobject.map_mk_ofLE, preimage])
+  rw [image, ← Subobject.exists_mk_eq_imageSubobject, hmk, Subobject.exists_eq_imageSubobject,
+    ← (Subobject.isPullback p.π S).w, imageSubobject_comp_eq_of_epi, imageSubobject_mono,
+    Subobject.mk_arrow]
 
 @[simp]
 theorem preimage_image (T : Subobject A) (hB : p.B ≤ T) (hZ : T ≤ p.Z) :
@@ -307,9 +305,9 @@ theorem preimage_eq_B_iff {S : Subobject X} : p.preimage S = p.B ↔ S = ⊥ := 
 /-- The lattice correspondence `Subobject X ≃o Set.Icc p.B p.Z` for a subquotient presentation. -/
 noncomputable def orderIso : Subobject X ≃o Set.Icc p.B p.Z where
   toFun S := ⟨p.preimage S, p.preimage_mem_Icc S⟩
-  invFun T := p.image T.1 T.2.2
+  invFun T := p.image T.val T.property.2
   left_inv S := p.image_preimage S
-  right_inv T := Subtype.ext (p.preimage_image T.1 T.2.1 T.2.2)
+  right_inv T := Subtype.ext (p.preimage_image T.val T.property.1 T.property.2)
   map_rel_iff' := p.preimage_le_preimage_iff
 
 /-- `p.preimage` preserves and reflects GLBs of nonempty families in `Subobject A`. -/
@@ -480,9 +478,9 @@ noncomputable def mapInduced (f : A ⟶ A') (hZ : (Subobject.exists f).obj p.Z �
   p.desc (p.liftZ p' f hZ ≫ p'.π) (by
     let liftB : (p.B : C) ⟶ (p'.B : C) := factorThruImageSubobject (p.B.arrow ≫ f) ≫
       Subobject.ofLE _ p'.B (by rwa [← Subobject.exists_eq_imageSubobject])
-    rw [reassoc_of% show Subobject.ofLE p.B p.Z p.le ≫ p.liftZ p' f hZ =
-      liftB ≫ Subobject.ofLE p'.B p'.Z p'.le by rw [← cancel_mono p'.Z.arrow]; simp [liftB],
-      p'.ofLE_comp_π, comp_zero])
+    have hsq : Subobject.ofLE p.B p.Z p.le ≫ p.liftZ p' f hZ =
+        liftB ≫ Subobject.ofLE p'.B p'.Z p'.le := by rw [← cancel_mono p'.Z.arrow]; simp [liftB]
+    rw [reassoc_of% hsq, p'.ofLE_comp_π, comp_zero])
 
 @[reassoc (attr := simp)]
 theorem π_comp_mapInduced (f : A ⟶ A') (hZ : (Subobject.exists f).obj p.Z ≤ p'.Z)
@@ -505,10 +503,9 @@ theorem mapInduced_congr {p₁ p₂ : SubquotientPresentation A X}
 @[simp]
 theorem mapInduced_id (hZ : (Subobject.exists (𝟙 A)).obj p.Z ≤ p.Z := by simp)
     (hB : (Subobject.exists (𝟙 A)).obj p.B ≤ p.B := by simp) :
-    p.mapInduced p (𝟙 A) hZ hB = 𝟙 X :=
-  (p.mapInduced_unique p (𝟙 A) hZ hB (by
-    rw [show p.liftZ p (𝟙 A) hZ = 𝟙 (p.Z : C) by rw [← cancel_mono p.Z.arrow]; simp,
-      Category.comp_id, Category.id_comp])).symm
+    p.mapInduced p (𝟙 A) hZ hB = 𝟙 X := by
+  have hlift : p.liftZ p (𝟙 A) hZ = 𝟙 (p.Z : C) := by rw [← cancel_mono p.Z.arrow]; simp
+  exact (p.mapInduced_unique p (𝟙 A) hZ hB (by rw [hlift, Category.comp_id, Category.id_comp])).symm
 
 @[simp]
 theorem id_mapInduced_id (f : A ⟶ A') (hZ : (Subobject.exists f).obj (id A).Z ≤ (id A').Z)
@@ -548,11 +545,11 @@ theorem exists_preimage_le_preimage_iff (f : A ⟶ A')
   let e₁ := factorThruImageSubobject ((p.preimage S).arrow ≫ f) ≫
     (Subobject.isoOfEq _ _ (Subobject.exists_eq_imageSubobject f (p.preimage S)).symm).hom
   have : Epi e₁ := by dsimp only [e₁]; infer_instance
-  rw [← imageSubobject_comp_eq_of_epi e₁, reassoc_of% show e₁ ≫ Subobject.ofLE _ p'.Z hleZ' =
-      Subobject.ofLE (p.preimage S) p.Z (p.preimage_le S) ≫ p.liftZ p' f hZ by
-        rw [← cancel_mono p'.Z.arrow]; simp [e₁],
-    ← p.π_comp_mapInduced, ← Category.assoc, ← p.preimageπ_comp_arrow S, Category.assoc,
-    imageSubobject_comp_eq_of_epi]
+  have hfac : e₁ ≫ Subobject.ofLE _ p'.Z hleZ' =
+      Subobject.ofLE (p.preimage S) p.Z (p.preimage_le S) ≫ p.liftZ p' f hZ := by
+    rw [← cancel_mono p'.Z.arrow]; simp [e₁]
+  rw [← imageSubobject_comp_eq_of_epi e₁, reassoc_of% hfac, ← p.π_comp_mapInduced,
+    ← Category.assoc, ← p.preimageπ_comp_arrow S, Category.assoc, imageSubobject_comp_eq_of_epi]
 
 /-- Compatibility of `mapInduced` with composition of subquotient presentations. -/
 theorem mapInduced_comp_presentation (q : SubquotientPresentation X Y)
@@ -568,16 +565,15 @@ theorem mapInduced_comp_presentation (q : SubquotientPresentation X Y)
   rw [comp_π_assoc, q.π_comp_mapInduced, comp_π, ← Category.assoc, ← Category.assoc]
   congr 1; rw [← cancel_mono q'.Z.arrow]
   simp only [Category.assoc, preimageπ_comp_arrow, liftZ_comp_arrow]
-  rw [reassoc_of% show (p.comp q).liftZ (p'.comp q') f
+  have hlift : (p.comp q).liftZ (p'.comp q') f
         ((p.exists_preimage_le_preimage_iff p' f hZ hB q.Z q'.Z).mpr hZq) ≫
       Subobject.ofLE (p'.preimage q'.Z) p'.Z (p'.preimage_le q'.Z) =
-      Subobject.ofLE (p.preimage q.Z) p.Z (p.preimage_le q.Z) ≫ p.liftZ p' f hZ by
-        rw [← cancel_mono p'.Z.arrow, Category.assoc, Category.assoc, Subobject.ofLE_arrow,
-          liftZ_comp_arrow, liftZ_comp_arrow, Subobject.ofLE_arrow_assoc],
-    ← p.π_comp_mapInduced p' f hZ hB, ← p.preimageπ_comp_arrow_assoc]
+      Subobject.ofLE (p.preimage q.Z) p.Z (p.preimage_le q.Z) ≫ p.liftZ p' f hZ := by
+    rw [← cancel_mono p'.Z.arrow, Category.assoc, Category.assoc, Subobject.ofLE_arrow,
+      liftZ_comp_arrow, liftZ_comp_arrow, Subobject.ofLE_arrow_assoc]
+  rw [reassoc_of% hlift, ← p.π_comp_mapInduced p' f hZ hB, ← p.preimageπ_comp_arrow_assoc]
 
 /-- An isomorphism `e : A ≅ A'` sending `p.Z` to `p'.Z` and `p.B` to `p'.B` induces `X ≅ X'`. -/
-@[expose, simps]
 noncomputable def mapInducedIso (e : A ≅ A') (hZ : (Subobject.exists e.hom).obj p.Z = p'.Z)
     (hB : (Subobject.exists e.hom).obj p.B = p'.B) : X ≅ X' where
   hom := p.mapInduced p' e.hom hZ.le hB.le
@@ -586,6 +582,18 @@ noncomputable def mapInducedIso (e : A ≅ A') (hZ : (Subobject.exists e.hom).ob
     (by rw [← hB, ← Subobject.exists_comp, e.hom_inv_id, Subobject.exists_id])
   hom_inv_id := by rw [← mapInduced_comp]; simp only [Iso.hom_inv_id]; exact p.mapInduced_id
   inv_hom_id := by rw [← mapInduced_comp]; simp only [Iso.inv_hom_id]; exact p'.mapInduced_id
+
+@[simp]
+theorem mapInducedIso_hom (e : A ≅ A') (hZ : (Subobject.exists e.hom).obj p.Z = p'.Z)
+    (hB : (Subobject.exists e.hom).obj p.B = p'.B) :
+    (p.mapInducedIso p' e hZ hB).hom = p.mapInduced p' e.hom hZ.le hB.le := by rfl
+
+@[simp]
+theorem mapInducedIso_inv (e : A ≅ A') (hZ : (Subobject.exists e.hom).obj p.Z = p'.Z)
+    (hB : (Subobject.exists e.hom).obj p.B = p'.B) :
+    (p.mapInducedIso p' e hZ hB).inv = p'.mapInduced p e.inv
+      (by rw [← hZ, ← Subobject.exists_comp, e.hom_inv_id, Subobject.exists_id])
+      (by rw [← hB, ← Subobject.exists_comp, e.hom_inv_id, Subobject.exists_id]) := by rfl
 
 /-- Functoriality of `subquotient` under inclusions: for `I ≤ I'`, `I ≤ K'`, `K' ≤ K`, `I' ≤ K`,
 the canonical map `K' / I ⟶ K / I'` coincides with the map induced by `𝟙 A`. -/

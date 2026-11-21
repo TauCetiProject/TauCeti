@@ -364,13 +364,15 @@ theorem IsMorse.nonempty_cokernel_abutmentFiltrationMap_iso_sigma_of_forall_ne_a
   · -- The object at `pq` vanishes on every page, and so does the coproduct.
     exact ⟨(eE.isZero_iff.1 (E.isZero_page_X_of_le le_rfl hpq r hr)).iso
       (e₂.isZero_iff.1 hpq)⟩
-  -- Otherwise every object joined to `pq` by a differential vanishes, so `pq` survives.
-  let e := E.pageXIsoOfLEOfIsZero le_rfl (pq := pq) (fun s hs pq' hpq' ↦ by
-    rcases hpq' with hpq' | hpq'
-    · exact (isZero_or_isZero_page_two_X R hf ha hind
-        (Abelian.SpectralObject.coreE₂Cohomological.hc s pq pq' hpq' hs)).resolve_left hpq
-    · exact (isZero_or_isZero_page_two_X R hf ha hind
-        (Abelian.SpectralObject.coreE₂Cohomological.hc s pq' pq hpq' hs)).resolve_right hpq) r hr
+  -- Otherwise every object joined to `pq` by a differential vanishes, so `pq` stabilises.
+  let e := (E.pageXIsoOfStabilises pq 2 le_rfl (E.stabilisesAt_of_forall_isZero le_rfl
+    (fun s hs pq' hpq' ↦ by
+      rcases hpq' with hpq' | hpq'
+      · exact (isZero_or_isZero_page_two_X R hf ha hind
+          (Abelian.SpectralObject.coreE₂Cohomological.hc s pq pq' hpq' hs)).resolve_left hpq
+      · exact (isZero_or_isZero_page_two_X R hf ha hind
+          (Abelian.SpectralObject.coreE₂Cohomological.hc s pq' pq hpq' hs)).resolve_right hpq))
+    r hr).symm
   exact ⟨eE.symm ≪≫ e ≪≫ e₂⟩
 
 end TauCeti
