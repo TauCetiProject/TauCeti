@@ -84,9 +84,7 @@ theorem eq_zero_of_forall_nonneg_add_smul_add_star_smul_star {B : Type*}
     have heq : w r - Complex.I • w (r * Complex.I) = ((2 * r : ℝ) : ℂ) • u := by
       simp only [w, Complex.star_def, map_mul, Complex.conj_ofReal, Complex.conj_I, smul_add,
         smul_smul]
-      ring_nf
-      simp only [Complex.I_sq]
-      module
+      linear_combination (norm := module) Complex.I_sq • ((r : ℂ) • star u - (r : ℂ) • u)
     calc 2 * r * ‖u‖ = ‖w r - Complex.I • w (r * Complex.I)‖ := by
           rw [heq, norm_smul, Complex.norm_real, Real.norm_of_nonneg (by positivity)]
       _ ≤ ‖w r‖ + ‖w (r * Complex.I)‖ := (norm_sub_le _ _).trans_eq (by
@@ -188,8 +186,7 @@ theorem IsNPositive.map_mul_of_mem_multiplicativeDomain_right {a : A}
 /-- The multiplicative domain of a unital `2`-positive map is norm closed. -/
 theorem IsNPositive.isClosed_multiplicativeDomain :
     IsClosed (hφ.multiplicativeDomain h1 : Set A) := by
-  have hc : Continuous φ := funext (hφ.toPositiveLinearMap_apply two_pos) ▸
-    map_continuous (hφ.toPositiveLinearMap two_pos)
+  have hc : Continuous φ := hφ.continuous two_pos
   exact (isClosed_eq (hc.comp (continuous_star.mul continuous_id))
       ((continuous_star.comp hc).mul hc)).inter
     (isClosed_eq (hc.comp (continuous_id.mul continuous_star)) (hc.mul (continuous_star.comp hc)))
