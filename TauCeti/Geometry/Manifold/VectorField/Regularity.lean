@@ -60,6 +60,8 @@ manifold differential of a function to tangent vectors whose base point varies.
   differentiability of these coordinate expressions without a completeness assumption.
 * `MDifferentiableAt.differentiableAt_mpullbackWithin_extChartAt_symm`: on a boundaryless model,
   these coordinate expressions are differentiable at the chart image of the point.
+* `TauCeti.mdifferentiableAt_section_iff_differentiableAt_mpullbackWithin_extChartAt_symm`: on a
+  boundaryless model, this differentiability characterizes differentiability of the section.
 * `ContMDiffWithinAt.contDiffWithinAt_mpullbackWithin_extChartAt_symm`: `C^n` regularity of
   these coordinate expressions, over any model with corners.
 * `TauCeti.eventually_hasDerivAt_extChartAt_family`: read in the chart at `y`, the points near `y`
@@ -455,6 +457,30 @@ theorem MDifferentiableAt.differentiableAt_mpullbackWithin_extChartAt_symm [I.Bo
     (hV.mdifferentiableWithinAt (s := univ))
   rw [preimage_univ, univ_inter] at h
   exact h.differentiableAt (by rw [I.range_eq_univ]; exact univ_mem)
+
+/-- On a boundaryless model, a vector field is differentiable at `x` as a tangent-bundle section
+exactly when its inverse-chart pullback is differentiable at the chart image of `x`. -/
+theorem TauCeti.mdifferentiableAt_section_iff_differentiableAt_mpullbackWithin_extChartAt_symm
+    [I.Boundaryless] :
+    MDifferentiableAt I I.tangent (fun y ↦ (V y : TangentBundle I M)) x ↔
+      DifferentiableAt 𝕜
+        (VectorField.mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x).symm V (range I))
+        (extChartAt I x x) := by
+  refine ⟨MDifferentiableAt.differentiableAt_mpullbackWithin_extChartAt_symm, fun hU ↦ ?_⟩
+  refine (mdifferentiableAt_section I V).2 ?_
+  have h := VectorField.trivializationAt_snd_eventuallyEq_mpullbackWithin_extChartAt_symm V x
+  rw [I.range_eq_univ, nhdsWithin_univ] at h
+  rw [I.range_eq_univ] at hU
+  -- Near `x`, the fibre coordinate of `V` in the trivialization at `x` is the inverse-chart
+  -- pullback composed with the chart.
+  have heq : (fun y ↦ (trivializationAt E (TangentSpace I) x (V y : TangentBundle I M)).2)
+      =ᶠ[𝓝 x] fun y ↦ VectorField.mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x).symm V univ
+        (extChartAt I x y) := by
+    filter_upwards [(continuousAt_extChartAt x).eventually h,
+      extChartAt_source_mem_nhds (I := I) x] with y hy hys
+    rwa [(extChartAt I x).left_inv hys] at hy
+  exact (hU.mdifferentiableAt.comp x (mdifferentiableAt_extChartAt (mem_chart_source H x))
+    ).congr_of_eventuallyEq heq
 
 /-- A vector field which is `C^n` as a tangent-bundle section within a set has a `C^n`
 inverse-chart pullback within the corresponding chart set. Unlike

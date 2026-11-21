@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.VectorField.Chart.Derivative
 import Mathlib.Analysis.Calculus.FDeriv.Prod
 import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
+import TauCeti.Geometry.Manifold.ExtChartAt
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 import TauCeti.Topology.VectorBundle.ZeroSection
 
@@ -36,12 +37,12 @@ chart, `zeroDet` is the determinant of the Fréchet derivative of the field
 (`TauCeti.zeroDet_modelSpace`). For instance, on `ℝ` the fields `x ↦ x` and `x ↦ -x` have
 indices `1` and `-1` at their zero.
 
-On a manifold modelled on a finite-dimensional space over a complete field, a nondegenerate zero
-of a field differentiable there is isolated
+On a boundaryless manifold modelled on a finite-dimensional space over a complete field, a
+nondegenerate zero of a field differentiable there is isolated
 (`TauCeti.eventually_ne_zero_of_zeroDet_ne_zero`): in the chart at `p`, the coordinate field has
 an injective derivative at its zero. Consequently a compact set of nondegenerate zeros is finite
-(`IsCompact.finite_of_zeroDet_ne_zero`), and a differentiable vector field on a compact real
-manifold whose zeros are all nondegenerate has only finitely many zeros
+(`IsCompact.finite_of_zeroDet_ne_zero`), and a differentiable vector field on a compact boundaryless
+real manifold whose zeros are all nondegenerate has only finitely many zeros
 (`TauCeti.finite_setOf_eq_zero_of_zeroDet_ne_zero`), so its indices have a finite sum.
 Neither orientability nor connectedness enters: changing the chart changes the orientation of
 the source and of the target of `dV_p` at once.
@@ -124,24 +125,6 @@ private theorem snd_writtenInExtChartAt_eventuallyEq_mpullback (V : (x : M) → 
   -- `p` on the base, so its fibre coordinate is that of the trivialization.
   rfl
 
-/-- If the coordinate field of `V` in the chart at `p` is differentiable at the chart image of
-`p`, then `V` is differentiable at `p` as a section of the tangent bundle. -/
-private theorem mdifferentiableAt_of_differentiableAt_mpullback
-    (hU : DifferentiableAt 𝕜 (mpullback 𝓘(𝕜, E) I (extChartAt I p).symm V) (extChartAt I p p)) :
-    MDifferentiableAt I I.tangent (fun x ↦ (V x : TangentBundle I M)) p := by
-  refine (mdifferentiableAt_section I V).2 ?_
-  have h := VectorField.trivializationAt_snd_eventuallyEq_mpullbackWithin_extChartAt_symm V p
-  rw [I.range_eq_univ, nhdsWithin_univ, mpullbackWithin_univ] at h
-  -- Near `p`, the fibre coordinate of `V` in the trivialization at `p` is the coordinate field
-  -- composed with the chart.
-  have heq : (fun x ↦ (trivializationAt E (TangentSpace I) p (V x : TangentBundle I M)).2)
-      =ᶠ[𝓝 p] fun x ↦ mpullback 𝓘(𝕜, E) I (extChartAt I p).symm V (extChartAt I p x) := by
-    filter_upwards [(continuousAt_extChartAt p).eventually h,
-      extChartAt_source_mem_nhds (I := I) p] with x hx hxs
-    rwa [(extChartAt I p).left_inv hxs] at hx
-  exact (hU.mdifferentiableAt.comp p (mdifferentiableAt_extChartAt (mem_chart_source H p))
-    ).congr_of_eventuallyEq heq
-
 /-- **The vertical derivative is the chart derivative.** On a boundaryless manifold, the fibre
 component of the derivative at `p` of the section `x ↦ (x, V x)` of the tangent bundle, read in
 the tangent-bundle chart at `(p, V p)`, is the derivative at the chart image of `p` of the
@@ -157,8 +140,11 @@ theorem snd_comp_mfderiv_eq_fderiv_mpullback (V : (x : M) → TangentSpace I x) 
     rw [hV.mfderiv, I.range_eq_univ, fderivWithin_univ,
       ← (snd_writtenInExtChartAt_eventuallyEq_mpullback V p).fderiv_eq]
     exact hd.hasFDerivAt.snd.fderiv.symm
-  · rw [mfderiv_zero_of_not_mdifferentiableAt hV, fderiv_zero_of_not_differentiableAt
-      fun hU ↦ hV (mdifferentiableAt_of_differentiableAt_mpullback hU)]
+  · have hU : ¬DifferentiableAt 𝕜 (mpullback 𝓘(𝕜, E) I (extChartAt I p).symm V)
+        (extChartAt I p p) := fun hU ↦
+      hV (mdifferentiableAt_section_iff_differentiableAt_mpullbackWithin_extChartAt_symm.2
+        (by rwa [I.range_eq_univ, mpullbackWithin_univ]))
+    rw [mfderiv_zero_of_not_mdifferentiableAt hV, fderiv_zero_of_not_differentiableAt hU]
     -- Both sides are zero: the tangent space of the tangent bundle is `E × E` by definition.
     ext v
     rfl
@@ -225,12 +211,7 @@ theorem eventually_ne_zero_of_zeroDet_ne_zero
   have hne : ∀ᶠ z in 𝓝[≠] φ p, U z ≠ (0 : E) := hU.hasFDerivAt.eventually_ne ⟨K, hK⟩
   -- The chart sends points `q ≠ p` near `p` to points `≠ φ p` near `φ p`.
   have hsource : φ.source ∈ 𝓝[≠] p := mem_nhdsWithin_of_mem_nhds (extChartAt_source_mem_nhds p)
-  have htends : Tendsto φ (𝓝[≠] p) (𝓝[≠] φ p) := by
-    refine tendsto_nhdsWithin_iff.2 ⟨(continuousAt_extChartAt p).tendsto.mono_left
-      nhdsWithin_le_nhds, ?_⟩
-    filter_upwards [hsource, self_mem_nhdsWithin] with q hq hqp
-    exact fun hφq ↦ hqp (φ.injOn hq (mem_extChartAt_source p) hφq)
-  filter_upwards [htends.eventually hne, hsource] with q hq hqs hVq
+  filter_upwards [(I.tendsto_extChartAt_nhdsNE p).eventually hne, hsource] with q hq hqs hVq
   -- The zero of `TangentSpace I q` and that of `E` agree by definition.
   exact hq (by rw [hUq hqs, hVq, map_zero]; rfl)
 
