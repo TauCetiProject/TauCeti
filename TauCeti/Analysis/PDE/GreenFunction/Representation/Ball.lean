@@ -11,6 +11,7 @@ public import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.DirichletBall
 import TauCeti.Analysis.InnerProductSpace.Laplacian.ParametricIntegral
 import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.Distribution
 import TauCeti.MeasureTheory.Integral.Kernel.Potential
+import TauCeti.Topology.Algebra.Support
 
 /-!
 # Green's representation formula on the unit ball
@@ -40,7 +41,7 @@ boundary values `Φ ⋆ f`, and on the closed ball
 corrected by the harmonic extension of its own trace on the sphere. Harmonicity of `h` comes from
 differentiating under the integral sign over the compact set `tsupport f`: the corrector is
 jointly smooth off `‖x‖ ‖y‖ = 1` and harmonic in `x` for every `y` in the ball
-(`TauCeti.harmonicOnNhd_integral_smul_of_contDiffOn`). For `f` of class `C²` the Newtonian
+(`TauCeti.harmonicOnNhd_integral_mul_of_contDiffOn`). For `f` of class `C²` the Newtonian
 potential solves `-Δ(Φ ⋆ f) = f` and the comparison of classical and weak solutions
 (`TauCeti.PDE.IsWeakSolutionDirichlet.value_ae_eq_newtonianKernel_convolution_sub`) identifies the
 Green potential with the weak solution
@@ -123,17 +124,9 @@ private theorem continuousOn_ballGreenCorrector_mul (hf : Continuous f)
     (hsupp : tsupport f ⊆ ball 0 1) :
     ContinuousOn (fun p : EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) =>
       ballGreenCorrector n p.1 p.2 * f p.2) (closedBall 0 1 ×ˢ univ) := by
-  rintro ⟨x, y⟩ ⟨hx, -⟩
-  refine ContinuousAt.continuousWithinAt ?_
-  by_cases hy : y ∈ tsupport f
-  · have hxy : ‖x‖ * ‖y‖ < 1 :=
-      (mul_le_of_le_one_left (norm_nonneg y) (mem_closedBall_zero_iff.1 hx)).trans_lt
-        (mem_ball_zero_iff.1 (hsupp hy))
-    exact (continuousAt_ballGreenCorrector hxy.ne).mul (hf.continuousAt.comp continuousAt_snd)
-  · have h0 : ∀ᶠ z in 𝓝 y, f z = 0 := notMem_tsupport_iff_eventuallyEq.1 hy
-    refine (continuousAt_const (y := (0 : ℝ))).congr ?_
-    filter_upwards [continuousAt_snd.eventually h0] with p hp
-    simp only [hp, mul_zero]
+  simpa only [smul_eq_mul] using hf.continuousOn_smul_comp_snd_of_continuousAt fun x hx y hy =>
+    continuousAt_ballGreenCorrector ((mul_le_of_le_one_left (norm_nonneg y)
+      (mem_closedBall_zero_iff.1 hx)).trans_lt (mem_ball_zero_iff.1 (hsupp hy))).ne
 
 /-- The integrand of the harmonic correction vanishes outside the support of `f`. -/
 private theorem ballGreenCorrector_mul_eq_zero {x y : EuclideanSpace ℝ (Fin n)}
@@ -145,7 +138,7 @@ private theorem ballGreenCorrector_mul_eq_zero {x y : EuclideanSpace ℝ (Fin n)
 theorem continuousOn_integral_ballGreenCorrector_mul (hf : Continuous f)
     (hsupp : tsupport f ⊆ ball 0 1) :
     ContinuousOn (fun x => ∫ y, ballGreenCorrector n x y * f y) (closedBall 0 1) :=
-  continuousOn_integral_of_compact_support (hasCompactSupport_of_tsupport_subset_ball hsupp)
+  continuousOn_integral_of_compact_support (HasCompactSupport.of_tsupport_subset_ball hsupp)
     (continuousOn_ballGreenCorrector_mul hf hsupp) fun _ _ _ hy =>
       ballGreenCorrector_mul_eq_zero hy
 
@@ -155,7 +148,7 @@ theorem harmonicOnNhd_integral_ballGreenCorrector_mul (hf : Continuous f)
     (hsupp : tsupport f ⊆ ball 0 1) :
     HarmonicOnNhd (fun x => ∫ y, ballGreenCorrector n x y * f y) (ball 0 1) :=
   harmonicOnNhd_integral_mul_of_contDiffOn (F := fun p => ballGreenCorrector n p.1 p.2) hf
-    (hasCompactSupport_of_tsupport_subset_ball hsupp) (isOpen_ne_fun (by fun_prop)
+    (HasCompactSupport.of_tsupport_subset_ball hsupp) (isOpen_ne_fun (by fun_prop)
       continuous_const) contDiffOn_ballGreenCorrector isOpen_ball
     (fun x hx y hy => ((mul_le_of_le_one_left (norm_nonneg _) (mem_ball_zero_iff.1 hx).le).trans_lt
       (mem_ball_zero_iff.1 (hsupp hy))).ne)
@@ -181,7 +174,7 @@ theorem integral_ballGreenKernel_mul_eq_sub (hf : Continuous f) (hsupp : tsuppor
     {x : EuclideanSpace ℝ (Fin n)} (hx : ‖x‖ ≤ 1) :
     ∫ y, ballGreenKernel n x y * f y =
       (newtonianKernel n ⋆ f) x - ∫ y, ballGreenCorrector n x y * f y := by
-  have hc : HasCompactSupport f := hasCompactSupport_of_tsupport_subset_ball hsupp
+  have hc : HasCompactSupport f := HasCompactSupport.of_tsupport_subset_ball hsupp
   have h1 : Integrable fun y => newtonianKernel n (x - y) * f y := by
     simpa using (hc.convolutionExists_right (ContinuousLinearMap.lsmul ℝ ℝ)
       (locallyIntegrable_newtonianKernel n) hf x).integrable_swap
@@ -222,7 +215,7 @@ theorem IsWeakSolutionDirichlet.value_ae_eq_integral_ballGreenKernel_mul (hn : n
       =ᵐ[volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))]
         fun x => ∫ y, ballGreenKernel (n + 1) x y * f y := by
   refine (hu.value_ae_eq_newtonianKernel_convolution_sub hn hf
-    (hasCompactSupport_of_tsupport_subset_ball hsupp)
+    (HasCompactSupport.of_tsupport_subset_ball hsupp)
     (harmonicOnNhd_integral_ballGreenCorrector_mul hf.continuous hsupp)
     (continuousOn_integral_ballGreenCorrector_mul hf.continuous hsupp)
     (fun x hx => integral_ballGreenCorrector_mul_eq_convolution (mem_sphere_zero_iff_norm.1 hx))

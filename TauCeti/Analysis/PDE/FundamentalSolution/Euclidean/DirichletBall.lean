@@ -12,20 +12,24 @@ import TauCeti.Analysis.PDE.PoissonIntegral.Ball
 /-!
 # The Dirichlet problem on a ball via the Newtonian potential
 
-Let `B = B(z, R) ⊆ ℝⁿ`, `n = 1` or `n ≥ 3`, and let `f` be of class `C²` with compact support. The
-classical solution of `-Δu = f` in `B`, `u = 0` on `∂B`, is the Newtonian potential `Gₙ ⋆ f`
-corrected by the harmonic function `h` on `B` with boundary values `Gₙ ⋆ f` on the sphere:
-`u = Gₙ ⋆ f - h`. Such an `h` exists, given by the Poisson integral
-(`TauCeti.exists_harmonicOnNhd_ball_continuousOn_closedBall_eqOn_sphere`).
-
-This file shows that this classical solution is the weak solution: the unique `u ∈ H¹₀(B)` with
-`∫_B ∇v · ∇u = ∫_B f v` for every `v ∈ H¹₀(B)`
+Let `B = B(z, R) ⊆ ℝⁿ` be a ball in any dimension `n ≥ 1`. If `v` is a classical solution of
+`-Δv = f` in `B`, of class `C²` in `B` and continuous on its closure, and `h` is harmonic in `B`,
+continuous on its closure and equal to `v` on the sphere, then `v - h` is the classical solution
+of `-Δu = f` in `B`, `u = 0` on `∂B`. This file shows that `v - h` is the weak solution: the
+unique `u ∈ H¹₀(B)` with `∫_B ∇v · ∇u = ∫_B f v` for every `v ∈ H¹₀(B)`
 (`TauCeti.PDE.existsUnique_isWeakSolutionDirichlet_laplacian_of_subset_ball`) agrees almost
-everywhere with `Gₙ ⋆ f - h`. So the variational solution produced by Lax--Milgram, the
-Newtonian potential, and the Poisson integral describe the same function. The comparison rests on
+everywhere with `v - h`. The comparison rests on
 `TauCeti.PDE.IsWeakSolutionDirichlet.value_ae_eq_of_contDiffOn`: a function of class `C²` inside
 a bounded domain, continuous up to the boundary and vanishing there, is the weak solution of the
 Dirichlet problem for its own Laplacian.
+
+The main special case is `n = 1` or `n ≥ 3` and `f` of class `C²` with compact support, with
+`v = Gₙ ⋆ f` the Newtonian potential: the weak solution is `Gₙ ⋆ f - h` for the harmonic function
+`h` on `B` with boundary values `Gₙ ⋆ f` on the sphere. Such an `h` exists, given by the Poisson
+integral (`TauCeti.exists_harmonicOnNhd_ball_continuousOn_closedBall_eqOn_sphere`). So the
+variational solution produced by Lax--Milgram, the Newtonian potential, and the Poisson integral
+describe the same function. In dimension `2` the general comparison applies to the logarithmic
+potential instead.
 
 ## Main declarations
 

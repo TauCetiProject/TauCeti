@@ -13,6 +13,7 @@ import TauCeti.Analysis.InnerProductSpace.Laplacian.ParametricIntegral
 import TauCeti.Analysis.PDE.FundamentalSolution.Planar.DistributionalLaplacian
 import TauCeti.Analysis.PDE.FundamentalSolution.Planar.Potential
 import TauCeti.MeasureTheory.Integral.Kernel.Potential
+import TauCeti.Topology.Algebra.Support
 
 /-!
 # Green's representation formula on the unit disk
@@ -149,22 +150,13 @@ private theorem continuousOn_planarNewtonianKernel_one_sub_conj_mul (hf : Contin
     ContinuousOn (fun p : EuclideanSpace ℝ (Fin 2) × EuclideanSpace ℝ (Fin 2) ↦
       planarNewtonianKernel (1 - starRingEnd ℂ (e p.1) * e p.2) * f p.2)
       (closedBall 0 1 ×ˢ univ) := by
-  rintro ⟨x, y⟩ ⟨hx, -⟩
-  refine ContinuousAt.continuousWithinAt ?_
-  by_cases hy : y ∈ tsupport f
-  · have hne := one_sub_conj_mul_ne_zero e (mem_closedBall_zero_iff.1 hx)
-      (mem_ball_zero_iff.1 (hsupp hy))
-    have h1 : ContinuousAt (fun p : EuclideanSpace ℝ (Fin 2) × EuclideanSpace ℝ (Fin 2) ↦
-        planarNewtonianKernel (1 - starRingEnd ℂ (e p.1) * e p.2)) (x, y) :=
-      (contDiffAt_planarNewtonianKernel (n := 0) hne).continuousAt.comp
+  simpa only [smul_eq_mul] using hf.continuousOn_smul_comp_snd_of_continuousAt
+    (F := fun p ↦ planarNewtonianKernel (1 - starRingEnd ℂ (e p.1) * e p.2)) fun x hx y hy ↦
+      (contDiffAt_planarNewtonianKernel (n := 0) (one_sub_conj_mul_ne_zero e
+        (mem_closedBall_zero_iff.1 hx) (mem_ball_zero_iff.1 (hsupp hy)))).continuousAt.comp
         (f := fun p : EuclideanSpace ℝ (Fin 2) × EuclideanSpace ℝ (Fin 2) ↦
           1 - starRingEnd ℂ (e p.1) * e p.2)
         (contDiff_one_sub_conj_mul e (k := 0)).continuous.continuousAt
-    exact h1.mul (hf.continuousAt.comp continuousAt_snd)
-  · have h0 : ∀ᶠ z in 𝓝 y, f z = 0 := notMem_tsupport_iff_eventuallyEq.1 hy
-    refine (continuousAt_const (y := (0 : ℝ))).congr ?_
-    filter_upwards [continuousAt_snd.eventually h0] with p hp
-    simp only [hp, mul_zero]
 
 /-- The harmonic correction is continuous on the closed disk. -/
 private theorem continuousOn_integral_planarNewtonianKernel_one_sub_conj_mul (hf : Continuous f)
@@ -172,7 +164,7 @@ private theorem continuousOn_integral_planarNewtonianKernel_one_sub_conj_mul (hf
     ContinuousOn (fun x ↦ ∫ y, planarNewtonianKernel (1 - starRingEnd ℂ (e x) * e y) * f y)
       (closedBall 0 1) :=
   continuousOn_integral_of_compact_support
-    (hasCompactSupport_of_tsupport_subset_ball hsupp)
+    (HasCompactSupport.of_tsupport_subset_ball hsupp)
     (continuousOn_planarNewtonianKernel_one_sub_conj_mul e hf hsupp) fun _ _ _ hy => by
       rw [image_eq_zero_of_notMem_tsupport hy, mul_zero]
 
@@ -183,7 +175,7 @@ private theorem harmonicOnNhd_integral_planarNewtonianKernel_one_sub_conj_mul (h
       (ball 0 1) := by
   refine harmonicOnNhd_integral_mul_of_contDiffOn
     (F := fun p ↦ planarNewtonianKernel (1 - starRingEnd ℂ (e p.1) * e p.2)) hf
-    (hasCompactSupport_of_tsupport_subset_ball hsupp)
+    (HasCompactSupport.of_tsupport_subset_ball hsupp)
     (isOpen_ne_fun (contDiff_one_sub_conj_mul e (k := 0)).continuous continuous_const)
     (fun p hp ↦ ((contDiffAt_planarNewtonianKernel hp).comp p
       (contDiff_one_sub_conj_mul e).contDiffAt).contDiffWithinAt)
@@ -217,7 +209,7 @@ private theorem integral_planarGreenKernel_mul_eq_sub (hf : Continuous f)
     ∫ y, planarGreenKernel (e x) (e y) * f y =
       (∫ y, planarNewtonianKernel (e y - e x) * f y) -
         ∫ y, planarNewtonianKernel (1 - starRingEnd ℂ (e x) * e y) * f y := by
-  have hc : HasCompactSupport f := hasCompactSupport_of_tsupport_subset_ball hsupp
+  have hc : HasCompactSupport f := HasCompactSupport.of_tsupport_subset_ball hsupp
   have h1 : Integrable fun y => planarNewtonianKernel (e y - e x) * f y := by
     refine (hc.convolutionExists_right (ContinuousLinearMap.lsmul ℝ ℝ)
       (locallyIntegrable_planarNewtonianKernel_comp e) hf x).integrable_swap.congr
@@ -254,7 +246,7 @@ theorem IsWeakSolutionDirichlet.value_ae_eq_integral_planarGreenKernel_mul
     W1p.value (u : W1p volume Omega 2)
       =ᵐ[volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin 2)))]
         fun x => ∫ y, planarGreenKernel (e x) (e y) * f y := by
-  have hc0 : HasCompactSupport f := hasCompactSupport_of_tsupport_subset_ball hsupp
+  have hc0 : HasCompactSupport f := HasCompactSupport.of_tsupport_subset_ball hsupp
   have hc : HasCompactSupport (f ∘ e.symm) := hc0.comp_homeomorph e.symm.toHomeomorph
   have hf' : ContDiff ℝ 2 (f ∘ e.symm) := hf.comp e.symm.contDiff
   have hV : ContDiff ℝ 2 ((planarNewtonianKernel ⋆ (f ∘ e.symm)) ∘ e) :=

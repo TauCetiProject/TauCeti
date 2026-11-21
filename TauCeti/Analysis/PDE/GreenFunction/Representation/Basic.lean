@@ -14,8 +14,8 @@ import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 Let `Ω ⊆ ℝⁿ` be a bounded open set and let `G` be a symmetric kernel on `Ω`. Suppose that `G`
 inverts the Dirichlet Laplacian on smooth data: for every smooth `ψ` with compact support in `Ω`,
 the weak solution `w ∈ H¹₀(Ω)` of `-Δw = ψ` in `Ω`, `w = 0` on `∂Ω`, is the Green potential
-`w(x) = ∫ G(x, y) ψ(y) dy`. Then `G` inverts it on all of `L²(Ω)`: for every `f ∈ L²(Ω)` for which
-`(x, y) ↦ G(x, y) f(y)` is integrable on `Ω × Ω`, the weak solution of `-Δu = f` is
+`w(x) = ∫ G(x, y) ψ(y) dy`. Then `G` inverts it on every `f ∈ L²(Ω)` for which
+`(x, y) ↦ G(x, y) f(y)` is integrable on `Ω × Ω`: the weak solution of `-Δu = f` is
 
 `u(x) = ∫_Ω G(x, y) f(y) dy` for almost every `x ∈ Ω`
 
@@ -36,9 +36,6 @@ Green potential is a classical solution; it is applied to the unit ball in every
 (`TauCeti.Analysis.PDE.GreenFunction.Representation.Ball` and
 `TauCeti.Analysis.PDE.GreenFunction.Representation.Disk`).
 
-Both applications take smooth data whose topological support lies in a ball, which therefore has
-compact support (`TauCeti.hasCompactSupport_of_tsupport_subset_ball`).
-
 ## References
 
 * L. C. Evans, *Partial Differential Equations*, 2nd ed., Section 2.2.4 (Green's function) and
@@ -50,14 +47,6 @@ compact support (`TauCeti.hasCompactSupport_of_tsupport_subset_ball`).
 public section
 
 namespace TauCeti
-
-/-- In a proper space, a function whose topological support lies in a ball has compact
-support. -/
-theorem hasCompactSupport_of_tsupport_subset_ball {X β : Type*} [PseudoMetricSpace X]
-    [ProperSpace X] [Zero β] {g : X → β} {c : X} {r : ℝ} (h : tsupport g ⊆ Metric.ball c r) :
-    HasCompactSupport g :=
-  (isCompact_closedBall c r).of_isClosed_subset (isClosed_tsupport g)
-    (h.trans Metric.ball_subset_closedBall)
 
 namespace PDE
 

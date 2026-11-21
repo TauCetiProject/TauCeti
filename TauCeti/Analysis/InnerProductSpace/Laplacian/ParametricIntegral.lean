@@ -30,7 +30,8 @@ integrable boundary data on a sphere is shown to be harmonic.
 * `TauCeti.harmonicOnNhd_integral_smul_of_contDiffOn`: an integral of harmonic functions against
   an integrable weight is harmonic.
 * `TauCeti.harmonicOnNhd_integral_mul_of_contDiffOn`: the same for a continuous weight with
-  compact support on the parameter space itself, integrated against a locally finite measure.
+  compact support on the parameter space itself, integrated against a measure that is finite on
+  compact sets.
 -/
 
 public section
