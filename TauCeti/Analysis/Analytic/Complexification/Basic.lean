@@ -8,8 +8,7 @@ module
 public import Mathlib.Analysis.Analytic.Constructions
 public import Mathlib.Analysis.Complex.Basic
 import TauCeti.Analysis.Analytic.ConvergenceRadius
-import Mathlib.Analysis.Analytic.CPolynomial
-import Mathlib.Analysis.Analytic.IsolatedZeros
+import TauCeti.Analysis.Analytic.Subfield
 import Mathlib.Analysis.Analytic.Uniqueness
 import Mathlib.LinearAlgebra.Multilinear.Basis
 import Mathlib.Topology.Algebra.Module.FiniteDimension
@@ -41,11 +40,10 @@ functions, such as the local behaviour of roots of a polynomial with analytic co
 applied to real analytic data.
 
 The complexification is determined by the real function: a complex analytic function vanishing at
-the real points near a real point vanishes near it. The proof restricts the power series to the
-real points, where it represents zero, so each homogeneous term vanishes on real vectors; along the
-complex line through two real vectors such a term is an entire function vanishing on the real
-axis, hence zero. Consequently every complex analytic extension of a real-valued real analytic germ
-commutes with complex conjugation near the point, not only the one constructed here.
+the real points near a real point vanishes near it. This is the case `ℝ ⊆ ℂ` of the identity
+theorem across a subfield, `AnalyticAt.eventually_eq_zero_of_eventually_algebraMap`. Consequently
+every complex analytic extension of a real-valued real analytic germ commutes with complex
+conjugation near the point, not only the one constructed here.
 
 ## Main declarations
 
@@ -211,40 +209,6 @@ theorem norm_complexifyPi_le_two_pow :
 
 end ContinuousMultilinearMap
 
-namespace ContinuousMultilinearMap
-
-variable {ν ι E : Type*} [Finite ν] [Finite ι] [NormedAddCommGroup E] [NormedSpace ℂ E]
-
-/-- A complex multilinear map on `ι → ℂ` whose values on constant tuples of real vectors vanish
-also vanishes on constant tuples of complex vectors. -/
-theorem apply_const_eq_zero_of_forall_ofReal {Q : ContinuousMultilinearMap ℂ (fun _ : ν ↦ ι → ℂ) E}
-    (h : ∀ y : ι → ℝ, Q (fun _ ↦ fun i ↦ (y i : ℂ)) = 0) (z : ι → ℂ) : Q (fun _ ↦ z) = 0 := by
-  have := Fintype.ofFinite ν
-  have := Fintype.ofFinite ι
-  set x : ι → ℂ := fun i ↦ ((z i).re : ℂ)
-  set y : ι → ℂ := fun i ↦ ((z i).im : ℂ)
-  have hz : z = x + Complex.I • y := by
-    ext i; simp [x, y, mul_comm Complex.I, Complex.re_add_im]
-  -- `t ↦ Q (x + t y, …, x + t y)` is entire and vanishes on the real line, so it vanishes at `I`
-  set φ : ℂ → E := fun t ↦ Q (fun _ ↦ x + t • y)
-  have hφ : AnalyticOnNhd ℂ φ univ := fun t _ ↦ by
-    have : AnalyticAt ℂ (fun t : ℂ ↦ fun _ : ν ↦ x + t • y) t :=
-      AnalyticAt.pi fun _ ↦ analyticAt_const.add (analyticAt_id.smul analyticAt_const)
-    exact Q.analyticAt.comp this
-  have hreal (t : ℝ) : φ t = 0 := by
-    convert h fun i ↦ (z i).re + t * (z i).im using 2
-    ext _; simp [x, y]
-  have hfreq : ∃ᶠ t in 𝓝[≠] (0 : ℂ), φ t = 0 := by
-    have hT : Tendsto (fun t : ℝ ↦ (t : ℂ)) (𝓝[≠] 0) (𝓝[≠] 0) :=
-      tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
-        ((Complex.continuous_ofReal.tendsto' 0 0 (by simp)).mono_left nhdsWithin_le_nhds)
-        (eventually_nhdsWithin_of_forall fun t ht ↦ by simpa using ht)
-    exact hT.frequently (Frequently.of_forall hreal)
-  simpa [φ, ← hz] using hφ.eqOn_zero_of_preconnected_of_frequently_eq_zero isPreconnected_univ
-    (mem_univ 0) hfreq (mem_univ Complex.I)
-
-end ContinuousMultilinearMap
-
 namespace FormalMultilinearSeries
 
 variable {ι : Type*} [Fintype ι]
@@ -321,23 +285,9 @@ theorem eventually_eq_zero_of_eventually_real {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℂ E] {F : (ι → ℂ) → E} {a : ι → ℝ} (hF : AnalyticAt ℂ F (fun i ↦ (a i : ℂ)))
     (h : ∀ᶠ x in 𝓝 a, F (fun i ↦ (x i : ℂ)) = 0) :
     ∀ᶠ z in 𝓝 (fun i ↦ (a i : ℂ)), F z = 0 := by
-  obtain ⟨Q, r, hQ⟩ := hF
-  let u : (ι → ℝ) →L[ℝ] (ι → ℂ) := ContinuousLinearMap.piMap fun _ ↦ Complex.ofRealCLM
-  have hu (x : ι → ℝ) : u x = fun i ↦ (x i : ℂ) := by ext i; simp [u]
-  -- restricted to the real points, the power series of `F` represents the zero function
-  have h0 : HasFPowerSeriesAt 0 ((Q.restrictScalars ℝ).compContinuousLinearMap u) a :=
-    (hQ.hasFPowerSeriesAt.restrictScalars (𝕜 := ℝ)).compContinuousLinearMap (u := u)
-      |>.congr (h.mono fun x hx ↦ by simpa [hu] using hx)
-  have hQ0 (n : ℕ) (z : ι → ℂ) : Q n (fun _ ↦ z) = 0 :=
-    (Q n).apply_const_eq_zero_of_forall_ofReal (fun y ↦ by
-      simpa [Function.comp_def, hu] using h0.apply_eq_zero n y) z
-  filter_upwards [Metric.eball_mem_nhds _ hQ.r_pos] with z hz
-  have hz' : z - (fun i ↦ (a i : ℂ)) ∈ Metric.eball 0 r := by
-    rwa [Metric.mem_eball, edist_zero_right, ← eDist_eq_eNorm_sub]
-  have hsum := hQ.hasSum hz'
-  rw [add_sub_cancel] at hsum
-  simp only [hQ0] at hsum
-  exact hsum.unique hasSum_zero
+  have key := eventually_eq_zero_of_eventually_algebraMap (E := ℝ) (C := ℂ) (F := F) (a := a)
+  simp only [Complex.coe_algebraMap] at key
+  exact key hF h
 
 /-- Two complex analytic functions of finitely many variables that agree at the real points near a
 real point agree near that point. -/

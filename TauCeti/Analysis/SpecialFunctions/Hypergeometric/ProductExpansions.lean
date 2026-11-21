@@ -17,7 +17,7 @@ import Mathlib.Analysis.Normed.Module.Convex
 import TauCeti.Analysis.Analytic.OfScalars
 import TauCeti.Analysis.Polynomial.Pochhammer
 import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
-import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric
+import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric.Basic
 import TauCeti.Analysis.SpecificLimits.Normed
 import TauCeti.Data.Nat.Choose.Cast
 import TauCeti.Data.Nat.Factorial.Basic

@@ -743,6 +743,15 @@ def evalGHom (hv : v ∈ V ι S) : GHom (coeff ι S) ι :=
 theorem evalGHom_mk (hv : v ∈ V ι S) (w : GX G X) :
     evalGHom v hv (w : CoordGroup ι S) = eval ι v w := (rfl)
 
+/-- Evaluation at a solution `v` of `S` carries a solution in `G_{R(S)}` of a system `T` with
+coefficients in `G[X]`, read in `G_{R(S)}` through the quotient map, to a solution of `T` in `H`,
+the coefficients being evaluated at `v`. -/
+theorem eval_mem_V_of_mk_mem_V {Z : Type*} {T : Set (GX (GX G X) Z)} {s : Z → GX G X}
+    (hv : v ∈ V ι S) (hs : (fun z ↦ (s z : CoordGroup ι S)) ∈ V (QuotientGroup.mk' (Rad ι S)) T) :
+    (fun z ↦ eval ι v (s z)) ∈ V (eval ι v) T := by
+  simpa [Function.comp_def] using
+    GHom.comp_mem_V (κ := eval ι v) ⟨(evalGHom v hv).toMonoidHom, evalGHom_mk hv⟩ hs
+
 variable (ι S) in
 /-- The universal property of the coordinate group: `G`-homomorphisms `G_{R(S)} → H` correspond
 to the solutions of `S` in `H`, by restriction to the variables and by evaluation. -/
@@ -952,6 +961,19 @@ theorem homEquiv_comp_homOfMapsToWordMap (w : Y → GX G X)
   funext y
   simp only [homEquiv_apply_coe, GHom.coe_comp, Function.comp_apply,
     homOfMapsToWordMap_mk, evalGHom_mk, wordMap_apply, eval_inr_of]
+
+variable {ι S T} in
+/-- A word map `w` from the solutions of `S` to those of `T` carries a solution in `G_{R(T)}` of a
+system `L` with coefficients in `G[Y]` to a solution in `G_{R(S)}` of the system obtained from `L`
+by substituting the words `w` in its coefficients. -/
+theorem mk_eval_mem_V_image_map_of_mk_mem_V {w : Y → GX G X}
+    (hw : Set.MapsTo (wordMap ι w) (V ι S) (V ι T)) {Z : Type*} {L : Set (GX (GX G Y) Z)}
+    {s : Z → GX G Y} (hs : (fun z ↦ (s z : CoordGroup ι T)) ∈ V (QuotientGroup.mk' (Rad ι T)) L) :
+    (fun z ↦ (eval (inl : G →* GX G X) w (s z) : CoordGroup ι S)) ∈ V (QuotientGroup.mk' (Rad ι S))
+      (Monoid.Coprod.map (eval (inl : G →* GX G X) w) (FreeGroup.map id) '' L) := by
+  simpa [mem_V, Function.comp_def] using GHom.comp_mem_V
+    (κ := (QuotientGroup.mk' (Rad ι S)).comp (eval inl w))
+    ⟨(homOfMapsToWordMap ι S T w hw).toMonoidHom, homOfMapsToWordMap_mk ι S T w hw⟩ hs
 
 /-- A coefficient-preserving homomorphism `σ : G[Y] →* G[X]` induces a `G`-homomorphism from the
 coordinate group of the inverse-image system `σ ⁻¹' S` to that of `S`; on classes it is `σ`. -/

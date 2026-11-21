@@ -221,24 +221,10 @@ private theorem nonempty_vertexLink_path_splitFace {v : C.graph.V} (c₀ : C.Cor
 `C.splitFace f p`. -/
 private theorem nonempty_vertexLink_path_splitFace_of_path {v : C.graph.V}
     {a b : (C.vertexLink v).V} (P : (C.vertexLink v).Path a b) :
-    Nonempty (((C.splitFace f p).vertexLink v).Path ⟨.inl a.val, a.property⟩ ⟨.inl b.val,
-        b.property⟩) := by
-  induction P with
-  | nil => exact ⟨.nil⟩
-  | cons _ e ih =>
-    rename_i b' c' _
-    obtain ⟨Q⟩ := ih
-    obtain ⟨⟨c, _ | _⟩, hs, ht⟩ := e
-    · obtain ⟨R⟩ := nonempty_vertexLink_path_splitFace (f := f) (p := p) c.val
-        (a := ⟨.inl c'.val, c'.property⟩) (b := ⟨.inl b'.val, b'.property⟩)
-        (congrArg Sum.inl ((congrArg Subtype.val ht).symm.trans (C.vertexLink_src_true c)))
-        (congrArg Sum.inl ((congrArg Subtype.val hs).symm.trans (C.vertexLink_src_false c)))
-      exact ⟨Q.comp R.reverse⟩
-    · obtain ⟨R⟩ := nonempty_vertexLink_path_splitFace (f := f) (p := p) c.val
-        (a := ⟨.inl b'.val, b'.property⟩) (b := ⟨.inl c'.val, c'.property⟩)
-        (congrArg Sum.inl ((congrArg Subtype.val hs).symm.trans (C.vertexLink_src_true c)))
-        (congrArg Sum.inl ((congrArg Subtype.val ht).symm.trans (C.vertexLink_src_false c)))
-      exact ⟨Q.comp R⟩
+    Nonempty (((C.splitFace f p).vertexLink v).Path ⟨.inl a.val, a.property⟩
+        ⟨.inl b.val, b.property⟩) :=
+  nonempty_vertexLink_path_of_path Sum.inl (fun _ he => he)
+    (fun c _ => nonempty_vertexLink_path_splitFace c) P rfl rfl
 
 /-- If the link of a vertex of `C` is preconnected, every germ of `C.splitFace f p` at that vertex
 is joined to any old germ: the new germs are joined to the germs of the corners they subdivide. -/

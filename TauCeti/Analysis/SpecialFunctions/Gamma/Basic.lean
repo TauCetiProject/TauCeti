@@ -37,7 +37,9 @@ Finally, the rising factorial is recorded as a quotient of real Gamma values, an
 limit formula `Real.GammaSeq_tendsto_Gamma` is recast as the asymptotic
 equivalence `Γ(n + 1 + s) ~ n ^ s * n!` along the natural numbers, valid for every real shift `s`.
 This is the form in which polynomial decay of Gamma quotients such as `Γ(n + a) / Γ(n + b)` enters
-summability and moment arguments for discrete laws with Beta-function masses.
+summability and moment arguments for discrete laws with Beta-function masses. Euler's reflection
+formula is also recorded in the reciprocal form `Γ(s) sin (π s) = π / Γ(1 - s)` for `s ∉ -ℕ`,
+valid including at positive integers where both sides vanish.
 
 ## Main results
 
@@ -52,7 +54,9 @@ summability and moment arguments for discrete laws with Beta-function masses.
 * `Real.isEquivalent_Gamma_natCast_add_one_add` — `Γ(n + 1 + s) ~ n ^ s * n!` as `n → ∞`.
 * `Real.tendsto_Gamma_natCast_add_div_Gamma_natCast_add_atTop` — `Γ(n + a) / Γ(n + b) → 0` for
   `a < b`.
-* `Complex.ne_neg_natCast_of_re_pos` — a parameter with positive real part avoids `−ℕ`.
+* `Complex.ne_neg_natCast_of_re_pos`, `Complex.Gamma_ne_zero_of_im_ne_zero` — parameters with
+  positive real part or nonzero imaginary part avoid `−ℕ`, so `Complex.Gamma` does not vanish off
+  the real axis.
 * `Complex.inv_Gamma_eq_ascPochhammer_mul_inv_Gamma_add` and
   `Real.inv_Gamma_eq_ascPochhammer_mul_inv_Gamma_add` — the pole-free reciprocal identity
   `(Γ s)⁻¹ = s (s + 1) ⋯ (s + n - 1) (Γ(s + n))⁻¹`, valid at every `s`.
@@ -67,8 +71,15 @@ summability and moment arguments for discrete laws with Beta-function masses.
 * `Complex.exists_norm_inv_Gamma_add_natCast_le` and `Real.exists_abs_inv_Gamma_add_natCast_le` —
   polynomial-times-inverse-factorial bounds along natural-number shifts for arbitrary complex or
   real `s`.
+* `Complex.inv_Gamma_eq_ascPochhammer_eval_mul_inv_Gamma_add_natCast`,
+  `Real.inv_Gamma_eq_ascPochhammer_eval_mul_inv_Gamma_add_natCast` — `(Γ s)⁻¹ = (s)_n (Γ(s + n))⁻¹`
+  for all `s` and `n`, including at the nonpositive integer poles of `Γ`.
 * `Complex.sum_range_neg_one_pow_div_factorial_mul_Gamma` — the alternating sum
   `∑_{i ≤ m} (−1)ⁱ / (i! Γ(a + m − i + 1)) = (−1)ᵐ / (m! (a + m) Γ(a))` for `a ∉ −ℕ`.
+* `Complex.Gamma_mul_sin_pi_mul` — Euler's reflection formula in reciprocal form:
+  `Γ(s) * sin (π * s) = π / Γ(1 - s)` for `s ∉ -ℕ`, including at positive integers where both
+  sides vanish.
+* `Complex.Gamma_one_third_mul_Gamma_two_thirds` — `Γ(1/3) Γ(2/3) = 2π/√3`.
 -/
 
 public section
@@ -248,6 +259,10 @@ theorem ne_neg_natCast_of_re_pos {b : ℂ} (hb : 0 < b.re) (n : ℕ) :
   simp only [neg_re, natCast_re] at heq
   linarith [n.cast_nonneg (α := ℝ)]
 
+/-- `Complex.Gamma` does not vanish off the real axis. -/
+theorem Gamma_ne_zero_of_im_ne_zero {z : ℂ} (hz : z.im ≠ 0) : Gamma z ≠ 0 :=
+  Gamma_ne_zero fun n hn ↦ hz (by simp [hn])
+
 /-- The reciprocal Gamma function satisfies `(Γ s)⁻¹ = s (s + 1) ⋯ (s + n - 1) (Γ(s + n))⁻¹`
 for every complex `s`, including at the nonpositive integer poles where `(Γ s)⁻¹ = 0`. -/
 theorem inv_Gamma_eq_ascPochhammer_mul_inv_Gamma_add (s : ℂ) (n : ℕ) :
@@ -315,6 +330,17 @@ theorem exists_norm_inv_Gamma_add_natCast_le (s : ℂ) :
     _ = (‖s‖ + M + 1) ^ M * ‖(Gamma (s + M))⁻¹‖ * ((k : ℝ) + 1) ^ M / k ! := by
         rw [mul_pow]; ring
 
+/-- For every complex `s` and natural `n`, `(Γ s)⁻¹ = (s)_n (Γ(s + n))⁻¹`, where
+`(s)_n = (ascPochhammer ℂ n).eval s`. Unlike `Complex.Gamma_add_nat_div_Gamma_eq`, this holds at
+the nonpositive integer poles of `Γ` as well, where Mathlib sets `Γ(-k) = 0`. -/
+theorem inv_Gamma_eq_ascPochhammer_eval_mul_inv_Gamma_add_natCast (s : ℂ) (n : ℕ) :
+    (Gamma s)⁻¹ = (ascPochhammer ℂ n).eval s * (Gamma (s + n))⁻¹ := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [ih, one_div_Gamma_eq_self_mul_one_div_Gamma_add_one (s + n), ascPochhammer_succ_eval,
+      Nat.cast_succ, ← add_assoc, mul_assoc]
+
 end Complex
 
 namespace Real
@@ -358,6 +384,18 @@ theorem exists_abs_inv_Gamma_add_natCast_le (s : ℝ) :
   simpa only [hcast, Complex.Gamma_ofReal, ← Complex.ofReal_inv, Complex.norm_real,
     Real.norm_eq_abs] using h k
 
+/-- For every real `s` and natural `n`, `(Γ s)⁻¹ = (s)_n (Γ(s + n))⁻¹`, including at the
+nonpositive integer poles of `Γ`. -/
+theorem inv_Gamma_eq_ascPochhammer_eval_mul_inv_Gamma_add_natCast (s : ℝ) (n : ℕ) :
+    (Gamma s)⁻¹ = (ascPochhammer ℝ n).eval s * (Gamma (s + n))⁻¹ := by
+  have h := Complex.inv_Gamma_eq_ascPochhammer_eval_mul_inv_Gamma_add_natCast (s : ℂ) n
+  have hcast : (s : ℂ) + n = ((s + n : ℝ) : ℂ) := by push_cast; ring
+  have hp : (ascPochhammer ℂ n).eval (s : ℂ) = (((ascPochhammer ℝ n).eval s : ℝ) : ℂ) :=
+    (ascPochhammer_eval₂ Complex.ofRealHom n (s : ℂ)).trans
+      (Polynomial.eval₂_at_apply Complex.ofRealHom s)
+  rw [hcast, hp, Complex.Gamma_ofReal, Complex.Gamma_ofReal] at h
+  exact_mod_cast h
+
 end Real
 
 namespace Complex
@@ -393,5 +431,45 @@ theorem sum_range_neg_one_pow_div_factorial_mul_Gamma {a : ℂ} (ha : ∀ n : �
     have ham' : a + 1 + m ≠ 0 := fun h => ham (by linear_combination h)
     field_simp
     ring
+
+open scoped Real in
+/-- Euler's reflection formula in reciprocal form: for `s ∉ -ℕ`,
+`Γ(s) * sin (π * s) = π / Γ(1 - s)`. This identity also holds at positive integers `s = n + 1`,
+where both sides vanish (`sin (π * (n + 1)) = 0` and `Γ(-n) = 0`). -/
+theorem Gamma_mul_sin_pi_mul {s : ℂ} (hs : ∀ n : ℕ, s ≠ -n) :
+    Gamma s * sin (π * s) = π / Gamma (1 - s) := by
+  by_cases h0 : Gamma (1 - s) = 0
+  · obtain ⟨n, hn⟩ := (Gamma_eq_zero_iff (1 - s)).mp h0
+    have hsn : s = (n : ℂ) + 1 := by linear_combination -hn
+    have hsin : sin (π * s) = 0 := by
+      rw [hsn, mul_add, mul_one, sin_add_pi]
+      exact neg_eq_zero.mpr (by simpa [mul_comm] using sin_nat_mul_pi n)
+    rw [h0, div_zero, hsin, mul_zero]
+  · have hrefl := Gamma_mul_Gamma_one_sub s
+    have hsin0 : sin (π * s) ≠ 0 := fun hsin => by
+      rw [hsin, div_zero] at hrefl
+      exact mul_ne_zero (Gamma_ne_zero hs) h0 hrefl
+    rw [eq_div_iff h0]
+    calc Gamma s * sin (π * s) * Gamma (1 - s)
+        = (Gamma s * Gamma (1 - s)) * sin (π * s) := by ring
+      _ = (π / sin (π * s)) * sin (π * s) := by rw [hrefl]
+      _ = π := div_mul_cancel₀ _ hsin0
+
+/-- `Γ(1/3) Γ(2/3) = 2π/√3`, by the reflection formula. -/
+theorem Gamma_one_third_mul_Gamma_two_thirds :
+    Gamma (1 / 3) * Gamma (2 / 3) = 2 * Real.pi / (Real.sqrt 3 : ℂ) := by
+  have h := Gamma_mul_Gamma_one_sub (1 / 3)
+  -- The reflection formula is stated at `1 - s`; put `1 - 1/3` in the form `2/3` of the goal.
+  have h23 : (1 : ℂ) - 1 / 3 = 2 / 3 := by norm_num
+  rw [h23] at h
+  have hs : sin (Real.pi * (1 / 3)) = (Real.sqrt 3 : ℂ) / 2 := by
+    -- Write the argument as the cast of the real number `π/3`, to use `Real.sin_pi_div_three`.
+    have hpi : (Real.pi : ℂ) * (1 / 3) = ((Real.pi / 3 : ℝ) : ℂ) := by push_cast; ring
+    rw [hpi, ← ofReal_sin, Real.sin_pi_div_three]
+    push_cast
+    ring
+  have h3 : (Real.sqrt 3 : ℂ) ≠ 0 := by simp
+  rw [h, hs]
+  field_simp
 
 end Complex
