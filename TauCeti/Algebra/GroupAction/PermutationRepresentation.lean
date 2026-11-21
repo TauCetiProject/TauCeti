@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Algebra.Group.Action.End
 public import Mathlib.Algebra.Group.Subgroup.Ker
+public import Mathlib.GroupTheory.GroupAction.Quotient
 public import TauCeti.GroupTheory.Perm.PermCongr
+public import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 
 /-!
 # The permutation representation of a group action on an enumerated set
@@ -61,6 +63,10 @@ hypothesis as `faithfulSMul_of_normalClosure_eq_top`.
   and the transitivity of the representation are those of the action.
 * `Equiv.natCard_range_permutationRepresentation`: a faithful representation has as many elements
   as `G`.
+* `Equiv.ker_permutationRepresentation_eq_normalCore` and
+  `Equiv.quotientNormalCoreMulEquivRange`: on the cosets of a subgroup `H`, the kernel is the
+  normal core of `H` and the image is `G ⧸ H.normalCore`, of order `H.normalCore.index`
+  (`Equiv.natCard_range_permutationRepresentation_eq_index_normalCore`).
 * `Equiv.not_exists_map_conj_range_permutationRepresentation_eq`: faithful representations of a
   commutative and a non-commutative group have non-conjugate images.
 
@@ -161,6 +167,32 @@ theorem isPretransitive_range_permutationRepresentation_iff (e : α ≃ β) :
 theorem natCard_range_permutationRepresentation [FaithfulSMul G α] (e : α ≃ β) :
     Nat.card (permutationRepresentation (G := G) e).range = Nat.card G :=
   (Nat.card_congr (MonoidHom.ofInjective (permutationRepresentation_injective e)).toEquiv).symm
+
+/-- **The kernel of the action on the cosets of `H` is the normal core of `H`**, however the cosets
+are enumerated. -/
+theorem ker_permutationRepresentation_eq_normalCore {H : Subgroup G} (e : G ⧸ H ≃ β) :
+    (permutationRepresentation (G := G) e).ker = H.normalCore := by
+  rw [ker_permutationRepresentation, Subgroup.normalCore_eq_ker]
+
+/-- **The image of the action on the cosets of `H` is `G ⧸ H.normalCore`**, by the first
+isomorphism theorem and `ker_permutationRepresentation_eq_normalCore`. -/
+noncomputable def quotientNormalCoreMulEquivRange {H : Subgroup G} (e : G ⧸ H ≃ β) :
+    G ⧸ H.normalCore ≃* (permutationRepresentation (G := G) e).range :=
+  (QuotientGroup.quotientMulEquivOfEq (ker_permutationRepresentation_eq_normalCore e).symm).trans
+    (QuotientGroup.quotientKerEquivRange _)
+
+/-- The class of `g` modulo the normal core corresponds to the permutation of `g`. -/
+@[simp]
+theorem coe_quotientNormalCoreMulEquivRange_mk {H : Subgroup G} (e : G ⧸ H ≃ β) (g : G) :
+    (quotientNormalCoreMulEquivRange e g : Perm β) = permutationRepresentation e g := by
+  simp [quotientNormalCoreMulEquivRange]
+
+/-- **The image of the action on the cosets of `H` has order the index of the normal core of
+`H`.** -/
+theorem natCard_range_permutationRepresentation_eq_index_normalCore {H : Subgroup G}
+    (e : G ⧸ H ≃ β) :
+    Nat.card (permutationRepresentation (G := G) e).range = H.normalCore.index :=
+  (Nat.card_congr (quotientNormalCoreMulEquivRange e).toEquiv).symm
 
 /-- **Faithful representations of a commutative and a non-commutative group are not conjugate.** A
 conjugate of the image of the commutative group `G` is commutative, while the image of `Γ` is

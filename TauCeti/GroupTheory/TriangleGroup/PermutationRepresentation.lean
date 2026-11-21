@@ -264,7 +264,7 @@ theorem comap_stabilizer_toPerm_cosetTriple {ha hb hc} :
 /-- The kernel of the representation of the coset triple of `H` is the normal core of `H`. -/
 theorem ker_toPerm_cosetTriple {ha hb hc} :
     (toPerm (cosetTriple H e) ha hb hc).ker = H.normalCore := by
-  rw [toPerm_cosetTriple, Equiv.ker_permutationRepresentation, Subgroup.normalCore_eq_ker]
+  rw [toPerm_cosetTriple, Equiv.ker_permutationRepresentation_eq_normalCore]
 
 /-- The isomorphism class of a coset triple does not depend on the numbering of the cosets. -/
 theorem equivalent_cosetTriple (e' : TriangleGroup a b c ⧸ H ≃ Fin n) :
