@@ -25,6 +25,10 @@ kernel rank. Rank-nullity then computes the rank of its cokernel.
 
 * `TauCeti.NumericalType.vecMul_intersection_eq_zero_iff`: an integral row vector is killed by
   the intersection matrix exactly when its cross-products with the multiplicity vector agree.
+* `TauCeti.NumericalType.ker_vecMulLinear_intersection_eq_span`: the kernel of the intersection
+  matrix is spanned over `ℤ` by the primitive multiplicity vector `i ↦ mᵢ / gcd(m)`.
+* `TauCeti.NumericalType.ker_vecMulLinear_intersection_eq_span_of_gcd_eq_one`: when the
+  multiplicities are coprime (`gcd = 1`), the kernel is spanned over `ℤ` by `i ↦ mᵢ`.
 * `TauCeti.NumericalType.finrank_ker_vecMulLinear_intersection`: the kernel of the intersection
   matrix has rank one over `ℤ`.
 * `TauCeti.NumericalType.finrank_pic`: the Picard group has rank one over `ℤ`.
@@ -157,6 +161,73 @@ lemma ker_vecMulLinear_intersection_apply_injective (i : T.Component) :
   rw [hi, mul_zero] at hcross
   exact (mul_eq_zero.mp hcross.symm).resolve_left
     (Int.natCast_ne_zero.mpr (T.multiplicity i).ne_zero)
+
+/-- The kernel of `T.intersection.vecMulLinear` is spanned over `ℤ` by the primitive multiplicity
+vector `i ↦ mᵢ / gcd(m)`. -/
+theorem ker_vecMulLinear_intersection_eq_span :
+    LinearMap.ker T.intersection.vecMulLinear =
+      Submodule.span ℤ {fun i ↦
+        (((T.multiplicity i : ℕ) /
+          Finset.univ.gcd (fun j : T.Component ↦ (T.multiplicity j : ℕ)) : ℕ) : ℤ)} := by
+  set d : ℕ := Finset.univ.gcd (fun j : T.Component ↦ (T.multiplicity j : ℕ))
+  have hd_dvd (i : T.Component) : d ∣ (T.multiplicity i : ℕ) :=
+    Finset.gcd_dvd (Finset.mem_univ i)
+  have hd_ne : d ≠ 0 := by
+    let i₀ : T.Component := Classical.choice T.componentNonempty
+    exact ne_zero_of_dvd_ne_zero (T.multiplicity i₀).ne_zero (hd_dvd i₀)
+  have hd_ne_int : (d : ℤ) ≠ 0 := Int.natCast_ne_zero.mpr hd_ne
+  have hmul_div (i : T.Component) :
+      (d : ℤ) * (((T.multiplicity i : ℕ) / d : ℕ) : ℤ) = (T.multiplicity i : ℤ) := by
+    exact_mod_cast Nat.mul_div_cancel' (hd_dvd i)
+  refine le_antisymm ?_ (Submodule.span_le.mpr (Set.singleton_subset_iff.mpr ?_))
+  · intro v hv
+    rw [LinearMap.mem_ker, Matrix.vecMulLinear_apply,
+      T.vecMul_intersection_eq_zero_iff] at hv
+    set dℤ : ℤ := Finset.univ.gcd (fun j : T.Component ↦ (T.multiplicity j : ℤ))
+    have hdℤ_dvd : dℤ ∣ (d : ℤ) := Int.natAbs_dvd_natAbs.mp <| by
+      rw [Int.natAbs_natCast]
+      exact Finset.dvd_gcd fun j _ ↦ by
+        simpa only [Int.natAbs_natCast] using
+          Int.natAbs_dvd_natAbs.mpr (Finset.gcd_dvd (f := fun k ↦ (T.multiplicity k : ℤ))
+            (Finset.mem_univ j))
+    obtain ⟨q, hq⟩ := hdℤ_dvd
+    obtain ⟨g, hg⟩ :=
+      Finset.gcd_eq_sum_mul Finset.univ (fun j : T.Component ↦ (T.multiplicity j : ℤ))
+    refine Submodule.mem_span_singleton.mpr ⟨∑ j : T.Component, v j * (g j * q), funext fun i ↦ ?_⟩
+    simp only [Pi.smul_apply, smul_eq_mul]
+    apply mul_left_cancel₀ hd_ne_int
+    calc
+      (d : ℤ) * ((∑ j : T.Component, v j * (g j * q)) * (((T.multiplicity i : ℕ) / d : ℕ) : ℤ))
+          = (T.multiplicity i : ℤ) * ∑ j : T.Component, v j * (g j * q) := by
+            rw [mul_comm (∑ j : T.Component, _), ← mul_assoc, hmul_div i]
+      _ = ∑ j : T.Component, ((T.multiplicity i : ℤ) * v j) * (g j * q) := by
+            rw [Finset.mul_sum]
+            exact Finset.sum_congr rfl fun j _ ↦ by ring
+      _ = ∑ j : T.Component, ((T.multiplicity j : ℤ) * v i) * (g j * q) := by
+            exact Finset.sum_congr rfl fun j _ ↦ by rw [hv i j]
+      _ = ((∑ j : T.Component, (T.multiplicity j : ℤ) * g j) * q) * v i := by
+            rw [Finset.sum_mul, Finset.sum_mul]
+            exact Finset.sum_congr rfl fun j _ ↦ by ring
+      _ = (d : ℤ) * v i := by rw [← hg, ← hq]
+  · rw [SetLike.mem_coe, LinearMap.mem_ker, Matrix.vecMulLinear_apply,
+      T.vecMul_intersection_eq_zero_iff]
+    intro i j
+    apply mul_left_cancel₀ hd_ne_int
+    calc
+      (d : ℤ) * ((T.multiplicity j : ℤ) * (((T.multiplicity i : ℕ) / d : ℕ) : ℤ))
+          = (T.multiplicity j : ℤ) * ((d : ℤ) * (((T.multiplicity i : ℕ) / d : ℕ) : ℤ)) := by ring
+      _ = (T.multiplicity j : ℤ) * (T.multiplicity i : ℤ) := by rw [hmul_div i]
+      _ = (T.multiplicity i : ℤ) * ((d : ℤ) * (((T.multiplicity j : ℕ) / d : ℕ) : ℤ)) := by
+            rw [hmul_div j, mul_comm]
+      _ = (d : ℤ) * ((T.multiplicity i : ℤ) * (((T.multiplicity j : ℕ) / d : ℕ) : ℤ)) := by ring
+
+/-- When the multiplicities of `T` are coprime (`gcd = 1`), the kernel of
+`T.intersection.vecMulLinear` is spanned over `ℤ` by the multiplicity vector `i ↦ mᵢ`. -/
+theorem ker_vecMulLinear_intersection_eq_span_of_gcd_eq_one
+    (hgcd : Finset.univ.gcd (fun i : T.Component ↦ (T.multiplicity i : ℕ)) = 1) :
+    LinearMap.ker T.intersection.vecMulLinear =
+      Submodule.span ℤ {fun i ↦ (T.multiplicity i : ℤ)} := by
+  simpa only [hgcd, Nat.div_one] using T.ker_vecMulLinear_intersection_eq_span
 
 /-- The kernel of the intersection matrix of a numerical type has rank one over `ℤ`. -/
 theorem finrank_ker_vecMulLinear_intersection :
