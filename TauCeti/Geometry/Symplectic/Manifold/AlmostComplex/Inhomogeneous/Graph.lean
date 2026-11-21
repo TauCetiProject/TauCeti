@@ -106,7 +106,8 @@ private theorem contMDiff_graphEndomorphism :
       (fun r : TangentBundle (IP.prod I) (P × M) ↦ r.proj) := contMDiff_proj _
   have hv : ContMDiff (IP.prod I).tangent I.tangent n
       (fun r : TangentBundle (IP.prod I) (P × M) ↦ TotalSpace.mk' E r.proj.2 r.snd.2) :=
-    (contMDiff_snd.comp hsplit).congr fun _ ↦ rfl
+    (contMDiff_snd.comp hsplit).congr fun r ↦ by
+      rw [Function.comp_apply, equivTangentBundleProd_apply]
   -- The horizontal component `j ξ` and the vertical component `J (v - A ξ) + A (j ξ)`.
   have hhor := j.contMDiff_apply le_rfl (contMDiff_fst.comp hproj) hsplit.fst
   have hver := ((J.contMDiff_tangentEndomorphism.comp hproj).clm_bundle_apply
@@ -125,9 +126,9 @@ manifold `P × M`. -/
 def graphStructure : ContMDiffAlmostComplexStructure (IP.prod I) n (P × M) where
   toEndomorphism := ⟨graphEndomorphism A j J, contMDiff_graphEndomorphism A j J⟩
   square_neg q := ContinuousLinearMap.ext fun v ↦ by
-    rw [ContMDiffSection.coeFn_mk, ContinuousLinearMap.comp_apply, graphEndomorphism_apply,
-      graphEndomorphism_apply, ContinuousLinearEquiv.apply_symm_apply, graphLinear_graphLinear,
-      map_neg, ContinuousLinearEquiv.symm_apply_apply, neg_apply, ContinuousLinearMap.id_apply]
+    -- Keep the product identifications so that they cancel against their inverses.
+    simp [graphEndomorphism_apply, graphLinear_graphLinear,
+      -Manifold.tangentSpaceProdEquiv_apply, -Manifold.tangentSpaceProdEquiv_symm_apply]
 
 /-- Gromov's graph structure sends `(ξ, v)` to `(j ξ, J (v - A ξ) + A (j ξ))`, under the canonical
 identification of the tangent space of `P × M` with the product of the tangent spaces. -/
