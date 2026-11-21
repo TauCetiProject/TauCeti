@@ -98,9 +98,9 @@ private theorem eq_zero_of_mul_add_mul_eq_C {x₀ : E} {w₀ : ℂ}
   have hid : (fun p ↦ F p * A p + G p * B p) =ᶠ[𝓝 (x₀, w₀)] fun p ↦ D p.1 := by
     have := congrArg (toFilterGerm 𝓘(ℂ, E × ℂ) (E × ℂ) (x₀, w₀) (𝓝 (x₀, w₀)) le_rfl)
       (congrArg (evalVertical x₀ w₀) h)
-    rw [map_add, map_mul, map_mul, map_add, map_mul, map_mul, evalVertical_C, hF, hG,
-      hA _ le_rfl, hB _ le_rfl, toFilterGerm_stalkPrecomp, hD _ le_rfl, Germ.coe_compTendsto,
-      ← Germ.coe_mul, ← Germ.coe_mul, ← Germ.coe_add] at this
+    simp only [map_add, map_mul, evalVertical_C, hF, hG, hA _ le_rfl, hB _ le_rfl,
+      toFilterGerm_stalkPrecomp, hD _ le_rfl, Germ.coe_compTendsto, ← Germ.coe_mul,
+      ← Germ.coe_add] at this
     exact Germ.coe_eq.1 this
   -- Near `(x₀, w₀)`, a zero of a fibre of `P` forces `D` to vanish at the base of the fibre.
   have hzero : ∀ᶠ p in 𝓝 (x₀, w₀), (Pf p.1).eval (p.2 - w₀) = 0 → D p.1 = 0 := by
@@ -159,10 +159,9 @@ private theorem evalVertical_dvd_of_irreducible {x₀ : E} {w₀ : ℂ}
       map_zero]
   obtain ⟨a, b, -, -, hab⟩ := exists_mul_add_mul_eq_C_resultant P R le_rfl le_rfl (Or.inl hd)
   obtain ⟨Q, -, hQ⟩ := exists_toFilterGerm_eq (x₀, w₀) q
-  refine hres (eq_zero_of_mul_add_mul_eq_C hP hd hab hF (G := fun p ↦ G p - F p * Q p) ?_ ?_)
-  · rw [show evalVertical x₀ w₀ R = t - evalVertical x₀ w₀ P * q by rw [hdiv]; ring, map_sub,
-      map_mul, hF, hG, hQ _ le_rfl, ← Germ.coe_mul, ← Germ.coe_sub]
-    rfl
+  refine hres (eq_zero_of_mul_add_mul_eq_C hP hd hab hF (G := G - F * Q) ?_ ?_)
+  · simp only [show evalVertical x₀ w₀ R = t - evalVertical x₀ w₀ P * q by rw [hdiv]; ring,
+      map_sub, map_mul, hF, hG, hQ _ le_rfl, ← Germ.coe_mul, ← Germ.coe_sub]
   · filter_upwards [hFG] with p hp h0
     simp [h0, hp h0]
 
@@ -191,9 +190,9 @@ private theorem dvd_of_irreducible_prod {x₀ : E} {w₀ : ℂ}
     rw [← eval_eq_of_toFilterGerm_eq (hU _ le_rfl)]
     exact (isUnit_stalk_iff _ _ _).1 u.isUnit
   have hPt := evalVertical_dvd_of_irreducible hP hPprime.irreducible
-    (F := fun p ↦ U p * F (φ p)) (G := fun p ↦ G (φ p))
-    (by rw [← hu, map_mul, hα, hU _ le_rfl, hF, Germ.coe_compTendsto, ← Germ.coe_mul]; rfl)
-    (by rw [hα, hG, Germ.coe_compTendsto]; rfl)
+    (F := U * F ∘ φ) (G := G ∘ φ)
+    (by rw [← hu, map_mul, hα, hU _ le_rfl, hF, Germ.coe_compTendsto, ← Germ.coe_mul])
+    (by rw [hα, hG, Germ.coe_compTendsto])
     (by
       filter_upwards [hUc.self_of_nhds.continuousAt.eventually_ne hU0, hφ.eventually hFG]
         with p hp hpFG h0
@@ -223,15 +222,12 @@ private theorem dvd_of_irreducible {x : X}
   | succ k =>
     -- Otherwise transport to the model `(Fin k → ℂ) × ℂ` through the chart at `x`.
     let e : E ≃L[ℂ] (Fin k → ℂ) × ℂ := ContinuousLinearEquiv.ofFinrankEq (by simp [hn])
-    have htend : Tendsto ((extChartAt I x).symm ∘ e.symm) (𝓝 (e (extChartAt I x x))) (𝓝 x) := by
-      have he := e.symm.continuous.tendsto (e (extChartAt I x x))
-      rw [e.symm_apply_apply] at he
-      simpa only [extChartAt_to_inv] using (continuousAt_extChartAt_symm x).tendsto.comp he
     refine (map_dvd_iff (stalkEquivModelSpace x e)).1 (dvd_of_irreducible_prod
       ((MulEquiv.irreducible_iff _).2 hs) (F := F ∘ (extChartAt I x).symm ∘ e.symm)
-      (G := G ∘ (extChartAt I x).symm ∘ e.symm) ?_ ?_ (htend.eventually hFG))
-    · exact (toFilterGerm_stalkEquivModelSpace x e s).trans (by rw [hF]; rfl)
-    · exact (toFilterGerm_stalkEquivModelSpace x e t).trans (by rw [hG]; rfl)
+      (G := G ∘ (extChartAt I x).symm ∘ e.symm) ?_ ?_
+      ((tendsto_extChartAt_symm_comp_symm x e).eventually hFG))
+    · exact (toFilterGerm_stalkEquivModelSpace x e s).trans (by rw [hF, Germ.coe_compTendsto])
+    · exact (toFilterGerm_stalkEquivModelSpace x e t).trans (by rw [hG, Germ.coe_compTendsto])
 
 /-- **Rückert's Nullstellensatz for hypersurface germs.** Let `F` and `G` represent holomorphic
 germs `s` and `t` at `x`. Then `t` lies in the radical of `(s)` if and only if `G` vanishes at
@@ -245,7 +241,7 @@ theorem mem_radical_span_singleton_iff {x : X}
     obtain ⟨q, hq⟩ := Ideal.mem_span_singleton'.1 hk
     obtain ⟨Q, -, hQ⟩ := exists_toFilterGerm_eq x q
     have := congrArg (toFilterGerm I X x (𝓝 x) le_rfl) hq
-    rw [map_mul, map_pow, hQ _ le_rfl, hF, hG, ← Germ.coe_mul, ← Germ.coe_pow] at this
+    simp only [map_mul, map_pow, hQ _ le_rfl, hF, hG, ← Germ.coe_mul, ← Germ.coe_pow] at this
     filter_upwards [Germ.coe_eq.1 this] with y hy h0
     exact (pow_eq_zero_iff'.1 (by rw [← Pi.pow_apply, ← hy, Pi.mul_apply, h0, mul_zero])).1
   · intro hFG
@@ -262,7 +258,7 @@ theorem mem_radical_span_singleton_iff {x : X}
       obtain ⟨P, -, hP⟩ := exists_toFilterGerm_eq x p
       obtain ⟨R, -, hR⟩ := exists_toFilterGerm_eq x r
       have := congrArg (toFilterGerm I X x (𝓝 x) le_rfl) hr
-      rw [map_mul, hF, hP _ le_rfl, hR _ le_rfl, ← Germ.coe_mul] at this
+      simp only [map_mul, hF, hP _ le_rfl, hR _ le_rfl, ← Germ.coe_mul] at this
       refine dvd_of_irreducible (UniqueFactorizationMonoid.irreducible_of_factor p hp)
         (hP _ le_rfl) hG ?_
       filter_upwards [Germ.coe_eq.1 this, hFG] with y hy hyG h0

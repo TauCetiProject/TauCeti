@@ -107,10 +107,8 @@ theorem exists_ringEquiv_mul_eq_evalVertical (x₀ : E) (w₀ : ℂ)
     simp only [α, RingEquiv.trans_apply, RingEquiv.ofBijective_apply, f,
       toFilterGerm_stalkPullback, toFilterGerm_ringEquivCast hφ0.symm (hC _ le_rfl), hC _ le_rfl,
       Germ.coe_compTendsto]
-  have hαb : toFilterGerm 𝓘(ℂ, E × ℂ) (E × ℂ) (x₀, w₀) (𝓝 (x₀, w₀)) le_rfl (α b) =
-      fun p ↦ F (φ p) := by
+  have hαb : toFilterGerm 𝓘(ℂ, E × ℂ) (E × ℂ) (x₀, w₀) (𝓝 (x₀, w₀)) le_rfl (α b) = ↑(F ∘ φ) := by
     rw [hα, hbF _ le_rfl, Germ.coe_compTendsto]
-    rfl
   have hφ_slice : ∀ w : ℂ, φ (x₀, w) = L (q.1, q.2 + (w - w₀)) := fun w ↦ by
     have hsub : (x₀, w) - (x₀, w₀) = ((0 : E), w - w₀) := by ext <;> simp
     calc
