@@ -67,6 +67,12 @@ functions whose gradient vanishes outside a small ball, so the work is the local
 
 * `TauCeti.PDE.exists_eLpNorm_gradient_ball_le_of_setAverage_le`: the interior `W^{1,p}` estimate,
   `2 < p < ∞`, for coefficients of small mean oscillation below a radius.
+* `TauCeti.PDE.exists_extendByZero_cutoff`, `TauCeti.PDE.energyFormH1_extendByZero_cutoff_eq` and
+  `TauCeti.PDE.setIntegral_cutoff_forcing_eq_zero`: the localization of a local weak solution for
+  bounded measurable coefficients. A cutoff of the solution, extended by zero, solves a
+  whole-space equation whose scalar forcing has mean zero.
+* `TauCeti.PDE.exists_wholeSpace_cutoff`: given a divergence representation of mean-zero functions
+  on balls, that whole-space equation in pure divergence form, with an `Lᵖ` bound on its datum.
 
 ## References
 
@@ -96,9 +102,10 @@ section Localization
 variable {Ω U : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
   {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
 
-/-- A cutoff of a local weak solution, minus a constant, extended by zero to the whole space,
-with its weak gradient. -/
-private theorem exists_extendByZero_cutoff (hUΩ : U ≤ Ω)
+/-- **The extension by zero of a cutoff.** For `u ∈ H¹(Ω)`, a constant `c`, and a smooth compactly
+supported `ζ` with `tsupport ζ ⊆ U ⊆ Ω`, the function `ζ (u - c)`, extended by zero, lies in
+`H¹(ℝ^{n+1})`, with weak gradient `ζ ∇u + (u - c) ∇ζ` on `U` and zero outside. -/
+theorem exists_extendByZero_cutoff (hUΩ : U ≤ Ω)
     [IsFiniteMeasure (volume.restrict (U : Set (EuclideanSpace ℝ (Fin (n + 1)))))]
     (u : W1p volume Ω 2) {ζ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} (hζ : ContDiff ℝ ∞ ζ)
     (hζc : HasCompactSupport ζ) (hts : tsupport ζ ⊆ U) (c : ℝ) :
@@ -247,14 +254,15 @@ private theorem setIntegral_cutoff_test_eq (hUΩ : U ≤ Ω) {u : W1p volume Ω 
   have h := setIntegral_test_eq hUΩ hu ψ (by rw [hψ]; exact tsupport_mul_subset_left.trans hts)
   simpa only [hgradψ] using h
 
-/-- **The weak equation of a cutoff of a local weak solution.** If `u` solves `-div(a ∇u) = -div G`
-weakly in `Ω`, and `w` is the extension by zero of `ζ (u - c)` for a cutoff `ζ` supported in
-`U ⊆ Ω`, then `w` solves on the whole space
+/-- **The weak equation of a cutoff of a local weak solution.** Let `a` be measurable and bounded
+by `Lam`, with no ellipticity or continuity assumed. If `u` solves `-div(a ∇u) = -div G` weakly in
+`Ω`, and `w` is the extension by zero of `ζ (u - c)` for a cutoff `ζ` supported in `U ⊆ Ω`, then
+`w` solves on the whole space
 
 `-div(a ∇w) = -div (ζ G + (u - c) a ∇ζ) + ⟪G, ∇ζ⟫ - ⟪∇ζ, a ∇u⟫`,
 
 both data being supported in `U`. -/
-private theorem energyFormH1_extendByZero_cutoff_eq (ha : AEStronglyMeasurable a volume)
+theorem energyFormH1_extendByZero_cutoff_eq (ha : AEStronglyMeasurable a volume)
     {Lam : ℝ} (hLam : 0 ≤ Lam) (hbd : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ Lam) (hUΩ : U ≤ Ω)
     [IsFiniteMeasure (volume.restrict (U : Set (EuclideanSpace ℝ (Fin (n + 1)))))]
     {u : W1p volume Ω 2}
@@ -313,9 +321,10 @@ private theorem energyFormH1_extendByZero_cutoff_eq (ha : AEStronglyMeasurable a
           ← matrixBilinearForm_apply, real_inner_comm (∇ φ x)]
         ring
 
-/-- **The cutoff forcing has mean zero.** Testing the equation of a local weak solution with the
-cutoff `ζ` itself gives `∫_U (⟪G, ∇ζ⟫ - ⟪∇ζ, a ∇u⟫) = 0`. -/
-private theorem setIntegral_cutoff_forcing_eq_zero (ha : AEStronglyMeasurable a volume)
+/-- **The cutoff forcing has mean zero.** For measurable coefficients `a` bounded by `Lam`, testing
+the equation of a local weak solution with the cutoff `ζ` itself gives
+`∫_U (⟪G, ∇ζ⟫ - ⟪∇ζ, a ∇u⟫) = 0`. -/
+theorem setIntegral_cutoff_forcing_eq_zero (ha : AEStronglyMeasurable a volume)
     {Lam : ℝ} (hLam : 0 ≤ Lam) (hbd : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ Lam) (hUΩ : U ≤ Ω)
     [IsFiniteMeasure (volume.restrict (U : Set (EuclideanSpace ℝ (Fin (n + 1)))))]
     {u : W1p volume Ω 2}
@@ -434,7 +443,7 @@ cutoff supported in `B` with `|ζ| ≤ 1` and `‖∇ζ‖ ≤ L`. Given the div
 mean-zero functions on `B`, the extension by zero of `ζ (u - c)` solves `-div(a ∇w) = -div F` on
 the whole space, for an explicit field `F ∈ Lᵖ`: the divergence datum of the cutoff plus a field
 `H` with `-div H` the scalar forcing of the cutoff. -/
-private theorem exists_wholeSpace_cutoff
+theorem exists_wholeSpace_cutoff
     {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
     (ha : AEStronglyMeasurable a volume) {Lam : ℝ} (hLam : 0 ≤ Lam)
     (hbd : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ Lam) {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)]
