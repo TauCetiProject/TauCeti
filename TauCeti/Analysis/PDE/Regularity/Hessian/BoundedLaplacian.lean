@@ -82,9 +82,7 @@ private theorem exists_cutoff_of_harmonic {q : V → ℝ} (hq : ContDiff ℝ ∞
     rw [χ.one_of_mem_closedBall (ball_subset_closedBall hy), one_mul]
   refine ⟨fun y ↦ χ y * q y, χ.contDiff.mul hq, fun x hx ↦ ?_, fun x hx ↦ ?_,
     ((hφq 0 (by simp)).iteratedFDeriv ℝ 2).eq_of_nhds⟩
-  · have : χ x = 0 := Function.notMem_support.1 fun h ↦ by
-      rw [χ.support_eq, mem_ball_zero_iff] at h
-      exact (lt_irrefl (2 : ℝ)) (hx.trans_lt h)
+  · have : χ x = 0 := χ.zero_of_le_dist (by simpa using hx)
     simp only [this, zero_mul]
   · refine ⟨not_lt.1 fun h ↦ hx ?_, not_lt.1 fun h ↦ hx ?_⟩
     · rw [(laplacian_congr_nhds (hφq x h)).eq_of_nhds, hΔq]
