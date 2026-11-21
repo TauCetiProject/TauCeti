@@ -50,7 +50,9 @@ modules over a ring, this extends both statements to sheaves and K-sheaves with 
 `TopCat.Presheaf.IsSheaf.isIso_toKPresheafUnit`). Together with the facts that the K-presheaf of a
 sheaf is a K-sheaf (`TopCat.Presheaf.IsSheaf.isKSheaf_toKPresheaf`) and the presheaf of a K-sheaf
 is a sheaf (`TopCat.KPresheaf.IsKSheaf.isSheaf_toPresheaf`), this gives the equivalence of
-categories `TopCat.sheafEquivKSheaf C X : Sheaf C X ≌ KSheaf C X`.
+categories `TopCat.sheafEquivKSheaf C X : Sheaf C X ≌ KSheaf C X`. Its unit and counit are
+`toKPresheafUnit` and `toPresheafCounit` themselves, which satisfy the triangle identity
+`TopCat.Presheaf.toKPresheafMap_toKPresheafUnit_comp_toPresheafCounit`.
 
 ## References
 
@@ -152,6 +154,14 @@ theorem toKPresheafUnit_naturality {P Q : Presheaf C X} (φ : P ⟶ Q) :
   ext ⟨U⟩ K hK
   simp
 
+/-- The triangle identity: the K-presheaf of the unit of `P`, followed by the counit of
+`P.toKPresheaf`, is the identity. -/
+@[reassoc (attr := simp)]
+theorem toKPresheafMap_toKPresheafUnit_comp_toPresheafCounit (P : Presheaf C X) :
+    toKPresheafMap P.toKPresheafUnit ≫ P.toKPresheaf.toPresheafCounit = 𝟙 _ := by
+  ext ⟨K⟩ U hU
+  simp
+
 end Presheaf
 
 section Functor
@@ -203,8 +213,8 @@ private theorem surjective_toPresheafCounit_app (hF : F.IsKSheaf) (K : Compacts 
     Types.jointly_surjective_of_isColimit (hF.nonempty_isColimit_coconeOfCompacts K).some x
   obtain ⟨V, hKV, hVL⟩ := Compacts.exists_open_set_nhds_of_compactsNhds L
   refine ⟨F.toPresheaf.kGerm K V hKV (toPresheafMk V
-    (fun M hM ↦ F.map (opHomOfLE (show M ≤ L.val from hM.trans hVL)) z) fun M N hM hN h ↦ ?_), ?_⟩
-  · rw [← Functor.map_comp_apply, Subsingleton.elim (opHomOfLE _ ≫ opHomOfLE h) _]
+    (fun M hM ↦ F.map (opHomOfLE (show M ≤ L.val from hM.trans hVL)) z) fun M N hM _ h ↦ ?_), ?_⟩
+  · exact map_opHomOfLE_comp_map_opHomOfLE_apply F _ h z
   · rw [kGerm_toPresheafCounit_app_apply, kRestrict_toPresheafMk, coconeOfCompacts_ι_app]
 
 /-- Two germs along `K` of sections of the presheaf of a K-sheaf of types with the same component on
@@ -231,6 +241,9 @@ private theorem injective_toPresheafCounit_app (hF : F.IsKSheaf) (K : Compacts X
   obtain ⟨⟨M⟩, f, hst⟩ := (Types.FilteredColimit.isColimit_eq_iff'
     (hF.nonempty_isColimit_coconeOfCompacts K).some (i := op ⟨L', hL'K⟩) _ _).1 h
   have hML : (M : Set X) ⊆ L := f.unop.le
+  -- The diagram of `coconeOfCompacts` sends `f` to `F.map (opHomOfLE _)` by definition, and the
+  -- proofs of `M ⊆ U` and `M ⊆ V` produced by `kRestrict_map_apply` are equal by proof
+  -- irrelevance, so both `replace` steps only restate `hst` in these terms.
   replace hst : F.map (opHomOfLE (show M.val ≤ L' from hML)) (F.kRestrict U L' hLU s) =
       F.map (opHomOfLE (show M.val ≤ L' from hML)) (F.kRestrict V L' hLV t) := hst
   rw [kRestrict_map_apply, kRestrict_map_apply] at hst
@@ -388,26 +401,31 @@ variable (C X) in
 germs along compact sets is an equivalence from sheaves to K-sheaves, with inverse the presheaf of
 compatible families of values on compact sets. The values are in a concrete category whose
 forgetful functor reflects isomorphisms and preserves limits and filtered colimits, such as types or
-modules over a ring. -/
+modules over a ring. The unit and counit are `Presheaf.toKPresheafUnit` and
+`KPresheaf.toPresheafCounit`. -/
+@[expose, simps! functor_obj_obj functor_map_hom inverse_obj_obj inverse_map_hom
+  unitIso_hom_app_hom unitIso_inv_app_hom counitIso_hom_app_hom counitIso_inv_app_hom]
 noncomputable def sheafEquivKSheaf
     {FC : C → C → Type*} {CC : C → Type w} [∀ X Y, FunLike (FC X Y) (CC X) (CC Y)]
     [ConcreteCategory C FC] [(forget C).ReflectsIsomorphisms]
     [PreservesLimitsOfSize.{w, w} (forget C)] [PreservesFilteredColimitsOfSize.{w, w} (forget C)]
-    : Sheaf C X ≌ KSheaf C X :=
-  CategoryTheory.Equivalence.mk
-    (ObjectProperty.lift _ (sheafToPresheaf _ _ ⋙ Presheaf.toKPresheafFunctor _ X)
-      fun P ↦ Presheaf.IsSheaf.isKSheaf_toKPresheaf P.property)
-    (ObjectProperty.lift _ (ObjectProperty.ι _ ⋙ KPresheaf.toPresheafFunctor _ X)
-      fun F ↦ KPresheaf.IsKSheaf.isSheaf_toPresheaf F.property)
-    (NatIso.ofComponents (fun P ↦ ObjectProperty.isoMk _
+    : Sheaf C X ≌ KSheaf C X where
+  functor := ObjectProperty.lift _ (sheafToPresheaf _ _ ⋙ Presheaf.toKPresheafFunctor _ X)
+    fun P ↦ Presheaf.IsSheaf.isKSheaf_toKPresheaf P.property
+  inverse := ObjectProperty.lift _ (ObjectProperty.ι _ ⋙ KPresheaf.toPresheafFunctor _ X)
+    fun F ↦ KPresheaf.IsKSheaf.isSheaf_toPresheaf F.property
+  unitIso := NatIso.ofComponents (fun P ↦ ObjectProperty.isoMk _
       (@asIso _ _ _ _ (Presheaf.toKPresheafUnit P.obj)
         (Presheaf.IsSheaf.isIso_toKPresheafUnit P.property)))
-      fun φ ↦ ObjectProperty.hom_ext _ (Presheaf.toKPresheafUnit_naturality φ.hom))
-    (NatIso.ofComponents (fun F ↦ ObjectProperty.isoMk _
+    fun φ ↦ ObjectProperty.hom_ext _ (Presheaf.toKPresheafUnit_naturality φ.hom)
+  counitIso := NatIso.ofComponents (fun F ↦ ObjectProperty.isoMk _
       (@asIso _ _ _ _ (KPresheaf.toPresheafCounit F.obj)
         (KPresheaf.IsKSheaf.isIso_toPresheafCounit F.property)))
-      fun φ ↦ ObjectProperty.hom_ext _ (KPresheaf.toPresheafCounit_naturality φ.hom))
+    fun φ ↦ ObjectProperty.hom_ext _ (KPresheaf.toPresheafCounit_naturality φ.hom)
+  functor_unitIso_comp P := ObjectProperty.hom_ext _
+    (Presheaf.toKPresheafMap_toKPresheafUnit_comp_toPresheafCounit P.obj)
 
 end ConcreteCategory
 
 end TopCat
+

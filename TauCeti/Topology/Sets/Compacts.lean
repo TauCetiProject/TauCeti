@@ -21,7 +21,8 @@ records that Mathlib's image `TopologicalSpace.Compacts.map` is monotone, which 
 with compact supports covariant in open embeddings. A compact set lies in one member of a
 directed open cover (`TopologicalSpace.Compacts.exists_subset_of_iSup_eq_top`). A compact set
 whose interior contains `K` is a compact neighbourhood of `K`
-(`TopologicalSpace.Compacts.compactNhdsOfSubsetInterior`), and open sets containing two compact sets
+(`TopologicalSpace.Compacts.compactNhdsOfSubsetInterior`); in a weakly locally compact space every
+compact set has one. Open sets containing two compact sets
 together contain their union (`TopologicalSpace.Compacts.coe_sup_subset_coe_sup`). A compact set
 covered by two open sets is the union of two compact sets, one inside each of them
 (`TopologicalSpace.Compacts.exists_sup_eq_of_subset_union`). Finally, in a
@@ -85,6 +86,11 @@ definition. -/
 lemma coe_compactNhdsOfSubsetInterior {K : Compacts α} (L : Compacts α)
     (h : (K : Set α) ⊆ interior L) : (compactNhdsOfSubsetInterior L h : Compacts α) = L :=
   (rfl)
+
+/-- In a weakly locally compact space, every compact set has a compact neighbourhood. -/
+instance [WeaklyLocallyCompactSpace α] (K : Compacts α) : Nonempty K.compactNhds :=
+  let ⟨L, hL, hKL⟩ := exists_compact_superset K.isCompact
+  ⟨compactNhdsOfSubsetInterior ⟨L, hL⟩ hKL⟩
 
 /-- An open set containing `K` and an open set containing `L` together contain `K ⊔ L`. -/
 lemma coe_sup_subset_coe_sup {K L : Compacts α} {U V : Opens α} (hK : (K : Set α) ⊆ U)

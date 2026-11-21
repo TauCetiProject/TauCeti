@@ -35,15 +35,14 @@ section over `U` is `F.kRestrict U K h x`, and `F.isLimitKRestrictCone U` is the
 of the limit. The construction is functorial in `F` (`TopCat.KPresheaf.toPresheafFunctor`).
 
 The main theorem is that on a Hausdorff space the presheaf of a K-sheaf of types is a sheaf
-(`TopCat.KPresheaf.IsKSheaf.isSheaf_toPresheaf_types`). The proof uses only the first two K-sheaf
-axioms, that `F(∅)` is a point and that `F(K₁ ∪ K₂)` is the pullback of `F(K₁)` and `F(K₂)` over
-`F(K₁ ∩ K₂)`. The key step is a gluing statement for compact sets: if `U` is a family of open sets
-covering a compact set `K`, an element of `F(K)` is the same thing as a compatible family of
-elements of `F(L)` for the compact sets `L ⊆ K` contained in a single member of `U`
-(`TopCat.KPresheaf.IsKSheaf.existsUnique_forall_map_eq_types`). Indeed, `K` is covered by finitely
-many members of `U`, and in a Hausdorff space a compact set covered by two open sets is the union
-of two compact sets, one inside each of them (`IsCompact.binary_compact_cover`); the pullback axiom
-then glues by induction on the number of open sets.
+(`TopCat.KPresheaf.IsKSheaf.isSheaf_toPresheaf_types`). The key step is a gluing statement for
+compact sets: if `U` is a family of open sets covering a compact set `K`, an element of `F(K)` is
+the same thing as a compatible family of elements of `F(L)` for the compact sets `L ⊆ K` contained
+in a single member of `U` (`TopCat.KPresheaf.IsKSheaf.existsUnique_forall_map_eq_types`). Indeed,
+`K` is covered by finitely many members of `U`, and in a Hausdorff space a compact set covered by
+two open sets is the union of two compact sets, one inside each of them
+(`IsCompact.binary_compact_cover`); the pullback axiom then glues by induction on the number of open
+sets.
 
 Taking presheaves commutes with every functor preserving limits
 (`TopCat.KPresheaf.toPresheafCompIso`), and on a locally compact Hausdorff space a functor
@@ -184,14 +183,15 @@ noncomputable def toPresheafCompIso : F.toPresheaf ⋙ G ≅ toPresheaf (F ⋙ G
     rintro ⟨U⟩ ⟨V⟩ i
     refine toPresheaf_hom_ext _ fun K hK ↦ ?_
     -- The components of the comparison isomorphisms are the images under `G` of the components.
+    -- The isomorphism is stated between the objects of `F.toPresheaf ⋙ G` and `(F ⋙ G).toPresheaf`,
+    -- as in the goal, so that `rw` can match it.
     have h (W : Opens X) (hW : (K : Set X) ⊆ W) :
-        (preservesLimitIso G (F.compactsInsideDiagram W)).hom ≫ kRestrict (F ⋙ G) W K hW =
+        Iso.hom (X := (F.toPresheaf ⋙ G).obj (op W)) (Y := (toPresheaf (F ⋙ G)).obj (op W))
+          (preservesLimitIso G (F.compactsInsideDiagram W)) ≫ kRestrict (F ⋙ G) W K hW =
           G.map (F.kRestrict W K hW) :=
       preservesLimitIso_hom_π G (F.compactsInsideDiagram W) (op ⟨K, hW⟩)
-    rw [Category.assoc, Category.assoc]
-    exact ((congrArg (_ ≫ ·) (h V hK)).trans ((G.map_comp _ _).symm.trans
-      (congrArg G.map (F.toPresheaf_map_kRestrict i.unop K hK)))).trans
-      ((h U _).symm.trans (congrArg (_ ≫ ·) (toPresheaf_map_kRestrict (F ⋙ G) i.unop K hK).symm))
+    rw [← Quiver.Hom.op_unop i, Category.assoc, Category.assoc, h V hK, toPresheaf_map_kRestrict,
+      h U, Functor.comp_map, ← G.map_comp, toPresheaf_map_kRestrict]
 
 /-- `F.toPresheafCompIso G` sends the image under `G` of a section of `F.toPresheaf` to the section
 of `(F ⋙ G).toPresheaf` whose components are the images under `G` of its components. -/
@@ -217,13 +217,24 @@ theorem IsKSheaf.comp [T2Space X] [LocallyCompactSpace X] {F : KPresheaf C X} (h
     KPresheaf.IsKSheaf (F ⋙ G) where
   nonempty_isTerminal := ⟨IsTerminal.isTerminalObj G _ hF.nonempty_isTerminal.some⟩
   isPullback sq := (hF.isPullback sq).map G
-  nonempty_isColimit_coconeOfCompacts K := by
-    have : Nonempty K.compactNhds := by
-      obtain ⟨L, hL, hKL⟩ := exists_compact_superset K.isCompact
-      exact ⟨Compacts.compactNhdsOfSubsetInterior ⟨L, hL⟩ hKL⟩
-    exact ⟨isColimitOfPreserves G (hF.nonempty_isColimit_coconeOfCompacts K).some⟩
+  nonempty_isColimit_coconeOfCompacts K :=
+    ⟨isColimitOfPreserves G (hF.nonempty_isColimit_coconeOfCompacts K).some⟩
 
 end Functor
+
+omit [HasLimitsOfSize.{w, w} C] in
+/-- Restriction along `L ≤ K` followed by restriction along `M ≤ L` is restriction along `M ≤ K`. -/
+@[reassoc, elementwise]
+theorem map_opHomOfLE_comp_map_opHomOfLE (F : KPresheaf C X) {K L M : Compacts X} (h : L ≤ K)
+    (h' : M ≤ L) : F.map (opHomOfLE h) ≫ F.map (opHomOfLE h') = F.map (opHomOfLE (h'.trans h)) := by
+  rw [← F.map_comp, Subsingleton.elim (opHomOfLE h ≫ opHomOfLE h') _]
+
+omit [HasLimitsOfSize.{w, w} C] in
+/-- Restriction along `K ≤ K` is the identity. -/
+@[elementwise]
+theorem map_opHomOfLE_refl (F : KPresheaf C X) (K : Compacts X) :
+    F.map (opHomOfLE (le_refl K)) = 𝟙 _ := by
+  rw [Subsingleton.elim (opHomOfLE (le_refl K)) (𝟙 (op K)), F.map_id]
 
 section Types
 
@@ -255,17 +266,6 @@ theorem kRestrict_toPresheafMk (U : Opens X)
     (K : Compacts X) (hK : (K : Set X) ⊆ U) :
     F.kRestrict U K hK (toPresheafMk U x hx) = x K hK :=
   Types.Limit.π_mk _ _ _ _
-
-/-- Restriction along `L ≤ K` followed by restriction along `M ≤ L` is restriction along `M ≤ K`. -/
-private theorem map_map (F : KPresheaf (Type w) X) {K L M : Compacts X} (h : L ≤ K) (h' : M ≤ L)
-    (x : F.obj (op K)) :
-    F.map (opHomOfLE h') (F.map (opHomOfLE h) x) = F.map (opHomOfLE (h'.trans h)) x := by
-  rw [← Functor.map_comp_apply, Subsingleton.elim (opHomOfLE h ≫ opHomOfLE h') _]
-
-/-- Restriction along `K ≤ K` is the identity. -/
-private theorem map_opHomOfLE_refl (F : KPresheaf (Type w) X) {K : Compacts X} (x : F.obj (op K)) :
-    F.map (opHomOfLE (le_refl K)) x = x := by
-  rw [Subsingleton.elim (opHomOfLE (le_refl K)) (𝟙 (op K)), Functor.map_id_apply]
 
 variable [T2Space X]
 
@@ -318,7 +318,7 @@ private theorem IsKSheaf.eq_of_forall_map_eq_of_finset (hF : F.IsKSheaf) (t : Fi
       (isOpen_biUnion fun i _ ↦ (U i).isOpen) hK
     refine hF.ext_types ⟨rfl, rfl⟩ (h K₁ le_sup_left ⟨a, hK₁⟩)
       (ih K₂ hK₂ _ _ fun L hL hLU ↦ ?_)
-    rw [map_map, map_map]
+    rw [map_opHomOfLE_comp_map_opHomOfLE_apply, map_opHomOfLE_comp_map_opHomOfLE_apply]
     exact h L _ hLU
 
 /-- Existence in the gluing statement for compact sets: on a compact set covered by finitely many
@@ -359,9 +359,11 @@ private theorem IsKSheaf.exists_forall_map_eq_of_finset (hF : F.IsKSheaf)
     have h₂ : ∃ i, ((L ⊓ K₂ : Compacts X) : Set X) ⊆ U i :=
       ⟨i, (show ((L ⊓ K₂ : Compacts X) : Set X) ⊆ L from inf_le_left).trans hi⟩
     refine hF.ext_types (K₂ := L ⊓ K₁) (K₃ := L ⊓ K₂) ⟨hLK.symm, rfl⟩ ?_ ?_
-    · rw [map_map, hx _ _ _ h₁, ← map_map F (le_sup_left : K₁ ≤ K₁ ⊔ K₂) inf_le_right, hy₁,
+    · rw [map_opHomOfLE_comp_map_opHomOfLE_apply, hx _ _ _ h₁,
+        ← map_opHomOfLE_comp_map_opHomOfLE_apply F (le_sup_left : K₁ ≤ K₁ ⊔ K₂) inf_le_right, hy₁,
         hx _ _ _ h₁]
-    · rw [map_map, hx _ _ _ h₂, ← map_map F (le_sup_right : K₂ ≤ K₁ ⊔ K₂) inf_le_right, hy₂',
+    · rw [map_opHomOfLE_comp_map_opHomOfLE_apply, hx _ _ _ h₂,
+        ← map_opHomOfLE_comp_map_opHomOfLE_apply F (le_sup_right : K₂ ≤ K₁ ⊔ K₂) inf_le_right, hy₂',
         hy₂ _ _ h₂]
 
 /-- **Locality on compact sets.** Let `F` be a K-sheaf of types on a Hausdorff space and let `K` be
@@ -393,9 +395,7 @@ theorem IsKSheaf.existsUnique_forall_map_eq_types (hF : F.IsKSheaf)
   exact ⟨y, hy, fun y' hy' ↦ hF.eq_of_forall_map_eq_types U hK fun L h hL ↦
     (hy' L h hL).trans (hy L h hL).symm⟩
 
-/-- On a Hausdorff space, the presheaf of a K-sheaf of types is a sheaf. Only the first two K-sheaf
-axioms are used: the value on `∅` is a point, and the value on a union of two compact sets is the
-pullback of the values on them. -/
+/-- On a Hausdorff space, the presheaf of a K-sheaf of types is a sheaf. -/
 theorem IsKSheaf.isSheaf_toPresheaf_types (hF : F.IsKSheaf) : F.toPresheaf.IsSheaf := by
   refine (Presheaf.isSheaf_iff_isSheafUniqueGluing_types _).2 fun ι U sf hsf ↦ ?_
   -- The component of `sf i` on a compact set `L ⊆ U i` does not depend on `i`.
@@ -415,11 +415,13 @@ theorem IsKSheaf.isSheaf_toPresheaf_types (hF : F.IsKSheaf) : F.toPresheaf.IsShe
   choose y hy hyu using fun (K : Compacts X) (hK : (K : Set X) ⊆ (iSup U : Opens X)) ↦
     hF.existsUnique_forall_map_eq_types U x hxc (hcov K hK)
   have hyc (K L : Compacts X) (hK hL) (h : L ≤ K) : F.map (opHomOfLE h) (y K hK) = y L hL :=
-    hyu L hL _ fun M hM hMU ↦ by rw [map_map]; exact hy K hK M _ hMU
+    hyu L hL _ fun M hM hMU ↦ by
+      rw [map_opHomOfLE_comp_map_opHomOfLE_apply]
+      exact hy K hK M _ hMU
   refine ⟨toPresheafMk (iSup U) y hyc, fun i ↦ toPresheaf_ext fun K hK ↦ ?_, fun s hs ↦ ?_⟩
   · rw [toPresheaf_map_kRestrict_apply, kRestrict_toPresheafMk, ← hx K ⟨i, hK⟩ i hK,
       ← hy K (hK.trans (show ((U i : Opens X) : Set X) ⊆ (iSup U : Opens X) from le_iSup U i))
-        K le_rfl ⟨i, hK⟩, map_opHomOfLE_refl]
+        K le_rfl ⟨i, hK⟩, map_opHomOfLE_refl_apply]
   · refine toPresheaf_ext fun K hK ↦ ?_
     rw [kRestrict_toPresheafMk]
     refine hyu K hK _ fun L h ⟨i, hi⟩ ↦ ?_
