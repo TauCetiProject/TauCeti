@@ -12,6 +12,7 @@ public import Mathlib.CategoryTheory.Sites.Spaces
 public import Mathlib.RingTheory.Ideal.Pointwise
 import TauCeti.RingTheory.Ideal.Maps
 import TauCeti.RingTheory.Localization.Tower
+import TauCeti.RingTheory.Spectrum.Prime.Topology
 
 /-!
 # Affine schemes: the spectrum, fixed points, and actions on global sections
@@ -43,6 +44,8 @@ be injective. This is the local reason why an affine blowup changes nothing away
 * `AlgebraicGeometry.Scheme.stalkFromSpecTopAlgEquiv`: for an affine scheme `Z` and a prime ideal
   `M` of `Γ(Z, ⊤)`, the canonical `Γ(Z, ⊤)`-algebra isomorphism between `Localization.AtPrime M` and
   the stalk at the point of `Z` corresponding to `M`.
+* `AlgebraicGeometry.Spec.zeroLocusClosed`: the closed vanishing locus `V(s)` in `Spec R` bundled in
+  `TopologicalSpace.Closeds (Spec R)`.
 
 ## Main results
 
@@ -434,6 +437,47 @@ theorem Scheme.Hom.eq_of_comp_eq_of_forall_liesOver_eq {R A : Type u} [CommRing 
     ⟨congr(($hzu).asIdeal).symm.trans (congrArg PrimeSpectrum.asIdeal (Spec.map_apply _ z))⟩
   obtain rfl : z = v := PrimeSpectrum.ext (huniq z.asIdeal z.isPrime this hz)
   exact Subtype.ext hzw.symm
+
+namespace Spec
+
+variable {R : CommRingCat.{u}}
+
+/-- The closed subset `V(s)` of `Spec R` bundled as an element of
+`TopologicalSpace.Closeds (Spec R)`.
+
+Because `Spec R` is semireducible rather than reducible, `Closeds (PrimeSpectrum R)` is not
+definitionally equal to `Closeds (Spec R)` at `implicit` or instance transparency; bundling at
+`Closeds (Spec R)` keeps sheaf and supported-cohomology constructions on `Spec R` type-correct
+under `rw`, `simp`, and typeclass synthesis without transparency overrides. -/
+def zeroLocusClosed (s : Set R) : TopologicalSpace.Closeds (Spec R) :=
+  PrimeSpectrum.zeroLocusClosed s
+
+@[simp]
+theorem coe_zeroLocusClosed (s : Set R) :
+    (zeroLocusClosed (R := R) s : Set (Spec R)) = PrimeSpectrum.zeroLocus s :=
+  PrimeSpectrum.coe_zeroLocusClosed s
+
+/-- A point of `Spec R` lies in `Spec.zeroLocusClosed s` precisely when its prime ideal contains
+`s`. -/
+@[simp]
+theorem mem_zeroLocusClosed {s : Set R} {p : Spec R} :
+    p ∈ zeroLocusClosed s ↔ s ⊆ p.asIdeal :=
+  PrimeSpectrum.mem_zeroLocusClosed
+
+/-- The bundled zero locus of `Ideal.span s` in `Spec R` agrees with that of `s`. -/
+@[simp]
+theorem zeroLocusClosed_span (s : Set R) :
+    zeroLocusClosed (R := R) (Ideal.span s : Set R) = zeroLocusClosed s :=
+  PrimeSpectrum.zeroLocusClosed_span s
+
+/-- The open complement of `V(s)` in `Spec R` is the union of the basic opens `D(r)` for
+`r ∈ s`. -/
+theorem compl_zeroLocusClosed_eq_iSup_basicOpen (s : Set R) :
+    (zeroLocusClosed (R := R) s).compl =
+      ⨆ r ∈ s, (PrimeSpectrum.basicOpen r : TopologicalSpace.Opens (Spec R)) :=
+  PrimeSpectrum.compl_zeroLocusClosed_eq_iSup_basicOpen s
+
+end Spec
 
 end AlgebraicGeometry
 

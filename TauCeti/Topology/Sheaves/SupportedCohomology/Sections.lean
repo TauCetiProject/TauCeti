@@ -136,10 +136,13 @@ lemma range_supportedSubmoduleι_hom_app (W : (Opens X)ᵒᵖ) :
     ((F.supportedSubmoduleι S).hom.app W).hom.range = F.supportedSubmodule S W.unop :=
   (F.supportedSubmodule S W.unop).range_subtype
 
+/-- Each open-set component of the supported-section inclusion is a monomorphism. -/
+instance mono_supportedSubmoduleι_hom_app (W : (Opens X)ᵒᵖ) :
+    Mono ((F.supportedSubmoduleι S).hom.app W) :=
+  (ModuleCat.mono_iff_injective _).2 Subtype.val_injective
+
 /-- The supported-section inclusion is a monomorphism. -/
 instance mono_supportedSubmoduleι : Mono (F.supportedSubmoduleι S) := by
-  have (W : (Opens X)ᵒᵖ) : Mono ((F.supportedSubmoduleι S).hom.app W) :=
-    (ModuleCat.mono_iff_injective _).2 Subtype.val_injective
   have : Mono (F.supportedSubmoduleι S).hom := NatTrans.mono_of_mono_app _
   exact Sheaf.Hom.mono_of_presheaf_mono _ _ _
 
@@ -261,6 +264,14 @@ instance additive_supportedSubmoduleFunctor : (supportedSubmoduleFunctor (R := R
 abbrev supportedSubmoduleSectionsFunctor (W : Opens X) :
     Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R) ⥤ ModuleCat.{u} R :=
   supportedSubmoduleFunctor S ⋙ (sheafSections _ _).obj (op W)
+
+/-- Mapping by `supportedSubmoduleSectionsFunctor` commutes with the inclusion into sections of the
+ambient sheaf. -/
+@[reassoc]
+lemma supportedSubmoduleSectionsFunctor_map_ι_hom_app (W : Opens X) (f : F ⟶ G) :
+    (supportedSubmoduleSectionsFunctor S W).map f ≫ (G.supportedSubmoduleι S).hom.app (op W) =
+      (F.supportedSubmoduleι S).hom.app (op W) ≫ f.hom.app (op W) :=
+  congrArg (fun φ ↦ φ.hom.app (op W)) (supportedSubmoduleFunctor_map_ι S f)
 
 /-- The supported-section functor on an open is additive in the coefficient sheaf. -/
 instance additive_supportedSubmoduleSectionsFunctor (W : Opens X) :

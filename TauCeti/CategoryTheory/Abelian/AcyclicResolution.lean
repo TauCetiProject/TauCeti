@@ -60,6 +60,9 @@ The proof has three steps.
   morphisms of augmented resolutions.
 * `CategoryTheory.Functor.rightDerivedIsoOfResolution`: the natural isomorphism for a
   functorial adapted resolution.
+* `CategoryTheory.Functor.compRightDerivedIsoOfResolution`: if an exact additive functor `H`
+  sends injective objects into a class adapted to `F` and `H ⋙ F ≅ G`, then
+  `H ⋙ F.rightDerived n ≅ G.rightDerived n`.
 
 ## References
 
@@ -375,5 +378,147 @@ lemma rightDerivedIsoOfResolution_app (K : C ⥤ CochainComplex C ℕ)
     (F.rightDerivedIsoOfResolution P hinj hP hF K ι hK n).app X =
       F.rightDerivedObjIsoOfResolution P hinj hP hF (ι.app X) (hK X) n :=
   (rfl)
+
+end CategoryTheory.Functor
+
+namespace CategoryTheory.InjectiveResolution
+
+open CochainComplex
+
+universe v₀ u₀
+
+variable {C₀ : Type u₀} [Category.{v₀} C₀] [Abelian C₀]
+  {C : Type u₁} [Category.{v₁} C] [Abelian C]
+
+/-- Applying an additive functor `H : C₀ ⥤ C` to an injective resolution `I` of `W` produces the
+augmented cochain complex `H(W)[0] ⟶ H(I.cocomplex)`. When `H` is exact (`H.PreservesHomology`),
+this augmentation is a quasi-isomorphism. -/
+noncomputable def mapι {W : C₀} (I : InjectiveResolution W) (H : C₀ ⥤ C) [H.Additive] :
+    (single₀ C).obj (H.obj W) ⟶ (H.mapHomologicalComplex _).obj I.cocomplex :=
+  (HomologicalComplex.singleMapHomologicalComplex H (ComplexShape.up ℕ) 0).inv.app W ≫
+    (H.mapHomologicalComplex _).map I.ι
+
+instance {W : C₀} (I : InjectiveResolution W) (H : C₀ ⥤ C) [H.Additive] [H.PreservesHomology] :
+    QuasiIso (I.mapι H) := by
+  dsimp only [mapι]
+  infer_instance
+
+/-- `InjectiveResolution.mapι` commutes with chain maps lifting a morphism `f : W ⟶ W'`. -/
+@[reassoc]
+lemma mapι_naturality {W W' : C₀} (f : W ⟶ W') (I : InjectiveResolution W)
+    (J : InjectiveResolution W') (φ : I.cocomplex ⟶ J.cocomplex)
+    (hφ : I.ι ≫ φ = (single₀ C₀).map f ≫ J.ι) (H : C₀ ⥤ C) [H.Additive] :
+    I.mapι H ≫ (H.mapHomologicalComplex _).map φ =
+      (single₀ C).map (H.map f) ≫ J.mapι H := by
+  dsimp only [mapι]
+  rw [Category.assoc, ← Functor.map_comp, hφ, Functor.map_comp]
+  exact ((HomologicalComplex.singleMapHomologicalComplex H
+    (ComplexShape.up ℕ) 0).inv.naturality_assoc f _).symm
+
+end CategoryTheory.InjectiveResolution
+
+namespace CategoryTheory.Functor
+
+open CochainComplex
+
+universe v₀ u₀
+
+variable {C₀ : Type u₀} [Category.{v₀} C₀] [Abelian C₀] [HasInjectiveResolutions C₀]
+  {C : Type u₁} [Category.{v₁} C] [Abelian C] [EnoughInjectives C]
+  {D : Type u₂} [Category.{v₂} D] [Abelian D]
+  (F : C ⥤ D) [F.Additive] (P : ObjectProperty C)
+  [P.IsClosedUnderIsomorphisms] (hinj : ∀ (Y : C), Injective Y → P Y)
+  (hP : ∀ S : ShortComplex C, S.ShortExact → P S.X₁ → P S.X₂ → P S.X₃)
+  (hF : ∀ S : ShortComplex C, S.ShortExact → P S.X₁ → P S.X₂ → (S.map F).ShortExact)
+  (H : C₀ ⥤ C) [H.Additive] [H.PreservesHomology]
+  (G : C₀ ⥤ D) [G.Additive] (e : H ⋙ F ≅ G)
+  (hHP : ∀ (E : C₀), Injective E → P (H.obj E))
+
+private lemma compRightDerivedObj_comm {W W' : C₀} (f : W ⟶ W') (I : InjectiveResolution W)
+    (J : InjectiveResolution W') (φ : I.cocomplex ⟶ J.cocomplex)
+    (hφ : I.ι ≫ φ = (single₀ C₀).map f ≫ J.ι) (n : ℕ) :
+    (F.rightDerived n).map (H.map f) ≫
+        (F.rightDerivedObjIsoOfResolution P hinj hP hF (J.mapι H)
+          (fun m ↦ hHP _ (J.injective m)) n).hom ≫
+        (HomologicalComplex.homologyFunctor D _ n).map
+          ((Functor.mapHomologicalComplexCompIso e (ComplexShape.up ℕ)).app J.cocomplex).hom =
+      (F.rightDerivedObjIsoOfResolution P hinj hP hF (I.mapι H)
+          (fun m ↦ hHP _ (I.injective m)) n).hom ≫
+        (HomologicalComplex.homologyFunctor D _ n).map
+          ((Functor.mapHomologicalComplexCompIso e (ComplexShape.up ℕ)).app I.cocomplex).hom ≫
+        (I.isoRightDerivedObj G n).inv ≫ (G.rightDerived n).map f ≫
+          (J.isoRightDerivedObj G n).hom := by
+  rw [F.rightDerivedObjIsoOfResolution_hom_naturality_assoc P hinj hP hF
+    (I.mapι H) (fun m ↦ hHP _ (I.injective m))
+    (J.mapι H) (fun m ↦ hHP _ (J.injective m))
+    (H.map f) ((H.mapHomologicalComplex _).map φ) (I.mapι_naturality f J φ hφ H) n]
+  have hcomp :
+      (HomologicalComplex.homologyFunctor D _ n).map
+          ((F.mapHomologicalComplex _).map ((H.mapHomologicalComplex _).map φ)) ≫
+        (HomologicalComplex.homologyFunctor D _ n).map
+          ((Functor.mapHomologicalComplexCompIso e (ComplexShape.up ℕ)).app J.cocomplex).hom =
+      (HomologicalComplex.homologyFunctor D _ n).map
+          ((Functor.mapHomologicalComplexCompIso e (ComplexShape.up ℕ)).app I.cocomplex).hom ≫
+        (HomologicalComplex.homologyFunctor D _ n).map ((G.mapHomologicalComplex _).map φ) := by
+    rw [← Functor.map_comp, ← Functor.map_comp]
+    exact congrArg (HomologicalComplex.homologyFunctor D _ n).map
+      ((Functor.mapHomologicalComplexCompIso e (ComplexShape.up ℕ)).hom.naturality φ)
+  have hnat := InjectiveResolution.isoRightDerivedObj_hom_naturality f I J φ
+    (by simpa using congr(($hφ).f 0)) G n
+  dsimp only [Functor.comp_map] at hnat
+  rw [hcomp, hnat, Iso.inv_hom_id_assoc]
+
+/-- **Composing an exact functor with a right derived functor via adapted resolutions.**
+Let `H : C₀ ⥤ C` be an exact additive functor sending injective objects of `C₀` into a class `P`
+adapted to `F : C ⥤ D`, and let `e : H ⋙ F ≅ G` for an additive functor `G : C₀ ⥤ D`. Then
+`H ⋙ F.rightDerived n ≅ G.rightDerived n` for every `n : ℕ`: `H` turns an injective resolution of
+`W` into a `P`-resolution of `H(W)`, which computes `(F.rightDerived n).obj (H.obj W)` and agrees
+under `e` with `G` applied to the injective resolution of `W`. -/
+noncomputable def compRightDerivedIsoOfResolution (n : ℕ) :
+    H ⋙ F.rightDerived n ≅ G.rightDerived n :=
+  NatIso.ofComponents
+    (fun W ↦
+      F.rightDerivedObjIsoOfResolution P hinj hP hF ((injectiveResolution W).mapι H)
+          (fun m ↦ hHP _ ((injectiveResolution W).injective m)) n ≪≫
+        (HomologicalComplex.homologyFunctor D _ n).mapIso
+          ((Functor.mapHomologicalComplexCompIso e (ComplexShape.up ℕ)).app
+            (injectiveResolution W).cocomplex) ≪≫
+        ((injectiveResolution W).isoRightDerivedObj G n).symm)
+    fun {W W'} f ↦ by
+      rw [← cancel_mono ((injectiveResolution W').isoRightDerivedObj G n).hom]
+      dsimp only [Functor.comp_obj, Functor.comp_map, Iso.trans_hom, Iso.symm_hom,
+        Functor.mapIso_hom]
+      simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id]
+      exact F.compRightDerivedObj_comm P hinj hP hF H G e hHP f
+        (injectiveResolution W) (injectiveResolution W')
+        (InjectiveResolution.desc f _ _) (InjectiveResolution.desc_commutes f _ _) n
+
+@[simp]
+lemma compRightDerivedIsoOfResolution_hom_app (n : ℕ) (W : C₀) :
+    (F.compRightDerivedIsoOfResolution P hinj hP hF H G e hHP n).hom.app W =
+      (F.rightDerivedObjIsoOfResolution P hinj hP hF ((injectiveResolution W).mapι H)
+          (fun m ↦ hHP _ ((injectiveResolution W).injective m)) n).hom ≫
+        (HomologicalComplex.homologyFunctor D _ n).map
+          ((Functor.mapHomologicalComplexCompIso e (ComplexShape.up ℕ)).app
+            (injectiveResolution W).cocomplex).hom ≫
+        ((injectiveResolution W).isoRightDerivedObj G n).inv :=
+  (rfl)
+
+/-- For any injective resolution `I` of `W`, `compRightDerivedIsoOfResolution` agrees with the
+adapted-resolution isomorphism on `I.mapι H` followed by `e` on `I.cocomplex`. -/
+@[reassoc]
+lemma compRightDerivedIsoOfResolution_hom_app_comp_isoRightDerivedObj
+    (n : ℕ) {W : C₀} (I : InjectiveResolution W) :
+    (F.compRightDerivedIsoOfResolution P hinj hP hF H G e hHP n).hom.app W ≫
+        (I.isoRightDerivedObj G n).hom =
+      (F.rightDerivedObjIsoOfResolution P hinj hP hF (I.mapι H)
+          (fun m ↦ hHP _ (I.injective m)) n).hom ≫
+        (HomologicalComplex.homologyFunctor D _ n).map
+          ((Functor.mapHomologicalComplexCompIso e (ComplexShape.up ℕ)).app I.cocomplex).hom := by
+  have h := F.compRightDerivedObj_comm P hinj hP hF H G e hHP (𝟙 W)
+    (injectiveResolution W) I (InjectiveResolution.desc (𝟙 W) I (injectiveResolution W))
+    (InjectiveResolution.desc_commutes (𝟙 W) I (injectiveResolution W)) n
+  rw [Functor.map_id, Functor.map_id, Functor.map_id, Category.id_comp, Category.id_comp] at h
+  rw [compRightDerivedIsoOfResolution_hom_app, Category.assoc, Category.assoc, ← h]
 
 end CategoryTheory.Functor
