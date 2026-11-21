@@ -69,14 +69,17 @@ theorem occurrenceGap_succ_of_eq_top {μ : Measure ℝ≥0} {n : ℕ} (hn : μ.o
     μ.occurrenceGap (n + 1) = ∞ := by
   simp [occurrenceGap_succ, hn]
 
-/-- After a finite occurrence `n`, the `ℝ≥0` representative `(μ.occurrenceGap (n + 1)).toNNReal`
-equals the truncated difference of the `toNNReal` occurrence times, including when occurrence
-`n + 1` is `∞` (where both sides vanish). -/
-theorem toNNReal_occurrenceGap_succ {μ : Measure ℝ≥0} {n : ℕ}
-    (hn : μ.occurrenceTime n ≠ ∞) :
+/-- The `ℝ≥0` representative `(μ.occurrenceGap (n + 1)).toNNReal` equals the truncated
+difference of the `toNNReal` occurrence times, including when occurrence `n` or `n + 1` is `∞`
+(where both sides vanish). -/
+theorem toNNReal_occurrenceGap_succ (μ : Measure ℝ≥0) (n : ℕ) :
     (μ.occurrenceGap (n + 1)).toNNReal =
       (μ.occurrenceTime (n + 1)).toNNReal - (μ.occurrenceTime n).toNNReal := by
-  rw [occurrenceGap_succ_of_ne_top hn, ENNReal.toNNReal_sub hn]
+  by_cases hn : μ.occurrenceTime n = ∞
+  · have hnext : μ.occurrenceTime (n + 1) = ∞ :=
+      top_le_iff.mp (hn ▸ μ.monotone_occurrenceTime (Nat.le_succ n))
+    simp [occurrenceGap_succ_of_eq_top hn, hn, hnext]
+  · rw [occurrenceGap_succ_of_ne_top hn, ENNReal.toNNReal_sub hn]
 
 /-- When occurrence `n + 1` is finite, occurrence `n` is automatically finite and the real
 representative of gap `n + 1` is the difference of the two real occurrence times. -/

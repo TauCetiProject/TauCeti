@@ -60,8 +60,8 @@ the Eisenstein reciprocity law.
   integers, in particular for every automorphism of `K`.
 * `Ideal.apply_stickelbergerPhi_eq_gaussSum_pow`: `σ (Φ(P)) = g(χ_P ^ c, ψ)^m` for an automorphism
   `σ` of `𝓞 K` raising the `m`-th roots of unity to the power `c`.
-* `Ideal.stickelbergerPhi_mul_apply_eq_absNorm_pow`: `Φ(P) σ(Φ(P)) = N(P)^m` for an automorphism
-  `σ` inverting the `m`-th roots of unity.
+* `Ideal.stickelbergerPhi_mul_apply_eq_absNorm_pow`: `Φ(A) σ(Φ(A)) = N(A)^m` for an ideal `A`
+  whose norm is prime to `m` and an automorphism `σ` inverting the `m`-th roots of unity.
 * `Ideal.stickelbergerPhi_modEq`: `Φ(P) ≡ -1 (mod m)` for `m` prime and every maximal ideal `P`
   whose norm is prime to `m`.
 * `Ideal.stickelbergerPhi_modEq_neg_one_pow`: `Φ(A) ≡ (-1)^r (mod m)` for `m` prime and every ideal
@@ -297,11 +297,9 @@ theorem apply_stickelbergerPhi_eq_gaussSum_pow (P : Ideal (𝓞 K)) [P.IsMaximal
   rw [MulChar.ringHomComp_apply, MulChar.ringHomComp_apply, RingHom.comp_apply,
     RingEquiv.coe_toRingHom, hσ _ hu, MulChar.pow_apply_coe]
 
-/-- **`Φ(P)` times its conjugate.** Let `σ` be a ring automorphism of `𝓞 K` inverting every
-`m`-th root of unity, such as complex conjugation on a cyclotomic field. If `m ≥ 2` and the norm
-of the maximal ideal `P` is prime to `m`, then `Φ(P) σ(Φ(P)) = N(P)^m`. -/
-theorem stickelbergerPhi_mul_apply_eq_absNorm_pow (P : Ideal (𝓞 K)) [P.IsMaximal]
-    (hP : (absNorm P).Coprime m) (hm : 2 ≤ m) (σ : 𝓞 K ≃+* 𝓞 K)
+/-- The case of a maximal ideal in `Ideal.stickelbergerPhi_mul_apply_eq_absNorm_pow`. -/
+private theorem stickelbergerPhi_mul_apply_eq_absNorm_pow_of_isMaximal (P : Ideal (𝓞 K))
+    [P.IsMaximal] (hP : (absNorm P).Coprime m) (hm : 2 ≤ m) (σ : 𝓞 K ≃+* 𝓞 K)
     (hσ : ∀ ζ : 𝓞 K, ζ ^ m = 1 → σ ζ = ζ ^ (m - 1)) :
     stickelbergerPhi P m * σ (stickelbergerPhi P m) = (absNorm P : 𝓞 K) ^ m := by
   let _ := Ideal.Quotient.field P
@@ -327,6 +325,27 @@ theorem stickelbergerPhi_mul_apply_eq_absNorm_pow (P : Ideal (𝓞 K)) [P.IsMaxi
   rw [map_mul, h₁, h₂, ← mul_pow, h, mul_pow, ← MulChar.pow_apply' χ (NeZero.ne m),
     ← hχ, pow_orderOf_eq_one, MulChar.one_apply (isUnit_one.neg), one_mul, map_pow, map_natCast,
     absNorm_eq_natCard, Nat.card_eq_fintype_card]
+
+/-- **`Φ(A)` times its conjugate.** Let `σ` be a ring automorphism of `𝓞 K` inverting every
+`m`-th root of unity, such as complex conjugation on a cyclotomic field. If `m ≥ 2` and the norm
+of the ideal `A` is prime to `m`, then `Φ(A) σ(Φ(A)) = N(A)^m`. -/
+theorem stickelbergerPhi_mul_apply_eq_absNorm_pow {A : Ideal (𝓞 K)}
+    (hA : (absNorm A).Coprime m) (hm : 2 ≤ m) (σ : 𝓞 K ≃+* 𝓞 K)
+    (hσ : ∀ ζ : 𝓞 K, ζ ^ m = 1 → σ ζ = ζ ^ (m - 1)) :
+    stickelbergerPhi A m * σ (stickelbergerPhi A m) = (absNorm A : 𝓞 K) ^ m := by
+  induction A using induction_on_prime with
+  | h₁ =>
+    rw [zero_eq_bot, absNorm_bot, Nat.coprime_zero_left] at hA
+    lia
+  | h₂ A hA' =>
+    rw [isUnit_iff.mp hA', stickelbergerPhi_top, absNorm_top]
+    simp
+  | h₃ A P hA₀ hP ih =>
+    have : P.IsMaximal := (isPrime_of_prime hP).isMaximal hP.ne_zero
+    rw [map_mul, Nat.coprime_mul_iff_left] at hA
+    rw [stickelbergerPhi_mul hP.ne_zero hA₀, map_mul, map_mul, Nat.cast_mul, mul_pow,
+      ← stickelbergerPhi_mul_apply_eq_absNorm_pow_of_isMaximal P hA.1 hm σ hσ, ← ih hA.2]
+    ring
 
 /-- **`Φ(P)` is `-1` modulo `m`.** If `m` is prime and `P` is a maximal ideal whose norm is prime
 to `m`, then `Φ(P) ≡ -1` modulo `m 𝓞 K`. -/

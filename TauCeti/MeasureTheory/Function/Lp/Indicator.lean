@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.LpSpace.Indicator
+public import Mathlib.MeasureTheory.Function.Holder
 public import TauCeti.MeasureTheory.Function.Lp.One
 public import TauCeti.MeasureTheory.Function.SimpleFunc.Dense
 import Mathlib.MeasureTheory.Integral.Bochner.Set
@@ -15,7 +16,8 @@ import Mathlib.MeasureTheory.Integral.Bochner.Set
 
 The class `MeasureTheory.indicatorConstLp p hs hμs c` of `s.indicator fun _ => c` is linear in the
 constant `c`: Mathlib provides additivity, `MeasureTheory.indicatorConstLp_add`, and this file adds
-compatibility with scalar multiplication. Together with the norm formula
+compatibility with scalar multiplication, bundling both as the linear map
+`TauCeti.indicatorConstLpₗ`. Together with the norm formula
 `MeasureTheory.norm_indicatorConstLp`, this makes `c ↦ indicatorConstLp p hs hμs c` a bounded
 linear map, so closed subspaces of `Lᵖ` can be tested on indicator classes of a dense set of
 constants.
@@ -28,13 +30,17 @@ sum of the indicator classes of the fibres of `G` with constants `φ w`.
 In `L∞` the indicator of any measurable set is essentially bounded, whatever its measure. The
 class `TauCeti.linftyIndicator μ s hs` of `1_s` in real `L∞(μ)` therefore needs no finiteness of
 `μ s`, unlike `indicatorConstLp`. It is additive on disjoint sets, nonnegative, vanishes on null
-sets, and equals the constant one at `univ`.
+sets, and equals the constant one at `univ`. Hölder multiplication by this class is the
+indicator cutoff on real `Lᵖ`, both almost everywhere and as a `MemLp.toLp` class; on
+constant indicator classes it intersects the supporting sets.
 
 ## Main declarations
 
 * `TauCeti.indicatorConstLp_eq_zero_iff`: an `Lᵖ` constant indicator class vanishes if and only if
   the set has measure zero or the constant is zero.
 * `TauCeti.indicatorConstLp_smul`: the indicator class of `a • c` is `a` times that of `c`.
+* `TauCeti.indicatorConstLpₗ`: the indicator class `indicatorConstLp p hs hμs c` as a linear map
+  in `c`.
 * `TauCeti.norm_sum_indicatorConstLp_one`: the `L¹` norm of a sum of indicator classes of pairwise
   disjoint sets.
 * `TauCeti.eq_sum_indicatorConstLp_fiber`: an `Lᵖ` class represented by `φ ∘ G`, for a simple
@@ -92,6 +98,15 @@ theorem indicatorConstLp_smul (hs : MeasurableSet s) (hμs : μ s ≠ ∞) (a : 
     indicatorConstLp_coeFn (p := p) (hs := hs) (hμs := hμs) (c := c)] with x h₁ h₂ h₃
   rw [h₁, h₂, Pi.smul_apply, h₃]
   by_cases hx : x ∈ s <;> simp [hx]
+
+variable (𝕜 p) in
+/-- `MeasureTheory.indicatorConstLp` as a linear map in the constant. -/
+@[expose, simps]
+noncomputable def indicatorConstLpₗ (hs : MeasurableSet s) (hμs : μ s ≠ ∞) :
+    E →ₗ[𝕜] Lp E p μ where
+  toFun := indicatorConstLp p hs hμs
+  map_add' _ _ := indicatorConstLp_add.symm
+  map_smul' := indicatorConstLp_smul hs hμs
 
 section Disjoint
 
@@ -214,6 +229,45 @@ theorem coeFn_linftyIndicator (hs : MeasurableSet s) :
     (SimpleFunc.piecewise s hs (SimpleFunc.const α (1 : ℝ)) 0)] with x hx
   rw [linftyIndicator, hx]
   by_cases hxs : x ∈ s <;> simp [hxs]
+
+section Holder
+
+variable {p : ℝ≥0∞}
+
+/-- Hölder multiplication by an `L∞` indicator is almost everywhere the indicator cutoff. -/
+theorem coeFn_holder_mul_linftyIndicator (hs : MeasurableSet s) (f : Lp ℝ p μ) :
+    (ContinuousLinearMap.mul ℝ ℝ).holder p (linftyIndicator μ s hs) f =ᵐ[μ]
+      s.indicator f := by
+  filter_upwards [(ContinuousLinearMap.mul ℝ ℝ).coeFn_holder
+    (r := p) (linftyIndicator μ s hs) f, coeFn_linftyIndicator (μ := μ) hs] with x hx hsx
+  rw [hx, ContinuousLinearMap.mul_apply', hsx]
+  by_cases h : x ∈ s <;> simp [h]
+
+/-- Hölder multiplication by an `L∞` indicator agrees with the `MemLp.toLp` cutoff. -/
+theorem holder_mul_linftyIndicator_eq_toLp (hs : MeasurableSet s) (f : Lp ℝ p μ) :
+    (ContinuousLinearMap.mul ℝ ℝ).holder p (linftyIndicator μ s hs) f =
+      ((Lp.memLp f).indicator hs.nullMeasurableSet).toLp (s.indicator f) :=
+  Lp.ext ((coeFn_holder_mul_linftyIndicator hs f).trans
+    ((Lp.memLp f).indicator hs.nullMeasurableSet).coeFn_toLp.symm)
+
+/-- Cutting off a constant indicator class intersects its supporting set. -/
+@[simp]
+theorem holder_mul_linftyIndicator_indicatorConstLp (hs : MeasurableSet s)
+    (ht : MeasurableSet t) (hμt : μ t ≠ ∞) (c : ℝ) :
+    (ContinuousLinearMap.mul ℝ ℝ).holder p (linftyIndicator μ s hs)
+        (indicatorConstLp p ht hμt c) =
+      indicatorConstLp p (hs.inter ht)
+        (ne_top_of_le_ne_top hμt (measure_mono inter_subset_right)) c := by
+  apply Lp.ext
+  filter_upwards [coeFn_holder_mul_linftyIndicator hs (indicatorConstLp p ht hμt c),
+    indicatorConstLp_coeFn (p := p) (hs := ht) (hμs := hμt) (c := c),
+    indicatorConstLp_coeFn (p := p) (hs := hs.inter ht)
+      (hμs := ne_top_of_le_ne_top hμt (measure_mono inter_subset_right)) (c := c)]
+      with x hx ht hst
+  rw [hx, hst]
+  by_cases h : x ∈ s <;> by_cases h' : x ∈ t <;> simp [h, h', ht]
+
+end Holder
 
 /-- The indicator of the empty set vanishes in `L∞`. -/
 @[simp]
