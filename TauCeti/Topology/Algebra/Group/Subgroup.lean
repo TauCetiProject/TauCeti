@@ -48,7 +48,8 @@ series of a profinite group.
 
 ## Main results
 
-* `Subgroup.continuous_inclusion`: the inclusion of a subgroup into a larger one is continuous.
+* `Subgroup.continuous_subtype`, `Subgroup.continuous_inclusion`: the inclusion of a subgroup into
+  the ambient group, and into a larger subgroup, is continuous.
 * `Subgroup.subgroupOfContinuousMulEquivOfLe_smul`: the topological identification of a subgroup
   with its copy inside a larger subgroup respects every restricted ambient action.
 * `Subgroup.continuous_subgroupOf_codRestrict`: the inclusion of `U ⊓ D` into `U`, presented
@@ -246,6 +247,15 @@ theorem isClosed_of_weaklyLocallyCompactSpace [T0Space G] (K : Subgroup G)
   have h : IsClosed (Set.range (Subtype.val : K → G)) := by
     simpa only [Subgroup.coe_subtype] using he.isClosedEmbedding.isClosed_range
   exact (Subtype.range_val (s := (K : Set G))) ▸ h
+
+omit [IsTopologicalGroup G] in
+/-- The inclusion of a subgroup into the ambient group, as a group homomorphism, is continuous.
+This is `continuous_subtype_val` stated for `H.subtype`, whose coercion to a function is
+`Subtype.val` only up to unfolding, so that constructions taking a continuous homomorphism can be
+applied to `H.subtype`. -/
+@[fun_prop]
+theorem continuous_subtype (H : Subgroup G) : Continuous H.subtype :=
+  continuous_subtypeVal
 
 omit [IsTopologicalGroup G] in
 /-- The inclusion of a subgroup into a larger subgroup is continuous. -/
