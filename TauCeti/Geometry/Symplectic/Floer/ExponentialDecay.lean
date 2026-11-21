@@ -12,6 +12,7 @@ import TauCeti.Analysis.Normed.Operator.Prod
 import TauCeti.Analysis.Calculus.FDeriv.Remainder
 import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 import TauCeti.Analysis.SpecificLimits.DiscreteGronwall
+import TauCeti.Analysis.SpecificLimits.ShiftDoubling
 import TauCeti.Geometry.Symplectic.Hamiltonian.Variation
 import TauCeti.Geometry.Symplectic.AlmostComplex.Topology
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.CauchySchwarz
@@ -580,27 +581,22 @@ theorem exists_pos_eventually_setLIntegral_floerEnergyDensity_Ici_le_exp
       hmono hs (hs.trans_le h) h))
   have hfanti : AntitoneOn f (Ici s₀) := fun s hs s' hs' h ↦
     sub_le_sub_left (hmono (hs₀a.trans_le hs) (hs₀a.trans_le hs') h) _
-  have hfle (s : ℝ) (hs : s₀ ≤ s) : f s ≤ K * ∫ t in Icc (0 : ℝ) 1, e (s, t) := by
+  have hfle (s : ℝ) (hs : s₀ ≤ s) :
+      |A s - ω.hamiltonianAction H x| ≤ K * ∫ t in Icc (0 : ℝ) 1, e (s, t) := by
     have hsa : a < s := hs₀a.trans_le hs
-    refine le_trans ?_ (hslice hopen (hu.of_le (by norm_num)) (fun t ↦ ⟨hsa, mem_univ t⟩)
+    exact hslice hopen (hu.of_le (by norm_num)) (fun t ↦ ⟨hsa, mem_univ t⟩)
       (by simpa using hper s hsa 0) (fun t ht ↦ hJc _ ⟨hsa, ht⟩) (fun t ht ↦ hJM _ ⟨hsa, ht⟩)
-      (fun t ht ↦ hfloer _ ⟨hsa, ht⟩) fun t _ ↦ (hclose s hs t).trans (min_le_left _ _))
-    rw [abs_sub_comm]
-    exact le_abs_self _
-  -- Over a step of length `K` the action defect drops by half: integrating `f ≤ K ∫ e(r, ·)` over
-  -- `r ∈ [s, s + K]` gives `K f (s + K) ≤ K (f s - f (s + K))`.
+      (fun t ht ↦ hfloer _ ⟨hsa, ht⟩) fun t _ ↦ (hclose s hs t).trans (min_le_left _ _)
+  -- Over a step of length `K` the action defect drops by half: by the energy identity in slices,
+  -- the negative part of `A - A_H(x)` doubles backwards.
   have hstep (s : ℝ) (hs : s₀ ≤ s) : f (s + K) ≤ 1 / 2 * f s := by
-    have hsa : a < s := hs₀a.trans_le hs
-    have hR : Icc s (s + K) ×ˢ Icc (0 : ℝ) 1 ⊆ Ioi a ×ˢ univ :=
-      prod_mono (fun r hr ↦ hsa.trans_le hr.1) (subset_univ _)
-    have hdiff := ω.integral_floerEnergyDensity_eq_hamiltonianAction_sub hH1 hopen hu
-      (by linarith : s ≤ s + K) hR fun r hr ↦ by simpa using hper r (hsa.trans_le hr.1) 0
-    have hlow := ω.le_setIntegral_floerEnergyDensity_of_forall_le_mul hopen
-      (hu.of_le (by norm_num)) contDiffOn_const (contDiff_uncurry_cylindrical hH1).contDiffOn
-      hKpos hR (m := f (s + K)) fun r hr ↦
-        (hfanti (mem_Ici.2 (hs.trans hr.1)) (mem_Ici.2 (by linarith)) hr.2).trans
-          (hfle r (hs.trans hr.1))
-    have : f s - f (s + K) = A (s + K) - A s := by simp only [hfdef]; ring
+    have hIcc : Icc s (s + K) ⊆ Ioi a := fun r hr ↦ (hs₀a.trans_le hs).trans_le hr.1
+    obtain ⟨hint, heq⟩ := ω.integrableOn_and_integral_setIntegral_floerEnergyDensity_eq hH1 hopen
+      hu (by linarith : s ≤ s + K) (prod_mono hIcc (subset_univ _)) fun r hr ↦ by
+        simpa using hper r (hIcc hr) 0
+    have h := (two_mul_sub_le_and_sub_le_two_mul_of_abs_sub_le_mul hKpos (hmono.mono hIcc)
+      (fun r hr ↦ hfle r (hs.trans hr.1)) hint heq).2
+    simp only [hfdef]
     linarith
   -- Halving over every step of length `K` is exponential decay at the rate `log 2 / K`.
   obtain hdecay := fun s (hs : s₀ ≤ s) ↦ le_div_mul_exp_of_antitoneOn (by norm_num)

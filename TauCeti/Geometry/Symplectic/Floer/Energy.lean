@@ -77,9 +77,8 @@ Hamiltonians, it is `∂_s H_{(s, t)}`, and in particular for a continuation per
 * `SymplecticForm.norm_fderiv_stdComplexLineReal_sq_le`: the energy density and the Hamiltonian
   vector field control `‖∂_s u‖²`.
 * `SymplecticForm.integral_floerEnergyDensity`: the energy identity on a rectangle.
-* `SymplecticForm.exists_mem_Icc_mul_setIntegral_floerEnergyDensity_le`,
-  `SymplecticForm.le_setIntegral_floerEnergyDensity_of_forall_le_mul`: comparison of the energy
-  of a rectangle with the energies of its slices.
+* `SymplecticForm.exists_mem_Icc_mul_setIntegral_floerEnergyDensity_le`: some slice of a
+  rectangle has at most the average energy.
 * `SymplecticForm.floerEnergyDensity_add_hamiltonianCurvature_eq`: for a `C²` map, the energy
   density plus the curvature is the exterior derivative of the one-form `K(u) + λ(u)`, where
   `λₓ(v) = ½ ω(x, v)` is the primitive of `ω`; this globalizes the energy identity to domains
@@ -971,19 +970,6 @@ theorem exists_mem_Icc_mul_setIntegral_floerEnergyDensity_le (ω : SymplecticFor
   simpa only [add_sub_cancel_left] using exists_mem_Icc_mul_setIntegral_slice_le_setIntegral_rect
     (lt_add_of_pos_right s hh) (((ω.continuousOn_floerEnergyDensity hU hu hKs hKt).mono
       hR).integrableOn_compact (isCompact_Icc.prod isCompact_Icc))
-
-/-- **A lower bound on every slice bounds the energy.** Let `u` and the perturbation data `Ks`,
-`Kt` be `C¹` over an open set `U` containing the rectangle `[s, s + h] × [0, 1]`, with `h > 0`. If
-`m ≤ h ∫₀¹ e(r, t) dt` for every `r ∈ [s, s + h]`, then `m ≤ ∫_{[s, s + h] × [0, 1]} e`. -/
-theorem le_setIntegral_floerEnergyDensity_of_forall_le_mul (ω : SymplecticForm V)
-    (hU : IsOpen U) (hu : ContDiffOn ℝ 1 u U) (hKs : ContDiffOn ℝ 1 (uncurry Ks) (U ×ˢ univ))
-    (hKt : ContDiffOn ℝ 1 (uncurry Kt) (U ×ˢ univ)) {h m : ℝ} (hh : 0 < h)
-    (hR : Icc s (s + h) ×ˢ Icc (0 : ℝ) 1 ⊆ U)
-    (hm : ∀ r ∈ Icc s (s + h), m ≤ h * ∫ t in Icc (0 : ℝ) 1, ω.floerEnergyDensity Ks Kt u (r, t)) :
-    m ≤ ∫ z in Icc s (s + h) ×ˢ Icc 0 1, ω.floerEnergyDensity Ks Kt u z :=
-  le_setIntegral_rect_of_forall_le_mul_setIntegral_slice (lt_add_of_pos_right s hh)
-    (((ω.continuousOn_floerEnergyDensity hU hu hKs hKt).mono hR).integrableOn_compact
-      (isCompact_Icc.prod isCompact_Icc)) (by simpa only [add_sub_cancel_left] using hm)
 
 end Integral
 
