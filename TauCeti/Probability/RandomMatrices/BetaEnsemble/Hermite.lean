@@ -352,13 +352,12 @@ theorem hermiteBetaEnsemble_one_map_eval_zero (hβ : 0 < β) :
   have hv : (2 / β).toNNReal ≠ 0 := by simpa using hβ
   have hpdf : hermiteBetaPDF β 1 = gaussianPDF 0 (2 / β).toNNReal ∘ e := by
     funext x
-    have hvar : 4 * π / β = 2 * π * (2 / β) := by ring
-    have hexp : -(β / 4) * x 0 ^ 2 = -x 0 ^ 2 / (2 * (2 / β)) := by
-      field_simp
-      ring
-    rw [Function.comp_apply, hermiteBetaPDF_def, gaussianPDF, hermiteBetaPDFReal_def,
-      hermiteBetaPartition_one, hermiteBetaWeight_one, gaussianPDFReal,
-      Real.coe_toNNReal _ (by positivity), he, sub_zero, hvar, hexp]
+    simp only [Function.comp_apply, hermiteBetaPDF_def, gaussianPDF_def, gaussianPDFReal_def,
+      hermiteBetaPDFReal_def, hermiteBetaPartition_one, hermiteBetaWeight_one, he,
+      Real.coe_toNNReal _ (by positivity : 0 ≤ 2 / β)]
+    congr 1
+    field_simp
+    ring_nf
   rw [← he, hermiteBetaEnsemble_def, hpdf, e.measurableEmbedding.map_withDensity_comp,
     hvol.map_eq, gaussianReal_of_var_ne_zero 0 hv]
 
