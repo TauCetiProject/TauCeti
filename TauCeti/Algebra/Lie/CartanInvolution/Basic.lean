@@ -127,7 +127,8 @@ theorem killingForm_apply_self_pos_of_mem_cartanP (hθ : θ.IsCartanInvolution) 
 
 /-- A Lie algebra with a Cartan involution has nondegenerate Killing form. -/
 theorem isKilling (hθ : θ.IsCartanInvolution) : IsKilling K L := by
-  refine TauCeti.isKilling_of_ker_killingForm_eq_bot K L (eq_bot_iff.mpr fun x hx ↦ ?_)
+  refine ⟨(LieSubmodule.toSubmodule_eq_bot _).mp <|
+    (LieIdeal.coe_killingCompl_top K L).trans (eq_bot_iff.mpr fun x hx ↦ ?_)⟩
   by_contra hx₀
   have := hθ.killingForm_apply_apply_neg hx₀
   rw [LinearMap.mem_ker.mp hx, LinearMap.zero_apply] at this
