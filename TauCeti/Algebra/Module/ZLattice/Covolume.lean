@@ -13,6 +13,7 @@ public import TauCeti.Algebra.Module.ZLattice.Dual
 public import TauCeti.MeasureTheory.Group.FundamentalDomain
 public import TauCeti.LinearAlgebra.Matrix.BilinearForm
 
+import TauCeti.Analysis.InnerProductSpace.Gram.Basic
 import TauCeti.Analysis.InnerProductSpace.Gram.Hadamard
 
 /-!
@@ -285,14 +286,10 @@ theorem _root_.ZLattice.covolume_dual (L : Submodule ℤ E) [DiscreteTopology L]
     (Basis.span (D.linearIndependent.restrict_scalars' ℤ)).map (LinearEquiv.ofEq _ _ hdual)
   have hB : (fun i ↦ (b i : E)) = ⇑B := funext fun i ↦ (b.ofZLatticeBasis_apply ℝ L i).symm
   have hD : (fun i ↦ (bD i : E)) = ⇑D := funext fun i ↦ by simp [bD, Basis.span_apply]
-  have hgram (v : Basis (Free.ChooseBasisIndex ℤ L) ℝ E) :
-      Matrix.gram ℝ ⇑v = BilinForm.toMatrix v (innerₗ E) := by
-    ext i j
-    simp [BilinForm.toMatrix_apply, Matrix.gram_apply]
   -- The squared covolumes are the Gram determinants of `D` and `B`, which are inverse.
   have hsq : (ZLattice.covolume (ZLattice.dual L) * ZLattice.covolume L) ^ 2 = 1 := by
     rw [mul_pow, ZLattice.covolume_sq_eq_det_gram _ bD, ZLattice.covolume_sq_eq_det_gram L b, hB,
-      hD, hgram, hgram]
+      hD, ← BilinForm.toMatrix_innerₗ, ← BilinForm.toMatrix_innerₗ]
     exact BilinForm.det_toMatrix_dualBasis_mul_det_toMatrix _ _ B
   have hpos := mul_pos (ZLattice.covolume_pos (ZLattice.dual L) volume)
     (ZLattice.covolume_pos L volume)
