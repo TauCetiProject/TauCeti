@@ -5,10 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.ClassFieldTheory.Formation.ArtinMap
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.ClassFormation
-public import TauCeti.NumberTheory.ClassFieldTheory.Global.IdeleClass.Norm
-public import TauCeti.NumberTheory.ClassFieldTheory.UnitsLayer
 import Mathlib.GroupTheory.FiniteAbelian.Duality
 import TauCeti.FieldTheory.Galois.Abelian.Basic
 import TauCeti.GroupTheory.Abelianization.Basic
@@ -33,8 +30,9 @@ are the abstract Artin equivalence and Artin map of the global class formation t
 these identifications, and nothing else (`globalArtinEquiv_mk`). In particular the kernel of the
 global Artin map is the idele-class norm group `N_{L/K}(C_L)` (`ker_globalArtinMap`), the map is
 surjective, and, being defined on `C_K = 𝕀_K / Kˣ`, it kills the classes of principal ideles
-(`globalArtinMap_principal`), which is the reciprocity law in idelic form. For an
-abelian extension, the norm index `[C_K : N_{L/K}(C_L)]` is the degree `[L : K]`
+(`globalArtinMap_principal`); this is immediate from the definition of `globalArtinMap` on the
+quotient `C_K`, and the content of the idelic reciprocity law is carried by the class formation.
+For an abelian extension, the norm index `[C_K : N_{L/K}(C_L)]` is the degree `[L : K]`
 (`card_ideleClassNormQuotient`), and the global Artin map, read in `Gal(L/K)` itself, is
 `ideleClassArtinMap K L : C_K →* Gal(L/K)`, surjective with kernel `N_{L/K}(C_L)`.
 
@@ -79,10 +77,18 @@ Artin symbol of `M/K` (`globalArtinMap_comp`).
 * `TauCeti.ClassFieldTheory.card_ideleClassNormQuotient`: the norm index theorem
   `[C_K : N_{L/K}(C_L)] = [L : K]` for a finite abelian extension.
 * `TauCeti.ClassFieldTheory.of_ideleClassArtinMap`,
+  `TauCeti.ClassFieldTheory.globalArtinMap_eq_ofMul_ideleClassArtinMap`,
   `TauCeti.ClassFieldTheory.ker_ideleClassArtinMap`,
   `TauCeti.ClassFieldTheory.ideleClassArtinMap_surjective`: the global Artin map of an abelian
-  extension is `globalArtinMap`, has kernel `N_{L/K}(C_L)`, and is surjective.
-
+  extension agrees with `globalArtinMap`, has kernel `N_{L/K}(C_L)`, and is surjective.
+* `TauCeti.ClassFieldTheory.restrictNormalHom_comp_ideleClassArtinMap`,
+  `TauCeti.ClassFieldTheory.restrictNormalHom_ideleClassArtinMap`,
+  `TauCeti.ClassFieldTheory.algEquivRestrictNormalHom_comp_ideleClassArtinMap`,
+  `TauCeti.ClassFieldTheory.algEquivRestrictNormalHom_ideleClassArtinMap`,
+  `TauCeti.ClassFieldTheory.restrictNormal_ideleClassArtinMap`,
+  `TauCeti.ClassFieldTheory.ideleClassArtinMap_intermediateField_eq_one_iff`,
+  `TauCeti.ClassFieldTheory.ideleClassArtinMap_adjoin_simple_eq_one_iff`: compatibility of
+  `ideleClassArtinMap` with restriction to abelian subextensions.
 * `TauCeti.ClassFieldTheory.mem_range_ideleClassNormMap_fixedField_iff`: an idele class is a norm
   from the fixed field of a subgroup exactly when its Artin symbol belongs to that subgroup.
 * `TauCeti.ClassFieldTheory.mem_range_ideleClassNormMap_iff_forall_fixedField_ker`: an idele class
@@ -92,7 +98,7 @@ Artin symbol of `M/K` (`globalArtinMap_comp`).
 
 ## References
 
-* E. Artin and J. Tate, *Class Field Theory*, Chapter XIV, §4.
+* E. Artin and J. Tate, *Class Field Theory*, Chapter XIV, §§4–5.
 * J. Neukirch, *Algebraic Number Theory*, Chapter VI, §5 (including the compatibility of the
   norm residue symbol in towers).
 * J. S. Milne, *Class Field Theory*, v4.03, Chapter VIII.
@@ -141,8 +147,8 @@ theorem globalArtinEquiv_mk (ι : L →ₐ[K] SeparableClosure K) (c : IdeleClas
           (NormalLayer.ofOpenNormal (fixingOpenNormalSubgroup K L))
           (NormalLayer.groundEquivOfOpenNormal (globalFormation K) (fixingOpenNormalSubgroup K L)
             (globalGroundEquiv K (.ofMul c)))) := by
-  rw [globalArtinEquiv, AddEquiv.trans_apply, AddEquiv.trans_apply,
-    globalLayerNormQuotientEquiv_mk, ClassFormation.artinMap_apply]
+  rw [ClassFormation.artinMap_apply, ← globalLayerNormQuotientEquiv_mk]
+  rfl
 
 /-- **Finite global reciprocity does not depend on the embedding** of `L` into the separable
 closure: the layer of `L` is the same for every embedding, and two embeddings change the
@@ -204,7 +210,9 @@ theorem surjective_globalArtinMap (ι : L →ₐ[K] SeparableClosure K) :
       IdeleClassGroup (𝓞 L) L →* IdeleClassGroup (𝓞 K) K).range
 
 /-- **The global Artin map kills principal ideles**: the class in `C_K` of the principal idele of
-`x ∈ Kˣ` is trivial, so its Artin symbol vanishes. This is the reciprocity law in idelic form. -/
+`x ∈ Kˣ` is trivial, so its Artin symbol vanishes. This is immediate from `globalArtinMap` being
+defined on the quotient `C_K = 𝕀_K / Kˣ`; the content of the idelic reciprocity law is in the
+class formation that defines `globalArtinMap`, not in this lemma. -/
 @[simp]
 theorem globalArtinMap_principal (ι : L →ₐ[K] SeparableClosure K) (x : Kˣ) :
     globalArtinMap K L ι
@@ -286,6 +294,13 @@ theorem of_ideleClassArtinMap (ι : L →ₐ[K] SeparableClosure K) (c : IdeleCl
   rw [globalArtinMap_eq_of_iota K L ι IsSepClosed.lift]
   exact Group.Abelianization.equivOfComm.apply_symm_apply _
 
+/-- Rewrites `globalArtinMap` of a finite abelian extension in terms of `ideleClassArtinMap`. -/
+theorem globalArtinMap_eq_ofMul_ideleClassArtinMap (ι : L →ₐ[K] SeparableClosure K)
+    (c : IdeleClassGroup (𝓞 K) K) :
+    globalArtinMap K L ι (.ofMul c) =
+      .ofMul (Group.Abelianization.of (ideleClassArtinMap K L c)) := by
+  simpa only [ofMul_toMul] using congrArg Additive.ofMul (of_ideleClassArtinMap K L ι c).symm
+
 /-- **The kernel of the global Artin map of an abelian extension** is the idele-class norm group
 `N_{L/K}(C_L)`. -/
 theorem ker_ideleClassArtinMap :
@@ -345,6 +360,83 @@ theorem mem_range_ideleClassNormMap_iff_forall_fixedField_ker
   simpa only [map_one] using
     (CommGroup.forall_apply_eq_apply_iff Gal(L/K) (M := M)
       (g := ideleClassArtinMap K L c) (g' := 1)).symm
+
+variable {K L}
+
+/-- **Restriction functoriality of `ideleClassArtinMap` along a `K`-embedding.** For a `K`-embedding
+`f : M →ₐ[K] L` between finite abelian Galois extensions of `K`, restricting the Artin map of `L/K`
+along `f` gives the Artin map of `M/K`. The instance `IsAbelianGalois K M` follows from
+`IsAbelianGalois K L` (`IsAbelianGalois.of_algHom`). -/
+theorem restrictNormalHom_comp_ideleClassArtinMap
+    {M : Type*} [Field M] [NumberField M] [Algebra K M] [IsAbelianGalois K M]
+    (f : M →ₐ[K] L) :
+    f.restrictNormalHom.comp (ideleClassArtinMap K L) = ideleClassArtinMap K M := by
+  refine MonoidHom.ext fun c ↦ Group.Abelianization.of_injective ?_
+  rw [MonoidHom.comp_apply, ← Group.Abelianization.map_of,
+    of_ideleClassArtinMap K L IsSepClosed.lift c,
+    of_ideleClassArtinMap K M ((IsSepClosed.lift : L →ₐ[K] SeparableClosure K).comp f) c]
+  have h := DFunLike.congr_fun (globalArtinMap_comp K L f IsSepClosed.lift) (.ofMul c)
+  simpa only [AddMonoidHom.comp_apply, MonoidHom.coe_toAdditive, Function.comp_apply,
+    toMul_ofMul] using congrArg Additive.toMul h
+
+/-- Restricting the Artin symbol `ideleClassArtinMap K L c` along `f : M →ₐ[K] L` gives
+`ideleClassArtinMap K M c`. -/
+@[simp]
+theorem restrictNormalHom_ideleClassArtinMap
+    {M : Type*} [Field M] [NumberField M] [Algebra K M] [IsAbelianGalois K M]
+    (f : M →ₐ[K] L) (c : IdeleClassGroup (𝓞 K) K) :
+    f.restrictNormalHom (ideleClassArtinMap K L c) = ideleClassArtinMap K M c :=
+  DFunLike.congr_fun (restrictNormalHom_comp_ideleClassArtinMap f) c
+
+/-- **Restriction functoriality of `ideleClassArtinMap` in a scalar tower (homomorphism form).**
+For `K ⊆ E ⊆ L` with `L/K` finite abelian Galois, composing `ideleClassArtinMap K L` with
+`AlgEquiv.restrictNormalHom E` gives `ideleClassArtinMap K E`. The instance `IsAbelianGalois K E`
+follows from `IsAbelianGalois K L` (`IsAbelianGalois.tower_bot`). -/
+theorem algEquivRestrictNormalHom_comp_ideleClassArtinMap
+    {E : Type*} [Field E] [NumberField E] [Algebra K E] [Algebra E L] [IsScalarTower K E L]
+    [IsAbelianGalois K E] :
+    (AlgEquiv.restrictNormalHom E).comp (ideleClassArtinMap K L) = ideleClassArtinMap K E := by
+  rw [← AlgHom.restrictNormalHom_toAlgHom (F := K) (M := E) (K := L),
+    restrictNormalHom_comp_ideleClassArtinMap]
+
+/-- Applying `AlgEquiv.restrictNormalHom E` to `ideleClassArtinMap K L c` gives
+`ideleClassArtinMap K E c`. -/
+@[simp]
+theorem algEquivRestrictNormalHom_ideleClassArtinMap
+    {E : Type*} [Field E] [NumberField E] [Algebra K E] [Algebra E L] [IsScalarTower K E L]
+    [IsAbelianGalois K E] (c : IdeleClassGroup (𝓞 K) K) :
+    AlgEquiv.restrictNormalHom E (ideleClassArtinMap K L c) = ideleClassArtinMap K E c :=
+  DFunLike.congr_fun algEquivRestrictNormalHom_comp_ideleClassArtinMap c
+
+/-- **Restriction functoriality of `ideleClassArtinMap` in a scalar tower.** For `K ⊆ E ⊆ L` with
+`L/K` finite abelian Galois, restricting `ideleClassArtinMap K L c` to `E` gives
+`ideleClassArtinMap K E c`. The instance `IsAbelianGalois K E` follows from `IsAbelianGalois K L`
+(`IsAbelianGalois.tower_bot`). -/
+@[simp]
+theorem restrictNormal_ideleClassArtinMap
+    {E : Type*} [Field E] [NumberField E] [Algebra K E] [Algebra E L] [IsScalarTower K E L]
+    [IsAbelianGalois K E] (c : IdeleClassGroup (𝓞 K) K) :
+    (ideleClassArtinMap K L c).restrictNormal E = ideleClassArtinMap K E c := by
+  rw [← AlgEquiv.restrictNormalHom_apply_eq_restrictNormal K E L,
+    algEquivRestrictNormalHom_ideleClassArtinMap]
+
+/-- For an intermediate field `E` of a finite abelian extension `L/K`, the Artin symbol of
+`c ∈ C_K` in `Gal(E/K)` is trivial if and only if `ideleClassArtinMap K L c` belongs to
+`E.fixingSubgroup`. -/
+theorem ideleClassArtinMap_intermediateField_eq_one_iff (E : _root_.IntermediateField K L)
+    (c : IdeleClassGroup (𝓞 K) K) :
+    ideleClassArtinMap K E c = 1 ↔ ideleClassArtinMap K L c ∈ E.fixingSubgroup := by
+  rw [← algEquivRestrictNormalHom_ideleClassArtinMap (L := L),
+    ← MonoidHom.mem_ker, IntermediateField.restrictNormalHom_ker]
+
+open _root_.IntermediateField in
+/-- For an element `α` of a finite abelian extension `L/K`, the Artin symbol of `c ∈ C_K` in
+`Gal(K⟮α⟯/K)` is trivial if and only if `ideleClassArtinMap K L c` fixes `α`. -/
+theorem ideleClassArtinMap_adjoin_simple_eq_one_iff {α : L}
+    (c : IdeleClassGroup (𝓞 K) K) :
+    ideleClassArtinMap K K⟮α⟯ c = 1 ↔ ideleClassArtinMap K L c α = α := by
+  rw [← algEquivRestrictNormalHom_ideleClassArtinMap (L := L),
+    AlgEquiv.restrictNormalHom_adjoin_simple_eq_one_iff]
 
 end Abelian
 

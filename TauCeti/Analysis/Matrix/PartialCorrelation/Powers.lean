@@ -6,19 +6,19 @@ Authors: Codex
 module
 
 public import TauCeti.Analysis.Matrix.PartialCorrelation.Basic
-public import Mathlib.Data.Nat.Choose.Multinomial
-import TauCeti.Algebra.Order.Antidiag.Pi
-import TauCeti.LinearAlgebra.Matrix.Gram
 
 /-!
-# Powers of partial-correlation Cholesky and Gram entries
+# Powers of partial-correlation Cholesky entries
 
 On the closed partial-correlation cube, natural powers and joint monomials of lower-triangular
 entries of the partial-correlation Cholesky factor split into coordinate and residual powers of
-the individual partial correlations. Expanding `partialCorrelationGram z = L * Lᵀ` then expresses
-every natural monomial in the correlation entries as a finite multinomial sum of products of
-natural coordinate powers and nonnegative half-integer residual powers of `1 - z ij ^ 2`. This
-file records these deterministic factorizations for moment calculations.
+the individual partial correlations. This file records the deterministic factorization used by
+moment calculations.
+
+## References
+
+* D. Lewandowski, D. Kurowicka, H. Joe, *Generating random correlation matrices based on vines
+  and extended onion method*, J. Multivariate Anal. 100 (2009), 1989–2001.
 -/
 
 public section
@@ -36,8 +36,8 @@ variable {p : ℕ}
 triangular factor. The formula is unguarded when `k > i`. -/
 def partialCorrelationCholeskyEntryFactor (i k : Fin p) (ij : strictLowerTriangle p)
     (x : ℝ) : ℝ :=
-  (if ij.1.1 = i ∧ ij.1.2 = k then x else 1) *
-    (if ij.1.1 = i ∧ ij.1.2 < k then Real.sqrt (1 - x ^ 2) else 1)
+  (if ij.val.1 = i ∧ ij.val.2 = k then x else 1) *
+    (if ij.val.1 = i ∧ ij.val.2 < k then Real.sqrt (1 - x ^ 2) else 1)
 
 /-- A coordinate factor of a Cholesky entry is continuous in the partial correlation. -/
 @[fun_prop]
@@ -51,36 +51,36 @@ theorem continuous_partialCorrelationCholeskyEntryFactor (i k : Fin p)
 theorem partialCorrelationCholeskyEntryFactor_def (i k : Fin p)
     (ij : strictLowerTriangle p) (x : ℝ) :
     partialCorrelationCholeskyEntryFactor i k ij x =
-      (if ij.1.1 = i ∧ ij.1.2 = k then x else 1) *
-        (if ij.1.1 = i ∧ ij.1.2 < k then Real.sqrt (1 - x ^ 2) else 1) := by
+      (if ij.val.1 = i ∧ ij.val.2 = k then x else 1) *
+        (if ij.val.1 = i ∧ ij.val.2 < k then Real.sqrt (1 - x ^ 2) else 1) := by
   rw [partialCorrelationCholeskyEntryFactor]
 
 @[simp]
 theorem partialCorrelationCholeskyEntryFactor_of_eq_of_eq (i k : Fin p)
-    (ij : strictLowerTriangle p) (x : ℝ) (hi : ij.1.1 = i) (hk : ij.1.2 = k) :
+    (ij : strictLowerTriangle p) (x : ℝ) (hi : ij.val.1 = i) (hk : ij.val.2 = k) :
     partialCorrelationCholeskyEntryFactor i k ij x = x := by
-  have hr : ¬(ij.1.1 = i ∧ ij.1.2 < k) := fun h ↦ (ne_of_lt h.2) hk
+  have hr : ¬(ij.val.1 = i ∧ ij.val.2 < k) := fun h ↦ (ne_of_lt h.2) hk
   rw [partialCorrelationCholeskyEntryFactor_def, ite_eq_left ⟨hi, hk⟩,
     ite_eq_right hr, mul_one]
 
 @[simp]
 theorem partialCorrelationCholeskyEntryFactor_of_eq_of_lt (i k : Fin p)
-    (ij : strictLowerTriangle p) (x : ℝ) (hi : ij.1.1 = i) (hk : ij.1.2 < k) :
+    (ij : strictLowerTriangle p) (x : ℝ) (hi : ij.val.1 = i) (hk : ij.val.2 < k) :
     partialCorrelationCholeskyEntryFactor i k ij x = Real.sqrt (1 - x ^ 2) := by
-  have hc : ¬(ij.1.1 = i ∧ ij.1.2 = k) := fun h ↦ (ne_of_lt hk) h.2
+  have hc : ¬(ij.val.1 = i ∧ ij.val.2 = k) := fun h ↦ (ne_of_lt hk) h.2
   rw [partialCorrelationCholeskyEntryFactor_def, ite_eq_right hc,
     ite_eq_left ⟨hi, hk⟩, one_mul]
 
 @[simp]
 theorem partialCorrelationCholeskyEntryFactor_self_of_eq (i : Fin p)
-    (ij : strictLowerTriangle p) (x : ℝ) (hi : ij.1.1 = i) :
+    (ij : strictLowerTriangle p) (x : ℝ) (hi : ij.val.1 = i) :
     partialCorrelationCholeskyEntryFactor i i ij x = Real.sqrt (1 - x ^ 2) := by
-  exact partialCorrelationCholeskyEntryFactor_of_eq_of_lt i i ij x hi (hi ▸ ij.2)
+  exact partialCorrelationCholeskyEntryFactor_of_eq_of_lt i i ij x hi (hi ▸ ij.property)
 
 @[simp]
 theorem partialCorrelationCholeskyEntryFactor_of_not_of_not (i k : Fin p)
     (ij : strictLowerTriangle p) (x : ℝ)
-    (hc : ¬(ij.1.1 = i ∧ ij.1.2 = k)) (hr : ¬(ij.1.1 = i ∧ ij.1.2 < k)) :
+    (hc : ¬(ij.val.1 = i ∧ ij.val.2 = k)) (hr : ¬(ij.val.1 = i ∧ ij.val.2 < k)) :
     partialCorrelationCholeskyEntryFactor i k ij x = 1 := by
   rw [partialCorrelationCholeskyEntryFactor_def, ite_eq_right hc, ite_eq_right hr, mul_one]
 
@@ -92,10 +92,10 @@ theorem abs_partialCorrelationCholeskyEntryFactor_le_one (i k : Fin p)
   have hs' : Real.sqrt (1 - x ^ 2) ≤ 1 := by
     rw [Real.sqrt_le_one]
     nlinarith [sq_nonneg x]
-  by_cases hc : ij.1.1 = i ∧ ij.1.2 = k
+  by_cases hc : ij.val.1 = i ∧ ij.val.2 = k
   · rw [partialCorrelationCholeskyEntryFactor_of_eq_of_eq i k ij x hc.1 hc.2]
     exact hx
-  by_cases hr : ij.1.1 = i ∧ ij.1.2 < k
+  by_cases hr : ij.val.1 = i ∧ ij.val.2 < k
   · rw [partialCorrelationCholeskyEntryFactor_of_eq_of_lt i k ij x hr.1 hr.2,
       abs_of_nonneg (Real.sqrt_nonneg _)]
     exact hs'
@@ -103,7 +103,7 @@ theorem abs_partialCorrelationCholeskyEntryFactor_le_one (i k : Fin p)
 
 /-- A partial correlation from another row contributes the identity coordinate factor. -/
 theorem partialCorrelationCholeskyEntryFactor_of_row_ne (i k : Fin p)
-    (ij : strictLowerTriangle p) (hi : ij.1.1 ≠ i) (x : ℝ) :
+    (ij : strictLowerTriangle p) (hi : ij.val.1 ≠ i) (x : ℝ) :
     partialCorrelationCholeskyEntryFactor i k ij x = 1 := by
   simp [hi]
 
@@ -114,26 +114,26 @@ theorem prod_partialCorrelationCholeskyEntryFactor (z : strictLowerTriangle p �
       partialCorrelationCholesky z i k := by
   simp only [partialCorrelationCholeskyEntryFactor_def, Finset.prod_mul_distrib]
   have hr : (∏ ij : strictLowerTriangle p,
-      if ij.1.1 = i ∧ ij.1.2 < k then Real.sqrt (1 - z ij ^ 2) else 1) =
-      ∏ ij : strictLowerTriangle p with ij.1.1 = i ∧ ij.1.2 < k,
+      if ij.val.1 = i ∧ ij.val.2 < k then Real.sqrt (1 - z ij ^ 2) else 1) =
+      ∏ ij : strictLowerTriangle p with ij.val.1 = i ∧ ij.val.2 < k,
         Real.sqrt (1 - z ij ^ 2) := by rw [Finset.prod_filter]
   rw [hr]
   rcases hki.eq_or_lt with hki | hki
   · subst k
     rw [partialCorrelationCholesky_apply_self]
-    have hnone : ∀ ij : strictLowerTriangle p, ¬(ij.1.1 = i ∧ ij.1.2 = i) := by
+    have hnone : ∀ ij : strictLowerTriangle p, ¬(ij.val.1 = i ∧ ij.val.2 = i) := by
       intro ij h
-      have := ij.2
+      have := ij.property
       simp_all
     simp only [hnone, ↓reduceIte, Finset.prod_const_one, one_mul]
     congr 1
     ext ij
     simp only [Finset.mem_filter, Finset.mem_univ, true_and, and_iff_left_iff_imp]
-    exact fun h ↦ h ▸ ij.2
+    exact fun h ↦ h ▸ ij.property
   · rw [partialCorrelationCholesky_apply_of_gt z hki]
     congr 1
     have heq (ij : strictLowerTriangle p) :
-        (ij.1.1 = i ∧ ij.1.2 = k) ↔ ij = ⟨(i, k), hki⟩ := by
+        (ij.val.1 = i ∧ ij.val.2 = k) ↔ ij = ⟨(i, k), hki⟩ := by
       simp only [Subtype.ext_iff, Prod.ext_iff]
     simp_rw [heq]
     simp
@@ -143,13 +143,13 @@ lower-triangular Cholesky entry. When `k < i`, it is `n` at `(i, k)` and zero el
 `k = i`, it is identically zero. The formula is unguarded when `k > i`. -/
 def partialCorrelationCholeskyEntryCoordinatePower (i k : Fin p) (n : ℕ)
     (ij : strictLowerTriangle p) : ℕ :=
-  if ij.1 = (i, k) then n else 0
+  if ij.val = (i, k) then n else 0
 
 /-- The defining formula for the coordinate power of one Cholesky entry. -/
 theorem partialCorrelationCholeskyEntryCoordinatePower_def (i k : Fin p) (n : ℕ)
     (ij : strictLowerTriangle p) :
     partialCorrelationCholeskyEntryCoordinatePower i k n ij =
-      if ij.1 = (i, k) then n else 0 := by
+      if ij.val = (i, k) then n else 0 := by
   rw [partialCorrelationCholeskyEntryCoordinatePower]
 
 /-- The residual power contributed by a natural power of one lower-triangular Cholesky entry.
@@ -157,13 +157,13 @@ Every partial correlation in the same row and a preceding column contributes
 `(1 - z²) ^ (n / 2)`. The formula is unguarded when `k > i`. -/
 def partialCorrelationCholeskyEntryResidualPower (i k : Fin p) (n : ℕ)
     (ij : strictLowerTriangle p) : ℝ :=
-  if ij.1.1 = i ∧ ij.1.2 < k then (n : ℝ) / 2 else 0
+  if ij.val.1 = i ∧ ij.val.2 < k then (n : ℝ) / 2 else 0
 
 /-- The defining formula for the residual power of one Cholesky entry. -/
 theorem partialCorrelationCholeskyEntryResidualPower_def (i k : Fin p) (n : ℕ)
     (ij : strictLowerTriangle p) :
     partialCorrelationCholeskyEntryResidualPower i k n ij =
-      if ij.1.1 = i ∧ ij.1.2 < k then (n : ℝ) / 2 else 0 := by
+      if ij.val.1 = i ∧ ij.val.2 < k then (n : ℝ) / 2 else 0 := by
   rw [partialCorrelationCholeskyEntryResidualPower]
 
 theorem partialCorrelationCholeskyEntryCoordinatePower_apply_self (i k : Fin p) (n : ℕ)
@@ -173,13 +173,13 @@ theorem partialCorrelationCholeskyEntryCoordinatePower_apply_self (i k : Fin p) 
 
 @[simp]
 theorem partialCorrelationCholeskyEntryCoordinatePower_apply_of_eq (i k : Fin p) (n : ℕ)
-    (ij : strictLowerTriangle p) (hij : ij.1 = (i, k)) :
+    (ij : strictLowerTriangle p) (hij : ij.val = (i, k)) :
     partialCorrelationCholeskyEntryCoordinatePower i k n ij = n := by
   simp [partialCorrelationCholeskyEntryCoordinatePower_def, hij]
 
 @[simp]
 theorem partialCorrelationCholeskyEntryCoordinatePower_apply_of_ne (i k : Fin p) (n : ℕ)
-    (ij : strictLowerTriangle p) (hij : ij.1 ≠ (i, k)) :
+    (ij : strictLowerTriangle p) (hij : ij.val ≠ (i, k)) :
     partialCorrelationCholeskyEntryCoordinatePower i k n ij = 0 := by
   simp [partialCorrelationCholeskyEntryCoordinatePower_def, hij]
 
@@ -187,7 +187,7 @@ theorem partialCorrelationCholeskyEntryCoordinatePower_apply_of_ne (i k : Fin p)
 theorem partialCorrelationCholeskyEntryCoordinatePower_eq_single (i k : Fin p) (n : ℕ)
     (ij : strictLowerTriangle p) :
     partialCorrelationCholeskyEntryCoordinatePower i k n ij =
-      Pi.single (M := fun _ : Fin p × Fin p ↦ ℕ) (i, k) n ij.1 := by
+      Pi.single (M := fun _ : Fin p × Fin p ↦ ℕ) (i, k) n ij.val := by
   classical
   simp [partialCorrelationCholeskyEntryCoordinatePower_def, Pi.single_apply]
 
@@ -205,7 +205,7 @@ theorem partialCorrelationCholeskyEntryCoordinatePower_of_le (i k : Fin p) (n : 
     partialCorrelationCholeskyEntryCoordinatePower i k n ij = 0 := by
   rw [partialCorrelationCholeskyEntryCoordinatePower_def]
   split_ifs with h
-  · have hki : k < i := by simpa only [h] using ij.2
+  · have hki : k < i := by simpa only [h] using ij.property
     exact (not_lt_of_ge hik hki).elim
   · rfl
 
@@ -223,22 +223,22 @@ theorem partialCorrelationCholeskyEntryCoordinatePower_add (i k : Fin p) (n r : 
 
 @[simp]
 theorem partialCorrelationCholeskyEntryResidualPower_of_eq_of_lt (i k : Fin p) (n : ℕ)
-    (ij : strictLowerTriangle p) (hi : ij.1.1 = i) (hk : ij.1.2 < k) :
+    (ij : strictLowerTriangle p) (hi : ij.val.1 = i) (hk : ij.val.2 < k) :
     partialCorrelationCholeskyEntryResidualPower i k n ij = (n : ℝ) / 2 := by
   simp [partialCorrelationCholeskyEntryResidualPower_def, hi, hk]
 
 @[simp]
 theorem partialCorrelationCholeskyEntryResidualPower_of_not (i k : Fin p) (n : ℕ)
-    (ij : strictLowerTriangle p) (h : ¬(ij.1.1 = i ∧ ij.1.2 < k)) :
+    (ij : strictLowerTriangle p) (h : ¬(ij.val.1 = i ∧ ij.val.2 < k)) :
     partialCorrelationCholeskyEntryResidualPower i k n ij = 0 := by
   simp [partialCorrelationCholeskyEntryResidualPower_def, h]
 
 /-- Every coordinate preceding a diagonal entry contributes its residual exponent. -/
 @[simp]
 theorem partialCorrelationCholeskyEntryResidualPower_self_of_eq (i : Fin p) (n : ℕ)
-    (ij : strictLowerTriangle p) (hi : ij.1.1 = i) :
+    (ij : strictLowerTriangle p) (hi : ij.val.1 = i) :
     partialCorrelationCholeskyEntryResidualPower i i n ij = (n : ℝ) / 2 := by
-  simp [hi, hi ▸ ij.2]
+  simp [hi, hi ▸ ij.property]
 
 /-- A zeroth power contributes no residual exponent. -/
 @[simp]
@@ -286,9 +286,9 @@ right in the same row. -/
 theorem partialCorrelationCholeskyMonomialResidualPower_eq_sum_Ioi
     (m : Fin p × Fin p → ℕ) (ij : strictLowerTriangle p) :
     partialCorrelationCholeskyMonomialResidualPower m ij =
-      ∑ k ∈ Finset.Ioi ij.1.2, (m (ij.1.1, k) : ℝ) / 2 := by
+      ∑ k ∈ Finset.Ioi ij.val.2, (m (ij.val.1, k) : ℝ) / 2 := by
   rw [partialCorrelationCholeskyMonomialResidualPower_def, Fintype.sum_prod_type,
-    Fintype.sum_eq_single ij.1.1]
+    Fintype.sum_eq_single ij.val.1]
   · simp only [partialCorrelationCholeskyEntryResidualPower_def, true_and]
     rw [← Finset.sum_filter]
     apply Finset.sum_congr
@@ -355,14 +355,14 @@ theorem pow_partialCorrelationCholeskyEntryFactor {x : ℝ} (hx : |x| ≤ 1)
         (1 - x ^ 2) ^ partialCorrelationCholeskyEntryResidualPower i k n ij := by
   have hbase : 0 ≤ 1 - x ^ 2 :=
     sub_nonneg.mpr ((sq_le_one_iff_abs_le_one _).2 hx)
-  by_cases hc : ij.1.1 = i ∧ ij.1.2 = k
-  · have hpair : ij.1 = (i, k) := Prod.ext hc.1 hc.2
-    have hr : ¬(ij.1.1 = i ∧ ij.1.2 < k) := fun h ↦ (ne_of_lt h.2) hc.2
+  by_cases hc : ij.val.1 = i ∧ ij.val.2 = k
+  · have hpair : ij.val = (i, k) := Prod.ext hc.1 hc.2
+    have hr : ¬(ij.val.1 = i ∧ ij.val.2 < k) := fun h ↦ (ne_of_lt h.2) hc.2
     simp only [partialCorrelationCholeskyEntryFactor_of_eq_of_eq i k ij x hc.1 hc.2,
       partialCorrelationCholeskyEntryCoordinatePower_apply_of_eq i k n ij hpair,
       partialCorrelationCholeskyEntryResidualPower_def, ite_eq_right hr, Real.rpow_zero, mul_one]
-  · have hpair : ij.1 ≠ (i, k) := fun h ↦ hc ⟨congrArg Prod.fst h, congrArg Prod.snd h⟩
-    by_cases hr : ij.1.1 = i ∧ ij.1.2 < k
+  · have hpair : ij.val ≠ (i, k) := fun h ↦ hc ⟨congrArg Prod.fst h, congrArg Prod.snd h⟩
+    by_cases hr : ij.val.1 = i ∧ ij.val.2 < k
     · have hsqrt : Real.sqrt (1 - x ^ 2) ^ n =
           (1 - x ^ 2) ^ ((n : ℝ) / 2) := by
         simpa only [Real.rpow_natCast] using
@@ -393,7 +393,7 @@ theorem prod_pow_partialCorrelationCholesky_eq_prod
     {z : strictLowerTriangle p → ℝ} (hz : ∀ ij, |z ij| ≤ 1)
     (m : Fin p × Fin p → ℕ) (hm : ∀ q, m q ≠ 0 → q.2 ≤ q.1) :
     (∏ q, partialCorrelationCholesky z q.1 q.2 ^ m q) =
-      ∏ ij, z ij ^ m ij.1 *
+      ∏ ij, z ij ^ m ij.val *
         (1 - z ij ^ 2) ^ partialCorrelationCholeskyMonomialResidualPower m ij := by
   have hentry (q : Fin p × Fin p) :
       partialCorrelationCholesky z q.1 q.2 ^ m q =
@@ -411,7 +411,7 @@ theorem prod_pow_partialCorrelationCholesky_eq_prod
     _ = ∏ ij, ∏ q, z ij ^ partialCorrelationCholeskyEntryCoordinatePower q.1 q.2 (m q) ij *
           (1 - z ij ^ 2) ^ partialCorrelationCholeskyEntryResidualPower q.1 q.2 (m q) ij :=
       Finset.prod_comm
-    _ = ∏ ij, z ij ^ m ij.1 *
+    _ = ∏ ij, z ij ^ m ij.val *
         (1 - z ij ^ 2) ^ partialCorrelationCholeskyMonomialResidualPower m ij := by
       apply Finset.prod_congr rfl
       intro ij _
@@ -430,151 +430,7 @@ in the same row. -/
 theorem partialCorrelationCholeskyMonomialResidualPower_eq_natCast_div_two
     (m : Fin p × Fin p → ℕ) (ij : strictLowerTriangle p) :
     partialCorrelationCholeskyMonomialResidualPower m ij =
-      ((∑ k ∈ Finset.Ioi ij.1.2, m (ij.1.1, k) : ℕ) : ℝ) / 2 := by
+      ((∑ k ∈ Finset.Ioi ij.val.2, m (ij.val.1, k) : ℕ) : ℝ) / 2 := by
   rw [partialCorrelationCholeskyMonomialResidualPower_eq_sum_Ioi, Nat.cast_sum, Finset.sum_div]
-
-/-- The Cholesky-entry exponent multi-index induced by a column-split exponent family `K` in the
-multinomial expansion of a `partialCorrelationGram` monomial. Entry `(i, k)` of the triangular
-factor collects its occurrences as both the left and right factor in column `k`. -/
-def partialCorrelationGramCholeskyPower
-    (K : Fin p × Fin p → Fin p → ℕ) (q : Fin p × Fin p) : ℕ :=
-  ∑ j, (K (q.1, j) q.2 + K (j, q.1) q.2)
-
-/-- The defining row-and-column sum for the Cholesky exponent induced by `K`. -/
-theorem partialCorrelationGramCholeskyPower_def
-    (K : Fin p × Fin p → Fin p → ℕ) (q : Fin p × Fin p) :
-    partialCorrelationGramCholeskyPower K q =
-      ∑ j, (K (q.1, j) q.2 + K (j, q.1) q.2) :=
-  (rfl)
-
-/-- The zero column-split family induces the zero Cholesky multi-index. -/
-@[simp]
-theorem partialCorrelationGramCholeskyPower_zero :
-    partialCorrelationGramCholeskyPower (0 : Fin p × Fin p → Fin p → ℕ) = 0 := by
-  ext q
-  simp [partialCorrelationGramCholeskyPower_def]
-
-/-- Induced Cholesky exponents are additive in the column-split family. -/
-@[simp]
-theorem partialCorrelationGramCholeskyPower_add
-    (K L : Fin p × Fin p → Fin p → ℕ) :
-    partialCorrelationGramCholeskyPower (K + L) =
-      partialCorrelationGramCholeskyPower K + partialCorrelationGramCholeskyPower L := by
-  ext q
-  simp only [partialCorrelationGramCholeskyPower_def, Pi.add_apply, ← Finset.sum_add_distrib]
-  exact Finset.sum_congr rfl fun _ _ ↦ by omega
-
-/-- Induced Cholesky exponents commute with finite sums of column-split families. -/
-@[simp]
-theorem partialCorrelationGramCholeskyPower_sum {ι : Type*}
-    (s : Finset ι) (K : ι → Fin p × Fin p → Fin p → ℕ) :
-    partialCorrelationGramCholeskyPower (∑ x ∈ s, K x) =
-      ∑ x ∈ s, partialCorrelationGramCholeskyPower (K x) := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simp
-  | @insert x s hxs ih => simp [hxs, ih]
-
-/-- A column-split family supported at a single matrix entry `ab` contributes `f q.2` to row
-`ab.1` and `f q.2` to row `ab.2` in column `q.2`. -/
-@[simp]
-theorem partialCorrelationGramCholeskyPower_single
-    (ab : Fin p × Fin p) (f : Fin p → ℕ) (q : Fin p × Fin p) :
-    partialCorrelationGramCholeskyPower (Pi.single ab f) q =
-      (if ab.1 = q.1 then f q.2 else 0) + (if ab.2 = q.1 then f q.2 else 0) := by
-  simp only [partialCorrelationGramCholeskyPower_def, Finset.sum_add_distrib, Pi.single_apply,
-    ite_apply, Pi.zero_apply, Prod.ext_iff, ite_and, Finset.sum_ite_irrel, Finset.sum_ite_eq',
-    Finset.mem_univ, ↓reduceIte, Finset.sum_const_zero]
-  simp only [eq_comm]
-
-/-- A column-split family supported at a single matrix entry `ab` and column `k` induces the sum
-of the two singleton Cholesky exponents at `(ab.1, k)` and `(ab.2, k)`. -/
-@[simp]
-theorem partialCorrelationGramCholeskyPower_single_single
-    (ab : Fin p × Fin p) (k : Fin p) (c : ℕ) :
-    partialCorrelationGramCholeskyPower (Pi.single ab (Pi.single k c)) =
-      Pi.single (ab.1, k) c + Pi.single (ab.2, k) c := by
-  ext ⟨i, j⟩
-  simp only [partialCorrelationGramCholeskyPower_single, Pi.add_apply, Pi.single_apply,
-    Prod.ext_iff, ite_and]
-  simp only [eq_comm]
-
-/-- The total Cholesky exponent in row `i` induced by `K` equals the sum over `j` of the column
-totals of `K (i, j)` and `K (j, i)`. -/
-theorem sum_partialCorrelationGramCholeskyPower_row
-    (K : Fin p × Fin p → Fin p → ℕ) (i : Fin p) :
-    ∑ k, partialCorrelationGramCholeskyPower K (i, k) =
-      ∑ j, ((∑ k, K (i, j) k) + ∑ k, K (j, i) k) := by
-  simp_rw [partialCorrelationGramCholeskyPower_def]
-  rw [Finset.sum_comm]
-  exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_add_distrib
-
-/-- For every column-split family `K` whose entrywise sums match `n`, the total Cholesky exponent
-in row `i` equals the total degree of axis `i` in `n`. -/
-theorem sum_partialCorrelationGramCholeskyPower_row_of_mem_piFinset
-    {s : Fin p × Fin p → Finset (Fin p)} {n : Fin p × Fin p → ℕ}
-    {K : Fin p × Fin p → Fin p → ℕ}
-    (hK : K ∈ Fintype.piFinset fun ab ↦ Finset.piAntidiag (s ab) (n ab))
-    (i : Fin p) :
-    ∑ k, partialCorrelationGramCholeskyPower K (i, k) =
-      ∑ j, (n (i, j) + n (j, i)) := by
-  rw [sum_partialCorrelationGramCholeskyPower_row]
-  have hsum (ab : Fin p × Fin p) : ∑ k, K ab k = n ab := by
-    have hab := Fintype.mem_piFinset.mp hK ab
-    rw [← (Finset.mem_piAntidiag.mp hab).1]
-    exact (Finset.sum_subset (Finset.subset_univ _) fun k _ hk ↦
-      Finset.eq_zero_of_notMem_of_mem_piAntidiag hk hab).symm
-  exact Finset.sum_congr rfl fun j _ ↦ by rw [hsum (i, j), hsum (j, i)]
-
-/-- When each column-split vector `K ab` is supported on `Finset.Iic (min ab.1 ab.2)`, the
-induced Cholesky multi-index is supported on or below the diagonal. -/
-theorem snd_le_fst_of_mem_piFinset_of_partialCorrelationGramCholeskyPower_ne_zero
-    {n : Fin p × Fin p → ℕ} {K : Fin p × Fin p → Fin p → ℕ}
-    (hK : K ∈ Fintype.piFinset fun ab : Fin p × Fin p ↦
-      Finset.piAntidiag (Finset.Iic (min ab.1 ab.2)) (n ab))
-    {q : Fin p × Fin p} (hq : partialCorrelationGramCholeskyPower K q ≠ 0) :
-    q.2 ≤ q.1 := by
-  rw [partialCorrelationGramCholeskyPower_def] at hq
-  obtain ⟨j, -, hj⟩ := Finset.exists_ne_zero_of_sum_ne_zero hq
-  by_cases hleft : K (q.1, j) q.2 ≠ 0
-  · have hmem := (Finset.mem_piAntidiag.mp (Fintype.mem_piFinset.mp hK (q.1, j))).2 q.2 hleft
-    exact (le_min_iff.mp (Finset.mem_Iic.mp hmem)).1
-  · have hright : K (j, q.1) q.2 ≠ 0 := by omega
-    have hmem := (Finset.mem_piAntidiag.mp (Fintype.mem_piFinset.mp hK (j, q.1))).2 q.2 hright
-    exact (le_min_iff.mp (Finset.mem_Iic.mp hmem)).2
-
-/-- Every natural monomial in the entries of `partialCorrelationGram z` expands as a multinomial
-sum of lower-triangular monomials in `partialCorrelationCholesky z`. -/
-theorem prod_pow_partialCorrelationGram_eq_sum_prod_pow_partialCorrelationCholesky
-    (z : strictLowerTriangle p → ℝ) (n : Fin p × Fin p → ℕ) :
-    (∏ ab, partialCorrelationGram z ab.1 ab.2 ^ n ab) =
-      ∑ K ∈ Fintype.piFinset (fun ab : Fin p × Fin p ↦
-          Finset.piAntidiag (Finset.Iic (min ab.1 ab.2)) (n ab)),
-        (∏ ab, (Nat.multinomial Finset.univ (K ab) : ℝ)) *
-          ∏ q, partialCorrelationCholesky z q.1 q.2 ^
-            partialCorrelationGramCholeskyPower K q := by
-  rw [partialCorrelationGram_def,
-    (isLowerTriangular_partialCorrelationCholesky z).prod_pow_mul_transpose_apply n]
-  simp only [partialCorrelationGramCholeskyPower_def]
-
-/-- On the closed partial-correlation cube, every natural monomial in the entries of
-`partialCorrelationGram z` expands into a finite multinomial sum of coordinatewise products of
-natural partial-correlation powers and nonnegative half-integer powers of `1 - z ij ^ 2`. -/
-theorem prod_pow_partialCorrelationGram_eq_sum_prod
-    {z : strictLowerTriangle p → ℝ} (hz : ∀ ij, |z ij| ≤ 1)
-    (n : Fin p × Fin p → ℕ) :
-    (∏ ab, partialCorrelationGram z ab.1 ab.2 ^ n ab) =
-      ∑ K ∈ Fintype.piFinset (fun ab : Fin p × Fin p ↦
-          Finset.piAntidiag (Finset.Iic (min ab.1 ab.2)) (n ab)),
-        (∏ ab, (Nat.multinomial Finset.univ (K ab) : ℝ)) *
-          ∏ ij : strictLowerTriangle p,
-            z ij ^ partialCorrelationGramCholeskyPower K ij.1 *
-              (1 - z ij ^ 2) ^
-                partialCorrelationCholeskyMonomialResidualPower
-                  (partialCorrelationGramCholeskyPower K) ij := by
-  rw [prod_pow_partialCorrelationGram_eq_sum_prod_pow_partialCorrelationCholesky]
-  refine Finset.sum_congr rfl fun K hK ↦ ?_
-  rw [prod_pow_partialCorrelationCholesky_eq_prod hz _
-    fun _ ↦ snd_le_fst_of_mem_piFinset_of_partialCorrelationGramCholeskyPower_ne_zero hK]
 
 end TauCeti

@@ -7,8 +7,10 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Basic
+import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
 # Examples of frequency-only symbols
@@ -17,7 +19,10 @@ A smooth coefficient `b(ξ)` with `‖D^k b(ξ)‖ ≤ C_k ⟨ξ⟩ ^ (m - k)` i
 (`TauCeti.Symbol.ofFrequency`). This file constructs two such symbols on `ℝⁿ`:
 
 * `TauCeti.Symbol.besselPotential`: the Bessel weight `(1 + ‖ξ / 2π‖²) ^ (s / 2)` in the angular
-  frequency `ξ`, a uniform symbol of order `s`;
+  frequency `ξ`, a uniform symbol of order `s`. Composing with it is additive in `s`
+  (`TauCeti.Symbol.besselPotential_comp_besselPotential`,
+  `TauCeti.Symbol.coefficient_comp_besselPotential_comp_besselPotential`) and trivial for `s = 0`
+  (`TauCeti.Symbol.coefficient_comp_besselPotential_zero`);
 * `TauCeti.Symbol.ofInner`: the linear coefficient `⟪ξ, v⟫`, a uniform symbol of order `1`. For
   `v ≠ 0` and a nontrivial fibre it has no smaller order
   (`TauCeti.Symbol.not_exists_coefficient_eq_ofInner_coefficient`).
@@ -64,7 +69,7 @@ def besselPotential (s : ℝ) : Symbol n V V s :=
       (Function.hasTemperateGrowth_one_add_norm_smul_sq_rpow _ _).1).smul contDiff_const)
     fun k ↦ by
       simpa only [ContinuousLinearMap.smulRight_apply, Complex.ofRealCLM_apply] using
-        ContinuousLinearMap.exists_norm_iteratedFDeriv_comp_left_le_one_add_norm_sq_rpow
+        ContinuousLinearMap.exists_norm_iteratedFDeriv_comp_left_le
           (Complex.ofRealCLM.smulRight (ContinuousLinearMap.id ℂ V))
           ((Function.hasTemperateGrowth_one_add_norm_smul_sq_rpow _ _).1.of_le (mod_cast le_top))
           (exists_norm_iteratedFDeriv_besselWeight_le s k)
@@ -77,6 +82,34 @@ theorem coefficient_besselPotential (s : ℝ) (p : CoordinateSpace n × Coordina
 
 theorem isUniform_besselPotential (s : ℝ) : (besselPotential s : Symbol n V V s).IsUniform :=
   isUniform_ofFrequency _ _
+
+/-- The pointwise composition of the Bessel weights of orders `s` and `t` is the Bessel weight of
+order `s + t`. -/
+@[simp]
+theorem besselPotential_comp_besselPotential (s t : ℝ) :
+    (besselPotential s : Symbol n V V s).comp (besselPotential t) = besselPotential (s + t) := by
+  ext1
+  funext p
+  simp only [coefficient_comp, coefficient_besselPotential, ContinuousLinearMap.comp_smul,
+    ContinuousLinearMap.comp_id, smul_smul, ← Complex.ofReal_mul]
+  rw [← Real.rpow_add (by positivity), add_div, add_comm (t / 2)]
+
+/-- Multiplying a symbol by `⟨ξ / 2π⟩ ^ t` and then by `⟨ξ / 2π⟩ ^ t'` multiplies it by
+`⟨ξ / 2π⟩ ^ (t + t')`. -/
+@[simp]
+theorem coefficient_comp_besselPotential_comp_besselPotential {W : Type*} [NormedAddCommGroup W]
+    [NormedSpace ℂ W] (a : Symbol n V W m) (t t' : ℝ) :
+    ((a.comp (besselPotential t)).comp (besselPotential t')).coefficient =
+      (a.comp (besselPotential (t + t'))).coefficient := by
+  rw [comp_assoc, coefficient_inclusion, besselPotential_comp_besselPotential]
+
+/-- Multiplying a symbol by `⟨ξ / 2π⟩ ^ 0 = 1` does not change its coefficient. -/
+@[simp]
+theorem coefficient_comp_besselPotential_zero {W : Type*} [NormedAddCommGroup W]
+    [NormedSpace ℂ W] (a : Symbol n V W m) :
+    (a.comp (besselPotential 0)).coefficient = a.coefficient := by
+  ext1 p
+  simp [coefficient_comp]
 
 
 /-- The linear function `⟪ξ, v⟫` satisfies the symbol estimates of order `1`. -/
@@ -98,7 +131,7 @@ def ofInner (v : CoordinateSpace n) : Symbol n V V 1 :=
     ((Complex.ofRealCLM.contDiff.comp (contDiff_id.inner ℝ contDiff_const)).smul contDiff_const)
     fun k ↦ by
       simpa only [ContinuousLinearMap.smulRight_apply, Complex.ofRealCLM_apply] using
-        ContinuousLinearMap.exists_norm_iteratedFDeriv_comp_left_le_one_add_norm_sq_rpow
+        ContinuousLinearMap.exists_norm_iteratedFDeriv_comp_left_le
           (Complex.ofRealCLM.smulRight (ContinuousLinearMap.id ℂ V)) (g := fun ξ ↦ ⟪ξ, v⟫)
           ((contDiff_id.inner ℝ contDiff_const).of_le (mod_cast le_top))
           (exists_norm_iteratedFDeriv_inner_le v k)
@@ -142,7 +175,7 @@ theorem not_exists_coefficient_eq_ofInner_coefficient [Nontrivial V] {v : Coordi
           Real.rpow_le_rpow_of_exponent_le (by nlinarith) (by linarith [le_max_left m 0])
       _ ≤ (1 + S / 2) ^ m₀ := by
           simpa [abs_of_nonneg hS0.le] using
-            one_add_norm_sq_rpow_half_le_one_add_norm_rpow (S / 2) (le_max_right m 0)
+            one_add_norm_sq_rpow_le_one_add_norm_rpow (S / 2) (le_max_right m 0)
       _ ≤ S ^ m₀ := Real.rpow_le_rpow (by positivity) (by linarith) (le_max_right m 0)
   have hbound : C * (1 + (S / 2) ^ 2) ^ (m / 2) ≤ |C| * S ^ m₀ :=
     (mul_le_mul_of_nonneg_right (le_abs_self C) (by positivity)).trans

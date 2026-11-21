@@ -409,7 +409,7 @@ def fixedPointsAddSubmonoidPairing (H : Subgroup G) (μ : M →+ N →+ P)
     { toFun n :=
         ⟨μ (m : M) (n : N), (FixedPoints.mem_addSubmonoid H P _).2 fun h ↦ by
           rw [Subgroup.smul_def, ← hequiv]
-          exact congrArg₂ (fun m n ↦ μ m n) (m.2 h) (n.2 h)⟩
+          exact congrArg₂ (fun m n ↦ μ m n) (m.property h) (n.property h)⟩
       map_zero' := Subtype.ext (map_zero (μ (m : M)))
       map_add' n n' := Subtype.ext (map_add (μ (m : M)) (n : N) (n' : N)) }
   map_zero' := AddMonoidHom.ext fun _ ↦ Subtype.ext <| by simp

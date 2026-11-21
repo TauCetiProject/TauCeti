@@ -70,7 +70,7 @@ theorem isConvexPolyhedron_convexHull_image {ι : Type*} (b : AffineBasis ι ℝ
         (fun i hi => subset_convexHull ℝ _ ⟨i, by simpa [t] using hi, rfl⟩)
   rw [hset]
   have hineq := isConvexPolyhedron_setOf_forall
-    (fun i : ι ⊕ {i // i ∉ s} => Sum.elim (fun j => -c j) (fun j => c j.1) i)
+    (fun i : ι ⊕ {i // i ∉ s} => Sum.elim (fun j => -c j) (fun j => c j.val) i)
   convert hineq using 1
   ext x
   simp [Sum.forall, c]

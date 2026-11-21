@@ -12,15 +12,15 @@ public import Mathlib.AlgebraicGeometry.Morphisms.Proper
 /-!
 # Proper orbit schemes
 
-For a finite-type group scheme acting on a proper scheme over an algebraically
-closed field, an orbit scheme is proper exactly when its geometric orbit is closed.
-The inclusion of a closed orbit is a closed immersion, so properness holds for the
-actual locally closed orbit model, not just its scheme-theoretic closure.
-Every orbit closure consequently contains a proper orbit scheme.
+For a finite-type group scheme acting on a proper scheme over a field, an orbit scheme is proper
+exactly when its geometric orbit is closed. The inclusion of a closed orbit is a closed
+immersion, so properness holds for the actual locally closed orbit model, not just its
+scheme-theoretic closure. Over an algebraically closed field, every orbit closure consequently
+contains a proper orbit scheme.
 
-The group need not be reduced, smooth or connected. When it is reduced, the
-smoothness instance in `TauCeti.AlgebraicGeometry.GroupAction.Orbit.Smooth` makes
-these proper orbit schemes smooth as well.
+The group need not be reduced, smooth or connected. When it is geometrically reduced over the
+ground field, the smoothness instance in `TauCeti.AlgebraicGeometry.GroupAction.Orbit.Smooth`
+makes these proper orbit schemes smooth as well.
 
 The construction uses `TauCeti.SchemeAction.orbitScheme` and the closed-orbit
 existence theorem, together with Mathlib's closed-immersion criterion and
@@ -40,7 +40,7 @@ namespace TauCeti.SchemeAction
 
 universe u
 
-variable {k : Type u} [Field k] [IsAlgClosed k]
+variable {k : Type u} [Field k]
   (G : Over (Spec (.of k))) {X : Over (Spec (.of k))} [GrpObj G] [ModObj G X]
   [LocallyOfFiniteType G.hom] [CompactSpace G.left]
   (x : 𝟙_ (Over (Spec (.of k))) ⟶ X)
@@ -91,9 +91,10 @@ theorem isProper_orbitToBase_iff :
     IsProper (orbitToBase G x) ↔ IsClosed (orbit G x) :=
   ⟨fun _ ↦ isClosed_orbit_of_isProper G x, isProper_orbitToBase_of_isClosed G x⟩
 
-/-- Every orbit closure in a proper scheme contains a proper orbit scheme, embedded as
-an actual closed subscheme of the ambient scheme. The chosen orbit need not be unique. -/
-theorem exists_isProper_orbit_subset_orbitClosure :
+/-- Over an algebraically closed field, every orbit closure in a proper scheme contains a proper
+orbit scheme, embedded as an actual closed subscheme of the ambient scheme. The chosen orbit need
+not be unique. -/
+theorem exists_isProper_orbit_subset_orbitClosure [IsAlgClosed k] :
     ∃ y : 𝟙_ (Over (Spec (.of k))) ⟶ X,
       IsProper (orbitToBase G y) ∧ IsClosedImmersion (orbitι G y) ∧
         orbit G y ⊆ orbitClosure G x := by
