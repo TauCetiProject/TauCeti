@@ -30,8 +30,9 @@ simultaneously.
   final map, the final map induces an isomorphism from the cokernel of the initial map.
 * `TauCeti.kernelSequence_shortExact`: the kernel sequence of an epimorphism is short exact.
 * `TauCeti.cokernelSequence_shortExact`: the cokernel sequence of a monomorphism is short exact.
-* `TauCeti.kernelCokernelCompSequence_snakeInput_L₃_shortExact`: for composable `a` and `b` with
-  `b` a monomorphism, `cokernel a ⟶ cokernel (a ≫ b) ⟶ cokernel b` is short exact.
+* `TauCeti.cokernelCompSequence`: the sequence `cokernel a ⟶ cokernel (a ≫ b) ⟶ cokernel b` of
+  composable `a` and `b`, with `TauCeti.cokernelCompSequence_shortExact` its short exactness when
+  `b` is a monomorphism.
 * `TauCeti.kernelCokernelCompSequence_snakeInput_L₀_shortExact`: for composable `a` and `b` with
   `a` an epimorphism, `kernel a ⟶ kernel (a ≫ b) ⟶ kernel b` is short exact.
 * `TauCeti.kernelCokernelCompSequence_shortExact_of_mono_of_epi`: for composable `a` and `b` with
@@ -41,8 +42,10 @@ simultaneously.
   `a ≫ b` by the kernel of `a` is the kernel of `b`.
 * `TauCeti.cokernelKernelSubobjectArrowIso`: for an epimorphism `a`, the quotient by the kernel of
   `a` is the target of `a`.
-* `TauCeti.cokernelSequenceToSnakeInputL₃`: the morphism from `Y ⟶ Z ⟶ cokernel b` to that
-  sequence.
+* `TauCeti.cokernelSequenceToCokernelCompSequence`: the morphism from `Y ⟶ Z ⟶ cokernel b` to
+  that sequence.
+* `TauCeti.cokernelCompSequenceMap`: the morphism between two such sequences induced by a
+  commutative ladder between the composable pairs.
 * `CategoryTheory.ShortComplex.shortExact_of_forall_evaluation`: a short complex of functors is
   short exact if it is short exact after evaluation at every object.
 * `CategoryTheory.ShortComplex.Exact.shortExact_factorThruImage`: an exact sequence
@@ -93,10 +96,24 @@ section Comp
 
 variable {X Y Z : C} (a : X ⟶ Y) (b : Y ⟶ Z)
 
-/-- The sequence `cokernel a ⟶ cokernel (a ≫ b) ⟶ cokernel b`, the last row of Mathlib's
-`kernelCokernelCompSequence.snakeInput a b`, is short exact when `b` is a monomorphism. -/
-lemma kernelCokernelCompSequence_snakeInput_L₃_shortExact [Mono b] :
-    (kernelCokernelCompSequence.snakeInput a b).L₃.ShortExact := by
+/-- The sequence `cokernel a ⟶ cokernel (a ≫ b) ⟶ cokernel b` of the composable pair `(a, b)`,
+whose maps are induced by `b` and by `𝟙 Z`. It is the last row of Mathlib's
+`kernelCokernelCompSequence.snakeInput a b` (`TauCeti.cokernelCompSequence_eq`), with its objects
+written as cokernels. -/
+@[simps]
+noncomputable abbrev cokernelCompSequence : ShortComplex C :=
+  ShortComplex.mk (cokernel.map a (a ≫ b) (𝟙 _) b (by simp))
+    (cokernel.map (a ≫ b) b a (𝟙 _) (by simp)) (by ext; simp)
+
+/-- The sequence `TauCeti.cokernelCompSequence a b` is the last row of Mathlib's
+`kernelCokernelCompSequence.snakeInput a b`. -/
+lemma cokernelCompSequence_eq :
+    cokernelCompSequence a b = (kernelCokernelCompSequence.snakeInput a b).L₃ :=
+  rfl
+
+/-- The sequence `cokernel a ⟶ cokernel (a ≫ b) ⟶ cokernel b` is short exact when `b` is a
+monomorphism. -/
+lemma cokernelCompSequence_shortExact [Mono b] : (cokernelCompSequence a b).ShortExact := by
   have hE := kernelCokernelCompSequence_exact a b
   refine ShortComplex.ShortExact.mk' (kernelCokernelCompSequence.snakeInput a b).L₃_exact ?_ ?_
   · exact (hE.exact 2).mono_g (by
@@ -203,8 +220,8 @@ lemma π_cokernelKernelSubobjectArrowIso_hom [Epi a] {S : Subobject X}
 /-- The morphism of short complexes from `Y ⟶ Z ⟶ cokernel b` to
 `cokernel a ⟶ cokernel (a ≫ b) ⟶ cokernel b` given by the cokernel projections of `a` and
 `a ≫ b` and the identity of `cokernel b`. -/
-noncomputable def cokernelSequenceToSnakeInputL₃ :
-    ShortComplex.cokernelSequence b ⟶ (kernelCokernelCompSequence.snakeInput a b).L₃ where
+noncomputable def cokernelSequenceToCokernelCompSequence :
+    ShortComplex.cokernelSequence b ⟶ cokernelCompSequence a b where
   τ₁ := cokernel.π a
   τ₂ := cokernel.π (a ≫ b)
   τ₃ := 𝟙 _
@@ -212,18 +229,54 @@ noncomputable def cokernelSequenceToSnakeInputL₃ :
   comm₂₃ := (cokernel.π_desc _ _ _).trans ((Category.id_comp _).trans (Category.comp_id _).symm)
 
 @[simp]
-lemma cokernelSequenceToSnakeInputL₃_τ₁ :
-    (cokernelSequenceToSnakeInputL₃ a b).τ₁ = cokernel.π a := by
-  rw [cokernelSequenceToSnakeInputL₃]
+lemma cokernelSequenceToCokernelCompSequence_τ₁ :
+    (cokernelSequenceToCokernelCompSequence a b).τ₁ = cokernel.π a := by
+  rw [cokernelSequenceToCokernelCompSequence]
 
 @[simp]
-lemma cokernelSequenceToSnakeInputL₃_τ₂ :
-    (cokernelSequenceToSnakeInputL₃ a b).τ₂ = cokernel.π (a ≫ b) := by
-  rw [cokernelSequenceToSnakeInputL₃]
+lemma cokernelSequenceToCokernelCompSequence_τ₂ :
+    (cokernelSequenceToCokernelCompSequence a b).τ₂ = cokernel.π (a ≫ b) := by
+  rw [cokernelSequenceToCokernelCompSequence]
 
 @[simp]
-lemma cokernelSequenceToSnakeInputL₃_τ₃ : (cokernelSequenceToSnakeInputL₃ a b).τ₃ = 𝟙 _ := by
-  rw [cokernelSequenceToSnakeInputL₃]
+lemma cokernelSequenceToCokernelCompSequence_τ₃ :
+    (cokernelSequenceToCokernelCompSequence a b).τ₃ = 𝟙 _ := by
+  rw [cokernelSequenceToCokernelCompSequence]
+
+variable {a b} {X' Y' Z' : C} {a' : X' ⟶ Y'} {b' : Y' ⟶ Z'} (u₁ : X ⟶ X') (u₂ : Y ⟶ Y')
+  (u₃ : Z ⟶ Z') (w₁ : u₁ ≫ a' = a ≫ u₂) (w₂ : u₂ ≫ b' = b ≫ u₃)
+
+/-- A commutative ladder `u₁, u₂, u₃` from the composable pair `(a, b)` to the composable pair
+`(a', b')` induces a morphism of short complexes from
+`cokernel a ⟶ cokernel (a ≫ b) ⟶ cokernel b` to `cokernel a' ⟶ cokernel (a' ≫ b') ⟶ cokernel b'`,
+whose components are the maps of cokernels induced by the ladder. -/
+noncomputable def cokernelCompSequenceMap :
+    cokernelCompSequence a b ⟶ cokernelCompSequence a' b' where
+  τ₁ := cokernel.map a a' u₁ u₂ w₁
+  τ₂ := cokernel.map (a ≫ b) (a' ≫ b') u₁ u₃ (by rw [Category.assoc, ← w₂, reassoc_of% w₁])
+  τ₃ := cokernel.map b b' u₂ u₃ w₂
+  comm₁₂ := by
+    ext
+    simp [reassoc_of% w₂]
+  comm₂₃ := by
+    ext
+    simp
+
+@[simp]
+lemma cokernelCompSequenceMap_τ₁ :
+    (cokernelCompSequenceMap u₁ u₂ u₃ w₁ w₂).τ₁ = cokernel.map a a' u₁ u₂ w₁ := by
+  rw [cokernelCompSequenceMap]
+
+@[simp]
+lemma cokernelCompSequenceMap_τ₂ :
+    (cokernelCompSequenceMap u₁ u₂ u₃ w₁ w₂).τ₂ =
+      cokernel.map (a ≫ b) (a' ≫ b') u₁ u₃ (by rw [Category.assoc, ← w₂, reassoc_of% w₁]) := by
+  rw [cokernelCompSequenceMap]
+
+@[simp]
+lemma cokernelCompSequenceMap_τ₃ :
+    (cokernelCompSequenceMap u₁ u₂ u₃ w₁ w₂).τ₃ = cokernel.map b b' u₂ u₃ w₂ := by
+  rw [cokernelCompSequenceMap]
 
 end Comp
 
