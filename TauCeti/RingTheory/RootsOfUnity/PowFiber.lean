@@ -49,7 +49,7 @@ theorem rootsOfUnity.smul_eq_mul [CommMonoid M]
 @[simp]
 theorem rootsOfUnity.smul_pow [CommMonoid M]
     (ζ : rootsOfUnity m M) (u : M) : (ζ • u) ^ m = u ^ m := by
-  rw [rootsOfUnity.smul_eq_mul, mul_pow, (mem_rootsOfUnity' m _).mp ζ.2, one_mul]
+  rw [rootsOfUnity.smul_eq_mul, mul_pow, (mem_rootsOfUnity' m _).mp ζ.property, one_mul]
 
 namespace TauCeti
 

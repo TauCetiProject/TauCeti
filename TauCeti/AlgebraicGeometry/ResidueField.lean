@@ -105,7 +105,7 @@ theorem Scheme.natCast_residueField_basicOpen_ne_zero (X : Scheme.{u}) (N : ℕ)
     (x : X.basicOpen (N : Γ(X, ⊤))) :
     (N : (X.basicOpen (N : Γ(X, ⊤))).toScheme.residueField x) ≠ 0 := by
   let U := X.basicOpen (N : Γ(X, ⊤))
-  have hx : U.ι x ∈ U := by simpa only [Scheme.Opens.ι_apply] using x.2
+  have hx : U.ι x ∈ U := by simpa only [Scheme.Opens.ι_apply] using x.property
   refine Scheme.Hom.natCast_residueField_ne_zero U.ι ?_
   simpa only [map_natCast] using (X.evaluation_ne_zero_iff_mem_basicOpen (U.ι x) trivial _).mpr hx
 

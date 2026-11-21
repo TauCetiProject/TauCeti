@@ -188,6 +188,11 @@ theorem equation_tateNormalForm_neg_mul_sub_one :
     tateNormalForm_a₆]
   ring
 
+/-- The point `(0, 0)` of the Tate normal form is nonsingular when `b ≠ 0`. -/
+theorem nonsingular_tateNormalForm_zero {b : R} (hb : b ≠ 0) :
+    (tateNormalForm a b).toAffine.Nonsingular 0 0 :=
+  ⟨equation_tateNormalForm_zero a b, Or.inr (by simpa [Affine.evalEval_polynomialY] using hb)⟩
+
 /-- The Tate normal form commutes with base change. -/
 @[simp]
 theorem map_tateNormalForm {A : Type*} [CommRing A] (φ : R →+* A) :

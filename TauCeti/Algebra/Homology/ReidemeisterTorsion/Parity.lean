@@ -21,7 +21,7 @@ symplectomorphism, are of this kind. They are not bounded integer complexes, so 
 `HomologicalComplex.reidemeisterTorsion` of a based `ℤ`-graded complex does not apply to them;
 this file defines their torsion with the same brackets. The chain-complex API lives in
 `ChainComplex`; the ascending two-periodic API lives in `HomologicalComplex` in
-`TauCeti.Algebra.Homology.ReidemeisterTorsion.Periodic`.
+`TauCeti.Algebra.Homology.ReidemeisterTorsion.Periodic.Basic`.
 
 Let `C` have ordered bases `c 0` of `C₀` and `c 1` of `C₁`. Write `Bᵢ ⊆ Cᵢ` for the boundaries,
 the images of the differentials into `Cᵢ`. When `C` is acyclic, a basis `bᵢ` of `Bᵢ` and lifts

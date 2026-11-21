@@ -277,7 +277,7 @@ def singularUniversalCoefficientEquiv (n : ℕ) :
   ((X.exact_singularExtToCohomology_singularKronecker R M n).splitSurjectiveEquiv
     (X.singularExtToCohomology_injective R M n)
     ⟨X.singularKroneckerSection R M (n + 1),
-      LinearMap.ext (X.singularKronecker_singularKroneckerSection R M (n + 1))⟩).1
+      LinearMap.ext (X.singularKronecker_singularKroneckerSection R M (n + 1))⟩).val
 
 /-- The inverse of the splitting `TopCat.singularUniversalCoefficientEquiv` restricts to the
 inclusion `TopCat.singularExtToCohomology` of the `Ext` term on the first factor. -/
