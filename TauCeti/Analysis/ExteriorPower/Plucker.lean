@@ -119,14 +119,22 @@ theorem plucker_le_prod_iSup {R ι : Type*} [CommRing R] [LinearOrder ι] [Finit
   rw [plucker_apply]
   exact Matrix.abv_det_le_prod_of_le _ hv fun i j ↦ Finite.le_ciSup_of_le _ le_rfl
 
+/-- Rowwise bounds bound every Plücker coordinate: if every coordinate of the `i`-th vector of a
+family of `p` vectors is at most `b i` at an absolute value `v`, then every Plücker coordinate of
+the family is at most `p! * ∏ i, b i` there. -/
+theorem plucker_le_factorial_mul_prod_of_row_le {R S ι : Type*} [CommRing R] [CommRing S]
+    [LinearOrder S] [IsStrictOrderedRing S] [LinearOrder ι] {p : ℕ} (v : AbsoluteValue R S)
+    {x : Fin p → ι → R} {b : Fin p → S} (hx : ∀ i j, v (x i j) ≤ b i) (s : powersetCard ι p) :
+    v (plucker x s) ≤ p.factorial * ∏ i, b i := by
+  rw [plucker_apply]
+  exact (Matrix.abv_det_le_factorial_prod _ v fun i j ↦ hx i _).trans_eq (by rw [Fintype.card_fin])
+
 /-- Every Plücker coordinate is bounded by `p!` times the product of the maximum row norms
 for any real-valued absolute value. -/
 theorem plucker_le_factorial_mul_prod_iSup {R ι : Type*} [CommRing R] [LinearOrder ι] [Finite ι]
     {p : ℕ} (v : AbsoluteValue R ℝ) (x : Fin p → ι → R) (s : powersetCard ι p) :
-    v (plucker x s) ≤ p.factorial * ∏ i, ⨆ j, v (x i j) := by
-  rw [plucker_apply]
-  simpa using Matrix.abv_det_le_factorial_prod _ v fun i j ↦
-    Finite.le_ciSup_of_le (ofFinEmbEquiv.symm s j) le_rfl
+    v (plucker x s) ≤ p.factorial * ∏ i, ⨆ j, v (x i j) :=
+  v.plucker_le_factorial_mul_prod_of_row_le (fun _ j ↦ Finite.le_ciSup_of_le j le_rfl) s
 
 /-- Columnwise bounds on the coordinates in `s` bound the Plücker coordinate at `s` by `p!` times
 their product over `s`, for any absolute value. -/

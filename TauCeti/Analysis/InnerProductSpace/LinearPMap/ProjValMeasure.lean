@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.BorelCalculus.Basic
-public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Cayley
+public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Cayley.Basic
 public import TauCeti.Analysis.InnerProductSpace.ProjValMeasure.Map
 import TauCeti.Analysis.Complex.UpperHalfPlane.Cayley
 
