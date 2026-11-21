@@ -24,7 +24,11 @@ a differentiable map with surjective derivative, and is a `C^n` distribution of 
 linear isomorphism from the horizontal space `D x` onto `T_(f x) B`; its inverse is the
 **horizontal lift** of tangent vectors of the base
 (`TauCeti.IsEhresmannConnection.horizontalLift`). Integrating these pointwise lifts lifts paths
-of the base horizontally, which is how a connection transports fibres along paths.
+of the base horizontally, which is how a connection transports fibres along paths. The
+complementary decomposition `T_x P = D x ⊕ ker (df_x)` splits every tangent vector into its
+horizontal and vertical parts (`TauCeti.IsEhresmannConnection.horizontalProjection` and
+`TauCeti.IsEhresmannConnection.verticalProjection`); the horizontal part of `v` is the horizontal
+lift of `df_x v`.
 
 Every submersion carries Ehresmann connections. For a Riemannian metric on `P`, the orthogonal
 complements `(ker df_x)ᗮ` of the vertical spaces of a `C^n` submersion form a `C^m` Ehresmann
@@ -42,9 +46,16 @@ from such a manifold has an Ehresmann connection
 * `TauCeti.IsEhresmannConnection I J n f D`: `D` is a `C^n` Ehresmann connection on `f`.
 * `TauCeti.IsEhresmannConnection.horizontalLift`: the horizontal lift `T_(f x) B ≃ D x`, inverse
   to the restriction of `df_x`.
+* `TauCeti.IsEhresmannConnection.horizontalProjection`,
+  `TauCeti.IsEhresmannConnection.verticalProjection`: the projections of `T_x P` onto `D x` along
+  `ker (df_x)` and onto `ker (df_x)` along `D x`.
 
 ## Main results
 
+* `TauCeti.IsEhresmannConnection.horizontalProjection_add_verticalProjection`: the horizontal and
+  vertical projections sum to the identity.
+* `TauCeti.IsEhresmannConnection.horizontalProjection_apply`: the horizontal projection is the
+  horizontal lift composed with `df_x`.
 * `TauCeti.isDistributionFrameOn_mgradient_coord`: the gradients of the coordinates of a map to a
   vector space whose derivative is surjective form a local frame of the orthogonal complements of
   the kernels of its derivative.
@@ -169,6 +180,102 @@ theorem eq_horizontalLift_iff {x : P} {v : TangentSpace J (f x)} {w : D x} :
     w = hD.horizontalLift x v ↔ mfderiv I J f x w = v := by
   refine ⟨fun h ↦ h ▸ hD.mfderiv_horizontalLift x v, fun h ↦ ?_⟩
   rw [← h, hD.horizontalLift_mfderiv]
+
+/-! ### The horizontal–vertical splitting -/
+
+/-- The **horizontal projection** of `T_x P` onto the horizontal space `D x`, along the vertical
+space `ker (df_x)`. -/
+def horizontalProjection (x : P) : TangentSpace I x →ₗ[𝕜] TangentSpace I x :=
+  (D x).projection (mfderiv I J f x).ker (hD.isCompl_ker x)
+
+/-- The **vertical projection** of `T_x P` onto the vertical space `ker (df_x)`, along the
+horizontal space `D x`. -/
+def verticalProjection (x : P) : TangentSpace I x →ₗ[𝕜] TangentSpace I x :=
+  (mfderiv I J f x).ker.projection (D x) (hD.isCompl_ker x).symm
+
+/-- The horizontal and vertical projections sum to the identity. -/
+@[simp]
+theorem horizontalProjection_add_verticalProjection (x : P) (v : TangentSpace I x) :
+    hD.horizontalProjection x v + hD.verticalProjection x v = v :=
+  Submodule.projection_add_projection_eq_self _ v
+
+theorem horizontalProjection_mem (x : P) (v : TangentSpace I x) :
+    hD.horizontalProjection x v ∈ D x :=
+  Submodule.projection_apply_mem _ v
+
+theorem verticalProjection_mem_ker (x : P) (v : TangentSpace I x) :
+    hD.verticalProjection x v ∈ (mfderiv I J f x).ker :=
+  Submodule.projection_apply_mem _ v
+
+/-- The vertical projection is killed by `df_x`. -/
+@[simp]
+theorem mfderiv_verticalProjection (x : P) (v : TangentSpace I x) :
+    mfderiv I J f x (hD.verticalProjection x v) = 0 :=
+  LinearMap.mem_ker.1 (hD.verticalProjection_mem_ker x v)
+
+/-- The horizontal projection does not change the image under `df_x`. -/
+@[simp]
+theorem mfderiv_horizontalProjection (x : P) (v : TangentSpace I x) :
+    mfderiv I J f x (hD.horizontalProjection x v) = mfderiv I J f x v := by
+  conv_rhs => rw [← hD.horizontalProjection_add_verticalProjection x v]
+  rw [map_add, mfderiv_verticalProjection, add_zero]
+
+/-- The horizontal projection of `v` is the horizontal lift of its image `df_x v`. -/
+theorem horizontalProjection_apply (x : P) (v : TangentSpace I x) :
+    hD.horizontalProjection x v = hD.horizontalLift x (mfderiv I J f x v) :=
+  congrArg Subtype.val (hD.eq_horizontalLift_iff (w := ⟨_, hD.horizontalProjection_mem x v⟩)
+    |>.2 (hD.mfderiv_horizontalProjection x v))
+
+/-- The vertical projection of `v` is `v` minus the horizontal lift of `df_x v`. -/
+theorem verticalProjection_apply (x : P) (v : TangentSpace I x) :
+    hD.verticalProjection x v = v - hD.horizontalLift x (mfderiv I J f x v) := by
+  rw [← hD.horizontalProjection_apply, eq_sub_iff_add_eq, add_comm,
+    horizontalProjection_add_verticalProjection]
+
+@[simp]
+theorem horizontalProjection_eq_self_iff {x : P} {v : TangentSpace I x} :
+    hD.horizontalProjection x v = v ↔ v ∈ D x :=
+  Submodule.projection_eq_self_iff _ v
+
+@[simp]
+theorem verticalProjection_eq_self_iff {x : P} {v : TangentSpace I x} :
+    hD.verticalProjection x v = v ↔ v ∈ (mfderiv I J f x).ker :=
+  Submodule.projection_eq_self_iff _ v
+
+@[simp]
+theorem horizontalProjection_eq_zero_iff {x : P} {v : TangentSpace I x} :
+    hD.horizontalProjection x v = 0 ↔ v ∈ (mfderiv I J f x).ker :=
+  Submodule.projection_apply_eq_zero_iff _
+
+@[simp]
+theorem verticalProjection_eq_zero_iff {x : P} {v : TangentSpace I x} :
+    hD.verticalProjection x v = 0 ↔ v ∈ D x :=
+  Submodule.projection_apply_eq_zero_iff _
+
+/-- The horizontal lift of a tangent vector of the base is fixed by the horizontal projection. -/
+@[simp]
+theorem horizontalProjection_horizontalLift (x : P) (v : TangentSpace J (f x)) :
+    hD.horizontalProjection x (hD.horizontalLift x v) = hD.horizontalLift x v :=
+  hD.horizontalProjection_eq_self_iff.2 (hD.horizontalLift x v).property
+
+/-- The range of the horizontal projection is the horizontal space. -/
+theorem range_horizontalProjection (x : P) : LinearMap.range (hD.horizontalProjection x) = D x :=
+  Submodule.range_projection _
+
+/-- The range of the vertical projection is the vertical space. -/
+theorem range_verticalProjection (x : P) :
+    LinearMap.range (hD.verticalProjection x) = (mfderiv I J f x).ker :=
+  Submodule.range_projection _
+
+/-- The kernel of the horizontal projection is the vertical space. -/
+theorem ker_horizontalProjection (x : P) :
+    LinearMap.ker (hD.horizontalProjection x) = (mfderiv I J f x).ker :=
+  Submodule.ker_projection _
+
+/-- The kernel of the vertical projection is the horizontal space. -/
+theorem ker_verticalProjection (x : P) :
+    LinearMap.ker (hD.verticalProjection x) = D x :=
+  Submodule.ker_projection _
 
 end IsEhresmannConnection
 

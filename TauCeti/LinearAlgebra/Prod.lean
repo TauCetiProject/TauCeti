@@ -40,6 +40,8 @@ quadratic forms with the subgroup preserving both summands.
 * `LinearEquiv.nonempty_linearEquiv_of_isUnit_snd_comp_inr`: a linear equivalence `M × P ≃ N × P`
   whose lower-right block is invertible gives `M ≃ N`.
 * `LinearMap.finrank_graph`: the graph of a linear map `M → M₂` has the dimension of `M`.
+* `LinearMap.isCompl_graph_ker_fst`: the graph of a linear map `M → M₂` is a complement of
+  `0 × M₂`.
 * `LinearMap.coprod_comp_prodComm`: precomposing `f.coprod g` with the exchange of factors gives
   `g.coprod f`, the linear version of `ContinuousLinearMap.coprod_comp_prodComm`.
 * `LinearMap.surjective_coprod_iff`, `LinearMap.surjective_coprod_neg_iff`: `f.coprod g` and
@@ -227,6 +229,18 @@ theorem finrank_graph {R M M₂ : Type*} [Semiring R] [AddCommMonoid M] [Module 
   rw [graph_eq_range_prod, finrank_range_of_inj]
   intro x y h
   exact congr(($h).1)
+
+/-- The graph of a linear map `f : M → M₂` is a complement of the kernel `0 × M₂` of the first
+projection: every `(x, y)` splits uniquely as `(x, f x) + (0, y - f x)`. -/
+theorem isCompl_graph_ker_fst {R M M₂ : Type*} [Ring R] [AddCommGroup M] [Module R M]
+    [AddCommGroup M₂] [Module R M₂] (f : M →ₗ[R] M₂) : IsCompl (graph f) (ker (fst R M M₂)) := by
+  refine ⟨Submodule.disjoint_def.2 fun ⟨x, y⟩ hg hk ↦ ?_, codisjoint_iff.2 <| eq_top_iff.2
+    fun ⟨x, y⟩ _ ↦ ?_⟩
+  · simp only [mem_graph_iff, mem_ker, fst_apply] at hg hk
+    simp [hk, hg]
+  · have hxy : ((x, y) : M × M₂) = (x, f x) + (0, y - f x) := by simp
+    rw [hxy]
+    exact Submodule.add_mem_sup ((mem_graph_iff _ _).2 rfl) (by simp)
 
 section Semiring
 
