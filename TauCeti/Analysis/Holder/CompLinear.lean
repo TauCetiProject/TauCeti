@@ -218,12 +218,7 @@ private theorem norm_compLinearL_apply_le_of_norm_le_one {e : E →L[ℝ] E'} (h
 equivalence. -/
 def compLinearLIE (e : E ≃ₗᵢ[ℝ] E') : CkHolderSpace k α E' F ≃ₗᵢ[ℝ] CkHolderSpace k α E F :=
   LinearIsometryEquiv.ofBounds
-    { toFun := compLinearL e.toLinearIsometry.toContinuousLinearMap
-      invFun := compLinearL e.symm.toLinearIsometry.toContinuousLinearMap
-      map_add' := map_add _
-      map_smul' := map_smul _
-      left_inv f := ext fun x ↦ by simp
-      right_inv f := ext fun x ↦ by simp }
+    (compLinearCLE e.toContinuousLinearEquiv).toLinearEquiv
     (norm_compLinearL_apply_le_of_norm_le_one e.toLinearIsometry.norm_toContinuousLinearMap_le)
     (norm_compLinearL_apply_le_of_norm_le_one
       e.symm.toLinearIsometry.norm_toContinuousLinearMap_le)

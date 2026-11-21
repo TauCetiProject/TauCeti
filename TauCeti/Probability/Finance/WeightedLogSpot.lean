@@ -15,9 +15,10 @@ import TauCeti.Analysis.SpecialFunctions.Log.Deriv
 A bounded parabolic Hölder map `u(y,t)` represents a price of linear growth by
 `C(s,t) = (1+s) u(log s,t)` for positive spot. `weightedLogSpotPrice` performs this
 reconstruction, using the canonical clamped extension in time. It preserves joint continuity
-of both the price and its spot derivative on `(0, ∞) × [a, b]`, twice continuous spatial
-differentiability, interior ordinary time differentiability, and explicit linear-growth bounds
-for both the price and its dollar delta `s C_s`.
+of the price, its first and second spot derivatives, and its within-slab time derivative on
+`(0, ∞) × [a, b]`, twice continuous spatial differentiability, interior ordinary time
+differentiability, and explicit linear-growth bounds for both the price and its dollar delta
+`s C_s`.
 
 The pricing-operator identity transports the backward equation for the bounded map to
 the financial pricing equation. This is a change-of-variables result, not an existence
@@ -179,6 +180,40 @@ theorem deriv_deriv_weightedLogSpotPrice_spot (u : ParabolicC2HolderSpace α ℝ
   dsimp only [f, v]
   linear_combination (1 + s) * h₂ + 2 * s * h₁ hs
 
+/-- The second spot derivative `(s, t) ↦ ∂ₛ²C(s, t)` of `C = weightedLogSpotPrice u` is jointly
+continuous on `(0, ∞) × [a, b]`. -/
+theorem continuousOn_deriv_deriv_weightedLogSpotPrice_spot
+    (u : ParabolicC2HolderSpace α ℝ ℝ hab) :
+    ContinuousOn (fun p : ℝ × ℝ ↦ deriv (deriv fun s ↦ weightedLogSpotPrice u s p.2) p.1)
+      (Ioi 0 ×ˢ Icc a b) := by
+  let g : ℝ × ℝ → ℝ := fun p ↦
+    ((p.1 - 1) * timeExtension hab.le (spatialFDerivL u) (log p.1) p.2 1 +
+      (1 + p.1) * timeExtension hab.le (spatialSecondFDerivL u) (log p.1) p.2 1 1) / p.1 ^ 2
+  have hdu : Continuous fun q : ℝ × ℝ ↦ timeExtension hab.le (spatialFDerivL u) q.2 q.1 1 :=
+    (ContinuousLinearMap.apply ℝ ℝ (1 : ℝ)).continuous.comp
+      (continuous_timeExtension hab.le (spatialFDerivL u).continuous)
+  have hddu : Continuous fun q : ℝ × ℝ ↦
+      timeExtension hab.le (spatialSecondFDerivL u) q.2 q.1 1 1 :=
+    (ContinuousLinearMap.apply ℝ ℝ (1 : ℝ)).continuous.comp
+      ((ContinuousLinearMap.apply ℝ (ℝ →L[ℝ] ℝ) (1 : ℝ)).continuous.comp
+        (continuous_timeExtension hab.le (spatialSecondFDerivL u).continuous))
+  have hg : ContinuousOn g (Ioi 0 ×ˢ Icc a b) := by
+    intro p hp
+    have hlog : ContinuousAt (fun q : ℝ × ℝ ↦ (q.2, log q.1)) p :=
+      continuous_snd.continuousAt.prodMk
+        ((continuousAt_log hp.1.ne').comp continuous_fst.continuousAt)
+    exact ((((continuous_fst.continuousAt.sub continuousAt_const).mul
+      (hdu.continuousAt.comp hlog)).add
+      ((continuousAt_const.add continuous_fst.continuousAt).mul
+        (hddu.continuousAt.comp hlog))).div
+      (continuous_fst.continuousAt.pow 2) (pow_ne_zero 2 hp.1.ne')).continuousWithinAt
+  refine hg.congr fun p hp ↦ ?_
+  rw [deriv_deriv_weightedLogSpotPrice_spot u hp.1 ⟨p.2, hp.2⟩]
+  have ht1 := timeExtension_of_mem hab.le (spatialFDerivL u) (log p.1) ⟨p.2, hp.2⟩
+  have ht2 := timeExtension_of_mem hab.le (spatialSecondFDerivL u) (log p.1) ⟨p.2, hp.2⟩
+  dsimp only [g, Subtype.coe_mk] at *
+  rw [ht1, ht2]
+
 /-- The dollar delta has linear growth with an explicit bound from the value and gradient
 norms. This bound is suitable for moment-based integrability criteria. -/
 theorem abs_mul_deriv_weightedLogSpotPrice_le (u : ParabolicC2HolderSpace α ℝ ℝ hab)
@@ -237,6 +272,28 @@ theorem derivWithin_weightedLogSpotPrice_time (u : ParabolicC2HolderSpace α ℝ
       (1 + s) * timeDerivL u (slabMk (log s) t) :=
   (hasDerivWithinAt_weightedLogSpotPrice_time u s t).derivWithin
     (uniqueDiffOn_Icc hab t t.property)
+
+/-- The within-slab time derivative `(s, t) ↦ ∂ₜC(s, t)` of `C = weightedLogSpotPrice u` is
+jointly continuous on `(0, ∞) × [a, b]`. -/
+theorem continuousOn_derivWithin_weightedLogSpotPrice_time
+    (u : ParabolicC2HolderSpace α ℝ ℝ hab) :
+    ContinuousOn (fun p : ℝ × ℝ ↦ derivWithin (weightedLogSpotPrice u p.1) (Icc a b) p.2)
+      (Ioi 0 ×ˢ Icc a b) := by
+  let g : ℝ × ℝ → ℝ := fun p ↦ (1 + p.1) * timeExtension hab.le (timeDerivL u) (log p.1) p.2
+  have hdt : Continuous fun q : ℝ × ℝ ↦ timeExtension hab.le (timeDerivL u) q.2 q.1 :=
+    continuous_timeExtension hab.le (timeDerivL u).continuous
+  have hg : ContinuousOn g (Ioi 0 ×ˢ Icc a b) := by
+    intro p hp
+    have hlog : ContinuousAt (fun q : ℝ × ℝ ↦ (q.2, log q.1)) p :=
+      continuous_snd.continuousAt.prodMk
+        ((continuousAt_log hp.1.ne').comp continuous_fst.continuousAt)
+    exact ((continuousAt_const.add continuous_fst.continuousAt).mul
+      (hdt.continuousAt.comp hlog)).continuousWithinAt
+  refine hg.congr fun p hp ↦ ?_
+  rw [derivWithin_weightedLogSpotPrice_time u p.1 ⟨p.2, hp.2⟩]
+  have ht1 := timeExtension_of_mem hab.le (timeDerivL u) (log p.1) ⟨p.2, hp.2⟩
+  dsimp only [g, Subtype.coe_mk] at *
+  rw [ht1]
 
 /-- At an interior time `t ∈ (a, b)`, the reconstructed spot price `weightedLogSpotPrice u s` has
 ordinary time derivative `(1 + s) ∂ₜu(log s, t)`. -/

@@ -272,10 +272,9 @@ theorem compSpatialCLE_symm_apply (e : E ≃L[ℝ] E') (v : ParabolicC2HolderSpa
 private theorem norm_compSpatialL_apply_le_of_norm_le_one {e : E →L[ℝ] E'} (he : ‖e‖ ≤ 1)
     (u : ParabolicC2HolderSpace α E' F hab) :
     ‖compSpatialL α F hab e u‖ ≤ ‖u‖ := by
-  rw [compSpatialL_eq_compSpatial]
-  refine (norm_compSpatial_le e u).trans ?_
-  rw [max_eq_right he]
-  norm_num
+  have h := (compSpatialL α F hab e).le_of_opNorm_le (norm_compSpatialL_le_one α F hab he) u
+  rw [one_mul] at h
+  convert h using 0
 
 variable (α F hab) in
 /-- The change of spatial variables `u ↦ u ∘ (e × id)` by a linear isometric equivalence
@@ -284,15 +283,15 @@ Its inverse is the change of variables by `e⁻¹`. -/
 def compSpatialLIE (e : E ≃ₗᵢ[ℝ] E') :
     ParabolicC2HolderSpace α E' F hab ≃ₗᵢ[ℝ] ParabolicC2HolderSpace α E F hab :=
   LinearIsometryEquiv.ofBounds
-    { toFun := compSpatialL α F hab e.toLinearIsometry.toContinuousLinearMap
-      invFun := compSpatialL α F hab e.symm.toLinearIsometry.toContinuousLinearMap
-      map_add' u v := by ext p; simp
-      map_smul' c u := by ext p; simp
-      left_inv u := by ext p; simp
-      right_inv v := by ext p; simp }
-    (norm_compSpatialL_apply_le_of_norm_le_one e.toLinearIsometry.norm_toContinuousLinearMap_le)
-    (norm_compSpatialL_apply_le_of_norm_le_one
-      e.symm.toLinearIsometry.norm_toContinuousLinearMap_le)
+    (compSpatialCLE α F hab e.toContinuousLinearEquiv).toLinearEquiv
+    (fun u ↦ by
+      convert norm_compSpatialL_apply_le_of_norm_le_one
+        e.toLinearIsometry.norm_toContinuousLinearMap_le u
+      rfl)
+    (fun v ↦ by
+      convert norm_compSpatialL_apply_le_of_norm_le_one
+        e.symm.toLinearIsometry.norm_toContinuousLinearMap_le v
+      rfl)
 
 /-- Applying `compSpatialLIE` agrees with `compSpatialL` on the underlying continuous linear
 map. -/

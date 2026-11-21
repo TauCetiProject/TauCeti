@@ -20,6 +20,8 @@ is determined by its values on the coordinate vectors
 (`ContinuousLinearMap.opNorm_le_norm_apply_one_zero_add_norm_apply_zero_one`). The map
 `(x, y) ↦ (x, c • y)` on a product with `‖c‖ ≤ 1` is a contraction
 (`ContinuousLinearMap.norm_inl_comp_fst_add_smul_inr_comp_snd_le`).
+Componentwise products of linear isometric equivalences are linear isometric equivalences
+(`LinearIsometryEquiv.prodCongr`).
 -/
 
 public section
@@ -66,4 +68,31 @@ theorem norm_inl_comp_fst_add_smul_inr_comp_snd_le {c : 𝕜} (hc : ‖c‖ ≤ 
   exact (mul_le_of_le_one_left (norm_nonneg _) hc).trans (norm_snd_le _ _ _)
 
 end ContinuousLinearMap
+
+namespace LinearIsometryEquiv
+
+variable {𝕜 E F E' F' : Type*} [Semiring 𝕜]
+  [SeminormedAddCommGroup E] [SeminormedAddCommGroup F]
+  [SeminormedAddCommGroup E'] [SeminormedAddCommGroup F']
+  [Module 𝕜 E] [Module 𝕜 F] [Module 𝕜 E'] [Module 𝕜 F']
+
+/-- Componentwise product of two linear isometric equivalences on `E × F`. -/
+def prodCongr (e₁ : E ≃ₗᵢ[𝕜] E') (e₂ : F ≃ₗᵢ[𝕜] F') : E × F ≃ₗᵢ[𝕜] E' × F' :=
+  { e₁.toLinearEquiv.prodCongr e₂.toLinearEquiv with
+    norm_map' x := by
+      simp only [Prod.norm_def, LinearEquiv.prodCongr_apply, coe_toLinearEquiv, norm_map] }
+
+/-- Evaluation of `LinearIsometryEquiv.prodCongr` at a pair. -/
+@[simp, norm_cast]
+theorem prodCongr_apply (e₁ : E ≃ₗᵢ[𝕜] E') (e₂ : F ≃ₗᵢ[𝕜] F') (x : E × F) :
+    prodCongr e₁ e₂ x = (e₁ x.1, e₂ x.2) := by
+  simp [prodCongr]
+
+/-- The inverse of `LinearIsometryEquiv.prodCongr e₁ e₂` is `prodCongr e₁.symm e₂.symm`. -/
+@[simp]
+theorem prodCongr_symm (e₁ : E ≃ₗᵢ[𝕜] E') (e₂ : F ≃ₗᵢ[𝕜] F') :
+    (prodCongr e₁ e₂).symm = prodCongr e₁.symm e₂.symm :=
+  LinearIsometryEquiv.ext fun x ↦ (prodCongr e₁ e₂).injective (by simp)
+
+end LinearIsometryEquiv
 

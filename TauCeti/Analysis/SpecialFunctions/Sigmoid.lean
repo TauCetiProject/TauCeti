@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.Analysis.SpecialFunctions.Sigmoid
 public import Mathlib.Topology.MetricSpace.HolderNorm
+public import TauCeti.Analysis.Holder.Normed
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
@@ -44,6 +45,8 @@ coefficients, as for option prices of linear growth in the spot `exp x`.
   in the sigmoid;
 * `Real.exists_abs_iteratedDeriv_sigmoid_le`, `Real.memHolder_iteratedDeriv_sigmoid` — every
   derivative of the sigmoid is bounded, and Hölder continuous of every exponent `α ≤ 1`;
+* `TauCeti.sigmoidHolder`, `TauCeti.sigmoidHolder_apply` — `sigmoid` as an element of
+  `HolderSpace α ℝ ℝ` for `α ≤ 1`;
 * `Real.hasDerivAt_log_one_add_exp`, `Real.iteratedDeriv_succ_log_one_add_exp` — the derivatives
   of `x ↦ log (1 + exp x)` of positive order are those of the sigmoid.
 -/
@@ -148,3 +151,23 @@ theorem iteratedDeriv_succ_log_one_add_exp (n : ℕ) :
   rw [iteratedDeriv_succ', deriv_log_one_add_exp]
 
 end Real
+
+namespace TauCeti
+
+open Real
+open scoped NNReal
+
+/-- The logistic function `x ↦ sigmoid x`, as a bounded `α`-Hölder function on `ℝ` (`α ≤ 1`). -/
+noncomputable def sigmoidHolder {α : ℝ≥0} (hα : α ≤ 1) : HolderSpace α ℝ ℝ :=
+  HolderSpace.ofBoundedContinuousFunction
+    (BoundedContinuousFunction.ofNormedAddCommGroup sigmoid continuous_sigmoid 1 fun x ↦ by
+      rw [Real.norm_eq_abs, abs_of_nonneg (sigmoid_nonneg x)]
+      exact sigmoid_le_one x)
+    (by simpa using memHolder_iteratedDeriv_sigmoid 0 hα)
+
+/-- Evaluation of `sigmoidHolder` at a real point gives `sigmoid`. -/
+@[simp]
+theorem sigmoidHolder_apply {α : ℝ≥0} (hα : α ≤ 1) (x : ℝ) : sigmoidHolder hα x = sigmoid x := by
+  simp [sigmoidHolder]
+
+end TauCeti

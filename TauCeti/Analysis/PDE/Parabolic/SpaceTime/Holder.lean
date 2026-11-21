@@ -321,6 +321,32 @@ theorem memHolder_slab_iff {α : ℝ≥0} {v : slab (E := E) a b → F} :
 
 end TauCeti.ParabolicSpaceTime
 
+namespace TauCeti.ParabolicSpaceTime
+
+/-- A field on `E × [a, b]` that is uniformly bounded, uniformly Lipschitz in `x` on every time
+slice `t ∈ [a, b]`, and uniformly `(α / 2)`-Hölder in `t` on `[a, b]` for every `x` is
+parabolically `α`-Hölder on `slab a b` (`α ≤ 1`). -/
+theorem memHolder_slab_of_norm_le_of_lipschitzWith_of_holderOnWith {E F : Type*} [MetricSpace E]
+    [NormedAddCommGroup F] {a b : ℝ} {α : ℝ≥0} (hα : α ≤ 1) {f : E → ℝ → F} {M L H : ℝ≥0}
+    (hbdd : ∀ x, ∀ t ∈ Icc a b, ‖f x t‖ ≤ M)
+    (hlip : ∀ t ∈ Icc a b, LipschitzWith L (fun x ↦ f x t))
+    (htime : ∀ x, HolderOnWith H (α / 2) (f x) (Icc a b)) :
+    MemHolder α
+      (fun p : slab (E := E) a b ↦ f (p : ParabolicSpaceTime E).space (slabTime p)) := by
+  rw [memHolder_slab_iff]
+  refine ⟨?_, ?_⟩
+  · refine ((spaceEHolderNorm_le_iff (a := a) (b := b)
+        (C := ((L + 2 * M : ℝ≥0) : ℝ≥0∞))).2 fun t x y ↦ ?_).trans_lt ENNReal.coe_lt_top
+    have hslice := ((hlip t t.property).lipschitzOnWith (s := univ)).holderOnWith_of_norm_le
+      (M := M) (fun z _ ↦ hbdd z t t.property) hα
+    simpa only [slabTime_slabMk, space_slabMk] using hslice x (mem_univ x) y (mem_univ y)
+  · refine ((timeEHolderNorm_le_iff (a := a) (b := b)
+        (C := (H : ℝ≥0∞))).2 fun x t s ↦ ?_).trans_lt ENNReal.coe_lt_top
+    simpa only [slabTime_slabMk, space_slabMk, Subtype.edist_eq] using
+      htime x t t.property s s.property
+
+end TauCeti.ParabolicSpaceTime
+
 /-! ### The temporal seminorm of the spatial gradient -/
 
 namespace TauCeti.ParabolicSpaceTime
@@ -412,24 +438,21 @@ theorem norm_compSlabSpaceL_apply_le (f : HolderSpace α E Y) :
     ‖(compSlabSpaceL f : HolderSpace α (slab (E := E) a b) Y)‖ ≤ ‖f‖ :=
   (compSlabSpaceL.le_of_opNorm_le norm_compSlabSpaceL_le_one f).trans_eq (one_mul _)
 
+private theorem holderWith_slabTime :
+    HolderWith 1 2 (slabTime : slab (E := E) a b → Icc a b) := by
+  intro p q
+  rw [ENNReal.coe_one, one_mul, Subtype.edist_eq, coe_slabTime, coe_slabTime, NNReal.coe_ofNat]
+  calc edist (p : ParabolicSpaceTime E).time (q : ParabolicSpaceTime E).time
+      = (edist (p : ParabolicSpaceTime E).time (q : ParabolicSpaceTime E).time ^ (1 / 2 : ℝ)) ^
+          (2 : ℝ) := by
+        rw [← ENNReal.rpow_mul, one_div_mul_cancel two_ne_zero, ENNReal.rpow_one]
+    _ ≤ edist p q ^ (2 : ℝ) :=
+        ENNReal.rpow_le_rpow (edist_time_rpow_le (p : ParabolicSpaceTime E) q) two_pos.le
+
 private theorem holderWith_comp_slabTime (f : HolderSpace (α / 2) (Icc a b) Y) :
     HolderWith (nnHolderNorm (α / 2) (f : Icc a b → Y)) α
       (fun p : slab (E := E) a b ↦ f (slabTime p)) := by
-  intro p q
-  calc edist (f (slabTime p)) (f (slabTime q))
-      ≤ nnHolderNorm (α / 2) (f : Icc a b → Y) *
-          edist (slabTime p) (slabTime q) ^ ((α / 2 : ℝ≥0) : ℝ) :=
-        f.holderWith (slabTime p) (slabTime q)
-    _ = nnHolderNorm (α / 2) (f : Icc a b → Y) *
-          (edist (p : ParabolicSpaceTime E).time
-            (q : ParabolicSpaceTime E).time ^ (1 / 2 : ℝ)) ^ (α : ℝ) := by
-        rw [Subtype.edist_eq, coe_slabTime, coe_slabTime, ← ENNReal.rpow_mul]
-        congr 2
-        push_cast
-        ring
-    _ ≤ nnHolderNorm (α / 2) (f : Icc a b → Y) * edist p q ^ (α : ℝ) := by
-        gcongr
-        exact edist_time_rpow_le (p : ParabolicSpaceTime E) q
+  simpa [Function.comp_def] using f.holderWith.comp (holderWith_slabTime (E := E) (a := a) (b := b))
 
 private def compSlabTimeAux (f : HolderSpace (α / 2) (Icc a b) Y) :
     HolderSpace α (slab (E := E) a b) Y :=
@@ -488,5 +511,24 @@ norm. -/
 theorem norm_compSlabTimeL_apply_le (f : HolderSpace (α / 2) (Icc a b) Y) :
     ‖compSlabTimeL (E := E) f‖ ≤ ‖f‖ :=
   norm_compSlabTimeAux_le f
+
+/-- A function `g : ℝ → Y` that is `γ`-Hölder on a compact interval `[a, b]` (`0 < γ`), as a
+bounded `γ`-Hölder function on `Icc a b`. -/
+def ofHolderOnWithIcc {γ : ℝ≥0} (hγ : 0 < γ) (g : ℝ → Y) {H : ℝ≥0}
+    (hg : HolderOnWith H γ g (Icc a b)) : HolderSpace γ (Icc a b) Y :=
+  let hcont : Continuous (fun t : Icc a b ↦ g t) :=
+    HolderWith.continuous (C := H) (r := γ)
+      (fun t s ↦ by simpa only [Subtype.edist_eq] using hg t t.property s s.property) hγ
+  ofBoundedContinuousFunction (BoundedContinuousFunction.mkOfCompact ⟨fun t ↦ g t, hcont⟩) <|
+    HolderWith.memHolder (C := H) fun t s ↦ by
+      simpa only [BoundedContinuousFunction.mkOfCompact_apply, ContinuousMap.coe_mk,
+        Subtype.edist_eq] using hg t t.property s s.property
+
+/-- Evaluation of `ofHolderOnWithIcc` at a point of `[a, b]`. -/
+@[simp]
+theorem ofHolderOnWithIcc_apply {γ : ℝ≥0} (hγ : 0 < γ) (g : ℝ → Y) {H : ℝ≥0}
+    (hg : HolderOnWith H γ g (Icc a b)) (t : Icc a b) :
+    ofHolderOnWithIcc hγ g hg t = g t := by
+  simp [ofHolderOnWithIcc]
 
 end TauCeti.HolderSpace

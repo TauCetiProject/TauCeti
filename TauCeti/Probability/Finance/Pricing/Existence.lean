@@ -5,45 +5,41 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Finance.Pricing.Operator
-public import TauCeti.Probability.Finance.WeightedLogSpot
-import TauCeti.Analysis.PDE.Parabolic.Holder.Line
+public import TauCeti.Probability.Finance.Pricing.Solvability
+import TauCeti.Probability.Finance.Comparison
 
 /-!
 # Existence of prices of linear growth with Hölder local volatility
 
 Write `a = σ² / 2` for the local variance rate in log-spot coordinates `y = log s`, and let `r` be
-the short rate. If `a` and `r` are bounded parabolic Hölder fields on `ℝ × [t₀, t₁]`, of exponent
-`0 < α < 1`, and `a` is bounded below by a positive constant, then the terminal-value problem for
-the weighted log-spot pricing operator `P` is well posed in `C_b^{2+α,1+α/2}`: the terminal-data map
-`v ↦ (P v, v(·, t₁))` is an isomorphism of Banach spaces onto `C_b^{α,α/2} × C_b^{2,α}`
-(`TauCeti.Finance.isInvertible_weightedLogSpotPricingOperatorL_prod_spatialTraceL`). Uniqueness
-holds even without ellipticity
-(`TauCeti.Finance.injective_weightedLogSpotPricingOperatorL_prod_spatialTraceL`); the point here is
-existence, together with the boundedness of the solution operator.
-
-In spot coordinates, this constructs the classical price of a payoff `h` with
-`y ↦ h (exp y) / (1 + exp y)` in `C_b^{2,α}`. There is exactly one `v ∈ C_b^{2+α,1+α/2}` whose
-price `C(s, t) = (1 + s) v(log s, t)` (`TauCeti.Finance.weightedLogSpotPrice`) solves the pricing
-equation
+the short rate. For general bounded parabolic Hölder fields `a` and `r` on `ℝ × [t₀, t₁]` of
+exponent `0 < α < 1` with `a` bounded below by a positive constant, well-posedness of the
+weighted terminal-data map `v ↦ (P v, v(·, t₁))`
+(`TauCeti.Finance.isInvertible_weightedLogSpotPricingOperatorL_prod_spatialTraceL`,
+`TauCeti.Finance.weightedLogSpotTerminalDataCLE`) constructs the unique `v ∈ C_b^{2+α,1+α/2}`
+whose reconstructed spot price `C(s, t) = (1 + s) v(log s, t)`
+(`TauCeti.Finance.weightedLogSpotPrice`) solves the closed-slab pricing equation
 
 `C_t + a(log s, t) s² C_ss + r(log s, t) (s C_s - C) = 0`
 
-for every spot `s > 0` and every `t ∈ [t₀, t₁]`, with one-sided time derivatives at the endpoints,
-and has terminal value `C(s, t₁) = h(s)`
-(`TauCeti.Finance.existsUnique_pde_weightedLogSpotPrice_eq_zero`). For a local volatility
-`σ(s, t)` the second-order term is `σ² s² / 2 C_ss`. The rate may depend on the spot as well; the
-financial short rate is the special case of a field constant in space. The price has linear
-growth together with its dollar delta, `|C| + |s C_s| ≤ A (1 + s)`
-(`TauCeti.Finance.abs_weightedLogSpotPrice_le`,
-`TauCeti.Finance.abs_mul_deriv_weightedLogSpotPrice_le`), the growth class of the comparison
-principle in spot coordinates.
+for `s > 0`, `t ∈ [t₀, t₁]` with terminal value `C(s, t₁) = h(s)`
+(`TauCeti.Finance.existsUnique_pde_weightedLogSpotPrice_eq_zero`).
 
-The proof transports the variable-coefficient Cauchy problem
-(`TauCeti.ParabolicC2HolderSpace.isInvertible_backwardParabolicOperatorL_prod_spatialTraceL_real`)
-to the conjugated coefficients of the weighted operator. Only the lower bound on `a` is a
-hypothesis: the conjugated first- and zeroth-order coefficients are bounded Hölder fields by
-construction, whatever the sign of `r`.
+Specialized to market volatility `σ(s, t)` and a time-only `(α / 2)`-Hölder short rate `r(t)`:
+
+* `TauCeti.Finance.memHolder_logSpot_of_abs_le_of_lipschitzWith_of_holderOnWith`,
+  `TauCeti.Finance.logSpotHalfVarianceHolder` and `TauCeti.Finance.shortRateHolder` build the
+  parabolic Hölder coefficient fields on `slab t₀ t₁`.
+* `TauCeti.Finance.eq_weightedLogSpotPrice_of_pde` proves that every continuous linear-growth
+  competitor with matching interior coefficients and payoff that solves the interior pricing PDE
+  agrees with `weightedLogSpotPrice u` on the closed slab `(0, ∞) × [t₀, t₁]`.
+* `TauCeti.Finance.exists_weightedLogSpotPrice_pde_and_unique` proves existence of a weighted
+  log-spot profile witnessing classical interior PDE solvability, uniqueness in the linear-growth
+  class, joint continuity of `C`, `∂ₛC`, `∂ₛ²C` and within-slab `∂ₜC` on `(0, ∞) × [t₀, t₁]`,
+  and linear-growth bounds on both price and dollar delta `s ∂ₛC`, directly from parabolic
+  Hölder regularity of `(y, t) ↦ σ(e^y, t)`.
+* `TauCeti.Finance.exists_weightedLogSpotPrice_pde_and_unique_of_lipschitzWith_of_holderOnWith`
+  derives the spatially Lipschitz / temporally `(α / 2)`-Hölder market-volatility case.
 
 ## References
 
@@ -60,23 +56,9 @@ noncomputable section
 namespace TauCeti.Finance
 
 open Set Real ParabolicSpaceTime ParabolicC2HolderSpace
-open scoped NNReal
+open scoped NNReal BoundedContinuousFunction
 
 variable {α : ℝ≥0} {t₀ t₁ : ℝ} {ht : t₀ < t₁}
-
-/-- **The weighted terminal-value problem is well posed.** For `0 < α < 1`, a local variance rate
-`a ≥ lam > 0` and a rate `r` in `C_b^{α,α/2}(ℝ × [t₀, t₁])`, the terminal-data map
-`v ↦ (P v, v(·, t₁))` of the weighted log-spot pricing operator `P` is an isomorphism of Banach
-spaces from `C_b^{2+α,1+α/2}` onto `C_b^{α,α/2} × C_b^{2,α}`. -/
-theorem isInvertible_weightedLogSpotPricingOperatorL_prod_spatialTraceL (hα₀ : 0 < α)
-    (hα₁ : α < 1) {a : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ}
-    (r : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ) {lam : ℝ} (hlam : 0 < lam)
-    (ha : ∀ p, lam ≤ a p) :
-    ((weightedLogSpotPricingOperatorL (ht := ht) hα₁.le a r).prod
-      (spatialTraceL ⟨t₁, right_mem_Icc.2 ht.le⟩)).IsInvertible := by
-  rw [weightedLogSpotPricingOperatorL_def]
-  exact isInvertible_backwardParabolicOperatorL_prod_spatialTraceL_real hα₀ hα₁ ht _ _ hlam
-    fun p ↦ by simpa using ha p
 
 /-- **Existence and uniqueness of the classical price in the weighted Hölder class.** Let
 `0 < α < 1`, let the local variance rate `a = σ² / 2 ≥ lam > 0` and the rate `r` be fields in
@@ -116,5 +98,278 @@ theorem existsUnique_pde_weightedLogSpotPrice_eq_zero (hα₀ : 0 < α) (hα₁ 
     rw [log_exp] at hy
     rw [spatialTrace_apply, hg, ← hy, mul_div_cancel_left₀ _ (by positivity)]
   · exact weightedLogSpotPrice_terminal v (fun y ↦ by rw [← spatialTrace_apply, hv, hg]) hs
+
+/-! ### Market coefficient fields -/
+
+section MarketCoefficients
+
+/-- If `σ(e^y, t)` is bounded on `ℝ × [t₀, t₁]`, uniformly Lipschitz in `y` for each `t ∈ [t₀, t₁]`,
+and uniformly `(α / 2)`-Hölder in `t` on `[t₀, t₁]` for each `y ∈ ℝ`, then `(y, t) ↦ σ(e^y, t)` is
+parabolically `α`-Hölder on `slab t₀ t₁` (`α ≤ 1`). -/
+theorem memHolder_logSpot_of_abs_le_of_lipschitzWith_of_holderOnWith (hα : α ≤ 1)
+    {σ : ℝ → ℝ → ℝ} {M L H : ℝ≥0} (hbdd : ∀ y, ∀ t ∈ Icc t₀ t₁, |σ (exp y) t| ≤ M)
+    (hlip : ∀ t ∈ Icc t₀ t₁, LipschitzWith L (fun y ↦ σ (exp y) t))
+    (htime : ∀ y, HolderOnWith H (α / 2) (σ (exp y)) (Icc t₀ t₁)) :
+    MemHolder α
+      (fun p : slab (E := ℝ) t₀ t₁ ↦ σ (exp (p : ParabolicSpaceTime ℝ).space) (slabTime p)) :=
+  ParabolicSpaceTime.memHolder_slab_of_norm_le_of_lipschitzWith_of_holderOnWith hα
+    (fun y t ht' ↦ by simpa only [Real.norm_eq_abs] using hbdd y t ht') hlip htime
+
+/-- The log-spot half-variance field `a(y, t) = σ(e^y, t)² / 2` as an element of
+`HolderSpace α (slab t₀ t₁) ℝ`, built from a bounded parabolically `α`-Hölder volatility
+(`0 < α`). -/
+def logSpotHalfVarianceHolder (hα₀ : 0 < α) (σ : ℝ → ℝ → ℝ) {M : ℝ}
+    (hbdd : ∀ y, ∀ t ∈ Icc t₀ t₁, |σ (exp y) t| ≤ M)
+    (hσ : MemHolder α (fun p : slab (E := ℝ) t₀ t₁ ↦
+      σ (exp (p : ParabolicSpaceTime ℝ).space) (slabTime p))) :
+    HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ :=
+  let f : slab (E := ℝ) t₀ t₁ → ℝ := fun p ↦
+    σ (exp (p : ParabolicSpaceTime ℝ).space) (slabTime p)
+  let σB : slab (E := ℝ) t₀ t₁ →ᵇ ℝ := BoundedContinuousFunction.ofNormedAddCommGroup f
+    (hσ.holderWith.continuous hα₀) M fun p ↦ by
+      simpa only [f, Real.norm_eq_abs] using hbdd _ _ (slabTime p).property
+  have hcoe : (σB : slab (E := ℝ) t₀ t₁ → ℝ) = f :=
+    BoundedContinuousFunction.coe_ofNormedAddCommGroup _ _ _ _
+  (2⁻¹ : ℝ) • (HolderSpace.ofBoundedContinuousFunction σB (hcoe.symm ▸ hσ)) ^ 2
+
+/-- Evaluation of `logSpotHalfVarianceHolder` at a slab point gives `σ(e^y, t)² / 2`. -/
+@[simp]
+theorem logSpotHalfVarianceHolder_apply (hα₀ : 0 < α) (σ : ℝ → ℝ → ℝ) {M : ℝ}
+    (hbdd : ∀ y, ∀ t ∈ Icc t₀ t₁, |σ (exp y) t| ≤ M)
+    (hσ : MemHolder α (fun p : slab (E := ℝ) t₀ t₁ ↦
+      σ (exp (p : ParabolicSpaceTime ℝ).space) (slabTime p)))
+    (p : slab (E := ℝ) t₀ t₁) :
+    logSpotHalfVarianceHolder hα₀ σ hbdd hσ p =
+      σ (exp (p : ParabolicSpaceTime ℝ).space) (slabTime p) ^ 2 / 2 := by
+  rw [logSpotHalfVarianceHolder, HolderSpace.smul_apply, HolderSpace.pow_apply,
+    HolderSpace.ofBoundedContinuousFunction_apply]
+  have hcoe : ∀ q : slab (E := ℝ) t₀ t₁,
+      BoundedContinuousFunction.ofNormedAddCommGroup
+        (fun p : slab (E := ℝ) t₀ t₁ ↦ σ (exp (p : ParabolicSpaceTime ℝ).space) (slabTime p))
+        (hσ.holderWith.continuous hα₀) M
+        (fun p ↦ by simpa only [Real.norm_eq_abs] using hbdd _ _ (slabTime p).property) q =
+      σ (exp (q : ParabolicSpaceTime ℝ).space) (slabTime q) :=
+    congrFun (BoundedContinuousFunction.coe_ofNormedAddCommGroup _ _ _ _)
+  rw [hcoe, smul_eq_mul]
+  ring
+
+/-- A time-only short rate `r : ℝ → ℝ` that is `(α / 2)`-Hölder on `[t₀, t₁]` (`0 < α`), promoted
+via `HolderSpace.compSlabTimeL` to a space-independent parabolic `α`-Hölder field on
+`slab (E := ℝ) t₀ t₁`. -/
+def shortRateHolder (hα₀ : 0 < α) (r : ℝ → ℝ) {H : ℝ≥0}
+    (hr : HolderOnWith H (α / 2) r (Icc t₀ t₁)) :
+    HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ :=
+  HolderSpace.compSlabTimeL (HolderSpace.ofHolderOnWithIcc (div_pos hα₀ two_pos) r hr)
+
+/-- Evaluation of `shortRateHolder` at a slab point gives `r` at its time coordinate. -/
+@[simp]
+theorem shortRateHolder_apply (hα₀ : 0 < α) (r : ℝ → ℝ) {H : ℝ≥0}
+    (hr : HolderOnWith H (α / 2) r (Icc t₀ t₁)) (p : slab (E := ℝ) t₀ t₁) :
+    shortRateHolder hα₀ r hr p = r (slabTime p) := by
+  simp [shortRateHolder]
+
+end MarketCoefficients
+
+/-! ### Classical spot-coordinate pricing PDE existence and uniqueness -/
+
+section SpotPricingPDE
+
+/-- **Uniqueness of classical linear-growth prices on `[t₀, t₁]`.** If
+`u ∈ C_b^{2+α,1+α/2}(ℝ × [t₀, t₁])` solves `weightedLogSpotPricingOperatorL u = 0` with terminal
+profile `y ↦ h(e^y) / (1 + e^y)`, and `a` and `rH` match `σ² / 2` and `r` on the interior times
+`t ∈ (t₀, t₁)`, then every continuous linear-growth competitor `C` (with `|C(s, t)| ≤ A (1 + s)`)
+and matching coefficients and terminal payoff `h` that solves the interior pricing PDE agrees with
+the reconstructed price `weightedLogSpotPrice u` on the closed slab `(0, ∞) × [t₀, t₁]`. -/
+theorem eq_weightedLogSpotPrice_of_pde (hα : α ≤ 1)
+    {σ : ℝ → ℝ → ℝ} {r h : ℝ → ℝ} {A : ℝ}
+    {a rH : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ}
+    (ha_eq : ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄ (ht' : t ∈ Ioo t₀ t₁),
+      a (slabMk (log s) ⟨t, Ioo_subset_Icc_self ht'⟩) = σ s t ^ 2 / 2)
+    (hr_eq : ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄ (ht' : t ∈ Ioo t₀ t₁),
+      rH (slabMk (log s) ⟨t, Ioo_subset_Icc_self ht'⟩) = r t)
+    (u : ParabolicC2HolderSpace α ℝ ℝ ht)
+    (hPu : weightedLogSpotPricingOperatorL hα a rH u = 0)
+    (huterm : ∀ y, u (slabMk y ⟨t₁, right_mem_Icc.2 ht.le⟩) = h (exp y) / (1 + exp y))
+    {C : ℝ → ℝ → ℝ}
+    (hC_cont : ContinuousOn (Function.uncurry C) (Ioi 0 ×ˢ Icc t₀ t₁))
+    (hC_growth : ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Icc t₀ t₁ → |C s t| ≤ A * (1 + s))
+    (hC_cd : ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Ioo t₀ t₁ → ContDiffAt ℝ 2 (fun x ↦ C x t) s)
+    (hC_diff : ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Ioo t₀ t₁ → DifferentiableAt ℝ (fun τ ↦ C s τ) t)
+    (hC_pde : ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Ioo t₀ t₁ →
+      deriv (fun τ ↦ C s τ) t + σ s t ^ 2 * s ^ 2 / 2 * deriv (deriv fun x ↦ C x t) s +
+        r t * (s * deriv (fun x ↦ C x t) s - C s t) = 0)
+    (hC_term : ∀ ⦃s⦄, 0 < s → C s t₁ = h s) :
+    ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Icc t₀ t₁ → C s t = weightedLogSpotPrice u s t := by
+  let W := weightedLogSpotPrice u
+  refine eq_of_pde_eq_of_terminal_eq (σ := σ) (r := r) (C₁ := C) (C₂ := W)
+    (Λ := 2 * ‖a‖) (R := ‖rH‖) (A := max A 0 + ‖u‖)
+    (fun s hs t ht' ↦ by
+      have ha1 : σ s t ^ 2 / 2 = a (slabMk (log s) ⟨t, Ioo_subset_Icc_self ht'⟩) :=
+        (ha_eq hs ht').symm
+      have ha2 : |a (slabMk (log s) ⟨t, Ioo_subset_Icc_self ht'⟩)| ≤ ‖a‖ :=
+        a.norm_apply_le _
+      linarith [(le_abs_self _).trans ha2])
+    (fun t ht' ↦ by
+      have hr1 : r t = rH (slabMk (log 1) ⟨t, Ioo_subset_Icc_self ht'⟩) :=
+        (hr_eq one_pos ht').symm
+      simpa only [hr1, Real.norm_eq_abs] using rH.norm_apply_le _)
+    hC_cont ((continuousOn_weightedLogSpotPrice u).mono (prod_mono_right (subset_univ _)))
+    (fun s hs t ht' ↦ by
+      have h1 := hC_growth hs ht'
+      have h2 := abs_weightedLogSpotPrice_le u hs.le t
+      calc |C s t - W s t| ≤ |C s t| + |W s t| := abs_sub _ _
+        _ ≤ A * (1 + s) + ‖u‖ * (1 + s) := add_le_add h1 h2
+        _ ≤ (max A 0 + ‖u‖) * (1 + s) := by nlinarith [le_max_left A 0, hs.le])
+    hC_cd
+    (fun s hs t ht' ↦ (contDiffOn_weightedLogSpotPrice u
+      ⟨t, Ioo_subset_Icc_self ht'⟩).contDiffAt (Ioi_mem_nhds hs))
+    hC_diff
+    (fun s _ t ht' ↦ differentiableAt_weightedLogSpotPrice_time u s ht')
+    (fun s hs t ht' ↦ by
+      have hW := pde_weightedLogSpotPrice_eq_mul_of_mem_Ioo hα a rH u hs ht'
+      rw [ha_eq hs ht', hr_eq hs ht', hPu, HolderSpace.zero_apply, mul_zero] at hW
+      rw [hC_pde hs ht']
+      linear_combination -hW)
+    (fun s hs ↦ by
+      dsimp only [W]
+      rw [hC_term hs, weightedLogSpotPrice_terminal u huterm hs])
+
+/-- **Existence, linear-growth bounds, and uniqueness for the self-financing pricing PDE.**
+Let `0 < α < 1`, `t₀ < t₁`, `0 < δ`, let `σ(s, t)` satisfy `δ ≤ σ(s, t)²` and `|σ(e^y, t)| ≤ M`
+with `(y, t) ↦ σ(e^y, t)` parabolically `α`-Hölder on `slab t₀ t₁`, let `r` be `(α / 2)`-Hölder on
+`[t₀, t₁]`, and let `h` be a terminal payoff whose weighted log-spot profile
+`y ↦ h(e^y) / (1 + e^y)` is represented by `g ∈ C_b^{2,α}(ℝ)`. Then there exists a witness
+`u ∈ C_b^{2+α,1+α/2}(ℝ × [t₀, t₁])` solving the weighted log-spot terminal-value problem (uniquely
+by `weightedLogSpotTerminalDataCLE`), and its reconstructed spot price `C = weightedLogSpotPrice u`
+is the unique classical solution of the pricing PDE in the linear-growth class, with joint
+continuity of `C`, `∂ₛC`, `∂ₛ²C`, and within-slab `∂ₜC` on `(0, ∞) × [t₀, t₁]` and linear-growth
+bounds on both the price and the dollar-delta exposure. -/
+theorem exists_weightedLogSpotPrice_pde_and_unique
+    (hα₀ : 0 < α) (hα₁ : α < 1) (ht : t₀ < t₁)
+    {σ : ℝ → ℝ → ℝ} {r h : ℝ → ℝ} {δ : ℝ} {M H_r : ℝ≥0}
+    (hδ : 0 < δ)
+    (hσ_low : ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Icc t₀ t₁ → δ ≤ σ s t ^ 2)
+    (hσ_bdd : ∀ y, ∀ t ∈ Icc t₀ t₁, |σ (exp y) t| ≤ M)
+    (hσ_hol : MemHolder α (fun p : slab (E := ℝ) t₀ t₁ ↦
+      σ (exp (p : ParabolicSpaceTime ℝ).space) (slabTime p)))
+    (hr_hol : HolderOnWith H_r (α / 2) r (Icc t₀ t₁))
+    (g : CkHolderSpace 2 α ℝ ℝ) (hg : ∀ y, g y = h (exp y) / (1 + exp y)) :
+    ∃ u : ParabolicC2HolderSpace α ℝ ℝ ht,
+      weightedLogSpotPricingOperatorL hα₁.le
+          (logSpotHalfVarianceHolder hα₀ σ hσ_bdd hσ_hol)
+          (shortRateHolder hα₀ r hr_hol) u = 0 ∧
+      u.spatialTrace ⟨t₁, right_mem_Icc.2 ht.le⟩ = g ∧
+      (∀ s > 0, weightedLogSpotPrice u s t₁ = h s) ∧
+      ContinuousOn (Function.uncurry (weightedLogSpotPrice u)) (Ioi 0 ×ˢ Icc t₀ t₁) ∧
+      ContinuousOn (fun p : ℝ × ℝ ↦ deriv (fun s ↦ weightedLogSpotPrice u s p.2) p.1)
+        (Ioi 0 ×ˢ Icc t₀ t₁) ∧
+      ContinuousOn (fun p : ℝ × ℝ ↦ deriv (deriv fun s ↦ weightedLogSpotPrice u s p.2) p.1)
+        (Ioi 0 ×ˢ Icc t₀ t₁) ∧
+      ContinuousOn (fun p : ℝ × ℝ ↦ derivWithin (weightedLogSpotPrice u p.1) (Icc t₀ t₁) p.2)
+        (Ioi 0 ×ˢ Icc t₀ t₁) ∧
+      (∀ s > 0, ∀ t ∈ Icc t₀ t₁,
+        ContDiffAt ℝ 2 (fun x ↦ weightedLogSpotPrice u x t) s ∧
+          |weightedLogSpotPrice u s t| + |s * deriv (fun x ↦ weightedLogSpotPrice u x t) s| ≤
+            2 * ‖u‖ * (1 + s)) ∧
+      (∀ s > 0, ∀ t ∈ Ioo t₀ t₁,
+        DifferentiableAt ℝ (weightedLogSpotPrice u s) t ∧
+          deriv (weightedLogSpotPrice u s) t +
+              σ s t ^ 2 * s ^ 2 / 2 * deriv (deriv fun x ↦ weightedLogSpotPrice u x t) s +
+              r t * (s * deriv (fun x ↦ weightedLogSpotPrice u x t) s -
+                weightedLogSpotPrice u s t) = 0) ∧
+      ∀ (C : ℝ → ℝ → ℝ) (A : ℝ),
+        ContinuousOn (Function.uncurry C) (Ioi 0 ×ˢ Icc t₀ t₁) →
+        (∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Icc t₀ t₁ → |C s t| ≤ A * (1 + s)) →
+        (∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Ioo t₀ t₁ → ContDiffAt ℝ 2 (fun x ↦ C x t) s) →
+        (∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Ioo t₀ t₁ → DifferentiableAt ℝ (fun τ ↦ C s τ) t) →
+        (∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Ioo t₀ t₁ →
+          deriv (fun τ ↦ C s τ) t + σ s t ^ 2 * s ^ 2 / 2 * deriv (deriv fun x ↦ C x t) s +
+            r t * (s * deriv (fun x ↦ C x t) s - C s t) = 0) →
+        (∀ ⦃s⦄, 0 < s → C s t₁ = h s) →
+        ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Icc t₀ t₁ → C s t = weightedLogSpotPrice u s t := by
+  let a := logSpotHalfVarianceHolder hα₀ σ hσ_bdd hσ_hol
+  let rH := shortRateHolder hα₀ r hr_hol
+  have ha : ∀ p, δ / 2 ≤ a p := fun p ↦ by
+    rw [logSpotHalfVarianceHolder_apply]
+    exact div_le_div_of_nonneg_right (hσ_low (exp_pos _) (slabTime p).property) zero_le_two
+  let u := (weightedLogSpotTerminalDataCLE hα₀ hα₁ ht a rH ⟨δ / 2, half_pos hδ, ha⟩).symm (0, g)
+  have hPu : weightedLogSpotPricingOperatorL hα₁.le a rH u = 0 :=
+    weightedLogSpotPricingOperatorL_weightedLogSpotTerminalDataCLE_symm_apply (0, g)
+  have htr : u.spatialTrace ⟨t₁, right_mem_Icc.2 ht.le⟩ = g :=
+    spatialTrace_weightedLogSpotTerminalDataCLE_symm_apply (0, g)
+  have huterm : ∀ y, u (slabMk y ⟨t₁, right_mem_Icc.2 ht.le⟩) = h (exp y) / (1 + exp y) :=
+    fun y ↦ by rw [← spatialTrace_apply, htr, hg]
+  refine ⟨u, hPu, htr, fun s hs ↦ weightedLogSpotPrice_terminal u huterm hs,
+    (continuousOn_weightedLogSpotPrice u).mono (prod_mono_right (subset_univ _)),
+    continuousOn_deriv_weightedLogSpotPrice_spot u,
+    continuousOn_deriv_deriv_weightedLogSpotPrice_spot u,
+    continuousOn_derivWithin_weightedLogSpotPrice_time u,
+    fun s hs t ht' ↦ ⟨(contDiffOn_weightedLogSpotPrice u ⟨t, ht'⟩).contDiffAt (Ioi_mem_nhds hs),
+      abs_weightedLogSpotPrice_add_abs_mul_deriv_le u hs ht'⟩,
+    fun s hs t ht' ↦ ⟨differentiableAt_weightedLogSpotPrice_time u s ht', ?_⟩,
+    fun C A hCc hCg hCcd hCd hCpde hCt ↦ ?_⟩
+  · have hW := pde_weightedLogSpotPrice_eq_mul_of_mem_Ioo hα₁.le a rH u hs ht'
+    rw [hPu, HolderSpace.zero_apply, mul_zero] at hW
+    simp only [a, rH, logSpotHalfVarianceHolder_apply, shortRateHolder_apply, space_slabMk,
+      slabTime_slabMk, exp_log hs] at hW
+    linear_combination hW
+  · exact eq_weightedLogSpotPrice_of_pde hα₁.le
+      (fun s hs t ht' ↦ by simp [a, exp_log hs]) (fun s _ t ht' ↦ by simp [rH])
+      u hPu huterm hCc hCg hCcd hCd hCpde hCt
+
+/-- **Existence, linear-growth bounds, and uniqueness for the pricing PDE with spatially Lipschitz
+log-spot volatility.** Specializes `exists_weightedLogSpotPrice_pde_and_unique` to bounded
+volatilities `σ(e^y, t)` that are uniformly Lipschitz in `y` and uniformly `(α / 2)`-Hölder in
+`t`, via `memHolder_logSpot_of_abs_le_of_lipschitzWith_of_holderOnWith`. -/
+theorem exists_weightedLogSpotPrice_pde_and_unique_of_lipschitzWith_of_holderOnWith
+    (hα₀ : 0 < α) (hα₁ : α < 1) (ht : t₀ < t₁)
+    {σ : ℝ → ℝ → ℝ} {r h : ℝ → ℝ} {δ : ℝ} {M L H H_r : ℝ≥0}
+    (hδ : 0 < δ)
+    (hσ_low : ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Icc t₀ t₁ → δ ≤ σ s t ^ 2)
+    (hσ_bdd : ∀ y, ∀ t ∈ Icc t₀ t₁, |σ (exp y) t| ≤ M)
+    (hσ_lip : ∀ t ∈ Icc t₀ t₁, LipschitzWith L (fun y ↦ σ (exp y) t))
+    (hσ_time : ∀ y, HolderOnWith H (α / 2) (σ (exp y)) (Icc t₀ t₁))
+    (hr_hol : HolderOnWith H_r (α / 2) r (Icc t₀ t₁))
+    (g : CkHolderSpace 2 α ℝ ℝ) (hg : ∀ y, g y = h (exp y) / (1 + exp y)) :
+    ∃ u : ParabolicC2HolderSpace α ℝ ℝ ht,
+      weightedLogSpotPricingOperatorL hα₁.le
+          (logSpotHalfVarianceHolder hα₀ σ hσ_bdd
+            (memHolder_logSpot_of_abs_le_of_lipschitzWith_of_holderOnWith
+              hα₁.le hσ_bdd hσ_lip hσ_time))
+          (shortRateHolder hα₀ r hr_hol) u = 0 ∧
+      u.spatialTrace ⟨t₁, right_mem_Icc.2 ht.le⟩ = g ∧
+      (∀ s > 0, weightedLogSpotPrice u s t₁ = h s) ∧
+      ContinuousOn (Function.uncurry (weightedLogSpotPrice u)) (Ioi 0 ×ˢ Icc t₀ t₁) ∧
+      ContinuousOn (fun p : ℝ × ℝ ↦ deriv (fun s ↦ weightedLogSpotPrice u s p.2) p.1)
+        (Ioi 0 ×ˢ Icc t₀ t₁) ∧
+      ContinuousOn (fun p : ℝ × ℝ ↦ deriv (deriv fun s ↦ weightedLogSpotPrice u s p.2) p.1)
+        (Ioi 0 ×ˢ Icc t₀ t₁) ∧
+      ContinuousOn (fun p : ℝ × ℝ ↦ derivWithin (weightedLogSpotPrice u p.1) (Icc t₀ t₁) p.2)
+        (Ioi 0 ×ˢ Icc t₀ t₁) ∧
+      (∀ s > 0, ∀ t ∈ Icc t₀ t₁,
+        ContDiffAt ℝ 2 (fun x ↦ weightedLogSpotPrice u x t) s ∧
+          |weightedLogSpotPrice u s t| + |s * deriv (fun x ↦ weightedLogSpotPrice u x t) s| ≤
+            2 * ‖u‖ * (1 + s)) ∧
+      (∀ s > 0, ∀ t ∈ Ioo t₀ t₁,
+        DifferentiableAt ℝ (weightedLogSpotPrice u s) t ∧
+          deriv (weightedLogSpotPrice u s) t +
+              σ s t ^ 2 * s ^ 2 / 2 * deriv (deriv fun x ↦ weightedLogSpotPrice u x t) s +
+              r t * (s * deriv (fun x ↦ weightedLogSpotPrice u x t) s -
+                weightedLogSpotPrice u s t) = 0) ∧
+      ∀ (C : ℝ → ℝ → ℝ) (A : ℝ),
+        ContinuousOn (Function.uncurry C) (Ioi 0 ×ˢ Icc t₀ t₁) →
+        (∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Icc t₀ t₁ → |C s t| ≤ A * (1 + s)) →
+        (∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Ioo t₀ t₁ → ContDiffAt ℝ 2 (fun x ↦ C x t) s) →
+        (∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Ioo t₀ t₁ → DifferentiableAt ℝ (fun τ ↦ C s τ) t) →
+        (∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Ioo t₀ t₁ →
+          deriv (fun τ ↦ C s τ) t + σ s t ^ 2 * s ^ 2 / 2 * deriv (deriv fun x ↦ C x t) s +
+            r t * (s * deriv (fun x ↦ C x t) s - C s t) = 0) →
+        (∀ ⦃s⦄, 0 < s → C s t₁ = h s) →
+        ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Icc t₀ t₁ → C s t = weightedLogSpotPrice u s t :=
+  exists_weightedLogSpotPrice_pde_and_unique hα₀ hα₁ ht hδ hσ_low hσ_bdd
+    (memHolder_logSpot_of_abs_le_of_lipschitzWith_of_holderOnWith hα₁.le hσ_bdd hσ_lip hσ_time)
+    hr_hol g hg
+
+end SpotPricingPDE
 
 end TauCeti.Finance

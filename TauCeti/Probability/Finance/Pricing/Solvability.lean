@@ -6,13 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Finance.Pricing.Operator
-public import TauCeti.Probability.Finance.WeightedLogSpot
-import TauCeti.Analysis.Holder.Algebra
-import TauCeti.Analysis.Matrix.QuadraticBounds
-import TauCeti.Analysis.PDE.Parabolic.Holder.CompSpatial
-import TauCeti.Analysis.PDE.Parabolic.Holder.Solvability
-import TauCeti.Probability.Finance.Comparison
-import TauCeti.Probability.Finance.Pricing.Existence
+import TauCeti.Analysis.PDE.Parabolic.Holder.Line
 
 /-!
 # Solvability of the pricing equation in weighted log-spot parabolic Hölder spaces
@@ -23,28 +17,23 @@ In weighted log-spot coordinates `u(y, t) = C(e^y, t) / (1 + e^y)`, the backward
 `P u = ∂ₜu + a ∂ᵧ²u + (r + a (2 sigmoid y - 1)) ∂ᵧu - r (1 - sigmoid y) u`
 
 acts as a bounded linear map `weightedLogSpotPricingOperatorL` from `C_b^{2+α,1+α/2}(ℝ × [t₀, t₁])`
-to `C_b^{α,α/2}(ℝ × [t₀, t₁])`. When `a` is uniformly bounded away from zero (`δ ≤ a` with `0 < δ`)
-and `0 < α < 1`, this file proves that the terminal-data map `u ↦ (P u, u(·, t₁))` is an
-isomorphism of Banach spaces onto `C_b^{α,α/2}(ℝ × [t₀, t₁]) × C_b^{2,α}(ℝ)`, with uniform
-Schauder bounds over horizons `t₁ - t₀ ≤ T₀` and Lipschitz dependence on `(a, r)` in operator norm.
+to `C_b^{α,α/2}(ℝ × [t₀, t₁])` for general bounded parabolic Hölder slab fields `a, r`. When `a` is
+uniformly bounded away from zero (`δ ≤ a` with `0 < δ`) and `0 < α < 1`, this file proves that the
+terminal-data map `u ↦ (P u, u(·, t₁))` is an isomorphism of Banach spaces onto
+`C_b^{α,α/2}(ℝ × [t₀, t₁]) × C_b^{2,α}(ℝ)`. When in addition `‖a‖ ≤ K`, `‖r‖ ≤ K` for a common
+coefficient norm bound `K` and `t₁ - t₀ ≤ T₀` for a horizon bound `T₀`, the solution operator
+admits uniform Schauder bounds and Lipschitz dependence on `(a, r)` in operator norm.
 
-Evaluating the inverse at `(0, g)` solves the homogeneous terminal-value problem `P u = 0`,
-`u(·, t₁) = g`, and reconstructing the spot price `C = weightedLogSpotPrice u` via
-`C(s, t) = (1 + s) u(log s, t)` yields the unique classical solution of the self-financing pricing
-equation
-
-`∂ₜC + σ(s, t)² s² / 2 ∂ₛ²C + r(t) (s ∂ₛC - C) = 0`
-
-on `(0, ∞) × (t₀, t₁)` in the linear-growth class, together with joint continuity of `C` and `∂ₛC`
-up to the time endpoints and the uniform linear-growth bound
-`|C(s, t)| + |s ∂ₛC(s, t)| ≤ 2 ‖u‖ (1 + s)` controlling both the claim value and its dollar-delta
-exposure.
+Evaluating the inverse at `(0, g)` solves the weighted terminal-value problem `P u = 0`,
+`u(·, t₁) = g`. The specialization to market spot-coordinate data (`a = σ² / 2` in log-spot
+coordinates and a time-only Hölder short rate `r`) and the resulting classical pricing PDE existence
+and uniqueness theorems live in `TauCeti.Probability.Finance.Pricing.Existence`.
 
 ## Main declarations
 
 All financial declarations are in the `TauCeti.Finance` namespace.
 
-* `bijective_weightedLogSpotPricingOperatorL_prod_spatialTraceL` and
+* `isInvertible_weightedLogSpotPricingOperatorL_prod_spatialTraceL` and
   `weightedLogSpotTerminalDataCLE`: the Banach-space isomorphism `u ↦ (P u, u(·, t₁))`, with
   `weightedLogSpotTerminalDataCLE_apply`,
   `weightedLogSpotPricingOperatorL_weightedLogSpotTerminalDataCLE_symm_apply`,
@@ -53,13 +42,8 @@ All financial declarations are in the `TauCeti.Finance` namespace.
   `abs_weightedLogSpotTerminalDataCLE_symm_apply_le`.
 * `exists_norm_weightedLogSpotTerminalDataCLE_symm_le` and
   `exists_norm_weightedLogSpotTerminalDataCLE_symm_sub_le`: uniform Schauder bound and Lipschitz
-  dependence on `(a, r)`.
-* `memHolder_slab_of_lipschitz_exp_of_holderOnWith`, `logSpotHalfVarianceHolder` and
-  `shortRateHolder`: parabolic Hölder coefficient fields built from market volatility `σ(s, t)` and
-  time-dependent short rate `r(t)`.
-* `eq_weightedLogSpotPrice_of_pde` and `exists_weightedLogSpotPrice_pde_and_unique`: classical
-  existence, linear-growth value and dollar-delta bounds, and uniqueness in the linear-growth class
-  for the spot-coordinate pricing PDE on `[t₀, t₁]`.
+  dependence on `(a, r)` under the common coefficient bound `‖a‖ ≤ K`, `‖r‖ ≤ K` and horizon
+  bound `t₁ - t₀ ≤ T₀`.
 
 ## References
 
@@ -76,12 +60,12 @@ public section
 noncomputable section
 
 open Real Set Filter Topology ContinuousLinearMap
-open scoped NNReal ENNReal BoundedContinuousFunction
+open scoped NNReal ENNReal
 open TauCeti.ParabolicSpaceTime TauCeti.ParabolicC2HolderSpace
 
 namespace TauCeti.Finance
 
--- These shortcuts keep instance search shallow for nested line and Euclidean coefficient spaces.
+-- These shortcuts keep instance search shallow for nested line coefficient spaces.
 private local instance : NormedAddCommGroup (ℝ →L[ℝ] ℝ) := inferInstance
 private local instance : NormedSpace ℝ (ℝ →L[ℝ] ℝ) := inferInstance
 private local instance : NormedAddCommGroup (ℝ →L[ℝ] ℝ →L[ℝ] ℝ) := inferInstance
@@ -90,112 +74,25 @@ private local instance : NormedAddCommGroup ((ℝ →L[ℝ] ℝ) →L[ℝ] ℝ) 
 private local instance : NormedSpace ℝ ((ℝ →L[ℝ] ℝ) →L[ℝ] ℝ) := inferInstance
 private local instance : NormedAddCommGroup ((ℝ →L[ℝ] ℝ →L[ℝ] ℝ) →L[ℝ] ℝ) := inferInstance
 private local instance : NormedSpace ℝ ((ℝ →L[ℝ] ℝ →L[ℝ] ℝ) →L[ℝ] ℝ) := inferInstance
-private local instance : NormedAddCommGroup (EuclideanSpace ℝ Unit →L[ℝ] ℝ) := inferInstance
-private local instance : NormedSpace ℝ (EuclideanSpace ℝ Unit →L[ℝ] ℝ) := inferInstance
-private local instance :
-    NormedAddCommGroup (EuclideanSpace ℝ Unit →L[ℝ] EuclideanSpace ℝ Unit →L[ℝ] ℝ) := inferInstance
-private local instance :
-    NormedSpace ℝ (EuclideanSpace ℝ Unit →L[ℝ] EuclideanSpace ℝ Unit →L[ℝ] ℝ) := inferInstance
-private local instance :
-    NormedAddCommGroup ((EuclideanSpace ℝ Unit →L[ℝ] ℝ) →L[ℝ] ℝ) := inferInstance
-private local instance :
-    NormedSpace ℝ ((EuclideanSpace ℝ Unit →L[ℝ] ℝ) →L[ℝ] ℝ) := inferInstance
-private local instance :
-    NormedAddCommGroup ((EuclideanSpace ℝ Unit →L[ℝ] EuclideanSpace ℝ Unit →L[ℝ] ℝ) →L[ℝ] ℝ) :=
-  inferInstance
-private local instance :
-    NormedSpace ℝ ((EuclideanSpace ℝ Unit →L[ℝ] EuclideanSpace ℝ Unit →L[ℝ] ℝ) →L[ℝ] ℝ) :=
-  inferInstance
 
 /-! ### The weighted log-spot terminal-data isomorphism -/
 
 section TerminalDataCLE
 
-private def weightedDriftScalar {α : ℝ≥0} {t₀ t₁ : ℝ} (hα : α ≤ 1)
-    (a r : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ) :
-    HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ :=
-  r + a * HolderSpace.compSlabSpaceL ((2 : ℝ) • sigmoidHolder hα - 1)
-
-@[simp]
-private theorem weightedDriftScalar_apply {α : ℝ≥0} {t₀ t₁ : ℝ} (hα : α ≤ 1)
-    (a r : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ) (p : slab (E := ℝ) t₀ t₁) :
-    weightedDriftScalar hα a r p =
-      r p + a p * (2 * sigmoid (p : ParabolicSpaceTime ℝ).space - 1) := by
-  simp [weightedDriftScalar]
-
-private def weightedRateScalar {α : ℝ≥0} {t₀ t₁ : ℝ} (hα : α ≤ 1)
-    (r : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ) :
-    HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ :=
-  -r * HolderSpace.compSlabSpaceL (1 - sigmoidHolder hα)
-
-@[simp]
-private theorem weightedRateScalar_apply {α : ℝ≥0} {t₀ t₁ : ℝ} (hα : α ≤ 1)
-    (r : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ) (p : slab (E := ℝ) t₀ t₁) :
-    weightedRateScalar hα r p = -r p * (1 - sigmoid (p : ParabolicSpaceTime ℝ).space) := by
-  simp [weightedRateScalar]
-
-private theorem norm_weightedDriftScalar_le {α : ℝ≥0} {t₀ t₁ : ℝ} (hα : α ≤ 1)
-    (a r : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ) :
-    ‖weightedDriftScalar hα a r‖ ≤
-      ‖r‖ + ‖a‖ * ‖((2 : ℝ) • sigmoidHolder hα - 1 : HolderSpace α ℝ ℝ)‖ := by
-  set w : HolderSpace α ℝ ℝ := (2 : ℝ) • sigmoidHolder hα - 1
-  rw [weightedDriftScalar]
-  calc ‖r + a * HolderSpace.compSlabSpaceL w‖
-      ≤ ‖r‖ + ‖a * HolderSpace.compSlabSpaceL w‖ := norm_add_le _ _
-    _ ≤ ‖r‖ + ‖a‖ * ‖(HolderSpace.compSlabSpaceL w : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ)‖ :=
-        add_le_add le_rfl (norm_mul_le _ _)
-    _ ≤ ‖r‖ + ‖a‖ * ‖w‖ :=
-        add_le_add le_rfl (mul_le_mul_of_nonneg_left (HolderSpace.norm_compSlabSpaceL_apply_le w)
-          (norm_nonneg a))
-
-private theorem norm_weightedDriftScalar_sub_le {α : ℝ≥0} {t₀ t₁ : ℝ} (hα : α ≤ 1)
-    (a a' r r' : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ) :
-    ‖weightedDriftScalar hα a r - weightedDriftScalar hα a' r'‖ ≤
-      ‖r - r'‖ + ‖a - a'‖ * ‖((2 : ℝ) • sigmoidHolder hα - 1 : HolderSpace α ℝ ℝ)‖ := by
-  have heq : weightedDriftScalar hα a r - weightedDriftScalar hα a' r' =
-      weightedDriftScalar hα (a - a') (r - r') := by
-    ext p
-    simp only [HolderSpace.sub_apply, weightedDriftScalar_apply]
-    ring
-  rw [heq]
-  exact norm_weightedDriftScalar_le hα (a - a') (r - r')
-
-private theorem norm_weightedRateScalar_le {α : ℝ≥0} {t₀ t₁ : ℝ} (hα : α ≤ 1)
-    (r : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ) :
-    ‖weightedRateScalar hα r‖ ≤ ‖r‖ * ‖(1 - sigmoidHolder hα : HolderSpace α ℝ ℝ)‖ := by
-  set w : HolderSpace α ℝ ℝ := 1 - sigmoidHolder hα
-  rw [weightedRateScalar]
-  calc ‖-r * HolderSpace.compSlabSpaceL w‖
-      ≤ ‖-r‖ * ‖(HolderSpace.compSlabSpaceL w : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ)‖ :=
-        norm_mul_le _ _
-    _ = ‖r‖ * ‖(HolderSpace.compSlabSpaceL w : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ)‖ := by
-        rw [norm_neg]
-    _ ≤ ‖r‖ * ‖w‖ :=
-        mul_le_mul_of_nonneg_left (HolderSpace.norm_compSlabSpaceL_apply_le w) (norm_nonneg r)
-
-private theorem norm_weightedRateScalar_sub_le {α : ℝ≥0} {t₀ t₁ : ℝ} (hα : α ≤ 1)
-    (r r' : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ) :
-    ‖weightedRateScalar hα r - weightedRateScalar hα r'‖ ≤
-      ‖r - r'‖ * ‖(1 - sigmoidHolder hα : HolderSpace α ℝ ℝ)‖ := by
-  have heq : weightedRateScalar hα r - weightedRateScalar hα r' =
-      weightedRateScalar hα (r - r') := by
-    ext p
-    simp only [HolderSpace.sub_apply, weightedRateScalar_apply]
-    ring
-  rw [heq]
-  exact norm_weightedRateScalar_le hα (r - r')
-
-/-- **Bijectivity of the weighted log-spot terminal-data map.** For `0 < α < 1`, `t₀ < t₁`, and
-parabolic Hölder coefficients `a, r` on `ℝ × [t₀, t₁]` with `δ ≤ a` (`0 < δ`), the map
-`u ↦ (P u, u(·, t₁))` of the weighted log-spot pricing operator is bijective from
-`C_b^{2+α,1+α/2}(ℝ × [t₀, t₁])` onto `C_b^{α,α/2}(ℝ × [t₀, t₁]) × C_b^{2,α}(ℝ)`. -/
-theorem bijective_weightedLogSpotPricingOperatorL_prod_spatialTraceL {α : ℝ≥0} {t₀ t₁ : ℝ}
-    (hα₀ : 0 < α) (hα₁ : α < 1) (ht : t₀ < t₁)
-    (a r : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ) {δ : ℝ} (hδ : 0 < δ) (ha : ∀ p, δ ≤ a p) :
-    Function.Bijective ((weightedLogSpotPricingOperatorL (ht := ht) hα₁.le a r).prod
-      (spatialTraceL ⟨t₁, right_mem_Icc.2 ht.le⟩)) :=
-  (isInvertible_weightedLogSpotPricingOperatorL_prod_spatialTraceL (ht := ht) hα₀ hα₁ r hδ
-    ha).bijective
+/-- **The weighted terminal-value problem is well posed.** For `0 < α < 1`, a local variance rate
+`a ≥ lam > 0` and a rate `r` in `C_b^{α,α/2}(ℝ × [t₀, t₁])`, the terminal-data map
+`u ↦ (P u, u(·, t₁))` of the weighted log-spot pricing operator `P` is an isomorphism of Banach
+spaces from `C_b^{2+α,1+α/2}` onto `C_b^{α,α/2} × C_b^{2,α}`. -/
+theorem isInvertible_weightedLogSpotPricingOperatorL_prod_spatialTraceL {α : ℝ≥0} {t₀ t₁ : ℝ}
+    {ht : t₀ < t₁} (hα₀ : 0 < α) (hα₁ : α < 1)
+    {a : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ}
+    (r : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ) {lam : ℝ} (hlam : 0 < lam)
+    (ha : ∀ p, lam ≤ a p) :
+    ((weightedLogSpotPricingOperatorL (ht := ht) hα₁.le a r).prod
+      (spatialTraceL ⟨t₁, right_mem_Icc.2 ht.le⟩)).IsInvertible := by
+  rw [weightedLogSpotPricingOperatorL_def]
+  exact isInvertible_backwardParabolicOperatorL_prod_spatialTraceL_real hα₀ hα₁ ht _ _ hlam
+    fun p ↦ by simpa using ha p
 
 /-- **The weighted log-spot terminal-data isomorphism.** For `0 < α < 1`, `t₀ < t₁`, and parabolic
 Hölder coefficients `a, r` on `ℝ × [t₀, t₁]` with `a` uniformly bounded away from zero, the map
@@ -207,7 +104,8 @@ def weightedLogSpotTerminalDataCLE {α : ℝ≥0} {t₀ t₁ : ℝ} (hα₀ : 0 
     ParabolicC2HolderSpace α ℝ ℝ ht ≃L[ℝ]
       HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ × CkHolderSpace 2 α ℝ ℝ :=
   have hbij := ha.elim fun _ h ↦
-    bijective_weightedLogSpotPricingOperatorL_prod_spatialTraceL hα₀ hα₁ ht a r h.1 h.2
+    (isInvertible_weightedLogSpotPricingOperatorL_prod_spatialTraceL (ht := ht) hα₀ hα₁ r
+      h.1 h.2).bijective
   ContinuousLinearEquiv.ofBijective _ (LinearMap.ker_eq_bot.2 hbij.1)
     (LinearMap.range_eq_top.2 hbij.2)
 
@@ -278,100 +176,49 @@ theorem abs_weightedLogSpotTerminalDataCLE_symm_apply_le {γ M K : ℝ}
 
 end WeightedCLEProps
 
-private theorem euclideanBackwardParabolicOperatorL_compSpatialLIE {α : ℝ≥0} {t₀ t₁ : ℝ}
-    {ht : t₀ < t₁} (hα : α ≤ 1) (a r : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ)
-    (u : ParabolicC2HolderSpace α ℝ ℝ ht) :
-    let e : EuclideanSpace ℝ Unit ≃ₗᵢ[ℝ] ℝ := (OrthonormalBasis.singleton Unit ℝ).repr.symm
-    let eSlab := HolderSpace.compIsometryEquivLIE (α := α) (Y := ℝ)
-      (slabSpaceIsometryEquiv (a := t₀) (b := t₁) e.toIsometryEquiv)
-    euclideanBackwardParabolicOperatorL hα (fun _ _ ↦ eSlab a)
-        (fun _ ↦ eSlab (weightedDriftScalar hα a r))
-        (eSlab (weightedRateScalar hα r)) (compSpatialLIE α ℝ ht e u) =
-      eSlab (weightedLogSpotPricingOperatorL hα a r u) := by
-  intro e eSlab
-  ext p
-  have he1 : e (EuclideanSpace.single () (1 : ℝ)) = 1 := by
-    apply (OrthonormalBasis.singleton Unit ℝ).repr.injective
-    ext i
-    simp [e, OrthonormalBasis.singleton_repr]
-  simp only [euclideanBackwardParabolicOperatorL_apply, compSpatialLIE_apply,
-    timeDerivL_compSpatialL, spatialSecondFDerivL_compSpatialL,
-    ContinuousLinearMap.bilinearComp_apply, spatialFDerivL_compSpatialL,
-    ContinuousLinearMap.comp_apply, compSpatialL_apply, LinearIsometry.coe_toContinuousLinearMap,
-    LinearIsometryEquiv.coe_toLinearIsometry, he1, Fintype.sum_unique, eSlab,
-    HolderSpace.compIsometryEquivLIE_apply, slabSpaceIsometryEquiv_apply,
-    LinearIsometryEquiv.coe_toIsometryEquiv, weightedDriftScalar_apply, weightedRateScalar_apply,
-    weightedLogSpotPricingOperatorL_apply]
-  ring
-
 private theorem weightedLogSpotTerminalDataCLE_symm_eq {α : ℝ≥0} {t₀ t₁ : ℝ}
     (hα₀ : 0 < α) (hα₁ : α < 1) (ht : t₀ < t₁)
     (a r : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ) (ha : ∃ δ : ℝ, 0 < δ ∧ ∀ p, δ ≤ a p) :
-    let e : EuclideanSpace ℝ Unit ≃ₗᵢ[ℝ] ℝ := (OrthonormalBasis.singleton Unit ℝ).repr.symm
-    let eSlab := HolderSpace.compIsometryEquivLIE (α := α) (Y := ℝ)
-      (slabSpaceIsometryEquiv (a := t₀) (b := t₁) e.toIsometryEquiv)
-    let eData :
-        HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ × CkHolderSpace 2 α ℝ ℝ ≃ₗᵢ[ℝ]
-          HolderSpace α (slab (E := EuclideanSpace ℝ Unit) t₀ t₁) ℝ ×
-            CkHolderSpace 2 α (EuclideanSpace ℝ Unit) ℝ :=
-      { eSlab.toLinearEquiv.prodCongr (CkHolderSpace.compLinearLIE e).toLinearEquiv with
-        norm_map' d := by
-          simp only [Prod.norm_def, LinearEquiv.prodCongr_apply,
-            LinearIsometryEquiv.coe_toLinearEquiv, LinearIsometryEquiv.norm_map] }
     (weightedLogSpotTerminalDataCLE hα₀ hα₁ ht a r ha).symm.toContinuousLinearMap =
-      ((compSpatialLIE α ℝ ht e).symm : _ →L[ℝ] _) ∘L
-        (euclideanTerminalDataCLE hα₀ hα₁ ht (fun _ _ : Unit ↦ eSlab a)
-          (fun _ : Unit ↦ eSlab (weightedDriftScalar hα₁.le a r))
-          (eSlab (weightedRateScalar hα₁.le r))
-          (ha.imp fun _ ⟨hδ, h⟩ ↦
-            ⟨hδ, fun p ξ ↦ by
-              simpa only [eSlab, HolderSpace.compIsometryEquivLIE_apply] using
-                Matrix.mul_norm_sq_le_toQuadraticForm'_of_unique (h _)
-                  ξ⟩)).symm.toContinuousLinearMap
-        ∘L (eData : _ →L[ℝ] _) := by
-  intro e eSlab eData
+      (realTerminalDataCLE hα₀ hα₁ ht
+        (weightedLogSpotSecondOrderCoeff a)
+        (weightedLogSpotFirstOrderCoeff hα₁.le a r)
+        (weightedLogSpotZerothOrderCoeff hα₁.le r)
+        (ha.imp fun _ ⟨hδ, h⟩ ↦ ⟨hδ, fun p ↦ by simpa using h p⟩)).symm.toContinuousLinearMap := by
   refine ContinuousLinearMap.ext fun d ↦ ?_
-  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-    LinearIsometryEquiv.coe_coe]
-  apply (compSpatialLIE α ℝ ht e).injective
-  rw [LinearIsometryEquiv.apply_symm_apply]
-  apply (euclideanTerminalDataCLE hα₀ hα₁ ht (fun _ _ : Unit ↦ eSlab a)
-    (fun _ : Unit ↦ eSlab (weightedDriftScalar hα₁.le a r))
-    (eSlab (weightedRateScalar hα₁.le r))
-    (ha.imp fun _ ⟨hδ, h⟩ ↦
-      ⟨hδ, fun p ξ ↦ by
-        simpa only [eSlab, HolderSpace.compIsometryEquivLIE_apply] using
-          Matrix.mul_norm_sq_le_toQuadraticForm'_of_unique (h _) ξ⟩)).injective
-  rw [ContinuousLinearEquiv.apply_symm_apply, euclideanTerminalDataCLE_apply]
-  refine Prod.ext ?_ ?_
-  · rw [euclideanBackwardParabolicOperatorL_compSpatialLIE,
-      weightedLogSpotPricingOperatorL_weightedLogSpotTerminalDataCLE_symm_apply]
-    rfl
-  · rw [compSpatialLIE_apply, spatialTrace_compSpatialL,
-      spatialTrace_weightedLogSpotTerminalDataCLE_symm_apply]
-    ext x
-    simp [eData]
+  apply (weightedLogSpotTerminalDataCLE hα₀ hα₁ ht a r ha).injective
+  simp only [ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply,
+    weightedLogSpotTerminalDataCLE_apply, weightedLogSpotPricingOperatorL_def,
+    backwardParabolicOperatorL_realTerminalDataCLE_symm_apply,
+    spatialTrace_realTerminalDataCLE_symm_apply]
 
 private def weightedCoeffBound {α : ℝ≥0} (hα : α ≤ 1) (K : ℝ≥0) : ℝ≥0 :=
-  K + K * (‖((2 : ℝ) • sigmoidHolder hα - 1 : HolderSpace α ℝ ℝ)‖₊ +
-    ‖(1 - sigmoidHolder hα : HolderSpace α ℝ ℝ)‖₊)
+  K + K + 2 * K * ‖logOneAddExpGrad hα‖₊ + K * (1 + ‖logOneAddExpGrad hα‖₊)
 
 private theorem norm_weightedCoeffs_le {α : ℝ≥0} {t₀ t₁ : ℝ} (hα : α ≤ 1) {K : ℝ≥0}
     {a r : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ} (hak : ‖a‖ ≤ K) (hrk : ‖r‖ ≤ K) :
-    ‖a‖ ≤ (weightedCoeffBound hα K : ℝ) ∧
-      ‖weightedDriftScalar hα a r‖ ≤ (weightedCoeffBound hα K : ℝ) ∧
-      ‖weightedRateScalar hα r‖ ≤ (weightedCoeffBound hα K : ℝ) := by
-  set w₁ : HolderSpace α ℝ ℝ := (2 : ℝ) • sigmoidHolder hα - 1
-  set w₀ : HolderSpace α ℝ ℝ := 1 - sigmoidHolder hα
-  have hK' : (weightedCoeffBound hα K : ℝ) = K + K * (‖w₁‖ + ‖w₀‖) := by
-    simp [weightedCoeffBound, w₁, w₀]
-  refine ⟨hak.trans (by exact_mod_cast le_self_add),
-    (norm_weightedDriftScalar_le hα a r).trans
-      ((add_le_add hrk (mul_le_mul_of_nonneg_right hak (norm_nonneg w₁))).trans
-        (by rw [hK']; nlinarith [K.coe_nonneg, norm_nonneg w₀])),
-    (norm_weightedRateScalar_le hα r).trans
-      ((mul_le_mul_of_nonneg_right hrk (norm_nonneg w₀)).trans
-        (by rw [hK']; nlinarith [K.coe_nonneg, norm_nonneg w₁]))⟩
+    ‖weightedLogSpotSecondOrderCoeff a‖ ≤ (weightedCoeffBound hα K : ℝ) ∧
+      ‖weightedLogSpotFirstOrderCoeff hα a r‖ ≤ (weightedCoeffBound hα K : ℝ) ∧
+      ‖weightedLogSpotZerothOrderCoeff hα r‖ ≤ (weightedCoeffBound hα K : ℝ) := by
+  set L : ℝ := ‖logOneAddExpGrad hα‖
+  have hK : (weightedCoeffBound hα K : ℝ) = K + K + 2 * K * L + K * (1 + L) := by
+    simp [weightedCoeffBound, L]
+  have h2 : ‖weightedLogSpotSecondOrderCoeff a‖ ≤ (weightedCoeffBound hα K : ℝ) := by
+    refine (norm_weightedLogSpotSecondOrderCoeff_le a).trans (hak.trans ?_)
+    rw [hK]
+    have hL : 0 ≤ L := norm_nonneg _
+    nlinarith [K.coe_nonneg]
+  have h1 : ‖weightedLogSpotFirstOrderCoeff hα a r‖ ≤ (weightedCoeffBound hα K : ℝ) := by
+    refine (norm_weightedLogSpotFirstOrderCoeff_le hα a r).trans ?_
+    rw [hK]
+    have hL : 0 ≤ L := norm_nonneg _
+    nlinarith [K.coe_nonneg]
+  have h0 : ‖weightedLogSpotZerothOrderCoeff hα r‖ ≤ (weightedCoeffBound hα K : ℝ) := by
+    refine (norm_weightedLogSpotZerothOrderCoeff_le hα r).trans ?_
+    rw [hK]
+    have hL : 0 ≤ L := norm_nonneg _
+    nlinarith [K.coe_nonneg]
+  exact ⟨h2, h1, h0⟩
 
 /-- **Uniform Schauder estimate for the weighted log-spot terminal-value problem.** For `0 < α < 1`,
 `0 < δ`, a coefficient bound `K` and a horizon bound `T₀`, the solution operators of the weighted
@@ -384,25 +231,14 @@ theorem exists_norm_weightedLogSpotTerminalDataCLE_symm_le {α : ℝ≥0} (hα�
         ‖a‖ ≤ K → ‖r‖ ≤ K →
         ‖(weightedLogSpotTerminalDataCLE hα₀ hα₁ ht a r
             ⟨δ, hδ, ha⟩).symm.toContinuousLinearMap‖ ≤ C := by
-  obtain ⟨C, hC, hest⟩ := exists_norm_euclideanTerminalDataCLE_symm_le (ι := Unit) hα₀ hα₁ hδ
+  obtain ⟨C, hC, hest⟩ := exists_norm_realTerminalDataCLE_symm_le (α := α) hα₀ hα₁ hδ
     (weightedCoeffBound hα₁.le K) T₀
   refine ⟨C, hC, fun {t₀ t₁} ht hTT₀ a r ha hak hrk ↦ ?_⟩
-  let e : EuclideanSpace ℝ Unit ≃ₗᵢ[ℝ] ℝ := (OrthonormalBasis.singleton Unit ℝ).repr.symm
-  let eSlab := HolderSpace.compIsometryEquivLIE (α := α) (Y := ℝ)
-    (slabSpaceIsometryEquiv (a := t₀) (b := t₁) e.toIsometryEquiv)
-  rw [weightedLogSpotTerminalDataCLE_symm_eq,
-    ContinuousLinearMap.opNorm_linearIsometryEquiv_comp,
-    ContinuousLinearMap.opNorm_comp_linearIsometryEquiv]
-  obtain ⟨haE, hbE, hcE⟩ := norm_weightedCoeffs_le hα₁.le hak hrk
-  exact hest ht hTT₀ (fun _ _ : Unit ↦ eSlab a)
-    (fun _ : Unit ↦ eSlab (weightedDriftScalar hα₁.le a r))
-    (eSlab (weightedRateScalar hα₁.le r))
-    (fun p ξ ↦ by
-      simpa only [eSlab, HolderSpace.compIsometryEquivLIE_apply] using
-        Matrix.mul_norm_sq_le_toQuadraticForm'_of_unique (ha _) ξ)
-    (fun _ _ ↦ by simpa only [LinearIsometryEquiv.norm_map] using haE)
-    (fun _ ↦ by simpa only [LinearIsometryEquiv.norm_map] using hbE)
-    (by simpa only [LinearIsometryEquiv.norm_map] using hcE)
+  obtain ⟨h2, h1, h0⟩ := norm_weightedCoeffs_le hα₁.le hak hrk
+  rw [weightedLogSpotTerminalDataCLE_symm_eq]
+  exact hest ht hTT₀ (weightedLogSpotSecondOrderCoeff a)
+    (weightedLogSpotFirstOrderCoeff hα₁.le a r) (weightedLogSpotZerothOrderCoeff hα₁.le r)
+    (fun p ↦ by simpa using ha p) h2 h1 h0
 
 /-- **Lipschitz dependence of the weighted log-spot solution operator on `(a, r)`.** Under the
 bounds of `exists_norm_weightedLogSpotTerminalDataCLE_symm_le`, the solution operators for `(a, r)`
@@ -417,309 +253,47 @@ theorem exists_norm_weightedLogSpotTerminalDataCLE_symm_sub_le {α : ℝ≥0} (h
             ⟨δ, hδ, ha⟩).symm.toContinuousLinearMap -
           (weightedLogSpotTerminalDataCLE hα₀ hα₁ ht a' r'
             ⟨δ, hδ, ha'⟩).symm.toContinuousLinearMap‖ ≤ C * (‖a - a'‖ + ‖r - r'‖) := by
-  let C₁ : ℝ≥0 := ‖((2 : ℝ) • sigmoidHolder hα₁.le - 1 : HolderSpace α ℝ ℝ)‖₊
-  let C₀ : ℝ≥0 := ‖(1 - sigmoidHolder hα₁.le : HolderSpace α ℝ ℝ)‖₊
-  obtain ⟨C, hC, hest⟩ := exists_norm_euclideanTerminalDataCLE_symm_sub_le (ι := Unit) hα₀ hα₁ hδ
+  let L : ℝ := ‖logOneAddExpGrad hα₁.le‖
+  obtain ⟨C, hC, hest⟩ := exists_norm_realTerminalDataCLE_symm_sub_le (α := α) hα₀ hα₁ hδ
     (weightedCoeffBound hα₁.le K) T₀
-  refine ⟨C * (1 + C₁ + C₀), by positivity,
+  refine ⟨C * (2 + 2 * L), by positivity,
     fun {t₀ t₁} ht hTT₀ a a' r r' ha ha' hak hrk hak' hrk' ↦ ?_⟩
-  let e : EuclideanSpace ℝ Unit ≃ₗᵢ[ℝ] ℝ := (OrthonormalBasis.singleton Unit ℝ).repr.symm
-  let eSlab := HolderSpace.compIsometryEquivLIE (α := α) (Y := ℝ)
-    (slabSpaceIsometryEquiv (a := t₀) (b := t₁) e.toIsometryEquiv)
-  rw [weightedLogSpotTerminalDataCLE_symm_eq, weightedLogSpotTerminalDataCLE_symm_eq,
-    ← ContinuousLinearMap.comp_sub, ← ContinuousLinearMap.sub_comp,
-    ContinuousLinearMap.opNorm_linearIsometryEquiv_comp,
-    ContinuousLinearMap.opNorm_comp_linearIsometryEquiv]
-  obtain ⟨haE, hbE, hcE⟩ := norm_weightedCoeffs_le hα₁.le hak hrk
-  obtain ⟨haE', hbE', hcE'⟩ := norm_weightedCoeffs_le hα₁.le hak' hrk'
-  have hmid := hest ht hTT₀ (fun _ _ : Unit ↦ eSlab a) (fun _ _ : Unit ↦ eSlab a')
-    (fun _ : Unit ↦ eSlab (weightedDriftScalar hα₁.le a r))
-    (fun _ : Unit ↦ eSlab (weightedDriftScalar hα₁.le a' r'))
-    (eSlab (weightedRateScalar hα₁.le r)) (eSlab (weightedRateScalar hα₁.le r'))
-    (fun p ξ ↦ by
-      simpa only [eSlab, HolderSpace.compIsometryEquivLIE_apply] using
-        Matrix.mul_norm_sq_le_toQuadraticForm'_of_unique (ha _) ξ)
-    (fun p ξ ↦ by
-      simpa only [eSlab, HolderSpace.compIsometryEquivLIE_apply] using
-        Matrix.mul_norm_sq_le_toQuadraticForm'_of_unique (ha' _) ξ)
-    (fun _ _ ↦ by simpa only [LinearIsometryEquiv.norm_map] using haE)
-    (fun _ ↦ by simpa only [LinearIsometryEquiv.norm_map] using hbE)
-    (by simpa only [LinearIsometryEquiv.norm_map] using hcE)
-    (fun _ _ ↦ by simpa only [LinearIsometryEquiv.norm_map] using haE')
-    (fun _ ↦ by simpa only [LinearIsometryEquiv.norm_map] using hbE')
-    (by simpa only [LinearIsometryEquiv.norm_map] using hcE')
-  simp only [Fintype.sum_unique, ← map_sub, LinearIsometryEquiv.norm_map] at hmid
-  have hsum : ‖a - a'‖ + ‖weightedDriftScalar hα₁.le a r - weightedDriftScalar hα₁.le a' r'‖ +
-      ‖weightedRateScalar hα₁.le r - weightedRateScalar hα₁.le r'‖ ≤
-      (1 + (C₁ : ℝ) + C₀) * (‖a - a'‖ + ‖r - r'‖) := by
-    have h₂ : ‖weightedDriftScalar hα₁.le a r - weightedDriftScalar hα₁.le a' r'‖ ≤
-        ‖r - r'‖ + ‖a - a'‖ * (C₁ : ℝ) := by
-      simpa only [C₁, coe_nnNorm] using norm_weightedDriftScalar_sub_le hα₁.le a a' r r'
-    have h₃ : ‖weightedRateScalar hα₁.le r - weightedRateScalar hα₁.le r'‖ ≤
-        ‖r - r'‖ * (C₀ : ℝ) := by
-      simpa only [C₀, coe_nnNorm] using norm_weightedRateScalar_sub_le hα₁.le r r'
-    nlinarith [norm_nonneg (a - a'), norm_nonneg (r - r'), C₁.coe_nonneg, C₀.coe_nonneg]
-  calc _ ≤ C * ((1 + (C₁ : ℝ) + C₀) * (‖a - a'‖ + ‖r - r'‖)) :=
-        (le_of_eq (congrArg norm (ContinuousLinearMap.ext fun d ↦ by
-          simp only [FunLike.coe_sub, Pi.sub_apply]; congr 1))).trans
-          (hmid.trans (mul_le_mul_of_nonneg_left hsum hC))
-    _ = C * (1 + C₁ + C₀) * (‖a - a'‖ + ‖r - r'‖) := by ring
+  obtain ⟨h2, h1, h0⟩ := norm_weightedCoeffs_le hα₁.le hak hrk
+  obtain ⟨h2', h1', h0'⟩ := norm_weightedCoeffs_le hα₁.le hak' hrk'
+  rw [weightedLogSpotTerminalDataCLE_symm_eq, weightedLogSpotTerminalDataCLE_symm_eq]
+  have hmid := hest ht hTT₀
+    (weightedLogSpotSecondOrderCoeff a) (weightedLogSpotSecondOrderCoeff a')
+    (weightedLogSpotFirstOrderCoeff hα₁.le a r) (weightedLogSpotFirstOrderCoeff hα₁.le a' r')
+    (weightedLogSpotZerothOrderCoeff hα₁.le r) (weightedLogSpotZerothOrderCoeff hα₁.le r')
+    (fun p ↦ by simpa using ha p) (fun p ↦ by simpa using ha' p)
+    h2 h1 h0 h2' h1' h0'
+  have hd2 : ‖weightedLogSpotSecondOrderCoeff a - weightedLogSpotSecondOrderCoeff a'‖ ≤
+      ‖a - a'‖ := by
+    rw [← weightedLogSpotSecondOrderCoeff_sub]
+    exact norm_weightedLogSpotSecondOrderCoeff_le (a - a')
+  have hd1 : ‖weightedLogSpotFirstOrderCoeff hα₁.le a r -
+        weightedLogSpotFirstOrderCoeff hα₁.le a' r'‖ ≤
+      ‖r - r'‖ + ‖a - a'‖ + 2 * ‖a - a'‖ * L := by
+    rw [← weightedLogSpotFirstOrderCoeff_sub]
+    exact norm_weightedLogSpotFirstOrderCoeff_le hα₁.le (a - a') (r - r')
+  have hd0 : ‖weightedLogSpotZerothOrderCoeff hα₁.le r -
+        weightedLogSpotZerothOrderCoeff hα₁.le r'‖ ≤
+      ‖r - r'‖ * (1 + L) := by
+    rw [← weightedLogSpotZerothOrderCoeff_sub]
+    exact norm_weightedLogSpotZerothOrderCoeff_le hα₁.le (r - r')
+  have hsum :
+      ‖weightedLogSpotSecondOrderCoeff a - weightedLogSpotSecondOrderCoeff a'‖ +
+          ‖weightedLogSpotFirstOrderCoeff hα₁.le a r -
+            weightedLogSpotFirstOrderCoeff hα₁.le a' r'‖ +
+          ‖weightedLogSpotZerothOrderCoeff hα₁.le r -
+            weightedLogSpotZerothOrderCoeff hα₁.le r'‖ ≤
+        (2 + 2 * L) * (‖a - a'‖ + ‖r - r'‖) := by
+    have hL : 0 ≤ L := norm_nonneg _
+    nlinarith [norm_nonneg (a - a'), norm_nonneg (r - r')]
+  calc _ ≤ C * ((2 + 2 * L) * (‖a - a'‖ + ‖r - r'‖)) := by
+        convert hmid.trans (mul_le_mul_of_nonneg_left hsum hC) using 0
+    _ = C * (2 + 2 * L) * (‖a - a'‖ + ‖r - r'‖) := by ring
 
 end TerminalDataCLE
-
-/-! ### Market coefficient fields -/
-
-section MarketCoefficients
-
-variable {α : ℝ≥0} {t₀ t₁ : ℝ}
-
-/-- If `σ(e^y, t)` is bounded on `ℝ × [t₀, t₁]`, uniformly Lipschitz in `y` for each `t ∈ [t₀, t₁]`,
-and uniformly `(α / 2)`-Hölder in `t` on `[t₀, t₁]` for each `y ∈ ℝ`, then `(y, t) ↦ σ(e^y, t)` is
-parabolically `α`-Hölder on `slab t₀ t₁` (`α ≤ 1`). -/
-theorem memHolder_slab_of_lipschitz_exp_of_holderOnWith (hα : α ≤ 1) {σ : ℝ → ℝ → ℝ}
-    {M L H : ℝ≥0} (hbdd : ∀ y, ∀ t ∈ Icc t₀ t₁, |σ (exp y) t| ≤ M)
-    (hlip : ∀ t ∈ Icc t₀ t₁, LipschitzWith L (fun y ↦ σ (exp y) t))
-    (htime : ∀ y, HolderOnWith H (α / 2) (σ (exp y)) (Icc t₀ t₁)) :
-    MemHolder α
-      (fun p : slab (E := ℝ) t₀ t₁ ↦ σ (exp (p : ParabolicSpaceTime ℝ).space) (slabTime p)) := by
-  rw [memHolder_slab_iff]
-  refine ⟨?_, ?_⟩
-  · refine ((spaceEHolderNorm_le_iff (a := t₀) (b := t₁)
-        (C := ((L + 2 * M : ℝ≥0) : ℝ≥0∞))).2 fun t x y ↦ ?_).trans_lt ENNReal.coe_lt_top
-    have hslice := ((hlip t t.property).lipschitzOnWith (s := univ)).holderOnWith_of_norm_le
-      (M := M) (fun z _ ↦ by simpa only [Real.norm_eq_abs] using hbdd z t t.property) hα
-    simpa only [slabTime_slabMk, space_slabMk] using hslice x (mem_univ x) y (mem_univ y)
-  · refine ((timeEHolderNorm_le_iff (a := t₀) (b := t₁)
-        (C := (H : ℝ≥0∞))).2 fun x t s ↦ ?_).trans_lt ENNReal.coe_lt_top
-    simpa only [slabTime_slabMk, space_slabMk, Subtype.edist_eq] using
-      htime x t t.property s s.property
-
-/-- The log-spot half-variance field `a(y, t) = σ(e^y, t)² / 2` as an element of
-`HolderSpace α (slab t₀ t₁) ℝ`, built from a bounded parabolically `α`-Hölder volatility
-(`0 < α`). -/
-def logSpotHalfVarianceHolder (hα₀ : 0 < α) (σ : ℝ → ℝ → ℝ) {M : ℝ}
-    (hbdd : ∀ y, ∀ t ∈ Icc t₀ t₁, |σ (exp y) t| ≤ M)
-    (hσ : MemHolder α (fun p : slab (E := ℝ) t₀ t₁ ↦
-      σ (exp (p : ParabolicSpaceTime ℝ).space) (slabTime p))) :
-    HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ :=
-  let f : slab (E := ℝ) t₀ t₁ → ℝ := fun p ↦
-    σ (exp (p : ParabolicSpaceTime ℝ).space) (slabTime p)
-  let σB : slab (E := ℝ) t₀ t₁ →ᵇ ℝ := BoundedContinuousFunction.ofNormedAddCommGroup f
-    (hσ.holderWith.continuous hα₀) M fun p ↦ by
-      simpa only [f, Real.norm_eq_abs] using hbdd _ _ (slabTime p).property
-  have hcoe : (σB : slab (E := ℝ) t₀ t₁ → ℝ) = f :=
-    BoundedContinuousFunction.coe_ofNormedAddCommGroup _ _ _ _
-  (2⁻¹ : ℝ) • (HolderSpace.ofBoundedContinuousFunction σB (hcoe.symm ▸ hσ)) ^ 2
-
-/-- Evaluation of `logSpotHalfVarianceHolder` at a slab point gives `σ(e^y, t)² / 2`. -/
-@[simp]
-theorem logSpotHalfVarianceHolder_apply (hα₀ : 0 < α) (σ : ℝ → ℝ → ℝ) {M : ℝ}
-    (hbdd : ∀ y, ∀ t ∈ Icc t₀ t₁, |σ (exp y) t| ≤ M)
-    (hσ : MemHolder α (fun p : slab (E := ℝ) t₀ t₁ ↦
-      σ (exp (p : ParabolicSpaceTime ℝ).space) (slabTime p)))
-    (p : slab (E := ℝ) t₀ t₁) :
-    logSpotHalfVarianceHolder hα₀ σ hbdd hσ p =
-      σ (exp (p : ParabolicSpaceTime ℝ).space) (slabTime p) ^ 2 / 2 := by
-  rw [logSpotHalfVarianceHolder, HolderSpace.smul_apply, HolderSpace.pow_apply,
-    HolderSpace.ofBoundedContinuousFunction_apply]
-  have hcoe : ∀ q : slab (E := ℝ) t₀ t₁,
-      BoundedContinuousFunction.ofNormedAddCommGroup
-        (fun p : slab (E := ℝ) t₀ t₁ ↦ σ (exp (p : ParabolicSpaceTime ℝ).space) (slabTime p))
-        (hσ.holderWith.continuous hα₀) M
-        (fun p ↦ by simpa only [Real.norm_eq_abs] using hbdd _ _ (slabTime p).property) q =
-      σ (exp (q : ParabolicSpaceTime ℝ).space) (slabTime q) :=
-    congrFun (BoundedContinuousFunction.coe_ofNormedAddCommGroup _ _ _ _)
-  rw [hcoe, smul_eq_mul]
-  ring
-
-/-- A time-only short rate `r : ℝ → ℝ` that is `(α / 2)`-Hölder on `[t₀, t₁]` (`0 < α`), promoted
-via `HolderSpace.compSlabTimeL` to a space-independent parabolic `α`-Hölder field on
-`slab (E := ℝ) t₀ t₁`. -/
-def shortRateHolder (hα₀ : 0 < α) (r : ℝ → ℝ) {H : ℝ≥0}
-    (hr : HolderOnWith H (α / 2) r (Icc t₀ t₁)) :
-    HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ :=
-  have hcont : Continuous (fun t : Icc t₀ t₁ ↦ r t) :=
-    HolderWith.continuous (C := H) (r := α / 2)
-      (fun t s ↦ by simpa only [Subtype.edist_eq] using hr t t.property s s.property)
-      (div_pos hα₀ two_pos)
-  let rB : Icc t₀ t₁ →ᵇ ℝ := BoundedContinuousFunction.mkOfCompact ⟨fun t ↦ r t, hcont⟩
-  HolderSpace.compSlabTimeL <|
-    HolderSpace.ofBoundedContinuousFunction rB <|
-      HolderWith.memHolder (C := H) fun t s ↦ by
-        simp only [rB, BoundedContinuousFunction.mkOfCompact_apply, ContinuousMap.coe_mk]
-        simpa only [Subtype.edist_eq] using hr t t.property s s.property
-
-/-- Evaluation of `shortRateHolder` at a slab point gives `r` at its time coordinate. -/
-@[simp]
-theorem shortRateHolder_apply (hα₀ : 0 < α) (r : ℝ → ℝ) {H : ℝ≥0}
-    (hr : HolderOnWith H (α / 2) r (Icc t₀ t₁)) (p : slab (E := ℝ) t₀ t₁) :
-    shortRateHolder hα₀ r hr p = r (slabTime p) := by
-  simp only [shortRateHolder, HolderSpace.compSlabTimeL_apply,
-    HolderSpace.ofBoundedContinuousFunction_apply, BoundedContinuousFunction.mkOfCompact_apply,
-    ContinuousMap.coe_mk]
-
-end MarketCoefficients
-
-/-! ### Classical spot-coordinate pricing PDE existence and uniqueness -/
-
-section SpotPricingPDE
-
-/-- **Uniqueness of classical linear-growth prices on `[t₀, t₁]`.** Let `σ² ≤ Λ` and `|r| ≤ R` on
-`(t₀, t₁)`. If `u ∈ C_b^{2+α,1+α/2}(ℝ × [t₀, t₁])` solves `weightedLogSpotPricingOperatorL u = 0`
-with terminal payoff `h`, then `weightedLogSpotPrice u` is the unique classical solution of the
-spot pricing PDE on `(0, ∞) × [t₀, t₁]` satisfying `|C(s, t)| ≤ A (1 + s)`. -/
-theorem eq_weightedLogSpotPrice_of_pde {α : ℝ≥0} {t₀ t₁ : ℝ} {ht : t₀ < t₁} (hα : α ≤ 1)
-    {σ : ℝ → ℝ → ℝ} {r h : ℝ → ℝ} {Λ R A : ℝ}
-    {a rH : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ}
-    (ha_eq : ∀ ⦃s⦄, 0 < s → ∀ t : Icc t₀ t₁, a (slabMk (log s) t) = σ s t ^ 2 / 2)
-    (hr_eq : ∀ ⦃s⦄, 0 < s → ∀ t : Icc t₀ t₁, rH (slabMk (log s) t) = r t)
-    (hσ : ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Ioo t₀ t₁ → σ s t ^ 2 ≤ Λ)
-    (hr : ∀ ⦃t⦄, t ∈ Ioo t₀ t₁ → |r t| ≤ R)
-    (u : ParabolicC2HolderSpace α ℝ ℝ ht)
-    (hPu : weightedLogSpotPricingOperatorL hα a rH u = 0)
-    (huterm : ∀ y, u (slabMk y ⟨t₁, right_mem_Icc.2 ht.le⟩) = h (exp y) / (1 + exp y))
-    {C : ℝ → ℝ → ℝ}
-    (hC_cont : ContinuousOn (Function.uncurry C) (Ioi 0 ×ˢ Icc t₀ t₁))
-    (hC_growth : ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Icc t₀ t₁ → |C s t| ≤ A * (1 + s))
-    (hC_cd : ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Ioo t₀ t₁ → ContDiffAt ℝ 2 (fun x ↦ C x t) s)
-    (hC_diff : ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Ioo t₀ t₁ → DifferentiableAt ℝ (fun τ ↦ C s τ) t)
-    (hC_pde : ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Ioo t₀ t₁ →
-      deriv (fun τ ↦ C s τ) t + σ s t ^ 2 * s ^ 2 / 2 * deriv (deriv fun x ↦ C x t) s +
-        r t * (s * deriv (fun x ↦ C x t) s - C s t) = 0)
-    (hC_term : ∀ ⦃s⦄, 0 < s → C s t₁ = h s) :
-    ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Icc t₀ t₁ → C s t = weightedLogSpotPrice u s t := by
-  let W := weightedLogSpotPrice u
-  have hshift_Icc {τ : ℝ} (hτ : τ ∈ Icc 0 (t₁ - t₀)) : t₀ + τ ∈ Icc t₀ t₁ :=
-    ⟨by linarith [hτ.1], by linarith [hτ.2]⟩
-  have hshift_Ioo {τ : ℝ} (hτ : τ ∈ Ioo 0 (t₁ - t₀)) : t₀ + τ ∈ Ioo t₀ t₁ :=
-    ⟨by linarith [hτ.1], by linarith [hτ.2]⟩
-  have hderiv_shift (F : ℝ → ℝ) {τ : ℝ} (hF : DifferentiableAt ℝ F (t₀ + τ)) :
-      deriv (fun τ' ↦ F (t₀ + τ')) τ = deriv F (t₀ + τ) := by
-    have hd : HasDerivAt (fun τ' ↦ F (t₀ + τ')) (deriv F (t₀ + τ) * 1) τ :=
-      hF.hasDerivAt.comp τ ((hasDerivAt_id' τ).const_add t₀)
-    simpa only [mul_one] using hd.deriv
-  have heq := eq_of_pde_eq_of_terminal_eq
-    (σ := fun s τ ↦ σ s (t₀ + τ)) (r := fun τ ↦ r (t₀ + τ))
-    (C₁ := fun s τ ↦ C s (t₀ + τ)) (C₂ := fun s τ ↦ W s (t₀ + τ))
-    (T := t₁ - t₀) (Λ := Λ) (R := R) (A := max A 0 + ‖u‖)
-    (fun s hs τ hτ ↦ hσ hs (hshift_Ioo hτ))
-    (fun τ hτ ↦ hr (hshift_Ioo hτ))
-    (hC_cont.comp (f := fun p : ℝ × ℝ ↦ (p.1, t₀ + p.2)) (by fun_prop)
-      fun p hp ↦ ⟨hp.1, hshift_Icc hp.2⟩)
-    ((continuousOn_weightedLogSpotPrice u).comp (f := fun p : ℝ × ℝ ↦ (p.1, t₀ + p.2))
-      (by fun_prop) fun p hp ↦ ⟨hp.1, mem_univ _⟩)
-    (fun s hs τ hτ ↦ by
-      have h1 := hC_growth hs (hshift_Icc hτ)
-      have h2 := abs_weightedLogSpotPrice_le u hs.le (t₀ + τ)
-      calc |C s (t₀ + τ) - W s (t₀ + τ)|
-          ≤ |C s (t₀ + τ)| + |W s (t₀ + τ)| := abs_sub _ _
-        _ ≤ A * (1 + s) + ‖u‖ * (1 + s) := add_le_add h1 h2
-        _ ≤ (max A 0 + ‖u‖) * (1 + s) := by nlinarith [le_max_left A 0, hs.le])
-    (fun s hs τ hτ ↦ hC_cd hs (hshift_Ioo hτ))
-    (fun s hs τ hτ ↦ (contDiffOn_weightedLogSpotPrice u
-      ⟨t₀ + τ, Ioo_subset_Icc_self (hshift_Ioo hτ)⟩).contDiffAt (Ioi_mem_nhds hs))
-    (fun s hs τ hτ ↦ (hC_diff hs (hshift_Ioo hτ)).comp τ
-      (differentiableAt_id.const_add t₀))
-    (fun s _ τ hτ ↦ (differentiableAt_weightedLogSpotPrice_time u s (hshift_Ioo hτ)).comp τ
-      (differentiableAt_id.const_add t₀))
-    (fun s hs τ hτ ↦ by
-      have ht' := hshift_Ioo hτ
-      rw [hderiv_shift (C s) (hC_diff hs ht'),
-        hderiv_shift (W s) (differentiableAt_weightedLogSpotPrice_time u s ht'),
-        hC_pde hs ht', pde_weightedLogSpotPrice_eq_mul_weightedLogSpotPricingOperatorL_of_mem_Ioo
-          hα a rH u hs ht' (ha_eq hs ⟨t₀ + τ, Ioo_subset_Icc_self ht'⟩)
-          (hr_eq hs ⟨t₀ + τ, Ioo_subset_Icc_self ht'⟩),
-        hPu, HolderSpace.zero_apply, mul_zero])
-    (fun s hs ↦ by
-      have ht₁ : t₀ + (t₁ - t₀) = t₁ := by ring
-      dsimp only [W]
-      rw [ht₁, hC_term hs, weightedLogSpotPrice_terminal u huterm hs])
-  intro s hs t ht'
-  have h := heq hs (t := t - t₀) ⟨by linarith [ht'.1], by linarith [ht'.2]⟩
-  simpa only [add_sub_cancel] using h
-
-/-- **Existence, linear-growth bounds, and uniqueness for the self-financing pricing PDE.**
-Let `0 < α < 1`, `t₀ < t₁`, `0 < δ`, let `σ(s, t)` satisfy `δ ≤ σ(s, t)²` and `|σ(e^y, t)| ≤ M`
-with `σ(e^y, t)` uniformly Lipschitz in `y` and uniformly `(α / 2)`-Hölder in `t`, let `r` be
-`(α / 2)`-Hölder on `[t₀, t₁]`, and let `h` be a terminal payoff whose weighted log-spot profile
-`y ↦ h(e^y) / (1 + e^y)` is represented by `g ∈ C_b^{2,α}(ℝ)`. Then there exists a unique
-`u ∈ C_b^{2+α,1+α/2}(ℝ × [t₀, t₁])` solving the weighted log-spot terminal-value problem, and its
-reconstructed spot price `C = weightedLogSpotPrice u` is the unique classical solution of the
-pricing PDE in the linear-growth class, with joint continuity of `C` and `∂ₛC` and linear-growth
-bounds on both the price and the dollar-delta exposure. -/
-theorem exists_weightedLogSpotPrice_pde_and_unique {α : ℝ≥0} {t₀ t₁ : ℝ}
-    (hα₀ : 0 < α) (hα₁ : α < 1) (ht : t₀ < t₁)
-    {σ : ℝ → ℝ → ℝ} {r h : ℝ → ℝ} {δ : ℝ} {M L H H_r : ℝ≥0}
-    (hδ : 0 < δ)
-    (hσ_low : ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Icc t₀ t₁ → δ ≤ σ s t ^ 2)
-    (hσ_bdd : ∀ y, ∀ t ∈ Icc t₀ t₁, |σ (exp y) t| ≤ M)
-    (hσ_lip : ∀ t ∈ Icc t₀ t₁, LipschitzWith L (fun y ↦ σ (exp y) t))
-    (hσ_time : ∀ y, HolderOnWith H (α / 2) (σ (exp y)) (Icc t₀ t₁))
-    (hr_hol : HolderOnWith H_r (α / 2) r (Icc t₀ t₁))
-    (g : CkHolderSpace 2 α ℝ ℝ) (hg : ∀ y, g y = h (exp y) / (1 + exp y)) :
-    ∃ u : ParabolicC2HolderSpace α ℝ ℝ ht,
-      weightedLogSpotPricingOperatorL hα₁.le
-          (logSpotHalfVarianceHolder hα₀ σ hσ_bdd
-            (memHolder_slab_of_lipschitz_exp_of_holderOnWith hα₁.le hσ_bdd hσ_lip hσ_time))
-          (shortRateHolder hα₀ r hr_hol) u = 0 ∧
-      u.spatialTrace ⟨t₁, right_mem_Icc.2 ht.le⟩ = g ∧
-      (∀ s > 0, weightedLogSpotPrice u s t₁ = h s) ∧
-      ContinuousOn (Function.uncurry (weightedLogSpotPrice u)) (Ioi 0 ×ˢ Icc t₀ t₁) ∧
-      ContinuousOn (fun p : ℝ × ℝ ↦ deriv (fun s ↦ weightedLogSpotPrice u s p.2) p.1)
-        (Ioi 0 ×ˢ Icc t₀ t₁) ∧
-      (∀ s > 0, ∀ t ∈ Icc t₀ t₁,
-        ContDiffAt ℝ 2 (fun x ↦ weightedLogSpotPrice u x t) s ∧
-          |weightedLogSpotPrice u s t| + |s * deriv (fun x ↦ weightedLogSpotPrice u x t) s| ≤
-            2 * ‖u‖ * (1 + s)) ∧
-      (∀ s > 0, ∀ t ∈ Ioo t₀ t₁,
-        DifferentiableAt ℝ (weightedLogSpotPrice u s) t ∧
-          deriv (weightedLogSpotPrice u s) t +
-              σ s t ^ 2 * s ^ 2 / 2 * deriv (deriv fun x ↦ weightedLogSpotPrice u x t) s +
-              r t * (s * deriv (fun x ↦ weightedLogSpotPrice u x t) s -
-                weightedLogSpotPrice u s t) = 0) ∧
-      ∀ (C : ℝ → ℝ → ℝ) (A : ℝ),
-        ContinuousOn (Function.uncurry C) (Ioi 0 ×ˢ Icc t₀ t₁) →
-        (∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Icc t₀ t₁ → |C s t| ≤ A * (1 + s)) →
-        (∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Ioo t₀ t₁ → ContDiffAt ℝ 2 (fun x ↦ C x t) s) →
-        (∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Ioo t₀ t₁ → DifferentiableAt ℝ (fun τ ↦ C s τ) t) →
-        (∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Ioo t₀ t₁ →
-          deriv (fun τ ↦ C s τ) t + σ s t ^ 2 * s ^ 2 / 2 * deriv (deriv fun x ↦ C x t) s +
-            r t * (s * deriv (fun x ↦ C x t) s - C s t) = 0) →
-        (∀ ⦃s⦄, 0 < s → C s t₁ = h s) →
-        ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Icc t₀ t₁ → C s t = weightedLogSpotPrice u s t := by
-  have hmem := memHolder_slab_of_lipschitz_exp_of_holderOnWith hα₁.le hσ_bdd hσ_lip hσ_time
-  let a := logSpotHalfVarianceHolder hα₀ σ hσ_bdd hmem
-  let rH := shortRateHolder hα₀ r hr_hol
-  have ha : ∀ p, δ / 2 ≤ a p := fun p ↦ by
-    rw [logSpotHalfVarianceHolder_apply]
-    exact div_le_div_of_nonneg_right (hσ_low (exp_pos _) (slabTime p).property) zero_le_two
-  let u := (weightedLogSpotTerminalDataCLE hα₀ hα₁ ht a rH ⟨δ / 2, half_pos hδ, ha⟩).symm (0, g)
-  have hPu : weightedLogSpotPricingOperatorL hα₁.le a rH u = 0 :=
-    weightedLogSpotPricingOperatorL_weightedLogSpotTerminalDataCLE_symm_apply (0, g)
-  have htr : u.spatialTrace ⟨t₁, right_mem_Icc.2 ht.le⟩ = g :=
-    spatialTrace_weightedLogSpotTerminalDataCLE_symm_apply (0, g)
-  have huterm : ∀ y, u (slabMk y ⟨t₁, right_mem_Icc.2 ht.le⟩) = h (exp y) / (1 + exp y) :=
-    fun y ↦ by rw [← spatialTrace_apply, htr, hg]
-  refine ⟨u, hPu, htr, fun s hs ↦ weightedLogSpotPrice_terminal u huterm hs,
-    (continuousOn_weightedLogSpotPrice u).mono (prod_mono_right (subset_univ _)),
-    continuousOn_deriv_weightedLogSpotPrice_spot u,
-    fun s hs t ht' ↦ ⟨(contDiffOn_weightedLogSpotPrice u ⟨t, ht'⟩).contDiffAt (Ioi_mem_nhds hs),
-      abs_weightedLogSpotPrice_add_abs_mul_deriv_le u hs ht'⟩,
-    fun s hs t ht' ↦ ⟨differentiableAt_weightedLogSpotPrice_time u s ht', ?_⟩,
-    fun C A hCc hCg hCcd hCd hCpde hCt ↦ ?_⟩
-  · rw [pde_weightedLogSpotPrice_eq_mul_weightedLogSpotPricingOperatorL_of_mem_Ioo hα₁.le a rH u hs
-      ht' (by simp [a, exp_log hs]) (by simp [rH]), hPu, HolderSpace.zero_apply, mul_zero]
-  · exact eq_weightedLogSpotPrice_of_pde hα₁.le
-      (fun s hs t ↦ by simp [a, exp_log hs]) (fun s _ t ↦ by simp [rH])
-      (fun s hs t ht' ↦ by
-        have h1 := hσ_bdd (log s) t (Ioo_subset_Icc_self ht')
-        rw [exp_log hs] at h1
-        exact (sq_abs (σ s t)).symm.trans_le (pow_le_pow_left₀ (abs_nonneg _) h1 2))
-      (fun t ht' ↦ by
-        simpa only [rH, Real.norm_eq_abs, shortRateHolder_apply, slabTime_slabMk] using
-          rH.norm_apply_le (slabMk 0 ⟨t, Ioo_subset_Icc_self ht'⟩))
-      u hPu huterm hCc hCg hCcd hCd hCpde hCt
-
-end SpotPricingPDE
 
 end TauCeti.Finance
