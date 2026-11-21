@@ -29,8 +29,8 @@ flag `S ≤ T` of subrepresentations this gives the invariant three-term splitti
 
 in which `S ⊔ (T ⊓ Sᗮ) = T`, `(T ⊓ Sᗮ) ⊔ Tᗮ = Sᗮ`, and each summand is complementary to the sum of
 the other two. No reflexivity of `B` is needed for this, and only `T` needs to be
-finite-dimensional; for a reflexive form on a finite-dimensional representation moreover
-`(T ⊓ Sᗮ)ᗮ = S ⊔ Tᗮ`. This is how an inner product averaged over a compact
+finite-dimensional; for a nondegenerate reflexive form on a finite-dimensional representation
+moreover `(T ⊓ Sᗮ)ᗮ = S ⊔ Tᗮ`. This is how an inner product averaged over a compact
 group produces invariant complements adapted to a flag of invariant subspaces, as for the splitting
 `𝔤 = 𝔥 ⊕ 𝔪 ⊕ 𝔮` of a Lie algebra along subspaces `𝔥 ⊆ 𝔨` invariant under a compact subgroup.
 
@@ -49,14 +49,14 @@ All in the namespace `TauCeti.Representation.IsInvariantForm`:
   `orthogonalSubrepresentation_sup` and
   `le_orthogonalSubrepresentation_orthogonalSubrepresentation`: the order-reversing behaviour of
   the orthogonal complement.
-* `orthogonalSubrepresentation_top_eq_bot`, `orthogonalSubrepresentation_inf` and
-  `orthogonalSubrepresentation_orthogonalSubrepresentation`: their counterparts for a
-  nondegenerate form (on a finite-dimensional representation, and reflexive for the last).
+* `orthogonalSubrepresentation_top_eq_bot`, `orthogonalSubrepresentation_inf`,
+  `orthogonalSubrepresentation_orthogonalSubrepresentation` and
+  `orthogonalSubrepresentation_inf_orthogonalSubrepresentation`: their counterparts for a
+  nondegenerate form (on a finite-dimensional representation, and reflexive for the last two).
 * `isCompl_orthogonalSubrepresentation`: for an anisotropic invariant form, a finite-dimensional
   subrepresentation and its orthogonal complement are complementary.
 * `sup_inf_orthogonalSubrepresentation`,
   `inf_orthogonalSubrepresentation_sup_orthogonalSubrepresentation`,
-  `orthogonalSubrepresentation_inf_orthogonalSubrepresentation` (for a reflexive form),
   `isCompl_inf_orthogonalSubrepresentation_sup_orthogonalSubrepresentation_right` and
   `isCompl_inf_orthogonalSubrepresentation_sup_orthogonalSubrepresentation`: the three-term
   splitting of a flag of subrepresentations.
@@ -199,6 +199,17 @@ theorem orthogonalSubrepresentation_orthogonalSubrepresentation (hB : IsInvarian
   rw [toSubmodule_orthogonalSubrepresentation, toSubmodule_orthogonalSubrepresentation,
     BilinForm.orthogonal_orthogonal hnd hrefl]
 
+/-- For a nondegenerate reflexive form on a finite-dimensional representation, the orthogonal
+complement of `T ⊓ Sᗮ` is `S ⊔ Tᗮ`. For a flag `S ≤ T` this identifies the sum of the two other
+summands of the splitting `V = S ⊕ (T ⊓ Sᗮ) ⊕ Tᗮ` with the orthogonal complement of the middle
+one. -/
+theorem orthogonalSubrepresentation_inf_orthogonalSubrepresentation (hB : IsInvariantForm ρ B)
+    (hnd : B.Nondegenerate) (hrefl : B.IsRefl) (S T : Subrepresentation ρ) :
+    hB.orthogonalSubrepresentation (T ⊓ hB.orthogonalSubrepresentation S) =
+      S ⊔ hB.orthogonalSubrepresentation T := by
+  rw [hB.orthogonalSubrepresentation_inf hnd,
+    hB.orthogonalSubrepresentation_orthogonalSubrepresentation hnd hrefl, sup_comm]
+
 end Nondegenerate
 
 section Field
@@ -241,17 +252,6 @@ theorem inf_orthogonalSubrepresentation_sup_orthogonalSubrepresentation
     toSubmodule_orthogonalSubrepresentation]
   exact BilinForm.inf_orthogonal_sup_orthogonal_of_le hani
     (Subrepresentation.toSubmodule_le_toSubmodule.mpr hST)
-
-/-- For a reflexive form on a finite-dimensional representation, the orthogonal complement of
-`T ⊓ Sᗮ` is `S ⊔ Tᗮ`. For a flag `S ≤ T` this identifies the sum of the two other summands of the
-splitting `V = S ⊕ (T ⊓ Sᗮ) ⊕ Tᗮ` with the orthogonal complement of the middle one. -/
-theorem orthogonalSubrepresentation_inf_orthogonalSubrepresentation [FiniteDimensional k V]
-    (hrefl : B.IsRefl) (S T : Subrepresentation ρ) :
-    hB.orthogonalSubrepresentation (T ⊓ hB.orthogonalSubrepresentation S) =
-      S ⊔ hB.orthogonalSubrepresentation T := by
-  have hnd := B.nondegenerate_of_anisotropic hani
-  rw [hB.orthogonalSubrepresentation_inf hnd,
-    hB.orthogonalSubrepresentation_orthogonalSubrepresentation hnd hrefl, sup_comm]
 
 /-- For a flag `S ≤ T` of subrepresentations with `T` finite-dimensional, `S` is complementary to
 the sum `(T ⊓ Sᗮ) ⊔ Tᗮ` of the two other summands of the splitting `V = S ⊕ (T ⊓ Sᗮ) ⊕ Tᗮ`. The
