@@ -213,25 +213,32 @@ private theorem relativePicardFppfSheafBaseChangeIso_hom_eq :
 
 /-- The sheaf comparison sends the image of a relative Picard class to the image of its
 base-change comparison. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 theorem relativePicardToFppfSheaf_comp_baseChangeIso_hom :
     relativePicardToFppfSheaf (pullback.fst g f) ≫
         (relativePicardFppfSheafBaseChangeIso f g).hom.hom =
       (relativePicardAddPresheafBaseChangeIso f g).hom ≫
         Functor.whiskerLeft (Over.map g).op (relativePicardToFppfSheaf f) := by
   rw [relativePicardToFppfSheaf_eq, Category.assoc, relativePicardFppfSheafBaseChangeIso_hom_eq]
+  -- In the goal, the pushforward comparison, with target the underlying presheaf of the
+  -- pushforward sheaf, is composed with a map whiskered by `(Over.map g).op`, with source
+  -- `(Over.map g).op ⋙ _`. The two agree only after unfolding `sheafPushforwardContinuous`, so the
+  -- goal is not type-correct at instance transparency and `rw` finds no instance of
+  -- `Category.assoc`, `toSheafify_naturality` or the compatibility; the next three steps need
+  -- `erw`.
   erw [← Category.assoc, ← toSheafify_naturality]
   erw [Category.assoc]
   erw [reassoc_of% (Over.map g).toSheafify_pullbackSheafificationCompatibility
     AddCommGrpCat.{u + 1} (Scheme.fppfTopology.over S') (Scheme.fppfTopology.over S)
       (relativePicardAddPresheaf f)]
-  erw [relativePicardToFppfSheaf_eq, Functor.whiskerLeft_comp]
+  rw [relativePicardToFppfSheaf_eq, Functor.whiskerLeft_comp]
   -- The underlying presheaf of the pushforward is restriction along `Over.map g`;
   -- its target identification is the same whiskered equality on both sides.
   rfl
 
 /-- On the class of a line bundle on `T ×_{S'} X'`, the sheaf comparison is the class of its
 pullback along `T ×_S X ≅ T ×_{S'} X'`. -/
+@[simp]
 theorem relativePicardFppfSheafBaseChangeIso_hom_app_toFppfSheaf_mk {T : (Over S')ᵒᵖ}
     (a : LineBundleClass (pullback T.unop.hom (pullback.fst g f))) :
     (relativePicardFppfSheafBaseChangeIso f g).hom.hom.app T

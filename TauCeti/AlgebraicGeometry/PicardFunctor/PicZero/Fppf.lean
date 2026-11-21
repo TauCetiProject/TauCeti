@@ -136,6 +136,10 @@ lemma relativePicardDegreeZeroAddPresheafι_app_addEquiv_ofMul {T : (Over S)ᵒ�
         (relativePicardDegreeZeroAddPresheafAddEquiv f T (Additive.ofMul c)) =
       relativePicardAddPresheafMk f T a := by
   rw [relativePicardAddPresheafMk_eq, ← ha]
+  -- Both sides unfold to `Additive.ofMul ((relativePicardDegreeZeroFunctorι f).app T c)`:
+  -- `relativePicardDegreeZeroAddPresheafAddEquiv` is `AddEquiv.refl _`, the `eqToHom` components
+  -- of `relativePicardDegreeZeroAddPresheafι` are identities, and the whiskered component under
+  -- `CommGrpCat.toAddCommGrp` acts on `Additive.ofMul` by applying the same homomorphism.
   rfl
 
 /-- The inclusion of the additive degree-zero relative Picard presheaf is a monomorphism. -/
@@ -265,6 +269,7 @@ theorem relativePicardDegreeZeroToFppfSheaf_comp_relativePicardDegreeZeroFppfShe
 
 /-- The inclusion of degree-zero fppf sheaves sends the image of a degree-zero presheaf section to
 the image of its inclusion into the full relative Picard presheaf. -/
+@[simp]
 theorem relativePicardDegreeZeroFppfSheafι_hom_app_toFppfSheaf {T : (Over S)ᵒᵖ}
     (c : (relativePicardDegreeZeroAddPresheaf f).obj T) :
     (relativePicardDegreeZeroFppfSheafι f).hom.app T

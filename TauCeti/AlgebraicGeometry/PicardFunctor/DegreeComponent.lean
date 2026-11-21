@@ -11,8 +11,7 @@ public import TauCeti.AlgebraicGeometry.PicardFunctor.Abel.PicZero
 public import TauCeti.AlgebraicGeometry.PicardFunctor.Fppf
 public import TauCeti.AlgebraicGeometry.PicardFunctor.PicZero.BaseChange
 public import TauCeti.AlgebraicGeometry.PicardFunctor.PicZero.Fppf
-public import TauCeti.AlgebraicGeometry.Sites.FppfAlgClosed
-public import TauCeti.CategoryTheory.Sites.LocallyBijective
+public import TauCeti.AlgebraicGeometry.PicardFunctor.SheafPoints
 
 /-!
 # Degree components of the relative Picard fppf sheaf
@@ -21,7 +20,10 @@ Let `f : X ⟶ S` be a morphism of schemes and `Pic_{X/S}` its relative Picard f
 fppf sheafification of `T ↦ Pic(X_T) / Pic(T)`. A section of `Pic_{X/S}` over a test scheme `T`
 need not be the class of a line bundle on `X_T`; it is only one fppf-locally on `T`. This file
 nevertheless reads off its degree on each geometric fibre, and cuts out the subsheaf `Picᵈ_{X/S}`
-of sections of degree `d` on every geometric fibre.
+of sections of degree `d` on every geometric fibre. Here the degree of a line bundle `L` on a
+fibre over `K` is its Euler-characteristic degree `χ(L) - χ(𝒪)`, computed from `H⁰` and `H¹`
+(`LineBundleClass.eulerDegree`). It is the usual degree when the fibres are proper curves; for
+other `f` it is still defined, but can take junk values.
 
 The point is that fppf covers of the spectrum of an algebraically closed field `K` split
 (`AlgebraicGeometry.Scheme.eq_top_of_mem_fppfTopology_over_of_isAlgClosed`). Hence over a
@@ -96,35 +98,12 @@ section GeometricPoint
 
 variable {K : Type u} [Field K] [IsAlgClosed K]
 
-/-- **The relative Picard sheaf at a geometric point.** For a morphism `g : Spec K ⟶ S` from the
-spectrum of an algebraically closed field, the map
-`Pic(X_K) / Pic(Spec K) → Pic_{X/S}(Spec K)` to the relative Picard fppf sheaf is bijective, since
-every fppf cover of `Spec K` splits. -/
-theorem relativePicardToFppfSheaf_app_bijective_of_isAlgClosed (g : Spec (.of K) ⟶ S) :
-    Function.Bijective ((relativePicardToFppfSheaf f).app (op (Over.mk g))) := by
-  have hg := Scheme.eq_top_of_mem_fppfTopology_over_of_isAlgClosed K g
-  have := (Presheaf.isLocallySurjective_iff_whisker_forget (Scheme.fppfTopology.over S)
-    (relativePicardToFppfSheaf f)).1 inferInstance
-  exact ⟨Presheaf.injective_app_of_isLocallyInjective (Scheme.fppfTopology.over S)
-      (Functor.whiskerRight (relativePicardToFppfSheaf f) (forget _)) hg,
-    Presheaf.surjective_app_of_isLocallySurjective (Scheme.fppfTopology.over S)
-      (Functor.whiskerRight (relativePicardToFppfSheaf f) (forget _)) hg⟩
-
-/-- Over a geometric point `g : Spec K ⟶ S`, every section of the relative Picard fppf sheaf is
-the class of a line bundle on the fibre `Spec K ×_S X`. -/
-theorem exists_relativePicardToFppfSheaf_app_eq_of_isAlgClosed (g : Spec (.of K) ⟶ S)
-    (σ : (relativePicardFppfSheaf f).obj.obj (op (Over.mk g))) :
-    ∃ a : LineBundleClass (pullback g f),
-      (relativePicardToFppfSheaf f).app (op (Over.mk g))
-        (relativePicardAddPresheafMk f (op (Over.mk g)) a) = σ := by
-  obtain ⟨c, rfl⟩ := (relativePicardToFppfSheaf_app_bijective_of_isAlgClosed f g).2 σ
-  obtain ⟨a, rfl⟩ := relativePicardAddPresheafMk_surjective f _ c
-  exact ⟨a, rfl⟩
-
 /-- **The fibre degree of a section of the relative Picard fppf sheaf** at a geometric point
 `ξ : Spec K ⟶ T` of a test scheme `T`: the restriction of the section to `ξ` is the class of a
 line bundle on the fibre `Spec K ×_S X` (`exists_relativePicardToFppfSheaf_app_eq_of_isAlgClosed`),
-and this is its degree. On the class of a line bundle on `X_T` it is the fibre degree
+and this is the Euler-characteristic degree `χ(L) - χ(𝒪)` from `H⁰` and `H¹`
+(`LineBundleClass.eulerDegree`) of that line bundle, the usual degree when the fibre is a proper
+curve. On the class of a line bundle on `X_T` it is the fibre degree
 `relativePicardFiberDegree` (`relativePicardFppfSheafFiberDegree_toFppfSheaf`). -/
 def relativePicardFppfSheafFiberDegree {T : (Over S)ᵒᵖ} (ξ : Spec (.of K) ⟶ T.unop.left)
     (σ : (relativePicardFppfSheaf f).obj.obj T) : ℤ :=
@@ -267,8 +246,10 @@ private lemma isSheaf_relativePicardFppfSheaf_comp_forget :
 at a test scheme `T`, the sections whose fibre degree is `d` at every geometric point
 `Spec K ⟶ T`. It is a subsheaf (`isSheaf_relativePicardDegreeFppfSubfunctor`).
 
-The fibre degree is the degree of a line bundle on a geometric fibre, so for a family of
-curves this is the sheaf of classes of degree `d`. A section of degree `0` on one component of a
+The fibre degree is the Euler-characteristic degree `χ(L) - χ(𝒪)` from `H⁰` and `H¹`
+(`LineBundleClass.eulerDegree`) of a line bundle on a geometric fibre. It is the usual degree
+when the fibres are proper curves, so for a family of curves this is the sheaf of classes of
+degree `d`. A section of degree `0` on one component of a
 disconnected `T` and of degree `1` on another lies in no component. -/
 def relativePicardDegreeFppfSubfunctor (d : ℤ) :
     Subfunctor ((relativePicardFppfSheaf f).obj ⋙ forget AddCommGrpCat) where
@@ -489,6 +470,7 @@ variable {S' : Scheme.{u}} (g : S' ⟶ S) [QuasiCompact f] [IsSeparated f]
 `g : S' ⟶ S`, the fibre degree at a geometric point of a section of the relative Picard fppf
 sheaf of `X' = S' ×_S X ⟶ S'` is the fibre degree of its image under the base-change comparison
 `relativePicardFppfSheafBaseChangeIso`. -/
+@[simp]
 theorem relativePicardFppfSheafFiberDegree_baseChangeIso_hom_app {K : Type u} [Field K]
     [IsAlgClosed K] {T : (Over S')ᵒᵖ} (ξ : Spec (.of K) ⟶ T.unop.left)
     (σ : (relativePicardFppfSheaf (pullback.fst g f)).obj.obj T) :
