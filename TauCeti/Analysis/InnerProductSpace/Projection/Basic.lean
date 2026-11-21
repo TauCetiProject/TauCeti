@@ -73,6 +73,8 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
 * `Submodule.finrank_inf_orthogonal_comm`: `dim (U ⊓ Vᗮ) = dim (V ⊓ Uᗮ)` when `dim U = dim V`.
 * `Submodule.finrank_orthogonal_span_singleton_eq_finrank_sub_one`: `dim (𝕜 ∙ v)ᗮ = dim E - 1`
   for a nonzero vector `v`.
+* `Submodule.isCompl_orthogonal_span_of_finite`: the span of finitely many vectors is
+  complemented by its orthogonal complement.
 * `TauCeti.exists_ne_zero_forall_inner_eq_zero_of_card_lt_finrank`,
   `TauCeti.exists_norm_eq_one_forall_inner_eq_zero_of_card_lt_finrank`: fewer than `dim E` vectors
   have a common nonzero, and hence a common unit, orthogonal vector.
@@ -217,6 +219,12 @@ theorem finrank_orthogonal_span_singleton_eq_finrank_sub_one [FiniteDimensional 
     (hv : v ≠ 0) : Module.finrank 𝕜 (𝕜 ∙ v)ᗮ = Module.finrank 𝕜 E - 1 := by
   have := Module.finrank_pos_iff_exists_ne_zero (R := 𝕜).2 ⟨v, hv⟩
   exact finrank_add_finrank_orthogonal' <| by rw [finrank_span_singleton hv]; omega
+
+/-- The span of finitely many vectors is complemented by its orthogonal complement. -/
+theorem isCompl_orthogonal_span_of_finite {s : Set E} (hs : s.Finite) :
+    IsCompl (span 𝕜 s) (span 𝕜 s)ᗮ :=
+  have : FiniteDimensional 𝕜 (span 𝕜 s) := FiniteDimensional.span_of_finite 𝕜 hs
+  (span 𝕜 s).isCompl_orthogonal
 
 /-- For a finite-dimensional subspace `V` and a subspace `U` with `dim V ≤ dim U`, a lower bound
 `k ‖u‖² ≤ ‖P_V u‖²` on the cosines of `U` towards `V` transfers to the same lower bound for `V`

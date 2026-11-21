@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.DGNerve.InitialVertex
 public import TauCeti.AlgebraicTopology.DGNerve.TerminalVertex
+public import TauCeti.AlgebraicTopology.Quasicategory.ZeroVertex
 public import TauCeti.Algebra.Homology.LinearHomComplex.Zero
 public import TauCeti.CategoryTheory.DG.CochainComplex.Basic
 
@@ -19,7 +20,9 @@ not just its homotopy category: all simplex boundaries with that vertex as first
 vertex admit fillers. It supplies the zero objects needed for stability of the enhancement.
 
 The Hom complexes with a zero argument vanish in every degree, so the initial and terminal
-criteria apply directly. No abelian or boundedness hypothesis is needed.
+criteria apply directly. No abelian or boundedness hypothesis is needed. Consequently a zero
+complex is a zero vertex, and the dg nerve of complexes has a zero vertex (is pointed) whenever
+the underlying category has a zero object.
 
 ## References
 
@@ -49,5 +52,19 @@ theorem isTerminalVertex_cochainComplex_of_isZero {K : CochainComplex C ℤ} (hK
       ((dgNerveEquiv R (CochainComplex C ℤ)).symm K) :=
   isTerminalVertex_of_isZero fun _ ↦
     isZero_linearHomComplex_of_isZero_right R hK
+
+/-- A zero cochain complex is a zero vertex of the dg nerve of complexes. -/
+theorem isZeroVertex_cochainComplex_of_isZero {K : CochainComplex C ℤ} (hK : IsZero K) :
+    (dgNerve R (CochainComplex C ℤ)).IsZeroVertex
+      ((dgNerveEquiv R (CochainComplex C ℤ)).symm K) :=
+  (SSet.isZeroVertex_iff _).2
+    ⟨isInitialVertex_cochainComplex_of_isZero R hK, isTerminalVertex_cochainComplex_of_isZero R hK⟩
+
+/-- The dg nerve of complexes in a linear category with a zero object has a zero vertex: it is
+pointed. -/
+theorem hasZeroVertex_cochainComplex [HasZeroObject C] :
+    (dgNerve R (CochainComplex C ℤ)).HasZeroVertex :=
+  let ⟨_, hK⟩ := HasZeroObject.zero (C := CochainComplex C ℤ)
+  SSet.hasZeroVertex_iff.2 ⟨_, isZeroVertex_cochainComplex_of_isZero R hK⟩
 
 end TauCeti.dgNerve

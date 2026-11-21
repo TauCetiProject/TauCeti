@@ -42,7 +42,9 @@ union with the interiors of the critical-point neighbourhoods is the returned ne
 ## Main declarations
 
 * `TauCeti.MorseChart.field`: the linear field of a Morse chart, on the manifold, with
-  `TauCeti.MorseChart.mvfderiv_field_apply_lt_zero` and `TauCeti.MorseChart.mfderiv_eq_zero_iff`.
+  `TauCeti.MorseChart.mvfderiv_field_apply_lt_zero` and `TauCeti.MorseChart.mfderiv_eq_zero_iff`;
+  it is the only field that reads `(-wᵢ zᵢ)ᵢ` in the chart
+  (`TauCeti.MorseChart.eq_field_of_coord_mfderiv`).
   The differential of `f` in a Morse chart is `TauCeti.MorseChart.mvfderiv_apply`.
 * `TauCeti.MorseChart.hessianQuadraticForm_quadratic` and
   `TauCeti.MorseChart.hessianQuadraticForm_extChartAt`: the Hessian of the quadratic normal form,
@@ -112,6 +114,17 @@ theorem coord_mfderiv_field {y : M} (hy : y ∈ φ.toChart.source) :
   rw [field, mfderiv_mpullback_apply
     (IsManifold.maximalAtlas_subset_of_le (by simp) φ.mem_maximalAtlas) _ hy]
   simp [linearVectorField, linearField]
+
+/-- A tangent vector that reads `(-wᵢ zᵢ)ᵢ` in the coordinates of the Morse chart is the value of
+the field of the chart. -/
+theorem eq_field_of_coord_mfderiv {y : M} (hy : y ∈ φ.toChart.source)
+    {v : TangentSpace 𝓘(ℝ, E) y}
+    (hv : φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y v) =
+      fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i)) :
+    v = φ.field y := by
+  have hinv := isInvertible_mfderiv_chart φ.mem_maximalAtlas_one hy
+  rw [← hinv.inverse_apply_self v, ← hinv.inverse_apply_self (φ.field y),
+    φ.coord.injective (hv.trans (φ.coord_mfderiv_field hy).symm)]
 
 end Basic
 
