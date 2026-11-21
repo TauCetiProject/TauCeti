@@ -17,7 +17,6 @@ import TauCeti.Topology.Homeomorph.SetCongr
 The spectrum of a quotient ring `R / I` is homeomorphic to the zero locus of `I` in `Spec R`.
 The homeomorphism `PrimeSpectrum.quotientHomeomorphZeroLocus` acts by contraction along the quotient
 map. This identifies quotient spectra with closed subsets without any connectedness hypothesis.
-The preimage of an ideal's zero locus under a spectral map is the zero locus of the extended ideal.
 
 An injective homomorphism of commutative semirings induces a dense map on prime spectra.
 For a reduced source ring, the converse holds. These facts supply the coordinate-ring criterion for
@@ -143,13 +142,6 @@ theorem quotientHomeomorphZeroLocus_apply_coe (I : Ideal R) (y : PrimeSpectrum (
 end Quotient
 
 variable {R : Type*} [CommSemiring R]
-
-/-- The preimage of the zero locus of an ideal is the zero locus of its extension. -/
-theorem preimage_comap_zeroLocus_ideal {S : Type*} [CommSemiring S]
-    (f : R →+* S) (I : Ideal R) : comap f ⁻¹' zeroLocus I = zeroLocus (I.map f) := by
-  ext x
-  simp only [Set.mem_preimage, mem_zeroLocus, SetLike.coe_subset_coe, comap_asIdeal,
-    Ideal.map_le_iff_le_comap]
 
 /-- A subset of the prime spectrum containing every minimal prime is dense: every nonempty open
 set contains a minimal prime, namely a generization of any of its points. -/

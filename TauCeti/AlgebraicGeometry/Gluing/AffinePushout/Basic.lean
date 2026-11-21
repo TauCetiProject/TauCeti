@@ -10,9 +10,9 @@ public import Mathlib.RingTheory.LocalRing.Pullback
 
 import Mathlib.AlgebraicGeometry.PullbackCarrier
 import Mathlib.CategoryTheory.Limits.Types.Pushouts
+import Mathlib.RingTheory.Spectrum.Prime.Topology
 import TauCeti.AlgebraicGeometry.Morphisms.IsoLocus
 import TauCeti.RingTheory.FiberProduct.Basic
-import TauCeti.RingTheory.Spectrum.Prime.Topology
 import TauCeti.Topology.Category.TopCat.Pushout
 
 /-!
@@ -26,8 +26,6 @@ These are the topology and morphism properties of the affine Ferrand constructio
 
 See [Ferrand, *Conducteur, descente et pincement*][ferrand], Theorem 5.1, and the Stacks Project,
 [Lemma 15.6.2][stacks-0B7J].
-The topological pushout uses Mathlib's `Types.isPushout_of_isPullback_of_mono'` on underlying sets
-and Tau Ceti's `CategoryTheory.IsPushout.of_isPushout_forget` for the topology.
 
 [ferrand]: https://www.numdam.org/articles/10.24033/bsmf.2455/
 [stacks-0B7J]: https://stacks.math.columbia.edu/tag/0B7J
@@ -181,8 +179,11 @@ private theorem isClosed_of_isClosed_preimages_comap_pullback (hp : Surjective p
   have hComp : comap (p.pullbackFst q) ∘ comap p = comap (p.pullbackSnd q) ∘ comap q := by
     rw [← comap_comp, ← comap_comp, p.pullback_comm_sq q]
   have hEq : zeroLocus (I.map p : Set C) = zeroLocus (J.map q : Set C) := by
-    simpa only [Set.preimage_comp, hI, hJ, preimage_comap_zeroLocus_ideal] using
-      congrArg (fun f : PrimeSpectrum C → PrimeSpectrum (p.pullback q) ↦ f ⁻¹' W) hComp
+    have hpre := congrArg (fun f : PrimeSpectrum C → PrimeSpectrum (p.pullback q) ↦ f ⁻¹' W)
+      hComp
+    simp only [Set.preimage_comp, hI, hJ, preimage_comap_zeroLocus] at hpre
+    rwa [← zeroLocus_span (p '' (I : Set B)), ← Ideal.map,
+      ← zeroLocus_span (q '' (J : Set D)), ← Ideal.map] at hpre
   have hRad := zeroLocus_eq_iff.mp hEq
   let K := I.comap (p.pullbackFst q) ⊓ J.comap (p.pullbackSnd q)
   refine (isClosed_iff_zeroLocus_ideal _).mpr ⟨K, Set.Subset.antisymm ?_ ?_⟩
@@ -237,6 +238,8 @@ theorem isPushout_base_spec_pullback (hp : Surjective p) :
     refine (Types.isPullback_iff ..).mpr ⟨hpre.w, ?_, ?_⟩
     · exact fun x y h ↦ comap_injective_of_surjective _ hp h.2
     · exact Scheme.exists_preimage_of_isPullback hs
+  -- Apply Tau Ceti's `IsPushout.of_isPushout_forget` to the underlying set pushout
+  -- given by Mathlib's `Types.isPushout_of_isPullback_of_mono'`.
   apply IsPushout.of_isPushout_forget
   · refine (Types.isPushout_of_isPullback_of_mono' hSet ?_ ?_).flip
     · refine Set.eq_univ_of_forall fun x ↦ ?_

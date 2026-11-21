@@ -90,8 +90,14 @@ theorem map_pullbackFst_ker_pullbackSnd_eq {B C D : Type*} [Ring B] [Semiring C]
     (ker (p.pullbackSnd q)).map (p.pullbackFst q) = ker p := by
   let e : p.pullback q ≃+* q.pullback p :=
     (RingEquiv.prodComm : B × D ≃+* D × B).restrict _ _ (fun _ ↦ eq_comm)
-  have hker : ker (p.pullbackSnd q) = (ker (q.pullbackFst p)).comap e.toRingHom := rfl
-  have hfst : p.pullbackFst q = (q.pullbackSnd p).comp e.toRingHom := rfl
+  have hswap_fst (x : p.pullback q) : q.pullbackFst p (e x) = p.pullbackSnd q x := rfl
+  have hswap_snd (x : p.pullback q) : q.pullbackSnd p (e x) = p.pullbackFst q x := rfl
+  have hker : ker (p.pullbackSnd q) = (ker (q.pullbackFst p)).comap e.toRingHom := by
+    rw [comap_ker]
+    exact congrArg ker (RingHom.ext fun x ↦ (hswap_fst x).symm)
+  have hfst : p.pullbackFst q = (q.pullbackSnd p).comp e.toRingHom := by
+    ext x
+    exact (hswap_snd x).symm
   rw [hfst, ← Ideal.map_map, hker,
     Ideal.map_comap_of_surjective e.toRingHom e.surjective, map_pullbackSnd_ker_pullbackFst_eq]
 

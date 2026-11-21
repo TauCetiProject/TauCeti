@@ -23,11 +23,9 @@ ring fiber product and the maps to their common target:
   its inverse images. Its right overlap map uses `Scheme.Hom.appLE` to identify the two
   equal inverse-image opens over the common ring.
 
-Neither statement requires surjectivity or finiteness. The principal-open statement is
-localization of the ring pullback, and the arbitrary-open statement expresses the same
-property for the pushed-forward structure sheaves. Mathlib's
-`TopCat.Sheaf.isIso_iff_isIso_basis` extends the principal-open calculation by showing
-that the comparison with the sheaf pullback is an isomorphism.
+Both statements apply to arbitrary ring maps. The principal-open result describes sections
+on the standard affine basis. The arbitrary-open result identifies sections over any open
+with pairs of sections whose restrictions agree on its inverse image in `Spec C`.
 
 See [Ferrand, *Conducteur, descente et pincement*][ferrand], Theorem 5.1, and the
 localization argument in the Stacks Project, [Lemma 15.5.3][stacks-01Z8].
@@ -218,6 +216,8 @@ private theorem isPullback_sheafSquare :
   let t : (Spec (CommRingCat.of (p.pullback q))).sheaf ⟶ Limits.pullback l r :=
     pullback.lift (p.leftMap q) (p.rightMap q) (sheafSquare_comm p q)
   have ht : IsIso t := by
+    -- Mathlib's `TopCat.Sheaf.isIso_iff_isIso_basis` lets us check the comparison
+    -- isomorphism on the basic-open basis.
     apply TopCat.Sheaf.isIso_iff_isIso_basis PrimeSpectrum.isBasis_basic_opens
     intro x
     let V : (Spec (CommRingCat.of (p.pullback q))).Opens := PrimeSpectrum.basicOpen x
