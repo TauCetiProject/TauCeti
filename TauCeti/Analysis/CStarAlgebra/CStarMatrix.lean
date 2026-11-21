@@ -59,6 +59,8 @@ diagonal embedding `b ↦ diag(b, …, b)`.
 * `CStarMatrix.submatrix_nonneg` and `CStarMatrix.extend_nonneg`: reindexing a positive matrix
   along any map of indices, or extending it by zero along an injective one, gives a positive
   matrix.
+* `CStarMatrix.norm_sq_smul_sub_mulLeft_nonneg`: positivity of the matrix
+  `(‖c‖ ^ 2 • (star (a i) * a j) - star (c * a i) * (c * a j))`.
 * `WithCStarModule.norm_equiv_symm_pi_smul`: the vector `(vᵢ a)ᵢ` of the Hilbert `A`-module `Aᵐ`
   has norm `‖v‖ ‖a‖`.
 * `CStarMatrix.norm_sum_smul_le`: compressing `x ∈ M_{m,n}(A)` by scalar vectors `v`, `w` gives
@@ -69,6 +71,7 @@ diagonal embedding `b ↦ diag(b, …, b)`.
 ## References
 
 * E. C. Lance, *Hilbert C⋆-Modules: A Toolkit for Operator Algebraists*, Lemma 4.1.
+* V. Paulsen, *Completely Bounded Maps and Operator Algebras*, Lemma 3.1.
 -/
 
 public section
@@ -382,6 +385,26 @@ theorem extend_nonneg {m : Type*} [Fintype m] {f : m → n} (hf : Function.Injec
   refine Fintype.sum_of_injective f hf _ _ (fun l hl => ?_) fun j => ?_
   · simp [hf.extend_apply, Function.extend_apply' _ _ _ (by simpa using hl : ¬∃ a, f a = l)]
   simp [hf.extend_apply]
+
+/-- For any `c : A` and finite family `a : n → A`, the matrix with `(i, j)`-entry
+`‖c‖ ^ 2 • (star (a i) * a j) - star (c * a i) * (c * a j)` is positive in `CStarMatrix n n A`. -/
+theorem norm_sq_smul_sub_mulLeft_nonneg (c : A) (a : n → A) :
+    0 ≤ ofMatrix (Matrix.of fun i j =>
+      ((‖c‖ ^ 2 : ℝ) : ℂ) • (star (a i) * a j) - star (c * a i) * (c * a j)) := by
+  rw [nonneg_iff_forall_sum_nonneg]
+  intro y
+  let z : A := ∑ i, a i * y i
+  have hsum :
+      ∑ i, ∑ j, star (y i) *
+        (((‖c‖ ^ 2 : ℝ) : ℂ) • (star (a i) * a j) - star (c * a i) * (c * a j)) * y j =
+        (‖c‖ ^ 2 : ℝ) • (star z * z) - star z * (star c * c) * z := by
+    simp only [mul_sub, sub_mul, Finset.sum_sub_distrib, z, ← Complex.coe_smul, mul_smul_comm,
+      smul_mul_assoc, ← Finset.smul_sum, star_sum, star_mul, Finset.sum_mul, Finset.mul_sum,
+      mul_assoc]
+    congr 1 <;> rw [Finset.sum_comm]
+  simp only [ofMatrix_apply, of_apply]
+  rw [hsum, sub_nonneg, sq, ← CStarRing.norm_star_mul_self (x := c)]
+  exact CStarAlgebra.star_left_conjugate_le_norm_smul z (star c * c)
 
 /-- The diagonal matrix `diag(a, …, a)` has norm at most `‖a‖`. -/
 theorem norm_diagonalNonUnitalStarAlgHom_le [DecidableEq n] (a : A) :
