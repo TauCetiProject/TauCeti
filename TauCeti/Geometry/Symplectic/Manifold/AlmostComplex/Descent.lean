@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Pullback
 public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
+import TauCeti.Geometry.Manifold.MFDeriv.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
 
 /-!
@@ -128,14 +129,8 @@ theorem mfderiv_apply_eq_of_deck
   have hq := mdifferentiableAt_of_mfderiv_injective hinj
   -- The chain rule for `q ∘ g = q` identifies `dq_x` with `dq_{g x} ∘ dg_x`.
   have hchain (w : TangentSpace I x) :
-      mfderiv I I' q x w = mfderiv I I' q (g x) (mfderiv I I g x w) := by
-    have h := mfderiv_comp x hq hg
-    rw [hqg] at h
-    -- After rewriting, `ContinuousLinearMap.comp_apply` closes the goal definitionally; it
-    -- cannot be used by `rw` because the tangent spaces at `q x` and `q (g x)` differ
-    -- syntactically.
-    rw [h]
-    rfl
+      mfderiv I I' q x w = mfderiv I I' q (g x) (mfderiv I I g x w) :=
+    (mfderiv_apply_mfderiv_of_eventuallyEq_comp (.of_eq hqg) hq hg w).symm
   -- Injectivity of `dq_{g x}` identifies `v'` with `dg_x v`.
   have hv' : v' = mfderiv I I g x v :=
     hinj (by rw [← hvv', hchain])
@@ -497,10 +492,9 @@ theorem mfderiv_localPullback_apply_of_comp_eq {g : M → M} {x : M}
     mfderiv I I g x (localPullback hq K x v) = localPullback hq K (g x) (mfderiv I I g x v) := by
   -- The chain rule for `q ∘ g = q` identifies `dq_x` with `dq_(g x) ∘ dg_x`.
   have hchain (w : TangentSpace I x) :
-      mfderiv I I' q (g x) (mfderiv I I g x w) = mfderiv I I' q x w := by
-    have h := mfderiv_comp_apply x ((hq.contMDiff (g x)).mdifferentiableAt (by simp)) hg w
-    rw [hqg] at h
-    exact h.symm
+      mfderiv I I' q (g x) (mfderiv I I g x w) = mfderiv I I' q x w :=
+    mfderiv_apply_mfderiv_of_eventuallyEq_comp (.of_eq hqg)
+      ((hq.contMDiff (g x)).mdifferentiableAt (by simp)) hg w
   have hqx : q (g x) = q x := congrFun hqg x
   apply (hq.isInvertible_mfderiv (by simp) (g x)).injective
   rw [hchain, mfderiv_localPullback_apply, mfderiv_localPullback_apply, hchain]
