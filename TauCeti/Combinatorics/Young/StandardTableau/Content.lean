@@ -348,13 +348,14 @@ private theorem labelContent_ne_of_rowIndex_lt {T U : StandardYoungTableau μ} {
   have hTd : T ⟨(r', s' - 1), hd⟩ = U ⟨(r', s' - 1), hd⟩ := by
     have hsymm := h _ hji
     rw [← toTableau_apply U, Equiv.symm_apply_apply, Equiv.symm_apply_eq] at hsymm
-    rw [← toTableau_apply, ← toTableau_apply U, ← hsymm]
+    simpa using hsymm.symm
   have h₁ : T ⟨(r, s' - 1), he⟩ < i :=
     (T.apply_lt_apply_of_mem he hd hrow.le le_rfl (Or.inl hrow)).trans (hTd ▸ hji)
   have h₂ : i ≤ T ⟨(r, s' - 1), he⟩ := by
     rcases (show s ≤ s' - 1 by omega).lt_or_eq with hs | hs
     · exact hTa ▸ (T.apply_lt_apply_of_mem ha' he le_rfl hs.le (Or.inr hs)).le
-    · exact hTa ▸ le_of_eq (by simp only [hs])
+    · obtain rfl : s = s' - 1 := hs
+      exact hTa.ge
   exact lt_irrefl i (h₂.trans_lt h₁)
 
 /-- **A standard Young tableau is determined by the contents of its labels**, as it is by their

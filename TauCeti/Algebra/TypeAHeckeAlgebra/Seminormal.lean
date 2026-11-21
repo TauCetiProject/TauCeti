@@ -496,16 +496,11 @@ theorem additiveContent_labelContent_sub_ne_zero (hQ : Q ≠ 0)
     additiveContent Q (labelContent T.toTableau b - labelContent T.toTableau a) ≠ 0 := by
   have hne : labelContent T.toTableau b - labelContent T.toTableau a ≠ 0 :=
     sub_ne_zero.mpr (T.labelContent_ne_of_lt_of_le_add_two hab hba).symm
-  have hlt := abs_labelContent_sub_lt_card T.toTableau b a
-  rw [abs_lt] at hlt
-  rcases lt_or_gt_of_ne hne with h | h
-  · obtain ⟨m, hm⟩ := Int.eq_ofNat_of_zero_le (neg_nonneg.mpr h.le)
-    rw [← neg_neg (labelContent T.toTableau b - labelContent T.toTableau a), hm, ne_eq,
-      additiveContent_neg_eq_zero_iff hQ]
-    exact hμ m (by omega) (by omega)
-  · obtain ⟨m, hm⟩ := Int.eq_ofNat_of_zero_le h.le
-    rw [hm]
-    exact hμ m (by omega) (by omega)
+  have hlt : |labelContent T.toTableau b - labelContent T.toTableau a - 0| < μ.card := by
+    rw [sub_zero]
+    exact abs_labelContent_sub_lt_card T.toTableau b a
+  rw [ne_eq, ← additiveContent_zero Q, additiveContent_inj hQ hμ hlt]
+  exact hne
 
 /-- Under the hypothesis of `TauCeti.TypeAHeckeAlgebra.seminormalRep` on `Q`, the additive
 content of an axial distance of a standard tableau is nonzero. -/

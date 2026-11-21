@@ -103,8 +103,8 @@ private noncomputable def seminormalMatrices (q : Kˣ) (μ : YoungDiagram)
 private theorem mem_seminormalMatrices {M : Matrix (StandardYoungTableau μ)
     (StandardYoungTableau μ) K} :
     M ∈ seminormalMatrices q μ hμ ↔ ∃ x, seminormalRep q μ hμ x = toLinAlgEquiv' M := by
-  rw [seminormalMatrices, Subalgebra.mem_comap, AlgHom.mem_range]
-  rfl
+  rw [seminormalMatrices, Subalgebra.mem_comap, AlgHom.mem_range,
+    AlgEquiv.toAlgHom_apply]
 
 /-- The projection onto the line of a standard tableau is in the image: the additive
 Jucys–Murphy elements act diagonally, and their eigenvalues separate the tableaux. -/
@@ -169,10 +169,9 @@ private theorem single_swap_mem_seminormalMatrices
   have hentry : LinearMap.toMatrixAlgEquiv' (seminormalRep q μ hμ (T q ⟨k, by omega⟩))
       (U.swap k hk h) U =
         (↑q⁻¹ : K) * seminormalOffDiag ((q : K) ^ 2) (-axialDistance U.toTableau k hk) := by
-    rw [LinearMap.toMatrixAlgEquiv'_apply,
+    simp [LinearMap.toMatrixAlgEquiv'_apply,
       seminormalRep_T_single_of_abs_ne_one (⟨k, by omega⟩ : Fin (μ.card - 1)) U h,
-      Pi.add_apply, Pi.smul_apply, Pi.smul_apply, Pi.single_eq_of_ne (U.swap_ne_self k hk h),
-      Pi.single_eq_same, smul_zero, zero_add, smul_eq_mul, mul_one]
+      Pi.single_eq_of_ne (U.swap_ne_self k hk h)]
   have hne : LinearMap.toMatrixAlgEquiv' (seminormalRep q μ hμ (T q ⟨k, by omega⟩))
       (U.swap k hk h) U ≠ 0 := by
     rw [hentry]
@@ -216,9 +215,10 @@ linear endomorphism of the functions on the standard tableaux of shape `μ` is t
 element of the Hecke algebra `H_n(q)`. -/
 theorem seminormalRep_surjective
     (hn : ∀ d : ℕ, 0 < d → d ≤ μ.card → additiveContent ((q : K) ^ 2) d ≠ 0) :
-    Function.Surjective (seminormalRep q μ hμ) := by
+    Function.Surjective (seminormalRep q μ fun d hd hdn => hn d hd hdn.le) := by
   intro f
-  have hM : LinearMap.toMatrixAlgEquiv' f ∈ seminormalMatrices q μ hμ := by
+  have hM : LinearMap.toMatrixAlgEquiv' f ∈
+      seminormalMatrices q μ fun d hd hdn => hn d hd hdn.le := by
     rw [matrix_eq_sum_single (LinearMap.toMatrixAlgEquiv' f)]
     refine Subalgebra.sum_mem _ fun U _ => Subalgebra.sum_mem _ fun W _ => ?_
     rw [← mul_one (LinearMap.toMatrixAlgEquiv' f U W), ← smul_eq_mul, ← smul_single]
@@ -232,17 +232,17 @@ that is invariant under the Hecke algebra `H_n(q)` is `⊥` or `⊤`. -/
 theorem eq_bot_or_eq_top_of_seminormalRep_mem
     (hn : ∀ d : ℕ, 0 < d → d ≤ μ.card → additiveContent ((q : K) ^ 2) d ≠ 0)
     (W : Submodule K (StandardYoungTableau μ → K))
-    (hW : ∀ x, ∀ w ∈ W, seminormalRep q μ hμ x w ∈ W) : W = ⊥ ∨ W = ⊤ := by
+    (hW : ∀ x, ∀ w ∈ W, seminormalRep q μ (fun d hd hdn => hn d hd hdn.le) x w ∈ W) :
+    W = ⊥ ∨ W = ⊤ := by
   refine or_iff_not_imp_left.mpr fun hne => eq_top_iff.mpr fun v _ => ?_
   obtain ⟨w, hw, hw0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hne
   obtain ⟨U, hU⟩ : ∃ U, w U ≠ 0 := by
     by_contra! h
     exact hw0 (funext h)
   -- the endomorphism `ψ ↦ (ψ U / w U) • v` sends `w` to `v`
-  obtain ⟨x, hx⟩ := seminormalRep_surjective (hμ := hμ) hn
+  obtain ⟨x, hx⟩ := seminormalRep_surjective hn
     ((w U)⁻¹ • (LinearMap.proj U).smulRight v)
   have hxw := hW x w hw
-  rwa [hx, LinearMap.smul_apply, LinearMap.smulRight_apply, LinearMap.proj_apply, smul_smul,
-    inv_mul_cancel₀ hU, one_smul] at hxw
+  simpa [hx, smul_smul, inv_mul_cancel₀ hU] using hxw
 
 end TauCeti.TypeAHeckeAlgebra

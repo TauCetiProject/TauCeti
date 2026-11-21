@@ -23,7 +23,8 @@ shape: every standard tableau is joined to the row-superstandard tableau by a ch
 (`TauCeti.StandardYoungTableau.reflTransGen_swap_rowSuperstandard`). Since an exchange can be
 undone, any two standard tableaux of one shape are joined by such a chain. In Young's seminormal
 form a generator sends the vector of a tableau to a combination of it and the vector of the
-exchanged tableau, so connectedness is what makes the seminormal representations irreducible.
+exchanged tableau, so connectedness, together with nonzero exchange coefficients and Jucys–Murphy
+eigenvalues that separate the tableaux, makes the seminormal representations irreducible.
 
 To find the exchanges, read the cells of the shape left to right along the first row, then along
 the second, and so on. The row-superstandard tableau is the only standard tableau whose labels are
