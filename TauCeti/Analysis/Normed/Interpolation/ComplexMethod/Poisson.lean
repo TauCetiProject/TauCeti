@@ -50,6 +50,48 @@ namespace TauCeti
 
 /-! ### Herglotz–Riesz multipliers and Calderón's log-convexity inequality -/
 
+namespace CompatibleCouple.IsStripFunction
+
+variable {X₀ X₁ V : Type*}
+  [NormedAddCommGroup X₀] [NormedSpace ℂ X₀] [NormedAddCommGroup X₁] [NormedSpace ℂ X₁]
+  [AddCommGroup V] [Module ℂ V] [TopologicalSpace V] [ContinuousAdd V] [T1Space V]
+  {C : CompatibleCouple ℂ X₀ X₁ V} {F : ℂ → C.SumSpace} {g : C₀(ℝ, X₀) × C₀(ℝ, X₁)}
+
+/-- Multiplying an admissible function by a scalar function `c`, holomorphic on the open strip,
+continuous up to its boundary, and bounded on the closed strip, gives an admissible function with
+boundary traces `(t ↦ c (t * I) • g₀ t, t ↦ c (1 + t * I) • g₁ t)`. -/
+theorem exists_smul_of_diffContOnCl (hF : C.IsStripFunction F g) {c : ℂ → ℂ}
+    (hc : DiffContOnCl ℂ c (verticalStrip 0 1))
+    {K : ℝ} (hK : ∀ z ∈ verticalClosedStrip 0 1, ‖c z‖ ≤ K) :
+    ∃ g' : C₀(ℝ, X₀) × C₀(ℝ, X₁), C.IsStripFunction (fun z => c z • F z) g' ∧
+      (∀ t, g'.1 t = c (t * I) • g.1 t) ∧ ∀ t, g'.2 t = c (1 + t * I) • g.2 t := by
+  have hcl : closure (verticalStrip 0 1) = verticalClosedStrip 0 1 := by
+    rw [verticalStrip, closure_preimage_re, closure_Ioo zero_ne_one]; rfl
+  have hcc : ContinuousOn c (verticalClosedStrip 0 1) := hcl ▸ hc.continuousOn
+  have hc0 : Continuous fun t : ℝ => c (t * I) :=
+    hcc.comp_continuous (by fun_prop) fun _ => by simp [mem_verticalClosedStrip_iff]
+  have hc1 : Continuous fun t : ℝ => c (1 + t * I) :=
+    hcc.comp_continuous (by fun_prop) fun _ => by simp [mem_verticalClosedStrip_iff]
+  let G₀ := ZeroAtInftyContinuousMap.compLeftFamily
+    (fun t : ℝ => c (t * I) • ContinuousLinearMap.id ℂ X₀)
+    (fun x => by simpa using hc0.fun_smul continuous_const)
+    ⟨K, fun t x => by
+      rw [smul_apply, ContinuousLinearMap.id_apply, norm_smul]
+      exact mul_le_mul_of_nonneg_right
+        (hK (t * I) (by simp [mem_verticalClosedStrip_iff])) (norm_nonneg x)⟩
+  let G₁ := ZeroAtInftyContinuousMap.compLeftFamily
+    (fun t : ℝ => c (1 + t * I) • ContinuousLinearMap.id ℂ X₁)
+    (fun x => by simpa using hc1.fun_smul continuous_const)
+    ⟨K, fun t x => by
+      rw [smul_apply, ContinuousLinearMap.id_apply, norm_smul]
+      exact mul_le_mul_of_nonneg_right
+        (hK (1 + t * I) (by simp [mem_verticalClosedStrip_iff])) (norm_nonneg x)⟩
+  exact ⟨(G₀ g.1, G₁ g.2),
+    hF.smul hc hK (fun t => by simp [G₀]) (fun t => by simp [G₁]),
+    fun t => by simp [G₀], fun t => by simp [G₁]⟩
+
+end CompatibleCouple.IsStripFunction
+
 namespace CompatibleCouple.ComplexMethodSpace
 
 variable {X₀ X₁ V : Type*}
@@ -165,8 +207,8 @@ theorem norm_le_exp_integral_stripPoissonKernel {θ ε : ℝ} (hθ : θ ∈ Ioo 
 /-- Calderón's log-convexity inequality applied to `mk θ g`. -/
 theorem norm_mk_le_exp_integral_stripPoissonKernel {θ ε : ℝ} (hθ : θ ∈ Ioo 0 1) (hε : 0 < ε)
     (g : C.stripTraces) :
-    ‖mk θ g‖ ≤ Real.exp ((∫ t, stripPoissonKernel₀ θ t * Real.log (max ‖g.1.1 t‖ ε)) +
-      ∫ t, stripPoissonKernel₁ θ t * Real.log (max ‖g.1.2 t‖ ε)) :=
+    ‖mk θ g‖ ≤ Real.exp ((∫ t, stripPoissonKernel₀ θ t * Real.log (max ‖g.val.1 t‖ ε)) +
+      ∫ t, stripPoissonKernel₁ θ t * Real.log (max ‖g.val.2 t‖ ε)) :=
   norm_le_exp_integral_stripPoissonKernel hθ hε (C.isStripFunction_stripFunction g)
     (by simp [stripEval_apply])
 
@@ -205,8 +247,8 @@ theorem norm_le_rpow_integral_stripPoissonMeasure {θ p₀ p₁ : ℝ} (hθ : θ
 /-- `(L^{p₀}, L^{p₁})` strip Poisson bound applied to `mk θ g`. -/
 theorem norm_mk_le_rpow_integral_stripPoissonMeasure {θ p₀ p₁ : ℝ} (hθ : θ ∈ Ioo 0 1)
     (hp₀ : 0 < p₀) (hp₁ : 0 < p₁) (g : C.stripTraces) :
-    ‖mk θ g‖ ≤ (∫ t, ‖g.1.1 t‖ ^ p₀ ∂stripPoissonMeasure₀ θ) ^ ((1 - θ) / p₀) *
-      (∫ t, ‖g.1.2 t‖ ^ p₁ ∂stripPoissonMeasure₁ θ) ^ (θ / p₁) :=
+    ‖mk θ g‖ ≤ (∫ t, ‖g.val.1 t‖ ^ p₀ ∂stripPoissonMeasure₀ θ) ^ ((1 - θ) / p₀) *
+      (∫ t, ‖g.val.2 t‖ ^ p₁ ∂stripPoissonMeasure₁ θ) ^ (θ / p₁) :=
   norm_le_rpow_integral_stripPoissonMeasure hθ hp₀ hp₁ (C.isStripFunction_stripFunction g)
     (by simp [stripEval_apply])
 

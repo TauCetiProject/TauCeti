@@ -63,8 +63,8 @@ private theorem exists_weighted_trace {Y₀ Y₁ W : Type*}
     (hc : (1 - θ) * c₀ + θ * c₁ = 1) (hbi : 0 < bi) (hB : 0 < B)
     {u : D.ComplexMethodSpace θ} (hu : ‖u‖ < bi) :
     ∃ g' : D.stripTraces, ComplexMethodSpace.mk θ g' = u ∧
-      (∀ t, ‖g'.1.1 t‖ ≤ B * (bi / B) ^ c₀) ∧
-      (∀ t, ‖g'.1.2 t‖ ≤ B * (bi / B) ^ c₁) := by
+      (∀ t, ‖g'.val.1 t‖ ≤ B * (bi / B) ^ c₀) ∧
+      (∀ t, ‖g'.val.2 t‖ ≤ B * (bi / B) ^ c₁) := by
   obtain ⟨g, rfl, hgb⟩ := ComplexMethodSpace.norm_lt_iff.1 hu
   set γ := Real.log (bi / B)
   let w : ℂ → ℂ := fun z ↦ exp (((1 - z) * c₀ + z * c₁ - 1) * γ)
@@ -85,9 +85,9 @@ private theorem exists_weighted_trace {Y₀ Y₁ W : Type*}
       stripFunction_eq hsmul (by simpa [mem_verticalClosedStrip_iff] using hθ)]
     simp [hwθ]
   · simpa [hg'₀, w, norm_smul, Complex.norm_exp] using hbd (c := c₀)
-      ((g.1.1.norm_coe_le_norm t).trans ((norm_fst_le g.1).trans hgb.le))
+      ((g.val.1.norm_coe_le_norm t).trans ((norm_fst_le g.val).trans hgb.le))
   · simpa [hg'₁, w, norm_smul, Complex.norm_exp] using hbd (c := c₁)
-      ((g.1.2.norm_coe_le_norm t).trans ((norm_snd_le g.1).trans hgb.le))
+      ((g.val.2.norm_coe_le_norm t).trans ((norm_snd_le g.val).trans hgb.le))
 
 /-! ### The `PiLp` compatible couple -/
 
@@ -228,10 +228,10 @@ private theorem norm_mk_le_stripPoissonMeasure {Y₀ Y₁ W : Type*}
     [NormedAddCommGroup Y₀] [NormedSpace ℂ Y₀] [NormedAddCommGroup Y₁] [NormedSpace ℂ Y₁]
     [AddCommGroup W] [Module ℂ W] [TopologicalSpace W] [ContinuousAdd W] [T1Space W]
     {D : CompatibleCouple ℂ Y₀ Y₁ W} {θ : ℝ} (hθ : θ ∈ Ioo 0 1)
-    {gi : D.stripTraces} (hgi₀ : ‖gi.1.1‖ ≤ 1) (hgi₁ : ‖gi.1.2‖ ≤ 1) :
+    {gi : D.stripTraces} (hgi₀ : ‖gi.val.1‖ ≤ 1) (hgi₁ : ‖gi.val.2‖ ≤ 1) :
     ‖ComplexMethodSpace.mk θ gi‖ ≤
-      (∫ t, ‖gi.1.1 t‖ ^ q₀.toReal ∂stripPoissonMeasure₀ θ) ^ ((1 - θ) * (q₀⁻¹).toReal) *
-      (∫ t, ‖gi.1.2 t‖ ^ q₁.toReal ∂stripPoissonMeasure₁ θ) ^ (θ * (q₁⁻¹).toReal) := by
+      (∫ t, ‖gi.val.1 t‖ ^ q₀.toReal ∂stripPoissonMeasure₀ θ) ^ ((1 - θ) * (q₀⁻¹).toReal) *
+      (∫ t, ‖gi.val.2 t‖ ^ q₁.toReal ∂stripPoissonMeasure₁ θ) ^ (θ * (q₁⁻¹).toReal) := by
   have hu : ComplexMethodSpace.toSum (ComplexMethodSpace.mk θ gi) = D.stripFunction gi θ :=
     (ComplexMethodSpace.toSum_mk gi).trans (D.stripEval_apply θ gi)
   have hF := D.isStripFunction_stripFunction gi
@@ -255,19 +255,21 @@ private theorem coord_le_poisson {θ : ℝ} (hθ : θ ∈ Ioo 0 1)
     (C : ∀ i, CompatibleCouple ℂ (X₀ i) (X₁ i) (V i))
     {g : (piLp q₀ q₁ C).stripTraces} (hg : ‖g‖ ≤ 1) (i : ι) :
     ‖piLpCoord θ C i (ComplexMethodSpace.mk θ g)‖ ≤
-      (∫ t, ‖(g.1.1 t) i‖ ^ q₀.toReal ∂stripPoissonMeasure₀ θ) ^ ((1 - θ) * (q₀⁻¹).toReal) *
-      (∫ t, ‖(g.1.2 t) i‖ ^ q₁.toReal ∂stripPoissonMeasure₁ θ) ^ (θ * (q₁⁻¹).toReal) := by
+      (∫ t, ‖(g.val.1 t) i‖ ^ q₀.toReal ∂stripPoissonMeasure₀ θ) ^ ((1 - θ) * (q₀⁻¹).toReal) *
+      (∫ t, ‖(g.val.2 t) i‖ ^ q₁.toReal ∂stripPoissonMeasure₁ θ) ^ (θ * (q₁⁻¹).toReal) := by
   set gi := stripTracesMap (PiLp.proj (𝕜 := ℂ) q₀ X₀ i) (PiLp.proj (𝕜 := ℂ) q₁ X₁ i)
     (piLp_proj_compat C i) g
-  have hgi1 (t : ℝ) : gi.1.1 t = (g.1.1 t) i := by rw [stripTracesMap_apply_fst, PiLp.proj_apply]
-  have hgi2 (t : ℝ) : gi.1.2 t = (g.1.2 t) i := by rw [stripTracesMap_apply_snd, PiLp.proj_apply]
+  have hgi1 (t : ℝ) : gi.val.1 t = (g.val.1 t) i := by
+    rw [stripTracesMap_apply_fst, PiLp.proj_apply]
+  have hgi2 (t : ℝ) : gi.val.2 t = (g.val.2 t) i := by
+    rw [stripTracesMap_apply_snd, PiLp.proj_apply]
   rw [piLpCoord, ComplexMethodSpace.map_mk]; simp_rw [← hgi1, ← hgi2]
-  have h1 := (norm_fst_le g.1).trans hg; have h2 := (norm_snd_le g.1).trans hg
+  have h1 := (norm_fst_le g.val).trans hg; have h2 := (norm_snd_le g.val).trans hg
   exact norm_mk_le_stripPoissonMeasure (q₀ := q₀) (q₁ := q₁) hθ
     ((ZeroAtInftyContinuousMap.norm_le zero_le_one).2 fun t ↦
-      hgi1 t ▸ (PiLp.norm_apply_le _ i).trans ((g.1.1.norm_coe_le_norm t).trans h1))
+      hgi1 t ▸ (PiLp.norm_apply_le _ i).trans ((g.val.1.norm_coe_le_norm t).trans h1))
     ((ZeroAtInftyContinuousMap.norm_le zero_le_one).2 fun t ↦
-      hgi2 t ▸ (PiLp.norm_apply_le _ i).trans ((g.1.2.norm_coe_le_norm t).trans h2))
+      hgi2 t ▸ (PiLp.norm_apply_le _ i).trans ((g.val.2.norm_coe_le_norm t).trans h2))
 
 private theorem toReal_mul_inv_add {θ : ℝ} (hθ : θ ∈ Icc 0 1) (hq_ne : q ≠ ∞)
     (hq : q⁻¹ = ENNReal.ofReal (1 - θ) * q₀⁻¹ + ENNReal.ofReal θ * q₁⁻¹) :
@@ -299,8 +301,8 @@ private theorem norm_toLp_piLpCoord_mk_le_one [Fact (1 ≤ q)] {θ : ℝ} (hθ :
   have hα₁ : 0 ≤ α₁ := mul_nonneg (mul_nonneg hq_pos.le hθ.1.le) ENNReal.toReal_nonneg
   have hα : α₀ + α₁ = 1 := by
     simpa only [α₀, α₁, mul_assoc] using toReal_mul_inv_add ⟨hθ.1.le, hθ.2.le⟩ hq_top hq
-  let S₀ : ι → ℝ := fun i ↦ ∫ t, ‖(g.1.1 t) i‖ ^ q₀.toReal ∂stripPoissonMeasure₀ θ
-  let S₁ : ι → ℝ := fun i ↦ ∫ t, ‖(g.1.2 t) i‖ ^ q₁.toReal ∂stripPoissonMeasure₁ θ
+  let S₀ : ι → ℝ := fun i ↦ ∫ t, ‖(g.val.1 t) i‖ ^ q₀.toReal ∂stripPoissonMeasure₀ θ
+  let S₁ : ι → ℝ := fun i ↦ ∫ t, ‖(g.val.2 t) i‖ ^ q₁.toReal ∂stripPoissonMeasure₁ θ
   have hpt (i : ι) : ‖piLpCoord θ C i (ComplexMethodSpace.mk θ g)‖ ^ q.toReal ≤
       α₀ * S₀ i + α₁ * S₁ i := by
     have hS₀ : 0 ≤ S₀ i := integral_nonneg fun _ ↦ by positivity
@@ -312,12 +314,12 @@ private theorem norm_toLp_piLpCoord_mk_le_one [Fact (1 ≤ q)] {θ : ℝ} (hθ :
     exact Real.geom_mean_le_arith_mean2_weighted hα₀ hα₁ hS₀ hS₁ hα
   have hsum₀ : α₀ * ∑ i, S₀ i ≤ α₀ := if hq₀ : q₀ = ∞ then by simp [α₀, hq₀] else
     mul_le_of_le_one_right hα₀ <| (sum_integral_norm_rpow_le_rpow (μ := stripPoissonMeasure₀ θ)
-      (toReal_pos_of_ne_top hq₀) (.of_forall fun t ↦ (g.1.1.norm_coe_le_norm t).trans
-        ((norm_fst_le g.1).trans hg))).trans_eq (Real.one_rpow _)
+      (toReal_pos_of_ne_top hq₀) (.of_forall fun t ↦ (g.val.1.norm_coe_le_norm t).trans
+        ((norm_fst_le g.val).trans hg))).trans_eq (Real.one_rpow _)
   have hsum₁ : α₁ * ∑ i, S₁ i ≤ α₁ := if hq₁ : q₁ = ∞ then by simp [α₁, hq₁] else
     mul_le_of_le_one_right hα₁ <| (sum_integral_norm_rpow_le_rpow (μ := stripPoissonMeasure₁ θ)
-      (toReal_pos_of_ne_top hq₁) (.of_forall fun t ↦ (g.1.2.norm_coe_le_norm t).trans
-        ((norm_snd_le g.1).trans hg))).trans_eq (Real.one_rpow _)
+      (toReal_pos_of_ne_top hq₁) (.of_forall fun t ↦ (g.val.2.norm_coe_le_norm t).trans
+        ((norm_snd_le g.val).trans hg))).trans_eq (Real.one_rpow _)
   refine (Finset.sum_le_sum fun i _ ↦ hpt i).trans ?_
   rw [Finset.sum_add_distrib, ← Finset.mul_sum, ← Finset.mul_sum]; linarith
 
@@ -346,8 +348,8 @@ private theorem norm_piLpFromCoord_le_of_traces {θ B : ℝ} (hB : 0 ≤ B)
     (C : ∀ i, CompatibleCouple ℂ (X₀ i) (X₁ i) (V i))
     (v : ∀ i, (C i).ComplexMethodSpace θ) (g : ∀ i, (C i).stripTraces)
     (hmk : ∀ i, ComplexMethodSpace.mk θ (g i) = v i)
-    (h₀ : ∀ t, ‖toLp q₀ (fun j ↦ (g j).1.1 t)‖ ≤ B)
-    (h₁ : ∀ t, ‖toLp q₁ (fun j ↦ (g j).1.2 t)‖ ≤ B) :
+    (h₀ : ∀ t, ‖toLp q₀ (fun j ↦ (g j).val.1 t)‖ ≤ B)
+    (h₁ : ∀ t, ‖toLp q₁ (fun j ↦ (g j).val.2 t)‖ ≤ B) :
     ‖piLpFromCoord q₀ q₁ θ C v‖ ≤ B := by
   classical
   let G : (piLp q₀ q₁ C).stripTraces :=
@@ -356,10 +358,10 @@ private theorem norm_piLpFromCoord_le_of_traces {θ B : ℝ} (hB : 0 ≤ B)
   have hG_mk : ComplexMethodSpace.mk θ G = piLpFromCoord q₀ q₁ θ C v := by
     rw [piLpFromCoord, map_sum]
     exact Finset.sum_congr rfl fun i _ ↦ by rw [piLpSingle, ← hmk i, ComplexMethodSpace.map_mk]
-  have hG₀ (t : ℝ) : G.1.1 t = toLp q₀ (fun j ↦ (g j).1.1 t) := PiLp.ext fun j ↦ by
+  have hG₀ (t : ℝ) : G.val.1 t = toLp q₀ (fun j ↦ (g j).val.1 t) := PiLp.ext fun j ↦ by
     dsimp only [G]; rw [Submodule.coe_sum, Prod.fst_sum, ZeroAtInftyContinuousMap.coe_sum,
       Finset.sum_apply, ofLp_sum, Finset.sum_apply]; simp [piLpSingleCLM]
-  have hG₁ (t : ℝ) : G.1.2 t = toLp q₁ (fun j ↦ (g j).1.2 t) := PiLp.ext fun j ↦ by
+  have hG₁ (t : ℝ) : G.val.2 t = toLp q₁ (fun j ↦ (g j).val.2 t) := PiLp.ext fun j ↦ by
     dsimp only [G]; rw [Submodule.coe_sum, Prod.snd_sum, ZeroAtInftyContinuousMap.coe_sum,
       Finset.sum_apply, ofLp_sum, Finset.sum_apply]; simp [piLpSingleCLM]
   rw [← hG_mk]
@@ -379,9 +381,9 @@ private theorem norm_piLpFromCoord_le_top {θ : ℝ} (hθ : θ ∈ Ioo 0 1)
   have hb : 0 ≤ ‖v‖ + δ := add_nonneg (norm_nonneg v) hδ.le
   exact norm_piLpFromCoord_le_of_traces hb C v.ofLp g hg_mk
     (fun t ↦ (PiLp.norm_toLp _).trans_le ((pi_norm_le_iff_of_nonneg hb).2 fun j ↦
-      ((g j).1.1.norm_coe_le_norm t).trans ((norm_fst_le (g j).1).trans (hg_norm j).le)))
+      ((g j).val.1.norm_coe_le_norm t).trans ((norm_fst_le (g j).val).trans (hg_norm j).le)))
     (fun t ↦ (PiLp.norm_toLp _).trans_le ((pi_norm_le_iff_of_nonneg hb).2 fun j ↦
-      ((g j).1.2.norm_coe_le_norm t).trans ((norm_snd_le (g j).1).trans (hg_norm j).le)))
+      ((g j).val.2.norm_coe_le_norm t).trans ((norm_snd_le (g j).val).trans (hg_norm j).le)))
 
 private theorem norm_piLpFromCoord_le [Fact (1 ≤ q)] {θ : ℝ} (hθ : θ ∈ Ioo 0 1)
     (hq : q⁻¹ = ENNReal.ofReal (1 - θ) * q₀⁻¹ + ENNReal.ofReal θ * q₁⁻¹)
@@ -419,10 +421,10 @@ private theorem norm_piLpFromCoord_le [Fact (1 ≤ q)] {θ : ℝ} (hθ : θ ∈ 
     Real.rpow_mul (div_nonneg (hb j).le hB.le) _ _
   exact norm_piLpFromCoord_le_of_traces hB.le C v.ofLp g' hg'_mk
     (fun t ↦ (PiLp.norm_le_mul_sum_rpow_inv (zero_lt_one.trans_le (Fact.out : 1 ≤ q₀)).ne' hw hB.le
-      (x := toLp q₀ fun j ↦ (g' j).1.1 t)
+      (x := toLp q₀ fun j ↦ (g' j).val.1 t)
       fun j ↦ (hg'₀ j t).trans_eq (congrArg (B * ·) (hw_eq j _))).trans_eq (by simp [hw_sum]))
     (fun t ↦ (PiLp.norm_le_mul_sum_rpow_inv (zero_lt_one.trans_le (Fact.out : 1 ≤ q₁)).ne' hw hB.le
-      (x := toLp q₁ fun j ↦ (g' j).1.2 t)
+      (x := toLp q₁ fun j ↦ (g' j).val.2 t)
       fun j ↦ (hg'₁ j t).trans_eq (congrArg (B * ·) (hw_eq j _))).trans_eq (by simp [hw_sum]))
 
 /-! ### Main linear isometry equivalences -/
@@ -459,6 +461,39 @@ theorem piLpCoord_piLpComplexMethodEquiv_symm [Fact (1 ≤ q)] {θ : ℝ} (hθ :
     (v : PiLp q (fun i ↦ (C i).ComplexMethodSpace θ)) (i : ι) :
     piLpCoord θ C i ((piLpComplexMethodEquiv hθ hq C).symm v) = v i :=
   piLpCoord_piLpFromCoord (q₀ := q₀) (q₁ := q₁) θ C v.ofLp i
+
+/-- For `0 ≤ θ ≤ 1`, `[X, X]_θ ≃ₗᵢ[ℂ] X` via evaluation in the ambient space. -/
+def ComplexMethodSpace.reflEquiv {X : Type*} [NormedAddCommGroup X] [NormedSpace ℂ X] {θ : ℝ}
+    (hθ : θ ∈ Icc 0 1) : (refl ℂ X).ComplexMethodSpace θ ≃ₗᵢ[ℂ] X where
+  toFun u := (refl ℂ X).sumSpaceEmbed (ComplexMethodSpace.toSum u)
+  invFun x := ComplexMethodSpace.ofInter θ ⟨(x, x), by simp⟩
+  left_inv u := by ext; simp [ComplexMethodSpace.toSum_ofInter hθ]
+  right_inv x := by simp [ComplexMethodSpace.toSum_ofInter hθ]
+  map_add' u v := by simp
+  map_smul' c u := by simp
+  norm_map' u := (norm_refl_sumSpaceEmbed (ComplexMethodSpace.toSum u)).trans
+    (ComplexMethodSpace.norm_refl u).symm
+
+/-- Applying `reflEquiv` evaluates `toSum u` in `X`. -/
+@[simp]
+theorem ComplexMethodSpace.reflEquiv_apply {X : Type*} [NormedAddCommGroup X] [NormedSpace ℂ X]
+    {θ : ℝ} (hθ : θ ∈ Icc 0 1) (u : (refl ℂ X).ComplexMethodSpace θ) :
+    ComplexMethodSpace.reflEquiv hθ u = (refl ℂ X).sumSpaceEmbed (ComplexMethodSpace.toSum u) :=
+  (rfl)
+
+/-- The inverse of `reflEquiv` sends `x : X` to the class of `(x, x) ∈ (refl ℂ X).inter`. -/
+@[simp]
+theorem ComplexMethodSpace.reflEquiv_symm_apply {X : Type*} [NormedAddCommGroup X] [NormedSpace ℂ X]
+    {θ : ℝ} (hθ : θ ∈ Icc 0 1) (x : X) :
+    (ComplexMethodSpace.reflEquiv hθ).symm x = ComplexMethodSpace.ofInter θ ⟨(x, x), by simp⟩ :=
+  (rfl)
+
+/-- In `(refl ℂ X).SumSpace`, `(reflEquiv hθ).symm x` lies over `fstToSum x`. -/
+theorem ComplexMethodSpace.toSum_reflEquiv_symm {X : Type*} [NormedAddCommGroup X]
+    [NormedSpace ℂ X] {θ : ℝ} (hθ : θ ∈ Icc 0 1) (x : X) :
+    ComplexMethodSpace.toSum ((ComplexMethodSpace.reflEquiv hθ).symm x) =
+      (refl ℂ X).fstToSum x := by
+  simp [ComplexMethodSpace.reflEquiv_symm_apply, ComplexMethodSpace.toSum_ofInter hθ]
 
 /-- **Constant-fiber complex interpolation of finite `ℓ^q` spaces** (`0 < θ < 1`,
 `1 / q = (1 - θ) / q₀ + θ / q₁`). -/

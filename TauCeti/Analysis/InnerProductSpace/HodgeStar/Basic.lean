@@ -22,10 +22,6 @@ import Mathlib.Analysis.InnerProductSpace.PiL2
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
 import TauCeti.LinearAlgebra.ExteriorPower.WedgePairing
--- The Gram-determinant formula `LinearMap.BilinForm.bilinForm_ιMulti_ιMulti` for the induced
--- bilinear form on an exterior power is private to its file, and the body of
--- `LinearMap.BilinForm.exteriorPower` is not exposed, so evaluating that form needs this import.
-import all Mathlib.LinearAlgebra.ExteriorPower.BilinForm
 
 /-!
 # The Hodge star of an oriented real inner product space
@@ -274,7 +270,7 @@ theorem trace_hodgeStar {k : ℕ} (hk : 0 < k) (hkk : k + k = finrank ℝ V) :
   -- A `k`-element set with `0 < k` is not disjoint from itself, so it is not its own complement.
   have hne : powersetCard.compl hcard s ≠ s := fun h ↦ by
     have hs := disjoint_self.1 ((powersetCard.disjoint_iff_eq_compl hcard).2 h.symm)
-    have := powersetCard.mem_iff.1 s.2
+    have := powersetCard.mem_iff.1 s.property
     simp_all
   -- The diagonal entry is the `e_I` coordinate of `⋆ e_I = ±e_{Iᶜ}`, which vanishes.
   rw [Matrix.diag_apply, LinearMap.toMatrix_apply, LinearEquiv.coe_coe, hodgeStar_orthonormalBasis]
@@ -327,7 +323,7 @@ theorem two_mul_finrank_eigenspace_hodgeStar_neg_one {k : ℕ} (hk : Even k) (hk
 theorem hodgeStar_coe_of_mem_eigenspace_one {k : ℕ} (hkk : k + k = finrank ℝ V)
     (x : Module.End.eigenspace (o.hodgeStar hkk : Module.End ℝ (⋀[ℝ]^k V)) 1) :
     o.hodgeStar hkk x = x := by
-  simpa using Module.End.mem_eigenspace_iff.1 x.2
+  simpa using Module.End.mem_eigenspace_iff.1 x.property
 
 /-! ### Two-forms split along a unit vector -/
 
@@ -351,7 +347,7 @@ theorem inner_ιMulti_twoVectorContraction_add_hodgeStar (hkk : 2 + 2 = finrank 
   have hιa : ExteriorAlgebra.ι ℝ a = contractLeft (innerₗ V s) (F : ExteriorAlgebra ℝ V) := by
     rw [ha, TauCeti.twoVectorContraction_apply]
     exact TauCeti.ExteriorAlgebra.ι_ιInv_of_mem_exteriorPower_one
-      (TauCeti.ExteriorAlgebra.contractLeft_mem_exteriorPower (innerₗ V s) (n := 1) F.2)
+      (TauCeti.ExteriorAlgebra.contractLeft_mem_exteriorPower (innerₗ V s) (n := 1) F.property)
   -- In dimension four, `F ∧ F` is twice `F ∧ (s ∧ a)`.
   have hwedge : exteriorPower.wedge ℝ V 2 2 F F =
       2 • exteriorPower.wedge ℝ V 2 2 F (ιMulti ℝ 2 ![s, a]) := by
@@ -360,7 +356,8 @@ theorem inner_ιMulti_twoVectorContraction_add_hodgeStar (hkk : 2 + 2 = finrank 
       ExteriorAlgebra.ιMulti_apply, Submodule.coe_smul_of_tower]
     simp only [List.ofFn_succ, List.ofFn_zero, List.prod_cons, List.prod_nil, mul_one,
       Matrix.cons_val_zero, Matrix.cons_val_succ, hιa]
-    exact TauCeti.ExteriorAlgebra.mul_self_eq_two_smul_mul_ι_mul_contractLeft hss (by omega) F.2
+    exact TauCeti.ExteriorAlgebra.mul_self_eq_two_smul_mul_ι_mul_contractLeft hss
+        (by omega) F.property
   rw [inner_add_right, real_inner_comm, ← TauCeti.inner_twoVectorContraction_apply, ← ha,
     real_inner_self_eq_norm_sq, real_inner_comm, inner_hodgeStar_apply]
   simp only [LinearMap.compr₂_apply, hwedge, map_nsmul, nsmul_eq_mul]

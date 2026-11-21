@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.FieldTheory.GaloisCohomology.Kummer
+public import TauCeti.FieldTheory.GaloisCohomology.Units.CoeffMap
 public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.Basic
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestriction.Basic
 
@@ -131,8 +131,7 @@ theorem explicitMap2_unitsCoeffMapSymm_explicitMap2_unitsCoeffMap
       x := by
   let e : UnitsCoeff K ≃+ UnitsCoeff L :=
     (unitsCoeffMap K L σ).toAddEquiv (unitsCoeffMapSymm K L σ)
-      (AddMonoidHom.ext (unitsCoeffMapSymm_unitsCoeffMap K L σ))
-      (AddMonoidHom.ext (unitsCoeffMap_unitsCoeffMapSymm K L σ))
+      (unitsCoeffMapSymm_comp_unitsCoeffMap K L σ) (unitsCoeffMap_comp_unitsCoeffMapSymm K L σ)
   let F := explicitMap2Equiv _ _ _ _ (absoluteGaloisGroupEquivFixingSubgroup K L σ) e
     continuous_of_discreteTopology continuous_of_discreteTopology (unitsCoeffMap_smul K L σ)
   -- Both transports are the two directions of `F`, so the composite cancels.

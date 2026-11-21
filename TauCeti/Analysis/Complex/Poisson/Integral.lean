@@ -263,8 +263,9 @@ theorem tendstoUniformlyOn_planarPoissonIntegral_smul {g : ℂ → ℝ} {c : ℂ
   rw [Metric.tendstoUniformlyOn_iff]
   intro ε hε
   have hloc : ∀ z : sphere c |R|, ∃ δ > 0,
-      (∀ w ∈ ball c |R|, dist w z.1 < δ → dist (planarPoissonIntegral g c R w) (g z.1) < ε / 2) ∧
-      (∀ ζ ∈ sphere c |R|, dist ζ z.1 < δ → dist (g ζ) (g z.1) < ε / 2) := fun ⟨z, hz⟩ ↦ by
+      (∀ w ∈ ball c |R|, dist w z.val < δ →
+        dist (planarPoissonIntegral g c R w) (g z.val) < ε / 2) ∧
+      (∀ ζ ∈ sphere c |R|, dist ζ z.val < δ → dist (g ζ) (g z.val) < ε / 2) := fun ⟨z, hz⟩ ↦ by
     obtain ⟨δ₁, hδ₁, hp'⟩ := Metric.tendsto_nhdsWithin_nhds.1
       (tendsto_planarPoissonIntegral hg hz) (ε / 2) (half_pos hε)
     obtain ⟨δ₂, hδ₂, hc'⟩ := Metric.continuousWithinAt_iff.1 (hg z hz) (ε / 2) (half_pos hε)
@@ -274,7 +275,7 @@ theorem tendstoUniformlyOn_planarPoissonIntegral_smul {g : ℂ → ℝ} {c : ℂ
   choose δ hδ hp hc using hloc
   obtain ⟨s, hs⟩ := (isCompact_sphere c |R|).elim_nhds_subcover'
     (fun z hz ↦ ball z (δ ⟨z, hz⟩ / 2)) (fun z hz ↦ ball_mem_nhds z (half_pos (hδ ⟨z, hz⟩)))
-  have hsne : s.Nonempty := Finset.nonempty_iff_ne_empty.2 fun he ↦ by
+  have hsne : s.Nonempty := Finset.ne_empty_iff_nonempty.1 fun he ↦ by
     simpa [he] using hs (by simp : c + |R| ∈ sphere c |R|)
   set η := s.inf' hsne fun z ↦ δ z / 2
   have hRpos : 0 < |R| := abs_pos.2 hR
@@ -287,18 +288,18 @@ theorem tendstoUniformlyOn_planarPoissonIntegral_smul {g : ℂ → ℝ} {c : ℂ
   have hw_ball : c + r • (ζ - c) ∈ ball c |R| := by
     rw [mem_ball_iff_norm, add_sub_cancel_left, norm_smul, Real.norm_of_nonneg hr₀.le, hnorm]
     nlinarith [hr.2]
-  have hw_dist : dist (c + r • (ζ - c)) z.1 < δ z := by
+  have hw_dist : dist (c + r • (ζ - c)) z.val < δ z := by
     have hsub : c + r • (ζ - c) - ζ = -((1 - r) • (ζ - c)) := by rw [sub_smul, one_smul]; abel
     have hd₁ : dist (c + r • (ζ - c)) ζ = (1 - r) * |R| := by
       rw [dist_eq_norm, hsub, norm_neg, norm_smul,
         Real.norm_of_nonneg (sub_nonneg.2 hr.2.le), hnorm]
     have hd₂ : (1 - r) * |R| < η :=
       (lt_div_iff₀ hRpos).1 (by linarith [(le_max_right 0 _).trans_lt hr.1])
-    linarith [dist_triangle (c + r • (ζ - c)) ζ z.1, mem_ball.1 hζz,
+    linarith [dist_triangle (c + r • (ζ - c)) ζ z.val, mem_ball.1 hζz,
       Finset.inf'_le (fun z : sphere c |R| ↦ δ z / 2) hzs]
   linarith [hp z _ hw_ball hw_dist,
     hc z ζ hζ ((mem_ball.1 hζz).trans (half_lt_self (hδ z))),
-    dist_triangle_right (g ζ) (planarPoissonIntegral g c R (c + r • (ζ - c))) (g z.1)]
+    dist_triangle_right (g ζ) (planarPoissonIntegral g c R (c + r • (ζ - c))) (g z.val)]
 
 end TauCeti
 

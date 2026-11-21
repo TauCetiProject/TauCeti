@@ -9,10 +9,8 @@ public import TauCeti.AlgebraicTopology.Singular.ModuleChains.Basic
 public import TauCeti.Topology.Homotopy.Path
 public import TauCeti.Algebra.Homology.ModuleCat.Basic
 public import TauCeti.Algebra.Homology.ShortComplex.ModuleCat
-public import TauCeti.Geometry.Convex.ConvexSpace.ContractibleSpaceStdSimplex
 public import TauCeti.Geometry.Convex.ConvexSpace.Defs
 public import TauCeti.GroupTheory.Abelianization.Basic
-public import Mathlib.AlgebraicTopology.FundamentalGroupoid.FundamentalGroup
 
 /-!
 # The Hurewicz theorem in degree one
@@ -652,7 +650,7 @@ private lemma hurewiczAb_chainsDesc_loopThroughAb (c : ((singularChains ℤ).obj
 private lemma hurewiczAb_inverse₁ (h : H₁ X) : hurewiczAb x (inverse₁ x h) = h := by
   obtain ⟨z, rfl⟩ := H₁.mk_surjective h
   rw [inverse₁, H₁.liftPathClass_mk, hurewiczAb_chainsDesc_loopThroughAb, H₁.mk_eq_mk_iff]
-  have hz : ((singularChains ℤ).obj X).d 1 0 z = 0 := mem_cycles₁_iff.1 z.2
+  have hz : ((singularChains ℤ).obj X).d 1 0 z = 0 := mem_cycles₁_iff.1 z.property
   have := loopChains_sub_mem_boundaries₁ x z
   rw [hz, map_zero, add_zero] at this
   exact this

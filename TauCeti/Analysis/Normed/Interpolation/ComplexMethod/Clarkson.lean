@@ -112,7 +112,7 @@ private theorem clarksonPair_compat (C : CompatibleCouple ℂ X₀ X₁ V)
         (clarksonPairCLM 1 ∞ X₀ ((piLp 1 2 fun _ : Fin 2 ↦ C).interFst x)) =
       (piLp ∞ 2 fun _ : Fin 2 ↦ C).sndToSum
         (clarksonPairCLM 2 2 X₁ ((piLp 1 2 fun _ : Fin 2 ↦ C).interSnd x)) := by
-  have h (j : Fin 2) : C.embed₀ (x.1.1 j) = C.embed₁ (x.1.2 j) := by
+  have h (j : Fin 2) : C.embed₀ (x.val.1 j) = C.embed₁ (x.val.2 j) := by
     simpa using congr_fun ((piLp 1 2 fun _ : Fin 2 ↦ C).embed₀_interFst x) j
   refine (piLp ∞ 2 fun _ : Fin 2 ↦ C).sumSpace_ext (funext fun i ↦ ?_)
   simp only [sumSpaceEmbed_fstToSum, sumSpaceEmbed_sndToSum, piLp_embed₀_apply, piLp_embed₁_apply,

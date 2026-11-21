@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Poisson.Integral
-public import TauCeti.Analysis.Complex.VerticalStrip
+public import TauCeti.Analysis.Complex.VerticalStrip.Basic
 import Mathlib.Algebra.Order.Interval.Set.Group
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.ArctanDeriv
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.DerivHyp

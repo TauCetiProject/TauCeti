@@ -206,7 +206,7 @@ theorem mem_ker_cliffordFullCoverToOrthogonal_iff [Nontrivial V] (hQ : Q.Nondege
       simpa only [map_one, mul_one, sq] using
         cliffordNorm_eq_sq_mul_of_coe_eq_algebraMap_mul (x := 1) (c := r) (by simpa using hr)
     have hr1 : (r : K) * r = 1 := by
-      rcases (mem_cliffordFullCover_iff Q x).1 x.2 with h1 | h1
+      rcases (mem_cliffordFullCover_iff Q x).1 x.property with h1 | h1
       · simpa using congrArg Units.val (hnorm.symm.trans h1)
       · exact absurd ⟨(r : K), by simpa using (congrArg Units.val (hnorm.symm.trans h1)).symm⟩ h
     have hval {y : cliffordFullCover Q} {c : K}
