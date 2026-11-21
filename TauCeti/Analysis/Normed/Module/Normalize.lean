@@ -202,7 +202,8 @@ theorem LipschitzWith.norm_mul_comp_sphereDirection {E : Type*} [NormedAddCommGr
       = |(‖x‖ - ‖y‖) * g (sphereDirection e x) +
           ‖y‖ * (g (sphereDirection e x) - g (sphereDirection e y))| := by
         rw [Real.dist_eq]
-        ring_nf
+        congr 1
+        ring
     _ ≤ |‖x‖ - ‖y‖| * M + ‖y‖ * (L * dist (sphereDirection e x) (sphereDirection e y)) := by
         refine (abs_add_le _ _).trans (add_le_add ?_ ?_)
         · rw [abs_mul]

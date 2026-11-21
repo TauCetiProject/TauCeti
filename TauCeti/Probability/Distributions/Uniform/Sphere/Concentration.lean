@@ -111,10 +111,9 @@ private lemma lintegral_exp_mul_integral_chiMeasure_le {g : sphere (0 : E) 1 →
   refine le_of_le_of_eq ?_ (lintegral_map (f := H) hH hΦ)
   rw [stdGaussian_map_sphereDirection_prod_norm e, lintegral_prod _ hH.aemeasurable]
   refine lintegral_mono fun u ↦ ?_
-  have hint : Integrable (fun r ↦ exp (t * (r * g u))) (chiMeasure d 1) := by
-    refine (integrable_exp_mul_id_chiMeasure d 1 (t * g u)).congr (.of_forall fun r ↦ ?_)
-    simp only
-    ring_nf
+  have hint : Integrable (fun r ↦ exp (t * (r * g u))) (chiMeasure d 1) :=
+    (integrable_exp_mul_id_chiMeasure d 1 (t * g u)).congr
+      (.of_forall fun r ↦ congrArg exp (by ring))
   have hid : Integrable (fun r : ℝ ↦ t * (r * g u)) (chiMeasure d 1) := by
     have h1 : Integrable (fun r : ℝ ↦ r) (chiMeasure d 1) := by
       simpa using integrable_pow_chiMeasure d 1 1

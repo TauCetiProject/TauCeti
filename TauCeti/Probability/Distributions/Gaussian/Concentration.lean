@@ -296,6 +296,7 @@ theorem hasSubgaussianMGF_stdGaussian_sub_integral (hf : LipschitzWith K f) :
   refine .of_forall_exists_abs_sub_le fun ε hε ↦ ?_
   -- A smooth `K`-Lipschitz `g` within `ε / 2` of `f` concentrates by the Maurey–Pisier bound.
   obtain ⟨g, hg, hgK, hgf⟩ := hf.exists_contDiff_lipschitzWith_dist_lt (half_pos hε)
+  have hfg' (x : E) : |f x - g x| ≤ ε / 2 := by rw [abs_sub_comm]; exact (hgf x).le
   have hgsub : HasSubgaussianMGF (fun x ↦ g x - ∫ y, g y ∂stdGaussian E)
       (NNReal.pi ^ 2 / 4 * K ^ 2) (stdGaussian E) :=
     IsGaussian.hasSubgaussianMGF_sub_integral_of_variance_fderiv_le (by simp)
@@ -307,19 +308,18 @@ theorem hasSubgaussianMGF_stdGaussian_sub_integral (hf : LipschitzWith K f) :
       (.of_forall fun x ↦ sub_add_cancel _ _)
   have hfg : Integrable (fun x ↦ f x - g x) (stdGaussian E) :=
     .of_bound (hf.continuous.sub hgK.continuous).aestronglyMeasurable (ε / 2)
-      (.of_forall fun x ↦ by rw [Real.norm_eq_abs, abs_sub_comm]; exact (hgf x).le)
+      (.of_forall fun x ↦ (Real.norm_eq_abs _).trans_le (hfg' x))
   have hmean : |∫ y, f y ∂stdGaussian E - ∫ y, g y ∂stdGaussian E| ≤ ε / 2 := by
     rw [← integral_sub ((hfg.add hgi).congr (.of_forall fun x ↦ sub_add_cancel _ _)) hgi,
       ← Real.norm_eq_abs]
     have h := norm_integral_le_of_norm_le_const (μ := stdGaussian E) (C := ε / 2)
-      (.of_forall fun x ↦ by rw [Real.norm_eq_abs, abs_sub_comm]; exact (hgf x).le)
+      (.of_forall fun x ↦ (Real.norm_eq_abs _).trans_le (hfg' x))
     rwa [probReal_univ, mul_one] at h
   refine ⟨_, hgsub, .of_forall fun x ↦ ?_⟩
-  have hx : |f x - g x| ≤ ε / 2 := by rw [abs_sub_comm]; exact (hgf x).le
   calc |f x - ∫ y, f y ∂stdGaussian E - (g x - ∫ y, g y ∂stdGaussian E)|
-      = |(f x - g x) - (∫ y, f y ∂stdGaussian E - ∫ y, g y ∂stdGaussian E)| := by ring_nf
+      = |(f x - g x) - (∫ y, f y ∂stdGaussian E - ∫ y, g y ∂stdGaussian E)| := by congr 1; ring
     _ ≤ |f x - g x| + |∫ y, f y ∂stdGaussian E - ∫ y, g y ∂stdGaussian E| := abs_sub _ _
-    _ ≤ ε := by linarith
+    _ ≤ ε := by linarith [hfg' x]
 
 /-- **Gaussian concentration of Lipschitz functions.** Under the standard Gaussian measure `γ`, a
 `K`-Lipschitz function `f` satisfies `γ {x | ε ≤ |f x - 𝔼 f|} ≤ 2 exp (-2 ε² / (π² K²))` for
