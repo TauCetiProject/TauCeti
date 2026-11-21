@@ -168,15 +168,6 @@ theorem differentExponent_eq_finsum_card_ramificationGroup_sub_one :
   have : FaithfulSMul (P.integers.decompositionSubgroup F) P.integers :=
     ⟨fun h ↦ ValuationSubring.decompositionSubgroup.ext P.integers fun x ↦
       congrArg Subtype.val (h x)⟩
-  -- On `𝒪_P`, the order at `P` is the additive valuation of the discrete valuation ring.
-  have hval (y : P.integers) (hy : y ≠ 0) :
-      IsDiscreteValuationRing.addVal P.integers y = ((P.ord (y : F')).toNat : ℕ∞) := by
-    refine ENat.eq_of_forall_natCast_le_iff fun n ↦ ?_
-    rw [← TauCeti.IsDiscreteValuationRing.mem_maximalIdeal_pow_iff_le_addVal,
-      P.mem_maximalIdeal_pow_iff_coe_mem_filtration,
-      P.mem_filtration_iff_le_ord (by simpa using hy), Nat.cast_le]
-    have := P.mem_integers_iff_ord_nonneg.mp y.property
-    omega
   -- The ramification groups of the inertia group acting on `𝒪_P` are those of `P`.
   have hcard (i : ℕ) : Nat.card (IsLocalRing.ramificationGroup (P.integers.inertiaSubgroup F)
       P.integers i) = Nat.card (ramificationGroup F P i) := by
@@ -188,7 +179,7 @@ theorem differentExponent_eq_finsum_card_ramificationGroup_sub_one :
       IsDiscreteValuationRing.addVal P.integers (g • ξ - ξ) =
         ((P.ord (((g : P.integers.decompositionSubgroup F) : F' ≃ₐ[F] F') t - t)).toNat :
           ℕ∞) := by
-    rw [hval _ (sub_ne_zero.mpr fun h ↦ Finset.ne_of_mem_erase hg
+    rw [P.addVal_integers (sub_ne_zero.mpr fun h ↦ Finset.ne_of_mem_erase hg
       (eq_one_of_smul_eq_of_adjoin_singleton_eq_top hadj h))]
     -- `g` acts on `𝒪_P` through its action on `F'`, and `ξ` is `t` read in `𝒪_P`.
     rfl

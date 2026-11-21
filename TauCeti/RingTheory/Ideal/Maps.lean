@@ -106,6 +106,18 @@ theorem map_eq_span_singleton_of_isUnit {B B' F : Type*} [CommSemiring B] [Semir
   have := mem_map_of_mem f (h (Submodule.smul_mem_pointwise_smul i r I hi))
   rwa [map_span, Set.image_singleton, smul_eq_mul, map_mul, unit_mul_mem_iff_mem _ hr] at this
 
+/-- An ideal extended along a ring homomorphism into a finite product equals the product of its
+component extensions. -/
+theorem map_eq_pi_of_map_evalRingHom {ι : Type*} [Finite ι] {A : Type*} {R : ι → Type*}
+    [Semiring A] [∀ i, Semiring (R i)] (I : Ideal A) (f : A →+* ∀ i, R i)
+    (J : ∀ i, Ideal (R i)) (h : ∀ i, I.map ((Pi.evalRingHom R i).comp f) = J i) :
+    I.map f = pi J := by
+  apply piOrderIso.injective
+  funext i
+  simp only [piOrderIso, OrderIso.symm_mk, RelIso.coe_fn_mk, Equiv.coe_fn_symm_mk,
+    map_evalRingHom_pi, map_map]
+  exact h i
+
 end Ideal
 
 namespace AlgEquiv

@@ -11,6 +11,7 @@ public import TauCeti.RingTheory.DedekindDomain.Different.Discriminant
 public import TauCeti.RingTheory.RamificationInertia.DiscreteValuationRing
 import Mathlib.RingTheory.Flat.EquationalCriterion
 import TauCeti.RingTheory.DedekindDomain.Different.DualFamily
+import TauCeti.RingTheory.Ideal.Maps
 import TauCeti.RingTheory.NormTrace.BaseChange
 
 /-!
@@ -154,19 +155,14 @@ theorem dual_one_adicCompletionIntegers_eq_extended :
         (nonZeroDivisors_le_comap_nonZeroDivisors_of_injective _
           (FaithfulSMul.algebraMap_injective B (w.adicCompletionIntegers L))) := by
   have : Module.Finite R B := IsIntegralClosure.finite R K L B
-  have hmap : IsLocalization.map (S := L) (w.adicCompletion L)
-      (algebraMap B (w.adicCompletionIntegers L))
-      (nonZeroDivisors_le_comap_nonZeroDivisors_of_injective _
-        (FaithfulSMul.algebraMap_injective B (w.adicCompletionIntegers L))) =
-      algebraMap L (w.adicCompletion L) := IsFractionRing.ringHom_ext (A := B) fun x ↦ by
-    rw [IsLocalization.map_eq, algebraMap_adicCompletion_eq_algebraMap_adicCompletionIntegers]
-  have hdual : ((FractionalIdeal.dual R K (1 : FractionalIdeal B⁰ L)) : Set L) =
-      Submodule.traceDual R K (1 : Submodule B L) := Set.ext fun x ↦ by
-    rw [SetLike.mem_coe, SetLike.mem_coe, ← FractionalIdeal.mem_coeToSubmodule,
-      FractionalIdeal.coeToSubmodule_dual_one]
-  rw [← FractionalIdeal.coeToSubmodule_inj, FractionalIdeal.coeToSubmodule_dual_one,
-    FractionalIdeal.coeToSubmodule_extended_eq_span, hmap, hdual]
-  exact traceDual_one_adicCompletionIntegers_eq_span v w
+  symm
+  exact TauCeti.extended_dual_one_eq_dual_one_of_span_traceDual_one
+    (R := R) (S := B) (K := K) (L := L)
+    (R' := v.adicCompletionIntegers K) (S' := w.adicCompletionIntegers L)
+    (K' := v.adicCompletion K) (L' := w.adicCompletion L)
+    (algebraMap L (w.adicCompletion L))
+    (fun s ↦ (w.algebraMap_adicCompletion_eq_algebraMap_adicCompletionIntegers s).symm)
+    (traceDual_one_adicCompletionIntegers_eq_span v w).symm
 
 include K L in
 /-- **The different ideal commutes with adic completion** (with arbitrary residue fields):
@@ -175,14 +171,10 @@ theorem differentIdeal_adicCompletionIntegers_eq_map :
     differentIdeal (v.adicCompletionIntegers K) (w.adicCompletionIntegers L) =
       (differentIdeal R B).map (algebraMap B (w.adicCompletionIntegers L)) := by
   have : Module.Finite R B := IsIntegralClosure.finite R K L B
-  rw [← FractionalIdeal.coeIdeal_inj (K := w.adicCompletion L),
-    ← FractionalIdeal.extended_coeIdeal_eq_map (K := L) (w.adicCompletion L)
-      (nonZeroDivisors_le_comap_nonZeroDivisors_of_injective _
-        (FaithfulSMul.algebraMap_injective B (w.adicCompletionIntegers L))),
-    ← FractionalIdeal.extendedHom'_apply, coeIdeal_differentIdeal R K L B,
-    coeIdeal_differentIdeal (v.adicCompletionIntegers K) (v.adicCompletion K) (w.adicCompletion L)
-      (w.adicCompletionIntegers L), map_inv₀, FractionalIdeal.extendedHom'_apply,
-    dual_one_adicCompletionIntegers_eq_extended v w]
+  symm
+  exact TauCeti.map_differentIdeal_eq_differentIdeal_of_extended_dual_one
+    (K := K) (L := L) (K' := v.adicCompletion K) (L' := w.adicCompletion L)
+    (dual_one_adicCompletionIntegers_eq_extended v w).symm
 
 /-- **The different of the integral semilocal algebra, read componentwise.** Extending
 `differentIdeal R B` to `𝒪_v ⊗[R] B` and transporting along `adicCompletionIntegersSemilocalEquiv`
@@ -199,25 +191,15 @@ theorem differentIdeal_adicCompletionIntegersSemilocal :
       u.val.adicCompletionIntegers L :=
     (v.adicCompletionIntegersSemilocalEquiv K B L).toRingEquiv.toRingHom.comp
       (Algebra.TensorProduct.includeRight : B →ₐ[R] _).toRingHom
-  have hcomp (u : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal}) :
-      ((differentIdeal R B).map f).map (Pi.evalRingHom _ u) =
-        differentIdeal (v.adicCompletionIntegers K) (u.val.adicCompletionIntegers L) := by
-    rw [Ideal.map_map, differentIdeal_adicCompletionIntegers_eq_map (K := K) (L := L) v u.val]
-    congr 1; ext x; simp [f]
   have hf : ((differentIdeal R B).map
       (Algebra.TensorProduct.includeRight : B →ₐ[R] v.adicCompletionIntegers K ⊗[R] B)).map
       (v.adicCompletionIntegersSemilocalEquiv K B L) = (differentIdeal R B).map f :=
     Ideal.map_map (Algebra.TensorProduct.includeRight : B →ₐ[R] _).toRingHom
       (v.adicCompletionIntegersSemilocalEquiv K B L).toRingEquiv.toRingHom
-  have hI : (differentIdeal R B).map f =
-      Ideal.pi (Ideal.piOrderIso ((differentIdeal R B).map f)) :=
-    SetLike.coe_injective <| by
-      conv_lhs => rw [← Ideal.piOrderIso.symm_apply_apply ((differentIdeal R B).map f)]
-      exact (Ideal.coe_piOrderIso_symm_apply _).trans (Set.ext fun _ ↦ by simp [Ideal.mem_pi])
-  rw [hf, hI]
-  refine congrArg Ideal.pi (funext fun u ↦ ?_)
-  rw [← Ideal.map_evalRingHom_pi (I := Ideal.piOrderIso ((differentIdeal R B).map f)) u, ← hI,
-    hcomp u]
+  rw [hf]
+  refine Ideal.map_eq_pi_of_map_evalRingHom (differentIdeal R B) f _ fun u ↦ ?_
+  rw [differentIdeal_adicCompletionIntegers_eq_map (K := K) (L := L) v u.val]
+  congr 1; ext x; simp [f]
 
 include K L in
 /-- **Completion preserves the different exponent**: the multiplicity of the maximal ideal of `𝒪_w`

@@ -25,7 +25,7 @@ through the completed extension. The completed extension restricts to an injecti
 homomorphism `completionIntegersExtension` of completed valuation rings, whose algebra
 `completionIntegersExtensionAlgebra` is likewise installed locally and makes `𝒪̂_{P'}` a
 torsion-free `𝒪̂_P`-subalgebra of `F̂_{P'}` (`completionIntegersExtension_injective`,
-`isScalarTower_completionIntegers`, `isTorsionFree_completionIntegers`).
+`isScalarTower_completionIntegersExtensionAlgebra`, `isTorsionFree_completionIntegers`).
 No finiteness, separability, or residue-field assumptions are needed.
 
 The construction uses Mathlib's `UniformSpace.Completion.mapRingHom`. The valuation-extension
@@ -248,6 +248,11 @@ theorem coe_algebraMap_completionIntegersExtensionAlgebra (x : P.completionPlace
       P.completionExtension P' hP x :=
   (rfl)
 
+/-- The canonical map of completed valuation rings is injective. -/
+theorem completionIntegersExtension_injective :
+    Function.Injective (P.completionIntegersExtension P' hP) := fun _ _ h ↦
+  Subtype.ext ((P.completionExtension P' hP).injective (congrArg Subtype.val h))
+
 /-- The completed valuation-ring extension forms a scalar tower inside the completed upper field. -/
 instance isScalarTower_completionIntegersExtensionAlgebra :
     letI := P.completionExtensionAlgebra P' hP
@@ -263,13 +268,11 @@ instance isScalarTower_completionIntegersExtensionAlgebra :
 /-- The completed valuation ring `𝒪̂_{P'}` is torsion-free over `𝒪̂_P`. -/
 instance isTorsionFree_completionIntegers :
     letI := P.completionIntegersExtensionAlgebra P' hP
-    Module.IsTorsionFree P.completionPlace.integers P'.completionPlace.integers := by
-  let _ := P.completionIntegersExtensionAlgebra P' hP
-  refine Module.isTorsionFree_iff_algebraMap_injective.mpr fun a b hab ↦ Subtype.ext ?_
-  have hab' := congrArg Subtype.val hab
-  rw [P.coe_algebraMap_completionIntegersExtensionAlgebra P' hP,
-    P.coe_algebraMap_completionIntegersExtensionAlgebra P' hP] at hab'
-  exact (P.completionExtension P' hP).injective hab'
+    Module.IsTorsionFree P.completionPlace.integers P'.completionPlace.integers :=
+  letI := P.completionIntegersExtensionAlgebra P' hP
+  Module.isTorsionFree_iff_algebraMap_injective.mpr <| by
+    rw [algebraMap_completionIntegersExtensionAlgebra]
+    exact P.completionIntegersExtension_injective P' hP
 
 end Integers
 

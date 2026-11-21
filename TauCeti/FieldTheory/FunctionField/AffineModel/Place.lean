@@ -39,8 +39,9 @@ integrally closed, then swallows everything integral over `k[x]`.
   with the maximal ideal of `𝒪_P`, `TauCeti.Place.center_injective` showing that a place finite on a
   model is determined by its centre, and `TauCeti.Place.comap_center_asIdeal` showing that the
   centre on a larger model contracts to the centre on a smaller one.
-* `TauCeti.Place.existsUnique_valuation_eq`: the uniqueness statement, and
-  `TauCeti.Place.valuationSubringAtPrime_eq_integers`: the valuation ring of the place is the
+* `TauCeti.Place.existsUnique_valuation_eq`: the uniqueness statement,
+  `TauCeti.Place.valuationSubringAtPrime_eq_integers`, and
+  `TauCeti.Place.isLocalization_integers_center`: the valuation ring of the place is the
   localization of the model at the centre.
 * `TauCeti.Place.ord_algebraMap_eq_multiplicity_center`: the coefficient formula
   `ord_P r = mult_(centre) (r)`, which reads an order at the place off the factorization of an
@@ -158,6 +159,17 @@ theorem valuationSubringAtPrime_eq_integers :
     HeightOneSpectrum.valuationSubringAtPrime F (P.center hR) = P.integers := by
   rw [HeightOneSpectrum.valuationSubringAtPrime_eq_valuationSubring, P.valuation_center hR]
   exact SetLike.ext fun _ ↦ P.mem_integers_iff.symm
+
+/-- The valuation ring of a place finite on a Dedekind affine model `R` is the localization of `R`
+at the centre of `P`. -/
+theorem isLocalization_integers_center [Algebra R P.integers] [IsScalarTower R P.integers F] :
+    IsLocalization.AtPrime P.integers (P.center hR).asIdeal := by
+  have hloc (O : ValuationSubring F) [Algebra R O] [IsScalarTower R O F]
+      (hO : O = ((P.center hR).valuation F).valuationSubring) :
+      IsLocalization.AtPrime O (P.center hR).asIdeal := by
+    subst O
+    exact HeightOneSpectrum.isLocalization_valuationSubring (K := F) (P.center hR)
+  exact hloc P.integers (by rw [integers_def, P.valuation_center hR])
 
 /-- Distinct places finite on an affine model have distinct centres: a place is recovered from its
 centre. -/

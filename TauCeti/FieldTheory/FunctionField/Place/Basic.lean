@@ -42,9 +42,10 @@ equivalence is needed and equality of places *is* equality of valuations
 
 * `TauCeti.Place.instIsDiscreteValuationRing`: `𝒪_P` is a discrete valuation ring
   (Stichtenoth, Theorem 1.1.6), with `TauCeti.Place.isUniformizer_iff_ord_eq_one` identifying
-  Mathlib's uniformizers as the elements of order one — Stichtenoth's prime elements — and
+  Mathlib's uniformizers as the elements of order one — Stichtenoth's prime elements —,
   `TauCeti.Place.exists_eq_zpow_mul_unit` writing every nonzero `f : F` as `t ^ (ord_P f)` times
-  a unit of `𝒪_P`.
+  a unit of `𝒪_P`, and `TauCeti.Place.addVal_integers` identifying the DVR additive valuation on
+  nonzero elements of `𝒪_P` with `ord_P`.
 * `TauCeti.Place.ord_add_eq_min_of_ord_ne`: the strict triangle inequality (Stichtenoth,
   Lemma 1.1.11).
 * `TauCeti.Place.valuation_eq_one_of_isAlgebraic`: every nonzero element that is algebraic over
@@ -453,6 +454,22 @@ theorem exists_eq_zpow_mul_unit {t : F} (ht : P.valuation.IsUniformizer t) {f : 
   refine ⟨P.valuation.unitPartUnits (Units.mk0 t ht0) htv (Units.mk0 f hf), ?_⟩
   simpa only [ord_valuation, Units.val_mk0] using
     (P.valuation.unitPartUnits_eq_iff (Units.mk0 t ht0) htv (Units.mk0 f hf) _).mp rfl
+
+/-- On a nonzero element of the valuation ring `𝒪_P`, the DVR additive valuation agrees with
+`ord_P`. -/
+theorem addVal_integers {x : P.integers} (hx : x ≠ 0) :
+    IsDiscreteValuationRing.addVal P.integers x = ((P.ord (x : F)).toNat : ℕ∞) := by
+  obtain ⟨t, ht⟩ := P.exists_isUniformizer
+  have ht1 : P.ord t = 1 := P.isUniformizer_iff_ord_eq_one.mp ht
+  have ht0 : t ≠ 0 := by rintro rfl; simp at ht1
+  let t₀ : P.integers := ⟨t, P.mem_integers_iff_ord_nonneg.mpr (by omega)⟩
+  have htirr : Irreducible t₀ := P.irreducible_of_isUniformizer ht
+  obtain ⟨n, u, rfl⟩ := IsDiscreteValuationRing.eq_unit_mul_pow_irreducible hx htirr
+  have hu0 : ((u : P.integers) : F) ≠ 0 := ZeroMemClass.coe_eq_zero.not.mpr u.ne_zero
+  have huord : P.ord ((u : P.integers) : F) = 0 := (P.isUnit_iff_ord_eq_zero hu0).mp u.isUnit
+  rw [IsDiscreteValuationRing.addVal_def' u htirr n, MulMemClass.coe_mul,
+    SubmonoidClass.coe_pow, P.ord_mul hu0 (pow_ne_zero n ht0), huord, zero_add, P.ord_pow, ht1,
+    mul_one, Int.toNat_natCast]
 
 end Discrete
 
