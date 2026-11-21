@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Symplectic.Manifold.Opens
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 import TauCeti.Geometry.Manifold.Submersion.Split
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
+import TauCeti.Topology.Connected.Basic
 
 /-!
 # The regular part of an integrable system is a Lagrangian torus fibration
@@ -31,11 +32,11 @@ for the restriction of `σ` to `F⁻¹(U)`
 Connected fibres are nonempty, so `U` lies in the image of `F`. Only properness of `F` over `U` is
 assumed, not properness of `F` on the whole of `M`.
 
-This is how integrable systems enter the global theory of Lagrangian torus fibrations: over `U`
-the fibres are tori (`IsLagrangianTorusFibration.nonempty_homeomorph_unitAddTorus`) carrying the
-fibrewise action of `T*U` and its period lattice
-(`IsLagrangianTorusFibration.periodLattice`), whose transport around loops in `U` is the
-monodromy of the system.
+This is how integrable systems enter the global theory of Lagrangian torus fibrations: when `σ` is
+moreover closed, so symplectic, the fibres over `U` are tori
+(`IsLagrangianTorusFibration.nonempty_homeomorph_unitAddTorus`) carrying the fibrewise action of
+`T*U` and its period lattice (`IsLagrangianTorusFibration.periodLattice`), whose transport around
+loops in `U` is the monodromy of the system.
 
 ## Main results
 
@@ -111,13 +112,9 @@ theorem isLagrangianTorusFibration_restrictPreimage (h : σ.IsIntegrableSystem F
     exact hV.isLagrangian_ker_mfderiv (hσ.mpullback_subtype_val V)
       ((hFreg x).comp (isRegularPoint_subtype_val x))
   · -- The inclusion of `V` carries the fibre of `π` over `c` onto the fibre of `F` over `c`.
-    have himage : Subtype.val '' (π ⁻¹' {c}) = F ⁻¹' {(c : ι → ℝ)} := by
-      refine Subset.antisymm (image_subset_iff.2 fun x hx ↦ congrArg Subtype.val hx) fun y hy ↦ ?_
-      rw [mem_preimage, mem_singleton_iff] at hy
-      exact ⟨⟨y, (hy ▸ c.property : F y ∈ U)⟩, Subtype.ext hy, rfl⟩
-    have hc := hconn c c.property
-    rw [← himage] at hc
-    exact ⟨hc.nonempty.of_image,
-      Topology.IsEmbedding.subtypeVal.isInducing.isPreconnected_image.1 hc.isPreconnected⟩
+    have himage : Subtype.val '' (π ⁻¹' {c}) = F ⁻¹' {(c : ι → ℝ)} :=
+      (image_val_preimage_restrictPreimage (t := (U : Set (ι → ℝ))) (f := F) (u := {c})).trans
+        (by rw [image_singleton])
+    exact Topology.IsInducing.subtypeVal.isConnected_image.1 (himage ▸ hconn c c.property)
 
 end TauCeti.SmoothTwoForm.IsIntegrableSystem
