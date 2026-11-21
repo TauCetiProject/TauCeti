@@ -90,7 +90,10 @@ noncomputable def quotientMulEquivOfIsSimpleGroup [IsSimpleGroup G] (hH : H.IsSu
   subquotientEquivOfEqTopOfEqBot (hH.eq_top_of_nontrivial_quotient K)
     (hH.eq_bot_of_nontrivial_quotient hKH)
 
-@[to_additive (attr := simp)]
+/-- Evaluation of `Subgroup.IsSubnormal.quotientMulEquivOfIsSimpleGroup` on coset
+representatives. -/
+@[to_additive (attr := simp) /-- Evaluation of
+`AddSubgroup.IsSubnormal.quotientAddEquivOfIsSimpleAddGroup` on coset representatives. -/]
 theorem quotientMulEquivOfIsSimpleGroup_mk [IsSimpleGroup G] (hH : H.IsSubnormal)
     (hKH : K ≤ H) [(K.subgroupOf H).Normal] [Nontrivial (H ⧸ K.subgroupOf H)] (x : H) :
     hH.quotientMulEquivOfIsSimpleGroup hKH (QuotientGroup.mk x) = (x : G) :=
@@ -183,19 +186,20 @@ private theorem of_normal_map_eq_bot {H K N : Subgroup G} [N.Normal] (hH : H.IsS
   let πN := QuotientGroup.mk' N
   let ψ : H →* H.map πN := πN.subgroupMap H
   have hψ_surj : Function.Surjective ψ := πN.subgroupMap_surjective H
+  have hNK : N.subgroupOf H ≤ K.subgroupOf H := by
+    rwa [Subgroup.map_eq_bot_iff, QuotientGroup.ker_mk'] at hbot
+  have hker_le : ψ.ker ≤ K.subgroupOf H := by
+    rwa [H.ker_subgroupMap πN, QuotientGroup.ker_mk']
+  have hmap : (K.subgroupOf H).map ψ = (K.map πN).subgroupOf (H.map πN) := by
+    have hmem : K.map πN = ((K.subgroupOf H).map ψ).map (H.map πN).subtype := by
+      conv_lhs => rw [← Subgroup.map_subgroupOf_eq_of_le hKH]
+      rw [Subgroup.map_map, Subgroup.map_map]
+      rfl
+    rw [hmem, Subgroup.subgroupOf]
+    exact (Subgroup.comap_map_eq_self_of_injective (H.map πN).subtype_injective _).symm
   have hcomap : ((K.map πN).subgroupOf (H.map πN)).comap ψ = K.subgroupOf H := by
-    ext x
-    refine ⟨fun hx ↦ ?_, fun hxK ↦ mem_map.mpr ⟨x.val, hxK, rfl⟩⟩
-    rcases mem_map.mp hx with ⟨k, hkK, hkx⟩
-    have hmem : (⟨k⁻¹ * x.val, mul_mem (inv_mem (hKH hkK)) x.property⟩ : H) ∈ N.subgroupOf H :=
-      mem_subgroupOf.mpr (QuotientGroup.eq.mp hkx)
-    have hm := mem_map_of_mem (QuotientGroup.mk' (K.subgroupOf H)) hmem
-    rw [hbot, mem_bot, QuotientGroup.mk'_apply, QuotientGroup.eq_one_iff] at hm
-    exact mem_subgroupOf.mpr (by simpa using mul_mem hkK hm)
-  have hK'N : ((K.map πN).subgroupOf (H.map πN)).Normal := by
-    have hmap : (K.subgroupOf H).map ψ = (K.map πN).subgroupOf (H.map πN) :=
-      hcomap ▸ map_comap_eq_self_of_surjective hψ_surj _
-    exact hmap ▸ hKN.map ψ hψ_surj
+    rw [← hmap, Subgroup.comap_map_eq_self hker_le]
+  have hK'N : ((K.map πN).subgroupOf (H.map πN)).Normal := hmap ▸ hKN.map ψ hψ_surj
   let φ := (QuotientGroup.mk' ((K.map πN).subgroupOf (H.map πN))).comp ψ
   have hφ_ker : φ.ker = K.subgroupOf H := by
     rw [← MonoidHom.comap_ker, QuotientGroup.ker_mk', hcomap]
@@ -241,12 +245,8 @@ theorem or_of_prod [IsSimpleGroup S] (h : HasSubnormalSection (G₁ × G₂) S) 
   let N := (MonoidHom.snd G₁ G₂).ker
   rcases h.or_of_normal N with h₁ | h₂
   · exact Or.inl <| h₁.congr_left <|
-      MonoidHom.toMulEquiv ((MonoidHom.fst G₁ G₂).comp N.subtype)
-        ((MonoidHom.inl G₁ G₂).codRestrict N fun _ ↦ rfl)
-        (by
-          ext ⟨⟨_, _⟩, hb⟩
-          · rfl
-          · exact hb.symm) (by ext; rfl)
+      (MulEquiv.subgroupCongr MonoidHom.ker_snd).trans
+        (((Subgroup.prodEquiv ..).trans .prodUnique).trans Subgroup.topEquiv)
   · exact Or.inr <| h₂.congr_left <|
       QuotientGroup.quotientKerEquivOfSurjective (MonoidHom.snd G₁ G₂) Prod.snd_surjective
 

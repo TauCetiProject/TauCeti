@@ -5,11 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.GroupTheory.SpecificGroups.Alternating
 public import TauCeti.GroupTheory.Subgroup.IsSubnormal
-public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ZMod
+public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ZMod.Basic
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Principal
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Projective
 import Mathlib.Algebra.Field.ZMod
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Solvable
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ZMod.CompositionFactors
 import TauCeti.LinearAlgebra.Projectivization.PSL.Simple
 
 /-!
@@ -29,8 +32,9 @@ subgroups of `SL₂(ℤ)` and `PSL₂(ℤ)`:
 * **Alternating and symmetric noncongruence criteria**: if `PSL₂(ℤ) ⧸ Γ.normalCore` admits
   `alternatingGroup α` (`6 ≤ Nat.card α`) as a subnormal section — in particular if it is
   isomorphic to `A_n` or `S_n` for `n ≥ 6` — then `Γ.liftSL` is noncongruence.
-* **Explicit checks** at levels `N ∈ {6, 10, 11, 12}`, including the level-`11` separation showing
-  `|PSL₂(𝔽₅)| = 60 ∣ 660 = (GammaProjective 11).index` while `PSL₂(𝔽₅)` cannot appear at level `11`.
+
+Explicit fixed-level obstruction checks (e.g. at levels `6, 8, 10, 11, 12`) live in
+`TauCeti.Examples.NumberTheory.ModularForms.CongruenceSubgroups.Obstructions`.
 
 ## References
 
@@ -67,6 +71,7 @@ noncomputable def slZModToQuotientNormalCore {N : ℕ} {Δ : Subgroup SL(2, ℤ)
   (QuotientGroup.map (Gamma N) Δ.normalCore (MonoidHom.id _)
     (Subgroup.normal_le_normalCore.mpr h)).comp (quotientGammaEquiv N).symm.toMonoidHom
 
+/-- Evaluation of `slZModToQuotientNormalCore` on reductions of integer matrices. -/
 @[simp]
 theorem slZModToQuotientNormalCore_map_intCast {N : ℕ} {Δ : Subgroup SL(2, ℤ)} (h : Gamma N ≤ Δ)
     (γ : SL(2, ℤ)) :
@@ -147,6 +152,7 @@ noncomputable def signedQuotientToQuotientNormalCore {N : ℕ} {Γ : Subgroup PS
     (Subgroup.normal_le_normalCore.mpr (GammaProjective_le_iff.mpr h))).comp
     (quotientGammaProjectiveEquiv N).symm.toMonoidHom
 
+/-- Evaluation of `signedQuotientToQuotientNormalCore` on reductions of elements of `PSL₂(ℤ)`. -/
 @[simp]
 theorem signedQuotientToQuotientNormalCore_psl2zToSignedQuotient {N : ℕ} {Γ : Subgroup PSL(2, ℤ)}
     (h : CongruenceSubgroup.Gamma N ≤ Γ.liftSL) (x : PSL(2, ℤ)) :
@@ -171,14 +177,6 @@ theorem card_quotient_normalCore_dvd_of_Gamma_le_liftSL {N : ℕ} {Γ : Subgroup
       Nat.card (TauCeti.Matrix.SignedQuotient (Fin 2) (ZMod N)) :=
   Subgroup.card_dvd_of_surjective (signedQuotientToQuotientNormalCore_surjective h)
 
-/-- Variant of `card_quotient_normalCore_dvd_of_Gamma_le_liftSL` written directly in terms of
-`(GammaProjective N).index`. -/
-theorem card_quotient_normalCore_dvd_GammaProjective_index {N : ℕ} {Γ : Subgroup PSL(2, ℤ)}
-    (h : CongruenceSubgroup.Gamma N ≤ Γ.liftSL) :
-    Nat.card (PSL(2, ℤ) ⧸ Γ.normalCore) ∣ (GammaProjective N).index := by
-  rw [GammaProjective_index_eq_card]
-  exact card_quotient_normalCore_dvd_of_Gamma_le_liftSL h
-
 /-- **Level-`N` composition-factor obstruction in `PSL₂(ℤ)`:** if `Γ(N) ≤ Γ.liftSL` with `N ≠ 0`,
 then every nonabelian simple subnormal section `S` of `PSL₂(ℤ) ⧸ Γ.normalCore` is isomorphic to
 `PSL(2, ZMod ℓ)` for a prime `ℓ ≥ 5` dividing `N`. -/
@@ -191,19 +189,6 @@ theorem exists_prime_dvd_and_mulEquiv_of_Gamma_le_liftSL {N : ℕ} (hN : N ≠ 0
     ((hsec.of_surjective (signedQuotientToQuotientNormalCore_surjective h)).of_surjective
       (QuotientGroup.mk'_surjective
         (TauCeti.Matrix.SpecialLinearGroup.negOneSubgroup (Fin 2) (ZMod N))))
-
-/-- Direct subquotient form of `exists_prime_dvd_and_mulEquiv_of_Gamma_le_liftSL`: for any
-subnormal `K ≤ H ≤ PSL₂(ℤ) ⧸ Γ.normalCore` with `K.subgroupOf H` normal and `H ⧸ K.subgroupOf H`
-nonabelian simple, if `Γ(N) ≤ Γ.liftSL` (`N ≠ 0`), then `H ⧸ K.subgroupOf H ≃* PSL(2, ZMod ℓ)` for
-a prime `ℓ ≥ 5` dividing `N`. -/
-theorem exists_prime_dvd_and_subquotient_mulEquiv_of_Gamma_le_liftSL {N : ℕ} (hN : N ≠ 0)
-    {Γ : Subgroup PSL(2, ℤ)} (h : CongruenceSubgroup.Gamma N ≤ Γ.liftSL)
-    {H K : Subgroup (PSL(2, ℤ) ⧸ Γ.normalCore)} (hH : H.IsSubnormal) (hKH : K ≤ H)
-    [(K.subgroupOf H).Normal] [IsSimpleGroup (H ⧸ K.subgroupOf H)]
-    (hcomm : ¬ IsMulCommutative (H ⧸ K.subgroupOf H)) :
-    ∃ ℓ : ℕ, ℓ.Prime ∧ 5 ≤ ℓ ∧ ℓ ∣ N ∧ Nonempty ((H ⧸ K.subgroupOf H) ≃* PSL(2, ZMod ℓ)) :=
-  exists_prime_dvd_and_mulEquiv_of_Gamma_le_liftSL hN h hcomm
-    (TauCeti.HasSubnormalSection.mk_quotient hH hKH)
 
 /-- **Composition-factor obstruction for projective congruence subgroups:** if `Γ.liftSL` is a
 congruence subgroup of `SL₂(ℤ)`, then every nonabelian simple subnormal section `S` of
@@ -273,38 +258,5 @@ theorem not_isCongruenceSubgroup_liftSL_of_quotient_normalCore_mulEquiv_perm
   exact not_isCongruenceSubgroup_liftSL_of_hasSubnormalSection_alternatingGroup hα <|
     ((TauCeti.HasSubnormalSection.refl (alternatingGroup α)).of_isSubnormal
       (inferInstance : (alternatingGroup α).Normal).isSubnormal).congr_left e.symm
-
-/-! ### Explicit arithmetic obstruction checks -/
-
-/-- `7` does not divide `(GammaProjective 6).index = 72`, ruling out `GammaProjective 6` inside any
-index-`7` subgroup. -/
-theorem not_seven_dvd_GammaProjective_index_six : ¬ 7 ∣ (GammaProjective 6).index := by
-  rw [GammaProjective_index_six]; omega
-
-/-- `7` does not divide `(GammaProjective 10).index = 360`. -/
-theorem not_seven_dvd_GammaProjective_index_ten : ¬ 7 ∣ (GammaProjective 10).index := by
-  rw [GammaProjective_index_ten]; omega
-
-/-- `7` does not divide `(GammaProjective 12).index = 576`. -/
-theorem not_seven_dvd_GammaProjective_index_twelve : ¬ 7 ∣ (GammaProjective 12).index := by
-  rw [GammaProjective_index_twelve]; omega
-
-/-- `|PSL₂(𝔽₅)| = 60` divides `(GammaProjective 11).index = 660`, showing that the order
-obstruction alone does not rule out `PSL₂(𝔽₅)` (`≃* A₅`) at level `11`. -/
-theorem card_psl_zmod_five_dvd_GammaProjective_index_eleven :
-    Nat.card PSL(2, ZMod 5) ∣ (GammaProjective 11).index := by
-  have h5 := Matrix.ProjectiveSpecialLinearGroup.two_mul_card_fin_two_zmod_prime
-    Nat.prime_five (by decide)
-  rw [GammaProjective_index_eleven, show Nat.card PSL(2, ZMod 5) = 60 by omega]
-  decide
-
-/-- **Separation of the composition-factor obstruction from the order obstruction (`N = 11`,
-`ℓ = 5`):** although `|PSL₂(𝔽₅)| = 60 ∣ 660 = (GammaProjective 11).index`, `PSL₂(𝔽₅)` cannot occur
-as a subnormal section of `PSL₂(ℤ) ⧸ Γ.normalCore` whenever `Γ(11) ≤ Γ.liftSL`, since `5 ∤ 11`. -/
-theorem not_hasSubnormalSection_psl_zmod_five_of_Gamma_eleven_le_liftSL
-    {Γ : Subgroup PSL(2, ℤ)} (h : CongruenceSubgroup.Gamma 11 ≤ Γ.liftSL) :
-    ¬ TauCeti.HasSubnormalSection (PSL(2, ℤ) ⧸ Γ.normalCore) PSL(2, ZMod 5) := fun hsec ↦
-  by have := dvd_of_hasSubnormalSection_psl_zmod_of_Gamma_le_liftSL (N := 11) (ℓ := 5)
-      (by decide) Nat.prime_five le_rfl h hsec; omega
 
 end TauCeti.CongruenceSubgroup

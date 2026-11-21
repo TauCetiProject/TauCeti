@@ -7,7 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Projective
-public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ZMod
+public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ZMod.Basic
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
 
 /-!
@@ -160,6 +160,8 @@ noncomputable def psl2zToSignedQuotient (N : ℕ) :
   (TauCeti.Matrix.SignedQuotient.map (Int.castRingHom (ZMod N))).comp
     (TauCeti.Matrix.SignedQuotient.equivPSL ℤ).symm.toMonoidHom
 
+/-- `psl2zToSignedQuotient N` evaluates on coset representatives by entrywise reduction modulo `N`.
+-/
 @[simp]
 theorem psl2zToSignedQuotient_mk (N : ℕ) (g : SL(2, ℤ)) :
     psl2zToSignedQuotient N (QuotientGroup.mk g) =
@@ -184,8 +186,8 @@ theorem ker_psl2zToSignedQuotient (N : ℕ) :
     TauCeti.Matrix.SpecialLinearGroup.mem_negOneSubgroup_iff, mem_GammaProjective_mk,
     CongruenceSubgroup.Gamma_mem', CongruenceSubgroup.Gamma_mem']
   have hneg : Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod N)) (-g) =
-      -Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod N)) g := by
-    ext i j; simp
+      -Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod N)) g :=
+    Matrix.SpecialLinearGroup.coe_int_neg (R := ZMod N) g
   rw [hneg, neg_eq_iff_eq_neg]
 
 /-- **Canonical isomorphism `PSL₂(ℤ) ⧸ GammaProjective N ≃* SL₂(ℤ/Nℤ) ⧸ {±I}`.** -/
@@ -195,6 +197,7 @@ noncomputable def quotientGammaProjectiveEquiv (N : ℕ) :
     (QuotientGroup.quotientKerEquivOfSurjective (psl2zToSignedQuotient N)
       (psl2zToSignedQuotient_surjective N))
 
+/-- Evaluation of `quotientGammaProjectiveEquiv N` on coset representatives. -/
 @[simp]
 theorem quotientGammaProjectiveEquiv_mk (N : ℕ) (x : PSL(2, ℤ)) :
     quotientGammaProjectiveEquiv N (QuotientGroup.mk x) = psl2zToSignedQuotient N x := by
@@ -238,39 +241,5 @@ theorem index_map_Gamma_three :
   have h := two_mul_index_map_Gamma le_rfl
   rw [← CongruenceSubgroup.index_Gamma, CongruenceSubgroup.index_Gamma_three] at h
   omega
-
-/-- At level `6`, `[PSL₂(ℤ) : GammaProjective 6] = |Q_6| = 72`. -/
-theorem GammaProjective_index_six : (GammaProjective 6).index = 72 := by
-  have h := two_mul_index_map_Gamma (N := 6) (by omega)
-  rw [← GammaProjective_def, show (6 : ℕ) = 2 * 3 by norm_num,
-    Matrix.SpecialLinearGroup.card_zmod_mul_of_coprime (Fin 2) (by decide),
-    Matrix.SpecialLinearGroup.card_fin_two_zmod_prime Nat.prime_two,
-    Matrix.SpecialLinearGroup.card_fin_two_zmod_prime Nat.prime_three] at h
-  norm_num at h; omega
-
-/-- At level `8`, `[PSL₂(ℤ) : GammaProjective 8] = |Q_8| = 192` (twice `|PSL₂(ℤ/8ℤ)| = 96`). -/
-theorem GammaProjective_index_eight : (GammaProjective 8).index = 192 := by
-  rw [GammaProjective_index_eq_card, TauCeti.Matrix.SignedQuotient.card_fin_two_zmod_eight]
-
-/-- At level `10`, `[PSL₂(ℤ) : GammaProjective 10] = |Q_10| = 360`. -/
-theorem GammaProjective_index_ten : (GammaProjective 10).index = 360 := by
-  have h := two_mul_index_map_Gamma (N := 10) (by omega)
-  rw [← GammaProjective_def, show (10 : ℕ) = 2 * 5 by norm_num,
-    Matrix.SpecialLinearGroup.card_zmod_mul_of_coprime (Fin 2) (by decide),
-    Matrix.SpecialLinearGroup.card_fin_two_zmod_prime Nat.prime_two,
-    Matrix.SpecialLinearGroup.card_fin_two_zmod_prime Nat.prime_five] at h
-  norm_num at h; omega
-
-/-- At level `11`, `[PSL₂(ℤ) : GammaProjective 11] = |PSL₂(𝔽₁₁)| = 660`. -/
-theorem GammaProjective_index_eleven : (GammaProjective 11).index = 660 := by
-  have h := two_mul_index_map_Gamma (N := 11) (by omega)
-  rw [← GammaProjective_def,
-    Matrix.SpecialLinearGroup.card_fin_two_zmod_prime (by decide)] at h
-  omega
-
-/-- At level `12`, `[PSL₂(ℤ) : GammaProjective 12] = |Q_12| = 576` (twice `|PSL₂(ℤ/12ℤ)| = 288`).
--/
-theorem GammaProjective_index_twelve : (GammaProjective 12).index = 576 := by
-  rw [GammaProjective_index_eq_card, TauCeti.Matrix.SignedQuotient.card_fin_two_zmod_twelve]
 
 end TauCeti.CongruenceSubgroup

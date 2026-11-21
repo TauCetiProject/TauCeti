@@ -47,8 +47,6 @@ index.
   `PSL(2, R)` of a subgroup of `SL(2, R)`.
 * `Matrix.SpecialLinearGroup.finiteIndex_map_mk'_center_iff`: that image has finite index exactly
   when the subgroup does.
-* `Matrix.ProjectiveSpecialLinearGroup.card_mul_card_rootsOfUnity`: for `0 < n`,
-  `|PSL(n, R)| · |rootsOfUnity n R| = |SL(n, R)|`.
 
 ## References
 
@@ -284,18 +282,3 @@ theorem finiteIndex_map_mk'_center_iff :
   · exact ⟨two_mul_index_map_mk'_of_neg_one_notMem hΓ ▸ mul_ne_zero two_ne_zero h.index_ne_zero⟩
 
 end Matrix.SpecialLinearGroup
-
-namespace Matrix.ProjectiveSpecialLinearGroup
-
-/-- For `0 < n` and any commutative ring `R`, the order of `PSL(n, R)` times the number of
-`n`-th roots of unity in `R` equals the order of `SL(n, R)` (both sides are `0` when `SL(n, R)` is
-infinite). -/
-theorem card_mul_card_rootsOfUnity (n : ℕ) (hn : 0 < n) (R : Type*) [CommRing R] :
-    Nat.card (ProjectiveSpecialLinearGroup (Fin n) R) * Nat.card (rootsOfUnity n R) =
-      Nat.card (SpecialLinearGroup (Fin n) R) := by
-  have hlag := Subgroup.card_eq_card_quotient_mul_card_subgroup
-    (Subgroup.center (SpecialLinearGroup (Fin n) R))
-  rw [Nat.card_congr (SpecialLinearGroup.centerMulEquivRootsOfUnityFin n hn R).toEquiv] at hlag
-  exact hlag.symm
-
-end Matrix.ProjectiveSpecialLinearGroup

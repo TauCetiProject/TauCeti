@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Data.Nat.Factorization.Basic
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
-import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ZMod
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ZMod.Basic
 
 /-!
 # Principal congruence quotients and index formulas
@@ -15,7 +15,7 @@ import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ZMod
 This file develops the finite-quotient and index arithmetic of `Γ(N) ≤ Γ₁(N) ≤ SL₂(ℤ)`:
 * `CongruenceSubgroup.quotientGammaEquiv`: `(SL₂(ℤ) ⧸ Γ(N)) ≃* SL₂(ℤ/Nℤ)`.
 * `CongruenceSubgroup.gamma1UpperRightHom` and `gamma1QuotientGammaEquiv`:
-  `(Γ₁(N) ⧸ Γ(N)) ≃* Multiplicative (ZMod N)`, `[Γ₁(N) : Γ(N)] = |ZMod N|`, and
+  `(Γ₁(N) ⧸ Γ(N)) ≃* Multiplicative (ZMod N)`, `[Γ₁(N) : Γ(N)] = N`, and
   `[SL₂(ℤ) : Γ(N)] = |ZMod N| · [SL₂(ℤ) : Γ₁(N)]`.
 * Prime, prime-power, prime-factorization, and cleared Euler-product formulas for `[SL₂(ℤ) : Γ(N)]`.
 
@@ -109,23 +109,17 @@ theorem gamma1QuotientGammaEquiv_mk (N : ℕ) (g : Gamma1 N) :
 
 /-! ### Relative and global index formulas for `Γ(N)` -/
 
-/-- At every level `N : ℕ`, `[Γ₁(N) : Γ(N)] = |ZMod N|` (`= N` for `N ≠ 0`, and `0` at `N = 0`). -/
+/-- At every level `N : ℕ`, `[Γ₁(N) : Γ(N)] = N` (including `0` at `N = 0`). -/
 theorem Gamma_relIndex_Gamma1 (N : ℕ) :
-    (Gamma N).relIndex (Gamma1 N) = Nat.card (ZMod N) := by
-  rw [Subgroup.relIndex, Subgroup.index_eq_card,
-    Nat.card_congr (gamma1QuotientGammaEquiv N).toEquiv]
-  exact Nat.card_congr Multiplicative.toAdd
-
-/-- For `N ≠ 0`, `[Γ₁(N) : Γ(N)] = N`. -/
-theorem Gamma_relIndex_Gamma1_of_ne_zero {N : ℕ} (hN : N ≠ 0) :
     (Gamma N).relIndex (Gamma1 N) = N := by
-  have : NeZero N := ⟨hN⟩
-  rw [Gamma_relIndex_Gamma1, Nat.card_zmod]
+  rw [Subgroup.relIndex, Subgroup.index_eq_card,
+    Nat.card_congr (gamma1QuotientGammaEquiv N).toEquiv,
+    Nat.card_congr Multiplicative.toAdd, Nat.card_zmod]
 
 /-- Tower relation `[SL₂(ℤ) : Γ(N)] = |ZMod N| · [SL₂(ℤ) : Γ₁(N)]`, valid at every level `N : ℕ`. -/
 theorem index_Gamma_eq_card_zmod_mul_Gamma1_index (N : ℕ) :
     (Gamma N).index = Nat.card (ZMod N) * (Gamma1 N).index := by
-  rw [← Subgroup.relIndex_mul_index (Gamma_le_Gamma1 N), Gamma_relIndex_Gamma1]
+  rw [← Subgroup.relIndex_mul_index (Gamma_le_Gamma1 N), Gamma_relIndex_Gamma1, Nat.card_zmod]
 
 /-- For a prime `p`, `[SL₂(ℤ) : Γ(p)] = p(p² - 1)`. -/
 theorem index_Gamma_prime {p : ℕ} (hp : p.Prime) :

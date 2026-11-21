@@ -8,20 +8,16 @@ module
 public import Mathlib.Data.Nat.Factorization.Basic
 public import Mathlib.Data.ZMod.QuotientRing
 public import Mathlib.GroupTheory.PGroup
-public import Mathlib.GroupTheory.SpecificGroups.Alternating
-public import TauCeti.GroupTheory.Subgroup.IsSubnormal
+public import Mathlib.GroupTheory.Solvable
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.SignedQuotient
-public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Solvable
 import Mathlib.Algebra.Field.ZMod
-import Mathlib.GroupTheory.SpecificGroups.Alternating.Centralizer
-import Mathlib.GroupTheory.SpecificGroups.Alternating.Simple
+import Mathlib.GroupTheory.Nilpotent
 import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Card
 import TauCeti.Data.ZMod.MulCastHom
-import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Projective
-import TauCeti.LinearAlgebra.Projectivization.PSL.Simple
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Transvection
 
 /-!
-# Structure, cardinality, signed quotients, and composition factors of `SL₂(ℤ/Nℤ)`
+# Structure, cardinality, and signed quotients of `SL₂(ℤ/Nℤ)`
 
 This file develops the finite-group arithmetic of `SL₂(ℤ/Nℤ)` and its signed quotient
 `Q_N = SL₂(ℤ/Nℤ) ⧸ {±I}` (`TauCeti.Matrix.SignedQuotient (Fin 2) (ZMod N)`, defined over general
@@ -37,15 +33,10 @@ rings in `TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.SignedQuotient`):
    `|SL₂(𝔽_p)| = p(p² - 1)`, this gives `|SL₂(ℤ/p^kℤ)| = p^{3k - 2}(p² - 1)`, the cleared Euler
    product `|SL₂(ℤ/Nℤ)| · ∏_{p ∣ N} p² = N³ · ∏_{p ∣ N} (p² - 1)`, and the `p`-group / solvability
    structure of `ker(SL₂(ℤ/p^kℤ) →* SL₂(𝔽_p))`.
-3. **Orders of `Q_N = SL₂(ℤ/Nℤ) ⧸ {±I}` vs. `PSL₂(ℤ/Nℤ)`**: over composite moduli with square roots
-   of `1` other than `±1` (such as `N = 8` or `N = 12`), the center of `SL₂(ℤ/Nℤ)` is strictly
-   larger than `{±I}`, so `Q_N` has strictly larger order than `PSL₂(ℤ/Nℤ)` (`192` vs. `96` at
-   `N = 8`; `576` vs. `288` at `N = 12`).
-4. **Simple composition factors of quotients of `SL₂(ℤ/Nℤ)`**: every nonabelian simple subnormal
-   section of a quotient of `SL₂(ℤ/Nℤ)` (`N ≠ 0`) is isomorphic to `PSL₂(𝔽_ℓ)` for a prime
-   `ℓ ≥ 5` dividing `N`. Moreover, `PSL₂(𝔽_p) ≃* PSL₂(𝔽_q)` implies `p = q` for all primes `p, q`,
-   and no alternating group `A_α` with `6 ≤ Nat.card α` is isomorphic to any `PSL₂(𝔽_ℓ)` or occurs
-   as a subnormal section of `SL₂(ℤ/Nℤ)`.
+3. **Orders of `Q_N = SL₂(ℤ/Nℤ) ⧸ {±I}` and `PSL₂(𝔽_p)`**: at `N ∣ 2`, `-I = I` so `|Q_N| = |SL₂|`
+   (`1` at `N = 1`, `6` at `N = 2`, with `|PSL₂(𝔽₂)| = 6`); for `N ≥ 3`, `2 · |Q_N| = |SL₂(ℤ/Nℤ)|`,
+   giving the cleared Euler product `2 · |Q_N| · ∏_{p ∣ N} p² = N³ · ∏_{p ∣ N} (p² - 1)` and
+   `2 · |PSL₂(𝔽_p)| = p(p² - 1)` for odd primes `p`.
 
 The factorization product and cleared Euler product proofs are adapted from Mathlib's
 `Nat.totient_eq_prod_factorization` and `Nat.totient_mul_prod_primeFactors`.
@@ -75,6 +66,7 @@ noncomputable def zmodMulEquivProd (n : Type*) [Fintype n] [DecidableEq n] {M N 
       SpecialLinearGroup n (ZMod M) × SpecialLinearGroup n (ZMod N) :=
   (mapEquiv n (ZMod.chineseRemainder h)).trans (prodEquiv n (ZMod M) (ZMod N))
 
+/-- The first component of `zmodMulEquivProd n h A` is reduction modulo `M`. -/
 @[simp]
 theorem zmodMulEquivProd_apply_fst {n : Type*} [Fintype n] [DecidableEq n] {M N : ℕ}
     (h : M.Coprime N) (A : SpecialLinearGroup n (ZMod (M * N))) :
@@ -84,6 +76,7 @@ theorem zmodMulEquivProd_apply_fst {n : Type*} [Fintype n] [DecidableEq n] {M N 
     ((RingHom.fst (ZMod M) (ZMod N)).comp (ZMod.chineseRemainder h).toRingHom)
     (ZMod.castHom (dvd_mul_right M N) (ZMod M))
 
+/-- The second component of `zmodMulEquivProd n h A` is reduction modulo `N`. -/
 @[simp]
 theorem zmodMulEquivProd_apply_snd {n : Type*} [Fintype n] [DecidableEq n] {M N : ℕ}
     (h : M.Coprime N) (A : SpecialLinearGroup n (ZMod (M * N))) :
@@ -101,6 +94,7 @@ noncomputable def zmodEquivPi (n : Type*) [Fintype n] [DecidableEq n] {N : ℕ} 
   (mapEquiv n (ZMod.equivPi N hN)).trans
     (piEquiv n fun p : N.primeFactors ↦ ZMod (p ^ N.factorization p))
 
+/-- The `p`-th component of `zmodEquivPi n hN A` is reduction modulo `p ^ N.factorization p`. -/
 @[simp]
 theorem zmodEquivPi_apply {n : Type*} [Fintype n] [DecidableEq n] {N : ℕ} (hN : N ≠ 0)
     (A : SpecialLinearGroup n (ZMod N)) (p : N.primeFactors) :
@@ -347,11 +341,8 @@ theorem card_fin_two_zmod_mul_prod_primeFactors_sq (N : ℕ) :
   by_cases hN : N = 0
   · subst hN
     have hinf : Infinite SL(2, ZMod 0) :=
-      Infinite.of_injective
-        (fun m : ZMod 0 ↦ (transvection (by decide : (0 : Fin 2) ≠ 1) m : SL(2, ZMod 0)))
-        fun a b h ↦ by
-          have := congrArg (fun M : SL(2, ZMod 0) ↦ (M : Matrix (Fin 2) (Fin 2) (ZMod 0)) 0 1) h
-          simpa [transvection_coe] using this
+      Infinite.of_injective _
+        (Matrix.SpecialLinearGroup.transvection_injective (by decide : (0 : Fin 2) ≠ 1))
     simp [Nat.card_eq_zero_of_infinite]
   rw [card_fin_two_zmod_eq_prod_factorization hN, Nat.prod_factorization_eq_prod_primeFactors]
   conv_rhs =>
@@ -363,16 +354,6 @@ theorem card_fin_two_zmod_mul_prod_primeFactors_sq (N : ℕ) :
   rw [mul_right_comm, ← pow_add, ← pow_mul]
   congr 1
   exact congrArg (p ^ ·) (by omega)
-
-/-- At modulus `8`, `|SL₂(ℤ/8ℤ)| = 384`. -/
-theorem card_fin_two_zmod_eight : Nat.card SL(2, ZMod 8) = 384 :=
-  card_fin_two_zmod_prime_pow (p := 2) (k := 3) Nat.prime_two (by omega)
-
-/-- At modulus `12`, `|SL₂(ℤ/12ℤ)| = 1152`. -/
-theorem card_fin_two_zmod_twelve : Nat.card SL(2, ZMod 12) = 1152 := by
-  rw [show (12 : ℕ) = 2 ^ 2 * 3 by norm_num, card_zmod_mul_of_coprime (Fin 2) (by decide),
-    card_fin_two_zmod_prime_pow Nat.prime_two (by omega), card_fin_two_zmod_prime Nat.prime_three]
-  norm_num
 
 /-- `-1 = 1` in `SL₂(ℤ/Nℤ)` if and only if `N ∣ 2`. -/
 theorem neg_one_eq_one_zmod_iff {N : ℕ} : (-1 : SL(2, ZMod N)) = 1 ↔ N ∣ 2 := by
@@ -453,22 +434,9 @@ theorem card_fin_two_zmod_one : Nat.card (SignedQuotient (Fin 2) (ZMod 1)) = 1 :
 theorem card_fin_two_zmod_two : Nat.card (SignedQuotient (Fin 2) (ZMod 2)) = 6 := by
   rw [card_fin_two_zmod_of_dvd_two dvd_rfl, card_fin_two_zmod_prime Nat.prime_two]; norm_num
 
-/-- At level `8`, the signed quotient `Q_8 = SL₂(ℤ/8ℤ) ⧸ {±I}` has order `192 = |SL₂(ℤ/8ℤ)| / 2`,
-strictly larger than `|PSL₂(ℤ/8ℤ)| = 96` because `±3I` are extra central elements. -/
-theorem card_fin_two_zmod_eight : Nat.card (SignedQuotient (Fin 2) (ZMod 8)) = 192 := by
-  have h := two_mul_card_fin_two_zmod (N := 8) (by omega)
-  rw [_root_.Matrix.SpecialLinearGroup.card_fin_two_zmod_eight] at h; omega
-
-/-- At level `12`, the signed quotient `Q_12 = SL₂(ℤ/12ℤ) ⧸ {±I}` has order
-`576 = |SL₂(ℤ/12ℤ)| / 2`, strictly larger than `|PSL₂(ℤ/12ℤ)| = 288` because `±5I` are extra
-central elements. -/
-theorem card_fin_two_zmod_twelve : Nat.card (SignedQuotient (Fin 2) (ZMod 12)) = 576 := by
-  have h := two_mul_card_fin_two_zmod (N := 12) (by omega)
-  rw [_root_.Matrix.SpecialLinearGroup.card_fin_two_zmod_twelve] at h; omega
-
 end TauCeti.Matrix.SignedQuotient
 
-/-! ### Orders, rigidity, and non-isomorphism with alternating groups for `PSL₂(ℤ/Nℤ)` -/
+/-! ### Prime-field orders of `PSL₂(𝔽_p)` -/
 
 namespace Matrix.ProjectiveSpecialLinearGroup
 
@@ -488,166 +456,4 @@ theorem two_mul_card_fin_two_zmod_prime {p : ℕ} (hp : p.Prime) (hp2 : p ≠ 2)
     TauCeti.Matrix.SignedQuotient.two_mul_card_fin_two_zmod (by have := hp.two_le; omega),
     card_fin_two_zmod_prime hp]
 
-/-- At modulus `8`, `ZMod 8` has four square roots of unity (`±1, ±3`), so
-`|PSL₂(ℤ/8ℤ)| = |SL₂(ℤ/8ℤ)| / 4 = 96`, half the order `192` of the signed quotient `Q_8`. -/
-theorem card_fin_two_zmod_eight : Nat.card PSL(2, ZMod 8) = 96 := by
-  have h := card_mul_card_rootsOfUnity 2 two_pos (ZMod 8)
-  have h4 : Nat.card (rootsOfUnity 2 (ZMod 8)) = 4 := by
-    rw [Nat.card_congr (Equiv.subtypeEquivRight fun u : (ZMod 8)ˣ ↦ mem_rootsOfUnity 2 u),
-      Nat.card_eq_fintype_card]
-    decide
-  rw [SpecialLinearGroup.card_fin_two_zmod_eight, h4] at h
-  omega
-
-/-- At modulus `12`, `ZMod 12` has four square roots of unity (`±1, ±5`), so
-`|PSL₂(ℤ/12ℤ)| = |SL₂(ℤ/12ℤ)| / 4 = 288`, half the order `576` of the signed quotient `Q_12`. -/
-theorem card_fin_two_zmod_twelve : Nat.card PSL(2, ZMod 12) = 288 := by
-  have h := card_mul_card_rootsOfUnity 2 two_pos (ZMod 12)
-  have h4 : Nat.card (rootsOfUnity 2 (ZMod 12)) = 4 := by
-    rw [Nat.card_congr (Equiv.subtypeEquivRight fun u : (ZMod 12)ˣ ↦ mem_rootsOfUnity 2 u),
-      Nat.card_eq_fintype_card]
-    decide
-  rw [SpecialLinearGroup.card_fin_two_zmod_twelve, h4] at h
-  omega
-
-/-- **Distinct primes have non-isomorphic projective special linear groups `PSL₂(𝔽_p)`:** if
-`PSL₂(𝔽_p) ≃* PSL₂(𝔽_q)` with `p, q` prime, then `p = q`. -/
-theorem eq_of_fin_two_zmod_mulEquiv {p q : ℕ} (hp : p.Prime) (hq : q.Prime)
-    (e : PSL(2, ZMod p) ≃* PSL(2, ZMod q)) : p = q := by
-  wlog hpq : p ≤ q generalizing p q
-  · exact (this hq hp e.symm (by omega)).symm
-  rcases hpq.eq_or_lt with rfl | hlt
-  · rfl
-  · exfalso
-    have hcard : Nat.card PSL(2, ZMod p) = Nat.card PSL(2, ZMod q) := Nat.card_congr e.toEquiv
-    have hq2 : q ≠ 2 := by have := hp.two_le; omega
-    have hq_eq := two_mul_card_fin_two_zmod_prime hq hq2
-    by_cases hp2 : p = 2
-    · subst hp2
-      rw [← hcard, card_fin_two_zmod_two] at hq_eq
-      have : 3 * (3 ^ 2 - 1) ≤ q * (q ^ 2 - 1) :=
-        Nat.mul_le_mul (by omega) (Nat.sub_le_sub_right (Nat.pow_le_pow_left (by omega) 2) 1)
-      omega
-    · have hp_eq := two_mul_card_fin_two_zmod_prime hp hp2
-      have h1 : 1 < p ^ 2 := by nlinarith [hp.two_le]
-      have h2 : p ^ 2 < q ^ 2 := by nlinarith [hp.two_le]
-      have : p * (p ^ 2 - 1) < q * (q ^ 2 - 1) :=
-        (Nat.mul_lt_mul_of_pos_right hlt (by omega)).trans
-          (Nat.mul_lt_mul_of_pos_left (by omega) hq.pos)
-      omega
-
-/-- **No alternating group of degree `≥ 6` is isomorphic to any `PSL₂(𝔽_ℓ)`.** If `ℓ` divided
-`|A_n| = n!/2`, primality would give `ℓ ≤ n`, forcing `|PSL₂(𝔽_ℓ)| = ℓ(ℓ² - 1)/2 < n³/2 ≤ n!/2`
-for `n ≥ 6`. -/
-theorem isEmpty_alternatingGroup_mulEquiv {α : Type*} [Fintype α] [DecidableEq α]
-    (hα : 6 ≤ Nat.card α) {ℓ : ℕ} (hℓ : ℓ.Prime) :
-    IsEmpty (alternatingGroup α ≃* PSL(2, ZMod ℓ)) := ⟨fun e ↦ by
-  set n := Nat.card α
-  have : Nontrivial α := by
-    rw [← Fintype.one_lt_card_iff_nontrivial, ← Nat.card_eq_fintype_card]; omega
-  have halt : 2 * Nat.card (alternatingGroup α) = n.factorial := by
-    rw [two_mul_nat_card_alternatingGroup, Nat.card_perm]
-  have hcard : Nat.card (alternatingGroup α) = Nat.card PSL(2, ZMod ℓ) := Nat.card_congr e.toEquiv
-  have h6 : 720 ≤ n.factorial :=
-    (by decide : 720 = (6 : ℕ).factorial).trans_le (Nat.factorial_le hα)
-  by_cases hℓ2 : ℓ = 2
-  · subst hℓ2; rw [hcard, card_fin_two_zmod_two] at halt; omega
-  · have hpsl := two_mul_card_fin_two_zmod_prime hℓ hℓ2
-    have hℓ_le : ℓ ≤ n := hℓ.dvd_factorial.mp ⟨ℓ ^ 2 - 1, by omega⟩
-    have hsub : ℓ ^ 2 - 1 < n ^ 2 := by
-      have : 1 ≤ ℓ ^ 2 := Nat.one_le_pow 2 ℓ hℓ.pos
-      have : ℓ ^ 2 ≤ n ^ 2 := Nat.pow_le_pow_left hℓ_le 2
-      omega
-    have hlt_cube : ℓ * (ℓ ^ 2 - 1) < n ^ 3 := by
-      calc ℓ * (ℓ ^ 2 - 1) < ℓ * n ^ 2 := Nat.mul_lt_mul_of_pos_left hsub hℓ.pos
-        _ ≤ n * n ^ 2 := Nat.mul_le_mul_right (n ^ 2) hℓ_le
-        _ = n ^ 3 := by ring
-    have hcube : ∀ m, 6 ≤ m → m ^ 3 ≤ m.factorial := fun m hm ↦ by
-      induction m, hm using Nat.le_induction with
-      | base => decide
-      | succ k hk ih =>
-        rw [Nat.factorial_succ]
-        have : (k + 1) ^ 2 ≤ k ^ 3 := by nlinarith
-        calc (k + 1) ^ 3 = (k + 1) * (k + 1) ^ 2 := by ring
-          _ ≤ (k + 1) * k ^ 3 := Nat.mul_le_mul_left _ this
-          _ ≤ (k + 1) * k.factorial := Nat.mul_le_mul_left _ ih
-    have := hcube n hα; omega⟩
-
 end Matrix.ProjectiveSpecialLinearGroup
-
-/-! ### Classification of nonabelian simple subnormal sections of `SL₂(ℤ/Nℤ)` and its quotients -/
-
-namespace Matrix.SpecialLinearGroup
-
-/-- **Classification of nonabelian simple composition factors of `SL₂(ℤ/Nℤ)`.** For `N ≠ 0`,
-every nonabelian simple group `S` occurring as a subnormal section of `SL₂(ℤ/Nℤ)` is isomorphic to
-`PSL₂(𝔽_ℓ)` for a prime `ℓ ≥ 5` dividing `N`. -/
-theorem exists_prime_dvd_psl_mulEquiv_of_hasSubnormalSection {N : ℕ} (hN : N ≠ 0) {S : Type*}
-    [Group S] [IsSimpleGroup S] (hnc : ¬ IsMulCommutative S)
-    (hS : TauCeti.HasSubnormalSection SL(2, ZMod N) S) :
-    ∃ ℓ : ℕ, ℓ.Prime ∧ 5 ≤ ℓ ∧ ℓ ∣ N ∧ Nonempty (S ≃* PSL(2, ZMod ℓ)) := by
-  obtain ⟨⟨ℓ, hℓ_mem⟩, hℓ_sec⟩ := (hS.congr_left (zmodEquivPi (Fin 2) hN)).exists_of_pi
-  obtain ⟨hℓ_prime, hℓ_dvd, _⟩ := Nat.mem_primeFactors.mp hℓ_mem
-  have hk : 1 ≤ N.factorization ℓ :=
-    Nat.pos_of_ne_zero (Finsupp.mem_support_iff.mp (by simpa using hℓ_mem))
-  let π : SL(2, ZMod (ℓ ^ N.factorization ℓ)) →* SL(2, ZMod ℓ) :=
-    map (ZMod.castHom (dvd_pow_self ℓ (by omega)) (ZMod ℓ))
-  have hSLℓ : TauCeti.HasSubnormalSection SL(2, ZMod ℓ) S := by
-    rcases hℓ_sec.or_of_normal π.ker with hker | hquot
-    · have := isSolvable_ker_map_zmod_prime_pow hℓ_prime hk
-      exact False.elim (hnc hker.isMulCommutative_of_isSolvable)
-    · exact hquot.congr_left (QuotientGroup.quotientKerEquivOfSurjective π
-        (map_zmod_castHom_surjective (dvd_pow_self ℓ (by omega))))
-  have : Fact ℓ.Prime := ⟨hℓ_prime⟩
-  have hℓ5 : 5 ≤ ℓ := by
-    by_contra! hlt5
-    have hle3 : Nat.card (ZMod ℓ) ≤ 3 := by
-      rw [Nat.card_zmod]; rcases hℓ_prime.eq_two_or_odd with rfl | hodd <;> omega
-    have := TauCeti.Matrix.SpecialLinearGroup.isSolvable_fin_two_of_natCard_le_three (ZMod ℓ) hle3
-    exact hnc hSLℓ.isMulCommutative_of_isSolvable
-  rcases hSLℓ.or_of_normal (Subgroup.center SL(2, ZMod ℓ)) with hcen | hpsl
-  · exact False.elim (hnc hcen.isMulCommutative_of_isSolvable)
-  · have : IsSimpleGroup PSL(2, ZMod ℓ) :=
-      ProjectiveSpecialLinearGroup.isSimpleGroup_of_four_le_natCard (by rw [Nat.card_zmod]; omega)
-    exact ⟨ℓ, hℓ_prime, hℓ5, hℓ_dvd, hpsl.nonempty_mulEquiv_of_isSimpleGroup⟩
-
-/-- **No alternating group `A_α` of degree `≥ 6` occurs as a subnormal section of `SL₂(ℤ/Nℤ)`**
-(`N ≠ 0`). -/
-theorem not_hasSubnormalSection_alternatingGroup {N : ℕ} (hN : N ≠ 0) {α : Type*}
-    [Fintype α] [DecidableEq α] (hα : 6 ≤ Nat.card α) :
-    ¬ TauCeti.HasSubnormalSection SL(2, ZMod N) (alternatingGroup α) := fun hsec ↦ by
-  have h5 : 5 ≤ Nat.card α := by omega
-  have hsimp := alternatingGroup.isSimpleGroup h5
-  have := hsimp.toNontrivial
-  have hnc : ¬ IsMulCommutative (alternatingGroup α) := fun _ ↦
-    bot_ne_top ((commutator_eq_bot (G := alternatingGroup α)).symm.trans
-      (commutator_alternatingGroup_eq_top h5))
-  obtain ⟨ℓ, hℓ, -, -, ⟨e⟩⟩ := exists_prime_dvd_psl_mulEquiv_of_hasSubnormalSection hN hnc hsec
-  exact (ProjectiveSpecialLinearGroup.isEmpty_alternatingGroup_mulEquiv hα hℓ).false e
-
-/-- **Quotient form of the composition-factor classification for `SL₂(ℤ/Nℤ)`.** Every nonabelian
-simple subnormal section `H ⧸ K.subgroupOf H` of any quotient `Q` of `SL₂(ℤ/Nℤ)` (`N ≠ 0`) is
-isomorphic to `PSL₂(𝔽_ℓ)` for a prime `ℓ ≥ 5` dividing `N`. -/
-theorem exists_prime_dvd_psl_mulEquiv_of_surjective {N : ℕ} (hN : N ≠ 0) {Q : Type*} [Group Q]
-    {f : SL(2, ZMod N) →* Q} (hf : Function.Surjective f) {H K : Subgroup Q}
-    (hH : H.IsSubnormal) (hKH : K ≤ H) [(K.subgroupOf H).Normal]
-    [IsSimpleGroup (H ⧸ K.subgroupOf H)] (hnc : ¬ IsMulCommutative (H ⧸ K.subgroupOf H)) :
-    ∃ ℓ : ℕ, ℓ.Prime ∧ 5 ≤ ℓ ∧ ℓ ∣ N ∧ Nonempty ((H ⧸ K.subgroupOf H) ≃* PSL(2, ZMod ℓ)) :=
-  exists_prime_dvd_psl_mulEquiv_of_hasSubnormalSection hN hnc
-    ((TauCeti.HasSubnormalSection.mk_quotient hH hKH).of_surjective hf)
-
-end Matrix.SpecialLinearGroup
-
-namespace TauCeti.Matrix.SignedQuotient
-
-/-- Every nonabelian simple subnormal section of any quotient of `SignedQuotient (Fin 2) (ZMod N)`
-(`N ≠ 0`) is isomorphic to `PSL₂(𝔽_ℓ)` for a prime `ℓ ≥ 5` dividing `N`. -/
-theorem exists_prime_dvd_psl_mulEquiv_of_surjective {N : ℕ} (hN : N ≠ 0) {Q : Type*} [Group Q]
-    {f : SignedQuotient (Fin 2) (ZMod N) →* Q} (hf : Function.Surjective f) {H K : Subgroup Q}
-    (hH : H.IsSubnormal) (hKH : K ≤ H) [(K.subgroupOf H).Normal]
-    [IsSimpleGroup (H ⧸ K.subgroupOf H)] (hnc : ¬ IsMulCommutative (H ⧸ K.subgroupOf H)) :
-    ∃ ℓ : ℕ, ℓ.Prime ∧ 5 ≤ ℓ ∧ ℓ ∣ N ∧ Nonempty ((H ⧸ K.subgroupOf H) ≃* PSL(2, ZMod ℓ)) :=
-  _root_.Matrix.SpecialLinearGroup.exists_prime_dvd_psl_mulEquiv_of_surjective hN
-    (f := f.comp (QuotientGroup.mk' _)) (hf.comp (QuotientGroup.mk'_surjective _)) hH hKH hnc
-
-end TauCeti.Matrix.SignedQuotient

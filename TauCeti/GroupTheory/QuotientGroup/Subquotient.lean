@@ -84,6 +84,23 @@ theorem _root_.MonoidHom.comapSubquotientEquivOfSurjective_mk (f : G →* Q)
       QuotientGroup.mk (f.subgroupComap H x) := by
   rw [MonoidHom.comapSubquotientEquivOfSurjective]; rfl
 
+/-- Pushing forward `K.subgroupOf H` along `H.equivMapOfInjective M.subtype M.subtype_injective`
+yields `(K.map M.subtype).subgroupOf (H.map M.subtype)`. -/
+@[to_additive /-- Pushing forward `K.addSubgroupOf H` along
+`H.equivMapOfInjective M.subtype M.subtype_injective` yields
+`(K.map M.subtype).addSubgroupOf (H.map M.subtype)`. -/]
+theorem map_equivMapOfInjective_subgroupOf {M : Subgroup G} (K H : Subgroup M) :
+    (K.subgroupOf H).map (H.equivMapOfInjective M.subtype M.subtype_injective).toMonoidHom =
+      (K.map M.subtype).subgroupOf (H.map M.subtype) := by
+  let e := H.equivMapOfInjective M.subtype M.subtype_injective
+  have hcomap : ((K.map M.subtype).subgroupOf (H.map M.subtype)).comap e.toMonoidHom =
+      K.subgroupOf H := by
+    rw [Subgroup.subgroupOf, Subgroup.comap_comap]
+    have hcomp : (H.map M.subtype).subtype.comp e.toMonoidHom = M.subtype.comp H.subtype := rfl
+    rw [hcomp, ← Subgroup.comap_comap,
+      Subgroup.comap_map_eq_self_of_injective M.subtype_injective, Subgroup.comap_subtype]
+  rw [← hcomap, Subgroup.map_comap_eq_self_of_surjective e.surjective]
+
 /-- Mapping two subgroups of `M ≤ G` into `G` via `M.subtype` preserves normality of their
 relative subgroup. -/
 @[to_additive /-- Mapping two additive subgroups of `M ≤ G` into `G` via `M.subtype` preserves
@@ -92,12 +109,7 @@ instance normal_map_subtype_subgroupOf {M : Subgroup G} (K H : Subgroup M)
     [hN : (K.subgroupOf H).Normal] :
     ((K.map M.subtype).subgroupOf (H.map M.subtype)).Normal := by
   let e := H.equivMapOfInjective M.subtype M.subtype_injective
-  have heq : (K.map M.subtype).subgroupOf (H.map M.subtype) =
-      (K.subgroupOf H).map e.toMonoidHom := by
-    ext ⟨_, ⟨x, hxH, rfl⟩⟩
-    exact ⟨fun ⟨y, hyK, hyx⟩ ↦ ⟨⟨y, M.subtype_injective hyx ▸ hxH⟩, hyK, Subtype.ext hyx⟩,
-      fun ⟨⟨y, _⟩, hyK, hyx⟩ ↦ ⟨y, hyK, congrArg (Subtype.val : H.map M.subtype → G) hyx⟩⟩
-  exact heq ▸ hN.map e.toMonoidHom e.surjective
+  exact map_equivMapOfInjective_subgroupOf K H ▸ hN.map e.toMonoidHom e.surjective
 
 /-- Mapping subgroups `K, H ≤ M` to `G` along `M.subtype` identifies their subquotient in `G` with
 `H ⧸ K.subgroupOf H`. -/
@@ -107,16 +119,9 @@ noncomputable def mapSubtypeSubquotientEquiv {M : Subgroup G} (K H : Subgroup M)
     [(K.subgroupOf H).Normal] :
     (H ⧸ K.subgroupOf H) ≃*
       ((H.map M.subtype) ⧸ (K.map M.subtype).subgroupOf (H.map M.subtype)) :=
-  let e := H.equivMapOfInjective M.subtype M.subtype_injective
-  let φ := (QuotientGroup.mk' ((K.map M.subtype).subgroupOf (H.map M.subtype))).comp e.toMonoidHom
-  have hker : φ.ker = K.subgroupOf H := by
-    ext x
-    simp only [φ, e, MonoidHom.mem_ker, MonoidHom.comp_apply, QuotientGroup.mk'_apply,
-      QuotientGroup.eq_one_iff, mem_subgroupOf, mem_map]
-    exact ⟨fun ⟨y, hyK, hyx⟩ ↦ M.subtype_injective hyx ▸ hyK, fun hxK ↦ ⟨x.val, hxK, rfl⟩⟩
-  (QuotientGroup.quotientMulEquivOfEq hker.symm).trans
-    (QuotientGroup.quotientKerEquivOfSurjective φ
-      ((QuotientGroup.mk'_surjective _).comp e.surjective))
+  QuotientGroup.congr (K.subgroupOf H) ((K.map M.subtype).subgroupOf (H.map M.subtype))
+    (H.equivMapOfInjective M.subtype M.subtype_injective)
+    (map_equivMapOfInjective_subgroupOf K H)
 
 /-- Evaluation of `Subgroup.mapSubtypeSubquotientEquiv` on coset representatives. -/
 @[to_additive (attr := simp) /-- Evaluation of `AddSubgroup.mapSubtypeSubquotientEquiv` on coset
