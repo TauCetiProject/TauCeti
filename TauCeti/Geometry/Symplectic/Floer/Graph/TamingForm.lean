@@ -23,7 +23,8 @@ through a closed two-form taming Gromov's almost complex structure; this is that
 
 * `TauCeti.SmoothTwoForm.floerGraphPrimitive K_s K_t c` is the one-form
   `λ_c = K_s ds + K_t dt + c s dt` on `(ℝ × ℝ) × M`
-  (`TauCeti.SmoothTwoForm.floerGraphPrimitive_apply`), a primitive of `dK + c ds ∧ dt`.
+  (`TauCeti.SmoothTwoForm.floerGraphPrimitive_apply`), a primitive of `dK + c ds ∧ dt`
+  (`TauCeti.SmoothTwoForm.mextDerivₗ_floerGraphPrimitive_apply`).
 * `TauCeti.SmoothTwoForm.floerGraphTwoForm ω K_s K_t c` is the smooth two-form
   `Ω_c = pr₂^* ω + dλ_c` (`TauCeti.SmoothTwoForm.floerGraphTwoForm_def`). At every point it is
   Gromov's taming form (`TauCeti.SmoothTwoForm.eval₂_floerGraphTwoForm`), so the pointwise results
@@ -71,6 +72,7 @@ private theorem mvfderiv_coordS (p : (ℝ × ℝ) × M)
   refine (mvfderiv_comp_fst_apply (I := 𝓘(ℝ, ℝ × ℝ)) (J := I) (fun z : ℝ × ℝ ↦ z.1) p ζ).trans ?_
   refine (mvfderiv_eq_fderiv_apply _ _ _).trans ?_
   rw [fderiv_fst]
+  -- `ContinuousLinearMap.fst` reads the domain component of a product tangent vector.
   rfl
 
 /-- The derivative of the domain coordinate `t` reads the `t`-component of a tangent vector. -/
@@ -80,6 +82,7 @@ private theorem mvfderiv_coordT (p : (ℝ × ℝ) × M)
   refine (mvfderiv_comp_fst_apply (I := 𝓘(ℝ, ℝ × ℝ)) (J := I) (fun z : ℝ × ℝ ↦ z.2) p ζ).trans ?_
   refine (mvfderiv_eq_fderiv_apply _ _ _).trans ?_
   rw [fderiv_snd]
+  -- `ContinuousLinearMap.snd` reads the domain component of a product tangent vector.
   rfl
 
 /-- The derivative of a smooth function on `(ℝ × ℝ) × M` is the sum of its partial derivatives in
@@ -135,6 +138,24 @@ theorem floerGraphTwoForm_def (ω : SmoothTwoForm I M)
         mextDerivₗ _ 1 (floerGraphPrimitive Ks Kt c) :=
   (rfl)
 
+/-- The exterior derivative `dλ_c = dK + c ds ∧ dt` of the one-form `λ_c`, evaluated on a pair of
+tangent vectors `ζ = ((a, b), v)` and `ζ' = ((a', b'), v')`: it is
+`dK_s(ζ) a' + dK_t(ζ) b' - (dK_s(ζ') a + dK_t(ζ') b) + c (a b' - b a')`. -/
+theorem mextDerivₗ_floerGraphPrimitive_apply
+    (Ks Kt : C^(⊤ : ℕ∞)⟮𝓘(ℝ, ℝ × ℝ).prod I, (ℝ × ℝ) × M; ℝ⟯) (c : ℝ) (p : (ℝ × ℝ) × M)
+    (ζ ζ' : TangentSpace (𝓘(ℝ, ℝ × ℝ).prod I) p) :
+    (mextDerivₗ _ 1 (floerGraphPrimitive Ks Kt c)).val p ![ζ, ζ'] =
+      mvfderiv _ Ks p ζ * ζ'.1.1 + mvfderiv _ Kt p ζ * ζ'.1.2 -
+          (mvfderiv _ Ks p ζ' * ζ.1.1 + mvfderiv _ Kt p ζ' * ζ.1.2) +
+        c * (ζ.1.1 * ζ'.1.2 - ζ.1.2 * ζ'.1.1) := by
+  -- `simp` matches the Leibniz lemma in `λ_c` only once its manifold is fixed to `(ℝ × ℝ) × M`.
+  simp only [floerGraphPrimitive, map_add, map_smul, Submodule.coe_add, Submodule.coe_smul,
+    Pi.add_apply, Pi.smul_apply, ContinuousAlternatingMap.add_apply,
+    ContinuousAlternatingMap.smul_apply, smul_eq_mul,
+    mextDerivₗ_funSMulₗ_mextDerivₗ_ofFunction_apply (I := 𝓘(ℝ, ℝ × ℝ).prod I) (M := (ℝ × ℝ) × M),
+    mvfderiv_coordS, mvfderiv_coordT]
+  ring
+
 /-- **The smooth taming form is Gromov's taming form.** At every point `p` of `(ℝ × ℝ) × M`, the
 smooth two-form `Ω_c` evaluates on a pair of tangent vectors as the pointwise form
 `TauCeti.SmoothTwoForm.floerGraphForm` of the curried perturbation components. -/
@@ -144,18 +165,9 @@ theorem eval₂_floerGraphTwoForm (ω : SmoothTwoForm I M)
     SmoothBundleForm.eval₂ (ω.floerGraphTwoForm Ks Kt c) p ζ ζ' =
       ω.floerGraphForm (fun z x ↦ Ks (z, x)) (fun z x ↦ Kt (z, x)) c p ζ ζ' := by
   rw [floerGraphTwoForm_def, SmoothBundleForm.eval₂_add, eval₂_mpullback_snd,
-    SmoothBundleForm.eval₂_apply (mextDerivₗ _ 1 _), floerGraphPrimitive, map_add, map_add,
-    map_smul, Submodule.coe_add, Submodule.coe_add, Submodule.coe_smul, Pi.add_apply,
-    Pi.add_apply, Pi.smul_apply, ContinuousAlternatingMap.add_apply,
-    ContinuousAlternatingMap.add_apply, ContinuousAlternatingMap.smul_apply,
-    mextDerivₗ_funSMulₗ_mextDerivₗ_ofFunction_apply,
-    mextDerivₗ_funSMulₗ_mextDerivₗ_ofFunction_apply,
-    mextDerivₗ_funSMulₗ_mextDerivₗ_ofFunction_apply,
-    mvfderiv_eq_fderiv_add_mvfderiv Ks, mvfderiv_eq_fderiv_add_mvfderiv Ks,
-    mvfderiv_eq_fderiv_add_mvfderiv Kt, mvfderiv_eq_fderiv_add_mvfderiv Kt, mvfderiv_coordS,
-    mvfderiv_coordS, mvfderiv_coordT, mvfderiv_coordT, smul_eq_mul]
+    SmoothBundleForm.eval₂_apply (mextDerivₗ _ 1 _), mextDerivₗ_floerGraphPrimitive_apply]
   refine Eq.trans ?_ (floerGraphForm_def ω _ _ c p ζ ζ').symm
-  simp only [Manifold.tangentSpaceProdEquiv_apply]
+  simp only [mvfderiv_eq_fderiv_add_mvfderiv, Manifold.tangentSpaceProdEquiv_apply]
   ring
 
 /-- **Gromov's taming form is closed exactly when `ω` is.** It differs from the pullback of `ω`
