@@ -23,6 +23,8 @@ continuously on the parameter.
 
 ## Main declarations
 
+* `ContDiffMapSupportedIn.tendsto_iff_tendstoUniformly_iteratedFDeriv`: convergence in
+  `𝓓^{n}_{K}(E, F)` is uniform convergence of every derivative of order at most `n`.
 * `TestFunction.tendsto_of_tendstoUniformly_iteratedFDeriv`: test functions supported in a common
   compact subset of `Ω` whose derivatives of order at most `n` converge uniformly converge in
   `𝓓^{n}(Ω, F)`.
@@ -48,6 +50,24 @@ namespace TestFunction
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {Ω : Opens E}
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {n : ℕ∞}
+
+/-- **Convergence in `𝓓^{n}_{K}(E, F)`.** Functions `φ i` supported in `K` converge to `ψ` in
+`𝓓^{n}_{K}(E, F)` exactly when, for every order `k ≤ n`, their `k`-th derivatives converge
+uniformly to that of `ψ`. -/
+theorem _root_.ContDiffMapSupportedIn.tendsto_iff_tendstoUniformly_iteratedFDeriv {ι : Type*}
+    {l : Filter ι} {K : Compacts E} {φ : ι → 𝓓^{n}_{K}(E, F)} {ψ : 𝓓^{n}_{K}(E, F)} :
+    Tendsto φ l (𝓝 ψ) ↔ ∀ k : ℕ, (k : ℕ∞) ≤ n →
+      TendstoUniformly (fun i ↦ iteratedFDeriv ℝ k (φ i)) (iteratedFDeriv ℝ k ψ) l := by
+  rw [(ContDiffMapSupportedIn.isUniformEmbedding_pi_structureMapCLM
+    ℝ).isEmbedding.tendsto_nhds_iff, tendsto_pi_nhds]
+  refine forall_congr' fun k ↦ ?_
+  simp only [Function.comp_apply, ContinuousLinearMap.pi_apply,
+    BoundedContinuousFunction.tendsto_iff_tendstoUniformly,
+    ContDiffMapSupportedIn.structureMapCLM_apply]
+  split_ifs with hk
+  · simp only [hk, forall_const]
+  · simp only [hk, IsEmpty.forall_iff, iff_true]
+    exact tendsto_const_nhds.tendstoUniformly_const
 
 /-- **Convergence of test functions with a common compact support.** If the test functions `φ i`
 on `Ω` are all supported in a fixed compact subset `K` of `Ω`, and for every order
@@ -78,15 +98,8 @@ theorem tendsto_of_tendstoUniformly_iteratedFDeriv {ι : Type*} {l : Filter ι}
   let φK : ι → 𝓓^{n}_{K'}(E, F) := fun i ↦
     .of_support_subset (φ i).contDiff ((subset_tsupport _).trans (hφK i))
   let ψK : 𝓓^{n}_{K'}(E, F) := .of_support_subset ψ.contDiff ((subset_tsupport _).trans hψK)
-  have hlim : Tendsto φK l (𝓝 ψK) := by
-    rw [(ContDiffMapSupportedIn.isUniformEmbedding_pi_structureMapCLM
-      ℝ).isEmbedding.tendsto_nhds_iff]
-    refine tendsto_pi_nhds.2 fun k ↦ BoundedContinuousFunction.tendsto_iff_tendstoUniformly.2 ?_
-    simp only [Function.comp_apply, ContinuousLinearMap.pi_apply,
-      ContDiffMapSupportedIn.structureMapCLM_apply, φK, ψK]
-    split_ifs with hk
-    · exact h k hk
-    · exact tendsto_const_nhds.tendstoUniformly_const
+  have hlim : Tendsto φK l (𝓝 ψK) :=
+    ContDiffMapSupportedIn.tendsto_iff_tendstoUniformly_iteratedFDeriv.2 h
   have ht := ((continuous_ofSupportedIn hKΩ).tendsto ψK).comp hlim
   have hφ : (ofSupportedIn hKΩ ∘ φK) = φ := funext fun i ↦ by
     ext x
