@@ -119,14 +119,6 @@ theorem exists_mem_sobolevGaugeGroup_gaugeTransform_eq_iff {k : ℕ} (hk : 1 < k
       (isZeroMultiplicity_iff.1 hD) (isZeroMultiplicity_iff.1 hD')
     exact ⟨u, mem_sobolevGaugeGroup_of_mem_framedFieldSpace hk hy hu (hux ▸ hx), hux⟩
 
-/-- A smooth vortex in `A_m^s`, `s > 1`, belongs to `framedVortexSubMulAction 1 m`. -/
-theorem mem_framedVortexSubMulAction_of_mem_framedFieldSpace_of_contDiff_of_equation_eq_zero
-    {s : ℝ} (hs : 1 < s) (hxA : x ∈ framedFieldSpace f m s)
-    (hx : ContDiff ℝ ∞ x) (hsol : ∀ z, equation x z = 0) :
-    x ∈ framedVortexSubMulAction 1 m :=
-  mem_framedVortexSubMulAction.2
-    ⟨hx, fun z ↦ by simpa using hsol z, tendsto_sectionValue_mul_inv_pow hs hxA hx.continuous⟩
-
 /-! ### The divisor map on the `C²` vortices of `A_m^k` -/
 
 variable (f m) in

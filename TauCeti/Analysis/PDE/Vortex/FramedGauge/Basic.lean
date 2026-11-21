@@ -672,14 +672,6 @@ theorem contDiff_coe_of_contDiff_gaugeTransform {n : ℕ∞} {u : ℂ → Circle
   exact (((hc 0).sub (huxc 0)).smul contDiff_const).add
     (((hc 1).sub (huxc 1)).smul contDiff_const)
 
-/-- For a differentiable gauge `u` and a `C^n` field `x` (`n ≤ ∞`), `gaugeTransform u x` is `C^n`
-if and only if `u` is `C^(n+1)`. -/
-theorem contDiff_gaugeTransform_iff {n : ℕ∞} {u : ℂ → Circle}
-    (hu : Differentiable ℝ (fun z ↦ (u z : ℂ)))
-    {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiff ℝ n x) :
-    ContDiff ℝ n (gaugeTransform u x) ↔ ContDiff ℝ (n + 1) (fun z ↦ (u z : ℂ)) :=
-  ⟨contDiff_coe_of_contDiff_gaugeTransform hu hx, fun hu' ↦ contDiff_gaugeTransform hu' hx⟩
-
 /-- Covariant derivatives transform by multiplication by the circle-valued gauge. -/
 theorem covariantDerivative_gaugeTransform {u : ℂ → Circle} {z : ℂ}
     (hu : DifferentiableAt ℝ (fun w ↦ (u w : ℂ)) z)

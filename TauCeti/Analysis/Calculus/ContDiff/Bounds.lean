@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Asymptotics.Defs
 public import Mathlib.Analysis.Calculus.ContDiff.Bounds
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.Asymptotics.Lemmas
-import Mathlib.Analysis.Normed.Operator.Asymptotics
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
@@ -42,6 +42,9 @@ how symbol estimates are proved near the zero frequency, where no decay is neede
   most `n` of a `C^n` map are bounded by one constant.
 * `ContDiffOn.exists_nonneg_bound_iteratedFDeriv_of_isOpen`: the same for the derivatives of a
   map that is `C^n` on an open set, with a nonnegative constant.
+* `ContDiffOn.exists_nonneg_bound_iteratedFDeriv_uncurry_of_isOpen`: for a family `f p` that is
+  `C^n` jointly in `(p, x)`, the derivatives of order at most `n` of the partial maps `f p` are
+  bounded on a compact set by one constant, uniformly for `p` in a compact set.
 * `TauCeti.exists_forall_norm_iteratedFDeriv_le_of_isCompact`: one nonnegative constant bounds the
   derivatives of order at most `n` of finitely many `C^n` maps on a compact set.
 * `HasCompactSupport.exists_bound_iteratedFDeriv_of_contDiff`: the derivatives of order at most `n`
@@ -77,11 +80,6 @@ how symbol estimates are proved near the zero frequency, where no decay is neede
 * `ContDiff.isBigO_iteratedFDeriv_smulRight`: the same for `y ↦ (f y).smulRight (g y)`.
 * `ContinuousLinearMap.isBigO_iteratedFDeriv_comp_left`: along any filter, if the order-`n`
   derivative of `f` is `O(ρ)`, then so is that of `y ↦ L (f y)`.
-* `ContinuousLinearEquiv.isBigO_iteratedFDeriv_comp_left_iff`: left composition with a continuous
-  linear equivalence preserves `IsBigO` bounds on iterated derivatives.
-* `TauCeti.isBigO_iteratedFDeriv_pi`, `ContDiff.isBigO_iteratedFDeriv_pi`: the order-`n` derivative
-  of an eventually (or globally) `C^n` map into a finite product is `O(ρ)` if and only if the
-  order-`n` derivative of each coordinate is `O(ρ)`.
 * `TauCeti.norm_iteratedFDeriv_smul_le_of_isOpen`: the Leibniz bound for `z ↦ c z • f z` at a
   point of an open set on which both factors are smooth.
 -/
@@ -393,19 +391,6 @@ theorem ContinuousLinearMap.isBigO_iteratedFDeriv_comp_left {D : Type*} [NormedA
   (IsBigO.of_bound ‖L‖ (Filter.Eventually.of_forall fun _ ↦
     L.norm_iteratedFDeriv_comp_left hf.contDiffAt hn)).trans hfn
 
-open Asymptotics in
-/-- Left composition with a continuous linear equivalence preserves `IsBigO` bounds on iterated
-derivatives along any filter, without differentiability hypotheses. -/
-theorem ContinuousLinearEquiv.isBigO_iteratedFDeriv_comp_left_iff {D M : Type*}
-    [NormedAddCommGroup D] [NormedSpace 𝕜 D] [Norm M] (e : F ≃L[𝕜] G) {f : D → F} {n : ℕ}
-    {l : Filter D} {ρ : D → M} :
-    iteratedFDeriv 𝕜 n (e ∘ f) =O[l] ρ ↔ iteratedFDeriv 𝕜 n f =O[l] ρ := by
-  let e' := e.continuousMultilinearMapCongrRight (fun _ : Fin n ↦ D)
-  have he : iteratedFDeriv 𝕜 n (e ∘ f) = fun x ↦ e' (iteratedFDeriv 𝕜 n f x) :=
-    funext fun _ ↦ e.iteratedFDeriv_comp_left
-  rw [he]
-  exact ⟨(e'.isBigO_comp_rev _ l).trans, (e'.isBigO_comp _ l).trans⟩
-
 namespace TauCeti
 
 open Set Filter
@@ -440,27 +425,6 @@ theorem norm_iteratedFDeriv_comp_le_of_contDiffAt {n : ℕ} {f : E → F}
   · intro j hj₁ hj
     rw [iteratedFDerivWithin_of_isOpen j hU hxU]
     exact hD j hj₁ hj
-
-open Asymptotics in
-/-- Along any filter where `f` is eventually `C^n`, the order-`n` derivative of a map into a finite
-product is `O(ρ)` if and only if the order-`n` derivative of each coordinate is `O(ρ)`. -/
-theorem isBigO_iteratedFDeriv_pi {ι D M : Type*} [Fintype ι] [NormedAddCommGroup D]
-    [NormedSpace 𝕜 D] [SeminormedAddCommGroup M] {E' : ι → Type*}
-    [∀ i, NormedAddCommGroup (E' i)] [∀ i, NormedSpace 𝕜 (E' i)] {N : WithTop ℕ∞}
-    {f : D → ∀ i, E' i} {l : Filter D} (hf : ∀ᶠ x in l, ContDiffAt 𝕜 N f x) {n : ℕ}
-    (hn : (n : WithTop ℕ∞) ≤ N) {ρ : D → M} :
-    iteratedFDeriv 𝕜 n f =O[l] ρ ↔ ∀ i, iteratedFDeriv 𝕜 n (fun x ↦ f x i) =O[l] ρ := by
-  let g : D → ∀ i, D [×n]→L[𝕜] E' i := fun x i ↦ iteratedFDeriv 𝕜 n (fun y ↦ f y i) x
-  have hnorm : (fun x ↦ ‖iteratedFDeriv 𝕜 n f x‖) =ᶠ[l] fun x ↦ ‖g x‖ := by
-    filter_upwards [hf] with x hx
-    have hpi : ContinuousMultilinearMap.piₗᵢ 𝕜 (fun _ : Fin n ↦ D) (g x) =
-        iteratedFDeriv 𝕜 n f x := by
-      ext m i
-      have hproj :=
-        (ContinuousLinearMap.proj (R := 𝕜) (φ := E') i).iteratedFDeriv_comp_left hx hn
-      exact congrArg (fun L ↦ L m) hproj
-    rw [← hpi, LinearIsometryEquiv.norm_map]
-  rw [← isBigO_norm_left, isBigO_congr hnorm EventuallyEq.rfl, isBigO_norm_left, isBigO_pi]
 
 /-- On a compact set `K`, the derivatives of order at most `n` of finitely many `C^n` maps
 `f i`, `i ∈ s`, are bounded by a single nonnegative constant. -/
@@ -526,13 +490,20 @@ theorem norm_iteratedFDeriv_smul_le_of_isOpen {𝕜' : Type*} [NormedField 𝕜'
 
 end TauCeti
 
-open Asymptotics in
-/-- For a `C^n` map `f` into a finite product, the order-`n` derivative of `f` is `O(ρ)` along any
-filter if and only if the order-`n` derivative of each coordinate is `O(ρ)`. -/
-theorem ContDiff.isBigO_iteratedFDeriv_pi {ι D M : Type*} [Fintype ι]
-    [NormedAddCommGroup D] [NormedSpace 𝕜 D] [SeminormedAddCommGroup M] {E' : ι → Type*}
-    [∀ i, NormedAddCommGroup (E' i)] [∀ i, NormedSpace 𝕜 (E' i)] {N : WithTop ℕ∞}
-    {f : D → ∀ i, E' i} (hf : ContDiff 𝕜 N f) {n : ℕ} (hn : (n : WithTop ℕ∞) ≤ N)
-    {l : Filter D} {ρ : D → M} :
-    iteratedFDeriv 𝕜 n f =O[l] ρ ↔ ∀ i, iteratedFDeriv 𝕜 n (fun x ↦ f x i) =O[l] ρ :=
-  TauCeti.isBigO_iteratedFDeriv_pi (.of_forall fun _ ↦ hf.contDiffAt) hn
+/-- Let `f p` be maps depending on a parameter `p`, jointly `C^n` in `(p, x)` on an open set `W`
+containing `C ×ˢ K` for compact sets `C` and `K`. For `p ∈ C` the partial map `f p` is `C^n` at
+every point of `K`, and its derivatives there of order at most `n` are bounded by a single
+nonnegative constant, uniformly in `p`. -/
+theorem ContDiffOn.exists_nonneg_bound_iteratedFDeriv_uncurry_of_isOpen {P : Type*}
+    [NormedAddCommGroup P] [NormedSpace 𝕜 P] {f : P → E → F} {W : Set (P × E)} {C : Set P}
+    {K : Set E} {n : ℕ} (hf : ContDiffOn 𝕜 n (Function.uncurry f) W) (hW : IsOpen W)
+    (hC : IsCompact C) (hK : IsCompact K) (hCKW : C ×ˢ K ⊆ W) :
+    ∃ A, 0 ≤ A ∧ ∀ p ∈ C, ∀ x ∈ K, ContDiffAt 𝕜 n (f p) x ∧
+      ∀ i ≤ n, ‖iteratedFDeriv 𝕜 i (f p) x‖ ≤ A := by
+  obtain ⟨A, hA0, hA⟩ := hf.exists_nonneg_bound_iteratedFDeriv_of_isOpen hW (hC.prod hK) hCKW
+  refine ⟨A, hA0, fun p hp x hx ↦ ?_⟩
+  have hpx : (p, x) ∈ C ×ˢ K := ⟨hp, hx⟩
+  have hfpx : ContDiffAt 𝕜 n (Function.uncurry f) (p, x) :=
+    hf.contDiffAt (hW.mem_nhds (hCKW hpx))
+  exact ⟨hfpx.comp x (contDiffAt_const.prodMk contDiffAt_id), fun i hi ↦
+    (hfpx.norm_iteratedFDeriv_prod_right_le i (mod_cast hi)).trans (hA i hi _ hpx)⟩
