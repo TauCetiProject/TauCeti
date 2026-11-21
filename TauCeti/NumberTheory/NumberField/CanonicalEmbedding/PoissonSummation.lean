@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.NumberField.CanonicalEmbedding.Basic
 public import TauCeti.Algebra.Module.ZLattice.Covolume
 public import TauCeti.Analysis.Fourier.PoissonSummation
 public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.Euclidean

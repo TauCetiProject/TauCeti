@@ -197,28 +197,6 @@ section MinkowskiBall
 
 open NumberField.mixedEmbedding TauCeti.NumberField.mixedEmbedding
 
-open Classical in
-/-- The `(D * m)`-th root of the covolume of `W.integerLattice` scaled by
-`W.mulMixedSubmodule (multSqrt K)` is `|discr K| ^ (1 / (2 * D)) * W.subspaceHeight ^ (1 / m)`. -/
-private theorem covolume_comap_mulMixedSubmodule_multSqrt_rpow [Fintype ι]
-    {W : Submodule K (ι → K)} (hW : W ≠ ⊥)
-    (eT : W.euclideanSpan ≃L[ℝ] W.euclideanSpan)
-    (heT : (eT.toLinearEquiv : W.euclideanSpan →ₗ[ℝ] W.euclideanSpan) =
-      W.mulMixedSubmodule (multSqrt K)) :
-    ZLattice.covolume (ZLattice.comap ℝ W.integerLattice eT.symm.toLinearMap) ^
-        (((finrank ℚ K * finrank K W : ℕ) : ℝ)⁻¹) =
-      |(discr K : ℝ)| ^ (1 / (2 * (finrank ℚ K : ℝ))) *
-        W.subspaceHeight ^ (finrank K W : ℝ)⁻¹ := by
-  have : Nontrivial W := Submodule.nontrivial_iff_ne_bot.mpr hW
-  have hD : (0 : ℝ) < finrank ℚ K := Nat.cast_pos.mpr finrank_pos
-  have hm : (0 : ℝ) < finrank K W := Nat.cast_pos.mpr finrank_pos
-  rw [W.covolume_comap_mulMixedSubmodule_multSqrt eT heT,
-    Real.mul_rpow (by positivity) (pow_nonneg (Submodule.subspaceHeight_pos W).le _),
-    Real.sqrt_eq_rpow, ← Real.rpow_natCast, ← Real.rpow_mul (abs_nonneg _),
-    ← Real.rpow_mul (abs_nonneg _), ← Real.rpow_natCast,
-    ← Real.rpow_mul (Submodule.subspaceHeight_pos W).le, Nat.cast_mul]
-  congr 1 <;> congr 1 <;> field_simp [hD.ne', hm.ne']
-
 omit [LinearOrder ι] in
 open Classical in
 /-- For any integral point `z ∈ W.integerPoints`, `height2 z` is bounded by the Euclidean norm of
@@ -265,7 +243,8 @@ theorem exists_ne_zero_mem_integerPoints_height2_le_mul_Gamma_rpow {W : Submodul
     positivity
   let eT : W.euclideanSpan ≃L[ℝ] W.euclideanSpan :=
     (T.equivOfDetNeZero hT_det).toContinuousLinearEquiv
-  have heT : (eT.toLinearEquiv : W.euclideanSpan →ₗ[ℝ] W.euclideanSpan) = T := by
+  have heT : (eT.toLinearEquiv : W.euclideanSpan →ₗ[ℝ] W.euclideanSpan) =
+      W.mulMixedSubmodule (multSqrt K) := by
     dsimp only [eT]
     rw [LinearEquiv.toLinearEquiv_toContinuousLinearEquiv, LinearEquiv.coe_ofIsUnitDet]
   let L' : Submodule ℤ W.euclideanSpan := ZLattice.comap ℝ W.integerLattice eT.symm.toLinearMap
@@ -285,11 +264,9 @@ theorem exists_ne_zero_mem_integerPoints_height2_le_mul_Gamma_rpow {W : Submodul
         x := by
     have hzw : (W.integerPointsEquivIntegerLattice z : W.euclideanSpan) = eT.symm x :=
       congrArg Subtype.val (W.integerPointsEquivIntegerLattice.apply_symm_apply ⟨eT.symm x, hwL⟩)
-    rw [hzw]
-    change T (eT.symm x) = x
-    rw [← heT]
+    rw [hzw, ← heT]
     exact eT.apply_symm_apply x
-  have hcov_rpow := covolume_comap_mulMixedSubmodule_multSqrt_rpow hW eT heT
+  have hcov_rpow := W.covolume_comap_mulMixedSubmodule_multSqrt_rpow hW eT heT
   rw [hfin, hcov_rpow] at hx_norm
   refine ⟨z, z.property, hz_ne, ?_⟩
   calc height2 (fun i ↦ ((z : ι → 𝓞 K) i : K))

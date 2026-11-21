@@ -163,31 +163,26 @@ theorem mixedEmbedding_integerLatticeEquiv_symm [NumberField K]
 place. Multiplying a tuple coordinatewise by `multSqrt K` turns the ambient Euclidean squared norm
 into the multiplicity-weighted sum `∑ w, w.mult * ∑ i, ‖w.embedding (x i)‖ ^ 2`. -/
 noncomputable def multSqrt (K : Type*) [Field K] : mixedSpace K :=
-  (fun _ ↦ 1, fun _ ↦ (√2 : ℂ))
+  mixedSpaceOfRealSpace (fun w : InfinitePlace K ↦ √(w.mult : ℝ))
 
 /-- At a real place, `multSqrt K` has coordinate `1`. -/
 @[simp]
 theorem multSqrt_apply_isReal (w : {w : InfinitePlace K // w.IsReal}) :
     (multSqrt K).1 w = 1 := by
-  rfl
+  simp [multSqrt, mixedSpaceOfRealSpace_apply, InfinitePlace.mult, w.property]
 
 /-- At a complex place, `multSqrt K` has coordinate `√2`. -/
 @[simp]
 theorem multSqrt_apply_isComplex (w : {w : InfinitePlace K // w.IsComplex}) :
     (multSqrt K).2 w = (√2 : ℂ) := by
-  rfl
+  simp [multSqrt, mixedSpaceOfRealSpace_apply, InfinitePlace.mult,
+    not_isReal_iff_isComplex.mpr w.property]
 
 /-- At every infinite place `w`, the norm of `multSqrt K` is `√w.mult`. -/
 @[simp]
 theorem normAtPlace_multSqrt (w : InfinitePlace K) :
-    normAtPlace w (multSqrt K) = √(w.mult : ℝ) := by
-  by_cases hw : w.IsReal
-  · rw [normAtPlace_apply_of_isReal hw, multSqrt_apply_isReal]
-    simp [InfinitePlace.mult, hw]
-  · have hwc : w.IsComplex := InfinitePlace.not_isReal_iff_isComplex.mp hw
-    rw [normAtPlace_apply_of_isComplex hwc, multSqrt_apply_isComplex]
-    simp [InfinitePlace.mult, hw, Complex.norm_real, Real.norm_eq_abs,
-      abs_of_nonneg (Real.sqrt_nonneg 2)]
+    normAtPlace w (multSqrt K) = √(w.mult : ℝ) :=
+  normAtPlace_mixedSpaceOfRealSpace (Real.sqrt_nonneg _)
 
 end TauCeti.NumberField.mixedEmbedding
 

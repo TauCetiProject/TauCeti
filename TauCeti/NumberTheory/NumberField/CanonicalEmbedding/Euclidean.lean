@@ -41,9 +41,8 @@ multiplication by `c : mixedSpace K` defines an `ℝ`-linear endomorphism
   product to `mixedInner`.
 * `TauCeti.NumberField.mixedEmbedding.eq_of_forall_mixedInner_eq`: a point of the mixed space is
   determined by its pairings against a basis.
-* `TauCeti.NumberField.mixedEmbedding.mulMixedAmbient_apply` and
-  `TauCeti.NumberField.mixedEmbedding.toMixed_mulMixedAmbient_apply`: coordinatewise evaluation
-  formulas.
+* `TauCeti.NumberField.mixedEmbedding.mulMixedAmbient_apply`: coordinatewise evaluation
+  formula.
 * `TauCeti.NumberField.mixedEmbedding.mulMixedAmbient_one`: multiplying by `1` is the identity.
 * `TauCeti.NumberField.mixedEmbedding.mulMixedAmbient_mul`: `mulMixedAmbient` is multiplicative in
   the scaling element `c : mixedSpace K`.
@@ -227,12 +226,6 @@ theorem mulMixedAmbient_apply (c : mixedSpace K)
     (x : PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) (i : ι) :
     mulMixedAmbient c x i = (euclidean.toMixed K).symm (c * euclidean.toMixed K (x i)) := by
   simp [mulMixedAmbient, LinearEquiv.conj_apply]
-
-/-- Transported coordinatewise formula for `mulMixedAmbient`. -/
-theorem toMixed_mulMixedAmbient_apply (c : mixedSpace K)
-    (x : PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) (i : ι) :
-    euclidean.toMixed K (mulMixedAmbient c x i) = c * euclidean.toMixed K (x i) := by
-  simp
 
 /-- Multiplying by `1 : mixedSpace K` acts as the identity on the ambient Euclidean Minkowski
 space. -/

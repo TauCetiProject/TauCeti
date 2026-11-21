@@ -10,11 +10,9 @@ public import TauCeti.Algebra.Module.ZLattice.Covolume
 public import TauCeti.NumberTheory.Height.Arakelov.Subspace.Basic
 public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.SubspaceLattice
 
-import Mathlib.RingTheory.Complex
 import TauCeti.Analysis.ExteriorPower.Nonarchimedean
 import TauCeti.LinearAlgebra.Matrix.AbsoluteValue
 import TauCeti.LinearAlgebra.Pi
-import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.Euclidean
 import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.MulVolume
 import TauCeti.NumberTheory.NumberField.FinitePlace.Basic
 import TauCeti.NumberTheory.NumberField.FinitePlace.Ideal
@@ -54,8 +52,10 @@ fields.
 * `Submodule.covolume_integerLattice`: Schmidt's formula
   `ZLattice.covolume W.integerLattice = ((2⁻¹) ^ nrComplexPlaces K * √|discr K|) ^ finrank K W *
     W.subspaceHeight ^ finrank ℚ K`.
-* `Submodule.covolume_comap_mulMixedSubmodule_multSqrt`: scaling `W.integerLattice` by
-  `W.mulMixedSubmodule (multSqrt K)` cancels the `2 ^ (-r₂ * finrank K W)` factor.
+* `Submodule.covolume_comap_mulMixedSubmodule_multSqrt`,
+  `Submodule.covolume_comap_mulMixedSubmodule_multSqrt_rpow`: scaling `W.integerLattice` by
+  `W.mulMixedSubmodule (multSqrt K)` cancels the `2 ^ (-r₂ * finrank K W)` factor, and its
+  `([K : ℚ] * finrank K W)`-th root.
 * `Submodule.covolume_integerLattice_eq_covolume_pow_mul_relativeSubspaceArakelovHeight`: the same
   identity written in terms of `ZLattice.covolume (mixedEmbedding.integerLattice K)` and
   `W.relativeSubspaceArakelovHeight`.
@@ -571,6 +571,28 @@ theorem covolume_comap_mulMixedSubmodule_multSqrt (W : Submodule K (ι → K))
   rw [ZLattice.covolume_comap_continuousLinearEquiv W.integerLattice eT.symm volume,
     W.covolume_integerLattice, hdet_symm, mul_pow, ← pow_mul, inv_pow]
   field_simp
+
+open Classical in
+/-- The `([K : ℚ] * finrank K W)`-th root of the covolume of `W.integerLattice` scaled by
+`W.mulMixedSubmodule (multSqrt K)` is
+`|discr K| ^ (1 / (2 * [K : ℚ])) * W.subspaceHeight ^ (1 / finrank K W)`. -/
+theorem covolume_comap_mulMixedSubmodule_multSqrt_rpow (W : Submodule K (ι → K)) (hW : W ≠ ⊥)
+    (eT : W.euclideanSpan ≃L[ℝ] W.euclideanSpan)
+    (heT : (eT.toLinearEquiv : W.euclideanSpan →ₗ[ℝ] W.euclideanSpan) =
+      W.mulMixedSubmodule (multSqrt K)) :
+    ZLattice.covolume (ZLattice.comap ℝ W.integerLattice eT.symm.toLinearMap) ^
+        (((finrank ℚ K * finrank K W : ℕ) : ℝ)⁻¹) =
+      |(discr K : ℝ)| ^ (1 / (2 * (finrank ℚ K : ℝ))) *
+        W.subspaceHeight ^ (finrank K W : ℝ)⁻¹ := by
+  have : Nontrivial W := Submodule.nontrivial_iff_ne_bot.mpr hW
+  have hD : (0 : ℝ) < finrank ℚ K := Nat.cast_pos.mpr finrank_pos
+  have hm : (0 : ℝ) < finrank K W := Nat.cast_pos.mpr finrank_pos
+  rw [W.covolume_comap_mulMixedSubmodule_multSqrt eT heT,
+    Real.mul_rpow (by positivity) (pow_nonneg (Submodule.subspaceHeight_pos W).le _),
+    Real.sqrt_eq_rpow, ← Real.rpow_natCast, ← Real.rpow_mul (abs_nonneg _),
+    ← Real.rpow_mul (abs_nonneg _), ← Real.rpow_natCast,
+    ← Real.rpow_mul (Submodule.subspaceHeight_pos W).le, Nat.cast_mul]
+  congr 1 <;> congr 1 <;> field_simp [hD.ne', hm.ne']
 
 open Classical in
 /-- The zero subspace has integral lattice of covolume `1` in its `0`-dimensional real span. -/
