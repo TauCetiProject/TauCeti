@@ -473,201 +473,6 @@ theorem exists_sobolev_exponent {n : ℕ} {θ : ℝ} (hθ : 0 ≤ θ) (hθn : θ
   rw [← div_lt_iff₀' hs0, one_div, hs]
   linarith
 
-/-- The exponent bookkeeping in the global bound: `(K m^(1/n - δ))² m^(1 - 1/r - 2/s) =
-K² m^(2/n - 1/r)` when `2/s = 1 - 2δ`. -/
-private theorem sq_mul_rpow_eq {n : ℕ} {r s K m δ : ℝ} (hm : 0 ≤ m) (hn0 : (0 : ℝ) < n)
-    (hr0 : 0 < r) (hrn : (n : ℝ) < 2 * r) (h2s : 2 / s = 1 - 2 * δ) :
-    (K * m ^ ((n : ℝ)⁻¹ - δ)) ^ 2 * m ^ (1 - r⁻¹ - 2 / s) = K ^ 2 * m ^ (2 / (n : ℝ) - r⁻¹) := by
-  have hsum : 2 * ((n : ℝ)⁻¹ - δ) + (1 - r⁻¹ - 2 / s) = 2 / n - r⁻¹ := by
-    rw [h2s]
-    ring
-  have hne : 2 / (n : ℝ) - r⁻¹ ≠ 0 := by
-    have : r⁻¹ < 2 / n := by
-      rw [inv_lt_comm₀ hr0 (by positivity), inv_div, div_lt_iff₀ (two_pos (α := ℝ))]
-      linarith
-    linarith
-  rw [mul_pow, ← Real.rpow_natCast (m ^ _), ← Real.rpow_mul hm, mul_assoc,
-    ← Real.rpow_add' hm (by rwa [Nat.cast_ofNat, mul_comm, hsum]), Nat.cast_ofNat,
-    mul_comm (((n : ℝ)⁻¹ - δ)), hsum]
-
-/-- **Stampacchia's global bound, in every dimension.** Let `n ≥ 1` be the dimension and let
-`r > 1` with `r > n/2`. There is `C > 0`, depending only on `n`, `r` and the normalization of the
-additive Haar measure `mu`, with the following property. Let `Ω` have finite measure, let `a` be
-measurable and uniformly elliptic on `Ω` with constants `0 < λ ≤ Λ`, let `c` be bounded,
-measurable and nonnegative, and let `f ∈ Lʳ(Ω)`. If `u ∈ H¹(Ω)` is a weak subsolution of
-
-`-∂ᵢ(aⁱʲ ∂ⱼu) + c u ≤ f` in `Ω`
-
-with `u ≤ k` on `∂Ω` for a level `k ≥ 0`, in the sense that `(u - k)⁺ ∈ H¹₀(Ω)`, then almost
-everywhere in `Ω`
-
-`u ≤ k + C ‖f‖_{Lʳ(Ω)} / λ · |Ω| ^ (2/n - 1/r)`.
-
-The bound is invariant under dilations of `Ω`. The Sobolev inequality behind it is the one on
-sets of finite measure, `TauCeti.W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient_of_lt`,
-which holds in every dimension. -/
-theorem exists_ae_value_le_add_mul_div_mul_rpow [Nonempty ι] {r : ℝ≥0} (hr : 1 < r)
-    (hrn : (Fintype.card ι : ℝ) < 2 * r) :
-    ∃ C : ℝ, 0 < C ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
-      {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {c : EuclideanSpace ℝ ι → ℝ} {lam Lam gamma : ℝ}
-      {f : EuclideanSpace ℝ ι → ℝ} {u : W1p mu Omega 2} {k : ℝ} (hk : 0 ≤ k),
-      mu Omega ≠ ∞ →
-      UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam →
-      AEStronglyMeasurable a (mu.restrict Omega) →
-      AEStronglyMeasurable c (mu.restrict Omega) →
-      (∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c x‖ ≤ gamma) →
-      (∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), 0 ≤ c x) →
-      MemLp f r (mu.restrict Omega) →
-      (∀ v : W1p0 mu Omega 2,
-        (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
-          energyFormH1 a 0 c u (v : W1p mu Omega 2) ≤
-            ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu) →
-      W1p.posPartAbove (by norm_num) hk u ∈ w1p0Submodule mu Omega 2 →
-      ∀ᵐ x ∂mu.restrict Omega, W1p.value u x ≤
-        k + C * (eLpNorm f r (mu.restrict Omega)).toReal / lam *
-          mu.real Omega ^ (2 / (Fintype.card ι : ℝ) - (r : ℝ)⁻¹) := by
-  set n : ℕ := Fintype.card ι
-  have hn : (1 : ℝ) ≤ n := by exact_mod_cast Fintype.card_pos
-  have hn0 : (0 : ℝ) < n := by linarith
-  have hr0 : (0 : ℝ) < r := by exact_mod_cast zero_lt_one.trans hr
-  -- The Sobolev exponent `s = (1/2 - δ)⁻¹`, with `1/(2r) < δ < min (1/n) (1/2)`.
-  obtain ⟨δ, hδpos, hδn, hδ2, hs, hθs⟩ := exists_sobolev_exponent (θ := ((2 : ℝ) * r)⁻¹)
-    (by positivity) ((inv_lt_inv₀ (by positivity) hn0).2 hrn)
-    ((inv_lt_inv₀ (by positivity) two_pos).2 (by linarith [show (1 : ℝ) < r from hr]))
-  obtain ⟨K, hK, hsob⟩ :=
-    exists_forall_eLpNorm_value_le_toNNReal_mul_measureReal_rpow (mu := mu) hδpos hδn hδ2
-  set s : ℝ≥0 := Real.toNNReal (2⁻¹ - δ)⁻¹
-  have hrs : 2 < (s : ℝ) * (1 - (r : ℝ)⁻¹) := by
-    rw [mul_inv] at hθs
-    linarith
-  have h2s : 2 / (s : ℝ) = 1 - 2 * δ := by
-    rw [div_eq_mul_inv, hs]
-    ring
-  set E : ℝ := ((s : ℝ) * (1 - (r : ℝ)⁻¹) - 1) / ((s : ℝ) * (1 - (r : ℝ)⁻¹) - 2)
-  refine ⟨2 ^ E * K ^ 2, by positivity, fun {Omega a c lam Lam gamma f u k} hk hOmega h ha hc
-    hc_bound hc_nonneg hf hu hboundary => ?_⟩
-  set m := mu.real (Omega : Set (EuclideanSpace ℝ ι))
-  have hm : 0 ≤ m := measureReal_nonneg
-  set S : ℝ≥0 := Real.toNNReal (K * m ^ ((n : ℝ)⁻¹ - δ))
-  have hSval : (S : ℝ) = K * m ^ ((n : ℝ)⁻¹ - δ) := Real.coe_toNNReal _ (by positivity)
-  have hbound := h.ae_value_le_add_of_forall_eLpNorm_le ha hc hc_bound hc_nonneg hOmega
-    (zero_lt_one.trans hr) hrs (hsob hOmega) hf hu hk hboundary
-  filter_upwards [hbound] with x hx
-  refine hx.trans_eq ?_
-  -- `S² |Ω| ^ (1 - 1/r - 2/s) = K² |Ω| ^ (2/n - 1/r)`.
-  have hpow : (S : ℝ) ^ 2 * m ^ (1 - (r : ℝ)⁻¹ - 2 / (s : ℝ)) =
-      K ^ 2 * m ^ (2 / (n : ℝ) - (r : ℝ)⁻¹) := by
-    rw [hSval]
-    exact sq_mul_rpow_eq hm hn0 hr0 hrn h2s
-  calc k + 2 ^ E * (S : ℝ) ^ 2 * (eLpNorm f r (mu.restrict Omega)).toReal / lam *
-        m ^ (1 - (r : ℝ)⁻¹ - 2 / (s : ℝ))
-      = k + 2 ^ E * ((S : ℝ) ^ 2 * m ^ (1 - (r : ℝ)⁻¹ - 2 / (s : ℝ))) *
-          (eLpNorm f r (mu.restrict Omega)).toReal / lam := by ring
-    _ = _ := by
-      rw [hpow]
-      ring
-
-/-- **Global boundedness of weak Dirichlet solutions, in every dimension.** Let `n ≥ 1` be the
-dimension and let `r > 1` with `r > n/2`. There is `C > 0`, depending only on `n`, `r` and the
-normalization of `mu`, such that on every `Ω` of finite measure, for measurable, uniformly
-elliptic `a` with constants `0 < λ ≤ Λ` and bounded, measurable, nonnegative `c`, the weak
-solution `u ∈ H¹₀(Ω)` of the Dirichlet problem `-∂ᵢ(aⁱʲ ∂ⱼu) + c u = f` with `f ∈ Lʳ(Ω)`,
-that is `a(u, v) = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`, satisfies, almost everywhere in `Ω`,
-
-`|u| ≤ C ‖f‖_{Lʳ(Ω)} / λ · |Ω| ^ (2/n - 1/r)`.
-
-No integrability of `f` beyond `Lʳ` is assumed; for `f ∈ L²(Ω)` the hypothesis on `u` is
-`TauCeti.PDE.IsWeakSolutionDirichlet a 0 c f u`, by `TauCeti.PDE.isWeakSolutionDirichlet_iff`.
-This is the two-sided form of `TauCeti.PDE.exists_ae_value_le_add_mul_div_mul_rpow` at the level
-`k = 0`, applied to `u` and to `-u`. -/
-theorem exists_ae_abs_value_le_mul_div_mul_rpow [Nonempty ι] {r : ℝ≥0} (hr : 1 < r)
-    (hrn : (Fintype.card ι : ℝ) < 2 * r) :
-    ∃ C : ℝ, 0 < C ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
-      {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {c : EuclideanSpace ℝ ι → ℝ} {lam Lam gamma : ℝ}
-      {f : EuclideanSpace ℝ ι → ℝ} {u : W1p0 mu Omega 2},
-      mu Omega ≠ ∞ →
-      UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam →
-      AEStronglyMeasurable a (mu.restrict Omega) →
-      AEStronglyMeasurable c (mu.restrict Omega) →
-      (∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c x‖ ≤ gamma) →
-      (∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), 0 ≤ c x) →
-      MemLp f r (mu.restrict Omega) →
-      (∀ v : W1p0 mu Omega 2,
-        energyFormH1 a 0 c (u : W1p mu Omega 2) (v : W1p mu Omega 2) =
-          ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu) →
-      ∀ᵐ x ∂mu.restrict Omega, |W1p.value (u : W1p mu Omega 2) x| ≤
-        C * (eLpNorm f r (mu.restrict Omega)).toReal / lam *
-          mu.real Omega ^ (2 / (Fintype.card ι : ℝ) - (r : ℝ)⁻¹) := by
-  obtain ⟨C, hC, hmain⟩ := exists_ae_value_le_add_mul_div_mul_rpow (mu := mu) hr hrn
-  refine ⟨C, hC, fun {Omega a c lam Lam gamma f u} hOmega h ha hc hc_bound hc_nonneg hf hsol => ?_⟩
-  -- The bound from above for `u`, and for `-u`, a weak solution with forcing `-f`.
-  have hup := hmain (u := (u : W1p mu Omega 2)) le_rfl hOmega h ha hc hc_bound hc_nonneg hf
-    (fun v _ => (hsol v).le) (W1p.posPartAbove_mem_w1p0Submodule (by norm_num) le_rfl u.property)
-  have hlo := hmain (u := -(u : W1p mu Omega 2)) (f := fun x => -f x) le_rfl hOmega h ha hc
-    hc_bound hc_nonneg hf.neg (fun v _ => by
-      rw [← neg_one_smul ℝ (u : W1p mu Omega 2), energyFormH1_smul_left, hsol v]
-      simp only [neg_mul, integral_neg, one_mul, le_refl])
-    (W1p.posPartAbove_mem_w1p0Submodule (by norm_num) le_rfl (-u).property)
-  have hnorm : eLpNorm (fun x => -f x) r (mu.restrict Omega) = eLpNorm f r (mu.restrict Omega) :=
-    eLpNorm_neg _ _ _
-  rw [hnorm] at hlo
-  simpa only [zero_add] using (W1p.ae_abs_value_le_iff subset_rfl).2 ⟨hup, hlo⟩
-
-open Metric in
-/-- **Stampacchia's bound on a ball.** Let `n ≥ 1` be the dimension and let `r > 1` with
-`r > n/2`. There is `K > 0`, depending only on `n`, `r` and the normalization of `mu`, such that
-the following holds. Let `a` be measurable and uniformly elliptic on `B = B(x₀, ρ)` with constants
-`λ, Λ`, and let `f ∈ Lʳ(B)`. Then there is a weak solution `w ∈ H¹₀(B)` of the Dirichlet problem
-`-∂ᵢ(aⁱʲ ∂ⱼw) = f` in `B`, that is `a(w, v) = ∫_B f v` for every `v ∈ H¹₀(B)`, with
-
-`|w| ≤ K ρ^(2 - n/r) ‖f‖_{Lʳ(B)} / λ` almost everywhere on `B`.
-
-This is `TauCeti.PDE.exists_ae_abs_value_le_mul_div_mul_rpow` on a ball, where
-`|B|^(2/n - 1/r)` is a multiple of `ρ^(2 - n/r)`. -/
-theorem exists_forall_energyFormH1_eq_setIntegral_ae_abs_le [Nonempty ι] {r : ℝ≥0}
-    (hr : 1 < r) (hrn : (Fintype.card ι : ℝ) < 2 * r) :
-    ∃ K : ℝ, 0 < K ∧ ∀ {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam Lam : ℝ}
-      {f : EuclideanSpace ℝ ι → ℝ} {x₀ : EuclideanSpace ℝ ι} {ρ : ℝ},
-      UniformlyEllipticOn (ball x₀ ρ) a lam Lam → AEStronglyMeasurable a (mu.restrict (ball x₀ ρ)) →
-      MemLp f r (mu.restrict (ball x₀ ρ)) → 0 < ρ →
-      ∃ w : W1p0 mu ⟨ball x₀ ρ, isOpen_ball⟩ 2,
-        (∀ v : W1p0 mu ⟨ball x₀ ρ, isOpen_ball⟩ 2,
-          energyFormH1 a 0 0 (w : W1p mu ⟨ball x₀ ρ, isOpen_ball⟩ 2)
-              (v : W1p mu ⟨ball x₀ ρ, isOpen_ball⟩ 2) =
-            ∫ x in ball x₀ ρ, f x * W1p.value (v : W1p mu ⟨ball x₀ ρ, isOpen_ball⟩ 2) x ∂mu) ∧
-        ∀ᵐ x ∂mu.restrict (ball x₀ ρ), |W1p.value (w : W1p mu ⟨ball x₀ ρ, isOpen_ball⟩ 2) x| ≤
-          K * ρ ^ (2 - (Fintype.card ι : ℝ) / r) *
-            (eLpNorm f r (mu.restrict (ball x₀ ρ))).toReal / lam := by
-  set n : ℝ := (Fintype.card ι : ℝ)
-  have hn : (0 : ℝ) < n := Nat.cast_pos.2 Fintype.card_pos
-  have hr1 : (1 : ℝ) < r := by exact_mod_cast hr
-  have hrn' : n * (2 - r) < 2 * r := by nlinarith [mul_pos hn (sub_pos.2 hr1)]
-  obtain ⟨C, hC, hstamp⟩ := exists_ae_abs_value_le_mul_div_mul_rpow (mu := mu) hr hrn
-  set e : ℝ := 2 / n - (r : ℝ)⁻¹
-  refine ⟨C * mu.real (ball (0 : EuclideanSpace ℝ ι) 1) ^ e,
-    mul_pos hC (Real.rpow_pos_of_pos (measureReal_ball_pos _ _ one_pos) _), ?_⟩
-  intro a lam Lam f x₀ ρ h ha hf hρ
-  set B : Opens (EuclideanSpace ℝ ι) := ⟨ball x₀ ρ, isOpen_ball⟩
-  have hBfin : mu B ≠ ∞ := measure_ball_lt_top.ne
-  obtain ⟨w, hw, -⟩ :=
-    h.existsUnique_forall_energyFormH1_eq_setIntegral_of_memLp (Omega := B) (c := 0) (gamma := 0)
-      ha aestronglyMeasurable_const (fun _ _ => by simp) (fun _ _ => le_rfl) hBfin hr hrn' hf
-  refine ⟨w, hw, ?_⟩
-  -- `|B|^e = ρ^(n e) |B(0, 1)|^e`, with `n e = 2 - n/r`.
-  have hmeas : mu.real (ball x₀ ρ) ^ e =
-      ρ ^ (2 - n / r) * mu.real (ball (0 : EuclideanSpace ℝ ι) 1) ^ e := by
-    rw [Measure.addHaar_real_ball_rpow _ _ hρ, finrank_euclideanSpace]
-    congr 2
-    simp only [e, n]
-    field_simp
-  filter_upwards [hstamp (Omega := B) (c := 0) (gamma := 0) hBfin h ha aestronglyMeasurable_const
-    (fun _ _ => by simp) (fun _ _ => le_rfl) hf hw] with x hx
-  refine hx.trans_eq ?_
-  simp only [B, Opens.coe_mk]
-  rw [hmeas]
-  ring
-
-
 /-! ### Stampacchia's bound from the energy inequality of the truncations -/
 
 omit [DecidableEq ι] in
@@ -932,6 +737,161 @@ theorem exists_ae_value_le_add_of_forall_mul_norm_gradient_posPartAbove_sq_le [N
         rw [hpow2]
         ring
 
+/-! ### The scale-invariant bounds for a scalar right-hand side -/
+
+/-- **Stampacchia's global bound, in every dimension.** Let `n ≥ 1` be the dimension and let
+`r > 1` with `r > n/2`. There is `C > 0`, depending only on `n`, `r` and the normalization of the
+additive Haar measure `mu`, with the following property. Let `Ω` have finite measure, let `a` be
+measurable and uniformly elliptic on `Ω` with constants `0 < λ ≤ Λ`, let `c` be bounded,
+measurable and nonnegative, and let `f ∈ Lʳ(Ω)`. If `u ∈ H¹(Ω)` is a weak subsolution of
+
+`-∂ᵢ(aⁱʲ ∂ⱼu) + c u ≤ f` in `Ω`
+
+with `u ≤ k` on `∂Ω` for a level `k ≥ 0`, in the sense that `(u - k)⁺ ∈ H¹₀(Ω)`, then almost
+everywhere in `Ω`
+
+`u ≤ k + C ‖f‖_{Lʳ(Ω)} / λ · |Ω| ^ (2/n - 1/r)`.
+
+The bound is invariant under dilations of `Ω`. The Sobolev inequality behind it is the one on
+sets of finite measure, `TauCeti.W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient_of_lt`,
+which holds in every dimension. -/
+theorem exists_ae_value_le_add_mul_div_mul_rpow [Nonempty ι] {r : ℝ≥0} (hr : 1 < r)
+    (hrn : (Fintype.card ι : ℝ) < 2 * r) :
+    ∃ C : ℝ, 0 < C ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
+      {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {c : EuclideanSpace ℝ ι → ℝ} {lam Lam gamma : ℝ}
+      {f : EuclideanSpace ℝ ι → ℝ} {u : W1p mu Omega 2} {k : ℝ} (hk : 0 ≤ k),
+      mu Omega ≠ ∞ →
+      UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam →
+      AEStronglyMeasurable a (mu.restrict Omega) →
+      AEStronglyMeasurable c (mu.restrict Omega) →
+      (∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c x‖ ≤ gamma) →
+      (∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), 0 ≤ c x) →
+      MemLp f r (mu.restrict Omega) →
+      (∀ v : W1p0 mu Omega 2,
+        (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
+          energyFormH1 a 0 c u (v : W1p mu Omega 2) ≤
+            ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu) →
+      W1p.posPartAbove (by norm_num) hk u ∈ w1p0Submodule mu Omega 2 →
+      ∀ᵐ x ∂mu.restrict Omega, W1p.value u x ≤
+        k + C * (eLpNorm f r (mu.restrict Omega)).toReal / lam *
+          mu.real Omega ^ (2 / (Fintype.card ι : ℝ) - (r : ℝ)⁻¹) := by
+  -- This is the case `q = 2r`, `F = 0` of the bound from the energy inequality of the
+  -- truncations.
+  have hr1 : (1 : ℝ) < r := by exact_mod_cast hr
+  obtain ⟨C, hC, hmain⟩ :=
+    exists_ae_value_le_add_of_forall_mul_norm_gradient_posPartAbove_sq_le (mu := mu) (q := 2 * r)
+      (by push_cast; linarith) (by push_cast; exact hrn)
+  have hr2 : 2 * r / 2 = r := mul_div_cancel_left₀ r two_ne_zero
+  refine ⟨C, hC, fun {Omega a c lam Lam gamma f u k} hk hOmega h ha hc hc_bound hc_nonneg hf hu
+    hboundary => ?_⟩
+  have hbound := hmain hk hOmega h.pos (F := 0) (by rwa [hr2]) MemLp.zero hboundary fun l hkl => by
+    simpa only [Pi.zero_apply, inner_zero_left, integral_zero, sub_zero] using
+      mul_norm_gradient_posPartAbove_sq_le h ha hc hc_bound hc_nonneg hu hk hboundary hkl
+  filter_upwards [hbound] with x hx
+  refine hx.trans_eq ?_
+  rw [hr2, eLpNorm_zero, ENNReal.toReal_zero, zero_mul, add_zero, NNReal.coe_mul,
+    NNReal.coe_ofNat, div_mul_cancel_left₀ two_ne_zero]
+  ring
+
+/-- **Global boundedness of weak Dirichlet solutions, in every dimension.** Let `n ≥ 1` be the
+dimension and let `r > 1` with `r > n/2`. There is `C > 0`, depending only on `n`, `r` and the
+normalization of `mu`, such that on every `Ω` of finite measure, for measurable, uniformly
+elliptic `a` with constants `0 < λ ≤ Λ` and bounded, measurable, nonnegative `c`, the weak
+solution `u ∈ H¹₀(Ω)` of the Dirichlet problem `-∂ᵢ(aⁱʲ ∂ⱼu) + c u = f` with `f ∈ Lʳ(Ω)`,
+that is `a(u, v) = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`, satisfies, almost everywhere in `Ω`,
+
+`|u| ≤ C ‖f‖_{Lʳ(Ω)} / λ · |Ω| ^ (2/n - 1/r)`.
+
+No integrability of `f` beyond `Lʳ` is assumed; for `f ∈ L²(Ω)` the hypothesis on `u` is
+`TauCeti.PDE.IsWeakSolutionDirichlet a 0 c f u`, by `TauCeti.PDE.isWeakSolutionDirichlet_iff`.
+This is the two-sided form of `TauCeti.PDE.exists_ae_value_le_add_mul_div_mul_rpow` at the level
+`k = 0`, applied to `u` and to `-u`. -/
+theorem exists_ae_abs_value_le_mul_div_mul_rpow [Nonempty ι] {r : ℝ≥0} (hr : 1 < r)
+    (hrn : (Fintype.card ι : ℝ) < 2 * r) :
+    ∃ C : ℝ, 0 < C ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
+      {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {c : EuclideanSpace ℝ ι → ℝ} {lam Lam gamma : ℝ}
+      {f : EuclideanSpace ℝ ι → ℝ} {u : W1p0 mu Omega 2},
+      mu Omega ≠ ∞ →
+      UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam →
+      AEStronglyMeasurable a (mu.restrict Omega) →
+      AEStronglyMeasurable c (mu.restrict Omega) →
+      (∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c x‖ ≤ gamma) →
+      (∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), 0 ≤ c x) →
+      MemLp f r (mu.restrict Omega) →
+      (∀ v : W1p0 mu Omega 2,
+        energyFormH1 a 0 c (u : W1p mu Omega 2) (v : W1p mu Omega 2) =
+          ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu) →
+      ∀ᵐ x ∂mu.restrict Omega, |W1p.value (u : W1p mu Omega 2) x| ≤
+        C * (eLpNorm f r (mu.restrict Omega)).toReal / lam *
+          mu.real Omega ^ (2 / (Fintype.card ι : ℝ) - (r : ℝ)⁻¹) := by
+  obtain ⟨C, hC, hmain⟩ := exists_ae_value_le_add_mul_div_mul_rpow (mu := mu) hr hrn
+  refine ⟨C, hC, fun {Omega a c lam Lam gamma f u} hOmega h ha hc hc_bound hc_nonneg hf hsol => ?_⟩
+  -- The bound from above for `u`, and for `-u`, a weak solution with forcing `-f`.
+  have hup := hmain (u := (u : W1p mu Omega 2)) le_rfl hOmega h ha hc hc_bound hc_nonneg hf
+    (fun v _ => (hsol v).le) (W1p.posPartAbove_mem_w1p0Submodule (by norm_num) le_rfl u.property)
+  have hlo := hmain (u := -(u : W1p mu Omega 2)) (f := fun x => -f x) le_rfl hOmega h ha hc
+    hc_bound hc_nonneg hf.neg (fun v _ => by
+      rw [← neg_one_smul ℝ (u : W1p mu Omega 2), energyFormH1_smul_left, hsol v]
+      simp only [neg_mul, integral_neg, one_mul, le_refl])
+    (W1p.posPartAbove_mem_w1p0Submodule (by norm_num) le_rfl (-u).property)
+  have hnorm : eLpNorm (fun x => -f x) r (mu.restrict Omega) = eLpNorm f r (mu.restrict Omega) :=
+    eLpNorm_neg _ _ _
+  rw [hnorm] at hlo
+  simpa only [zero_add] using (W1p.ae_abs_value_le_iff subset_rfl).2 ⟨hup, hlo⟩
+
+open Metric in
+/-- **Stampacchia's bound on a ball.** Let `n ≥ 1` be the dimension and let `r > 1` with
+`r > n/2`. There is `K > 0`, depending only on `n`, `r` and the normalization of `mu`, such that
+the following holds. Let `a` be measurable and uniformly elliptic on `B = B(x₀, ρ)` with constants
+`λ, Λ`, and let `f ∈ Lʳ(B)`. Then there is a weak solution `w ∈ H¹₀(B)` of the Dirichlet problem
+`-∂ᵢ(aⁱʲ ∂ⱼw) = f` in `B`, that is `a(w, v) = ∫_B f v` for every `v ∈ H¹₀(B)`, with
+
+`|w| ≤ K ρ^(2 - n/r) ‖f‖_{Lʳ(B)} / λ` almost everywhere on `B`.
+
+This is `TauCeti.PDE.exists_ae_abs_value_le_mul_div_mul_rpow` on a ball, where
+`|B|^(2/n - 1/r)` is a multiple of `ρ^(2 - n/r)`. -/
+theorem exists_forall_energyFormH1_eq_setIntegral_ae_abs_le [Nonempty ι] {r : ℝ≥0}
+    (hr : 1 < r) (hrn : (Fintype.card ι : ℝ) < 2 * r) :
+    ∃ K : ℝ, 0 < K ∧ ∀ {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam Lam : ℝ}
+      {f : EuclideanSpace ℝ ι → ℝ} {x₀ : EuclideanSpace ℝ ι} {ρ : ℝ},
+      UniformlyEllipticOn (ball x₀ ρ) a lam Lam → AEStronglyMeasurable a (mu.restrict (ball x₀ ρ)) →
+      MemLp f r (mu.restrict (ball x₀ ρ)) → 0 < ρ →
+      ∃ w : W1p0 mu ⟨ball x₀ ρ, isOpen_ball⟩ 2,
+        (∀ v : W1p0 mu ⟨ball x₀ ρ, isOpen_ball⟩ 2,
+          energyFormH1 a 0 0 (w : W1p mu ⟨ball x₀ ρ, isOpen_ball⟩ 2)
+              (v : W1p mu ⟨ball x₀ ρ, isOpen_ball⟩ 2) =
+            ∫ x in ball x₀ ρ, f x * W1p.value (v : W1p mu ⟨ball x₀ ρ, isOpen_ball⟩ 2) x ∂mu) ∧
+        ∀ᵐ x ∂mu.restrict (ball x₀ ρ), |W1p.value (w : W1p mu ⟨ball x₀ ρ, isOpen_ball⟩ 2) x| ≤
+          K * ρ ^ (2 - (Fintype.card ι : ℝ) / r) *
+            (eLpNorm f r (mu.restrict (ball x₀ ρ))).toReal / lam := by
+  set n : ℝ := (Fintype.card ι : ℝ)
+  have hn : (0 : ℝ) < n := Nat.cast_pos.2 Fintype.card_pos
+  have hr1 : (1 : ℝ) < r := by exact_mod_cast hr
+  have hrn' : n * (2 - r) < 2 * r := by nlinarith [mul_pos hn (sub_pos.2 hr1)]
+  obtain ⟨C, hC, hstamp⟩ := exists_ae_abs_value_le_mul_div_mul_rpow (mu := mu) hr hrn
+  set e : ℝ := 2 / n - (r : ℝ)⁻¹
+  refine ⟨C * mu.real (ball (0 : EuclideanSpace ℝ ι) 1) ^ e,
+    mul_pos hC (Real.rpow_pos_of_pos (measureReal_ball_pos _ _ one_pos) _), ?_⟩
+  intro a lam Lam f x₀ ρ h ha hf hρ
+  set B : Opens (EuclideanSpace ℝ ι) := ⟨ball x₀ ρ, isOpen_ball⟩
+  have hBfin : mu B ≠ ∞ := measure_ball_lt_top.ne
+  obtain ⟨w, hw, -⟩ :=
+    h.existsUnique_forall_energyFormH1_eq_setIntegral_of_memLp (Omega := B) (c := 0) (gamma := 0)
+      ha aestronglyMeasurable_const (fun _ _ => by simp) (fun _ _ => le_rfl) hBfin hr hrn' hf
+  refine ⟨w, hw, ?_⟩
+  -- `|B|^e = ρ^(n e) |B(0, 1)|^e`, with `n e = 2 - n/r`.
+  have hmeas : mu.real (ball x₀ ρ) ^ e =
+      ρ ^ (2 - n / r) * mu.real (ball (0 : EuclideanSpace ℝ ι) 1) ^ e := by
+    rw [Measure.addHaar_real_ball_rpow _ _ hρ, finrank_euclideanSpace]
+    congr 2
+    simp only [e, n]
+    field_simp
+  filter_upwards [hstamp (Omega := B) (c := 0) (gamma := 0) hBfin h ha aestronglyMeasurable_const
+    (fun _ _ => by simp) (fun _ _ => le_rfl) hf hw] with x hx
+  refine hx.trans_eq ?_
+  simp only [B, Opens.coe_mk]
+  rw [hmeas]
+  ring
 /-! ### A right-hand side in divergence form -/
 
 /-- **Stampacchia's global bound for a right-hand side in divergence form.** Let `Ω` have finite
