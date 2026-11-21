@@ -36,8 +36,10 @@ counterclockwise continuation shifts are assigned to `periph0⁻¹` and `periph1
 * `TauCeti.Polylog.IsPolylogTowerGerm`: germ-level `γ0`/`γ1` monodromy and universal-cover
   equivariance at `1 / 2` normalized by `F (1 / 2) 0 = Complex.log (1 / 2)`.
 * `TauCeti.Polylog.continuesInside_polylogTower`, `TauCeti.Polylog.polylogBranch`,
+  `TauCeti.Polylog.polylogBranch_eq_polylog_of_one_sub_mem_slitPlane`,
   `TauCeti.Polylog.polylogBranch_smul`, `TauCeti.Polylog.exists_polylogBranch_monodromy`: all-height
-  continuation, universal-cover branch, and polynomial `π₁`-equivariance of `polylogTower N`.
+  continuation, universal-cover branch, principal-domain comparison, and polynomial
+  `π₁`-equivariance of `polylogTower N`.
 
 ## References
 
@@ -174,7 +176,7 @@ theorem analyticOnNhd_polylogMonodromy (N : ℕ) (g : FundamentalGroup ThricePun
   fun w _ => analyticAt_polylogMonodromy N g w
 
 /-- `polylogMonodromy` commutes with truncating the tower along `Fin.castLE h`. -/
-theorem polylogMonodromy_castLE {M N : ℕ} (h : M + 1 ≤ N + 1)
+@[simp] theorem polylogMonodromy_castLE {M N : ℕ} (h : M + 1 ≤ N + 1)
     (g : FundamentalGroup ThricePuncturedSphere basePt) (w : Fin (N + 1) → ℂ) (i : Fin (M + 1)) :
     polylogMonodromy N g w (Fin.castLE h i) =
       polylogMonodromy M g (fun j => w (Fin.castLE h j)) i := by
@@ -622,9 +624,28 @@ theorem exists_isAnalyticContinuationAlong_polylogBranch (N : ℕ) {z : ThricePu
   simpa [coe_basePt, polylogBranch_def] using
     (continuesInside_polylogTower N).exists_isAnalyticContinuationAlong_universalCoverBranch γ
 
+/-- Along a path `γ` from `basePt = 1 / 2` in `ThricePuncturedSphere` staying in the principal
+polylogarithm domain `{z | 1 - z ∈ Complex.slitPlane}` (without needing `γ t ∈ Complex.slitPlane`
+for entry `0`), every positive-weight coordinate `i` (`(i : ℕ) ≠ 0`) of `polylogBranch N` agrees
+at the endpoint with the principal polylogarithm `polylog (i : ℕ) (z : ℂ)`. -/
+theorem polylogBranch_eq_polylog_of_one_sub_mem_slitPlane (N : ℕ) {z : ThricePuncturedSphere}
+    (γ : Path basePt z) (hγ : ∀ t : I, 1 - (γ t : ℂ) ∈ Complex.slitPlane)
+    {i : Fin (N + 1)} (hi : (i : ℕ) ≠ 0) :
+    polylogBranch N ⟨z, Path.Homotopic.Quotient.mk γ⟩ i = polylog (i : ℕ) (z : ℂ) := by
+  obtain ⟨f, hf, hf0, hval⟩ := exists_isAnalyticContinuationAlong_polylogBranch N γ
+  have hcont : IsAnalyticContinuationAlong (fun _ => polylog (i : ℕ)) (fun t => (γ t : ℂ)) univ :=
+    .const (continuous_subtypeVal.comp γ.continuous).continuousOn
+      fun t _ => analyticAt_polylog (i : ℕ) (hγ t)
+  have h0 : (fun w => f 0 w i) =ᶠ[𝓝 (γ 0 : ℂ)] polylog (i : ℕ) := by
+    rw [Path.source, coe_basePt]
+    exact hf0.mono fun w hw => by simp [hw, polylogTower_apply_of_ne_zero w hi]
+  have heq := (hf.eval i).eventuallyEq hcont isPreconnected_univ (mem_univ 0) (mem_univ 1) h0
+  rw [Path.target] at heq
+  exact (congrFun hval i).trans heq.eq_of_nhds
+
 /-- Truncating `polylogBranch N` along `Fin.castLE h` agrees with `polylogBranch M`. -/
-theorem polylogBranch_castLE {M N : ℕ} (h : M + 1 ≤ N + 1) (p : UniversalCover basePt)
-    (i : Fin (M + 1)) : polylogBranch M p i = polylogBranch N p (Fin.castLE h i) := by
+@[simp] theorem polylogBranch_castLE {M N : ℕ} (h : M + 1 ≤ N + 1) (p : UniversalCover basePt)
+    (i : Fin (M + 1)) : polylogBranch N p (Fin.castLE h i) = polylogBranch M p i := by
   rw [polylogBranch_def, polylogBranch_def,
     ← (isPolylogTowerGerm_polylogTower_basePt N).universalCoverBranch_castLE h p i,
     ContinuesInside.universalCoverBranch_congr _

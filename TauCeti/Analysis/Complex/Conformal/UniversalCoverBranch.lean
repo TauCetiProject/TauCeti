@@ -25,12 +25,13 @@ in `U ⊆ ℂ` from `z₀ ∈ U` depends only on its homotopy class in `U`, asse
   invariance in `U` and the universal-cover branch, with intro/elim, basepoint, congruence, `trans`,
   algebra (`add`, `neg`, `sub`, `mul`, `pow`), `eval_apply`, `analyticOnNhd_univ_comp`, global
   comparison, and loop monodromy (`universalCoverBranch_inv_smul_of_loop`).
-* `ContinuesInside.continuous_universalCoverBranch`,
+* `ContinuesInside.eventuallyEq_universalCoverBranch_of_isAnalyticContinuationAlong`,
+  `ContinuesInside.continuous_universalCoverBranch`,
   `ContinuesInside.analyticOnNhd_universalCoverBranch_comp`,
-  `ContinuesInside.eqOn_universalCoverBranch_comp_of_analyticOnNhd`: continuity, analyticity, and
-  `EqOn` principal-branch agreement of local determinations along continuous sections (see
-  `TauCeti.AlgebraicTopology.UniversalCover.Section` for topological section existence and
-  uniqueness).
+  `ContinuesInside.eqOn_universalCoverBranch_comp_of_analyticOnNhd`: local cover characterization,
+  continuity, analyticity, and `EqOn` principal-branch agreement of local determinations along
+  continuous sections (see `TauCeti.AlgebraicTopology.UniversalCover.Section` for topological
+  section existence and uniqueness).
 
 ## References
 
@@ -331,22 +332,36 @@ section Normed
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 
+/-- **Local characterization of `universalCoverBranch` on the cover.** Near `p : UniversalCover z₀`,
+`H.universalCoverBranch` equals the terminal representative `f 1` of any analytic continuation along
+a representing path `γ` of `p`, composed with the projection `UniversalCover.proj`. -/
+theorem eventuallyEq_universalCoverBranch_of_isAnalyticContinuationAlong {U : Set ℂ} {z₀ : U}
+    {f₀ : ℂ → E} (H : ContinuesInside f₀ U (z₀ : ℂ)) (p : UniversalCover z₀) {γ : Path z₀ p.proj}
+    (hγ : Path.Homotopic.Quotient.mk γ = p.path) {f : I → ℂ → E}
+    (hf : IsAnalyticContinuationAlong f (fun t => (γ t : ℂ)) univ) (hf0 : f 0 =ᶠ[𝓝 (z₀ : ℂ)] f₀) :
+    H.universalCoverBranch =ᶠ[𝓝 p] fun q => f 1 (q.proj : ℂ) := by
+  let e : E →L[ℂ] UniformSpace.Completion E := UniformSpace.Completion.toComplL
+  obtain ⟨S, G, hSo, hpS, -, hGf, hval⟩ := exists_isOpen_universalCoverBranch_eq
+    (H.analyticOnNhd_univ_comp (e.analyticOnNhd univ)) p hγ
+    (hf.analyticAt_comp fun _ _ => e.analyticAt _) (hf0.fun_comp e)
+  have hproj : ContinuousAt (fun q : UniversalCover z₀ => (q.proj : ℂ)) p :=
+    (continuous_subtypeVal.comp (UniversalCover.continuous_proj z₀)).continuousAt
+  filter_upwards [hSo.mem_nhds hpS, hproj.eventually hGf] with q hqS hqG
+  exact UniformSpace.Completion.coe_injective E <|
+    (H.universalCoverBranch_analyticOnNhd_univ_comp (e.analyticOnNhd univ) q).symm.trans
+      ((hval q hqS).trans hqG)
+
 /-- **Continuity of the universal-cover branch.** -/
 @[fun_prop] theorem continuous_universalCoverBranch {U : Set ℂ} {z₀ : U} {f₀ : ℂ → E}
     (H : ContinuesInside f₀ U (z₀ : ℂ)) : Continuous H.universalCoverBranch := by
-  let e : E →L[ℂ] UniformSpace.Completion E := UniformSpace.Completion.toComplL
-  let H' := H.analyticOnNhd_univ_comp (e.analyticOnNhd univ)
-  rw [(UniformSpace.Completion.isUniformInducing_coe E).isInducing.continuous_iff]
-  have heq : ((↑) : E → UniformSpace.Completion E) ∘ H.universalCoverBranch =
-      H'.universalCoverBranch :=
-    funext fun p => (H.universalCoverBranch_analyticOnNhd_univ_comp (e.analyticOnNhd univ) p).symm
-  rw [heq, continuous_iff_continuousAt]; intro p
+  rw [continuous_iff_continuousAt]; intro p
   obtain ⟨γ, hγ⟩ := Path.Homotopic.Quotient.mk_surjective p.path
-  obtain ⟨f, hf, hf0, -⟩ := H'.exists_isAnalyticContinuationAlong_universalCoverBranch γ
-  obtain ⟨S, G, hSo, hpS, hGan, -, hval⟩ := exists_isOpen_universalCoverBranch_eq H' p hγ hf hf0
-  exact (hGan.continuousAt.comp (f := fun q : UniversalCover z₀ => (q.proj : ℂ))
+  obtain ⟨f, hf, hf0, -⟩ := H.exists_isAnalyticContinuationAlong_universalCoverBranch γ
+  have hf1 : ContinuousAt (f 1) (p.proj : ℂ) :=
+    ((congrArg Subtype.val γ.target).symm ▸ hf.analyticAt 1 (mem_univ 1)).continuousAt
+  exact (hf1.comp (f := fun q : UniversalCover z₀ => (q.proj : ℂ))
     (continuous_subtypeVal.comp (UniversalCover.continuous_proj z₀)).continuousAt).congr
-    (eventually_of_mem (hSo.mem_nhds hpS) fun q hq => (hval q hq).symm)
+    (H.eventuallyEq_universalCoverBranch_of_isAnalyticContinuationAlong p hγ hf hf0).symm
 
 /-- **Germ of a local determination along a continuous section.** -/
 theorem eventuallyEq_universalCoverBranch_comp_of_continuousAt {U : Set ℂ} {z₀ : U} {f₀ : ℂ → E}
@@ -355,15 +370,10 @@ theorem eventuallyEq_universalCoverBranch_comp_of_continuousAt {U : Set ℂ} {z�
     {γ : Path z₀ (sec w).proj} (hγ : Path.Homotopic.Quotient.mk γ = (sec w).path) {f : I → ℂ → E}
     (hf : IsAnalyticContinuationAlong f (fun t => (γ t : ℂ)) univ) (hf0 : f 0 =ᶠ[𝓝 (z₀ : ℂ)] f₀) :
     (H.universalCoverBranch ∘ sec) =ᶠ[𝓝 w] f 1 := by
-  let e : E →L[ℂ] UniformSpace.Completion E := UniformSpace.Completion.toComplL
-  obtain ⟨S, G, hSo, hpS, -, hGf, hval⟩ := exists_isOpen_universalCoverBranch_eq
-    (H.analyticOnNhd_univ_comp (e.analyticOnNhd univ)) (sec w) hγ
-    (hf.analyticAt_comp fun _ _ => e.analyticAt _) (hf0.fun_comp e)
-  have hpw : ((sec w).proj : ℂ) = w := hproj.self_of_nhds; rw [hpw] at hGf
-  filter_upwards [hsec.eventually (hSo.mem_nhds hpS), hproj, hGf] with z hzS hzproj hzG
-  exact UniformSpace.Completion.coe_injective E <|
-    (H.universalCoverBranch_analyticOnNhd_univ_comp (e.analyticOnNhd univ) (sec z)).symm.trans
-      ((hval (sec z) hzS).trans (by simpa [hzproj, e] using hzG))
+  filter_upwards [hsec.eventually
+    (H.eventuallyEq_universalCoverBranch_of_isAnalyticContinuationAlong (sec w) hγ hf hf0),
+    hproj] with z hz hzp
+  exact hz.trans (by simp [hzp])
 
 /-- **Local determinations are complex analytic.** -/
 theorem analyticAt_universalCoverBranch_comp_of_continuousAt {U : Set ℂ} {z₀ : U} {f₀ : ℂ → E}
@@ -392,19 +402,16 @@ theorem eqOn_universalCoverBranch_comp_of_analyticOnNhd {U : Set ℂ} {z₀ : U}
     (hproj : ∀ z ∈ V, ((sec z).proj : ℂ) = z)
     (hsec0 : sec (z₀ : ℂ) = UniversalCover.basepointLift z₀) (hF : AnalyticOnNhd ℂ F V)
     (hF0 : F =ᶠ[𝓝 (z₀ : ℂ)] f₀) : EqOn (H.universalCoverBranch ∘ sec) F V := by
-  let e : E →L[ℂ] UniformSpace.Completion E := UniformSpace.Completion.toComplL
-  obtain ⟨S, G, hSo, hpS, -, hGF, hval⟩ := exists_isOpen_universalCoverBranch_eq
-    (H.analyticOnNhd_univ_comp (e.analyticOnNhd univ)) ⟨z₀, Path.Homotopic.Quotient.refl z₀⟩
-    (Path.Homotopic.Quotient.mk_refl z₀)
+  have hev_base := H.eventuallyEq_universalCoverBranch_of_isAnalyticContinuationAlong
+    ⟨z₀, Path.Homotopic.Quotient.refl z₀⟩ (Path.Homotopic.Quotient.mk_refl z₀)
     (.const (continuous_subtypeVal.comp (Path.refl z₀).continuous).continuousOn
-      fun _ _ => AnalyticAt.comp (e.analyticAt _) (hF _ hz₀)) (hF0.fun_comp e)
-  have hsecS : sec (z₀ : ℂ) ∈ S := by rwa [hsec0, UniversalCover.basepointLift_coe]
+      fun _ _ => hF _ hz₀) hF0
+  have hsec_eq : sec (z₀ : ℂ) = ⟨z₀, Path.Homotopic.Quotient.refl z₀⟩ := by
+    rw [hsec0, UniversalCover.basepointLift_coe]
   have hev : (H.universalCoverBranch ∘ sec) =ᶠ[𝓝 (z₀ : ℂ)] F := by
-    filter_upwards [(hsec.continuousAt (hVo.mem_nhds hz₀)).eventually (hSo.mem_nhds hsecS),
-      eventually_of_mem (hVo.mem_nhds hz₀) hproj, hGF] with z hzS hzproj hzG
-    exact UniformSpace.Completion.coe_injective E <|
-      (H.universalCoverBranch_analyticOnNhd_univ_comp (e.analyticOnNhd univ) (sec z)).symm.trans
-        ((hval (sec z) hzS).trans (by simpa [hzproj, e] using hzG))
+    filter_upwards [(hsec.continuousAt (hVo.mem_nhds hz₀)).eventually (hsec_eq ▸ hev_base),
+      eventually_of_mem (hVo.mem_nhds hz₀) hproj] with z hz hzp
+    exact hz.trans (by simp [hzp])
   exact AnalyticOnNhd.eqOn_of_preconnected_of_eventuallyEq
     (H.analyticOnNhd_universalCoverBranch_comp hVo hsec hproj) hF hVc hz₀ hev
 
