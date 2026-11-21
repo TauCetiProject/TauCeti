@@ -6,11 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Idempotent
+public import Mathlib.Algebra.Group.Prod
 
 /-!
 # Idempotents
 
 An injective multiplicative map reflects idempotents (`IsIdempotentElem.map_iff`).
+A pair is idempotent exactly when both coordinates are idempotent (`Prod.isIdempotentElem_iff`).
 
 If `b * a = 1` in a monoid, then `a * e * b` is idempotent whenever `e` is. In particular,
 conjugating an idempotent by a unit gives an idempotent, as does conjugating by a one-sided
@@ -35,3 +37,9 @@ theorem map_iff {M N F : Type*} [Mul M] [Mul N] [FunLike F M N] [MulHomClass F M
   ⟨fun h ↦ hf (by rw [map_mul]; exact h.eq), fun h ↦ h.map f⟩
 
 end IsIdempotentElem
+
+/-- A pair is idempotent exactly when both coordinates are idempotent. -/
+@[simp]
+theorem Prod.isIdempotentElem_iff {M N : Type*} [Mul M] [Mul N] {x : M × N} :
+    IsIdempotentElem x ↔ IsIdempotentElem x.1 ∧ IsIdempotentElem x.2 := by
+  simp only [_root_.isIdempotentElem_iff, Prod.ext_iff, Prod.fst_mul, Prod.snd_mul]
