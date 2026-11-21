@@ -180,10 +180,10 @@ theorem _root_.ContinuousLinearEquiv.mapProjectivization_apply_symm_apply (e : V
 @[simp]
 theorem _root_.ContinuousLinearEquiv.mapProjectivization_refl :
     (ContinuousLinearEquiv.refl K V).mapProjectivization = Homeomorph.refl (ℙ K V) := by
-  apply Homeomorph.toEquiv_injective
-  simpa only [ContinuousLinearEquiv.toEquiv_mapProjectivization,
-    ContinuousLinearEquiv.refl, Homeomorph.refl] using
-    LinearEquiv.mapProjectivization_refl (K := K) (V := V)
+  ext p
+  induction p using Projectivization.ind with | h v hv =>
+  simp only [ContinuousLinearEquiv.mapProjectivization_mk, Homeomorph.refl_apply,
+    ContinuousLinearEquiv.refl_apply, id_eq]
 
 @[simp]
 theorem _root_.ContinuousLinearEquiv.mapProjectivization_trans {M U : Type*} [DivisionRing M]
@@ -192,10 +192,10 @@ theorem _root_.ContinuousLinearEquiv.mapProjectivization_trans {M U : Type*} [Di
     [RingHomInvPair ρ ρ'] [RingHomInvPair ρ' ρ] [RingHomCompTriple σ τ ρ]
     [RingHomCompTriple τ' σ' ρ'] (e₁ : V ≃SL[σ] W) (e₂ : W ≃SL[τ] U) :
     (e₁.trans e₂).mapProjectivization = e₁.mapProjectivization.trans e₂.mapProjectivization := by
-  apply Homeomorph.toEquiv_injective
-  simpa only [Homeomorph.trans, ContinuousLinearEquiv.toEquiv_mapProjectivization,
-    ContinuousLinearEquiv.trans_toLinearEquiv] using
-    (LinearEquiv.mapProjectivization_trans e₁.toLinearEquiv e₂.toLinearEquiv).symm
+  ext p
+  induction p using Projectivization.ind with | h v hv =>
+  simp only [ContinuousLinearEquiv.mapProjectivization_mk, Homeomorph.trans_apply,
+    ContinuousLinearEquiv.trans_apply]
 
 end MapProjectivization
 
