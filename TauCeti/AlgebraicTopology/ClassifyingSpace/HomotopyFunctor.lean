@@ -10,7 +10,6 @@ public import TauCeti.AlgebraicTopology.ClassifyingSpace.Comparison
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.Functoriality
 public import TauCeti.AlgebraicTopology.Homotopy.PointedHomotopyCat
 import TauCeti.AlgebraicTopology.EilenbergMacLane.HomotopyEquiv
-import TauCeti.Topology.Homotopy.Extension.CWComplex
 
 /-!
 # The classifying space as a functor to the pointed homotopy category
@@ -91,9 +90,6 @@ contractible, hence isomorphic to `classifyingSpace PUnit`, yet `{0}` is not `G_
 
 ## Main results
 
-* `TauCeti.hasHomotopyExtensionProperty_classifyingSpaceBasepoint`,
-  `TauCeti.hasHomotopyExtensionProperty_cellularClassifyingSpaceBasepoint`: both classifying-space
-  models are well-pointed.
 * `TauCeti.fundamentalGroupFunctor_map_bijective_cellularClassifyingSpace`: pointed homotopy
   classes of maps out of a cellular classifying space into a space with no higher homotopy groups
   are classified by their effect on `π₁`.
@@ -223,13 +219,6 @@ group recovers the homomorphism inducing a map. -/
 instance : classifyingSpaceHomotopyFunctor.{u}.Faithful :=
   .of_comp_iso classifyingSpaceHomotopyFunctorCompFundamentalGroupFunctorIso
 
-/-- **Milnor's classifying space is well-pointed.** Its base point is a `0`-cell, so it has the
-homotopy extension property. -/
-theorem hasHomotopyExtensionProperty_classifyingSpaceBasepoint (G : Type u) [Group G] :
-    HasHomotopyExtensionProperty ({classifyingSpaceBasepoint G} : Set (classifyingSpace G)) :=
-  hasHomotopyExtensionProperty_singleton_of_mem_skeletonLT_one
-    (classifyingSpaceBasepoint_mem_skeletonLT_one G)
-
 section Cellular
 
 variable {S : Type u} (R : Set (FreeGroup S))
@@ -253,14 +242,6 @@ theorem cellularClassifyingSpaceBased_basepoint :
 instance instCWTypeCellularClassifyingSpaceBased :
     CWType (cellularClassifyingSpaceBased R).carrier :=
   inferInstanceAs (CWType (cellularClassifyingSpace R))
-
-/-- **The cellular classifying space is well-pointed.** Its base point is its unique `0`-cell, so
-it has the homotopy extension property. -/
-theorem hasHomotopyExtensionProperty_cellularClassifyingSpaceBasepoint :
-    HasHomotopyExtensionProperty
-      ({cellularClassifyingSpaceBasepoint R} : Set (cellularClassifyingSpace R)) :=
-  hasHomotopyExtensionProperty_singleton_of_mem_skeletonLT_one
-    (by rw [skeletonLT_one_cellularClassifyingSpace]; exact Set.mem_singleton _)
 
 /-- The comparison `cellularHomotopyEquivClassifyingSpace R e` of the cellular model with Milnor's
 classifying space, as a based map. -/
