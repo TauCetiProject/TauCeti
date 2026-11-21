@@ -10,7 +10,6 @@ public import Mathlib.RingTheory.FiniteType
 import Mathlib.Data.Fintype.Order
 import TauCeti.Algebra.BigOperators.Finset.Range
 import TauCeti.Algebra.MvPolynomial.Degrees
-import TauCeti.Algebra.MvPolynomial.Monad
 import TauCeti.RingTheory.AdicCompletion.Nilpotent
 
 /-!
