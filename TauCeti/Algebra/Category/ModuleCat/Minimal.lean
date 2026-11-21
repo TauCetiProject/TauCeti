@@ -13,12 +13,15 @@ import Mathlib.LinearAlgebra.Projection
 import Mathlib.RingTheory.Length
 
 /-!
-# Right minimal summands of module morphisms
+# Minimal summands of module morphisms
 
 A map with finite-length source restricts to a right minimal map on a direct summand,
 and vanishes on the complementary summand. Right minimality means that every endomorphism
 of the source fixing the map is invertible. This reduction removes redundant summands
-from right almost split morphisms before forming their kernel sequences.
+from right almost split morphisms before forming their kernel sequences. Dually, a map with
+finite-length target lands in a direct summand of the target, onto which it is left minimal:
+every endomorphism of that summand fixing the map is invertible
+(`ModuleCat.exists_retract_left_minimal`).
 
 The proof uses Mathlib's Fitting decomposition
 `LinearMap.eventually_isCompl_ker_pow_range_pow` and minimizes `Module.length` among
@@ -88,6 +91,50 @@ theorem exists_retract_right_minimal {M N : ModuleCat.{v} R} (f : M ⟶ N)
   -- Minimal length forces that range to be the whole source.
   have hI : LinearMap.range (b.hom ^ (n + 1)) = ⊤ :=
     by_contra fun hI ↦ hP.not_lt hD (Submodule.length_lt hI)
+  exact (ConcreteCategory.isIso_iff_bijective b).mpr
+    (IsNoetherian.bijective_of_surjective_endomorphism b.hom
+      (Module.End.surjective_of_iterate_surjective n.succ_ne_zero
+        (LinearMap.range_eq_top.mp hI)))
+
+/-- A morphism with finite-length target, followed by the projection onto a retract of
+its target, is a left minimal morphism, and the original map factors through it. No
+finiteness condition on the source or on the ring is required. -/
+theorem exists_retract_left_minimal {M N : ModuleCat.{v} R} (f : M ⟶ N)
+    (hN : IsFiniteLength R N) :
+    ∃ (P : ModuleCat.{v} R) (r : Retract P N),
+      f ≫ r.r ≫ r.i = f ∧
+        ∀ b : P ⟶ P, (f ≫ r.r) ≫ b = f ≫ r.r → IsIso b := by
+  let D (P : ModuleCat.{v} R) := ∃ r : Retract P N, f ≫ r.r ≫ r.i = f
+  -- Choose a factorizing summand of least length.
+  obtain ⟨P, hP⟩ := exists_minimalFor_of_wellFoundedLT D (fun P ↦ Module.length R P)
+    ⟨N, Retract.refl N, by simp⟩
+  obtain ⟨r, hr⟩ := hP.prop
+  have hlen : IsFiniteLength R P :=
+    hN.of_injective ((mono_iff_injective r.i).mp inferInstance)
+  obtain ⟨_, _⟩ := isFiniteLength_iff_isNoetherian_isArtinian.mp hlen
+  refine ⟨P, r, hr, fun b hb ↦ ?_⟩
+  obtain ⟨n, hn⟩ := Filter.eventually_atTop.mp
+    (LinearMap.eventually_isCompl_ker_pow_range_pow b.hom)
+  let K := LinearMap.ker (b.hom ^ (n + 1))
+  let I := LinearMap.range (b.hom ^ (n + 1))
+  have hc : IsCompl K I := hn (n + 1) n.le_succ
+  -- The fixed-map identity puts the image of `f ≫ r.r` in the Fitting range, so projection
+  -- onto that range gives another factorizing summand.
+  have hmem (x : M) : (f ≫ r.r) x ∈ I := by
+    have h : ⇑b.hom ∘ ⇑(f ≫ r.r).hom = ⇑(f ≫ r.r).hom := by
+      rw [← LinearMap.coe_comp, ← hom_comp, hb]
+    refine ⟨(f ≫ r.r) x, ?_⟩
+    rw [pow_apply_eq_iterate]
+    exact Function.iterate_fixed (congrFun h x) _
+  let s : Retract (ModuleCat.of R I) P :=
+    ⟨ofHom I.subtype, ofHom (I.projectionOnto K hc.symm), by ext; simp⟩
+  have hs : (f ≫ r.r) ≫ s.r ≫ s.i = f ≫ r.r := by
+    ext x
+    simpa [s] using hmem x
+  have hD : D (ModuleCat.of R I) :=
+    ⟨s.trans r, by simpa [Retract.trans, reassoc_of% hs] using hr⟩
+  -- Minimal length forces that range to be the whole target.
+  have hI : I = ⊤ := by_contra fun hI ↦ hP.not_lt hD (Submodule.length_lt hI)
   exact (ConcreteCategory.isIso_iff_bijective b).mpr
     (IsNoetherian.bijective_of_surjective_endomorphism b.hom
       (Module.End.surjective_of_iterate_surjective n.succ_ne_zero

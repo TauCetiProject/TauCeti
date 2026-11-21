@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Group.Torsion
 public import Mathlib.GroupTheory.Finiteness
 public import Mathlib.LinearAlgebra.FreeModule.Basic
 public import TauCeti.Algebra.Group.Submonoid.GroupCompletion
@@ -31,13 +30,16 @@ This file establishes two forms of Gordan's lemma for finitely generated additiv
   uses Mathlib's `AddSubmonoid.fg_iff_exists_fin_addMonoidHom` to parametrize both monoids by finite
   products of naturals, and `AddSubmonoid.fg_eqLocusM` to impose equality of their images (the
   slack-variable form of Gordan's lemma).
-* **Bounded shifts and saturations**: for a finitely generated submonoid `S` of a free abelian
-  group `L`, Euclidean division of natural generator coefficients bounds representatives of
-  `S.nsmulSaturation` modulo `S` inside a finite coordinate box over the basis support of the
-  generators, yielding a finite set `F ⊆ S.nsmulSaturation` with `S.nsmulSaturation = F + S`
-  (`AddSubmonoid.FG.exists_finset_subset_nsmulSaturation_add`). Consequently `S.nsmulSaturation` is
-  finitely generated (`AddSubmonoid.FG.nsmulSaturation`), and for any finitely generated submonoid
-  `S` of an arbitrary torsion-free abelian group `G`, its saturation inside
+* **Bounded shifts and saturations**: for any finitely generated submonoid `T ≤ S.powSaturation`,
+  finitely many elements of `T` represent every element of `T` up to a factor in `S`
+  (`Submonoid.FG.exists_finset_subset_forall_exists_mul`). For a finitely generated submonoid `S` of
+  a free abelian group `L`, Euclidean division of natural generator coefficients bounds
+  representatives of `S.nsmulSaturation` modulo `S` inside a finite coordinate box over the basis
+  support of the generators, yielding a finite set `F ⊆ S.nsmulSaturation` with
+  `S.nsmulSaturation = F + S` (`AddSubmonoid.FG.exists_finset_subset_nsmulSaturation_add`).
+  Consequently `S.nsmulSaturation` is finitely generated (`AddSubmonoid.FG.nsmulSaturation`), and
+  for any finitely generated submonoid `S` of an arbitrary abelian group `G`, pulling back along a
+  finite free presentation `(Fin n → ℤ) →+ G` shows that its saturation inside
   `AddSubgroup.closure (S : Set G)` is finitely generated
   (`AddSubmonoid.FG.nsmulSaturation_inf_closure`).
 
@@ -50,6 +52,9 @@ This file establishes two forms of Gordan's lemma for finitely generated additiv
 * `Submonoid.FG.exists_forall_exists_mul_eq_pow` and
   `AddSubmonoid.FG.exists_forall_exists_add_eq_nsmul`: interior element whose powers/multiples
   absorb every element of a finitely generated submonoid.
+* `Submonoid.FG.exists_finset_subset_forall_exists_mul` and
+  `AddSubmonoid.FG.exists_finset_subset_forall_exists_add`: finite set of remainders for
+  `T ≤ S.powSaturation` when `T` is finitely generated.
 * `AddSubmonoid.FG.exists_finset_subset_nsmulSaturation_add` and
   `AddSubmonoid.FG.exists_finset_subset_nsmulSaturation_inf_closure_add`: bounded-shift covering of
   saturations over `S`.
@@ -60,6 +65,7 @@ This file establishes two forms of Gordan's lemma for finitely generated additiv
 
 * W. Bruns and J. Gubeladze, *Polytopes, Rings, and K-Theory*, Chapter 2, affine monoids and
   Gordan's lemma.
+* W. Bruns and J. Herzog, *Cohen–Macaulay Rings*, Proposition 6.1.2.
 * W. Fulton, *Introduction to Toric Varieties*, §1.2, Proposition 1.
 * D. Cox, J. Little and H. Schenck, *Toric Varieties*, §1.2, Proposition 1.2.17.
 -/
@@ -99,7 +105,7 @@ theorem exists_finset_inclusion_mul {M : Type*} [MulOneClass M] {S T : Submonoid
   classical
   obtain ⟨F, hF_sub, hF_mul⟩ := hF
   refine ⟨F.subtype (· ∈ T), fun x => ?_⟩
-  obtain ⟨z, hz, s, hs, hxz⟩ := hF_mul x.1 x.2
+  obtain ⟨z, hz, s, hs, hxz⟩ := hF_mul x.val x.property
   exact ⟨⟨z, hF_sub hz⟩, Finset.mem_subtype.mpr hz, ⟨s, hs⟩, Subtype.ext hxz⟩
 
 /-- Every finitely generated commutative submonoid `S` possesses an element `u : S` whose powers
@@ -126,6 +132,33 @@ theorem FG.exists_forall_exists_mul_eq_pow {M : Type*} [CommMonoid M] {S : Submo
     have hcomm : (⟨x * w, hyS⟩ : S) * (c₁ * c₂) = (⟨x, ht ▸ hx⟩ * c₁) * (⟨w, ht ▸ hw⟩ * c₂) :=
       Subtype.ext (by simp only [coe_mul]; ac_rfl)
     exact ⟨n₁ + n₂, c₁ * c₂, by rw [hcomm, hc₁, hc₂, pow_add]⟩
+
+/-- If `T` is a finitely generated submonoid contained in `S.powSaturation`, there is a finite
+subset `F ⊆ T` such that every element of `T` factors as `z * y` with `z ∈ F` and `y ∈ S`. -/
+@[to_additive /-- If `T` is a finitely generated additive submonoid contained in
+`S.nsmulSaturation`, there is a finite subset `F ⊆ T` such that every element of `T` decomposes as
+`z + y` with `z ∈ F` and `y ∈ S`. -/]
+theorem FG.exists_finset_subset_forall_exists_mul {M : Type*} [CommMonoid M]
+    {S T : Submonoid M} (hT : T.FG) (hTS : T ≤ S.powSaturation) :
+    ∃ F : Finset M, (F : Set M) ⊆ T ∧ ∀ x ∈ T, ∃ z ∈ F, ∃ y ∈ S, x = z * y := by
+  classical
+  obtain ⟨s, rfl⟩ := Submonoid.isMulFG_iff.mp hT
+  choose d hd_pos hd_mem using fun a : s ↦
+    Submonoid.mem_powSaturation.mp (hTS (Submonoid.subset_closure a.property))
+  have : ∀ a : s, NeZero (d a) := fun a ↦ ⟨(hd_pos a).ne'⟩
+  let F : Finset M :=
+    Finset.univ.image fun r : (∀ a : s, Fin (d a)) ↦ ∏ a : s, (a : M) ^ (r a : ℕ)
+  refine ⟨F, ?_, fun x hx ↦ ?_⟩
+  · intro _ h
+    obtain ⟨r, -, rfl⟩ := Finset.mem_image.mp h
+    exact Submonoid.prod_mem _ fun a _ ↦ pow_mem (Submonoid.subset_closure a.property) _
+  · obtain ⟨c, -, rfl⟩ := Submonoid.mem_closure_finset.mp hx
+    let r : ∀ a : s, Fin (d a) := fun a ↦ ⟨c a % d a, Nat.mod_lt _ (hd_pos a)⟩
+    refine ⟨∏ a : s, (a : M) ^ (r a : ℕ), Finset.mem_image_of_mem _ (Finset.mem_univ r),
+      ∏ a : s, ((a : M) ^ d a) ^ (c a / d a), S.prod_mem fun a _ ↦ pow_mem (hd_mem a) _, ?_⟩
+    rw [← Finset.prod_attach, ← Finset.prod_mul_distrib]
+    refine Finset.prod_congr rfl fun a _ ↦ ?_
+    rw [← pow_mul, ← pow_add, add_comm, Nat.div_add_mod]
 
 end Submonoid
 
@@ -154,10 +187,10 @@ theorem FG.exists_finset_subset_nsmulSaturation_add {S : AddSubmonoid L} (hS : S
     simp only [J, Finset.mem_biUnion, Finset.mem_univ, true_and, Finsupp.mem_support_iff,
       not_exists, not_not] at hi
     simp [B, hi]
-  let box : Finset (J → ℤ) := Fintype.piFinset fun i => Finset.Icc (-B i.1) (B i.1)
+  let box : Finset (J → ℤ) := Fintype.piFinset fun i => Finset.Icc (-B i.val) (B i.val)
   have hfin : {z : L | z ∈ S.nsmulSaturation ∧ ∀ i, |b.repr z i| ≤ B i}.Finite := by
-    refine box.finite_toSet.of_injOn (f := fun z (i : J) => b.repr z i.1)
-      (fun z hz => Fintype.mem_piFinset.mpr fun i => Finset.mem_Icc.mpr (abs_le.mp (hz.2 i.1)))
+    refine box.finite_toSet.of_injOn (f := fun z (i : J) => b.repr z i.val)
+      (fun z hz => Fintype.mem_piFinset.mpr fun i => Finset.mem_Icc.mpr (abs_le.mp (hz.2 i.val)))
       fun z₁ hz₁ z₂ hz₂ heq => b.repr.injective <| Finsupp.ext fun i => ?_
     by_cases hi : i ∈ J
     · exact congrFun heq ⟨i, hi⟩
@@ -202,45 +235,33 @@ end AmbientLattice
 
 section GeneratedGroup
 
-variable {G : Type*} [AddCommGroup G] [HasUniqueDiv G]
+variable {G : Type*} [AddCommGroup G]
 
-/-- In any torsion-free abelian group `G`, the saturation of a finitely generated submonoid `S`
-inside `AddSubgroup.closure (S : Set G)` is covered by finitely many shifts of `S`. -/
+/-- In any abelian group `G`, the saturation of a finitely generated submonoid `S` inside
+`AddSubgroup.closure (S : Set G)` is finitely generated. -/
+theorem FG.nsmulSaturation_inf_closure {S : AddSubmonoid G} (hS : S.FG) :
+    (S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid).FG := by
+  obtain ⟨n, π, hπ⟩ := AddSubgroup.fg_iff_exists_fin_addMonoidHom.mp hS.addSubgroupClosure
+  have hrange : AddMonoidHom.mrange π = (AddSubgroup.closure (S : Set G)).toAddSubmonoid := by
+    ext x
+    simp [← hπ]
+  have hfg := ((hS.comap π).nsmulSaturation).map π
+  rwa [S.nsmulSaturation_comap π, map_comap_eq, hrange] at hfg
+
+/-- In any abelian group `G`, the saturation of the pullback of a finitely generated submonoid `S`
+to `AddSubgroup.closure (S : Set G)` is finitely generated. -/
+theorem FG.nsmulSaturation_comap_subtype_closure {S : AddSubmonoid G} (hS : S.FG) :
+    (S.comap (AddSubgroup.closure (S : Set G)).subtype).nsmulSaturation.FG :=
+  (isAddFG_congr S.nsmulSaturationInfClosureEquiv).mp hS.nsmulSaturation_inf_closure
+
+/-- In any abelian group `G`, the saturation of a finitely generated submonoid `S` inside
+`AddSubgroup.closure (S : Set G)` is covered by finitely many shifts of `S`. -/
 theorem FG.exists_finset_subset_nsmulSaturation_inf_closure_add {S : AddSubmonoid G} (hS : S.FG) :
     ∃ F : Finset G,
       (F : Set G) ⊆ S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid ∧
         ∀ x ∈ S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid,
-          ∃ z ∈ F, ∃ s ∈ S, x = z + s := by
-  classical
-  have := hS.addSubgroupClosure
-  obtain ⟨F₀, hF₀_sub, hF₀_add⟩ :=
-    hS.comap_subtype_closure.exists_finset_subset_nsmulSaturation_add
-  refine ⟨F₀.image Subtype.val, ?_, fun x hx => ?_⟩
-  · rw [Finset.coe_image]
-    rintro _ ⟨z, hz, rfl⟩
-    have hz' := hF₀_sub hz
-    rw [nsmulSaturation_comap] at hz'
-    exact ⟨hz', z.2⟩
-  · obtain ⟨hx1, hx2⟩ := mem_inf.mp hx
-    have hx0 : (⟨x, hx2⟩ : AddSubgroup.closure (S : Set G)) ∈
-        (S.comap (AddSubgroup.closure (S : Set G)).subtype).nsmulSaturation := by
-      rw [nsmulSaturation_comap]
-      exact hx1
-    obtain ⟨z, hz, s, hs, heq⟩ := hF₀_add ⟨x, hx2⟩ hx0
-    exact ⟨z.1, Finset.mem_image_of_mem Subtype.val hz, s.1, hs, congrArg Subtype.val heq⟩
-
-/-- In any torsion-free abelian group `G`, the saturation of the pullback of a finitely generated
-submonoid `S` to `AddSubgroup.closure (S : Set G)` is finitely generated. -/
-theorem FG.nsmulSaturation_comap_subtype_closure {S : AddSubmonoid G} (hS : S.FG) :
-    (S.comap (AddSubgroup.closure (S : Set G)).subtype).nsmulSaturation.FG := by
-  have := hS.addSubgroupClosure
-  exact hS.comap_subtype_closure.nsmulSaturation
-
-/-- In any torsion-free abelian group `G`, the saturation of a finitely generated submonoid `S`
-inside `AddSubgroup.closure (S : Set G)` is finitely generated. -/
-theorem FG.nsmulSaturation_inf_closure {S : AddSubmonoid G} (hS : S.FG) :
-    (S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid).FG :=
-  (isAddFG_congr S.nsmulSaturationInfClosureEquiv).mpr hS.nsmulSaturation_comap_subtype_closure
+          ∃ z ∈ F, ∃ s ∈ S, x = z + s :=
+  hS.nsmulSaturation_inf_closure.exists_finset_subset_forall_exists_add inf_le_left
 
 end GeneratedGroup
 

@@ -657,8 +657,8 @@ theorem _root_.ContinuousMonoidHom.explicitRes1_explicitMap1_eq_zero_of_map_le
     explicitRes1 H N T (explicitMap1 G M H N φ f hf hequiv c) = 0 := by
   -- The restriction `φ|_T : T → S`, completing the commuting square with the inclusions.
   let φT : T →ₜ* S :=
-    { toMonoidHom := ((φ : H →* G).comp T.subtype).codRestrict S fun t ↦ hTS ⟨t, t.2, rfl⟩
-      continuous_toFun := (φ.continuous.comp continuous_subtype_val).subtype_mk _ }
+    { toMonoidHom := ((φ : H →* G).comp T.subtype).codRestrict S fun t ↦ hTS ⟨t, t.property, rfl⟩
+      continuous_toFun := (φ.continuous.comp continuous_subtypeVal).subtype_mk _ }
   rw [explicitRes1_eq_explicitMap1, explicitMap1_explicitMap1_of_comp_eq G M H N φ f hf hequiv
     T N (ContinuousMonoidHom.subgroupSubtype T) (AddMonoidHom.id N) continuous_id
     (ContinuousMonoidHom.id_subgroupSubtype_smul N T) (ContinuousMonoidHom.subgroupSubtype S)
@@ -1059,7 +1059,7 @@ theorem explicitCoeff2_eq_card_nsmul (N : Subgroup G) [N.Normal] [Fintype N] (x 
     explicitCoeff2 G M (groupNormHom N M) (continuous_groupNormHom N M) x = Nat.card N • x := by
   induction x using QuotientAddGroup.induction_on with
   | _ c =>
-    obtain ⟨hcont, hc⟩ := mem_Z2_iff.1 c.2
+    obtain ⟨hcont, hc⟩ := mem_Z2_iff.1 c.property
     rw [explicitCoeff2_mk, ← QuotientAddGroup.mk_nsmul, H2pi_eq_iff, mem_B2_iff']
     -- The norm of `c` is `#N • c` plus the coboundary of `k ↦ ∑ n : N, (c (n, k) - c (k, n))`.
     refine ⟨fun k ↦ ∑ n : N, ((c : G × G → M) (n, k) - (c : G × G → M) (k, n)),

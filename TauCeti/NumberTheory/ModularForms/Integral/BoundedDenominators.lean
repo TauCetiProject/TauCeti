@@ -128,7 +128,7 @@ theorem exists_integral_multiple_qExpansion_coeff_of_mem_span (f : ModularForm �
     | smul c v _ hv =>
       obtain ⟨F, rfl, D, hD, hF⟩ := hv
       have hc : IsAlgebraic ℤ (algebraMap A ℂ c) :=
-        (mem_algebraicClosure_iff.mp c.2).restrictScalars ℤ
+        (mem_algebraicClosure_iff.mp c.property).restrictScalars ℤ
       refine ⟨algebraMap A ℂ c • F, by rw [map_smul, algebraMap_smul],
         Algebra.natDenominator (algebraMap A ℂ c) * D, mul_ne_zero hc.natDenominator_ne_zero hD,
         fun n ↦ ?_⟩

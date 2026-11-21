@@ -287,7 +287,7 @@ theorem range_inclusion_obj : Set.range (inclusion S).obj = {a | a.back ∈ S} :
   ext a
   refine ⟨?_, fun ha => ⟨objEquiv H S ⟨a.back, ha⟩, back_coe a⟩⟩
   rintro ⟨b, rfl⟩
-  exact b.back.2
+  exact b.back.property
 
 /-- The inclusion of the action category of a subgroup `H` on an invariant subset `S` is full
 exactly when `S` is a slice for `H`: every element of `G` carrying a point of `S` into `S`
@@ -296,10 +296,10 @@ theorem full_inclusion_iff :
     (inclusion S).Full ↔ ∀ (g : G) (y : X), y ∈ S → g • y ∈ S → g ∈ H := by
   refine (full_map_iff _ _).trans ⟨fun h g y hy hgy => ?_, fun h y y' g hg => ?_⟩
   · obtain ⟨m, hm, -⟩ := h ⟨y, hy⟩ ⟨g • y, hgy⟩ g rfl
-    exact hm ▸ m.2
+    exact hm ▸ m.property
   · -- `hg` is stated through the underlying function of the equivariant inclusion.
     have hg' : g • (y : X) = y' := hg
-    exact ⟨⟨g, h g y y.2 (hg' ▸ y'.2)⟩, rfl, Subtype.ext hg'⟩
+    exact ⟨⟨g, h g y y.property (hg' ▸ y'.property)⟩, rfl, Subtype.ext hg'⟩
 
 /-- For a slice `S` for `H`, the arrows of `H ⋉ S` are, through the inclusion, exactly the arrows
 of `G ⋉ X` with source and target in `S`. -/
@@ -342,14 +342,14 @@ theorem exists_functor_of_sections {U : Set C} [MulAction M U] {σ : M → C →
         (⟨_, _, F.map f⟩ : Quiver.Total C) = σ f.hom a.back := by
   let F : ActionCategory M U ⥤ C :=
     { obj a := a.back
-      map {a b} f := Quiver.homOfEq (σ f.hom a.back).hom (hσl _ _ a.back.2)
+      map {a b} f := Quiver.homOfEq (σ f.hom a.back).hom (hσl _ _ a.back.property)
         ((hsmul _ _).symm.trans (congrArg Subtype.val f.map_val))
       map_id a := eq_of_heq (Quiver.Total.mk.inj ((Quiver.Total.mk_homOfEq _ _ _).trans (by
         rw [ActionCategory.id_hom]
-        exact hone _ a.back.2))).2.2
+        exact hone _ a.back.property))).2.2
       map_comp {a b c} f g := eq_of_heq (Quiver.Total.mk.inj
         ((Quiver.Total.mk_homOfEq _ _ _).trans <| Eq.trans (by
-          rw [ActionCategory.comp_hom, hmul _ a.back.2]
+          rw [ActionCategory.comp_hom, hmul _ a.back.property]
           exact Quiver.Total.comp_congr rfl
             (congrArg (σ g.hom) ((hsmul _ _).symm.trans (congrArg Subtype.val f.map_val))) _ _)
           (Quiver.Total.mk_homOfEq_comp_homOfEq _ _ _ _ _ _).symm)).2.2 }

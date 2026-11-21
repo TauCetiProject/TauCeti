@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Polynomial.Reverse
 public import Mathlib.Algebra.Polynomial.Roots
 import Mathlib.Algebra.Polynomial.Eval.Degree
 import Mathlib.Algebra.Polynomial.FieldDivision
+import TauCeti.Data.Nat.Factorial.NatCast
 
 /-!
 # Polynomial derivatives
@@ -45,6 +46,14 @@ Over any commutative ring, the quotient of `p` by `X - a` takes the value `p' (a
 
 Over any semiring, the coefficient of `p q'` in degree `deg p + deg q - 1` is
 `leadingCoeff p · leadingCoeff q · deg q`.
+
+In positive characteristic `p`, every iterated derivative `derivative^[k] f` of order `k ≥ p`
+vanishes identically (`Polynomial.iterate_derivative_eq_zero_of_charP`), since `p` divides `k !`.
+
+Over a `ℚ≥0`-algebra, such as a division ring of characteristic zero, the derivative is surjective
+(`Polynomial.derivative_surjective`): every polynomial has an antiderivative. In positive
+characteristic `p` it is not (`Polynomial.derivative_not_surjective_of_charP`), as `X ^ (p - 1)`
+has no antiderivative.
 -/
 
 public section
@@ -255,5 +264,39 @@ theorem coeff_mul_derivative_natDegree_add_natDegree_sub_one {R : Type*} [Semiri
   · rw [Nat.add_succ_sub_one, coeff_mul_add_eq_of_natDegree_le le_rfl
       ((natDegree_derivative_le q).trans_eq (by omega)), coeff_derivative, leadingCoeff,
       leadingCoeff, hq, Nat.cast_add_one, mul_assoc]
+
+/-- In positive characteristic `p`, every iterated ordinary derivative of order `k ≥ p` vanishes
+identically, since `p` divides `k !`. -/
+theorem iterate_derivative_eq_zero_of_charP {R : Type*} [Semiring R] {p : ℕ} [CharP R p]
+    (hp : 0 < p) {k : ℕ} (hk : p ≤ k) (f : R[X]) :
+    derivative^[k] f = 0 := by
+  rw [iterate_derivative_eq_factorial_smul_sum, ← Nat.cast_smul_eq_nsmul R,
+    Nat.cast_factorial_eq_zero_of_le hp (CharP.cast_eq_zero R p) hk, zero_smul]
+
+/-- Over a `ℚ≥0`-algebra every polynomial is a derivative: the monomial `a X ^ n` is the
+derivative of `(n + 1)⁻¹ a X ^ (n + 1)`. -/
+theorem derivative_surjective {R : Type*} [Semiring R] [Algebra ℚ≥0 R] :
+    Function.Surjective (derivative (R := R)) := by
+  intro p
+  induction p using Polynomial.induction_on' with
+  | add p q hp hq =>
+    obtain ⟨p', rfl⟩ := hp
+    obtain ⟨q', rfl⟩ := hq
+    exact ⟨p' + q', derivative_add⟩
+  | monomial n a =>
+    refine ⟨monomial (n + 1) (((n + 1 : ℚ≥0)⁻¹ • a)), ?_⟩
+    rw [derivative_monomial, smul_mul_assoc, ← nsmul_eq_mul']
+    simp [← Nat.cast_smul_eq_nsmul ℚ≥0, smul_smul]
+
+/-- In characteristic `p`, the monomial `X ^ (p - 1)` is not a derivative: the coefficient of
+`X ^ (p - 1)` in the derivative of `q` is `p` times a coefficient of `q`. -/
+theorem derivative_not_surjective_of_charP {R : Type*} [Semiring R] [Nontrivial R] (p : ℕ)
+    [CharP R p] [NeZero p] : ¬Function.Surjective (derivative (R := R)) := fun h ↦ by
+  obtain ⟨q, hq⟩ := h (X ^ (p - 1))
+  have := congrArg (fun r : R[X] ↦ r.coeff (p - 1)) hq
+  simp only [coeff_derivative, coeff_X_pow_self] at this
+  rw [← Nat.cast_add_one, Nat.sub_add_cancel (Nat.one_le_iff_ne_zero.mpr (NeZero.ne p)),
+    CharP.cast_eq_zero, mul_zero] at this
+  exact zero_ne_one this
 
 end Polynomial
