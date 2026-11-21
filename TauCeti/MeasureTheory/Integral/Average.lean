@@ -13,7 +13,6 @@ import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.Analysis.Convex.Continuous
-import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 import Mathlib.Analysis.Convex.Integral
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 
@@ -914,14 +913,11 @@ theorem setIntegral_norm_sub_inner_setAverage_div_smul_sq_le (hs : μ s ≠ ⊤)
       (hsq ((⟪m, ν⟫_ℝ / ‖ν‖ ^ 2) • ν)),
     setIntegral_norm_sub_sq_eq_setIntegral_norm_sub_setAverage_sq_add hs hint (hsq (t • ν))]
   refine add_le_add_right (mul_le_mul_of_nonneg_left ?_ measureReal_nonneg) _
-  -- `m - p ⊥ ν` for the projection `p` of `m`, so `‖m - t ν‖² = ‖m - p‖² + ‖p - t ν‖²`.
-  have horth : ⟪m - (⟪m, ν⟫_ℝ / ‖ν‖ ^ 2) • ν, ν⟫_ℝ = 0 := by
-    simpa only [real_inner_comm m ν, RCLike.ofReal_real_eq_id, id_eq] using
-      inner_sub_div_norm_sq_smul_self_eq_zero (𝕜 := ℝ) m ν
-  have hsplit : m - t • ν = (m - (⟪m, ν⟫_ℝ / ‖ν‖ ^ 2) • ν) + (⟪m, ν⟫_ℝ / ‖ν‖ ^ 2 - t) • ν := by
-    rw [sub_smul]; abel
-  rw [hsplit, norm_add_sq_real, inner_smul_right, horth, mul_zero, mul_zero, add_zero]
-  exact le_add_of_nonneg_right (sq_nonneg _)
+  -- The projection of `m` onto `ℝ ∙ ν` is at least as close to `m` as `t • ν ∈ ℝ ∙ ν`.
+  have h := ((ℝ ∙ ν).dist_starProjection_eq_infDist m).trans_le
+    (Metric.infDist_le_dist_of_mem (Submodule.smul_mem _ t (Submodule.mem_span_singleton_self ν)))
+  rw [Submodule.starProjection_singleton, dist_eq_norm, dist_eq_norm, real_inner_comm] at h
+  exact pow_le_pow_left₀ (norm_nonneg _) h 2
 
 end InnerProduct
 

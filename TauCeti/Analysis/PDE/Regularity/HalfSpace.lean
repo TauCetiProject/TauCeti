@@ -375,10 +375,10 @@ private theorem exists_norm_le_hasWeakLineDerivOn_inner_gradient_normal
   have hν' : (‖e‖ ^ 2)⁻¹ • e = e := by simp [he]
   have hb : ∀ i, ‖b i‖ = 1 := fun i => b.orthonormal.1 i
   have hP : ∀ z, ⟪P z, e⟫_ℝ = 0 := fun z => by
-    simpa only [real_inner_comm z e, RCLike.ofReal_real_eq_id, id_eq] using
+    simpa only [P, real_inner_comm z e, RCLike.ofReal_real_eq_id, id_eq] using
       inner_sub_div_norm_sq_smul_self_eq_zero (𝕜 := ℝ) z e
   have hPb : ∀ i, ‖P (b i)‖ ≤ 1 := fun i => by
-    simpa only [real_inner_comm (b i) e, RCLike.ofReal_real_eq_id, id_eq, hb i] using
+    simpa only [P, real_inner_comm (b i) e, RCLike.ofReal_real_eq_id, id_eq, hb i] using
       norm_sub_div_norm_sq_smul_self_le (𝕜 := ℝ) (b i) e
   have hgK : 0 ≤ (K : ℝ) * ‖W1p.gradient U‖ := by positivity
   -- The tangential terms `Gᵢⱼ = ∂_{P eᵢ} (aⁱʲ ∂ⱼu)`, each of norm at most `D`.
@@ -447,10 +447,10 @@ private theorem exists_norm_le_hasWeakLineDerivOn_inner_gradient_normal_of_tange
   have hdec : y = ⟪y, e⟫_ℝ • e + Py := by simp [Py, he]
   -- `∂_e ∂_y u = ⟪y, e⟫ ∂_e ∂_e u + ∂_{P y} ∂_e u`, where weak derivatives commute.
   have hPy : ⟪Py, e⟫_ℝ = 0 := by
-    simpa only [real_inner_comm y e, RCLike.ofReal_real_eq_id, id_eq] using
+    simpa only [Py, real_inner_comm y e, RCLike.ofReal_real_eq_id, id_eq] using
       inner_sub_div_norm_sq_smul_self_eq_zero (𝕜 := ℝ) y e
   have hPyn : ‖Py‖ ≤ ‖y‖ := by
-    simpa only [real_inner_comm y e, RCLike.ofReal_real_eq_id, id_eq] using
+    simpa only [Py, real_inner_comm y e, RCLike.ofReal_real_eq_id, id_eq] using
       norm_sub_div_norm_sq_smul_self_le (𝕜 := ℝ) y e
   obtain ⟨G₁, hG₁n, hG₁⟩ := htan e Py hPy
   have hsplit : ∀ x, ⟪y, e⟫_ℝ * ⟪W1p.gradient U x, e⟫_ℝ + ⟪W1p.gradient U x, Py⟫_ℝ =
@@ -487,10 +487,10 @@ private theorem exists_norm_le_hasWeakLineDerivOn_inner_gradient_of_normal_of_ta
   obtain ⟨G₁, hG₁n, hG₁⟩ :=
     exists_norm_le_hasWeakLineDerivOn_inner_gradient_normal_of_tangential he hM hGeen hGee htan y
   have hPw : ⟪Pw, e⟫_ℝ = 0 := by
-    simpa only [real_inner_comm w e, RCLike.ofReal_real_eq_id, id_eq] using
+    simpa only [Pw, real_inner_comm w e, RCLike.ofReal_real_eq_id, id_eq] using
       inner_sub_div_norm_sq_smul_self_eq_zero (𝕜 := ℝ) w e
   have hPwn : ‖Pw‖ ≤ ‖w‖ := by
-    simpa only [real_inner_comm w e, RCLike.ofReal_real_eq_id, id_eq] using
+    simpa only [Pw, real_inner_comm w e, RCLike.ofReal_real_eq_id, id_eq] using
       norm_sub_div_norm_sq_smul_self_le (𝕜 := ℝ) w e
   obtain ⟨G₂, hG₂n, hG₂⟩ := htan y Pw hPw
   -- `∂_w = ⟪w, e⟫ ∂_e + ∂_{P w}`.

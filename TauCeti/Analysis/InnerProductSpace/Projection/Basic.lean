@@ -507,8 +507,8 @@ theorem norm_sub_div_norm_sq_smul_self_le (z ν : E) :
     ‖z - (⟪ν, z⟫_𝕜 / (‖ν‖ : 𝕜) ^ 2) • ν‖ ≤ ‖z‖ := by
   set a := ⟪ν, z⟫_𝕜 / (‖ν‖ : 𝕜) ^ 2
   -- Pythagoras for `z = (z - a • ν) + a • ν`, whose two summands are orthogonal.
-  have h := norm_add_sq_eq_norm_sq_add_norm_sq_of_inner_eq_zero (z - a • ν) (a • ν)
-    (by rw [inner_smul_right, inner_sub_div_norm_sq_smul_self_eq_zero, mul_zero])
+  have h := norm_add_sq_eq_norm_sq_add_norm_sq_of_inner_eq_zero (𝕜 := 𝕜) (z - a • ν) (a • ν)
+    (by simp only [inner_smul_right, a, inner_sub_div_norm_sq_smul_self_eq_zero, mul_zero])
   rw [sub_add_cancel] at h
   rw [mul_self_le_mul_self_iff (norm_nonneg _) (norm_nonneg _), h]
   exact le_add_of_nonneg_right (mul_self_nonneg _)
