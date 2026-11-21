@@ -95,7 +95,7 @@ theorem finsum_finrank_singularHomology_subcomplexPair [RelCWComplex.Finite C]
           ModuleCat k) =
       finrank k M * ∑ᶠ n : ℕ, (-1 : ℤ) ^ n * Nat.card ↥(E.I n)ᶜ := by
   have := @finsum_finrank_singularHomology_complexBasePair X _ _ (E : Set X) C E.relCWComplex
-    k _ M _ E.finite_relCWComplex
+    k _ _ _ M _ E.finite_relCWComplex
   rw [@complexBasePair_eq_ofInclusion X _ _ (E : Set X) C E.relCWComplex,
     @cwEulerChar_def X _ (E : Set X) C E.relCWComplex] at this
   simpa only [Nat.card_congr (E.relCWComplexCellEquiv _)] using this

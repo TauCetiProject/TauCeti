@@ -53,6 +53,8 @@ of `p` to a point `b` lifts to a point of the fibre over `b`
   weak homotopy equivalence exactly when its fibres are nonempty and weakly contractible.
 * `TauCeti.TopCat.isNConnected_fiberι_of_mem_serreFibrations`: over an `n`-connected base, the
   inclusion of a fibre is `n`-connected.
+* `TauCeti.TopCat.isWeakHomotopyEquivalence_fiberι_of_contractibleSpace`: over a contractible base,
+  the inclusion of any fibre is a weak homotopy equivalence.
 * `TauCeti.TopCat.bijective_homotopyGroupMap_fiberι_of_mem_serreFibrations`: where the homotopy
   groups of the base vanish, the inclusion of a fibre is bijective on homotopy groups.
 
@@ -249,6 +251,14 @@ theorem isNConnected_fiberι_of_mem_serreFibrations (hp : serreFibrations p) {n 
       obtain ⟨a, ha⟩ := (mem_range_homotopyGroupMap_fiberι_iff hp (e := e) (a := c)).2
         (Subsingleton.elim _ _)
       exact ⟨a, (homotopyGroupMap_fiberι_eq a).symm.trans ha⟩
+
+/-- **Over a contractible base, every fibre inclusion of a Serre fibration is a weak homotopy
+equivalence.** Since every homotopy group (and `π_0`) of a contractible space `B` is trivial, the
+fibre inclusion `p⁻¹(b) → E` is `n`-connected for every `n`, hence a weak homotopy equivalence. -/
+theorem isWeakHomotopyEquivalence_fiberι_of_contractibleSpace (hp : serreFibrations p)
+    [ContractibleSpace B] (b : B) : (p.fiberι b).hom.IsWeakHomotopyEquivalence :=
+  ContinuousMap.isWeakHomotopyEquivalence_iff_forall_isNConnected.2 fun _ ↦
+    isNConnected_fiberι_of_mem_serreFibrations hp fun _ _ ↦ inferInstance
 
 /-- **The fibre inclusion is bijective where the base has no homotopy.** Let `p : E → B` be a
 Serre fibration and `b : B` a point such that `π_{k+1}(B, b)` and `π_{k+2}(B, b)` are trivial.

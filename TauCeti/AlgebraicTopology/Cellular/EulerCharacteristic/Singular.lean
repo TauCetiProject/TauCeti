@@ -14,10 +14,11 @@ public import TauCeti.AlgebraicTopology.Singular.Empty
 
 The cellular--singular comparison transfers finite generation and Euler--Poincaré from
 cellular chains to relative singular homology. For a finite relative CW complex `(C, D)`
-and a finite-dimensional coefficient module `M` over a division ring `k`, the alternating
-sum of the dimensions of `Hₙ(C, D; M)` is `dim M` times the alternating count of relative
-cells. The singular homology groups are finite-dimensional and vanish in all sufficiently
-large degrees, so the sum has finite support.
+and a finitely generated coefficient module `M` over a ring `k` satisfying the strong rank
+condition and rank--nullity (such as a division ring or a commutative domain), the alternating
+sum of the finranks of `Hₙ(C, D; M)` is `finrank k M` times the alternating count of relative
+cells. The singular homology groups vanish in all sufficiently large degrees, so the sum has
+finite support.
 
 Finite generation over a noetherian ring needs only finitely many cells in the degree in
 question, and no dimension bound: sequential colimits of modules are exact, so the comparison
@@ -89,9 +90,10 @@ theorem finite_singularHomology_complexBasePair [IsNoetherianRing k] [Module.Fin
 
 end Ring
 
-section DivisionRing
+section RankNullity
 
-variable {k : Type w} [DivisionRing k] (M : ModuleCat.{w} k) [Module.Finite k M]
+variable {k : Type u} [Ring k] [StrongRankCondition k] [HasRankNullity.{w} k]
+  (M : ModuleCat.{w} k) [Module.Finite k M]
 
 /-- The truncated singular Euler--Poincaré formula. Only the cells through degree `n` need
 be finite; absence of `(n + 1)`-cells makes the truncated alternating sums agree. -/
@@ -104,8 +106,8 @@ theorem sum_range_finrank_singularHomology_complexBasePair {n : ℕ}
   exact sum_range_finrank_cellularHomology C M hfinite hn
 
 /-- **Euler--Poincaré for relative singular homology.** For a finite relative CW complex,
-the alternating sum of the dimensions of relative singular homology is the coefficient
-dimension times the alternating count of relative cells. Both sums have finite support. -/
+the alternating sum of the finranks of relative singular homology is the coefficient
+finrank times the alternating count of relative cells. Both sums have finite support. -/
 theorem finsum_finrank_singularHomology_complexBasePair [RelCWComplex.Finite C] :
     ∑ᶠ i : ℕ, (-1 : ℤ) ^ i * finrank k ((complexBasePair C).singularHomology M i : ModuleCat k) =
       finrank k M * cwEulerChar C := by
@@ -114,7 +116,7 @@ theorem finsum_finrank_singularHomology_complexBasePair [RelCWComplex.Finite C] 
     ComplexShape.eulerCharSignsDownNat_χ, Units.val_pow_eq_pow_val, Units.val_neg,
     Units.val_one] using homologyEulerChar_cellularChainComplex C M
 
-end DivisionRing
+end RankNullity
 
 end Relative
 
@@ -162,11 +164,12 @@ theorem finrank_singularHomology_eq_complexBasePair (i : ℕ) :
 
 end Ring
 
-variable {k : Type w} [DivisionRing k] (M : ModuleCat.{w} k) [Module.Finite k M]
+variable {k : Type u} [Ring k] [StrongRankCondition k] [HasRankNullity.{w} k]
+  (M : ModuleCat.{w} k) [Module.Finite k M]
 
 /-- **Euler--Poincaré for ordinary singular homology.** For a finite CW complex with
-finite-dimensional coefficients over a division ring, the alternating homology dimensions
-equal the coefficient dimension times the alternating cell count. -/
+finitely generated coefficients over a ring satisfying the strong rank condition and rank--nullity,
+the alternating homology finranks equal the coefficient finrank times the alternating cell count. -/
 theorem finsum_finrank_singularHomology_of_finite_cwComplex [RelCWComplex.Finite C] :
     ∑ᶠ i : ℕ, (-1 : ℤ) ^ i * finrank k
         (((AlgebraicTopology.singularHomologyFunctor.{w} (ModuleCat.{w} k) i).obj M).obj

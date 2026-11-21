@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
+public import Mathlib.LinearAlgebra.Dimension.RankNullity
 public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.Algebra.FiniteSupport.Defs
@@ -26,6 +27,13 @@ In a homological complex of vector spaces, a homology group has dimension at mos
 finite-dimensional term it is computed from (`HomologicalComplex.finrank_homology_le_finrank_X`),
 with equality, even for complexes of modules over any ring, when the differentials into and out of
 that degree vanish (`HomologicalComplex.finrank_homology_eq_finrank_X_of_d_eq_zero`).
+Over any ring satisfying the strong rank condition and rank--nullity, the rank of a finitely
+generated term `K.X i` equals the rank of `K.homology i` plus the ranks of the incoming and
+outgoing boundary submodules (`HomologicalComplex.finrank_X_eq`).
+When the incoming or outgoing differential from outside a finite index set `s` vanishes, the rank
+of the incoming or outgoing boundary submodule equals the sum of the differential ranks over `s`
+(`HomologicalComplex.finrank_range_d_prev_eq_sum`,
+`HomologicalComplex.finrank_range_d_next_eq_sum`).
 For a based homological complex over a nontrivial ring whose chain bases have finitely supported
 ranks, the homology bases also have finitely supported ranks
 (`HomologicalComplex.finite_homology_of_finite`).
@@ -80,6 +88,54 @@ theorem finrank_homology_eq_finrank_X_of_d_eq_zero {R : Type*} [Ring R] {ι : Ty
     (h₁ : K.d (c.prev i) i = 0) (h₂ : K.d i (c.next i) = 0) :
     finrank R (K.homology i) = finrank R (K.X i) :=
   (K.XIsoHomologyOfDEqZero i h₁ h₂).toLinearEquiv.finrank_eq.symm
+
+/-- **Rank--nullity at one index of a homological complex.** Over a ring satisfying the strong rank
+condition and rank--nullity, if `K.X i` is finitely generated, its rank is the rank of
+`K.homology i` plus the ranks of the incoming and outgoing boundary submodules. -/
+theorem finrank_X_eq {R : Type*} [Ring R] [StrongRankCondition R] {ι : Type*}
+    {c : ComplexShape ι} (K : HomologicalComplex (ModuleCat.{v} R) c) [HasRankNullity.{v} R]
+    (i : ι) [Module.Finite R (K.X i)] :
+    finrank R (K.X i) = finrank R (K.homology i) +
+      finrank R (LinearMap.range (K.d (c.prev i) i).hom) +
+      finrank R (LinearMap.range (K.d i (c.next i)).hom) := by
+  -- The middle term of `K.sc i` is `K.X i` by construction.
+  have : Module.Finite R (K.sc i).X₂ := ‹Module.Finite R (K.X i)›
+  have hH : finrank R (K.homology i) +
+      finrank R (LinearMap.range (K.d (c.prev i) i).hom) =
+        finrank R (LinearMap.ker (K.d i (c.next i)).hom) :=
+    (K.sc i).finrank_homology_add_finrank_range_f
+  have hker := LinearMap.finrank_range_add_finrank_ker (K.d i (c.next i)).hom
+  lia
+
+/-- For an index `i`, if the incoming differential from `c.prev i` vanishes whenever
+`c.prev i ∉ s`, then the rank of `im (K.d (c.prev i) i)` equals the sum over `j ∈ s` of the ranks
+of `im (K.d j i)`. -/
+theorem finrank_range_d_prev_eq_sum {R : Type*} [Ring R] [Nontrivial R] {ι : Type*}
+    {c : ComplexShape ι} (K : HomologicalComplex (ModuleCat.{v} R) c) {s : Finset ι} {i : ι}
+    (hprev : c.prev i ∉ s → K.d (c.prev i) i = 0) :
+    finrank R (LinearMap.range (K.d (c.prev i) i).hom) =
+      ∑ j ∈ s, finrank R (LinearMap.range (K.d j i).hom) := by
+  symm
+  refine Finset.sum_eq_single (c.prev i) (fun j _ hj ↦ ?_) (fun hmem ↦ ?_)
+  · rw [K.shape j i (fun h ↦ hj (c.prev_eq' h).symm), ModuleCat.hom_zero, LinearMap.range_zero]
+    exact finrank_zero_of_subsingleton
+  · rw [hprev hmem, ModuleCat.hom_zero, LinearMap.range_zero]
+    exact finrank_zero_of_subsingleton
+
+/-- For an index `i`, if the outgoing differential to `c.next i` vanishes whenever
+`c.next i ∉ s`, then the rank of `im (K.d i (c.next i))` equals the sum over `j ∈ s` of the ranks
+of `im (K.d i j)`. -/
+theorem finrank_range_d_next_eq_sum {R : Type*} [Ring R] [Nontrivial R] {ι : Type*}
+    {c : ComplexShape ι} (K : HomologicalComplex (ModuleCat.{v} R) c) {s : Finset ι} {i : ι}
+    (hnext : c.next i ∉ s → K.d i (c.next i) = 0) :
+    finrank R (LinearMap.range (K.d i (c.next i)).hom) =
+      ∑ j ∈ s, finrank R (LinearMap.range (K.d i j).hom) := by
+  symm
+  refine Finset.sum_eq_single (c.next i) (fun j _ hj ↦ ?_) (fun hmem ↦ ?_)
+  · rw [K.shape i j (fun h ↦ hj (c.next_eq' h).symm), ModuleCat.hom_zero, LinearMap.range_zero]
+    exact finrank_zero_of_subsingleton
+  · rw [hnext hmem, ModuleCat.hom_zero, LinearMap.range_zero]
+    exact finrank_zero_of_subsingleton
 
 /-- For a bounded based homological complex of modules over a nontrivial ring, only finitely many
 homology bases are nonempty: homology vanishes in every degree where the complex vanishes. -/

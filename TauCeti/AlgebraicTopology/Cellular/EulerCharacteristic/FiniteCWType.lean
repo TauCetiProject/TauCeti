@@ -14,10 +14,11 @@ public import TauCeti.Topology.CWComplex.Classical.FiniteCWType
 # The Euler characteristic of a space of finite CW type
 
 The Euler characteristic of a finite CW complex is the alternating count of its cells
-(`TauCeti.cwEulerChar`).  By singular Euler--Poincaré it is the alternating sum of the dimensions
-of the singular homology over any division ring, and singular homology is a homotopy invariant, so
-it depends only on the homotopy type of the complex.  This file transports it to spaces of finite
-CW type.
+(`TauCeti.cwEulerChar`).  By singular Euler--Poincaré it is the alternating sum of the finranks
+of the singular homology over any ring satisfying the strong rank condition and rank--nullity
+(such as a division ring or a commutative domain), and singular homology is a homotopy invariant,
+so it depends only on the homotopy type of the complex.  This file transports it to spaces of
+finite CW type.
 
 * `TauCeti.finite_singularHomology_of_finiteCWType` and
   `TauCeti.eventually_isZero_singularHomology_of_finiteCWType`: the singular homology of a space of
@@ -29,7 +30,8 @@ CW type.
 * `TauCeti.eulerChar_eq_cwEulerChar`: **independence of the model**; every finite CW complex
   homotopy equivalent to `X` has alternating cell count `eulerChar X`.
 * `TauCeti.eulerChar_eq_finsum_finrank_singularHomology`: `eulerChar X` is the alternating sum of
-  the dimensions of the singular homology of `X` over any division ring.
+  the finranks of the singular homology of `X` over any ring satisfying the strong rank condition
+  and rank--nullity.
 * `ContinuousMap.HomotopyEquiv.eulerChar_eq`: **homotopy invariance** of the Euler characteristic.
 * `TauCeti.eulerChar_of_discreteTopology` and `TauCeti.eulerChar_of_contractibleSpace`: a finite
   discrete space has Euler characteristic its cardinality, and a contractible space has Euler
@@ -56,19 +58,21 @@ section CWComplex
 variable {Y : Type w} [TopologicalSpace Y] [T2Space Y] (C : Set Y) [CWComplex C]
   [RelCWComplex.Finite C]
 
-/-- The alternating cell count of a finite CW complex is the alternating sum of the dimensions of
-the singular homology, over any division ring, of any space homotopy equivalent to the complex. -/
+/-- The alternating cell count of a finite CW complex is the alternating sum of the finranks of
+the singular homology, over any ring satisfying the strong rank condition and rank--nullity, of
+any space homotopy equivalent to the complex. -/
 theorem cwEulerChar_eq_finsum_finrank_singularHomology {X : Type w} [TopologicalSpace X]
-    (e : ContinuousMap.HomotopyEquiv X C) (k : Type w) [DivisionRing k] :
-    cwEulerChar C = ∑ᶠ i : ℕ, (-1 : ℤ) ^ i * finrank k
-      (((singularHomologyFunctor (ModuleCat.{w} k) i).obj (ModuleCat.of k k)).obj (TopCat.of X)) :=
+    (e : ContinuousMap.HomotopyEquiv X C) (R : Type w) [Ring R] [StrongRankCondition R]
+    [HasRankNullity.{w} R] :
+    cwEulerChar C = ∑ᶠ i : ℕ, (-1 : ℤ) ^ i * finrank R
+      (((singularHomologyFunctor (ModuleCat.{w} R) i).obj (ModuleCat.of R R)).obj (TopCat.of X)) :=
   calc
-    _ = ∑ᶠ i : ℕ, (-1 : ℤ) ^ i * finrank k
-        (((singularHomologyFunctor (ModuleCat.{w} k) i).obj (ModuleCat.of k k)).obj
+    _ = ∑ᶠ i : ℕ, (-1 : ℤ) ^ i * finrank R
+        (((singularHomologyFunctor (ModuleCat.{w} R) i).obj (ModuleCat.of R R)).obj
           (TopCat.of C)) := by
-      simp [finsum_finrank_singularHomology_of_finite_cwComplex C (ModuleCat.of k k)]
+      simp [finsum_finrank_singularHomology_of_finite_cwComplex C (ModuleCat.of R R)]
     _ = _ := finsum_congr fun i ↦ by
-      rw [(e.singularHomologyIso (ModuleCat.of k k) i).toLinearEquiv.finrank_eq]
+      rw [(e.singularHomologyIso (ModuleCat.of R R) i).toLinearEquiv.finrank_eq]
 
 /-- The discrete CW structure on a finite discrete space has Euler characteristic the number of
 points. -/
@@ -138,14 +142,16 @@ variable {X : Type w} [TopologicalSpace X] [FiniteCWType X]
 
 variable (X) in
 /-- **Euler--Poincaré** for a space of finite CW type: its Euler characteristic is the alternating
-sum of the dimensions of its singular homology over any division ring. -/
-theorem eulerChar_eq_finsum_finrank_singularHomology (k : Type w) [DivisionRing k] :
-    eulerChar X = ∑ᶠ i : ℕ, (-1 : ℤ) ^ i * finrank k
-      (((singularHomologyFunctor (ModuleCat.{w} k) i).obj (ModuleCat.of k k)).obj
+sum of the finranks of its singular homology over any ring satisfying the strong rank condition
+and rank--nullity. -/
+theorem eulerChar_eq_finsum_finrank_singularHomology (R : Type w) [Ring R] [StrongRankCondition R]
+    [HasRankNullity.{w} R] :
+    eulerChar X = ∑ᶠ i : ℕ, (-1 : ℤ) ^ i * finrank R
+      (((singularHomologyFunctor (ModuleCat.{w} R) i).obj (ModuleCat.of R R)).obj
         (TopCat.of X)) := by
   obtain ⟨Y, _, _, C, _, _, ⟨e⟩, h⟩ := (exists_cwEulerChar_eq X).choose_spec
   rw [eulerChar, ← h]
-  exact cwEulerChar_eq_finsum_finrank_singularHomology C e k
+  exact cwEulerChar_eq_finsum_finrank_singularHomology C e R
 
 /-- **Independence of the model.**  Every finite CW complex homotopy equivalent to a space has
 alternating cell count equal to the Euler characteristic of the space. -/

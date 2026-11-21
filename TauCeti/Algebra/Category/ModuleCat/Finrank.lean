@@ -14,6 +14,8 @@ import Mathlib.RingTheory.Finiteness.Prod
 import TauCeti.Algebra.Category.ModuleCat.Biproducts
 import TauCeti.CategoryTheory.Limits.Shapes.Biproduct
 
+import TauCeti.LinearAlgebra.Dimension.Prod
+
 /-!
 # Finrank of zero objects, biproducts and short exact sequences in `ModuleCat`
 
@@ -27,9 +29,10 @@ additive on biproducts of finite free modules
 Over a ring satisfying the rank-nullity theorem (`HasRankNullity`), such as a division ring or a
 commutative domain, finrank is moreover additive on every short exact sequence whose middle term is
 finitely generated (`CategoryTheory.ShortComplex.ShortExact.moduleCat_finrank_eq_add`), hence on
-binary biproducts (`ModuleCat.finrank_biprod_of_hasRankNullity`) and finite biproducts
-(`ModuleCat.finrank_biproduct`) of finitely generated modules. Unlike Mathlib's
-`ModuleCat.free_shortExact_finrank_add`, no freeness is assumed, so this covers biproducts and
+binary biproducts (`ModuleCat.finrank_biprod_of_hasRankNullity`), finite biproducts
+(`ModuleCat.finrank_biproduct`), and finite coproducts (`ModuleCat.finrank_sigma`) of finitely
+generated modules. Unlike Mathlib's `ModuleCat.free_shortExact_finrank_add` and
+`Module.finrank_directSum`, no freeness is assumed, so this covers biproducts, coproducts, and
 sequences of finitely generated abelian groups with torsion.
 
 The first translation is what bounds the `Module.finrank` support of a bounded complex of vector
@@ -43,7 +46,7 @@ public section
 
 open CategoryTheory CategoryTheory.Limits
 
-universe v u
+universe w v u
 
 namespace ModuleCat
 
@@ -141,5 +144,12 @@ theorem finrank_biproduct {ι : Type*} [Fintype ι] (V : ι → ModuleCat.{v} R)
       finite_biproduct (fun j ↦ W (some j))
     rw [(TauCeti.biproductOptionIso W).toLinearEquiv.finrank_eq,
       finrank_biprod_of_hasRankNullity, ih (fun j ↦ W (some j)), Fintype.sum_option]
+
+/-- Over a ring with the strong rank condition and rank-nullity, the finrank of a finite coproduct
+of finitely generated modules is the sum of their finranks (without assuming freeness). -/
+theorem finrank_sigma {ι : Type w} [Fintype ι] (f : ι → ModuleCat.{v} R)
+    [HasCoproduct f] [∀ i, Module.Finite R (f i)] :
+    Module.finrank R ↑(∐ f) = ∑ i, Module.finrank R (f i) :=
+  ((biproduct.isoCoproduct f).symm.toLinearEquiv.finrank_eq).trans (finrank_biproduct f)
 
 end ModuleCat

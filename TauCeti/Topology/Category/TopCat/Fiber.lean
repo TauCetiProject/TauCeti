@@ -103,6 +103,17 @@ theorem finite_fibers_comp {E B X : TopCat.{u}} (p : E ⟶ B) (q : B ⟶ X)
   exact ((Set.finite_coe_iff.mp (hfinq x)).preimage' fun b _ =>
     Set.finite_coe_iff.mp (hfinp b)).to_subtype
 
+/-- The inclusion of a fibre into the total space is a monomorphism. -/
+instance mono_fiberι (p : E ⟶ B) (b : B) : Mono (p.fiberι b) :=
+  ⟨fun _ _ h ↦ TopCat.ext fun x ↦ Subtype.ext (ConcreteCategory.congr_hom h x)⟩
+
+/-- Reindexing a fibre along an equality of base points commutes with the fibre inclusions. -/
+@[reassoc (attr := simp)]
+lemma eqToHom_fiber_comp_fiberι (p : E ⟶ B) {b b' : B} (h : b = b') :
+    eqToHom (congrArg p.fiber h) ≫ p.fiberι b' = p.fiberι b := by
+  subst h
+  exact Category.id_comp _
+
 end TopCat.Hom
 
 /-! ### The fibre inside the part over a subset -/

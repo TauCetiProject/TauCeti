@@ -10,6 +10,8 @@ public import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 public import TauCeti.Topology.Homotopy.FiberHomotopyEquiv.Basic
 public import TauCeti.Topology.Homotopy.SerreFibration.Connected
 
+import TauCeti.AlgebraicTopology.Singular.Homotopy.WeakHomotopyEquivalence
+
 /-!
 # Homology of the fibre inclusion over a highly connected base
 
@@ -18,7 +20,10 @@ Let `p : E → B` be a Serre fibration and `b : B` a point at which `π_k(B, b)`
 `F = p⁻¹(b) → E` is then an `n`-connected map
 (`TauCeti.TopCat.isNConnected_fiberι_of_mem_serreFibrations`), so it induces isomorphisms
 `H_m(F; R) → H_m(E; R)` for `m < n` and surjections for `m = n`, with coefficients in any ring
-`R`.
+`R`. Over a contractible base `B`, every fibre inclusion is a weak homotopy equivalence
+(`TauCeti.TopCat.isWeakHomotopyEquivalence_fiberι_of_contractibleSpace`) and therefore induces
+isomorphisms `H_n(F; M) → H_n(E; M)` in every degree for any coefficient module `M`
+(`TauCeti.TopCat.isIso_singularHomologyMap_fiberι_of_contractibleSpace`).
 
 This is the comparison between the homology of a fibre and of the total space that is usually read
 off the Serre spectral sequence, whose `E²` page vanishes in the columns `1 ≤ p ≤ n`; here it
@@ -44,6 +49,9 @@ of a space of Moore paths.
 * `TauCeti.TopCat.isIso_singularHomologyMap_fiberι`: the fibre inclusion is an isomorphism on
   `H_m` for `m < n`.
 * `TauCeti.TopCat.epi_singularHomologyMap_fiberι`: the fibre inclusion is surjective on `H_n`.
+* `TauCeti.TopCat.isIso_singularHomologyMap_fiberι_of_contractibleSpace`: over a contractible
+  base, the fibre inclusion is an isomorphism on `H_n(-; M)` in every degree and for any
+  coefficient module `M`.
 * `TauCeti.TopCat.isIso_singularHomologyMap_preimageInclusion`,
   `TauCeti.TopCat.epi_singularHomologyMap_preimageInclusion`: the same for the inclusion
   `p⁻¹(y) → p⁻¹(Y)` over an `n`-connected subspace `Y`.
@@ -64,9 +72,11 @@ public section
 open CategoryTheory AlgebraicTopology
 open scoped Topology Topology.Homotopy
 
-universe u
+universe u v
 
 namespace TauCeti.TopCat
+
+section ConnectedBase
 
 variable {E B : TopCat.{u}} {p : E ⟶ B} {b : B} {n : ℕ} (R : Type u) [Ring R]
 
@@ -89,6 +99,16 @@ theorem epi_singularHomologyMap_fiberι (hp : serreFibrations p)
     Epi (((singularHomologyFunctor (ModuleCat.{u} R) m).obj (ModuleCat.of R R)).map
       (p.fiberι b)) :=
   (isNConnected_fiberι_of_mem_serreFibrations hp hB).epi_singularHomologyMap R hm
+
+end ConnectedBase
+
+/-- **Over a contractible base, every fibre inclusion of a Serre fibration induces an isomorphism
+on singular homology** in every degree `n` and with coefficients in any module `M`. -/
+theorem isIso_singularHomologyMap_fiberι_of_contractibleSpace {E B : _root_.TopCat.{u}}
+    {p : E ⟶ B} (hp : serreFibrations p) [ContractibleSpace B] {R : Type v} [Ring R]
+    (M : ModuleCat.{u} R) (b : B) (n : ℕ) :
+    IsIso (((singularHomologyFunctor (ModuleCat.{u} R) n).obj M).map (p.fiberι b)) :=
+  (isWeakHomotopyEquivalence_fiberι_of_contractibleSpace hp b).isIso_singularHomologyMap M n
 
 end TauCeti.TopCat
 

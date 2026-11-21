@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.MorphismProperty.IsInvertedBy
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Functoriality
 public import TauCeti.AlgebraicTopology.Singular.Cubical.ChainComplex
 public import TauCeti.AlgebraicTopology.Singular.Cubical.LocalCoefficients.ChainComplex
+public import TauCeti.Topology.Category.TopCat.WeakEquivalence
 public import TauCeti.Topology.Homotopy.HomotopyGroup.WeakHomotopyEquivalence
 import Mathlib.Algebra.Homology.DerivedCategory.KProjective
 import TauCeti.AlgebraicTopology.Homotopy.Whitehead
@@ -87,6 +89,9 @@ from, in `TauCeti.AlgebraicTopology.Cohomology.WeakHomotopyEquivalence`.
   cubical form with local coefficients.
 * `ContinuousMap.IsWeakHomotopyEquivalence.isIso_singularHomologyMap`: a weak homotopy
   equivalence induces isomorphisms on singular homology with coefficients in any module.
+* `TauCeti.TopCat.weakEquivalences_isInvertedBy_singularHomologyFunctor`: the morphism-property
+  form stating that `singularHomologyFunctor` with coefficients in any module inverts
+  `TauCeti.TopCat.weakEquivalences`.
 * `ContinuousMap.IsWeakHomotopyEquivalence.quasiIso_chainComplexMap`,
   `ContinuousMap.IsWeakHomotopyEquivalence.homotopyEquivalences_chainComplexMap`: the induced map
   of simplicial singular chains with coefficients in any module is a quasi-isomorphism and a chain
@@ -235,6 +240,17 @@ theorem isIso_singularHomologyMap (hf : f.IsWeakHomotopyEquivalence) (M : Module
     isIso_comp_left_iff] at this
 
 end ContinuousMap.IsWeakHomotopyEquivalence
+
+namespace TauCeti.TopCat
+
+/-- Singular homology with coefficients in any module `M` inverts weak homotopy equivalences
+(`TauCeti.TopCat.weakEquivalences`). -/
+theorem weakEquivalences_isInvertedBy_singularHomologyFunctor {R : Type u} [Ring R]
+    (M : ModuleCat.{v} R) (n : ℕ) :
+    weakEquivalences.{v}.IsInvertedBy ((singularHomologyFunctor (ModuleCat.{v} R) n).obj M) :=
+  fun _ _ _ hf ↦ ((mem_weakEquivalences_iff _).1 hf).isIso_singularHomologyMap M n
+
+end TauCeti.TopCat
 
 /-! ### Simplicial singular chains and chain homotopy equivalences -/
 
