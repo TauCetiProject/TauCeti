@@ -180,7 +180,8 @@ theorem almostSetupPlus_isAlmostZero_powerBounded_quotient
   have hmem : (ϖ : R) * (x : R) ∈ Rplus := by
     rw [mul_comm]
     exact h.mem_of_isTopologicallyNilpotent
-      ((mem_powerBoundedSubring.mp x.2).isTopologicallyNilpotent_mul hϖ.isTopologicallyNilpotent)
+      ((mem_powerBoundedSubring.mp x.property).isTopologicallyNilpotent_mul
+        hϖ.isTopologicallyNilpotent)
   have hcoe (a : Rplus) : (algebraMap Rplus (powerBoundedSubring R) a : R) = a :=
     (IsScalarTower.algebraMap_apply Rplus (powerBoundedSubring R) R a).symm
   refine ⟨⟨(ϖ : R) * (x : R), hmem⟩, Subtype.ext ?_⟩

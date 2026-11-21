@@ -339,7 +339,7 @@ theorem isPerfectoidTateRing_of_bijective_frobeniusModPow
   refine IsPerfectoidTateRing.of_surjective ϖPB hϖPB_pu hϖPB_dvd fun x ↦ ?_
   have hwx : algebraMap A₀ A w0 * (x : A) ∈ (algebraMap A₀ A).range := by
     simpa [w0] using (isPowerBounded_iff_forall_untilt_mul_mem_range h hπ hroot hass).mp
-      (mem_powerBoundedSubring.mp x.2) 0
+      (mem_powerBoundedSubring.mp x.property) 0
   obtain ⟨a, ha⟩ := hwx
   obtain ⟨f, c, hfc⟩ := PreTilt.exists_mul_natCast_dvd_sub_untilt hw0_dvd hs0 a
   set y0 : A₀ := ((frobeniusEquiv (PreTilt A₀ p) p).symm f).untilt
@@ -362,7 +362,8 @@ theorem isPerfectoidTateRing_of_bijective_frobeniusModPow
   have hy_pb : y ∈ powerBoundedSubring A := by
     refine mem_powerBoundedSubring.mpr (IsPowerBounded.of_pow hp.out.ne_zero ?_)
     rw [hyp]
-    exact mem_powerBoundedSubring.mp (sub_mem x.2 (mul_mem (natCast_mem _ p) (hrange_le ⟨c, rfl⟩)))
+    exact mem_powerBoundedSubring.mp
+      (sub_mem x.property (mul_mem (natCast_mem _ p) (hrange_le ⟨c, rfl⟩)))
   refine ⟨⟨y, hy_pb⟩, hϖPB_dvd.trans ⟨⟨algebraMap A₀ A c, hrange_le ⟨c, rfl⟩⟩, Subtype.ext ?_⟩⟩
   simp only [AddSubgroupClass.coe_sub, Subring.coe_pow, Subring.coe_mul, Subring.coe_natCast]
   linear_combination -hyp

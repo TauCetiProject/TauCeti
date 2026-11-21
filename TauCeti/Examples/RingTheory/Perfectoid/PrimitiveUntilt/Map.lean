@@ -78,7 +78,7 @@ private theorem isPrimitive_xi : (xi p).IsPrimitive := by
   have hAdic : IsAdic (span {varpi p}) :=
     (pair p).plus.isAdic_span_singleton_of_isOpen_of_isBounded
       (pair p).isRingOfIntegralElements.isOpen (pair p).isRingOfIntegralElements.isBounded
-      hϖ (varpi p).2
+      hϖ (varpi p).property
   have := (pair p).isRingOfIntegralElements.isAdicComplete_span_singleton (varpi p) hϖ
   have hξ : xi p = (p : WittVector p (pair p).plus) + teichmuller p (varpi p) * (-1) := by
     simp [xi, sub_eq_add_neg]
@@ -108,31 +108,31 @@ private theorem nontrivial_untilt_xi :
   have hnil : IsTopologicallyNilpotent (1 : uniformTilt p ℂ_[p]) := by
     rw [← hmul]
     exact ((pair p).isRingOfIntegralElements.isPowerBounded_of_mem
-      (-(c.coeff 0)).2).isTopologicallyNilpotent_mul
+      (-(c.coeff 0)).property).isTopologicallyNilpotent_mul
       (isPseudoUniformizer_varpi p).isTopologicallyNilpotent
   obtain ⟨n, hn⟩ := hnil.exists_pow_mem_of_mem_nhds (isOpen_ne.mem_nhds zero_ne_one)
   exact hn (one_pow n)
 
 /-! ### Zero characteristic-`p` base -/
 
--- Over a zero characteristic-`p` base, every untilt is zero and `sharp` sends everything to `0`.
+-- Over a zero characteristic-`p` base, every untilt is zero and `sharpHom` sends everything to `0`.
 example {R : Type*} [CommRing R] [TopologicalSpace R] [IsTopologicalRing R] [IsTateRing R]
     [Subsingleton R] (P : Pair R) (J : Ideal (WittVector p P.plus)) (x : R) :
-    Subsingleton (untilt p P J) ∧ untilt.sharp p P J x = 0 := by
+    Subsingleton (untilt p P J) ∧ untilt.sharpHom p P J x = 0 := by
   have : Subsingleton (WittVector p P.plus) := ⟨fun a b ↦ WittVector.ext fun n ↦
     Subsingleton.elim _ _⟩
   have : Subsingleton (untilt p P J) :=
     (algebraMap (WittVector p P.plus ⧸ J) (untilt p P J)).codomain_trivial
   exact ⟨inferInstance, Subsingleton.elim _ _⟩
 
-/-! ### Computations on `sharp` along `ξ = p - [ϖ]` -/
+/-! ### Computations on `sharpHom` along `ξ = p - [ϖ]` -/
 
--- Along `ξ = p - [ϖ]`, `sharp ϖ = p` and `sharp (ϖ ^ 2) = p ^ 2`.
+-- Along `ξ = p - [ϖ]`, `sharpHom ϖ = p` and `sharpHom (ϖ ^ 2) = p ^ 2`.
 example :
-    untilt.sharp p (pair p) (span {xi p}) (varpi p : uniformTilt p ℂ_[p]) = p ∧
-    untilt.sharp p (pair p) (span {xi p}) ((varpi p : uniformTilt p ℂ_[p]) ^ 2) = p ^ 2 := by
-  have hsp : untilt.sharp p (pair p) (span {xi p}) (varpi p : uniformTilt p ℂ_[p]) = p := by
-    rw [untilt.sharp_apply]
+    untilt.sharpHom p (pair p) (span {xi p}) (varpi p : uniformTilt p ℂ_[p]) = p ∧
+    untilt.sharpHom p (pair p) (span {xi p}) ((varpi p : uniformTilt p ℂ_[p]) ^ 2) = p ^ 2 := by
+  have hsp : untilt.sharpHom p (pair p) (span {xi p}) (varpi p : uniformTilt p ℂ_[p]) = p := by
+    rw [untilt.sharpHom_coe, untilt.sharp_apply, untilt.algebraMap_apply]
     have hmk : Ideal.Quotient.mk (span {xi p}) (teichmuller p (varpi p)) =
         Ideal.Quotient.mk (span {xi p}) (p : WittVector p (pair p).plus) := by
       rw [Ideal.Quotient.eq]
@@ -143,20 +143,20 @@ example :
     rw [hmk, map_natCast, map_natCast]
   exact ⟨hsp, by rw [map_pow, hsp]⟩
 
--- Non-additivity of `sharp`: for `p = 2` and `ξ = 2 - [ϖ]`, `sharp (ϖ + ϖ) = 0`, whereas
--- `sharp ϖ + sharp ϖ = 4 ≠ 0`.
+-- Non-additivity of `sharpHom`: for `p = 2` and `ξ = 2 - [ϖ]`, `sharpHom (ϖ + ϖ) = 0`, whereas
+-- `sharpHom ϖ + sharpHom ϖ = 4 ≠ 0`.
 example :
-    untilt.sharp 2 (pair 2) (span {xi 2})
+    untilt.sharpHom 2 (pair 2) (span {xi 2})
         ((varpi 2 : uniformTilt 2 ℂ_[2]) + (varpi 2 : uniformTilt 2 ℂ_[2])) = 0 ∧
-      untilt.sharp 2 (pair 2) (span {xi 2}) (varpi 2 : uniformTilt 2 ℂ_[2]) +
-        untilt.sharp 2 (pair 2) (span {xi 2}) (varpi 2 : uniformTilt 2 ℂ_[2]) ≠ 0 := by
+      untilt.sharpHom 2 (pair 2) (span {xi 2}) (varpi 2 : uniformTilt 2 ℂ_[2]) +
+        untilt.sharpHom 2 (pair 2) (span {xi 2}) (varpi 2 : uniformTilt 2 ℂ_[2]) ≠ 0 := by
   have : Nontrivial (untilt 2 (pair 2) (span {xi 2})) := nontrivial_untilt_xi 2
   have hadd : (varpi 2 : uniformTilt 2 ℂ_[2]) + (varpi 2 : uniformTilt 2 ℂ_[2]) = 0 := by
     have h2 : (2 : uniformTilt 2 ℂ_[2]) = 0 := by
       simpa using CharP.cast_eq_zero (uniformTilt 2 ℂ_[2]) 2
     rw [← two_mul, h2, zero_mul]
-  have hsp : untilt.sharp 2 (pair 2) (span {xi 2}) (varpi 2 : uniformTilt 2 ℂ_[2]) = 2 := by
-    rw [untilt.sharp_apply]
+  have hsp : untilt.sharpHom 2 (pair 2) (span {xi 2}) (varpi 2 : uniformTilt 2 ℂ_[2]) = 2 := by
+    rw [untilt.sharpHom_coe, untilt.sharp_apply, untilt.algebraMap_apply]
     have hmk : Ideal.Quotient.mk (span {xi 2}) (teichmuller 2 (varpi 2)) =
         Ideal.Quotient.mk (span {xi 2}) (2 : WittVector 2 (pair 2).plus) := by
       rw [Ideal.Quotient.eq]
@@ -167,21 +167,21 @@ example :
     rw [hmk, map_ofNat, map_ofNat]
   have hu2 : IsUnit (2 : untilt 2 (pair 2) (span {xi 2})) := by
     rw [← hsp]
-    exact (untilt.isPseudoUniformizer_sharp (isPseudoUniformizer_varpi 2)).isUnit
+    exact (untilt.isPseudoUniformizer_sharpHom (isPseudoUniformizer_varpi 2)).isUnit
   refine ⟨by rw [hadd, map_zero], ?_⟩
   rw [hsp, show (2 : untilt 2 (pair 2) (span {xi 2})) + 2 = 2 * 2 by ring]
   exact (hu2.mul hu2).ne_zero
 
--- `quotEquiv` identifies `A⁺ ⧸ (sharp ϖ)` with `ℂ_p♭° ⧸ (ϖ)` along `ξ = p - [ϖ]`.
+-- `quotientSharpEquiv` identifies `A⁺ ⧸ (sharp ϖ)` with `ℂ_p♭° ⧸ (ϖ)` along `ξ = p - [ϖ]`.
 example (a : (pair p).plus) :
     have hξ₀ : varpi p ∣ (xi p).coeff 0 := by
       refine ⟨-1, ?_⟩
       simp [xi, WittVector.sub_coeff_zero, WittVector.coeff_p_zero]
-    untilt.quotEquiv (isPrimitive_xi p) hξ₀
+    untilt.quotientSharpEquiv (isPrimitive_xi p) hξ₀
       (Ideal.Quotient.mk _ ⟨untilt.sharp p (pair p) (span {xi p}) a,
-        untilt.sharp_mem_untiltPlus a⟩) =
+        untilt.sharp_mem_untiltPlus _ a⟩) =
       Ideal.Quotient.mk (span {varpi p}) a := by
-  exact untilt.quotEquiv_mk_sharp (isPrimitive_xi p) _ a
+  exact untilt.quotientSharpEquiv_mk_sharp (isPrimitive_xi p) _ a
 
 /-! ### Functoriality `untilt.map` -/
 
@@ -246,7 +246,7 @@ example :
     rw [hzero, Ideal.Quotient.eq_zero_iff_mem.mpr (mem_span_singleton_self _), map_zero]
 
 -- On the non-domain product `ℂ_p♭ × ℂ_p♭`, `untilt.map` along the first projection sends
--- `sharp (1, 0) ↦ 1` and `sharp (0, 1) ↦ 0`.
+-- `sharpHom (1, 0) ↦ 1` and `sharpHom (0, 1) ↦ 0`.
 example :
     let Q := Pair.powerBounded (uniformTilt p ℂ_[p] × uniformTilt p ℂ_[p])
     let hfplus : ∀ x ∈ Q.plus, RingHom.fst _ _ x ∈ (pair p).plus := fun x hx ↦ by
@@ -260,18 +260,18 @@ example :
         obtain ⟨c, rfl⟩ := mem_span_singleton.mp hw
         rw [map_mul, map_natCast]
         exact Ideal.mul_mem_right _ _ (mem_span_singleton_self _))
-    f (untilt.sharp p Q (span {(p : WittVector p Q.plus)}) (1, 0)) = 1 ∧
-      f (untilt.sharp p Q (span {(p : WittVector p Q.plus)}) (0, 1)) = 0 := by
+    f (untilt.sharpHom p Q (span {(p : WittVector p Q.plus)}) (1, 0)) = 1 ∧
+      f (untilt.sharpHom p Q (span {(p : WittVector p Q.plus)}) (0, 1)) = 0 := by
   intro Q hfplus f
-  exact ⟨by rw [untilt.map_sharp]; simp, by rw [untilt.map_sharp]; simp⟩
+  exact ⟨by rw [untilt.map_sharpHom]; simp, by rw [untilt.map_sharpHom]; simp⟩
 
 /-! ### Recovery along `(p)` -/
 
 -- `pRecovery` recovers `ℂ_p♭` as a topological ring from its untilt along `(p)`.
 example (x : uniformTilt p ℂ_[p]) :
     untilt.pRecovery p (pair p)
-        (untilt.sharp p (pair p) (span {(p : WittVector p (pair p).plus)}) x) = x ∧
+        (untilt.sharpHom p (pair p) (span {(p : WittVector p (pair p).plus)}) x) = x ∧
       IsHomeomorph (untilt.pRecovery p (pair p)) :=
-  ⟨untilt.pRecovery_sharp p (pair p) x, untilt.isHomeomorph_pRecovery p (pair p)⟩
+  ⟨untilt.pRecovery_sharpHom p (pair p) x, untilt.isHomeomorph_pRecovery p (pair p)⟩
 
 end TauCeti.Examples.PrimitiveUntiltMap

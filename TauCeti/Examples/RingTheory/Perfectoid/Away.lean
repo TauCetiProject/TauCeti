@@ -87,7 +87,7 @@ example :
       (awayNhd π ℂ_[p] n : Set ℂ_[p]) := by
     let D : PairOfDefinition ℂ_[p] := PairOfDefinition.ofIsPseudoUniformizer
       (powerBoundedSubring ℂ_[p]) (isOpen_powerBoundedSubring ℂ_[p])
-      (isRingOfIntegralElements_powerBoundedSubring ℂ_[p]).isBounded hpu π.2
+      (isRingOfIntegralElements_powerBoundedSubring ℂ_[p]).isBounded hpu π.property
     refine (hpu.hasBasis_nhds_zero D).congr (fun _ ↦ Iff.rfl) fun n _ ↦ ?_
     ext x
     simp only [SetLike.mem_coe, mem_awayNhd, D,
@@ -98,7 +98,7 @@ example :
       change (π : ℂ_[p]) ^ n * y = (π : ℂ_[p]) ^ n • y
       rw [smul_eq_mul]
     · rintro ⟨a, rfl⟩
-      refine ⟨(a : ℂ_[p]), a.2, ?_⟩
+      refine ⟨(a : ℂ_[p]), a.property, ?_⟩
       change (π : ℂ_[p]) ^ n • (a : ℂ_[p]) = (π : ℂ_[p]) ^ n * (a : ℂ_[p])
       rw [smul_eq_mul]
   have hreg : π ∈ (powerBoundedSubring ℂ_[p])⁰ :=
@@ -110,7 +110,7 @@ example :
         simpa using congrArg Subtype.val hc
       rw [← norm_pow, hc_val, norm_mul, norm_pow]
       have hcle : ‖(c : ℂ_[p])‖ ≤ 1 :=
-        isPowerBounded_iff_norm_le_one.mp (mem_powerBoundedSubring.mp c.2)
+        isPowerBounded_iff_norm_le_one.mp (mem_powerBoundedSubring.mp c.property)
       exact mul_le_of_le_one_right (pow_nonneg (norm_nonneg _) _) hcle
     have hle : ‖(a : ℂ_[p])‖ ≤ ‖(π : ℂ_[p])‖ := by
       by_contra hlt
@@ -130,7 +130,7 @@ example :
     obtain ⟨b, hb⟩ := IsAlgClosed.exists_pow_nat_eq (a : ℂ_[p]) hp.out.pos
     have hb_pb : b ∈ powerBoundedSubring ℂ_[p] :=
       mem_powerBoundedSubring.mpr (IsPowerBounded.of_pow hp.out.ne_zero
-        (hb.symm ▸ mem_powerBoundedSubring.mp a.2))
+        (hb.symm ▸ mem_powerBoundedSubring.mp a.property))
     refine ⟨⟨b, hb_pb⟩, ?_⟩
     rw [show a - ⟨b, hb_pb⟩ ^ p = 0 from Subtype.ext (by simpa [sub_eq_zero] using hb.symm)]
     exact dvd_zero _

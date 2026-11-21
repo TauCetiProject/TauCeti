@@ -45,23 +45,44 @@ variable {E N F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup N] [NormedSpace ℝ N]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {k : ℕ}
 
-private def fiberScaling (z : (E × N) × ℝ) : E × N := (z.1.1, z.2 • z.1.2)
+/-- The flat fibre-scaling map `((q, p), t) ↦ (q, t • p)` of `E × N`, which fixes the base
+coordinate and scales the normal coordinate. -/
+def fiberScaling (z : (E × N) × ℝ) : E × N := (z.1.1, z.2 • z.1.2)
 
-private theorem contDiff_fiberScaling {r : WithTop ℕ∞} :
+omit [NormedAddCommGroup E] [NormedSpace ℝ E] in
+/-- The flat fibre-scaling map sends `((q, p), t)` to `(q, t • p)`. -/
+@[simp]
+theorem fiberScaling_apply (z : (E × N) × ℝ) : fiberScaling z = (z.1.1, z.2 • z.1.2) :=
+  (rfl)
+
+/-- The flat fibre-scaling map is smooth. -/
+theorem contDiff_fiberScaling {r : WithTop ℕ∞} :
     ContDiff ℝ r (fiberScaling (E := E) (N := N)) :=
   contDiff_fst.fst.prodMk (contDiff_snd.smul contDiff_fst.snd)
 
-private theorem fderiv_fiberScaling_apply (z v : (E × N) × ℝ) :
+/-- The derivative of the flat fibre-scaling map at `((q, p), t)` sends `((a, b), c)` to
+`(a, t • b + c • p)`. -/
+theorem fderiv_fiberScaling_apply (z v : (E × N) × ℝ) :
     fderiv ℝ fiberScaling z v = (v.1.1, z.2 • v.1.2 + v.2 • z.1.2) := by
   unfold fiberScaling
   have h0 := hasFDerivAt_id (𝕜 := ℝ) z
   have h := h0.fst.fst.prodMk (h0.snd.smul h0.fst.snd)
   simpa [Pi.smul_apply] using DFunLike.congr_fun h.fderiv v
 
-private def fiberScalingPullback
+/-- The pullback of a form `ω` on `E × N` along the flat fibre-scaling map, a form on the flat
+cylinder `(E × N) × ℝ`. -/
+def fiberScalingPullback
     (ω : E × N → (E × N) [⋀^Fin (k + 1)]→L[ℝ] F) :
     (E × N) × ℝ → ((E × N) × ℝ) [⋀^Fin (k + 1)]→L[ℝ] F :=
   fun z ↦ (ω (fiberScaling z)).compContinuousLinearMap (fderiv ℝ fiberScaling z)
+
+/-- The pullback by fibre scaling at `z` is the form at `fiberScaling z` precomposed with the
+derivative of fibre scaling at `z`. -/
+theorem fiberScalingPullback_apply (ω : E × N → (E × N) [⋀^Fin (k + 1)]→L[ℝ] F)
+    (z : (E × N) × ℝ) :
+    fiberScalingPullback ω z =
+      (ω (fiberScaling z)).compContinuousLinearMap (fderiv ℝ fiberScaling z) :=
+  (rfl)
 
 /-- Integrate the time contraction of the pullback by `(q, p, t) ↦ (q, t • p)`.
 This relative Poincaré operator fixes the base and contracts the normal coordinate. -/
@@ -69,6 +90,12 @@ def fiberwisePoincareHomotopy
     (ω : E × N → (E × N) [⋀^Fin (k + 1)]→L[ℝ] F) :
     E × N → (E × N) [⋀^Fin k]→L[ℝ] F :=
   cylinderHomotopy (fiberScalingPullback ω)
+
+/-- The relative Poincaré operator is the cylinder homotopy operator of the pullback by fibre
+scaling. -/
+theorem fiberwisePoincareHomotopy_def (ω : E × N → (E × N) [⋀^Fin (k + 1)]→L[ℝ] F) :
+    fiberwisePoincareHomotopy ω = cylinderHomotopy (fiberScalingPullback ω) :=
+  (rfl)
 
 /-- The relative primitive evaluated as an integral of ambient alternating tensors.
 The remaining arguments are transformed by `(v, w) ↦ (v, t • w)`. -/

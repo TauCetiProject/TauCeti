@@ -32,11 +32,11 @@ tilt `A♭` is topologically isomorphic to `R`:
   `untilt.isIntegralPerfectoid_untiltPlus`), `A` is uniform (`untilt.isUniform`), and `A` is a
   perfectoid Tate ring (`untilt.isPerfectoidTateRing`) via
   `TauCeti.Perfectoid.isPerfectoidTateRing_of_bijective_frobeniusModPow`.
-* An elementary induction using `quotientTeichmullerEquiv` proves that `sharp x ∈ A⁺ ↔ x ∈ R⁺`
-  (`untilt.sharp_mem_untiltPlus_iff`).
+* An elementary induction using `quotientTeichmullerEquiv` proves that `sharpHom x ∈ A⁺ ↔ x ∈ R⁺`
+  (`untilt.sharpHom_mem_untiltPlus_iff`).
 * The tilt `A♭` is a Tate ring (`untilt.isTateRing_uniformTilt`), and the map
-  `x ↦ (sharp (x ^ (1 / p ^ n)))_n` is a topological ring isomorphism `R ≃+* A♭`, whose inverse is
-  `untilt.tiltEquiv` (`untilt.isHomeomorph_tiltEquiv`).
+  `x ↦ (sharpHom (x ^ (1 / p ^ n)))_n` is a topological ring isomorphism `R ≃+* A♭`, whose inverse
+  is `untilt.tiltEquiv` (`untilt.isHomeomorph_tiltEquiv`).
 
 For the Huber pair structure `(A, A⁺)`, the identification of `A♭⁺` and `PreTilt A⁺ p` with `R⁺`,
 Fontaine's `ker θ = (ξ)`, and the almost vanishing of `A° ⧸ A⁺`, see
@@ -53,7 +53,7 @@ Fontaine's `ker θ = (ξ)`, and the almost vanishing of `A° ⧸ A⁺`, see
   perfectoid rings.
 * `TauCeti.Perfectoid.untilt.isUniform`, `TauCeti.Perfectoid.untilt.isPerfectoidTateRing`:
   the untilt `A` is a uniform perfectoid Tate ring.
-* `TauCeti.Perfectoid.untilt.sharp_mem_untiltPlus_iff`: `sharp x ∈ A⁺ ↔ x ∈ R⁺`.
+* `TauCeti.Perfectoid.untilt.sharpHom_mem_untiltPlus_iff`: `sharpHom x ∈ A⁺ ↔ x ∈ R⁺`.
 * `TauCeti.Perfectoid.untilt.isTateRing_uniformTilt`,
   `TauCeti.Perfectoid.untilt.isHomeomorph_tiltEquiv`: `A♭` is Tate and `tiltEquiv : A♭ ≃+* R` is a
   homeomorphism.
@@ -86,15 +86,6 @@ private theorem iterateFrobeniusEquiv_zero_symm {S : Type*} [CommRing S] [CharP 
     [PerfectRing S p] (x : S) : (iterateFrobeniusEquiv S p 0).symm x = x := by
   have := iterateFrobeniusEquiv_symm_pow (p := p) 0 x
   simpa only [pow_zero, pow_one] using this
-
-private theorem iterate_frobeniusEquiv_symm_pow {S : Type*} [CommRing S] [CharP S p]
-    [PerfectRing S p] (n : ℕ) (x : S) :
-    ((frobeniusEquiv S p).symm^[n] x) ^ p ^ n = x := by
-  induction n with
-  | zero => simp
-  | succ m ihm =>
-    rw [Function.iterate_succ_apply', pow_succ', pow_mul, frobeniusEquiv_symm_pow_p]
-    exact ihm
 
 /-! ### Divisibility and relative Frobenius on `𝕎 R⁺ ⧸ (ξ)` -/
 
@@ -132,11 +123,8 @@ private theorem exists_isPseudoUniformizer_pow_dvd (a : P.plus)
     rw [← pow_mul, ← pow_succ', hpow]
     exact ⟨c * a ^ (p ^ N - N), by
       rw [← mul_assoc, ← hc, ← pow_add, Nat.add_sub_of_le hle]⟩
-  obtain ⟨t, ht⟩ := hdiv
-  refine ⟨ϖ, hϖ, (iterateFrobeniusEquiv P.plus p N).symm t,
-    (iterateFrobeniusEquiv P.plus p N).injective ?_⟩
-  rw [map_mul, (iterateFrobeniusEquiv P.plus p N).apply_symm_apply]
-  exact ht
+  change iterateFrobeniusEquiv P.plus p N (ϖ ^ p) ∣ iterateFrobeniusEquiv P.plus p N a at hdiv
+  exact ⟨ϖ, hϖ, (map_dvd_iff (iterateFrobeniusEquiv P.plus p N)).mp hdiv⟩
 
 /-- For a primitive element `ξ` and `ϖ ∈ P.plus` with `ϖ ^ p ∣ ξ.coeff 0`, we have
 `(mk [ϖ]) ^ p ∣ p` in `𝕎 P.plus ⧸ (ξ)`. -/
@@ -187,10 +175,8 @@ private theorem bijective_frobeniusModPow_quotient (hξ : ξ.IsPrimitive) {ϖ : 
         IsDistinguished.quotientTeichmullerEquiv_mk_mk, ← map_pow] at h0
       exact mem_span_singleton.mp (Ideal.Quotient.eq_zero_iff_mem.mp h0)
     have hcoeff1 : ϖ ∣ w.coeff 0 := by
-      obtain ⟨t, ht⟩ := hcoeff
-      refine ⟨(frobeniusEquiv P.plus p).symm t, (frobeniusEquiv P.plus p).injective ?_⟩
-      rw [map_mul, (frobeniusEquiv P.plus p).apply_symm_apply]
-      exact ht
+      change frobeniusEquiv P.plus p ϖ ∣ frobeniusEquiv P.plus p (w.coeff 0) at hcoeff
+      exact (map_dvd_iff (frobeniusEquiv P.plus p)).mp hcoeff
     have h1 : e1 (Ideal.Quotient.mk (span {π}) (Ideal.Quotient.mk J w)) = 0 := by
       rw [IsDistinguished.quotientTeichmullerEquiv_mk_mk, Ideal.Quotient.eq_zero_iff_mem,
         mem_span_singleton]
@@ -209,18 +195,21 @@ private theorem bijective_frobeniusModPow_quotient (hξ : ξ.IsPrimitive) {ϖ : 
       IsDistinguished.quotientTeichmullerEquiv_mk_mk, teichmuller_coeff_zero, ← map_pow,
       frobeniusEquiv_symm_pow_p, sub_self]
 
-/-- **The sharp-membership criterion**: for a primitive element `ξ`, `sharp x ∈ A⁺` if and only if
-`x ∈ R⁺`. -/
-theorem sharp_mem_untiltPlus_iff (hξ : ξ.IsPrimitive) {x : R} :
-    sharp p P (Ideal.span {ξ}) x ∈ untiltPlus p P (Ideal.span {ξ}) ↔ x ∈ P.plus := by
-  refine ⟨fun hx ↦ ?_, fun hx ↦ sharp_mem_untiltPlus ⟨x, hx⟩⟩
+/-- **The sharp-membership criterion**: for a primitive element `ξ`, `sharpHom x ∈ A⁺` if and
+only if `x ∈ R⁺`. -/
+theorem sharpHom_mem_untiltPlus_iff (hξ : ξ.IsPrimitive) {x : R} :
+    sharpHom p P (Ideal.span {ξ}) x ∈ untiltPlus p P (Ideal.span {ξ}) ↔ x ∈ P.plus := by
+  refine ⟨fun hx ↦ ?_, fun hx ↦ by
+    change sharpHom p P (Ideal.span {ξ}) ((⟨x, hx⟩ : P.plus) : R) ∈ _
+    rw [sharpHom_coe]
+    exact sharp_mem_untiltPlus _ _⟩
   obtain ⟨ϖ, hϖ, hξ₀p⟩ := exists_isPseudoUniformizer_pow_dvd (ξ.coeff 0)
-    (hξ.isTopologicallyNilpotent_coeff_zero.map (φ := P.plus.subtype) continuous_subtype_val)
+    (hξ.isTopologicallyNilpotent_coeff_zero.map (φ := P.plus.subtype) continuous_subtypeVal)
   have hξ₀ : ϖ ∣ ξ.coeff 0 := (dvd_pow_self ϖ hp.out.ne_zero).trans hξ₀p
   set J := Ideal.span {ξ}
   obtain ⟨m, hm⟩ := exists_mul_pow_mem_of_isTopologicallyNilpotent
     hϖ.isTopologicallyNilpotent P.isRingOfIntegralElements.isOpen x
-  suffices ∀ (k : ℕ) (y : R), sharp p P J y ∈ untiltPlus p P J → y * (ϖ : R) ^ k ∈ P.plus →
+  suffices ∀ (k : ℕ) (y : R), sharpHom p P J y ∈ untiltPlus p P J → y * (ϖ : R) ^ k ∈ P.plus →
       y ∈ P.plus from this m x hx hm
   intro k
   induction k with
@@ -233,7 +222,15 @@ theorem sharp_mem_untiltPlus_iff (hξ : ξ.IsPrimitive) {x : R} :
         (Ideal.Quotient.mk J (teichmuller p a)) =
         algebraMap (WittVector p P.plus ⧸ J) (untilt p P J)
           (b * Ideal.Quotient.mk J (teichmuller p ϖ) ^ (k + 1)) := by
-      rw [map_mul, map_pow, hb, ← sharp_apply a, ← sharp_apply ϖ, ← map_pow, ← map_mul]
+      have ha' : algebraMap (WittVector p P.plus ⧸ J) (untilt p P J)
+          (Ideal.Quotient.mk J (teichmuller p a)) = sharpHom p P J (a : R) := by
+        rw [sharpHom_coe, sharp_apply, algebraMap_apply]
+      have hϖ' : algebraMap (WittVector p P.plus ⧸ J) (untilt p P J)
+          (Ideal.Quotient.mk J (teichmuller p ϖ)) = sharpHom p P J (ϖ : R) := by
+        rw [sharpHom_coe, sharp_apply, algebraMap_apply]
+      rw [map_mul, map_pow, hb, ha', hϖ']
+      change sharpHom p P J (y * (ϖ : R) ^ (k + 1)) = _
+      rw [map_mul, map_pow]
     have heqQ : Ideal.Quotient.mk J (teichmuller p a) =
         Ideal.Quotient.mk J (teichmuller p ϖ) *
           (b * Ideal.Quotient.mk J (teichmuller p ϖ) ^ k) := by
@@ -257,12 +254,12 @@ theorem sharp_mem_untiltPlus_iff (hξ : ξ.IsPrimitive) {x : R} :
       change y * (ϖ : R) ^ (k + 1) = (ϖ : R) * (c : R) at hca
       rw [pow_succ] at hca
       rw [mul_assoc, hca, mul_comm]
-    exact ih y hy (hyc.symm ▸ c.2)
+    exact ih y hy (hyc.symm ▸ c.property)
 
 /-- The untilt along a primitive element is uniform. -/
 theorem isUniform (hξ : ξ.IsPrimitive) : IsUniform (untilt p P (Ideal.span {ξ})) := by
   obtain ⟨ϖ, hϖ, hξ₀p⟩ := exists_isPseudoUniformizer_pow_dvd (ξ.coeff 0)
-    (hξ.isTopologicallyNilpotent_coeff_zero.map (φ := P.plus.subtype) continuous_subtype_val)
+    (hξ.isTopologicallyNilpotent_coeff_zero.map (φ := P.plus.subtype) continuous_subtypeVal)
   set J := Ideal.span {ξ}
   have := isLocalizationAway (J := J) hϖ
   have hrad : ξ.coeff 0 ∈ (span {ϖ}).radical :=
@@ -292,7 +289,7 @@ variable [UniformSpace R] [IsUniformAddGroup R] [IsTopologicalRing R] [IsTateRin
 theorem isIntegralPerfectoid_quotient (hξ : ξ.IsPrimitive) :
     IsIntegralPerfectoid p (WittVector p P.plus ⧸ Ideal.span {ξ}) := by
   obtain ⟨ϖ, hϖ, hξ₀p⟩ := exists_isPseudoUniformizer_pow_dvd (ξ.coeff 0)
-    (hξ.isTopologicallyNilpotent_coeff_zero.map (φ := P.plus.subtype) continuous_subtype_val)
+    (hξ.isTopologicallyNilpotent_coeff_zero.map (φ := P.plus.subtype) continuous_subtypeVal)
   set J := Ideal.span {ξ}
   have hrad : ξ.coeff 0 ∈ (span {ϖ}).radical :=
     ⟨1, by rw [pow_one, mem_span_singleton]; exact (dvd_pow_self ϖ hp.out.ne_zero).trans hξ₀p⟩
@@ -310,9 +307,9 @@ theorem isIntegralPerfectoid_quotient (hξ : ξ.IsPrimitive) :
 theorem isIntegralPerfectoid_untiltPlus (hξ : ξ.IsPrimitive) :
     IsIntegralPerfectoid p (untiltPlus p P (Ideal.span {ξ})) := by
   obtain ⟨ϖ, hϖ, hξ₀p⟩ := exists_isPseudoUniformizer_pow_dvd (ξ.coeff 0)
-    (hξ.isTopologicallyNilpotent_coeff_zero.map (φ := P.plus.subtype) continuous_subtype_val)
+    (hξ.isTopologicallyNilpotent_coeff_zero.map (φ := P.plus.subtype) continuous_subtypeVal)
   set J := Ideal.span {ξ}
-  set e := quotientEquivPlus hξ
+  set e := quotientEquivUntiltPlus hξ
   set π₀ : WittVector p P.plus ⧸ J := Ideal.Quotient.mk J (teichmuller p ϖ)
   set π : untiltPlus p P J := e π₀
   have hrad : ξ.coeff 0 ∈ (span {ϖ}).radical :=
@@ -361,7 +358,7 @@ theorem isPerfectoidTateRing (hξ : ξ.IsPrimitive) :
     letI := completeSpace hξ
     IsPerfectoidTateRing p (untilt p P (Ideal.span {ξ})) := by
   obtain ⟨ϖ, hϖ, hξ₀p⟩ := exists_isPseudoUniformizer_pow_dvd (ξ.coeff 0)
-    (hξ.isTopologicallyNilpotent_coeff_zero.map (φ := P.plus.subtype) continuous_subtype_val)
+    (hξ.isTopologicallyNilpotent_coeff_zero.map (φ := P.plus.subtype) continuous_subtypeVal)
   set J := Ideal.span {ξ}
   have := isLocalizationAway (J := J) hϖ
   have := t2Space hξ
@@ -411,10 +408,10 @@ private theorem continuous_iterateFrobeniusEquiv_symm (n : ℕ) :
     exact h1.comp ih
 
 /-- The canonical map `R → uniformTilt p (untilt p P (Ideal.span {ξ}))`,
-`x ↦ (sharp (x ^ (1 / p ^ n)))_n`. -/
+`x ↦ (sharpHom (x ^ (1 / p ^ n)))_n`. -/
 private noncomputable def toTiltFun (ξ : WittVector p P.plus) (x : R) :
     uniformTilt p (untilt p P (Ideal.span {ξ})) :=
-  uniformTilt.mk (fun n ↦ sharp p P (Ideal.span {ξ}) ((iterateFrobeniusEquiv R p n).symm x))
+  uniformTilt.mk (fun n ↦ sharpHom p P (Ideal.span {ξ}) ((iterateFrobeniusEquiv R p n).symm x))
     fun n ↦ by
       rw [← map_pow]
       congr 1
@@ -429,7 +426,7 @@ private theorem coeff_toTiltFun (hξ : ξ.IsPrimitive) (x : R) (n : ℕ) :
     letI : Fact (IsTopologicallyNilpotent (p : untilt p P (Ideal.span {ξ}))) :=
       ⟨isTopologicallyNilpotent_natCast hξ⟩
     uniformTilt.coeff p (untilt p P (Ideal.span {ξ})) n (toTiltFun ξ x) =
-      sharp p P (Ideal.span {ξ}) ((iterateFrobeniusEquiv R p n).symm x) := by
+      sharpHom p P (Ideal.span {ξ}) ((iterateFrobeniusEquiv R p n).symm x) := by
   have := t2Space hξ
   have := completeSpace hξ
   have := isUniform hξ
@@ -453,7 +450,7 @@ theorem isTateRing_uniformTilt (hξ : ξ.IsPrimitive) :
   obtain ⟨ϖ, hϖ⟩ := P.isRingOfIntegralElements.exists_isPseudoUniformizer
   refine uniformTilt.isTateRing_of_sharp (ϖ := toTiltFun ξ ϖ) ?_
   rw [coeff_toTiltFun hξ, iterateFrobeniusEquiv_zero_symm]
-  exact isPseudoUniformizer_sharp hϖ
+  exact isPseudoUniformizer_sharpHom hϖ
 
 /-- `toTiltFun` is a ring homomorphism `R →+* uniformTilt p (untilt p P (Ideal.span {ξ}))`. -/
 private noncomputable def toTiltHom (hξ : ξ.IsPrimitive) :
@@ -517,7 +514,9 @@ private noncomputable def toTiltHom (hξ : ξ.IsPrimitive) :
         ← coe_iterateFrobeniusEquiv_plus_symm a (i + m),
         ← coe_iterateFrobeniusEquiv_plus_symm b (i + m), ← Subring.coe_add,
         ← coe_iterateFrobeniusEquiv_plus_symm (a + b) i,
-        sharp_apply ai, sharp_apply bi, sharp_apply, ← map_add, ← map_add, ← map_pow, ← map_pow,
+        sharpHom_coe ai, sharpHom_coe bi, sharpHom_coe,
+        sharp_apply, sharp_apply, sharp_apply, algebraMap_apply, algebraMap_apply,
+        algebraMap_apply, ← map_add, ← map_add, ← map_pow, ← map_pow,
         ← hsum_pow, map_pow (teichmuller p) (ai + bi), ← map_sub, ← map_sub, hd, map_mul,
         map_pow, map_natCast, map_mul, map_pow, map_natCast]
     rw [Filter.tendsto_def]
@@ -551,16 +550,16 @@ private noncomputable def toTiltHom (hξ : ξ.IsPrimitive) :
         have h1 : x * (ϖ : R) ^ k = (x * (ϖ : R) ^ kx) * (ϖ : R) ^ (k - kx) := by
           rw [mul_assoc, ← pow_add, Nat.add_sub_of_le (le_max_left _ _)]
         rw [h1]
-        exact P.plus.mul_mem hkx (P.plus.pow_mem ϖ.2 _)
+        exact P.plus.mul_mem hkx (P.plus.pow_mem ϖ.property _)
       have hyk : y * (ϖ : R) ^ k ∈ P.plus := by
         have h1 : y * (ϖ : R) ^ k = (y * (ϖ : R) ^ ky) * (ϖ : R) ^ (k - ky) := by
           rw [mul_assoc, ← pow_add, Nat.add_sub_of_le (le_max_right _ _)]
         rw [h1]
-        exact P.plus.mul_mem hky (P.plus.pow_mem ϖ.2 _)
+        exact P.plus.mul_mem hky (P.plus.pow_mem ϖ.property _)
       have hu : IsUnit (toTiltFun ξ ((ϖ : R) ^ k)) := by
         rw [uniformTilt.isUnit_iff_coeff_zero, coeff_toTiltFun hξ, iterateFrobeniusEquiv_zero_symm,
           map_pow]
-        exact (isPseudoUniformizer_sharp hϖ).isUnit.pow k
+        exact (isPseudoUniformizer_sharpHom hϖ).isUnit.pow k
       refine hu.mul_right_cancel ?_
       rw [← hmul, add_mul, add_mul, ← hmul, ← hmul]
       exact hadd_plus ⟨x * (ϖ : R) ^ k, hxk⟩ ⟨y * (ϖ : R) ^ k, hyk⟩ }
@@ -572,7 +571,7 @@ private theorem coeff_toTiltHom (hξ : ξ.IsPrimitive) (x : R) (n : ℕ) :
     letI : Fact (IsTopologicallyNilpotent (p : untilt p P (Ideal.span {ξ}))) :=
       ⟨isTopologicallyNilpotent_natCast hξ⟩
     uniformTilt.coeff p (untilt p P (Ideal.span {ξ})) n (toTiltHom hξ x) =
-      sharp p P (Ideal.span {ξ}) ((iterateFrobeniusEquiv R p n).symm x) :=
+      sharpHom p P (Ideal.span {ξ}) ((iterateFrobeniusEquiv R p n).symm x) :=
   coeff_toTiltFun hξ x n
 
 /-- `toTiltHom` is injective. -/
@@ -585,20 +584,20 @@ private theorem toTiltHom_injective (hξ : ξ.IsPrimitive) :
     ⟨isTopologicallyNilpotent_natCast hξ⟩
   rw [injective_iff_map_eq_zero]
   intro x hx
-  have hx0 : sharp p P (Ideal.span {ξ}) x = 0 := by
+  have hx0 : sharpHom p P (Ideal.span {ξ}) x = 0 := by
     have h0 := congrArg (uniformTilt.coeff p (untilt p P (Ideal.span {ξ})) 0) hx
     rw [uniformTilt.coeff_zero, coeff_toTiltHom hξ, iterateFrobeniusEquiv_zero_symm] at h0
     exact h0
   obtain ⟨ϖ, hϖ⟩ := P.isRingOfIntegralElements.exists_isPseudoUniformizer
   have := IsUniform.of_perfectRing (R := R) p
   let D : PairOfDefinition R := PairOfDefinition.ofIsPseudoUniformizer P.plus
-    P.isRingOfIntegralElements.isOpen P.isRingOfIntegralElements.isBounded hϖ ϖ.2
+    P.isRingOfIntegralElements.isOpen P.isRingOfIntegralElements.isBounded hϖ ϖ.property
   have hmem (n : ℕ) : x ∈ ((ϖ : R) ^ n) • (D.ringOfDefinition : Set R) := by
     let u := (hϖ.isUnit.pow n).unit
-    have hsharp : sharp p P (Ideal.span {ξ}) (↑u⁻¹ * x) ∈ untiltPlus p P (Ideal.span {ξ}) := by
+    have hsharp : sharpHom p P (Ideal.span {ξ}) (↑u⁻¹ * x) ∈ untiltPlus p P (Ideal.span {ξ}) := by
       rw [map_mul, hx0, mul_zero]
       exact zero_mem _
-    have hplus : ↑u⁻¹ * x ∈ P.plus := (sharp_mem_untiltPlus_iff hξ).mp hsharp
+    have hplus : ↑u⁻¹ * x ∈ P.plus := (sharpHom_mem_untiltPlus_iff hξ).mp hsharp
     refine ⟨↑u⁻¹ * x, ?_, ?_⟩
     · rw [PairOfDefinition.ofIsPseudoUniformizer_ringOfDefinition]
       exact hplus
@@ -701,14 +700,13 @@ private theorem exists_surjective_toPreTilt_quotient (hξ : ξ.IsPrimitive) {ϖ 
       exact hmem
     have hpow_dvd :
         (g ϖ ^ k) ^ p ^ n ∣ (((frobeniusEquiv (PreTilt A₀ p) p).symm^[n]) z) ^ p ^ n := by
-      rw [← pow_mul, iterate_frobeniusEquiv_symm_pow]
+      rw [← pow_mul, iterate_frobeniusEquiv_symm_pow_p_pow]
       exact hzk
-    obtain ⟨t, ht⟩ := hpow_dvd
     have hdvd_n : g ϖ ^ k ∣ ((frobeniusEquiv (PreTilt A₀ p) p).symm^[n]) z := by
-      refine ⟨(iterateFrobeniusEquiv (PreTilt A₀ p) p n).symm t,
-        (iterateFrobeniusEquiv (PreTilt A₀ p) p n).injective ?_⟩
-      rw [map_mul, (iterateFrobeniusEquiv (PreTilt A₀ p) p n).apply_symm_apply]
-      exact ht
+      change iterateFrobeniusEquiv (PreTilt A₀ p) p n (g ϖ ^ k) ∣
+        iterateFrobeniusEquiv (PreTilt A₀ p) p n (((frobeniusEquiv (PreTilt A₀ p) p).symm^[n]) z)
+        at hpow_dvd
+      exact (map_dvd_iff (iterateFrobeniusEquiv (PreTilt A₀ p) p n)).mp hpow_dvd
     obtain ⟨c, hc⟩ := hdvd_n
     refine ⟨c.untilt, ?_⟩
     rw [← hg_varpi, ← map_pow, ← map_mul, ← hc]
@@ -756,7 +754,7 @@ private theorem toTiltHom_surjective (hξ : ξ.IsPrimitive) :
   · intro y
     refine ⟨0, uniformTilt.ext fun n ↦ Subsingleton.elim _ _⟩
   obtain ⟨ϖ, hϖ, hξ₀p⟩ := exists_isPseudoUniformizer_pow_dvd (ξ.coeff 0)
-    (hξ.isTopologicallyNilpotent_coeff_zero.map (φ := P.plus.subtype) continuous_subtype_val)
+    (hξ.isTopologicallyNilpotent_coeff_zero.map (φ := P.plus.subtype) continuous_subtypeVal)
   set π : A₀ := Ideal.Quotient.mk J (teichmuller p ϖ)
   have hdvd : π ^ p ∣ (p : A₀) := mk_teichmuller_pow_dvd_natCast hξ hξ₀p
   have hbij := bijective_frobeniusModPow_quotient hξ hξ₀p
@@ -783,15 +781,16 @@ private theorem toTiltHom_surjective (hξ : ξ.IsPrimitive) :
       ((frobeniusEquiv (PreTilt A₀ p) p).symm^[n]) (g a) =
         g ((iterateFrobeniusEquiv P.plus p n).symm a) := by
     apply (iterateFrobeniusEquiv (PreTilt A₀ p) p n).injective
-    rw [iterateFrobeniusEquiv_def, iterate_frobeniusEquiv_symm_pow, iterateFrobeniusEquiv_def,
+    rw [iterateFrobeniusEquiv_def, iterate_frobeniusEquiv_symm_pow_p_pow, iterateFrobeniusEquiv_def,
       ← map_pow, iterateFrobeniusEquiv_symm_pow]
   -- Surjectivity on elements whose coordinates all lie in `untiltPlus`.
   have hsurj_plus : ∀ y : uniformTilt p A, (∀ n, uniformTilt.coeff p A n y ∈ untiltPlus p P J) →
       ∃ a : P.plus, toTiltHom hξ a = y := by
     intro y hy
-    let u : ℕ → A₀ := fun n ↦ (quotientEquivPlus hξ).symm ⟨uniformTilt.coeff p A n y, hy n⟩
+    let u : ℕ → A₀ := fun n ↦ (quotientEquivUntiltPlus hξ).symm ⟨uniformTilt.coeff p A n y, hy n⟩
     have hu_map (n : ℕ) : algebraMap A₀ A (u n) = uniformTilt.coeff p A n y := by
-      rw [← coe_quotientEquivPlus_apply hξ (u n), (quotientEquivPlus hξ).apply_symm_apply]
+      rw [← coe_quotientEquivUntiltPlus_apply hξ (u n),
+        (quotientEquivUntiltPlus hξ).apply_symm_apply]
     have hu_pow (n : ℕ) : u (n + 1) ^ p = u n := by
       apply algebraMap_injective hξ
       rw [map_pow, hu_map, hu_map, uniformTilt.coeff_pow_p]
@@ -821,7 +820,8 @@ private theorem toTiltHom_surjective (hξ : ξ.IsPrimitive) :
     have hu_eq : Ideal.Quotient.mk J (teichmuller p ((iterateFrobeniusEquiv P.plus p n).symm a)) =
         u n := by
       rw [← hg_untilt, ← hg_iter, ha, hzn_untilt]
-    rw [coeff_toTiltHom hξ, ← coe_iterateFrobeniusEquiv_plus_symm, sharp_apply, hu_eq, hu_map]
+    rw [coeff_toTiltHom hξ, ← coe_iterateFrobeniusEquiv_plus_symm, sharpHom_coe, sharp_apply,
+      algebraMap_apply, hu_eq, hu_map]
   -- Arbitrary `y : uniformTilt p A`: clear denominators using `ϖ ^ (k + 1)` and `Away.lean`.
   intro y
   have := isLocalizationAway (J := J) hϖ
@@ -834,7 +834,8 @@ private theorem toTiltHom_surjective (hξ : ξ.IsPrimitive) :
     refine IsPowerBounded.of_pow (pow_ne_zero n hp.out.ne_zero) ?_
     have h0 := uniformTilt.coeff_pow_p_pow (toTiltHom hξ ((ϖ : R) ^ k) * y) 0 n
     rw [zero_add] at h0
-    rw [h0, map_mul, coeff_toTiltHom hξ, iterateFrobeniusEquiv_zero_symm, map_pow, mul_comm]
+    rw [h0, map_mul, coeff_toTiltHom hξ, iterateFrobeniusEquiv_zero_symm, map_pow, mul_comm,
+      sharpHom_coe]
     exact isBounded_untiltPlus.isPowerBounded_of_mem hk
   have hy'_plus (n : ℕ) :
       uniformTilt.coeff p A n (toTiltHom hξ ((ϖ : R) ^ (k + 1)) * y) ∈ untiltPlus p P J := by
@@ -845,7 +846,7 @@ private theorem toTiltHom_surjective (hξ : ξ.IsPrimitive) :
     have hcoeff_ϖ : uniformTilt.coeff p A n (toTiltHom hξ ϖ) =
         algebraMap A₀ A ((((frobeniusEquiv (PreTilt A₀ p) p).symm^[n]) (g ϖ)).untilt) := by
       rw [hg_iter, hg_untilt, coeff_toTiltHom hξ, ← coe_iterateFrobeniusEquiv_plus_symm,
-        sharp_apply]
+        sharpHom_coe, sharp_apply, algebraMap_apply]
     rw [hcoeff_ϖ]
     have hmem := (isPowerBounded_iff_forall_untilt_mul_mem_range (hasBasis_nhds_zero hϖ) hreg
       hroot (Associated.of_eq (hg_untilt ϖ).symm)).mp (hz_pb n) n
@@ -861,7 +862,7 @@ private theorem toTiltHom_surjective (hξ : ξ.IsPrimitive) :
 
 /-- **The tilt of a primitive untilt is `R`** (Scholze, *Étale cohomology of diamonds*,
 Theorem 3.17): `uniformTilt p (untilt p P (Ideal.span {ξ})) ≃+* R`, with inverse
-`x ↦ (sharp (x ^ (1 / p ^ n)))_n`. -/
+`x ↦ (sharpHom (x ^ (1 / p ^ n)))_n`. -/
 noncomputable def tiltEquiv (hξ : ξ.IsPrimitive) :
     letI := t2Space hξ
     letI := completeSpace hξ
@@ -876,7 +877,7 @@ noncomputable def tiltEquiv (hξ : ξ.IsPrimitive) :
     ⟨isTopologicallyNilpotent_natCast hξ⟩
   (RingEquiv.ofBijective (toTiltHom hξ) ⟨toTiltHom_injective hξ, toTiltHom_surjective hξ⟩).symm
 
-/-- The `n`-th coordinate of `(tiltEquiv hξ).symm x` is `sharp (x ^ (1 / p ^ n))`. -/
+/-- The `n`-th coordinate of `(tiltEquiv hξ).symm x` is `sharpHom (x ^ (1 / p ^ n))`. -/
 @[simp]
 theorem coeff_tiltEquiv_symm (hξ : ξ.IsPrimitive) (x : R) (n : ℕ) :
     letI := t2Space hξ
@@ -885,19 +886,19 @@ theorem coeff_tiltEquiv_symm (hξ : ξ.IsPrimitive) (x : R) (n : ℕ) :
     letI : Fact (IsTopologicallyNilpotent (p : untilt p P (Ideal.span {ξ}))) :=
       ⟨isTopologicallyNilpotent_natCast hξ⟩
     uniformTilt.coeff p (untilt p P (Ideal.span {ξ})) n ((tiltEquiv hξ).symm x) =
-      sharp p P (Ideal.span {ξ}) ((iterateFrobeniusEquiv R p n).symm x) :=
+      sharpHom p P (Ideal.span {ξ}) ((iterateFrobeniusEquiv R p n).symm x) :=
   coeff_toTiltFun hξ x n
 
-/-- Under `tiltEquiv`, `untilt.sharp` agrees with the zeroth coordinate of `uniformTilt`. -/
+/-- Under `tiltEquiv`, `untilt.sharpHom` agrees with the zeroth coordinate of `uniformTilt`. -/
 @[simp]
-theorem sharp_tiltEquiv (hξ : ξ.IsPrimitive)
+theorem sharpHom_tiltEquiv (hξ : ξ.IsPrimitive)
     (y : uniformTilt p (untilt p P (Ideal.span {ξ}))) :
     letI := t2Space hξ
     letI := completeSpace hξ
     letI := isUniform hξ
     letI : Fact (IsTopologicallyNilpotent (p : untilt p P (Ideal.span {ξ}))) :=
       ⟨isTopologicallyNilpotent_natCast hξ⟩
-    sharp p P (Ideal.span {ξ}) (tiltEquiv hξ y) =
+    sharpHom p P (Ideal.span {ξ}) (tiltEquiv hξ y) =
       uniformTilt.coeff p (untilt p P (Ideal.span {ξ})) 0 y := by
   have := t2Space hξ
   have := completeSpace hξ
@@ -927,16 +928,16 @@ theorem isHomeomorph_tiltEquiv (hξ : ξ.IsPrimitive) :
     rw [uniformTilt.continuous_iff]
     intro n
     have heq : (fun x : R ↦ uniformTilt.coeff p A n ((tiltEquiv hξ).symm x)) =
-        ⇑(sharp p P J) ∘ ⇑(iterateFrobeniusEquiv R p n).symm :=
+        ⇑(sharpHom p P J) ∘ ⇑(iterateFrobeniusEquiv R p n).symm :=
       funext fun x ↦ coeff_tiltEquiv_symm hξ x n
     rw [heq]
-    exact (continuous_sharp_of_isPrimitive hξ).comp (continuous_iterateFrobeniusEquiv_symm n)
+    exact (continuous_sharpHom_of_isPrimitive hξ).comp (continuous_iterateFrobeniusEquiv_symm n)
   have hcont : Continuous (tiltEquiv hξ) := by
     refine continuous_of_continuousAt_zero (tiltEquiv hξ).toAddMonoidHom ?_
     obtain ⟨ϖ, hϖ⟩ := P.isRingOfIntegralElements.exists_isPseudoUniformizer
     have := IsUniform.of_perfectRing (R := R) p
     let D : PairOfDefinition R := PairOfDefinition.ofIsPseudoUniformizer P.plus
-      P.isRingOfIntegralElements.isOpen P.isRingOfIntegralElements.isBounded hϖ ϖ.2
+      P.isRingOfIntegralElements.isOpen P.isRingOfIntegralElements.isBounded hϖ ϖ.property
     rw [ContinuousAt, map_zero, (hϖ.hasBasis_nhds_zero D).tendsto_right_iff]
     intro n _
     have hV : uniformTilt.coeff p A 0 ⁻¹'
@@ -948,15 +949,15 @@ theorem isHomeomorph_tiltEquiv (hξ : ξ.IsPrimitive) :
     refine Filter.mem_of_superset hV fun y hy ↦ ?_
     obtain ⟨b, hb⟩ := mem_awayNhd.mp hy
     let u := (hϖ.isUnit.pow n).unit
-    have hsharp : sharp p P J (↑u⁻¹ * tiltEquiv hξ y) ∈ untiltPlus p P J := by
-      rw [map_mul, sharp_tiltEquiv hξ y, ← hb, map_mul, map_pow, ← sharp_apply ϖ, ← map_pow,
-        ← mul_assoc, ← map_mul]
+    have hsharp : sharpHom p P J (↑u⁻¹ * tiltEquiv hξ y) ∈ untiltPlus p P J := by
+      rw [map_mul, sharpHom_tiltEquiv hξ y, ← hb, map_mul, map_pow, ← algebraMap_apply,
+        ← sharp_apply _ ϖ, ← sharpHom_coe, ← map_pow, ← mul_assoc, ← map_mul]
       have hu1 : (↑u⁻¹ : R) * (ϖ : R) ^ n = 1 := Units.inv_mul u
       rw [hu1, map_one, one_mul]
       exact mem_untiltPlus.mpr ⟨b, rfl⟩
     refine ⟨↑u⁻¹ * tiltEquiv hξ y, ?_, ?_⟩
     · rw [PairOfDefinition.ofIsPseudoUniformizer_ringOfDefinition]
-      exact (sharp_mem_untiltPlus_iff hξ).mp hsharp
+      exact (sharpHom_mem_untiltPlus_iff hξ).mp hsharp
     · change (u : R) * (↑u⁻¹ * tiltEquiv hξ y) = tiltEquiv hξ y
       rw [← mul_assoc, Units.mul_inv, one_mul]
   exact (Homeomorph.mk (tiltEquiv hξ).toEquiv hcont hcont_symm).isHomeomorph
