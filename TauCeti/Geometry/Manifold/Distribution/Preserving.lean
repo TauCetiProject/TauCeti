@@ -129,14 +129,33 @@ theorem congr_of_eventuallyEq (h : PreservesDistributionAt I D X x) (hXY : X =�
   have h' := h hU hx hV hVD
   rwa [hXY.mlieBracket_vectorField_eq (Filter.EventuallyEq.refl (𝓝 x) V)] at h'
 
+/-- The negative of a vector field preserving `D` at `x` preserves `D` at `x`. -/
+theorem neg (hX : PreservesDistributionAt I D X x) : PreservesDistributionAt I D (-X) x :=
+  fun _ hU hx _ hV hVD ↦ by
+  rw [mlieBracket_neg_left]
+  exact neg_mem (hX hU hx hV hVD)
+
+section Linear
+
+variable [IsManifold I 2 M] [CompleteSpace E]
+
+/-- The sum of two vector fields preserving `D` at `x`, both differentiable at `x`, preserves `D`
+at `x`. -/
+theorem add (hX : PreservesDistributionAt I D X x) (hY : PreservesDistributionAt I D Y x)
+    (hXd : MDiffAt (T% X) x) (hYd : MDiffAt (T% Y) x) :
+    PreservesDistributionAt I D (X + Y) x := fun _ hU hx _ hV hVD ↦ by
+  rw [mlieBracket_add_left hXd hYd]
+  exact add_mem (hX hU hx hV hVD) (hY hU hx hV hVD)
+
 /-- The difference of two vector fields preserving `D` at `x`, both differentiable at `x`,
 preserves `D` at `x`. -/
-theorem sub [IsManifold I 2 M] [CompleteSpace E] (hX : PreservesDistributionAt I D X x)
-    (hY : PreservesDistributionAt I D Y x) (hXd : MDiffAt (T% X) x) (hYd : MDiffAt (T% Y) x) :
-    PreservesDistributionAt I D (X - Y) x := fun _ hU hx _ hV hVD ↦ by
-  rw [sub_eq_add_neg, mlieBracket_add_left hXd (mdifferentiableAt_neg_section hYd),
-    mlieBracket_neg_left, ← sub_eq_add_neg]
-  exact sub_mem (hX hU hx hV hVD) (hY hU hx hV hVD)
+theorem sub (hX : PreservesDistributionAt I D X x) (hY : PreservesDistributionAt I D Y x)
+    (hXd : MDiffAt (T% X) x) (hYd : MDiffAt (T% Y) x) :
+    PreservesDistributionAt I D (X - Y) x := by
+  rw [sub_eq_add_neg]
+  exact hX.add hY.neg hXd (mdifferentiableAt_neg_section hYd)
+
+end Linear
 
 end PreservesDistributionAt
 
@@ -150,9 +169,8 @@ theorem const_smul (hX : PreservesDistribution I D X) (c : 𝕜) :
 
 /-- The negative of a vector field preserving `D` preserves `D`. -/
 theorem neg (hX : PreservesDistribution I D X) : PreservesDistribution I D (-X) :=
-  fun _ hU _ hV hVD x hx ↦ by
-  rw [mlieBracket_neg_left]
-  exact neg_mem (hX hU hV hVD x hx)
+  preservesDistribution_iff_forall_preservesDistributionAt.2 fun x ↦
+    (hX.preservesDistributionAt x).neg
 
 section Linear
 
@@ -161,15 +179,14 @@ variable [IsManifold I 2 M] [CompleteSpace E]
 /-- The sum of two differentiable vector fields preserving `D` preserves `D`. -/
 theorem add (hX : PreservesDistribution I D X) (hY : PreservesDistribution I D Y)
     (hXd : MDiff (T% X)) (hYd : MDiff (T% Y)) : PreservesDistribution I D (X + Y) :=
-  fun _ hU _ hV hVD x hx ↦ by
-  rw [mlieBracket_add_left (hXd x) (hYd x)]
-  exact add_mem (hX hU hV hVD x hx) (hY hU hV hVD x hx)
+  preservesDistribution_iff_forall_preservesDistributionAt.2 fun x ↦
+    (hX.preservesDistributionAt x).add (hY.preservesDistributionAt x) (hXd x) (hYd x)
 
 /-- The difference of two differentiable vector fields preserving `D` preserves `D`. -/
 theorem sub (hX : PreservesDistribution I D X) (hY : PreservesDistribution I D Y)
-    (hXd : MDiff (T% X)) (hYd : MDiff (T% Y)) : PreservesDistribution I D (X - Y) := by
-  rw [sub_eq_add_neg]
-  exact hX.add hY.neg hXd fun x ↦ mdifferentiableAt_neg_section (hYd x)
+    (hXd : MDiff (T% X)) (hYd : MDiff (T% Y)) : PreservesDistribution I D (X - Y) :=
+  preservesDistribution_iff_forall_preservesDistributionAt.2 fun x ↦
+    (hX.preservesDistributionAt x).sub (hY.preservesDistributionAt x) (hXd x) (hYd x)
 
 end Linear
 

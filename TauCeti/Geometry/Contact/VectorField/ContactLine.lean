@@ -103,13 +103,7 @@ private theorem exists_local [T2Space M] (hD : IsContactDistribution I ∞ D)
     (hU₀.mem_nhds hx₀)
   have hβ : IsSmoothForm I ∞ (fun y ↦ b y • α y) := by
     rw [isSmoothForm_def]
-    intro y
-    by_cases hy : y ∈ U₀
-    · exact (b.contMDiff y).smul_section ((hα y hy).contMDiffAt (hU₀.mem_nhds hy))
-    · refine ((IsSmoothForm.zero (I := I) (M := M) (F := ℝ) (k := 1) ∞).contMDiff y)
-        |>.congr_of_eventuallyEq ?_
-      filter_upwards [notMem_tsupport_iff_eventuallyEq.1 fun h ↦ hy (hb h)] with z hz
-      simp [hz]
+    exact b.contMDiff.contMDiffOn.smul_section_of_tsupport hU₀ hb hα
   let β : SmoothForm I M ℝ 1 := ⟨_, hβ.mem_smoothBundleForms⟩
   -- On the open set `U` where `b = 1` near each point, `β` agrees with `α` near each point.
   set U := U₀ ∩ {y | ∀ᶠ z in 𝓝 y, b z = 1}
@@ -141,10 +135,9 @@ private theorem exists_local [T2Space M] (hD : IsContactDistribution I ∞ D)
     filter_upwards [hU.mem_nhds hx, hU'.mem_nhds hxU'] with y hy hy'
     rw [hker y hy]
     exact hWD y hy'
-  · rw [← hker x hx, SmoothForm.mem_kerDistribution, ← SmoothForm.degreeOneEquiv_apply_apply_vec,
-      map_sub, SmoothForm.degreeOneEquiv_apply_apply_vec,
-      SmoothForm.degreeOneEquiv_apply_apply_vec,
-      SmoothForm.apply_contactHamiltonianVectorField_of_isContactFormAt (hcontact x hx), sub_self]
+  · rw [← hker x hx]
+    exact SmoothForm.sub_mem_kerDistribution_iff.2
+      (SmoothForm.apply_contactHamiltonianVectorField_of_isContactFormAt (hcontact x hx) _)
 
 /-! ### Every section of the contact line comes from a contact vector field -/
 
@@ -319,10 +312,8 @@ theorem contactVectorField_kerDistribution (hV : CMDiff ∞ (T% V)) :
   have hXD := (hα.isContactHamiltonianVectorField_contactHamiltonianVectorField
     fun y ↦ α.val y ![V y]).preservesDistribution hXd
   have hXV (x : M) : α.contactHamiltonianVectorField (fun y ↦ α.val y ![V y]) x - V x ∈
-      α.kerDistribution x := by
-    rw [mem_kerDistribution, ← degreeOneEquiv_apply_apply_vec, map_sub,
-      degreeOneEquiv_apply_apply_vec, degreeOneEquiv_apply_apply_vec,
-      hα.apply_contactHamiltonianVectorField, sub_self]
+      α.kerDistribution x :=
+    sub_mem_kerDistribution_iff.2 (hα.apply_contactHamiltonianVectorField _ x)
   -- The contact Hamiltonian vector field is a solution, and solutions are unique.
   obtain ⟨hs, hp, hsub⟩ := contactVectorField_spec_of_exists ⟨_, hXs, hXD, hXV⟩
   refine hp.eq_of_forall_mkQ_eq (hα.isContactDistribution_kerDistribution (n := ∞)) hXD
