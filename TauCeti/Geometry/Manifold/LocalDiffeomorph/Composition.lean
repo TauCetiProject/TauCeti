@@ -38,7 +38,11 @@ apply to `e ∘ R`.
 * `ContMDiffOn.of_comp_isLocalDiffeomorph`: on-set cancellation.
 * `ContMDiff.of_comp_isLocalDiffeomorph`: global cancellation.
 * `IsLocalDiffeomorphAt.contMDiffAt_comp_iff`: pointwise cancellation on the source side.
-* `IsLocalDiffeomorphAt.mdifferentiableAt_comp_iff`: the same for differentiability.
+* `IsLocalDiffeomorphAt.mdifferentiableAt_comp_iff`, `IsLocalDiffeomorphAt.mfderiv_comp`,
+  `IsLocalDiffeomorphAt.isInvertible_mfderiv_comp_iff`: differentiability, chain rule, and
+  invertibility of the manifold derivative under precomposition with a local diffeomorphism.
+* `IsLocalDiffeomorphAt.ker_mfderiv_comp`: postcomposing with a local diffeomorphism does not
+  change the kernel of the differential.
 * `IsLocalDiffeomorph.contMDiff_comp_iff`: global cancellation on the source side, for a
   surjective local diffeomorphism.
 * `IsLocalDiffeomorphAt.contMDiffAt_comp_prodMap_iff`,
@@ -114,6 +118,38 @@ theorem _root_.IsLocalDiffeomorphAt.mdifferentiableAt_comp_iff {x : M} {g : B �
     hg.comp_of_eq (p x) (hp.mdifferentiableAt_localInverse hn)
       (hp.localInverse_left_inv hp.localInverse_mem_target)
   exact hcomp.congr_of_eventuallyEq (hp.localInverse_eventuallyEq_right.fun_comp g).symm
+
+/-- **Unconditional chain rule on the right for a local diffeomorphism.** Precomposing an arbitrary
+map `g` with a `C^n` local diffeomorphism `p` at `x` (`n ≠ 0`) composes its manifold derivative with
+`mfderiv p`: where `g` is not differentiable at `p x`, neither is `g ∘ p` at `x`, and both sides
+vanish. -/
+theorem _root_.IsLocalDiffeomorphAt.mfderiv_comp {x : M}
+    (hp : IsLocalDiffeomorphAt I J n p x) (hn : n ≠ 0) (g : B → N) :
+    mfderiv I I' (g ∘ p) x = (mfderiv J I' g (p x)).comp (mfderiv I J p x) := by
+  by_cases hg : MDifferentiableAt J I' g (p x)
+  · exact _root_.mfderiv_comp x hg (hp.mdifferentiableAt hn)
+  · have hgp : ¬MDifferentiableAt I I' (g ∘ p) x := (hp.mdifferentiableAt_comp_iff hn).not.mpr hg
+    rw [mfderiv_zero_of_not_mdifferentiableAt hg, mfderiv_zero_of_not_mdifferentiableAt hgp,
+      ContinuousLinearMap.zero_comp]
+
+/-- Precomposing an arbitrary map `g` with a `C^n` local diffeomorphism `p` at `x` (`n ≠ 0`)
+preserves invertibility of the manifold derivative. -/
+theorem _root_.IsLocalDiffeomorphAt.isInvertible_mfderiv_comp_iff {x : M} {g : B → N}
+    (hp : IsLocalDiffeomorphAt I J n p x) (hn : n ≠ 0) :
+    (mfderiv I I' (g ∘ p) x).IsInvertible ↔ (mfderiv J I' g (p x)).IsInvertible := by
+  rw [hp.mfderiv_comp hn, ← hp.mfderivToContinuousLinearEquiv_coe hn,
+    ContinuousLinearMap.isInvertible_comp_equiv]
+
+/-- Postcomposing a map differentiable at `y` with a map that is a `C^n` local diffeomorphism at
+its image, `n ≠ 0`, does not change the kernel of the differential at `y`. -/
+theorem _root_.IsLocalDiffeomorphAt.ker_mfderiv_comp {y : N}
+    (hp : IsLocalDiffeomorphAt I J n p (f y)) (hn : n ≠ 0) (hf : MDifferentiableAt I' I f y) :
+    (mfderiv I' J (p ∘ f) y).ker = (mfderiv I' I f y).ker := by
+  ext v
+  rw [_root_.mfderiv_comp y (hp.mdifferentiableAt hn) hf]
+  simp only [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, ContinuousLinearMap.comp_apply]
+  rw [← hp.mfderivToContinuousLinearEquiv_coe hn, ContinuousLinearEquiv.coe_coe,
+    ContinuousLinearEquiv.map_eq_zero_iff]
 
 /-- If `p` is a surjective `C^n` local diffeomorphism and `m ≤ n`, a map `g` out of its target is
 `C^m` exactly when `g ∘ p` is `C^m`. -/

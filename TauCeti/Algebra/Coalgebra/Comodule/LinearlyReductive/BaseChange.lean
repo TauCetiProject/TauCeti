@@ -145,7 +145,7 @@ theorem IsCompletelyReducible.of_baseChange [Nontrivial A]
     | add x y hx hy =>
       rw [map_add, map_add, map_add]
       exact add_mem hx hy
-    | tmul a w => simpa using W.toSubmodule.smul_mem (l a) w.2
+    | tmul a w => simpa using W.toSubmodule.smul_mem (l a) w.property
   refine ⟨descendHom A l (Subcomodule.projection WA QA hQA), fun v ↦ ?_, fun w hw ↦ ?_⟩
   · rw [descendHom_apply]
     exact hWA _ (Subcomodule.projection_apply_mem hQA _)

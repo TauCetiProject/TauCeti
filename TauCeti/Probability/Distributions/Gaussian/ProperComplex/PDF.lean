@@ -235,6 +235,43 @@ theorem integrable_properComplexGaussianPDFReal (m : ι → ℂ) (C : Matrix ι 
     rw [heq]
     exact integrable_zero _ _ _
 
+/-- The unit-covariance proper complex Gaussian density is the exponential of the negative
+sum of squared distances from the mean, divided by `π ^ card ι`. -/
+theorem properComplexGaussianPDFReal_one (m z : ι → ℂ) :
+    properComplexGaussianPDFReal m 1 z =
+      exp (-(∑ i, ‖z i - m i‖ ^ 2)) / π ^ Fintype.card ι := by
+  have hq (w : ι → ℂ) : (star w ⬝ᵥ w).re = ∑ i, ‖w i‖ ^ 2 := by
+    simp [dotProduct, Complex.conj_mul', ← Complex.ofReal_pow]
+  simp only [properComplexGaussianPDFReal_of_posDef _ _ Matrix.PosDef.one, inv_one,
+    Matrix.one_mulVec, Matrix.det_one, Complex.one_re, mul_one, hq,
+    Pi.sub_apply]
+
+/-- The extended unit-covariance density is the nonnegative lift of the exponential
+of the negative sum of squared distances from the mean, divided by `π ^ card ι`. -/
+theorem properComplexGaussianPDF_one (m z : ι → ℂ) :
+    properComplexGaussianPDF m 1 z =
+      ENNReal.ofReal (exp (-(∑ i, ‖z i - m i‖ ^ 2)) / π ^ Fintype.card ι) := by
+  simp only [properComplexGaussianPDF_eq_ofReal, properComplexGaussianPDFReal_one]
+
+/-- The scalar standard proper complex Gaussian has density `π⁻¹ exp(-‖z‖²)` with respect
+to planar Lebesgue measure. -/
+theorem properComplexGaussianScalar_eq_withDensity :
+    properComplexGaussianScalar =
+      volume.withDensity (fun z : ℂ ↦ ENNReal.ofReal (exp (-‖z‖ ^ 2) / π)) := by
+  let e := MeasurableEquiv.funUnique Unit ℂ
+  rw [properComplexGaussianScalar_def,
+    properComplexGaussianMeasure_eq_withDensity _ Matrix.PosDef.one]
+  have he_fun : (fun z : Unit → ℂ ↦ z ()) = e := by
+    simp [e]
+  rw [he_fun, e.map_withDensity, (volume_preserving_funUnique Unit ℂ).map_eq]
+  congr 1
+  funext z
+  simp [properComplexGaussianPDF_one, e]
+
+instance : NullSingletonClass properComplexGaussianScalar := by
+  rw [properComplexGaussianScalar_eq_withDensity]
+  infer_instance
+
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {Z : Ω → ι → ℂ} {m : ι → ℂ}
 
 /-- A random vector with a nondegenerate proper complex Gaussian law has a density. -/

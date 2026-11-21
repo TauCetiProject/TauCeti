@@ -111,7 +111,7 @@ theorem skewZigzagMk_vertexIdempotent_mul_skewZigzagVolume {i : V} (e : {j : V /
 theorem skewZigzagMk_vertexIdempotent_mul_skewZigzagVolume_of_ne {v i : V}
     (e : {j : V // G.Adj i j}) (h : v ≠ i) :
     skewZigzagMk k G c (vertexIdempotent k (vertex G v)) * skewZigzagVolume k G c e = 0 := by
-  rw [skewZigzagVolume_def, ← map_mul, vertexIdempotent_mul_backtrackElem_of_ne _ _ e.2 h,
+  rw [skewZigzagVolume_def, ← map_mul, vertexIdempotent_mul_backtrackElem_of_ne _ _ e.property h,
     map_zero]
 
 /-- The vertex idempotent at the base of a volume class is a right unit for it. -/
@@ -126,7 +126,7 @@ theorem skewZigzagVolume_mul_skewZigzagMk_vertexIdempotent {i : V} (e : {j : V /
 theorem skewZigzagVolume_mul_skewZigzagMk_vertexIdempotent_of_ne {i v : V}
     (e : {j : V // G.Adj i j}) (h : v ≠ i) :
     skewZigzagVolume k G c e * skewZigzagMk k G c (vertexIdempotent k (vertex G v)) = 0 := by
-  rw [skewZigzagVolume_def, ← map_mul, backtrackElem_mul_vertexIdempotent_of_ne _ _ e.2 h,
+  rw [skewZigzagVolume_def, ← map_mul, backtrackElem_mul_vertexIdempotent_of_ne _ _ e.property h,
     map_zero]
 
 /-! ### Products of two arrows -/

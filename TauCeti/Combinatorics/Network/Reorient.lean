@@ -80,7 +80,7 @@ variable [Neg K]
 /-- Transport an assignment across a reorientation, negating the value on every reversed arrow. -/
 def reorientAssignment (σ : ∀ ⦃x y : V⦄, Q x y → Bool) (f : Assignment Q K) :
     Assignment (ReorientedHom Q σ) K :=
-  fun _ _ e ↦ Sum.elim (fun e ↦ f e.1) (fun e ↦ -f e.1) e
+  fun _ _ e ↦ Sum.elim (fun e ↦ f e.val) (fun e ↦ -f e.val) e
 
 /-- Recover an assignment on the original arrows from an assignment on the reoriented arrows. -/
 def unreorientAssignment (σ : ∀ ⦃x y : V⦄, Q x y → Bool)
@@ -115,12 +115,12 @@ theorem unreorientAssignment_flip (σ : ∀ ⦃x y : V⦄, Q x y → Bool)
 /-- The lower bound after reorientation: a reversed interval `[l, u]` has lower endpoint `-u`. -/
 def reorientLower (σ : ∀ ⦃x y : V⦄, Q x y → Bool) (lo hi : Assignment Q K) :
     Assignment (ReorientedHom Q σ) K :=
-  fun _ _ e ↦ Sum.elim (fun e ↦ lo e.1) (fun e ↦ -hi e.1) e
+  fun _ _ e ↦ Sum.elim (fun e ↦ lo e.val) (fun e ↦ -hi e.val) e
 
 /-- The upper bound after reorientation: a reversed interval `[l, u]` has upper endpoint `-l`. -/
 def reorientUpper (σ : ∀ ⦃x y : V⦄, Q x y → Bool) (lo hi : Assignment Q K) :
     Assignment (ReorientedHom Q σ) K :=
-  fun _ _ e ↦ Sum.elim (fun e ↦ hi e.1) (fun e ↦ -lo e.1) e
+  fun _ _ e ↦ Sum.elim (fun e ↦ hi e.val) (fun e ↦ -lo e.val) e
 
 @[simp]
 theorem reorientLower_keep (σ : ∀ ⦃x y : V⦄, Q x y → Bool) (lo hi : Assignment Q K)
@@ -168,8 +168,8 @@ theorem reorientAssignment_unreorientAssignment (σ : ∀ ⦃x y : V⦄, Q x y �
     reorientAssignment σ (unreorientAssignment σ f) = f := by
   funext x y e
   obtain e | e := e
-  · simp [unreorientAssignment, reorientAssignment, ReorientedHom.keep, e.2]
-  · simp [unreorientAssignment, reorientAssignment, ReorientedHom.flip, e.2]
+  · simp [unreorientAssignment, reorientAssignment, ReorientedHom.keep, e.property]
+  · simp [unreorientAssignment, reorientAssignment, ReorientedHom.flip, e.property]
 
 end InvolutiveNeg
 
@@ -230,11 +230,11 @@ theorem reorientAssignment_mem_Icc_iff (σ : ∀ ⦃x y : V⦄, Q x y → Bool)
   · intro hf
     constructor <;> intro x y e
     · obtain e | e := e
-      · exact hf.1 _ _ e.1
-      · exact neg_le_neg_iff.mpr (hf.2 _ _ e.1)
+      · exact hf.1 _ _ e.val
+      · exact neg_le_neg_iff.mpr (hf.2 _ _ e.val)
     · obtain e | e := e
-      · exact hf.2 _ _ e.1
-      · exact neg_le_neg_iff.mpr (hf.1 _ _ e.1)
+      · exact hf.2 _ _ e.val
+      · exact neg_le_neg_iff.mpr (hf.1 _ _ e.val)
 
 end Order
 
@@ -247,15 +247,15 @@ variable [Fintype V] [∀ x y, Fintype (Q x y)]
 theorem excessAt_reorientAssignment (σ : ∀ ⦃x y : V⦄, Q x y → Bool)
     (f : Assignment Q K) (v : V) : excessAt (reorientAssignment σ f) v = excessAt f v := by
   have hin :
-      (∑ x, ∑ e : {e : Q x v // ¬ σ e}, f e.1) +
-          ∑ x, ∑ e : {e : Q x v // σ e}, f e.1 = ∑ x, ∑ e : Q x v, f e := by
+      (∑ x, ∑ e : {e : Q x v // ¬ σ e}, f e.val) +
+          ∑ x, ∑ e : {e : Q x v // σ e}, f e.val = ∑ x, ∑ e : Q x v, f e := by
     rw [← Finset.sum_add_distrib]
     exact Finset.sum_congr rfl fun x _ ↦ by
       rw [add_comm]
       exact Fintype.sum_subtype_add_sum_subtype _ _
   have hout :
-      (∑ y, ∑ e : {e : Q v y // ¬ σ e}, f e.1) +
-          ∑ y, ∑ e : {e : Q v y // σ e}, f e.1 = ∑ y, ∑ e : Q v y, f e := by
+      (∑ y, ∑ e : {e : Q v y // ¬ σ e}, f e.val) +
+          ∑ y, ∑ e : {e : Q v y // σ e}, f e.val = ∑ y, ∑ e : Q v y, f e := by
     rw [← Finset.sum_add_distrib]
     exact Finset.sum_congr rfl fun y _ ↦ by
       rw [add_comm]
@@ -403,8 +403,8 @@ def reorient (N : Network K V) (σ : ∀ ⦃x y : V⦄, N.Hom x y → Bool) : Ne
   upper := reorientUpper σ N.lower N.upper
   lower_le_upper e := by
     obtain e | e := e
-    · exact N.lower_le_upper e.1
-    · exact neg_le_neg_iff.mpr (N.lower_le_upper e.1)
+    · exact N.lower_le_upper e.val
+    · exact neg_le_neg_iff.mpr (N.lower_le_upper e.val)
 
 @[simp]
 theorem reorient_lower_keep (N : Network K V) (σ : ∀ ⦃x y : V⦄, N.Hom x y → Bool)

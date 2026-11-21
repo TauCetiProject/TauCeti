@@ -46,19 +46,19 @@ variable {C : Type u} [Category.{v} C] (x : C)
 /-- Reindexing a string of arrows under x along `f` reindexes its string of arrows starting at x
 along the extension `SimplexCategory.vertexJoin.map f` of `f` fixing the initial vertex. -/
 lemma underEquiv_symm_map_coe {m n : ℕ} (f : ⦋m⦌ ⟶ ⦋n⦌) (s : ComposableArrows (Under x) n) :
-    ((ComposableArrows.underEquiv x m).symm ((nerve (Under x)).map f.op s)).1 =
+    ((ComposableArrows.underEquiv x m).symm ((nerve (Under x)).map f.op s)).val =
       (nerve C).map (SimplexCategory.vertexJoin.map f).op
-        ((ComposableArrows.underEquiv x n).symm s).1 := by
+        ((ComposableArrows.underEquiv x n).symm s).val := by
   symm
   -- Both strings drop their first arrow to the reindexing along f of the string s: dropping the
   -- first arrow is the face `δ 0`, and the nerve reindexes strings by whiskering.
   have h₁ : ((nerve C).map (SimplexCategory.vertexJoin.map f).op
-      ((ComposableArrows.underEquiv x n).symm s).1).δ₀ =
+      ((ComposableArrows.underEquiv x n).symm s).val).δ₀ =
       (nerve C).map (SimplexCategory.δ 0 ≫ SimplexCategory.vertexJoin.map f).op
-        ((ComposableArrows.underEquiv x n).symm s).1 :=
+        ((ComposableArrows.underEquiv x n).symm s).val :=
     nerve.δ₀_eq.symm.trans (Functor.map_comp_apply _ _ _ _).symm
   have h₂ : (nerve C).map (f ≫ SimplexCategory.δ 0).op
-      ((ComposableArrows.underEquiv x n).symm s).1 = (nerve C).map f.op (s ⋙ Under.forget x) :=
+      ((ComposableArrows.underEquiv x n).symm s).val = (nerve C).map f.op (s ⋙ Under.forget x) :=
     (Functor.map_comp_apply _ _ _ _).trans
       (congrArg _ (nerve.δ₀_eq.trans (ComposableArrows.precomp_δ₀ _ _)))
   have h₃ : (nerve C).map f.op (s ⋙ Under.forget x) =
@@ -66,15 +66,15 @@ lemma underEquiv_symm_map_coe {m n : ℕ} (f : ⦋m⦌ ⟶ ⦋n⦌) (s : Composa
     rw [nerve_map, nerve_map]
     exact Functor.assoc _ s (Under.forget x)
   refine ComposableArrows.ext_succ_of_totalArrow (h₁.trans ((congrArg (fun g : ⦋m⦌ ⟶ ⦋n + 1⦌ ↦
-      (nerve C).map g.op ((ComposableArrows.underEquiv x n).symm s).1)
+      (nerve C).map g.op ((ComposableArrows.underEquiv x n).symm s).val)
       (SimplexCategory.δ_zero_comp_vertexJoin_map f)).trans (h₂.trans (h₃.trans
         (ComposableArrows.precomp_δ₀ _ _).symm)))) ?_
   -- The first arrow of the reindexed string runs from the vertex 0 to the vertex f 0 + 1.
   -- Rewriting the indices along `vertexJoin_map_zero` and `vertexJoin_map_succ` changes the
   -- dependent proof of `0 ≤ f 0 + 1`, so `key` transports along them by `subst`.
   have key (i j : Fin (n + 2)) (hij : i ≤ j) (hi : i = 0) (hj : j = (f.toOrderHom 0).succ) :
-      ((ComposableArrows.underEquiv x n).symm s).1.totalArrow i j hij =
-        ((ComposableArrows.underEquiv x n).symm s).1.totalArrow 0 (f.toOrderHom 0).succ
+      ((ComposableArrows.underEquiv x n).symm s).val.totalArrow i j hij =
+        ((ComposableArrows.underEquiv x n).symm s).val.totalArrow 0 (f.toOrderHom 0).succ
           (Fin.zero_le _) := by
     subst hi hj
     rfl
@@ -92,7 +92,7 @@ prepending the structure arrow of its first object, read through `Δ[0] ⋆ Δ[n
 private noncomputable def cone (n : ℕ) (s : ComposableArrows (Under x) n) :
     join Δ[0] Δ[n] ⟶ nerve C :=
   (join.coneIso.{max u v} n).hom ≫
-    SSet.yonedaEquiv.symm ((ComposableArrows.underEquiv x n).symm s).1
+    SSet.yonedaEquiv.symm ((ComposableArrows.underEquiv x n).symm s).val
 
 -- The vertex `nerveEquiv.symm x : ComposableArrows C 0` is a 0-simplex of `nerve C` only after
 -- unfolding `nerve`, so `rw` rejects goals mentioning the coslice under it as ill-typed at
@@ -105,7 +105,7 @@ private lemma cone_inl (n : ℕ) (s : ComposableArrows (Under x) n) :
   -- The vertex 0 of the prepended string is x.
   exact (SSet.yonedaEquiv_symm_naturality_left _ _).trans
     ((congrArg _ ((nerve.map_const _ 0).trans (congrArg nerveEquiv.symm
-      ((ComposableArrows.underEquiv x n).symm s).2))).trans (yonedaEquiv_symm_zero _))
+      ((ComposableArrows.underEquiv x n).symm s).property))).trans (yonedaEquiv_symm_zero _))
 
 private lemma cone_inr (n : ℕ) (s : ComposableArrows (Under x) n) :
     join.inr Δ[0] Δ[n] ≫ cone x n s =
@@ -128,18 +128,18 @@ with cone point x, through `Δ[0] ⋆ Δ[n] ≅ Δ[n + 1]`. -/
 private noncomputable def coneSimplex {n : ℕ}
     (τ : {τ : join Δ[0] Δ[n] ⟶ nerve C // join.inl _ _ ≫ τ = const (nerveEquiv.symm x)}) :
     {t : ComposableArrows C (n + 1) // t.obj 0 = x} :=
-  ⟨SSet.yonedaEquiv ((join.coneIso n).inv ≫ τ.1),
+  ⟨SSet.yonedaEquiv ((join.coneIso n).inv ≫ τ.val),
     -- The vertex 0 of the simplex is the cone point of τ.
     nerveEquiv.symm.injective ((nerve.map_const _ 0).symm.trans
       (((SSet.yonedaEquiv_naturality _ _).trans (congrArg SSet.yonedaEquiv
-        ((join.const_zero_comp_coneIso_inv_assoc τ.1).trans τ.2))).trans
+        ((join.const_zero_comp_coneIso_inv_assoc τ.val).trans τ.property))).trans
           (SSet.yonedaEquiv_const _)))⟩
 
 private lemma cone_coneSimplex {n : ℕ}
     (τ : {τ : join Δ[0] Δ[n] ⟶ nerve C // join.inl _ _ ≫ τ = const (nerveEquiv.symm x)}) :
-    cone x n (ComposableArrows.underEquiv x n (coneSimplex x τ)) = τ.1 :=
+    cone x n (ComposableArrows.underEquiv x n (coneSimplex x τ)) = τ.val :=
   (congrArg (fun t : {t : ComposableArrows C (n + 1) // t.obj 0 = x} ↦
-    (join.coneIso n).hom ≫ (SSet.yonedaEquiv (X := nerve C)).symm t.1)
+    (join.coneIso n).hom ≫ (SSet.yonedaEquiv (X := nerve C)).symm t.val)
     (Equiv.symm_apply_apply (ComposableArrows.underEquiv x n) (coneSimplex x τ))).trans
       ((congrArg _ (SSet.yonedaEquiv.symm_apply_apply _)).trans (Iso.hom_inv_id_assoc _ _))
 
@@ -175,17 +175,17 @@ noncomputable def cosliceIso :
 /-- The coslice simplex of a string of n arrows under x is the string of n + 1 arrows prepending
 its first structure arrow, read through `Δ[0] ⋆ Δ[n] ≅ Δ[n + 1]`. -/
 lemma objEquiv_cosliceIso_hom_app_coe {n : ℕ} (s : ComposableArrows (Under x) n) :
-    (coslice.objEquiv ((cosliceIso x).hom.app (op ⦋n⦌) s)).1 =
+    (coslice.objEquiv ((cosliceIso x).hom.app (op ⦋n⦌) s)).val =
       (join.coneIso n).hom ≫
-        SSet.yonedaEquiv.symm ((ComposableArrows.underEquiv x n).symm s).1 :=
+        SSet.yonedaEquiv.symm ((ComposableArrows.underEquiv x n).symm s).val :=
   congrArg Subtype.val (coslice.objEquiv.apply_symm_apply _)
 
 /-- The string of n + 1 arrows starting at x underlying the inverse image of a coslice simplex
 `τ : Δ[0] ⋆ Δ[n] ⟶ nerve C` is τ read through `Δ[n + 1] ≅ Δ[0] ⋆ Δ[n]`. -/
 lemma underEquiv_symm_cosliceIso_inv_app_coe {n : ℕ}
     (τ : (coslice (const (nerveEquiv.symm x) : Δ[0] ⟶ nerve C)).obj (op ⦋n⦌)) :
-    ((ComposableArrows.underEquiv x n).symm ((cosliceIso x).inv.app (op ⦋n⦌) τ)).1 =
-      SSet.yonedaEquiv ((join.coneIso n).inv ≫ (coslice.objEquiv τ).1) :=
+    ((ComposableArrows.underEquiv x n).symm ((cosliceIso x).inv.app (op ⦋n⦌) τ)).val =
+      SSet.yonedaEquiv ((join.coneIso n).inv ≫ (coslice.objEquiv τ).val) :=
   congrArg Subtype.val ((ComposableArrows.underEquiv x n).symm_apply_apply _)
 
 /-- Restricting `(cosliceIso x).hom.app n s` to the base simplex along `join.inr` forgets the
@@ -194,8 +194,8 @@ structure arrows of `s`. This is the `SSet.coslice.π_app` normal form of its pr
 lemma yonedaEquiv_inr_comp_objEquiv_cosliceIso_hom_app_coe (n : SimplexCategoryᵒᵖ)
     (s : (nerve (Under x)).obj n) :
     SSet.yonedaEquiv (join.inr Δ[0] (stdSimplex.obj n.unop) ≫
-      (coslice.objEquiv ((cosliceIso x).hom.app n s)).1) = s ⋙ Under.forget x :=
-  (congrArg (fun τ ↦ SSet.yonedaEquiv (join.inr _ _ ≫ τ.1))
+      (coslice.objEquiv ((cosliceIso x).hom.app n s)).val) = s ⋙ Under.forget x :=
+  (congrArg (fun τ ↦ SSet.yonedaEquiv (join.inr _ _ ≫ τ.val))
     (coslice.objEquiv.apply_symm_apply ⟨cone x n.unop.len s, cone_inl x _ s⟩)).trans
     ((congrArg SSet.yonedaEquiv (cone_inr x _ s)).trans (Equiv.apply_symm_apply _ _))
 
@@ -204,7 +204,7 @@ lemma yonedaEquiv_inr_comp_objEquiv_cosliceIso_hom_app_coe (n : SimplexCategory�
 @[simp]
 lemma homEquiv_cosliceIso_hom_coe_app_inr_app (n : SimplexCategoryᵒᵖ)
     (s : (nerve (Under x)).obj n) :
-    (coslice.homEquiv (cosliceIso x).hom).1.app n ((join.inr Δ[0] (nerve (Under x))).app n s) =
+    (coslice.homEquiv (cosliceIso x).hom).val.app n ((join.inr Δ[0] (nerve (Under x))).app n s) =
       s ⋙ Under.forget x :=
   (congrArg (fun φ ↦ φ.app n s) (coslice.comp_π (cosliceIso x).hom)).symm.trans
     ((coslice.π_app _).trans (yonedaEquiv_inr_comp_objEquiv_cosliceIso_hom_app_coe x n s))
@@ -215,17 +215,17 @@ the base simplex along `join.inr`, the `SSet.coslice.π_app` normal form of the 
 lemma cosliceIso_inv_app_comp_forget (n : SimplexCategoryᵒᵖ)
     (τ : (coslice (const (nerveEquiv.symm x) : Δ[0] ⟶ nerve C)).obj n) :
     (cosliceIso x).inv.app n τ ⋙ Under.forget x =
-      SSet.yonedaEquiv (join.inr Δ[0] (stdSimplex.obj n.unop) ≫ (coslice.objEquiv τ).1) := by
+      SSet.yonedaEquiv (join.inr Δ[0] (stdSimplex.obj n.unop) ≫ (coslice.objEquiv τ).val) := by
   have e : (cosliceIso x).hom.app n ((cosliceIso x).inv.app n τ) = τ :=
     by simp
   exact (yonedaEquiv_inr_comp_objEquiv_cosliceIso_hom_app_coe x n _).symm.trans
     (congrArg (fun σ : (coslice (const (nerveEquiv.symm x) : Δ[0] ⟶ nerve C)).obj n ↦
-      SSet.yonedaEquiv (join.inr Δ[0] (stdSimplex.obj n.unop) ≫ (coslice.objEquiv σ).1)) e)
+      SSet.yonedaEquiv (join.inr Δ[0] (stdSimplex.obj n.unop) ≫ (coslice.objEquiv σ).val)) e)
 
 /-- The vertex given by an object `a : Under x` retains its structure arrow in the coslice. -/
 lemma objEquiv_cosliceIso_hom_app_nerveEquiv_symm_coe (a : Under x) :
     (coslice.objEquiv ((cosliceIso x).hom.app (op ⦋0⦌)
-      (nerveEquiv.symm a))).1 =
+      (nerveEquiv.symm a))).val =
         (join.coneIso 0).hom ≫ SSet.yonedaEquiv.symm (ComposableArrows.mk₁ a.hom) :=
   -- `nerveEquiv.symm a` is `ComposableArrows.mk₀ a` by definition of `nerveEquiv`.
   (objEquiv_cosliceIso_hom_app_coe x _).trans
