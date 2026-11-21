@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Holder.CompLinear
 public import TauCeti.Analysis.Holder.Inclusion
 public import TauCeti.Analysis.Holder.LowOrder
-public import TauCeti.Analysis.Holder.Zygmund
+public import TauCeti.Analysis.Holder.Zygmund.Basic
 public import TauCeti.Analysis.Sobolev.BesselPotential.Besov
 public import TauCeti.Analysis.Sobolev.BesselPotential.NormEquivalence
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp

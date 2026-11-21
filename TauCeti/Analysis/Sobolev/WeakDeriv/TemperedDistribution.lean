@@ -65,6 +65,8 @@ theorem HasWeakLineDerivOn.lineDerivOp_toTemperedDistribution_eq
     neg_smul, integral_neg, Complex.coe_smul]
   exact neg_eq_iff_eq_neg.mpr hweak
 
+section
+
 variable [IsLocallyFiniteMeasure μ]
 
 omit [FiniteDimensional ℝ E] in
@@ -133,6 +135,26 @@ theorem hasWeakLineDerivOn_iff_lineDerivOp_toTemperedDistribution_ofReal_eq
     · filter_upwards [hu'] with x hx
       simp [hx]
 
+end
+
+/-- **Classical line derivatives are distributional derivatives.** If a locally integrable function
+`f` has line derivative `f' x` in the direction `v` at every point, `f'` is locally integrable, and
+`u ∈ Lᵖ`, `u' ∈ L^q` agree `μ`-almost everywhere with `f` and `f'`, then `∂_v u = u'` as
+tempered distributions, for any additive Haar measure `μ`. -/
+theorem lineDerivOp_toTemperedDistribution_eq_of_hasLineDerivAt [μ.IsAddHaarMeasure]
+    {f f' : E → F} (hf : LocallyIntegrable f μ) (hf' : LocallyIntegrable f' μ)
+    {u : Lp F p μ} {u' : Lp F q μ} {v : E}
+    (huf : u =ᵐ[μ] f) (hu'f : u' =ᵐ[μ] f')
+    (hderiv : ∀ x, HasLineDerivAt ℝ f (f' x) x v) :
+    ∂_{v} (Lp.toTemperedDistribution u) = Lp.toTemperedDistribution u' := by
+  have hline : HasWeakLineDerivOn μ ⊤ f f' v :=
+    hasWeakLineDerivOn_of_hasLineDerivAt (hf.locallyIntegrableOn _) (hf'.locallyIntegrableOn _)
+      fun x _ ↦ hderiv x
+  have hline' : HasWeakLineDerivOn μ ⊤ u u' v :=
+    (hline.congr_ae (by simpa only [Opens.coe_top, Measure.restrict_univ] using huf.symm))
+      |>.congr_ae_deriv (by simpa only [Opens.coe_top, Measure.restrict_univ] using hu'f.symm)
+  exact hline'.lineDerivOp_toTemperedDistribution_eq
+
 /-- **Classical derivatives are distributional derivatives.** If a `C¹` function `f` agrees
 `μ`-almost everywhere with `u ∈ Lᵖ`, and its classical derivative in the direction `v` agrees
 `μ`-almost everywhere with `u' ∈ L^q`, then `∂_v u = u'` as tempered distributions, for any
@@ -140,17 +162,10 @@ additive Haar measure `μ`. -/
 theorem lineDerivOp_toTemperedDistribution_eq_of_contDiff [μ.IsAddHaarMeasure]
     {f : E → F} (hf : ContDiff ℝ 1 f) {u : Lp F p μ} {u' : Lp F q μ} {v : E}
     (huf : u =ᵐ[μ] f) (hu'f : u' =ᵐ[μ] fun x ↦ fderiv ℝ f x v) :
-    ∂_{v} (Lp.toTemperedDistribution u) = Lp.toTemperedDistribution u' := by
-  have hcont : Continuous fun x ↦ fderiv ℝ f x v :=
-    (hf.continuous_fderiv one_ne_zero).clm_apply continuous_const
-  have hline : HasWeakLineDerivOn μ ⊤ f (fun x ↦ fderiv ℝ f x v) v :=
-    hasWeakLineDerivOn_of_hasLineDerivAt (hf.continuous.locallyIntegrable.locallyIntegrableOn _)
-      (hcont.locallyIntegrable.locallyIntegrableOn _)
-      fun x _ ↦ (hf.differentiable one_ne_zero x).hasFDerivAt.hasLineDerivAt v
-  have hline' : HasWeakLineDerivOn μ ⊤ u u' v :=
-    (hline.congr_ae (by simpa only [Opens.coe_top, Measure.restrict_univ] using huf.symm))
-      |>.congr_ae_deriv (by simpa only [Opens.coe_top, Measure.restrict_univ] using hu'f.symm)
-  exact (hasWeakLineDerivOn_iff_lineDerivOp_toTemperedDistribution_eq u u' v).1 hline'
+    ∂_{v} (Lp.toTemperedDistribution u) = Lp.toTemperedDistribution u' :=
+  lineDerivOp_toTemperedDistribution_eq_of_hasLineDerivAt hf.continuous.locallyIntegrable
+    ((hf.continuous_fderiv one_ne_zero).clm_apply continuous_const).locallyIntegrable huf hu'f
+    fun x ↦ (hf.differentiable one_ne_zero x).hasFDerivAt.hasLineDerivAt v
 
 /-- **Classical derivatives are distributional derivatives**, for real functions. If a real `C¹`
 function `f` agrees `μ`-almost everywhere with `u ∈ Lᵖ`, and its classical derivative in the

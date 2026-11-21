@@ -70,26 +70,17 @@ theorem exists_norm_littlewoodPaleyBlock_succ_le_of_iteratedLineDerivOp
       ‖w‖ ≤ C * A / (2 ^ j) ^ M := by
   set b := stdOrthonormalBasis ℝ E
   obtain ⟨Cr, hCr, hrev⟩ :=
-    b.exists_norm_le_div_pow_mul_sum_norm_of_iteratedLineDerivOp_eq (F := F)
-      (2 * φ.rOut / φ.rIn)
+    exists_norm_littlewoodPaleyBlock_succ_le_sum_of_iteratedLineDerivOp_eq (F := F) φ b
   obtain ⟨CΔ, hΔ⟩ := exists_littlewoodPaleyBlock_eq_and_norm_le (F := F) φ
   have hrIn := φ.rIn_pos
   refine ⟨(Cr / φ.rIn) ^ M * Module.finrank ℝ E ^ M * max CΔ 0, by positivity,
     fun {p} _ j T w hw {A} hA ↦ ?_⟩
-  have hR : (0 : ℝ) < 2 ^ j * φ.rIn := by positivity
-  -- `w` has spectrum in the `(j+1)`-st dyadic annulus.
-  have hwv : IsVanishingOn (𝓕 (w : 𝓢'(E, F)) : 𝓢'(E, F))
-      (Metric.ball 0 (2 ^ j * φ.rIn) ∪
-        (Metric.closedBall 0 (2 * φ.rOut / φ.rIn * (2 ^ j * φ.rIn)))ᶜ) := by
-    rw [φ.two_mul_rOut_div_rIn_mul, ← hw]
-    simpa only [Set.compl_sdiff, Set.union_comm] using
-      isVanishingOn_fourier_littlewoodPaleyBlock_succ φ j _
   -- Its derivatives are the blocks of those of `T`.
   choose y hy hyn using hA
   choose z hz hzn using fun i ↦ hΔ (j + 1) (y i)
   have hder (i : Fin M → Fin (Module.finrank ℝ E)) : ∂^{⇑b ∘ i} (w : 𝓢'(E, F)) = z i := by
     rw [← hw, ← littlewoodPaleyBlock_iteratedLineDerivOp, hy i, hz i]
-  calc ‖w‖ ≤ (Cr / (2 ^ j * φ.rIn)) ^ M * ∑ i, ‖z i‖ := hrev M hR w z hwv hder
+  calc ‖w‖ ≤ (Cr / (2 ^ j * φ.rIn)) ^ M * ∑ i, ‖z i‖ := hrev M j T w z hw hder
     _ ≤ (Cr / (2 ^ j * φ.rIn)) ^ M * ∑ _i : Fin M → Fin (Module.finrank ℝ E), max CΔ 0 * A := by
         gcongr with i
         exact (hzn i).trans (mul_le_mul (le_max_left _ _) (hyn i) (norm_nonneg _)

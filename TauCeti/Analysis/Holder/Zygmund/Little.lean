@@ -7,11 +7,9 @@ module
 
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Little
 public import TauCeti.Analysis.Holder.Little
-public import TauCeti.Analysis.Holder.Zygmund
+public import TauCeti.Analysis.Holder.Zygmund.Basic
 import TauCeti.Analysis.Distribution.SchwartzSpace.Lp
-import TauCeti.Analysis.Distribution.TemperedDistribution.LittlewoodPaley
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
-import TauCeti.Analysis.FunctionalSpaces.BesovSpace.PartialSum
 
 /-!
 # Little Hölder–Zygmund spaces and vanishing small-scale moduli
@@ -34,10 +32,7 @@ function representing `u`, for non-integer orders `k + α` (`k : ℕ`, `0 < α <
   Hölder regularity to block decay holds for every `α < 1`, including `α = 0` (uniform continuity).
 * **Membership in `c^{k+α}` is little Hölder regularity plus vanishing at infinity:** `u ∈ c^{k+α}`
   holds exactly when `D^k f` is little `α`-Hölder and `f` vanishes at infinity along the cocompact
-  filter (`TauCeti.BesovSpace.mem_littleBesov_iff_memLittleHolder_and_tendsto_cocompact`). For
-  compactly supported `C_b^{k,α}` functions, vanishing at infinity is automatic, so membership in
-  `c^{k+α}` reduces to little `α`-Hölder regularity of `D^k f`
-  (`TauCeti.BesovSpace.ofCkHolderSpace_mem_littleBesov_iff_of_hasCompactSupport`).
+  filter (`TauCeti.BesovSpace.mem_littleBesov_iff_memLittleHolder_and_tendsto_cocompact`).
 
 ## The argument
 
@@ -67,9 +62,6 @@ the closed subspace `TauCeti.HolderSpace.littleHolder` yields little `α`-Hölde
 
 ## Main declarations
 
-* `TauCeti.CkHolderSpace.exists_rpow_mul_norm_littlewoodPaleyBlock_succ_le_sum_directional`:
-  weighted reverse Bernstein estimate bounding `2^{(k+s)(j+1)} ‖Δ_{j+1} f‖_∞` by the weighted
-  blocks of the directional `k`-th derivatives of `f`.
 * `TauCeti.BesovSpace.tendsto_rpow_mul_norm_block_ofHolderSpace` and
   `TauCeti.BesovSpace.tendsto_rpow_mul_norm_block_ofCkHolderSpace`: little `α`-Hölder regularity of
   `D^k f` implies `2^{(k+α)j} ‖Δⱼ f‖_∞ → 0` for every `α < 1`.
@@ -80,12 +72,9 @@ the closed subspace `TauCeti.HolderSpace.littleHolder` yields little `α`-Hölde
 * `TauCeti.BesovSpace.mem_littleBesov_iff_memLittleHolder_and_tendsto_cocompact` and
   `TauCeti.BesovSpace.mem_littleBesov_iff_mem_littleHolder_and_tendsto_cocompact`: for `0 < α < 1`,
   `u ∈ c^{k+α}` iff `D^k f` is little `α`-Hölder and `f` vanishes at infinity.
-* `TauCeti.BesovSpace.ofCkHolderSpace_mem_littleBesov_iff`,
-  `TauCeti.BesovSpace.ofCkHolderSpace_mem_littleBesov_iff_of_hasCompactSupport`,
-  `TauCeti.BesovSpace.ofHolderSpace_mem_littleBesov_iff`, and
-  `TauCeti.BesovSpace.ofHolderSpace_mem_littleBesov_iff_of_hasCompactSupport`: the corresponding
-  characterisations for `CkHolderSpace` and `HolderSpace` elements, with vanishing at infinity
-  discharged under compact support.
+* `TauCeti.BesovSpace.ofCkHolderSpace_mem_littleBesov_iff` and
+  `TauCeti.BesovSpace.ofHolderSpace_mem_littleBesov_iff`: the corresponding characterisations for
+  `CkHolderSpace` and `HolderSpace` elements.
 
 ## References
 
@@ -104,59 +93,73 @@ open scoped ENNReal NNReal SchwartzMap Topology
 
 namespace TauCeti
 
+/-! ### Little Hölder regularity implies high-frequency block decay -/
+
+section
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedAddCommGroup F]
+
+/-- A bounded continuous little `α`-Hölder function satisfies a global `η ‖y‖^α + B ‖y‖` increment
+bound for every `η > 0`. -/
+private theorem exists_norm_sub_le_of_memLittleHolder {α : ℝ≥0} {f : E →ᵇ F}
+    (hf : MemLittleHolder α f) {η : ℝ} (hη : 0 < η) :
+    ∃ B : ℝ, 0 ≤ B ∧ ∀ x y, ‖f (x - y) - f x‖ ≤ η * ‖y‖ ^ (α : ℝ) + B * ‖y‖ := by
+  obtain ⟨δ, hδ, hδf⟩ := memLittleHolder_iff.1 hf η hη
+  refine ⟨2 * ‖f‖ / δ, by positivity, fun x y ↦ ?_⟩
+  rcases lt_or_ge ‖y‖ δ with hy | hy
+  · have hd : dist (x - y) x < δ := by rwa [dist_eq_norm, sub_sub_cancel_left, norm_neg]
+    have h := hδf (x - y) x hd
+    rw [dist_eq_norm, dist_eq_norm, sub_sub_cancel_left, norm_neg] at h
+    exact h.trans (le_add_of_nonneg_right (by positivity))
+  · have h2f : ‖f (x - y) - f x‖ ≤ 2 * ‖f‖ :=
+      (norm_sub_le _ _).trans (by linarith [f.norm_coe_le_norm (x - y), f.norm_coe_le_norm x])
+    have hlarge : 2 * ‖f‖ ≤ (2 * ‖f‖ / δ) * ‖y‖ := by
+      rw [div_mul_eq_mul_div, le_div_iff₀ hδ]
+      exact mul_le_mul_of_nonneg_left hy (by positivity)
+    exact (h2f.trans hlarge).trans (le_add_of_nonneg_left (by positivity))
+
+end
+
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
 
-namespace CkHolderSpace
-
-/-- **Weighted reverse Bernstein bound for `C_b^{k,α}` functions.** Given an orthonormal basis `b`
-of `E`, there is `C ≥ 0` depending only on `φ` and `b` such that for every `k : ℕ`, `α : ℝ≥0`,
-`f : CkHolderSpace k α E F`, real weight `s`, dyadic index `j : ℕ`, and `L^∞` representatives `v`
-and `w i` of `Δ_{j+1} f` and `Δ_{j+1} (D^k f · (b ∘ i))`,
-`2^{(k + s)(j + 1)} ‖v‖ ≤ C^k ∑ᵢ 2^{s(j + 1)} ‖w i‖`. -/
-theorem exists_rpow_mul_norm_littlewoodPaleyBlock_succ_le_sum_directional
-    (φ : ContDiffBump (0 : E)) {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ E) :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ (k : ℕ) {α : ℝ≥0} (f : CkHolderSpace k α E F) (s : ℝ) (j : ℕ)
-      (v : Lp F ∞ (volume : Measure E)) (w : (Fin k → ι) → Lp F ∞ (volume : Measure E)),
-      littlewoodPaleyBlock F φ (j + 1)
-        (toLpTop volume ℂ f.toBoundedContinuousFunction : 𝓢'(E, F)) = v →
-      (∀ i, littlewoodPaleyBlock F φ (j + 1)
-        (toLpTop volume ℂ (f.directionalIteratedFDeriv (Fin.last k) (⇑b ∘ i)) : 𝓢'(E, F)) =
-          w i) →
-      2 ^ (((k : ℝ) + s) * ((j + 1 : ℕ) : ℝ)) * ‖v‖ ≤
-        C ^ k * ∑ i, 2 ^ (s * ((j + 1 : ℕ) : ℝ)) * ‖w i‖ := by
-  obtain ⟨Cr, hCr0, hrev⟩ := exists_norm_littlewoodPaleyBlock_succ_le_sum_iteratedFDeriv
-    (F := F) φ b
-  have hIn : 0 < φ.rIn := φ.rIn_pos
-  refine ⟨2 * Cr / φ.rIn, by positivity, fun k {α} f s j v w hv hw ↦ ?_⟩
-  have hrev_j : ‖v‖ ≤ (Cr / (2 ^ j * φ.rIn)) ^ k * ∑ i, ‖w i‖ :=
-    hrev k f.toBoundedContinuousFunction
-      (fun i ↦ f.directionalIteratedFDeriv (Fin.last k) (⇑b ∘ i)) j v w
-      (by simpa only [coe_toBoundedContinuousFunction] using f.contDiff)
-      (fun m hm ↦ ⟨‖f‖, fun x ↦ by
-        simpa only [coe_toBoundedContinuousFunction] using
-          f.norm_iteratedFDeriv_apply_le hm.le x⟩)
-      (fun i x ↦ by
-        rw [directionalIteratedFDeriv_apply, coe_toBoundedContinuousFunction]
-        rfl)
-      hv hw
-  have hpow : (2 : ℝ) ^ (((k : ℝ) + s) * ((j + 1 : ℕ) : ℝ)) =
-      (2 ^ (j + 1)) ^ k * 2 ^ (s * ((j + 1 : ℕ) : ℝ)) := by
-    rw [add_mul, Real.rpow_add two_pos, mul_comm (k : ℝ), Real.rpow_mul_natCast zero_le_two,
-      Real.rpow_natCast]
-  calc 2 ^ (((k : ℝ) + s) * ((j + 1 : ℕ) : ℝ)) * ‖v‖
-      ≤ 2 ^ (((k : ℝ) + s) * ((j + 1 : ℕ) : ℝ)) *
-          ((Cr / (2 ^ j * φ.rIn)) ^ k * ∑ i, ‖w i‖) := by gcongr
-    _ = (2 * Cr / φ.rIn) ^ k * ∑ i, 2 ^ (s * ((j + 1 : ℕ) : ℝ)) * ‖w i‖ := by
-        rw [hpow, ← Finset.mul_sum]
-        simp only [pow_succ, div_pow, mul_pow]
-        field_simp
-
-end CkHolderSpace
-
-/-! ### Little Hölder regularity implies high-frequency block decay -/
-
 section LittleHolderToDecay
+
+/-- From a global `η ‖y‖^α + B ‖y‖` increment bound, the weighted dyadic block
+`2^{α (j + 1)} ‖Δ_{j+1} f‖_∞` splits into a scale-free `O(η)` term and a geometric
+`O((2^{α - 1})^j)` term. -/
+private theorem rpow_mul_norm_littlewoodPaleyBlock_succ_le_of_norm_sub_le
+    (φ : ContDiffBump (0 : E)) {α : ℝ≥0} {η B : ℝ} (hη : 0 ≤ η) (hB : 0 ≤ B) {f : E →ᵇ F}
+    (hf : ∀ x y, ‖f (x - y) - f x‖ ≤ η * ‖y‖ ^ (α : ℝ) + B * ‖y‖) {j : ℕ}
+    {v : Lp F ∞ (volume : Measure E)}
+    (hv : littlewoodPaleyBlock F φ (j + 1) (toLpTop volume ℂ f : 𝓢'(E, F)) = v) :
+    2 ^ ((α : ℝ) * ((j + 1 : ℕ) : ℝ)) * ‖v‖ ≤
+      η * (2 ^ (α : ℝ) *
+        ∫ y, ‖y‖ ^ (α : ℝ) * ‖𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley 1 ξ : ℂ)) y‖) +
+      (B * 2 ^ (α : ℝ) *
+        ∫ y, ‖y‖ * ‖𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley 1 ξ : ℂ)) y‖) *
+          ((2 : ℝ) ^ ((α : ℝ) - 1)) ^ j := by
+  have hblock := norm_littlewoodPaleyBlock_succ_le_of_norm_sub_le φ α.coe_nonneg hη hB hf hv
+  have hpow : (2 : ℝ) ^ ((α : ℝ) * ((j + 1 : ℕ) : ℝ)) =
+      2 ^ (α : ℝ) * 2 ^ ((α : ℝ) * j) := by
+    rw [Nat.cast_add, Nat.cast_one, mul_add, mul_one, Real.rpow_add two_pos, mul_comm]
+  have hratio : 2 ^ ((α : ℝ) * j) * ((2 : ℝ) ^ j)⁻¹ = ((2 : ℝ) ^ ((α : ℝ) - 1)) ^ j := by
+    rw [← Real.rpow_natCast (2 : ℝ) j, ← Real.rpow_neg zero_le_two, ← Real.rpow_add two_pos,
+      ← Real.rpow_mul_natCast zero_le_two]
+    congr 1
+    ring
+  calc 2 ^ ((α : ℝ) * ((j + 1 : ℕ) : ℝ)) * ‖v‖
+      ≤ 2 ^ ((α : ℝ) * ((j + 1 : ℕ) : ℝ)) *
+          (η * ((2 : ℝ) ^ ((α : ℝ) * j))⁻¹ *
+            (∫ y, ‖y‖ ^ (α : ℝ) *
+              ‖𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley 1 ξ : ℂ)) y‖) +
+          B * ((2 : ℝ) ^ j)⁻¹ *
+            (∫ y, ‖y‖ * ‖𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley 1 ξ : ℂ)) y‖)) := by
+        gcongr
+    _ = _ := by
+        rw [hpow, mul_add, ← hratio]
+        have h2αj : (2 : ℝ) ^ ((α : ℝ) * j) ≠ 0 := by positivity
+        field_simp
 
 /-- For `α < 1`, if a bounded continuous function `f` is little `α`-Hölder, then its weighted
 dyadic blocks satisfy `2^{α j} ‖Δⱼ f‖_∞ → 0`. -/
@@ -173,43 +176,19 @@ private theorem tendsto_rpow_mul_norm_littlewoodPaleyBlock_of_memLittleHolder
     ∫ y, ‖y‖ * ‖𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley 1 ξ : ℂ)) y‖
   set η : ℝ := ε / (2 * (2 ^ (α : ℝ) * Mα + 1))
   have hη : 0 < η := by positivity
-  obtain ⟨δ, hδ, hδf⟩ := memLittleHolder_iff.1 hf η hη
-  -- Global increment bound combining the small-scale `η`-Hölder bound and the global sup bound.
-  have hinc : ∀ x y, ‖f (x - y) - f x‖ ≤ η * ‖y‖ ^ (α : ℝ) + (2 * ‖f‖ / δ) * ‖y‖ := fun x y ↦ by
-    rcases lt_or_ge ‖y‖ δ with hy | hy
-    · have hd : dist (x - y) x < δ := by
-        rwa [dist_eq_norm, sub_sub_cancel_left, norm_neg]
-      have h := hδf (x - y) x hd
-      rw [dist_eq_norm, dist_eq_norm, sub_sub_cancel_left, norm_neg] at h
-      exact h.trans (le_add_of_nonneg_right (by positivity))
-    · have h2f : ‖f (x - y) - f x‖ ≤ 2 * ‖f‖ :=
-        (norm_sub_le _ _).trans (by linarith [f.norm_coe_le_norm (x - y), f.norm_coe_le_norm x])
-      have hlarge : 2 * ‖f‖ ≤ (2 * ‖f‖ / δ) * ‖y‖ := by
-        rw [div_mul_eq_mul_div, le_div_iff₀ hδ]
-        exact mul_le_mul_of_nonneg_left hy (by positivity)
-      exact (h2f.trans hlarge).trans (le_add_of_nonneg_left (by positivity))
+  obtain ⟨B, hB, hinc⟩ := exists_norm_sub_le_of_memLittleHolder hf hη
   -- The second term decays geometrically with ratio `q = 2^{α - 1} < 1`.
   set q : ℝ := (2 : ℝ) ^ ((α : ℝ) - 1)
   have hq0 : 0 ≤ q := by positivity
   have hq1 : q < 1 := Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (sub_neg.2 hα1)
-  have htend : Tendsto (fun j : ℕ ↦ ((2 * ‖f‖ / δ) * 2 ^ (α : ℝ) * M1) * q ^ j) atTop (𝓝 0) := by
-    simpa only [mul_zero] using (tendsto_pow_atTop_nhds_zero_of_lt_one hq0 hq1).const_mul
-      ((2 * ‖f‖ / δ) * 2 ^ (α : ℝ) * M1)
+  have htend : Tendsto (fun j : ℕ ↦ (B * 2 ^ (α : ℝ) * M1) * q ^ j) atTop (𝓝 0) := by
+    simpa only [mul_zero] using
+      (tendsto_pow_atTop_nhds_zero_of_lt_one hq0 hq1).const_mul (B * 2 ^ (α : ℝ) * M1)
   obtain ⟨N, hN⟩ := Metric.tendsto_atTop.1 htend (ε / 2) (half_pos hε)
   refine ⟨N, fun j hj ↦ ?_⟩
   rw [Real.dist_0_eq_abs, abs_of_nonneg (by positivity)]
   have hNj := hN j hj
   rw [Real.dist_0_eq_abs, abs_of_nonneg (by positivity)] at hNj
-  have hblock := norm_littlewoodPaleyBlock_succ_le_of_norm_sub_le φ α.coe_nonneg hη.le
-    (by positivity) hinc (hv (j + 1))
-  have hpow : (2 : ℝ) ^ ((α : ℝ) * ((j + 1 : ℕ) : ℝ)) =
-      2 ^ (α : ℝ) * 2 ^ ((α : ℝ) * j) := by
-    rw [Nat.cast_add, Nat.cast_one, mul_add, mul_one, Real.rpow_add two_pos, mul_comm]
-  have hratio : 2 ^ ((α : ℝ) * j) * ((2 : ℝ) ^ j)⁻¹ = q ^ j := by
-    rw [← Real.rpow_natCast (2 : ℝ) j, ← Real.rpow_neg zero_le_two, ← Real.rpow_add two_pos,
-      ← Real.rpow_mul_natCast zero_le_two]
-    congr 1
-    ring
   have hfirst : η * (2 ^ (α : ℝ) * Mα) < ε / 2 := by
     have hlt : 2 ^ (α : ℝ) * Mα < 2 ^ (α : ℝ) * Mα + 1 := lt_add_one _
     calc η * (2 ^ (α : ℝ) * Mα)
@@ -219,13 +198,8 @@ private theorem tendsto_rpow_mul_norm_littlewoodPaleyBlock_of_memLittleHolder
           have hpos : 2 ^ (α : ℝ) * Mα + 1 ≠ 0 := by positivity
           field_simp
   calc 2 ^ ((α : ℝ) * ((j + 1 : ℕ) : ℝ)) * ‖v (j + 1)‖
-      ≤ 2 ^ ((α : ℝ) * ((j + 1 : ℕ) : ℝ)) *
-          (η * ((2 : ℝ) ^ ((α : ℝ) * j))⁻¹ * Mα + (2 * ‖f‖ / δ) * ((2 : ℝ) ^ j)⁻¹ * M1) := by
-        gcongr
-    _ = η * (2 ^ (α : ℝ) * Mα) + ((2 * ‖f‖ / δ) * 2 ^ (α : ℝ) * M1) * q ^ j := by
-        rw [hpow, mul_add, ← hratio]
-        have h2αj : (2 : ℝ) ^ ((α : ℝ) * j) ≠ 0 := by positivity
-        field_simp
+      ≤ η * (2 ^ (α : ℝ) * Mα) + (B * 2 ^ (α : ℝ) * M1) * q ^ j :=
+        rpow_mul_norm_littlewoodPaleyBlock_succ_le_of_norm_sub_le φ hη.le hB hinc (hv (j + 1))
     _ < ε / 2 + ε / 2 := add_lt_add hfirst hNj
     _ = ε := add_halves ε
 
@@ -269,8 +243,9 @@ theorem tendsto_rpow_mul_norm_block_ofCkHolderSpace (hα1 : α < 1) {f : CkHolde
     rw [dist_eq_norm]
     calc ‖f.directionalIteratedFDeriv (Fin.last k) (⇑b ∘ i) x -
             f.directionalIteratedFDeriv (Fin.last k) (⇑b ∘ i) y‖
-        ≤ ‖_root_.iteratedFDeriv ℝ k f x - _root_.iteratedFDeriv ℝ k f y‖ * ∏ r, ‖b (i r)‖ :=
-          f.norm_directionalIteratedFDeriv_sub_le (Fin.last k) (⇑b ∘ i) x y
+        ≤ ‖_root_.iteratedFDeriv ℝ k f x - _root_.iteratedFDeriv ℝ k f y‖ * ∏ r, ‖b (i r)‖ := by
+          simpa only [Fin.val_last, Function.comp_apply] using
+            f.norm_directionalIteratedFDeriv_sub_le (Fin.last k) (⇑b ∘ i) x y
       _ = dist (_root_.iteratedFDeriv ℝ k f x) (_root_.iteratedFDeriv ℝ k f y) := by
           rw [hnorm_b i, mul_one, dist_eq_norm]
       _ ≤ ε * dist x y ^ (α : ℝ) := hδf x y hxy
@@ -356,21 +331,6 @@ theorem tendsto_rpow_mul_norm_block_iff_memLittleHolder (k : ℕ) (hα0 : 0 < α
     simpa only [ofCkHolderSpace_toCkHolderSpace] using
       tendsto_rpow_mul_norm_block_ofCkHolderSpace φ hα1 hLH⟩
 
-/-- The order-zero `CkHolderSpace` representative of `u ∈ 𝒞^α` (viewed in `𝒞^{0+α}`) has the same
-underlying function as `toHolderSpace F φ hα0 hα1 u`. -/
-private theorem coe_toCkHolderSpace_zero_inclusion (hα0 : 0 < α) (hα1 : α < 1)
-    (u : BesovSpace F φ α ∞ ∞) :
-    ⇑(toCkHolderSpace F φ 0 hα0 hα1 (inclusion F φ ∞ (by simp) le_rfl u)) =
-      ⇑(toHolderSpace F φ hα0 hα1 u) := by
-  have hfg :
-      (toCkHolderSpace F φ 0 hα0 hα1
-        (inclusion F φ ∞ (by simp) le_rfl u)).toBoundedContinuousFunction =
-      (toHolderSpace F φ hα0 hα1 u).toBoundedContinuousFunction :=
-    toTemperedDistribution_toLpTop_injective (μ := volume) <| by simp
-  ext x
-  simpa only [CkHolderSpace.coe_toBoundedContinuousFunction,
-    HolderSpace.toBoundedContinuousFunction_apply] using DFunLike.congr_fun hfg x
-
 /-- **Order-zero block decay characterises little Hölder regularity.** For `0 < α < 1`, an element
 `u ∈ 𝒞^α` has `2^{α j} ‖Δⱼ u‖_∞ → 0` exactly when its `C^{0,α}` representative lies in the little
 Hölder space `h^{0,α}`. -/
@@ -415,14 +375,17 @@ theorem mem_littleBesov_iff_memLittleHolder_and_tendsto_cocompact (k : ℕ) (hα
     rw [← SetLike.mem_coe, coe_littleBesov] at hu
     have hmem : Φ u ∈ closure (Set.range fun g : 𝓢(E, F) ↦ g.toBoundedContinuousFunction) :=
       map_mem_closure Φ.continuous hu fun _ ⟨g, hg⟩ ↦ ⟨g, hg ▸ (hΦ_schwartz g).symm⟩
-    have hLp : toLpTop (volume : Measure E) ℂ (Φ u) ∈
-          closure (Set.range fun g : 𝓢(E, F) ↦ g.toLp ∞ (volume : Measure E)) :=
-      map_mem_closure (toLpTop (volume : Measure E) ℂ).continuous hmem fun _ ⟨g, hg⟩ ↦
-        ⟨g, hg ▸ g.toLp_top_eq_toLpTop (𝕜 := ℂ)⟩
+    have hsub :
+        (Set.range fun g : 𝓢(E, F) ↦ g.toBoundedContinuousFunction) ⊆
+          Set.range (ZeroAtInftyContinuousMap.toBCF : ZeroAtInftyContinuousMap E F → E →ᵇ F) :=
+      Set.range_subset_iff.2 fun g ↦ ⟨g.toZeroAtInfty, g.toZeroAtInfty_toBCF⟩
+    obtain ⟨h, hh⟩ := closure_minimal hsub ZeroAtInftyContinuousMap.isClosed_range_toBCF hmem
+    have htend : Tendsto (Φ u) (cocompact E) (𝓝 0) := by
+      rw [← hh]
+      exact zero_at_infty h
     simpa only [Φ, ContinuousLinearMap.comp_apply,
       CkHolderSpace.toBoundedContinuousFunctionCLM_apply,
-      CkHolderSpace.coe_toBoundedContinuousFunction] using
-      (Φ u).toLpTop_mem_closure_range_schwartz_toLp_top_iff.1 hLp
+      CkHolderSpace.coe_toBoundedContinuousFunction] using htend
   · rintro ⟨hLH, h0⟩
     rw [mem_littleBesov_iff]
     refine ⟨(tendsto_rpow_mul_norm_block_iff_memLittleHolder φ k hα0 hα1).2 hLH, fun j ↦ ?_⟩
@@ -465,15 +428,6 @@ theorem ofCkHolderSpace_mem_littleBesov_iff (hα0 : 0 < α) (hα1 : α < 1)
     mem_littleBesov_iff_memLittleHolder_and_tendsto_cocompact φ k hα0 hα1
       (u := ofCkHolderSpace F φ k α f)
 
-/-- **Compactly supported `C^{k,α}` maps in `c^{k+α}`.** A compactly supported bounded `C^{k,α}`
-map (`0 < α < 1`) lies in the little Hölder–Zygmund space `c^{k+α}` exactly when its `k`-th
-derivative is little `α`-Hölder. -/
-theorem ofCkHolderSpace_mem_littleBesov_iff_of_hasCompactSupport (hα0 : 0 < α) (hα1 : α < 1)
-    {f : CkHolderSpace k α E F} (hf : HasCompactSupport f) :
-    ofCkHolderSpace F φ k α f ∈ littleBesov F φ (k + α) ∞ ↔
-      MemLittleHolder α (_root_.iteratedFDeriv ℝ k f) := by
-  rw [ofCkHolderSpace_mem_littleBesov_iff φ hα0 hα1 f, and_iff_left hf.is_zero_at_infty]
-
 /-- A bounded `α`-Hölder function (`0 < α < 1`) lies in the little Hölder–Zygmund space `c^α`
 exactly when it lies in `h^{0,α}` and vanishes at infinity. -/
 theorem ofHolderSpace_mem_littleBesov_iff (hα0 : 0 < α) (hα1 : α < 1) (f : HolderSpace α E F) :
@@ -482,14 +436,6 @@ theorem ofHolderSpace_mem_littleBesov_iff (hα0 : 0 < α) (hα1 : α < 1) (f : H
   simpa only [toHolderSpace_ofHolderSpace] using
     mem_littleBesov_iff_mem_littleHolder_and_tendsto_cocompact φ hα0 hα1
       (u := ofHolderSpace F φ α f)
-
-/-- **Compactly supported Hölder functions in `c^α`.** A compactly supported bounded `α`-Hölder
-function (`0 < α < 1`) lies in the little Hölder–Zygmund space `c^α` exactly when it lies in
-`h^{0,α}`. -/
-theorem ofHolderSpace_mem_littleBesov_iff_of_hasCompactSupport (hα0 : 0 < α) (hα1 : α < 1)
-    {f : HolderSpace α E F} (hf : HasCompactSupport f) :
-    ofHolderSpace F φ α f ∈ littleBesov F φ α ∞ ↔ f ∈ HolderSpace.littleHolder α E F := by
-  rw [ofHolderSpace_mem_littleBesov_iff φ hα0 hα1 f, and_iff_left hf.is_zero_at_infty]
 
 end BesovSpace
 

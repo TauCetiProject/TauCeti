@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.Distribution.TemperedDistribution
 public import Mathlib.Analysis.Distribution.SchwartzSpace.Fourier
 public import TauCeti.MeasureTheory.Function.Lp.BoundedContinuous
-import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 import Mathlib.Analysis.Normed.Operator.Extend
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import TauCeti.Analysis.Distribution.TemperateGrowth
@@ -425,93 +424,5 @@ theorem toTemperedDistribution_toLpTop_injective {μ : Measure E} [μ.HasTempera
     Function.Injective fun f : E →ᵇ F ↦ Lp.toTemperedDistribution (toLpTop μ ℂ f) :=
   have := Measure.HasTemperateGrowth.isFiniteMeasureOnCompacts μ
   Lp.toTemperedDistribution_injective.comp (toLpTop_injective (𝕜 := ℂ) μ)
-
-open scoped SchwartzMap LineDeriv in
-/-- **Distributional directional derivative of a bounded differentiable function.** By integration
-by parts against an additive Haar measure `μ`, if `f` and `g` are bounded continuous with `f`
-differentiable and `g x = fderiv ℝ f x v`, then `∂_v f = g` in `𝓢'(E, F)`. -/
-theorem lineDerivOp_toLpTop_eq {μ : Measure E} [μ.IsAddHaarMeasure] {f g : E →ᵇ F}
-    (hf : Differentiable ℝ f) (v : E) (hg : ∀ x, g x = fderiv ℝ f x v) :
-    ∂_{v} (toLpTop μ ℂ f : 𝓢'(E, F)) = (toLpTop μ ℂ g : 𝓢'(E, F)) := by
-  ext ψ
-  rw [TemperedDistribution.lineDerivOp_apply_apply, Lp.toTemperedDistribution_apply,
-    Lp.toTemperedDistribution_apply]
-  have h1 : ∫ x, (-∂_{v} ψ) x • (toLpTop μ ℂ f : E → F) x ∂μ =
-      -∫ x, fderiv ℝ (ψ : E → ℂ) x v • f x ∂μ := by
-    rw [← integral_neg]
-    refine integral_congr_ae ?_
-    filter_upwards [coeFn_toLpTop (𝕜 := ℂ) μ f] with x hx
-    simp only [neg_apply, SchwartzMap.lineDerivOp_apply_eq_fderiv, neg_smul, hx]
-  have h2 : ∫ x, ψ x • (toLpTop μ ℂ g : E → F) x ∂μ = ∫ x, ψ x • fderiv ℝ f x v ∂μ := by
-    refine integral_congr_ae ?_
-    filter_upwards [coeFn_toLpTop (𝕜 := ℂ) μ g] with x hx
-    rw [hx, hg x]
-  rw [h1, h2]
-  have hf'g : Integrable (fun x ↦ fderiv ℝ (ψ : E → ℂ) x v • f x) μ := by
-    refine (((∂_{v} ψ).integrable (μ := μ)).norm.mul_const ‖f‖).mono'
-      (((∂_{v} ψ).continuous.congr (fun x ↦ SchwartzMap.lineDerivOp_apply_eq_fderiv v ψ x)).smul
-        f.continuous).aestronglyMeasurable
-      (Filter.Eventually.of_forall fun x ↦ ?_)
-    rw [norm_smul, ← SchwartzMap.lineDerivOp_apply_eq_fderiv]
-    exact mul_le_mul_of_nonneg_left (f.norm_coe_le_norm x) (norm_nonneg _)
-  have hfg' : Integrable (fun x ↦ ψ x • fderiv ℝ f x v) μ := by
-    refine ((ψ.integrable (μ := μ)).norm.mul_const ‖g‖).mono'
-      (ψ.continuous.smul (g.continuous.congr hg)).aestronglyMeasurable
-      (Filter.Eventually.of_forall fun x ↦ ?_)
-    rw [norm_smul, ← hg x]
-    exact mul_le_mul_of_nonneg_left (g.norm_coe_le_norm x) (norm_nonneg _)
-  have hfg : Integrable (fun x ↦ ψ x • f x) μ :=
-    ((ψ.integrable (μ := μ)).norm.mul_const ‖f‖).mono'
-      (ψ.continuous.smul f.continuous).aestronglyMeasurable
-      (Filter.Eventually.of_forall fun x ↦ by
-        rw [norm_smul]
-        exact mul_le_mul_of_nonneg_left (f.norm_coe_le_norm x) (norm_nonneg _))
-  exact (integral_smul_fderiv_eq_neg_fderiv_smul_of_integrable hf'g hfg' hfg
-    (fun x _ ↦ ψ.differentiableAt) (fun x _ ↦ hf x)).symm
-
-open scoped SchwartzMap LineDeriv in
-/-- **Distributional iterated directional derivatives of bounded `C^k` functions.** If `f` is
-bounded `C^k` with bounded derivatives of order `< k` and `g` is bounded continuous with
-`g x = iteratedFDeriv ℝ k f x v`, then `∂^v f = g` in `𝓢'(E, F)` for any additive Haar
-measure `μ`. -/
-theorem iteratedLineDerivOp_toLpTop_eq {μ : Measure E} [μ.IsAddHaarMeasure] {k : ℕ} {f g : E →ᵇ F}
-    (hf : ContDiff ℝ k f) (hbdd : ∀ i < k, ∃ C, ∀ x, ‖iteratedFDeriv ℝ i f x‖ ≤ C)
-    (v : Fin k → E) (hg : ∀ x, g x = iteratedFDeriv ℝ k f x v) :
-    ∂^{v} (toLpTop μ ℂ f : 𝓢'(E, F)) = (toLpTop μ ℂ g : 𝓢'(E, F)) := by
-  induction k generalizing g with
-  | zero =>
-    have hfg : f = g := by
-      ext x
-      simpa only [iteratedFDeriv_zero_apply] using (hg x).symm
-    simp [hfg]
-  | succ k ih =>
-    obtain ⟨C, hC⟩ := hbdd k (Nat.lt_succ_self k)
-    have hcont : Continuous fun x ↦ iteratedFDeriv ℝ k f x (Fin.tail v) :=
-      ((ContinuousMultilinearMap.apply ℝ (fun _ : Fin k ↦ E) F (Fin.tail v)).continuous).comp
-        (hf.continuous_iteratedFDeriv (by exact_mod_cast Nat.le_succ k))
-    have hbd : ∀ x, ‖iteratedFDeriv ℝ k f x (Fin.tail v)‖ ≤ C * ∏ i, ‖Fin.tail v i‖ := fun x ↦
-      (ContinuousMultilinearMap.le_opNorm _ _).trans
-        (mul_le_mul_of_nonneg_right (hC x) (Finset.prod_nonneg fun _ _ ↦ norm_nonneg _))
-    set g' : E →ᵇ F := ofNormedAddCommGroup (fun x ↦ iteratedFDeriv ℝ k f x (Fin.tail v))
-      hcont (C * ∏ i, ‖Fin.tail v i‖) hbd
-    have hih : ∂^{Fin.tail v} (toLpTop μ ℂ f : 𝓢'(E, F)) = (toLpTop μ ℂ g' : 𝓢'(E, F)) :=
-      ih (hf.of_le (by exact_mod_cast Nat.le_succ k))
-        (fun i hi ↦ hbdd i (hi.trans (Nat.lt_succ_self k))) (Fin.tail v) fun x ↦ rfl
-    have hdiff : ∀ x, HasFDerivAt (g' : E → F)
-        ((ContinuousMultilinearMap.apply ℝ (fun _ : Fin k ↦ E) F (Fin.tail v)).comp
-          (continuousMultilinearCurryLeftEquiv ℝ (fun _ : Fin (k + 1) ↦ E) F
-            (iteratedFDeriv ℝ (k + 1) f x))) x := fun x ↦ by
-      have hF : HasFDerivAt (iteratedFDeriv ℝ k f)
-          (continuousMultilinearCurryLeftEquiv ℝ (fun _ : Fin (k + 1) ↦ E) F
-            (iteratedFDeriv ℝ (k + 1) f x)) x := by
-        have h := (hf.differentiable_iteratedFDeriv (by exact_mod_cast Nat.lt_succ_self k) x
-          ).hasFDerivAt
-        rwa [fderiv_iteratedFDeriv] at h
-      exact (ContinuousMultilinearMap.apply ℝ (fun _ : Fin k ↦ E) F (Fin.tail v)).hasFDerivAt.comp
-        x hF
-    rw [LineDeriv.iteratedLineDerivOp_succ_left, hih]
-    refine lineDerivOp_toLpTop_eq (fun x ↦ (hdiff x).differentiableAt) (v 0) fun x ↦ ?_
-    rw [hg x, (hdiff x).fderiv]
-    simp [Fin.cons_self_tail]
 
 end BoundedContinuousFunction

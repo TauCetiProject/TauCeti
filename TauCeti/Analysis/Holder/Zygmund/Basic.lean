@@ -13,6 +13,7 @@ import TauCeti.Analysis.Calculus.IteratedFDeriv.FDerivApply
 import TauCeti.Analysis.Calculus.SmoothSeries
 import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 import TauCeti.Analysis.Distribution.TemperedDistribution.Convolution
+import TauCeti.Analysis.Distribution.TemperedDistribution.Deriv
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Fourier.ChangeOfVariables
 import TauCeti.Analysis.FunctionalSpaces.BesovSpace.LineDeriv
@@ -82,9 +83,14 @@ derivatives lie in `𝒞^{k-1+α}` lies in `𝒞^{k+α}`
   `u ∈ 𝒞^α` is a bounded continuous `α`-Hölder function.
 * `TauCeti.BesovSpace.toHolderSpace`: the inclusion `𝒞^α → C^{0,α}` as a continuous linear map
   into the Hölder space with norm `‖f‖_∞ + [f]_α`, characterised by
-  `TauCeti.BesovSpace.toHolderSpace_eq_iff` and `TauCeti.BesovSpace.toLpTop_toHolderSpace`.
+  `TauCeti.BesovSpace.toHolderSpace_eq_iff` and `TauCeti.BesovSpace.toLpTop_toHolderSpace`,
+  matching the order-zero `CkHolderSpace` representative via
+  `TauCeti.BesovSpace.coe_toCkHolderSpace_zero_inclusion`.
 * `TauCeti.exists_rpow_mul_norm_littlewoodPaleyBlock_succ_le_of_holderWith`: the blocks of an
   `α`-Hölder function with constant `H` satisfy `2^{(j+1)α} ‖Δ_{j+1} f‖_∞ ≤ C H`.
+* `TauCeti.CkHolderSpace.exists_rpow_mul_norm_littlewoodPaleyBlock_succ_le_sum_directional`:
+  weighted reverse Bernstein estimate bounding `2^{(k+s)(j+1)} ‖Δ_{j+1} f‖_∞` by the weighted
+  blocks of the directional `k`-th derivatives of `f`.
 * `TauCeti.BesovSpace.exists_toDistr_eq_and_norm_le_of_holderWith` and
   `TauCeti.BesovSpace.exists_toDistr_eq_and_norm_le_of_contDiff_of_holderWith`: the converse
   inclusions `C^{0,α} ⊆ 𝒞^α` and `C_b^{k,α} ⊆ 𝒞^{k+α}`, for every `α ≥ 0`, with norm bounds.
@@ -286,51 +292,64 @@ theorem exists_rpow_mul_norm_littlewoodPaleyBlock_succ_le_of_holderWith (α : �
       ∀ (j : ℕ) (g : Lp F ∞ (volume : Measure E)),
       littlewoodPaleyBlock F φ (j + 1) (toLpTop volume ℂ f : 𝓢'(E, F)) = g →
       2 ^ ((α : ℝ) * ((j + 1 : ℕ) : ℝ)) * ‖g‖ ≤ C * H := by
-  obtain ⟨C, hC, hm⟩ :=
-    φ.exists_integrable_and_integral_norm_rpow_mul_norm_fourierInv_inhomogeneousLittlewoodPaley_le
-      α.coe_nonneg
-  refine ⟨C, hC, fun f H hf j g hg ↦ ?_⟩
-  -- The block `Δ_{j+1} f` is the convolution `κ ⋆ f` with the kernel `κ = 𝓕⁻ ψ_{j+1}`, whose
-  -- integral vanishes; hence `(κ ⋆ f)(x) = ∫ κ(t) (f(x - t) - f(x)) dt` is at most
-  -- `H ∫ ‖t‖^α ‖κ t‖ dt`, the `α`-th moment of `κ` times `H`.
-  set κ : E → ℂ := 𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley (j + 1) ξ : ℂ))
-  have hκi : Integrable κ := by
-    simpa only [φ.coe_fourierInv_inhomogeneousLittlewoodPaleySchwartz] using
-      (𝓕⁻ (φ.inhomogeneousLittlewoodPaleySchwartz (j + 1))).integrable
-  obtain ⟨hmi, hmb⟩ := hm (j + 1)
-  have hconv : (g : E → F) =ᵐ[volume] κ ⋆[lsmul ℂ ℂ] (f : E → F) := by
-    refine (ae_eq_convolution_of_littlewoodPaleyBlock_eq φ (j + 1) hg).trans ?_
-    rw [convolution_congr (lsmul ℂ ℂ) (Filter.EventuallyEq.refl _ κ) (coeFn_toLpTop volume f)]
-  have hpt (x : E) : ‖(κ ⋆[lsmul ℂ ℂ] (f : E → F)) x‖ ≤ H * ∫ t, ‖t‖ ^ (α : ℝ) * ‖κ t‖ := by
-    have hint₁ : Integrable fun t ↦ κ t • f (x - t) :=
-      hκi.smul_bdd ‖f‖
-        (f.continuous.comp (continuous_const.sub continuous_id)).aestronglyMeasurable
-        (Filter.Eventually.of_forall fun t ↦ f.norm_coe_le_norm _)
-    have hzero : ∫ t, κ t • f x = 0 := by
-      rw [integral_smul_const, φ.integral_fourierInv_inhomogeneousLittlewoodPaley_succ j,
-        zero_smul]
-    have heq : (κ ⋆[lsmul ℂ ℂ] (f : E → F)) x = ∫ t, κ t • (f (x - t) - f x) := by
-      simp only [convolution_def, lsmul_apply, smul_sub]
-      rw [integral_sub hint₁ (hκi.smul_const _), hzero, sub_zero]
-    rw [heq, ← integral_const_mul]
-    refine norm_integral_le_of_norm_le (hmi.const_mul _) (Filter.Eventually.of_forall fun t ↦ ?_)
-    have hd : ‖f (x - t) - f x‖ ≤ H * ‖t‖ ^ (α : ℝ) := by
-      simpa [dist_eq_norm] using hf.dist_le (x - t) x
-    calc ‖κ t • (f (x - t) - f x)‖ ≤ ‖κ t‖ * (H * ‖t‖ ^ (α : ℝ)) := by
-          rw [norm_smul]
-          gcongr
-      _ = H * (‖t‖ ^ (α : ℝ) * ‖κ t‖) := by ring
-  have hnorm : ‖g‖ ≤ H * (((2 : ℝ) ^ ((α : ℝ) * ((j + 1 : ℕ) : ℝ)))⁻¹ * C) := by
-    refine Lp.norm_top_le_of_ae_bound (by positivity) ?_
-    filter_upwards [hconv] with x hx
-    rw [hx]
-    exact (hpt x).trans (by gcongr)
+  refine ⟨2 ^ (α : ℝ) *
+      ∫ y, ‖y‖ ^ (α : ℝ) * ‖𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley 1 ξ : ℂ)) y‖,
+    mul_nonneg (by positivity) (integral_nonneg fun _ ↦ by positivity), fun f H hf j g hg ↦ ?_⟩
+  have hinc : ∀ x y, ‖f (x - y) - f x‖ ≤ (H : ℝ) * ‖y‖ ^ (α : ℝ) + 0 * ‖y‖ := fun x y ↦ by
+    simpa [dist_eq_norm] using hf.dist_le (x - y) x
+  have hblock := norm_littlewoodPaleyBlock_succ_le_of_norm_sub_le φ α.coe_nonneg H.coe_nonneg
+    le_rfl hinc hg
+  rw [zero_mul, zero_mul, add_zero] at hblock
+  have hpow : (2 : ℝ) ^ ((α : ℝ) * ((j + 1 : ℕ) : ℝ)) =
+      2 ^ (α : ℝ) * 2 ^ ((α : ℝ) * j) := by
+    rw [Nat.cast_add, Nat.cast_one, mul_add, mul_one, Real.rpow_add two_pos, mul_comm]
   calc 2 ^ ((α : ℝ) * ((j + 1 : ℕ) : ℝ)) * ‖g‖
-      ≤ 2 ^ ((α : ℝ) * ((j + 1 : ℕ) : ℝ)) *
-          (H * (((2 : ℝ) ^ ((α : ℝ) * ((j + 1 : ℕ) : ℝ)))⁻¹ * C)) := by gcongr
-    _ = C * H := by field_simp
+      ≤ 2 ^ ((α : ℝ) * ((j + 1 : ℕ) : ℝ)) * ((H : ℝ) * ((2 : ℝ) ^ ((α : ℝ) * j))⁻¹ *
+          ∫ y, ‖y‖ ^ (α : ℝ) * ‖𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley 1 ξ : ℂ)) y‖) := by
+        gcongr
+    _ = (2 ^ (α : ℝ) *
+          ∫ y, ‖y‖ ^ (α : ℝ) * ‖𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley 1 ξ : ℂ)) y‖) *
+          H := by
+        rw [hpow]
+        have h2αj : (2 : ℝ) ^ ((α : ℝ) * j) ≠ 0 := by positivity
+        field_simp
 
 end Holder
+
+namespace CkHolderSpace
+
+open BoundedContinuousFunction
+
+/-- **Weighted reverse Bernstein bound for `C_b^{k,α}` functions.** Given an orthonormal basis `b`
+of `E`, there is `C ≥ 0` depending only on `φ` and `b` such that for every `k : ℕ`, `α : ℝ≥0`,
+`f : CkHolderSpace k α E F`, real weight `s`, dyadic index `j : ℕ`, and `L^∞` representatives `v`
+and `w i` of `Δ_{j+1} f` and `Δ_{j+1} (D^k f · (b ∘ i))`,
+`2^{(k + s)(j + 1)} ‖v‖ ≤ C^k ∑ᵢ 2^{s(j + 1)} ‖w i‖`. -/
+theorem exists_rpow_mul_norm_littlewoodPaleyBlock_succ_le_sum_directional
+    (φ : ContDiffBump (0 : E)) {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ E) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ (k : ℕ) {α : ℝ≥0} (f : CkHolderSpace k α E F) (s : ℝ) (j : ℕ)
+      (v : Lp F ∞ (volume : Measure E)) (w : (Fin k → ι) → Lp F ∞ (volume : Measure E)),
+      littlewoodPaleyBlock F φ (j + 1)
+        (toLpTop volume ℂ f.toBoundedContinuousFunction : 𝓢'(E, F)) = v →
+      (∀ i, littlewoodPaleyBlock F φ (j + 1)
+        (toLpTop volume ℂ (f.directionalIteratedFDeriv (Fin.last k) (⇑b ∘ i)) : 𝓢'(E, F)) =
+          w i) →
+      2 ^ (((k : ℝ) + s) * ((j + 1 : ℕ) : ℝ)) * ‖v‖ ≤
+        C ^ k * ∑ i, 2 ^ (s * ((j + 1 : ℕ) : ℝ)) * ‖w i‖ := by
+  obtain ⟨c, hc0, hrev⟩ :=
+    exists_rpow_mul_norm_littlewoodPaleyBlock_succ_le_sum_of_iteratedLineDerivOp_eq (F := F) φ b
+  refine ⟨c, hc0, fun k {α} f s j v w hv hw ↦ hrev k s j _ v w hv fun i ↦ ?_⟩
+  rw [← hv, ← littlewoodPaleyBlock_iteratedLineDerivOp,
+    iteratedLineDerivOp_toLpTop_eq (g := f.directionalIteratedFDeriv (Fin.last k) (⇑b ∘ i))
+      (by simpa only [coe_toBoundedContinuousFunction] using f.contDiff)
+      (fun m hm ↦ ⟨‖f‖, fun x ↦ by
+        simpa only [coe_toBoundedContinuousFunction] using f.norm_iteratedFDeriv_apply_le hm.le x⟩)
+      (⇑b ∘ i) (fun x ↦ by
+        simp only [directionalIteratedFDeriv_apply, coe_toBoundedContinuousFunction,
+          Fin.val_last]),
+    hw i]
+
+end CkHolderSpace
 
 namespace BesovSpace
 
@@ -720,6 +739,21 @@ theorem toCkHolderSpace_eq_iff (k : ℕ) (hα0 : 0 < α) (hα1 : α < 1)
   refine ⟨fun h ↦ h ▸ toLpTop_toCkHolderSpace φ k hα0 hα1 u, fun h ↦ CkHolderSpace.ext fun x ↦ ?_⟩
   rw [toCkHolderSpace_apply, coe_ckHolderRepr, repr_eq φ (fun u ↦ (ckRepr_spec φ k hα0 hα1 u).1) h,
     CkHolderSpace.coe_toBoundedContinuousFunction]
+
+/-- The order-zero `CkHolderSpace` representative of `u ∈ 𝒞^α` (viewed in `𝒞^{0+α}`) has the same
+underlying function as `toHolderSpace F φ hα0 hα1 u`. -/
+theorem coe_toCkHolderSpace_zero_inclusion (hα0 : 0 < α) (hα1 : α < 1)
+    (u : BesovSpace F φ α ∞ ∞) :
+    ⇑(toCkHolderSpace F φ 0 hα0 hα1 (inclusion F φ ∞ (by simp) le_rfl u)) =
+      ⇑(toHolderSpace F φ hα0 hα1 u) := by
+  have hfg :
+      (toCkHolderSpace F φ 0 hα0 hα1
+        (inclusion F φ ∞ (by simp) le_rfl u)).toBoundedContinuousFunction =
+      (toHolderSpace F φ hα0 hα1 u).toBoundedContinuousFunction :=
+    toTemperedDistribution_toLpTop_injective (μ := volume) <| by simp
+  ext x
+  simpa only [CkHolderSpace.coe_toBoundedContinuousFunction,
+    HolderSpace.toBoundedContinuousFunction_apply] using DFunLike.congr_fun hfg x
 
 /-! ### The converse inclusion `C_b^{k,α} ⊆ 𝒞^{k+α}` -/
 

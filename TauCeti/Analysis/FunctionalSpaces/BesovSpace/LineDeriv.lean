@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Basic
-import TauCeti.Analysis.Distribution.TemperedDistribution.Bernstein
 
 /-!
 # Besov regularity from the first derivatives
@@ -66,31 +65,16 @@ private theorem exists_rpow_mul_norm_littlewoodPaleyBlock_succ_le (φ : ContDiff
       (∀ i, ∂_{b i} (g : 𝓢'(E, F)) = h i) →
       2 ^ ((s + 1) * ((j + 1 : ℕ) : ℝ)) * ‖g‖ ≤
         c * ∑ i, 2 ^ (s * ((j + 1 : ℕ) : ℝ)) * ‖h i‖ := by
-  obtain ⟨Cr, hCr, hrev⟩ :=
-    b.exists_norm_le_div_mul_sum_norm_of_lineDerivOp_eq (F := F) (2 * φ.rOut / φ.rIn)
-  have hrIn := φ.rIn_pos
-  refine ⟨2 * Cr / φ.rIn, by positivity, fun {p} _ s f j g h hg hh ↦ ?_⟩
-  -- The block `g` has Fourier transform carried by the annulus
-  -- `2^j φ.rIn ≤ ‖ξ‖ ≤ 2^{j+1} φ.rOut`, where the reverse Bernstein inequality applies.
-  have hR : (0 : ℝ) < 2 ^ j * φ.rIn := by positivity
-  have hvan : IsVanishingOn (𝓕 (g : 𝓢'(E, F)) : 𝓢'(E, F))
-      (ball 0 (2 ^ j * φ.rIn) ∪ (closedBall 0 (2 * φ.rOut / φ.rIn * (2 ^ j * φ.rIn)))ᶜ) := by
-    have heq : 2 * φ.rOut / φ.rIn * (2 ^ j * φ.rIn) = 2 ^ (j + 1) * φ.rOut := by
-      field_simp
-      ring
-    rw [heq, ← hg]
-    simpa only [Set.compl_sdiff, Set.union_comm] using
-      isVanishingOn_fourier_littlewoodPaleyBlock_succ φ j (f : 𝓢'(E, F))
-  have h2 : (2 : ℝ) ^ ((s + 1) * ((j + 1 : ℕ) : ℝ)) =
-      2 ^ (s * ((j + 1 : ℕ) : ℝ)) * (2 * 2 ^ j) := by
-    rw [add_mul, one_mul, Real.rpow_add two_pos, Real.rpow_natCast, pow_succ, mul_comm 2]
-  calc (2 : ℝ) ^ ((s + 1) * ((j + 1 : ℕ) : ℝ)) * ‖g‖
-      ≤ 2 ^ ((s + 1) * ((j + 1 : ℕ) : ℝ)) * (Cr / (2 ^ j * φ.rIn) * ∑ i, ‖h i‖) := by
-        gcongr
-        exact hrev hR g h hvan hh
-    _ = 2 * Cr / φ.rIn * ∑ i, 2 ^ (s * ((j + 1 : ℕ) : ℝ)) * ‖h i‖ := by
-        rw [h2, ← Finset.mul_sum]
-        field_simp
+  obtain ⟨c, hc, hrev⟩ :=
+    exists_rpow_mul_norm_littlewoodPaleyBlock_succ_le_sum_of_iteratedLineDerivOp_eq (F := F) φ b
+  refine ⟨c, hc, fun {p} _ s f j g h hg hh ↦ ?_⟩
+  have h1 := hrev 1 s j (f : 𝓢'(E, F)) g (fun i ↦ h (i 0)) hg fun i ↦ by
+    rw [LineDeriv.iteratedLineDerivOp_succ_left, Function.comp_apply,
+      LineDeriv.iteratedLineDerivOp_fin_zero, hh (i 0)]
+  rw [Fintype.sum_equiv (Equiv.funUnique (Fin 1) ι)
+    (fun i ↦ 2 ^ (s * ((j + 1 : ℕ) : ℝ)) * ‖h (i 0)‖)
+    (fun i ↦ 2 ^ (s * ((j + 1 : ℕ) : ℝ)) * ‖h i‖) fun _ ↦ rfl] at h1
+  simpa only [Nat.cast_one, add_comm (1 : ℝ) s, pow_one] using h1
 
 /-- **Besov regularity from the first derivatives.** Let `b` be an orthonormal basis of `E`. There
 is `C`, depending only on `φ` and `b`, with the following property. Let `s ∈ ℝ`,

@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Distribution.SchwartzSpace.Basic
 public import TauCeti.MeasureTheory.Function.Lp.BoundedContinuous
 import Mathlib.Analysis.Distribution.SchwartzSpace.CompactSupport
 import Mathlib.Geometry.Manifold.SmoothApprox
+import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
@@ -80,44 +81,44 @@ theorem toLpTop_mem_closure_range_schwartz_toLp_top_iff {μ : Measure E}
       Tendsto f (cocompact E) (𝓝 0) := by
   constructor
   · intro hf
-    refine Metric.tendsto_nhds.2 fun ε hε ↦ ?_
-    obtain ⟨_, ⟨g, rfl⟩, hfg⟩ := Metric.mem_closure_iff.1 hf (ε / 2) (half_pos hε)
-    have hnorm : ‖f - g.toBoundedContinuousFunction‖ < ε / 2 := by
-      dsimp only at hfg
-      rw [dist_eq_norm, g.toLp_top_eq_toLpTop (𝕜 := 𝕜), ← map_sub, norm_toLpTop] at hfg
-      exact hfg
-    filter_upwards [Metric.tendsto_nhds.1 g.tendsto_cocompact (ε / 2) (half_pos hε)] with x hx
-    calc dist (f x) 0 ≤ dist (f x) (g x) + dist (g x) 0 := dist_triangle _ _ _
-      _ = ‖(f - g.toBoundedContinuousFunction) x‖ + dist (g x) 0 := by rw [dist_eq_norm]; rfl
-      _ ≤ ‖f - g.toBoundedContinuousFunction‖ + dist (g x) 0 :=
-          add_le_add ((f - g.toBoundedContinuousFunction).norm_coe_le_norm x) le_rfl
-      _ < ε / 2 + ε / 2 := add_lt_add hnorm hx
-      _ = ε := add_halves ε
+    have hiso : Isometry (toLpTop μ 𝕜 : (E →ᵇ F) →L[𝕜] Lp F ∞ μ) :=
+      AddMonoidHomClass.isometry_of_norm _ (norm_toLpTop μ)
+    have him :
+        ((toLpTop μ 𝕜 : (E →ᵇ F) →L[𝕜] Lp F ∞ μ) ''
+            Set.range fun g : 𝓢(E, F) ↦ g.toBoundedContinuousFunction) =
+          Set.range fun g : 𝓢(E, F) ↦ g.toLp ∞ μ := by
+      ext y
+      simp [SchwartzMap.toLp_top_eq_toLpTop (𝕜 := 𝕜)]
+    have hmem : f ∈ closure (Set.range fun g : 𝓢(E, F) ↦ g.toBoundedContinuousFunction) := by
+      rwa [hiso.isUniformInducing.isInducing.closure_eq_preimage_closure_image, Set.mem_preimage,
+        him]
+    have hsub :
+        (Set.range fun g : 𝓢(E, F) ↦ g.toBoundedContinuousFunction) ⊆
+          Set.range (ZeroAtInftyContinuousMap.toBCF : ZeroAtInftyContinuousMap E F → E →ᵇ F) :=
+      Set.range_subset_iff.2 fun g ↦ ⟨g.toZeroAtInfty, g.toZeroAtInfty_toBCF⟩
+    obtain ⟨h, hh⟩ := closure_minimal hsub ZeroAtInftyContinuousMap.isClosed_range_toBCF hmem
+    rw [← hh]
+    exact zero_at_infty h
   · intro hf
     refine Metric.mem_closure_iff.2 fun ε hε ↦ ?_
-    -- Outside a large ball of radius `R`, `‖f x‖ < ε / 3`.
+    -- Outside a compact set `K`, `‖f x‖ < ε / 3`.
     obtain ⟨K, hK, hKε⟩ := hasBasis_cocompact.mem_iff.1
       (Metric.tendsto_nhds.1 hf (ε / 3) (by positivity))
-    obtain ⟨R₀, hKR₀⟩ := hK.isBounded.subset_closedBall (0 : E)
-    set R : ℝ := max R₀ 1
-    have hR : 0 < R := lt_of_lt_of_le one_pos (le_max_right R₀ 1)
-    let χ : ContDiffBump (0 : E) := ⟨R, R + 1, hR, by linarith⟩
+    obtain ⟨χ, hχ_smooth, hχ_range, hχ_one, hχ_supp, -⟩ :=
+      hK.exists_contDiff_cutoff isOpen_univ (Set.subset_univ K)
     set fcut : E → F := fun x ↦ χ x • f x
-    have hfcut_cont : Continuous fcut := χ.continuous.smul f.continuous
-    have hfcut_supp : HasCompactSupport fcut := χ.hasCompactSupport.smul_right
+    have hfcut_cont : Continuous fcut := hχ_smooth.continuous.smul f.continuous
+    have hfcut_supp : HasCompactSupport fcut := hχ_supp.smul_right
     have hfcut_dist : ∀ x, ‖f x - fcut x‖ ≤ ε / 3 := fun x ↦ by
-      rcases le_or_gt ‖x‖ R with hx | hx
-      · have h1 : χ x = 1 := χ.one_of_mem_closedBall (mem_closedBall_zero_iff.2 hx)
+      by_cases hx : x ∈ K
+      · have h1 : χ x = 1 := interior_subset (hχ_one hx)
         simp only [fcut, h1, one_smul, sub_self, norm_zero]
         positivity
-      · have hxK : x ∈ Kᶜ := fun hxK ↦ by
-          have hle : ‖x‖ ≤ R₀ := mem_closedBall_zero_iff.1 (hKR₀ hxK)
-          linarith [le_max_left R₀ 1]
-        have hfx : ‖f x‖ < ε / 3 := by simpa [dist_zero_right] using hKε hxK
-        have hsub : f x - fcut x = (1 - χ x) • f x := by
-          simp only [fcut, sub_smul, one_smul]
-        rw [hsub, norm_smul, Real.norm_of_nonneg (sub_nonneg.2 χ.le_one)]
-        exact (mul_le_of_le_one_left (norm_nonneg _) (by linarith [χ.nonneg' x])).trans hfx.le
+      · have hfx : ‖f x‖ < ε / 3 := by simpa [dist_zero_right] using hKε hx
+        have hχx : χ x ∈ Set.Icc (0 : ℝ) 1 := hχ_range ⟨x, rfl⟩
+        have hsub : f x - fcut x = (1 - χ x) • f x := by simp only [fcut, sub_smul, one_smul]
+        rw [hsub, norm_smul, Real.norm_of_nonneg (sub_nonneg.2 hχx.2)]
+        exact (mul_le_of_le_one_left (norm_nonneg _) (by linarith [hχx.1])).trans hfx.le
     -- Smoothly approximate `fcut` within `ε / 3` while preserving compact support.
     obtain ⟨g₀, hg₀_smooth, hg₀_approx, hg₀_supp⟩ := hfcut_cont.exists_contDiff_approx ⊤
       (ε := fun _ ↦ ε / 3) continuous_const fun _ ↦ by positivity

@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Distribution.TemperedDistribution
+public import TauCeti.MeasureTheory.Function.Lp.BoundedContinuous
 import TauCeti.Analysis.Distribution.SchwartzSpace.Deriv
+import TauCeti.Analysis.Sobolev.WeakDeriv.TemperedDistribution
 
 /-!
 # Directional derivatives of tempered distributions
@@ -19,7 +21,8 @@ along `1` and `I`, as for Schwartz functions (`SchwartzMap.laplacian_eq_lineDeri
 are the identities needed to compute compositions of constant-coefficient first-order operators
 on tempered distributions. Directional differentiation of the tempered distribution given by a
 Schwartz function also commutes with a continuous real-linear map applied to its values, and its
-iterated directional derivatives are those of the Schwartz function.
+iterated directional derivatives are those of the Schwartz function; likewise, the distributional
+directional derivatives of bounded `C^k` functions agree with their classical derivatives.
 
 ## Main results
 
@@ -29,6 +32,9 @@ iterated directional derivatives are those of the Schwartz function.
   `∂_v (L ∘ f) = L ∘ ∂_v f` for a Schwartz function `f` viewed as a tempered distribution.
 * `TemperedDistribution.iteratedLineDerivOp_toTemperedDistributionCLM_eq`: iterated directional
   derivatives of a Schwartz function viewed as a tempered distribution.
+* `BoundedContinuousFunction.lineDerivOp_toLpTop_eq` and
+  `BoundedContinuousFunction.iteratedLineDerivOp_toLpTop_eq`: distributional directional and
+  iterated directional derivatives of bounded differentiable and `C^k` functions.
 -/
 
 public section
@@ -73,3 +79,69 @@ theorem iteratedLineDerivOp_toTemperedDistributionCLM_eq (f : 𝓢(E, F)) {k : �
       lineDerivOp_toTemperedDistributionCLM_eq]
 
 end TemperedDistribution
+
+namespace BoundedContinuousFunction
+
+open MeasureTheory
+open scoped SchwartzMap LineDeriv
+
+variable {E F : Type*} [NormedAddCommGroup E] [MeasurableSpace E] [BorelSpace E]
+  [NormedSpace ℝ E] [FiniteDimensional ℝ E] [NormedAddCommGroup F] [NormedSpace ℂ F]
+  [CompleteSpace F]
+
+/-- **Distributional directional derivative of a bounded differentiable function.** If `f` and `g`
+are bounded continuous with `f` differentiable and `g x = fderiv ℝ f x v`, then `∂_v f = g` in
+`𝓢'(E, F)` for any additive Haar measure `μ`. -/
+theorem lineDerivOp_toLpTop_eq {μ : Measure E} [μ.IsAddHaarMeasure] {f g : E →ᵇ F}
+    (hf : Differentiable ℝ f) (v : E) (hg : ∀ x, g x = fderiv ℝ f x v) :
+    ∂_{v} (toLpTop μ ℂ f : 𝓢'(E, F)) = (toLpTop μ ℂ g : 𝓢'(E, F)) :=
+  TauCeti.lineDerivOp_toTemperedDistribution_eq_of_hasLineDerivAt f.continuous.locallyIntegrable
+    g.continuous.locallyIntegrable (coeFn_toLpTop μ f) (coeFn_toLpTop μ g)
+    fun x ↦ (hg x).symm ▸ (hf x).hasFDerivAt.hasLineDerivAt v
+
+/-- **Distributional iterated directional derivatives of bounded `C^k` functions.** If `f` is
+bounded `C^k` with bounded derivatives of order `< k` and `g` is bounded continuous with
+`g x = iteratedFDeriv ℝ k f x v`, then `∂^v f = g` in `𝓢'(E, F)` for any additive Haar
+measure `μ`. -/
+theorem iteratedLineDerivOp_toLpTop_eq {μ : Measure E} [μ.IsAddHaarMeasure] {k : ℕ} {f g : E →ᵇ F}
+    (hf : ContDiff ℝ k f) (hbdd : ∀ i < k, ∃ C, ∀ x, ‖iteratedFDeriv ℝ i f x‖ ≤ C)
+    (v : Fin k → E) (hg : ∀ x, g x = iteratedFDeriv ℝ k f x v) :
+    ∂^{v} (toLpTop μ ℂ f : 𝓢'(E, F)) = (toLpTop μ ℂ g : 𝓢'(E, F)) := by
+  induction k generalizing g with
+  | zero =>
+    have hfg : f = g := by
+      ext x
+      simpa only [iteratedFDeriv_zero_apply] using (hg x).symm
+    simp [hfg]
+  | succ k ih =>
+    obtain ⟨C, hC⟩ := hbdd k (Nat.lt_succ_self k)
+    have hcont : Continuous fun x ↦ iteratedFDeriv ℝ k f x (Fin.tail v) :=
+      ((ContinuousMultilinearMap.apply ℝ (fun _ : Fin k ↦ E) F (Fin.tail v)).continuous).comp
+        (hf.continuous_iteratedFDeriv (by exact_mod_cast Nat.le_succ k))
+    have hbd : ∀ x, ‖iteratedFDeriv ℝ k f x (Fin.tail v)‖ ≤ C * ∏ i, ‖Fin.tail v i‖ := fun x ↦
+      (ContinuousMultilinearMap.le_opNorm _ _).trans
+        (mul_le_mul_of_nonneg_right (hC x) (Finset.prod_nonneg fun _ _ ↦ norm_nonneg _))
+    set g' : E →ᵇ F := ofNormedAddCommGroup (fun x ↦ iteratedFDeriv ℝ k f x (Fin.tail v))
+      hcont (C * ∏ i, ‖Fin.tail v i‖) hbd
+    have hih : ∂^{Fin.tail v} (toLpTop μ ℂ f : 𝓢'(E, F)) = (toLpTop μ ℂ g' : 𝓢'(E, F)) :=
+      ih (hf.of_le (by exact_mod_cast Nat.le_succ k))
+        (fun i hi ↦ hbdd i (hi.trans (Nat.lt_succ_self k))) (Fin.tail v)
+        fun x ↦ by simp only [g', coe_ofNormedAddCommGroup]
+    have hdiff : ∀ x, HasFDerivAt (g' : E → F)
+        ((ContinuousMultilinearMap.apply ℝ (fun _ : Fin k ↦ E) F (Fin.tail v)).comp
+          (continuousMultilinearCurryLeftEquiv ℝ (fun _ : Fin (k + 1) ↦ E) F
+            (iteratedFDeriv ℝ (k + 1) f x))) x := fun x ↦ by
+      have hF : HasFDerivAt (iteratedFDeriv ℝ k f)
+          (continuousMultilinearCurryLeftEquiv ℝ (fun _ : Fin (k + 1) ↦ E) F
+            (iteratedFDeriv ℝ (k + 1) f x)) x := by
+        have h := (hf.differentiable_iteratedFDeriv (by exact_mod_cast Nat.lt_succ_self k) x
+          ).hasFDerivAt
+        rwa [fderiv_iteratedFDeriv] at h
+      exact (ContinuousMultilinearMap.apply ℝ (fun _ : Fin k ↦ E) F (Fin.tail v)).hasFDerivAt.comp
+        x hF
+    rw [LineDeriv.iteratedLineDerivOp_succ_left, hih]
+    refine lineDerivOp_toLpTop_eq (fun x ↦ (hdiff x).differentiableAt) (v 0) fun x ↦ ?_
+    rw [hg x, (hdiff x).fderiv]
+    simp [Fin.cons_self_tail]
+
+end BoundedContinuousFunction

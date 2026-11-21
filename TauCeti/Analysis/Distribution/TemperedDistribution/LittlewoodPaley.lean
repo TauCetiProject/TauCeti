@@ -16,6 +16,7 @@ import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
 import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 import TauCeti.Analysis.Distribution.TemperedDistribution.Bernstein
 import TauCeti.Analysis.Distribution.TemperedDistribution.Convolution
+import TauCeti.Analysis.Distribution.TemperedDistribution.Deriv
 import TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Fourier.ChangeOfVariables
@@ -168,6 +169,9 @@ blocks `Δⱼ u`.
 * `TemperedDistribution.norm_littlewoodPaleyBlock_succ_le_of_norm_sub_le`: kernel cancellation
   bound for the dyadic blocks of a bounded continuous function with an `A ‖y‖^α + B ‖y‖` increment
   bound.
+* `TemperedDistribution.exists_norm_littlewoodPaleyBlock_succ_le_sum_of_iteratedLineDerivOp_eq`
+  and `exists_rpow_mul_norm_littlewoodPaleyBlock_succ_le_sum_of_iteratedLineDerivOp_eq`: dyadic
+  and weighted dyadic reverse Bernstein bounds for `Lᵖ` block representatives.
 * `TemperedDistribution.exists_norm_littlewoodPaleyBlock_succ_le_sum_iteratedFDeriv`: reverse
   Bernstein bound on dyadic blocks of a bounded `C^k` function in terms of the blocks of its
   directional `k`-th derivatives.
@@ -1010,27 +1014,45 @@ theorem littlewoodPaleyBlock_mem_closure_range_schwartz_toLp [CompleteSpace F]
     (hv : littlewoodPaleyBlock F φ j (f : 𝓢'(E, F)) = v) :
     v ∈ closure (Set.range fun g : 𝓢(E, F) ↦ g.toLp p) := by
   obtain ⟨C, hC⟩ := exists_littlewoodPaleyBlock_eq_and_norm_le (F := F) φ
-  refine Metric.mem_closure_iff.2 fun ε hε ↦ ?_
-  obtain ⟨_, ⟨g, rfl⟩, hfg⟩ := Metric.mem_closure_iff.1 hf (ε / (max C 0 + 1)) (by positivity)
-  set gj : 𝓢(E, F) := SchwartzMap.fourierMultiplierCLM F
-    (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) g
-  refine ⟨gj.toLp p (volume : Measure E), ⟨gj, rfl⟩, ?_⟩
-  obtain ⟨r, hr, hrnorm⟩ := hC j (f - g.toLp p (volume : Measure E))
-  have hvr : v - gj.toLp p (volume : Measure E) = r := Lp.toTemperedDistribution_injective <| by
+  let T : Lp F p (volume : Measure E) →L[ℂ] Lp F p (volume : Measure E) :=
+    LinearMap.mkContinuous
+      { toFun u := (hC j u).choose
+        map_add' u₁ u₂ := Lp.toTemperedDistribution_injective <| by
+          calc Lp.toTemperedDistribution (hC j (u₁ + u₂)).choose
+              = littlewoodPaleyBlock F φ j (Lp.toTemperedDistribution (u₁ + u₂)) :=
+                (hC j (u₁ + u₂)).choose_spec.1.symm
+            _ = littlewoodPaleyBlock F φ j (Lp.toTemperedDistribution u₁) +
+                  littlewoodPaleyBlock F φ j (Lp.toTemperedDistribution u₂) := by
+                rw [Lp.toTemperedDistribution_add, map_add]
+            _ = Lp.toTemperedDistribution ((hC j u₁).choose + (hC j u₂).choose) := by
+                rw [Lp.toTemperedDistribution_add]
+                exact congrArg₂ (· + ·) (hC j u₁).choose_spec.1 (hC j u₂).choose_spec.1
+        map_smul' c u := Lp.toTemperedDistribution_injective <| by
+          rw [RingHom.id_apply]
+          calc Lp.toTemperedDistribution (hC j (c • u)).choose
+              = littlewoodPaleyBlock F φ j (Lp.toTemperedDistribution (c • u)) :=
+                (hC j (c • u)).choose_spec.1.symm
+            _ = c • littlewoodPaleyBlock F φ j (Lp.toTemperedDistribution u) := by
+                rw [Lp.toTemperedDistribution_smul, map_smul]
+            _ = Lp.toTemperedDistribution (c • (hC j u).choose) := by
+                rw [Lp.toTemperedDistribution_smul]
+                exact congrArg (c • ·) (hC j u).choose_spec.1 }
+      C fun u ↦ (hC j u).choose_spec.2
+  have hT (u : Lp F p (volume : Measure E)) :
+      Lp.toTemperedDistribution (T u) = littlewoodPaleyBlock F φ j (Lp.toTemperedDistribution u) :=
+    (hC j u).choose_spec.1.symm
+  have hvT : v = T f := Lp.toTemperedDistribution_injective <| by
     dsimp only
-    rw [Lp.toTemperedDistribution_sub, ← hv, Lp.toTemperedDistribution_toLp_eq, ← hr,
-      Lp.toTemperedDistribution_sub, map_sub, Lp.toTemperedDistribution_toLp_eq,
-      littlewoodPaleyBlock_toTemperedDistributionCLM_eq]
-  rw [dist_eq_norm, hvr]
-  rw [dist_eq_norm] at hfg
-  calc ‖r‖ ≤ C * ‖f - g.toLp p (volume : Measure E)‖ := hrnorm
-    _ ≤ max C 0 * ‖f - g.toLp p (volume : Measure E)‖ :=
-        mul_le_mul_of_nonneg_right (le_max_left _ _) (norm_nonneg _)
-    _ ≤ max C 0 * (ε / (max C 0 + 1)) :=
-        mul_le_mul_of_nonneg_left hfg.le (le_max_right _ _)
-    _ < (max C 0 + 1) * (ε / (max C 0 + 1)) :=
-        mul_lt_mul_of_pos_right (lt_add_one _) (by positivity)
-    _ = ε := mul_div_cancel₀ ε (by positivity)
+    rw [hT f, hv]
+  rw [hvT]
+  refine map_mem_closure T.continuous hf fun _ ⟨g, hg⟩ ↦ ?_
+  refine ⟨SchwartzMap.fourierMultiplierCLM F
+    (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) g,
+    Lp.toTemperedDistribution_injective ?_⟩
+  rw [← hg]
+  dsimp only
+  rw [hT, Lp.toTemperedDistribution_toLp_eq,
+    Lp.toTemperedDistribution_toLp_eq, littlewoodPaleyBlock_toTemperedDistributionCLM_eq]
 
 /-- **The low-pass truncations are bounded on `Lᵖ` uniformly in `N`.** For every `1 ≤ p ≤ ∞`,
 every `N` and every `f ∈ Lᵖ`, the truncation `S_N f = ∑_{j ≤ N} Δⱼ f` is a function in `Lᵖ` with
@@ -1185,14 +1207,8 @@ theorem norm_littlewoodPaleyBlock_succ_le_of_norm_sub_le [CompleteSpace F] {α :
   -- `v` agrees almost everywhere with the convolution `κ ⋆ f`.
   have hae : (v : E → F) =ᵐ[volume] (κ : E → ℂ) ⋆[ContinuousLinearMap.lsmul ℂ ℂ] (f : E → F) := by
     refine (ae_eq_convolution_of_littlewoodPaleyBlock_eq φ (j + 1) hv).trans ?_
-    filter_upwards with x
-    simp only [convolution_def, ContinuousLinearMap.lsmul_apply, hκ]
-    refine integral_congr_ae ?_
-    have hsub := (Measure.measurePreserving_sub_left (volume : Measure E) x).quasiMeasurePreserving
-      |>.ae_eq_comp (coeFn_toLpTop (𝕜 := ℂ) (volume : Measure E) f)
-    filter_upwards [hsub] with y hy
-    rw [Function.comp_apply, Function.comp_apply] at hy
-    rw [hy]
+    rw [← hκ, convolution_congr (ContinuousLinearMap.lsmul ℂ ℂ) (Filter.EventuallyEq.refl _ _)
+      (coeFn_toLpTop (volume : Measure E) f)]
   -- Subtract `f x` using `∫ κ = 0` and apply the increment bound pointwise.
   have hpt (x : E) :
       ‖((κ : E → ℂ) ⋆[ContinuousLinearMap.lsmul ℂ ℂ] (f : E → F)) x‖ ≤
@@ -1201,12 +1217,9 @@ theorem norm_littlewoodPaleyBlock_succ_le_of_norm_sub_le [CompleteSpace F] {α :
           B * ((2 : ℝ) ^ j)⁻¹ *
             (∫ y, ‖y‖ * ‖𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley 1 ξ : ℂ)) y‖) := by
     have hint1 : Integrable (fun y ↦ κ y • f (x - y)) volume :=
-      ((κ.integrable (μ := volume)).norm.mul_const ‖f‖).mono'
-        ((κ.continuous.smul (f.continuous.comp (continuous_const.sub continuous_id))
-          ).aestronglyMeasurable)
-        (Filter.Eventually.of_forall fun y ↦ by
-          rw [norm_smul]
-          exact mul_le_mul_of_nonneg_left (f.norm_coe_le_norm (x - y)) (norm_nonneg _))
+      (κ.integrable (μ := volume)).smul_bdd ‖f‖
+        (f.continuous.comp (continuous_const.sub continuous_id)).aestronglyMeasurable
+        (Filter.Eventually.of_forall fun y ↦ f.norm_coe_le_norm _)
     have hint2 : Integrable (fun y ↦ κ y • f x) volume :=
       (κ.integrable (μ := volume)).smul_const (f x)
     have hsub_eq :
@@ -1254,6 +1267,58 @@ theorem norm_littlewoodPaleyBlock_succ_le_of_norm_sub_le [CompleteSpace F] {α :
   rw [hx]
   exact hpt x
 
+/-- **Dyadic reverse Bernstein bound for `Lᵖ` block representatives.** Given an orthonormal basis
+`b` of `E`, there is `C ≥ 0` depending only on `φ` and `b` such that for every `1 ≤ p ≤ ∞`,
+`k, j : ℕ`, `u : 𝓢'(E, F)`, and `Lᵖ` representatives `v` of `Δ_{j+1} u` and `w i` of
+`∂^{b ∘ i} v`, `‖v‖_p ≤ (C / (2^j φ.rIn))^k ∑ᵢ ‖w i‖_p`. -/
+theorem exists_norm_littlewoodPaleyBlock_succ_le_sum_of_iteratedLineDerivOp_eq [CompleteSpace F]
+    {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ E) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ {p : ℝ≥0∞} [Fact (1 ≤ p)] (k j : ℕ) (u : 𝓢'(E, F))
+      (v : Lp F p (volume : Measure E)) (w : (Fin k → ι) → Lp F p (volume : Measure E)),
+      littlewoodPaleyBlock F φ (j + 1) u = v →
+      (∀ i, ∂^{⇑b ∘ i} (v : 𝓢'(E, F)) = w i) →
+      ‖v‖ ≤ (C / (2 ^ j * φ.rIn)) ^ k * ∑ i, ‖w i‖ := by
+  obtain ⟨C, hC0, hB⟩ := b.exists_norm_le_div_pow_mul_sum_norm_of_iteratedLineDerivOp_eq
+    (F := F) (2 * φ.rOut / φ.rIn)
+  refine ⟨C, hC0, fun {p} _ k j u v w hv hw ↦ ?_⟩
+  have hR : 0 < (2 : ℝ) ^ j * φ.rIn := mul_pos (by positivity) φ.rIn_pos
+  have hspec : Distribution.IsVanishingOn (𝓕 (v : 𝓢'(E, F)) : 𝓢'(E, F))
+      (Metric.ball 0 ((2 : ℝ) ^ j * φ.rIn) ∪
+        (Metric.closedBall 0 (2 * φ.rOut / φ.rIn * ((2 : ℝ) ^ j * φ.rIn)))ᶜ) := by
+    rw [φ.two_mul_rOut_div_rIn_mul, ← hv]
+    simpa only [Set.compl_sdiff, Set.union_comm] using
+      isVanishingOn_fourier_littlewoodPaleyBlock_succ φ j u
+  exact hB k hR v w hspec hw
+
+/-- **Weighted dyadic reverse Bernstein bound for `Lᵖ` block representatives.** Given an
+orthonormal basis `b` of `E`, there is `c ≥ 0` depending only on `φ` and `b` such that for every
+`1 ≤ p ≤ ∞`, `k : ℕ`, real weight `s`, `j : ℕ`, `u : 𝓢'(E, F)`, and `Lᵖ` representatives `v` of
+`Δ_{j+1} u` and `w i` of `∂^{b ∘ i} v`,
+`2^{(k + s)(j + 1)} ‖v‖_p ≤ c^k ∑ᵢ 2^{s(j + 1)} ‖w i‖_p`. -/
+theorem exists_rpow_mul_norm_littlewoodPaleyBlock_succ_le_sum_of_iteratedLineDerivOp_eq
+    [CompleteSpace F] {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ E) :
+    ∃ c : ℝ, 0 ≤ c ∧ ∀ {p : ℝ≥0∞} [Fact (1 ≤ p)] (k : ℕ) (s : ℝ) (j : ℕ) (u : 𝓢'(E, F))
+      (v : Lp F p (volume : Measure E)) (w : (Fin k → ι) → Lp F p (volume : Measure E)),
+      littlewoodPaleyBlock F φ (j + 1) u = v →
+      (∀ i, ∂^{⇑b ∘ i} (v : 𝓢'(E, F)) = w i) →
+      2 ^ (((k : ℝ) + s) * ((j + 1 : ℕ) : ℝ)) * ‖v‖ ≤
+        c ^ k * ∑ i, 2 ^ (s * ((j + 1 : ℕ) : ℝ)) * ‖w i‖ := by
+  obtain ⟨Cr, hCr0, hrev⟩ :=
+    exists_norm_littlewoodPaleyBlock_succ_le_sum_of_iteratedLineDerivOp_eq (F := F) φ b
+  have hIn : 0 < φ.rIn := φ.rIn_pos
+  refine ⟨2 * Cr / φ.rIn, by positivity, fun {p} _ k s j u v w hv hw ↦ ?_⟩
+  have hpow : (2 : ℝ) ^ (((k : ℝ) + s) * ((j + 1 : ℕ) : ℝ)) =
+      (2 ^ (j + 1)) ^ k * 2 ^ (s * ((j + 1 : ℕ) : ℝ)) := by
+    rw [add_mul, Real.rpow_add two_pos, mul_comm (k : ℝ), Real.rpow_mul_natCast zero_le_two,
+      Real.rpow_natCast]
+  calc 2 ^ (((k : ℝ) + s) * ((j + 1 : ℕ) : ℝ)) * ‖v‖
+      ≤ 2 ^ (((k : ℝ) + s) * ((j + 1 : ℕ) : ℝ)) *
+          ((Cr / (2 ^ j * φ.rIn)) ^ k * ∑ i, ‖w i‖) := by gcongr; exact hrev k j u v w hv hw
+    _ = (2 * Cr / φ.rIn) ^ k * ∑ i, 2 ^ (s * ((j + 1 : ℕ) : ℝ)) * ‖w i‖ := by
+        rw [hpow, ← Finset.mul_sum]
+        simp only [pow_succ, div_pow, mul_pow]
+        field_simp
+
 open BoundedContinuousFunction in
 /-- **Reverse Bernstein bound on dyadic blocks of bounded `C^k` functions.** Given an orthonormal
 basis `b` of `E`, there is `C ≥ 0` depending only on `φ` and `b` such that for every `k : ℕ`,
@@ -1269,22 +1334,9 @@ theorem exists_norm_littlewoodPaleyBlock_succ_le_sum_iteratedFDeriv [CompleteSpa
       littlewoodPaleyBlock F φ (j + 1) (toLpTop volume ℂ f : 𝓢'(E, F)) = v →
       (∀ i, littlewoodPaleyBlock F φ (j + 1) (toLpTop volume ℂ (g i) : 𝓢'(E, F)) = w i) →
       ‖v‖ ≤ (C / (2 ^ j * φ.rIn)) ^ k * ∑ i, ‖w i‖ := by
-  obtain ⟨C, hC0, hB⟩ := b.exists_norm_le_div_pow_mul_sum_norm_of_iteratedLineDerivOp_eq
-    (F := F) (2 * φ.rOut / φ.rIn)
-  refine ⟨C, hC0, fun k f g j v w hf hbdd hg hv hw ↦ ?_⟩
-  have hR : 0 < (2 : ℝ) ^ j * φ.rIn := mul_pos (by positivity) φ.rIn_pos
-  have hBR : 2 * φ.rOut / φ.rIn * ((2 : ℝ) ^ j * φ.rIn) = (2 : ℝ) ^ (j + 1) * φ.rOut := by
-    have hIn : φ.rIn ≠ 0 := φ.rIn_pos.ne'
-    rw [pow_succ]
-    field_simp
-  have hspec : Distribution.IsVanishingOn (𝓕 (v : 𝓢'(E, F)) : 𝓢'(E, F))
-      (Metric.ball 0 ((2 : ℝ) ^ j * φ.rIn) ∪
-        (Metric.closedBall 0 (2 * φ.rOut / φ.rIn * ((2 : ℝ) ^ j * φ.rIn)))ᶜ) := by
-    rw [← hv, hBR]
-    refine (isVanishingOn_fourier_littlewoodPaleyBlock_succ φ j _).mono fun ξ hξ ↦ ?_
-    simp only [Set.mem_union, Set.mem_compl_iff, Set.mem_sdiff, not_and_or, not_not] at hξ ⊢
-    exact hξ.symm
-  refine hB k hR v w hspec fun i ↦ ?_
+  obtain ⟨C, hC0, hrev⟩ :=
+    exists_norm_littlewoodPaleyBlock_succ_le_sum_of_iteratedLineDerivOp_eq (F := F) φ b
+  refine ⟨C, hC0, fun k f g j v w hf hbdd hg hv hw ↦ hrev k j _ v w hv fun i ↦ ?_⟩
   rw [← hv, ← littlewoodPaleyBlock_iteratedLineDerivOp,
     iteratedLineDerivOp_toLpTop_eq hf hbdd (⇑b ∘ i) (hg i), hw i]
 
