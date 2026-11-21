@@ -111,9 +111,8 @@ theorem _root_.AffineEquiv.hasFDerivAt_restrictScalars [CompleteSpace 𝕜'] [Fi
     (f : V ≃ᵃ[𝕜'] V) (x : V) :
     HasFDerivAt f ((f.linear.toContinuousLinearEquiv.restrictScalars 𝕜 : V ≃L[𝕜] V) :
       V →L[𝕜] V) x :=
-  -- The coercion of this continuous affine map is `⇑f` by definition.
-  ((ContinuousAffineMap.hasFDerivAt (f := ⟨f.toAffineMap,
-    f.toAffineMap.continuous_of_finiteDimensional⟩)).restrictScalars 𝕜).congr_fderiv
-      (by ext; simp)
+  ((ContinuousAffineMap.hasFDerivAt
+    (f := f.toContinuousAffineEquiv.toContinuousAffineMap)).restrictScalars 𝕜).congr_fderiv
+      (by ext; simp [ContinuousAffineEquiv.toContinuousAffineMap_toAffineMap])
 
 end TauCeti
