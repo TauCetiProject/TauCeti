@@ -236,7 +236,7 @@ private theorem extendCoefficientsCLM_apply_test (hj : ∀ a, ‖j a‖ ≤ B) (
       (h := LocallyConstant.toContinuousMap_injective) φ
   have he : IsUniformInducing (locallyConstantTests (X := X) K).subtypeL := by
     rw [Submodule.coe_subtypeL, Submodule.coe_subtype]
-    exact isUniformEmbedding_subtype_val.isUniformInducing
+    exact ⟨uniformity_subtype.symm⟩
   rw [← hφ, extendCoefficientsCLM, (integralOnLocallyConstantTests j μ hj).extend_eq
     (e := (locallyConstantTests (X := X) K).subtypeL)
     (LocallyConstant.denseRange_toContinuousMapLinearMap_range_subtype K)
