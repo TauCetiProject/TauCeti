@@ -35,6 +35,10 @@ unfolded by hand.
   `g • z` cleared.
 * `UpperHalfPlane.coe_smul_of_apply_zero_one_eq_zero`: an upper triangular element
   `!![a, b; 0, a⁻¹]` of `SL(2, ℝ)` acts on `ℍ` by `τ ↦ a ^ 2 * τ + a * b`.
+* `UpperHalfPlane.coe_smul_of_apply_one_zero_eq_zero`: a positive-determinant upper-triangular
+  `M ∈ GL(2, ℝ)` acts on `ℍ` by `τ ↦ (M 0 0 / M 1 1) * τ + M 0 1 / M 1 1`.
+* `UpperHalfPlane.smul_vadd_of_apply_one_zero_eq_zero`: any upper-triangular `M ∈ GL(2, ℝ)`
+  intertwines real translations on `ℍ` with scaling by `M 0 0 / M 1 1`.
 * `UpperHalfPlane.J_smul_re`, `UpperHalfPlane.J_smul_im`: the involution `J : z ↦ -conj z`
   negates the real part and preserves the imaginary part.
 * `Matrix.SpecialLinearGroup.J_mul_mapGL_mul_J`, `Matrix.SpecialLinearGroup.J_mul_mapGL`:
@@ -208,6 +212,28 @@ theorem coe_smul_of_apply_zero_one_eq_zero {g : SL(2, ℝ)} (hg : g 1 0 = 0) (τ
   simp only [Algebra.algebraMap_self, RingHom.id_apply, Complex.ofReal_zero, zero_mul, zero_add]
   field_simp
   linear_combination (-((g 0 0 : ℂ) * τ + g 0 1)) * hdet
+
+/-- **An upper triangular element of `GL(2, ℝ)` of positive determinant acts on `ℍ` by a real
+affine map**: `M • τ = (M 0 0 / M 1 1) * τ + M 0 1 / M 1 1`. -/
+theorem coe_smul_of_apply_one_zero_eq_zero {M : GL (Fin 2) ℝ}
+    (hdet : 0 < (M : Matrix (Fin 2) (Fin 2) ℝ).det) (hM : M 1 0 = 0) (τ : ℍ) :
+    ((M • τ : ℍ) : ℂ) = ((M 0 0 / M 1 1 : ℝ) : ℂ) * τ + (M 0 1 / M 1 1 : ℝ) := by
+  have h11_c : (M 1 1 : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr fun h0 ↦ by
+    simp [Matrix.det_fin_two, hM, h0] at hdet
+  rw [coe_smul_of_det_pos (by rwa [Matrix.GeneralLinearGroup.val_det_apply])]
+  simp only [num, denom, hM, Complex.ofReal_zero, zero_mul, zero_add, Complex.ofReal_div]
+  field_simp
+
+/-- Any upper-triangular matrix `M ∈ GL(2, ℝ)` intertwines real translations on `ℍ` with scaling
+by `M 0 0 / M 1 1`. -/
+theorem smul_vadd_of_apply_one_zero_eq_zero {M : GL (Fin 2) ℝ} (hM : M 1 0 = 0) (x : ℝ) (τ : ℍ) :
+    M • (x +ᵥ τ) = ((M 0 0 / M 1 1) * x) +ᵥ (M • τ) := by
+  have h11 : (M 1 1 : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr fun h0 ↦
+    M.det.ne_zero <| by simp [Matrix.GeneralLinearGroup.val_det_apply, Matrix.det_fin_two, hM, h0]
+  refine UpperHalfPlane.ext ?_
+  rw [coe_smul, coe_vadd, coe_vadd, coe_smul, ← σ_ofReal M (M 0 0 / M 1 1 * x), ← map_add]
+  congr 1; simp only [num, denom, hM, Complex.ofReal_zero, zero_mul, zero_add]; push_cast
+  field_simp; ring
 
 /-- Scalar action invariance for `GL (Fin 2) ℝ`: a matrix that is a scalar multiple of another
 acts identically on `ℍ`, through Mathlib's scalar-matrix action `glScalar_smul`. The scalar is

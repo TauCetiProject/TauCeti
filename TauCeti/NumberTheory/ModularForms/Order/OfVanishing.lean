@@ -27,7 +27,7 @@ irregular cusps in odd weight) belongs to the general-level layer and is not def
 * `TauCeti.orderOfVanishingAt_eq_zero_iff`: for a nonzero holomorphic function, the order
   at `z` vanishes exactly when the function does not vanish at `z`.
 * `TauCeti.orderOfVanishingAt_mul`: orders add under multiplication, with the
-  `Finset.prod` and power versions.
+  `Finset.prod`, power, and nonzero scalar-multiple (`orderOfVanishingAt_const_smul`) versions.
 * `TauCeti.orderOfVanishingAt_pos_iff`: for a nonzero holomorphic function, positive
   order characterizes the zeros.
 * `TauCeti.orderOfVanishingAt_slash`: the order of a slash translate at `z` is the order at
@@ -150,6 +150,14 @@ nonvanishing hypotheses: the degenerate case is not excluded, it is trivially tr
 @[simp]
 lemma orderOfVanishingAt_zero (z : ℍ) : orderOfVanishingAt 0 z = 0 :=
   orderOfVanishingAt_const 0 z
+
+/-- Scaling a function by a nonzero complex constant leaves its vanishing order unchanged. -/
+@[simp]
+lemma orderOfVanishingAt_const_smul {c : ℂ} (hc : c ≠ 0) (f : ℍ → ℂ) (z : ℍ) :
+    orderOfVanishingAt (c • f) z = orderOfVanishingAt f z := by
+  have hsmul : (c • f) ∘ ofComplex = (fun _ : ℂ ↦ c) * (f ∘ ofComplex) := rfl
+  rw [orderOfVanishingAt_def, orderOfVanishingAt_def, hsmul,
+    meromorphicOrderAt_mul_of_ne_zero analyticAt_const hc]
 
 /-- The vanishing order of a holomorphic function is nonnegative. -/
 lemma orderOfVanishingAt_nonneg (hf : MDiff f) (z : ℍ) : 0 ≤ orderOfVanishingAt f z := by

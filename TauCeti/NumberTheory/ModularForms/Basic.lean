@@ -57,6 +57,8 @@ AINTLIB `LeanModularForms` project
 
 ## Main results
 
+* `ModularForm.slash_apply_of_apply_one_zero_eq_zero`: explicit slash formula for
+  positive-determinant upper-triangular matrices in `GL(2, ℝ)`.
 * `Matrix.SpecialLinearGroup.slash_mapGL_inv_apply_smul`: the slash by `s⁻¹ ∈ SL(2, ℝ)`, read
   at `s • τ`, is `denom s τ ^ k * f τ`.
 * `MDifferentiableAt.slash`: the slash preserves holomorphy at a point.
@@ -77,6 +79,8 @@ AINTLIB `LeanModularForms` project
   every integer power of `A`.
 * `TauCeti.ModularForm.SL_slash_S_slash_S`: `(f ∣[k] S) ∣[k] S = (-1)^k • f`, the action of
   `S² = -I`.
+* `Subgroup.IsArithmetic.conj_mapGL_inv`: conjugating an arithmetic subgroup of `GL(2, ℝ)` by
+  `(mapGL ℝ γ)⁻¹` (`γ ∈ SL(2, ℤ)`) preserves arithmeticity.
 * `Subgroup.IsArithmetic.isCusp_of_isCusp`: any two arithmetic groups have the same cusps.
 * `TauCeti.ModularForm.eq_zero_of_eq_const`: a constant slash-invariant form of nonzero weight
   vanishes when its group has finite-index intersection with the modular group.
@@ -268,6 +272,16 @@ theorem _root_.Matrix.SpecialLinearGroup.slash_mapGL_inv_apply_smul (s : SL(2, �
     Matrix.SpecialLinearGroup.mapGL_smul, inv_smul_smul, h2]
   simp [mul_comm]
 
+/-- For a positive-determinant upper-triangular matrix `M ∈ GL(2, ℝ)`, the weight-`k` slash action
+has constant automorphy factor `|det M| ^ (k - 1) * M₁₁ ^ (-k)`. -/
+theorem _root_.ModularForm.slash_apply_of_apply_one_zero_eq_zero {M : GL (Fin 2) ℝ}
+    (hdet : 0 < (M : Matrix (Fin 2) (Fin 2) ℝ).det) (hM : M 1 0 = 0) (k : ℤ)
+    (f : ℍ → ℂ) (τ : ℍ) :
+    (f ∣[k] M) τ = ((|(M.det : ℝ)| : ℝ) : ℂ) ^ (k - 1) * (M 1 1 : ℂ) ^ (-k) * f (M • τ) := by
+  rw [ModularForm.slash_apply_of_det_pos k hdet]
+  simp only [UpperHalfPlane.denom, hM, Complex.ofReal_zero, zero_mul, zero_add]
+  ring
+
 /-- The slash of a positive-determinant matrix preserves holomorphy at a point. -/
 private theorem mdifferentiableAt_slash_of_det_pos (k : ℤ) {g : GL (Fin 2) ℝ}
     (hg : 0 < (g : Matrix (Fin 2) (Fin 2) ℝ).det) {f : ℍ → ℂ} {τ : ℍ}
@@ -416,6 +430,12 @@ variable {Γ Γ' : Subgroup (GL (Fin 2) ℝ)} {k : ℤ}
 -- characteristic lemmas are written `(rfl)` rather than `rfl`: the parentheses opt out of
 -- exporting the definitional equality, which downstream modules do not need and which those
 -- lemmas themselves replace.
+
+/-- Conjugating an arithmetic subgroup of `GL(2, ℝ)` by `(mapGL ℝ γ)⁻¹` (`γ ∈ SL(2, ℤ)`) preserves
+arithmeticity. -/
+instance _root_.Subgroup.IsArithmetic.conj_mapGL_inv [Γ.IsArithmetic] (γ : SL(2, ℤ)) :
+    (ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • Γ).IsArithmetic :=
+  Subgroup.isArithmetic_conj_of_mem (H := 𝒮ℒ) (inv_mem (MonoidHom.mem_range.mpr ⟨γ, rfl⟩))
 
 /-- Two arithmetic subgroups of `GL(2, ℝ)` have the same cusps, namely those of `SL(2, ℤ)`.
 This is the standard way to supply the cusp hypothesis of `ModularForm.ofSlashInvariant`. -/
