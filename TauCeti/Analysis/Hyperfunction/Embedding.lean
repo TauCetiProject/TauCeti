@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Hyperfunction.Localization
-import Mathlib.Analysis.Complex.LocallyUniformLimit
 import TauCeti.Analysis.Complex.Runge.Approximation
 import TauCeti.Analysis.Distribution.Support
 
