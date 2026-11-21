@@ -19,6 +19,7 @@ public import TauCeti.LinearAlgebra.Trace.Idempotent
 -- exterior-algebra contraction lemmas in `TauCeti.ExteriorAlgebra` are used only inside proofs.
 import Mathlib.Analysis.InnerProductSpace.Dual
 import Mathlib.Analysis.InnerProductSpace.PiL2
+import TauCeti.LinearAlgebra.Eigenspace.Involution
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
 import TauCeti.LinearAlgebra.ExteriorPower.WedgePairing
@@ -52,6 +53,8 @@ of a curvature form, its self-dual part and its Chern–Weil density.
 
 * `Orientation.volumeEquiv`: the trivialization of `⋀ⁿ V` induced by `Orientation.volumeForm`.
 * `Orientation.hodgeStar`: the Hodge star `⋀ᵏ V ≃ ⋀ˡ V` of the oriented inner product space.
+* `Orientation.selfDualProj`: in an even middle degree, the linear projection
+  `x ↦ (2⁻¹ : ℝ) • (x + ⋆x)` onto the self-dual (`+1`) eigenspace of `⋆`.
 
 ## Main results
 
@@ -324,6 +327,35 @@ theorem hodgeStar_coe_of_mem_eigenspace_one {k : ℕ} (hkk : k + k = finrank ℝ
     (x : Module.End.eigenspace (o.hodgeStar hkk : Module.End ℝ (⋀[ℝ]^k V)) 1) :
     o.hodgeStar hkk x = x := by
   simpa using Module.End.mem_eigenspace_iff.1 x.property
+
+/-- In an even middle degree, the linear projection `x ↦ (2⁻¹ : ℝ) • (x + ⋆x)` onto the
+self-dual (`+1`) eigenspace of the Hodge star. -/
+def selfDualProj {k : ℕ} (hk : Even k) (hkk : k + k = finrank ℝ V) :
+    ⋀[ℝ]^k V →ₗ[ℝ] Module.End.eigenspace (o.hodgeStar hkk : Module.End ℝ (⋀[ℝ]^k V)) 1 :=
+  letI := invertibleOfNonzero (two_ne_zero : (2 : ℝ) ≠ 0)
+  Module.End.eigenProjOfInvolutive (g := (o.hodgeStar hkk : Module.End ℝ (⋀[ℝ]^k V)))
+    (o.hodgeStar_hodgeStar_of_even hk hkk) (one_mul (1 : ℝ))
+
+/-- The underlying `k`-vector of `o.selfDualProj hk hkk x` is `(2⁻¹ : ℝ) • (x + ⋆x)`. -/
+@[simp]
+theorem coe_selfDualProj_apply {k : ℕ} (hk : Even k) (hkk : k + k = finrank ℝ V)
+    (x : ⋀[ℝ]^k V) :
+    (o.selfDualProj hk hkk x : ⋀[ℝ]^k V) = (2⁻¹ : ℝ) • (x + o.hodgeStar hkk x) := by
+  let := invertibleOfNonzero (two_ne_zero : (2 : ℝ) ≠ 0)
+  simpa [selfDualProj, invOf_eq_inv] using
+    Module.End.coe_eigenProjOfInvolutive_apply
+      (g := (o.hodgeStar hkk : Module.End ℝ (⋀[ℝ]^k V)))
+      (o.hodgeStar_hodgeStar_of_even hk hkk) (one_mul (1 : ℝ)) x
+
+/-- `o.selfDualProj hk hkk` fixes every self-dual `k`-vector. -/
+@[simp]
+theorem selfDualProj_coe {k : ℕ} (hk : Even k) (hkk : k + k = finrank ℝ V)
+    (x : Module.End.eigenspace (o.hodgeStar hkk : Module.End ℝ (⋀[ℝ]^k V)) 1) :
+    o.selfDualProj hk hkk x = x := by
+  let := invertibleOfNonzero (two_ne_zero : (2 : ℝ) ≠ 0)
+  exact Module.End.eigenProjOfInvolutive_apply_of_mem
+    (g := (o.hodgeStar hkk : Module.End ℝ (⋀[ℝ]^k V)))
+    (o.hodgeStar_hodgeStar_of_even hk hkk) (one_mul (1 : ℝ)) x
 
 /-! ### Two-forms split along a unit vector -/
 

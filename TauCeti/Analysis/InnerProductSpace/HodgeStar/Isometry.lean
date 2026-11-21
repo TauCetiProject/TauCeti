@@ -287,6 +287,18 @@ theorem hodgeStar_ιMulti_zero_three :
     ← e.repr_apply_apply, OrthonormalBasis.repr_self]
   ring
 
+/-- For a positively oriented orthonormal basis `e` in dimension four,
+`⋆(e₁ ∧ e₃) = -(e₀ ∧ e₂)`. -/
+theorem hodgeStar_ιMulti_one_three :
+    o.hodgeStar hkl (ιMulti ℝ 2 ![e 1, e 3]) = -ιMulti ℝ 2 ![e 0, e 2] := by
+  rw [← neg_neg (ιMulti ℝ 2 ![e 1, e 3]), ← o.hodgeStar_ιMulti_zero_two hkl he, map_neg,
+    o.hodgeStar_hodgeStar_of_even even_two hkl]
+
+/-- For a positively oriented orthonormal basis `e` in dimension four, `⋆(e₁ ∧ e₂) = e₀ ∧ e₃`. -/
+theorem hodgeStar_ιMulti_one_two :
+    o.hodgeStar hkl (ιMulti ℝ 2 ![e 1, e 2]) = ιMulti ℝ 2 ![e 0, e 3] := by
+  rw [← o.hodgeStar_ιMulti_zero_three hkl he, o.hodgeStar_hodgeStar_of_even even_two hkl]
+
 /-- For a positively oriented orthonormal basis `e` in dimension four, the coordinates of an
 anti-self-dual `μ`, with `⋆μ = -μ`, in the basis `eᵢ ∧ eⱼ` are determined by its three coordinates
 along `e₀ ∧ e₁`, `e₀ ∧ e₂` and `e₀ ∧ e₃`. -/

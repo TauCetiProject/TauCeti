@@ -7,9 +7,10 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
+public import TauCeti.Analysis.Normed.Lp.ProdLp
 
 /-!
-# Isometric embeddings into the `L²` direct sum `WithLp 2 (E × F)`
+# Embeddings and block-diagonal adjoints on `WithLp 2` products
 
 For inner product spaces `E` and `F` over `𝕜` (`[RCLike 𝕜]`), `WithLp.inlL2 𝕜 E F` and
 `WithLp.inrL2 𝕜 E F` are the coordinate embeddings `x ↦ (x, 0)` and `y ↦ (0, y)` into
@@ -18,9 +19,41 @@ of operator norm `1` on nontrivial spaces (`WithLp.norm_inlL2`, `WithLp.norm_inr
 `F` are complete, they are the Hilbert-space adjoints of the coordinate projections
 `WithLp.fstL 2 𝕜 E F` and `WithLp.sndL 2 𝕜 E F` (`WithLp.adjoint_fstL`, `WithLp.adjoint_sndL`,
 `WithLp.adjoint_inlL2`, `WithLp.adjoint_inrL2`).
+
+For Hilbert spaces `E₁, E₂, F₁, F₂` and continuous linear maps `f : E₁ →L[𝕜] F₁`,
+`g : E₂ →L[𝕜] F₂`, the block-diagonal operator `f.withLpProdMap 2 g` on
+`WithLp 2 (E₁ × E₂) →L[𝕜] WithLp 2 (F₁ × F₂)` has Hilbert adjoint
+`(adjoint f).withLpProdMap 2 (adjoint g)` (`ContinuousLinearMap.adjoint_withLpProdMap`), and is
+self-adjoint whenever both blocks are (`IsSelfAdjoint.withLpProdMap`).
 -/
 
 public section
+
+namespace ContinuousLinearMap
+
+variable {𝕜 E₁ E₂ F₁ F₂ : Type*} [RCLike 𝕜]
+  [NormedAddCommGroup E₁] [InnerProductSpace 𝕜 E₁]
+  [NormedAddCommGroup E₂] [InnerProductSpace 𝕜 E₂]
+  [NormedAddCommGroup F₁] [InnerProductSpace 𝕜 F₁]
+  [NormedAddCommGroup F₂] [InnerProductSpace 𝕜 F₂]
+
+/-- **Hilbert adjoint of an orthogonal block sum.** `(f ⊕ g)† = f† ⊕ g†` on `WithLp 2`. -/
+@[simp]
+theorem adjoint_withLpProdMap
+    [CompleteSpace E₁] [CompleteSpace E₂] [CompleteSpace F₁] [CompleteSpace F₂]
+    (f : E₁ →L[𝕜] F₁) (g : E₂ →L[𝕜] F₂) :
+    adjoint (f.withLpProdMap 2 g) = (adjoint f).withLpProdMap 2 (adjoint g) := by
+  refine ((eq_adjoint_iff _ _).mpr fun x y ↦ ?_).symm
+  simp [WithLp.prod_inner_apply, adjoint_inner_left]
+
+/-- An orthogonal block sum `f ⊕ g` on `WithLp 2` is self-adjoint when both blocks are. -/
+theorem _root_.IsSelfAdjoint.withLpProdMap [CompleteSpace E₁] [CompleteSpace E₂]
+    {f : E₁ →L[𝕜] E₁} {g : E₂ →L[𝕜] E₂} (hf : IsSelfAdjoint f) (hg : IsSelfAdjoint g) :
+    IsSelfAdjoint (f.withLpProdMap 2 g) := by
+  rw [isSelfAdjoint_iff, star_eq_adjoint, adjoint_withLpProdMap,
+    ← star_eq_adjoint, ← star_eq_adjoint, hf.star_eq, hg.star_eq]
+
+end ContinuousLinearMap
 
 namespace WithLp
 

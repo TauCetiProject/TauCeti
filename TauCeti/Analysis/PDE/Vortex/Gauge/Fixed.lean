@@ -279,6 +279,13 @@ theorem gaugeFixedAdjoint_smul (x η : ℂ → EuclideanSpace ℝ (Fin 4)) (t : 
   ext i
   fin_cases i <;> simp [hd] <;> ring
 
+/-- `L_x*` sends the zero field to zero. -/
+@[simp]
+theorem gaugeFixedAdjoint_zero (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
+    gaugeFixedAdjoint x 0 = 0 := by
+  funext z
+  simpa using gaugeFixedAdjoint_smul x 0 0 z
+
 /-- The coefficient matrix of the zeroth-order part of the gauge-fixed operator at a field with
 value `w`. It is linear in `w`, and `L_x - L₀` is multiplication by the matrix at
 `x z - vacuumField z` (`gaugeFixedOperator_eq_add_gaugeFixedZerothOrder`). -/

@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
+-- Private: `canonicalCovariantTensor_eq_sum` is used only inside `sum_apply_self_eq`.
+import Mathlib.Analysis.InnerProductSpace.CanonicalTensor
 
 /-!
 # Expansions and contractions against orthonormal bases
@@ -30,6 +32,8 @@ curvature:
   `⟪x, y⟫ = ∑ i, conj (b.repr x i) * b.repr y i`.
 * `OrthonormalBasis.real_inner_fin_two`: in a real plane with orthonormal basis `b`,
   `⟪x, y⟫ = ⟪x, b₀⟫ ⟪y, b₀⟫ + ⟪x, b₁⟫ ⟪y, b₁⟫`.
+* `OrthonormalBasis.sum_apply_self_eq`: for orthonormal bases `b`, `b'` of a real inner product
+  space and a bilinear map `B`, `∑ k, B (b k) (b k) = ∑ i, B (b' i) (b' i)`.
 * `Complex.isometryOfOrthonormal_symm_apply_eq_mk`: in the same plane, the complex coordinate of
   `x` given by `Complex.isometryOfOrthonormal b` is `⟪x, b₀⟫ + i ⟪x, b₁⟫`.
 -/
@@ -115,6 +119,19 @@ theorem inner_sum_inner_smul (b : OrthonormalBasis ι 𝕜 E) {e : ι → F} (he
     (x y : E) :
     ⟪∑ i, ⟪b i, x⟫_𝕜 • e i, ∑ i, ⟪b i, y⟫_𝕜 • e i⟫_𝕜 = ⟪x, y⟫_𝕜 := by
   simp_rw [he.inner_sum, inner_conj_symm, b.sum_inner_mul_inner]
+
+/-- **Basis independence of the trace of a real bilinear map.** For orthonormal bases `b` and `b'`
+of a real inner product space `V` and a bilinear map `B : V →ₗ[ℝ] V →ₗ[ℝ] M`,
+`∑ k, B (b k) (b k) = ∑ i, B (b' i) (b' i)`. -/
+theorem sum_apply_self_eq {V M : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+    [AddCommMonoid M] [Module ℝ M] (b : OrthonormalBasis ι ℝ V) (b' : OrthonormalBasis κ ℝ V)
+    (B : V →ₗ[ℝ] V →ₗ[ℝ] M) :
+    ∑ k, B (b k) (b k) = ∑ i, B (b' i) (b' i) := by
+  have : FiniteDimensional ℝ V := Module.Finite.of_basis b.toBasis
+  have h := congrArg (TensorProduct.lift B)
+    ((InnerProductSpace.canonicalCovariantTensor_eq_sum V b).symm.trans
+      (InnerProductSpace.canonicalCovariantTensor_eq_sum V b'))
+  simpa [map_sum] using h
 
 end OrthonormalBasis
 

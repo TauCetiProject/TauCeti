@@ -339,6 +339,45 @@ theorem exists_continuousLinearMap_mem_orthogonal_weakGaugeFixedKernel (hx : Con
   rw [L2.inner_def]
   exact hQK f u ((mem_weakGaugeFixedKernel_iff_contDiff_two hx.continuous).1 hu)
 
+/-- If `Q` is a weak right inverse of `L_x` with range orthogonal to `weakGaugeFixedKernel x`,
+then `Q (L_x ψ) = ψ - P_{K_x} ψ` in `L²` for every compactly supported `C¹` field `ψ`. -/
+theorem apply_toLp_gaugeFixedOperator_eq_sub_starProjection (hx : Continuous x)
+    {Q : Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ) →L[ℝ]
+      Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ)}
+    (hQsol : ∀ f η, ContDiff ℝ 2 η → HasCompactSupport η →
+      ∫ z, ⟪Q f z, gaugeFixedAdjoint x η z⟫ = ∫ z, ⟪f z, η z⟫)
+    (hQorth : ∀ f u, u ∈ weakGaugeFixedKernel x → ∫ z, ⟪Q f z, u z⟫ = 0)
+    {ψ : ℂ → EuclideanSpace ℝ (Fin 4)} (hψ : ContDiff ℝ 1 ψ) (hψc : HasCompactSupport ψ) :
+    let hψ_lp : MemLp ψ 2 volume := hψ.continuous.memLp_of_hasCompactSupport hψc
+    let hLψ_lp : MemLp (gaugeFixedOperator x ψ) 2 volume :=
+      (continuous_gaugeFixedOperator hx hψ).memLp_of_hasCompactSupport
+        (hasCompactSupport_gaugeFixedOperator hψc)
+    Q (hLψ_lp.toLp (gaugeFixedOperator x ψ)) =
+      hψ_lp.toLp ψ - (weakGaugeFixedKernel x).starProjection (hψ_lp.toLp ψ) := by
+  intro hψ_lp hLψ_lp
+  set q := Q (hLψ_lp.toLp (gaugeFixedOperator x ψ))
+  set p := hψ_lp.toLp ψ - (weakGaugeFixedKernel x).starProjection (hψ_lp.toLp ψ)
+  have hq_orth : q ∈ (weakGaugeFixedKernel x)ᗮ :=
+    (Submodule.mem_orthogonal' _ _).2 fun u hu ↦ by rw [L2.inner_def]; exact hQorth _ u hu
+  have hp_orth : p ∈ (weakGaugeFixedKernel x)ᗮ := Submodule.sub_starProjection_mem_orthogonal _
+  have hqp_orth : q - p ∈ (weakGaugeFixedKernel x)ᗮ := Submodule.sub_mem _ hq_orth hp_orth
+  have hqp_ker : q - p ∈ weakGaugeFixedKernel x := by
+    rw [mem_weakGaugeFixedKernel_iff hx]
+    intro η hη hηc
+    have hη_lp : MemLp (gaugeFixedAdjoint x η) 2 volume :=
+      memLp_gaugeFixedAdjoint hx (hη.of_le (by simp)) hηc
+    rw [← L2.inner_toLp (q - p) hη_lp, inner_sub_left, L2.inner_toLp q hη_lp,
+      hQsol _ η (hη.of_le (by simp)) hηc]
+    have hproj : ⟪(weakGaugeFixedKernel x).starProjection (hψ_lp.toLp ψ),
+        hη_lp.toLp (gaugeFixedAdjoint x η)⟫ = 0 := by
+      rw [L2.inner_toLp _ hη_lp]
+      exact (mem_weakGaugeFixedKernel_iff hx).1 (Submodule.starProjection_apply_mem _ _) η hη hηc
+    dsimp only [p]
+    rw [inner_sub_left, hproj, sub_zero, L2.inner_toLp _ hη_lp, hLψ_lp.integral_inner_toLp_left,
+      hψ_lp.integral_inner_toLp_left,
+      integral_inner_gaugeFixedOperator hψ (hη.of_le (by simp)) (.inl hψc), sub_self]
+  exact sub_eq_zero.1 (inner_self_eq_zero.1 ((Submodule.mem_orthogonal _ _).1 hqp_orth _ hqp_ker))
+
 /-! ### From the classical kernel to the weak kernel -/
 
 /-- A square-integrable `C¹` solution of `L_x y = 0` represents an element of

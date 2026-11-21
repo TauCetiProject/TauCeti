@@ -79,6 +79,8 @@ products. Consequently `ρ(x* x) = det(ρ x)` on `W^ε`.
 * `CliffordAlgebra.eq_zero_of_forall_re_inner_map_ι_apply_eq_zero`: if
   `Re ⟪c(v) ψ, χ⟫ = 0` for all `v`, with `ψ ≠ 0` in a two-dimensional `ε`-eigenspace and `χ` in
   the opposite eigenspace, then `χ = 0`.
+* `CliffordAlgebra.norm_halfSpinCliffordMul_apply`: on a Hermitian Clifford module,
+  `‖c(v) ψ‖ = ‖v‖ * ‖ψ‖` for `halfSpinCliffordMul`.
 
 ## References
 
@@ -451,5 +453,13 @@ theorem eq_zero_of_forall_re_inner_map_ι_apply_eq_zero {ε : ℂ} {ψ χ : W}
   have hχ₀ := h (e.symm ⟨χ, hχ⟩)
   rw [← hv, ← RCLike.re_to_complex, inner_self_eq_norm_sq] at hχ₀
   exact norm_eq_zero.1 (pow_eq_zero_iff two_ne_zero |>.1 hχ₀)
+
+/-- On a Hermitian Clifford module with `Q v = -‖v‖²`, `halfSpinCliffordMul` scales norms by
+`‖v‖`: `‖c(v) ψ‖ = ‖v‖ * ‖ψ‖`. -/
+theorem norm_halfSpinCliffordMul_apply (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
+    (ε : ℂ) (v : V) (ψ : eigenspace (ρ (chirality Q o)) ε) :
+    ‖halfSpinCliffordMul o ρ ε v ψ‖ = ‖v‖ * ‖ψ‖ := by
+  rw [← Submodule.norm_coe, coe_halfSpinCliffordMul_apply_apply, norm_map_ι_apply hQ hρ,
+    Submodule.norm_coe]
 
 end CliffordAlgebra

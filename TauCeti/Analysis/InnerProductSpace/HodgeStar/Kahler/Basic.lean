@@ -52,6 +52,13 @@ computations at `e₀` hold at every unit vector.
 ## Main definitions
 
 * `TauCeti.AlmostComplexStructure.kahlerForm J`: the Kähler two-vector `ω ∈ ⋀² V`.
+* `TauCeti.AlmostComplexStructure.kahlerSelfDual`: the unit Kähler self-dual two-vector
+  `ω_u = (√2 / 2) ω ∈ Λ⁺ V`.
+* `TauCeti.AlmostComplexStructure.antiInvariantSelfDual₁` and `antiInvariantSelfDual₂`: the
+  anti-`J`-invariant unit self-dual two-vectors `ρ₁ = (√2 / 2) (e₀ ∧ e₂ - e₁ ∧ e₃)` and
+  `ρ₂ = (√2 / 2) (e₀ ∧ e₃ + e₁ ∧ e₂)` associated to a positively oriented orthonormal frame `e`.
+* `TauCeti.AlmostComplexStructure.selfDualOrthonormalBasis`: the real orthonormal basis
+  `(ω_u, ρ₁, ρ₂)` of `Λ⁺ V`.
 
 ## Main results
 
@@ -87,6 +94,12 @@ In the namespace `TauCeti.AlmostComplexStructure`:
 * `hodgeStar_ιMulti_apply`: `⋆(x ∧ J x) = ‖x‖² ω - x ∧ J x` for the complex orientation.
 * `eq_smul_kahlerForm_add_of_lieMap_eq_zero`: a `J`-invariant `η` is
   `(⟪ω, η⟫ / 2) ω + (η - ⋆η) / 2`.
+* `norm_kahlerSelfDual`, `norm_antiInvariantSelfDual₁`, `norm_antiInvariantSelfDual₂`,
+  `inner_antiInvariantSelfDual₁_antiInvariantSelfDual₂`,
+  `inner_kahlerSelfDual_antiInvariantSelfDual₁`, `inner_kahlerSelfDual_antiInvariantSelfDual₂`:
+  unit norms and pairwise orthogonality of `(ω_u, ρ₁, ρ₂)` in `Λ⁺ V`.
+* `coe_selfDualOrthonormalBasis` and `eq_inner_kahlerSelfDual_add_antiInvariantSelfDual`:
+  orthogonal expansion of any self-dual two-vector along `(ω_u, ρ₁, ρ₂)`.
 
 The supporting norm-preservation and four-frame construction lemmas live in
 `TauCeti.Geometry.Symplectic.Complex.InnerProductSpace` and
@@ -557,5 +570,195 @@ theorem eq_smul_kahlerForm_add_of_lieMap_eq_zero {η : ⋀[ℝ]^2 V}
       linear_combination (norm := module) (4⁻¹ : ℝ) • h2
 
 end Frame
+
+/-! ### Unit Kähler self-dual two-vector and orthonormal frame of `Λ⁺` -/
+
+section SelfDualFrame
+
+variable [Fact (finrank ℝ V = 4)]
+
+/-- The unit Kähler self-dual two-vector `ω_u = (√2 / 2) ω ∈ Λ⁺ V`, packaged as an element of
+the `+1`-eigenspace of the Hodge star when `⋆ω = ω`. -/
+def kahlerSelfDual (J : AlmostComplexStructure V) (o : Orientation ℝ V (Fin 4))
+    (hkl : 2 + 2 = finrank ℝ V) (hω : o.hodgeStar hkl J.kahlerForm = J.kahlerForm) :
+    Module.End.eigenspace (o.hodgeStar hkl : Module.End ℝ (⋀[ℝ]^2 V)) 1 :=
+  ⟨(√2 / 2 : ℝ) • J.kahlerForm, Module.End.mem_eigenspace_iff.2 <| by simp [hω]⟩
+
+/-- The underlying two-vector of `J.kahlerSelfDual` is `(√2 / 2) ω`. -/
+@[simp]
+theorem coe_kahlerSelfDual (J : AlmostComplexStructure V) (o : Orientation ℝ V (Fin 4))
+    (hkl : 2 + 2 = finrank ℝ V) (hω : o.hodgeStar hkl J.kahlerForm = J.kahlerForm) :
+    (J.kahlerSelfDual o hkl hω : ⋀[ℝ]^2 V) = (√2 / 2 : ℝ) • J.kahlerForm :=
+  (rfl)
+
+/-- For an orthogonal almost complex structure `J`, `J.kahlerSelfDual` is a unit vector in
+`Λ⁺ V`. -/
+theorem norm_kahlerSelfDual {J : AlmostComplexStructure V} {o : Orientation ℝ V (Fin 4)}
+    {hkl : 2 + 2 = finrank ℝ V} {hω : o.hodgeStar hkl J.kahlerForm = J.kahlerForm}
+    (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) :
+    ‖J.kahlerSelfDual o hkl hω‖ = 1 :=
+  (pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero).1 <| by
+    rw [← Submodule.norm_coe, coe_kahlerSelfDual, norm_smul, mul_pow, Real.norm_eq_abs, sq_abs,
+      norm_kahlerForm_sq_eq_two hJ, div_pow, Real.sq_sqrt zero_le_two]
+    ring
+
+/-- The first anti-`J`-invariant unit self-dual two-vector
+`ρ₁ = (√2 / 2) (e₀ ∧ e₂ - e₁ ∧ e₃) ∈ Λ⁺ V` associated to a positively oriented orthonormal frame
+`e`. For any `J` with `J e₀ = e₁` and `J e₂ = e₃`, `ρ₁` is orthogonal to `J.kahlerSelfDual`. -/
+def antiInvariantSelfDual₁ (o : Orientation ℝ V (Fin 4)) (e : OrthonormalBasis (Fin 4) ℝ V)
+    (hkl : 2 + 2 = finrank ℝ V) (he : e.toBasis.orientation = o) :
+    Module.End.eigenspace (o.hodgeStar hkl : Module.End ℝ (⋀[ℝ]^2 V)) 1 :=
+  ⟨(√2 / 2 : ℝ) • (ιMulti ℝ 2 ![e 0, e 2] - ιMulti ℝ 2 ![e 1, e 3]),
+    Module.End.mem_eigenspace_iff.2 <| by
+      simp only [LinearEquiv.coe_coe, map_smul, map_sub, o.hodgeStar_ιMulti_zero_two hkl he,
+        o.hodgeStar_ιMulti_one_three hkl he, one_smul]
+      module⟩
+
+/-- The underlying two-vector of `antiInvariantSelfDual₁` is
+`(√2 / 2) (e₀ ∧ e₂ - e₁ ∧ e₃)`. -/
+@[simp]
+theorem coe_antiInvariantSelfDual₁ (o : Orientation ℝ V (Fin 4)) (e : OrthonormalBasis (Fin 4) ℝ V)
+    (hkl : 2 + 2 = finrank ℝ V) (he : e.toBasis.orientation = o) :
+    (antiInvariantSelfDual₁ o e hkl he : ⋀[ℝ]^2 V) =
+      (√2 / 2 : ℝ) • (ιMulti ℝ 2 ![e 0, e 2] - ιMulti ℝ 2 ![e 1, e 3]) :=
+  (rfl)
+
+/-- The second anti-`J`-invariant unit self-dual two-vector
+`ρ₂ = (√2 / 2) (e₀ ∧ e₃ + e₁ ∧ e₂) ∈ Λ⁺ V` associated to a positively oriented orthonormal frame
+`e`. For any `J` with `J e₀ = e₁` and `J e₂ = e₃`, `ρ₂` is orthogonal to `J.kahlerSelfDual` and
+`ρ₁`. -/
+def antiInvariantSelfDual₂ (o : Orientation ℝ V (Fin 4)) (e : OrthonormalBasis (Fin 4) ℝ V)
+    (hkl : 2 + 2 = finrank ℝ V) (he : e.toBasis.orientation = o) :
+    Module.End.eigenspace (o.hodgeStar hkl : Module.End ℝ (⋀[ℝ]^2 V)) 1 :=
+  ⟨(√2 / 2 : ℝ) • (ιMulti ℝ 2 ![e 0, e 3] + ιMulti ℝ 2 ![e 1, e 2]),
+    Module.End.mem_eigenspace_iff.2 <| by
+      simp [o.hodgeStar_ιMulti_zero_three hkl he, o.hodgeStar_ιMulti_one_two hkl he, add_comm]⟩
+
+/-- The underlying two-vector of `antiInvariantSelfDual₂` is
+`(√2 / 2) (e₀ ∧ e₃ + e₁ ∧ e₂)`. -/
+@[simp]
+theorem coe_antiInvariantSelfDual₂ (o : Orientation ℝ V (Fin 4)) (e : OrthonormalBasis (Fin 4) ℝ V)
+    (hkl : 2 + 2 = finrank ℝ V) (he : e.toBasis.orientation = o) :
+    (antiInvariantSelfDual₂ o e hkl he : ⋀[ℝ]^2 V) =
+      (√2 / 2 : ℝ) • (ιMulti ℝ 2 ![e 0, e 3] + ιMulti ℝ 2 ![e 1, e 2]) :=
+  (rfl)
+
+section InnerAndNorm
+
+variable {o : Orientation ℝ V (Fin 4)} {e : OrthonormalBasis (Fin 4) ℝ V}
+  {J : AlmostComplexStructure V} {hkl : 2 + 2 = finrank ℝ V} {he : e.toBasis.orientation = o}
+
+/-- `antiInvariantSelfDual₁` has unit norm in `Λ⁺ V`. -/
+theorem norm_antiInvariantSelfDual₁ : ‖antiInvariantSelfDual₁ o e hkl he‖ = 1 :=
+  (pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero).1 <| by
+    rw [← real_inner_self_eq_norm_sq, Submodule.coe_inner, coe_antiInvariantSelfDual₁]
+    simp only [real_inner_smul_left, real_inner_smul_right, inner_sub_left, inner_sub_right,
+      e.orthonormal.inner_ιMulti_two]
+    norm_num [div_eq_mul_inv]
+    linear_combination (2⁻¹ : ℝ) * Real.mul_self_sqrt zero_le_two
+
+/-- `antiInvariantSelfDual₂` has unit norm in `Λ⁺ V`. -/
+theorem norm_antiInvariantSelfDual₂ : ‖antiInvariantSelfDual₂ o e hkl he‖ = 1 :=
+  (pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero).1 <| by
+    rw [← real_inner_self_eq_norm_sq, Submodule.coe_inner, coe_antiInvariantSelfDual₂]
+    simp only [real_inner_smul_left, real_inner_smul_right, inner_add_left, inner_add_right,
+      e.orthonormal.inner_ιMulti_two]
+    norm_num [div_eq_mul_inv]
+    linear_combination (2⁻¹ : ℝ) * Real.mul_self_sqrt zero_le_two
+
+/-- `antiInvariantSelfDual₁` and `antiInvariantSelfDual₂` are orthogonal in `Λ⁺ V`. -/
+theorem inner_antiInvariantSelfDual₁_antiInvariantSelfDual₂ :
+    ⟪antiInvariantSelfDual₁ o e hkl he, antiInvariantSelfDual₂ o e hkl he⟫ = 0 := by
+  rw [Submodule.coe_inner, coe_antiInvariantSelfDual₁, coe_antiInvariantSelfDual₂]
+  simp only [real_inner_smul_left, real_inner_smul_right, inner_sub_left, inner_add_right,
+    e.orthonormal.inner_ιMulti_two]
+  norm_num
+
+/-- `J.kahlerSelfDual` is orthogonal to `antiInvariantSelfDual₁` in `Λ⁺ V`. -/
+theorem inner_kahlerSelfDual_antiInvariantSelfDual₁ (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3)
+    (hω : o.hodgeStar hkl J.kahlerForm = J.kahlerForm) :
+    ⟪J.kahlerSelfDual o hkl hω, antiInvariantSelfDual₁ o e hkl he⟫ = 0 := by
+  rw [Submodule.coe_inner, coe_kahlerSelfDual, coe_antiInvariantSelfDual₁,
+    kahlerForm_eq_ιMulti_add_ιMulti h₀ h₂]
+  simp only [real_inner_smul_left, real_inner_smul_right, inner_add_left, inner_sub_right,
+    e.orthonormal.inner_ιMulti_two]
+  norm_num
+
+/-- `J.kahlerSelfDual` is orthogonal to `antiInvariantSelfDual₂` in `Λ⁺ V`. -/
+theorem inner_kahlerSelfDual_antiInvariantSelfDual₂ (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3)
+    (hω : o.hodgeStar hkl J.kahlerForm = J.kahlerForm) :
+    ⟪J.kahlerSelfDual o hkl hω, antiInvariantSelfDual₂ o e hkl he⟫ = 0 := by
+  rw [Submodule.coe_inner, coe_kahlerSelfDual, coe_antiInvariantSelfDual₂,
+    kahlerForm_eq_ιMulti_add_ιMulti h₀ h₂]
+  simp only [real_inner_smul_left, real_inner_smul_right, inner_add_left, inner_add_right,
+    e.orthonormal.inner_ιMulti_two]
+  norm_num
+
+end InnerAndNorm
+
+private theorem orthonormal_selfDualTuple (J : AlmostComplexStructure V)
+    (o : Orientation ℝ V (Fin 4)) (e : OrthonormalBasis (Fin 4) ℝ V)
+    (hkl : 2 + 2 = finrank ℝ V) (he : e.toBasis.orientation = o)
+    (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3) :
+    Orthonormal ℝ ![J.kahlerSelfDual o hkl (hodgeStar_kahlerForm h₀ h₂ hkl he),
+      antiInvariantSelfDual₁ o e hkl he, antiInvariantSelfDual₂ o e hkl he] := by
+  have hJ := inner_apply_apply_of_orthonormalBasis h₀ h₂
+  have hk := norm_kahlerSelfDual (o := o) (hkl := hkl)
+    (hω := hodgeStar_kahlerForm h₀ h₂ hkl he) hJ
+  have h1 := norm_antiInvariantSelfDual₁ (o := o) (e := e) (hkl := hkl) (he := he)
+  have h2 := norm_antiInvariantSelfDual₂ (o := o) (e := e) (hkl := hkl) (he := he)
+  have hk1 := inner_kahlerSelfDual_antiInvariantSelfDual₁ (he := he) h₀ h₂
+    (hodgeStar_kahlerForm h₀ h₂ hkl he)
+  have hk2 := inner_kahlerSelfDual_antiInvariantSelfDual₂ (he := he) h₀ h₂
+    (hodgeStar_kahlerForm h₀ h₂ hkl he)
+  have h12 := inner_antiInvariantSelfDual₁_antiInvariantSelfDual₂ (o := o) (e := e)
+    (hkl := hkl) (he := he)
+  exact ⟨fun i ↦ by fin_cases i <;> assumption, fun {i j} hij ↦ by
+    fin_cases i <;> fin_cases j <;>
+      first | contradiction | assumption | rwa [real_inner_comm]⟩
+
+/-- **The real orthonormal basis `(ω_u, ρ₁, ρ₂)` of `Λ⁺ V`** induced by a positively oriented
+unitary frame `e`. -/
+def selfDualOrthonormalBasis (J : AlmostComplexStructure V) (o : Orientation ℝ V (Fin 4))
+    (e : OrthonormalBasis (Fin 4) ℝ V) (hkl : 2 + 2 = finrank ℝ V)
+    (he : e.toBasis.orientation = o) (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3) :
+    OrthonormalBasis (Fin 3) ℝ
+      (Module.End.eigenspace (o.hodgeStar hkl : Module.End ℝ (⋀[ℝ]^2 V)) 1) :=
+  have hcard : Fintype.card (Fin 3) =
+      finrank ℝ (Module.End.eigenspace (o.hodgeStar hkl : Module.End ℝ (⋀[ℝ]^2 V)) 1) := by
+    have hsd := o.two_mul_finrank_eigenspace_hodgeStar_one even_two two_pos hkl
+    have hchoose : Nat.choose 4 2 = 6 := by decide
+    rw [hchoose] at hsd
+    rw [Fintype.card_fin]
+    omega
+  (basisOfOrthonormalOfCardEqFinrank (orthonormal_selfDualTuple J o e hkl he h₀ h₂) hcard)
+    |>.toOrthonormalBasis (by
+      rw [coe_basisOfOrthonormalOfCardEqFinrank]
+      exact orthonormal_selfDualTuple J o e hkl he h₀ h₂)
+
+/-- The basis vectors of `selfDualOrthonormalBasis` are `![ω_u, ρ₁, ρ₂]`. -/
+@[simp]
+theorem coe_selfDualOrthonormalBasis (J : AlmostComplexStructure V) (o : Orientation ℝ V (Fin 4))
+    (e : OrthonormalBasis (Fin 4) ℝ V) (hkl : 2 + 2 = finrank ℝ V)
+    (he : e.toBasis.orientation = o) (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3) :
+    (J.selfDualOrthonormalBasis o e hkl he h₀ h₂ : Fin 3 → _) =
+      ![J.kahlerSelfDual o hkl (hodgeStar_kahlerForm h₀ h₂ hkl he),
+        antiInvariantSelfDual₁ o e hkl he, antiInvariantSelfDual₂ o e hkl he] := by
+  rw [selfDualOrthonormalBasis, Basis.coe_toOrthonormalBasis, coe_basisOfOrthonormalOfCardEqFinrank]
+
+/-- Orthogonal expansion of any self-dual two-vector `τ ∈ Λ⁺ V` along `(ω_u, ρ₁, ρ₂)`. -/
+theorem eq_inner_kahlerSelfDual_add_antiInvariantSelfDual {J : AlmostComplexStructure V}
+    {o : Orientation ℝ V (Fin 4)} {e : OrthonormalBasis (Fin 4) ℝ V}
+    {hkl : 2 + 2 = finrank ℝ V} {he : e.toBasis.orientation = o}
+    {h₀ : J (e 0) = e 1} {h₂ : J (e 2) = e 3}
+    (hω : o.hodgeStar hkl J.kahlerForm = J.kahlerForm)
+    (τ : Module.End.eigenspace (o.hodgeStar hkl : Module.End ℝ (⋀[ℝ]^2 V)) 1) :
+    τ = ⟪J.kahlerSelfDual o hkl hω, τ⟫ • J.kahlerSelfDual o hkl hω +
+      ⟪antiInvariantSelfDual₁ o e hkl he, τ⟫ • antiInvariantSelfDual₁ o e hkl he +
+      ⟪antiInvariantSelfDual₂ o e hkl he, τ⟫ • antiInvariantSelfDual₂ o e hkl he := by
+  have h := ((J.selfDualOrthonormalBasis o e hkl he h₀ h₂).sum_repr' τ).symm
+  rwa [Fin.sum_univ_three, coe_selfDualOrthonormalBasis] at h
+
+end SelfDualFrame
 
 end TauCeti.AlmostComplexStructure
