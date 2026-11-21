@@ -220,7 +220,7 @@ end TauCeti
 
 namespace TauCeti.GradedAlgebra
 
-variable {R A τ : Type*} [CommRing R] [CommRing A] [IsDomain A] [Algebra R A]
+variable {R A τ : Type*} [CommSemiring R] [CommRing A] [IsDomain A] [Algebra R A]
   (𝒜 : ℤ → Submodule R A) [GradedAlgebra 𝒜]
 
 /-- Over a `ℤ`-graded domain `A`, every localization `Localization.Away f` at a homogeneous
