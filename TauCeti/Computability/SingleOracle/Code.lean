@@ -8,6 +8,7 @@ module
 public import Mathlib.Computability.PartrecCode
 public import Mathlib.Computability.TuringDegree
 import TauCeti.Computability.RecursiveIn
+import TauCeti.Data.PFun.Basic
 
 /-!
 # Programs with one oracle
@@ -534,8 +535,7 @@ def curry (c : Code) (a : ℕ) : Code :=
 @[simp]
 theorem eval_curry (O : ℕ →. ℕ) (c : Code) (a x : ℕ) :
     eval O (curry c a) x = eval O c (Nat.pair a x) := by
-  have hbind (n : ℕ) : Part.some n >>= eval O c = eval O c n := Part.bind_some n (eval O c)
-  simp [curry, Nat.Partrec.Code.eval_const, Seq.seq, hbind]
+  simp [curry, Nat.Partrec.Code.eval_const, Seq.seq, PFun.some_bind]
 
 /-- The parameter compiler is primitive recursive on programs and parameters. -/
 theorem primrec₂_curry : Primrec₂ curry :=

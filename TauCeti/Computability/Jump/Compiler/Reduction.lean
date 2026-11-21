@@ -32,6 +32,12 @@ namespace Set
 
 variable {A B : Set ℕ} {d : Code}
 
+/-- A program computing the oracle of `A` in the oracle of `B` gives a uniform index
+translation from diagonal halting in `A` to diagonal halting in `B`. -/
+theorem jumpIndex_mem_jump_iff (hd : Code.eval B.oracle d = A.oracle) (e : ℕ) :
+    d.jumpIndex e ∈ B.jump ↔ e ∈ A.jump := by
+  simp [hd]
+
 /-- A reduction program for `A` in `B` compiles to one for `A.jump` in `B.jump`. -/
 theorem eval_jumpProgram_of_eval_eq_oracle (hd : Code.eval B.oracle d = A.oracle) :
     Code.eval B.jump.oracle d.jumpProgram = A.jump.oracle := by

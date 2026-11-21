@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Computability.Jump.Compiler.Index
+public import TauCeti.Computability.SingleOracle.Code
 import TauCeti.Computability.SingleOracle.Universal
 import TauCeti.Computability.RecursiveIn
 public import TauCeti.Computability.TuringDegree
@@ -209,19 +209,14 @@ theorem rePred_mem_jump_of_computablePred (hA : ComputablePred (· ∈ A)) :
 theorem rePred_mem_jump_empty : REPred (· ∈ (∅ : Set ℕ).jump) :=
   rePred_mem_jump_of_computablePred ((turingReducible_empty_iff ∅).1 .rfl)
 
-/-- A program computing the oracle of `A` in the oracle of `B` gives a uniform index
-translation from diagonal halting in `A` to diagonal halting in `B`. -/
-theorem jumpIndex_mem_jump_iff {d : Code} (hd : Code.eval B.oracle d = A.oracle) (e : ℕ) :
-    d.jumpIndex e ∈ B.jump ↔ e ∈ A.jump := by
-  simp [hd]
-
 /-- **The jump is monotone:** if `A` is Turing reducible to `B`, then `A'` reduces one-one to
 `B'`. -/
 theorem oneOneReducible_jump_jump (h : TuringReducible A.oracle B.oracle) :
     OneOneReducible (· ∈ A.jump) (· ∈ B.jump) := by
-  obtain ⟨d, hd⟩ := Code.turingReducible_iff_exists_code.1 h
-  exact ⟨d.jumpIndex, (Code.primrec₂_jumpIndex.comp (Primrec.const d) Primrec.id).to_comp,
-    d.jumpIndex_injective, fun e => (jumpIndex_mem_jump_iff hd e).symm⟩
+  -- the diagonal computations relative to `A` are recursive in `A`, hence in `B`, so `A'` is c.e.
+  -- in `B`
+  exact oneOneReducible_jump_of_recursiveIn B <| A.recursiveIn_eval_diag.subst fun g hg =>
+    (Set.mem_singleton_iff.1 hg) ▸ RecursiveIn.iff_nat.1 h
 
 /-- **The jump is monotone:** if `A` is Turing reducible to `B`, then so is `A'` to `B'`. -/
 theorem turingReducible_jump_jump (h : TuringReducible A.oracle B.oracle) :

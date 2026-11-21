@@ -614,19 +614,6 @@ theorem boundedAnswers_eq_none_iff :
       evaln σ j d x = none ∨ ∃ h, evaln σ j d x = some h ∧ u < h.use := by
   cases h : evaln σ j d x <;> simp [boundedAnswers, h]
 
-/-- If the supplied answers represent `O`, the values computed by `d` are exactly the bounded
-answers supplied at some common fuel and use bound. -/
-theorem mem_eval_iff_exists_boundedAnswers {O : ℕ →. ℕ}
-    (hσ : ∀ z v, σ z = some v ↔ v ∈ O z) :
-    y ∈ eval O d x ↔ ∃ k, d.boundedAnswers σ k k x = some y := by
-  rw [mem_eval_iff_exists_evaln hσ]
-  constructor
-  · rintro ⟨k, h, hk, rfl⟩
-    exact ⟨k, boundedAnswers_eq_some_iff.2 ⟨h, hk, evaln_use_le hk, rfl⟩⟩
-  · rintro ⟨k, hk⟩
-    obtain ⟨h, hh, -, hy⟩ := boundedAnswers_eq_some_iff.1 hk
-    exact ⟨k, h, hh, hy⟩
-
 /-- Enlarging either bound retains any answer already supplied by a query program. -/
 theorem boundedAnswers_eq_some_of_le {j' u' : ℕ} (hj : j ≤ j') (hu : u ≤ u')
     (h : d.boundedAnswers σ j u x = some y) : d.boundedAnswers σ j' u' x = some y := by
