@@ -383,9 +383,9 @@ theorem reducedRep_W_pow (k : ℕ) : reducedRep (W ^ k) = 1 := by
 `W`-indivisible ones: reduction and inclusion are mutually inverse. -/
 noncomputable def stableEquivReduced : StableSeries ≃ {P : Series // IsReduced P} where
   toFun S := ⟨reduce S, isReduced_reduce S⟩
-  invFun P := stableMk P.1
+  invFun P := stableMk P.val
   left_inv S := by simp
-  right_inv P := Subtype.ext (by simpa using reducedRep_eq_self P.2)
+  right_inv P := Subtype.ext (by simpa using reducedRep_eq_self P.property)
 
 end Reduced
 

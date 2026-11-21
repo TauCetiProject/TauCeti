@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Path.Bimodule
+public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.Augmentation
 public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.Pairing
 public import TauCeti.Algebra.Homology.DG.Bimodule.QuasiIso
 public import TauCeti.Algebra.Homology.DG.Bimodule.TensorProduct.Associator
@@ -44,6 +45,10 @@ along the paths from `a` to `b`.
 * `TauCeti.pathChainConcat_tmul`: on pure tensors, the composition is the pairing of cubical
   chains induced by concatenation of Moore paths.
 * `TauCeti.pathChainConcat_tmul_ofCube`: the composition concatenates cubes pointwise.
+* `TauCeti.pathChainConcat_tmul_pathChainPoint_left`: concatenating the `0`-chain of a path `γ`
+  with a chain prepends `γ` to it.
+* `TauCeti.pathChainConcat_tmul_pathChainPoint`: concatenating the `0`-chains of `δ` and `δ'` gives
+  the `0`-chain of `δ ⋆ δ'`.
 * `TauCeti.pathChainConcat_assoc`: the composition is associative.
 * `TauCeti.isQuasiIso_pathChainConcat`: if `a` and `b` are joined by a Moore path, the composition
   is a quasi-isomorphism of right DG modules.
@@ -144,18 +149,14 @@ private def retraceLoop (γ : MoorePathBetween B a b) :
     C(MoorePathBetween B a b, MooreLoopSpace B b) :=
   ((MoorePathBetween.loopHomeomorph b).symm : C(_, _)).comp (γ.symm.prepend b)
 
-/-- The `0`-chain of a single path. -/
-private abbrev pathPointChain (γ : MoorePathBetween B a b) :
-    cubicalChainModule (MoorePathBetween B a b) (MooreLoopSpace B b) R :=
-  cubicalChainModuleLof _ _ R 0 (ofCube _ R (SingularCube.point γ))
-
 /-- Prepending `γ⁻¹` to a concatenation `m ⋆ n` is the left action on `n` of the loops `γ⁻¹ ⋆ m`. -/
 private theorem pathChainPrepend_symm_concat (γ : MoorePathBetween B a b)
     (m : cubicalChainModule (MoorePathBetween B a b) (MooreLoopSpace B b) R)
     (n : cubicalChainModule (MoorePathBetween B b c) (MooreLoopSpace B c) R) :
     cubicalChainModuleLinearMap R (γ.symm.prepend c)
         (pathChainConcat B a b c R (tmul R (loopChainAlgebra B b R) m n)) =
-      cubicalChainModuleEquiv _ _ R (cubicalChainModuleLinearMap R (retraceLoop γ) m) • n := by
+      cubicalChainModuleEquiv _ (MooreLoopSpace B b) R
+        (cubicalChainModuleLinearMap R (retraceLoop γ) m) • n := by
   rw [pathChainConcat_tmul, cubicalChainModuleLinearMap_cubicalChainPairing,
     cubicalChainModuleEquiv_smul_eq_cubicalChainPairing,
     cubicalChainPairing_cubicalChainModuleLinearMap_left]
@@ -164,36 +165,51 @@ private theorem pathChainPrepend_symm_concat (γ : MoorePathBetween B a b)
     MoorePath.trans_assoc])
 
 /-- The loops `γ⁻¹ ⋆ m` act on the point `γ` by prepending `γ⁻¹` and then `γ` to `m`. -/
-private theorem op_smul_pathPointChain (γ : MoorePathBetween B a b)
+private theorem op_smul_pathChainPoint (γ : MoorePathBetween B a b)
     (m : cubicalChainModule (MoorePathBetween B a b) (MooreLoopSpace B b) R) :
-    op (cubicalChainModuleEquiv _ _ R (cubicalChainModuleLinearMap R (retraceLoop γ) m)) •
-        pathPointChain (R := R) γ =
+    op (cubicalChainModuleEquiv _ (MooreLoopSpace B b) R
+          (cubicalChainModuleLinearMap R (retraceLoop γ) m)) •
+        pathChainPoint R γ =
       pathChainPrepend R γ b (pathChainPrepend R γ.symm b m) := by
   rw [op_cubicalChainModuleEquiv_smul_eq_cubicalChainPairing,
-    cubicalChainPairing_cubicalChainModuleLinearMap_right, cubicalChainPairing_lof_point_left,
-    pathChainPrepend_apply, pathChainPrepend_apply, ← LinearMap.comp_apply,
+    cubicalChainPairing_cubicalChainModuleLinearMap_right, pathChainPoint_def,
+    cubicalChainPairing_lof_point_left, pathChainPrepend_apply, pathChainPrepend_apply,
+    ← LinearMap.comp_apply,
     ← cubicalChainModuleLinearMap_comp]
   refine congrArg (fun F ↦ cubicalChainModuleLinearMap R F m) (ContinuousMap.ext fun σ ↦ ?_)
   exact MoorePathBetween.ext (by simp [retraceLoop, MoorePathBetween.toMoorePath_rightAct])
 
-/-- Concatenating the point `γ` with a chain `y` prepends `γ` to `y`. -/
-private theorem pathChainConcat_pathPointChain (γ : MoorePathBetween B a b)
+/-- Concatenating the `0`-chain of `γ` with a chain `y` prepends `γ` to `y`. -/
+theorem pathChainConcat_tmul_pathChainPoint_left (γ : MoorePathBetween B a b)
     (y : cubicalChainModule (MoorePathBetween B b c) (MooreLoopSpace B c) R) :
-    pathChainConcat B a b c R (tmul R (loopChainAlgebra B b R) (pathPointChain γ) y) =
+    pathChainConcat B a b c R (tmul R (loopChainAlgebra B b R) (pathChainPoint R γ) y) =
       pathChainPrepend R γ c y := by
-  rw [pathChainConcat_tmul, cubicalChainPairing_lof_point_left, pathChainPrepend_apply]
+  rw [pathChainConcat_tmul, pathChainPoint_def, cubicalChainPairing_lof_point_left,
+    pathChainPrepend_apply]
   exact congrArg (fun F ↦ cubicalChainModuleLinearMap R F y) (ContinuousMap.ext fun _ ↦ by simp)
+
+/-- Concatenating the `0`-chains of `δ` and `δ'` gives the `0`-chain of `δ ⋆ δ'`. -/
+@[simp]
+theorem pathChainConcat_tmul_pathChainPoint (δ : MoorePathBetween B a b)
+    (δ' : MoorePathBetween B b c) :
+    pathChainConcat B a b c R
+        (tmul R (loopChainAlgebra B b R) (pathChainPoint R δ) (pathChainPoint R δ')) =
+      pathChainPoint R (δ.trans δ') := by
+  rw [pathChainConcat_tmul_pathChainPoint_left, pathChainPrepend_apply, pathChainPoint_def,
+    cubicalChainModuleLinearMap_lof, NormalizedCubicalChain.map_ofCube, pathChainPoint_def]
+  exact congrArg (fun σ ↦ cubicalChainModuleLof _ (MooreLoopSpace B c) R 0
+    (NormalizedCubicalChain.ofCube _ R σ)) (ContinuousMap.ext fun _ ↦ by simp)
 
 /-- Concatenating, prepending `γ⁻¹` and tensoring with the point `γ` is, by the balancing
 relation, prepending `γ⁻¹` and then `γ` on the first factor. -/
-private theorem tmul_pathPointChain_pathChainPrepend_symm_concat (γ : MoorePathBetween B a b)
+private theorem tmul_pathChainPoint_pathChainPrepend_symm_concat (γ : MoorePathBetween B a b)
     (m : cubicalChainModule (MoorePathBetween B a b) (MooreLoopSpace B b) R)
     (n : cubicalChainModule (MoorePathBetween B b c) (MooreLoopSpace B c) R) :
-    tmul R (loopChainAlgebra B b R) (pathPointChain γ) (cubicalChainModuleLinearMap R
+    tmul R (loopChainAlgebra B b R) (pathChainPoint R γ) (cubicalChainModuleLinearMap R
         (γ.symm.prepend c) (pathChainConcat B a b c R (tmul R (loopChainAlgebra B b R) m n))) =
       tmul R (loopChainAlgebra B b R)
         (pathChainPrepend R γ b (pathChainPrepend R γ.symm b m)) n := by
-  rw [pathChainPrepend_symm_concat, ← balance, op_smul_pathPointChain]
+  rw [pathChainPrepend_symm_concat, ← balance, op_smul_pathChainPoint]
 
 /-- **Concatenation of path bimodules is a quasi-isomorphism** of right DG modules over
 `C_*(Ω_c B)`, as soon as `a` and `b` are joined by a Moore path:
@@ -217,15 +233,13 @@ theorem isQuasiIso_pathChainConcat (h : Nonempty (MoorePathBetween B a b)) :
       (fun x m ↦ H.map_smul (op x) m) (fun _ _ ↦ rfl)
   let g : pathChainBimodule B a c R →ₗ[R]
       DGBimoduleCat.tensorObj (pathChainBimodule B a b R) (pathChainBimodule B b c R) :=
-    (mk R (loopChainAlgebra B b R) (pathPointChain (R := R) γ)) ∘ₗ
+    (mk R (loopChainAlgebra B b R) (pathChainPoint R γ)) ∘ₗ
       cubicalChainModuleLinearMap (G := MooreLoopSpace B c) R (γ.symm.prepend c)
   refine DGBimoduleCat.isQuasiIso_forgetToRightModuleCat_map_of_homotopyInverse _ g K
     ((pathChainPrependHomotopy R γ c).restrictScalars R) ?_ ?_ ?_
   · -- `g` is a chain map, since the point `γ` is a cycle of degree zero.
     intro y
-    have hγ : pathPointChain (R := R) γ ∈ (pathChainBimodule B a b R).grading 0 := by
-      simpa using cubicalChainModuleLof_mem (G := MooreLoopSpace B b)
-        (ofCube _ R (SingularCube.point γ))
+    have hγ : pathChainPoint R γ ∈ (pathChainBimodule B a b R).grading 0 := pathChainPoint_mem γ
     rw [LinearMap.comp_apply, LinearMap.comp_apply, mk_apply, mk_apply,
       DGBimoduleCat.tensorObj_differential_tmul hγ]
     simp [cubicalChainModuleDifferential_linearMap]
@@ -250,7 +264,7 @@ theorem isQuasiIso_pathChainConcat (h : Nonempty (MoorePathBetween B a b)) :
           (fun x m ↦ P.map_smul (op x) m) (fun _ _ ↦ rfl) x := by
       induction x using BalancedTensorProduct.induction_on with
       | ht m n =>
-        rw [LinearMap.comp_apply, mk_apply, tmul_pathPointChain_pathChainPrepend_symm_concat]
+        rw [LinearMap.comp_apply, mk_apply, tmul_pathChainPoint_pathChainPrepend_symm_concat]
         exact (map_tmul (P.restrictScalars R) LinearMap.id _ _ m n).symm
       | ha x y hx hy => simp only [map_add, hx, hy]
     rw [hgx, hP, LinearMap.add_apply, LinearMap.add_apply, LinearMap.comp_apply,
@@ -262,7 +276,7 @@ theorem isQuasiIso_pathChainConcat (h : Nonempty (MoorePathBetween B a b)) :
     have hfg : pathChainConcat B a b c R (g y) =
         pathChainPrepend R γ c (pathChainPrepend R γ.symm c y) := by
       rw [LinearMap.comp_apply, mk_apply, pathChainPrepend_apply R γ.symm]
-      exact pathChainConcat_pathPointChain γ _
+      exact pathChainConcat_tmul_pathChainPoint_left γ _
     refine hfg.trans ?_
     rw [add_assoc]
     exact (add_sub_cancel y _).symm.trans (congrArg _ h.symm)
