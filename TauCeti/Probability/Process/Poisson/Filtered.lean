@@ -11,6 +11,7 @@ public import Mathlib.Probability.Independence.Process.HasIndepIncrements.Basic
 public import Mathlib.Probability.Moments.Variance
 public import Mathlib.Probability.Process.Adapted
 public import TauCeti.Probability.Process.Filtration.AmbientNullAugmentation
+import TauCeti.Order.Filter.Basic
 import TauCeti.Probability.Distributions.Poisson.Basic
 import TauCeti.Probability.HasLaw
 import TauCeti.Probability.Independence.Basic
@@ -18,6 +19,7 @@ import TauCeti.Probability.Independence.Completion
 import TauCeti.Probability.Independence.Filtration
 import TauCeti.Probability.Independence.Process.HasIndepIncrements
 import TauCeti.Probability.Process.Filtration.Natural
+import TauCeti.Probability.Process.Poisson.Characterization
 
 /-!
 # Homogeneous Poisson processes relative to a filtration
@@ -258,55 +260,6 @@ section NatCast
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} {N : ℝ≥0 → Ω → ℕ}
 
-private theorem ae_natCast_sub {s t : ℝ≥0} (hle : ∀ᵐ ω ∂P, N s ω ≤ N t ω) :
-    ((fun ω ↦ (N t ω : ℝ)) - fun ω ↦ (N s ω : ℝ)) =ᵐ[P]
-      fun ω ↦ ((N t ω - N s ω : ℕ) : ℝ) := by
-  filter_upwards [hle] with ω hω
-  simp [Nat.cast_sub hω]
-
-private theorem ae_nonneg_of_hasLaw_map_natCast_poissonMeasure {X : Ω → ℝ} {c : ℝ≥0}
-    (hX : HasLaw X Po(ℝ, c) P) : ∀ᵐ ω ∂P, 0 ≤ X ω := by
-  refine ae_of_ae_map hX.aemeasurable ?_
-  rw [hX.map_eq]
-  exact (ae_map_iff Measurable.of_discrete.aemeasurable
-    (measurableSet_le measurable_const measurable_id)).2 (ae_of_all _ Nat.cast_nonneg)
-
-private theorem ae_le_of_hasLaw_sub_poissonMeasure {r : ℝ≥0}
-    (h0 : ∀ᵐ ω ∂P, N 0 ω = 0)
-    (hlaw : ∀ s t, s ≤ t → HasLaw (fun ω ↦ N t ω - N s ω) (poissonMeasure (r * (t - s))) P)
-    {s t : ℝ≥0} (hst : s ≤ t) :
-    ∀ᵐ ω ∂P, N s ω ≤ N t ω := by
-  have hcast {X : Ω → ℕ} {c : ℝ≥0} (hX : HasLaw X (poissonMeasure c) P) :
-      HasLaw (fun ω ↦ (X ω : ℝ)) Po(ℝ, c) P :=
-    MeasurableEmbedding.natCast.hasLaw_comp_iff.2 hX
-  have hint {X : Ω → ℝ} {c : ℝ≥0} (hX : HasLaw X Po(ℝ, c) P) : Integrable X P :=
-    memLp_one_iff_integrable.1 (by simpa using hX.memLp (memLp_id_map_cast_poissonMeasure c 1))
-  have hmarg (u : ℝ≥0) : HasLaw (fun ω ↦ (N u ω : ℝ)) Po(ℝ, r * u) P := by
-    have hu : HasLaw (N u) (poissonMeasure (r * u)) P := by
-      simpa only [tsub_zero] using (hlaw 0 u zero_le).congr (h0.mono fun ω hω ↦ by simp [hω])
-    exact hcast hu
-  have hs := hmarg s
-  have ht := hmarg t
-  have hd := hcast (hlaw s t hst)
-  let g : Ω → ℝ := fun ω ↦ (N s ω : ℝ) + ((N t ω - N s ω : ℕ) : ℝ) - (N t ω : ℝ)
-  have hshd : Integrable (fun ω ↦ (N s ω : ℝ) + ((N t ω - N s ω : ℕ) : ℝ)) P :=
-    (hint hs).add (hint hd)
-  have hg_int : Integrable g P := hshd.sub (hint ht)
-  have hg_nonneg : 0 ≤ᵐ[P] g := ae_of_all P fun ω ↦ by
-    have hle : N t ω ≤ N s ω + (N t ω - N s ω) := le_add_tsub
-    exact sub_nonneg.2 (by exact_mod_cast hle)
-  have hg_zero : ∫ ω, g ω ∂P = 0 := by
-    dsimp only [g]
-    rw [integral_sub hshd (hint ht), integral_add (hint hs) (hint hd),
-      integral_of_hasLaw_map_cast_poissonMeasure hs, integral_of_hasLaw_map_cast_poissonMeasure hd,
-      integral_of_hasLaw_map_cast_poissonMeasure ht, NNReal.coe_mul, NNReal.coe_mul,
-      NNReal.coe_mul, NNReal.coe_sub hst]
-    ring
-  filter_upwards [(integral_eq_zero_iff_of_nonneg_ae hg_nonneg hg_int).1 hg_zero] with ω hω
-  have heq : N s ω + (N t ω - N s ω) = N t ω := by
-    exact_mod_cast sub_eq_zero.1 hω
-  exact heq ▸ Nat.le_add_right (N s ω) (N t ω - N s ω)
-
 /-- The real cast of a natural-valued process `N` is a rate-`r` Poisson process relative to `ℱ`
 if and only if `N` is adapted to `ℱ`, starts at zero almost surely, and has `ℱ`-independent
 `poissonMeasure (r * (t - s))` increments. -/
@@ -325,16 +278,16 @@ theorem isFilteredPoissonProcess_natCast_iff
       rw [← Function.comp_def (Nat.cast : ℕ → ℝ), ← MeasurableSpace.comap_comp,
         MeasurableEmbedding.natCast.comap_eq]
     rw [← hcomap]
-    exact indep_comap_congr_left (ae_natCast_sub hle)
+    exact indep_comap_congr_left (Filter.EventuallyLE.natCast_sub hle).symm
   constructor
   · intro h
     have hle {s t : ℝ≥0} (hst : s ≤ t) : ∀ᵐ ω ∂P, N s ω ≤ N t ω := by
-      filter_upwards [ae_nonneg_of_hasLaw_map_natCast_poissonMeasure (h.hasLaw_sub hst)] with ω hω
+      filter_upwards [(h.hasLaw_sub hst).ae (ae_nonneg_map_cast_poissonMeasure _)] with ω hω
       exact Nat.cast_le.1 (sub_nonneg.1 hω)
     exact ⟨fun t ↦ MeasurableEmbedding.natCast.measurable_comp_iff.mp (h.adapted t),
       h.eval_zero_ae_eq_zero.mono fun _ hω ↦ Nat.cast_eq_zero.1 hω,
       fun s t hst ↦ MeasurableEmbedding.natCast.hasLaw_comp_iff.1
-        ((h.hasLaw_sub hst).congr (ae_natCast_sub (hle hst)).symm),
+        ((h.hasLaw_sub hst).congr (Filter.EventuallyLE.natCast_sub (hle hst))),
       fun s t hst ↦ (hind_iff (hle hst)).1 (h.indep_sub hst)⟩
   · rintro ⟨hadapt, h0, hlaw, hind⟩
     have hle {s t : ℝ≥0} (hst : s ≤ t) : ∀ᵐ ω ∂P, N s ω ≤ N t ω :=
@@ -342,7 +295,7 @@ theorem isFilteredPoissonProcess_natCast_iff
     exact ⟨fun t ↦ (Measurable.of_discrete.comp (hadapt t)).stronglyMeasurable,
       h0.mono fun _ hω ↦ by simp [hω],
       fun s t hst ↦ (MeasurableEmbedding.natCast.hasLaw_comp_iff.2
-        (hlaw s t hst)).congr (ae_natCast_sub (hle hst)),
+        (hlaw s t hst)).congr (Filter.EventuallyLE.natCast_sub (hle hst)).symm,
       fun s t hst ↦ (hind_iff (hle hst)).2 (hind hst)⟩
 
 /-- For a coordinatewise measurable natural-valued process `N`, its real cast is a rate-`r`
@@ -372,11 +325,11 @@ theorem isFilteredPoissonProcess_natural_natCast_iff {r : ℝ≥0}
       intro n t ht
       have hcast := (hind n t ht).comp (fun _ ↦ (Nat.cast : ℕ → ℝ))
         (fun _ ↦ Measurable.of_discrete)
-      exact hcast.congr fun i ↦ (ae_natCast_sub (hle (ht i.castSucc_le_succ))).symm
+      exact hcast.congr fun i ↦ Filter.EventuallyLE.natCast_sub (hle (ht i.castSucc_le_succ))
     exact hind_real.isFilteredPoissonProcess_natural hmeas
       (h0.mono fun _ hω ↦ by simp [hω]) fun s t hst ↦
         (MeasurableEmbedding.natCast.hasLaw_comp_iff.2 (hlaw s t hst)).congr
-          (ae_natCast_sub (hle hst))
+          (Filter.EventuallyLE.natCast_sub (hle hst)).symm
 
 end NatCast
 

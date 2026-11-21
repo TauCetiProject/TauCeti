@@ -241,6 +241,12 @@ theorem variance_of_hasLaw_map_cast_poissonMeasure {Ω : Type*} [MeasurableSpace
   rw [hX.variance_eq]
   exact variance_id_map_cast_poissonMeasure r
 
+/-- A real-valued Poisson law is supported on nonnegative numbers. -/
+theorem ae_nonneg_map_cast_poissonMeasure (r : ℝ≥0) :
+    ∀ᵐ x ∂Po(ℝ, r), 0 ≤ x :=
+  (ae_map_iff Measurable.of_discrete.aemeasurable
+    (measurableSet_le measurable_const measurable_id)).2 (ae_of_all _ Nat.cast_nonneg)
+
 end TauCeti.Probability
 
 namespace ProbabilityTheory.HasLaw

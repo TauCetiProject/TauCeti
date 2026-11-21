@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Order.Filter.Basic
+public import Mathlib.Data.Int.Cast.Basic
 
 /-!
 # Basic facts about filters
@@ -20,6 +21,8 @@ inclusion.
 * `Filter.isCodirectedOrder_mem`: the members of a filter are codirected under inclusion.
 * `Filter.le_of_eventually_le_and_le`: bounds `a ≤ f x ≤ b` holding eventually along a nontrivial
   filter force `a ≤ b`.
+* `Filter.EventuallyLE.natCast_sub`: when one natural-valued function is eventually bounded by
+  another along a filter, casting their subtraction agrees eventually with subtracting their casts.
 * `Equiv.symm_comp_eventuallyEq_iff`: the eventual form of `Equiv.symm_comp_eq`, which moves an
   equivalence to the other side of an eventual equality.
 -/
@@ -40,6 +43,17 @@ theorem le_of_eventually_le_and_le {β : Type*} [Preorder β] {l : Filter α} [l
     {f : α → β} {a b : β} (h : ∀ᶠ x in l, a ≤ f x ∧ f x ≤ b) : a ≤ b :=
   let ⟨_, hx⟩ := h.exists
   hx.1.trans hx.2
+
+namespace EventuallyLE
+
+/-- When one natural-valued function is eventually bounded by another along a filter, casting
+their subtraction to an `AddGroupWithOne` agrees eventually with subtracting their casts. -/
+theorem natCast_sub {R : Type*} [AddGroupWithOne R] {l : Filter α}
+    {f g : α → ℕ} (h : f ≤ᶠ[l] g) :
+    (fun x ↦ ((g x - f x : ℕ) : R)) =ᶠ[l] fun x ↦ (g x : R) - (f x : R) :=
+  h.mono fun _ hx ↦ Nat.cast_sub hx
+
+end EventuallyLE
 
 end Filter
 

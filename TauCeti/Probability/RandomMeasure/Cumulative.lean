@@ -12,6 +12,7 @@ public import Mathlib.Topology.Instances.NNReal.Lemmas
 public import Mathlib.Topology.Order.Cadlag
 public import Mathlib.Probability.IdentDistrib
 import Mathlib.MeasureTheory.Function.Floor
+import Mathlib.Topology.Algebra.Order.Floor
 import TauCeti.MeasureTheory.Measure.Interval
 import TauCeti.MeasureTheory.Measure.Typeclasses.Finite
 
@@ -239,6 +240,14 @@ theorem ae_forall_natFloor_toNNReal_Ioc_add_eq {Q : Measure Ω} {M₁ M₂ M₀ 
     (by simpa only [M, Fintype.sum_bool, Bool.cond_true, Bool.cond_false] using hadd)
   simpa only [M, Fintype.sum_bool, Bool.cond_true, Bool.cond_false] using h
 
+/-- A natural-valued process that agrees almost surely with the cumulative masses of a random
+measure simultaneously at all times is almost surely monotone. -/
+theorem ae_monotone_of_ae_measure_Iic_eq {P : Measure Ω} {N : ℝ≥0 → Ω → ℕ}
+    (hcount : ∀ᵐ ω ∂P, ∀ t, M ω (Iic t) = (N t ω : ℝ≥0∞)) :
+    ∀ᵐ ω ∂P, Monotone (N · ω) := by
+  filter_upwards [hcount] with ω hω s t hst
+  exact_mod_cast (hω s).symm.trans_le ((measure_mono (Iic_subset_Iic.mpr hst)).trans_eq (hω t))
+
 end TauCeti.Probability
 
 namespace MeasureTheory.Measure
@@ -256,20 +265,23 @@ right-continuous in `t`, without assuming integrality. -/
 theorem isRightContinuous_natFloor_Iic (μ : Measure ℝ≥0) [IsLocallyFiniteMeasure μ] :
     IsRightContinuous fun t : ℝ≥0 ↦ ⌊(μ (Iic t)).toNNReal⌋₊ := by
   intro t
-  let k := ⌊(μ (Iic t)).toNNReal⌋₊
-  have hk_lt : (μ (Iic t)).toNNReal < (k : ℝ≥0) + 1 := Nat.lt_floor_add_one _
   have htend_enn : Tendsto (fun s : ℝ≥0 ↦ μ (Iic s)) (𝓝[>] t) (𝓝 (μ (Iic t))) :=
     tendsto_measure_Iic_nhdsGT ⟨t + 1, lt_add_one t, (measure_Iic_lt_top (μ := μ)).ne⟩
-  have htend_nn : Tendsto (fun s : ℝ≥0 ↦ (μ (Iic s)).toNNReal)
-      (𝓝[>] t) (𝓝 (μ (Iic t)).toNNReal) :=
-    (ENNReal.tendsto_toNNReal (measure_Iic_lt_top (μ := μ)).ne).comp htend_enn
-  apply tendsto_const_nhds.congr'
-  filter_upwards [self_mem_nhdsWithin, htend_nn.eventually (isOpen_Iio.mem_nhds hk_lt)]
-    with s hts hs_lt
-  have hle : k ≤ ⌊(μ (Iic s)).toNNReal⌋₊ := μ.monotone_natFloor_Iic hts.le
-  have hlt : ⌊(μ (Iic s)).toNNReal⌋₊ < k + 1 :=
-    (Nat.floor_lt (zero_le (a := _))).2 (by simpa [Nat.cast_add, Nat.cast_one] using hs_lt)
-  omega
+  have htend_real : Tendsto (fun s : ℝ≥0 ↦ ((μ (Iic s)).toNNReal : ℝ))
+      (𝓝[>] t) (𝓝[≥] ((μ (Iic t)).toNNReal : ℝ)) := by
+    refine tendsto_nhdsWithin_iff.2 ⟨?_, ?_⟩
+    · exact (NNReal.continuous_coe.tendsto _).comp
+        ((ENNReal.tendsto_toNNReal (measure_Iic_lt_top (μ := μ)).ne).comp htend_enn)
+    · filter_upwards [self_mem_nhdsWithin] with s hts
+      exact NNReal.coe_le_coe.2 (ENNReal.toNNReal_mono (measure_Iic_lt_top (μ := μ)).ne
+        (measure_mono (Iic_subset_Iic.2 hts.le)))
+  have hfloor := (tendsto_floor_right_pure_floor ((μ (Iic t)).toNNReal : ℝ)).comp htend_real
+  have htoNat : Tendsto (fun s : ℝ≥0 ↦ ⌊((μ (Iic s)).toNNReal : ℝ)⌋.toNat)
+      (𝓝[>] t) (pure ⌊((μ (Iic t)).toNNReal : ℝ)⌋.toNat) :=
+    (tendsto_pure_pure Int.toNat _).comp hfloor
+  rw [ContinuousWithinAt, nhds_discrete]
+  simpa only [Function.comp_def, Int.floor_toNat,
+    show ∀ x : ℝ≥0, ⌊(x : ℝ)⌋₊ = ⌊x⌋₊ from fun x ↦ Nonneg.nat_floor_coe x] using htoNat
 
 /-- For a locally finite measure on `ℝ≥0` and any cutoff `a`, the floored counts on `(a, t]` are
 monotone in `t`. -/

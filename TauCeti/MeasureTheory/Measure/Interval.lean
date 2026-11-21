@@ -61,6 +61,8 @@ longer windows linearly in their length, and so makes the measure locally finite
   `(n + 1) * C`, and is locally finite.
 * `MeasureTheory.Measure.restrict_Ioi_apply_Iic`: restricting a measure to `(a, ∞)` and evaluating
   on `(-∞, b]` gives `μ (Ioc a b)`.
+* `MeasureTheory.Measure.measure_Ioc_eq_natCast_sub`: when `μ (Iic s)` and `μ (Iic t)` equal
+  natural numbers `m` and `n`, `μ (Ioc s t)` equals `((n - m : ℕ) : ℝ≥0∞)`.
 -/
 
 public section
@@ -79,6 +81,20 @@ theorem restrict_Ioi_apply_Iic {α : Type*} [Preorder α] [TopologicalSpace α]
     (μ : Measure α) (a b : α) :
     μ.restrict (Ioi a) (Iic b) = μ (Ioc a b) := by
   rw [Measure.restrict_apply measurableSet_Iic, inter_comm, Ioi_inter_Iic]
+
+/-- If the cumulative measures `μ (Iic s)` and `μ (Iic t)` equal natural numbers `m` and `n`,
+then `μ (Ioc s t)` equals `((n - m : ℕ) : ℝ≥0∞)`. -/
+theorem measure_Ioc_eq_natCast_sub {α : Type*} [LinearOrder α] [TopologicalSpace α]
+    [ClosedIicTopology α] [MeasurableSpace α] [OpensMeasurableSpace α]
+    {μ : Measure α} {s t : α} {m n : ℕ} (hs : μ (Iic s) = m) (ht : μ (Iic t) = n) :
+    μ (Ioc s t) = ((n - m : ℕ) : ℝ≥0∞) := by
+  rcases le_total s t with hst | hts
+  · rw [← Iic_sdiff_Iic, measure_sdiff (Iic_subset_Iic.2 hst) measurableSet_Iic.nullMeasurableSet
+      (by rw [hs]; exact ENNReal.natCast_ne_top _), hs, ht, ← ENNReal.natCast_sub]
+  · have hmn : n ≤ m := by
+      have h : (n : ℝ≥0∞) ≤ m := ht ▸ hs ▸ measure_mono (Iic_subset_Iic.2 hts)
+      exact_mod_cast h
+    rw [Ioc_eq_empty_of_le hts, measure_empty, Nat.sub_eq_zero_of_le hmn, Nat.cast_zero]
 
 section NegInvariant
 

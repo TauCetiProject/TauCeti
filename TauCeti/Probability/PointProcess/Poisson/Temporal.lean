@@ -173,7 +173,7 @@ theorem isPoissonRandomMeasure_countPathMeasure_iff_count_increments
         (poissonMeasure (Λ (Ioc s t)).toNNReal) P :=
   isPoissonRandomMeasure_iff_count_increments hΛ
     (measurable_countPathMeasure_of_nnrat hN)
-    (hreg.mono fun _ ⟨hf, hrc⟩ t ↦ countPathMeasure_Iic hf hrc t)
+    (ae_countPathMeasure_Iic_eq hreg)
 
 /-- Homogeneous specialization: for a count process measurable at nonnegative rational times whose
 paths are monotone and right-continuous on one event of full measure, `countPathMeasure (N · ω)` is
@@ -190,7 +190,7 @@ theorem isPoissonRandomMeasure_countPathMeasure_smul_nnvolume_iff_count_incremen
         (poissonMeasure (r * (t - s))) P :=
   isPoissonRandomMeasure_smul_nnvolume_iff_count_increments
     (measurable_countPathMeasure_of_nnrat hN)
-    (hreg.mono fun _ ⟨hf, hrc⟩ t ↦ countPathMeasure_Iic hf hrc t)
+    (ae_countPathMeasure_Iic_eq hreg)
 
 /-- For a measurable random measure `M` on `ℝ≥0` represented almost surely by a coordinatewise
 measurable natural-valued cumulative count process `N`, `M` is a rate-`r` homogeneous Poisson
@@ -224,7 +224,7 @@ theorem isPoissonRandomMeasure_countPathMeasure_smul_nnvolume_iff_isFilteredPois
         r (fun t ω ↦ (N t ω : ℝ)) P :=
   isPoissonRandomMeasure_smul_nnvolume_iff_isFilteredPoissonProcess_natural
     (measurable_countPathMeasure_of_nnrat fun q ↦ hN q) hN
-    (hreg.mono fun _ ⟨hf, hrc⟩ t ↦ countPathMeasure_Iic hf hrc t)
+    (ae_countPathMeasure_Iic_eq hreg)
 
 /-- **Zero-rate temporal Poisson characterization.** A measurable random measure with a
 natural-valued cumulative count process on a probability space has zero Poisson intensity if and
