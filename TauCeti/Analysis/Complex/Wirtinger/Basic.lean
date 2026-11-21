@@ -408,8 +408,8 @@ theorem conjWirtingerDeriv_conj_comp_apply (g : V → ℂ) (x v : V) :
     smul_eq_mul, map_mul, map_sub, conj_I, map_inv₀, map_ofNat]
   ring
 
-/-- For complex differentiable `g : V → ℂ`, the conjugate map `y ↦ conj (g y)` is antiholomorphic:
-its complex-linear Wirtinger derivative vanishes. -/
+/-- If `g : V → ℂ` is complex differentiable at `x`, then the complex-linear Wirtinger derivative
+`∂(conj ∘ g)` vanishes at `x`. -/
 @[simp]
 theorem _root_.DifferentiableAt.wirtingerDeriv_conj_comp_eq_zero {g : V → ℂ} {x : V}
     (hg : DifferentiableAt ℂ g x) : wirtingerDeriv (fun y ↦ conj (g y)) x = 0 := by

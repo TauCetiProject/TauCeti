@@ -24,11 +24,11 @@ uniform bound in terms of the radius when the pole lies in that disk, and the in
 reciprocal over any set is bounded by `2π` plus the measure of the set, uniformly in the pole.
 The truncated kernel is in `L^q` for `q < 2`, and compact truncation also gives local `L¹`
 continuity as the pole varies. The Cauchy integral of complex data splits into the integrals of
-their real and imaginary parts. For a bounded measurable set `Δ` and a bounded a.e.-strongly
-measurable map `g`, `z ↦ (z - ξ)⁻¹ • g z` is integrable on `Δ`
-(`TauCeti.integrableOn_sub_inv_smul_of_isBounded`), and excising `closedBall ξ ε` changes its
-integral by at most `2π M ε`
-(`TauCeti.norm_setIntegral_sdiff_closedBall_sub_integral_sub_inv_smul_le`).
+their real and imaginary parts. For a bounded plane set `Δ` and an a.e.-strongly measurable map
+`g` that is a.e. bounded on `Δ`, `z ↦ (z - ξ)⁻¹ • g z` is integrable on `Δ`
+(`TauCeti.integrableOn_sub_inv_smul_of_isBounded`), and when integrable on `Δ`, excising
+`closedBall ξ ε` changes its integral by at most `2π M ε` whenever `‖g‖ ≤ M` a.e. on
+`Δ ∩ closedBall ξ ε` (`TauCeti.norm_setIntegral_sdiff_closedBall_sub_integral_sub_inv_smul_le`).
 -/
 
 public section
@@ -221,29 +221,31 @@ theorem integral_sub_inv_mul_eq_re_add_I_mul_im {f : ℂ → ℂ}
   simp_rw [heq]
   rw [integral_add hRe (hIm.const_mul Complex.I), integral_const_mul]
 
-/-- On a bounded measurable plane set `Δ`, `z ↦ (z - ξ)⁻¹ • g z` is integrable whenever `g` is
-almost everywhere strongly measurable and bounded on `Δ`. -/
+/-- On a bounded plane set `Δ`, `z ↦ (z - ξ)⁻¹ • g z` is integrable whenever `g` is almost
+everywhere strongly measurable on `Δ` and `‖g z‖ ≤ M` almost everywhere with respect to
+`volume.restrict Δ`. -/
 theorem integrableOn_sub_inv_smul_of_isBounded {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
-    {Δ : Set ℂ} (hbounded : IsBounded Δ) (hΔ : MeasurableSet Δ) {g : ℂ → E}
-    (hg : AEStronglyMeasurable g (volume.restrict Δ)) {M : ℝ} (hM : ∀ z ∈ Δ, ‖g z‖ ≤ M) (ξ : ℂ) :
+    {Δ : Set ℂ} (hbounded : IsBounded Δ) {g : ℂ → E}
+    (hg : AEStronglyMeasurable g (volume.restrict Δ)) {M : ℝ}
+    (hM : ∀ᵐ z ∂volume.restrict Δ, ‖g z‖ ≤ M) (ξ : ℂ) :
     IntegrableOn (fun z ↦ (z - ξ)⁻¹ • g z) Δ := by
   have hinv_cl : IntegrableOn (fun z : ℂ ↦ (ξ - z)⁻¹) (closure Δ) :=
     (Complex.locallyIntegrable_sub_inv ξ).integrableOn_isCompact
       (Metric.isCompact_of_isClosed_isBounded isClosed_closure hbounded.closure)
+  have heq : (fun z : ℂ ↦ -(ξ - z)⁻¹) = fun z ↦ (z - ξ)⁻¹ :=
+    funext fun z ↦ by rw [← inv_neg, neg_sub]
   have hinv : IntegrableOn (fun z : ℂ ↦ (z - ξ)⁻¹) Δ :=
-    (hinv_cl.mono_set subset_closure).neg.congr_fun
-      (fun z _ ↦ by rw [Pi.neg_apply, ← inv_neg, neg_sub]) hΔ
-  exact hinv.smul_bdd (max M 0) hg
-    (ae_restrict_of_forall_mem hΔ fun z hz ↦ (hM z hz).trans (le_max_left _ _))
+    heq ▸ (hinv_cl.mono_set subset_closure).neg
+  exact hinv.smul_bdd (max M 0) hg (hM.mono fun z hz ↦ hz.trans (le_max_left _ _))
 
-/-- **Deleted-disk area bound (`2π M ε`).** Excising `closedBall ξ ε` (`ε ≥ 0`) from the
-Cauchy-kernel area integral over `Δ` changes the integral by at most `2 * π * M * ε` whenever
-`‖g z‖ ≤ M` (`M ≥ 0`) on `Δ ∩ closedBall ξ ε`. -/
+/-- **Deleted-disk area bound (`2π M ε`).** Whenever `z ↦ (z - ξ)⁻¹ • g z` is integrable on `Δ`
+and `‖g z‖ ≤ M` (`M ≥ 0`) almost everywhere with respect to `volume.restrict (Δ ∩ closedBall ξ ε)`,
+excising `closedBall ξ ε` (`ε ≥ 0`) changes the set integral over `Δ` by at most `2 * π * M * ε`. -/
 theorem norm_setIntegral_sdiff_closedBall_sub_integral_sub_inv_smul_le {E : Type*}
-    [NormedAddCommGroup E] [NormedSpace ℂ E] {Δ : Set ℂ} (hΔ : MeasurableSet Δ) {g : ℂ → E}
+    [NormedAddCommGroup E] [NormedSpace ℂ E] {Δ : Set ℂ} {g : ℂ → E}
     (ξ : ℂ) {M ε : ℝ} (hM0 : 0 ≤ M) (hε : 0 ≤ ε)
     (hint : IntegrableOn (fun z ↦ (z - ξ)⁻¹ • g z) Δ)
-    (hM : ∀ z ∈ Δ ∩ closedBall ξ ε, ‖g z‖ ≤ M) :
+    (hM : ∀ᵐ z ∂volume.restrict (Δ ∩ closedBall ξ ε), ‖g z‖ ≤ M) :
     ‖(∫ z in Δ \ closedBall ξ ε, (z - ξ)⁻¹ • g z) - ∫ z in Δ, (z - ξ)⁻¹ • g z‖ ≤
       2 * Real.pi * M * ε := by
   have hsplit : (∫ z in Δ \ closedBall ξ ε, (z - ξ)⁻¹ • g z) - ∫ z in Δ, (z - ξ)⁻¹ • g z =
@@ -258,11 +260,12 @@ theorem norm_setIntegral_sdiff_closedBall_sub_integral_sub_inv_smul_le {E : Type
     ‖∫ z in Δ ∩ closedBall ξ ε, (z - ξ)⁻¹ • g z‖
         ≤ ∫ z in Δ ∩ closedBall ξ ε, ‖(z - ξ)⁻¹ • g z‖ := norm_integral_le_integral_norm _
     _ ≤ ∫ z in Δ ∩ closedBall ξ ε, ‖z - ξ‖⁻¹ * M :=
-          setIntegral_mono_on (hint.mono_set inter_subset_left).norm
+          integral_mono_ae (hint.mono_set inter_subset_left).norm
             ((hinv.mono_set inter_subset_right).mul_const M)
-            (hΔ.inter measurableSet_closedBall) fun z hz ↦ by
+            (hM.mono fun z hz ↦ by
+              dsimp only
               rw [norm_smul, norm_inv]
-              exact mul_le_mul_of_nonneg_left (hM z hz) (inv_nonneg.mpr (norm_nonneg _))
+              exact mul_le_mul_of_nonneg_left hz (inv_nonneg.mpr (norm_nonneg _)))
     _ ≤ ∫ z in closedBall ξ ε, ‖z - ξ‖⁻¹ * M :=
           setIntegral_mono_set (hinv.mul_const M)
             (Eventually.of_forall fun _ ↦ mul_nonneg (inv_nonneg.mpr (norm_nonneg _)) hM0)

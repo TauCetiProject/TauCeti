@@ -119,6 +119,8 @@ let alone a holomorphic map.
   set where it is continuous.
 * `TauCeti.nonneg_of_forall_abs_le_frontier` — a bound for the absolute value of a function on the
   frontier of a nonempty compact set in a preconnected noncompact space is nonnegative.
+* `IsOpen.closure_sdiff_biUnion` and `IsOpen.frontier_sdiff_biUnion` — the closure and frontier
+  of an open set with finitely many pairwise-disjoint closed subsets removed.
 -/
 
 public section
@@ -367,5 +369,77 @@ theorem nonneg_of_forall_abs_le_frontier {K : Set X} (hK : IsCompact K) (hne : K
   exact (abs_nonneg _).trans (hbdry hy)
 
 end Bound
+
+section FiniteHoles
+
+variable {X ι : Type*} [TopologicalSpace X]
+
+/-- Removing finitely many pairwise-disjoint closed subsets `K i ⊆ U` (`i ∈ s`) from an open set
+`U` gives a set whose closure is `closure U \ ⋃ i ∈ s, interior (K i)`. -/
+theorem _root_.IsOpen.closure_sdiff_biUnion {U : Set X} (hU : IsOpen U) (s : Finset ι)
+    {K : ι → Set X} (hK : ∀ i ∈ s, IsClosed (K i)) (hsub : ∀ i ∈ s, K i ⊆ U)
+    (hdisj : (s : Set ι).PairwiseDisjoint K) :
+    closure (U \ ⋃ i ∈ s, K i) = closure U \ ⋃ i ∈ s, interior (K i) := by
+  classical
+  refine Subset.antisymm (subset_sdiff.mpr ⟨closure_mono sdiff_subset,
+    Set.disjoint_iUnion₂_right.mpr fun i hi ↦
+      Disjoint.closure_left (Set.disjoint_left.mpr fun x hx hxi ↦
+        hx.2 (mem_iUnion₂.mpr ⟨i, hi, interior_subset hxi⟩)) isOpen_interior⟩) ?_
+  intro x ⟨hxU, hxint⟩
+  by_cases hxK : x ∈ ⋃ i ∈ s, K i
+  · obtain ⟨i, hi, hxi⟩ := mem_iUnion₂.mp hxK
+    have hxfr : x ∈ closure (K i)ᶜ := by
+      rw [closure_compl]
+      exact fun h ↦ hxint (mem_iUnion₂.mpr ⟨i, hi, h⟩)
+    have hW : IsOpen (U ∩ (⋃ j ∈ s.erase i, K j)ᶜ) :=
+      hU.inter ((s.erase i).finite_toSet.isClosed_biUnion fun j hj ↦
+        hK j (Finset.mem_of_mem_erase hj)).isOpen_compl
+    have hxW : x ∈ U ∩ (⋃ j ∈ s.erase i, K j)ᶜ := by
+      refine ⟨hsub i hi hxi, fun h ↦ ?_⟩
+      obtain ⟨j, hj, hxj⟩ := mem_iUnion₂.mp h
+      exact Set.disjoint_left.mp
+        (hdisj hi (Finset.mem_of_mem_erase hj) (Finset.ne_of_mem_erase hj).symm) hxi hxj
+    refine closure_mono ?_ (hW.closure_inter (s := (K i)ᶜ) ⟨hxfr, hxW⟩)
+    rintro y ⟨hyi, hyU, hyK'⟩
+    refine ⟨hyU, fun h ↦ ?_⟩
+    obtain ⟨j, hj, hyj⟩ := mem_iUnion₂.mp h
+    exact if hji : j = i then hyi (hji ▸ hyj)
+      else hyK' (mem_iUnion₂.mpr ⟨j, Finset.mem_erase.mpr ⟨hji, hj⟩, hyj⟩)
+  · have hV : IsOpen (⋃ i ∈ s, K i)ᶜ := (s.finite_toSet.isClosed_biUnion hK).isOpen_compl
+    exact hV.closure_inter (s := U) ⟨hxU, hxK⟩
+
+/-- **Frontier of an open set with finitely many pairwise-disjoint closed holes.** For an open set
+`U` and finitely many pairwise-disjoint closed subsets `K i ⊆ U` (`i ∈ s`), the frontier of
+`U \ ⋃ i ∈ s, K i` is `frontier U ∪ ⋃ i ∈ s, frontier (K i)`. -/
+theorem _root_.IsOpen.frontier_sdiff_biUnion {U : Set X} (hU : IsOpen U) (s : Finset ι)
+    {K : ι → Set X} (hK : ∀ i ∈ s, IsClosed (K i)) (hsub : ∀ i ∈ s, K i ⊆ U)
+    (hdisj : (s : Set ι).PairwiseDisjoint K) :
+    frontier (U \ ⋃ i ∈ s, K i) = frontier U ∪ ⋃ i ∈ s, frontier (K i) := by
+  have hopen : IsOpen (U \ ⋃ i ∈ s, K i) :=
+    hU.sdiff (s.finite_toSet.isClosed_biUnion hK)
+  rw [frontier, hopen.interior_eq, hU.closure_sdiff_biUnion s hK hsub hdisj]
+  ext x
+  constructor
+  · rintro ⟨⟨hxUcl, hxint⟩, hxΔ⟩
+    by_cases hxU : x ∈ U
+    · obtain ⟨i, hi, hxi⟩ := mem_iUnion₂.mp (by_contra fun h ↦ hxΔ ⟨hxU, h⟩)
+      exact Or.inr (mem_iUnion₂.mpr
+        ⟨i, hi, (hK i hi).closure_eq.symm ▸ hxi, fun h ↦ hxint (mem_iUnion₂.mpr ⟨i, hi, h⟩)⟩)
+    · exact Or.inl ⟨hxUcl, hU.interior_eq.symm ▸ hxU⟩
+  · rintro (⟨hxUcl, hxUint⟩ | hxfr)
+    · have hxU : x ∉ U := hU.interior_eq ▸ hxUint
+      refine ⟨⟨hxUcl, fun h ↦ ?_⟩, fun h ↦ hxU h.1⟩
+      obtain ⟨i, hi, hxi⟩ := mem_iUnion₂.mp h
+      exact hxU (hsub i hi (interior_subset hxi))
+    · obtain ⟨i, hi, hxicl, hxiint⟩ := mem_iUnion₂.mp hxfr
+      have hxi : x ∈ K i := (hK i hi).closure_eq ▸ hxicl
+      refine ⟨⟨subset_closure (hsub i hi hxi), fun h ↦ ?_⟩,
+        fun h ↦ h.2 (mem_iUnion₂.mpr ⟨i, hi, hxi⟩)⟩
+      obtain ⟨j, hj, hxjint⟩ := mem_iUnion₂.mp h
+      by_cases hji : j = i
+      · exact hxiint (hji ▸ hxjint)
+      · exact Set.disjoint_left.mp (hdisj hi hj (Ne.symm hji)) hxi (interior_subset hxjint)
+
+end FiniteHoles
 
 end TauCeti

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Integral.DominatedConvergence
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Metric
+import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
 
 /-!
@@ -51,7 +52,8 @@ on the whole space.
 * `TendstoUniformlyOn.tendsto_intervalIntegral_comp`: if `F i → f` uniformly on `[[a, b]]`, then
   `∫ g(t, F i t) dt → ∫ g(t, f t) dt` over `a..b` for every jointly continuous `g`.
 * `MeasureTheory.IntegrableOn.tendsto_integral_sdiff_closedBall_nhdsGT`: excising a shrinking
-  closed ball around a null point `ξ` recovers `∫ z in Δ, h z ∂μ` as `ε → 0⁺`.
+  closed ball around a point `ξ` that is null for `μ.restrict Δ` recovers `∫ z in Δ, h z ∂μ` as
+  `ε → 0⁺`.
 -/
 
 public section
@@ -318,28 +320,18 @@ theorem TendstoUniformlyOn.tendsto_intervalIntegral_comp {ι β E : Type*} [Unif
       ((TauCeti.tendstoUniformlyOn_const id l _).prodMk_same h)
 
 open Filter MeasureTheory Topology Set Metric in
-/-- Excising a shrinking closed ball around a point `ξ` of measure zero recovers the set integral
-over `Δ` as the radius tends to `0⁺`. -/
+/-- Excising a shrinking closed ball around a point `ξ` with `(μ.restrict Δ) {ξ} = 0` recovers the
+set integral over `Δ` as the radius tends to `0⁺`. -/
 theorem MeasureTheory.IntegrableOn.tendsto_integral_sdiff_closedBall_nhdsGT {X E : Type*}
     [MetricSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
     [NormedAddCommGroup E] [NormedSpace ℝ E] {μ : Measure X} {Δ : Set X} {h : X → E}
-    (hh : IntegrableOn h Δ μ) {ξ : X} (hξ : μ {ξ} = 0) :
+    (hh : IntegrableOn h Δ μ) {ξ : X} (hξ : (μ.restrict Δ) {ξ} = 0) :
     Tendsto (fun ε ↦ ∫ z in Δ \ closedBall ξ ε, h z ∂μ) (𝓝[>] 0) (𝓝 (∫ z in Δ, h z ∂μ)) := by
-  have heq (ε : ℝ) : (∫ z in Δ \ closedBall ξ ε, h z ∂μ) =
-      ∫ z in Δ, (closedBall ξ ε)ᶜ.indicator h z ∂μ := by
-    rw [Set.sdiff_eq, Set.inter_comm,
-      ← Measure.restrict_restrict isClosed_closedBall.measurableSet.compl,
-      integral_indicator isClosed_closedBall.measurableSet.compl]
-  simp_rw [heq]
-  refine tendsto_integral_filter_of_dominated_convergence (fun z ↦ ‖h z‖)
-    (Eventually.of_forall fun ε ↦
-      hh.aestronglyMeasurable.indicator isClosed_closedBall.measurableSet.compl)
-    (Eventually.of_forall fun ε ↦ Eventually.of_forall fun z ↦ norm_indicator_le_norm_self h z)
-    hh.norm ?_
-  have hae : ∀ᵐ z ∂(μ.restrict Δ), z ≠ ξ :=
-    ae_restrict_of_ae (compl_mem_ae_iff.mpr hξ)
-  filter_upwards [hae] with z hz
-  refine tendsto_const_nhds.congr' ?_
-  filter_upwards [Ioo_mem_nhdsGT (dist_pos.mpr hz)] with ε hε
-  exact (indicator_of_mem (by simpa [mem_closedBall] using hε.2) h).symm
+  have hcov : AECover (μ.restrict Δ) (𝓝[>] (0 : ℝ)) (fun ε ↦ (closedBall ξ ε)ᶜ) :=
+    ⟨by filter_upwards [compl_mem_ae_iff.mpr hξ] with z hz
+        filter_upwards [Ioo_mem_nhdsGT (dist_pos.mpr hz)] with ε hε
+        simpa [mem_closedBall] using hε.2,
+     fun _ ↦ isClosed_closedBall.measurableSet.compl⟩
+  simpa only [Measure.restrict_restrict isClosed_closedBall.measurableSet.compl,
+    Set.inter_comm, ← Set.sdiff_eq] using hcov.integral_tendsto_of_countably_generated hh
 

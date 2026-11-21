@@ -16,9 +16,9 @@ import TauCeti.MeasureTheory.Integral.DominatedConvergence
 # The Cauchy–Pompeiu formula on bounded domains with contour-cycle boundaries
 
 Let `Δ` be a bounded open plane set with `closure Δ ⊆ Ω` (`Ω` open), and let `C : Contour.Cycle`
-have `C.trace ⊆ frontier Δ` and winding number `1` on `Δ` and `0` outside `Δ`. Applying the
-winding-weighted complex Green formula to `(z - ξ)⁻¹ • f z` on `C - circleCycle ξ ε` and passing
-`ε → 0⁺` proves the full-boundary **Cauchy–Pompeiu formula**:
+have `C.trace ⊆ frontier Δ` and winding number `1` on `Δ` and `0` outside `Δ` off `C.trace`.
+Applying the winding-weighted complex Green formula to `(z - ξ)⁻¹ • f z` on `C - circleCycle ξ ε`
+and passing `ε → 0⁺` proves the full-boundary **Cauchy–Pompeiu formula**:
 
 `f ξ = (2πi)⁻¹ • C.integral (fun z ↦ (z - ξ)⁻¹ • f z) - π⁻¹ • ∫ z in Δ, (z - ξ)⁻¹ • \bar∂ f(z)`,
 
@@ -61,9 +61,9 @@ theorem integrableOn_sub_inv_smul_conjWirtingerDeriv {E : Type*} [NormedAddCommG
     (hf.conjWirtingerDeriv_apply_of_isOpen hΩ (m := 0) (by simp) 1).continuousOn
   obtain ⟨M, hM⟩ := (Metric.isCompact_of_isClosed_isBounded isClosed_closure
     hbounded.closure).exists_bound_of_continuousOn (hcont.mono hclosure)
-  exact (integrableOn_sub_inv_smul_of_isBounded hbounded.closure isClosed_closure.measurableSet
-    ((hcont.mono hclosure).aestronglyMeasurable isClosed_closure.measurableSet) hM ξ).mono_set
-    subset_closure
+  exact (integrableOn_sub_inv_smul_of_isBounded hbounded.closure
+    ((hcont.mono hclosure).aestronglyMeasurable isClosed_closure.measurableSet)
+    (ae_restrict_of_forall_mem isClosed_closure.measurableSet hM) ξ).mono_set subset_closure
 
 /-! ### Punctured Cauchy–Pompeiu identity -/
 
@@ -133,9 +133,12 @@ private theorem windingWeight_sub_circleCycle_ae_eq {E : Type*} [NormedAddCommGr
 end PuncturedHelpers
 
 open scoped Classical in
-/-- **Punctured Cauchy–Pompeiu identity.** Excising `closedBall ξ ε ⊆ Δ` (`ε > 0`) around `ξ`
-expresses the difference between the outer cycle integral `C.integral (fun z ↦ (z - ξ)⁻¹ • f z)`
-and the small-circle integral `∮ z in C(ξ, ε), (z - ξ)⁻¹ • f z` as
+/-- **Punctured Cauchy–Pompeiu identity.** For an open set `Ω`, an open set `Δ` with
+`closure Δ ⊆ Ω`, a cycle `C` with `C.trace ⊆ frontier Δ` and winding number `1` on `Δ` and `0`
+outside `Δ` off `C.trace`, and a real `C¹` map `f : ℂ → E` on `Ω`, excising
+`closedBall ξ ε ⊆ Δ` (`ε > 0`) around `ξ` expresses the difference between the outer cycle integral
+`C.integral (fun z ↦ (z - ξ)⁻¹ • f z)` and the small-circle integral
+`∮ z in C(ξ, ε), (z - ξ)⁻¹ • f z` as
 `(2 * I) • ∫ z in Δ \ closedBall ξ ε, (z - ξ)⁻¹ • \bar∂ f(z)`. -/
 theorem Contour.Cycle.integral_sub_circleIntegral_sub_inv_smul_eq {E : Type*}
     [NormedAddCommGroup E] [NormedSpace ℂ E] {Ω Δ : Set ℂ} (hΩ : IsOpen Ω) (hΔ : IsOpen Δ)
@@ -199,7 +202,8 @@ theorem cauchyPompeiu_smul {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E
   have hcirc := hf.continuousOn.tendsto_circleIntegral_sub_inv_smul_nhdsGT
     (hΩ.mem_nhds (hclosure (subset_closure hξ)))
   have harea := (integrableOn_sub_inv_smul_conjWirtingerDeriv hΩ hbounded hclosure hf ξ)
-    |>.tendsto_integral_sdiff_closedBall_nhdsGT (measure_singleton ξ)
+    |>.tendsto_integral_sdiff_closedBall_nhdsGT
+      (le_antisymm ((Measure.restrict_apply_le _ _).trans (measure_singleton ξ).le) zero_le)
   have hev : (fun ε ↦ ∮ z in C(ξ, ε), (z - ξ)⁻¹ • f z) =ᶠ[𝓝[>] 0]
       fun ε ↦ C.integral (fun z ↦ (z - ξ)⁻¹ • f z) -
         (2 * I : ℂ) • ∫ z in Δ \ closedBall ξ ε, (z - ξ)⁻¹ • conjWirtingerDeriv f z 1 := by
@@ -223,8 +227,10 @@ theorem cauchyPompeiu_smul {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E
           rw [heq, smul_sub, smul_smul, hcoeff]
 
 open scoped Classical in
-/-- **Full-boundary Cauchy–Pompeiu formula (`\bar∂` normalization).** For `f : ℂ → ℂ` real `C¹` on
-`Ω` and `ξ ∈ Δ`,
+/-- **Full-boundary Cauchy–Pompeiu formula (`\bar∂` normalization).** Under the hypotheses of
+`TauCeti.cauchyPompeiu_smul` (an open set `Ω`, a bounded open set `Δ` with `closure Δ ⊆ Ω`, a
+cycle `C` with `C.trace ⊆ frontier Δ` and winding number `1` on `Δ` and `0` outside `Δ` off
+`C.trace`), for `f : ℂ → ℂ` real `C¹` on `Ω` and `ξ ∈ Δ`,
 `f ξ = (2πi)⁻¹ * C.integral (fun z ↦ f z / (z - ξ)) - π⁻¹ * ∫ z in Δ, \bar∂ f(z) / (z - ξ)`. -/
 theorem cauchyPompeiu_conjWirtingerDeriv {Ω Δ : Set ℂ} (hΩ : IsOpen Ω) (hΔ : IsOpen Δ)
     (hbounded : IsBounded Δ) (hclosure : closure Δ ⊆ Ω)

@@ -298,16 +298,10 @@ theorem hasCompactSupport_windingWeight (C : Contour.Cycle) :
 point. -/
 theorem windingNumber_eventuallyEq (C : Cycle) {z : ℂ} (hz : z ∉ trace C) :
     (fun w ↦ windingNumber w C) =ᶠ[𝓝 z] fun _ ↦ windingNumber z C := by
-  have hopen : IsOpen ((Subtype.val : {w : ℂ // w ∉ trace C} → ℂ) ''
-      ((fun w : {w : ℂ // w ∉ trace C} ↦ windingNumber w C) ⁻¹' {windingNumber z C})) :=
-    C.isCompact_trace.isClosed.isOpen_compl.isOpenMap_subtypeVal _
-      (C.isLocallyConstant_windingNumber {windingNumber z C})
-  have hmem : z ∈ (Subtype.val : {w : ℂ // w ∉ trace C} → ℂ) ''
-      ((fun w : {w : ℂ // w ∉ trace C} ↦ windingNumber w C) ⁻¹' {windingNumber z C}) :=
-    ⟨⟨z, hz⟩, rfl, rfl⟩
-  filter_upwards [hopen.mem_nhds hmem] with w hw
-  rcases hw with ⟨⟨w', _⟩, hw', rfl⟩
-  exact hw'
+  rw [← nhdsWithin_eq_nhds.mpr (C.isCompact_trace.isClosed.isOpen_compl.mem_nhds hz)]
+  exact (eventually_nhds_subtype_iff (trace C)ᶜ ⟨z, hz⟩
+    (fun w ↦ windingNumber w C = windingNumber z C)).mp
+    (C.isLocallyConstant_windingNumber.eventually_eq ⟨z, hz⟩)
 
 /-- The actual trace-zero cycle weight agrees with its restriction to a domain in which
 the cycle is null-homologous. -/
