@@ -66,7 +66,8 @@ theorem isUnit_evalAt_charPowerSeries_complement (hE : IsRieszProjection u a h E
   apply (hu.comp_clm (1 - E)).isUnit_evalAt_charPowerSeries_of_isUnit_one_sub_smul
   have hunit := _root_.IsIdempotentElem.isUnit_add_mul_one_sub
     (A := C₀(I, R) →L[R] C₀(I, R)) (isRieszProjection_def.mp hE).isIdempotentElem
-    hE.one_sub_smul_mul_inverse hE.inverse_mul_one_sub_smul
+    (isRieszProjection_def.mp hE).spectral_mul_inverse
+    (isRieszProjection_def.mp hE).inverse_mul_spectral
   convert hunit using 1
   ext x : 1
   simp only [sub_apply, one_apply_eq_self, smul_apply, mul_apply_eq_comp, add_apply, comp_apply]
@@ -104,21 +105,22 @@ private theorem exists_charPowerSeries_eq_projectiveCharpolyRev (hE : IsRieszPro
     (LinearMap.IsIdempotentElem.mem_range_iff
       (ContinuousLinearMap.IsIdempotentElem.toLinearMap
         (isRieszProjection_def.mp hE).isIdempotentElem)).mp x.property
-  let f : Module.End R E.range := (u.restrict hE.mapsTo_range).toLinearMap
+  let f : Module.End R E.range :=
+    (u.restrict (isRieszProjection_def.mp hE).mapsTo_range).toLinearMap
   refine ⟨inferInstance, inferInstance, f, ?_,
     (hE.isRowCompact hu).charPowerSeries_matrixCoeff_mul_eq_projectiveCharpolyRev
-      (isRieszProjection_def.mp hE).isIdempotentElem hE.mapsTo_range⟩
+      (isRieszProjection_def.mp hE).isIdempotentElem (isRieszProjection_def.mp hE).mapsTo_range⟩
   -- On this range, nilpotence of 1 - a u is equivalent to nilpotence of u - μ.
   have hC : IsNilpotent ((1 : Module.End R E.range) - a • f) := by
     refine ⟨h, ?_⟩
     have hrestrict : (1 : Module.End R E.range) - a • f =
         ((1 - a • u : C₀(I, R) →L[R] C₀(I, R)) : Module.End R C₀(I, R)).restrict
-          hE.mapsTo_range_one_sub_smul := by
+          (isRieszProjection_def.mp hE).mapsTo_range_spectral := by
       ext x
       rfl
     rw [hrestrict]
     refine (Module.End.pow_restrict h
-      (fun x hx ↦ hE.mapsTo_range_one_sub_smul hx)).trans ?_
+      (fun x hx ↦ (isRieszProjection_def.mp hE).mapsTo_range_spectral hx)).trans ?_
     ext x : 1
     apply Subtype.ext
     have hx := congr($((isRieszProjection_def.mp hE).pow_mul_eq_zero) (x : C₀(I, R)))
@@ -139,7 +141,7 @@ theorem rankAtStalk_range (hE : IsRieszProjection u a h E) (hu : u.IsRowCompact)
     (hH : u.matrixCoeff.charPowerSeries.IsGoodZero a h) (p : PrimeSpectrum R) :
     Module.rankAtStalk (R := R) E.range p = h := by
   rcases Nat.eq_zero_or_pos h with rfl | hh
-  · have hE0 := hE.eq_zero_of_order_zero
+  · have hE0 := (isRieszProjection_def.mp hE).eq_zero_of_order_zero
     have : Subsingleton E.range := ⟨by rintro ⟨_, x, rfl⟩ ⟨_, y, rfl⟩; simp [hE0]⟩
     simp
   have ha := hH.isUnit hu.isEntire_charPowerSeries (Matrix.constantCoeff_charPowerSeries _) hh
@@ -159,7 +161,7 @@ theorem charPowerSeries_matrixCoeff_mul_eq_pow (hE : IsRieszProjection u a h E)
     (u * E).matrixCoeff.charPowerSeries =
       (1 - PowerSeries.C (Ring.inverse a) * PowerSeries.X) ^ h := by
   rcases Nat.eq_zero_or_pos h with rfl | hh
-  · simp [hE.eq_zero_of_order_zero]
+  · simp [(isRieszProjection_def.mp hE).eq_zero_of_order_zero]
   have ha := hH.isUnit hu.isEntire_charPowerSeries (Matrix.constantCoeff_charPowerSeries _) hh
   let : AddCommGroup E.range := inferInstance
   obtain ⟨_, _, f, hf, hchar⟩ :=
@@ -226,7 +228,7 @@ theorem finrank_ker_pow (hE : IsRieszProjection u a h E) (hu : u.IsRowCompact)
     (hH : u.matrixCoeff.charPowerSeries.IsGoodZero a h) {n : ℕ} (hn : h ≤ n) :
     Module.finrank K (LinearMap.ker (((1 - a • u) ^ n : C₀(I, K) →L[K] C₀(I, K)) :
       Module.End K C₀(I, K))) = h := by
-  rw [hE.ker_pow_eq hn, ← hE.range_eq_ker]
+  rw [(isRieszProjection_def.mp hE).ker_pow_eq hn, ← (isRieszProjection_def.mp hE).range_eq_ker]
   exact hE.finrank_range hu hH
 
 end Field

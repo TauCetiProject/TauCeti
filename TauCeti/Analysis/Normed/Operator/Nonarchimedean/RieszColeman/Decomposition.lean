@@ -121,6 +121,7 @@ theorem rieszColemanProjection_one (u : C₀(I, R) →L[R] C₀(I, R)) :
   simp [rieszColemanProjection_def]
 
 /-- Scaling a polynomial by a unit of `R` leaves `u.rieszColemanProjection` unchanged. -/
+@[simp]
 theorem rieszColemanProjection_units_smul (u : C₀(I, R) →L[R] C₀(I, R)) {Q : R[X]} (c : Rˣ) :
     u.rieszColemanProjection (c • Q) = u.rieszColemanProjection Q := by
   have hdeg : (c • Q).natDegree = Q.natDegree :=
@@ -211,7 +212,8 @@ private theorem isUnit_aeval_mul_one_sub_reverse_of_isRieszProjection
     simp [Algebra.algebraMap_eq_smul_one]
   have hunit := _root_.IsIdempotentElem.isUnit_add_mul_one_sub
     (A := M →L[R] M) (isRieszProjection_def.mp hEv).isIdempotentElem
-    hEv.one_sub_smul_mul_inverse hEv.inverse_mul_one_sub_smul
+    (isRieszProjection_def.mp hEv).spectral_mul_inverse
+    (isRieszProjection_def.mp hEv).inverse_mul_spectral
   rw [h1v] at hunit
   have hulc : IsUnit (Q.leadingCoeff • (1 : M →L[R] M)) :=
     Algebra.algebraMap_eq_smul_one (A := M →L[R] M) Q.leadingCoeff ▸
@@ -254,29 +256,24 @@ private theorem rieszColemanProjection_aux {u : C₀(I, R) →L[R] C₀(I, R)} (
       closure (Algebra.adjoin R {u} : Set (C₀(I, R) →L[R] C₀(I, R))) :=
     closure_mono (Algebra.adjoin_le (Set.singleton_subset_iff.mpr
       (Polynomial.aeval_mem_adjoin_singleton R u)))
-  have : IsTopologicalSemiring (C₀(I, R) →L[R] C₀(I, R)) := inferInstance
-  set T := (Algebra.adjoin R {u}).topologicalClosure
-  have hET : E ∈ T := by
-    rw [← SetLike.mem_coe, Subalgebra.topologicalClosure_coe]
-    exact hsub (isRieszProjection_def.mp hEv).mem_closure_adjoin
-  have hEu : Commute u E := by
-    rw [Commute, SemiconjBy]
-    exact (Subalgebra.mem_centralizer_iff R).mp
-      (Subalgebra.topologicalClosure_adjoin_le_centralizer_centralizer R {u} hET) u
-      ((Subalgebra.mem_centralizer_iff R).mpr fun _ hy ↦ by rw [Set.mem_singleton_iff.mp hy])
+  have hEu : Commute u E :=
+    ContinuousLinearMap.ext fun x ↦
+      (isRieszProjection_def.mp hEv).semiconj (isRieszProjection_def.mp hEv) u.toLinearMap
+        ((Function.Semiconj.aeval (f := u.toLinearMap) (fun _ ↦ rfl) B).one_sub_smul 1) x
   have h1v : (1 - (1 : R) • v : C₀(I, R) →L[R] C₀(I, R)) = c • Polynomial.aeval u Q.reverse := by
     simp [v, B, Algebra.algebraMap_eq_smul_one]
   have hwT : c • (isRieszProjection_def.mp hEv).inverse ∈
-      closure (Algebra.adjoin R {u} : Set (C₀(I, R) →L[R] C₀(I, R))) := by
-    rw [← Subalgebra.topologicalClosure_coe]
-    refine T.smul_mem ?_ c
-    rw [← SetLike.mem_coe, Subalgebra.topologicalClosure_coe]
-    exact hsub (isRieszProjection_def.mp hEv).inverse_mem_closure_adjoin
+      closure (Algebra.adjoin R {u} : Set (C₀(I, R) →L[R] C₀(I, R))) :=
+    map_mem_closure (continuous_const_smul c)
+      (hsub (isRieszProjection_def.mp hEv).inverse_mem_closure_adjoin)
+      fun _ hy ↦ Subalgebra.smul_mem _ hy c
   refine ⟨hEv, hEu, hsub (isRieszProjection_def.mp hEv).mem_closure_adjoin,
     ⟨c • (isRieszProjection_def.mp hEv).inverse, ?_, ?_, ?_, ?_, hwT⟩,
     isUnit_aeval_mul_one_sub_reverse_of_isRieszProjection hQ hEv hEu⟩
-  · rw [mul_smul_comm, ← smul_mul_assoc, ← h1v, hEv.one_sub_smul_mul_inverse]
-  · rw [smul_mul_assoc, ← mul_smul_comm, ← h1v, hEv.inverse_mul_one_sub_smul]
+  · rw [mul_smul_comm, ← smul_mul_assoc, ← h1v,
+      (isRieszProjection_def.mp hEv).spectral_mul_inverse]
+  · rw [smul_mul_assoc, ← mul_smul_comm, ← h1v,
+      (isRieszProjection_def.mp hEv).inverse_mul_spectral]
   · rw [mul_smul_comm, (isRieszProjection_def.mp hEv).mul_inverse_eq_zero]; ext x : 1; simp
   · rw [smul_mul_assoc, (isRieszProjection_def.mp hEv).inverse_mul_eq_zero]; ext x : 1; simp
 
@@ -446,7 +443,9 @@ theorem eq_rieszColemanProjection {u E : C₀(I, R) →L[R] C₀(I, R)} {Q : R[X
     (hcop : IsCoprime (⟨Q, IsEntire.mem_subring.mpr (PowerSeries.isEntire_coe Q)⟩ :
       IsEntire.subring R) ⟨S, IsEntire.mem_subring.mpr hS⟩) :
     E = u.rieszColemanProjection Q :=
-  hE.unique (hu.isRieszColemanProjection_rieszColemanProjection hQ hS hQS hcop)
+  (isRieszColemanProjection_def.mp hE).unique
+    (isRieszColemanProjection_def.mp
+      (hu.isRieszColemanProjection_rieszColemanProjection hQ hS hQS hcop))
 
 /-- **Constant stalk rank of the Riesz–Coleman summand.** For a row-compact operator `u` with a
 coprime factorisation `H_u = Q * S`, where `IsUnit Q.leadingCoeff` and `S` is entire, the finite
@@ -513,13 +512,16 @@ theorem projectiveCharpolyRev_restrict_range {u E : C₀(I, R) →L[R] C₀(I, R
     letI : AddCommGroup E.range := inferInstance
     haveI : Module.Finite R E.range := hE.finite_range hQ hu
     haveI : Module.Projective R E.range := hE.projective_range hQ hu
-    (((u.restrict fun _ hx ↦ hE.mapsTo_range hx).toLinearMap).projectiveCharpolyRev) = Q := by
+    (((u.restrict fun _ hx ↦
+      (isRieszColemanProjection_def.mp hE).mapsTo_range hx).toLinearMap).projectiveCharpolyRev) =
+      Q := by
   let : AddCommGroup E.range := inferInstance
   have := hE.finite_range hQ hu
   have := hE.projective_range hQ hu
   apply Polynomial.coe_inj.mp
   rw [← (hE.isRowCompact hQ hu).charPowerSeries_matrixCoeff_mul_eq_projectiveCharpolyRev
-    (isRieszColemanProjection_def.mp hE).isIdempotentElem fun _ hx ↦ hE.mapsTo_range hx]
+    (isRieszColemanProjection_def.mp hE).isIdempotentElem
+    fun _ hx ↦ (isRieszColemanProjection_def.mp hE).mapsTo_range hx]
   exact hE.charPowerSeries_matrixCoeff_mul hu hQ0 hQ hS hQS hcop
 
 end IsRieszColemanProjection
@@ -537,7 +539,8 @@ theorem IsRowCompact.rankAtStalk_ker_aeval_reverse {u : C₀(I, R) →L[R] C₀(
     Module.rankAtStalk (R := R) (Polynomial.aeval u Q.reverse : C₀(I, R) →L[R] C₀(I, R)).ker p =
       Q.natDegree := by
   have hE := hu.isRieszColemanProjection_rieszColemanProjection hQ hS hQS hcop
-  rw [← hE.range_eq_ker]
+  have hker := by simpa only [pow_one] using (isRieszColemanProjection_def.mp hE).range_eq_ker
+  rw [← hker]
   exact hE.rankAtStalk_range hu hQ hS hQS hcop p
 
 end Decomposition
@@ -578,7 +581,8 @@ theorem IsRowCompact.finrank_ker_aeval_reverse {u : C₀(I, K) →L[K] C₀(I, K
   have hQ : IsUnit Q.leadingCoeff :=
     IsUnit.mk0 _ (leadingCoeff_ne_zero.mpr fun h ↦ by simp [h] at hQ0_mul)
   have hE := hu.isRieszColemanProjection_rieszColemanProjection hQ hS hQS hcop
-  rw [← hE.range_eq_ker]
+  have hker := by simpa only [pow_one] using (isRieszColemanProjection_def.mp hE).range_eq_ker
+  rw [← hker]
   exact hE.finrank_range hu hS hQS hcop
 
 end Field

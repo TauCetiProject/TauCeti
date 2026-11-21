@@ -43,47 +43,6 @@ namespace IsRieszProjection
 
 variable {u E : C₀(I, R) →L[R] C₀(I, R)} {a : R} {h n : ℕ}
 
-/-- The kernels of the powers of `1 - a • u` stabilise at the nilpotence bound of a
-Riesz projection. -/
-theorem ker_pow_eq (hE : IsRieszProjection u a h E) (hn : h ≤ n) :
-    LinearMap.ker (((1 - a • u) ^ n : C₀(I, R) →L[R] C₀(I, R)) :
-      C₀(I, R) →ₗ[R] C₀(I, R)) =
-    LinearMap.ker (((1 - a • u) ^ h : C₀(I, R) →L[R] C₀(I, R)) :
-      C₀(I, R) →ₗ[R] C₀(I, R)) :=
-  (isRieszProjection_def.mp hE).ker_pow_eq hn
-
-/-- The range of every sufficiently large power of `1 - a • u` is the kernel of its
-Riesz projection, hence the complementary spectral summand. -/
-theorem range_pow_eq_ker (hE : IsRieszProjection u a h E) (hn : h ≤ n) :
-    LinearMap.range (((1 - a • u) ^ n : C₀(I, R) →L[R] C₀(I, R)) :
-      C₀(I, R) →ₗ[R] C₀(I, R)) = LinearMap.ker (E : C₀(I, R) →ₗ[R] C₀(I, R)) :=
-  (isRieszProjection_def.mp hE).range_pow_eq_ker hn
-
-/-- The ranges of the powers of `1 - a • u` stabilise at the nilpotence bound of a
-Riesz projection. -/
-theorem range_pow_eq (hE : IsRieszProjection u a h E) (hn : h ≤ n) :
-    LinearMap.range (((1 - a • u) ^ n : C₀(I, R) →L[R] C₀(I, R)) :
-      C₀(I, R) →ₗ[R] C₀(I, R)) =
-    LinearMap.range (((1 - a • u) ^ h : C₀(I, R) →L[R] C₀(I, R)) :
-      C₀(I, R) →ₗ[R] C₀(I, R)) :=
-  (isRieszProjection_def.mp hE).range_pow_eq hn
-
-/-- The generalised eigenspace and the stabilised range of `1 - a • u` are topological
-complements. -/
-theorem isTopCompl_ker_range_pow (hE : IsRieszProjection u a h E) (hn : h ≤ n) :
-    (LinearMap.ker (((1 - a • u) ^ n : C₀(I, R) →L[R] C₀(I, R)) :
-      C₀(I, R) →ₗ[R] C₀(I, R))).IsTopCompl
-    (LinearMap.range (((1 - a • u) ^ n : C₀(I, R) →L[R] C₀(I, R)) :
-      C₀(I, R) →ₗ[R] C₀(I, R))) :=
-  (isRieszProjection_def.mp hE).isTopCompl_ker_range_pow hn
-
-/-- Every stabilised range of `1 - a • u` is closed, even when the ambient module is
-infinite-dimensional. -/
-theorem isClosed_range_pow (hE : IsRieszProjection u a h E) (hn : h ≤ n) :
-    IsClosed (LinearMap.range (((1 - a • u) ^ n : C₀(I, R) →L[R] C₀(I, R)) :
-      C₀(I, R) →ₗ[R] C₀(I, R)) : Set C₀(I, R)) :=
-  (isRieszProjection_def.mp hE).isClosed_range_pow hn
-
 variable [DiscreteTopology I] [DecidableEq I] [IsUltrametricDist R]
 
 variable [CompleteSpace R]
@@ -92,7 +51,7 @@ variable [CompleteSpace R]
 theorem finite_ker_pow (hE : IsRieszProjection u a h E) (hu : u.IsRowCompact) (hn : h ≤ n) :
     Module.Finite R (LinearMap.ker (((1 - a • u) ^ n : C₀(I, R) →L[R] C₀(I, R)) :
       C₀(I, R) →ₗ[R] C₀(I, R))) := by
-  rw [← (hE.of_le hn).range_eq_ker]
+  rw [← ((isRieszProjection_def.mp hE).of_le hn).range_eq_ker]
   exact (hE.isRowCompact hu).finite_range_of_isIdempotentElem
     (isRieszProjection_def.mp hE).isIdempotentElem
 
@@ -101,7 +60,7 @@ coefficient ring. No Noetherian hypothesis is needed. -/
 theorem projective_ker_pow (hE : IsRieszProjection u a h E) (hu : u.IsRowCompact) (hn : h ≤ n) :
     Module.Projective R (LinearMap.ker (((1 - a • u) ^ n : C₀(I, R) →L[R] C₀(I, R)) :
       C₀(I, R) →ₗ[R] C₀(I, R))) := by
-  rw [← (hE.of_le hn).range_eq_ker]
+  rw [← ((isRieszProjection_def.mp hE).of_le hn).range_eq_ker]
   exact (hE.isRowCompact hu).projective_range_of_isIdempotentElem
     (isRieszProjection_def.mp hE).isIdempotentElem
 

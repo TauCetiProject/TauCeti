@@ -507,20 +507,10 @@ theorem IsSpectralProjection.inverse_comp_comp_of_retract (hri : r.comp i = .id 
     (hi : Function.Semiconj (i : M →ₗ[R] N) C D)
     (hE : IsSpectralProjection (i.comp (u.comp r)) D h E) :
     (hE.comp_comp_of_retract hri hr hi).inverse = r.comp (hE.inverse.comp i) := by
-  have hri' (x : M) : r (i x) = x := by simpa using DFunLike.congr_fun hri x
-  have hir_comm : Commute (i.comp r) D := by
-    ext y
-    simp only [mul_apply_eq_comp, comp_apply]
-    exact (congrArg i (hr y)).trans (hi (r y))
-  have hw' (y : N) : i (r (hE.inverse y)) = hE.inverse (i (r y)) :=
-    congr($(hE.commute_inverse_of_commute hir_comm) y)
-  refine ((hE.comp_comp_of_retract hri hr hi).eq_inverse ?_ ?_).symm
-  · ext x
-    simpa [hri'] using
-      (hr (hE.inverse (i x))).symm.trans congr(r $(congr($(hE.spectral_mul_inverse) (i x))))
-  · ext x
-    simp only [mul_apply_eq_comp, comp_apply, hw', hri', zero_apply]
-    rw [← mul_apply_eq_comp, hE.mul_inverse_eq_zero, zero_apply, map_zero]
+  ext x
+  have hri' : r (i x) = x := by simpa using DFunLike.congr_fun hri x
+  have h := hE.semiconj_inverse (hE.comp_comp_of_retract hri hr hi) r.toLinearMap hr (i x)
+  simpa only [comp_apply, coe_coe, hri'] using h.symm
 
 end Retract
 

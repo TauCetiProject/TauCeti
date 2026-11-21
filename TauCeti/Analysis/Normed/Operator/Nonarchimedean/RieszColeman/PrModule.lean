@@ -116,7 +116,8 @@ Riesz–Coleman projection of a `(Pr)`-compact operator is finitely generated. -
 theorem IsRieszColemanProjection.finite_ker_aeval_reverse_of_isPrCompact
     (hE : IsRieszColemanProjection u Q E) (hQ : IsUnit Q.leadingCoeff) (hu : u.IsPrCompact) :
     Module.Finite R (Polynomial.aeval u Q.reverse : M →L[R] M).ker := by
-  rw [← hE.range_eq_ker]
+  have hker := by simpa only [pow_one] using (isRieszColemanProjection_def.mp hE).range_eq_ker
+  rw [← hker]
   exact hE.finite_range_of_isPrCompact hQ hu
 
 /-- On a module with property `(Pr)`, when `Q.leadingCoeff` is a unit, `ker Q*(u)` for a
@@ -124,7 +125,8 @@ Riesz–Coleman projection of a `(Pr)`-compact operator is projective over the c
 theorem IsRieszColemanProjection.projective_ker_aeval_reverse_of_isPrCompact
     (hE : IsRieszColemanProjection u Q E) (hQ : IsUnit Q.leadingCoeff) (hu : u.IsPrCompact) :
     Module.Projective R (Polynomial.aeval u Q.reverse : M →L[R] M).ker := by
-  rw [← hE.range_eq_ker]
+  have hker := by simpa only [pow_one] using (isRieszColemanProjection_def.mp hE).range_eq_ker
+  rw [← hker]
   exact hE.projective_range_of_isPrCompact hQ hu
 
 end Compact
@@ -232,7 +234,8 @@ theorem rankAtStalk_range_of_isPrCompact {u E : M →L[R] M} {Q : R[X]} {S : R�
       IsEntire.subring R) ⟨S, IsEntire.mem_subring.mpr hS⟩)
     (p : PrimeSpectrum R) :
     Module.rankAtStalk (R := R) E.range p = Q.natDegree := by
-  rw [hE.range_eq_ker]
+  have hker := by simpa only [pow_one] using (isRieszColemanProjection_def.mp hE).range_eq_ker
+  rw [hker]
   exact hu.rankAtStalk_ker_aeval_reverse hQ hS hQS hcop p
 
 /-- **Fredholm factor on the finite Riesz–Coleman summand on a module with property `(Pr)`.** For a
@@ -290,7 +293,8 @@ theorem charPowerSeries_restrict_range {u E : M →L[R] M} {Q : R[X]} {S : R⟦X
     (hQS : u.charPowerSeries = (Q : R⟦X⟧) * S)
     (hcop : IsCoprime (⟨Q, IsEntire.mem_subring.mpr (PowerSeries.isEntire_coe Q)⟩ :
       IsEntire.subring R) ⟨S, IsEntire.mem_subring.mpr hS⟩) :
-    (u.restrict fun _ hx ↦ hE.mapsTo_range hx).charPowerSeries = (Q : R⟦X⟧) := by
+    (u.restrict fun _ hx ↦
+      (isRieszColemanProjection_def.mp hE).mapsTo_range hx).charPowerSeries = (Q : R⟦X⟧) := by
   have hfix (x : E.range) : E x = x := by
     obtain ⟨y, hy⟩ := x.property
     simpa only [← hy, coe_coe, mul_apply_eq_comp, comp_apply] using
@@ -299,7 +303,7 @@ theorem charPowerSeries_restrict_range {u E : M →L[R] M} {Q : R[X]} {S : R⟦X
     ext fun x ↦ Subtype.ext (hfix x)
   have hM : TauCeti.HasPr R E.range := hu.hasPr_source.of_retract _ _ hri
   have hleft : E.rangeRestrict.comp (u.comp E.range.subtypeL) =
-      u.restrict (fun _ hx ↦ hE.mapsTo_range hx) := by
+      u.restrict (fun _ hx ↦ (isRieszColemanProjection_def.mp hE).mapsTo_range hx) := by
     ext x
     exact (congr($((isRieszColemanProjection_def.mp hE).commute.eq) (x : M)).symm).trans
       (congrArg u (hfix x))
@@ -318,20 +322,24 @@ theorem charPowerSeries_restrict_ker {u E : M →L[R] M} {Q : R[X]} {S : R⟦X�
     (hQS : u.charPowerSeries = (Q : R⟦X⟧) * S)
     (hcop : IsCoprime (⟨Q, IsEntire.mem_subring.mpr (PowerSeries.isEntire_coe Q)⟩ :
       IsEntire.subring R) ⟨S, IsEntire.mem_subring.mpr hS⟩) :
-    (u.restrict fun _ hx ↦ hE.mapsTo_ker hx).charPowerSeries = S := by
+    (u.restrict fun _ hx ↦ (isRieszColemanProjection_def.mp hE).mapsTo_ker hx).charPowerSeries =
+      S := by
   have hmem (x : M) : (1 - E) x ∈ E.ker := by
-    apply LinearMap.mem_ker.mpr
-    simp only [coe_coe, sub_apply, one_apply_eq_self, map_sub, sub_eq_zero]
-    exact (congr($((isRieszColemanProjection_def.mp hE).isIdempotentElem.eq) x)).symm
+    rw [LinearMap.IsIdempotentElem.ker_eq_range_one_sub
+      (ContinuousLinearMap.IsIdempotentElem.toLinearMap
+        (isRieszColemanProjection_def.mp hE).isIdempotentElem)]
+    exact ⟨x, rfl⟩
   let rK : M →L[R] E.ker := (1 - E).codRestrict E.ker hmem
   have hri : rK.comp E.ker.subtypeL = .id R E.ker := by
     ext x
     have hx : E x = 0 := LinearMap.mem_ker.mp x.property
     simp [rK, hx]
   have hK : TauCeti.HasPr R E.ker := hu.hasPr_source.of_retract _ _ hri
-  have hleft : rK.comp (u.comp E.ker.subtypeL) = u.restrict (fun _ hx ↦ hE.mapsTo_ker hx) := by
+  have hleft : rK.comp (u.comp E.ker.subtypeL) =
+      u.restrict (fun _ hx ↦ (isRieszColemanProjection_def.mp hE).mapsTo_ker hx) := by
     ext x
-    have hx : E (u x) = 0 := LinearMap.mem_ker.mp (hE.mapsTo_ker x.property)
+    have hx : E (u x) = 0 :=
+      LinearMap.mem_ker.mp ((isRieszColemanProjection_def.mp hE).mapsTo_ker x.property)
     simp [rK, hx]
   have hright : (u.comp E.ker.subtypeL).comp rK = u * (1 - E) := by
     rw [comp_assoc, subtypeL_comp_codRestrict, mul_def]
@@ -351,7 +359,9 @@ theorem projectiveCharpolyRev_restrict_range_of_isPrCompact {u E : M →L[R] M} 
     letI : AddCommGroup E.range := inferInstance
     haveI : Module.Finite R E.range := hE.finite_range_of_isPrCompact hQ hu
     haveI : Module.Projective R E.range := hE.projective_range_of_isPrCompact hQ hu
-    (((u.restrict fun _ hx ↦ hE.mapsTo_range hx).toLinearMap).projectiveCharpolyRev) = Q := by
+    (((u.restrict fun _ hx ↦
+      (isRieszColemanProjection_def.mp hE).mapsTo_range hx).toLinearMap).projectiveCharpolyRev) =
+      Q := by
   obtain ⟨J, _, _, _, i, r, hri, hv, hQS', hE'⟩ :=
     exists_retract_isRieszColemanProjection hu hQ hS hQS hcop
   have hri' (x : M) : r (i x) = x := by simpa using DFunLike.congr_fun hri x
@@ -364,8 +374,10 @@ theorem projectiveCharpolyRev_restrict_range_of_isPrCompact {u E : M →L[R] M} 
   have := hE'.finite_range hQ hv
   have := hE'.projective_range hQ hv
   let e := (hE.rangeEquivOfRetract hri hE' hQ).toLinearEquiv
-  let f : Module.End R E.range := (u.restrict fun _ hx ↦ hE.mapsTo_range hx).toLinearMap
-  let g : Module.End R E'.range := (v.restrict fun _ hy ↦ hE'.mapsTo_range hy).toLinearMap
+  let f : Module.End R E.range :=
+    (u.restrict fun _ hx ↦ (isRieszColemanProjection_def.mp hE).mapsTo_range hx).toLinearMap
+  let g : Module.End R E'.range :=
+    (v.restrict fun _ hy ↦ (isRieszColemanProjection_def.mp hE').mapsTo_range hy).toLinearMap
   have hfg (x : E.range) : g (e x) = e (f x) := by
     apply Subtype.ext
     simp [e, f, g, v, hri']
@@ -414,7 +426,8 @@ theorem IsRieszColemanProjection.finrank_range_of_isPrCompact {u E : M →L[K] M
     (hcop : IsCoprime (⟨Q, IsEntire.mem_subring.mpr (PowerSeries.isEntire_coe Q)⟩ :
       IsEntire.subring K) ⟨S, IsEntire.mem_subring.mpr hS⟩) :
     Module.finrank K E.range = Q.natDegree := by
-  rw [hE.range_eq_ker]
+  have hker := by simpa only [pow_one] using (isRieszColemanProjection_def.mp hE).range_eq_ker
+  rw [hker]
   exact hu.finrank_ker_aeval_reverse hS hQS hcop
 
 end FieldRange

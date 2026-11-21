@@ -34,50 +34,26 @@ open scoped ZeroAtInfty TauCeti.RingOpNorm
 
 namespace ContinuousLinearMap.IsRieszProjection
 
-variable {I J R : Type*} [TopologicalSpace I] [TopologicalSpace J]
+variable {I R : Type*} [TopologicalSpace I]
   [NormedCommRing R] [TauCeti.NormedRing.IsTate R]
-  {u E : C₀(I, R) →L[R] C₀(I, R)} {v F : C₀(J, R) →L[R] C₀(J, R)}
-  {a : R} {h k : ℕ}
-
-/-- An intertwiner carries Riesz projectors at the same scalar to one another. The two
-nilpotence bounds may differ, and the intertwiner need not be continuous. -/
-theorem semiconj (hE : IsRieszProjection u a h E) (hF : IsRieszProjection v a k F)
-    (f : C₀(I, R) →ₗ[R] C₀(J, R)) (hf : Function.Semiconj f u v) :
-    Function.Semiconj f E F :=
-  (isRieszProjection_def.mp hE).semiconj (isRieszProjection_def.mp hF) f (hf.one_sub_smul a)
-
-/-- An intertwiner sends the nilpotent spectral summand into the corresponding summand. -/
-theorem mapsTo_range_of_semiconj (hE : IsRieszProjection u a h E)
-    (hF : IsRieszProjection v a k F) (f : C₀(I, R) →ₗ[R] C₀(J, R))
-    (hf : Function.Semiconj f u v) : Set.MapsTo f E.range F.range :=
-  (isRieszProjection_def.mp hE).mapsTo_range_of_semiconj (isRieszProjection_def.mp hF) f
-    (hf.one_sub_smul a)
-
-/-- An intertwiner sends the complementary spectral summand into the corresponding summand. -/
-theorem mapsTo_ker_of_semiconj (hE : IsRieszProjection u a h E)
-    (hF : IsRieszProjection v a k F) (f : C₀(I, R) →ₗ[R] C₀(J, R))
-    (hf : Function.Semiconj f u v) : Set.MapsTo f E.ker F.ker :=
-  (isRieszProjection_def.mp hE).mapsTo_ker_of_semiconj (isRieszProjection_def.mp hF) f
-    (hf.one_sub_smul a)
-
-/-- Intertwiners also carry the complementary inverses of the spectral operators to one
-another. This includes order zero, when the complementary inverse is the full inverse. -/
-theorem semiconj_inverse (hE : IsRieszProjection u a h E) (hF : IsRieszProjection v a k F)
-    (f : C₀(I, R) →ₗ[R] C₀(J, R)) (hf : Function.Semiconj f u v) :
-    Function.Semiconj f (isRieszProjection_def.mp hE).inverse
-      (isRieszProjection_def.mp hF).inverse :=
-  (isRieszProjection_def.mp hE).semiconj_inverse (isRieszProjection_def.mp hF) f (hf.one_sub_smul a)
+  {u E : C₀(I, R) →L[R] C₀(I, R)} {a : R} {h : ℕ}
 
 /-- A bounded operator commuting with `u` commutes with every Riesz projector of `u`. -/
 theorem commute_of_commute (hE : IsRieszProjection u a h E)
     {w : C₀(I, R) →L[R] C₀(I, R)} (hw : Commute w u) : Commute w E :=
-  ext fun x ↦ hE.semiconj hE w.toLinearMap (fun y ↦ congr($(hw.eq) y)) x
+  (isRieszProjection_def.mp hE).commute_of_commute <| by
+    rw [Commute, SemiconjBy]; ext x : 1
+    have hwu : w (u x) = u (w x) := congr($(hw.eq) x)
+    simp [mul_apply_eq_comp, hwu]
 
 /-- A bounded operator commuting with `u` commutes with the complementary inverse of any
 Riesz projector of `u`. -/
 theorem commute_inverse_of_commute (hE : IsRieszProjection u a h E)
     {w : C₀(I, R) →L[R] C₀(I, R)} (hw : Commute w u) :
     Commute w (isRieszProjection_def.mp hE).inverse :=
-  ext fun x ↦ hE.semiconj_inverse hE w.toLinearMap (fun y ↦ congr($(hw.eq) y)) x
+  (isRieszProjection_def.mp hE).commute_inverse_of_commute <| by
+    rw [Commute, SemiconjBy]; ext x : 1
+    have hwu : w (u x) = u (w x) := congr($(hw.eq) x)
+    simp [mul_apply_eq_comp, hwu]
 
 end ContinuousLinearMap.IsRieszProjection

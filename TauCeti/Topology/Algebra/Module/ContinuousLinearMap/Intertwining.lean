@@ -9,6 +9,7 @@ public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Basic
 public import Mathlib.Topology.Algebra.Module.Equiv.Basic
 public import TauCeti.LinearAlgebra.End.Aeval
 import Mathlib.Algebra.Polynomial.Div
+import TauCeti.LinearAlgebra.End.Split
 
 /-!
 # Intertwining linear maps
@@ -174,44 +175,63 @@ noncomputable def kerAevalEquivOfRetract {i : M →L[R] N} {r : N →L[R] M}
     (hri : r.comp i = .id R M) (u : M →L[R] M) {P : Polynomial R} (hP : IsUnit (P.coeff 0)) :
     LinearMap.ker ((Polynomial.aeval (i.comp (u.comp r)) P : N →L[R] N) : N →ₗ[R] N) ≃L[R]
       LinearMap.ker ((Polynomial.aeval u P : M →L[R] M) : M →ₗ[R] M) := by
-  have hri' (x : M) : r (i x) = x := by simpa using DFunLike.congr_fun hri x
-  have hr : Function.Semiconj (r : N →ₗ[R] M) (i.comp (u.comp r)) u := fun y ↦ by simp [hri']
-  have hi : Function.Semiconj (i : M →ₗ[R] N) u (i.comp (u.comp r)) := fun x ↦ by simp [hri']
+  have hri' : r.toLinearMap.comp i.toLinearMap = LinearMap.id := by
+    simpa only [toLinearMap_comp, coe_id] using congrArg toLinearMap hri
+  set Q : Polynomial R := hP.unit⁻¹ • P
+  have hQ0 : Q.coeff 0 = 1 := by
+    simp [Q, Units.smul_def, smul_eq_mul]
+  have hQ : Q = Polynomial.X * Q.divX + 1 := by
+    simpa [hQ0] using (Polynomial.X_mul_divX_add Q).symm
+  have hB := aeval_comp_comp_of_retract hri u (B := Polynomial.X * Q.divX) (by simp)
+  have hQu : ((Polynomial.aeval u Q : M →L[R] M) : M →ₗ[R] M) - 1 =
+      ((Polynomial.aeval u (Polynomial.X * Q.divX) : M →L[R] M) : M →ₗ[R] M) := by
+    apply sub_eq_iff_eq_add.mpr
+    conv_lhs => rw [hQ, map_add, map_one, toLinearMap_add, toLinearMap_one]
+  have hsplit : ((Polynomial.aeval (i.comp (u.comp r)) Q : N →L[R] N) : N →ₗ[R] N) =
+      LinearMap.splitEnd r.toLinearMap i.toLinearMap hri'
+        ((Polynomial.aeval u Q : M →L[R] M) : M →ₗ[R] M) := by
+    rw [LinearMap.splitEnd_eq_one_add, hQu, ← toLinearMap_comp, ← toLinearMap_comp, ← hB]
+    conv_lhs => rw [hQ, map_add, map_one, toLinearMap_add, toLinearMap_one, add_comm]
+  have hQ_ker_u :
+      LinearMap.ker ((Polynomial.aeval u P : M →L[R] M) : M →ₗ[R] M) =
+        LinearMap.ker ((Polynomial.aeval u Q : M →L[R] M) : M →ₗ[R] M) := by
+    ext x
+    simp only [Q, Units.smul_def, map_smul, LinearMap.mem_ker, coe_coe, smul_apply,
+      (hP.unit⁻¹).isUnit.smul_eq_zero]
+  have hQ_ker_v :
+      LinearMap.ker ((Polynomial.aeval (i.comp (u.comp r)) P : N →L[R] N) : N →ₗ[R] N) =
+        LinearMap.ker ((Polynomial.aeval (i.comp (u.comp r)) Q : N →L[R] N) : N →ₗ[R] N) := by
+    ext x
+    simp only [Q, Units.smul_def, map_smul, LinearMap.mem_ker, coe_coe, smul_apply,
+      (hP.unit⁻¹).isUnit.smul_eq_zero]
+  let e := LinearMap.kerSplitEndEquiv r.toLinearMap i.toLinearMap hri'
+    ((Polynomial.aeval u Q : M →L[R] M) : M →ₗ[R] M)
   have hmaps_r : ∀ x ∈ LinearMap.ker ((Polynomial.aeval (i.comp (u.comp r)) P : N →L[R] N) :
       N →ₗ[R] N), r x ∈ LinearMap.ker ((Polynomial.aeval u P : M →L[R] M) : M →ₗ[R] M) := by
     intro x hx
-    rw [LinearMap.mem_ker, coe_coe] at hx ⊢
-    simpa only [coe_coe, hx, map_zero] using (hr.aeval P x).symm
+    rw [hQ_ker_v, hsplit] at hx
+    rw [hQ_ker_u]
+    simpa only [e, LinearMap.coe_kerSplitEndEquiv_apply, coe_coe] using (e ⟨x, hx⟩).property
   have hmaps_i : ∀ x ∈ LinearMap.ker ((Polynomial.aeval u P : M →L[R] M) : M →ₗ[R] M),
       i x ∈ LinearMap.ker ((Polynomial.aeval (i.comp (u.comp r)) P : N →L[R] N) : N →ₗ[R] N) := by
     intro x hx
-    rw [LinearMap.mem_ker, coe_coe] at hx ⊢
-    simpa only [coe_coe, hx, map_zero] using (hi.aeval P x).symm
+    rw [hQ_ker_u] at hx
+    rw [hQ_ker_v, hsplit]
+    simpa only [e, LinearMap.coe_kerSplitEndEquiv_symm_apply, coe_coe] using
+      (e.symm ⟨x, hx⟩).property
   refine ContinuousLinearEquiv.ofContinuousLinearMap
     ((r.domRestrict _).codRestrict _ fun x ↦ hmaps_r x x.property)
     ((i.domRestrict _).codRestrict _ fun x ↦ hmaps_i x x.property)
-    (ContinuousLinearMap.ext fun x ↦ Subtype.ext (hri' x))
-    (ContinuousLinearMap.ext fun x ↦ ?_)
-  have hx : Polynomial.aeval (i.comp (u.comp r)) P x = 0 := LinearMap.mem_ker.mp x.property
-  have hirx : Polynomial.aeval (i.comp (u.comp r)) P (i (r x)) = 0 :=
-    LinearMap.mem_ker.mp (hmaps_i (r x) (hmaps_r x x.property))
-  have hdiv (y : N) :
-      Polynomial.aeval (i.comp (u.comp r)) (Polynomial.X * P.divX) y + P.coeff 0 • y =
-        Polynomial.aeval (i.comp (u.comp r)) P y := by
-    have h := congrArg (fun f : N →L[R] N ↦ f y)
-      (congrArg (Polynomial.aeval (i.comp (u.comp r))) (Polynomial.X_mul_divX_add P))
-    simpa only [map_add, Polynomial.aeval_C, Algebra.algebraMap_eq_smul_one, add_apply,
-      smul_apply, one_apply_eq_self] using h
-  have hX := aeval_comp_comp_of_retract hri u (B := Polynomial.X * P.divX) (by simp)
-  have hXeq : Polynomial.aeval (i.comp (u.comp r)) (Polynomial.X * P.divX) (i (r x)) =
-      Polynomial.aeval (i.comp (u.comp r)) (Polynomial.X * P.divX) x := by
-    simp [hX, hri']
-  have hsmul : P.coeff 0 • i (r x) = P.coeff 0 • (x : N) := by
-    apply add_left_cancel (a := Polynomial.aeval (i.comp (u.comp r)) (Polynomial.X * P.divX) x)
-    rw [hdiv x, hx, ← hXeq, hdiv (i (r x)), hirx]
-  obtain ⟨c, hc⟩ := hP.exists_left_inv
-  have hEq : i (r x) = x := by simpa [smul_smul, hc] using congrArg (c • ·) hsmul
-  exact Subtype.ext hEq
+    (ContinuousLinearMap.ext fun x ↦ Subtype.ext <| by
+      have h1 := congrArg Subtype.val (e.apply_symm_apply ⟨x, hQ_ker_u ▸ x.property⟩)
+      dsimp only [e] at h1
+      rw [LinearMap.coe_kerSplitEndEquiv_apply, LinearMap.coe_kerSplitEndEquiv_symm_apply] at h1
+      exact h1)
+    (ContinuousLinearMap.ext fun x ↦ Subtype.ext <| by
+      have h2 := congrArg Subtype.val (e.symm_apply_apply ⟨x, hsplit ▸ hQ_ker_v ▸ x.property⟩)
+      dsimp only [e] at h2
+      rw [LinearMap.coe_kerSplitEndEquiv_symm_apply, LinearMap.coe_kerSplitEndEquiv_apply] at h2
+      exact h2)
 
 /-- The forward map of `kerAevalEquivOfRetract` applies the retraction `r`. -/
 @[simp]

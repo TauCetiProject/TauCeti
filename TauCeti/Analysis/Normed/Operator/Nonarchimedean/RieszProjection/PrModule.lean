@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.PrModule.Basic
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.RieszProjection.Multiplicity
-public import TauCeti.LinearAlgebra.End.Split
 public import TauCeti.RingTheory.PowerSeries.Entire.GoodZero
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Intertwining
 
 /-!
 # Riesz projections on modules with property (Pr)
@@ -20,8 +20,8 @@ a row-compact `u` is that of its extension
 (`ContinuousLinearMap.IsPrCompact.charPowerSeries_eq`). Hence a good zero `a` of order
 `h` of `H_u` gives a Riesz projection of `u` at `a` of order `h`
 (`ContinuousLinearMap.IsPrCompact.exists_isRieszProjection`), and it is unique
-(`ContinuousLinearMap.IsRieszProjection.unique`). Its range is the generalised eigenspace
-`ker (1 - a • u) ^ h` (`ContinuousLinearMap.IsRieszProjection.range_eq_ker`). A Riesz projection
+(`ContinuousLinearMap.IsSpectralProjection.unique`). Its range is the generalised eigenspace
+`ker (1 - a • u) ^ h` (`ContinuousLinearMap.IsSpectralProjection.range_eq_ker`). A Riesz projection
 of a row-compact operator is row compact (`ContinuousLinearMap.IsRieszProjection.isPrCompact`), so
 the generalised eigenspace is finitely generated and projective
 (`ContinuousLinearMap.IsRieszProjection.finite_ker_pow_of_isPrCompact`,
@@ -110,7 +110,7 @@ endomorphism of a module with property (Pr) is finitely generated. -/
 theorem IsRieszProjection.finite_ker_pow_of_isPrCompact (hE : IsRieszProjection u a h E)
     (hu : u.IsPrCompact) {n : ℕ} (hn : h ≤ n) :
     Module.Finite R (LinearMap.ker (((1 - a • u) ^ n : M →L[R] M) : M →ₗ[R] M)) := by
-  rw [← (hE.of_le hn).range_eq_ker]
+  rw [← ((isRieszProjection_def.mp hE).of_le hn).range_eq_ker]
   exact (hE.isPrCompact hu).finite_range_of_isIdempotentElem
     (isRieszProjection_def.mp hE).isIdempotentElem
 
@@ -119,7 +119,7 @@ endomorphism of a module with property (Pr) is projective over the coefficient r
 theorem IsRieszProjection.projective_ker_pow_of_isPrCompact (hE : IsRieszProjection u a h E)
     (hu : u.IsPrCompact) {n : ℕ} (hn : h ≤ n) :
     Module.Projective R (LinearMap.ker (((1 - a • u) ^ n : M →L[R] M) : M →ₗ[R] M)) := by
-  rw [← (hE.of_le hn).range_eq_ker]
+  rw [← ((isRieszProjection_def.mp hE).of_le hn).range_eq_ker]
   exact (hE.isPrCompact hu).projective_range_of_isIdempotentElem
     (isRieszProjection_def.mp hE).isIdempotentElem
 
@@ -146,19 +146,19 @@ theorem IsPrCompact.rankAtStalk_ker_pow (hu : u.IsPrCompact)
   obtain ⟨hzero, hunit⟩ := PowerSeries.isGoodZero_iff.mp hH
   have hF := hv.isRieszProjection_rieszProjection hzero hunit
   -- Extension adds a zero block, so it does not change these spectral kernels.
-  have hri' : r.toLinearMap.comp i.toLinearMap = LinearMap.id := by
-    simpa only [toLinearMap_comp, coe_id] using
-      congrArg ContinuousLinearMap.toLinearMap hri
-  have heq :
-      LinearMap.ker (((1 - a • i.comp (u.comp r)) ^ n :
-        C₀(J, R) →L[R] C₀(J, R)) : C₀(J, R) →ₗ[R] C₀(J, R)) ≃ₗ[R]
-      LinearMap.ker (((1 - a • u) ^ n : M →L[R] M) : M →ₗ[R] M) := by
-    have e := LinearMap.kerSplitEndEquiv r.toLinearMap i.toLinearMap hri'
-      ((1 - a • u.toLinearMap) ^ n)
-    rw [map_pow, LinearMap.splitEnd_one_sub] at e
-    convert e using 2 <;>
-      simp only [toLinearMap_pow, toLinearMap_sub, toLinearMap_one, toLinearMap_smul,
-        toLinearMap_comp, LinearMap.comp_smul, LinearMap.smul_comp]
+  have heq := (ContinuousLinearMap.kerAevalEquivOfRetract hri u
+    (P := (1 - Polynomial.C a * Polynomial.X) ^ n)
+    (by simp [Polynomial.coeff_zero_eq_eval_zero])).toLinearEquiv
+  have h1sub :
+      (Polynomial.aeval u ((1 - Polynomial.C a * Polynomial.X) ^ n) : M →L[R] M) =
+        (1 - a • u) ^ n := by
+    simp [Algebra.algebraMap_eq_smul_one]
+  have h1sub' :
+      (Polynomial.aeval (i.comp (u.comp r))
+        ((1 - Polynomial.C a * Polynomial.X) ^ n) : C₀(J, R) →L[R] C₀(J, R)) =
+        (1 - a • i.comp (u.comp r)) ^ n := by
+    simp [Algebra.algebraMap_eq_smul_one]
+  rw [h1sub, h1sub'] at heq
   have hker : Module.rankAtStalk (R := R)
       (LinearMap.ker (((1 - a • u) ^ n : M →L[R] M) : M →ₗ[R] M)) =
       Module.rankAtStalk (R := R)
@@ -170,7 +170,8 @@ theorem IsPrCompact.rankAtStalk_ker_pow (hu : u.IsPrCompact)
     let : AddCommGroup (LinearMap.ker (((1 - a • i.comp (u.comp r)) ^ n :
         C₀(J, R) →L[R] C₀(J, R)) : C₀(J, R) →ₗ[R] C₀(J, R))) := inferInstance
     exact Module.rankAtStalk_eq_of_equiv heq.symm
-  rw [hker, hF.ker_pow_eq hn, ← hF.range_eq_ker]
+  rw [hker, (isRieszProjection_def.mp hF).ker_pow_eq hn,
+    ← (isRieszProjection_def.mp hF).range_eq_ker]
   exact hF.rankAtStalk_range hv hH p
 
 /-- The range of any Riesz projection at a good Fredholm zero on a module with property
@@ -179,7 +180,7 @@ theorem IsRieszProjection.rankAtStalk_range_of_isPrCompact [IsBoundedSMul R M]
     (hE : IsRieszProjection u a h E) (hu : u.IsPrCompact)
     (hH : u.charPowerSeries.IsGoodZero a h) (p : PrimeSpectrum R) :
     Module.rankAtStalk (R := R) E.range p = h := by
-  rw [hE.range_eq_ker]
+  rw [(isRieszProjection_def.mp hE).range_eq_ker]
   exact hu.rankAtStalk_ker_pow hH le_rfl p
 
 end Ring
@@ -204,7 +205,7 @@ to the order of the good Fredholm zero. This includes order zero. -/
 theorem IsRieszProjection.finrank_range_of_isPrCompact [IsBoundedSMul K M]
     (hE : IsRieszProjection u a h E) (hu : u.IsPrCompact)
     (hH : u.charPowerSeries.IsGoodZero a h) : Module.finrank K E.range = h := by
-  rw [hE.range_eq_ker]
+  rw [(isRieszProjection_def.mp hE).range_eq_ker]
   exact hu.finrank_ker_pow hH le_rfl
 
 /-- **Algebraic multiplicities are orders of Fredholm zeros.** Over a complete ultrametric field,

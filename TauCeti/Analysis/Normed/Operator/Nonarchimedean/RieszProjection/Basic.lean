@@ -27,9 +27,9 @@ idempotent `E`, commuting with `u` and an operator-norm limit of polynomials in 
 limit of polynomials in `u`, with `C w = w C = 1 - E` and `E w = w E = 0` — that is, a spectral
 projection (`ContinuousLinearMap.IsSpectralProjection`) of `u` for `C = 1 - a • u` of order `h`.
 Thus `E` splits `C₀(I, R)` into the generalised eigenspace `range E = ker C ^ h`
-(`ContinuousLinearMap.IsRieszProjection.range_eq_ker`), on which `C` is nilpotent, and a stable
+(`ContinuousLinearMap.IsSpectralProjection.range_eq_ker`), on which `C` is nilpotent, and a stable
 complement `range (1 - E)` on which `C` is invertible. Such a splitting is unique
-(`ContinuousLinearMap.IsRieszProjection.unique`); at order `0` it is `E = 0`. The definition and
+(`ContinuousLinearMap.IsSpectralProjection.unique`); at order `0` it is `E = 0`. The definition and
 these algebraic consequences make sense for an endomorphism of any seminormed module with a
 bounded scalar action, and are stated in that generality; only the construction below uses the
 model space.
@@ -66,11 +66,8 @@ nilpotents and need not be Noetherian; over a ring the range need not be free.
 
 ## Main results
 
-* `ContinuousLinearMap.IsRieszProjection.range_eq_ker`: the range of a Riesz projection is the
-  generalised eigenspace `ker (1 - a • u) ^ h`.
-* `ContinuousLinearMap.IsRieszProjection.maxGenEigenspace_eq_range`: for `a * μ = 1` it is the
-  maximal generalised eigenspace of `u` at `μ`.
-* `ContinuousLinearMap.IsRieszProjection.unique`: Riesz projections are unique.
+* `ContinuousLinearMap.IsRieszProjection.maxGenEigenspace_eq_range`: for `a * μ = 1`, the range
+  of a Riesz projection is the maximal generalised eigenspace of `u` at `μ`.
 * `ContinuousLinearMap.IsRieszProjection.comp_comp_of_retract`: Riesz projections compress along
   continuous linear retracts.
 * `ContinuousLinearMap.IsRowCompact.isRieszProjection_rieszProjection`: at a good zero, the
@@ -123,74 +120,6 @@ namespace IsRieszProjection
 
 variable {u E : M →L[R] M} {a : R} {h : ℕ}
 
-/-- A Riesz projection of order `0` is zero. -/
-theorem eq_zero_of_order_zero (hE : IsRieszProjection u a 0 E) : E = 0 :=
-  (isRieszProjection_def.mp hE).eq_zero_of_order_zero
-
-/-- A Riesz projection commutes with `1 - a • u`. -/
-theorem commute_one_sub_smul (hE : IsRieszProjection u a h E) : Commute (1 - a • u) E :=
-  (isRieszProjection_def.mp hE).commute_spectral
-
-/-- A Riesz projection remains one when its nilpotence bound is increased. -/
-theorem of_le (hE : IsRieszProjection u a h E) {n : ℕ} (hn : h ≤ n) :
-    IsRieszProjection u a n E :=
-  isRieszProjection_def.mpr ((isRieszProjection_def.mp hE).of_le hn)
-
-/-- The operator preserves the kernel of its Riesz projection. -/
-theorem mapsTo_ker (hE : IsRieszProjection u a h E) : Set.MapsTo u E.ker E.ker :=
-  (isRieszProjection_def.mp hE).mapsTo_ker
-
-/-- The operator preserves the range of its Riesz projection. -/
-theorem mapsTo_range (hE : IsRieszProjection u a h E) : Set.MapsTo u E.range E.range :=
-  (isRieszProjection_def.mp hE).mapsTo_range
-
-/-- The spectral operator preserves the kernel of its Riesz projection. -/
-theorem mapsTo_ker_one_sub_smul (hE : IsRieszProjection u a h E) :
-    Set.MapsTo (1 - a • u : M →L[R] M) E.ker E.ker :=
-  (isRieszProjection_def.mp hE).mapsTo_ker_spectral
-
-/-- The spectral operator preserves the range of its Riesz projection. -/
-theorem mapsTo_range_one_sub_smul (hE : IsRieszProjection u a h E) :
-    Set.MapsTo (1 - a • u : M →L[R] M) E.range E.range :=
-  (isRieszProjection_def.mp hE).mapsTo_range_spectral
-
-/-- The complementary inverse is a right inverse of `1 - a • u` up to `1 - E`. -/
-theorem one_sub_smul_mul_inverse (hE : IsRieszProjection u a h E) :
-    (1 - a • u) * (isRieszProjection_def.mp hE).inverse = 1 - E :=
-  (isRieszProjection_def.mp hE).spectral_mul_inverse
-
-/-- The complementary inverse is a left inverse of `1 - a • u` up to `1 - E`. -/
-theorem inverse_mul_one_sub_smul (hE : IsRieszProjection u a h E) :
-    (isRieszProjection_def.mp hE).inverse * (1 - a • u) = 1 - E :=
-  (isRieszProjection_def.mp hE).inverse_mul_spectral
-
-/-- The complementary inverse is the unique right inverse of `1 - a • u` up to `1 - E` that
-takes values in the kernel of the Riesz projection. -/
-theorem eq_inverse (hE : IsRieszProjection u a h E) {w : M →L[R] M}
-    (hw : (1 - a • u) * w = 1 - E) (hEw : E * w = 0) :
-    w = (isRieszProjection_def.mp hE).inverse :=
-  (isRieszProjection_def.mp hE).eq_inverse hw hEw
-
-/-- On the complementary summand, the complementary inverse is a left inverse of the
-spectral operator. -/
-theorem inverse_one_sub_smul_apply (hE : IsRieszProjection u a h E)
-    {x : M} (hx : x ∈ E.ker) :
-    (isRieszProjection_def.mp hE).inverse ((1 - a • u) x) = x :=
-  (isRieszProjection_def.mp hE).inverse_spectral_apply hx
-
-/-- On the complementary summand, the complementary inverse is a right inverse of the
-spectral operator. -/
-theorem one_sub_smul_apply_inverse (hE : IsRieszProjection u a h E)
-    {x : M} (hx : x ∈ E.ker) :
-    (1 - a • u) ((isRieszProjection_def.mp hE).inverse x) = x :=
-  (isRieszProjection_def.mp hE).spectral_apply_inverse hx
-
-/-- **The range of a Riesz projection is the generalised eigenspace** `ker (1 - a • u) ^ h`. -/
-theorem range_eq_ker (hE : IsRieszProjection u a h E) :
-    LinearMap.range (E : M →ₗ[R] M) =
-      LinearMap.ker (((1 - a • u) ^ h : M →L[R] M) : M →ₗ[R] M) :=
-  (isRieszProjection_def.mp hE).range_eq_ker
-
 /-- **The range of a Riesz projection is the maximal generalised eigenspace.** If `a * μ = 1`,
 the range of a Riesz projection of `u` at `a` is the space of all vectors killed by some power of
 `u - μ`, the maximal generalised eigenspace of `u` at the eigenvalue `μ = a⁻¹`. -/
@@ -207,16 +136,10 @@ theorem maxGenEigenspace_eq_range (hE : IsRieszProjection u a h E) {μ : R} (hμ
     (hunit.pow _).smul_eq_zero, ← toLinearMap_pow, coe_coe]
   refine ⟨fun ⟨k, hk⟩ ↦ ?_, fun hx ↦ ⟨h, ?_⟩⟩
   · -- The kernels of the powers of `1 - a • u` stabilise in the range of `E`.
-    rw [(hE.of_le (le_max_right k h)).range_eq_ker, LinearMap.mem_ker, coe_coe,
-      ← Nat.sub_add_cancel (le_max_left k h), pow_add, mul_apply_eq_comp, hk, map_zero]
-  · rw [hE.range_eq_ker, LinearMap.mem_ker, coe_coe] at hx
+    rw [((isRieszProjection_def.mp hE).of_le (le_max_right k h)).range_eq_ker, LinearMap.mem_ker,
+      coe_coe, ← Nat.sub_add_cancel (le_max_left k h), pow_add, mul_apply_eq_comp, hk, map_zero]
+  · rw [(isRieszProjection_def.mp hE).range_eq_ker, LinearMap.mem_ker, coe_coe] at hx
     exact hx
-
-/-- **Uniqueness of the Riesz projection.** Two Riesz projections of `u` at `a` of the same order
-are equal. -/
-theorem unique {E' : M →L[R] M} (hE : IsRieszProjection u a h E)
-    (hE' : IsRieszProjection u a h E') : E = E' :=
-  (isRieszProjection_def.mp hE).unique (isRieszProjection_def.mp hE')
 
 end IsRieszProjection
 
@@ -374,7 +297,8 @@ theorem IsRieszProjection.eq_rieszProjection {u E : C₀(I, R) →L[R] C₀(I, R
     (hH : ∀ j < h, (PowerSeries.hasseDeriv j u.matrixCoeff.charPowerSeries).evalAt a = 0)
     (hc : IsUnit ((PowerSeries.hasseDeriv h u.matrixCoeff.charPowerSeries).evalAt a)) :
     E = u.rieszProjection a h :=
-  hE.unique (hu.isRieszProjection_rieszProjection hH hc)
+  (isRieszProjection_def.mp hE).unique
+    (isRieszProjection_def.mp (hu.isRieszProjection_rieszProjection hH hc))
 
 end Projection
 

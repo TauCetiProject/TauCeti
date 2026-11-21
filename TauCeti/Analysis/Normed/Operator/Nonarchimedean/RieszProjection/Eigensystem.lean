@@ -49,7 +49,8 @@ theorem exists_jointEigenvector (hE : IsRieszProjection u a h E) (hu : u.IsRowCo
     (hcomm : Pairwise fun i j ↦ Commute (f i) (f j))
     (hfu : ∀ i, Function.Semiconj (f i) u u)
     (htri : ∀ i, ⨆ μ, Module.End.maxGenEigenspace (R := K) (M := E.range) ((f i).restrict
-      (hE.mapsTo_range_of_semiconj hE (f i) (hfu i))) μ = ⊤) :
+      ((isRieszProjection_def.mp hE).mapsTo_range_of_semiconj (isRieszProjection_def.mp hE)
+        (f i) ((hfu i).one_sub_smul a))) μ = ⊤) :
     ∃ (χ : ι → K) (v : C₀(I, K)), v ≠ 0 ∧ v ∈ E.range ∧
       ∀ i, f i v = χ i • v := by
   let := (hE.isRowCompact hu).finite_range_of_isIdempotentElem
@@ -60,7 +61,8 @@ theorem exists_jointEigenvector (hE : IsRieszProjection u a h E) (hu : u.IsRowCo
     exact ContinuousLinearMap.coe_injective (LinearMap.range_eq_bot.mp hz)
   let : Nontrivial E.range := Submodule.nontrivial_iff_ne_bot.mpr hrange
   let g : ι → Module.End K E.range := fun i ↦
-    (f i).restrict (hE.mapsTo_range_of_semiconj hE (f i) (hfu i))
+    (f i).restrict ((isRieszProjection_def.mp hE).mapsTo_range_of_semiconj
+      (isRieszProjection_def.mp hE) (f i) ((hfu i).one_sub_smul a))
   have hg : Pairwise fun i j ↦ Commute (g i) (g j) := fun i j hij ↦
     LinearMap.restrict_commute (hcomm hij) _ _
   obtain ⟨χ, v, hv, heigen⟩ :=
@@ -90,7 +92,8 @@ theorem exists_eigenvalueHom (hE : IsRieszProjection u a h E) (hu : u.IsRowCompa
     (ρ : A →ₐ[K] Module.End K C₀(I, K))
     (hρu : ∀ b, Function.Semiconj (ρ b) u u)
     (htri : ∀ b, ⨆ μ, Module.End.maxGenEigenspace (R := K) (M := E.range) ((ρ b).restrict
-      (hE.mapsTo_range_of_semiconj hE (ρ b) (hρu b))) μ = ⊤) :
+      ((isRieszProjection_def.mp hE).mapsTo_range_of_semiconj (isRieszProjection_def.mp hE)
+        (ρ b) ((hρu b).one_sub_smul a))) μ = ⊤) :
     ∃ (χ : A →ₐ[K] K) (v : C₀(I, K)), v ≠ 0 ∧ v ∈ E.range ∧
       ∀ b, ρ b v = χ b • v := by
   have hcomm : Pairwise fun b c ↦ Commute (ρ b) (ρ c) := fun b c _ ↦

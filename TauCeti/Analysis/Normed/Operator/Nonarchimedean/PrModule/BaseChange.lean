@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.BaseChange
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.PrModule.Coprime
+public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.RieszColeman.Basic
 public import TauCeti.RingTheory.Huber.BanachModule.ZeroAtInfty
 
 /-!
@@ -26,7 +27,9 @@ assumed.
   `u.mapCoeffs` on `C₀` (`completedBaseChange_zeroAtInfty`), respects changing realisations
   (`completedBaseChange_trans`), and transports `TauCeti.HasPr`, `IsPrCompact`, Fredholm series,
   Hasse derivatives, good zeros, coprime reverse-polynomial invertibility, operator-norm continuity,
-  and Riesz projections (`IsRieszProjection.completedBaseChange`).
+  and Riesz and Riesz–Coleman projections (`IsRieszProjection.completedBaseChange`,
+  `IsRieszColemanProjection.completedBaseChange`,
+  `IsRieszColemanProjection.inverse_completedBaseChange`).
 
 ## References
 
@@ -553,6 +556,43 @@ theorem IsRieszProjection.completedBaseChange [TauCeti.NormedRing.IsTate S]
     simpa only [hu', h1sub, hE'] using
       (isRieszProjection_def.mp hE).map Φ fun {v} hv ↦
         completedBaseChange_mem_closure_adjoin hS hM α hv
+
+/-- **Riesz–Coleman projections under completed-tensor base change.** On a `(Pr)` module `M₁` over
+`R`, `completedBaseChange` transports a Riesz–Coleman projection of `u` for `Q` to one of
+`u.completedBaseChange α α` for `Q.map (algebraMap R S)`, whenever `algebraMap R S` preserves the
+degree of `Q` (in particular, whenever `Q` has invertible leading coefficient). No compactness is
+needed. -/
+theorem IsRieszColemanProjection.completedBaseChange [TauCeti.NormedRing.IsTate S]
+    [IsBoundedSMul R M₁] [IsBoundedSMul S N₁] (hM : HasPr R M₁) (α : S ⊗̂[R] M₁ ≃L[S] N₁)
+    {u E : M₁ →L[R] M₁} {Q : R[X]} (hE : IsRieszColemanProjection u Q E)
+    (hdeg : (Q.map (algebraMap R S)).natDegree = Q.natDegree) :
+    IsRieszColemanProjection (u.completedBaseChange α α) (Q.map (algebraMap R S))
+      (E.completedBaseChange α α) := by
+  have hrev : (Q.map (algebraMap R S)).reverse = Q.reverse.map (algebraMap R S) := by
+    rw [Polynomial.reverse, hdeg, Polynomial.reflect_map, Polynomial.reverse]
+  exact isRieszColemanProjection_def.mpr <| by
+    simpa only [completedBaseChangeRingHom_apply, aeval_completedBaseChange, hrev] using
+      (isRieszColemanProjection_def.mp hE).map (completedBaseChangeRingHom α)
+        (completedBaseChange_mem_closure_adjoin hS hM α)
+
+/-- Completed-tensor base change commutes with taking the complementary inverse of a Riesz–Coleman
+projection, whenever `algebraMap R S` preserves the degree of `Q`. -/
+theorem IsRieszColemanProjection.inverse_completedBaseChange [TauCeti.NormedRing.IsTate S]
+    [IsBoundedSMul R M₁] [IsBoundedSMul S N₁] (hM : HasPr R M₁) (α : S ⊗̂[R] M₁ ≃L[S] N₁)
+    {u E : M₁ →L[R] M₁} {Q : R[X]} (hE : IsRieszColemanProjection u Q E)
+    (hdeg : (Q.map (algebraMap R S)).natDegree = Q.natDegree) :
+    (isRieszColemanProjection_def.mp (hE.completedBaseChange hS hM α hdeg)).inverse =
+      (isRieszColemanProjection_def.mp hE).inverse.completedBaseChange α α := by
+  let Φ := completedBaseChangeRingHom α
+  refine ((isRieszColemanProjection_def.mp (hE.completedBaseChange hS hM α hdeg)).eq_inverse
+    ?_ ?_).symm
+  · have hrev : (Q.map (algebraMap R S)).reverse = Q.reverse.map (algebraMap R S) := by
+      rw [Polynomial.reverse, hdeg, Polynomial.reflect_map, Polynomial.reverse]
+    simpa only [Φ, map_mul, map_sub, map_one, completedBaseChangeRingHom_apply,
+      ← aeval_completedBaseChange, ← hrev] using
+      congrArg Φ (isRieszColemanProjection_def.mp hE).spectral_mul_inverse
+  · simpa only [Φ, map_mul, map_zero, completedBaseChangeRingHom_apply] using
+      congrArg Φ (isRieszColemanProjection_def.mp hE).mul_inverse_eq_zero
 
 end PrTransport
 

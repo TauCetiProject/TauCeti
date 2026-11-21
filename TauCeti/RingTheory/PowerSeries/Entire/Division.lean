@@ -567,30 +567,41 @@ section Ultrametric
 
 variable [IsUltrametricDist R] [NormOneClass R]
 
+omit [CompleteSpace R] in
+/-- Over an ultrametric ring with `‖1‖ = 1`, two decompositions `(r : R⟦X⟧) + p * q = r' + p * q'`
+with `p` monic, `q, q'` entire, and `r.degree, r'.degree < p.degree` have equal quotients and
+remainders. Completeness of `R` is not needed. -/
+private theorem eq_and_eq_of_add_mul_eq (hp : p.Monic) {q q' : R⟦X⟧} {r r' : Polynomial R}
+    (hq : q.IsEntire) (hq' : q'.IsEntire) (hr : r.degree < p.degree) (hr' : r'.degree < p.degree)
+    (h : (r : R⟦X⟧) + p * q = (r' : R⟦X⟧) + p * q') :
+    q = q' ∧ r = r' := by
+  have : Nontrivial R := NormOneClass.nontrivial
+  have hdist := hp.isDistinguished_one_add_sum_norm_coeff
+  set c := 1 + ∑ i ∈ p.support, ‖p.coeff i‖
+  have hc0 : 0 < c := by positivity
+  have hrem (s : Polynomial R) (hs : s.degree < p.degree) :
+      ∀ m, p.natDegree ≤ m → coeff m (s : R⟦X⟧) = 0 := fun m hm ↦ by
+    rw [Polynomial.coeff_coe]
+    exact Polynomial.coeff_eq_zero_of_degree_lt
+      (hs.trans_le (Polynomial.degree_le_natDegree.trans (by exact_mod_cast hm)))
+  have hmul : ∀ x, ‖x * coeff p.natDegree (p : R⟦X⟧)‖ = ‖x‖ * ‖coeff p.natDegree (p : R⟦X⟧)‖ := by
+    simp [hp.coeff_natDegree]
+  obtain ⟨hq_eq, hr_eq⟩ := TauCeti.PowerSeries.IsDistinguished.eq_and_eq_of_mul_add_eq_mul_add hdist
+    hc0 hmul (hq.isRestricted c) (hq'.isRestricted c) (hrem r hr) (hrem r' hr')
+    (by linear_combination h)
+  exact ⟨hq_eq, Polynomial.coe_inj.mp hr_eq⟩
+
 /-- **Uniqueness of entire division.** Over an ultrametric ring with `‖1‖ = 1`, if
 `f = r + p * q` with `q` entire and `r` of degree less than the monic polynomial `p`, then `q`
 and `r` are the quotient and remainder of `f` on division by `p`. -/
 theorem divByMonic_modByMonic_unique (q : R⟦X⟧) (r : Polynomial R) (hp : p.Monic)
     (hq : q.IsEntire) (h : (r : R⟦X⟧) + p * q = f ∧ r.degree < p.degree) :
     f.divByMonic p = q ∧ f.modByMonic p = r := by
+  have : Nontrivial R := NormOneClass.nontrivial
   obtain ⟨rfl, hr⟩ := h
   have hf : ((r : R⟦X⟧) + p * q).IsEntire := (isEntire_coe r).add ((isEntire_coe p).mul hq)
-  have : Nontrivial R := NormOneClass.nontrivial
-  have hdist := hp.isDistinguished_one_add_sum_norm_coeff
-  set c := 1 + ∑ i ∈ p.support, ‖p.coeff i‖
-  have hc0 : 0 < c := by positivity
-  have hrem (r' : Polynomial R) (hr' : r'.degree < p.degree) :
-      ∀ m, p.natDegree ≤ m → coeff m (r' : R⟦X⟧) = 0 := fun m hm ↦ by
-    rw [Polynomial.coeff_coe]
-    exact Polynomial.coeff_eq_zero_of_degree_lt
-      (hr'.trans_le (Polynomial.degree_le_natDegree.trans (by exact_mod_cast hm)))
-  have hmul : ∀ x, ‖x * coeff p.natDegree (p : R⟦X⟧)‖ = ‖x‖ * ‖coeff p.natDegree (p : R⟦X⟧)‖ := by
-    simp [hp.coeff_natDegree]
-  have hdiv := hf.modByMonic_add_divByMonic hp
-  obtain ⟨hq', hr'⟩ := TauCeti.PowerSeries.IsDistinguished.eq_and_eq_of_mul_add_eq_mul_add hdist
-    hc0 hmul ((hf.divByMonic p).isRestricted c) (hq.isRestricted c)
-    (hrem _ (degree_modByMonic_lt _ hp.ne_zero)) (hrem r hr) (by linear_combination hdiv)
-  exact ⟨hq', Polynomial.coe_inj.mp hr'⟩
+  exact eq_and_eq_of_add_mul_eq hp (hf.divByMonic p) hq (degree_modByMonic_lt _ hp.ne_zero) hr
+    (hf.modByMonic_add_divByMonic hp)
 
 /-- Dividing `p * q` by `p`, for entire `q`, gives quotient `q` and remainder `0`. -/
 private theorem IsEntire.coe_mul_divByMonic_and_modByMonic {q : R⟦X⟧} (hq : q.IsEntire)
@@ -791,26 +802,15 @@ private theorem dvd_of_coe_eq_coe_mul_entire {g : Polynomial R} {q : R⟦X⟧}
   have hP_mul : (g : R⟦X⟧) = (P : R⟦X⟧) * ((u : R) • q) := by
     have hcoe : (P : R⟦X⟧) = (↑u⁻¹ : R) • (p : R⟦X⟧) := by simp [P, Units.smul_def]
     rw [h, hcoe, smul_mul_smul_comm, Units.inv_mul, one_smul]
-  have hdist := hP.isDistinguished_one_add_sum_norm_coeff
-  set c := 1 + ∑ i ∈ P.support, ‖P.coeff i‖
-  have hc0 : 0 < c := by positivity
-  have hmul : ∀ x, ‖x * coeff P.natDegree (P : R⟦X⟧)‖ = ‖x‖ * ‖coeff P.natDegree (P : R⟦X⟧)‖ := by
-    simp [hP.coeff_natDegree]
-  have hrem : ∀ m, P.natDegree ≤ m → coeff m ((g %ₘ P : Polynomial R) : R⟦X⟧) = 0 := fun m hm ↦ by
-    rw [Polynomial.coeff_coe]
-    exact Polynomial.coeff_eq_zero_of_degree_lt
-      ((Polynomial.degree_modByMonic_lt g hP).trans_le
-        (Polynomial.degree_le_natDegree.trans (by exact_mod_cast hm)))
-  have heq : ((g /ₘ P : Polynomial R) : R⟦X⟧) * (P : R⟦X⟧) + ((g %ₘ P : Polynomial R) : R⟦X⟧) =
-      ((u : R) • q) * (P : R⟦X⟧) + 0 := by
-    have hdiv : ((g %ₘ P : Polynomial R) : R⟦X⟧) + (P : R⟦X⟧) * ((g /ₘ P : Polynomial R) : R⟦X⟧) =
-        (g : R⟦X⟧) := by
-      rw [← Polynomial.coe_mul, ← Polynomial.coe_add, Polynomial.modByMonic_add_div]
-    rw [add_zero, mul_comm ((u : R) • q), ← hP_mul, ← hdiv, add_comm, mul_comm (P : R⟦X⟧)]
-  obtain ⟨-, hmod_coe⟩ := TauCeti.PowerSeries.IsDistinguished.eq_and_eq_of_mul_add_eq_mul_add hdist
-    hc0 hmul ((isEntire_coe (g /ₘ P)).isRestricted c) ((hq.smul (u : R)).isRestricted c) hrem
-    (fun _ _ ↦ map_zero _) heq
-  have hmod : g %ₘ P = 0 := Polynomial.coe_inj.mp (by simpa using hmod_coe)
+  have hdiv : ((g %ₘ P : Polynomial R) : R⟦X⟧) + (P : R⟦X⟧) * ((g /ₘ P : Polynomial R) : R⟦X⟧) =
+      ((0 : Polynomial R) : R⟦X⟧) + (P : R⟦X⟧) * ((u : R) • q) := by
+    rw [← Polynomial.coe_mul, ← Polynomial.coe_add, Polynomial.modByMonic_add_div,
+      Polynomial.coe_zero, zero_add, hP_mul]
+  have h0deg : (0 : Polynomial R).degree < P.degree := by
+    rw [Polynomial.degree_zero, bot_lt_iff_ne_bot, ne_eq, Polynomial.degree_eq_bot]
+    exact hP.ne_zero
+  obtain ⟨-, hmod⟩ := _root_.PowerSeries.eq_and_eq_of_add_mul_eq hP (isEntire_coe (g /ₘ P))
+    (hq.smul (u : R)) (Polynomial.degree_modByMonic_lt g hP) h0deg hdiv
   obtain ⟨k, hk⟩ := (Polynomial.modByMonic_eq_zero_iff_dvd hP).mp hmod
   exact ⟨u⁻¹ • k, by simpa only [P, smul_mul_assoc, mul_smul_comm] using hk⟩
 

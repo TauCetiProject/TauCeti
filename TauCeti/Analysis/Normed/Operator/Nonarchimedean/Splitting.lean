@@ -100,18 +100,6 @@ theorem charPowerSeries_eq_prod_of_commute {ι : Type*} [Fintype ι]
   rw [← mul_def, mul_assoc, ← mul_assoc (e k), ← (hue k).eq, mul_assoc u (e k),
     he.ortho hkl, mul_zero, mul_zero]
 
-/-- **Splitting along a commuting idempotent on a (Pr) module.** If a row-compact endomorphism `u`
-of a module with property (Pr) commutes with a bounded idempotent `e`, then
-`det (1 - T u) = det (1 - T u e) det (1 - T u (1 - e))`. -/
-theorem charPowerSeries_eq_mul_of_commute {u e : M →L[R] M} (hu : u.IsPrCompact)
-    (he : IsIdempotentElem e) (hue : Commute u e) :
-    u.charPowerSeries = (u * e).charPowerSeries * (u * (1 - e)).charPowerSeries := by
-  rw [charPowerSeries_eq_prod_of_commute hu (e := ![e, 1 - e])
-      (CompleteOrthogonalIdempotents.of_isIdempotentElem (R := M →L[R] M) he) fun i ↦ by
-        fin_cases i
-        exacts [hue, (Commute.one_right u).sub_right (R := M →L[R] M) hue],
-    Fin.prod_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_zero]
-
 /-- A bounded splitting with invariant summands gives the product of their Fredholm
 series. The inclusions and retractions need not be isometries. Only one cross
 composite is needed to make the two extended operators annihilate. -/
