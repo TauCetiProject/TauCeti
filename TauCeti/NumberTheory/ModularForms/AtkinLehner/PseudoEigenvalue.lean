@@ -8,11 +8,16 @@ module
 public import TauCeti.NumberTheory.ModularForms.AtkinLehner.Newform
 public import TauCeti.NumberTheory.ModularForms.Newforms.Fricke
 public import TauCeti.NumberTheory.ModularForms.Petersson.FiniteIndex
+import Mathlib.NumberTheory.DirichletCharacter.Bounds
 import TauCeti.Data.ZMod.Units
+import TauCeti.NumberTheory.DirichletCharacter.Conductor
+import TauCeti.NumberTheory.ModularForms.Newforms.BadPrime.Classification
+import TauCeti.NumberTheory.ModularForms.Newforms.BadPrime.Primes
 import TauCeti.NumberTheory.ModularForms.Newforms.PeterssonAdjoint
 import TauCeti.NumberTheory.ModularForms.Newforms.StrongMultiplicityOne.Basic
 import TauCeti.NumberTheory.ModularForms.Petersson.AtkinLehner
 import TauCeti.NumberTheory.ModularForms.Petersson.Conjugate
+import TauCeti.NumberTheory.ModularForms.Petersson.RankinSelberg
 
 /-!
 # The Atkin–Li pseudo-eigenvalue of a newform at an exact divisor
@@ -26,7 +31,7 @@ Atkin and Li. The choice of `W` matters: another Atkin–Lehner matrix for `Q` c
 value of `χ`, and under the Atkin–Li normalization `𝒲_Q ∘ 𝒲_Q` is the constant
 `χ_Q(-1) χ_{N/Q}(Q)⁻¹` on `S_k(N, χ)`.
 
-The results here are what the operator identities give without further analytic input.
+The operator identities give:
 
 * The product law `λ_Q(f) · λ_Q(g) = χ_Q(-1) χ_{N/Q}(Q)⁻¹`, from the square of `𝒲_Q` and the fact
   that transporting twice returns `f`.
@@ -35,13 +40,17 @@ The results here are what the operator identities give without further analytic 
   and `λ_N(f)` is `χ(-1)` times the Fricke pseudo-eigenvalue.
 * The norm identity `|λ_Q(f)|² ⟪g, g⟫ = ⟪f, f⟫`, from the Petersson unitarity of `𝒲_Q`. Hence
   `|λ_Q(f)| = 1` exactly when `f` and `g` have the same Petersson norm.
-* That equality of norms, and so `|λ_Q(f)| = 1`, in the two cases where `g` is identified with a
-  newform of known norm. If `χ_Q` is trivial then `g = f`, and `f` is a genuine `𝒲_Q`-eigenform with
-  `λ_Q(f)² = χ_{N/Q}(Q)⁻¹`. If `χ_{N/Q}` is trivial then `g = f_ρ` is the conjugate newform, whose
-  norm is that of `f`.
+* Explicit identification of `g` in the two split cases: if `χ_Q` is trivial then `g = f`, and `f`
+  is a genuine `𝒲_Q`-eigenform with `λ_Q(f)² = χ_{N/Q}(Q)⁻¹`; if `χ_{N/Q}` is trivial then
+  `g = f_ρ` is the conjugate newform.
 
-For a general nebentypus, both factors nontrivial, the equality `⟪g, g⟫ = ⟪f, f⟫` is not proved
-here.
+For a general nebentypus, `|λ_Q(f)| = 1` follows from the equality of Petersson norms
+`⟪g, g⟫ = ⟪f, f⟫`. First, `|a_n(g)| = |a_n(f)|` for every `n`: at good primes `p ∤ N` the Hecke
+recurrence yields `a_{p^r}(g) = χ_Q(p)⁻ʳ a_{p^r}(f)`; at bad primes `p ∣ N` transport preserves
+the conductor of the nebentypus so Li's classification fixes `|a_p|` and `a_{p^r} = a_p^r` extends
+this to prime powers; multiplicativity then covers all `n`. Rankin–Selberg unfolding
+(`CuspForm.peterssonInnerCosets_self_eq_of_norm_qExpansion_coeff_eq`) then forces `⟪g, g⟫ = ⟪f, f⟫`,
+and hence `|λ_Q(f)| = 1` and `λ_Q(g) = χ_Q(-1) χ_{N/Q}(Q)⁻¹ · conj λ_Q(f)`.
 
 ## Main definitions
 
@@ -62,6 +71,13 @@ All declarations are in the namespace `HeckeRing.GL2.Newform`.
 * `atkinLehnerTransform_self`, `atkinLehnerPseudoEigenvalue_self`: at `Q = N` the transported
   newform is `f_ρ` and `λ_N(f) = χ(-1) · frickePseudoEigenvalue f`.
 * `norm_atkinLehnerPseudoEigenvalue_eq_one_iff`: `|λ_Q(f)| = 1` if and only if `⟪g, g⟫ = ⟪f, f⟫`.
+* `conductor_dirichletLift_atkinLehnerTransform`: Atkin–Lehner transport preserves the conductor of
+  the nebentypus.
+* `norm_qExpansion_coeff_atkinLehnerTransform`: `|a_n(g)| = |a_n(f)|` for every `n`.
+* `peterssonInnerCosets_atkinLehnerTransform`: `⟪g, g⟫ = ⟪f, f⟫` for every nebentypus.
+* `norm_atkinLehnerPseudoEigenvalue`: `|λ_Q(f)| = 1` for every nebentypus.
+* `atkinLehnerPseudoEigenvalue_atkinLehnerTransform`:
+  `λ_Q(g) = χ_Q(-1) χ_{N/Q}(Q)⁻¹ · conj λ_Q(f)`.
 * `atkinLehnerTransform_eq_self_of_χ_eq_comp_right`: if `χ` is pulled back from a character
   modulo `N / Q`, then `g = f`, so `|λ_Q(f)| = 1`
   (`norm_atkinLehnerPseudoEigenvalue_of_χ_eq_comp_right`) and `λ_Q(f)² = χ_{N/Q}(Q)⁻¹`
@@ -73,7 +89,7 @@ All declarations are in the namespace `HeckeRing.GL2.Newform`.
 ## References
 
 * A. O. L. Atkin and W.-C. W. Li, *Twists of newforms and pseudo-eigenvalues of W-operators*,
-  Invent. Math. **48** (1978), 221–243, §1.
+  Invent. Math. **48** (1978), 221–243, §1 (Theorem 1.1).
 * [T. Miyake, *Modular forms*][miyake1989], Theorem 4.6.16.
 -/
 
@@ -338,5 +354,202 @@ theorem atkinLehnerPseudoEigenvalue_self (f : Newform N k) (h : N ∥ N) :
   rw [key _ hM, atkinLehnerTransform_self, smul_comm, ← LinearMap.smul_apply,
     ← normalizedFrickeOperatorCusp_def,
     f.normalizedFrickeOperatorCusp_eq_frickePseudoEigenvalue_smul, smul_smul]
+
+/-! ### Modulus one at general nebentypus -/
+
+/-- **Atkin–Lehner transport preserves the conductor of the nebentypus**: inverting the `Q`-part
+of `χ = χ_Q · χ_{N/Q}` preserves the conductor of the `Q`-factor and leaves the complementary
+factor unchanged, and the two factors have coprime conductors. -/
+theorem conductor_dirichletLift_atkinLehnerTransform (f : Newform N k) (h : Q ∥ N) :
+    (f.atkinLehnerTransform h).dirichletLift.conductor = f.dirichletLift.conductor := by
+  let ψ₀ : (ZMod Q)ˣ →* ℂˣ :=
+    (f.χ.comp h.unitsEquivProd.symm.toMonoidHom).comp
+      (MonoidHom.inl (ZMod Q)ˣ (ZMod (N / Q))ˣ)
+  let φ₀ : (ZMod (N / Q))ˣ →* ℂˣ :=
+    (f.χ.comp h.unitsEquivProd.symm.toMonoidHom).comp
+      (MonoidHom.inr (ZMod Q)ˣ (ZMod (N / Q))ˣ)
+  let ψ : DirichletCharacter ℂ N :=
+    DirichletCharacter.changeLevel h.dvd (MulChar.ofUnitHom ψ₀ : DirichletCharacter ℂ Q)
+  let φ : DirichletCharacter ℂ N :=
+    DirichletCharacter.changeLevel (Nat.div_dvd_of_dvd h.dvd)
+      (MulChar.ofUnitHom φ₀ : DirichletCharacter ℂ (N / Q))
+  have hf : f.dirichletLift = ψ * φ := by
+    refine MulChar.ext fun u ↦ ?_
+    have hu := congrArg Units.val (DFunLike.congr_fun (h.eq_mul_comp_unitsMap f.χ) u)
+    simpa [ψ, φ, ψ₀, φ₀, dirichletLift_def, DirichletCharacter.changeLevel_def] using hu
+  have hg : (f.atkinLehnerTransform h).dirichletLift = ψ⁻¹ * φ := by
+    refine MulChar.ext fun u ↦ ?_
+    have hχg : (f.atkinLehnerTransform h).χ =
+        ψ₀⁻¹.comp (ZMod.unitsMap h.dvd) *
+          φ₀.comp (ZMod.unitsMap (Nat.div_dvd_of_dvd h.dvd)) := by
+      rw [χ_atkinLehnerTransform, ← h.comp_unitsInvPart ψ₀ φ₀, ← h.eq_mul_comp_unitsMap f.χ]
+      rfl
+    have hu := congrArg Units.val (DFunLike.congr_fun hχg u)
+    simpa [ψ, φ, ψ₀, φ₀, dirichletLift_def, DirichletCharacter.changeLevel_def,
+      MulChar.inv_apply_eq_inv'] using hu
+  have hcop : ψ.conductor.Coprime φ.conductor := by
+    have hψ : ψ.conductor ∣ Q := by
+      rw [DirichletCharacter.conductor_changeLevel]
+      exact DirichletCharacter.conductor_dvd_level _
+    have hφ : φ.conductor ∣ N / Q := by
+      rw [DirichletCharacter.conductor_changeLevel]
+      exact DirichletCharacter.conductor_dvd_level _
+    exact (h.coprime.coprime_dvd_left hψ).coprime_dvd_right hφ
+  have hcop_inv : ψ⁻¹.conductor.Coprime φ.conductor := by
+    rwa [DirichletCharacter.conductor_inv]
+  rw [hg, hf, DirichletCharacter.conductor_mul_of_coprime hcop_inv,
+    DirichletCharacter.conductor_mul_of_coprime hcop, DirichletCharacter.conductor_inv]
+
+/-- At a good prime power `p^r` (`p ∤ N`), Atkin–Lehner transport scales `a_{p^r}(f)` by
+`χ_Q(p)⁻ʳ`, by induction on the Hecke prime-power recurrence. -/
+private theorem qExpansion_coeff_prime_pow_atkinLehnerTransform (f : Newform N k) (h : Q ∥ N)
+    {p : ℕ} (hp : p.Prime) (hpN : p.Coprime N) (r : ℕ) :
+    (qExpansion 1 (f.atkinLehnerTransform h).toCuspForm).coeff (p ^ r) =
+      ((f.χ (h.unitsEquivProd.symm
+        (ZMod.unitOfCoprime p (hpN.coprime_dvd_right h.dvd), 1)) : ℂ)⁻¹) ^ r *
+        (qExpansion 1 f.toCuspForm).coeff (p ^ r) := by
+  let g := f.atkinLehnerTransform h
+  let u : (ZMod N)ˣ :=
+    h.unitsEquivProd.symm (ZMod.unitOfCoprime p (hpN.coprime_dvd_right h.dvd), 1)
+  let ζ : ℂ := (f.χ u : ℂ)⁻¹
+  have hχg : g.dirichletLift p = ζ ^ 2 * f.dirichletLift p := by
+    let up : (ZMod N)ˣ := ZMod.unitOfCoprime p hpN
+    have hrel : h.unitsInvPart up = u⁻¹ ^ 2 * up := by
+      apply h.unitsEquivProd.injective
+      refine Prod.ext ?_ ?_
+      · simp [u, up, ZMod.unitsMap_unitOfCoprime, sq, mul_assoc]
+      · simp [u, up]
+    rw [g.dirichletLift_apply_of_coprime hpN, f.dirichletLift_apply_of_coprime hpN]
+    change (g.χ up : ℂ) = ζ ^ 2 * (f.χ up : ℂ)
+    rw [χ_atkinLehnerTransform, MonoidHom.comp_apply]
+    change (f.χ (h.unitsInvPart up) : ℂ) = ζ ^ 2 * (f.χ up : ℂ)
+    rw [hrel, map_mul, map_pow, map_inv]
+    simp [ζ]
+  induction r using Nat.twoStepInduction with
+  | zero =>
+    simp
+  | one =>
+    simpa [g, ζ, u] using f.qExpansion_coeff_prime_atkinLehnerTransform h hp hpN
+  | more r ih0 ih1 =>
+    have hfg := g.toEigenform.qExpansion_coeff_prime_pow_add_two
+      g.toEigenform_qExpansion_coeff_one hp r
+    have hff := f.toEigenform.qExpansion_coeff_prime_pow_add_two
+      f.toEigenform_qExpansion_coeff_one hp r
+    simp only [toEigenform_toCuspForm, toEigenform_χ, ← dirichletLift_def] at hfg hff
+    have h1 : (qExpansion 1 g.toCuspForm).coeff p = ζ * (qExpansion 1 f.toCuspForm).coeff p :=
+      f.qExpansion_coeff_prime_atkinLehnerTransform h hp hpN
+    rw [hfg, hff, h1, ih0, ih1, hχg]
+    ring
+
+/-- At a bad prime `p ∣ N`, Atkin–Lehner transport preserves `|a_p(f)|`, by Li's bad-prime
+classification and conductor preservation. -/
+private theorem norm_qExpansion_coeff_prime_atkinLehnerTransform_of_dvd (f : Newform N k)
+    (h : Q ∥ N) {p : ℕ} (hp : p.Prime) (hpN : p ∣ N) :
+    ‖(qExpansion 1 (f.atkinLehnerTransform h).toCuspForm).coeff p‖ =
+      ‖(qExpansion 1 f.toCuspForm).coeff p‖ := by
+  let g := f.atkinLehnerTransform h
+  have hcond : g.dirichletLift.conductor = f.dirichletLift.conductor :=
+    f.conductor_dirichletLift_atkinLehnerTransform h
+  have hpos : 0 < N.factorization p := hp.factorization_pos_of_dvd (NeZero.ne N) hpN
+  have hle : f.dirichletLift.conductor.factorization p ≤ N.factorization p :=
+    (Nat.factorization_le_iff_dvd f.dirichletLift.conductor_ne_zero (NeZero.ne N)).mpr
+      f.dirichletLift.conductor_dvd_level p
+  rcases hle.lt_or_eq with hc | hc
+  · by_cases hN : N.factorization p = 1
+    · have hcf : f.dirichletLift.conductor.factorization p = 0 := by omega
+      have hcg : g.dirichletLift.conductor.factorization p = 0 := by rwa [hcond]
+      have hsqf := f.qExpansion_coeff_prime_sq_of_factorization_eq_one hp hN hcf
+      have hsqg := g.qExpansion_coeff_prime_sq_of_factorization_eq_one hp hN hcg
+      have hnorm_ptp : ∀ χ : DirichletCharacter ℂ N,
+          ‖primeToPart p χ (p : ZMod (ordCompl[p] χ.conductor))‖ = 1 := fun χ ↦ by
+        have hu := ZMod.coe_unitOfCoprime p (Nat.coprime_ordCompl hp χ.conductor_ne_zero)
+        rw [← hu]
+        exact DirichletCharacter.unit_norm_eq_one (primeToPart p χ) _
+      have hsq : ‖(qExpansion 1 g.toCuspForm).coeff p‖ ^ 2 =
+          ‖(qExpansion 1 f.toCuspForm).coeff p‖ ^ 2 := by
+        rw [← norm_pow, ← norm_pow, hsqg, hsqf, norm_mul, norm_mul,
+          hnorm_ptp g.dirichletLift, hnorm_ptp f.dirichletLift]
+      exact (pow_left_inj₀ (norm_nonneg _) (norm_nonneg _) two_ne_zero).mp hsq
+    · have hN2 : 2 ≤ N.factorization p := by omega
+      have hcg : g.dirichletLift.conductor.factorization p < N.factorization p := by
+        rwa [hcond]
+      rw [g.qExpansion_coeff_prime_eq_zero_of_factorization_conductor_lt hp hN2 hcg,
+        f.qExpansion_coeff_prime_eq_zero_of_factorization_conductor_lt hp hN2 hc]
+  · have hcg : g.dirichletLift.conductor.factorization p = N.factorization p := by rwa [hcond]
+    rw [g.norm_qExpansion_coeff_prime_of_factorization_conductor_eq hp hpN hcg,
+      f.norm_qExpansion_coeff_prime_of_factorization_conductor_eq hp hpN hc]
+
+/-- **Atkin–Lehner transport preserves the moduli of all Fourier coefficients**: for every `n`,
+`|a_n(g)| = |a_n(f)|`, where `g = f.atkinLehnerTransform h`. At good primes `p ∤ N`,
+`a_{p^r}(g) = χ_Q(p)⁻ʳ a_{p^r}(f)`; at bad primes `p ∣ N`, transport preserves the conductor of
+the nebentypus, so Li's classification fixes `|a_p|` and `a_{p^r} = a_p^r` propagates it to all
+prime powers; multiplicativity then gives all `n`. -/
+theorem norm_qExpansion_coeff_atkinLehnerTransform (f : Newform N k) (h : Q ∥ N) (n : ℕ) :
+    ‖(qExpansion 1 (f.atkinLehnerTransform h).toCuspForm).coeff n‖ =
+      ‖(qExpansion 1 f.toCuspForm).coeff n‖ := by
+  let g := f.atkinLehnerTransform h
+  induction n using Nat.recOnPosPrimePosCoprime with
+  | zero =>
+    rw [CuspFormClass.qExpansion_coeff_zero g.toCuspForm one_pos
+        (one_mem_strictPeriods_Gamma1_map N),
+      CuspFormClass.qExpansion_coeff_zero f.toCuspForm one_pos
+        (one_mem_strictPeriods_Gamma1_map N)]
+  | one =>
+    rw [g.qExpansion_coeff_one, f.qExpansion_coeff_one]
+  | prime_pow p r hp _ =>
+    by_cases hpN : p ∣ N
+    · have hpf : p ∈ f.badPrimes := f.mem_badPrimes_iff_dvd.mpr ⟨hp, hpN⟩
+      have hpg : p ∈ g.badPrimes := g.mem_badPrimes_iff_dvd.mpr ⟨hp, hpN⟩
+      rw [g.qExpansion_coeff_prime_pow_of_mem_badPrimes hpg r,
+        f.qExpansion_coeff_prime_pow_of_mem_badPrimes hpf r, norm_pow, norm_pow,
+        f.norm_qExpansion_coeff_prime_atkinLehnerTransform_of_dvd h hp hpN]
+    · have hcop : p.Coprime N := hp.coprime_iff_not_dvd.mpr hpN
+      rw [f.qExpansion_coeff_prime_pow_atkinLehnerTransform h hp hcop r, norm_mul, norm_pow,
+        norm_inv]
+      have hnorm : ‖(f.χ (h.unitsEquivProd.symm
+          (ZMod.unitOfCoprime p (hcop.coprime_dvd_right h.dvd), 1)) : ℂ)‖ = 1 := by
+        simpa [dirichletLift_def] using DirichletCharacter.unit_norm_eq_one f.dirichletLift
+          (h.unitsEquivProd.symm (ZMod.unitOfCoprime p (hcop.coprime_dvd_right h.dvd), 1))
+      rw [hnorm, inv_one, one_pow, one_mul]
+  | coprime m n _ _ hmn ihm ihn =>
+    have hmg := g.toEigenform.qExpansion_coeff_mul g.toEigenform_qExpansion_coeff_one hmn
+    have hmf := f.toEigenform.qExpansion_coeff_mul f.toEigenform_qExpansion_coeff_one hmn
+    simp only [toEigenform_toCuspForm] at hmg hmf
+    rw [hmg, hmf, norm_mul, norm_mul, ihm, ihn]
+
+/-- **Atkin–Lehner transport preserves the Petersson norm**: `⟪g, g⟫ = ⟪f, f⟫`, where
+`g = f.atkinLehnerTransform h`. Both forms have the same Fourier coefficient moduli
+(`norm_qExpansion_coeff_atkinLehnerTransform`), so Rankin–Selberg unfolding forces their
+Petersson norms to agree. -/
+theorem peterssonInnerCosets_atkinLehnerTransform (f : Newform N k) (h : Q ∥ N) :
+    CuspForm.peterssonInnerCosets (f.atkinLehnerTransform h).toCuspForm
+        (f.atkinLehnerTransform h).toCuspForm =
+      CuspForm.peterssonInnerCosets f.toCuspForm f.toCuspForm :=
+  CuspForm.peterssonInnerCosets_self_eq_of_norm_qExpansion_coeff_eq
+    (f.atkinLehnerTransform h).mem_charSpace f.mem_charSpace
+    (f.norm_qExpansion_coeff_atkinLehnerTransform h)
+
+/-- **The Atkin–Li pseudo-eigenvalue has modulus `1`**, for an arbitrary nebentypus
+(Atkin–Li, Theorem 1.1; Miyake, Theorem 4.6.16). -/
+theorem norm_atkinLehnerPseudoEigenvalue (f : Newform N k) (h : Q ∥ N) :
+    ‖f.atkinLehnerPseudoEigenvalue h‖ = 1 :=
+  (f.norm_atkinLehnerPseudoEigenvalue_eq_one_iff h).mpr
+    (f.peterssonInnerCosets_atkinLehnerTransform h)
+
+/-- **The pseudo-eigenvalue of the transported newform**:
+`λ_Q(g) = χ_Q(-1) χ_{N/Q}(Q)⁻¹ · conj λ_Q(f)`. Since `|λ_Q(f)| = 1`, the inverse of `λ_Q(f)` is
+its complex conjugate. -/
+theorem atkinLehnerPseudoEigenvalue_atkinLehnerTransform (f : Newform N k) (h : Q ∥ N) :
+    (f.atkinLehnerTransform h).atkinLehnerPseudoEigenvalue h =
+      ↑(f.χ (h.unitsEquivProd.symm (-1, 1)) *
+        (f.χ (h.unitsEquivProd.symm (1, ZMod.unitOfCoprime Q h.coprime)))⁻¹) *
+        starRingEnd ℂ (f.atkinLehnerPseudoEigenvalue h) := by
+  have hnorm : starRingEnd ℂ (f.atkinLehnerPseudoEigenvalue h) *
+      f.atkinLehnerPseudoEigenvalue h = 1 := by
+    rw [mul_comm, Complex.mul_conj', f.norm_atkinLehnerPseudoEigenvalue h, Complex.ofReal_one,
+      one_pow]
+  linear_combination -((f.atkinLehnerTransform h).atkinLehnerPseudoEigenvalue h) * hnorm +
+    starRingEnd ℂ (f.atkinLehnerPseudoEigenvalue h) *
+      f.atkinLehnerPseudoEigenvalue_mul_atkinLehnerPseudoEigenvalue_atkinLehnerTransform h
 
 end HeckeRing.GL2.Newform
