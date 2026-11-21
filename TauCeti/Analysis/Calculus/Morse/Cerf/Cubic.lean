@@ -15,12 +15,12 @@ import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.Calculus.FDeriv.Mul
 import Mathlib.Analysis.Calculus.FDeriv.Pow
-import Mathlib.Analysis.Calculus.LineDeriv.Basic
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 import TauCeti.Analysis.Calculus.Bilinear
 import TauCeti.Analysis.Calculus.ContDiff.Prod
 import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.Analysis.Calculus.LineDeriv.Basic
 import TauCeti.Analysis.Calculus.Morse.Cerf
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.Fredholm.LevelSet.FiniteDimensional
@@ -300,7 +300,7 @@ private theorem fderiv_jetMap_apply_coeff {t : ℝ} {x v : E} {p : Λ}
     (hP.comp (contDiff_const.prodMk contDiff_id)).of_le (by norm_num)
   -- Along the line in the direction of `q`, the jet map moves by minus `s` times the jet of `P q`.
   refine ((contDiffAt_jetMap hf hP p).differentiableAt one_ne_zero).fderiv_apply_eq_of_add_smul
-    fun s ↦ ?_
+    (.of_forall fun s ↦ ?_)
   have hsw : ContDiffAt ℝ 3 (s • P q) x := (hw.const_smul s).contDiffAt
   simp only [jetMap, Prod.mk_add_mk, Prod.smul_mk, smul_zero, add_zero, smul_neg,
     ← sub_eq_add_neg, Prod.mk_sub_mk]
