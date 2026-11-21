@@ -439,42 +439,15 @@ variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V] [Complet
   [FiniteDimensional ℂ V] [NormedAddCommGroup W] [InnerProductSpace ℂ W] [CompleteSpace W]
   [FiniteDimensional ℂ W] {a : Symbol n V W m}
 
-/-- `Op(a)` on distributions as a real linear map: in an orthonormal basis `(wₖ)` of `W`, the
-`k`-th coordinate of `Op(a) T` is the distribution `φ ↦ ⟪Op(a)* (φ • wₖ), T⟫`. -/
-private def quantizeDistributionReal (ha : a.HasNearDiagonalKernel R) :
-    𝓓'((⊤ : Opens (CoordinateSpace n)), V) →L[ℝ] 𝓓'((⊤ : Opens (CoordinateSpace n)), W) :=
-  ∑ k, Distribution.mapCLM
-      ((ContinuousLinearMap.toSpanSingleton ℂ (stdOrthonormalBasis ℂ W k)).restrictScalars ℝ) ∘L
-    Distribution.innerPairingCLM ((adjointTestFunctionCLM ha).restrictScalars ℝ ∘L
-      TestFunction.postcompCLM (𝕜 := ℝ)
-        (ContinuousLinearMap.toSpanSingleton ℝ (stdOrthonormalBasis ℂ W k)))
-
-private theorem quantizeDistributionReal_apply (ha : a.HasNearDiagonalKernel R)
-    (T : 𝓓'((⊤ : Opens (CoordinateSpace n)), V)) (φ : 𝓓((⊤ : Opens (CoordinateSpace n)), ℝ)) :
-    quantizeDistributionReal ha T φ = ∑ k, T.innerPairing (adjointTestFunctionCLM ha
-      (TestFunction.postcompCLM (𝕜 := ℝ)
-        (ContinuousLinearMap.toSpanSingleton ℝ (stdOrthonormalBasis ℂ W k)) φ)) •
-          stdOrthonormalBasis ℂ W k := by
-  simp [quantizeDistributionReal]
-
-private theorem inner_quantizeDistributionReal_apply (ha : a.HasNearDiagonalKernel R)
-    (T : 𝓓'((⊤ : Opens (CoordinateSpace n)), V)) (φ : 𝓓((⊤ : Opens (CoordinateSpace n)), ℝ))
-    (w : W) :
-    ⟪w, quantizeDistributionReal ha T φ⟫_ℂ = T.innerPairing (adjointTestFunctionCLM ha
-      (TestFunction.postcompCLM (𝕜 := ℝ) (ContinuousLinearMap.toSpanSingleton ℝ w) φ)) := by
-  set b := stdOrthonormalBasis ℂ W
-  -- Expand `φ • w` in the basis: `φ • w = ∑ₖ ⟪wₖ, w⟫ (φ • wₖ)`.
-  have hw : TestFunction.postcompCLM (𝕜 := ℝ) (ContinuousLinearMap.toSpanSingleton ℝ w) φ =
-      ∑ k, ⟪b k, w⟫_ℂ • TestFunction.postcompCLM (𝕜 := ℝ)
-        (ContinuousLinearMap.toSpanSingleton ℝ (b k)) φ := by
-    ext x
-    simp only [TestFunction.postcompCLM_apply, Function.comp_apply, sum_apply, smul_apply,
-      ContinuousLinearMap.toSpanSingleton_apply]
-    conv_lhs => rw [← b.sum_repr' w, Finset.smul_sum]
-    exact Finset.sum_congr rfl fun k _ ↦ smul_comm _ _ _
-  rw [quantizeDistributionReal_apply, hw, map_sum, Distribution.innerPairing_sum_right, inner_sum]
-  refine Finset.sum_congr rfl fun k _ ↦ ?_
-  rw [map_smul, Distribution.innerPairing_smul_right, inner_smul_right, inner_conj_symm, mul_comm]
+/-- The distribution `φ ↦ T φ • w` of a complex-valued distribution `T`, complex linear in `T`. -/
+private def smulRightDistribution (w : W) :
+    𝓓'((⊤ : Opens (CoordinateSpace n)), ℂ) →L[ℂ] 𝓓'((⊤ : Opens (CoordinateSpace n)), W) where
+  toFun := Distribution.mapCLM ((ContinuousLinearMap.toSpanSingleton ℂ w).restrictScalars ℝ)
+  map_add' := map_add _
+  map_smul' c T := by
+    ext φ
+    simp [mul_smul]
+  cont := (Distribution.mapCLM _).continuous
 
 /-- **A properly supported operator on distributions.** For a symbol `a` with values in
 `V →L[ℂ] W`, for finite-dimensional complex inner product spaces `V` and `W`, whose quantization
@@ -489,17 +462,15 @@ for real test functions `φ` and vectors `w : W`, where `Op(a)*` is the formal a
 (`TauCeti.Symbol.inner_quantizeDistribution_apply`). It is complex linear, and it extends `Op(a)`
 on test functions (`TauCeti.Symbol.quantizeDistribution_ofFun`). For a scalar symbol it is
 `(Op(a) T) (φ) = T (Op(a)ᵗ φ)`, with the transpose `Op(a)ᵗ φ = conj (Op(a)* φ)` of `Op(a)` for the
-bilinear pairing `∫ φ u` (`TauCeti.Symbol.quantizeDistribution_apply`). -/
+bilinear pairing `∫ φ u` (`TauCeti.Symbol.quantizeDistribution_apply`). It is defined in an
+orthonormal basis `(wₖ)` of `W`: the `k`-th coordinate of `Op(a) T` is the distribution
+`φ ↦ ⟪Op(a)* (φ • wₖ), T⟫`. -/
 def quantizeDistribution (ha : a.HasNearDiagonalKernel R) :
-    𝓓'((⊤ : Opens (CoordinateSpace n)), V) →L[ℂ] 𝓓'((⊤ : Opens (CoordinateSpace n)), W) where
-  toFun := quantizeDistributionReal ha
-  map_add' := map_add _
-  map_smul' c T := by
-    ext φ
-    refine ext_inner_left ℂ fun w ↦ ?_
-    rw [inner_quantizeDistributionReal_apply, Distribution.innerPairing_smul_left, RingHom.id_apply,
-      smul_apply, inner_smul_right, inner_quantizeDistributionReal_apply]
-  cont := (quantizeDistributionReal ha).continuous
+    𝓓'((⊤ : Opens (CoordinateSpace n)), V) →L[ℂ] 𝓓'((⊤ : Opens (CoordinateSpace n)), W) :=
+  ∑ k, smulRightDistribution (stdOrthonormalBasis ℂ W k) ∘L
+    Distribution.innerPairingCLM ((adjointTestFunctionCLM ha).restrictScalars ℝ ∘L
+      TestFunction.postcompCLM (𝕜 := ℝ)
+        (ContinuousLinearMap.toSpanSingleton ℝ (stdOrthonormalBasis ℂ W k)))
 
 /-- **`Op(a)` on distributions is the transpose of the formal adjoint**: the component of
 `Op(a) T (φ)` along `w` is the pairing of `T` with `Op(a)* (φ • w)`. -/
@@ -508,8 +479,21 @@ theorem inner_quantizeDistribution_apply (ha : a.HasNearDiagonalKernel R)
     (T : 𝓓'((⊤ : Opens (CoordinateSpace n)), V)) (φ : 𝓓((⊤ : Opens (CoordinateSpace n)), ℝ))
     (w : W) :
     ⟪w, quantizeDistribution ha T φ⟫_ℂ = T.innerPairing (adjointTestFunctionCLM ha
-      (TestFunction.postcompCLM (𝕜 := ℝ) (ContinuousLinearMap.toSpanSingleton ℝ w) φ)) :=
-  inner_quantizeDistributionReal_apply ha T φ w
+      (TestFunction.postcompCLM (𝕜 := ℝ) (ContinuousLinearMap.toSpanSingleton ℝ w) φ)) := by
+  set b := stdOrthonormalBasis ℂ W
+  -- Expand `φ • w` in the basis: `φ • w = ∑ₖ ⟪wₖ, w⟫ (φ • wₖ)`.
+  have hw : TestFunction.postcompCLM (𝕜 := ℝ) (ContinuousLinearMap.toSpanSingleton ℝ w) φ =
+      ∑ k, ⟪b k, w⟫_ℂ • TestFunction.postcompCLM (𝕜 := ℝ)
+        (ContinuousLinearMap.toSpanSingleton ℝ (b k)) φ := by
+    ext x
+    simp only [TestFunction.postcompCLM_apply, Function.comp_apply, sum_apply, smul_apply,
+      ContinuousLinearMap.toSpanSingleton_apply]
+    conv_lhs => rw [← b.sum_repr' w, Finset.smul_sum]
+    exact Finset.sum_congr rfl fun k _ ↦ smul_comm _ _ _
+  rw [hw, map_sum, Distribution.innerPairing_sum_right]
+  simp only [quantizeDistribution, sum_apply, inner_sum]
+  refine Finset.sum_congr rfl fun k _ ↦ ?_
+  simp [smulRightDistribution, b, inner_smul_right, inner_conj_symm, mul_comm]
 
 /-- `Op(a) T (φ)` in an orthonormal basis `(wₖ)` of `W`: its coordinates are the pairings of `T`
 with `Op(a)* (φ • wₖ)`. -/

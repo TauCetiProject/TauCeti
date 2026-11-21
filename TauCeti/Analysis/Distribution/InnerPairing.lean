@@ -51,7 +51,7 @@ continuously on `T` (`Distribution.innerPairingCLM`).
 * `Distribution.innerPairing`: the pairing `⟪g, T⟫` of a `V`-valued distribution with a `V`-valued
   test function.
 * `Distribution.innerPairingCLM`: for a continuous real-linear map `h` into `V`-valued test
-  functions, the distribution `φ ↦ ⟪h φ, T⟫`, as a continuous real-linear function of `T`.
+  functions, the distribution `φ ↦ ⟪h φ, T⟫`, as a continuous complex-linear function of `T`.
 * `Distribution.innerPairing_postcompCLM_toSpanSingleton`: its value on `φ • v`, and
   `Distribution.innerPairing_eq_sum_basis`: its formula in an arbitrary real basis of `V`.
 * `Distribution.innerPairing_eq_complexPairing`: for `V = ℂ` it is `T.complexPairing (conj g)`.
@@ -229,11 +229,10 @@ theorem innerPairing_eq_complexPairing (T : 𝓓'^{n}(Ω, ℂ)) (g : 𝓓^{n}(Ω
     innerPairing_postcompCLM_toSpanSingleton, conj_I, smul_eq_mul]
   simp [RCLike.inner_apply, sub_eq_add_neg]
 
-/-- **The distribution `φ ↦ ⟪h φ, T⟫`.** For a continuous real-linear map `h` from real to
-`V`-valued test functions, the pairings `φ ↦ ⟪h φ, T⟫` of `T` form a complex-valued distribution,
-which depends continuously and real-linearly on `T` (`Distribution.innerPairingCLM_apply`). This
-is how operators defined on distributions by transposition are assembled. -/
-def innerPairingCLM (h : 𝓓^{n}(Ω, ℝ) →L[ℝ] 𝓓^{n}(Ω, V)) : 𝓓'^{n}(Ω, V) →L[ℝ] 𝓓'^{n}(Ω, ℂ) :=
+/-- The distribution `φ ↦ ⟪h φ, T⟫` as a continuous real-linear function of `T`, assembled from the
+real and imaginary parts of the components of `h φ`. -/
+private def innerPairingRealCLM (h : 𝓓^{n}(Ω, ℝ) →L[ℝ] 𝓓^{n}(Ω, V)) :
+    𝓓'^{n}(Ω, V) →L[ℝ] 𝓓'^{n}(Ω, ℂ) :=
   ∑ i, (mapCLM ((innerSL ℂ (stdOrthonormalBasis ℂ V i)).restrictScalars ℝ) ∘L
       (postcompCLM (𝕜 := ℝ) (reCLM ∘L conjInner (stdOrthonormalBasis ℂ V i)) ∘L
         h).precompCompactConvergenceCLM V +
@@ -242,14 +241,30 @@ def innerPairingCLM (h : 𝓓^{n}(Ω, ℝ) →L[ℝ] 𝓓^{n}(Ω, V)) : 𝓓'^{n
         (postcompCLM (𝕜 := ℝ) (imCLM ∘L conjInner (stdOrthonormalBasis ℂ V i)) ∘L
           h).precompCompactConvergenceCLM V)
 
-@[simp]
-theorem innerPairingCLM_apply (h : 𝓓^{n}(Ω, ℝ) →L[ℝ] 𝓓^{n}(Ω, V)) (T : 𝓓'^{n}(Ω, V))
-    (φ : 𝓓^{n}(Ω, ℝ)) : innerPairingCLM h T φ = T.innerPairing (h φ) := by
-  simp only [innerPairingCLM, innerPairing, complexPairing_apply, sum_apply]
+private theorem innerPairingRealCLM_apply (h : 𝓓^{n}(Ω, ℝ) →L[ℝ] 𝓓^{n}(Ω, V))
+    (T : 𝓓'^{n}(Ω, V)) (φ : 𝓓^{n}(Ω, ℝ)) : innerPairingRealCLM h T φ = T.innerPairing (h φ) := by
+  simp only [innerPairingRealCLM, innerPairing, complexPairing_apply, sum_apply]
   -- The remaining evaluation is by unfolding: `precompCompactConvergenceCLM_apply` produces a sum
   -- in the type synonym `UniformConvergenceCLM`, whose evaluation the lemma `add_apply` does not
   -- match.
   rfl
+
+/-- **The distribution `φ ↦ ⟪h φ, T⟫`.** For a continuous real-linear map `h` from real to
+`V`-valued test functions, the pairings `φ ↦ ⟪h φ, T⟫` of `T` form a complex-valued distribution,
+which depends continuously and complex-linearly on `T` (`Distribution.innerPairingCLM_apply`).
+This is how operators defined on distributions by transposition are assembled. -/
+def innerPairingCLM (h : 𝓓^{n}(Ω, ℝ) →L[ℝ] 𝓓^{n}(Ω, V)) : 𝓓'^{n}(Ω, V) →L[ℂ] 𝓓'^{n}(Ω, ℂ) where
+  toFun := innerPairingRealCLM h
+  map_add' := map_add _
+  map_smul' c T := by
+    ext φ
+    simp [innerPairingRealCLM_apply]
+  cont := (innerPairingRealCLM h).continuous
+
+@[simp]
+theorem innerPairingCLM_apply (h : 𝓓^{n}(Ω, ℝ) →L[ℝ] 𝓓^{n}(Ω, V)) (T : 𝓓'^{n}(Ω, V))
+    (φ : 𝓓^{n}(Ω, ℝ)) : innerPairingCLM h T φ = T.innerPairing (h φ) :=
+  innerPairingRealCLM_apply h T φ
 
 /-- **The pairing with a function.** On the distribution of a function `f` locally integrable on
 `Ω`, the pairing with a test function `g` is `∫ ⟪g x, f x⟫ dμ(x)`. -/
