@@ -61,7 +61,9 @@ top cell `[(m-1)/m, 1] = Set.Ici ((m-1)/m)`.
   `V → Fin m`.
 
 The file also records `TauCeti.intervalIntegral_eq_integral_unitInterval`: an interval integral
-over `[0, 1]` is the integral over the unit interval `I` with its volume measure.
+over `[0, 1]` is the integral over the unit interval `I` with its volume measure; and its rescaled
+form `TauCeti.intervalIntegral_zero_eq_integral_unitInterval_smul`: an interval integral over
+`[0, y]` is `∫ t : I, y • f (y * t)`.
 
 ## References
 
@@ -343,5 +345,14 @@ theorem intervalIntegral_eq_integral_unitInterval {G : Type*} [NormedAddCommGrou
     [NormedSpace ℝ G] (f : ℝ → G) : ∫ t in (0 : ℝ)..1, f t = ∫ t : I, f t := by
   rw [intervalIntegral.integral_of_le zero_le_one, ← integral_Icc_eq_integral_Ioc,
     ← integral_subtype measurableSet_Icc]
+
+/-- An interval integral over `[0, y]` is the integral over the unit interval of the rescaled
+integrand: `∫₀ʸ f = ∫ t : I, y • f (y t)`. -/
+theorem intervalIntegral_zero_eq_integral_unitInterval_smul {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] (f : ℝ → G) (y : ℝ) :
+    ∫ r in (0 : ℝ)..y, f r = ∫ t : I, y • f (y * t) := by
+  rw [← intervalIntegral_eq_integral_unitInterval (fun t ↦ y • f (y * t)),
+    intervalIntegral.integral_smul, intervalIntegral.smul_integral_comp_mul_left, mul_zero,
+    mul_one]
 
 end TauCeti
