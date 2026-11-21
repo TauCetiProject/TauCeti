@@ -744,6 +744,20 @@ private theorem ae_apply_le_of_tendsto {M : ℝ} {c : ℕ → ℝ} (hc : Tendsto
   exact le_of_tendsto_of_tendsto' (((A t).continuous₂.tendsto (u t, u t)).comp (ht.prodMk_nhds ht))
     (hc.comp hns.tendsto_atTop) fun k ↦ hE (ns k) t ht'
 
+omit [CompleteSpace V] in
+/-- Applying `ι` preserves convergence in `L²(a, b)`: if `∫ ‖uh n - u‖² → 0`, then
+`∫ ‖ι (uh n) - ι u‖² → 0`. -/
+private theorem tendsto_integral_norm_apply_sub_sq {u : ℝ → V} {uh : ℕ → ℝ → V}
+    (huh : ∀ n, MemLp (uh n) 2 (volume.restrict (Ioo a b)))
+    (hu : MemLp u 2 (volume.restrict (Ioo a b)))
+    (huhu : Tendsto (fun n ↦ ∫ t in Ioo a b, ‖uh n t - u t‖ ^ 2) atTop (𝓝 0)) :
+    Tendsto (fun n ↦ ∫ t in Ioo a b, ‖ι (uh n t) - ι (u t)‖ ^ 2) atTop (𝓝 0) := by
+  refine squeeze_zero (fun n ↦ setIntegral_nonneg measurableSet_Ioo fun _ _ ↦ by positivity)
+    (fun n ↦ integral_norm_sq_le_sq_mul_of_norm_le
+      ((ι.comp_memLp' (huh n)).sub (ι.comp_memLp' hu)) ((huh n).sub hu)
+      (Eventually.of_forall fun t ↦ by rw [← map_sub]; exact ι.le_opNorm _)) ?_
+  simpa using huhu.const_mul (‖ι‖ ^ 2)
+
 /-- **Time regularity of weak solutions with time-dependent coefficients.** Let `V ↪ H ↪ V*` be
 given by `ι : V →L[ℝ] H`, and let `A(t) : V →L[ℝ] V*`, `t ∈ [a, b]`, be symmetric and coercive,
 `α ‖v‖² ≤ A(t) v v`, and Lipschitz in time, `‖A(t) - A(s)‖ ≤ L |t - s|`. If `u` is a weak solution
@@ -823,13 +837,8 @@ theorem HasWeakLineDerivOn.exists_memLp_hasWeakLineDerivOn_of_gelfandDual_of_lip
     simpa using (((hmesh.const_mul L).div_const α).const_add 1).mul_const M
   obtain ⟨dl, hderiv, hdl⟩ := exists_hasWeakLineDerivOn_and_norm_le_of_tendsto
     (F := fun n t ↦ ι (uh n t)) (G := fun n t ↦ ι (D n t)) (f := fun t ↦ ι (u t))
-    (fun n ↦ (hD n).clm_comp ι)
-    (fun n ↦ ι.comp_memLp' (huh n)) (ι.comp_memLp' hu) (fun n ↦ ι.comp_memLp' (hDm n)) hDbd <| by
-      refine squeeze_zero (fun n ↦ setIntegral_nonneg measurableSet_Ioo fun _ _ ↦ by positivity)
-        (fun n ↦ integral_norm_sq_le_sq_mul_of_norm_le
-          ((ι.comp_memLp' (huh n)).sub (ι.comp_memLp' hu)) ((huh n).sub hu)
-          (Eventually.of_forall fun t ↦ by rw [← map_sub]; exact ι.le_opNorm _)) ?_
-      simpa using huhu.const_mul (‖ι‖ ^ 2)
+    (fun n ↦ (hD n).clm_comp ι) (fun n ↦ ι.comp_memLp' (huh n)) (ι.comp_memLp' hu)
+    (fun n ↦ ι.comp_memLp' (hDm n)) hDbd (tendsto_integral_norm_apply_sub_sq huh hu huhu)
   refine ⟨dl, Lp.memLp dl, hderiv, h.ae_eq (hderiv.clm_comp ι.gelfandDual),
     ae_apply_le_of_tendsto hc hub hu hubu hE, ?_⟩
   have hn := MemLp.norm_toLp_sq (Lp.memLp dl)
