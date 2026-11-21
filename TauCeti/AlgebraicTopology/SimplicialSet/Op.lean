@@ -434,6 +434,26 @@ lemma opEquiv_symm_inv (I : (Edge.opEquiv e).InvStruct) :
     (opEquiv.symm I).inv = Edge.opEquiv.symm I.inv :=
   (rfl)
 
+@[simp]
+lemma opEquiv_homInvId_simplex (I : e.InvStruct) :
+    (opEquiv I).homInvId.simplex = X.opObjEquiv.symm I.invHomId.simplex :=
+  (rfl)
+
+@[simp]
+lemma opEquiv_invHomId_simplex (I : e.InvStruct) :
+    (opEquiv I).invHomId.simplex = X.opObjEquiv.symm I.homInvId.simplex :=
+  (rfl)
+
+@[simp]
+lemma opEquiv_symm_homInvId_simplex (I : (Edge.opEquiv e).InvStruct) :
+    (opEquiv.symm I).homInvId.simplex = X.opObjEquiv I.invHomId.simplex :=
+  (rfl)
+
+@[simp]
+lemma opEquiv_symm_invHomId_simplex (I : (Edge.opEquiv e).InvStruct) :
+    (opEquiv.symm I).invHomId.simplex = X.opObjEquiv I.homInvId.simplex :=
+  (rfl)
+
 end InvStruct
 
 end Edge

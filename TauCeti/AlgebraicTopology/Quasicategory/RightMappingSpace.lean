@@ -652,6 +652,16 @@ theorem uliftIso_inv_app_coe {m : SimplexCategoryᵒᵖ}
       (joinVertex.op ⋙ uliftFunctor.{v, u}.obj X).obj m) = ULift.up s.down.val :=
   (rfl)
 
+variable (x y) in
+/-- `uliftIso.hom` is natural in the ambient simplicial set. -/
+@[reassoc]
+theorem map_comp_uliftIso_hom {Y : SSet.{u}} (f : X ⟶ Y) :
+    map (ULift.up x) (ULift.up y) (uliftFunctor.{v, u}.map f) ≫
+        (uliftIso.{u, v} (f.app (op ⦋0⦌) x) (f.app (op ⦋0⦌) y)).hom =
+      (uliftIso.{u, v} x y).hom ≫ uliftFunctor.{v, u}.map (map x y f) := by
+  ext m s
+  rfl
+
 end ulift
 
 end rightMappingSpace

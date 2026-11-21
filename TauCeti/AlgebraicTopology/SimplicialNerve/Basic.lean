@@ -179,6 +179,7 @@ lemma map_apply {m n : SimplexCategoryᵒᵖ} (f : m ⟶ n) (G : (SimplicialNerv
   (rfl)
 
 /-- Object projection of restriction in `SimplicialNerve C`. -/
+@[simp]
 lemma map_apply_obj {m n : SimplexCategoryᵒᵖ} (f : m ⟶ n) (G : (SimplicialNerve C).obj m)
     (i : SimplicialThickening (ULift.{v} (Fin (n.unop.len + 1)))) :
     ((SimplicialNerve C).map f G).obj i = G.obj ⟨⟨f.unop i.as.down⟩⟩ :=
