@@ -103,20 +103,13 @@ theorem linearIndependent_tmul_D {k A : Type*} [CommRing k] [CommRing A] [Algebr
     rw [ResidueField.algebraMap_eq]
     exact residue_surjective
   have hinj := kerCotangentToTensor_injective_of_formallySmooth (R := k) (P := A) (S := κ) hsurj
-  have htker (j : Fin r) : t j ∈ RingHom.ker (algebraMap A κ) :=
-    hker.symm ▸ ht ▸ Ideal.subset_span ⟨j, rfl⟩
-  rw [Fintype.linearIndependent_iff]
-  intro c hc i
-  choose c' hc' using fun j ↦ hsurj (c j)
-  have h0 : kerCotangentToTensor k A κ
-      ((RingHom.ker (algebraMap A κ)).toCotangent (∑ j, c' j • ⟨t j, htker j⟩)) = 0 := by
-    rw [← hc]
-    simp only [map_sum, map_smul, kerCotangentToTensor_toCotangent, ← hc']
-    refine Finset.sum_congr rfl fun j _ ↦ ?_
-    rw [← algebraMap_smul κ (c' j), TensorProduct.smul_tmul']
-  have hmem := (Ideal.toCotangent_eq_zero _ _).mp (hinj (h0.trans (map_zero _).symm))
-  simp only [Submodule.coe_sum, Submodule.coe_smul, smul_eq_mul, hker] at hmem
-  rw [← hc', ← RingHom.mem_ker, hker]
-  exact TauCeti.IsLocalRing.mem_maximalIdeal_of_sum_mul_mem_sq ht hr hmem i
+  let e := Ideal.Cotangent.equivOfEq (maximalIdeal A) (RingHom.ker (algebraMap A κ)) hker.symm
+  let φ : (maximalIdeal A).Cotangent →ₗ[κ] κ ⊗[A] Ω[A⁄k] :=
+    (kerCotangentToTensor k A κ ∘ₗ e.toLinearMap).extendScalarsOfSurjective hsurj
+  have hli := (TauCeti.IsLocalRing.linearIndependent_toCotangent ht hr).map' φ
+    (LinearMap.ker_eq_bot.mpr (hinj.comp e.injective))
+  convert hli using 1
+  ext j
+  simp [φ, e, LinearMap.extendScalarsOfSurjective_apply, Ideal.Cotangent.equivOfEq]
 
 end KaehlerDifferential

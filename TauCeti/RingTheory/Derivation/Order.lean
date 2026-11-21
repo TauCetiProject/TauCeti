@@ -156,10 +156,10 @@ private theorem pderiv_map_residue_eq_zero {k R A : Type*} [Field k] [PerfectFie
     (Ideal.mul_unit_mem_iff_mem _ (IsLocalization.map_units A s)).mp hmul_mem
   rw [pderiv_map]
   refine MvPolynomial.ext _ _ fun e ↦ ?_
-  rw [coeff_map]
-  change residue A ((pderiv i F).coeff e) = 0
-  rw [residue_eq_zero_iff]
-  exact hofList ▸ hreg.coeff_mem_of_eval_mem_pow_succ hF.pderiv (hofList.symm ▸ hp_eval) e
+  rw [coeff_map,
+    (residue_eq_zero_iff _).mpr (hofList ▸
+      hreg.coeff_mem_of_eval_mem_pow_succ hF.pderiv (hofList.symm ▸ hp_eval) e)]
+  rfl
 
 /-- In a regular local localization `A` of `R` with `Ω[R⁄k]` finite projective over a
 characteristic-zero field `k`, if `y ∈ 𝔪 ^ (n + 1)` has `D_loc y ∈ 𝔪 ^ (n + 1)` for every global

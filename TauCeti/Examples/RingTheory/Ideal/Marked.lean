@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.DualNumber
 public import TauCeti.RingTheory.MarkedIdeal.Basic
 import Mathlib.RingTheory.Nilpotent.Lemmas
+import TauCeti.Algebra.DualNumber.Basic
 
 /-!
 # Examples of affine ideal order and marked ideals
@@ -62,11 +63,6 @@ section DualNumbers
 
 variable {k : Type*} [Field k]
 
-private theorem eps_ne_zero : (DualNumber.eps : DualNumber k) ≠ 0 := by
-  intro h
-  have : (1 : k) = 0 := by simpa using congrArg TrivSqZeroExt.snd h
-  exact one_ne_zero this
-
 private theorem maximalIdeal_sq_eq_bot : maximalIdeal (DualNumber k) ^ 2 = ⊥ := by
   rw [DualNumber.maximalIdeal_eq_span_singleton_eps, Ideal.span_singleton_pow, sq,
     DualNumber.eps_mul_eps, Ideal.span_singleton_zero]
@@ -82,7 +78,7 @@ theorem localOrder_maximalIdeal :
     rw [Ideal.natCast_le_localOrder_iff, maximalIdeal_sq_eq_bot,
       DualNumber.maximalIdeal_eq_span_singleton_eps, Ideal.span_singleton_le_iff_mem,
       Ideal.mem_bot] at h2
-    exact eps_ne_zero h2
+    exact DualNumber.eps_ne_zero h2
   · rw [← Nat.cast_one, Ideal.natCast_le_localOrder_iff, _root_.pow_one]
 
 -- On `k[ε] / (ε²)`, `𝔪` has local order `1` while `𝔪²` has local order `⊤`.

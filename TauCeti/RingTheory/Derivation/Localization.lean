@@ -8,9 +8,7 @@ module
 public import Mathlib.RingTheory.Etale.Kaehler
 public import Mathlib.RingTheory.Localization.Module
 public import TauCeti.RingTheory.Derivation.Ideal
-import Mathlib.LinearAlgebra.StdBasis
-import Mathlib.RingTheory.Finiteness.Projective
-import Mathlib.RingTheory.Localization.Integer
+import Mathlib.Algebra.Module.FinitePresentation
 
 /-!
 # Derivations of a localization
@@ -28,17 +26,16 @@ derivation of `A` extends to a `T`-linear map `Ω[T⁄R] → N`.
 
 Conversely, when `Ω[R⁄k]` is finitely generated and projective over `R`, any `k`-derivation `D` of
 a localization `A` of `R` at `S` differs from the localization of a global `k`-derivation `δ` of
-`R` by an element `s ∈ S`: clearing the denominators of the values on a finite generating set
-produces an `R`-linear map `Ω[R⁄k] →ₗ[R] R` matching `s • D` on `R`, and uniqueness on
-localizations (`IsLocalization.eq_of_leibniz`) identifies the two derivations on `A`. Consequently,
-taking derivation ideals commutes with localization (`Ideal.map_derivationIdeal`).
+`R` by an element `s ∈ S`: lifting `Ω[R⁄k] →ₗ[R] A` via
+`Module.FinitePresentation.exists_lift_of_isLocalizedModule` produces an `R`-linear map
+`Ω[R⁄k] →ₗ[R] R` matching `s • D` on `R`, and uniqueness on localizations
+(`IsLocalization.eq_of_leibniz`) identifies the two derivations on `A`. Consequently, taking
+derivation ideals commutes with localization (`Ideal.map_derivationIdeal`).
 
 ## Main declarations
 
 * `IsLocalization.eq_of_leibniz`: two maps `T → N` satisfying the Leibniz rule and agreeing on
   the image of `A` are equal;
-* `IsLocalization.exists_linearMap_mul_eq`: clearing denominators for an `R`-linear map from a
-  finitely generated projective `R`-module to a localization `A`;
 * `Derivation.extendOfIsLocalization`: the extension of a derivation of `A` to `T`, with
   `Derivation.extendOfIsLocalization_algebraMap` stating that it extends;
 * `Derivation.exists_extendOfIsLocalization_eq_smul`: every derivation of a localization `A` of
@@ -70,33 +67,6 @@ theorem IsLocalization.eq_of_leibniz {A T N : Type*} [CommSemiring A] [CommSemir
       t • δ₂ (algebraMap A T s) + algebraMap A T s • δ₂ t := by
     rw [← h₁, ← h₂, hs, h]
   exact add_left_cancel (by simpa only [h] using hm)
-
-/-- Given an `R`-linear map `f : M →ₗ[R] A` from a finitely generated projective `R`-module `M`
-to a localization `A` of `R` at `S`, there exist `s ∈ S` and `g : M →ₗ[R] R` such that
-`algebraMap R A (g m) = algebraMap R A s * f m` for all `m : M`. -/
-theorem IsLocalization.exists_linearMap_mul_eq {R A M : Type*} [CommSemiring R] [CommSemiring A]
-    [Algebra R A] [AddCommMonoid M] [Module R M] [Module.Projective R M] [Module.Finite R M]
-    (S : Submonoid R) [IsLocalization S A] (f : M →ₗ[R] A) :
-    ∃ (s : S) (g : M →ₗ[R] R), ∀ m : M, algebraMap R A (g m) = algebraMap R A s * f m := by
-  classical
-  obtain ⟨n, q, σ, -, -, hqσ⟩ := Module.Finite.exists_comp_eq_id_of_projective R M
-  obtain ⟨s, hs⟩ :=
-    IsLocalization.exist_integer_multiples_of_finite S (fun j : Fin n ↦ f (q (Pi.single j 1)))
-  choose b hb using hs
-  let h₀ : (Fin n → R) →ₗ[R] R := Module.piEquiv (Fin n) R R b
-  have hlin : (Algebra.linearMap R A).comp h₀ =
-      algebraMap R A s • (f.comp q) := by
-    refine (Pi.basisFun R (Fin n)).ext fun j ↦ ?_
-    simp only [LinearMap.comp_apply, Algebra.linearMap_apply, LinearMap.smul_apply, smul_eq_mul]
-    have hj : h₀ (Pi.basisFun R (Fin n) j) = b j := (Pi.basisFun R (Fin n)).constr_basis R b j
-    rw [hj, Pi.basisFun_apply, hb j, Algebra.smul_def]
-  refine ⟨s, h₀ ∘ₗ σ, fun m ↦ ?_⟩
-  have hmv := LinearMap.congr_fun hlin (σ m)
-  simp only [LinearMap.comp_apply, Algebra.linearMap_apply, LinearMap.smul_apply, smul_eq_mul]
-    at hmv
-  have hqσm : q (σ m) = m := LinearMap.congr_fun hqσ m
-  rw [hqσm] at hmv
-  exact hmv
 
 namespace Derivation
 
@@ -152,9 +122,11 @@ theorem exists_extendOfIsLocalization_eq_smul {k R A : Type*} [CommRing k] [Comm
     (S : Submonoid R) [IsLocalization S A] (D : Derivation k A A) :
     ∃ (s : S) (δ : Derivation k R R),
       ((Algebra.linearMap R A).compDer δ).extendOfIsLocalization S = algebraMap R A s • D := by
+  have : Module.FinitePresentation R Ω[R⁄k] := Module.finitePresentation_of_projective R Ω[R⁄k]
   let f : Ω[R⁄k] →ₗ[R] A :=
     D.liftKaehlerDifferential.restrictScalars R ∘ₗ KaehlerDifferential.map k k R A
-  obtain ⟨s, g, hg⟩ := IsLocalization.exists_linearMap_mul_eq S f
+  obtain ⟨g, s, hg⟩ :=
+    Module.FinitePresentation.exists_lift_of_isLocalizedModule S (Algebra.linearMap R A) f
   let δ : Derivation k R R := g.compDer (KaehlerDifferential.D k R)
   refine ⟨s, δ, Derivation.ext fun a ↦ congrFun (IsLocalization.eq_of_leibniz S
     (δ₁ := ((Algebra.linearMap R A).compDer δ).extendOfIsLocalization S)
@@ -165,8 +137,10 @@ theorem exists_extendOfIsLocalization_eq_smul {k R A : Type*} [CommRing k] [Comm
   simp only [extendOfIsLocalization_algebraMap, coe_comp, LinearMap.comp_apply,
     FunLike.coe_smul, Pi.smul_apply, smul_eq_mul]
   calc
-    algebraMap R A (δ r) = algebraMap R A (g (KaehlerDifferential.D k R r)) := rfl
-    _ = algebraMap R A s * f (KaehlerDifferential.D k R r) := hg _
+    algebraMap R A (δ r) = ((Algebra.linearMap R A).comp g) (KaehlerDifferential.D k R r) := rfl
+    _ = algebraMap R A s * f (KaehlerDifferential.D k R r) := by
+      simpa [Submonoid.smul_def, Algebra.smul_def] using
+        LinearMap.congr_fun hg (KaehlerDifferential.D k R r)
     _ = algebraMap R A s * D (algebraMap R A r) := by
       dsimp only [f]
       rw [LinearMap.comp_apply, KaehlerDifferential.map_D]
@@ -198,24 +172,18 @@ theorem map_derivationIdeal (k : Type*) {R A : Type*} [CommRing k] [CommRing R] 
     [Module.Projective R Ω[R⁄k]] [Module.Finite R Ω[R⁄k]]
     (S : Submonoid R) [IsLocalization S A] (I : Ideal R) :
     (I.derivationIdeal k).map (algebraMap R A) = (I.map (algebraMap R A)).derivationIdeal k := by
-  refine le_antisymm (map_derivationIdeal_le k S I) ((Ideal.derivationIdeal_le_iff k).mpr
-    ⟨Ideal.map_mono (Ideal.le_derivationIdeal k I), fun D x hx ↦ ?_⟩)
-  obtain ⟨s, δ, hδ⟩ := Derivation.exists_extendOfIsLocalization_eq_smul S D
-  let D' : Derivation k A A := ((Algebra.linearMap R A).compDer δ).extendOfIsLocalization S
-  have hmap : D' x ∈ (I.derivationIdeal k).map (algebraMap R A) := by
-    change x ∈ Ideal.span (algebraMap R A '' I) at hx
-    induction hx using Submodule.span_induction with
-    | mem y hy =>
-      obtain ⟨r, hr, rfl⟩ := hy
-      simpa [D'] using Ideal.mem_map_of_mem _ (Ideal.apply_mem_derivationIdeal k δ hr)
-    | zero => simp
-    | add y z _ _ hy hz => simpa using Ideal.add_mem _ hy hz
-    | smul a y hy' hy =>
-      rw [smul_eq_mul, D'.leibniz, smul_eq_mul, smul_eq_mul]
-      exact Ideal.add_mem _ (Ideal.mul_mem_left _ _ hy)
-        (Ideal.mul_mem_right _ _ (Ideal.map_mono (Ideal.le_derivationIdeal k I) hy'))
-  have hD' : D' x = algebraMap R A s * D x := congrArg (fun d : Derivation k A A ↦ d x) hδ
-  rw [hD', mul_comm] at hmap
-  exact (Ideal.mul_unit_mem_iff_mem _ (IsLocalization.map_units A s)).mp hmap
+  refine le_antisymm (map_derivationIdeal_le k S I) ?_
+  conv_lhs => rw [← Ideal.span_eq I, Ideal.map_span, Ideal.derivationIdeal_span]
+  refine Ideal.span_le.mpr (Set.union_subset ?_ ?_)
+  · exact Set.image_subset_iff.mpr fun r hr ↦
+      Ideal.mem_map_of_mem _ (Ideal.le_derivationIdeal k I hr)
+  · rintro _ ⟨_, ⟨D, rfl⟩, _, ⟨r, hr, rfl⟩, rfl⟩
+    obtain ⟨s, δ, hδ⟩ := Derivation.exists_extendOfIsLocalization_eq_smul S D
+    have hD : algebraMap R A s * D (algebraMap R A r) = algebraMap R A (δ r) := by
+      simpa [Submonoid.smul_def, Algebra.smul_def] using
+        (congrArg (fun d : Derivation k A A ↦ d (algebraMap R A r)) hδ).symm
+    refine (Ideal.mul_unit_mem_iff_mem _ (IsLocalization.map_units A s)).mp ?_
+    rw [mul_comm, hD]
+    exact Ideal.mem_map_of_mem _ (Ideal.apply_mem_derivationIdeal k δ hr)
 
 end Ideal
