@@ -74,6 +74,7 @@ instance isModification_fromNormalization_fromSpecStalk_genericPoint
     obtain ⟨y, hy⟩ : (Y.basicOpen s : Set Y).Nonempty :=
       (TopologicalSpace.Opens.ne_bot_iff_nonempty _).mp ((basicOpen_eq_bot_iff _).not.mpr hs)
     refine ⟨Y.basicOpen s, (Y.basicOpen s).isOpen.dense ⟨y, hy⟩,
-      (ν ⁻¹ᵁ Y.basicOpen s).isOpen.dense ⟨_, ((asIso (ν ∣_ Y.basicOpen s)).inv ⟨y, hy⟩).2⟩, hiso⟩
+      (ν ⁻¹ᵁ Y.basicOpen s).isOpen.dense ⟨_, ((asIso (ν ∣_ Y.basicOpen s)).inv ⟨y, hy⟩).property⟩,
+          hiso⟩
 
 end TauCeti.AlgebraicGeometry

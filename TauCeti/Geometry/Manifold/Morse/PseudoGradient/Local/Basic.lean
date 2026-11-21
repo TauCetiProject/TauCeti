@@ -98,6 +98,12 @@ theorem linearFlow_smul (t a : ℝ) (z : Fin (Module.finrank ℝ E) → ℝ) :
   simp only [linearFlow_apply, Pi.smul_apply, smul_eq_mul]
   ring
 
+/-- The linear flow fixes the origin. -/
+@[simp]
+theorem linearFlow_zero_right (t : ℝ) : φ.linearFlow t 0 = 0 := by
+  funext i
+  simp [linearFlow_apply]
+
 /-- The linear flow of the negated Morse chart runs the linear flow backwards. -/
 theorem neg_linearFlow (h : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x) (t : ℝ)
     (z : Fin (Module.finrank ℝ E) → ℝ) : (φ.neg h).linearFlow t z = φ.linearFlow (-t) z := by
@@ -130,6 +136,16 @@ theorem linearFlow_of_weight_eq_one {i : Fin (Module.finrank ℝ E)} (hi : φ.we
 theorem linearFlow_of_weight_eq_neg_one {i : Fin (Module.finrank ℝ E)} (hi : φ.weight i = -1)
     (t : ℝ) (z : Fin (Module.finrank ℝ E) → ℝ) : φ.linearFlow t z i = Real.exp t * z i := by
   rw [linearFlow_apply, hi, neg_one_mul, neg_neg]
+
+/-- The linear flow multiplies the coordinate vector of a coordinate of weight `1` by `e^{-t}`. -/
+theorem linearFlow_single_of_weight_eq_one {j : Fin (Module.finrank ℝ E)} (hj : φ.weight j = 1)
+    (t : ℝ) : φ.linearFlow t (Pi.single j 1) = Real.exp (-t) • Pi.single j 1 := by
+  funext i
+  rw [linearFlow_apply, Pi.smul_apply, smul_eq_mul]
+  by_cases hi : i = j
+  · subst hi
+    rw [hj, one_mul]
+  · simp [hi]
 
 /-- For times `t > -log 2`, a coordinate of positive weight grows at most by a factor `2`. -/
 theorem norm_linearFlow_lt_of_weight_eq_one {r : ℝ} {z : Fin (Module.finrank ℝ E) → ℝ}
@@ -180,7 +196,7 @@ theorem sum_weight_mul_linearFlow_sq_le {z : Fin (Module.finrank ℝ E) → ℝ}
         nlinarith [sq_nonneg (φ.linearFlow T z i), sq_nonneg ε]
       · rw [hi, one_mul, φ.linearFlow_of_weight_eq_one hi, mul_pow, add_zero]
         have hexp1 : Real.exp (-T) ^ 2 ≤ 1 := by
-          rw [← Real.exp_nat_mul, Real.exp_le_one_iff]; push_cast; linarith
+          rw [← Real.exp_natCast_mul, Real.exp_le_one_iff]; push_cast; linarith
         have hzi2 : z i ^ 2 ≤ ε ^ 2 := by
           rw [← sq_abs]; exact pow_le_pow_left₀ (abs_nonneg _) (hz i) 2
         nlinarith [sq_nonneg (z i), sq_nonneg (Real.exp (-T))]

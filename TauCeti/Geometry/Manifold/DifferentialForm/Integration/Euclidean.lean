@@ -84,7 +84,7 @@ theorem integralTopForm_eq_setIntegral_mpullback (o : Manifold.Orientation I N (
   classical
   let std := Manifold.Orientation.euclideanSpace p
   have hgd (x : U) : MDifferentiableAt 𝓘(ℝ, EuclideanSpace ℝ (Fin p)) I g x :=
-    mdifferentiableAt_of_isInvertible_mfderiv (ho x x.2).isInvertible_mfderiv
+    mdifferentiableAt_of_isInvertible_mfderiv (ho x x.property).isInvertible_mfderiv
   -- The pullback of `φ` along `g`, cut off outside `U`, is a top form on `ℝᵖ` which vanishes
   -- outside `K`.
   let ψ : RoughForm 𝓘(ℝ, EuclideanSpace ℝ (Fin p)) (EuclideanSpace ℝ (Fin p)) ℝ p := fun y ↦
@@ -108,9 +108,9 @@ theorem integralTopForm_eq_setIntegral_mpullback (o : Manifold.Orientation I N (
       ((↑) : U → EuclideanSpace ℝ (Fin p)) ψ =
       mpullback 𝓘(ℝ, EuclideanSpace ℝ (Fin p)) I (g ∘ ((↑) : U → EuclideanSpace ℝ (Fin p))) φ := by
     funext x
-    rw [mpullback_comp_at (contMDiff_subtype_val.mdifferentiableAt one_ne_zero) (hgd x)]
+    rw [mpullback_comp_at (contMDiff_subtypeVal.mdifferentiableAt one_ne_zero) (hgd x)]
     ext v
-    simp [ψ, x.2]
+    simp [ψ, x.property]
   have hrange : _root_.tsupport (α := E [⋀^Fin p]→L[ℝ] ℝ) φ ⊆
       range (g ∘ ((↑) : U → EuclideanSpace ℝ (Fin p))) := by
     rintro _ hy
@@ -118,7 +118,7 @@ theorem integralTopForm_eq_setIntegral_mpullback (o : Manifold.Orientation I N (
     exact ⟨⟨z, hKU hz⟩, rfl⟩
   have hoU (x : U) : Manifold.Orientation.IsOrientationPreservingAt (std.restrict U) o
       (g ∘ ((↑) : U → EuclideanSpace ℝ (Fin p))) x :=
-    (ho x x.2).comp (std.isOrientationPreservingAt_restrict U x)
+    (ho x x.property).comp (std.isOrientationPreservingAt_restrict U x)
   have hψi : IntegrableTopForm ψ := by
     rwa [← U.integrableTopForm_mpullback_subtypeVal_iff hψU, hres,
       hg.integrableTopForm_mpullback_iff (fun x ↦ (hoU x).isInvertible_mfderiv)

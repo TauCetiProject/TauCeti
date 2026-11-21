@@ -26,6 +26,8 @@ rectangles.
 * `Complex.mem_Ioo_reProdIm_of_mem_rectangle`: a point of the rectangle off its frontier lies in
   the open rectangle.
 * `Complex.isClosed_rectangle`, `Complex.isCompact_rectangle`, `Complex.convex_rectangle`.
+* `Complex.dist_le_of_mem_rectangle`: two points of `Rectangle z w` are at distance at most
+  `dist z w`.
 * `Complex.smul_integral_lineMap_of_im_eq`, `Complex.smul_integral_lineMap_of_re_eq`: the contour
   integral along a horizontal or vertical segment, parametrized over `[0, 1]`, as a real interval
   integral over the real or imaginary parts.
@@ -110,6 +112,16 @@ theorem isCompact_rectangle (z w : ℂ) : IsCompact (Rectangle z w) :=
 theorem convex_rectangle (z w : ℂ) : Convex ℝ (Rectangle z w) := by
   rw [rectangle_eq_convexHull]
   exact convex_convexHull ℝ _
+
+/-- The distance between any two points of a closed rectangle is at most the distance between its
+opposite corners. -/
+theorem dist_le_of_mem_rectangle {u v : ℂ} (hu : u ∈ Rectangle z w) (hv : v ∈ Rectangle z w) :
+    dist u v ≤ dist z w := by
+  rw [dist_eq_re_im, dist_eq_re_im]
+  have hre := Real.dist_le_of_mem_uIcc hu.1 hv.1
+  have him := Real.dist_le_of_mem_uIcc hu.2 hv.2
+  rw [Real.dist_eq, Real.dist_eq] at hre him
+  exact Real.sqrt_le_sqrt (add_le_add (sq_le_sq.2 hre) (sq_le_sq.2 him))
 
 section Integral
 

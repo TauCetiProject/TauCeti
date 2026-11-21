@@ -143,6 +143,14 @@ theorem quotientPointsSubgroup_sup (H : _root_.CommHopfAlgCat.{v} R)
   obtain ⟨y, hy, z, hz, rfl⟩ := HopfIdeal.mem_sup.mp hx
   rw [map_add, hI y hy, hJ z hz, add_zero]
 
+/-- On any commutative `R`-algebra `A`, the group homomorphism underlying `quotientPointsHom` is
+`BialgHom.mapDomain (mkQuotient H I).hom`. -/
+theorem quotientPointsHom_hom {H : _root_.CommHopfAlgCat.{v} R} (I : HopfIdeal R H)
+    (A : CommAlgCat.{w} R) :
+    (quotientPointsHom H I A).hom =
+      BialgHom.mapDomain (A := A) (_root_.CommHopfAlgCat.mkQuotient H I).hom := by
+  rw [quotientPointsHom, _root_.CommHopfAlgCat.Hom.mapPointsFunctor, GrpCat.hom_ofHom]
+
 /-- The point subgroup cut out by an indexed supremum of Hopf ideals is the intersection of the
 point subgroups cut out by the individual ideals. -/
 theorem _root_.CommHopfAlgCat.quotientPointsSubgroup_iSup (H : _root_.CommHopfAlgCat.{v} R)

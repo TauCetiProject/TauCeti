@@ -122,15 +122,6 @@ theorem isCompletelyContinuous_eval [Module.Finite R E] :
   exact isCompletelyContinuous_transition.clm_comp_of_bound _ (C := 1) fun c ↦ by
     simpa using norm_eval_le R c
 
-/-- Evaluation at `0` of the constant function `e` on the disc of `0`, whose coefficient vector
-is `single (0, 0) e`, is `e`. -/
-private theorem eval_single_zero (e : E) :
-    eval R (single ((0 : ZMod (p ^ h)), 0) e) 0 = e := by
-  have h0 := eval_natCast_val_add_mul (p := p) R (single ((0 : ZMod (p ^ h)), 0) e) 0 0
-  simp only [ZMod.val_zero, Nat.cast_zero, mul_zero, add_zero] at h0
-  rw [h0, tsum_eq_single 0 fun n hn ↦ by simp [zero_pow hn]]
-  simp
-
 /-- Evaluation `LA_h(E) → C(ℤ_p, E)` is completely continuous exactly when `E` is a finitely
 generated `R`-module. -/
 theorem isCompletelyContinuous_eval_iff :
@@ -140,7 +131,7 @@ theorem isCompletelyContinuous_eval_iff :
   have hid : (ContinuousMap.evalCLM R 0).comp
       ((eval (p := p) (h := h) R).comp (singleCLM R (0, 0))) = ContinuousLinearMap.id R E := by
     ext e
-    simpa using eval_single_zero (p := p) (R := R) e
+    simp
   rw [← ContinuousLinearMap.isCompletelyContinuous_id_iff, ← hid]
   exact (hT.comp_clm_of_bound _ (C := 1) fun e ↦ by simp).clm_comp_of_bound _ (C := 1) fun f ↦ by
     simpa using f.norm_coe_le_norm 0

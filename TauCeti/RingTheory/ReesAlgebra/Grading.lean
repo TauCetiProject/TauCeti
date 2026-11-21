@@ -162,7 +162,7 @@ noncomputable def gradeZeroEquiv : R ≃+* grade I 0 :=
   RingEquiv.ofBijective (algebraMap R (grade I 0)) <| by
     refine ⟨fun r s h ↦ ?_, fun f ↦ ?_⟩
     · simpa using congr_arg (fun x : grade I 0 ↦ ((x : reesAlgebra I) : R[X]).coeff 0) h
-    · obtain ⟨r, -, hr⟩ := mem_grade_iff.mp f.2
+    · obtain ⟨r, -, hr⟩ := mem_grade_iff.mp f.property
       refine ⟨r, Subtype.ext (Subtype.ext ?_)⟩
       rw [← hr, monomial_zero_left, SetLike.GradeZero.coe_algebraMap, Subalgebra.coe_algebraMap,
         algebraMap_eq]
@@ -181,7 +181,7 @@ theorem coe_gradeZeroEquiv (r : R) :
 theorem gradeZeroEquiv_symm_apply (f : grade I 0) :
     (gradeZeroEquiv I).symm f = ((f : reesAlgebra I) : R[X]).coeff 0 := by
   rw [RingEquiv.symm_apply_eq]
-  obtain ⟨r, -, hr⟩ := mem_grade_iff.mp f.2
+  obtain ⟨r, -, hr⟩ := mem_grade_iff.mp f.property
   ext1; ext1
   rw [coe_gradeZeroEquiv, ← hr, monomial_zero_left, coeff_C_zero]
 
@@ -262,7 +262,7 @@ theorem irrelevant_eq_span_monomialDegreeOne {ι : Type*} {s : ι → R}
     refine Ideal.sum_mem _ fun n hn ↦ ?_
     obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 :=
       Nat.exists_eq_succ_of_ne_zero (by rintro rfl; exact mem_support_iff.mp hn h0)
-    exact monomial_succ_mem_span hs ((mem_reesAlgebra_iff I _).mp x.2 _)
+    exact monomial_succ_mem_span hs ((mem_reesAlgebra_iff I _).mp x.property _)
   · rintro _ ⟨i, rfl⟩
     rw [SetLike.mem_coe, HomogeneousIdeal.mem_iff, HomogeneousIdeal.mem_irrelevant_iff,
       GradedRing.proj_apply]

@@ -91,7 +91,7 @@ theorem exists_morseBott_partialDiffeomorph_normalBundle [SecondCountableTopolog
     ∃ Θ : PartialDiffeomorph (J.prod 𝓘(ℝ, P)) I (TotalSpace P (fun s ↦ i.NormalSpace s hn)) M k,
       (∀ s, zeroSection P (fun s ↦ i.NormalSpace s hn) s ∈ Θ.source) ∧
       (∀ s, Θ (zeroSection P (fun s ↦ i.NormalSpace s hn) s) = i s) ∧ Θ.target ⊆ O ∧
-      ∀ x ∈ Θ.source, f (Θ x) = f (i x.proj) + 2⁻¹ * h.normalHessian hn x.proj x.2 x.2 := by
+      ∀ x ∈ Θ.source, f (Θ x) = f (i x.proj) + 2⁻¹ * h.normalHessian hn x.proj x.snd x.snd := by
   let := i.normalSpaceFiberBundle hn hdim
   have hk2 : (k : ℕ∞ω) + 2 ≤ ∞ := by
     rw [← WithTop.coe_ofNat, ← WithTop.coe_add]
