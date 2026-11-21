@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Topology.Algebra.Module.Equiv.Prod
 public import TauCeti.Analysis.Normed.Module.TensorProduct.FiniteDimension
+public import TauCeti.LinearAlgebra.Determinant.Semilinear
 public import TauCeti.LinearAlgebra.Determinant.TensorProduct
 
 /-!
@@ -28,6 +29,8 @@ loop of determinants.
   `ContinuousLinearEquiv.normalizedDet_symm`: the normalized determinant is multiplicative.
 * `ContinuousLinearEquiv.normalizedDet_trans_trans_symm`: it is invariant under conjugation by an
   isomorphism `E' ≃ E`.
+* `ContinuousLinearEquiv.normalizedDet_conjₛₗ`: conjugating by a conjugate-linear isomorphism
+  inverts the normalized determinant.
 * `ContinuousLinearEquiv.normalizedDet_prodCongr`: the normalized determinant of `A × B` is the
   product of those of `A` and `B`.
 * `ContinuousLinearEquiv.normalizedDet_eq_pow_mul_pow_of_apply_tmul`: the normalized determinant
@@ -101,6 +104,20 @@ theorem normalizedDet_trans_trans_symm {E' : Type*} [NormedAddCommGroup E'] [Nor
     LinearMap.det_conj (A.toLinearEquiv : E →ₗ[ℂ] E) L.symm.toLinearEquiv
   ext1
   simp only [coe_normalizedDet, hdet]
+
+/-- **Conjugation by a conjugate-linear isomorphism.** Transporting `A` along a conjugate-linear
+isomorphism `K : E ≃ E'` conjugates its determinant, so it inverts its normalized determinant. -/
+@[simp]
+theorem normalizedDet_conjₛₗ {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℂ E']
+    (A : E ≃L[ℂ] E) (K : E ≃L⋆[ℂ] E') :
+    ((K.symm.trans A).trans K : E' ≃L[ℂ] E').normalizedDet = A.normalizedDet⁻¹ := by
+  have h : (((K.symm.trans A).trans K : E' ≃L[ℂ] E').toLinearEquiv : E' →ₗ[ℂ] E') =
+      (K.toLinearEquiv : E →ₗ⋆[ℂ] E') ∘ₛₗ (A.toLinearEquiv : E →ₗ[ℂ] E) ∘ₛₗ
+        (K.toLinearEquiv.symm : E' →ₗ⋆[ℂ] E) :=
+    LinearMap.ext fun _ ↦ rfl
+  ext1
+  rw [coe_normalizedDet, h, LinearMap.det_conjₛₗ, Circle.coe_inv_eq_conj]
+  simp [coe_normalizedDet, map_div₀]
 
 /-- The normalized determinant of a product of automorphisms is the product of their normalized
 determinants. -/
