@@ -153,9 +153,9 @@ namespace SpecialLinearGroup
 
 /-- The rotation `!![cos θ, sin θ; -sin θ, cos θ]`, an element of `SL(2, ℝ)`. -/
 def rotation (θ : ℝ) : SL(2, ℝ) :=
-  ⟨!![cos θ, sin θ; -sin θ, cos θ], by
+  .mk !![cos θ, sin θ; -sin θ, cos θ] (by
     rw [det_fin_two_of]
-    linear_combination cos_sq_add_sin_sq θ⟩
+    linear_combination cos_sq_add_sin_sq θ)
 
 /-- The entries of `rotation θ`. -/
 @[simp]
@@ -213,10 +213,10 @@ theorem trace_rotation_mul (θ : ℝ) (A : Matrix (Fin 2) (Fin 2) ℝ) :
 /-- The matrix `!![cos θ, exp t * sin θ; -(exp (-t) * sin θ), cos θ]` of `SL(2, ℝ)`: the rotation
 `rotation θ = !![cos θ, sin θ; -sin θ, cos θ]` conjugated by `diag (exp (t / 2), exp (-t / 2))`. -/
 def conjRotation (θ t : ℝ) : SL(2, ℝ) :=
-  ⟨!![cos θ, exp t * sin θ; -(exp (-t) * sin θ), cos θ], by
+  .mk !![cos θ, exp t * sin θ; -(exp (-t) * sin θ), cos θ] (by
     rw [det_fin_two_of, exp_neg]
     field_simp
-    linear_combination cos_sq_add_sin_sq θ⟩
+    linear_combination cos_sq_add_sin_sq θ)
 
 /-- The entries of `conjRotation θ t`. -/
 @[simp]
