@@ -61,21 +61,9 @@ theorem HasHaagerupProperty.finite_of_relativePropertyT (hΓ : HasHaagerupProper
   set π := hφ.gnsRepresentation
   set ξ := hφ.gnsVector 1
   -- The GNS vector at the identity is an `(F, δ)`-invariant unit vector.
-  have hξ : ‖ξ‖ = 1 := by
-    have h : ‖ξ‖ ^ 2 = 1 := by
-      rw [@norm_sq_eq_re_inner ℂ, hφ.inner_gnsVector, inv_mul_cancel, hφ1, RCLike.one_re]
-    exact (pow_eq_one_iff_of_nonneg (norm_nonneg ξ) two_ne_zero).mp h
-  have hξF : ∀ g ∈ F, ‖π g ξ - ξ‖ < δ := by
-    intro g hg
-    have hsq := hφ.norm_gnsVector_sub_sq 1 g
-    rw [inv_one, one_mul, hφ1, RCLike.one_re] at hsq
-    have hre : 1 - RCLike.re (φ g) < δ ^ 2 / 2 := by
-      have := hφF g hg
-      rw [← norm_neg, neg_sub] at this
-      linarith [RCLike.re_le_norm (1 - φ g), show RCLike.re (1 - φ g) = 1 - RCLike.re (φ g) by
-        simp]
-    rw [hφ.gnsRepresentation_gnsVector_one, norm_sub_rev]
-    exact (sq_lt_sq₀ (norm_nonneg _) hδ.le).mp (by linarith)
+  have hξ : ‖ξ‖ = 1 := hφ.norm_gnsVector_eq_one hφ1 1
+  have hξF : ∀ g ∈ F, ‖π g ξ - ξ‖ < δ := fun g hg ↦
+    hφ.norm_gnsRepresentation_gnsVector_one_sub_lt hφ1 hδ (hφF g hg)
   obtain ⟨v, hv, hvΛ⟩ := (Λ.isKazhdanPair_def F δ).mp hK hφ.gnsSpace π
     hφ.isUnitary_gnsRepresentation ⟨ξ, hξ, hξF⟩
   have hvΛ' (g : Γ) (hg : g ∈ Λ) : π g v = v := by
