@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Exp
-public import TauCeti.Analysis.SpecialFunctions.Choose
-public import TauCeti.NumberTheory.UnitEquation.Specialization
+public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import TauCeti.NumberTheory.UnitEquation.SubspaceCover
+
+import TauCeti.Analysis.SpecialFunctions.Choose
+import TauCeti.NumberTheory.UnitEquation.Specialization
 
 /-!
 # The explicit bound for nondegenerate solutions of unit equations
@@ -23,13 +25,14 @@ subspaces of `Qᵐ`.
 
 `TauCeti.encard_isNondegenerateSolution_le_of_subspaceCover` performs the combinatorial
 deduction for any cover bound `N`, producing the recursive bound
-`TauCeti.unitEquationNondegenerateBound N n r`. This file evaluates that recursion for the cover
-bound `exp ((5m)^(3m) (s + 1))` and shows that it stays below `exp ((6n)^(3n) (r + 1))`. Each step
-of the recursion, in `n` unknowns and rank `r`, multiplies the cover bound in `n` unknowns at
-rank `r + 1`, at most `2ⁿ` choices of the index set of a minimal vanishing subsum of the
-homogeneous linear relation supplied by a covering subspace, and two bounds in fewer unknowns at
-rank `r + 1`. The increase of the base from `5n` to `6n` absorbs these factors and the increase of
-the rank.
+`TauCeti.unitEquationNondegenerateBound N n r`. This file evaluates that recursion for a cover
+bound `N m s ≤ exp ((5m)^(3m) (s + 1))` and shows that it stays below
+`exp ((6n)^(3n) (r + 1))`. Each step of the recursion, in `n` unknowns and rank `r`, multiplies
+the cover bound in `n` unknowns at rank `r + 1` by a sum over the possible index sets `I` of a
+minimal vanishing subsum of the homogeneous linear relation supplied by a covering subspace. There
+are at most `2ⁿ` such index sets, and the summand for `I` is the product of the two bounds at rank
+`r + 1` in `|I| - 1` and `n - |I| + 1` unknowns. The increase of the base from `5n` to `6n` absorbs
+these factors and the increase of the rank.
 
 The subspace theorem enters as a hypothesis, `TauCeti.IsUnitEquationCoverBound` for the cover
 bound `⌊exp ((5m)^(3m) (s + 1))⌋₊`: this file does not prove it, and it fails in positive
@@ -114,14 +117,6 @@ private lemma two_mul_five_mul_pow_add_le_six_mul_pow (n : ℕ) :
   rw [hQ]
   linarith [hn]
 
-/-- The index sets of size at least two in `n + 2` unknowns number at most `exp (n + 2)`: the
-binomial tail bound `TauCeti.sum_range_choose_add_le_exp` at cutoff two. -/
-private lemma sum_choose_add_two_le_exp (n : ℕ) :
-    ∑ k : Fin (n + 1), (((n + 2).choose (k + 2) : ℕ) : ℝ) ≤ exp (n + 2 : ℕ) := by
-  rw [Fin.sum_univ_eq_sum_range (fun j ↦ (((n + 2).choose (j + 2) : ℕ) : ℝ)),
-    show n + 1 = n + 2 + 1 - 2 by omega]
-  exact sum_range_choose_add_le_exp (n + 2) 2
-
 /-- **The explicit Evertse–Schlickewei–Schmidt bound.** If the cover bound in `m` unknowns and
 rank `s` is at most `exp ((5m)^(3m) (s + 1))` whenever `2 ≤ m ≤ n` and `m + s ≤ n + r + 1`, a
 range containing all cases the recursion reaches, then the bound
@@ -157,7 +152,10 @@ theorem unitEquationNondegenerateBound_le_exp {N : ℕ → ℕ → ℕ} (n r : �
       (exp_pos _).le).trans_eq (by rw [← exp_add]; ring_nf)
   -- The index sets, of size at least two, of the minimal vanishing subsums of the homogeneous
   -- relation supplied by a covering subspace number at most `2^(n+2) ≤ exp (n + 2)`.
-  have hchoose := sum_choose_add_two_le_exp n
+  have hchoose : ∑ k : Fin (n + 1), (((n + 2).choose (k + 2) : ℕ) : ℝ) ≤ exp (n + 2 : ℕ) := by
+    have hrange : n + 2 + 1 - 2 = n + 1 := by omega
+    simpa only [Fin.sum_univ_eq_sum_range (fun j ↦ (((n + 2).choose (j + 2) : ℕ) : ℝ)), hrange]
+      using sum_range_choose_add_le_exp (n + 2) 2
   have hN' := hN (n + 2) (r + 1) (by omega) le_rfl (by omega)
   set A : ℝ := (5 * (n + 2 : ℕ) : ℝ) ^ (3 * (n + 2))
   have hA : 0 ≤ A := by positivity

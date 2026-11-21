@@ -157,7 +157,7 @@ theorem sum_range_choose_add_le_exp (n c : ℕ) :
         simp_rw [Finset.sum_Ico_eq_sum_range, add_comm c]
     _ ≤ ∑ j ∈ Finset.range (n + 1), (n.choose j : ℝ) :=
         Finset.sum_le_sum_of_subset_of_nonneg
-          (fun j hj ↦ by simp only [Finset.mem_Ico, Finset.mem_range] at hj ⊢; omega)
+          (by rw [Finset.range_eq_Ico]; exact Finset.Ico_subset_Ico_left (Nat.zero_le c))
           fun _ _ _ ↦ by positivity
     _ = 2 ^ n := by exact_mod_cast Nat.sum_range_choose n
     _ ≤ Real.exp 1 ^ n :=
