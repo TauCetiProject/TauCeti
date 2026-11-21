@@ -6,14 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Distribution.Distribution
+import Mathlib.Analysis.InnerProductSpace.PiL2
 
 /-!
 # Repeated distributional differentiation
 
 Iterating directional derivatives transfers them to the test function in reverse order with
-one minus sign per derivative. This evaluates repeated derivatives of distributions
-without unfolding the continuous transpose defining the derivative. The file also writes the
-Laplacian `laplacianCLM` as a sum of second iterated derivatives along an orthonormal basis.
+one minus sign per derivative, and the distributional Laplacian transfers directly to the test
+function with plus sign (`Distribution.laplacianCLM_apply_apply`). This evaluates repeated
+derivatives of distributions without unfolding the continuous transpose defining the derivative.
+The file also writes the Laplacian `laplacianCLM` as a sum of second iterated derivatives along an
+orthonormal basis.
 -/
 
 public section
@@ -22,6 +25,8 @@ open LineDeriv TopologicalSpace
 open scoped Distributions
 
 namespace Distribution
+
+section NormedSpace
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {Ω : Opens E}
   {F : Type*} [AddCommGroup F] [Module ℝ F] [TopologicalSpace F]
@@ -47,6 +52,23 @@ theorem iterate_lineDerivOp_apply_apply (T : 𝓓'(Ω, F)) (v : E) (n : ℕ) (φ
     ((lineDerivOp v)^[n] T) φ =
       (-1 : ℝ) ^ n • T ((lineDerivOp v)^[n] φ) := by
   simpa [Function.comp_def] using iteratedLineDerivOp_apply_apply T (fun _ : Fin n => v) φ
+
+end NormedSpace
+
+section InnerProductSpace
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  {Ω : Opens E} {F : Type*} [AddCommGroup F] [Module ℝ F] [TopologicalSpace F]
+  [IsTopologicalAddGroup F] [ContinuousSMul ℝ F]
+
+/-- The distributional Laplacian transfers directly to the test function: the two minus signs from
+repeated directional differentiation cancel. -/
+@[simp]
+theorem laplacianCLM_apply_apply (T : 𝓓'(Ω, F)) (φ : 𝓓(Ω, ℝ)) :
+    laplacianCLM ℝ E 𝓓'(Ω, F) T φ = T (laplacianCLM ℝ E 𝓓(Ω, ℝ) φ) := by
+  simp [laplacianCLM_eq_sum (stdOrthonormalBasis ℝ E)]
+
+end InnerProductSpace
 
 end Distribution
 

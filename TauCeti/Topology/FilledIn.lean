@@ -35,6 +35,8 @@ Filled compact exhaustions of open sets in proper real normed spaces are constru
 ## Main declarations
 
 * `TauCeti.IsFilledIn`: no connected component of `Ω \ K` is relatively compact in `Ω`.
+* `Homeomorph.isFilledIn_image`, `Homeomorph.isFilledIn_preimage`: invariance of
+  `TauCeti.IsFilledIn` under homeomorphisms.
 * `TauCeti.isFilledIn_iff_forall_mem_filledHull_sdiff_not_connectedComponentIn_subset`: the same
   condition through the bounded components of `Kᶜ`.
 * `TauCeti.isFilledIn_univ_iff`: a closed set is filled in the whole space exactly when it equals
@@ -61,7 +63,7 @@ namespace TauCeti
 
 section Topology
 
-variable {X : Type*} [TopologicalSpace X] {K Ω : Set X}
+variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] {K Ω : Set X}
 
 /-- A set `K` is **filled in** a set `Ω` if no connected component of `Ω \ K` is relatively compact
 in `Ω`: the closure of each such component is noncompact or leaves `Ω`. -/
@@ -177,6 +179,31 @@ theorem connectedComponentIn_sdiff_eq_of_closure_subset [LocallyConnectedSpace X
     isPreconnected_connectedComponentIn.subset_connectedComponentIn_of_inter_closure_subset
       hΩK (mem_connectedComponentIn hx.2) hx
       fun _ hy => ⟨hsub hy.2, connectedComponentIn_subset _ _ hy.1⟩
+
+private theorem _root_.Homeomorph.isFilledIn_image_of_isFilledIn (e : X ≃ₜ Y)
+    (h : IsFilledIn K Ω) : IsFilledIn (e '' K) (e '' Ω) := by
+  rw [isFilledIn_iff, ← image_sdiff e.injective]
+  rintro _ ⟨x, hx, rfl⟩ ⟨hcpt, hsub⟩
+  have hcl : closure (connectedComponentIn (e '' (Ω \ K)) (e x)) =
+      e '' closure (connectedComponentIn (Ω \ K) x) := by
+    rw [← e.image_connectedComponentIn hx, e.image_closure]
+  rw [hcl] at hcpt hsub
+  exact h x hx ⟨e.isCompact_image.mp hcpt, (image_subset_image_iff e.injective).mp hsub⟩
+
+/-- A homeomorphism preserves `TauCeti.IsFilledIn` on images. -/
+@[simp]
+theorem _root_.Homeomorph.isFilledIn_image (e : X ≃ₜ Y) :
+    IsFilledIn (e '' K) (e '' Ω) ↔ IsFilledIn K Ω :=
+  ⟨fun h ↦ by
+    rw [← e.symm_image_image K, ← e.symm_image_image Ω]
+    exact e.symm.isFilledIn_image_of_isFilledIn h, e.isFilledIn_image_of_isFilledIn⟩
+
+/-- A homeomorphism preserves `TauCeti.IsFilledIn` on preimages. -/
+@[simp]
+theorem _root_.Homeomorph.isFilledIn_preimage (e : X ≃ₜ Y) {K Ω : Set Y} :
+    IsFilledIn (e ⁻¹' K) (e ⁻¹' Ω) ↔ IsFilledIn K Ω := by
+  rw [← e.image_symm]
+  exact e.symm.isFilledIn_image
 
 end Topology
 

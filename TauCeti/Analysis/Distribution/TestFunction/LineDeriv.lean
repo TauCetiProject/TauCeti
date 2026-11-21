@@ -9,19 +9,23 @@ public import Mathlib.Analysis.Distribution.TestFunction
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import TauCeti.Analysis.Calculus.IteratedFDeriv.FDerivApply
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
+public import TauCeti.Analysis.Calculus.IteratedFDeriv.DirectionList
 
 /-!
 # Directional derivatives of test functions
 
-Mathlib equips the test functions `𝓓(Ω, F)` with the directional derivative `∂_{v}`. This file
-evaluates it pointwise as the classical directional derivative, and shows that two directional
-derivatives of a test function commute, `∂_{v} (∂_{w} φ) = ∂_{w} (∂_{v} φ)`, because the second
-derivative of a smooth function is symmetric. Moving derivatives between the two sides of an
-integration-by-parts identity uses exactly this, for instance to show that weak derivatives
-commute. Summing over an orthonormal basis, the Laplacian of a test function commutes with every
-directional derivative. Finally, a test function on `Ω` times a function smooth on `Ω` is again a
-test function, with the classical product rule for its directional derivatives; this is what lets
-a weak derivative be tested against `g φ` when `g` is only smooth inside `Ω`.
+Mathlib equips the test functions `𝓓(Ω, F)` with the directional derivative `∂_{v}` and its
+iteration `∂^{m}`. This file evaluates them pointwise as the classical directional and iterated
+Fréchet derivatives, and shows that two directional derivatives of a test function commute,
+`∂_{v} (∂_{w} φ) = ∂_{w} (∂_{v} φ)`, because the second derivative of a smooth function is
+symmetric. Moving derivatives between the two sides of an integration-by-parts identity uses
+exactly this, for instance to show that weak derivatives commute. Summing over an orthonormal basis,
+the Laplacian of a test function commutes with every directional derivative. Finally, pairing a
+`Cⁿ` test function `φ ∈ 𝓓^{n}(Ω, F₁)` with a function `g : E → F₂` that is `Cⁿ` on an open
+neighbourhood `U` of `tsupport φ` via a continuous bilinear map (in particular, multiplying a scalar
+cutoff `χ` by `g : E → F` or scaling `φ` by a scalar `g` smooth on `Ω`) produces a test function on
+`Ω`, with the classical product rule for its directional derivatives; this is what lets a weak
+derivative or distribution be tested against cutoffs of locally smooth functions.
 
 ## Main declarations
 
@@ -29,8 +33,15 @@ a weak derivative be tested against `g φ` when `g` is only smooth inside `Ω`.
 * `TestFunction.lineDerivOp_apply_eq_fderiv`, `TestFunction.coe_lineDerivOp_eq_fderiv`:
   `∂_{v} φ x = Dφ(x) v`.
 * `TestFunction.tsupport_lineDerivOp_subset`: `∂_{v} φ` is supported in the support of `φ`.
+* `TestFunction.tsupport_iteratedLineDerivOp_subset`: iterated directional derivatives of `φ`
+  are supported in `tsupport φ`.
 * `TestFunction.norm_iteratedFDeriv_lineDerivOp_le`: the derivatives of order at most `r` of
   `∂_{v} φ` are bounded by `‖v‖` times a bound on those of order at most `r + 1` of `φ`.
+* `TestFunction.iteratedLineDerivOp_apply_eq_iteratedFDeriv`,
+  `TestFunction.iteratedLineDerivOp_apply_eq_iteratedFDerivAlong`: `∂^{m} φ` agrees pointwise with
+  the iterated Fréchet derivative and `TauCeti.iteratedFDerivAlong`.
+* `TestFunction.smul_neg_one_pow_iteratedLineDerivOp_sub_apply`: `((-1)^k • ∂^{m} φ) (y - z)` is
+  the iterated directional derivative of `w ↦ φ (y - w)` at `z`.
 * `TestFunction.smul_fderiv_apply_eq_of_eqOn_one`: a first derivative of `φ` is unchanged by a
   factor equal to `1` on `Ω`.
 * `TestFunction.lineDerivOp_one_apply_eq_deriv`: on the real line, `∂_{1} φ` is the derivative
@@ -41,10 +52,14 @@ a weak derivative be tested against `g φ` when `g` is only smooth inside `Ω`.
   its Fréchet derivative in that direction.
 * `TestFunction.lineDerivCLM_postcompCLM`: directional derivatives commute with postcomposition
   by a continuous linear map.
-* `TestFunction.lineDerivOp_comm` and `TestFunction.lineDeriv_lineDerivOp_comm`: directional
-  derivatives of test functions commute.
+* `TestFunction.lineDerivOp_comm`, `TestFunction.lineDeriv_lineDerivOp_comm`,
+  `TestFunction.iteratedLineDerivOp_lineDerivOp`, `TestFunction.iteratedLineDerivOp_comp_rev`:
+  directional and iterated directional derivatives of test functions commute.
 * `TestFunction.lineDerivOp_laplacianCLM`: the Laplacian of test functions commutes with
   directional derivatives.
+* `TestFunction.bilinOfContDiffOn`, `TestFunction.smulOfContDiffOn`: pairing a test function with a
+  function `Cⁿ` on an open neighbourhood of its support via a continuous bilinear map or scalar
+  multiplication produces a test function on `Ω`.
 * `TestFunction.exists_coe_eq_smul_of_contDiffOn`: the product of a test function on `Ω` with a
   function smooth on `Ω` is a test function on `Ω`.
 * `TestFunction.lineDeriv_fun_smul_of_differentiableOn`: its directional derivatives obey the
@@ -184,22 +199,203 @@ theorem lineDeriv_lineDerivOp_comm (φ : 𝓓(Ω, F)) (v w x : E) :
     lineDeriv ℝ (∂_{v} φ : 𝓓(Ω, F)) x w = lineDeriv ℝ (∂_{w} φ : 𝓓(Ω, F)) x v := by
   rw [← lineDerivOp_apply, ← lineDerivOp_apply, lineDerivOp_comm]
 
-/-! ### Multiplication by a function smooth on `Ω` -/
+/-! ### Iterated directional derivatives -/
+
+/-- An iterated directional derivative of a test function is supported in the support of the
+function. -/
+theorem tsupport_iteratedLineDerivOp_subset (φ : 𝓓(Ω, F)) {k : ℕ} (m : Fin k → E) :
+    tsupport (∂^{m} φ : 𝓓(Ω, F)) ⊆ tsupport φ := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    rw [iteratedLineDerivOp_succ_left]
+    exact (tsupport_lineDerivOp_subset _ (m 0)).trans (ih (Fin.tail m))
+
+/-- An iterated directional derivative of a test function agrees pointwise with its iterated
+Fréchet derivative evaluated on those directions. -/
+theorem iteratedLineDerivOp_apply_eq_iteratedFDeriv (φ : 𝓓(Ω, F)) {k : ℕ} (m : Fin k → E)
+    (x : E) :
+    ∂^{m} φ x = iteratedFDeriv ℝ k (φ : E → F) x m := by
+  induction k generalizing x with
+  | zero => simp
+  | succ k ih =>
+    rw [iteratedLineDerivOp_succ_left, iteratedFDeriv_succ_apply_left,
+      ← fderiv_continuousMultilinear_apply_const_apply]
+    · simp only [lineDerivOp_apply_eq_fderiv, ← ih]
+    · exact φ.contDiff.differentiable_iteratedFDeriv (mod_cast ENat.natCast_lt_top k) x
+
+/-- An iterated directional derivative of a test function agrees pointwise with
+`TauCeti.iteratedFDerivAlong` along the list of directions. -/
+theorem iteratedLineDerivOp_apply_eq_iteratedFDerivAlong (φ : 𝓓(Ω, F)) {k : ℕ} (m : Fin k → E)
+    (x : E) :
+    ∂^{m} φ x = TauCeti.iteratedFDerivAlong ℝ (List.ofFn m) (φ : E → F) x := by
+  rw [iteratedLineDerivOp_apply_eq_iteratedFDeriv,
+    (φ.contDiff.contDiffAt.of_le (mod_cast le_top)).iteratedFDerivAlong_ofFn_eq_iteratedFDeriv
+      le_rfl]
+
+/-- An iterated directional derivative of a test function commutes with a single directional
+derivative. -/
+theorem iteratedLineDerivOp_lineDerivOp (φ : 𝓓(Ω, F)) {k : ℕ} (m : Fin k → E) (v : E) :
+    ∂^{m} (∂_{v} φ) = ∂_{v} (∂^{m} φ) := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    rw [iteratedLineDerivOp_succ_left, iteratedLineDerivOp_succ_left, ih, lineDerivOp_comm]
+
+/-- Reversing the order of directions does not change an iterated directional derivative of a test
+function. -/
+theorem iteratedLineDerivOp_comp_rev (φ : 𝓓(Ω, F)) {k : ℕ} (m : Fin k → E) :
+    ∂^{m ∘ Fin.rev} φ = ∂^{m} φ := by
+  induction k generalizing φ with
+  | zero => simp
+  | succ k ih =>
+    have hinit : Fin.init (m ∘ Fin.rev) = Fin.tail m ∘ Fin.rev := by
+      ext i
+      simp [Fin.init_def, Fin.tail_def, Fin.rev_castSucc]
+    rw [iteratedLineDerivOp_succ_right, iteratedLineDerivOp_succ_left,
+      iteratedLineDerivOp_lineDerivOp]
+    simp only [Function.comp_apply, Fin.rev_last, hinit, ih]
+
+/-- Differentiating `w ↦ φ (y - w)` along the directions `m` at `z` agrees with evaluating
+`(-1)^k • ∂^{m} φ` at `y - z`. -/
+theorem smul_neg_one_pow_iteratedLineDerivOp_sub_apply (φ : 𝓓(Ω, F)) {k : ℕ} (m : Fin k → E)
+    (y z : E) :
+    ((-1 : ℝ) ^ k • ∂^{m} φ) (y - z) =
+      TauCeti.iteratedFDerivAlong ℝ (List.ofFn m) (fun w ↦ φ (y - w)) z := by
+  induction k generalizing z with
+  | zero => simp
+  | succ k ih =>
+    let η : 𝓓(Ω, F) := ∂^{Fin.tail m} φ
+    let ψ : 𝓓(Ω, F) := (-1 : ℝ) ^ k • η
+    have hd := (ψ.contDiff.differentiable (by simp) (y - z)).hasFDerivAt.comp z
+      ((hasFDerivAt_const y z).sub (hasFDerivAt_id z))
+    have hdf : fderiv ℝ (fun w ↦ ψ (y - w)) z (m 0) = -fderiv ℝ (ψ : E → F) (y - z) (m 0) := by
+      simpa [Function.comp_def] using congrArg (· (m 0)) hd.fderiv
+    have hψ_coe : (ψ : E → F) = (-1 : ℝ) ^ k • (η : E → F) := by
+      ext w
+      simp [ψ]
+    have hψ : fderiv ℝ (ψ : E → F) (y - z) (m 0) =
+        (-1 : ℝ) ^ k • fderiv ℝ (η : E → F) (y - z) (m 0) := by
+      rw [hψ_coe, fderiv_const_smul (η.contDiff.differentiable (by simp) (y - z)), smul_apply]
+    have hih : TauCeti.iteratedFDerivAlong ℝ (List.ofFn fun i ↦ m i.succ)
+        (fun w ↦ φ (y - w)) = fun w ↦ ψ (y - w) :=
+      funext fun w ↦ (ih (Fin.tail m) w).symm
+    rw [List.ofFn_succ, TauCeti.iteratedFDerivAlong_cons_apply, hih, hdf, hψ,
+      iteratedLineDerivOp_succ_left, smul_apply, lineDerivOp_apply_eq_fderiv, pow_succ, mul_comm,
+      mul_smul, neg_one_smul]
+
+/-! ### Multiplication by a function `Cⁿ` on a neighbourhood of the support -/
+
+/-- **Pairing a test function with a function `Cⁿ` near its support.** Given a test function
+`φ ∈ 𝓓^{n}(Ω, F₁)`, a continuous bilinear map `B : F₁ →L[ℝ] F₂ →L[ℝ] F₃`, and a function
+`g : E → F₂` that is `Cⁿ` on an open neighbourhood `U` of `tsupport φ` (with no regularity
+requirement outside `U`), the pointwise product `x ↦ B (φ x) (g x)` is a test function in
+`𝓓^{n}(Ω, F₃)` supported in `tsupport φ`. -/
+def bilinOfContDiffOn {F₁ F₂ F₃ : Type*} [NormedAddCommGroup F₁] [NormedSpace ℝ F₁]
+    [NormedAddCommGroup F₂] [NormedSpace ℝ F₂] [NormedAddCommGroup F₃] [NormedSpace ℝ F₃]
+    {n : ℕ∞} (φ : 𝓓^{n}(Ω, F₁)) (B : F₁ →L[ℝ] F₂ →L[ℝ] F₃) {U : Set E} (hU : IsOpen U)
+    (hφU : tsupport (φ : E → F₁) ⊆ U) {g : E → F₂} (hg : ContDiffOn ℝ n g U) :
+    𝓓^{n}(Ω, F₃) where
+  toFun x := B (φ x) (g x)
+  contDiff' :=
+    contDiff_of_contDiffOn_union_of_isOpen
+      (B.isBoundedBilinearMap.contDiff.comp_contDiffOn (φ.contDiff.contDiffOn.prodMk hg))
+      ((contDiffOn_const (c := (0 : F₃))).congr fun _ hx ↦ by
+        simp [image_eq_zero_of_notMem_tsupport (f := (φ : E → F₁)) hx])
+      (Set.eq_univ_of_forall fun x ↦ (em (x ∈ tsupport (φ : E → F₁))).imp (hφU ·) id)
+      hU (isClosed_tsupport (φ : E → F₁)).isOpen_compl
+  hasCompactSupport' :=
+    HasCompactSupport.of_support_subset_isCompact φ.hasCompactSupport fun _ hx ↦
+      subset_tsupport _ fun h0 ↦ Function.mem_support.1 hx (by simp [h0])
+  tsupport_subset' :=
+    (closure_minimal
+      (fun _ hx ↦ subset_tsupport _ fun h0 ↦ Function.mem_support.1 hx (by simp [h0]))
+      (isClosed_tsupport (φ : E → F₁))).trans φ.tsupport_subset
+
+@[simp]
+theorem bilinOfContDiffOn_apply {F₁ F₂ F₃ : Type*} [NormedAddCommGroup F₁] [NormedSpace ℝ F₁]
+    [NormedAddCommGroup F₂] [NormedSpace ℝ F₂] [NormedAddCommGroup F₃] [NormedSpace ℝ F₃]
+    {n : ℕ∞} (φ : 𝓓^{n}(Ω, F₁)) (B : F₁ →L[ℝ] F₂ →L[ℝ] F₃) {U : Set E} (hU : IsOpen U)
+    (hφU : tsupport (φ : E → F₁) ⊆ U) {g : E → F₂} (hg : ContDiffOn ℝ n g U) (x : E) :
+    φ.bilinOfContDiffOn B hU hφU hg x = B (φ x) (g x) := by
+  rfl
+
+/-- The support of `φ.bilinOfContDiffOn B hU hφU hg` is contained in `tsupport φ`. -/
+theorem tsupport_bilinOfContDiffOn_subset {F₁ F₂ F₃ : Type*} [NormedAddCommGroup F₁]
+    [NormedSpace ℝ F₁] [NormedAddCommGroup F₂] [NormedSpace ℝ F₂] [NormedAddCommGroup F₃]
+    [NormedSpace ℝ F₃] {n : ℕ∞} (φ : 𝓓^{n}(Ω, F₁)) (B : F₁ →L[ℝ] F₂ →L[ℝ] F₃) {U : Set E}
+    (hU : IsOpen U) (hφU : tsupport (φ : E → F₁) ⊆ U) {g : E → F₂} (hg : ContDiffOn ℝ n g U) :
+    tsupport (φ.bilinOfContDiffOn B hU hφU hg : E → F₃) ⊆ tsupport (φ : E → F₁) :=
+  closure_minimal (fun _ hx ↦ subset_tsupport _ fun h0 ↦ Function.mem_support.1 hx (by simp [h0]))
+    (isClosed_tsupport (φ : E → F₁))
+
+/-- **Multiplying a scalar cutoff by a function `Cⁿ` near its support.** Given a scalar test
+function `χ ∈ 𝓓^{n}(Ω, ℝ)` and a function `g : E → F` that is `Cⁿ` on an open neighbourhood `U` of
+`tsupport χ`, the pointwise product `x ↦ χ x • g x` is a test function in `𝓓^{n}(Ω, F)`. -/
+noncomputable def smulOfContDiffOn {n : ℕ∞} (χ : 𝓓^{n}(Ω, ℝ)) {U : Set E} (hU : IsOpen U)
+    (hχU : tsupport (χ : E → ℝ) ⊆ U) {g : E → F} (hg : ContDiffOn ℝ n g U) : 𝓓^{n}(Ω, F) :=
+  χ.bilinOfContDiffOn (ContinuousLinearMap.lsmul ℝ ℝ) hU hχU hg
+
+@[simp]
+theorem smulOfContDiffOn_apply {n : ℕ∞} (χ : 𝓓^{n}(Ω, ℝ)) {U : Set E} (hU : IsOpen U)
+    (hχU : tsupport (χ : E → ℝ) ⊆ U) {g : E → F} (hg : ContDiffOn ℝ n g U) (x : E) :
+    χ.smulOfContDiffOn hU hχU hg x = χ x • g x := by
+  rfl
+
+/-- The support of `χ.smulOfContDiffOn hU hχU hg` is contained in `tsupport χ`. -/
+theorem tsupport_smulOfContDiffOn_subset {n : ℕ∞} (χ : 𝓓^{n}(Ω, ℝ)) {U : Set E} (hU : IsOpen U)
+    (hχU : tsupport (χ : E → ℝ) ⊆ U) {g : E → F} (hg : ContDiffOn ℝ n g U) :
+    tsupport (χ.smulOfContDiffOn hU hχU hg : E → F) ⊆ tsupport (χ : E → ℝ) :=
+  χ.tsupport_bilinOfContDiffOn_subset (ContinuousLinearMap.lsmul ℝ ℝ) hU hχU hg
+
+@[simp]
+theorem smulOfContDiffOn_zero {n : ℕ∞} (χ : 𝓓^{n}(Ω, ℝ)) {U : Set E} (hU : IsOpen U)
+    (hχU : tsupport (χ : E → ℝ) ⊆ U) (hg : ContDiffOn ℝ n (0 : E → F) U) :
+    χ.smulOfContDiffOn hU hχU hg = 0 := by
+  ext x
+  simp
+
+@[simp]
+theorem smulOfContDiffOn_add {n : ℕ∞} (χ : 𝓓^{n}(Ω, ℝ)) {U : Set E} (hU : IsOpen U)
+    (hχU : tsupport (χ : E → ℝ) ⊆ U) {g₁ g₂ : E → F} (hg₁ : ContDiffOn ℝ n g₁ U)
+    (hg₂ : ContDiffOn ℝ n g₂ U) :
+    χ.smulOfContDiffOn hU hχU (hg₁.add hg₂) =
+      χ.smulOfContDiffOn hU hχU hg₁ + χ.smulOfContDiffOn hU hχU hg₂ := by
+  ext x
+  simp [smul_add]
+
+@[simp]
+theorem smulOfContDiffOn_neg {n : ℕ∞} (χ : 𝓓^{n}(Ω, ℝ)) {U : Set E} (hU : IsOpen U)
+    (hχU : tsupport (χ : E → ℝ) ⊆ U) {g : E → F} (hg : ContDiffOn ℝ n g U) :
+    χ.smulOfContDiffOn hU hχU hg.neg = -χ.smulOfContDiffOn hU hχU hg := by
+  ext x
+  simp
+
+@[simp]
+theorem smulOfContDiffOn_sub {n : ℕ∞} (χ : 𝓓^{n}(Ω, ℝ)) {U : Set E} (hU : IsOpen U)
+    (hχU : tsupport (χ : E → ℝ) ⊆ U) {g₁ g₂ : E → F} (hg₁ : ContDiffOn ℝ n g₁ U)
+    (hg₂ : ContDiffOn ℝ n g₂ U) :
+    χ.smulOfContDiffOn hU hχU (hg₁.sub hg₂) =
+      χ.smulOfContDiffOn hU hχU hg₁ - χ.smulOfContDiffOn hU hχU hg₂ := by
+  ext x
+  simp [smul_sub]
+
+@[simp]
+theorem smulOfContDiffOn_smul {n : ℕ∞} (χ : 𝓓^{n}(Ω, ℝ)) {U : Set E} (hU : IsOpen U)
+    (hχU : tsupport (χ : E → ℝ) ⊆ U) (c : ℝ) {g : E → F} (hg : ContDiffOn ℝ n g U) :
+    χ.smulOfContDiffOn hU hχU (hg.const_smul c : ContDiffOn ℝ n (c • g) U) =
+      c • χ.smulOfContDiffOn hU hχU hg := by
+  ext x
+  rw [smulOfContDiffOn_apply, smul_apply, smulOfContDiffOn_apply, smul_comm]
 
 /-- **A test function times a function smooth on `Ω` is a test function.** If `g` is smooth on
 `Ω`, with no condition off `Ω`, and `φ ∈ 𝓓(Ω, F)`, then `x ↦ g x • φ x` is again a test function
 on `Ω`: it is smooth on `Ω` and vanishes on the open complement of `tsupport φ`, and these two
 open sets cover `E`. -/
 theorem exists_coe_eq_smul_of_contDiffOn {g : E → ℝ} (hg : ContDiffOn ℝ ∞ g Ω) (φ : 𝓓(Ω, F)) :
-    ∃ ψ : 𝓓(Ω, F), ⇑ψ = fun x => g x • φ x := by
-  have hsmooth : ContDiff ℝ ∞ fun x => g x • φ x := by
-    refine contDiff_of_contDiffOn_union_of_isOpen (hg.smul φ.contDiff.contDiffOn)
-      ((contDiffOn_const (c := (0 : F))).congr fun x hx => ?_) ?_ Ω.isOpen
-      (isClosed_tsupport (φ : E → F)).isOpen_compl
-    · simp [image_eq_zero_of_notMem_tsupport (f := (φ : E → F)) hx]
-    · exact Set.eq_univ_of_forall fun x => (em (x ∈ tsupport φ)).imp (φ.tsupport_subset ·) id
-  exact ⟨⟨fun x => g x • φ x, hsmooth, φ.hasCompactSupport.smul_left,
-    (tsupport_smul_subset_right _ _).trans φ.tsupport_subset⟩, rfl⟩
+    ∃ ψ : 𝓓(Ω, F), ⇑ψ = fun x => g x • φ x :=
+  ⟨φ.bilinOfContDiffOn (ContinuousLinearMap.lsmul ℝ ℝ).flip Ω.isOpen φ.tsupport_subset hg,
+    by ext x; simp⟩
 
 /-- **The product rule for a test function times a function differentiable on `Ω`**:
 `∂_v (g φ) = g ∂_v φ + (∂_v g) φ` at every point of `E`. Off `tsupport φ` both sides vanish, so

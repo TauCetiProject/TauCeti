@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Distribution.TestFunction
+public import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
+import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Topology.UniformSpace.HeineCantor
 
 /-!
@@ -17,15 +19,19 @@ making every inclusion `𝓓^{n}_{K}(E, F) → 𝓓^{n}(Ω, F)` of the tests sup
 derivatives of order at most `n`. Consequently a family of test functions supported in one fixed
 compact subset of `Ω` converges as soon as each of its derivatives of order at most `n` converges
 uniformly. This is the usual way to prove convergence in `𝓓^{n}(Ω, F)` concretely, for instance for
-approximations by mollification or by truncated Fourier series. In particular a family of test
-functions depending jointly smoothly on a parameter, with a common compact support, depends
-continuously on the parameter.
+approximations by mollification, by truncated Fourier series, or by multiplying a fixed cutoff by
+locally `Cⁿ` functions whose derivatives converge uniformly on the cutoff's support. In particular a
+family of test functions depending jointly smoothly on a parameter, with a common compact support,
+depends continuously on the parameter.
 
 ## Main declarations
 
 * `TestFunction.tendsto_of_tendstoUniformly_iteratedFDeriv`: test functions supported in a common
   compact subset of `Ω` whose derivatives of order at most `n` converge uniformly converge in
   `𝓓^{n}(Ω, F)`.
+* `TestFunction.tendsto_smulOfContDiffOn`: multiplying a fixed scalar cutoff `χ ∈ 𝓓^{n}(Ω, ℝ)` by
+  functions `g i` that are `Cⁿ` on an open neighbourhood of `tsupport χ` converges in `𝓓^{n}(Ω, F)`
+  whenever the derivatives of `g i` up to order `n` converge uniformly on `tsupport χ`.
 * `ContDiffMapSupportedIn.continuous_of_continuous_iteratedFDeriv`,
   `TestFunction.continuous_of_continuous_iteratedFDeriv`: a family of test functions supported in a
   common compact set, whose derivatives of order at most `n` are jointly continuous in the
@@ -95,6 +101,97 @@ theorem tendsto_of_tendstoUniformly_iteratedFDeriv {ι : Type*} {l : Filter ι}
     ext x
     simp [ψK]
   rwa [hφ, hψ] at ht
+
+/-- Pointwise Leibniz bound for the `k`-th derivative of
+`χ.smulOfContDiffOn hU hχU hg₁ - χ.smulOfContDiffOn hU hχU hg₂`. -/
+private theorem norm_iteratedFDeriv_smulOfContDiffOn_sub_le (χ : 𝓓^{n}(Ω, ℝ)) {U : Set E}
+    (hU : IsOpen U) (hχU : tsupport (χ : E → ℝ) ⊆ U) {g₁ g₂ : E → F}
+    (hg₁ : ContDiffOn ℝ n g₁ U) (hg₂ : ContDiffOn ℝ n g₂ U) {k : ℕ} (hk : (k : ℕ∞) ≤ n)
+    {M : ℕ → ℝ} (hM0 : ∀ j ∈ Finset.range (k + 1), 0 ≤ M j)
+    (hM : ∀ j ∈ Finset.range (k + 1), ∀ y, ‖iteratedFDeriv ℝ j (χ : E → ℝ) y‖ ≤ M j)
+    {δ : ℝ} (hδ0 : 0 ≤ δ)
+    (hg_le : ∀ j ∈ Finset.range (k + 1), ∀ y ∈ tsupport (χ : E → ℝ),
+      ‖iteratedFDeriv ℝ (k - j) g₁ y - iteratedFDeriv ℝ (k - j) g₂ y‖ ≤ δ)
+    (y : E) :
+    ‖iteratedFDeriv ℝ k (χ.smulOfContDiffOn hU hχU hg₁ : E → F) y -
+        iteratedFDeriv ℝ k (χ.smulOfContDiffOn hU hχU hg₂ : E → F) y‖ ≤
+      (∑ j ∈ Finset.range (k + 1), (k.choose j : ℝ) * M j) * δ := by
+  let ψ₁ := χ.smulOfContDiffOn hU hχU hg₁
+  let ψ₂ := χ.smulOfContDiffOn hU hχU hg₂
+  have hk' : (k : WithTop ℕ∞) ≤ n := by exact_mod_cast hk
+  rw [← iteratedFDeriv_sub_apply (ψ₁.contDiff.contDiffAt.of_le hk')
+    (ψ₂.contDiff.contDiffAt.of_le hk')]
+  by_cases hy : y ∈ tsupport (χ : E → ℝ)
+  · have hsub_eq : ((ψ₁ : E → F) - (ψ₂ : E → F)) = fun z ↦ χ z • (g₁ - g₂) z := by
+      ext z
+      simp [ψ₁, ψ₂, smul_sub]
+    have hyU : y ∈ U := hχU hy
+    have hle := norm_iteratedFDerivWithin_smul_le χ.contDiff.contDiffOn (hg₁.sub hg₂)
+      hU.uniqueDiffOn hyU (n := k) hk'
+    rw [iteratedFDerivWithin_of_isOpen k hU hyU] at hle
+    rw [hsub_eq]
+    refine hle.trans ?_
+    rw [Finset.sum_mul]
+    refine Finset.sum_le_sum fun j hj ↦ ?_
+    have hkj : ((k - j : ℕ) : WithTop ℕ∞) ≤ n :=
+      le_trans (by exact_mod_cast Nat.sub_le k j) hk'
+    rw [iteratedFDerivWithin_of_isOpen j hU hyU, iteratedFDerivWithin_of_isOpen (k - j) hU hyU,
+      ← Pi.sub_def,
+      iteratedFDeriv_sub_apply ((hg₁.contDiffAt (hU.mem_nhds hyU)).of_le hkj)
+        ((hg₂.contDiffAt (hU.mem_nhds hyU)).of_le hkj), mul_assoc, mul_assoc]
+    exact mul_le_mul_of_nonneg_left
+      (mul_le_mul (hM j hj y) (hg_le j hj y hy) (norm_nonneg _) (hM0 j hj))
+      (Nat.cast_nonneg _)
+  · have h0 : ((ψ₁ : E → F) - (ψ₂ : E → F)) =ᶠ[𝓝 y] 0 := by
+      filter_upwards [(isClosed_tsupport (χ : E → ℝ)).isOpen_compl.mem_nhds hy] with z hz
+      simp [ψ₁, ψ₂, image_eq_zero_of_notMem_tsupport hz]
+    rw [(h0.iteratedFDeriv ℝ k).eq_of_nhds]
+    simpa using mul_nonneg
+      (Finset.sum_nonneg fun j hj ↦ mul_nonneg (Nat.cast_nonneg _) (hM0 j hj)) hδ0
+
+/-- **Convergence of cutoff products in `𝓓^{n}(Ω, F)`.** Let `χ ∈ 𝓓^{n}(Ω, ℝ)` be a fixed cutoff
+supported in an open set `U`, and let `g i`, `g₀ : E → F` be `Cⁿ` on `U`. If for every order
+`k ≤ n` the `k`-th derivatives of `g i` converge uniformly to that of `g₀` on `tsupport χ`, then
+`χ • g i → χ • g₀` in the LF topology of `𝓓^{n}(Ω, F)`. -/
+theorem tendsto_smulOfContDiffOn {ι : Type*} {l : Filter ι} (χ : 𝓓^{n}(Ω, ℝ))
+    {U : Set E} (hU : IsOpen U) (hχU : tsupport (χ : E → ℝ) ⊆ U) {g : ι → E → F} {g₀ : E → F}
+    (hg : ∀ i, ContDiffOn ℝ n (g i) U) (hg₀ : ContDiffOn ℝ n g₀ U)
+    (hlim : ∀ k : ℕ, (k : ℕ∞) ≤ n →
+      TendstoUniformlyOn (fun i ↦ iteratedFDeriv ℝ k (g i)) (iteratedFDeriv ℝ k g₀) l
+        (tsupport (χ : E → ℝ))) :
+    Tendsto (fun i ↦ χ.smulOfContDiffOn hU hχU (hg i)) l
+      (𝓝 (χ.smulOfContDiffOn hU hχU hg₀)) := by
+  refine tendsto_of_tendstoUniformly_iteratedFDeriv χ.hasCompactSupport χ.tsupport_subset
+    (fun i ↦ χ.tsupport_smulOfContDiffOn_subset hU hχU (hg i)) fun k hk ↦ ?_
+  have hχb (j : ℕ) : ∃ M : ℝ, 0 ≤ M ∧
+      (j ∈ Finset.range (k + 1) → ∀ y, ‖iteratedFDeriv ℝ j (χ : E → ℝ) y‖ ≤ M) := by
+    by_cases hj : j ∈ Finset.range (k + 1)
+    · have hjk : (j : ℕ∞) ≤ k := by exact_mod_cast Nat.lt_succ_iff.1 (Finset.mem_range.1 hj)
+      have hjn : (j : WithTop ℕ∞) ≤ n := by exact_mod_cast hjk.trans hk
+      obtain ⟨M, hM⟩ := (χ.hasCompactSupport.iteratedFDeriv j).exists_bound_of_continuous
+        (χ.contDiff.continuous_iteratedFDeriv hjn)
+      exact ⟨max M 0, le_max_right _ _, fun _ y ↦ (hM y).trans (le_max_left _ _)⟩
+    · exact ⟨0, le_rfl, fun h ↦ absurd h hj⟩
+  choose M hM0 hM using hχb
+  set C : ℝ := ∑ j ∈ Finset.range (k + 1), (k.choose j : ℝ) * M j + 1
+  have hC : 0 < C := add_pos_of_nonneg_of_pos
+    (Finset.sum_nonneg fun j _ ↦ mul_nonneg (Nat.cast_nonneg _) (hM0 j)) zero_lt_one
+  rw [Metric.tendstoUniformly_iff]
+  intro ε hε
+  have hev : ∀ᶠ i in l, ∀ j ∈ Finset.range (k + 1), ∀ y ∈ tsupport (χ : E → ℝ),
+      ‖iteratedFDeriv ℝ (k - j) (g i) y - iteratedFDeriv ℝ (k - j) g₀ y‖ < ε / C := by
+    rw [Filter.eventually_all_finset]
+    intro j _
+    have hkj : ((k - j : ℕ) : ℕ∞) ≤ n :=
+      le_trans (by exact_mod_cast Nat.sub_le k j) hk
+    simpa [dist_eq_norm, norm_sub_rev] using
+      Metric.tendstoUniformlyOn_iff.1 (hlim (k - j) hkj) (ε / C) (div_pos hε hC)
+  filter_upwards [hev] with i hi y
+  rw [dist_eq_norm, norm_sub_rev]
+  refine (norm_iteratedFDeriv_smulOfContDiffOn_sub_le χ hU hχU (hg i) hg₀ hk (fun j _ ↦ hM0 j)
+    hM (div_pos hε hC).le (fun j hj z hz ↦ (hi j hj z hz).le) y).trans_lt ?_
+  exact (mul_lt_mul_of_pos_right (lt_add_one _) (div_pos hε hC)).trans_eq
+    (mul_div_cancel₀ ε hC.ne')
 
 /-- **Continuity of families with continuous jets.** Let `φ y`, for `y` in a topological space
 `Y`, be `Cⁿ` functions supported in a compact set `K`. If for every order `k ≤ n` the `k`-th

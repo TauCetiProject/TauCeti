@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Distribution.TestFunction
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
+public import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 public import TauCeti.Topology.Algebra.Support
 import TauCeti.Analysis.Calculus.ParametricIntegral.Basic
 import TauCeti.MeasureTheory.Constructions.UnitInterval
@@ -15,9 +16,10 @@ import TauCeti.MeasureTheory.Constructions.UnitInterval
 # Translation of test functions
 
 This file translates a test function on an open set `V` in the opposite direction to a vector
-`h`, producing a test function on any open set `Ω` that contains `V + h`. The codomain may be
-any real normed space. This is the common test-function operation used to prove translation
-invariance of weak derivatives and distributional variation.
+`h`, producing a test function on any open set `Ω` that contains `V + h` (or more generally
+`tsupport ρ + x`). The codomain may be any real normed space. This is the common test-function
+operation used to prove translation invariance of weak derivatives, distributional variation, and
+iterated directional derivatives of regularizations.
 
 ## Main declarations
 
@@ -31,6 +33,10 @@ invariance of weak derivatives and distributional variation.
   compactly supported function, as a test function on `Omega`.
 * `TauCeti.fderiv_reflectTranslateTestFunction`, `TauCeti.lineDeriv_reflectTranslateTestFunction`:
   derivatives of the reflected translate.
+* `TestFunction.translateOfMapsTo`: translate a `Cⁿ` test function `ρ` by `x` whenever
+  `tsupport ρ + x ⊆ Ω`.
+* `TestFunction.translateIteratedFDerivAlong`: package
+  `y ↦ TauCeti.iteratedFDerivAlong ℝ vs (fun z ↦ ρ (y - z)) x` as a test function on `Ω`.
 -/
 
 public section
@@ -167,3 +173,63 @@ theorem lineDeriv_reflectTranslateTestFunction (ρ : E → F) (y : E)
     t).lineDeriv_eq_fderiv, fderiv_reflectTranslateTestFunction, neg_apply]
 
 end TauCeti
+
+namespace TestFunction
+
+open LineDeriv Set TopologicalSpace
+open scoped ContDiff Distributions
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] {Ω V : Opens E}
+
+/-- Translate a `Cⁿ` test function `ρ` in the opposite direction by `x`, as a test function on `Ω`
+whenever `tsupport ρ + x ⊆ Ω`. -/
+def translateOfMapsTo {n : ℕ∞} (ρ : 𝓓^{n}(V, F)) {x : E}
+    (h : MapsTo (· + x) (tsupport (ρ : E → F)) Ω) : 𝓓^{n}(Ω, F) where
+  toFun y := ρ (y - x)
+  contDiff' := ρ.contDiff.comp (contDiff_id.sub contDiff_const)
+  hasCompactSupport' := by
+    simpa [sub_eq_add_neg, Function.comp_def, Homeomorph.addRight] using
+      ρ.hasCompactSupport.comp_homeomorph (Homeomorph.addRight (-x))
+  tsupport_subset' y hy := by
+    rw [TauCeti.tsupport_comp_sub_right] at hy
+    simpa using h hy
+
+@[simp]
+theorem translateOfMapsTo_apply {n : ℕ∞} (ρ : 𝓓^{n}(V, F)) {x : E}
+    (h : MapsTo (· + x) (tsupport (ρ : E → F)) Ω) (y : E) :
+    ρ.translateOfMapsTo h y = ρ (y - x) := by
+  rfl
+
+/-- The translate `ρ (· - x)` has the translated topological support. -/
+theorem tsupport_translateOfMapsTo {n : ℕ∞} (ρ : 𝓓^{n}(V, F)) {x : E}
+    (h : MapsTo (· + x) (tsupport (ρ : E → F)) Ω) :
+    tsupport (ρ.translateOfMapsTo h : E → F) = (· - x) ⁻¹' tsupport (ρ : E → F) :=
+  TauCeti.tsupport_comp_sub_right (f := (ρ : E → F)) x
+
+/-- Package `y ↦ TauCeti.iteratedFDerivAlong ℝ vs (fun z ↦ ρ (y - z)) x` as a test function on `Ω`,
+for any admissible translation `x` of `ρ`. -/
+def translateIteratedFDerivAlong (ρ : 𝓓(V, F)) {x : E}
+    (hx : MapsTo (· + x) (tsupport (ρ : E → F)) Ω) (vs : List E) : 𝓓(Ω, F) :=
+  ((-1 : ℝ) ^ vs.length • ∂^{vs.get} ρ).translateOfMapsTo
+    (hx.mono_left ((tsupport_smul_subset_right _ _).trans
+      (ρ.tsupport_iteratedLineDerivOp_subset vs.get)))
+
+@[simp]
+theorem translateIteratedFDerivAlong_apply (ρ : 𝓓(V, F)) {x : E}
+    (hx : MapsTo (· + x) (tsupport (ρ : E → F)) Ω) (vs : List E) (y : E) :
+    ρ.translateIteratedFDerivAlong hx vs y =
+      TauCeti.iteratedFDerivAlong ℝ vs (fun z ↦ ρ (y - z)) x := by
+  rw [translateIteratedFDerivAlong, translateOfMapsTo_apply,
+    smul_neg_one_pow_iteratedLineDerivOp_sub_apply, List.ofFn_get]
+
+/-- The support of `ρ.translateIteratedFDerivAlong hx vs` lies in `(· - x) ⁻¹' tsupport ρ`. -/
+theorem tsupport_translateIteratedFDerivAlong_subset (ρ : 𝓓(V, F)) {x : E}
+    (hx : MapsTo (· + x) (tsupport (ρ : E → F)) Ω) (vs : List E) :
+    tsupport (ρ.translateIteratedFDerivAlong hx vs : E → F) ⊆ (· - x) ⁻¹' tsupport (ρ : E → F) := by
+  rw [translateIteratedFDerivAlong, tsupport_translateOfMapsTo]
+  exact preimage_mono ((tsupport_smul_subset_right _ _).trans
+    (ρ.tsupport_iteratedLineDerivOp_subset vs.get))
+
+end TestFunction
+
