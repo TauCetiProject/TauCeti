@@ -396,12 +396,12 @@ def transposeCellsEquiv (μ : YoungDiagram) : ↥μ.transpose.cells ≃ ↥μ.ce
 
 @[simp]
 theorem transposeCellsEquiv_apply (μ : YoungDiagram) (c : ↥μ.transpose.cells) :
-    μ.transposeCellsEquiv c = ⟨(c : ℕ × ℕ).swap, mem_transpose.mp c.2⟩ :=
+    μ.transposeCellsEquiv c = ⟨(c : ℕ × ℕ).swap, mem_transpose.mp c.property⟩ :=
   (rfl)
 
 @[simp]
 theorem transposeCellsEquiv_symm_apply (μ : YoungDiagram) (c : ↥μ.cells) :
-    μ.transposeCellsEquiv.symm c = ⟨(c : ℕ × ℕ).swap, mem_transpose.mpr c.2⟩ :=
+    μ.transposeCellsEquiv.symm c = ⟨(c : ℕ × ℕ).swap, mem_transpose.mpr c.property⟩ :=
   (rfl)
 
 end YoungDiagram

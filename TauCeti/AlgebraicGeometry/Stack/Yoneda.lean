@@ -5,24 +5,23 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Stack.StackInGroupoids
+public import TauCeti.AlgebraicGeometry.Stack.OfSheaf
 public import TauCeti.CategoryTheory.Bicategory.Yoneda
 
 /-!
 # The 2-Yoneda lemma for stacks in groupoids
 
-A scheme `T` defines the stack in setoids `h_T` of its functor of points, which is an fppf sheaf
-because the fppf topology is subcanonical. The 2-Yoneda lemma identifies morphisms of stacks
-`h_T → 𝒳` with objects of the fibre `𝒳(T)`: evaluating a morphism at `𝟙 T` is an equivalence
-between the groupoid of morphisms `h_T → 𝒳` (with invertible modifications as arrows) and the
-groupoid `𝒳(T)`, whose inverse sends `x` to the morphism `f ↦ f^* x`. In particular the
-automorphisms of the morphism `h_T → 𝒳` attached to `x` are the automorphisms of `x`. This is how
-an object `x ∈ 𝒳(T)` is regarded as a morphism `T → 𝒳`, for instance to form 2-fibre products
-`T ×_𝒳 𝒴`.
+A scheme `T` defines the stack in setoids `h_T = StackInGroupoids.ofScheme T` of its functor of
+points, which is an fppf sheaf because the fppf topology is subcanonical. The 2-Yoneda lemma
+identifies morphisms of stacks `h_T → 𝒳` with objects of the fibre `𝒳(T)`: evaluating a morphism at
+`𝟙 T` is an equivalence between the groupoid of morphisms `h_T → 𝒳` (with invertible modifications
+as arrows) and the groupoid `𝒳(T)`, whose inverse sends `x` to the morphism `f ↦ f^* x`. In
+particular the automorphisms of the morphism `h_T → 𝒳` attached to `x` are the automorphisms of `x`.
+This is how an object `x ∈ 𝒳(T)` is regarded as a morphism `T → 𝒳`, for instance to form 2-fibre
+products `T ×_𝒳 𝒴`.
 
 ## Main declarations
 
-* `TauCeti.AlgebraicGeometry.StackInGroupoids.ofScheme`: the stack in setoids `h_T` of a scheme.
 * `TauCeti.AlgebraicGeometry.StackInGroupoids.yonedaEquiv`: the equivalence of groupoids
   `Hom(h_T, 𝒳) ≌ 𝒳(T)`.
 
@@ -40,16 +39,6 @@ namespace TauCeti.AlgebraicGeometry.StackInGroupoids
 open _root_.AlgebraicGeometry
 
 universe u
-
-/-- The stack in setoids `h_T` of a scheme `T`: the stack `ofSheaf` of the functor of points of
-`T`, which is an fppf sheaf because the fppf topology is subcanonical. -/
-def ofScheme (T : Scheme.{u}) : StackInGroupoids.{u} :=
-  ofSheaf (Scheme.fppfTopology.yoneda.obj T)
-
-@[simp]
-lemma ofScheme_toSchPseudofunctor (T : Scheme.{u}) :
-    (ofScheme T).toSchPseudofunctor = Pseudofunctor.ofPresheaf.{u + 1} (yoneda.obj T) :=
-  rfl
 
 /-- The 2-Yoneda lemma for stacks in groupoids (Stacks, Lemma 004B): evaluation at `𝟙 T` is an
 equivalence between the groupoid of morphisms `h_T → 𝒳` (with invertible modifications as

@@ -53,7 +53,7 @@ universe w' v u
 
 namespace CategoryTheory.Pseudofunctor
 
-open Opposite Bicategory StrongTrans
+open Opposite Bicategory StrongTrans ofPresheaf
 
 attribute [local instance] uliftCategory
 
@@ -69,22 +69,22 @@ variable {C : Type u} [Category.{v} C] (F : Pseudofunctor (LocallyDiscrete Cᵒ�
 
 /-- Pulling back a morphism `f : Y ⟶ X` along `g` corresponds to composing the corresponding
 `1`-morphism `⟨op X⟩ ⟶ Y` of `LocallyDiscrete Cᵒᵖ` with `g`. -/
-lemma toLoc_op_ofPresheafObjEquiv_comp {Y Y' : LocallyDiscrete Cᵒᵖ}
+lemma toLoc_op_ofPresheaf_objEquiv_comp {Y Y' : LocallyDiscrete Cᵒᵖ}
     (a : (ofPresheaf.{w'} (yoneda.obj X)).obj Y) (g : Y ⟶ Y') :
-    (ofPresheafObjEquiv _ Y a).op.toLoc ≫ g =
-      (ofPresheafObjEquiv _ Y'
+    (objEquiv Y.as a).op.toLoc ≫ g =
+      (objEquiv Y'.as
         (((ofPresheaf.{w'} (yoneda.obj X)).map g).toFunctor.obj a)).op.toLoc :=
   rfl
 
 /-- Pulling back a morphism `f : Y ⟶ X` along `g₁` and then along `g₂` corresponds to the same
 `1`-morphism `⟨op X⟩ ⟶ Y''` as pulling it back along `g₁ ≫ g₂`. -/
-lemma toLoc_op_ofPresheafObjEquiv_map_map {Y Y' Y'' : LocallyDiscrete Cᵒᵖ}
+lemma toLoc_op_ofPresheaf_objEquiv_map_map {Y Y' Y'' : LocallyDiscrete Cᵒᵖ}
     (a : (ofPresheaf.{w'} (yoneda.obj X)).obj Y) (g₁ : Y ⟶ Y') (g₂ : Y' ⟶ Y'') :
-    (ofPresheafObjEquiv _ Y'' (((ofPresheaf.{w'} (yoneda.obj X)).map g₂).toFunctor.obj
+    (objEquiv Y''.as (((ofPresheaf.{w'} (yoneda.obj X)).map g₂).toFunctor.obj
         (((ofPresheaf.{w'} (yoneda.obj X)).map g₁).toFunctor.obj a))).op.toLoc =
-      (ofPresheafObjEquiv _ Y''
+      (objEquiv Y''.as
         (((ofPresheaf.{w'} (yoneda.obj X)).map (g₁ ≫ g₂)).toFunctor.obj a)).op.toLoc := by
-  simp only [ofPresheafObjEquiv_map_obj]
+  simp only [objEquiv_map_toFunctor_obj]
   simp
 
 /-- The component at `Y` of `yonedaPullbackObj F X x`: the functor from the discrete category on
@@ -98,7 +98,7 @@ def yonedaPullbackApp (x : F.obj (.mk (op X))) (Y : LocallyDiscrete Cᵒᵖ) :
 lemma yonedaPullbackApp_toFunctor_obj (x : F.obj (.mk (op X))) (Y : LocallyDiscrete Cᵒᵖ)
     (a : (ofPresheaf.{w'} (yoneda.obj X)).obj Y) :
     (yonedaPullbackApp F X x Y).toFunctor.obj a =
-      (F.map (ofPresheafObjEquiv _ Y a).op.toLoc).toFunctor.obj x :=
+      (F.map (objEquiv Y.as a).op.toLoc).toFunctor.obj x :=
   rfl
 
 @[simp]
@@ -116,18 +116,18 @@ def yonedaPullbackNaturality (x : F.obj (.mk (op X))) {Y Y' : LocallyDiscrete C�
     (ofPresheaf.{w'} (yoneda.obj X)).map g ≫ yonedaPullbackApp F X x Y' ≅
       yonedaPullbackApp F X x Y ≫ F.map g :=
   Cat.Hom.isoMk <| IsDiscrete.natIso fun a ↦
-    (Cat.Hom.toNatIso (F.mapComp' (ofPresheafObjEquiv _ Y a).op.toLoc g
-      (ofPresheafObjEquiv _ Y' (((ofPresheaf.{w'} (yoneda.obj X)).map g).toFunctor.obj a)).op.toLoc
-      (toLoc_op_ofPresheafObjEquiv_comp X a g))).app x
+    (Cat.Hom.toNatIso (F.mapComp' (objEquiv Y.as a).op.toLoc g
+      (objEquiv Y'.as (((ofPresheaf.{w'} (yoneda.obj X)).map g).toFunctor.obj a)).op.toLoc
+      (toLoc_op_ofPresheaf_objEquiv_comp X a g))).app x
 
 @[simp]
 lemma yonedaPullbackNaturality_hom_toNatTrans_app (x : F.obj (.mk (op X)))
     {Y Y' : LocallyDiscrete Cᵒᵖ} (g : Y ⟶ Y') (a : (ofPresheaf.{w'} (yoneda.obj X)).obj Y) :
     (yonedaPullbackNaturality F X x g).hom.toNatTrans.app a =
-      (F.mapComp' (ofPresheafObjEquiv _ Y a).op.toLoc g
-        (ofPresheafObjEquiv _ Y'
+      (F.mapComp' (objEquiv Y.as a).op.toLoc g
+        (objEquiv Y'.as
           (((ofPresheaf.{w'} (yoneda.obj X)).map g).toFunctor.obj a)).op.toLoc
-        (toLoc_op_ofPresheafObjEquiv_comp X a g)).hom.toNatTrans.app x :=
+        (toLoc_op_ofPresheaf_objEquiv_comp X a g)).hom.toNatTrans.app x :=
   rfl
 
 /-- The strong transformation `ofPresheaf (yoneda.obj X) ⟶ F` attached to an object `x` of
@@ -155,12 +155,12 @@ def yonedaPullbackObj (x : F.obj (.mk (op X))) : ofPresheaf.{w'} (yoneda.obj X) 
       yonedaPullbackNaturality_hom_toNatTrans_app, yonedaPullbackNaturality_hom_toNatTrans_app,
       ← mapComp'_eq_mapComp]
     refine (mapComp'₀₁₃_hom_comp_whiskerLeft_mapComp'_hom_app F _ g₁ g₂ _ (g₁ ≫ g₂) _
-      (toLoc_op_ofPresheafObjEquiv_comp X a g₁) rfl
-      (toLoc_op_ofPresheafObjEquiv_comp X a (g₁ ≫ g₂)) x).trans ?_
-    rw [mapComp'_hom_toNatTrans_app_of_eq F _ g₂ _ _ (toLoc_op_ofPresheafObjEquiv_comp X _ g₂)
-      (toLoc_op_ofPresheafObjEquiv_map_map X a g₁ g₂)]
-    dsimp only [yonedaPullbackApp_toFunctor_obj, Functor.comp_obj, ofPresheafObjEquiv_map_obj,
-      Cat.Hom.comp_toFunctor]
+      (toLoc_op_ofPresheaf_objEquiv_comp X a g₁) rfl
+      (toLoc_op_ofPresheaf_objEquiv_comp X a (g₁ ≫ g₂)) x).trans ?_
+    rw [mapComp'_hom_toNatTrans_app_of_eq F _ g₂ _ _ (toLoc_op_ofPresheaf_objEquiv_comp X _ g₂)
+      (toLoc_op_ofPresheaf_objEquiv_map_map X a g₁ g₂)]
+    dsimp only [yonedaPullbackApp_toFunctor_obj, Functor.comp_obj,
+      objEquiv_map_toFunctor_obj, Cat.Hom.comp_toFunctor]
     simp only [Category.id_comp, Category.comp_id, Category.assoc]
     exact (eqToHom_comp_eqToHom_comp _ _ _).symm
 
@@ -180,16 +180,16 @@ lemma yonedaPullbackObj_naturality (x : F.obj (.mk (op X))) {Y Y' : LocallyDiscr
 def yonedaPullbackMapApp {x y : F.obj (.mk (op X))} (φ : x ⟶ y) (Y : LocallyDiscrete Cᵒᵖ) :
     yonedaPullbackApp F X x Y ⟶ yonedaPullbackApp F X y Y where
   toNatTrans :=
-    { app a := (F.map (ofPresheafObjEquiv _ Y a).op.toLoc).toFunctor.map φ
+    { app a := (F.map (objEquiv Y.as a).op.toLoc).toFunctor.map φ
       naturality _ _ ψ := IsDiscrete.naturality (G := (yonedaPullbackApp F X x Y).toFunctor)
         (H := (yonedaPullbackApp F X y Y).toFunctor)
-        (fun a ↦ (F.map (ofPresheafObjEquiv (yoneda.obj X) Y a).op.toLoc).toFunctor.map φ) ψ }
+        (fun a ↦ (F.map (objEquiv Y.as a).op.toLoc).toFunctor.map φ) ψ }
 
 @[simp]
 lemma yonedaPullbackMapApp_toNatTrans_app {x y : F.obj (.mk (op X))} (φ : x ⟶ y)
     (Y : LocallyDiscrete Cᵒᵖ) (a : (ofPresheaf.{w'} (yoneda.obj X)).obj Y) :
     (yonedaPullbackMapApp F X φ Y).toNatTrans.app a =
-      (F.map (ofPresheafObjEquiv _ Y a).op.toLoc).toFunctor.map φ :=
+      (F.map (objEquiv Y.as a).op.toLoc).toFunctor.map φ :=
   rfl
 
 /-- The modification `yonedaPullbackObj F X x ⟶ yonedaPullbackObj F X y` induced by a morphism
@@ -233,19 +233,23 @@ lemma yonedaPullback_map {x y : F.obj (.mk (op X))} (φ : x ⟶ y) :
 /-- Evaluation of a strong transformation `ofPresheaf (yoneda.obj X) ⟶ F` at the identity of `X`;
 it is the functor of the 2-Yoneda equivalence `yonedaEquiv F X`. -/
 def yonedaEvaluation : (ofPresheaf.{w'} (yoneda.obj X) ⟶ F) ⥤ F.obj (.mk (op X)) where
-  obj η := (η.app (.mk (op X))).toFunctor.obj ((ofPresheafObjEquiv _ _).symm (𝟙 X))
-  map Γ := (Γ.as.app (.mk (op X))).toNatTrans.app ((ofPresheafObjEquiv _ _).symm (𝟙 X))
+  obj η := (η.app (.mk (op X))).toFunctor.obj
+    ((objEquiv.{w'} (P := yoneda.obj X) (op X)).symm (𝟙 X))
+  map Γ := (Γ.as.app (.mk (op X))).toNatTrans.app
+    ((objEquiv.{w'} (P := yoneda.obj X) (op X)).symm (𝟙 X))
 
 @[simp]
 lemma yonedaEvaluation_obj (η : ofPresheaf.{w'} (yoneda.obj X) ⟶ F) :
     (yonedaEvaluation F X).obj η =
-      (η.app (.mk (op X))).toFunctor.obj ((ofPresheafObjEquiv _ _).symm (𝟙 X)) :=
+      (η.app (.mk (op X))).toFunctor.obj
+        ((objEquiv.{w'} (P := yoneda.obj X) (op X)).symm (𝟙 X)) :=
   rfl
 
 @[simp]
 lemma yonedaEvaluation_map {η θ : ofPresheaf.{w'} (yoneda.obj X) ⟶ F} (Γ : η ⟶ θ) :
     (yonedaEvaluation F X).map Γ =
-      (Γ.as.app (.mk (op X))).toNatTrans.app ((ofPresheafObjEquiv _ _).symm (𝟙 X)) :=
+      (Γ.as.app (.mk (op X))).toNatTrans.app
+        ((objEquiv.{w'} (P := yoneda.obj X) (op X)).symm (𝟙 X)) :=
   rfl
 
 /-- The counit of the 2-Yoneda equivalence: evaluating `f ↦ F(f)(x)` at `𝟙 X` gives
@@ -266,31 +270,32 @@ lemma yonedaCounitIso_inv_app (x : F.obj (.mk (op X))) :
 
 /-- Every object of the fibre of `ofPresheaf (yoneda.obj X)` over `Y` is the pullback of the
 identity of `X` along the corresponding `1`-morphism `⟨op X⟩ ⟶ Y`. -/
-lemma eq_map_obj_ofPresheafObjEquiv_symm_id {Y : LocallyDiscrete Cᵒᵖ}
+lemma eq_map_obj_ofPresheaf_objEquiv_symm_id {Y : LocallyDiscrete Cᵒᵖ}
     (a : (ofPresheaf.{w'} (yoneda.obj X)).obj Y) :
-    a = ((ofPresheaf.{w'} (yoneda.obj X)).map (ofPresheafObjEquiv _ Y a).op.toLoc).toFunctor.obj
-      ((ofPresheafObjEquiv _ _).symm (𝟙 X)) :=
-  (ofPresheafObjEquiv _ Y).injective (by
-    simp only [ofPresheafObjEquiv_map_obj, Equiv.apply_symm_apply]
+    a = ((ofPresheaf.{w'} (yoneda.obj X)).map (objEquiv Y.as a).op.toLoc).toFunctor.obj
+      ((objEquiv.{w'} (P := yoneda.obj X) (op X)).symm (𝟙 X)) :=
+  (objEquiv.{w'} (P := yoneda.obj X) Y.as).injective (by
+    simp only [objEquiv_map_toFunctor_obj, Equiv.apply_symm_apply]
     simp)
 
 /-- The component at `Y` of the unit of the 2-Yoneda equivalence at `η`: at `f : Y ⟶ X` it is
 the naturality isomorphism `η_Y(f) ≅ F(f)(η_X(𝟙 X))` of `η` at `f`. -/
 def yonedaUnitApp (η : ofPresheaf.{w'} (yoneda.obj X) ⟶ F) (Y : LocallyDiscrete Cᵒᵖ) :
     η.app Y ≅ yonedaPullbackApp F X
-      ((η.app (.mk (op X))).toFunctor.obj ((ofPresheafObjEquiv _ _).symm (𝟙 X))) Y :=
+      ((η.app (.mk (op X))).toFunctor.obj
+        ((objEquiv.{w'} (P := yoneda.obj X) (op X)).symm (𝟙 X))) Y :=
   Cat.Hom.isoMk <| IsDiscrete.natIso (D := (ofPresheaf.{w'} (yoneda.obj X)).obj Y) fun a ↦
-    (η.app Y).toFunctor.mapIso (eqToIso (eq_map_obj_ofPresheafObjEquiv_symm_id X a)) ≪≫
-      (Cat.Hom.toNatIso (η.naturality (ofPresheafObjEquiv _ Y a).op.toLoc)).app
-        ((ofPresheafObjEquiv _ _).symm (𝟙 X))
+    (η.app Y).toFunctor.mapIso (eqToIso (eq_map_obj_ofPresheaf_objEquiv_symm_id X a)) ≪≫
+      (Cat.Hom.toNatIso (η.naturality (objEquiv Y.as a).op.toLoc)).app
+        ((objEquiv.{w'} (P := yoneda.obj X) (op X)).symm (𝟙 X))
 
 @[simp]
 lemma yonedaUnitApp_hom_toNatTrans_app (η : ofPresheaf.{w'} (yoneda.obj X) ⟶ F)
     (Y : LocallyDiscrete Cᵒᵖ) (a : (ofPresheaf.{w'} (yoneda.obj X)).obj Y) :
     (yonedaUnitApp F X η Y).hom.toNatTrans.app a =
-      (η.app Y).toFunctor.map (eqToHom (eq_map_obj_ofPresheafObjEquiv_symm_id X a)) ≫
-        (η.naturality (ofPresheafObjEquiv _ Y a).op.toLoc).hom.toNatTrans.app
-          ((ofPresheafObjEquiv _ _).symm (𝟙 X)) :=
+      (η.app Y).toFunctor.map (eqToHom (eq_map_obj_ofPresheaf_objEquiv_symm_id X a)) ≫
+        (η.naturality (objEquiv Y.as a).op.toLoc).hom.toNatTrans.app
+          ((objEquiv.{w'} (P := yoneda.obj X) (op X)).symm (𝟙 X)) :=
   rfl
 
 /-- The unit of the 2-Yoneda equivalence at `η`: the invertible modification from `η` to the
@@ -302,13 +307,13 @@ def yonedaUnitIsoApp (η : ofPresheaf.{w'} (yoneda.obj X) ⟶ F) :
     simp only [Cat.Hom₂.comp_app, Cat.whiskerLeft_app, Cat.whiskerRight_app,
       yonedaPullbackObj_naturality, yonedaPullbackNaturality_hom_toNatTrans_app,
       yonedaUnitApp_hom_toNatTrans_app]
-    rw [naturality_comp'_hom_app η _ g _ (toLoc_op_ofPresheafObjEquiv_comp X a g)]
+    rw [naturality_comp'_hom_app η _ g _ (toLoc_op_ofPresheaf_objEquiv_comp X a g)]
     have key := (η.naturality g).hom.toNatTrans.naturality
-      (eqToHom (eq_map_obj_ofPresheafObjEquiv_symm_id X a))
+      (eqToHom (eq_map_obj_ofPresheaf_objEquiv_symm_id X a))
     rw [Cat.Hom.comp_map, Cat.Hom.comp_map] at key
     dsimp only [yonedaEvaluation_obj, Cat.Hom.comp_toFunctor, Functor.comp_obj,
       yonedaPullbackObj_app, yonedaPullbackApp_toFunctor_obj,
-      ofPresheafObjEquiv_map_obj] at key ⊢
+      objEquiv_map_toFunctor_obj] at key ⊢
     simp only [Category.assoc, Functor.map_comp, Cat.Hom.inv_hom_id_toNatTrans_app]
     rw [← reassoc_of% key, ← Functor.map_comp_assoc]
     congr 1
@@ -331,13 +336,14 @@ def yonedaUnitIso : 𝟭 _ ≅ yonedaEvaluation F X ⋙ yonedaPullback F X :=
     dsimp only [yonedaUnitIsoApp_hom_as_app, yonedaPullbackMap_as_app, yonedaPullbackObj_app]
     rw [Cat.Hom₂.comp_app, Cat.Hom₂.comp_app, yonedaUnitApp_hom_toNatTrans_app,
       yonedaUnitApp_hom_toNatTrans_app, yonedaPullbackMapApp_toNatTrans_app]
-    have hmod := congrArg (fun t ↦ t.toNatTrans.app ((ofPresheafObjEquiv _ _).symm (𝟙 X)))
-      (Γ.as.naturality (ofPresheafObjEquiv _ _ a).op.toLoc)
+    have hmod := congrArg
+      (fun t ↦ t.toNatTrans.app ((objEquiv.{w'} (P := yoneda.obj X) (op X)).symm (𝟙 X)))
+      (Γ.as.naturality (objEquiv _ a).op.toLoc)
     simp only [Cat.Hom₂.comp_app, Cat.whiskerLeft_app, Cat.whiskerRight_app] at hmod
     -- Precompose the modification condition with `η_Z` of the `eqToHom` identifying `a` with a
     -- pullback of `𝟙 X`, and move it past `Γ` by naturality of `Γ_Z`. The goal itself is only
     -- type-correct up to unfolding, so the equation is assembled in the hypothesis.
-    have key := (η.app _).toFunctor.map (eqToHom (eq_map_obj_ofPresheafObjEquiv_symm_id X a)) ≫=
+    have key := (η.app _).toFunctor.map (eqToHom (eq_map_obj_ofPresheaf_objEquiv_symm_id X a)) ≫=
       hmod
     rw [reassoc_of% (Γ.as.app _).toNatTrans.naturality,
       ← Category.assoc ((η.app _).toFunctor.map _)] at key

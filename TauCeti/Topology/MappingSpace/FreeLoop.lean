@@ -109,17 +109,17 @@ theorem isEmbedding_constContractibleLoop :
 /-- Every loop along a path of free loops that starts at a constant loop is contractible: a path
 in `ConstLoopPath Q` is a path in `𝓛₀Q`. -/
 theorem constLoopPath_mem_contractibleLoops (p : ConstLoopPath Q) (t : I) :
-    p.1 t ∈ contractibleLoops Q := by
-  obtain ⟨⟨q, hq⟩, -⟩ := p.2
+    p.val t ∈ contractibleLoops Q := by
+  obtain ⟨⟨q, hq⟩, -⟩ := p.property
   have h : Joined (0 : I) t := ⟨⟨⟨fun s => s * t, by fun_prop⟩, by simp, by simp⟩⟩
-  have h' := h.map p.1.continuous
+  have h' := h.map p.val.continuous
   rw [hq] at h'
   exact ⟨q, h'.symm⟩
 
 variable (Q) in
 /-- The paths in the free loop space from the constant loop at `x` to a constant loop. -/
 abbrev BasedConstLoopPath (x : Q) : Type _ :=
-  {p : ConstLoopPath Q // p.1 0 = ContinuousMap.const Circle x}
+  {p : ConstLoopPath Q // p.val 0 = ContinuousMap.const Circle x}
 
 variable (Q) in
 /-- The paths in the contractible free loops `𝓛₀Q` from a constant loop to a constant loop. -/
@@ -130,27 +130,28 @@ abbrev ContractibleConstLoopPath : Type _ :=
 /-- A path of free loops from a constant loop to a constant loop is a path in the contractible free
 loops `𝓛₀Q`. -/
 def constLoopPathHomeomorph : ConstLoopPath Q ≃ₜ ContractibleConstLoopPath Q where
-  toFun p := ⟨⟨fun t => ⟨p.1 t, constLoopPath_mem_contractibleLoops p t⟩,
-      p.1.continuous.subtype_mk _⟩,
-    ⟨p.2.1.choose, Subtype.ext p.2.1.choose_spec⟩, ⟨p.2.2.choose, Subtype.ext p.2.2.choose_spec⟩⟩
-  invFun r := ⟨(ContinuousMap.mk Subtype.val continuous_subtype_val).comp r.1,
-    ⟨r.2.1.choose, congrArg Subtype.val r.2.1.choose_spec⟩,
-    ⟨r.2.2.choose, congrArg Subtype.val r.2.2.choose_spec⟩⟩
+  toFun p := ⟨⟨fun t => ⟨p.val t, constLoopPath_mem_contractibleLoops p t⟩,
+      p.val.continuous.subtype_mk _⟩,
+    ⟨p.property.1.choose, Subtype.ext p.property.1.choose_spec⟩, ⟨p.property.2.choose,
+        Subtype.ext p.property.2.choose_spec⟩⟩
+  invFun r := ⟨(ContinuousMap.mk Subtype.val continuous_subtypeVal).comp r.val,
+    ⟨r.property.1.choose, congrArg Subtype.val r.property.1.choose_spec⟩,
+    ⟨r.property.2.choose, congrArg Subtype.val r.property.2.choose_spec⟩⟩
   -- both composites rebuild the same data, by the definitional eta rules for subtypes
   left_inv _ := rfl
   right_inv _ := rfl
   continuous_toFun := by
     refine continuous_induced_rng.2 ?_
     refine ((ContinuousMap.isInducing_postcomp (ContinuousMap.mk Subtype.val
-      continuous_subtype_val) Topology.IsInducing.subtypeVal).continuous_iff).2 ?_
-    exact continuous_subtype_val
+      continuous_subtypeVal) Topology.IsInducing.subtypeVal).continuous_iff).2 ?_
+    exact continuous_subtypeVal
   continuous_invFun :=
-    continuous_induced_rng.2 ((ContinuousMap.continuous_postcomp _).comp continuous_subtype_val)
+    continuous_induced_rng.2 ((ContinuousMap.continuous_postcomp _).comp continuous_subtypeVal)
 
 /-- The path of contractible loops, read in the free loop space, is the original path. -/
 @[simp]
 theorem coe_constLoopPathHomeomorph (p : ConstLoopPath Q) (t : I) :
-    ((constLoopPathHomeomorph p).1 t : C(Circle, Q)) = p.1 t := by
+    ((constLoopPathHomeomorph p).val t : C(Circle, Q)) = p.val t := by
   rw [constLoopPathHomeomorph]
   -- the underlying free loop at `t` is `p.1 t`, by construction of `toFun`
   rfl
@@ -158,13 +159,13 @@ theorem coe_constLoopPathHomeomorph (p : ConstLoopPath Q) (t : I) :
 variable (Q) in
 /-- The paths in the contractible free loops from the constant loop at `x` to a constant loop. -/
 abbrev BasedContractibleConstLoopPath (x : Q) : Type _ :=
-  {p : ContractibleConstLoopPath Q // p.1 0 = constContractibleLoop x}
+  {p : ContractibleConstLoopPath Q // p.val 0 = constContractibleLoop x}
 
 /-- The inverse of `constLoopPathHomeomorph` reads a path in the contractible loops in the free
 loop space. -/
 @[simp]
 theorem coe_constLoopPathHomeomorph_symm (r : ContractibleConstLoopPath Q) (t : I) :
-    (constLoopPathHomeomorph.symm r).1 t = (r.1 t : C(Circle, Q)) := by
+    (constLoopPathHomeomorph.symm r).val t = (r.val t : C(Circle, Q)) := by
   have h := coe_constLoopPathHomeomorph (constLoopPathHomeomorph.symm r) t
   rw [Homeomorph.apply_symm_apply] at h
   exact h.symm
@@ -190,12 +191,12 @@ homeomorphism `C(Circle, Q) ≃ₜ ClosedUnitPath Q`. -/
 def circleMapHomeomorphClosedUnitPath : C(Circle, Q) ≃ₜ ClosedUnitPath Q :=
   (ContinuousMap.homeomorphFactorsThrough unitToCircle unitToCircle.continuous.isProperMap
       unitToCircle_surjective).trans
-    { toFun g := ⟨g.1, (factorsThrough_unitToCircle_iff g.1).1 g.2⟩
-      invFun p := ⟨p.1, (factorsThrough_unitToCircle_iff p.1).2 p.2⟩
+    { toFun g := ⟨g.val, (factorsThrough_unitToCircle_iff g.val).1 g.property⟩
+      invFun p := ⟨p.val, (factorsThrough_unitToCircle_iff p.val).2 p.property⟩
       left_inv _ := rfl
       right_inv _ := rfl
-      continuous_toFun := continuous_subtype_val.subtype_mk _
-      continuous_invFun := continuous_subtype_val.subtype_mk _ }
+      continuous_toFun := continuous_subtypeVal.subtype_mk _
+      continuous_invFun := continuous_subtypeVal.subtype_mk _ }
 
 @[simp]
 theorem coe_circleMapHomeomorphClosedUnitPath (γ : C(Circle, Q)) :
@@ -205,19 +206,19 @@ theorem coe_circleMapHomeomorphClosedUnitPath (γ : C(Circle, Q)) :
     unitToCircle.continuous.isProperMap unitToCircle_surjective γ
 
 theorem circleMapHomeomorphClosedUnitPath_apply (γ : C(Circle, Q)) (t : I) :
-    (circleMapHomeomorphClosedUnitPath γ).1 t = γ (unitToCircle t) := by
+    (circleMapHomeomorphClosedUnitPath γ).val t = γ (unitToCircle t) := by
   rw [coe_circleMapHomeomorphClosedUnitPath, ContinuousMap.comp_apply]
 
 @[simp]
 theorem circleMapHomeomorphClosedUnitPath_symm_unitToCircle (p : ClosedUnitPath Q) (t : I) :
-    circleMapHomeomorphClosedUnitPath.symm p (unitToCircle t) = p.1 t := by
+    circleMapHomeomorphClosedUnitPath.symm p (unitToCircle t) = p.val t := by
   have h := circleMapHomeomorphClosedUnitPath_apply (circleMapHomeomorphClosedUnitPath.symm p) t
   rw [Homeomorph.apply_symm_apply] at h
   exact h.symm
 
 @[simp]
 theorem circleMapHomeomorphClosedUnitPath_symm_one (p : ClosedUnitPath Q) :
-    circleMapHomeomorphClosedUnitPath.symm p 1 = p.1 0 := by
+    circleMapHomeomorphClosedUnitPath.symm p 1 = p.val 0 := by
   rw [← unitToCircle_zero, circleMapHomeomorphClosedUnitPath_symm_unitToCircle]
 
 @[simp]
@@ -235,26 +236,26 @@ theorem circleMapHomeomorphClosedUnitPath_symm_const (q : Q) :
 /-- Restricting `circleMapHomeomorphClosedUnitPath` to the fibre of evaluation at `1 ∈ Circle` over
 `x` gives the homeomorphism `BasedMap Circle Q 1 x ≃ₜ Path x x`. -/
 def basedMapCircleOneHomeomorphPath (x : Q) : BasedMap Circle Q 1 x ≃ₜ Path x x :=
-  (Homeomorph.subtype (q := fun p : ClosedUnitPath Q ↦ p.1 0 = x)
+  (Homeomorph.subtype (q := fun p : ClosedUnitPath Q ↦ p.val 0 = x)
     circleMapHomeomorphClosedUnitPath fun γ ↦ by
       rw [← unitToCircle_zero, ← circleMapHomeomorphClosedUnitPath_apply]).trans
-    { toFun p := ⟨p.1.1, p.2, p.1.2.symm.trans p.2⟩
+    { toFun p := ⟨p.val.val, p.property, p.val.property.symm.trans p.property⟩
       invFun ω := ⟨⟨ω.toContinuousMap, ω.source.trans ω.target.symm⟩, ω.source⟩
       left_inv _ := rfl
       right_inv _ := rfl
-      continuous_toFun := continuous_induced_rng.2 continuous_subtype_val.subtype_val
+      continuous_toFun := continuous_induced_rng.2 continuous_subtypeVal.subtypeVal
       continuous_invFun :=
         ((continuous_induced_dom :
           Continuous (Path.toContinuousMap : Path x x → C(I, Q))).subtype_mk _).subtype_mk _ }
 
 @[simp]
 theorem basedMapCircleOneHomeomorphPath_apply (x : Q) (γ : BasedMap Circle Q 1 x) (t : I) :
-    basedMapCircleOneHomeomorphPath x γ t = γ.1 (unitToCircle t) := by
+    basedMapCircleOneHomeomorphPath x γ t = γ.val (unitToCircle t) := by
   simp [basedMapCircleOneHomeomorphPath]
 
 @[simp]
 theorem basedMapCircleOneHomeomorphPath_symm_unitToCircle (x : Q) (ω : Path x x) (t : I) :
-    ((basedMapCircleOneHomeomorphPath x).symm ω).1 (unitToCircle t) = ω t := by
+    ((basedMapCircleOneHomeomorphPath x).symm ω).val (unitToCircle t) = ω t := by
   have h := basedMapCircleOneHomeomorphPath_apply x ((basedMapCircleOneHomeomorphPath x).symm ω) t
   rw [Homeomorph.apply_symm_apply] at h
   exact h.symm
@@ -267,7 +268,7 @@ theorem basedMapCircleOneHomeomorphPath_symm_refl (x : Q) :
 /-- The underlying circle map of `(basedMapCircleOneHomeomorphPath x).symm ω` agrees with
 `Path.toCircle ω`. -/
 theorem coe_basedMapCircleOneHomeomorphPath_symm (x : Q) (ω : Path x x) :
-    ((basedMapCircleOneHomeomorphPath x).symm ω).1 = ω.toCircle := by
+    ((basedMapCircleOneHomeomorphPath x).symm ω).val = ω.toCircle := by
   ext z
   obtain ⟨t, rfl⟩ := unitToCircle_surjective z
   rw [basedMapCircleOneHomeomorphPath_symm_unitToCircle, ω.toCircle_unitToCircle]
@@ -280,7 +281,7 @@ def basepointContractibleLoop : C(contractibleLoops Q, Q) :=
 
 @[simp]
 theorem basepointContractibleLoop_apply (γ : contractibleLoops Q) :
-    basepointContractibleLoop γ = γ.1 1 := by
+    basepointContractibleLoop γ = γ.val 1 := by
   simp [basepointContractibleLoop]
 
 theorem basepointContractibleLoop_constContractibleLoop (q : Q) :
@@ -334,7 +335,7 @@ variable {x y : X}
 /-- Reading loops at `x` as maps from the circle is continuous. -/
 theorem continuous_toCircle (x : X) : Continuous fun γ : Path x x ↦ γ.toCircle := by
   simp_rw [← TauCeti.coe_basedMapCircleOneHomeomorphPath_symm]
-  exact continuous_subtype_val.comp (TauCeti.basedMapCircleOneHomeomorphPath x).symm.continuous
+  exact continuous_subtypeVal.comp (TauCeti.basedMapCircleOneHomeomorphPath x).symm.continuous
 
 /-- **Free homotopy of loops is homotopy through closed paths.** Two loops, at possibly different
 points, are joined by a path in `C(S¹, X)` exactly when they are homotopic as maps `I → X` through

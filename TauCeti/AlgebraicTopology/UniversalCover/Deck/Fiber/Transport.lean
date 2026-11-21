@@ -53,14 +53,14 @@ variable {E F G B : Type*} [TopologicalSpace E] [TopologicalSpace F] [Topologica
 homeomorphism. -/
 @[simp]
 lemma fiberMap_apply_coe (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) (e : p ⁻¹' {b}) :
-    (fiberMap h hpq b e : F) = h e.1 :=
+    (fiberMap h hpq b e : F) = h e.val :=
   rfl
 
 /-- On underlying points, the inverse fibre map is the inverse of the over-base
 homeomorphism. -/
 @[simp]
 lemma fiberMap_symm_apply_coe (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) (f : q ⁻¹' {b}) :
-    ((fiberMap h hpq b).symm f : E) = h.symm f.1 :=
+    ((fiberMap h hpq b).symm f : E) = h.symm f.val :=
   rfl
 
 /-- The fibre map induced by the identity over-base homeomorphism is the identity. -/
@@ -164,7 +164,7 @@ def fiberMapStabilizerEquiv (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) (e : p
 @[simp]
 lemma fiberMapStabilizerEquiv_apply_coe (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e)
     (e : p ⁻¹' {b}) (φ : MulAction.stabilizer (deck p) e) :
-    (fiberMapStabilizerEquiv h hpq e φ : deck q) = conjMulEquiv h hpq φ.1 :=
+    (fiberMapStabilizerEquiv h hpq e φ : deck q) = conjMulEquiv h hpq φ.val :=
   by simp [fiberMapStabilizerEquiv]
 
 /-- On deck transformations, the inverse fibre-map stabilizer equivalence is inverse
@@ -172,7 +172,7 @@ conjugation. -/
 @[simp]
 lemma fiberMapStabilizerEquiv_symm_apply_coe (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e)
     (e : p ⁻¹' {b}) (ψ : MulAction.stabilizer (deck q) (fiberMap h hpq b e)) :
-    ((fiberMapStabilizerEquiv h hpq e).symm ψ : deck p) = (conjMulEquiv h hpq).symm ψ.1 :=
+    ((fiberMapStabilizerEquiv h hpq e).symm ψ : deck p) = (conjMulEquiv h hpq).symm ψ.val :=
   by simp [fiberMapStabilizerEquiv]
 
 /-- Applying a deck transformation and then transporting to the target fibre gives a point in

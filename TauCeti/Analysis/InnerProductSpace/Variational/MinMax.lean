@@ -100,7 +100,7 @@ theorem apply_self_le_mul_norm_sq_of_mem_span (hkappa : Monotone kappa)
     rw [real_inner_smul_left, hcoord, sq]
   rw [hB, hnorm, Finset.mul_sum]
   exact Finset.sum_le_sum fun i _ ↦
-    mul_le_mul_of_nonneg_right (hkappa (Nat.lt_succ_iff.1 i.2)) (sq_nonneg _)
+    mul_le_mul_of_nonneg_right (hkappa (Nat.lt_succ_iff.1 i.isLt)) (sq_nonneg _)
 
 /-- **Bessel's inequality and the lower half of the min–max principle.** Let `B` be symmetric
 with `B v v ≥ 0`, let `(eⱼ)` be an orthonormal basis of `H` with `eⱼ = J uⱼ` and
@@ -160,7 +160,7 @@ theorem exists_mem_apply_ne_zero_mul_norm_sq_le_apply_self (hsymm : ∀ v w : V,
     LinearMap.pi fun j ↦ (innerₗ H (e j)).comp (W.map J).subtype
   obtain ⟨x, hx, hx0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot
     (LinearMap.ker_ne_bot_of_finrank_lt (f := f) (by rw [Module.finrank_fin_fun]; omega))
-  obtain ⟨v, hvW, hvx⟩ := Submodule.mem_map.1 x.2
+  obtain ⟨v, hvW, hvx⟩ := Submodule.mem_map.1 x.property
   refine ⟨v, hvW, hvx ▸ fun h ↦ hx0 (Subtype.ext h),
     mul_norm_sq_le_apply_self_of_forall_inner_eq_zero hsymm hnonneg e hkappa hJu heq
       fun j hj ↦ ?_⟩
