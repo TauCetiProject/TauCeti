@@ -19,30 +19,37 @@ import TauCeti.GroupTheory.NoncommPiCoprod
 
 Let `G` be a fully residually free group and `X` a finite set of variables. The non-orientable
 standard quadratic equations `x₁² x₂² = 1` and `x₁² x₂² x₃² = 1` without coefficients have only
-commutative solutions in `G`, and their radicals are larger than the normal closures of the
-equations:
+commutative solutions in `G`:
 
-* `G` has unique roots, so every solution of `x₁² x₂² = 1` has `x₂ = x₁⁻¹`. The radical is the
-  normal closure of `x₁ x₂`, the kernel of the substitution `x₂ ↦ x₁⁻¹`, and the coordinate group
-  is `G ∗ F(X ∖ {x₂})`.
+* `G` has unique roots, so every solution of `x₁² x₂² = 1` has `x₂ = x₁⁻¹`.
 * By Lyndon's theorem in free groups, `G` satisfies Vaught's condition
   (`TauCeti.LimitGroup.IsResiduallyFree.isVaught`); it is also torsion-free, so every solution of
-  `x₁² x₂² x₃² = 1` consists of pairwise commuting `x₁`, `x₂`, `x₃` with `x₁ x₂ x₃ = 1`. The
-  radical is the kernel of the map to `G[X] ∗ ℤ²` sending `x₁`, `x₂` to the generators `a₁`, `a₂`
-  of `ℤ²` and `x₃` to `(a₁ a₂)⁻¹`, and the coordinate group is `G ∗ ℤ² ∗ F(X ∖ {x₁, x₂, x₃})`.
+  `x₁² x₂² x₃² = 1` consists of pairwise commuting `x₁`, `x₂`, `x₃` with `x₁ x₂ x₃ = 1`.
 
-In both cases the coordinate group embeds, over `G`, in an iterated extension of centralizers of
+So the radicals of both equations are larger than their normal closures. If `G` is not abelian,
+they are described by these relations:
+
+* the radical of `x₁² x₂² = 1` is the normal closure of `x₁ x₂`, the kernel of the substitution
+  `x₂ ↦ x₁⁻¹`, and its coordinate group is `G ∗ F(X ∖ {x₂})`;
+* the radical of `x₁² x₂² x₃² = 1` is the kernel of the map to `G[X] ∗ ℤ²` sending `x₁`, `x₂` to
+  the generators `a₁`, `a₂` of `ℤ²` and `x₃` to `(a₁ a₂)⁻¹`, and its coordinate group is
+  `G ∗ ℤ² ∗ F(X ∖ {x₁, x₂, x₃})`.
+
+If `G` is abelian, both radicals also contain the commutator subgroup of `G[X]`, and both
+coordinate groups are of the form `G × ℤᵏ`.
+
+In every case the coordinate group embeds, over `G`, in an iterated extension of centralizers of
 `G`; this embedding, not the description of the radical, is what is stated here. For nonabelian
 `G`, the free `G`-group `G[X]` embeds in one extension of a centralizer of `G` and `G[X] ∗ ℤ²` in
 one more (`TauCeti.LimitGroup.exists_ice_embedding_GX`,
 `TauCeti.LimitGroup.exists_ice_embedding_coprod_pi`); the kernel of a `G`-homomorphism into an
 iterated extension of centralizers, which is discriminated by `G`, is its own radical. For abelian
-`G` the coordinate group is `G × ℤᵏ`
-(`TauCeti.GroupAlgGeom.exists_ice_embedding_coordGroup_of_isMulCommutative`).
+`G` the embedding is `TauCeti.GroupAlgGeom.exists_ice_embedding_coordGroup_of_isMulCommutative`.
 
 These are the cases (4) and (5) of the radicals of consistent standard quadratic equations over a
 freely discriminated group, whose printed formulas in [IFT] omit the relations `x₁ x₂ = 1` and
-`x₁ x₂ x₃ = 1`, and two of the low-genus cases of the embedding theorem of [VAR-I].
+`x₁ x₂ x₃ = 1` (and, for abelian `G`, the commutators with the coefficients), and two of the
+low-genus cases of the embedding theorem of [VAR-I].
 
 ## Main results
 
