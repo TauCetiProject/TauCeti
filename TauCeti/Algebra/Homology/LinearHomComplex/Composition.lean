@@ -132,19 +132,17 @@ private lemma cochainCompTensor_d (p q j : ℤ)
   simp only [Preadditive.add_comp, Linear.units_smul_comp, Category.assoc,
     HomologicalComplex.ι_mapBifunctorDesc]
   apply ModuleCat.MonoidalCategory.tensor_ext
-  intro z₂ z₁
-  let z₂' : ModuleCat.of R (Cochain G K p) := z₂
-  let z₁' : ModuleCat.of R (Cochain F G q) := z₁
+  intro (z₂ : Cochain G K p) (z₁ : Cochain F G q)
   simp only [ModuleCat.hom_comp, LinearMap.coe_comp, Function.comp_apply, ModuleCat.hom_add,
     ModuleCat.hom_smul, LinearMap.add_apply, ModuleCat.MonoidalCategory.whiskerRight_apply,
     LinearMap.smul_apply, ModuleCat.MonoidalCategory.whiskerLeft_apply]
-  -- On a pure tensor of cochains, the differentials are `δ` (`linearHomComplex_d_hom_apply`) and
-  -- `cochainCompTensor` is composition (`cochainCompTensor_tmul`), both by definition; state the
-  -- goal through them as the Leibniz rule.
-  change z₁'.comp (δ p (p + 1) z₂') (by omega) +
-      p.negOnePow • (δ q (q + 1) z₁').comp z₂' (by omega) =
-    δ j (j + 1) (z₁'.comp z₂' (by omega))
-  exact (δ_comp z₁' z₂' (by omega) (q + 1) (p + 1) (j + 1) rfl rfl rfl).symm
+  -- The evaluation lemmas `linearHomComplex_d_hom_apply` and `cochainCompTensor_tmul` are stated
+  -- on the modules `ModuleCat.of R (Cochain _ _ _)`, while the maps here still have source and
+  -- target `(linearHomComplex _ _ _).X _`; `simp` does not unfold `linearHomComplex` to match
+  -- them, so first align these coefficient modules by `linearHomComplex_X`.
+  dsimp only [CochainComplex.linearHomComplex_X]
+  simp only [CochainComplex.linearHomComplex_d_hom_apply, cochainCompTensor_tmul]
+  exact (δ_comp z₁ z₂ (by omega) (q + 1) (p + 1) (j + 1) rfl rfl rfl).symm
 
 /-- **Composition of cochains is a closed degree-zero map.**  It assembles into a morphism of
 cochain complexes of `R`-modules out of the tensor product; the differential of a composite is
