@@ -41,8 +41,10 @@ interaction is recorded here.
 * `TauCeti.Hodge.DolbeaultComplex.del_mem_iSup`, `TauCeti.Hodge.DolbeaultComplex.delBar_mem_iSup`
   and `TauCeti.Hodge.DolbeaultComplex.conj_mem_iSup`: the operators move sums of type pieces as
   their bidegrees prescribe, and so does `TauCeti.Hodge.DolbeaultComplex.d_mem_iSup`.
-* `TauCeti.Hodge.DolbeaultComplex.conj_supportedProj`: projection onto a set of types stable under
-  exchanging the two indices commutes with conjugation.
+* `TauCeti.Hodge.DolbeaultComplex.conj_supportedProj`: conjugation carries the projection onto a
+  set of types to the projection onto the set of exchanged types.
+* `TauCeti.Hodge.DolbeaultComplex.twistProj_mem_iSup`: the projections to the real twists preserve
+  every sum of type pieces stable under exchanging the two indices.
 
 ## References
 
@@ -165,17 +167,25 @@ theorem conj_mem_iSup {S T : Set (ℤ × ℤ)} (hST : ∀ i ∈ S, i.swap ∈ T)
     (hx : x ∈ ⨆ i : S, 𝒜 i) : X.conj.toEquiv x ∈ ⨆ i : T, 𝒜 i :=
   TauCeti.DirectSum.map_mem_iSup X.conj.toEquiv (fun _ _ ↦ X.conj_mem) hST hx
 
+/-- The projection to a real twist preserves a sum of type pieces indexed by a set stable under
+exchanging the two indices. -/
+theorem twistProj_mem_iSup {S : Set (ℤ × ℤ)} (hS : ∀ i ∈ S, i.swap ∈ S) (p : ℤ) {x : A}
+    (hx : x ∈ ⨆ i : S, 𝒜 i) : X.conj.twistProj p x ∈ ⨆ i : S, 𝒜 i := by
+  rw [Conjugation.twistProj_apply]
+  exact Submodule.smul_of_tower_mem _ _ (add_mem hx (Submodule.smul_of_tower_mem _ _
+    (X.conj_mem_iSup hS hx)))
+
 section Decomposition
 
 variable [DirectSum.Decomposition 𝒜]
 
 open TauCeti.DirectSum
 
-/-- Projection onto the types in a set stable under exchanging the two indices commutes with
-conjugation. -/
-theorem conj_supportedProj {S : Set (ℤ × ℤ)} (hS : ∀ i, i.swap ∈ S ↔ i ∈ S) (x : A) :
-    X.conj.toEquiv (supportedProj 𝒜 S x) = supportedProj 𝒜 S (X.conj.toEquiv x) :=
-  map_supportedProj X.conj.toEquiv (e := Prod.swap) (fun _ _ ↦ X.conj_mem) hS x
+/-- Conjugation carries the projection onto the types in `S` to the projection onto the types in
+`T`, when `T` is the set of exchanged types of `S`. -/
+theorem conj_supportedProj {S T : Set (ℤ × ℤ)} (hST : ∀ i, i.swap ∈ T ↔ i ∈ S) (x : A) :
+    X.conj.toEquiv (supportedProj 𝒜 S x) = supportedProj 𝒜 T (X.conj.toEquiv x) :=
+  map_supportedProj X.conj.toEquiv (e := Prod.swap) (fun _ _ ↦ X.conj_mem) hST x
 
 end Decomposition
 
