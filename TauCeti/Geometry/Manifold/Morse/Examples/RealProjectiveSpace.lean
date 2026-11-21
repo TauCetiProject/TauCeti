@@ -249,7 +249,7 @@ variable (R : Type) [Ring R]
 /-- The last stage `{f ≤ 5/2}` of the filtration of `ℝℙ²` is all of `ℝℙ²`. -/
 private def filtThreeHomeomorph : filt 2 3 ≃ₜ RealProjectiveSpace 2 :=
   (Homeomorph.setCongr (eq_univ_of_forall fun x ↦
-      (projectiveMomentFunction_le (c := 2) (fun i ↦ by exact_mod_cast Nat.le_of_lt_succ i.2)
+      (projectiveMomentFunction_le (c := 2) (fun i ↦ by exact_mod_cast Nat.le_of_lt_succ i.isLt)
         x).trans (by norm_num))).trans
     ((Homeomorph.Set.univ _).trans (RealProjectiveSpace.homeomorphProjectivization 2).symm)
 
