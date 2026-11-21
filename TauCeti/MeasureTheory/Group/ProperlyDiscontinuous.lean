@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Group.FundamentalDomain
+public import Mathlib.Topology.Algebra.OpenSubgroup
 public import Mathlib.Topology.Bases
+public import TauCeti.Topology.Algebra.Group.Subgroup
 public import TauCeti.Topology.Algebra.GroupAction.FreeLocus
 
 /-!
@@ -24,6 +26,10 @@ a measurable fundamental domain for `G` in the sense of `MeasureTheory.IsFundame
 are not merely almost everywhere disjoint but genuinely disjoint. Together with
 `MeasureTheory.IsFundamentalDomain.measure_eq` this makes the covolume
 `MeasureTheory.covolume G X μ` the measure of any measurable fundamental domain.
+
+A discrete subgroup `Γ` of a second countable, locally compact Hausdorff group acts properly
+discontinuously and freely on the right, so this gives a measurable fundamental domain for the
+right action of `Γ` (`Subgroup.exists_isFundamentalDomain_op`, `Subgroup.hasFundamentalDomain_op`).
 
 ## References
 
@@ -139,3 +145,35 @@ theorem exists_isFundamentalDomain_of_properlyDiscontinuousSMul (μ : Measure X)
     rwa [mul_smul, ← hyx, inv_smul_smul]
 
 end MeasureTheory.Measure
+
+namespace Subgroup
+
+variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [MeasurableSpace G]
+  [OpensMeasurableSpace G] [T2Space G] [LocallyCompactSpace G] [SecondCountableTopology G]
+  {Γ : Subgroup G} [DiscreteTopology Γ]
+
+/-- A discrete subgroup `Γ` of a second countable, locally compact Hausdorff group `G` has a
+measurable fundamental domain for its right action on `G`, for every measure. -/
+theorem exists_isFundamentalDomain_op (μ : Measure G) :
+    ∃ s : Set G, MeasurableSet s ∧ IsFundamentalDomain Γ.op s μ := by
+  have : Countable Γ := countable_of_discreteTopology
+  have : ProperlyDiscontinuousSMul Γ.op G :=
+    Γ.properlyDiscontinuousSMul_opposite_of_tendsto_cofinite
+      (Γ.tendsto_coe_cofinite_of_isDiscrete (isDiscrete_iff_discreteTopology.mpr ‹_›))
+  have hfree : (TauCeti.freeLocus Γ.op G : Set G) = univ := by
+    refine eq_univ_of_forall fun x ↦ ?_
+    rw [SetLike.mem_coe, TauCeti.mem_freeLocus, eq_bot_iff]
+    intro γ hγ
+    rw [MulAction.mem_stabilizer_iff] at hγ
+    rw [Subgroup.mem_bot]
+    exact Subtype.ext (MulOpposite.unop_injective (mul_eq_left.mp hγ))
+  obtain ⟨s, hs, -, h⟩ :=
+    μ.exists_isFundamentalDomain_of_properlyDiscontinuousSMul (G := Γ.op) (by simp [hfree])
+  exact ⟨s, hs, h⟩
+
+/-- In a second countable, locally compact Hausdorff group, a discrete subgroup has a
+fundamental domain for its right action. -/
+theorem hasFundamentalDomain_op (μ : Measure G) : HasFundamentalDomain Γ.op G μ :=
+  ⟨(exists_isFundamentalDomain_op μ).imp fun _ ↦ And.right⟩
+
+end Subgroup

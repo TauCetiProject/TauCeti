@@ -12,6 +12,7 @@ public import Mathlib.Topology.Algebra.OpenSubgroup
 public import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 public import TauCeti.GroupTheory.QuotientGroup.Map
 public import TauCeti.Topology.Algebra.Group.OpenNormalSubgroup
+public import TauCeti.Topology.Compactness.LocallyCompact
 public import TauCeti.Topology.Discrete
 
 /-!
@@ -65,6 +66,10 @@ The preimage of a discrete subgroup of `G ⧸ N`, for a discrete normal subgroup
   index, respectively is compact.
 * `Subgroup.comapMk'OpenNormalOrderIso`: open normal subgroups of `G ⧸ N` correspond
   to the open normal subgroups of `G` containing `N`.
+* `QuotientGroup.image_mk_eq_univ_iff`: a set `K` meets every left coset of `Γ` exactly when
+  `K * Γ = G`.
+* `QuotientGroup.compactSpace_iff_exists_isCompact_mul_eq_univ`: in a weakly locally compact
+  topological group, `G ⧸ Γ` is compact exactly when `K * Γ = G` for a compact set `K`.
 -/
 
 public section
@@ -458,3 +463,33 @@ instance instDiscreteTopologyComapMk' [T2Space G] (N : Subgroup G) [N.Normal] [D
 end DiscreteComap
 
 end Subgroup
+
+namespace QuotientGroup
+
+open Set
+
+open scoped Pointwise
+
+variable {G : Type*} [Group G] {Γ : Subgroup G}
+
+/-- A set `K` meets every left coset of `Γ` exactly when `K * Γ = G`. -/
+theorem image_mk_eq_univ_iff {K : Set G} :
+    ((↑) '' K : Set (G ⧸ Γ)) = univ ↔ K * (Γ : Set G) = univ := by
+  rw [← preimage_image_mk_eq_mul]
+  refine ⟨fun h ↦ by rw [h, preimage_univ], fun h ↦ eq_univ_of_forall fun x ↦ ?_⟩
+  obtain ⟨g, rfl⟩ := mk_surjective x
+  exact (h ▸ mem_univ g : g ∈ _)
+
+/-- In a weakly locally compact topological group, `G ⧸ Γ` is compact exactly when `K * Γ = G`
+for some compact set `K`. -/
+theorem compactSpace_iff_exists_isCompact_mul_eq_univ [TopologicalSpace G] [IsTopologicalGroup G]
+    [WeaklyLocallyCompactSpace G] :
+    CompactSpace (G ⧸ Γ) ↔ ∃ K : Set G, IsCompact K ∧ K * (Γ : Set G) = univ := by
+  simp_rw [← image_mk_eq_univ_iff]
+  refine ⟨fun _ ↦ ?_, fun ⟨K, hK, hKΓ⟩ ↦ ⟨hKΓ ▸ hK.image continuous_mk⟩⟩
+  obtain ⟨K, hK, hsub⟩ :=
+    isOpenMap_coe.exists_isCompact_subset_image (isCompact_univ (X := G ⧸ Γ))
+      mk_surjective.range_eq.ge
+  exact ⟨K, hK, eq_univ_of_univ_subset hsub⟩
+
+end QuotientGroup

@@ -119,6 +119,8 @@ series of a profinite group.
   generate a dense subgroup.
 * `TauCeti.discreteTopology_of_conjAct_smul_eq`: a conjugate `g H g⁻¹` of a discrete
   subgroup `H` is discrete.
+* `Subgroup.countable_of_discreteTopology`: a discrete subgroup of a second countable group is
+  countable.
 * `MonoidHom.discreteTopology_range_of_finite_preimage`: a homomorphism into a `T1` group with
   continuous translations has discrete range when some neighbourhood of the identity has finite
   preimage.
@@ -152,6 +154,11 @@ end TauCeti
 namespace Subgroup
 
 variable {G : Type*} [Group G] [TopologicalSpace G]
+
+/-- A discrete subgroup of a second countable group is countable. -/
+theorem countable_of_discreteTopology [SecondCountableTopology G] {Γ : Subgroup G}
+    [DiscreteTopology Γ] : Countable Γ :=
+  TopologicalSpace.separableSpace_iff_countable.mp inferInstance
 
 -- Normalize the action before `subgroupOfContinuousMulEquivOfLe_apply` rewrites the scalar.
 /-- The canonical topological identification of `V.subgroupOf U` with `V` respects every action
