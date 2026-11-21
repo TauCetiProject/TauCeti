@@ -25,12 +25,12 @@ No path-connectedness, Hausdorff, CW, or finite-generation assumption is imposed
 need not be prime or nonzero.
 
 The proof passes to the CW approximation of the path component of `x` (preserving positive homotopy
-groups via `TauCeti.cwApproximationHomotopyGroupMulEquiv` and singular homology vanishing via
-`TauCeti.isZero_singularHomology_cwApproximation_of_isZero`), identifies `π_{n + 2}` with lifted
-integral homology via `HomotopyGroup.cubicalHurewiczSingularHomologyUliftAddEquiv`, and applies the
-mod-`m` coefficient sequence (`TopCat.bijective_zsmul_singularHomology_of_isZero_zmod`). Both
-adjacent vanishing hypotheses matter: degree `n + 2` gives surjectivity of multiplication by `m`,
-and degree `n + 3` rules out `m`-torsion.
+groups via `TauCeti.cwApproximationPathComponentHomotopyGroupMulEquiv` and singular homology
+vanishing via `TauCeti.isZero_singularHomology_cwApproximation_of_isZero`), identifies `π_{n + 2}`
+with lifted integral homology via `HomotopyGroup.cubicalHurewiczSingularHomologyUliftAddEquiv`, and
+applies the mod-`m` coefficient sequence (`TopCat.bijective_zsmul_singularHomology_of_isZero_zmod`).
+Both adjacent vanishing hypotheses matter: degree `n + 2` gives surjectivity of multiplication by
+`m`, and degree `n + 3` rules out `m`-torsion.
 
 ## Main results
 
@@ -70,7 +70,7 @@ theorem bijective_zsmul_homotopyGroup_of_subsingleton_lower_homotopyGroups_of_is
     | 0 => HomotopyGroup.pi0EquivZerothHomotopy.subsingleton
     | k + 1 =>
       have : Subsingleton (π_ (k + 1) X x) := hX (k + 1) (Nat.succ_le_succ (Nat.zero_le k)) hk
-      (cwApproximationHomotopyGroupMulEquiv x k).toEquiv.subsingleton
+      (cwApproximationPathComponentHomotopyGroupMulEquiv x k).toEquiv.subsingleton
   have hbij := (TopCat.of Z).bijective_zsmul_singularHomology_of_isZero_zmod m (n + 2)
     (((TopCat.of Z).isZero_singularHomology_uliftZMod_iff m (n + 2)).2
       (isZero_singularHomology_cwApproximation_of_isZero x (ZMod m) (n + 2) hn))
@@ -79,7 +79,7 @@ theorem bijective_zsmul_homotopyGroup_of_subsingleton_lower_homotopyGroups_of_is
   have hπ : Function.Bijective fun a : Additive (π_ (n + 2) Z z) ↦ (m : ℤ) • a :=
     ((HomotopyGroup.cubicalHurewiczSingularHomologyUliftAddEquiv hZ).bijective_zsmul_iff
       (m : ℤ)).2 hbij
-  exact ((cwApproximationHomotopyGroupMulEquiv x (n + 1)).toAdditive.bijective_zsmul_iff
-    (m : ℤ)).1 hπ
+  exact ((cwApproximationPathComponentHomotopyGroupMulEquiv x
+    (n + 1)).toAdditive.bijective_zsmul_iff (m : ℤ)).1 hπ
 
 end TauCeti

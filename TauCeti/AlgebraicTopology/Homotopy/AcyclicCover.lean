@@ -124,7 +124,7 @@ private theorem prop_homotopyGroup_of_add (d : ℕ) :
     have hX : ∀ j, j ≠ 0 → j < n + 2 → Subsingleton (π_ j X x₀) := fun j hj0 hj ↦ by
       obtain ⟨j', rfl⟩ := Nat.exists_eq_succ_of_ne_zero hj0
       have := hZ (j' + 1) hj0 hj
-      exact (cwApproximationHomotopyGroupMulEquiv z j').toEquiv.subsingleton
+      exact (cwApproximationPathComponentHomotopyGroupMulEquiv z j').toEquiv.subsingleton
     -- `X` is a retract of `sigmaCWApproximation Z`, so it inherits `k`-homology vanishing.
     have hXk (q : ℕ) (hq1 : n + 2 ≤ q) (hq2 : q ≤ n + (d + 1) + 2 + r) :
         Subsingleton (((singularChains k).obj X).homology q) :=
@@ -149,7 +149,7 @@ private theorem prop_homotopyGroup_of_add (d : ℕ) :
     have he : π_ (n + 1 + d + 2) C c₀ ≃* π_ (n + (d + 1) + 2) Z z :=
       ((nConnectedCoverHomotopyGroupMulEquiv (n + 2) X x₀ _ (by omega)).trans
         (HomotopyGroup.congrMulEquiv (finCongr (by omega : n + 1 + d + 2 = n + d + 2 + 1)))).trans
-          (cwApproximationHomotopyGroupMulEquiv z (n + d + 2))
+          (cwApproximationPathComponentHomotopyGroupMulEquiv z (n + d + 2))
     exact hP he.toAdditive (ih (n + 1) c₀ hC hCk (n + 1 + d) rfl)
 
 include hP hπ hK in
@@ -173,13 +173,13 @@ theorem prop_homotopyGroup_of_subsingleton_singularHomology {Y : Type} [Topologi
   let x₀ := cwApproximationBasepoint (TopCat.of Y) (Quotient.out (ZerothHomotopy.mk y))
   have h₁ (j : ℕ) (hj0 : j ≠ 0) (hj : j < 2) : Subsingleton (π_ j X x₀) := by
     obtain rfl : j = 1 := by omega
-    exact (cwApproximationHomotopyGroupMulEquiv y 0).toEquiv.subsingleton
+    exact (cwApproximationPathComponentHomotopyGroupMulEquiv y 0).toEquiv.subsingleton
   have hXk (q : ℕ) (hq1 : 0 + 2 ≤ q) (hq2 : q ≤ 0 + n + 2 + r) :
       Subsingleton (((singularChains k).obj X).homology q) :=
     ModuleCat.isZero_iff_subsingleton.1 <|
       isZero_singularHomology_cwApproximation_of_isZero y k q <|
         ModuleCat.isZero_iff_subsingleton.2 (hY q hq1 (by omega))
-  exact hP (cwApproximationHomotopyGroupMulEquiv y (n + 1)).toAdditive
+  exact hP (cwApproximationPathComponentHomotopyGroupMulEquiv y (n + 1)).toAdditive
     (prop_homotopyGroup_of_add k P r hP hπ hK n 0 x₀ h₁ hXk n (Nat.zero_add n).symm)
 
 end TauCeti

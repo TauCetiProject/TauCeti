@@ -159,7 +159,7 @@ fibrations over `B`, `C ⊆ B` a relative CW complex with skeleta `Xⁿ`, and `f
 maps of fibres over the centres of the `n`-cells have kernels and cokernels in `Q ≤ P` on `Hq(-; R)`
 for `q + n = m`. Then `f` induces an isomorphism modulo `P` on
 `Hₘ(p⁻¹(Xⁿ), p⁻¹(Xⁿ⁻¹); R) ⟶ Hₘ(p'⁻¹(Xⁿ), p'⁻¹(Xⁿ⁻¹); R)`. -/
-private lemma isoModSerre_singularHomologyMap_preimagePairMap (hQP : Q ≤ P)
+lemma isoModSerre_singularHomologyMap_preimagePairMap (hQP : Q ≤ P)
     (sq : CommSq f p p' (𝟙 B)) (n m : ℕ)
     (hfib : ∀ j : cell C n, ∀ q, q + n = m →
       Q (kernel (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj

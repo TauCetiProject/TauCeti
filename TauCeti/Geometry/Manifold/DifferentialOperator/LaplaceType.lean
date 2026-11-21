@@ -33,6 +33,8 @@ is `h ↦ h Δf + 2 ⟪grad f, grad h⟫` and that its double commutators are mu
 
 ## Main definitions
 
+* `TauCeti.smoothDivergence I M`: the divergence of smooth vector fields of a smooth metric, as a
+  real-linear map to `C^∞(M)`.
 * `TauCeti.smoothLaplaceBeltrami I M`: the Laplace–Beltrami operator of a smooth metric as a
   real-linear endomorphism of `C^∞(M)`.
 * `TauCeti.IsLaplaceType D c`: `D` is of Laplace type with constant `c`.
@@ -171,9 +173,27 @@ end Isometry
 
 end IsLaplaceType
 
-/-! ### The Laplace–Beltrami operator on smooth functions -/
+/-! ### The divergence and the Laplace–Beltrami operator on smooth functions -/
 
 variable [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+
+variable (I M) in
+/-- The Riemannian divergence `X ↦ div X` (`TauCeti.Manifold.divergence`) of a smooth metric, as a
+real-linear map from smooth vector fields to smooth functions. -/
+def smoothDivergence :
+    Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯ where
+  toFun X := ⟨divergence I X,
+    contMDiff_divergence (n := ∞) (m := ∞) (k := ∞) (by simp) (by simp) X.contMDiff⟩
+  map_add' X Y := ContMDiffMap.ext fun x ↦
+    divergence_add I X Y x (X.contMDiff.mdifferentiableAt (by simp))
+      (Y.contMDiff.mdifferentiableAt (by simp))
+  map_smul' c X := ContMDiffMap.ext fun x ↦
+    divergence_smul I c X x (X.contMDiff.mdifferentiableAt (by simp))
+
+@[simp]
+theorem smoothDivergence_apply (X : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯) (x : M) :
+    smoothDivergence I M X x = divergence I X x :=
+  (rfl)
 
 variable (I M) in
 /-- The Laplace–Beltrami operator `Δ = div ∘ grad` (`TauCeti.Manifold.laplaceBeltrami`) of a

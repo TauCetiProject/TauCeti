@@ -30,7 +30,7 @@ It is a weak homotopy equivalence
   map induced by `cwApproximationMap X x_c`, which is bijective on `πₖ` although `X` need not be
   path-connected (`TauCeti.bijective_homotopyGroupMap_cwApproximationMap`). In particular, the
   summand of the path component of `y` has the same positive homotopy groups as `X` at `y`
-  (`TauCeti.cwApproximationHomotopyGroupMulEquiv`).
+  (`TauCeti.cwApproximationPathComponentHomotopyGroupMulEquiv`).
 
 The disjoint union of CW complexes is a CW complex
 (`Topology.CWComplex.sigmaUniv`), so `TauCeti.sigmaCWApproximation X` has CW type. The lift through
@@ -56,8 +56,8 @@ approximation of `X` is homotopy equivalent to this one compatibly with the maps
 * `TauCeti.sigmaCWApproximation X`: the CW approximation of `X`, one summand for each path
   component.
 * `TauCeti.sigmaCWApproximationMap X`: its map to `X`.
-* `TauCeti.cwApproximationHomotopyGroupMulEquiv y k`: the isomorphism between `πₖ₊₁` of the CW
-  approximation of the path component of `y` and `πₖ₊₁(X, y)`.
+* `TauCeti.cwApproximationPathComponentHomotopyGroupMulEquiv y k`: the isomorphism between `πₖ₊₁`
+  of the CW approximation of the path component of `y` and `πₖ₊₁(X, y)`.
 * `TauCeti.sigmaCWApproximationLift φ`: the map of CW approximations induced by `φ : X → Y`.
 
 ## Main results
@@ -66,8 +66,8 @@ approximation of `X` is homotopy equivalent to this one compatibly with the maps
   approximation is a CW complex, and so has CW type.
 * `TauCeti.isWeakHomotopyEquivalence_sigmaCWApproximationMap`: **CW approximation** of an
   arbitrary space.
-* `TauCeti.cwApproximationHomotopyGroupMulEquiv_apply`: forward evaluation of
-  `TauCeti.cwApproximationHomotopyGroupMulEquiv`.
+* `TauCeti.cwApproximationPathComponentHomotopyGroupMulEquiv_apply`: forward evaluation of
+  `TauCeti.cwApproximationPathComponentHomotopyGroupMulEquiv`.
 * `TauCeti.comp_sigmaCWApproximationLift_homotopic` and
   `TauCeti.homotopic_sigmaCWApproximationLift`: naturality up to homotopy, and uniqueness of the
   induced map.
@@ -197,35 +197,32 @@ theorem isWeakHomotopyEquivalence_sigmaCWApproximationMap :
 
 /-- The CW approximation of the path component of `y` has the same positive homotopy groups as `Y`
 at `y`. -/
-def cwApproximationHomotopyGroupMulEquiv {Y : Type u} [TopologicalSpace Y] (y : Y) (k : ℕ) :
+def cwApproximationPathComponentHomotopyGroupMulEquiv {Y : Type u} [TopologicalSpace Y] (y : Y)
+    (k : ℕ) :
     π_ (k + 1) (cwApproximation (TopCat.of Y) (Quotient.out (ZerothHomotopy.mk y)))
       (cwApproximationBasepoint (TopCat.of Y) (Quotient.out (ZerothHomotopy.mk y))) ≃*
       π_ (k + 1) Y y :=
-  let x₀ : TopCat.of Y := Quotient.out (ZerothHomotopy.mk y)
-  let z := cwApproximationBasepoint (TopCat.of Y) x₀
-  (MulEquiv.ofBijective
-    (HomotopyGroup.mapHom (cwApproximationMap (TopCat.of Y) x₀).hom rfl)
-    (bijective_homotopyGroupMap_cwApproximationMap (TopCat.of Y) x₀ k z)).trans
-    (homotopyGroupMulEquivOfPath
-      ((Quotient.mk_out (s := pathSetoid Y) y).somePath.cast
-        (cwApproximationMap_cwApproximationBasepoint (TopCat.of Y) x₀) rfl))
+  let x₀ : Y := Quotient.out (ZerothHomotopy.mk y)
+  (cwApproximationHomotopyGroupMulEquiv (TopCat.of Y) x₀ (k + 1)).trans
+    (homotopyGroupMulEquivOfPath (Quotient.mk_out (s := pathSetoid Y) y).somePath)
 
-/-- `TauCeti.cwApproximationHomotopyGroupMulEquiv` sends a homotopy class to its image under the
-CW approximation map, transported along the chosen path to `y`. -/
+/-- `TauCeti.cwApproximationPathComponentHomotopyGroupMulEquiv` sends a homotopy class to its
+image under the CW approximation map, transported along the chosen path to `y`. -/
 @[simp]
-theorem cwApproximationHomotopyGroupMulEquiv_apply {Y : Type u} [TopologicalSpace Y] (y : Y)
-    (k : ℕ)
+theorem cwApproximationPathComponentHomotopyGroupMulEquiv_apply {Y : Type u} [TopologicalSpace Y]
+    (y : Y) (k : ℕ)
     (a : π_ (k + 1) (cwApproximation (TopCat.of Y) (Quotient.out (ZerothHomotopy.mk y)))
       (cwApproximationBasepoint (TopCat.of Y) (Quotient.out (ZerothHomotopy.mk y)))) :
-    cwApproximationHomotopyGroupMulEquiv y k a =
+    cwApproximationPathComponentHomotopyGroupMulEquiv y k a =
       homotopyGroupTransport
-        ((Quotient.mk_out (s := pathSetoid Y) y).somePath.cast
-          (cwApproximationMap_cwApproximationBasepoint (TopCat.of Y)
-            (Quotient.out (ZerothHomotopy.mk y))) rfl)
+        (Quotient.mk_out (s := pathSetoid Y) y).somePath
         (HomotopyGroup.map (cwApproximationMap (TopCat.of Y)
-          (Quotient.out (ZerothHomotopy.mk y))).hom rfl a) := by
-  simp [cwApproximationHomotopyGroupMulEquiv]
-  rfl
+          (Quotient.out (ZerothHomotopy.mk y))).hom
+          (cwApproximationMap_cwApproximationBasepoint (TopCat.of Y)
+            (Quotient.out (ZerothHomotopy.mk y))) a) := by
+  rw [cwApproximationPathComponentHomotopyGroupMulEquiv, MulEquiv.trans_apply,
+    cwApproximationHomotopyGroupMulEquiv_apply]
+  exact homotopyGroupMulEquivOfPath_apply _ _
 
 end Construction
 

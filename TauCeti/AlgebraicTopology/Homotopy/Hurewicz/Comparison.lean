@@ -315,7 +315,7 @@ theorem subsingleton_homotopyGroup_of_isZero_singularHomology_int {Y : Type} [To
   let Z := cwApproximation (TopCat.of Y) (Quotient.out (ZerothHomotopy.mk y))
   let z := cwApproximationBasepoint (TopCat.of Y) (Quotient.out (ZerothHomotopy.mk y))
   have hZ1 : Subsingleton (π_ 1 Z z) :=
-    (cwApproximationHomotopyGroupMulEquiv y 0).toEquiv.subsingleton
+    (cwApproximationPathComponentHomotopyGroupMulEquiv y 0).toEquiv.subsingleton
   have hH : ∀ j, j + 2 ≤ n + 2 →
       IsZero (((singularHomologyFunctor (ModuleCat.{0} ℤ) (j + 2)).obj
         (ModuleCat.of ℤ (ULift.{0} ℤ))).obj Z) := fun j hj ↦ by
@@ -325,6 +325,6 @@ theorem subsingleton_homotopyGroup_of_isZero_singularHomology_int {Y : Type} [To
       (ULift.moduleEquiv : ULift.{0} ℤ ≃ₗ[ℤ] ℤ).toModuleIso).app Z)
   have : Subsingleton (π_ (n + 2) Z z) :=
     subsingleton_homotopyGroup_of_isZero_singularHomologyFunctor_ulift_of_le (X := Z) z hH
-  exact (cwApproximationHomotopyGroupMulEquiv y (n + 1)).symm.toEquiv.subsingleton
+  exact (cwApproximationPathComponentHomotopyGroupMulEquiv y (n + 1)).symm.toEquiv.subsingleton
 
 end TauCeti

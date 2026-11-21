@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Basic
+public import Mathlib.Algebra.Ring.Parity
 public import Mathlib.Data.Nat.ModEq
 import Mathlib.Algebra.Group.Nat.Defs
 import Mathlib.Algebra.Ring.Nat
@@ -33,6 +34,8 @@ import TauCeti.Data.Nat.Periodic.Basic
 * `TauCeti.bijective_zpow_iff_natAbs` and `TauCeti.bijective_zsmul_iff_natAbs`: raising to the
   `m`-th power (multiplying by `m`) is bijective on a group if and only if raising to the
   `m.natAbs`-th power is.
+* `TauCeti.pow_two_pow_of_odd` and `TauCeti.nsmul_two_nsmul_of_odd`: for odd `n`, raising to the
+  power `(n + 1) / 2` inverts squaring on elements killed by `n`.
 -/
 
 public section
@@ -130,5 +133,14 @@ theorem bijective_zpow_iff_natAbs {G : Type*} [Group G] (m : ℤ) :
       conv_lhs => rw [h]
       rw [Function.comp_apply, zpow_neg]
     rw [hfun, Function.Bijective.of_comp_iff' inv_involutive.bijective]
+
+/-- For odd `n`, raising to the power `(n + 1) / 2` inverts squaring on elements `a` with
+`a ^ n = 1`. -/
+@[to_additive /-- For odd `n`, multiplying by `(n + 1) / 2` inverts doubling on elements `a` with
+`n • a = 0`. -/]
+theorem pow_two_pow_of_odd {n : ℕ} (hn : Odd n) {a : M} (ha : a ^ n = 1) :
+    (a ^ 2) ^ ((n + 1) / 2) = a := by
+  obtain ⟨t, rfl⟩ := hn
+  rw [← pow_mul, show 2 * ((2 * t + 1 + 1) / 2) = 2 * t + 1 + 1 by omega, pow_succ, ha, one_mul]
 
 end TauCeti

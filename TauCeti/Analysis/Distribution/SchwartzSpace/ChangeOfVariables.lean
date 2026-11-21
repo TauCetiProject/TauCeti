@@ -7,13 +7,14 @@ module
 
 public import Mathlib.Analysis.Distribution.SchwartzSpace.Basic
 public import Mathlib.Analysis.Distribution.SchwartzSpace.Deriv
+public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.MeasureTheory.Measure.Haar.Basic
 public import Mathlib.Topology.Algebra.Module.Determinant
 public import TauCeti.Analysis.Distribution.TemperateGrowth
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
-import Mathlib.MeasureTheory.Function.Jacobian
 import TauCeti.Analysis.Distribution.SchwartzSpace.Deriv
+import TauCeti.MeasureTheory.Function.Jacobian.Equiv
 import TauCeti.Topology.Algebra.Module.Determinant
 
 /-!
@@ -55,6 +56,11 @@ the chain rule for the pullback of tempered distributions. It is proved by pairi
 test functions and integrating by parts for scalar-valued `f`; the Jacobian factor of the
 pushforward is never differentiated. Vector-valued `f` reduce to the real-valued case by applying
 continuous linear functionals to the values.
+
+Composition with `φ` is also the transpose of the pushforward for the sesquilinear `L²` pairing,
+`∫ ⟪w ∘ φ, v⟫ dμ = ∫ ⟪w, φ_* v⟫ dμ` (`SchwartzMap.integral_inner_compCLM_eq`), an input of the
+Sobolev estimates for changes of variables in
+`TauCeti.Analysis.Sobolev.BesselPotential.ChangeOfVariables`.
 
 ## References
 
@@ -98,14 +104,28 @@ theorem integral_pushforwardCLM_smul {G : Type*} [NormedAddCommGroup G] [NormedS
     [μ.IsAddHaarMeasure] (hφ : (φ : E → E).HasTemperateGrowth)
     (hψ : (φ.symm : E → E).HasTemperateGrowth) (f : 𝓢(E, 𝕜)) (u : E → G) :
     ∫ y, pushforwardCLM 𝕜 φ hφ hψ f y • u y ∂μ = ∫ x, f x • u (φ x) ∂μ := by
-  have hcv := integral_image_eq_integral_abs_det_fderiv_smul μ MeasurableSet.univ
-    (fun y _ ↦ (hψ.1.differentiable (by simp) y).hasFDerivAt.hasFDerivWithinAt)
-    φ.symm.injective.injOn fun x ↦ f x • u (φ x)
-  rw [Set.image_univ_of_surjective φ.symm.surjective] at hcv
-  simp only [Measure.restrict_univ, Equiv.apply_symm_apply] at hcv
+  have hcv := TauCeti.integral_comp_equiv_eq_integral_abs_det_fderiv_symm_smul μ
+    (hψ.1.differentiable (by simp)) fun y ↦ f (φ.symm y) • u y
+  simp only [Equiv.symm_apply_apply] at hcv
   rw [hcv]
   congr 1 with y
   rw [pushforwardCLM_apply, smul_assoc, RCLike.real_smul_eq_coe_smul (K := 𝕜)]
+
+open scoped InnerProductSpace in
+/-- **Composition with `φ` is the transpose of the pushforward of densities** for the `L²` pairing:
+`∫ ⟪w ∘ φ, v⟫ dμ = ∫ ⟪w, φ_* v⟫ dμ` for every additive Haar measure `μ`, where
+`(φ_* v)(y) = |det Dφ⁻¹(y)| v(φ⁻¹ y)`. -/
+theorem integral_inner_compCLM_eq {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F]
+    [MeasurableSpace E] [BorelSpace E] (μ : Measure E) [μ.IsAddHaarMeasure]
+    (hφ : (φ : E → E).HasTemperateGrowth) (hψ : (φ.symm : E → E).HasTemperateGrowth)
+    (w v : 𝓢(E, F)) :
+    ∫ x, ⟪compCLM ℂ hφ (hψ.exists_norm_le_of_leftInverse φ.left_inv) w x, v x⟫_ℂ ∂μ =
+      ∫ y, ⟪w y, pushforwardCLM ℂ φ hφ hψ v y⟫_ℂ ∂μ := by
+  have hcv := TauCeti.integral_comp_equiv_eq_integral_abs_det_fderiv_symm_smul μ
+    (hψ.1.differentiable (by simp)) fun y ↦ ⟪w y, v (φ.symm y)⟫_ℂ
+  simp only [Equiv.symm_apply_apply] at hcv
+  simp only [compCLM_apply, Function.comp_apply, pushforwardCLM_apply, inner_smul_right, hcv,
+    RCLike.real_smul_eq_coe_mul (K := ℂ)]
 
 /-- **Functoriality of the pushforward**: `(χ ∘ φ)_* = χ_* ∘ φ_*`, by the chain rule for the
 Jacobian determinant. -/
@@ -159,18 +179,19 @@ variable {ι : Type*} [Fintype ι]
 omit [FiniteDimensional ℝ E] in
 /-- **The chain rule for composition with `φ`.** If `Dφ(x) v = ∑ᵢ cᵢ(x) bᵢ` in a basis `b`, then
 `∂_v (u ∘ φ)(x) = ∑ᵢ cᵢ(x) (∂_{bᵢ} u)(φ x)`. -/
-theorem lineDerivOp_compCLM_apply (b : Module.Basis ι ℝ E)
+theorem lineDerivOp_compCLM_apply [IsScalarTower ℝ 𝕜 F] (b : Module.Basis ι ℝ E)
     (hφ : (φ : E → E).HasTemperateGrowth) (hψ : (φ.symm : E → E).HasTemperateGrowth)
-    (u : 𝓢(E, 𝕜)) (v x : E) :
+    (u : 𝓢(E, F)) (v x : E) :
     ∂_{v} (compCLM 𝕜 hφ (hψ.exists_norm_le_of_leftInverse φ.left_inv) u) x =
-      ∑ i, ((b.repr (fderiv ℝ φ x v) i : ℝ) : 𝕜) * (∂_{b i} u) (φ x) := by
+      ∑ i, ((b.repr (fderiv ℝ φ x v) i : ℝ) : 𝕜) • (∂_{b i} u) (φ x) := by
   rw [lineDerivOp_apply_eq_fderiv, compCLM_apply,
     fderiv_comp x u.differentiableAt (hφ.1.differentiable (by simp) x),
     ContinuousLinearMap.comp_apply]
   calc fderiv ℝ u (φ x) (fderiv ℝ φ x v)
       = fderiv ℝ u (φ x) (∑ i, b.repr (fderiv ℝ φ x v) i • b i) := by rw [b.sum_repr]
     _ = _ := by
-      simp only [map_sum, map_smul, RCLike.real_smul_eq_coe_mul, lineDerivOp_apply_eq_fderiv]
+      simp only [map_sum, map_smul, RCLike.real_smul_eq_coe_smul (K := 𝕜),
+        lineDerivOp_apply_eq_fderiv]
 
 /-- The pushforward formula for a derivative, paired with a Schwartz function `u`: both sides are
 `-∫ f x ∂_v (u ∘ φ)(x) dx` after the change of variables and integration by parts. -/
@@ -198,7 +219,7 @@ private theorem integral_pushforwardCLM_lineDerivOp_mul [MeasurableSpace E] [Bor
         rw [← integral_finsetSum _ fun i _ ↦ hint i]
         congr 1
         refine integral_congr_ae (.of_forall fun x ↦ ?_)
-        simp only [w, lineDerivOp_compCLM_apply 𝕜 b hφ hψ, Finset.sum_mul]
+        simp only [w, lineDerivOp_compCLM_apply 𝕜 b hφ hψ, smul_eq_mul, Finset.sum_mul]
         exact Finset.sum_congr rfl fun i _ ↦ by ring
     _ = -∑ i, ∫ y, pushforwardCLM 𝕜 φ hφ hψ (smulLeftCLM 𝕜 (c i) f) y * ∂_{b i} u y ∂μ := by
         congr 1
