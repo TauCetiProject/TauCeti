@@ -33,6 +33,9 @@ The chains are the module
 
 * `TauCeti.pathChain_isDGBimodule`: the chains `C_*(P_{b→b'} B; R)` form a DG
   `(C_*(Ω_b B), C_*(Ω_{b'} B))`-bimodule, bundled as `TauCeti.pathChainBimodule`.
+* `TauCeti.cubicalChainModuleLinearMap_moorePathBetweenMap_smul`,
+  `TauCeti.cubicalChainModuleLinearMap_moorePathBetweenMap_op_smul`: pushing path chains forward
+  along a continuous map `f` is semilinear for both actions, through `C_*(Ωf)`.
 
 ## References
 
@@ -93,5 +96,45 @@ theorem cubicalChainModuleDifferential_pathChainPoint (δ : MoorePathBetween B b
   cubicalChainModuleDifferential_lof_zero _
 
 end Point
+
+section Map
+
+open MulOpposite
+
+variable {B B' : Type*} [TopologicalSpace B] [TopologicalSpace B'] {R : Type*} [CommRing R]
+  (f : C(B', B)) {a b : B'}
+
+/-- Pushing path chains forward along `f` is semilinear for the loops acting in front, through
+`C_*(Ωf)`. -/
+theorem cubicalChainModuleLinearMap_moorePathBetweenMap_smul (α : loopChainAlgebra B' a R)
+    (x : cubicalChainModule (MoorePathBetween B' a b) (MooreLoopSpace B' b) R) :
+    cubicalChainModuleLinearMap (G' := MooreLoopSpace B (f b)) R (MoorePathBetween.map f)
+        (α • x) =
+      loopChainMap R f rfl α • cubicalChainModuleLinearMap R (MoorePathBetween.map f) x := by
+  induction α using DirectSum.induction_on with
+  | zero => rw [zero_smul, map_zero, map_zero, zero_smul]
+  | add α α' hα hα' => rw [add_smul, map_add, hα, hα', map_add, add_smul]
+  | of p y =>
+    rw [← DirectSum.lof_eq_of R, loopChainMap_lof, cubicalChainModuleLinearMap_smul_map _
+      (MooreLoopSpace.map f rfl).toContinuousMap (MoorePathBetween.map_smul f),
+      cubicalChainSumMap_lof]
+
+/-- Pushing path chains forward along `f` is semilinear for the loops acting behind, through
+`C_*(Ωf)`. -/
+theorem cubicalChainModuleLinearMap_moorePathBetweenMap_op_smul (α : loopChainAlgebra B' b R)
+    (x : cubicalChainModule (MoorePathBetween B' a b) (MooreLoopSpace B' b) R) :
+    cubicalChainModuleLinearMap (G' := MooreLoopSpace B (f b)) R (MoorePathBetween.map f)
+        (op α • x) =
+      op (loopChainMap R f rfl α) • cubicalChainModuleLinearMap R (MoorePathBetween.map f) x := by
+  induction α using DirectSum.induction_on with
+  | zero => rw [op_zero, zero_smul, map_zero, map_zero, op_zero, zero_smul]
+  | add α α' hα hα' =>
+    rw [op_add, add_smul, map_add, hα, hα', map_add, op_add, add_smul]
+  | of p y =>
+    rw [← DirectSum.lof_eq_of R, loopChainMap_lof, cubicalChainModuleLinearMap_op_smul_map _
+      (MooreLoopSpace.map f rfl).toContinuousMap (fun ω γ ↦ MoorePathBetween.map_op_smul f ω γ),
+      cubicalChainSumMap_lof]
+
+end Map
 
 end TauCeti

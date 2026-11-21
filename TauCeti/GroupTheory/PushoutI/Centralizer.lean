@@ -9,47 +9,69 @@ public import TauCeti.GroupTheory.PushoutI.Basic
 public import TauCeti.GroupTheory.PushoutI.Reduced
 public import TauCeti.GroupTheory.TrivialIntersection
 public import Mathlib.GroupTheory.SpecificGroups.Cyclic.Subgroup
+public import Mathlib.GroupTheory.Subgroup.Centralizer
 import TauCeti.Data.Int.DivMod
 import TauCeti.Data.Int.UnitStep
 
 /-!
-# Centralizers of hyperbolic elements of an amalgamated product
+# Centralizers in an amalgamated product
 
-Let `E = A ∗_C B` be an amalgamated product of two groups, Mathlib's `Monoid.PushoutI` over `Bool`
-with injective maps of `C` into the factors, and suppose that `C` is malnormal in one factor. This
-file proves that the centralizer of an element of `E` conjugate into neither factor is cyclic.
+Let `φ i : H →* G i` be a family of injective group homomorphisms, with amalgamated product
+`Monoid.PushoutI φ`. In the action of the amalgamated product on its Bass–Serre tree an element
+either fixes a vertex, and is then conjugate into a factor, or is hyperbolic: it translates a line,
+its axis. This file describes the centralizers of elements of both kinds.
 
-In the Bass–Serre tree of the amalgam such an element `x` is hyperbolic: it translates a line, its
-axis, and an element commuting with `x` preserves the axis and translates it in the direction of
-`x`. At a vertex of the malnormal factor, the stabilizer of the two edges of the axis is
-`C ∩ a C a⁻¹ = 1` for a letter `a ∉ C`, so the centralizer of `x` acts faithfully on the axis by
-translations and embeds in `ℤ`.
+If an element `g` of a factor `G i` is not conjugate in `G i` into the amalgamated subgroup
+`φ i H`, then every element of the amalgamated product commuting with `g` lies in `G i`: the
+centralizer of `g` in the amalgamated product is its centralizer in `G i`. In the tree, such a `g`
+fixes the vertex `G i` and no edge at it, so it fixes no other vertex, and an element commuting
+with `g` preserves its fixed point set.
 
-The proof follows this picture with normal forms in place of the tree. A conjugate of `x` is
-cyclically reduced, `a₁ ⋯ aᵣ` with `r ≥ 2` letters alternately from `A ∖ C` and `B ∖ C`, the first
-and the last from different factors. The cosets `P m C` of the partial products `P m` of the
-periodic word `⋯ a₁ ⋯ aᵣ a₁ ⋯ aᵣ ⋯` play the role of the edges of the axis, and the number of
-letters of a normal form, an invariant of the element, plays the role of the distance. An element
-`g` for which `g⁻¹ x g` has at most `r` letters lies in one of the cosets `P m C`; so an element
-commuting with `x` permutes these cosets, by a translation of the index since it commutes with
-`x`.
+Let now `E = A ∗_C B` be an amalgamated product of two groups, indexed by `Bool`, and suppose that
+`C` is malnormal in one factor. Then the centralizer of an element `x` of `E` conjugate into
+neither factor is cyclic. An element commuting with `x` preserves the axis of `x` and translates it
+in the direction of `x`. At a vertex of the malnormal factor, the stabilizer of the two edges of
+the axis is `C ∩ a C a⁻¹ = 1` for a letter `a ∉ C`, so the centralizer of `x` acts faithfully on
+the axis by translations and embeds in `ℤ`.
 
 ## Main results
 
+* `Monoid.PushoutI.centralizer_of_eq_map`: the centralizer of an element of a factor that is not
+  conjugate in that factor into the amalgamated subgroup.
 * `Monoid.PushoutI.isCyclic_centralizer`: in `A ∗_C B` with `C` malnormal in one factor, the
   centralizer of an element conjugate into neither factor is cyclic.
 
 ## Implementation notes
 
-Inside the proofs a letter is a pair `(i, e)` of a factor `i` and an element `e` of the amalgam in
-the image of that factor and not in the image of `C`, so that letters of one factor can be
+Both proofs use normal forms rather than the Bass–Serre tree.
+
+For an element `g` of a factor `G i`, write an element `x` commuting with `g` as `a * w` with
+`a ∈ G i` and `w` a reduced word not starting in `G i`
+(`Monoid.PushoutI.exists_eq_of_mul_list_prod`). If `w` is nonempty, then
+`x⁻¹ * g * x = w⁻¹ * (a⁻¹ * g * a) * w` lies in no factor
+(`Monoid.PushoutI.list_prod_inv_mul_of_mul_list_prod_notMem_range_of`), but it equals `g`.
+
+For an element conjugate into neither factor, a conjugate of it is cyclically reduced,
+`a₁ ⋯ aᵣ` with `r ≥ 2` letters alternately from `A ∖ C` and `B ∖ C`, the first and the last from
+different factors. The cosets `P m C` of the partial products `P m` of the periodic word
+`⋯ a₁ ⋯ aᵣ a₁ ⋯ aᵣ ⋯` play the role of the edges of the axis, and the number of letters of a
+normal form, an invariant of the element, plays the role of the distance. An element `g` for which
+`g⁻¹ x g` has at most `r` letters lies in one of the cosets `P m C`; so an element commuting with
+`x` permutes these cosets, by a translation of the index since it commutes with `x`.
+
+Inside these proofs a letter is a pair `(i, e)` of a factor `i` and an element `e` of the amalgam
+in the image of that factor and not in the image of `C`, so that letters of one factor can be
 multiplied without casts between the factors; the normal form lemmas of
 `TauCeti.GroupTheory.PushoutI.Reduced` are translated to such lists once.
 
 ## References
 
-* J.-P. Serre, *Trees*, Chapter I, §4 (the tree of an amalgam) and §6 (hyperbolic automorphisms
-  and their axes).
+* J.-P. Serre, *Trees*, Chapter I, §1.2, Theorem 1 (the normal form theorem), §4 (the tree of an
+  amalgam) and §6 (hyperbolic automorphisms and their axes).
+* W. Magnus, A. Karrass, D. Solitar, *Combinatorial group theory*, Theorem 4.5 (commuting
+  elements of an amalgamated product), as used in G. Baumslag, A. Myasnikov, V. Remeslennikov,
+  *Algebraic geometry over groups I: Algebraic sets and ideal theory*, J. Algebra 219 (1999),
+  proof of Theorem A2.
 * R. C. Lyndon, P. E. Schupp, *Combinatorial group theory*, Chapter IV, §2 (normal forms in free
   products with amalgamation).
 * O. Kharlampovich, A. Myasnikov, V. Remeslennikov, D. Serbin, *Subgroups of fully residually free
@@ -61,6 +83,39 @@ public section
 open Function
 
 namespace Monoid.PushoutI
+
+section Factor
+
+open Subgroup
+
+variable {ι : Type*} {G : ι → Type*} {H : Type*} [∀ i, Group (G i)] [Group H]
+  {φ : ∀ i, H →* G i}
+
+/-! ### Centralizers of elements of a factor -/
+
+/-- **Centralizers of factor elements away from the amalgamated subgroup.** If an element `g` of
+a factor `G i` of an amalgamated product of groups is not conjugate in `G i` into the amalgamated
+subgroup, then its centralizer in the amalgamated product is its centralizer in `G i`. -/
+theorem centralizer_of_eq_map (hφ : ∀ i, Injective (φ i)) {i : ι} {g : G i}
+    (hg : ∀ k : G i, k * g * k⁻¹ ∉ (φ i).range) :
+    centralizer {of (φ := φ) i g} = (centralizer {g}).map (of i) := by
+  refine le_antisymm (fun x hx => ?_) (map_le_iff_le_comap.2 fun k hk => ?_)
+  · obtain ⟨a, L, hc, hred, hhead, rfl⟩ := exists_eq_of_mul_list_prod i x
+    have hx' : (of (φ := φ) i a * (L.map fun l => of l.1 l.2).prod)⁻¹ * of i g *
+        (of i a * (L.map fun l => of l.1 l.2).prod) = of i g := by
+      rw [mul_assoc, ← mem_centralizer_singleton_iff.1 hx, inv_mul_cancel_left]
+    rcases eq_or_ne L [] with rfl | hL
+    · refine ⟨a, mem_centralizer_singleton_iff.2 (of_injective hφ i ?_), by simp⟩
+      simpa using (mem_centralizer_singleton_iff.1 hx).eq
+    · -- Otherwise `x⁻¹ * g * x` is a reduced word of length at least three.
+      refine (list_prod_inv_mul_of_mul_list_prod_notMem_range_of hφ hL hc hred (hg a⁻¹) hhead
+        ⟨g, ?_⟩).elim
+      rw [← hx']
+      simp [mul_assoc]
+  · rw [mem_comap, mem_centralizer_singleton_iff, commute_iff_eq, ← map_mul, ← map_mul,
+      (mem_centralizer_singleton_iff.1 hk).eq]
+
+end Factor
 
 section General
 
@@ -583,7 +638,7 @@ subgroup is malnormal in one factor: it acts on the axis by translations, faithf
 private theorem isCyclic_centralizer (hφ : ∀ b, Injective (φ b)) (A : Axis φ) {b : Bool}
     (hT : TauCeti.IsTISubgroup (φ b).range) : IsCyclic (Subgroup.centralizer {A.P A.r}) := by
   choose τ hτ using fun y : Subgroup.centralizer {A.P A.r} =>
-    A.exists_translation hφ (Subgroup.mem_centralizer_singleton_iff.1 y.2)
+    A.exists_translation hφ (Subgroup.mem_centralizer_singleton_iff.1 y.property)
   have hmul (y z : Subgroup.centralizer {A.P A.r}) : τ (y * z) = τ y + τ z := by
     have h : (A.P (0 + (τ z + τ y)))⁻¹ * ((y * z : Subgroup.centralizer _) * A.P 0) ∈
         (base φ).range := by
@@ -730,7 +785,7 @@ theorem isCyclic_centralizer (hφ : ∀ b, Injective (φ b)) {b : Bool}
     (((MulAut.conj y).toMonoidHom.comp (Subgroup.centralizer {x}).subtype).codRestrict
       (Subgroup.centralizer {y * x * y⁻¹}) fun z => ?_) fun z₁ z₂ h => ?_
   · exact Subgroup.mem_centralizer_singleton_iff.2
-      ((Commute.conj_iff y).2 (Subgroup.mem_centralizer_singleton_iff.1 z.2))
+      ((Commute.conj_iff y).2 (Subgroup.mem_centralizer_singleton_iff.1 z.property))
   · exact Subtype.ext (by simpa using congrArg Subtype.val h)
 
 end Bool

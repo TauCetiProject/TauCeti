@@ -17,7 +17,9 @@ the centralizer of `u`. An element of `G(u, ℤⁿ)` conjugate into neither fact
 hyperbolic element for the action on the Bass–Serre tree of the amalgam, has cyclic centralizer.
 This is the case `‖h‖ ≥ 2` of the description of centralizers in an extension of a centralizer;
 the elements conjugate into a factor can have noncyclic centralizers, such as the centralizer
-`C_G(u) × ℤⁿ` of `u` (`TauCeti.LimitGroup.CentralizerExt.centralizer_of_eq_range_ofProd`).
+`C_G(u) × ℤⁿ` of `u` (`TauCeti.LimitGroup.CentralizerExt.centralizer_of_eq_range_ofProd`). The
+centralizers of these elliptic elements are computed in
+`TauCeti.GroupTheory.LimitGroup.CentralizerExtension.Elliptic`.
 
 For distinct basis elements `a` and `b` of a free group `F`, the element `b * tᵢ` of `F(a, ℤⁿ)` is
 hyperbolic, so its centralizer is cyclic, while the centralizer of `a` is free abelian of rank

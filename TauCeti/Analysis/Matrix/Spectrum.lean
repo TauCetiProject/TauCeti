@@ -144,7 +144,7 @@ the eigenvalues. -/
 theorem det_one_sub_smul (c : 𝕜) :
     (1 - c • B).det = ∏ j, (1 - c * (hB.eigenvalues j : 𝕜)) := by
   rw [hB.one_sub_smul_eq_conjStarAlgAut_diagonal c, conjStarAlgAut_apply, det_mul, det_mul,
-    mul_right_comm, ← det_mul, mul_star_self_of_mem hB.eigenvectorUnitary.2, det_one,
+    mul_right_comm, ← det_mul, mul_star_self_of_mem hB.eigenvectorUnitary.property, det_one,
     one_mul, det_diagonal]
 
 /-- The trace of a natural power of a Hermitian matrix is the sum of the corresponding
@@ -152,7 +152,7 @@ powers of its eigenvalues. -/
 theorem trace_pow_eq_sum_eigenvalues_pow (k : ℕ) :
     (B ^ k).trace = ∑ j, (hB.eigenvalues j : 𝕜) ^ k := by
   conv_lhs => rw [hB.spectral_theorem, ← map_pow]
-  rw [conjStarAlgAut_apply, trace_mul_cycle, star_mul_self_of_mem hB.eigenvectorUnitary.2,
+  rw [conjStarAlgAut_apply, trace_mul_cycle, star_mul_self_of_mem hB.eigenvectorUnitary.property,
     one_mul, diagonal_pow, trace_diagonal]
   simp
 

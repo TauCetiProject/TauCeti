@@ -219,7 +219,7 @@ monodromy along a path identifies each fibre with the fibre over `1/2`. -/
 private theorem small_of_isCoveringMap : Small.{0} E := by
   have (z : ThricePuncturedSphere) : Small.{0} {e // p e = z} :=
     small_of_injective (f := fun e : {e // p e = z} ↦
-      ν (hp.monodromy (.mk (PathConnectedSpace.somePath z basePt)) ⟨e.1, e.2⟩))
+      ν (hp.monodromy (.mk (PathConnectedSpace.somePath z basePt)) ⟨e.val, e.property⟩))
       fun e e' h ↦ Subtype.ext <| congrArg Subtype.val
         ((hp.monodromy_bijective _).1 (ν.injective h))
   exact small_of_surjective (Equiv.sigmaFiberEquiv p).surjective
