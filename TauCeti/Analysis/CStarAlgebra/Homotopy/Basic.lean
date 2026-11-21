@@ -171,7 +171,7 @@ theorem trans_toHom_apply_of_half_le (H₀ : Homotopy φ₀ φ₁) (H₁ : Homot
   let γ₁ := Path.mk (H₁.toHom a) (H₁.eval_zero a) (H₁.eval_one a)
   calc
     (H₀.trans H₁).toHom a t = (γ₀.trans γ₁).extend t :=
-      (Path.extend_apply (γ₀.trans γ₁) t.2).symm
+      (Path.extend_apply (γ₀.trans γ₁) t.property).symm
     _ = γ₁.extend (2 * t - 1) := Path.extend_trans_of_half_le γ₀ γ₁ ((one_div (2 : ℝ)).symm ▸ ht)
     _ = H₁.toHom a ⟨2 * t - 1, two_mul_sub_one_mem_iff.2
           (mem_Icc.mpr ⟨(one_div (2 : ℝ)).symm ▸ ht, le_one t⟩)⟩ := Path.extend_apply γ₁ _

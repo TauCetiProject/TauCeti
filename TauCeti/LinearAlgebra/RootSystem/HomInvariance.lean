@@ -45,9 +45,14 @@ weight-space vectors.
   `RootPairing.Hom.root_indexEquiv_eq_sub_iff`: it preserves and reflects the relations
   `α = β + γ` and `α = β - γ` between roots.
 * `RootPairing.Hom.linearIndependent_root_indexEquiv_iff`: it preserves and reflects linear
-  independence of a pair of roots.
+  independence of a pair of roots; consequently `RootPairing.Hom.isReduced` and
+  `RootPairing.Equiv.isReduced` transport reducedness to the target pairing.
 * `RootPairing.Hom.chainTopCoeff_indexEquiv` and `RootPairing.Hom.chainBotCoeff_indexEquiv`: it
   preserves the two root-string coefficients.
+* `RootPairing.Hom.coroot'_weightMap` and `RootPairing.Hom.weightMap_reflection`: the weight map
+  preserves coroot values and intertwines the reflection at a root with the reflection at its
+  image. These generalise Mathlib's `RootPairing.Equiv.coroot'_weightEquiv` and
+  `RootPairing.Equiv.weightEquiv_reflection` from equivalences to morphisms.
 
 These invariance facts show that an automorphism of a root system permutes the matrices of Geck's
 construction, as developed in `TauCeti.LinearAlgebra.RootSystem.GeckConstruction.Symmetry`.
@@ -100,6 +105,24 @@ theorem indexEquiv_reflectionPerm (f : P.Hom P₂) (i j : ι) :
   rw [← Hom.root_weightMap_apply]
   simp [root_reflectionPerm, reflection_apply_root, Hom.root_weightMap_apply]
 
+/-- The weight map of a homomorphism of root pairings preserves coroot values: pulling the coroot
+functional at `f.indexEquiv i` back along `f.weightMap` gives the coroot functional at `i`. This
+generalises Mathlib's `RootPairing.Equiv.coroot'_weightEquiv` from equivalences to morphisms. -/
+@[grind =]
+theorem coroot'_weightMap (f : P.Hom P₂) (i : ι) (x : M) :
+    P₂.coroot' (f.indexEquiv i) (f.weightMap x) = P.coroot' i x := by
+  simpa [coroot', Hom.coroot_coweightMap_apply] using
+    congrArg (fun g : Module.Dual R M ↦ g x)
+      (f.weight_coweight_transpose_apply P P₂ (P₂.coroot (f.indexEquiv i)))
+
+/-- The weight map of a homomorphism of root pairings intertwines the reflection at a root with
+the reflection at its image. This generalises Mathlib's `RootPairing.Equiv.weightEquiv_reflection`
+from equivalences to morphisms, with the same proof. -/
+theorem weightMap_reflection (f : P.Hom P₂) (i : ι) (x : M) :
+    f.weightMap (P.reflection i x) = P₂.reflection (f.indexEquiv i) (f.weightMap x) := by
+  rw [reflection_apply, reflection_apply, map_sub, map_smul, Hom.root_weightMap_apply,
+    coroot'_weightMap]
+
 section Injective
 
 variable (f : P.Hom P₂) (hf : Injective f.weightMap)
@@ -138,6 +161,16 @@ theorem linearIndependent_root_indexEquiv_iff (i j : ι) :
   ext k
   fin_cases k <;> simp [Hom.root_weightMap_apply]
 
+/-- A homomorphism with injective weight map transports reducedness to the target. -/
+theorem isReduced [P.IsReduced] : P₂.IsReduced := by
+  rw [isReduced_iff']; intro i₂ j₂ hij hdep
+  obtain ⟨i, rfl⟩ := f.indexEquiv.surjective i₂
+  obtain ⟨j, rfl⟩ := f.indexEquiv.surjective j₂
+  rcases IsReduced.eq_or_eq_neg i j (mt (f.linearIndependent_root_indexEquiv_iff hf i j).mpr hdep)
+    with hroot | hroot
+  · exact absurd (congrArg f.indexEquiv (P.root.injective hroot)) hij
+  · rw [← Hom.root_weightMap_apply P P₂ i f, hroot, map_neg, Hom.root_weightMap_apply P P₂ j f]
+
 end Injective
 
 section Chain
@@ -167,5 +200,9 @@ theorem chainBotCoeff_indexEquiv (i j : ι) :
 end Chain
 
 end Hom
+
+/-- An equivalence of root pairings transports reducedness from the source to the target. -/
+theorem Equiv.isReduced (e : P.Equiv P₂) [P.IsReduced] : P₂.IsReduced :=
+  e.toHom.isReduced e.bijective_weightMap.injective
 
 end RootPairing

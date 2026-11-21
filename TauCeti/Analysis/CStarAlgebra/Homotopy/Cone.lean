@@ -154,7 +154,7 @@ theorem toPath_ofPathEqZero (g : C(I, A)) (hg0 : g 0 = 0) : toPath (ofPathEqZero
 
 /-- Linear cone element `t ↦ (t : ℝ) • a` in `CStarCone A`. -/
 noncomputable def linearPath (a : A) : CStarCone A :=
-  ofPathEqZero ⟨fun t : I => (t : ℝ) • a, continuous_subtype_val.smul continuous_const⟩ (by simp)
+  ofPathEqZero ⟨fun t : I => (t : ℝ) • a, continuous_subtypeVal.smul continuous_const⟩ (by simp)
 
 @[simp]
 theorem linearPath_apply (a : A) (t : Ioc (0 : ℝ) 1) : linearPath a t = (t : ℝ) • a := by
@@ -165,8 +165,8 @@ theorem evalOne_linearPath (a : A) : evalOne (linearPath a) = a := by simp
 @[simp]
 theorem norm_linearPath (a : A) : ‖linearPath a‖ = ‖a‖ :=
   le_antisymm ((ZeroAtInftyContinuousMap.norm_le (norm_nonneg a)).mpr fun t => by
-    rw [linearPath_apply, norm_smul, Real.norm_of_nonneg t.2.1.le]
-    exact mul_le_of_le_one_left (norm_nonneg a) t.2.2)
+    rw [linearPath_apply, norm_smul, Real.norm_of_nonneg t.property.1.le]
+    exact mul_le_of_le_one_left (norm_nonneg a) t.property.2)
     (by simpa only [linearPath_apply, coe_iocOne, one_smul] using
       ZeroAtInftyContinuousMap.norm_coe_le_norm (linearPath a) iocOne)
 
@@ -208,19 +208,19 @@ variable {A : Type*} [NonUnitalCStarAlgebra A]
 /-- Truncated shift `(t, s) ↦ max(s - t, 0)` on `unitInterval × unitInterval`. -/
 private noncomputable def coneShift : C(I × I, I) where
   toFun p := ⟨max ((p.2 : ℝ) - (p.1 : ℝ)) 0,
-    le_max_right _ _, max_le ((sub_le_self _ p.1.2.1).trans p.2.2.2) zero_le_one⟩
+    le_max_right _ _, max_le ((sub_le_self _ p.1.property.1).trans p.2.property.2) zero_le_one⟩
   continuous_toFun := Continuous.subtype_mk
-    (((continuous_subtype_val.comp continuous_snd).sub
-      (continuous_subtype_val.comp continuous_fst)).max continuous_const) _
+    (((continuous_subtypeVal.comp continuous_snd).sub
+      (continuous_subtypeVal.comp continuous_fst)).max continuous_const) _
 
 private theorem coneShift_zero_right (t : I) : coneShift (t, 0) = 0 := by
-  ext; simp [coneShift, t.2.1]
+  ext; simp [coneShift, t.property.1]
 
 private theorem coneShift_zero_left (s : I) : coneShift (0, s) = s := by
-  ext; simp [coneShift, s.2.1]
+  ext; simp [coneShift, s.property.1]
 
 private theorem coneShift_one_left (s : I) : coneShift (1, s) = 0 := by
-  ext; simp [coneShift, sub_nonpos.mpr s.2.2]
+  ext; simp [coneShift, sub_nonpos.mpr s.property.2]
 
 /-- Continuous path `t ↦ φ_t(f)` in `CStarCone A` induced by precomposing `toPath f` with
 `coneShift`. -/
@@ -256,10 +256,10 @@ noncomputable def contractionHomotopy :
 theorem contractionHomotopy_apply_of_lt (f : CStarCone A) (t : I) (s : Ioc (0 : ℝ) 1)
     (hst : (t : ℝ) < (s : ℝ)) :
     (contractionHomotopy (A := A)).eval t f s =
-      f ⟨(s : ℝ) - (t : ℝ), sub_pos.mpr hst, (sub_le_self _ t.2.1).trans s.2.2⟩ := by
+      f ⟨(s : ℝ) - (t : ℝ), sub_pos.mpr hst, (sub_le_self _ t.property.1).trans s.property.2⟩ := by
   have hshift : coneShift (t, iocToUnitInterval s) =
       iocToUnitInterval ⟨(s : ℝ) - (t : ℝ), sub_pos.mpr hst,
-        (sub_le_self _ t.2.1).trans s.2.2⟩ := by
+        (sub_le_self _ t.property.1).trans s.property.2⟩ := by
     ext; simp [coneShift, max_eq_left (sub_pos.mpr hst).le]
   simp [contractionHomotopy, hshift]
 

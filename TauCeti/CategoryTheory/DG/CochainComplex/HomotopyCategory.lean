@@ -78,8 +78,8 @@ def cochainHomLinearEquivDGCycles (F G : CochainComplex C ℤ) :
     (F ⟶ G) ≃ₗ[R] dgCycles R F G where
   toFun f := ⟨(Cochain.ofHom f : ModuleCat.of R (Cochain F G 0)),
     (mem_dgCycles R).2 ((dgDifferential_linearHomComplex R 0 _).trans (δ_ofHom f))⟩
-  invFun z := Cocycle.homOf ⟨z.1, (Cocycle.mem_iff 0 1 (zero_add 1) _).2
-    ((dgDifferential_linearHomComplex R 0 z.1).symm.trans ((mem_dgCycles R).1 z.2))⟩
+  invFun z := Cocycle.homOf ⟨z.val, (Cocycle.mem_iff 0 1 (zero_add 1) _).2
+    ((dgDifferential_linearHomComplex R 0 z.val).symm.trans ((mem_dgCycles R).1 z.property))⟩
   left_inv f := Cocycle.homOf_ofHom_eq_self f
   right_inv _ := Subtype.ext (Cocycle.cochain_ofHom_homOf_eq_coe _)
   map_add' f g := Subtype.ext (Cochain.ofHom_add f g)
@@ -143,7 +143,7 @@ def cochainComplexToDGClosed :
     CochainComplex C ℤ ⥤
       ForgetEnrichment (CochainComplex (ModuleCat.{v} R) ℤ) (CochainComplex C ℤ) where
   obj K := ForgetEnrichment.of _ K
-  map {F G} f := dgClosedHomOf R _ (cochainHomLinearEquivDGCycles R F G f).2
+  map {F G} f := dgClosedHomOf R _ (cochainHomLinearEquivDGCycles R F G f).property
   map_id K := dgClosedHom_injective R (by
     rw [dgClosedHom_dgClosedHomOf, dgClosedHom_id]
     exact cochainHomLinearEquivDGCycles_id R K)
@@ -162,7 +162,7 @@ theorem cochainComplexToDGClosed_obj (K : CochainComplex C ℤ) :
 @[simp]
 theorem dgClosedHom_cochainComplexToDGClosed_map {F G : CochainComplex C ℤ} (f : F ⟶ G) :
     dgClosedHom R ((cochainComplexToDGClosed R C).map f) =
-      (cochainHomLinearEquivDGCycles R F G f).1 :=
+      (cochainHomLinearEquivDGCycles R F G f).val :=
   dgClosedHom_dgClosedHomOf R _ _
 
 /-- The functor `TauCeti.cochainComplexToDGClosed` is fully faithful: a morphism of the underlying
@@ -192,8 +192,8 @@ instance : (cochainComplexToDGClosed R C).IsEquivalence where
 /-- Two cochain maps have the same class in the homotopy category of the DG category of cochain
 complexes exactly when they are homotopic. -/
 theorem homOf_cochainHomLinearEquivDGCycles_eq_iff {F G : CochainComplex C ℤ} (f g : F ⟶ G) :
-    DGHomotopyCategory.homOf R _ (cochainHomLinearEquivDGCycles R F G f).2 =
-        DGHomotopyCategory.homOf R _ (cochainHomLinearEquivDGCycles R F G g).2 ↔
+    DGHomotopyCategory.homOf R _ (cochainHomLinearEquivDGCycles R F G f).property =
+        DGHomotopyCategory.homOf R _ (cochainHomLinearEquivDGCycles R F G g).property ↔
       Nonempty (Homotopy f g) := by
   rw [DGHomotopyCategory.homOf_eq_iff, cochainHomLinearEquivDGCycles_sub_mem_dgBoundaries_iff]
 
@@ -202,7 +202,7 @@ the homotopy class of the corresponding closed degree-zero morphism. -/
 theorem cochainComplexToDGClosed_comp_dgClosedToHomotopy_map {F G : CochainComplex C ℤ}
     (f : F ⟶ G) :
     (cochainComplexToDGClosed R C ⋙ dgClosedToHomotopy R).map f =
-      DGHomotopyCategory.homOf R _ (cochainHomLinearEquivDGCycles R F G f).2 := by
+      DGHomotopyCategory.homOf R _ (cochainHomLinearEquivDGCycles R F G f).property := by
   simp only [Functor.comp_map, dgClosedToHomotopy_map, dgClosedHom_cochainComplexToDGClosed_map]
   -- The two sides now agree except that the Hom type on the left is written with the objects
   -- `(cochainComplexToDGClosed R C ⋙ dgClosedToHomotopy R).obj K`, which reduce to
@@ -243,7 +243,7 @@ theorem homotopyCategoryToDGHomotopyCategory_map_quotient_map {F G : CochainComp
     (f : F ⟶ G) :
     (homotopyCategoryToDGHomotopyCategory R C).map
         ((HomotopyCategory.quotient C (ComplexShape.up ℤ)).map f) =
-      DGHomotopyCategory.homOf R _ (cochainHomLinearEquivDGCycles R F G f).2 :=
+      DGHomotopyCategory.homOf R _ (cochainHomLinearEquivDGCycles R F G f).property :=
   (CategoryTheory.Quotient.lift_map_functor_map _ _ _ f).trans
     (cochainComplexToDGClosed_comp_dgClosedToHomotopy_map R f)
 

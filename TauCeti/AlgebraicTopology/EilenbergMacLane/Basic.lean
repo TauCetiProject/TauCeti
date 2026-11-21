@@ -88,10 +88,8 @@ protected theorem subsingleton_homotopyGroup (h : IsAspherical X x) (n : ℕ) :
 its homotopy groups at any two points are isomorphic. -/
 theorem of_basepoint (h : IsAspherical X x) (x' : X) : IsAspherical X x' := by
   let : PathConnectedSpace X := h.pathConnectedSpace
-  refine IsAspherical.mk h.pathConnectedSpace fun n ↦ ?_
-  let : Subsingleton (π_ (n + 2) X x) := h.subsingleton_homotopyGroup n
-  obtain ⟨φ⟩ := nonempty_homotopyGroupMulEquiv (N := Fin (n + 2)) (x := x) (y := x')
-  exact φ.toEquiv.subsingleton_congr.mp inferInstance
+  exact IsAspherical.mk h.pathConnectedSpace fun n ↦
+    subsingleton_homotopyGroup_of_pathConnectedSpace (h.subsingleton_homotopyGroup n)
 
 /-- The product of two aspherical spaces is aspherical. -/
 theorem prod (hX : IsAspherical X x) (hY : IsAspherical Y y) :

@@ -50,7 +50,7 @@ noncomputable def equivKerEvalOfNotMemRangeIff (A : Type*) [NonUnitalCStarAlgebr
     exact extendByZero_apply_of_notMem he f ((hcompl y₀).mpr rfl)⟩
   invFun g := restrictOfEqZero he.isEmbedding (g : C₀(Y, A)) fun y hy => by
     rw [(hcompl y).mp hy]
-    have hg := (TwoSidedIdeal.mem_ker (evalNonUnitalStarAlgHom ℂ A y₀)).mp g.2
+    have hg := (TwoSidedIdeal.mem_ker (evalNonUnitalStarAlgHom ℂ A y₀)).mp g.property
     rwa [evalNonUnitalStarAlgHom_apply] at hg
   left_inv f := restrictOfEqZero_extendByZero he f
   right_inv g := Subtype.ext (extendByZero_restrictOfEqZero he (g : C₀(Y, A)) _)
@@ -84,7 +84,8 @@ noncomputable def equivKerContinuousMapEvalOfNotMemRangeIff [CompactSpace Y]
   invFun g := restrictOfEqZero he.isEmbedding
     (ZeroAtInftyContinuousMap.ContinuousMap.liftZeroAtInfty (g : C(Y, A))) fun y hy => by
       rw [(hcompl y).mp hy]
-      simpa using (TwoSidedIdeal.mem_ker (ContinuousMap.evalNonUnitalStarAlgHom ℂ A y₀)).mp g.2
+      simpa using
+        (TwoSidedIdeal.mem_ker (ContinuousMap.evalNonUnitalStarAlgHom ℂ A y₀)).mp g.property
   left_inv f := restrictOfEqZero_extendByZero he f
   right_inv g := Subtype.ext <| ContinuousMap.ext fun y =>
     DFunLike.congr_fun (extendByZero_restrictOfEqZero he

@@ -30,11 +30,12 @@ namespace TauCeti
 /-- Orientation-preserving order isomorphism `(0, 1) ≃o (-π/2, π/2)` given by `t ↦ π(t - 1/2)`. -/
 noncomputable def iooZeroOneOrderIsoPiHalf :
     Ioo (0 : ℝ) 1 ≃o Ioo (-(Real.pi / 2)) (Real.pi / 2) where
-  toFun x := ⟨Real.pi * ((x : ℝ) - 2⁻¹), by constructor <;> nlinarith [Real.pi_pos, x.2.1, x.2.2]⟩
+  toFun x := ⟨Real.pi * ((x : ℝ) - 2⁻¹),
+    by constructor <;> nlinarith [Real.pi_pos, x.property.1, x.property.2]⟩
   invFun y := ⟨(y : ℝ) / Real.pi + 2⁻¹, by
     have hpi := Real.pi_pos
-    exact ⟨by rw [div_add' _ _ _ hpi.ne', lt_div_iff₀ hpi]; linarith [y.2.1],
-      by rw [div_add' _ _ _ hpi.ne', div_lt_iff₀ hpi]; linarith [y.2.2]⟩⟩
+    exact ⟨by rw [div_add' _ _ _ hpi.ne', lt_div_iff₀ hpi]; linarith [y.property.1],
+      by rw [div_add' _ _ _ hpi.ne', div_lt_iff₀ hpi]; linarith [y.property.2]⟩⟩
   left_inv x := by ext; simp [mul_div_cancel_left₀ _ Real.pi_ne_zero]
   right_inv y := by ext; simp [mul_div_cancel₀ _ Real.pi_ne_zero]
   map_rel_iff' := by

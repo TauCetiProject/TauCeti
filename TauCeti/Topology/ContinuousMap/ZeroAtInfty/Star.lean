@@ -5,28 +5,23 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.ContinuousMap.Compact
 public import Mathlib.Topology.ContinuousMap.Star
 public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.ExtendByZero
 
 /-!
-# Non-unital star-algebra homomorphisms and equivalences on `C₀(X, A)`
+# Non-unital star-algebra homomorphisms on `C₀(X, A)`
 
 Mathlib defines `ZeroAtInftyContinuousMap.compNonUnitalAlgHom` (`C₀(Y, A) →ₙₐ[𝕜] C₀(X, A)`) along a
-cocompact map, and `ZeroAtInftyContinuousMap.ContinuousMap.liftZeroAtInfty` (`C(X, A) ≃ C₀(X, A)`)
-for compact `X`. This file supplies the `⋆`-algebra homomorphisms and equivalences needed for
+cocompact map, and `TauCeti.Topology.ContinuousMap.ZeroAtInfty.Basic` provides
+`ContinuousMap.liftZeroAtInftyStarAlgEquiv` and `ZeroAtInftyContinuousMap.congrLeftStarAlgEquiv`.
+This file supplies the remaining non-unital `⋆`-algebra homomorphisms on `C₀(X, A)` needed for
 C⋆-algebras of functions vanishing at infinity:
 
-* `ContinuousMap.liftZeroAtInftyStarAlgEquiv`: for compact `X`, `liftZeroAtInfty` bundled as a
-  `⋆`-algebra equivalence `C(X, A) ≃⋆ₐ[𝕜] C₀(X, A)`, together with supremum-norm preservation
-  `ContinuousMap.norm_liftZeroAtInfty`.
 * `ZeroAtInftyContinuousMap.compNonUnitalStarAlgHom`: precomposition `C₀(Y, A) →⋆ₙₐ[𝕜] C₀(X, A)`
   along a cocompact map `X →co Y`.
 * `ZeroAtInftyContinuousMap.evalNonUnitalStarAlgHom`: evaluation `C₀(X, A) →⋆ₙₐ[𝕜] A` at `x : X`.
 * `ZeroAtInftyContinuousMap.compLeftNonUnitalStarAlgHom`: postcomposition
   `C₀(X, A) →⋆ₙₐ[𝕜] C₀(X, B)` with a continuous `φ : A →⋆ₙₐ[𝕜] B`.
-* `ZeroAtInftyContinuousMap.congrLeftStarAlgEquiv`: reindexing `C₀(X, A) ≃⋆ₐ[𝕜] C₀(Y, A)` along a
-  homeomorphism `e : X ≃ₜ Y` (`f ↦ f ∘ e.symm`).
 * `ZeroAtInftyContinuousMap.extendByZeroNonUnitalStarAlgHom`: extension by zero
   `C₀(X, A) →⋆ₙₐ[𝕜] C₀(Y, A)` along an open embedding `e : X → Y` into an `R₁` space `Y`.
 -/
@@ -35,46 +30,6 @@ public section
 
 open Filter Set Topology
 open scoped ZeroAtInfty
-
-namespace ContinuousMap
-
-section LiftZeroAtInfty
-
-@[simp]
-theorem norm_liftZeroAtInfty {X E : Type*} [TopologicalSpace X] [CompactSpace X]
-    [SeminormedAddCommGroup E] (f : C(X, E)) :
-    ‖ZeroAtInftyContinuousMap.ContinuousMap.liftZeroAtInfty f‖ = ‖f‖ :=
-  le_antisymm
-    ((ZeroAtInftyContinuousMap.norm_le (norm_nonneg f)).mpr fun x => f.norm_coe_le_norm x)
-    ((f.norm_le (norm_nonneg _)).mpr fun x =>
-      ZeroAtInftyContinuousMap.norm_coe_le_norm
-        (ZeroAtInftyContinuousMap.ContinuousMap.liftZeroAtInfty f) x)
-
-variable (𝕜 X A : Type*) [TopologicalSpace X] [CompactSpace X] [TopologicalSpace A]
-  [NonUnitalNonAssocSemiring A] [IsTopologicalSemiring A] [SMulZeroClass 𝕜 A]
-  [ContinuousConstSMul 𝕜 A] [StarAddMonoid A] [ContinuousStar A]
-
-/-- On a compact space `X`, `liftZeroAtInfty` is a `⋆`-algebra equivalence
-`C(X, A) ≃⋆ₐ[𝕜] C₀(X, A)`. -/
-def liftZeroAtInftyStarAlgEquiv : C(X, A) ≃⋆ₐ[𝕜] C₀(X, A) where
-  __ := ZeroAtInftyContinuousMap.ContinuousMap.liftZeroAtInfty
-  map_mul' _ _ := rfl
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
-  map_star' _ := rfl
-
-@[simp]
-theorem liftZeroAtInftyStarAlgEquiv_apply (f : C(X, A)) :
-    liftZeroAtInftyStarAlgEquiv 𝕜 X A f =
-      ZeroAtInftyContinuousMap.ContinuousMap.liftZeroAtInfty f := (rfl)
-
-@[simp]
-theorem liftZeroAtInftyStarAlgEquiv_symm_apply (f : C₀(X, A)) :
-    (liftZeroAtInftyStarAlgEquiv 𝕜 X A).symm f = (f : C(X, A)) := (rfl)
-
-end LiftZeroAtInfty
-
-end ContinuousMap
 
 namespace ZeroAtInftyContinuousMap
 
@@ -176,43 +131,6 @@ theorem compLeftNonUnitalStarAlgHom_comp {C : Type*} [TopologicalSpace C]
   NonUnitalStarAlgHom.ext fun _ => ext fun _ => rfl
 
 end Postcomp
-
-section CongrLeft
-
-variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
-variable (𝕜 A : Type*) [TopologicalSpace A] [NonUnitalNonAssocSemiring A]
-  [IsTopologicalSemiring A] [SMulZeroClass 𝕜 A] [ContinuousConstSMul 𝕜 A] [StarAddMonoid A]
-  [ContinuousStar A]
-
-/-- Reindexing along a homeomorphism `e : X ≃ₜ Y` (`f ↦ f ∘ e.symm`) as a `⋆`-algebra equivalence
-`C₀(X, A) ≃⋆ₐ[𝕜] C₀(Y, A)`. -/
-def congrLeftStarAlgEquiv (e : X ≃ₜ Y) : C₀(X, A) ≃⋆ₐ[𝕜] C₀(Y, A) where
-  toFun f := f.comp e.symm.toCocompactMap
-  invFun f := f.comp e.toCocompactMap
-  left_inv f := by ext; simp
-  right_inv f := by ext; simp
-  map_mul' _ _ := rfl
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
-  map_star' _ := rfl
-
-@[simp]
-theorem congrLeftStarAlgEquiv_apply (e : X ≃ₜ Y) (f : C₀(X, A)) (y : Y) :
-    congrLeftStarAlgEquiv 𝕜 A e f y = f (e.symm y) := (rfl)
-
-@[simp]
-theorem congrLeftStarAlgEquiv_symm (e : X ≃ₜ Y) :
-    (congrLeftStarAlgEquiv 𝕜 A e).symm = congrLeftStarAlgEquiv 𝕜 A e.symm := (rfl)
-
-@[simp]
-theorem congrLeftStarAlgEquiv_refl :
-    congrLeftStarAlgEquiv 𝕜 A (Homeomorph.refl X) = StarAlgEquiv.refl 𝕜 C₀(X, A) := (rfl)
-
-theorem congrLeftStarAlgEquiv_trans {Z : Type*} [TopologicalSpace Z] (e : X ≃ₜ Y) (e' : Y ≃ₜ Z) :
-    congrLeftStarAlgEquiv 𝕜 A (e.trans e') =
-      (congrLeftStarAlgEquiv 𝕜 A e).trans (congrLeftStarAlgEquiv 𝕜 A e') := (rfl)
-
-end CongrLeft
 
 section ExtendByZero
 

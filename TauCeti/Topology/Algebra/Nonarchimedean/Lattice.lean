@@ -66,9 +66,9 @@ theorem nonarchimedeanGroup_sInf {G : Type*} [Group G] {ts : Set (TopologicalSpa
   -- a neighbourhood of `1` for the infimum is built from finitely many neighbourhoods for members
   -- of `ts` by intersections; each of them contains an open subgroup, open for the infimum too
   refine Filter.iInf_sets_induct hU ⟨⊤, fun _ _ ↦ trivial⟩ fun {t} {s₁ s₂} hs₁ ⟨O₂, hO₂⟩ ↦ ?_
-  obtain ⟨O₁, hO₁⟩ := @NonarchimedeanGroup.is_nonarchimedean G _ t (h t t.2) s₁ hs₁
+  obtain ⟨O₁, hO₁⟩ := @NonarchimedeanGroup.is_nonarchimedean G _ t (h t t.property) s₁ hs₁
   exact ⟨⟨@OpenSubgroup.toSubgroup G _ t O₁,
-    TopologicalSpace.le_def.mp (sInf_le t.2) _ (@OpenSubgroup.isOpen G _ t O₁)⟩ ⊓ O₂,
+    TopologicalSpace.le_def.mp (sInf_le t.property) _ (@OpenSubgroup.isOpen G _ t O₁)⟩ ⊓ O₂,
     Set.inter_subset_inter hO₁ hO₂⟩
 
 end TauCeti
