@@ -66,8 +66,9 @@ noncomputable def a5FourthD4TrialityRotation :
     (fun k x ↦ componentTrialityLabel k x)
     glueAlphabetIsometry_componentTrialityLabel
     fun w ↦ by
-      rw [componentTrialityLabel_piGlueAlphabetCongr]
-      exact a5FourthD4TrialityGlueIsometry_mem_glueSubgroup_iff w
+      have h := a5FourthD4TrialityGlueIsometry_mem_glueSubgroup_iff w
+      rw [a5FourthD4TrialityGlueIsometry, QuadraticMap.IsometryEquiv.trans_apply] at h
+      rwa [← funext fun k ↦ QuadraticMap.IsometryEquiv.pi_apply componentTrialityLabel _ k]
 
 private theorem a5FourthD4TrialityRotation_apply
     (x : ∀ i, Fin (a5FourthD4.componentType i).rank → ℚ) (k : Fin 5) :

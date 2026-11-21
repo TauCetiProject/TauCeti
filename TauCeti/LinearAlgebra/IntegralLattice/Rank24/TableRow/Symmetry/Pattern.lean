@@ -53,22 +53,41 @@ namespace RootfulNiemeierType
 
 open IntegralLattice
 
+/-- Classification of glue patterns of `A₅⁴ D₄`: each is either a literal word or `[2(024)0]`. -/
+private def classifyA5FourthD4GluePattern {p : GluePattern}
+    (hp : p ∈ a5FourthD4.gluePatterns) :
+    PSum (Σ' word : List ℕ, p = .literal word) (p = .cyclic [2] [0, 2, 4] [0]) :=
+  match p, hp with
+  | .literal word, _ => PSum.inl ⟨word, rfl⟩
+  | .evenPermutations _, hp => absurd hp (by simp [gluePatterns])
+  | .cyclic pre block post, hp => by
+    have hp' : pre = [2] ∧ block = [0, 2, 4] ∧ post = [0] := by
+      simpa [gluePatterns] using hp
+    rcases hp' with ⟨rfl, rfl, rfl⟩
+    exact PSum.inr rfl
+
+/-- Transporting a permutation of `[2(024)0]` along `length_eq_of_mem_gluePatterns` leaves it
+unchanged on `Fin 5`. -/
+private theorem permCongr_cyclic_a5FourthD4
+    (hp : GluePattern.cyclic [2] [0, 2, 4] [0] ∈ a5FourthD4.gluePatterns)
+    (σ : Equiv.Perm (Fin (GluePattern.cyclic [2] [0, 2, 4] [0]).length)) :
+    (finCongr (length_eq_of_mem_gluePatterns hp)).permCongr σ =
+      (σ : Equiv.Perm (Fin a5FourthD4.components.length)) := by
+  ext i
+  rw [Equiv.permCongr_apply, finCongr_apply, Fin.val_cast, finCongr_symm, finCongr_apply]
+  exact congrArg (fun j : Fin 5 ↦ (σ j).val) (Fin.ext (Fin.val_cast _ _))
+
 /-- **Every table pattern of every rootful Niemeier row acts on the lattice of its row**: by pure
 component permutation (`patternIsometryHom`) on the 22 rows other than `A₅⁴ D₄`, and by the
 coupled triality action (`a5FourthD4CyclicSymmetryHom`) on `A₅⁴ D₄`. -/
 noncomputable def coupledPatternIsometryHom {r : RootfulNiemeierType} {p : GluePattern}
     (hp : p ∈ r.gluePatterns) :
     p.symmetries →* Isometry r.lattice r.lattice :=
-  if hr : r = a5FourthD4 then
-    match p, hp with
-    | .literal _, _ => 1
-    | .evenPermutations _, hp => by simp [hr, gluePatterns] at hp
-    | .cyclic pre block post, hp => by
-      have hp' : pre = [2] ∧ block = [0, 2, 4] ∧ post = [0] := by
-        simpa [hr, gluePatterns] using hp
-      rcases hp' with ⟨rfl, rfl, rfl⟩
-      subst hr
-      exact a5FourthD4CyclicSymmetryHom
+  if hr : r = a5FourthD4 then by
+    subst hr
+    exact match classifyA5FourthD4GluePattern hp with
+      | .inl ⟨_, hw⟩ => hw ▸ 1
+      | .inr hw => hw ▸ a5FourthD4CyclicSymmetryHom
   else
     patternIsometryHom hr hp
 
@@ -86,7 +105,10 @@ theorem coupledPatternIsometryHom_eq_patternIsometryHom {r : RootfulNiemeierType
 theorem coupledPatternIsometryHom_a5FourthD4_cyclic
     (hp : GluePattern.cyclic [2] [0, 2, 4] [0] ∈ a5FourthD4.gluePatterns) :
     coupledPatternIsometryHom hp = a5FourthD4CyclicSymmetryHom := by
-  simp [coupledPatternIsometryHom]
+  rw [coupledPatternIsometryHom, dite_eq_left rfl]
+  cases h : classifyA5FourthD4GluePattern hp with
+  | inl h' => cases h'.2
+  | inr h' => rfl
 
 /-- On any literal pattern of any row, `coupledPatternIsometryHom` is trivial. -/
 @[simp]
@@ -108,10 +130,8 @@ theorem forall_permCongr_mem_glueSymmetries_iff {r : RootfulNiemeierType} :
   refine a5FourthD4BlockRot_notMem_glueSymmetries ?_
   have hmem := h _ cyclic_mem_gluePatterns_a5FourthD4 a5FourthD4BlockRot
     a5FourthD4BlockRot_mem_symmetries
-  rwa [show (finCongr (length_eq_of_mem_gluePatterns cyclic_mem_gluePatterns_a5FourthD4)).permCongr
-      a5FourthD4BlockRot =
-      (a5FourthD4BlockRot : Equiv.Perm (Fin a5FourthD4.components.length)) from
-    Equiv.ext fun _ ↦ rfl] at hmem
+  exact (permCongr_cyclic_a5FourthD4 cyclic_mem_gluePatterns_a5FourthD4
+    a5FourthD4BlockRot) ▸ hmem
 
 /-- Every indicated pattern symmetry of `A₅⁴ D₄` acts on the component positions as a power
 `a5FourthD4BlockRot ^ k` (`k < 3`) and on `niemeierA5FourthD4` as the matching power
@@ -121,19 +141,19 @@ theorem exists_coupledPatternIsometryHom_a5FourthD4_eq_pow {p : GluePattern}
     ∃ k < 3,
       (finCongr (length_eq_of_mem_gluePatterns hp)).permCongr g.val = a5FourthD4BlockRot ^ k ∧
         coupledPatternIsometryHom hp g = a5FourthD4TrialityRotation ^ k := by
-  rcases p with word | ⟨pre, block, post⟩ | @⟨n, word⟩
-  · refine ⟨0, by decide, ?_, ?_⟩
+  cases classifyA5FourthD4GluePattern hp with
+  | inl h =>
+    rcases h with ⟨word, rfl⟩
+    refine ⟨0, by decide, ?_, ?_⟩
     · rw [Subsingleton.elim g 1, Subgroup.coe_one, Equiv.Perm.one_def, Equiv.permCongr_refl]
       exact (pow_zero a5FourthD4BlockRot).symm
     · rw [coupledPatternIsometryHom_literal, MonoidHom.one_apply, pow_zero]
-  · have hp' : pre = [2] ∧ block = [0, 2, 4] ∧ post = [0] := by
-      simpa [gluePatterns] using hp
-    rcases hp' with ⟨rfl, rfl, rfl⟩
+  | inr h =>
+    rcases h with rfl
     obtain ⟨k, hk, hgk, hact⟩ := exists_a5FourthD4CyclicSymmetryHom_eq_pow g
     refine ⟨k, hk, ?_, ?_⟩
-    · exact Eq.trans (Equiv.ext fun _ ↦ rfl) hgk
+    · exact (permCongr_cyclic_a5FourthD4 hp g.val).trans hgk
     · rw [coupledPatternIsometryHom_a5FourthD4_cyclic, hact]
-  · simp [gluePatterns] at hp
 
 /-- Every pattern symmetry of `A₅⁴ D₄` acts on `niemeierA5FourthD4` with determinant `1`. -/
 @[simp]
@@ -150,14 +170,14 @@ theorem coupledPatternIsometryHom_injective {r : RootfulNiemeierType} {p : GlueP
     Function.Injective (coupledPatternIsometryHom hp) := by
   by_cases hr : r = a5FourthD4
   · subst hr
-    rcases p with word | ⟨pre, block, post⟩ | @⟨n, word⟩
-    · exact fun a b _ ↦ Subsingleton.elim a b
-    · have hp' : pre = [2] ∧ block = [0, 2, 4] ∧ post = [0] := by
-        simpa [gluePatterns] using hp
-      rcases hp' with ⟨rfl, rfl, rfl⟩
+    cases classifyA5FourthD4GluePattern hp with
+    | inl h =>
+      rcases h with ⟨word, rfl⟩
+      exact fun a b _ ↦ Subsingleton.elim a b
+    | inr h =>
+      rcases h with rfl
       rw [coupledPatternIsometryHom_a5FourthD4_cyclic]
       exact a5FourthD4CyclicSymmetryHom_injective
-    · simp [gluePatterns] at hp
   · rw [coupledPatternIsometryHom_eq_patternIsometryHom hr]
     exact patternIsometryHom_injective hr hp
 
