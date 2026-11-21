@@ -35,6 +35,8 @@ taking invariants under it.
   subrepresentation containing its image.
 * `Representation.IntertwiningMap.equivOfRange`: an injective intertwining map is an equivalence
   onto a subrepresentation that its image fills.
+* `Representation.IntertwiningMap.prodEquiv`: intertwining maps into a product are pairs of
+  intertwining maps into the factors.
 * `Representation.IntertwiningMap.lcomp`: precomposition with an intertwining map, as an
   intertwining map of the conjugation representations `Representation.linHom`.
 * `Representation.IntertwiningMap.res` and `Representation.Equiv.res`: restriction of an
@@ -42,6 +44,7 @@ taking invariants under it.
 * `DistribMulActionHom.toIntertwiningMap`: an equivariant additive map of `G`-modules, as an
   intertwining map of the attached representations over `ℤ`.
 * `Representation.Equiv.tprod`: the tensor product of two equivalences of representations.
+* `Representation.Equiv.prodCongr`: the product of two equivalences of representations.
 * `Representation.Equiv.dual`: the dual of an equivalence of representations.
 * `Representation.Equiv.intertwiningMapCongr`: transport of intertwining maps along equivalences
   of the source and of the target.
@@ -81,6 +84,35 @@ theorem prod_ext {A G V W U : Type*} [Semiring A] [Monoid G]
   · exact congrArg IntertwiningMap.toLinearMap hl
   · exact congrArg IntertwiningMap.toLinearMap hr
 
+section prodEquiv
+
+variable {A G V W U : Type*} [CommSemiring A] [Monoid G]
+  [AddCommMonoid V] [Module A V] [AddCommMonoid W] [Module A W] [AddCommMonoid U] [Module A U]
+  {ρ : Representation A G V} {σ : Representation A G W} {τ : Representation A G U}
+
+/-- **Intertwining maps into a product are pairs of intertwining maps**: the representation
+counterpart of `LinearMap.prodEquiv`, sending a pair `(f, g)` to `IntertwiningMap.prod f g`. -/
+noncomputable def prodEquiv :
+    (IntertwiningMap ρ σ × IntertwiningMap ρ τ) ≃ₗ[A] IntertwiningMap ρ (σ.prod τ) where
+  toFun f := f.1.prod f.2
+  invFun f := ((fst A σ τ).comp f, (snd A σ τ).comp f)
+  left_inv f := by simp
+  right_inv f := by ext <;> rfl
+  map_add' f g := by ext <;> rfl
+  map_smul' c f := by ext <;> rfl
+
+@[simp]
+theorem prodEquiv_apply (f : IntertwiningMap ρ σ × IntertwiningMap ρ τ) :
+    prodEquiv f = f.1.prod f.2 :=
+  (rfl)
+
+@[simp]
+theorem prodEquiv_symm_apply (f : IntertwiningMap ρ (σ.prod τ)) :
+    prodEquiv.symm f = ((fst A σ τ).comp f, (snd A σ τ).comp f) :=
+  (rfl)
+
+end prodEquiv
+
 /-- **Evaluation of the `k[G]`-linear map attached to an intertwining map.** The map
 `Representation.IntertwiningMap.equivLinearMapAsModule ρ σ f` is `f` itself on the underlying
 types, so it too may be erased from an application. -/
@@ -113,21 +145,28 @@ theorem codRestrict_apply_coe (f : IntertwiningMap ρ σ) (P : Subrepresentation
     ((f.codRestrict P hP v : P.toSubmodule) : W) = f v := by
   rfl
 
-end codRestrict
-
-variable {A G V W : Type*} [CommSemiring A] [Monoid G]
-  [AddCommMonoid V] [Module A V] [AddCommMonoid W] [Module A W]
-  {ρ : Representation A G V} {σ : Representation A G W}
-
 /-- **An injective intertwining map is an isomorphism onto its image**, here onto any
 subrepresentation `P` that the image fills. -/
 noncomputable def equivOfRange (f : IntertwiningMap ρ σ) (hf : Function.Injective f)
     {P : Subrepresentation σ} (hP : LinearMap.range f.toLinearMap = P.toSubmodule) :
     ρ.Equiv P.toRepresentation :=
-  (f.codRestrict P fun v => hP.le (LinearMap.mem_range_self _ v)).ofBijective
+  let f' := f.codRestrict P fun v => hP.le (LinearMap.mem_range_self _ v)
+  .mk (LinearEquiv.ofBijective f'.toLinearMap
     ⟨fun _ _ h => hf (by exact congrArg Subtype.val h), fun w => by
-      obtain ⟨v, hv⟩ := hP.ge w.2
-      exact ⟨v, Subtype.ext (by exact hv)⟩⟩
+      obtain ⟨v, hv⟩ := hP.ge w.property
+      exact ⟨v, Subtype.ext (by exact hv)⟩⟩) f'.isIntertwining'
+
+@[simp]
+theorem equivOfRange_apply_coe (f : IntertwiningMap ρ σ) (hf : Function.Injective f)
+    {P : Subrepresentation σ} (hP : LinearMap.range f.toLinearMap = P.toSubmodule) (v : V) :
+    ((f.equivOfRange hf hP v : P.toSubmodule) : W) = f v := by
+  rfl
+
+end codRestrict
+
+variable {A G V W : Type*} [CommSemiring A] [Monoid G]
+  [AddCommMonoid V] [Module A V] [AddCommMonoid W] [Module A W]
+  {ρ : Representation A G V} {σ : Representation A G W}
 
 /-- **An intertwining map commutes with the action of the monoid algebra**, not only with that of
 the group elements. -/
@@ -135,12 +174,6 @@ the group elements. -/
 theorem apply_asAlgebraHom (f : IntertwiningMap ρ σ) (r : MonoidAlgebra A G) (v : V) :
     f (ρ.asAlgebraHom r v) = σ.asAlgebraHom r (f v) :=
   (equivLinearMapAsModule ρ σ f).map_smul r (ρ.asModuleEquiv.symm v)
-
-@[simp]
-theorem equivOfRange_apply_coe (f : IntertwiningMap ρ σ) (hf : Function.Injective f)
-    {P : Subrepresentation σ} (hP : LinearMap.range f.toLinearMap = P.toSubmodule) (v : V) :
-    ((f.equivOfRange hf hP v : P.toSubmodule) : W) = f v := by
-  rfl
 
 section lcomp
 
@@ -201,6 +234,44 @@ end Restriction
 end Representation.IntertwiningMap
 
 namespace Representation.Equiv
+
+section Product
+
+variable {A G V V' W W' : Type*} [Semiring A] [Monoid G]
+  [AddCommMonoid V] [Module A V] [AddCommMonoid V'] [Module A V']
+  [AddCommMonoid W] [Module A W] [AddCommMonoid W'] [Module A W']
+  {ρ : Representation A G V} {ρ' : Representation A G V'}
+  {σ : Representation A G W} {σ' : Representation A G W'}
+
+/-- The product of two equivalences of representations, acting componentwise. -/
+noncomputable def prodCongr (e : Equiv ρ ρ') (e' : Equiv σ σ') : Equiv (ρ.prod σ) (ρ'.prod σ') :=
+  .mk (e.toLinearEquiv.prodCongr e'.toLinearEquiv) fun g ↦
+    LinearMap.ext fun v ↦ Prod.ext
+      (e.toIntertwiningMap.isIntertwining _ _ g v.1)
+      (e'.toIntertwiningMap.isIntertwining _ _ g v.2)
+
+/-- The linear equivalence underlying a product equivalence is the product of its factors. -/
+@[simp]
+theorem toLinearEquiv_prodCongr (e : Equiv ρ ρ') (e' : Equiv σ σ') :
+    (e.prodCongr e').toLinearEquiv = e.toLinearEquiv.prodCongr e'.toLinearEquiv := (rfl)
+
+/-- Forgetting equivariance of a product equivalence gives the product linear map. -/
+@[simp]
+theorem toLinearMap_prodCongr (e : Equiv ρ ρ') (e' : Equiv σ σ') :
+    (e.prodCongr e').toLinearMap = e.toLinearMap.prodMap e'.toLinearMap := (rfl)
+
+/-- A product equivalence acts on the two coordinates separately. -/
+@[simp]
+theorem prodCongr_apply (e : Equiv ρ ρ') (e' : Equiv σ σ') (v : V × W) :
+    e.prodCongr e' v = (e v.1, e' v.2) := (rfl)
+
+/-- Inverting a product equivalence inverts each factor. -/
+@[simp]
+theorem prodCongr_symm (e : Equiv ρ ρ') (e' : Equiv σ σ') :
+    (e.prodCongr e').symm = e.symm.prodCongr e'.symm := by
+  ext v <;> rfl
+
+end Product
 
 section Basis
 

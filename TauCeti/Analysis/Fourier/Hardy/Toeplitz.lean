@@ -133,8 +133,10 @@ theorem inner_toeplitz_apply (a : Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1)))
     Submodule.inner_orthogonalProjectionOnto_eq_of_mem_left, Submodule.subtypeL_apply,
     Lp.multiplicationOperator_apply]
 
-/-- The Hardy coordinates of `T_a f` are the nonnegative Fourier coefficients of `a f`. -/
-@[simp]
+/-- The Hardy coordinates of `T_a f` are the nonnegative Fourier coefficients of `a f`.
+
+Not a `simp` lemma: on the right-hand side, `simp` tries `SetLike.val_smul`, whose search for an
+`SMul` of `L^∞` on almost-everywhere-equal functions times out in large environments. -/
 theorem hardyBasis_repr_toeplitz_apply (a : Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1)))
     (f : HardySpace) (i : ℕ) :
     hardyBasis.repr (toeplitz a f) i =
@@ -359,7 +361,7 @@ theorem norm_toeplitz_le (a : Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1))) :
 /-- Multiplication by `a` on circle `L²` has norm at most the norm of `T_a`. -/
 private theorem norm_multiplicationOperator_le_norm_toeplitz
     (a : Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1))) :
-    ‖Lp.multiplicationOperator (E := ℂ) a‖ ≤ ‖toeplitz a‖ := by
+    ‖Lp.multiplicationOperator (E := ℂ) (p := 2) a‖ ≤ ‖toeplitz a‖ := by
   rw [toeplitz_apply]
   refine hardySubmodule.norm_le_norm_orthogonalProjectionOnto_comp_comp_subtypeL
     (Lp.multiplicationOperator a) (l := Filter.atTop)
@@ -373,13 +375,46 @@ private theorem norm_multiplicationOperator_le_norm_toeplitz
   · simpa only [LinearIsometry.coe_mk, ContinuousLinearMap.coe_coe, mul_apply_eq_comp] using
       congrArg (· g) (Lp.commute_multiplicationOperator (E := ℂ) (fourierLp (T := 1) ∞ N) a).eq.symm
 
+/-- On trigonometric polynomials, the matrix coefficients of multiplication by `a` are bounded by
+the norm of `T_a`: multiplying by a high Fourier mode is unitary, commutes with multiplication by
+`a`, and moves both vectors into Hardy space, where `M_a` is compressed to `T_a`. -/
+private theorem norm_inner_smul_le_of_mem_span (a : Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1)))
+    {f g : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1))}
+    (hf : f ∈ Submodule.span ℂ (Set.range (fourierBasis (T := 1))))
+    (hg : g ∈ Submodule.span ℂ (Set.range (fourierBasis (T := 1)))) :
+    ‖⟪f, a • g⟫_ℂ‖ ≤ ‖toeplitz a‖ * ‖f‖ * ‖g‖ := by
+  obtain ⟨N, hfN, hgN⟩ := ((eventually_fourierLp_smul_mem_hardySubmodule hf).and
+    (eventually_fourierLp_smul_mem_hardySubmodule hg)).exists
+  have hu := ae_norm_fourierLp_eq_one (T := 1) ∞ N
+  have hcomm := congrArg (· g)
+    (Lp.commute_multiplicationOperator (E := ℂ) (fourierLp (T := 1) ∞ N) a).eq
+  simp only [mul_apply_eq_comp, Lp.multiplicationOperator_apply] at hcomm
+  have hinner : ⟪f, a • g⟫_ℂ = ⟪(⟨_, hfN⟩ : HardySpace), toeplitz a ⟨_, hgN⟩⟫_ℂ := by
+    rw [inner_toeplitz_apply, Submodule.coe_mk, Submodule.coe_mk, ← hcomm]
+    simp only [← Lp.multiplicationOperator_apply]
+    exact ((LinearMap.norm_map_iff_inner_map_map
+      (Lp.multiplicationOperator (E := ℂ) (p := 2) (fourierLp (T := 1) ∞ N)).toLinearMap).1
+        (Lp.norm_multiplicationOperator_apply_of_ae_norm_eq_one hu) f
+          (Lp.multiplicationOperator a g)).symm
+  have hnorm (h : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1))) :
+      ‖(fourierLp (T := 1) ∞ N • h : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1)))‖ = ‖h‖ := by
+    rw [← Lp.multiplicationOperator_apply,
+      Lp.norm_multiplicationOperator_apply_of_ae_norm_eq_one hu]
+  calc ‖⟪f, a • g⟫_ℂ‖ ≤ ‖(⟨_, hfN⟩ : HardySpace)‖ * (‖toeplitz a‖ * ‖(⟨_, hgN⟩ : HardySpace)‖) := by
+        rw [hinner]
+        exact (norm_inner_le_norm _ _).trans (by gcongr; exact ContinuousLinearMap.le_opNorm _ _)
+    _ = ‖toeplitz a‖ * ‖f‖ * ‖g‖ := by
+        rw [← Submodule.norm_coe, ← Submodule.norm_coe, Submodule.coe_mk, Submodule.coe_mk,
+          hnorm, hnorm]
+        ring
+
 /-- **Symbol norm.** The operator norm of the Toeplitz operator `T_a` is the `L∞` norm of its
 symbol. -/
 @[simp]
 theorem norm_toeplitz (a : Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1))) :
     ‖toeplitz a‖ = ‖a‖ := by
   refine le_antisymm (norm_toeplitz_le a) ?_
-  rw [← Lp.norm_multiplicationOperator (E := ℂ) a]
+  rw [← Lp.norm_multiplicationOperator (E := ℂ) (p := 2) a]
   exact norm_multiplicationOperator_le_norm_toeplitz a
 
 /-- The Toeplitz symbol map `a ↦ T_a` is an isometry. -/

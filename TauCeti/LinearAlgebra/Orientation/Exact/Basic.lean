@@ -101,7 +101,7 @@ def ofExact (o : Orientation R A (Fin m)) (p : Orientation R C (Fin n))
     (hm : finrank R A = m) (hn : finrank R C = n) : Orientation R B (Fin (m + n)) :=
   Orientation.map (Fin (m + n))
     (hfg.splitSurjectiveEquiv hf
-      ⟨_, (Module.projective_lifting_property g .id hg).choose_spec⟩).1.symm
+      ⟨_, (Module.projective_lifting_property g .id hg).choose_spec⟩).val.symm
     (prod o p hm hn)
 
 /-- **The orientation of a short exact sequence in bases.** If the first `m` vectors of a basis
@@ -115,10 +115,10 @@ theorem ofExact_orientation (a : Basis (Fin m) R A) (c : Basis (Fin n) R C)
   let e := hfg.splitSurjectiveEquiv hf
     ⟨_, (Module.projective_lifting_property g .id hg).choose_spec⟩
   -- The splitting sends `A` to the first factor and lifts the projection to `C`.
-  have hfe (x : A) : e.1.symm (x, 0) = f x := (LinearMap.congr_fun e.2.1 x).symm
-  have hge (y : C) : g (e.1.symm (0, y)) = y := by
-    simpa using LinearMap.congr_fun e.2.2 (e.1.symm (0, y))
-  let b' := ((a.prod c).reindex finSumFinEquiv).map e.1.symm
+  have hfe (x : A) : e.val.symm (x, 0) = f x := (LinearMap.congr_fun e.property.1 x).symm
+  have hge (y : C) : g (e.val.symm (0, y)) = y := by
+    simpa using LinearMap.congr_fun e.property.2 (e.val.symm (0, y))
+  let b' := ((a.prod c).reindex finSumFinEquiv).map e.val.symm
   have hb'' : ofExact hf hfg hg a.orientation c.orientation hm hn = b'.orientation := by
     rw [ofExact, prod_basis_orientation, ← Basis.orientation_map]
   -- Both `b` and `b'` are images of `a` followed by lifts of `c`, so they differ by a change of

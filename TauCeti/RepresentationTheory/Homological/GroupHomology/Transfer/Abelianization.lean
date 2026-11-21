@@ -5,6 +5,7 @@ Authors: Claude
 -/
 module
 
+public import TauCeti.GroupTheory.Abelianization.Transfer
 public import TauCeti.GroupTheory.Transfer.Basic
 public import TauCeti.RepresentationTheory.Homological.GroupHomology.Augmentation
 public import TauCeti.RepresentationTheory.Homological.GroupHomology.Functoriality
@@ -21,7 +22,7 @@ tensored with the coefficients, `H₁(G, A) ≃ Gᵃᵇ ⊗ A` (Mathlib's
 `groupHomology.H1AddEquivOfIsTrivial`). This file
 proves that, under these identifications, the homological transfer `H₁(G, A) ⟶ H₁(S, A)` of
 `TauCeti.groupHomology.transfer` is the group-theoretic transfer (Verlagerung)
-`Gᵃᵇ → Sᵃᵇ` of Mathlib's `MonoidHom.transfer`, tensored with `A`.
+`Gᵃᵇ →* Sᵃᵇ` of `Group.Abelianization.transfer`, tensored with `A`.
 
 This is the homological form of the classical fact that the transfer in degree one is the
 Verlagerung. Through the comparison of negative Tate degrees with group homology it identifies
@@ -40,7 +41,7 @@ restriction enters the reciprocity map of class field theory.
 
 * K. S. Brown, *Cohomology of Groups*, Chapter III, §9.
 * J.-P. Serre, *Local Fields*, Chapter VII, §8.
-* E. Artin and J. Tate, *Class Field Theory*, Chapter XIV, §4.
+* E. Artin and J. Tate, *Class Field Theory*, Chapter XIV, §§4–5.
 -/
 
 public noncomputable section
@@ -84,7 +85,7 @@ private def ψ (a : k) :
     { toFun s := Multiplicative.ofAdd (θ S a s)
       map_one' := by simp [θ]
       map_mul' s t := by
-        simp only [Subgroup.coe_mul, θ_mul a s.2, ofAdd_add] }
+        simp only [Subgroup.coe_mul, θ_mul a s.property, ofAdd_add] }
 
 private theorem ψ_of (a : k) (s : S) : ψ S a (Group.Abelianization.of s) = .ofAdd (θ S a s) := by
   simp [ψ]
@@ -121,14 +122,11 @@ private theorem δ_res_mkH1OfIsTrivial_ofAbelianization
   exact δ_res_mkH1OfIsTrivial S hAug s a
 
 /-- `transfer_mkH1OfIsTrivial` for the coefficients `k` themselves. -/
-private theorem transfer_mkH1OfIsTrivial_trivial [S.FiniteIndex] (x : Additive (Group.Abelianization
-    G))
-    (a : k) :
+private theorem transfer_mkH1OfIsTrivial_trivial [S.FiniteIndex]
+    (x : Additive (Group.Abelianization G)) (a : k) :
     transfer (trivial k G k) S 1 (mkH1OfIsTrivial (trivial k G k) x a) =
       mkH1OfIsTrivial (res S.subtype (trivial k G k))
-        ((Group.Abelianization.lift (Group.Abelianization.of : S →* Group.Abelianization
-            S).transfer).toAdditive x)
-        a := by
+        ((Group.Abelianization.transfer S).toAdditive x) a := by
   obtain ⟨g, rfl⟩ : ∃ g : G, Additive.ofMul (Group.Abelianization.of g) = x :=
     QuotientGroup.mk'_surjective _ x.toMul
   -- The connecting map of the augmentation sequence restricted to `S` is injective on `H₁(S, k)`,
@@ -141,7 +139,7 @@ private theorem transfer_mkH1OfIsTrivial_trivial [S.FiniteIndex] (x : Additive (
   have : Mono (δ hXS 1 0 rfl) :=
     mono_δ_of_isZero hXS 0 (isZero_res_leftRegular_succ (k := k) S 0)
   apply (ModuleCat.mono_iff_injective _).1 this
-  rw [MonoidHom.toAdditive_apply_apply, toMul_ofMul, Group.Abelianization.lift_apply_of,
+  rw [MonoidHom.toAdditive_apply_apply, toMul_ofMul, Group.Abelianization.transfer_of,
     δ_res_mkH1OfIsTrivial_ofAbelianization S hAug, ← map_inv,
     ← H0π_relTransfer_augElt,
     ← transfer_zero_H0π,
@@ -151,16 +149,13 @@ private theorem transfer_mkH1OfIsTrivial_trivial [S.FiniteIndex] (x : Additive (
 /-- **The transfer on `H₁` with trivial coefficients is the Verlagerung.** For a subgroup `S` of a
 group `G`, a finite-index subgroup `S`, and trivial coefficients `A`, the transfer
 `H₁(G, A) ⟶ H₁(S, A)` sends the class
-of `x ⊗ a` to the class of `V x ⊗ a`, where `V : Gᵃᵇ → Sᵃᵇ` is the group-theoretic transfer
-`MonoidHom.transfer` of `Group.Abelianization.of : S →* Sᵃᵇ`, descended to `Gᵃᵇ`. -/
+of `x ⊗ a` to the class of `V x ⊗ a`, where `V : Gᵃᵇ → Sᵃᵇ` is `Group.Abelianization.transfer S`. -/
 @[simp]
 theorem transfer_mkH1OfIsTrivial [S.FiniteIndex] (A : Rep k G) [A.IsTrivial]
     (x : Additive (Group.Abelianization G)) (a : A) :
     transfer A S 1 (mkH1OfIsTrivial A x a) =
       mkH1OfIsTrivial (res S.subtype A)
-        ((Group.Abelianization.lift (Group.Abelianization.of : S →* Group.Abelianization
-            S).transfer).toAdditive x)
-        a := by
+        ((Group.Abelianization.transfer S).toAdditive x) a := by
   -- `a` is the image of `1` under the morphism `k ⟶ A`, `1 ↦ a`, and the transfer is natural in
   -- the coefficients.
   let φ : trivial k G k ⟶ A := Rep.ofHom <| (LinearMap.toSpanSingleton k A a)
@@ -175,13 +170,12 @@ theorem transfer_mkH1OfIsTrivial [S.FiniteIndex] (A : Rep k G) [A.IsTrivial]
 
 /-- **The transfer on `H₁` with trivial coefficients is the Verlagerung**, read through the
 identifications `H₁(G, A) ≃ Gᵃᵇ ⊗ A` and `H₁(S, A) ≃ Sᵃᵇ ⊗ A`: the transfer becomes `V ⊗ A`, for
-`V : Gᵃᵇ → Sᵃᵇ` the group-theoretic transfer. -/
+`V : Gᵃᵇ → Sᵃᵇ` the group-theoretic transfer `Group.Abelianization.transfer S`. -/
 @[simp]
 theorem H1AddEquivOfIsTrivial_transfer [S.FiniteIndex] (A : Rep k G) [A.IsTrivial] (x : H1 A) :
     H1AddEquivOfIsTrivial (res S.subtype A) (transfer A S 1 x) =
       LinearMap.rTensor A (AddMonoidHom.toIntLinearMap
-        (Group.Abelianization.lift (Group.Abelianization.of : S →* Group.Abelianization
-            S).transfer).toAdditive)
+        (Group.Abelianization.transfer S).toAdditive)
         (H1AddEquivOfIsTrivial A x) := by
   obtain ⟨t, rfl⟩ := (H1AddEquivOfIsTrivial A).symm.surjective x
   rw [AddEquiv.apply_symm_apply]
@@ -193,7 +187,8 @@ theorem H1AddEquivOfIsTrivial_transfer [S.FiniteIndex] (A : Rep k G) [A.IsTrivia
         (Group.Abelianization.of : S →* Group.Abelianization S).transfer g :=
       QuotientGroup.mk'_surjective _ _
     rw [H1AddEquivOfIsTrivial_symm_tmul, ← mkH1OfIsTrivial_apply, transfer_mkH1OfIsTrivial]
-    simpa [← hs] using H1AddEquivOfIsTrivial_single (res S.subtype A) s a
+    simpa [Group.Abelianization.transfer_of, ← hs] using
+      H1AddEquivOfIsTrivial_single (res S.subtype A) s a
   | add t t' ht ht' => rw [map_add, map_add, map_add, ht, ht', map_add]
 
 end Transfer

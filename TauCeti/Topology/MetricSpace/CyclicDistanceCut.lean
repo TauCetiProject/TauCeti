@@ -31,6 +31,9 @@ arbitrary pseudometric space, before any geodesic interpolation is chosen.
   `δᵢ` is at most every `δ'ⱼ`, the monotonicity condition `δᵢⁿ ≤ δⱼⁿ⁺¹` imposed on the cut-offs
   of the approximation. This is its embedding `ιⁿ : 𝓛ⁿQ → 𝓛ⁿ⁺¹Q`
   (`TauCeti.cyclicDistanceCutRepeatFirst`).
+* Repeating the first vertex `k` more times, `(q₀, …, qₙ) ↦ (q₀, …, q₀, q₁, …, qₙ)`, maps the cut
+  with cut-offs `δ` into the cut with cut-offs `δ'` when `δ (j - k) ≤ δ' j` for every `j`. This
+  is the iterate `ιⁿ⁺ᵏ⁻¹ ∘ ⋯ ∘ ιⁿ` (`TauCeti.cyclicDistanceCutRepeatFirstIterate`).
 
 The sampling of compact families of free Moore loops into these cuts is in
 `TauCeti.Topology.PathSpace.Moore.Sampling`.
@@ -39,6 +42,8 @@ The sampling of compact families of free Moore loops into these cuts is in
 
 * `TauCeti.cyclicDistanceCut δ`: the cyclic tuples whose consecutive distances are bounded by `δ`.
 * `TauCeti.cyclicDistanceCutRepeatFirst`: the map between cuts repeating the first vertex.
+* `TauCeti.cyclicDistanceCutRepeatFirstIterate`: the map between cuts repeating the first vertex
+  several times.
 
 ## Main results
 
@@ -138,16 +143,16 @@ def cyclicDistanceCutRepeatFirst {δ : Fin (n + 1) → ℝ} {δ' : Fin (n + 2) �
     (h₀ : δ 0 ≤ δ' 0) (h₁ : 0 ≤ δ' 1)
     (h : ∀ i : Fin n, δ i.succ ≤ δ' i.succ.succ) :
     C(cyclicDistanceCut (X := X) δ, cyclicDistanceCut (X := X) δ') where
-  toFun q := ⟨Fin.cons (q.1 0) q.1, cons_mem_cyclicDistanceCut h₀ h₁ h q.2⟩
+  toFun q := ⟨Fin.cons (q.val 0) q.val, cons_mem_cyclicDistanceCut h₀ h₁ h q.property⟩
   continuous_toFun :=
-    (((continuous_apply 0).comp continuous_subtype_val).finCons (A := fun _ ↦ X)
-      continuous_subtype_val).subtype_mk _
+    (((continuous_apply 0).comp continuous_subtypeVal).finCons (A := fun _ ↦ X)
+      continuous_subtypeVal).subtype_mk _
 
 @[simp]
 theorem coe_cyclicDistanceCutRepeatFirst_apply {δ : Fin (n + 1) → ℝ} {δ' : Fin (n + 2) → ℝ}
     (h₀ : δ 0 ≤ δ' 0) (h₁ : 0 ≤ δ' 1)
     (h : ∀ i : Fin n, δ i.succ ≤ δ' i.succ.succ) (q : cyclicDistanceCut (X := X) δ) :
-    (cyclicDistanceCutRepeatFirst h₀ h₁ h q : Fin (n + 2) → X) = Fin.cons (q.1 0) q.1 :=
+    (cyclicDistanceCutRepeatFirst h₀ h₁ h q : Fin (n + 2) → X) = Fin.cons (q.val 0) q.val :=
   (rfl)
 
 /-- Repeating the first vertex is an embedding of distance cuts: forgetting the first vertex is a
@@ -157,8 +162,8 @@ theorem isEmbedding_cyclicDistanceCutRepeatFirst {δ : Fin (n + 1) → ℝ} {δ'
     (h : ∀ i : Fin n, δ i.succ ≤ δ' i.succ.succ) :
     IsEmbedding (cyclicDistanceCutRepeatFirst (X := X) h₀ h₁ h) := by
   refine IsEmbedding.of_comp (map_continuous _)
-    continuous_subtype_val.finTail ?_
-  have hcomp : (fun p : cyclicDistanceCut (X := X) δ' ↦ Fin.tail p.1) ∘
+    continuous_subtypeVal.finTail ?_
+  have hcomp : (fun p : cyclicDistanceCut (X := X) δ' ↦ Fin.tail p.val) ∘
       cyclicDistanceCutRepeatFirst h₀ h₁ h = Subtype.val := by
     funext q
     simp
@@ -177,7 +182,8 @@ theorem range_cyclicDistanceCutRepeatFirst {δ : Fin (n + 1) → ℝ} {δ' : Fin
     rw [← hq]
     refine ⟨?_, ?_⟩
     · simp [Fin.cons_one]
-    · simpa only [mem_preimage, coe_cyclicDistanceCutRepeatFirst_apply, Fin.tail_cons] using q.2
+    · simpa only [mem_preimage, coe_cyclicDistanceCutRepeatFirst_apply,
+        Fin.tail_cons] using q.property
   · rintro ⟨h01, htail⟩
     refine ⟨⟨Fin.tail p, htail⟩, Subtype.ext ?_⟩
     have h0 : Fin.tail p 0 = p 0 := by
@@ -194,6 +200,81 @@ theorem isClosedEmbedding_cyclicDistanceCutRepeatFirst [T2Space X] {δ : Fin (n 
   refine ⟨isEmbedding_cyclicDistanceCutRepeatFirst h₀ h₁ h, ?_⟩
   rw [range_cyclicDistanceCutRepeatFirst]
   exact ((isClosed_eq (continuous_apply 1) (continuous_apply 0)).inter
-    ((isClosed_cyclicDistanceCut δ).preimage continuous_id.finTail)).preimage continuous_subtype_val
+    ((isClosed_cyclicDistanceCut δ).preimage continuous_id.finTail)).preimage continuous_subtypeVal
+
+/-! ### Repeating the first vertex several times -/
+
+/-- **Repeating the first vertex `k` more times maps one distance cut into another.** The tuple
+`(q₀, …, q₀, q₁, …, qₙ)`, with `q₀` repeated `k + 1` times, has the closing edge `(q₀, qₙ)` of `q`,
+`k` edges of length zero, and the other edges of `q`. So it lies in the cut with cut-offs `δ'` when
+`q` lies in the cut with cut-offs `δ` and the cut-off `δ (j - k)` of the vertex `q_{j - k}` at the
+position `j` is at most `δ' j`. -/
+theorem repeatFirstIterate_mem_cyclicDistanceCut {k : ℕ} {δ : Fin (n + 1) → ℝ}
+    {δ' : Fin (n + k + 1) → ℝ} (h : ∀ j : Fin (n + k + 1), δ ⟨j - k, by omega⟩ ≤ δ' j)
+    {q : Fin (n + 1) → X} (hq : q ∈ cyclicDistanceCut δ) :
+    (fun j : Fin (n + k + 1) ↦ q ⟨j - k, by omega⟩) ∈ cyclicDistanceCut δ' := by
+  rw [mem_cyclicDistanceCut]
+  intro j
+  by_cases hj : (j : ℕ) ≤ k ∧ (j : ℕ) ≠ 0
+  · -- The edge ending at a repeated copy of `q₀` has length zero.
+    have hj' : ((j - 1 : Fin (n + k + 1)) : ℕ) - k = (j : ℕ) - k := by
+      simp only [Fin.coe_sub_one, Fin.ext_iff, Fin.val_zero]
+      split_ifs <;> omega
+    rw [show q ⟨(j - 1 : Fin (n + k + 1)) - k, by omega⟩ = q ⟨j - k, by omega⟩ from
+      congrArg q (Fin.ext hj'), dist_self]
+    exact (nonneg_of_mem_cyclicDistanceCut hq _).trans (h j)
+  · -- Otherwise the edge ending at the vertex `j` is the edge of `q` ending at the vertex `j - k`.
+    have hj' : q ⟨(j - 1 : Fin (n + k + 1)) - k, by omega⟩ = q (⟨j - k, by omega⟩ - 1) := by
+      refine congrArg q (Fin.ext ?_)
+      simp only [Fin.coe_sub_one, Fin.ext_iff, Fin.val_zero]
+      split_ifs <;> omega
+    rw [hj']
+    exact (hq _).trans (h j)
+
+/-- **The iterated embedding `ιⁿ⁺ᵏ⁻¹ ∘ ⋯ ∘ ιⁿ : 𝓛ⁿ → 𝓛ⁿ⁺ᵏ` repeating the first vertex**,
+`(q₀, …, qₙ) ↦ (q₀, …, q₀, q₁, …, qₙ)` with `q₀` repeated `k + 1` times, between the distance cuts
+with cut-offs `δ` and `δ'`, when `δ (j - k) ≤ δ' j` for every `j`. For `k = 0` it is the inclusion
+of the cuts for `δ ≤ δ'` (`TauCeti.coe_cyclicDistanceCutRepeatFirstIterate_zero_apply`), and
+repeating the first vertex once more gives the next iterate
+(`TauCeti.cyclicDistanceCutRepeatFirst_cyclicDistanceCutRepeatFirstIterate`). -/
+def cyclicDistanceCutRepeatFirstIterate (k : ℕ) {δ : Fin (n + 1) → ℝ}
+    {δ' : Fin (n + k + 1) → ℝ} (h : ∀ j : Fin (n + k + 1), δ ⟨j - k, by omega⟩ ≤ δ' j) :
+    C(cyclicDistanceCut (X := X) δ, cyclicDistanceCut (X := X) δ') where
+  toFun q :=
+    ⟨fun j ↦ q.val ⟨j - k, by omega⟩, repeatFirstIterate_mem_cyclicDistanceCut h q.property⟩
+  continuous_toFun := by
+    refine Continuous.subtype_mk (continuous_pi fun _ ↦ ?_) _
+    exact (continuous_apply _).comp continuous_subtypeVal
+
+@[simp]
+theorem coe_cyclicDistanceCutRepeatFirstIterate_apply (k : ℕ) {δ : Fin (n + 1) → ℝ}
+    {δ' : Fin (n + k + 1) → ℝ} (h : ∀ j : Fin (n + k + 1), δ ⟨j - k, by omega⟩ ≤ δ' j)
+    (q : cyclicDistanceCut (X := X) δ) (j : Fin (n + k + 1)) :
+    (cyclicDistanceCutRepeatFirstIterate k h q : Fin (n + k + 1) → X) j = q.val ⟨j - k, by omega⟩ :=
+  (rfl)
+
+/-- Repeating the first vertex no more times is the inclusion of one distance cut into another. -/
+theorem coe_cyclicDistanceCutRepeatFirstIterate_zero_apply {δ δ' : Fin (n + 1) → ℝ}
+    (h : δ ≤ δ') (q : cyclicDistanceCut (X := X) δ) :
+    (cyclicDistanceCutRepeatFirstIterate 0 (δ' := δ') (fun j ↦ h j) q : Fin (n + 1) → X) = q :=
+  funext fun _ ↦ congrArg q.val (Fin.ext (Nat.sub_zero _))
+
+/-- Repeating the first vertex once more after repeating it `k` more times repeats it `k + 1` more
+times: `ιⁿ⁺ᵏ ∘ (ιⁿ⁺ᵏ⁻¹ ∘ ⋯ ∘ ιⁿ) = ιⁿ⁺ᵏ ∘ ⋯ ∘ ιⁿ`. -/
+theorem cyclicDistanceCutRepeatFirst_cyclicDistanceCutRepeatFirstIterate {k : ℕ}
+    {δ : Fin (n + 1) → ℝ} {δ' : Fin (n + k + 1) → ℝ} {δ'' : Fin (n + (k + 1) + 1) → ℝ}
+    (h : ∀ j : Fin (n + k + 1), δ ⟨j - k, by omega⟩ ≤ δ' j)
+    (h' : ∀ j : Fin (n + (k + 1) + 1), δ ⟨j - (k + 1), by omega⟩ ≤ δ'' j) (h₀ : δ' 0 ≤ δ'' 0)
+    (h₁ : 0 ≤ δ'' 1) (h₂ : ∀ i : Fin (n + k), δ' i.succ ≤ δ'' i.succ.succ)
+    (q : cyclicDistanceCut (X := X) δ) :
+    cyclicDistanceCutRepeatFirst h₀ h₁ h₂ (cyclicDistanceCutRepeatFirstIterate k h q) =
+      cyclicDistanceCutRepeatFirstIterate (k + 1) h' q := by
+  ext j : 2
+  rw [coe_cyclicDistanceCutRepeatFirst_apply, coe_cyclicDistanceCutRepeatFirstIterate_apply]
+  refine Fin.cases ?_ (fun i ↦ ?_) j
+  · rw [Fin.cons_zero, coe_cyclicDistanceCutRepeatFirstIterate_apply]
+    exact congrArg q.val (Fin.ext (by simp))
+  · rw [Fin.cons_succ, coe_cyclicDistanceCutRepeatFirstIterate_apply]
+    exact congrArg q.val (Fin.ext (by simp))
 
 end TauCeti

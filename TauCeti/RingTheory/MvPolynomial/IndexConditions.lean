@@ -80,20 +80,20 @@ noncomputable def indexConditionMap (d : σ → ℕ) (a : κ → σ → F) (t : 
     ((∀ j, Fin (d j + 1)) → R) →ₗ[R]
       ((k : κ) → indexConditions d (t k) → F) :=
   LinearMap.pi fun k ↦ LinearMap.pi fun I ↦
-    (aeval (a k)).toLinearMap ∘ₗ hasseDeriv (boxMonomial d I.1) ∘ₗ ofBox d
+    (aeval (a k)).toLinearMap ∘ₗ hasseDeriv (boxMonomial d I.val) ∘ₗ ofBox d
 
 /-- An equation of the index system is the corresponding Hasse jet of the box polynomial. -/
 @[simp]
 theorem indexConditionMap_apply (d : σ → ℕ) (a : κ → σ → F) (t : κ → ℝ)
     (x : (∀ j, Fin (d j + 1)) → R) (k : κ) (I : indexConditions d (t k)) :
-    indexConditionMap d a t x k I = aeval (a k) (hasseDeriv (boxMonomial d I.1) (ofBox d x)) :=
+    indexConditionMap d a t x k I = aeval (a k) (hasseDeriv (boxMonomial d I.val) (ofBox d x)) :=
   (rfl)
 
 /-- The row of the index system is the explicit binomial-and-power row of Hasse evaluation. -/
 theorem indexConditionMap_apply_eq_sum (d : σ → ℕ) (a : κ → σ → F) (t : κ → ℝ)
     (x : (∀ j, Fin (d j + 1)) → R) (k : κ) (I : indexConditions d (t k)) :
     indexConditionMap d a t x k I =
-      ∑ J, hasseDerivRow d (a k) (boxMonomial d I.1) J * algebraMap R F (x J) := by
+      ∑ J, hasseDerivRow d (a k) (boxMonomial d I.val) J * algebraMap R F (x J) := by
   rw [indexConditionMap_apply, aeval_hasseDeriv_ofBox]
 
 /-- The kernel of the index system consists exactly of coefficient vectors whose polynomials,
@@ -111,7 +111,7 @@ theorem mem_ker_indexConditionMap_iff (d : σ → ℕ) (a : κ → σ → F) (t 
   · intro h k I hI
     simpa only [hasseDeriv_map, eval_map, ← aeval_def] using h k ⟨I, hI⟩
   · intro h k I
-    simpa only [hasseDeriv_map, eval_map, ← aeval_def] using h k I.1 I.2
+    simpa only [hasseDeriv_map, eval_map, ← aeval_def] using h k I.val I.property
 
 end Semiring
 

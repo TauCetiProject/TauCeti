@@ -30,9 +30,13 @@ Results connecting unit and coprimality data over `ZMod d`, independent of one a
   `TauCeti.EisensteinSeries.nonempty_gammaSet_iff_coprime_val`.
 * `IsCoprime.exists_int_lifts` — a *pair* of coprime residues mod `d` lifts to a coprime pair
   of integers. Ported from the AINTLIB `LeanModularForms` project
-  (`LeanModularForms/HeckeRIngs/GLn/SL2Surjection.lean`, Chris Birkbeck); its consumer is the
+  (`LeanModularForms/HeckeRIngs/GLn/SL2Surjection.lean`, Chris Birkbeck); its consumers are the
   strong approximation theorem `Matrix.SpecialLinearGroup.map_intCast_zmod_surjective` in
-  `TauCeti/LinearAlgebra/Matrix/SpecialLinearGroup/Basic.lean`.
+  `TauCeti/LinearAlgebra/Matrix/SpecialLinearGroup/Basic.lean`,
+  `TauCeti.gamma1CuspLabel_surjective` in
+  `TauCeti/NumberTheory/ModularForms/CongruenceSubgroups/Cusp/Gamma1.lean`, and
+  `TauCeti.EisensteinSeries.nonempty_gammaSet_intCast_iff` in
+  `TauCeti/NumberTheory/ModularForms/EisensteinSeries/GammaSet.lean`.
 * `ZMod.comp_unitsMap_eq_comp_unitsMap_of_comp_mul_left` — a lowered unit homomorphism
   stays lowered after restricting to a multiple of its modulus.
 * `ZMod.exists_unitOfCoprime_eq` — every unit of `ZMod d` is `ZMod.unitOfCoprime` of a natural
@@ -95,7 +99,7 @@ variable {d : ℕ}
 what consumers of `Nat.Coprime` want; `ZMod.isUnit_intCast_iff_isCoprime` states the same
 equivalence with `IsCoprime` over `ℤ` on the right, in the opposite argument order. -/
 theorem Int.isUnit_intCast_iff_gcd_eq_one {a : ℤ} :
-    IsUnit ((a : ℤ) : ZMod d) ↔ Int.gcd a d = 1 :=
+    IsUnit (a : ZMod d) ↔ Int.gcd a d = 1 :=
   (ZMod.isUnit_intCast_iff_isCoprime _ _).trans
     (isCoprime_comm.trans Int.isCoprime_iff_gcd_eq_one)
 

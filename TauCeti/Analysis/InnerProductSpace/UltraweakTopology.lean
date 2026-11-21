@@ -405,10 +405,10 @@ theorem isInducing_restrict_toWOT {s : Set (ContinuousLinearMapUltraweak 𝕜 E 
     IsInducing (s.domRestrict fun A : ContinuousLinearMapUltraweak 𝕜 E F ↦
       ContinuousLinearMapWOT.ofCLM A.toCLM) := by
   refine isInducing_iff_nhds.2 fun A ↦ le_antisymm
-    ((continuous_toWOT.comp continuous_subtype_val).tendsto A).le_comap ?_
+    ((continuous_toWOT.comp continuous_subtypeVal).tendsto A).le_comap ?_
   rw [nhds_subtype, ← tendsto_iff_comap]
   exact (tendsto_iff_tendsto_toWOT_of_eventually_norm_le
-    (Eventually.of_forall fun B : s ↦ hs B B.2)).2 tendsto_comap
+    (Eventually.of_forall fun B : s ↦ hs B B.property)).2 tendsto_comap
 
 end Comparison
 
@@ -447,7 +447,7 @@ theorem exists_tsum_inner_apply_eq (φ : StrongDual 𝕜 (ContinuousLinearMapUlt
     ContinuousLinearMap.ext fun ξ ↦ by simpa only [hι] using congr($h ξ)
   let e := LinearEquiv.ofInjective ι hιinj
   have he : Continuous e.symm := continuous_of_continuous_ampliation_apply fun ξ ↦
-    ((continuous_eval_const ξ).comp continuous_subtype_val).congr fun x ↦ by
+    ((continuous_eval_const ξ).comp continuous_subtypeVal).congr fun x ↦ by
       simp [e, ← hι, LinearEquiv.ofInjective_symm_apply]
   -- By Hahn–Banach `φ` extends to a strongly continuous functional `G`, a finite sum of continuous
   -- functionals of values, which the Riesz theorem in `ℓ²(ℕ, F)` turns into vectors.

@@ -270,7 +270,7 @@ theorem coe_translationGauge_mul_pow {m : ℕ} {a z : ℂ} (hz : ‖a‖ ^ 2 + 2
       norm_mul_exp_arg_mul_I]
   -- The gauge is `exp (-i m arg w) = (exp (i arg w) ^ m)⁻¹`.
   have hg : (translationGauge m a z : ℂ) = (exp (arg (1 + a / z) * I) ^ m)⁻¹ := by
-    rw [translationGauge, Circle.coe_exp, translationPhase_eq hz, ← exp_nat_mul, ← exp_neg]
+    rw [translationGauge, Circle.coe_exp, translationPhase_eq hz, ← exp_natCast_mul, ← exp_neg]
     congr 1
     push_cast
     ring
