@@ -48,6 +48,8 @@ is supplied here alongside the opposite-ring module structure.
 
 * `AuslanderReitenTranspose`: the cokernel of the dual of the first map in a projective
   presentation.
+* `AuslanderReitenTranspose.mkLinear`: the quotient map `Module.Dual R Q₁ →ₗ[R]
+  AuslanderReitenTranspose p` over a commutative ring `R`.
 * `AuslanderReitenTranspose.lift`: the universal property of that cokernel, descending an
   opposite-linear map that kills the functionals factoring through `p₁`.
 * `AuslanderReitenTranspose.linearEquiv`: the equivalence induced by an isomorphism of presentation
@@ -140,6 +142,18 @@ theorem op_algebraMap_smul (c : k) (x : AuslanderReitenTranspose p₁) :
 
 end Scalars
 
+section ScalarTower
+
+variable {k R : Type*} [CommSemiring k] [CommSemiring R]
+  [Algebra k R] [Algebra R A] [Algebra k A] [IsScalarTower k R A]
+
+instance : IsScalarTower k R (AuslanderReitenTranspose p₁) :=
+  IsScalarTower.of_algebraMap_smul fun c x ↦ by
+    rw [← op_algebraMap_smul (k := R), ← op_algebraMap_smul (k := k),
+      IsScalarTower.algebraMap_apply k R A]
+
+end ScalarTower
+
 /-- The quotient map from the dual of the first projective onto its Auslander--Reiten transpose. -/
 def mk : Module.Dual A P₁ →ₗ[Aᵐᵒᵖ] AuslanderReitenTranspose p₁ :=
   (LinearMap.range (p₁.lcomp Aᵐᵒᵖ A)).mkQ
@@ -183,6 +197,40 @@ theorem induction_on {motive : AuslanderReitenTranspose p₁ → Prop}
     (x : AuslanderReitenTranspose p₁) (h : ∀ φ : Module.Dual A P₁, motive (mk p₁ φ)) :
     motive x :=
   Submodule.Quotient.induction_on _ x h
+
+section CommRing
+
+variable {R Q₀ Q₁ : Type*} [CommRing R] [AddCommMonoid Q₀] [Module R Q₀]
+  [AddCommMonoid Q₁] [Module R Q₁]
+
+/-- Over a commutative ring `R`, `MulOpposite.op r` acts on the transpose as `r`. -/
+@[simp]
+theorem op_smul_eq_smul (p : Q₁ →ₗ[R] Q₀) (r : R) (y : AuslanderReitenTranspose p) :
+    MulOpposite.op r • y = r • y := by
+  simpa only [Algebra.algebraMap_self_apply] using op_algebraMap_smul (k := R) p r y
+
+/-- Over a commutative ring `R`, the quotient map from `Module.Dual R Q₁` onto
+`AuslanderReitenTranspose p` is `R`-linear. -/
+def mkLinear (p : Q₁ →ₗ[R] Q₀) : Module.Dual R Q₁ →ₗ[R] AuslanderReitenTranspose p where
+  toFun := mk p
+  map_add' := map_add (mk p)
+  map_smul' r φ := by
+    have hsmul : r • φ = MulOpposite.op r • φ := by
+      ext x
+      exact mul_comm r (φ x)
+    rw [hsmul, map_smul, op_smul_eq_smul, RingHom.id_apply]
+
+/-- `mkLinear p` agrees with the quotient map `mk p` on functionals. -/
+@[simp]
+theorem mkLinear_apply (p : Q₁ →ₗ[R] Q₀) (φ : Module.Dual R Q₁) :
+    mkLinear p φ = mk p φ :=
+  (rfl)
+
+/-- Every element of `AuslanderReitenTranspose p` is in the image of `mkLinear p`. -/
+theorem mkLinear_surjective (p : Q₁ →ₗ[R] Q₀) : Function.Surjective (mkLinear p) :=
+  mk_surjective p
+
+end CommRing
 
 section QuotientEquiv
 
