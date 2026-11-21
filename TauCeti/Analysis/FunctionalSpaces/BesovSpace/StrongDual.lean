@@ -47,8 +47,9 @@ on `φ` and `s`, not on the exponents.
   `TauCeti.BesovSpace.exists_norm_toStrongDualCLM_le`: it is injective and bounded uniformly in the
   exponents.
 * `TauCeti.BesovSpace.strongDualEquiv`: **the duality `(B^s_{p,q})^* ≃ B^{-s}_{p',q'}`** for
-  `1 < p < ∞` and `1 ≤ q < ∞`. Its inverse is a right inverse of the pairing
-  (`TauCeti.BesovSpace.toStrongDualCLM_strongDualEquiv_symm_apply`), is characterized on the
+  `1 < p < ∞` and `1 ≤ q < ∞`. Its inverse is a two-sided inverse of the pairing
+  (`TauCeti.BesovSpace.toStrongDualCLM_strongDualEquiv_symm_apply` and
+  `TauCeti.BesovSpace.strongDualEquiv_symm_toStrongDualCLM`), is characterized on the
   Schwartz functions by `TauCeti.BesovSpace.toDistr_strongDualEquiv_symm_apply` and is bounded
   uniformly in the exponents by `TauCeti.BesovSpace.exists_norm_strongDualEquiv_symm_apply_le`.
 
@@ -189,6 +190,14 @@ theorem toStrongDualCLM_strongDualEquiv_symm_apply (hp1 : 1 < p) (hp : p ≠ ∞
     toStrongDualCLM φ s hp hq ((strongDualEquiv (p' := p') (q' := q') φ s hp1 hp hq).symm Λ) =
       Λ := by
   rw [← strongDualEquiv_apply φ s hp1, ContinuousLinearEquiv.apply_symm_apply]
+
+/-- The element of `B^{-s}_{p',q'}` representing the pairing with `v` is `v`. -/
+@[simp]
+theorem strongDualEquiv_symm_toStrongDualCLM (hp1 : 1 < p) (hp : p ≠ ∞) (hq : q ≠ ∞)
+    (v : BesovSpace ℂ φ (-s) p' q') :
+    (strongDualEquiv (p' := p') (q' := q') φ s hp1 hp hq).symm (toStrongDualCLM φ s hp hq v) =
+      v := by
+  rw [← strongDualEquiv_apply φ s hp1, ContinuousLinearEquiv.symm_apply_apply]
 
 /-- The element of `B^{-s}_{p',q'}` representing a continuous linear functional `Λ` on
 `B^s_{p,q}` pairs with every Schwartz function `f` to `Λ f`. -/
