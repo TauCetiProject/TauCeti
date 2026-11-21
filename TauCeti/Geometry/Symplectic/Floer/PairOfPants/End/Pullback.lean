@@ -35,18 +35,13 @@ a map `u : S → M` to `u ∘ φ'_q`:
   (`SmoothTwoForm.setLIntegral_floerEnergyDensity_comp_positiveEndChart_le_of_isOpen`, and for a
   measurable subset of a band of angular width one
   `SmoothTwoForm.setLIntegral_floerEnergyDensity_comp_positiveEndChart_le_of_subset_of_isOpen`);
-* at the time `±t` of the end, `X_{H'_q(±t)} = ±X_{H_q(t)}`
-  (`TauCeti.SmoothTwoForm.hamiltonianVectorField_positiveEndHamiltonian_endSign_mul`), so reading
-  an integral curve of `H'_q` with `±t` gives one of `H_q`
-  (`TauCeti.SmoothTwoForm.hasMFDerivAt_comp_endSign_mul`);
 * combining regularity, the Floer equation, and finite energy on `S` or on an open set containing
   the end gives the coordinate half-cylinder regularity, Floer equation, and finite energy for
   `u ∘ φ'_q` (`TauCeti.SmoothTwoForm.floer_halfCylinder_comp_positiveEndChart_of_isOpen` and
   `TauCeti.SmoothTwoForm.floer_halfCylinder_comp_positiveEndChart`).
 
-These are used in `TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.PeriodicOrbit`,
-`TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Manifold` to obtain the orbits at the ends of a
-pair of pants in a manifold, and, for a constant form, in
+These are used in `TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Manifold` to obtain the
+orbits at the ends of a pair of pants in a manifold, and, for a constant form, in
 `TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Orbit` for a symplectic vector space.
 
 ## References
@@ -73,41 +68,6 @@ variable {E HM M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topologica
   {I : ModelWithCorners ℝ E HM} [TopologicalSpace M] [ChartedSpace HM M]
   [IsManifold I (⊤ : ℕ∞) M] {ω : SmoothTwoForm I M}
   {K : ℂ → M → ℂ →L[ℝ] ℝ} {H : Puncture → ℝ → M → ℝ} {T₀ : ℝ}
-
-/-! ### Hamiltonian vector fields in positive end charts -/
-
-/-- At the time `±t` of the end, the Hamiltonian vector field of the positive end Hamiltonian
-`H'_q` is `±` that of `H_q` at the time `t`: `X_{H'_q(±t)} = ±X_{H_q(t)}`. -/
-theorem hamiltonianVectorField_positiveEndHamiltonian_endSign_mul (q : Puncture) (t : ℝ)
-    (x : M) :
-    ω.hamiltonianVectorField (positiveEndHamiltonian H q (q.endSign * t)) x =
-      q.endSign • ω.hamiltonianVectorField (H q t) x := by
-  rw [← hamiltonianVectorField_const_smul]
-  congr 1
-  funext y
-  rw [positiveEndHamiltonian_apply, endSign_mul_endSign_mul, Pi.smul_apply, smul_eq_mul]
-
-/-- Reading a solution curve of the positive end Hamiltonian `H'_q` with the time `±t` of the end
-gives a solution curve of `H_q`. -/
-theorem hasMFDerivAt_comp_endSign_mul {q : Puncture} {x : ℝ → M}
-    (hx : ∀ t, HasMFDerivAt 𝓘(ℝ) I x t
-      ((1 : ℝ →L[ℝ] ℝ).smulRight
-        (ω.hamiltonianVectorField (positiveEndHamiltonian H q t) (x t))))
-    (t : ℝ) :
-    HasMFDerivAt 𝓘(ℝ) I (fun s ↦ x (q.endSign * s)) t
-      ((1 : ℝ →L[ℝ] ℝ).smulRight (ω.hamiltonianVectorField (H q t) (x (q.endSign * t)))) := by
-  -- The velocity `±X_{H'_q(±t)}` of `x` at `±t`, rescaled by the sign of the end, is `X_{H_q(t)}`.
-  have h : (1 : ℝ →L[ℝ] ℝ).smulRight (ω.hamiltonianVectorField (H q t) (x (q.endSign * t))) =
-      (1 : ℝ →L[ℝ] ℝ).smulRight
-          (ω.hamiltonianVectorField (positiveEndHamiltonian H q (q.endSign * t))
-            (x (q.endSign * t))) ∘SL (1 : ℝ →L[ℝ] ℝ).smulRight q.endSign := by
-    simp [ContinuousLinearMap.smulRight_comp_smulRight,
-      hamiltonianVectorField_positiveEndHamiltonian_endSign_mul, smul_smul]
-  rw [h]
-  refine (hx (q.endSign * t)).comp t (hasMFDerivAt_iff_hasFDerivAt.2 ?_)
-  exact ((hasDerivAt_id' t).const_mul q.endSign).hasFDerivAt.congr_fderiv
-    (ContinuousLinearMap.ext_ring (by simp))
-
 
 /-! ### The ends of a Floer pair of pants as Floer half-cylinders -/
 

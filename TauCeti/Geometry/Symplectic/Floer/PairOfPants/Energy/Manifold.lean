@@ -260,21 +260,13 @@ variable (hfloer : FloerS(ω, PoP(H), u, J))
 
 include hω hH he hB he_inj hde hu huB J hc hJc hfloer hA hC
 
-omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] he hB he_inj hu hA hC in
-/-- Deduce the topological energy lower bound `-∑ q, M_H q ≤ ∫ u^*ω + ∑ q, ±∫₀¹ H_q(t, y_q(t))`
-from the energy identity and pointwise bounds `|H_q(t, x)| ≤ M_H q` on `B`. -/
-private theorem neg_sum_le_of_energyIdentity
-    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q)))
-    {M_H : Puncture → ℝ} (hMH : ∀ q t, ∀ x ∈ B, |H q t x| ≤ M_H q) {y : Puncture → ℝ → M}
-    (hid : EnergyEq(I, ω, PoP(H), H, u, y)) :
-    TopoBound(I, ω, H, u, M_H, y) := by
-  have hpos : 0 ≤ ∫ z in Sℝ, Dens(ω, PoP(H), u) z :=
-    setIntegral_nonneg isOpen_thricePuncturedSphereReal.measurableSet fun z hz ↦
-      floerEnergyDensity_nonneg hω
-        (hω.tames_of_tame_mvfderiv (hde _ (huB z hz)) hc (hJc z hz)) (hfloer z hz)
-  have hcurv := abs_setIntegral_hamiltonianCurvature_pairOfPantsPerturbation_le_of_mapsTo ω hH hHs
-    hMH huB Sℝ
-  linarith [(abs_le.1 hcurv).1]
+omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] hH he hB he_inj hu hA hC in
+/-- Nonnegativity of the integrated Floer energy density under uniform tameness through `e`. -/
+private theorem setIntegral_floerEnergyDensity_nonneg :
+    0 ≤ ∫ z in Sℝ, Dens(ω, PoP(H), u) z :=
+  setIntegral_nonneg isOpen_thricePuncturedSphereReal.measurableSet fun z hz ↦
+    floerEnergyDensity_nonneg hω
+      (hω.tames_of_tame_mvfderiv (hde _ (huB z hz)) hc (hJc z hz)) (hfloer z hz)
 
 section PeriodicC1
 variable (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q)))
@@ -297,7 +289,8 @@ theorem exists_neg_sum_le_integral_add_sum_of_pairOfPantsPerturbation_of_isCompa
   let ⟨y, hy, _, hid⟩ :=
     exists_integral_floerEnergyDensity_pairOfPantsPerturbation_of_isCompact_of_eventually
       hω hH he hB he_inj hde hu huB J hc hJc hA hC hfloer hHs hiso
-  ⟨y, hy, neg_sum_le_of_energyIdentity hω hH hde huB J hc hJc hfloer hHs hMH hid⟩
+  ⟨y, hy, ω.neg_sum_le_integral_add_sum_of_pairOfPantsPerturbation_of_mapsTo hH hHs hMH huB
+    (setIntegral_floerEnergyDensity_nonneg hω hde huB J hc hJc hfloer) hid⟩
 end PeriodicC1
 
 section PeriodicC2
@@ -321,8 +314,9 @@ theorem exists_neg_sum_le_integral_add_sum_of_pairOfPantsPerturbation_of_isCompa
     BoundOut(periodicSolutions, I, ω, H, B, e, u, M_H) :=
   let ⟨y, hy, _, hid⟩ := exists_integral_floerEnergyDensity_pairOfPantsPerturbation_of_isCompact
     hω hH he hB he_inj hde hu huB J hc hJc hA hC hfloer hHs hnd
-  ⟨y, hy, neg_sum_le_of_energyIdentity hω hH hde huB J hc hJc hfloer
-    (fun q ↦ (hHs q).of_le one_le_two) hMH hid⟩
+  ⟨y, hy, ω.neg_sum_le_integral_add_sum_of_pairOfPantsPerturbation_of_mapsTo hH
+    (fun q ↦ (hHs q).of_le one_le_two) hMH huB
+    (setIntegral_floerEnergyDensity_nonneg hω hde huB J hc hJc hfloer) hid⟩
 end PeriodicC2
 
 section ContractibleC1
@@ -347,7 +341,8 @@ theorem exists_neg_sum_le_integral_add_sum_of_pairOfPantsPerturbation_of_nullhom
   let ⟨y, hy, _, hid⟩ :=
     exists_integral_floerEnergyDensity_pairOfPantsPerturbation_of_nullhomotopic_of_eventually
       hω hH he hB he_inj hde hu huB J hc hJc hA hC hfloer hHs hnull hiso
-  ⟨y, hy, neg_sum_le_of_energyIdentity hω hH hde huB J hc hJc hfloer hHs hMH hid⟩
+  ⟨y, hy, ω.neg_sum_le_integral_add_sum_of_pairOfPantsPerturbation_of_mapsTo hH hHs hMH huB
+    (setIntegral_floerEnergyDensity_nonneg hω hde huB J hc hJc hfloer) hid⟩
 end ContractibleC1
 
 section ContractibleC2
@@ -375,8 +370,9 @@ theorem exists_neg_sum_le_integral_add_sum_of_pairOfPantsPerturbation_of_isCompa
   let ⟨y, hy, _, hid⟩ :=
     exists_integral_floerEnergyDensity_pairOfPantsPerturbation_of_isCompact_of_nullhomotopic
       hω hH he hB he_inj hde hu huB J hc hJc hA hC hfloer hHs hnull hnd
-  ⟨y, hy, neg_sum_le_of_energyIdentity hω hH hde huB J hc hJc hfloer
-    (fun q ↦ (hHs q).of_le one_le_two) hMH hid⟩
+  ⟨y, hy, ω.neg_sum_le_integral_add_sum_of_pairOfPantsPerturbation_of_mapsTo hH
+    (fun q ↦ (hHs q).of_le one_le_two) hMH huB
+    (setIntegral_floerEnergyDensity_nonneg hω hde huB J hc hJc hfloer) hid⟩
 end ContractibleC2
 
 end PairOfPants

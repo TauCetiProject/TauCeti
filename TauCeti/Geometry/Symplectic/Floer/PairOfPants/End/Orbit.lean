@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Floer.HalfCylinder.Basic
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Action
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Identity
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Pullback
+import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.PeriodicOrbit
 
 /-!
 # Asymptotic orbits at the ends of a finite-energy Floer pair of pants

@@ -66,8 +66,10 @@ specializations to the constant form `SymplecticForm.constSmooth`.
   `SymplecticForm.abs_integral_floerEnergyDensity_pairOfPantsPerturbation_sub_le`: the resulting
   energy bound.
 * `SmoothTwoForm.IsNondegenerate.neg_sum_le_integral_add_sum_of_isComplexLinearMap`,
+  `SmoothTwoForm.neg_sum_le_integral_add_sum_of_pairOfPantsPerturbation_of_mapsTo`,
   `SymplecticForm.neg_sum_le_integral_add_sum_of_isComplexLinearMap`: the lower bound on the
-  topological energy of a Floer solution.
+  topological energy of a Floer solution (globally bounded, or on a target subset from the energy
+  identity and energy nonnegativity).
 * `SmoothTwoForm.IsNondegenerate.sum_mul_integral_le_integral_add_sum_of_isComplexLinearMap`,
   `SymplecticForm.sum_mul_integral_le_integral_add_sum_of_isComplexLinearMap`: the lower bound
   with the one-sided constant `∫₀¹ h_0 + ∫₀¹ h_1 - ∫₀¹ h_∞` for functions of time `h_q ≤ H_q` on
@@ -408,6 +410,41 @@ theorem IsNondegenerate.neg_sum_le_integral_add_sum_of_isComplexLinearMap
   have h := abs_le.1
     (hω.abs_integral_floerEnergyDensity_pairOfPantsPerturbation_sub_le hH hHs hB hu hx hE hA)
   linarith [h.2]
+
+omit [FiniteDimensional ℝ E] in
+/-- **Topological energy lower bound from the energy identity on a target subset.** Let `H_q` be
+period-one `C¹` Hamiltonians bounded by `|H_q(t, x)| ≤ B_q` on a subset `S₀ ⊆ M`, and let `u` map
+`S` into `S₀` with nonnegative integrated Floer energy for `pairOfPantsPerturbation H`. If `u`
+satisfies the pair-of-pants energy identity against loops `y_q`, then
+`-(B₀ + B₁ + B_∞) ≤ ∫_S u^*ω + ∑ q, ±∫₀¹ H_q(t, y_q(t)) dt`. -/
+theorem neg_sum_le_integral_add_sum_of_pairOfPantsPerturbation_of_mapsTo
+    (ω : SmoothTwoForm I M) (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q)))
+    {S₀ : Set M} {B : Puncture → ℝ} (hB : ∀ q t, ∀ x ∈ S₀, |H q t x| ≤ B q)
+    {u : ℝ × ℝ → M} (hu : MapsTo u thricePuncturedSphereReal S₀)
+    (hpos : 0 ≤ ∫ z in thricePuncturedSphereReal, ω.floerEnergyDensity
+      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u z)
+    {y : Puncture → ℝ → M}
+    (hid : ∫ z in thricePuncturedSphereReal, ω.floerEnergyDensity
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u z =
+      (∫ z in thricePuncturedSphereReal,
+          (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+            (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
+        (∑ q, q.endSign * ∫ t in (0 : ℝ)..1, H q t (y q t)) -
+        ∫ z in thricePuncturedSphereReal, ω.hamiltonianCurvature
+          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+          z (u z)) :
+    -∑ q, B q ≤
+      (∫ z in thricePuncturedSphereReal,
+          (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+            (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
+        ∑ q, q.endSign * ∫ t in (0 : ℝ)..1, H q t (y q t) := by
+  have hcurv := abs_setIntegral_hamiltonianCurvature_pairOfPantsPerturbation_le_of_mapsTo ω hH hHs
+    hB hu thricePuncturedSphereReal
+  linarith [(abs_le.1 hcurv).1]
 
 /-- **The one-sided lower bound on the topological energy of a pair-of-pants solution, for a
 manifold target.** Under the hypotheses of
