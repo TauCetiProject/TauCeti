@@ -235,11 +235,8 @@ theorem coeFn_inclusionLp_reducedEquationMap (hm : 0 < P.natDegree) (hs : 1 < s)
   have h0 : (0 : ℝ) ≤ s := by linarith
   have he := coeFn_inclusionLp_expSubOne_two_smul hs w
   set e := expSubOne hs' ((2 : ℂ) • inclusion (by linarith) w)
-  have hneg : ⇑(inclusionLp h0 (-laplacianCLM s w)) =ᵐ[(volume : Measure ℂ)]
-      fun z ↦ -inclusionLp h0 (laplacianCLM s w) z := by
-    rw [map_neg]
-    exact Lp.coeFn_neg _
-  have hN := coeFn_inclusionLp_add_ae_eq h0 (coeFn_inclusionLp_add_ae_eq h0 hneg
+  have hN := coeFn_inclusionLp_add_ae_eq h0 (coeFn_inclusionLp_add_ae_eq h0
+    (coeFn_inclusionLp_neg_ae_eq h0 (u := laplacianCLM s w) EventuallyEq.rfl)
     (coeFn_inclusionLp_smul_ae_eq h0 8⁻¹
       (coeFn_inclusionLp_sub_mulCLM_sobolevBackgroundDefect hm hs e)))
     (coeFn_inclusionLp_sobolevBackgroundSource hm h0)
@@ -276,13 +273,11 @@ theorem coeFn_inclusionLp_reducedEquationDeriv (hm : 0 < P.natDegree) (hs : 1 < 
       -laplacianCLM s v + (4⁻¹ : ℂ) • (X - mulCLM hs' (sobolevBackgroundDefect hm h0) X) := by
     simp only [reducedEquationDeriv, _root_.add_apply, _root_.neg_apply, _root_.smul_apply,
       _root_.sub_apply, ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply, X, e, ι]
-  have hneg : ⇑(inclusionLp h0 (-laplacianCLM s v)) =ᵐ[(volume : Measure ℂ)]
-      fun z ↦ -inclusionLp h0 (laplacianCLM s v) z := by
-    rw [map_neg]
-    exact Lp.coeFn_neg _
   rw [hD]
-  filter_upwards [coeFn_inclusionLp_add_ae_eq h0 hneg (coeFn_inclusionLp_smul_ae_eq h0 4⁻¹
-    (coeFn_inclusionLp_sub_mulCLM_sobolevBackgroundDefect hm hs X)), hX] with z h₁ h₂
+  filter_upwards [coeFn_inclusionLp_add_ae_eq h0
+      (coeFn_inclusionLp_neg_ae_eq h0 (u := laplacianCLM s v) EventuallyEq.rfl)
+      (coeFn_inclusionLp_smul_ae_eq h0 4⁻¹
+        (coeFn_inclusionLp_sub_mulCLM_sobolevBackgroundDefect hm hs X)), hX] with z h₁ h₂
   rw [h₁, h₂, smul_eq_mul]
   ring
 

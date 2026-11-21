@@ -97,8 +97,8 @@ theorem hasFDerivAt_subOne_expGauge (F : realSubmodule ℂ (zero_le_one.trans hs
     ℝ).comp F ι.hasFDerivAt
   convert h using 1
   · exact funext fun G ↦ subOne_expGauge_eq_expSubOne hs G
-  · rw [subOne_expGauge_eq_expSubOne hs F, add_comm]
-    rfl
+  · ext G : 1
+    simp [subOne_expGauge_eq_expSubOne hs F, ι, add_comm]
 
 /-- At `F = 0` the derivative of `F ↦ exp (i F) - 1` is `G ↦ i G`. -/
 theorem hasFDerivAt_subOne_expGauge_zero :
