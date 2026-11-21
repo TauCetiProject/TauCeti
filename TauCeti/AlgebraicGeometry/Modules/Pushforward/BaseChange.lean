@@ -34,6 +34,14 @@ quasi-compact quasi-separated `f` and flat `g` is
 * `AlgebraicGeometry.Scheme.Modules.pullback_map_unit_comp_pushforwardBaseChange_app`: on a pullback
   `f^* N`, it turns the pullback of the unit of `f^* ⊣ f_*` into the unit of `f'^* ⊣ f'_*` followed
   by the identification `f'^* g^* N ≅ g'^* f^* N`. This is how it enters descent theory.
+* `AlgebraicGeometry.Scheme.Modules.pushforwardBaseChange_horiz_comp`: the base change morphism of
+  two squares placed side by side is the composite of their base change morphisms, and
+  `AlgebraicGeometry.Scheme.Modules.pushforwardBaseChange_congr` compares the base change morphisms
+  of squares with equal sides;
+* `AlgebraicGeometry.Scheme.Modules.pushforwardBaseChange_app_comp_pushforwardToPullback_app`: on a
+  square `p₁ ≫ f = p₂ ≫ f` with a common section `s` of `p₁` and `p₂`, such as the diagonal of
+  `X ×_S X`, the morphism `p₂_* ⟶ s^*` of `AlgebraicGeometry.Scheme.Modules.pushforwardToPullback`
+  turns the base change morphism into the counit of `f^* ⊣ f_*`.
 
 ## References
 
@@ -168,5 +176,107 @@ lemma pullback_map_unit_comp_pushforwardBaseChange_app (w : CommSq g' f' f g) (N
   refine Eq.symm ((ConcreteCategory.comp_apply _ _ _).trans ?_)
   refine (congrArg _ h₁).trans ((ConcreteCategory.comp_apply _ _ _).trans ?_)
   exact (congrArg _ h₂).trans h₃
+
+/-- On a commutative square `p₁ ≫ f = p₂ ≫ f` with a common section `s` of `p₁` and `p₂` (such as
+the diagonal of `X ×_S X`), the base change morphism `f^* f_* M ⟶ p₂_* p₁^* M` followed by
+`pushforwardToPullback : p₂_* p₁^* M ⟶ s^* p₁^* M` is the counit `f^* f_* M ⟶ M` followed by the
+identification `M ≅ (s ≫ p₁)^* M ≅ s^* p₁^* M`. -/
+lemma pushforwardBaseChange_app_comp_pushforwardToPullback_app {Y : Scheme.{u}} {p₁ p₂ : Y ⟶ X}
+    (w : CommSq p₁ p₂ f f) {s : X ⟶ Y} (h₁ : s ≫ p₁ = 𝟙 X) (h₂ : s ≫ p₂ = 𝟙 X) (M : X.Modules) :
+    (pushforwardBaseChange w).app M ≫ (pushforwardToPullback h₂).app ((pullback p₁).obj M) =
+      (pullbackPushforwardAdjunction f).counit.app M ≫ (pullbackId X).inv.app M ≫
+        (pullbackCongr h₁.symm).hom.app M ≫ (pullbackComp s p₁).inv.app M := by
+  apply ((pullbackPushforwardAdjunction f).homEquiv _ _).injective
+  simp only [Adjunction.homEquiv_unit, Functor.map_comp, pushforwardToPullback_app]
+  rw [unit_comp_pushforward_map_pushforwardBaseChange_app_assoc,
+    Adjunction.right_triangle_components_assoc]
+  have hs := congrArg (pushforward f).map (unit_comp_pushforwardToPullback_app h₁ M)
+  simp only [Functor.map_comp, pushforwardToPullback_app] at hs
+  rw [← hs]
+  -- Move `p₂_*` of the unit of `s` across the identification `f_* p₁_* = f_* p₂_*`; what remains
+  -- compares the identifications `p₁_* s_* = 𝟭` and `p₂_* s_* = 𝟭`, which act on sections by
+  -- restriction maps.
+  have hτ := ((pushforwardComp p₁ f).hom ≫ (pushforwardCongr w.w).hom ≫
+    (pushforwardComp p₂ f).inv).naturality
+    ((pullbackPushforwardAdjunction s).unit.app ((pullback p₁).obj M))
+  dsimp only [Functor.comp_map, Functor.comp_obj, Functor.id_obj] at hτ
+  rw [← reassoc_of% hτ]
+  congr 2
+  refine hom_ext _ _ fun U ↦ ?_
+  simp only [pushforward_obj_obj, NatTrans.comp_app, Functor.comp_obj, Category.assoc,
+    Hom.comp_app, Hom.comp_base, TopologicalSpace.Opens.map_comp_obj, pushforwardComp_hom_app_app,
+    pushforwardCongr_hom_app_app, pushforward_obj_presheaf_map, pushforwardComp_inv_app_app,
+    pushforward_map_app, Hom.id_base, pushforwardId_hom_app_app, Category.id_comp]
+  exact (((pullback s).obj ((pullback p₁).obj M)).presheaf.map_comp_assoc _ _ _).symm
+
+/-- The base change morphisms of two commutative squares with the same right and left sides and
+equal top and bottom sides agree, through the identifications `g₁^* = g₂^*` and `g₁'^* = g₂'^*`. -/
+lemma pushforwardBaseChange_congr {f' : X' ⟶ S'} {g₁ g₂ : S' ⟶ S} {g₁' g₂' : X' ⟶ X}
+    (w₁ : CommSq g₁' f' f g₁) (w₂ : CommSq g₂' f' f g₂) (hg : g₁ = g₂) (hg' : g₁' = g₂')
+    (M : X.Modules) :
+    (pullbackCongr hg).hom.app _ ≫ (pushforwardBaseChange w₂).app M =
+      (pushforwardBaseChange w₁).app M ≫ (pushforward f').map ((pullbackCongr hg').hom.app M) := by
+  subst hg hg'
+  simp [pullbackCongr]
+
+section Paste
+
+variable {X'' S'' : Scheme.{u}} {f'' : X'' ⟶ S''} {k : S'' ⟶ S'} {g'' : X'' ⟶ X'}
+
+/-- **Base change along composite squares.** For squares `g' ≫ f = f' ≫ g` and
+`g'' ≫ f' = f'' ≫ k` placed side by side, the base change morphism of the composite square
+`(g'' ≫ g') ≫ f = f'' ≫ (k ≫ g)` is `k^*` of the base change morphism of the first square followed
+by the base change morphism of the second, read through `(k ≫ g)^* ≅ k^* g^*` and
+`g''^* g'^* ≅ (g'' ≫ g')^*`. -/
+lemma pushforwardBaseChange_horiz_comp (w₁ : CommSq g' f' f g) (w₂ : CommSq g'' f'' f' k)
+    (M : X.Modules) :
+    (pushforwardBaseChange (w₂.horiz_comp w₁)).app M =
+      (pullbackComp k g).inv.app _ ≫ (pullback k).map ((pushforwardBaseChange w₁).app M) ≫
+        (pushforwardBaseChange w₂).app ((pullback g').obj M) ≫
+          (pushforward f'').map ((pullbackComp g'' g').hom.app M) := by
+  -- Compare adjuncts under `(k ≫ g)^* ⊣ (k ≫ g)_*`, splitting the unit of `k ≫ g` into the units
+  -- of `g` and `k`.
+  apply ((pullbackPushforwardAdjunction (k ≫ g)).homEquiv _ _).injective
+  simp only [Adjunction.homEquiv_unit, Functor.map_comp]
+  rw [unit_comp_pushforward_map_pushforwardBaseChange_app,
+    unit_comp_pushforward_map_pullbackComp_inv_app_assoc]
+  -- Move the units of `k` and of `g` past the two base change morphisms.
+  have n1 := (pushforwardComp k g).hom.naturality
+  simp only [Functor.comp_map] at n1
+  rw [← Functor.map_comp, ← Functor.map_comp, ← n1]
+  have h1 := (pullbackPushforwardAdjunction k).unit_naturality ((pushforwardBaseChange w₁).app M)
+  have h2 := unit_comp_pushforward_map_pushforwardBaseChange_app w₂ ((pullback g').obj M)
+  have h3 := unit_comp_pushforward_map_pushforwardBaseChange_app w₁ M
+  dsimp only [Functor.comp_obj] at h1 h2 h3
+  simp only [Functor.map_comp, Category.assoc]
+  rw [← (pushforward g).map_comp_assoc, ← (pushforward g).map_comp_assoc, h1]
+  simp only [Category.assoc]
+  rw [h2, Functor.map_comp]
+  simp only [Category.assoc]
+  rw [reassoc_of% h3]
+  -- Split the unit of `g'' ≫ g'` likewise; what remains compares identifications of iterated
+  -- pushforwards, which act on sections by restriction maps.
+  have h4 := unit_comp_pushforward_map_pullbackComp_inv_app g'' g' M
+  rw [← Iso.app_inv, ← Functor.mapIso_inv, Iso.comp_inv_eq] at h4
+  simp only [Functor.mapIso_hom, Iso.app_hom] at h4
+  rw [h4]
+  have n2 := ((pushforwardComp g' f).hom ≫ (pushforwardCongr w₁.w).hom ≫
+    (pushforwardComp f' g).inv).naturality
+  simp only [Functor.comp_map] at n2
+  simp only [Functor.map_comp, Category.assoc]
+  rw [← reassoc_of% n2]
+  congr 2
+  refine hom_ext _ _ fun U ↦ ?_
+  have := ((pullbackComp g'' g').hom.app M).mapPresheaf.naturality
+  dsimp only [mapPresheaf_app, Functor.comp_obj] at this
+  simp only [Functor.comp_obj, pushforward_obj_obj, Hom.comp_base,
+    TopologicalSpace.Opens.map_comp_obj, NatTrans.comp_app, Hom.comp_app, pushforward_map_app,
+    pushforwardComp_hom_app_app, pushforwardCongr_hom_app_app, pushforwardComp_inv_app_app,
+    Category.comp_id, Category.id_comp, Functor.map_comp, Category.assoc,
+    pushforward_obj_presheaf_map]
+  rw [← Functor.map_comp_assoc]
+  exact (this _).symm
+
+end Paste
 
 end AlgebraicGeometry.Scheme.Modules

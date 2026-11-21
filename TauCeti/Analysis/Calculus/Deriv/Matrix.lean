@@ -25,7 +25,9 @@ Along a curve whose entries are differentiable, the determinant satisfies Jacobi
 `(det A)' = trace (adjugate A * A')` (`Matrix.hasDerivWithinAt_det_of_entries_adjugate`), which
 becomes `(det A)' = det A * trace (A⁻¹ * A')` wherever `A` is invertible
 (`Matrix.hasDerivWithinAt_det_of_entries`). The hypotheses and conclusions only involve
-derivatives of scalar functions, so no norm on matrices appears in the statements.
+derivatives of scalar functions, so no norm on matrices appears in the statements. The curve
+parameter may range over a subfield `𝕜` of the entry field `𝕜'`, as for a real curve of complex
+matrices.
 -/
 
 public section
@@ -56,8 +58,9 @@ theorem HasDerivAt.matrix_inv {𝕜 ι : Type*} [NontriviallyNormedField 𝕜] [
 
 namespace Matrix
 
-variable {𝕜 ι : Type*} [NontriviallyNormedField 𝕜] [Fintype ι] [DecidableEq ι]
-  {A : 𝕜 → Matrix ι ι 𝕜} {A' : Matrix ι ι 𝕜} {t : 𝕜}
+variable {𝕜 𝕜' ι : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜']
+  [NormedAlgebra 𝕜 𝕜'] [Fintype ι] [DecidableEq ι]
+  {A : 𝕜 → Matrix ι ι 𝕜'} {A' : Matrix ι ι 𝕜'} {t : 𝕜}
 
 /-- **Jacobi's adjugate formula along a curve.** If every entry of a matrix curve `A` has
 derivative given by the corresponding entry of `A'` at `t` within `s`, then `det A` has derivative
@@ -68,8 +71,8 @@ theorem hasDerivWithinAt_det_of_entries_adjugate {s : Set 𝕜}
   -- Read `A` as a curve in the product space of its entries.
   have hA' : HasDerivWithinAt (fun τ ↦ of.symm (A τ)) (of.symm A') s t :=
     hasDerivWithinAt_pi.2 fun i ↦ hasDerivWithinAt_pi.2 fun j ↦ hA i j
-  have h := (differentiable_det _).hasFDerivAt.comp_hasDerivWithinAt t
-    ((ofContinuousLinearEquiv 𝕜).hasFDerivAt.comp_hasDerivWithinAt t hA')
+  have h := ((differentiable_det (𝕜 := 𝕜') _).hasFDerivAt.restrictScalars 𝕜).comp_hasDerivWithinAt
+    t ((ofContinuousLinearEquiv 𝕜).hasFDerivAt.comp_hasDerivWithinAt t hA')
   simp only [Function.comp_def, ContinuousLinearEquiv.coe_coe, coe_ofContinuousLinearEquiv,
     Equiv.apply_symm_apply] at h
   exact h.congr_deriv (fderiv_det_apply_adjugate _ _)

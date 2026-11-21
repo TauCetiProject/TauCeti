@@ -26,7 +26,9 @@ the singular homology of `CPⁿ`: it is `R` in the degrees `0, 2, …, 2n` and z
   cellular chain complex of `CPⁿ` vanishes.
 * `TauCeti.ComplexProjectiveSpace.singularHomologyIso`: for `i ≤ n`, `H₂ᵢ(CPⁿ; R) ≅ R`.
 * `TauCeti.ComplexProjectiveSpace.isZero_singularHomology_of_odd`: `Hₖ(CPⁿ; R) = 0` for odd `k`.
-* `TauCeti.ComplexProjectiveSpace.isZero_singularHomology_of_lt`: `Hₖ(CPⁿ; R) = 0` for `k > 2n`.
+* `TauCeti.ComplexProjectiveSpace.isZero_singularHomology_of_lt`: `Hₖ(CPⁿ; R) = 0` for `k > 2n`,
+  as is the cellular chain group
+  (`TauCeti.ComplexProjectiveSpace.isZero_cellularChainComplex_X_of_lt`).
 
 ## References
 
@@ -49,7 +51,7 @@ attribute [local instance] cwComplex Abelian.hasFiniteBiproducts
 variable {n : ℕ} {A : Type u} [Category.{v} A] [HasCoproducts.{0} A] [Abelian A] (R : A)
 
 /-- The cells of `CPⁿ` in each dimension form a finite type. -/
-private instance (m : ℕ) : Finite (cell (univ : Set (ComplexProjectiveSpace n)) m) :=
+instance (m : ℕ) : Finite (cell (univ : Set (ComplexProjectiveSpace n)) m) :=
   have := finite_cwComplex (n := n)
   FiniteType.finite_cell m
 
@@ -135,11 +137,15 @@ theorem isZero_singularHomology_of_odd {k : ℕ} (hk : Odd k) :
       (TopCat.of (ComplexProjectiveSpace n))) :=
   (isZero_X_of_odd R hk).of_iso (singularHomologyIsoX R k)
 
+/-- The cellular chain complex of `CPⁿ` vanishes above degree `2n`. -/
+theorem isZero_cellularChainComplex_X_of_lt {k : ℕ} (hk : 2 * n < k) : IsZero ((K).X k) :=
+  have := isEmpty_cell_of_lt (n := n) hk
+  isZero_X_of_isEmpty R
+
 /-- The singular homology of `CPⁿ` vanishes above degree `2n`. -/
 theorem isZero_singularHomology_of_lt {k : ℕ} (hk : 2 * n < k) :
     IsZero (((AlgebraicTopology.singularHomologyFunctor A k).obj R).obj
       (TopCat.of (ComplexProjectiveSpace n))) :=
-  have := isEmpty_cell_of_lt (n := n) hk
-  (isZero_X_of_isEmpty R).of_iso (singularHomologyIsoX R k)
+  (isZero_cellularChainComplex_X_of_lt R hk).of_iso (singularHomologyIsoX R k)
 
 end TauCeti.ComplexProjectiveSpace
