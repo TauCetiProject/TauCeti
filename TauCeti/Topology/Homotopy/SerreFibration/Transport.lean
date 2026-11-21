@@ -13,6 +13,7 @@ public import TauCeti.Topology.Homotopy.SerreFibration.Connected
 import Mathlib.Topology.Subpath
 import TauCeti.Topology.Homotopy.Contractible
 import TauCeti.Topology.Homotopy.Path
+import TauCeti.Topology.UnitInterval.Contractible
 
 /-!
 # Path transport on fibres of a Serre fibration

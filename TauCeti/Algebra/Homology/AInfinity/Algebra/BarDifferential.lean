@@ -68,12 +68,12 @@ theorem higherTaylor_comp_ofLetter (𝒜 : AInfinityAlgebra R A) :
 /-- On a word of length at least two, the higher Taylor map is the original Taylor map. -/
 @[simp]
 theorem higherTaylor_of (𝒜 : AInfinityAlgebra R A)
-    (n : {n : ℕ // 0 < n}) (hn : 1 < n.1) (x : TensorPower R n.1 A) :
+    (n : {n : ℕ // 0 < n}) (hn : 1 < n.val) (x : TensorPower R n.val A) :
     𝒜.higherTaylor (ReducedTensorWords.of R A n x) =
       𝒜.taylor (ReducedTensorWords.of R A n x) := by
   have hne : n ≠ (1 : {n : ℕ // 0 < n}) := by
     intro h
-    have h' : n.1 = 1 := congrArg Subtype.val h
+    have h' : n.val = 1 := congrArg Subtype.val h
     omega
   simp [higherTaylor, ReducedTensorWords.letter_of_of_ne_one R A hne]
 

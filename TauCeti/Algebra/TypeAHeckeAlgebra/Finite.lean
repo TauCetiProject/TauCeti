@@ -69,7 +69,6 @@ map is injective, so that the finite presentation is isomorphic to the stage, is
   algebra the right block map is the strand shift.
 * `TauCeti.TypeAHeckeAlgebra.algebraMap_injective`: the presentation does not collapse the
   scalars.
-* `TauCeti.TypeAHeckeAlgebra.T_ne_algebraMap`: a generator is not a scalar when `q ≠ -q⁻¹`.
 
 ## References
 
@@ -438,12 +437,6 @@ theorem algebraMap_injective : Function.Injective (algebraMap R (TypeAHeckeAlgeb
 
 instance [Nontrivial R] : Nontrivial (TypeAHeckeAlgebra R q n) :=
   algebraMap_injective.nontrivial
-
-/-- A generator is not a scalar when the two eigenvalues `q` and `-q⁻¹` are distinct. -/
-theorem T_ne_algebraMap (hq : (q : R) ≠ -↑q⁻¹) (i : Fin (n - 1)) (r : R) :
-    T q i ≠ algebraMap R _ r := fun h ↦
-  InfiniteTypeAHeckeAlgebra.T_ne_algebraMap hq i r <| by
-    simpa using congrArg (toInfinite R q n) h
 
 /-- Over a nontrivial base ring, no generator vanishes. -/
 @[simp]

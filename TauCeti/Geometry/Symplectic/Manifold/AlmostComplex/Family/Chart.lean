@@ -33,6 +33,11 @@ is the prescribed field.
   product of the intrinsic chart sources from a field on the product chart target.
 * `ContMDiffAlmostComplexStructureFamily.inChart_ofModel`: on a model target, the coordinate
   expression of `ofModel A` is `A` read in the domain chart.
+* `ContMDiffAlmostComplexStructureFamily.chartField`: the family read in a chart `φ` of the
+  domain and a chart `ψ` of the target with values in a normed space, as the pushforward
+  `dψ ∘ J(φ⁻¹ z, ψ⁻¹ v) ∘ dψ⁻¹`; this is the coefficient of coordinate Cauchy–Riemann equations.
+  Reparametrizing along `g` with `g ∘ φ'⁻¹ = φ⁻¹` does not change it
+  (`ContMDiffAlmostComplexStructureFamily.chartField_comp`).
 
 ## References
 
@@ -189,7 +194,7 @@ def ofChart (q : P × M) (A : EP × E → E →L[ℝ] E)
           (fun r : chartSource (H := HP) q.1 × chartSource (H := H) q.2 ↦
             extChartAt (IP.prod I) q ((r.1 : P), (r.2 : M))) :=
         (contMDiffOn_extChartAt (I := IP.prod I) (x := q) (n := n)).comp_contMDiff
-          ((contMDiff_subtype_val (I := IP)).prodMap (contMDiff_subtype_val (I := I)))
+          ((contMDiff_subtypeVal (I := IP)).prodMap (contMDiff_subtypeVal (I := I)))
           (fun r ↦ by simpa only [extChartAt_source] using hmem r)
       refine (hA.contMDiffOn.comp_contMDiff hg fun r ↦
         (extChartAt (IP.prod I) q).map_source (hmem r)).congr fun r ↦ ?_
@@ -278,6 +283,74 @@ theorem inChart_ofModel (A : P × V → V →L[ℝ] V)
     q.2 z q.2 z _).trans h
 
 end Model
+
+section ChartField
+
+variable {D G : Type*} [TopologicalSpace D] [NormedAddCommGroup G] [NormedSpace ℝ G]
+
+/-- A domain-dependent structure read in a chart `φ` of `P` and a chart `ψ` of `M` with values in
+a normed space `G`: at `(z, v)`, the structure `J(φ⁻¹ z, ψ⁻¹ v)` pushed forward along `ψ`, that
+is `dψ ∘ J(φ⁻¹ z, ψ⁻¹ v) ∘ dψ⁻¹`. -/
+def chartField (J : ContMDiffAlmostComplexStructureFamily I M IP P n)
+    (φ : OpenPartialHomeomorph P D) (ψ : OpenPartialHomeomorph M G) (z : D) (v : G) :
+    G →L[ℝ] G :=
+  (J.freeze (φ.symm z)).chartPushforward ψ v
+
+/-- Evaluate a structure read in charts. -/
+theorem chartField_apply (J : ContMDiffAlmostComplexStructureFamily I M IP P n)
+    (φ : OpenPartialHomeomorph P D) (ψ : OpenPartialHomeomorph M G) (z : D) (v : G) :
+    J.chartField φ ψ z v = (J.freeze (φ.symm z)).chartPushforward ψ v :=
+  (rfl)
+
+/-- A structure independent of the domain point reads in charts as its pushforward along the
+chart of `M`. -/
+@[simp]
+theorem chartField_const (J : ContMDiffAlmostComplexStructure I n M)
+    (φ : OpenPartialHomeomorph P D) (ψ : OpenPartialHomeomorph M G) :
+    (const (IP := IP) J).chartField φ ψ = fun _ v ↦ J.chartPushforward ψ v := by
+  funext z v
+  rw [chartField_apply, freeze_const]
+
+/-- Forgetting regularity does not change a structure read in charts. -/
+@[simp]
+theorem chartField_ofLE (J : ContMDiffAlmostComplexStructureFamily I M IP P n) (hmn : m ≤ n)
+    (φ : OpenPartialHomeomorph P D) (ψ : OpenPartialHomeomorph M G) :
+    (J.ofLE hmn).chartField φ ψ = J.chartField φ ψ := by
+  funext z v
+  rw [chartField_apply, chartField_apply, freeze_ofLE,
+    ContMDiffAlmostComplexStructure.chartPushforward_ofLE]
+
+/-- The negated structure reads in charts as the negated chart field. -/
+@[simp]
+theorem chartField_neg (J : ContMDiffAlmostComplexStructureFamily I M IP P n)
+    (φ : OpenPartialHomeomorph P D) (ψ : OpenPartialHomeomorph M G) :
+    (-J).chartField φ ψ = -J.chartField φ ψ := by
+  funext z v
+  simp [chartField_apply]
+
+/-- **Transport in charts.** If `φ'` is a chart of `Q` and `φ` a chart of `P` with
+`g ∘ φ'⁻¹ = φ⁻¹`, the reparametrized family `J ∘ g` read in `φ'` is `J` read in `φ`. -/
+theorem chartField_comp {EQ HQ Q : Type*} [NormedAddCommGroup EQ] [NormedSpace ℝ EQ]
+    [TopologicalSpace HQ] {IQ : ModelWithCorners ℝ EQ HQ} [TopologicalSpace Q]
+    [ChartedSpace HQ Q] (J : ContMDiffAlmostComplexStructureFamily I M IP P n)
+    (g : C^n⟮IQ, Q; IP, P⟯) {φ' : OpenPartialHomeomorph Q D} {φ : OpenPartialHomeomorph P D}
+    (hφ : g ∘ φ'.symm = φ.symm) (ψ : OpenPartialHomeomorph M G) :
+    (J.comp g).chartField φ' ψ = J.chartField φ ψ := by
+  funext z v
+  rw [chartField_apply, chartField_apply, freeze_comp, ← hφ, Function.comp_apply]
+
+/-- On a normed space, read in the identity chart, a structure is its value at the domain point
+`φ⁻¹ z`. -/
+@[simp]
+theorem chartField_refl {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    (J : ContMDiffAlmostComplexStructureFamily 𝓘(ℝ, F) F IP P n)
+    (φ : OpenPartialHomeomorph P D) :
+    J.chartField φ (OpenPartialHomeomorph.refl F) =
+      fun z v ↦ (J.freeze (φ.symm z)).toEndomorphism v := by
+  funext z v
+  rw [chartField_apply, ContMDiffAlmostComplexStructure.chartPushforward_refl]
+
+end ChartField
 
 end ContMDiffAlmostComplexStructureFamily
 

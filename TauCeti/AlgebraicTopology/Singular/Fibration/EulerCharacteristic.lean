@@ -214,11 +214,11 @@ private lemma exists_cell_and_fiber_bounds [RelCWComplex.Finite C]
           (p.fiber (g (map k j 0)))) := by
   obtain ⟨K, hK⟩ := Filter.eventually_atTop.1
     (FiniteDimensional.eventually_isEmpty_cell (C := C) (D := ∅))
-  have (i : Fin K) : _root_.Finite (cell C i.1) := FiniteType.finite_cell i.1
-  have hsigma : ∀ᶠ q in Filter.atTop, ∀ x : Σ i : Fin K, cell C i.1,
+  have (i : Fin K) : _root_.Finite (cell C i.val) := FiniteType.finite_cell i.val
+  have hsigma : ∀ᶠ q in Filter.atTop, ∀ x : Σ i : Fin K, cell C i.val,
       IsZero (((singularHomologyFunctor (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).obj
-        (p.fiber (g (map x.1.1 x.2 0)))) :=
-    Filter.eventually_all.2 fun x ↦ hvanish (g (map x.1.1 x.2 0))
+        (p.fiber (g (map x.fst.val x.snd 0)))) :=
+    Filter.eventually_all.2 fun x ↦ hvanish (g (map x.fst.val x.snd 0))
   obtain ⟨Q, hQ⟩ := Filter.eventually_atTop.1 hsigma
   exact ⟨K, Q, hK, fun k hk j q hq ↦ hQ q hq ⟨⟨k, hk⟩, j⟩⟩
 

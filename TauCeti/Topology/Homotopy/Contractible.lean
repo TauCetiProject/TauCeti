@@ -6,39 +6,42 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Homotopy.Contractible
-public import Mathlib.Topology.UnitInterval
-
-import Mathlib.Analysis.Convex.Contractible
-import Mathlib.Topology.Homeomorph.Lemmas
 
 /-!
-# Additional `ContractibleSpace` instances
+# Contractible spaces
 
-This file supplies two missing `ContractibleSpace` instances for Mathlib types:
+The lift `ULift X` of a contractible space `X` to a higher universe is contractible, since
+`Homeomorph.ulift` identifies it with `X`.
 
-* `unitInterval` is contractible, being a nonempty convex subset of `ℝ`
-  (`Convex.contractibleSpace`).
-* `ULift X` is contractible whenever `X` is contractible, via the homeomorphism
-  `Homeomorph.ulift`.
-
-Combined with Mathlib's product instance `ContractibleSpace (X × Y)`, these immediately yield
-contractibility of universe-lifted intervals and cubes such as `ULift unitInterval` and
-`ULift (unitInterval × unitInterval)`.
+Any two continuous maps into a contractible space are homotopic
+(`ContinuousMap.homotopic_of_contractibleSpace`): both are homotopic to the constant map at the
+point the identity contracts onto.
 -/
 
 public section
 
 universe u v
 
-namespace TauCeti
+namespace ULift
 
-/-- The unit interval `unitInterval` is contractible. -/
-instance : ContractibleSpace unitInterval :=
-  (convex_Icc (0 : ℝ) 1).contractibleSpace ⟨0, unitInterval.zero_mem⟩
+variable {X : Type u} [TopologicalSpace X]
 
-/-- A universe lift `ULift X` of a contractible space `X` is contractible. -/
-instance {X : Type v} [TopologicalSpace X] [ContractibleSpace X] :
-    ContractibleSpace (ULift.{u} X) :=
+/-- The lift of a contractible space to a higher universe is contractible. -/
+instance contractibleSpace [ContractibleSpace X] : ContractibleSpace (ULift.{v} X) :=
   Homeomorph.ulift.contractibleSpace
 
-end TauCeti
+end ULift
+
+namespace ContinuousMap
+
+variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
+
+/-- Any two continuous maps into a contractible space are homotopic. -/
+theorem homotopic_of_contractibleSpace [ContractibleSpace Y] (f g : C(X, Y)) : f.Homotopic g := by
+  obtain ⟨c, hc⟩ := id_nullhomotopic Y
+  have h (f : C(X, Y)) : f.Homotopic (const X c) := by
+    have := hc.comp (Homotopic.refl f)
+    rwa [id_comp, const_comp] at this
+  exact (h f).trans (h g).symm
+
+end ContinuousMap
