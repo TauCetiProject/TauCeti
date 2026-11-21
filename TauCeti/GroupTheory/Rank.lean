@@ -31,10 +31,10 @@ its rank is at most the sum of the two ranks.
 ## Main statements
 
 * `AddGroup.rank_eq_spanFinrank`: `AddGroup.rank M = (⊤ : Submodule ℤ M).spanFinrank`, and
-  `AddGroup.rank_eq_spanFinrank_of_surjective` over a quotient ring of `ℤ`.
+  `AddGroup.rank_eq_spanFinrank_of_intCast_surjective` over a quotient ring of `ℤ`.
 * `AddGroup.rank_eq_finrank`: `AddGroup.rank M = finrank ℤ M` for a finitely generated free
-  abelian group `M`, and `AddGroup.rank_eq_finrank_of_surjective` over a quotient ring of `ℤ`
-  with the strong rank condition, such as `ZMod p`.
+  abelian group `M`, and `AddGroup.rank_eq_finrank_of_intCast_surjective` over a quotient ring of
+  `ℤ` with the strong rank condition, such as `ZMod p`.
 * `AddGroup.rank_pi_zmod`: `AddGroup.rank (∀ i, ZMod (n i)) = Fintype.card ι` when a prime divides
   every `n i`.
 * `Subgroup.rank_sup_le`: `rank (H ⊔ K) ≤ rank H + rank K` for finitely generated subgroups
@@ -75,7 +75,7 @@ theorem rank_eq_spanFinrank [AddGroup.FG M] :
 /-- Over a ring `R` that is a quotient of `ℤ`, such as `ZMod n`, the least number of generators
 of a finitely generated `R`-module as an abelian group is its least number of generators as an
 `R`-module. -/
-theorem rank_eq_spanFinrank_of_surjective (R : Type*) [Ring R] [Module R M]
+theorem rank_eq_spanFinrank_of_intCast_surjective (R : Type*) [Ring R] [Module R M]
     (hR : Function.Surjective (Int.cast : ℤ → R)) [AddGroup.FG M] :
     AddGroup.rank M = (⊤ : Submodule R M).spanFinrank := by
   rw [rank_eq_spanFinrank, ← Submodule.spanFinrank_restrictScalars_eq (R := ℤ) (S := R)
@@ -84,44 +84,38 @@ theorem rank_eq_spanFinrank_of_surjective (R : Type*) [Ring R] [Module R M]
 /-- Over a ring `R` with the strong rank condition that is a quotient of `ℤ`, such as `ℤ` or a
 prime field `ZMod p`, a free `R`-module that is finitely generated as an abelian group needs
 exactly `finrank R M` generators. -/
-theorem rank_eq_finrank_of_surjective (R : Type*) [Ring R] [StrongRankCondition R] [Module R M]
-    [Module.Free R M] (hR : Function.Surjective (Int.cast : ℤ → R)) [AddGroup.FG M] :
+theorem rank_eq_finrank_of_intCast_surjective (R : Type*) [Ring R] [StrongRankCondition R]
+    [Module R M] [Module.Free R M] (hR : Function.Surjective (Int.cast : ℤ → R)) [AddGroup.FG M] :
     AddGroup.rank M = finrank R M := by
-  rw [rank_eq_spanFinrank_of_surjective R hR, Module.finrank_eq_spanFinrank_of_free]
+  rw [rank_eq_spanFinrank_of_intCast_surjective R hR, Module.finrank_eq_spanFinrank_of_free]
 
 variable (M) in
 /-- A finitely generated free abelian group needs exactly `finrank ℤ M` generators. -/
 theorem rank_eq_finrank [AddGroup.FG M] [Module.Free ℤ M] :
     AddGroup.rank M = finrank ℤ M :=
-  rank_eq_finrank_of_surjective ℤ (fun n ↦ ⟨n, Int.cast_id⟩)
+  rank_eq_finrank_of_intCast_surjective ℤ (fun n ↦ ⟨n, Int.cast_id⟩)
 
 /-- A product of cyclic groups `ℤ/nᵢ` whose orders share a prime factor `p` needs exactly as many
-generators as it has factors: the unit vectors generate it, and it maps onto the
+generators as it has factors: it is a quotient of `ℤ^ι`, and it maps onto the
 `𝔽_p`-vector space `(ℤ/p)^ι`. -/
 theorem rank_pi_zmod {ι : Type*} [Fintype ι] (n : ι → ℕ) [∀ i, NeZero (n i)] {p : ℕ}
     (hp : p.Prime) (hn : ∀ i, p ∣ n i) : AddGroup.rank (∀ i, ZMod (n i)) = Fintype.card ι := by
-  classical
   have : Fact p.Prime := ⟨hp⟩
   apply le_antisymm
-  · -- the unit vectors generate
-    let e : ι → ∀ j, ZMod (n j) := fun i ↦ Pi.single i 1
-    refine (AddGroup.rank_le (S := Finset.univ.image e) ?_).trans Finset.card_image_le
-    refine (AddSubgroup.eq_top_iff' _).mpr fun x ↦ ?_
-    rw [← Finset.univ_sum_single x]
-    refine AddSubgroup.sum_mem _ fun i _ ↦ ?_
-    have hx : (x i).val • e i = Pi.single i (x i) := by
-      rw [← Pi.single_smul, nsmul_eq_mul, mul_one, ZMod.natCast_zmod_val]
-    rw [← hx]
-    exact AddSubgroup.nsmul_mem _ (AddSubgroup.subset_closure (by simp)) _
+  · -- `ℤ^ι` maps onto the product
+    let f : (ι → ℤ) →+ ∀ i, ZMod (n i) :=
+      AddMonoidHom.pi fun i ↦ (Int.castAddHom (ZMod (n i))).comp (Pi.evalAddMonoidHom _ i)
+    refine (AddGroup.rank_le_of_surjective f
+      (Function.Surjective.piMap fun i ↦ ZMod.intCast_surjective)).trans_eq ?_
+    rw [rank_eq_finrank, Module.finrank_fintype_fun_eq_card]
   · -- reduction modulo `p` maps the product onto `(ℤ/p)^ι`
     let f : (∀ i, ZMod (n i)) →+ (ι → ZMod p) :=
       AddMonoidHom.pi fun i ↦ (ZMod.castHom (hn i) (ZMod p)).toAddMonoidHom.comp
         (Pi.evalAddMonoidHom (fun i ↦ ZMod (n i)) i)
-    have hf : Function.Surjective f := fun y ↦
-      ⟨fun i ↦ (ZMod.castHom_surjective (hn i) (y i)).choose,
-        funext fun i ↦ (ZMod.castHom_surjective (hn i) (y i)).choose_spec⟩
+    have hf : Function.Surjective f :=
+      Function.Surjective.piMap fun i ↦ ZMod.castHom_surjective (hn i)
     calc Fintype.card ι = AddGroup.rank (ι → ZMod p) := by
-          rw [rank_eq_finrank_of_surjective (ZMod p) ZMod.intCast_surjective,
+          rw [rank_eq_finrank_of_intCast_surjective (ZMod p) ZMod.intCast_surjective,
             Module.finrank_fintype_fun_eq_card]
       _ ≤ AddGroup.rank (∀ i, ZMod (n i)) := AddGroup.rank_le_of_surjective f hf
 
