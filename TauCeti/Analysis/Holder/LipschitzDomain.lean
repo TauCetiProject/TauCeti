@@ -21,15 +21,17 @@ file proves both statements on a bounded Lipschitz domain, which need not be con
 of such a domain are joined inside it by three segments of total length comparable to their
 distance (`Set.IsLipschitzDomain.exists_segment_chain`), and the mean value inequality along them
 bounds the increments of each lower derivative field at small scales. The domains of the global
-Schauder theory, bounded domains with `C^{k,α}` boundary, are bounded Lipschitz domains.
+Schauder theory, bounded domains with `C^{k,α}` boundary for `k ≥ 1`, are bounded Lipschitz
+domains.
 
 ## Main declarations
 
 * `TauCeti.CkHolderSpaceOn.exists_holderOnWith_iteratedFDeriv_of_isLipschitzDomain`: there is a
-  constant `C`, depending only on `Ω` and `α`, such that every derivative field through order `k`
-  of every `f ∈ C^{k,α}(Ω)` is `α`-Hölder on `Ω` with constant `C ‖f‖`.
+  constant `C`, depending on `Ω`, `α`, `k` and `F`, such that every derivative field through
+  order `k` of every `f ∈ C^{k,α}(Ω)` is `α`-Hölder on `Ω` with constant `C ‖f‖`.
 * `TauCeti.CkHolderSpaceOn.inclusionSuccLOfIsLipschitzDomain`: the inclusion
-  `C^{k+1,α}(Ω) → C^{k,α}(Ω)` as a continuous linear map.
+  `C^{k+1,α}(Ω) → C^{k,α}(Ω)` as a continuous linear map, built by
+  `TauCeti.CkHolderSpaceOn.inclusionSuccLOfHolderOnWith` from that constant.
 
 ## References
 
@@ -54,8 +56,8 @@ variable {k : ℕ} {α : ℝ≥0} {E : Type u} [NormedAddCommGroup E] [NormedSpa
   [ProperSpace E] {Ω : Opens E} {F : Type v} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {E' : Type w} [NormedAddCommGroup E'] [NormedSpace ℝ E']
 
-/-- On a bounded Lipschitz domain and for `α ≤ 1`, there is a constant `C`, depending only on `Ω`
-and `α`, such that for every `f ∈ C^{k,α}(Ω)` and every function `g` agreeing with `f` on `Ω`,
+/-- On a bounded Lipschitz domain and for `α ≤ 1`, there is a constant `C`, depending on `Ω`, `α`,
+`k` and `F`, such that for every `f ∈ C^{k,α}(Ω)` and every function `g` agreeing with `f` on `Ω`,
 each iterated derivative of `g` through order `k` is `α`-Hölder on `Ω` with constant `C ‖f‖`.
 Compare `TauCeti.CkHolderSpaceOn.holderOnWith_iteratedFDeriv_of_le`, with constant `3 ‖f‖`, on a
 convex open set. -/
@@ -110,55 +112,22 @@ theorem exists_holderOnWith_iteratedFDeriv_of_isLipschitzDomain
   nlinarith [norm_nonneg f, (δ ^ (1 - (α : ℝ)) : ℝ≥0).coe_nonneg,
     (δ ^ (-(α : ℝ)) : ℝ≥0).coe_nonneg, C₀.coe_nonneg]
 
-/-- The constant of `exists_holderOnWith_iteratedFDeriv_of_isLipschitzDomain` for the order-`k`
-field of elements of `C^{k+1,α}(Ω)`, chosen once for the inclusion map. -/
-private theorem exists_holderOnWith_iteratedFDeriv_succ
-    (hΩ : (Ω : Set E).IsLipschitzDomain E') (hb : Bornology.IsBounded (Ω : Set E))
-    (hα : α ≤ 1) :
-    ∃ C : ℝ≥0, ∀ f : CkHolderSpaceOn (k + 1) α Ω F,
-      HolderOnWith (C * ‖f‖₊) α (_root_.iteratedFDeriv ℝ k f.extend) Ω := by
-  obtain ⟨C, hC⟩ := exists_holderOnWith_iteratedFDeriv_of_isLipschitzDomain (k := k + 1)
-    (F := F) hΩ hb hα
-  exact ⟨C, fun f ↦ hC f f.extend_apply k.le_succ⟩
-
 /-- On a bounded Lipschitz domain and for `α ≤ 1`, the inclusion `C^{k+1,α}(Ω) → C^{k,α}(Ω)`, as
 a continuous linear map. Compare `TauCeti.CkHolderSpaceOn.inclusionSuccL`, on a convex open set,
 which has operator norm at most `3`. -/
 def inclusionSuccLOfIsLipschitzDomain (hΩ : (Ω : Set E).IsLipschitzDomain E')
     (hb : Bornology.IsBounded (Ω : Set E)) (hα : α ≤ 1) :
     CkHolderSpaceOn (k + 1) α Ω F →L[ℝ] CkHolderSpaceOn k α Ω F :=
-  let C := (exists_holderOnWith_iteratedFDeriv_succ (k := k) (F := F) hΩ hb hα).choose
-  have hC := (exists_holderOnWith_iteratedFDeriv_succ (k := k) (F := F) hΩ hb hα).choose_spec
-  LinearMap.mkContinuous
-    { toFun f := ofContDiffOn f.extend (f.contDiffOn_extend.of_le (by norm_cast; omega))
-        (fun i hi ↦ ⟨‖f.iteratedFDeriv ⟨i, by omega⟩‖, fun x ↦
-          f.norm_iteratedFDeriv_apply_le_norm_iteratedFDeriv f.extend_apply ⟨i, by omega⟩ x⟩)
-        (HolderWith.memHolder fun x y ↦ hC f x x.property y y.property)
-      map_add' f g := by ext x; simp [extend_apply]
-      map_smul' c f := by ext x; simp [extend_apply] }
-    (1 + C) fun f ↦ by
-      rw [LinearMap.coe_mk, AddHom.coe_mk]
-      refine (norm_le_sum_add_of_norm_iteratedFDeriv_le_of_holderWith
-        (M := fun i ↦ ‖f.iteratedFDeriv i.castSucc‖) (fun i ↦ by positivity) (fun i x ↦ ?_)
-        (K := C * ‖f‖₊) (fun x y ↦ ?_)).trans ?_
-      · rw [iteratedFDeriv_ofContDiffOn]
-        exact f.norm_iteratedFDeriv_apply_le_norm_iteratedFDeriv f.extend_apply i.castSucc x
-      · rw [iteratedFDeriv_ofContDiffOn, iteratedFDeriv_ofContDiffOn]
-        exact hC f x x.property y y.property
-      · have hsum : ∑ i : Fin (k + 2), ‖f.iteratedFDeriv i‖ ≤ ‖f‖ := by
-          rw [norm_eq]
-          exact le_add_of_nonneg_right (NNReal.coe_nonneg _)
-        rw [Fin.sum_univ_castSucc] at hsum
-        push_cast
-        nlinarith [norm_nonneg (f.iteratedFDeriv (Fin.last (k + 1)))]
+  have hC := exists_holderOnWith_iteratedFDeriv_of_isLipschitzDomain (k := k + 1) (F := F) hΩ hb hα
+  inclusionSuccLOfHolderOnWith hC.choose fun f ↦ hC.choose_spec f f.extend_apply k.le_succ
 
 /-- The inclusion `C^{k+1,α}(Ω) → C^{k,α}(Ω)` on a bounded Lipschitz domain does not change
 values. -/
 @[simp]
 theorem inclusionSuccLOfIsLipschitzDomain_apply (hΩ : (Ω : Set E).IsLipschitzDomain E')
     (hb : Bornology.IsBounded (Ω : Set E)) (hα : α ≤ 1) (f : CkHolderSpaceOn (k + 1) α Ω F)
-    (x : Ω) : inclusionSuccLOfIsLipschitzDomain hΩ hb hα f x = f x := by
-  simp [inclusionSuccLOfIsLipschitzDomain, extend_apply]
+    (x : Ω) : inclusionSuccLOfIsLipschitzDomain hΩ hb hα f x = f x :=
+  inclusionSuccLOfHolderOnWith_apply _ _ f x
 
 /-- The inclusion `C^{k+1,α}(Ω) → C^{k,α}(Ω)` on a bounded Lipschitz domain keeps the derivative
 fields through order `k`. -/
@@ -167,10 +136,8 @@ theorem iteratedFDeriv_inclusionSuccLOfIsLipschitzDomain (hΩ : (Ω : Set E).IsL
     (hb : Bornology.IsBounded (Ω : Set E)) (hα : α ≤ 1) (f : CkHolderSpaceOn (k + 1) α Ω F)
     (i : Fin (k + 1)) (x : Ω) :
     (inclusionSuccLOfIsLipschitzDomain hΩ hb hα f).iteratedFDeriv i x =
-      f.iteratedFDeriv i.castSucc x := by
-  rw [inclusionSuccLOfIsLipschitzDomain, LinearMap.mkContinuous_apply, LinearMap.coe_mk,
-    AddHom.coe_mk, iteratedFDeriv_ofContDiffOn]
-  exact f.iteratedFDeriv_eq f.extend_apply i.castSucc x
+      f.iteratedFDeriv i.castSucc x :=
+  iteratedFDeriv_inclusionSuccLOfHolderOnWith _ _ f i x
 
 end CkHolderSpaceOn
 
