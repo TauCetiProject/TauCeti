@@ -121,6 +121,23 @@ theorem linearLegendreMap_snd (L : E × E → ℝ) (x : E × E) :
     (linearLegendreMap L x).2 = fderiv ℝ (fun v ↦ L (x.1, v)) x.2 :=
   (rfl)
 
+/-- Lagrangians that agree near `x` have Legendre maps that agree near `x`. -/
+theorem _root_.Filter.EventuallyEq.linearLegendreMap {L₁ L₂ : E × E → ℝ} {x : E × E}
+    (h : L₁ =ᶠ[𝓝 x] L₂) : linearLegendreMap L₁ =ᶠ[𝓝 x] linearLegendreMap L₂ := by
+  filter_upwards [h.eventually_nhds] with y hy
+  refine Prod.ext rfl ?_
+  rw [linearLegendreMap_snd, linearLegendreMap_snd]
+  exact Filter.EventuallyEq.fderiv_eq
+    (((continuous_const.prodMk continuous_id).tendsto y.2).eventually hy)
+
+/-- Lagrangians that agree near `x` have energies `E_L(q, v) = ∂_v L(q, v)(v) - L(q, v)` that
+agree near `x`. -/
+theorem _root_.Filter.EventuallyEq.linearLegendreMap_snd_apply_sub {L₁ L₂ : E × E → ℝ}
+    {x : E × E} (h : L₁ =ᶠ[𝓝 x] L₂) :
+    (fun y ↦ (linearLegendreMap L₁ y).2 y.2 - L₁ y) =ᶠ[𝓝 x]
+      fun y ↦ (linearLegendreMap L₂ y).2 y.2 - L₂ y :=
+  (h.linearLegendreMap.and h).mono fun y hy ↦ by dsimp only; rw [hy.1, hy.2]
+
 /-- The **Hamiltonian** of a Lagrangian `L`, given a map `w` solving the momentum for the velocity:
 `H(q, p) = p(w(q, p)) - L(q, w(q, p))`. When `∂_v L(q, w(q, p)) = p`, this is the energy of `L`
 at the velocity `w(q, p)` (`TauCeti.legendreHamiltonian_linearLegendreMap`). -/

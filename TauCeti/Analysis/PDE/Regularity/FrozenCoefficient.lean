@@ -11,6 +11,7 @@ public import TauCeti.Topology.MetricSpace.Holder
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.Analysis.PDE.EnergyForm.Restriction
 import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.Topology.Instances.Matrix
 
 /-!
 # Comparison with the frozen-coefficient problem
@@ -342,11 +343,10 @@ theorem UniformlyEllipticOn.exists_sub_mem_w1p0Submodule_mul_norm_gradient_sub_l
       ‖G x - G x₀‖ ≤ KG * r ^ (α : ℝ) := fun x hx => by
     rw [← dist_eq_norm]
     exact hGK.dist_le_mul_rpow_of_mem_ball (hBr hx)
-  -- A matrix is a function of its entries, and the entries of `a` are continuous on the ball.
   have ha :
       AEStronglyMeasurable a (volume.restrict (B : Set (EuclideanSpace ℝ (Fin (n + 1))))) :=
-    ContinuousOn.aestronglyMeasurable (β := Fin (n + 1) → Fin (n + 1) → ℝ)
-      ((continuousOn_of_continuousOn_matrixBilinearForm (haK.continuousOn hα)).mono hBr) hBm
+    (continuousOn_of_continuousOn_matrixBilinearForm
+      ((haK.continuousOn hα).mono hBr)).aestronglyMeasurable hBm
   have hGc : MemLp (fun x => G x - G x₀) 2
       (volume.restrict (B : Set (EuclideanSpace ℝ (Fin (n + 1))))) :=
     MemLp.of_bound ((((hGK.continuousOn hα).mono hBr).aestronglyMeasurable hBm).sub

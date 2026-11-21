@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import TauCeti.MeasureTheory.Function.PreciseRepresentative
 import Mathlib.Analysis.Convex.Integral
 import Mathlib.MeasureTheory.Covering.BesicovitchVectorSpace
+import TauCeti.Analysis.Holder.MeanValue
 import TauCeti.Analysis.SpecialFunctions.Pow.Scaling
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.Average
@@ -117,6 +118,10 @@ All declarations are in the `TauCeti.MeasureTheory` namespace.
   oscillation on a domain with the measure density property.
 * `exists_holderOnWith_ae_eq_iff_campanatoSeminormPow_ne_top`: **Campanato's characterization**
   `𝓛^{p,n + p α}(Ω) = C^{0,α}(Ω)` on a domain with the measure density property.
+* `campanatoSeminormPow_const`: constants have vanishing Campanato seminorm.
+* `exists_ae_eq_const_iff_campanatoSeminormPow_ne_top`: for `α > 1`, that is `λ > n + p`, the
+  Campanato space on a preconnected open set with the measure density property consists of the
+  almost everywhere constant functions.
 
 ## References
 
@@ -1000,6 +1005,19 @@ theorem campanatoSeminormPow_zero (hp : 0 < p) :
     campanatoSeminormPow μ Ω p lam (0 : X → F) = 0 := by
   simp [campanatoSeminormPow, ENNReal.zero_rpow_of_pos hp]
 
+/-- For `p > 0`, the Campanato seminorm of a constant function vanishes: on every ball the function
+equals its average. -/
+@[simp]
+theorem campanatoSeminormPow_const [CompleteSpace F] [ProperSpace X] [IsFiniteMeasureOnCompacts μ]
+    (hp : 0 < p) (c : F) : campanatoSeminormPow μ Ω p lam (fun _ ↦ c) = 0 := by
+  refine le_antisymm (campanatoSeminormPow_le_iff.2 fun x _ r _ ↦ ?_) (zero_le)
+  by_cases h0 : μ.restrict Ω (closedBall x r) = 0
+  · rw [setLIntegral_measure_zero _ _ h0, mul_zero]
+  · have hfin : μ.restrict Ω (closedBall x r) ≠ ⊤ :=
+      ((Measure.restrict_apply_le _ _).trans_lt measure_closedBall_lt_top).ne
+    rw [setAverage_const h0 hfin, sub_self, eNorm_zero, ENNReal.zero_rpow_of_pos hp, lintegral_zero,
+      mul_zero]
+
 end Seminorm
 
 section Characterization
@@ -1149,6 +1167,34 @@ theorem exists_holderOnWith_ae_eq_iff_campanatoSeminormPow_ne_top {α : ℝ≥0}
       ae_eq_preciseRepresentative_of_hasBesicovitchCovering hf⟩
     rw [Real.coe_toNNReal _ (by positivity)]
     exact setAverage_norm_sub_le_of_campanatoSeminormPow_le hp hc hM hx hr (hdens x hx r hr hr')
+
+/-- **Campanato spaces beyond `λ = n + p`.** Let `α > 1`, `p ≥ 1` and `c > 0`, and let `Ω` be a
+preconnected open set with density at least `c` in every closed ball centred in `Ω` of radius
+`r > 0` at most twice the diameter of `Ω` (every radius, if `Ω` is unbounded):
+`c μ(B(x, r)) ≤ μ(B(x, r) ∩ Ω)`. A function `f` locally integrable for `μ.restrict Ω` belongs to
+the Campanato space `𝓛^{p,λ}(Ω)` for `λ = n + p α`, where `n` is the dimension, if and only if it
+is almost everywhere constant on `Ω`. So Campanato's characterization
+`exists_holderOnWith_ae_eq_iff_campanatoSeminormPow_ne_top` carries information only for
+`n < λ ≤ n + p`. -/
+theorem exists_ae_eq_const_iff_campanatoSeminormPow_ne_top {α : ℝ≥0} (hα : 1 < α) (hp : 1 ≤ p)
+    (hc : 0 < c) (hΩ : IsOpen Ω) (hΩc : IsPreconnected Ω)
+    (hf : LocallyIntegrable f (μ.restrict Ω))
+    (hdens : ∀ x ∈ Ω, ∀ r : ℝ, 0 < r → ENNReal.ofReal r ≤ 2 * ediam Ω →
+      (c : ℝ≥0∞) * μ (closedBall x r) ≤ μ (closedBall x r ∩ Ω)) :
+    (∃ a : F, f =ᵐ[μ.restrict Ω] fun _ ↦ a) ↔
+      campanatoSeminormPow μ Ω p (finrank ℝ E + p * α) f ≠ ⊤ := by
+  constructor
+  · rintro ⟨a, hfa⟩
+    rw [campanatoSeminormPow_congr_ae hfa, campanatoSeminormPow_const (zero_lt_one.trans_le hp)]
+    exact ENNReal.zero_ne_top
+  · intro hfin
+    obtain ⟨K, g, hg, hfg⟩ := (exists_holderOnWith_ae_eq_iff_campanatoSeminormPow_ne_top
+      (zero_lt_one.trans hα) hp hc hΩ.nullMeasurableSet hf hdens).2 hfin
+    rcases Ω.eq_empty_or_nonempty with rfl | ⟨x₀, hx₀⟩
+    · exact ⟨0, by simp [Filter.EventuallyEq]⟩
+    · refine ⟨g x₀, ?_⟩
+      filter_upwards [hfg, ae_restrict_mem hΩ.measurableSet] with x hx hxΩ
+      rw [hx, hg.eq_of_one_lt hα hΩ hΩc hxΩ hx₀]
 
 end Characterization
 

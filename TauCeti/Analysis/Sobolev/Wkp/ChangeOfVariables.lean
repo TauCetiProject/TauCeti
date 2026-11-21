@@ -184,6 +184,16 @@ theorem norm_fderiv_le (h : IsChangeOfVariables (k + 1) U V Φ L c) :
     ∀ x ∈ (U : Set E), ‖fderiv ℝ Φ x‖ ≤ L := fun x hx => by
   simpa only [norm_iteratedFDeriv_one] using h.norm_iteratedFDeriv_le 1 le_rfl (by omega) x hx
 
+/-- A change of variables has invertible derivative on `U`. -/
+theorem det_fderiv_ne_zero (h : IsChangeOfVariables k U V Φ L c) {x : E}
+    (hx : x ∈ (U : Set E)) : (fderiv ℝ Φ x).det ≠ 0 := fun h0 =>
+  (h.pos.trans_le (h.le_abs_det x hx)).ne' (by rw [h0, abs_zero])
+
+/-- The derivative of a change of variables of order `k + 1` is `Cᵏ` on `U`. -/
+theorem contDiffOn_fderiv (h : IsChangeOfVariables (k + 1) U V Φ L c) :
+    ContDiffOn ℝ k (fderiv ℝ Φ) U :=
+  h.contDiffOn.fderiv_of_isOpen U.isOpen (by push_cast; exact le_rfl)
+
 /-- For mutually inverse changes of variables `Φ` and `Ψ`, `DΨ(Φ x)` is a left inverse of
 `DΦ(x)`. -/
 theorem fderiv_comp_fderiv_eq_id {U' : Opens E} {Ψ : E → E} {k' : ℕ} {L' c' : ℝ}
@@ -1113,8 +1123,7 @@ private theorem hasWeakLineDerivOn_inner_gradient_firstOrder_compL
         ⟪iteratedGradient 0 (lowerOrder 1 u) (Φ x), fderiv ℝ (fderiv ℝ Φ) x f c₀⟫_ℝ) f := by
   set b := stdOrthonormalBasis ℝ E
   set G := iteratedGradient 0 (lowerOrder 1 u)
-  have hΦ1 : ContDiffOn ℝ 1 (fderiv ℝ Φ) U :=
-    h.contDiffOn.fderiv_of_isOpen U.isOpen (by norm_num)
+  have hΦ1 : ContDiffOn ℝ 1 (fderiv ℝ Φ) U := h.contDiffOn_fderiv
   -- The weak gradient of `u ∘ Φ` is `DΦ(x)† ∇u(Φ x)`.
   have hgrad : ∀ᵐ x ∂mu.restrict U,
       W1p.gradient (firstOrder 1 (compL h u)) x = (fderiv ℝ Φ x).adjoint (G (Φ x)) := by
