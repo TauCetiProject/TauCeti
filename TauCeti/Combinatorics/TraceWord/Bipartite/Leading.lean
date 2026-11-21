@@ -16,14 +16,15 @@ import TauCeti.GroupTheory.Perm.OrbitCount.FinRotate
 # Leading bipartite trace words
 
 A word of half-length `k` is leading if no edge occurs just once and the word visits
-`k + 1` vertices. Each edge then occurs once in each direction. Matching the two occurrences
-gives a permutation of the `k` positions. Its cycles are the column classes, and the cycles
-of the rotation composed with its inverse are the row classes. The sum of the two cycle
-counts is maximal, so the column partition is noncrossing. Directed-edge uniqueness uses
-`TreeWalk.prodMk_finRotate_injective_of_no_singleton_edge_of_card_image_eq`. The classification
-uses `NoncrossingPartition.orbitCount_add_orbitCount_inv_mul_finRotate_eq_iff` to recover the
-partition and `NoncrossingPartition.orbitCount_formPerm_add_orbitCount_inv_mul_finRotate` to
-verify the vertex count for a word built from a partition.
+`k + 1` vertices. The empty word visits no vertices, so it is not leading. Each edge of a
+leading word occurs once in each direction. Matching the two occurrences gives a permutation
+of the `k` positions. Its cycles form a noncrossing column partition, and the cycles of the
+rotation composed with its inverse give the row classes.
+
+At positive half-length, every noncrossing column partition and pair of injective row and
+column labellings of these classes determines a unique leading word. With `c` column blocks,
+its contribution to the count is the product of the numbers of ways to assign `c` distinct
+column labels and `k + 1 - c` distinct row labels.
 
 ## References
 
@@ -184,9 +185,9 @@ private def labelBipartiteWord (hk : k ≠ 0)
   ⟨((invariantColouringEquiv _ q.2.1).val, (invariantColouringEquiv _ q.2.2).val),
     isLeadingBipartiteWord_cycleColouring hk q.1 q.2.1 q.2.2⟩
 
-/-- A leading bipartite trace word is specified by a noncrossing column partition and two
-injective labellings. Column labels are attached to the cycles of its permutation, and row
-labels to the cycles of the rotation composed with the inverse permutation. -/
+/-- At half-length `k > 0`, a leading bipartite trace word is specified by a noncrossing column
+partition and two injective labellings. Column labels are attached to the cycles of its
+permutation, and row labels to the cycles of the rotation composed with the inverse permutation. -/
 noncomputable def leadingBipartiteWordEquiv (hk : k ≠ 0) :
     (Σ π : NoncrossingPartition (univ : Finset (Fin k)),
       (Quotient (SameCycle.setoid (finRotate k * π.val.formPerm⁻¹)) ↪ α) ×
@@ -272,8 +273,9 @@ theorem bipartiteEdge_inl_formPerm_leadingBipartiteWordEquiv_symm (hk : k ≠ 0)
     bipartiteEdge_cycleColouring π.val.formPerm f g i
 
 open Classical in
-/-- The contribution to the leading-word count from a noncrossing partition with `c` blocks
-is the number of ways to assign `c` distinct column labels and `k + 1 - c` distinct row labels. -/
+/-- At half-length `k > 0`, the leading-word count sums over noncrossing column partitions.
+A partition with `c` blocks contributes the number of ways to assign `c` distinct column labels
+and `k + 1 - c` distinct row labels. -/
 theorem card_leadingBipartiteWord [Finite α] [Finite β] (hk : k ≠ 0) :
     Nat.card {w : (Fin k → α) × (Fin k → β) // IsLeadingBipartiteWord w.1 w.2} =
       ∑ π : NoncrossingPartition (univ : Finset (Fin k)),
