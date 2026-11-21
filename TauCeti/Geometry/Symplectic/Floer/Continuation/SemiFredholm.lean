@@ -17,8 +17,9 @@ A Floer continuation cylinder from `H₋` to `H₊` solves the Floer equation fo
 and `H₊` for `s ≥ 1`, with the almost complex structures
 `TauCeti.Floer.continuationAlmostComplex h₀ J₋ J₊`, which are `J₋` for `s ≤ 0` and `J₊` for
 `s ≥ 1`. These data are cylindrical outside `[0, 1] × S¹`, with different Hamiltonians and
-almost complex structures at the two ends, so the semi-Fredholm estimate for data that are
-cylindrical near the ends,
+almost complex structures at the two ends
+(`TauCeti.Floer.isCylindricalNearEnds_continuationHomotopy`), so the semi-Fredholm estimate for
+data that are cylindrical near the ends,
 `exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_add_of_cylindrical`
 in `TauCeti.Geometry.Symplectic.Floer.SemiFredholm`, applies to them. This file records the
 resulting estimate for the linearized operator `D_u` along a map `u` of the cylinder asymptotic to
@@ -45,6 +46,35 @@ public section
 
 open Set Filter
 open scoped NNReal Manifold
+
+namespace TauCeti.Floer
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
+
+/-- The continuation data from `(J₋, H₋)` to `(J₊, H₊)`, for `C¹` families `J±_t(y)` of `ω`-tame
+almost complex structures and jointly `C²` Hamiltonians `H±`, are cylindrical near the ends with
+radius `1` and end data `(J₋, H₋)` and `(J₊, H₊)`, along any map `u`. -/
+theorem isCylindricalNearEnds_continuationHomotopy {ω : SymplecticForm V}
+    {J₀ : AlmostComplexStructure V} (h₀ : ω.Compatible J₀)
+    {Jm Jp : ℝ → V → AlmostComplexStructure V} {hJmt : ∀ t x, ω.Tames (Jm t x)}
+    {hJpt : ∀ t x, ω.Tames (Jp t x)}
+    (hJm : ContDiff ℝ 1 fun p : ℝ × V ↦ (Jm p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hJp : ContDiff ℝ 1 fun p : ℝ × V ↦ (Jp p.1 p.2).toLinearMap.toContinuousLinearMap)
+    {Hm Hp : ℝ → V → ℝ} (hHm : ContDiff ℝ 2 (Function.uncurry Hm))
+    (hHp : ContDiff ℝ 2 (Function.uncurry Hp)) (u : ℝ × ℝ → V) :
+    IsCylindricalNearEnds (continuationAlmostComplex h₀ Jm Jp hJmt hJpt) (fun _ _ ↦ 0)
+      (continuationHomotopy Hm Hp) Jm Jp Hm Hp 1 u where
+  almostComplex_eq_of_le_neg _ hz :=
+    funext (continuationAlmostComplex_of_nonpos h₀ (hz.trans (by norm_num)))
+  almostComplex_eq_of_le _ hz := funext (continuationAlmostComplex_of_one_le h₀ hz)
+  hamiltonianS_eq_zero _ _ := rfl
+  hamiltonianT_eq_of_le_neg _ hz := funext (continuationHomotopy_of_nonpos (hz.trans (by norm_num)))
+  hamiltonianT_eq_of_le _ hz := funext (continuationHomotopy_of_one_le hz)
+  contDiffAt_almostComplex _ := (contDiff_continuationAlmostComplex h₀ hJm hJp).contDiffAt
+  contDiffAt_hamiltonianS _ := contDiffAt_const
+  contDiffAt_hamiltonianT _ := (contDiff_uncurry_continuationHomotopy hHm hHp).contDiffAt
+
+end TauCeti.Floer
 
 namespace TauCeti.SymplecticForm
 
@@ -101,13 +131,7 @@ theorem exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_continua
             (fun _ _ ↦ 0) (continuationHomotopy Hm Hp) u ξ z‖ ^ 2) +
             ∫ z in Icc (-T) T ×ˢ Icc (0 : ℝ) 1, ‖ξ z‖ ^ 2) :=
   ω.exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_add_of_cylindrical
-    (Ks := fun _ _ ↦ 0) (R := 1)
-    (fun _ hz ↦ funext (continuationAlmostComplex_of_nonpos h₀ (by linarith)))
-    (fun _ hz ↦ funext (continuationAlmostComplex_of_one_le h₀ hz)) (fun _ _ ↦ rfl)
-    (fun _ hz ↦ funext (continuationHomotopy_of_nonpos (by linarith)))
-    (fun _ hz ↦ funext (continuationHomotopy_of_one_le hz))
-    (fun _ ↦ (contDiff_continuationAlmostComplex h₀ hJm hJp).contDiffAt)
-    (fun _ ↦ contDiffAt_const) (fun _ ↦ (contDiff_uncurry_continuationHomotopy hHm hHp).contDiffAt)
-    hu hJu hXm hHm hxm hndm hJm hJxm huxm hδm hXp hHp hxp hndp hJp hJxp huxp hδp
+    (isCylindricalNearEnds_continuationHomotopy h₀ hJm hJp hHm hHp u) hu hJu hXm hHm hxm hndm hJm
+    hJxm huxm hδm hXp hHp hxp hndp hJp hJxp huxp hδp
 
 end TauCeti.SymplecticForm

@@ -52,7 +52,7 @@ private theorem cor_natural_zero {M N : Rep k G} (f : M ⟶ N) (H : Subgroup G) 
       Representation.coe_relNormInvariants, Representation.relNorm_apply]
     erw [LinearMap.codRestrict_apply, LinearMap.comp_apply, Submodule.subtype_apply,
       Representation.coe_relNormInvariants, Representation.relNorm_apply, map_sum]
-    exact Finset.sum_congr rfl fun q _ ↦ (Rep.hom_comm_apply f q.out x.1).symm
+    exact Finset.sum_congr rfl fun q _ ↦ (Rep.hom_comm_apply f q.out x.val).symm
 
 /-- Naturality of Tate corestriction in positive degrees, via ordinary group cohomology. -/
 private theorem cor_natural_pos {M N : Rep k G} (f : M ⟶ N) (H : Subgroup G) (n : ℕ) :

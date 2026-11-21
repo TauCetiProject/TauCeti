@@ -213,7 +213,7 @@ theorem SmoothForm.isContactForm_iff_isContactDistribution_kerDistribution [ENat
     [IsManifold I (n + 1) M] {α : SmoothForm I M ℝ 1} :
     α.IsContactForm ↔ IsContactDistribution I n α.kerDistribution := by
   -- The kernel of `α` at `x` is all of `T_x M` exactly when `α_x = 0`.
-  have htop (x : M) : α.kerDistribution x ≠ ⊤ ↔ α.1 x ≠ 0 := by
+  have htop (x : M) : α.kerDistribution x ≠ ⊤ ↔ α.val x ≠ 0 := by
     rw [SmoothForm.kerDistribution_eq_ker, Ne, RoughForm.ker_eq_top_iff]
   rw [isContactForm_iff_forall_bijective_distributionLeviForm]
   exact ⟨fun h ↦ ⟨isContMDiffDistribution_kerDistribution fun x ↦ (h x).1,
@@ -236,9 +236,9 @@ def SmoothForm.IsContactForm.kerSymplecticForm {α : SmoothForm I M ℝ 1} (hα 
       (α.kerDistribution x) (α.kerDistribution x)
   have hAlt : B.IsAlt := fun v ↦ by
     rw [LinearMap.domRestrict₁₂_apply]
-    exact (SmoothForm.isAlt_bilinFormAt _ x).self_eq_zero v.1
+    exact (SmoothForm.isAlt_bilinFormAt _ x).self_eq_zero v.val
   have hsep : B.SeparatingLeft := fun v hv ↦ Subtype.ext <|
-    (SmoothForm.isContactForm_iff.1 hα x).2 v.1 (SmoothForm.mem_kerDistribution.1 v.2)
+    (SmoothForm.isContactForm_iff.1 hα x).2 v.val (SmoothForm.mem_kerDistribution.1 v.property)
       fun w hw ↦ by
         have h := hv ⟨w, SmoothForm.mem_kerDistribution.2 hw⟩
         rwa [LinearMap.domRestrict₁₂_apply, ← SmoothForm.mextDeriv_eq_bilinFormAt] at h
@@ -252,7 +252,7 @@ omit [CompleteSpace E] [FiniteDimensional ℝ E] in
 @[simp]
 theorem SmoothForm.IsContactForm.kerSymplecticForm_apply {α : SmoothForm I M ℝ 1}
     (hα : α.IsContactForm) (x : M) (v w : α.kerDistribution x) :
-    hα.kerSymplecticForm x v w = mextDeriv α.1 x ![v.1, w.1] := by
+    hα.kerSymplecticForm x v w = mextDeriv α.val x ![v.val, w.val] := by
   unfold SmoothForm.IsContactForm.kerSymplecticForm
   dsimp only
   rw [LinearMap.domRestrict₁₂_apply, ← SmoothForm.mextDeriv_eq_bilinFormAt]

@@ -67,7 +67,7 @@ theorem exists_finset_forall_one_lt_re_apply {S : Set (WeakDual 𝕜 E)} (hS : I
       exact this
   refine ⟨u.map (.subtype _), fun x hx ↦ ?_, fun f hf ↦ ?_⟩
   · obtain ⟨x, -, rfl⟩ := Finset.mem_map.1 hx
-    exact mem_closedBall_zero_iff.1 x.2
+    exact mem_closedBall_zero_iff.1 x.property
   · have := Set.disjoint_left.1 hu hf
     simp only [mem_iInter, mem_ofPred_eq, not_forall, not_le] at this
     obtain ⟨x, hxu, hx⟩ := this
@@ -223,7 +223,7 @@ theorem exists_forall_one_le_re_apply [CompleteSpace E] {C : Set (WeakDual 𝕜 
   obtain ⟨D, hD, hDC⟩ := exists_seq_finset_forall_one_lt_re_apply hCR hr hCr
   -- Enumerate the points of all the `D n` as a family over a discrete index type.
   let v (i : Σ n, Fin (D n).card) : E := (D i.1).equivFin.symm i.2
-  have hvD (i : Σ n, Fin (D n).card) : v i ∈ D i.1 := ((D i.1).equivFin.symm i.2).2
+  have hvD (i : Σ n, Fin (D n).card) : v i ∈ D i.1 := ((D i.1).equivFin.symm i.2).property
   refine hC.exists_forall_one_le_re_apply_of_tendsto (v := v) ?_ fun f hfC ↦ ?_
   · -- Only the finitely many points of `D 0, …, D (N - 1)` can have norm at least `ε`.
     refine Metric.tendsto_nhds.2 fun ε hε ↦ eventually_cofinite.2 ?_
