@@ -12,13 +12,15 @@ public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.FunctionFiel
 # Arithmetic generation by Fricke functions
 
 For any subfield `K` of `ℂ` containing the `N`-th roots of unity, the functions on `X(N)`
-with Laurent coefficients in `K` are precisely `K(j, f_a : a ≠ 0)`. In particular the
+whose Laurent expansion at infinity, in `q = exp(2πiτ/N)`, has coefficients in `K`
+are precisely `K(j, f_a : a ≠ 0)`. In particular the
 arithmetic modular function field is `F_N = ℚ(ζ_N)(j, f_a : a ≠ 0)`.
 
 The complex generation theorem and linear disjointness from the constants descend the
-construction to `K`. Since the modular action fixes constants and `j` and permutes the
-Fricke functions, it preserves this arithmetic field. This gives the fractional-linear
-part of the finite-level arithmetic action, including level two.
+construction to `K`. This adapts the rank comparison in
+`TauCeti.rank_adjoin_modularFunctionJ_le`, comparing ranks over the full Fricke generator
+field rather than over `K(j)`. The resulting arithmetic action is constructed in
+`TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.FunctionField.Action`.
 
 ## References
 
@@ -36,8 +38,9 @@ namespace TauCeti
 
 variable {N : ℕ} [NeZero N]
 
-/-- Fricke functions and `j` generate all the level-`N` functions with coefficients in `K`,
-provided `K` contains the `N`-th roots of unity. -/
+/-- Fricke functions and `j` generate all the level-`N` functions whose Laurent expansion
+at infinity, in `q = exp(2πiτ/N)`, has coefficients in `K`, provided `K` contains the
+`N`-th roots of unity. -/
 theorem adjoin_insert_image_frickeMeromorphicFunction_eq_coeffIntermediateField
     {K : Subfield ℂ} (hK : ∀ ζ : ℂ, ζ ^ N = 1 → ζ ∈ K) :
     IntermediateField.adjoin K (insert (Subgroup.compactifiedQuotientComap
@@ -63,13 +66,10 @@ theorem adjoin_insert_image_frickeMeromorphicFunction_eq_coeffIntermediateField
     -- The tower map from C has image A; A contains the complex generators S.
     have hrange : Set.range (algebraMap C
         (MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient)) = A := by
-      rw [← hmap, IntermediateField.coe_map]
-      ext x
-      constructor
-      · rintro ⟨c, rfl⟩
-        exact ⟨c, c.property, rfl⟩
-      · rintro ⟨c, hc, rfl⟩
-        exact ⟨⟨c, hc⟩, rfl⟩
+      rw [IsScalarTower.algebraMap_eq C B
+        (MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient)]
+      change Set.range (B.val.comp C.val) = A
+      rw [← AlgHom.coe_fieldRange, IntermediateField.fieldRange_comp_val, hmap]
     rw [hrange, IntermediateField.adjoin_adjoin_right]
     exact adjoin_insert_image_frickeMeromorphicFunction_eq_top
   have hrank := (linearDisjoint_fieldRange_coeffIntermediateField
@@ -95,131 +95,25 @@ theorem modularFunctionField_eq_closure :
     ← adjoin_insert_image_frickeMeromorphicFunction_eq_coeffIntermediateField
       (fun _ hζ ↦ Subfield.subset_closure hζ), IntermediateField.adjoin_toSubfield]
 
-/-- Fractional-linear substitutions preserve the coefficient field when it contains the
-`N`-th roots of unity. -/
-theorem unop_modularFunctionActionZMod_mem_coeffSubfield {K : Subfield ℂ}
-    (hK : ∀ ζ : ℂ, ζ ^ N = 1 → ζ ∈ K) (g : SL(2, ZMod N))
-    {F : MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient}
-    (hF : F ∈ coeffSubfield (cuspDatumInftyGamma N) K) :
-    unop (modularFunctionActionZMod N g) F ∈ coeffSubfield (cuspDatumInftyGamma N) K := by
-  let B := coeffIntermediateField (cuspDatumInftyGamma N) K
-  let σ := (unop (modularFunctionActionZMod N g)).restrictScalars K
-  have hle : B ≤ B.comap σ.toAlgHom := by
-    conv_lhs =>
-      unfold B
-      rw [← adjoin_insert_image_frickeMeromorphicFunction_eq_coeffIntermediateField hK]
-    refine IntermediateField.adjoin_le_iff.mpr ?_
-    rintro F (rfl | ⟨a, _, rfl⟩)
-    · simp only [SetLike.mem_coe, IntermediateField.mem_comap, σ, AlgEquiv.coe_toAlgHom,
-        AlgEquiv.restrictScalars_apply, unop_modularFunctionActionZMod_compactifiedQuotientComap]
-      simpa only [B, coe_modularFunctionJ, SetLike.mem_coe] using (modularFunctionJ N K).property
-    · simp only [SetLike.mem_coe, IntermediateField.mem_comap, σ, AlgEquiv.coe_toAlgHom,
-        AlgEquiv.restrictScalars_apply, unop_modularFunctionActionZMod_frickeMeromorphicFunction]
-      exact mem_coeffIntermediateField.mpr ((mem_coeffSubfield _).mpr
-        (laurentQExpansion_frickeMeromorphicFunction_coeff_mem hK _))
-  exact mem_coeffIntermediateField.mp (hle (mem_coeffIntermediateField.mpr hF))
-
-/-- Preservation of a cyclotomic coefficient field is an equivalence under the modular
-substitutions. -/
-@[simp]
-theorem unop_modularFunctionActionZMod_mem_coeffSubfield_iff {K : Subfield ℂ}
-    (hK : ∀ ζ : ℂ, ζ ^ N = 1 → ζ ∈ K) (g : SL(2, ZMod N))
-    {F : MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient} :
-    unop (modularFunctionActionZMod N g) F ∈ coeffSubfield (cuspDatumInftyGamma N) K ↔
-      F ∈ coeffSubfield (cuspDatumInftyGamma N) K := by
-  refine ⟨fun hF ↦ ?_, unop_modularFunctionActionZMod_mem_coeffSubfield hK g⟩
-  have h := unop_modularFunctionActionZMod_mem_coeffSubfield hK g⁻¹ hF
-  simpa only [map_inv, unop_inv, AlgEquiv.coe_inv, AlgEquiv.symm_apply_apply] using h
-
-/-- The finite modular action preserves the arithmetic modular function field. -/
-@[simp]
-theorem unop_modularFunctionActionZMod_mem_modularFunctionField_iff (g : SL(2, ZMod N))
-    {F : MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient} :
-    unop (modularFunctionActionZMod N g) F ∈ modularFunctionField N ↔
-      F ∈ modularFunctionField N := by
-  rw [modularFunctionField_def]
-  exact unop_modularFunctionActionZMod_mem_coeffSubfield_iff
-    (fun _ hζ ↦ Subfield.subset_closure hζ) g
-
-variable (N) in
-/-- The fractional-linear right action of `SL(2, ℤ/Nℤ)` on the arithmetic modular function
-field `F_N`, obtained by restricting its action on the complex function field. -/
-def modularFunctionFieldActionZMod :
-    SL(2, ZMod N) →* (modularFunctionField N ≃+* modularFunctionField N)ᵐᵒᵖ where
-  toFun g := op ((unop (modularFunctionActionZMod N g)).toRingEquiv.restrict
-    (modularFunctionField N) (modularFunctionField N)
-    (fun _ ↦ (unop_modularFunctionActionZMod_mem_modularFunctionField_iff g).symm))
-  map_one' := by
-    apply unop_injective
-    apply RingEquiv.ext
-    intro F
-    apply Subtype.ext
-    simp
-  map_mul' g h := by
-    apply unop_injective
-    apply RingEquiv.ext
-    intro F
-    apply Subtype.ext
-    simp
-
-/-- The arithmetic modular action agrees with the complex action on underlying functions. -/
-@[simp]
-theorem coe_unop_modularFunctionFieldActionZMod_apply (g : SL(2, ZMod N))
-    (F : modularFunctionField N) :
-    (unop (modularFunctionFieldActionZMod N g) F :
-      MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient) =
-        unop (modularFunctionActionZMod N g) F :=
-  (rfl)
-
-/-- Opposite scalar signs induce the same arithmetic modular substitution. -/
-@[simp]
-theorem modularFunctionFieldActionZMod_neg (g : SL(2, ZMod N)) :
-    modularFunctionFieldActionZMod N (-g) = modularFunctionFieldActionZMod N g := by
-  apply unop_injective
-  apply RingEquiv.ext
-  intro F
-  apply Subtype.ext
-  simp
-
-/-- The arithmetic action has right-action multiplication order. -/
-theorem unop_modularFunctionFieldActionZMod_mul_apply (g h : SL(2, ZMod N))
-    (F : modularFunctionField N) :
-    unop (modularFunctionFieldActionZMod N (g * h)) F =
-      unop (modularFunctionFieldActionZMod N h) (unop (modularFunctionFieldActionZMod N g) F) := by
-  rw [map_mul, unop_mul, RingAut.mul_apply]
-
-/-- The kernel of the arithmetic modular action consists exactly of the two scalar signs.
-This statement also applies when the two signs coincide. -/
-theorem modularFunctionFieldActionZMod_eq_one_iff (g : SL(2, ZMod N)) :
-    modularFunctionFieldActionZMod N g = 1 ↔ g = 1 ∨ g = -1 := by
-  constructor
-  · intro hg
-    refine (forall_unop_modularFunctionActionZMod_frickeMeromorphicFunction_eq_iff g).mp ?_
-    intro a _
-    have h := congrArg (fun e : (modularFunctionField N ≃+* modularFunctionField N)ᵐᵒᵖ ↦
-      (unop e (⟨frickeMeromorphicFunction a,
-        frickeMeromorphicFunction_mem_modularFunctionField a⟩ : modularFunctionField N) :
-        MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient)) hg
-    simpa using h
-  · rintro (rfl | rfl)
-    · exact map_one _
-    · apply unop_injective
-      apply RingEquiv.ext
-      intro F
-      apply Subtype.ext
-      simp
-
-/-- At level two the arithmetic modular action is faithful, since the two signs coincide. -/
-theorem modularFunctionFieldActionZMod_two_injective :
-    Function.Injective (modularFunctionFieldActionZMod 2) := by
-  apply (MonoidHom.ker_eq_bot_iff _).mp
-  apply (Subgroup.eq_bot_iff_forall _).mpr
-  intro g hg
-  rcases (modularFunctionFieldActionZMod_eq_one_iff g).mp hg with h | h
-  · exact h
-  · have hneg : (-1 : SL(2, ZMod 2)) = 1 := by
-      ext i j
-      simp [ZMod.neg_eq_self_mod_two]
-    exact h.trans hneg
+/-- Inside `F_N`, the cyclotomic constants, `j`, and the nonzero-index Fricke functions
+generate the whole field. Together with `RingHom.eq_of_eqOn_of_field_closure_eq_top`, this
+gives extensionality for ring homomorphisms out of `F_N`. -/
+theorem modularFunctionField_closure_eq_top :
+    Subfield.closure
+      (Set.range (fun c : Subfield.closure {z : ℂ | z ^ N = 1} ↦
+        (⟨algebraMap ℂ _ c, algebraMap_mem_modularFunctionField.mpr c.property⟩ :
+          modularFunctionField N)) ∪
+        insert ⟨Subgroup.compactifiedQuotientComap
+          (Gamma N).map_sl2zToPSL2R_le_range_psl2zToPSL2R ModularGroup.jMeromorphicFunction,
+            compactifiedQuotientComap_jMeromorphicFunction_mem_modularFunctionField⟩
+          ((fun a : Fin 2 → ZMod N ↦
+            (⟨frickeMeromorphicFunction a, frickeMeromorphicFunction_mem_modularFunctionField a⟩ :
+              modularFunctionField N)) '' {a | a ≠ 0})) = ⊤ := by
+  apply Subfield.map_injective (f := (modularFunctionField N).subtype)
+  rw [RingHom.map_field_closure, Subfield.map_top, Subfield.fieldRange_subtype]
+  conv_rhs => rw [modularFunctionField_eq_closure]
+  congr 1
+  simp only [Set.image_union, ← Set.range_comp, Set.image_insert_eq, Set.image_image]
+  rfl
 
 end TauCeti
