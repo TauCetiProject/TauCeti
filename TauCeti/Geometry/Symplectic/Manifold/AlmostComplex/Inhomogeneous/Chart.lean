@@ -31,6 +31,11 @@ So the equation tested on `∂ₛ` alone loses no information.
 * `TauCeti.InhomogeneousTerm.chartTerm`: an inhomogeneous term read in charts, with its
   interaction with the module operations, with regularity downgrades, with replacing the
   structures by equal ones and with identity charts.
+* `TauCeti.InhomogeneousTerm.chartTermExtend`: an inhomogeneous term read in an extended chart
+  `φ.extend IQ` of a domain modelled on `ℂ`, possibly with corners such as a Riemann surface with
+  boundary, with the same API as `chartTerm`;
+  `TauCeti.InhomogeneousTerm.chartTermExtend_apply_eq_chartTerm_apply` compares it with
+  `chartTerm` at interior points of the model range.
 * `TauCeti.InhomogeneousTerm.chartTerm_apply_eq_zero_iff`: the term read in charts vanishes at a
   point exactly when the term vanishes on `∂ₛ` there.
 * `TauCeti.InhomogeneousTerm.tangentHom_eq_zero_iff_apply_eq_zero`: over a two-dimensional domain,
@@ -48,7 +53,7 @@ public section
 
 noncomputable section
 
-open scoped Manifold ContDiff
+open scoped Manifold ContDiff Topology
 
 namespace TauCeti
 
@@ -199,6 +204,155 @@ theorem tangentHom_eq_zero_iff_apply_one_eq_zero {HX X : Type*} [TopologicalSpac
     (q : X × M) : ν.val.tangentHom q = 0 ↔ ν.val.tangentHom q (1 : ℂ) = 0 :=
   ν.tangentHom_eq_zero_iff_apply_eq_zero Complex.finrank_real_complex q
     (one_ne_zero : (1 : ℂ) ≠ 0)
+
+/-! ### Extended charts of domains with corners -/
+
+section Extend
+
+variable {HQ Q : Type*} [TopologicalSpace HQ] {IQ : ModelWithCorners ℝ ℂ HQ} [TopologicalSpace Q]
+  [ChartedSpace HQ Q] [IsManifold IQ ∞ Q] {jQ : ContMDiffAlmostComplexStructure IQ n Q}
+  {JQ : ContMDiffAlmostComplexStructureFamily I M IQ Q n}
+
+/-- An inhomogeneous term read in an extended chart `φ.extend IQ` of a domain `Q` modelled on `ℂ`,
+possibly with corners, and a chart `ψ` of `M` with values in a normed space `G`: at `(z, v)`,
+twice the value of `ν((φ.extend IQ)⁻¹ z, ψ⁻¹ v)` on the coordinate vector `∂ₛ`, the image of `1`
+under the derivative of `(φ.extend IQ)⁻¹` within the range of the model, pushed forward along `ψ`.
+At points of the interior of the range it is `chartTerm` for any chart into `ℂ` with the same
+inverse near the point (`chartTermExtend_apply_eq_chartTerm_apply`). -/
+def chartTermExtend (ν : InhomogeneousTerm jQ JQ) (φ : OpenPartialHomeomorph Q HQ)
+    (ψ : OpenPartialHomeomorph M G) (z : ℂ) (v : G) : G :=
+  (2 : ℝ) • mvfderiv I ψ (ψ.symm v)
+    (ν.val.tangentHom ((φ.extend IQ).symm z, ψ.symm v)
+      (mfderivWithin 𝓘(ℝ, ℂ) IQ (φ.extend IQ).symm (Set.range IQ) z (1 : ℂ)))
+
+/-- Evaluate an inhomogeneous term read in an extended chart. -/
+theorem chartTermExtend_apply (ν : InhomogeneousTerm jQ JQ) (φ : OpenPartialHomeomorph Q HQ)
+    (ψ : OpenPartialHomeomorph M G) (z : ℂ) (v : G) :
+    ν.chartTermExtend φ ψ z v = (2 : ℝ) • mvfderiv I ψ (ψ.symm v)
+      (ν.val.tangentHom ((φ.extend IQ).symm z, ψ.symm v)
+        (mfderivWithin 𝓘(ℝ, ℂ) IQ (φ.extend IQ).symm (Set.range IQ) z (1 : ℂ))) :=
+  (rfl)
+
+/-- The zero inhomogeneous term reads as zero in all extended charts. -/
+@[simp]
+theorem chartTermExtend_zero (φ : OpenPartialHomeomorph Q HQ) (ψ : OpenPartialHomeomorph M G) :
+    (0 : InhomogeneousTerm jQ JQ).chartTermExtend φ ψ = fun _ _ ↦ 0 := by
+  funext z v
+  rw [chartTermExtend_apply]
+  -- Name the domain point, so that simp does not unfold the extended chart in the tangent spaces.
+  generalize mfderivWithin 𝓘(ℝ, ℂ) IQ (φ.extend IQ).symm (Set.range IQ) z (1 : ℂ) = w
+  generalize (φ.extend IQ).symm z = x at w ⊢
+  simp [-mvfderiv_apply_eq_mfderiv_apply]
+
+/-- Reading in extended charts is additive in the inhomogeneous term. -/
+@[simp]
+theorem chartTermExtend_add (ν μ : InhomogeneousTerm jQ JQ) (φ : OpenPartialHomeomorph Q HQ)
+    (ψ : OpenPartialHomeomorph M G) :
+    (ν + μ).chartTermExtend φ ψ = ν.chartTermExtend φ ψ + μ.chartTermExtend φ ψ := by
+  funext z v
+  simp only [Pi.add_apply, chartTermExtend_apply]
+  -- Name the domain point, so that simp does not unfold the extended chart in the tangent spaces.
+  generalize mfderivWithin 𝓘(ℝ, ℂ) IQ (φ.extend IQ).symm (Set.range IQ) z (1 : ℂ) = w
+  generalize (φ.extend IQ).symm z = x at w ⊢
+  simp [-mvfderiv_apply_eq_mfderiv_apply]
+
+/-- Reading in extended charts commutes with real scalar multiplication of the inhomogeneous
+term. -/
+@[simp]
+theorem chartTermExtend_smul (c : ℝ) (ν : InhomogeneousTerm jQ JQ)
+    (φ : OpenPartialHomeomorph Q HQ) (ψ : OpenPartialHomeomorph M G) :
+    (c • ν).chartTermExtend φ ψ = c • ν.chartTermExtend φ ψ := by
+  funext z v
+  simp only [Pi.smul_apply, chartTermExtend_apply]
+  -- Name the domain point, so that simp does not unfold the extended chart in the tangent spaces.
+  generalize mfderivWithin 𝓘(ℝ, ℂ) IQ (φ.extend IQ).symm (Set.range IQ) z (1 : ℂ) = w
+  generalize (φ.extend IQ).symm z = x at w ⊢
+  simp [-mvfderiv_apply_eq_mfderiv_apply, smul_smul, mul_comm]
+
+/-- Reading in extended charts commutes with negation of the inhomogeneous term. -/
+@[simp]
+theorem chartTermExtend_neg (ν : InhomogeneousTerm jQ JQ) (φ : OpenPartialHomeomorph Q HQ)
+    (ψ : OpenPartialHomeomorph M G) :
+    (-ν).chartTermExtend φ ψ = -ν.chartTermExtend φ ψ := by
+  rw [← neg_one_smul ℝ ν, chartTermExtend_smul, neg_one_smul]
+
+/-- Reading in extended charts commutes with subtraction of inhomogeneous terms. -/
+@[simp]
+theorem chartTermExtend_sub (ν μ : InhomogeneousTerm jQ JQ) (φ : OpenPartialHomeomorph Q HQ)
+    (ψ : OpenPartialHomeomorph M G) :
+    (ν - μ).chartTermExtend φ ψ = ν.chartTermExtend φ ψ - μ.chartTermExtend φ ψ := by
+  rw [sub_eq_add_neg, chartTermExtend_add, chartTermExtend_neg, sub_eq_add_neg]
+
+/-- Forgetting regularity does not change an inhomogeneous term read in extended charts. -/
+@[simp]
+theorem chartTermExtend_ofLE (ν : InhomogeneousTerm jQ JQ) (hmn : m ≤ n)
+    (φ : OpenPartialHomeomorph Q HQ) (ψ : OpenPartialHomeomorph M G) :
+    (ν.ofLE hmn).chartTermExtend φ ψ = ν.chartTermExtend φ ψ := by
+  funext z v
+  simp [chartTermExtend_apply]
+
+/-- Replacing the structures of an inhomogeneous term by equal ones does not change it read in
+extended charts. -/
+@[simp]
+theorem chartTermExtend_ofEq (ν : InhomogeneousTerm jQ JQ)
+    {jQ' : ContMDiffAlmostComplexStructure IQ n Q}
+    {JQ' : ContMDiffAlmostComplexStructureFamily I M IQ Q n} (hj : jQ = jQ') (hJ : JQ = JQ')
+    (φ : OpenPartialHomeomorph Q HQ) (ψ : OpenPartialHomeomorph M G) :
+    (ν.ofEq hj hJ).chartTermExtend φ ψ = ν.chartTermExtend φ ψ := by
+  funext z v
+  rw [chartTermExtend_apply, chartTermExtend_apply, ofEq_val]
+
+/-- On a normed space, read in the identity chart, an inhomogeneous term is twice its value on
+`∂ₛ` at the domain point `(φ.extend IQ)⁻¹ z`. -/
+@[simp]
+theorem chartTermExtend_refl {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {JQ : ContMDiffAlmostComplexStructureFamily 𝓘(ℝ, F) F IQ Q n} (ν : InhomogeneousTerm jQ JQ)
+    (φ : OpenPartialHomeomorph Q HQ) :
+    ν.chartTermExtend φ (OpenPartialHomeomorph.refl F) = fun z v ↦
+      (2 : ℝ) • (ν.val.tangentHom ((φ.extend IQ).symm z, v)
+        (mfderivWithin 𝓘(ℝ, ℂ) IQ (φ.extend IQ).symm (Set.range IQ) z (1 : ℂ)) : F) := by
+  funext z v
+  rw [chartTermExtend_apply]
+  generalize mfderivWithin 𝓘(ℝ, ℂ) IQ (φ.extend IQ).symm (Set.range IQ) z (1 : ℂ) = w
+  rw [OpenPartialHomeomorph.refl_symm, OpenPartialHomeomorph.refl_apply, id_eq,
+    mvfderiv_eq_fderiv_apply, fderiv_id]
+  -- The identity of `F` fixes the tangent vector, read as a vector of `F`.
+  rfl
+
+/-- An inhomogeneous term read in extended charts vanishes at the value `ψ y` exactly when the
+term at `((φ.extend IQ)⁻¹ z, y)` vanishes on `∂ₛ`, for a chart `ψ` differentiable at `y` with
+inverse differentiable at `ψ y`. -/
+theorem chartTermExtend_apply_eq_zero_iff (ν : InhomogeneousTerm jQ JQ)
+    (φ : OpenPartialHomeomorph Q HQ) {ψ : OpenPartialHomeomorph M G} {y : M} (hy : y ∈ ψ.source)
+    (hψ : MDifferentiableAt I 𝓘(ℝ, G) ψ y) (hψs : MDifferentiableAt 𝓘(ℝ, G) I ψ.symm (ψ y))
+    (z : ℂ) :
+    ν.chartTermExtend φ ψ z (ψ y) = 0 ↔
+      ν.val.tangentHom ((φ.extend IQ).symm z, y)
+        (mfderivWithin 𝓘(ℝ, ℂ) IQ (φ.extend IQ).symm (Set.range IQ) z (1 : ℂ)) = 0 := by
+  -- The chart derivative is injective, with left inverse the derivative of `ψ.symm`.
+  have hinv := ψ.mfderiv_symm_apply_mfderiv_apply hy hψ hψs
+  rw [chartTermExtend_apply, ψ.left_inv hy]
+  generalize ν.val.tangentHom ((φ.extend IQ).symm z, y)
+    (mfderivWithin 𝓘(ℝ, ℂ) IQ (φ.extend IQ).symm (Set.range IQ) z (1 : ℂ)) = w
+  rw [smul_eq_zero, or_iff_right two_ne_zero, mvfderiv_apply_eq_mfderiv_apply]
+  refine ⟨fun h ↦ ?_, fun h ↦ by rw [h]; exact map_zero _⟩
+  rw [← hinv w, h]
+  exact map_zero _
+
+/-- **Comparison at interior points.** At a point `z` in the interior of the range of the model,
+an inhomogeneous term read in the extended chart `φ.extend IQ` is the term read by `chartTerm` in
+any chart `φ'` into `ℂ` whose inverse agrees with `(φ.extend IQ)⁻¹` near `z`. -/
+theorem chartTermExtend_apply_eq_chartTerm_apply (ν : InhomogeneousTerm jQ JQ)
+    (φ : OpenPartialHomeomorph Q HQ) (φ' : OpenPartialHomeomorph Q ℂ)
+    (ψ : OpenPartialHomeomorph M G) {z : ℂ} (hz : Set.range IQ ∈ 𝓝 z)
+    (hφ : φ'.symm =ᶠ[𝓝 z] (φ.extend IQ).symm) (v : G) :
+    ν.chartTermExtend φ ψ z v = ν.chartTerm φ' ψ z v := by
+  rw [chartTermExtend_apply, chartTerm_apply, mfderivWithin_of_mem_nhds hz, hφ.mfderiv_eq,
+    hφ.eq_of_nhds]
+  -- The cast between tangent spaces at the same point is the identity.
+  rfl
+
+end Extend
 
 end InhomogeneousTerm
 

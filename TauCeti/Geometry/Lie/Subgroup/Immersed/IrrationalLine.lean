@@ -231,7 +231,7 @@ private theorem coe_lift (x : C) (hx : x ∈ circleChart.source) : ((lift x : �
 private def domain (θ : ℝ) : Opens (subgroup θ) :=
   ⟨{x | x.val.toAdd.1 ∈ circleChart.source ∧ x.val.toAdd.2 ∈ circleChart.source}, by
     have hc : Continuous (fun x : subgroup θ ↦ x.val.toAdd) :=
-      continuous_toAdd.comp continuous_subtype_val
+      continuous_toAdd.comp continuous_subtypeVal
     exact (circleChart.open_source.preimage hc.fst).inter
       (circleChart.open_source.preimage hc.snd)⟩
 
@@ -248,7 +248,7 @@ private theorem continuousOn_lift : ContinuousOn lift circleChart.source :=
 @[fun_prop]
 private theorem continuous_domainCoord (θ : ℝ) :
     Continuous (fun x : domain θ ↦ x.val.val.toAdd) :=
-  continuous_toAdd.comp (continuous_subtype_val.comp continuous_subtype_val)
+  continuous_toAdd.comp (continuous_subtypeVal.comp continuous_subtypeVal)
 
 @[fun_prop]
 private theorem continuous_firstLift (θ : ℝ) : Continuous (firstLift θ) := by

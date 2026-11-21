@@ -22,8 +22,9 @@ of the multiplicity spaces of a fusion category. Specializing to `tensorPow V 2`
 
 ## Main declarations
 
-* `TauCeti.rightAdjointMate_zero`, `TauCeti.rightAdjointMate_add`, and
-  `TauCeti.rightAdjointMate_sum`: the right adjoint mate is additive;
+* `TauCeti.rightAdjointMate_zero`, `TauCeti.rightAdjointMate_add`,
+  `TauCeti.rightAdjointMate_sum`, and `TauCeti.rightAdjointMate_smul`: the right adjoint mate is
+  additive, and `R`-linear in an `R`-linear monoidal category;
 * `TauCeti.tensorLeftHomLinearEquiv` and `TauCeti.tensorRightHomLinearEquiv`: Frobenius
   reciprocity as `k`-linear equivalences, and `TauCeti.homTensorPowTwoLinearEquiv` (with
   `TauCeti.homTensorPowTwoLinearEquiv_apply` and `TauCeti.homTensorPowTwoLinearEquiv_symm_apply`):
@@ -61,6 +62,12 @@ theorem rightAdjointMate_sum {ι : Type*} (s : Finset ι) (f : ι → (X ⟶ Y))
     (∑ i ∈ s, f i)ᘁ = ∑ i ∈ s, (f i)ᘁ := by
   simp [rightAdjointMate, sum_whiskerRight, whiskerLeft_sum, Preadditive.comp_sum,
     Preadditive.sum_comp]
+
+/-- The right adjoint mate is `R`-linear in an `R`-linear monoidal category. -/
+@[simp]
+theorem rightAdjointMate_smul {R : Type*} [Semiring R] [Linear R C] [MonoidalLinear R C] (r : R)
+    (f : X ⟶ Y) : (r • f)ᘁ = r • fᘁ := by
+  simp [rightAdjointMate]
 
 end Mate
 

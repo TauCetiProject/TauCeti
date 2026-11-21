@@ -351,7 +351,8 @@ theorem f4RootExponential_intertwines {A : Type*} [CommRing A]
 @[simp] theorem f4ShortRootExponential_zero {A : Type*} [CommRing A]
     [Algebra (ZMod 2) A] (k : Fin 4 ⊕ Fin 4) :
     f4ShortRootExponential (A := A) k 0 = 1 := by
-  simp [f4ShortRootExponential]
+  unfold f4ShortRootExponential
+  simp only [zero_smul, add_zero, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow]
 
 /-- In the scalar-extended canonical basis, the modular root exponential is the existing sparse
 root matrix plus its divided-square term. -/

@@ -9,7 +9,7 @@ public import TauCeti.Analysis.PDE.Parabolic.Holder.CauchyProblem
 import TauCeti.Analysis.Matrix.QuadraticBounds
 
 /-!
-# The initial-data isomorphism of the parabolic Cauchy problem
+# The initial-data and terminal-data isomorphisms of parabolic problems
 
 On `ℝⁿ = EuclideanSpace ℝ ι` and a time slab `ℝⁿ × [0, T]`, let
 
@@ -26,6 +26,11 @@ uniformly over coefficients with a fixed ellipticity constant and a fixed bound 
 norms and over horizons `T ≤ T₀`, and it depends Lipschitz continuously on the coefficients in
 operator norm.
 
+The same holds for the terminal-value problem `P_back u = f`, `u(·, T) = g` of the backward
+operator `P_back u = ∂ₜu + aⁱʲ ∂ᵢ∂ⱼu + bⁱ ∂ᵢu + c u`: the terminal-data map
+`u ↦ (P_back u, u(·, T))` is an isomorphism `C_b^{2+α,1+α/2} ≃ C_b^{α,α/2} × C_b^{2,α}`, and its
+inverse has the same uniform bound and Lipschitz dependence on the coefficients.
+
 ## The argument
 
 The uniform bound is the global Schauder estimate
@@ -33,6 +38,13 @@ The uniform bound is the global Schauder estimate
 identity `e⁻¹ - e'⁻¹ = e⁻¹ (e' - e) e'⁻¹` together with the Lipschitz dependence of `P` on its
 coefficients (`TauCeti.ParabolicC2HolderSpace.norm_euclideanParabolicOperatorL_sub_le`) gives the
 Lipschitz dependence of the solution operator.
+
+The terminal-value problem reduces to a Cauchy problem by time reversal `R (x, s) = (x, T - s)`:
+`u` solves `P_back u = f`, `u(·, T) = g` exactly when `u ∘ R` solves `P_R v = -f ∘ R`,
+`v(·, 0) = g`, where `P_R` is the forward operator with the reversed coefficients `aⁱʲ ∘ R`,
+`bⁱ ∘ R`, `c ∘ R`. Time reversal is an isometry of the solution space and does not increase the
+norms of the coefficients and data, so the bounds for the backward solution operator are those
+for the forward one.
 
 ## Main declarations
 
@@ -46,6 +58,18 @@ All declarations are in the `TauCeti.ParabolicC2HolderSpace` namespace.
 * `exists_norm_euclideanInitialDataCLE_symm_le`: the uniform bound on the solution operators.
 * `exists_norm_euclideanInitialDataCLE_symm_sub_le`: their Lipschitz dependence on the
   coefficients.
+* `euclideanTerminalDataCLE`: the terminal-data isomorphism `u ↦ (P_back u, u(·, T))`, with
+  `euclideanTerminalDataCLE_apply` and the equation and terminal condition for its inverse,
+  `euclideanBackwardParabolicOperatorL_euclideanTerminalDataCLE_symm_apply`,
+  `spatialTrace_euclideanTerminalDataCLE_symm_apply` and
+  `euclideanTerminalDataCLE_symm_apply_slabMk_right`.
+* `timeReverseLIE_euclideanTerminalDataCLE_symm_apply`: the time reversal of the solution of the
+  terminal-value problem solves the reversed Cauchy problem, and
+  `timeReverseLIE_comp_euclideanTerminalDataCLE_symm` states this as an identity of continuous
+  linear maps.
+* `exists_norm_euclideanTerminalDataCLE_symm_le` and
+  `exists_norm_euclideanTerminalDataCLE_symm_sub_le`: the uniform bound on the backward solution
+  operators and their Lipschitz dependence on the coefficients.
 
 ## References
 
@@ -54,6 +78,8 @@ All declarations are in the `TauCeti.ParabolicC2HolderSpace` namespace.
   Chapter 8.
 * D. Gilbarg, N. S. Trudinger, *Elliptic Partial Differential Equations of Second Order*,
   Theorem 5.2 (the method of continuity) and its use in Theorem 6.8 (the elliptic analogue).
+* A. Friedman, *Partial Differential Equations of Parabolic Type*, Chapter 2, Section 4
+  (backward equations and time reversal).
 -/
 
 public section
@@ -242,5 +268,219 @@ theorem exists_norm_euclideanInitialDataCLE_symm_sub_le (hα₀ : 0 < α) (hα�
           (mul_le_mul_of_nonneg_left (ContinuousLinearMap.opNorm_comp_le _ _) (norm_nonneg _))
     _ ≤ C * (24 * δ * C) := by gcongr
     _ = 24 * C ^ 2 * δ := by ring
+
+/-! ### The terminal-value problem -/
+
+/-- **The terminal-data isomorphism.** For `0 < α < 1` and coefficients `aⁱʲ`, `bⁱ`, `c` in
+`C_b^{α,α/2}(ℝⁿ × [0, T])` with `a` uniformly elliptic, `λ ‖ξ‖² ≤ ξᵀ a ξ` with `0 < λ`, the map
+`u ↦ (∂ₜu + aⁱʲ ∂ᵢ∂ⱼu + bⁱ ∂ᵢu + c u, u(·, T))` as an isomorphism of Banach spaces from
+`C_b^{2+α,1+α/2}(ℝⁿ × [0, T])` onto `C_b^{α,α/2}(ℝⁿ × [0, T]) × C_b^{2,α}(ℝⁿ)`. Its inverse is
+the solution operator of the terminal-value problem `P_back u = f`, `u(·, T) = g`. -/
+def euclideanTerminalDataCLE (hα₀ : 0 < α) (hα₁ : α < 1) (hT : (0 : ℝ) < T)
+    (a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
+    (b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
+    (c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
+    (ha : ∃ lam : ℝ, 0 < lam ∧ ∀ p (ξ : EuclideanSpace ℝ ι),
+      lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ) :
+    ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ hT ≃L[ℝ]
+      HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ ×
+        CkHolderSpace 2 α (EuclideanSpace ℝ ι) ℝ :=
+  have hbij := ha.elim fun _ h ↦
+    bijective_euclideanBackwardParabolicOperatorL_prod_spatialTraceL hα₀ hα₁ hT b c h.1 h.2
+  ContinuousLinearEquiv.ofBijective _ (LinearMap.ker_eq_bot.2 hbij.1)
+    (LinearMap.range_eq_top.2 hbij.2)
+
+section TerminalDataCLE
+
+variable {hα₀ : 0 < α} {hα₁ : α < 1} {hT : (0 : ℝ) < T}
+  {a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ}
+  {b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ}
+  {c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ}
+  {ha : ∃ lam : ℝ, 0 < lam ∧ ∀ p (ξ : EuclideanSpace ℝ ι),
+    lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ}
+
+/-- The terminal-data isomorphism sends `u` to its forcing `P_back u` and its terminal trace. -/
+@[simp]
+theorem euclideanTerminalDataCLE_apply
+    (u : ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ hT) :
+    euclideanTerminalDataCLE hα₀ hα₁ hT a b c ha u =
+      (euclideanBackwardParabolicOperatorL hα₁.le a b c u,
+        u.spatialTrace ⟨T, right_mem_Icc.2 hT.le⟩) := by
+  simp [euclideanTerminalDataCLE, spatialTraceL_apply]
+
+/-- The solution of the terminal-value problem with forcing `f` and terminal datum `g` has
+forcing `f`. -/
+@[simp]
+theorem euclideanBackwardParabolicOperatorL_euclideanTerminalDataCLE_symm_apply
+    (d : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ ×
+      CkHolderSpace 2 α (EuclideanSpace ℝ ι) ℝ) :
+    euclideanBackwardParabolicOperatorL hα₁.le a b c
+      ((euclideanTerminalDataCLE hα₀ hα₁ hT a b c ha).symm d) = d.1 := by
+  have h := (euclideanTerminalDataCLE hα₀ hα₁ hT a b c ha).apply_symm_apply d
+  rw [euclideanTerminalDataCLE_apply] at h
+  exact congrArg Prod.fst h
+
+/-- The solution of the terminal-value problem with forcing `f` and terminal datum `g` has
+terminal trace `g`. -/
+@[simp]
+theorem spatialTrace_euclideanTerminalDataCLE_symm_apply
+    (d : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ ×
+      CkHolderSpace 2 α (EuclideanSpace ℝ ι) ℝ) :
+    ((euclideanTerminalDataCLE hα₀ hα₁ hT a b c ha).symm d).spatialTrace
+      ⟨T, right_mem_Icc.2 hT.le⟩ = d.2 := by
+  have h := (euclideanTerminalDataCLE hα₀ hα₁ hT a b c ha).apply_symm_apply d
+  rw [euclideanTerminalDataCLE_apply] at h
+  exact congrArg Prod.snd h
+
+/-- The solution of the terminal-value problem with terminal datum `g` takes the value `g x` at
+`(x, T)`. -/
+@[simp]
+theorem euclideanTerminalDataCLE_symm_apply_slabMk_right
+    (d : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ ×
+      CkHolderSpace 2 α (EuclideanSpace ℝ ι) ℝ) (x : EuclideanSpace ℝ ι) :
+    (euclideanTerminalDataCLE hα₀ hα₁ hT a b c ha).symm d (slabMk x ⟨T, right_mem_Icc.2 hT.le⟩) =
+      d.2 x := by
+  rw [← spatialTrace_apply, spatialTrace_euclideanTerminalDataCLE_symm_apply]
+
+/-- **The terminal-value problem is a reversed Cauchy problem.** With `R (x, s) = (x, T - s)`, the
+time reversal `u ∘ R` of the solution `u` of `P_back u = f`, `u(·, T) = g` is the solution of the
+Cauchy problem `P_R v = -f ∘ R`, `v(·, 0) = g` for the forward operator `P_R` with the reversed
+coefficients `aⁱʲ ∘ R`, `bⁱ ∘ R`, `c ∘ R`. -/
+theorem timeReverseLIE_euclideanTerminalDataCLE_symm_apply
+    (d : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ ×
+      CkHolderSpace 2 α (EuclideanSpace ℝ ι) ℝ) :
+    timeReverseLIE (T : ℝ) (sub_self (T : ℝ)).symm (sub_zero (T : ℝ)).symm
+        ((euclideanTerminalDataCLE hα₀ hα₁ hT a b c ha).symm d) =
+      (euclideanInitialDataCLE hα₀ hα₁ hT
+        (fun i j ↦ HolderSpace.compLipschitzL _ (slabTimeReverse (T : ℝ) (sub_self (T : ℝ)).symm
+          (sub_zero (T : ℝ)).symm).isometry.lipschitzWith (a i j))
+        (fun i ↦ HolderSpace.compLipschitzL _ (slabTimeReverse (T : ℝ) (sub_self (T : ℝ)).symm
+          (sub_zero (T : ℝ)).symm).isometry.lipschitzWith (b i))
+        (HolderSpace.compLipschitzL _ (slabTimeReverse (T : ℝ) (sub_self (T : ℝ)).symm
+          (sub_zero (T : ℝ)).symm).isometry.lipschitzWith c)
+        (ha.imp fun _ h ↦
+          ⟨h.1, mul_norm_sq_le_toQuadraticForm'_compLipschitzL _ h.2⟩)).symm
+        (-HolderSpace.compLipschitzL _ (slabTimeReverse (T : ℝ) (sub_self (T : ℝ)).symm
+          (sub_zero (T : ℝ)).symm).isometry.lipschitzWith d.1, d.2) := by
+  rw [ContinuousLinearEquiv.eq_symm_apply, euclideanInitialDataCLE_apply,
+    euclideanParabolicOperatorL_timeReverseLIE, spatialTrace_timeReverseLIE_left,
+    euclideanBackwardParabolicOperatorL_euclideanTerminalDataCLE_symm_apply,
+    spatialTrace_euclideanTerminalDataCLE_symm_apply]
+
+/-- **The terminal-value solution operator is a reversed Cauchy solution operator.** As continuous
+linear maps, time reversal `u ↦ u ∘ R` after the solution operator of the terminal-value problem
+for `P_back` is the solution operator of the Cauchy problem for the reversed forward operator
+`P_R` after the data reversal `(f, g) ↦ (-f ∘ R, g)`. -/
+theorem timeReverseLIE_comp_euclideanTerminalDataCLE_symm :
+    (timeReverseLIE (T : ℝ) (sub_self (T : ℝ)).symm
+        (sub_zero (T : ℝ)).symm).toLinearIsometry.toContinuousLinearMap.comp
+        (euclideanTerminalDataCLE hα₀ hα₁ hT a b c ha).symm.toContinuousLinearMap =
+      (euclideanInitialDataCLE hα₀ hα₁ hT
+        (fun i j ↦ HolderSpace.compLipschitzL _ (slabTimeReverse (T : ℝ) (sub_self (T : ℝ)).symm
+          (sub_zero (T : ℝ)).symm).isometry.lipschitzWith (a i j))
+        (fun i ↦ HolderSpace.compLipschitzL _ (slabTimeReverse (T : ℝ) (sub_self (T : ℝ)).symm
+          (sub_zero (T : ℝ)).symm).isometry.lipschitzWith (b i))
+        (HolderSpace.compLipschitzL _ (slabTimeReverse (T : ℝ) (sub_self (T : ℝ)).symm
+          (sub_zero (T : ℝ)).symm).isometry.lipschitzWith c)
+        (ha.imp fun _ h ↦ ⟨h.1,
+          mul_norm_sq_le_toQuadraticForm'_compLipschitzL _ h.2⟩)).symm.toContinuousLinearMap.comp
+        ((-HolderSpace.compLipschitzL _ (slabTimeReverse (T : ℝ) (sub_self (T : ℝ)).symm
+          (sub_zero (T : ℝ)).symm).isometry.lipschitzWith).prodMap
+          (ContinuousLinearMap.id ℝ (CkHolderSpace 2 α (EuclideanSpace ℝ ι) ℝ))) :=
+  ContinuousLinearMap.ext timeReverseLIE_euclideanTerminalDataCLE_symm_apply
+
+end TerminalDataCLE
+
+omit [DecidableEq ι] in
+/-- The data reversal `(f, g) ↦ (-f ∘ R, g)` of the reversed Cauchy problem does not increase the
+norm of the data. -/
+private theorem norm_prodMap_neg_compLipschitzL_slabTimeReverse_le :
+    ‖(-HolderSpace.compLipschitzL (α := α) (Y := ℝ) _ (slabTimeReverse (E := EuclideanSpace ℝ ι)
+      (T : ℝ) (sub_self (T : ℝ)).symm (sub_zero (T : ℝ)).symm).isometry.lipschitzWith).prodMap
+        (ContinuousLinearMap.id ℝ (CkHolderSpace 2 α (EuclideanSpace ℝ ι) ℝ))‖ ≤ 1 :=
+  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun d ↦ by
+    simpa [Prod.norm_def] using max_le_max (HolderSpace.norm_compLipschitzL_apply_le _ d.1) le_rfl
+
+/-- **The Schauder estimate for the terminal-value problem.** For `0 < α < 1`, an ellipticity
+constant `λ > 0`, a bound `K` on the Hölder norms of the coefficients and a bound `T₀` on the
+horizon, the solution operators of the terminal-value problems on `ℝⁿ × [0, T]`, `T ≤ T₀`, are
+bounded uniformly: the solution `u` of `P_back u = f`, `u(·, T) = g` satisfies
+`‖u‖_{2+α,par} ≤ C max (‖f‖_{α,par}) (‖g‖_{2,α})`. -/
+theorem exists_norm_euclideanTerminalDataCLE_symm_le (hα₀ : 0 < α) (hα₁ : α < 1) {lam : ℝ}
+    (hlam : 0 < lam) (K T₀ : ℝ≥0) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ (T : ℝ≥0) (hT : (0 : ℝ) < T), T ≤ T₀ →
+      ∀ (a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
+        (b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
+        (c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
+        (ha : ∀ p (ξ : EuclideanSpace ℝ ι),
+          lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ),
+        (∀ i j, ‖a i j‖ ≤ K) → (∀ i, ‖b i‖ ≤ K) → ‖c‖ ≤ K →
+        ‖(euclideanTerminalDataCLE hα₀ hα₁ hT a b c ⟨lam, hlam, ha⟩).symm.toContinuousLinearMap‖ ≤
+          C := by
+  obtain ⟨C, hC, hest⟩ := exists_norm_euclideanInitialDataCLE_symm_le (ι := ι) hα₀ hα₁ hlam K T₀
+  refine ⟨C, hC, fun T hT hTT₀ a b c ha hak hbk hck ↦ ?_⟩
+  have hR := HolderSpace.norm_compLipschitzL_apply_le (α := α) (Y := ℝ)
+    (slabTimeReverse (E := EuclideanSpace ℝ ι) (T : ℝ) (sub_self (T : ℝ)).symm
+      (sub_zero (T : ℝ)).symm).isometry.lipschitzWith
+  -- The Cauchy problem with the reversed coefficients satisfies the same bounds.
+  have h := hest T hT hTT₀ _ _ _
+    (mul_norm_sq_le_toQuadraticForm'_compLipschitzL _ ha)
+    (fun i j ↦ (hR (a i j)).trans (hak i j)) (fun i ↦ (hR (b i)).trans (hbk i))
+    ((hR c).trans hck)
+  rw [← (timeReverseLIE (T : ℝ) (sub_self (T : ℝ)).symm
+      (sub_zero (T : ℝ)).symm).toLinearIsometry.norm_toContinuousLinearMap_comp,
+    timeReverseLIE_comp_euclideanTerminalDataCLE_symm]
+  exact (ContinuousLinearMap.opNorm_comp_le _ _).trans <| (mul_le_mul h
+    norm_prodMap_neg_compLipschitzL_slabTimeReverse_le (norm_nonneg _) hC).trans_eq (mul_one C)
+
+/-- **Lipschitz dependence of the terminal-value solution operator on the coefficients.** Under
+the bounds of `exists_norm_euclideanTerminalDataCLE_symm_le`, the solution operators of two
+terminal-value problems differ in operator norm by at most
+`C (∑ᵢⱼ ‖aⁱʲ - a'ⁱʲ‖ + ∑ᵢ ‖bⁱ - b'ⁱ‖ + ‖c - c'‖)`. -/
+theorem exists_norm_euclideanTerminalDataCLE_symm_sub_le (hα₀ : 0 < α) (hα₁ : α < 1) {lam : ℝ}
+    (hlam : 0 < lam) (K T₀ : ℝ≥0) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ (T : ℝ≥0) (hT : (0 : ℝ) < T), T ≤ T₀ →
+      ∀ (a a' : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
+        (b b' : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
+        (c c' : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
+        (ha : ∀ p (ξ : EuclideanSpace ℝ ι),
+          lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ)
+        (ha' : ∀ p (ξ : EuclideanSpace ℝ ι),
+          lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a' i j p).toQuadraticForm' ξ),
+        (∀ i j, ‖a i j‖ ≤ K) → (∀ i, ‖b i‖ ≤ K) → ‖c‖ ≤ K →
+        (∀ i j, ‖a' i j‖ ≤ K) → (∀ i, ‖b' i‖ ≤ K) → ‖c'‖ ≤ K →
+        ‖(euclideanTerminalDataCLE hα₀ hα₁ hT a b c ⟨lam, hlam, ha⟩).symm.toContinuousLinearMap -
+          (euclideanTerminalDataCLE hα₀ hα₁ hT a' b' c'
+            ⟨lam, hlam, ha'⟩).symm.toContinuousLinearMap‖ ≤
+          C * (∑ i, ∑ j, ‖a i j - a' i j‖ + ∑ i, ‖b i - b' i‖ + ‖c - c'‖) := by
+  obtain ⟨C, hC, hest⟩ :=
+    exists_norm_euclideanInitialDataCLE_symm_sub_le (ι := ι) hα₀ hα₁ hlam K T₀
+  refine ⟨C, hC, fun T hT hTT₀ a a' b b' c c' ha ha' hak hbk hck hak' hbk' hck' ↦ ?_⟩
+  have hR := HolderSpace.norm_compLipschitzL_apply_le (α := α) (Y := ℝ)
+    (slabTimeReverse (E := EuclideanSpace ℝ ι) (T : ℝ) (sub_self (T : ℝ)).symm
+      (sub_zero (T : ℝ)).symm).isometry.lipschitzWith
+  -- The Cauchy problems with the reversed coefficients satisfy the same bounds, and reversing
+  -- does not increase the distance between the coefficients.
+  have h := hest T hT hTT₀ _ _ _ _ _ _
+    (mul_norm_sq_le_toQuadraticForm'_compLipschitzL _ ha)
+    (mul_norm_sq_le_toQuadraticForm'_compLipschitzL _ ha')
+    (fun i j ↦ (hR (a i j)).trans (hak i j)) (fun i ↦ (hR (b i)).trans (hbk i))
+    ((hR c).trans hck) (fun i j ↦ (hR (a' i j)).trans (hak' i j))
+    (fun i ↦ (hR (b' i)).trans (hbk' i)) ((hR c').trans hck')
+  simp only [← map_sub] at h
+  have hδ := h.trans (mul_le_mul_of_nonneg_left (add_le_add (add_le_add
+    (Finset.sum_le_sum fun i _ ↦ Finset.sum_le_sum fun j _ ↦ hR (a i j - a' i j))
+    (Finset.sum_le_sum fun i _ ↦ hR (b i - b' i))) (hR (c - c'))) hC)
+  rw [← (timeReverseLIE (T : ℝ) (sub_self (T : ℝ)).symm
+      (sub_zero (T : ℝ)).symm).toLinearIsometry.norm_toContinuousLinearMap_comp,
+    ContinuousLinearMap.comp_sub, timeReverseLIE_comp_euclideanTerminalDataCLE_symm,
+    timeReverseLIE_comp_euclideanTerminalDataCLE_symm, ← ContinuousLinearMap.sub_comp]
+  refine ((ContinuousLinearMap.opNorm_comp_le _ _).trans (mul_le_of_le_one_right (norm_nonneg _)
+    norm_prodMap_neg_compLipschitzL_slabTimeReverse_le)).trans ?_
+  -- The goal and `hδ` differ only in instance arguments. Chiefly, on the data space
+  -- `C_b^{α,α/2} × C_b^{2,α}` the forward bound in `hδ` has the product topology
+  -- `instTopologicalSpaceProd`, while composing with the data reversal gives the topology of the
+  -- product uniform structure. `exact hδ` fails to unify these definitionally equal instances.
+  convert hδ using 1
 
 end TauCeti.ParabolicC2HolderSpace

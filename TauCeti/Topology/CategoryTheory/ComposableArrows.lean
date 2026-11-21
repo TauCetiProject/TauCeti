@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Topology.CategoryTheory.Groupoid.Basic
 public import TauCeti.Topology.CategoryTheory.Nerve
 
 /-!
@@ -17,7 +18,9 @@ its remaining string, with the matching endpoint equation. In degree zero,
 `CategoryTheory.ComposableArrows.zeroHomeomorph` identifies the nerve with the object space.
 Thus the topology defined by recording all composite arrows introduces no extra topology
 beyond that of composable strings. These identifications apply to topological groupoids
-without discarding any isotropy arrows.
+without discarding any isotropy arrows. When source, target, units and composition are continuous,
+`C` is Hausdorff and `Quiver.Total C` is compact, each nerve level is compact
+(`CategoryTheory.ComposableArrows.compactSpace_of_compactSpace`).
 
 Composition is required to be continuous on the subspace of pairs with matching endpoints.
 No topology on individual hom types and no new category or groupoid carrier is used.
@@ -79,7 +82,8 @@ variable
   (hs : Continuous (Quiver.Total.left : Quiver.Total C → C))
   (hu : Continuous fun x : C ↦ (⟨x, x, 𝟙 x⟩ : Quiver.Total C))
   (hc : Continuous fun p : {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left} ↦
-    (⟨p.1.1.left, p.1.2.right, p.1.1.hom ≫ eqToHom p.2 ≫ p.1.2.hom⟩ : Quiver.Total C))
+    (⟨p.val.1.left, p.val.2.right, p.val.1.hom ≫ eqToHom p.property ≫ p.val.2.hom⟩ : Quiver.Total
+        C))
 
 include hs hu hc in
 /-- Prepending a continuous family of arrows to a continuous family of strings is continuous,
@@ -137,7 +141,7 @@ def precompHomeomorph (n : ℕ) :
   -- Explicit vertices make the matching endpoint equation definitional, without unfolding
   -- the opaque total-arrow accessor in the dependent inverse construction.
   toFun F := ⟨(⟨F.obj' 0, F.obj' 1, F.map' 0 1⟩, F.δ₀), rfl⟩
-  invFun p := p.1.2.precomp (p.1.1.hom ≫ eqToHom p.2)
+  invFun p := p.val.2.precomp (p.val.1.hom ≫ eqToHom p.property)
   left_inv F := by
     -- The first vertex of the tail and vertex 1 have different native accessor expressions.
     dsimp only
@@ -160,8 +164,8 @@ def precompHomeomorph (n : ℕ) :
     simp_rw [totalArrow_def] at ht
     exact (ht.prodMk (continuous_whiskerLeft (Fin.succFunctor (n + 1)))).subtype_mk _
   continuous_invFun := continuous_precomp hs hu hc
-    (continuous_fst.comp continuous_subtype_val)
-    (continuous_snd.comp continuous_subtype_val) (fun p ↦ p.2)
+    (continuous_fst.comp continuous_subtypeVal)
+    (continuous_snd.comp continuous_subtypeVal) (fun p ↦ p.property)
 
 @[simp]
 theorem precompHomeomorph_apply (n : ℕ) (F : ComposableArrows C (n + 1)) :
@@ -173,7 +177,7 @@ theorem precompHomeomorph_apply (n : ℕ) (F : ComposableArrows C (n + 1)) :
 theorem precompHomeomorph_symm_apply (n : ℕ)
     (p : {p : Quiver.Total C × ComposableArrows C n // p.1.right = p.2.left}) :
     (precompHomeomorph hs hu hc n).symm p =
-      p.1.2.precomp (p.1.1.hom ≫ eqToHom p.2) := (rfl)
+      p.val.2.precomp (p.val.1.hom ≫ eqToHom p.property) := (rfl)
 
 include hs hu hc in
 /-- A family of nonempty strings is continuous exactly when its first arrow and its tail are
@@ -187,5 +191,37 @@ theorem continuous_iff_first_tail {Y : Type*} [TopologicalSpace Y] {n : ℕ}
   rw [← (precompHomeomorph hs hu hc n).comp_continuous_iff]
   simp only [continuous_induced_rng, continuous_prodMk, Function.comp_def,
     precompHomeomorph_apply]
+
+include hs hu hc in
+/-- When source, target, units and composition are continuous, `C` is Hausdorff and
+`Quiver.Total C` is compact, every `ComposableArrows C n` is compact. -/
+theorem compactSpace_of_compactSpace
+    (ht : Continuous (Quiver.Total.right : Quiver.Total C → C))
+    [T2Space C] [CompactSpace (Quiver.Total C)] (n : ℕ) :
+    CompactSpace (ComposableArrows C n) := by
+  -- `C` is compact as the image of `Quiver.Total C` under source, and each positive level is a
+  -- closed fiber product in a compact product.
+  induction n with
+  | zero =>
+    have hsurj : Function.Surjective (Quiver.Total.left : Quiver.Total C → C) :=
+      fun x ↦ ⟨⟨x, x, 𝟙 x⟩, rfl⟩
+    have : CompactSpace C := hsurj.compactSpace hs
+    exact (zeroHomeomorph hs hu).symm.compactSpace
+  | succ n ih =>
+    have hclosed :
+        IsClosed {p : Quiver.Total C × ComposableArrows C n | p.1.right = p.2.left} :=
+      isClosed_eq (ht.comp continuous_fst) ((continuous_obj hs 0).comp continuous_snd)
+    have : CompactSpace {p : Quiver.Total C × ComposableArrows C n // p.1.right = p.2.left} :=
+      isCompact_iff_compactSpace.mp hclosed.isCompact
+    exact (precompHomeomorph hs hu hc n).symm.compactSpace
+
+instance instCompactSpace [IsGroupoid C] [TauCeti.IsTopologicalGroupoid C]
+    [T2Space (Quiver.Total C)] [CompactSpace (Quiver.Total C)] (n : ℕ) :
+    CompactSpace (ComposableArrows C n) :=
+  have : T2Space C := (TauCeti.IsTopologicalGroupoid.isEmbedding_unit C).t2Space
+  compactSpace_of_compactSpace
+    TauCeti.IsTopologicalGroupoid.continuous_source TauCeti.IsTopologicalGroupoid.continuous_unit
+    (by simpa only [Quiver.Total.comp_def] using TauCeti.IsTopologicalGroupoid.continuous_comp)
+    TauCeti.IsTopologicalGroupoid.continuous_target n
 
 end CategoryTheory.ComposableArrows

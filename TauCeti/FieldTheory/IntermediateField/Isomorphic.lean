@@ -39,6 +39,8 @@ of a local field inside a separable closure along their isomorphism classes.
   separable and `Ω` separably closed, the same product is `[E : K]`.
 * `IntermediateField.setOf_isomorphic_eq_singleton_of_normal`: a normal intermediate field
   is `K`-isomorphic to no other intermediate field.
+* `IntermediateField.exists_subset_existsUnique_algEquiv`: every set of intermediate fields has a
+  subset containing a unique `K`-isomorphic representative of each of its members.
 -/
 
 public section
@@ -53,11 +55,11 @@ variable {K E Ω : Type*} [Field K] [Field E] [Field Ω] [Algebra K E] [Algebra 
 `e` to `M.val.comp e`. -/
 def algHomFieldRangeEquiv (M : IntermediateField K Ω) :
     {φ : E →ₐ[K] Ω // φ.fieldRange = M} ≃ (E ≃ₐ[K] M) where
-  toFun φ := φ.1.equivFieldRange.trans (equivOfEq φ.2)
+  toFun φ := φ.val.equivFieldRange.trans (equivOfEq φ.property)
   invFun e := ⟨M.val.comp e.toAlgHom, by
     ext x
     simp only [AlgHom.mem_fieldRange, AlgHom.coe_comp, Function.comp_apply, coe_val]
-    exact ⟨fun ⟨y, hy⟩ ↦ hy ▸ (e y).2, fun hx ↦ ⟨e.symm ⟨x, hx⟩, by simp⟩⟩⟩
+    exact ⟨fun ⟨y, hy⟩ ↦ hy ▸ (e y).property, fun hx ↦ ⟨e.symm ⟨x, hx⟩, by simp⟩⟩⟩
   left_inv φ := by
     ext x
     simp
@@ -69,7 +71,7 @@ def algHomFieldRangeEquiv (M : IntermediateField K Ω) :
 @[simp]
 theorem coe_algHomFieldRangeEquiv_apply (M : IntermediateField K Ω)
     (φ : {φ : E →ₐ[K] Ω // φ.fieldRange = M}) (x : E) :
-    (algHomFieldRangeEquiv M φ x : Ω) = φ.1 x := by
+    (algHomFieldRangeEquiv M φ x : Ω) = φ.val x := by
   simp [algHomFieldRangeEquiv]
 
 /-- The inverse of `algHomFieldRangeEquiv` composes an isomorphism onto `M` with the inclusion of
@@ -94,8 +96,8 @@ theorem ncard_isomorphic_mul_natCard_algEquiv :
   -- `E ≃ₐ[K] E`.
   let fibre (M : S) : {φ // range φ = M} ≃ (E ≃ₐ[K] E) :=
     ((Equiv.subtypeEquivRight fun φ ↦ Subtype.ext_iff).trans
-      (algHomFieldRangeEquiv M.1)).trans
-      (AlgEquiv.refl.equivCongr M.2.some.symm)
+      (algHomFieldRangeEquiv M.val)).trans
+      (AlgEquiv.refl.equivCongr M.property.some.symm)
   rw [← Nat.card_coe_set_eq, ← Nat.card_prod]
   exact Nat.card_congr <| ((Equiv.sigmaEquivProd S (E ≃ₐ[K] E)).symm.trans
     (Equiv.sigmaCongrRight fun M ↦ (fibre M).symm)).trans (Equiv.sigmaFiberEquiv range)
@@ -117,7 +119,25 @@ theorem setOf_isomorphic_eq_singleton_of_normal (L : IntermediateField K Ω) [No
     {M : IntermediateField K Ω | Nonempty (L ≃ₐ[K] M)} = {L} := by
   ext M
   refine ⟨fun ⟨e⟩ ↦ ?_, fun h ↦ h ▸ ⟨AlgEquiv.refl⟩⟩
-  rw [Set.mem_singleton_iff, ← ((algHomFieldRangeEquiv M).symm e).2]
+  rw [Set.mem_singleton_iff, ← ((algHomFieldRangeEquiv M).symm e).property]
   exact AlgHom.fieldRange_of_normal _
+
+/-- Every set `S` of intermediate fields of `Ω / K` has a subset `R ⊆ S` containing a unique
+`K`-isomorphic representative of each member of `S`. -/
+theorem exists_subset_existsUnique_algEquiv (S : Set (IntermediateField K Ω)) :
+    ∃ R ⊆ S, ∀ L ∈ S, ∃! M, M ∈ R ∧ Nonempty (L ≃ₐ[K] M) := by
+  let s : Setoid S :=
+    { r := fun L M ↦ Nonempty (L.val ≃ₐ[K] M.val)
+      iseqv := ⟨fun _ ↦ ⟨.refl⟩, fun ⟨e⟩ ↦ ⟨e.symm⟩, fun ⟨e⟩ ⟨e'⟩ ↦ ⟨e.trans e'⟩⟩ }
+  refine ⟨Set.range fun c : Quotient s ↦ (c.out : IntermediateField K Ω), ?_,
+    fun L hL ↦ ⟨(Quotient.mk s ⟨L, hL⟩).out,
+      ⟨⟨_, rfl⟩, Setoid.symm' s (Quotient.mk_out (s := s) ⟨L, hL⟩)⟩, ?_⟩⟩
+  · rintro _ ⟨c, rfl⟩
+    exact c.out.property
+  · rintro _ ⟨⟨c, rfl⟩, he⟩
+    have hc : c = Quotient.mk s ⟨L, hL⟩ := by
+      rw [← Quotient.out_eq c]
+      exact Quotient.sound (Setoid.symm' s he)
+    rw [hc]
 
 end IntermediateField

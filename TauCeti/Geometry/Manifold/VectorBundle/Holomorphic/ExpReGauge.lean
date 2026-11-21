@@ -111,7 +111,7 @@ noncomputable def expReTrivialization : Trivialization ℂ (π ℂ (Bundle.Trivi
 
 @[simp]
 theorem expReTrivialization_apply (p : TotalSpace ℂ (Bundle.Trivial ℂ ℂ)) :
-    expReTrivialization p = (p.proj, p.2 * Real.exp p.proj.re) := by
+    expReTrivialization p = (p.proj, p.snd * Real.exp p.proj.re) := by
   simp [expReTrivialization]
 
 @[simp]

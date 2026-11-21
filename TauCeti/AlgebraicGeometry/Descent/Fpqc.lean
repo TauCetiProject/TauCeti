@@ -94,14 +94,14 @@ theorem exists_isAffineHom_baseChange_hom_isIso_of_quasiCompact [IsAffineHom X.h
   obtain ⟨X₀, f, hf⟩ := exists_baseChange_hom_isIso_of_forall_affineOpens_pullbackAlong fun U ↦ by
     -- Over an affine open `U`, the base change of `D` acts on a scheme affine over `U ×_S S'`,
     -- relative to the flat quasi-compact morphism `U ×_S S' ⟶ U` with affine target.
-    have : IsAffineHom (pullbackAlongObj (p := p) U.1.ι X).hom := by
+    have : IsAffineHom (pullbackAlongObj (p := p) U.val.ι X).hom := by
       simp only [pullbackAlongObj, Over.pullback_obj_hom]
       -- Mathlib has no instance for base changes of affine morphisms, so stability under base
       -- change is applied by name.
       exact isAffineHom_isStableUnderBaseChange.of_isPullback (IsPullback.of_hasPullback _ _) ‹_›
-    have : IsAffine U.1.toScheme := U.2
+    have : IsAffine U.val.toScheme := U.property
     obtain ⟨Y₀, -, f, hf⟩ :=
-      exists_isAffine_baseChange_hom_isIso_of_quasiCompact (D.pullbackAlong U.1.ι)
+      exists_isAffine_baseChange_hom_isIso_of_quasiCompact (D.pullbackAlong U.val.ι)
     exact ⟨Y₀, f, hf⟩
   exact ⟨X₀, f.mem_of_descendsAlong (P := @IsAffineHom) inferInstance, f, hf⟩
 

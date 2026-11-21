@@ -218,7 +218,7 @@ theorem IsGradedCoderivationAlong.eq_of_letter_comp_eq {q : ℤ}
         | tmul u v =>
             simp only [TensorProduct.mapIncl, TensorProduct.map_tmul, Submodule.coe_subtype,
               LinearMap.rTensor_tmul]
-            rw [ih _ u.2, ih _ v.2]
+            rw [ih _ u.property, ih _ v.property]
         | add u v hu hv =>
             simp only [map_add] at hu hv ⊢
             rw [add_add_add_comm, hu, hv, add_add_add_comm]

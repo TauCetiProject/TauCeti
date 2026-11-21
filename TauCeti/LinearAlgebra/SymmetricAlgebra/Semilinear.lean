@@ -139,9 +139,9 @@ theorem mapₛₗ_mem_homogeneousSubmodule (f : M →ₛₗ[φ] N) {n : ℕ}
 restriction of `SymmetricAlgebra.mapₛₗ`. -/
 noncomputable def homogeneousSubmoduleMapₛₗ (f : M →ₛₗ[φ] N) (n : ℕ) :
     homogeneousSubmodule R M n →ₛₗ[φ] homogeneousSubmodule S N n where
-  toFun x := ⟨mapₛₗ f x, mapₛₗ_mem_homogeneousSubmodule f x.2⟩
-  map_add' x y := Subtype.ext (map_add (mapₛₗ f) x.1 y.1)
-  map_smul' r x := Subtype.ext (_root_.SymmetricAlgebra.mapₛₗ_smul f r x.1)
+  toFun x := ⟨mapₛₗ f x, mapₛₗ_mem_homogeneousSubmodule f x.property⟩
+  map_add' x y := Subtype.ext (map_add (mapₛₗ f) x.val y.val)
+  map_smul' r x := Subtype.ext (_root_.SymmetricAlgebra.mapₛₗ_smul f r x.val)
 
 /-- The map between homogeneous pieces induced by a semilinear map is computed in the symmetric
 algebra by `SymmetricAlgebra.mapₛₗ`. -/

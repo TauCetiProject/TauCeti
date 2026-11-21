@@ -78,7 +78,7 @@ theorem norm_charCoeff_eq_prod_of_norm_principalMinor_eq_one [CompleteSpace K]
     refine IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg hC₀ fun s ↦ ?_
     split_ifs with h
     · simpa using hC₀
-    · exact norm_principalMinor_le_prod_range_mul hdec.antitone hA s.2
+    · exact norm_principalMinor_le_prod_range_mul hdec.antitone hA s.property
         fun h' ↦ h (Subtype.ext h')
   have hlt : C < ∏ i ∈ range (n + 1), ‖d i‖ := by
     rw [prod_range_succ]
