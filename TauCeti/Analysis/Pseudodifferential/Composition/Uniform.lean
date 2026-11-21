@@ -464,7 +464,7 @@ omit [CompleteSpace V] [CompleteSpace W] [CompleteSpace U] in
 with radius `√n`. -/
 private theorem isBallFamily_latticePiece {a : Symbol n V W m} (ha : a.IsUniform) :
     IsBallFamily (fun j : Fin n → ℤ ↦ latticePoint j) √n (latticePiece a) :=
-  isBallFamily_latticeBump_comp ha
+  isBallFamily_smulLeft_latticeBump ha
 
 omit [CompleteSpace V] in
 /-- The quantization of `p # (χ(· - j) a)` is `Op(p)` applied to `χ(· - j) Op(a) u`. -/

@@ -39,8 +39,8 @@ symbol is the adjoint symbol `TauCeti.Symbol.adjoint`, by uniqueness of symbols
 ## The construction
 
 Cut `c` into the pieces `cⱼ(y, ξ) = χ(y - j) c(y, ξ)`, `j ∈ ℤⁿ`, by the integer translates of the
-bump `χ = TauCeti.latticeBump n` (`TauCeti.Symbol.isBallFamily_latticeBump_comp`). Each piece has
-compact spatial support, so it has the left symbol `bⱼ = cⱼ.ofRight`,
+bump `χ = TauCeti.latticeBump n` (`TauCeti.Symbol.isBallFamily_smulLeft_latticeBump`). Each piece
+has compact spatial support, so it has the left symbol `bⱼ = cⱼ.ofRight`,
 
 `bⱼ(x, ξ) = ∫ exp(2πi ⟪θ, x⟫) 𝓕cⱼ(θ, ξ + 2πθ) dθ`,
 
@@ -368,7 +368,7 @@ omit [CompleteSpace V] [CompleteSpace W] in
 `χ(· - j) u`. -/
 private theorem quantizeRightUniformCLM_latticeBump_comp {c : Symbol n V W m} (hc : c.IsUniform)
     (u : 𝓢(CoordinateSpace n, V)) (j : Fin n → ℤ) :
-    quantizeRightUniformCLM _ ((isBallFamily_latticeBump_comp hc).hasCompactSpatialSupport
+    quantizeRightUniformCLM _ ((isBallFamily_smulLeft_latticeBump hc).hasCompactSpatialSupport
       j).isUniform u =
       quantizeRightUniformCLM c hc (SchwartzMap.smulLeftCLM V
         (fun y ↦ latticeBump n (y - latticePoint j)) u) := by
@@ -385,7 +385,7 @@ compact spatial support is assumed. The symbol is unique
 theorem IsUniform.exists_quantizeRightUniformCLM_eq {c : Symbol n V W m} (hc : c.IsUniform) :
     ∃ (b : Symbol n V W m) (hb : b.IsUniform),
       quantizeRightUniformCLM c hc = quantizeUniformCLM b hb := by
-  have hfam := isBallFamily_latticeBump_comp hc
+  have hfam := isBallFamily_smulLeft_latticeBump hc
   set F : (Fin n → ℤ) → Symbol n V W m := fun j ↦
     ofRight _ (hfam.hasCompactSpatialSupport j)
   set w : (Fin n → ℤ) → CoordinateSpace n → ℝ := fun j x ↦

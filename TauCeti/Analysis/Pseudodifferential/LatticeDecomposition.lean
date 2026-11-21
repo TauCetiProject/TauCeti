@@ -24,7 +24,7 @@ composition symbol `TauCeti.Symbol.sharp` or the left symbol `TauCeti.Symbol.ofR
 quantization, do not apply to it directly. Cutting `a` by the integer translates of a bump
 function gives pieces `aⱼ(x, ξ) = χ(x - j) a(x, ξ)`, `j ∈ ℤⁿ`, which vanish outside the balls of a
 fixed radius about the lattice points and whose estimates do not depend on `j`
-(`TauCeti.Symbol.isBallFamily_latticeBump_comp`). This file develops the two ends of this
+(`TauCeti.Symbol.isBallFamily_smulLeft_latticeBump`). This file develops the two ends of this
 argument: such families of pieces, and sums of series of symbols.
 
 * `TauCeti.Symbol.IsBallFamily`: families of symbols supported in balls of a fixed radius, with
@@ -213,7 +213,7 @@ variable {ι : Type*}
 /-- A family of symbols `c i` of order `m`, each vanishing at the positions outside the closed
 ball of radius `r` about `z i`, whose symbol estimates hold with constants independent of the
 position and of `i`. Cutting a uniform symbol by the lattice translates of a bump function gives
-such a family (`TauCeti.Symbol.isBallFamily_latticeBump_comp`). -/
+such a family (`TauCeti.Symbol.isBallFamily_smulLeft_latticeBump`). -/
 structure IsBallFamily (z : ι → CoordinateSpace n) (r : ℝ) (c : ι → Symbol n V W m) :
     Prop where
   /-- Each member vanishes at the positions at distance more than `r` from its centre. -/
@@ -486,7 +486,7 @@ end Decay
 
 /-- The cut-off pieces `χ(x - j) a(x, ξ)` of a uniform symbol `a` form a ball family centred at
 the lattice points, with radius `√n`. -/
-theorem isBallFamily_latticeBump_comp {a : Symbol n V W m} (ha : a.IsUniform) :
+theorem isBallFamily_smulLeft_latticeBump {a : Symbol n V W m} (ha : a.IsUniform) :
     IsBallFamily (fun j : Fin n → ℤ ↦ latticePoint j) √n fun j ↦
       smulLeft (Complex.ofRealCLM.contDiff.comp (contDiff_latticeBump_sub j)) a :=
   isBallFamily_smulLeft _ _ (fun j y ↦ latticeBump n (y - latticePoint j))
