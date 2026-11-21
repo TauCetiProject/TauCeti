@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Positive
-import Mathlib.Analysis.Normed.Operator.Bilinear
+import Mathlib.Topology.Algebra.InfiniteSum.ContinuousEval
 import Mathlib.Topology.Algebra.InfiniteSum.Module
 
 /-!
@@ -22,13 +22,17 @@ When the series converges in operator norm, it evaluates pointwise
 (`PositiveContinuousLinearMap.hasSum_tsum_apply`, `PositiveContinuousLinearMap.tsum_apply`),
 dominates every summand on nonnegative elements (`PositiveContinuousLinearMap.le_tsum_apply`), and
 vanishes at a nonnegative element if and only if every summand vanishes there
-(`PositiveContinuousLinearMap.tsum_apply_eq_zero_iff`).
+(`PositiveContinuousLinearMap.tsum_apply_eq_zero_iff`). The bundled sum satisfies `tsum_zero`,
+`tsum_const_zero`, `tsum_eq_zero_of_not_summable`, and `tsum_add`.
 
 ## Main declarations
 
 * `PositiveContinuousLinearMap.tsum`: the operator-norm `tsum` of an indexed family of positive
   continuous linear maps.
 * `PositiveContinuousLinearMap.toContinuousLinearMap_tsum`: coercion to `E₁ →L[𝕜] E₂`.
+* `PositiveContinuousLinearMap.tsum_zero`, `PositiveContinuousLinearMap.tsum_const_zero`,
+  `PositiveContinuousLinearMap.tsum_eq_zero_of_not_summable`,
+  `PositiveContinuousLinearMap.tsum_add`: algebraic and nonsummable simplification laws.
 * `PositiveContinuousLinearMap.hasSum_tsum_apply`, `PositiveContinuousLinearMap.tsum_apply`:
   pointwise evaluation of a summable positive series.
 * `PositiveContinuousLinearMap.le_tsum_apply`,
@@ -47,21 +51,14 @@ namespace PositiveContinuousLinearMap
 variable {ι 𝕜 E₁ E₂ : Type*} [NontriviallyNormedField 𝕜]
   [SeminormedAddCommGroup E₁] [NormedSpace 𝕜 E₁] [PartialOrder E₁]
   [SeminormedAddCommGroup E₂] [NormedSpace 𝕜 E₂] [PartialOrder E₂]
-
-private theorem hasSum_apply_of_summable {f : ι → E₁ →P[𝕜] E₂}
-    (hf : Summable fun i => (f i : E₁ →L[𝕜] E₂)) (a : E₁) :
-    HasSum (fun i => f i a) ((∑' i, (f i : E₁ →L[𝕜] E₂)) a) := by
-  simpa only [ContinuousLinearMap.apply_apply, coe_toContinuousLinearMap] using
-    (ContinuousLinearMap.apply 𝕜 E₂ a).hasSum hf.hasSum
-
-variable [IsOrderedAddMonoid E₂] [OrderClosedTopology E₂]
+  [IsOrderedAddMonoid E₂] [OrderClosedTopology E₂]
 
 private theorem tsum_monotone (f : ι → E₁ →P[𝕜] E₂) :
     Monotone ⇑(∑' i, (f i : E₁ →L[𝕜] E₂)) := by
   intro x y hxy
   by_cases hf : Summable fun i => (f i : E₁ →L[𝕜] E₂)
-  · refine le_of_tendsto_of_tendsto (hasSum_apply_of_summable hf x)
-      (hasSum_apply_of_summable hf y) ?_
+  · refine le_of_tendsto_of_tendsto (hasSum_apply hf.hasSum x)
+      (hasSum_apply hf.hasSum y) ?_
     exact Eventually.of_forall fun s => Finset.sum_le_sum fun i _ => (f i).mono hxy
   · rw [tsum_eq_zero_of_not_summable hf, _root_.zero_apply, _root_.zero_apply]
 
@@ -76,12 +73,39 @@ theorem toContinuousLinearMap_tsum (f : ι → E₁ →P[𝕜] E₂) :
     (tsum f : E₁ →L[𝕜] E₂) = ∑' i, (f i : E₁ →L[𝕜] E₂) :=
   (rfl)
 
+/-- The `tsum` of the zero family is `0`. -/
+@[simp]
+theorem tsum_zero : tsum (0 : ι → E₁ →P[𝕜] E₂) = 0 :=
+  toContinuousLinearMap_injective <| by
+    rw [toContinuousLinearMap_tsum]
+    exact _root_.tsum_zero
+
+/-- The `tsum` of a pointwise-zero family is `0`. -/
+@[simp]
+theorem tsum_const_zero : tsum (fun _ : ι => (0 : E₁ →P[𝕜] E₂)) = 0 :=
+  tsum_zero
+
+/-- A nonsummable family has `tsum` equal to `0`. -/
+@[simp]
+theorem tsum_eq_zero_of_not_summable {f : ι → E₁ →P[𝕜] E₂}
+    (hf : ¬ Summable fun i => (f i : E₁ →L[𝕜] E₂)) : tsum f = 0 :=
+  toContinuousLinearMap_injective <| by
+    simpa [toContinuousLinearMap_tsum] using _root_.tsum_eq_zero_of_not_summable hf
+
+/-- The `tsum` of the sum of two summable families is the sum of their `tsum`s. -/
+theorem tsum_add {f g : ι → E₁ →P[𝕜] E₂}
+    (hf : Summable fun i => (f i : E₁ →L[𝕜] E₂))
+    (hg : Summable fun i => (g i : E₁ →L[𝕜] E₂)) :
+    tsum (fun i => f i + g i) = tsum f + tsum g :=
+  toContinuousLinearMap_injective <| by
+    simpa [toContinuousLinearMap_tsum] using hf.tsum_add hg
+
 /-- A summable family of positive continuous linear maps evaluates pointwise by summing its
 values. -/
 theorem hasSum_tsum_apply {f : ι → E₁ →P[𝕜] E₂} (hf : Summable fun i => (f i : E₁ →L[𝕜] E₂))
     (a : E₁) :
     HasSum (fun i => f i a) (tsum f a) :=
-  hasSum_apply_of_summable hf a
+  hasSum_apply hf.hasSum a
 
 /-- A summable family of positive continuous linear maps evaluates pointwise as the `tsum` of its
 values. -/

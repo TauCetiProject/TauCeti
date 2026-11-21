@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Colimit.DirectLimit
 public import Mathlib.Analysis.CStarAlgebra.Classes
 public import Mathlib.Topology.Algebra.LinearMapCompletion
+public import TauCeti.Algebra.Star.StarAlgHom
 public import TauCeti.Analysis.CStarAlgebra.Completion
 public import TauCeti.Analysis.CStarAlgebra.Hom
 import Mathlib.Analysis.CStarAlgebra.Spectrum
@@ -755,12 +756,8 @@ theorem lift_one {B : Type*} [CStarAlgebra B] (g : ∀ i, A i →⋆ₙₐ[ℂ] 
 variable (A f) in
 /-- The canonical map from a stage of a unital directed system into the C⋆-inductive limit, as a
 unital ⋆-homomorphism. -/
-def ofStarAlgHom (i : ι) : A i →⋆ₐ[ℂ] CStarInductiveLimit A f where
-  __ := of A f i
-  map_one' := of_one i
-  commutes' r := by
-    simp only [Algebra.algebraMap_eq_smul_one]
-    exact (map_smul (of A f i) r 1).trans (congrArg (r • ·) (of_one i))
+def ofStarAlgHom (i : ι) : A i →⋆ₐ[ℂ] CStarInductiveLimit A f :=
+  (of A f i).toStarAlgHom (of_one i)
 
 /-- The unital canonical map agrees with the canonical ⋆-homomorphism. -/
 @[simp]
@@ -790,13 +787,9 @@ variable {B : Type*} [CStarAlgebra B] (g : ∀ i, A i →⋆ₐ[ℂ] B)
 
 /-- A family of unital ⋆-homomorphisms `g i : A i → B` into a unital C⋆-algebra, compatible with
 the connecting maps, induces a unital ⋆-homomorphism out of the C⋆-inductive limit. -/
-def liftStarAlgHom : CStarInductiveLimit A f →⋆ₐ[ℂ] B where
-  __ := lift (fun i => (g i).toNonUnitalStarAlgHom) hg
-  map_one' := lift_one _ hg fun i => map_one (g i)
-  commutes' r := by
-    simp only [Algebra.algebraMap_eq_smul_one]
-    exact (map_smul (lift (fun i => (g i).toNonUnitalStarAlgHom) hg) r 1).trans
-      (congrArg (r • ·) (lift_one _ hg fun i => map_one (g i)))
+def liftStarAlgHom : CStarInductiveLimit A f →⋆ₐ[ℂ] B :=
+  (lift (fun i => (g i).toNonUnitalStarAlgHom) hg).toStarAlgHom
+    (lift_one _ hg fun i => map_one (g i))
 
 /-- The unital ⋆-homomorphism induced by `g` is the ⋆-homomorphism induced by `g`. -/
 @[simp]

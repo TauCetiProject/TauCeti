@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.l2Space
 public import TauCeti.Analysis.CStarAlgebra.Representation.Nondegenerate
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Basic
+import TauCeti.Algebra.Star.StarAlgHom
 import TauCeti.Analysis.CStarAlgebra.GNS.Nondegenerate
 import TauCeti.Analysis.CStarAlgebra.PositiveLinearFunctional
 import TauCeti.Analysis.CStarAlgebra.Representation.Ampliation
@@ -173,16 +174,7 @@ theorem exists_injective_starAlgHom_lp (A : Type*)
     ∃ π : A →⋆ₐ[ℂ] (lp (fun _ : ℕ => ℂ) 2 →L[ℂ] lp (fun _ : ℕ => ℂ) 2),
       Function.Injective π := by
   obtain ⟨π, hinj, hnondeg⟩ := exists_injective_nondegenerate_representation_lp A
-  have h1 : π 1 = 1 := hnondeg.map_one
-  refine ⟨{
-    toFun := π
-    map_one' := h1
-    map_mul' := map_mul π
-    map_zero' := map_zero π
-    map_add' := map_add π
-    commutes' := fun c => by
-      rw [Algebra.algebraMap_eq_smul_one, map_smul, h1, Algebra.algebraMap_eq_smul_one]
-    map_star' := map_star π }, hinj⟩
+  exact ⟨π.toStarAlgHom hnondeg.map_one, hinj⟩
 
 /-- No representation of a zero C⋆-algebra on `lp (fun _ : ℕ => ℂ) 2` is nondegenerate. -/
 theorem not_exists_nondegenerate_representation_lp_of_subsingleton (A : Type*)

@@ -101,8 +101,8 @@ theorem opNorm_tsum (f : ι → A →P[ℂ] ℂ) :
   · exact (hasSum_opNorm_tsum hf).tsum_eq.symm
   · have hnot : ¬ Summable fun i => ‖(f i : A →L[ℂ] ℂ)‖ :=
       mt (summable_toContinuousLinearMap_iff f).2 hf
-    rw [toContinuousLinearMap_tsum, tsum_eq_zero_of_not_summable hf, norm_zero,
-      tsum_eq_zero_of_not_summable hnot]
+    rw [tsum_eq_zero_of_not_summable hf, toContinuousLinearMap_zero, norm_zero,
+      _root_.tsum_eq_zero_of_not_summable hnot]
 
 end PositiveContinuousLinearMap
 

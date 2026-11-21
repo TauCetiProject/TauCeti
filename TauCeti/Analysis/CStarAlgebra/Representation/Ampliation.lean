@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.CStarAlgebra.Representation.HilbertSum
 public import TauCeti.Analysis.CStarAlgebra.Representation.Nondegenerate
 public import TauCeti.Analysis.InnerProductSpace.HilbertSum
 
@@ -17,17 +18,22 @@ complete Hilbert space `H` over `𝕜` (`[RCLike 𝕜]`) and an index type `ι`,
 direct sum `lp (fun _ : ι => H) 2` (`NonUnitalStarAlgHom.ampliation`), and `StarAlgHom.ampliation`
 in the unital setting.
 
-Over any nonempty index type `ι`, the amplification preserves injectivity
-(`ampliation_injective_iff`) and, for complex C⋆-algebra representations, nondegeneracy
-(`isNondegenerate_ampliation_iff`); nondegeneracy always passes forward to the amplification, even
-for empty `ι` (`NonUnitalStarAlgHom.IsNondegenerate.ampliation`). In particular, amplifying a
-separable nonzero representation by `ℕ` produces an infinite-dimensional separable carrier on which
-`A` acts with the same faithfulness and nondegeneracy.
+For complex C⋆-algebra representations, `π.ampliation ι` coincides with the constant-family
+Hilbert direct sum `hilbertSum (fun _ : ι => π)` (`NonUnitalStarAlgHom.ampliation_eq_hilbertSum`),
+allowing direct-sum results to transfer to amplifications. Over any nonempty index type `ι`, the
+amplification preserves injectivity (`ampliation_injective_iff`) and, for complex C⋆-algebra
+representations, nondegeneracy (`isNondegenerate_ampliation_iff`); nondegeneracy always passes
+forward to the amplification, even for empty `ι` (`NonUnitalStarAlgHom.IsNondegenerate.ampliation`).
+In particular, amplifying a separable nonzero representation by `ℕ` produces an
+infinite-dimensional separable carrier on which `A` acts with the same faithfulness and
+nondegeneracy.
 
 ## Main declarations
 
 * `NonUnitalStarAlgHom.ampliation`: diagonal amplification of a nonunital `⋆`-homomorphism to
   `lp (fun _ : ι => H) 2`.
+* `NonUnitalStarAlgHom.ampliation_eq_hilbertSum`: identification with the constant-family
+  `hilbertSum`.
 * `NonUnitalStarAlgHom.ampliation_injective_iff`,
   `NonUnitalStarAlgHom.IsNondegenerate.ampliation`,
   `NonUnitalStarAlgHom.isNondegenerate_ampliation_iff`: faithfulness and nondegeneracy of the
@@ -80,28 +86,25 @@ section Nondegenerate
 variable {A H : Type*} [NonUnitalCStarAlgebra A]
   [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
 
+/-- For a complex C⋆-algebra representation `π`, `π.ampliation ι` coincides with the
+constant-family Hilbert direct sum `hilbertSum (fun _ : ι => π)`. -/
+theorem ampliation_eq_hilbertSum (π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)) (ι : Type*) :
+    π.ampliation ι = hilbertSum (fun _ : ι => π) := by
+  ext a x i
+  simp
+
 /-- Amplifying a nondegenerate representation produces a nondegenerate representation (for every
 index type `ι`, including empty `ι`). -/
 theorem IsNondegenerate.ampliation {π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)} (hπ : π.IsNondegenerate)
     (ι : Type*) : (π.ampliation ι).IsNondegenerate := by
-  rw [isNondegenerate_iff_forall_apply_eq_zero] at hπ ⊢
-  intro ξ hξ
-  ext i
-  refine hπ (ξ i) fun a => ?_
-  simpa using congr($(hξ a) i)
+  rw [ampliation_eq_hilbertSum, isNondegenerate_hilbertSum_iff]
+  exact fun _ => hπ
 
 /-- Over a nonempty index type, the amplified representation is nondegenerate if and only if the
 original representation is nondegenerate. -/
 theorem isNondegenerate_ampliation_iff (π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)) (ι : Type*) [Nonempty ι] :
     (π.ampliation ι).IsNondegenerate ↔ π.IsNondegenerate := by
-  classical
-  refine ⟨fun h => ?_, fun h => h.ampliation ι⟩
-  rw [isNondegenerate_iff_forall_apply_eq_zero] at h ⊢
-  intro v hv
-  obtain ⟨i⟩ := ‹Nonempty ι›
-  have hsingle : lp.single (E := fun _ : ι => H) 2 i v = 0 :=
-    h (lp.single 2 i v) fun a => by simp [hv a]
-  simpa using congr($hsingle i)
+  rw [ampliation_eq_hilbertSum, isNondegenerate_hilbertSum_iff, forall_const]
 
 end Nondegenerate
 

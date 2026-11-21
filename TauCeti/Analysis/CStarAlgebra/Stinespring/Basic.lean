@@ -9,6 +9,7 @@ public import Mathlib.Analysis.CStarAlgebra.ApproximateUnit
 public import Mathlib.Analysis.CStarAlgebra.PositiveLinearFunctional
 public import Mathlib.Analysis.InnerProductSpace.Completion
 public import Mathlib.LinearAlgebra.TensorProduct.Map
+public import TauCeti.Algebra.Star.StarAlgHom
 public import TauCeti.Analysis.CStarAlgebra.CompletelyPositiveMap.Order
 public import TauCeti.Analysis.CStarAlgebra.Representation.Nondegenerate
 import Mathlib.Analysis.InnerProductSpace.Positive
@@ -627,10 +628,8 @@ variable {D : Type u} [CStarAlgebra D] [PartialOrder D] [StarOrderedRing D]
     simp [stinespringHom_apply, ContinuousLinearMap.completion_apply_coe]
 
 /-- The unital Stinespring `⋆`-representation of a unital C⋆-algebra `D` on `φ.Stinespring`. -/
-noncomputable def stinespringStarAlgHom : D →⋆ₐ[ℂ] (φ.Stinespring →L[ℂ] φ.Stinespring) where
-  __ := φ.stinespringHom
-  map_one' := φ.stinespringHom_one
-  commutes' r := by simp [Algebra.algebraMap_eq_smul_one, φ.stinespringHom_one]
+noncomputable def stinespringStarAlgHom : D →⋆ₐ[ℂ] (φ.Stinespring →L[ℂ] φ.Stinespring) :=
+  φ.stinespringHom.toStarAlgHom φ.stinespringHom_one
 
 @[simp] theorem coe_stinespringStarAlgHom : ⇑φ.stinespringStarAlgHom = ⇑φ.stinespringHom := (rfl)
 
