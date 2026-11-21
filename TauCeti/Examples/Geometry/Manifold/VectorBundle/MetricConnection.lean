@@ -41,7 +41,7 @@ instance flatConnection.contMDiffCovariantDerivative (n : ℕ∞ω) :
 /-- The constant scalar endomorphism-valued one-form `a dx`. -/
 def constantOneForm (a : ℝ) (x : ℝ) :
     ℝ →L[ℝ] TangentSpace 𝓘(ℝ) x →L[ℝ] ℝ :=
-  a • ContinuousLinearMap.smulRightL ℝ (TangentSpace 𝓘(ℝ) x) ℝ
+  a • ContinuousLinearMap.smulRightL ℝ ℝ ℝ (TangentSpace 𝓘(ℝ) x) ℝ
     (NormedSpace.fromTangentSpace x).toContinuousLinearMap
 
 /-- The native connection `d + a dx` on the trivial real line. -/
@@ -140,7 +140,7 @@ example : ∃ cov : CovariantDerivative 𝓘(ℝ, EuclideanSpace ℝ (Fin 0)) �
 
 example : ∃ cov : CovariantDerivative 𝓘(ℝ) ℝ (Trivial (⊥ : TopologicalSpace.Opens ℝ) ℝ),
     cov.ContMDiffCovariantDerivative ∞ ∧ cov.IsMetricCompatible := by
-  let : IsEmpty (⊥ : TopologicalSpace.Opens ℝ) := ⟨fun x ↦ x.2⟩
+  let : IsEmpty (⊥ : TopologicalSpace.Opens ℝ) := ⟨fun x ↦ x.property⟩
   exact CovariantDerivative.exists_contMDiffCovariantDerivative_isMetricCompatible
     (I := 𝓘(ℝ)) (F := ℝ) (V := Trivial (⊥ : TopologicalSpace.Opens ℝ) ℝ)
     (k := ∞) (by simp)

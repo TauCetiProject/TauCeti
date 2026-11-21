@@ -294,14 +294,14 @@ theorem totallyBounded_of_comp_add_sub_of_unifTight (hp' : p ≠ ∞)
       ballAverage mu r ⇑(i : Lp F p mu) x ∈ closedBall (0 : F) Bₑ.toReal := fun i x => by
     rw [mem_closedBall, dist_zero_right]
     have h := (enorm_ballAverage_le (r := r) hp hp' x).trans
-      (mul_le_mul' le_rfl (hbdd _ i.2))
+      (mul_le_mul' le_rfl (hbdd _ i.property))
     simpa [Bₑ, V] using ENNReal.toReal_mono hBₑt h
   -- The uniform equicontinuity of the ball averages, at the fixed scale `r`.
   have hequi : UniformEquicontinuous fun i : S => ballAverage mu r ⇑(i : Lp F p mu) :=
     uniformEquicontinuous_ballAverage hp hp' (fun i => Lp.memLp (i : Lp F p mu))
       fun c hc => by
         obtain ⟨δ, hδ, hδS⟩ := htrans c hc
-        exact ⟨δ, hδ, fun i => hδS _ i.2⟩
+        exact ⟨δ, hδ, fun i => hδS _ i.property⟩
   have hsmooth : ∀ g ∈ S, eLpNorm (ballAverage mu r ⇑g - ⇑g) p mu ≤ ε₁ := by
     intro g hg
     exact eLpNorm_ballAverage_sub_le hp hp' (Lp.memLp g) hr
@@ -327,7 +327,8 @@ theorem totallyBounded_of_comp_add_sub_of_unifTight (hp' : p ≠ ∞)
   obtain ⟨j, hjt, hmid⟩ := ht ⟨f, hf⟩
   refine mem_iUnion₂.2 ⟨(j : Lp F p mu), ⟨j, hjt, rfl⟩, ?_⟩
   exact dist_lt_of_ballAverage_close_on hp hp' measurableSet_closedBall hε hη.le
-    (hsmooth f hf) (hsmooth _ j.2) (hRS f hf) (hRS _ j.2) hWη fun x hx ↦ (hmid x hx).le
+    (hsmooth f hf) (hsmooth _ j.property) (hRS f hf) (hRS _ j.property) hWη fun x hx ↦
+        (hmid x hx).le
 
 /-- **Relative compactness in `Lᵖ` under the Fréchet--Kolmogorov hypotheses**: the closure of an
 `Lᵖ`-bounded, uniformly tight family whose translation increments are uniformly small in `Lᵖ` is
@@ -358,7 +359,7 @@ theorem totallyBounded_of_comp_add_sub_of_isBounded_of_ae_eq_zero_compl (hp' : p
   intro ε _
   refine ⟨closedBall (0 : E) R, measure_closedBall_lt_top.ne, fun f => ?_⟩
   have h0 : (closedBall (0 : E) R)ᶜ.indicator ⇑(f : Lp F p mu) =ᵐ[mu] 0 := by
-    filter_upwards [hsupp (f : Lp F p mu) f.2] with x hx
+    filter_upwards [hsupp (f : Lp F p mu) f.property] with x hx
     by_cases hxK : x ∈ (closedBall (0 : E) R)ᶜ
     · rw [Set.indicator_of_mem hxK, Pi.zero_apply, hx fun hxs => hxK (hR hxs)]
     · rw [Set.indicator_of_notMem hxK, Pi.zero_apply]

@@ -256,7 +256,7 @@ theorem contMDiffOn_hom_of_localFrame {f : N → M} {u : Set N} (hf : ContMDiffO
         ((eh ⟨f y, A y⟩).2 (b j))) u := by
     refine contMDiffOn_finsetSum fun j _ ↦ ?_
     exact ContMDiffOn.clm_apply
-      (g := fun _ ↦ ContinuousLinearMap.smulRightL 𝕜 F F'
+      (g := fun _ ↦ ContinuousLinearMap.smulRightL 𝕜 𝕜 𝕜 F F'
         (LinearMap.toContinuousLinearMap (b.coord j))) contMDiffOn_const (hcoord j)
   apply hsum.congr
   intro y _

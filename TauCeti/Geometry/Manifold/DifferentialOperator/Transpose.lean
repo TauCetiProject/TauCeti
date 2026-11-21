@@ -71,6 +71,10 @@ compositions.
   order at most `m`.
 * `LinearMap.IsFormalTranspose.smoothPrincipalSymbol_eq`: its principal symbol is `(-1) ^ m` times
   that of the operator.
+* `LinearMap.IsFormalTranspose.mem_differentialOperators_of_neg_one_pow_smul`,
+  `LinearMap.IsFormalTranspose.mem_differentialOperators_two_mul_of_self`: if `(-1) ^ m D` is a
+  formal transpose of an operator `D` of order at most `m + 1`, then `D` has order at most `m`; in
+  particular a formally self-adjoint operator of order at most `2 k + 1` has order at most `2 k`.
 * `LinearMap.isFormalTranspose_lineDerivation`: the formal transpose of `∂_v` is `-∂_v`.
 * `LinearMap.isFormalTranspose_multiIndexDeriv`,
   `LinearMap.isFormalTranspose_coordinateOperator`, `LinearMap.formalTranspose_multiIndexDeriv`,
@@ -458,6 +462,45 @@ theorem IsFormalTranspose.mem_differentialOperators {m k : ℕ} (h : D.IsFormalT
       (smulCommutator_mem_differentialOperators hD a)
       (neg_mem (smulCommutator_mem_differentialOperators (differentialOperators_le_succ _ hD') a))
 
+omit [OpensMeasurableSpace M] [IsFiniteMeasureOnCompacts μ] in
+/-- **The parity of a formally symmetric operator.** If `(-1) ^ m D` is a formal transpose of a
+differential operator `D` of order at most `m + 1`, then `D` has order at most `m`: the
+`(m + 1)`-fold commutators of `D` have order zero, so they are their own transposes, while
+transposition multiplies them by `(-1) ^ (m + 1) (-1) ^ m = -1`. For even `m` this says that a
+formally self-adjoint operator of odd order `m + 1` has order at most `m`, and for odd `m` that a
+formally skew-adjoint operator of even order `m + 1` has order at most `m`. -/
+theorem IsFormalTranspose.mem_differentialOperators_of_neg_one_pow_smul {m : ℕ}
+    (h : D.IsFormalTranspose ((-1 : ℝ) ^ m • D) μ)
+    (hD : D ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ (m + 1)) :
+    D ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m := by
+  induction m generalizing D with
+  | zero =>
+    refine mem_differentialOperators_zero_iff_smulCommutator.2 fun a ↦ ?_
+    have h' := (h.smulCommutator hD (Submodule.smul_mem _ _ hD) a).unique
+      (isFormalTranspose_self_of_mem_differentialOperators_zero
+        (smulCommutator_mem_differentialOperators hD a))
+    rw [pow_zero, one_smul] at h'
+    have h2 : (2 : ℝ) • TauCeti.smulCommutator ℝ a D = 0 := by
+      rw [two_smul]
+      nth_rw 1 [← h']
+      exact neg_add_cancel _
+    exact (smul_eq_zero.1 h2).resolve_left two_ne_zero
+  | succ m ih =>
+    refine mem_differentialOperators_succ_iff.2 fun a ↦ ih ?_
+      (smulCommutator_mem_differentialOperators hD a)
+    convert h.smulCommutator hD (Submodule.smul_mem _ _ hD) a using 1
+    rw [map_smul, pow_succ, mul_neg_one]
+    module
+
+omit [OpensMeasurableSpace M] [IsFiniteMeasureOnCompacts μ] in
+/-- **Formally self-adjoint operators have even order.** A formally self-adjoint differential
+operator of order at most `2 k + 1` has order at most `2 k`. -/
+theorem IsFormalTranspose.mem_differentialOperators_two_mul_of_self {k : ℕ}
+    (h : D.IsFormalTranspose D μ)
+    (hD : D ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ (2 * k + 1)) :
+    D ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ (2 * k) :=
+  IsFormalTranspose.mem_differentialOperators_of_neg_one_pow_smul (by simpa using h) hD
+
 /-- **The principal symbol of a formal transpose.** If `D'` is a formal transpose of `D`, both
 differential operators of order at most `m`, then `σ(D')(ξ) = (-1) ^ m σ(D)(ξ)`. -/
 theorem IsFormalTranspose.smoothPrincipalSymbol_eq {m : ℕ}
@@ -473,7 +516,7 @@ theorem IsFormalTranspose.smoothPrincipalSymbol_eq {m : ℕ}
       (TauCeti.smulCommutator ℝ f ^ m) (P : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯) ∈
         differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ 0 := fun P ↦
     smulCommutator_pow_mem_differentialOperators (by simp) f
-  have heq := (h.smulCommutator_pow D.2 D'.2 f m).unique
+  have heq := (h.smulCommutator_pow D.property D'.property f m).unique
     (isFormalTranspose_self_of_mem_differentialOperators_zero (hm D))
   have heq' : (TauCeti.smulCommutator ℝ f ^ m) (D' : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯) =
       (-1 : ℝ) ^ m • (TauCeti.smulCommutator ℝ f ^ m) (D : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯) := by

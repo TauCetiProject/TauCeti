@@ -64,7 +64,7 @@ theorem exists_fin_spanning_contMDiffSection :
   obtain ⟨t, ht⟩ := isCompact_univ.elim_finite_subcover U hU fun x _ ↦
     mem_iUnion.mpr ⟨x, hxU x⟩
   let J := ↥t × Fin (finrank ℝ F)
-  let f : J → ContMDiffSection I F ∞ V := fun i ↦ s i.1.1 i.2
+  let f : J → ContMDiffSection I F ∞ V := fun i ↦ s i.1.val i.2
   let q := Fintype.equivFin J
   refine ⟨Fintype.card J, f ∘ q.symm, fun x ↦ ?_⟩
   obtain ⟨a, ha, hx⟩ := mem_iUnion₂.mp (ht (mem_univ x))

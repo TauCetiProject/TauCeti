@@ -49,13 +49,13 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 def normalQuotientMap (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
     (p : TotalSpace F ((f : M → N) *ᵖ (TangentSpace J))) :
     TotalSpace K (fun x => f.NormalSpace x hn) :=
-  ⟨p.proj, f.normalClass p.proj hn p.2⟩
+  ⟨p.proj, f.normalClass p.proj hn p.snd⟩
 
 omit [IsManifold J 1 N] in
 /-- The quotient map preserves the base and takes the fibrewise normal class. -/
 @[simp] theorem normalQuotientMap_apply (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
     (p : TotalSpace F ((f : M → N) *ᵖ (TangentSpace J))) :
-    f.normalQuotientMap (K := K) hn p = ⟨p.proj, f.normalClass p.proj hn p.2⟩ := (rfl)
+    f.normalQuotientMap (K := K) hn p = ⟨p.proj, f.normalClass p.proj hn p.snd⟩ := (rfl)
 
 omit [IsManifold J 1 N] in
 /-- Every point of the intrinsic normal total space has an ambient tangent representative. -/
@@ -119,10 +119,11 @@ class of the ambient differential of the representative. -/
     (p : TotalSpace F ((f : M → N) *ᵖ (TangentSpace J))) :
     f.normalBundleMap (K := K) (K' := K') g hn hm h (f.normalQuotientMap hn p) =
       g.normalQuotientMap hm (⟨u p.proj, tangentSpaceCast J' (v (f p.proj)) (g (u p.proj))
-        (mfderiv J J' v (f p.proj) p.2)⟩ : TotalSpace F' ((g : M' → N') *ᵖ (TangentSpace J'))) := by
+        (mfderiv J J' v (f p.proj) p.snd)⟩ : TotalSpace F' ((g : M' → N') *ᵖ (TangentSpace J')))
+            := by
   rw [normalBundleMap_apply]
   exact congrArg (TotalSpace.mk (u p.proj))
-    (f.normalMap_normalClass g hn hm (Filter.EventuallyEq.of_eq h) p.2)
+    (f.normalMap_normalClass g hn hm (Filter.EventuallyEq.of_eq h) p.snd)
 
 /-- A commuting square with C¹ ambient map induces a continuous map of intrinsic normal bundles.
 The base map is then continuous, since the target embedding reflects continuity. -/
@@ -135,7 +136,7 @@ theorem continuous_normalBundleMap
   let T : TotalSpace F ((f : M → N) *ᵖ (TangentSpace J)) →
       TotalSpace F' ((g : M' → N') *ᵖ (TangentSpace J')) := fun p =>
     ⟨u p.proj, tangentSpaceCast J' (v (f p.proj)) (g (u p.proj))
-      (mfderiv J J' v (f p.proj) p.2)⟩
+      (mfderiv J J' v (f p.proj) p.snd)⟩
   have hT : Continuous T := by
     apply (inducing_pullbackTotalSpaceEmbedding F' (TangentSpace J')
       (g : M' → N')).continuous_iff.mpr

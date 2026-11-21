@@ -56,7 +56,8 @@ instance : isTorsion.{u}.IsSerreClass where
     exact IsAddTorsion.of_surjective (f := f.hom) hf hM
   prop_X₂_of_shortExact {S} hS h₁ h₃ := by
     refine IsAddTorsion.extension_closed (f := S.g.hom) rfl h₃ fun x ↦ ?_
-    obtain ⟨x₁, hx₁⟩ := (ShortComplex.ab_exact_iff S).1 hS.exact x (AddMonoidHom.mem_ker.1 x.2)
+    obtain ⟨x₁, hx₁⟩ := (ShortComplex.ab_exact_iff S).1 hS.exact x
+        (AddMonoidHom.mem_ker.1 x.property)
     exact AddSubmonoid.isOfFinAddOrder_coe.1 (hx₁ ▸ S.f.hom.isOfFinAddOrder (h₁ x₁))
 
 /-- A group annihilated by some power of a nonzero natural number `d` is a torsion group. -/

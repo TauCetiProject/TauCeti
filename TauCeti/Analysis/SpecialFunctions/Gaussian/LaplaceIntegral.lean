@@ -15,14 +15,17 @@ import Mathlib.Analysis.Calculus.ParametricIntegral
 import Mathlib.Analysis.MellinTransform
 import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
+import TauCeti.Analysis.RCLike.Basic
 import TauCeti.Analysis.SpecialFunctions.Gaussian.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
+import TauCeti.MeasureTheory.Integral.Exp.Decay
 
 /-!
 # Half-line Gaussian–Laplace integrals
 
-This file develops integrability, positive scaling, differentiation with respect to the Laplace
-parameter, and Mellin-parameter holomorphy for half-line integrals of the form
+This file develops integrability, vertical-strip norm bounds, positive scaling, and complex
+differentiation with respect to both the Laplace parameter and the Mellin exponent for half-line
+integrals of the form
 
   `∫ u in Ioi (0 : ℝ), (u : ℂ) ^ (s - 1) * cexp (-b * (u : ℂ) ^ 2 - z * u)`
 
@@ -31,7 +34,8 @@ parameter `z : ℂ`, alongside real majorants for `b ≥ 0`. Completing the squa
 `-b.re u² - z.re u` absorbs the linear term into half the Gaussian weight, so the integral
 converges on `(0, ∞)` whenever `0 < b.re` and `0 < s.re` for every `z : ℂ`, defines an entire
 function of `z` whose derivative shifts `s - 1` to `s` with a minus sign, and defines a holomorphic
-function of `s` on the open right half-plane `{s : ℂ | 0 < s.re}`.
+function of `s` on the open right half-plane `{s : ℂ | 0 < s.re}` whose derivative inserts
+`Complex.log u` into the integrand.
 
 At `b = 1 / 2` and `s = a + 1 / 2`, this integral is the half-line Laplace kernel of Weber's
 parabolic cylinder function `U(a, z)` (DLMF 12.5.1), providing both its differential-equation
@@ -50,13 +54,16 @@ derivative shifts and the termwise shifted integrals of the Laplace–Hermite ro
 * `TauCeti.integrableOn_cpow_mul_cexp_neg_mul_sq_sub_mul_Ioi`,
   `TauCeti.integrableOn_cpow_mul_cexp_neg_mul_sq_sub_mul_Ioi_of_pos`: complex integrability on
   `(0, ∞)` for `0 < b.re` and `0 < s.re`, and on `(a, ∞)` (`0 < a`) for `0 < b.re` and any `s`.
+* `TauCeti.norm_integral_cpow_mul_cexp_neg_mul_sq_sub_mul_Ioi_le_add`: vertical-strip norm bound
+  on `σ₁ ≤ s.re ≤ σ₂` (`0 < σ₁`) by the sum of the two real endpoint integrals.
 * `TauCeti.integral_cpow_mul_cexp_neg_mul_sq_mul_sq_sub_mul_Ioi_eq_cpow_mul_integral`: positive
   scaling `v = c u` (`0 < c`) pulls out `(c : ℂ) ^ (-s)` and replaces `(b c², z)` by `(b, z / c)`.
 * `TauCeti.hasDerivAt_integral_cpow_mul_cexp_neg_mul_sq_sub_mul_Ioi`,
   `TauCeti.differentiable_integral_cpow_mul_cexp_neg_mul_sq_sub_mul_Ioi`: derivative in `z : ℂ`
   and entireness on `ℂ` for `0 < b.re` and `0 < s.re`.
-* `TauCeti.differentiableOn_integral_cpow_mul_cexp_neg_mul_sq_sub_mul_Ioi`: holomorphy in `s` on
-  `{s : ℂ | 0 < s.re}` for `0 < b.re` and any `z : ℂ`.
+* `TauCeti.hasDerivAt_integral_cpow_mul_cexp_neg_mul_sq_sub_mul_Ioi_left`,
+  `TauCeti.differentiableOn_integral_cpow_mul_cexp_neg_mul_sq_sub_mul_Ioi`: derivative and
+  holomorphy in `s` on `{s : ℂ | 0 < s.re}` for `0 < b.re` and any `z : ℂ`.
 
 ## References
 
@@ -116,31 +123,13 @@ theorem integrableOn_rpow_mul_exp_neg_mul_sq_sub_mul_Ioi_of_pos {a b : ℝ} (ha 
 theorem integrableOn_rpow_mul_exp_neg_mul_sq_sub_mul_Ioi_of_nonneg {a b s c : ℝ} (ha : 0 < a)
     (hb : 0 ≤ b) (hc : 0 < c ∨ (0 ≤ c ∧ s < -1)) :
     IntegrableOn (fun u : ℝ => u ^ s * rexp (-b * u ^ 2 - c * u)) (Ioi a) := by
-  have hmeas : AEStronglyMeasurable (fun u : ℝ => u ^ s * rexp (-b * u ^ 2 - c * u))
-      (volume.restrict (Ioi a)) :=
-    Measurable.aestronglyMeasurable (by fun_prop)
-  rcases hc with hc | ⟨hc, hs⟩
-  · set m := max s 0
-    have hm : -1 < m := lt_of_lt_of_le neg_one_lt_zero (le_max_right s 0)
-    have hmaj : IntegrableOn
-        (fun u : ℝ => a ^ (s - m) * (u ^ m * rexp (-c * u ^ (1 : ℝ)))) (Ioi a) :=
-      ((integrableOn_rpow_mul_exp_neg_mul_rpow hm zero_lt_one hc).mono_set
-        (Ioi_subset_Ioi ha.le)).const_mul _
-    refine hmaj.mono' hmeas ?_
-    filter_upwards [ae_restrict_mem measurableSet_Ioi] with u (hu : a < u)
-    have hu0 : 0 < u := ha.trans hu
-    rw [Real.norm_of_nonneg (by positivity), Real.rpow_one]
-    calc u ^ s * rexp (-b * u ^ 2 - c * u)
-        ≤ (a ^ (s - m) * u ^ m) * rexp (-c * u) :=
-          mul_le_mul (Real.rpow_le_rpow_sub_mul_rpow_of_exponent_le ha hu.le (le_max_left s 0))
-            (Real.exp_le_exp.mpr (by nlinarith [sq_nonneg u])) (Real.exp_pos _).le (by positivity)
-      _ = a ^ (s - m) * (u ^ m * rexp (-c * u)) := by ring
-  · refine (integrableOn_Ioi_rpow_of_lt hs ha).mono' hmeas ?_
-    filter_upwards [ae_restrict_mem measurableSet_Ioi] with u (hu : a < u)
-    have hu0 : 0 < u := ha.trans hu
-    rw [Real.norm_of_nonneg (by positivity)]
-    exact mul_le_of_le_one_right (by positivity)
-      (Real.exp_le_one_iff.mpr (by nlinarith [sq_nonneg u]))
+  refine (integrableOn_rpow_mul_exp_neg_mul_Ioi_of_pos ha hc).mono'
+    (Measurable.aestronglyMeasurable (by fun_prop)) ?_
+  filter_upwards [ae_restrict_mem measurableSet_Ioi] with u (hu : a < u)
+  have hu0 : 0 < u := ha.trans hu
+  rw [Real.norm_of_nonneg (by positivity)]
+  exact mul_le_mul_of_nonneg_left
+    (Real.exp_le_exp.mpr (by nlinarith [sq_nonneg u])) (by positivity)
 
 private theorem re_neg_mul_sq_sub_mul (b z : ℂ) (u : ℝ) :
     (-b * (u : ℂ) ^ 2 - z * u).re = -b.re * u ^ 2 - z.re * u := by
@@ -181,6 +170,24 @@ theorem integrableOn_cpow_mul_cexp_neg_mul_sq_sub_mul_Ioi_of_pos {a : ℝ} {b : 
   rw [norm_cpow_mul_cexp_neg_mul_sq_sub_mul b (s - 1) z (ha.trans hu)]
   simp
 
+/-- On any vertical strip `σ₁ ≤ s.re ≤ σ₂` (`0 < σ₁`, `0 < b.re`), the norm of the complex
+Gaussian–Laplace integral is bounded by the sum of the two real endpoint integrals at `σ₁` and
+`σ₂`. -/
+theorem norm_integral_cpow_mul_cexp_neg_mul_sq_sub_mul_Ioi_le_add {b s : ℂ} {σ₁ σ₂ : ℝ}
+    (hb : 0 < b.re) (hσ₁ : 0 < σ₁) (hlo : σ₁ ≤ s.re) (hhi : s.re ≤ σ₂) (z : ℂ) :
+    ‖∫ u in Ioi (0 : ℝ), (u : ℂ) ^ (s - 1) * cexp (-b * (u : ℂ) ^ 2 - z * u)‖ ≤
+      (∫ u in Ioi (0 : ℝ), u ^ (σ₁ - 1) * rexp (-b.re * u ^ 2 - z.re * u)) +
+        ∫ u in Ioi (0 : ℝ), u ^ (σ₂ - 1) * rexp (-b.re * u ^ 2 - z.re * u) := by
+  have hint₁ := integrableOn_rpow_mul_exp_neg_mul_sq_sub_mul_Ioi hb (s := σ₁ - 1) (by linarith) z.re
+  have hint₂ := integrableOn_rpow_mul_exp_neg_mul_sq_sub_mul_Ioi hb (s := σ₂ - 1) (by linarith) z.re
+  rw [← integral_add hint₁ hint₂]
+  refine norm_integral_le_of_norm_le (hint₁.add hint₂) ?_
+  filter_upwards [ae_restrict_mem measurableSet_Ioi] with u (hu : 0 < u)
+  rw [norm_cpow_mul_cexp_neg_mul_sq_sub_mul b (s - 1) z hu, Complex.sub_re, Complex.one_re,
+    ← add_mul]
+  exact mul_le_mul_of_nonneg_right
+    (Real.rpow_le_rpow_add_rpow_of_mem_Icc hu ⟨by linarith, by linarith⟩) (Real.exp_pos _).le
+
 /-- Positive rescaling `v = c * u` (`0 < c`) in the half-line Gaussian–Laplace integral: for every
 `b s z : ℂ`, `∫_{u > 0} u^{s - 1} exp (-(b c²) u² - z u) du` equals
 `c^{-s} ∫_{v > 0} v^{s - 1} exp (-b v² - (z / c) v) dv`. -/
@@ -210,23 +217,20 @@ theorem hasDerivAt_integral_cpow_mul_cexp_neg_mul_sq_sub_mul_Ioi {b s : ℂ} (hb
       (-∫ u in Ioi (0 : ℝ), (u : ℂ) ^ s * cexp (-b * (u : ℂ) ^ 2 - z * u)) z := by
   have hball : Metric.ball z 1 ∈ 𝓝 z := Metric.ball_mem_nhds z zero_lt_one
   have hb_int : IntegrableOn
-      (fun u : ℝ => u ^ s.re * rexp (-b.re * u ^ 2 - (-(|z.re| + 1)) * u)) (Ioi 0) :=
-    integrableOn_rpow_mul_exp_neg_mul_sq_sub_mul_Ioi hb (by linarith) (-(|z.re| + 1))
+      (fun u : ℝ => u ^ s.re * rexp (-b.re * u ^ 2 - (z.re - 1) * u)) (Ioi 0) :=
+    integrableOn_rpow_mul_exp_neg_mul_sq_sub_mul_Ioi hb (by linarith) (z.re - 1)
   have h := hasDerivAt_integral_of_dominated_loc_of_deriv_le
     (μ := volume.restrict (Ioi 0))
     (F := fun w (u : ℝ) => (u : ℂ) ^ (s - 1) * cexp (-b * (u : ℂ) ^ 2 - w * u))
     (F' := fun w (u : ℝ) => -((u : ℂ) ^ s * cexp (-b * (u : ℂ) ^ 2 - w * u)))
-    (bound := fun u : ℝ => u ^ s.re * rexp (-b.re * u ^ 2 - (-(|z.re| + 1)) * u))
+    (bound := fun u : ℝ => u ^ s.re * rexp (-b.re * u ^ 2 - (z.re - 1) * u))
     hball
     (Eventually.of_forall fun _ => Measurable.aestronglyMeasurable (by fun_prop))
     (integrableOn_cpow_mul_cexp_neg_mul_sq_sub_mul_Ioi hb hs z)
     (Measurable.aestronglyMeasurable (by fun_prop)) ?_ hb_int ?_
   · simpa only [integral_neg] using h.2
   · filter_upwards [ae_restrict_mem measurableSet_Ioi] with u (hu : 0 < u) w hw
-    have hw_re : -(|z.re| + 1) ≤ w.re := by
-      rw [Metric.mem_ball, dist_eq_norm] at hw
-      have h1 : |w.re - z.re| < 1 := lt_of_le_of_lt (Complex.abs_re_le_norm (w - z)) hw
-      linarith [abs_lt.mp h1, le_abs_self z.re, neg_le_abs z.re]
+    have hw_re : z.re - 1 < w.re := (RCLike.re_mem_Ioo_of_mem_ball hw).1
     rw [norm_neg, norm_cpow_mul_cexp_neg_mul_sq_sub_mul b s w hu]
     gcongr
   · filter_upwards [ae_restrict_mem measurableSet_Ioi] with u (hu : 0 < u) w _
@@ -252,18 +256,20 @@ theorem differentiable_integral_cpow_mul_cexp_neg_mul_sq_sub_mul_Ioi {b s : ℂ}
       ∫ u in Ioi (0 : ℝ), (u : ℂ) ^ (s - 1) * cexp (-b * (u : ℂ) ^ 2 - z * u) :=
   fun z => (hasDerivAt_integral_cpow_mul_cexp_neg_mul_sq_sub_mul_Ioi hb hs z).differentiableAt
 
-/-- For `0 < b.re` and any `z : ℂ`, the Mellin parameter map
-`s ↦ ∫ u in Ioi (0 : ℝ), (u : ℂ) ^ (s - 1) * cexp (-b * (u : ℂ) ^ 2 - z * u)` is holomorphic
-on the open right half-plane `{s : ℂ | 0 < s.re}`. -/
-theorem differentiableOn_integral_cpow_mul_cexp_neg_mul_sq_sub_mul_Ioi {b : ℂ} (hb : 0 < b.re)
-    (z : ℂ) :
-    DifferentiableOn ℂ
+/-- For `0 < b.re`, `0 < s₀.re`, and any `z : ℂ`, differentiating the Gaussian–Laplace integral
+with respect to the Mellin exponent `s` at `s₀` inserts a factor `Complex.log u` into the
+integrand. -/
+theorem hasDerivAt_integral_cpow_mul_cexp_neg_mul_sq_sub_mul_Ioi_left {b s₀ : ℂ} (hb : 0 < b.re)
+    (hs₀ : 0 < s₀.re) (z : ℂ) :
+    HasDerivAt
       (fun s : ℂ =>
         ∫ u in Ioi (0 : ℝ), (u : ℂ) ^ (s - 1) * cexp (-b * (u : ℂ) ^ 2 - z * u))
-      {s : ℂ | 0 < s.re} := by
+      (∫ u in Ioi (0 : ℝ),
+        Complex.log u * (u : ℂ) ^ (s₀ - 1) * cexp (-b * (u : ℂ) ^ 2 - z * u)) s₀ := by
   let f : ℝ → ℂ := fun u => cexp (-b * (u : ℂ) ^ 2 - z * u)
+  have hf_cont : Continuous f := by fun_prop
   have hf_loc : LocallyIntegrableOn f (Ioi 0) :=
-    (by fun_prop : Continuous f).continuousOn.locallyIntegrableOn measurableSet_Ioi
+    hf_cont.continuousOn.locallyIntegrableOn measurableSet_Ioi
   have hf_top : f =O[atTop] fun u : ℝ => rexp (-(b.re / 2) * u) := by
     rw [Asymptotics.isBigO_iff]
     refine ⟨rexp (z.re ^ 2 / (2 * b.re)), ?_⟩
@@ -272,26 +278,28 @@ theorem differentiableOn_integral_cpow_mul_cexp_neg_mul_sq_sub_mul_Ioi {b : ℂ}
     rw [Complex.norm_exp, Real.norm_of_nonneg (Real.exp_pos _).le, re_neg_mul_sq_sub_mul]
     refine (exp_neg_mul_sq_sub_mul_le hb z.re u).trans ?_
     exact mul_le_mul_of_nonneg_left (Real.exp_le_exp.mpr (by nlinarith)) (Real.exp_pos _).le
+  have hf_rpow : f =O[atTop] fun u : ℝ => u ^ (-(s₀.re + 1)) :=
+    hf_top.trans (isLittleO_exp_neg_mul_rpow_atTop (half_pos hb) _).isBigO
   have hf_bot : f =O[𝓝[>] 0] fun u : ℝ => u ^ (-(0 : ℝ)) := by
-    rw [Asymptotics.isBigO_iff]
-    refine ⟨rexp (z.re ^ 2 / (2 * b.re)), ?_⟩
-    filter_upwards [self_mem_nhdsWithin] with u (_ : 0 < u)
-    rw [neg_zero, Real.rpow_zero, norm_one, mul_one, Complex.norm_exp, re_neg_mul_sq_sub_mul]
-    calc rexp (-b.re * u ^ 2 - z.re * u)
-        ≤ rexp (z.re ^ 2 / (2 * b.re)) * rexp (-(b.re / 2) * u ^ 2) :=
-          exp_neg_mul_sq_sub_mul_le hb z.re u
-      _ ≤ rexp (z.re ^ 2 / (2 * b.re)) * 1 := by
-          gcongr
-          exact Real.exp_le_one_iff.mpr (by nlinarith [sq_nonneg u])
-      _ = rexp (z.re ^ 2 / (2 * b.re)) := mul_one _
-  have hm : (fun s : ℂ =>
-        ∫ u in Ioi (0 : ℝ), (u : ℂ) ^ (s - 1) * cexp (-b * (u : ℂ) ^ 2 - z * u)) =
-      mellin f := by
-    ext s
-    simp [mellin, f]
-  rw [hm]
-  intro s hs
-  exact (mellin_differentiableAt_of_isBigO_rpow_exp (half_pos hb) hf_loc hf_top hf_bot
-    hs).differentiableWithinAt
+    simp_rw [neg_zero, Real.rpow_zero]
+    exact Asymptotics.isBigO_const_of_tendsto hf_cont.continuousWithinAt one_ne_zero
+  have hm := (mellin_hasDerivAt_of_isBigO_rpow hf_loc hf_rpow (lt_add_one s₀.re) hf_bot hs₀).2
+  simp only [mellin, smul_eq_mul] at hm
+  refine hm.congr_deriv (setIntegral_congr_fun measurableSet_Ioi fun u (hu : 0 < u) => ?_)
+  rw [Complex.real_smul, Complex.ofReal_log hu.le]
+  ring
+
+/-- For `0 < b.re` and any `z : ℂ`, the Mellin parameter map
+`s ↦ ∫ u in Ioi (0 : ℝ), (u : ℂ) ^ (s - 1) * cexp (-b * (u : ℂ) ^ 2 - z * u)` is holomorphic
+on the open right half-plane `{s : ℂ | 0 < s.re}`. -/
+theorem differentiableOn_integral_cpow_mul_cexp_neg_mul_sq_sub_mul_Ioi {b : ℂ} (hb : 0 < b.re)
+    (z : ℂ) :
+    DifferentiableOn ℂ
+      (fun s : ℂ =>
+        ∫ u in Ioi (0 : ℝ), (u : ℂ) ^ (s - 1) * cexp (-b * (u : ℂ) ^ 2 - z * u))
+      {s : ℂ | 0 < s.re} :=
+  fun _ hs =>
+    (hasDerivAt_integral_cpow_mul_cexp_neg_mul_sq_sub_mul_Ioi_left hb hs z).differentiableAt
+      |>.differentiableWithinAt
 
 end TauCeti

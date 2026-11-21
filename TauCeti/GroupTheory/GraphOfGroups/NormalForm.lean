@@ -57,6 +57,9 @@ transversals. For a loop, the statement about the edge paths of reduced paths is
 
 * `TauCeti.GraphOfGroups.normalForm_eq_normalForm_iff`: two `𝔸`-paths are homotopic exactly
   when they have the same normal form.
+* `TauCeti.GraphOfGroups.exists_homotopic_cons_vertex_iff_setLast_eq`: two `𝔸`-paths differ on the
+  right by a vertex group element up to homotopy exactly when their normal forms agree up to the
+  final vertex group element.
 * `TauCeti.GraphOfGroups.NormalWord.toPath_homotopic_toPath_iff`: distinct normal words are not
   homotopic.
 * `TauCeti.GraphOfGroups.π₁.normalWordEquiv`: `π₁(𝔸, a)` is in bijection with the normal words of
@@ -103,28 +106,28 @@ variable {𝔸} (d : 𝔸.Transversal) {a b : Γ.V} (e : a ⟶ b)
 
 /-- The representative in the transversal `d e` of the left coset `g α_e(A_e)`. -/
 noncomputable def rep (g : 𝔸.vertexGroup a) : 𝔸.vertexGroup a :=
-  ((d e).2.equiv g).1
+  ((d e).property.equiv g).1
 
 /-- The element `c` of the edge group with `g = rep g * α_e(c)`. -/
-noncomputable def edgePart (g : 𝔸.vertexGroup a) : 𝔸.edgeGroup (Γ.toGeomEdge e.1) :=
+noncomputable def edgePart (g : 𝔸.vertexGroup a) : 𝔸.edgeGroup (Γ.toGeomEdge e.val) :=
   (MonoidHom.ofInjective (𝔸.αArrow_injective e)).symm
-    ⟨((d e).2.equiv g).2.1, ((d e).2.equiv g).2.2⟩
+    ⟨((d e).property.equiv g).2.val, ((d e).property.equiv g).2.property⟩
 
-@[simp] theorem rep_mem (g : 𝔸.vertexGroup a) : d.rep e g ∈ (d e).1 :=
-  ((d e).2.equiv g).1.2
+@[simp] theorem rep_mem (g : 𝔸.vertexGroup a) : d.rep e g ∈ (d e).val :=
+  ((d e).property.equiv g).1.property
 
 /-- Every `g ∈ A_a` is its representative times an element `α_e(c)` of `α_e(A_e)`. -/
 @[simp] theorem rep_mul_αArrow_edgePart (g : 𝔸.vertexGroup a) :
     d.rep e g * 𝔸.αArrow e (d.edgePart e g) = g := by
-  simpa [rep, edgePart] using (d e).2.equiv_fst_mul_equiv_snd g
+  simpa [rep, edgePart] using (d e).property.equiv_fst_mul_equiv_snd g
 
 /-- An element of the transversal is its own representative. -/
-theorem rep_of_mem {g : 𝔸.vertexGroup a} (hg : g ∈ (d e).1) : d.rep e g = g :=
-  congrArg Subtype.val ((d e).2.equiv_fst_eq_self_of_mem_of_one_mem (one_mem _) hg)
+theorem rep_of_mem {g : 𝔸.vertexGroup a} (hg : g ∈ (d e).val) : d.rep e g = g :=
+  congrArg Subtype.val ((d e).property.equiv_fst_eq_self_of_mem_of_one_mem (one_mem _) hg)
 
 /-- An element of the transversal has trivial edge group part. -/
-theorem edgePart_of_mem {g : 𝔸.vertexGroup a} (hg : g ∈ (d e).1) : d.edgePart e g = 1 := by
-  simp only [edgePart, (d e).2.equiv_snd_eq_one_of_mem_of_one_mem (one_mem _) hg]
+theorem edgePart_of_mem {g : 𝔸.vertexGroup a} (hg : g ∈ (d e).val) : d.edgePart e g = 1 := by
+  simp only [edgePart, (d e).property.equiv_snd_eq_one_of_mem_of_one_mem (one_mem _) hg]
   exact map_one _
 
 @[simp] theorem rep_rep (g : 𝔸.vertexGroup a) : d.rep e (d.rep e g) = d.rep e g :=
@@ -133,11 +136,11 @@ theorem edgePart_of_mem {g : 𝔸.vertexGroup a} (hg : g ∈ (d e).1) : d.edgePa
 @[simp] theorem edgePart_rep (g : 𝔸.vertexGroup a) : d.edgePart e (d.rep e g) = 1 :=
   d.edgePart_of_mem e (d.rep_mem e g)
 
-@[simp] theorem rep_mul_αArrow (g : 𝔸.vertexGroup a) (c : 𝔸.edgeGroup (Γ.toGeomEdge e.1)) :
+@[simp] theorem rep_mul_αArrow (g : 𝔸.vertexGroup a) (c : 𝔸.edgeGroup (Γ.toGeomEdge e.val)) :
     d.rep e (g * 𝔸.αArrow e c) = d.rep e g := by
-  rw [rep, (d e).2.equiv_mul_right_of_mem (MonoidHom.mem_range.2 ⟨c, rfl⟩), rep]
+  rw [rep, (d e).property.equiv_mul_right_of_mem (MonoidHom.mem_range.2 ⟨c, rfl⟩), rep]
 
-@[simp] theorem edgePart_mul_αArrow (g : 𝔸.vertexGroup a) (c : 𝔸.edgeGroup (Γ.toGeomEdge e.1)) :
+@[simp] theorem edgePart_mul_αArrow (g : 𝔸.vertexGroup a) (c : 𝔸.edgeGroup (Γ.toGeomEdge e.val)) :
     d.edgePart e (g * 𝔸.αArrow e c) = d.edgePart e g * c :=
   𝔸.αArrow_injective e <| mul_left_cancel (a := d.rep e (g * 𝔸.αArrow e c)) <| by
     rw [rep_mul_αArrow_edgePart, rep_mul_αArrow, map_mul, ← mul_assoc, rep_mul_αArrow_edgePart]
@@ -376,7 +379,7 @@ def toPath : ∀ {b : Γ.V}, 𝔸.AlternatingPath a b → 𝔸.Path ⟨a⟩ ⟨b
       List.length_singleton] at hj ⊢
     split_ifs with h
     · rw [ih h, vertex_cons_of_le p e g (hp ▸ h.le)]
-    · rw [List.getElem_singleton, e.2.1, vertex_cons_of_le p e g (by omega),
+    · rw [List.getElem_singleton, e.property.1, vertex_cons_of_le p e g (by omega),
         show j = p.length by omega, vertex_length]
 
 /-- The dart `e_{j+1}` of an alternating path `g₀, e₁, g₁, …, e_k, g_k` ends at its vertex
@@ -392,7 +395,7 @@ def toPath : ∀ {b : Γ.V}, 𝔸.AlternatingPath a b → 𝔸.Path ⟨a⟩ ⟨b
       SerreGraph.Path.darts_cons, List.getElem_append] at hj ⊢
     split_ifs with h
     · rw [ih h, vertex_cons_of_le p e g (hp ▸ h)]
-    · rw [List.getElem_singleton, e.2.2, vertex_cons_of_lt p e g (by omega)]
+    · rw [List.getElem_singleton, e.property.2, vertex_cons_of_lt p e g (by omega)]
 
 /-- Multiplying the last element of an alternating path by `g` amounts, up to homotopy, to
 appending the vertex group letter `g`. -/
@@ -423,7 +426,7 @@ theorem toPath_setLast_one_comp_homotopic {b : Γ.V} {y : 𝔸.LetterVertex}
 so that appending `e` creates the backtracking `rev e, α_e(c), e`. -/
 def Cancels : ∀ {b c : Γ.V}, 𝔸.AlternatingPath a b → (b ⟶ c) → Prop
   | _, _, single _, _ => False
-  | _, _, cons _ e' g, e => e'.1 = Γ.rev e.1 ∧ g ∈ (𝔸.αArrow e).range
+  | _, _, cons _ e' g, e => e'.val = Γ.rev e.val ∧ g ∈ (𝔸.αArrow e).range
 
 @[simp] theorem not_cancels_single {c : Γ.V} (g : 𝔸.vertexGroup a) (e : a ⟶ c) :
     ¬ (single g : 𝔸.AlternatingPath a a).Cancels e :=
@@ -431,21 +434,21 @@ def Cancels : ∀ {b c : Γ.V}, 𝔸.AlternatingPath a b → (b ⟶ c) → Prop
 
 @[simp] theorem cancels_cons_iff {b c d : Γ.V} (p : 𝔸.AlternatingPath a b) (e' : b ⟶ c)
     (g : 𝔸.vertexGroup c) (e : c ⟶ d) :
-    (cons p e' g).Cancels e ↔ e'.1 = Γ.rev e.1 ∧ g ∈ (𝔸.αArrow e).range :=
+    (cons p e' g).Cancels e ↔ e'.val = Γ.rev e.val ∧ g ∈ (𝔸.αArrow e).range :=
   Iff.rfl
 
 /-- In terms of the first dart: `p, e', g` followed by `e` backtracks when `e` reverses `e'` and
 `g ∈ ω_{e'}(A_{e'})`. -/
 theorem cancels_cons_iff_ωArrow {b c d : Γ.V} (p : 𝔸.AlternatingPath a b) (e' : b ⟶ c)
     (g : 𝔸.vertexGroup c) (e : c ⟶ d) :
-    (cons p e' g).Cancels e ↔ e.1 = Γ.rev e'.1 ∧ g ∈ (𝔸.ωArrow e').range := by
+    (cons p e' g).Cancels e ↔ e.val = Γ.rev e'.val ∧ g ∈ (𝔸.ωArrow e').range := by
   have hrev : Function.Involutive Γ.rev := Γ.rev_rev
-  rw [cancels_cons_iff, ← (eq_comm.trans hrev.eq_iff : e'.1 = Γ.rev e.1 ↔ _)]
+  rw [cancels_cons_iff, ← (eq_comm.trans hrev.eq_iff : e'.val = Γ.rev e.val ↔ _)]
   exact and_congr_right fun h ↦ by rw [𝔸.range_ωArrow_eq_range_αArrow e' e h]
 
 /-- `p` backtracks with `e` exactly when it ends with `rev e, α_e(c)`. -/
 theorem cancels_iff {b c : Γ.V} {p : 𝔸.AlternatingPath a b} {e : b ⟶ c} :
-    p.Cancels e ↔ ∃ (q : 𝔸.AlternatingPath a c) (c₀ : 𝔸.edgeGroup (Γ.toGeomEdge e.1)),
+    p.Cancels e ↔ ∃ (q : 𝔸.AlternatingPath a c) (c₀ : 𝔸.edgeGroup (Γ.toGeomEdge e.val)),
       p = cons q (Quiver.reverse e) (𝔸.αArrow e c₀) := by
   refine ⟨fun h ↦ ?_, ?_⟩
   · cases p with
@@ -490,14 +493,14 @@ variable (d : 𝔸.Transversal)
 except the last lies in the transversal of the dart that follows it. -/
 def IsNormalized : ∀ {b : Γ.V}, 𝔸.AlternatingPath a b → Prop
   | _, single _ => True
-  | _, cons p e _ => p.IsNormalized ∧ p.last ∈ (d e).1
+  | _, cons p e _ => p.IsNormalized ∧ p.last ∈ (d e).val
 
 @[simp] theorem isNormalized_single (g : 𝔸.vertexGroup a) :
     (single g : 𝔸.AlternatingPath a a).IsNormalized d :=
   True.intro
 
 @[simp] theorem isNormalized_cons_iff {b c : Γ.V} (p : 𝔸.AlternatingPath a b) (e : b ⟶ c)
-    (g : 𝔸.vertexGroup c) : (cons p e g).IsNormalized d ↔ p.IsNormalized d ∧ p.last ∈ (d e).1 :=
+    (g : 𝔸.vertexGroup c) : (cons p e g).IsNormalized d ↔ p.IsNormalized d ∧ p.last ∈ (d e).val :=
   Iff.rfl
 
 @[simp] theorem isNormalized_setLast {b : Γ.V} (p : 𝔸.AlternatingPath a b) (g : 𝔸.vertexGroup b) :
@@ -517,7 +520,7 @@ noncomputable def cancelDart :
 /-- Deleting the backtracking `rev e, α_e(c), e` from `q, rev e, α_e(c)` gives `q` with
 `ω_e(c)` multiplied onto its last element. -/
 theorem cancelDart_cons_reverse {b c : Γ.V} (q : 𝔸.AlternatingPath a c) (e : b ⟶ c)
-    (c₀ : 𝔸.edgeGroup (Γ.toGeomEdge e.1))
+    (c₀ : 𝔸.edgeGroup (Γ.toGeomEdge e.val))
     (h : (cons q (Quiver.reverse e) (𝔸.αArrow e c₀)).Cancels e) :
     (cons q (Quiver.reverse e) (𝔸.αArrow e c₀)).cancelDart e h =
       q.setLast (q.last * 𝔸.ωArrow e c₀) := by
@@ -553,7 +556,7 @@ theorem appendDart_of_not_cancels {b c : Γ.V} {p : 𝔸.AlternatingPath a b} {e
 
 /-- Appending `e` after `rev e, α_e(c)` deletes the backtracking. -/
 theorem appendDart_cons_of_eq {b c : Γ.V} (q : 𝔸.AlternatingPath a c) {e' : c ⟶ b} {e : b ⟶ c}
-    (he : e' = Quiver.reverse e) {g : 𝔸.vertexGroup b} {c₀ : 𝔸.edgeGroup (Γ.toGeomEdge e.1)}
+    (he : e' = Quiver.reverse e) {g : 𝔸.vertexGroup b} {c₀ : 𝔸.edgeGroup (Γ.toGeomEdge e.val)}
     (hg : g = 𝔸.αArrow e c₀) :
     (cons q e' g).appendDart d e = q.setLast (q.last * 𝔸.ωArrow e c₀) := by
   subst he hg
@@ -602,7 +605,7 @@ theorem appendDart_appendDart_reverse {b c : Γ.V} {p : 𝔸.AlternatingPath a b
 /-- Moving an edge group element across an appended dart: appending `e` and then `ω_e(c)` is
 appending `α_e(c)` and then `e`. -/
 theorem setLast_appendDart_ωArrow {b c : Γ.V} (p : 𝔸.AlternatingPath a b) (e : b ⟶ c)
-    (c₀ : 𝔸.edgeGroup (Γ.toGeomEdge e.1)) :
+    (c₀ : 𝔸.edgeGroup (Γ.toGeomEdge e.val)) :
     (p.appendDart d e).setLast ((p.appendDart d e).last * 𝔸.ωArrow e c₀) =
       (p.setLast (p.last * 𝔸.αArrow e c₀)).appendDart d e := by
   by_cases h : p.Cancels e
@@ -679,11 +682,12 @@ theorem toPath_def {b : Γ.V} (w : NormalWord d a b) : w.toPath = w.toAlternatin
 
 /-- Multiplying the last vertex group element of a normal word on the right. -/
 def mulLast {b : Γ.V} (w : NormalWord d a b) (g : 𝔸.vertexGroup b) : NormalWord d a b :=
-  ⟨w.1.setLast (w.1.last * g), by simpa using w.2, by simpa using w.3⟩
+  ⟨w.toAlternatingPath.setLast (w.toAlternatingPath.last * g), by simpa using w.isReduced,
+      by simpa using w.isNormalized⟩
 
 /-- Appending a dart to a normal word and normalizing. -/
 noncomputable def appendDart {b c : Γ.V} (w : NormalWord d a b) (e : b ⟶ c) : NormalWord d a c :=
-  ⟨w.1.appendDart d e, w.2.appendDart d e, w.3.appendDart d e⟩
+  ⟨w.toAlternatingPath.appendDart d e, w.isReduced.appendDart d e, w.isNormalized.appendDart d e⟩
 
 @[simp] theorem toAlternatingPath_single (g : 𝔸.vertexGroup a) :
     (single d g).toAlternatingPath = .single g :=
@@ -711,11 +715,11 @@ noncomputable def appendDart {b c : Γ.V} (w : NormalWord d a b) (e : b ⟶ c) :
   rw [eq_comm, single_eq_empty_iff]
 
 @[simp] theorem toAlternatingPath_mulLast {b : Γ.V} (w : NormalWord d a b) (g : 𝔸.vertexGroup b) :
-    (w.mulLast g).toAlternatingPath = w.1.setLast (w.1.last * g) :=
+    (w.mulLast g).toAlternatingPath = w.toAlternatingPath.setLast (w.toAlternatingPath.last * g) :=
   (rfl)
 
 @[simp] theorem toAlternatingPath_appendDart {b c : Γ.V} (w : NormalWord d a b) (e : b ⟶ c) :
-    (w.appendDart e).toAlternatingPath = w.1.appendDart d e :=
+    (w.appendDart e).toAlternatingPath = w.toAlternatingPath.appendDart d e :=
   (rfl)
 
 /-- Multiplying the last vertex group element does not change the edge path. -/
@@ -748,7 +752,7 @@ noncomputable def appendDart {b c : Γ.V} (w : NormalWord d a b) (e : b ⟶ c) :
 @[simp] theorem appendDart_appendDart_reverse {b c : Γ.V} (w : NormalWord d a b) (e : b ⟶ c) :
     (w.appendDart e).appendDart (Quiver.reverse e) = w := by
   ext1
-  exact AlternatingPath.appendDart_appendDart_reverse d w.2 w.3 e
+  exact AlternatingPath.appendDart_appendDart_reverse d w.isReduced w.isNormalized e
 
 /-- Appending the reverse of a dart and then the dart to a normal word gives the word back. -/
 @[simp] theorem appendDart_reverse_appendDart {b c : Γ.V} (w : NormalWord d a c) (e : b ⟶ c) :
@@ -758,10 +762,10 @@ noncomputable def appendDart {b c : Γ.V} (w : NormalWord d a b) (e : b ⟶ c) :
 
 /-- Appending `e` and then `ω_e(c)` to a normal word is appending `α_e(c)` and then `e`. -/
 theorem mulLast_appendDart_ωArrow {b c : Γ.V} (w : NormalWord d a b) (e : b ⟶ c)
-    (c₀ : 𝔸.edgeGroup (Γ.toGeomEdge e.1)) :
+    (c₀ : 𝔸.edgeGroup (Γ.toGeomEdge e.val)) :
     (w.appendDart e).mulLast (𝔸.ωArrow e c₀) = (w.mulLast (𝔸.αArrow e c₀)).appendDart e := by
   ext1
-  exact AlternatingPath.setLast_appendDart_ωArrow d w.1 e c₀
+  exact AlternatingPath.setLast_appendDart_ωArrow d w.toAlternatingPath e c₀
 
 /-- Appending a letter to a normal word and normalizing. -/
 noncomputable def appendLetter :
@@ -825,8 +829,8 @@ theorem appendPath_eq_of_homotopic {x y : 𝔸.LetterVertex} (w : NormalWord d a
 theorem toPath_appendLetter_homotopic {x y : 𝔸.LetterVertex} (w : NormalWord d a x.as)
     (l : 𝔸.Letter x y) : Path.Homotopic (w.appendLetter l).toPath (w.toPath.cons l) := by
   cases l with
-  | vertex g => exact w.1.toPath_setLast_mul_homotopic g
-  | dart e => exact w.1.toPath_appendDart_homotopic d e
+  | vertex g => exact w.toAlternatingPath.toPath_setLast_mul_homotopic g
+  | dart e => exact w.toAlternatingPath.toPath_appendDart_homotopic d e
 
 /-- Appending a path and normalizing does not change the homotopy class. -/
 theorem toPath_appendPath_homotopic {x y : 𝔸.LetterVertex} (w : NormalWord d a x.as)
@@ -848,7 +852,7 @@ theorem length_appendPath_le {x y : 𝔸.LetterVertex} (w : NormalWord d a x.as)
     cases l with
     | vertex g => simpa using ih
     | dart e =>
-      have := (w.appendPath p).1.length_appendDart d e
+      have := (w.appendPath p).toAlternatingPath.length_appendDart d e
       simp only [appendPath_cons, appendLetter_dart, toAlternatingPath_appendDart,
         Path.edgePath_cons_dart, Quiver.Path.length_cons]
       lia
@@ -924,12 +928,30 @@ private theorem normalForm_toPath_aux :
 
 /-- A normal word is its own normal form. -/
 @[simp] theorem normalForm_toPath (w : NormalWord d a b) : normalForm d w.toPath = w :=
-  normalForm_toPath_aux d w.1 w.2 w.3
+  normalForm_toPath_aux d w.toAlternatingPath w.isReduced w.isNormalized
 
 /-- Two normal words are homotopic only when they are equal. -/
 @[simp] theorem NormalWord.toPath_homotopic_toPath_iff {w w' : NormalWord d a b} :
     w.toPath.Homotopic w'.toPath ↔ w = w' := by
   rw [← normalForm_eq_normalForm_iff d, normalForm_toPath, normalForm_toPath]
+
+/-- Two `𝔸`-paths from `a` to `b` differ on the right by an element of `A_b` up to homotopy if and
+only if their normal forms agree up to the final vertex group element. -/
+theorem exists_homotopic_cons_vertex_iff_setLast_eq {p q : 𝔸.Path ⟨a⟩ ⟨b⟩} :
+    (∃ g : 𝔸.vertexGroup b, p.Homotopic (q.cons (Letter.vertex g))) ↔
+      (normalForm d p).toAlternatingPath.setLast 1 =
+        (normalForm d q).toAlternatingPath.setLast 1 := by
+  refine ⟨fun ⟨g, hg⟩ ↦ ?_, fun h ↦ ?_⟩
+  · rw [(normalForm_eq_normalForm_iff d).mpr hg]
+    simp
+  · refine ⟨((normalForm d q).toAlternatingPath.last)⁻¹ * (normalForm d p).toAlternatingPath.last,
+      (normalForm_eq_normalForm_iff d).mp (NormalWord.ext ?_)⟩
+    calc (normalForm d p).toAlternatingPath
+        = ((normalForm d p).toAlternatingPath.setLast 1).setLast
+            (normalForm d p).toAlternatingPath.last := by simp
+      _ = ((normalForm d q).toAlternatingPath.setLast 1).setLast
+            (normalForm d p).toAlternatingPath.last := by rw [h]
+      _ = (normalForm d (q.cons (Letter.vertex _))).toAlternatingPath := by simp
 
 end normalForm
 

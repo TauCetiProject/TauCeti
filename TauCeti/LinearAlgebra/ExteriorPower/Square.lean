@@ -98,9 +98,9 @@ indexed by a linearly ordered type, and `c` a basis of `N` indexed by the pairs 
 `ω x y` (`LinearMap.IsAlt.exteriorSquareEquiv_ιMulti`), is an isomorphism. -/
 noncomputable def exteriorSquareEquiv (hω : ω.IsAlt) (b : Module.Basis ι R M)
     (c : Module.Basis {ij : ι × ι // ij.1 < ij.2} R N)
-    (hc : ∀ ij, ω (b ij.1.1) (b ij.1.2) = c ij) : ⋀[R]^2 M ≃ₗ[R] N :=
+    (hc : ∀ ij, ω (b ij.val.1) (b ij.val.2) = c ij) : ⋀[R]^2 M ≃ₗ[R] N :=
   LinearEquiv.ofLinearMap (exteriorPower.alternatingMapLinearEquiv hω.toAlternatingMap)
-    (c.constr R fun ij ↦ exteriorPower.ιMulti R 2 ![b ij.1.1, b ij.1.2])
+    (c.constr R fun ij ↦ exteriorPower.ιMulti R 2 ![b ij.val.1, b ij.val.2])
     (c.ext fun ij ↦ by
       simp [Module.Basis.constr_basis, exteriorPower.alternatingMapLinearEquiv_apply_ιMulti, hc])
     (exteriorPower.linearMap_ext <| b.ext_alternating fun v hv ↦ by
@@ -124,7 +124,7 @@ noncomputable def exteriorSquareEquiv (hω : ω.IsAlt) (b : Module.Basis ι R M)
 @[simp]
 theorem exteriorSquareEquiv_ιMulti (hω : ω.IsAlt) (b : Module.Basis ι R M)
     (c : Module.Basis {ij : ι × ι // ij.1 < ij.2} R N)
-    (hc : ∀ ij, ω (b ij.1.1) (b ij.1.2) = c ij) (v : Fin 2 → M) :
+    (hc : ∀ ij, ω (b ij.val.1) (b ij.val.2) = c ij) (v : Fin 2 → M) :
     hω.exteriorSquareEquiv b c hc (exteriorPower.ιMulti R 2 v) = ω (v 0) (v 1) := by
   simp [exteriorSquareEquiv, exteriorPower.alternatingMapLinearEquiv_apply_ιMulti]
 
@@ -132,9 +132,9 @@ theorem exteriorSquareEquiv_ιMulti (hω : ω.IsAlt) (b : Module.Basis ι R M)
 @[simp]
 theorem exteriorSquareEquiv_symm_apply (hω : ω.IsAlt) (b : Module.Basis ι R M)
     (c : Module.Basis {ij : ι × ι // ij.1 < ij.2} R N)
-    (hc : ∀ ij, ω (b ij.1.1) (b ij.1.2) = c ij) (ij : {ij : ι × ι // ij.1 < ij.2}) :
+    (hc : ∀ ij, ω (b ij.val.1) (b ij.val.2) = c ij) (ij : {ij : ι × ι // ij.1 < ij.2}) :
     (hω.exteriorSquareEquiv b c hc).symm (c ij) =
-      exteriorPower.ιMulti R 2 ![b ij.1.1, b ij.1.2] := by
+      exteriorPower.ιMulti R 2 ![b ij.val.1, b ij.val.2] := by
   simp [exteriorSquareEquiv, Module.Basis.constr_basis]
 
 end LinearMap.IsAlt

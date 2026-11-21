@@ -546,7 +546,7 @@ theorem contMDiffAt_hom_bundle_prod_iff [CompleteSpace 𝕜] [FiniteDimensional 
         (fun y : P × B ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := fun y ↦ E₁ y →L[𝕜] E₂ y) y.2
           (ϕ y)) q ↔
       ∀ v : E₁ q.2, ContMDiffAt (IP.prod (IB.prod 𝓘(𝕜, F₁))) (IB.prod 𝓘(𝕜, F₂)) n
-        (fun p : P × TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ p.2.proj (ϕ (p.1, p.2.proj) p.2.2))
+        (fun p : P × TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ p.2.proj (ϕ (p.1, p.2.proj) p.2.snd))
         (q.1, ⟨q.2, v⟩) := by
   constructor
   · intro hϕ v
@@ -593,8 +593,8 @@ theorem contMDiff_hom_bundle_prod_iff [CompleteSpace 𝕜] [FiniteDimensional �
         (fun y : P × B ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := fun y ↦ E₁ y →L[𝕜] E₂ y) y.2
           (ϕ y)) ↔
       ContMDiff (IP.prod (IB.prod 𝓘(𝕜, F₁))) (IB.prod 𝓘(𝕜, F₂)) n
-        (fun p : P × TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ p.2.proj (ϕ (p.1, p.2.proj) p.2.2)) :=
-  ⟨fun hϕ p ↦ (contMDiffAt_hom_bundle_prod_iff ϕ (p.1, p.2.proj)).1 (hϕ _) p.2.2,
+        (fun p : P × TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ p.2.proj (ϕ (p.1, p.2.proj) p.2.snd)) :=
+  ⟨fun hϕ p ↦ (contMDiffAt_hom_bundle_prod_iff ϕ (p.1, p.2.proj)).1 (hϕ _) p.2.snd,
     fun hϕ q ↦ (contMDiffAt_hom_bundle_prod_iff ϕ q).2 fun v ↦ hϕ (q.1, ⟨q.2, v⟩)⟩
 
 /-- For a finite-dimensional model source, a family of fibrewise linear maps is a Hom-bundle
@@ -605,7 +605,7 @@ theorem contMDiffAt_hom_bundle_iff [CompleteSpace 𝕜] [FiniteDimensional 𝕜 
     ContMDiffAt IB (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) n
         (fun y ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := fun y ↦ E₁ y →L[𝕜] E₂ y) y (ϕ y)) x ↔
       ∀ v : E₁ x, ContMDiffAt (IB.prod 𝓘(𝕜, F₁)) (IB.prod 𝓘(𝕜, F₂)) n
-        (fun p : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ p.proj (ϕ p.proj p.2)) ⟨x, v⟩ := by
+        (fun p : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ p.proj (ϕ p.proj p.snd)) ⟨x, v⟩ := by
   -- This is the case of a family that does not depend on its parameter, taken in `B` itself.
   have h := contMDiffAt_hom_bundle_prod_iff (IB := IB) (IP := IB) (n := n) (F₁ := F₁) (F₂ := F₂)
     (fun q : B × B ↦ ϕ q.2) (x, x)
@@ -623,8 +623,8 @@ theorem contMDiff_hom_bundle_iff [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F�
     ContMDiff IB (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) n
         (fun x ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := fun y ↦ E₁ y →L[𝕜] E₂ y) x (ϕ x)) ↔
       ContMDiff (IB.prod 𝓘(𝕜, F₁)) (IB.prod 𝓘(𝕜, F₂)) n
-        (fun p : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ p.proj (ϕ p.proj p.2)) :=
-  ⟨fun hϕ p ↦ (contMDiffAt_hom_bundle_iff ϕ p.proj).1 (hϕ p.proj) p.2,
+        (fun p : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ p.proj (ϕ p.proj p.snd)) :=
+  ⟨fun hϕ p ↦ (contMDiffAt_hom_bundle_iff ϕ p.proj).1 (hϕ p.proj) p.snd,
     fun hϕ x ↦ (contMDiffAt_hom_bundle_iff ϕ x).2 fun v ↦ hϕ ⟨x, v⟩⟩
 
 variable [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F₁]
@@ -637,9 +637,9 @@ omit [∀ x, IsTopologicalAddGroup (E₂ x)] [∀ x, ContinuousSMul 𝕜 (E₂ x
 inverse on total spaces. -/
 theorem contMDiff_bundle_symm (e : ∀ x, E₁ x ≃L[𝕜] E₂ x)
     (he : ContMDiff (IB.prod 𝓘(𝕜, F₁)) (IB.prod 𝓘(𝕜, F₂)) n
-      (fun p : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ p.proj (e p.proj p.2))) :
+      (fun p : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ p.proj (e p.proj p.snd))) :
     ContMDiff (IB.prod 𝓘(𝕜, F₂)) (IB.prod 𝓘(𝕜, F₁)) n
-      (fun p : TotalSpace F₂ E₂ ↦ TotalSpace.mk' F₁ p.proj ((e p.proj).symm p.2)) := by
+      (fun p : TotalSpace F₂ E₂ ↦ TotalSpace.mk' F₁ p.proj ((e p.proj).symm p.snd)) := by
   let := FiniteDimensional.completeSpace 𝕜 F₁
   have : ∀ x, IsTopologicalAddGroup (E₁ x) := VectorBundle.isTopologicalAddGroup 𝕜 F₁ E₁
   have : ∀ x, ContinuousSMul 𝕜 (E₁ x) := VectorBundle.continuousSMul 𝕜 F₁ E₁
@@ -654,10 +654,10 @@ theorem contMDiff_bundle_symm (e : ∀ x, E₁ x ≃L[𝕜] E₂ x)
 equivalences, with finite-dimensional model source. Smoothness of the inverse is automatic. -/
 def bundleDiffeomorph (e : ∀ x, E₁ x ≃L[𝕜] E₂ x)
     (he : ContMDiff (IB.prod 𝓘(𝕜, F₁)) (IB.prod 𝓘(𝕜, F₂)) n
-      (fun p : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ p.proj (e p.proj p.2))) :
+      (fun p : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ p.proj (e p.proj p.snd))) :
     TotalSpace F₁ E₁ ≃ₘ^n⟮IB.prod 𝓘(𝕜, F₁), IB.prod 𝓘(𝕜, F₂)⟯ TotalSpace F₂ E₂ where
-  toFun p := ⟨p.proj, e p.proj p.2⟩
-  invFun p := ⟨p.proj, (e p.proj).symm p.2⟩
+  toFun p := ⟨p.proj, e p.proj p.snd⟩
+  invFun p := ⟨p.proj, (e p.proj).symm p.snd⟩
   left_inv p := by simp
   right_inv p := by simp
   contMDiff_toFun := he
@@ -667,16 +667,16 @@ section
 
 variable (e : ∀ x, E₁ x ≃L[𝕜] E₂ x)
   (he : ContMDiff (IB.prod 𝓘(𝕜, F₁)) (IB.prod 𝓘(𝕜, F₂)) n
-    (fun p : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ p.proj (e p.proj p.2)))
+    (fun p : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ p.proj (e p.proj p.snd)))
 
 @[simp]
 theorem bundleDiffeomorph_apply (p : TotalSpace F₁ E₁) :
-    bundleDiffeomorph e he p = ⟨p.proj, e p.proj p.2⟩ :=
+    bundleDiffeomorph e he p = ⟨p.proj, e p.proj p.snd⟩ :=
   (rfl)
 
 @[simp]
 theorem bundleDiffeomorph_symm_apply (p : TotalSpace F₂ E₂) :
-    (bundleDiffeomorph e he).symm p = ⟨p.proj, (e p.proj).symm p.2⟩ :=
+    (bundleDiffeomorph e he).symm p = ⟨p.proj, (e p.proj).symm p.snd⟩ :=
   (rfl)
 
 /-- The underlying homeomorphism of `bundleDiffeomorph` is `bundleHomeomorph`. -/
@@ -704,10 +704,10 @@ def bundleDiffeomorphOfHom :
       fun _ ↦ rfl)
 
 @[simp] theorem bundleDiffeomorphOfHom_apply (p : TotalSpace F₁ E₁) :
-    bundleDiffeomorphOfHom e he p = ⟨p.proj, e p.proj p.2⟩ := (rfl)
+    bundleDiffeomorphOfHom e he p = ⟨p.proj, e p.proj p.snd⟩ := (rfl)
 
 @[simp] theorem bundleDiffeomorphOfHom_symm_apply (p : TotalSpace F₂ E₂) :
-    (bundleDiffeomorphOfHom e he).symm p = ⟨p.proj, (e p.proj).symm p.2⟩ := (rfl)
+    (bundleDiffeomorphOfHom e he).symm p = ⟨p.proj, (e p.proj).symm p.snd⟩ := (rfl)
 
 /-- The underlying homeomorphism of `bundleDiffeomorphOfHom` is `bundleHomeomorphOfHom`. -/
 @[simp] theorem toHomeomorph_bundleDiffeomorphOfHom :
@@ -722,9 +722,9 @@ omit [∀ x, IsTopologicalAddGroup (E₂ x)] [∀ x, ContinuousSMul 𝕜 (E₂ x
 every fibre map is bijective. -/
 theorem exists_bundleDiffeomorph_iff (ϕ : ∀ x, E₁ x →L[𝕜] E₂ x) :
     (∃ Φ : TotalSpace F₁ E₁ ≃ₘ^n⟮IB.prod 𝓘(𝕜, F₁), IB.prod 𝓘(𝕜, F₂)⟯ TotalSpace F₂ E₂,
-        ⇑Φ = fun p ↦ TotalSpace.mk' F₂ p.proj (ϕ p.proj p.2)) ↔
+        ⇑Φ = fun p ↦ TotalSpace.mk' F₂ p.proj (ϕ p.proj p.snd)) ↔
       ContMDiff (IB.prod 𝓘(𝕜, F₁)) (IB.prod 𝓘(𝕜, F₂)) n
-          (fun p : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ p.proj (ϕ p.proj p.2)) ∧
+          (fun p : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ p.proj (ϕ p.proj p.snd)) ∧
         ∀ x, Function.Bijective (ϕ x) := by
   refine ⟨fun ⟨Φ, hΦ⟩ ↦ ⟨hΦ ▸ Φ.contMDiff, bijective_totalSpace_map_iff.1 (hΦ ▸ Φ.bijective)⟩,
     fun ⟨hϕ, hbij⟩ ↦ ?_⟩
