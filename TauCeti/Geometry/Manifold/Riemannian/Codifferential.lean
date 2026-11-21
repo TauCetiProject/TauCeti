@@ -15,7 +15,7 @@ import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Positivity
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Regularity
 import TauCeti.Geometry.Manifold.DifferentialForm.Squared
 import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Leibniz
-import TauCeti.Geometry.Manifold.Riemannian.VolumeForm.Divergence
+import TauCeti.Geometry.Manifold.Riemannian.VolumeForm.Divergence.Basic
 
 /-!
 # The codifferential and the Hodge Laplacian of an oriented Riemannian manifold
@@ -65,6 +65,9 @@ operator, this says that the principal symbol of `Δ` at `df_x` is `-|df_x|² Id
 * `TauCeti.SmoothForm.laplacian`: the Laplacian `δD + Dδ` of a family of differentials `D` and
   codifferentials `δ`.
 * `TauCeti.SmoothForm.hodgeLaplacian`: the Hodge Laplacian `Δ = d*d + dd*` of smooth `k`-forms.
+* `TauCeti.compactlySupportedForms.codifferential`,
+  `TauCeti.compactlySupportedForms.hodgeLaplacian`: their restrictions to compactly supported
+  forms.
 
 ## Main results
 
@@ -86,6 +89,8 @@ operator, this says that the principal symbol of `Δ` at `df_x` is `-|df_x|² Id
   `Δf = -div grad f`.
 * `TauCeti.SmoothForm.coe_codifferential_funSMulₗ`: the Leibniz rule
   `d*(f β) = f d*β - ι_(grad f) β`.
+* `TauCeti.SmoothForm.codifferential_lie_lie_funSMulₗ_eq_zero`: `d*` has order one,
+  `[[d*, f], g] = 0`.
 * `TauCeti.SmoothForm.coe_lie_lie_hodgeLaplacian_funSMulₗ`,
   `TauCeti.SmoothForm.coe_lie_lie_hodgeLaplacian_funSMulₗ_self`: the principal symbol of the Hodge
   Laplacian, `[[Δ, f], g] = -2 ⟪df, dg⟫` and `[[Δ, f], f] = -2 |df|²`.
@@ -126,12 +131,15 @@ namespace TauCeti
 
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
-  [FiniteDimensional ℝ E] [IsManifold I ∞ M]
+
+namespace SmoothForm
+
+section Codifferential
+
+variable [FiniteDimensional ℝ E] [IsManifold I ∞ M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
   {m k l : ℕ}
-
-namespace SmoothForm
 
 /-- The codifferential `d* = (-1) ^ (m (k + 2) + 1) ⋆ d ⋆` of smooth `(k + 1)`-forms on an
 oriented Riemannian manifold of dimension `m = k + 1 + l`. For forms of degree `j = k + 1` the
@@ -274,14 +282,14 @@ theorem hodgeStar_mextDeriv (o : Manifold.Orientation I M (Fin m)) (hkl : k + (l
   rw [codifferential_apply o hlk hkl', hodgeStar_hodgeStar, map_smul, map_smul, smul_smul,
     smul_smul, hsign, one_smul]
 
+end Codifferential
+
 /-! ### The Laplacian of a differential and a codifferential -/
 
 section Laplacian
 
-omit [FiniteDimensional ℝ E] [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-
-variable (D : ∀ k, SmoothForm I M ℝ k →ₗ[ℝ] SmoothForm I M ℝ (k + 1))
+variable [IsManifold I ∞ M] {m k l : ℕ}
+  (D : ∀ k, SmoothForm I M ℝ k →ₗ[ℝ] SmoothForm I M ℝ (k + 1))
   (δ : ∀ {k l : ℕ}, k + 1 + l = m → SmoothForm I M ℝ (k + 1) →ₗ[ℝ] SmoothForm I M ℝ k)
 
 /-- The Laplacian `δD + Dδ` of smooth `k`-forms on a manifold of dimension `m = k + l`, built from
@@ -357,9 +365,44 @@ theorem tsupport_laplacian_subset
     exact (tsupport_add _ _).trans
       (union_subset ((hδ _ _).trans (hD α)) ((hD _).trans (hδ hkl α)))
 
+/-- The double commutator `[[Q P, f], g]` of a composite of two operators whose commutators
+`[P, h] = A h` and `[Q, h] = B h` with every smooth function `h` are fibrewise is
+`(B g) (A f) + (B f) (A g)`. -/
+private theorem lie_lie_comp_funSMulₗ_apply {j : ℕ}
+    (P : SmoothForm I M ℝ k →ₗ[ℝ] SmoothForm I M ℝ j)
+    (Q : SmoothForm I M ℝ j →ₗ[ℝ] SmoothForm I M ℝ k)
+    (A : C^∞⟮I, M; ℝ⟯ → ∀ x : M,
+      (TangentSpace I x [⋀^Fin k]→L[ℝ] ℝ) →ₗ[ℝ] TangentSpace I x [⋀^Fin j]→L[ℝ] ℝ)
+    (B : C^∞⟮I, M; ℝ⟯ → ∀ x : M,
+      (TangentSpace I x [⋀^Fin j]→L[ℝ] ℝ) →ₗ[ℝ] TangentSpace I x [⋀^Fin k]→L[ℝ] ℝ)
+    (hP : ∀ h α x, (P (funSMulₗ h α)).val x = h x • (P α).val x + A h x (α.val x))
+    (hQ : ∀ h β x, (Q (funSMulₗ h β)).val x = h x • (Q β).val x + B h x (β.val x))
+    (f g : C^∞⟮I, M; ℝ⟯) (α : SmoothForm I M ℝ k) (x : M) :
+    (⁅⁅Q ∘ₗ P, funSMulₗ (F := ℝ) (k := k) f⁆, funSMulₗ g⁆ α).val x =
+      B g x (A f x (α.val x)) + B f x (A g x (α.val x)) := by
+  -- `P (f g α) = f P (g α) + g P (f α) - f g P α` as smooth forms.
+  have hγ : P (funSMulₗ f (funSMulₗ g α)) =
+      funSMulₗ f (P (funSMulₗ g α)) + funSMulₗ g (P (funSMulₗ f α)) -
+        funSMulₗ f (funSMulₗ g (P α)) := by
+    refine Subtype.ext (funext fun y ↦ ?_)
+    simp only [hP, coe_funSMulₗ, map_smul, Submodule.coe_add, Submodule.coe_sub, Pi.add_apply,
+      Pi.sub_apply]
+    module
+  simp only [Ring.lie_def, mul_apply_eq_comp, LinearMap.sub_apply, LinearMap.comp_apply,
+    map_sub, map_add, hγ, hQ, hP, map_smul, Submodule.coe_add, Submodule.coe_sub, coe_funSMulₗ,
+    Pi.add_apply, Pi.sub_apply]
+  module
+
 end Laplacian
 
+variable [FiniteDimensional ℝ E] [IsManifold I ∞ M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+
 /-! ### The Hodge Laplacian -/
+
+section HodgeLaplacian
+
+variable [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] {m k l : ℕ}
 
 /-- The Hodge Laplacian `Δ = d*d + dd*` of smooth `k`-forms on an oriented Riemannian manifold of
 dimension `m = k + l`. In degree `0` only `d*d` is present, and in the top degree `k = m` only
@@ -440,6 +483,13 @@ theorem tsupport_hodgeLaplacian_subset (o : Manifold.Orientation I M (Fin m)) (h
     (fun α ↦ by rw [mextDerivₗ_apply]; exact RoughForm.tsupport_mextDeriv_subset _)
     (tsupport_codifferential_subset o) hkl α
 
+/-- The Hodge Laplacian of a compactly supported form is compactly supported. -/
+theorem hodgeLaplacian_mem_compactlySupportedForms (o : Manifold.Orientation I M (Fin m))
+    (hkl : k + l = m) {α : SmoothForm I M ℝ k} (hα : α ∈ compactlySupportedForms I M k) :
+    hodgeLaplacian o hkl α ∈ compactlySupportedForms I M k :=
+  (mem_compactlySupportedForms I).2 (((mem_compactlySupportedForms I).1 hα).of_isClosed_subset
+    (_root_.isClosed_tsupport _) (tsupport_hodgeLaplacian_subset o hkl α))
+
 /-- **The Hodge star commutes with the Hodge Laplacian**: `⋆Δα = Δ⋆α`. -/
 theorem hodgeStar_hodgeLaplacian (o : Manifold.Orientation I M (Fin m)) (hkl : k + l = m)
     (hlk : l + k = m) (α : SmoothForm I M ℝ k) :
@@ -509,7 +559,13 @@ theorem hodgeLaplacian_eq_ofFunction_neg_laplaceBeltrami (o : Manifold.Orientati
     ext v
     simp [Manifold.laplaceBeltrami_def]
 
+end HodgeLaplacian
+
 /-! ### Commutators with functions and the principal symbol of the Hodge Laplacian -/
+
+section GradOperators
+
+variable {k : ℕ}
 
 /-- Exterior multiplication `ε_u` by the gradient `u = grad f x` of `f` at `x` on alternating
 forms of the tangent space, read through the identification of forms with the exterior algebra. -/
@@ -527,14 +583,12 @@ private def gradContr (f : M → ℝ) (j : ℕ) (x : M) :
     koszulDifferential (innerₗ _ (Manifold.mgradient I f x)) j ∘ₗ
       (alternatingFormEquiv _ (j + 1)).symm.toLinearMap
 
-omit [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
 /-- The contraction by the gradient is the interior product with it. -/
 private theorem gradContr_apply (f : M → ℝ) (j : ℕ) (β : RoughForm I M ℝ (j + 1)) (x : M) :
     gradContr f j x (β x) = RoughForm.interior (Manifold.mgradient I f) β x := by
   ext v
   simp [gradContr, alternatingFormEquiv_koszulDifferential]
 
-omit [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
 /-- `ι_v ε_u = ⟪v, u⟫` on functions, for the gradients `u` of `f` and `v` of `g`. -/
 private theorem gradContr_gradWedge_zero (f g : M → ℝ) (x : M)
     (w : TangentSpace I x [⋀^Fin 0]→L[ℝ] ℝ) :
@@ -548,7 +602,6 @@ private theorem gradContr_gradWedge_zero (f g : M → ℝ) (x : M)
   simp only [gradContr, gradWedge, LinearMap.comp_apply, LinearEquiv.coe_coe,
     LinearEquiv.symm_apply_apply, h, map_smul, LinearEquiv.apply_symm_apply]
 
-omit [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
 /-- The Koszul homotopy identity `ε_u ι_v + ι_v ε_u = ⟪v, u⟫` in positive degrees, for the
 gradients `u` of `f` and `v` of `g`. -/
 private theorem gradWedge_gradContr_add (f g : M → ℝ) (j : ℕ) (x : M)
@@ -563,7 +616,6 @@ private theorem gradWedge_gradContr_add (f g : M → ℝ) (j : ℕ) (x : M)
   simp only [gradContr, gradWedge, LinearMap.comp_apply, LinearEquiv.coe_coe,
     LinearEquiv.symm_apply_apply, ← map_add, h, map_smul, LinearEquiv.apply_symm_apply]
 
-omit [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
 /-- The Leibniz rule `d (f α) = f dα + df ∧ α` for smooth forms, with `df ∧ ·` written as exterior
 multiplication by the gradient. -/
 private theorem mextDerivₗ_funSMulₗ_eq_gradWedge (f : C^∞⟮I, M; ℝ⟯) (α : SmoothForm I M ℝ k)
@@ -580,6 +632,12 @@ private theorem mextDerivₗ_funSMulₗ_eq_gradWedge (f : C^∞⟮I, M; ℝ⟯) 
   simp only [coe_funSMulₗ, gradWedge, LinearMap.comp_apply, LinearEquiv.coe_coe,
     alternatingFormEquiv_wedgeLeft_apply, LinearEquiv.apply_symm_apply,
     ContinuousAlternatingMap.add_apply, ContinuousAlternatingMap.smul_apply, smul_eq_mul]
+
+end GradOperators
+
+section PrincipalSymbol
+
+variable [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] {m k l : ℕ}
 
 /-- **The Leibniz rule for the codifferential**: `d*(f β) = f d*β - ι_(grad f) β` for a smooth
 function `f` and a smooth `(k + 1)`-form `β`. The commutator `[d*, f] = -ι_(grad f)` is a
@@ -612,6 +670,23 @@ theorem coe_codifferential_funSMulₗ (o : Manifold.Orientation I M (Fin m))
   rw [← key, map_smul, smul_smul, hsign]
   exact neg_one_smul ℝ (M := TangentSpace I x [⋀^Fin k]→L[ℝ] ℝ) _
 
+/-- **The codifferential has order one**: its double commutator with multiplication by smooth
+functions `f` and `g` vanishes, `[[d*, f], g] = 0`, since `[d*, f] = -ι_(grad f)` is fibrewise
+(`TauCeti.SmoothForm.coe_codifferential_funSMulₗ`). Since `d*` changes the degree, the commutators
+are written out as differences of composites. -/
+theorem codifferential_lie_lie_funSMulₗ_eq_zero (o : Manifold.Orientation I M (Fin m))
+    (hkl : k + 1 + l = m) (f g : C^∞⟮I, M; ℝ⟯) :
+    (codifferential o hkl ∘ₗ funSMulₗ f - funSMulₗ f ∘ₗ codifferential o hkl) ∘ₗ funSMulₗ g -
+      funSMulₗ g ∘ₗ (codifferential o hkl ∘ₗ funSMulₗ f - funSMulₗ f ∘ₗ codifferential o hkl) =
+      0 := by
+  refine LinearMap.ext fun β ↦ Subtype.ext (funext fun x ↦ ?_)
+  ext v
+  simp only [LinearMap.sub_apply, LinearMap.comp_apply, Submodule.coe_sub, Pi.sub_apply,
+    ContinuousAlternatingMap.sub_apply, LinearMap.zero_apply, Submodule.coe_zero, Pi.zero_apply,
+    ContinuousAlternatingMap.coe_zero, coe_codifferential_funSMulₗ, coe_funSMulₗ,
+    ContinuousAlternatingMap.smul_apply, smul_eq_mul, RoughForm.interior_apply]
+  ring
+
 /-- `[d*, f] = -ι_(grad f)`, in the form consumed by the double commutator computation. -/
 private theorem codifferential_funSMulₗ_apply (o : Manifold.Orientation I M (Fin m))
     (hkl : k + 1 + l = m) (f : C^∞⟮I, M; ℝ⟯) (β : SmoothForm I M ℝ (k + 1)) (x : M) :
@@ -619,36 +694,6 @@ private theorem codifferential_funSMulₗ_apply (o : Manifold.Orientation I M (F
       f x • (codifferential o hkl β).val x + (-gradContr f k x) (β.val x) := by
   rw [congrFun (coe_codifferential_funSMulₗ o hkl f β) x, Pi.sub_apply, sub_eq_add_neg,
     LinearMap.neg_apply, gradContr_apply]
-
-omit [FiniteDimensional ℝ E] [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
-/-- The double commutator `[[Q P, f], g]` of a composite of two operators whose commutators
-`[P, h] = A h` and `[Q, h] = B h` with every smooth function `h` are fibrewise is
-`(B g) (A f) + (B f) (A g)`. -/
-private theorem lie_lie_comp_funSMulₗ_apply {j : ℕ}
-    (P : SmoothForm I M ℝ k →ₗ[ℝ] SmoothForm I M ℝ j)
-    (Q : SmoothForm I M ℝ j →ₗ[ℝ] SmoothForm I M ℝ k)
-    (A : C^∞⟮I, M; ℝ⟯ → ∀ x : M,
-      (TangentSpace I x [⋀^Fin k]→L[ℝ] ℝ) →ₗ[ℝ] TangentSpace I x [⋀^Fin j]→L[ℝ] ℝ)
-    (B : C^∞⟮I, M; ℝ⟯ → ∀ x : M,
-      (TangentSpace I x [⋀^Fin j]→L[ℝ] ℝ) →ₗ[ℝ] TangentSpace I x [⋀^Fin k]→L[ℝ] ℝ)
-    (hP : ∀ h α x, (P (funSMulₗ h α)).val x = h x • (P α).val x + A h x (α.val x))
-    (hQ : ∀ h β x, (Q (funSMulₗ h β)).val x = h x • (Q β).val x + B h x (β.val x))
-    (f g : C^∞⟮I, M; ℝ⟯) (α : SmoothForm I M ℝ k) (x : M) :
-    (⁅⁅Q ∘ₗ P, funSMulₗ (F := ℝ) (k := k) f⁆, funSMulₗ g⁆ α).val x =
-      B g x (A f x (α.val x)) + B f x (A g x (α.val x)) := by
-  -- `P (f g α) = f P (g α) + g P (f α) - f g P α` as smooth forms.
-  have hγ : P (funSMulₗ f (funSMulₗ g α)) =
-      funSMulₗ f (P (funSMulₗ g α)) + funSMulₗ g (P (funSMulₗ f α)) -
-        funSMulₗ f (funSMulₗ g (P α)) := by
-    refine Subtype.ext (funext fun y ↦ ?_)
-    simp only [hP, coe_funSMulₗ, map_smul, Submodule.coe_add, Submodule.coe_sub, Pi.add_apply,
-      Pi.sub_apply]
-    module
-  simp only [Ring.lie_def, mul_apply_eq_comp, LinearMap.sub_apply, LinearMap.comp_apply,
-    map_sub, map_add, hγ, hQ, hP, map_smul, Submodule.coe_add, Submodule.coe_sub, coe_funSMulₗ,
-    Pi.add_apply, Pi.sub_apply]
-  module
 
 /-- **The principal symbol of the Hodge Laplacian**, polarized: for smooth functions `f` and `g`,
 the double commutator of `Δ = d*d + dd*` with multiplication by `f` and `g` is multiplication by
@@ -715,9 +760,14 @@ theorem coe_lie_lie_hodgeLaplacian_funSMulₗ_self (o : Manifold.Orientation I M
       fun x ↦ (-2 * ⟪Manifold.mgradient I f x, Manifold.mgradient I f x⟫) • α.val x :=
   coe_lie_lie_hodgeLaplacian_funSMulₗ o hkl f f α
 
+end PrincipalSymbol
+
 /-! ### The `L²` pairing -/
 
-omit [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
+section RoughPairing
+
+variable {m k : ℕ}
+
 /-- On a positively oriented tangent basis, the top form `|α|² vol` takes a nonnegative value. -/
 private theorem inner_self_smul_riemannianVolumeForm_apply_nonneg
     (o : Manifold.Orientation I M (Fin m)) (α : RoughForm I M ℝ k) (x : M)
@@ -729,7 +779,6 @@ private theorem inner_self_smul_riemannianVolumeForm_apply_nonneg
   exact mul_nonneg (alternatingFormInner_self_nonneg _)
     (Orientation.volumeForm_apply_pos_iff.2 hc).le
 
-omit [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
 /-- **The `L²` pairing of forms is nonnegative**: on an oriented Riemannian manifold of positive
 dimension, `0 ≤ ∫_M |α|² vol` for every form `α`, where `|α|²` is the pointwise inner product of
 `α` with itself and `vol` the Riemannian volume form. -/
@@ -739,7 +788,6 @@ theorem _root_.TauCeti.RoughForm.integralTopForm_inner_self_smul_riemannianVolum
       riemannianVolumeForm o x) :=
   integralTopForm_nonneg o (inner_self_smul_riemannianVolumeForm_apply_nonneg o α)
 
-omit [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
 /-- The `L²` pairing vanishes when its first argument is zero: `∫_M ⟨0, β⟩ vol = 0`. -/
 theorem integralTopForm_inner_zero_left (o : Manifold.Orientation I M (Fin m))
     (β : SmoothForm I M ℝ k) :
@@ -747,6 +795,37 @@ theorem integralTopForm_inner_zero_left (o : Manifold.Orientation I M (Fin m))
       ((0 : SmoothForm I M ℝ k).val x) (β.val x) • riemannianVolumeForm o x) = 0 := by
   simp only [ZeroMemClass.coe_zero, Pi.zero_apply, LinearMap.map_zero₂, zero_smul]
   exact integralTopForm_zero o
+
+/-- The `L²` pairing of forms is homogeneous in its first argument,
+`∫_M ⟨c α, β⟩ vol = c ∫_M ⟨α, β⟩ vol`. -/
+theorem integralTopForm_inner_smul_left (o : Manifold.Orientation I M (Fin m)) (c : ℝ)
+    (α β : SmoothForm I M ℝ k) :
+    integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k ((c • α).val x) (β.val x) •
+      riemannianVolumeForm o x) =
+      c * integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k (α.val x) (β.val x) •
+        riemannianVolumeForm o x) := by
+  rw [← integralTopForm_smul]
+  congr 1
+  funext x
+  rw [Submodule.coe_smul, Pi.smul_apply, LinearMap.map_smul₂, Pi.smul_apply, smul_eq_mul,
+    mul_smul]
+
+/-- The `L²` pairing of forms is symmetric: `∫_M ⟨α, β⟩ vol = ∫_M ⟨β, α⟩ vol`. -/
+theorem _root_.TauCeti.RoughForm.integralTopForm_inner_smul_riemannianVolumeForm_comm
+    (o : Manifold.Orientation I M (Fin m)) (α β : RoughForm I M ℝ k) :
+    integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k (α x) (β x) •
+      riemannianVolumeForm o x) =
+      integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k (β x) (α x) •
+        riemannianVolumeForm o x) := by
+  congr 1
+  funext x
+  rw [alternatingFormInner_comm]
+
+end RoughPairing
+
+section SmoothPairing
+
+variable [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] {m k l : ℕ}
 
 /-- **The `L²` pairing of forms is definite**: on an oriented Riemannian manifold of positive
 dimension `m = k + l`, a compactly supported smooth `k`-form `α` satisfies `∫_M |α|² vol = 0`
@@ -776,18 +855,6 @@ theorem integralTopForm_inner_self_smul_riemannianVolumeForm_eq_zero_iff [NeZero
       (Ne.symm (mt alternatingFormInner_self_eq_zero.1 hx))
   · subst h
     exact integralTopForm_inner_zero_left o 0
-
-omit [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
-/-- The `L²` pairing of forms is symmetric: `∫_M ⟨α, β⟩ vol = ∫_M ⟨β, α⟩ vol`. -/
-theorem _root_.TauCeti.RoughForm.integralTopForm_inner_smul_riemannianVolumeForm_comm
-    (o : Manifold.Orientation I M (Fin m)) (α β : RoughForm I M ℝ k) :
-    integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k (α x) (β x) •
-      riemannianVolumeForm o x) =
-      integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k (β x) (α x) •
-        riemannianVolumeForm o x) := by
-  congr 1
-  funext x
-  rw [alternatingFormInner_comm]
 
 /-- The `L²` pairing of forms is additive in its first argument,
 `∫_M ⟨α + β, γ⟩ vol = ∫_M ⟨α, γ⟩ vol + ∫_M ⟨β, γ⟩ vol`, when `α` and `β` or `γ` are compactly
@@ -822,21 +889,6 @@ theorem integralTopForm_inner_add_left (o : Manifold.Orientation I M (Fin m)) (h
   funext x
   rw [Submodule.coe_add, Pi.add_apply, LinearMap.map_add₂, add_smul, Pi.add_apply]
 
-omit [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
-/-- The `L²` pairing of forms is homogeneous in its first argument,
-`∫_M ⟨c α, β⟩ vol = c ∫_M ⟨α, β⟩ vol`. -/
-theorem integralTopForm_inner_smul_left (o : Manifold.Orientation I M (Fin m)) (c : ℝ)
-    (α β : SmoothForm I M ℝ k) :
-    integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k ((c • α).val x) (β.val x) •
-      riemannianVolumeForm o x) =
-      c * integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k (α.val x) (β.val x) •
-        riemannianVolumeForm o x) := by
-  rw [← integralTopForm_smul]
-  congr 1
-  funext x
-  rw [Submodule.coe_smul, Pi.smul_apply, LinearMap.map_smul₂, Pi.smul_apply, smul_eq_mul,
-    mul_smul]
-
 /-- **Young's inequality for the `L²` pairing**: on an oriented Riemannian manifold of positive
 dimension `m = k + l`, compactly supported smooth `k`-forms satisfy
 `-(∫_M |α|² vol + ∫_M |β|² vol) ≤ 2 ∫_M ⟨α, β⟩ vol`, from `0 ≤ ∫_M |α + β|² vol`. -/
@@ -858,11 +910,13 @@ theorem neg_add_le_two_mul_integralTopForm_inner [NeZero m] (o : Manifold.Orient
     RoughForm.integralTopForm_inner_smul_riemannianVolumeForm_comm o β.val α.val] at hsq
   linarith
 
+end SmoothPairing
+
 /-! ### Green's formulas and positivity of a Laplacian -/
 
-section Laplacian
+section GreenCodiffDiff
 
-variable (o : Manifold.Orientation I M (Fin m))
+variable {m k l : ℕ} (o : Manifold.Orientation I M (Fin m))
   {D : ∀ k, SmoothForm I M ℝ k →ₗ[ℝ] SmoothForm I M ℝ (k + 1)}
   {δ : ∀ {k l : ℕ}, k + 1 + l = m → SmoothForm I M ℝ (k + 1) →ₗ[ℝ] SmoothForm I M ℝ k}
   (hD : ∀ {k : ℕ} {α : SmoothForm I M ℝ k},
@@ -879,7 +933,6 @@ variable (o : Manifold.Orientation I M (Fin m))
 include hadj
 
 include hD in
-omit [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
 /-- Green's formula `∫_M ⟨δDα, β⟩ vol = ∫_M ⟨Dα, Dβ⟩ vol` for a formal adjoint `δ` of `D`. -/
 theorem integralTopForm_inner_codiff_diff (hkl : k + 1 + l = m)
     (α β : SmoothForm I M ℝ k)
@@ -893,7 +946,6 @@ theorem integralTopForm_inner_codiff_diff (hkl : k + 1 + l = m)
     RoughForm.integralTopForm_inner_smul_riemannianVolumeForm_comm]
 
 include hδ in
-omit [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
 /-- Green's formula `∫_M ⟨Dδα, β⟩ vol = ∫_M ⟨δα, δβ⟩ vol` for a formal adjoint `δ` of `D`. -/
 theorem integralTopForm_inner_diff_codiff (hkl : k + 1 + l = m)
     (α β : SmoothForm I M ℝ (k + 1))
@@ -904,8 +956,28 @@ theorem integralTopForm_inner_diff_codiff (hkl : k + 1 + l = m)
         ((δ hkl α).val x) ((δ hkl β).val x) • riemannianVolumeForm o x) :=
   hadj hkl _ β (h.imp_left (hδ hkl))
 
-include hD hδ
+end GreenCodiffDiff
 
+section GreenLaplacian
+
+variable [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+  {m k l : ℕ} (o : Manifold.Orientation I M (Fin m))
+  {D : ∀ k, SmoothForm I M ℝ k →ₗ[ℝ] SmoothForm I M ℝ (k + 1)}
+  {δ : ∀ {k l : ℕ}, k + 1 + l = m → SmoothForm I M ℝ (k + 1) →ₗ[ℝ] SmoothForm I M ℝ k}
+  (hD : ∀ {k : ℕ} {α : SmoothForm I M ℝ k},
+    α ∈ compactlySupportedForms I M k → D k α ∈ compactlySupportedForms I M (k + 1))
+  (hδ : ∀ {k l : ℕ} (hkl : k + 1 + l = m) {β : SmoothForm I M ℝ (k + 1)},
+    β ∈ compactlySupportedForms I M (k + 1) → δ hkl β ∈ compactlySupportedForms I M k)
+  (hadj : ∀ {k l : ℕ} (hkl : k + 1 + l = m) (α : SmoothForm I M ℝ k)
+    (β : SmoothForm I M ℝ (k + 1)),
+    α ∈ compactlySupportedForms I M k ∨ β ∈ compactlySupportedForms I M (k + 1) →
+      integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) (k + 1)
+          ((D k α).val x) (β.val x) • riemannianVolumeForm o x) =
+        integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k
+          (α.val x) ((δ hkl β).val x) • riemannianVolumeForm o x))
+include hadj
+
+include hD hδ in
 /-- **The Dirichlet pairing of a Laplacian**: if `δ` is a formal adjoint of `D` and both preserve
 compact support, then strictly between degree `0` and the top degree
 `∫_M ⟨Δα, β⟩ vol = ∫_M ⟨Dα, Dβ⟩ vol + ∫_M ⟨δα, δβ⟩ vol` for `Δ = δD + Dδ` and smooth forms `α`
@@ -925,6 +997,7 @@ theorem integralTopForm_inner_laplacian_add_one_add_one (hkl : k + 1 + (l + 1) =
     integralTopForm_inner_codiff_diff o hD hadj hkl' α β h,
     integralTopForm_inner_diff_codiff o hδ hadj hkl α β h]
 
+include hD hδ in
 /-- **A Laplacian is formally self-adjoint**: if `δ` is a formal adjoint of `D` and both preserve
 compact support, then `∫_M ⟨Δα, β⟩ vol = ∫_M ⟨α, Δβ⟩ vol` for `Δ = δD + Dδ` and smooth `k`-forms
 `α` and `β`, one of them compactly supported. -/
@@ -953,7 +1026,6 @@ theorem integralTopForm_inner_laplacian_eq_inner_laplacian (hkl : k + l = m)
       RoughForm.integralTopForm_inner_smul_riemannianVolumeForm_comm (β := (D _ α).val),
       RoughForm.integralTopForm_inner_smul_riemannianVolumeForm_comm (β := (δ hkl α).val)]
 
-omit hD hδ in
 /-- **A Laplacian is nonnegative**: if `δ` is a formal adjoint of `D`, then `0 ≤ ∫_M ⟨Δα, α⟩ vol`
 for `Δ = δD + Dδ` and every compactly supported smooth form `α`. -/
 theorem integralTopForm_inner_laplacian_self_nonneg (hkl : k + l = m) {α : SmoothForm I M ℝ k}
@@ -982,7 +1054,7 @@ theorem integralTopForm_inner_laplacian_self_nonneg (hkl : k + l = m) {α : Smoo
     exact add_nonneg (RoughForm.integralTopForm_inner_self_smul_riemannianVolumeForm_nonneg o _)
       (RoughForm.integralTopForm_inner_self_smul_riemannianVolumeForm_nonneg o _)
 
-omit hδ in
+include hD in
 /-- **The kernel of a Laplacian on functions**: if `δ` is a formal adjoint of `D` and `D`
 preserves compact support, then a compactly supported smooth function `f` satisfies `Δf = 0`
 for `Δ = δD` exactly when `Df = 0`. -/
@@ -999,6 +1071,7 @@ theorem laplacian_eq_zero_iff_apply_eq_zero (hl : 0 + l = m) {f : SmoothForm I M
   exact (integralTopForm_inner_self_smul_riemannianVolumeForm_eq_zero_iff o hl' (hD hf)).1
     hint.symm
 
+include hD hδ in
 /-- **The kernel of a Laplacian in positive degree**: if `δ` is a formal adjoint of `D` and both
 preserve compact support, then a compactly supported smooth `(k + 1)`-form `α` satisfies `Δα = 0`
 for `Δ = δD + Dδ` exactly when `Dα = 0` and `δα = 0`. -/
@@ -1029,9 +1102,12 @@ theorem laplacian_eq_zero_iff (hkl : k + 1 + l = m) {α : SmoothForm I M ℝ (k 
         (hD hα)).1 hint.1, hdown.1 hint.2⟩
     · rw [laplacian_add_one_add_one D δ hkl hkl', h.1, h.2, map_zero, map_zero, add_zero]
 
-end Laplacian
+end GreenLaplacian
 
-variable [BoundarylessManifold I M] [T2Space M] [SigmaCompactSpace M]
+section Boundaryless
+
+variable [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+  {m k l : ℕ} [BoundarylessManifold I M] [T2Space M] [SigmaCompactSpace M]
 
 /-- **The codifferential is the formal adjoint of the exterior derivative**: on an oriented
 boundaryless Riemannian manifold, for smooth forms `α` of degree `k` and `β` of degree `k + 1`,
@@ -1161,6 +1237,42 @@ theorem hodgeLaplacian_eq_zero_iff (o : Manifold.Orientation I M (Fin m)) (hkl :
     (codifferential_mem_compactlySupportedForms o)
     (integralTopForm_inner_mextDeriv_eq_inner_codifferential o) hkl hα
 
+end Boundaryless
+
 end SmoothForm
+
+namespace compactlySupportedForms
+
+variable [FiniteDimensional ℝ E] [IsManifold I ∞ M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] {m k l : ℕ}
+
+/-- The codifferential of compactly supported smooth forms, which does not enlarge supports. -/
+def codifferential (o : Manifold.Orientation I M (Fin m)) (hkl : k + 1 + l = m) :
+    compactlySupportedForms I M (k + 1) →ₗ[ℝ] compactlySupportedForms I M k :=
+  (SmoothForm.codifferential o hkl).restrict fun _ ↦
+    SmoothForm.codifferential_mem_compactlySupportedForms o hkl
+
+/-- The codifferential of a compactly supported form is its codifferential as a smooth form. -/
+@[simp]
+theorem coe_codifferential (o : Manifold.Orientation I M (Fin m)) (hkl : k + 1 + l = m)
+    (β : compactlySupportedForms I M (k + 1)) :
+    (codifferential o hkl β : SmoothForm I M ℝ k) = SmoothForm.codifferential o hkl β :=
+  (rfl)
+
+/-- The Hodge Laplacian of compactly supported smooth forms, which does not enlarge supports. -/
+def hodgeLaplacian (o : Manifold.Orientation I M (Fin m)) (hkl : k + l = m) :
+    compactlySupportedForms I M k →ₗ[ℝ] compactlySupportedForms I M k :=
+  (SmoothForm.hodgeLaplacian o hkl).restrict fun _ ↦
+    SmoothForm.hodgeLaplacian_mem_compactlySupportedForms o hkl
+
+/-- The Hodge Laplacian of a compactly supported form is its Hodge Laplacian as a smooth form. -/
+@[simp]
+theorem coe_hodgeLaplacian (o : Manifold.Orientation I M (Fin m)) (hkl : k + l = m)
+    (α : compactlySupportedForms I M k) :
+    (hodgeLaplacian o hkl α : SmoothForm I M ℝ k) = SmoothForm.hodgeLaplacian o hkl α :=
+  (rfl)
+
+end compactlySupportedForms
 
 end TauCeti

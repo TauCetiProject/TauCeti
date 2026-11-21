@@ -8,7 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.RingTheory.Polynomial.DegreeLT
 public import TauCeti.LinearAlgebra.Matrix.ConfluentVandermonde
-public import TauCeti.RingTheory.Polynomial.HermiteInterpolation
+public import TauCeti.LinearAlgebra.HermiteInterpolation
 import TauCeti.LinearAlgebra.Matrix.ToLin
 
 /-!
@@ -16,14 +16,14 @@ import TauCeti.LinearAlgebra.Matrix.ToLin
 
 For nodes `a : Fin r → R` and multiplicities `m : Fin r → ℕ` with `M = ∑ i, m i`, the confluent
 Vandermonde matrix `Matrix.confluentVandermonde a m` is the matrix of the Hermite jet map
-`TauCeti.hermiteJet a m : degreeLT R M →ₗ[R] ∀ i, Fin (m i) → R` in the monomial basis
+`Polynomial.hermiteJet a m : degreeLT R M →ₗ[R] ∀ i, Fin (m i) → R` in the monomial basis
 `Polynomial.degreeLT.basis R M` of the source, `X ^ j` in increasing degree, and the standard basis
 of the jet space with the jets `⟨i, k⟩` in the lexicographic order `finSigmaFinEquiv`.
 
 Consequently the Hermite jet map is bijective iff the confluent Vandermonde determinant is a unit.
 Over a field this happens iff `a i ≠ a j` whenever `i ≠ j` and `m i`, `m j` are both nonzero, by
 `Matrix.det_confluentVandermonde_ne_zero_iff`; injective nodes are a special case, which gives a
-second proof of `TauCeti.hermiteJet_bijective` for nodes indexed by `Fin r`, and a repeated node
+second proof of `Polynomial.hermiteJet_bijective` for nodes indexed by `Fin r`, and a repeated node
 of multiplicity `0` is allowed.
 
 ## Main definitions
@@ -78,8 +78,8 @@ theorem toMatrix_hermiteJet (a : Fin r → R) (m : Fin r → ℕ) :
     LinearMap.toMatrix (degreeLT.basis R (∑ i, m i)) (lexJetBasis R m) (hermiteJet a m) =
       Matrix.confluentVandermonde a m := by
   ext ρ j
-  rw [LinearMap.toMatrix_apply, lexJetBasis_repr, hermiteJet_apply, degreeLT.basis_val,
-    Matrix.confluentVandermonde_apply]
+  rw [LinearMap.toMatrix_apply, lexJetBasis_repr, hermiteJet_apply, hasseJet_apply,
+    degreeLT.basis_val, Matrix.confluentVandermonde_apply]
 
 /-- The Hermite jet map is the linear map of the confluent Vandermonde matrix in the monomial and
 the lexicographic jet bases. -/

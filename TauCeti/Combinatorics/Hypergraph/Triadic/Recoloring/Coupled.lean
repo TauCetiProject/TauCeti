@@ -619,7 +619,7 @@ private theorem approximates3_of_glued_edit_bound (H H' : Colored3Graph κ V)
           H.relativeDensity c (Q.coarsen hVeq.le π)| ≤
       (Fintype.card κ : ℝ) * √g * (Fintype.card V).descFactorial 3 := by
     calc _ ≤ ∑ _c : κ, (√g * (Fintype.card V).descFactorial 3) :=
-          sum_le_sum fun c _ ↦ H.sum_card_support_mul_abs_relativeDensity_coarsen_le
+          sum_le_sum fun c _ ↦ H.sum_card_support_mul_abs_relativeDensity_coarsen_le_of_color_eq
             hVeq.le π (fun p ↦ (hπ p).symm) hgap c
       _ = (Fintype.card κ : ℝ) * √g * (Fintype.card V).descFactorial 3 := by
           rw [sum_const, card_univ, nsmul_eq_mul, mul_assoc]

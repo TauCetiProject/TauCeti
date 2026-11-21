@@ -180,7 +180,9 @@ end TauCeti.Probability
 
 namespace Seminorm
 
-variable {ι E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+section
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
 
 /-- Every real seminorm on a finite-dimensional real inner product space is integrable on the unit
@@ -234,6 +236,11 @@ theorem integral_seminorm_uniformSphereMeasure_le_mul_sqrt_two_div_finrank [Nont
     (p.continuous_of_finiteDimensional.comp continuous_subtypeVal).aestronglyMeasurable
     (fun hr x ↦ by rw [map_smul_eq_mul, Real.norm_of_nonneg hr.le])
     fun u ↦ apply_nonneg p (u : E)
+
+end
+
+variable {ι E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E]
 
 /-- **Mean-seminorm lower bound on the unit sphere.** If `b` is an orthonormal basis of `E` and
 `c ≤ p (b i)` for every `i` (with `0 ≤ c`), then the average of `p` over the unit sphere of `E` is

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Fredholm.DeterminantLine.Basic
 public import TauCeti.Analysis.Normed.Operator.Splitting.Family
-import Mathlib.Topology.Instances.Matrix
+import TauCeti.Analysis.Calculus.ContDiff.Matrix
 import TauCeti.Analysis.Fredholm.Stabilization
 import TauCeti.LinearAlgebra.Exact
 import TauCeti.LinearAlgebra.LinearEquiv.Basic
@@ -19,7 +19,8 @@ import TauCeti.LinearAlgebra.TensorProduct.Separation
 The determinant lines `det (ker T) ⊗ (det (F ⧸ range T))^*` of a continuous family of Fredholm
 operators `T x : E →L[𝕜] F` form a line bundle over the parameter space, although kernel and
 cokernel jump. This file constructs its local trivializations and proves that they are
-compatible: their transition functions are continuous and nowhere zero. The bundle itself is
+compatible: their transition functions are nowhere zero and have the regularity of the family. As
+functions of the operator they are analytic. The bundle itself is
 assembled from these charts in `TauCeti.Analysis.Fredholm.DeterminantLine.Bundle`.
 
 A *kernel chart* is a finite stabilization `D₂ : Λ →L[𝕜] F`, with `Λ` finite-dimensional,
@@ -32,20 +33,25 @@ Invertibility of the pair is an open condition on `T`, and
 `ContinuousLinearMap.IsFredholm.exists_stabilization_kernel_coordinates` supplies such a chart near
 every Fredholm operator, so the kernel charts of a family cover the parameter space.
 
-Over parameters where two kernel charts are both defined, the transition from one to the other is
-an isomorphism between two fixed lines, so it is multiplication by a scalar relative to its value
-at any base point `x₀`. The main theorem,
-`ContinuousLinearMap.exists_continuous_detLineChartEquiv_symm_eq_smul`, says that this scalar is a
-continuous nowhere-vanishing function of the parameter. Two charts are compared through their sum
-`D₂.coprod D₃` (`ContinuousLinearMap.IsInvertible.prod_coprod_coprod`), and the essential case
-is that of nested stabilizers, `D₂ = D₂' ∘ ι`
-(`ContinuousLinearMap.exists_continuous_detLineChartEquiv_symm_eq_smul_of_comp`). There the
-transition is the change of stabilizer `ContinuousLinearMap.detLineCoprodMapEquiv`, which is
-constant on exterior products of suitable bases. These bases are a fixed basis of `G`
+Over operators at which two kernel charts are both defined, the transition from one to the other
+is an isomorphism between two fixed lines, so it is multiplication by a scalar relative to its
+value at any base operator `A₀`. The main theorem,
+`ContinuousLinearMap.exists_contDiffAt_detLineChartEquiv_symm_eq_smul`, says that this scalar is an
+analytic nowhere-vanishing function of the operator. Along a family `T x` of operators it is
+therefore continuous when the family is continuous
+(`ContinuousLinearMap.exists_continuous_detLineChartEquiv_symm_eq_smul`) and `C^n` when the
+family is `C^n` (`ContinuousLinearMap.exists_contDiffOn_detLineChartEquiv_symm_eq_smul`). Two
+charts are compared through their sum `D₂.coprod D₃`
+(`ContinuousLinearMap.IsInvertible.prod_coprod_coprod`), and the essential case is that of nested
+stabilizers, `D₂ = D₂' ∘ ι`
+(`ContinuousLinearMap.exists_contDiffAt_detLineChartEquiv_symm_eq_smul_of_comp`). There the
+transition is the change of stabilizer `ContinuousLinearMap.detLineCoprodMapEquiv`,
+which is constant on exterior products of suitable bases. These bases are a fixed basis of `G`
 transported by the kernel section of `q`, followed by kernel vectors of the larger stabilization
 lifting a fixed basis of `Λ' ⧸ range ι`, obtained from the right inverse normalized by `q`. Both
-depend continuously on the operator, and the transition coefficient is the inverse of the
-determinant of their `q'`-coordinates, up to a constant.
+are analytic functions of the operator, since the inverse of an invertible operator is, and the
+transition coefficient is the inverse of the determinant of their `q'`-coordinates, up to a
+constant.
 
 Kernel charts are natural with respect to commuting squares of stabilized operators
 (`ContinuousLinearMap.detLineChartEquiv_detLineCongr`); in particular a kernel chart of `S`, for
@@ -66,10 +72,16 @@ with the data frozen (`ContinuousLinearMap.eventually_detLineChartEquiv_eq_smul`
 
 ## Main results
 
-* `ContinuousLinearMap.exists_continuous_detLineChartEquiv_symm_eq_smul_of_comp`: transitions
-  between the kernel charts of nested stabilizers are continuous and nowhere zero.
-* `ContinuousLinearMap.exists_continuous_detLineChartEquiv_symm_eq_smul`: the same for any two
+* `ContinuousLinearMap.exists_contDiffAt_detLineChartEquiv_symm_eq_smul_of_comp`: transitions
+  between the kernel charts of nested stabilizers are analytic and nowhere zero, as functions of
+  the operator.
+* `ContinuousLinearMap.exists_contDiffAt_detLineChartEquiv_symm_eq_smul`: the same for any two
   kernel charts.
+* `ContinuousLinearMap.exists_continuous_detLineChartEquiv_symm_eq_smul_of_comp`,
+  `ContinuousLinearMap.exists_continuous_detLineChartEquiv_symm_eq_smul`: along a continuous family
+  of operators, the transitions are continuous and nowhere zero.
+* `ContinuousLinearMap.exists_contDiffOn_detLineChartEquiv_symm_eq_smul`: along a family of
+  operators which is `C^n` on a subset of a normed space, the transitions are `C^n` there.
 * `ContinuousLinearMap.detLineChartEquiv_detLineCongr`,
   `ContinuousLinearMap.detLineChartEquiv_detLineCongr_of_comp_eq`: naturality of kernel charts.
 * `ContinuousLinearMap.detLineChartEquiv_apply_eq_det_smul_of_coprod_comp_eq`: kernel charts of
@@ -80,6 +92,10 @@ with the data frozen (`ContinuousLinearMap.eventually_detLineChartEquiv_eq_smul`
   kernel coordinate or the stabilizer of a kernel chart multiplies it by a determinant.
 * `ContinuousLinearMap.IsFredholm.exists_isOpen_kernelChart`: a Fredholm operator has a kernel
   chart valid on an open neighbourhood.
+* `ContinuousLinearMap.detLineChartEquiv_eq_detLineEquivOfBijective_smul`: the kernel chart of an
+  invertible operator with zero stabilization and coordinate spaces
+  (`ContinuousLinearMap.IsInvertible.prod_coprod_of_subsingleton`) reads the identification of its
+  determinant line with the scalars as one fixed identification.
 * `ContinuousLinearMap.eventually_detLineChartEquiv_symm_eq_smul`: over `ℝ`, the transition between
   two kernel charts valid at an operator is, nearby, a positive multiple of its value there.
 * `ContinuousLinearMap.eventually_detLineChartEquiv_eq_smul`: over `ℝ`, a kernel chart with
@@ -149,6 +165,48 @@ theorem detLineChartEquiv_detLineStabilizationEquiv [FiniteDimensional 𝕜 T.ke
         (detLineStabilizationEquiv T D₂ (surjective_of_isInvertible_prod h) z) =
       LinearEquiv.rTensor _ (kerEquivOfProd _ q h).toLinearEquiv.symm.detLineCongr z := by
   simp [detLineChartEquiv]
+
+section Subsingleton
+
+variable [Subsingleton Λ] [Subsingleton G]
+
+/-- **The invertibility trivialization in a zero kernel chart.** For a bijective `T` and a kernel
+chart whose stabilization and coordinate spaces `Λ` and `G` are zero, the chart reads an element
+`z` of the determinant line as its value under `LinearMap.detLineEquivOfBijective` times the
+generator `1 ⊗ 1` of `det G ⊗ (det Λ)^*`, the empty exterior product tensored with the functional
+taking the value `1` on it. The generator does not depend on `T`, so the identifications of the
+determinant lines of invertible operators with the scalars form a continuous orientation. -/
+theorem detLineChartEquiv_eq_detLineEquivOfBijective_smul
+    (h : ((T.coprod D₂).prod q).IsInvertible) (hT : Function.Bijective T)
+    (z : (T : E →ₗ[𝕜] F).detLine) :
+    detLineChartEquiv T D₂ q h z = LinearMap.detLineEquivOfBijective hT z •
+      (exteriorPower.ιMulti 𝕜 _ 0 ⊗ₜ (TauCeti.detLineEquivOfFinrankEqZero
+        (finrank_zero_of_subsingleton (M := Λ))).toLinearMap :
+          TauCeti.detLine 𝕜 G ⊗[𝕜] Dual 𝕜 (TauCeti.detLine 𝕜 Λ)) := by
+  have := finiteDimensional_ker_of_isInvertible_prod_coprod h
+  have hΛ : finrank 𝕜 Λ = 0 := finrank_zero_of_subsingleton
+  have hker : finrank 𝕜 (LinearMap.ker (T : E →ₗ[𝕜] F)) = 0 :=
+    LinearMap.finrank_ker_eq_zero_of_injective hT.1
+  have hcoker : finrank 𝕜 (F ⧸ LinearMap.range (T : E →ₗ[𝕜] F)) = 0 :=
+    LinearMap.finrank_quotient_range_eq_zero_of_surjective hT.2
+  have hB : finrank 𝕜 (LinearMap.ker ((T.coprod D₂ : E × Λ →L[𝕜] F) : E × Λ →ₗ[𝕜] F)) = 0 :=
+    (kerEquivOfProd _ q h).toLinearEquiv.finrank_eq.symm.trans finrank_zero_of_subsingleton
+  have hsign : (-1 : 𝕜) ^ (finrank 𝕜 (F ⧸ (T : E →ₗ[𝕜] F).range) * finrank 𝕜 Λ) = 1 := by
+    simp [hΛ]
+  -- All the spaces of the exact sequence `0 → ker T → ker (T.coprod D₂) → Λ → coker T → 0` are
+  -- zero, so the inverse chart sends the generator to the element `1` under invertibility.
+  have hone : (detLineChartEquiv T D₂ q h).symm (exteriorPower.ιMulti 𝕜 _ 0 ⊗ₜ
+      (TauCeti.detLineEquivOfFinrankEqZero hΛ).toLinearMap) =
+        (LinearMap.detLineEquivOfBijective hT).symm 1 := by
+    simp only [detLineChartEquiv_symm_tmul, detLineStabilizationEquiv_apply, hsign, one_smul,
+      detLineCoprodEquiv_def, LinearEquiv.detLineCongr_ιMulti]
+    rw [TauCeti.detLineFourTermEquiv_ιMulti_tmul_of_finrank_eq_zero _ _ _ _ hker hB hΛ hcoker 0,
+      LinearMap.detLineEquivOfBijective_symm_one_eq_ιMulti_tmul]
+  rw [← LinearEquiv.eq_symm_apply, map_smul, hone]
+  apply (LinearMap.detLineEquivOfBijective hT).injective
+  simp
+
+end Subsingleton
 
 section Nested
 
@@ -449,45 +507,194 @@ theorem detLineChartEquiv_detLineCongr_of_comp_eq
 
 end Conjugate
 
-section Continuity
+section Regularity
 
-variable {𝕜 E Λ Λ' F G G' X : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+open scoped ContDiff
+
+variable {𝕜 E Λ Λ' F G G' : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   [NormedAddCommGroup Λ] [NormedSpace 𝕜 Λ] [FiniteDimensional 𝕜 Λ]
   [NormedAddCommGroup Λ'] [NormedSpace 𝕜 Λ'] [FiniteDimensional 𝕜 Λ']
   [NormedAddCommGroup G] [NormedSpace 𝕜 G] [FiniteDimensional 𝕜 G]
   [NormedAddCommGroup G'] [NormedSpace 𝕜 G'] [FiniteDimensional 𝕜 G']
-  [TopologicalSpace X] {T : X → E →L[𝕜] F}
   {D₂ : Λ →L[𝕜] F} {D₂' : Λ' →L[𝕜] F} {q : E × Λ →L[𝕜] G} {q' : E × Λ' →L[𝕜] G'}
   {ι : Λ →ₗ[𝕜] Λ'}
 
 omit [FiniteDimensional 𝕜 Λ'] [FiniteDimensional 𝕜 G] in
 /-- The determinant, against a fixed basis of `G'`, of the `q'`-coordinates of the kernel vectors
-of the larger stabilization used to compare two nested kernel charts depends continuously on the
-operator. -/
-private theorem continuous_det_append_kerSection (hT : Continuous T)
-    (h : ∀ x, (((T x).coprod D₂).prod q).IsInvertible) {k m : ℕ}
+of the larger stabilization used to compare two nested kernel charts is an analytic function of the
+operator at every operator where the smaller chart is valid. -/
+private theorem contDiffAt_det_kerCoordAppend {A : E →L[𝕜] F}
+    (h : ((A.coprod D₂).prod q).IsInvertible) {k m : ℕ}
     (bB : Module.Basis (Fin (k + m)) 𝕜 G') (b : Fin k → G) (lift : Fin m → Λ') :
-    Continuous fun x ↦ bB.det (kerCoordAppend (T x) D₂ q D₂' q' ι b lift) := by
+    ContDiffAt 𝕜 ω (fun A ↦ bB.det (kerCoordAppend A D₂ q D₂' q' ι b lift)) A := by
   have : CompleteSpace Λ := FiniteDimensional.completeSpace 𝕜 Λ
-  have hA : Continuous fun x ↦ (T x).coprod D₂ := hT.continuousLinearMapCoprod continuous_const
-  have hιc : Continuous ι := ι.continuous_of_finiteDimensional
-  have hks : Continuous fun x ↦ ((T x).coprod D₂).kerSection q := continuous_kerSection hA h
-  have hrc : Continuous fun x ↦ q.kerSection ((T x).coprod D₂) :=
-    continuous_const.kerSection hA fun x ↦ isInvertible_prod_comm.mp (h x)
-  have hfam : Continuous fun x ↦ kerCoordAppend (T x) D₂ q D₂' q' ι b lift := by
-    refine continuous_pi fun i ↦ Fin.addCases (fun i ↦ ?_) (fun j ↦ ?_) i
-    · simp only [kerCoordAppend, Fin.append_left]
-      have := hks.clm_apply (continuous_const (y := b i))
-      fun_prop
-    · simp only [kerCoordAppend, Fin.append_right]
-      have := hrc.clm_apply (continuous_const (y := -D₂' (lift j)))
-      fun_prop
+  have hA : ContDiffAt 𝕜 ω (fun A : E →L[𝕜] F ↦ A.coprod D₂) A :=
+    contDiffAt_id.continuousLinearMapCoprod contDiffAt_const
+  have hks : ContDiffAt 𝕜 ω (fun A : E →L[𝕜] F ↦ (A.coprod D₂).kerSection q) A :=
+    hA.kerSection contDiffAt_const h
+  have hrc : ContDiffAt 𝕜 ω (fun A : E →L[𝕜] F ↦ q.kerSection (A.coprod D₂)) A :=
+    contDiffAt_const.kerSection hA (isInvertible_prod_comm.mp h)
+  -- `q' (x.1, ι x.2 + l)` is an affine function of `x`.
+  have hq (l : Λ') : ContDiff 𝕜 ω fun x : E × Λ ↦ q' (x.1, l + ι x.2) := by
+    have hι : ContDiff 𝕜 ω fun x : E × Λ ↦ ι x.2 := by
+      simpa only [LinearMap.coe_toContinuousLinearMap', Function.comp_def] using
+        (LinearMap.toContinuousLinearMap ι).contDiff.comp contDiff_snd
+    exact q'.contDiff.comp (contDiff_fst.prodMk (contDiff_const.add hι))
+  have hfam : ContDiffAt 𝕜 ω (fun A ↦ kerCoordAppend A D₂ q D₂' q' ι b lift) A := by
+    refine contDiffAt_pi.2 fun i ↦ Fin.addCases (fun i ↦ ?_) (fun j ↦ ?_) i
+    · simpa only [kerCoordAppend, Fin.append_left, zero_add, Function.comp_def] using
+        (hq 0).contDiffAt.comp A (hks.clm_apply (contDiffAt_const (c := b i)))
+    · simpa only [kerCoordAppend, Fin.append_right, Function.comp_def] using
+        (hq (lift j)).contDiffAt.comp A (hrc.clm_apply (contDiffAt_const (c := -D₂' (lift j))))
   simp only [Module.Basis.det_apply]
-  refine Continuous.matrix_det (continuous_pi fun i ↦ continuous_pi fun j ↦ ?_)
-  simpa only [Module.Basis.toMatrix_apply, Function.comp_def, Module.Basis.coord_apply] using
-    (bB.coord i).continuous_of_finiteDimensional.comp ((continuous_apply j).comp hfam)
+  refine ContDiffAt.matrix_det fun i j ↦ ?_
+  simpa only [Module.Basis.toMatrix_apply, LinearMap.coe_toContinuousLinearMap',
+    Module.Basis.coord_apply, Function.comp_def] using
+    (LinearMap.toContinuousLinearMap (bB.coord i)).contDiff.contDiffAt.comp A
+      (contDiffAt_pi.1 hfam j)
+
+omit [CompleteSpace 𝕜] [CompleteSpace E] in
+/-- For nested kernel charts both valid at `A`, an element `y` of `det G'`, read off as the
+determinant against a fixed basis `bB` of the `q'`-coordinates of kernel vectors of the larger
+stabilization, on which the transition from the larger chart to the smaller one takes a value
+independent of `A`. Here `lift` lifts a fixed basis of `Λ' ⧸ range ι` to `Λ'`. -/
+private theorem exists_detLineChartEquiv_symm_tmul_nested
+    (hι : ∀ l, D₂' (ι l) = D₂ l) (hι' : Function.Injective ι) {A : E →L[𝕜] F}
+    (h : ((A.coprod D₂).prod q).IsInvertible) (h' : ((A.coprod D₂').prod q').IsInvertible)
+    (bB : Module.Basis (Fin (finrank 𝕜 G + finrank 𝕜 (Λ' ⧸ LinearMap.range ι))) 𝕜 G')
+    (lift : Fin (finrank 𝕜 (Λ' ⧸ LinearMap.range ι)) → Λ')
+    (hlift : ∀ j, (LinearMap.range ι).mkQ (lift j) = Module.finBasis 𝕜 _ j) :
+    ∃ y : TauCeti.detLine 𝕜 G', y ≠ 0 ∧
+      (y : ExteriorAlgebra 𝕜 G') =
+        bB.det (kerCoordAppend A D₂ q D₂' q' ι (Module.finBasis 𝕜 G) lift) •
+          ExteriorAlgebra.ιMulti 𝕜 _ bB ∧
+      ∀ φ, detLineChartEquiv A D₂ q h ((detLineChartEquiv A D₂' q' h').symm (y ⊗ₜ φ)) =
+        exteriorPower.ιMulti 𝕜 _ (Module.finBasis 𝕜 G) ⊗ₜ
+          (φ ∘ₗ (TauCeti.detLineShortExactEquiv hι' (LinearMap.exact_map_mkQ_range ι)
+            (Submodule.mkQ_surjective _)).toLinearMap ∘ₗ
+              (TensorProduct.mk 𝕜 _ _).flip (exteriorPower.ιMulti 𝕜 _ (Module.finBasis 𝕜 _))) := by
+  have := finite_ker_of_isInvertible_prod h
+  set bG := Module.finBasis 𝕜 G
+  set bW := Module.finBasis 𝕜 (Λ' ⧸ LinearMap.range ι)
+  -- Kernel vectors of the larger stabilization lifting `lift`.
+  let wv (j : Fin (finrank 𝕜 (Λ' ⧸ LinearMap.range ι))) : (A.coprod D₂').ker :=
+    ⟨_, mem_ker_coprod_kerSection hι h (lift j)⟩
+  have hgv : ((LinearMap.range ι).mkQ ∘ₗ
+      (parameterProj A D₂' : (A.coprod D₂').ker →ₗ[𝕜] Λ')) ∘ wv = bW := by
+    funext j
+    have hι0 : (LinearMap.range ι).mkQ (ι (q.kerSection (A.coprod D₂) (-D₂' (lift j))).2) = 0 :=
+      (Submodule.Quotient.mk_eq_zero _).2 (LinearMap.mem_range_self ι _)
+    simp only [LinearMap.coe_comp, Function.comp_apply, coe_coe, parameterProj_apply, wv]
+    rw [map_add, hι0, add_zero]
+    exact hlift j
+  refine ⟨(kerEquivOfProd _ q' h').toLinearEquiv.symm.detLineCongr
+    (TauCeti.detLineShortExactEquiv (kerCoprodMap_injective hι hι') (exact_kerCoprodMap hι)
+      (surjective_mkQ_comp_parameterProj hι (surjective_of_isInvertible_prod h))
+      ((kerEquivOfProd _ q h).toLinearEquiv.detLineCongr (exteriorPower.ιMulti 𝕜 _ bG) ⊗ₜ
+        exteriorPower.ιMulti 𝕜 _ bW)),
+    detLineCongr_detLineShortExactEquiv_ne_zero hι hι' h h' bG bW, ?_, fun φ ↦
+      detLineChartEquiv_symm_tmul_nested hι hι' h h' _ _ φ⟩
+  have hy := coe_detLineCongr_detLineShortExactEquiv_nested hι hι' h h' bG wv
+  rw [hgv] at hy
+  rw [hy, ← exteriorPower.ιMulti_apply_coe, bB.exteriorPower_ιMulti_eq_det_smul,
+    Submodule.coe_smul, exteriorPower.ιMulti_apply_coe]
+  simp only [kerCoordAppend, wv]
+
+/-- **Transitions between nested kernel charts are analytic.** Let `(D₂, q)` and `(D₂', q')` be
+kernel charts of the operator `A₀`, with the stabilizer `D₂ = D₂' ∘ ι` obtained from `D₂'` along an
+injective `ι : Λ → Λ'`. Then there is a function `c` of the operator such that, at every operator
+`A` where both charts are valid, `c` is analytic (`C^ω`) and nonzero at `A`, and the transition
+from the
+second chart to the first at `A` is `c A` times the transition at `A₀`. -/
+theorem exists_contDiffAt_detLineChartEquiv_symm_eq_smul_of_comp
+    (hι : ∀ l, D₂' (ι l) = D₂ l) (hι' : Function.Injective ι) {A₀ : E →L[𝕜] F}
+    (h₀ : ((A₀.coprod D₂).prod q).IsInvertible) (h₀' : ((A₀.coprod D₂').prod q').IsInvertible) :
+    ∃ c : (E →L[𝕜] F) → 𝕜, ∀ A (h : ((A.coprod D₂).prod q).IsInvertible)
+      (h' : ((A.coprod D₂').prod q').IsInvertible), ContDiffAt 𝕜 ω c A ∧ c A ≠ 0 ∧ ∀ v,
+        detLineChartEquiv A D₂ q h ((detLineChartEquiv A D₂' q' h').symm v) =
+          c A • detLineChartEquiv A₀ D₂ q h₀ ((detLineChartEquiv A₀ D₂' q' h₀').symm v) := by
+  set W := Λ' ⧸ LinearMap.range ι
+  -- Fixed data: lifts of a basis of `W` to `Λ'`, and a basis of `G'`.
+  let lift : Fin (finrank 𝕜 W) → Λ' := fun j ↦
+    Function.surjInv (Submodule.mkQ_surjective (LinearMap.range ι)) (Module.finBasis 𝕜 W j)
+  have hlift (j) : (LinearMap.range ι).mkQ (lift j) = Module.finBasis 𝕜 W j :=
+    Function.surjInv_eq (Submodule.mkQ_surjective _) _
+  let bB : Module.Basis (Fin (finrank 𝕜 G + finrank 𝕜 W)) 𝕜 G' := Module.finBasisOfFinrankEq 𝕜 G'
+    (finrank_eq_finrank_add_finrank_quotient hι hι' h₀ h₀')
+  -- The transition is `c₀ A₀ / c₀ A` times its value at `A₀`.
+  set c₀ : (E →L[𝕜] F) → 𝕜 := fun A ↦
+    bB.det (kerCoordAppend A D₂ q D₂' q' ι (Module.finBasis 𝕜 G) lift)
+  obtain ⟨y₀, hy₀, hyc₀, hM₀⟩ :=
+    exists_detLineChartEquiv_symm_tmul_nested hι hι' h₀ h₀' bB lift hlift
+  have hc0 {A : E →L[𝕜] F} {y : TauCeti.detLine 𝕜 G'} (hy : y ≠ 0)
+      (hyc : (y : ExteriorAlgebra 𝕜 G') = c₀ A • ExteriorAlgebra.ιMulti 𝕜 _ bB) : c₀ A ≠ 0 :=
+    fun hc ↦ hy (Subtype.ext (by rw [hyc, hc, zero_smul, ZeroMemClass.coe_zero]))
+  refine ⟨fun A ↦ c₀ A₀ / c₀ A, fun A h h' ↦ ?_⟩
+  obtain ⟨y, hy, hyc, hM⟩ := exists_detLineChartEquiv_symm_tmul_nested hι hι' h h' bB lift hlift
+  refine ⟨contDiffAt_const.div (contDiffAt_det_kerCoordAppend h bB _ lift) (hc0 hy hyc),
+    div_ne_zero (hc0 hy₀ hyc₀) (hc0 hy hyc), fun v ↦ ?_⟩
+  -- The transition is constant on `y ⊗ φ`, and `det G'` is spanned by `y₀`.
+  let e (A : E →L[𝕜] F) (h : ((A.coprod D₂).prod q).IsInvertible)
+      (h' : ((A.coprod D₂').prod q').IsInvertible) :=
+    (detLineChartEquiv A D₂' q' h').symm ≪≫ₗ detLineChartEquiv A D₂ q h
+  have key : (e A h h').toLinearMap = (c₀ A₀ / c₀ A) • (e A₀ h₀ h₀').toLinearMap :=
+    TauCeti.eq_smul_of_tmul_eq_tmul (N := Dual 𝕜 (TauCeti.detLine 𝕜 Λ'))
+      (P := TauCeti.detLine 𝕜 G ⊗[𝕜] Dual 𝕜 (TauCeti.detLine 𝕜 Λ)) (y := y)
+      (TauCeti.finrank_detLine 𝕜 G') hy₀
+      (Subtype.ext (by
+        rw [Submodule.coe_smul, hyc, hyc₀, smul_smul, div_mul_cancel₀ _ (hc0 hy hyc)]))
+      fun n ↦ (hM n).trans (hM₀ n).symm
+  simpa [e] using LinearMap.congr_fun key v
+
+variable {Λ₃ G₃ : Type*} [NormedAddCommGroup Λ₃] [NormedSpace 𝕜 Λ₃] [FiniteDimensional 𝕜 Λ₃]
+  [NormedAddCommGroup G₃] [NormedSpace 𝕜 G₃] [FiniteDimensional 𝕜 G₃]
+  {D₃ : Λ₃ →L[𝕜] F} {q₃ : E × Λ₃ →L[𝕜] G₃}
+
+/-- **Transitions between kernel charts are analytic.** Let `(D₂, q)` and `(D₃, q₃)` be kernel
+charts of the operator `A₀`. Then there is a function `c` of the operator such that, at every
+operator `A` where both charts are valid, `c` is analytic (`C^ω`) and nonzero at `A`, and the
+transition from the second chart to the first at `A` is `c A` times the transition at `A₀`. These
+are the transition functions of the determinant line bundle, as functions of the operator; along a
+family of operators they have the regularity of the family
+(`ContinuousLinearMap.exists_continuous_detLineChartEquiv_symm_eq_smul`,
+`ContinuousLinearMap.exists_contDiffOn_detLineChartEquiv_symm_eq_smul`). -/
+theorem exists_contDiffAt_detLineChartEquiv_symm_eq_smul {A₀ : E →L[𝕜] F}
+    (h₀ : ((A₀.coprod D₂).prod q).IsInvertible) (h₀₃ : ((A₀.coprod D₃).prod q₃).IsInvertible) :
+    ∃ c : (E →L[𝕜] F) → 𝕜, ∀ A (h : ((A.coprod D₂).prod q).IsInvertible)
+      (h₃ : ((A.coprod D₃).prod q₃).IsInvertible), ContDiffAt 𝕜 ω c A ∧ c A ≠ 0 ∧ ∀ v,
+        detLineChartEquiv A D₂ q h ((detLineChartEquiv A D₃ q₃ h₃).symm v) =
+          c A • detLineChartEquiv A₀ D₂ q h₀ ((detLineChartEquiv A₀ D₃ q₃ h₀₃).symm v) := by
+  -- Both charts are compared with the chart of the sum `D₂.coprod D₃` of the stabilizers.
+  let q'' : E × Λ × Λ₃ →L[𝕜] G × Λ₃ := (q.prodMap (ContinuousLinearMap.id 𝕜 Λ₃)) ∘L
+    (ContinuousLinearEquiv.prodAssoc 𝕜 E Λ Λ₃).symm.toContinuousLinearMap
+  obtain ⟨c₁, hc₁⟩ := exists_contDiffAt_detLineChartEquiv_symm_eq_smul_of_comp
+    (ι := LinearMap.inl 𝕜 Λ Λ₃) (D₂' := D₂.coprod D₃) (q' := q'') (fun _ ↦ by simp)
+    LinearMap.inl_injective h₀ (h₀.prod_coprod_coprod D₃)
+  obtain ⟨c₂, hc₂⟩ := exists_contDiffAt_detLineChartEquiv_symm_eq_smul_of_comp
+    (ι := LinearMap.inr 𝕜 Λ Λ₃) (D₂' := D₂.coprod D₃) (q' := q'') (fun _ ↦ by simp)
+    LinearMap.inr_injective h₀₃ (h₀.prod_coprod_coprod D₃)
+  refine ⟨fun A ↦ c₁ A / c₂ A, fun A h h₃ ↦ ?_⟩
+  have h'' : (((A.coprod (D₂.coprod D₃)).prod q'')).IsInvertible := h.prod_coprod_coprod D₃
+  obtain ⟨hd₁, hn₁, he₁⟩ := hc₁ A h h''
+  obtain ⟨hd₂, hn₂, he₂⟩ := hc₂ A h₃ h''
+  refine ⟨hd₁.div hd₂ hn₂, div_ne_zero hn₁ hn₂, fun v ↦ ?_⟩
+  let M₁ (A : E →L[𝕜] F) (h : ((A.coprod D₂).prod q).IsInvertible) :=
+    (detLineChartEquiv A (D₂.coprod D₃) q'' (h.prod_coprod_coprod D₃)).symm ≪≫ₗ
+      detLineChartEquiv A D₂ q h
+  let M₂ (A : E →L[𝕜] F) (h : ((A.coprod D₂).prod q).IsInvertible)
+      (h₃ : ((A.coprod D₃).prod q₃).IsInvertible) :=
+    (detLineChartEquiv A (D₂.coprod D₃) q'' (h.prod_coprod_coprod D₃)).symm ≪≫ₗ
+      detLineChartEquiv A D₃ q₃ h₃
+  have := LinearEquiv.apply_symm_eq_div_smul (M₁ A h) (M₁ A₀ h₀) (M₂ A h h₃) (M₂ A₀ h₀ h₀₃) he₁ he₂
+    hn₂ v
+  simpa only [M₁, M₂, LinearEquiv.trans_apply, LinearEquiv.symm_trans_apply, LinearEquiv.symm_symm,
+    LinearEquiv.apply_symm_apply, LinearEquiv.symm_apply_apply] using this
+
+section Family
+
+variable {X : Type*} [TopologicalSpace X] {T : X → E →L[𝕜] F}
 
 /-- **Transitions between nested kernel charts are continuous.** Let `T` be a continuous family
 of operators, and `(D₂, q)` and `(D₂', q')` kernel charts of `T x` at every parameter `x`, with the
@@ -502,76 +709,10 @@ theorem exists_continuous_detLineChartEquiv_symm_eq_smul_of_comp (hT : Continuou
       detLineChartEquiv (T x) D₂ q (h x) ((detLineChartEquiv (T x) D₂' q' (h' x)).symm v) =
         c x • detLineChartEquiv (T x₀) D₂ q (h x₀)
           ((detLineChartEquiv (T x₀) D₂' q' (h' x₀)).symm v) := by
-  set W := Λ' ⧸ LinearMap.range ι
-  have hfd (x) : FiniteDimensional 𝕜 ((T x).coprod D₂).ker := finite_ker_of_isInvertible_prod (h x)
-  -- Fixed data: bases of `G` and `W`, lifts of the latter to `Λ'`, and a basis of `G'`.
-  let bG := Module.finBasis 𝕜 G
-  let bW := Module.finBasis 𝕜 W
-  let lift : Fin (finrank 𝕜 W) → Λ' := fun j ↦
-    Function.surjInv (Submodule.mkQ_surjective (LinearMap.range ι)) (bW j)
-  let bB : Module.Basis (Fin (finrank 𝕜 G + finrank 𝕜 W)) 𝕜 G' := Module.finBasisOfFinrankEq 𝕜 G'
-    (finrank_eq_finrank_add_finrank_quotient hι hι' (h x₀) (h' x₀))
-  -- Kernel vectors of the larger stabilization lifting `lift`, continuous in `x`.
-  let wv (x : X) (j : Fin (finrank 𝕜 W)) : ((T x).coprod D₂').ker :=
-    ⟨_, mem_ker_coprod_kerSection hι (h x) (lift j)⟩
-  have hgv (x) : ((LinearMap.range ι).mkQ ∘ₗ
-      (parameterProj (T x) D₂' : ((T x).coprod D₂').ker →ₗ[𝕜] Λ')) ∘ wv x = bW := by
-    funext j
-    have hι0 : (LinearMap.range ι).mkQ
-        (ι (q.kerSection ((T x).coprod D₂) (-D₂' (lift j))).2) = 0 :=
-      (Submodule.Quotient.mk_eq_zero _).2 (LinearMap.mem_range_self ι _)
-    simp only [LinearMap.coe_comp, Function.comp_apply, coe_coe, parameterProj_apply, wv]
-    rw [map_add, hι0, add_zero]
-    exact Function.surjInv_eq (Submodule.mkQ_surjective _) _
-  -- The elements `y x` of `det G'`, on which the transition is constant, are the multiples
-  -- `c₀ x` of a fixed generator, with `c₀` continuous.
-  let y (x : X) : TauCeti.detLine 𝕜 G' :=
-    have := hfd x
-    (kerEquivOfProd _ q' (h' x)).toLinearEquiv.symm.detLineCongr
-      (TauCeti.detLineShortExactEquiv (kerCoprodMap_injective hι hι') (exact_kerCoprodMap hι)
-        (surjective_mkQ_comp_parameterProj hι (surjective_of_isInvertible_prod (h x)))
-        ((kerEquivOfProd _ q (h x)).toLinearEquiv.detLineCongr (exteriorPower.ιMulti 𝕜 _ bG) ⊗ₜ
-          exteriorPower.ιMulti 𝕜 _ bW))
-  have hc := continuous_det_append_kerSection (q' := q') (ι := ι) (D₂' := D₂') hT h bB bG lift
-  set c₀ : X → 𝕜 := fun x ↦ bB.det (kerCoordAppend (T x) D₂ q D₂' q' ι bG lift)
-  have hyc (x) : (y x : ExteriorAlgebra 𝕜 G') = c₀ x • ExteriorAlgebra.ιMulti 𝕜 _ bB := by
-    have := hfd x
-    have hy := coe_detLineCongr_detLineShortExactEquiv_nested hι hι' (h x) (h' x) bG (wv x)
-    rw [hgv x] at hy
-    rw [hy, ← exteriorPower.ιMulti_apply_coe, bB.exteriorPower_ιMulti_eq_det_smul,
-      Submodule.coe_smul, exteriorPower.ιMulti_apply_coe]
-    simp only [c₀, kerCoordAppend, wv, W]
-  have hy0 (x) : y x ≠ 0 :=
-    have := hfd x
-    detLineCongr_detLineShortExactEquiv_ne_zero hι hι' (h x) (h' x) bG bW
-  -- The transition from the larger chart to the smaller one.
-  let e (x : X) := (detLineChartEquiv (T x) D₂' q' (h' x)).symm ≪≫ₗ
-    detLineChartEquiv (T x) D₂ q (h x)
-  have hM (x) (φ : Dual 𝕜 (TauCeti.detLine 𝕜 Λ')) :
-      (e x).toLinearMap (y x ⊗ₜ φ) =
-      exteriorPower.ιMulti 𝕜 _ bG ⊗ₜ (φ ∘ₗ (TauCeti.detLineShortExactEquiv hι'
-        (LinearMap.exact_map_mkQ_range ι) (Submodule.mkQ_surjective _)).toLinearMap ∘ₗ
-          (TensorProduct.mk 𝕜 _ _).flip (exteriorPower.ιMulti 𝕜 _ bW)) :=
-    have := hfd x
-    detLineChartEquiv_symm_tmul_nested hι hι' (h x) (h' x) (exteriorPower.ιMulti 𝕜 _ bG)
-      (exteriorPower.ιMulti 𝕜 _ bW) φ
-  clear_value y c₀
-  have hc0 (x) : c₀ x ≠ 0 := fun hc ↦
-    hy0 x (Subtype.ext (by rw [hyc, hc, zero_smul, ZeroMemClass.coe_zero]))
-  refine ⟨fun x ↦ c₀ x₀ / c₀ x, continuous_const.div hc hc0,
-    fun x ↦ div_ne_zero (hc0 x₀) (hc0 x), fun x v ↦ ?_⟩
-  -- The transition is constant on `y x ⊗ φ`, and `det G'` is spanned by `y x₀`.
-  have key : (e x).toLinearMap = (c₀ x₀ / c₀ x) • (e x₀).toLinearMap :=
-    TauCeti.eq_smul_of_tmul_eq_tmul (N := Dual 𝕜 (TauCeti.detLine 𝕜 Λ'))
-      (P := TauCeti.detLine 𝕜 G ⊗[𝕜] Dual 𝕜 (TauCeti.detLine 𝕜 Λ)) (y := y x)
-      (TauCeti.finrank_detLine 𝕜 G') (hy0 x₀)
-      (Subtype.ext (by rw [Submodule.coe_smul, hyc, hyc, smul_smul, div_mul_cancel₀ _ (hc0 x)]))
-      fun n ↦ (hM x n).trans (hM x₀ n).symm
-  simpa [e] using LinearMap.congr_fun key v
-
-variable {Λ₃ G₃ : Type*} [NormedAddCommGroup Λ₃] [NormedSpace 𝕜 Λ₃] [FiniteDimensional 𝕜 Λ₃]
-  [NormedAddCommGroup G₃] [NormedSpace 𝕜 G₃] [FiniteDimensional 𝕜 G₃]
-  {D₃ : Λ₃ →L[𝕜] F} {q₃ : E × Λ₃ →L[𝕜] G₃}
+  obtain ⟨c, hc⟩ := exists_contDiffAt_detLineChartEquiv_symm_eq_smul_of_comp hι hι' (h x₀) (h' x₀)
+  exact ⟨fun x ↦ c (T x), continuous_iff_continuousAt.2 fun x ↦
+    (hc _ (h x) (h' x)).1.continuousAt.comp hT.continuousAt, fun x ↦ (hc _ (h x) (h' x)).2.1,
+    fun x ↦ (hc _ (h x) (h' x)).2.2⟩
 
 /-- **Transitions between kernel charts are continuous.** Let `T` be a continuous family of
 operators, and `(D₂, q)` and `(D₃, q₃)` kernel charts of `T x` at every parameter `x`. Then,
@@ -586,23 +727,30 @@ theorem exists_continuous_detLineChartEquiv_symm_eq_smul (hT : Continuous T)
       detLineChartEquiv (T x) D₂ q (h x) ((detLineChartEquiv (T x) D₃ q₃ (h₃ x)).symm v) =
         c x • detLineChartEquiv (T x₀) D₂ q (h x₀)
           ((detLineChartEquiv (T x₀) D₃ q₃ (h₃ x₀)).symm v) := by
-  let q'' : E × Λ × Λ₃ →L[𝕜] G × Λ₃ := (q.prodMap (ContinuousLinearMap.id 𝕜 Λ₃)) ∘L
-    (ContinuousLinearEquiv.prodAssoc 𝕜 E Λ Λ₃).symm.toContinuousLinearMap
-  have h'' (x) : (((T x).coprod (D₂.coprod D₃)).prod q'').IsInvertible :=
-    (h x).prod_coprod_coprod D₃
-  obtain ⟨c₁, hc₁, hc₁0, h₁⟩ := exists_continuous_detLineChartEquiv_symm_eq_smul_of_comp hT
-    (ι := LinearMap.inl 𝕜 Λ Λ₃) (fun _ ↦ by simp) LinearMap.inl_injective h h'' x₀
-  obtain ⟨c₂, hc₂, hc₂0, h₂⟩ := exists_continuous_detLineChartEquiv_symm_eq_smul_of_comp hT
-    (ι := LinearMap.inr 𝕜 Λ Λ₃) (fun _ ↦ by simp) LinearMap.inr_injective h₃ h'' x₀
-  refine ⟨fun x ↦ c₁ x / c₂ x, hc₁.div hc₂ hc₂0, fun x ↦ div_ne_zero (hc₁0 x) (hc₂0 x),
-    fun x v ↦ ?_⟩
-  let M₁ (x : X) := (detLineChartEquiv (T x) (D₂.coprod D₃) q'' (h'' x)).symm ≪≫ₗ
-    detLineChartEquiv (T x) D₂ q (h x)
-  let M₂ (x : X) := (detLineChartEquiv (T x) (D₂.coprod D₃) q'' (h'' x)).symm ≪≫ₗ
-    detLineChartEquiv (T x) D₃ q₃ (h₃ x)
-  have := LinearEquiv.apply_symm_eq_div_smul (M₁ x) (M₁ x₀) (M₂ x) (M₂ x₀) (h₁ x) (h₂ x) (hc₂0 x) v
-  simpa only [M₁, M₂, LinearEquiv.trans_apply, LinearEquiv.symm_trans_apply, LinearEquiv.symm_symm,
-    LinearEquiv.apply_symm_apply, LinearEquiv.symm_apply_apply] using this
+  obtain ⟨c, hc⟩ := exists_contDiffAt_detLineChartEquiv_symm_eq_smul (h x₀) (h₃ x₀)
+  exact ⟨fun x ↦ c (T x), continuous_iff_continuousAt.2 fun x ↦
+    (hc _ (h x) (h₃ x)).1.continuousAt.comp hT.continuousAt, fun x ↦ (hc _ (h x) (h₃ x)).2.1,
+    fun x ↦ (hc _ (h x) (h₃ x)).2.2⟩
+
+end Family
+
+/-- **Transitions between kernel charts have the regularity of the family.** Let `T` be a family of
+operators which is `C^n` on a set `s` of a normed space, and `(D₂, q)` and `(D₃, q₃)` kernel charts
+of `T x` at every `x ∈ s`. Then, relative to its value at any base point `x₀ ∈ s`, the transition
+from the second chart to the first is multiplication by a function which is `C^n` on `s` and
+nowhere zero there. -/
+theorem exists_contDiffOn_detLineChartEquiv_symm_eq_smul {X : Type*} [NormedAddCommGroup X]
+    [NormedSpace 𝕜 X] {T : X → E →L[𝕜] F} {s : Set X} {n : ℕ∞ω} (hT : ContDiffOn 𝕜 n T s)
+    (h : ∀ x ∈ s, (((T x).coprod D₂).prod q).IsInvertible)
+    (h₃ : ∀ x ∈ s, (((T x).coprod D₃).prod q₃).IsInvertible) {x₀ : X} (hx₀ : x₀ ∈ s) :
+    ∃ c : X → 𝕜, ContDiffOn 𝕜 n c s ∧ (∀ x ∈ s, c x ≠ 0) ∧ ∀ x (hx : x ∈ s) v,
+      detLineChartEquiv (T x) D₂ q (h x hx) ((detLineChartEquiv (T x) D₃ q₃ (h₃ x hx)).symm v) =
+        c x • detLineChartEquiv (T x₀) D₂ q (h x₀ hx₀)
+          ((detLineChartEquiv (T x₀) D₃ q₃ (h₃ x₀ hx₀)).symm v) := by
+  obtain ⟨c, hc⟩ := exists_contDiffAt_detLineChartEquiv_symm_eq_smul (h x₀ hx₀) (h₃ x₀ hx₀)
+  exact ⟨fun x ↦ c (T x), fun x hx ↦
+    ((hc _ (h x hx) (h₃ x hx)).1.of_le le_top).comp_contDiffWithinAt x (hT x hx),
+    fun x hx ↦ (hc _ (h x hx) (h₃ x hx)).2.1, fun x hx ↦ (hc _ (h x hx) (h₃ x hx)).2.2⟩
 
 variable [CompleteSpace F] in
 /-- **Kernel charts near a Fredholm operator.** A Fredholm operator `A₀` has a kernel chart, with
@@ -619,7 +767,7 @@ theorem IsFredholm.exists_isOpen_kernelChart {A₀ : E →L[𝕜] F} (hF : IsFre
     (hF.coprod_of_finiteDimensional S.subtypeL).finite_ker
   exact ⟨S, hS, _, inferInstance, q, U, hU, hxU, hinv⟩
 
-end Continuity
+end Regularity
 
 section Real
 

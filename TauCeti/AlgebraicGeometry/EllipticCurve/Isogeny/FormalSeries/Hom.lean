@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Point.MvPowerSeries
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.FormalSeries.Basic
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.FormalSeries.Neg
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.FormalSeries.Order
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.BaseChange
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Hom
@@ -325,17 +326,6 @@ end Hom
 section MulByInt
 
 variable {K : Type*} [Field K] (W : WeierstrassCurve K) [W.IsElliptic]
-
-/-- **For an elliptic curve `W`, the formal series of the negation isogeny `[-1]` is the
-formal-group inverse.** -/
-@[simp]
-theorem formalSeries_negIsogeny :
-    (negIsogeny W.toAffine).formalSeries = (formalGroup W).addInvX := by
-  have h : Hom.ofIsogeny (negIsogeny W.toAffine) = -Hom.id W.toAffine := by
-    rw [Hom.id_def, Hom.neg_ofIsogeny, comp_id]
-  have hs := congrArg Hom.formalSeries h
-  rwa [Hom.formalSeries_ofIsogeny, Hom.formalSeries_neg, Hom.formalSeries_id,
-    PowerSeries.X_subst] at hs
 
 /-- **For an elliptic curve `W`, the formal series of the multiplication-by-`n` isogeny `[n]` is
 the formal-group multiplication series `(formalGroup W).zsmulSeries n`.** -/

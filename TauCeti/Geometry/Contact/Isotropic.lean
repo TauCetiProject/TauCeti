@@ -153,6 +153,13 @@ structure IsLegendrianEmbedding (D : Π x : M, Submodule ℝ (TangentSpace I x))
   /-- A Legendrian embedding is a homeomorphism onto its image. -/
   isEmbedding : Topology.IsEmbedding f
 
+/-- A one-form whose kernel admits a Legendrian immersion is a contact form: the kernel is a
+contact structure. -/
+theorem IsLegendrianImmersion.isContactForm {α : SmoothForm I M ℝ 1}
+    (h : IsLegendrianImmersion J α.kerDistribution f) : α.IsContactForm :=
+  have : IsManifold I (1 + 1) M := .of_le (n := 2) (by norm_num)
+  SmoothForm.isContactForm_iff_isContactDistribution_kerDistribution.2 h.isContactDistribution
+
 /-- A Legendrian embedding is a smooth embedding. -/
 theorem IsLegendrianEmbedding.isSmoothEmbedding (h : IsLegendrianEmbedding J D f) :
     Manifold.IsSmoothEmbedding J I ∞ f :=

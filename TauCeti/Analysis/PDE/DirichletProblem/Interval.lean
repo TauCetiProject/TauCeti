@@ -59,6 +59,9 @@ quasilinear problem under perturbation of its data.
   every solution is the explicit solution with its own endpoint values.
 * `TauCeti.PDE.exists_intervalTraceL_eq_and_forall_integral_mul_gradient_eq`: the linear problem
   `-(a u' + F)' = f` with prescribed endpoint values has a solution in `W^{1,p}(x₀, x₁)`.
+* `TauCeti.PDE.abs_intervalDirichletSolution_sub_le_min_mul_div`: with equal endpoint values `g`,
+  the explicit solution stays within `min (y - x₀) (x₁ - y) * N / λ` of `g`, where `N` bounds the
+  oscillation of `∫_{x₀}^t f + F`.
 
 ## References
 
@@ -446,9 +449,7 @@ theorem exists_w1p_intervalRepresentativeL_eq (hx : x₀ < x₁) (hlam : 0 < lam
   set G : ℝ → ℝ := fun t => (∫ s in x₀..t, f s) + F t
   -- `G` lies in `Lᵖ`: the primitive of `f` is continuous on `[x₀, x₁]`, and `F ∈ Lᵖ`.
   have hGp : MemLp G p (volume.restrict (Ioo x₀ x₁)) :=
-    ((intervalIntegral.continuousOn_primitive_interval_of_integrableOn_Ioo hf
-      (left_mem_Icc.2 hx.le)).memLp_restrict_of_subset_isCompact isCompact_Icc measurableSet_Ioo
-      Ioo_subset_Icc_self p).add hF
+    (intervalIntegral.memLp_primitive hf (left_mem_Icc.2 hx.le)).add hF
   have hF1 : IntegrableOn F (Ioo x₀ x₁) := hF.integrable Fact.out
   obtain ⟨u, hu, hgrad⟩ := W1p.exists_intervalRepresentativeL_eq_and_gradient_ae_eq hx
     (left_mem_Icc.2 hx.le) g₀ (memLp_intervalDirichletSlope hlam g₀ g₁ ha hla hGp)
@@ -585,5 +586,29 @@ theorem exists_intervalTraceL_eq_and_forall_integral_mul_gradient_eq (hx : x₀ 
           (∫ t in Ioo x₀ x₁, f t * φ t) - ∫ t in Ioo x₀ x₁, F t * deriv φ t := by
   obtain ⟨u, -, hu⟩ := exists_w1p_intervalRepresentativeL_eq hx hlam ha hla hf hF g₀ g₁
   exact ⟨u, hu⟩
+
+
+/-- **Decay of the explicit solution towards equal boundary values.** Let `λ ≤ a ≤ M` almost
+everywhere on `(x₀, x₁)`, with `λ > 0`, let `f` and `F` be integrable there, and let
+`G t = ∫_{x₀}^t f + F t` lie in `[m, m + N]` for almost every `t ∈ (x₀, x₁)`. Then the explicit
+solution of `-(a u' + F)' = f` with the value `g` at both endpoints satisfies
+`|u y - g| ≤ min (y - x₀) (x₁ - y) * N / λ`. In particular the frozen-coefficient solution map
+sends every coefficient between `λ` and `M` into the closed ball of radius `(x₁ - x₀) N / (2 λ)`
+about the constant `g`. -/
+theorem abs_intervalDirichletSolution_sub_le_min_mul_div (hx : x₀ < x₁) (hlam : 0 < lam)
+    (ha : AEStronglyMeasurable a (volume.restrict (Ioo x₀ x₁)))
+    (haM : ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁), lam ≤ a t ∧ a t ≤ M)
+    (hf : IntegrableOn f (Ioo x₀ x₁)) (hF : IntegrableOn F (Ioo x₀ x₁)) (g : ℝ) {m N : ℝ}
+    (hG : ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁),
+      m ≤ (∫ s in x₀..t, f s) + F t ∧ (∫ s in x₀..t, f s) + F t ≤ m + N)
+    (hs : IntegrableOn
+      (intervalDirichletSlope x₀ x₁ g g (fun t => (∫ s in x₀..t, f s) + F t) a) (Ioo x₀ x₁))
+    (y : Icc x₀ x₁) :
+    |intervalDirichletSolution hx.le g g hs y - g| ≤ min ((y : ℝ) - x₀) (x₁ - y) * N / lam := by
+  -- The explicit solution is the continuous representative of a weak solution in `W^{1,1}`.
+  obtain ⟨u, hrep, htr, hweak⟩ := exists_w1p_intervalRepresentativeL_eq (p := 1) hx hlam ha
+    (haM.mono fun _ h => h.1) hf (memLp_one_iff_integrable.2 hF) g g
+  rw [intervalDirichletSolution_apply, ← hrep]
+  exact abs_intervalRepresentativeL_sub_le_min_mul_div hx hlam ha haM hf hF hweak htr hG y
 
 end TauCeti.PDE
