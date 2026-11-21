@@ -50,6 +50,9 @@ injectivity.
 * `TauCeti.GroupAlgGeom.eval_comp_eval`, `TauCeti.GroupAlgGeom.eval_sumElim_wordMap`: evaluating
   after word substitution is evaluation at the substituted tuple.
 * `TauCeti.GroupAlgGeom.wordMap_wordMap`: composition of word maps is word substitution.
+* `TauCeti.GroupAlgGeom.wordMap_inr_of`, `TauCeti.GroupAlgGeom.wordMap_sumElim`: the tuple of
+  variables `f y` maps `v` to `v ∘ f`, and the word map of a tuple of words indexed by a sum is the
+  pair of the word maps of its two parts.
 * `TauCeti.GroupAlgGeom.sumExtend_surjective_iff`, `TauCeti.GroupAlgGeom.sumExtend_bijective_iff`,
   `TauCeti.GroupAlgGeom.eval_sumExtend`: the extension of `σ` is surjective, respectively a change
   of coordinates, exactly when `σ` is, and acts on points by the word map of `σ` on the
@@ -543,13 +546,29 @@ theorem wordMap_wordMap {Y Z : Type*} (w : Y → GX G X) (u : Z → GX G Y) (v :
   funext z
   exact (DFunLike.congr_fun (eval_comp_eval w v) (u z)).symm
 
+/-- The tuple of variables `f y` maps a tuple `v` to `v ∘ f`. -/
+theorem wordMap_inr_of {Y : Type*} (f : Y → X) (v : X → H) :
+    wordMap ι (fun y => inr (FreeGroup.of (f y))) v = v ∘ f := by
+  funext y
+  simp
+
+/-- The identity word homomorphism leaves tuples unchanged. -/
+@[simp] theorem wordMap_id (v : X → H) :
+    wordMap ι (fun x => inr (FreeGroup.of x)) v = v :=
+  wordMap_inr_of id v
+
+/-- The word map of a tuple of words indexed by `Y ⊕ Z` is the pair of the word maps of its two
+parts. -/
+theorem wordMap_sumElim {Y Z : Type*} (w : Y → GX G X) (w' : Z → GX G X) (v : X → H) :
+    wordMap ι (Sum.elim w w') v = Sum.elim (wordMap ι w v) (wordMap ι w' v) :=
+  Sum.comp_elim (eval ι v) w w'
+
 /-- Evaluating a word `u(X, Y)` at the point `v` extended to `Y` by the values `w(v)` of words
 `w : Y → G[X]` is evaluating at `v` the word `u(X, w(X))` obtained by substituting `w` for `Y`. -/
 theorem eval_sumElim_wordMap {Y : Type*} (w : Y → GX G X) (v : X → H) (u : GX G (X ⊕ Y)) :
     eval ι (Sum.elim v (wordMap ι w v)) u =
       eval ι v (eval (inl : G →* GX G X) (Sum.elim (fun x => inr (FreeGroup.of x)) w) u) := by
-  rw [← MonoidHom.comp_apply, eval_comp_eval]
-  exact congrArg (eval ι · u) (funext fun z => by cases z <;> simp)
+  rw [← MonoidHom.comp_apply, eval_comp_eval, wordMap_sumElim, wordMap_id]
 
 /-- Evaluation after a word map is composition with the word homomorphism. -/
 theorem eval_wordMap (σ : GHom (inl : G →* GX G Y) (inl : G →* GX G X)) (v : X → H) :
@@ -558,12 +577,6 @@ theorem eval_wordMap (σ : GHom (inl : G →* GX G Y) (inl : G →* GX G X)) (v 
   rw [← eval_comp_eval]
   congr 1
   exact eval_eq_of_comp_inl σ.comp_coeff
-
-/-- The identity word homomorphism leaves tuples unchanged. -/
-@[simp] theorem wordMap_id (v : X → H) :
-    wordMap ι (fun x => inr (FreeGroup.of x)) v = v := by
-  funext x
-  simp
 
 variable (ι) in
 /-- The tuple of variables maps every set of points to itself. -/
