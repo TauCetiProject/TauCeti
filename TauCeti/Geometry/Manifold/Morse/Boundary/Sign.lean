@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.Morse.Stable.ChartChange
 public import TauCeti.LinearAlgebra.Orientation.Prod
 import TauCeti.Analysis.Normed.Module.Orientation
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Geometry.Manifold.Morse.Stable.LevelSlice
 import TauCeti.LinearAlgebra.Determinant.Prod
 import TauCeti.LinearAlgebra.Ray
 
@@ -100,10 +101,15 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
   map depends continuously on the point of `W^u(p) ∩ W^s(q)`.
 * `eventually_trajectorySign_eq`: so the sign is locally constant on `W^u(p) ∩ W^s(q)` where the
   comparison map is an isomorphism.
-* `trajectorySign_neg_left`, `trajectorySign_neg_right`: reversing an orientation reverses the
-  signs.
+* `trajectorySign_neg_left`, `trajectorySign_neg_right`, `trajectorySign_eq_neg_of_map_eq_neg`:
+  reversing an orientation or reversing the induced comparison orientation reverses the signs.
 * `signBasis_mul_trajectorySign`: changing the orientation at the target to that of a basis
   multiplies the sign by their relative sign.
+* `exists_trajectorySign_eq_one_and_eq_neg_one_of_trajectorySign_eq_neg` and
+  `signedTrajectoryCount_eq_zero_of_exists_trajectorySign`: opposite-signed trajectories give slice
+  points of signs `+1` and `-1`, and on a two-point slice their signed count vanishes.
+* `unstableFrameEquiv_symm_trans_trajectoryComparison_apply`: reading the comparison map from a
+  top-index critical point in local chart coordinates at the target critical point.
 * `intCast_signedTrajectoryCount`,
   `IsMorseSmale.morseBoundaryCoeff_eq_intCast_signedTrajectoryCount`: the signed count reduces
   modulo two to the number of trajectories, the coefficient of the mod-two Morse boundary.
@@ -362,6 +368,38 @@ theorem signedTrajectoryCount_neg_right :
     hX.signedTrajectoryCount φp φq op (-oq) hpq = -hX.signedTrajectoryCount φp φq op oq hpq := by
   simp only [signedTrajectoryCount_def, trajectorySign_neg_right, finsum_neg_distrib]
 
+/-- If the comparison maps at `y₁` and `y₂` are bijective and transport `op` to opposite
+orientations, then `y₁` and `y₂` carry opposite trajectory signs. -/
+theorem trajectorySign_eq_neg_of_map_eq_neg {y₁ y₂ : M}
+    (hC₁ : Bijective (hX.trajectoryComparison φp φq y₁))
+    (hC₂ : Bijective (hX.trajectoryComparison φp φq y₂))
+    (hneg : Orientation.map _
+        (LinearEquiv.ofBijective (hX.trajectoryComparison φp φq y₂).toLinearMap hC₂) op =
+      -Orientation.map _
+        (LinearEquiv.ofBijective (hX.trajectoryComparison φp φq y₁).toLinearMap hC₁) op) :
+    hX.trajectorySign φp φq op oq hpq y₂ = -hX.trajectorySign φp φq op oq hpq y₁ := by
+  rw [trajectorySign_of_bijective hC₁, trajectorySign_of_bijective hC₂, hneg]
+  generalize Orientation.map _ (LinearEquiv.ofBijective _ hC₁) op = o
+  rcases φq.eq_or_eq_neg_trajectoryTargetOrientation (oq := oq) (hpq := hpq) o with rfl | rfl
+  · simp [(Module.Ray.ne_neg_self _).symm]
+  · simp [(Module.Ray.ne_neg_self _).symm, Module.Ray.neg_neg]
+
+/-- If the trajectory slice from `p` to `q` has two points carrying signs `+1` and `-1`, then the
+signed trajectory count vanishes. -/
+theorem signedTrajectoryCount_eq_zero_of_exists_trajectorySign
+    (hncard : (hX.morseTrajectorySlice p q).ncard = 2)
+    (hex : ∃ y₁ ∈ hX.morseTrajectorySlice p q, ∃ y₂ ∈ hX.morseTrajectorySlice p q,
+      hX.trajectorySign φp φq op oq hpq y₁ = 1 ∧ hX.trajectorySign φp φq op oq hpq y₂ = -1) :
+    hX.signedTrajectoryCount φp φq op oq hpq = 0 := by
+  obtain ⟨y₁, hy₁, y₂, hy₂, hs₁, hs₂⟩ := hex
+  have hyne : y₁ ≠ y₂ := fun h ↦ by have := h ▸ hs₁; omega
+  have hslice : hX.morseTrajectorySlice p q = {y₁, y₂} :=
+    (Set.eq_of_subset_of_ncard_le (pair_subset hy₁ hy₂)
+      (by rw [hncard, ncard_pair hyne]) (finite_of_ncard_pos (by omega))).symm
+  rw [signedTrajectoryCount_def, hslice, finsum_mem_insert _ hyne (finite_singleton y₂),
+    finsum_mem_singleton, hs₁, hs₂]
+  ring
+
 variable (hφp : ∀ y ∈ φp.toChart.source,
     φp.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φp.toChart y (X y)) =
       fun i ↦ -(φp.weight i * φp.coord (φp.toChart y) i))
@@ -610,6 +648,58 @@ theorem intCast_signedTrajectoryCount (hMS : hX.IsMorseSmale)
   rw [Finite.mem_toFinset, mem_morseTrajectorySlice] at hy
   rcases trajectorySign_eq_one_or_eq_neg_one hφp hφq hMS hf ⟨hy.1, hy.2.1⟩ with h | h <;>
     rw [h] <;> decide
+
+/-- If two points of `W^u(p) ∩ W^s(q)` carry opposite trajectory signs, then the middle-level slice
+`morseTrajectorySlice p q` contains a point of sign `+1` and a point of sign `-1`. -/
+theorem exists_trajectorySign_eq_one_and_eq_neg_one_of_trajectorySign_eq_neg
+    (hMS : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f)
+    {z₁ z₂ : M} (hz₁ : z₁ ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q)
+    (hz₂ : z₂ ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q)
+    (hsign : hX.trajectorySign φp φq op oq hpq z₂ = -hX.trajectorySign φp φq op oq hpq z₁) :
+    ∃ y₁ ∈ hX.morseTrajectorySlice p q, ∃ y₂ ∈ hX.morseTrajectorySlice p q,
+      hX.trajectorySign φp φq op oq hpq y₁ = 1 ∧ hX.trajectorySign φp φq op oq hpq y₂ = -1 := by
+  have hne : p ≠ q := by rintro rfl; omega
+  obtain ⟨t₁, ht₁, -⟩ := hX.existsUnique_flow_eq_midpoint_of_mem_unstableSet_inter_stableSet hne hz₁
+  obtain ⟨t₂, ht₂, -⟩ := hX.existsUnique_flow_eq_midpoint_of_mem_unstableSet_inter_stableSet hne hz₂
+  set w₁ := hX.flow t₁ z₁
+  set w₂ := hX.flow t₂ z₂
+  have hw₁ : w₁ ∈ hX.morseTrajectorySlice p q :=
+    hX.mem_morseTrajectorySlice.2 ⟨(Flow.apply_mem_unstableSet_iff _ t₁).2 hz₁.1,
+      (Flow.apply_mem_stableSet_iff _ t₁).2 hz₁.2, ht₁⟩
+  have hw₂ : w₂ ∈ hX.morseTrajectorySlice p q :=
+    hX.mem_morseTrajectorySlice.2 ⟨(Flow.apply_mem_unstableSet_iff _ t₂).2 hz₂.1,
+      (Flow.apply_mem_stableSet_iff _ t₂).2 hz₂.2, ht₂⟩
+  have hsw₁ := hX.trajectorySign_flow (op := op) (oq := oq) (hpq := hpq) hφp hφq hMS hf hz₁ t₁
+  have hsw₂ := hX.trajectorySign_flow (op := op) (oq := oq) (hpq := hpq) hφp hφq hMS hf hz₂ t₂
+  rcases hX.trajectorySign_eq_one_or_eq_neg_one (op := op) (oq := oq) (hpq := hpq) hφp hφq hMS
+      hf hz₁ with h₁ | h₁
+  · exact ⟨w₁, hw₁, w₂, hw₂, hsw₁.trans h₁, hsw₂.trans (hsign.trans (by rw [h₁]))⟩
+  · exact ⟨w₂, hw₂, w₁, hw₁, hsw₂.trans (hsign.trans (by rw [h₁]; ring)), hsw₁.trans h₁⟩
+
+/-- At a point `z ∈ W^u(p)` where `0 ∈ hX.linearForwardTimes φq z` and `D` represents the chart
+derivative `mfderiv φq.toChart z`, reading the comparison map from a top-index critical point `p`
+through `(hX.unstableFrameEquiv ...).trans D.toLinearEquiv` sends `w ∈ E` to
+`(df_z (D⁻¹ w), φq.negativeCoord w)`. -/
+theorem unstableFrameEquiv_symm_trans_trajectoryComparison_apply
+    (hf : IsMorse 𝓘(ℝ, E) f) (hp : manifoldMorseIndex 𝓘(ℝ, E) f p = Module.finrank ℝ E)
+    {z : M} (hz : z ∈ hX.flow.unstableSet p)
+    (h0 : 0 ∈ hX.linearForwardTimes φq z) (D : TangentSpace 𝓘(ℝ, E) z ≃L[ℝ] E)
+    (hD : ∀ v, D v = mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φq.toChart z v)
+    (hC : Bijective (hX.trajectoryComparison φp φq z)) (w : E) :
+    (((hX.unstableFrameEquiv hφp hf hp hz).trans D.toLinearEquiv).symm.trans
+      (LinearEquiv.ofBijective (hX.trajectoryComparison φp φq z).toLinearMap hC)) w =
+    (mvfderiv 𝓘(ℝ, E) f z (D.symm w), φq.negativeCoord w) := by
+  have hcomp : φq.toChart ∘ hX.flow 0 = φq.toChart := funext fun _ ↦ by simp
+  set v := ((hX.unstableFrameEquiv hφp hf hp hz).trans D.toLinearEquiv).symm w
+  have hv : D (hX.unstableFrame φp z v) = w := by
+    simpa only [v, LinearEquiv.trans_apply, ContinuousLinearEquiv.coe_toLinearEquiv,
+      unstableFrameEquiv_apply] using
+      ((hX.unstableFrameEquiv hφp hf hp hz).trans D.toLinearEquiv).apply_symm_apply w
+  have hsn := hX.stableNormal_apply hφq h0 (hX.unstableFrame φp z v)
+  rw [hcomp, neg_zero, Real.exp_zero, one_smul, ← hD _, hv] at hsn
+  rw [LinearEquiv.trans_apply, LinearEquiv.ofBijective_apply, ContinuousLinearMap.coe_coe,
+    trajectoryComparison_apply]
+  exact Prod.ext (congrArg (mvfderiv 𝓘(ℝ, E) f z) (D.eq_symm_apply.2 hv)) hsn
 
 omit hφp hφq in
 /-- **The mod-two Morse boundary is the reduction of the signed counts.** For critical points of

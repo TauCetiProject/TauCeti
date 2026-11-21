@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.RingTheory.Finiteness.Prod
 import Mathlib.LinearAlgebra.Dimension.Finrank
 import TauCeti.GroupTheory.Perm.Inversion
+import TauCeti.LinearAlgebra.Determinant.Prod
 import TauCeti.LinearAlgebra.Ray
 
 /-!
@@ -29,6 +30,11 @@ factor past each of the `n` basis vectors of the second.
 Reassociating `(E × F) × G` as `E × (F × G)` carries the product orientation `(o × o') × o''` to
 `o × (o' × o'')` (`Orientation.map_prodAssoc_prod`, inverse form
 `Orientation.map_prodAssoc_symm_prod`): both list the bases of the three factors in the same order.
+
+Over an ordered field `K`, two linear equivalences `V ≃ₗ[K] K × W` that agree on the `W`-factor
+and assign opposite signs in `K` to a vector with vanishing `W`-coordinate transport every
+orientation of `V` to opposite orientations of `K × W`
+(`Orientation.map_eq_neg_map_of_snd_eq_of_fst_mul_neg`).
 -/
 
 public section
@@ -339,5 +345,44 @@ theorem map_prodAssoc_symm_prod (o : Orientation R E (Fin m)) (o' : Orientation 
   rw [← (Orientation.map _ (LinearEquiv.prodAssoc R E F G)).injective.eq_iff, ← map_symm,
     Equiv.apply_symm_apply, map_reindex, map_prodAssoc_prod, reindex_finCongr_reindex_finCongr,
     finCongr_refl, reindex_refl, Equiv.refl_apply]
+
+section Field
+
+/-- If two linear equivalences `e₁, e₂ : V ≃ₗ[K] K × W` agree on the `W`-coordinate and assign
+opposite signs in `K` to some vector `v₀` with vanishing `W`-coordinate, then they transport every
+orientation of `V` to opposite orientations of `K × W`. -/
+theorem map_eq_neg_map_of_snd_eq_of_fst_mul_neg {K V W ι : Type*}
+    [Field K] [LinearOrder K] [IsStrictOrderedRing K]
+    [AddCommGroup V] [Module K V]
+    [AddCommGroup W] [Module K W] [FiniteDimensional K W] [Fintype ι]
+    (o : Orientation K V ι) {e₁ e₂ : V ≃ₗ[K] K × W}
+    (hcard : Fintype.card ι = Module.finrank K (K × W))
+    (hsnd : ∀ v, (e₁ v).2 = (e₂ v).2) {v₀ : V} (hv₀ : (e₁ v₀).2 = 0)
+    (hfst : (e₁ v₀).1 * (e₂ v₀).1 < 0) :
+    Orientation.map ι e₂ o = -Orientation.map ι e₁ o := by
+  set B := e₁.symm.trans e₂
+  have hBe (w : K × W) : B w = e₂ (e₁.symm w) := LinearEquiv.trans_apply w
+  have hB (w : K × W) : (B w).2 = w.2 := by
+    obtain ⟨v, rfl⟩ := e₁.surjective w
+    rw [hBe, e₁.symm_apply_apply, hsnd]
+  have h₁ne : (e₁ v₀).1 ≠ 0 := left_ne_zero_of_mul hfst.ne
+  have he₁ : e₁ (((e₁ v₀).1)⁻¹ • v₀) = (1, 0) := by
+    rw [map_smul]
+    exact Prod.ext (inv_mul_cancel₀ h₁ne) (by simp [hv₀])
+  have hfstB : (B (1, 0)).1 < 0 := by
+    rw [hBe, e₁.symm_apply_eq.2 he₁.symm, map_smul, Prod.smul_fst, smul_eq_mul]
+    rcases mul_neg_iff.1 hfst with ⟨h1, h2⟩ | ⟨h1, h2⟩
+    · exact mul_neg_of_pos_of_neg (inv_pos.2 h1) h2
+    · exact mul_neg_of_neg_of_pos (inv_lt_zero.2 h1) h2
+  have hdet : B.toLinearMap.det < 0 := by
+    rw [LinearMap.det_eq_fst_of_snd_eq _ hB]
+    exact hfstB
+  have hmap : Orientation.map ι e₂ o = Orientation.map ι B (Orientation.map ι e₁ o) := by
+    have hee : e₂ = e₁.trans B := LinearEquiv.ext fun v ↦ by
+      rw [LinearEquiv.trans_apply, hBe, e₁.symm_apply_apply]
+    rw [hee, Orientation.map_trans]
+  rw [hmap, ((Orientation.map ι e₁ o).map_eq_neg_iff_det_neg B hcard).2 hdet]
+
+end Field
 
 end Orientation

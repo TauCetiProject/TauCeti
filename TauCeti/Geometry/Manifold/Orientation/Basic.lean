@@ -317,6 +317,16 @@ theorem orientationAt_model (o : _root_.Orientation ℝ E ι)
   -- The tangent space of the model uses its model-space scalar structure.
   rfl
 
+/-- Negating the linear orientation negates the constant model orientation. -/
+@[simp]
+theorem model_neg (o : _root_.Orientation ℝ E ι)
+    (hι : Fintype.card ι = Module.finrank ℝ E) :
+    model (I := I) (-o) hι = -model (I := I) o hι := by
+  ext x
+  rw [orientationAt_neg, orientationAt_model, orientationAt_model]
+  -- The tangent space of the model uses its model-space scalar structure.
+  rfl
+
 /-- Transporting the tangent orientation of the constant model orientation to `E` through
 `NormedSpace.fromTangentSpace` recovers the original orientation. -/
 theorem map_orientationAt_model (o : _root_.Orientation ℝ E ι)

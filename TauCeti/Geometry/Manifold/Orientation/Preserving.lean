@@ -49,7 +49,11 @@ or reverses every orientation of `E` according to the sign of its determinant
 precomposing with an automorphism of negative determinant exchanges preservation and reversal
 (`isOrientationPreservingAt_comp_of_det_neg`, `isOrientationReversingAt_comp_of_det_neg`).
 More generally, a map with negative derivative determinant reverses orientations at that point
-(`isOrientationReversingAt_of_det_fderiv_neg`).
+(`isOrientationReversingAt_of_det_fderiv_neg`). For maps from an arbitrary manifold into a model
+space equipped with `Manifold.Orientation.model`, orientation preservation is characterized by a
+continuous linear equivalence representing the derivative read in the target model space and
+transporting the source tangent orientation to the model orientation
+(`isOrientationPreservingAt_model_iff`).
 
 If the derivative carries a tangent basis `b` onto a basis `b'`, then, whether `b` is positively
 or negatively oriented, preservation (reversal) means that `b` and `b'` have equal (opposite)
@@ -675,6 +679,41 @@ theorem isOrientationReversingAt_comp_of_det_neg [IsManifold I 1 M]
     (hL : LinearMap.det (L : E →ₗ[ℝ] E) < 0) :
     IsOrientationReversingAt oE oM (e ∘ L) x :=
   he.comp_reversing (isOrientationReversingAt_of_det_neg oE L hL x)
+
+/-- A map `g : M → E'` into a model space oriented by `Manifold.Orientation.model` preserves
+orientations at `x` if and only if its derivative at `x`, read in `E'` through
+`NormedSpace.fromTangentSpace`, is represented by a continuous linear equivalence
+`D : TangentSpace I x ≃L[ℝ] E'` mapping the tangent orientation at `x` to `oE'`. -/
+theorem isOrientationPreservingAt_model_iff [IsManifold I 1 M]
+    (o : Manifold.Orientation I M ι) (oE' : _root_.Orientation ℝ E' ι)
+    (hι : Fintype.card ι = Module.finrank ℝ E') (g : M → E') (x : M) :
+    IsOrientationPreservingAt o (Manifold.Orientation.model (I := 𝓘(ℝ, E')) oE' hι) g x ↔
+      ∃ D : TangentSpace I x ≃L[ℝ] E',
+        (D : TangentSpace I x →L[ℝ] E') =
+          (NormedSpace.fromTangentSpace (𝕜 := ℝ) (g x)).toContinuousLinearMap.comp
+            (mfderiv I 𝓘(ℝ, E') g x) ∧
+        _root_.Orientation.map ι D.toLinearEquiv (o.orientationAt x) = oE' := by
+  constructor
+  · rintro ⟨D₀, hD₀, hD₀o⟩
+    refine ⟨D₀.trans (NormedSpace.fromTangentSpace (g x)), ?_, ?_⟩
+    · ext v
+      simp [← hD₀]
+    · rw [ContinuousLinearEquiv.trans_toLinearEquiv, _root_.Orientation.map_trans, hD₀o,
+        Manifold.Orientation.map_orientationAt_model]
+  · rintro ⟨D, hD, hDo⟩
+    refine ⟨D.trans (NormedSpace.fromTangentSpace (g x)).symm, ?_, ?_⟩
+    · ext v
+      have hDv := DFunLike.congr_fun hD v
+      simp only [ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.trans_apply,
+        ContinuousLinearMap.comp_apply] at hDv ⊢
+      rw [hDv, ContinuousLinearEquiv.symm_apply_apply]
+    · rw [ContinuousLinearEquiv.trans_toLinearEquiv, _root_.Orientation.map_trans, hDo]
+      apply (_root_.Orientation.map ι (NormedSpace.fromTangentSpace (g x)).toLinearEquiv).injective
+      have he : (NormedSpace.fromTangentSpace (𝕜 := ℝ) (g x)).symm.toLinearEquiv.trans
+          (NormedSpace.fromTangentSpace (𝕜 := ℝ) (g x)).toLinearEquiv = LinearEquiv.refl ℝ E' :=
+        LinearEquiv.ext fun _ ↦ by simp
+      rw [← _root_.Orientation.map_trans, he, _root_.Orientation.map_refl, Equiv.refl_apply,
+        Manifold.Orientation.map_orientationAt_model]
 
 end ModelSpace
 

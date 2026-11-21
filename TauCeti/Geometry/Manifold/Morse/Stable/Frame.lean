@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Local.Derivative
 public import TauCeti.Geometry.Manifold.Morse.Stable.Manifold
 public import TauCeti.Geometry.Manifold.TangentCone.Basic
+import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.PullbackGroupoid
 import TauCeti.Geometry.Manifold.Morse.Stable.Transversality
@@ -67,14 +68,26 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
   backward, orbit of a point has entered the part of the chart where the flow stays linear.
 * `stableNormal`: the normal coordinates of the stable manifold.
 * `unstableFrame`: the frame of the unstable manifold.
+* `unstableFrameEquiv`: at a top-index critical point, the unstable frame as a linear equivalence
+  onto `T_y M`.
 
 ## Main results
 
-* `eventually_mem_linearForwardTimes`, `eventually_mem_linearBackwardTimes`: points of the
-  stable, respectively unstable, manifold have admissible times.
+* `eventually_mem_linearForwardTimes`, `eventually_mem_linearBackwardTimes`,
+  `eventually_zero_mem_linearBackwardTimes_of_manifoldMorseIndex_eq_finrank`: points of the
+  stable, respectively unstable, manifold (and points near a top-index critical point) have
+  admissible times.
 * `exists_eventually_mem_linearForwardTimes`, `exists_eventually_mem_linearBackwardTimes`: one
   admissible time serves all nearby points of the stable, respectively unstable, manifold.
-* `stableNormal_apply`, `mfderiv_unstableFrame`: the two maps read at any admissible time.
+* `zero_mem_linearForwardTimes_toChart_symm`,
+  `zero_mem_linearBackwardTimes_toChart_symm_negativeExtend`,
+  `mem_stableSet_of_zero_mem_linearForwardTimes`,
+  `mem_unstableSet_of_zero_mem_linearBackwardTimes`: local points on the stable and unstable
+  coordinate subspaces lie in `W^s(x)` and `W^u(x)` with admissible time `0`.
+* `stableNormal_apply`, `mfderiv_unstableFrame`,
+  `MorseChart.mfderiv_toChart_apply_of_mem_stableSubspace`,
+  `unstableFrame_eq_of_zero_mem_linearBackwardTimes`: the two maps read at any admissible time,
+  and the velocity along local stable and unstable rays.
 * `zero_mem_linearForwardTimes_self`, `zero_mem_linearBackwardTimes_self`,
   `stableNormal_unstableFrame_self`: at the centre of the chart the time `0` is admissible, and the
   normal coordinates invert the unstable frame.
@@ -124,7 +137,26 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {M : Type*} [TopologicalSpace M] [ChartedSpace E M]
   {f : M → ℝ} {x : M} {X : (x : M) → TangentSpace 𝓘(ℝ, E) x}
-  [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M]
+
+namespace MorseChart
+
+/-- If a vector field `X` is linear in a Morse chart `φ`, then at any point of the chart domain
+whose image lies in the stable subspace, the chart derivative of `X` is `-φ.toChart y`. -/
+theorem mfderiv_toChart_apply_of_mem_stableSubspace (φ : MorseChart E f x)
+    (hφ : ∀ y ∈ φ.toChart.source,
+      φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
+        fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i))
+    {y : M} (hy : y ∈ φ.toChart.source) (hs : φ.toChart y ∈ φ.stableSubspace) :
+    mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y) = -φ.toChart y := by
+  refine φ.coord.injective (funext fun i ↦ ?_)
+  rw [congrFun (hφ y hy) i, map_neg, Pi.neg_apply]
+  rcases φ.weight_eq_neg_one_or_eq_one i with hi | hi
+  · simp [φ.mem_stableSubspace.1 hs i (by rw [hi]; norm_num)]
+  · rw [hi, one_mul]
+
+end MorseChart
+
+variable [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M]
 
 namespace IsAdaptedPseudoGradient
 
@@ -180,6 +212,31 @@ noncomputable def unstableFrame (y : M) :
       (φ.toChart ∘ hX.flow (-Classical.epsilon (· ∈ hX.linearBackwardTimes φ y))) y).inverse.comp
       (LinearMap.toContinuousLinearMap φ.negativeExtend)
 
+/-- Near a critical point of top index `dim M`, `0` is a time of linear backward flow. -/
+theorem eventually_zero_mem_linearBackwardTimes_of_manifoldMorseIndex_eq_finrank
+    (hx : manifoldMorseIndex 𝓘(ℝ, E) f x = Module.finrank ℝ E) :
+    ∀ᶠ z in 𝓝 x, 0 ∈ hX.linearBackwardTimes φ z := by
+  have hall (i : Fin (Module.finrank ℝ E)) : φ.weight i = -1 := by
+    have huniv : {j : Fin (Module.finrank ℝ E) | φ.weight j < 0} = univ :=
+      Set.eq_of_subset_of_ncard_le (subset_univ _)
+        (by rw [φ.ncard_weight_neg, hx, ncard_univ, Nat.card_fin]) (toFinite _)
+    have hi : φ.weight i < 0 := by simpa using (huniv ▸ mem_univ i : i ∈ {j | φ.weight j < 0})
+    exact (φ.weight_eq_neg_one_or_eq_one i).resolve_right fun h ↦ by rw [h] at hi; norm_num at hi
+  obtain ⟨r, hr, hrT⟩ := φ.exists_pos_forall_norm_lt_mem_target
+  have hc : ContinuousAt (fun z ↦ ‖φ.coord (φ.toChart z)‖) x :=
+    φ.continuous_coord.norm.continuousAt.comp (φ.toChart.continuousAt φ.mem_source)
+  filter_upwards [φ.toChart.open_source.eventually_mem φ.mem_source,
+    hc.eventually (gt_mem_nhds (by simpa using hr))] with z hzsrc hzr
+  rw [mem_linearBackwardTimes]
+  refine ⟨by simpa using hzsrc, fun t ht ↦ hrT _ ?_⟩
+  have hlin : φ.linearFlow t (φ.coord (φ.toChart (hX.flow (-0) z))) =
+      Real.exp t • φ.coord (φ.toChart z) := by
+    funext i
+    rw [neg_zero, Flow.map_zero_apply, φ.linearFlow_of_weight_eq_neg_one (hall i),
+      Pi.smul_apply, smul_eq_mul]
+  rw [hlin, norm_smul, Real.norm_of_nonneg (Real.exp_pos t).le]
+  exact (mul_le_of_le_one_left (norm_nonneg _) (Real.exp_le_one_iff.2 ht)).trans_lt hzr
+
 variable {hX φ}
 
 /-- In the chart `φ` composed with the time-`T` map of the flow, the derivative at a point whose
@@ -216,6 +273,50 @@ theorem mem_linearBackwardTimes_self (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 
   rw [hX.flow_apply_of_mfderiv_eq_zero hx, φ.apply_self, map_zero, φ.linearFlow_zero_right,
     map_zero, ← φ.apply_self]
   exact φ.toChart.map_source φ.mem_source
+
+/-- For a vector `u` in the stable subspace of `φ` whose coordinates lie in a chart ball, `0` is a
+time of linear forward flow of `φ.toChart.symm u`. -/
+theorem zero_mem_linearForwardTimes_toChart_symm {r : ℝ}
+    (hrT : ∀ z, ‖z‖ < r → φ.coord.symm z ∈ φ.toChart.target)
+    {u : E} (hu : u ∈ φ.stableSubspace) (hur : ‖φ.coord u‖ < r) :
+    0 ∈ hX.linearForwardTimes φ (φ.toChart.symm u) := by
+  set c := φ.coord u
+  have hc_symm : φ.coord.symm c = u := φ.coord.symm_apply_apply u
+  have htar : u ∈ φ.toChart.target := hc_symm ▸ hrT c hur
+  have hysrc : φ.toChart.symm u ∈ φ.toChart.source := φ.toChart.map_target htar
+  have hyapp : φ.toChart (φ.toChart.symm u) = u := φ.toChart.right_inv htar
+  rw [mem_linearForwardTimes]
+  refine ⟨by simpa using hysrc, fun t ht ↦ hrT _ ?_⟩
+  have hlin : φ.linearFlow t (φ.coord (φ.toChart (hX.flow 0 (φ.toChart.symm u)))) =
+      Real.exp (-t) • c := by
+    funext i
+    rw [Flow.map_zero_apply, hyapp]
+    rcases φ.weight_eq_neg_one_or_eq_one i with hi | hi
+    · simp [c, φ.mem_stableSubspace.1 hu i (by rw [hi]; norm_num)]
+    · rw [φ.linearFlow_of_weight_eq_one hi, Pi.smul_apply, smul_eq_mul]
+  rw [hlin, norm_smul, Real.norm_of_nonneg (Real.exp_pos _).le]
+  exact (mul_le_of_le_one_left (norm_nonneg c)
+    (Real.exp_le_one_iff.2 (neg_nonpos.2 ht))).trans_lt hur
+
+/-- For any negative-weight coordinate vector `v` whose extension lies in a chart ball, `0` is a
+time of linear backward flow of `φ.toChart.symm (φ.negativeExtend v)`. -/
+theorem zero_mem_linearBackwardTimes_toChart_symm_negativeExtend {r : ℝ}
+    (hrT : ∀ z, ‖z‖ < r → φ.coord.symm z ∈ φ.toChart.target)
+    {v : {i // φ.weight i < 0} → ℝ} (hv : ‖φ.coord (φ.negativeExtend v)‖ < r) :
+    0 ∈ hX.linearBackwardTimes φ (φ.toChart.symm (φ.negativeExtend v)) := by
+  set c := φ.coord (φ.negativeExtend v)
+  have hc_symm : φ.coord.symm c = φ.negativeExtend v := φ.coord.symm_apply_apply _
+  have htar : φ.negativeExtend v ∈ φ.toChart.target := hc_symm ▸ hrT c hv
+  have hysrc : φ.toChart.symm (φ.negativeExtend v) ∈ φ.toChart.source := φ.toChart.map_target htar
+  have hyapp : φ.toChart (φ.toChart.symm (φ.negativeExtend v)) = φ.negativeExtend v :=
+    φ.toChart.right_inv htar
+  rw [mem_linearBackwardTimes]
+  refine ⟨by simpa using hysrc, fun t ht ↦ hrT _ ?_⟩
+  have hlin : φ.linearFlow t c = Real.exp t • c :=
+    φ.linearFlow_coord_negativeExtend t v
+  rw [neg_zero, Flow.map_zero_apply, hyapp, hlin, norm_smul,
+    Real.norm_of_nonneg (Real.exp_pos t).le]
+  exact (mul_le_of_le_one_left (norm_nonneg c) (Real.exp_le_one_iff.2 ht)).trans_lt hv
 
 /-- The chain rule for the chart `φ` composed with the time-`s` map of the flow, after the
 time-`t` map. -/
@@ -617,6 +718,90 @@ theorem range_unstableFrame (hf : IsMorse 𝓘(ℝ, E) f) {y : M} (hy : y ∈ hX
     rw [mfderiv_unstableFrame hφ hT, map_smul, smul_smul, ← Real.exp_add, neg_add_cancel,
       Real.exp_zero, one_smul]
     exact φ.negativeExtend_negativeCoord hv
+
+/-- A point with `0 ∈ hX.linearForwardTimes φ y` whose chart coordinates lie in the stable
+subspace belongs to `W^s(x)`. -/
+theorem mem_stableSet_of_zero_mem_linearForwardTimes {y : M}
+    (h0 : 0 ∈ hX.linearForwardTimes φ y) (hy : φ.toChart y ∈ φ.stableSubspace) :
+    y ∈ hX.flow.stableSet x := by
+  have hysrc : y ∈ φ.toChart.source := by simpa using h0.1
+  set c := φ.coord (φ.toChart y)
+  have hlin (t : ℝ) : φ.linearFlow t c = Real.exp (-t) • c := by
+    funext i
+    rcases φ.weight_eq_neg_one_or_eq_one i with hi | hi
+    · simp [c, φ.mem_stableSubspace.1 hy i (by rw [hi]; norm_num)]
+    · rw [φ.linearFlow_of_weight_eq_one hi, Pi.smul_apply, smul_eq_mul]
+  have htend : Tendsto (fun t ↦ Real.exp (-t) • c) atTop (𝓝 0) := by
+    simpa using Real.tendsto_exp_neg_atTop_nhds_zero.smul_const c
+  refine Flow.mem_stableSet.2 <| (φ.tendsto_toChart_symm_coord_symm_nhds_zero.comp htend).congr' ?_
+  filter_upwards [eventually_ge_atTop 0] with t ht
+  have hflow := hX.flow_toChart_symm_of_forall_mem_uIcc φ hφ (z := c) (t := t) fun s hs ↦ by
+    have := h0.2 s (by rw [uIcc_of_le ht] at hs; exact hs.1)
+    simpa [c] using this
+  rw [comp_apply, ← hlin t, ← hflow, φ.toChart_symm_coord_symm_coord hysrc]
+
+/-- A point with `0 ∈ hX.linearBackwardTimes φ y` whose positive-weight chart coordinates vanish
+belongs to `W^u(x)`. -/
+theorem mem_unstableSet_of_zero_mem_linearBackwardTimes {y : M}
+    (h0 : 0 ∈ hX.linearBackwardTimes φ y)
+    (hy : ∀ i, ¬φ.weight i < 0 → φ.coord (φ.toChart y) i = 0) :
+    y ∈ hX.flow.unstableSet x := by
+  have hysrc : y ∈ φ.toChart.source := by simpa using h0.1
+  set c := φ.coord (φ.toChart y)
+  have hlin (t : ℝ) : φ.linearFlow t c = Real.exp t • c := by
+    funext i
+    rcases φ.weight_eq_neg_one_or_eq_one i with hi | hi
+    · rw [φ.linearFlow_of_weight_eq_neg_one hi, Pi.smul_apply, smul_eq_mul]
+    · simp [c, hy i (by rw [hi]; norm_num)]
+  have htend : Tendsto (fun t ↦ Real.exp t • c) atBot (𝓝 0) := by
+    simpa using Real.tendsto_exp_atBot.smul_const c
+  refine Flow.mem_unstableSet.2 <|
+    (φ.tendsto_toChart_symm_coord_symm_nhds_zero.comp htend).congr' ?_
+  filter_upwards [eventually_le_atBot 0] with t ht
+  have hflow := hX.flow_toChart_symm_of_forall_mem_uIcc φ hφ (z := c) (t := t) fun s hs ↦ by
+    have := h0.2 s (by rw [uIcc_of_ge ht] at hs; exact hs.2)
+    simpa [c] using this
+  rw [comp_apply, ← hlin t, ← hflow, φ.toChart_symm_coord_symm_coord hysrc]
+
+/-- At a point `y` with `0 ∈ hX.linearBackwardTimes φ y` and `φ.toChart y = φ.negativeExtend v`,
+the unstable frame sends `v` to the vector field `X y`. -/
+theorem unstableFrame_eq_of_zero_mem_linearBackwardTimes {y : M}
+    (h0 : 0 ∈ hX.linearBackwardTimes φ y) {v : {i // φ.weight i < 0} → ℝ}
+    (hy : φ.toChart y = φ.negativeExtend v) :
+    hX.unstableFrame φ y v = X y := by
+  have hysrc : y ∈ φ.toChart.source := by simpa using h0.1
+  have hcomp : φ.toChart ∘ hX.flow (-0) = φ.toChart := funext fun z ↦ by simp
+  have hinv := isInvertible_mfderiv_toChart_comp_flow (hX := hX) (φ := φ) (T := -0) h0.1
+  rw [hcomp] at hinv
+  refine hinv.injective ?_
+  have hfr := hX.mfderiv_unstableFrame hφ h0 v
+  rw [hcomp, neg_zero, Real.exp_zero, one_smul] at hfr
+  rw [hfr]
+  refine φ.coord.injective (funext fun i ↦ ?_)
+  rw [congrFun (hφ y hysrc) i, hy]
+  rcases φ.weight_eq_neg_one_or_eq_one i with hi | hi
+  · rw [hi, neg_one_mul, neg_neg]
+  · rw [φ.coord_negativeExtend_of_not_weight_neg _ (by rw [hi]; norm_num), mul_zero, neg_zero]
+
+/-- **The top-index unstable frame is an isomorphism.** At a critical point `x` of top index
+`dim M`, the unstable frame at any `y ∈ W^u(x)` is a linear equivalence onto `T_y M`. -/
+noncomputable def unstableFrameEquiv (hf : IsMorse 𝓘(ℝ, E) f)
+    (hx : manifoldMorseIndex 𝓘(ℝ, E) f x = Module.finrank ℝ E)
+    {y : M} (hy : y ∈ hX.flow.unstableSet x) :
+    ({i // φ.weight i < 0} → ℝ) ≃ₗ[ℝ] TangentSpace 𝓘(ℝ, E) y :=
+  LinearEquiv.ofBijective (hX.unstableFrame φ y).toLinearMap <| by
+    obtain ⟨T, hT⟩ := (hX.eventually_mem_linearBackwardTimes hφ hf hy).exists
+    have hinj := hX.injective_unstableFrame hφ hT
+    exact ⟨hinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank
+      (by rw [φ.finrank_negativeWeight_fun, hx, finrank_tangentSpace])).1 hinj⟩
+
+/-- Evaluation of `unstableFrameEquiv` agrees with `unstableFrame`. -/
+@[simp]
+theorem unstableFrameEquiv_apply (hf : IsMorse 𝓘(ℝ, E) f)
+    (hx : manifoldMorseIndex 𝓘(ℝ, E) f x = Module.finrank ℝ E)
+    {y : M} (hy : y ∈ hX.flow.unstableSet x) (c : {i // φ.weight i < 0} → ℝ) :
+    hX.unstableFrameEquiv hφ hf hx hy c = hX.unstableFrame φ y c := by
+  rw [unstableFrameEquiv, LinearEquiv.ofBijective_apply, ContinuousLinearMap.coe_coe]
 
 /-! ### Exactness for the reversed pseudo-gradient -/
 

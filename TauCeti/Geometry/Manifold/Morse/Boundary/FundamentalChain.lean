@@ -106,8 +106,8 @@ and every point. -/
 theorem isOrientationPreservingAt_flow {ι : Type*} [Fintype ι]
     (o : Manifold.Orientation 𝓘(ℝ, E) M ι) (t : ℝ) (y : M) :
     o.IsOrientationPreservingAt o (hX.flow t) y := by
-  have h := Manifold.Orientation.isOrientationPreservingAt_family_iff o o
-    (hX.contMDiff_flow_uncurry.of_le (by simp)) y
+  have h := Manifold.Orientation.isOrientationPreservingAt_family_iff o o y
+    (fun _ ↦ (hX.contMDiff_flow_uncurry.of_le (by simp)).contMDiffAt)
     (fun s ↦ by
       have hs : (fun z ↦ hX.flow s z) = hX.flowDiffeomorph s :=
         funext fun z ↦ (hX.flowDiffeomorph_apply s z).symm

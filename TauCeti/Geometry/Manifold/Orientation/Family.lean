@@ -17,9 +17,10 @@ derivative at a fixed source point, its orientation behavior there is locally co
 parameter. On a preconnected parameter manifold it is therefore independent of the parameter.
 No compactness, global injectivity, or boundarylessness is required.
 
-This is the orientation step in moving embedded discs by a diffeotopy: a motion starting at
-the identity preserves orientation throughout, so moving the centre does not change the
-orientation class of the disc.
+This is the orientation step in moving embedded discs by a diffeotopy or along a smooth flow:
+a family of self-maps starting at the identity preserves orientation throughout
+(`TauCeti.Manifold.Orientation.isOrientationPreservingAt_family_of_id`), so moving the centre
+does not change the orientation class of the disc.
 
 The coordinate argument follows the relative-determinant method of
 `TauCeti.Manifold.Orientation.eventually_mapOrientation_map_symm_eq` in the pullback-orientation
@@ -50,11 +51,11 @@ variable {E H M E' H' N V G P : Type*}
   [TopologicalSpace P] [ChartedSpace G P] [IsManifold L 1 P]
   {ι : Type*} [Fintype ι]
 
-/-- The orientation behavior of a jointly `C¹` family is locally constant in the parameter,
-provided the derivatives of all slices are invertible at the chosen source point. -/
+/-- The orientation behavior of a family that is jointly `C¹` at `(p, x)` for every parameter `p`
+is locally constant in `p`, provided the derivatives of all slices are invertible at `x`. -/
 theorem isLocallyConstant_isOrientationPreservingAt
     (o : Manifold.Orientation I M ι) (o' : Manifold.Orientation J N ι)
-    {F : P × M → N} (hF : ContMDiff (L.prod I) J 1 F) (x : M)
+    {F : P × M → N} (x : M) (hF : ∀ p, ContMDiffAt (L.prod I) J 1 F (p, x))
     (hD : ∀ p, (mfderiv I J (fun y => F (p, y)) x).IsInvertible) :
     IsLocallyConstant (fun p => IsOrientationPreservingAt o o' (fun y => F (p, y)) x) := by
   classical
@@ -80,7 +81,7 @@ theorem isLocallyConstant_isOrientationPreservingAt
   let c := inTangentCoordinates I J (fun _ : P => x) f
     (fun p => mfderiv I J (fun y => F (p, y)) x) a
   have hc : ContinuousAt c a :=
-    ((hF (a, x)).mfderiv (fun p y => F (p, y)) (fun _ => x)
+    ((hF a).mfderiv (fun p y => F (p, y)) (fun _ => x)
       (m := 0) contMDiffAt_const (by simp)).continuousAt
   have hcT (p : P) (hp : f p ∈ e'.baseSet) : c p = (T p hp : E →L[ℝ] E') := by
     simp only [c, inTangentCoordinates]
@@ -97,13 +98,15 @@ theorem isLocallyConstant_isOrientationPreservingAt
   have hpos : ∀ᶠ p in 𝓝 a, 0 < (K p).det :=
     (ContinuousLinearMap.continuous_det.continuousAt.comp hK).eventually
       (lt_mem_nhds (by simp [hKa, ContinuousLinearMap.det]))
-  have hf : Continuous f := hF.continuous.comp (continuous_id.prodMk continuous_const)
+  have hf : ContinuousAt f a :=
+    ContinuousAt.comp (g := F) (f := fun p => (p, x)) (hF a).continuousAt
+      (continuousAt_id.prodMk continuousAt_const)
   have hbase : ∀ᶠ p in 𝓝 a, f p ∈ e'.baseSet :=
-    hf.continuousAt.preimage_mem_nhds (e'.open_baseSet.mem_nhds ha)
+    hf.preimage_mem_nhds (e'.open_baseSet.mem_nhds ha)
   -- The target orientation is locally constant in the same trivialization.
   have ho := o'.toVectorBundleOrientation.eventually_mapOrientation_eq o'.card_eq e' ha
   simp only [toVectorBundleOrientation_apply] at ho
-  filter_upwards [hpos, hbase, (hf.tendsto a).eventually ho] with p hpos hp hop
+  filter_upwards [hpos, hbase, hf.tendsto.eventually ho] with p hpos hp hop
   have hmaps := _root_.Orientation.map_eq_map_of_det_pos η (T p hp).toLinearEquiv
     (T a ha).toLinearEquiv o.card_eq (by
       convert hpos using 2
@@ -112,15 +115,28 @@ theorem isLocallyConstant_isOrientationPreservingAt
   apply propext
   rw [hread p hp, hread a ha, hmaps, hop hp]
 
-/-- In a preconnected smooth family with invertible slice derivatives at `x`, one slice
-preserves orientation at `x` exactly when every other slice does. -/
+/-- In a preconnected family that is jointly `C¹` at `(p, x)` for all `p` with invertible slice
+derivatives at `x`, one slice preserves orientation at `x` exactly when every other slice does. -/
 theorem isOrientationPreservingAt_family_iff [PreconnectedSpace P]
     (o : Manifold.Orientation I M ι) (o' : Manifold.Orientation J N ι)
-    {F : P × M → N} (hF : ContMDiff (L.prod I) J 1 F) (x : M)
+    {F : P × M → N} (x : M) (hF : ∀ p, ContMDiffAt (L.prod I) J 1 F (p, x))
     (hD : ∀ p, (mfderiv I J (fun y => F (p, y)) x).IsInvertible) (p q : P) :
     IsOrientationPreservingAt o o' (fun y => F (p, y)) x ↔
       IsOrientationPreservingAt o o' (fun y => F (q, y)) x :=
-  ((isLocallyConstant_isOrientationPreservingAt o o' hF x hD).apply_eq_of_preconnectedSpace
+  ((isLocallyConstant_isOrientationPreservingAt o o' x hF hD).apply_eq_of_preconnectedSpace
     p q).to_iff
+
+/-- In a preconnected family of self-maps that is jointly `C¹` at `(p, x)` for all `p` with
+invertible slice derivatives at `x`, if one slice agrees with the identity near `x`, then every
+slice preserves orientation at `x`. -/
+theorem isOrientationPreservingAt_family_of_id [PreconnectedSpace P]
+    (o : Manifold.Orientation I M ι) {F : P × M → M} (x : M)
+    (hF : ∀ p, ContMDiffAt (L.prod I) I 1 F (p, x))
+    (hD : ∀ p, (mfderiv I I (fun y => F (p, y)) x).IsInvertible) {p₀ : P}
+    (hp₀ : (fun y => F (p₀, y)) =ᶠ[𝓝 x] id) (p : P) :
+    IsOrientationPreservingAt o o (fun y => F (p, y)) x := by
+  rw [isOrientationPreservingAt_family_iff o o x hF hD p p₀]
+  exact isOrientationPreservingAt_of_apply_eq_of_mfderiv_eq_id o hp₀.self_of_nhds
+    ((hasMFDerivAt_id (I := I) x).congr_of_eventuallyEq_abuse hp₀).mfderiv
 
 end TauCeti.Manifold.Orientation
