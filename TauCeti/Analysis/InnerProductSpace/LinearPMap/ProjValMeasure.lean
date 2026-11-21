@@ -477,7 +477,7 @@ theorem _root_.IsSelfAdjoint.spectralPVM_toPMap_top {T : H →L[ℂ] H} (hT : Is
   have hsymb : (fun w : _root_.spectrum ℂ T => (z - ((w : ℂ).re : ℂ))⁻¹) =
       fun w : _root_.spectrum ℂ T => (z - (w : ℂ))⁻¹ := by
     funext w
-    rw [← hT.mem_spectrum_eq_re w.2]
+    rw [← hT.mem_spectrum_eq_re w.property]
   rw [ContinuousLinearMap.resolvent_toPMap_top T hzT, ProjValMeasure.map_diag,
     integral_map (by fun_prop) (by fun_prop), ContinuousLinearMap.spectralPVM_diag, hsymb,
     ContinuousLinearMap.integral_diagMeasure_eq_inner_cfc _ _ (fun w => (z - w)⁻¹)
