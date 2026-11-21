@@ -520,10 +520,10 @@ theorem HasCompactSpatialSupport.memLp_smul_fourier_toLp_quantizeSobolev_of_coef
 
 /-- The localized microlocal parametrix identity. Let `b` be a microlocal left parametrix symbol of
 `a`, `c ∼ ∑ₖ sharpTerm b a k`, and `φ` a compactly supported Schwartz function. Then there are
-symbols `q` of order `-m` and `P(x, ξ) = φ(x) (1 - c(x, ξ))` of order `0` with compact spatial
-support, and for every order `μ` a symbol `r` of order `μ`, such that
-`φ u = Op(q) (Op(a) u) + Op(P) u - Op(r) u` for every `u ∈ H^t`. Here `q = φ b`, and `r` is the
-smoothing symbol `(φ b) # a - φ c`. -/
+symbols `q` of order `-m` and `P(x, ξ) = φ(x) (1 - c(x, ξ))` of order `0`, and a smoothing
+symbol `r`, all with compact spatial support, such that
+`φ u = Op(q) (Op(a) u) + Op(P) u - Op(r) u` for every `u ∈ H^t`. Here `q = φ b`, and `r` is
+`(φ b) # a - φ c`. -/
 private theorem HasCompactSpatialSupport.exists_toDistr_smulLeftCLM_eq
     (ha : a.HasCompactSpatialSupport) {c : Symbol n V V 0} {b : Symbol n W V (-m)}
     (hab : IsAsymptoticSum (m := fun k : ℕ ↦ -m + m - k) (Symbol.inclusion (by simp) c)
@@ -532,21 +532,19 @@ private theorem HasCompactSpatialSupport.exists_toDistr_smulLeftCLM_eq
     ∃ (q : Symbol n W V (-m)) (hq : q.HasCompactSpatialSupport) (P : Symbol n V V 0)
       (hP : P.HasCompactSpatialSupport),
       (∀ x ξ, P.coefficient (x, ξ) = φ x • (ContinuousLinearMap.id ℂ V - c.coefficient (x, ξ))) ∧
-      ∀ μ : ℝ, ∃ (r : Symbol n V V μ) (hr : r.HasCompactSpatialSupport),
+      ∃ (r : Symbol n V V (-m + m)) (hr : r.HasCompactSpatialSupport), r.IsSmoothing ∧
         ∀ (t : ℝ) (u : H^{t}(CoordinateSpace n, V)),
           (BesselPotentialSpace.smulLeftCLM t φ u).toDistr =
             (q.quantizeSobolev hq (t - m) (a.quantizeSobolev ha t u)).toDistr +
               (P.quantizeSobolev hP t u).toDistr - (r.quantizeSobolev hr t u).toDistr := by
-  obtain ⟨q, hq, -, e₁, he₁, hce₁, r₀, hr₀, hsm, hid⟩ :=
+  obtain ⟨q, hq, -, e₁, he₁, hce₁, r, hr, hsm, hid⟩ :=
     hab.exists_isSmoothing_and_toDistr_quantizeSobolev_eq_quantizeSobolev_add ha hφ
       (.of_forall fun _ _ ↦ rfl)
   set e := ofSpatial (fun x ↦ φ x • ContinuousLinearMap.id ℂ V) ((φ.smooth ⊤).smul contDiff_const)
   have he : e.HasCompactSpatialSupport := hasCompactSpatialSupport_ofSpatial_smul_id hφ
-  refine ⟨q, hq, e - e₁, he.sub he₁, fun x ξ ↦ by simp [e, hce₁, smul_sub], fun μ ↦ ?_⟩
-  obtain ⟨r, hr⟩ := isSmoothing_iff.1 hsm μ
-  refine ⟨r, hr₀.of_coefficient_eq hr, fun t u ↦ ?_⟩
-  rw [toDistr_quantizeSobolev_congr hr (hr₀.of_coefficient_eq hr) hr₀ rfl, hid,
-    toDistr_quantizeSobolev_sub_apply he he₁ (he.sub he₁) t u,
+  refine ⟨q, hq, e - e₁, he.sub he₁, fun x ξ ↦ by simp [e, hce₁, smul_sub], r, hr, hsm,
+    fun t u ↦ ?_⟩
+  rw [hid, toDistr_quantizeSobolev_sub_apply he he₁ (he.sub he₁) t u,
     ← toDistr_quantizeSobolev_ofSpatial_smul_id φ he]
   abel
 
@@ -571,9 +569,7 @@ private theorem HasCompactSpatialSupport.memLp_smul_fourier_toLp_smulLeftCLM_of_
     MemLp (fun ξ ↦ (((1 + ‖ξ‖ ^ 2) ^ ((s - t) / 2) : ℝ) : ℂ) •
       (𝓕 (BesselPotentialSpace.smulLeftCLM t φ u).toLp : Lp V 2 _) ξ) 2
       (volume.restrict Γ') := by
-  obtain ⟨q, hq, P, hP, hPc, hr⟩ := ha.exists_toDistr_smulLeftCLM_eq hab hφ
-  obtain ⟨r₀, hr₀, h₀⟩ := hr 0
-  obtain ⟨rₛ, hrₛ, hₛ⟩ := hr (t - s)
+  obtain ⟨q, hq, P, hP, hPc, r₀, hr₀, hsm, h₀⟩ := ha.exists_toDistr_smulLeftCLM_eq hab hφ
   -- `φ u = X + Y - Z` in `H^t`.
   set X := (q.quantizeSobolev hq (t - m) (a.quantizeSobolev ha t u)).copy t (by ring) with hXd
   set Y := (P.quantizeSobolev hP t u).copy t (by ring) with hYd
@@ -599,14 +595,12 @@ private theorem HasCompactSpatialSupport.memLp_smul_fourier_toLp_smulLeftCLM_of_
     by_cases hx : x ∈ tsupport φ
     · simp [hPc, hcφ x hx ξ hξ hR]
     · simp [hPc, image_eq_zero_of_notMem_tsupport hx]
-  -- and `Z = Op(r) u` since it lies in `H^s`, as `r` has every order.
+  -- and `Z = Op(r) u` since it lies in `H^s`, as `r` is smoothing.
+  have hS := hsm.memSobolev_toDistr_quantizeSobolev hr₀ t s u
   have hZ := (BesselPotentialSpace.memLp_smul_fourier_toLp_of_toDistr_eq
-    (u := rₛ.quantizeSobolev hrₛ t u) (v := Z) (by
-      rw [hZd, BesselPotentialSpace.toDistr_copy _ (by ring)]
-      have h := (hₛ t u).symm.trans (h₀ t u)
-      rwa [sub_right_inj] at h)).restrict Γ'
-  have hst : t - (t - s) - t = s - t := by ring
-  rw [hst] at hZ
+    (u := hS.toBesselPotentialSpace) (v := Z) (by
+      rw [hZd, BesselPotentialSpace.toDistr_copy _ (by ring),
+        MemSobolev.toBesselPotentialSpace_toDistr])).restrict Γ'
   -- The sum `X + Y - Z` on the Fourier side.
   rw [hdecomp, BesselPotentialSpace.toLp_sub, BesselPotentialSpace.toLp_add,
     FourierTransform.fourier_sub, FourierTransform.fourier_add]
