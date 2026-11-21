@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.ZMod.Basic
-public import Mathlib.FieldTheory.IsRealClosed.Basic
+public import TauCeti.FieldTheory.IsRealClosed.Basic
 public import TauCeti.FieldTheory.MatsumotoGroup.Basic
 
 /-!
@@ -196,15 +196,14 @@ theorem symbol_sub_sign_smul_mem_positiveEntrySpan (x y : Fˣ) :
       -- together with three symbols having the positive entry `-x` or `-y`.
       have hx' : 0 < ((-x : Fˣ) : F) := by simpa using hx
       have hy' : 0 < ((-y : Fˣ) : F) := by simpa using hy
-      have hsym : symbol x y = symbol (-1) (-1) + symbol (-1) (-y) +
-          (symbol (-x) (-1) + symbol (-x) (-y)) := by
+      have hsym : symbol x y - symbol (-1) (-1) =
+          symbol (-1) (-y) + (symbol (-x) (-1) + symbol (-x) (-y)) := by
         conv_lhs => rw [← neg_neg x, ← neg_neg y, neg_eq_neg_one_mul (-x),
           neg_eq_neg_one_mul (-y)]
         simp only [symbol_mul_left, symbol_mul_right]
         abel
-      rw [sign_symbol_of_neg_of_neg hx hy, ZMod.val_one'' (by decide), one_nsmul, hsym, add_assoc,
-        add_sub_cancel_left]
-      exact add_mem (symbol_mem_positiveEntrySpan_of_pos_right (-1) hy')
+      simpa [sign_symbol_of_neg_of_neg hx hy, ZMod.val_one'' (n := 2) (by decide), hsym] using
+        add_mem (symbol_mem_positiveEntrySpan_of_pos_right (-1) hy')
           (add_mem (symbol_mem_positiveEntrySpan_of_pos_left hx' (-1))
             (symbol_mem_positiveEntrySpan_of_pos_left hx' (-y)))
     · simpa [sign_symbol_of_pos_right x hy] using symbol_mem_positiveEntrySpan_of_pos_right x hy
@@ -214,7 +213,7 @@ theorem symbol_sub_sign_smul_mem_positiveEntrySpan (x y : Fˣ) :
 `{-1, -1}` has order dividing two. -/
 private def signSection : ZMod 2 →+ MatsumotoGroup F :=
   ZMod.lift 2 ⟨zmultiplesHom _ (symbol (-1 : Fˣ) (-1)), by
-    rw [zmultiplesHom_apply, Nat.cast_ofNat, two_zsmul, ← two_nsmul, two_nsmul_symbol_neg_one]⟩
+    simpa [two_zsmul, ← two_nsmul] using two_nsmul_symbol_neg_one (-1 : Fˣ)⟩
 
 omit [LinearOrder F] [IsStrictOrderedRing F] in
 private theorem signSection_apply (ε : ZMod 2) :
@@ -223,8 +222,7 @@ private theorem signSection_apply (ε : ZMod 2) :
   rw [signSection, ZMod.lift_coe, zmultiplesHom_apply, natCast_zsmul]
 
 private theorem sign_signSection (ε : ZMod 2) : sign F (signSection ε) = ε := by
-  rw [signSection_apply, map_nsmul, sign_symbol_neg_one_neg_one, nsmul_eq_mul, mul_one,
-    ZMod.natCast_zmod_val]
+  simp [signSection_apply]
 
 /-- **The kernel of the sign map is the positive-entry span.** -/
 theorem sign_eq_zero_iff {q : MatsumotoGroup F} : sign F q = 0 ↔ q ∈ positiveEntrySpan F := by
@@ -293,12 +291,10 @@ element. -/
 private theorem exists_mem_positiveEntrySpan_nsmul_eq_symbol [IsRealClosed F] {m : ℕ}
     (hm : m ≠ 0) {x y : Fˣ} (h : 0 < (x : F) ∨ 0 < (y : F)) :
     ∃ z ∈ positiveEntrySpan F, m • z = symbol x y := by
-  -- A positive element `a` is `r ^ m`, hence also `|r| ^ m` with `|r| > 0`.
+  -- A positive unit `a` is the `m`-th power of a positive unit.
   have hroot : ∀ a : Fˣ, 0 < (a : F) → ∃ b : Fˣ, 0 < (b : F) ∧ b ^ m = a := fun a ha ↦ by
-    obtain ⟨r, hr⟩ := IsRealClosed.exists_eq_pow_of_nonneg ha.le hm
-    have hr0 : r ≠ 0 := by rintro rfl; simp [zero_pow hm] at hr
-    refine ⟨Units.mk0 |r| (abs_ne_zero.2 hr0), abs_pos.2 hr0, Units.ext ?_⟩
-    rw [Units.val_pow_eq_pow_val, Units.val_mk0, pow_abs, ← hr, abs_of_pos ha]
+    obtain ⟨r, hr, hra⟩ := IsRealClosed.exists_pos_pow_eq_of_pos ha hm
+    exact ⟨Units.mk0 r hr.ne', hr, Units.ext (by simpa using hra)⟩
   rcases h with hx | hy
   · obtain ⟨b, hb, rfl⟩ := hroot x hx
     exact ⟨symbol b y, symbol_mem_positiveEntrySpan_of_pos_left hb y,
