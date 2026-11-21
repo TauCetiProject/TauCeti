@@ -81,9 +81,16 @@ theorem principalUnitGroupGradedZeroEquivResidueFieldUnits_mk
     (u : (maximalIdeal S ^ 0).principalUnitGroup) :
     principalUnitGroupGradedZeroEquivResidueFieldUnits S (QuotientGroup.mk u) =
       Units.map (residue S).toMonoidHom (u : Sˣ) := by
+  rw [principalUnitGroupGradedZeroEquivResidueFieldUnits]
+  -- `ResidueField S` is a semireducible `def` for `S ⧸ maximalIdeal S` with its own derived
+  -- `Field`/`CommRing` instance, so `rw [MulEquiv.trans_apply]` fails at `implicit` transparency
+  -- on `Ideal.unitsQuotientPrincipalUnitGroupEquiv`; `change` exposes the composed equivalence
+  -- across that defeq gap, and `rfl` bridges `(S ⧸ maximalIdeal S)ˣ` vs `(ResidueField S)ˣ`
+  -- after reducing the `Subgroup.topEquiv`/`MulEquiv.subgroupCongr` wrappers and `residue`.
   change Ideal.unitsQuotientPrincipalUnitGroupEquiv _
       (QuotientGroup.congr _ _ _ _ (QuotientGroup.mk u)) = _
   rw [QuotientGroup.congr_mk, Ideal.unitsQuotientPrincipalUnitGroupEquiv_mk]
+  simp only [MulEquiv.trans_apply, Subgroup.topEquiv_apply, MulEquiv.subgroupCongr_apply, residue]
   rfl
 
 /-- At positive depth `n + 1`, the quotient `(1 + 𝔪 ^ (n + 1)) ⧸ (1 + 𝔪 ^ (n + 2))` is isomorphic
