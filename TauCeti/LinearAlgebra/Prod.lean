@@ -339,11 +339,11 @@ variable (L) in
 def kerEquivKerIdProdMap (g : M →ₗ[R] N) :
     ker g ≃ₗ[R] ker ((LinearMap.id : L →ₗ[R] L).prodMap g) where
   toFun x := ⟨(0, x), by simp⟩
-  invFun y := ⟨y.1.2, (Prod.mk_eq_zero.1 (mem_ker.1 y.2)).2⟩
+  invFun y := ⟨y.val.2, (Prod.mk_eq_zero.1 (mem_ker.1 y.property)).2⟩
   map_add' _ _ := by ext <;> simp
   map_smul' _ _ := by ext <;> simp
   left_inv _ := rfl
-  right_inv y := Subtype.ext (Prod.ext (Prod.mk_eq_zero.1 (mem_ker.1 y.2)).1.symm rfl)
+  right_inv y := Subtype.ext (Prod.ext (Prod.mk_eq_zero.1 (mem_ker.1 y.property)).1.symm rfl)
 
 @[simp]
 theorem coe_kerEquivKerIdProdMap_apply (g : M →ₗ[R] N) (x : ker g) :
