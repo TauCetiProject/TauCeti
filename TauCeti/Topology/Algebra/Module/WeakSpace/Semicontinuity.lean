@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.Module.Spaces.WeakDual
 public import TauCeti.Topology.Semicontinuity.Sequences
+import TauCeti.Logic.Equiv.Set
 
 /-!
 # Weak lower semicontinuity
@@ -27,15 +28,6 @@ namespace TauCeti
 variable {𝕜 V : Type*} [CommSemiring 𝕜] [TopologicalSpace 𝕜] [ContinuousAdd 𝕜]
   [ContinuousConstSMul 𝕜 𝕜] [AddCommMonoid V] [Module 𝕜 V] [TopologicalSpace V]
 
-private theorem preimage_subtype_toWeakSpace_sublevel {β : Type*} [Preorder β] {E : V → β}
-    {S : Set V} (b : β) :
-    ((↑) : toWeakSpace 𝕜 V '' S → WeakSpace 𝕜 V) ⁻¹' (toWeakSpace 𝕜 V '' {u ∈ S | E u ≤ b}) =
-      ((↑) : toWeakSpace 𝕜 V '' S → WeakSpace 𝕜 V) ⁻¹'
-        ((fun w : WeakSpace 𝕜 V ↦ E ((toWeakSpace 𝕜 V).symm w)) ⁻¹' Iic b) := by
-  ext ⟨w, hw⟩
-  simp only [mem_preimage, (toWeakSpace 𝕜 V).image_eq_preimage_symm, mem_ofPred_eq, mem_Iic]
-  exact and_iff_right (((toWeakSpace 𝕜 V).image_eq_preimage_symm S).subset hw)
-
 /-- Weak lower semicontinuity of `E` on `S` is equivalent to relative weak closedness of each
 sublevel `{u ∈ S | E u ≤ b}` in `toWeakSpace 𝕜 V '' S`. -/
 theorem lowerSemicontinuousOn_toWeakSpace_iff_isClosed_subtype {β : Type*} [LinearOrder β]
@@ -46,7 +38,11 @@ theorem lowerSemicontinuousOn_toWeakSpace_iff_isClosed_subtype {β : Type*} [Lin
         (toWeakSpace 𝕜 V '' {u ∈ S | E u ≤ b})) := by
   rw [← lowerSemicontinuous_restrict_iff, lowerSemicontinuous_iff_isClosed_preimage]
   refine forall_congr' fun b ↦ ?_
-  rw [preimage_subtype_toWeakSpace_sublevel b]
+  have heq : toWeakSpace 𝕜 V '' {u ∈ S | E u ≤ b} =
+      toWeakSpace 𝕜 V '' S ∩
+        (fun w : WeakSpace 𝕜 V ↦ E ((toWeakSpace 𝕜 V).symm w)) ⁻¹' Iic b :=
+    (toWeakSpace 𝕜 V).toEquiv.image_inter_preimage S E (Iic b)
+  rw [heq, Subtype.preimage_coe_self_inter]
   rfl
 
 /-- Sequential weak lower semicontinuity of `E` on `S` is equivalent to relative sequential weak
@@ -59,6 +55,10 @@ theorem seqLowerSemicontinuousOn_toWeakSpace_iff_isSeqClosed_subtype {β : Type*
         (toWeakSpace 𝕜 V '' {u ∈ S | E u ≤ b})) := by
   rw [seqLowerSemicontinuousOn_iff_isSeqClosed_subtype]
   refine forall_congr' fun b ↦ ?_
-  rw [preimage_subtype_toWeakSpace_sublevel b]
+  have heq : toWeakSpace 𝕜 V '' {u ∈ S | E u ≤ b} =
+      toWeakSpace 𝕜 V '' S ∩
+        (fun w : WeakSpace 𝕜 V ↦ E ((toWeakSpace 𝕜 V).symm w)) ⁻¹' Iic b :=
+    (toWeakSpace 𝕜 V).toEquiv.image_inter_preimage S E (Iic b)
+  rw [heq, Subtype.preimage_coe_self_inter]
 
 end TauCeti

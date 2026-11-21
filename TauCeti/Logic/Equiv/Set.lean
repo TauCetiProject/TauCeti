@@ -15,6 +15,8 @@ An equivalence `e : α ≃ β` carries `s` onto `t`, in the sense that `e x ∈ 
 
 The preimage of `{y}` under `e` is `{e.symm y}` (`Equiv.preimage_singleton`). Together with
 `Set.preimage_comp`, this identifies fibres after relabelling the base by an equivalence.
+Similarly, the image of a relative preimage `s ∩ f ⁻¹' t` under `e` is the intersection of
+`e '' s` with the preimage of `t` under `fun y ↦ f (e.symm y)` (`Equiv.image_inter_preimage`).
 
 A map `g : α → β` that agrees on `s` with an equivalence `s ≃ t` is a bijection from `s` onto `t`
 (`Equiv.bijOn_of_coe_eq`). This is a converse to `Set.BijOn.equiv`, which turns a bijection
@@ -33,6 +35,14 @@ namespace Equiv
 theorem preimage_singleton {α β : Type*} (e : α ≃ β) (y : β) :
     e ⁻¹' {y} = {e.symm y} := by
   rw [← e.image_symm_eq_preimage, Set.image_singleton]
+
+/-- The image of a relative preimage `s ∩ f ⁻¹' t` under an equivalence `e : α ≃ β` is the
+intersection of `e '' s` with the preimage of `t` under `fun y ↦ f (e.symm y)`. -/
+theorem image_inter_preimage {α β γ : Type*} (e : α ≃ β) (s : Set α) (f : α → γ)
+    (t : Set γ) :
+    e '' (s ∩ f ⁻¹' t) = e '' s ∩ (fun y ↦ f (e.symm y)) ⁻¹' t := by
+  rw [← Set.image_inter_preimage e s ((fun y ↦ f (e.symm y)) ⁻¹' t), Set.preimage_preimage]
+  simp only [e.symm_apply_apply]
 
 /-- An equivalence carries `s` onto `t` exactly when it maps `s` into `t` and its inverse maps `t`
 into `s`. -/

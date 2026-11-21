@@ -872,12 +872,20 @@ theorem seqLowerSemicontinuousWithinAt_ciSup {ι : Sort*} {γ : Type*}
       ∀ᶠ n in atTop, BddAbove (range fun i ↦ f i (u n)))
     (hf : ∀ i, SeqLowerSemicontinuousWithinAt (f i) s x) :
     SeqLowerSemicontinuousWithinAt (fun z ↦ ⨆ i, f i z) s x := by
-  cases isEmpty_or_nonempty ι
-  · simpa only [iSup_of_empty'] using seqLowerSemicontinuousWithinAt_const
-  · intro u hu hlim y hy
-    obtain ⟨i, hi⟩ := exists_lt_of_lt_ciSup hy
-    filter_upwards [hf i hu hlim y hi, hbdd hu hlim] with n hn hnbdd
-    exact hn.trans_le (le_ciSup hnbdd i)
+  intro u hu hlim
+  let F : ι → ℕ∞ → γ := fun i ↦ ENat.recTopCoe (f i x) (fun n ↦ f i (u n))
+  have hF (i : ι) : LowerSemicontinuousWithinAt (F i) (Iio ⊤) ⊤ :=
+    (ENat.lowerSemicontinuousAt_top_iff.2 (hf i hu hlim)).lowerSemicontinuousWithinAt _
+  have hFbdd : ∀ᶠ k in 𝓝[Iio (⊤ : ℕ∞)] ⊤, BddAbove (range fun i ↦ F i k) := by
+    rw [eventually_nhdsWithin_iff]
+    exact (ENat.semicontinuousAt_top_iff
+      (r := fun k (_ : Unit) ↦ k ∈ Iio (⊤ : ℕ∞) → BddAbove (range fun i ↦ F i k))).2
+      (fun _ _ ↦ (hbdd hu hlim).mono fun n hn _ ↦ hn) ()
+      (fun h ↦ (lt_irrefl _ (mem_Iio.1 h)).elim)
+  have hsup := lowerSemicontinuousWithinAt_ciSup hFbdd hF
+  intro y hy
+  exact (tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _ ENat.tendsto_natCast_nhds_top
+    (Eventually.of_forall ENat.natCast_lt_top)).eventually (hsup y hy)
 
 /-- The pointwise supremum of a family of functions sequentially lower semicontinuous within `s`
 at `x` into a complete linear order is sequentially lower semicontinuous within `s` at `x`. -/
@@ -999,6 +1007,21 @@ theorem _root_.Equiv.seqLowerSemicontinuousOn_image_iff_forall_le_of_tendsto {X 
   simp only [Equiv.arrowCongr_apply, Equiv.refl_symm, Equiv.coe_refl, Function.comp_def,
     id_eq, e.injective.mem_set_image, e.symm_apply_apply]
   rfl
+
+/-- For a real-valued function, sequential lower semicontinuity of `f ∘ e.symm` on `e '' s` along
+an equivalence `e : X ≃ Y` into a topological space `Y` is equivalent to the `EReal`-valued
+`liminf` inequality `(f x : EReal) ≤ liminf (fun n ↦ (f (u n) : EReal)) atTop` along sequences
+in `s` whose images under `e` converge to `e x` with `x ∈ s`. -/
+theorem _root_.Equiv.seqLowerSemicontinuousOn_image_iff_le_liminf_ereal {X Y : Type*}
+    [TopologicalSpace Y] (e : X ≃ Y) {f : X → ℝ} {s : Set X} :
+    SeqLowerSemicontinuousOn (fun y ↦ f (e.symm y)) (e '' s) ↔
+      ∀ (u : ℕ → X) (x : X), (∀ n, u n ∈ s) → x ∈ s →
+        Tendsto (fun n ↦ e (u n)) atTop (𝓝 (e x)) →
+        (f x : EReal) ≤ liminf (fun n ↦ (f (u n) : EReal)) atTop := by
+  rw [e.seqLowerSemicontinuousOn_image_iff]
+  refine forall₅_congr fun u x _ _ _ ↦ ?_
+  rw [le_liminf_iff, EReal.forall]
+  simp
 
 section SeqCompact
 

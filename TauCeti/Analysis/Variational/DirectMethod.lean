@@ -9,6 +9,7 @@ public import TauCeti.Order.Filter.Extr
 public import TauCeti.Analysis.Variational.BoundedSublevels
 public import TauCeti.Analysis.Normed.Module.DoubleDual
 public import Mathlib.Topology.Semicontinuity.Basic
+import TauCeti.Logic.Equiv.Set
 
 /-!
 # The direct method in the weak topology
@@ -49,10 +50,8 @@ theorem isCompact_toWeakSpace_sublevel
     IsCompact (toWeakSpace 𝕜 V '' {u ∈ S | E u ≤ b}) := by
   have heq : toWeakSpace 𝕜 V '' {u ∈ S | E u ≤ b} =
       (toWeakSpace 𝕜 V '' S) ∩
-        (fun u : WeakSpace 𝕜 V ↦ E ((toWeakSpace 𝕜 V).symm u)) ⁻¹' Iic b := by
-    ext u
-    simp only [(toWeakSpace 𝕜 V).image_eq_preimage_symm, mem_preimage,
-      mem_ofPred_eq, mem_inter_iff, mem_Iic]
+        (fun u : WeakSpace 𝕜 V ↦ E ((toWeakSpace 𝕜 V).symm u)) ⁻¹' Iic b :=
+    (toWeakSpace 𝕜 V).toEquiv.image_inter_preimage S E (Iic b)
   obtain ⟨C, hC, hEC⟩ := lowerSemicontinuousOn_iff_preimage_Iic.1 hE b
   have hclosed : IsClosed (toWeakSpace 𝕜 V '' {u ∈ S | E u ≤ b}) := by
     rw [heq, hEC]
