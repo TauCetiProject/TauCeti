@@ -97,7 +97,7 @@ theorem plusEquivPreTilt_symm_apply [IsAdicComplete (Ideal.span {(p : Bplus)}) B
 @[simp]
 theorem coeff_plusEquivPreTilt (x : plusSubring p h) (n : ℕ) :
     PreTilt.coeff n (plusEquivPreTilt p h x) =
-      Ideal.Quotient.mk _ ⟨coeff p B n x, mem_plusSubring_iff.mp x.2 n⟩ := by
+      Ideal.Quotient.mk _ ⟨coeff p B n x, mem_plusSubring_iff.mp x.property n⟩ := by
   have := h.isAdicComplete_span_natCast p hpn.out
   rw [PreTilt.coeff_def, plusEquivPreTilt_apply, coeff_plusEquiv]
 

@@ -110,7 +110,7 @@ theorem HasHomotopyExtensionProperty.exists_leftInverse_homotopicRel_of_homotopi
   -- Extend the restriction of `H` to `A` to a homotopy `K` starting at the identity of `X`.
   obtain ⟨K, hK₀, hK₁⟩ := hA.exists_extension (ContinuousMap.id X)
     (H.toContinuousMap.comp ((ContinuousMap.id I).prodMap (subtypeVal A)))
-    fun a => by simp [hφ a a.2]
+    fun a => by simp [hφ a a.property]
   let K' : (ContinuousMap.id X).Homotopy ⟨fun x => K (1, x), by fun_prop⟩ :=
     { toContinuousMap := K
       map_zero_left := hK₀
@@ -151,7 +151,7 @@ theorem HasHomotopyExtensionProperty.exists_leftInverse_homotopicRel
   obtain ⟨ψ, hψA, hψ, hψφ⟩ := hA.exists_leftInverse_homotopicRel_of_homotopic_id
     (φ := g₁.comp f) (fun x hx => by simp [hf ⟨x, hx⟩, hg₁])
     ((hgg₁.symm.comp (.refl f)).trans ⟨H⟩)
-  refine ⟨ψ.comp g₁, fun b => by simp [hg₁, hψA _ (e.symm b).2], ?_, ?_⟩
+  refine ⟨ψ.comp g₁, fun b => by simp [hg₁, hψA _ (e.symm b).property], ?_, ?_⟩
   · simpa using hψ.comp hgg₁.symm
   · rwa [ContinuousMap.comp_assoc]
 
@@ -174,7 +174,7 @@ theorem HasHomotopyExtensionProperty.exists_inverse_homotopicRel
   -- Then `h ≃ f' ∘ g ∘ h ≃ f'` relative to `A`.
   have hhf : h.toFun.HomotopicRel f' A := by
     have h₁ := (HomotopicRel.precomp hfg h.toFun).mono fun x hx =>
-      Set.mem_preimage.2 <| (he ⟨x, hx⟩).symm ▸ (e ⟨x, hx⟩).2
+      Set.mem_preimage.2 <| (he ⟨x, hx⟩).symm ▸ (e ⟨x, hx⟩).property
     have h₂ := HomotopicRel.comp_continuousMap hgf f'
     rw [ContinuousMap.id_comp] at h₁
     rw [ContinuousMap.comp_id, ← ContinuousMap.comp_assoc] at h₂
@@ -182,7 +182,7 @@ theorem HasHomotopyExtensionProperty.exists_inverse_homotopicRel
   -- Hence `h ∘ g ≃ f' ∘ g ≃ id` relative to `B`.
   refine ⟨g, hgB, hgf, ((HomotopicRel.precomp hhf g).mono fun y hy => ?_).trans hfg⟩
   rw [Set.mem_preimage, hgB ⟨y, hy⟩]
-  exact (e.symm ⟨y, hy⟩).2
+  exact (e.symm ⟨y, hy⟩).property
 
 /-- **Based homotopy inverses.** Let `x₀ ∈ X` and `y₀ ∈ Y` be points whose inclusions have the
 homotopy extension property. A homotopy equivalence `h : X ≃ₕ Y` with `h x₀ = y₀` has a homotopy
@@ -196,7 +196,8 @@ theorem HasHomotopyExtensionProperty.exists_basedInverse_homotopicRel {x₀ : X}
       (h.toFun.comp g).HomotopicRel (ContinuousMap.id Y) {y₀} := by
   obtain ⟨g, hg, hgh, hhg⟩ := hx₀.exists_inverse_homotopicRel hy₀ h
     (Homeomorph.homeomorphOfUnique _ _)
-    fun a => by rw [Set.mem_singleton_iff.1 a.2, hh, Set.mem_singleton_iff.1 (Subtype.prop _)]
+    fun a => by
+        rw [Set.mem_singleton_iff.1 a.property, hh, Set.mem_singleton_iff.1 (Subtype.prop _)]
   exact ⟨g, (hg ⟨y₀, rfl⟩).trans (Set.mem_singleton_iff.1 (Subtype.prop _)), hgh, hhg⟩
 
 /-- **Extending a homotopy inverse from the subspaces.** Let `A ⊆ X` and `B ⊆ Y` have the
@@ -250,7 +251,7 @@ theorem HasHomotopyExtensionProperty.exists_inverse_extending_homotopy
   -- `φ₁` has a left inverse `ψ` relative to `A`; the inverse of `h` is `g = ψ g₁`.
   obtain ⟨ψ, hψA, hψ, ⟨L⟩⟩ := hA.exists_leftInverse_homotopicRel_of_homotopic_id hφ₁A
     ((Homotopic.symm ⟨K'⟩).trans hφ)
-  have hgB (b : B) : ψ (g₁ b) = g₀ b := by rw [hg₁, hψA _ (g₀ b).2]
+  have hgB (b : B) : ψ (g₁ b) = g₀ b := by rw [hg₁, hψA _ (g₀ b).property]
   -- The homotopy `ψ K` followed by `L` runs from `g h` to the identity, and on `A` it is `H₀`
   -- followed by the constant homotopy.
   let F : ((ψ.comp g₁).comp h.toFun).Homotopy (ContinuousMap.id X) :=
@@ -264,9 +265,10 @@ theorem HasHomotopyExtensionProperty.exists_inverse_extending_homotopy
       Homotopy.refl_apply]
     split_ifs
     · -- `K' = K` follows `H₀` on `A`, where `ψ` is the identity.
-      exact (congrArg ψ (hK₁ _ a)).trans (hψA _ (H₀ _).2)
+      exact (congrArg ψ (hK₁ _ a)).trans (hψA _ (H₀ _).property)
     · -- `L` is stationary on `A`, where `ψ φ₁` is the identity.
-      exact (L.eq_fst _ a.2).trans ((hψA _ (by rw [hφ₁A _ a.2]; exact a.2)).trans (hφ₁A _ a.2))
+      exact (L.eq_fst _ a.property).trans ((hψA _
+          (by rw [hφ₁A _ a.property]; exact a.property)).trans (hφ₁A _ a.property))
   refine ⟨ψ.comp g₁, H, hgB, hH, ?_⟩
   -- `h g = h ψ g₁ ≃ h g₁ ≃ h h⁻¹ ≃ id`.
   have := (Homotopic.refl h.toFun).comp (hψ.comp hg₁h.symm)

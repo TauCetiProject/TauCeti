@@ -207,7 +207,7 @@ theorem isUniversallyCatenary_iff_forall_isMaximal {R : Type u} [CommRing R]
       fun y => by
         rw [IsScalarTower.algebraMap_apply R B]
         exact IsLocalization.map_units (Localization.AtPrime n)
-          (⟨algebraMap R B y, fun hy => y.2 (hnm hy)⟩ : n.primeCompl)).toAlgebra
+          (⟨algebraMap R B y, fun hy => y.property (hnm hy)⟩ : n.primeCompl)).toAlgebra
   have : IsScalarTower R (Localization.AtPrime m) (Localization.AtPrime n) :=
     .of_algebraMap_eq fun x => (IsLocalization.lift_eq _ x).symm
   have : Algebra.EssFiniteType R (Localization.AtPrime n) := .comp R B _

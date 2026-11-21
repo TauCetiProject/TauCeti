@@ -195,12 +195,12 @@ def comapMk'OpenNormalOrderIso (N : Subgroup G) [N.Normal] :
         (OpenNormalSubgroup.toSubgroup_comap U _ _).symm⟩
     invFun U :=
       { toOpenSubgroup :=
-          ⟨Subgroup.map (QuotientGroup.mk' N) U.1.toSubgroup,
+          ⟨Subgroup.map (QuotientGroup.mk' N) U.val.toSubgroup,
             (QuotientGroup.isQuotientMap_mk N).isOpen_preimage.mp <| by
-              have hopen : IsOpen ((U.1.toSubgroup.map (QuotientGroup.mk' N)).comap
+              have hopen : IsOpen ((U.val.toSubgroup.map (QuotientGroup.mk' N)).comap
                   (QuotientGroup.mk' N) : Set G) := by
-                rw [QuotientGroup.comap_map_mk', sup_eq_right.mpr U.2]
-                exact U.1.toOpenSubgroup.isOpen'
+                rw [QuotientGroup.comap_map_mk', sup_eq_right.mpr U.property]
+                exact U.val.toOpenSubgroup.isOpen'
               simpa only [Subgroup.coe_comap, QuotientGroup.coe_mk', Set.preimage,
                 Subgroup.mem_carrier, SetLike.mem_coe] using hopen⟩
         isNormal' :=
@@ -212,7 +212,7 @@ def comapMk'OpenNormalOrderIso (N : Subgroup G) [N.Normal] :
         (Subgroup.map_comap_eq_self_of_surjective (QuotientGroup.mk'_surjective N) _)
     right_inv U := Subtype.ext <| OpenNormalSubgroup.toSubgroup_injective <|
       (OpenNormalSubgroup.toSubgroup_comap _ _ _).trans <|
-        (QuotientGroup.comap_map_mk' N U.1.toSubgroup).trans (sup_eq_right.mpr U.2)
+        (QuotientGroup.comap_map_mk' N U.val.toSubgroup).trans (sup_eq_right.mpr U.property)
     map_rel_iff' {U V} := by
       simp only [Equiv.coe_fn_mk, Subtype.mk_le_mk, IsConcreteLE.le_iff,
         OpenNormalSubgroup.mem_comap]
@@ -239,7 +239,7 @@ theorem comapMk'OpenNormalOrderIso_apply_toSubgroup (U : OpenNormalSubgroup (G �
 theorem comapMk'OpenNormalOrderIso_symm_apply_toSubgroup
     (U : { V : OpenNormalSubgroup G // (N : Subgroup G) ≤ V.toSubgroup }) :
     ((Subgroup.comapMk'OpenNormalOrderIso N).symm U : OpenNormalSubgroup (G ⧸ N)).toSubgroup =
-      Subgroup.map (QuotientGroup.mk' N) U.1.toSubgroup :=
+      Subgroup.map (QuotientGroup.mk' N) U.val.toSubgroup :=
   (rfl)
 
 end OpenNormalSubgroup
@@ -287,7 +287,7 @@ theorem coe_quotientOpenSubgroupMap (U : OpenSubgroup G) (u : U.toSubgroup) :
 /-- The restricted quotient homomorphism is continuous. -/
 theorem continuous_quotientOpenSubgroupMap (U : OpenSubgroup G) :
     Continuous (quotientOpenSubgroupMap N U) :=
-  continuous_induced_rng.2 (QuotientGroup.continuous_mk.comp continuous_subtype_val)
+  continuous_induced_rng.2 (QuotientGroup.continuous_mk.comp continuous_subtypeVal)
 
 /-- The image in `G / N` of an open subgroup of finite index has finite index. -/
 instance instFiniteIndexQuotientOpenSubgroup (U : OpenSubgroup G) [U.toSubgroup.FiniteIndex] :

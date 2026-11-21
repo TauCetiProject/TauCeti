@@ -96,7 +96,7 @@ theorem BlockTriangular.det_eq_prod_diag {ι α S : Type*} [Fintype ι] [Decidab
     (hb : Function.Injective b) : N.det = ∏ i, N i i := by
   rw [hN.det, Finset.prod_image fun x _ y _ hxy ↦ hb hxy]
   refine Finset.prod_congr rfl fun i _ ↦ ?_
-  let _ : Unique {j // b j = b i} := ⟨⟨⟨i, rfl⟩⟩, fun j ↦ Subtype.ext (hb j.2)⟩
+  let _ : Unique {j // b j = b i} := ⟨⟨⟨i, rfl⟩⟩, fun j ↦ Subtype.ext (hb j.property)⟩
   exact det_unique _
 
 /-- A square matrix is upper unitriangular when it is upper triangular and every diagonal entry
@@ -193,7 +193,7 @@ variable {S : Type*} [Semiring S] {n : ℕ}
 theorem pow_apply_eq_zero_of_isUpperTriangular_of_diag_eq_zero
     {M : Matrix (Fin n) (Fin n) S} (htri : M.IsUpperTriangular)
     (hdiag : ∀ i, M i i = 0) (k : ℕ) (i j : Fin n)
-    (hji : j.1 < i.1 + k) : (M ^ k) i j = 0 := by
+    (hji : j.val < i.val + k) : (M ^ k) i j = 0 := by
   have hstrict : ∀ a b : Fin n, b ≤ a → M a b = 0 := by
     intro a b hba
     obtain hba | rfl := hba.lt_or_eq
@@ -210,7 +210,7 @@ theorem pow_apply_eq_zero_of_isUpperTriangular_of_diag_eq_zero
       rw [pow_succ, Matrix.mul_apply]
       apply Finset.sum_eq_zero
       intro l _
-      by_cases hil : i.1 + k ≤ l.1
+      by_cases hil : i.val + k ≤ l.val
       · rw [hstrict l j (by omega), mul_zero]
       · rw [ih (i := i) (j := l) (by omega), zero_mul]
 
@@ -240,7 +240,7 @@ theorem isNilpotent_of_isUpperTriangular_of_diag_eq_zero [Fintype m] [LinearOrde
 
 end Nilpotence
 
-variable {R : Type*} [NonUnitalNonAssocSemiring R] {n : Type*} [Fintype n] [LinearOrder n]
+variable [NonUnitalNonAssocSemiring R] {n : Type*} [Fintype n] [LinearOrder n]
   {A B : Matrix n n R}
 
 /-- The diagonal of a product of upper-triangular matrices is the pointwise product of the
@@ -535,7 +535,7 @@ theorem exists_ne_zero_forall_mulVec_eq_zero_of_invariant_submodule
 /-- Replacing the column `a` of both factors of a product leaves every earlier column `c < a` of
 the product unchanged, when the right factor is upper triangular. -/
 theorem updateCol_mul_updateCol_apply_of_lt {T l p : Type*} [NonUnitalNonAssocSemiring T]
-    [Fintype p] [LinearOrder p] {J : Matrix l p T} {H : Matrix p p T}
+    [Fintype p] [DecidableEq p] [Preorder p] {J : Matrix l p T} {H : Matrix p p T}
     (hH : H.IsUpperTriangular) {a c : p} (hca : c < a) (x : l → T) (y : p → T) (i : l) :
     (J.updateCol a x * H.updateCol a y) i c = (J * H) i c := by
   simp only [Matrix.mul_apply, updateCol_apply, hca.ne, ↓reduceIte]
@@ -567,7 +567,7 @@ theorem exists_sum_mul_eq_of_isUpperUnitriangular {ι T : Type*} [LinearOrder ι
   have := congrFun hz ⟨i, hi⟩
   simp only [M, mulVec, dotProduct, submatrix_apply] at this
   rw [← this, ← Finset.sum_coe_sort S]
-  exact Finset.sum_congr rfl fun t _ ↦ by simp [y, t.2]
+  exact Finset.sum_congr rfl fun t _ ↦ by simp [y, t.property]
 
 end Matrix
 
