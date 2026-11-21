@@ -61,8 +61,13 @@ along `Sᵏ⁻¹ × Sⁿ⁻ᵏ⁻¹`, and `M × [0, 1]` along `∂M × {0, 1}`.
   in the positive tangent cone.
 * `ModelWithCorners.depthAt_eq_zero_iff`, `ModelWithCorners.depth_eq_zero_iff`: depth zero means
   interior point.
-* `ModelWithCorners.depthAt_eq_natCard_of_range_eq`: for a model whose range is cut out by the
-  nonnegativity of some coordinates, the depth counts the vanishing ones among them.
+* `ModelWithCorners.depthAt_eq_natCard_of_range_eq`,
+  `ModelWithCorners.depthAt_le_natCard_of_range_eq`: for a model whose range is cut out by the
+  nonnegativity of some coordinates, the depth counts the vanishing ones among them, so it is at
+  most the cardinality of that coordinate set.
+* `ModelWithCorners.depthAt_transContinuousLinearEquiv`,
+  `ModelWithCorners.depth_transContinuousLinearEquiv`: continuous linear changes of model
+  coordinates preserve the depth.
 * `ModelWithCorners.depthAt_extend_eq_depth`: the depth does not depend on the chart.
 * `MDifferentiableAt.finrank_sub_depth_le`: a map with injective differential does not decrease
   the dimension of the largest linear subspace in the cone.
@@ -266,6 +271,36 @@ theorem depthAt_prod (hy : y ∈ range I) {y' : E'} (hy' : y' ∈ range I') :
     rw [hfin] at hU'
     omega
 
+omit [FiniteDimensional ℝ E'] in
+/-- A continuous linear change of model coordinates preserves the depth of points in the range
+of the model. -/
+@[simp]
+theorem depthAt_transContinuousLinearEquiv (e : E ≃L[ℝ] E') (hy : y ∈ range I) :
+    (I.transContinuousLinearEquiv e).depthAt (e y) = I.depthAt y := by
+  have : FiniteDimensional ℝ E' := e.toLinearEquiv.finiteDimensional
+  have h1 : finrank ℝ E - I.depthAt y ≤
+      finrank ℝ E' - (I.transContinuousLinearEquiv e).depthAt (e y) :=
+    finrank_sub_depthAt_le_of_hasFDerivWithinAt (I := I) (I' := I.transContinuousLinearEquiv e)
+      hy self_mem_nhdsWithin
+      (fun z hz ↦ by rw [I.transContinuousLinearEquiv_range]; exact mem_image_of_mem e hz)
+      e.hasFDerivAt.hasFDerivWithinAt e.injective
+  have hey : e y ∈ range (I.transContinuousLinearEquiv e) := by
+    rw [I.transContinuousLinearEquiv_range]
+    exact mem_image_of_mem e hy
+  have h2 : finrank ℝ E' - (I.transContinuousLinearEquiv e).depthAt (e y) ≤
+      finrank ℝ E - I.depthAt y := by
+    simpa using finrank_sub_depthAt_le_of_hasFDerivWithinAt
+      (I := I.transContinuousLinearEquiv e) (I' := I) hey self_mem_nhdsWithin
+      (fun z hz ↦ by
+        rw [I.transContinuousLinearEquiv_range] at hz
+        rcases hz with ⟨w, hw, rfl⟩
+        simpa using hw)
+      e.symm.hasFDerivAt.hasFDerivWithinAt e.symm.injective
+  have hdim : finrank ℝ E = finrank ℝ E' := e.toLinearEquiv.finrank_eq
+  have h3 := depthAt_le_finrank (I := I) y
+  have h4 := depthAt_le_finrank (I := I.transContinuousLinearEquiv e) (e y)
+  omega
+
 end Model
 
 section Coordinates
@@ -358,6 +393,15 @@ theorem depthAt_eq_natCard_of_range_eq (hJ : range J = {z | ∀ i ∈ S, 0 ≤ z
     have := Submodule.finrank_mono hVK
     omega
 
+/-- For a model with corners whose range is cut out by the nonnegativity of the coordinates
+indexed by `S`, the depth of a point of the range is at most the cardinality of `S`. -/
+theorem depthAt_le_natCard_of_range_eq (hJ : range J = {z | ∀ i ∈ S, 0 ≤ z i})
+    {y : EuclideanSpace ℝ ι} (hy : y ∈ range J) :
+    J.depthAt y ≤ Nat.card S := by
+  rw [depthAt_eq_natCard_of_range_eq hJ hy]
+  exact Nat.card_le_card_of_injective (fun j : {i // i ∈ S ∧ y i = 0} ↦ (⟨j.1, j.2.1⟩ : S))
+    (fun _ _ h ↦ Subtype.ext (congrArg (Subtype.val : S → ι) h))
+
 /-- In the quadrant model `𝓡c n`, the depth of a point of the quadrant is its number of
 vanishing coordinates. -/
 @[simp]
@@ -423,6 +467,24 @@ theorem depth_prod [FiniteDimensional ℝ E'] (x : M) (x' : N) :
   simp only [depth_def, extChartAt_prod, PartialEquiv.prod_coe]
   exact depthAt_prod (extChartAt_target_subset_range x (mem_extChartAt_target x))
     (extChartAt_target_subset_range x' (mem_extChartAt_target x'))
+
+/-- A continuous linear change of model coordinates leaves the depth of every point of a manifold
+unchanged. -/
+@[simp]
+theorem depth_transContinuousLinearEquiv (e : E ≃L[ℝ] E') (x : M) :
+    (I.transContinuousLinearEquiv e).depth x = I.depth x := by
+  simp only [depth_def, I.coe_extChartAt_transContinuousLinearEquiv, Function.comp_apply]
+  exact depthAt_transContinuousLinearEquiv e
+    (extChartAt_target_subset_range x (mem_extChartAt_target x))
+
+/-- On a manifold modelled on a region `{z | ∀ i ∈ S, 0 ≤ z i}`, every point has depth at most
+the cardinality of `S`. -/
+theorem depth_le_natCard_of_range_eq {ι : Type*} [Fintype ι]
+    {J : ModelWithCorners ℝ (EuclideanSpace ℝ ι) H} {S : Set ι}
+    (hJ : range J = {z | ∀ i ∈ S, 0 ≤ z i}) (x : M) :
+    J.depth x ≤ Nat.card S :=
+  depthAt_le_natCard_of_range_eq hJ
+    (extChartAt_target_subset_range x (mem_extChartAt_target x))
 
 variable {n : WithTop ℕ∞} [IsManifold I n M]
 
