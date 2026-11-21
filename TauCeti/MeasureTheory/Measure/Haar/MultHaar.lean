@@ -39,8 +39,8 @@ Integrating against `dt / t` is integrating `t⁻¹ f(t)` over `(0, ∞)`
 `Lᵖ(dt / t)` seminorms (`TauCeti.eLpNorm_volume_Ioi_eq_eLpNorm_multHaar`), and a right-continuous
 function on `(0, ∞)` has `dt / t`-essential supremum equal to its pointwise supremum
 (`TauCeti.essSup_multHaar_eq_iSup_Ioi`). Half-line power integrals evaluate explicitly
-(`TauCeti.lintegral_Iic_multHaar_rpow`, `TauCeti.lintegral_Iio_multHaar_rpow`,
-`TauCeti.lintegral_Ici_multHaar_rpow_neg`, `TauCeti.lintegral_multHaar_rpow_eq_top`). In
+(`TauCeti.lintegral_Iic_multHaar_rpow`, `TauCeti.lintegral_Ici_multHaar_rpow_neg`,
+`TauCeti.lintegral_multHaar_rpow_eq_top`). In
 particular the Mellin transform `mellin f s = ∫_0^∞ t^(s-1) f(t) dt` is the integral of
 `t^s f(t)` against `dt / t` (`TauCeti.integral_multHaar_cpow_smul`), and Mathlib's
 `MellinConvergent` is the integrability of `t^s f(t)` against `dt / t`
@@ -457,11 +457,6 @@ theorem lintegral_Iic_multHaar_rpow {θ t : ℝ} (hθ : 0 < θ) (ht : 0 < t) :
   rw [setLIntegral_congr_fun measurableSet_Ioo hpt,
     lintegral_ofReal_rpow_Ioo (by linarith) ht.le, sub_add_cancel, div_eq_mul_inv]
 
-/-- `∫_{s < t} s ^ θ ds / s = t ^ θ / θ` for `0 < θ` and `0 < t`. -/
-theorem lintegral_Iio_multHaar_rpow {θ t : ℝ} (hθ : 0 < θ) (ht : 0 < t) :
-    ∫⁻ s in Iio t, ENNReal.ofReal (s ^ θ) ∂multHaar = ENNReal.ofReal (t ^ θ * θ⁻¹) := by
-  rw [restrict_congr_set Iio_ae_eq_Iic, lintegral_Iic_multHaar_rpow hθ ht]
-
 /-- `∫_{s ≥ t} s ^ (-θ) ds / s = t ^ (-θ) / θ` for `0 < θ` and `0 < t`. -/
 theorem lintegral_Ici_multHaar_rpow_neg {θ t : ℝ} (hθ : 0 < θ) (ht : 0 < t) :
     ∫⁻ s in Ici t, ENNReal.ofReal (s ^ (-θ)) ∂multHaar = ENNReal.ofReal (t ^ (-θ) * θ⁻¹) := by
@@ -512,27 +507,28 @@ theorem integral_multHaar_eq_setIntegral (f : ℝ → E) :
 theorem lintegral_multHaar_rpow_mul_min_inv_rpow {α β : ℝ} (hα : 0 < α) (hβ : 0 < β) :
     ∫⁻ u, ENNReal.ofReal (u ^ α * min 1 u⁻¹ ^ (α + β)) ∂multHaar =
       ENNReal.ofReal (α⁻¹ + β⁻¹) := by
-  rw [← map_volume_exp, lintegral_map (by fun_prop) Real.measurable_exp,
-    ← lintegral_add_compl _ (measurableSet_Iic (a := (0 : ℝ))), compl_Iic,
+  rw [← lintegral_add_compl _ (measurableSet_Iic (a := (1 : ℝ))), compl_Iic,
+    Measure.restrict_congr_set Ioi_ae_eq_Ici,
     ENNReal.ofReal_add (inv_nonneg.2 hα.le) (inv_nonneg.2 hβ.le)]
-  -- in the variable `x = log u` the integrand is `exp (α x)` on `x ≤ 0` and `exp (-β x)` on `x > 0`
-  have hexp (x : ℝ) : (Real.exp x)⁻¹ = Real.exp (-x) := (Real.exp_neg x).symm
   congr 1
-  · rw [setLIntegral_congr_fun measurableSet_Iic (g := fun x ↦ ENNReal.ofReal (Real.exp (α * x)))
-        fun x (hx : x ≤ 0) ↦ ?_, ← ofReal_integral_eq_lintegral_ofReal
-        (integrableOn_exp_mul_Iic hα 0) (ae_of_all _ fun _ ↦ (Real.exp_pos _).le),
-        integral_exp_mul_Iic hα]
-    · simp
-    · rw [min_eq_left (one_le_inv_iff₀.2 ⟨Real.exp_pos x, Real.exp_le_one_iff.2 hx⟩)]
-      simp [← Real.exp_mul, mul_comm]
-  · rw [setLIntegral_congr_fun measurableSet_Ioi
-        (g := fun x ↦ ENNReal.ofReal (Real.exp (-β * x))) fun x (hx : 0 < x) ↦ ?_,
-        ← ofReal_integral_eq_lintegral_ofReal (integrableOn_exp_mul_Ioi (neg_lt_zero.2 hβ) 0)
-        (ae_of_all _ fun _ ↦ (Real.exp_pos _).le), integral_exp_mul_Ioi (neg_lt_zero.2 hβ)]
-    · simp
-    · rw [min_eq_right (inv_le_one_of_one_le₀ (Real.one_le_exp hx.le)), hexp,
-        ← Real.exp_mul, ← Real.exp_mul, ← Real.exp_add]
-      ring_nf
+  · calc ∫⁻ u in Iic 1, ENNReal.ofReal (u ^ α * min 1 u⁻¹ ^ (α + β)) ∂multHaar
+        = ∫⁻ u in Iic 1, ENNReal.ofReal (u ^ α) ∂multHaar := by
+          refine lintegral_congr_ae
+            (((ae_restrict_of_ae ae_pos_multHaar).and (ae_restrict_mem measurableSet_Iic)).mono
+              fun u ⟨hu, hu1⟩ ↦ ?_)
+          dsimp only
+          rw [min_eq_left ((one_le_inv₀ hu).2 hu1), Real.one_rpow, mul_one]
+      _ = ENNReal.ofReal α⁻¹ := by
+          rw [lintegral_Iic_multHaar_rpow hα one_pos, Real.one_rpow, one_mul]
+  · calc ∫⁻ u in Ici 1, ENNReal.ofReal (u ^ α * min 1 u⁻¹ ^ (α + β)) ∂multHaar
+        = ∫⁻ u in Ici 1, ENNReal.ofReal (u ^ (-β)) ∂multHaar := by
+          refine setLIntegral_congr_fun measurableSet_Ici fun u (hu1 : 1 ≤ u) ↦ ?_
+          have hu : 0 < u := zero_lt_one.trans_le hu1
+          rw [min_eq_right (inv_le_one_of_one_le₀ hu1), ← Real.rpow_neg_one,
+            ← Real.rpow_mul hu.le, ← Real.rpow_add hu]
+          ring_nf
+      _ = ENNReal.ofReal β⁻¹ := by
+          rw [lintegral_Ici_multHaar_rpow_neg hβ one_pos, Real.one_rpow, one_mul]
 
 /-- The kernel `s ^ θ₀ r ^ θ₁ min s⁻¹ r⁻¹ ^ (θ₀ + θ₁)` has integral `θ₀⁻¹ + θ₁⁻¹` in `r`
 for every `s > 0`: the substitution `r = s u` turns it into `u ^ θ₁ min 1 u⁻¹ ^ (θ₀ + θ₁)`. -/

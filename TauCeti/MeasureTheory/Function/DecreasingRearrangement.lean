@@ -508,16 +508,21 @@ theorem lintegral_decreasingRearrangement_indicator (A : Set α) (c : ℝ≥0∞
 
 /-! ### The `K`-functional of `(L¹, L∞)` -/
 
+/-- If `g : ℝ → ℝ≥0∞` is antitone on `(0, ∞)`, then `t * g t ≤ ∫₀ᵗ g` for every `t : ℝ`. -/
+theorem _root_.AntitoneOn.ofReal_mul_le_setLIntegral_Ioc {g : ℝ → ℝ≥0∞}
+    (hg : AntitoneOn g (Ioi 0)) (t : ℝ) :
+    ENNReal.ofReal t * g t ≤ ∫⁻ s in Ioc 0 t, g s := by
+  calc ENNReal.ofReal t * g t
+      = ∫⁻ _ in Ioc 0 t, g t := by
+        rw [setLIntegral_const, Real.volume_Ioc, sub_zero, mul_comm]
+    _ ≤ ∫⁻ s in Ioc 0 t, g s :=
+        setLIntegral_mono' measurableSet_Ioc fun s hs ↦ hg hs.1 (hs.1.trans_le hs.2) hs.2
+
 /-- Since `f*` is antitone, `t f* t ≤ ∫₀ᵗ f*` for every `t : ℝ`. -/
 theorem mul_decreasingRearrangement_le_setLIntegral_Ioc (f : α → ℝ≥0∞) (t : ℝ) :
     ENNReal.ofReal t * μ.decreasingRearrangement f t ≤
-      ∫⁻ s in Ioc 0 t, μ.decreasingRearrangement f s := by
-  calc ENNReal.ofReal t * μ.decreasingRearrangement f t
-      = ∫⁻ _ in Ioc 0 t, μ.decreasingRearrangement f t := by
-        rw [setLIntegral_const, Real.volume_Ioc, sub_zero, mul_comm]
-    _ ≤ ∫⁻ s in Ioc 0 t, μ.decreasingRearrangement f s :=
-        setLIntegral_mono (μ.measurable_decreasingRearrangement f) fun s hs ↦
-          μ.antitone_decreasingRearrangement f hs.2
+      ∫⁻ s in Ioc 0 t, μ.decreasingRearrangement f s :=
+  ((μ.antitone_decreasingRearrangement f).antitoneOn (Ioi 0)).ofReal_mul_le_setLIntegral_Ioc t
 
 /-- For every level `c`, `∫₀ᵗ f* ≤ ∫ (f - c) + t c`. -/
 theorem lintegral_decreasingRearrangement_le_lintegral_sub (hf : AEMeasurable f μ) (t : ℝ)

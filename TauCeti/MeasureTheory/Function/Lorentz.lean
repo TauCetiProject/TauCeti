@@ -109,18 +109,6 @@ theorem eLorentzNorm_eq_eLpNorm (hf : AEStronglyMeasurable f μ) (hp : p ≠ 0) 
   simp [eLorentzNorm_def, hf, hp]
 
 /-- For a.e. strongly measurable `f`, `p ≠ 0`, and finite `q ≠ 0`, the Lorentz gauge is the
-`(1 / q)`-th power of the `dt / t`-integral of `(t ^ (1 / p) f*(t)) ^ q`. -/
-theorem eLorentzNorm_eq_lintegral (hf : AEStronglyMeasurable f μ) (hp0 : p ≠ 0) (hq0 : q ≠ 0)
-    (hq : q ≠ ∞) :
-    eLorentzNorm f p q μ =
-      (∫⁻ t, (ENNReal.ofReal (t ^ (p⁻¹).toReal) * μ.decreasingRearrangement (‖f ·‖ₑ) t) ^ q.toReal
-        ∂multHaar) ^ (1 / q.toReal) := by
-  rw [eLorentzNorm_eq_eLpNorm hf hp0,
-    eLpNorm_eq_lintegral_rpow_eNorm_toReal hq0 hq
-      (μ.measurable_rpow_mul_decreasingRearrangement _ _).aestronglyMeasurable]
-  simp only [eNorm_eq_self]
-
-/-- For a.e. strongly measurable `f`, `p ≠ 0`, and finite `q ≠ 0`, the Lorentz gauge is the
 `(1 / q)`-th power of `∫ t ^ (q / p) f*(t) ^ q dt / t`. -/
 theorem eLorentzNorm_eq_lintegral_rpow_mul (hf : AEStronglyMeasurable f μ) (hp0 : p ≠ 0)
     (hq0 : q ≠ 0) (hq : q ≠ ∞) :
@@ -128,10 +116,13 @@ theorem eLorentzNorm_eq_lintegral_rpow_mul (hf : AEStronglyMeasurable f μ) (hp0
       (∫⁻ t, ENNReal.ofReal (t ^ (q.toReal / p.toReal)) *
         μ.decreasingRearrangement (‖f ·‖ₑ) t ^ q.toReal ∂multHaar) ^ (1 / q.toReal) := by
   have hq_pos : 0 < q.toReal := ENNReal.toReal_pos hq0 hq
-  rw [eLorentzNorm_eq_lintegral hf hp0 hq0 hq]
+  rw [eLorentzNorm_eq_eLpNorm hf hp0,
+    eLpNorm_eq_lintegral_rpow_eNorm_toReal hq0 hq
+      (μ.measurable_rpow_mul_decreasingRearrangement _ _).aestronglyMeasurable]
   congr 1
   refine lintegral_congr_ae ?_
   filter_upwards [ae_pos_multHaar] with t ht
+  simp only [eNorm_eq_self]
   rw [ENNReal.mul_rpow_of_nonneg _ _ hq_pos.le,
     ENNReal.ofReal_rpow_of_nonneg (Real.rpow_nonneg ht.le _) hq_pos.le,
     ← Real.rpow_mul ht.le, ENNReal.toReal_inv, inv_mul_eq_div]
@@ -392,32 +383,30 @@ private theorem eLorentzNorm_indicator_one {A : Set α} (hA : NullMeasurableSet 
         ext y; by_cases hy : y ∈ A <;> simp [hy, not_lt.2 hb]
       rw [h0, measure_empty, ENNReal.zero_rpow_of_pos hr, mul_zero]; exact bot_le
   · have hrq : 0 < q.toReal := ENNReal.toReal_pos hq0 hqtop
-    have hmeas := (μ.measurable_rpow_mul_decreasingRearrangement
-      (‖A.indicator (fun _ ↦ (1 : ℝ≥0∞)) ·‖ₑ) r).aestronglyMeasurable (μ := multHaar)
-    rw [eLorentzNorm_eq_eLpNorm h1 hp0, eLpNorm_eq_lintegral_rpow_eNorm_toReal hq0 hqtop hmeas,
-      lintegral_multHaar_eq_setLIntegral]
-    simp only [eNorm_eq_self, one_div]
+    rw [eLorentzNorm_eq_lintegral_rpow_mul h1 hp0 hq0 hqtop, lintegral_multHaar_eq_setLIntegral]
+    simp only [one_div, eNorm_eq_self]
     have hcongr : ∀ t ∈ Ioi (0 : ℝ),
-        ENNReal.ofReal t⁻¹ * (ENNReal.ofReal (t ^ r) *
-          μ.decreasingRearrangement (A.indicator fun _ ↦ (1 : ℝ≥0∞)) t) ^ q.toReal =
+        ENNReal.ofReal t⁻¹ * (ENNReal.ofReal (t ^ (q.toReal / p.toReal)) *
+          μ.decreasingRearrangement (A.indicator fun _ ↦ (1 : ℝ≥0∞)) t ^ q.toReal) =
         {t : ℝ | ENNReal.ofReal (1 * t) < μ A}.indicator
-          (fun t ↦ ENNReal.ofReal (t ^ (r * q.toReal - 1))) t := fun t ht ↦ by
+          (fun t ↦ ENNReal.ofReal (t ^ (q.toReal / p.toReal - 1))) t := fun t ht ↦ by
       rw [μ.decreasingRearrangement_indicator]
       by_cases htA : ENNReal.ofReal t < μ A
       · have hmem : t ∈ {t : ℝ | ENNReal.ofReal (1 * t) < μ A} := by simpa using htA
-        simp only [htA, ↓reduceIte, indicator_of_mem hmem, mul_one]
-        rw [ENNReal.ofReal_rpow_of_pos (Real.rpow_pos_of_pos ht r), ← Real.rpow_mul ht.le,
-          ← ENNReal.ofReal_mul (inv_nonneg.2 ht.le), Real.rpow_sub ht, Real.rpow_one,
-          inv_mul_eq_div]
+        simp only [htA, ↓reduceIte, indicator_of_mem hmem]
+        rw [ENNReal.one_rpow, mul_one, ← ENNReal.ofReal_mul (inv_nonneg.2 ht.le),
+          Real.rpow_sub ht, Real.rpow_one, inv_mul_eq_div]
       · simp [htA, ENNReal.zero_rpow_of_pos hrq]
-    have hα : 0 < r * q.toReal := mul_pos hr hrq
-    have hdiv : 1 / (r * q.toReal) = p.toReal / q.toReal := by
-      simp only [r, ENNReal.toReal_inv]; field_simp
+    have hα : 0 < q.toReal / p.toReal := div_pos hrq hrp
+    have hdiv : 1 / (q.toReal / p.toReal) = p.toReal / q.toReal := one_div_div _ _
     rw [setLIntegral_congr_fun measurableSet_Ioi hcongr,
       lintegral_indicator_ofReal_rpow_Ioi (by linarith) one_pos (μ A),
       Real.one_rpow, sub_add_cancel, hdiv, ENNReal.mul_rpow_of_nonneg _ _ (inv_nonneg.2 hrq.le),
-      ENNReal.ofReal_rpow_of_pos (div_pos hrp hrq), ← ENNReal.rpow_mul, mul_assoc,
-      mul_inv_cancel₀ hrq.ne', mul_one]
+      ENNReal.ofReal_rpow_of_pos (div_pos hrp hrq), ← ENNReal.rpow_mul]
+    congr 2
+    dsimp only [r]
+    rw [ENNReal.toReal_inv]
+    field_simp
 
 /-- Pointwise control of the rearrangement by any Lorentz gauge: for `0 < p < ∞`, `q₀ ≠ 0`, and
 `t > 0`, `t ^ (1 / p) f*(t) ≤ (q₀ / p) ^ (1 / q₀) ‖f‖_{p, q₀}`. -/

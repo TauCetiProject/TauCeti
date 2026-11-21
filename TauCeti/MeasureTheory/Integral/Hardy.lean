@@ -9,6 +9,7 @@ public import Mathlib.Basic.ENNReal.Holder
 public import TauCeti.MeasureTheory.Measure.Haar.MultHaar
 import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.Data.ENNReal.Inv
+import TauCeti.MeasureTheory.Function.DecreasingRearrangement
 import TauCeti.MeasureTheory.Integral.SchurTest
 
 /-!
@@ -29,10 +30,13 @@ Substituting `ψ(s) = s φ(s)` turns the inner integrals into Lebesgue integrals
 Both pairs follow uniformly across `1 ≤ q ≤ ∞` from Schur's test
 (`TauCeti.eLpNorm_lintegral_mul_le`) applied to `k(t, s) = 1_{0 < s ≤ t} (s / t) ^ θ` and its
 transpose on `multHaar`, whose row and column integrals against `dt / t` both equal `θ⁻¹`.
-Setting `q = p` and `θ = 1 - 1 / p` recovers Hardy's classical `Lᵖ(0, ∞)` inequality with the sharp
-constant `p / (p - 1)` (`TauCeti.eLpNorm_inv_mul_lintegral_Ioc_le`). For antitone functions on
-`(0, ∞)` there is an immediate pointwise lower bound giving the reverse inequality with constant
-`1` (`TauCeti.eLpNorm_rpow_one_sub_le_eLpNorm_rpow_neg_mul_lintegral_Ioc`).
+For Hölder conjugate exponents `p` and `q` (so `q = p / (p - 1)` for `1 < p < ∞`, `q = 1` for
+`p = ∞`, and `q = ∞` for `p = 1`), setting `θ = q⁻¹` (i.e. `1 - 1 / p` for `1 < p < ∞`)
+recovers Hardy's classical `Lᵖ(0, ∞)` inequality
+`‖t ↦ t⁻¹ ∫₀ᵗ g‖_{Lᵖ(0, ∞)} ≤ q ‖g‖_{Lᵖ(0, ∞)}` (`TauCeti.eLpNorm_inv_mul_lintegral_Ioc_le`),
+with constant `p / (p - 1)` for `1 < p < ∞`. For antitone functions on `(0, ∞)` there is an
+immediate pointwise lower bound giving the reverse inequality with constant `1`
+(`TauCeti.eLpNorm_rpow_one_sub_le_eLpNorm_rpow_neg_mul_lintegral_Ioc`).
 
 ## Main declarations
 
@@ -269,11 +273,8 @@ theorem rpow_one_sub_mul_le_rpow_neg_mul_lintegral_Ioc {g : ℝ → ℝ≥0∞} 
       = ENNReal.ofReal (t ^ (-θ)) * (ENNReal.ofReal t * g t) := by
           rw [← mul_assoc, ← ENNReal.ofReal_mul (Real.rpow_nonneg ht.le _),
             ← Real.rpow_add_one ht.ne', neg_add_eq_sub]
-    _ = ENNReal.ofReal (t ^ (-θ)) * ∫⁻ _ in Ioc 0 t, g t := by
-          rw [setLIntegral_const, Real.volume_Ioc, sub_zero, mul_comm (g t)]
-    _ ≤ ENNReal.ofReal (t ^ (-θ)) * ∫⁻ s in Ioc 0 t, g s := by
-          gcongr 1
-          exact setLIntegral_mono' measurableSet_Ioc fun s hs ↦ hg hs.left ht hs.right
+    _ ≤ ENNReal.ofReal (t ^ (-θ)) * ∫⁻ s in Ioc 0 t, g s :=
+          mul_le_mul_right (hg.ofReal_mul_le_setLIntegral_Ioc t) _
 
 /-- **Reverse weighted Hardy bound for antitone functions.** If `g : ℝ → ℝ≥0∞` is antitone on
 `(0, ∞)`, then for every `θ : ℝ` and every `q : ℝ≥0∞`,
