@@ -14,7 +14,8 @@ import TauCeti.Data.List.Infix
 
 These lemmas bound the length of a cyclic reduction, relate cyclic reduction to the identity
 and give the length of a positive power. Words of constant sign are cyclically reduced, and being
-cyclically reduced is decidable.
+cyclically reduced is decidable. A nonzero power of an element is at least as long as the element
+(`FreeGroup.norm_le_norm_zpow`).
 
 If the reduced word of `x ≠ 1` is `c ++ v ++ c⁻¹` with `v` cyclically reduced, then the reduced
 word of `x ^ m` is `c ++ vᵐ ++ c⁻¹` for `m ≥ 1`. Its first `L` letters therefore do not depend on
@@ -80,6 +81,24 @@ theorem norm_pow_eq (x : FreeGroup α) {n : ℕ} (hn : 0 < n) :
     reduceCyclically.reduce_flatten_replicate isReduced_toWord, hn0,
     List.length_flatten, List.map_replicate]
   omega
+
+/-- A nonzero natural power of an element is at least as long as the element. -/
+@[to_additive]
+theorem norm_le_norm_pow (x : FreeGroup α) {n : ℕ} (hn : n ≠ 0) : norm x ≤ norm (x ^ n) := by
+  have h1 := norm_pow_eq x one_pos
+  rw [pow_one] at h1
+  rw [h1, norm_pow_eq x (Nat.pos_of_ne_zero hn)]
+  have := Nat.le_mul_of_pos_left (reduceCyclically x.toWord).length (Nat.pos_of_ne_zero hn)
+  lia
+
+/-- A nonzero integer power of an element is at least as long as the element. -/
+@[to_additive]
+theorem norm_le_norm_zpow (x : FreeGroup α) {n : ℤ} (hn : n ≠ 0) : norm x ≤ norm (x ^ n) := by
+  obtain ⟨k, rfl | rfl⟩ := Int.eq_nat_or_neg n
+  · rw [zpow_natCast]
+    exact norm_le_norm_pow x (by lia)
+  · rw [zpow_neg, zpow_natCast, norm_inv_eq]
+    exact norm_le_norm_pow x (by lia)
 
 section Prefix
 

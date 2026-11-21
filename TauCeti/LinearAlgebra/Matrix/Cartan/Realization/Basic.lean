@@ -479,6 +479,12 @@ theorem map_trans {H'' : Type*} [AddCommGroup H''] [Module K H'']
     (e : H ≃ₗ[K] H') (f : H' ≃ₗ[K] H'') : (R.map e).map f = R.map (e.trans f) := by
   ext <;> simp
 
+/-- Transporting `R` by `e.symm` gives `S` if and only if transporting `S` by `e` gives `R`. -/
+theorem map_symm_eq_iff {S : CartanRealization A H'} (e : H' ≃ₗ[K] H) :
+    R.map e.symm = S ↔ S.map e = R :=
+  ⟨fun h ↦ by rw [← h, map_trans, e.symm_trans_self, map_refl],
+   fun h ↦ by rw [← h, map_trans, e.self_trans_symm, map_refl]⟩
+
 /-- If the coroots span both realizations, there is a unique linear equivalence preserving
 all simple roots and coroots. Unlike the singular minimal case, the coroots form a basis. -/
 theorem existsUnique_linearEquiv_of_corootSpan_eq_top (S : CartanRealization A H')

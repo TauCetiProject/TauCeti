@@ -431,15 +431,15 @@ theorem exact_ker_comp {P : Type*} [AddCommGroup P] [Module R P] {π : P →ₗ[
 
 end ShortExact
 
-/-- If `M --f--> N --g--> P` is exact at `N` and both `M` and `P` are finite-dimensional, then so
-is `N`.
+/-- If `M --f--> N --g--> P` is exact at `N`, `M` is finite and `P` is a Noetherian module, then
+`N` is finite. For a division ring this is the finite-dimensional statement.
 
 This is deduced from `Module.Finite.of_exact`, which asks the second map to be surjective, by
-corestricting `g` to its range. -/
-theorem finiteDimensional_of_exact {k M N P : Type*} [DivisionRing k] [AddCommGroup M]
-    [Module k M] [AddCommGroup N] [Module k N] [AddCommGroup P] [Module k P] {f : M →ₗ[k] N}
-    {g : N →ₗ[k] P} (h : Function.Exact f g) [FiniteDimensional k M] [FiniteDimensional k P] :
-    FiniteDimensional k N :=
+corestricting `g` to its range, a submodule of the Noetherian module `P`. -/
+theorem _root_.Function.Exact.moduleFinite {R M N P : Type*} [Ring R] [AddCommGroup M]
+    [Module R M] [AddCommGroup N] [Module R N] [AddCommGroup P] [Module R P] {f : M →ₗ[R] N}
+    {g : N →ₗ[R] P} (h : Function.Exact f g) [Module.Finite R M] [IsNoetherian R P] :
+    Module.Finite R N :=
   Module.Finite.of_exact h.rangeRestrict g.surjective_rangeRestrict
 
 /-- Let `A → B → C` and `A → B' → C'` be exact with `A → B` and `A → B'` injective, let
@@ -457,7 +457,7 @@ theorem finrank_range_eq_finrank_range_add_of_exact_comp {k : Type*} [DivisionRi
     (hjπ : Function.Exact j (π ∘ₗ g')) (hπg : Function.Surjective (π ∘ₗ g')) :
     Module.finrank k (LinearMap.range g') =
       Module.finrank k (LinearMap.range g) + Module.finrank k W := by
-  have : FiniteDimensional k B' := finiteDimensional_of_exact hjπ
+  have : FiniteDimensional k B' := hjπ.moduleFinite
   have e₁ := hfg.rangeRestrict.finrank_eq_add hf g.surjective_rangeRestrict
   have e₂ := hfg'.rangeRestrict.finrank_eq_add hf' g'.surjective_rangeRestrict
   have e₃ := hjπ.finrank_eq_add hj hπg
@@ -530,7 +530,7 @@ theorem sum_range_neg_one_pow_finrank_eq_of_exact (hfg : ∀ n, Function.Exact (
       finrank k (LinearMap.range (f i)) + finrank k (LinearMap.range (g i)) := by
     have := hA i hi
     have := hC i hi
-    have := finiteDimensional_of_exact (hfg i)
+    have := (hfg i).moduleFinite
     rw [← (g i).finrank_range_add_finrank_ker, (hfg i).linearMap_ker_eq, add_comm]
   have hC' (i : ℕ) (hi : i + 1 ≤ n) : finrank k (C (i + 1)) =
       finrank k (LinearMap.range (g (i + 1))) + finrank k (LinearMap.range (δ i)) := by
@@ -715,7 +715,7 @@ theorem finrank_sub_finrank_sub_finrank_of_exact
     (hfg : Function.Exact f g) (hgδ : Function.Exact g δ) (hδf : Function.Exact δ f') :
     (finrank k B : ℤ) - finrank k A - finrank k C =
       -(finrank k f.ker : ℤ) - finrank k f'.ker := by
-  have := TauCeti.finiteDimensional_of_exact hfg
+  have := hfg.moduleFinite
   have hB := f.finrank_eq_finrank_range_add_finrank_range_of_exact g hfg
   have hC := g.finrank_eq_finrank_range_add_finrank_range_of_exact δ hgδ
   have hA := f.finrank_range_add_finrank_ker

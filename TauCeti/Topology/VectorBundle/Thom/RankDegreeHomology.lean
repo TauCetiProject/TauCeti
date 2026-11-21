@@ -364,7 +364,7 @@ private theorem isIso_thomPairOverSingularHomologyFinrankInv_empty
     (hg : IsLocalFiberGenerator K F E g ε) :
     IsIso (thomPairOverSingularHomologyFinrankInv hg ∅) :=
   isIso_of_source_target_iso_zero _
-    (isZero_singularHomologyFunctor_zero_of_isEmpty _ _).isoZero
+    (isZero_singularHomology_of_isEmpty _ _ _).isoZero
     (isZero_singularHomology_thomPairOver_empty _ _).isoZero
 
 /-- Over `W ⊆ W'`, with the map over `W'` an isomorphism, the restriction from `W` to `W'` read
