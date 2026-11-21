@@ -21,12 +21,11 @@ independence across matrix sizes.
 
 ## Main results
 
-* `TauCeti.Probability.ae_tendsto_spectralMeasure_wignerMatrix_of_seq`,
-  `TauCeti.Probability.ae_tendsto_spectralMeasure_wignerMatrix`, and
-  `TauCeti.Probability.ae_tendsto_spectralMeasure_wignerMatrix_of_identDistrib`: almost-sure weak
-  convergence to `semicircleReal 0 s`.
-* `TauCeti.Probability.tendsto_integral_spectralMeasure_wignerMatrix_sub_semicircleReal_probability`
-  and `TauCeti.Probability.tendsto_integral_spectralMeasure_wignerMatrix_sub_semicircleReal_probability_of_identDistrib`:
+* `ae_tendsto_spectralMeasure_wignerMatrix_of_seq`, `ae_tendsto_spectralMeasure_wignerMatrix`,
+  and `ae_tendsto_spectralMeasure_wignerMatrix_of_identDistrib`: almost-sure weak convergence to
+  `semicircleReal 0 s`.
+* `tendsto_integral_spectralMeasure_wignerMatrix_sub_semicircleReal_probability` and
+  `tendsto_integral_spectralMeasure_wignerMatrix_sub_semicircleReal_probability_of_identDistrib`:
   convergence in probability of bounded continuous linear statistics on varying probability spaces.
 
 ## References

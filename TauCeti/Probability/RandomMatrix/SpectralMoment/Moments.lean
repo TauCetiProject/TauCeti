@@ -24,15 +24,15 @@ both convergence in probability (on possibly varying probability spaces) and alm
 
 ## Main results
 
-* `TauCeti.Probability.tendsto_integral_pow_spectralMeasure_wignerMatrix_sub_semicircleReal_probability`:
-  convergence in probability of the `k`-th empirical spectral moment to `∫ x, x ^ k ∂semicircleReal 0 s`
-  on possibly varying probability spaces under corner-local independence and uniform `2k`-th
-  moment bounds.
-* `TauCeti.Probability.ae_tendsto_integral_pow_spectralMeasure_wignerMatrix_of_seq`,
-  `TauCeti.Probability.ae_tendsto_integral_pow_spectralMeasure_wignerMatrix`, and
-  `TauCeti.Probability.ae_forall_tendsto_integral_pow_spectralMeasure_wignerMatrix`: almost-sure
-  convergence of empirical spectral moments to `∫ x, x ^ k ∂semicircleReal 0 s` for a sequence of
-  Wigner arrays (with no independence assumed across `n`) and for a single infinite array.
+* `tendsto_integral_pow_spectralMeasure_wignerMatrix_sub_semicircleReal_probability`:
+  convergence in probability of the `k`-th empirical spectral moment to
+  `∫ x, x ^ k ∂semicircleReal 0 s` on possibly varying probability spaces under corner-local
+  independence and uniform `2k`-th moment bounds.
+* `ae_tendsto_integral_pow_spectralMeasure_wignerMatrix_of_seq`,
+  `ae_tendsto_integral_pow_spectralMeasure_wignerMatrix`, and
+  `ae_forall_tendsto_integral_pow_spectralMeasure_wignerMatrix`: almost-sure convergence of
+  empirical spectral moments to `∫ x, x ^ k ∂semicircleReal 0 s` for a sequence of Wigner arrays
+  (with no independence assumed across `n`) and for a single infinite array.
 
 ## References
 
@@ -60,6 +60,22 @@ private def padZeroOffDiag {Ω : Type*} (ξ : StrictUpper → Ω → ℂ) (n : �
 private def padZeroDiag {Ω : Type*} (η : ℕ → Ω → ℝ) (n : ℕ) : ℕ → Ω → ℝ :=
   fun i ω ↦ if i < n then η i ω else 0
 
+private theorem padZeroOffDiag_of_lt {Ω : Type*} (ξ : StrictUpper → Ω → ℂ) {n : ℕ}
+    {ij : StrictUpper} (h : ij.val.2 < n) : padZeroOffDiag ξ n ij = ξ ij := by
+  ext ω; simp [padZeroOffDiag, h]
+
+private theorem padZeroOffDiag_of_not_lt {Ω : Type*} (ξ : StrictUpper → Ω → ℂ) {n : ℕ}
+    {ij : StrictUpper} (h : ¬ ij.val.2 < n) : padZeroOffDiag ξ n ij = 0 := by
+  ext ω; simp [padZeroOffDiag, h]
+
+private theorem padZeroDiag_of_lt {Ω : Type*} (η : ℕ → Ω → ℝ) {n : ℕ} {i : ℕ} (h : i < n) :
+    padZeroDiag η n i = η i := by
+  ext ω; simp [padZeroDiag, h]
+
+private theorem padZeroDiag_of_not_lt {Ω : Type*} (η : ℕ → Ω → ℝ) {n : ℕ} {i : ℕ} (h : ¬ i < n) :
+    padZeroDiag η n i = 0 := by
+  ext ω; simp [padZeroDiag, h]
+
 private theorem wignerMatrix_padZero_eq {Ω : Type*} (ξ : StrictUpper → Ω → ℂ)
     (η : ℕ → Ω → ℝ) (n : ℕ) (ω : Ω) :
     wignerMatrix (padZeroOffDiag ξ n) (padZeroDiag η n) n ω = wignerMatrix ξ η n ω :=
@@ -78,7 +94,9 @@ private theorem iIndepFun_padZero {Ω : Type*} [MeasurableSpace Ω] {P : Measure
     Sum.map Subtype.val Subtype.val
   refine iIndepFun_of_ae_eq_const_outside_range (e := e) ?_ ?_
   · refine hindep.congr fun r ↦ .of_forall fun ω ↦ ?_
-    rcases r with ⟨ij, hij⟩ | ⟨i, hi⟩ <;> simp [e, padZeroOffDiag, padZeroDiag, hij, hi]
+    rcases r with ⟨ij, hij⟩ | ⟨i, hi⟩
+    · simp [e, padZeroOffDiag, hij]
+    · simp [e, padZeroDiag, hi]
   · intro idx hnot
     refine ⟨0, .of_forall fun ω ↦ ?_⟩
     rcases idx with ij | i
@@ -102,23 +120,37 @@ private theorem variance_integral_pow_spectralMeasure_wignerMatrix_le_of_lt
     Var[fun ω ↦ ∫ x, x ^ k ∂((wignerMatrix ξ η (n + 1) ω).spectralMeasure
       (wignerMatrix_isHermitian ξ η ω (n + 1)) : Measure ℝ); P] ≤
       2 * (k : ℝ) ^ (2 * k) * B / (n + 1 : ℝ) ^ 2 := by
+  have := hindep.isProbabilityMeasure
   have hB : 0 ≤ B :=
     (integral_nonneg fun ω ↦ pow_nonneg (norm_nonneg (η 0 ω)) _).trans
       (hη 0 (Nat.zero_lt_succ n))
+  have h0B : ∫ _ω : Ω, (0 : ℝ) ^ (2 * k) ∂P ≤ B := by
+    rcases eq_or_ne k 0 with rfl | hk
+    · simpa using hη 0 (Nat.zero_lt_succ n)
+    · simpa [hk] using hB
   have hvar := variance_integral_pow_spectralMeasure_wignerMatrix_le
     (ξ := padZeroOffDiag ξ (n + 1)) (η := padZeroDiag η (n + 1)) (k := k) (B := B)
     (iIndepFun_padZero hindep)
-    (fun ij ↦ by dsimp [padZeroOffDiag]; split_ifs with h; exacts [hξzero ij h, by simp])
-    (fun i ↦ by dsimp [padZeroDiag]; split_ifs with h; exacts [hηzero i h, by simp])
-    (fun ij ↦ by dsimp [padZeroOffDiag]; split_ifs with h; exacts [hξp ij h, .zero])
-    (fun i ↦ by dsimp [padZeroDiag]; split_ifs with h; exacts [hηp i h, .zero])
+    (fun ij ↦ by by_cases h : ij.val.2 < n + 1 <;> simp [padZeroOffDiag, h, hξzero])
+    (fun i ↦ by by_cases h : i < n + 1 <;> simp [padZeroDiag, h, hηzero])
     (fun ij ↦ by
-      dsimp [padZeroOffDiag]; split_ifs with h
-      exacts [hξ ij h, by simpa using hB])
+      by_cases h : ij.val.2 < n + 1
+      · rw [padZeroOffDiag_of_lt _ h]; exact hξp ij h
+      · rw [padZeroOffDiag_of_not_lt _ h]; exact MemLp.zero)
     (fun i ↦ by
-      dsimp [padZeroDiag]; split_ifs with h
-      exacts [hη i h, by simpa using hB]) n
-  simpa only [wignerMatrix_padZero_eq] using hvar
+      by_cases h : i < n + 1
+      · rw [padZeroDiag_of_lt _ h]; exact hηp i h
+      · rw [padZeroDiag_of_not_lt _ h]; exact MemLp.zero)
+    (fun ij ↦ by
+      by_cases h : ij.val.2 < n + 1
+      · simpa [padZeroOffDiag, h] using hξ ij h
+      · simpa [padZeroOffDiag, h] using h0B)
+    (fun i ↦ by
+      by_cases h : i < n + 1
+      · simpa [padZeroDiag, h] using hη i h
+      · simpa [padZeroDiag, h] using h0B) n
+  simp_rw [wignerMatrix_padZero_eq] at hvar
+  exact hvar
 
 private theorem memLp_integral_pow_spectralMeasure_wignerMatrix_of_lt
     {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} [IsFiniteMeasure P]
@@ -130,12 +162,15 @@ private theorem memLp_integral_pow_spectralMeasure_wignerMatrix_of_lt
   have hm := memLp_integral_pow_spectralMeasure_wignerMatrix (p := 2) (k := k)
     (ξ := padZeroOffDiag ξ (n + 1)) (η := padZeroDiag η (n + 1))
     (fun ij ↦ by
-      dsimp [padZeroOffDiag]; split_ifs with h
-      exacts [by simpa only [Nat.cast_mul, Nat.cast_ofNat] using hξp ij h, .zero])
+      by_cases h : ij.val.2 < n + 1
+      · rw [padZeroOffDiag_of_lt _ h]; exact_mod_cast hξp ij h
+      · rw [padZeroOffDiag_of_not_lt _ h]; exact MemLp.zero)
     (fun i ↦ by
-      dsimp [padZeroDiag]; split_ifs with h
-      exacts [by simpa only [Nat.cast_mul, Nat.cast_ofNat] using hηp i h, .zero]) n
-  simpa only [wignerMatrix_padZero_eq] using hm
+      by_cases h : i < n + 1
+      · rw [padZeroDiag_of_lt _ h]; exact_mod_cast hηp i h
+      · rw [padZeroDiag_of_not_lt _ h]; exact MemLp.zero) n
+  simp_rw [wignerMatrix_padZero_eq] at hm
+  exact hm
 
 end CornerHelpers
 
