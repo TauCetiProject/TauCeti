@@ -37,6 +37,9 @@ this says that `F ↦ exp (i F) - 1` has derivative `G ↦ i (1 + (exp (i F) - 1
 (`TauCeti.Vortex.hasFDerivAt_subOne_expGauge`). The derivative is an affine function of the value,
 so the map is smooth (`TauCeti.Vortex.contDiff_subOne_expGauge`), and the embedding `u ↦ u - 1`
 of `G_s` into `H^s(ℂ)` is smooth (`TauCeti.Vortex.SobolevTopologicalGaugeGroup.contMDiff_subOne`).
+Since `Re u - 1 = ((u - 1) + (u⁻¹ - 1)) / 2` and `Im u = -i ((u - 1) - (u⁻¹ - 1)) / 2`, the
+coordinates `Re u - 1` and `Im u` are smooth too, with derivatives `0` and `G ↦ G` at the identity
+in exponential coordinates.
 
 ## Main results
 
@@ -49,6 +52,14 @@ of `G_s` into `H^s(ℂ)` is smooth (`TauCeti.Vortex.SobolevTopologicalGaugeGroup
 * `TauCeti.Vortex.contMDiff_gaugeChart_symm`, `TauCeti.Vortex.contMDiff_expGauge`: the inverse
   charts `F ↦ u exp (i F)`, and in particular the exponential, are smooth.
 * `TauCeti.Vortex.SobolevTopologicalGaugeGroup.contMDiff_subOne`: `u ↦ u - 1` is smooth.
+* `TauCeti.Vortex.SobolevTopologicalGaugeGroup.contMDiff_reSubOne`,
+  `TauCeti.Vortex.SobolevTopologicalGaugeGroup.contMDiff_imPart`: `u ↦ Re u - 1` and `u ↦ Im u`
+  are smooth.
+* `TauCeti.Vortex.hasFDerivAt_subOne_inv_expGauge_zero`,
+  `TauCeti.Vortex.hasFDerivAt_reSubOne_expGauge_zero`,
+  `TauCeti.Vortex.hasFDerivAt_imPart_expGauge_zero`: at `F = 0`, the maps
+  `F ↦ exp (i F)⁻¹ - 1`, `F ↦ Re (exp (i F)) - 1` and `F ↦ Im (exp (i F))` have derivatives
+  `G ↦ -i G`, `0` and `G ↦ G`.
 
 ## References
 
@@ -171,6 +182,39 @@ theorem hasFDerivAt_subOne_expGauge_zero :
       (I • (realSubmodule ℂ (zero_le_one.trans hs.le)).subtypeL) 0 := by
   simpa using hasFDerivAt_subOne_expGauge (hs := hs) 0
 
+/-- `u⁻¹ - 1` at `u = exp (i F)` has derivative `G ↦ -i G` at `F = 0`. -/
+theorem hasFDerivAt_subOne_inv_expGauge_zero :
+    HasFDerivAt (fun F ↦ subOne (expGauge hs F)⁻¹)
+      (-(I • (realSubmodule ℂ (zero_le_one.trans hs.le)).subtypeL)) 0 := by
+  have hg : HasFDerivAt (fun F ↦ subOne (expGauge hs F))
+      (I • (realSubmodule ℂ (zero_le_one.trans hs.le)).subtypeL) (-0) := by
+    rw [neg_zero]
+    exact hasFDerivAt_subOne_expGauge_zero
+  have h := hg.comp (0 : realSubmodule ℂ (zero_le_one.trans hs.le)) (hasFDerivAt_id 0).neg
+  simp only [Function.comp_def, AddChar.map_neg_eq_inv] at h
+  exact h.congr_fderiv (ContinuousLinearMap.ext fun G ↦ by simp)
+
+/-- At `F = 0` the map `F ↦ Re (exp (i F)) - 1` from the real phases to `H^s(ℂ)` has derivative
+zero. -/
+theorem hasFDerivAt_reSubOne_expGauge_zero :
+    HasFDerivAt (fun F ↦ reSubOne (expGauge hs F))
+      (0 : realSubmodule ℂ (zero_le_one.trans hs.le) →L[ℝ] H^{s}(ℂ)) 0 := by
+  simp only [reSubOne_def]
+  exact ((hasFDerivAt_subOne_expGauge_zero.add hasFDerivAt_subOne_inv_expGauge_zero).const_smul
+    (2 : ℂ)⁻¹).congr_fderiv (by simp)
+
+/-- At `F = 0` the map `F ↦ Im (exp (i F))` from the real phases to `H^s(ℂ)` has derivative the
+inclusion `G ↦ G` of the real phases. -/
+theorem hasFDerivAt_imPart_expGauge_zero :
+    HasFDerivAt (fun F ↦ imPart (expGauge hs F))
+      (realSubmodule ℂ (zero_le_one.trans hs.le)).subtypeL 0 := by
+  simp only [imPart_def]
+  refine ((hasFDerivAt_subOne_expGauge_zero.sub hasFDerivAt_subOne_inv_expGauge_zero).const_smul
+    (-(I / 2))).congr_fderiv ?_
+  refine ContinuousLinearMap.ext fun G ↦ ?_
+  have hI : -(I / 2 * (2 * I)) = 1 := by linear_combination (-1 : ℂ) * I_sq
+  simp [← two_smul ℂ, smul_smul, hI]
+
 /-- **The exponential coordinate is smooth**: `F ↦ exp (i F) - 1` is a smooth map from the real
 `H^s` phases to `H^s(ℂ)`, `s > 1`. -/
 theorem contDiff_subOne_expGauge :
@@ -254,6 +298,28 @@ theorem contMDiff_subOne :
   rw [contMDiffAt_iff_source]
   simpa [Function.comp_def, subOne_mul] using
     (contMDiff_iff_contDiff.2 hg).contMDiffAt.contMDiffWithinAt
+
+/-- **`u ↦ Re u - 1` is smooth** from `G_s` to `H^s(ℂ)`, since
+`Re u - 1 = ((u - 1) + (u⁻¹ - 1)) / 2` and inversion is smooth. -/
+theorem contMDiff_reSubOne :
+    ContMDiff 𝓘(ℝ, realSubmodule ℂ (zero_le_one.trans hs.le)) 𝓘(ℝ, H^{s}(ℂ)) ∞
+      (reSubOne : SobolevTopologicalGaugeGroup hs → H^{s}(ℂ)) := by
+  convert (((2 : ℂ)⁻¹ • ContinuousLinearMap.id ℂ H^{s}(ℂ)).restrictScalars ℝ).contDiff
+    |>.comp_contMDiff
+            (contMDiff_subOne.add (contMDiff_subOne.comp (contMDiff_inv _ _))) using 1
+  funext u
+  simp [reSubOne_def]
+
+/-- **`u ↦ Im u` is smooth** from `G_s` to `H^s(ℂ)`, since `Im u = -i ((u - 1) - (u⁻¹ - 1)) / 2`
+and inversion is smooth. -/
+theorem contMDiff_imPart :
+    ContMDiff 𝓘(ℝ, realSubmodule ℂ (zero_le_one.trans hs.le)) 𝓘(ℝ, H^{s}(ℂ)) ∞
+      (imPart : SobolevTopologicalGaugeGroup hs → H^{s}(ℂ)) := by
+  convert ((-(I / 2) • ContinuousLinearMap.id ℂ H^{s}(ℂ)).restrictScalars ℝ).contDiff
+    |>.comp_contMDiff
+      (contMDiff_subOne.sub (contMDiff_subOne.comp (contMDiff_inv _ _))) using 1
+  funext u
+  simp [imPart_def]
 
 end SobolevTopologicalGaugeGroup
 
