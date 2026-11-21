@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Quotient.AssociatedBundle
 public import TauCeti.Geometry.Manifold.VectorBundle.FiniteRank.Picard
 public import TauCeti.GroupTheory.OrderOfElement.Basic
+public import TauCeti.Topology.Covering.CharacterBundle
 public import TauCeti.Topology.Covering.Quotient
 public import Mathlib.GroupTheory.OrderOfElement
 
@@ -29,6 +30,7 @@ isomorphisms (using the categorical tensor power `TauCeti.tensorPow`):
 
 * `L_1 ≅ 𝟙_` (`characterContMDiffCoreOneIso`),
 * `L_χ ⊗ L_ψ ≅ L_{χ * ψ}` (`characterContMDiffCoreMulIso`),
+* `L_χ^* ≅ L_{χ⁻¹}` over a complete scalar field (`characterContMDiffCoreDualIso`),
 * `L_χ^{\otimes m} ≅ L_{χ ^ m}` (`characterContMDiffCoreTensorPowerIso`),
 * `L_χ^{\otimes \operatorname{orderOf} χ} ≅ 𝟙_` (`characterContMDiffCoreTensorPowerOrderOfIsoUnit`),
 * `L_χ^{\otimes \operatorname{Nat.card} G} ≅ 𝟙_`
@@ -58,10 +60,9 @@ on `E` is constant, so no nontrivial character admits a globally trivial line bu
 * `characterPicardHom_injective`: `(G →* ℂˣ) →* ContMDiffPicardGroup IB n X` is injective;
 * `orderOf_characterPicardHom_eq`: the order of `[L_χ]` in the holomorphic Picard group equals
   `orderOf χ`;
-* `exists_bundleDiffeomorph_characterCore_iff_eq`,
-  `exists_trivialization_baseSet_eq_univ_tensorPow_characterFiniteRankCore_iff_orderOf_dvd`, and
-  `isLeast_pos_trivialization_tensorPow_characterFiniteRankCore`: global-trivialization and
-  bundle-equivalence criteria for character line bundles and their tensor powers.
+* `exists_trivialization_baseSet_eq_univ_tensorPow_characterFiniteRankCore_iff_orderOf_dvd` and
+  `isLeast_pos_trivialization_tensorPow_characterFiniteRankCore`: global-trivialization criteria
+  for tensor powers of character line bundles.
 
 ## References
 
@@ -202,6 +203,28 @@ noncomputable def characterContMDiffCoreMulIso (χ ψ : G →* 𝕜ˣ) :
     FiniteRankBundleCore.hom_ext fun x ↦
       (FiniteRankBundleCore.fiberMap_constIso_inv _ _ _ x).trans
         (hp.fiberMap_characterFiniteRankCoreMulIso_inv χ ψ x).symm
+
+/-- Over a complete scalar field, the dual of `hp.characterContMDiffCore IB n χ` is canonically
+isomorphic in `ContMDiffFiniteRankBundleCore IB n X` to `hp.characterContMDiffCore IB n χ⁻¹`. -/
+noncomputable def characterContMDiffCoreDualIso [CompleteSpace 𝕜] (χ : G →* 𝕜ˣ) :
+    (hp.characterContMDiffCore IB n χ).dual ≅ hp.characterContMDiffCore IB n χ⁻¹ :=
+  ContMDiffFiniteRankBundleCore.constIso
+    (A := (hp.characterContMDiffCore IB n χ).dual)
+    (D := hp.characterContMDiffCore IB n χ⁻¹)
+    (hp.baseSet_dual_characterFiniteRankCore χ) (ContinuousLinearEquiv.refl 𝕜 (Fin 1 → 𝕜))
+    (hp.coordChange_characterFiniteRankCore_inv_intertwines χ)
+
+@[simp] theorem characterContMDiffCoreDualIso_hom_toHom [CompleteSpace 𝕜] (χ : G →* 𝕜ˣ) :
+    (hp.characterContMDiffCoreDualIso IB n χ).hom.toHom =
+      (hp.characterFiniteRankCoreInvIso χ).hom :=
+  (ContMDiffFiniteRankBundleCore.constIso_hom_toHom _ _ _).trans
+    (hp.characterFiniteRankCoreInvIso_def χ ▸ rfl)
+
+@[simp] theorem characterContMDiffCoreDualIso_inv_toHom [CompleteSpace 𝕜] (χ : G →* 𝕜ˣ) :
+    (hp.characterContMDiffCoreDualIso IB n χ).inv.toHom =
+      (hp.characterFiniteRankCoreInvIso χ).inv :=
+  (ContMDiffFiniteRankBundleCore.constIso_inv_toHom _ _ _).trans
+    (hp.characterFiniteRankCoreInvIso_def χ ▸ rfl)
 
 /-- **Tensor powers of a `C^n` character line bundle.** For every `m : ℕ`, the `m`-th tensor power
 of `hp.characterContMDiffCore IB n χ` is canonically isomorphic to
@@ -633,19 +656,6 @@ theorem orderOf_characterPicardHom_eq_of_compactSpace_base [CompactSpace X] [Con
     orderOf (hp.characterPicardHom IB n χ) = orderOf χ :=
   have := hp.compactSpace
   hp.orderOf_characterPicardHom_eq hpd hn χ
-
-/-- When `E` is a compact connected complex manifold and `p : E → X` is differentiable (`n ≠ 0`),
-two character line bundles `hp.characterCore χ₁` and `hp.characterCore χ₂` are `C^n`
-bundle-equivalent (in particular holomorphically isomorphic at `n = ∞`) if and only if
-`χ₁ = χ₂`. -/
-theorem exists_bundleDiffeomorph_characterCore_iff_eq [CompactSpace E] [ConnectedSpace E]
-    (χ₁ χ₂ : G →* ℂˣ) :
-    (∃ e : ∀ x, (hp.characterCore χ₁).Fiber x ≃L[ℂ] (hp.characterCore χ₂).Fiber x,
-        ContMDiff (IB.prod 𝓘(ℂ)) (IB.prod 𝓘(ℂ)) n
-          (fun p : (hp.characterCore χ₁).TotalSpace ↦ TotalSpace.mk' ℂ p.proj (e p.proj p.snd))) ↔
-      χ₁ = χ₂ :=
-  hp.exists_bundleDiffeomorph_characterCore_iff_eq_of_injective
-    (hp.characterPicardHom_injective hpd hn) χ₁ χ₂
 
 /-- When `E` is a compact connected complex manifold and `p : E → X` is differentiable (`n ≠ 0`),
 the `m`-th tensor power `tensorPow (hp.characterFiniteRankCore χ) m` admits a global compatible

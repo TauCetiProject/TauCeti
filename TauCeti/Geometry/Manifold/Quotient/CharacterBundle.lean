@@ -5,23 +5,23 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Quotient.Picard
+public import TauCeti.Geometry.Manifold.Quotient.AssociatedBundle
 public import TauCeti.Topology.Covering.CharacterBundle
+import TauCeti.Geometry.Manifold.VectorBundle.FiniteRank.Basic
+import TauCeti.Geometry.Manifold.VectorBundle.FiniteRank.Dual
 
 /-!
 # Duals of character line bundles
 
 Let `p : E → X` be a quotient covering map for a group `G` (`IsQuotientCoveringMap p G`) over a
-charted space `X`. Building on `IsQuotientCoveringMap.characterContMDiffCore IB n χ` from
-`TauCeti.Geometry.Manifold.Quotient.Picard` and
+charted space `X`. Building on `IsQuotientCoveringMap.characterFiniteRankCore χ` from
+`TauCeti.Geometry.Manifold.Quotient.AssociatedBundle` and
 `IsQuotientCoveringMap.characterFiniteRankCoreInvIso` from
 `TauCeti.Topology.Covering.CharacterBundle`, this file provides:
 
-* `IsQuotientCoveringMap.characterContMDiffCoreDualIso` and
-  `IsQuotientCoveringMap.characterFiniteRankCoreInvDiffeomorph`: over a complete scalar field, the
-  dual `(hp.characterContMDiffCore IB n χ).dual` is canonically isomorphic in
-  `ContMDiffFiniteRankBundleCore IB n X` to `hp.characterContMDiffCore IB n χ⁻¹`, with glued
-  `C^n` total-space equivalence over `X`.
+* `IsQuotientCoveringMap.characterFiniteRankCoreInvDiffeomorph`: over a complete scalar field, a
+  glued `C^n` total-space equivalence over `X` identifying
+  `(hp.characterFiniteRankCore χ).dual` with `hp.characterFiniteRankCore χ⁻¹`.
 
 ## References
 
@@ -42,34 +42,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {IB : ModelWithCorners 𝕜 EB HB}
   {E X G : Type*} [TopologicalSpace E] [TopologicalSpace X] [ChartedSpace HB X]
   [Group G] [MulAction G E] {p : E → X} (hp : IsQuotientCoveringMap p G) {n : ℕ∞ω}
-
-section
-
-variable (IB n) [CompleteSpace 𝕜]
-
-/-- Over a complete scalar field, the dual of `hp.characterContMDiffCore IB n χ` is canonically
-isomorphic in `ContMDiffFiniteRankBundleCore IB n X` to `hp.characterContMDiffCore IB n χ⁻¹`. -/
-noncomputable def characterContMDiffCoreDualIso (χ : G →* 𝕜ˣ) :
-    (hp.characterContMDiffCore IB n χ).dual ≅ hp.characterContMDiffCore IB n χ⁻¹ :=
-  ContMDiffFiniteRankBundleCore.constIso
-    (A := (hp.characterContMDiffCore IB n χ).dual)
-    (D := hp.characterContMDiffCore IB n χ⁻¹)
-    (hp.baseSet_dual_characterFiniteRankCore χ) (ContinuousLinearEquiv.refl 𝕜 (Fin 1 → 𝕜))
-    (hp.coordChange_characterFiniteRankCore_inv_intertwines χ)
-
-@[simp] theorem characterContMDiffCoreDualIso_hom_toHom (χ : G →* 𝕜ˣ) :
-    (hp.characterContMDiffCoreDualIso IB n χ).hom.toHom =
-      (hp.characterFiniteRankCoreInvIso χ).hom :=
-  (ContMDiffFiniteRankBundleCore.constIso_hom_toHom _ _ _).trans
-    (hp.characterFiniteRankCoreInvIso_def χ ▸ rfl)
-
-@[simp] theorem characterContMDiffCoreDualIso_inv_toHom (χ : G →* 𝕜ˣ) :
-    (hp.characterContMDiffCoreDualIso IB n χ).inv.toHom =
-      (hp.characterFiniteRankCoreInvIso χ).inv :=
-  (ContMDiffFiniteRankBundleCore.constIso_inv_toHom _ _ _).trans
-    (hp.characterFiniteRankCoreInvIso_def χ ▸ rfl)
-
-end
 
 /-- Over a complete scalar field, the `C^n` bundle equivalence identifying
 `(hp.characterFiniteRankCore χ).dual` with `hp.characterFiniteRankCore χ⁻¹` over the identity of

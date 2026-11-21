@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Core.Trivial
 public import TauCeti.Geometry.Manifold.VectorBundle.FrameTrivialization
 public import TauCeti.Topology.Covering.AssociatedBundle
 import TauCeti.Algebra.Group.Hom.Defs
+import TauCeti.Geometry.Manifold.MFDeriv.Constancy
 import TauCeti.Geometry.Manifold.VectorBundle.FiniteRank.Basic
 
 /-!
@@ -57,9 +58,11 @@ the maximum principle). Hence the holomorphic sections of the bundle associated 
 correspond to the `ρ`-invariant vectors of `F`
 (`IsQuotientCoveringMap.mdifferentiable_section_associatedCore_iff_exists_eq_const`),
 the line bundle of a nontrivial character has no nonzero holomorphic section
-(`IsQuotientCoveringMap.eq_zero_of_contMDiff_section_characterCore`), and the line bundle of `χ` is
+(`IsQuotientCoveringMap.eq_zero_of_contMDiff_section_characterCore`), the line bundle of `χ` is
 holomorphically trivial exactly when `χ = 1`
-(`IsQuotientCoveringMap.exists_trivialization_baseSet_eq_univ_characterCore_iff_eq_one`).
+(`IsQuotientCoveringMap.exists_trivialization_baseSet_eq_univ_characterCore_iff_eq_one`), and
+two character line bundles are holomorphically isomorphic over `X` exactly when their characters
+coincide (`IsQuotientCoveringMap.exists_bundleDiffeomorph_characterCore_iff_eq`).
 
 ## Main results
 
@@ -82,15 +85,17 @@ holomorphically trivial exactly when `χ = 1`
   over `X` have constant equivariant functions upstairs with `ρ`-invariant values.
 * `IsQuotientCoveringMap.eq_zero_of_mdifferentiable_section_characterCore`,
   `IsQuotientCoveringMap.eq_zero_of_contMDiff_section_characterCore`,
-  `IsQuotientCoveringMap.exists_trivialization_baseSet_eq_univ_characterCore_iff_eq_one`: if `p`
-  is differentiable with compact connected complex covering manifold `E`, the line bundle of a
-  nontrivial character over `X` has no nonzero holomorphic section and is not holomorphically
-  trivial. The analogous vanishing results for rank-one representations and the triviality
-  criterion for arbitrary representations are
+  `IsQuotientCoveringMap.exists_trivialization_baseSet_eq_univ_characterCore_iff_eq_one`,
+  `IsQuotientCoveringMap.exists_bundleDiffeomorph_characterCore_iff_eq`: if `p` is differentiable
+  with compact connected complex covering manifold `E`, the line bundle of a nontrivial character
+  over `X` has no nonzero holomorphic section, is not holomorphically trivial, and distinct
+  characters yield non-isomorphic line bundles. The analogous vanishing results for rank-one
+  representations and the triviality criterion for arbitrary representations are
   `IsQuotientCoveringMap.eq_zero_of_mdifferentiable_section_associatedCore`,
   `IsQuotientCoveringMap.eq_zero_of_contMDiff_section_associatedCore`, and
   `IsQuotientCoveringMap.exists_trivialization_baseSet_eq_univ_associatedCore_iff_eq_one`.
 * `IsQuotientCoveringMap.contMDiffOn_inChartCoordinates_characterCoreHomEquiv_iff`,
+  `IsQuotientCoveringMap.contMDiff_totalSpaceMap_characterCoreHomEquiv_iff`,
   `IsQuotientCoveringMap.characterCoreDiffeomorphOfSectionNeZero`,
   `IsQuotientCoveringMap.exists_bundleDiffeomorph_characterCore_iff_exists_trivialization`, and
   `IsQuotientCoveringMap.exists_bundleDiffeomorph_characterCore_iff`: twisting cocycle morphisms by
@@ -396,20 +401,14 @@ private theorem contMDiffOn_deckChange_smul (ψ : G →* 𝕜ˣ) {e e' : E}
         (hp.isLocalHomeomorph.localInverseAt e').source)) :
     ContMDiffOn IB 𝓘(𝕜, 𝕜 →L[𝕜] 𝕜) n (fun x ↦ (ψ (hp.deckChange e e' x) : 𝕜) • g x)
       ((hp.isLocalHomeomorph.localInverseAt e).source ∩
-        (hp.isLocalHomeomorph.localInverseAt e').source) := by
-  have hU : IsOpen ((hp.isLocalHomeomorph.localInverseAt e).source ∩
-      (hp.isLocalHomeomorph.localInverseAt e').source) :=
-    (hp.isLocalHomeomorph.localInverseAt e).open_source.inter
-      (hp.isLocalHomeomorph.localInverseAt e').open_source
-  intro x₀ hx₀
-  have hAt : ContMDiffAt IB 𝓘(𝕜, 𝕜 →L[𝕜] 𝕜) n
-      (fun x ↦ (ψ (hp.deckChange e e' x₀) : 𝕜) • g x) x₀ :=
-    (((ψ (hp.deckChange e e' x₀) : 𝕜) •
-      ContinuousLinearMap.id 𝕜 (𝕜 →L[𝕜] 𝕜)).contDiff.comp_contMDiffAt
-      (hg.contMDiffAt (hU.mem_nhds hx₀)))
-  exact (hAt.congr_of_eventuallyEq <|
-    Filter.Eventually.mono (hp.eventually_deckChange_eq hx₀) fun _ hx ↦ by
-      rw [hx]).contMDiffWithinAt
+        (hp.isLocalHomeomorph.localInverseAt e').source) :=
+  have hψ : ContMDiffOn IB 𝓘(𝕜) n (fun x ↦ (ψ (hp.deckChange e e' x) : 𝕜))
+      ((hp.isLocalHomeomorph.localInverseAt e).source ∩
+        (hp.isLocalHomeomorph.localInverseAt e').source) :=
+    TauCeti.contMDiffOn_of_eventuallyEq_const fun _ hx ↦
+      ((hp.eventually_deckChange_eq hx).mono fun _ h ↦ congrArg (fun g ↦ (ψ g : 𝕜)) h).filter_mono
+        nhdsWithin_le_nhds
+  hψ.smul hg
 
 /-- Twisting a cocycle morphism via `hp.characterCoreHomEquiv χ₁ χ₂` preserves `C^n` regularity of
 every chart operator. -/
@@ -431,6 +430,17 @@ theorem contMDiffOn_inChartCoordinates_characterCoreHomEquiv_iff (χ₁ χ₂ : 
     fun ha ↦ (hp.contMDiffOn_deckChange_smul χ₁⁻¹ ha).congr fun x hx ↦ ?_⟩
   rw [hp.inChartCoordinates_characterCore_eq_smul χ₁ χ₂ a.fiberMap e e' hx, MonoidHom.inv_apply,
     smul_smul, ← Units.val_mul, inv_mul_cancel, Units.val_one, one_smul]
+
+/-- Twisting a cocycle morphism via `hp.characterCoreHomEquiv χ₁ χ₂` preserves `C^n` regularity of
+its glued total-space map. -/
+theorem contMDiff_totalSpaceMap_characterCoreHomEquiv_iff [CompleteSpace 𝕜] (χ₁ χ₂ : G →* 𝕜ˣ)
+    (a : CoordinateHom (hp.characterCore χ₁) (hp.characterCore χ₂)) :
+    ContMDiff (IB.prod 𝓘(𝕜)) (IB.prod 𝓘(𝕜)) n
+        (hp.characterCoreHomEquiv χ₁ χ₂ a).totalSpaceMap ↔
+      ContMDiff (IB.prod 𝓘(𝕜)) (IB.prod 𝓘(𝕜)) n a.totalSpaceMap := by
+  rw [CoordinateHom.contMDiff_totalSpaceMap_iff, CoordinateHom.contMDiff_totalSpaceMap_iff]
+  exact forall₂_congr fun e e' ↦
+    hp.contMDiffOn_inChartCoordinates_characterCoreHomEquiv_iff χ₁ χ₂ a e e'
 
 /-- The canonical unit section `x ↦ 1` of `hp.characterCore 1` is `C^n` at every regularity. -/
 theorem contMDiff_one_section_characterCore_one :
@@ -594,8 +604,9 @@ theorem exists_bundleDiffeomorph_characterCore_iff_exists_trivialization (χ₁ 
   rintro ⟨e, he⟩
   obtain ⟨a, ha, hbij, -⟩ := CoordinateHom.exists_toDiffeomorph_eq e he
   let b := hp.characterCoreHomEquiv χ₁ χ₂ a
-  have hbtot := b.contMDiff_totalSpaceMap fun i j ↦
-    (hp.contMDiffOn_inChartCoordinates_characterCoreHomEquiv_iff χ₁ χ₂ a i j).2 (ha i j)
+  have hbtot : ContMDiff (IB.prod 𝓘(𝕜)) (IB.prod 𝓘(𝕜)) n b.totalSpaceMap :=
+    (hp.contMDiff_totalSpaceMap_characterCoreHomEquiv_iff χ₁ χ₂ a).2
+      (a.contMDiff_totalSpaceMap ha)
   refine ⟨fun x ↦ b.fiberMap x (1 : 𝕜),
     (hbtot.comp hp.contMDiff_one_section_characterCore_one).congr fun x ↦
       (CoordinateHom.totalSpaceMap_mk b x (1 : 𝕜)).symm, fun x h0 ↦ ?_⟩
@@ -766,5 +777,21 @@ theorem exists_trivialization_baseSet_eq_univ_characterCore_iff_eq_one [Connecte
     hp.exists_trivialization_baseSet_eq_univ_associatedCore_iff_eq_one _ hpd hn]
   exact MonoidHom.comp_eq_one_iff (Units.map_injective
     (FaithfulSMul.algebraMap_injective ℂ (ℂ →L[ℂ] ℂ)))
+
+/-- When `E` is a compact connected complex manifold and `p : E → X` is differentiable (`n ≠ 0`),
+two character line bundles `hp.characterCore χ₁` and `hp.characterCore χ₂` are `C^n`
+bundle-equivalent (in particular holomorphically isomorphic at `n = ∞`) if and only if
+`χ₁ = χ₂`. -/
+theorem exists_bundleDiffeomorph_characterCore_iff_eq [ConnectedSpace E]
+    (hn : n ≠ 0) (χ₁ χ₂ : G →* ℂˣ) :
+    (∃ e : ∀ x, (hp.characterCore χ₁).Fiber x ≃L[ℂ] (hp.characterCore χ₂).Fiber x,
+        ContMDiff (IB.prod 𝓘(ℂ)) (IB.prod 𝓘(ℂ)) n
+          (fun p : (hp.characterCore χ₁).TotalSpace ↦ TotalSpace.mk' ℂ p.proj (e p.proj p.snd))) ↔
+      χ₁ = χ₂ :=
+  ((hp.exists_bundleDiffeomorph_characterCore_iff_exists_trivialization χ₁ χ₂).trans
+    (hp.exists_trivialization_baseSet_eq_univ_characterCore_iff_eq_one hpd hn
+      (χ₁⁻¹ * χ₂))).trans
+    ⟨fun h ↦ DFunLike.ext _ _ fun g ↦ inv_mul_eq_one.1 (DFunLike.congr_fun h g),
+      fun h ↦ h ▸ DFunLike.ext _ _ fun g ↦ inv_mul_cancel (χ₁ g)⟩
 
 end IsQuotientCoveringMap
