@@ -163,14 +163,10 @@ section Uniqueness
 symbol have the same homogeneous terms. -/
 theorem term_eq_of_toLocalSymbol_eq {a b : LocalClassicalSymbol U V W m}
     (h : a.toLocalSymbol = b.toLocalSymbol) (j : ℕ) : a.term j = b.term j := by
-  refine LocalHomogeneousSymbol.ext_of_mem fun x hx ξ _ => ?_
-  obtain ⟨ψ, hψ, -, hψ1, -, hψU⟩ :=
-    isCompact_singleton.exists_contDiff_cutoff_eventuallyEq_one U.isOpen
-      (singleton_subset_iff.2 hx)
-  have hext := congrArg (fun c : HomogeneousSymbol _ _ V W (m - j) => c.coefficient (x, ξ))
-    (ClassicalSymbol.term_eq_of_toSymbol_eq (a := extendAux ψ hψ hψU a)
-      (b := extendAux ψ hψ hψU b) (by rw [toSymbol_extendAux, toSymbol_extendAux, h]) j)
-  simpa [term_extendAux, (hψ1 x rfl).self_of_nhds] using hext
+  refine LocalHomogeneousSymbol.ext_of_extend fun ψ hψ hψU => ?_
+  simpa only [term_extendAux] using
+    ClassicalSymbol.term_eq_of_toSymbol_eq (a := extendAux ψ hψ hψU a)
+      (b := extendAux ψ hψ hψU b) (by rw [toSymbol_extendAux, toSymbol_extendAux, h]) j
 
 /-- A classical symbol on `U` is determined by its full symbol. -/
 @[ext]

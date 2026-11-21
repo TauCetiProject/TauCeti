@@ -484,7 +484,7 @@ theorem map_center_scChevalleyDatum_elementarySubgroup (K : Type v) [Field K] :
         Subgroup.centralizer ((t.scChevalleyDatum ht).rootTorusSubgroup K :
           Set ((t.scChevalleyDatum ht).points K)) := by
   rw [ChevalleyDatum.map_center_elementarySubgroup,
-    ← t.scChevalleyDatum_extendedElementarySubgroup_eq_elementarySubgroup ht K, inf_eq_right]
+    ← t.scChevalleyDatum_extendedElementarySubgroup ht K, inf_eq_right]
   refine inf_le_left.trans ?_
   rintro _ ⟨s, rfl⟩
   exact (t.scChevalleyDatum ht).torusPoints_mem_extendedElementarySubgroup K s

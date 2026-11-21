@@ -104,9 +104,7 @@ theorem blockLaw_apply_rectangle (μ : Measure Ω) (X : ι → Ω → α) {m : �
     (hXk : ∀ i, AEMeasurable (X (k i)) μ) (B : Fin m → Set α) (hB : ∀ i, MeasurableSet (B i)) :
     blockLaw μ X k (Set.univ.pi B) = μ {ω | ∀ i, X (k i) ω ∈ B i} := by
   rw [blockLaw_apply_of_measurable μ X k hXk (MeasurableSet.univ_pi hB)]
-  congr 1
-  ext ω
-  simp [Set.mem_preimage]
+  exact congrArg μ (Set.ext fun ω => by simp)
 
 @[simp]
 theorem prefixLaw_def (μ : Measure Ω) (X : ℕ → Ω → α) (n : ℕ) :
@@ -139,68 +137,50 @@ instance isProbabilityMeasure_prefixLaw (μ : Measure Ω) [IsProbabilityMeasure 
 `prefixLaw μ X n {w} = μ {ω | ∀ i, X i.val ω = w i}`. The singleton specialization of
 `blockLaw_apply_of_measurable` along the prefix selection. -/
 theorem prefixLaw_singleton_eq_measure [MeasurableSingletonClass α] {μ : Measure Ω}
-    {X : ℕ → Ω → α} (hX : ∀ i, AEMeasurable (X i) μ) {n : ℕ} (w : Fin n → α) :
+    {X : ℕ → Ω → α} {n : ℕ} (hX : ∀ i : Fin n, AEMeasurable (X i.val) μ) (w : Fin n → α) :
     prefixLaw μ X n {w} = μ {ω | ∀ i : Fin n, X i.val ω = w i} := by
-  rw [prefixLaw_def, blockLaw_apply_of_measurable μ X (fun i : Fin n => i.val)
-    (fun i => hX i.val) (measurableSet_singleton w)]
+  rw [prefixLaw_def, blockLaw_apply_of_measurable μ X (fun i : Fin n => i.val) hX
+    (measurableSet_singleton w)]
   exact congrArg μ (Set.ext fun ω => by simp [funext_iff, eq_comm])
 
-/-- The law of the first `n + 1` states at a single finite path is the measure of the event
-that the process follows any sequence extending that path. -/
+/-- The law of the first `n` states at a single finite path `w` is the measure of the event that
+the process follows any sequence `w'` extending that path. -/
 theorem prefixLaw_singleton_eq_measure_setOf [MeasurableSingletonClass α] {μ : Measure Ω}
-    {X : ℕ → Ω → α} (hX : ∀ i, AEMeasurable (X i) μ) {n : ℕ} (w : Fin (n + 1) → α) (w' : ℕ → α)
-    (hfin : ∀ (j : ℕ) (hj : j < n + 1), w' j = w ⟨j, hj⟩) :
-    prefixLaw μ X (n + 1) {w} = μ {ω | ∀ j ≤ n, X j ω = w' j} := by
+    {X : ℕ → Ω → α} {n : ℕ} (hX : ∀ i : Fin n, AEMeasurable (X i.val) μ) (w : Fin n → α)
+    (w' : ℕ → α) (hfin : ∀ (j : ℕ) (hj : j < n), w' j = w ⟨j, hj⟩) :
+    prefixLaw μ X n {w} = μ {ω | ∀ j < n, X j ω = w' j} := by
   rw [prefixLaw_singleton_eq_measure hX w]
-  congr 1
-  ext ω
-  simp only [Set.mem_ofPred_eq]
-  constructor
-  · intro h j hj
-    rw [hfin j (Nat.lt_succ_of_le hj)]
-    exact h ⟨j, Nat.lt_succ_of_le hj⟩
-  · intro h i
-    rw [← hfin i.val i.isLt]
-    exact h i.val (Nat.lt_succ_iff.1 i.isLt)
+  exact congrArg μ (Set.ext fun ω => Fin.forall_iff.trans (forall₂_congr fun j hj => by
+    rw [hfin j hj]))
 
 open Classical ProbabilityTheory in
 /-- The mass of a finite path after conditioning on an initial-state event. Paths whose initial
 state lies outside the conditioning set have zero mass, including when the conditioning event
 itself has zero mass. -/
 theorem prefixLaw_singleton_cond_initial_mem [MeasurableSingletonClass α] {μ : Measure Ω}
-    {X : ℕ → Ω → α} {S : Set α} (hX : ∀ i, AEMeasurable (X i) μ) (n : ℕ) (w : Fin (n + 1) → α) :
+    {X : ℕ → Ω → α} {S : Set α} (n : ℕ) (hX : ∀ i : Fin (n + 1), AEMeasurable (X i.val) μ)
+    (w : Fin (n + 1) → α) :
     prefixLaw μ[|{ω | X 0 ω ∈ S}] X (n + 1) {w} =
       (μ {ω | X 0 ω ∈ S})⁻¹ *
         (if w 0 ∈ S then prefixLaw μ X (n + 1) {w} else 0) := by
   let s : Set Ω := {ω | X 0 ω ∈ S}
-  have hac : μ[|s] ≪ μ := cond_absolutelyContinuous
-  have hXcond : ∀ i, AEMeasurable (X i) μ[|s] := fun i => (hX i).mono_ac hac
+  have hXcond : ∀ i : Fin (n + 1), AEMeasurable (X i.val) μ[|s] := fun i =>
+    (hX i).mono_ac cond_absolutelyContinuous
   -- `ProbabilityTheory.cond_apply` asks for a measurable conditioning event; instead the
   -- set of paths is null measurable, being a finite intersection of coordinate preimages
   have hpath : NullMeasurableSet {ω | ∀ i : Fin (n + 1), X i.val ω = w i} (μ.restrict s) := by
     rw [Set.ofPred_forall]
     exact (NullMeasurableSet.iInter fun i =>
-      (hX i.val).nullMeasurableSet_preimage (measurableSet_singleton (w i))).mono_ac
+      (hX i).nullMeasurableSet_preimage (measurableSet_singleton (w i))).mono_ac
         Measure.restrict_le_self.absolutelyContinuous
   rw [prefixLaw_singleton_eq_measure hXcond, ProbabilityTheory.cond, _root_.smul_apply,
-    Measure.restrict_apply₀ hpath, smul_eq_mul, Set.inter_comm,
-    prefixLaw_singleton_eq_measure hX]
+    Measure.restrict_apply₀ hpath, smul_eq_mul, prefixLaw_singleton_eq_measure hX]
+  -- a path spelling out `w` starts at `w 0`, so it lies in `s` exactly when `w 0 ∈ S`
+  have h0 : ∀ ω ∈ {ω | ∀ i : Fin (n + 1), X i.val ω = w i}, X 0 ω = w 0 := fun ω hp => hp 0
   split_ifs with hw
-  · congr 1
-    congr 1
-    ext ω
-    simp only [Set.mem_inter_iff, Set.mem_ofPred_eq]
-    constructor
-    · exact And.right
-    · intro hp
-      refine ⟨?_, hp⟩
-      have h0 : X 0 ω = w 0 := hp 0
-      simpa only [s, Set.mem_ofPred_eq, h0] using hw
-  · have hempty : s ∩ {ω | ∀ i : Fin (n + 1), X i.val ω = w i} = ∅ := by
-      apply Set.eq_empty_of_forall_notMem
-      intro ω hω
-      exact hw ((hω.2 0) ▸ hω.1)
-    rw [hempty, measure_empty]
+  · rw [Set.inter_eq_left.2 fun ω hp => by simpa [s, h0 ω hp] using hw]
+  · rw [Set.disjoint_iff_inter_eq_empty.1 (Set.disjoint_left.2 fun ω hp (hs : ω ∈ s) =>
+      hw (by simpa [s, h0 ω hp] using hs)), measure_empty]
 
 @[simp]
 theorem pathLaw_def (μ : Measure Ω) (X : ℕ → Ω → α) :
@@ -305,15 +285,10 @@ theorem prefixSplitEquiv_apply (r : ℕ) (f : ℕ → α) :
 @[simp]
 theorem prefixSplitEquiv_symm_apply (r : ℕ) (p : (Fin r → α) × (ℕ → α)) (n : ℕ) :
     (prefixSplitEquiv r).symm p n = if h : n < r then p.1 ⟨n, h⟩ else p.2 (n - r) := by
-  have key : (prefixSplitEquiv r).symm p
-      = fun n => if h : n < r then p.1 ⟨n, h⟩ else p.2 (n - r) := by
-    apply (prefixSplitEquiv r).injective
-    rw [MeasurableEquiv.apply_symm_apply, prefixSplitEquiv_apply]
-    refine Prod.ext (funext fun i => ?_) (funext fun j => ?_)
-    · simp only [dite_eq_left i.isLt, Fin.eta]
-    · have h : ¬ (r + j < r) := Nat.not_lt.mpr (Nat.le_add_right r j)
-      simp only [dite_eq_right h, Nat.add_sub_cancel_left]
-  rw [key]
+  suffices (prefixSplitEquiv r).symm p = fun n => if h : n < r then p.1 ⟨n, h⟩ else p.2 (n - r)
+    from congrFun this n
+  rw [MeasurableEquiv.symm_apply_eq, prefixSplitEquiv_apply]
+  ext <;> simp
 
 /-- The prefix law is the pushforward of the path law by `prefixProj`. -/
 theorem map_prefixProj_pathLaw (μ : Measure Ω) {X : ℕ → Ω → α}
