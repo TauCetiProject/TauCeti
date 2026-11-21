@@ -533,7 +533,7 @@ theorem transitiveGroupLabel_two_iff (j : TransitiveGroupIndex 2) (G : Subgroup 
   have htop : G = ⊤ := by
     refine eq_top_iff.mpr fun σ _ => ?_
     rcases hperm σ g hg1 with rfl | rfl
-    exacts [G.one_mem, g.2]
+    exacts [G.one_mem, g.property]
   rw [htop, referenceSubgroup_two]
   exact Subgroup.map_top_of_surjective _ (MulAut.conj 1).surjective
 

@@ -141,7 +141,7 @@ private lemma reduction_some_eq_mk_of_one_lt {x y : F} (h : W.Nonsingular x y)
     · rw [h0, mul_zero]; exact zero_lt_one
     · refine lt_of_lt_of_le ?_ hY1
       rw [hY, map_mul]
-      exact mul_lt_mul_of_pos_right hxy (zero_lt_iff.mpr h0)
+      exact mul_lt_mul_of_pos_right hxy (pos_iff_ne_zero.mpr h0)
   have hYu : IsUnit Y := by
     rcases hu with hX' | hY' | hZ'
     · exact absurd (hint.isUnit_iff_valuation_eq_one.mp hX') hX1.ne

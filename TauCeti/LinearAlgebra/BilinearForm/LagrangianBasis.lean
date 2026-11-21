@@ -27,8 +27,8 @@ the prescribed basis to the ambient space using Mathlib's `Subspace.dualLift`, t
 triangular combination of the original vectors to make them isotropic. The correction uses
 no division by two and is proved over a commutative ring.
 
-The resulting family is a basis by the Gram determinant criterion
-`LinearMap.BilinForm.linearIndependent_of_det_ne_zero` and dimension counting.
+The resulting family has Gram matrix `Matrix.J`, so it is a basis by
+`LinearMap.BilinForm.linearIndependent_of_apply_eq_J` and dimension counting.
 
 Our convention is Mathlib's `Matrix.J`: the dual vector pairs to `1` with its prescribed
 partner, and the prescribed vector pairs to `-1` with its dual.
@@ -111,11 +111,7 @@ theorem IsAlt.exists_basis_toMatrix_eq_J_inl_eq_of_finrank
         using (hB.neg_eq (f' j) (e i)).symm.trans (congrArg Neg.neg (hf'e j i))
     · simpa [d, Matrix.J, Matrix.fromBlocks, Matrix.one_apply] using hf'e i j
     · simpa [d, Matrix.J, Matrix.fromBlocks] using hf'f' i j
-  have hgram : (Matrix.of fun i j ↦ B (d i) (d j)) = Matrix.J ι K := Matrix.ext hd
-  have hli : LinearIndependent K d := by
-    apply B.linearIndependent_of_det_ne_zero
-    rw [hgram]
-    exact (Matrix.isUnit_det_J ι K).ne_zero
+  have hli : LinearIndependent K d := B.linearIndependent_of_apply_eq_J hd
   have hcard : Fintype.card (ι ⊕ ι) = finrank K V := by
     simpa using hdim
   let b := basisOfLinearIndependentOfCardEqFinrank' d hli hcard

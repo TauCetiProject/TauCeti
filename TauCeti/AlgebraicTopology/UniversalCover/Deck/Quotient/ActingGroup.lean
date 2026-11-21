@@ -72,7 +72,7 @@ def toDeckHom (hf : IsQuotientCoveringMap f G) : G →* deck f :=
 element. -/
 @[simp]
 lemma toDeckHom_apply (hf : IsQuotientCoveringMap f G) (g : G) (e : E) :
-    (hf.toDeckHom g).1 e = g • e := by
+    (hf.toDeckHom g).val e = g • e := by
   let := hf.toContinuousConstSMul
   rw [toDeckHom, MonoidHom.coe_mk, OneHom.coe_mk, Homeomorph.smul_apply]
 
@@ -80,7 +80,7 @@ lemma toDeckHom_apply (hf : IsQuotientCoveringMap f G) (g : G) (e : E) :
 translation by the inverse element. -/
 @[simp]
 lemma toDeckHom_symm_apply (hf : IsQuotientCoveringMap f G) (g : G) (e : E) :
-    (hf.toDeckHom g).1.symm e = g⁻¹ • e := by
+    (hf.toDeckHom g).val.symm e = g⁻¹ • e := by
   rw [Homeomorph.symm_apply_eq, hf.toDeckHom_apply, smul_inv_smul]
 
 /-- Passing from a group element to a deck transformation is injective, because the action
@@ -91,7 +91,7 @@ lemma toDeckHom_injective (hf : IsQuotientCoveringMap f G) [Nonempty E] :
   intro g g' hgg
   obtain ⟨e⟩ := ‹Nonempty E›
   have hsmul : g • e = g' • e := by
-    simpa using congrArg (fun φ : deck f => φ.1 e) hgg
+    simpa using congrArg (fun φ : deck f => φ.val e) hgg
   exact IsCancelSMul.right_cancel _ _ _ hsmul
 
 /-- Every deck transformation of a quotient covering map with preconnected total space is
@@ -122,14 +122,14 @@ noncomputable def deckMulEquiv (hf : IsQuotientCoveringMap f G) [PreconnectedSpa
 /-- On points, the isomorphism between the acting group and the deck group is translation. -/
 @[simp]
 lemma deckMulEquiv_apply (hf : IsQuotientCoveringMap f G) [PreconnectedSpace E] [Nonempty E]
-    (g : G) (e : E) : (hf.deckMulEquiv g).1 e = g • e := by
+    (g : G) (e : E) : (hf.deckMulEquiv g).val e = g • e := by
   rw [deckMulEquiv, MulEquiv.ofBijective_apply, hf.toDeckHom_apply]
 
 /-- The inverse isomorphism returns the group element whose translation is the given deck
 transformation. -/
 @[simp]
 lemma deckMulEquiv_symm_apply (hf : IsQuotientCoveringMap f G) [PreconnectedSpace E] [Nonempty E]
-    (φ : deck f) (e : E) : hf.deckMulEquiv.symm φ • e = φ.1 e :=
-  congrArg (fun ψ : deck f => ψ.1 e) (hf.deckMulEquiv.apply_symm_apply φ)
+    (φ : deck f) (e : E) : hf.deckMulEquiv.symm φ • e = φ.val e :=
+  congrArg (fun ψ : deck f => ψ.val e) (hf.deckMulEquiv.apply_symm_apply φ)
 
 end IsQuotientCoveringMap

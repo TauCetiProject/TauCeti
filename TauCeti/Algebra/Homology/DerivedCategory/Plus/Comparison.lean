@@ -251,7 +251,7 @@ private def degreeZeroComponent (n : ℕ) (X : C) (I : InjectiveResolution X) :
         ((TauCeti.DerivedCategory.Plus.singleFunctorIsoCompQ C 0).app X)) ≪≫
     F.rightDerivedFunctorPlusHomologyObjIsoOfResolution (extendResolution I) (n : ℤ) ≪≫
     HomologicalComplex.homologyMapIso
-      (ComplexShape.embeddingUpNat.mapExtendIso F I.cocomplex) (n : ℤ) ≪≫
+      (HomologicalComplex.mapExtendIso F I.cocomplex ComplexShape.embeddingUpNat) (n : ℤ) ≪≫
     ((F.mapHomologicalComplex (.up ℕ)).obj I.cocomplex).extendHomologyIso
       ComplexShape.embeddingUpNat (ComplexShape.embeddingUpNat_f n) ≪≫
     (I.isoRightDerivedObj F n).symm
@@ -263,7 +263,7 @@ private lemma degreeZeroComponent_hom (n : ℕ) (X : C) (I : InjectiveResolution
             ((TauCeti.DerivedCategory.Plus.singleFunctorIsoCompQ C 0).hom.app X)) ≫
         (F.rightDerivedFunctorPlusHomologyObjIsoOfResolution (extendResolution I) (n : ℤ)).hom ≫
         HomologicalComplex.homologyMap
-          (ComplexShape.embeddingUpNat.mapExtendIso F I.cocomplex).hom (n : ℤ) ≫
+          (HomologicalComplex.mapExtendIso F I.cocomplex ComplexShape.embeddingUpNat).hom (n : ℤ) ≫
         (((F.mapHomologicalComplex (.up ℕ)).obj I.cocomplex).extendHomologyIso
           ComplexShape.embeddingUpNat (ComplexShape.embeddingUpNat_f n)).hom ≫
         (I.isoRightDerivedObj F n).inv :=
@@ -316,7 +316,7 @@ private lemma degreeZeroComponent_hom_naturality (n : ℕ) {X Y : C} (f : X ⟶ 
     ((TauCeti.CochainComplex.Plus.singleFunctor C 0).map f) φExt
     (extendResolution_naturality f IX IY φ (InjectiveResolution.desc_commutes f IY IX)) (n : ℤ)
   have h3 := congrArg (fun g ↦ HomologicalComplex.homologyMap g (n : ℤ))
-    (ComplexShape.embeddingUpNat.mapExtendIso_hom_naturality F φ)
+    (HomologicalComplex.mapExtendIso_hom_naturality F φ ComplexShape.embeddingUpNat)
   simp only [HomologicalComplex.homologyMap_comp] at h3
   have h4 := HomologicalComplex.extendHomologyIso_hom_naturality
     ((F.mapHomologicalComplex (.up ℕ)).map φ) ComplexShape.embeddingUpNat
@@ -328,10 +328,7 @@ private lemma degreeZeroComponent_hom_naturality (n : ℕ) {X Y : C} (f : X ⟶ 
       (InjectiveResolution.desc_commutes_zero f IY IX) F n).symm
   rw [degreeZeroComponent_hom, degreeZeroComponent_hom]
   simp only [Category.assoc]
-  rw [reassoc_of% h1, reassoc_of% h2, reassoc_of% h3]
-  refine congrArg (_ ≫ ·) (congrArg (_ ≫ ·) (congrArg (_ ≫ ·) ?_))
-  exact (Category.assoc _ _ _).symm.trans ((congrArg (· ≫ _) h4).trans
-    ((Category.assoc _ _ _).trans ((congrArg (_ ≫ ·) h5).trans (Category.assoc _ _ _).symm)))
+  rw [reassoc_of% h1, reassoc_of% h2, reassoc_of% h3, reassoc_of% h4, h5]
 
 /-- **Degree-zero complexes recover classical right derived functors.** For every `n : ℕ`,
 `DerivedCategory.Plus.singleFunctor C 0 ⋙ F.rightDerivedFunctorPlus ⋙
@@ -367,7 +364,7 @@ lemma singleFunctorZeroCompRightDerivedFunctorPlusCompHomologyIso_hom_app_comp_i
                 (CochainComplex.plus_iff C _).2 ⟨0, inferInstance⟩⟩)
           (n : ℤ)).hom ≫
         HomologicalComplex.homologyMap
-          (ComplexShape.embeddingUpNat.mapExtendIso F I.cocomplex).hom (n : ℤ) ≫
+          (HomologicalComplex.mapExtendIso F I.cocomplex ComplexShape.embeddingUpNat).hom (n : ℤ) ≫
         (((F.mapHomologicalComplex (.up ℕ)).obj I.cocomplex).extendHomologyIso
           ComplexShape.embeddingUpNat (ComplexShape.embeddingUpNat_f n)).hom := by
   have h := degreeZeroComponent_hom_naturality F n (𝟙 X) (injectiveResolution X) I
@@ -375,10 +372,7 @@ lemma singleFunctorZeroCompRightDerivedFunctorPlusCompHomologyIso_hom_app_comp_i
   dsimp only [singleFunctorZeroCompRightDerivedFunctorPlusCompHomologyIso,
     NatIso.ofComponents_hom_app]
   rw [← h, degreeZeroComponent_hom]
-  simp only [Category.assoc]
-  refine congrArg (_ ≫ ·) (congrArg (_ ≫ ·) (congrArg (_ ≫ ·) ?_))
-  exact (Category.assoc _ _ _).trans
-    ((congrArg (_ ≫ ·) (I.isoRightDerivedObj F n).inv_hom_id).trans (Category.comp_id _))
+  simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id]
 
 /-- Derived cohomology of a degree-zero complex vanishes in negative degrees. -/
 theorem isZero_homology_rightDerivedFunctorPlus_singleFunctor_zero_of_neg

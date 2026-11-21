@@ -397,13 +397,13 @@ theorem linearCombination_semifreeResolutionAugmentation_surjective
   | zero => exact ⟨0, map_zero _⟩
   | @homogeneous n y =>
     obtain ⟨e, he, he0, hey⟩ := exists_semifreeResolution_m_eq (𝒜 := 𝒜) (d := d) (n := n + 1)
-      (c := 0) (w := dN y) (zero_mem _) (hN.isHomogeneous.map_mem y.2) (map_zero _)
+      (c := 0) (w := dN y) (zero_mem _) (hN.isHomogeneous.map_mem y.property) (map_zero _)
       (by rw [map_zero, hN.sq_zero])
     have hmem : single e 1 ∈
         rowFiniteTotalGrading 𝒜 (semifreeResolutionIndex 𝒜 d 𝒩 dN) (n + 1) := by
       simpa only [he, neg_neg] using
         single_one_mem_rowFiniteTotalGrading 𝒜 (semifreeResolutionIndex 𝒜 d 𝒩 dN) e
-    obtain ⟨x, -, -, hxy⟩ := exists_semifreeResolution_m_eq hmem y.2
+    obtain ⟨x, -, -, hxy⟩ := exists_semifreeResolution_m_eq hmem y.property
       (by rw [(semifreeResolution 𝒜 d 𝒩 dN).differential_single_one hA, he0])
       (by simp [hey])
     exact ⟨single x 1, by simp [hxy]⟩
