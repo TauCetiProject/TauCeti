@@ -113,48 +113,6 @@ private theorem continuous_sq_add_sq (hcont : Continuous x) :
   have _ : Continuous fun z ↦ x z 3 := by fun_prop
   fun_prop
 
-/-- **The potential of the gauge Laplacian is bounded.** At a continuous field of `A_m^s`,
-`s > 1`, the potential `p² + q² = |α|² / 4` is bounded: it tends to `1 / 4` at infinity. -/
-theorem exists_forall_sq_add_sq_le {s : ℝ} (hs : 1 < s) (hx : x ∈ framedFieldSpace f m s)
-    (hcont : Continuous x) : ∃ C, ∀ z, x z 2 ^ 2 + x z 3 ^ 2 ≤ C := by
-  have hlim := tendsto_normSq_of_mem_framedFieldSpace hs hx hcont
-  -- Outside a disc the potential is below `1 / 2`; inside it is bounded by compactness.
-  have he := hlim.eventually (gt_mem_nhds (by norm_num : (1 : ℝ) < 2))
-  rw [← Metric.cobounded_eq_cocompact] at he
-  obtain ⟨R, -, hR⟩ := Filter.hasBasis_cobounded_norm.mem_iff.mp he
-  obtain ⟨C, hC⟩ := (isCompact_closedBall (0 : ℂ) R).exists_bound_of_continuousOn
-    (continuous_sq_add_sq hcont).continuousOn
-  refine ⟨max C (1 / 2), fun z ↦ ?_⟩
-  have h0 : 0 ≤ x z 2 ^ 2 + x z 3 ^ 2 := by positivity
-  by_cases hz : z ∈ closedBall (0 : ℂ) R
-  · have := hC z hz
-    rw [Real.norm_eq_abs, abs_of_nonneg h0] at this
-    exact this.trans (le_max_left _ _)
-  · have hzR : R ≤ ‖z‖ := (lt_of_not_ge (by simpa using hz)).le
-    have h := hR hzR
-    simp only [Set.mem_ofPred_eq] at h
-    exact le_max_of_le_right (by linarith)
-
-/-- **The potential of the gauge Laplacian is positive at infinity.** At a continuous field of
-`A_m^s`, `s > 1`, the potential `p² + q² = |α|² / 4` is at least `1 / 8` outside a disc, since it
-tends to `1 / 4` at infinity. -/
-theorem exists_forall_le_sq_add_sq {s : ℝ} (hs : 1 < s) (hx : x ∈ framedFieldSpace f m s)
-    (hcont : Continuous x) : ∃ R, ∀ z, R < ‖z‖ → 1 / 8 ≤ x z 2 ^ 2 + x z 3 ^ 2 := by
-  obtain ⟨R, -, hR⟩ := exists_exterior_lt_mass (tendsto_normSq_of_mem_framedFieldSpace hs hx hcont)
-    (by norm_num : (1 : ℝ) / 8 < 1 / 4)
-  exact ⟨R, fun z hz ↦ (hR z hz).le⟩
-
-/-- The potential `p² + q²` of the gauge Laplacian at a continuous field of `A_m^s`, `s > 1`, is
-essentially bounded: with `TauCeti.Vortex.exists_forall_le_sq_add_sq`, these are the hypotheses of
-the results of `TauCeti.Analysis.PDE.Schrodinger.Stationary`. -/
-theorem memLp_top_sq_add_sq {s : ℝ} (hs : 1 < s) (hx : x ∈ framedFieldSpace f m s)
-    (hcont : Continuous x) : MemLp (fun z ↦ x z 2 ^ 2 + x z 3 ^ 2) ⊤ (volume : Measure ℂ) := by
-  obtain ⟨C, hC⟩ := exists_forall_sq_add_sq_le hs hx hcont
-  refine memLp_top_of_bound (continuous_sq_add_sq hcont).aestronglyMeasurable C
-    (Eventually.of_forall fun z ↦ ?_)
-  rw [Real.norm_eq_abs, abs_of_nonneg (by positivity)]
-  exact hC z
-
 /-- At a field of `A_m^n`, `n > 1`, multiplication by the potential `p² + q²` of the gauge
 Laplacian preserves `H^n(ℂ)`. -/
 theorem sq_add_sq_mul_mem_realSobolevFunctions_of_mem_framedFieldSpace {n : ℕ} (hn : 1 < n)
@@ -188,10 +146,11 @@ theorem ae_eq_of_integral_mul_gaugeAdjoint_gaugeDirection_eq {s : ℝ} (hs : 1 <
     (hw₂ : ∀ φ : ℂ → ℝ, ContDiff ℝ ∞ φ → HasCompactSupport φ →
       ∫ z, u₂ z * gaugeAdjoint x (gaugeDirection x φ) z = ∫ z, g z * φ z) :
     u₁ =ᵐ[volume] u₂ := by
-  have hV := memLp_top_sq_add_sq hs hx hcont
-  obtain ⟨R, hR⟩ := exists_forall_le_sq_add_sq hs hx hcont
-  exact ae_eq_of_integral_mul_neg_laplacian_add_mul_eq hV (ae_of_all _ fun z ↦ by positivity)
-    (by norm_num : (0 : ℝ) < 1 / 8) (ae_of_all _ hR) hu₁ hu₂
+  have hlim := tendsto_normSq_of_mem_framedFieldSpace hs hx hcont
+  obtain ⟨R, -, hR⟩ := exists_exterior_lt_mass hlim (by norm_num : (1 : ℝ) / 8 < 1 / 4)
+  exact ae_eq_of_integral_mul_neg_laplacian_add_mul_eq (memLp_top_sq_add_sq hcont hlim)
+    (ae_of_all _ fun z ↦ by positivity) (by norm_num : (0 : ℝ) < 1 / 8)
+    (ae_of_all _ fun z hz ↦ (hR z hz).le) hu₁ hu₂
     (fun φ hφ hc ↦ by rw [← integral_mul_gaugeAdjoint_gaugeDirection (hφ.of_le (by simp)),
       hw₁ φ hφ hc])
     (fun φ hφ hc ↦ by rw [← integral_mul_gaugeAdjoint_gaugeDirection (hφ.of_le (by simp)),
@@ -206,7 +165,8 @@ theorem mem_realSobolevFunctions_of_integral_mul_gaugeAdjoint_gaugeDirection_eq 
     (hweak : ∀ φ : ℂ → ℝ, ContDiff ℝ ∞ φ → HasCompactSupport φ →
       ∫ z, u z * gaugeAdjoint x (gaugeDirection x φ) z = ∫ z, g z * φ z) :
     u ∈ realSobolevFunctions ℂ (j + 2) 2 := by
-  have hV := memLp_top_sq_add_sq (by exact_mod_cast hk) hx hcont
+  have hV := memLp_top_sq_add_sq hcont
+    (tendsto_normSq_of_mem_framedFieldSpace (by exact_mod_cast hk) hx hcont)
   -- The weak equation of the Schrödinger operator `-Δ + (p² + q²)`.
   have heq (φ : ℂ → ℝ) (hφ : ContDiff ℝ ∞ φ) (hc : HasCompactSupport φ) :
       ∫ z, u z * (-Δ φ z + (x z 2 ^ 2 + x z 3 ^ 2) * φ z) = ∫ z, g z * φ z := by
@@ -251,10 +211,12 @@ theorem exists_mem_realSobolevFunctions_integral_mul_gaugeAdjoint_gaugeDirection
     {g : ℂ → ℝ} (hg : g ∈ realSobolevFunctions ℂ j 2) :
     ∃ u ∈ realSobolevFunctions ℂ (j + 2) 2, ∀ φ : ℂ → ℝ, ContDiff ℝ 2 φ → HasCompactSupport φ →
       ∫ z, u z * gaugeAdjoint x (gaugeDirection x φ) z = ∫ z, g z * φ z := by
-  have hV := memLp_top_sq_add_sq (by exact_mod_cast hk) hx hcont
-  obtain ⟨R, hR⟩ := exists_forall_le_sq_add_sq (by exact_mod_cast hk) hx hcont
+  have hlim := tendsto_normSq_of_mem_framedFieldSpace (by exact_mod_cast hk) hx hcont
+  have hV := memLp_top_sq_add_sq hcont hlim
+  obtain ⟨R, -, hR⟩ := exists_exterior_lt_mass hlim (by norm_num : (1 : ℝ) / 8 < 1 / 4)
   obtain ⟨u, hu, heq⟩ := exists_mem_realSobolevFunctions_two_integral_mul_neg_laplacian_add_mul_eq
-    hV (ae_of_all _ fun z ↦ by positivity) (by norm_num : (0 : ℝ) < 1 / 8) (ae_of_all _ hR)
+    hV (ae_of_all _ fun z ↦ by positivity) (by norm_num : (0 : ℝ) < 1 / 8)
+    (ae_of_all _ fun z hz ↦ (hR z hz).le)
     (memLp_of_mem_realSobolevFunctions hg)
   have hweak (φ : ℂ → ℝ) (hφ : ContDiff ℝ 2 φ) (hc : HasCompactSupport φ) :
       ∫ z, u z * gaugeAdjoint x (gaugeDirection x φ) z = ∫ z, g z * φ z := by

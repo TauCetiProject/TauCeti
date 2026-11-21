@@ -20,7 +20,9 @@ The proof uses the Weitzenböck formula at a vortex
 (`gaugeFixedOperator_gaugeFixedAdjoint_of_equation_eq_zero`). The magnetic first-order terms
 complete to covariant-gradient squares, while the two potentials are
 `P = |α|²/4` and `1/8 + P/2`. Integrating the squared-norm Bochner identity eliminates the
-Laplacian.
+Laplacian. At a continuous field with `|α| → 1`, the squared mass `P` is bounded
+(`exists_forall_sq_add_sq_le`, `memLp_top_sq_add_sq`) and exceeds every `a < 1/4` outside a disc
+(`exists_exterior_lt_mass`).
 
 The gauge-fixed operator `L_x` itself satisfies the same kind of exterior bound, at every mass
 below `1/2`, once the covariant derivative `∇₁ α` also tends to zero at infinity. At a vortex the
@@ -102,6 +104,35 @@ theorem exists_exterior_lt_mass
   have hv : 4 * a < 4 * (x z 2 ^ 2 + x z 3 ^ 2) :=
     hR (le_trans (le_max_left R 1) hz.le)
   linarith
+
+/-- At a continuous field with a unit-modulus end, the squared mass `P = |α|² / 4 = x₂² + x₃²` is
+bounded above. -/
+theorem exists_forall_sq_add_sq_le (hx : Continuous x)
+    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) :
+    ∃ M, ∀ z, x z 2 ^ 2 + x z 3 ^ 2 ≤ M := by
+  have hxi (i : Fin 4) : Continuous fun z ↦ x z i := by fun_prop
+  have hPc : Continuous fun z ↦ x z 2 ^ 2 + x z 3 ^ 2 := by
+    have := hxi 2; have := hxi 3; fun_prop
+  obtain ⟨K, hK, hKc⟩ := mem_cocompact.1 (hlim.eventually (ge_mem_nhds (by norm_num : (1 : ℝ) < 2)))
+  obtain ⟨M, hM⟩ := hK.exists_bound_of_continuousOn hPc.continuousOn
+  refine ⟨max M 1, fun z ↦ ?_⟩
+  by_cases hz : z ∈ K
+  · exact (le_abs_self _).trans ((Real.norm_eq_abs _ ▸ hM z hz).trans (le_max_left _ _))
+  · have h2 : 4 * (x z 2 ^ 2 + x z 3 ^ 2) ≤ 2 := hKc hz
+    linarith [le_max_right M 1]
+
+/-- At a continuous field with a unit-modulus end, the squared mass `P = |α|² / 4 = x₂² + x₃²` is
+essentially bounded. -/
+theorem memLp_top_sq_add_sq (hx : Continuous x)
+    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) :
+    MemLp (fun z ↦ x z 2 ^ 2 + x z 3 ^ 2) ⊤ (volume : Measure ℂ) := by
+  have hxi (i : Fin 4) : Continuous fun z ↦ x z i := by fun_prop
+  have hPc : Continuous fun z ↦ x z 2 ^ 2 + x z 3 ^ 2 := by
+    have := hxi 2; have := hxi 3; fun_prop
+  obtain ⟨M, hM⟩ := exists_forall_sq_add_sq_le hx hlim
+  refine memLp_top_of_bound hPc.aestronglyMeasurable M (ae_of_all _ fun z ↦ ?_)
+  rw [Real.norm_of_nonneg (by positivity)]
+  exact hM z
 
 variable {μ : Measure ℂ} [μ.IsAddHaarMeasure]
 

@@ -62,6 +62,13 @@ open SobolevTopologicalGaugeGroup
 
 variable {f : ContDiffBump (0 : ℝ)} {m k : ℕ} [Fact (1 < k)] {hs : 1 < (k : ℝ) + 1}
 
+omit [Fact (1 < k)] in
+/-- The coordinates of a field of `A_m^k`, `k ≥ 3`, are differentiable. -/
+private theorem differentiable_apply (hk : 3 ≤ k) (w : SobolevFieldSpace f m k) (i : Fin 4) :
+    Differentiable ℝ fun v ↦ w v i := by
+  have hw : ContDiff ℝ 1 w := w.contDiff (by exact_mod_cast (by omega : 1 + 1 < k))
+  exact differentiable_euclidean.1 (hw.differentiable one_ne_zero) i
+
 variable (hs) in
 /-- **Local uniqueness of the Coulomb gauge.** Let `x` be a continuous field of `A_m^k`, `k ≥ 3`.
 There are a neighbourhood `U` of `x` and a neighbourhood `N` of `1` in the Sobolev gauge group
@@ -99,23 +106,18 @@ theorem exists_mem_nhds_forall_eq_one_of_gaugeAdjoint_smul_eq (hk : 3 ≤ k)
   obtain ⟨F, rfl, hF⟩ := hu
   have hd := finrank_real_complex_lt_two_mul hs
   have hφ := continuousRep_mem_realSobolevFunctions hd F
-  -- The phase `F` is `C²` and square integrable, and the field `y` is `C¹`.
+  -- The phase `F` is `C²` and square integrable.
   have hφ2 : ContDiff ℝ 2 (continuousRep F) := by
     refine contDiff_of_mem_realSobolevFunctions ?_ hφ (continuous_continuousRep hd F)
     rw [Complex.finrank_real_complex]
     have hk' : (3 : ℝ) ≤ k := by exact_mod_cast hk
     push_cast
     linarith
-  have hy1 : ContDiff ℝ 1 y := y.contDiff (by exact_mod_cast (by omega : 1 + 1 < k))
-  have hy₀ : Differentiable ℝ fun w ↦ y w 0 :=
-    (differentiable_euclidean.1 (hy1.differentiable one_ne_zero)) 0
-  have hy₁ : Differentiable ℝ fun w ↦ y w 1 :=
-    (differentiable_euclidean.1 (hy1.differentiable one_ne_zero)) 1
   have hact : ⇑(expGauge hs F • y) = phaseGauge y (continuousRep F) := by
     rw [coe_smul, toSubgroup_expGauge]
     exact gaugeTransform_exp (hφ2.differentiable two_ne_zero) y
-  have h0 := huniq y.continuous hy₀ hy₁ hy hφ2 (memLp_of_mem_realSobolevFunctions hφ) hF
-    (by simpa only [hact] using hcoul)
+  have h0 := huniq y.continuous (differentiable_apply hk y 0) (differentiable_apply hk y 1) hy hφ2
+    (memLp_of_mem_realSobolevFunctions hφ) hF (by simpa only [hact] using hcoul)
   rw [continuousRep_injective hd (h0.trans (map_zero _).symm), AddChar.map_zero_eq_one]
 
 variable (hs) in
@@ -130,11 +132,9 @@ theorem exists_mem_nhds_forall_eq_one_of_gaugeAdjoint_sub_eq_zero (hk : 3 ≤ k)
         u = 1 := by
   obtain ⟨U, hU, N, hN, h⟩ := exists_mem_nhds_forall_eq_one_of_gaugeAdjoint_smul_eq hs hk x
   refine ⟨U, hU, N, hN, fun y hy u hu hy0 huy0 ↦ h y hy u hu fun z ↦ ?_⟩
-  -- Fields of `A_m^k`, `k ≥ 3`, are `C¹`, so `d₀*` is additive on them.
-  have hC (w : SobolevFieldSpace f m k) : ContDiff ℝ 1 w :=
-    w.contDiff (by exact_mod_cast (by omega : 1 + 1 < k))
+  -- Fields of `A_m^k`, `k ≥ 3`, are differentiable, so `d₀*` is additive on them.
   have hd (w : SobolevFieldSpace f m k) (i : Fin 4) : DifferentiableAt ℝ (fun v ↦ w v i) z :=
-    (differentiable_euclidean.1 ((hC w).differentiable one_ne_zero)) i z
+    differentiable_apply hk w i z
   have e₁ := hy0 z
   have e₂ := huy0 z
   rw [gaugeAdjoint_sub _ (hd y 0) (hd y 1) (hd x 0) (hd x 1)] at e₁

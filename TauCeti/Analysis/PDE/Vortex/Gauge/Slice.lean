@@ -8,11 +8,12 @@ module
 public import TauCeti.Analysis.PDE.Vortex.Gauge.Laplacian
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.PDE.Vortex.EquationMap
+import TauCeti.Analysis.PDE.Vortex.ExteriorEstimate
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Sinc
 
 /-!
-# The infinitesimal Coulomb slice of the framed plane vortex fields
+# The infinitesimal Coulomb slice and local uniqueness of the Coulomb gauge
 
 The framed degree-`m` plane vortex fields form the affine space `A_m^k = x_m + H^k`
 (`TauCeti.Vortex.framedFieldSpace`), acted on by the Sobolev framed gauge group `G_(k+1)`. At a
@@ -293,14 +294,7 @@ coordinates are differentiable and whose section coordinates are within `ε` of 
 let `F` be a square-integrable `C²` phase with `|F| ≤ ε`. If the gauge transformation `e^{iF} y`
 has the same Coulomb defect at `x` as `y`, `d₀* (e^{iF} y) = d₀* y`, then `F = 0`. For the
 Coulomb slice `d₀* (· - x) = 0` of a `C¹` field `x`, see
-`TauCeti.Vortex.SobolevFieldSpace.exists_mem_nhds_forall_eq_one_of_gaugeAdjoint_sub_eq_zero`.
-
-Subtracting the two Coulomb defects with `TauCeti.Vortex.gaugeAdjoint_phaseGauge` gives
-`ΔF = Q F` with `Q = sinc F (p y₂ + q y₃) - (F / 2) sinc (F / 2)² (p y₃ - q y₂)`, a perturbation
-of the potential `p² + q²` of the gauge Laplacian by at most a constant times `ε`. The potential
-`Q` can be negative near the zeros of the section of `x`, but the uniqueness of weak solutions
-for the gauge Laplacian survives small perturbations of the potential
-(`TauCeti.exists_pos_forall_ae_eq_zero_of_integral_mul_neg_laplacian_add_mul_eq_zero`). -/
+`TauCeti.Vortex.SobolevFieldSpace.exists_mem_nhds_forall_eq_one_of_gaugeAdjoint_sub_eq_zero`. -/
 theorem exists_pos_forall_eq_zero_of_gaugeAdjoint_phaseGauge_eq {s : ℝ} (hs : 1 < s)
     (hx : x ∈ framedFieldSpace f m s) (hxc : Continuous x) :
     ∃ ε > 0, ∀ {y : ℂ → EuclideanSpace ℝ (Fin 4)} {F : ℂ → ℝ}, Continuous y →
@@ -308,14 +302,15 @@ theorem exists_pos_forall_eq_zero_of_gaugeAdjoint_phaseGauge_eq {s : ℝ} (hs : 
       (∀ z, |y z 2 - x z 2| ≤ ε ∧ |y z 3 - x z 3| ≤ ε) →
       ContDiff ℝ 2 F → MemLp F 2 volume → (∀ z, |F z| ≤ ε) →
       (∀ z, gaugeAdjoint x (phaseGauge y F) z = gaugeAdjoint x y z) → F = 0 := by
-  obtain ⟨C, hC⟩ := exists_forall_sq_add_sq_le hs hx hxc
-  have hV := memLp_top_sq_add_sq hs hx hxc
-  obtain ⟨R, hR⟩ := exists_forall_le_sq_add_sq hs hx hxc
+  have hlim := tendsto_normSq_of_mem_framedFieldSpace hs hx hxc
+  obtain ⟨C, hC⟩ := exists_forall_sq_add_sq_le hxc hlim
+  have hV := memLp_top_sq_add_sq hxc hlim
+  obtain ⟨R, -, hR⟩ := exists_exterior_lt_mass hlim (by norm_num : (1 : ℝ) / 8 < 1 / 4)
   set V : ℂ → ℝ := fun z ↦ x z 2 ^ 2 + x z 3 ^ 2
   have hV0 (z : ℂ) : 0 ≤ V z := by positivity
   obtain ⟨ε₀, hε₀, huniq⟩ :=
     exists_pos_forall_ae_eq_zero_of_integral_mul_neg_laplacian_add_mul_eq_zero hV
-      (ae_of_all _ hV0) (by norm_num : (0 : ℝ) < 1 / 8) (ae_of_all _ fun z hz ↦ hR z hz)
+      (ae_of_all _ hV0) (by norm_num : (0 : ℝ) < 1 / 8) (ae_of_all _ fun z hz ↦ (hR z hz).le)
   -- A bound `M` for the section coordinates of `x`.
   set M := C + 1
   have hC0 : 0 ≤ C := (hV0 0).trans (hC 0)
@@ -350,11 +345,9 @@ theorem exists_pos_forall_eq_zero_of_gaugeAdjoint_phaseGauge_eq {s : ℝ} (hs : 
       hεK
   have hQ : MemLp Q ⊤ volume := memLp_top_of_bound hQc.aestronglyMeasurable (C + ε₀)
     (Eventually.of_forall fun z ↦ by
-      rw [Real.norm_eq_abs]
-      have := hQV z
-      have := hC z
-      rw [abs_le] at *
-      constructor <;> linarith [hV0 z])
+      have h := abs_le.1 (hQV z)
+      rw [Real.norm_eq_abs, abs_le]
+      constructor <;> linarith [hV0 z, hC z])
   -- `F` is a weak solution of `-ΔF + Q F = 0`.
   have hweak := integral_mul_neg_laplacian_add_mul_eq_zero_of_laplacian_eq_mul hF hΔ
   have hae := huniq hQ (ae_of_all _ hQV) hF2 hweak
