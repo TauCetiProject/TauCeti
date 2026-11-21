@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.Hypergraph.Complex.TwoComplex.Basic
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
+import TauCeti.Algebra.BigOperators.Finset.Pairs
 
 /-!
 # Relabelling finite two-complexes
@@ -164,29 +165,23 @@ theorem two_nsmul_sum_filter_lt_edges {A : Type*} [AddCommMonoid A] [Fintype V] 
     (X : TwoComplex V) (f : V → V → A) (hf : ∀ u v, X.Adj u v → f v u = f u v) :
     2 • (∑ p : V × V with p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges, f p.1 p.2) =
       ∑ p : V × V with ({p.1, p.2} : Finset V) ∈ X.edges, f p.1 p.2 := by
-  set E_lt : Finset (V × V) :=
-    Finset.univ.filter fun p => p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges
-  set E_gt : Finset (V × V) :=
-    Finset.univ.filter fun p => p.2 < p.1 ∧ ({p.1, p.2} : Finset V) ∈ X.edges
-  have hunion : (Finset.univ.filter fun p : V × V => ({p.1, p.2} : Finset V) ∈ X.edges) =
-      E_lt ∪ E_gt := by
-    ext p
-    simp only [E_lt, E_gt, Finset.mem_union, Finset.mem_filter, Finset.mem_univ, true_and]
-    refine ⟨fun he => ?_, fun h => h.elim And.right And.right⟩
-    rcases lt_or_gt_of_ne ((X.adj_iff_pair_mem_edges p.1 p.2).mpr he).ne with hlt | hgt
-    · exact Or.inl ⟨hlt, he⟩
-    · exact Or.inr ⟨hgt, he⟩
-  have hdisj : Disjoint E_lt E_gt :=
-    Finset.disjoint_left.mpr fun p h₁ h₂ =>
-      lt_asymm (Finset.mem_filter.mp h₁).2.1 (Finset.mem_filter.mp h₂).2.1
-  have hswap : (∑ p ∈ E_gt, f p.1 p.2) = ∑ p ∈ E_lt, f p.1 p.2 :=
-    Finset.sum_equiv (Equiv.prodComm V V)
-      (fun p => by simp [E_gt, E_lt, Finset.pair_comm]) fun p hp => by
-      have hadj : X.Adj p.2 p.1 :=
-        (X.adj_iff_pair_mem_edges p.2 p.1).mpr
-          (by simpa [Finset.pair_comm] using (Finset.mem_filter.mp hp).2.2)
-      simpa using hf p.2 p.1 hadj
-  rw [hunion, Finset.sum_union hdisj, hswap, two_nsmul]
+  let F : V × V → A := fun p => if X.Adj p.1 p.2 then f p.1 p.2 else 0
+  have hfold := TauCeti.sum_univ_prod_eq_sum_lt_add_swap F fun a => by simp [F]
+  have hL : (∑ p : V × V, F p) =
+      ∑ p : V × V with ({p.1, p.2} : Finset V) ∈ X.edges, f p.1 p.2 := by
+    simp [F, Finset.sum_filter, X.adj_iff_pair_mem_edges]
+  have hR : (∑ p ∈ {p : V × V | p.1 < p.2}, (F p + F p.swap)) =
+      2 • (∑ p : V × V with p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges, f p.1 p.2) := by
+    rw [Finset.sum_filter, Finset.sum_filter, two_nsmul, ← Finset.sum_add_distrib]
+    refine Finset.sum_congr rfl fun p _ => ?_
+    simp only [← X.adj_iff_pair_mem_edges]
+    by_cases hp : p.1 < p.2
+    · by_cases hadj : X.Adj p.1 p.2
+      · simp [F, hp, hadj, hadj.symm, hf p.1 p.2 hadj]
+      · have hadj' : ¬ X.Adj p.2 p.1 := fun h => hadj h.symm
+        simp [F, hp, hadj, hadj']
+    · simp [hp]
+  exact (hL.symm.trans hfold).trans hR |>.symm
 
 /-- Relabelling `X : TwoComplex V` along an arbitrary bijection `e : V ≃ W` (not required to
 preserve the vertex linear order) preserves the sum of an edge-symmetric weight over positively
@@ -196,22 +191,26 @@ theorem sum_filter_lt_edges_relabel {A : Type*} [AddCommMonoid A] [Fintype V] [L
     (hf : ∀ u v, (X.relabel e).Adj u v → f v u = f u v) :
     (∑ p : V × V with p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges, f (e p.1) (e p.2)) =
       ∑ q : W × W with q.1 < q.2 ∧ ({q.1, q.2} : Finset W) ∈ (X.relabel e).edges, f q.1 q.2 := by
-  refine Finset.sum_nbij' (fun p => (min (e p.1) (e p.2), max (e p.1) (e p.2)))
-    (fun q => (min (e.symm q.1) (e.symm q.2), max (e.symm q.1) (e.symm q.2))) ?_ ?_ ?_ ?_ ?_
-  all_goals
-    rintro ⟨a, b⟩ h
-    simp only [Finset.mem_filter, Finset.mem_univ, true_and, ← adj_iff_pair_mem_edges] at h ⊢
-  · rcases lt_or_gt_of_ne (e.injective.ne h.1.ne) with hab | hab
-    · simp [hab.le, hab, h.2]
-    · simp [hab.le, hab, h.2.symm]
-  · rcases lt_or_gt_of_ne (e.symm.injective.ne h.1.ne) with hab | hab
-    · simpa [hab.le, hab] using (X.adj_relabel e a b).mp h.2
-    · simpa [hab.le, hab] using ((X.adj_relabel e a b).mp h.2).symm
-  · rcases le_total (e a) (e b) with hab | hab <;> simp [hab, h.1.le]
-  · rcases le_total (e.symm a) (e.symm b) with hab | hab <;> simp [hab, h.1.le]
-  · rcases lt_or_gt_of_ne (e.injective.ne h.1.ne) with hab | hab
-    · simp [hab.le]
-    · exact (hf (e b) (e a) ((X.adj_relabel_apply e b a).mpr h.2.symm)).symm ▸ by simp [hab.le]
+  let g : W → W → A := fun u v => if (X.relabel e).Adj u v then f u v else 0
+  have hg : ∀ u v, u ≠ v → g v u = g u v := fun u v _ => by
+    by_cases h : (X.relabel e).Adj u v
+    · simp only [g, h, h.symm, ↓reduceIte, hf u v h]
+    · have h' : ¬ (X.relabel e).Adj v u := fun hv => h hv.symm
+      simp only [g, h, h', ↓reduceIte]
+  have hpull := e.sum_filter_lt_of_symm g hg
+  have hL : (∑ p : V × V with p.1 < p.2, g (e p.1) (e p.2)) =
+      ∑ p : V × V with p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges, f (e p.1) (e p.2) := by
+    simp only [g, X.adj_relabel_apply, X.adj_iff_pair_mem_edges]
+    rw [Finset.sum_filter, Finset.sum_filter]
+    refine Finset.sum_congr rfl fun p _ => ?_
+    by_cases hp : p.1 < p.2 <;> simp [hp]
+  have hR : (∑ q : W × W with q.1 < q.2, g q.1 q.2) =
+      ∑ q : W × W with q.1 < q.2 ∧ ({q.1, q.2} : Finset W) ∈ (X.relabel e).edges, f q.1 q.2 := by
+    simp only [g, (X.relabel e).adj_iff_pair_mem_edges]
+    rw [Finset.sum_filter, Finset.sum_filter]
+    refine Finset.sum_congr rfl fun q _ => ?_
+    by_cases hq : q.1 < q.2 <;> simp [hq]
+  exact (hL.symm.trans hpull).trans hR
 
 /-- The sum of an edge-symmetric weight over positively oriented edges of `X : TwoComplex V` is
 independent of the chosen linear order on `V`. -/
