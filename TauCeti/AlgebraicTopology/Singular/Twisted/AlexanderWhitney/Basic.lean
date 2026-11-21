@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.SimplicialObject.AlexanderWhitney
-public import TauCeti.AlgebraicTopology.Singular.Twisted.Relative
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Tensor
 
 /-!
@@ -25,11 +24,6 @@ space, with the canonical tensor comparison for pullback. It supplies the diagon
 products of cochains with dual local coefficients. The ring and coefficient fibres share a
 universe, as required by the monoidal structure on `ModuleCat`; the space may live in a smaller
 universe.
-
-For a pair `(X, A)`, the front face of a simplex of `A` lies in `A`, so the diagonal followed by
-the quotient onto relative chains in its first factor descends to the relative diagonal
-`C(X, A; L ⊗ K) ⟶ C(X, A; L) ⊗ C(X; K)` (`TopPair.twistedAlexanderWhitneyDiagonal`). It supplies
-the diagonal for cap products with relative cochains.
 
 ## References
 
@@ -106,6 +100,55 @@ lemma ιTwistedChainComplex_twistedAlexanderWhitneyDiagonal_f (n : ℕ)
   rw [tensorHom_eq_mapBifunctorMap, ι_tensorHom]
   simp only [tensorHom_comp_tensorHom_assoc, Category.assoc,
     ιTwistedChainComplex_isoAlternatingFaceMapComplex_hom_f]
+
+/-- Followed by a map that vanishes on the summands of left degree other than `p`, the twisted
+diagonal of a `(p + q)`-simplex is its `(p, q)` summand: the front `p`-face tensored with the back
+`q`-face, with their coefficient transports. -/
+lemma ιTwistedChainComplex_twistedAlexanderWhitneyDiagonal_f_comp_of_ne_left (p q n : ℕ)
+    (h : p + q = n) (σ : (TopCat.toSSet.obj X) _⦋n⦌) {Z : ModuleCat.{max v w} R}
+    (g : (L.twistedChainComplex ⊗ K.twistedChainComplex).X n ⟶ Z)
+    (hg : ∀ (i j : ℕ) (hij : i + j = n), i ≠ p →
+      HomologicalComplex.ιTensorObj L.twistedChainComplex K.twistedChainComplex i j n hij ≫ g =
+        0) :
+    ιTwistedChainComplex (L ⊗ K) n σ ≫ (twistedAlexanderWhitneyDiagonal L K).f n ≫ g =
+      ((L.map (vertexTransport (SimplexCategory.subinterval 0 p (by omega)).op σ) ≫
+          ιTwistedChainComplex L p
+            ((TopCat.toSSet.obj X).map (SimplexCategory.subinterval 0 p (by omega)).op σ)) ⊗ₘ
+        (K.map (vertexTransport (SimplexCategory.subinterval p q (by omega)).op σ) ≫
+          ιTwistedChainComplex K q
+            ((TopCat.toSSet.obj X).map (SimplexCategory.subinterval p q (by omega)).op σ))) ≫
+        HomologicalComplex.ιTensorObj L.twistedChainComplex K.twistedChainComplex p q n h ≫ g := by
+  subst h
+  -- State the surviving term for an arbitrary equal back degree: rewriting `p + q - p` directly
+  -- gives an ill-typed motive because both the subinterval bound and the tensor-summand equality
+  -- depend on that degree.
+  have key : ∀ (j : ℕ) (hj : j = q) (hj' : p + j ≤ p + q) (hj'' : p + j = p + q),
+      ((L.map (vertexTransport (SimplexCategory.subinterval 0 p (by omega)).op σ) ≫
+          ιTwistedChainComplex L p
+            ((TopCat.toSSet.obj X).map (SimplexCategory.subinterval 0 p (by omega)).op σ)) ⊗ₘ
+        (K.map (vertexTransport (SimplexCategory.subinterval p j hj').op σ) ≫
+          ιTwistedChainComplex K j
+            ((TopCat.toSSet.obj X).map (SimplexCategory.subinterval p j hj').op σ))) ≫
+          HomologicalComplex.ιTensorObj L.twistedChainComplex K.twistedChainComplex p j (p + q)
+            hj'' ≫ g =
+        ((L.map (vertexTransport (SimplexCategory.subinterval 0 p (by omega)).op σ) ≫
+            ιTwistedChainComplex L p
+              ((TopCat.toSSet.obj X).map (SimplexCategory.subinterval 0 p (by omega)).op σ)) ⊗ₘ
+          (K.map (vertexTransport (SimplexCategory.subinterval p q (by omega)).op σ) ≫
+            ιTwistedChainComplex K q
+              ((TopCat.toSSet.obj X).map (SimplexCategory.subinterval p q (by omega)).op σ))) ≫
+          HomologicalComplex.ιTensorObj L.twistedChainComplex K.twistedChainComplex p q (p + q)
+            rfl ≫ g := by
+    rintro _ rfl _ _
+    rfl
+  rw [ιTwistedChainComplex_twistedAlexanderWhitneyDiagonal_f_assoc]
+  dsimp only [Monoidal.tensorObj_obj]
+  rw [Preadditive.sum_comp, Finset.sum_eq_single ⟨p, by omega⟩]
+  · simp only [Category.assoc]
+    exact key (p + q - p) (by omega) _ _
+  · rintro i - hi
+    rw [Category.assoc, hg _ _ _ (fun h ↦ hi (Fin.ext h)), comp_zero]
+  · simp
 
 variable {L K} {L' K' : LocalCoefficientSystem.{max v w, v, max v w} R X}
 
@@ -194,61 +237,3 @@ lemma twistedAlexanderWhitneyDiagonal_space_naturality :
 end Space
 
 end TauCeti.LocalCoefficientSystem
-
-namespace TopPair
-
-open TauCeti TauCeti.LocalCoefficientSystem
-
-variable {R : Type (max v w)} [CommRing R] (P : TopPair.{v})
-  (L K : LocalCoefficientSystem.{max v w, v, max v w} R P.fst)
-
-/-- The twisted Alexander–Whitney diagonal, followed by the quotient onto relative chains in its
-first factor, vanishes on the chains of the subspace: the front face of a simplex of the subspace
-lies in the subspace. -/
-private lemma twistedChainComplexMap_twistedAlexanderWhitneyDiagonal_twistedChainComplexπ :
-    LocalCoefficientSystem.twistedChainComplexMap P.map (L ⊗ K) ≫
-      L.twistedAlexanderWhitneyDiagonal K ≫
-        (P.twistedChainComplexπ L ⊗ₘ 𝟙 K.twistedChainComplex) = 0 := by
-  have h₀ : (0 : ((LocalCoefficientSystem.pullback P.map.hom).obj L).twistedChainComplex ⟶
-      P.twistedChainComplex L) ⊗ₘ
-        (LocalCoefficientSystem.twistedChainComplexMap P.map K ≫ 𝟙 K.twistedChainComplex) = 0 :=
-    HomologicalComplex.zero_tensorHom _
-  rw [twistedAlexanderWhitneyDiagonal_space_naturality_assoc, tensorHom_comp_tensorHom,
-    P.twistedChainComplexMap_comp_twistedChainComplexπ L, h₀, comp_zero, comp_zero]
-
-/-- **The relative twisted Alexander–Whitney diagonal** `C(X, A; L ⊗ K) ⟶ C(X, A; L) ⊗ C(X; K)` of
-a pair `(X, A)`: the twisted diagonal, read in relative chains in its first factor, which descends
-to the relative chains twisted by `L ⊗ K`. -/
-def twistedAlexanderWhitneyDiagonal :
-    P.twistedChainComplex (L ⊗ K) ⟶ P.twistedChainComplex L ⊗ K.twistedChainComplex :=
-  P.twistedChainComplexDesc (L ⊗ K)
-    (L.twistedAlexanderWhitneyDiagonal K ≫ (P.twistedChainComplexπ L ⊗ₘ 𝟙 K.twistedChainComplex))
-    (twistedChainComplexMap_twistedAlexanderWhitneyDiagonal_twistedChainComplexπ P L K)
-
-/-- The relative diagonal is the absolute diagonal read in relative chains. -/
-@[reassoc (attr := simp)]
-lemma twistedChainComplexπ_twistedAlexanderWhitneyDiagonal :
-    P.twistedChainComplexπ (L ⊗ K) ≫ P.twistedAlexanderWhitneyDiagonal L K =
-      L.twistedAlexanderWhitneyDiagonal K ≫
-        (P.twistedChainComplexπ L ⊗ₘ 𝟙 K.twistedChainComplex) :=
-  P.twistedChainComplexπ_comp_twistedChainComplexDesc _ _ _
-
-variable {P L K} {L' K' : LocalCoefficientSystem.{max v w, v, max v w} R P.fst}
-
-/-- The relative diagonal commutes with changes of both local coefficient systems. -/
-@[reassoc]
-lemma twistedAlexanderWhitneyDiagonal_naturality (η : L ⟶ L') (θ : K ⟶ K') :
-    P.twistedChainComplexCoefficientMap (η ⊗ₘ θ) ≫ P.twistedAlexanderWhitneyDiagonal L' K' =
-      P.twistedAlexanderWhitneyDiagonal L K ≫
-        (P.twistedChainComplexCoefficientMap η ⊗ₘ
-          LocalCoefficientSystem.twistedChainComplexCoefficientMap θ) := by
-  ext : 1
-  rw [twistedChainComplexπ_comp_twistedChainComplexCoefficientMap_assoc,
-    twistedChainComplexπ_twistedAlexanderWhitneyDiagonal,
-    twistedChainComplexπ_twistedAlexanderWhitneyDiagonal_assoc,
-    LocalCoefficientSystem.twistedAlexanderWhitneyDiagonal_naturality_assoc,
-    tensorHom_comp_tensorHom, tensorHom_comp_tensorHom,
-    twistedChainComplexπ_comp_twistedChainComplexCoefficientMap, Category.id_comp,
-    Category.comp_id]
-
-end TopPair
