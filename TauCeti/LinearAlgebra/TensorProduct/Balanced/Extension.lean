@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Algebra.RestrictScalars
-public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Actions
+public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Unit
 public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Pi
 public import TauCeti.LinearAlgebra.Matrix.Idempotent
 
@@ -43,6 +43,7 @@ commutativity is assumed.
   restricted from the `S`-action; it is not an instance.
 * `TauCeti.BalancedExtension.cancelBaseChange`: extension along a composite,
   `T ⊗_S (S ⊗_R P) ≃ T ⊗_R P`.
+* `TauCeti.BalancedExtension.rid`: extension of the regular module, `S ⊗_R R ≃ S`.
 * `TauCeti.BalancedExtension.piScalarRight`: extension of a finite free module,
   `S ⊗_R Rⁿ ≃ Sⁿ`.
 * `TauCeti.BalancedExtension.rangeVecMulLinearEquiv`: extension of the image of an idempotent
@@ -301,12 +302,14 @@ def congrRingHom {g : R →+* S} (h : f = g) :
   subst g
   exact .refl _ _
 
+/-- Transport along an equality of ring homomorphisms keeps both factors of a pure tensor. -/
 @[simp]
 theorem congrRingHom_tmul {g : R →+* S} (h : f = g) (s : S) (p : P) :
     congrRingHom h (tmul f s p) = tmul g s p := by
   subst g
   rfl
 
+/-- The inverse of transport along `h` is transport along the reversed equality `h.symm`. -/
 @[simp]
 theorem congrRingHom_symm {g : R →+* S} (h : f = g) :
     (congrRingHom h).symm = congrRingHom (P := P) h.symm := by
@@ -434,6 +437,27 @@ theorem cancelBaseChange_symm_tmul (t : T) (p : P) :
   simp [cancelBaseChange]
 
 end Composition
+
+section RightUnit
+
+variable (f)
+
+/-- **Extension of the regular module.** `S ⊗_R R ≃ S`, sending `s ⊗ r` to `s * f r`. It is the
+right unit identification `TauCeti.BalancedTensorProduct.rid` of the right `R`-module `S`. -/
+noncomputable def rid : BalancedExtension f R ≃ₗ[S] S where
+  toAddEquiv := (BalancedTensorProduct.rid ℤ R (Scalars f)).toAddEquiv.trans (Scalars.of f).symm
+  map_smul' s x := congrArg (Scalars.of f).symm
+    (BalancedTensorProduct.rid_smul_left ℤ R (Scalars f) S s x)
+
+@[simp]
+theorem rid_tmul (s : S) (r : R) : rid f (tmul f s r) = s * f r := by
+  simp [rid, tmul_def]
+
+@[simp]
+theorem rid_symm_apply (s : S) : (rid f).symm s = tmul f s 1 := by
+  rw [LinearEquiv.symm_apply_eq, rid_tmul, map_one, mul_one]
+
+end RightUnit
 
 section Pi
 

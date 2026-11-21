@@ -238,11 +238,8 @@ theorem map_extendScalars_classOf {Λ' : Type u} [Ring Λ'] (f : Λ →+* Λ') (
     SplitK0.map_of, SplitK0.map_of,
     SplitK0.of_extendScalars_obj (Q := ⟨ModuleCat.of Λ' (BalancedExtension f M),
       finiteProjectiveModules_iff.2 ⟨inferInstance, inferInstance⟩⟩) (.refl _ _),
-    -- `Λ' ⊗_Λ Λ ≃ Λ'`, through `Λ ≃ Λ¹` and `Λ' ⊗_Λ Λ¹ ≃ Λ'¹`.
     SplitK0.of_extendScalars_obj (Q := ⟨ModuleCat.of Λ' Λ',
-      finiteProjectiveModules_iff.2 ⟨inferInstance, inferInstance⟩⟩)
-      ((BalancedExtension.congr f (LinearEquiv.funUnique (Fin 1) Λ Λ).symm).trans
-        ((BalancedExtension.piScalarRight f (Fin 1)).trans (LinearEquiv.funUnique (Fin 1) Λ' Λ')))]
+      finiteProjectiveModules_iff.2 ⟨inferInstance, inferInstance⟩⟩) (BalancedExtension.rid f)]
 
 end ClassOf
 

@@ -26,7 +26,7 @@ open scoped TensorProduct
 
 namespace TauCeti.BalancedExtension
 
-variable (A : Type*) [CommRing A] (S : Type*) [CommRing S] [Algebra A S]
+variable (A : Type*) [CommSemiring A] (S : Type*) [CommRing S] [Algebra A S]
   (Λ : Type*) [Ring Λ] [Algebra A Λ]
   (M : Type*) [AddCommGroup M] [Module A M] [Module Λ M] [IsScalarTower A Λ M]
 
@@ -85,19 +85,13 @@ private theorem leftInverse_centralInverse :
   intro x
   induction x using induction_on with
   | tmul t m =>
-    have ht := TensorProduct.AlgebraTensorModule.ext (A := S) (R := A)
-      (g := (centralInverse A S Λ M).comp
-        (((lift (CentralBaseChange.includeRight A S Λ M)).restrictScalars S).comp
-          ((LinearMap.toSpanSingleton (S ⊗[A] Λ) _ (tmul _ 1 m)).restrictScalars S)))
-      (h := (LinearMap.toSpanSingleton (S ⊗[A] Λ) _ (tmul _ 1 m)).restrictScalars S)
-      (fun s l ↦ by
-        simp only [LinearMap.comp_apply, LinearMap.coe_restrictScalars,
-          LinearMap.toSpanSingleton_apply, ← tmul_eq_smul_one_tmul]
-        rw [lift_includeRight_tmul, centralInverse_tmul, tmul_smul]
-        simp)
-    simpa only [LinearMap.comp_apply, LinearMap.coe_restrictScalars,
-      LinearMap.toSpanSingleton_apply, ← tmul_eq_smul_one_tmul] using
-        LinearMap.congr_fun ht t
+    induction t using TensorProduct.inductionOn with
+    | tmul s l =>
+      -- Balancing moves `l` back from the module factor: `(s ⊗ 1) ⊗ l • m = (s ⊗ l) ⊗ m`.
+      rw [lift_includeRight_tmul, centralInverse_tmul, tmul_smul, RingHom.coe_coe,
+        Algebra.TensorProduct.includeRight_apply, Algebra.TensorProduct.tmul_mul_tmul, mul_one,
+        one_mul]
+    | add t t' ht ht' => rw [add_tmul, _root_.map_add, _root_.map_add, ht, ht', ← add_tmul]
   | add x y hx hy => rw [_root_.map_add, _root_.map_add, hx, hy]
 
 /-- Central base change `S ⊗[A] M` is balanced extension along `Λ → S ⊗[A] Λ`, `l ↦ 1 ⊗ l`. -/
