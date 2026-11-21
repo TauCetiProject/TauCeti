@@ -45,12 +45,14 @@ with spherical class, has zero area and zero first Chern number. Its projection
 `TauCeti.Floer.capCoverProj` to `𝓛₀X` is a covering map as soon as `𝓛₀X` is locally path-connected
 and semilocally simply connected
 (`TauCeti.Floer.isCoveringMap_capCoverProj`), which holds for a locally equiconnected `X`
-(`TauCeti.locallyEquiconnectedSpace_contractibleLoops`), in particular for a compact smooth manifold
-(`TauCeti.Manifold.locallyEquiconnectedSpace`). So paths of contractible loops lift uniquely, and a
-loop of contractible loops lifts to a loop of the cover exactly when the torus it sweeps out has
-zero area and zero first Chern number (`TauCeti.Floer.mem_range_mapOfEq_capCoverProj_iff`).
+(`TauCeti.locallyEquiconnectedSpace_contractibleLoops`), in particular for a compact smooth
+manifold, whose local equiconnectedness `Manifold.locallyEquiconnectedSpace` is a theorem rather
+than an instance and must be supplied explicitly (for instance with `haveI`). So paths of
+contractible loops lift uniquely, and a loop of contractible loops lifts to a loop of the cover
+exactly when the torus it sweeps out has zero area and zero first Chern number
+(`TauCeti.Floer.mem_range_mapOfEq_capCoverProj_iff`).
 
-For path-connected `X` the kernel is normal with quotient `Γ`, so the cap cover is regular
+The kernel is normal, and for path-connected `X` its quotient is `Γ`, so the cap cover is regular
 (`TauCeti.Floer.isRegular_capCoverProj`) with deck group `Γ`
 (`TauCeti.Floer.capCoverDeckEquiv`): the period class of a loop `Λ` acts by transporting caps
 around `Λ` (`TauCeti.Floer.capCoverDeckEquiv_capCoverPeriodHom_apply_mk`). Every fibre is therefore
@@ -260,6 +262,13 @@ theorem capCoverProj_mk (e : UniversalCover (constContractibleLoop x)) :
 the trivial cap of that constant loop. -/
 def CapCover.basepoint : CapCover ω c x :=
   SubgroupQuotient.basepoint _ _
+
+/-- The base point of the cap cover is the class of the constant path at the constant loop at
+`x`. -/
+theorem CapCover.basepoint_eq_mk :
+    CapCover.basepoint ω c x =
+      Quotient.mk'' (UniversalCover.mk _ (Path.Homotopic.Quotient.refl _)) :=
+  SubgroupQuotient.basepoint_eq_mk _ _
 
 @[simp]
 theorem capCoverProj_basepoint :
