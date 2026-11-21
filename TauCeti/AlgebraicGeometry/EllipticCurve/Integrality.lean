@@ -83,7 +83,8 @@ section
 
 variable {R : Type*} [CommRing R] (W : _root_.WeierstrassCurve R)
 
-/-- **An integral `x`-coordinate forces an integral `y`-coordinate**, over any `R`-algebra.
+/-- **An integral `x`-coordinate forces an integral `y`-coordinate**, over any commutative
+`R`-algebra.
 
 On the curve, `y` is a root of the monic quadratic `Y² + (a₁x + a₃)Y − (x³ + a₂x² + a₄x + a₆)`,
 whose coefficients are polynomial in `x` and so are integral whenever `x` is. No domain,
