@@ -156,24 +156,7 @@ theorem eventually_boxBoundarySum_cauchyFueterCutoffField
     ∀ᶠ ε : ℝ in 𝓝[>] 0,
       boxBoundarySum a b (fun i x ↦ cauchyFueterCutoffField ε (dq x₀) (F i) (dq x)) =
         boxBoundarySum a b (fun i x ↦ F i (dq x)) := by
-  let e := (QuaternionAlgebra.linearEquivTuple (-1 : ℝ) 0 (-1)).symm.toContinuousLinearEquiv
-  have he (x : Fin 4 → ℝ) : dq x = e x := congrFun coe_dq x
-  let U := pi univ (fun i ↦ Ioo (a i) (b i))
-  have hU : IsOpen U := isOpen_set_pi finite_univ fun _ _ ↦ isOpen_Ioo
-  have hx₀ : x₀ ∈ U := Set.mem_pi.mpr (fun i _ ↦ ⟨ha i, hb i⟩)
-  obtain ⟨δ, hδ, hball⟩ := Metric.isOpen_iff.mp (e.isOpenMap U hU) (e x₀)
-    (mem_image_of_mem e hx₀)
-  have hdist (i : Fin 4) (c : ℝ) (hc : c = a i ∨ c = b i) (x : Fin 3 → ℝ) :
-      δ ≤ ‖dq (i.insertNth c x) - dq x₀‖ := by
-    by_contra hn
-    have hm := hball (by simpa only [Metric.mem_ball, dist_eq_norm, he] using lt_of_not_ge hn)
-    obtain ⟨y, hy, heq⟩ := hm
-    have hy' : y = i.insertNth c x := e.injective heq
-    have hi := (Set.mem_pi.mp hy) i (mem_univ i)
-    rw [hy', Fin.insertNth_apply_same] at hi
-    rcases hc with rfl | rfl
-    · exact lt_irrefl _ hi.1
-    · exact lt_irrefl _ hi.2
+  obtain ⟨δ, hδ, _, hdist⟩ := exists_ball_subset_and_le_norm_box_face ha hb
   filter_upwards [self_mem_nhdsWithin, nhdsWithin_le_nhds (Iio_mem_nhds hδ)] with ε hε hεδ
   simp only [boxBoundarySum_def]
   apply Finset.sum_congr rfl
