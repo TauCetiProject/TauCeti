@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PDE.Parabolic.EnergyEstimate
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Function.L2Space
 import TauCeti.Analysis.InnerProductSpace.LaxMilgram
+import TauCeti.MeasureTheory.Function.CurveAction.Basic
 import TauCeti.MeasureTheory.Function.IntervalStep.CellAverage
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.Analysis.Sobolev.WeakDeriv.Local
@@ -372,8 +373,10 @@ private theorem exists_rotheScheme_bound [CompleteSpace H] (hab : a < b) {N : �
   set h := (b - a) / N
   have hh : 0 < h := div_pos (sub_pos.2 hab) (Nat.cast_pos.2 hN)
   set B : ℕ → V →L[ℝ] StrongDual ℝ V := fun k ↦ A (a + (min k N : ℕ) * h)
-  have hnode (k : ℕ) : a + (min k N : ℕ) * h ∈ Icc a b :=
-    add_natCast_mul_sub_div_natCast_mem_Icc hab.le hN (min_le_right _ _)
+  have hnode' (k : ℕ) (hk : k ≤ N) : a + k * h ∈ Icc a b :=
+    Icc_subset_Icc_right (add_natCast_mul_sub_div_natCast_self a b hN).le
+      (add_natCast_mul_mem_Icc a hh.le hk)
+  have hnode (k : ℕ) : a + (min k N : ℕ) * h ∈ Icc a b := hnode' _ (min_le_right _ _)
   have hBk (k : ℕ) (hk : k ≤ N) : B k = A (a + k * h) := by simp only [B, min_eq_left hk]
   obtain ⟨x, hx0, hx⟩ := exists_rotheScheme (ι := ι) (B := B) hα hh
     (fun k v ↦ hA _ (hnode _) v) (intervalCellAverage g a h) v₀
@@ -384,8 +387,7 @@ private theorem exists_rotheScheme_bound [CompleteSpace H] (hab : a < b) {N : �
     (fun k _ ↦ hsymm _ (hnode k)) (fun k _ ↦ hA _ (hnode k))
     (fun k hk ↦ by
       rw [hBk (k + 1) hk, hBk k hk.le]
-      refine (hLip _ (add_natCast_mul_sub_div_natCast_mem_Icc hab.le hN hk.le) _
-        (add_natCast_mul_sub_div_natCast_mem_Icc hab.le hN hk)).trans_eq ?_
+      refine (hLip _ (hnode' k hk.le) _ (hnode' (k + 1) hk)).trans_eq ?_
       push_cast
       rw [show a + (k + 1) * h - (a + k * h) = h by ring, abs_of_pos hh])
     (fun k _ v ↦ hx k v) hk
@@ -411,7 +413,7 @@ private theorem exists_rotheScheme_bound [CompleteSpace H] (hab : a < b) {N : �
   · have := hE N le_rfl
     rw [hBk N le_rfl] at this
     have hEN : 0 ≤ A (a + N * h) (x N) (x N) := (by positivity : (0 : ℝ) ≤ α * ‖x N‖ ^ 2).trans
-      (hA _ (add_natCast_mul_sub_div_natCast_mem_Icc hab.le hN le_rfl) _)
+      (hA _ (hnode' N le_rfl) _)
     linarith [hbound N le_rfl]
 
 omit [CompleteSpace V] in
@@ -557,7 +559,8 @@ private theorem rotheScheme_integral_le (hab : a < b) {N : ℕ} (hN : 0 < N) (h�
   have hh : 0 < (b - a) / N := div_pos (sub_pos.2 hab) (Nat.cast_pos.2 hN)
   have hxk (k : ℕ) (hk : k ≤ N) : ‖x k‖ ^ 2 ≤ M / α := by
     rw [le_div_iff₀ hα, mul_comm]
-    exact (hA _ (add_natCast_mul_sub_div_natCast_mem_Icc hab.le hN hk) _).trans (hE k hk)
+    exact (hA _ (Icc_subset_Icc_right (add_natCast_mul_sub_div_natCast_self a b hN).le
+      (add_natCast_mul_mem_Icc a hh.le hk)) _).trans (hE k hk)
   have hδ : ∑ k ∈ Finset.range N, ‖x (k + 1) - x k‖ ^ 2 ≤ M / α := by
     rw [le_div_iff₀ hα, Finset.sum_mul]
     refine le_trans (Finset.sum_le_sum fun k _ ↦ ?_) hS
