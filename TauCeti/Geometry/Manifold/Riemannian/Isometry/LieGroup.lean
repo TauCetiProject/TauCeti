@@ -125,6 +125,37 @@ private theorem mem_chartJetSet_iff (e : M ≃ᵢ M) (x : M) (m : ℕ)
     TauCeti.RiemannianIsometry.coe_toDiffeomorph, IsometryEquiv.coe_toRiemannianIsometry]
 
 /-- Isometries near the identity map a closed coordinate ball around `x` into the chart at `x`,
+with coordinate `m`-jets on that ball in any open set `V` that contains the identity's `m`-jets
+there. -/
+private theorem eventually_iteratedFDerivWithin_chart_mem (x : M) (m : ℕ) {ρ : ℝ}
+    (hBT : closedBall (extChartAt I x x) ρ ⊆ (extChartAt I x).target)
+    {V : Set (E [×m]→L[ℝ] E)} (hV : IsOpen V)
+    (hid : ∀ z ∈ closedBall (extChartAt I x x) ρ,
+      iteratedFDerivWithin ℝ m id (extChartAt I x).target z ∈ V) :
+    ∀ᶠ e : M ≃ᵢ M in 𝓝 1, ∀ z ∈ closedBall (extChartAt I x x) ρ,
+      e ((extChartAt I x).symm z) ∈ (extChartAt I x).source ∧
+        iteratedFDerivWithin ℝ m (extChartAt I x ∘ e ∘ (extChartAt I x).symm)
+          (extChartAt I x).target z ∈ V := by
+  let K : Set (extChartAt I x).target := (↑) ⁻¹' closedBall (extChartAt I x x) ρ
+  have hK : IsCompact K := by
+    rw [Subtype.isCompact_iff, Subtype.image_preimage_coe, inter_eq_right.2 hBT]
+    exact isCompact_closedBall _ _
+  -- The identity passes the weak Whitney test given by `K` and `V`.
+  have h1 : ((1 : M ≃ᵢ M).toRiemannianIsometry I I).toDiffeomorph.toContMDiffMap ∈
+      ContMDiffMap.chartJetSet x x m K V := by
+    rw [mem_chartJetSet_iff]
+    rintro ⟨z, hz⟩ hzB
+    refine ⟨(extChartAt I x).map_target hz, ?_⟩
+    rw [iteratedFDerivWithin_congr (f := id)
+      (f₁ := extChartAt I x ∘ ⇑(1 : M ≃ᵢ M) ∘ (extChartAt I x).symm)
+      (fun y hy ↦ (extChartAt I x).right_inv hy) hz]
+    exact hid z hzB
+  filter_upwards [IsometryEquiv.continuous_toContMDiffMap.continuousAt.preimage_mem_nhds
+    ((ContMDiffMap.isOpen_chartJetSet x x m (by simp) hK hV).mem_nhds h1)] with e he z hzB
+  rw [mem_preimage, mem_chartJetSet_iff] at he
+  exact he ⟨z, hBT hzB⟩ hzB
+
+/-- Isometries near the identity map a closed coordinate ball around `x` into the chart at `x`,
 with coordinate derivative within `1 / 2` of the identity on that ball. -/
 private theorem eventually_norm_fderiv_chart_sub_id_lt (x : M) {ρ : ℝ}
     (hBT : closedBall (extChartAt I x x) ρ ⊆ (extChartAt I x).target) :
@@ -133,29 +164,15 @@ private theorem eventually_norm_fderiv_chart_sub_id_lt (x : M) {ρ : ℝ}
         ‖fderiv ℝ (extChartAt I x ∘ e ∘ (extChartAt I x).symm) z -
           ContinuousLinearMap.id ℝ E‖ < 1 / 2 := by
   have hT : IsOpen (extChartAt I x).target := isOpen_extChartAt_target x
-  let K : Set (extChartAt I x).target := (↑) ⁻¹' closedBall (extChartAt I x x) ρ
-  have hK : IsCompact K := by
-    rw [Subtype.isCompact_iff, Subtype.image_preimage_coe, inter_eq_right.2 hBT]
-    exact isCompact_closedBall _ _
-  let V : Set (E [×1]→L[ℝ] E) :=
-    continuousMultilinearCurryFin1 ℝ E E ⁻¹' ball (ContinuousLinearMap.id ℝ E) (1 / 2)
-  have hV : IsOpen V := isOpen_ball.preimage (continuousMultilinearCurryFin1 ℝ E E).continuous
-  -- The identity passes the weak Whitney test given by `K` and `V`.
-  have h1 : ((1 : M ≃ᵢ M).toRiemannianIsometry I I).toDiffeomorph.toContMDiffMap ∈
-      ContMDiffMap.chartJetSet x x 1 K V := by
-    rw [mem_chartJetSet_iff]
-    rintro ⟨z, hz⟩ -
-    refine ⟨(extChartAt I x).map_target hz, ?_⟩
-    have hid : (extChartAt I x ∘ ⇑(1 : M ≃ᵢ M) ∘ (extChartAt I x).symm) =ᶠ[𝓝 z] id :=
-      Filter.eventually_of_mem (hT.mem_nhds hz) fun y hy ↦ (extChartAt I x).right_inv hy
-    rw [mem_preimage, iteratedFDerivWithin_of_isOpen 1 hT hz,
-      TauCeti.continuousMultilinearCurryFin1_iteratedFDeriv_one,
-      hid.fderiv_eq, fderiv_id, mem_ball, dist_self]
-    norm_num
-  filter_upwards [IsometryEquiv.continuous_toContMDiffMap.continuousAt.preimage_mem_nhds
-    ((ContMDiffMap.isOpen_chartJetSet x x 1 (by simp) hK hV).mem_nhds h1)] with e he z hzB
-  rw [mem_preimage, mem_chartJetSet_iff] at he
-  obtain ⟨h₁, h₂⟩ := he ⟨z, hBT hzB⟩ hzB
+  filter_upwards [eventually_iteratedFDerivWithin_chart_mem x 1 hBT
+    (V := continuousMultilinearCurryFin1 ℝ E E ⁻¹' ball (ContinuousLinearMap.id ℝ E) (1 / 2))
+    (isOpen_ball.preimage (continuousMultilinearCurryFin1 ℝ E E).continuous)
+    fun z hzB ↦ by
+      rw [mem_preimage, iteratedFDerivWithin_of_isOpen 1 hT (hBT hzB),
+        TauCeti.continuousMultilinearCurryFin1_iteratedFDeriv_one, fderiv_id, mem_ball,
+        dist_self]
+      norm_num] with e he z hzB
+  obtain ⟨h₁, h₂⟩ := he z hzB
   rw [mem_preimage, iteratedFDerivWithin_of_isOpen 1 hT (hBT hzB),
     TauCeti.continuousMultilinearCurryFin1_iteratedFDeriv_one,
     mem_ball_iff_norm] at h₂
@@ -168,27 +185,14 @@ private theorem eventually_mem_ball_chart (x : M) {r ρ : ℝ}
     ∀ᶠ e : M ≃ᵢ M in 𝓝 1, ∀ z ∈ closedBall (extChartAt I x x) r,
       e ((extChartAt I x).symm z) ∈ (extChartAt I x).source ∧
         extChartAt I x (e ((extChartAt I x).symm z)) ∈ ball (extChartAt I x x) ρ := by
-  let K : Set (extChartAt I x).target := (↑) ⁻¹' closedBall (extChartAt I x x) r
-  have hK : IsCompact K := by
-    rw [Subtype.isCompact_iff, Subtype.image_preimage_coe, inter_eq_right.2 hBT]
-    exact isCompact_closedBall _ _
-  let V : Set (E [×0]→L[ℝ] E) :=
-    continuousMultilinearCurryFin0 ℝ E E ⁻¹' ball (extChartAt I x x) ρ
-  have hV : IsOpen V := isOpen_ball.preimage (continuousMultilinearCurryFin0 ℝ E E).continuous
-  -- The identity passes the weak Whitney test given by `K` and `V`.
-  have h1 : ((1 : M ≃ᵢ M).toRiemannianIsometry I I).toDiffeomorph.toContMDiffMap ∈
-      ContMDiffMap.chartJetSet x x 0 K V := by
-    rw [mem_chartJetSet_iff]
-    rintro ⟨z, hz⟩ hzB
-    refine ⟨(extChartAt I x).map_target hz, ?_⟩
-    have hzB' : z ∈ closedBall (extChartAt I x x) r := hzB
-    simpa only [V, mem_preimage, continuousMultilinearCurryFin0_apply,
-      iteratedFDerivWithin_zero_apply, comp_apply, coe_one, id_eq, (extChartAt I x).right_inv hz]
-      using closedBall_subset_ball hr hzB'
-  filter_upwards [IsometryEquiv.continuous_toContMDiffMap.continuousAt.preimage_mem_nhds
-    ((ContMDiffMap.isOpen_chartJetSet x x 0 (by simp) hK hV).mem_nhds h1)] with e he z hzB
-  rw [mem_preimage, mem_chartJetSet_iff] at he
-  obtain ⟨h₁, h₂⟩ := he ⟨z, hBT hzB⟩ hzB
+  filter_upwards [eventually_iteratedFDerivWithin_chart_mem x 0 hBT
+    (V := continuousMultilinearCurryFin0 ℝ E E ⁻¹' ball (extChartAt I x x) ρ)
+    (isOpen_ball.preimage (continuousMultilinearCurryFin0 ℝ E E).continuous)
+    fun z hzB ↦ by
+      simpa only [mem_preimage, continuousMultilinearCurryFin0_apply,
+        iteratedFDerivWithin_zero_apply, id_eq] using closedBall_subset_ball hr hzB]
+    with e he z hzB
+  obtain ⟨h₁, h₂⟩ := he z hzB
   rw [mem_preimage, continuousMultilinearCurryFin0_apply, iteratedFDerivWithin_zero_apply] at h₂
   exact ⟨h₁, h₂⟩
 
