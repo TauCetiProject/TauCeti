@@ -156,9 +156,7 @@ theorem covariance_eq_zero (h : IsMinimumVarianceUnbiasedEstimator P W g) {U : X
     rw [variance_fun_add (h.memLp θ) ((hU2 θ).const_mul a), covariance_const_mul_right,
       variance_const_mul] at hle
     nlinarith
-  have hd := discrim_le_zero hquad
-  simp only [discrim, mul_zero, sub_zero] at hd
-  nlinarith [sq_nonneg cov[W, U; P θ]]
+  simpa [discrim, mul_eq_zero, two_ne_zero] using discrim_le_zero hquad
 
 end IsMinimumVarianceUnbiasedEstimator
 
@@ -190,8 +188,8 @@ theorem IsMinimumVarianceUnbiasedEstimator.ae_eq (hW : IsMinimumVarianceUnbiased
     rw [← covariance_self (hU.measurable.aemeasurable),
       covariance_fun_sub_left (hW'.memLp θ) (hW.memLp θ) (hU2 θ),
       hW'.covariance_eq_zero hU hU2 θ, hW.covariance_eq_zero hU hU2 θ, sub_zero]
-  filter_upwards [ae_eq_integral_of_variance_eq_zero (hU2 θ) hvar] with x hx
-  rw [hU.integral_eq θ, sub_eq_zero] at hx
-  exact hx.symm
+  have h0 := ae_eq_integral_of_variance_eq_zero (hU2 θ) hvar
+  rw [hU.integral_eq θ] at h0
+  exact (Filter.eventuallyEq_iff_sub (f := W') (g := W).mpr h0).symm
 
 end TauCeti
