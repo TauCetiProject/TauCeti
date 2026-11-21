@@ -42,9 +42,9 @@ derivative bounds; it localizes operators to the frequencies of a single block.
 
 ## Main declarations
 
-* `TauCeti.exists_mul_eq_zero_of_dyadic_support`: if `ψ i` vanishes where `2 ^ e i * R ≤ ρ ξ`
-  and `ψ' k` vanishes where `ρ ξ ≤ 2 ^ (e' k - 1) * r`, then `ψ i` and `ψ' k` have disjoint
-  supports once `e i + L ≤ e' k`, for some `L`.
+* `TauCeti.mul_eq_zero_of_dyadic_support`: if `f` vanishes where `2 ^ a * R ≤ ρ ξ`, `g` vanishes
+  where `ρ ξ ≤ 2 ^ (b - 1) * r`, and `R ≤ 2 ^ n * r` with `0 ≤ r`, then `f` and `g` have disjoint
+  supports once `a + n + 1 ≤ b`.
 * `ContDiffBump.exists_rOut_lt_two_pow_mul_rIn`: `φ.rOut < 2^N φ.rIn` for some `N`.
 * `ContDiffBump.littlewoodPaley`: the dyadic cutoff `ψⱼ`.
 * `ContDiffBump.littlewoodPaley_apply_eq_littlewoodPaley_zero_apply`: `ψⱼ` is the rescaling
@@ -108,26 +108,21 @@ open scoped ContDiff
 
 namespace TauCeti
 
-/-- **Finite overlap of dyadically supported families.** Let `ψ i` vanish where
-`2 ^ e i * R ≤ ρ ξ` and `ψ' k` vanish where `ρ ξ ≤ 2 ^ (e' k - 1) * r`, with `0 < r`. Then there
-is `L` such that `ψ i` and `ψ' k` have disjoint supports whenever `e i + L ≤ e' k`. -/
-theorem exists_mul_eq_zero_of_dyadic_support {ι κ α : Type*} {ψ : ι → α → ℝ} {ψ' : κ → α → ℝ}
-    {e : ι → ℤ} {e' : κ → ℤ} {ρ : α → ℝ} {R r : ℝ} (hr : 0 < r)
-    (hψ : ∀ i ξ, 2 ^ e i * R ≤ ρ ξ → ψ i ξ = 0)
-    (hψ' : ∀ k ξ, ρ ξ ≤ 2 ^ (e' k - 1) * r → ψ' k ξ = 0) :
-    ∃ L : ℕ, ∀ i k, e i + L ≤ e' k → ∀ ξ, ψ i ξ * ψ' k ξ = 0 := by
-  obtain ⟨n, hn⟩ := pow_unbounded_of_one_lt (R / r) (one_lt_two (α := ℝ))
-  have hn' : R ≤ 2 ^ n * r := ((div_lt_iff₀ hr).1 hn).le
-  refine ⟨n + 1, fun i k hik ξ ↦ ?_⟩
-  rcases le_or_gt (ρ ξ) (2 ^ (e' k - 1) * r) with hξ | hξ
-  · rw [hψ' k ξ hξ, mul_zero]
-  · refine mul_eq_zero_of_left (hψ i ξ (le_trans ?_ hξ.le)) _
-    calc (2 : ℝ) ^ e i * R ≤ 2 ^ e i * (2 ^ n * r) :=
-          mul_le_mul_of_nonneg_left hn' (zpow_nonneg zero_le_two _)
-      _ = 2 ^ (e i + n) * r := by rw [zpow_add₀ two_ne_zero, zpow_natCast, mul_assoc]
-      _ ≤ 2 ^ (e' k - 1) * r :=
-          mul_le_mul_of_nonneg_right (zpow_le_zpow_right₀ one_le_two (by push_cast at hik; omega))
-            hr.le
+/-- **Disjoint supports of dyadically supported functions.** Let `f` vanish where
+`2 ^ a * R ≤ ρ ξ` and `g` vanish where `ρ ξ ≤ 2 ^ (b - 1) * r`, with `0 ≤ r` and
+`R ≤ 2 ^ n * r`. Then `f` and `g` have disjoint supports whenever `a + n + 1 ≤ b`. -/
+theorem mul_eq_zero_of_dyadic_support {α : Type*} {f g ρ : α → ℝ} {a b : ℤ} {R r : ℝ} {n : ℕ}
+    (hr : 0 ≤ r) (hn : R ≤ 2 ^ n * r) (hf : ∀ ξ, 2 ^ a * R ≤ ρ ξ → f ξ = 0)
+    (hg : ∀ ξ, ρ ξ ≤ 2 ^ (b - 1) * r → g ξ = 0) (hab : a + n + 1 ≤ b) (ξ : α) :
+    f ξ * g ξ = 0 := by
+  rcases le_or_gt (ρ ξ) (2 ^ (b - 1) * r) with hξ | hξ
+  · rw [hg ξ hξ, mul_zero]
+  · refine mul_eq_zero_of_left (hf ξ (le_trans ?_ hξ.le)) _
+    calc (2 : ℝ) ^ a * R ≤ 2 ^ a * (2 ^ n * r) :=
+          mul_le_mul_of_nonneg_left hn (zpow_nonneg zero_le_two _)
+      _ = 2 ^ (a + n) * r := by rw [zpow_add₀ two_ne_zero, zpow_natCast, mul_assoc]
+      _ ≤ 2 ^ (b - 1) * r :=
+          mul_le_mul_of_nonneg_right (zpow_le_zpow_right₀ one_le_two (by omega)) hr
 
 end TauCeti
 
@@ -309,10 +304,11 @@ that the cutoff `ψⱼ` of `φ` and the cutoff `ψ'ₖ` of `φ'` have disjoint s
 `j + L ≤ k`. For `φ' = φ` this is the finite overlap of a single family of cutoffs. -/
 theorem exists_littlewoodPaley_mul_eq_zero (φ' : ContDiffBump (0 : E)) :
     ∃ L : ℕ, ∀ j k : ℤ, j + L ≤ k → ∀ ξ : E,
-      φ.littlewoodPaley j ξ * φ'.littlewoodPaley k ξ = 0 :=
-  exists_mul_eq_zero_of_dyadic_support (e := id) (e' := id) (ρ := norm) φ'.rIn_pos
-    (fun _ _ ↦ φ.littlewoodPaley_eq_zero_of_le_norm)
-    (fun _ _ ↦ φ'.littlewoodPaley_eq_zero_of_norm_le)
+      φ.littlewoodPaley j ξ * φ'.littlewoodPaley k ξ = 0 := by
+  obtain ⟨n, hn⟩ := pow_unbounded_of_one_lt (φ.rOut / φ'.rIn) (one_lt_two (α := ℝ))
+  exact ⟨n + 1, fun j k hjk ↦ mul_eq_zero_of_dyadic_support (ρ := norm) φ'.rIn_pos.le
+    ((div_lt_iff₀ φ'.rIn_pos).1 hn).le (fun _ ↦ φ.littlewoodPaley_eq_zero_of_le_norm)
+    (fun _ ↦ φ'.littlewoodPaley_eq_zero_of_norm_le) (by push_cast at hjk; omega)⟩
 
 /-- **Bounded overlap of the dyadic cutoffs.** There is `L`, depending only on `φ`, such that at
 every `ξ` at most `L` cutoffs `ψⱼ` are nonzero, over any finite set of indices. -/
@@ -559,18 +555,12 @@ theorem inhomogeneousLittlewoodPaley_mul_eq_zero (φ' : ContDiffBump (0 : E)) {j
     have hceil : φ.rOut / φ'.rIn ≤ (2 : ℝ) ^ n :=
       (Nat.le_ceil _).trans (by exact_mod_cast Nat.le_pow_clog one_lt_two ⌈φ.rOut / φ'.rIn⌉₊)
     exact (div_le_iff₀ φ'.rIn_pos).1 hceil
-  obtain ⟨k, rfl⟩ : ∃ k', k = k' + 1 :=
-    Nat.exists_eq_add_one.2 (by rw [littlewoodPaleyOverlap_def] at hjk; omega)
-  rcases le_or_gt ‖ξ‖ (2 ^ k * φ'.rIn) with hξ | hξ
-  · rw [φ'.inhomogeneousLittlewoodPaley_succ_eq_zero_of_norm_le hξ, mul_zero]
-  · refine mul_eq_zero_of_left (φ.inhomogeneousLittlewoodPaley_eq_zero_of_le_norm ?_) _
-    refine le_trans ?_ hξ.le
-    calc (2 : ℝ) ^ j * φ.rOut ≤ 2 ^ j * (2 ^ n * φ'.rIn) :=
-          mul_le_mul_of_nonneg_left hn (pow_nonneg zero_le_two _)
-      _ = 2 ^ (j + n) * φ'.rIn := by rw [pow_add, mul_assoc]
-      _ ≤ 2 ^ k * φ'.rIn :=
-          mul_le_mul_of_nonneg_right (pow_le_pow_right₀ one_le_two
-            (by rw [littlewoodPaleyOverlap_def] at hjk; omega)) φ'.rIn_pos.le
+  rw [littlewoodPaleyOverlap_def] at hjk
+  obtain ⟨k, rfl⟩ : ∃ k', k = k' + 1 := Nat.exists_eq_add_one.2 (by omega)
+  exact mul_eq_zero_of_dyadic_support (a := j) (b := k + 1) (ρ := norm) φ'.rIn_pos.le hn
+    (fun x h ↦ φ.inhomogeneousLittlewoodPaley_eq_zero_of_le_norm (ξ := x) (by simpa using h))
+    (fun x h ↦ φ'.inhomogeneousLittlewoodPaley_succ_eq_zero_of_norm_le (ξ := x) (by simpa using h))
+    (by omega) ξ
 
 /-- **Finite overlap.** For two bump functions `φ` and `φ'`, there is `L` such that the piece `ψⱼ`
 of the partition of `φ` and the piece `ψ'ₖ` of the partition of `φ'` have disjoint supports
