@@ -210,9 +210,26 @@ theorem vecMulEquiv_symm {R : Type*} [CommRing R] {n : Type*} [Fintype n] [Decid
   rfl
 
 /-- Right multiplication by `g ∈ SL(n, R)` fixes the zero row vector. -/
+-- Not `@[simp]`: `simpNF` rejects it because `@[simp] vecMulEquiv_apply` and Mathlib's
+-- `@[simp] Matrix.zero_vecMul` already simplify `g.vecMulEquiv 0` to `0`.
 theorem vecMulEquiv_zero {R : Type*} [CommRing R] {n : Type*} [Fintype n] [DecidableEq n]
     (g : SpecialLinearGroup n R) : g.vecMulEquiv 0 = 0 := by
   simp
+
+/-- Right multiplication by `1 ∈ SL(n, R)` is the identity permutation on `n → R`. -/
+@[simp]
+theorem vecMulEquiv_one {R : Type*} [CommRing R] {n : Type*} [Fintype n] [DecidableEq n] :
+    (1 : SpecialLinearGroup n R).vecMulEquiv = Equiv.refl (n → R) := by
+  ext a i
+  simp
+
+/-- Right multiplication by `g * h ∈ SL(n, R)` composes in right-action order:
+`(g * h).vecMulEquiv = g.vecMulEquiv.trans h.vecMulEquiv`. -/
+theorem vecMulEquiv_mul {R : Type*} [CommRing R] {n : Type*} [Fintype n] [DecidableEq n]
+    (g h : SpecialLinearGroup n R) :
+    (g * h).vecMulEquiv = g.vecMulEquiv.trans h.vecMulEquiv := by
+  ext a i
+  simp [Matrix.vecMul_vecMul]
 
 /-- Right multiplication of row vectors by `g ∈ SL(n, R)` permutes `n → R`, so it does not change
 a sum over all row vectors when `R` is finite. -/

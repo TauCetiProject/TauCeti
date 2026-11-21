@@ -311,9 +311,9 @@ theorem periodic_smul_comp_ofComplex_of_Gamma_invariant {α : Type*} {N : ℕ} {
       apply UpperHalfPlane.ext
       rw [UpperHalfPlane.modular_T_zpow_smul]
       simp [add_comm]
-    rw [hof, ← mul_smul,
-      show γ * ModularGroup.T ^ (N : ℤ) = (γ * ModularGroup.T ^ (N : ℤ) * γ⁻¹) * γ by group,
-      mul_smul]
+    have hconj_eq : γ * ModularGroup.T ^ (N : ℤ) = (γ * ModularGroup.T ^ (N : ℤ) * γ⁻¹) * γ := by
+      group
+    rw [hof, ← mul_smul, hconj_eq, mul_smul]
     exact hinv _ hconj _
   · rw [UpperHalfPlane.ofComplex_apply_of_im_nonpos (by linarith),
       UpperHalfPlane.ofComplex_apply_of_im_nonpos (not_lt.mp hz)]

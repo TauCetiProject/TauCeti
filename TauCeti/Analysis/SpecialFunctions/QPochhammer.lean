@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Analytic.Basic
 public import Mathlib.Analysis.Complex.LocallyUniformLimit
 public import Mathlib.Analysis.Complex.Periodic
 public import Mathlib.Analysis.Complex.UpperHalfPlane.FunctionsBoundedAtInfty
@@ -13,7 +12,6 @@ public import Mathlib.Analysis.Normed.Module.MultipliableUniformlyOn
 public import TauCeti.Algebra.Ring.Parity
 public import TauCeti.Analysis.Normed.Ring.InfiniteProd
 public import TauCeti.Analysis.Normed.Ring.Basic
-import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.Normed.Field.Instances
 import Mathlib.Analysis.Normed.Module.Completion
 import TauCeti.Topology.Algebra.InfiniteSum.NatInt
@@ -95,9 +93,9 @@ holomorphy argument is adapted from `Mathlib.NumberTheory.ModularForms.DedekindE
   together with its convergence (`TauCeti.multipliable_qPochhammerFun`), reindexing and shift
   identities (`TauCeti.tprod_one_sub_pow_succ_mul_eq_qPochhammerFun`,
   `TauCeti.tprod_one_sub_pow_succ_mul_inv_eq_qPochhammerFun`,
-  `TauCeti.qPochhammerFun_eq_one_sub_mul_tprod`, `TauCeti.qPochhammerFun_eq_mul`), asymptotics
-  near `0` (`TauCeti.isBigO_qPochhammerFun_sub_one`), and holomorphy on the open unit disc
-  (`TauCeti.differentiableOn_qPochhammerFun`, `TauCeti.analyticAt_qPochhammerFun`).
+  `TauCeti.qPochhammerFun_eq_one_sub_mul_tprod`, `TauCeti.qPochhammerFun_eq_one_sub_mul`),
+  asymptotics near `0` (`TauCeti.isBigO_qPochhammerFun_sub_one`), and holomorphy on the open
+  unit disc (`TauCeti.differentiableOn_qPochhammerFun`, `TauCeti.analyticAt_qPochhammerFun`).
 -/
 
 public section
@@ -685,6 +683,7 @@ theorem qPochhammerFun_zero_left {𝕜 : Type*} [CommRing 𝕜] [TopologicalSpac
     qPochhammerFun N c (0 : 𝕜) z = 1 := by simp [qPochhammerFun_def]
 
 /-- For `0 < c`, `qPochhammerFun N c w 0 = 1`. -/
+@[simp]
 theorem qPochhammerFun_zero_right {𝕜 : Type*} [CommRing 𝕜] [TopologicalSpace 𝕜]
     {N c : ℕ} (hc : 0 < c) (w : 𝕜) : qPochhammerFun N c w (0 : 𝕜) = 1 := by
   simp only [qPochhammerFun_def, zero_pow ((by omega : ∀ n, N * n + c ≠ 0) _), mul_zero, sub_zero,
@@ -702,7 +701,7 @@ theorem multipliable_qPochhammerFun {𝕜 : Type*} [NormedField 𝕜] [CompleteS
 
 /-- **Shift identity for `qPochhammerFun`**: for `0 < N` and `‖z‖ < 1`,
 `qPochhammerFun N c w z = (1 - w z^c) * qPochhammerFun N (N + c) w z`. -/
-theorem qPochhammerFun_eq_mul {𝕜 : Type*} [NormedField 𝕜] [CompleteSpace 𝕜]
+theorem qPochhammerFun_eq_one_sub_mul {𝕜 : Type*} [NormedField 𝕜] [CompleteSpace 𝕜]
     {N : ℕ} (hN : 0 < N) (c : ℕ) (w : 𝕜) {z : 𝕜} (hz : ‖z‖ < 1) :
     qPochhammerFun N c w z = (1 - w * z ^ c) * qPochhammerFun N (N + c) w z := by
   have hm : Multipliable fun k : ℕ ↦ 1 - w * z ^ (N * (k + 1) + c) :=
@@ -739,7 +738,7 @@ theorem qPochhammerFun_eq_one_sub_mul_tprod {𝕜 : Type*} [NormedField 𝕜] [C
     {N : ℕ} (hN : 0 < N) (c : ℕ) (w : 𝕜) {z : 𝕜} (hz : ‖z‖ < 1) :
     qPochhammerFun N c w z =
       (1 - w * z ^ c) * ∏' k : ℕ, (1 - (z ^ N) ^ (k + 1) * (w * z ^ c)) := by
-  rw [qPochhammerFun_eq_mul hN c w hz, tprod_one_sub_pow_succ_mul_eq_qPochhammerFun]
+  rw [qPochhammerFun_eq_one_sub_mul hN c w hz, tprod_one_sub_pow_succ_mul_eq_qPochhammerFun]
 
 open Asymptotics Filter Topology in
 /-- For `0 < N` and `0 < c`, `qPochhammerFun N c w z - 1 = O(‖z‖ ^ c)` as `z → 0`. -/

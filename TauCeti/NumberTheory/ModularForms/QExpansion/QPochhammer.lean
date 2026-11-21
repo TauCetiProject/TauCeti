@@ -15,10 +15,9 @@ import TauCeti.NumberTheory.ModularForms.QExpansion.BigO
 
 For `h > 0`, `0 < N`, and `c : ℕ`, the cusp function of `τ ↦ qPochhammerFun N c w (𝕢 h τ)` agrees
 near `0` with `qPochhammerFun N c w` (`cuspFunction_qPochhammerFun_eventuallyEq`,
-`analyticAt_cuspFunction_qPochhammerFun`). Together with the single-factor lemmas
-`analyticAt_cuspFunction_one_sub_mul_qParam_pow`, `qExpansion_one_sub_mul_qParam_pow` and partial
-product split `qExpansion_qPochhammerFun_eq_prod_range_mul`, this gives
-`qExpansion_qPochhammerFun` (`q`-expansion equals `TauCeti.qPochhammerSeries N c w` for `0 < c`).
+`analyticAt_cuspFunction_qPochhammerFun`). Together with the partial product split
+`qExpansion_qPochhammerFun_eq_prod_range_mul`, this gives `qExpansion_qPochhammerFun`: the
+`q`-expansion equals `TauCeti.qPochhammerSeries N c w`.
 -/
 
 public noncomputable section
@@ -52,25 +51,6 @@ theorem analyticAt_cuspFunction_qPochhammerFun (hh : 0 < h) {N : ℕ} (hN : 0 < 
     AnalyticAt ℂ (cuspFunction h fun τ : ℍ ↦ qPochhammerFun N c w (𝕢 h τ)) 0 :=
   (analyticAt_qPochhammerFun hN c w).congr (cuspFunction_qPochhammerFun_eventuallyEq hh hN c w).symm
 
-/-- The cusp function of `τ ↦ 1 - w * 𝕢 h τ ^ c` is analytic at `0`. -/
-theorem analyticAt_cuspFunction_one_sub_mul_qParam_pow (h : ℝ) (c : ℕ) (w : ℂ) :
-    AnalyticAt ℂ (cuspFunction h fun τ : ℍ ↦ 1 - w * 𝕢 h τ ^ c) 0 :=
-  analyticAt_cuspFunction_sub (analyticAt_cuspFunction_const h 1)
-    (analyticAt_cuspFunction_smul (analyticAt_cuspFunction_qParam_pow h c) w)
-
-/-- For `0 < h`, the `q`-expansion of `τ ↦ 1 - w * 𝕢 h τ ^ c` is `1 - C w * X ^ c`. -/
-theorem qExpansion_one_sub_mul_qParam_pow (hh : 0 < h) (c : ℕ) (w : ℂ) :
-    qExpansion h (fun τ : ℍ ↦ 1 - w * 𝕢 h τ ^ c) = 1 - PowerSeries.C w * PowerSeries.X ^ c := by
-  have hanq := analyticAt_cuspFunction_qParam_pow h c
-  rw [show (fun τ : ℍ ↦ 1 - w * 𝕢 h τ ^ c) = (1 : ℍ → ℂ) - w • fun τ : ℍ ↦ 𝕢 h τ ^ c by
-      funext; simp,
-    _root_.UpperHalfPlane.qExpansion_sub
-      (by rw [Pi.one_def]; exact analyticAt_cuspFunction_const h 1)
-      (analyticAt_cuspFunction_smul hanq w),
-    _root_.UpperHalfPlane.qExpansion_one, _root_.UpperHalfPlane.qExpansion_smul hanq w,
-    qExpansion_qParam_pow hh, Algebra.smul_def, PowerSeries.algebraMap_apply,
-    Algebra.algebraMap_self, RingHom.id_apply]
-
 /-- For `0 < h` and `0 < N`, splitting off the first `m` factors of `qPochhammerFun N c w (𝕢 h τ)`
 in `qExpansion`. -/
 theorem qExpansion_qPochhammerFun_eq_prod_range_mul (hh : 0 < h) {N : ℕ} (hN : 0 < N)
@@ -83,22 +63,26 @@ theorem qExpansion_qPochhammerFun_eq_prod_range_mul (hh : 0 < h) {N : ℕ} (hN :
   | succ m ih =>
     have hfun : (fun τ : ℍ ↦ qPochhammerFun N c w (𝕢 h τ)) =
         (fun τ : ℍ ↦ 1 - w * 𝕢 h τ ^ c) * fun τ : ℍ ↦ qPochhammerFun N (N + c) w (𝕢 h τ) :=
-      funext fun τ ↦ qPochhammerFun_eq_mul hN c w (Function.Periodic.norm_qParam_lt_one hh τ.im_pos)
+      funext fun τ ↦
+        qPochhammerFun_eq_one_sub_mul hN c w (Function.Periodic.norm_qParam_lt_one hh τ.im_pos)
+    have hshift (n : ℕ) : N * n + (N + c) = N * (n + 1) + c := by
+      rw [Nat.mul_succ]
+      ring
     rw [hfun, _root_.UpperHalfPlane.qExpansion_mul
       (analyticAt_cuspFunction_one_sub_mul_qParam_pow h c w)
       (analyticAt_cuspFunction_qPochhammerFun hh hN _ w),
       qExpansion_one_sub_mul_qParam_pow hh c w, ih (N + c)]
-    simp only [show ∀ n, N * n + (N + c) = N * (n + 1) + c from fun _ ↦ by ring,
-      Finset.prod_range_succ', mul_zero, zero_add]; ring
+    simp only [hshift, Finset.prod_range_succ', mul_zero, zero_add]
+    ring
 
-/-- **The `q`-expansion of a shifted `q`-Pochhammer product.** For `0 < h`, `0 < N`, and `0 < c`,
-the `q`-expansion of `τ ↦ ∏_{n ≥ 0} (1 - w 𝕢 h τ^{N n + c})` equals the formal power series
+/-- **The `q`-expansion of a shifted `q`-Pochhammer product.** For `0 < h` and `0 < N`, the
+`q`-expansion of `τ ↦ ∏_{n ≥ 0} (1 - w 𝕢 h τ^{N n + c})` equals the formal power series
 `qPochhammerSeries N c w`. -/
-theorem qExpansion_qPochhammerFun (hh : 0 < h) {N c : ℕ} (hN : 0 < N) (hc : 0 < c) (w : ℂ) :
+theorem qExpansion_qPochhammerFun (hh : 0 < h) {N : ℕ} (hN : 0 < N) (c : ℕ) (w : ℂ) :
     qExpansion h (fun τ : ℍ ↦ qPochhammerFun N c w (𝕢 h τ)) = qPochhammerSeries N c w := by
   ext m
-  set c' := N * m + c
-  have hc' : m < c' := by have := Nat.mul_le_mul_right m hN; omega
+  set c' := N * (m + 1) + c
+  have hc' : m < c' := by have := Nat.mul_le_mul_right (m + 1) hN; omega
   have han1 : AnalyticAt ℂ (cuspFunction h (1 : ℍ → ℂ)) 0 := by
     rw [Pi.one_def]; exact analyticAt_cuspFunction_const h 1
   have hanP := analyticAt_cuspFunction_qPochhammerFun hh hN c' w
@@ -116,7 +100,7 @@ theorem qExpansion_qPochhammerFun (hh : 0 < h) {N c : ℕ} (hN : 0 < N) (hc : 0 
     have h := hzero k hk
     rwa [_root_.UpperHalfPlane.qExpansion_sub hanP han1, _root_.UpperHalfPlane.qExpansion_one,
       map_sub, sub_eq_zero] at h
-  rw [qExpansion_qPochhammerFun_eq_prod_range_mul hh hN c m w, coeff_qPochhammerSeries,
+  rw [qExpansion_qPochhammerFun_eq_prod_range_mul hh hN c (m + 1) w, coeff_qPochhammerSeries,
     PowerSeries.coeff_mul]
   rw [Finset.sum_congr rfl fun p hp ↦ by
     rw [hcoeff p.2 ((by have := Finset.mem_antidiagonal.mp hp; omega : p.2 ≤ m).trans_lt hc')],

@@ -5,6 +5,7 @@ Authors: Chris Birkbeck, The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Field.Defs
 public import Mathlib.Algebra.Group.Pi.Units
 public import Mathlib.Data.ZMod.Units
 public import Mathlib.Data.ZMod.QuotientRing
@@ -61,6 +62,8 @@ and the name places the divisibility in Mathlib's operand order.
 * `ZMod.unitsEquivPi_apply`, `ZMod.unitsMap_unitsEquivPi_symm`: the same for `ZMod.unitsEquivPi`.
 * `ZMod.dvd_of_forall_mul_eq_zero`: divisibility inside `ZMod n` from annihilators: if every `r`
   with `r d = 0` has `r x = 0`, then `d ∣ x`.
+* `TauCeti.exists_div_eq_intCast_iff_zmod_eq_zero`: a vector `a / N` in a characteristic-zero
+  division ring is integral iff `a ≡ 0 (mod N)`.
 -/
 
 public section
@@ -234,3 +237,21 @@ theorem dvd_of_forall_mul_eq_zero {n : ℕ} [NeZero n] {d x : ZMod n}
     _ = x := natCast_zmod_val x
 
 end ZMod
+
+namespace TauCeti
+
+/-- For `N ≠ 0`, a vector `a / N` in a characteristic-zero division ring `K` equals an integer
+vector cast to `K` if and only if `a ≡ 0 (mod N)`. -/
+theorem exists_div_eq_intCast_iff_zmod_eq_zero {ι K : Type*} [DivisionRing K] [CharZero K]
+    {N : ℕ} (hN : N ≠ 0) (a : ι → ℤ) :
+    (∃ s : ι → ℤ, (fun i ↦ (a i : K) / N) = fun i ↦ (s i : K)) ↔
+      (fun i ↦ (a i : ZMod N)) = 0 := by
+  have hNK : (N : K) ≠ 0 := Nat.cast_ne_zero.mpr hN
+  refine ⟨fun ⟨s, hs⟩ ↦ funext fun i ↦ ?_, fun h0 ↦ ?_⟩
+  · have hZ : a i = s i * N := by exact_mod_cast (div_eq_iff hNK).mp (congrFun hs i)
+    exact (ZMod.intCast_zmod_eq_zero_iff_dvd (a i) N).mpr ⟨s i, hZ.trans (mul_comm _ _)⟩
+  · choose s hs using fun i ↦ (ZMod.intCast_zmod_eq_zero_iff_dvd (a i) N).mp (congrFun h0 i)
+    refine ⟨s, funext fun i ↦ (div_eq_iff hNK).mpr ?_⟩
+    exact_mod_cast (hs i).trans (mul_comm _ _)
+
+end TauCeti

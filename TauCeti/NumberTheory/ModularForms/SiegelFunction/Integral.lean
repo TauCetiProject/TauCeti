@@ -11,9 +11,8 @@ import Mathlib.RingTheory.RootsOfUnity.Lemmas
 import TauCeti.Analysis.Complex.UpperHalfPlane.Manifold
 import TauCeti.Data.Rat.ZMultiples
 import TauCeti.Data.ZMod.FinEquiv
-import TauCeti.LinearAlgebra.Matrix.RationalVector
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
-import TauCeti.NumberTheory.Cyclotomic.Adjoin
+import TauCeti.NumberTheory.Cyclotomic.Aut
 import TauCeti.NumberTheory.ModularForms.LevelOne.Invariant
 import TauCeti.NumberTheory.ModularForms.LevelOne.WeaklyHolomorphic
 import TauCeti.NumberTheory.ModularForms.QExpansion.BigO
@@ -31,19 +30,19 @@ whenever `j` (or `j(τ)`) is integral over a commutative ring `R`, every `g_r` (
 
 ## Main results
 
-* `TauCeti.ModularForm.prod_siegelFunction_div_pow_twelve_mul_eq`:
-  `∏_{v ∈ (ℤ/Nℤ)² \ {0}} g_{v/N}(τ)^{12 N} = N^{12 N}` (cusp orders sum to `0` and leading
-  `q_N`-coefficients multiply to `N^{12 N}`).
+* `TauCeti.ModularForm.prod_siegelFunction_div_pow_twelve_mul_eq`,
+  `natCast_div_siegelFunction_div_pow_twelve_mul_eq_prod_erase`:
+  `∏_{v ∈ (ℤ/Nℤ)² \ {0}} g_{v/N}(τ)^{12 N} = N^{12 N}` and the complementary-product formula for
+  `(N / g_{a/N}(τ))^{12 N}`.
 * `TauCeti.ModularForm.exists_monic_map_aeval_j_eq_prod_X_sub_C_siegelFunction_div_pow_twelve_mul`:
   monic `Φ ∈ (ℤ[X])[X]` specializing at `j(τ)` to `∏_{v ∈ S} (X - g_{v/N}(τ)^{12 N})`, obtained via
   `SL₂(ℤ)`-invariance, cyclotomic descent on `ℤ[ζ_N]`, and `exists_aeval_j_eq`.
 * `TauCeti.ModularForm.isIntegral_siegelFunction_div`, `isIntegral_siegelFunction_ratCast`,
   `isIntegral_natCast_div_siegelFunction_div`: function-level integrality over any ring over which
   `j` is integral (via `(12 N)`-th roots and `(N / g_{v/N})^{12 N} = ∏_{w ≠ v} g_{w/N}^{12 N}`).
-* `TauCeti.ModularForm.isIntegral_apply_of_isIntegral_adjoin_j`,
-  `isIntegral_siegelFunction_div_apply`, `isIntegral_siegelFunction_ratCast_apply`,
-  `isIntegral_natCast_div_siegelFunction_div_apply`: evaluation descent and pointwise integrality
-  at `τ ∈ ℍ`, plus level-two specializations.
+* `IsIntegral.eval_of_adjoin_j`, `TauCeti.ModularForm.isIntegral_siegelFunction_div_apply`,
+  `isIntegral_siegelFunction_ratCast_apply`, `isIntegral_natCast_div_siegelFunction_div_apply`:
+  evaluation descent and pointwise integrality at `τ ∈ ℍ`, plus level-two specializations.
 
 ## References
 
@@ -77,17 +76,6 @@ private theorem siegelPowerMem_coe (N : ℕ) (v : Fin 2 → ZMod N) :
       fun τ : ℍ ↦ siegelFunction (fun i ↦ ((v i).val : ℝ) / N) τ ^ (12 * N) :=
   rfl
 
-private theorem siegelFunction_zmod_pow_twelve_mul_smul {N k : ℕ} [NeZero N] (hk : N ∣ 6 * k)
-    (v : Fin 2 → ZMod N) (γ : SL(2, ℤ)) (τ : ℍ) :
-    siegelFunction (fun i ↦ ((v i).val : ℝ) / N) ↑(γ • τ) ^ (12 * k) =
-      siegelFunction (fun i ↦
-        (((Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod N)) γ).vecMulEquiv v i).val :
-          ℝ) / N) τ ^ (12 * k) := by
-  set a : Fin 2 → ℤ := fun i ↦ (v i).val
-  have ha : (fun i ↦ ((v i).val : ℝ) / N) = fun i ↦ (a i : ℝ) / N := by ext i; simp [a]
-  rw [ha, siegelFunction_div_pow_twelve_mul_smul_eq_zmod hk a γ τ]
-  congr 3; ext j; simp [a, Matrix.vecMul, dotProduct, Fin.sum_univ_two]
-
 private theorem prod_leadingCoeff_zero_first {N : ℕ} [NeZero N] :
     ∏ v ∈ ((Finset.univ : Finset (Fin 2 → ZMod N)).erase 0).filter (fun v ↦ v 0 = 0),
         (cexp (2 * π * I / N) ^ (6 * (v 0).val * (v 1).val) *
@@ -120,7 +108,7 @@ private theorem prod_leadingCoeff_zero_first {N : ℕ} [NeZero N] :
       simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one,
         ZMod.val_natCast_of_lt hlt]; simp
   · rw [(Complex.isPrimitiveRoot_exp (n + 1) (Nat.succ_ne_zero n)).prod_one_sub_pow_eq_order]
-    push_cast; rfl
+    simp only [Nat.cast_succ]
 
 private theorem prod_leadingCoeff_ne_zero_first {N : ℕ} [NeZero N] :
     ∏ v ∈ ((Finset.univ : Finset (Fin 2 → ZMod N)).erase 0).filter (fun v ↦ ¬v 0 = 0),
@@ -167,7 +155,8 @@ private theorem analyticAt_and_coeff_zero_prod_siegelPower {N : ℕ} [NeZero N] 
     rw [← laurentQExpansionRingHom_apply]
     exact map_prod (laurentQExpansionRingHom N) (siegelPowerMem N) S
   have hfactor_ord (v : Fin 2 → ZMod N) (hv : v ∈ S) :
-      (laurentQExpansionRingHom N (siegelPowerMem N v)).orderTop = siegelCuspOrder N v := by
+      (laurentQExpansionRingHom N (siegelPowerMem N v)).orderTop =
+        siegelPowerCuspExponent N v := by
     have hv0 : (fun i ↦ (((v i).val : ℤ) : ZMod N)) ≠ 0 := by
       simpa [ZMod.natCast_zmod_val] using (Finset.mem_erase.mp hv).1
     have hm := meromorphicOrderAt_cuspFunction_siegelFunction_div_pow_twelve_mul hv0 1
@@ -178,8 +167,8 @@ private theorem analyticAt_and_coeff_zero_prod_siegelPower {N : ℕ} [NeZero N] 
       (mem_meromorphicAtCuspSubring.mp (siegelPowerMem N v).property)).trans hm
   have hord : meromorphicOrderAt (cuspFunction N FM.val) 0 = 0 := by
     rw [← orderTop_laurentQExpansion hFM_mer, hL, HahnSeries.orderTop_prod,
-      Finset.sum_congr rfl hfactor_ord, ← WithTop.coe_sum, sum_siegelCuspOrder_erase_zero N,
-      WithTop.coe_zero]
+      Finset.sum_congr rfl hfactor_ord, ← WithTop.coe_sum,
+      sum_siegelPowerCuspExponent_erase_zero N, WithTop.coe_zero]
   refine ⟨by simpa using analyticAt_cuspFunction_qParam_pow_mul hFM_mer (k := 0) (by simp [hord]),
     ?_⟩
   have hord_eq {x : LaurentSeries ℂ} {k : ℤ} (h : x.orderTop = k) : x.order = k :=
@@ -193,9 +182,17 @@ private theorem analyticAt_and_coeff_zero_prod_siegelPower {N : ℕ} [NeZero N] 
           (if v 0 = 0 then (1 - cexp (2 * π * I / N) ^ (v 1).val) ^ (12 * N) else 1) := by
     rw [HahnSeries.leadingCoeff_eq, hord_eq (hfactor_ord v hv), laurentQExpansionRingHom_apply,
       siegelPowerMem_coe]
-    exact laurentQExpansion_siegelFunction_div_pow_twelve_mul_coeff_siegelCuspOrder v
+    exact laurentQExpansion_siegelFunction_div_pow_twelve_mul_coeff_siegelPowerCuspExponent v
   rw [Finset.prod_congr rfl hfac, ← Finset.prod_filter_mul_prod_filter_not S (fun v ↦ v 0 = 0),
     prod_leadingCoeff_zero_first, prod_leadingCoeff_ne_zero_first, mul_one]
+
+private theorem prod_erase_zero_equiv {M : Type*} [CommMonoid M] {N : ℕ} [NeZero N]
+    (e : (Fin 2 → ZMod N) ≃ (Fin 2 → ZMod N)) (h0 : e 0 = 0)
+    (f g : (Fin 2 → ZMod N) → M)
+    (hfg : ∀ v ∈ (Finset.univ : Finset (Fin 2 → ZMod N)).erase 0, f v = g (e v)) :
+    ∏ v ∈ (Finset.univ : Finset (Fin 2 → ZMod N)).erase 0, f v =
+      ∏ v ∈ (Finset.univ : Finset (Fin 2 → ZMod N)).erase 0, g v :=
+  Finset.prod_equiv e (fun v ↦ by simpa [h0] using (e.injective.ne_iff (x := v) (y := 0)).symm) hfg
 
 /-- **Product of all nonzero level-`N` Siegel `(12 N)`-th powers.** For every positive integer `N`
 and `τ ∈ ℍ`, `∏_{v ∈ (ℤ/Nℤ)² \ {0}} g_{v/N}(τ)^{12 N} = N^{12 N}`. -/
@@ -215,9 +212,9 @@ theorem prod_siegelFunction_div_pow_twelve_mul_eq (N : ℕ) [NeZero N] (τ : ℍ
   have hinv (γ : SL(2, ℤ)) (z : ℍ) : FM.val (γ • z) = FM.val z := by
     rw [hFM_val, hFM_val]
     set e := (Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod N)) γ).vecMulEquiv
-    have h0 : e 0 = 0 := Matrix.SpecialLinearGroup.vecMulEquiv_zero _
-    exact Finset.prod_equiv e
-      (fun v ↦ by simpa [S, h0] using (e.injective.ne_iff (x := v) (y := 0)).symm)
+    exact prod_erase_zero_equiv e (Matrix.SpecialLinearGroup.vecMulEquiv_zero _)
+      (fun v ↦ siegelFunction (fun i ↦ ((v i).val : ℝ) / N) ↑(γ • z) ^ (12 * N))
+      (fun w ↦ siegelFunction (fun i ↦ ((w i).val : ℝ) / N) z ^ (12 * N))
       fun v _ ↦ siegelFunction_zmod_pow_twelve_mul_smul (dvd_mul_left N 6) v γ z
   obtain ⟨han, hlead⟩ := analyticAt_and_coeff_zero_prod_siegelPower (N := N)
   have hper1 : Function.Periodic (FM.val ∘ ofComplex) 1 :=
@@ -244,12 +241,30 @@ private def diagSecondEquiv {N : ℕ} (u : (ZMod N)ˣ) :
 private theorem diagSecondEquiv_zero {N : ℕ} (u : (ZMod N)ˣ) : diagSecondEquiv u 0 = 0 := by
   ext i; fin_cases i <;> simp [diagSecondEquiv]
 
+/-- The monic polynomial `∏_{v ≠ 0} (X - g_{v/N}^{12 N})` over `meromorphicAtCuspSubring N`. -/
+private noncomputable def siegelPowerPoly (N : ℕ) [NeZero N] : (meromorphicAtCuspSubring N)[X] :=
+  ∏ v ∈ (Finset.univ : Finset (Fin 2 → ZMod N)).erase 0,
+    (Polynomial.X - Polynomial.C (siegelPowerMem N v))
+
+private theorem siegelPowerPoly_map_eval (N : ℕ) [NeZero N] (τ : ℍ) :
+    (siegelPowerPoly N).map
+        ((Pi.evalRingHom (fun _ : ℍ ↦ ℂ) τ).comp (meromorphicAtCuspSubring N).subtype) =
+      ∏ v ∈ (Finset.univ : Finset (Fin 2 → ZMod N)).erase 0,
+        (Polynomial.X - Polynomial.C
+          (siegelFunction (fun i ↦ ((v i).val : ℝ) / N) τ ^ (12 * N))) := by
+  simp [siegelPowerPoly, Polynomial.map_prod]
+
+private theorem siegelPowerPoly_coeff_eval (N k : ℕ) [NeZero N] (τ : ℍ) :
+    ((siegelPowerPoly N).coeff k).val τ =
+      (∏ v ∈ (Finset.univ : Finset (Fin 2 → ZMod N)).erase 0,
+        (Polynomial.X - Polynomial.C
+          (siegelFunction (fun i ↦ ((v i).val : ℝ) / N) τ ^ (12 * N)))).coeff k := by
+  rw [← siegelPowerPoly_map_eval N τ, Polynomial.coeff_map]
+  simp only [RingHom.comp_apply, Subring.coe_subtype, Pi.evalRingHom_apply]
+
 private theorem laurentQExpansion_siegelPolyCoeff_mem_range_intCast {N : ℕ} [NeZero N]
     (k : ℕ) (m : ℤ) :
-    (laurentQExpansion N
-      (((∏ v ∈ (Finset.univ : Finset (Fin 2 → ZMod N)).erase 0,
-        (Polynomial.X - Polynomial.C (siegelPowerMem N v))) :
-          (meromorphicAtCuspSubring N)[X]).coeff k).val).coeff m ∈
+    (laurentQExpansion N (((siegelPowerPoly N).coeff k).val)).coeff m ∈
       (Int.castRingHom ℂ).range := by
   set S := (Finset.univ : Finset (Fin 2 → ZMod N)).erase 0
   set Ω : (HahnSeries ℤ ℤ[X])[X] :=
@@ -264,13 +279,10 @@ private theorem laurentQExpansion_siegelPolyCoeff_mem_range_intCast {N : ℕ} [N
     rw [laurentQExpansionRingHom_apply, siegelPowerMem_coe,
       mapRingHom_aeval_exp_pow_siegelPowerLaurentSeries]
   have hmap1 : Ω.map (HahnSeries.mapRingHom (Polynomial.aeval ζ).toRingHom) =
-      (∏ v ∈ S, (Polynomial.X - Polynomial.C (siegelPowerMem N v))).map
-        (laurentQExpansionRingHom N) := by
-    simpa [Polynomial.map_prod, show ∀ v : Fin 2 → ZMod N, ![v 0, v 1] = v from
+      (siegelPowerPoly N).map (laurentQExpansionRingHom N) := by
+    simpa [siegelPowerPoly, Polynomial.map_prod, show ∀ v : Fin 2 → ZMod N, ![v 0, v 1] = v from
       fun v ↦ by ext i; fin_cases i <;> rfl] using hmap 1
-  have heq : (laurentQExpansion N
-      (((∏ v ∈ S, (Polynomial.X - Polynomial.C (siegelPowerMem N v))) :
-        (meromorphicAtCuspSubring N)[X]).coeff k).val).coeff m =
+  have heq : (laurentQExpansion N (((siegelPowerPoly N).coeff k).val)).coeff m =
       Polynomial.aeval ζ ((Ω.coeff k).coeff m) := by
     rw [← laurentQExpansionRingHom_apply, ← Polynomial.coeff_map, ← hmap1,
       Polynomial.coeff_map, HahnSeries.coeff_mapRingHom, AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
@@ -280,53 +292,48 @@ private theorem laurentQExpansion_siegelPolyCoeff_mem_range_intCast {N : ℕ} [N
   have hu : Ω.map (HahnSeries.mapRingHom (Polynomial.aeval (ζ ^ (u : ZMod N).val)).toRingHom) =
       Ω.map (HahnSeries.mapRingHom (Polynomial.aeval ζ).toRingHom) := by
     rw [hmap (u : ZMod N).val, hmap1]
-    simp only [ZMod.natCast_zmod_val, Polynomial.map_prod, Polynomial.map_sub,
+    simp only [siegelPowerPoly, ZMod.natCast_zmod_val, Polynomial.map_prod, Polynomial.map_sub,
       Polynomial.map_X, Polynomial.map_C]
-    set e := diagSecondEquiv u
-    have h0 : e 0 = 0 := diagSecondEquiv_zero u
-    exact Finset.prod_equiv e
-      (fun v ↦ by simpa [S, h0] using (e.injective.ne_iff (x := v) (y := 0)).symm)
+    exact prod_erase_zero_equiv (diagSecondEquiv u) (diagSecondEquiv_zero u)
+      (fun v ↦ Polynomial.X - Polynomial.C
+        (laurentQExpansionRingHom N (siegelPowerMem N ![v 0, (u : ZMod N) * v 1])))
+      (fun w ↦ Polynomial.X - Polynomial.C (laurentQExpansionRingHom N (siegelPowerMem N w)))
       fun _ _ ↦ rfl
   simpa only [Polynomial.coeff_map, HahnSeries.coeff_mapRingHom, AlgHom.toRingHom_eq_coe,
     RingHom.coe_coe] using congrArg (fun P : (LaurentSeries ℂ)[X] ↦ (P.coeff k).coeff m) hu
 
 private theorem exists_aeval_j_siegelPolyCoeff {N : ℕ} [NeZero N] (k : ℕ) :
-    ∃ P : ℤ[X], ∀ τ : ℍ, Polynomial.aeval (j τ) P =
-      (((∏ v ∈ (Finset.univ : Finset (Fin 2 → ZMod N)).erase 0,
-        (Polynomial.X - Polynomial.C (siegelPowerMem N v))) :
-          (meromorphicAtCuspSubring N)[X]).coeff k).val τ := by
+    ∃ P : ℤ[X], ∀ τ : ℍ, Polynomial.aeval (j τ) P = ((siegelPowerPoly N).coeff k).val τ := by
   set S := (Finset.univ : Finset (Fin 2 → ZMod N)).erase 0
-  set Ψ : (meromorphicAtCuspSubring N)[X] :=
-    ∏ v ∈ S, (Polynomial.X - Polynomial.C (siegelPowerMem N v))
-  have hΨ_eval (τ : ℍ) :
-      Ψ.map ((Pi.evalRingHom (fun _ : ℍ ↦ ℂ) τ).comp (meromorphicAtCuspSubring N).subtype) =
-        ∏ v ∈ S, (Polynomial.X - Polynomial.C
-          (siegelFunction (fun i ↦ ((v i).val : ℝ) / N) τ ^ (12 * N))) := by
-    simp [Ψ, Polynomial.map_prod]
-  have hΨ_mdiff : MDiff (Ψ.coeff k).val := by
-    rw [show (Ψ.coeff k).val = fun τ : ℍ ↦ (∏ v ∈ S, (Polynomial.X - Polynomial.C
-        (siegelFunction (fun i ↦ ((v i).val : ℝ) / N) τ ^ (12 * N)))).coeff k from funext fun τ ↦
-      by simpa using congrArg (fun Q : ℂ[X] ↦ Q.coeff k) (hΨ_eval τ)]
+  have hΨ_mdiff : MDiff ((siegelPowerPoly N).coeff k).val := by
+    rw [funext (siegelPowerPoly_coeff_eval N k)]
     exact mdifferentiable_coeff_prod_X_sub_C S
       (fun v _ ↦ (mdifferentiable_siegelFunction _).pow (12 * N)) k
-  have hinv (γ : SL(2, ℤ)) (τ : ℍ) : (Ψ.coeff k).val (γ • τ) = (Ψ.coeff k).val τ := by
+  have hinv (γ : SL(2, ℤ)) (τ : ℍ) :
+      ((siegelPowerPoly N).coeff k).val (γ • τ) = ((siegelPowerPoly N).coeff k).val τ := by
     have hpoly :
-        Ψ.map ((Pi.evalRingHom (fun _ : ℍ ↦ ℂ) (γ • τ)).comp (meromorphicAtCuspSubring N).subtype) =
-          Ψ.map ((Pi.evalRingHom (fun _ : ℍ ↦ ℂ) τ).comp (meromorphicAtCuspSubring N).subtype) := by
-      rw [hΨ_eval, hΨ_eval]
+        (siegelPowerPoly N).map
+            ((Pi.evalRingHom (fun _ : ℍ ↦ ℂ) (γ • τ)).comp (meromorphicAtCuspSubring N).subtype) =
+          (siegelPowerPoly N).map
+            ((Pi.evalRingHom (fun _ : ℍ ↦ ℂ) τ).comp (meromorphicAtCuspSubring N).subtype) := by
+      rw [siegelPowerPoly_map_eval, siegelPowerPoly_map_eval]
       set e := (Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod N)) γ).vecMulEquiv
-      have h0 : e 0 = 0 := Matrix.SpecialLinearGroup.vecMulEquiv_zero _
-      exact Finset.prod_equiv e
-        (fun v ↦ by simpa [S, h0] using (e.injective.ne_iff (x := v) (y := 0)).symm)
+      exact prod_erase_zero_equiv e (Matrix.SpecialLinearGroup.vecMulEquiv_zero _)
+        (fun v ↦ Polynomial.X - Polynomial.C
+          (siegelFunction (fun i ↦ ((v i).val : ℝ) / N) ↑(γ • τ) ^ (12 * N)))
+        (fun w ↦ Polynomial.X - Polynomial.C
+          (siegelFunction (fun i ↦ ((w i).val : ℝ) / N) τ ^ (12 * N)))
         fun v _ ↦ by rw [siegelFunction_zmod_pow_twelve_mul_smul (dvd_mul_left N 6)]
-    simpa using congrArg (fun Q : ℂ[X] ↦ Q.coeff k) hpoly
-  have hper : Function.Periodic ((Ψ.coeff k).val ∘ ofComplex) 1 :=
+    simpa only [Polynomial.coeff_map, RingHom.comp_apply, Subring.coe_subtype,
+      Pi.evalRingHom_apply] using congrArg (fun Q : ℂ[X] ↦ Q.coeff k) hpoly
+  have hper : Function.Periodic (((siegelPowerPoly N).coeff k).val ∘ ofComplex) 1 :=
     UpperHalfPlane.periodic_comp_ofComplex fun τ ↦ by rw [← modular_T_smul]; exact hinv _ τ
-  have hmer1 : MeromorphicAt (cuspFunction 1 (Ψ.coeff k).val) 0 :=
+  have hmer1 : MeromorphicAt (cuspFunction 1 ((siegelPowerPoly N).coeff k).val) 0 :=
     meromorphicAt_cuspFunction_of_nat_mul one_pos hΨ_mdiff hper (d := N)
-      (by simpa only [mul_one] using mem_meromorphicAtCuspSubring.mp (Ψ.coeff k).property)
+      (by simpa only [mul_one] using
+        mem_meromorphicAtCuspSubring.mp ((siegelPowerPoly N).coeff k).property)
   refine exists_aeval_j_eq (R := ℤ) hΨ_mdiff hinv hmer1 fun n _ ↦ ?_
-  rw [laurentQExpansion_coeff_eq_nat_mul hper hmer1 (d := N) n, mul_one, algebraMap_int_eq]
+  rw [hper.laurentQExpansion_coeff_eq_coeff_nat_mul hmer1 (d := N) n, mul_one, algebraMap_int_eq]
   exact laurentQExpansion_siegelPolyCoeff_mem_range_intCast k ((N : ℤ) * n)
 
 /-- **The `(12 N)`-th powers of the nonzero level-`N` Siegel functions satisfy a monic polynomial
@@ -340,17 +347,16 @@ theorem exists_monic_map_aeval_j_eq_prod_X_sub_C_siegelFunction_div_pow_twelve_m
           (Polynomial.X - Polynomial.C
             (siegelFunction (fun i ↦ ((v i).val : ℝ) / N) τ ^ (12 * N))) := by
   set S := (Finset.univ : Finset (Fin 2 → ZMod N)).erase 0
-  set Ψ : (meromorphicAtCuspSubring N)[X] :=
-    ∏ v ∈ S, (Polynomial.X - Polynomial.C (siegelPowerMem N v))
   choose P hP using fun k : ℕ ↦ exists_aeval_j_siegelPolyCoeff (N := N) k
   set Φ : (ℤ[X])[X] :=
     Polynomial.X ^ S.card + ∑ k ∈ Finset.range S.card, Polynomial.C (P k) * Polynomial.X ^ k
   refine ⟨Φ, Polynomial.monic_X_pow_add
     (by simp_rw [← Fin.sum_univ_eq_sum_range, Polynomial.degree_sum_fin_lt]), fun τ ↦ ?_⟩
-  set Q := Ψ.map ((Pi.evalRingHom (fun _ : ℍ ↦ ℂ) τ).comp (meromorphicAtCuspSubring N).subtype)
+  set Q := (siegelPowerPoly N).map
+    ((Pi.evalRingHom (fun _ : ℍ ↦ ℂ) τ).comp (meromorphicAtCuspSubring N).subtype)
   have hQ : Q = ∏ v ∈ S, (Polynomial.X - Polynomial.C
-      (siegelFunction (fun i ↦ ((v i).val : ℝ) / N) τ ^ (12 * N))) := by
-    simp [Q, Ψ, Polynomial.map_prod]
+      (siegelFunction (fun i ↦ ((v i).val : ℝ) / N) τ ^ (12 * N))) :=
+    siegelPowerPoly_map_eval N τ
   have hQ_monic : Q.Monic := hQ ▸ Polynomial.monic_prod_of_monic _ _ fun _ _ ↦
     Polynomial.monic_X_sub_C _
   have hQ_deg : Q.natDegree = S.card := by rw [hQ, Polynomial.natDegree_finsetProd_X_sub_C_eq_card]
@@ -361,13 +367,18 @@ theorem exists_monic_map_aeval_j_eq_prod_X_sub_C_siegelFunction_div_pow_twelve_m
     Polynomial.finsetSum_coeff, Polynomial.coeff_C_mul, AlgHom.toRingHom_eq_coe,
     RingHom.coe_coe, hP, mul_ite, mul_one, mul_zero]
   rcases lt_trichotomy m S.card with hm | rfl | hm
-  · simp [hm.ne, Finset.mem_range.mpr hm, Q]; rfl
+  · simp only [hm.ne, ↓reduceIte, Finset.sum_ite_eq, Finset.mem_range.mpr hm, zero_add]
+    simp only [Q, Polynomial.coeff_map, RingHom.comp_apply, Subring.coe_subtype,
+      Pi.evalRingHom_apply]
   · simp only [↓reduceIte, Finset.sum_ite_eq, Finset.notMem_range_self, add_zero]
     rw [← hQ_deg, ← Polynomial.leadingCoeff, hQ_monic.leadingCoeff]
   · simp only [hm.ne', ↓reduceIte, Finset.sum_ite_eq, Finset.mem_range.not.mpr hm.not_gt, add_zero]
     exact (Polynomial.coeff_eq_zero_of_natDegree_lt (hQ_deg.symm ▸ hm)).symm
 
-private theorem natCast_div_siegelFunction_div_pow_twelve_mul_eq_prod_erase {N : ℕ} [NeZero N]
+/-- **Complementary product identity for `(N / g_{a/N})^{12 N}`**: for `0 < N` and `a ∉ N ℤ²`,
+`(N / g_{a/N}(τ))^{12 N}` equals the product of `g_{w/N}(τ)^{12 N}` over all
+`w ∈ ((ℤ/Nℤ)² \ {0}) \ {a mod N}`. -/
+theorem natCast_div_siegelFunction_div_pow_twelve_mul_eq_prod_erase {N : ℕ} [NeZero N]
     {a : Fin 2 → ℤ} (hv : (fun i ↦ (a i : ZMod N)) ≠ 0) (τ : ℍ) :
     ((N : ℂ) / siegelFunction (fun i ↦ (a i : ℝ) / N) τ) ^ (12 * N) =
       ∏ w ∈ ((Finset.univ : Finset (Fin 2 → ZMod N)).erase 0).erase (fun i ↦ (a i : ZMod N)),
@@ -383,6 +394,11 @@ private theorem natCast_div_siegelFunction_div_pow_twelve_mul_eq_prod_erase {N :
 
 /-! ### General integrality of Siegel functions (as functions on `ℍ`) -/
 
+private theorem siegelFunction_div_pow_twelve_mul_eq_zmod_fun (N : ℕ) (a : Fin 2 → ℤ) :
+    (fun τ : ℍ ↦ siegelFunction (fun i ↦ (a i : ℝ) / N) τ) ^ (12 * N) =
+      fun τ : ℍ ↦ siegelFunction (fun i ↦ (((a i : ZMod N).val : ℝ) / N)) τ ^ (12 * N) :=
+  funext fun τ ↦ siegelFunction_div_pow_twelve_mul_eq_zmod (dvd_mul_left N 6) a τ.im_pos
+
 section GeneralFunctions
 
 variable {R : Type*} [CommRing R] [Algebra R (ℍ → ℂ)]
@@ -392,26 +408,26 @@ integral.** Take `R = Algebra.adjoin ℤ {j}` for integrality over `ℤ[j]`. -/
 theorem isIntegral_siegelFunction_div (N : ℕ) (a : Fin 2 → ℤ) (hj : IsIntegral R j) :
     IsIntegral R (fun τ : ℍ ↦ siegelFunction (fun i ↦ (a i : ℝ) / N) τ) := by
   rcases eq_or_ne N 0 with rfl | hN
-  · rw [show (fun τ : ℍ ↦ siegelFunction (fun i ↦ (a i : ℝ) / (0 : ℕ)) τ) = 0 from
-      funext fun _ ↦ by simp [div_zero, ← Pi.zero_def]]; exact isIntegral_zero
+  · have h0 : (fun τ : ℍ ↦ siegelFunction (fun i ↦ (a i : ℝ) / (0 : ℕ)) τ) = 0 :=
+      funext fun _ ↦ by simp [div_zero, ← Pi.zero_def]
+    rw [h0]; exact isIntegral_zero
   have : NeZero N := ⟨hN⟩
   set v : Fin 2 → ZMod N := fun i ↦ (a i : ZMod N)
   by_cases hv : v = 0
-  · rw [show (fun τ : ℍ ↦ siegelFunction (fun i ↦ (a i : ℝ) / N) τ) = 0 from
-      funext fun τ ↦ (siegelFunction_div_eq_zero_iff a τ.im_pos).mpr hv]; exact isIntegral_zero
+  · have hzero : (fun τ : ℍ ↦ siegelFunction (fun i ↦ (a i : ℝ) / N) τ) = 0 :=
+      funext fun τ ↦ (siegelFunction_div_eq_zero_iff a τ.im_pos).mpr hv
+    rw [hzero]; exact isIntegral_zero
   obtain ⟨Φ, hmon, hΦ⟩ :=
     exists_monic_map_aeval_j_eq_prod_X_sub_C_siegelFunction_div_pow_twelve_mul N
   refine IsIntegral.of_pow (by positivity : 0 < 12 * N) ?_
-  rw [show (fun τ : ℍ ↦ siegelFunction (fun i ↦ (a i : ℝ) / N) τ) ^ (12 * N) =
-      fun τ : ℍ ↦ siegelFunction (fun i ↦ ((v i).val : ℝ) / N) τ ^ (12 * N) from
-    funext fun τ ↦ siegelFunction_div_pow_twelve_mul_eq_zmod (dvd_mul_left N 6) a τ.im_pos]
+  rw [siegelFunction_div_pow_twelve_mul_eq_zmod_fun N a]
   refine TauCeti.isIntegral_of_eval_map_aeval_eq_zero hmon hj (funext fun τ ↦ ?_)
   have hcomp : (Pi.evalRingHom (fun _ : ℍ ↦ ℂ) τ).comp (Polynomial.aeval j).toRingHom =
       (Polynomial.aeval (j τ)).toRingHom := Polynomial.ringHom_ext' (RingHom.ext_int _ _) (by simp)
   rw [Pi.zero_apply, ← Pi.evalRingHom_apply (fun _ : ℍ ↦ ℂ) τ (Polynomial.eval _ _),
     Polynomial.eval_map, Polynomial.hom_eval₂, hcomp, ← Polynomial.eval_map, hΦ τ,
     Polynomial.eval_prod]
-  exact Finset.prod_eq_zero (Finset.mem_erase.mpr ⟨hv, Finset.mem_univ v⟩) (by simp)
+  exact Finset.prod_eq_zero (Finset.mem_erase.mpr ⟨hv, Finset.mem_univ v⟩) (by simp [v])
 
 /-- **Every rational-parameter Siegel function `g_r` (`r ∈ ℚ²`) is integral over any ring over
 which `j` is integral.** -/
@@ -420,7 +436,8 @@ theorem isIntegral_siegelFunction_ratCast (r : Fin 2 → ℚ) (hj : IsIntegral R
   obtain ⟨D, -, hD⟩ := Rat.exists_forall_mem_zmultiples_inv_natCast r
   choose a ha using fun i ↦ AddSubgroup.mem_zmultiples_iff.mp (hD i)
   have hr : (fun i ↦ (r i : ℝ)) = fun i ↦ (a i : ℝ) / D := funext fun i ↦ by
-    rw [← ha i, zsmul_eq_mul, ← div_eq_mul_inv]; push_cast; rfl
+    rw [← ha i, zsmul_eq_mul, Rat.cast_mul, Rat.cast_intCast, Rat.cast_inv, Rat.cast_natCast,
+      div_eq_mul_inv]
   rw [hr]
   exact isIntegral_siegelFunction_div D a hj
 
@@ -429,20 +446,22 @@ integral. -/
 theorem isIntegral_natCast_div_siegelFunction_div (N : ℕ) (a : Fin 2 → ℤ) (hj : IsIntegral R j) :
     IsIntegral R (fun τ : ℍ ↦ (N : ℂ) / siegelFunction (fun i ↦ (a i : ℝ) / N) τ) := by
   rcases eq_or_ne N 0 with rfl | hN
-  · rw [show (fun τ : ℍ ↦ ((0 : ℕ) : ℂ) / siegelFunction (fun i ↦ (a i : ℝ) / (0 : ℕ)) τ) = 0 from
-      funext fun _ ↦ by simp]; exact isIntegral_zero
+  · have h0 : (fun τ : ℍ ↦ ((0 : ℕ) : ℂ) / siegelFunction (fun i ↦ (a i : ℝ) / (0 : ℕ)) τ) =
+        0 := funext fun _ ↦ by simp
+    rw [h0]; exact isIntegral_zero
   have : NeZero N := ⟨hN⟩
   set v : Fin 2 → ZMod N := fun i ↦ (a i : ZMod N)
   by_cases hv : v = 0
-  · rw [show (fun τ : ℍ ↦ (N : ℂ) / siegelFunction (fun i ↦ (a i : ℝ) / N) τ) = 0 from
-      funext fun τ ↦ by simp [(siegelFunction_div_eq_zero_iff a τ.im_pos).mpr hv]]
-    exact isIntegral_zero
+  · have hzero : (fun τ : ℍ ↦ (N : ℂ) / siegelFunction (fun i ↦ (a i : ℝ) / N) τ) = 0 :=
+      funext fun τ ↦ by simp [(siegelFunction_div_eq_zero_iff a τ.im_pos).mpr hv]
+    rw [hzero]; exact isIntegral_zero
   refine IsIntegral.of_pow (by positivity : 0 < 12 * N) ?_
-  rw [show (fun τ : ℍ ↦ (N : ℂ) / siegelFunction (fun i ↦ (a i : ℝ) / N) τ) ^ (12 * N) =
+  have hprod : (fun τ : ℍ ↦ (N : ℂ) / siegelFunction (fun i ↦ (a i : ℝ) / N) τ) ^ (12 * N) =
       ∏ w ∈ ((Finset.univ : Finset (Fin 2 → ZMod N)).erase 0).erase v,
-        (fun τ : ℍ ↦ siegelFunction (fun i ↦ ((w i).val : ℝ) / N) τ) ^ (12 * N) from funext fun τ ↦
+        (fun τ : ℍ ↦ siegelFunction (fun i ↦ ((w i).val : ℝ) / N) τ) ^ (12 * N) := funext fun τ ↦
     by simpa only [Pi.pow_apply, Finset.prod_apply] using
-      natCast_div_siegelFunction_div_pow_twelve_mul_eq_prod_erase hv τ]
+      natCast_div_siegelFunction_div_pow_twelve_mul_eq_prod_erase hv τ
+  rw [hprod]
   exact IsIntegral.prod _ fun w _ ↦
     (by simpa using (isIntegral_siegelFunction_div N (fun i ↦ ((w i).val : ℤ)) hj).pow (12 * N))
 
@@ -460,26 +479,23 @@ variable {R : Type*} [CommRing R] [Algebra R ℂ]
 
 /-- **Pointwise integrality from function-level integrality over `ℤ[j]`.** If `F : ℍ → ℂ` is
 integral over `ℤ[j]` and `j(τ)` is integral over `R`, then `F(τ)` is integral over `R`. -/
-theorem isIntegral_apply_of_isIntegral_adjoin_j {F : ℍ → ℂ}
+theorem _root_.IsIntegral.eval_of_adjoin_j {F : ℍ → ℂ}
     (hF : IsIntegral (Algebra.adjoin ℤ ({j} : Set (ℍ → ℂ))) F) (τ : ℍ)
     (hj : IsIntegral R (j τ)) : IsIntegral R (F τ) :=
-  TauCeti.isIntegral_map_of_isIntegral_adjoin_singleton hF
-    (Pi.evalRingHom (fun _ : ℍ ↦ ℂ) τ) (RingHom.ext_int _ _) hj
+  hF.map_of_adjoin_singleton (Pi.evalRingHom (fun _ : ℍ ↦ ℂ) τ) (RingHom.ext_int _ _) hj
 
 /-- **Pointwise integrality of `g_{a/N}(τ)`**: if `j(τ)` is integral over `R`, then so is
 `g_{a/N}(τ)`. In particular, if `j(τ)` is an algebraic integer (`R = ℤ`), then every `g_{a/N}(τ)`
 is an algebraic integer. -/
 theorem isIntegral_siegelFunction_div_apply (N : ℕ) (a : Fin 2 → ℤ) (τ : ℍ)
     (hj : IsIntegral R (j τ)) : IsIntegral R (siegelFunction (fun i ↦ (a i : ℝ) / N) τ) :=
-  isIntegral_apply_of_isIntegral_adjoin_j
-    (isIntegral_siegelFunction_div N a isIntegral_adjoin_j) τ hj
+  (isIntegral_siegelFunction_div N a isIntegral_adjoin_j).eval_of_adjoin_j τ hj
 
 /-- **Pointwise integrality of `g_r(τ)` for `r ∈ ℚ²`**: if `j(τ)` is integral over `R`, then so is
 `g_r(τ)`. -/
 theorem isIntegral_siegelFunction_ratCast_apply (r : Fin 2 → ℚ) (τ : ℍ) (hj : IsIntegral R (j τ)) :
     IsIntegral R (siegelFunction (fun i ↦ (r i : ℝ)) τ) :=
-  isIntegral_apply_of_isIntegral_adjoin_j
-    (isIntegral_siegelFunction_ratCast r isIntegral_adjoin_j) τ hj
+  (isIntegral_siegelFunction_ratCast r isIntegral_adjoin_j).eval_of_adjoin_j τ hj
 
 /-- **Pointwise integrality of `N / g_{a/N}(τ)`**: if `j(τ)` is integral over `R`, then so is
 `N / g_{a/N}(τ)`. In particular, when `j(τ)` is an algebraic integer and `a ∉ N ℤ²`, `g_{a/N}(τ)`
@@ -487,8 +503,7 @@ divides `N` in the ring of algebraic integers. -/
 theorem isIntegral_natCast_div_siegelFunction_div_apply (N : ℕ) (a : Fin 2 → ℤ) (τ : ℍ)
     (hj : IsIntegral R (j τ)) :
     IsIntegral R ((N : ℂ) / siegelFunction (fun i ↦ (a i : ℝ) / N) τ) :=
-  isIntegral_apply_of_isIntegral_adjoin_j
-    (isIntegral_natCast_div_siegelFunction_div N a isIntegral_adjoin_j) τ hj
+  (isIntegral_natCast_div_siegelFunction_div N a isIntegral_adjoin_j).eval_of_adjoin_j τ hj
 
 end GeneralValues
 
@@ -498,54 +513,56 @@ section Functions
 
 variable {R : Type*} [CommRing R] [Algebra R (ℍ → ℂ)]
 
+private theorem fun_vecCons_div_two (a b : ℤ) :
+    (fun i ↦ ((![a, b] i : ℤ) : ℝ) / (2 : ℕ)) = ![(a : ℝ) / 2, (b : ℝ) / 2] := by
+  ext i; fin_cases i <;> simp
+
+private theorem isIntegral_siegelFunction_vecCons_div_two (a b : ℤ) (hj : IsIntegral R j) :
+    IsIntegral R (fun τ : ℍ ↦ siegelFunction ![(a : ℝ) / 2, (b : ℝ) / 2] τ) := by
+  simpa only [← fun_vecCons_div_two a b] using isIntegral_siegelFunction_div 2 ![a, b] hj
+
+private theorem isIntegral_two_div_siegelFunction_vecCons_div_two (a b : ℤ)
+    (hj : IsIntegral R j) :
+    IsIntegral R (fun τ : ℍ ↦ 2 / siegelFunction ![(a : ℝ) / 2, (b : ℝ) / 2] τ) := by
+  simpa only [← fun_vecCons_div_two a b, Nat.cast_ofNat] using
+    isIntegral_natCast_div_siegelFunction_div 2 ![a, b] hj
+
 /-- The level-two Siegel function `g₀` is integral over any coefficient ring over which `j`
 is integral. Take `R = Algebra.adjoin ℤ {j}` for integrality over `ℤ[j]`. -/
 theorem isIntegral_siegelFunction_zero_half (hj : IsIntegral R j) :
     IsIntegral R (fun τ : ℍ ↦ siegelFunction ![0, 1 / 2] τ) := by
-  have h := isIntegral_siegelFunction_div 2 ![0, 1] hj
-  rw [← Function.comp_def (fun x : ℤ ↦ (x : ℝ) / (2 : ℕ)) ![0, 1]] at h
-  simpa only [Matrix.vecCons, Fin.comp_cons, Matrix.empty_eq, Int.cast_zero, Int.cast_one,
-    Nat.cast_ofNat, zero_div] using h
+  simpa only [Int.cast_zero, zero_div, Int.cast_one] using
+    isIntegral_siegelFunction_vecCons_div_two 0 1 hj
 
 /-- The level-two Siegel function `g₁` is integral over any coefficient ring over which `j`
 is integral. -/
 theorem isIntegral_siegelFunction_half_zero (hj : IsIntegral R j) :
     IsIntegral R (fun τ : ℍ ↦ siegelFunction ![1 / 2, 0] τ) := by
-  have h := isIntegral_siegelFunction_div 2 ![1, 0] hj
-  rw [← Function.comp_def (fun x : ℤ ↦ (x : ℝ) / (2 : ℕ)) ![1, 0]] at h
-  simpa only [Matrix.vecCons, Fin.comp_cons, Matrix.empty_eq, Int.cast_zero, Int.cast_one,
-    Nat.cast_ofNat, zero_div] using h
+  simpa only [Int.cast_zero, zero_div, Int.cast_one] using
+    isIntegral_siegelFunction_vecCons_div_two 1 0 hj
 
 /-- The level-two Siegel function `g₂` is integral over any coefficient ring over which `j`
 is integral. -/
 theorem isIntegral_siegelFunction_half_half (hj : IsIntegral R j) :
     IsIntegral R (fun τ : ℍ ↦ siegelFunction ![1 / 2, 1 / 2] τ) := by
-  have h := isIntegral_siegelFunction_div 2 ![1, 1] hj
-  rw [← Function.comp_def (fun x : ℤ ↦ (x : ℝ) / (2 : ℕ)) ![1, 1]] at h
-  simpa only [Matrix.vecCons, Fin.comp_cons, Matrix.empty_eq, Int.cast_one, Nat.cast_ofNat] using h
+  simpa only [Int.cast_one] using isIntegral_siegelFunction_vecCons_div_two 1 1 hj
 
 /-- Twice the inverse of `g₀` is integral over any coefficient ring over which `j` is integral. -/
 theorem isIntegral_two_div_siegelFunction_zero_half (hj : IsIntegral R j) :
     IsIntegral R (fun τ : ℍ ↦ 2 / siegelFunction ![0, 1 / 2] τ) := by
-  have h := isIntegral_natCast_div_siegelFunction_div 2 ![0, 1] hj
-  rw [← Function.comp_def (fun x : ℤ ↦ (x : ℝ) / (2 : ℕ)) ![0, 1]] at h
-  simpa only [Matrix.vecCons, Fin.comp_cons, Matrix.empty_eq, Int.cast_zero, Int.cast_one,
-    Nat.cast_ofNat, zero_div] using h
+  simpa only [Int.cast_zero, zero_div, Int.cast_one] using
+    isIntegral_two_div_siegelFunction_vecCons_div_two 0 1 hj
 
 /-- Twice the inverse of `g₁` is integral over any coefficient ring over which `j` is integral. -/
 theorem isIntegral_two_div_siegelFunction_half_zero (hj : IsIntegral R j) :
     IsIntegral R (fun τ : ℍ ↦ 2 / siegelFunction ![1 / 2, 0] τ) := by
-  have h := isIntegral_natCast_div_siegelFunction_div 2 ![1, 0] hj
-  rw [← Function.comp_def (fun x : ℤ ↦ (x : ℝ) / (2 : ℕ)) ![1, 0]] at h
-  simpa only [Matrix.vecCons, Fin.comp_cons, Matrix.empty_eq, Int.cast_zero, Int.cast_one,
-    Nat.cast_ofNat, zero_div] using h
+  simpa only [Int.cast_zero, zero_div, Int.cast_one] using
+    isIntegral_two_div_siegelFunction_vecCons_div_two 1 0 hj
 
 /-- Twice the inverse of `g₂` is integral over any coefficient ring over which `j` is integral. -/
 theorem isIntegral_two_div_siegelFunction_half_half (hj : IsIntegral R j) :
     IsIntegral R (fun τ : ℍ ↦ 2 / siegelFunction ![1 / 2, 1 / 2] τ) := by
-  have h := isIntegral_natCast_div_siegelFunction_div 2 ![1, 1] hj
-  rw [← Function.comp_def (fun x : ℤ ↦ (x : ℝ) / (2 : ℕ)) ![1, 1]] at h
-  simpa only [Matrix.vecCons, Fin.comp_cons, Matrix.empty_eq, Int.cast_one, Nat.cast_ofNat] using h
+  simpa only [Int.cast_one] using isIntegral_two_div_siegelFunction_vecCons_div_two 1 1 hj
 
 end Functions
 
@@ -558,38 +575,32 @@ variable {R : Type*} [CommRing R] [Algebra R ℂ] (τ : ℍ)
 /-- If `j(τ)` is integral over `R`, so is `g₀(τ)`. In particular this applies with `R = ℤ`. -/
 theorem isIntegral_siegelFunction_zero_half_apply (hj : IsIntegral R (j τ)) :
     IsIntegral R (siegelFunction ![0, 1 / 2] τ) :=
-  isIntegral_apply_of_isIntegral_adjoin_j
-    (isIntegral_siegelFunction_zero_half isIntegral_adjoin_j) τ hj
+  (isIntegral_siegelFunction_zero_half isIntegral_adjoin_j).eval_of_adjoin_j τ hj
 
 /-- If `j(τ)` is integral over `R`, so is `g₁(τ)`. -/
 theorem isIntegral_siegelFunction_half_zero_apply (hj : IsIntegral R (j τ)) :
     IsIntegral R (siegelFunction ![1 / 2, 0] τ) :=
-  isIntegral_apply_of_isIntegral_adjoin_j
-    (isIntegral_siegelFunction_half_zero isIntegral_adjoin_j) τ hj
+  (isIntegral_siegelFunction_half_zero isIntegral_adjoin_j).eval_of_adjoin_j τ hj
 
 /-- If `j(τ)` is integral over `R`, so is `g₂(τ)`. -/
 theorem isIntegral_siegelFunction_half_half_apply (hj : IsIntegral R (j τ)) :
     IsIntegral R (siegelFunction ![1 / 2, 1 / 2] τ) :=
-  isIntegral_apply_of_isIntegral_adjoin_j
-    (isIntegral_siegelFunction_half_half isIntegral_adjoin_j) τ hj
+  (isIntegral_siegelFunction_half_half isIntegral_adjoin_j).eval_of_adjoin_j τ hj
 
 /-- If `j(τ)` is integral over `R`, so is `2 / g₀(τ)`. -/
 theorem isIntegral_two_div_siegelFunction_zero_half_apply (hj : IsIntegral R (j τ)) :
     IsIntegral R (2 / siegelFunction ![0, 1 / 2] τ) :=
-  isIntegral_apply_of_isIntegral_adjoin_j
-    (isIntegral_two_div_siegelFunction_zero_half isIntegral_adjoin_j) τ hj
+  (isIntegral_two_div_siegelFunction_zero_half isIntegral_adjoin_j).eval_of_adjoin_j τ hj
 
 /-- If `j(τ)` is integral over `R`, so is `2 / g₁(τ)`. -/
 theorem isIntegral_two_div_siegelFunction_half_zero_apply (hj : IsIntegral R (j τ)) :
     IsIntegral R (2 / siegelFunction ![1 / 2, 0] τ) :=
-  isIntegral_apply_of_isIntegral_adjoin_j
-    (isIntegral_two_div_siegelFunction_half_zero isIntegral_adjoin_j) τ hj
+  (isIntegral_two_div_siegelFunction_half_zero isIntegral_adjoin_j).eval_of_adjoin_j τ hj
 
 /-- If `j(τ)` is integral over `R`, so is `2 / g₂(τ)`. -/
 theorem isIntegral_two_div_siegelFunction_half_half_apply (hj : IsIntegral R (j τ)) :
     IsIntegral R (2 / siegelFunction ![1 / 2, 1 / 2] τ) :=
-  isIntegral_apply_of_isIntegral_adjoin_j
-    (isIntegral_two_div_siegelFunction_half_half isIntegral_adjoin_j) τ hj
+  (isIntegral_two_div_siegelFunction_half_half isIntegral_adjoin_j).eval_of_adjoin_j τ hj
 
 end Values
 

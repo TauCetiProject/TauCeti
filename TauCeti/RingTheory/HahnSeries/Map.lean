@@ -149,6 +149,11 @@ theorem mapRingHom_injective {f : R →+* S} (hf : Function.Injective f) :
     Function.Injective (mapRingHom f : R⟦Γ⟧ →+* S⟦Γ⟧) := fun _ _ h ↦
   HahnSeries.ext <| funext fun g ↦ hf congr(($h).coeff g)
 
+@[simp]
+theorem mapRingHom_single (f : R →+* S) (g : Γ) (r : R) :
+    mapRingHom f (single g r) = single g (f r) :=
+  HahnSeries.map_single f.toZeroHom
+
 /-- A Hahn series is in the range of a coefficientwise map exactly when all its coefficients are
 in the range of the coefficient map. Compare `Polynomial.mem_map_rangeS`. -/
 theorem mem_map_rangeS {f : R →+* S} {x : S⟦Γ⟧} :

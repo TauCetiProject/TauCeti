@@ -20,10 +20,7 @@ If `N` casts to zero, division by zero makes both vectors zero.
 This is useful for transformation laws whose multipliers depend on integral translations.
 
 This file also records that right multiplication by an integer matrix commutes with dividing a
-vector by `N` (`Matrix.vecMul_div_map_intCast`), and characterizes when a vector `a / N` in a
-characteristic-zero division ring is integral in terms of reduction modulo `N`
-(`TauCeti.exists_div_eq_intCast_iff_zmod_eq_zero`,
-`TauCeti.forall_div_ne_intCast_iff_zmod_ne_zero`).
+vector by `N` (`Matrix.vecMul_div_map_intCast`).
 -/
 
 public section
@@ -89,29 +86,3 @@ theorem exists_vecMul_div_eq_add_intCast {ι K : Type*} [Fintype ι] [DecidableE
   exact ⟨a ᵥ* B, vecMul_div_eq_add_intCast_vecMul B hN a⟩
 
 end Matrix
-
-namespace TauCeti
-
-/-- For `N ≠ 0`, a vector `a / N` in a characteristic-zero division ring `K` equals an integer
-vector cast to `K` if and only if `a ≡ 0 (mod N)`. -/
-theorem exists_div_eq_intCast_iff_zmod_eq_zero {ι K : Type*} [DivisionRing K] [CharZero K]
-    {N : ℕ} (hN : N ≠ 0) (a : ι → ℤ) :
-    (∃ s : ι → ℤ, (fun i ↦ (a i : K) / N) = fun i ↦ (s i : K)) ↔
-      (fun i ↦ (a i : ZMod N)) = 0 := by
-  have hNK : (N : K) ≠ 0 := Nat.cast_ne_zero.mpr hN
-  refine ⟨fun ⟨s, hs⟩ ↦ funext fun i ↦ ?_, fun h0 ↦ ?_⟩
-  · have hZ : a i = s i * N := by exact_mod_cast (div_eq_iff hNK).mp (congrFun hs i)
-    exact (ZMod.intCast_zmod_eq_zero_iff_dvd (a i) N).mpr ⟨s i, hZ.trans (mul_comm _ _)⟩
-  · choose s hs using fun i ↦ (ZMod.intCast_zmod_eq_zero_iff_dvd (a i) N).mp (congrFun h0 i)
-    refine ⟨s, funext fun i ↦ (div_eq_iff hNK).mpr ?_⟩
-    exact_mod_cast (hs i).trans (mul_comm _ _)
-
-/-- For `N ≠ 0`, a vector `a / N` in a characteristic-zero division ring `K` is non-integral if and
-only if its reduction modulo `N` is nonzero. -/
-theorem forall_div_ne_intCast_iff_zmod_ne_zero {ι K : Type*} [DivisionRing K] [CharZero K]
-    {N : ℕ} (hN : N ≠ 0) (a : ι → ℤ) :
-    (∀ s : ι → ℤ, (fun i ↦ (a i : K) / N) ≠ fun i ↦ (s i : K)) ↔
-      (fun i ↦ (a i : ZMod N)) ≠ 0 := by
-  simpa only [not_exists] using (exists_div_eq_intCast_iff_zmod_eq_zero (K := K) hN a).not
-
-end TauCeti

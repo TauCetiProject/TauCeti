@@ -5,10 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.ZMod.Basic
 public import Mathlib.NumberTheory.Cyclotomic.Basic
-import Mathlib.FieldTheory.Galois.Basic
-import Mathlib.NumberTheory.Cyclotomic.Gal
 
 /-!
 # Adjoining roots of unity as an intermediate field
@@ -23,23 +20,17 @@ needs them; the cyclotomic one is transported from Mathlib's `Algebra.adjoin` st
 `IsPrimitiveRoot.intermediateField_adjoin_isCyclotomicExtension`, nothing is asked of the ambient
 extension `M / K`, since a root of unity is integral over `K` on its own.
 
-Over `ℚ`, a polynomial `P ∈ ℤ[X]` evaluated at a primitive `N`-th root of unity `ζ` whose value is
-invariant under `ζ ↦ ζ ^ u` for all `u ∈ (ℤ/Nℤ)ˣ` is fixed by `Gal(ℚ(ζ)/ℚ)`, hence lies in `ℚ`,
-and by integrality of `ζ` over `ℤ` lies in `ℤ` (`IsPrimitiveRoot.aeval_mem_range_intCast`).
-
 ## Main results
 
 * `IsPrimitiveRoot.adjoin_singleton_eq_adjoin_nth_roots`: `K(ζ) = K(μ_m)`.
 * `IsPrimitiveRoot.isCyclotomicExtension_adjoin_singleton` and
   `IsPrimitiveRoot.isCyclotomicExtension_adjoin_nth_roots`: `K(ζ) = K(μ_m)` is an `m`-th cyclotomic
   extension of `K`.
-* `IsPrimitiveRoot.aeval_mem_range_intCast`: cyclotomic Galois descent to `ℤ`.
 -/
 
 public section
 
 open IntermediateField
-open scoped Polynomial
 
 /-- **Adjoining one primitive `m`-th root adjoins them all.** `K(ζ) = K(μ_m)` inside any
 field extension of `K` containing a primitive `m`-th root of unity `ζ`: every `m`-th root of unity
@@ -71,40 +62,3 @@ theorem IsPrimitiveRoot.isCyclotomicExtension_adjoin_nth_roots {K M : Type*} [Fi
     [Algebra K M] {m : ℕ} [NeZero m] {ζ : M} (hζ : IsPrimitiveRoot ζ m) :
     IsCyclotomicExtension {m} K (adjoin K {b : M | b ^ m = 1}) :=
   hζ.adjoin_singleton_eq_adjoin_nth_roots (K := K) ▸ hζ.isCyclotomicExtension_adjoin_singleton
-
-/-- **Cyclotomic Galois descent to `ℤ`.** If `ζ` is a primitive `N`-th root of unity in a
-characteristic-zero field `L` and `P ∈ ℤ[X]` satisfies `P(ζ ^ u) = P(ζ)` for every
-`u ∈ (ℤ/Nℤ)ˣ`, then `P(ζ)` lies in the image of `ℤ`. -/
-theorem IsPrimitiveRoot.aeval_mem_range_intCast {L : Type*} [Field L] [CharZero L]
-    {N : ℕ} [NeZero N] {ζ : L} (hζ : IsPrimitiveRoot ζ N) (P : ℤ[X])
-    (hP : ∀ u : (ZMod N)ˣ,
-      Polynomial.aeval (ζ ^ (u : ZMod N).val) P = Polynomial.aeval ζ P) :
-    Polynomial.aeval ζ P ∈ (Int.castRingHom L).range := by
-  let K := IntermediateField.adjoin ℚ ({ζ} : Set L)
-  have : IsCyclotomicExtension {N} ℚ K := hζ.isCyclotomicExtension_adjoin_singleton
-  have : IsGalois ℚ K := IsCyclotomicExtension.isGalois (S := {N}) (K := ℚ) (L := K)
-  have : FiniteDimensional ℚ K := IsCyclotomicExtension.finiteDimensional (S := {N}) (K := ℚ) K
-  let ζK : K := ⟨ζ, IntermediateField.mem_adjoin_simple_self ℚ ζ⟩
-  have hζK : IsPrimitiveRoot ζK N := IsPrimitiveRoot.coe_submonoidClass_iff.mp hζ
-  let x : K := Polynomial.aeval ζK P
-  have hx_val : (x : L) = Polynomial.aeval ζ P := by
-    simpa [x, ζK] using (Polynomial.aeval_algHom_apply (K.val : K →+* L).toIntAlgHom ζK P).symm
-  have hfix (σ : K ≃ₐ[ℚ] K) : σ x = x := by
-    have hσ : σ x = Polynomial.aeval (σ ζK) P := by
-      simpa [x] using (Polynomial.aeval_algHom_apply (σ : K →+* K).toIntAlgHom ζK P).symm
-    rw [hσ, ← hζK.autToPow_spec ℚ σ]
-    apply Subtype.ext
-    have hval := (Polynomial.aeval_algHom_apply (K.val : K →+* L).toIntAlgHom
-      (ζK ^ (hζK.autToPow ℚ σ : ZMod N).val) P).symm
-    simpa [ζK, hx_val, hP (hζK.autToPow ℚ σ), -IsPrimitiveRoot.autToPow_spec] using hval
-  obtain ⟨q, hq⟩ := IntermediateField.mem_bot.mp ((IsGalois.mem_bot_iff_fixed x).mpr hfix)
-  have hqL : algebraMap ℚ L q = Polynomial.aeval ζ P := by
-    rw [IsScalarTower.algebraMap_apply ℚ K L, IntermediateField.algebraMap_apply, hq, hx_val]
-  have hintL : IsIntegral ℤ (Polynomial.aeval ζ P) := by
-    rw [Polynomial.aeval_def, Polynomial.eval₂_eq_sum, Polynomial.sum_def]
-    exact IsIntegral.sum _ fun i _ ↦
-      (isIntegral_intCast _).mul ((hζ.isIntegral (NeZero.pos N)).pow i)
-  let _ : IsIntegrallyClosed ℤ := GCDMonoid.toIsIntegrallyClosed
-  obtain ⟨m, rfl⟩ := IsIntegrallyClosed.isIntegral_iff.mp <|
-    (isIntegral_algebraMap_iff (R := ℤ) (A := ℚ) (B := L)).mp (hqL.symm ▸ hintL)
-  exact ⟨m, by simpa using hqL⟩
