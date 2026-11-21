@@ -266,7 +266,7 @@ theorem cohomologyGRingOfCounts_of_mk_mul_of_mk {i j : ℤ}
           LinearMap.apply_mem_cocycles_add _
             (kernelProduct_coefficientComparison_mem_cochain_gradeBy q hq r hF hμ n Q hnQ hQ)
             (kernelMap_kernelProduct_coefficientComparison_self_eq_add q hq r hF hμ n D hδ Q hnQ
-              hL) a.2 b.2⟩) := by
+              hL) a.property b.property⟩) := by
   let := cohomologyGRingOfCounts q hq r hF hμ n D hδ Q hnQ hQ hL E hE hED hone_mul hmul_one hassoc
   exact (of_mul_of _ _).trans <| congrArg _ <|
     LinearMap.cohomologyMul_mk (kernelProduct hnQ (kernelOfMatrix_mem hF r r r _))
