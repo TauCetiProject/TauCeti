@@ -45,9 +45,11 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
   reduction modulo `p` are continuous, `ZMod (p ^ n)` and `ZMod p` carrying the discrete
   topology.
 * `PadicInt.toZMod_eq_zero_iff_dvd`, `PadicInt.toZModPow_eq_zero_iff_dvd`: the kernels of
-  reduction and truncation, as divisibility statements; `PadicInt.toZModPow_eq_iff_dvd_sub`:
-  two `p`-adic integers truncate to the same residue exactly when `p ^ n` divides their
-  difference; `PadicInt.eight_dvd_sub_iff_toZModPow_three_eq` is its case `p ^ n = 8`.
+  reduction and truncation, as divisibility statements; `PadicInt.toZMod_eq_iff_dvd_sub` and
+  `PadicInt.toZModPow_eq_iff_dvd_sub`: two `p`-adic integers reduce (respectively truncate) to the
+  same residue exactly when `p` (respectively `p ^ n`) divides their difference;
+  `PadicInt.isUnit_iff_toZMod_ne_zero`: units are elements with nonzero reduction modulo `p`;
+  `PadicInt.eight_dvd_sub_iff_toZModPow_three_eq` is the `p ^ n = 8` case.
 * `PadicInt.residueClopen`: the clopen fibre of a residue modulo `p ^ n`;
   `PadicInt.mem_residueClopen_iff_dvd`: its description as a coset of `p ^ n ℤ_p`.
 * `PadicInt.isUnit_iff_toZModPow_three_mul_self`: the units of `ℤ_[2]` are exactly the elements
@@ -60,7 +62,12 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
   reduce to `1` modulo `p ^ n`.
 * `PadicInt.cast_toZModPow_eq_toZMod`: reducing the truncation modulo `p ^ n` further modulo `p`
   recovers `toZMod`.
-* `PadicInt.dvd_sub_appr`: `x - appr x n` is divisible by `p ^ n` in `ℤ_[p]`.
+* `PadicInt.dvd_sub_appr`, `PadicInt.dvd_sub_appr_of_le`, `PadicInt.dvd_sub_appr_of_ne_zero`,
+  `PadicInt.natCast_appr_eq_toZMod`, `PadicInt.pow_dvd_appr_iff`, `PadicInt.dvd_appr_iff`,
+  `PadicInt.coprime_appr_iff`: `x - appr x n` is divisible by `p ^ n` (and by `p ^ m` for `m ≤ n`,
+  hence by `p` for `n ≠ 0`), `appr x n` reduces modulo `p` to `toZMod x`, `p ^ m` divides
+  `appr x n` exactly when `p ^ m` divides `x`, and `appr x n` is coprime to `p` exactly when `x`
+  is a unit.
 * `PadicInt.div_pow_le_card_filter_dvd`: among `n` consecutive elements of `ℤ_[p]`, at least
   `⌊n / pʲ⌋` are divisible by `p ^ j`; `PadicInt.card_filter_pow_dvd_natCast_sub`: for a natural
   number `a`, exactly `⌊n / pʲ⌋ + [a mod pʲ < n mod pʲ]` of them are.
@@ -173,6 +180,15 @@ theorem continuous_toZMod : Continuous (toZMod : ℤ_[p] → ZMod p) := by
 /-- A `p`-adic integer reduces to `0` modulo `p` exactly when `p` divides it. -/
 theorem toZMod_eq_zero_iff_dvd (x : ℤ_[p]) : toZMod x = 0 ↔ (p : ℤ_[p]) ∣ x := by
   rw [← RingHom.mem_ker, ker_toZMod, maximalIdeal_eq_span_p, Ideal.mem_span_singleton]
+
+/-- Two `p`-adic integers have the same reduction modulo `p` exactly when `p` divides their
+difference. -/
+theorem toZMod_eq_iff_dvd_sub (x y : ℤ_[p]) : toZMod x = toZMod y ↔ (p : ℤ_[p]) ∣ x - y := by
+  rw [← sub_eq_zero, ← map_sub, toZMod_eq_zero_iff_dvd]
+
+/-- A `p`-adic integer is a unit if and only if its reduction modulo `p` is nonzero. -/
+theorem isUnit_iff_toZMod_ne_zero (x : ℤ_[p]) : IsUnit x ↔ toZMod x ≠ 0 := by
+  rw [ne_eq, toZMod_eq_zero_iff_dvd, ← not_isUnit_iff_dvd, not_not]
 
 -- This is the `p = 2` case of the congruence `x ^ p ≡ x` modulo `p`; the general case would need
 -- `ZMod.pow_card`, whose finite-field import closure is far wider than this file's.
@@ -310,6 +326,40 @@ theorem cast_toZModPow_eq_toZMod {n : ℕ} (hn : n ≠ 0) (x : ℤ_[p]) :
 @[simp]
 theorem dvd_sub_appr (x : ℤ_[p]) (n : ℕ) : (p : ℤ_[p]) ^ n ∣ x - x.appr n :=
   Ideal.mem_span_singleton.mp (appr_spec n x)
+
+/-- For `m ≤ n`, `p ^ m` divides `x - x.appr n` in `ℤ_[p]`. -/
+theorem dvd_sub_appr_of_le (x : ℤ_[p]) {m n : ℕ} (h : m ≤ n) :
+    (p : ℤ_[p]) ^ m ∣ x - x.appr n :=
+  (pow_dvd_pow (p : ℤ_[p]) h).trans (dvd_sub_appr x n)
+
+/-- For `n ≠ 0`, `p` divides `x - x.appr n` in `ℤ_[p]`. -/
+theorem dvd_sub_appr_of_ne_zero (x : ℤ_[p]) {n : ℕ} (hn : n ≠ 0) :
+    (p : ℤ_[p]) ∣ x - x.appr n := by
+  simpa using dvd_sub_appr_of_le x (Nat.one_le_iff_ne_zero.mpr hn)
+
+/-- For `n ≠ 0`, the truncation `x.appr n` reduces modulo `p` to `toZMod x`. -/
+@[simp]
+theorem natCast_appr_eq_toZMod (x : ℤ_[p]) {n : ℕ} (hn : n ≠ 0) :
+    (x.appr n : ZMod p) = toZMod x := by
+  rw [← map_natCast toZMod, eq_comm, toZMod_eq_iff_dvd_sub]
+  exact dvd_sub_appr_of_ne_zero x hn
+
+/-- For `m ≤ n`, `p ^ m` divides `x.appr n` in `ℕ` if and only if `p ^ m` divides `x` in
+`ℤ_[p]`. -/
+theorem pow_dvd_appr_iff (x : ℤ_[p]) {m n : ℕ} (h : m ≤ n) :
+    p ^ m ∣ x.appr n ↔ (p : ℤ_[p]) ^ m ∣ x := by
+  have heq : toZModPow m (x.appr n : ℤ_[p]) = toZModPow m x :=
+    (toZModPow_eq_iff_dvd_sub m).mpr (dvd_sub_appr_of_le x h)
+  rw [← ZMod.natCast_eq_zero_iff, ← map_natCast (toZModPow m), heq, toZModPow_eq_zero_iff_dvd]
+
+/-- For `n ≠ 0`, `p` divides `x.appr n` in `ℕ` if and only if `p` divides `x` in `ℤ_[p]`. -/
+theorem dvd_appr_iff (x : ℤ_[p]) {n : ℕ} (hn : n ≠ 0) : p ∣ x.appr n ↔ (p : ℤ_[p]) ∣ x := by
+  simpa using pow_dvd_appr_iff x (Nat.one_le_iff_ne_zero.mpr hn)
+
+/-- For `n ≠ 0`, `x.appr n` is coprime to `p` if and only if `x` is a unit of `ℤ_[p]`. -/
+theorem coprime_appr_iff (x : ℤ_[p]) {n : ℕ} (hn : n ≠ 0) :
+    p.Coprime (x.appr n) ↔ IsUnit x := by
+  rw [hp.out.coprime_iff_not_dvd, dvd_appr_iff x hn, ← not_isUnit_iff_dvd, not_not]
 
 open scoped Classical Finset in
 /-- At least `⌊n / pʲ⌋` of the `n` consecutive elements `a, a - 1, …, a - (n - 1)` of `ℤ_p` are

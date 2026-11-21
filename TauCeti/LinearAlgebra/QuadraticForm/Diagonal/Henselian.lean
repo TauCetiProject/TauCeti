@@ -87,25 +87,52 @@ theorem equivalent_weightedSumSquares_snoc_prod_of_isUnit_two (h2 : IsUnit (2 : 
   simpa only [weightedSumSquares_units] using
     (diagonalChain_snoc_prod_of_isUnit_two h2 w).equivalent
 
-/-- Two unit diagonal forms of the same rank over a finite-residue Henselian local ring with
-two invertible are isometric exactly when their determinants agree modulo unit squares. -/
+/-- Two unit diagonal forms on the same finite index type over a finite-residue Henselian local
+ring with two invertible are isometric exactly when their determinants agree modulo unit squares. -/
 theorem equivalent_weightedSumSquares_iff_isSquare_prod_mul_prod_of_isUnit_two
-    (h2 : IsUnit (2 : R)) {n : ℕ} (w v : Fin n → Rˣ) :
+    (h2 : IsUnit (2 : R)) {ι : Type*} [Fintype ι] (w v : ι → Rˣ) :
     (weightedSumSquares R w).Equivalent (weightedSumSquares R v) ↔
       IsSquare ((∏ i, w i) * ∏ i, v i) := by
   let := h2.invertible
   refine ⟨isSquare_prod_mul_prod_of_equivalent, fun h ↦ ?_⟩
-  cases n with
-  | zero =>
-      have hv : w = v := Subsingleton.elim _ _
-      rw [hv]
-  | succ n =>
-      refine (equivalent_weightedSumSquares_snoc_prod_of_isUnit_two h2 w).trans
+  rcases eq_or_ne (Fintype.card ι) 0 with hc | hc
+  · have : IsEmpty ι := Fintype.card_eq_zero_iff.mp hc
+    rw [Subsingleton.elim w v]
+  · obtain ⟨n, hn⟩ : ∃ n, Fintype.card ι = n + 1 := ⟨Fintype.card ι - 1, by omega⟩
+    let α : Fin (n + 1) ≃ ι := (Fintype.equivFinOfCardEq hn).symm
+    have hcomp (u : ι → Rˣ) :
+        (weightedSumSquares R u).Equivalent (weightedSumSquares R (u ∘ α)) := by
+      rw [weightedSumSquares_units, weightedSumSquares_units]
+      exact equivalent_weightedSumSquares_comp (fun i ↦ (u i : R)) α
+    have hfin : IsSquare ((∏ j, (w ∘ α) j) * ∏ j, (v ∘ α) j) := by
+      rwa [Function.comp_def, Equiv.prod_comp α w, Function.comp_def, Equiv.prod_comp α v]
+    refine (hcomp w).trans <|
+      (equivalent_weightedSumSquares_snoc_prod_of_isUnit_two h2 (w ∘ α)).trans
         ((equivalent_weightedSumSquares_of_isSquare_div ?_).trans
-          (equivalent_weightedSumSquares_snoc_prod_of_isUnit_two h2 v).symm)
-      intro i
-      refine Fin.lastCases ?_ (fun j ↦ ?_) i
-      · simpa [div_eq_mul_inv, pow_two, mul_assoc] using h.div (IsSquare.sq (∏ i, v i))
-      · simp
+          ((equivalent_weightedSumSquares_snoc_prod_of_isUnit_two h2 (v ∘ α)).symm.trans
+            (hcomp v).symm))
+    intro i
+    refine Fin.lastCases ?_ (fun _ ↦ by simp) i
+    simpa [div_eq_mul_inv, pow_two, mul_assoc] using hfin.div (IsSquare.sq (∏ j, (v ∘ α) j))
+
+/-- Over a finite-residue Henselian local ring with two invertible, two diagonal forms
+`∑ᵢ uᵢ s(kᵢ) xᵢ²` and `∑ᵢ vᵢ s(kᵢ) xᵢ²` sharing a scale profile `k : ι → α` are isometric over `R`
+whenever the unit products `∏_{kᵢ = m} uᵢ` and `∏_{kᵢ = m} vᵢ` agree modulo unit squares on every
+fiber `m : α`. -/
+theorem equivalent_weightedSumSquares_mul_of_forall_fiber_of_isUnit_two
+    (h2 : IsUnit (2 : R)) {ι α : Type*} [Fintype ι] [DecidableEq α]
+    (k : ι → α) (s : α → R) (u v : ι → Rˣ)
+    (hfiber : ∀ m : α, IsSquare ((∏ i with k i = m, u i) * ∏ i with k i = m, v i)) :
+    (weightedSumSquares R fun i ↦ (u i : R) * s (k i)).Equivalent
+      (weightedSumSquares R fun i ↦ (v i : R) * s (k i)) := by
+  refine equivalent_weightedSumSquares_mul_of_forall_fiber k s (fun i ↦ (u i : R))
+    (fun i ↦ (v i : R)) fun m ↦ ?_
+  rw [← weightedSumSquares_units (fun i : {i : ι // k i = m} ↦ u i.val),
+    ← weightedSumSquares_units (fun i : {i : ι // k i = m} ↦ v i.val)]
+  refine (equivalent_weightedSumSquares_iff_isSquare_prod_mul_prod_of_isUnit_two h2 _ _).mpr ?_
+  have hsub (w : ι → Rˣ) : ∏ i : {i : ι // k i = m}, w i.val = ∏ i with k i = m, w i :=
+    (Finset.prod_subtype {i : ι | k i = m} (fun _ ↦ by simp) w).symm
+  rw [hsub u, hsub v]
+  exact hfiber m
 
 end TauCeti

@@ -57,6 +57,8 @@ subring: lift a monic integral equation, whose evaluation then lies in the kerne
   every element some positive power of which it contains.
 * `Subring.perfectRing_of_isIntegrallyClosedIn`: a subring integrally closed in a perfect ring is
   perfect.
+* `TauCeti.IsIntegrallyClosed.isSquare_mul_sq_iff`: in an integrally closed domain, multiplying by
+  a nonzero square preserves and reflects squareness.
 * `Function.LeftInverse.isIntegrallyClosed_of_nonZeroDivisors_le` and
   `Function.LeftInverse.isIntegrallyClosed`: a ring retract of an integrally closed commutative ring
   whose section preserves nonzerodivisors (in particular when the ambient ring has no zero divisors)
@@ -256,6 +258,22 @@ theorem isIntegrallyClosedIn_map_of_ker_le (S : Subring A) [IsIntegrallyClosedIn
     exact ⟨a, Subring.isIntegrallyClosedIn_iff.mp inferInstance ha, rfl⟩
 
 end Subring
+
+namespace TauCeti.IsIntegrallyClosed
+
+/-- In an integrally closed domain, multiplying by the square of a nonzero element `b` preserves
+and reflects squareness: `a * b ^ 2` is a square if and only if `a` is. -/
+theorem isSquare_mul_sq_iff {R : Type*} [CommRing R] [IsDomain R] [IsIntegrallyClosed R]
+    {a b : R} (hb : b ≠ 0) : IsSquare (a * b ^ 2) ↔ IsSquare a := by
+  refine ⟨fun ⟨r, hr⟩ ↦ ?_, fun ⟨s, hs⟩ ↦ ⟨s * b, by rw [hs]; ring⟩⟩
+  have hbr : b ∣ r := (_root_.IsIntegrallyClosed.pow_dvd_pow_iff two_ne_zero).mp
+    ⟨a, by rw [sq, ← hr, mul_comm]⟩
+  obtain ⟨s, rfl⟩ := hbr
+  refine ⟨s, mul_right_cancel₀ (pow_ne_zero 2 hb) ?_⟩
+  calc a * b ^ 2 = (b * s) * (b * s) := hr
+    _ = (s * s) * b ^ 2 := by ring
+
+end TauCeti.IsIntegrallyClosed
 
 /-- **A ring retract of an integrally closed ring along a nonzerodivisor-preserving section is
 integrally closed.** If `i : R →+* A` admits a left inverse `π : A →+* R`, carries nonzerodivisors

@@ -1,19 +1,19 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Wentao Li
+Authors: Wentao Li, The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Group.Primary.Generators
+public import TauCeti.GroupTheory.Rank
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Group
-public import Mathlib.Algebra.Module.SpanRank
 
 /-!
 # The number of generators of a discriminant group
 
-For a nondegenerate integral lattice `L`, the discriminant group `Lᵛ / L` needs at most
-`rank L` generators. We use Mathlib's `Submodule.spanFinrank` for the least number of generators
-of a finite abelian group, viewed as a `ℤ`-module.
+For a nondegenerate integral lattice `L`, the discriminant group `Lᵛ / L` and each of its
+`n`-primary components need at most `rank L` generators.
 
 The quotient map carries a generating set of the free dual lattice to a generating set of the
 discriminant group. The dual lattice has the same rank as `L`, so no choice of Gram matrix or
@@ -22,6 +22,8 @@ Smith normal form is needed.
 ## Main declarations
 
 * `TauCeti.IntegralLattice.spanFinrank_discriminantGroup_le_finrank`: the bound `l(A_L) ≤ rank L`.
+* `TauCeti.IntegralLattice.rank_primaryComponent_discriminantGroup_le_finrank`: the bound
+  `AddGroup.rank (A_L)_n ≤ rank L` for every `n : ℕ`.
 -/
 
 public section
@@ -39,5 +41,14 @@ theorem spanFinrank_discriminantGroup_le_finrank (L : IntegralLattice V) [L.IsNo
   rwa [Submodule.map_top, LinearMap.range_eq_top.mpr L.carrierInDual.mkQ_surjective,
     ← Module.finrank_eq_spanFinrank_of_free (R := ℤ) (M := L.dualCarrier),
     L.finrank_dualCarrier, ← L.finrank_carrier] at h
+
+/-- Every `n`-primary component of the discriminant group of a nondegenerate integral lattice has
+`AddGroup.rank` at most `rank L`. -/
+theorem rank_primaryComponent_discriminantGroup_le_finrank (L : IntegralLattice V)
+    [L.IsNondegenerate] (n : ℕ) :
+    AddGroup.rank (AddCommGroup.primaryComponent L.DiscriminantGroup n) ≤ Module.finrank ℤ L := by
+  refine (AddCommGroup.rank_primaryComponent_le L.DiscriminantGroup n).trans ?_
+  rw [AddGroup.rank_eq_spanFinrank_top]
+  exact L.spanFinrank_discriminantGroup_le_finrank
 
 end TauCeti.IntegralLattice

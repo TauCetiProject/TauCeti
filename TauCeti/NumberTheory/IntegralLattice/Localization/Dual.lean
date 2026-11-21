@@ -32,7 +32,9 @@ every `ℤ_p`-linear functional on the localized carrier.
   space is the scalar extension of the localized dual carrier.
 * `TauCeti.IntegralLattice.localCarrierToDual`: the localized inclusion `L_p → ℤ_p ⊗[ℤ] Lᵛ`,
   which is injective and compatible with the embeddings into the completed ambient space.
-* `TauCeti.IntegralLattice.localDualPairingEquiv`: the perfect pairing after localization.
+* `TauCeti.IntegralLattice.localDualPairingEquiv` and
+  `TauCeti.IntegralLattice.localDualPairingEquiv_localCarrierToDual`: the perfect pairing after
+  localization and its compatibility with `localIntegralForm`.
 * `TauCeti.IntegralLattice.completedRationalForm_localizationDualToCompletion`: compatibility
   with the completed rational form.
 * `TauCeti.IntegralLattice.range_localizationDualToCompletion`: equality of the localized dual
@@ -162,6 +164,15 @@ theorem completedRationalForm_localizationDualToCompletion
         Rat.cast_intCast, PadicInt.algebraMap_apply]
       push_cast
       ring
+
+/-- Restricting the localized dual pairing along the carrier inclusion recovers the localized
+integral bilinear form. -/
+@[simp]
+theorem localDualPairingEquiv_localCarrierToDual (x y : L.LocalCarrier p) :
+    L.localDualPairingEquiv p (L.localCarrierToDual p x) y = L.localIntegralForm p x y := by
+  apply FaithfulSMul.algebraMap_injective ℤ_[p] ℚ_[p]
+  rw [← completedRationalForm_localizationDualToCompletion,
+    localizationDualToCompletion_localCarrierToDual, completedRationalForm_localizationToCompletion]
 
 /-- Localization commutes with duality as embedded carriers in the completed rational space.
 This equality uses the completed rational form on both sides and holds at every prime. -/

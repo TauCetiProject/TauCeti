@@ -334,6 +334,11 @@ def toFiniteBilinearModule (f : Isometry A B) :
 theorem toFiniteBilinearModule_toAddEquiv (f : Isometry A B) :
     f.toFiniteBilinearModule.toAddEquiv = f.toAddEquiv := (rfl)
 
+/-- The induced bilinear isometry acts as the quadratic isometry on elements. -/
+@[simp]
+theorem toFiniteBilinearModule_apply (f : Isometry A B) (x : A) :
+    f.toFiniteBilinearModule x = f x := (rfl)
+
 /-- Nondegeneracy transfers along a quadratic isometry. -/
 theorem isNondegenerate (f : Isometry A B) (hA : A.IsNondegenerate) : B.IsNondegenerate :=
   f.toFiniteBilinearModule.isNondegenerate hA
@@ -433,6 +438,11 @@ theorem restrict_pairing (H : AddSubgroup A) (x y : H) :
 theorem restrict_toFiniteBilinearModule (H : AddSubgroup A) :
     (A.restrict H).toFiniteBilinearModule = A.toFiniteBilinearModule.restrict H := by
   rfl
+
+/-- The cardinality of a restricted finite quadratic module is the cardinality of the subgroup. -/
+theorem natCard_restrict (H : AddSubgroup A) :
+    Nat.card (A.restrict H) = Nat.card H :=
+  (rfl)
 
 /-- The inclusion of a restricted finite quadratic module into the original module. -/
 def restrictHom (H : AddSubgroup A) : Hom (restrict A H) A where

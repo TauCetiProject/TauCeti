@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 import Mathlib.Algebra.BigOperators.Fin
+import Mathlib.Algebra.BigOperators.Group.Finset.Lemmas
 import Mathlib.GroupTheory.Perm.DomMulAct
 public import Mathlib.Data.Fintype.Card
 public import Mathlib.SetTheory.Cardinal.Finite
@@ -35,9 +36,15 @@ covering the range is weighted by its occurrence count.
 * `Function.occCount_subtype_ne`, `Function.exists_equiv_subtype_ne_of_occCount_eq`: deleting the
   indices with value `z` keeps the other counts, so equal counts away from `z` match the
   remaining indices.
+* `Function.occCount_eq_of_natCard_eq_of_occCount_eq_of_ne`,
+  `Function.occCount_eq_of_occCount_eq_of_ne`, `Function.exists_perm_of_occCount_eq_of_ne`: on
+  index types of equal finite cardinality, equal counts away from `z` force equal counts at `z` as
+  well, giving a permutation when the index types coincide.
 * `Finset.prod_filter_subtype_ne`: a product over one fiber ignores the deletion of another.
 * `Finset.prod_filter_subtype_ne_equiv`: a product over one fiber is preserved by a value-preserving
   matching of the indices away from another fiber.
+* `Finset.isSquare_prod_filter_of_isSquare_prod`: if the full product and every fiber away from `z`
+  are squares in a commutative group, then the fiber at `z` is also a square.
 * `Function.occCount_eq_count_map_univ`: occurrence counts as multiset multiplicities.
 * `Function.exists_perm_of_map_univ_eq`: equal multisets give a permutation.
 * `Multiset.exists_map_univ_eq`: enumeration of a multiset by any type of matching size.
@@ -212,6 +219,43 @@ theorem exists_equiv_subtype_ne_of_occCount_eq {Y : Type*} [Finite X] [Finite Y]
       · rw [occCount_subtype_ne u ha, occCount_subtype_ne v ha, h a ha]
   exact ⟨σ, congrFun hσ⟩
 
+/-- Two finite families on index types of equal cardinality whose occurrence counts agree away from
+`z` have the same occurrence count at every value. -/
+theorem occCount_eq_of_natCard_eq_of_occCount_eq_of_ne {Y : Type*} [Finite X] [Finite Y]
+    {u : X → S} {v : Y → S} {z : S} (hXY : Nat.card X = Nat.card Y)
+    (h : ∀ a, a ≠ z → occCount u a = occCount v a) (a : S) :
+    occCount u a = occCount v a := by
+  classical
+  let _ := Fintype.ofFinite X
+  let _ := Fintype.ofFinite Y
+  obtain rfl | ha := eq_or_ne a z
+  · let T : Finset S := insert a (Finset.univ.image u ∪ Finset.univ.image v)
+    have huT : ∑ b ∈ T, occCount u b = Nat.card X :=
+      sum_occCount_eq_card u fun i => Finset.mem_insert_of_mem
+        (Finset.mem_union_left _ (Finset.mem_image_of_mem u (Finset.mem_univ i)))
+    have hvT : ∑ b ∈ T, occCount v b = Nat.card Y :=
+      sum_occCount_eq_card v fun j => Finset.mem_insert_of_mem
+        (Finset.mem_union_right _ (Finset.mem_image_of_mem v (Finset.mem_univ j)))
+    rw [← Finset.add_sum_erase T _ (Finset.mem_insert_self a _)] at huT hvT
+    have herase : ∑ b ∈ T.erase a, occCount u b = ∑ b ∈ T.erase a, occCount v b :=
+      Finset.sum_congr rfl fun b hb => h b (Finset.ne_of_mem_erase hb)
+    omega
+  · exact h a ha
+
+/-- Two families on a finite index type whose occurrence counts agree away from `z` have equal
+occurrence counts everywhere. -/
+theorem occCount_eq_of_occCount_eq_of_ne [Finite X] {u v : X → S} {z : S}
+    (h : ∀ a, a ≠ z → occCount u a = occCount v a) (a : S) :
+    occCount u a = occCount v a :=
+  occCount_eq_of_natCard_eq_of_occCount_eq_of_ne rfl h a
+
+/-- Two families on a finite index type whose occurrence counts agree away from `z` differ by a
+permutation of their indices. -/
+theorem exists_perm_of_occCount_eq_of_ne [Finite X] {u v : X → S} {z : S}
+    (h : ∀ a, a ≠ z → occCount u a = occCount v a) :
+    ∃ σ : Equiv.Perm X, v ∘ σ = u :=
+  exists_perm_of_occCount_eq (occCount_eq_of_occCount_eq_of_ne h)
+
 /-- Occurrence counts are the multiplicities in the multiset of values of a finite family. -/
 theorem occCount_eq_count_map_univ [Fintype X] [DecidableEq S] (f : X → S) (y : S) :
     occCount f y = (Finset.univ.val.map f).count y := by
@@ -258,6 +302,29 @@ theorem prod_filter_subtype_ne_equiv {Y : Type*} [Fintype X] [Fintype Y] [Decida
     ∏ x ∈ ({x | u x = a} : Finset {x // u x ≠ z}), g (σ x) = ∏ y with v y = a, g y := by
   rw [← prod_filter_subtype_ne v g ha, prod_filter, prod_filter]
   exact Fintype.prod_equiv σ _ _ fun x => by simp only [hσ x]
+
+/-- In a commutative group, if the product of `w` over `s` is a square and its product over every
+fiber `k i = m` with `m ≠ z` is a square, then its product over the fiber `k i = z` is a square. -/
+theorem isSquare_prod_filter_of_isSquare_prod {G ι α : Type*} [CommGroup G] [DecidableEq α]
+    (s : Finset ι) (k : ι → α) (w : ι → G) (z : α)
+    (hfull : IsSquare (∏ i ∈ s, w i))
+    (hne : ∀ m, m ≠ z → IsSquare (∏ i ∈ s with k i = m, w i)) :
+    IsSquare (∏ i ∈ s with k i = z, w i) := by
+  let P : Finset α := (s.image k).erase z
+  have hsplit :
+      ∏ i ∈ s, w i = (∏ i ∈ s with k i = z, w i) * ∏ m ∈ P, ∏ i ∈ s with k i = m, w i := by
+    have hpart := (Finset.prod_fiberwise_of_maps_to (s := s) (g := k) (t := insert z P)
+      (fun i hi ↦ by
+        by_cases hkz : k i = z
+        · simp [hkz]
+        · exact Finset.mem_insert_of_mem
+            (Finset.mem_erase.mpr ⟨hkz, Finset.mem_image_of_mem k hi⟩))
+      w).symm
+    rw [hpart, Finset.prod_insert (Finset.notMem_erase z _)]
+  have hP_sq : IsSquare (∏ m ∈ P, ∏ i ∈ s with k i = m, w i) :=
+    Finset.isSquare_prod _ fun m hm ↦ hne m (Finset.ne_of_mem_erase hm)
+  rw [hsplit] at hfull
+  simpa [mul_inv_cancel_right] using hfull.mul hP_sq.inv
 
 end Finset
 

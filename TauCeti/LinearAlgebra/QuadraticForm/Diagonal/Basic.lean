@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.QuadraticForm.IsometryEquiv
+public import Mathlib.LinearAlgebra.QuadraticForm.Prod
 public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 import Mathlib.LinearAlgebra.Determinant
 
@@ -20,6 +21,13 @@ of squares.
 * `TauCeti.equivalent_weightedSumSquares_comp`: reindexing the coefficients preserves equivalence.
 * `TauCeti.equivalent_weightedSumSquares_of_pair`: a binary equivalence extends across fixed
   coordinates.
+* `TauCeti.weightedSumSquaresMulFiberIsometryEquiv`,
+  `TauCeti.weightedSumSquaresMulFiberIsometryEquiv_apply`, and
+  `TauCeti.weightedSumSquaresMulFiberIsometryEquiv_symm_apply`: fiberwise orthogonal-sum
+  decomposition isometry for a scaled diagonal form over any commutative semiring, together with
+  its forward and inverse coordinate characterizations.
+* `TauCeti.equivalent_weightedSumSquares_mul_of_forall_fiber`: fiberwise equivalences of diagonal
+  subforms assemble into an equivalence of scaled diagonal forms over any commutative semiring.
 * `QuadraticMap.associated_weightedSumSquares`, `QuadraticForm.toMatrix'_weightedSumSquares`, and
   `QuadraticForm.discr'_weightedSumSquares`: over a ring in which two is invertible, the associated
   bilinear form of a diagonal form is the weighted dot product, its Gram matrix in the standard
@@ -179,6 +187,102 @@ theorem equivalent_weightedSumSquares_comp (w : ι → R) (σ : κ ≃ ι) :
     map_app' := fun x => ?_ }⟩
   simp only [QuadraticMap.weightedSumSquares_apply, Function.comp_apply, smul_eq_mul]
   simpa using (Equiv.sum_comp σ.symm (fun i => w (σ i) * (x (σ i) * x (σ i)))).symm
+
+/-- Fiberwise orthogonal-sum decomposition of a scaled diagonal form `∑ᵢ uᵢ s(kᵢ) xᵢ²` over the
+finite image of the scale profile `k`. -/
+def weightedSumSquaresMulFiberIsometryEquiv {α : Type*} [DecidableEq α]
+    (k : ι → α) (s : α → R) (u : ι → R) :
+    (weightedSumSquares R fun i ↦ u i * s (k i)).IsometryEquiv
+      (QuadraticMap.pi fun m : Finset.univ.image k ↦
+        s m.val • weightedSumSquares R fun i : {i : ι // k i = m.val} ↦ u i.val) where
+  toLinearEquiv :=
+    let κ : ι → Finset.univ.image k := fun i ↦
+      ⟨k i, Finset.mem_image_of_mem k (Finset.mem_univ i)⟩
+    let fiberEquiv (m : Finset.univ.image k) : {i : ι // κ i = m} ≃ {i : ι // k i = m.val} :=
+      Equiv.subtypeEquivRight fun _ ↦ Subtype.ext_iff
+    ((LinearEquiv.funCongrLeft R R (Equiv.sigmaFiberEquiv κ)).trans
+      (LinearEquiv.piCurry R fun m (_ : {i : ι // κ i = m}) ↦ R)).trans
+      (LinearEquiv.piCongrRight fun m ↦ LinearEquiv.funCongrLeft R R (fiberEquiv m).symm)
+  map_app' x := by
+    -- Evaluate each fiber summand and reassemble the sum via `Finset.sum_fiberwise_of_maps_to`.
+    rw [QuadraticMap.pi_apply, weightedSumSquares_apply]
+    have hsum :
+        ∑ m : Finset.univ.image k,
+            s m.val * ∑ i : {i : ι // k i = m.val}, u i.val * (x i.val * x i.val) =
+          ∑ i : ι, u i * s (k i) * (x i * x i) := by
+      calc
+        ∑ m : Finset.univ.image k,
+            s m.val * ∑ i : {i : ι // k i = m.val}, u i.val * (x i.val * x i.val)
+            = ∑ m ∈ Finset.univ.image k,
+                s m * ∑ i with k i = m, u i * (x i * x i) := by
+              rw [← Finset.sum_attach (Finset.univ.image k)]
+              refine Finset.sum_congr rfl fun m _ ↦ ?_
+              congr 1
+              exact (Finset.sum_subtype {i : ι | k i = m.val} (fun _ ↦ by simp)
+                (fun i ↦ u i * (x i * x i))).symm
+        _ = ∑ m ∈ Finset.univ.image k,
+              ∑ i with k i = m, u i * s (k i) * (x i * x i) := by
+              refine Finset.sum_congr rfl fun m _ ↦ ?_
+              rw [Finset.mul_sum]
+              refine Finset.sum_congr rfl fun i hi ↦ ?_
+              rw [(Finset.mem_filter.mp hi).2]
+              ring
+        _ = ∑ i : ι, u i * s (k i) * (x i * x i) :=
+              Finset.sum_fiberwise_of_maps_to
+                (fun i _ ↦ Finset.mem_image_of_mem k (Finset.mem_univ i)) _
+    refine (Finset.sum_congr rfl fun m _ ↦ ?_).trans hsum
+    rw [smul_apply, weightedSumSquares_apply, smul_eq_mul]
+    refine congrArg (s m.val * ·) (Finset.sum_congr rfl fun i _ ↦ ?_)
+    simp only [LinearMap.toFun_eq_coe, LinearEquiv.coe_coe, LinearEquiv.trans_apply,
+      LinearEquiv.piCongrRight_apply, LinearEquiv.piCurry_apply, Sigma.curry,
+      LinearEquiv.funCongrLeft_apply, LinearMap.funLeft_apply, Equiv.sigmaFiberEquiv_apply,
+      Equiv.subtypeEquivRight_symm_apply_coe, smul_eq_mul]
+
+/-- The forward map of `weightedSumSquaresMulFiberIsometryEquiv` restricts a vector to each fiber
+of `k`. -/
+@[simp]
+theorem weightedSumSquaresMulFiberIsometryEquiv_apply {α : Type*} [DecidableEq α]
+    (k : ι → α) (s : α → R) (u : ι → R) (x : ι → R)
+    (m : Finset.univ.image k) (i : {i : ι // k i = m.val}) :
+    weightedSumSquaresMulFiberIsometryEquiv k s u x m i = x i.val :=
+  (rfl)
+
+/-- The inverse map of `weightedSumSquaresMulFiberIsometryEquiv` reads the `i`-th coordinate from
+the fiber over `k i`. -/
+@[simp]
+theorem weightedSumSquaresMulFiberIsometryEquiv_symm_apply {α : Type*} [DecidableEq α]
+    (k : ι → α) (s : α → R) (u : ι → R)
+    (y : (m : Finset.univ.image k) → {i : ι // k i = m.val} → R) (i : ι) :
+    (weightedSumSquaresMulFiberIsometryEquiv k s u).symm y i =
+      y ⟨k i, Finset.mem_image_of_mem k (Finset.mem_univ i)⟩ ⟨i, rfl⟩ := by
+  have h := congrFun (congrFun ((weightedSumSquaresMulFiberIsometryEquiv k s u).apply_symm_apply y)
+    ⟨k i, Finset.mem_image_of_mem k (Finset.mem_univ i)⟩) ⟨i, rfl⟩
+  simpa only [weightedSumSquaresMulFiberIsometryEquiv_apply] using h
+
+/-- Fiberwise equivalences of diagonal subforms assemble into an equivalence of scaled diagonal
+forms `∑ᵢ wᵢ s(kᵢ) xᵢ²` and `∑ᵢ vᵢ s(kᵢ) xᵢ²`. -/
+theorem equivalent_weightedSumSquares_mul_of_forall_fiber {α : Type*} [DecidableEq α]
+    (k : ι → α) (s : α → R) (w v : ι → R)
+    (hfiber : ∀ m : α,
+      (weightedSumSquares R fun i : {i : ι // k i = m} ↦ w i.val).Equivalent
+        (weightedSumSquares R fun i : {i : ι // k i = m} ↦ v i.val)) :
+    (weightedSumSquares R fun i ↦ w i * s (k i)).Equivalent
+      (weightedSumSquares R fun i ↦ v i * s (k i)) := by
+  -- Split both forms into orthogonal sums indexed by the finite image of `k`, scale each fiber
+  -- equivalence by `s m`, and recombine via `QuadraticMap.Equivalent.pi`.
+  have hpi :
+      (QuadraticMap.pi fun m : Finset.univ.image k ↦
+          s m.val • weightedSumSquares R fun i : {i : ι // k i = m.val} ↦ w i.val).Equivalent
+        (QuadraticMap.pi fun m : Finset.univ.image k ↦
+          s m.val • weightedSumSquares R fun i : {i : ι // k i = m.val} ↦ v i.val) :=
+    QuadraticMap.Equivalent.pi fun m ↦ by
+      obtain ⟨e⟩ := hfiber m.val
+      exact ⟨{ toLinearEquiv := e.toLinearEquiv
+               map_app' := fun x ↦ by
+                 simp only [smul_apply, LinearMap.toFun_eq_coe, LinearEquiv.coe_coe,
+                   QuadraticMap.IsometryEquiv.coe_toLinearEquiv, e.map_app] }⟩
+  exact QuadraticMap.Equivalent.trans ⟨weightedSumSquaresMulFiberIsometryEquiv k s w⟩
+    (hpi.trans ⟨(weightedSumSquaresMulFiberIsometryEquiv k s v).symm⟩)
 
 /-- A diagonal form with unit weights is the diagonal form with the underlying scalar weights. -/
 theorem _root_.QuadraticMap.weightedSumSquares_units (w : ι → Rˣ) :

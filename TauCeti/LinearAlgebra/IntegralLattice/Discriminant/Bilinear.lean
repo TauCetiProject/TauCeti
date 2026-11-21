@@ -138,6 +138,18 @@ theorem discriminantBilinearModule_pairing (L : IntegralLattice V) [L.IsNondegen
     L.discriminantBilinearModule.pairing x y = L.discriminantPairing x y :=
   (rfl)
 
+/-- The cardinality of the discriminant bilinear module is that of the discriminant group. -/
+@[simp]
+theorem natCard_discriminantBilinearModule (L : IntegralLattice V) [L.IsNondegenerate] :
+    Nat.card L.discriminantBilinearModule = Nat.card L.DiscriminantGroup :=
+  rfl
+
+/-- The discriminant bilinear module is subsingleton exactly when the discriminant group is. -/
+@[simp]
+theorem subsingleton_discriminantBilinearModule_iff (L : IntegralLattice V) [L.IsNondegenerate] :
+    Subsingleton L.discriminantBilinearModule ↔ Subsingleton L.DiscriminantGroup :=
+  Iff.rfl
+
 private theorem injective_discriminantPairing (L : IntegralLattice V) [L.IsNondegenerate] :
     Function.Injective L.discriminantPairing := by
   intro a b hab

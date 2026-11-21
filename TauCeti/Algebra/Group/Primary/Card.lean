@@ -26,6 +26,8 @@ For a prime `p` this pins the order down: `#A[p^∞]` is the full power of `p` d
 * `TauCeti.AddCommGroup.coprime_index_primaryComponent`: `[A : A[n^∞]]` is prime to `n`.
 * `TauCeti.AddCommGroup.dvd_of_prime_dvd_natCard_primaryComponent`: a prime dividing `#A[n^∞]`
   divides `n`.
+* `TauCeti.AddCommGroup.odd_natCard_primaryComponent`: for odd `n`, `#A[n^∞]` is odd whenever
+  `A[n^∞]` is finite.
 * `TauCeti.AddCommGroup.natCard_primaryComponent_dvd_of_natCard_dvd` and
   `TauCeti.AddCommGroup.natCard_primaryComponent_eq_of_natCard_eq`: for finite groups, `#A[n^∞]`
   only depends on `#A`.
@@ -79,6 +81,13 @@ theorem dvd_of_prime_dvd_natCard_primaryComponent {n p : ℕ}
   refine hp.dvd_of_dvd_pow (n := k) ?_
   rw [← hx]
   exact addOrderOf_dvd_of_nsmul_eq_zero (Subtype.ext hk)
+
+/-- **For odd `n`, the `n`-primary component has odd cardinality** whenever it is finite. -/
+theorem odd_natCard_primaryComponent {n : ℕ} [Finite (AddCommGroup.primaryComponent A n)]
+    (hn : Odd n) : Odd (Nat.card (AddCommGroup.primaryComponent A n)) :=
+  Nat.not_even_iff_odd.mp fun heven ↦
+    Nat.not_even_iff_odd.mpr hn <| even_iff_two_dvd.mpr <|
+      dvd_of_prime_dvd_natCard_primaryComponent Nat.prime_two (even_iff_two_dvd.mp heven)
 
 /-- **The order of the `n`-primary component is monotone in the order of the group**: if
 `#A ∣ #B` for commutative groups with `B` finite, then `#A[n^∞] ∣ #B[n^∞]` (`A` is then finite
