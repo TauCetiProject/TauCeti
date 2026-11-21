@@ -15,9 +15,9 @@ import Mathlib.Dynamics.BirkhoffSum.Maximal
 import Mathlib.Dynamics.BirkhoffSum.QuasiMeasurePreserving
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 import Mathlib.MeasureTheory.Function.ConditionalExpectation.Real
+import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 import Mathlib.MeasureTheory.Function.LpSpace.Complete
 import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
-import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.Topology.Instances.EReal.Lemmas
 import TauCeti.Dynamics.BirkhoffSum.Limsup
 import TauCeti.Dynamics.BirkhoffSum.Maximal
@@ -26,6 +26,7 @@ import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
 import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
 import TauCeti.MeasureTheory.Function.LpSeminorm.LpNorm
 import TauCeti.Probability.Ergodic.BirkhoffLp
+import TauCeti.Probability.Ergodic.CondExpProjection
 import TauCeti.Probability.Ergodic.InvariantSigma
 
 /-!
@@ -38,15 +39,18 @@ an observable `f : Ω → E` taking values in a real Banach space `E`.
 The proof for real-valued observables follows the standard maximal-ergodic route (as in Garsia's
 presentation of Hopf's maximal ergodic theorem, Billingsley's *Ergodic Theory and Information*, and
 Einsiedler–Ward, *Ergodic Theory*, Chapter 2): Mathlib's maximal ergodic theorem
-(`setIntegral_birkhoffSumSup_nonneg` and `mul_measureReal_lt_birkhoffAverageSup_le_norm`) shows
-that the upper and lower `EReal` limits of `birkhoffAverage ℝ T g n` are almost everywhere finite
-and equal, and `L¹`-approximation by simple functions identifies the limit with the conditional
-expectation `μ[f | MeasurableSpace.invariants T]`. Extending from `ℝ` to an arbitrary real Banach
-space `E` requires no separability hypothesis: pointwise convergence holds on simple functions by
-linearity and transfers to all `Integrable` functions via `L¹`-density of simple functions and the
-weak-type maximal inequality; `Lᵖ` convergence for `1 ≤ p < ∞` follows from `Lᵖ` dominated
-convergence (`TauCeti.tendsto_eLpNorm_sub_of_ae_tendsto`) on simple functions together with
-`Lᵖ`-contractivity of Birkhoff averages and conditional expectations.
+(`mul_measureReal_lt_birkhoffAverageSup_le_integral` and
+`mul_measureReal_lt_birkhoffAverageSup_le_norm`) shows that the upper and lower `EReal` limits of
+`birkhoffAverage ℝ T g n` are almost everywhere finite and equal. On measurable indicators, this
+almost-everywhere limit is identified with the conditional expectation
+`μ[f | MeasurableSpace.invariants T]` by comparing convergence in measure against the `L²` mean
+ergodic theorem (`TauCeti.Probability.tendsto_eLpNorm_birkhoffAverage_sub_condExp`). Extending from
+indicators to an arbitrary real Banach space `E` requires no separability hypothesis: pointwise
+convergence holds on simple functions by linearity and transfers to all `Integrable` functions via
+`L¹`-density of simple functions and the weak-type maximal inequality; `Lᵖ` convergence for
+`1 ≤ p < ∞` follows from `Lᵖ` dominated convergence (`TauCeti.tendsto_eLpNorm_sub_of_ae_tendsto`)
+on simple functions together with `Lᵖ`-contractivity of Birkhoff averages and conditional
+expectations.
 
 Supporting general-purpose lemmas live in their canonical homes: pointwise norm bounds in
 `TauCeti.Dynamics.BirkhoffSum.Norm`, orbit invariance of `limsup`/`liminf` in
@@ -96,26 +100,26 @@ private lemma mul_measureReal_le_setIntegral_of_lt_limsup {Ω : Type*} [Measurab
   let ν : Measure Ω := μ.restrict E
   have hTν : MeasurePreserving T ν ν := by
     simpa only [ν, hE.2] using hT.restrict_preimage hE.1
-  have hsub : E ⊆ {x | 0 < birkhoffSumSup T (g - fun _ ↦ b) x} := by
+  have hsub : E ⊆ {x | 0 < birkhoffAverageSup T (g - fun _ ↦ b) x} := by
     intro x hx
     have hfreq : ∃ᶠ n in atTop, (b : EReal) < ((birkhoffAverage ℝ T g n x : ℝ) : EReal) :=
       frequently_lt_of_lt_limsup (by isBoundedDefault) (hb x hx)
     obtain ⟨n, hbn, hn1⟩ := (hfreq.and_eventually (eventually_ge_atTop 1)).exists
-    have hnpos : (0 : ℝ) < (n : ℝ) := Nat.cast_pos.mpr (Nat.pos_of_ne_zero (by omega))
-    have hsum_pos : 0 < birkhoffSum T (g - fun _ ↦ b) n x := by
-      have hbn' : b < birkhoffAverage ℝ T g n x := EReal.coe_lt_coe_iff.mp hbn
-      rw [birkhoffSum_sub_apply, birkhoffSum_const, Pi.smul_apply, nsmul_eq_mul, sub_pos]
-      rw [birkhoffAverage, smul_eq_mul, lt_inv_mul_iff₀ hnpos] at hbn'
-      linarith
-    exact (EReal.coe_pos.mpr hsum_pos).trans_le
-      (le_iSup (fun k ↦ ((birkhoffSum T (g - fun _ ↦ b) k x : ℝ) : EReal)) n)
-  have hnonneg : 0 ≤ ∫ x in {x | 0 < birkhoffSumSup T (g - fun _ ↦ b) x}, (g x - b) ∂ν :=
-    setIntegral_birkhoffSumSup_nonneg ν hTν (hg.sub (integrable_const b)).integrableOn
-  have hrestrict : ν.restrict {x | 0 < birkhoffSumSup T (g - fun _ ↦ b) x} = μ.restrict E :=
+    have hnpos : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (by omega)
+    have havg_pos : 0 < birkhoffAverage ℝ T (g - fun _ ↦ b) n x := by
+      rw [birkhoffAverage_sub_apply, birkhoffAverage_const ℝ T b hnpos, sub_pos]
+      exact EReal.coe_lt_coe_iff.mp hbn
+    exact (EReal.coe_pos.mpr havg_pos).trans_le
+      (le_iSup (fun k ↦ ((birkhoffAverage ℝ T (g - fun _ ↦ b) k x : ℝ) : EReal)) n)
+  have hmax : 0 * ν.real {x | 0 < birkhoffAverageSup T (g - fun _ ↦ b) x} ≤
+      ∫ x in {x | 0 < birkhoffAverageSup T (g - fun _ ↦ b) x}, (g x - b) ∂ν :=
+    mul_measureReal_lt_birkhoffAverageSup_le_integral ν hTν
+      (hg.sub (integrable_const b)).integrableOn 0 le_rfl
+  have hrestrict : ν.restrict {x | 0 < birkhoffAverageSup T (g - fun _ ↦ b) x} = μ.restrict E :=
     Measure.restrict_eq_self_of_ae_mem (ae_restrict_of_forall_mem hE.1 hsub)
-  rw [hrestrict, integral_sub hg.integrableOn integrableOn_const, setIntegral_const, smul_eq_mul,
-    sub_nonneg] at hnonneg
-  linarith
+  rw [zero_mul, hrestrict, integral_sub hg.integrableOn integrableOn_const, setIntegral_const,
+    smul_eq_mul, sub_nonneg, mul_comm] at hmax
+  exact hmax
 
 private lemma measure_liminf_lt_and_lt_limsup_birkhoffAverage_eq_zero {Ω : Type*}
     [MeasurableSpace Ω] {μ : Measure Ω} [IsFiniteMeasure μ] {T : Ω → Ω}
@@ -145,7 +149,10 @@ private lemma measure_liminf_lt_and_lt_limsup_birkhoffAverage_eq_zero {Ω : Type
     refine mul_measureReal_le_setIntegral_of_lt_limsup hT hg.neg hE fun x hx ↦ ?_
     have h2 := hx.1
     dsimp only [fInf] at h2
-    rw [TauCeti.liminf_birkhoffAverage_eq_neg_limsup_neg, ← EReal.neg_lt_neg_iff, neg_neg] at h2
+    have hfun : (fun n ↦ ((birkhoffAverage ℝ T g n x : ℝ) : EReal)) =
+        -(fun n ↦ ((birkhoffAverage ℝ T (-g) n x : ℝ) : EReal)) := by
+      ext n; simp [birkhoffAverage_neg_apply]
+    rw [hfun, EReal.liminf_neg, ← EReal.neg_lt_neg_iff, neg_neg] at h2
     simpa [EReal.coe_neg] using h2
   rw [integral_neg] at hhigh_neg
   have hzero : μ.real E = 0 := by nlinarith [measureReal_nonneg (μ := μ) (s := E)]
@@ -219,130 +226,6 @@ private lemma ae_tendsto_birkhoffAverage_real_limit {Ω : Type*} [MeasurableSpac
     exact tendsto_of_le_liminf_of_limsup_le heq.ge le_rfl
   exact EReal.tendsto_coe.mp htend_ereal
 
-private lemma integrable_real_birkhoffLimit_and_norm_le {Ω : Type*} [MeasurableSpace Ω]
-    {μ : Measure Ω} [IsFiniteMeasure μ] {T : Ω → Ω} (hT : MeasurePreserving T μ μ)
-    {g : Ω → ℝ} (hg_meas : Measurable g) (hg : Integrable g μ) :
-    let L := fun x ↦ (limsup (fun n ↦ ((birkhoffAverage ℝ T g n x : ℝ) : EReal)) atTop).toReal
-    Integrable L μ ∧ ∫ x, ‖L x‖ ∂μ ≤ ∫ x, ‖g x‖ ∂μ := by
-  intro L
-  have hL_meas : Measurable L :=
-    measurable_ereal_toReal.comp
-      (Measurable.limsup fun _ ↦
-        measurable_coe_real_ereal.comp (measurable_birkhoffAverage hT.measurable hg_meas))
-  have hle : eLpNorm L 1 μ ≤ eLpNorm g 1 μ :=
-    Lp.eLpNorm_le_of_ae_tendsto
-      (Eventually.of_forall fun n ↦ hT.eLpNorm_birkhoffAverage_le le_rfl g n)
-      (fun _ ↦ (measurable_birkhoffAverage hT.measurable hg_meas).aestronglyMeasurable)
-      hL_meas.aestronglyMeasurable (ae_tendsto_birkhoffAverage_real_limit hT hg_meas hg)
-  have hL_int : Integrable L μ :=
-    memLp_one_iff_integrable.mp (hle.trans_lt (memLp_one_iff_integrable.mpr hg).eLpNorm_lt_top)
-  exact ⟨hL_int, integral_norm_le_integral_norm_of_eLpNorm_one_le hg hle⟩
-
-private lemma setIntegral_real_birkhoffLimit_eq_of_bounded {Ω : Type*} [MeasurableSpace Ω]
-    {μ : Measure Ω} [IsFiniteMeasure μ] {T : Ω → Ω} (hT : MeasurePreserving T μ μ)
-    {g : Ω → ℝ} (hg_meas : Measurable g) {C : ℝ} (hC : ∀ x, ‖g x‖ ≤ C)
-    {s : Set Ω} (hs : MeasurableSet[MeasurableSpace.invariants T] s) :
-    ∫ x in s, (limsup (fun n ↦ ((birkhoffAverage ℝ T g n x : ℝ) : EReal)) atTop).toReal ∂μ =
-      ∫ x in s, g x ∂μ := by
-  have hg : Integrable g μ := Integrable.of_bound hg_meas.aestronglyMeasurable C (ae_of_all _ hC)
-  have hTs : MeasurePreserving T (μ.restrict s) (μ.restrict s) := by
-    simpa only [hs.2] using hT.restrict_preimage hs.1
-  have htend : Tendsto (fun n ↦ ∫ x in s, birkhoffAverage ℝ T g n x ∂μ) atTop
-      (𝓝 (∫ x in s,
-        (limsup (fun n ↦ ((birkhoffAverage ℝ T g n x : ℝ) : EReal)) atTop).toReal ∂μ)) := by
-    refine tendsto_integral_of_dominated_convergence (fun _ ↦ C) ?_ integrableOn_const ?_ ?_
-    · exact fun _ ↦ (measurable_birkhoffAverage hT.measurable hg_meas).aestronglyMeasurable
-    · exact fun n ↦ ae_of_all _ fun x ↦ TauCeti.norm_birkhoffAverage_le_of_forall_norm_le hC n x
-    · exact ae_restrict_of_ae (ae_tendsto_birkhoffAverage_real_limit hT hg_meas hg)
-  have hconst : Tendsto (fun n ↦ ∫ x in s, birkhoffAverage ℝ T g n x ∂μ) atTop
-      (𝓝 (∫ x in s, g x ∂μ)) := by
-    refine tendsto_const_nhds.congr' ?_
-    filter_upwards [eventually_ne_atTop 0] with n hn
-    exact (hTs.integral_birkhoffAverage hg.integrableOn hn).symm
-  exact tendsto_nhds_unique htend hconst
-
-private lemma setIntegral_real_birkhoffLimit_eq {Ω : Type*} [MeasurableSpace Ω]
-    {μ : Measure Ω} [IsFiniteMeasure μ] {T : Ω → Ω} (hT : MeasurePreserving T μ μ)
-    {g : Ω → ℝ} (hg_meas : Measurable g) (hg : Integrable g μ)
-    {s : Set Ω} (hs : MeasurableSet[MeasurableSpace.invariants T] s) :
-    ∫ x in s, (limsup (fun n ↦ ((birkhoffAverage ℝ T g n x : ℝ) : EReal)) atTop).toReal ∂μ =
-      ∫ x in s, g x ∂μ := by
-  let L := fun x ↦ (limsup (fun n ↦ ((birkhoffAverage ℝ T g n x : ℝ) : EReal)) atTop).toReal
-  have hL_int : Integrable L μ := (integrable_real_birkhoffLimit_and_norm_le hT hg_meas hg).1
-  refine eq_of_forall_dist_le fun ε hε ↦ ?_
-  obtain ⟨φ, hφ_dist, _⟩ := (memLp_one_iff_integrable.mpr hg).exists_simpleFunc_eLpNorm_sub_lt
-    ENNReal.one_ne_top (by positivity : ENNReal.ofReal (ε / 2) ≠ 0)
-  obtain ⟨C, hC⟩ := φ.exists_forall_norm_le
-  have hφ_int : Integrable (φ : Ω → ℝ) μ := φ.integrable_of_isFiniteMeasure
-  let Lφ := fun x ↦
-    (limsup (fun n ↦ ((birkhoffAverage ℝ T (φ : Ω → ℝ) n x : ℝ) : EReal)) atTop).toReal
-  let Ldiff := fun x ↦
-    (limsup (fun n ↦ ((birkhoffAverage ℝ T (g - ⇑φ) n x : ℝ) : EReal)) atTop).toReal
-  have hLφ_int := (integrable_real_birkhoffLimit_and_norm_le hT φ.measurable hφ_int).1
-  have hLdiff :=
-    integrable_real_birkhoffLimit_and_norm_le hT (hg_meas.sub φ.measurable) (hg.sub hφ_int)
-  have hLsub : L - Lφ =ᵐ[μ] Ldiff := by
-    filter_upwards [ae_tendsto_birkhoffAverage_real_limit hT hg_meas hg,
-      ae_tendsto_birkhoffAverage_real_limit hT φ.measurable hφ_int,
-      ae_tendsto_birkhoffAverage_real_limit hT (hg_meas.sub φ.measurable) (hg.sub hφ_int)]
-      with x h1 h2 h3
-    have hsub : Tendsto (fun n ↦ birkhoffAverage ℝ T (g - ⇑φ) n x) atTop (𝓝 (L x - Lφ x)) := by
-      simpa only [birkhoffAverage_sub_apply] using h1.sub h2
-    exact tendsto_nhds_unique hsub h3
-  have hnorm_diff : ∫ x, ‖(g - ⇑φ) x‖ ∂μ < ε / 2 :=
-    integral_norm_lt_of_eLpNorm_one_lt_ofReal hφ_dist
-  rw [Real.dist_eq]
-  calc
-    |(∫ x in s, L x ∂μ) - ∫ x in s, g x ∂μ|
-      = |(∫ x in s, (L x - Lφ x) ∂μ) - ∫ x in s, (g x - φ x) ∂μ| := by
-        rw [integral_sub hL_int.integrableOn hLφ_int.integrableOn,
-          integral_sub hg.integrableOn hφ_int.integrableOn,
-          setIntegral_real_birkhoffLimit_eq_of_bounded hT φ.measurable hC hs]
-        ring_nf
-    _ ≤ |∫ x in s, (L x - Lφ x) ∂μ| + |∫ x in s, (g x - φ x) ∂μ| := abs_sub _ _
-    _ ≤ (∫ x in s, ‖L x - Lφ x‖ ∂μ) + ∫ x in s, ‖g x - φ x‖ ∂μ := by
-        gcongr <;> exact abs_integral_le_integral_abs
-    _ ≤ (∫ x, ‖L x - Lφ x‖ ∂μ) + ∫ x, ‖g x - φ x‖ ∂μ := add_le_add
-        (setIntegral_le_integral (hL_int.sub hLφ_int).norm (ae_of_all _ fun _ ↦ norm_nonneg _))
-        (setIntegral_le_integral (hg.sub hφ_int).norm (ae_of_all _ fun _ ↦ norm_nonneg _))
-    _ = (∫ x, ‖Ldiff x‖ ∂μ) + ∫ x, ‖(g - ⇑φ) x‖ ∂μ := by
-        congr 1; exact integral_congr_ae (hLsub.mono fun _ hx ↦ congrArg norm hx)
-    _ ≤ (∫ x, ‖(g - ⇑φ) x‖ ∂μ) + ∫ x, ‖(g - ⇑φ) x‖ ∂μ := add_le_add hLdiff.2 le_rfl
-    _ ≤ ε := by linarith
-
-private lemma ae_tendsto_birkhoffAverage_condExp_real {Ω : Type*} [MeasurableSpace Ω]
-    {μ : Measure Ω} [IsFiniteMeasure μ] {T : Ω → Ω} (hT : MeasurePreserving T μ μ)
-    {f : Ω → ℝ} (hf : Integrable f μ) :
-    ∀ᵐ x ∂μ, Tendsto (fun n ↦ birkhoffAverage ℝ T f n x) atTop
-      (𝓝 (μ[f | MeasurableSpace.invariants T] x)) := by
-  let g := hf.aestronglyMeasurable.mk f
-  have hg_meas : Measurable g := hf.aestronglyMeasurable.measurable_mk
-  have hg_eq : g =ᵐ[μ] f := hf.aestronglyMeasurable.ae_eq_mk.symm
-  have hg : Integrable g μ := hf.congr hg_eq.symm
-  let L : Ω → ℝ :=
-    fun x ↦ (limsup (fun n ↦ ((birkhoffAverage ℝ T g n x : ℝ) : EReal)) atTop).toReal
-  have hL_meas_inv : Measurable[MeasurableSpace.invariants T] L := by
-    refine MeasurableSpace.measurable_invariants_dom.mpr ⟨?_, fun s _ ↦ ?_⟩
-    · exact measurable_ereal_toReal.comp
-        (Measurable.limsup fun _ ↦
-          measurable_coe_real_ereal.comp (measurable_birkhoffAverage hT.measurable hg_meas))
-    · have hcomp : L ∘ T = L :=
-        funext fun x ↦ congrArg EReal.toReal (TauCeti.limsup_birkhoffAverage_comp T g x)
-      rw [hcomp]
-  have hL_int : Integrable L μ := (integrable_real_birkhoffLimit_and_norm_le hT hg_meas hg).1
-  have hL_eq_condExp : L =ᵐ[μ] μ[g | MeasurableSpace.invariants T] :=
-    ae_eq_condExp_of_forall_setIntegral_eq (MeasurableSpace.invariants_le T) hg
-      (fun _ _ _ ↦ hL_int.integrableOn)
-      (fun _ hs _ ↦ setIntegral_real_birkhoffLimit_eq hT hg_meas hg hs)
-      hL_meas_inv.aestronglyMeasurable
-  have havg_eq : ∀ᵐ x ∂μ, ∀ n, birkhoffAverage ℝ T g n x = birkhoffAverage ℝ T f n x := by
-    rw [ae_all_iff]
-    exact fun n ↦ hT.quasiMeasurePreserving.birkhoffAverage_ae_eq_of_ae_eq ℝ hg_eq n
-  filter_upwards [ae_tendsto_birkhoffAverage_real_limit hT hg_meas hg, hL_eq_condExp,
-    condExp_congr_ae hg_eq (m := MeasurableSpace.invariants T), havg_eq] with x hx hL hce havg
-  rw [← hce, ← hL]
-  exact hx.congr fun n ↦ havg n
-
 end RealBirkhoffHelpers
 
 section BanachBirkhoffHelpers
@@ -359,13 +242,32 @@ private lemma ae_tendsto_birkhoffAverage_condExp_simpleFunc {Ω E : Type*} [Meas
   | @const c t ht =>
     let φ : Ω → ℝ := t.indicator 1
     let L : ℝ →L[ℝ] E := ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ) c
+    have hφ_meas : Measurable φ := measurable_one.indicator ht
     have hφ_int : Integrable φ μ := (integrable_const (1 : ℝ)).indicator ht
+    have hφ_memLp2 : MemLp φ 2 μ := (memLp_const (1 : ℝ)).indicator ht.nullMeasurableSet
+    let lim : Ω → ℝ :=
+      fun x ↦ (limsup (fun n ↦ ((birkhoffAverage ℝ T φ n x : ℝ) : EReal)) atTop).toReal
+    have hae : ∀ᵐ x ∂μ, Tendsto (fun n ↦ birkhoffAverage ℝ T φ n x) atTop (𝓝 (lim x)) :=
+      ae_tendsto_birkhoffAverage_real_limit hT hφ_meas hφ_int
+    have hmeas_in : TendstoInMeasure μ (birkhoffAverage ℝ T φ) atTop lim :=
+      tendstoInMeasure_of_tendsto_ae
+        (fun _ ↦ (measurable_birkhoffAverage hT.measurable hφ_meas).aestronglyMeasurable) hae
+    have hL2_in : TendstoInMeasure μ (birkhoffAverage ℝ T φ) atTop
+        (μ[φ | MeasurableSpace.invariants T]) :=
+      tendstoInMeasure_of_tendsto_eLpNorm (by norm_num : (2 : ℝ≥0∞) ≠ 0)
+        (TauCeti.Probability.tendsto_eLpNorm_birkhoffAverage_sub_condExp T hT hφ_memLp2 hφ_int)
+    have hlim_eq : lim =ᵐ[μ] μ[φ | MeasurableSpace.invariants T] :=
+      tendstoInMeasure_ae_unique hmeas_in hL2_in
+    have hφ_ae : ∀ᵐ x ∂μ, Tendsto (fun n ↦ birkhoffAverage ℝ T φ n x) atTop
+        (𝓝 (μ[φ | MeasurableSpace.invariants T] x)) := by
+      filter_upwards [hae, hlim_eq] with x hx hxeq
+      rwa [← hxeq]
     have hfun : (SimpleFunc.piecewise t ht (SimpleFunc.const Ω c) (SimpleFunc.const Ω 0) : Ω → E) =
         L ∘ φ := by
       ext x
       by_cases hx : x ∈ t <;> simp [φ, L, hx]
     rw [hfun]
-    filter_upwards [ae_tendsto_birkhoffAverage_condExp_real hT hφ_int,
+    filter_upwards [hφ_ae,
       L.comp_condExp_comm hφ_int (m := MeasurableSpace.invariants T)] with x hx hcomm
     have h1 : Tendsto (fun n ↦ L (birkhoffAverage ℝ T φ n x)) atTop
         (𝓝 (L (μ[φ | MeasurableSpace.invariants T] x))) := (L.continuous.tendsto _).comp hx

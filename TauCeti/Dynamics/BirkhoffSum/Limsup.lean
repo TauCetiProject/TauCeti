@@ -20,8 +20,6 @@ extended-real `limsup` and `liminf` of `birkhoffAverage ℝ T g n` unchanged.
 
 ## Main results
 
-* `TauCeti.liminf_birkhoffAverage_eq_neg_limsup_neg` — the `liminf` of the Birkhoff averages of `g`
-  equals the negation of the `limsup` of the Birkhoff averages of `-g`.
 * `TauCeti.limsup_birkhoffAverage_comp` — orbit invariance of the extended-real `limsup` of
   Birkhoff averages.
 * `TauCeti.liminf_birkhoffAverage_comp` — orbit invariance of the extended-real `liminf` of
@@ -34,15 +32,6 @@ open Filter
 open scoped Topology
 
 namespace TauCeti
-
-/-- The extended-real `liminf` of the Birkhoff averages of `g` equals the negation of the `limsup`
-of the Birkhoff averages of `-g`. -/
-theorem liminf_birkhoffAverage_eq_neg_limsup_neg {Ω : Type*} (T : Ω → Ω) (g : Ω → ℝ) (x : Ω) :
-    liminf (fun n ↦ ((birkhoffAverage ℝ T g n x : ℝ) : EReal)) atTop =
-      -limsup (fun n ↦ ((birkhoffAverage ℝ T (-g) n x : ℝ) : EReal)) atTop := by
-  rw [← EReal.liminf_neg]
-  refine congrArg (liminf · atTop) (funext fun n ↦ ?_)
-  simp [birkhoffAverage_neg_apply]
 
 /-- The extended-real `limsup` of the Birkhoff averages of a real-valued function along a forward
 orbit is invariant under shifting the starting point from `x` to `T x`. -/
@@ -102,7 +91,9 @@ orbit is invariant under shifting the starting point from `x` to `T x`. -/
 theorem liminf_birkhoffAverage_comp {Ω : Type*} (T : Ω → Ω) (g : Ω → ℝ) (x : Ω) :
     liminf (fun n ↦ ((birkhoffAverage ℝ T g n (T x) : ℝ) : EReal)) atTop =
       liminf (fun n ↦ ((birkhoffAverage ℝ T g n x : ℝ) : EReal)) atTop := by
-  rw [liminf_birkhoffAverage_eq_neg_limsup_neg, liminf_birkhoffAverage_eq_neg_limsup_neg,
-    limsup_birkhoffAverage_comp]
+  have h (y : Ω) : (fun n ↦ ((birkhoffAverage ℝ T g n y : ℝ) : EReal)) =
+      -(fun n ↦ ((birkhoffAverage ℝ T (-g) n y : ℝ) : EReal)) := by
+    ext n; simp [birkhoffAverage_neg_apply]
+  rw [h (T x), h x, EReal.liminf_neg, EReal.liminf_neg, limsup_birkhoffAverage_comp]
 
 end TauCeti
