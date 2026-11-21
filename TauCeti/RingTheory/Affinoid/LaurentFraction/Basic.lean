@@ -231,9 +231,8 @@ theorem existsUnique_algHom (φ : A →ₐ[K] B) :
       (∀ i, IsPowerBounded (φ (f i))) ∧
         ∀ j, IsUnit (φ (g j)) ∧ IsPowerBounded (Ring.inverse (φ (g j))) := by
   -- Images of the variables of `A⟨X, Y⟩` are power-bounded, by automatic continuity.
-  have := (hA.isRestricted_subring (τ := Fin (r + s))).isNoetherianRing
   have hX (ψ : LaurentFraction f g →ₐ[K] B) (k : Fin (r + s)) :=
-    hB.isPowerBounded_map (ψ.comp (Ideal.Quotient.mkₐ K _)) (isPowerBounded_X (R := A) k)
+    hB.isPowerBounded_map_quotient_X ψ k
   refine ⟨fun ⟨ψ, hψ, _⟩ ↦ ⟨fun i ↦ ?_, fun j ↦ ?_⟩, fun ⟨hf, hg⟩ ↦ ?_⟩
   · simpa [hψ] using hX ψ (Fin.castAdd s i)
   · have hu : IsUnit (φ (g j)) := hψ (g j) ▸ (isUnit_algebraMap (f := f) (g := g) j).map ψ

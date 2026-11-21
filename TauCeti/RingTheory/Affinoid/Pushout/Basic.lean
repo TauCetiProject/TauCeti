@@ -306,8 +306,8 @@ noncomputable def lift (h : ∀ a, β (algebraMap A _ a) = γ (algebraMap A _ a)
   { liftRingHom (β := (β : _ →+* E)) (γ := (γ : _ →+* E))
       (IsAffinoidAlgebra.continuous_algHom_quotient hA hE β)
       (IsAffinoidAlgebra.continuous_algHom_quotient hA hE γ)
-      (IsAffinoidAlgebra.isPowerBounded_map_quotient_X hA hE β)
-      (IsAffinoidAlgebra.isPowerBounded_map_quotient_X hA hE γ) (RingHom.ext h) with
+      (IsAffinoidAlgebra.isPowerBounded_map_quotient_X hE β)
+      (IsAffinoidAlgebra.isPowerBounded_map_quotient_X hE γ) (RingHom.ext h) with
     commutes' k := by
       rw [← ((inl I J).restrictScalars K).commutes k]
       exact (liftRingHom_inl _ _ _ _ _ _).trans (β.commutes k) }
@@ -321,8 +321,8 @@ theorem lift_inl (x : IsRestricted.subring (R := A) (fun _ : Fin m ↦ 1) ⧸ I)
   liftRingHom_inl
     (IsAffinoidAlgebra.continuous_algHom_quotient hA hE β)
     (IsAffinoidAlgebra.continuous_algHom_quotient hA hE γ)
-    (IsAffinoidAlgebra.isPowerBounded_map_quotient_X hA hE β)
-    (IsAffinoidAlgebra.isPowerBounded_map_quotient_X hA hE γ) (RingHom.ext h) x
+    (IsAffinoidAlgebra.isPowerBounded_map_quotient_X hE β)
+    (IsAffinoidAlgebra.isPowerBounded_map_quotient_X hE γ) (RingHom.ext h) x
 
 /-- `lift` restricts to `γ` along `inr`. -/
 @[simp]
@@ -331,16 +331,16 @@ theorem lift_inr (y : IsRestricted.subring (R := A) (fun _ : Fin n ↦ 1) ⧸ J)
   liftRingHom_inr
     (IsAffinoidAlgebra.continuous_algHom_quotient hA hE β)
     (IsAffinoidAlgebra.continuous_algHom_quotient hA hE γ)
-    (IsAffinoidAlgebra.isPowerBounded_map_quotient_X hA hE β)
-    (IsAffinoidAlgebra.isPowerBounded_map_quotient_X hA hE γ) (RingHom.ext h) y
+    (IsAffinoidAlgebra.isPowerBounded_map_quotient_X hE β)
+    (IsAffinoidAlgebra.isPowerBounded_map_quotient_X hE γ) (RingHom.ext h) y
 
 /-- `lift` is continuous for the quotient topology on `A⟨X, Y⟩ ⧸ (I, J)`. -/
 theorem continuous_lift : Continuous (lift hA hE β γ h) :=
   continuous_liftRingHom
     (IsAffinoidAlgebra.continuous_algHom_quotient hA hE β)
     (IsAffinoidAlgebra.continuous_algHom_quotient hA hE γ)
-    (IsAffinoidAlgebra.isPowerBounded_map_quotient_X hA hE β)
-    (IsAffinoidAlgebra.isPowerBounded_map_quotient_X hA hE γ) (RingHom.ext h)
+    (IsAffinoidAlgebra.isPowerBounded_map_quotient_X hE β)
+    (IsAffinoidAlgebra.isPowerBounded_map_quotient_X hE γ) (RingHom.ext h)
 
 include hA hE in
 /-- **`K`-algebra maps out of the affinoid pushout are determined by `inl` and `inr`.** Two

@@ -11,6 +11,7 @@ public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Map
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Sum
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.UniversalProperty
 
+import TauCeti.RingTheory.Affinoid.PowerBounded
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Groebner
 
 /-!
@@ -125,15 +126,15 @@ theorem continuous_algHom_quotient {L : Ideal (IsRestricted.subring (R := A) (fu
   have := (hA.isRestricted_subring (τ := Fin k)).isNoetherianRing
   continuous_coinduced_dom.mpr (hB.continuous_algHom (ψ.comp (Ideal.Quotient.mkₐ K L)))
 
-include hA hB in
+include hB in
 /-- **`K`-algebra maps out of a quotient of `A⟨X₁, …, Xₖ⟩` send the variables to power-bounded
-elements.** Let `A` and `B` be affinoid algebras with complete ultrametric algebra norms. Every
-`K`-algebra map `A⟨X₁, …, Xₖ⟩ ⧸ L → B` sends the image of each `Xᵢ` to a power-bounded element. -/
+elements.** Let `A` be a completely normed ultrametric `K`-algebra and `B` a completely normed
+affinoid `K`-algebra. Every `K`-algebra map `A⟨X₁, …, Xₖ⟩ ⧸ L → B` sends the image of each `Xᵢ` to
+a power-bounded element. -/
 theorem isPowerBounded_map_quotient_X
     {L : Ideal (IsRestricted.subring (R := A) (fun _ : Fin k ↦ 1))}
     (ψ : IsRestricted.subring (R := A) (fun _ : Fin k ↦ 1) ⧸ L →ₐ[K] B) (i : Fin k) :
     Huber.IsPowerBounded (ψ (Ideal.Quotient.mk L ⟨X i, isRestricted_X _ i⟩)) :=
-  have := (hA.isRestricted_subring (τ := Fin k)).isNoetherianRing
   hB.isPowerBounded_map (ψ.comp (Ideal.Quotient.mkₐ K L)) (isPowerBounded_X i)
 
 /-- **The extension of a `K`-algebra map `φ : A → B` to `A⟨X₁, …, Xₖ⟩` sending each `Xᵢ` to

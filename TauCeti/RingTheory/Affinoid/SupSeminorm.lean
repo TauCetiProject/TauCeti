@@ -7,10 +7,13 @@ module
 
 public import TauCeti.RingTheory.Affinoid.Continuity
 public import TauCeti.RingTheory.Affinoid.MaximalSpectrum
+public import Mathlib.Analysis.Normed.Algebra.GelfandRadius
 public import Mathlib.Analysis.Normed.Unbundled.IsPowMulFaithful
 public import Mathlib.RingTheory.Ideal.MinimalPrime.Noetherian
 public import TauCeti.Analysis.Normed.Unbundled.RootBound
 public import TauCeti.Analysis.Normed.Unbundled.SpectralNorm.Basic
+
+import TauCeti.Analysis.Normed.Algebra.AutomaticContinuity.Algebraic
 
 /-!
 # Point norms and the supremum seminorm of an affinoid algebra
@@ -32,8 +35,11 @@ the quotients by the finitely many minimal primes of `A`, and a monic equation
 
 The bound by a complete algebra norm uses automatic continuity,
 `TauCeti.IsAffinoidAlgebra.continuous_algHom`, of the residue map into `A ⧸ x` with its spectral
-norm, followed by the power-multiplicativity of the spectral norm. The kernel computation uses
-that affinoid algebras are Jacobson rings.
+norm, followed by the power-multiplicativity of the spectral norm. More generally, any `K`-algebra
+homomorphism `φ : B →ₐ[K] A` from an arbitrary Banach `K`-algebra `B` into any commutative
+`K`-algebra `A` satisfies `|φ(b)(x)| ≤ gelfandRadius b`, hence `|φ(b)|sup ≤ gelfandRadius b ≤ ‖b‖`,
+by `AlgHom.spectralNorm_apply_le_gelfandRadius`. The kernel computation uses that affinoid
+algebras are Jacobson rings.
 
 ## Main definitions
 
@@ -65,6 +71,9 @@ that affinoid algebras are Jacobson rings.
   supremum seminorms of the residues of `f` modulo the minimal primes of `A`.
 * `TauCeti.IsAffinoidAlgebra.supSeminorm_le_iSup_coeff_rpow_of_eval_eq_zero`: the bound of
   `|f|sup` by the coefficients of a monic polynomial vanishing at `f`.
+* `AlgHom.pointNorm_apply_le_gelfandRadius`, `AlgHom.supSeminorm_apply_le_gelfandRadius`, and
+  `AlgHom.supSeminorm_apply_le_norm`: spectral contraction from arbitrary Banach `K`-algebras into
+  commutative `K`-algebras.
 
 ## References
 
@@ -617,3 +626,35 @@ end IsAffinoidAlgebra
 end SupSeminorm
 
 end TauCeti
+
+section BanachSource
+
+variable {K B A : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
+  [NormedRing B] [NormedAlgebra K B] [CompleteSpace B]
+  [CommRing A] [Algebra K A]
+
+/-- Over a complete nontrivially normed ultrametric field `K`, any `K`-algebra homomorphism from a
+Banach `K`-algebra `B` into a commutative `K`-algebra `A` is bounded at every classical point
+`x : MaximalSpectrum A` by the Gelfand radius on `B`. -/
+theorem AlgHom.pointNorm_apply_le_gelfandRadius (φ : B →ₐ[K] A) (x : MaximalSpectrum A) (b : B) :
+    TauCeti.pointNorm K x (φ b) ≤ gelfandRadius b := by
+  let := Ideal.Quotient.field x.asIdeal
+  rw [TauCeti.pointNorm_eq_spectralNorm (L := A ⧸ x.asIdeal)
+    (ψ := Ideal.Quotient.mkₐ K x.asIdeal) (Ideal.Quotient.mkₐ_ker K x.asIdeal).ge]
+  exact ((Ideal.Quotient.mkₐ K x.asIdeal).comp φ).spectralNorm_apply_le_gelfandRadius b
+
+/-- Over a complete nontrivially normed ultrametric field `K`, any `K`-algebra homomorphism from a
+Banach `K`-algebra `B` into a commutative `K`-algebra `A` maps every `b : B` to an element of
+supremum seminorm at most `gelfandRadius b`. -/
+theorem AlgHom.supSeminorm_apply_le_gelfandRadius (φ : B →ₐ[K] A) (b : B) :
+    TauCeti.supSeminorm K (φ b) ≤ gelfandRadius b :=
+  TauCeti.supSeminorm_le (gelfandRadius_nonneg b) fun x ↦ φ.pointNorm_apply_le_gelfandRadius x b
+
+/-- Over a complete nontrivially normed ultrametric field `K`, any `K`-algebra homomorphism from a
+Banach `K`-algebra `B` into a commutative `K`-algebra `A` is contractive from the norm on `B` to
+`TauCeti.supSeminorm K` on `A`. -/
+theorem AlgHom.supSeminorm_apply_le_norm (φ : B →ₐ[K] A) (b : B) :
+    TauCeti.supSeminorm K (φ b) ≤ ‖b‖ :=
+  (φ.supSeminorm_apply_le_gelfandRadius b).trans (gelfandRadius_le_norm b)
+
+end BanachSource

@@ -8,9 +8,14 @@ module
 public import Mathlib.Analysis.Analytic.ConvergenceRadius
 public import Mathlib.Analysis.Normed.Algebra.GelfandFormula
 public import Mathlib.Analysis.Normed.Algebra.UnitizationL1
+public import Mathlib.Analysis.Normed.Group.Ultra
+public import Mathlib.Analysis.Normed.Unbundled.SmoothingSeminorm
+public import Mathlib.Analysis.Normed.Unbundled.SpectralNorm
+
+import TauCeti.Analysis.Normed.Unbundled.RootBound
 
 /-!
-# The Gelfand radius: idempotents, nonunital elements, and power series
+# The Gelfand radius: idempotents, nonunital elements, power series, and ultrametric rings
 
 The Gelfand radius `gelfandRadius a` of an element of a normed ring is the limit of
 `‖a ^ k‖ ^ (1 / k)`. A nonzero idempotent has Gelfand radius one, whatever its norm, since all
@@ -33,6 +38,13 @@ Finally, whenever `ENNReal.ofReal (gelfandRadius a) < p.radius`, the power serie
 ring. Combined with Gelfand's formula in a complex Banach algebra, this gives absolute convergence
 of `∑ p.coeff k • (a - z₀ 1) ^ k` whenever `spectrum ℂ a ⊆ Metric.eball z₀ p.radius`.
 
+In any seminormed commutative ring `A`, `gelfandRadius` agrees with Mathlib's smoothing seminorm
+`smoothingFun (normRingSeminorm A)` and forms a power-multiplicative `RingSeminorm A`
+(`TauCeti.gelfandRadiusRingSeminorm`) without requiring `‖(1 : A)‖ ≤ 1`. When `A` is ultrametric,
+`gelfandRadius` is moreover nonarchimedean (`Commute.gelfandRadius_add_le_max`,
+`TauCeti.isNonarchimedean_gelfandRadius`), yielding the polynomial root bound
+`TauCeti.gelfandRadius_le_spectralValue_of_aeval_eq_zero`.
+
 ## Main results
 
 * `IsIdempotentElem.gelfandRadius_eq_one`: a nonzero idempotent has Gelfand radius one.
@@ -47,6 +59,16 @@ of `∑ p.coeff k • (a - z₀ 1) ^ k` whenever `spectrum ℂ a ⊆ Metric.ebal
 * `FormalMultilinearSeries.summable_norm_coeff_smul_pow_of_spectrum_subset_eball`: absolute
   convergence of `∑ p.coeff k • (a - z₀ 1) ^ k` in a complex Banach algebra when
   `spectrum ℂ a ⊆ Metric.eball z₀ p.radius`.
+* `TauCeti.le_gelfandRadius_of_bound`: lower bound `r ≤ gelfandRadius a` from
+  `∀ n ≠ 0, r ^ n ≤ C * ‖a ^ n‖`.
+* `Commute.gelfandRadius_add_le_max` and `TauCeti.isNonarchimedean_gelfandRadius`: ultrametric
+  subadditivity of `gelfandRadius` without `‖1‖ ≤ 1`.
+* `TauCeti.smoothingFun_normRingSeminorm_eq_gelfandRadius` and
+  `TauCeti.gelfandRadiusRingSeminorm`: identification with `smoothingFun (normRingSeminorm A)` and
+  `RingSeminorm` bundling.
+* `TauCeti.gelfandRadius_le_spectralValue_of_aeval_eq_zero`: root bound
+  `gelfandRadius a ≤ spectralValue p` for any monic polynomial `p` vanishing at `a` in an
+  ultrametric seminormed commutative algebra.
 -/
 
 public section
@@ -84,6 +106,41 @@ theorem IsIdempotentElem.one_le_gelfandRadius_mul_norm_inverse {R : Type*} [Norm
         rw [hyw, mul_assoc, w.mul_inv, mul_one]
     _ ≤ gelfandRadius y * gelfandRadius ((w⁻¹ : Rˣ) : R) := hcomm.gelfandRadius_mul_le
     _ ≤ gelfandRadius y * ‖((w⁻¹ : Rˣ) : R)‖ := by grw [gelfandRadius_le_norm ((w⁻¹ : Rˣ) : R)]
+
+/-- In an ultrametric seminormed ring, the Gelfand radius of a sum of commuting elements is at most
+the maximum of their Gelfand radii. No normalization on `‖1‖` is needed. -/
+theorem Commute.gelfandRadius_add_le_max {A : Type*} [SeminormedRing A] [IsUltrametricDist A]
+    {a b : A} (h : Commute a b) :
+    gelfandRadius (a + b) ≤ max (gelfandRadius a) (gelfandRadius b) := by
+  refine le_of_forall_gt_imp_ge_of_dense fun r hr ↦ ?_
+  have ha_lt : gelfandRadius a < r := (le_max_left _ _).trans_lt hr
+  have hb_lt : gelfandRadius b < r := (le_max_right _ _).trans_lt hr
+  have hr0 : 0 < r := (gelfandRadius_nonneg a).trans_lt ha_lt
+  obtain ⟨Ca, hCa, ha⟩ := norm_pow_le_mul_pow_of_gelfandRadius_lt a ha_lt
+  obtain ⟨Cb, hCb, hb⟩ := norm_pow_le_mul_pow_of_gelfandRadius_lt b hb_lt
+  refine gelfandRadius_le_of_bound hr0.le (C := Ca * Cb * ‖(1 : A)‖) fun n ↦ ?_
+  rw [h.add_pow]
+  obtain ⟨k, hk, hle⟩ := IsUltrametricDist.isNonarchimedean_norm.finset_image_add_of_nonempty
+    (fun k ↦ a ^ k * b ^ (n - k) * (n.choose k : A)) (Finset.nonempty_range_add_one)
+  have hkn : k ≤ n := Nat.lt_succ_iff.mp (Finset.mem_range.mp hk)
+  have hnat : ‖(n.choose k : A)‖ ≤ ‖(1 : A)‖ := by
+    simpa using IsUltrametricDist.norm_nsmul_le (1 : A) (n.choose k)
+  calc
+    ‖∑ m ∈ Finset.range (n + 1), a ^ m * b ^ (n - m) * (n.choose m : A)‖
+        ≤ ‖a ^ k * b ^ (n - k) * (n.choose k : A)‖ := hle
+    _ ≤ ‖a ^ k‖ * ‖b ^ (n - k)‖ * ‖(n.choose k : A)‖ :=
+      (norm_mul_le _ _).trans (mul_le_mul_of_nonneg_right (norm_mul_le _ _) (norm_nonneg _))
+    _ ≤ (Ca * r ^ k) * (Cb * r ^ (n - k)) * ‖(1 : A)‖ := by
+      gcongr
+      · exact ha k
+      · exact hb (n - k)
+    _ = Ca * Cb * ‖(1 : A)‖ * r ^ n := by
+      have hrpow : r ^ k * r ^ (n - k) = r ^ n := by
+        rw [← pow_add, Nat.add_sub_of_le hkn]
+      calc
+        (Ca * r ^ k) * (Cb * r ^ (n - k)) * ‖(1 : A)‖
+            = Ca * Cb * ‖(1 : A)‖ * (r ^ k * r ^ (n - k)) := by ring
+        _ = Ca * Cb * ‖(1 : A)‖ * r ^ n := by rw [hrpow]
 
 namespace FormalMultilinearSeries
 
@@ -129,6 +186,8 @@ end FormalMultilinearSeries
 
 namespace TauCeti
 
+section NonUnital
+
 /-- If `spectrum ℂ a` lies in the open extended ball `Metric.eball z₀ r` and `r` does not exceed
 the convergence radius of a formal power series `p : FormalMultilinearSeries ℂ ℂ ℂ`, then
 `∑ ‖p.coeff n • (a - z₀)^n‖` converges. -/
@@ -171,5 +230,102 @@ theorem spectralRadius_eq_gelfandRadius_toLp_inr (a : A) :
     ← AlgEquiv.spectrum_eq (WithLp.unitizationAlgEquiv (𝕜 := ℂ) (A := A) ℂ),
     WithLp.unitizationAlgEquiv_apply,
     WithLp.ofLp_toLp, ← Unitization.quasispectrum_eq_spectrum_inr, spectralRadius]
+
+end NonUnital
+
+/-- If `r ^ n ≤ C * ‖a ^ n‖` for all `n ≠ 0`, then `r ≤ gelfandRadius a`.
+Dual to Mathlib's `gelfandRadius_le_of_bound`. -/
+theorem le_gelfandRadius_of_bound {A : Type*} [SeminormedRing A] {a : A} {C r : ℝ}
+    (h : ∀ n ≠ 0, r ^ n ≤ C * ‖a ^ n‖) : r ≤ gelfandRadius a := by
+  by_cases hr : 0 ≤ r
+  · have hC : 0 < max C 1 := by positivity
+    have hlim : Tendsto (fun n : ℕ ↦ max C 1 ^ (n : ℝ)⁻¹ * ‖a ^ n‖ ^ (n : ℝ)⁻¹)
+        atTop (𝓝 (gelfandRadius a)) := by
+      simpa using (((Real.continuous_const_rpow hC.ne').tendsto' 0 1 (Real.rpow_zero _)).comp
+        tendsto_inv_atTop_nhds_zero_nat).mul (tendsto_gelfandRadius a)
+    refine ge_of_tendsto hlim ?_
+    filter_upwards [eventually_ne_atTop 0] with n hn
+    have hstep : r ^ n ≤ max C 1 * ‖a ^ n‖ :=
+      (h n hn).trans (mul_le_mul_of_nonneg_right (le_max_left C 1) (norm_nonneg _))
+    calc
+      r = (r ^ n) ^ (n : ℝ)⁻¹ := (Real.pow_rpow_inv_natCast hr hn).symm
+      _ ≤ (max C 1 * ‖a ^ n‖) ^ (n : ℝ)⁻¹ :=
+        Real.rpow_le_rpow (pow_nonneg hr n) hstep (by positivity)
+      _ = max C 1 ^ (n : ℝ)⁻¹ * ‖a ^ n‖ ^ (n : ℝ)⁻¹ :=
+        Real.mul_rpow hC.le (norm_nonneg _)
+  · exact (le_of_not_ge hr).trans (gelfandRadius_nonneg a)
+
+/-- In any seminormed commutative ring, `smoothingFun (normRingSeminorm A)` agrees with Mathlib's
+`gelfandRadius`, without requiring `‖(1 : A)‖ ≤ 1`. -/
+theorem smoothingFun_normRingSeminorm_eq_gelfandRadius {A : Type*} [SeminormedCommRing A] (a : A) :
+    smoothingFun (normRingSeminorm A) a = gelfandRadius a := by
+  have hnorm (x : A) : normRingSeminorm A x = ‖x‖ := rfl
+  refine le_antisymm ?_ ?_
+  · refine ge_of_tendsto' (tendsto_gelfandRadius' a) fun k ↦ ?_
+    have hk := smoothingFun_le (normRingSeminorm A) a k
+    rwa [hnorm, one_div] at hk
+  · refine le_ciInf fun k ↦ ?_
+    rw [hnorm, one_div]
+    exact gelfandRadius_le_norm_pow a k.ne_zero
+
+/-- In an ultrametric seminormed commutative ring, `gelfandRadius` is nonarchimedean. -/
+theorem isNonarchimedean_gelfandRadius {A : Type*} [SeminormedCommRing A] [IsUltrametricDist A] :
+    IsNonarchimedean (gelfandRadius : A → ℝ) := fun a b ↦
+  (Commute.all a b).gelfandRadius_add_le_max
+
+/-- In any seminormed commutative ring, `gelfandRadius` bundled as a `RingSeminorm`, without
+requiring `‖(1 : A)‖ ≤ 1`. -/
+noncomputable def gelfandRadiusRingSeminorm (A : Type*) [SeminormedCommRing A] :
+    RingSeminorm A where
+  toFun := gelfandRadius
+  map_zero' := gelfandRadius_zero
+  add_le' := gelfandRadius_add_le
+  neg' := gelfandRadius_neg
+  mul_le' := gelfandRadius_mul_le
+
+/-- `gelfandRadiusRingSeminorm A` evaluates to `gelfandRadius`. -/
+@[simp]
+theorem gelfandRadiusRingSeminorm_apply {A : Type*} [SeminormedCommRing A] (a : A) :
+    gelfandRadiusRingSeminorm A a = gelfandRadius a := (rfl)
+
+/-- `gelfandRadiusRingSeminorm A` is power-multiplicative. -/
+theorem isPowMul_gelfandRadiusRingSeminorm {A : Type*} [SeminormedCommRing A] :
+    IsPowMul (gelfandRadiusRingSeminorm A) := fun a _n hn ↦
+  gelfandRadius_pow_of_ne_zero a (Nat.one_le_iff_ne_zero.mp hn)
+
+/-- In an ultrametric seminormed commutative ring, `gelfandRadiusRingSeminorm A` is
+nonarchimedean. -/
+theorem isNonarchimedean_gelfandRadiusRingSeminorm {A : Type*} [SeminormedCommRing A]
+    [IsUltrametricDist A] : IsNonarchimedean (gelfandRadiusRingSeminorm A) :=
+  isNonarchimedean_gelfandRadius
+
+open Polynomial in
+/-- If `a` is a root of a monic polynomial `p : B[X]` in an ultrametric seminormed commutative
+`B`-algebra `A` whose structure map satisfies `gelfandRadius (algebraMap B A b) ≤ ‖b‖`, then
+`gelfandRadius a ≤ spectralValue p`. -/
+theorem gelfandRadius_le_spectralValue_of_aeval_eq_zero {B A : Type*} [SeminormedCommRing B]
+    [SeminormedCommRing A] [IsUltrametricDist A] [Algebra B A]
+    (hBA : ∀ b : B, gelfandRadius (algebraMap B A b) ≤ ‖b‖)
+    {p : B[X]} (hp : p.Monic) {a : A} (ha : aeval a p = 0) :
+    gelfandRadius a ≤ spectralValue p := by
+  rcases subsingleton_or_nontrivial A with _ | _
+  · rw [Subsingleton.elim a 0, gelfandRadius_zero]
+    exact spectralValue_nonneg p
+  have hroot := (hp.map (algebraMap B A)).apply_le_iSup_apply_coeff_rpow_of_eval_eq_zero
+    isPowMul_gelfandRadiusRingSeminorm isNonarchimedean_gelfandRadiusRingSeminorm
+    (x := a) (by rw [eval_map_algebraMap, ha])
+  have hdeg : (p.map (algebraMap B A)).natDegree = p.natDegree :=
+    hp.natDegree_map (algebraMap B A)
+  rw [← gelfandRadiusRingSeminorm_apply]
+  refine hroot.trans (Real.iSup_le (fun ⟨j, hj⟩ ↦ ?_) (spectralValue_nonneg p))
+  have hjd : j < p.natDegree := hdeg ▸ hj
+  rw [Fin.val_mk, gelfandRadiusRingSeminorm_apply, coeff_map, hdeg]
+  calc
+    gelfandRadius (algebraMap B A (p.coeff j)) ^ (1 / ((p.natDegree : ℝ) - (j : ℝ)))
+        ≤ ‖p.coeff j‖ ^ (1 / ((p.natDegree : ℝ) - (j : ℝ))) := by
+      refine Real.rpow_le_rpow (gelfandRadius_nonneg _) (hBA _) ?_
+      exact one_div_nonneg.mpr (sub_nonneg.mpr (Nat.cast_le.mpr hjd.le))
+    _ = spectralValueTerms p j := (spectralValueTerms_of_lt_natDegree p hjd).symm
+    _ ≤ spectralValue p := le_ciSup (spectralValueTerms_bddAbove p) j
 
 end TauCeti
