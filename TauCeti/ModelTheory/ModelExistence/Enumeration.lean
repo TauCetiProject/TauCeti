@@ -189,7 +189,7 @@ private def Target (σ : ℕ ⊕ ℕ → Option L[[ℕ]].Sentenceω) : Request L
   | eqRefl t, φ => φ = equal t t
   | eqSubst i j θ, φ =>
     ∃ t t' : L[[ℕ]].Term (Empty ⊕ Fin 0),
-      σ i = some (equal t t') ∧ σ j = some (θ.1.inst t) ∧ φ = θ.1.inst t'
+      σ i = some (equal t t') ∧ σ j = some (θ.val.inst t) ∧ φ = θ.val.inst t'
   | eqName t, φ => ∃ c : ℕ, φ = equal (L.con c).term t
 
 end Request

@@ -5,137 +5,184 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Polynomial.Chebyshev
 public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Matrix
+import TauCeti.RingTheory.Polynomial.Chebyshev.Growth
 
 /-!
-# The Coxeter matrix of an integral Cartan matrix
+# Infinite entries of the Coxeter matrix of an integer matrix
 
-Given any integral square matrix `A : Matrix I I ℤ`, `TauCeti.cartanCoxeterMatrix A` constructs a
-`CoxeterMatrix I` without requiring finiteness of `I`, diagonal entries equal to `2`, or any
-upper bound on the off-diagonal Cartan products `aᵢⱼ aⱼᵢ`:
+For an integer matrix `A : Matrix I I ℤ`, the Coxeter matrix
+`TauCeti.coxeterMatrixOfGeneralizedCartanMatrix A` has entry `1` on the diagonal and, at two
+distinct nodes, `TauCeti.coxeterOrder (A i j * A j i)` (`2, 3, 4, 6` for
+`A i j * A j i = 0, 1, 2, 3`) when `A i j * A j i < 4`, and `0` (Mathlib's encoding of `∞`)
+otherwise. This file characterizes the infinite entries off the diagonal: they are exactly the
+pairs whose Cartan product lies outside `{0, 1, 2, 3}`, that is, for a nonnegative Cartan product,
+the pairs with `4 ≤ A i j * A j i`.
 
-* on the diagonal, `mᵢᵢ = 1`;
-* off the diagonal, `mᵢⱼ = 2, 3, 4, 6` when `aᵢⱼ aⱼᵢ = 0, 1, 2, 3` respectively (via
-  `TauCeti.coxeterOrder`), and `mᵢⱼ = 0` (Mathlib's encoding of `∞`) otherwise — in particular
-  when `aᵢⱼ aⱼᵢ ≥ 4`, as for affine `A₁⁽¹⁾` and indefinite generalized Cartan matrices.
-
-This generalizes `TauCeti.coxeterMatrixOfCartanMatrix` from finite crystallographic matrices
-(whose off-diagonal products lie in `{0, 1, 2, 3}`) to arbitrary integral matrices, agreeing with
-it whenever those hypotheses hold (`TauCeti.cartanCoxeterMatrix_eq_coxeterMatrixOfCartanMatrix`).
-It supplies the Coxeter matrix for the Weyl group presentation of a Cartan realization.
-
-## Main definitions
-
-* `TauCeti.cartanCoxeterMatrix`: the Kac–Moody Coxeter matrix attached to an integral matrix `A`.
+This file also exports the rank-two Chebyshev nonnegativity inequalities attached to an integer
+`c : ℤ` and its Coxeter order `coxeterOrder c`: over any ordered commutative ring `R`, the
+rescaled Chebyshev evaluations `(Polynomial.Chebyshev.S R k).eval ((c : R) - 2)` and their
+consecutive sums are nonnegative below the sharp `coxeterOrder c` threshold (and for all `k : ℕ`
+when `3 < c`).
 
 ## Main results
 
-* `TauCeti.cartanCoxeterMatrix_apply`, `TauCeti.cartanCoxeterMatrix_self`,
-  `TauCeti.cartanCoxeterMatrix_of_ne`, `TauCeti.cartanCoxeterMatrix_of_ne_of_le`,
-  `TauCeti.cartanCoxeterMatrix_of_ne_of_lt`: entry formulas for `cartanCoxeterMatrix`.
-* `TauCeti.cartanCoxeterMatrix_eq_coxeterMatrixOfCartanMatrix`: agreement with
-  `TauCeti.coxeterMatrixOfCartanMatrix` when `A` has diagonal `2` and off-diagonal products in
-  `{0, 1, 2, 3}`.
-* `TauCeti.cartanCoxeterMatrix_B_two` and `TauCeti.cartanCoxeterMatrix_affine_A_one`: evaluations
-  on the `B₂` Cartan matrix (`m₀₁ = 4`) and the affine `A₁⁽¹⁾` Cartan matrix (`m₀₁ = 0`).
+* `TauCeti.coxeterMatrixOfGeneralizedCartanMatrix_apply_eq_zero_iff_not_mem`,
+  `TauCeti.coxeterMatrixOfGeneralizedCartanMatrix_apply_eq_zero_iff`: characterization of the
+  infinite (`0`) entries of `TauCeti.coxeterMatrixOfGeneralizedCartanMatrix A`.
+* `TauCeti.chebyshevS_eval_sub_two_nonneg`, `TauCeti.chebyshevS_sub_one_eval_sub_two_nonneg`,
+  `TauCeti.chebyshevS_add_sub_one_eval_sub_two_nonneg`: nonnegativity of rescaled Chebyshev
+  evaluations at `(c : R) - 2` below the rank-two Coxeter bound.
 
 ## References
 
 * V. G. Kac, *Infinite-dimensional Lie algebras*, third edition, Cambridge University Press, 1990,
-  §§3.7 and 3.13.
-* N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4–6*, Ch. VI, §1.3.
+  §3.13.
 -/
 
 public section
 
 namespace TauCeti
 
-/-- **The Coxeter matrix attached to an integral Cartan matrix.** On the diagonal the entry is `1`.
-Off the diagonal it translates the Cartan product `aᵢⱼ aⱼᵢ` into `2, 3, 4, 6` when
-`aᵢⱼ aⱼᵢ = 0, 1, 2, 3` (`TauCeti.coxeterOrder`), and into `0` (Mathlib's encoding of an infinite
-order) otherwise — in particular when `aᵢⱼ aⱼᵢ = 4` at two distinct nodes, as in affine `A₁⁽¹⁾`. -/
-noncomputable def cartanCoxeterMatrix {I : Type*} (A : Matrix I I ℤ) : CoxeterMatrix I := by
-  classical
-  exact
-    { M := Matrix.of fun i j ↦
-        if i = j then 1
-        else if A i j * A j i ≤ 3 then coxeterOrder (A i j * A j i) else 0
-      isSymm := Matrix.IsSymm.ext fun i j ↦ by
-        simp only [Matrix.of_apply, eq_comm (a := i), mul_comm (A i j)]
-      diagonal i := by simp
-      off_diagonal i j hij := by
-        simp only [Matrix.of_apply, hij, ↓reduceIte]
-        split_ifs with hle
-        · rcases lt_or_ge (A i j * A j i) 0 with hlt | hge
-          · have h0 : coxeterOrder (A i j * A j i) = 0 := coxeterOrder_eq_zero_iff.mpr <| by
-              simp only [Set.mem_insert_iff, Set.mem_singleton_iff]; omega
-            omega
-          · have hmem : A i j * A j i ∈ ({0, 1, 2, 3} : Set ℤ) := by
-              simp only [Set.mem_insert_iff, Set.mem_singleton_iff]; omega
-            have := two_le_coxeterOrder hmem
-            omega
-        · decide }
+/-! ### Infinite entries of the Coxeter matrix of an integer matrix -/
 
-/-- Unfolded entry formula for `TauCeti.cartanCoxeterMatrix`. -/
-theorem cartanCoxeterMatrix_apply {I : Type*} [DecidableEq I] (A : Matrix I I ℤ) (i j : I) :
-    cartanCoxeterMatrix A i j =
-      if i = j then 1
-      else if A i j * A j i ≤ 3 then coxeterOrder (A i j * A j i) else 0 := by
-  -- Reconcile the classical `DecidableEq` inside `cartanCoxeterMatrix` with the caller's instance.
-  change (letI := Classical.decEq I;
-    if i = j then 1 else if A i j * A j i ≤ 3 then coxeterOrder (A i j * A j i) else 0) = _
-  congr 1
+section CoxeterMatrixEntries
 
-/-- Every diagonal entry of `cartanCoxeterMatrix A` is `1`. -/
-theorem cartanCoxeterMatrix_self {I : Type*} (A : Matrix I I ℤ) (i : I) :
-    cartanCoxeterMatrix A i i = 1 :=
-  (cartanCoxeterMatrix A).diagonal i
+variable {I : Type*} [DecidableEq I] (A : Matrix I I ℤ)
 
-/-- Off-diagonal entry formula for `cartanCoxeterMatrix`. -/
-theorem cartanCoxeterMatrix_of_ne {I : Type*} (A : Matrix I I ℤ) {i j : I} (hij : i ≠ j) :
-    cartanCoxeterMatrix A i j =
-      if A i j * A j i ≤ 3 then coxeterOrder (A i j * A j i) else 0 := by
-  classical simp [cartanCoxeterMatrix_apply, hij]
+/-- Off the diagonal, the Coxeter entry vanishes (representing `∞`) exactly when the Cartan
+product does not lie in `{0, 1, 2, 3}`. -/
+theorem coxeterMatrixOfGeneralizedCartanMatrix_apply_eq_zero_iff_not_mem {i j : I} (hij : i ≠ j) :
+    coxeterMatrixOfGeneralizedCartanMatrix A i j = 0 ↔
+      A i j * A j i ∉ ({0, 1, 2, 3} : Set ℤ) := by
+  rw [coxeterMatrixOfGeneralizedCartanMatrix_apply_of_ne A hij]
+  split_ifs with h4
+  · rw [coxeterOrder_eq_zero_iff]
+    simp only [Set.mem_insert_iff, Set.mem_singleton_iff]
+    omega
+  · simp only [true_iff, Set.mem_insert_iff, Set.mem_singleton_iff]
+    omega
 
-/-- Off-diagonal entry of `cartanCoxeterMatrix` when `aᵢⱼ aⱼᵢ ≤ 3`. -/
-@[simp]
-theorem cartanCoxeterMatrix_of_ne_of_le {I : Type*} (A : Matrix I I ℤ) {i j : I} (hij : i ≠ j)
-    (h : A i j * A j i ≤ 3) : cartanCoxeterMatrix A i j = coxeterOrder (A i j * A j i) := by
-  simp [cartanCoxeterMatrix_of_ne A hij, h]
+/-- When `0 ≤ A i j * A j i` and `i ≠ j`, the Coxeter entry vanishes (representing `∞`) exactly
+when the Cartan product is at least `4`. -/
+theorem coxeterMatrixOfGeneralizedCartanMatrix_apply_eq_zero_iff {i j : I} (hij : i ≠ j)
+    (hnonneg : 0 ≤ A i j * A j i) :
+    coxeterMatrixOfGeneralizedCartanMatrix A i j = 0 ↔ 4 ≤ A i j * A j i := by
+  rw [coxeterMatrixOfGeneralizedCartanMatrix_apply_eq_zero_iff_not_mem A hij]
+  simp only [Set.mem_insert_iff, Set.mem_singleton_iff]
+  omega
 
-/-- Off-diagonal entry of `cartanCoxeterMatrix` when `aᵢⱼ aⱼᵢ > 3` (`0`, encoding `∞`). -/
-@[simp]
-theorem cartanCoxeterMatrix_of_ne_of_lt {I : Type*} (A : Matrix I I ℤ) {i j : I} (hij : i ≠ j)
-    (h : 3 < A i j * A j i) : cartanCoxeterMatrix A i j = 0 := by
-  simp [cartanCoxeterMatrix_of_ne A hij, not_le.mpr h]
+end CoxeterMatrixEntries
 
-/-- When all off-diagonal Cartan products lie in `{0, 1, 2, 3}`, `cartanCoxeterMatrix` agrees with
-`coxeterMatrixOfCartanMatrix`. -/
-theorem cartanCoxeterMatrix_eq_coxeterMatrixOfCartanMatrix {I : Type*} (A : Matrix I I ℤ)
-    (hdiag : ∀ i, A i i = 2)
-    (hmem : ∀ i j, i ≠ j → A i j * A j i ∈ ({0, 1, 2, 3} : Set ℤ)) :
-    cartanCoxeterMatrix A = coxeterMatrixOfCartanMatrix A hdiag hmem := by
-  ext i j
-  rcases eq_or_ne i j with rfl | hij
-  · simp
-  · have hle : A i j * A j i ≤ 3 := by
-      have := hmem i j hij
-      simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at this; omega
-    rw [cartanCoxeterMatrix_of_ne_of_le A hij hle, coxeterMatrixOfCartanMatrix_apply]
+/-! ### Rank-two Chebyshev nonnegativity below the Coxeter bound -/
 
-/-- **Type `B₂` Coxeter entry**: `a₀₁ a₁₀ = (-2)(-1) = 2`, so `m₀₁ = 4` (not `3`). -/
-@[simp]
-theorem cartanCoxeterMatrix_B_two : cartanCoxeterMatrix (CartanMatrix.B 2) 0 1 = 4 := by
-  have hprod : CartanMatrix.B 2 0 1 * CartanMatrix.B 2 1 0 = 2 := by
-    rw [CartanMatrix.B_two]; decide
-  rw [cartanCoxeterMatrix_of_ne_of_le (CartanMatrix.B 2) (by decide) (by omega), hprod,
-    coxeterOrder_two]
+section ChebyshevCoxeter
 
-/-- **Affine `A₁⁽¹⁾` Coxeter entry**: for `A = !![2, -2; -2, 2]`, `a₀₁ a₁₀ = 4`, so `m₀₁ = 0`
-(encoding `∞`). -/
-@[simp]
-theorem cartanCoxeterMatrix_affine_A_one :
-    cartanCoxeterMatrix !![(2 : ℤ), -2; -2, 2] 0 1 = 0 :=
-  cartanCoxeterMatrix_of_ne_of_lt !![(2 : ℤ), -2; -2, 2] (by decide) (by decide)
+open Polynomial.Chebyshev
+
+variable {R : Type*} [CommRing R] [PartialOrder R] [IsOrderedRing R]
+
+/-- For any integer `c : ℤ`, the rescaled Chebyshev evaluation `(S R k).eval ((c : R) - 2)` is
+nonnegative whenever `2 * k + 1 < coxeterOrder c` for `c ≤ 3` (and for every `k : ℕ` when
+`3 < c`). -/
+theorem chebyshevS_eval_sub_two_nonneg {c : ℤ} {k : ℕ}
+    (hk : c ≤ 3 → 2 * k + 1 < coxeterOrder c) :
+    0 ≤ (S R k).eval ((c : R) - 2) := by
+  rcases le_or_gt c 3 with hle | hgt
+  · have hlt := hk hle
+    have hne0 : coxeterOrder c ≠ 0 := by omega
+    have hmem : c ∈ ({0, 1, 2, 3, 4} : Set ℤ) :=
+      not_not.mp (mt coxeterOrder_eq_zero_iff.mpr hne0)
+    simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hmem
+    rcases hmem with rfl | rfl | rfl | rfl | rfl
+    · rw [coxeterOrder_zero] at hlt
+      have hk0 : k = 0 := by omega
+      subst hk0
+      simp [S_zero]
+    · rw [coxeterOrder_one] at hlt
+      have hk0 : k = 0 := by omega
+      subst hk0
+      simp [S_zero]
+    · rw [coxeterOrder_two] at hlt
+      have hk2 : k < 2 := by omega
+      interval_cases k
+      · simp [S_zero]
+      · simp [S_one]
+    · rw [coxeterOrder_three] at hlt
+      have h3 : ((3 : ℤ) : R) - 2 = 1 := by norm_num
+      rw [h3]
+      have hk3 : k < 3 := by omega
+      interval_cases k
+      · simp [S_zero]
+      · simp [S_one]
+      · simp [S_two]
+    · omega
+  · have ht : (2 : R) ≤ (c : R) - 2 := by
+      rw [← sub_nonneg]
+      have h0 : (0 : R) ≤ ((c - 4 : ℤ) : R) := Int.cast_nonneg (by omega)
+      simpa [sub_sub, show (2 : R) + 2 = 4 by norm_num] using h0
+    exact le_trans zero_le_one (one_le_S_eval ht k)
+
+/-- For any integer `c : ℤ`, the shifted rescaled Chebyshev evaluation
+`(S R ((k : ℤ) - 1)).eval ((c : R) - 2)` is nonnegative whenever `2 * k ≤ coxeterOrder c` for
+`c ≤ 3` (and for every `k : ℕ` when `3 < c`). -/
+theorem chebyshevS_sub_one_eval_sub_two_nonneg {c : ℤ} {k : ℕ}
+    (hk : c ≤ 3 → 2 * k ≤ coxeterOrder c) :
+    0 ≤ (S R ((k : ℤ) - 1)).eval ((c : R) - 2) := by
+  cases k with
+  | zero => simp [S_neg_one]
+  | succ k =>
+    have h := chebyshevS_eval_sub_two_nonneg (R := R) (c := c) (k := k) fun hle ↦ by
+      have := hk hle
+      omega
+    simpa [Nat.cast_add, add_sub_cancel_right] using h
+
+/-- For any integer `c : ℤ`, the consecutive rescaled Chebyshev sum
+`(S R k).eval ((c : R) - 2) + (S R ((k : ℤ) - 1)).eval ((c : R) - 2)` is nonnegative whenever
+`2 * k < coxeterOrder c` for `c ≤ 3` (and for every `k : ℕ` when `3 < c`). -/
+theorem chebyshevS_add_sub_one_eval_sub_two_nonneg {c : ℤ} {k : ℕ}
+    (hk : c ≤ 3 → 2 * k < coxeterOrder c) :
+    0 ≤ (S R k).eval ((c : R) - 2) + (S R ((k : ℤ) - 1)).eval ((c : R) - 2) := by
+  rcases le_or_gt c 3 with hle | hgt
+  · have hlt := hk hle
+    have hne0 : coxeterOrder c ≠ 0 := by omega
+    have hmem : c ∈ ({0, 1, 2, 3, 4} : Set ℤ) :=
+      not_not.mp (mt coxeterOrder_eq_zero_iff.mpr hne0)
+    simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hmem
+    rcases hmem with rfl | rfl | rfl | rfl | rfl
+    · rw [coxeterOrder_zero] at hlt
+      have hk0 : k = 0 := by omega
+      subst hk0
+      simp [S_neg_one, S_zero]
+    · rw [coxeterOrder_one] at hlt
+      have h1 : ((1 : ℤ) : R) - 2 = -1 := by norm_num
+      rw [h1]
+      have hk2 : k < 2 := by omega
+      interval_cases k
+      · simp [S_neg_one, S_zero]
+      · simp [S_zero, S_one]
+    · rw [coxeterOrder_two] at hlt
+      have hk2 : k < 2 := by omega
+      interval_cases k
+      · simp [S_neg_one, S_zero]
+      · simp [S_zero, S_one]
+    · rw [coxeterOrder_three] at hlt
+      have h3 : ((3 : ℤ) : R) - 2 = 1 := by norm_num
+      rw [h3]
+      have hk3 : k < 3 := by omega
+      interval_cases k
+      · simp [S_neg_one, S_zero]
+      · simp only [Nat.cast_one, sub_self, S_one, S_zero, Polynomial.eval_X, Polynomial.eval_one]
+        exact add_nonneg zero_le_one zero_le_one
+      · simp [S_one, S_two]
+    · omega
+  · have ht : (2 : R) ≤ (c : R) - 2 := by
+      rw [← sub_nonneg]
+      have h0 : (0 : R) ≤ ((c - 4 : ℤ) : R) := Int.cast_nonneg (by omega)
+      simpa [sub_sub, show (2 : R) + 2 = 4 by norm_num] using h0
+    exact add_nonneg (le_trans zero_le_one (one_le_S_eval ht k)) (nonneg_S_eval_sub_one ht k)
+
+end ChebyshevCoxeter
 
 end TauCeti

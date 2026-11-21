@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.Trace.Basic
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.BilinearTensor
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.BilinearTensor.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.ChartGram
 
@@ -94,9 +94,8 @@ private theorem sum_apply_chartDualFrame_cancel
       filter_upwards [hU] with y hy
       exact inner_chartDualFrame x
         (by simpa only [TangentBundle.trivializationAt_baseSet] using hy) i j
-    have h := hcov.mvfderiv_inner_eq (extend E v) (hD i) (hF j)
-    rw [hconst.mvfderiv_eq, mvfderiv_const] at h
-    simp only [extend_apply_self, zero_apply] at h
+    have h := hcov.inner_apply_add_inner_apply_eq_zero_of_eventuallyEq_const
+      (hD i) (hF j) hconst v
     rw [real_inner_comm]
     linarith
   have hexp (i : Fin (Module.finrank ℝ E)) : b (F i x) (cov (D i) x v) =
@@ -132,7 +131,7 @@ theorem IsMetricCompatible.mvfderiv_bilinFormTrace
   have hU := (trivializationAt E (TangentSpace I) x).open_baseSet.mem_nhds hx
   have : IsManifold I (1 + 1) M := by norm_num; infer_instance
   have hF (i : Fin (Module.finrank ℝ E)) : MDiffAt (T% (F i)) x :=
-    ((contMDiffOn_chartLocalFrame (n := 1) x i).contMDiffAt hU).mdifferentiableAt one_ne_zero
+    (contMDiffAt_chartLocalFrame (n := 1) x i).mdifferentiableAt one_ne_zero
   have hD (i : Fin (Module.finrank ℝ E)) : MDiffAt (T% (D i)) x :=
     (contMDiffAt_chartDualFrame (n := 1) x hx i).mdifferentiableAt one_ne_zero
   -- Near `x`, the metric trace of `b` is `∑ᵢ b(Fᵢ, Dᵢ)`.

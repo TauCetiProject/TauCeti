@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Order.Group.Cone
-public import Mathlib.Data.Finsupp.Order
 public import TauCeti.LinearAlgebra.LinearIndependent.NatSpan
 public import TauCeti.LinearAlgebra.Matrix.Cartan.Realization.Lattice
 
@@ -34,28 +33,21 @@ integral coroot coordinates are nonnegative, so dominance is decidable on the we
 
 * `TauCeti.CartanRealization.rootLattice`: the root lattice `Q`.
 * `TauCeti.CartanRealization.posRootCone`: the positive root cone `Q₊`.
-* `TauCeti.CartanRealization.restrictRootLatticeEquiv`: restriction of functionals identifies `Q`
-  with the root lattice of any sub-realization supplementing the Cartan center.
 * `TauCeti.CartanRealization.height`: the height on `Q₊`.
 * `TauCeti.CartanRealization.RootLE`: the order `μ ≤ λ` given by `λ - μ ∈ Q₊`.
 * `TauCeti.CartanRealization.IsDominant`: the dominance predicate `λ(hᵢ) ≥ 0` for all `i`.
+* `TauCeti.CartanRealization.restrictRootLatticeEquiv`: the canonical isomorphism
+  `R.rootLattice ≃ₗ[ℤ] (R.restrict M hc hs).rootLattice` induced by restriction of functionals.
 
 ## Main results
 
-* `TauCeti.CartanRealization.eval_eq_zero_of_mem_rootLattice`: elements of `Q` vanish on the Cartan
-  center.
 * `TauCeti.CartanRealization.linearIndependent_nat_root`: the simple roots are independent over
   `ℕ`, so `Q₊` is the natural span of an independent family.
-* `TauCeti.CartanRealization.rootLinearCombination_injective` and
-  `TauCeti.CartanRealization.rootLinearCombination_mem_posRootCone_iff`: integral combinations of
-  simple roots have unique coordinates and lie in `Q₊` iff their coordinates are nonnegative.
 * `TauCeti.CartanRealization.isPointed_posRootCone`: `Q₊ ∩ (-Q₊) = 0`.
 * `TauCeti.CartanRealization.height_eq_sum`: `ht(∑ᵢ nᵢ αᵢ) = ∑ᵢ nᵢ`.
 * `TauCeti.CartanRealization.RootLE.antisymm`: the order on weights is antisymmetric.
 * `TauCeti.CartanRealization.finite_setOf_rootLE_height_le`: **finite-height intervals**, the set
   of `μ ≤ λ` with `ht(λ - μ) ≤ n` is finite.
-* `TauCeti.CartanRealization.exists_intCast_eval_coroot_of_mem_rootLattice`: for an integral
-  matrix, elements of `Q` take integer-cast values on simple coroots.
 * `TauCeti.CartanRealization.CoweightLattice.rootLattice_le_weightLattice`: `Q ⊆ P`.
 * `TauCeti.CartanRealization.CoweightLattice.isDominant_coe_iff`: dominance of an integral weight
   is nonnegativity of its coroot coordinates.
@@ -123,47 +115,53 @@ theorem rootLattice_eq_bot [IsEmpty I] : R.rootLattice = ⊥ := by
 theorem posRootCone_eq_bot [IsEmpty I] : R.posRootCone = ⊥ := by
   simp [posRootCone]
 
-/-- Every element of `R.rootLattice` vanishes on the Cartan center. -/
-theorem eval_eq_zero_of_mem_rootLattice {φ : Dual K H} (hφ : φ ∈ R.rootLattice)
-    {z : H} (hz : z ∈ R.cartanCenter) : φ z = 0 := by
-  rw [R.rootLattice_def] at hφ
-  induction hφ using Submodule.span_induction with
-  | mem _ hx => obtain ⟨i, rfl⟩ := hx; exact (R.mem_cartanCenter_iff z).mp hz i
-  | zero => rfl
-  | add _ _ _ _ ihx ihy => simp [ihx, ihy]
-  | smul n _ _ ihx => simp [ihx]
+section Restrict
 
-/-- Restriction of functionals from `H` to `M` identifies `R.rootLattice` with
-`(R.restrict M hc hs).rootLattice` as `ℤ`-modules. -/
-noncomputable def restrictRootLatticeEquiv (M : Submodule K H) (hc : R.corootSpan ≤ M)
-    (hs : M ⊔ R.cartanCenter = ⊤) :
-    R.rootLattice ≃ₗ[ℤ] (R.restrict M hc hs).rootLattice := by
-  let f : Dual K H →ₗ[ℤ] Dual K M := M.subtype.dualMap.restrictScalars ℤ
-  have hcomp : f ∘ R.root = (R.restrict M hc hs).root := by ext i m; simp [f]
-  have hmap : R.rootLattice.map f = (R.restrict M hc hs).rootLattice := by
-    rw [R.rootLattice_def, (R.restrict M hc hs).rootLattice_def, Submodule.map_span,
-      ← Set.range_comp, hcomp]
-  let g : R.rootLattice →ₗ[ℤ] (R.restrict M hc hs).rootLattice :=
-    (f.domRestrict R.rootLattice).codRestrict (R.restrict M hc hs).rootLattice
-      fun φ ↦ hmap ▸ Submodule.mem_map_of_mem φ.2
-  refine LinearEquiv.ofBijective g ⟨fun φ₁ φ₂ h12 ↦ Subtype.ext ?_, fun ψ ↦ ?_⟩
-  · rw [← sub_eq_zero]
-    ext x
-    obtain ⟨m, hm, z, hz, rfl⟩ := Submodule.mem_sup.mp (hs ▸ Submodule.mem_top : x ∈ _)
-    have hm' : (φ₁.1 - φ₂.1) m = 0 := by
-      simpa [g, f, sub_eq_zero] using
-        congrArg (fun ξ : Dual K M ↦ ξ ⟨m, hm⟩) (congrArg Subtype.val h12)
-    rw [map_add, hm', R.eval_eq_zero_of_mem_rootLattice (sub_mem φ₁.2 φ₂.2) hz, add_zero,
-      LinearMap.zero_apply]
-  · obtain ⟨φ, hφ, hφψ⟩ := Submodule.mem_map.mp (hmap.symm ▸ ψ.2 : ψ.1 ∈ R.rootLattice.map f)
-    exact ⟨⟨φ, hφ⟩, Subtype.ext hφψ⟩
+variable (M : Submodule K H) (hc : R.corootSpan ≤ M) (hs : M ⊔ R.cartanCenter = ⊤)
 
-/-- Coercing `R.restrictRootLatticeEquiv` to `Dual K M` is `M.subtype.dualMap`. -/
+/-- Restriction of functionals to `M` maps `R.rootLattice` onto
+`(R.restrict M hc hs).rootLattice`. -/
+theorem range_domRestrict_dualRestrict_rootLattice :
+    LinearMap.range ((M.dualRestrict.restrictScalars ℤ).domRestrict R.rootLattice) =
+      (R.restrict M hc hs).rootLattice := by
+  rw [LinearMap.range_domRestrict, rootLattice_def, rootLattice_def, Submodule.map_span,
+    ← Set.range_comp]
+  exact congrArg (Submodule.span ℤ) <| congrArg Set.range <| funext fun i ↦
+    LinearMap.ext fun m ↦ (R.restrict_root_apply M hc hs i m).symm
+
+/-- Restriction of functionals to `M` maps `R.rootLattice` isomorphically onto
+`(R.restrict M hc hs).rootLattice`. -/
+noncomputable def restrictRootLatticeEquiv :
+    R.rootLattice ≃ₗ[ℤ] (R.restrict M hc hs).rootLattice :=
+  (LinearEquiv.ofInjective ((M.dualRestrict.restrictScalars ℤ).domRestrict R.rootLattice) <|
+    (injective_iff_map_eq_zero _).mpr fun φ hφ ↦ Subtype.ext <| by
+      have hker : ∀ ξ ∈ R.rootLattice, ∀ z ∈ R.cartanCenter, ξ z = 0 := fun ξ hξ ↦ by
+        rw [rootLattice_def] at hξ
+        induction hξ using Submodule.span_induction with
+        | mem _ hα => obtain ⟨i, rfl⟩ := hα; exact fun z hz ↦ (R.mem_cartanCenter_iff z).mp hz i
+        | zero => exact fun _ _ ↦ rfl
+        | add _ _ _ _ ih₁ ih₂ => exact fun z hz ↦ by simp [ih₁ z hz, ih₂ z hz]
+        | smul _ _ _ ih => exact fun z hz ↦ by simp [ih z hz]
+      ext x
+      obtain ⟨m, hm, z, hz, rfl⟩ := Submodule.mem_sup.mp (hs ▸ Submodule.mem_top : x ∈ _)
+      have hm' : (φ : Dual K H) m = 0 := congr($(hφ) ⟨m, hm⟩)
+      simp [hm', hker φ φ.property z hz]).trans
+    (LinearEquiv.ofEq _ _ (R.range_domRestrict_dualRestrict_rootLattice M hc hs))
+
+/-- Under `restrictRootLatticeEquiv`, a root-lattice functional is restricted along `M.subtype`. -/
 @[simp]
-theorem coe_restrictRootLatticeEquiv (M : Submodule K H) (hc : R.corootSpan ≤ M)
-    (hs : M ⊔ R.cartanCenter = ⊤) (φ : R.rootLattice) :
-    ((R.restrictRootLatticeEquiv M hc hs φ : (R.restrict M hc hs).rootLattice) : Dual K M) =
-      M.subtype.dualMap φ := (rfl)
+theorem coe_restrictRootLatticeEquiv_apply (φ : R.rootLattice) :
+    (R.restrictRootLatticeEquiv M hc hs φ : Dual K M) = (φ : Dual K H).comp M.subtype := (rfl)
+
+/-- `restrictRootLatticeEquiv` sends each simple root of `R` to the corresponding simple root of
+`R.restrict M hc hs`. -/
+@[simp]
+theorem restrictRootLatticeEquiv_root (i : I) :
+    R.restrictRootLatticeEquiv M hc hs ⟨R.root i, R.root_mem_rootLattice i⟩ =
+      ⟨(R.restrict M hc hs).root i, (R.restrict M hc hs).root_mem_rootLattice i⟩ :=
+  Subtype.ext <| LinearMap.ext fun m ↦ (R.restrict_root_apply M hc hs i m).symm
+
+end Restrict
 
 section CharZero
 
@@ -173,44 +171,6 @@ variable [CharZero K]
 positive root cone is the natural span of an independent family. -/
 theorem linearIndependent_nat_root : LinearIndependent ℕ R.root :=
   R.root_linearIndependent.restrict_scalars' ℕ
-
-/-- Over a field of characteristic zero, `Finsupp.linearCombination ℤ R.root` is injective, so
-elements of the root lattice have unique integral coordinates in the simple roots. -/
-theorem rootLinearCombination_injective :
-    Function.Injective (Finsupp.linearCombination ℤ R.root) :=
-  (R.root_linearIndependent.restrict_scalars' ℤ).finsuppLinearCombination_injective
-
-/-- An integral combination of simple roots lies in `R.posRootCone` iff its coordinates are
-nonnegative. -/
-theorem rootLinearCombination_mem_posRootCone_iff (x : I →₀ ℤ) :
-    Finsupp.linearCombination ℤ R.root x ∈ R.posRootCone ↔ 0 ≤ x := by
-  let castNat : (I →₀ ℕ) →+ (I →₀ ℤ) := Finsupp.mapRange.addMonoidHom (Nat.castAddMonoidHom ℤ)
-  have hcast_apply (y : I →₀ ℕ) (i : I) : castNat y i = (y i : ℤ) := by simp [castNat]
-  refine ⟨fun hx ↦ ?_, fun hx ↦ ?_⟩
-  · rw [R.posRootCone_def] at hx
-    have hex : ∀ φ ∈ Submodule.span ℕ (Set.range R.root),
-        ∃ y : I →₀ ℕ, Finsupp.linearCombination ℤ R.root (castNat y) = φ := by
-      intro φ hφ
-      induction hφ using Submodule.span_induction with
-      | mem _ h => obtain ⟨i, rfl⟩ := h; exact ⟨Finsupp.single i 1, by simp [castNat]⟩
-      | zero => exact ⟨0, by simp⟩
-      | add _ _ _ _ ih₁ ih₂ =>
-        obtain ⟨y₁, hy₁⟩ := ih₁; obtain ⟨y₂, hy₂⟩ := ih₂
-        exact ⟨y₁ + y₂, by rw [map_add, map_add, hy₁, hy₂]⟩
-      | smul n _ _ ih => obtain ⟨y, hy⟩ := ih; exact ⟨n • y, by rw [map_nsmul, map_nsmul, hy]⟩
-    obtain ⟨y, hy⟩ := hex _ hx
-    rw [← R.rootLinearCombination_injective hy]
-    intro i; rw [hcast_apply]; exact Nat.cast_nonneg (y i)
-  · let y : I →₀ ℕ := x.mapRange Int.toNat rfl
-    have hyx : castNat y = x := by ext i; rw [hcast_apply]; exact Int.toNat_of_nonneg (hx i)
-    rw [← hyx]
-    induction y using Finsupp.induction_linear with
-    | zero => simp
-    | add y₁ y₂ ih₁ ih₂ => rw [map_add, map_add]; exact add_mem ih₁ ih₂
-    | single i n =>
-      have hsingle : castNat (Finsupp.single i n) = Finsupp.single i (n : ℤ) := by simp [castNat]
-      rw [hsingle, Finsupp.linearCombination_single, natCast_zsmul]
-      exact Submodule.smul_mem _ n (R.root_mem_posRootCone i)
 
 /-- **The positive root cone is pointed**: `Q₊ ∩ (-Q₊) = 0`, even for a singular matrix. -/
 theorem isPointed_posRootCone : R.posRootCone.toAddSubmonoid.IsPointed :=
@@ -223,7 +183,7 @@ noncomputable def height : R.posRootCone →+ ℕ :=
 
 /-- The height is the `LinearIndependent.natSpanHeight` of the simple roots. -/
 theorem height_apply (x : R.posRootCone) :
-    R.height x = R.linearIndependent_nat_root.natSpanHeight ⟨x, R.posRootCone_def ▸ x.2⟩ :=
+    R.height x = R.linearIndependent_nat_root.natSpanHeight ⟨x, R.posRootCone_def ▸ x.property⟩ :=
   (rfl)
 
 /-- The height of a natural combination of the simple roots is the sum of its coefficients. -/
@@ -286,7 +246,7 @@ as a named relation because one dual space carries the orders of several realiza
 theorem rootLE_eq_ofAddSubmonoid_le [CharZero K] :
     R.RootLE = (PartialOrder.ofAddSubmonoid R.isPointed_posRootCone).le := by
   ext μ lam
-  simp [rootLE_iff]
+  simp [rootLE_iff, PartialOrder.ofAddSubmonoid_le_iff]
 
 /-- The order on weights is invariant under translation. -/
 @[simp]
@@ -344,25 +304,7 @@ theorem IsDominant.add [PartialOrder K] [IsOrderedAddMonoid K] {lam μ : Dual K 
 
 end Dominance
 
-/-! ### Integral matrices and integral weights -/
-
-section IntegralMatrix
-
-variable {A : Matrix I I ℤ} (R : CartanRealization (A.map (Int.cast : ℤ → K)) H)
-
-/-- Every functional in `R.rootLattice` takes integer-cast values on simple coroots. -/
-theorem exists_intCast_eval_coroot_of_mem_rootLattice {φ : Dual K H} (hφ : φ ∈ R.rootLattice)
-    (i : I) : ∃ n : ℤ, (n : K) = φ (R.coroot i) := by
-  rw [R.rootLattice_def] at hφ
-  induction hφ using Submodule.span_induction with
-  | mem _ hx => obtain ⟨j, rfl⟩ := hx; exact ⟨A i j, by simp⟩
-  | zero => exact ⟨0, by simp⟩
-  | add _ _ _ _ ihx ihy =>
-    obtain ⟨nx, hnx⟩ := ihx; obtain ⟨ny, hny⟩ := ihy
-    exact ⟨nx + ny, by simp [← hnx, ← hny]⟩
-  | smul c _ _ ihx => obtain ⟨nx, hnx⟩ := ihx; exact ⟨c * nx, by simp [← hnx]⟩
-
-end IntegralMatrix
+/-! ### Integral weights -/
 
 namespace CoweightLattice
 
