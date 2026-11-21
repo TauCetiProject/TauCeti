@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Neg
-public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Basic
+public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Even
 
 /-!
 # The Spin groups of a quadratic form and of its negative as topological groups
