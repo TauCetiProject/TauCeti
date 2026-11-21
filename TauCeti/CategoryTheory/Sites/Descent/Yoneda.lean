@@ -130,6 +130,16 @@ lemma yonedaPullbackNaturality_hom_toNatTrans_app (x : F.obj (.mk (op X)))
         (toLoc_op_ofPresheaf_objEquiv_comp X a g)).hom.toNatTrans.app x :=
   rfl
 
+@[simp]
+lemma yonedaPullbackNaturality_inv_toNatTrans_app (x : F.obj (.mk (op X)))
+    {Y Y' : LocallyDiscrete Cᵒᵖ} (g : Y ⟶ Y') (a : (ofPresheaf.{w'} (yoneda.obj X)).obj Y) :
+    (yonedaPullbackNaturality F X x g).inv.toNatTrans.app a =
+      (F.mapComp' (objEquiv Y.as a).op.toLoc g
+        (objEquiv Y'.as
+          (((ofPresheaf.{w'} (yoneda.obj X)).map g).toFunctor.obj a)).op.toLoc
+        (toLoc_op_ofPresheaf_objEquiv_comp X a g)).inv.toNatTrans.app x :=
+  rfl
+
 /-- The strong transformation `ofPresheaf (yoneda.obj X) ⟶ F` attached to an object `x` of
 `F(X)`: its component at `Y` sends `f : Y ⟶ X` to `F(f)(x)`, and its naturality isomorphisms are
 the composition comparisons of `F`. -/
@@ -298,6 +308,15 @@ lemma yonedaUnitApp_hom_toNatTrans_app (η : ofPresheaf.{w'} (yoneda.obj X) ⟶ 
           ((objEquiv.{w'} (P := yoneda.obj X) (op X)).symm (𝟙 X)) :=
   rfl
 
+@[simp]
+lemma yonedaUnitApp_inv_toNatTrans_app (η : ofPresheaf.{w'} (yoneda.obj X) ⟶ F)
+    (Y : LocallyDiscrete Cᵒᵖ) (a : (ofPresheaf.{w'} (yoneda.obj X)).obj Y) :
+    (yonedaUnitApp F X η Y).inv.toNatTrans.app a =
+      (η.naturality (objEquiv Y.as a).op.toLoc).inv.toNatTrans.app
+          ((objEquiv.{w'} (P := yoneda.obj X) (op X)).symm (𝟙 X)) ≫
+        (η.app Y).toFunctor.map (eqToHom (eq_map_obj_ofPresheaf_objEquiv_symm_id X a).symm) :=
+  rfl
+
 /-- The unit of the 2-Yoneda equivalence at `η`: the invertible modification from `η` to the
 strong transformation `f ↦ F(f)(η_X(𝟙 X))`, with components `yonedaUnitApp F X η`. -/
 def yonedaUnitIsoApp (η : ofPresheaf.{w'} (yoneda.obj X) ⟶ F) :
@@ -324,6 +343,12 @@ def yonedaUnitIsoApp (η : ofPresheaf.{w'} (yoneda.obj X) ⟶ F) :
 lemma yonedaUnitIsoApp_hom_as_app (η : ofPresheaf.{w'} (yoneda.obj X) ⟶ F)
     (Y : LocallyDiscrete Cᵒᵖ) :
     (yonedaUnitIsoApp F X η).hom.as.app Y = (yonedaUnitApp F X η Y).hom :=
+  rfl
+
+@[simp]
+lemma yonedaUnitIsoApp_inv_as_app (η : ofPresheaf.{w'} (yoneda.obj X) ⟶ F)
+    (Y : LocallyDiscrete Cᵒᵖ) :
+    (yonedaUnitIsoApp F X η).inv.as.app Y = (yonedaUnitApp F X η Y).inv :=
   rfl
 
 /-- The unit of the 2-Yoneda equivalence. -/

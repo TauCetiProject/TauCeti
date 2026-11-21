@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Stack.OfSheaf
-public import TauCeti.CategoryTheory.Bicategory.Yoneda
+public import TauCeti.CategoryTheory.Sites.Descent.Yoneda
 
 /-!
 # The 2-Yoneda lemma for stacks in groupoids
