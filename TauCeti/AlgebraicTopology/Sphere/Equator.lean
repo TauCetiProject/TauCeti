@@ -287,36 +287,23 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] {u : V} {k
 /-- **The equator is a sphere collapsed from a cube.** If `V` has dimension `k + 2`, then for every
 point `p₀` of the equator orthogonal to the nonzero vector `u` there is a generalized loop of the
 equator at `p₀`, out of the cube `I^k`, that covers the equator off `p₀` and identifies only
-points of the boundary of the cube: the collapse `TauCeti.cubeToSphere` of the cube onto the unit
-sphere of `ℝᵏ⁺¹`, followed by a linear isometry of `ℝᵏ⁺¹` onto `u⊥` sending the north pole to
-`p₀`. These are the hypotheses asked of a generalized loop of the equator in
-`TauCeti.AlgebraicTopology.Sphere.TangentCircle`. -/
+points of the boundary of the cube: such a generalized loop of the unit sphere of `u⊥`
+(`TauCeti.exists_genLoop_sphere`), read in the equator. These are the hypotheses asked of a
+generalized loop of the equator in `TauCeti.AlgebraicTopology.Sphere.TangentCircle`. -/
 theorem exists_genLoop_sphereEquator (hu : u ≠ 0)
     (hV : Module.finrank ℝ V = k + 2) (p₀ : sphereEquator u) :
     ∃ c : Ω^ (Fin k) (sphereEquator u) p₀, (∀ q, q ≠ p₀ → ∃ y, c y = q) ∧
       ∀ y z, c y = c z → y = z ∨ y ∈ Cube.boundary (Fin k) ∧ z ∈ Cube.boundary (Fin k) := by
   have : Fact (Module.finrank ℝ V = (k + 1) + 1) := ⟨hV⟩
-  let e₀ : EuclideanSpace ℝ (Fin (k + 1)) ≃ₗᵢ[ℝ] (ℝ ∙ u)ᗮ :=
-    (OrthonormalBasis.fromOrthogonalSpanSingleton (k + 1) hu).repr.symm
-  let P : (ℝ ∙ u)ᗮ :=
-    ⟨p₀.val.val, Submodule.mem_orthogonal_singleton_iff_inner_left.2
-        (mem_sphereEquator.1 p₀.property)⟩
-  obtain ⟨b, hb⟩ : ∃ b : EuclideanSpace ℝ (Fin (k + 1)), b = sphereNorthPole k := ⟨_, rfl⟩
-  have hab : ‖b‖ = ‖e₀.symm P‖ := by
-    rw [LinearIsometryEquiv.norm_map, hb]
-    simp [P, norm_eq_of_mem_sphere]
-  -- Rotate the north pole onto the preimage of `p₀` by a reflection.
-  let e := (ℝ ∙ (b - e₀.symm P))ᗮ.reflection.trans e₀
-  have he : e.sphereToEquator (sphereNorthPole k) = p₀ := by
-    refine Subtype.ext (Subtype.ext ?_)
-    rw [LinearIsometryEquiv.coe_sphereToEquator, ← hb]
-    simp [e, Submodule.reflection_sub hab, P]
-  refine ⟨GenLoop.map e.sphereToEquator he (sphereGenLoop k), fun q hq ↦ ?_, fun y z h ↦ ?_⟩
-  · obtain ⟨s, rfl⟩ := e.surjective_sphereToEquator q
-    obtain ⟨y, hy⟩ := exists_cubeToSphere_eq_of_ne (s := s) fun hs ↦ hq (by rw [hs, he])
-    exact ⟨y, by rw [GenLoop.map_apply, sphereGenLoop_apply, hy]⟩
-  · rw [GenLoop.map_apply, GenLoop.map_apply, sphereGenLoop_apply, sphereGenLoop_apply] at h
-    exact cubeToSphere_eq_cubeToSphere_iff.1 (e.injective_sphereToEquator h)
+  obtain ⟨s₀, hs₀⟩ := surjective_orthogonalSphereToEquator u p₀
+  obtain ⟨c, hcs, hci⟩ :=
+    exists_genLoop_sphere (Submodule.finrank_orthogonal_span_singleton (n := k + 1) hu) s₀
+  refine ⟨GenLoop.map (orthogonalSphereToEquator u) hs₀ c, fun q hq ↦ ?_, fun y z h ↦ ?_⟩
+  · obtain ⟨s, rfl⟩ := surjective_orthogonalSphereToEquator u q
+    obtain ⟨y, hy⟩ := hcs s fun h ↦ hq (by rw [h, hs₀])
+    exact ⟨y, by rw [GenLoop.map_apply, hy]⟩
+  · rw [GenLoop.map_apply, GenLoop.map_apply] at h
+    exact hci y z (injective_orthogonalSphereToEquator u h)
 
 end sphereEquator
 
