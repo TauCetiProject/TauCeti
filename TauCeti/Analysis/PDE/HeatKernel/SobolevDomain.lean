@@ -24,8 +24,10 @@ that domain with a Sobolev space for real-valued functions and `1 < p < ∞`:
   is the value of an element of `W^{2,p}(E)`;
 * `TauCeti.mem_domain_heatSemigroup_iff_memSobolev`: equivalently, `f` lies in the Bessel
   potential space `H^{2,p}(E)`; for `p = 2` the domain is `H²(E)`;
-* `TauCeti.generator_heatSemigroup_ae_eq_trace`: on the domain, `A f` is the trace of the weak
-  Hessian of `f`, for every `1 ≤ p < ∞`.
+* `TauCeti.generator_heatSemigroup_ae_eq_trace`: if `f` in the domain of `A` is almost everywhere
+  the value of `w ∈ W^{2,p}(E)`, then `A f` is almost everywhere the trace `tr D²w` of the weak
+  Hessian of `w`, for every `1 ≤ p < ∞`; for `1 < p < ∞` such a `w` exists for every `f` in the
+  domain.
 
 One inclusion holds because the distributional Laplacian of a `W^{2,p}` function is its weak
 Laplacian (`TauCeti.Wkp.integral_laplacian_smul_value_eq_laplacianL`), an element of `Lᵖ`. The
