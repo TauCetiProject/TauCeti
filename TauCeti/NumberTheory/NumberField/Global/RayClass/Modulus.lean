@@ -367,13 +367,13 @@ conditions imposed by the trivial modulus.  The condition is also not unqualifie
 def IsCongrOne (𝔪 : Modulus K) (x : Kˣ) : Prop :=
   (∀ v : HeightOneSpectrum (𝓞 K), v.asIdeal ∣ 𝔪.finitePart →
       v.valuation K ((x : K) - 1) ≤ WithZero.exp (-(𝔪.exponent v : ℤ))) ∧
-    ∀ w ∈ 𝔪.infinitePart, 0 < InfinitePlace.embedding_of_isReal w.2 (x : K)
+    ∀ w ∈ 𝔪.infinitePart, 0 < InfinitePlace.embedding_of_isReal w.property (x : K)
 
 theorem isCongrOne_iff {𝔪 : Modulus K} {x : Kˣ} :
     IsCongrOne 𝔪 x ↔
       (∀ v : HeightOneSpectrum (𝓞 K), v.asIdeal ∣ 𝔪.finitePart →
           v.valuation K ((x : K) - 1) ≤ WithZero.exp (-(𝔪.exponent v : ℤ))) ∧
-        ∀ w ∈ 𝔪.infinitePart, 0 < InfinitePlace.embedding_of_isReal w.2 (x : K) :=
+        ∀ w ∈ 𝔪.infinitePart, 0 < InfinitePlace.embedding_of_isReal w.property (x : K) :=
   Iff.rfl
 
 /-- Multiplicative congruence is the finite ideal congruence together with the selected
@@ -381,7 +381,7 @@ real-place positivity conditions. -/
 theorem isCongrOne_iff_mem_congruenceSubgroup_and_pos {𝔪 : Modulus K} {x : Kˣ} :
     IsCongrOne 𝔪 x ↔
       x ∈ Ideal.congruenceSubgroup 𝔪.finitePart K 𝔪.finitePart_ne_bot ∧
-        ∀ w ∈ 𝔪.infinitePart, 0 < InfinitePlace.embedding_of_isReal w.2 (x : K) := by
+        ∀ w ∈ 𝔪.infinitePart, 0 < InfinitePlace.embedding_of_isReal w.property (x : K) := by
   simp only [isCongrOne_iff, Ideal.mem_congruenceSubgroup_iff, Modulus.exponent_def]
 
 namespace IsCongrOne
@@ -393,7 +393,8 @@ theorem valuation_sub_one_le (hx : IsCongrOne 𝔪 x) {v : HeightOneSpectrum (�
     v.valuation K ((x : K) - 1) ≤ WithZero.exp (-(𝔪.exponent v : ℤ)) := hx.1 v hv
 
 theorem pos (hx : IsCongrOne 𝔪 x) {w : {w : InfinitePlace K // w.IsReal}}
-    (hw : w ∈ 𝔪.infinitePart) : 0 < InfinitePlace.embedding_of_isReal w.2 (x : K) := hx.2 w hw
+    (hw : w ∈ 𝔪.infinitePart) : 0 < InfinitePlace.embedding_of_isReal w.property (x : K)
+        := hx.2 w hw
 
 /-- An element congruent to one modulo `𝔪` has `v`-adic valuation strictly less than one at
 `x - 1`, for every prime `v` dividing the finite part: the exponent there is positive. -/
@@ -529,7 +530,7 @@ every real place. -/
 @[simp] theorem isCongrOne_narrowModulus_iff {x : Kˣ} :
     IsCongrOne (narrowModulus K) x ↔ IsTotallyPositive (x : K) := by
   refine ⟨fun hx ↦ isTotallyPositive_iff.mpr fun w hw ↦ hx.pos (w := ⟨w, hw⟩) (by simp),
-    fun hx ↦ ⟨fun v hv ↦ ?_, fun w _ ↦ isTotallyPositive_iff.mp hx w w.2⟩⟩
+    fun hx ↦ ⟨fun v hv ↦ ?_, fun w _ ↦ isTotallyPositive_iff.mp hx w w.property⟩⟩
   exact absurd ((Modulus.mem_support_iff _ v).mpr hv) (by simp)
 
 /-- **The integer units congruent to one modulo the narrow modulus are exactly the totally
@@ -608,7 +609,7 @@ theorem Modulus.mem_integralIdealsPrimeTo {𝔪 : Modulus K} {I : Ideal (𝓞 K)
 /-- A generator of an integral ideal prime to a modulus is nonzero, since such an ideal is. -/
 theorem ne_zero_of_coe_eq_span_singleton {𝔪 : Modulus K} {J : integralIdealsPrimeTo 𝔪} {β : 𝓞 K}
     (hJ : (J : Ideal (𝓞 K)) = Ideal.span {β}) : β ≠ 0 := fun h ↦
-  (Modulus.isCoprimeTo_iff_sup_eq_top.mp (Modulus.mem_integralIdealsPrimeTo.mp J.2)).1
+  (Modulus.isCoprimeTo_iff_sup_eq_top.mp (Modulus.mem_integralIdealsPrimeTo.mp J.property)).1
     (by rw [hJ, h, Ideal.span_singleton_eq_bot])
 
 /-- **The integral prime-to monoid is antitone in the modulus**: the support of a divisor `𝔪` of

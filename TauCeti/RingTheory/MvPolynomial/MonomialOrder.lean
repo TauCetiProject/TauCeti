@@ -186,7 +186,7 @@ theorem withBotDegree_sub_lt [CommRing R] {f q : MvPolynomial σ R} (hf : f ≠ 
       (m.withBotDegree_add_le f (-q)).trans (max_le le_rfl (by rwa [withBotDegree_neg]))
   rw [EmbeddingLike.apply_eq_iff_eq, withBotDegree_eq_withBotDegree_iff] at heq
   have := m.degree_mem_support fun h0 ↦ hf (heq.2.1 h0)
-  rw [heq.1, mem_support_iff, coeff_sub, hqf, leadingCoeff, sub_self] at this
+  rw [heq.1, mem_support_iff, AddMonoidAlgebra.coeff_sub_apply, hqf, leadingCoeff, sub_self] at this
   exact this rfl
 
 /-- If `q` has degree at most that of `f` and the same coefficient of `X^(deg f)`, then
@@ -197,7 +197,8 @@ theorem degree_sub_lt [CommRing R] {f q : MvPolynomial σ R} (hfq : f - q ≠ 0)
   refine lt_of_le_of_ne (m.degree_sub_le.trans (max_le le_rfl hq)) ?_
   intro heq
   have hmem := m.degree_mem_support hfq
-  rw [m.toSyn.injective heq, mem_support_iff, coeff_sub, hqf, leadingCoeff, sub_self] at hmem
+  rw [m.toSyn.injective heq, mem_support_iff, AddMonoidAlgebra.coeff_sub_apply, hqf, leadingCoeff,
+    sub_self] at hmem
   exact hmem rfl
 
 /-- A monomial multiple `c X^a * b` has degree at most `a + deg b`. -/

@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Toric.Delzant.TangentCone
 public import TauCeti.Analysis.Convex.Polyhedron.Boundary
 public import TauCeti.Analysis.Convex.Polyhedron.Direction
 import TauCeti.Analysis.Normed.Module.FiniteDimension
+import TauCeti.LinearAlgebra.AffineSpace.Span
 
 /-!
 # Faces of Delzant polytopes
@@ -366,8 +367,8 @@ theorem finrank_vectorSpan_facetFace_add_ncard [Finite ι] (hi : IsIntegralLatti
     refine ⟨(hvs.edgeBasis hi).equivFun.symm fun k ↦ if h : (k : ι) ∈ s then f ⟨k, h⟩ else 0,
       funext fun j ↦ ?_⟩
     have := hvs.edgeBasis_equivFun_symm_apply hi
-      (fun k ↦ if h : (k : ι) ∈ s then f ⟨k, h⟩ else 0) ⟨j, hsub (hys j.2)⟩
-    simp only [j.2, dite_true] at this
+      (fun k ↦ if h : (k : ι) ∈ s then f ⟨k, h⟩ else 0) ⟨j, hsub (hys j.property)⟩
+    simp only [j.property, dite_true] at this
     simpa only [Φ, LinearMap.pi_apply, facetPairing_apply] using this
   have hker : LinearMap.ker Φ = vectorSpan ℝ (facetFace i u c s) := by
     rw [hΔ.vectorSpan_facetFace hi ⟨y, hy, hys⟩, LinearMap.ker_pi]
@@ -404,7 +405,7 @@ theorem mem_intrinsicInterior_facetFace_iff [Finite ι] (hi : IsIntegralLattice 
     simp only [mem_ofPred_eq, Sum.forall, g, Sum.elim_inl, Sum.elim_inr,
       ContinuousAffineMap.coe_neg, Pi.neg_apply, neg_nonpos, Subtype.forall]
     exact and_congr_right fun h ↦ forall₂_congr fun j _ ↦ ⟨ge_of_eq, (h j).antisymm⟩
-  rw [mem_intrinsicInterior_iff_forall_lt g hP]
+  rw [mem_intrinsicInterior_iff_forall_lt g (eq_setOf_mem_affineSpan_and hP)]
   constructor
   · rintro ⟨hx, hlt⟩
     refine ⟨hx.1, subset_antisymm (fun j hj ↦ ?_) hx.2⟩

@@ -108,7 +108,7 @@ private theorem lintegral_cauchyKernelL_le {c w : ℂ} (r R : ℝ≥0)
     _ = Real.pi⁻¹ * ∫ z in closedBall c (r : ℝ), ‖z - w‖⁻¹ := integral_const_mul _ _
     _ ≤ Real.pi⁻¹ * (2 * Real.pi * ((r : ℝ) + R)) := by
         gcongr
-        exact integral_norm_sub_inv_closedBall_le_add r.2 hw
+        exact integral_norm_sub_inv_closedBall_le_add r.property hw
     _ = (2 * (r + R) : ℝ≥0) := by
         push_cast
         field_simp

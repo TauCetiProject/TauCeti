@@ -171,7 +171,7 @@ private theorem exists_relative_boundary_of_quasiIso_gradedCochainComplexHom (f 
         LinearEquiv.apply_symm_apply] using hfx.symm))
   set u₀ : M := (gradedCochainComplexXEquiv (n + 1 - 1) a : M)
   have hu₀ : u₀ ∈ ℳ n := by
-    simpa only [add_sub_cancel_right] using (gradedCochainComplexXEquiv (n + 1 - 1) a).2
+    simpa only [add_sub_cancel_right] using (gradedCochainComplexXEquiv (n + 1 - 1) a).property
   have hdu₀ : dM u₀ = x := by
     simpa only [LinearEquiv.apply_symm_apply] using
       (gradedCochainComplex_d_eq_iff (sub_add_cancel (n + 1) 1) _ _).1 ha

@@ -31,6 +31,8 @@ differentiability criterion for maps whose tangent maps preserve inner products.
   bundle is installed.
 * `Bundle.ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle_inner`: the packaged metric is
   the bundle's inner product.
+* `Bundle.ContMDiffRiemannianMetric.toRiemannianMetric_ofIsContMDiffRiemannianBundle`: forgetting
+  regularity after packaging recovers the bundle's metric.
 * `Bundle.ContMDiffRiemannianMetric.inner_riemannianBundle`: conversely, installing a metric as the
   `RiemannianBundle` instance makes its inner product the fiber inner product.
 * `Bundle.IsContinuousRiemannianBundle.toIsContMDiffZero`: view a continuous Riemannian bundle as
@@ -123,6 +125,13 @@ theorem ofIsContMDiffRiemannianBundle_inner
     (ofIsContMDiffRiemannianBundle (IB := IB) (n := n) (F := F) (V := V)).inner x v w =
       RiemannianBundle.g.inner x v w := by
   rfl
+
+/-- Forgetting regularity after packaging a Riemannian bundle recovers its metric. -/
+@[simp]
+theorem toRiemannianMetric_ofIsContMDiffRiemannianBundle
+    [RiemannianBundle V] [IsContMDiffRiemannianBundle IB n F V] :
+    (ofIsContMDiffRiemannianBundle (IB := IB) (n := n) (F := F) (V := V)).toRiemannianMetric =
+      RiemannianBundle.g := (rfl)
 
 /-- Once a `C^n` Riemannian metric `g` is installed as the `RiemannianBundle` instance, the inner
 product of each fiber is `g.inner`. -/
@@ -227,6 +236,17 @@ theorem mdifferentiableAt_of_inner_mfderiv {Φ : M → N} {x : M}
   have h := hinner v
   rw [hv, inner_zero_left] at h
   exact inner_self_eq_zero (𝕜 := ℝ) (E := TangentSpace I x) |>.1 h.symm
+
+/-- The standard Riemannian metric of a real inner product space pairs two tangent vectors by the
+inner product of the corresponding vectors of the space. -/
+@[simp]
+theorem riemannianMetricVectorSpace_inner {V : Type*} [NormedAddCommGroup V]
+    [InnerProductSpace ℝ V] (x : V) (v w : TangentSpace 𝓘(ℝ, V) x) :
+    (riemannianMetricVectorSpace V).inner x v w =
+      ⟪NormedSpace.fromTangentSpace x v, NormedSpace.fromTangentSpace x w⟫_ℝ :=
+  -- The metric is `innerSL ℝ` on each fibre, and `TangentSpace` is a type synonym for `V` whose
+  -- identification `fromTangentSpace` with `V` is the identity.
+  rfl
 
 end TauCeti
 

@@ -106,7 +106,7 @@ theorem integralCoefficientMap_coe (x : ℤ_[p]) :
 
 /-- The integral coefficient inclusion is continuous for the induced p-adic topologies. -/
 theorem continuous_integralCoefficientMap : Continuous (integralCoefficientMap p) :=
-  (continuous_algebraMap ℚ_[p] ℂ_[p] |>.comp continuous_subtype_val).subtype_mk _
+  (continuous_algebraMap ℚ_[p] ℂ_[p] |>.comp continuous_subtypeVal).subtype_mk _
 
 /-- Extending integral coefficients to `ℂ_p` loses no information. -/
 theorem integralCoefficientMap_injective : Function.Injective (integralCoefficientMap p) := by

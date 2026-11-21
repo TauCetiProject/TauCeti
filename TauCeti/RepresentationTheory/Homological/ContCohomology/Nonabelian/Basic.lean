@@ -43,9 +43,12 @@ restriction. Inflation, the other named instance, is in
   `a : A`; two cocycles are cohomologous exactly when one is a twist of the other
   (`TauCeti.NonabelianH1.Cocycle.equiv_iff_exists_twist_eq`).
 * `TauCeti.NonabelianH1 G A`: the pointed set `H¹(G, A)` of cohomology classes, with
-  `TauCeti.NonabelianH1.mk` the class of a cocycle.
+  `TauCeti.NonabelianH1.mk` the class of a cocycle and `TauCeti.NonabelianH1.lift` the descent of
+  functions of cocycles constant on classes.
 * `TauCeti.NonabelianH1.Cocycle.map` and `TauCeti.NonabelianH1.map`: the maps of cocycles and of
   classes induced by a compatible pair.
+* `TauCeti.NonabelianH1.Cocycle.liftOfMemRange`: a cocycle with values in the range of an
+  equivariant topological embedding, as a cocycle of its source.
 * `TauCeti.NonabelianH1.res`: restriction to a subgroup.
 
 ## Main results
@@ -211,6 +214,17 @@ theorem mk_eq_mk_iff {f f' : Cocycle G A} :
     mk f = mk f' ↔ ∃ a : A, ∀ g, f' g = a⁻¹ * f g * g • a :=
   Quotient.eq
 
+/-- Define a function on continuous nonabelian cohomology by a function on cocycles that is
+constant on gauge classes. -/
+def lift {B : Sort*} (f : Cocycle G A → B) (hf : ∀ c d, c ≈ d → f c = f d) :
+    NonabelianH1 G A → B :=
+  Quotient.lift f hf
+
+@[simp]
+theorem lift_mk {B : Sort*} (f : Cocycle G A → B) (hf : ∀ c d, c ≈ d → f c = f d)
+    (c : Cocycle G A) : lift f hf (mk c) = f c :=
+  (rfl)
+
 /-- The base point of `H¹(G, A)`, the class of the trivial cocycle. -/
 instance : One (NonabelianH1 G A) :=
   ⟨mk 1⟩
@@ -318,6 +332,54 @@ theorem map_map {G'' A'' : Type*} [Group G''] [TopologicalSpace G''] [Group A'']
   simpa only [map_mk] using congrArg mk (Cocycle.map_map _ ψ φ h ψ' φ' h')
 
 end Map
+
+section Lift
+
+variable {A' : Type*} [Group A'] [TopologicalSpace A'] [MulDistribMulAction G A']
+
+/-- **Lifting along an embedding**: a cocycle `f` of `A'` whose values lie in the range of a
+`G`-equivariant topological embedding `φ : A →ₜ* A'` is the image under `φ` of a cocycle of `A`,
+unique by `TauCeti.NonabelianH1.Cocycle.liftOfMemRange_map`. The equivariance of `φ` is stated as
+the compatibility of the pair `(ContinuousMonoidHom.id G, φ)`, the form taken by
+`TauCeti.NonabelianH1.Cocycle.map`. -/
+noncomputable def Cocycle.liftOfMemRange (φ : A →ₜ* A') (hφ : Topology.IsEmbedding φ)
+    (h : ∀ (g : G) (a : A), φ (ContinuousMonoidHom.id G g • a) = g • φ a) (f : Cocycle G A')
+    (hf : ∀ g, f g ∈ Set.range φ) : Cocycle G A where
+  toFun g := (Set.mem_range.mp (hf g)).choose
+  continuous_toFun := hφ.continuous_iff.mpr <| by
+    simpa only [Function.comp_def, fun g ↦ (Set.mem_range.mp (hf g)).choose_spec] using
+      f.continuous
+  map_mul' g g' := hφ.injective <| by
+    have hspec (g : G) : φ (Set.mem_range.mp (hf g)).choose = f g :=
+      (Set.mem_range.mp (hf g)).choose_spec
+    have hφg : ∀ a, φ (g • a) = g • φ a := h g
+    simp only [map_mul, hφg, hspec]
+    exact f.apply_mul g g'
+
+/-- The lift of a cocycle maps back to it pointwise. -/
+@[simp]
+theorem Cocycle.apply_liftOfMemRange (φ : A →ₜ* A') (hφ : Topology.IsEmbedding φ)
+    (h : ∀ (g : G) (a : A), φ (ContinuousMonoidHom.id G g • a) = g • φ a) (f : Cocycle G A')
+    (hf : ∀ g, f g ∈ Set.range φ) (g : G) : φ (f.liftOfMemRange φ hφ h hf g) = f g :=
+  (Set.mem_range.mp (hf g)).choose_spec
+
+/-- Mapping the lift of a cocycle along the embedding recovers the cocycle. -/
+@[simp]
+theorem Cocycle.map_liftOfMemRange (φ : A →ₜ* A') (hφ : Topology.IsEmbedding φ)
+    (h : ∀ (g : G) (a : A), φ (ContinuousMonoidHom.id G g • a) = g • φ a) (f : Cocycle G A')
+    (hf : ∀ g, f g ∈ Set.range φ) :
+    (f.liftOfMemRange φ hφ h hf).map (ContinuousMonoidHom.id G) φ h = f :=
+  ext fun g ↦ by simp
+
+/-- Lifting the image of a cocycle along the embedding recovers the cocycle. -/
+@[simp]
+theorem Cocycle.liftOfMemRange_map (φ : A →ₜ* A') (hφ : Topology.IsEmbedding φ)
+    (h : ∀ (g : G) (a : A), φ (ContinuousMonoidHom.id G g • a) = g • φ a) (f : Cocycle G A)
+    (hf : ∀ g, f.map (ContinuousMonoidHom.id G) φ h g ∈ Set.range φ) :
+    (f.map (ContinuousMonoidHom.id G) φ h).liftOfMemRange φ hφ h hf = f :=
+  ext fun g ↦ hφ.injective (by simp)
+
+end Lift
 
 section Res
 

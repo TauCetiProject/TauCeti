@@ -63,6 +63,8 @@ This is the setup the compact-group representation theory of `SU(2)` runs on; se
   group over `ℝ` or `ℂ` is compact.
 * `Matrix.UnitaryGroup.continuous_fromBlocksOne`: the block embedding `B ↦ diag(1_r, B)` of `U(m)`
   in `U(r + m)` is continuous.
+* `Matrix.specialUnitaryGroup.continuous_fromBlocksOne`: the block embedding of `SU(m)` in
+  `SU(r + m)` is continuous.
 -/
 
 public section
@@ -82,7 +84,7 @@ variable [CommRing 𝕜] [StarRing 𝕜]
 variable [TopologicalSpace 𝕜] [ContinuousStar 𝕜]
 
 instance : ContinuousInv (Matrix.specialUnitaryGroup n 𝕜) where
-  continuous_inv := continuous_induced_rng.mpr continuous_subtype_val.star
+  continuous_inv := continuous_induced_rng.mpr continuous_subtypeVal.star
 
 section TopologicalSemiring
 
@@ -176,9 +178,23 @@ theorem continuous_fromBlocksOne (m : ℕ) :
   refine continuous_induced_rng.2 ?_
   simp only [Function.comp_def, coe_fromBlocksOne]
   exact (continuous_const.matrix_fromBlocks continuous_const continuous_const
-    continuous_subtype_val).matrix_reindex _ _
+    continuous_subtypeVal).matrix_reindex _ _
 
 end Matrix.UnitaryGroup
+
+namespace Matrix.specialUnitaryGroup
+
+variable {𝕜 : Type*} [CommRing 𝕜] [StarRing 𝕜] [TopologicalSpace 𝕜] {r : ℕ}
+
+/-- The block embedding `B ↦ diag(1_r, B)` of `SU(m)` in `SU(r + m)` is continuous. -/
+theorem continuous_fromBlocksOne (m : ℕ) :
+    Continuous (fromBlocksOne 𝕜 r m) := by
+  refine continuous_induced_rng.2 ?_
+  simp only [Function.comp_def, coe_fromBlocksOne]
+  exact continuous_subtypeVal.comp
+    ((UnitaryGroup.continuous_fromBlocksOne m).comp (continuous_subtypeVal.subtype_mk _))
+
+end Matrix.specialUnitaryGroup
 
 namespace ClosedSubgroup
 

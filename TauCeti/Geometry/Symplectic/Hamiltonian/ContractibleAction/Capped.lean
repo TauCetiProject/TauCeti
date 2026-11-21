@@ -200,7 +200,7 @@ backwards, `u ∘ Prod.map (fun s ↦ 1 - s) id`, which is a disc of `γ` when `
 theorem cappedLoopAction_comp_prodMap_one_sub_eq_neg_cylinderAction [IsManifold I ∞ M]
     (σ : SmoothTwoForm I M) (H : ℝ → M → ℝ) {γ γ₀ : ℝ → M} {u : ℝ × ℝ → M}
     (hu : IsSmoothCylinder I γ γ₀ u) :
-    cappedLoopAction σ.1 H γ (u ∘ Prod.map (fun s ↦ 1 - s) id) = -cylinderAction σ.1 H u := by
+    cappedLoopAction σ.val H γ (u ∘ Prod.map (fun s ↦ 1 - s) id) = -cylinderAction σ.val H u := by
   rw [cappedLoopAction_def, SmoothTwoForm.cylinderAction_eq_of_isSmoothCylinder hu,
     rectangleIntegral_comp_prodMap_one_sub (σ.isSmoothForm.of_le (by simp))
       (hu.contMDiff.of_le (by simp))]

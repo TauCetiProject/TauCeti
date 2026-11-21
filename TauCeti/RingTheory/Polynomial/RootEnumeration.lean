@@ -216,7 +216,7 @@ theorem isRootEnumeration_numbering
   · exact univ.nodup.map fun i j h ↦ e.injective (Subtype.ext h)
   · intro a
     simp only [Multiset.mem_map, Finset.mem_val, mem_univ, true_and]
-    exact ⟨fun ha ↦ ⟨e.symm ⟨a, hmem.mp ha⟩, by simp⟩, fun ⟨i, hi⟩ ↦ hi ▸ hmem.mpr (e i).2⟩
+    exact ⟨fun ha ↦ ⟨e.symm ⟨a, hmem.mp ha⟩, by simp⟩, fun ⟨i, hi⟩ ↦ hi ▸ hmem.mpr (e i).property⟩
 
 /-- **Root enumerations exist exactly for split polynomials.** If the image of `f` in `L` has
 degree `Fintype.card ι`, then `f` has a root enumeration in `L` indexed by `ι` if and only if `f`

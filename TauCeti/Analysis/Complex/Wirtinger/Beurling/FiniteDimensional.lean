@@ -131,8 +131,8 @@ theorem beurling_naturality {G : Type*} [NormedAddCommGroup G] [NormedSpace ℂ 
   apply Finset.sum_congr rfl
   intro i _
   congr 1
-  rw [ContinuousLinearMap.compLpL_comp, functional_beurling, ← ContinuousLinearMap.compLpL_comp, ←
-    functional_beurling]
+  rw [ContinuousLinearMap.compLpL_compLpL, functional_beurling,
+    ← ContinuousLinearMap.compLpL_compLpL, ← functional_beurling]
 
 end Finite
 

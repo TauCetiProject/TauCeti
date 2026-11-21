@@ -97,19 +97,19 @@ variable (D : ℤ) (hD : D % 4 = 0 ∨ D % 4 = 1) [Fact (¬ IsSquare D)]
 /-- Forms in the same cycle of `primitiveReductionPerm D` represent the same wide Picard class. -/
 theorem picClass_eq_of_sameCycle {f g : primitiveGaussReducedForms D}
     (h : (primitiveReductionPerm D).SameCycle f g) :
-    picClass D hD ⟨f.1, (mem_primitiveForms D f.1).mpr
-      ⟨(mem_primitiveGaussReducedForms.mp f.2).1,
-        (mem_primitiveGaussReducedForms.mp f.2).2.2⟩⟩ =
-    picClass D hD ⟨g.1, (mem_primitiveForms D g.1).mpr
-      ⟨(mem_primitiveGaussReducedForms.mp g.2).1,
-        (mem_primitiveGaussReducedForms.mp g.2).2.2⟩⟩ := by
+    picClass D hD ⟨f.val, (mem_primitiveForms D f.val).mpr
+      ⟨(mem_primitiveGaussReducedForms.mp f.property).1,
+        (mem_primitiveGaussReducedForms.mp f.property).2.2⟩⟩ =
+    picClass D hD ⟨g.val, (mem_primitiveForms D g.val).mpr
+      ⟨(mem_primitiveGaussReducedForms.mp g.property).1,
+        (mem_primitiveGaussReducedForms.mp g.property).2.2⟩⟩ := by
   obtain ⟨γ, hγ⟩ := sameCycle_primitiveReductionPerm_iff.mp h
-  have hsub : γ • (⟨f.1, (mem_primitiveForms D f.1).mpr
-      ⟨(mem_primitiveGaussReducedForms.mp f.2).1,
-        (mem_primitiveGaussReducedForms.mp f.2).2.2⟩⟩ : primitiveForms D) =
-      ⟨g.1, (mem_primitiveForms D g.1).mpr
-        ⟨(mem_primitiveGaussReducedForms.mp g.2).1,
-          (mem_primitiveGaussReducedForms.mp g.2).2.2⟩⟩ :=
+  have hsub : γ • (⟨f.val, (mem_primitiveForms D f.val).mpr
+      ⟨(mem_primitiveGaussReducedForms.mp f.property).1,
+        (mem_primitiveGaussReducedForms.mp f.property).2.2⟩⟩ : primitiveForms D) =
+      ⟨g.val, (mem_primitiveForms D g.val).mpr
+        ⟨(mem_primitiveGaussReducedForms.mp g.property).1,
+          (mem_primitiveGaussReducedForms.mp g.property).2.2⟩⟩ :=
     Subtype.ext (by simpa only [SubMulAction.val_smul] using hγ)
   rw [← hsub, picClass_smul]
 
@@ -125,8 +125,8 @@ def primitiveCycleEquivNarrowPic (hpos : 0 < D) :
 narrow class `f.1.narrowPicClass`. -/
 @[simp] theorem primitiveCycleEquivNarrowPic_mk (hpos : 0 < D) (f : primitiveGaussReducedForms D) :
     primitiveCycleEquivNarrowPic D hD hpos (Quotient.mk'' f) =
-      f.1.narrowPicClass D (mem_primitiveGaussReducedForms.mp f.2).1
-        (mem_primitiveGaussReducedForms.mp f.2).2.2 := by
+      f.val.narrowPicClass D (mem_primitiveGaussReducedForms.mp f.property).1
+        (mem_primitiveGaussReducedForms.mp f.property).2.2 := by
   simp [primitiveCycleEquivNarrowPic]
 
 /-- **The order of the narrow Picard group** of a real quadratic order of discriminant `D > 0` is
@@ -141,9 +141,9 @@ primitive Gauss reduced form. -/
 theorem exists_mem_primitiveGaussReducedForms_picClass_eq (hpos : 0 < D)
     (c : Pic (QuadraticOrder.numberFieldOrder D hD)) :
     ∃ f : primitiveGaussReducedForms D,
-      picClass D hD ⟨f.1, (mem_primitiveForms D f.1).mpr
-        ⟨(mem_primitiveGaussReducedForms.mp f.2).1,
-          (mem_primitiveGaussReducedForms.mp f.2).2.2⟩⟩ = c := by
+      picClass D hD ⟨f.val, (mem_primitiveForms D f.val).mpr
+        ⟨(mem_primitiveGaussReducedForms.mp f.property).1,
+          (mem_primitiveGaussReducedForms.mp f.property).2.2⟩⟩ = c := by
   obtain ⟨n, rfl⟩ := (QuadraticOrder.numberFieldOrder D hD).narrowToPic_surjective c
   obtain ⟨q, rfl⟩ := (primitiveCycleEquivNarrowPic D hD hpos).surjective n
   refine Quotient.inductionOn' q fun f ↦ ⟨f, ?_⟩
@@ -222,7 +222,7 @@ theorem nat_card_narrowPic_five :
     rw [primitiveGaussReducedForms_five]; simp
   refine nat_card_narrowPic_eq_one_of_sameCycle (Or.inr rfl) (by decide) ⟨⟨1, 1, -1⟩, hf₀⟩
     fun g ↦ ?_
-  have hg := (Finset.ext_iff.mp primitiveGaussReducedForms_five g.1).mp g.2
+  have hg := (Finset.ext_iff.mp primitiveGaussReducedForms_five g.val).mp g.property
   simp only [mem_insert, mem_singleton] at hg
   rcases hg with hg | hg
   · exact (Subtype.ext hg.symm).sameCycle _
@@ -298,7 +298,7 @@ theorem nat_card_narrowPic_eight :
     rw [primitiveGaussReducedForms_eight]; simp
   refine nat_card_narrowPic_eq_one_of_sameCycle (Or.inl rfl) (by decide) ⟨⟨1, 2, -1⟩, hf₀⟩
     fun g ↦ ?_
-  have hg := (Finset.ext_iff.mp primitiveGaussReducedForms_eight g.1).mp g.2
+  have hg := (Finset.ext_iff.mp primitiveGaussReducedForms_eight g.val).mp g.property
   simp only [mem_insert, mem_singleton] at hg
   rcases hg with hg | hg
   · exact (Subtype.ext hg.symm).sameCycle _
@@ -383,8 +383,8 @@ theorem primitiveGaussReducedForms_twelve :
 
 private theorem pow_primitiveReductionPerm_twelve_one_two_neg_two
     (h₀ : (⟨1, 2, -2⟩ : BinaryQuadraticForm ℤ) ∈ primitiveGaussReducedForms 12) (n : ℕ) :
-    ((primitiveReductionPerm 12 ^ n) ⟨⟨1, 2, -2⟩, h₀⟩).1 = ⟨1, 2, -2⟩ ∨
-      ((primitiveReductionPerm 12 ^ n) ⟨⟨1, 2, -2⟩, h₀⟩).1 = ⟨-2, 2, 1⟩ := by
+    ((primitiveReductionPerm 12 ^ n) ⟨⟨1, 2, -2⟩, h₀⟩).val = ⟨1, 2, -2⟩ ∨
+      ((primitiveReductionPerm 12 ^ n) ⟨⟨1, 2, -2⟩, h₀⟩).val = ⟨-2, 2, 1⟩ := by
   induction n with
   | zero => exact Or.inl rfl
   | succ n ih =>
@@ -407,7 +407,7 @@ private theorem not_sameCycle_twelve
     ¬ (primitiveReductionPerm 12).SameCycle ⟨⟨1, 2, -2⟩, h₀⟩ ⟨⟨-1, 2, 2⟩, h₁⟩ := by
   intro hsc
   obtain ⟨n, hn⟩ := hsc.exists_nat_pow_eq
-  have hn' := congrArg (fun f : primitiveGaussReducedForms 12 ↦ f.1.a) hn
+  have hn' := congrArg (fun f : primitiveGaussReducedForms 12 ↦ f.val.a) hn
   rcases pow_primitiveReductionPerm_twelve_one_two_neg_two h₀ n with h | h <;>
     rw [h] at hn' <;> norm_num at hn'
 
@@ -429,7 +429,7 @@ private theorem sameCycle_twelve_or
     (g : primitiveGaussReducedForms 12) :
     (primitiveReductionPerm 12).SameCycle ⟨⟨1, 2, -2⟩, h₀⟩ g ∨
       (primitiveReductionPerm 12).SameCycle ⟨⟨-1, 2, 2⟩, h₁⟩ g := by
-  have hg := (Finset.ext_iff.mp primitiveGaussReducedForms_twelve g.1).mp g.2
+  have hg := (Finset.ext_iff.mp primitiveGaussReducedForms_twelve g.val).mp g.property
   simp only [mem_insert, mem_singleton] at hg
   rcases hg with hg | hg | hg | hg
   · exact Or.inl ((Subtype.ext hg.symm).sameCycle _)

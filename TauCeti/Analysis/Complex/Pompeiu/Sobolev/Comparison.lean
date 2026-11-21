@@ -113,7 +113,7 @@ theorem beurlingL_eq_beurlingLp (hp : 1 < p) (hp_top : p ≠ ∞) :
   let S := {u : 𝓢(ℂ, F) // HasCompactSupport (u : ℂ → F)}
   have hd : DenseRange (fun u : S ↦ u.val.toLp p (volume : Measure ℂ)) :=
     (SchwartzMap.denseRange_toLpCLM (E := ℂ) (F := F) (μ := volume) hp_top).comp
-      SchwartzMap.dense_hasCompactSupport.denseRange_val
+      SchwartzMap.dense_hasCompactSupport.denseRange_subtypeVal
       (SchwartzMap.toLpCLM ℂ F p (volume : Measure ℂ)).continuous
   apply DFunLike.coe_injective
   apply hd.equalizer (beurlingL hp hp_top).continuous (beurlingLp p hp hp_top).continuous

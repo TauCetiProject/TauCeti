@@ -298,26 +298,26 @@ fixed point to its trajectory under the flow from time `s`. -/
 def periodicSolutionsEquivFixedPoints (hT : Periodic X T) (hT0 : T ≠ 0) (s : ℝ) :
     periodicSolutions X T ≃ {x | ((s, s + T), x) ∈ timeDependentFlowDomain X ∧
       IsFixedPt (timeDependentFlowOf X s (s + T)) x} where
-  toFun γ := ⟨γ.1 s, by
+  toFun γ := ⟨γ.val s, by
     -- A global solution stays in the domain and is the trajectory of the flow.
-    have hγ (u : ℝ) (_ : u ∈ Ioo (s - |T| - 1) (s + |T| + 1)) := γ.2.1 u
+    have hγ (u : ℝ) (_ : u ∈ Ioo (s - |T| - 1) (s + |T| + 1)) := γ.property.1 u
     have hs : s ∈ Ioo (s - |T| - 1) (s + |T| + 1) :=
       ⟨by linarith [abs_nonneg T], by linarith [abs_nonneg T]⟩
     have hsT : s + T ∈ Ioo (s - |T| - 1) (s + |T| + 1) :=
       ⟨by linarith [neg_abs_le T], by linarith [le_abs_self T]⟩
     exact ⟨mem_timeDependentFlowDomain_of_hasMFDerivAt hγ hs hsT,
-      (timeDependentFlowOf_eq_of_hasMFDerivAt hX hγ hs hsT).trans (γ.2.2 s)⟩⟩
+      (timeDependentFlowOf_eq_of_hasMFDerivAt hX hγ hs hsT).trans (γ.property.2 s)⟩⟩
   invFun x := ⟨fun t ↦ timeDependentFlowOf X s t x, fun t ↦ hasMFDerivAt_timeDependentFlowOf hX
-      (mem_timeDependentFlowDomain_of_isFixedPt hX hT hT0 x.2.1 x.2.2 t), fun t ↦ by
+      (mem_timeDependentFlowDomain_of_isFixedPt hX hT hT0 x.property.1 x.property.2 t), fun t ↦ by
     -- Flow for one period, which fixes `x`, then translate the remaining time back by `T`.
-    have hall := mem_timeDependentFlowDomain_of_isFixedPt hX hT hT0 x.2.1 x.2.2
+    have hall := mem_timeDependentFlowDomain_of_isFixedPt hX hT hT0 x.property.1 x.property.2
     obtain ⟨hmem, heq⟩ := timeDependentFlowOf_add_period_of_mem hX hT (hall t)
-    have htr := (timeDependentFlowOf_trans_of_mem hX x.2.1
-      (by rwa [x.2.2.eq])).2
+    have htr := (timeDependentFlowOf_trans_of_mem hX x.property.1
+      (by rwa [x.property.2.eq])).2
     dsimp only
-    rw [← htr, x.2.2.eq, heq]⟩
+    rw [← htr, x.property.2.eq, heq]⟩
   left_inv γ := Subtype.ext <| funext fun t ↦ by
-    have hγ (u : ℝ) (_ : u ∈ Ioo (min s t - 1) (max s t + 1)) := γ.2.1 u
+    have hγ (u : ℝ) (_ : u ∈ Ioo (min s t - 1) (max s t + 1)) := γ.property.1 u
     exact timeDependentFlowOf_eq_of_hasMFDerivAt hX hγ
       ⟨by linarith [min_le_left s t], by linarith [le_max_left s t]⟩
       ⟨by linarith [min_le_right s t], by linarith [le_max_right s t]⟩
@@ -328,7 +328,7 @@ omit [CompleteSpace E] in
 @[simp]
 theorem periodicSolutionsEquivFixedPoints_apply (hT : Periodic X T) (hT0 : T ≠ 0) (s : ℝ)
     (γ : periodicSolutions X T) :
-    (periodicSolutionsEquivFixedPoints hX hT hT0 s γ : M) = γ.1 s :=
+    (periodicSolutionsEquivFixedPoints hX hT hT0 s γ : M) = γ.val s :=
   (rfl)
 
 omit [CompleteSpace E] in
@@ -337,7 +337,7 @@ omit [CompleteSpace E] in
 theorem periodicSolutionsEquivFixedPoints_symm_apply (hT : Periodic X T) (hT0 : T ≠ 0) (s : ℝ)
     (x : {x | ((s, s + T), x) ∈ timeDependentFlowDomain X ∧
       IsFixedPt (timeDependentFlowOf X s (s + T)) x}) (t : ℝ) :
-    ((periodicSolutionsEquivFixedPoints hX hT hT0 s).symm x).1 t =
+    ((periodicSolutionsEquivFixedPoints hX hT hT0 s).symm x).val t =
       timeDependentFlowOf X s t x :=
   (rfl)
 
@@ -440,7 +440,7 @@ theorem finite_periodicSolutions [FiniteDimensional ℝ E] [CompactSpace M] [T2S
     have hx' : x ∈ {x | ((s, s + T), x) ∈ timeDependentFlowDomain X ∧
         IsFixedPt (timeDependentFlowOf X s (s + T)) x} :=
       ⟨by rw [timeDependentFlowDomain_eq_univ hcomplete]; exact mem_univ _, hx⟩
-    have hγ := h _ (e.symm ⟨x, hx'⟩).2
+    have hγ := h _ (e.symm ⟨x, hx'⟩).property
     rwa [periodicSolutionsEquivFixedPoints_symm_apply, timeDependentFlowOf_self] at hγ
   have : Finite {x | ((s, s + T), x) ∈ timeDependentFlowDomain X ∧
       IsFixedPt (timeDependentFlowOf X s (s + T)) x} :=
@@ -477,18 +477,20 @@ theorem finite_contractiblePeriodicSolutions [CompactSpace M] [T2Space M]
   let e := periodicSolutionsEquivFixedPoints hX hT hT0.ne' s
   -- A periodic solution is contractible exactly when its loop over `[s, s + T]` is
   -- null-homotopic.
-  have hcont (γ : periodicSolutions X T) : Continuous γ.1 := continuous_of_mem_periodicSolutions γ.2
-  have hper (γ : periodicSolutions X T) : Periodic γ.1 T := γ.2.2
+  have hcont (γ : periodicSolutions X T) : Continuous γ.val := continuous_of_mem_periodicSolutions
+      γ.property
+  have hper (γ : periodicSolutions X T) : Periodic γ.val T := γ.property.2
   let P (γ : periodicSolutions X T) : Prop :=
-    ((hper γ).loop (hcont γ) s).Homotopic (Path.refl (γ.1 s))
-  have hP (γ : periodicSolutions X T) : P γ ↔ γ.1 ∈ contractiblePeriodicSolutions X T :=
-    ⟨fun hγ ↦ ⟨γ.2, ((hper γ).exists_nullhomotopic_iff_loop_homotopic_refl (hcont γ) s).2 hγ⟩,
+    ((hper γ).loop (hcont γ) s).Homotopic (Path.refl (γ.val s))
+  have hP (γ : periodicSolutions X T) : P γ ↔ γ.val ∈ contractiblePeriodicSolutions X T :=
+    ⟨fun hγ ↦ ⟨γ.property, ((hper γ).exists_nullhomotopic_iff_loop_homotopic_refl
+        (hcont γ) s).2 hγ⟩,
       fun hγ ↦ ((hper γ).exists_nullhomotopic_iff_loop_homotopic_refl (hcont γ) s).1 hγ.2⟩
   -- These loops depend continuously on the fixed point, which ranges over a closed set.
   have hfam : Continuous ↿fun y ↦ (hper (e.symm y)).loop (hcont (e.symm y)) s := by
     have heq : (↿fun y ↦ (hper (e.symm y)).loop (hcont (e.symm y)) s) =
         (fun p : (ℝ × ℝ) × M ↦ timeDependentFlowOf X p.1.1 p.1.2 p.2) ∘
-          fun q ↦ ((s, s + q.2 * T), q.1.1) :=
+          fun q ↦ ((s, s + q.2 * T), q.1.val) :=
       funext fun q ↦ (Periodic.loop_apply _ _ _ _).trans
         (periodicSolutionsEquivFixedPoints_symm_apply hX hT hT0.ne' s _ _)
     rw [heq]
@@ -503,7 +505,7 @@ theorem finite_contractiblePeriodicSolutions [CompactSpace M] [T2Space M]
   -- The initial points of the contractible solutions form a closed set of nondegenerate fixed
   -- points, hence a finite set.
   have hK : IsClosed (Subtype.val '' {y | P (e.symm y)}) :=
-    hY.isClosedMap_subtype_val _ (isClopen_setOf_homotopic_refl _ hfam).isClosed
+    hY.isClosedMap_subtypeVal _ (isClopen_setOf_homotopic_refl _ hfam).isClosed
   have hKfin := hK.isCompact.finite_of_isNondegenerateFixedPt (I := I) <| by
     rintro _ ⟨y, hy, rfl⟩
     have hnd := h _ ((hP _).1 hy)

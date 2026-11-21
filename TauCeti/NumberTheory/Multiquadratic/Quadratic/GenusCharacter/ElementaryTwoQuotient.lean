@@ -98,7 +98,7 @@ noncomputable def genusCharFunElementaryTwoQuotientFamilyLinearMap
     NumberField.NarrowClassGroup.ElementaryTwoQuotient K →ₗ[ZMod 2]
       ((P : ↥s) → Additive ℤˣ) :=
   LinearMap.pi fun P => genusCharFunElementaryTwoQuotientLinearMap
-    hs heven hprod hmin hgen hsf (Finset.singleton_subset_iff.mpr P.2)
+    hs heven hprod hmin hgen hsf (Finset.singleton_subset_iff.mpr P.property)
 
 /-- A coordinate of the family map is the linear genus character indexed by the corresponding
 singleton prime discriminant. -/
@@ -112,7 +112,7 @@ singleton prime discriminant. -/
     (P : ↥s) :
     genusCharFunElementaryTwoQuotientFamilyLinearMap hs heven hprod hmin hgen hsf x P =
       genusCharFunElementaryTwoQuotientLinearMap hs heven hprod hmin hgen hsf
-        (Finset.singleton_subset_iff.mpr P.2) x := by
+        (Finset.singleton_subset_iff.mpr P.property) x := by
   rfl
 
 /-- The linear functional of a subset-indexed genus character is the sum of the singleton
@@ -126,7 +126,7 @@ theorem genusCharFunElementaryTwoQuotientLinearMap_eq_sum_singleton
     (hsf : Squarefree d) (hts : t ⊆ s) :
     genusCharFunElementaryTwoQuotientLinearMap hs heven hprod hmin hgen hsf hts =
       ∑ P : ↥t, genusCharFunElementaryTwoQuotientLinearMap
-        hs heven hprod hmin hgen hsf (Finset.singleton_subset_iff.mpr (hts P.2)) := by
+        hs heven hprod hmin hgen hsf (Finset.singleton_subset_iff.mpr (hts P.property)) := by
   apply LinearMap.ext
   intro x
   obtain ⟨A, rfl⟩ := TauCeti.elementaryTwoQuotientMk_surjective

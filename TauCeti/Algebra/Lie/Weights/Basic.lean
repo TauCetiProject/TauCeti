@@ -449,7 +449,7 @@ variable [CharZero K] [FiniteDimensional K L] [LieAlgebra.IsKilling K L]
 /-- The root vectors bracketed with a point at which no root vanishes, together with a basis of the
 Cartan subalgebra, span `L`. -/
 theorem span_rootVectors_eq_top {κ : Type*} [Finite κ]
-    (e : H.root → L) (he : ∀ α, e α ∈ rootSpace H α.1) (he0 : ∀ α, e α ≠ 0) (h₀ : H)
+    (e : H.root → L) (he : ∀ α, e α ∈ rootSpace H α.val) (he0 : ∀ α, e α ≠ 0) (h₀ : H)
     (hh₀ : ∀ α ∈ H.root, (α : H → K) h₀ ≠ 0) (bH : Module.Basis κ K H) :
     Submodule.span K (Set.range (Sum.elim (fun α ↦ ⁅e α, (h₀ : L)⁆) fun j ↦ (bH j : L))) = ⊤ := by
   have := Fintype.ofFinite κ
@@ -473,7 +473,7 @@ theorem span_rootVectors_eq_top {κ : Type*} [Finite κ]
     have hbr : ⁅e α, (h₀ : L)⁆ = -(χ h₀) • e α := by
       rw [← lie_skew, ← LieSubalgebra.coe_bracket_of_module,
         lie_eq_smul_of_mem_rootSpace (he α) h₀, neg_smul]
-    have hχh₀ : χ h₀ ≠ 0 := hh₀ α α.2
+    have hχh₀ : χ h₀ ≠ 0 := hh₀ α α.property
     have he' : e α = (-(χ h₀))⁻¹ • ⁅e α, (h₀ : L)⁆ := by
       rw [hbr, smul_smul, inv_mul_cancel₀ (neg_ne_zero.mpr hχh₀), one_smul]
     rw [hz', he']
@@ -483,10 +483,10 @@ theorem span_rootVectors_eq_top {κ : Type*} [Finite κ]
 omit [LieAlgebra.IsKilling K L] in
 /-- A nonzero root vector in each root space, with a nilpotency degree of its adjoint action. -/
 theorem exists_nonzero_rootVectors :
-    ∃ (e : H.root → L), (∀ α, e α ∈ rootSpace H α.1) ∧ (∀ α, e α ≠ 0) ∧
+    ∃ (e : H.root → L), (∀ α, e α ∈ rootSpace H α.val) ∧ (∀ α, e α ≠ 0) ∧
       ∃ n : H.root → ℕ, ∀ α, ad K L (e α) ^ n α = 0 := by
-  have hα0 (α : H.root) : α.1.IsNonZero := (Finset.mem_filter.mp α.2).2
-  choose e he he0 using fun α : H.root ↦ α.1.exists_ne_zero
+  have hα0 (α : H.root) : α.val.IsNonZero := (Finset.mem_filter.mp α.property).2
+  choose e he he0 using fun α : H.root ↦ α.val.exists_ne_zero
   have hnil (α : H.root) : IsNilpotent (ad K L (e α)) :=
     isNilpotent_ad_of_mem_rootSpace H (fun h ↦ hα0 α ((Weight.coe_eq_zero_iff _).mp h)) (he α)
   choose n hn using hnil
@@ -499,7 +499,7 @@ infinite field `K` supplies one `h : H` on which every root is nonzero. -/
 theorem exists_forall_root_apply_ne_zero [Infinite K]
     [LieModule.LinearWeights K H L] :
     ∃ h : H, ∀ α ∈ H.root, (α : H → K) h ≠ 0 := by
-  let f : H.root → Module.Dual K H := fun α ↦ (α.1 : H →ₗ[K] K)
+  let f : H.root → Module.Dual K H := fun α ↦ (α.val : H →ₗ[K] K)
   obtain ⟨h, hh⟩ := Module.Dual.exists_forall_ne_zero_of_forall_exists f fun α ↦ by
     simpa [f] using DFunLike.ne_iff.mp
       (Weight.coe_toLinear_ne_zero_iff.mpr (H.isNonZero_coe_root α))

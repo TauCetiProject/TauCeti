@@ -85,7 +85,7 @@ theorem coe_continuousD (hL : Continuous fun p : L × L ↦ ⁅p.1, p.2⁆)
 theorem continuousD_continuousD (hL : Continuous fun p : L × L ↦ ⁅p.1, p.2⁆)
     (hM : ∀ m : M, IsLocallyConstant (⁅·, m⁆ : L → M)) (n : ℕ)
     (ω : continuousCochain R L M n) :
-    continuousD R L M hL hM (n + 1) (continuousD R L M hL hM n ω) = 0 := Subtype.ext (d_d n ω.1)
+    continuousD R L M hL hM (n + 1) (continuousD R L M hL hM n ω) = 0 := Subtype.ext (d_d n ω.val)
 
 theorem continuousD_comp_continuousD (hL : Continuous fun p : L × L ↦ ⁅p.1, p.2⁆)
     (hM : ∀ m : M, IsLocallyConstant (⁅·, m⁆ : L → M)) (n : ℕ) :
@@ -108,7 +108,7 @@ theorem continuousCochainMap_comp_continuousD {L' M' : Type*}
   ext ω : 1
   apply Subtype.ext
   simp only [LinearMap.comp_apply, coe_continuousCochainMap, coe_continuousD,
-    cochainMap_d e φ he n ω.1]
+    cochainMap_d e φ he n ω.val]
 
 end Differential
 
@@ -278,7 +278,7 @@ noncomputable def continuousCohomologyClass (hL : Continuous fun p : L × L ↦ 
     fun z ↦ ((continuousCochainComplex R L M hL hM).moduleCat_d_inv_eq_zero_iff
       (continuousD R L M hL hM) (continuousCochainComplex_d_succ R L M hL hM)
       (Submodule.inclusion (continuousCocycle_le_continuousCochain R L M n) z)).mpr
-        (Subtype.ext (mem_continuousCocycle_iff.mp z.2).2)
+        (Subtype.ext (mem_continuousCocycle_iff.mp z.property).2)
 
 /-- The homology class of a continuous cocycle `z` is its `homologyπ` image via
 `moduleCatCyclesMk`. -/
@@ -295,7 +295,7 @@ theorem continuousCohomologyClass_apply (hL : Continuous fun p : L × L ↦ ⁅p
             (continuousD R L M hL hM) (continuousCochainComplex_d_succ R L M hL hM)
             (Submodule.inclusion (continuousCocycle_le_continuousCochain R L M n) z)).mpr
               (Subtype.ext ((coe_continuousD hL hM _).trans
-                (mem_continuousCocycle_iff.mp z.2).2)))) :=
+                (mem_continuousCocycle_iff.mp z.property).2)))) :=
   HomologicalComplex.moduleCatHomologyClass_apply _ _ _ _ _
 
 /-- `continuousCohomologyClass` sends `z` to the `homologyπ` class of any cycle with underlying
@@ -305,7 +305,7 @@ theorem continuousCohomologyClass_eq_homologyπ (hL : Continuous fun p : L × L 
     (z : continuousCocycle R L M n)
     (y : (continuousCochainComplex R L M hL hM).cycles n)
     (hy : ((continuousCochainComplexXIso R L M hL hM n).hom
-      ((continuousCochainComplex R L M hL hM).iCycles n y) : L [⋀^Fin n]→ₗ[R] M) = z.1) :
+      ((continuousCochainComplex R L M hL hM).iCycles n y) : L [⋀^Fin n]→ₗ[R] M) = z.val) :
     continuousCohomologyClass R L M hL hM n z =
       (continuousCochainComplex R L M hL hM).homologyπ n y := by
   rw [continuousCohomologyClass_apply]
@@ -326,9 +326,9 @@ theorem homologyMap_continuousCochainComplexι_continuousCohomologyClass
     homologyMap (continuousCochainComplexι R L M hL hM) n
         (continuousCohomologyClass R L M hL hM n z) =
       (cochainComplex R L M).homologyπ n
-        ((cochainComplex R L M).moduleCatCyclesMk (z.1 : (cochainComplex R L M).X n)
+        ((cochainComplex R L M).moduleCatCyclesMk (z.val : (cochainComplex R L M).X n)
           (n + 1) (CochainComplex.next ℕ n)
-          (by rw [cochainComplex_d_succ]; exact (mem_continuousCocycle_iff.mp z.2).2)) := by
+          (by rw [cochainComplex_d_succ]; exact (mem_continuousCocycle_iff.mp z.property).2)) := by
   rw [continuousCohomologyClass_apply, HomologicalComplex.homologyMap_homologyπ_moduleCatCyclesMk]
   congr 1
 
@@ -343,10 +343,10 @@ theorem continuousCohomologyClass_surjective (hL : Continuous fun p : L × L ↦
     rw [← (continuousCochainComplex R L M hL hM).moduleCat_d_inv_eq_zero_iff
       (continuousD R L M hL hM) (continuousCochainComplex_d_succ R L M hL hM) ω]
     simpa [ω] using hx
-  have hz : ω.1 ∈ continuousCocycle R L M n :=
-    mem_continuousCocycle_iff.mpr ⟨ω.2, by simpa using congrArg Subtype.val hdx⟩
-  refine ⟨⟨ω.1, hz⟩, ?_⟩
-  have hco : Submodule.inclusion (continuousCocycle_le_continuousCochain R L M n) ⟨ω.1, hz⟩ = ω :=
+  have hz : ω.val ∈ continuousCocycle R L M n :=
+    mem_continuousCocycle_iff.mpr ⟨ω.property, by simpa using congrArg Subtype.val hdx⟩
+  refine ⟨⟨ω.val, hz⟩, ?_⟩
+  have hco : Submodule.inclusion (continuousCocycle_le_continuousCochain R L M n) ⟨ω.val, hz⟩ = ω :=
     Subtype.ext rfl
   simp [hco, ω]
 
@@ -376,7 +376,7 @@ theorem continuousCohomologyClass_eq_zero_iff (hL : Continuous fun p : L × L �
       mem_continuousCoboundary_succ_iff]
     refine ⟨fun ⟨y, hy⟩ ↦ ?_, fun ⟨ω, hω, hdω⟩ ↦ ?_⟩
     · let η := (continuousCochainComplexXIso R L M hL hM n).hom y
-      refine ⟨η.1, η.2, ?_⟩
+      refine ⟨η.val, η.property, ?_⟩
       have hy' := congrArg (continuousCochainComplexXIso R L M hL hM (n + 1)).hom hy
       rw [continuousCochainComplex_d_succ_apply, LinearMap.comp_apply,
         ModuleCat.Hom.hom, Iso.inv_hom_id_apply] at hy'

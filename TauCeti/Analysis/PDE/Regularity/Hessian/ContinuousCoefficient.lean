@@ -91,7 +91,7 @@ private theorem le_mul_mul_add_of_sq_mul_le {C₀ : ℝ≥0} {lam r T F U G Lf L
       field_simp
       ring
     rw [hsplit]
-    refine mul_le_mul_of_nonneg_left ?_ C₀.2
+    refine mul_le_mul_of_nonneg_left ?_ C₀.property
     have h1 : (2 * r) ^ 2 / lam * Lf ≤ (2 * r) ^ 2 / lam * F := by gcongr
     have h2 : T * Lu ≤ T * U := mul_le_mul_of_nonneg_left hLu hT0
     have h3 : 0 ≤ r ^ 2 * (4 / lam) * U + T * F :=

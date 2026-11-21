@@ -178,7 +178,7 @@ private def dartRev : Quot (CosetRel 𝔸 Γ.src (fun e ↦ (𝔸.α e).range) v
 -- Appending two darts with the same underlying dart of `Γ` gives the same path, up to the
 -- identification of their endpoints.
 private theorem heq_cons_dart {y : 𝔸.LetterVertex} {a b b' : Γ.V} (q : 𝔸.Path y ⟨a⟩) (f : a ⟶ b)
-    (f' : a ⟶ b') (h : f.1 = f'.1) : q.cons (Letter.dart f) ≍ q.cons (Letter.dart f') := by
+    (f' : a ⟶ b') (h : f.val = f'.val) : q.cons (Letter.dart f) ≍ q.cons (Letter.dart f') := by
   obtain ⟨e, rfl, rfl⟩ := f
   obtain ⟨e', _, rfl⟩ := f'
   obtain rfl : e = e' := h

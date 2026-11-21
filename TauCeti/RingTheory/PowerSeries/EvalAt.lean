@@ -599,9 +599,9 @@ noncomputable def IsRestricted.evalAtHom (hb : ‖b‖ ≤ c) :
     IsRestricted.subring (R := R) c →+* A where
   toFun f := (f : R⟦X⟧).evalAt b
   map_one' := evalAt_one b
-  map_mul' f g := IsRestricted.evalAt_mul f.2 g.2 hb
+  map_mul' f g := IsRestricted.evalAt_mul f.property g.property hb
   map_zero' := evalAt_zero b
-  map_add' f g := IsRestricted.evalAt_add f.2 g.2 hb
+  map_add' f g := IsRestricted.evalAt_add f.property g.property hb
 
 /-- The evaluation homomorphism at `b` sends a restricted series `f` to `f(b)`. -/
 @[simp]
@@ -628,7 +628,7 @@ theorem evalAt_eq_zero_iff_of_isUnit_X_pow_mul_finprod_eq {R A ι : Type*} [Norm
   have hu_eval : IsUnit ((u : R⟦X⟧).evalAt x) := by
     simpa using hu.map (IsRestricted.evalAtHom R hx)
   rw [← hmul, finprod_eq_prod g hfin,
-    IsRestricted.evalAt_mul u.2 (TauCeti.PowerSeries.isRestricted_polynomial _) hx,
+    IsRestricted.evalAt_mul u.property (TauCeti.PowerSeries.isRestricted_polynomial _) hx,
     evalAt_coe, hu_eval.mul_right_eq_zero, map_mul, map_pow, Polynomial.aeval_X,
     map_prod (Polynomial.aeval (R := R) x), mul_eq_zero, pow_eq_zero_iff', Finset.prod_eq_zero_iff]
   refine or_congr ⟨fun ⟨hx0, ha0⟩ => ⟨hx0, Nat.pos_of_ne_zero ha0⟩,

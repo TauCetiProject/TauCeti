@@ -477,26 +477,26 @@ private def stageMap {K L : CochainComplex C ℤ} (g : K ⟶ L) :
   | 0 => ⟨gradedMap (.up ℤ) fun n ↦ E.map (cyclesMap g n),
       gradedMap_fromGraded _ _ _ g fun n ↦ p.naturality (cyclesMap g n)⟩
   | k + 1 => ⟨stepMap E p (stage E.obj p.app K k).2 (stage E.obj p.app L k).2
-      (stageMap g k).1 g (stageMap g k).2,
-      stepMap_attachDesc E p _ _ _ g (stageMap g k).2⟩
+      (stageMap g k).val g (stageMap g k).property,
+      stepMap_attachDesc E p _ _ _ g (stageMap g k).property⟩
 
 private lemma stageMap_id (K : CochainComplex C ℤ) :
-    ∀ k : ℕ, (stageMap E p (𝟙 K) k).1 = 𝟙 _
+    ∀ k : ℕ, (stageMap E p (𝟙 K) k).val = 𝟙 _
   | 0 => by simp [stageMap, stage]
-  | k + 1 => stepMap_id E p _ _ (stageMap E p (𝟙 K) k).2 (stageMap_id K k)
+  | k + 1 => stepMap_id E p _ _ (stageMap E p (𝟙 K) k).property (stageMap_id K k)
 
 private lemma stageMap_comp {K L M : CochainComplex C ℤ} (g : K ⟶ L) (h : L ⟶ M) :
-    ∀ k : ℕ, (stageMap E p (g ≫ h) k).1 = (stageMap E p g k).1 ≫ (stageMap E p h k).1
+    ∀ k : ℕ, (stageMap E p (g ≫ h) k).val = (stageMap E p g k).val ≫ (stageMap E p h k).val
   | 0 => by simp [stageMap, stage, cyclesMap_comp]
   | k + 1 => stepMap_comp E p _ _ _ _ _ _ g h
-      (stageMap E p g k).2 (stageMap E p h k).2 (stageMap E p (g ≫ h) k).2
+      (stageMap E p g k).property (stageMap E p h k).property (stageMap E p (g ≫ h) k).property
       (stageMap_comp g h k)
 
 private def sequenceMap {K L : CochainComplex C ℤ} (g : K ⟶ L) :
     sequence E.obj p.app K ⟶ sequence E.obj p.app L :=
-  NatTrans.ofSequence (fun k ↦ (stageMap E p g k).1) fun k ↦ by
+  NatTrans.ofSequence (fun k ↦ (stageMap E p g k).val) fun k ↦ by
     rw [sequence_map_succ, sequence_map_succ]
-    exact inr_stepMap E p _ _ _ g (stageMap E p g k).2
+    exact inr_stepMap E p _ _ _ g (stageMap E p g k).property
 
 private lemma sequenceMap_id (K : CochainComplex C ℤ) :
     sequenceMap E p (𝟙 K) = 𝟙 _ :=
@@ -509,7 +509,7 @@ private lemma sequenceMap_comp {K L M : CochainComplex C ℤ} (g : K ⟶ L) (h :
 private lemma sequenceMap_toComplex_app {K L : CochainComplex C ℤ} (g : K ⟶ L) (k : ℕ) :
     (sequenceMap E p g).app k ≫ (toComplex E.obj p.app L).app k =
       (toComplex E.obj p.app K).app k ≫ g :=
-  (stageMap E p g k).2
+  (stageMap E p g k).property
 
 variable [HasColimitsOfShape ℕ C]
 
