@@ -12,12 +12,12 @@ public import Mathlib.Analysis.Normed.Ring.Basic
 
 This file records elementary consequences of the submultiplicativity of the norm (for instance, a
 nonzero idempotent has norm at least `1`: `IsIdempotentElem.one_le_norm`), exact positive-power
-norms without `NormOneClass`, an estimate for `‖w - 1‖` with `‖w‖ = 1` when the norm is
-multiplicative, convergence to `0` of finite partial products when factors tend to `0` cofinitely
-(`TauCeti.tendsto_finsetProd_cofinite_zero`), and norm bounds for powers of units — including the
-shell lemma `Units.exists_lt_norm_zpow_lt` showing that the norms of integer powers of a unit `u`
-with `‖u‖ < 1` in a nontrivial normed ring visit every open interval `(a, b)` with `0 ≤ a` and
-`a * ‖u⁻¹‖ < b`.
+norms without `NormOneClass` (`TauCeti.norm_pow_succ`, `TauCeti.norm_pow'`), an estimate for
+`‖w - 1‖` with `‖w‖ = 1` when the norm is multiplicative, convergence to `0` of finite partial
+products when factors tend to `0` cofinitely (`TauCeti.tendsto_finsetProd_cofinite_zero`), and norm
+bounds for powers of units — including the shell lemma `Units.exists_lt_norm_zpow_lt` showing that
+the norms of integer powers of a unit `u` with `‖u‖ < 1` in a nontrivial normed ring visit every
+open interval `(a, b)` with `0 ≤ a` and `a * ‖u⁻¹‖ < b`.
 
 Among the former are the estimates `‖e * a - c‖ ≤ ‖e‖ ‖a - b‖ + ‖e * b - c‖`
 (`TauCeti.norm_mul_sub_le_left`) and `‖a * e - c‖ ≤ ‖a - b‖ ‖e‖ + ‖b * e - c‖`
@@ -194,6 +194,14 @@ theorem norm_pow_succ {M : Type*} [Norm M] [Monoid M] [NormMulClass M] (x : M) (
   induction n with
   | zero => simp
   | succ n ih => rw [pow_succ x (n + 1), norm_mul, ih, pow_succ ‖x‖ (n + 1)]
+
+/-- Positive powers preserve the norm in any monoid with a multiplicative norm, without assuming
+`NormOneClass`. Compare Mathlib's `norm_pow_le'` for submultiplicative norms and `norm_pow` with
+`NormOneClass`. -/
+theorem norm_pow' {M : Type*} [Monoid M] [Norm M] [NormMulClass M] (x : M) {n : ℕ} (hn : 0 < n) :
+    ‖x ^ n‖ = ‖x‖ ^ n := by
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn.ne'
+  exact norm_pow_succ x m
 
 /-- For a multiplicative norm with `‖1‖ = 1`, an element `w` of norm one and `r` of norm at most
 one, `‖w - 1‖ ≤ ‖(w - 1) a‖ + 2 ‖a - r‖ + 2 (1 - ‖r‖)` for every `a`. So `w - 1` is controlled by

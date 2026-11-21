@@ -33,7 +33,8 @@ and restricts on `PadicAlgCl p` to `TauCeti.spectralAddValuation ℚ_[p] (PadicA
 Changing from base `p` to base `Real.exp 1` scales finite values by `Real.log p`.
 Since `ℂ_[p]` is algebraically closed, every rational number is a value: a root `x` of
 `x ^ n = p ^ m` with `n > 0` has `v(x) = m / n`. For example a cube root of `p` has valuation
-`1 / 3`. Consequently every rational power of `p` is attained as a norm on `ℂ_[p]`.
+`1 / 3`. Consequently every rational power of `p` is attained as a norm on `ℂ_[p]`, and the
+nonzero norms of `ℂ_[p]` are precisely the rational powers `p ^ q` (`q : ℚ`).
 
 ## Main definitions
 
@@ -63,6 +64,8 @@ Since `ℂ_[p]` is algebraically closed, every rational number is a value: a roo
 * `PadicComplex.ofNorm_exp_one_eq_map_realValuation`: base change from `p` to `Real.exp 1` scales
   values by `Real.log p`.
 * `PadicComplex.exists_norm_eq_rpow`: every rational power of `p` is attained as a norm on `ℂ_[p]`.
+* `PadicComplex.image_norm_ne_zero` and `PadicComplex.range_norm`: the nonzero norms of `ℂ_[p]` are
+  the rational powers of `p`, and all norms are `0` together with the rational powers of `p`.
 
 ## References
 
@@ -191,6 +194,38 @@ theorem addValuation_surjective : Function.Surjective (addValuation p) := by
 theorem exists_norm_eq_rpow (q : ℚ) : ∃ x : ℂ_[p], ‖x‖ = (p : ℝ) ^ (q : ℝ) := by
   obtain ⟨x, hx⟩ := addValuation_surjective (p := p) (-q : ℚ)
   exact ⟨x, by simpa using addValuation_eq_coe_iff.mp hx⟩
+
+variable (p) in
+/-- **Nonzero norms of `ℂ_[p]`**: the norms of the nonzero elements of `ℂ_[p]` are the rational
+powers of `p`. -/
+theorem image_norm_ne_zero :
+    (‖·‖ : ℂ_[p] → ℝ) '' {x : ℂ_[p] | x ≠ 0} = Set.range fun q : ℚ ↦ (p : ℝ) ^ (q : ℝ) := by
+  ext r
+  constructor
+  · rintro ⟨x, hx, rfl⟩
+    have hv : addValuation p x ≠ ⊤ := by simpa using hx
+    obtain ⟨q, hq⟩ := WithTop.ne_top_iff_exists.mp hv
+    exact ⟨-q, by simp [addValuation_eq_coe_iff.mp hq.symm]⟩
+  · rintro ⟨q, rfl⟩
+    obtain ⟨x, hx⟩ := exists_norm_eq_rpow (p := p) q
+    have hp0 : (0 : ℝ) < p := Nat.cast_pos.mpr (Fact.out : p.Prime).pos
+    exact ⟨x, norm_ne_zero_iff.mp (hx ▸ (Real.rpow_pos_of_pos hp0 _).ne'), hx⟩
+
+variable (p) in
+/-- The set of norms of elements of `ℂ_[p]` consists of `0` together with the rational powers of
+`p`. -/
+theorem range_norm :
+    Set.range (‖·‖ : ℂ_[p] → ℝ) = insert 0 (Set.range fun q : ℚ ↦ (p : ℝ) ^ (q : ℝ)) := by
+  rw [← image_norm_ne_zero p]
+  ext r
+  constructor
+  · rintro ⟨x, rfl⟩
+    rcases eq_or_ne x 0 with rfl | hx
+    · simp
+    · exact Or.inr ⟨x, hx, rfl⟩
+  · rintro (rfl | ⟨x, _, rfl⟩)
+    · exact ⟨0, norm_zero⟩
+    · exact ⟨x, rfl⟩
 
 variable (p) in
 /-- The real additive valuation on `ℂ_[p]` with values in `WithTop ℝ`, normalised by `v(p) = 1`.

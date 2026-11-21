@@ -34,7 +34,9 @@ side is the Gauss norm at radius `‖d‖` of the polynomial with roots `s`, so 
 which that Gauss norm equals `‖c‖`.
 
 A normed field whose norm takes every positive real value is densely normed
-(`DenselyNormedField.ofForallExistsNormEq`).
+(`DenselyNormedField.ofForallExistsNormEq`); conversely, in any densely normed field the positive
+norms have closure `[0, ∞)` (`NormedField.closure_image_norm_ne_zero`,
+`NormedField.closure_range_norm`).
 
 Finally, `NormedField.iSup_eNorm_eq_top` records that the extended norms of a nontrivially normed
 field have supremum `⊤`, and `TauCeti.norm_sub_div_le_of_dist_div_le` turns a bound on the ratio
@@ -184,6 +186,30 @@ theorem exists_prod_map_max_norm_eq_of_isAlgClosed {𝕜 : Type*} [NormedField �
     rw [← pow_left_inj₀ (norm_nonneg d) hr.le hm, ← norm_pow, hd, norm_div,
       div_eq_iff (norm_ne_zero_iff.mpr hs₂), ← hsplit, hφr]
   exact ⟨d, by rw [hdr]; exact hφr⟩
+
+/-- In a densely normed field, the positive norms are dense in `[0, ∞)`: the closure of the norms
+of nonzero elements is `Set.Ici 0`. -/
+theorem closure_image_norm_ne_zero (𝕜 : Type*) [DenselyNormedField 𝕜] :
+    closure ((‖·‖ : 𝕜 → ℝ) '' {x : 𝕜 | x ≠ 0}) = Set.Ici 0 := by
+  refine Set.Subset.antisymm (closure_minimal ?_ isClosed_Ici) fun r hr ↦ ?_
+  · rintro _ ⟨x, -, rfl⟩
+    exact norm_nonneg x
+  · rw [Metric.mem_closure_iff]
+    intro ε hε
+    obtain ⟨x, hrx, hxε⟩ := exists_lt_norm_lt 𝕜 hr (lt_add_of_pos_right r hε)
+    have hx0 : x ≠ 0 := norm_ne_zero_iff.mp (lt_of_le_of_lt hr hrx).ne'
+    refine ⟨‖x‖, ⟨x, hx0, rfl⟩, ?_⟩
+    rw [Real.dist_eq, abs_lt]
+    exact ⟨by linarith, by linarith⟩
+
+/-- In a densely normed field, the closure of the range of the norm is `[0, ∞)`. -/
+theorem closure_range_norm (𝕜 : Type*) [DenselyNormedField 𝕜] :
+    closure (Set.range (‖·‖ : 𝕜 → ℝ)) = Set.Ici 0 := by
+  refine Set.Subset.antisymm (closure_minimal ?_ isClosed_Ici) ?_
+  · rintro _ ⟨x, rfl⟩
+    exact norm_nonneg x
+  · rw [← closure_image_norm_ne_zero 𝕜]
+    exact closure_mono (Set.image_subset_range _ _)
 
 end NormedField
 

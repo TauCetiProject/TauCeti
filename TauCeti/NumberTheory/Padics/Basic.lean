@@ -34,7 +34,9 @@ For a normed `ℚ_[p]`-algebra `K`, the composite structure map
 `TauCeti.padicIntAlgebraMap p K : ℤ_[p] →+* K` is continuous. When `‖1‖ = 1` in `K` it is an
 isometry, so it maps `ℤ_[p]` into the closed unit ball of `K`, and it is injective when `K` is
 nontrivial. When `‖1‖ = 1` in `K`, the norm of a natural number in `K` is also its `p`-adic norm
-(`TauCeti.norm_natCast_eq_norm_padic`). A continuous ring homomorphism between normed
+(`TauCeti.norm_natCast_eq_norm_padic`). It also records the discrete norm gaps on `ℚ_[p]`:
+consecutive integer powers of `p` enclose no norms (`Padic.norm_le_zpow_or_zpow_succ_le`,
+`Padic.norm_le_one_or_natCast_le_norm`). A continuous ring homomorphism between normed
 `ℚ_[p]`-algebras is automatically `ℚ_[p]`-linear (`RingHom.map_algebraMap_padic_of_continuous`),
 since it fixes the dense subfield `ℚ`; for instance a continuous Frobenius lift on a `p`-adic
 field fixes `ℚ_[p]`.
@@ -132,6 +134,24 @@ theorem continuous_padicIntAlgebraMap : Continuous (padicIntAlgebraMap p K) :=
 end Algebra
 
 end TauCeti
+
+namespace Padic
+
+variable {p : ℕ} [Fact p.Prime]
+
+/-- **Discrete norm gap on `ℚ_[p]`.** No element of `ℚ_[p]` has norm strictly between `p ^ n` and
+`p ^ (n + 1)`. -/
+theorem norm_le_zpow_or_zpow_succ_le (x : ℚ_[p]) (n : ℤ) :
+    ‖x‖ ≤ (p : ℝ) ^ n ∨ (p : ℝ) ^ (n + 1) ≤ ‖x‖ := by
+  rw [norm_le_pow_iff_norm_lt_pow_add_one]
+  exact lt_or_ge _ _
+
+/-- No element of `ℚ_[p]` has norm strictly between `1` and `p`. -/
+theorem norm_le_one_or_natCast_le_norm (x : ℚ_[p]) :
+    ‖x‖ ≤ 1 ∨ (p : ℝ) ≤ ‖x‖ := by
+  simpa using norm_le_zpow_or_zpow_succ_le x 0
+
+end Padic
 
 namespace RingHom
 
