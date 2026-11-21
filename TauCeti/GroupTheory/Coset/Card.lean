@@ -64,7 +64,8 @@ theorem ncard_image_mk_of_le (hKW : ∀ k ∈ K, ∀ w ∈ W, k * w ∈ K) {W' :
       have hgq : (g : G ⧸ W) = q := by rw [← he, hg, e.apply_symm_apply]
       refine ⟨g, ⟨g, (mk_mem_image_iff_of_forall_mul_mem hKW).1 (hgq ▸ hq), rfl⟩, ?_⟩
       rw [hg, e.apply_symm_apply]
-  rw [← ncard_image_of_injective _ e.injective, himage, ncard_prod, ncard_univ, relIndex, index]
+  rw [← ncard_image_of_injective _ e.injective, himage, ncard_prod, ncard_univ,
+    ← index_eq_card, relIndex]
 
 /-- A subgroup `U` containing `W` meets exactly `[U : W]` left cosets of `W`. -/
 @[to_additive /-- An additive subgroup `U` containing `W` meets exactly `[U : W]` cosets of

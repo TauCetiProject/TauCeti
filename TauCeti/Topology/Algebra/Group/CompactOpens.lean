@@ -32,8 +32,6 @@ locally profinite group are computed.
 
 ## Main results
 
-* `IsCompact.finite_image_mk`: a compact set meets only finitely many left cosets of an open
-  subgroup.
 * `TopologicalSpace.CompactOpens.exists_openSubgroup_le_forall_mul_mem`: a compact open set is a
   union of left cosets of an open subgroup contained in a given open subgroup.
 * `OpenSubgroup.forall_mul_mem_toCompactOpens`: a compact open subgroup `U` is a union of left
@@ -46,13 +44,6 @@ public section
 
 open Set
 open scoped Pointwise
-
-/-- A compact set meets only finitely many left cosets of an open subgroup. -/
-theorem IsCompact.finite_image_mk {G : Type*} [Group G] [TopologicalSpace G]
-    [SeparatelyContinuousMul G] {K : Set G} (hK : IsCompact K) (W : OpenSubgroup G) :
-    (((↑) : G → G ⧸ (W : Subgroup G)) '' K).Finite := by
-  have := QuotientGroup.discreteTopology W.isOpen
-  exact (hK.image continuous_quotient_mk').finite_of_discrete
 
 namespace TopologicalSpace.CompactOpens
 

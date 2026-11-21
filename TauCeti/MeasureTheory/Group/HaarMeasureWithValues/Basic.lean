@@ -10,6 +10,7 @@ public import TauCeti.Topology.Algebra.Group.CompactOpens
 public import TauCeti.Topology.Algebra.Group.Profinite.UnitProOrder
 import Mathlib.Algebra.Group.Pointwise.Set.Card
 import TauCeti.GroupTheory.Coset.Card
+import TauCeti.Topology.Algebra.Group.OpenSubgroup.Basic
 
 /-!
 # Haar measures with values in a ring
@@ -246,9 +247,8 @@ theorem hasUnitProOrder_of_isUnit (U : OpenSubgroup G) (hU : IsCompact (U : Set 
     exact v.2
   have hWc : IsCompact (W : Set G) := hU.of_isClosed_subset W.isClosed hWU
   have hidx : (W : Subgroup G).relIndex U = (V : Subgroup U).index := by
-    rw [Subgroup.relIndex]
-    congr 1
-    exact Subgroup.comap_map_eq_self_of_injective Subtype.val_injective _
+    rw [← Subgroup.relIndex_top_right, ← Subgroup.relIndex_map_map_of_injective _ _
+      (U : Subgroup G).subtype_injective, ← MonoidHom.range_eq_map, Subgroup.range_subtype]
   rw [μ.apply_toCompactOpens_eq_relIndex_smul hU hWc hWU, nsmul_eq_mul, hidx] at h
   exact ((Nat.cast_commute _ _).isUnit_mul_iff.1 h).1
 
