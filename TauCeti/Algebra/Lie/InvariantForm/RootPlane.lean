@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Lie.Coadjoint.RootPlane
 public import TauCeti.Analysis.InnerProductSpace.SkewSymmetric.NormalForm
 import TauCeti.Analysis.InnerProductSpace.Spectral.Relative
 import TauCeti.LinearAlgebra.BilinearForm.LinearIndependent
+import TauCeti.LinearAlgebra.BilinearForm.QuarterTurn
 
 /-!
 # Existence of root-plane decompositions
@@ -50,7 +51,7 @@ form of a commuting linear family of skew-symmetric maps
 (`TauCeti.exists_orthonormal_apply_eq_smul_of_skew_of_linearMap`) to `H ↦ ad H`, with the
 orthogonal direct sum of its planes (`TauCeti.isInternal_planeDecomposition`). The planes are
 spanned by the images `q_k, p_k` of its orthonormal pairs, and `J_k` is the quarter turn
-`v ↦ B(q_k, v) p_k - B(p_k, v) q_k`.
+`v ↦ B(q_k, v) p_k - B(p_k, v) q_k` (`LinearMap.BilinForm.quarterTurn`).
 
 ## References
 
@@ -65,55 +66,10 @@ noncomputable section
 
 open Module (Dual finrank)
 open scoped RealInnerProductSpace Function
+open LinearMap.BilinForm (apply_quarterTurn quarterTurn_apply_left quarterTurn_apply_right
+  quarterTurn_mem_span quarterTurn_quarterTurn)
 
 namespace TauCeti
-
-section Plane
-
-variable {L : Type*} [AddCommGroup L] [Module ℝ L] {B : LinearMap.BilinForm ℝ L}
-
-/-- The quarter turn `v ↦ B(q, v) p - B(p, v) q` of a `B`-orthonormal pair `(q, p)`, the complex
-structure of a root plane spanned by `q` and `p`. -/
-private def quarterTurn (B : LinearMap.BilinForm ℝ L) (q p : L) : L →ₗ[ℝ] L :=
-  (B q).smulRight p - (B p).smulRight q
-
-private theorem quarterTurn_apply (q p v : L) :
-    quarterTurn B q p v = B q v • p - B p v • q :=
-  rfl
-
-private theorem quarterTurn_mem_span (q p v : L) :
-    quarterTurn B q p v ∈ Submodule.span ℝ {q, p} :=
-  Submodule.sub_mem _ (Submodule.smul_mem _ _ (Submodule.subset_span (by simp)))
-    (Submodule.smul_mem _ _ (Submodule.subset_span (by simp)))
-
-/-- The quarter turn of a pair is skew for a symmetric `B`. -/
-private theorem apply_quarterTurn (hB : B.IsSymm) (q p v w : L) :
-    B (quarterTurn B q p v) w = -B v (quarterTurn B q p w) := by
-  simp only [quarterTurn_apply, map_sub, map_smul, LinearMap.sub_apply, LinearMap.smul_apply,
-    smul_eq_mul]
-  rw [hB.eq v p, hB.eq v q]
-  ring
-
-private theorem quarterTurn_apply_left {q p : L} (hqq : B q q = 1) (hpq : B p q = 0) :
-    quarterTurn B q p q = p := by
-  simp [quarterTurn_apply, hqq, hpq]
-
-private theorem quarterTurn_apply_right {q p : L} (hqp : B q p = 0) (hpp : B p p = 1) :
-    quarterTurn B q p p = -q := by
-  simp [quarterTurn_apply, hqp, hpp]
-
-variable {q p : L} (hqq : B q q = 1) (hqp : B q p = 0) (hpq : B p q = 0) (hpp : B p p = 1)
-include hqq hqp hpq hpp
-
-/-- The quarter turn of a `B`-orthonormal pair squares to `-1` on the plane of the pair. -/
-private theorem quarterTurn_quarterTurn {v : L} (hv : v ∈ Submodule.span ℝ {q, p}) :
-    quarterTurn B q p (quarterTurn B q p v) = -v := by
-  obtain ⟨a, b, rfl⟩ := Submodule.mem_span_pair.1 hv
-  simp only [map_add, map_smul, quarterTurn_apply_left hqq hpq, quarterTurn_apply_right hqp hpp,
-    smul_neg, map_neg]
-  abel
-
-end Plane
 
 variable {L : Type*} [LieRing L] [LieAlgebra ℝ L] {B : LinearMap.BilinForm ℝ L}
 
@@ -121,7 +77,7 @@ variable {L : Type*} [LieRing L] [LieAlgebra ℝ L] {B : LinearMap.BilinForm ℝ
 map `ad H` is `a` times the quarter turn. -/
 private theorem lie_eq_smul_quarterTurn {q p H v : L} {a : ℝ} (hqq : B q q = 1) (hqp : B q p = 0)
     (hpq : B p q = 0) (hpp : B p p = 1) (hq : ⁅H, q⁆ = a • p) (hp : ⁅H, p⁆ = -(a • q))
-    (hv : v ∈ Submodule.span ℝ {q, p}) : ⁅H, v⁆ = a • quarterTurn B q p v := by
+    (hv : v ∈ Submodule.span ℝ {q, p}) : ⁅H, v⁆ = a • B.quarterTurn q p v := by
   obtain ⟨c, d, rfl⟩ := Submodule.mem_span_pair.1 hv
   rw [lie_add, lie_smul, lie_smul, hq, hp, map_add, map_smul, map_smul,
     quarterTurn_apply_left hqq hpq, quarterTurn_apply_right hqp hpp]
@@ -212,7 +168,7 @@ theorem exists_isInternal_isRootPlane (hB : B.IsSymm) (hpos : ∀ x, x ≠ 0 →
   have hqp (k : Fin r) : B (q k) (p k) = 0 := by simpa using hB' (.inl k) (.inr k)
   have hpq (k : Fin r) : B (p k) (q k) = 0 := by simpa using hB' (.inr k) (.inl k)
   have hpp (k : Fin r) : B (p k) (p k) = 1 := by simpa using hB' (.inr k) (.inr k)
-  refine ⟨r, α, fun k ↦ Submodule.span ℝ {q k, p k}, fun k ↦ (quarterTurn B (q k) (p k)).restrict
+  refine ⟨r, α, fun k ↦ Submodule.span ℝ {q k, p k}, fun k ↦ (B.quarterTurn (q k) (p k)).restrict
     fun v _ ↦ quarterTurn_mem_span _ _ v, hint, fun k ↦ ⟨fun v ↦ ?_,
     fun v w ↦ apply_quarterTurn hB _ _ v w, fun H v ↦ ?_⟩, hne,
     fun k ↦ B.finrank_span_pair_eq_two (by simp [hqq k]) (hqp k) (by simp [hpp k]),
