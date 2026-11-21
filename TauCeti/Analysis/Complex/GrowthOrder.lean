@@ -32,6 +32,8 @@ growth input of Hadamard's factorization and of the convexity bounds for L-funct
 * `TauCeti.OrderLE.comp_mul_add`: the order does not increase under an affine substitution
   `s ↦ a * s + b`.
 * `Polynomial.orderLE_eval`: polynomials have order at most `0`; constants have every order.
+* `Polynomial.orderLE_cexp_eval`: the exponential of a polynomial has order at most its
+  natural degree.
 * `TauCeti.orderLE_cexp_mul_pow`: `exp (a * s ^ n)` has order at most `n`, and
   `TauCeti.orderLE_cexp_pow_iff` shows that `exp (s ^ n)` has no smaller order when `n ≠ 0`.
   In particular `exp` has order exactly `1` (`TauCeti.orderLE_cexp_iff`).
@@ -201,6 +203,18 @@ theorem orderLE_zero_of_isBigO_pow {n : ℕ} (h : f =O[cobounded ℂ] (· ^ n)) 
 theorem _root_.Polynomial.orderLE_eval (p : Polynomial ℂ) : OrderLE p.eval 0 :=
   orderLE_zero_of_isBigO_pow p.isBigO_cobounded_pow_natDegree
 
+/-- The exponential of a polynomial has order at most its natural degree, including the
+zero polynomial and constants. -/
+theorem _root_.Polynomial.orderLE_cexp_eval (P : Polynomial ℂ) :
+    OrderLE (fun z : ℂ ↦ cexp (P.eval z)) P.natDegree := by
+  intro q hq
+  obtain ⟨C, hC⟩ := P.isBigO_cobounded_pow_natDegree.bound
+  refine (IsBigO.of_bound 1 ?_).trans (isBigO_exp_mul_norm_rpow C hq)
+  filter_upwards [hC] with z hz
+  rw [norm_exp, Real.norm_eq_abs, Real.abs_exp, one_mul, Real.exp_le_exp,
+    Real.rpow_natCast]
+  exact (Complex.re_le_norm _).trans (by simpa only [norm_pow] using hz)
+
 /-- `exp (a * s ^ n)` has order at most `n`, for every `a : ℂ`. -/
 theorem orderLE_cexp_mul_pow (a : ℂ) (n : ℕ) : OrderLE (fun s ↦ cexp (a * s ^ n)) n := by
   intro A' hA'
@@ -267,7 +281,7 @@ theorem not_isBigO_exp_mul_norm_of_factorial_le {z : ℕ → ℂ} {a b K L : ℝ
     ((hlim.eventually (gt_mem_nhds one_pos)).and (hz.eventually hc.bound))).exists
   rw [Real.norm_eq_abs, abs_of_pos (Real.exp_pos _)] at hle
   have hexp : Real.exp (C * ‖z n‖) ≤ Real.exp (|C| * b) * Real.exp (|C| * a) ^ n := by
-    rw [← Real.exp_nat_mul, ← Real.exp_add]
+    rw [← Real.exp_natCast_mul, ← Real.exp_add]
     refine Real.exp_le_exp.2 ?_
     calc C * ‖z n‖ ≤ |C| * ‖z n‖ := mul_le_mul_of_nonneg_right (le_abs_self C) (norm_nonneg _)
       _ ≤ |C| * (a * n + b) := mul_le_mul_of_nonneg_left (hnorm n) (abs_nonneg C)

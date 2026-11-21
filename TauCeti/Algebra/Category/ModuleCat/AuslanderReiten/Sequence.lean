@@ -72,6 +72,7 @@ theorem exists_isAlmostSplit_arTranslate (M : ModuleCat.{max u v w} A) [Module.F
     ∃ (E : ModuleCat.{max u v w} A) (i : arTranslate k M ⟶ E) (p : E ⟶ M) (h : i ≫ p = 0),
       Module.Finite A E ∧ (ShortComplex.mk i p h).IsAlmostSplit := by
   have : IsArtinianRing A := IsArtinianRing.of_finite k A
+  have : Module.FinitePresentation A M := Module.finitePresentation_of_finite A M
   -- Compute the translate from a minimal presentation `P`.
   obtain ⟨P, hP⟩ := FiniteProjectivePresentation.exists_isMinimal (M := M)
   obtain ⟨e⟩ := nonempty_iso_arTranslate k M P hP

@@ -66,7 +66,7 @@ def alexanderWhitneyDiagonal (P : TopPair.{w}) (u : T ⟶ R ⊗ S) :
   (CokernelCofork.IsColimit.desc' (P.isColimitCokernelCoforkSingularChainComplex T)
     (P.fst.alexanderWhitneyDiagonal u ≫
       (P.singularChainComplexπ R ▷ (TopCat.toSSet.obj P.fst).chainComplex S))
-    (chainComplexMap_comp_alexanderWhitneyDiagonal_comp_whiskerRight P u)).1
+    (chainComplexMap_comp_alexanderWhitneyDiagonal_comp_whiskerRight P u)).val
 
 /-- The relative Alexander–Whitney diagonal of a pair `(X, A)` is the descent of the
 Alexander–Whitney diagonal of `X`, followed by the quotient map on the first factor. -/
@@ -76,7 +76,7 @@ lemma singularChainComplexπ_alexanderWhitneyDiagonal (P : TopPair.{w}) (u : T �
       P.fst.alexanderWhitneyDiagonal u ≫
         (P.singularChainComplexπ R ▷ (TopCat.toSSet.obj P.fst).chainComplex S) :=
   (CokernelCofork.IsColimit.desc' (P.isColimitCokernelCoforkSingularChainComplex T) _
-    (chainComplexMap_comp_alexanderWhitneyDiagonal_comp_whiskerRight P u)).2
+    (chainComplexMap_comp_alexanderWhitneyDiagonal_comp_whiskerRight P u)).property
 
 /-- The relative Alexander–Whitney diagonal is natural in maps of pairs. -/
 @[reassoc]

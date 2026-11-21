@@ -74,10 +74,13 @@ theorem W1p.isCompactOperator_valueL_unitDisc :
     (isLipschitzDomainWith_unitDisc one_pos) isBounded_unitDisc
 
 /-- **Extension from the closed disc.** There is a bounded linear extension operator
-`W^{1,p}(D) → W^{1,p}(ℝ²)` whose composite with restriction to the disc is the identity. -/
+`W^{1,p}(D) → W^{1,p}(ℝ²)` whose composite with restriction to the disc is the identity
+and which preserves almost-everywhere nonnegativity. -/
 theorem W1p.exists_extensionL_unitDisc :
     ∃ T : W1p volume unitDisc p →L[ℝ] W1p volume (⊤ : Opens (WithLp 2 (ℝ × ℝ))) p,
-      (W1p.restrictL le_top).comp T = ContinuousLinearMap.id ℝ (W1p volume unitDisc p) :=
+      (W1p.restrictL le_top).comp T = ContinuousLinearMap.id ℝ (W1p volume unitDisc p) ∧
+      ∀ u, (∀ᵐ x ∂volume.restrict unitDisc, 0 ≤ W1p.value u x) →
+        ∀ᵐ x ∂volume, 0 ≤ W1p.value (T u) x :=
   W1p.exists_extensionL_of_isLipschitzDomainWith (isLipschitzDomainWith_unitDisc one_pos)
     isBounded_unitDisc
 

@@ -12,6 +12,7 @@ import Mathlib.Analysis.Complex.Polynomial.Basic
 import TauCeti.Analysis.Analytic.Complexification.Weierstrass
 import TauCeti.Analysis.Analytic.Constructions
 import TauCeti.Analysis.Analytic.IteratedDeriv
+import TauCeti.Analysis.Analytic.SingularDirection
 import TauCeti.Analysis.Analytic.Uniqueness
 import TauCeti.Analysis.Polynomial.Monic.RootBound
 import TauCeti.Analysis.Polynomial.Order
@@ -437,7 +438,7 @@ private theorem isNashAt_weierstrassPreparation_coeff {d : ℕ}
   refine isSemialgebraicOn_def.mpr ⟨isSemialgebraic_ball x₀ δ, ?_⟩
   convert IsSemialgebraic.iUnion (fun r : Fin (d + 1) ↦
     IsSemialgebraic.iUnion fun m : {m : Fin (r : ℕ) → Fin (d + 1) // ∑ l, (m l : ℕ) = d} ↦
-      isSemialgebraic_rootCluster_branch hVo hFV hFS x₀ t₀ R δ r (fun l ↦ (m.1 l : ℕ))) using 1
+      isSemialgebraic_rootCluster_branch hVo hFV hFS x₀ t₀ R δ r (fun l ↦ (m.val l : ℕ))) using 1
   ext w
   rw [mem_preimage_sumArrowEquivProdArrow_graphOn]
   simp only [mem_iUnion, mem_ofPred_eq]
@@ -484,14 +485,14 @@ private theorem isNashAt_weierstrassPreparation_coeff {d : ℕ}
     let z : Fin (r : ℕ) → ℂ := fun l ↦ (y (.inl l) : ℂ) + (y (.inr l) : ℂ) * Complex.I
     have hzR (l : Fin (r : ℕ)) : ‖z l‖ < R :=
       (hnorm (z l)).mpr (by simpa [z] using hyR l)
-    have hmult (l : Fin (r : ℕ)) : P.rootMultiplicity (z l) = (m.1 l : ℕ) := by
+    have hmult (l : Fin (r : ℕ)) : P.rootMultiplicity (z l) = (m.val l : ℕ) := by
       obtain ⟨hptV, hk0, hkne⟩ := hderiv l
       obtain ⟨-, hord_eq⟩ := hord x hx (z l) (hzR l)
       exact Nat.cast_injective (R := ℕ∞) <| hord_eq.symm.trans <|
-        ((hFV _ hptV).analyticOrderAt_sumElim_eq_nat_iff (m.1 l : ℕ)).mpr
+        ((hFV _ hptV).analyticOrderAt_sumElim_eq_nat_iff (m.val l : ℕ)).mpr
           ⟨fun k hk ↦ hk0 ⟨k, hk⟩, hkne⟩
     have hP_eq := hP_monic.eq_prod_X_sub_C_pow_of_le_rootMultiplicity (z := z)
-      (m := fun l ↦ (m.1 l : ℕ)) (by rw [Polynomial.natDegree_monicOfCoeff, m.2])
+      (m := fun l ↦ (m.val l : ℕ)) (by rw [Polynomial.natDegree_monicOfCoeff, m.property])
       (fun _ _ h ↦ by_contra fun hne ↦ hpair _ _ hne h) (fun l ↦ (hmult l).ge)
     funext j
     apply Complex.ofReal_injective

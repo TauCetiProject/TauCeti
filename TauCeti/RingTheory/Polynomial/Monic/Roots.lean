@@ -75,7 +75,7 @@ theorem exists_eq_prod_X_sub_C_pow_rootMultiplicity {R : Type*} [CommRing R] [Is
   let e : Fin p.roots.toFinset.card ≃ p.roots.toFinset :=
     (Fintype.equivFinOfCardEq (Fintype.card_coe p.roots.toFinset)).symm
   refine ⟨p.roots.toFinset.card, fun l ↦ (e l : R), fun l ↦ p.roots.count (e l : R),
-    fun l ↦ Multiset.count_pos.mpr (Multiset.mem_toFinset.mp (e l).2), ?_, fun l ↦ ?_,
+    fun l ↦ Multiset.count_pos.mpr (Multiset.mem_toFinset.mp (e l).property), ?_, fun l ↦ ?_,
     fun _ _ h ↦ e.injective (Subtype.ext h), fun l ↦ (count_roots p).symm, ?_⟩
   · calc ∑ l, p.roots.count (e l : R)
         = ∑ x : p.roots.toFinset, p.roots.count (x : R) :=
@@ -83,7 +83,7 @@ theorem exists_eq_prod_X_sub_C_pow_rootMultiplicity {R : Type*} [CommRing R] [Is
       _ = ∑ a ∈ p.roots.toFinset, p.roots.count a :=
           Finset.sum_coe_sort p.roots.toFinset (fun a ↦ p.roots.count a)
       _ = p.natDegree := by rw [Multiset.toFinset_sum_count_eq, ← hsplit.natDegree_eq_card_roots]
-  · exact (mem_roots hp.ne_zero).mp (Multiset.mem_toFinset.mp (e l).2)
+  · exact (mem_roots hp.ne_zero).mp (Multiset.mem_toFinset.mp (e l).property)
   · calc (∏ l, (X - C (e l : R)) ^ p.roots.count (e l : R))
         = ∏ x : p.roots.toFinset, (X - C (x : R)) ^ p.roots.count (x : R) :=
           e.prod_comp (fun x : p.roots.toFinset ↦ (X - C (x : R)) ^ p.roots.count (x : R))

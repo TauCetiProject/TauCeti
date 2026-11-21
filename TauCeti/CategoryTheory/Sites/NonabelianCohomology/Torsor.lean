@@ -69,7 +69,7 @@ structure Torsor (G : Sheaf J GrpCat.{w}) where
   map_smul ⦃U V : Cᵒᵖ⦄ (f : U ⟶ V) (g : G.obj.obj U) (p : sheaf.obj.obj U) :
     sheaf.obj.map f (g • p) = G.obj.map f g • sheaf.obj.map f p
   /-- The torsor is locally nonempty: the objects over which it has a section cover the site. -/
-  coversTop : J.CoversTop fun U : {U : C // Nonempty (sheaf.obj.obj (op U))} ↦ U.1
+  coversTop : J.CoversTop fun U : {U : C // Nonempty (sheaf.obj.obj (op U))} ↦ U.val
   /-- The action is simply transitive: `(g, p) ↦ (g • p, p)` is a bijection on sections. -/
   bijective (U : Cᵒᵖ) :
     Function.Bijective fun x : G.obj.obj U × sheaf.obj.obj U ↦ (x.1 • x.2, x.2)
@@ -183,11 +183,11 @@ def trivialHomEquiv (P : Torsor G) : (trivial G ⟶ P) ≃ P.sheaf.obj.sections 
     (NatTrans.naturality_apply f.hom.hom a (1 : G.obj.obj U)).symm.trans
       (congrArg (f.hom.hom.app V) (map_one (G.obj.map a).hom))⟩
   invFun s := ⟨ObjectProperty.homMk
-    { app U := ↾fun g : G.obj.obj U ↦ g • s.1 U
+    { app U := ↾fun g : G.obj.obj U ↦ g • s.val U
       naturality U V a := by
         ext (g : G.obj.obj U)
-        exact ((P.map_smul a g (s.1 U)).trans (congrArg _ (s.2 a))).symm },
-    fun U g (h : G.obj.obj U) ↦ mul_smul g h (s.1 U)⟩
+        exact ((P.map_smul a g (s.val U)).trans (congrArg _ (s.property a))).symm },
+    fun U g (h : G.obj.obj U) ↦ mul_smul g h (s.val U)⟩
   left_inv f := by
     ext U (g : G.obj.obj U)
     exact ((congrArg (f.hom.hom.app U) (mul_one g).symm).trans
@@ -198,13 +198,13 @@ def trivialHomEquiv (P : Torsor G) : (trivial G ⟶ P) ≃ P.sheaf.obj.sections 
 
 @[simp]
 lemma trivialHomEquiv_apply_coe (P : Torsor G) (f : trivial G ⟶ P) (U : Cᵒᵖ) :
-    (trivialHomEquiv P f).1 U = f.hom.hom.app U (1 : G.obj.obj U) := by
+    (trivialHomEquiv P f).val U = f.hom.hom.app U (1 : G.obj.obj U) := by
   rfl
 
 @[simp]
 lemma trivialHomEquiv_symm_apply_hom_app (P : Torsor G) (s : P.sheaf.obj.sections) (U : Cᵒᵖ)
     (g : G.obj.obj U) :
-    ((trivialHomEquiv P).symm s).hom.hom.app U g = g • s.1 U := by
+    ((trivialHomEquiv P).symm s).hom.hom.app U g = g • s.val U := by
   rfl
 
 /-- If every group of sections of `G` is trivial, every `G`-torsor has a global section: its
@@ -215,21 +215,21 @@ lemma nonempty_sections_of_subsingleton (P : Torsor G) [∀ U, Subsingleton (G.o
     obtain ⟨g, rfl⟩ := MulAction.exists_smul_eq (G.obj.obj U) p q
     rw [Subsingleton.elim g 1, one_smul]⟩
   obtain ⟨s, -, -⟩ := Presheaf.FamilyOfElementsOnObjects.IsCompatible.existsUnique_section
-    (x := fun i : {U : C // Nonempty (P.sheaf.obj.obj (op U))} ↦ i.2.some)
+    (x := fun i : {U : C // Nonempty (P.sheaf.obj.obj (op U))} ↦ i.property.some)
     (fun _ _ _ _ _ ↦ Subsingleton.elim _ _) P.coversTop P.sheaf.property
-  exact ⟨s.1, s.2⟩
+  exact ⟨s.val, s.property⟩
 
 /-- A `G`-invariant morphism from a torsor `P` to a sheaf of sets `F` is constant: its values
 are those of a global section of `F`. -/
 lemma exists_sections_eq_of_smul_invariant (P : Torsor G) {F : Sheaf J (Type w)}
     (f : P.sheaf ⟶ F) (hf : ∀ (U : Cᵒᵖ) (g : G.obj.obj U) (p : P.sheaf.obj.obj U),
       f.hom.app U (g • p) = f.hom.app U p) :
-    ∃ s : F.obj.sections, ∀ (U : Cᵒᵖ) (p : P.sheaf.obj.obj U), f.hom.app U p = s.1 U := by
+    ∃ s : F.obj.sections, ∀ (U : Cᵒᵖ) (p : P.sheaf.obj.obj U), f.hom.app U p = s.val U := by
   have key {U : Cᵒᵖ} (p p' : P.sheaf.obj.obj U) : f.hom.app U p = f.hom.app U p' := by
     obtain ⟨g, rfl⟩ := MulAction.exists_smul_eq (G.obj.obj U) p' p
     exact hf U g p'
   obtain ⟨s, hs, -⟩ := Presheaf.FamilyOfElementsOnObjects.IsCompatible.existsUnique_section
-    (x := fun j : {U : C // Nonempty (P.sheaf.obj.obj (op U))} ↦ f.hom.app _ j.2.some)
+    (x := fun j : {U : C // Nonempty (P.sheaf.obj.obj (op U))} ↦ f.hom.app _ j.property.some)
     (fun Z j k a b ↦ by
       rw [← NatTrans.naturality_apply, ← NatTrans.naturality_apply]
       exact key _ _)
@@ -294,7 +294,7 @@ lemma lift_mk {α : Sort*} (f : Torsor G → α) (hf : ∀ P Q : Torsor G, (P �
 (Stacks, Lemma 21.4.2 (03AI)). -/
 lemma mk_eq_one_iff (P : Torsor G) : mk P = 1 ↔ P.sheaf.obj.sections.Nonempty := by
   rw [one_def, eq_comm, mk_eq_mk_iff]
-  refine ⟨fun ⟨e⟩ ↦ ⟨_, (Torsor.trivialHomEquiv P e.hom).2⟩, fun ⟨s, hs⟩ ↦ ?_⟩
+  refine ⟨fun ⟨e⟩ ↦ ⟨_, (Torsor.trivialHomEquiv P e.hom).property⟩, fun ⟨s, hs⟩ ↦ ?_⟩
   exact ⟨asIso ((Torsor.trivialHomEquiv P).symm ⟨s, hs⟩)⟩
 
 /-- For a sheaf of trivial groups, every torsor is trivial. -/
