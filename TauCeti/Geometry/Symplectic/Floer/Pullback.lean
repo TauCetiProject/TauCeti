@@ -53,12 +53,14 @@ domain.
   part `∂_s K_t - ∂_t K_s` of the curvature scales by `det dφ`, for any target.
 * `TauCeti.Floer.perturbationPullback_realChart`: the pullback of a datum on `ℂ` along a
   holomorphic map `f` evaluates the datum at `f w` on `f'(w) v`.
-* `TauCeti.Floer.isComplexLinearMap_fderiv_realChart`: a map of the plane with a complex
-  derivative has complex-linear derivative in the real coordinates.
+* `TauCeti.Floer.perturbationPullback_one_sub`: the pullback of a datum `P` on `ℂ` along the
+  exchange `w ↦ 1 - w` is `-P` at `1 - w`.
 * `TauCeti.Floer.differentiableAt_domain_of_differentiableAt`,
   `TauCeti.Floer.differentiableAt_target_of_differentiableAt`: a datum on `ℂ` that is
   differentiable jointly in the domain and target points is differentiable in each of them, in
   real coordinates.
+* `TauCeti.SymplecticForm.fderiv_hamiltonianVectorField_perturbationPullback`: the derivative of the
+  Hamiltonian vector field of a component of `φ^*K` in the target point.
 * `TauCeti.SymplecticForm.perturbedFDeriv_perturbationPullback`: the perturbed derivative of the
   reparametrized map is the original one precomposed with `dφ`.
 * `TauCeti.SymplecticForm.floerEnergyDensity_perturbationPullback`: the energy density scales by
@@ -86,7 +88,8 @@ domain.
 
 public section
 
-open Function MeasureTheory Set
+open Filter Function MeasureTheory Set
+open scoped Topology
 open TauCeti.Complex (realChart realChart_apply fderiv_realChart_apply)
 
 namespace TauCeti
@@ -145,6 +148,15 @@ theorem perturbationPullback_comp {φ ψ : ℝ × ℝ → ℝ × ℝ} (Ks Kt : �
   simp only [perturbationPullback_apply, fderiv_comp w hφ hψ, ContinuousLinearMap.comp_apply,
     comp_apply, h, Prod.fst_add, Prod.snd_add, Prod.smul_fst, Prod.smul_snd, smul_eq_mul]
   ring
+
+/-- Pulling back along `w ↦ φ (w + c)` is pulling back along `φ` at the translated point, since a
+translation of the domain has the identity as derivative. -/
+theorem perturbationPullback_comp_add_right (φ : ℝ × ℝ → ℝ × ℝ) (Ks Kt : ℝ × ℝ → X → ℝ)
+    (c v w : ℝ × ℝ) :
+    perturbationPullback (fun w ↦ φ (w + c)) Ks Kt v w =
+      perturbationPullback φ Ks Kt v (w + c) := by
+  funext x
+  simp only [perturbationPullback_apply, fderiv_comp_add_right]
 
 /-- The domain derivative of a component of the pullback `φ^*K`, by the product and chain rules:
 the second derivative of `φ` falls on the coefficient and the first derivative of `φ` on `K`. -/
@@ -217,18 +229,20 @@ theorem perturbationPullback_realChart (P : ℂ → X → ℂ →L[ℝ] ℝ) {f 
     ContinuousLinearEquiv.symm_apply_apply, Complex.equivRealProdCLM_apply]
   exact ((P _ x : ℂ →ₗ[ℝ] ℝ).apply_eq_re_smul_one_add_im_smul_I _).symm
 
-/-- A map of the plane with a complex derivative is holomorphic in real coordinates: the derivative
-of its real chart is complex linear. -/
-theorem isComplexLinearMap_fderiv_realChart {f : ℂ → ℂ} {f' : ℂ} {z : ℝ × ℝ}
-    (hf : HasDerivAt f f' (Complex.equivRealProdCLM.symm z)) :
-    IsComplexLinearMap (AlmostComplexStructure.product ℝ) (AlmostComplexStructure.product ℝ)
-      (fderiv ℝ (realChart f) z : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ) := by
-  rw [isComplexLinearMap_iff_apply]
-  intro v
-  simp only [ContinuousLinearMap.coe_coe, fderiv_realChart_apply hf,
-    AlmostComplexStructure.product_apply]
-  apply Prod.ext <;>
-    simp [Complex.equivRealProdCLM_symm_apply, Complex.mul_re, Complex.mul_im] <;> ring
+/-- The pullback of a datum `P` on `ℂ` along the exchange `σ(z) = (1, 0) - z`, which is `w ↦ 1 - w`
+in the real coordinates `ℝ × ℝ ≃ ℂ`, is `-P` at `1 - w`, since `σ` reverses tangent vectors. -/
+theorem perturbationPullback_one_sub (P : ℂ → X → ℂ →L[ℝ] ℝ) (v w : ℝ × ℝ) (x : X) :
+    perturbationPullback (fun z ↦ (1, 0) - z) (fun z x ↦ P (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ P (Complex.equivRealProdCLM.symm z) x Complex.I) v w x =
+      -P (1 - Complex.equivRealProdCLM.symm w) x (Complex.equivRealProdCLM.symm v) := by
+  have hσ : Complex.equivRealProdCLM.symm ((1, 0) - w) = 1 - Complex.equivRealProdCLM.symm w := by
+    apply Complex.ext <;> simp
+  have hv : Complex.equivRealProdCLM.symm v = v.1 • (1 : ℂ) + v.2 • Complex.I := by
+    apply Complex.ext <;> simp
+  rw [perturbationPullback_apply, fderiv_const_sub, fderiv_fun_id, hσ, hv]
+  simp only [neg_apply, ContinuousLinearMap.id_apply, Prod.fst_neg,
+    Prod.snd_neg, map_add, map_smul, smul_eq_mul]
+  ring
 
 section Differentiable
 
@@ -277,6 +291,26 @@ theorem hamiltonianVectorField_perturbationPullback (ω : SymplecticForm V)
     funext (perturbationPullback_apply φ Ks Kt v w)
   rw [h]
   exact ω.hamiltonianVectorField_const_mul_add_const_mul hKs hKt _ _
+
+/-- **The derivative of the Hamiltonian vector field of a pulled-back component.** If the
+Hamiltonians `K_s` and `K_t` at `φ w` are differentiable near `x` and their Hamiltonian vector
+fields are differentiable at `x`, then the derivative at `x` of the Hamiltonian vector field of
+the component `(φ^*K)(v)` at `w` is the corresponding combination of the derivatives of `X_{K_s}`
+and `X_{K_t}`. -/
+theorem fderiv_hamiltonianVectorField_perturbationPullback (ω : SymplecticForm V)
+    (hKs : ∀ᶠ y in 𝓝 x, DifferentiableAt ℝ (Ks (φ w)) y)
+    (hKt : ∀ᶠ y in 𝓝 x, DifferentiableAt ℝ (Kt (φ w)) y)
+    (hXs : DifferentiableAt ℝ (ω.hamiltonianVectorField (Ks (φ w))) x)
+    (hXt : DifferentiableAt ℝ (ω.hamiltonianVectorField (Kt (φ w))) x) (v : ℝ × ℝ) :
+    fderiv ℝ (ω.hamiltonianVectorField (perturbationPullback φ Ks Kt v w)) x =
+      (fderiv ℝ φ w v).1 • fderiv ℝ (ω.hamiltonianVectorField (Ks (φ w))) x +
+        (fderiv ℝ φ w v).2 • fderiv ℝ (ω.hamiltonianVectorField (Kt (φ w))) x := by
+  have hX : ω.hamiltonianVectorField (perturbationPullback φ Ks Kt v w) =ᶠ[𝓝 x]
+      fun y ↦ (fderiv ℝ φ w v).1 • ω.hamiltonianVectorField (Ks (φ w)) y +
+        (fderiv ℝ φ w v).2 • ω.hamiltonianVectorField (Kt (φ w)) y :=
+    (hKs.and hKt).mono fun y hy ↦ ω.hamiltonianVectorField_perturbationPullback hy.1 hy.2 v
+  rw [hX.fderiv_eq]
+  exact ((hXs.hasFDerivAt.const_smul _).add (hXt.hasFDerivAt.const_smul _)).fderiv
 
 /-- **Naturality of the perturbed derivative.** The perturbed derivative of the reparametrized
 map `u ∘ φ` for the pulled-back datum `φ^*K` is `(du - X_K) ∘ dφ`. -/

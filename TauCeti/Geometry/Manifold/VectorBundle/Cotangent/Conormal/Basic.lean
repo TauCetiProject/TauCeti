@@ -87,18 +87,10 @@ theorem finrank_add_finrank_conormalSpace [CompleteSpace 𝕜] [FiniteDimensiona
     finrank 𝕜 F + finrank 𝕜 (conormalSpace J I i q) = finrank 𝕜 E := by
   let L : F →L[𝕜] E := mfderiv J I i q
   have : FiniteDimensional 𝕜 F := FiniteDimensional.of_injective L.toLinearMap hi
-  let pre : (E →L[𝕜] 𝕜) →L[𝕜] F →L[𝕜] 𝕜 := (ContinuousLinearMap.compL 𝕜 F E 𝕜).flip L
-  have hrange : LinearMap.range (pre : (E →L[𝕜] 𝕜) →ₗ[𝕜] F →L[𝕜] 𝕜) = ⊤ :=
-    LinearMap.range_eq_top.mpr (ContinuousLinearMap.surjective_compL_flip_of_injective hi)
-  have hker : LinearMap.ker (pre : (E →L[𝕜] 𝕜) →ₗ[𝕜] F →L[𝕜] 𝕜) = conormalSpace J I i q := by
-    ext p
-    -- `TangentSpace I (i q)` is `E` by definition, and `pre p` is `p ∘L L`, so both
-    -- memberships say that `p` vanishes on the image of `L`.
-    exact LinearMap.mem_ker.trans mem_conormalSpace_iff.symm
-  have hrn := LinearMap.finrank_range_add_finrank_ker (pre : (E →L[𝕜] 𝕜) →ₗ[𝕜] F →L[𝕜] 𝕜)
-  rw [hrange, hker, finrank_top, ContinuousLinearMap.dual_finrank_eq,
-    ContinuousLinearMap.dual_finrank_eq] at hrn
-  exact hrn
+  -- The conormal space is the annihilator of the range of `L`, which has dimension `dim F`.
+  rw [← LinearMap.finrank_range_of_inj (f := L.toLinearMap) hi, conormalSpace]
+  -- `TangentSpace I (i q)` is `E` and `TangentSpace J q` is `F` by definition.
+  exact StrongDual.finrank_add_finrank_polarSubmodule (𝕜 := 𝕜) (E := E) _
 
 /-! ### The conormal set -/
 
@@ -107,12 +99,12 @@ annihilate the tangent image `di_q (T_q Q)`. For an embedded submanifold this is
 bundle `N*Q ⊆ T*M`. -/
 def conormal (J : ModelWithCorners 𝕜 F H') (I : ModelWithCorners 𝕜 E H) (i : Q → M) :
     Set (CotangentBundle I M) :=
-  {w | ∃ q, i q = w.proj ∧ w.2 ∘L mfderiv J I i q = 0}
+  {w | ∃ q, i q = w.proj ∧ w.snd ∘L mfderiv J I i q = 0}
 
 /-- A covector is conormal to `i` when it lies over some `i q` and vanishes on the image of
 `di_q`. -/
 theorem mem_conormal_iff {i : Q → M} {w : CotangentBundle I M} :
-    w ∈ conormal J I i ↔ ∃ q, i q = w.proj ∧ w.2 ∘L mfderiv J I i q = 0 :=
+    w ∈ conormal J I i ↔ ∃ q, i q = w.proj ∧ w.snd ∘L mfderiv J I i q = 0 :=
   Iff.rfl
 
 /-- A covector is conormal to `i` exactly when the cotangent relation of `i` relates a zero

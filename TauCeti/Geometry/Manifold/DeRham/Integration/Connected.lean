@@ -55,7 +55,7 @@ theorem extendByZero_eq_of_integral_eq_of_nonempty_inter
     extendByZero hU n a = extendByZero hV n b := by
   have : SecondCountableTopology U := Φ.toHomeomorph.symm.secondCountableTopology
   have hi := Topology.IsOpenEmbedding.inclusion (inf_le_left : U ⊓ V ≤ U)
-    ((U ⊓ V).isOpen.preimage (continuous_subtype_val : Continuous (Subtype.val : U → M)))
+    ((U ⊓ V).isOpen.preimage (continuous_subtypeVal : Continuous (Subtype.val : U → M)))
   have : SecondCountableTopology (U ⊓ V : Opens M) := hi.isEmbedding.secondCountableTopology
   have : LocallyCompactSpace U := Φ.toHomeomorph.symm.isOpenEmbedding.locallyCompactSpace
   have : LocallyCompactSpace (U ⊓ V : Opens M) := hi.locallyCompactSpace
@@ -96,7 +96,7 @@ private theorem extendByZero_normalized_eq_of_cover
   have hgc : IsLocallyConstant g := by
     rw [IsLocallyConstant.iff_eventually_eq]
     intro x
-    filter_upwards [((U (k x)).isOpen.preimage continuous_subtype_val).mem_nhds (hk x)] with y hy
+    filter_upwards [((U (k x)).isOpen.preimage continuous_subtypeVal).mem_nhds (hk x)] with y hy
     exact hg y (k x) hy
   exact (hg ⟨Φ i 0, hU i (Φ i 0).property⟩ i (Φ i 0).property).symm.trans
     ((hgc.apply_eq_of_preconnectedSpace _ _).trans

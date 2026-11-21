@@ -14,7 +14,9 @@ import Mathlib.Algebra.Homology.HomologySequenceLemmas
 A map of topological pairs `f : (X, A) ⟶ (Y, B)` and a local coefficient system `L` on `Y`
 induce maps from the relative twisted chains and homology of `(X, A)` with coefficients in
 `f⁎L` to those of `(Y, B)` with coefficients in `L`.  The construction descends the map on
-ambient twisted chains through the quotient by the subspace chains.
+ambient twisted chains through the quotient by the subspace chains. When the ambient map is
+injective and sends no point outside `A` into `B`, for instance for an inclusion `(X, A) ⟶ (Y, A)`,
+the relative map is injective in every degree (`TopPair.twistedChainComplexMap_f_injective`).
 
 The coefficient system on `A` obtained by first pulling `L` back to `X` and then restricting to
 `A` is canonically isomorphic to the pullback to `A` of the restriction of `L` to `B`.  This
@@ -131,6 +133,31 @@ lemma twistedChainComplexMap_f_twistedChainComplexπ_f_apply {k : ℕ}
     twistedChainComplexπ_comp_twistedChainComplexMap, HomologicalComplex.comp_f,
     ConcreteCategory.comp_apply]
 
+/-- **Relative twisted chains of a subpair inject.** If the ambient component of a map of pairs
+`f : (X, A) ⟶ (Y, B)` is injective and every point of `X` sent into `B` lies in `A`, then `f`
+induces an injective map of relative twisted chains in every degree. For instance, this applies
+to the inclusion `(X, A) ⟶ (Y, A)` for subspaces `A ⊆ X ⊆ Y`. -/
+theorem twistedChainComplexMap_f_injective [Mono (Hom.fst f)]
+    (hf : Hom.fst f ⁻¹' Set.range Q.map ⊆ Set.range P.map) (k : ℕ) :
+    Function.Injective ((twistedChainComplexMap f L).f k).hom := by
+  intro y y' h
+  refine P.twistedChainComplex_ext_coeff _ fun σ hσ ↦ ?_
+  -- The image of `σ` does not lie in `B` either.
+  have hσ' : ¬Set.range (TopCat.simplexMap ((TopCat.toSSet.map (Hom.fst f)).app _ σ)) ⊆
+      Set.range Q.map := fun h' ↦ hσ fun x ⟨p, hp⟩ ↦ hf (h' ⟨p, by
+        rw [TopCat.simplexMap_app, ContinuousMap.comp_apply, hp]⟩)
+  -- So the coefficient on `σ` is the coefficient of the image on the image simplex.
+  have key (z : (P.twistedChainComplex
+      ((LocalCoefficientSystem.pullback (Hom.fst f).hom).obj L)).X k) :
+      (P.twistedChainComplexCoeff _ σ hσ).hom z =
+        (Q.twistedChainComplexCoeff L _ hσ').hom (((twistedChainComplexMap f L).f k).hom z) := by
+    obtain ⟨a, rfl⟩ := P.twistedChainComplexπ_f_surjective _ z
+    rw [twistedChainComplexMap_f_twistedChainComplexπ_f_apply,
+      twistedChainComplexCoeff_twistedChainComplexπ_f_apply,
+      twistedChainComplexCoeff_twistedChainComplexπ_f_apply,
+      LocalCoefficientSystem.twistedChainComplexCoeff_twistedChainComplexMap_f_apply]
+  rw [key, key, h]
+
 /-- Relative maps of pairs commute with a change of coefficients on the target pair. -/
 @[reassoc]
 lemma twistedChainComplexMap_naturality
@@ -200,6 +227,18 @@ lemma twistedChainComplexMap_id (L : LocalCoefficientSystem.{u, v, max v w} R P.
     (Hom.fst_id P),
     LocalCoefficientSystem.twistedChainComplexMap_id]
   rw [Iso.app_hom]
+
+variable {f} in
+/-- Equal maps of pairs induce the same map of relative twisted chains, after the canonical
+identification of their pulled-back coefficient systems. -/
+lemma twistedChainComplexMap_congr {f' : P ⟶ Q} (h : f = f') :
+    twistedChainComplexMap f L =
+      P.twistedChainComplexCoefficientMap
+          (eqToHom (congrArg (fun g : P ⟶ Q ↦
+            (LocalCoefficientSystem.pullback (Hom.fst g).hom).obj L) h)) ≫
+        twistedChainComplexMap f' L := by
+  subst h
+  simp
 
 variable {S : TopPair.{v}} (g : Q ⟶ S)
   (K : LocalCoefficientSystem.{u, v, max v w} R S.fst)
@@ -331,9 +370,9 @@ lemma twistedHomologyMap_congr {f' : P ⟶ Q} (h : f = f') (k : ℕ) :
       P.twistedHomologyCoefficientMap
           (eqToHom (congrArg (fun g : P ⟶ Q ↦
             (LocalCoefficientSystem.pullback (Hom.fst g).hom).obj L) h)) k ≫
-        twistedHomologyMap f' L k := by
-  subst h
-  simp
+        twistedHomologyMap f' L k :=
+  (congrArg (fun φ ↦ HomologicalComplex.homologyMap φ k) (twistedChainComplexMap_congr L h)).trans
+    (HomologicalComplex.homologyMap_comp _ _ _)
 
 /-- The composition law for maps on relative twisted homology. -/
 @[simp, reassoc]

@@ -262,10 +262,10 @@ def conjNormal : G →* ContinuousAut N where
   toFun g :=
     { MulAut.conjNormal g with
       continuous_toFun := continuous_induced_rng.mpr <|
-        ((continuous_subtype_val.const_mul g).mul_const g⁻¹).congr
+        ((continuous_subtypeVal.const_mul g).mul_const g⁻¹).congr
           fun n ↦ (MulAut.conjNormal_apply g n).symm
       continuous_invFun := continuous_induced_rng.mpr <|
-        ((continuous_subtype_val.const_mul g⁻¹).mul_const g).congr
+        ((continuous_subtypeVal.const_mul g⁻¹).mul_const g).congr
           fun n ↦ (MulAut.conjNormal_symm_apply g n).symm }
   map_one' := toMulAut_injective (map_one MulAut.conjNormal)
   map_mul' a b := toMulAut_injective (map_mul MulAut.conjNormal a b)

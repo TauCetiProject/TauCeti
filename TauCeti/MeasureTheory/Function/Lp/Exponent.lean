@@ -31,6 +31,8 @@ continuous linear map, which does not change the underlying almost everywhere eq
   bound `ν(univ) ^ (1/p - 1/q)` on the operator norm.
 * `MeasureTheory.Lp.ofExponentLEL_self`, `MeasureTheory.Lp.ofExponentLEL_ofExponentLEL`: the
   identity at `p = q` and transitivity.
+* `ContinuousLinearMap.compLpL_ofExponentLEL`: the inclusion commutes with postcomposition by a
+  continuous linear map.
 
 ## References
 
@@ -51,12 +53,12 @@ variable {α 𝕜 F : Type*} [MeasurableSpace α] {ν : Measure α} [IsFiniteMea
 omit [Fact (1 ≤ q)] in
 /-- The norm bound of the inclusion `L^q(ν) → Lᵖ(ν)`, on the underlying class. -/
 private theorem norm_mk_le (hpq : p ≤ q) (f : Lp F q ν) :
-    ‖(⟨f, Lp.antitone hpq f.2⟩ : Lp F p ν)‖ ≤
+    ‖(⟨f, Lp.antitone hpq f.property⟩ : Lp F p ν)‖ ≤
       (ν Set.univ ^ (1 / p.toReal - 1 / q.toReal)).toReal * ‖f‖ := by
   have hc : ν Set.univ ^ (1 / p.toReal - 1 / q.toReal) ≠ ∞ :=
     ENNReal.rpow_ne_top_of_nonneg (ENNReal.one_div_toReal_sub_one_div_toReal_nonneg
       (zero_lt_one.trans_le (Fact.out : (1 : ℝ≥0∞) ≤ p)).ne' hpq) (measure_ne_top ν _)
-  rw [Lp.norm_def, Lp.coeFn_mk (Lp.antitone hpq f.2), Lp.norm_def, mul_comm,
+  rw [Lp.norm_def, Lp.coeFn_mk (Lp.antitone hpq f.property), Lp.norm_def, mul_comm,
     ← ENNReal.toReal_mul]
   exact ENNReal.toReal_mono (ENNReal.mul_ne_top (Lp.eLpNorm_ne_top f) hc)
     (eLpNorm_le_eLpNorm_mul_rpow_measure_univ hpq (Lp.aestronglyMeasurable f))
@@ -71,14 +73,14 @@ most `ν(univ) ^ (1/p - 1/q)`; it does not change the underlying almost everywhe
 class. -/
 def ofExponentLEL (hpq : p ≤ q) : Lp F q ν →L[𝕜] Lp F p ν :=
   LinearMap.mkContinuous
-    { toFun f := ⟨f, Lp.antitone hpq f.2⟩
+    { toFun f := ⟨f, Lp.antitone hpq f.property⟩
       map_add' _ _ := rfl
       map_smul' _ _ := rfl }
     (ν Set.univ ^ (1 / p.toReal - 1 / q.toReal)).toReal (norm_mk_le hpq)
 
 /-- Lowering the exponent keeps the underlying almost everywhere equivalence class. -/
 theorem ofExponentLEL_apply (hpq : p ≤ q) (f : Lp F q ν) :
-    ofExponentLEL 𝕜 F hpq f = ⟨f, Lp.antitone hpq f.2⟩ :=
+    ofExponentLEL 𝕜 F hpq f = ⟨f, Lp.antitone hpq f.property⟩ :=
   (rfl)
 
 /-- Lowering the exponent does not change the underlying function. -/
@@ -119,5 +121,15 @@ end NormedRing
 theorem opNorm_ofExponentLEL_le [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 F] (hpq : p ≤ q) :
     ‖ofExponentLEL (ν := ν) 𝕜 F hpq‖ ≤ (ν Set.univ ^ (1 / p.toReal - 1 / q.toReal)).toReal :=
   LinearMap.mkContinuous_norm_le _ ENNReal.toReal_nonneg _
+
+/-- Lowering the exponent commutes with postcomposition by a continuous (semi)linear map. -/
+theorem _root_.ContinuousLinearMap.compLpL_ofExponentLEL {𝕜' E : Type*}
+    [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜'] [NormedAddCommGroup E]
+    [NormedSpace 𝕜 E] [NormedSpace 𝕜' F] {σ : 𝕜 →+* 𝕜'} [RingHomIsometric σ] (L : E →SL[σ] F)
+    (hpq : p ≤ q) (f : Lp E q ν) :
+    L.compLpL p ν (ofExponentLEL 𝕜 E hpq f) = ofExponentLEL 𝕜' F hpq (L.compLpL q ν f) := by
+  ext1
+  filter_upwards [L.coeFn_compLpL (ofExponentLEL 𝕜 E hpq f), L.coeFn_compLpL f] with x hp hq
+  rw [hp, coeFn_ofExponentLEL, coeFn_ofExponentLEL, hq]
 
 end MeasureTheory.Lp

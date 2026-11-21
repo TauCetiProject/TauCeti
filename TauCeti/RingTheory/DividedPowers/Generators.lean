@@ -328,7 +328,8 @@ private theorem coeff_ratDpow_X_mul_Y
     DividedPowers.RatAlgebra.dpow_eq_inv_fact_smul _ γ hx1,
     Ring.inverse_eq_inv', MvPolynomial.X_pow_eq_monomial,
     MvPolynomial.X_pow_eq_monomial, smul_mul_smul_comm, MvPolynomial.monomial_mul_monomial,
-    mul_one, MvPolynomial.coeff_smul, MvPolynomial.coeff_monomial]
+    mul_one, AddMonoidAlgebra.coeff_smul, Finsupp.coe_smul, Pi.smul_apply, smul_eq_mul,
+    MvPolynomial.coeff_monomial]
   have hiff : Finsupp.single (0 : Fin 2) a + Finsupp.single 1 b =
       Finsupp.single 0 c + Finsupp.single 1 d ↔ (a, b) = (c, d) := by
     constructor

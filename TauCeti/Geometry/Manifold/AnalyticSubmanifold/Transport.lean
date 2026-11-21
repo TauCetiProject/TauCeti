@@ -271,8 +271,8 @@ private theorem IsMAnalyticSubmanifold.exists_linearSliceCharts {e : E ≃L[𝕜
     set C := (chartAt H (x : M)).extendTrans I e.toHomeomorph
     have hC_eq : ⇑C = e ∘ extChartAt I (x : M) := by ext y; simp [C, extChartAt]
     have hS : IsAnalyticSubmanifold d (C '' (s ∩ C.source)) := by
-      simpa [hC_eq, C, extChartAt] using hs.image_extChartAt x.2
-    exact hS.exists_isAnalyticChart (C x) ⟨x, ⟨x.2, by simp [C]⟩, rfl⟩
+      simpa [hC_eq, C, extChartAt] using hs.image_extChartAt x.property
+    exact hS.exists_isAnalyticChart (C x) ⟨x, ⟨x.property, by simp [C]⟩, rfl⟩
   choose φ hφx hφ using hchart
   let A := splitAt (𝕜 := 𝕜) (M := 𝕜) hd
   let c (x : s) : OpenPartialHomeomorph M ((Fin d → 𝕜) × (Fin (n - d) → 𝕜)) :=

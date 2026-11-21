@@ -207,7 +207,7 @@ theorem mem_iInf_map_algebraMap_pow_iff [IsNoetherianRing R] [Module.Finite R A]
     simp only [Submodule.mem_iInf, pow_smul_top_eq_restrictScalars_map_pow,
       Submodule.restrictScalars_mem]
   rw [hmem, I.mem_iInf_smul_pow_eq_bot_iff]
-  exact ⟨fun ⟨r, hr⟩ ↦ ⟨r, r.2, by rwa [← Algebra.smul_def]⟩,
+  exact ⟨fun ⟨r, hr⟩ ↦ ⟨r, r.property, by rwa [← Algebra.smul_def]⟩,
     fun ⟨r, hrI, hr⟩ ↦ ⟨⟨r, hrI⟩, by rwa [Algebra.smul_def]⟩⟩
 
 /-- **The powers of an extended ideal meet in zero** when `A` has no zero divisors and no scalar in

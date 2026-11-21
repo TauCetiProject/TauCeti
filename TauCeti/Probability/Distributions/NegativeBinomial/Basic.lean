@@ -286,10 +286,10 @@ theorem geometricMeasure_eq_negativeBinomialMeasure_one (p : unitInterval) (hp :
     geometricMeasure p = negativeBinomialMeasure 1 p := by
   have hpR : (0 : ℝ) < p := by grind
   let _ : IsProbabilityMeasure (negativeBinomialMeasure 1 p) :=
-    isProbabilityMeasure_negativeBinomialMeasure zero_le_one hpR p.2.2
+    isProbabilityMeasure_negativeBinomialMeasure zero_le_one hpR p.property.2
   refine Measure.ext_of_measureReal_singleton fun k => ?_
   rw [geometricMeasure_real_singleton hp,
-    negativeBinomialMeasure_real_singleton zero_le_one hpR p.2.2,
+    negativeBinomialMeasure_real_singleton zero_le_one hpR p.property.2,
     negativeBinomialWeightReal_eq_coeff zero_le_one]
   have hp_rpow : Real.rpow (p : ℝ) 1 = p := Real.rpow_one _
   rw [hp_rpow]

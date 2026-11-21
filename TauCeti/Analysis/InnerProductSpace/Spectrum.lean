@@ -10,6 +10,7 @@ public import Mathlib.Analysis.InnerProductSpace.Positive
 public import Mathlib.Analysis.InnerProductSpace.Spectrum
 public import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Basic
 public import TauCeti.Analysis.InnerProductSpace.BasisSpan
+public import TauCeti.Analysis.InnerProductSpace.Symmetric.Basic
 public import TauCeti.Data.Fin.Tuple.Sort
 public import TauCeti.LinearAlgebra.Eigenspace.Anticommute
 import Mathlib.LinearAlgebra.Eigenspace.ContinuousLinearMap
@@ -78,6 +79,8 @@ nonzero eigenvalue, which is the form the eigenvalue problem of an elliptic oper
 * `finrank_positiveSpectralSubspace_eq_finrank_negativeSpectralSubspace_of_anticommute`, in the
   same namespace: in that case the positive and negative spectral subspaces have the same
   dimension.
+* `LinearMap.IsSymmetric.eigenvalues_neg`: the ordered eigenvalues of `-T` are the negated
+  eigenvalues of `T` in reverse order.
 * `LinearMap.IsPositive.det_nonneg`: a positive operator on a finite-dimensional space has
   nonnegative determinant, the product of its eigenvalues.
 * `LinearMap.IsPositive.abs_det_neg`: on a real space, `|det (-S)| = det S` for positive `S`.
@@ -140,7 +143,7 @@ theorem exists_hilbertBasis_forall_hasEigenvector_of_dense_eigenspaces
   have hv : Orthonormal 𝕜 v :=
     hT'.orthonormal_sigma_orthonormal fun mu => (bw mu).orthonormal
   have hinj : Function.Injective v := hv.linearIndependent.injective
-  have hmem : ∀ p, v p ∈ eigenspace (T : Module.End 𝕜 E) p.1 := fun p => (bw p.1 p.2).2
+  have hmem : ∀ p, v p ∈ eigenspace (T : Module.End 𝕜 E) p.1 := fun p => (bw p.1 p.2).property
   have hvspan : (Submodule.span 𝕜 (Set.range v))ᗮ = ⊥ := by
     refine le_antisymm ?_ bot_le
     rw [← hspan, ← Submodule.iInf_orthogonal]
@@ -238,6 +241,19 @@ theorem inner_sub_apply_of_apply_eq_smul_of_apply_eq_smul {T S : E →ₗ[𝕜] 
         rw [hx, hy, inner_smul_right, inner_smul_left, hlam, sub_mul]
 
 variable {n : ℕ} [FiniteDimensional 𝕜 E] {T : E →ₗ[𝕜] E}
+
+/-- On an eigenvector of the ordered eigenbasis, the diagonal pairing is its eigenvalue. -/
+theorem inner_apply_eigenvectorBasis (hT : T.IsSymmetric) (hn : Module.finrank 𝕜 E = n)
+    (j : Fin n) :
+    ⟪T (hT.eigenvectorBasis hn j), hT.eigenvectorBasis hn j⟫_𝕜 = hT.eigenvalues hn j := by
+  simp [hT.apply_eigenvectorBasis, inner_smul_left]
+
+/-- On an eigenvector of the ordered eigenbasis, the real part of the diagonal pairing is its
+eigenvalue. -/
+theorem re_inner_apply_eigenvectorBasis (hT : T.IsSymmetric) (hn : Module.finrank 𝕜 E = n)
+    (j : Fin n) :
+    RCLike.re ⟪T (hT.eigenvectorBasis hn j), hT.eigenvectorBasis hn j⟫_𝕜 = hT.eigenvalues hn j := by
+  rw [hT.inner_apply_eigenvectorBasis hn j, RCLike.ofReal_re]
 
 /-! ### Finite-dimensional eigenvector spans -/
 
@@ -524,6 +540,28 @@ theorem finrank_positiveSpectralSubspace_eq_finrank_negativeSpectralSubspace_of_
     fun j hj ↦ ⟨j.rev, ?_, Fin.rev_rev j⟩
   · simpa [hT.eigenvalues_rev_of_anticommute hn e h] using hi
   · simpa [hT.eigenvalues_rev_of_anticommute hn e h] using hj
+
+/-! ### Eigenvalues of the negation -/
+
+/-- The decreasingly ordered eigenvalues of `-T` are the negatives of those of `T` in reverse
+order: the `i`-th largest eigenvalue of `-T` is minus the `i`-th smallest eigenvalue of `T`. -/
+theorem eigenvalues_neg (hT : T.IsSymmetric) (hn : Module.finrank 𝕜 E = n) (i : Fin n) :
+    hT.neg.eigenvalues hn i = -hT.eigenvalues hn i.rev :=
+  congrFun (hT.neg.eigenvalues_eq_of_eigenbasis hn ((hT.eigenvectorBasis hn).reindex Fin.revPerm)
+    (fun _ _ hjk ↦ neg_le_neg (hT.eigenvalues_antitone hn (Fin.rev_le_rev.2 hjk)))
+    fun j ↦ by simp [hT.apply_eigenvectorBasis]) i
+
+/-! ### Determinant of an affine function of the operator -/
+
+/-- The determinant of `c·Id + d·T` for a symmetric `T` is `∏_i (c + d·λ_i(T))`, where `λ_i(T)`
+are the eigenvalues of `T`. -/
+theorem det_smul_id_add_smul (hT : T.IsSymmetric) (hn : Module.finrank 𝕜 E = n) (c d : 𝕜) :
+    LinearMap.det (c • LinearMap.id + d • T) = ∏ i, (c + d * (hT.eigenvalues hn i : 𝕜)) := by
+  let b := (hT.eigenvectorBasis hn).toBasis
+  rw [← LinearMap.det_toMatrix b, map_add, map_smul, map_smul, LinearMap.toMatrix_id,
+    hT.toMatrix_eigenvectorBasis hn, Matrix.smul_one_eq_diagonal, ← Matrix.diagonal_smul,
+    Matrix.diagonal_add, Matrix.det_diagonal]
+  simp [smul_eq_mul]
 
 end LinearMap.IsSymmetric
 

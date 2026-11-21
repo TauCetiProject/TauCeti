@@ -219,9 +219,9 @@ theorem add_scalar_mem_traceDetFiber {t d : R} {M : Matrix (Fin 2) (Fin 2) R}
 determinant `d` to those of trace `t + 2 r` and determinant `d + r t + r²`. -/
 def traceDetFiberAddScalarEquiv (t d r : R) :
     traceDetFiber (Fin 2) t d ≃ traceDetFiber (Fin 2) (t + 2 * r) (d + r * t + r ^ 2) where
-  toFun M := ⟨M.1 + scalar (Fin 2) r, add_scalar_mem_traceDetFiber M.2 r⟩
-  invFun M := ⟨M.1 - scalar (Fin 2) r, by
-    obtain ⟨ht, hd⟩ := mem_traceDetFiber.mp M.2
+  toFun M := ⟨M.val + scalar (Fin 2) r, add_scalar_mem_traceDetFiber M.property r⟩
+  invFun M := ⟨M.val - scalar (Fin 2) r, by
+    obtain ⟨ht, hd⟩ := mem_traceDetFiber.mp M.property
     rw [trace_fin_two] at ht
     rw [det_fin_two] at hd
     rw [mem_traceDetFiber, trace_fin_two, det_fin_two]
@@ -234,7 +234,7 @@ def traceDetFiberAddScalarEquiv (t d r : R) :
 /-- `traceDetFiberAddScalarEquiv t d r` adds the scalar matrix `r`. -/
 @[simp]
 theorem traceDetFiberAddScalarEquiv_apply_coe (t d r : R) (M : traceDetFiber (Fin 2) t d) :
-    (traceDetFiberAddScalarEquiv t d r M : Matrix (Fin 2) (Fin 2) R) = M.1 + scalar (Fin 2) r :=
+    (traceDetFiberAddScalarEquiv t d r M : Matrix (Fin 2) (Fin 2) R) = M.val + scalar (Fin 2) r :=
   (rfl)
 
 /-- The inverse of `traceDetFiberAddScalarEquiv t d r` subtracts the scalar matrix `r`. -/
@@ -242,7 +242,7 @@ theorem traceDetFiberAddScalarEquiv_apply_coe (t d r : R) (M : traceDetFiber (Fi
 theorem traceDetFiberAddScalarEquiv_symm_apply_coe (t d r : R)
     (M : traceDetFiber (Fin 2) (t + 2 * r) (d + r * t + r ^ 2)) :
     ((traceDetFiberAddScalarEquiv t d r).symm M : Matrix (Fin 2) (Fin 2) R) =
-      M.1 - scalar (Fin 2) r :=
+      M.val - scalar (Fin 2) r :=
   (rfl)
 
 end TauCeti

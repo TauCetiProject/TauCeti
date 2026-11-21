@@ -165,19 +165,15 @@ theorem isClosed_positiveCone (J : AlmostComplexStructure V) :
 /-- The Kähler form of an orthogonal `J` is a positive `(1,1)`-form. -/
 theorem kahlerForm_mem_positiveCone {J : AlmostComplexStructure V}
     (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) : J.kahlerForm ∈ J.positiveCone :=
-  ⟨lieMap_kahlerForm hJ, fun v ↦ by
+  ⟨lieMap_kahlerForm J, fun v ↦ by
     rw [inner_kahlerForm_ιMulti hJ]; exact real_inner_self_nonneg⟩
 
 /-- A complex line `v ∧ J v` is a positive `(1,1)`-form, for an orthogonal `J`. -/
 theorem ιMulti_mem_positiveCone {J : AlmostComplexStructure V}
     (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) (v : V) : ιMulti ℝ 2 ![v, J v] ∈ J.positiveCone := by
-  refine ⟨?_, fun w ↦ ?_⟩
-  · rw [lieMap_two_apply_ιMulti]
-    refine ext_inner_ιMulti_two fun a b ↦ ?_
-    simp only [inner_add_left, inner_ιMulti_two, inner_zero_left, apply_apply, inner_neg_left]
-    ring
-  · rw [inner_ιMulti_two, hJ, inner_apply_left hJ]
-    nlinarith [sq_nonneg ⟪v, w⟫, sq_nonneg ⟪v, J w⟫]
+  refine ⟨lieMap_ιMulti_apply J v, fun w ↦ ?_⟩
+  rw [inner_ιMulti_two, hJ, inner_apply_left hJ]
+  nlinarith [sq_nonneg ⟪v, w⟫, sq_nonneg ⟪v, J w⟫]
 
 /-- **Distance to the cone of positive `(1,1)`-forms.** For an orthogonal `J`, if
 `η(v, J v) ≥ -s ‖v‖²` for every `v`, with `s ≥ 0`, then the distance from `η` to the cone is at
@@ -192,7 +188,7 @@ theorem infDist_positiveCone_le {J : AlmostComplexStructure V}
   set κ := η + (4⁻¹ : ℝ) • D (D η) + s • J.kahlerForm
   have hκ : κ ∈ J.positiveCone := by
     refine ⟨?_, fun v ↦ ?_⟩
-    · rw [map_add, lieMap_add_smul_lieMap_lieMap, map_smul, lieMap_kahlerForm hJ, smul_zero,
+    · rw [map_add, lieMap_add_smul_lieMap_lieMap, map_smul, lieMap_kahlerForm J, smul_zero,
         add_zero]
     · have hB := LinearMap.congr_fun₂ (hermitianForm_lieMap hJ (D η)) v v
       rw [hermitianForm_apply_self, LinearMap.zero_apply, LinearMap.zero_apply] at hB

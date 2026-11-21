@@ -261,7 +261,7 @@ theorem ofPrincipal_id_dpow (hI : DividedPowers I) {x : A} (hx : I = Ideal.span 
     (n : ℕ) (z : A) :
     (hI.ofPrincipal hx (RingHom.id A)).dpow n z = hI.dpow n z := by
   by_cases hz : z ∈ I
-  · have h := (hI.isDPMorphism_ofPrincipal hx (RingHom.id A)).2 (n := n) z hz
+  · have h := (hI.isDPMorphism_ofPrincipal hx (RingHom.id A)).dpow_comp (n := n) z hz
     simpa using h
   · rw [DividedPowers.dpow_null _ (by rwa [Ideal.map_id]), hI.dpow_null hz]
 
@@ -496,10 +496,10 @@ theorem dpow_sum_of_isDPMorphism (hI : DividedPowers I) {J : Ideal B} (hJ : Divi
     {ι : Type*} [DecidableEq ι] {s : Finset ι} (b : ι → B) {x : ι → A}
     (hx : ∀ i ∈ s, x i ∈ I) :
     hJ.dpow n (∑ i ∈ s, b i * f (x i)) = hI.extCoeff f n s b x := by
-  rw [hJ.dpow_sum fun i hi ↦ J.mul_mem_left _ (hf.1 (Ideal.mem_map_of_mem f (hx i hi))),
+  rw [hJ.dpow_sum fun i hi ↦ J.mul_mem_left _ (hf.ideal_comp (Ideal.mem_map_of_mem f (hx i hi))),
     hI.extCoeff_eq_sum_sym]
   refine sum_congr rfl fun k _ ↦ prod_congr rfl fun i hi ↦ ?_
-  rw [hJ.dpow_mul (hf.1 (Ideal.mem_map_of_mem f (hx i hi))), hf.2 _ (hx i hi)]
+  rw [hJ.dpow_mul (hf.ideal_comp (Ideal.mem_map_of_mem f (hx i hi))), hf.dpow_comp _ (hx i hi)]
 
 /-- **Invariance under finite scalar substitution**: for `x i ∈ I`, `a i j ∈ A`, and `c j ∈ B`,
 setting `b i = ∑ j ∈ t, f (a i j) * c j` and `y j = ∑ i ∈ s, a i j * x i` gives
@@ -706,7 +706,7 @@ theorem ofFlat_comp_dpow (hI : DividedPowers I) {C : Type*} [CommRing C]
   have hm : IsDPMorphism hI h₁ (g.comp f) := by
     have hcomp := (isDPMorphism_ofFlat (hI.ofFlat hf) hg).comp
       ((hI.ofFlat hf).ofFlat hg) (hI.isDPMorphism_ofFlat hf)
-    exact ⟨le_rfl, fun a ha ↦ by simpa [h₁] using hcomp.2 a ha⟩
+    exact ⟨le_rfl, fun a ha ↦ by simpa [h₁] using hcomp.dpow_comp a ha⟩
   have heq : h₁ = hI.ofFlat (hf.comp hg) := hI.eq_ofFlat_of_isDPMorphism (hf.comp hg) hm
   simpa [h₁] using congrArg (fun h : DividedPowers (I.map (g.comp f)) ↦ h.dpow n z) heq
 
@@ -751,7 +751,7 @@ private noncomputable def locDpow (hI : DividedPowers I) (S : Submonoid A) (B : 
   open scoped Classical in
   if hz : z ∈ I.map (algebraMap A B) then
     have h := (IsLocalization.mem_map_algebraMap_iff S B).mp hz
-    IsLocalization.mk' B (hI.dpow n h.choose.1.1) (h.choose.2 ^ n)
+    IsLocalization.mk' B (hI.dpow n h.choose.1.val) (h.choose.2 ^ n)
   else 0
 
 private theorem locDpow_mk' (hI : DividedPowers I) (S : Submonoid A) (B : Type*)
@@ -763,7 +763,7 @@ private theorem locDpow_mk' (hI : DividedPowers I) (S : Submonoid A) (B : Type*)
       ⟨⟨⟨x, hx⟩, s⟩, IsLocalization.mk'_spec B x s⟩
   simp only [locDpow, dite_eq_left hz]
   set h := (IsLocalization.mem_map_algebraMap_iff S B).mp hz
-  exact mk'_dpow_eq_of_mk'_eq hI S B h.choose.1.2 hx
+  exact mk'_dpow_eq_of_mk'_eq hI S B h.choose.1.property hx
     (IsLocalization.mk'_eq_iff_eq_mul.mpr h.choose_spec.symm) n
 
 private theorem locDpow_add (hI : DividedPowers I) (S : Submonoid A) (B : Type*)

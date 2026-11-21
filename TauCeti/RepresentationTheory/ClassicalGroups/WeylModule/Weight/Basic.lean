@@ -112,7 +112,7 @@ variable [CommRing k] [Algebra ℚ k]
 /-- **The content of the row filling is the weight of the shape**: the number of labels of a
 `μ`-tableau lying in row `j` is the length of that row. -/
 theorem weightOfMultiset_ofFn_rowFilling (t : YoungTableau μ) (hn : μ.colLen 0 ≤ n) :
-    weightOfMultiset (Sym.ofFn (rowFilling t hn) : Multiset (Fin n)) = (weightOfShape n μ).1 := by
+    weightOfMultiset (Sym.ofFn (rowFilling t hn) : Multiset (Fin n)) = (weightOfShape n μ).val := by
   classical
   funext j
   have hset : (Finset.univ.filter fun x => rowFilling t hn x = j)
@@ -222,10 +222,10 @@ theorem sum_le_sum_weightOfShape_of_weightSpace_weylRep_ne_bot (t : YoungTableau
     {l : Fin n → ℤ}
     (hl : weightSpace (W := (weylModule k n t).toSubmodule) (weylRep k n t) l ≠ ⊥) (m : ℕ) :
     ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, l j ≤
-      ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, (weightOfShape n μ).1 j := by
+      ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, (weightOfShape n μ).val j := by
   classical
   rcases le_or_gt (μ.colLen 0) n with hn | hn
-  · have hsum : ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, (weightOfShape n μ).1 j =
+  · have hsum : ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, (weightOfShape n μ).val j =
         ((Finset.univ.filter fun x => rowIndex t x < m).card : ℤ) := by
       rw [← weightOfMultiset_ofFn_rowFilling t hn, sum_weightOfMultiset_ofFn_filter_val_lt]
       simp only [val_rowFilling]
@@ -241,8 +241,8 @@ permuting the coordinates preserves occurrence, so the partial-sum bound applies
 theorem sum_dominantWeightOf_le_sum_weightOfShape_of_weightSpace_weylRep_ne_bot
     (t : YoungTableau μ) {l : Fin n → ℤ}
     (hl : weightSpace (W := (weylModule k n t).toSubmodule) (weylRep k n t) l ≠ ⊥) (m : ℕ) :
-    ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, (dominantWeightOf l).1 j ≤
-      ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, (weightOfShape n μ).1 j := by
+    ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, (dominantWeightOf l).val j ≤
+      ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, (weightOfShape n μ).val j := by
   exact sum_le_sum_weightOfShape_of_weightSpace_weylRep_ne_bot t
     (fun hbot => hl ((weightSpace_eq_bot_dominantWeightOf_iff
       (W := (weylModule k n t).toSubmodule) (weylRep k n t) l).mp hbot)) m
@@ -270,7 +270,7 @@ variable [CommRing k] [Algebra ℚ k]
 private theorem tensorPowerBasis_rowFilling_mem_weightSpace {R : Type u} [CommRing R]
     (t : YoungTableau μ) (hn : μ.colLen 0 ≤ n) :
     tensorPowerBasis R n μ.card (rowFilling t hn) ∈
-      weightSpace (tensorPowerRep R n μ.card) (weightOfShape n μ).1 := by
+      weightSpace (tensorPowerRep R n μ.card) (weightOfShape n μ).val := by
   rw [← weightOfMultiset_ofFn_rowFilling t hn]
   exact basis_mem_weightSpace_tensorPowerRep _
 
@@ -284,16 +284,16 @@ any `μ`-tableau whose shape satisfies `μ.colLen 0 ≤ n`. -/
 theorem weightSpace_weylRep_weightOfShape_ne_bot [Nontrivial k] (t : YoungTableau μ)
     (hn : μ.colLen 0 ≤ n) :
     weightSpace (W := (weylModule k n t).toSubmodule) (weylRep k n t)
-      (weightOfShape n μ).1 ≠ ⊥ := by
+      (weightOfShape n μ).val ≠ ⊥ := by
   intro hbot
   have hbot' := ((weylModule k n t).weightSpace_toRepresentation_eq_bot_iff
-    (weightOfShape n μ).1).mp hbot
+    (weightOfShape n μ).val).mp hbot
   refine permTensorActionAlgHom_youngSymmetrizerOver_tensorPowerBasis_rowFilling_ne_zero
     (k := k) t hn ?_
   have hmem : permTensorActionAlgHom k n μ.card (youngSymmetrizerOver k t)
       (tensorPowerBasis k n μ.card (rowFilling t hn)) ∈
       (weylModule k n t).toSubmodule ⊓
-        weightSpace (tensorPowerRep k n μ.card) (weightOfShape n μ).1 := by
+        weightSpace (tensorPowerRep k n μ.card) (weightOfShape n μ).val := by
     refine ⟨?_, map_weightSpace_tensorPowerRep_permTensorActionAlgHom_le _ _
       (Submodule.mem_map_of_mem (tensorPowerBasis_rowFilling_mem_weightSpace t hn))⟩
     exact permTensorActionAlgHom_youngSymmetrizerOver_tensorPowerBasis_mem_weylModule t _
@@ -343,7 +343,7 @@ theorem sum_le_sum_weightOfShape_of_weightSpace_weylRepOfShape_ne_bot {μ : Youn
     (hl : weightSpace (W := (weylModuleOfShape k n μ).toSubmodule) (weylRepOfShape k n μ) l ≠ ⊥)
     (m : ℕ) :
     ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, l j ≤
-      ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, (weightOfShape n μ).1 j := by
+      ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, (weightOfShape n μ).val j := by
   exact YoungTableau.sum_le_sum_weightOfShape_of_weightSpace_weylRep_ne_bot (k := k)
     (StandardYoungTableau.rowSuperstandard μ).toTableau
     (fun hbot => hl ((weightSpace_weylRepOfShape_eq_bot_iff μ l).mpr hbot)) m
@@ -354,8 +354,8 @@ theorem sum_dominantWeightOf_le_sum_weightOfShape_of_weightSpace_weylRepOfShape_
     {μ : YoungDiagram} {l : Fin n → ℤ}
     (hl : weightSpace (W := (weylModuleOfShape k n μ).toSubmodule) (weylRepOfShape k n μ) l ≠ ⊥)
     (m : ℕ) :
-    ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, (dominantWeightOf l).1 j ≤
-      ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, (weightOfShape n μ).1 j := by
+    ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, (dominantWeightOf l).val j ≤
+      ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, (weightOfShape n μ).val j := by
   exact YoungTableau.sum_dominantWeightOf_le_sum_weightOfShape_of_weightSpace_weylRep_ne_bot
     (k := k) (StandardYoungTableau.rowSuperstandard μ).toTableau
     (fun hbot => hl ((weightSpace_weylRepOfShape_eq_bot_iff μ l).mpr hbot)) m
@@ -381,7 +381,7 @@ of `TauCeti.schurFunctor` — in the dominance order. -/
 theorem weightSpace_weylRepOfShape_weightOfShape_ne_bot {μ : YoungDiagram}
     (hn : μ.colLen 0 ≤ n) :
     weightSpace (W := (weylModuleOfShape k n μ).toSubmodule) (weylRepOfShape k n μ)
-      (weightOfShape n μ).1 ≠ ⊥ := by
+      (weightOfShape n μ).val ≠ ⊥ := by
   exact fun hbot => YoungTableau.weightSpace_weylRep_weightOfShape_ne_bot (k := k)
     (StandardYoungTableau.rowSuperstandard μ).toTableau hn
     ((weightSpace_weylRepOfShape_eq_bot_iff μ _).mp hbot)

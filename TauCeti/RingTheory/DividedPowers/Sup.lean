@@ -357,11 +357,11 @@ theorem isDPMorphism_sup_iff (hI : DividedPowers I) (hJ : DividedPowers J)
     refine IsDPMorphism.on_span (hI.sup hJ hIJ) hK (S := (I : Set A) ∪ (J : Set A))
       (by rw [Ideal.span_union, Ideal.span_eq, Ideal.span_eq]) ?_ ?_
     · rintro s (hs | hs)
-      · exact hgI.1 (Ideal.mem_map_of_mem g hs)
-      · exact hgJ.1 (Ideal.mem_map_of_mem g hs)
+      · exact hgI.ideal_comp (Ideal.mem_map_of_mem g hs)
+      · exact hgJ.ideal_comp (Ideal.mem_map_of_mem g hs)
     · rintro n s (hs | hs)
-      · rw [hI.sup_dpow_left hJ hIJ n hs, hgI.2 s hs]
-      · rw [hI.sup_dpow_right hJ hIJ n hs, hgJ.2 s hs]
+      · rw [hI.sup_dpow_left hJ hIJ n hs, hgI.dpow_comp s hs]
+      · rw [hI.sup_dpow_right hJ hIJ n hs, hgJ.dpow_comp s hs]
 
 /-- A divided power structure on `I ⊔ J` equals `hI.sup hJ hIJ` if and only if it restricts to
 `hI` on `I` and to `hJ` on `J`. -/

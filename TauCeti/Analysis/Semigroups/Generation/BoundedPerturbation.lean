@@ -206,11 +206,11 @@ private theorem continuous_weightedOrbit (x : X) :
     Continuous (fun t : ℝ≥0 => Real.exp (-(omega * (t : ℝ))) • S t x) := by
   have hS : Continuous (fun t : ℝ≥0 => S t x) := by
     have h := (S.realOperator_continuousOn_Ici x).comp_continuous
-      continuous_subtype_val (fun t => t.property)
+      continuous_subtypeVal (fun t => t.property)
     exact h.congr fun t => by
       exact congrArg (fun f : X →L[ℝ] X => f x) (S.realOperator_coe t)
   exact (Real.continuous_exp.comp
-    ((continuous_const.mul continuous_subtype_val).neg)).smul hS
+    ((continuous_const.mul continuous_subtypeVal).neg)).smul hS
 
 include hb
 

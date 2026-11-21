@@ -79,15 +79,15 @@ theorem Flat.exists_eq_sum_mul_of_sum_mul_eq {A B : Type*} [CommRing A] [CommRin
       (∀ j ∈ t, b' j = ∑ l : Fin k, g (aR j l) * c l) ∧
       (∀ l : Fin k, ∑ i ∈ s, aL i l * x i = ∑ j ∈ t, aR j l * x' j) := by
   classical
-  let f : (s : Type _) ⊕ (t : Type _) → A := Sum.elim (fun i ↦ x i.1) (fun j ↦ -x' j.1)
-  let v : (s : Type _) ⊕ (t : Type _) → B := Sum.elim (fun i ↦ b i.1) (fun j ↦ b' j.1)
+  let f : (s : Type _) ⊕ (t : Type _) → A := Sum.elim (fun i ↦ x i.val) (fun j ↦ -x' j.val)
+  let v : (s : Type _) ⊕ (t : Type _) → B := Sum.elim (fun i ↦ b i.val) (fun j ↦ b' j.val)
   have hrel : ∑ u : (s : Type _) ⊕ (t : Type _), g (f u) * v u = 0 := by
     rw [Fintype.sum_sum_type]
     simp only [f, v, Sum.elim_inl, Sum.elim_inr, map_neg, neg_mul, Finset.sum_neg_distrib]
-    have hL : ∑ i : s, g (x i.1) * b i.1 = ∑ i ∈ s, b i * g (x i) := by
+    have hL : ∑ i : s, g (x i.val) * b i.val = ∑ i ∈ s, b i * g (x i) := by
       rw [← Finset.sum_coe_sort s fun i ↦ b i * g (x i)]
       exact Finset.sum_congr rfl fun i _ ↦ mul_comm _ _
-    have hR : ∑ j : t, g (x' j.1) * b' j.1 = ∑ j ∈ t, b' j * g (x' j) := by
+    have hR : ∑ j : t, g (x' j.val) * b' j.val = ∑ j ∈ t, b' j * g (x' j) := by
       rw [← Finset.sum_coe_sort t fun j ↦ b' j * g (x' j)]
       exact Finset.sum_congr rfl fun j _ ↦ mul_comm _ _
     rw [hL, hR, hsum, add_neg_cancel]
@@ -100,14 +100,14 @@ theorem Flat.exists_eq_sum_mul_of_sum_mul_eq {A B : Type*} [CommRing A] [CommRin
     have hl := hga l
     rw [Fintype.sum_sum_type] at hl
     simp only [f, Sum.elim_inl, Sum.elim_inr, neg_mul, Finset.sum_neg_distrib] at hl
-    have h1 : ∑ i : s, x i.1 * a (Sum.inl i) l =
+    have h1 : ∑ i : s, x i.val * a (Sum.inl i) l =
         ∑ i ∈ s, (if hi : i ∈ s then a (Sum.inl ⟨i, hi⟩) l else 0) * x i := by
       rw [← Finset.sum_coe_sort s]
-      exact Finset.sum_congr rfl fun i _ ↦ by simp [i.2, mul_comm]
-    have h2 : ∑ j : t, x' j.1 * a (Sum.inr j) l =
+      exact Finset.sum_congr rfl fun i _ ↦ by simp [i.property, mul_comm]
+    have h2 : ∑ j : t, x' j.val * a (Sum.inr j) l =
         ∑ j ∈ t, (if hj : j ∈ t then a (Sum.inr ⟨j, hj⟩) l else 0) * x' j := by
       rw [← Finset.sum_coe_sort t]
-      exact Finset.sum_congr rfl fun j _ ↦ by simp [j.2, mul_comm]
+      exact Finset.sum_congr rfl fun j _ ↦ by simp [j.property, mul_comm]
     rw [h1, h2, ← sub_eq_add_neg, sub_eq_zero] at hl
     exact hl
 
