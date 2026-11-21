@@ -35,6 +35,8 @@ meromorphic order to every point of `closedBall c R`.
   forces nonnegative meromorphic order.
 * `AnalyticOnNhd.meromorphicOrderAt_ne_top_of_exists_ne_zero`: a nonzero value on a connected
   set rules out infinite order throughout the set.
+* `AnalyticAt.meromorphicOrderAt_pos_iff_eq_zero`: an analytic function at `x` has positive
+  meromorphic order at `x` if and only if `f x = 0`.
 * `MeromorphicOn.meromorphicOrderAt_ne_top_of_forall_mem_sphere`: finite meromorphic order on the
   bounding sphere propagates throughout the closed disc.
 * `AnalyticOnNhd.meromorphicOrderAt_ne_top_of_forall_mem_sphere_ne_zero`: an analytic function on
@@ -59,6 +61,16 @@ theorem AnalyticOnNhd.meromorphicOrderAt_ne_top_of_exists_ne_zero
     rw [(hf z hz).meromorphicOrderAt_eq, (hf z hz).analyticOrderAt_eq_zero.mpr hzero]
     simp
   exact hfin hex ⟨z, hz⟩
+
+/-- An analytic function at `x` has positive meromorphic order at `x` if and only if it vanishes
+at `x` (including when it vanishes identically near `x`, where the order is `⊤`). -/
+theorem AnalyticAt.meromorphicOrderAt_pos_iff_eq_zero
+    {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {f : 𝕜 → E} {x : 𝕜} (hf : AnalyticAt 𝕜 f x) :
+    0 < meromorphicOrderAt f x ↔ f x = 0 := by
+  rw [lt_iff_le_and_ne, and_iff_right hf.meromorphicOrderAt_nonneg, ne_comm,
+    hf.meromorphicOrderAt_eq, ← hf.analyticOrderAt_ne_zero]
+  cases analyticOrderAt f x <;> simp
 
 open Filter Metric Topology
 

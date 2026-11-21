@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Meromorphic.Order
 public import Mathlib.NumberTheory.LSeries.DirichletContinuation
 public import TauCeti.NumberTheory.PrimeFactors.Bounds
 
@@ -18,8 +19,9 @@ Thus passage between an imprimitive character and its primitive character costs 
 small power of the ambient level. This applies in particular to products of primitive quadratic
 characters at their common level, including primes dividing both conductors.
 
-The factors are nonzero on `Re(s) > 0`, so this passage also preserves zeros there. At `s = 1`
-the L-function comparison requires nonprincipal characters, as in the native continuation API.
+The factors are analytic and nonzero on `Re(s) > 0`, so this passage preserves zeros and exact
+meromorphic orders there, including the simple pole at `s = 1` for principal characters. At `s = 1`
+pointwise L-function comparison requires nonprincipal characters, as in the native continuation API.
 
 The exact identity is Mathlib's `DirichletCharacter.LFunction_changeLevel`,
 by David Loeffler and Michael Stoll.
@@ -29,9 +31,22 @@ the treatment of imprimitive characters and Siegel's theorem.
 
 public section
 
-open Finset Complex
+open Finset Complex Filter
+open scoped Topology
 
 namespace DirichletCharacter
+
+/-- Each Euler factor `z ↦ 1 - χ p * (p : ℂ) ^ (-z)` with `p ≠ 0` is entire. -/
+theorem differentiable_one_sub_mul_natCast_cpow {M p : ℕ} (χ : DirichletCharacter ℂ M)
+    (hp : p ≠ 0) : Differentiable ℂ fun z : ℂ ↦ 1 - χ p * (p : ℂ) ^ (-z) := by
+  have : NeZero p := ⟨hp⟩
+  fun_prop
+
+/-- The finite product of deleted Euler factors over `N.primeFactors` is entire. -/
+theorem differentiable_prod_one_sub_mul_prime_cpow {M N : ℕ} (χ : DirichletCharacter ℂ M) :
+    Differentiable ℂ (∏ p ∈ N.primeFactors, fun z : ℂ ↦ 1 - χ p * (p : ℂ) ^ (-z)) :=
+  Differentiable.finsetProd fun _ hp ↦
+    differentiable_one_sub_mul_natCast_cpow χ (Nat.prime_of_mem_primeFactors hp).ne_zero
 
 private theorem norm_mul_prime_cpow_le {M p : ℕ} (χ : DirichletCharacter ℂ M)
     (hp : p.Prime) {δ : ℝ} (hδ : 0 < δ) {s : ℂ} (hs : δ ≤ s.re) :
@@ -100,6 +115,30 @@ half-plane. At the possible pole `1`, require the original character to be nonpr
     (changeLevel hMN χ).LFunction s = 0 ↔ χ.LFunction s = 0 := by
   rw [LFunction_changeLevel hMN χ h, mul_eq_zero]
   simp [prod_one_sub_mul_prime_cpow_ne_zero (N := N) χ hs]
+
+/-- Raising the level preserves the meromorphic order of the continued L-function at every point of
+the open right half-plane `Re(s) > 0`, including `s = 1` for principal characters. -/
+@[simp] theorem meromorphicOrderAt_LFunction_changeLevel {M N : ℕ} [NeZero M] [NeZero N]
+    (χ : DirichletCharacter ℂ M) (hMN : M ∣ N) {s : ℂ} (hs : 0 < s.re) :
+    meromorphicOrderAt (changeLevel hMN χ).LFunction s = meromorphicOrderAt χ.LFunction s := by
+  set P : ℂ → ℂ := ∏ p ∈ N.primeFactors, fun z ↦ 1 - χ p * (p : ℂ) ^ (-z)
+  have hPs : P s ≠ 0 := by
+    simpa [P, Finset.prod_apply] using prod_one_sub_mul_prime_cpow_ne_zero (N := N) χ hs
+  have heq : (changeLevel hMN χ).LFunction =ᶠ[𝓝[≠] s] P * χ.LFunction := by
+    filter_upwards [(eventually_cofinite_ne 1).filter_mono (nhdsNE_le_cofinite s)] with z hz
+    simp [P, Finset.prod_apply, LFunction_changeLevel hMN χ (.inr hz), mul_comm]
+  rw [meromorphicOrderAt_congr heq,
+    meromorphicOrderAt_mul_of_ne_zero
+      ((differentiable_prod_one_sub_mul_prime_cpow χ).analyticAt s) hPs]
+
+/-- On the open right half-plane `Re(s) > 0`, the principal Dirichlet `L`-function modulo `N` has
+the same meromorphic order as `riemannZeta` (including `-1` at `s = 1`). -/
+theorem meromorphicOrderAt_LFunctionTrivChar_eq_riemannZeta {N : ℕ} [NeZero N] {s : ℂ}
+    (hs : 0 < s.re) :
+    meromorphicOrderAt (LFunctionTrivChar N) s = meromorphicOrderAt riemannZeta s := by
+  have hch : changeLevel (one_dvd N) (1 : DirichletCharacter ℂ 1) = 1 := map_one _
+  have h := meromorphicOrderAt_LFunction_changeLevel (1 : DirichletCharacter ℂ 1) (one_dvd N) hs
+  rwa [hch, LFunction_modOne_eq] at h
 
 /-- Uniform comparison of the L-functions before and after a level change in either direction.
 In particular it applies to the primitive character at its conductor and the original character

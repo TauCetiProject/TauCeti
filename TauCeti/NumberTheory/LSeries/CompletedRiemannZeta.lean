@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.LSeries.Dirichlet
 public import Mathlib.NumberTheory.LSeries.HurwitzZetaValues
 public import TauCeti.Analysis.Meromorphic.Divisor
+import TauCeti.Analysis.Meromorphic.Order
 
 /-!
 # Meromorphy and poles of the completed Riemann zeta function
@@ -26,8 +27,10 @@ continuation.
 * `TauCeti.analyticAt_completedRiemannZeta`
 * `TauCeti.meromorphicOrderAt_completedRiemannZeta_zero`,
   `TauCeti.meromorphicOrderAt_completedRiemannZeta_one`
-* `TauCeti.meromorphic_riemannZeta`: the uncompleted function `riemannZeta` is meromorphic on `ℂ`
-  as well.
+* `TauCeti.meromorphic_riemannZeta`, `TauCeti.meromorphicOrderAt_riemannZeta_one`, and
+  `TauCeti.meromorphicOrderAt_riemannZeta_pos_iff`: the uncompleted function `riemannZeta` is
+  meromorphic on `ℂ` with a simple pole at `1`, so positive meromorphic order characterizes its
+  zeros away from `1`.
 * `TauCeti.meromorphicOrderAt_completedRiemannZeta_neg_two_mul_nat_add_one`: `Λ` is regular and
   nonzero at the trivial zeros `-2(n + 1)` of `riemannZeta`, where `Γ_ℝ` has its poles.
 * `TauCeti.zero_lt_divisor_completedRiemannZeta_iff`: the points of positive divisor of `Λ` are
@@ -93,6 +96,21 @@ theorem meromorphic_riemannZeta : Meromorphic riemannZeta := by
     filter_upwards [nhdsWithin_le_nhds (eventually_ne_nhds one_ne_zero)] with s hs
     rw [riemannZeta_def_of_ne_zero hs, div_eq_mul_inv, Pi.mul_apply]
   · exact (analyticOn_riemannZeta z hz).meromorphicAt
+
+/-- The Riemann zeta function has a simple pole at `1`. -/
+@[simp]
+theorem meromorphicOrderAt_riemannZeta_one :
+    meromorphicOrderAt riemannZeta 1 = -1 := by
+  simpa using (meromorphic_riemannZeta 1).meromorphicOrderAt_eq_neg_one_of_tendsto_sub_smul
+    one_ne_zero (by simpa using riemannZeta_residue_one)
+
+/-- The Riemann zeta function has positive meromorphic order at `s` if and only if
+`riemannZeta s = 0` and `s ≠ 1`. -/
+theorem meromorphicOrderAt_riemannZeta_pos_iff {s : ℂ} :
+    0 < meromorphicOrderAt riemannZeta s ↔ riemannZeta s = 0 ∧ s ≠ 1 := by
+  rcases eq_or_ne s 1 with rfl | hs
+  · simp
+  · simp [(analyticOn_riemannZeta s hs).meromorphicOrderAt_pos_iff_eq_zero, hs]
 
 /-- The completed Riemann zeta function does not vanish on the half-plane `1 < re s`. -/
 theorem completedRiemannZeta_ne_zero_of_one_lt_re {s : ℂ} (hs : 1 < s.re) :

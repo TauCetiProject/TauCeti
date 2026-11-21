@@ -12,13 +12,21 @@ public import Mathlib.NumberTheory.LSeries.Nonvanishing
 
 The function `ζ′/ζ(s) + (s - 1)⁻¹` is bounded on every compact subset of the closed half-plane
 `1 ≤ re s`, punctured at `s = 1`. In particular there is one absolute constant `C` with
-`‖-ζ′/ζ(1 + η) - η⁻¹‖ ≤ C` for all `0 < η ≤ 1`.
+`‖-ζ′/ζ(1 + η) - η⁻¹‖ ≤ C` (and hence `-(ζ′/ζ(1 + η)).re ≤ η⁻¹ + C` with `C ≥ 0`) for all
+`0 < η ≤ 1`.
 
 The proof identifies `ζ′/ζ(s) + (s - 1)⁻¹` with the logarithmic derivative of the regularized
 function `(s - 1) ζ(s)`, which is Mathlib's `DirichletCharacter.LFunctionTrivChar₁` at level one.
 Its negative logarithmic derivative is continuous wherever `ζ` does not vanish, including at `s = 1`
 (`DirichletCharacter.continuousOn_neg_logDeriv_LFunctionTrivChar₁`), and `ζ` has no zero on
 `1 ≤ re s` (`riemannZeta_ne_zero_of_one_le_re`).
+
+## Main results
+
+* `TauCeti.logDeriv_riemannZeta_add_inv_sub_one`
+* `IsCompact.exists_norm_logDeriv_riemannZeta_add_inv_sub_one_le`
+* `TauCeti.exists_norm_neg_logDeriv_riemannZeta_one_add_sub_inv_le`
+* `TauCeti.exists_neg_re_logDeriv_riemannZeta_one_add_le`
 -/
 
 public section
@@ -69,5 +77,19 @@ theorem exists_norm_neg_logDeriv_riemannZeta_one_add_sub_inv_le :
   refine ⟨C, fun η hη hη₁ ↦ ?_⟩
   have := hC _ ⟨η, ⟨hη.le, hη₁⟩, rfl⟩ (by simpa using hη.ne')
   rwa [add_sub_cancel_left, ← norm_neg, neg_add] at this
+
+/-- **Real-part pole bound for `-ζ′/ζ` on `(1, 2]`.** There is a constant `C ≥ 0` such that
+`-(logDeriv riemannZeta (1 + η)).re ≤ η⁻¹ + C` for every `0 < η ≤ 1`. -/
+theorem exists_neg_re_logDeriv_riemannZeta_one_add_le :
+    ∃ C : ℝ, 0 ≤ C ∧
+      ∀ {η : ℝ}, 0 < η → η ≤ 1 → -(logDeriv riemannZeta (1 + η)).re ≤ η⁻¹ + C := by
+  obtain ⟨C₀, hC₀⟩ := exists_norm_neg_logDeriv_riemannZeta_one_add_sub_inv_le
+  refine ⟨max 0 C₀, le_max_left _ _, fun {η} hη hη₁ ↦ ?_⟩
+  have hle : (-logDeriv riemannZeta (1 + η) - (η : ℂ)⁻¹).re ≤ max 0 C₀ :=
+    (le_abs_self _).trans <| (Complex.abs_re_le_norm _).trans <|
+      (hC₀ η hη hη₁).trans (le_max_right _ _)
+  have hre : ((η : ℂ)⁻¹).re = η⁻¹ := by rw [← ofReal_inv]; rfl
+  rw [sub_re, neg_re, hre] at hle
+  linarith
 
 end TauCeti

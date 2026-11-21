@@ -34,9 +34,14 @@ half-plane (`Complex.re_one_sub_conj_mul_nonneg`; strictly inside it for `z` in 
 
 Inversion preserves both the open and closed right half-planes: `z⁻¹` has positive
 (respectively nonnegative) real part exactly when `z` does (`Complex.inv_re_pos`,
-`Complex.inv_re_nonneg`). Under a reflection symmetry `f (a - z) = c * conj (f (conj z))`, a
-one-sided upper bound `Re ρ ≤ B` on all zeros of `f` confines every zero to the bounded vertical
-strip `|Re ρ| ≤ max B |Re a - B|` (`TauCeti.abs_re_le_max_of_re_le_of_sub_conj`).
+`Complex.inv_re_nonneg`), and off the real axis its real part is bounded by `(2 |Im z|)⁻¹`
+(`Complex.inv_re_le_inv_two_mul_abs_im`). On a closed disc `closedBall z₀ r`, the real and
+imaginary parts stay within `r` of `z₀.re` and `z₀.im` and `‖z‖ ≤ |z₀.re| + |z₀.im| + r`.
+Two complex numbers with the same imaginary part differ by the real cast of their real-part
+difference (`Complex.sub_eq_ofReal_re_sub_of_im_eq`). Under a reflection symmetry
+`f (a - z) = c * conj (f (conj z))`, a one-sided upper bound `Re ρ ≤ B` on all zeros of `f`
+confines every zero to the bounded vertical strip `|Re ρ| ≤ max B |Re a - B|`
+(`TauCeti.abs_re_le_max_of_re_le_of_sub_conj`).
 
 The map `y ↦ r² / y` (inversion in the circle of radius `r` followed by conjugation) satisfies
 `‖conj x - r² / y‖ ≤ 3 ‖x - y‖` for `‖x‖ ≤ r ≤ ‖y‖` (`Complex.norm_conj_sub_sq_div_le`).
@@ -73,6 +78,15 @@ theorem Complex.inv_re_pos {z : ℂ} : 0 < z⁻¹.re ↔ 0 < z.re := by
   rcases eq_or_ne z 0 with rfl | hz
   · simp
   · rw [inv_re, div_pos_iff_of_pos_right (normSq_pos.mpr hz)]
+
+/-- Off the real axis, the real part of `z⁻¹` is at most `(2 |Im z|)⁻¹`. -/
+theorem Complex.inv_re_le_inv_two_mul_abs_im {z : ℂ} (hz : z.im ≠ 0) :
+    z⁻¹.re ≤ (2 * |z.im|)⁻¹ := by
+  have : 0 < |z.im| := abs_pos.2 hz
+  have : 0 < z.re * z.re + z.im * z.im :=
+    add_pos_of_nonneg_of_pos (mul_self_nonneg z.re) (mul_self_pos.2 hz)
+  rw [inv_re, normSq_apply, div_le_iff₀ this, le_inv_mul_iff₀ (by positivity)]
+  nlinarith [sq_nonneg (z.re - |z.im|), sq_abs z.im]
 
 /-- A complex number and its inverse lie in the closed right half-plane together. -/
 theorem Complex.inv_re_nonneg {z : ℂ} : 0 ≤ z⁻¹.re ↔ 0 ≤ z.re := by
@@ -336,6 +350,35 @@ theorem norm_mul_add_div_natCast_le (M : ℕ) (a b : ℂ) {z : ℂ} {C : ℝ} (h
   rw [norm_div, Complex.norm_natCast]
   exact (div_nat_le_self_of_nonneg (norm_nonneg _) M).trans
     (norm_add_le_of_le (norm_mul_le_of_le le_rfl hz) le_rfl)
+
+/-- On `closedBall z₀ r`, the real part differs from `z₀.re` by at most `r`. -/
+theorem abs_re_sub_le_of_mem_closedBall {z z₀ : ℂ} {r : ℝ}
+    (hz : z ∈ Metric.closedBall z₀ r) : |z.re - z₀.re| ≤ r := by
+  simpa using (abs_re_le_norm (z - z₀)).trans (by simpa [dist_eq_norm] using hz)
+
+/-- On `closedBall z₀ r`, the imaginary part differs from `z₀.im` by at most `r`. -/
+theorem abs_im_sub_le_of_mem_closedBall {z z₀ : ℂ} {r : ℝ}
+    (hz : z ∈ Metric.closedBall z₀ r) : |z.im - z₀.im| ≤ r := by
+  simpa using (abs_im_le_norm (z - z₀)).trans (by simpa [dist_eq_norm] using hz)
+
+/-- On `closedBall z₀ r`, the norm of `z` is at most `|z₀.re| + |z₀.im| + r`. -/
+theorem norm_le_abs_re_add_abs_im_add_of_mem_closedBall {z z₀ : ℂ} {r : ℝ}
+    (hz : z ∈ Metric.closedBall z₀ r) : ‖z‖ ≤ |z₀.re| + |z₀.im| + r :=
+  (norm_le_of_mem_closedBall hz).trans (add_le_add_left (norm_le_abs_re_add_abs_im z₀) r)
+
+/-- Two complex numbers with the same imaginary part differ by the real cast of the difference of
+their real parts. -/
+theorem sub_eq_ofReal_re_sub_of_im_eq {z w : ℂ} (h : z.im = w.im) :
+    z - w = ((z.re - w.re : ℝ) : ℂ) :=
+  Complex.ext (by simp) (by simp [h])
+
+/-- The distance from `z` to `(σ : ℂ) + z.im * I` on the same horizontal line is `|z.re - σ|`,
+so `z ∈ closedBall (σ + z.im * I) r` iff `|z.re - σ| ≤ r`. -/
+theorem mem_closedBall_ofReal_add_im_mul_I_iff {z : ℂ} {σ r : ℝ} :
+    z ∈ Metric.closedBall ((σ : ℂ) + z.im * I) r ↔ |z.re - σ| ≤ r := by
+  rw [Metric.mem_closedBall, dist_eq_norm, sub_eq_ofReal_re_sub_of_im_eq (by simp),
+    norm_real, Real.norm_eq_abs]
+  simp
 
 /-- The real coordinates `equivRealProdCLM` do not increase distances, so they map the disc of
 radius `r` about `equivRealProdCLM.symm z₀` into the square `B_r(z₀)` of `ℝ × ℝ`. -/
