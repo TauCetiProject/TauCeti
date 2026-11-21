@@ -72,6 +72,9 @@ hence zero (`ae_eq_zero_of_integral_contMDiff_smul_eq_zero`).
   `Δ⁺u = f` everywhere.
 * `TauCeti.Manifold.SobolevH1.contMDiff_of_dirichletForm_eq_semilinear`: smoothness and classical
   equation `Δ⁺u = A Φ(u) + C` for continuous weak solutions in dimension at most three.
+* `TauCeti.Manifold.SobolevH1.exists_contMDiff_of_forall_dirichletForm_eq`: combined existence of
+  a smooth classical representative for semilinear weak solutions in dimension at most three with
+  `L²` forcing.
 * `SobolevH1.exists_eq_ofSmooth_and_neg_laplaceBeltrami_add_mul_eq_of_dirichletForm_add_eq`:
   a weak solution of `Δ⁺w + V w = f` with smooth `V` and `f` is a smooth classical solution, in
   every dimension.
@@ -907,6 +910,36 @@ theorem contMDiff_of_dirichletForm_eq_semilinear (hE : finrank ℝ E < 4)
   exact ⟨hu_smooth, (eq_ofSmooth_and_neg_laplaceBeltrami_eq_of_dirichletForm_eq
     (u := ⟨u, hu_smooth⟩)
     ((hA.continuous.mul (hΦ.continuous.comp hu_cont)).add hC.continuous) hwu hw).2⟩
+
+/-- **Smoothness of semilinear weak solutions on closed Riemannian manifolds.** Let `M` be a closed
+smooth Riemannian manifold of dimension `< 4`, let `A, C : M → ℝ` and `Φ : ℝ → ℝ` be smooth, and
+let `w ∈ H¹(M)` satisfy `D(w, ψ) = ∫ (A Φ(w) + C) ψ dV` for every smooth function `ψ`, with
+`A Φ(w) + C ∈ L²(M)`. Then `w` agrees almost everywhere with a smooth classical solution
+`u : M → ℝ` of `-Δu = A Φ(u) + C`. -/
+theorem exists_contMDiff_of_forall_dirichletForm_eq (hE : finrank ℝ E < 4)
+    {A C : M → ℝ} (hA : ContMDiff I 𝓘(ℝ) ∞ A) (hC : ContMDiff I 𝓘(ℝ) ∞ C)
+    {Φ : ℝ → ℝ} (hΦ : ContDiff ℝ ∞ Φ) {w : SobolevH1 I M}
+    (hf : MemLp (fun x ↦ A x * Φ (toLp w x) + C x) 2 (riemannianVolume I M))
+    (hw : ∀ ψ : C^∞⟮I, M; ℝ⟯,
+      dirichletForm w (ofSmooth ψ) =
+        ∫ x, (A x * Φ (toLp w x) + C x) * ψ x ∂riemannianVolume I M) :
+    ∃ u : M → ℝ, ContMDiff I 𝓘(ℝ) ∞ u ∧
+      (toLp w : M → ℝ) =ᵐ[riemannianVolume I M] u ∧
+      ∀ x, -laplaceBeltrami I u x = A x * Φ (u x) + C x := by
+  have hE2 : (finrank ℝ E : ℝ) < 2 * ((2 : ℝ≥0) : ℝ) := by
+    exact_mod_cast (by omega : finrank ℝ E < 2 * 2)
+  obtain ⟨u, hu_cont, hwu⟩ :=
+    exists_continuous_ae_eq_of_dirichletForm_eq (r := 2) le_rfl hE2 hf hw
+  have hw' : ∀ ψ : C^∞⟮I, M; ℝ⟯,
+      dirichletForm w (ofSmooth ψ) =
+        ∫ x, (A x * Φ (u x) + C x) * ψ x ∂riemannianVolume I M := fun ψ ↦ by
+    rw [hw ψ]
+    refine integral_congr_ae ?_
+    filter_upwards [hwu] with x hx
+    rw [hx]
+  obtain ⟨hu_sm, hΔ⟩ :=
+    contMDiff_of_dirichletForm_eq_semilinear hE hA hC hΦ hu_cont hwu hw'
+  exact ⟨u, hu_sm, hwu, hΔ⟩
 
 /-- The reading `ρ (g ∘ ψ)` in the coordinates at `p` of a function `g` on `M`, weighted by the
 chart volume density `ρ`, where `ψ` is the inverse chart. Integrals against the Riemannian volume

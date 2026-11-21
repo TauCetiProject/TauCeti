@@ -64,6 +64,12 @@ closed surface carries a conformal hyperbolic metric, and its area is `-∫ K dV
   are equal.
 * `TauCeti.HyperbolicMetric.hypVolumeOfMetric_eq_of_metric_eq_rescale`: a hyperbolic metric
   conformal to `g` has area `-∫ K dV_g`.
+* `Bundle.ContMDiffRiemannianMetric.isHyperbolic_of_integral_scalarCurvature_neg`: a closed
+  connected surface admitting a smooth Riemannian metric of negative total scalar curvature is
+  hyperbolic.
+* `TauCeti.isHyperbolic_iff_exists_integral_scalarCurvature_neg`: a nonempty closed connected
+  surface is hyperbolic if and only if it admits a smooth Riemannian metric of negative total
+  scalar curvature.
 
 ## References
 
@@ -295,4 +301,37 @@ theorem exists_hyperbolicMetric_mem_conformalClass_iff [I.Boundaryless] [Nonempt
   exact g.integral_scalarCurvature_neg_of_scalarCurvature_rescale_eq hE hf hf_pos
     (c := -2) (by norm_num) (hGf ▸ G.scalarCurvature_metric_of_finrank_eq_two hE)
 
+/-- **Hyperbolicity from negative total curvature.** A closed connected surface admitting a smooth
+Riemannian metric of negative total scalar curvature is hyperbolic. -/
+theorem isHyperbolic_of_integral_scalarCurvature_neg [I.Boundaryless] (hE : finrank ℝ E = 2)
+    (hK : ∫ x, g.scalarCurvature x.ofWithMetric ∂riemannianVolume I (WithMetric g) < 0) :
+    IsHyperbolic (I := I) (M := M) :=
+  isHyperbolic_iff.2 <|
+    let ⟨G, _, _, _, _⟩ := g.exists_hyperbolicMetric_metric_eq_rescale hE hK
+    ⟨G⟩
+
 end Bundle.ContMDiffRiemannianMetric
+
+namespace TauCeti
+
+/-- **Total-curvature characterization of hyperbolic closed surfaces.** A nonempty closed connected
+surface is hyperbolic if and only if it admits a smooth Riemannian metric of negative total scalar
+curvature. -/
+theorem isHyperbolic_iff_exists_integral_scalarCurvature_neg [I.Boundaryless] [Nonempty M]
+    (hE : finrank ℝ E = 2) :
+    IsHyperbolic (I := I) (M := M) ↔
+      ∃ g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x),
+        ∫ x, g.scalarCurvature x.ofWithMetric ∂riemannianVolume I (WithMetric g) < 0 := by
+  rw [isHyperbolic_iff]
+  refine ⟨fun ⟨G⟩ ↦ ⟨G.metric, ?_⟩, fun ⟨g, hK⟩ ↦
+    isHyperbolic_iff.1 (g.isHyperbolic_of_integral_scalarCurvature_neg hE hK)⟩
+  have := (WithMetric.equiv G.metric).nonempty
+  have hsc :
+      ∫ x, G.metric.scalarCurvature x.ofWithMetric ∂riemannianVolume I (WithMetric G.metric) =
+        -2 * riemannianTotalVolume I (WithMetric G.metric) := by
+    simp only [G.scalarCurvature_metric_of_finrank_eq_two hE, MeasureTheory.integral_const,
+      smul_eq_mul, riemannianTotalVolume_def, mul_comm]
+  rw [hsc]
+  exact mul_neg_of_neg_of_pos (by norm_num) riemannianTotalVolume_pos
+
+end TauCeti
