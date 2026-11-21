@@ -59,6 +59,12 @@ quantifier closure places their conjunction inside `Σ⁰₂(Z)`.
   predicates and sets are those computable in `Z⁽ⁿ⁾`.
 * `TauCeti.ArithmeticalHierarchy.not_isPi_succ_iterate_jump`,
   `TauCeti.ArithmeticalHierarchy.not_isDelta_succ_iterate_jump`,
+  `TauCeti.ArithmeticalHierarchy.isSigma_iterate_jump_iff`,
+  `TauCeti.ArithmeticalHierarchy.isPi_iterate_jump_iff`,
+  `TauCeti.ArithmeticalHierarchy.isDelta_iterate_jump_iff`,
+  `TauCeti.ArithmeticalHierarchy.isPi_compl_iterate_jump_iff`,
+  `TauCeti.ArithmeticalHierarchy.isSigma_compl_iterate_jump_iff`,
+  `TauCeti.ArithmeticalHierarchy.isDelta_compl_iterate_jump_iff`,
   `TauCeti.ArithmeticalHierarchy.isDelta_succ_succ_turingJoin_iterate_jump_compl`,
   `TauCeti.ArithmeticalHierarchy.not_isSigma_succ_turingJoin_iterate_jump_compl`,
   `TauCeti.ArithmeticalHierarchy.not_isPi_succ_turingJoin_iterate_jump_compl`: strictness of
@@ -242,6 +248,11 @@ theorem IsSigma.oneOneReducible_iterate_jump (h : IsSigma Z (n + 1) p) :
   rw [Function.iterate_succ_apply']
   exact (isSigma_succ_iff_isSigma_one_iterate_jump.1 h).oneOneReducible_jump
 
+/-- Every `Σ⁰_{n+1}(Z)` predicate reduces many-one to `Z⁽ⁿ⁺¹⁾`. -/
+theorem IsSigma.manyOneReducible_iterate_jump (h : IsSigma Z (n + 1) p) :
+    ManyOneReducible p (· ∈ Set.jump^[n + 1] Z) :=
+  h.oneOneReducible_iterate_jump.to_many_one
+
 /-- **Relativized Post's theorem, one-one completeness of `Z⁽ⁿ⁺¹⁾`.** A predicate is `Σ⁰_{n+1}`
 relative to `Z` if and only if it reduces one-one to `Z⁽ⁿ⁺¹⁾`. -/
 theorem isSigma_succ_iff_oneOneReducible_iterate_jump :
@@ -266,6 +277,11 @@ theorem IsPi.oneOneReducible_compl_iterate_jump (h : IsPi Z (n + 1) p) :
     OneOneReducible p (· ∈ (Set.jump^[n + 1] Z)ᶜ) := by
   rw [Function.iterate_succ_apply']
   exact (isPi_succ_iff_isPi_one_iterate_jump.1 h).oneOneReducible_compl_jump
+
+/-- Every `Π⁰_{n+1}(Z)` predicate reduces many-one to `(Z⁽ⁿ⁺¹⁾)ᶜ`. -/
+theorem IsPi.manyOneReducible_compl_iterate_jump (h : IsPi Z (n + 1) p) :
+    ManyOneReducible p (· ∈ (Set.jump^[n + 1] Z)ᶜ) :=
+  h.oneOneReducible_compl_iterate_jump.to_many_one
 
 /-- **Relativized Post's theorem, one-one completeness of `(Z⁽ⁿ⁺¹⁾)ᶜ`.** A predicate is
 `Π⁰_{n+1}` relative to `Z` if and only if it reduces one-one to `(Z⁽ⁿ⁺¹⁾)ᶜ`. -/
@@ -364,6 +380,53 @@ theorem not_isDelta_iterate_jump_of_le (hmn : m ≤ n + 1) :
 theorem not_isDelta_compl_iterate_jump_of_le (hmn : m ≤ n + 1) :
     ¬IsDelta Z m (· ∈ (Set.jump^[n + 1] Z)ᶜ) := fun h =>
   not_isDelta_succ_compl_iterate_jump (h.of_le hmn)
+
+/-- Exact `Σ⁰` level of the `n`-th jump: `Z⁽ⁿ⁾ ∈ Σ⁰ₘ(Z)` if and only if `n ≤ m`. -/
+theorem isSigma_iterate_jump_iff : IsSigma Z m (· ∈ Set.jump^[n] Z) ↔ n ≤ m := by
+  constructor
+  · intro h
+    by_contra hnm
+    obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by omega : n ≠ 0)
+    exact not_isSigma_iterate_jump_of_le (by omega) h
+  · intro hnm
+    cases n with
+    | zero => exact (isSigma_zero_mem_iff_turingReducible.2 .rfl).of_le hnm
+    | succ k => exact isSigma_succ_iterate_jump.of_le hnm
+
+/-- Exact `Π⁰` level of a positive iterated jump: for `0 < n`, `Z⁽ⁿ⁾ ∈ Π⁰ₘ(Z)` if and only if
+`n < m`. -/
+theorem isPi_iterate_jump_iff (hn : 0 < n) : IsPi Z m (· ∈ Set.jump^[n] Z) ↔ n < m := by
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by omega : n ≠ 0)
+  refine ⟨fun h => not_le.1 fun hmk => not_isPi_iterate_jump_of_le hmk h,
+    fun hkm => isSigma_succ_iterate_jump.pi_succ.of_le hkm⟩
+
+/-- Exact `Δ⁰` level of a positive iterated jump: for `0 < n`, `Z⁽ⁿ⁾ ∈ Δ⁰ₘ(Z)` if and only if
+`n < m`. -/
+theorem isDelta_iterate_jump_iff (hn : 0 < n) : IsDelta Z m (· ∈ Set.jump^[n] Z) ↔ n < m := by
+  rw [isDelta_iff, isSigma_iterate_jump_iff, isPi_iterate_jump_iff hn]
+  omega
+
+/-- Exact `Π⁰` level of the complement of the `n`-th jump: `(Z⁽ⁿ⁾)ᶜ ∈ Π⁰ₘ(Z)` if and only if
+`n ≤ m`. -/
+theorem isPi_compl_iterate_jump_iff : IsPi Z m (· ∈ (Set.jump^[n] Z)ᶜ) ↔ n ≤ m := by
+  rw [← isSigma_iterate_jump_iff (Z := Z) (m := m) (n := n)]
+  exact ⟨fun h => isPi_not_iff.1 (h.of_eq fun _ => Set.mem_compl_iff _ _),
+    fun h => (isPi_not_iff.2 h).of_eq fun _ => (Set.mem_compl_iff _ _).symm⟩
+
+/-- Exact `Σ⁰` level of the complement of a positive iterated jump: for `0 < n`,
+`(Z⁽ⁿ⁾)ᶜ ∈ Σ⁰ₘ(Z)` if and only if `n < m`. -/
+theorem isSigma_compl_iterate_jump_iff (hn : 0 < n) :
+    IsSigma Z m (· ∈ (Set.jump^[n] Z)ᶜ) ↔ n < m := by
+  rw [← isPi_iterate_jump_iff (Z := Z) (m := m) hn]
+  exact ⟨fun h => isSigma_not_iff.1 (h.of_eq fun _ => Set.mem_compl_iff _ _),
+    fun h => (isSigma_not_iff.2 h).of_eq fun _ => (Set.mem_compl_iff _ _).symm⟩
+
+/-- Exact `Δ⁰` level of the complement of a positive iterated jump: for `0 < n`,
+`(Z⁽ⁿ⁾)ᶜ ∈ Δ⁰ₘ(Z)` if and only if `n < m`. -/
+theorem isDelta_compl_iterate_jump_iff (hn : 0 < n) :
+    IsDelta Z m (· ∈ (Set.jump^[n] Z)ᶜ) ↔ n < m := by
+  rw [isDelta_iff, isSigma_compl_iterate_jump_iff hn, isPi_compl_iterate_jump_iff]
+  omega
 
 /-- The parity join of `Z⁽ⁿ⁺¹⁾` with its complement is `Δ⁰_{n+2}` relative to `Z`. -/
 theorem isDelta_succ_succ_turingJoin_iterate_jump_compl :
