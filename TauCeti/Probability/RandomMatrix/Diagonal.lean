@@ -8,11 +8,10 @@ module
 public import TauCeti.Analysis.Matrix.SpectralMeasure.Diagonal
 public import TauCeti.Probability.RandomMatrix.Wigner
 public import TauCeti.Probability.StrongLaw
-public import TauCeti.Analysis.Matrix.SpectralMeasure.ResolventStability
 import TauCeti.Probability.Moments.Variance
 
 /-!
-# Removing an i.i.d. diagonal without moment assumptions
+# Removing the diagonal of a random matrix
 
 Adding a real i.i.d. diagonal divided by a normalization tending to infinity preserves almost
 sure weak spectral limits of Hermitian matrix families. Pairwise independence of the diagonal
@@ -23,6 +22,10 @@ In particular a Wigner matrix and its zero-diagonal version have the same almost
 spectral limits. This separates the arbitrary diagonal law from the finite-second-moment
 off-diagonal hypotheses in the semicircle law. The result concerns global spectral limits;
 individual extreme eigenvalues need not be stable under these perturbations.
+
+The pointwise and mean absolute resolvent bounds also apply to triangular arrays with
+non-identically distributed diagonal entries. They control the transform error through the
+normalized Euclidean size of the diagonal and its mean square, respectively.
 
 ## References
 
@@ -102,8 +105,8 @@ omit [MeasurableSpace Ω] in
 open scoped Matrix.Norms.Frobenius in
 /-- The transform error from setting the diagonal to zero is bounded by the normalized
 Euclidean norm of the diagonal times `(Im z)⁻²`. -/
-theorem norm_resolventTransform_wignerMatrix_sub_zero_le (ω : Ω)
-    {z : ℂ} (hz : 0 < z.im) :
+theorem norm_resolventTransform_wignerMatrix_sub_wignerMatrix_zero_le (ω : Ω)
+    {z : ℂ} (hz : z.im ≠ 0) :
     ‖resolventTransform ((wignerMatrix ξ η (n + 1) ω).spectralMeasure
       (wignerMatrix_isHermitian ξ η ω (n + 1)) : Measure ℝ) z -
       resolventTransform ((wignerMatrix ξ (fun _ _ ↦ 0) (n + 1) ω).spectralMeasure
@@ -126,14 +129,16 @@ theorem norm_resolventTransform_wignerMatrix_sub_zero_le (ω : Ω)
     ring
   have hp := norm_resolventTransform_spectralMeasure_sub_le_frobenius
     (wignerMatrix_isHermitian ξ η ω (n + 1))
-    (wignerMatrix_isHermitian ξ (fun _ _ ↦ 0) ω (n + 1)) hz.ne'
-  simpa only [hB, Fintype.card_fin, Nat.cast_succ, abs_of_pos hz, mul_div_assoc, hnorm] using hp
+    (wignerMatrix_isHermitian ξ (fun _ _ ↦ 0) ω (n + 1)) hz
+  simpa only [hB, Fintype.card_fin, Nat.cast_succ, ← inv_pow, sq_abs, inv_pow,
+    mul_div_assoc, hnorm] using hp
 
 /-- The mean transform error from setting the diagonal to zero is bounded using only
 the normalized sum of diagonal second moments. -/
-theorem integral_norm_resolventTransform_wignerMatrix_sub_zero_le [IsProbabilityMeasure P]
+theorem integral_norm_resolventTransform_wignerMatrix_sub_wignerMatrix_zero_le
+    [IsProbabilityMeasure P]
     (hξ : ∀ ij : StrictUpper, ij.val.2 < n + 1 → AEMeasurable (ξ ij) P)
-    (hη : ∀ i < n + 1, MemLp (η i) 2 P) {z : ℂ} (hz : 0 < z.im) :
+    (hη : ∀ i < n + 1, MemLp (η i) 2 P) {z : ℂ} (hz : z.im ≠ 0) :
     (∫ ω, ‖resolventTransform ((wignerMatrix ξ η (n + 1) ω).spectralMeasure
       (wignerMatrix_isHermitian ξ η ω (n + 1)) : Measure ℝ) z -
       resolventTransform ((wignerMatrix ξ (fun _ _ ↦ 0) (n + 1) ω).spectralMeasure
@@ -152,13 +157,14 @@ theorem integral_norm_resolventTransform_wignerMatrix_sub_zero_le [IsProbability
     simpa only [Real.norm_of_nonneg (Real.sqrt_nonneg _), Real.sq_sqrt (hS _)] using hSi
   have ha := Matrix.integrable_resolventTransform_spectralMeasure
     (aemeasurable_wignerMatrix hξ (fun i hi ↦ (hη i hi).aemeasurable))
-    (fun ω ↦ wignerMatrix_isHermitian ξ η ω (n + 1)) hz.ne'
+    (fun ω ↦ wignerMatrix_isHermitian ξ η ω (n + 1)) hz
   have hb := Matrix.integrable_resolventTransform_spectralMeasure
     (aemeasurable_wignerMatrix hξ (fun _ _ ↦ aemeasurable_const))
-    (fun ω ↦ wignerMatrix_isHermitian ξ (fun _ _ ↦ 0) ω (n + 1)) hz.ne'
+    (fun ω ↦ wignerMatrix_isHermitian ξ (fun _ _ ↦ 0) ω (n + 1)) hz
   have hab := (ha.sub hb).norm
   refine (integral_mono hab ((he.integrable one_le_two).const_mul _)
-    (fun ω ↦ norm_resolventTransform_wignerMatrix_sub_zero_le (ξ := ξ) (η := η) ω hz)).trans ?_
+    (fun ω ↦ norm_resolventTransform_wignerMatrix_sub_wignerMatrix_zero_le
+      (ξ := ξ) (η := η) ω hz)).trans ?_
   rw [integral_const_mul]
   refine mul_le_mul_of_nonneg_left ((integral_le_sqrt_integral_sq he).trans_eq ?_) (sq_nonneg _)
   simp_rw [Real.sq_sqrt (hS _)]

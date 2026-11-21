@@ -35,6 +35,21 @@ public section
 
 noncomputable section
 
+namespace Matrix
+
+variable {𝕜 n : Type*} [CommRing 𝕜] [Fintype n] [DecidableEq n]
+
+/-- The resolvent of the principal submatrix obtained by deleting row and column `i`. -/
+def minorResolvent (A : Matrix n n 𝕜) (i : n) (z : 𝕜) :
+    Matrix {j // j ≠ i} {j // j ≠ i} 𝕜 :=
+  (A.submatrix (↑) (↑) - z • 1)⁻¹
+
+/-- The minor resolvent is the inverse of the shifted principal submatrix. -/
+theorem minorResolvent_def (A : Matrix n n 𝕜) (i : n) (z : 𝕜) :
+    A.minorResolvent i z = (A.submatrix (↑) (↑) - z • 1)⁻¹ := by rw [minorResolvent]
+
+end Matrix
+
 namespace Matrix.IsHermitian
 
 variable {𝕜 n : Type*} [RCLike 𝕜] [Fintype n] [DecidableEq n]
@@ -48,8 +63,7 @@ resolvent of the principal submatrix away from `i` in the `i`-th column. -/
 theorem inv_inv_sub_smul_one_apply_self {z : 𝕜} (hz : RCLike.im z ≠ 0) (i : n) :
     ((A - z • 1)⁻¹ i i)⁻¹ =
       A i i - z - star (fun a : {a // a ≠ i} ↦ A a i) ⬝ᵥ
-        (((A.submatrix (↑) (↑) : Matrix {a // a ≠ i} {a // a ≠ i} 𝕜) - z • 1)⁻¹ *ᵥ
-          fun a : {a // a ≠ i} ↦ A a i) := by
+        (A.minorResolvent i z *ᵥ fun a : {a // a ≠ i} ↦ A a i) := by
   have hB : (A.submatrix (↑) (↑) : Matrix {a // a ≠ i} {a // a ≠ i} 𝕜).IsHermitian :=
     hA.submatrix _
   have hsub : ((A - z • 1).submatrix (↑) (↑) : Matrix {a // a ≠ i} {a // a ≠ i} 𝕜) =
@@ -66,7 +80,7 @@ theorem inv_inv_sub_smul_one_apply_self {z : 𝕜} (hz : RCLike.im z ≠ 0) (i :
   have hcol : (fun a : {a // a ≠ i} ↦ (A - z • 1) a i) = fun a : {a // a ≠ i} ↦ A a i := by
     ext a
     simp [a.property]
-  rw [hrow, hcol]
+  rw [hrow, hcol, minorResolvent_def]
   simp
 
 /-- **Leave-one-out formula.** The diagonal entry `R(z) i i` of the resolvent of a Hermitian matrix
@@ -74,8 +88,7 @@ at a non-real point equals `(A i i - z - aᵢᴴ (A⁽ⁱ⁾ - z • 1)⁻¹ a�
 theorem inv_sub_smul_one_apply_self_eq {z : 𝕜} (hz : RCLike.im z ≠ 0) (i : n) :
     (A - z • 1)⁻¹ i i =
       (A i i - z - star (fun a : {a // a ≠ i} ↦ A a i) ⬝ᵥ
-        (((A.submatrix (↑) (↑) : Matrix {a // a ≠ i} {a // a ≠ i} 𝕜) - z • 1)⁻¹ *ᵥ
-          fun a : {a // a ≠ i} ↦ A a i))⁻¹ := by
+        (A.minorResolvent i z *ᵥ fun a : {a // a ≠ i} ↦ A a i))⁻¹ := by
   rw [← hA.inv_inv_sub_smul_one_apply_self hz i, inv_inv]
 
 end Matrix.IsHermitian

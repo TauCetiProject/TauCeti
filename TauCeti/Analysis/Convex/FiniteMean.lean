@@ -62,6 +62,17 @@ theorem finiteMean_eq_inv_smul_sum (z : ι → E) :
 theorem finiteMean_of_isEmpty [IsEmpty ι] (z : ι → E) : finiteMean R z = 0 := by
   simp [finiteMean_eq_inv_smul_sum]
 
+/-- Taking a finite mean commutes with scaling. -/
+theorem finiteMean_smul (c : R) (z : ι → E) :
+    finiteMean R (fun i ↦ c • z i) = c • finiteMean R z := by
+  simp only [finiteMean_eq_inv_smul_sum, ← smul_sum, smul_comm (c : R)]
+
+/-- The finite mean of scalar families preserves the pointwise order. -/
+theorem finiteMean_mono [LinearOrder R] [IsStrictOrderedRing R] {f g : ι → R}
+    (h : ∀ i, f i ≤ g i) : finiteMean R f ≤ finiteMean R g := by
+  rw [finiteMean_eq_inv_smul_sum, finiteMean_eq_inv_smul_sum, smul_eq_mul, smul_eq_mul]
+  exact mul_le_mul_of_nonneg_left (sum_le_sum fun i _ ↦ h i) (inv_nonneg.mpr (Nat.cast_nonneg _))
+
 /-- Centering two scalar families subtracts the product of their means from their mean
 product. This also holds for an empty family, and in arbitrary characteristic. -/
 theorem finiteMean_sub_mul_sub (f g : ι → R) :
@@ -96,6 +107,11 @@ theorem finiteMean_sub_const [Nonempty ι] (z : ι → E) (c : E) :
 theorem finiteMean_add_const [Nonempty ι] (z : ι → E) (c : E) :
     finiteMean R (fun i ↦ z i + c) = finiteMean R z + c := by
   simpa only [sub_neg_eq_add] using finiteMean_sub_const (R := R) z (-c)
+
+/-- The mean of a nonempty constant family is that constant. -/
+@[simp] theorem finiteMean_const [Nonempty ι] (c : E) :
+    finiteMean R (fun _ : ι ↦ c) = c := by
+  simp [finiteMean_eq_inv_smul_sum, ← Nat.cast_smul_eq_nsmul R, smul_smul]
 
 /-- **Appending a point.** Appending `y` to a family `z` of `n` points with mean `m` moves the
 mean by `(n + 1)⁻¹ • (y - m)`. For `n = 0` this says that the mean of the single point `y` is
