@@ -16,7 +16,9 @@ Two comparison bounds for the integrals `∫ ‖f‖²` of square-integrable fun
 integrals themselves rather than with `eLpNorm`, as they appear in energy estimates: the bound
 `∫ ‖f₁ + f₂ + f₃‖² ≤ 3 (∫ ‖f₁‖² + ∫ ‖f₂‖² + ∫ ‖f₃‖²)`
 (`MeasureTheory.integral_norm_sq_le_three_mul`) and the pointwise comparison
-`‖f‖ ≤ c ‖g‖ ⟹ ∫ ‖f‖² ≤ c² ∫ ‖g‖²` (`MeasureTheory.integral_norm_sq_le_sq_mul_of_norm_le`); and the
+`‖f‖ ≤ c ‖g‖ ⟹ ∫ ‖f‖² ≤ c² ∫ ‖g‖²` (`MeasureTheory.integral_norm_sq_le_sq_mul_of_norm_le`), with
+its instance for operators bounded by `c` applied to `f`
+(`MeasureTheory.memLp_clm_apply_and_integral_norm_sq_le`); and the
 almost everywhere convergent subsequence of a sequence with `∫ ‖f n - g‖² → 0`
 (`MeasureTheory.exists_subseq_ae_tendsto_of_tendsto_integral_norm_sub_sq`), Riesz's theorem through
 convergence in measure.
@@ -63,6 +65,21 @@ theorem integral_norm_sq_le_sq_mul_of_norm_le {α E F : Type*} [MeasurableSpace 
   filter_upwards [hle] with x hx
   rw [← mul_pow]
   exact pow_le_pow_left₀ (norm_nonneg _) hx 2
+
+/-- Applying continuous linear maps `B x` with `‖B x‖ ≤ c` almost everywhere to `f ∈ L²` gives
+`x ↦ B x (f x) ∈ L²`, with `∫ ‖B x (f x)‖² ≤ c² ∫ ‖f‖²`. -/
+theorem memLp_clm_apply_and_integral_norm_sq_le {α 𝕜 E F : Type*} [MeasurableSpace α]
+    {μ : Measure α} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] {B : α → E →L[𝕜] F} {f : α → E} {c : ℝ}
+    (hB : AEStronglyMeasurable B μ) (hc : ∀ᵐ x ∂μ, ‖B x‖ ≤ c) (hf : MemLp f 2 μ) :
+    MemLp (fun x ↦ B x (f x)) 2 μ ∧ ∫ x, ‖B x (f x)‖ ^ 2 ∂μ ≤ c ^ 2 * ∫ x, ‖f x‖ ^ 2 ∂μ := by
+  have hle : ∀ᵐ x ∂μ, ‖B x (f x)‖ ≤ c * ‖f x‖ := by
+    filter_upwards [hc] with x hx
+    exact ((B x).le_opNorm _).trans (mul_le_mul_of_nonneg_right hx (norm_nonneg _))
+  have hm : MemLp (fun x ↦ B x (f x)) 2 μ :=
+    hf.of_le_mul ((isBoundedBilinearMap_apply (𝕜 := 𝕜) (E := E) (F := F)).continuous
+      |>.comp_aestronglyMeasurable (hB.prodMk hf.aestronglyMeasurable)) hle
+  exact ⟨hm, integral_norm_sq_le_sq_mul_of_norm_le hm hf hle⟩
 
 /-- **Convergence in `L²` gives an almost everywhere convergent subsequence.** If
 `∫ ‖f n - g‖² → 0` for `f n, g ∈ L²`, then a subsequence of `f n` converges to `g` almost

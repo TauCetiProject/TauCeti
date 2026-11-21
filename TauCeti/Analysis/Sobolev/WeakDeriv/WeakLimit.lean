@@ -109,7 +109,7 @@ theorem hasWeakLineDerivOn_of_tendsto_inner_toLp [IsLocallyFiniteMeasure μ] {ι
       refine (norm_inner_le_norm _ _).trans (mul_le_mul_of_nonneg_right (le_of_eq ?_)
         (norm_nonneg _))
       rw [← Real.sqrt_sq (norm_nonneg _), MemLp.norm_toLp_sq]
-      rfl
+      simp only [Pi.sub_apply]
     · simpa using ((Real.continuous_sqrt.tendsto 0).comp hFf).mul_const ‖Ψ‖
   have h2 : Tendsto (fun n ↦ ⟪∫ x, (φ : E → ℝ) x • G n x ∂μ, y⟫_ℝ) l
       (𝓝 ⟪∫ x, (φ : E → ℝ) x • g x ∂μ, y⟫_ℝ) := by
