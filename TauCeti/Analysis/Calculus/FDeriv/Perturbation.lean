@@ -27,10 +27,13 @@ sets (`IsCompact.exists_pos_forall_mem_and_dist_lt`), which controls the error m
 Iterating, if `f : E → E` is `C¹` near the first `k` points of the orbits of the points of `K`,
 then every map `g` which is `C¹`-close enough to `f` on a given neighbourhood `U` of these orbit
 points has its `k`-th iterate `C¹`-close to `f^[k]` on `K`
-(`IsCompact.exists_pos_forall_differentiableAt_iterate_and_norm_sub_le`). This is the step that
-makes conditions on the iterates of a map, such as nondegeneracy of all its periodic points of
-period at most `k` in a compact set, open in the `C¹` topology, and so it is what a Baire argument
-making all periodic points of a map nondegenerate up to a period cutoff needs.
+(`IsCompact.exists_pos_forall_differentiableAt_iterate_and_norm_sub_le`). This is one ingredient
+in showing that conditions on the iterates of a map, such as nondegeneracy of all its periodic
+points of period at most `k` in a compact set, are open in the `C¹` topology, as a Baire argument
+making all periodic points of a map nondegenerate up to a period cutoff needs. The other
+ingredients, persistence of nondegenerate fixed points under `C¹`-small perturbations (applied to
+`f^[k]` and `g^[k]`) and control of the periodic points of `g` in the compact set, are not proved
+in this file.
 
 The induction uses that `f^[k]` is `C¹` along the orbit (`TauCeti.contDiffAt_iterate`).
 
