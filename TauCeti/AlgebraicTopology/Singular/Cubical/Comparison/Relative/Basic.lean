@@ -82,6 +82,12 @@ relative homotopy invariance of cubical homology is transported from the simplic
   same map on relative cubical homology.
 * `TopPair.IsCubicalRepresentative.map`: a map of pairs carries a representative of a relative
   class to a representative of its image.
+* `TopPair.exists_isCubicalRepresentative_of_boundary_mem`,
+  `TopPair.exists_isCubicalRepresentative_of_dim_zero`,
+  `TopPair.isCubicalRepresentative_zero_iff`: a relative cycle represents a relative class, the
+  zero class exactly when it is a relative boundary; representatives are additive
+  (`TopPair.IsCubicalRepresentative.sum`) and determine their class
+  (`TopPair.IsCubicalRepresentative.unique`).
 * `TopPair.quasiIsoAt_cubicalChainComplexMap_iff`: a map of pairs induces a quasi-isomorphism of
   relative chains in a degree exactly when, on chains of the ambient spaces, every relative cycle
   of the target is the image of a relative cycle up to a boundary and the chains of the subspace,
@@ -408,6 +414,134 @@ private theorem d_cokernel_π_f_apply (P : TopPair.{u}) {i j : ℕ}
       (cokernel.π ((normalizedCubicalChainComplex k).map P.map)).f j
         (((normalizedCubicalChainComplex k).obj P.fst).d i j c) :=
   HomologicalComplex.Hom.comm_apply _ i j c
+
+/-! ### Representatives of relative classes -/
+
+variable {k} in
+/-- The zero chain represents the zero class. -/
+theorem isCubicalRepresentative_zero (P : TopPair.{u}) (n : ℕ) :
+    P.IsCubicalRepresentative k (0 : NormalizedCubicalChain P.fst k n) 0 :=
+  ⟨0, (LinearMap.map_zero _).trans (LinearMap.map_zero _).symm, map_zero _⟩
+
+variable {k} in
+/-- The sum of representatives of two relative classes represents their sum. -/
+theorem IsCubicalRepresentative.add {P : TopPair.{u}} {n : ℕ}
+    {c c' : NormalizedCubicalChain P.fst k n} {μ μ' : (P.cubicalChainComplex k).homology n}
+    (h : P.IsCubicalRepresentative k c μ) (h' : P.IsCubicalRepresentative k c' μ') :
+    P.IsCubicalRepresentative k (c + c') (μ + μ') := by
+  obtain ⟨r, hr, rfl⟩ := h
+  obtain ⟨r', hr', rfl⟩ := h'
+  exact ⟨r + r', (LinearMap.map_add _ c c').trans ((congrArg₂ (· + ·) hr hr').trans
+    (map_add _ r r').symm), map_add _ _ _⟩
+
+variable {k} in
+/-- The negative of a representative of a relative class represents its negative. -/
+theorem IsCubicalRepresentative.neg {P : TopPair.{u}} {n : ℕ}
+    {c : NormalizedCubicalChain P.fst k n} {μ : (P.cubicalChainComplex k).homology n}
+    (h : P.IsCubicalRepresentative k c μ) : P.IsCubicalRepresentative k (-c) (-μ) := by
+  obtain ⟨r, hr, rfl⟩ := h
+  exact ⟨-r, (LinearMap.map_neg _ c).trans ((congrArg Neg.neg hr).trans (map_neg _ r).symm),
+    map_neg _ _⟩
+
+variable {k} in
+/-- The difference of representatives of two relative classes represents their difference. -/
+theorem IsCubicalRepresentative.sub {P : TopPair.{u}} {n : ℕ}
+    {c c' : NormalizedCubicalChain P.fst k n} {μ μ' : (P.cubicalChainComplex k).homology n}
+    (h : P.IsCubicalRepresentative k c μ) (h' : P.IsCubicalRepresentative k c' μ') :
+    P.IsCubicalRepresentative k (c - c') (μ - μ') := by
+  simpa only [sub_eq_add_neg] using h.add h'.neg
+
+variable {k} in
+/-- A finite sum of representatives of relative classes represents the sum of the classes. -/
+theorem IsCubicalRepresentative.sum {P : TopPair.{u}} {n : ℕ} {ι : Type*} (s : Finset ι)
+    {c : ι → NormalizedCubicalChain P.fst k n} {μ : ι → (P.cubicalChainComplex k).homology n}
+    (h : ∀ i ∈ s, P.IsCubicalRepresentative k (c i) (μ i)) :
+    P.IsCubicalRepresentative k (∑ i ∈ s, c i) (∑ i ∈ s, μ i) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simpa using isCubicalRepresentative_zero P n
+  | insert i s hi ih =>
+    rw [Finset.sum_insert hi, Finset.sum_insert hi]
+    exact (h i (Finset.mem_insert_self i s)).add (ih fun j hj ↦ h j (Finset.mem_insert_of_mem hj))
+
+variable {k} in
+/-- A chain represents at most one relative class. -/
+theorem IsCubicalRepresentative.unique {P : TopPair.{u}} {n : ℕ}
+    {c : NormalizedCubicalChain P.fst k n} {μ μ' : (P.cubicalChainComplex k).homology n}
+    (h : P.IsCubicalRepresentative k c μ) (h' : P.IsCubicalRepresentative k c μ') : μ = μ' := by
+  obtain ⟨r, hr, rfl⟩ := h
+  obtain ⟨r', hr', rfl⟩ := h'
+  rw [(P.cubicalChainComplex k).moduleCat_iCycles_injective n (hr.symm.trans hr')]
+
+/-- The projection to the relative chains sends the boundary of a chain to the boundary of its
+projection. -/
+private theorem cokernel_π_f_boundary (P : TopPair.{u}) {n : ℕ}
+    (v : NormalizedCubicalChain P.fst k (n + 1)) :
+    (cokernel.π ((normalizedCubicalChainComplex k).map P.map)).f n
+        (NormalizedCubicalChain.boundary P.fst k n v) =
+      (P.cubicalChainComplex k).d (n + 1) n
+        ((cokernel.π ((normalizedCubicalChainComplex k).map P.map)).f (n + 1) v) :=
+  -- the cubical boundary is the differential of the normalized cubical chain complex
+  (congrArg _ (normalizedCubicalChainComplexXEquiv_d_apply P.fst n v).symm).trans
+    (d_cokernel_π_f_apply k P v).symm
+
+/-- A chain of the ambient space is a chain of the subspace exactly when it vanishes in the
+relative chains. -/
+private theorem mem_supportedIn_iff_cokernel_π_f_eq_zero (P : TopPair.{u}) {n : ℕ}
+    (c : NormalizedCubicalChain P.fst k n) :
+    c ∈ NormalizedCubicalChain.supportedIn k (Set.range P.map) n ↔
+      (cokernel.π ((normalizedCubicalChainComplex k).map P.map)).f n c = 0 :=
+  ((cokernel_π_f_eq_zero_iff k P c).trans
+    (mem_range_normalizedCubicalChainComplex_map_f_iff k P c)).symm
+
+/-- **A relative cycle represents a relative class**: a chain of the ambient space whose boundary
+is a chain of the subspace represents a class of the relative cubical homology. -/
+theorem exists_isCubicalRepresentative_of_boundary_mem (P : TopPair.{u}) {n : ℕ}
+    (c : NormalizedCubicalChain P.fst k (n + 1))
+    (hc : NormalizedCubicalChain.boundary P.fst k n c ∈
+      NormalizedCubicalChain.supportedIn k (Set.range P.map) n) :
+    ∃ μ, P.IsCubicalRepresentative k c μ := by
+  have hd := ((mem_supportedIn_iff_cokernel_π_f_eq_zero k P _).1 hc)
+  rw [cokernel_π_f_boundary] at hd
+  exact ⟨_, _,
+    ((P.cubicalChainComplex k).iCycles_moduleCatCyclesMk (n + 1) _ n (by simp) hd).symm, rfl⟩
+
+/-- Every chain of dimension `0` of the ambient space is a relative cycle, so it represents a
+relative class. -/
+theorem exists_isCubicalRepresentative_of_dim_zero (P : TopPair.{u})
+    (c : NormalizedCubicalChain P.fst k 0) : ∃ μ, P.IsCubicalRepresentative k c μ :=
+  ⟨_, _, ((P.cubicalChainComplex k).iCycles_moduleCatCyclesMk 0 _ 0 (by simp)
+    (by simp)).symm, rfl⟩
+
+/-- **A chain represents the zero relative class exactly when it is a relative boundary**: the
+boundary of a chain of the ambient space, up to a chain of the subspace. -/
+theorem isCubicalRepresentative_zero_iff (P : TopPair.{u}) {n : ℕ}
+    (c : NormalizedCubicalChain P.fst k n) :
+    P.IsCubicalRepresentative k c 0 ↔ ∃ v : NormalizedCubicalChain P.fst k (n + 1),
+      c - NormalizedCubicalChain.boundary P.fst k n v ∈
+        NormalizedCubicalChain.supportedIn k (Set.range P.map) n := by
+  -- In the relative chains, `c - ∂v` vanishes exactly when `c` is the boundary of the image of `v`.
+  have key (v : NormalizedCubicalChain P.fst k (n + 1)) :
+      c - NormalizedCubicalChain.boundary P.fst k n v ∈
+          NormalizedCubicalChain.supportedIn k (Set.range P.map) n ↔
+        (cokernel.π ((normalizedCubicalChainComplex k).map P.map)).f n c =
+          (P.cubicalChainComplex k).d (n + 1) n
+            ((cokernel.π ((normalizedCubicalChainComplex k).map P.map)).f (n + 1) v) := by
+    rw [mem_supportedIn_iff_cokernel_π_f_eq_zero, ← cokernel_π_f_boundary]
+    exact (congrArg (· = 0) (LinearMap.map_sub _ c _)).to_iff.trans sub_eq_zero
+  constructor
+  · rintro ⟨r, hr, hr0⟩
+    obtain ⟨b, rfl⟩ := ((P.cubicalChainComplex k).moduleCat_homologyπ_eq_zero_iff
+      (m := n + 1) (by simp) r).1 hr0
+    obtain ⟨v, rfl⟩ := surjective_cokernel_π_f k P (n + 1) b
+    exact ⟨v, (key v).2 (hr.trans
+      ((P.cubicalChainComplex k).moduleCat_iCycles_toCycles_apply n (n + 1) _))⟩
+  · rintro ⟨v, hv⟩
+    refine ⟨(P.cubicalChainComplex k).toCycles (n + 1) n
+      ((cokernel.π ((normalizedCubicalChainComplex k).map P.map)).f (n + 1) v),
+      ((key v).1 hv).trans
+        ((P.cubicalChainComplex k).moduleCat_iCycles_toCycles_apply n (n + 1) _).symm, ?_⟩
+    exact ((P.cubicalChainComplex k).moduleCat_homologyπ_eq_zero_iff (by simp) _).2 ⟨_, rfl⟩
 
 /-- **Quasi-isomorphisms of relative cubical chains, on chains of the ambient spaces.** A map of
 pairs `f : (X, A) ⟶ (X', A')` induces a quasi-isomorphism of relative normalized cubical chains in
