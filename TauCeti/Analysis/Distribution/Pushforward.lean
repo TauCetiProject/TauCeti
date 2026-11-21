@@ -594,7 +594,7 @@ theorem pushforward_ofFun_apply (hf : LocallyIntegrableOn f Ω μ)
 
 /-- **Pushforward of a density along a constant map.** Pushing the density `f μ` forward along the
 constant map with value `c` gives the point mass at `c` weighted by the total mass `∫_Ω f dμ`.
-For instance a compactly supported density of total mass one is pushed forward to the point
+For instance a smooth compactly supported density of total mass one is pushed forward to the point
 mass `δ_c`, although its wave front set is empty. -/
 theorem pushforward_const_ofFun (hf : LocallyIntegrableOn f Ω μ) {c : E'}
     (hT : IsProperOnSupport (ofFun Ω f μ ⊤) (fun _ ↦ c) Ω') :
