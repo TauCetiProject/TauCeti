@@ -41,8 +41,6 @@ symbols are seen to be invariant under changes of coordinates.
 
 ## Main declarations
 
-* `TauCeti.Amplitude.exists_coefficient_eq_of_forall_le_norm`: a smooth coefficient agreeing with
-  an amplitude at all large frequencies is an amplitude of the same order.
 * `TauCeti.HomogeneousSymbol.cutoffAmplitude`: the cut-off term `χ(ξ) a(x, y, ξ)` of a homogeneous
   term, with its derivatives `TauCeti.HomogeneousSymbol.spatialDerivSnd_cutoffAmplitude` and
   `TauCeti.HomogeneousSymbol.coefficient_frequencyDeriv_cutoffAmplitude`.
@@ -80,62 +78,6 @@ namespace TauCeti
 variable {n : ℕ} {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W]
   [NormedSpace ℂ W] {m : ℝ}
 
-namespace Amplitude
-
-/-- A smooth coefficient vanishing at every frequency of norm at least `R` satisfies the
-amplitude estimates of every order. -/
-private theorem exists_bound_of_forall_le_norm_eq_zero
-    {f : CoordinateSpace n × CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W}
-    (hf : ContDiff ℝ ∞ f) (R : ℝ) (hR : ∀ x y ξ, R ≤ ‖ξ‖ → f (x, y, ξ) = 0) (s : ℝ)
-    {K : Set (CoordinateSpace n × CoordinateSpace n)} (hK : IsCompact K)
-    (ds : List (CoordinateSpace n × CoordinateSpace n × CoordinateSpace n)) :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ x y, (x, y) ∈ K → ∀ ξ,
-      ‖iteratedFDerivAlong ℝ ds f (x, y, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (s / 2) := by
-  -- On `K × closedBall 0 R` the continuous quotient of the derivative by the weight is bounded;
-  -- beyond the radius `R` the coefficient vanishes on a neighbourhood, and so do its derivatives.
-  have hw : Continuous fun q : (CoordinateSpace n × CoordinateSpace n) × CoordinateSpace n ↦
-      (1 + ‖q.2‖ ^ 2) ^ (s / 2) :=
-    (continuous_const.add (continuous_snd.norm.pow 2)).rpow_const fun q ↦
-      Or.inl (by positivity : (0 : ℝ) < 1 + ‖q.2‖ ^ 2).ne'
-  have hD : Continuous fun q : (CoordinateSpace n × CoordinateSpace n) × CoordinateSpace n ↦
-      ‖iteratedFDerivAlong ℝ ds f (q.1.1, q.1.2, q.2)‖ :=
-    ((hf.iteratedFDerivAlong (m := 0) ds (by simp)).continuous.comp (by fun_prop)).norm
-  obtain ⟨M, hM⟩ := (hK.prod (isCompact_closedBall (0 : CoordinateSpace n) R))
-    |>.exists_bound_of_continuousOn (hD.div hw fun q ↦ (rpow_weight_pos q.2 _).ne').continuousOn
-  refine ⟨max M 0, le_max_right _ _, fun x y hxy ξ ↦ ?_⟩
-  rcases le_or_gt ‖ξ‖ R with hξ | hξ
-  · have h := hM ((x, y), ξ) ⟨hxy, mem_closedBall_zero_iff.2 hξ⟩
-    rw [Real.norm_eq_abs] at h
-    rw [← div_le_iff₀ (rpow_weight_pos ξ _)]
-    exact (le_abs_self _).trans (h.trans (le_max_left M 0))
-  · have hzero : f =ᶠ[𝓝 (x, y, ξ)] 0 := by
-      filter_upwards [(isOpen_lt continuous_const
-        (continuous_norm.comp (continuous_snd.comp continuous_snd))).mem_nhds hξ] with q hq
-      exact hR q.1 q.2.1 q.2.2 hq.le
-    rw [iteratedFDerivAlong_eq_zero_of_eventuallyEq_zero hzero, norm_zero]
-    exact mul_nonneg (le_max_right _ _) (rpow_weight_pos ξ _).le
-
-/-- A smooth coefficient that agrees with an amplitude `b` of order `m' ≤ m` at all frequencies of
-norm at least `R` is an amplitude of order `m`: the difference vanishes at large frequencies. -/
-theorem exists_coefficient_eq_of_forall_le_norm
-    {f : CoordinateSpace n × CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W}
-    (hf : ContDiff ℝ ∞ f) {m' : ℝ} (b : Amplitude n V W m') (hm : m' ≤ m) (R : ℝ)
-    (h : ∀ x y ξ, R ≤ ‖ξ‖ → f (x, y, ξ) = b.coefficient (x, y, ξ)) :
-    ∃ c : Amplitude n V W m, c.coefficient = f := by
-  have hg : ContDiff ℝ ∞ (f - b.coefficient) := hf.sub b.contDiff_coefficient
-  refine ⟨⟨f, hf, fun K hK α γ β ↦ ?_⟩, rfl⟩
-  obtain ⟨C, hC0, hC⟩ := b.exists_bound K hK α γ β
-  obtain ⟨D, hD0, hD⟩ := exists_bound_of_forall_le_norm_eq_zero hg R
-    (fun x y ξ hξ ↦ sub_eq_zero.2 (h x y ξ hξ)) (m - β.length) hK (amplitudeDirections α γ β)
-  refine ⟨C + D, add_nonneg hC0 hD0, fun x y hxy ξ ↦ ?_⟩
-  have e : f = b.coefficient + (f - b.coefficient) := by abel
-  rw [e, iteratedFDerivAlong_add b.contDiff_coefficient hg _ (by simp), Pi.add_apply, add_mul]
-  exact (norm_add_le _ _).trans (add_le_add ((hC x y hxy ξ).trans
-    (mul_le_mul_of_nonneg_left (rpow_weight_le_rpow_weight ξ (by linarith)) hC0))
-    (hD x y hxy ξ))
-
-end Amplitude
-
 namespace HomogeneousSymbol
 
 variable (χ : FrequencyCutoff (CoordinateSpace n))
@@ -166,8 +108,9 @@ private theorem exists_bound_iteratedFDerivAlong_smul_coefficient
       List.ofFn_get, List.ofFn_comp' β.get
         (fun j ↦ ((0 : CoordinateSpace n × CoordinateSpace n), EuclideanSpace.single j 1)),
       List.ofFn_get]
-    simp only [amplitudeDirections_def, lu, List.map_append, List.map_map, List.append_assoc]
-    rfl
+    simp only [amplitudeDirections_def, lu, L, List.map_append, List.map_map, List.append_assoc,
+      Function.comp_def, Prod.zero_eq_mk, ContinuousLinearEquiv.coe_coe,
+      ContinuousLinearEquiv.prodAssoc_symm_apply]
   have hcomp := iteratedFDerivAlong_comp_of_hasFDerivAt (φ := L) (L := (L : _ →L[ℝ] _))
     (fun z ↦ L.hasFDerivAt) hF (amplitudeDirections α γ β) (by simp) (x, y, ξ)
   have hnorm : ∀ v ∈ lu, ‖v‖ = 1 := by
@@ -178,8 +121,9 @@ private theorem exists_bound_iteratedFDerivAlong_smul_coefficient
     Finset.prod_eq_one fun i _ ↦ by simp, mul_one, mul_one] at h
   -- The coefficient is the cut-off term composed with the reassociation `L`.
   have e : (fun p : CoordinateSpace n × CoordinateSpace n × CoordinateSpace n ↦
-      χ p.2.2 • a.coefficient ((p.1, p.2.1), p.2.2)) = fun z ↦ χ (L z).2 • a.coefficient (L z) :=
-    (rfl)
+      χ p.2.2 • a.coefficient ((p.1, p.2.1), p.2.2)) = fun z ↦ χ (L z).2 • a.coefficient (L z) := by
+    funext ⟨_, _, _⟩
+    simp [L]
   rw [e, hcomp, hdirs, iteratedFDerivAlong_ofFn_eq_iteratedFDeriv
     (hF.of_le (by exact_mod_cast le_top))]
   exact h
@@ -226,11 +170,15 @@ private theorem fderiv_coefficient_cutoffAmplitude
       hasFDerivAt_snd
   have ha := (a.differentiableAt_coefficient (p := L p) hp).hasFDerivAt
   have h := (hχ.smul ha).comp p L.hasFDerivAt
-  rw [show (cutoffAmplitude χ a).coefficient =
-    ((fun q : (CoordinateSpace n × CoordinateSpace n) × CoordinateSpace n ↦ χ q.2) •
-      a.coefficient) ∘ L from (rfl), h.fderiv]
-  -- `L p = ((p.1, p.2.1), p.2.2)` holds by definition.
-  rfl
+  have e : (cutoffAmplitude χ a).coefficient =
+      ((fun q : (CoordinateSpace n × CoordinateSpace n) × CoordinateSpace n ↦ χ q.2) •
+        a.coefficient) ∘ L := by
+    funext ⟨_, _, _⟩
+    simp [L]
+  rw [e, h.fderiv]
+  obtain ⟨_, _, _⟩ := p
+  obtain ⟨_, _, _⟩ := v
+  simp [L]
 
 /-- The input-position derivative of the cut-off term is the cut-off term of the input-position
 derivative: the cutoff does not depend on the positions. -/

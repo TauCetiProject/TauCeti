@@ -65,8 +65,7 @@ becomes `ρ(M(x, y) ξ / t)`, whose position derivatives are bounded uniformly i
 
 * `TauCeti.Symbol.exists_amplitude_quantizeSchwartzValue_comp_eq`: the transported operator is the
   quantization of the amplitude `g(x, y) • a(κ x, M(x, y) ξ)` (`TauCeti.Symbol.compAmplitude`),
-  for data `M` and `g` depending only on `κ`, `K` and `ψ`, with `g(x, x) = ψ(x)` and
-  `M(x, x) = (Dκ(x)*)⁻¹` on the diagonal.
+  for data `M` and `g` with `g(x, x) = ψ(x)` and `M(x, x) = (Dκ(x)*)⁻¹` on the diagonal.
 * `TauCeti.Symbol.exists_quantizeSchwartzValue_comp_eq`: the transported operator is `Op(b)` for a
   symbol `b` of order `m` with `b(x, ξ) - ψ(x) a(κ x, (Dκ(x)*)⁻¹ ξ)` of order `m - 1`.
 * `TauCeti.ClassicalSymbol.exists_quantizeSchwartzValue_comp_eq`: if `a` is classical, so is `b`,
@@ -583,8 +582,7 @@ and on the diagonal `g(x, x) = ψ(x)` and `M(x, x) = (Dκ(x)*)⁻¹` (the latter
 `ψ`) wherever `κ x ∈ K`; so the restriction of `c` to the diagonal is `ψ(x) a(κ x, (Dκ(x)*)⁻¹ ξ)`.
 In particular the operator `u ↦ Op(a) ((ψ u) ∘ κ⁻¹) ∘ κ` is the quantization of a symbol of order
 `m`, whose full asymptotic expansion is `b ∼ ∑ₖ c.leftTerm k`
-(`TauCeti.Amplitude.isAsymptoticSum_leftSymbol`). The data `M` and `g` only depend on `κ`, `K` and
-`ψ`. -/
+(`TauCeti.Amplitude.isAsymptoticSum_leftSymbol`). -/
 theorem Symbol.exists_amplitude_quantizeSchwartzValue_comp_eq (a : Symbol n V W m)
     {K : Set (CoordinateSpace n)} (hK : IsCompact K)
     (haK : ∀ z ∉ K, ∀ η, a.coefficient (z, η) = 0)
@@ -645,21 +643,20 @@ theorem Symbol.exists_amplitude_quantizeSchwartzValue_comp_eq (a : Symbol n V W 
   set c := a.compAmplitude hκ hM hg hgc hgM with hc_def
   have hc : c.HasProperInputSupport := a.hasProperInputSupport_compAmplitude hκ hM hg hgc hgM
   have hΦx : ∀ x, Φ (x, x) = fderiv ℝ κ x := fun x ↦ by rw [hΦdef]; exact hadamardFactor_self κ x
+  have hφx : ∀ x, κ x ∈ K → x ∈ tsupport φ := fun x hx ↦
+    subset_tsupport _ (Function.mem_support.2 (by rw [hφ1' x hx]; exact one_ne_zero))
   refine ⟨M, g, hM, hg, hgc, hgM, fun x hx ↦ ?_, fun x hx hxψ ↦ ?_, fun u v huv x ↦ ?_⟩
   · -- On the diagonal `φ(x) = 1`, `M(x, x) = (Dκ(x)⁻¹)*` and `|det Dκ(x)| |det M(x, x)| = 1`.
     rw [hgdef]
     by_cases hψx : ψ x = 0
     · simp [hψx]
-    have hxS : (x, x) ∈ tsupport φ ×ˢ tsupport ψ :=
-      ⟨subset_tsupport _ (Function.mem_support.2 (by rw [hφ1' x hx]; exact one_ne_zero)),
-        subset_tsupport _ hψx⟩
+    have hxS : (x, x) ∈ tsupport φ ×ˢ tsupport ψ := ⟨hφx x hx, subset_tsupport _ hψx⟩
     have hu : IsUnit (fderiv ℝ κ x) := hΦx x ▸ hSΦ _ hxS
     simp only
     rw [hMS _ hxS, hΦx, hφ1' x hx, ← abs_mul,
       ContinuousLinearMap.det_mul_det_adjoint_ringInverse hu]
     simp
-  · have hxS : (x, x) ∈ tsupport φ ×ˢ tsupport ψ :=
-      ⟨subset_tsupport _ (Function.mem_support.2 (by rw [hφ1' x hx]; exact one_ne_zero)), hxψ⟩
+  · have hxS : (x, x) ∈ tsupport φ ×ˢ tsupport ψ := ⟨hφx x hx, hxψ⟩
     rw [hMS _ hxS, hΦx]
   · rw [Amplitude.quantizeSchwartzValue_leftSymbol hc]
     by_cases hx : κ x ∈ K
@@ -674,8 +671,7 @@ theorem Symbol.exists_amplitude_quantizeSchwartzValue_comp_eq (a : Symbol n V W 
     have hρ0 : ρ 0 = 1 := interior_subset (hρ1 rfl)
     have hρs : ∀ η, 1 ≤ ‖η‖ → ρ η = 0 := fun η hη ↦ image_eq_zero_of_notMem_tsupport
       fun h ↦ (not_lt.2 hη) (by simpa using hρU h)
-    have hxS : ∀ y ∈ tsupport ψ, (x, y) ∈ tsupport φ ×ˢ tsupport ψ := fun y hy ↦
-      ⟨subset_tsupport _ (Function.mem_support.2 (by rw [hφ1' x hx]; exact one_ne_zero)), hy⟩
+    have hxS : ∀ y ∈ tsupport ψ, (x, y) ∈ tsupport φ ×ˢ tsupport ψ := fun y hy ↦ ⟨hφx x hx, hy⟩
     have hMx : Continuous fun y ↦ M (x, y) :=
       hM.continuous.comp (continuous_const.prodMk continuous_id)
     -- The amplitude side: the regularized amplitudes `ρ(t⁻¹ M(x, y) ξ) c(x, y, ξ)`.
