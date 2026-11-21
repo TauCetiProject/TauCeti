@@ -199,7 +199,7 @@ theorem cohomologyClass_smul (MM : AInfinityRightModule AA M) (r : R) {x : M}
 theorem exists_cohomologyClass_eq (MM : AInfinityRightModule AA M) (c : MM.Cohomology) :
     ∃ (x : M) (hx : x ∈ MM.cycles), MM.cohomologyClass hx = c := by
   induction c using Submodule.Quotient.induction_on with
-  | H x => exact ⟨x, x.2, rfl⟩
+  | H x => exact ⟨x, x.property, rfl⟩
 
 /-- Two module cycles represent the same cohomology class exactly when their difference is a
 boundary. -/
@@ -234,7 +234,7 @@ def cohomologyEquivHomology (MM : AInfinityRightModule AA M) :
     ext z
     simp only [Submodule.mem_map, LinearMap.mem_boundariesInKer, mem_boundariesInCycles,
       boundaries_def]
-    refine ⟨fun ⟨w, hw, hwz⟩ ↦ ?_, fun hz ↦ ⟨⟨z, by rw [cycles_def]; exact z.2⟩, hz, ?_⟩⟩
+    refine ⟨fun ⟨w, hw, hwz⟩ ↦ ?_, fun hz ↦ ⟨⟨z, by rw [cycles_def]; exact z.property⟩, hz, ?_⟩⟩
     · rw [← hwz]
       simpa only [LinearEquiv.coe_coe, LinearEquiv.coe_ofEq_apply] using hw
     · exact Subtype.ext (LinearEquiv.coe_ofEq_apply _ _)
@@ -254,7 +254,7 @@ theorem cohomologyEquivHomology_symm_homologyπ (MM : AInfinityRightModule AA M)
     (z : LinearMap.ker MM.differential) :
     MM.cohomologyEquivHomology.symm
         (MM.differential.homologyπ MM.differential_comp_self_eq_zero z) =
-      MM.cohomologyClass (show (z : M) ∈ MM.cycles by rw [cycles_def]; exact z.2) := by
+      MM.cohomologyClass (show (z : M) ∈ MM.cycles by rw [cycles_def]; exact z.property) := by
   rw [LinearEquiv.symm_apply_eq, cohomologyEquivHomology_cohomologyClass]
 
 end AInfinityRightModule

@@ -51,13 +51,13 @@ theorem exists_contMDiff_contraction_of_starConvex_image_extChartAt [IsManifold 
     (hc : StarConvex ℝ (extChartAt I x c) (extChartAt I x '' (U : Set M))) :
     ∃ F : ℝ × U → U, ContMDiff (𝓘(ℝ).prod I) I n F ∧
       (∀ z, F (0, z) = z) ∧ (∀ z, F (1, z) = c) := by
-  let φ : U → E := fun y ↦ extChartAt I x y.1
+  let φ : U → E := fun y ↦ extChartAt I x y.val
   have hφ : ContMDiff I 𝓘(ℝ, E) n φ :=
-    (contMDiffOn_extChartAt (I := I) (x := x) (n := n)).comp_contMDiff contMDiff_subtype_val
-      fun y ↦ (extChartAt_source I x) ▸ hU y.2
+    (contMDiffOn_extChartAt (I := I) (x := x) (n := n)).comp_contMDiff contMDiff_subtypeVal
+      fun y ↦ (extChartAt_source I x) ▸ hU y.property
   let G : ℝ × U → E := fun p ↦ φ c + (1 - Real.smoothTransition p.1) • (φ p.2 - φ c)
   have hG_im (p : ℝ × U) : G p ∈ extChartAt I x '' (U : Set M) :=
-    hc.add_smul_sub_mem ⟨p.2.1, p.2.2, rfl⟩
+    hc.add_smul_sub_mem ⟨p.2.val, p.2.property, rfl⟩
       (by linarith [Real.smoothTransition.le_one p.1])
       (by linarith [Real.smoothTransition.nonneg p.1])
   have hG_tgt (p : ℝ × U) : G p ∈ (extChartAt I x).target := by
@@ -81,11 +81,11 @@ theorem exists_contMDiff_contraction_of_starConvex_image_extChartAt [IsManifold 
     refine Subtype.ext ?_
     dsimp only [G, φ]
     rw [Real.smoothTransition.zero, sub_zero, one_smul, add_sub_cancel]
-    exact (extChartAt I x).left_inv (hU z.2)
+    exact (extChartAt I x).left_inv (hU z.property)
   · intro z
     refine Subtype.ext ?_
     dsimp only [G, φ]
     rw [Real.smoothTransition.one, sub_self, zero_smul, add_zero]
-    exact (extChartAt I x).left_inv (hU c.2)
+    exact (extChartAt I x).left_inv (hU c.property)
 
 end TauCeti

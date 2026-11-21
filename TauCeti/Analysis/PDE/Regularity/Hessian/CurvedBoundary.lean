@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Regularity.Hessian.ChangeOfVariables
 public import TauCeti.Analysis.PDE.Regularity.Hessian.HalfSpace.ContinuousCoefficient
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Flattening
+public import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables.Bounds
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 import TauCeti.Analysis.InnerProductSpace.Coercive
 import TauCeti.MeasureTheory.Function.Lp.Norm
@@ -101,7 +102,7 @@ private theorem exists_w1p0_value_ae_eq_mul_value_compL
         W1p.value (w : W1p mu Omega p) =ᵐ[mu.restrict Omega] fun x => χ x * value 2 u x)
     (ψ : F → ℝ) (hψ : ContDiff ℝ ∞ ψ) (hψc : HasCompactSupport ψ) (hψs : tsupport ψ ⊆ U') :
     ∃ w : W1p0 mu Ω' p, W1p.value (w : W1p mu Ω' p) =ᵐ[mu.restrict Ω']
-      fun x => ψ x * value 2 (compL hΦ hp (restrictL inf_le_left 2 u)) x := by
+      fun x => ψ x * value 2 (compL hΦ (restrictL inf_le_left 2 u)) x := by
   have hΦ1 : IsChangeOfVariables 1 Ω' (Omega ⊓ U) Φ L c := hΦ.mono one_le_two
   obtain ⟨w, hw⟩ := hΦ1.exists_w1p0_value_ae_eq_mul_value_w1pCompL hp hΦc hΨc hΨmaps hΨΦ hΦU'
     (u := lowerOrder 1 u) (fun χ hχ hχc hχs => by
@@ -109,7 +110,7 @@ private theorem exists_w1p0_value_ae_eq_mul_value_compL
   refine ⟨w, hw.trans ?_⟩
   filter_upwards [hΦ1.value_w1pCompL_ae hp (W1p.restrictL inf_le_left (lowerOrder 1 u)),
     hΦ.ae_comp (W1p.value_restrictL_ae inf_le_left (lowerOrder 1 u)),
-    value_compL_ae hΦ hp (restrictL inf_le_left 2 u),
+    value_compL_ae hΦ (restrictL inf_le_left 2 u),
     hΦ.ae_comp (value_restrictL_ae inf_le_left 2 u)] with x h1 h2 h3 h4
   rw [h1, h2, h3, h4, value_lowerOrder_one]
 
@@ -126,11 +127,11 @@ private theorem ae_traceCLM_comp_iteratedGradient_compL_restrictL_eq {ι : Type*
       ⟪b y, iteratedGradient 0 (lowerOrder 1 u) y⟫_ℝ + c₀ y * value 2 u y = f y) :
     ∀ᵐ x ∂mu.restrict Ω',
       traceCLM ℝ F ((fderiv ℝ Ψ (Φ x) ∘L A (Φ x) ∘L (fderiv ℝ Ψ (Φ x)).adjoint) ∘L
-          iteratedGradient 1 (compL hΦ hp (restrictL inf_le_left 2 u)) x) +
+          iteratedGradient 1 (compL hΦ (restrictL inf_le_left 2 u)) x) +
         ⟪fderiv ℝ Ψ (Φ x) (b (Φ x)) +
             ∑ i, fderiv ℝ (fderiv ℝ Ψ) (Φ x) (e i) ((A (Φ x)).adjoint (e i)),
-          iteratedGradient 0 (lowerOrder 1 (compL hΦ hp (restrictL inf_le_left 2 u))) x⟫_ℝ +
-        c₀ (Φ x) * value 2 (compL hΦ hp (restrictL inf_le_left 2 u)) x = f (Φ x) := by
+          iteratedGradient 0 (lowerOrder 1 (compL hΦ (restrictL inf_le_left 2 u))) x⟫_ℝ +
+        c₀ (Φ x) * value 2 (compL hΦ (restrictL inf_le_left 2 u)) x = f (Φ x) := by
   refine PDE.ae_traceCLM_comp_iteratedGradient_compL_add_inner_add_mul_eq e hΦ hΨ hΦΨ hp _ ?_
   have hD : ((Omega ⊓ U : Opens F) : Set F) ⊆ Omega := fun x hx => hx.1
   filter_upwards [ae_restrict_of_ae_restrict_of_subset hD hu,
@@ -147,7 +148,7 @@ from `Ω ∩ U` into `Ω'` with constants `L' ≥ 0` and `c'`, and let `u` restr
 private theorem lpNorm_iteratedGradient_inter_le (hL' : 0 ≤ L')
     (hΨ : IsChangeOfVariables 2 (Omega ⊓ U) Ω' Ψ L' c') (hp : p ≠ ⊤) {K : Set F}
     (hK : IsCompact K) (hKU : K ⊆ U) (u : Wkp mu Omega p 2) (v : Wkp mu Ω' p 2)
-    (hv : compL hΨ hp v = restrictL inf_le_left 2 u) :
+    (hv : compL hΨ v = restrictL inf_le_left 2 u) :
     lpNorm (iteratedGradient 1 u) p (mu.restrict ((Omega : Set F) ∩ K)) ≤
       L' ^ 2 * (c'⁻¹ ^ (1 / p).toReal *
           lpNorm (iteratedGradient 1 v) p (mu.restrict ((Ω' : Set F) ∩ Ψ '' K))) +
@@ -383,21 +384,21 @@ private theorem exists_lpNorm_iteratedGradient_le_of_norm_le (hp : 1 < p) (hp_to
   -- The lower-order terms of `u ∘ Φ`, bounded on `Ω ∩ U` and then on `Ω`.
   have hD : volume.restrict ((Omega ⊓ U : Opens (WithLp 2 (ℝ × E))) : Set (WithLp 2 (ℝ × E))) ≤
       volume.restrict Omega := Measure.restrict_mono_set _ (SetLike.coe_subset_coe.2 inf_le_left)
-  have hG : ‖iteratedGradient 0 (lowerOrder 1 (compL hΦ' hp_top (restrictL inf_le_left 2 u)))‖ ≤
+  have hG : ‖iteratedGradient 0 (lowerOrder 1 (compL hΦ' (restrictL inf_le_left 2 u)))‖ ≤
       L * (c⁻¹ ^ (1 / p).toReal * ‖iteratedGradient 0 (lowerOrder 1 u)‖) := by
-    have h := norm_gradient_firstOrder_compL_le hΦ' hL hp_top (restrictL inf_le_left 2 u)
+    have h := norm_gradient_firstOrder_compL_le hΦ' hL (restrictL inf_le_left 2 u)
     rw [gradient_firstOrder_one, gradient_firstOrder_one, lowerOrder_restrictL] at h
     refine h.trans (mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left ?_ hκ) hL)
     exact (Lp.norm_eq_lpNorm_of_ae_eq EventuallyEq.rfl).trans_le (lpNorm_le_norm_of_ae_eq_of_le hD
       (iteratedGradient_restrictL_ae inf_le_left 0 (lowerOrder 1 u)))
-  have hV : ‖value 2 (compL hΦ' hp_top (restrictL inf_le_left 2 u))‖ ≤
+  have hV : ‖value 2 (compL hΦ' (restrictL inf_le_left 2 u))‖ ≤
       c⁻¹ ^ (1 / p).toReal * ‖value 2 u‖ := by
-    refine (norm_value_compL_le hΦ' hp_top _).trans (mul_le_mul_of_nonneg_left ?_ hκ)
+    refine (norm_value_compL_le hΦ' _).trans (mul_le_mul_of_nonneg_left ?_ hκ)
     exact (Lp.norm_eq_lpNorm_of_ae_eq EventuallyEq.rfl).trans_le (lpNorm_le_norm_of_ae_eq_of_le hD
       (value_restrictL_ae inf_le_left 2 u))
   -- Back to `Ω`, along `Ψ`.
   have hlhs := lpNorm_iteratedGradient_inter_le hL' hΨ' hp_top hK hKU u _
-    (compL_compL_of_rightInvOn hΦ' hΨ' (hΦΨ.mono fun y hy => hy.2) hp_top _)
+    (compL_compL_of_rightInvOn hΦ' hΨ' (hΦΨ.mono fun y hy => hy.2) _)
   exact le_mul_add_add_of_le_add hκ hκ' hL hL' (norm_nonneg _) (norm_nonneg _) (norm_nonneg _)
     (norm_nonneg _) (norm_nonneg _) (norm_nonneg _) hest hF hG hV hlhs
 

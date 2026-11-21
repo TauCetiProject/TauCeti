@@ -87,15 +87,15 @@ theorem nondegenerate_sumTwoSquaresSubSq : sumTwoSquaresSubSq.Nondegenerate := b
 /-- The form `⟨1, 1, -3⟩` is isotropic at every real place of `ℚ`: `(√3, 0, 1)` is a zero. -/
 theorem not_anisotropic_sumTwoSquaresSubThreeSq_atRealPlace
     (w : {w : InfinitePlace ℚ // w.IsReal}) :
-    let : Algebra ℚ ℝ := (InfinitePlace.embedding_of_isReal w.2).toAlgebra
+    let : Algebra ℚ ℝ := (InfinitePlace.embedding_of_isReal w.property).toAlgebra
     ¬ (sumTwoSquaresSubThreeSq.atRealPlace w).Anisotropic := by
   intro _
   have he : (sumTwoSquaresSubThreeSq.atRealPlace w).IsometryEquiv
       (weightedSumSquares ℝ fun i =>
-        InfinitePlace.embedding_of_isReal w.2 (![(1 : ℚ), 1, -3] i)) :=
+        InfinitePlace.embedding_of_isReal w.property (![(1 : ℚ), 1, -3] i)) :=
     _root_.QuadraticForm.atRealPlaceWeightedSumSquares w ![(1 : ℚ), 1, -3]
   have hcoeff : (fun i : Fin 3 =>
-      InfinitePlace.embedding_of_isReal w.2 (![(1 : ℚ), 1, -3] i)) = ![(1 : ℝ), 1, -3] := by
+      InfinitePlace.embedding_of_isReal w.property (![(1 : ℚ), 1, -3] i)) = ![(1 : ℝ), 1, -3] := by
     funext i
     fin_cases i <;> simp
   rw [(QuadraticMap.Equivalent.anisotropic_iff ⟨he⟩), hcoeff]
@@ -107,7 +107,7 @@ theorem not_anisotropic_sumTwoSquaresSubThreeSq_atRealPlace
 
 /-- The form `⟨1, 1, -3⟩` is anisotropic at the finite place of `ℚ` above `3`. -/
 theorem anisotropic_sumTwoSquaresSubThreeSq_atFinitePlace (v : HeightOneSpectrum (𝓞 ℚ))
-    (hv : (Rat.HeightOneSpectrum.primesEquiv v).1 = 3) :
+    (hv : (Rat.HeightOneSpectrum.primesEquiv v).val = 3) :
     (sumTwoSquaresSubThreeSq.atFinitePlace v).Anisotropic := by
   have h2 : (2 : v.adicCompletion ℚ) ≠ 0 :=
     have := algebraRat.charZero (v.adicCompletion ℚ)
@@ -134,8 +134,8 @@ theorem anisotropic_sumTwoSquaresSubThreeSq_atFinitePlace (v : HeightOneSpectrum
   obtain ⟨x, y, hxy⟩ := h
   -- Transport `3 = x² + y²` to `ℚ_3`, where `(-1, 3)_3 = -1` forbids it.
   let p := Rat.HeightOneSpectrum.primesEquiv v
-  have hp : Fact p.1.Prime := ⟨p.2⟩
-  have hsymb := Padic.hilbertSymbol_neg_one_eq_neg_one_of_mod_four_eq_three p.1
+  have hp : Fact p.val.Prime := ⟨p.property⟩
+  have hsymb := Padic.hilbertSymbol_neg_one_eq_neg_one_of_mod_four_eq_three p.val
     (by simp [p, hv])
   rw [hilbertSymbol_eq_neg_one_iff] at hsymb
   let e := (Rat.HeightOneSpectrum.adicCompletion.padicEquiv v).toRingEquiv
@@ -156,22 +156,22 @@ theorem anisotropic_sumTwoSquaresSubThreeSq : sumTwoSquaresSubThreeSq.Anisotropi
 /-- At every real place, `⟨1, 1, -3⟩` is isometric to `⟨1, 1, -1⟩`. -/
 theorem equivalent_sumTwoSquaresSubThreeSq_sumTwoSquaresSubSq_atRealPlace
     (w : {w : InfinitePlace ℚ // w.IsReal}) :
-    let : Algebra ℚ ℝ := (InfinitePlace.embedding_of_isReal w.2).toAlgebra
+    let : Algebra ℚ ℝ := (InfinitePlace.embedding_of_isReal w.property).toAlgebra
     (sumTwoSquaresSubThreeSq.atRealPlace w).Equivalent (sumTwoSquaresSubSq.atRealPlace w) := by
   intro _
   have he₁ : (sumTwoSquaresSubThreeSq.atRealPlace w).IsometryEquiv
       (weightedSumSquares ℝ fun i =>
-        InfinitePlace.embedding_of_isReal w.2 (![(1 : ℚ), 1, -3] i)) :=
+        InfinitePlace.embedding_of_isReal w.property (![(1 : ℚ), 1, -3] i)) :=
     _root_.QuadraticForm.atRealPlaceWeightedSumSquares w ![(1 : ℚ), 1, -3]
   have he₂ := _root_.QuadraticForm.atRealPlaceWeightedSumSquares w ![(1 : ℚ), 1, -1]
   have h3 : (3 : ℝ) ≠ 0 := by norm_num
   have hcoeff₁ : (fun i : Fin 3 =>
-      InfinitePlace.embedding_of_isReal w.2 (![(1 : ℚ), 1, -3] i)) =
+      InfinitePlace.embedding_of_isReal w.property (![(1 : ℚ), 1, -3] i)) =
       fun i => ((![1, 1, -Units.mk0 3 h3] : Fin 3 → ℝˣ) i : ℝ) := by
     funext i
     fin_cases i <;> simp
   have hcoeff₂ : (fun i : Fin 3 =>
-      InfinitePlace.embedding_of_isReal w.2 (![(1 : ℚ), 1, -1] i)) =
+      InfinitePlace.embedding_of_isReal w.property (![(1 : ℚ), 1, -1] i)) =
       fun i => ((![1, 1, -1] : Fin 3 → ℝˣ) i : ℝ) := by
     funext i
     fin_cases i <;> simp

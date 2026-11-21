@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Even
+public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import Mathlib.LinearAlgebra.Matrix.Symmetric
+public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.LinearAlgebra.Matrix.Trace
 public import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.Algebra.Ring.Int.Parity
@@ -57,6 +59,8 @@ same way by their entries on and above the diagonal, in every characteristic.
 
 * `Matrix.IsSymm.add_dotProduct_mulVec_add` and `Matrix.IsSymm.sub_dotProduct_mulVec_sub`: the
   polarization identities for a symmetric matrix.
+* `Matrix.IsSymm.dotProduct_eq_zero_of_mem_eigenspace`: distinct eigenspaces of a symmetric matrix
+  are orthogonal.
 * `Matrix.IsSymm.even_sum_mul_diag_iff_even_dotProduct_mulVec`: if `A` is a symmetric integer
   matrix then `∑ᵢ mᵢ aᵢᵢ` is even if and only if `mᵀ A m` is.
 * `Matrix.IsSymm.even_sum_mul_diag_of_dotProduct_mulVec_eq_zero`: if `A` is a symmetric integer
@@ -101,6 +105,18 @@ theorem IsSymm.sub_dotProduct_mulVec_sub {ι R : Type*} [Fintype ι] [CommRing R
   rw [sub_eq_add_neg, hA.add_dotProduct_mulVec_add, mulVec_neg, neg_dotProduct, dotProduct_neg,
     dotProduct_neg, neg_neg]
   ring
+
+/-- **Distinct eigenspaces of a symmetric matrix are orthogonal** for the dot product, over a ring
+without zero divisors: `ν (u ⬝ᵥ v) = u ⬝ᵥ A v = v ⬝ᵥ A u = μ (u ⬝ᵥ v)`. -/
+theorem IsSymm.dotProduct_eq_zero_of_mem_eigenspace {ι R : Type*} [Fintype ι] [DecidableEq ι]
+    [CommRing R] [NoZeroDivisors R] {A : Matrix ι ι R} (hA : A.IsSymm) {μ ν : R} (h : μ ≠ ν)
+    {u v : ι → R} (hu : u ∈ Module.End.eigenspace A.toLin' μ)
+    (hv : v ∈ Module.End.eigenspace A.toLin' ν) : u ⬝ᵥ v = 0 := by
+  rw [Module.End.mem_eigenspace_iff, toLin'_apply] at hu hv
+  have key := hA.dotProduct_mulVec_comm (x := u) (y := v)
+  rw [hu, hv, dotProduct_smul, dotProduct_smul, dotProduct_comm v, smul_eq_mul, smul_eq_mul,
+    ← sub_eq_zero, ← sub_mul] at key
+  exact (mul_eq_zero.1 key).resolve_left (sub_ne_zero.2 h.symm)
 
 /-- If `A` is a symmetric integer matrix and `m` is an integer vector, then `∑ᵢ mᵢ aᵢᵢ` has the
 same parity as the quadratic form `mᵀ A m`. The individual terms `mᵢ aᵢᵢ` need not be even. -/
@@ -295,7 +311,7 @@ strictly lower triangular part of `Q`. No division by two is involved, so this h
 in every additive commutative group, including rings of characteristic two. -/
 def subTransposeEqEquiv (hQ : Qᵀ = -Q) (hQd : ∀ i, Q i i = 0) :
     {S : Matrix n n R // S - Sᵀ = Q} ≃ (Sym2 n → R) where
-  toFun S := Sym2.lift ⟨fun i j => S.1 (min i j) (max i j), fun i j => by
+  toFun S := Sym2.lift ⟨fun i j => S.val (min i j) (max i j), fun i j => by
     simp only [min_comm i j, max_comm i j]⟩
   invFun g := ⟨of fun i j => g s(i, j) + if j < i then Q i j else 0, by
     ext i j
@@ -306,7 +322,7 @@ def subTransposeEqEquiv (hQ : Qᵀ = -Q) (hQd : ∀ i, Q i i = 0) :
     · simp [h, h.not_gt, Sym2.eq_swap, Function.swap]⟩
   left_inv S := by
     ext i j
-    have hS : S.1 i j - S.1 j i = Q i j := by simpa using congrFun (congrFun S.2 i) j
+    have hS : S.val i j - S.val j i = Q i j := by simpa using congrFun (congrFun S.property i) j
     rcases le_or_gt i j with h | h
     · simp [h, h.not_gt]
     · simp [h, h.le, ← hS]
@@ -321,7 +337,7 @@ def subTransposeEqEquiv (hQ : Qᵀ = -Q) (hQd : ∀ i, Q i i = 0) :
 /-- The parameter of a solution of `S - Sᵀ = Q` records its entries on and above the diagonal. -/
 theorem subTransposeEqEquiv_apply_mk_of_le (hQ : Qᵀ = -Q) (hQd : ∀ i, Q i i = 0)
     (S : {S : Matrix n n R // S - Sᵀ = Q}) {i j : n} (h : i ≤ j) :
-    subTransposeEqEquiv hQ hQd S s(i, j) = S.1 i j := by
+    subTransposeEqEquiv hQ hQd S s(i, j) = S.val i j := by
   simp [subTransposeEqEquiv, h]
 
 /-- The solution of `S - Sᵀ = Q` with parameter `g` has entries `g s(i, j)` on and above the
@@ -329,7 +345,7 @@ diagonal, and `g s(i, j) + Q i j` below it. -/
 @[simp]
 theorem coe_subTransposeEqEquiv_symm_apply (hQ : Qᵀ = -Q) (hQd : ∀ i, Q i i = 0)
     (g : Sym2 n → R) (i j : n) :
-    ((subTransposeEqEquiv hQ hQd).symm g).1 i j = g s(i, j) + if j < i then Q i j else 0 :=
+    ((subTransposeEqEquiv hQ hQd).symm g).val i j = g s(i, j) + if j < i then Q i j else 0 :=
   (rfl)
 
 end SubTranspose

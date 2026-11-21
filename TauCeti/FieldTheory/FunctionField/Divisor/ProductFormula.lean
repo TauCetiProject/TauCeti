@@ -345,7 +345,7 @@ theorem degreeZeroClassHom_surjective (hF : IsFunctionField k F) :
     Function.Surjective (degreeZeroClassHom hF) := fun c ↦ by
   obtain ⟨D, hD⟩ := (Place.orderSystem hF).weightedDegreeZeroClassHom_surjective
     (Place.isWeightedDegreeZero_orderSystem hF) c
-  refine ⟨⟨D, ker_degree_eq_weightedDegreeZeroSubgroup.ge D.2⟩, Subtype.ext ?_⟩
+  refine ⟨⟨D, ker_degree_eq_weightedDegreeZeroSubgroup.ge D.property⟩, Subtype.ext ?_⟩
   rw [coe_degreeZeroClassHom_apply, ← hD,
     (Place.orderSystem hF).coe_weightedDegreeZeroClassHom_apply]
 

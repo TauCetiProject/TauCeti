@@ -39,7 +39,7 @@ variable {R : Type v} [CommRing R] {C : Type u} [DGCategory R C]
 /-- A closed degree-zero morphism is an equivalence in the dg nerve if and only if its
 class in the homotopy category of the dg category is an isomorphism. -/
 theorem isEquivalence_edgeMk_iff {X Y : C} (f : dgCycles R X Y) :
-    (edgeMk R C f).IsEquivalence ↔ IsIso (DGHomotopyCategory.homOf R f.1 f.2) := by
+    (edgeMk R C f).IsEquivalence ↔ IsIso (DGHomotopyCategory.homOf R f.val f.property) := by
   have : (fromHomotopyCategory R C).IsEquivalence := by
     rw [← homotopyCategoryEquiv_inverse]
     infer_instance
