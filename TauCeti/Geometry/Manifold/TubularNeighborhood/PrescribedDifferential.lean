@@ -59,7 +59,8 @@ neighbourhood of the zero section
 ## References
 
 * A. Cannas da Silva, *Lectures on Symplectic Geometry*, Lecture Notes in Mathematics 1764,
-  Springer, 2001, Theorem 8.4 (the neighbourhood theorem with prescribed normal data).
+  Springer, 2001, Theorem 8.4 (the Lagrangian neighbourhood theorem, whose
+  prescribed-derivative refinement this construction serves).
 * M. W. Hirsch, *Differential Topology*, Chapter 4, Theorem 6.3 (tubular neighbourhoods).
 -/
 
@@ -179,10 +180,8 @@ omit [FiniteDimensional ℝ E] [NormedAddCommGroup P] [NormedSpace ℝ P] [Finit
   [IsContMDiffRiemannianBundle J ∞ V (fun y : M ↦ TangentSpace J y)] in
 /-- The transported normal exponential sends the zero section to `g`. -/
 private theorem transportedNormalExp_zeroSection (q : Q) :
-    transportedNormalExp i hn A (zeroSection P (fun q ↦ i.NormalSpace q hn) q) = g q := by
-  -- As above, restate the fibre value of the zero section over `q` so that `map_zero` applies.
-  change Manifold.riemannianExp K N (g q) (A q (i.normalRepresentative q hn 0)) = g q
-  rw [map_zero, map_zero, Manifold.riemannianExp_zero]
+    transportedNormalExp i hn A (zeroSection P (fun q ↦ i.NormalSpace q hn) q) = g q :=
+  Bundle.riemannianExp_fiberwise_zeroSection (fun q ↦ (A q).comp (i.normalRepresentative q hn)) q
 
 /-- Under the splitting of the tangent space along the zero section, the differential of the
 transported normal exponential sends `(u, n)` to `d g u + A n`, the normal class `n` being read
@@ -208,36 +207,9 @@ private theorem mfderiv_transportedNormalExp_zeroSection_apply
     ((contMDiffOn_transportedNormalExp i hn A hdim hg hA).contMDiffAt
       ((isOpen_transportedNormalExpDomain i hn A hdim hg hA).mem_nhds
         (zeroSection_mem_transportedNormalExpDomain i hn A q))).mdifferentiableAt (by simp)
-  rw [Bundle.zeroSectionTangentEquiv_symm_eq, map_add]
-  congr 1
-  · have h := mfderiv_comp_apply q he (mdifferentiableAt_zeroSection ℝ _) u
-    have hfun : transportedNormalExp i hn A ∘ zeroSection P (fun q ↦ i.NormalSpace q hn) = g :=
-      funext (transportedNormalExp_zeroSection i hn A)
-    rw [hfun] at h
-    exact h.symm
-  · rw [Bundle.zeroSectionTangentEquiv_symm_inr]
-    let w : TangentSpace K (g q) := A q (i.normalRepresentative q hn v)
-    let line : ℝ → TotalSpace P (fun q ↦ i.NormalSpace q hn) := fun t ↦ ⟨q, t • v⟩
-    have hl : ContMDiff 𝓘(ℝ) (I.prod 𝓘(ℝ, P)) 1 line :=
-      contMDiff_id.smul_totalSpace (contMDiff_const (c := (⟨q, v⟩ :
-        TotalSpace P (fun q ↦ i.NormalSpace q hn))))
-    have h := mfderiv_comp_apply_of_eq (0 : ℝ) he
-      (hl.mdifferentiableAt one_ne_zero) (by simp [line, zeroSection]) (1 : ℝ)
-    have hfun : transportedNormalExp i hn A ∘ line =
-        Manifold.riemannianExp K N (g q) ∘ (fun t : ℝ ↦ t • w) := by
-      funext t
-      simp only [Function.comp_apply, line, transportedNormalExp, map_smul, w]
-    rw [hfun] at h
-    have hexp₀ := Manifold.hasMFDerivAt_riemannianExp_zero (I := K) (g q)
-    have hvec : HasMFDerivAt 𝓘(ℝ) 𝓘(ℝ, TangentSpace K (g q)) (fun t : ℝ ↦ t • w) 0
-        (ContinuousLinearMap.toSpanSingleton ℝ w) :=
-      (ContinuousLinearMap.toSpanSingleton ℝ w).hasMFDerivAt
-    have hc := mfderiv_comp_apply_of_eq (0 : ℝ) hexp₀.mdifferentiableAt
-      hvec.mdifferentiableAt (by simp) (1 : ℝ)
-    -- The differential of `exp` at `0` is stated on the tangent space of the tangent space at
-    -- `g q`, which is only definitionally that tangent space; `erw` sees through this.
-    erw [Manifold.mfderiv_riemannianExp_apply_zero (I := K) (g q), hvec.mfderiv] at hc
-    exact h.symm.trans (hc.trans (ContinuousLinearMap.toSpanSingleton_apply_one ℝ w))
+  -- The map is the fibrewise exponential of `A q ∘ normalRepresentative`.
+  exact Bundle.mfderiv_riemannianExp_fiberwise_zeroSection_apply
+    (fun q ↦ (A q).comp (i.normalRepresentative q hn)) q he u v
 
 /-- Along the zero section, the differential of the transported normal exponential is `A`
 composed with the differential of the normal exponential of `i`. -/
@@ -397,20 +369,25 @@ private theorem exists_partialDiffeomorph_mfderiv_eq_of_riemannian [I.Boundaryle
   · exact inter_subset_left.trans hΦNO'
   · rw [PartialDiffeomorph.coe_trans, comp_apply, hΦMs q, hΦN]
     exact transportedNormalExp_zeroSection i hn A q
-  -- Along the zero section `d Φ_N = A ∘ d Φ_M`, and `d Φ_M` is onto.
+  -- Along the zero section `d Φ_N = A ∘ d Φ_M`, and `d Φ_M` is onto. Both sides are ascribed to
+  -- the model spaces `V →L[ℝ] F`: the tangent spaces at `ΦM (Z q)` and at `i q` are both
+  -- definitionally `V`, so `key` can be stated before the base point `ΦM (Z q)` is rewritten to
+  -- `i q`, which the dependent type of `A q` would otherwise block.
   have key : (mfderiv J K (ΦM.symm.trans ΦN) (ΦM (Z q)) : V →L[ℝ] F) = (A q : V →L[ℝ] F) := by
     ext w
     obtain ⟨x, rfl⟩ := (ΦM.isInvertible_mfderiv (by simp) (hΦMZ q)).surjective w
     rw [ΦM.mfderiv_symm_trans_apply_mfderiv_apply ΦN (by simp) (hΦMZ q) (hΦNZ q), hΦN,
       mfderiv_transportedNormalExp_zeroSection i hn A hdim hg hA hAi q, ← hΦM]
-    -- Applying a composite of continuous linear maps is applying the two maps in turn.
-    rfl
+    -- Applying a composite of continuous linear maps is applying the two maps in turn; the
+    -- composite is typed over the tangent spaces, which are only definitionally the model spaces
+    -- of `key`, so `erw` sees through this.
+    erw [ContinuousLinearMap.comp_apply]
   rw [hΦMz q] at key
   exact key
 
 /-- **Extension with a prescribed ambient differential.** Let `i : Q → M` be a smooth embedding
 and `g : Q → N` a smooth map inducing the topology of `Q`, between finite-dimensional
-boundaryless real manifolds with `M` and `N` Hausdorff and second countable. Let
+boundaryless real manifolds with `Q` nonempty and `M` and `N` Hausdorff and second countable. Let
 `A q : T_{i q} M → T_{g q} N` be linear isomorphisms which are smooth in tangent coordinates and
 satisfy `A q ∘ d i_q = d g_q`. Then there is a smooth partial diffeomorphism `Ψ` from `M` to `N`
 whose source contains the image of `i` and lies in a prescribed open neighbourhood `O` of it,
@@ -446,7 +423,8 @@ theorem exists_partialDiffeomorph_mfderiv_eq [I.Boundaryless] [J.Boundaryless] [
   exact exists_partialDiffeomorph_mfderiv_eq_of_riemannian i hg hgi hA hAinv hAi hO hiO
     hO' hgO'
 
-/-- **Germs with a prescribed ambient differential.** Along a smooth embedding `i : Q → M`, a map
+/-- **Germs with a prescribed ambient differential.** Along a smooth embedding `i : Q → M` of a
+nonempty manifold, a map
 `g : Q → N` and linear maps `A q : T_{i q} M → T_{g q} N` are the restriction and the differentials
 along `i(Q)` of a smooth partial diffeomorphism `Ψ` from `M` to `N` defined near `i(Q)` exactly
 when `g` is smooth and induces the topology of `Q`, each `A q` is invertible, `A` is smooth in
