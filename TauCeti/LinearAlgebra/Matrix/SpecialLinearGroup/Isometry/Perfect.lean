@@ -7,11 +7,11 @@ module
 
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.Generation
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.Iwasawa
-import Mathlib.Tactic.FinCases
 import TauCeti.Algebra.Group.Hom.Defs
 import TauCeti.Algebra.Ring.Hom
 import TauCeti.LinearAlgebra.Matrix.MulVec
 import TauCeti.LinearAlgebra.Matrix.SesquilinearForm
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.UnitaryRankOne
 
 /-!
 # Perfectness and projective simplicity of the standard special unitary group
@@ -163,43 +163,6 @@ private theorem unitaryTransvection_single_zero_mem_commutator_of_three_le
     rw [hg, hcomm, hpair, hσ t]; congr 1; rw [pow_succ] at ht; linear_combination -ht
   exact hge ▸ Subgroup.commutator_mem_commutator (Subgroup.mem_top g₁) (Subgroup.mem_top g₂)
 
-private theorem exists_diag_three_mulVec_single_zero (hσ : Function.Involutive σ) {u : K}
-    (hu0 : u ≠ 0) :
-    ∃ D : (stdUnitMat K 2).specialIsometryGroup σ,
-      ((D : Matrix.SpecialLinearGroup (Fin 3) K) : Matrix (Fin 3) (Fin 3) K) *ᵥ Pi.single 0 1 =
-        u • Pi.single 0 1 := by
-  have hσu0 : σ u ≠ 0 := (map_ne_zero σ).mpr hu0
-  let d : Fin 3 → K := ![u, σ u * u⁻¹, (σ u)⁻¹]
-  have hdetD : (diagonal d).det = 1 := by
-    rw [det_diagonal, Fin.prod_univ_three]
-    simp only [d, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val]; field_simp
-  have hisoD : ((diagonal d).map σ)ᵀ * stdUnitMat K 2 * diagonal d = stdUnitMat K 2 := by
-    ext i j; fin_cases i <;> fin_cases j <;>
-      simp [Matrix.mul_apply, Fin.sum_univ_three, stdUnitMat, coe_typeAGraphConjugator_two, d,
-        hσ u, hu0, hσu0]
-    field_simp
-  refine ⟨⟨⟨diagonal d, hdetD⟩, mem_specialIsometryGroup_iff.mpr hisoD⟩, ?_⟩
-  ext i; fin_cases i <;> simp [mulVec_diagonal, d]
-
-private theorem exists_ne_zero_apply_mul_self_ne_one {t d : K}
-    (ht : σ t = t) (ht0 : t ≠ 0) (ht1 : t ≠ 1) (hd0 : d ≠ 0) (hd : d + (-1 : K) ^ 2 * σ d = 0) :
-    ∃ u : K, u ≠ 0 ∧ σ u * u ≠ 1 := by
-  by_cases ht2 : t * t = 1
-  swap
-  · exact ⟨t, ht0, by rwa [ht]⟩
-  have ht_neg : t = -1 := by
-    have hfac : (t - 1) * (t + 1) = 0 := by linear_combination ht2
-    linear_combination (mul_eq_zero.mp hfac).resolve_left (sub_ne_zero.mpr ht1)
-  have h2 : (2 : K) ≠ 0 := fun h0 ↦ ht1 (by linear_combination ht_neg - h0)
-  have hσd : σ d = -d := by simp only [neg_one_sq, one_mul] at hd; linear_combination hd
-  by_cases hd2 : σ d * d = 1
-  swap
-  · exact ⟨d, hd0, hd2⟩
-  have hd_sq : d * d = -1 := by rw [hσd, neg_mul] at hd2; linear_combination -hd2
-  refine ⟨d + 1, fun h0 ↦ h2 (by linear_combination hd_sq - (d - 1) * h0), fun h1 ↦ ?_⟩
-  rw [map_add, hσd, map_one] at h1
-  exact one_ne_zero (by linear_combination h1 + hd_sq)
-
 private theorem unitaryTransvection_single_zero_mem_commutator_two (hσ : Function.Involutive σ)
     {u : K} (hu0 : u ≠ 0) (hu1 : σ u * u ≠ 1)
     {g : (stdUnitMat K 2).specialIsometryGroup σ} {a : K}
@@ -214,7 +177,12 @@ private theorem unitaryTransvection_single_zero_mem_commutator_two (hσ : Functi
   set t := σ u * u
   have ht : σ t = t := by simp only [t, map_mul, hσ u, mul_comm]
   have htsub : t - 1 ≠ 0 := sub_ne_zero.mpr hu1
-  obtain ⟨D, hDe0⟩ := exists_diag_three_mulVec_single_zero hσ hu0
+  let D : (stdUnitMat K 2).specialIsometryGroup σ :=
+    UnitaryRankOne.torusHom K σ hσ (Units.mk0 u hu0)
+  have hDe0 : ((D : Matrix.SpecialLinearGroup (Fin 3) K) : Matrix (Fin 3) (Fin 3) K) *ᵥ
+      Pi.single 0 1 = u • Pi.single 0 1 := by
+    rw [UnitaryRankOne.coe_torusHom, Matrix.diagonal_mulVec_single, ← Pi.single_smul']
+    simp
   let b : K := (t - 1)⁻¹ * a
   have hb : b + (-1 : K) ^ 2 * σ b = 0 := by
     simp only [b, map_mul, map_inv₀, map_sub, ht, map_one]; linear_combination (t - 1)⁻¹ * ha
@@ -272,7 +240,7 @@ theorem commutator_specialIsometryGroup_typeAGraphConjugator_eq_top
   rcases eq_or_lt_of_le hr with rfl | hr3
   · obtain ⟨t, ht, ht0, ht1⟩ := hfield.resolve_left (by decide)
     obtain ⟨d, hd0, hd⟩ := hadm
-    obtain ⟨u, hu0, hu1⟩ := exists_ne_zero_apply_mul_self_ne_one ht ht0 ht1 hd0 hd
+    obtain ⟨u, hu0, hu1⟩ := exists_ne_zero_apply_mul_self_ne_one ht ht0 ht1 hd0 (by simpa using hd)
     exact unitaryTransvection_single_zero_mem_commutator_two hσ hu0 hu1 hga
   · exact unitaryTransvection_single_zero_mem_commutator_of_three_le hσ htr hr3 hga
 

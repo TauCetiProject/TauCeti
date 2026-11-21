@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.Basic
 public import TauCeti.LinearAlgebra.Matrix.SiegelTransvection
 public import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
 public import Mathlib.Algebra.Group.Subgroup.Pointwise
+import TauCeti.LinearAlgebra.Matrix.MulVec
 import TauCeti.LinearAlgebra.Matrix.SesquilinearForm
 
 /-!
@@ -255,12 +256,6 @@ theorem unitaryTransvectionSubgroup_smul (g : Q.specialIsometryGroup σ)
     rw [MulAut.smul_def, MulAut.conj_apply, Subgroup.coe_mul, Subgroup.coe_mul,
       SpecialLinearGroup.coe_mul, SpecialLinearGroup.coe_mul, ha, hconj]
 
-private theorem comp_vecMul_ne_zero (hdet : Q.det ≠ 0) {v : n → K} (hv0 : v ≠ 0) :
-    (σ ∘ v) ᵥ* Q ≠ 0 := by
-  have hσv : σ ∘ v ≠ 0 := fun h0 ↦ hv0 <| funext fun i ↦
-    (map_eq_zero σ).mp (congrFun h0 i)
-  exact fun h0 ↦ hdet (exists_vecMul_eq_zero_iff.mp ⟨σ ∘ v, hσv, h0⟩)
-
 variable {ε : K}
 
 /-- **Every admissible parameter gives an isometry.** If `σ` is an involution and `Q` is
@@ -274,25 +269,6 @@ theorem exists_coe_eq_unitaryTransvection (hσ : Function.Involutive σ) (hQ : (
   obtain ⟨g, hg, hga⟩ := exists_mem_specialIsometryGroup_coe_eq_unitaryTransvection hσ hQ
     (comp_rep_dotProduct_mulVec_rep p) ha
   exact ⟨⟨⟨g, hg⟩, a, hga⟩, hga⟩
-
-/-- **The parameters of the transvection group of an isotropic point.** If `σ` is an involution
-and `Q` is a nondegenerate `ε`-Hermitian matrix, the transvection `τ_{v,a}` along the
-representative `v` of an isotropic point is an isometry exactly when `a + ε σ(a) = 0`. For a
-Hermitian form these are the elements of trace zero. -/
-theorem exists_coe_eq_unitaryTransvection_iff (hσ : Function.Involutive σ)
-    (hQ : (Q.map σ)ᵀ = ε • Q) (hdet : Q.det ≠ 0) (p : Q.isotropicPoints σ) (a : K) :
-    (∃ g : Q.unitaryTransvectionSubgroup σ p,
-      (((g : Q.specialIsometryGroup σ) : SpecialLinearGroup n K) : Matrix n n K) =
-        Q.unitaryTransvection σ (p : ℙ K (n → K)).rep a) ↔ a + ε * σ a = 0 := by
-  refine ⟨fun ⟨g, hg⟩ ↦ ?_, exists_coe_eq_unitaryTransvection hσ hQ p⟩
-  set v := (p : ℙ K (n → K)).rep
-  have hv := comp_rep_dotProduct_mulVec_rep p
-  have h := (mem_specialIsometryGroup_iff).mp (g : Q.specialIsometryGroup σ).property
-  rw [hg, transpose_map_unitaryTransvection_mul_mul hσ hQ hv, add_eq_left, smul_eq_zero,
-    vecMulVec_eq_zero] at h
-  have hQv : Q *ᵥ v ≠ 0 := fun h0 ↦
-    hdet (exists_mulVec_eq_zero_iff.mp ⟨v, (p : ℙ K (n → K)).rep_ne_zero, h0⟩)
-  exact h.resolve_right (not_or.mpr ⟨hQv, comp_vecMul_ne_zero hdet (p : ℙ K (n → K)).rep_ne_zero⟩)
 
 /-- **The scalar condition for a Siegel transformation to be an isometry.** If `σ` is an
 involution, `Q` is a nondegenerate `ε`-Hermitian matrix, `u ≠ 0` is isotropic, and `B(u, w) = 0`,
@@ -311,7 +287,22 @@ theorem exists_mem_specialIsometryGroup_coe_eq_siegelTransvection_iff
   rw [hcoe, transpose_map_siegelTransvection_mul_mul hσ hQ hu huw, add_eq_left, smul_eq_zero,
     vecMulVec_eq_zero] at h
   have hQu : Q *ᵥ u ≠ 0 := fun h0 ↦ hdet (exists_mulVec_eq_zero_iff.mp ⟨u, hu0, h0⟩)
-  exact h.resolve_right (not_or.mpr ⟨hQu, comp_vecMul_ne_zero hdet hu0⟩)
+  exact h.resolve_right (not_or.mpr ⟨hQu, comp_vecMul_ne_zero hdet σ hu0⟩)
+
+/-- **The parameters of the transvection group of an isotropic point.** If `σ` is an involution
+and `Q` is a nondegenerate `ε`-Hermitian matrix, the transvection `τ_{v,a}` along the
+representative `v` of an isotropic point is an isometry exactly when `a + ε σ(a) = 0`. For a
+Hermitian form these are the elements of trace zero. -/
+theorem exists_coe_eq_unitaryTransvection_iff (hσ : Function.Involutive σ)
+    (hQ : (Q.map σ)ᵀ = ε • Q) (hdet : Q.det ≠ 0) (p : Q.isotropicPoints σ) (a : K) :
+    (∃ g : Q.unitaryTransvectionSubgroup σ p,
+      (((g : Q.specialIsometryGroup σ) : SpecialLinearGroup n K) : Matrix n n K) =
+        Q.unitaryTransvection σ (p : ℙ K (n → K)).rep a) ↔ a + ε * σ a = 0 := by
+  refine ⟨fun ⟨g, hg⟩ ↦ ?_, exists_coe_eq_unitaryTransvection hσ hQ p⟩
+  simpa using (exists_mem_specialIsometryGroup_coe_eq_siegelTransvection_iff hσ hQ hdet
+    (p : ℙ K (n → K)).rep_ne_zero (comp_rep_dotProduct_mulVec_rep p) (w := 0) (by simp) a).mp
+    ⟨(g : Q.specialIsometryGroup σ).val, (g : Q.specialIsometryGroup σ).property,
+      by rwa [siegelTransvection_zero_eq_unitaryTransvection]⟩
 
 /-- **Nontriviality of a special unitary group with an isotropic point.** If `σ` is an involution,
 `Q` is a nondegenerate `ε`-Hermitian matrix admitting an isotropic point, and there is a nonzero
@@ -330,7 +321,7 @@ theorem nontrivial_specialIsometryGroup (hσ : Function.Involutive σ) (hQ : (Q.
       ((x : SpecialLinearGroup n K) : Matrix n n K)) h)
   rw [unitaryTransvection_def, add_eq_left, smul_eq_zero, vecMulVec_eq_zero] at hmat
   exact (hmat.resolve_left hd0).elim (p₀ : ℙ K (n → K)).rep_ne_zero
-    (comp_vecMul_ne_zero hdet (p₀ : ℙ K (n → K)).rep_ne_zero)
+    (comp_vecMul_ne_zero hdet σ (p₀ : ℙ K (n → K)).rep_ne_zero)
 
 end Field
 

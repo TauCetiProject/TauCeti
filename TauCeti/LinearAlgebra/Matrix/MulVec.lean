@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Matrix.Basic
+public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 public import Mathlib.LinearAlgebra.Matrix.DotProduct
 import Mathlib.Algebra.BigOperators.Fin
+import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
 import TauCeti.Algebra.Group.Hom.Defs
 
 /-!
@@ -55,6 +57,10 @@ permutation to vectors invariant under the row map.
 * `Matrix.comp_smul_dotProduct_mulVec_smul`: `h(c v, c v) = σ c * c * h(v, v)`.
 * `Matrix.star_mulVec_eq_map_star_mulVec`: `star (M *ᵥ v) = M.map star *ᵥ star v`.
 * `Matrix.map_star_mulVec_of_star_eq`: if `star v = v`, then `M.map star *ᵥ v = star (M *ᵥ v)`.
+* `Matrix.comp_vecMul_ne_zero`: for invertible `Q`, endomorphism `σ`, and nonzero `v`,
+  `(σ ∘ v) ᵥ* Q ≠ 0`.
+* `Matrix.exists_eq_smul_of_vecMulVec_eq`: equality of `vecMulVec u₁ w₁` and `vecMulVec u₂ w₂`
+  with `u₂, w₂ ≠ 0` implies `u₁ = c • u₂` for some `c ≠ 0`.
 -/
 
 public section
@@ -204,5 +210,37 @@ theorem submatrix_id_castSucc_mulVec_eq_of_mulVec_eq_zero {m : Type*}
   exact Finset.sum_congr rfl fun _ _ => by simp only [mul_assoc]
 
 end Ring
+
+section Field
+
+variable {K : Type*} [Field K]
+
+/-- If `Q` is invertible over a field `K`, `σ` is a ring endomorphism of `K`, and `v` is nonzero,
+then `(σ ∘ v) ᵥ* Q ≠ 0`. -/
+theorem comp_vecMul_ne_zero [DecidableEq n] {Q : Matrix n n K} (hdet : Q.det ≠ 0) (σ : K →+* K)
+    {v : n → K} (hv0 : v ≠ 0) : (σ ∘ v) ᵥ* Q ≠ 0 := by
+  have hσv : σ ∘ v ≠ 0 := fun h0 ↦ hv0 <| funext fun i ↦
+    (map_eq_zero σ).mp (congrFun h0 i)
+  exact fun h0 ↦ hdet (exists_vecMul_eq_zero_iff.mp ⟨σ ∘ v, hσv, h0⟩)
+
+omit [Fintype n] in
+/-- If two outer products `vecMulVec u₁ w₁` and `vecMulVec u₂ w₂` over a field agree and
+`u₂`, `w₂` are nonzero, then `u₁ = c • u₂` for some nonzero scalar `c`. -/
+theorem exists_eq_smul_of_vecMulVec_eq {u₁ u₂ : m → K} {w₁ w₂ : n → K}
+    (hu₂ : u₂ ≠ 0) (hw₂ : w₂ ≠ 0) (h : vecMulVec u₁ w₁ = vecMulVec u₂ w₂) :
+    ∃ c ≠ (0 : K), u₁ = c • u₂ := by
+  obtain ⟨j, hj⟩ := Function.ne_iff.mp hw₂
+  have hcol : ∀ i, u₁ i * w₁ j = u₂ i * w₂ j := fun i ↦ congrFun (congrFun h i) j
+  have hw₁j : w₁ j ≠ 0 := fun h0 ↦ hu₂ <| funext fun i ↦ by
+    have hi := hcol i
+    rw [h0, mul_zero] at hi
+    exact (mul_eq_zero.mp hi.symm).resolve_right hj
+  refine ⟨w₂ j * (w₁ j)⁻¹, mul_ne_zero hj (inv_ne_zero hw₁j), funext fun i ↦ ?_⟩
+  simp only [Pi.smul_apply, smul_eq_mul]
+  calc u₁ i = u₁ i * w₁ j * (w₁ j)⁻¹ := (mul_inv_cancel_right₀ hw₁j _).symm
+    _ = u₂ i * w₂ j * (w₁ j)⁻¹ := by rw [hcol i]
+    _ = w₂ j * (w₁ j)⁻¹ * u₂ i := by rw [mul_assoc, mul_comm (u₂ i)]
+
+end Field
 
 end Matrix

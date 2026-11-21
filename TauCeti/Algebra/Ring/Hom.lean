@@ -40,6 +40,8 @@ along field and completion isomorphisms.
 * `TauCeti.exists_add_neg_one_pow_mul_apply_eq` and
   `TauCeti.exists_ne_zero_add_neg_one_pow_mul_apply_eq_zero`: extending trace surjectivity and
   existence of a nonzero kernel element from `t ↦ t + σ t` to `t ↦ t + (-1) ^ k * σ t`.
+* `TauCeti.exists_ne_zero_apply_mul_self_ne_one`: finding a nonzero element `u` with `σ u * u ≠ 1`
+  from a fixed element `t ∉ {0, 1}` and a nonzero element `d` with `d + σ d = 0`.
 * `MulHom.unitize`: the unitization `a ↦ f a + (1 - f 1)` of a multiplicative map from a monoid
   to a ring, which is a monoid homomorphism.
 * `Set.MapsTo.natCast_pow_mul_apply_mem`: if a ring homomorphism `f` maps `A` into `B`, then
@@ -89,6 +91,36 @@ theorem exists_ne_zero_add_neg_one_pow_mul_apply_eq_zero {R : Type*} [Ring R] [N
   · obtain ⟨d, hd0, hd⟩ := hadm hk
     exact ⟨d, hd0, by rw [hk.neg_one_pow, one_mul, hd]⟩
   · exact ⟨1, one_ne_zero, by rw [hk.neg_one_pow, map_one, neg_one_mul, add_neg_cancel]⟩
+
+/-- Given a ring endomorphism `σ` of an integral domain `R`, a fixed element `t ∉ {0, 1}`, and a
+nonzero element `d` with `d + σ d = 0`, some nonzero `u` satisfies `σ u * u ≠ 1`. -/
+theorem exists_ne_zero_apply_mul_self_ne_one {R : Type*} [CommRing R] [IsDomain R]
+    {σ : R →+* R} {t d : R} (ht : σ t = t) (ht0 : t ≠ 0) (ht1 : t ≠ 1)
+    (hd0 : d ≠ 0) (hd : d + σ d = 0) : ∃ u : R, u ≠ 0 ∧ σ u * u ≠ 1 := by
+  by_cases ht2 : t * t = 1
+  · have ht_neg : t = -1 := (mul_self_eq_one_iff.mp ht2).resolve_left ht1
+    have h2 : (2 : R) ≠ 0 := fun h0 ↦ ht1 (by
+      rw [ht_neg, neg_eq_iff_add_eq_zero, one_add_one_eq_two, h0])
+    have hσd : σ d = -d := eq_neg_of_add_eq_zero_right hd
+    by_cases hd2 : σ d * d = 1
+    · have hd_sq : d * d = -1 := by
+        rw [hσd, neg_mul] at hd2
+        exact neg_eq_iff_eq_neg.mp hd2
+      refine ⟨d + 1, fun h0 ↦ h2 ?_, fun h1 ↦ ?_⟩
+      · have hd1 : d = -1 := eq_neg_of_add_eq_zero_left h0
+        rw [hd1, neg_mul_neg, one_mul, eq_neg_iff_add_eq_zero, one_add_one_eq_two] at hd_sq
+        exact hd_sq
+      · rw [map_add, hσd, map_one] at h1
+        have h1' : (-d + 1) * (d + 1) = 1 - d * d := by
+          rw [add_mul, mul_add, mul_add, neg_mul, neg_mul, one_mul, mul_one,
+            add_assoc, ← add_assoc (-d), neg_add_cancel, zero_add, add_comm, sub_eq_add_neg,
+            one_mul]
+        rw [hd_sq, sub_neg_eq_add, one_add_one_eq_two] at h1'
+        have h21 : (2 : R) = 1 := (h1.symm.trans h1').symm
+        rw [← one_add_one_eq_two, add_eq_right] at h21
+        exact one_ne_zero h21
+    · exact ⟨d, hd0, hd2⟩
+  · exact ⟨t, ht0, by rwa [ht]⟩
 
 end TauCeti
 

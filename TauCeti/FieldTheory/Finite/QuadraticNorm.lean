@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Field.Defs
 public import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.FieldTheory.Finite.Basic
-import TauCeti.FieldTheory.Finite.EulerCriterion
 import TauCeti.FieldTheory.Finite.PowNeOne
 import TauCeti.GroupTheory.SpecificGroups.Cyclic.PowMonoidHom
 
@@ -89,20 +88,13 @@ theorem natCard_pow_mul_self_eq {q : ℕ} (hK : Nat.card K = q ^ 2) {c : K}
 /-- In a field with `q²` elements, every `c` with `c ^ q = c` is of the form `b ^ q * b`. -/
 theorem exists_pow_mul_self_eq {q : ℕ} (hK : Nat.card K = q ^ 2) {c : K}
     (hc : c ^ q = c) : ∃ b : K, b ^ q * b = c := by
-  by_cases hq : q = 0
-  · exact ⟨1, by subst q; simpa using hc⟩
   by_cases hc0 : c = 0
-  · exact ⟨0, by subst c; simp⟩
-  have : Finite K := Nat.finite_of_card_ne_zero (hK ▸ pow_ne_zero 2 hq)
-  have hq1 : 1 < q := (Nat.one_lt_pow_iff two_ne_zero).mp (hK ▸ Finite.one_lt_card)
-  have hqsq : (q + 1) * (q - 1) = q ^ 2 - 1 := by rw [← Nat.sq_sub_sq, one_pow]
-  have hdvd : q + 1 ∣ Nat.card K - 1 := ⟨q - 1, by rw [hK, hqsq]⟩
-  obtain ⟨b, hb⟩ := (exists_pow_eq_iff_pow_card_sub_one_div_eq_one hdvd hc0).mpr (by
-    rw [hK, ← hqsq, Nat.mul_div_cancel_left _ (Nat.succ_pos q)]
-    refine mul_left_cancel₀ hc0 ?_
-    calc c * c ^ (q - 1) = c ^ (1 + (q - 1)) := by rw [pow_add, pow_one]
-      _ = c * 1 := by rw [Nat.add_sub_of_le hq1.le, hc, mul_one])
-  exact ⟨b, by simpa [pow_succ] using hb⟩
+  · exact ⟨0, by subst hc0; simp⟩
+  have hpos : 0 < Nat.card {b : K // b ^ q * b = c} := by
+    rw [natCard_pow_mul_self_eq hK hc0 hc]
+    exact Nat.succ_pos q
+  obtain ⟨⟨b, hb⟩⟩ := (Nat.card_pos_iff.mp hpos).1
+  exact ⟨b, hb⟩
 
 /-- In a field with `q²` elements and `3 ≤ q`, some element `c` satisfies `c ^ q = c`, `c ≠ 0`,
 and `c ≠ 1`. -/

@@ -9,7 +9,6 @@ public import Mathlib.Data.Fin.Rev
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.InverseTranspose
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Basic
 
-import TauCeti.Algebra.Group.Pi.Lemmas
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Normalizer
 import TauCeti.Data.Fin.Rev
 import Mathlib.Tactic.FinCases
@@ -269,7 +268,8 @@ theorem comp_single_dotProduct_typeAGraphConjugator_mulVec {B : Type*} [Ring B] 
     (σ ∘ Pi.single i (1 : A)) ⬝ᵥ
       ((typeAGraphConjugator r B : Matrix (Fin (r + 1)) (Fin (r + 1)) B) *ᵥ v) =
       (-1 : B) ^ (i : ℕ) * v i.rev := by
-  rw [map_comp_single, map_one, single_one_dotProduct, coe_typeAGraphConjugator_mulVec]
+  rw [Function.comp_def, ← Pi.single_op (fun _ ↦ σ) (fun _ ↦ map_zero σ) i 1, map_one,
+    single_one_dotProduct, coe_typeAGraphConjugator_mulVec]
 
 /-- A standard coordinate vector `eᵢ` with `i ≠ i.rev` is isotropic for `Q_r`. -/
 theorem comp_single_dotProduct_typeAGraphConjugator_mulVec_single {B : Type*} [Ring B]

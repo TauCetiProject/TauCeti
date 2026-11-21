@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.Elementary
+import TauCeti.LinearAlgebra.Matrix.MulVec
 import TauCeti.LinearAlgebra.Matrix.SesquilinearForm
 
 /-!
@@ -102,38 +103,12 @@ theorem smul_eq_self_of_mem_center_specialIsometryGroup (hσ : Function.Involuti
           simp only [Subgroup.coe_mul, Subgroup.coe_inv, SpecialLinearGroup.coe_mul, t', hta, v]
       _ = Q.unitaryTransvection σ v d := by rw [hconj]; exact hta
   simp only [unitaryTransvection_def, add_right_inj, smul_right_inj hd0] at hmat
-  have hσv : σ ∘ v ≠ 0 := fun h0 ↦ hv0 <| funext fun i ↦ (map_eq_zero σ).mp (congrFun h0 i)
-  have hrow : (σ ∘ v) ᵥ* Q ≠ 0 := fun h0 ↦ hdet (exists_vecMul_eq_zero_iff.mp ⟨σ ∘ v, hσv, h0⟩)
-  obtain ⟨j, hj⟩ := Function.ne_iff.mp hrow
-  have hcol : ∀ i, (((g : SpecialLinearGroup n K) : Matrix n n K) *ᵥ v) i *
-      ((σ ∘ (((g : SpecialLinearGroup n K) : Matrix n n K) *ᵥ v)) ᵥ* Q) j =
-      v i * ((σ ∘ v) ᵥ* Q) j := fun i ↦ congrFun (congrFun hmat i) j
-  have hgvj : ((σ ∘ (((g : SpecialLinearGroup n K) : Matrix n n K) *ᵥ v)) ᵥ* Q) j ≠ 0 := by
-    intro h0
-    exact hv0 <| funext fun i ↦ by
-      have hi := hcol i
-      rw [h0, mul_zero] at hi
-      exact (mul_eq_zero.mp hi.symm).resolve_right hj
-  set c := ((σ ∘ v) ᵥ* Q) j *
-    (((σ ∘ (((g : SpecialLinearGroup n K) : Matrix n n K) *ᵥ v)) ᵥ* Q) j)⁻¹
-  have hsmul : ((g : SpecialLinearGroup n K) : Matrix n n K) *ᵥ v = c • v := by
-    funext i
-    simp only [Pi.smul_apply, smul_eq_mul, c]
-    calc (((g : SpecialLinearGroup n K) : Matrix n n K) *ᵥ v) i
-        = (((g : SpecialLinearGroup n K) : Matrix n n K) *ᵥ v) i *
-            ((σ ∘ (((g : SpecialLinearGroup n K) : Matrix n n K) *ᵥ v)) ᵥ* Q) j *
-            (((σ ∘ (((g : SpecialLinearGroup n K) : Matrix n n K) *ᵥ v)) ᵥ* Q) j)⁻¹ :=
-          (mul_inv_cancel_right₀ hgvj _).symm
-      _ = v i * ((σ ∘ v) ᵥ* Q) j *
-            (((σ ∘ (((g : SpecialLinearGroup n K) : Matrix n n K) *ᵥ v)) ᵥ* Q) j)⁻¹ := by
-          rw [hcol i]
-      _ = ((σ ∘ v) ᵥ* Q) j *
-            (((σ ∘ (((g : SpecialLinearGroup n K) : Matrix n n K) *ᵥ v)) ᵥ* Q) j)⁻¹ * v i := by
-          ring
+  obtain ⟨c, hc0, hsmul⟩ :=
+    exists_eq_smul_of_vecMulVec_eq hv0 (comp_vecMul_ne_zero hdet σ hv0) hmat
   refine Subtype.ext ?_
   rw [SubMulAction.val_smul, Subgroup.smul_def, ← Projectivization.mk_rep (p : ℙ K (n → K)),
     Projectivization.smul_mk, Projectivization.mk_eq_mk_iff]
-  refine ⟨Units.mk0 c (mul_ne_zero hj (inv_ne_zero hgvj)), ?_⟩
+  refine ⟨Units.mk0 c hc0, ?_⟩
   rw [Units.smul_def, Units.val_mk0, SpecialLinearGroup.smul_def, smul_eq_mulVec]
   exact hsmul.symm
 

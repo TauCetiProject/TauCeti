@@ -149,20 +149,16 @@ theorem _root_.Matrix.SpecialLinearGroup.diag2nUnit_mulVec_single_left {R : Type
     {m : Type v} [Fintype m] [DecidableEq m] {i j : m} (hij : i ≠ j) (a : Rˣ) (c : R) :
     Matrix.mulVec (Matrix.SpecialLinearGroup.diag2nUnit hij a : Matrix m m R) (Pi.single i c) =
       (a : R) • Pi.single i c := by
-  ext k
-  by_cases hki : k = i
-  · subst hki; simp [Matrix.mulVec_diagonal]
-  · simp [Matrix.mulVec_diagonal, hki]
+  rw [Matrix.SpecialLinearGroup.diag2nUnit_coe, Matrix.diagonal_mulVec_single, ← Pi.single_smul']
+  simp
 
 /-- `diag2nUnit hij a` scales `Pi.single j c` by `a⁻¹`. -/
 theorem _root_.Matrix.SpecialLinearGroup.diag2nUnit_mulVec_single_right {R : Type u} [CommRing R]
     {m : Type v} [Fintype m] [DecidableEq m] {i j : m} (hij : i ≠ j) (a : Rˣ) (c : R) :
     Matrix.mulVec (Matrix.SpecialLinearGroup.diag2nUnit hij a : Matrix m m R) (Pi.single j c) =
       ((a⁻¹ : Rˣ) : R) • Pi.single j c := by
-  ext k
-  by_cases hkj : k = j
-  · subst hkj; simp [Matrix.mulVec_diagonal, hij.symm]
-  · simp [Matrix.mulVec_diagonal, hkj]
+  rw [Matrix.SpecialLinearGroup.diag2nUnit_coe, Matrix.diagonal_mulVec_single, ← Pi.single_smul']
+  simp [hij.symm]
 
 /-- `diag2n hij a ha` fixes every vector supported off `{i, j}`. -/
 theorem _root_.Matrix.SpecialLinearGroup.diag2n_mulVec_eq_self {K : Type u} [Field K]

@@ -9,6 +9,7 @@ public import Mathlib.Algebra.CharP.Lemmas
 public import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.FieldTheory.Finite.Basic
 import Mathlib.GroupTheory.Index
+import TauCeti.Algebra.Ring.Hom
 
 /-!
 # The fibres of `b ↦ b ^ q + b` over a field with `q²` elements
@@ -129,34 +130,32 @@ exponential characteristic, and for `ε = (-1) ^ k`, every `c` with `c ^ q = ε 
 `b + ε b ^ q`. -/
 theorem exists_add_neg_one_pow_mul_pow_eq (hK : Nat.card K = (p ^ n) ^ 2) (k : ℕ)
     {c : K} (hc : c ^ p ^ n = (-1) ^ k * c) : ∃ b : K, b + (-1) ^ k * b ^ p ^ n = c := by
-  rcases neg_one_pow_eq_or K k with h | h <;> rw [h] at hc ⊢
-  · obtain ⟨b, hb⟩ := exists_pow_add_self_eq hK (one_mul c ▸ hc)
-    exact ⟨b, by rw [one_mul, add_comm, hb]⟩
-  · -- Scale a preimage `b₁` of `1` under `b ↦ b ^ q + b` by `c`.
-    obtain ⟨b, hb⟩ := exists_pow_add_self_eq hK (one_pow (p ^ n))
-    refine ⟨c * b, ?_⟩
-    rw [mul_pow, hc]
-    linear_combination c * hb
+  simpa only [iterateFrobenius_def] using
+    TauCeti.exists_add_neg_one_pow_mul_apply_eq (σ := iterateFrobenius K p n)
+      (fun s hs ↦ by
+        obtain ⟨b, hb⟩ := exists_pow_add_self_eq hK (by simpa [iterateFrobenius_def] using hs)
+        exact ⟨b, by simpa [iterateFrobenius_def, add_comm] using hb⟩)
+      k (by simpa [iterateFrobenius_def] using hc)
 
 /-- **The twisted trace has a nonzero kernel element.** In a field with `q²` elements, `q = p ^ n`
 a power of the exponential characteristic, and for `ε = (-1) ^ k`, some nonzero `b` satisfies
 `b + ε b ^ q = 0`. -/
 theorem exists_ne_zero_add_neg_one_pow_mul_pow_eq_zero
     (hK : Nat.card K = (p ^ n) ^ 2) (k : ℕ) : ∃ b ≠ (0 : K), b + (-1) ^ k * b ^ p ^ n = 0 := by
-  have := finite_of_natCard_eq_pow_sq hK
-  rcases neg_one_pow_eq_or K k with h | h <;> rw [h]
-  · -- The `q` roots of `b ^ q + b = 0` are not all zero.
-    have : Finite {b : K // b ^ p ^ n + b = 0} := Subtype.finite
-    have hq : 1 < p ^ n := (Nat.one_lt_pow_iff two_ne_zero).mp (hK ▸ Finite.one_lt_card)
-    have hcard : 1 < Nat.card {b : K // b ^ p ^ n + b = 0} := by
-      rwa [natCard_pow_add_self_eq hK (zero_pow (pow_pos (expChar_pos K p) n).ne')]
-    have : Nontrivial {b : K // b ^ p ^ n + b = 0} := Finite.one_lt_card_iff_nontrivial.mp hcard
-    have hzero : (0 : K) ^ p ^ n + 0 = 0 := by
-      rw [zero_pow (pow_pos (expChar_pos K p) n).ne', add_zero]
-    obtain ⟨⟨b, hb⟩, hne⟩ := exists_ne (⟨0, hzero⟩ : {b : K // b ^ p ^ n + b = 0})
-    refine ⟨b, fun hb0 ↦ hne (Subtype.ext hb0), ?_⟩
-    rw [one_mul, add_comm, hb]
-  · exact ⟨1, one_ne_zero, by simp⟩
+  simpa only [iterateFrobenius_def] using
+    TauCeti.exists_ne_zero_add_neg_one_pow_mul_apply_eq_zero (σ := iterateFrobenius K p n)
+      (k := k) fun _ ↦ by
+        have := finite_of_natCard_eq_pow_sq hK
+        have : Finite {b : K // b ^ p ^ n + b = 0} := Subtype.finite
+        have hq : 1 < p ^ n := (Nat.one_lt_pow_iff two_ne_zero).mp (hK ▸ Finite.one_lt_card)
+        have hcard : 1 < Nat.card {b : K // b ^ p ^ n + b = 0} := by
+          rwa [natCard_pow_add_self_eq hK (zero_pow (pow_pos (expChar_pos K p) n).ne')]
+        have : Nontrivial {b : K // b ^ p ^ n + b = 0} := Finite.one_lt_card_iff_nontrivial.mp hcard
+        have hzero : (0 : K) ^ p ^ n + 0 = 0 := by
+          rw [zero_pow (pow_pos (expChar_pos K p) n).ne', add_zero]
+        obtain ⟨⟨b, hb⟩, hne⟩ := exists_ne (⟨0, hzero⟩ : {b : K // b ^ p ^ n + b = 0})
+        exact ⟨b, fun hb0 ↦ hne (Subtype.ext hb0), by
+          simpa [iterateFrobenius_def, add_comm] using hb⟩
 
 /-- The quadratic finite-field involution admits an element of trace one, in every
 characteristic. -/

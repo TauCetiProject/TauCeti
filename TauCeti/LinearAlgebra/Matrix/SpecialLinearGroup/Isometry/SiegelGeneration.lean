@@ -61,15 +61,8 @@ theorem unitaryTransvection_typeAGraphConjugator_single (σ : R →+* R) {r : �
         Matrix (Fin (r + 1)) (Fin (r + 1)) R) := by
   refine mulVec_injective (funext fun v ↦ ?_)
   rw [unitaryTransvection_mulVec, comp_single_dotProduct_typeAGraphConjugator_mulVec,
-    Matrix.SpecialLinearGroup.transvection_coe, add_mulVec, one_mulVec]
-  ext j
-  by_cases hj : j = i
-  · subst hj
-    simp only [Pi.add_apply, Pi.smul_apply, Pi.single_eq_same, smul_eq_mul, mul_one, mulVec,
-      dotProduct, Matrix.single_apply, true_and, ite_mul, zero_mul, Finset.sum_ite_eq,
-      Finset.mem_univ, ↓reduceIte]
-    ring
-  · simp [mulVec, dotProduct, hj, Ne.symm hj]
+    Matrix.SpecialLinearGroup.transvection_coe, add_mulVec, one_mulVec, Matrix.single_mulVec_eq]
+  simp [mul_assoc, mul_comm]
 
 end CommRing
 
@@ -319,8 +312,8 @@ private theorem exists_mem_siegelClosure_two_mulVec_last_eq_smul_zero_of_eq
   refine exists_mem_siegelClosure_mulVec_last_eq_smul_zero_of_exists_isotropic hσ h02 ht0
     (v := ![t, x, 1]) ?_ ?_ ?_
   · dsimp only [stdUnitMat]
-    rw [coe_typeAGraphConjugator_two]
-    simp [dotProduct, mulVec, Fin.sum_univ_three]
+    rw [dotProduct_typeAGraphConjugator_two_mulVec]
+    simp [map_one]
     linear_combination -hx
   · rw [comp_single_dotProduct_typeAGraphConjugator_mulVec]
     simp [Fin.rev_zero]
@@ -618,26 +611,24 @@ private theorem mem_range_borderHom_of_mulVec_single_eq {r' : ℕ}
   let M := g.val.val
   let A : Matrix (Fin (r' + 1)) (Fin (r' + 1)) K := fun i j ↦ M (innerIdx i) (innerIdx j)
   have hcol0 (k : Fin (r' + 2 + 1)) : M k 0 = if k = 0 then 1 else 0 := by
-    simpa [mulVec, dotProduct, Pi.single_apply] using congrFun hg0 k
+    simpa [M, Matrix.mulVec_single_one, Pi.single_apply] using congrFun hg0 k
   have hcoll (k : Fin (r' + 2 + 1)) :
       M k (Fin.last (r' + 2)) = if k = Fin.last (r' + 2) then 1 else 0 := by
-    simpa [mulVec, dotProduct, Pi.single_apply] using congrFun hgl k
+    simpa [M, Matrix.mulVec_single_one, Pi.single_apply] using congrFun hgl k
   have hrow0 (j : Fin (r' + 1)) : M 0 (innerIdx j) = 0 := by
     have hp := comp_mulVec_dotProduct_mulVec_mulVec (mem_specialIsometryGroup_iff.mp g.property)
       (Pi.single (Fin.last (r' + 2)) 1) (Pi.single (innerIdx j) 1)
     rw [hgl, comp_single_dotProduct_typeAGraphConjugator_mulVec,
-      comp_single_dotProduct_typeAGraphConjugator_mulVec] at hp
+      comp_single_dotProduct_typeAGraphConjugator_mulVec, Matrix.mulVec_single_one] at hp
     simp only [Fin.val_last, Fin.rev_last, Pi.single_apply, zero_ne_innerIdx, ↓reduceIte,
-      mul_zero] at hp
-    have hM0 : M 0 (innerIdx j) = (M *ᵥ Pi.single (innerIdx j) 1) 0 := by
-      simp [mulVec, dotProduct, Pi.single_apply]
-    exact hM0 ▸ (mul_eq_zero.mp hp).resolve_left (pow_ne_zero _ (neg_ne_zero.mpr one_ne_zero))
+      mul_zero, col_apply] at hp
+    exact (mul_eq_zero.mp hp).resolve_left (pow_ne_zero _ (neg_ne_zero.mpr one_ne_zero))
   have hrowl (j : Fin (r' + 1)) : M (Fin.last (r' + 2)) (innerIdx j) = 0 := by
     have hp := comp_mulVec_dotProduct_mulVec_mulVec (mem_specialIsometryGroup_iff.mp g.property)
       (Pi.single 0 1) (Pi.single (innerIdx j) 1)
     rw [hg0, comp_single_dotProduct_typeAGraphConjugator_mulVec,
-      comp_single_dotProduct_typeAGraphConjugator_mulVec] at hp
-    simpa [Fin.rev_zero, Pi.single_apply, mulVec, dotProduct] using hp
+      comp_single_dotProduct_typeAGraphConjugator_mulVec, Matrix.mulVec_single_one] at hp
+    simpa [M, Fin.rev_zero, Pi.single_apply] using hp
   have hlast0 : (Fin.last (r' + 2) : Fin (r' + 2 + 1)) ≠ 0 := Fin.last_pos.ne'
   have hM : borderMat A = M := Matrix.ext <| forall_fin_border
     (forall_fin_border (by simp [hcol0 0]) (fun j ↦ by simp [hrow0 j])
@@ -749,9 +740,10 @@ private theorem siegelClosure_one_eq_top (hσ : Function.Involutive σ)
   have hσc0 : σ c ≠ 0 := (map_ne_zero σ).mpr hc0
   have hg₂_mat : ((g₂ : Matrix.SpecialLinearGroup (Fin 2) K) : Matrix (Fin 2) (Fin 2) K) =
       diagonal ![c, (σ c)⁻¹] := by
-    ext i j; fin_cases j
-    · have := congrFun hg₂e0 i; fin_cases i <;> simpa [g₂, mulVec, dotProduct] using this
-    · have := congrFun hg₂er i; fin_cases i <;> simpa [g₂, mulVec, dotProduct] using this
+    refine Matrix.ext_of_mulVec_single fun i ↦ ?_
+    fin_cases i
+    · simpa [g₂, Matrix.diagonal_mulVec_single, ← Pi.single_smul'] using hg₂e0
+    · simpa [g₂, Matrix.diagonal_mulVec_single, ← Pi.single_smul'] using hg₂er
   have hdet1 : c * (σ c)⁻¹ = 1 := by
     have hd := g₂.val.property; rwa [hg₂_mat, det_diagonal, Fin.prod_univ_two] at hd
   have hσc : σ c = c := ((mul_inv_eq_one₀ hσc0).mp hdet1).symm
