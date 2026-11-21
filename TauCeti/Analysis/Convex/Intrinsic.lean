@@ -151,7 +151,7 @@ theorem intrinsicInterior_inter_subset_of_affineSpan_eq {U : Set P} (hU : IsOpen
   rw [intrinsicInterior, h]
   have hsub : interior ((↑) ⁻¹' t) ∩ (↑) ⁻¹' U ⊆ ((↑) ⁻¹' s : Set (affineSpan 𝕜 t)) :=
     fun z hz ↦ htU ⟨(interior_subset hz.1 : z ∈ (↑) ⁻¹' t), hz.2⟩
-  exact ⟨y, interior_maximal hsub (isOpen_interior.inter (hU.preimage continuous_subtype_val))
+  exact ⟨y, interior_maximal hsub (isOpen_interior.inter (hU.preimage continuous_subtypeVal))
     ⟨hy, hyU⟩, rfl⟩
 
 /-- The intrinsic frontier of a closed set consists of its points outside its intrinsic
@@ -159,7 +159,7 @@ interior. -/
 theorem _root_.IsClosed.sdiff_intrinsicInterior (hs : IsClosed s) :
     s \ intrinsicInterior 𝕜 s = intrinsicFrontier 𝕜 s := by
   rw [← intrinsicClosure_sdiff_intrinsicInterior,
-    (hs.preimage continuous_subtype_val).intrinsicClosure]
+    (hs.preimage continuous_subtypeVal).intrinsicClosure]
 
 /-- Membership in the intrinsic interior, read in the ambient space: `x` is an intrinsic interior
 point of `s` when it lies in the affine span of `s` and every point of that span close to `x` lies
@@ -169,8 +169,8 @@ theorem mem_intrinsicInterior_iff_eventually {x : P} :
       x ∈ affineSpan 𝕜 s ∧ ∀ᶠ y in nhds x, y ∈ affineSpan 𝕜 s → y ∈ s := by
   refine ⟨fun ⟨z, hz, hzx⟩ ↦ ?_, fun ⟨hx, h⟩ ↦ ⟨⟨x, hx⟩, ?_, rfl⟩⟩
   · obtain ⟨u, hu, hus⟩ := (mem_nhds_subtype _ _ _).1 (mem_interior_iff_mem_nhds.1 hz)
-    exact hzx ▸ ⟨z.2, Filter.mem_of_superset hu fun y hy hyA ↦ hus (a := ⟨y, hyA⟩) hy⟩
-  · exact mem_interior_iff_mem_nhds.2 ((mem_nhds_subtype _ _ _).2 ⟨_, h, fun y hy ↦ hy y.2⟩)
+    exact hzx ▸ ⟨z.property, Filter.mem_of_superset hu fun y hy hyA ↦ hus (a := ⟨y, hyA⟩) hy⟩
+  · exact mem_interior_iff_mem_nhds.2 ((mem_nhds_subtype _ _ _).2 ⟨_, h, fun y hy ↦ hy y.property⟩)
 
 /-- A point in the intrinsic interiors of two sets is in the intrinsic interior of their
 intersection. -/
@@ -204,7 +204,7 @@ theorem _root_.IsClosed.isNowhereDense_preimage_intrinsicFrontier {s : Set P} (h
   subst hA
   rw [intrinsicFrontier, preimage_image_eq _ Subtype.val_injective,
     isClosed_frontier.isNowhereDense_iff]
-  exact interior_frontier (hs.preimage continuous_subtype_val)
+  exact interior_frontier (hs.preimage continuous_subtypeVal)
 
 /-- Off the relative boundary of a set, membership in the set is locally constant within
 its affine span. -/
@@ -392,14 +392,14 @@ lemma add_mem_intrinsicFrontier_iff (v : (affineSpan ℝ C).direction) :
   · -- A displacement `w` in the direction with `c + w` in the span puts `c` in the span.
     have key (w : (affineSpan ℝ C).direction) (h : c + (w : E) ∈ affineSpan ℝ C) :
         c ∈ affineSpan ℝ C := by
-      have := AffineSubspace.vadd_mem_of_mem_direction (neg_mem w.2) h
+      have := AffineSubspace.vadd_mem_of_mem_direction (neg_mem w.property) h
       rwa [vadd_eq_add, show -(w : E) + (c + w) = c by abel] at this
     have hempty : {w : (affineSpan ℝ C).direction | c + (w : E) ∈ C} = ∅ :=
       Set.eq_empty_of_forall_notMem fun w hw ↦ hc (key w (subset_affineSpan ℝ C hw))
     rw [hempty, frontier_empty]
     simp only [Set.mem_empty_iff_false, iff_false]
     rintro ⟨y, -, hy⟩
-    exact hc (key v (hy ▸ y.2))
+    exact hc (key v (hy ▸ y.property))
   let cA : affineSpan ℝ C := ⟨c, hc⟩
   let : Nonempty (affineSpan ℝ C) := ⟨cA⟩
   let e := Homeomorph.vaddConst cA
@@ -420,7 +420,8 @@ theorem setOf_add_mem_mem_nhds_of_mem_intrinsicInterior (hc : c ∈ intrinsicInt
   obtain ⟨y, hy, rfl⟩ := hc
   -- Translating the direction by `y` is a continuous map into the affine span sending `0` to `y`.
   let φ : (affineSpan ℝ C).direction → affineSpan ℝ C :=
-    fun v ↦ ⟨(v : E) + y, by simpa using AffineSubspace.vadd_mem_of_mem_direction v.2 y.2⟩
+    fun v ↦ ⟨(v : E) + y,
+        by simpa using AffineSubspace.vadd_mem_of_mem_direction v.property y.property⟩
   have hφ : Continuous φ := (by fun_prop : Continuous fun v : (affineSpan ℝ C).direction ↦
     (v : E) + y).subtype_mk _
   have hφ0 : φ 0 = y := Subtype.ext (zero_add _)
@@ -527,9 +528,9 @@ noncomputable def convexClosedBallHomeomorph (hconv : Convex ℝ C) (hcl : IsClo
   have hgS : _ '' closedBall (0 : V) 1 = S := by
     rwa [closure_closedBall, (isClosed_setOf_add_mem hcl).closure_eq] at hg
   ((Homeomorph.image _ _).trans (Homeomorph.setCongr hgS)).trans
-    { toFun v := ⟨c + (v : V), v.2⟩
+    { toFun v := ⟨c + (v : V), v.property⟩
       invFun x := ⟨⟨(x : E) - c, by
-        simpa using AffineSubspace.vsub_mem_direction (subset_affineSpan ℝ C x.2) hcspan⟩,
+        simpa using AffineSubspace.vsub_mem_direction (subset_affineSpan ℝ C x.property) hcspan⟩,
         by simp [S]⟩
       left_inv v := by ext; simp
       right_inv x := by ext; simp
@@ -569,7 +570,7 @@ theorem coe_convexClosedBallHomeomorph_symm_apply_eq_gaugeRescale (hconv : Conve
     (((convexClosedBallHomeomorph hconv hcl hb hc).symm x : (affineSpan ℝ C).direction) : E) =
       ((gaugeRescale {w : (affineSpan ℝ C).direction | c + (w : E) ∈ C} (closedBall 0 1)
         ⟨(x : E) - c, by
-          simpa using AffineSubspace.vsub_mem_direction (subset_affineSpan ℝ C x.2)
+          simpa using AffineSubspace.vsub_mem_direction (subset_affineSpan ℝ C x.property)
             (subset_affineSpan ℝ C (intrinsicInterior_subset hc))⟩ :
               (affineSpan ℝ C).direction) : E) := (rfl)
 
@@ -590,7 +591,7 @@ theorem coe_convexClosedBallHomeomorph_mem_intrinsicFrontier_iff (hconv : Convex
     (hcl : IsClosed C) (hb : IsBounded C) (hc : c ∈ intrinsicInterior ℝ C)
     (v : closedBall (0 : (affineSpan ℝ C).direction) 1) :
     (convexClosedBallHomeomorph hconv hcl hb hc v : E) ∈ intrinsicFrontier ℝ C ↔
-      ‖v.1‖ = 1 := by
+      ‖v.val‖ = 1 := by
   rw [coe_convexClosedBallHomeomorph_apply_eq_gaugeRescale,
     add_mem_intrinsicFrontier_iff,
     ← gauge_eq_one_iff_mem_frontier (convex_setOf_add_mem hconv)
@@ -616,7 +617,7 @@ theorem inter_affineSpan_subset {S U : Set V} (hU : Convex ℝ U) (hUS : (U ∩ 
     ⟨AffineMap.lineMap w z (r : ℝ),
       AffineMap.lineMap_mem _ (subset_affineSpan ℝ S hwP) hzA⟩
   have hg : Continuous g :=
-    (AffineMap.lineMap_continuous.comp continuous_subtype_val).subtype_mk _
+    (AffineMap.lineMap_continuous.comp continuous_subtypeVal).subtype_mk _
   let B : Set (affineSpan ℝ S) := (↑) ⁻¹' S
   have havoid : Set.range g ⊆ (frontier B)ᶜ := by
     rintro _ ⟨r, rfl⟩ hr

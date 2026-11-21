@@ -66,8 +66,7 @@ variable {Y : Type*} [TopologicalSpace Y] [T2Space Y]
 Hausdorff set, has a preconnected cluster set at every approach point. -/
 theorem isPreconnected_clusterSetOn (hUc : Convex ℝ U) (hK : IsCompact K)
     (hfK : MapsTo f U K) (hfc : ContinuousOn f U) : IsPreconnected (clusterSetOn f U w) :=
-  TauCeti.isPreconnected_clusterSetOn hK hfK hfc
-    (isPreconnectedApproachAt_def.mp (hUc.isPreconnectedApproachAt w))
+  TauCeti.isPreconnected_clusterSetOn hK hfK hfc (hUc.isPreconnectedApproachAt w)
 
 /-- A continuous map on a convex domain in a real locally convex space, with values in a compact
 Hausdorff set, has a connected cluster set at each point of the closure of its domain.

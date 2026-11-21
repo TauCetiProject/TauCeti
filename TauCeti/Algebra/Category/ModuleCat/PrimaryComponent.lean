@@ -117,8 +117,8 @@ noncomputable instance preservesFiniteLimits_primaryComponentFunctor :
     (ModuleCat.mono_iff_injective _).mpr fun x y hxy ↦
       Subtype.ext (hf (congrArg Subtype.val hxy))
   refine ⟨(S.map J.primaryComponentFunctor).moduleCat_exact_iff.mpr fun y hy ↦ ?_, hmono⟩
-  obtain ⟨x, hx⟩ := hex y.1 (congrArg Subtype.val hy)
-  obtain ⟨n, hn⟩ := (J.primaryComponent_mem S.X₂ y.1).mp y.2
+  obtain ⟨x, hx⟩ := hex y.val (congrArg Subtype.val hy)
+  obtain ⟨n, hn⟩ := (J.primaryComponent_mem S.X₂ y.val).mp y.property
   refine ⟨⟨x, (J.primaryComponent_mem S.X₁ x).mpr ⟨n, ?_⟩⟩, Subtype.ext hx⟩
   rw [Submodule.mem_torsionBySet_iff] at hn ⊢
   exact fun r ↦ hf (by rw [map_smul, hx, hn r, map_zero])

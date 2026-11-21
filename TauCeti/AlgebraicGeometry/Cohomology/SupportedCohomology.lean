@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.MvPolynomial.Basic
 public import TauCeti.Algebra.Homology.LocalCohomology.RightDerived
-public import TauCeti.AlgebraicGeometry.AffineScheme
+public import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Tilde.Basic
 public import TauCeti.RingTheory.Depth.LocalCohomology
 public import TauCeti.Topology.Sheaves.SupportedCohomology.Derived
@@ -129,7 +129,7 @@ theorem tilde_toOpen_top_mem_supportedSubmodule_iff (s : Set R) (M : ModuleCat.{
       (tilde.toOpen M (basicOpen f)).hom).mp hmf
     exact ⟨n, hn⟩
   · intro hm
-    refine TopCat.Presheaf.IsSheaf.section_ext F.2 fun p hp ↦ ?_
+    refine TopCat.Presheaf.IsSheaf.section_ext F.property fun p hp ↦ ?_
     have hp' : p ∈ ⨆ f ∈ s, (basicOpen f : Opens (Spec R)) := hU ▸ hp
     obtain ⟨f, hp'⟩ := Opens.mem_iSup.mp hp'
     obtain ⟨hf, hp'⟩ := Opens.mem_iSup.mp hp'
@@ -165,27 +165,28 @@ def primaryComponentEquivSupportedSubmoduleTop {I : Ideal R} (hI : I.FG) (M : Mo
         (Spec.zeroLocusClosed (R := R) (I : Set R)) ⊤ :=
   LinearEquiv.ofLinearMap
     ((tilde.toOpen M ⊤).hom.comp (I.primaryComponent M).subtype |>.codRestrict _
-      fun m ↦ (tilde_toOpen_top_mem_supportedSubmodule_iff_mem_primaryComponent hI M m.1).mpr m.2)
+      fun m ↦ (tilde_toOpen_top_mem_supportedSubmodule_iff_mem_primaryComponent hI M m.val).mpr
+        m.property)
     (((tilde.isoTop M).inv.hom.comp
         ((modulesSpecToSheaf.obj (tilde M)).supportedSubmodule _ ⊤).subtype).codRestrict
       _ fun s ↦ by
         refine (tilde_toOpen_top_mem_supportedSubmodule_iff_mem_primaryComponent hI M _).mp ?_
         simp only [LinearMap.comp_apply, Submodule.subtype_apply]
-        have h : tilde.toOpen M ⊤ ((tilde.isoTop M).inv.hom s.1) = s.1 :=
-          ConcreteCategory.congr_hom (tilde.isoTop M).inv_hom_id s.1
+        have h : tilde.toOpen M ⊤ ((tilde.isoTop M).inv.hom s.val) = s.val :=
+          ConcreteCategory.congr_hom (tilde.isoTop M).inv_hom_id s.val
         rw [h]
-        exact s.2)
+        exact s.property)
     (LinearMap.ext fun s ↦ Subtype.ext <|
-      ConcreteCategory.congr_hom (tilde.isoTop M).inv_hom_id s.1)
+      ConcreteCategory.congr_hom (tilde.isoTop M).inv_hom_id s.val)
     (LinearMap.ext fun m ↦ Subtype.ext <|
-      ConcreteCategory.congr_hom (tilde.isoTop M).hom_inv_id m.1)
+      ConcreteCategory.congr_hom (tilde.isoTop M).hom_inv_id m.val)
 
 @[simp]
 lemma coe_primaryComponentEquivSupportedSubmoduleTop_apply
     {I : Ideal R} (hI : I.FG) (M : ModuleCat.{u} R) (m : I.primaryComponent M) :
     (primaryComponentEquivSupportedSubmoduleTop hI M m :
         (modulesSpecToSheaf.obj (tilde M)).obj.obj (op ⊤)) =
-      tilde.toOpen M ⊤ m.1 :=
+      tilde.toOpen M ⊤ m.val :=
   (rfl)
 
 private def tildeToOpenTop (M : ModuleCat.{u} R) :
