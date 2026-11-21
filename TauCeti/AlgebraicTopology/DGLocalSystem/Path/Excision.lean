@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Path.Skeleton
 public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.Relative.QuasiIso
+public import TauCeti.AlgebraicTopology.Singular.Fibration.Convergence
 public import TauCeti.AlgebraicTopology.Singular.Fibration.Cubical.Cells
 public import TauCeti.Topology.PathSpace.Moore.Replacement.Equiv
 
@@ -75,6 +76,20 @@ variable {B : Type u} [TopologicalSpace B] [T2Space B] {b : B} {C D : Set B} [Re
 private abbrev pathFromEndpoint (B : Type u) [TopologicalSpace B] (b : B) :
     _root_.TopCat.of (MoorePathFrom B b) ⟶ _root_.TopCat.of B :=
   _root_.TopCat.ofHom (MoorePathFrom.endpoint B b)
+
+omit [T2Space B] in
+/-- The based path fibration is a Serre fibration: it is the end point map of the Moore paths
+starting in `{b}`, a Hurewicz fibration. -/
+private theorem pathFromEndpoint_mem_serreFibrations :
+    TopCat.serreFibrations (pathFromEndpoint B b) := by
+  have h : IsHurewiczFibration.{0} fun γ : MoorePathFrom B b ↦ γ.val.target :=
+    MoorePath.isHurewiczFibration_target ({b} : Set B)
+  have hp : IsHurewiczFibration.{0} (MoorePathFrom.endpoint B b) := by
+    convert h using 1
+    funext γ
+    exact (MoorePathFrom.endpoint_apply γ).trans
+      (congrArg MoorePath.target (MoorePathFrom.toMoorePath_mk γ.val γ.property))
+  exact IsHurewiczFibration.mem_serreFibrations hp
 
 variable (b C) in
 /-- The pullback of the based path fibration to the disks of the `n`-cells, as the pullback
@@ -176,16 +191,8 @@ theorem exists_add_differential_sub_mem_pathFromChainSkeleton {n : ℕ}
           (MoorePathPullback.proj (sigmaCellMap C n) b ⁻¹' {q | ‖(q.2 : Fin n → ℝ)‖ = 1}) ∧
         cubicalChainModuleLinearMap R MoorePathPullback.toMoorePathFrom u +
             cubicalChainModuleDifferential _ H R v - y ∈ pathFromChainSkeleton b C H R (n - 1) := by
-  -- The based path space is the space of Moore paths starting in `{b}`.
-  have h : IsHurewiczFibration.{0} fun γ : MoorePathFrom B b ↦ γ.val.target :=
-    MoorePath.isHurewiczFibration_target ({b} : Set B)
-  have hp : IsHurewiczFibration.{0} (MoorePathFrom.endpoint B b) := by
-    convert h using 1
-    funext γ
-    exact (MoorePathFrom.endpoint_apply γ).trans
-      (congrArg MoorePath.target (MoorePathFrom.toMoorePath_mk γ.val γ.property))
   have := TopCat.quasiIso_cubicalChainComplexMap_cellPullbackPairMap (C := C)
-    (IsHurewiczFibration.mem_serreFibrations (p := pathFromEndpoint B b) hp) R n
+    (pathFromEndpoint_mem_serreFibrations (B := B) (b := b)) R n
   simp only [mem_pathFromChainSkeleton] at hy hxy ⊢
   exact exists_add_differential_sub_mem_cubicalChainModuleSupportedIn_of_quasiIso H
     (TopCat.cellPullbackPairMap (pathFromEndpoint B b) C n)
@@ -195,5 +202,38 @@ theorem exists_add_differential_sub_mem_pathFromChainSkeleton {n : ℕ}
     (image_symm_range_cellPullbackPair_map b C n)
     (Subtype.range_coe.trans (preimage_skeletonLT_succ_eq b C n))
     (image_range_preimageSkeletonPair_map b C n) hx hy hxy
+
+variable (b C R) in
+/-- **The relative homology of the pullback over the cells vanishes below their dimension.** Let
+`P` be the pullback of the based path fibration `P_b B → B` along the characteristic maps of the
+`n`-cells and `∂P` its part over the boundary spheres. Then `H_p(P, ∂P; R) = 0` for `p < n`: the
+projection to `(p⁻¹(Xⁿ), p⁻¹(Xⁿ⁻¹))` is an isomorphism on relative homology, and the skeletal
+filtration of a Serre fibration has no relative homology below the cell dimension
+(`TauCeti.TopCat.isZero_singularHomology_preimageSkeleton_succ`). -/
+theorem isZero_homology_cubicalChainComplex_ofSubset_sigmaCellMap {n p : ℕ} (hp : p < n) :
+    IsZero (((TopPair.ofSubset (X := _root_.TopCat.of (MoorePathPullback (sigmaCellMap C n) b))
+      (MoorePathPullback.proj (sigmaCellMap C n) b ⁻¹' {q | ‖(q.2 : Fin n → ℝ)‖ = 1})
+        ).cubicalChainComplex R).homology p) := by
+  have hser := pathFromEndpoint_mem_serreFibrations (B := B) (b := b)
+  have h₁ := TopCat.isZero_singularHomology_preimageSkeleton_succ hser R (C := C)
+    ((n : ℤ) - 1) p (by omega)
+  rw [TopCat.ofInclusion_preimageSkeleton_eq_preimageSkeletonPair (C := C)
+    (p := pathFromEndpoint B b) n ((n : ℤ) - 1) rfl] at h₁
+  have h₂ : IsZero (((TopCat.preimageSkeletonPair (pathFromEndpoint B b) C n).cubicalChainComplex
+      R).homology p) :=
+    h₁.of_iso (TopPair.singularCubicalHomologyIso R _ p).symm
+  have := TopCat.quasiIso_cubicalChainComplexMap_cellPullbackPairMap C hser R n
+  have h₃ : IsZero (((TopCat.cellPullbackPair (pathFromEndpoint B b) C n).cubicalChainComplex
+      R).homology p) :=
+    h₂.of_iso (asIso (HomologicalComplex.homologyMap (TopPair.cubicalChainComplexMap R
+      (TopCat.cellPullbackPairMap (pathFromEndpoint B b) C n)) p))
+  -- The two pullbacks are the same subspace of the product of the disks with `P_b B`.
+  let e : TopPair.ofSubset (X := _root_.TopCat.of (MoorePathPullback (sigmaCellMap C n) b))
+      (MoorePathPullback.proj (sigmaCellMap C n) b ⁻¹' {q | ‖(q.2 : Fin n → ℝ)‖ = 1}) ≅
+        TopCat.cellPullbackPair (pathFromEndpoint B b) C n :=
+    TopPair.ofSubsetIso (cellPullbackHomeomorph b C n) fun ⟨⟨d, γ⟩, h⟩ ↦ by
+      simp [cellPullbackHomeomorph, MoorePathPullback.proj_apply, MoorePathPullback.point_mk]
+  exact h₃.of_iso (asIso (HomologicalComplex.homologyMap
+    (TopPair.cubicalChainComplexMap R e.hom) p))
 
 end TauCeti
