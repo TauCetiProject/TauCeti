@@ -7,9 +7,11 @@ module
 
 public import Mathlib.Algebra.Group.Conj
 public import Mathlib.Algebra.Module.Defs
+public import Mathlib.Algebra.Ring.Hom.Defs
 public import Mathlib.Algebra.Ring.Int.Defs
 public import Mathlib.Algebra.Ring.Nat
 public import Mathlib.GroupTheory.Subgroup.Centralizer
+import TauCeti.Algebra.Group.Basic
 
 /-!
 # Groups with exponents in a ring
@@ -31,6 +33,8 @@ generated fully residually free group. In a `ℤ[t]`-group the laws give, for in
 ## Main definitions
 
 * `TauCeti.IsExponentialGroup A G`: the exponentiation `Pow G A` makes the group `G` an `A`-group.
+* `TauCeti.IsExponentialGroup.compPow G f`: the exponentiation `g ^ a = g ^ f a` by `A`, pulled
+  back from an exponentiation by `B` along a map `f : A → B`. It is not an instance.
 * `TauCeti.IsExponentialGroup.MultiplicativePow.instPow`: the exponentiation
   `ofAdd m ^ a = ofAdd (a • m)` on `Multiplicative M`, for scalars `A` acting on `M`. It is a
   scoped instance.
@@ -46,6 +50,8 @@ generated fully residually free group. In a `ℤ[t]`-group the laws give, for in
   commuting with `h` commutes with every `h ^ a`, so centralizers are closed under
   exponentiation.
 * Every group is a `ℤ`-group and an `ℕ`-group, with the usual powers.
+* `TauCeti.IsExponentialGroup.isExponentialGroup_compPow`: along a homomorphism of semirings
+  `f : A →+* B`, a `B`-group is an `A`-group with `g ^ a = g ^ f a`.
 * `TauCeti.IsExponentialGroup.MultiplicativePow.instIsExponentialGroup`: a module `M` over a
   commutative semiring `A` is an `A`-group, written multiplicatively.
 
@@ -104,10 +110,8 @@ open TauCeti
 variable {A G : Type*} [Semiring A] [Group G] [Pow G A] [IsExponentialGroup A G] {g h : G}
 
 /-- An element commuting with `h` commutes with the powers of `h` in an `A`-group. -/
-theorem exponentialPow_right (hc : Commute g h) (a : A) : Commute g (h ^ a) := by
-  have key := IsExponentialGroup.conj_pow g h a
-  rw [hc.mul_inv_cancel, eq_mul_inv_iff_mul_eq] at key
-  exact (commute_iff_eq _ _).2 key.symm
+theorem exponentialPow_right (hc : Commute g h) (a : A) : Commute g (h ^ a) :=
+  hc.apply_right_of_conj (T := (· ^ a)) (IsExponentialGroup.conj_pow g h a)
 
 /-- The powers of `g` in an `A`-group commute with every element commuting with `g`. -/
 theorem exponentialPow_left (hc : Commute g h) (a : A) : Commute (g ^ a) h :=
@@ -230,6 +234,38 @@ instance : IsExponentialGroup ℕ G where
   mul_pow hc a := hc.mul_pow a
 
 end Instances
+
+section CompPow
+
+variable {A B : Type*} (G : Type*)
+
+/-- The exponentiation `g ^ a = g ^ f a` by the elements of `A`, pulled back from an
+exponentiation by `B` along a map `f : A → B`. It is not an instance. -/
+abbrev compPow (f : A → B) [Pow G B] : Pow G A :=
+  ⟨fun g a => g ^ f a⟩
+
+variable {G} in
+/-- The defining formula of `compPow`. -/
+@[simp]
+theorem compPow_def (f : A → B) [Pow G B] (g : G) (a : A) :
+    letI := compPow G f
+    g ^ a = g ^ f a :=
+  (rfl)
+
+/-- Along a homomorphism of semirings `f : A →+* B`, a `B`-group is an `A`-group with
+`g ^ a = g ^ f a`. -/
+theorem isExponentialGroup_compPow [Group G] [Semiring A] [Semiring B] (f : A →+* B) [Pow G B]
+    [IsExponentialGroup B G] :
+    letI := compPow G f
+    IsExponentialGroup A G :=
+  letI := compPow G f
+  { pow_one g := (congrArg (g ^ ·) (map_one f)).trans (IsExponentialGroup.pow_one g)
+    pow_add g a b := (congrArg (g ^ ·) (map_add f a b)).trans (IsExponentialGroup.pow_add g _ _)
+    pow_mul g a b := (congrArg (g ^ ·) (map_mul f a b)).trans (IsExponentialGroup.pow_mul g _ _)
+    conj_pow g h a := IsExponentialGroup.conj_pow g h (f a)
+    mul_pow hc a := IsExponentialGroup.mul_pow hc (f a) }
+
+end CompPow
 
 namespace MultiplicativePow
 
