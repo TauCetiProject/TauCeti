@@ -16,14 +16,17 @@ Mathlib identifies the spectrum of a square matrix with that of the endomorphism
 it defines (`Matrix.spectrum_toLin'`), and the spectrum of an endomorphism of a finite-dimensional
 vector space with its eigenvalues (`Module.End.hasEigenvalue_iff_mem_spectrum`). This file records
 the composite in matrix language: a scalar lies in the spectrum of a matrix over a field exactly
-when the matrix has a nonzero eigenvector for it. It also records that conjugate matrices have
-generalized eigenspaces of the same dimension, and that an endomorphism and its matrix in a basis
-have eigenspaces of the same dimension.
+when the matrix has a nonzero eigenvector for it, and the eigenspace at `μ` is trivial when
+`A - μ • 1` is invertible. It also records that conjugate matrices have generalized eigenspaces of
+the same dimension, and that an endomorphism and its matrix in a basis have eigenspaces of the
+same dimension.
 
 ## Main results
 
 * `Matrix.mem_spectrum_iff_exists_mulVec_eq_smul`: `μ ∈ spectrum K A` if and only if
   `A *ᵥ v = μ • v` for some nonzero vector `v`.
+* `Matrix.finrank_eigenspace_toLin'_eq_zero`: if `A - μ • 1` is invertible, the eigenspace of `A`
+  at `μ` is zero-dimensional.
 * `Matrix.finrank_genEigenspace_toLin'_conj`: the generalized eigenspaces of `P X P⁻¹` and of `X`
   have the same dimension.
 * `LinearMap.finrank_eigenspace_toLin'_toMatrix`: the eigenspaces of an endomorphism and of its
@@ -45,6 +48,14 @@ theorem mem_spectrum_iff_exists_mulVec_eq_smul {A : Matrix n n K} {μ : K} :
   rw [← spectrum_toLin', ← Module.End.hasEigenvalue_iff_mem_spectrum,
     Module.End.hasEigenvalue_iff, Submodule.ne_bot_iff]
   simp only [Module.End.mem_eigenspace_iff, toLin'_apply, and_comm]
+
+/-- If `A - μ • 1` is invertible, the eigenspace of the square matrix `A` at `μ` is trivial. -/
+theorem finrank_eigenspace_toLin'_eq_zero {A : Matrix n n K} {μ : K} (h : IsUnit (A - μ • 1)) :
+    Module.finrank K (Module.End.eigenspace (toLin' A) μ) = 0 := by
+  refine Submodule.finrank_eq_zero.2 ((Submodule.eq_bot_iff _).2 fun v hv ↦ ?_)
+  rw [Module.End.mem_eigenspace_iff, toLin'_apply] at hv
+  refine mulVec_injective_iff_isUnit.2 h ?_
+  rw [sub_mulVec, hv, smul_mulVec, one_mulVec, sub_self, mulVec_zero]
 
 section Conj
 
