@@ -68,7 +68,7 @@ theorem totalDegree_aeval_le {σ τ R : Type*} [CommSemiring R] {f : σ → MvPo
     (aeval f p).totalDegree ≤ p.totalDegree * D := by
   conv_lhs => rw [p.as_sum]
   rw [map_sum]
-  refine (totalDegree_finsetSum _ _).trans (Finset.sup_le fun s hs ↦ ?_)
+  refine totalDegree_finsetSum_le fun s hs ↦ ?_
   rw [aeval_monomial, algebraMap_eq, Finsupp.prod]
   refine (totalDegree_mul _ _).trans ?_
   rw [totalDegree_C, zero_add]
