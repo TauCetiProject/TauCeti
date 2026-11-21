@@ -71,6 +71,9 @@ square of the Dirac operator is the displayed product formula
 
 * `CovariantDerivative.transverseDiracOperator_eq_sum`: `B_T σ = ∑ᵢ c(eᵢ) ∇_{eᵢ} σ` in an
   orthonormal basis `(T, e₁, …, eₖ)`.
+* `CovariantDerivative.transverseDiracOperator_add`, `transverseDiracOperator_smul` and their
+  companions: linearity and the Leibniz rule
+  `B_T (f σ) = f B_T σ + c(grad f) σ - df(T) c(T) σ`.
 * `CovariantDerivative.diracOperator_clifford_eq`: `D (c(T) τ) = -c(T) D τ - 2 ∇_T τ`.
 * `CovariantDerivative.diracOperator_diracOperator_eq`:
   `D² σ = -∇_T ∇_T σ + B_T² σ + c(T) (∇_T (B_T σ) - B_T (∇_T σ))`.
@@ -131,6 +134,54 @@ theorem diracOperator_eq_add_transverseDiracOperator (σ : Π y : M, V y) (x : M
     cov.diracOperator c σ x =
       c x (T x) (cov σ x (T x)) + cov.transverseDiracOperator c T σ x := by
   rw [transverseDiracOperator_def, add_sub_cancel]
+
+/-- The transverse Dirac operator of the zero section is zero. -/
+@[simp]
+theorem transverseDiracOperator_zero [VectorBundle ℝ F V] (x : M) :
+    cov.transverseDiracOperator c T (0 : Π y : M, V y) x = 0 := by
+  simp [transverseDiracOperator_def]
+
+/-- The transverse Dirac operator is additive on sections differentiable at the point. -/
+theorem transverseDiracOperator_add {x : M} (hσ : MDiffAt (T% σ) x) (hτ : MDiffAt (T% τ) x) :
+    cov.transverseDiracOperator c T (σ + τ) x =
+      cov.transverseDiracOperator c T σ x + cov.transverseDiracOperator c T τ x := by
+  simp only [transverseDiracOperator_def, cov.diracOperator_add c hσ hτ,
+    cov.isCovariantDerivativeOnUniv.add hσ hτ, add_apply, map_add]
+  abel
+
+/-- The transverse Dirac operator commutes with multiplication of a differentiable section by a
+constant. -/
+theorem transverseDiracOperator_const_smul {x : M} (a : ℝ) (hσ : MDiffAt (T% σ) x) :
+    cov.transverseDiracOperator c T (a • σ) x = a • cov.transverseDiracOperator c T σ x := by
+  simp only [transverseDiracOperator_def, cov.diracOperator_const_smul c a hσ,
+    cov.isCovariantDerivativeOnUniv.smul_const a hσ, smul_apply, map_smul, smul_sub]
+
+/-- The transverse Dirac operator commutes with negation of a differentiable section. -/
+theorem transverseDiracOperator_neg {x : M} (hσ : MDiffAt (T% σ) x) :
+    cov.transverseDiracOperator c T (-σ) x = -cov.transverseDiracOperator c T σ x := by
+  rw [← neg_one_smul ℝ σ, cov.transverseDiracOperator_const_smul c T (-1) hσ, neg_one_smul]
+
+/-- The transverse Dirac operator commutes with differences of differentiable sections. -/
+theorem transverseDiracOperator_sub [VectorBundle ℝ F V] {x : M} (hσ : MDiffAt (T% σ) x)
+    (hτ : MDiffAt (T% τ) x) :
+    cov.transverseDiracOperator c T (σ - τ) x =
+      cov.transverseDiracOperator c T σ x - cov.transverseDiracOperator c T τ x := by
+  rw [sub_eq_add_neg, cov.transverseDiracOperator_add c T hσ (mdifferentiableAt_neg_section hτ),
+    cov.transverseDiracOperator_neg c T hτ, sub_eq_add_neg]
+
+/-- **The Leibniz rule for the transverse Dirac operator.** For a function `f` and a section
+`σ`, both differentiable at `x`, `B_T (f σ) = f B_T σ + c(grad f) σ - df(T) c(T) σ`: the
+commutator of `B_T` with multiplication by `f` is Clifford multiplication by the part
+`grad f - df(T) T` of the gradient transverse to a unit vector `T`. -/
+theorem transverseDiracOperator_smul [IsManifold I 1 M] {f : M → ℝ} {x : M} (hf : MDiffAt f x)
+    (hσ : MDiffAt (T% σ) x) :
+    cov.transverseDiracOperator c T (f • σ) x =
+      f x • cov.transverseDiracOperator c T σ x +
+        c x (TauCeti.Manifold.mgradient I f x) (σ x) - d% f x (T x) • c x (T x) (σ x) := by
+  simp only [transverseDiracOperator_def, cov.diracOperator_smul c hf hσ,
+    cov.isCovariantDerivativeOnUniv.leibniz hσ hf, add_apply, smul_apply,
+    ContinuousLinearMap.smulRight_apply, map_add, map_smul]
+  module
 
 /-- **The transverse Dirac operator in an orthonormal frame.** If `b` is an orthonormal basis of
 the tangent space at `x`, indexed by `Option ι`, whose vector `b none` is `T x`, then
