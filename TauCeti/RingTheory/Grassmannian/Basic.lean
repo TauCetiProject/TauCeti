@@ -69,6 +69,10 @@ of `M`, naturally in `A`. This is the functorial form of base change of the Gras
 * `Module.Grassmannian.rTensor_mem_map_iff_of_injective` and
   `Module.Grassmannian.map_injective`: along an injective map, a point is recovered from its base
   change.
+* `LinearEquiv.grassmannianCongr_refl` and `LinearEquiv.grassmannianCongr_trans`: functoriality
+  of `grassmannianCongr` in the linear equivalence.
+* `Module.Grassmannian.map_grassmannianCongr_baseChange`: transport along the base change of a
+  linear equivalence is natural in the algebra.
 * `Module.Grassmannian.baseChangeEquiv_map`: `baseChangeEquiv` is natural in the algebra.
 
 ## References
@@ -324,6 +328,37 @@ theorem _root_.LinearEquiv.grassmannianCongr_symm (e : M ≃ₗ[R] M') :
     (e.grassmannianCongr (k := k)).symm = e.symm.grassmannianCongr :=
   Equiv.ext fun N ↦ Module.Grassmannian.ext <| by
     simp [LinearEquiv.grassmannianCongr, LinearMap.ker_comp, Submodule.comap_equiv_eq_map_symm]
+
+/-- Transport along the identity is the identity. -/
+@[simp]
+theorem _root_.LinearEquiv.grassmannianCongr_refl :
+    (LinearEquiv.refl R M).grassmannianCongr (k := k) = Equiv.refl _ :=
+  Equiv.ext fun N ↦ Module.Grassmannian.ext <| by simp
+
+/-- Transport along a composite is the composite of the transports. -/
+theorem _root_.LinearEquiv.grassmannianCongr_trans {M'' : Type*} [AddCommGroup M'']
+    [Module R M''] (e : M ≃ₗ[R] M') (e' : M' ≃ₗ[R] M'') :
+    (e.trans e').grassmannianCongr (k := k) = e.grassmannianCongr.trans e'.grassmannianCongr :=
+  Equiv.ext fun N ↦ Module.Grassmannian.ext <| by
+    simp only [LinearEquiv.toSubmodule_grassmannianCongr_apply, Equiv.trans_apply]
+    rw [LinearEquiv.coe_trans, Submodule.map_comp]
+
+variable {A B : Type w} [CommRing A] [Algebra R A] [CommRing B] [Algebra R B]
+
+/-- **Naturality of transport along a linear equivalence.** For `e : M ≃ₗ[R] M'`, transporting
+points of `G(k, A ⊗[R] M; A)` along the base change of `e` commutes with base change of points
+along an `R`-algebra map `f : A → B`. -/
+theorem map_grassmannianCongr_baseChange (e : M ≃ₗ[R] M') (f : A →ₐ[R] B)
+    (N : G(k, A ⊗[R] M; A)) :
+    map f ((e.baseChange R A M M').grassmannianCongr N) =
+      (e.baseChange R B M M').grassmannianCongr (map f N) := by
+  ext : 1
+  simp only [LinearEquiv.toSubmodule_grassmannianCongr_apply, map_toSubmodule_eq_span,
+    Submodule.map_span, Submodule.map_coe, ← Set.image_comp]
+  refine congrArg _ (Set.image_congr' fun x ↦ ?_)
+  induction x using TensorProduct.inductionOn with
+  | add x y hx hy => simp only [Function.comp_apply, map_add] at hx hy ⊢; rw [hx, hy]
+  | tmul a m => simp
 
 end Congr
 
