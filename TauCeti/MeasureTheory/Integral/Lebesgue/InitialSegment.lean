@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Basic
+import Mathlib.Order.UpperLower.Relative
 
 /-!
 # Integral comparison on initial segments
@@ -50,7 +51,9 @@ theorem setLIntegral_indicator_le_setLIntegral_indicator_inter
     ∫⁻ x in S, R.indicator f x ∂μ ≤ ∫⁻ x in S, (R ∩ T).indicator w x ∂μ := by
   -- Seen inside `S`, the segments `R` and `T` are lower sets, so one contains the other.
   have hlower {U : Set α} (hU : IsRelLowerSet (U ∩ S) (· ∈ S)) :
-      IsLowerSet ((↑) ⁻¹' U : Set S) := fun x y hyx hx ↦ ((hU ⟨hx, x.property⟩).2 hyx y.property).1
+      IsLowerSet ((↑) ⁻¹' U : Set S) :=
+    isLowerSet_subtype_iff_isRelLowerSet.mpr <| by
+      simpa only [Subtype.image_preimage_val, inter_comm] using hU
   rcases (hlower hT).total (hlower hR) with hTR | hRT
   · -- `R` contains the part of `S` in `T`: compare with the total mass of `f`.
     calc ∫⁻ x in S, R.indicator f x ∂μ

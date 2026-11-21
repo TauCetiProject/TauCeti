@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Convex.Star
 public import Mathlib.Analysis.SpecialFunctions.Gaussian.FourierTransform
 public import TauCeti.MeasureTheory.Constructions.HaarToSphere
 public import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
+import Mathlib.Order.UpperLower.Relative
 import TauCeti.MeasureTheory.Integral.Lebesgue.InitialSegment
 
 /-!
@@ -124,7 +125,7 @@ private lemma lintegral_ray_le {w φ : ℝ → ℝ≥0∞} {ρ : ℝ}
     _ ≤ ∫⁻ r in Ioi (0 : ℝ), (R ∩ Iic ρ).indicator w r :=
         setLIntegral_indicator_le_setLIntegral_indicator_inter measurableSet_Ioi.nullMeasurableSet
           (ae_restrict_of_forall_mem measurableSet_Ioi fun r hr ↦ mul_le_of_le_one_right' (hφ r hr))
-          hmass hR fun _ ⟨hr, hr₀⟩ ↦ ⟨hr₀, fun _ hsr hs ↦ ⟨IsLowerSet.Iic ρ hsr hr, hs⟩⟩
+          hmass hR ((IsLowerSet.Iic ρ).isRelLowerSet_sep (· ∈ Ioi (0 : ℝ)))
     _ = ∫⁻ r in Ioi (0 : ℝ), w r * (A ∩ closedBall 0 ρ).indicator 1 (r • (u : E)) := by
         refine setLIntegral_congr_fun measurableSet_Ioi fun r hr ↦ ?_
         rw [inter_indicator_one, Pi.mul_apply, indicator_closedBall_smul u hr]
