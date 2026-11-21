@@ -285,7 +285,7 @@ theorem morseBrokenTrajectoryConcat_assoc (hq : f q ∉ L) (hs : f s ∉ L)
     hX.morseBrokenTrajectoryConcat hs (hX.morseBrokenTrajectoryConcat hq (a, b), c) =
       hX.morseBrokenTrajectoryConcat hq (a, hX.morseBrokenTrajectoryConcat hs (b, c)) :=
   Subtype.ext <|
-    morseRecordConcat_assoc hq (hX.le_of_mem_morseBrokenTrajectoryRecords b.property) _ _ _
+    morseRecordConcat_assoc hq (hX.value_le_of_mem_morseBrokenTrajectoryRecords b.property) _ _ _
 
 /-- **Splitting a broken trajectory at its first breaking point.** Let `L` contain no critical value
 of `f`. A broken trajectory from `p` to `r` with at least two components, through the chain
@@ -384,7 +384,7 @@ theorem disjoint_morseTrajectoryRecords_image2_morseRecordConcat (hqr : q ≠ r)
   refine disjoint_left.2 ?_
   rintro w hw ⟨w₁, h₁, w₂, h₂, rfl⟩
   obtain ⟨c, hcL, hc⟩ := hL
-  have hrq := hX.lt_of_mem_morseBrokenTrajectoryRecords hqr h₂
+  have hrq := hX.value_lt_of_mem_morseBrokenTrajectoryRecords hqr h₂
   -- On the level `c`, the unbroken trajectory lies in the stable set of `r`.
   obtain ⟨y, hy, hwy⟩ := hX.mem_morseTrajectoryRecords.1 hw
   obtain ⟨-, t, ht⟩ := hwy ⟨c, hcL, hrq.trans hc.1, hc.2⟩

@@ -61,8 +61,8 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
   space of unbroken trajectories.
 * `antitone_apply_of_chain`, `strictAnti_apply_of_chain`: `f` decreases along a chain of critical
   points joined by trajectories, strictly when consecutive points are distinct.
-* `le_of_mem_morseBrokenTrajectoryRecords`, `lt_of_mem_morseBrokenTrajectoryRecords`: `f`
-  decreases from the start to the end of a broken trajectory, strictly when they are distinct.
+* `value_le_of_mem_morseBrokenTrajectoryRecords`, `value_lt_of_mem_morseBrokenTrajectoryRecords`:
+  `f` decreases from the start to the end of a broken trajectory, strictly when they are distinct.
 * `exists_flow_eq_of_mem_Ioo`: the point of a record on a level of step `j` lies on the orbit of
   the component of step `j`.
 * `mem_unstableSet_inter_stableSet_of_mem_morseBrokenTrajectoryStratum`: the point of a record on a
@@ -168,14 +168,14 @@ theorem strictAnti_apply_of_chain {k : ℕ} {x : Fin (k + 1) → M} {z : Fin k �
 
 /-- **The function decreases along a broken trajectory.** If there is a broken trajectory from `p`
 to `r`, recorded on any levels, then `f r ≤ f p`. -/
-theorem le_of_mem_morseBrokenTrajectoryRecords {p r : M} {c : ι → ℝ} {w : ι → M}
+theorem value_le_of_mem_morseBrokenTrajectoryRecords {p r : M} {c : ι → ℝ} {w : ι → M}
     (hw : w ∈ hX.morseBrokenTrajectoryRecords p r c) : f r ≤ f p := by
   obtain ⟨k, x, z, rfl, rfl, -, -, hz, -⟩ := hX.mem_morseBrokenTrajectoryRecords.1 hw
   exact hX.antitone_apply_of_chain hz (Fin.zero_le _)
 
 /-- **The function decreases strictly along a broken trajectory between distinct points.** If there
 is a broken trajectory from `p` to `r ≠ p`, recorded on any levels, then `f r < f p`. -/
-theorem lt_of_mem_morseBrokenTrajectoryRecords {p r : M} {c : ι → ℝ} {w : ι → M}
+theorem value_lt_of_mem_morseBrokenTrajectoryRecords {p r : M} {c : ι → ℝ} {w : ι → M}
     (hpr : p ≠ r) (hw : w ∈ hX.morseBrokenTrajectoryRecords p r c) : f r < f p := by
   obtain ⟨k, x, z, rfl, rfl, -, hne, hz, -⟩ := hX.mem_morseBrokenTrajectoryRecords.1 hw
   exact hX.strictAnti_apply_of_chain hne hz
