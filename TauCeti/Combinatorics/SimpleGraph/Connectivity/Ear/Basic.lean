@@ -333,12 +333,12 @@ theorem isEdgeConnected_two_adjoin (hH : H.coe.IsEdgeConnected 2) (e : G.Ear H) 
     intro a b ha hb
     induction f using Sym2.ind with
     | _ x y =>
-      by_cases hxy : H.Adj x.1 y.1
-      · let fH : Sym2 H.verts := s(⟨x.1, H.edge_vert hxy⟩, ⟨y.1, H.edge_vert hxy.symm⟩)
+      by_cases hxy : H.Adj x.val y.val
+      · let fH : Sym2 H.verts := s(⟨x.val, H.edge_vert hxy⟩, ⟨y.val, H.edge_vert hxy.symm⟩)
         have hr : (H.coe.deleteEdges {fH}).Reachable ⟨a, ha⟩ ⟨b, hb⟩ :=
           (isEdgeConnected_two_iff_forall_preconnected.mp hH) fH ⟨a, ha⟩ ⟨b, hb⟩
         let φ : H.coe.deleteEdges {fH} →g e.adjoin.coe.deleteEdges {s(x, y)} :=
-          { toFun z := ⟨z.1, hadj_le.1 z.2⟩
+          { toFun z := ⟨z.val, hadj_le.1 z.property⟩
             map_rel' {z₁ z₂} h := by
               rw [deleteEdges_adj, Set.mem_singleton_iff] at h ⊢
               refine ⟨(e.adjoin.coe_adj _ _).mpr (hadj_le.2 ((H.coe_adj _ _).mp h.1)),

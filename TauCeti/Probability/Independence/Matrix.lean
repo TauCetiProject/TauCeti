@@ -9,6 +9,7 @@ public import Mathlib.Probability.Independence.Process.Basic
 public import Mathlib.Analysis.Matrix.MeasurableSpace
 public import TauCeti.Probability.HasLaw
 import Mathlib.LinearAlgebra.Matrix.RowCol
+import TauCeti.MeasureTheory.Constructions.Pi
 
 /-!
 # Product laws and independence for random matrices
@@ -50,10 +51,52 @@ theorem indepFun_updateCol_zero {Ω p n R : Type*}
     (by simp [Set.disjoint_left, S, T])
     (fun ij ↦ (Matrix.measurable_apply (i := ij.1) (j := ij.2)).comp_aemeasurable hX)).comp hf hg
   have hleft (ω : Ω) :
-      f (fun i : S ↦ X ω i.1.1 i.1.2) = (X ω).updateCol k 0 := by
+      f (fun i : S ↦ X ω i.val.1 i.val.2) = (X ω).updateCol k 0 := by
     ext i j
     by_cases h : j = k <;> simp [f, h]
   simpa only [Function.comp_def, hleft, g] using h
+
+/-- The rows of a matrix with mutually independent entries are mutually independent
+as random vectors, even for infinite index types. The entry maps only need to be almost
+everywhere measurable. -/
+theorem matrix_row {Ω m n R : Type*} [MeasurableSpace Ω]
+    [MeasurableSpace R] {P : Measure Ω} {X : Ω → Matrix m n R}
+    (hX : iIndepFun (fun ij : m × n ↦ fun ω ↦ X ω ij.1 ij.2) P)
+    (hm : ∀ i j, AEMeasurable (fun ω ↦ X ω i j) P) :
+    iIndepFun (fun i ω ↦ (X ω).row i) P := by
+  refine iIndepFun.iIndepFun_process₀ (X := fun i j ω ↦ X ω i j) hm ?_
+  intro I J
+  let Z (p : (i : I) × J i) (ω : Ω) := X ω p.1 p.2
+  have hZ : iIndepFun Z P := by
+    apply hX.precomp (g := fun p : (i : I) × J i ↦ (p.1.val, p.2.val))
+    rintro ⟨i, j⟩ ⟨i', j'⟩ h
+    have hi : i = i' := Subtype.ext (congrArg Prod.fst h)
+    subst i'
+    exact congrArg (Sigma.mk i) (Subtype.ext (congrArg Prod.snd h))
+  have mZ (p : (i : I) × J i) : AEMeasurable (Z p) P := hm p.1 p.2
+  have : IsProbabilityMeasure P := hX.isProbabilityMeasure
+  let μ (i : I) (j : J i) := P.map (Z ⟨i, j⟩)
+  have (i : I) (j : J i) : IsProbabilityMeasure (μ i j) :=
+    (Measure.isProbabilityMeasure_map_iff (mZ ⟨i, j⟩)).mpr inferInstance
+  have hflat : HasLaw (fun ω p ↦ Z p ω) (Measure.pi fun p ↦ μ p.1 p.2) P :=
+    ⟨aemeasurable_pi_iff.2 mZ, hZ.map_fun_eq_pi_map mZ⟩
+  have hrows : HasLaw (fun ω (i : I) (j : J i) ↦ X ω i j)
+      (Measure.pi fun i ↦ Measure.pi (μ i)) P :=
+    (TauCeti.measurePreserving_piCurry μ).hasLaw.comp hflat
+  exact (TauCeti.Probability.hasLaw_pi_iff.mp hrows).1
+
+/-- The columns of a matrix with mutually independent entries are mutually independent
+as random vectors, even for infinite index types. The entry maps only need to be almost
+everywhere measurable. -/
+theorem matrix_col {Ω m n R : Type*} [MeasurableSpace Ω] [MeasurableSpace R]
+    {P : Measure Ω} {X : Ω → Matrix m n R}
+    (hX : iIndepFun (fun ij : m × n ↦ fun ω ↦ X ω ij.1 ij.2) P)
+    (hm : ∀ i j, AEMeasurable (fun ω ↦ X ω i j) P) :
+    iIndepFun (fun j ω ↦ (X ω).col j) P := by
+  have hind' : iIndepFun (fun ij : n × m ↦ fun ω ↦ (X ω).transpose ij.1 ij.2) P := by
+    simpa only [Matrix.transpose_apply] using
+      hX.precomp (g := fun ij : n × m ↦ (ij.2, ij.1)) (Equiv.prodComm n m).injective
+  simpa only [Matrix.row_transpose] using hind'.matrix_row fun j i ↦ hm i j
 
 end ProbabilityTheory.iIndepFun
 

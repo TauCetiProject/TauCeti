@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Vortex.Gauge.ComplexStructure
 public import TauCeti.Analysis.PDE.Vortex.Index
-public import TauCeti.Analysis.PDE.Vortex.KernelDimension
+public import TauCeti.Analysis.PDE.Vortex.Kernel.Dimension
 public import TauCeti.Geometry.Symplectic.Complex.Module.DetLine
 import TauCeti.MeasureTheory.Measure.Restrict
 
@@ -35,11 +35,12 @@ identifies this orientation with the complex orientation of the tangent space of
 * At a plane vortex `x` lying in `A_m^k` for every `k`, with zero divisor `D`, the kernel of the
   realization is identified with the space `D → ℂ` of principal parts, the tangent space of
   `Sym^m ℂ` at `D`: an element `y` of the kernel is taken to the weak `L²` kernel, there to the
-  smooth classical solution with the same values (`TauCeti.Vortex.gaugeFixedKernelEquivWeak`), and
-  then to the principal parts of `δα / α` at the zeros of `α`
-  (`TauCeti.Vortex.sobolevKernelPrincipalPartEquiv`). Every element of the kernel has the values of
-  such a classical solution (`TauCeti.Vortex.exists_gaugeFixedKernel_ae_eq_values`), and the
-  isomorphism reads off the principal parts of that solution
+  smooth classical solution with the same values
+  (`TauCeti.Vortex.framedGaugeFixedKernelEquivWeak`), and then to the principal parts of `δα / α`
+  at the zeros of `α` (`TauCeti.Vortex.sobolevKernelPrincipalPartEquiv`). Every element of the
+  kernel has the values of such a classical solution
+  (`TauCeti.Vortex.exists_gaugeFixedKernel_ae_eq_values`), and the isomorphism reads off the
+  principal parts of that solution
   (`TauCeti.Vortex.sobolevKernelPrincipalPartEquiv_apply_of_ae_eq`). This identification is
   complex linear: it sends `J y` to `i` times the principal parts of `y`
   (`TauCeti.Vortex.sobolevKernelPrincipalPartEquiv_sobolevGaugeFixedKernelAlmostComplexStructure`).
@@ -95,7 +96,7 @@ def sobolevKernelPrincipalPartEquiv (hx : Continuous x)
     (hD : IsZeroMultiplicity (sectionValue x) fun z ↦ D.count z) (hν : Differentiable ℝ ν)
     (hνeq : ∀ w, conjWirtingerDeriv ν w 1 = ((x w 1 : ℂ) - I * x w 0) / 2) :
     (sobolevGaugeFixedOperator a).ker ≃ₗ[ℝ] (Multiset.ToType D → ℂ) :=
-  (sobolevGaugeFixedKernelEquiv hx hax).trans ((gaugeFixedKernelEquivWeak hx hmem).symm.trans
+  (sobolevGaugeFixedKernelEquiv hx hax).trans ((framedGaugeFixedKernelEquivWeak hx hmem).symm.trans
     (principalPartEquiv (contDiff_of_forall_mem_framedFieldSpace hx hmem) hhol
       (tendsto_normSq_of_forall_mem_framedFieldSpace hx hmem) hD hν hνeq))
 
@@ -114,10 +115,11 @@ private theorem sobolevKernelPrincipalPartEquiv_eq_of_ae_eq (hx : Continuous x)
       principalPartEquiv (contDiff_of_forall_mem_framedFieldSpace hx hmem) hhol
         (tendsto_normSq_of_forall_mem_framedFieldSpace hx hmem) hD hν hνeq u := by
   have hu :
-      (gaugeFixedKernelEquivWeak hx hmem).symm (sobolevGaugeFixedKernelEquiv hx hax y) = u := by
+      (framedGaugeFixedKernelEquivWeak hx hmem).symm (sobolevGaugeFixedKernelEquiv hx hax y) =
+        u := by
     rw [LinearEquiv.symm_apply_eq]
     refine Subtype.ext (Lp.ext ?_)
-    rw [coe_gaugeFixedKernelEquivWeak_apply]
+    rw [framedGaugeFixedKernelEquivWeak_apply, coe_gaugeFixedKernelToWeak]
     exact (coeFn_sobolevGaugeFixedKernelEquiv hx hax y).trans
       (h.symm.trans (coeFn_gaugeFixedKernelToLp u).symm)
   rw [sobolevKernelPrincipalPartEquiv, LinearEquiv.trans_apply, LinearEquiv.trans_apply, hu]
@@ -133,10 +135,10 @@ theorem exists_gaugeFixedKernel_ae_eq_values (hx : Continuous x)
     ∃ u : gaugeFixedKernel x, (u : ℂ → EuclideanSpace ℝ (Fin 4)) =ᵐ[volume]
       fun z ↦ (WithLp.toLp 2 fun j ↦ W1p.value ((y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) j) z :
         EuclideanSpace ℝ (Fin 4)) := by
-  obtain ⟨u, hu⟩ := (gaugeFixedKernelEquivWeak hx hmem).surjective
+  obtain ⟨u, hu⟩ := (framedGaugeFixedKernelEquivWeak hx hmem).surjective
     (sobolevGaugeFixedKernelEquiv hx hax y)
   refine ⟨u, (coeFn_gaugeFixedKernelToLp u).symm.trans ?_⟩
-  rw [← coe_gaugeFixedKernelEquivWeak_apply hx hmem, hu]
+  rw [← coe_gaugeFixedKernelToWeak hx, ← framedGaugeFixedKernelEquivWeak_apply hx hmem, hu]
   exact coeFn_sobolevGaugeFixedKernelEquiv hx hax y
 
 /-- **`sobolevKernelPrincipalPartEquiv` reads off the principal parts of the classical solution**:
@@ -193,10 +195,10 @@ theorem sobolevKernelPrincipalPartEquiv_sobolevGaugeFixedKernelAlmostComplexStru
   refine e₁.trans (Eq.trans ?_ (congrArg (I • ·) e₂).symm)
   obtain ⟨G, hG, H, hH, hGH⟩ := exists_decomposition_of_gaugeFixedOperator_eq_zero (μ := volume)
     ((contDiff_of_forall_mem_framedFieldSpace hx hmem).of_le (by simp)) hhol hν hνeq
-    (fun _ ↦ mem_gaugeFixedKernel.1) u u.2
+    (fun _ ↦ mem_gaugeFixedKernel.1) u u.property
   funext i
   rw [principalPartEquiv_apply, Pi.smul_apply, principalPartEquiv_apply, smul_eq_mul,
-    ← principalPart_variationComplexStructure hD hν.continuous hG hH hGH i.2.2]
+    ← principalPart_variationComplexStructure hD hν.continuous hG hH hGH i.snd.isLt]
   congr 1
   exact funext (coe_gaugeFixedKernelAlmostComplexStructure_apply x u)
 

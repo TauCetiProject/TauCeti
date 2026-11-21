@@ -124,12 +124,12 @@ private theorem cup_res_of_add_one (M N : Rep k G) (H : Subgroup G) {p q r : ℤ
   have hR := congr($(δ_comp_res hD H q) y)
   simp only [ModuleCat.comp_apply] at hL hR
   have hT := congrArg (p.negOnePow • ·) (cup_dimensionShiftDownIso_hom M N hq h rfl x y)
-  rw [negOnePow_smul_negOnePow_smul, tensorDimensionShiftDownIso_hom] at hT
+  rw [Int.negOnePow_smul_negOnePow_smul, tensorDimensionShiftDownIso_hom] at hT
   dsimp only [ShortComplex.map_X₁, ShortComplex.map_X₃, curriedTensor_obj_obj] at hL
   rw [← hL, ← hT, map_zsmul_unit, ih, dimensionShiftDownIso_hom, hR]
   have hcup := congrArg (p.negOnePow • ·)
     (cup_δ_of_leftInverse (Rep.res H.subtype M) hresD hρ h (res M H p x) (res N H q y))
-  rw [negOnePow_smul_negOnePow_smul] at hcup
+  rw [Int.negOnePow_smul_negOnePow_smul] at hcup
   exact hcup
 
 /-- Restriction preserves the Tate cup product in all integer bidegrees. For a subgroup `H`
