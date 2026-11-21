@@ -15,7 +15,7 @@ piece to the centre by a homeomorphism `ψ i : W i ≃ₜ A i` from an open subs
 onto an open subset `A i` of the centre. The star gluing `TauCeti.starGlueData ψ` glues the
 pieces so that every identification passes through the centre: a point of `W i` and a point of
 `W j` are identified exactly when `ψ i` and `ψ j` send them to the same point of `X`
-(`TauCeti.starGlueData_ι_eq_ι_iff`). Points outside `W i` are identified with nothing else.
+(`TauCeti.starGlueData_ι_eq_iff`). Points outside `W i` are identified with nothing else.
 Accordingly, the overlap of the pieces `i ≠ j` is the open set of points of `W i` whose image lies
 in `A j`, and the transition to the piece `j` is `ψ j⁻¹ ∘ ψ i`. The cocycle condition holds
 because all these transitions factor through `X`.
@@ -33,7 +33,7 @@ The glued space is Mathlib's `TopCat.GlueData` carrier, built with `TopCat.GlueD
 ## Main declarations
 
 * `TauCeti.starGlueData`: the pieces `U i` glued about the centre `X` along the `ψ i`.
-* `TauCeti.starGlueData_ι_eq_ι_iff`, `TauCeti.starGlueData_ι_eq_ι_iff_of_ne`: the gluing
+* `TauCeti.starGlueData_ι_eq_iff`, `TauCeti.starGlueData_ι_eq_iff_of_ne`: the gluing
   relation.
 * `TauCeti.nonempty_starGlueData_V_iff`: distinct pieces overlap exactly when their images in the
   centre meet.
@@ -73,6 +73,7 @@ def starOverlap (i j : J) : Opens (U i) where
 variable {ψ} in
 /-- A point of the piece `i` lies in its overlap with the piece `j` exactly when `i = j` or it lies
 in `W i` and `ψ i` sends it into `A j`. -/
+@[simp]
 theorem mem_starOverlap {i j : J} {y : U i} :
     y ∈ starOverlap ψ i j ↔ i = j ∨ ∃ h : y ∈ W i, (ψ i ⟨y, h⟩ : X) ∈ A j :=
   Iff.rfl
@@ -225,7 +226,7 @@ variable {ψ}
 
 /-- Points of the pieces `i` and `j` of a star gluing are identified in the glued space exactly
 when they are a point of the overlap `starOverlap ψ i j` and its transition. -/
-theorem starGlueData_ι_eq_ι_iff_exists {i j : J} {x : U i} {y : U j} :
+theorem starGlueData_ι_eq_iff_exists {i j : J} {x : U i} {y : U j} :
     (starGlueData ψ).toGlueData.ι i x = (starGlueData ψ).toGlueData.ι j y ↔
       ∃ z : starOverlap ψ i j, (z : U i) = x ∧ (starTransition ψ i j z : U j) = y :=
   -- This is `TopCat.GlueData.ι_eq_iff_rel`, whose overlaps and maps are those of
@@ -234,10 +235,11 @@ theorem starGlueData_ι_eq_ι_iff_exists {i j : J} {x : U i} {y : U j} :
 
 /-- **The gluing relation of a star gluing.** Points of the attaching sets of two pieces are
 identified in the glued space exactly when they have the same image in the centre. -/
-theorem starGlueData_ι_eq_ι_iff {i j : J} {x : U i} {y : U j} (hx : x ∈ W i) (hy : y ∈ W j) :
+@[grind =]
+theorem starGlueData_ι_eq_iff {i j : J} {x : U i} {y : U j} (hx : x ∈ W i) (hy : y ∈ W j) :
     (starGlueData ψ).toGlueData.ι i x = (starGlueData ψ).toGlueData.ι j y ↔
       (ψ i ⟨x, hx⟩ : X) = ψ j ⟨y, hy⟩ := by
-  refine starGlueData_ι_eq_ι_iff_exists.trans ⟨?_, fun h ↦ ?_⟩
+  refine starGlueData_ι_eq_iff_exists.trans ⟨?_, fun h ↦ ?_⟩
   · rintro ⟨z, rfl, rfl⟩
     exact (apply_starTransition z hx hy).symm
   · -- The point `x` lies in the overlap of `i` and `j`, and its transition is `y`.
@@ -250,13 +252,14 @@ theorem starGlueData_ι_eq_ι_iff {i j : J} {x : U i} {y : U j} (hx : x ∈ W i)
 
 /-- Points of two distinct pieces of a star gluing are identified in the glued space exactly when
 they lie in the attaching sets and have the same image in the centre. -/
-theorem starGlueData_ι_eq_ι_iff_of_ne {i j : J} (hij : i ≠ j) {x : U i} {y : U j} :
+@[simp, grind =]
+theorem starGlueData_ι_eq_iff_of_ne {i j : J} (hij : i ≠ j) {x : U i} {y : U j} :
     (starGlueData ψ).toGlueData.ι i x = (starGlueData ψ).toGlueData.ι j y ↔
       ∃ (hx : x ∈ W i) (hy : y ∈ W j), (ψ i ⟨x, hx⟩ : X) = ψ j ⟨y, hy⟩ := by
-  refine ⟨fun h ↦ ?_, fun ⟨hx, hy, h⟩ ↦ (starGlueData_ι_eq_ι_iff hx hy).2 h⟩
-  obtain ⟨z, rfl, rfl⟩ := starGlueData_ι_eq_ι_iff_exists.1 h
+  refine ⟨fun h ↦ ?_, fun ⟨hx, hy, h⟩ ↦ (starGlueData_ι_eq_iff hx hy).2 h⟩
+  obtain ⟨z, rfl, rfl⟩ := starGlueData_ι_eq_iff_exists.1 h
   have hz : (z : U i) ∈ W i := ((mem_starOverlap.1 z.2).resolve_left hij).1
-  exact ⟨hz, starTransition_mem z hz, (starGlueData_ι_eq_ι_iff _ _).1 h⟩
+  exact ⟨hz, starTransition_mem z hz, (starGlueData_ι_eq_iff _ _).1 h⟩
 
 /-- Two distinct pieces of a star gluing overlap exactly when their images in the centre meet.
 In particular, when the centre is one of the pieces, pieces with pairwise disjoint images meet

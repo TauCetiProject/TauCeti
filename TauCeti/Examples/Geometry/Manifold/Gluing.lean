@@ -123,13 +123,10 @@ example (n : ℕ) {k l : Fin n} (hkl : k ≠ l) :
   rw [← not_nonempty_iff, nonempty_starGlueData_V_iff (by simpa using hkl),
     not_nonempty_iff_eq_empty, ← disjoint_iff_inter_eq_empty]
   refine Metric.ball_disjoint_ball ?_
-  have h : ((k : ℕ) : ℂ) - (l : ℕ) = (((k : ℕ) - (l : ℕ) : ℝ) : ℂ) := by push_cast; ring
-  rw [dist_eq_norm, ← mul_sub, norm_mul, h, Complex.norm_real, Real.norm_eq_abs]
   -- Distinct natural numbers are at distance at least `1`.
-  rcases Nat.lt_or_gt_of_ne (Fin.val_ne_of_ne hkl) with hlt | hlt
-  · have : ((k : ℕ) : ℝ) + 1 ≤ (l : ℕ) := by exact_mod_cast hlt
-    norm_num
-    linarith [neg_abs_le (((k : ℕ) : ℝ) - (l : ℕ))]
-  · have : ((l : ℕ) : ℝ) + 1 ≤ (k : ℕ) := by exact_mod_cast hlt
-    norm_num
-    linarith [le_abs_self (((k : ℕ) : ℝ) - (l : ℕ))]
+  have h : (1 : ℝ) ≤ ‖((((k : ℕ) : ℤ) - (l : ℕ) : ℤ) : ℂ)‖ := by
+    rw [Complex.norm_intCast]
+    exact_mod_cast Int.one_le_abs (sub_ne_zero.2 (Int.ofNat_inj.not.2 (Fin.val_ne_of_ne hkl)))
+  push_cast at h
+  simp [dist_eq_norm, ← mul_sub]
+  linarith

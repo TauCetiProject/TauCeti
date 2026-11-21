@@ -119,13 +119,9 @@ theorem isCompatible_starGlueData (hψ : ∀ i, IsLocalDiffeomorph I I n (ψ i))
     (starGlueData ψ).IsCompatible I n :=
   -- By `starGlueData_f` and `starGlueData_t`, each map `f i j` is the inclusion of the open
   -- subset `starOverlap ψ i j` and each transition `t i j` is `starTransition ψ i j`. The
-  -- statements are made for indices in `J` and then read at the indices of `starGlueData ψ`.
+  -- inclusions are stated for indices in `J` and then read at the indices of `starGlueData ψ`.
   have hf (i j : J) : IsLocalDiffeomorph I I n (Subtype.val : starOverlap ψ i j → U i) :=
     isLocalDiffeomorph_subtype_val
-  have hft (i j : J) : IsLocalDiffeomorph I I n
-      ((Subtype.val : starOverlap ψ j i → U j) ∘ starTransition ψ i j) := fun x ↦
-    (isLocalDiffeomorph_starTransition hψ i j x).comp (hg := hf j i _)
-  { isLocalDiffeomorph_f := hf
-    isLocalDiffeomorph_f_comp_t := hft }
+  .of_isLocalDiffeomorph_t hf fun i j : J ↦ isLocalDiffeomorph_starTransition hψ i j
 
 end TauCeti
