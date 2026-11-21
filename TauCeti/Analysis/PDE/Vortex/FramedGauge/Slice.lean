@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Chart
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Quotient
 public import TauCeti.Analysis.PDE.Vortex.Gauge.Slice
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import TauCeti.Analysis.PDE.Vortex.FramedGauge.RealChart
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 
 /-!
@@ -61,6 +62,7 @@ open SobolevTopologicalGaugeGroup
 
 variable {f : ContDiffBump (0 : ℝ)} {m k : ℕ} [Fact (1 < k)] {hs : 1 < (k : ℝ) + 1}
 
+variable (hs) in
 /-- **Local uniqueness of the Coulomb gauge.** Let `x` be a continuous field of `A_m^k`, `k ≥ 3`.
 There are a neighbourhood `U` of `x` and a neighbourhood `N` of `1` in the Sobolev gauge group
 `G_(k+1)` such that for `y ∈ U` and `u ∈ N`, if `u · y` and `y` have the same Coulomb defect at
@@ -104,9 +106,7 @@ theorem exists_mem_nhds_forall_eq_one_of_gaugeAdjoint_smul_eq (hk : 3 ≤ k)
     have hk' : (3 : ℝ) ≤ k := by exact_mod_cast hk
     push_cast
     linarith
-  have hy3 : ⇑y ∈ framedFieldSpace f m ((1 + 2 : ℕ) : ℝ) :=
-    framedFieldSpace_mono f m (by exact_mod_cast hk) y.mem_framedFieldSpace
-  have hy1 : ContDiff ℝ 1 y := by simpa using contDiff_of_mem_framedFieldSpace y.continuous hy3
+  have hy1 : ContDiff ℝ 1 y := y.contDiff (by exact_mod_cast (by omega : 1 + 1 < k))
   have hy₀ : Differentiable ℝ fun w ↦ y w 0 :=
     (differentiable_euclidean.1 (hy1.differentiable one_ne_zero)) 0
   have hy₁ : Differentiable ℝ fun w ↦ y w 1 :=
@@ -118,6 +118,7 @@ theorem exists_mem_nhds_forall_eq_one_of_gaugeAdjoint_smul_eq (hk : 3 ≤ k)
     (by simpa only [hact] using hcoul)
   rw [continuousRep_injective hd (h0.trans (map_zero _).symm), AddChar.map_zero_eq_one]
 
+variable (hs) in
 /-- **The Coulomb slice meets nearby gauge orbits once.** Let `x` be a continuous field of `A_m^k`,
 `k ≥ 3`. There are a neighbourhood `U` of `x` and a neighbourhood `N` of `1` in `G_(k+1)` such
 that if `y ∈ U` and `u · y`, `u ∈ N`, both lie in the Coulomb slice `d₀* (· - x) = 0` of `x`, then
@@ -127,13 +128,11 @@ theorem exists_mem_nhds_forall_eq_one_of_gaugeAdjoint_sub_eq_zero (hk : 3 ≤ k)
     ∃ U ∈ 𝓝 x, ∃ N ∈ 𝓝 (1 : SobolevTopologicalGaugeGroup hs), ∀ y ∈ U, ∀ u ∈ N,
       (∀ z, gaugeAdjoint x (⇑y - ⇑x) z = 0) → (∀ z, gaugeAdjoint x (⇑(u • y) - ⇑x) z = 0) →
         u = 1 := by
-  obtain ⟨U, hU, N, hN, h⟩ := exists_mem_nhds_forall_eq_one_of_gaugeAdjoint_smul_eq hk x (hs := hs)
+  obtain ⟨U, hU, N, hN, h⟩ := exists_mem_nhds_forall_eq_one_of_gaugeAdjoint_smul_eq hs hk x
   refine ⟨U, hU, N, hN, fun y hy u hu hy0 huy0 ↦ h y hy u hu fun z ↦ ?_⟩
   -- Fields of `A_m^k`, `k ≥ 3`, are `C¹`, so `d₀*` is additive on them.
-  have hC (w : SobolevFieldSpace f m k) : ContDiff ℝ 1 w := by
-    have hw3 : ⇑w ∈ framedFieldSpace f m ((1 + 2 : ℕ) : ℝ) :=
-      framedFieldSpace_mono f m (by exact_mod_cast hk) w.mem_framedFieldSpace
-    simpa using contDiff_of_mem_framedFieldSpace w.continuous hw3
+  have hC (w : SobolevFieldSpace f m k) : ContDiff ℝ 1 w :=
+    w.contDiff (by exact_mod_cast (by omega : 1 + 1 < k))
   have hd (w : SobolevFieldSpace f m k) (i : Fin 4) : DifferentiableAt ℝ (fun v ↦ w v i) z :=
     (differentiable_euclidean.1 ((hC w).differentiable one_ne_zero)) i z
   have e₁ := hy0 z

@@ -611,21 +611,22 @@ private theorem contDiff_and_bounded_sub_referenceField_apply {f : ContDiffBump 
   exact ⟨contDiff_of_mem_realSobolevFunctions hs hd hc,
     exists_norm_iteratedFDeriv_le_of_mem_realSobolevFunctions hs hd hc le_rfl⟩
 
-/-- **Fields in `A_m^(n+2)` are `Cⁿ`.** A continuous field lying in `A_m^(n+2)` is of class `Cⁿ`,
-by the Sobolev embedding of `H^(n+2)(ℂ)` into `Cⁿ`. -/
-theorem contDiff_of_mem_framedFieldSpace {f : ContDiffBump (0 : ℝ)} {m n : ℕ}
-    {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : Continuous x)
-    (hmem : x ∈ framedFieldSpace f m (n + 2 : ℕ)) : ContDiff ℝ n x := by
-  have hd : ContDiff ℝ n (x - referenceField f m) :=
-    contDiff_euclidean.2 fun i ↦ (contDiff_and_bounded_sub_referenceField_apply hx hmem i).1
-  simpa using hd.add ((contDiff_referenceField f m).of_le (by exact_mod_cast le_top))
+/-- **Fields in `A_m^s` are `Cⁿ` above the threshold** `s > n + 1`. A continuous field lying in
+`A_m^s` is of class `Cⁿ`, by the Sobolev embedding of `H^s(ℂ)` into `Cⁿ`. -/
+theorem contDiff_of_mem_framedFieldSpace {f : ContDiffBump (0 : ℝ)} {m n : ℕ} {s : ℝ}
+    (hs : n + 1 < s) {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : Continuous x)
+    (hmem : x ∈ framedFieldSpace f m s) : ContDiff ℝ n x := by
+  simpa using (contDiff_of_mem_sobolevFields hs (mem_framedFieldSpace.1 hmem)
+    (hx.sub (contDiff_referenceField f m).continuous)).add
+    ((contDiff_referenceField f m).of_le (by exact_mod_cast le_top))
 
 /-- **Fields in every `A_m^k` are smooth.** A continuous field lying in `A_m^k` for every `k` is
 smooth, by the Sobolev embedding of `H^(k+2)(ℂ)` into `C^k`. -/
 theorem contDiff_of_forall_mem_framedFieldSpace {f : ContDiffBump (0 : ℝ)} {m : ℕ}
     {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : Continuous x)
     (hmem : ∀ k : ℕ, x ∈ framedFieldSpace f m k) : ContDiff ℝ ∞ x :=
-  contDiff_infty.2 fun n ↦ contDiff_of_mem_framedFieldSpace hx (hmem (n + 2))
+  contDiff_infty.2 fun n ↦
+    contDiff_of_mem_framedFieldSpace (by push_cast; linarith) hx (hmem (n + 2))
 
 /-- **Fields in `A_m^(n+2)` have bounded derivatives of order `n`.** The `n`-th iterated
 derivative of every coordinate of a continuous field lying in `A_m^(n+2)` is bounded on the whole

@@ -99,10 +99,7 @@ private theorem contDiff_one_of_three_le {k : ℕ} (hk : 3 ≤ k) (hx : x ∈ fr
     (hxc : Continuous x) {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : y ∈ sobolevFields k)
     (hyc : Continuous y) : ContDiff ℝ 1 x ∧ ContDiff ℝ 1 y := by
   have hk1 : ((1 : ℕ) : ℝ) + 1 < k := by exact_mod_cast (by omega : 1 + 1 < k)
-  have hx3 : x ∈ framedFieldSpace f m ((1 + 2 : ℕ) : ℝ) :=
-    framedFieldSpace_mono f m (by exact_mod_cast hk) hx
-  exact ⟨by simpa using contDiff_of_mem_framedFieldSpace hxc hx3,
-    contDiff_of_mem_sobolevFields hk1 hy hyc⟩
+  exact ⟨contDiff_of_mem_framedFieldSpace hk1 hxc hx, contDiff_of_mem_sobolevFields hk1 hy hyc⟩
 
 /-- The Coulomb defect of `y - d₀ u` is that of `y` minus the gauge Laplacian of `u`. -/
 private theorem gaugeAdjoint_sub_gaugeDirection (hx : ContDiff ℝ 1 x)
@@ -243,7 +240,8 @@ theorem gaugeAdjoint_phaseGauge (x : ℂ → EuclideanSpace ℝ (Fin 4))
     phaseGauge_apply_two, phaseGauge_apply_three]
   rw [fderiv_fun_sub hy₀ (hd 1), fderiv_fun_sub hy₁ (hd Complex.I),
     laplacian_eq_sum_fderiv_fderiv_apply Complex.orthonormalBasisOneI hdf]
-  simp [Fin.sum_univ_two]
+  simp only [Fin.isValue, sub_apply, Complex.coe_orthonormalBasisOneI, Fin.sum_univ_two,
+    Matrix.cons_val_zero, Matrix.cons_val_one]
   ring
 
 /-- The pointwise estimate behind the local uniqueness of the Coulomb gauge: if `|a|, |b| ≤ M`
@@ -293,8 +291,9 @@ private theorem abs_sinc_mul_sub_le {M ε a b y₂ y₃ t : ℝ} (hM : 0 ≤ M) 
 There is `ε > 0` with the following property. Let `y` be a continuous field whose connection
 coordinates are differentiable and whose section coordinates are within `ε` of those of `x`, and
 let `F` be a square-integrable `C²` phase with `|F| ≤ ε`. If the gauge transformation `e^{iF} y`
-has the same Coulomb defect at `x` as `y`, `d₀* (e^{iF} y) = d₀* y`, then `F = 0`. In particular,
-if `y` and `e^{iF} y` both lie in the Coulomb slice `d₀* (· - x) = 0` of `x`, then `F = 0`.
+has the same Coulomb defect at `x` as `y`, `d₀* (e^{iF} y) = d₀* y`, then `F = 0`. For the
+Coulomb slice `d₀* (· - x) = 0` of a `C¹` field `x`, see
+`TauCeti.Vortex.SobolevFieldSpace.exists_mem_nhds_forall_eq_one_of_gaugeAdjoint_sub_eq_zero`.
 
 Subtracting the two Coulomb defects with `TauCeti.Vortex.gaugeAdjoint_phaseGauge` gives
 `ΔF = Q F` with `Q = sinc F (p y₂ + q y₃) - (F / 2) sinc (F / 2)² (p y₃ - q y₂)`, a perturbation
@@ -309,8 +308,9 @@ theorem exists_pos_forall_eq_zero_of_gaugeAdjoint_phaseGauge_eq {s : ℝ} (hs : 
       (∀ z, |y z 2 - x z 2| ≤ ε ∧ |y z 3 - x z 3| ≤ ε) →
       ContDiff ℝ 2 F → MemLp F 2 volume → (∀ z, |F z| ≤ ε) →
       (∀ z, gaugeAdjoint x (phaseGauge y F) z = gaugeAdjoint x y z) → F = 0 := by
-  obtain ⟨⟨C, hC⟩, -⟩ := exists_forall_sq_add_sq_le_and_exists_forall_le_sq_add_sq hs hx hxc
-  obtain ⟨hV, R, hR⟩ := memLp_top_sq_add_sq_and_exists_forall_le_sq_add_sq hs hx hxc
+  obtain ⟨C, hC⟩ := exists_forall_sq_add_sq_le hs hx hxc
+  have hV := memLp_top_sq_add_sq hs hx hxc
+  obtain ⟨R, hR⟩ := exists_forall_le_sq_add_sq hs hx hxc
   set V : ℂ → ℝ := fun z ↦ x z 2 ^ 2 + x z 3 ^ 2
   have hV0 (z : ℂ) : 0 ≤ V z := by positivity
   obtain ⟨ε₀, hε₀, huniq⟩ :=

@@ -63,9 +63,10 @@ which is unique among weak solutions in `L²(E)`.
   solution of `-Δh + P h = 0` lies in `H²(E) ⊆ H¹(E)` and, by density of test functions
   (`TauCeti.W1p.denseRange_ofTestFunctionₗ_top`), is orthogonal to `H¹(E)` for this form, so it
   vanishes; two weak `L²` solutions for the same `g` thus agree almost everywhere
-  (`TauCeti.ae_eq_of_integral_mul_neg_laplacian_add_mul_eq`). The coercivity constant `c` leaves
-  room for a perturbation: weak `L²` solutions of `-Δh + Q h = 0` still vanish when the bounded
-  potential `Q` satisfies `|Q - P| ≤ c / 2`, even where `Q` is negative
+  (`TauCeti.ae_eq_of_integral_mul_neg_laplacian_add_mul_eq`). The coercivity bound
+  `c' ‖w‖²_{H¹} ≤ schrodingerForm w w` leaves room for a perturbation: weak `L²` solutions of
+  `-Δh + V h = 0` still vanish when the bounded potential `V` satisfies `|V - P| ≤ c' / 2`, even
+  where `V` is negative
   (`TauCeti.exists_pos_forall_ae_eq_zero_of_integral_mul_neg_laplacian_add_mul_eq_zero`).
 
 Together, every `g ∈ L²(E)` has a weak solution `h ∈ H²(E)`
@@ -107,9 +108,9 @@ equation `Δη = P η` for `η = δα / α` describes the infinitesimal deformat
 * `TauCeti.ae_eq_of_integral_mul_neg_laplacian_add_mul_eq`: two weak `L²` solutions agree almost
   everywhere.
 * `TauCeti.exists_pos_forall_ae_eq_zero_of_integral_mul_neg_laplacian_add_mul_eq_zero`: weak `L²`
-  solutions of `-Δh + Q h = 0` vanish for every bounded `Q` close enough to `P`.
+  solutions of `-Δh + V h = 0` vanish for every bounded potential `V` close enough to `P`.
 * `TauCeti.integral_mul_neg_laplacian_add_mul_eq_zero_of_laplacian_eq_mul`: a `C²` solution of
-  `Δh = Q h` is a weak solution.
+  `Δh = V h` is a weak solution.
 * `TauCeti.integrable_and_integral_mul_neg_laplacian_add_mul_eq_of_re_im`: real weak solutions
   for the real and imaginary parts combine into a complex weak solution.
 * `TauCeti.memLp_neg_laplacian_add_mul`: the Schrödinger operator with a bounded potential maps
