@@ -371,7 +371,7 @@ local notation "𝔤" => Module.Dual R (Bialgebra.CotangentSpace R H)
 
 /-- **The adjoint action of a one-parameter exponential point.** For any parameter `t : R`, the
 adjoint action of `expPointAt (cotangentDualLieEquiv x) hd t` on `𝔤` is `exp (t • ad x)`. -/
-theorem basePointsAdjointLieEquiv_expPointAt_toLinearMap [Algebra ℚ H] [Algebra ℚ R]
+theorem basePointsAdjointLieEquiv_expPointAt_toLinearMap [Algebra ℚ H]
     [Module ℚ 𝔤] (x : 𝔤)
     (hd : ∀ h : H, ∃ n,
       (Bialgebra.leftInvariantDerivation

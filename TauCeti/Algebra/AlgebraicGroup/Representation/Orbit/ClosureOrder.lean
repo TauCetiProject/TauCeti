@@ -138,16 +138,13 @@ theorem mem_closure_projectiveOrbitMap_zero_of_forall_smul [Infinite k] {v : M}
     have hcomp : (Polynomial.aeval t).comp (SymmetricAlgebra.lift L) =
         SymmetricAlgebra.lift (Module.Dual.eval k (M × k) (t • v, 1)) := by
       ext φ
-      change Polynomial.aeval t
-          (SymmetricAlgebra.lift L (SymmetricAlgebra.ι k (Module.Dual k (M × k)) φ)) =
-        SymmetricAlgebra.lift (Module.Dual.eval k (M × k) (t • v, 1))
-          (SymmetricAlgebra.ι k (Module.Dual k (M × k)) φ)
-      rw [SymmetricAlgebra.lift_ι_apply, SymmetricAlgebra.lift_ι_apply]
       have hdecomp : (t • v, (1 : k)) = (0, (1 : k)) + t • (v, (0 : k)) := by
         ext <;> simp
-      simp only [L, LinearMap.coe_mk, AddHom.coe_mk, map_add, map_mul, Polynomial.aeval_C,
-        Polynomial.aeval_X, Algebra.algebraMap_self, RingHom.id_apply, Module.Dual.eval_apply]
-      rw [hdecomp, map_add, map_smul, smul_eq_mul]
+      simp only [LinearMap.coe_comp, LinearMap.coe_ofClass, AlgHom.coe_comp,
+        Polynomial.coe_aeval_eq_eval, Function.comp_apply, SymmetricAlgebra.lift_ι_apply, L,
+        LinearMap.coe_mk, AddHom.coe_mk, Polynomial.eval_add, Polynomial.eval_C,
+        Polynomial.eval_mul, Polynomial.eval_X, Module.Dual.eval_apply]
+      rw [hdecomp, map_add, map_smul, smul_eq_mul, mul_comm]
     have hq := congrArg (fun g ↦ g q) hcomp
     simpa only [AlgHom.comp_apply, P, Polynomial.coe_aeval_eq_eval] using hq
   have hP0 : P.eval 0 ≠ 0 := by

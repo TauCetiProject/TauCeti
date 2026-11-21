@@ -8,8 +8,8 @@ module
 public import Mathlib.LinearAlgebra.RootSystem.BaseExists
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Bases
 import Mathlib.Algebra.Module.Submodule.Union
-import TauCeti.LinearAlgebra.RootSystem.Flip
 import TauCeti.LinearAlgebra.RootSystem.Weyl.DominantIntegral
+import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 
 /-!
 # Making an integral coweight dominant and uniqueness in its Weyl orbit
@@ -33,9 +33,9 @@ ordered-field statement `RootPairing.exists_mem_dominantChamber`.
 Moreover, this dominant coweight is **unique** in its Weyl orbit
 (`RootPairing.Base.eq_of_coweightEquiv_eq_of_forall_exists_nat`), over any integral domain of
 characteristic zero without an order: passing to the flipped root pairing `P.flip` via
-`RootPairing.Equiv.autFlip` reduces coweight dominance directly to weight dominance
-(`TauCeti.weylGroup_smul_eq_self_of_dominantIntegral`). Combining existence and uniqueness gives
-`RootPairing.Base.existsUnique_coweightEquiv_forall_exists_nat`.
+`RootPairing.exists_flip_weylGroup_smul_eq_coweightEquiv` reduces coweight dominance directly to
+weight dominance (`TauCeti.weylGroup_smul_eq_self_of_dominantIntegral`). Combining existence and
+uniqueness gives `RootPairing.Base.existsUnique_coweightEquiv_forall_exists_nat`.
 
 In the Lie-theoretic application `x` is the neutral element `h` of an `sl₂` triple lying in a
 splitting Cartan subalgebra: its roots take integer values, a base making `h` dominant puts the
@@ -79,17 +79,8 @@ theorem Base.eq_of_coweightEquiv_eq_of_forall_exists_nat {x y : N}
     (hy : ∀ i ∈ b.support, ∃ n : ℕ, P.root' i y = n)
     {w : P.weylGroup} (hw : (w : P.Aut).coweightEquiv x = y) : x = y := by
   have := P.flip_isReduced
-  have hmem : Equiv.autFlip P (w⁻¹ : P.Aut) ∈ P.flip.weylGroup :=
-    weylGroup.induction (P := P) (pred := fun g _ ↦ Equiv.autFlip P g ∈ P.flip.weylGroup)
-      (fun i ↦ by rw [Equiv.autFlip_reflection]; exact P.flip.reflection_mem_weylGroup i)
-      (by rw [map_one]; exact one_mem _)
-      (fun _ _ _ _ ha hb ↦ by rw [map_mul]; exact mul_mem ha hb)
-      (w⁻¹ : P.weylGroup).property
-  let w' : P.flip.weylGroup := ⟨Equiv.autFlip P (w⁻¹ : P.Aut), hmem⟩
-  have hsmul : w' • x = y := by
-    change (Equiv.autFlip P (w⁻¹ : P.Aut)).weightEquiv x = y
-    rw [Equiv.weightEquiv_autFlip, LinearEquiv.symm_apply_eq]
-    simp [← hw]
+  obtain ⟨w', hw'⟩ := P.exists_flip_weylGroup_smul_eq_coweightEquiv w
+  have hsmul : w' • x = y := (hw' x).trans hw
   have hcoroot (i : ι) (z : N) : P.flip.coroot' i z = P.root' i z := by
     simp [coroot', root']
   exact (hsmul.symm.trans (TauCeti.weylGroup_smul_eq_self_of_dominantIntegral (P := P.flip)
