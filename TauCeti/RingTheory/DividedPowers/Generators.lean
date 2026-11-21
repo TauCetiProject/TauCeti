@@ -236,6 +236,36 @@ private theorem dpow_comp_term {x y : A} (hx : x ∈ I) (hy : y ∈ I)
     rw [mul_comm (δ.dpow k x), δ.dpow_mul (δ.dpow_mem hk hx), hpow, hcompx c hk, Nat.cast_mul]
     ring
 
+private theorem dpow_comp_add_term {x y : A} (hx : x ∈ I) (hy : y ∈ I)
+    (hmulx : ∀ p q, δ.dpow p x * δ.dpow q x = (p + q).choose p * δ.dpow (p + q) x)
+    (hmuly : ∀ p q, δ.dpow p y * δ.dpow q y = (p + q).choose p * δ.dpow (p + q) y)
+    (hcompx : ∀ p {q}, q ≠ 0 → δ.dpow p (δ.dpow q x) = uniformBell p q * δ.dpow (p * q) x)
+    (hcompy : ∀ p {q}, q ≠ 0 → δ.dpow p (δ.dpow q y) = uniformBell p q * δ.dpow (p * q) y)
+    (m : ℕ) {n : ℕ} (hn : n ≠ 0) {μ : Sym ℕ m} (hμ : μ ∈ (range (n + 1)).sym m) :
+    (∏ k ∈ range (n + 1), δ.dpow (Multiset.count k μ) (δ.dpow k x * δ.dpow (n - k) y)) =
+      (compSymWeight n μ : A) *
+        (δ.dpow (compXDeg n μ) x * δ.dpow (m * n - compXDeg n μ) y) := by
+  have hdeg := compXDeg_add_compYDeg hμ
+  have hydeg : compYDeg n μ = m * n - compXDeg n μ := by omega
+  calc ∏ k ∈ range (n + 1), δ.dpow (Multiset.count k μ) (δ.dpow k x * δ.dpow (n - k) y)
+      = ∏ k ∈ range (n + 1),
+          ((compTermWeight n k (Multiset.count k μ) : A) *
+            (δ.dpow (Multiset.count k μ * k) x *
+              δ.dpow (Multiset.count k μ * (n - k)) y)) :=
+        prod_congr rfl fun k _ ↦ δ.dpow_comp_term hx hy hmuly hcompx hcompy hn k _
+    _ = (∏ k ∈ range (n + 1), (compTermWeight n k (Multiset.count k μ) : A)) *
+          ((∏ k ∈ range (n + 1), δ.dpow (Multiset.count k μ * k) x) *
+            (∏ k ∈ range (n + 1), δ.dpow (Multiset.count k μ * (n - k)) y)) := by
+        simp only [prod_mul_distrib]
+    _ = (compSymWeight n μ : A) *
+          (δ.dpow (compXDeg n μ) x * δ.dpow (m * n - compXDeg n μ) y) := by
+        rw [δ.prod_dpow hx hmulx, δ.prod_dpow hy hmuly]
+        unfold compSymWeight
+        rw [← hydeg]
+        unfold compXDeg compYDeg
+        push_cast
+        ring
+
 private theorem dpow_comp_add_eq_sum {x y : A} (hx : x ∈ I) (hy : y ∈ I)
     (hmulx : ∀ p q, δ.dpow p x * δ.dpow q x = (p + q).choose p * δ.dpow (p + q) x)
     (hmuly : ∀ p q, δ.dpow p y * δ.dpow q y = (p + q).choose p * δ.dpow (p + q) y)
@@ -250,33 +280,8 @@ private theorem dpow_comp_add_eq_sum {x y : A} (hx : x ∈ I) (hy : y ∈ I)
     · subst hk
       simpa [δ.dpow_zero hx] using δ.dpow_mem hn hy
     · exact I.mul_mem_right _ (δ.dpow_mem hk hx)
-  rw [δ.dpow_add' hx hy, δ.dpow_sum hmem m]
-  have hterm : ∀ μ ∈ (range (n + 1)).sym m,
-      (∏ k ∈ range (n + 1), δ.dpow (Multiset.count k μ) (δ.dpow k x * δ.dpow (n - k) y)) =
-        (compSymWeight n μ : A) *
-          (δ.dpow (compXDeg n μ) x * δ.dpow (m * n - compXDeg n μ) y) := by
-    intro μ hμ
-    have hdeg := compXDeg_add_compYDeg hμ
-    have hydeg : compYDeg n μ = m * n - compXDeg n μ := by omega
-    calc ∏ k ∈ range (n + 1), δ.dpow (Multiset.count k μ) (δ.dpow k x * δ.dpow (n - k) y)
-        = ∏ k ∈ range (n + 1),
-            ((compTermWeight n k (Multiset.count k μ) : A) *
-              (δ.dpow (Multiset.count k μ * k) x *
-                δ.dpow (Multiset.count k μ * (n - k)) y)) :=
-          prod_congr rfl fun k _ ↦ δ.dpow_comp_term hx hy hmuly hcompx hcompy hn k _
-      _ = (∏ k ∈ range (n + 1), (compTermWeight n k (Multiset.count k μ) : A)) *
-            ((∏ k ∈ range (n + 1), δ.dpow (Multiset.count k μ * k) x) *
-              (∏ k ∈ range (n + 1), δ.dpow (Multiset.count k μ * (n - k)) y)) := by
-          simp only [prod_mul_distrib]
-      _ = (compSymWeight n μ : A) *
-            (δ.dpow (compXDeg n μ) x * δ.dpow (m * n - compXDeg n μ) y) := by
-          rw [δ.prod_dpow hx hmulx, δ.prod_dpow hy hmuly]
-          unfold compSymWeight
-          rw [← hydeg]
-          unfold compXDeg compYDeg
-          push_cast
-          ring
-  rw [sum_congr rfl hterm]
+  rw [δ.dpow_add' hx hy, δ.dpow_sum hmem m,
+    sum_congr rfl fun μ hμ ↦ δ.dpow_comp_add_term hx hy hmulx hmuly hcompx hcompy m hn hμ]
   have hmaps : ∀ μ ∈ (range (n + 1)).sym m, compXDeg n μ ∈ range (m * n + 1) := by
     intro μ hμ
     have hdeg := compXDeg_add_compYDeg hμ
