@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.Distribution.Diffeomorph
 public import TauCeti.Geometry.Symplectic.Lagrangian.Constructions
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
-import TauCeti.Geometry.Symplectic.Lagrangian.Manifold
 
 /-!
 # Real polarizations
@@ -37,8 +36,6 @@ The distribution is recorded, as in `TauCeti.IsContMDiffDistribution`, as a fami
   has half the rank of the tangent bundle.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.IsRealPolarization.eval₂_eq_zero`: `σ` vanishes on pairs of
   vectors of `P`.
-* `TauCeti.SmoothTwoForm.IsNondegenerate.IsRealPolarization.mem_of_forall_eval₂_eq_zero`: a vector
-  `σ`-orthogonal to `P_x` lies in `P_x`.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.IsRealPolarization.comap_mfderiv`: the pullback of a real
   polarization by a symplectomorphism is a real polarization.
 * `TauCeti.SymplecticForm.isRealPolarization_const`: on a finite-dimensional symplectic vector
@@ -91,11 +88,6 @@ theorem eval₂_eq_zero {x : M} {v w : TangentSpace I x} (hv : v ∈ P x) (hw : 
 /-- Each fibre of a real polarization is coisotropic. -/
 theorem isCoisotropic (x : M) : (hσ.symplecticFormAt x).IsCoisotropic (P x) :=
   (hP.isLagrangian x).isCoisotropic
-
-/-- A tangent vector `σ`-orthogonal to a fibre of a real polarization lies in that fibre. -/
-theorem mem_of_forall_eval₂_eq_zero {x : M} {v : TangentSpace I x}
-    (hv : ∀ w ∈ P x, SmoothBundleForm.eval₂ σ x v w = 0) : v ∈ P x :=
-  hσ.mem_of_forall_eval₂_eq_zero_of_isCoisotropic (hP.isCoisotropic x) hv
 
 /-- A real polarization has half the rank of the tangent bundle: `2 dim P_x = dim M`. -/
 theorem two_mul_finrank [FiniteDimensional ℝ E] (x : M) :
