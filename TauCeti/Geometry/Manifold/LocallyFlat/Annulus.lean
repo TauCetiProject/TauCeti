@@ -135,7 +135,7 @@ theorem coboundAnnulus_smul_coe_sphere {r R : ℝ} (hr : 0 < r) (hrR : r < R) :
   have hRr : 0 < R - r := sub_pos.mpr hrR
   -- the radius `R - (R - r) * t` at time `t`, as an embedding `[0, 1] → (0, ∞)`
   have hpos : ∀ t : I, R - (R - r) * t ∈ Ioi (0 : ℝ) := fun t => by
-    have := mul_le_of_le_one_right hRr.le t.2.2
+    have := mul_le_of_le_one_right hRr.le t.property.2
     rw [mem_Ioi]
     linarith
   let affine : ℝ ≃ₜ ℝ := (Homeomorph.mulLeft₀ (-(R - r)) (neg_ne_zero.mpr hRr.ne')).trans
@@ -162,8 +162,8 @@ theorem coboundAnnulus_smul_coe_sphere {r R : ℝ} (hr : 0 < r) (hrR : r < R) :
     constructor
     · rintro ⟨u, t, rfl⟩
       rw [norm_smul, norm_eq_of_mem_sphere u, mul_one, Real.norm_of_nonneg (hpos t).out.le]
-      have h₀ := t.2.1
-      have h₁ := mul_le_of_le_one_right hRr.le t.2.2
+      have h₀ := t.property.1
+      have h₁ := mul_le_of_le_one_right hRr.le t.property.2
       refine ⟨by nlinarith, fun h => ?_⟩
       nlinarith
     · rintro ⟨hxR, hxr⟩

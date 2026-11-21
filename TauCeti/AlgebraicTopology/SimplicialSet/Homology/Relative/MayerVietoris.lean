@@ -139,7 +139,7 @@ theorem shortExact_mayerVietoris (sqL : IsPushout t.left l.left r.left b.left)
   refine (SSet.shortExact_mayerVietoris R sqR).of_isColimit_cokernelCofork
     (SSet.shortExact_mayerVietoris R sqL).exact v π hw ?_
   apply ShortComplex.isColimitOfIsColimitπ <;>
-    apply (CokernelCofork.isColimitMapCoconeEquiv _ _).2
+    apply (CokernelCofork.isColimitMapCoconeEquiv _ _).invFun
   · exact P₁.isColimitCokernelCoforkChainComplex R
   · exact CokernelCofork.isColimitBiprod (P₂.isColimitCokernelCoforkChainComplex R)
       (P₃.isColimitCokernelCoforkChainComplex R)

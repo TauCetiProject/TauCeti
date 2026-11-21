@@ -65,7 +65,7 @@ variable {σ : SmoothTwoForm I M}
 /-- On a two-dimensional manifold, a smooth two-form is fiberwise nondegenerate exactly when it
 vanishes nowhere. -/
 theorem isNondegenerate_iff_forall_ne_zero_of_finrank_eq_two (hE : Module.finrank ℝ E = 2) :
-    σ.IsNondegenerate ↔ ∀ x, σ.1 x ≠ 0 := by
+    σ.IsNondegenerate ↔ ∀ x, σ.val x ≠ 0 := by
   have : Nontrivial E := Module.nontrivial_of_finrank_eq_succ hE
   refine ⟨fun h ↦ h.apply_ne_zero, fun h ↦ isNondegenerate_iff_separatingLeft.2 fun x v hv ↦ ?_⟩
   -- `TangentSpace I x` is the model space `E` by definition
@@ -79,7 +79,7 @@ theorem isNondegenerate_iff_forall_ne_zero_of_finrank_eq_two (hE : Module.finran
 /-- **Area forms on surfaces are symplectic.** On a two-dimensional manifold, a smooth two-form is
 symplectic exactly when it vanishes nowhere: closedness is automatic in dimension two. -/
 theorem isSymplectic_iff_forall_ne_zero_of_finrank_eq_two (hE : Module.finrank ℝ E = 2) :
-    σ.IsSymplectic ↔ ∀ x, σ.1 x ≠ 0 := by
+    σ.IsSymplectic ↔ ∀ x, σ.val x ≠ 0 := by
   have : FiniteDimensional ℝ E := Module.finite_of_finrank_eq_succ hE
   rw [← isNondegenerate_iff_forall_ne_zero_of_finrank_eq_two hE]
   exact ⟨IsSymplectic.isNondegenerate, fun h ↦ ⟨SmoothForm.isClosed_of_finrank_le hE.le σ, h⟩⟩

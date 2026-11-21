@@ -316,8 +316,8 @@ def rationalFunctionsHom : M ⟶ rationalFunctions X := by
   intro U V i
   by_cases hV : Nonempty V.unop
   · let := hV
-    have hU : Nonempty U.unop := ⟨⟨(Classical.choice hV).1,
-      i.unop.le (Classical.choice hV).2⟩⟩
+    have hU : Nonempty U.unop := ⟨⟨(Classical.choice hV).val,
+      i.unop.le (Classical.choice hV).property⟩⟩
     let := hU
     simp only [dite_eq_left hU, dite_eq_left hV]
     ext s
@@ -353,7 +353,7 @@ end Hom
 theorem rationalFunctions_map_bijective {U V : X.Opens} [Nonempty U] (i : U ⟶ V) :
     Function.Bijective ((rationalFunctions X).presheaf.map i.op) := by
   have : Nonempty V :=
-    ⟨⟨(Classical.arbitrary U : U).1, leOfHom i (Classical.arbitrary U : U).2⟩⟩
+    ⟨⟨(Classical.arbitrary U : U).val, leOfHom i (Classical.arbitrary U : U).property⟩⟩
   constructor
   · intro a b hab
     refine (rationalFunctionsEquiv V).injective ?_
@@ -675,7 +675,7 @@ one because the germ map to the function field of an integral scheme is injectiv
 empty one because there are no nonzero functions there. -/
 theorem toRationalFunctions_app_injective (U : X.Opens) :
     Function.Injective (Scheme.Modules.Hom.app (toRationalFunctions X) U) := by
-  rcases U.1.eq_empty_or_nonempty with h | h
+  rcases U.carrier.eq_empty_or_nonempty with h | h
   · have hU : U = ⊥ := SetLike.ext' h
     have hsub : Subsingleton Γ(X, U) :=
       CommRingCat.subsingleton_of_isTerminal (X.sheaf.isTerminalOfEqEmpty hU)
@@ -703,9 +703,9 @@ theorem exists_germToFunctionField_eq_of_forall_mem_range {U : X.Opens} [Nonempt
   have key : ∀ y : U, ∃ V : X.Opens, ∃ _ : (y : X) ∈ V, ∃ _ : V ≤ U,
       ∃ s : Γ(X, V), X.presheaf.germ V (genericPoint X) (hgen V ⟨⟨(y : X), ‹_›⟩⟩) s = f := by
     intro y
-    obtain ⟨g, hgf⟩ := hf y y.2
+    obtain ⟨g, hgf⟩ := hf y y.property
     obtain ⟨W, hyW, s, hs⟩ := X.presheaf.exists_germ_eq g
-    have hmem : (y : X) ∈ (W ⊓ U : X.Opens) := ⟨hyW, y.2⟩
+    have hmem : (y : X) ∈ (W ⊓ U : X.Opens) := ⟨hyW, y.property⟩
     have hWU : Nonempty (W ⊓ U : X.Opens) := ⟨⟨(y : X), hmem⟩⟩
     -- Only needed as an instance, so that `algebraMap_germ_eq_germToFunctionField` applies at `W`.
     have : Nonempty W := ⟨⟨(y : X), hyW⟩⟩

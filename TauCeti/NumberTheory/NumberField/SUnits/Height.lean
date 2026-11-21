@@ -121,7 +121,7 @@ theorem two_mul_logHeight₁_eq_sum_abs_logEmbedding
   have hS (v : HeightOneSpectrum (𝓞 K)) (hv : v ∉ S) :
       HeightOneSpectrum.adicAbv K v ((x : Kˣ) : K) = 1 := by
     rw [← FinitePlace.norm_embedding, ← FinitePlace.mk_apply]
-    exact (Set.mem_unit_iff_finitePlace _ _).mp x.2 v (by simpa using hv)
+    exact (Set.mem_unit_iff_finitePlace _ _).mp x.property v (by simpa using hv)
   rw [GlobalNumberFields.two_mul_logHeight₁_eq_sum_abs_log_adicAbv_add_sum_mult_mul_abs_log S hS,
     sum_logEmbedding, Fintype.sum_sum_type,
     Fintype.sum_eq_add_sum_subtype_ne (fun w : InfinitePlace K ↦ w.mult * |Real.log (w _)|) w₀,
