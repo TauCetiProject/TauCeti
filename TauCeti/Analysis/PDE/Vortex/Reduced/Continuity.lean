@@ -817,7 +817,7 @@ theorem continuous_reducedMinimizer {X : Type*} [TopologicalSpace X] {P : X → 
 
 /-- Two-sided bounds on the Laplacian of the reduced solution `w` of `P`: if `|w| ≤ M` and
 `2 ‖P'‖² / (1 + ‖P‖²)² ≤ G`, then `-1 / 8 ≤ Δw ≤ exp (2M) / 8 + G`. -/
-private theorem laplacian_reducedSolution_bounds {P : Polynomial ℂ} (hm : 0 < P.natDegree)
+theorem laplacian_reducedSolution_bounds {P : Polynomial ℂ} (hm : 0 < P.natDegree)
     {M G : ℝ} (hM : ∀ z, |reducedSolution P z| ≤ M)
     (hG : ∀ z, 2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 ≤ G) (z : ℂ) :
     -(1 / 8) ≤ Δ (reducedSolution P) z ∧

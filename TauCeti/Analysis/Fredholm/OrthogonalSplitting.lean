@@ -54,6 +54,9 @@ complements of the kernel, which move continuously with the solution about which
   values in its kernel, `R - π R` is a right inverse of `T` whenever `R` is, and when `π` projects
   along the `ι`-orthogonal complement of the kernel, a right inverse `Q` with values in that
   complement splits every `e` as `e = π e + Q (T e)`.
+* `ContinuousLinearMap.eq_of_orthogonal_ker_projection` and
+  `ContinuousLinearMap.eq_of_orthogonal_rightInverse`: the projection onto the kernel along its
+  `ι`-orthogonal complement, and the right inverse with values in that complement, are unique.
 * `ContinuousLinearMap.IsFredholm.exists_continuousOn_orthogonal_ker_projection`: continuous
   projections onto the kernels along their `ι`-orthogonal complements, at the parameters of
   constant nullity.
@@ -112,6 +115,43 @@ theorem apply_add_apply_apply_eq_self {H : Type*} [RCLike 𝕜] [AddCommGroup E]
     rwa [← map_sub] at h
   have : d = 0 := hι (by simpa using hdd)
   exact (sub_eq_zero.1 (by simpa only [d, sub_sub] using this)).symm
+
+section Uniqueness
+
+variable {H : Type*} [RCLike 𝕜] [AddCommGroup E] [Module 𝕜 E] [AddCommGroup F] [Module 𝕜 F]
+  [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] {ι : E →L[𝕜] H} {T : E →L[𝕜] F}
+
+/-- An element of the kernel of `T` whose image under an injective `ι` is orthogonal to `ι` of the
+kernel vanishes. -/
+private theorem eq_zero_of_mem_ker_of_forall_inner_eq_zero (hι : Injective ι) {d : E}
+    (hd : d ∈ T.ker) (horth : ∀ k ∈ T.ker, ⟪ι d, ι k⟫_𝕜 = 0) : d = 0 :=
+  hι (by simpa using horth d hd)
+
+/-- **Uniqueness of the orthogonal kernel projection.** For an injective `ι` into an inner product
+space, two operators with values in the kernel of `T` that project along the `ι`-orthogonal
+complement of the kernel agree. -/
+theorem eq_of_orthogonal_ker_projection (hι : Injective ι) {π π' : E →L[𝕜] E}
+    (hmem : ∀ e, π e ∈ T.ker) (horth : ∀ e, ∀ k ∈ T.ker, ⟪ι (e - π e), ι k⟫_𝕜 = 0)
+    (hmem' : ∀ e, π' e ∈ T.ker) (horth' : ∀ e, ∀ k ∈ T.ker, ⟪ι (e - π' e), ι k⟫_𝕜 = 0) :
+    π = π' := by
+  ext e
+  refine sub_eq_zero.1 (eq_zero_of_mem_ker_of_forall_inner_eq_zero hι
+    (T.ker.sub_mem (hmem e) (hmem' e)) fun k hk ↦ ?_)
+  have h : π e - π' e = (e - π' e) - (e - π e) := by abel
+  rw [h, map_sub, inner_sub_left, horth' e k hk, horth e k hk, sub_zero]
+
+/-- **Uniqueness of the orthogonal right inverse.** For an injective `ι` into an inner product
+space, two right inverses of `T` whose values are `ι`-orthogonal to the kernel of `T` agree. -/
+theorem eq_of_orthogonal_rightInverse (hι : Injective ι) {Q Q' : F →L[𝕜] E}
+    (hQ : RightInverse Q T) (hQorth : ∀ y, ∀ k ∈ T.ker, ⟪ι (Q y), ι k⟫_𝕜 = 0)
+    (hQ' : RightInverse Q' T) (hQorth' : ∀ y, ∀ k ∈ T.ker, ⟪ι (Q' y), ι k⟫_𝕜 = 0) :
+    Q = Q' := by
+  ext y
+  refine sub_eq_zero.1 (eq_zero_of_mem_ker_of_forall_inner_eq_zero (T := T) hι
+    (LinearMap.mem_ker.2 (by simp [hQ y, hQ' y])) fun k hk ↦ ?_)
+  rw [map_sub, inner_sub_left, hQorth y k hk, hQorth' y k hk, sub_zero]
+
+end Uniqueness
 
 end SingleOperator
 
