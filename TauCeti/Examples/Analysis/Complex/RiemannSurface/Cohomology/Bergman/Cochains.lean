@@ -164,10 +164,8 @@ theorem closure_level_three_inf_subset_source (i j : Fin D.size × Fin 2) :
 theorem isFiniteMeasure_restrict_imageOpens_level_three_inf (i j : Fin D.size × Fin 2) :
     IsFiniteMeasure (volume.restrict
       ((D.chart₂ i).imageOpens (D.level 3 i ⊓ D.level 3 j) : Set ℂ)) := by
-  have hKC := (D.chart₂ i).isCompact_closure_imageOpens
+  exact (D.chart₂ i).isFiniteMeasure_restrict_imageOpens volume
     (D.isCompact_closure_level_three_inf i j) (D.closure_level_three_inf_subset_source i j)
-  exact isFiniteMeasure_restrict.2
-    ((measure_mono subset_closure).trans_lt hKC.measure_lt_top).ne
 
 /-- The actual native Bergman cochain of the constant coboundary δ(0,1). -/
 def constantCochain (i j : Fin D.size × Fin 2) :

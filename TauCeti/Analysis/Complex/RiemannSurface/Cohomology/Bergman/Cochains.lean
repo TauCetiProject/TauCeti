@@ -374,9 +374,7 @@ theorem exists_representative_eq {e : OpenPartialHomeomorph M ℂ} {V : Opens M}
       (((contMDiffOn_symm_of_mem_maximalAtlas he).mdifferentiableOn one_ne_zero).mono
         e.imageOpens_subset_target) fun z hz ↦ (e.mem_imageOpens.mp hz).2).differentiableOn
   obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn (hf.continuousOn.mono hKS)
-  have hKC := e.isCompact_closure_imageOpens hK hKe
-  let : IsFiniteMeasure (volume.restrict (e.imageOpens V : Set ℂ)) :=
-    isFiniteMeasure_restrict.2 ((measure_mono subset_closure).trans_lt hKC.measure_lt_top).ne
+  let := e.isFiniteMeasure_restrict_imageOpens volume hK hKe
   let B := BoundedHolomorphicFunctions.of (e.imageOpens V) (f ∘ e.symm) hfe C
     fun z hz ↦ hC _ (subset_closure (e.mem_imageOpens.mp hz).2)
   refine ⟨BergmanSpace.ofBounded B, fun x hx ↦ ?_⟩
