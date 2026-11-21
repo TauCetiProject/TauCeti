@@ -65,27 +65,19 @@ theorem card_cliffordFullCover_of_finrank_eq_one (h : ¬IsSquare (-1 : K))
     MonoidHom.range_eq_top.2 (cliffordFullCoverToOrthogonal_surjective hQ hK), Subgroup.card_top,
     QuadraticMap.card_orthogonalGroup_of_finrank_eq_one hQ.ne_zero hV]
 
-omit hQ hV in
-/-- A vector `v` of norm `Q v = ±1` as an element of the full cover. -/
-private def cliffordFullCoverOfNorm (v : V) [Invertible (Q v)] (hv : Q v = 1 ∨ Q v = -1) :
-    cliffordFullCover Q :=
-  ⟨⟨unitι Q v, unitι_mem_lipschitzGroup v⟩, (mem_cliffordFullCover_iff Q _).2 (by
-    rw [cliffordNorm_unitι, Units.ext_iff, Units.ext_iff, val_unitOfInvertible]
-    simpa using hv)⟩
-
 omit hQ hV [FiniteDimensional K V] in
 private theorem coe_cliffordFullCoverOfNorm_pow (v : V) [Invertible (Q v)]
     (hv : Q v = 1 ∨ Q v = -1) (n : ℕ) :
     ((((cliffordFullCoverOfNorm v hv ^ n : cliffordFullCover Q) : lipschitzGroup Q) :
       (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) = ι Q v ^ n := by
-  simp [cliffordFullCoverOfNorm, coe_unitι]
+  simp [coe_unitι]
 
 omit hQ [FiniteDimensional K V] in
 /-- In rank one the element of a vector of norm `±1` acts on the line by `-1`. -/
 private theorem cliffordFullCoverToOrthogonal_cliffordFullCoverOfNorm (v : V) [Invertible (Q v)]
     (hv : Q v = 1 ∨ Q v = -1) :
     cliffordFullCoverToOrthogonal Q (cliffordFullCoverOfNorm v hv) = Q.negOrthogonal := by
-  rw [cliffordFullCoverToOrthogonal_apply, cliffordFullCoverOfNorm, lipschitzToOrthogonal_unitι,
+  rw [cliffordFullCoverToOrthogonal_apply, coe_cliffordFullCoverOfNorm, lipschitzToOrthogonal_unitι,
     QuadraticMap.reflectionOrthogonal_eq_negOrthogonal_of_finrank_eq_one Q v hV]
 
 omit hQ [FiniteDimensional K V] in
@@ -96,13 +88,6 @@ private theorem cliffordFullCoverOfNorm_notMem_ker (v : V) [Invertible (Q v)]
   have : Nontrivial V := Module.nontrivial_of_finrank_eq_succ hV
   rw [MonoidHom.mem_ker, cliffordFullCoverToOrthogonal_cliffordFullCoverOfNorm hV v hv]
   exact Q.negOrthogonal_ne_one
-
-omit hQ hV [FiniteDimensional K V] in
-/-- An element of the full cover is determined by its underlying Clifford element. -/
-private theorem cliffordFullCover_ext_iff {x y : cliffordFullCover Q} :
-    x = y ↔ (((x : lipschitzGroup Q) : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) =
-      (((y : lipschitzGroup Q) : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) := by
-  rw [Subtype.ext_iff, Subtype.ext_iff, Units.ext_iff]
 
 /-- **A cyclic full cover in rank one.** Over a field in which `-1` is not a square but every
 element is a square up to sign, if some vector `e` of a nondegenerate line has norm `-1`, then

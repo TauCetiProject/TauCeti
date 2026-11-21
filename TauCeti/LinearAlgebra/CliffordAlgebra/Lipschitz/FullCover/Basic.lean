@@ -36,6 +36,7 @@ subgroup for an indefinite form.
 ## Main definitions
 
 * `CliffordAlgebra.cliffordFullCover`: the normalized full Clifford cover.
+* `CliffordAlgebra.cliffordFullCoverOfNorm`: a vector of norm `±1` as an element of it.
 * `CliffordAlgebra.cliffordFullCoverToOrthogonal`: its action on the quadratic space.
 * `CliffordAlgebra.spinToCliffordFullCover`: the inclusion of the Spin group.
 
@@ -106,6 +107,27 @@ theorem mem_cliffordFullCover_iff_lipschitzNorm (Q : QuadraticForm R M) (x : lip
   · rw [lipschitzNorm_eq_cliffordNorm_of_mem_even x hp]
   · rw [lipschitzNorm_eq_neg_cliffordNorm_of_mem_odd x hp, neg_eq_iff_eq_neg, neg_inj, or_comm]
 
+/-- An element of the full cover is determined by its underlying Clifford element. -/
+theorem cliffordFullCover_ext_iff {Q : QuadraticForm R M} {x y : cliffordFullCover Q} :
+    x = y ↔ (((x : lipschitzGroup Q) : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) =
+      (((y : lipschitzGroup Q) : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) := by
+  rw [Subtype.ext_iff, Subtype.ext_iff, Units.ext_iff]
+
+/-- A vector `v` of norm `Q v = ±1` as an element of the full cover. -/
+def cliffordFullCoverOfNorm {Q : QuadraticForm R M} (v : M) [Invertible (Q v)]
+    (hv : Q v = 1 ∨ Q v = -1) : cliffordFullCover Q :=
+  ⟨⟨unitι Q v, unitι_mem_lipschitzGroup v⟩, (mem_cliffordFullCover_iff Q _).2 (by
+    rw [cliffordNorm_unitι, Units.ext_iff, Units.ext_iff, val_unitOfInvertible]
+    simpa using hv)⟩
+
+/-- The underlying Lipschitz element of `cliffordFullCoverOfNorm v hv` is the unit `ι Q v`. -/
+@[simp]
+theorem coe_cliffordFullCoverOfNorm {Q : QuadraticForm R M} (v : M) [Invertible (Q v)]
+    (hv : Q v = 1 ∨ Q v = -1) :
+    (cliffordFullCoverOfNorm v hv : lipschitzGroup Q) =
+      ⟨unitι Q v, unitι_mem_lipschitzGroup v⟩ := by
+  rw [cliffordFullCoverOfNorm]
+
 /-- The orthogonal action restricted to the normalized full Clifford cover. -/
 def cliffordFullCoverToOrthogonal (Q : QuadraticForm R M) :
     cliffordFullCover Q →* QuadraticMap.orthogonalGroup Q :=
@@ -172,7 +194,7 @@ theorem mem_range_spinToCliffordFullCover_iff (Q : QuadraticForm R M) (x : cliff
     rw [coe_spinToCliffordFullCover_apply, coe_spinToLipschitz_apply]
     exact s.property
   · intro h
-    refine ⟨⟨_, h⟩, Subtype.ext (Subtype.ext (Units.ext ?_))⟩
+    refine ⟨⟨_, h⟩, cliffordFullCover_ext_iff.2 ?_⟩
     rw [coe_spinToCliffordFullCover_apply, coe_spinToLipschitz_apply]
 
 /-! ### Rescaling into the full cover -/
@@ -249,7 +271,7 @@ theorem mem_ker_cliffordFullCoverToOrthogonal_iff [Nontrivial V] (hQ : Q.Nondege
           algebraMap K _ c) :
         x = y ↔ (r : K) = c := by
       rw [← (algebraMap_injective Q).eq_iff, ← hr, ← hy]
-      exact ⟨fun h ↦ by rw [h], fun h ↦ Subtype.ext (Subtype.ext (Units.ext h))⟩
+      exact ⟨fun h ↦ by rw [h], fun h ↦ cliffordFullCover_ext_iff.2 h⟩
     rcases mul_self_eq_one_iff.1 hr1 with h1 | h1
     · exact Or.inl ((hval (y := 1) (by simp)).2 h1)
     · exact Or.inr ((hval (c := -1) (by simp)).2 h1)

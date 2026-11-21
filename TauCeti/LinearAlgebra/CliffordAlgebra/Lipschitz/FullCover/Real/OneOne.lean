@@ -46,11 +46,8 @@ product of the generators `e₁` and `e₂`, of norms `1` and `-1`, so its rever
 def realCliffordOneOneVolumeFullCover : cliffordFullCover (realCliffordForm 1 1) :=
   letI : Invertible (realCliffordForm 1 1 (Pi.single 0 1)) := invertibleOfNonzero (by simp)
   letI : Invertible (realCliffordForm 1 1 (Pi.single 1 1)) := invertibleOfNonzero (by simp)
-  ⟨⟨unitι _ (Pi.single 0 1), unitι_mem_lipschitzGroup _⟩ *
-      ⟨unitι _ (Pi.single 1 1), unitι_mem_lipschitzGroup _⟩,
-    (mem_cliffordFullCover_iff _ _).2 <| Or.inr <| by
-      rw [map_mul, cliffordNorm_unitι, cliffordNorm_unitι, Units.ext_iff]
-      simp⟩
+  cliffordFullCoverOfNorm (Pi.single 0 1) (Or.inl (by simp)) *
+    cliffordFullCoverOfNorm (Pi.single 1 1) (Or.inr (by simp))
 
 /-- The underlying Clifford element of `realCliffordOneOneVolumeFullCover` is the volume element
 `z = e₁ e₂`. -/
