@@ -30,6 +30,8 @@ equivalence `TauCeti.NumberField.mixedEmbedding.integerLatticeEquiv K`.
   `((φ_w (g w))_{w real}, (φ_w (g w))_{w complex})`.
 * `TauCeti.NumberField.mixedEmbedding.integerLatticeEquiv K`: the `ℤ`-linear equivalence
   `𝓞 K ≃ₗ[ℤ] mixedEmbedding.integerLattice K` induced by `mixedEmbedding K`.
+* `TauCeti.NumberField.mixedEmbedding.multSqrt K`: the element of `mixedSpace K` equal to `1` at
+  real places and `√2` at complex places.
 
 ## Main results
 
@@ -43,6 +45,7 @@ equivalence `TauCeti.NumberField.mixedEmbedding.integerLatticeEquiv K`.
 * `TauCeti.NumberField.mixedEmbedding.normAtPlace_mixedDiag`:
   `normAtPlace w (mixedDiag K g) = w (g w)`.
 * `TauCeti.NumberField.mixedEmbedding.normAtPlace_le_norm`: `normAtPlace w x ≤ ‖x‖`.
+* `TauCeti.NumberField.mixedEmbedding.normAtPlace_multSqrt`: `normAtPlace w (multSqrt K) = √w.mult`.
 * `TauCeti.NumberField.norm_mixedEmbedding`: `‖mixedEmbedding K x‖ = house x`.
 * `TauCeti.NumberField.mixedEmbedding.coe_integerLatticeEquiv` and
   `TauCeti.NumberField.mixedEmbedding.mixedEmbedding_integerLatticeEquiv_symm`: coercing
@@ -133,6 +136,36 @@ theorem mixedEmbedding_integerLatticeEquiv_symm [NumberField K]
     (y : mixedEmbedding.integerLattice K) :
     mixedEmbedding K (((integerLatticeEquiv K).symm y : 𝓞 K) : K) = (y : mixedSpace K) := by
   rw [← coe_integerLatticeEquiv, LinearEquiv.apply_symm_apply]
+
+/-- The element of `mixedSpace K` with coordinate `1` at every real place and `√2` at every complex
+place. Multiplying a tuple coordinatewise by `multSqrt K` turns the ambient Euclidean squared norm
+into the multiplicity-weighted sum `∑ w, w.mult * ∑ i, ‖w.embedding (x i)‖ ^ 2`. -/
+noncomputable def multSqrt (K : Type*) [Field K] : mixedSpace K :=
+  (fun _ ↦ 1, fun _ ↦ (√2 : ℂ))
+
+/-- At a real place, `multSqrt K` has coordinate `1`. -/
+@[simp]
+theorem multSqrt_apply_isReal (w : {w : InfinitePlace K // w.IsReal}) :
+    (multSqrt K).1 w = 1 := by
+  rfl
+
+/-- At a complex place, `multSqrt K` has coordinate `√2`. -/
+@[simp]
+theorem multSqrt_apply_isComplex (w : {w : InfinitePlace K // w.IsComplex}) :
+    (multSqrt K).2 w = (√2 : ℂ) := by
+  rfl
+
+/-- At every infinite place `w`, the norm of `multSqrt K` is `√w.mult`. -/
+@[simp]
+theorem normAtPlace_multSqrt (w : InfinitePlace K) :
+    normAtPlace w (multSqrt K) = √(w.mult : ℝ) := by
+  by_cases hw : w.IsReal
+  · rw [normAtPlace_apply_of_isReal hw, multSqrt_apply_isReal]
+    simp [InfinitePlace.mult, hw]
+  · have hwc : w.IsComplex := InfinitePlace.not_isReal_iff_isComplex.mp hw
+    rw [normAtPlace_apply_of_isComplex hwc, multSqrt_apply_isComplex]
+    simp [InfinitePlace.mult, hw, Complex.norm_real, Real.norm_eq_abs,
+      abs_of_nonneg (Real.sqrt_nonneg 2)]
 
 end TauCeti.NumberField.mixedEmbedding
 

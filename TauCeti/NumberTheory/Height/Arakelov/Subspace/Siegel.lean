@@ -16,6 +16,7 @@ import TauCeti.Analysis.SpecialFunctions.Gamma.Growth
 import TauCeti.MeasureTheory.Group.GeometryOfNumbers
 import TauCeti.NumberTheory.Height.Arakelov.Comparison
 import TauCeti.NumberTheory.Height.Arakelov.Subspace.Covolume
+import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.MulVolume
 
 /-!
 # Fixed-field Siegel's lemma in the Euclidean height
@@ -217,19 +218,19 @@ theorem exists_ne_zero_mem_integerPoints_height2_le {W : Submodule K (ι → K)}
   set D : ℕ := finrank ℚ K
   set m : ℕ := finrank K W
   have hD : (0 : ℝ) < D := Nat.cast_pos.mpr finrank_pos
-  have hm : (0 : ℝ) < m := Nat.cast_pos.mpr finrank_pos
   have hconst :
       2 / √((D : ℝ) * Real.pi) * Real.Gamma ((D * m : ℝ) / 2 + 1) ^ ((D * m : ℝ)⁻¹) ≤
         √(m : ℝ) := by
     have h := Real.two_div_sqrt_pi_mul_Gamma_rpow_le_sqrt (n := D * m)
       (Nat.mul_pos finrank_pos finrank_pos)
     rw [Nat.cast_mul] at h
-    rw [Real.sqrt_mul hD.le,
-      show (2 : ℝ) / (√(D : ℝ) * √Real.pi) *
-          Real.Gamma ((D * m : ℝ) / 2 + 1) ^ ((D * m : ℝ)⁻¹) =
-        (2 / √Real.pi * Real.Gamma ((D * m : ℝ) / 2 + 1) ^ ((D * m : ℝ)⁻¹)) / √(D : ℝ) by ring,
-      div_le_iff₀ (Real.sqrt_pos.mpr hD), ← Real.sqrt_mul hm.le, mul_comm (m : ℝ)]
-    exact h
+    calc 2 / √((D : ℝ) * Real.pi) * Real.Gamma ((D * m : ℝ) / 2 + 1) ^ ((D * m : ℝ)⁻¹)
+        = (2 / √Real.pi * Real.Gamma ((D * m : ℝ) / 2 + 1) ^ ((D * m : ℝ)⁻¹)) / √(D : ℝ) := by
+            rw [Real.sqrt_mul hD.le]
+            ring
+      _ ≤ √((D : ℝ) * m) / √(D : ℝ) := div_le_div_of_nonneg_right h (Real.sqrt_nonneg _)
+      _ = √(m : ℝ) := by
+            rw [Real.sqrt_mul hD.le, mul_div_cancel_left₀ _ (Real.sqrt_pos.mpr hD).ne']
   have hfac :
       0 ≤ |(discr K : ℝ)| ^ (1 / (2 * (D : ℝ))) * W.subspaceHeight ^ (m : ℝ)⁻¹ :=
     mul_nonneg (Real.rpow_nonneg (abs_nonneg _) _)

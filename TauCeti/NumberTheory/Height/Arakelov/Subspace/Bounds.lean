@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.Height.Arakelov.Subspace.Basic
 import TauCeti.Analysis.ExteriorPower.Plucker
+import TauCeti.InformationTheory.Coding.GeneratorParityCheck
 import TauCeti.NumberTheory.NumberField.FinitePlace.Basic
 
 /-!
@@ -164,10 +165,8 @@ product of the absolute Euclidean heights of its rows, without any row-independe
 theorem subspaceHeight_ker_mulVecLin_le_prod {A : Matrix m ι K} (hA : ∀ i, A.row i ≠ 0) :
     (LinearMap.ker A.mulVecLin).subspaceHeight ≤ ∏ i, height2 (A.row i) := by
   have hker : LinearMap.ker A.mulVecLin = (span K (range A.row)).euclideanDual := by
-    ext x
-    simp only [LinearMap.mem_ker, Matrix.mulVecLin_apply, mem_euclideanDual_span, Matrix.mulVec,
-      funext_iff, Pi.zero_apply, Matrix.row]
-    exact ⟨fun h _ ⟨i, hi⟩ ↦ hi ▸ h i, fun h i ↦ h ⟨i, rfl⟩⟩
+    simpa only [Matrix.checkedBy_def, Matrix.generatedBy_eq_span_rows] using
+      A.checkedBy_eq_euclideanDual_generatedBy
   rw [hker, subspaceHeight_euclideanDual]
   exact subspaceHeight_span_range_le_prod hA
 

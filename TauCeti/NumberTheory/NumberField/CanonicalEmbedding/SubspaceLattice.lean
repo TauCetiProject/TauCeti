@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.Module.ZLattice.Basic
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Algebra.Module.ZLattice.RationalSubspace
+public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.Basic
+public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.Euclidean
 public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.IdealLattice
 public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.Rat
 public import TauCeti.NumberTheory.NumberField.SubspaceIntegerPoints
@@ -28,16 +30,15 @@ of `K` contributes a single `(Re, Im)` plane with its standard real inner produc
 sup-normed product `ι → mixedSpace K`, this ambient space is a real inner product space, so the
 real span `W.euclideanSpan` of `W` inherits an inner product and canonical Euclidean Haar measure.
 
-Coordinatewise multiplication by any element `c : mixedSpace K` defines an `ℝ`-linear endomorphism
-`TauCeti.NumberField.mixedEmbedding.mulMixedAmbient c` of the ambient Euclidean Minkowski space
-that preserves `W.euclideanSpan` (`Submodule.mulMixedAmbient_mem_euclideanSpan`). Its restriction
-`W.mulMixedSubmodule c` has real determinant `(Algebra.norm ℝ c) ^ finrank K W`
-(`Submodule.det_mulMixedSubmodule`) and scales the squared norm at each infinite place `w` by
-`normAtPlace w c ^ 2` (`Submodule.norm_sq_mulMixedSubmodule`). Taking
-`c = TauCeti.NumberField.mixedEmbedding.multSqrt K` (`1` at real places, `√2` at complex places)
-has determinant `2 ^ (nrComplexPlaces K * finrank K W)` and turns the squared Euclidean norm of
-an integral point into the multiplicity-weighted sum `∑ w, w.mult * ∑ i, ‖w.embedding (z i)‖ ^ 2`
-(`Submodule.norm_sq_mulMixedSubmodule_multSqrt`).
+Coordinatewise multiplication by any element `c : mixedSpace K`
+(`TauCeti.NumberField.mixedEmbedding.mulMixedAmbient c`) preserves `W.euclideanSpan`
+(`Submodule.mulMixedAmbient_mem_euclideanSpan`). Its restriction `W.mulMixedSubmodule c` has real
+determinant `(Algebra.norm ℝ c) ^ finrank K W` (`Submodule.det_mulMixedSubmodule`) and scales the
+squared norm at each infinite place `w` by `normAtPlace w c ^ 2`
+(`Submodule.norm_sq_mulMixedSubmodule`). Taking `c = TauCeti.NumberField.mixedEmbedding.multSqrt K`
+(`1` at real places, `√2` at complex places) has determinant `2 ^ (nrComplexPlaces K * finrank K W)`
+and turns the squared Euclidean norm of an integral point into the multiplicity-weighted sum
+`∑ w, w.mult * ∑ i, ‖w.embedding (z i)‖ ^ 2` (`Submodule.norm_sq_mulMixedSubmodule_multSqrt`).
 
 Within `W.euclideanSpan`, the points whose coordinates lie in
 `NumberField.mixedEmbedding.euclidean.integerLattice K` form a `ℤ`-submodule `W.integerLattice`,
@@ -56,10 +57,6 @@ back to `V.integerLattice` (`Submodule.comap_intLattice_euclideanSpanEquivRealSp
 
 ## Main definitions
 
-* `TauCeti.NumberField.mixedEmbedding.multSqrt K`: the element of `mixedSpace K` equal to `1` at
-  real places and `√2` at complex places.
-* `TauCeti.NumberField.mixedEmbedding.mulMixedAmbient c`: coordinatewise multiplication by
-  `c : mixedSpace K` on `PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K`.
 * `Submodule.euclideanSpan W`: the real span of `W` inside
   `PiLp 2 fun _ : ι ↦ NumberField.mixedEmbedding.euclidean.mixedSpace K`, with defining equation
   `Submodule.euclideanSpan_def` and universal property `Submodule.euclideanSpan_le_iff`.
@@ -76,9 +73,6 @@ back to `V.integerLattice` (`Submodule.comap_intLattice_euclideanSpanEquivRealSp
 
 ## Main results
 
-* `TauCeti.NumberField.mixedEmbedding.normAtPlace_multSqrt`,
-  `TauCeti.NumberField.mixedEmbedding.algebraNorm_multSqrt`: local norms and `ℝ`-algebra norm
-  `2 ^ nrComplexPlaces K` of `multSqrt K`.
 * `Submodule.mulMixedAmbient_mem_euclideanSpan`: `W.euclideanSpan` is stable under coordinatewise
   multiplication by `mixedSpace K`.
 * `Submodule.det_mulMixedSubmodule`: `LinearMap.det (W.mulMixedSubmodule c) =
@@ -111,99 +105,6 @@ noncomputable section
 
 open MeasureTheory Module NumberField NumberField.mixedEmbedding Set
 open scoped nonZeroDivisors
-
-namespace TauCeti.NumberField.mixedEmbedding
-
-variable (K : Type*) [Field K]
-
-/-- The element of `mixedSpace K` with coordinate `1` at every real place and `√2` at every complex
-place. Multiplying a tuple coordinatewise by `multSqrt K` turns the ambient Euclidean squared norm
-into the multiplicity-weighted sum `∑ w, w.mult * ∑ i, ‖w.embedding (x i)‖ ^ 2`. -/
-def multSqrt : mixedSpace K :=
-  (fun _ ↦ 1, fun _ ↦ (√2 : ℂ))
-
-variable {K}
-
-/-- At a real place, `multSqrt K` has coordinate `1`. -/
-@[simp]
-theorem multSqrt_apply_isReal (w : {w : InfinitePlace K // w.IsReal}) :
-    (multSqrt K).1 w = 1 := by
-  rfl
-
-/-- At a complex place, `multSqrt K` has coordinate `√2`. -/
-@[simp]
-theorem multSqrt_apply_isComplex (w : {w : InfinitePlace K // w.IsComplex}) :
-    (multSqrt K).2 w = (√2 : ℂ) := by
-  rfl
-
-/-- At every infinite place `w`, the norm of `multSqrt K` is `√w.mult`. -/
-@[simp]
-theorem normAtPlace_multSqrt (w : InfinitePlace K) :
-    normAtPlace w (multSqrt K) = √(w.mult : ℝ) := by
-  by_cases hw : w.IsReal
-  · rw [normAtPlace_apply_of_isReal hw, multSqrt_apply_isReal]
-    simp [InfinitePlace.mult, hw]
-  · have hwc : w.IsComplex := InfinitePlace.not_isReal_iff_isComplex.mp hw
-    rw [normAtPlace_apply_of_isComplex hwc, multSqrt_apply_isComplex]
-    simp [InfinitePlace.mult, hw, Complex.norm_real, Real.norm_eq_abs,
-      abs_of_nonneg (Real.sqrt_nonneg 2)]
-
-/-- The `ℝ`-algebra norm of `multSqrt K` is `2 ^ nrComplexPlaces K`. -/
-theorem algebraNorm_multSqrt [NumberField K] :
-    Algebra.norm ℝ (multSqrt K) = (2 : ℝ) ^ InfinitePlace.nrComplexPlaces K := by
-  classical
-  rw [mixedEmbedding.algebraNorm_apply]
-  simp only [multSqrt_apply_isReal, multSqrt_apply_isComplex, Finset.prod_const_one, one_mul,
-    Complex.normSq_ofReal, Real.mul_self_sqrt zero_le_two, Finset.prod_const, Finset.card_univ]
-
-section MulMixedAmbient
-
-variable [NumberField K] {ι : Type*}
-
-open Classical in
-/-- Coordinatewise multiplication by `c : mixedSpace K` on the ambient Euclidean Minkowski space. -/
-def mulMixedAmbient (c : mixedSpace K) :
-    (PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) →ₗ[ℝ]
-      (PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) where
-  toFun x := WithLp.toLp 2 fun i ↦ (euclidean.toMixed K).symm (c * euclidean.toMixed K (x i))
-  map_add' x y := by
-    ext1 i
-    apply (euclidean.toMixed K).injective
-    simp [mul_add]
-  map_smul' r x := by
-    ext1 i
-    apply (euclidean.toMixed K).injective
-    simp [Algebra.mul_smul_comm]
-
-/-- Coordinatewise formula for `mulMixedAmbient`. -/
-@[simp]
-theorem mulMixedAmbient_apply (c : mixedSpace K)
-    (x : PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) (i : ι) :
-    mulMixedAmbient c x i = (euclidean.toMixed K).symm (c * euclidean.toMixed K (x i)) := by
-  simp [mulMixedAmbient]
-
-/-- Multiplying by `1 : mixedSpace K` acts as the identity on the ambient Euclidean Minkowski
-space. -/
-@[simp]
-theorem mulMixedAmbient_one :
-    (mulMixedAmbient (1 : mixedSpace K) :
-        (PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) →ₗ[ℝ] _) = LinearMap.id := by
-  ext1 x
-  ext1 i
-  apply (euclidean.toMixed K).injective
-  simp
-
-/-- `mulMixedAmbient` is multiplicative in the scaling element of `mixedSpace K`. -/
-theorem mulMixedAmbient_mul (c₁ c₂ : mixedSpace K)
-    (x : PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) :
-    mulMixedAmbient (c₁ * c₂) x = mulMixedAmbient c₁ (mulMixedAmbient c₂ x) := by
-  ext1 i
-  apply (euclidean.toMixed K).injective
-  simp [mul_assoc]
-
-end MulMixedAmbient
-
-end TauCeti.NumberField.mixedEmbedding
 
 namespace Submodule
 

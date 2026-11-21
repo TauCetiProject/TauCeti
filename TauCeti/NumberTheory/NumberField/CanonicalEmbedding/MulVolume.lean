@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import Mathlib.NumberTheory.NumberField.CanonicalEmbedding.FundamentalCone
 public import Mathlib.RingTheory.Complex
+public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.Basic
 public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.UnitAction
 public import TauCeti.RingTheory.NormTrace.Pi
 public import TauCeti.RingTheory.NormTrace.Prod
@@ -28,6 +29,8 @@ mixed space leaves the volume of every set unchanged.
 
 * `NumberField.mixedEmbedding.algebraNorm_apply`: the `ℝ`-algebra norm of `c`, as a product over
   the places;
+* `TauCeti.NumberField.mixedEmbedding.algebraNorm_multSqrt`: the `ℝ`-algebra norm of `multSqrt K`
+  is `2 ^ nrComplexPlaces K`;
 * `NumberField.mixedEmbedding.abs_algebraNorm`: the absolute value of that norm is
   `mixedEmbedding.norm c`;
 * `NumberField.mixedEmbedding.abs_det_changeOfVariables`: the absolute value of the real
@@ -132,3 +135,15 @@ theorem abs_det_changeOfVariables {ι : Type*} [Fintype ι] [DecidableEq ι]
   simp
 
 end NumberField.mixedEmbedding
+
+namespace TauCeti.NumberField.mixedEmbedding
+
+/-- The `ℝ`-algebra norm of `multSqrt K` is `2 ^ nrComplexPlaces K`. -/
+theorem algebraNorm_multSqrt {K : Type*} [Field K] [NumberField K] :
+    Algebra.norm ℝ (multSqrt K) = (2 : ℝ) ^ InfinitePlace.nrComplexPlaces K := by
+  classical
+  rw [_root_.NumberField.mixedEmbedding.algebraNorm_apply]
+  simp only [multSqrt_apply_isReal, multSqrt_apply_isComplex, Finset.prod_const_one, one_mul,
+    Complex.normSq_ofReal, Real.mul_self_sqrt zero_le_two, Finset.prod_const, Finset.card_univ]
+
+end TauCeti.NumberField.mixedEmbedding
