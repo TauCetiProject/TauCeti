@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Complex.LocallyUniformLimit
 public import Mathlib.Analysis.SpecialFunctions.RegularizedHypergeometric
 public import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import Mathlib.RingTheory.Binomial
+import Mathlib.Algebra.Polynomial.OfFn
 import Mathlib.Analysis.Analytic.Constructions
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
 import TauCeti.Analysis.Analytic.OfScalars
@@ -417,12 +418,10 @@ theorem regularizedHGFun_eq_sum_range_of_neg_natCast_mem {a b : Multiset ℂ} {n
     (ha : -(n : ℂ) ∈ a) (z : ℂ) :
     regularizedHGFun a b z =
       ∑ k ∈ Finset.range (n + 1), regularizedHGFunCoeff a b k * z ^ k := by
-  have hs := (regularizedHGFunSeries a b).hasSum (x := z)
-    (by simp [radius_regularizedHGFunSeries_eq_top_of_finite ha rfl])
-  simp only [regularizedHGFunSeries, FormalMultilinearSeries.ofScalars_apply_eq,
-    smul_eq_mul] at hs
-  refine hs.unique (hasSum_sum_of_ne_finset_zero fun k hk => ?_)
-  rw [regularizedHGFunCoeff_eq_zero_left a b k n ha (by simpa using hk), zero_mul]
+  rw [regularizedHGFun, (regularizedHGFunSeries a b).sum_of_finite (n := n + 1) (fun m hm =>
+    regularizedHGFunSeries_eq_zero.2 (regularizedHGFunCoeff_eq_zero_left a b m n ha hm)) z]
+  simp only [FormalMultilinearSeries.partialSum, regularizedHGFunSeries,
+    FormalMultilinearSeries.ofScalars_apply_eq, smul_eq_mul]
 
 open Polynomial in
 /-- If `-n` is an upper parameter, `regularizedHGFun a b` is a polynomial of degree at most `n`,
@@ -430,10 +429,12 @@ whatever the other upper and the lower parameters are. -/
 theorem exists_natDegree_le_regularizedHGFun_of_neg_natCast_mem {a b : Multiset ℂ} {n : ℕ}
     (ha : -(n : ℂ) ∈ a) :
     ∃ p : ℂ[X], p.natDegree ≤ n ∧ ∀ z, regularizedHGFun a b z = p.eval z := by
-  refine ⟨∑ k ∈ Finset.range (n + 1), C (regularizedHGFunCoeff a b k) * X ^ k,
-    natDegree_sum_le_of_forall_le _ _ fun k hk => ?_, fun z => ?_⟩
-  · exact (natDegree_C_mul_X_pow_le _ k).trans (Nat.lt_succ_iff.mp (Finset.mem_range.mp hk))
-  · simp [regularizedHGFun_eq_sum_range_of_neg_natCast_mem ha z, eval_finsetSum]
+  refine ⟨ofFn (n + 1) fun k => regularizedHGFunCoeff a b k,
+    Nat.lt_succ_iff.mp (ofFn_natDegree_lt n.succ_pos _), fun z => ?_⟩
+  rw [regularizedHGFun_eq_sum_range_of_neg_natCast_mem ha z,
+    eval_eq_sum_range' (ofFn_natDegree_lt n.succ_pos _)]
+  exact Finset.sum_congr rfl fun k hk => by
+    rw [ofFn_coeff_eq_val_of_lt _ (Finset.mem_range.mp hk)]
 
 section Gaussian
 

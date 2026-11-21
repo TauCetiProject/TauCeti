@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.RegularizedHypergeometric
-import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric.Basic
+import TauCeti.Analysis.SpecialFunctions.Hypergeometric.Kummer.Contiguous
 
 /-!
 # Polynomial cases of the regularized Kummer function
@@ -44,9 +44,7 @@ theorem regularizedHGFun_singleton_neg_natCast (b z : ℂ) (n : ℕ) :
       ∑ k ∈ range (n + 1), (ascPochhammer ℂ k).eval (-(n : ℂ)) * z ^ k /
         (k ! * Gamma (b + k)) := by
   rw [regularizedHGFun_eq_sum_range_of_neg_natCast_mem (Multiset.mem_singleton_self _) z]
-  refine sum_congr rfl fun k _ => ?_
-  simp only [regularizedHGFunCoeff, Multiset.map_singleton, Multiset.prod_singleton]
-  ring
+  exact sum_congr rfl fun k _ => by rw [regularizedHGFunCoeff_singleton, div_mul_eq_mul_div₀]
 
 /-- `𝐌(-1, b, z) = Γ(b)⁻¹ - z Γ(b + 1)⁻¹` for every complex `b`. -/
 @[simp]
