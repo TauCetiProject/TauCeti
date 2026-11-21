@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.l2Space
 public import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Diagonal
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.SelfAdjoint
 import TauCeti.Analysis.InnerProductSpace.Parseval
+import TauCeti.Topology.Algebra.Module.LinearPMap.Basic
 
 /-!
 # Diagonal operators in a Hilbert basis
@@ -26,7 +27,11 @@ coordinatewise (`HilbertBasis.mem_graph_diagonalPMap_iff`), so it is closed. Its
 every basis vector and is dense, and its adjoint is the diagonal operator of the conjugate family
 (`HilbertBasis.adjoint_diagonalPMap`), so it is self-adjoint for a real family.
 Composition multiplies the families (`HilbertBasis.diagonalPMap_apply_diagonalPMap_apply`) and
-addition adds them on the common domain (`HilbertBasis.diagonalPMap_add_diagonalPMap_le`).
+addition adds them on the common domain (`HilbertBasis.diagonalPMap_add_diagonalPMap_le`). Its
+kernel is the closed span of the basis vectors `b i` with `c i = 0`
+(`HilbertBasis.ker_diagonalPMap`), and its `finrank` is the number `Nat.card {i | c i = 0}` of
+these indices, which is `0` when infinitely many coefficients vanish
+(`HilbertBasis.finrank_ker_diagonalPMap`).
 
 Diagonal operators are the functional calculus of operators with a Hilbert basis of eigenvectors.
 If a closed symmetric operator `A`, for instance a self-adjoint one, has a Hilbert basis `b` of
@@ -60,6 +65,8 @@ so `f` only enters through its values `f (λ i)` at the eigenvalues.
 * `HilbertBasis.diagonalPMap_domain_eq_top`: a bounded family gives an everywhere defined operator,
   and `HilbertBasis.diagonalPMap_eq_toPMap` identifies it with the bounded diagonal operator.
 * `HilbertBasis.isClosed_diagonalPMap`: diagonal operators are closed.
+* `HilbertBasis.mem_ker_diagonalPMap_iff`, `HilbertBasis.ker_diagonalPMap` and
+  `HilbertBasis.finrank_ker_diagonalPMap`: the kernel and its dimension.
 * `HilbertBasis.adjoint_diagonalPMap`, `HilbertBasis.isSelfAdjoint_diagonalPMap`: the adjoint of
   `b.diagonalPMap c` is `b.diagonalPMap (star c)`, so diagonal operators are self-adjoint for
   self-adjoint coefficient families.
@@ -287,6 +294,61 @@ theorem isClosed_diagonalPMap : (b.diagonalPMap c).IsClosed := by
     exact b.mem_graph_diagonalPMap_iff c
   rw [LinearPMap.IsClosed, h]
   exact isClosed_iInter fun i ↦ isClosed_eq (by fun_prop) (by fun_prop)
+
+/-- **The kernel of a diagonal operator.** A vector lies in the kernel of `b.diagonalPMap c` if and
+only if its coordinates `⟪b i, x⟫` vanish at every index `i` with `c i ≠ 0`. -/
+theorem mem_ker_diagonalPMap_iff {x : E} :
+    x ∈ (b.diagonalPMap c).ker ↔ ∀ i, c i ≠ 0 → ⟪b i, x⟫_𝕜 = 0 := by
+  rw [mem_ker_iff_mem_graph, mem_graph_diagonalPMap_iff]
+  refine forall_congr' fun i ↦ ?_
+  rw [inner_zero_right, eq_comm, mul_eq_zero]
+  exact ⟨fun h hc ↦ h.resolve_left hc, fun h ↦ or_iff_not_imp_left.2 h⟩
+
+/-- The kernel of a diagonal operator is the closed span of the basis vectors `b i` at which the
+coefficient `c i` vanishes. -/
+theorem ker_diagonalPMap :
+    (b.diagonalPMap c).ker = (Submodule.span 𝕜 (b '' {i | c i = 0})).topologicalClosure := by
+  refine le_antisymm (fun x hx ↦ ?_) (Submodule.topologicalClosure_minimal _ ?_ ?_)
+  · -- The basis expansion of a vector of the kernel only involves the basis vectors `b i` with
+    -- `c i = 0`.
+    rw [mem_ker_diagonalPMap_iff] at hx
+    refine (Submodule.isClosed_topologicalClosure _).mem_of_tendsto (b.hasSum_repr x)
+      (Filter.Eventually.of_forall fun s ↦ Submodule.sum_mem _ fun i _ ↦ ?_)
+    by_cases hc : c i = 0
+    · exact Submodule.le_topologicalClosure _
+        (Submodule.smul_mem _ _ (Submodule.subset_span ⟨i, hc, rfl⟩))
+    · rw [b.repr_apply_apply, hx i hc, zero_smul]
+      exact Submodule.zero_mem _
+  · refine Submodule.span_le.2 ?_
+    rintro _ ⟨i, hi, rfl⟩
+    rw [SetLike.mem_coe, mem_ker_diagonalPMap_iff]
+    intro j hj
+    exact b.orthonormal.inner_eq_zero fun hji ↦ hj (hji ▸ hi)
+  · exact (b.isClosed_diagonalPMap c).isClosed_ker
+
+/-- **The dimension of the kernel of a diagonal operator** is the number of indices `i` with
+`c i = 0`. Both sides are `0` when there are infinitely many such indices. -/
+theorem finrank_ker_diagonalPMap :
+    Module.finrank 𝕜 (b.diagonalPMap c).ker = Nat.card {i | c i = 0} := by
+  rcases finite_or_infinite {i | c i = 0} with hZ | hZ
+  · have : Fintype {i | c i = 0} := Fintype.ofFinite _
+    have : FiniteDimensional 𝕜 (Submodule.span 𝕜 (b '' {i | c i = 0})) :=
+      FiniteDimensional.span_of_finite 𝕜 ((Set.toFinite _).image b)
+    rw [ker_diagonalPMap,
+      (Submodule.span 𝕜 _).isClosed_of_finiteDimensional.submodule_topologicalClosure_eq,
+      Set.image_eq_range, Nat.card_eq_fintype_card]
+    exact finrank_span_eq_card (b.orthonormal.linearIndependent.comp _ Subtype.val_injective)
+  · -- Infinitely many orthonormal vectors lie in the kernel, so it is infinite-dimensional.
+    rw [Nat.card_eq_zero_of_infinite]
+    refine Module.finrank_of_not_finite fun hfin ↦ ?_
+    have hmem (i : {i | c i = 0}) : b i ∈ (b.diagonalPMap c).ker := by
+      rw [ker_diagonalPMap]
+      exact Submodule.le_topologicalClosure _ (Submodule.subset_span ⟨i, i.property, rfl⟩)
+    have : Finite {i | c i = 0} :=
+      LinearIndependent.finite (f := fun i ↦ (⟨b i, hmem i⟩ : (b.diagonalPMap c).ker)) <|
+        LinearIndependent.of_comp (b.diagonalPMap c).ker.subtype
+          (b.orthonormal.linearIndependent.comp _ Subtype.val_injective)
+    exact not_finite {i | c i = 0}
 
 variable [CompleteSpace E]
 

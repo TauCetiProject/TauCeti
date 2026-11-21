@@ -43,7 +43,8 @@ used (`TauCeti.HasWeakLineDerivOn.contDiffOn_smul`), since `ψ φ` only sees `ψ
 coefficient field of an elliptic operator, smooth in the domain but not beyond it, is a factor of
 this kind. For an additive Haar measure, a factor that is only `C¹` on `Ω` also suffices
 (`TauCeti.HasWeakLineDerivOn.contDiffOn_smul_of_ne_zero`), as a consequence of the Lipschitz rule
-below.
+below. Expanding in a basis gives the rule `D(T u) = T Du + (DT) u` for a `C¹` field `T` of linear
+maps between finite-dimensional spaces (`TauCeti.HasWeakFDerivOn.contDiffOn_clm_apply_of_ne_zero`).
 
 ## Lipschitz factors
 

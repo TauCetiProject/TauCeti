@@ -15,9 +15,14 @@ For a line bundle `L` on a scheme `X` and `n : ℕ`, the tensor power `L^{⊗n}`
 defined recursively by `L^{⊗0} = 𝒪_X` and `L^{⊗(n+1)} = L^{⊗n} ⊗ L`.
 These powers retain invertibility as bundled line bundles and provide the objects used in
 global generation and ample twisting. They use `InvertibleSheaf.tensorProduct`, the operation
-defining multiplication in `LineBundleClass`, and `InvertibleSheaf.tensorPowObjIso` compares them
-with the monoidal tensor powers `TauCeti.tensorPow` in `X.Modules`.
-The comparisons below assert existence of isomorphisms; they do not specify coherent morphisms.
+defining multiplication in `LineBundleClass`, rather than the monoidal product of `X.Modules`;
+`InvertibleSheaf.tensorPowObjIso` compares them with the monoidal tensor powers `TauCeti.tensorPow`
+in `X.Modules`.
+An isomorphism `e : L ≅ K` induces a specified isomorphism `L^{⊗n} ≅ K^{⊗n}`, functorial in `e`,
+and the powers of the trivial line bundle are trivial by a specified isomorphism. These are the
+operations on tensor powers needed to compare `n`-th roots `M^{⊗n} ≅ L` of a line bundle. The
+exponent laws and the compatibility with pullback below are still only stated as the existence of
+isomorphisms.
 
 Ported from `roed-math/TauCeti-w2-fresh`, branch
 `lookahead/StableReduction/relative-ampleness`, commit `efa6fc8f3735`.
@@ -33,8 +38,13 @@ Ported from `roed-math/TauCeti-w2-fresh`, branch
   `TauCeti.AlgebraicGeometry.LineBundleClass.mk_tensorPow_obj`: the class of `L^{⊗n}` (and of the
   monoidal tensor power `TauCeti.tensorPow L.obj n`) is the `n`-th power of the class of `L` in
   the Picard group.
-* `TauCeti.AlgebraicGeometry.InvertibleSheaf.nonempty_tensorPow_obj_iso`: tensor powers of
-  isomorphic line bundles are isomorphic.
+* `TauCeti.AlgebraicGeometry.InvertibleSheaf.tensorPowCongr e n`: the isomorphism
+  `L^{⊗n} ≅ K^{⊗n}` induced by `e : L ≅ K`, compatible with identities, composition and inverses
+  (`tensorPowCongr_refl`, `tensorPowCongr_trans`, `tensorPowCongr_symm`); its consequence
+  `TauCeti.AlgebraicGeometry.InvertibleSheaf.nonempty_tensorPow_obj_iso` says that tensor powers
+  of isomorphic line bundles are isomorphic.
+* `TauCeti.AlgebraicGeometry.InvertibleSheaf.tensorPowTrivialIso X n`: the isomorphism
+  `𝒪_X^{⊗n} ≅ 𝒪_X`.
 * `TauCeti.AlgebraicGeometry.InvertibleSheaf.nonempty_tensorPow_add_iso` and
   `TauCeti.AlgebraicGeometry.InvertibleSheaf.nonempty_tensorPow_tensorPow_iso`: the exponent laws
   `L^{⊗(m + n)} ≅ L^{⊗m} ⊗ L^{⊗n}` and `(L^{⊗m})^{⊗n} ≅ L^{⊗(m * n)}`.
@@ -76,6 +86,84 @@ lemma tensorPow_succ (L : InvertibleSheaf X) (n : ℕ) :
     L.tensorPow (n + 1) = tensorProduct (L.tensorPow n) L :=
   (rfl)
 
+/-- An isomorphism `e : L ≅ K` of line bundles induces the isomorphism `L^{⊗n} ≅ K^{⊗n}`, applying
+`e` to every factor. -/
+noncomputable def tensorPowCongr {L K : InvertibleSheaf X} (e : L ≅ K) :
+    (n : ℕ) → L.tensorPow n ≅ K.tensorPow n
+  | 0 => Iso.refl _
+  | n + 1 => tensorProductCongrLeft (tensorPowCongr e n) ≪≫ tensorProductCongrRight e
+
+/-- On the zeroth tensor power, `tensorPowCongr e` is the identity of the trivial line bundle,
+transported along `tensorPow_zero`. -/
+@[simp]
+lemma tensorPowCongr_zero {L K : InvertibleSheaf X} (e : L ≅ K) :
+    tensorPowCongr e 0 = eqToIso (L.tensorPow_zero.trans K.tensorPow_zero.symm) := by
+  ext1
+  exact (eqToHom_refl _ rfl).symm
+
+/-- The recursive step of `tensorPowCongr`: on `L^{⊗(n+1)} = L^{⊗n} ⊗ L` it applies
+`tensorPowCongr e n` to the first factor and `e` to the second. -/
+lemma tensorPowCongr_succ {L K : InvertibleSheaf X} (e : L ≅ K) (n : ℕ) :
+    tensorPowCongr e (n + 1) =
+      eqToIso (L.tensorPow_succ n) ≪≫
+        (tensorProductCongrLeft (tensorPowCongr e n) ≪≫ tensorProductCongrRight e) ≪≫
+          eqToIso (K.tensorPow_succ n).symm := by
+  ext1
+  exact ((Category.id_comp _).trans (Category.comp_id _)).symm
+
+/-- The tensor power of the identity is the identity. -/
+@[simp]
+lemma tensorPowCongr_refl (L : InvertibleSheaf X) (n : ℕ) :
+    tensorPowCongr (Iso.refl L) n = Iso.refl _ := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    simp [tensorPowCongr_succ, ih, tensorProductCongrLeft_refl, tensorProductCongrRight_refl]
+
+/-- Tensor powers of isomorphisms respect composition. -/
+@[simp]
+lemma tensorPowCongr_trans {L K M : InvertibleSheaf X} (e : L ≅ K) (e' : K ≅ M) (n : ℕ) :
+    tensorPowCongr (e ≪≫ e') n = tensorPowCongr e n ≪≫ tensorPowCongr e' n := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    simp only [tensorPowCongr_succ, ih, tensorProductCongrLeft_trans,
+      tensorProductCongrRight_trans, Iso.trans_assoc]
+    rw [← Iso.trans_assoc (eqToIso _) (eqToIso _), eqToIso_trans, eqToIso_refl, Iso.refl_trans,
+      ← Iso.trans_assoc (tensorProductCongrLeft (tensorPowCongr e' n)),
+      tensorProductCongrLeft_trans_tensorProductCongrRight, Iso.trans_assoc]
+
+/-- The tensor power of the inverse of an isomorphism is the inverse of its tensor power. -/
+@[simp]
+lemma tensorPowCongr_symm {L K : InvertibleSheaf X} (e : L ≅ K) (n : ℕ) :
+    tensorPowCongr e.symm n = (tensorPowCongr e n).symm := by
+  ext1
+  refine (Iso.inv_ext ?_).symm
+  rw [← Iso.trans_hom, ← tensorPowCongr_trans, Iso.self_symm_id, tensorPowCongr_refl,
+    Iso.refl_hom]
+
+variable (X) in
+/-- The `n`-th tensor power of the trivial line bundle is the trivial line bundle, removing the
+trivial factors one at a time with the right unit isomorphism. -/
+noncomputable def tensorPowTrivialIso : (n : ℕ) → (trivial X).tensorPow n ≅ trivial X
+  | 0 => Iso.refl _
+  | n + 1 => tensorTrivialRightIso _ ≪≫ tensorPowTrivialIso n
+
+/-- On the zeroth tensor power, `tensorPowTrivialIso` is the transport along `tensorPow_zero`. -/
+@[simp]
+lemma tensorPowTrivialIso_zero : tensorPowTrivialIso X 0 = eqToIso (trivial X).tensorPow_zero := by
+  ext1
+  exact (eqToHom_refl _ rfl).symm
+
+/-- The recursive step of `tensorPowTrivialIso`: on `𝒪_X^{⊗(n+1)} = 𝒪_X^{⊗n} ⊗ 𝒪_X` it removes
+the last factor and then applies `tensorPowTrivialIso X n`. -/
+lemma tensorPowTrivialIso_succ (n : ℕ) :
+    tensorPowTrivialIso X (n + 1) =
+      eqToIso ((trivial X).tensorPow_succ n) ≪≫
+        tensorTrivialRightIso ((trivial X).tensorPow n) ≪≫ tensorPowTrivialIso X n := by
+  ext1
+  exact (Category.id_comp _).symm
+
 end InvertibleSheaf
 
 namespace LineBundleClass
@@ -94,9 +182,9 @@ namespace InvertibleSheaf
 /-- The underlying sheaves of `L^{⊗n}` and `K^{⊗n}` are isomorphic whenever the underlying sheaves
 of `L` and `K` are. -/
 theorem nonempty_tensorPow_obj_iso {L K : InvertibleSheaf X} (h : Nonempty (L.obj ≅ K.obj))
-    (n : ℕ) : Nonempty ((L.tensorPow n).obj ≅ (K.tensorPow n).obj) := by
-  rw [← LineBundleClass.mk_eq_mk_iff] at h ⊢
-  simp [h]
+    (n : ℕ) : Nonempty ((L.tensorPow n).obj ≅ (K.tensorPow n).obj) :=
+  h.map fun e ↦ (SheafOfModules.isInvertible X).ι.mapIso
+    (tensorPowCongr (ObjectProperty.isoMk _ e) n)
 
 /-- The tensor power `L^{⊗(m + n)}` is isomorphic to `L^{⊗m} ⊗ L^{⊗n}`. -/
 theorem nonempty_tensorPow_add_iso (L : InvertibleSheaf X) (m n : ℕ) :

@@ -33,6 +33,10 @@ for regular values `a ≤ b` of `f` and a finite-dimensional module `V` over a d
   (`TauCeti.isZero_singularHomology_sublevelPair_of_contMDiff`), since the Morse index of every
   critical point of `g` is at most that dimension.
 
+Applied to the constant function `0` on a compact manifold, whose sublevels at the regular values
+`-1` and `1` are `∅` and `M`, the first statement shows that the homology `Hₙ(M; V)` of a compact
+boundaryless manifold is finite-dimensional (`TauCeti.finite_singularHomology_of_compactSpace`).
+
 These are the hypotheses of the Morse inequalities of a filtration
 (`TauCeti.AlgebraicTopology.Singular.Sublevel`). Let `M` be compact, so that every smooth `f` is
 proper and bounded. Cut the values of `f` at regular values
@@ -58,6 +62,8 @@ inequalities.
 * `TauCeti.finite_singularHomology_sublevelPair_of_contMDiff` and
   `TauCeti.isZero_singularHomology_sublevelPair_of_contMDiff`: finiteness of the relative
   homology of regular sublevels, and its vanishing above the dimension.
+* `TauCeti.finite_singularHomology_of_compactSpace`: finiteness of the homology of a compact
+  boundaryless manifold.
 * `TauCeti.finrank_singularHomology_le_sum_sublevelPair_of_contMDiff`,
   `TauCeti.sum_range_neg_one_pow_mul_finrank_singularHomology_le_sum_sublevelPair_of_contMDiff`,
   `TauCeti.sum_range_neg_one_pow_mul_finrank_singularHomology_eq_sum_sublevelPair_of_contMDiff`,
@@ -183,6 +189,26 @@ theorem finite_singularHomology_sublevelPair_of_contMDiff {k : Type u} [Division
   obtain ⟨g, hg, hcompact, hga, hgb, hgf⟩ := exists_isMorse_sublevelPair_eq hf hp hab ha hb
   rw [← hgf]
   exact hg.finite_singularHomology_sublevelPair V hab hcompact hga hgb n
+
+variable (I M) in
+include I in
+/-- **Finiteness of the homology of a compact manifold.** The singular homology of a compact
+boundaryless manifold, with coefficients in a finite-dimensional module `V` over a division ring,
+is finite-dimensional in every degree. -/
+theorem finite_singularHomology_of_compactSpace [CompactSpace M] {k : Type u} [DivisionRing k]
+    (V : ModuleCat.{u} k) [Module.Finite k V] (n : ℕ) :
+    Module.Finite k (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) n).obj V).obj
+      (TopCat.of M)) :=
+  -- Apply the finiteness of the homology of regular sublevels to the constant function `0`,
+  -- whose sublevels `{0 ≤ -1} = ∅` and `{0 ≤ 1} = M` are cut at the regular values `±1`.
+  have hreg (c : ℝ) (hc : c ≠ 0) : IsRegularValue I 𝓘(ℝ) (fun _ : M ↦ (0 : ℝ)) c :=
+    isRegularValue_of_notMem_range fun ⟨_, hx⟩ ↦ hc hx.symm
+  have := finite_singularHomology_sublevelPair_of_contMDiff V contMDiff_const
+    continuous_const.isProperMap (neg_one_lt_zero.trans zero_lt_one).le
+    (hreg _ (neg_ne_zero.2 one_ne_zero)) (hreg _ one_ne_zero) n
+  Module.Finite.equiv (singularHomologyIsoSublevelPair (f := fun _ : M ↦ (0 : ℝ))
+    (neg_one_lt_zero.trans zero_lt_one).le (fun _ ↦ neg_one_lt_zero) (fun _ ↦ zero_le_one) V
+    n).symm.toLinearEquiv
 
 /-- **Vanishing of the homology of regular sublevels above the dimension.** Let `f` be a smooth
 proper function on a boundaryless manifold and `a ≤ b` regular values of `f`. Then the relative
