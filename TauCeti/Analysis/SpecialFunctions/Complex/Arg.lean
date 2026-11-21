@@ -74,9 +74,15 @@ In polar coordinates, `Im (z ^ m) = |z|^m sin(m arg z)` for every integer `m`.
 * `Complex.contDiffAt_arg`: the argument is smooth on the slit plane.
 * `Complex.tendsto_arg_of_tendsto_ofReal_mul`: if `c x * f x → Q ∈ slitPlane` with `c x > 0`
   eventually, then `arg (f x) → arg Q`.
+* `Complex.arg_one_sub_ofReal_mul_ne_pi`: for `z` off `(1, ∞)` and `t ∈ [0, 1]`,
+  `arg (1 - t * z) ≠ π`.
+* `Complex.one_sub_mem_slitPlane_of_im_ne_zero_or_re_le_one`: for `z ≠ 1` off `(1, ∞)`,
+  `1 - z ∈ slitPlane`.
 * `Complex.im_zpow`: `Im (z ^ m) = |z|^m sin(m arg z)` for every integer `m`.
 * `Complex.sin_arg_sub_arg_one_sub`: `sin (arg ξ - arg (1 - ξ)) = Im ξ / (|ξ| |1 - ξ|)`; for `ξ`
   in the upper half-plane, the sine of the angle at `ξ` of the triangle `0, 1, ξ`.
+* `Filter.Tendsto.arg_of_im_neg_of_re_neg_of_im_zero`: approaching the open negative real axis from
+  the open lower half-plane along an arbitrary filter sends `(f y).arg` to `-π`.
 * `HasDerivAt.hasFDerivAt_arg`: the real derivative of `arg ∘ f` on the slit plane is the
   imaginary part of the logarithmic derivative of `f`.
 * `ContDiff.contDiffAt_comp_arg`: a smooth `2π`-periodic function of the argument is smooth away
@@ -246,6 +252,29 @@ theorem tendsto_arg_of_tendsto_ofReal_mul {α : Type*} {l : Filter α} {c : α �
     Tendsto (fun x ↦ arg (f x)) l (𝓝 (arg Q)) :=
   ((continuousAt_arg hQ).tendsto.comp h).congr' (hc.mono fun _ hx ↦ arg_ofReal_mul hx _)
 
+/-- For `z` off the open ray `(1, ∞)` (i.e. `z.im ≠ 0 ∨ z.re ≤ 1`) and `t ∈ [0, 1]`, the radial
+point `1 - t * z` never lies on the open negative real axis, so its principal argument is not
+`π`. -/
+theorem arg_one_sub_ofReal_mul_ne_pi {z : ℂ} (hz : z.im ≠ 0 ∨ z.re ≤ 1) {t : ℝ}
+    (ht : t ∈ Set.Icc (0 : ℝ) 1) : ((1 : ℂ) - (t : ℂ) * z).arg ≠ π := by
+  rw [ne_eq, arg_eq_pi_iff]
+  rintro ⟨hre, him⟩
+  simp only [sub_re, one_re, mul_re, ofReal_re, ofReal_im, zero_mul, sub_zero, sub_im, one_im,
+    mul_im, add_zero, zero_sub, neg_eq_zero, mul_eq_zero] at hre him
+  rcases hz with hzim | hzre
+  · rcases him with rfl | hzim'
+    · linarith
+    · exact hzim hzim'
+  · nlinarith [ht.1, ht.2]
+
+/-- For `z ≠ 1` off the open ray `(1, ∞)` (i.e. `z.im ≠ 0 ∨ z.re ≤ 1`), the point `1 - z` lies in
+the open slit plane `Complex.slitPlane`. -/
+theorem one_sub_mem_slitPlane_of_im_ne_zero_or_re_le_one {z : ℂ} (hz : z.im ≠ 0 ∨ z.re ≤ 1)
+    (hz1 : z ≠ 1) : 1 - z ∈ slitPlane :=
+  mem_slitPlane_iff_arg.mpr
+    ⟨by simpa using arg_one_sub_ofReal_mul_ne_pi hz (Set.right_mem_Icc.mpr zero_le_one),
+      sub_ne_zero.mpr hz1.symm⟩
+
 /-- Rotating `1 + r * exp (θ * I)` by `exp (-(θ / 2) * I)` projects onto the bisecting direction,
 giving `(1 + r) * cos (θ / 2) ≤ ‖1 + r * exp (θ * I)‖` for all real `θ` and `r`. -/
 theorem one_add_mul_cos_div_two_le_norm_one_add_ofReal_mul_exp_mul_I (θ r : ℝ) :
@@ -372,6 +401,15 @@ theorem sin_arg_sub_arg_one_sub (ξ : ℂ) :
   ring
 
 end Complex
+
+open Filter Topology in
+/-- Limit rule for `Complex.arg` along a filter eventually mapped into the open lower half-plane
+when the limiting value lies on the open negative real axis (`z.re < 0` and `z.im = 0`). -/
+theorem Filter.Tendsto.arg_of_im_neg_of_re_neg_of_im_zero {α : Type*} {l : Filter α} {f : α → ℂ}
+    {z : ℂ} (hf : Tendsto f l (𝓝 z)) (him : ∀ᶠ y in l, (f y).im < 0) (hre : z.re < 0)
+    (him₀ : z.im = 0) : Tendsto (fun y ↦ (f y).arg) l (𝓝 (-π)) :=
+  (Complex.tendsto_arg_nhdsWithin_im_neg_of_re_neg_of_im_zero hre him₀).comp
+    (tendsto_nhdsWithin_iff.mpr ⟨hf, him⟩)
 
 /-- If `f` has complex derivative `f'` at `z` and `f z` lies in the slit plane, then the argument
 `w ↦ arg (f w)` has real derivative `v ↦ Im (v * f' / f z)` at `z`, the imaginary part of the

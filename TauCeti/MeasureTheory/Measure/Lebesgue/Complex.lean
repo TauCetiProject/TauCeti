@@ -31,6 +31,9 @@ side times its one-dimensional integral (`Complex.setLIntegral_reProdIm_comp_re`
 Splitting complex vectors into real and imaginary blocks preserves product volume, using
 Mathlib's `Complex.volume_preserving_equiv_real_prod` coordinatewise and
 `PiLp.volume_preserving_toLp` for the Euclidean volume normalization.
+For any fixed `z : ℂ`, the affine factor `1 - t * z` vanishes at most once on `ℝ`
+(`Complex.subsingleton_one_sub_ofReal_mul_eq_zero`), so it is nonzero almost everywhere for every
+measure on `ℝ` with null singletons (`Complex.ae_one_sub_ofReal_mul_ne_zero`).
 -/
 
 public section
@@ -155,6 +158,24 @@ theorem setLIntegral_reProdIm_comp_im (s t : Set ℝ) {F : ℝ → ℝ≥0∞} (
   simp only [one_mul, lintegral_const, Measure.restrict_apply_univ] at h2
   rw [← h2, ← h]
   rfl
+
+/-- For a fixed `z : ℂ`, the factor `1 - t z` vanishes at most once as `t` varies over `ℝ`. -/
+theorem subsingleton_one_sub_ofReal_mul_eq_zero (z : ℂ) :
+    {t : ℝ | 1 - (t : ℂ) * z = 0}.Subsingleton := by
+  intro t₁ ht₁ t₂ ht₂
+  have hz : z ≠ 0 := by
+    rintro rfl
+    simp at ht₁
+  have h1 : (t₁ : ℂ) * z = 1 := sub_eq_zero.mp ht₁ |>.symm
+  have h2 : (t₂ : ℂ) * z = 1 := sub_eq_zero.mp ht₂ |>.symm
+  exact ofReal_injective (mul_right_cancel₀ hz (h1.trans h2.symm))
+
+/-- For any `z : ℂ` and any measure `μ` on `ℝ` with null singletons, `1 - t z ≠ 0` almost
+everywhere. -/
+theorem ae_one_sub_ofReal_mul_ne_zero (z : ℂ) {μ : Measure ℝ} [NullSingletonClass μ] :
+    ∀ᵐ t : ℝ ∂μ, 1 - (t : ℂ) * z ≠ 0 := by
+  rw [ae_iff]
+  simpa [Classical.not_not] using (subsingleton_one_sub_ofReal_mul_eq_zero z).measure_zero μ
 
 end Complex
 
