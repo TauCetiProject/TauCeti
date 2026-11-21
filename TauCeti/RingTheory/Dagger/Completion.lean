@@ -88,7 +88,7 @@ theorem not_completeSpace : ¬ CompleteSpace (washnitzerAlgebra σ L) := by
   obtain ⟨g, hg⟩ := hsurj ⟨f, hf⟩
   have hg' : (g : MvPowerSeries σ L) = f := by
     simpa only [coe_toTate] using congrArg Subtype.val hg
-  exact hg' ▸ g.2
+  exact hg' ▸ g.property
 
 end NontriviallyNormedField
 

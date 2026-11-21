@@ -90,16 +90,13 @@ theorem exists_w1p_value_ae_eq_norm_rpow (hp : p ≠ ∞) (hb : Bornology.IsBoun
   have hp0 : p ≠ 0 := (zero_lt_one.trans_le (Fact.out : 1 ≤ p)).ne'
   have hp1 : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
   have hu : MemLp (fun x : E => ‖x‖ ^ s) p (μ.restrict Ω) :=
-    hb.memLp_norm_rpow_restrict (mu := μ) hp0 hp (by nlinarith)
+    hb.memLp_norm_rpow_restrict (mu := μ) hp (by nlinarith)
   have hD : MemLp (fun x : E => (s * ‖x‖ ^ (s - 2)) • innerSL ℝ x) p (μ.restrict Ω) := by
     have hm : AEStronglyMeasurable (fun x : E => (s * ‖x‖ ^ (s - 2)) • innerSL ℝ x)
         (μ.restrict Ω) :=
       (locallyIntegrable_norm_rpow_smul_innerSL (μ := μ)
         (one_sub_finrank_lt hp hs)).aestronglyMeasurable.restrict
-    refine ((hb.memLp_norm_rpow_restrict (mu := μ) hp0 hp hs).const_mul |s|).of_le hm
-      (ae_of_all _ fun x => ?_)
-    refine (norm_rpow_smul_innerSL_le s x).trans (le_of_eq ?_)
-    rw [Real.norm_of_nonneg (by positivity)]
+    exact hb.memLp_of_norm_le_mul_norm_rpow (mu := μ) hp hs hm (norm_rpow_smul_innerSL_le s)
   obtain ⟨u, hval, hgrad⟩ := W1p.exists_value_gradient_ae_eq_of_hasWeakFDerivOn hu hD
     (hasWeakFDerivOn_norm_rpow (one_sub_finrank_lt hp hs) Ω)
   refine ⟨u, hval, hgrad.trans (ae_of_all _ fun x => ?_)⟩

@@ -363,10 +363,10 @@ theorem principalPartMap_variationComplexStructure {D : Multiset ℂ}
       ∀ w, sectionValue y w = sectionValue x w * G w + exp (ν w) * H w)
     (y : V) (hJy : (fun w ↦ variationComplexStructure ((y : ℂ → EuclideanSpace ℝ (Fin 4)) w)) ∈ V) :
     principalPartMap hα hν hV ⟨_, hJy⟩ = I • principalPartMap hα hν hV y := by
-  obtain ⟨G, hG, H, hH, hy⟩ := hV y y.2
+  obtain ⟨G, hG, H, hH, hy⟩ := hV y y.property
   funext i
   simp only [principalPartMap_apply, Pi.smul_apply, smul_eq_mul]
-  exact principalPart_variationComplexStructure hα hν hG hH hy i.2.2
+  exact principalPart_variationComplexStructure hα hν hG hH hy i.2.isLt
 
 end PrincipalPart
 
