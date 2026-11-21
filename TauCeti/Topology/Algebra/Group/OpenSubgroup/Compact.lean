@@ -149,10 +149,8 @@ additive subgroups contained in any given open additive subgroup `K₀` still fo
 basis of `0`. -/]
 theorem nhds_one_hasBasis_isCompact_openSubgroup_le (K₀ : OpenSubgroup G) :
     (𝓝 (1 : G)).HasBasis (fun H : OpenSubgroup G ↦ IsCompact (H : Set G) ∧ H ≤ K₀) (↑) := by
-  refine ⟨fun U ↦ ⟨fun hU ↦ ?_, fun ⟨H, _, hHU⟩ ↦ mem_of_superset H.mem_nhds_one hHU⟩⟩
-  obtain ⟨H, hHc, hHsub⟩ :=
-    (nhds_one_hasBasis_isCompact_openSubgroup (G := G)).mem_iff.mp (inter_mem hU K₀.mem_nhds_one)
-  exact ⟨H, ⟨hHc, hHsub.trans inter_subset_right⟩, hHsub.trans inter_subset_left⟩
+  simpa only [SetLike.coe_subset_coe] using
+    (nhds_one_hasBasis_isCompact_openSubgroup (G := G)).restrict_subset K₀.mem_nhds_one
 
 /-- In a weakly locally compact nonarchimedean group, left cosets of compact open subgroups form a
 neighbourhood basis at every point `g : G`. -/

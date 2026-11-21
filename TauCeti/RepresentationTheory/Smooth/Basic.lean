@@ -10,6 +10,7 @@ public import TauCeti.RepresentationTheory.Stabilizer
 public import TauCeti.RepresentationTheory.Subrepresentation
 public import TauCeti.Topology.Algebra.Group.OpenSubgroup.Compact
 import Mathlib.GroupTheory.GroupAction.Quotient
+import TauCeti.GroupTheory.QuotientGroup.Basic
 import TauCeti.RepresentationTheory.Invariants
 
 /-!
@@ -156,16 +157,6 @@ theorem Equiv.isSmooth_iff {ρ : Representation A G V} {σ : Representation A G 
     (e : ρ.Equiv σ) : ρ.IsSmooth ↔ σ.IsSmooth :=
   ⟨fun _ ↦ IsSmooth.of_injective e.symm.toIntertwiningMap e.symm.injective,
     fun _ ↦ IsSmooth.of_injective e.toIntertwiningMap e.injective⟩
-
-/-- The restriction of a smooth representation to an invariant submodule is smooth. -/
-theorem IsSmooth.subrepresentation (ρ : Representation A G V) [ρ.IsSmooth] (U : Submodule A V)
-    (hU : ∀ g, U ≤ U.comap (ρ g)) : (ρ.subrepresentation U hU).IsSmooth :=
-  ⟨fun v ↦ by
-    have hstab : (ρ.subrepresentation U hU).stabilizer v = ρ.stabilizer (v : V) := by
-      ext g
-      simp [mem_stabilizer, Subtype.ext_iff]
-    rw [hstab]
-    exact IsSmooth.isOpen_stabilizer (v : V)⟩
 
 /-- The binary product of two smooth representations is smooth. -/
 instance IsSmooth.prod (ρ : Representation A G V) (σ : Representation A G W)
@@ -405,9 +396,7 @@ theorem smoothVectors_toSubmodule_eq_iSup [SeparatelyContinuousMul G]
       ⨆ U : OpenSubgroup G, invariants (ρ.comp (U : Subgroup G).subtype) := by
   have hdir : Directed (· ≤ ·)
       (fun U : OpenSubgroup G ↦ invariants (ρ.comp (U : Subgroup G).subtype)) :=
-    fun U₁ U₂ ↦ ⟨U₁ ⊓ U₂,
-      invariants_comp_subtype_antitone ρ (inf_le_left : (U₁ ⊓ U₂ : Subgroup G) ≤ U₁),
-      invariants_comp_subtype_antitone ρ (inf_le_right : (U₁ ⊓ U₂ : Subgroup G) ≤ U₂)⟩
+    Antitone.directed_le fun _ _ h ↦ invariants_comp_subtype_antitone ρ h
   ext v
   rw [Subrepresentation.mem_toSubmodule, mem_smoothVectors_iff_exists_openSubgroup,
     Submodule.mem_iSup_of_directed _ hdir]
@@ -447,21 +436,15 @@ theorem smoothVectors_toSubmodule_eq_iSup_isCompact (ρ : Representation A G V) 
     ρ.smoothVectors.toSubmodule =
       ⨆ (U : OpenSubgroup G) (_ : IsCompact (U : Set G)),
         invariants (ρ.comp (U : Subgroup G).subtype) := by
-  obtain ⟨K₀, hK₀, -⟩ :=
-    (NonarchimedeanGroup.nhds_one_hasBasis_isCompact_openSubgroup (G := G)).mem_iff.1
-      Filter.univ_mem
-  have : Nonempty {U : OpenSubgroup G // IsCompact (U : Set G)} := ⟨⟨K₀, hK₀⟩⟩
-  have hdir : Directed (· ≤ ·) (fun U : {U : OpenSubgroup G // IsCompact (U : Set G)} ↦
-      invariants (ρ.comp (U : Subgroup G).subtype)) :=
-    fun U₁ U₂ ↦ by
-      obtain ⟨U, hUc, hU₁, hU₂⟩ := OpenSubgroup.directedOn_isCompact U₁.val U₁.property U₂.val
-        U₂.property
-      exact ⟨⟨U, hUc⟩, invariants_comp_subtype_antitone ρ hU₁,
-        invariants_comp_subtype_antitone ρ hU₂⟩
-  ext v
-  rw [Subrepresentation.mem_toSubmodule, mem_smoothVectors_iff_exists_isCompact_openSubgroup,
-    iSup_subtype', Submodule.mem_iSup_of_directed _ hdir]
-  simp only [mem_invariants_comp_subtype_iff, Subtype.exists, exists_prop]
+  rw [smoothVectors_toSubmodule_eq_iSup, iSup_subtype',
+    ← (OrderDual.ofDual : (OpenSubgroup G)ᵒᵈ ≃ OpenSubgroup G).iSup_comp]
+  have hmono : Monotone fun U : (OpenSubgroup G)ᵒᵈ ↦
+      invariants (ρ.comp ((OrderDual.ofDual U : OpenSubgroup G) : Subgroup G).subtype) :=
+    fun _ _ h ↦ invariants_comp_subtype_antitone ρ h
+  exact (hmono.iSup_comp_eq (s := fun U : {U : OpenSubgroup G // IsCompact (U : Set G)} ↦
+    OrderDual.toDual U.val) fun U ↦
+      let ⟨V, hVc, hVU⟩ := NonarchimedeanGroup.isCoinitial_isCompact_openSubgroup U.ofDual
+      ⟨⟨V, hVc⟩, hVU⟩).symm
 
 /-- For a locally profinite group, a representation is smooth iff `V` is the supremum of its
 compact-open-subgroup invariant submodules. -/
@@ -558,10 +541,7 @@ theorem isSmooth_ofMulAction_quotient [SeparatelyContinuousMul G] {H : Subgroup 
         (fun x ↦ g⁻¹ * x * g) ⁻¹' (H : Set G) := by
       ext x
       simp only [SetLike.mem_coe, MulAction.mem_stabilizer_iff, Set.mem_preimage]
-      have hsmul : x • (g : G ⧸ H) = ((x * g : G) : G ⧸ H) := rfl
-      rw [hsmul, QuotientGroup.eq, mul_inv_rev, mul_assoc]
-      exact ⟨fun h ↦ by simpa [mul_assoc] using H.inv_mem h,
-        fun h ↦ by simpa [mul_assoc] using H.inv_mem h⟩
+      exact TauCeti.smul_quotientGroup_mk_eq_self_iff H x g
     rw [hpre]
     exact hH.preimage ((Homeomorph.mulRight g).continuous.comp (Homeomorph.mulLeft g⁻¹).continuous)
 
