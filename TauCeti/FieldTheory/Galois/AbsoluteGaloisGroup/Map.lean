@@ -100,7 +100,7 @@ def absoluteGaloisGroupMap (τ : SeparableClosure K →ₐ[K] SeparableClosure L
       refine ⟨s.image τ, ?_⟩
       rw [adjoin_map, adjoin_adjoin_right, Finset.coe_image]
     · exact τ.injective <| (τ.restrictNormalHom_commutes _ x).trans <|
-        hg ⟨τ x, subset_adjoin _ _ ⟨_, x.2, rfl⟩⟩
+        hg ⟨τ x, subset_adjoin _ _ ⟨_, x.property, rfl⟩⟩
 
 variable (τ : SeparableClosure K →ₐ[K] SeparableClosure L)
 

@@ -97,9 +97,9 @@ private theorem upperUnitriangularCoordinateAlgHom_counit
   apply UpperUnitriangular.coordinateHopfAlgebra_algHom_ext R m
   intro ij
   rw [AlgHom.comp_apply, Bialgebra.counitAlgHom_apply,
-    upperUnitriangularCoordinateAlgHom, UpperUnitriangular.upperUnitriangularToPoint_apply,
+    upperUnitriangularCoordinateAlgHom, UpperUnitriangular.upperUnitriangularToPoint_apply_X,
     h.coe_toGL, counit_coefficientMatrix]
-  simp [Bialgebra.counitAlgHom_apply, ij.2.ne]
+  simp [Bialgebra.counitAlgHom_apply, ij.property.ne]
 
 private theorem upperUnitriangularCoordinateAlgHom_comul
     (b : Basis m R M) (h : (coefficientMatrix (C := H) b).IsUpperUnitriangular) :
@@ -122,16 +122,16 @@ private theorem upperUnitriangularCoordinateAlgHom_comul
   have hX (ij : UpperUnitriangular.Index m) :
       upperUnitriangularCoordinateAlgHom (H := H) b h
           (UpperUnitriangular.coordinateHopfAlgebraAlgEquiv R m (MvPolynomial.X ij)) =
-        coefficientMatrix (C := H) b ij.1.1 ij.1.2 := by
+        coefficientMatrix (C := H) b ij.val.1 ij.val.2 := by
     rw [upperUnitriangularCoordinateAlgHom,
-      UpperUnitriangular.upperUnitriangularToPoint_apply, h.coe_toGL]
+      UpperUnitriangular.upperUnitriangularToPoint_apply_X, h.coe_toGL]
   apply UpperUnitriangular.coordinateHopfAlgebra_algHom_ext R m
   intro ij
   simp only [AlgHom.comp_apply, Bialgebra.comulAlgHom_apply,
     UpperUnitriangular.coordinateHopfAlgebra_comul_X, map_sum,
     Algebra.TensorProduct.map_tmul,
     hgeneric, hX]
-  exact (comul_coefficientMatrix_eq_sum (C := H) b ij.1.1 ij.1.2).symm
+  exact (comul_coefficientMatrix_eq_sum (C := H) b ij.val.1 ij.val.2).symm
 
 /-- The coordinate Hopf-algebra morphism of a comodule whose coefficient matrix is upper
 unitriangular in the chosen basis. It sends each strict-upper coordinate of `U_n` to the
@@ -151,9 +151,9 @@ theorem upperUnitriangularCoordinateBialgHom_X
     (ij : UpperUnitriangular.Index m) :
     upperUnitriangularCoordinateBialgHom (H := H) b h
         (UpperUnitriangular.coordinateHopfAlgebraAlgEquiv R m (MvPolynomial.X ij)) =
-      coefficientMatrix (C := H) b ij.1.1 ij.1.2 := by
+      coefficientMatrix (C := H) b ij.val.1 ij.val.2 := by
   simp only [upperUnitriangularCoordinateBialgHom, BialgHom.ofAlgHom_apply,
-    upperUnitriangularCoordinateAlgHom, UpperUnitriangular.upperUnitriangularToPoint_apply,
+    upperUnitriangularCoordinateAlgHom, UpperUnitriangular.upperUnitriangularToPoint_apply_X,
     h.coe_toGL]
 
 /-- The upper-unitriangular coordinate morphism sends every entry of the generic matrix to the

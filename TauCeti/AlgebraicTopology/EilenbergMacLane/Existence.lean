@@ -11,6 +11,7 @@ public import TauCeti.AlgebraicTopology.Homotopy.CellAttachment
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Absolute
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.DiskBoundary
 public import TauCeti.AlgebraicTopology.Homotopy.KillHomotopyGroups
+public import TauCeti.AlgebraicTopology.Homotopy.SphereWedge
 import TauCeti.AlgebraicTopology.Singular.Contractible
 
 /-!
@@ -21,7 +22,7 @@ For every abelian group `A` and every `n`, there is a Hausdorff Eilenberg--Mac L
 It is built from a presentation of `A` by cells, following Hatcher:
 
 1. Attach one `(n + 2)`-cell to a point for each element of `A`, along the constant map. The result
-   `W = TauCeti.EilenbergMacLane.wedge A n` is a wedge of `(n + 2)`-spheres. It is
+   `W = TauCeti.sphereWedge A (n + 2)` is a wedge of `(n + 2)`-spheres. It is
    `(n + 1)`-connected, so by the Hurewicz theorem `πₙ₊₂(W) ≅ Hₙ₊₂(W; ℤ)`, and `Hₙ₊₂(W; ℤ)` is free
    on the cells (`TauCeti.nonempty_singularHomology_cellAttachment_iso_sigma`). Sending the cell of
    `a` to `a` gives a surjection `ψ : Hₙ₊₂(W; ℤ) → A`
@@ -44,7 +45,6 @@ stated for spaces in the lowest universe, so `A` is a type in `Type`.
 
 ## Main definitions
 
-* `TauCeti.EilenbergMacLane.wedge A n`: the wedge of `(n + 2)`-spheres indexed by `A`.
 * `TauCeti.EilenbergMacLane.presentation A n ψ`: the wedge with an `(n + 3)`-cell attached along
   every map in the kernel of `ψ`.
 
@@ -82,23 +82,6 @@ namespace EilenbergMacLane
 
 variable (A : Type) (n : ℕ)
 
-/-- The constant attaching maps of the cells of the wedge of `(n + 2)`-spheres indexed by `A`. -/
-abbrev wedgeAttach : A → (TopCat.diskBoundary.{0} (n + 2) ⟶ TopCat.of PUnit.{1}) :=
-  fun _ ↦ TopCat.ofHom (ContinuousMap.const _ PUnit.unit)
-
-/-- The wedge of `(n + 2)`-spheres indexed by the elements of `A`: one `(n + 2)`-cell attached to
-a point for each element, along the constant map. -/
-abbrev wedge : TopCat.{0} := cellAttachment (wedgeAttach A n)
-
-/-- The base point of the wedge of spheres, the image of the point. -/
-abbrev wedgeBase : wedge A n := cellAttachmentIncl (wedgeAttach A n) PUnit.unit
-
-/-- The wedge of `(n + 2)`-spheres is `(n + 1)`-connected. -/
-theorem subsingleton_homotopyGroup_wedge (k : ℕ) (hk : k < n + 2) :
-    Subsingleton (π_ k (wedge A n) (wedgeBase A n)) :=
-  (surjective_homotopyGroupMap_cellAttachmentIncl (N := Fin k) (wedgeAttach A n)
-    (by simpa using Nat.le_of_lt_succ hk) PUnit.unit).subsingleton
-
 /-- Integral singular homology in degree `k`, as a functor. -/
 private abbrev H (k : ℕ) : TopCat.{0} ⥤ ModuleCat.{0} ℤ :=
   (singularHomologyFunctor (ModuleCat.{0} ℤ) k).obj (ModuleCat.of ℤ ℤ)
@@ -114,8 +97,9 @@ variable [AddCommGroup A]
 the homology of the wedge of `(n + 2)`-spheres. -/
 theorem exists_surjective_singularHomology_wedge :
     ∃ ψ : ((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 2)).obj (ModuleCat.of ℤ ℤ)).obj
-      (wedge A n) →ₗ[ℤ] A, Function.Surjective ψ := by
-  obtain ⟨e⟩ := nonempty_singularHomology_cellAttachment_iso_sigma (wedgeAttach A n) ℤ
+      (sphereWedge A (n + 2)) →ₗ[ℤ] A, Function.Surjective ψ := by
+  obtain ⟨e⟩ := nonempty_singularHomology_cellAttachment_iso_sigma
+    (sphereWedgeAttachingMap A (n + 2)) ℤ
     (isZero_singularHomologyFunctor_of_contractibleSpace (ModuleCat.of ℤ ℤ) (TopCat.of PUnit.{1})
       (by omega))
     (isZero_singularHomologyFunctor_of_contractibleSpace (ModuleCat.of ℤ ℤ) (TopCat.of PUnit.{1})
@@ -129,20 +113,20 @@ theorem exists_surjective_singularHomology_wedge :
       (one_smul ℤ a)
 
 variable (ψ : ((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 2)).obj (ModuleCat.of ℤ ℤ)).obj
-  (wedge A n) →ₗ[ℤ] A)
+  (sphereWedge A (n + 2)) →ₗ[ℤ] A)
 
 /-- The relations of the presentation: the maps `g : Sⁿ⁺² → W` into the wedge of spheres whose class
 `g_*[Sⁿ⁺²]` lies in the kernel of `ψ`. -/
 abbrev Relation : Type :=
-  {g : TopCat.diskBoundary.{0} (n + 3) ⟶ wedge A n //
+  {g : TopCat.diskBoundary.{0} (n + 3) ⟶ sphereWedge A (n + 2) //
     ψ ((((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 2)).obj (ModuleCat.of ℤ ℤ)).map g).hom
       ((reducedSingularHomologyι (ModuleCat.of ℤ ℤ) (n + 2)).app (TopCat.diskBoundary.{0} (n + 3))
         ((reducedSingularHomologyTopCatSphereIso (ModuleCat.of ℤ ℤ) (n + 2)).inv 1))) = 0}
 
 /-- The relations of the presentation, as attaching maps of `(n + 3)`-cells. -/
 abbrev relationAttach (r : Relation A n ψ) :
-    TopCat.diskBoundary.{0} (n + 3) ⟶ wedge A n :=
-  r.1
+    TopCat.diskBoundary.{0} (n + 3) ⟶ sphereWedge A (n + 2) :=
+  r.val
 
 /-- **The presentation complex.** The wedge of `(n + 2)`-spheres indexed by `A`, with an
 `(n + 3)`-cell attached along every map `Sⁿ⁺² → W` whose class lies in the kernel of `ψ`. -/
@@ -151,14 +135,14 @@ abbrev presentation : TopCat.{0} :=
 
 /-- The base point of the presentation complex, the image of the base point of the wedge. -/
 abbrev presentationBase : presentation A n ψ :=
-  cellAttachmentIncl (relationAttach A n ψ) (wedgeBase A n)
+  cellAttachmentIncl (relationAttach A n ψ) (sphereWedgeBase A (n + 2))
 
 /-- **The presentation complex is `(n + 1)`-connected.** -/
 theorem subsingleton_homotopyGroup_presentation (k : ℕ) (hk : k < n + 2) :
     Subsingleton (π_ k (presentation A n ψ) (presentationBase A n ψ)) :=
-  have := subsingleton_homotopyGroup_wedge A n k hk
+  have := subsingleton_homotopyGroup_sphereWedge A (n + 1) (Nat.le_of_lt_succ hk)
   (bijective_homotopyGroupMap_cellAttachmentIncl (N := Fin k) (relationAttach A n ψ)
-    (by simpa using hk) (wedgeBase A n)).2.subsingleton
+    (by simpa using hk) (sphereWedgeBase A (n + 2))).2.subsingleton
 
 /-- **Attaching the relation cells kills exactly the kernel of `ψ` in `Hₙ₊₂`.** The kernel of the
 map `Hₙ₊₂(W; ℤ) → Hₙ₊₂(Y; ℤ)` induced by the inclusion of the wedge into the presentation complex
@@ -167,26 +151,27 @@ theorem ker_singularHomologyMap_presentation :
     LinearMap.ker (((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 2)).obj
       (ModuleCat.of ℤ ℤ)).map (cellAttachmentIncl (relationAttach A n ψ))).hom =
       LinearMap.ker ψ := by
+  have hW : ∀ k < n + 2, Subsingleton (π_ k (sphereWedge A (n + 2)) (sphereWedgeBase A (n + 2))) :=
+    fun k hk ↦ subsingleton_homotopyGroup_sphereWedge A (n + 1) (Nat.le_of_lt_succ hk)
   rw [ker_singularHomologyMap_cellAttachmentIncl]
   refine le_antisymm (Submodule.span_le.2 ?_) fun h hh ↦ ?_
   · rintro _ ⟨r, rfl⟩
-    exact r.2
+    exact r.property
   -- Every class of `Hₙ₊₂(W)` is the Hurewicz class of a generalized loop, so up to sign the class
   -- of its attaching sphere, which lies in the kernel of `ψ` with the class.
   obtain ⟨ε, hε⟩ :=
     exists_singularHomologyMap_diskBoundaryMap_eq_units_smul_hurewicz (n + 1)
   obtain ⟨a, rfl⟩ :=
-    (HomotopyGroup.hurewiczAddEquiv (subsingleton_homotopyGroup_wedge A n)).surjective h
+    (HomotopyGroup.hurewiczAddEquiv hW).surjective h
   induction a using Additive.rec with | ofMul a => ?_
   induction a using Quotient.inductionOn with | h p => ?_
   have hp : (H (n + 2)).map (GenLoop.diskBoundaryMap p) (sphereClass n) =
-      (ε : ℤ) • HomotopyGroup.hurewiczAddEquiv (subsingleton_homotopyGroup_wedge A n)
-        (Additive.ofMul ⟦p⟧) := by
+      (ε : ℤ) • HomotopyGroup.hurewiczAddEquiv hW (Additive.ofMul ⟦p⟧) := by
     rw [HomotopyGroup.hurewiczAddEquiv_apply, HomotopyGroup.hurewiczHom_apply]
     -- `Additive.ofMul ⟦p⟧` is presented through `Quotient` rather than `HomotopyGroup`, so the
     -- generated motive of `rw` is ill-typed and `erw` is needed.
     erw [toMul_ofMul, HomotopyGroup.hurewicz_mk]
-    exact hε (wedge A n) _ p
+    exact hε (sphereWedge A (n + 2)) _ p
   have hr : ψ ((H (n + 2)).map (GenLoop.diskBoundaryMap p) (sphereClass n)) = 0 := by
     rw [hp, map_zsmul, LinearMap.mem_ker.1 hh, smul_zero]
   have hmem := (Submodule.span ℤ (Set.range fun r : Relation A n ψ ↦

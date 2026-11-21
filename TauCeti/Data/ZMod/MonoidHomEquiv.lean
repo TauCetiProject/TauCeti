@@ -72,7 +72,7 @@ noncomputable def zmodMonoidHomEquiv (G : Type*) [Group G] :
     (Multiplicative (ZMod N) →* G) ≃ {g : G // g ^ N = 1} where
   toFun φ := ⟨φ (.ofAdd 1), by
     rw [← map_pow, ← ofAdd_nsmul, nsmul_one, ZMod.natCast_self, ofAdd_zero, map_one]⟩
-  invFun g := (zmodLift g.1 g.2).toMultiplicativeLeft
+  invFun g := (zmodLift g.val g.property).toMultiplicativeLeft
   left_inv φ := by
     refine MonoidHom.ext fun z ↦ ?_
     obtain ⟨k, rfl⟩ : ∃ k : ℕ, z = .ofAdd (k : ZMod N) := ⟨z.toAdd.val, by simp⟩
@@ -93,13 +93,13 @@ theorem coe_zmodMonoidHomEquiv_apply {G : Type*} [Group G] (φ : Multiplicative 
 /-- The homomorphism associated to an element killed by `N` sends `1` to that element,
 including when `N = 1`. -/
 theorem zmodMonoidHomEquiv_symm_apply_ofAdd_one {G : Type*} [Group G]
-    (g : {g : G // g ^ N = 1}) : (zmodMonoidHomEquiv N G).symm g (.ofAdd 1) = g.1 := by
+    (g : {g : G // g ^ N = 1}) : (zmodMonoidHomEquiv N G).symm g (.ofAdd 1) = g.val := by
   rw [← coe_zmodMonoidHomEquiv_apply, Equiv.apply_symm_apply]
 
 /-- The homomorphism `ℤ/Nℤ →* G` of an element `g` killed by `N` sends `a` to `g ^ a.val`. -/
 @[simp]
 theorem zmodMonoidHomEquiv_symm_apply {G : Type*} [Group G] (g : {g : G // g ^ N = 1})
-    (a : ZMod N) : (zmodMonoidHomEquiv N G).symm g (.ofAdd a) = g.1 ^ a.val :=
+    (a : ZMod N) : (zmodMonoidHomEquiv N G).symm g (.ofAdd a) = g.val ^ a.val :=
   zmodLift_apply _ _ a
 
 variable (N) in
@@ -109,7 +109,8 @@ noncomputable def zmodProdMonoidHomEquiv (G : Type*) [CommGroup G] :
     (Multiplicative (ZMod N × ZMod N) →* G) ≃ {g : G // g ^ N = 1} × {g : G // g ^ N = 1} where
   toFun φ := (zmodMonoidHomEquiv N G (φ.comp (AddMonoidHom.inl _ _).toMultiplicative),
     zmodMonoidHomEquiv N G (φ.comp (AddMonoidHom.inr _ _).toMultiplicative))
-  invFun g := ((zmodLift g.1.1 g.1.2).coprod (zmodLift g.2.1 g.2.2)).toMultiplicativeLeft
+  invFun g := ((zmodLift g.1.val g.1.property).coprod
+      (zmodLift g.2.val g.2.property)).toMultiplicativeLeft
   left_inv φ := by
     refine MonoidHom.ext fun z ↦ ?_
     obtain ⟨a, b, rfl⟩ : ∃ a b : ℕ, z = .ofAdd ((a : ZMod N), (b : ZMod N)) :=
@@ -139,7 +140,7 @@ to `g ^ a.val * h ^ b.val`. -/
 @[simp]
 theorem zmodProdMonoidHomEquiv_symm_apply {G : Type*} [CommGroup G]
     (g : {g : G // g ^ N = 1} × {g : G // g ^ N = 1}) (a b : ZMod N) :
-    (zmodProdMonoidHomEquiv N G).symm g (.ofAdd (a, b)) = g.1.1 ^ a.val * g.2.1 ^ b.val := by
+    (zmodProdMonoidHomEquiv N G).symm g (.ofAdd (a, b)) = g.1.val ^ a.val * g.2.val ^ b.val := by
   simp [zmodProdMonoidHomEquiv, zmodLift_apply]
 
 /-- **Injectivity on `(ℤ/3ℤ)²`.** A homomorphism `ψ : (ℤ/3ℤ)² →* G` is injective exactly when

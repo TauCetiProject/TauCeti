@@ -306,7 +306,7 @@ theorem isWeylInvariant_of_forall_coeff_reflection {f : AddMonoidAlgebra ℤ M}
   | cons i l ih =>
     intro x
     rw [wordProd_cons, mul_smul, RootPairing.weylGroup.ofIdx_smul,
-      RootPairing.Equiv.reflection_smul, hf i i.2, ih]
+      RootPairing.Equiv.reflection_smul, hf i i.property, ih]
 
 end Reflections
 

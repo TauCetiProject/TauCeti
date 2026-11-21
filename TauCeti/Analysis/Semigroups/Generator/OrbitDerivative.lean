@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Semigroups.Generator.Invariance
+import Mathlib.Analysis.Calculus.Deriv.Shift
 import Mathlib.Analysis.Calculus.Deriv.Slope
 
 /-!
@@ -15,7 +16,9 @@ This file characterizes membership in the infinitesimal generator domain by righ
 differentiability of the orbit at zero. For a vector in the generator domain, it computes the
 right derivative at every nonnegative time in the equivalent forms `A (S t x)` and `S t (A x)`.
 It also proves that a generator-domain orbit has a derivative within the whole nonnegative
-half-line, hence a two-sided derivative at positive times.
+half-line, hence a two-sided derivative at positive times, and
+`StronglyContinuousSemigroup.hasDerivAt_realOperator_sub` reads such an orbit backwards from a
+fixed time `t`: at `s < t`, `u ↦ S (t - u) y` has derivative `-S (t - s) (A y)`.
 
 Finally, `StronglyContinuousSemigroup.slope_apply_realOperator_eq` rebases an orbit inside a
 slope by the semigroup law, and
@@ -252,6 +255,21 @@ orbit of its generator. In particular, the derivative at zero is a right derivat
       S.realOperator t (S.generator ⟨x, by rw [S.generator_domain]; exact x.property⟩) := by
   rw [(S.realOperator_hasDerivWithinAt_Ici x ht).derivWithin
     (uniqueDiffOn_Ici 0 t ht), S.realOperator_generator_map x]
+
+/-- **The backwards orbit of a domain point.** Reading the orbit of `y ∈ D(A)` backwards from a
+fixed time `t`, the derivative at `s < t` is the negative of the generator transported along the
+remaining time `t - s`. -/
+theorem hasDerivAt_realOperator_sub [CompleteSpace X] {S : StronglyContinuousSemigroup X}
+    {t s : ℝ} (hrpos : 0 < t - s) {y a : X} (hy : y ∈ S.generator.domain)
+    (hSa : S.generator ⟨y, hy⟩ = a) :
+    HasDerivAt (fun u : ℝ => S.realOperator (t - u) y) (-(S.realOperator (t - s) a)) s := by
+  have hyS : y ∈ S.domain := by rwa [S.generator_domain] at hy
+  have hpsi : HasDerivAt (fun u : ℝ => S.realOperator u y) (S.realOperator (t - s) a) (t - s) := by
+    have h := S.realOperator_hasDerivWithinAt_Ici ⟨y, hyS⟩ hrpos.le
+    rw [S.realOperator_generator_map ⟨y, hyS⟩] at h
+    simp only [hSa] at h
+    exact h.hasDerivAt (Ici_mem_nhds hrpos)
+  exact HasDerivAt.comp_const_sub t s hpsi
 
 end StronglyContinuousSemigroup
 
