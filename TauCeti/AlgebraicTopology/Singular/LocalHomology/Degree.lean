@@ -57,7 +57,10 @@ that are not surjective and is invariant under proper homotopies, that is homoto
   `TauCeti.HomologicalOrientation.degree_eq_iff` for nonempty `K`.
 * `TauCeti.HomologicalOrientation.degree_id`, `TauCeti.HomologicalOrientation.degree_neg_left`,
   `TauCeti.HomologicalOrientation.degree_neg_right`, `TauCeti.HomologicalOrientation.degree_comp`:
-  normalization, orientation reversal and multiplicativity. Local degrees are multiplicative
+  normalization, orientation reversal and multiplicativity. On a connected manifold the degree of
+  a self-map, and the local degree of a map from an open subset, do not depend on the orientation
+  (`TauCeti.HomologicalOrientation.degree_self_eq`,
+  `TauCeti.HomologicalOrientation.localDegree_comap_self_eq`). Local degrees are multiplicative
   as well, `localDegree (g ∘ f) z = deg f * localDegree g z`, as soon as `f` is proper onto a
   preconnected `N` and the fibre of `g` over `z` is compact
   (`TauCeti.HomologicalOrientation.localDegree_comp`).
@@ -331,6 +334,27 @@ theorem degree_neg_right (hF : finrank ℝ F = n) (f : C(M, N)) :
   · rw [degree_of_isEmpty, degree_of_isEmpty, neg_zero]
   · rw [degree_eq_localDegree_some _ _ hE f h, degree_eq_localDegree_some o o' hE f h,
       localDegree_neg_right o o' hE hF]
+
+/-- **The local degree on an open subset does not depend on the orientation.** On a connected
+manifold `M`, the local degree of a map `f : U → M` from an open subset, for an orientation of `M`
+restricted to `U` on the source and used on the target, is the same for every orientation of `M`:
+reversing it reverses both. -/
+theorem localDegree_comap_self_eq [ConnectedSpace M] (o₁ : HomologicalOrientation M E n) {U : Type}
+    [TopologicalSpace U] [T2Space U] [ChartedSpace E U] {j : U → M} (hj : IsOpenEmbedding j)
+    (f : C(U, M)) (y : M) :
+    (o₁.comap hj).localDegree o₁ hE f y = (o.comap hj).localDegree o hE f y := by
+  rcases eq_or_eq_neg hE o o₁ with rfl | rfl
+  · rfl
+  · rw [comap_neg, localDegree_neg_left _ _ _ hE, localDegree_neg_right _ _ _ hE, neg_neg]
+
+/-- **The degree of a self-map does not depend on the orientation.** On a connected manifold, the
+degree of a self-map for an orientation used on both sides is the same for every orientation:
+reversing it reverses both. -/
+theorem degree_self_eq [ConnectedSpace M] (o₁ : HomologicalOrientation M E n) (f : C(M, M)) :
+    o₁.degree o₁ hE f = o.degree o hE f := by
+  rcases eq_or_eq_neg hE o o₁ with rfl | rfl
+  · rfl
+  · rw [degree_neg_left _ _ _ hE, degree_neg_right _ _ _ hE, neg_neg]
 
 /-- **Local degrees multiply under composition**: for a proper map `f : M → N` with `N`
 preconnected and a map `g : N → P` whose fibre over `z` is compact, the local degree of `g ∘ f` at

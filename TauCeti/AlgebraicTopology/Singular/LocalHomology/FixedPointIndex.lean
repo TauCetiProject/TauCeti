@@ -137,11 +137,7 @@ theorem fixedPointIndex_eq_localDegree {n : ℕ} (o : HomologicalOrientation E E
     f.fixedPointIndex =
       (o.comap U.isOpenEmbedding').localDegree o hn f.displacement 0 := by
   subst hn
-  rcases HomologicalOrientation.eq_or_eq_neg rfl fixedPointOrientation o with rfl | rfl
-  · rfl
-  · rw [fixedPointIndex, HomologicalOrientation.comap_neg,
-      HomologicalOrientation.localDegree_neg_left _ _ _ rfl,
-      HomologicalOrientation.localDegree_neg_right _ _ _ rfl, neg_neg]
+  exact HomologicalOrientation.localDegree_comap_self_eq o rfl fixedPointOrientation _ _ _
 
 /-- **The local fixed-point index in an arbitrary orientation**: for every orientation `o` of `E`,
 the local fixed-point index of `f : U → E` at a fixed point `x` is the local index at `x` of the
