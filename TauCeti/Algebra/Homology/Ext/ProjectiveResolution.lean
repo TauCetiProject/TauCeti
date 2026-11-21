@@ -93,10 +93,12 @@ end Comparison
 
 universe w v u t
 
-variable {C : Type u} [Category.{v} C] [Abelian C] {k : Type t} [Ring k] [Linear k C]
-  [HasExt.{w} C] {X Y : C}
+variable {C : Type u} [Category.{v} C] [Abelian C]
 
-omit [Ring k] [Linear k C] in
+section SubsingletonHom
+
+variable [HasExt.{w} C] {X Y : C}
+
 /-- If the degree-`n` term of a projective resolution has no nonzero morphism to `Y`, then
 `Extⁿ(X,Y)` vanishes. No condition on the neighboring terms is needed. -/
 theorem subsingleton_ext_of_subsingleton_hom (R : ProjectiveResolution X) (n : ℕ)
@@ -107,16 +109,21 @@ theorem subsingleton_ext_of_subsingleton_hom (R : ProjectiveResolution X) (n : �
   obtain rfl : f = 0 := Subsingleton.elim _ _
   simp
 
-omit [HasExt.{w} C] in
+end SubsingletonHom
+
 /-- A projective resolution of `X` whose terms vanish from degree `n` on shows that `X` has
 projective dimension less than `n`. -/
-theorem hasProjectiveDimensionLT (R : ProjectiveResolution X) (n : ℕ)
+theorem hasProjectiveDimensionLT {X : C} (R : ProjectiveResolution X) (n : ℕ)
     (h : ∀ i, n ≤ i → Limits.IsZero (R.complex.X i)) : HasProjectiveDimensionLT X n := by
   let := HasExt.standard C
   refine HasProjectiveDimensionLT.mk fun i hi Y e ↦ ?_
   have : Subsingleton (R.complex.X i ⟶ Y) := ⟨fun f g ↦ (h i hi).eq_of_src f g⟩
   have := R.subsingleton_ext_of_subsingleton_hom (Y := Y) i
   exact Subsingleton.elim _ _
+
+section LinearEquiv
+
+variable {k : Type t} [Ring k] [Linear k C] [HasExt.{w} C] {X Y : C}
 
 /-- If the two differentials of a projective resolution `R` of `X` adjacent to degree `n + 1`
 become zero after applying `Hom(-, Y)`, then `Extⁿ⁺¹(X, Y)` is the degree `n + 1` term of that
@@ -149,5 +156,7 @@ theorem extLinearEquiv_apply (R : ProjectiveResolution X) (n : ℕ)
     (f : R.complex.X (n + 1) ⟶ Y) :
     extLinearEquiv (k := k) R n h₁ h₂ f = R.extMk f (n + 2) rfl (h₁ f) :=
   (rfl)
+
+end LinearEquiv
 
 end CategoryTheory.ProjectiveResolution

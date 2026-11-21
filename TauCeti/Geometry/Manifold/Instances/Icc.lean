@@ -18,13 +18,16 @@ import Mathlib.Geometry.Manifold.Algebra.Structures
 
 The reflection `t ↦ 1 - t` and the multiplication `(s, t) ↦ s t` are smooth for the
 manifold-with-boundary structure of the unit interval. The smooth transition function also gives
-smooth interval-valued maps. These support reversal, rescaling and stationary-time concatenation
-of smooth isotopies.
+smooth interval-valued maps, among them the collared transition
+`TauCeti.collaredSmoothTransitionUnit`, which is `0` up to time `1 / 4` and `1` from time `3 / 4`
+on. These support reversal, rescaling and stationary-time concatenation of smooth isotopies.
 
 The constructions reuse Mathlib’s interval immersion and `Real.smoothTransition`.
 The preferred interval charts also expose their actual affine coordinate formulas and the
 within-range derivatives of the inclusion composed with their inverses. The derivative of the
-inclusion is invertible at every point, including both endpoints.
+inclusion is invertible at every point, including both endpoints. At interior points the projection
+`ℝ → [a, b]` is differentiable and sends the unit vector of `ℝ` to that of the interval, and the
+map `(s, t) ↦ (γ s, t)` from the plane to `M × [a, b]` has the product derivative.
 
 Both preferred charts send their endpoints to `0` (`extChartAt_Icc_bot`, `extChartAt_Icc_top`).
 -/
@@ -66,6 +69,48 @@ theorem ContMDiff.smoothTransition (hf : ContMDiff I 𝓘(ℝ) n f) (hn : n ≤ 
   apply contMDiff_iff_comp_subtypeVal_Icc.mpr
   refine ⟨(Real.smoothTransition.continuous.comp hf.continuous).subtype_mk _, ?_⟩
   exact ((Real.smoothTransition.contDiff (n := ⊤)).contMDiff.of_le hn).comp hf
+
+namespace TauCeti
+
+/-- The time reparametrization `t ↦ Real.smoothTransition (2 * t - 1 / 2)`, as a map into the
+unit interval: a smooth transition from `0` to `1` which is constant on neighborhoods of both ends
+of the unit interval. -/
+noncomputable def collaredSmoothTransitionUnit (t : ℝ) : unitInterval :=
+  ⟨Real.smoothTransition (2 * t - 1 / 2), Real.smoothTransition.nonneg _,
+    Real.smoothTransition.le_one _⟩
+
+/-- The collared smooth transition at `t` is `Real.smoothTransition (2 * t - 1 / 2)`. -/
+@[simp]
+theorem coe_collaredSmoothTransitionUnit (t : ℝ) :
+    (collaredSmoothTransitionUnit t : ℝ) = Real.smoothTransition (2 * t - 1 / 2) :=
+  (rfl)
+
+/-- The collared smooth transition is `C^n` for every `n ≤ ∞`. -/
+theorem contMDiff_collaredSmoothTransitionUnit (hn : n ≤ ∞) :
+    ContMDiff 𝓘(ℝ) (𝓡∂ 1) n collaredSmoothTransitionUnit :=
+  ContMDiff.smoothTransition (((contDiff_const.mul contDiff_id).sub contDiff_const).contMDiff) hn
+
+/-- The collared smooth transition is smooth as a real-valued function. -/
+theorem contDiff_coe_collaredSmoothTransitionUnit {n : ℕ∞} :
+    ContDiff ℝ n fun t ↦ (collaredSmoothTransitionUnit t : ℝ) :=
+  Real.smoothTransition.contDiff.comp ((contDiff_const.mul contDiff_id).sub contDiff_const)
+
+/-- The collared smooth transition is continuous. -/
+@[continuity, fun_prop]
+theorem continuous_collaredSmoothTransitionUnit : Continuous collaredSmoothTransitionUnit :=
+  (Real.smoothTransition.continuous.comp (by fun_prop)).subtype_mk _
+
+/-- The collared smooth transition is `0` up to time `1 / 4`. -/
+theorem collaredSmoothTransitionUnit_eq_zero_of_le {t : ℝ} (ht : t ≤ 1 / 4) :
+    collaredSmoothTransitionUnit t = 0 :=
+  Subtype.ext (Real.smoothTransition.zero_of_nonpos (by linarith))
+
+/-- The collared smooth transition is `1` from time `3 / 4` on. -/
+theorem collaredSmoothTransitionUnit_eq_one_of_ge {t : ℝ} (ht : 3 / 4 ≤ t) :
+    collaredSmoothTransitionUnit t = 1 :=
+  Subtype.ext (Real.smoothTransition.one_of_one_le (by linarith))
+
+end TauCeti
 
 open Set Filter WithLp
 open scoped Topology
@@ -136,7 +181,7 @@ theorem mfderiv_subtypeVal_Icc (x : Icc a b) :
       (if (x : ℝ) < b then (1 : ℝ) else -1) •
         EuclideanSpace.proj (𝕜 := ℝ) (ι := Fin 1) 0 := by
   apply HasMFDerivAt.mfderiv
-  refine ⟨continuous_subtype_val.continuousAt, ?_⟩
+  refine ⟨continuous_subtypeVal.continuousAt, ?_⟩
   simp only [writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_coe,
     Function.id_comp]
   convert! hasFDerivWithinAt_subtypeVal_extChartAt_Icc_symm x (mem_extChartAt_target x) using 1
@@ -287,5 +332,29 @@ open Fact.Manifold in
 theorem extChartAt_Icc_top : extChartAt (𝓡∂ 1) (⊤ : Icc a b) ⊤ = 0 := by
   rw [extChartAt, Icc_chartedSpaceChartAt_of_top_le (by simp)]
   exact IccRightChart_extend_top
+
+/-- The projection of the real line onto `[a, b]` is differentiable at every interior point. -/
+theorem mdifferentiableAt_projIcc {t : ℝ} (ht : t ∈ Ioo a b) :
+    MDifferentiableAt 𝓘(ℝ) (𝓡∂ 1) (projIcc a b hab.out.le) t :=
+  ((contMDiffOn_projIcc (n := 1) t (Ioo_subset_Icc_self ht)).contMDiffAt
+    (Icc_mem_nhds ht.1 ht.2)).mdifferentiableAt one_ne_zero
+
+/-- At an interior point, the projection of the real line onto `[a, b]` sends the unit vector of
+`ℝ` to the unit vector `1` of the tangent space of the interval. -/
+theorem mfderiv_projIcc_one {t : ℝ} (ht : t ∈ Ioo a b) :
+    mfderiv 𝓘(ℝ) (𝓡∂ 1) (projIcc a b hab.out.le) t 1 = 1 := by
+  rw [← mfderivWithin_of_mem_nhds (Icc_mem_nhds ht.1 ht.2)]
+  exact mfderivWithin_projIcc_one (Ioo_subset_Icc_self ht)
+
+/-- At an interior time, the derivative of the map `(s, t) ↦ (γ s, t)` from the plane to the
+product `M × [a, b]` is the product of the derivatives of `γ` and of the projection of the real
+line onto the interval. -/
+theorem hasMFDerivAt_prodMk_projIcc {γ : ℝ → M} {s t : ℝ} (hγ : MDifferentiableAt 𝓘(ℝ) I γ s)
+    (ht : t ∈ Ioo a b) :
+    HasMFDerivAt 𝓘(ℝ, ℝ × ℝ) (I.prod (𝓡∂ 1)) (fun p ↦ (γ p.1, projIcc a b hab.out.le p.2))
+      (s, t) (((mfderiv 𝓘(ℝ) I γ s).comp (.fst ℝ ℝ ℝ)).prod
+        ((mfderiv 𝓘(ℝ) (𝓡∂ 1) (projIcc a b hab.out.le) t).comp (.snd ℝ ℝ ℝ))) := by
+  rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
+  exact hγ.hasMFDerivAt.prodMap (p := (s, t)) (mdifferentiableAt_projIcc ht).hasMFDerivAt
 
 end TauCeti

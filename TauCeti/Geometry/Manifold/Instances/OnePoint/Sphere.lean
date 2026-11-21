@@ -188,7 +188,7 @@ private theorem toSphere_symm_eq_invChart_symm {p : sphere (0 : E) 1} (hp : p �
   have split : (p : E) = t • (v : E) + (y : E) := by
     rw [← ((ℝ ∙ (v : E)).starProjection_add_starProjection_orthogonal p),
       Submodule.starProjection_unit_singleton ℝ hv p, Submodule.starProjection_apply]
-  have hvy : ⟪(v : E), y⟫_ℝ = 0 := Submodule.mem_orthogonal_singleton_iff_inner_right.mp y.2
+  have hvy : ⟪(v : E), y⟫_ℝ = 0 := Submodule.mem_orthogonal_singleton_iff_inner_right.mp y.property
   have pythag : t ^ 2 + ‖y‖ ^ 2 = 1 := by
     have hvy' : ⟪t • (v : E), (y : E)⟫_ℝ = 0 := by simp only [inner_smul_left, hvy, mul_zero]
     have h := norm_add_sq_eq_norm_sq_add_norm_sq_of_inner_eq_zero _ _ hvy'
@@ -251,7 +251,7 @@ private theorem contMDiff_coe_toSphere :
     simp [coe_toSphere_eq_invExpr v ι hy]
 
 private theorem contMDiff_toSphere : ContMDiff 𝓘(ℝ, ℂ) (𝓡 2) ω (toSphere v ι) :=
-  (contMDiff_coe_toSphere v ι).codRestrict_sphere fun x ↦ (toSphere v ι x).2
+  (contMDiff_coe_toSphere v ι).codRestrict_sphere fun x ↦ (toSphere v ι x).property
 
 private theorem contMDiff_toSphere_symm : ContMDiff (𝓡 2) 𝓘(ℝ, ℂ) ω (toSphere v ι).symm := by
   have hv : ‖(v : E)‖ = 1 := norm_eq_of_mem_sphere v
@@ -382,7 +382,8 @@ private theorem inner_mvfderiv_coe_toSphere (x : OnePoint ℂ) (a b : ℂ) :
     -- `affineExpr` is inverse stereographic projection from `v` read through `2 ι`.
     simp only [elim_some, chartAt_coe, affineChart_coe]
     exact (inner_fderiv_stereoInvFunAux_two_smul hv
-      ((ℝ ∙ (v : E))ᗮ.subtypeₗᵢ.comp ι.toLinearIsometry) (fun c ↦ (ι c).2) z a b).trans (h4 _)
+      ((ℝ ∙ (v : E))ᗮ.subtypeₗᵢ.comp ι.toLinearIsometry) (fun c ↦ (ι c).property) z a b).trans
+          (h4 _)
   | infty =>
     -- `invExpr` is inverse stereographic projection from `-v` read through `2 ι ∘ conj`.
     simp only [elim_infty, chartAt_infty, invChart_infty]
@@ -391,7 +392,7 @@ private theorem inner_mvfderiv_coe_toSphere (x : OnePoint ℂ) (a b : ℂ) :
       (fun c ↦ ?_) 0 a b).trans (h4 _)
     rw [Submodule.mem_orthogonal_singleton_iff_inner_right, inner_neg_left, neg_eq_zero,
       ← Submodule.mem_orthogonal_singleton_iff_inner_right]
-    exact (ι _).2
+    exact (ι _).property
 
 /-- **The round metric is `4π` times the Fubini–Study metric.** Along the diffeomorphism
 `σ = diffeomorphSphere v ι`, the round metric of the unit sphere pulls back to `4π` times the

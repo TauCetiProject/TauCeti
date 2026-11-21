@@ -112,6 +112,12 @@ theorem genus_dualGraph (i : ι) : (dualGraph g m).genus i = g i :=
 theorem marking_dualGraph (l : L) : (dualGraph g m).marking l = (m.point l).1 :=
   rfl
 
+/-- **The dual graph of a relabelled marking** is the dual graph with its markings relabelled. -/
+@[simp]
+theorem dualGraph_reindex {L' : Type*} (e : L' ↪ L) :
+    dualGraph g (m.reindex e) = (dualGraph g m).reindex e := by
+  simp only [dualGraph, DualGraph.reindex, Marking.point_reindex]
+
 /-- The endpoint `k` of an edge is the component of the flag point selected by `k`. -/
 private theorem fst_flagPoint_finTwoEquiv (f : Flag) (k : Fin 2) :
     (flagPoint d (f, finTwoEquiv k)).1 = (dualGraph g m).endpoint f k := by

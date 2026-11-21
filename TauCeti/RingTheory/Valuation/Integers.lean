@@ -29,6 +29,8 @@ valuations on Witt vectors, apply to a perfect field with its trivial valuation.
 
 * `Valuation.Integers.isDomain`: the ring of integers of a domain is a domain.
 * `Valuation.Integers.perfectRing`: the ring of integers of a perfect ring is perfect.
+* `Valuation.Integers.isNontrivial_of_ne_zero_of_not_isUnit`: if the ring of integers of a
+  valuation on a field contains a nonzero nonunit, the valuation is nontrivial.
 * `Valuation.integers_self_iff`: a ring is the ring of integers of a valuation on it iff the
   valuation is at most `1` everywhere.
 -/
@@ -59,6 +61,19 @@ theorem perfectRing (hv : v.Integers O) (p : ℕ) [PerfectRing R p] : PerfectRin
       exact hv.map_le_one x
   obtain ⟨z, rfl⟩ := hv.exists_of_le_one hyv
   exact ⟨z, hv.hom_inj (by simpa only [map_pow] using hy)⟩
+
+/-- **A ring of integers of a field with a nonzero nonunit witnesses a nontrivial valuation.**
+If `O` is a ring of integers for a valuation `v` on a field `F`, any nonzero nonunit `ϖ : O` maps
+to an element of `F` with `0 < v (algebraMap O F ϖ) < 1`. That `F` is a field is needed: by
+`Valuation.integers_self_iff`, any domain that is not a field is its own ring of integers for the
+trivial valuation. -/
+theorem isNontrivial_of_ne_zero_of_not_isUnit {F Γ₀ O : Type*} [Field F]
+    [LinearOrderedCommGroupWithZero Γ₀] {v : Valuation F Γ₀} [CommRing O] [Algebra O F]
+    (hv : v.Integers O) {ϖ : O} (hϖ0 : ϖ ≠ 0) (hϖu : ¬ IsUnit ϖ) : v.IsNontrivial where
+  exists_val_nontrivial := by
+    have hϖF : algebraMap O F ϖ ≠ 0 := (map_ne_zero_iff _ hv.hom_inj).mpr hϖ0
+    exact ⟨algebraMap O F ϖ, (Valuation.ne_zero_iff _).mpr hϖF,
+      fun h1 ↦ hϖu (hv.isUnit_of_one (isUnit_iff_ne_zero.mpr hϖF) h1)⟩
 
 end Valuation.Integers
 

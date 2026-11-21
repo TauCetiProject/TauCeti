@@ -93,6 +93,8 @@ positive genus. The factors `[xᵢ, yᵢ]`, `xᵢ²` and `zⱼ⁻¹ cⱼ zⱼ` a
 * `TauCeti.GroupAlgGeom.Quadratic.isQuadratic_map_iff`,
   `TauCeti.GroupAlgGeom.Quadratic.isStrictlyQuadratic_map_iff`: an injective map transporting
   occurrence counts along a bijection of the variables preserves (strictly) quadratic systems.
+* `TauCeti.GroupAlgGeom.Quadratic.IsQuadratic.image_map`: every change of coefficients
+  `G →* H`, injective or not, keeps a system quadratic.
 * `TauCeti.GroupAlgGeom.Quadratic.exists_isCyclicallyReduced_conj`,
   `TauCeti.GroupAlgGeom.Quadratic.IsStrictlyQuadratic.exists_isCyclicallyReduced_conj`: cyclic
   reduction relative to `G`, and of strictly quadratic words.
@@ -100,15 +102,17 @@ positive genus. The factors `[xᵢ, yᵢ]`, `xᵢ²` and `zⱼ⁻¹ cⱼ zⱼ` a
   `TauCeti.GroupAlgGeom.Quadratic.Standard.isStrictlyQuadratic`: standard equations are strictly
   quadratic, with every variable of `S.vars` occurring twice
   (`TauCeti.GroupAlgGeom.Quadratic.Standard.occurrences_toWord_of_mem_vars`).
-* `TauCeti.GroupAlgGeom.Quadratic.Standard.isCyclicallyReduced_reducedWord`,
-  `TauCeti.GroupAlgGeom.Quadratic.Standard.toWord_ne_conj_inl`: the reduced word of a standard
-  equation is cyclically reduced, and no standard word is conjugate in `G[X]` to a coefficient.
+* `TauCeti.GroupAlgGeom.Quadratic.Standard.isCyclicallyReduced_reducedWord`: the reduced word of
+  a standard equation is cyclically reduced.
 * `TauCeti.GroupAlgGeom.Quadratic.isStandard_oneCommutatorEquation`: `[x, y] = [a, b]` is a
   standard orientable quadratic equation of genus one.
 * `TauCeti.GroupAlgGeom.Quadratic.Standard.kappa_eq_ncard_vars`,
   `TauCeti.GroupAlgGeom.Quadratic.Standard.kappa_eq_ncard_vars_add_one`: `κ(S)` is the number of
   variables of `S`, plus one when the coefficient `d` occurs; it equals `2 - χ(S)`
-  (`TauCeti.GroupAlgGeom.Quadratic.Standard.eulerChar_eq_two_sub_kappa`).
+  (`TauCeti.GroupAlgGeom.Quadratic.Standard.eulerChar_eq_two_sub_kappa`). When every variable of
+  `X` occurs in `S`, this is the count `κ(S) = |X| + ε(S)` of [IFT], Definition 6
+  (`TauCeti.GroupAlgGeom.Quadratic.Standard.kappa_eq_card_of_vars_eq_univ`,
+  `TauCeti.GroupAlgGeom.Quadratic.Standard.kappa_eq_card_add_one_of_vars_eq_univ`).
 * `TauCeti.GroupAlgGeom.Quadratic.exists_standard_toWord_eq_commutator`: the commutator
   `x⁻¹ y⁻¹ x y` is a standard quadratic word.
 * `TauCeti.GroupAlgGeom.Quadratic.Standard.isCommutative_of_mem_V_genusTwo`: every solution of
@@ -434,6 +438,18 @@ theorem IsStrictlyQuadratic.isQuadratic {S : Finset (GX G X)} (h : IsStrictlyQua
 
 theorem IsQuadratic.mono {S T : Finset (GX G X)} (hT : IsQuadratic T) (h : S ⊆ T) :
     IsQuadratic S := fun x => (Finset.sum_le_sum_of_subset h).trans (hT x)
+
+/-- A change of coefficients `f : G →* H` keeps a system quadratic: it does not increase the
+number of occurrences of a variable in a word, and identifying words only lowers the counts. -/
+theorem IsQuadratic.image_map [DecidableEq (GX H X)] {S : Finset (GX G X)} (hS : IsQuadratic S)
+    (f : G →* H) : IsQuadratic (S.image (Monoid.Coprod.map f (FreeGroup.map id))) := fun x =>
+  calc ∑ w ∈ S.image (Monoid.Coprod.map f (FreeGroup.map id)), occurrences x w
+      ≤ ∑ w ∈ S, occurrences x (Monoid.Coprod.map f (FreeGroup.map id) w) :=
+        Finset.sum_image_le_of_nonneg fun _ _ => Nat.zero_le _
+    _ ≤ ∑ w ∈ S, occurrences x w := Finset.sum_le_sum fun w _ =>
+        occurrences_map_le _ x x (by simp [occurrences_inl]) (by simp [occurrences_inr_of_self])
+          (fun z hz => by simp [occurrences_inr_of_of_ne hz]) w
+    _ ≤ 2 := hS x
 
 section Map
 
@@ -852,6 +868,18 @@ theorem kappa_eq_ncard_vars (h : S.constant = 1) : S.kappa = S.vars.ncard := by
 theorem kappa_eq_ncard_vars_add_one (h : S.constant ≠ 1) : S.kappa = S.vars.ncard + 1 := by
   cases S <;> simp_all [-Set.Sum.elim_range, Set.ncard_range_of_injective, two_mul]
 
+/-- A standard quadratic equation without the coefficient `d` in which every variable of `X`
+occurs has `κ(S) = |X|`. -/
+theorem kappa_eq_card_of_vars_eq_univ (hX : S.vars = Set.univ) (h : S.constant = 1) :
+    S.kappa = Nat.card X := by
+  rw [kappa_eq_ncard_vars h, hX, Set.ncard_univ]
+
+/-- A standard quadratic equation with the coefficient `d` in which every variable of `X` occurs
+has `κ(S) = |X| + 1`. -/
+theorem kappa_eq_card_add_one_of_vars_eq_univ (hX : S.vars = Set.univ) (h : S.constant ≠ 1) :
+    S.kappa = Nat.card X + 1 := by
+  rw [kappa_eq_ncard_vars_add_one h, hX, Set.ncard_univ]
+
 /-- An orientable standard quadratic equation of genus `n` with `r` atoms has `n + r`
 variables. -/
 theorem ncard_vars_of_isOrientable (h : S.IsOrientable) :
@@ -1014,32 +1042,18 @@ private theorem prod_wordLetters (S : Standard G X) :
     simp [wordLetters, atomBlocks, toWord_def, Function.comp_def, hcomm, hsq, hconj, mul_assoc]
 
 private theorem isCyclicallyReduced_flatten_of_blocks {blocks : List (List (G ⊕ X × Bool))}
-    (hlen : ∀ l ∈ blocks, 2 ≤ l.length) (hred : ∀ l ∈ blocks, GX.IsReduced l)
+    (hne : ∀ l ∈ blocks, l ≠ []) (hred : ∀ l ∈ blocks, GX.IsReduced l)
     (hwrap : ∀ l₁ ∈ blocks, ∀ l₂ ∈ blocks,
       ∀ a ∈ l₁.getLast?, ∀ b ∈ l₂.head?, ¬GX.Combines a b) :
     GX.IsCyclicallyReduced blocks.flatten := by
-  rcases blocks with _ | ⟨l, rest_blocks⟩
-  · simp
-  have hne : ∀ m ∈ l :: rest_blocks, m ≠ [] := fun m hm h => by
-    have := hlen m hm; simp [h] at this
-  have hchain : (l :: rest_blocks).IsChain
-      fun l₁ l₂ => ∀ a ∈ l₁.getLast?, ∀ b ∈ l₂.head?, ¬GX.Combines a b :=
-    List.isChain_iff_getElem.2 fun _ _ => hwrap _ (List.getElem_mem _) _ (List.getElem_mem _)
-  have hr := GX.isReduced_flatten hne hred hchain
-  have hlen_f : 2 ≤ (l :: rest_blocks).flatten.length := by
-    have := hlen l List.mem_cons_self; simp; omega
-  rcases hf : (l :: rest_blocks).flatten with _ | ⟨a, _ | ⟨c, rest⟩⟩
-  · simp [hf] at hlen_f
-  · simp [hf] at hlen_f
-  refine GX.isCyclicallyReduced_cons_cons.2 ⟨hf ▸ hr, ?_⟩
-  have ha_eq : List.findSome? List.head? (l :: rest_blocks) = some a := by
-    rw [← List.head?_flatten, hf]; rfl
-  have hl_eq : List.findSome? List.getLast? (l :: rest_blocks).reverse =
-      some ((c :: rest).getLast (List.cons_ne_nil c rest)) := by
-    rw [← List.getLast?_flatten, hf]; simp [List.getLast?_eq_some_getLast (List.cons_ne_nil c rest)]
-  obtain ⟨l₂, hl₂, ha⟩ := List.exists_of_findSome?_eq_some ha_eq
-  obtain ⟨l₁, hl₁, hlast⟩ := List.exists_of_findSome?_eq_some hl_eq
-  exact hwrap l₁ (List.mem_reverse.1 hl₁) l₂ hl₂ _ hlast _ ha
+  refine GX.isCyclicallyReduced_iff.2 ⟨GX.isReduced_flatten hne hred ?_, fun a b m hm => ?_⟩
+  · exact List.isChain_iff_getElem.2 fun _ _ => hwrap _ (List.getElem_mem _) _ (List.getElem_mem _)
+  · obtain ⟨l₂, hl₂, ha⟩ := List.exists_of_findSome?_eq_some
+      (by rw [← List.head?_flatten, hm]; rfl : blocks.findSome? List.head? = some a)
+    obtain ⟨l₁, hl₁, hlast⟩ := List.exists_of_findSome?_eq_some
+      (by rw [← List.getLast?_flatten, hm, ← List.cons_append, List.getLast?_concat] :
+        blocks.reverse.findSome? List.getLast? = some b)
+    exact hwrap l₁ (List.mem_reverse.1 hl₁) l₂ hl₂ b hlast a ha
 
 private theorem isCyclicallyReduced_flatten_append_inl {blocks : List (List (G ⊕ X × Bool))}
     {d : G} (hne : ∀ l ∈ blocks, l ≠ []) (hred : ∀ l ∈ blocks, GX.IsReduced l)
@@ -1234,14 +1248,6 @@ theorem toWord_notMem_range_inl (S : Standard G X) :
 @[simp] theorem toWord_ne_one (S : Standard G X) : S.toWord ≠ 1 := by simpa using S.toWord_ne_inl 1
 
 @[simp] theorem one_ne_toWord (S : Standard G X) : 1 ≠ S.toWord := S.toWord_ne_one.symm
-
-/-- No standard quadratic word is conjugate in `G[X]` to a coefficient. -/
-theorem toWord_ne_conj_inl (S : Standard G X) (v : GX G X) (c : G) :
-    S.toWord ≠ v * inl c * v⁻¹ := by
-  intro h
-  refine S.toWord_notMem_range_inl (mem_range_inl_iff_forall_occurrences_eq_zero.2 fun x => ?_)
-  exact S.isCyclicallyReduced_reducedWord.countVar_eq_zero_of_eq_conj_inl
-    ((GX.prod_reducedWord S.toWord).trans h) x
 
 end IsQuadratic
 
