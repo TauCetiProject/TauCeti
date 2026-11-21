@@ -453,25 +453,16 @@ def pi (P : ∀ i, CompactFormPair 𝕜 (E i) (H i)) :
             (P i).inclusion.comp
               ((ContinuousLinearMap.proj (R := 𝕜) i).comp
                 (PiLp.continuousLinearEquiv 2 𝕜 E).toContinuousLinearMap)))) =
-        (PiLp.homeomorph 2 H).symm ∘ ((fun f : ∀ i, E i => fun i => (P i).inclusion (f i)) ∘
-          PiLp.homeomorph 2 E) := rfl
+        (PiLp.continuousLinearEquiv 2 𝕜 H).symm ∘ ((Pi.map fun i => ⇑(P i).inclusion) ∘
+          PiLp.continuousLinearEquiv 2 𝕜 E) := by
+      ext u i
+      simp
     rw [hcomp]
-    have hprod : DenseRange (fun (f : ∀ i, E i) (i : ι) => (P i).inclusion (f i)) := by
-      have hrange :
-          Set.range (fun (f : ∀ i, E i) (i : ι) => (P i).inclusion (f i)) =
-            Set.univ.pi fun i => Set.range (P i).inclusion := by
-        ext y
-        simp only [Set.mem_range, Set.mem_pi, Set.mem_univ, true_implies]
-        exact ⟨fun ⟨f, hf⟩ i => ⟨f i, congrFun hf i⟩,
-          fun h => ⟨fun i => (h i).choose, funext fun i => (h i).choose_spec⟩⟩
-      rw [DenseRange, hrange, dense_iff_closure_eq, closure_pi_set]
-      ext y
-      simp [fun i => (P i).dense.closure_eq]
-    have hcont : Continuous (fun (f : ∀ i, E i) (i : ι) => (P i).inclusion (f i)) :=
-      continuous_pi fun i => (P i).inclusion.continuous.comp (continuous_apply i)
-    exact (PiLp.homeomorph 2 H).symm.surjective.denseRange.comp
-      (hprod.comp (PiLp.homeomorph 2 E).surjective.denseRange hcont)
-      (PiLp.homeomorph 2 H).symm.continuous
+    exact (PiLp.continuousLinearEquiv 2 𝕜 H).symm.surjective.denseRange.comp
+      ((DenseRange.piMap fun i => (P i).dense).comp
+        (PiLp.continuousLinearEquiv 2 𝕜 E).surjective.denseRange
+        (Continuous.piMap fun i => (P i).inclusion.continuous))
+      (PiLp.continuousLinearEquiv 2 𝕜 H).symm.continuous
   compact := by
     classical
     let projCLM (i : ι) : PiLp 2 E →L[𝕜] E i :=
