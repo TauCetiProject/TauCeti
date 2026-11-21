@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.FreeProbability.Law.Basic
-public import TauCeti.Probability.Moments.WeakConvergence
+public import TauCeti.Probability.Moments.MethodOfMoments.CompactSupport
 
 /-!
 # Weak convergence of scalar laws

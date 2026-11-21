@@ -8,7 +8,7 @@ module
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 public import TauCeti.Probability.Distributions.MarchenkoPastur.Basic
 import TauCeti.Probability.Distributions.MarchenkoPastur.Moments
-import TauCeti.Probability.Moments.WeakConvergence
+import TauCeti.Probability.Moments.MethodOfMoments.CompactSupport
 
 /-!
 # Weak continuity of Marchenko–Pastur laws
