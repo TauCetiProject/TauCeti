@@ -41,8 +41,9 @@ every commutative ring: such a family is selected over `ℤ` by noetherianity an
   `A u = A v`.
 * `TauCeti.monomial_sub_monomial_mem_toricIdeal_iff`: over a nontrivial ring,
   `X^u - X^v` lies in the toric ideal exactly when `A u = A v`.
-* `TauCeti.rename_mem_toricIdeal_iff`: renaming the variables along `f` carries the toric ideal
-  of `a ∘ f` into that of `a`, and exactly it.
+* `TauCeti.rename_mem_toricIdeal_iff`: `p` lies in the toric ideal of `a ∘ f` exactly when
+  `rename f p` lies in the toric ideal of `a`; that is, the toric ideal of `a ∘ f` is the preimage
+  of the toric ideal of `a` under `rename f`.
 * `TauCeti.linearCombination_eq_of_toricIdeal_eq_span`: the members `X^u - X^v` of a binomial
   generating family of the toric ideal satisfy `A u = A v`.
 * `TauCeti.toricIdeal_iUnion_eq_span`: the toric ideal of `a` restricted to a directed union of
