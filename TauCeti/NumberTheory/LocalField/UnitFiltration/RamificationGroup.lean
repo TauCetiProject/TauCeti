@@ -12,7 +12,6 @@ public import TauCeti.NumberTheory.LocalField.Teichmuller
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Uniformizer
 public import TauCeti.RingTheory.LocalRing.RamificationGroup
-import TauCeti.GroupTheory.PGroup
 import TauCeti.NumberTheory.LocalField.UnitFiltration.ProP
 import TauCeti.NumberTheory.LocalField.UnitsDecomposition
 import TauCeti.RingTheory.Valuation.ValuativeRel.Action
@@ -643,25 +642,11 @@ inertia group `G_1` is a `p`-group. The filtration reaches `1`, and each positiv
 theorem isPGroup_ramificationGroup (p : ℕ) [CharP 𝓀[L] p] [FaithfulSMul G 𝒪[L]]
     [Finite (ramificationGroup G 𝒪[L] 0)] {i : ℤ} (hi : 0 < i) :
     IsPGroup p (ramificationGroup G 𝒪[L] i) := by
-  obtain ⟨N, hN⟩ := exists_forall_ramificationGroup_eq_bot G 𝒪[L]
-  obtain ⟨j, rfl⟩ : ∃ j : ℕ, i = ((j + 1 : ℕ) : ℤ) := ⟨(i - 1).toNat, by omega⟩
-  -- Descending induction on the distance `d` from the index `j + 1` to a vanishing index.
-  suffices ∀ d j : ℕ, N ≤ j + 1 + d → IsPGroup p (ramificationGroup G 𝒪[L] ((j + 1 : ℕ) : ℤ)) from
-    this N.toNat j (by omega)
-  intro d
-  induction d with
-  | zero =>
-    intro j hj
-    rw [hN _ (by omega)]
-    exact IsPGroup.of_bot
-  | succ d ih =>
-    intro j hj
-    have hsucc := ih (j + 1) (by omega)
-    push_cast at hsucc
-    -- `G_{j+1}` is an extension of the `p`-group `G_{j+1} / G_{j+2}` by the `p`-group `G_{j+2}`.
-    refine IsPGroup.of_subgroup_of_quotient ?_ (isPGroup_ramificationGroupGraded_natCast_succ G p j)
-    push_cast
-    exact hsucc.comap_subtype
+  have : Finite (ramificationGroup G 𝒪[L] i) :=
+    Finite.of_injective
+      (Subgroup.inclusion (ramificationGroup_antitone G 𝒪[L] (by omega : (0 : ℤ) ≤ i)))
+      (Subgroup.inclusion_injective _)
+  exact IsLocalRing.isPGroup_ramificationGroup G 𝒪[L] p hi
 
 /-! ### Wild inertia as the Sylow subgroup of inertia -/
 
