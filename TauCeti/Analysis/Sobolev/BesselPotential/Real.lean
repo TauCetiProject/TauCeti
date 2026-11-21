@@ -181,8 +181,7 @@ theorem contDiff_continuousRep {n : ℕ} (hs : finrank ℝ E + 2 * n < 2 * s)
   have hs' : (finrank ℝ E : ℝ) < 2 * s := by
     have : (0 : ℝ) ≤ 2 * n := by positivity
     linarith
-  obtain ⟨g, hg, hFg⟩ := exists_contDiff_ae_eq_of_mem_realSobolevFunctions hs
-    (continuousRep_mem_realSobolevFunctions hs' F)
-  rwa [(continuous_continuousRep hs' F).ae_eq_iff_eq volume hg.continuous |>.1 hFg]
+  exact contDiff_of_mem_realSobolevFunctions hs (continuousRep_mem_realSobolevFunctions hs' F)
+    (continuous_continuousRep hs' F)
 
 end BesselPotentialSpace

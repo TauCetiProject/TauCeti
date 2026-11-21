@@ -94,7 +94,7 @@ theorem contDiff_smulCoord :
     ContDiff ℝ ∞ fun p : H^{(k : ℝ) + 1}(ℂ) × H^{(k : ℝ) + 1}(ℂ) × (Fin 4 → H^{(k : ℝ)}(ℂ)) ↦
       smulCoord f m p.1 p.2.1 p.2.2 := by
   refine ContDiff.restrict_scalars ℝ (𝕜' := ℂ) ?_
-  have hk := finrank_real_complex_lt_two_mul (s := (k : ℝ)) (by exact_mod_cast (Fact.out : 1 < k))
+  have hk := finrank_lt (k := k)
   refine contDiff_pi.2 fun j ↦ ?_
   fin_cases j
   · simp only [Fin.zero_eta, smulCoord_zero hk]; fun_prop
@@ -133,8 +133,7 @@ defined on complexified phases; for a real phase and a field `x` it computes the
 def gaugeDirectionCoord (y : Fin 4 → H^{(k : ℝ)}(ℂ)) :
     H^{(k : ℝ) + 1}(ℂ) →L[ℂ] Fin 4 → H^{(k : ℝ)}(ℂ) :=
   let ι : H^{(k : ℝ) + 1}(ℂ) →L[ℂ] H^{(k : ℝ)}(ℂ) := inclusion (lt_add_one _).le
-  let M := mulCLM (finrank_real_complex_lt_two_mul (s := (k : ℝ))
-    (by exact_mod_cast (Fact.out : 1 < k)))
+  let M := mulCLM (finrank_lt (k := k))
   let D (v : ℂ) : H^{(k : ℝ) + 1}(ℂ) →L[ℂ] H^{(k : ℝ)}(ℂ) :=
     lineDerivCLM ENNReal.one_lt_two ENNReal.ofNat_ne_top v
   ContinuousLinearMap.pi ![-D 1, -D I, -((M.flip (y 3) + referenceMulCLM f m k 3) ∘L ι),
@@ -191,7 +190,7 @@ private theorem hasFDerivAt_smulCoord_comp {E : Type*} [NormedAddCommGroup E] [N
     (hR₀ : R e = 0) (hJ₀ : J e = 0) (y : Fin 4 → H^{(k : ℝ)}(ℂ)) :
     HasFDerivAt (fun F ↦ smulCoord f m (R F) (J F) y)
       ((gaugeDirectionCoord f m y).restrictScalars ℝ ∘L J') e := by
-  have hk := finrank_real_complex_lt_two_mul (s := (k : ℝ)) (by exact_mod_cast (Fact.out : 1 < k))
+  have hk := finrank_lt (k := k)
   set ι : H^{(k : ℝ) + 1}(ℂ) →L[ℂ] H^{(k : ℝ)}(ℂ) := inclusion (lt_add_one _).le
   set B := (mulCLM hk).bilinearRestrictScalars ℝ
   have hιR : HasFDerivAt (fun F ↦ ι (R F)) (ι.restrictScalars ℝ ∘L 0) e :=
@@ -268,7 +267,7 @@ theorem coeFn_inclusionLp_gaugeDirectionCoord_ae_eq (x : SobolevFieldSpace f m k
     {h : (0 : ℝ) ≤ k + 1} (G : realSubmodule ℂ h) (j : Fin 4) :
     ⇑(inclusionLp k.cast_nonneg (gaugeDirectionCoord f m (subRef x) G j)) =ᵐ[volume]
       fun z ↦ ((gaugeDirection x (continuousRep G) z j : ℝ) : ℂ) := by
-  have hk := finrank_real_complex_lt_two_mul (s := (k : ℝ)) (by exact_mod_cast (Fact.out : 1 < k))
+  have hk := finrank_lt (k := k)
   have hs' : (finrank ℝ ℂ : ℝ) < 2 * ((k : ℝ) + 1) := by
     have : (0 : ℝ) ≤ 2 := by norm_num
     linarith
