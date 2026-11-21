@@ -605,7 +605,7 @@ theorem hasFTaylorSeriesUpTo_mixedDerivL (f : ParabolicCkHolderSpace k α E F ha
     (continuous_id.prodMk continuous_const))
 
 /-- The spatial derivatives of `D_t^r u` are the fields `D_t^r D_x^m u`. -/
-private theorem iteratedFDeriv_mixedDerivL_zero (f : ParabolicCkHolderSpace k α E F hab)
+theorem iteratedFDeriv_mixedDerivL_zero (f : ParabolicCkHolderSpace k α E F hab)
     {r m : ℕ} (h : 2 * r + m ≤ k) (x : E) (t : Icc a b) :
     iteratedFDeriv ℝ m (fun y ↦ (mixedDerivL r 0 f (slabMk y t)).curry0) x =
       mixedDerivL r m f (slabMk x t) :=
@@ -967,6 +967,11 @@ theorem norm_valueL_le_one :
 theorem norm_spatialFDerivBCF_le (f : ParabolicCkHolderSpace k α E F hab) :
     ‖spatialFDerivBCF f‖ ≤ ‖f‖ :=
   (norm_spatialFDerivBCF f).trans_le (f.norm_mixedDerivL_le 0 1)
+
+/-- Each value of each field is bounded by the norm. -/
+theorem norm_mixedDerivL_apply_le (f : ParabolicCkHolderSpace k α E F hab) (r m : ℕ)
+    (p : slab (E := E) a b) : ‖mixedDerivL r m f p‖ ≤ ‖f‖ :=
+  ((mixedDerivL r m f).norm_coe_le_norm p).trans (f.norm_mixedDerivL_le r m)
 
 /-- Each family of time slices is bounded by the norm. -/
 theorem norm_timeSliceL_le (f : ParabolicCkHolderSpace k α E F hab) (r m : ℕ) :
