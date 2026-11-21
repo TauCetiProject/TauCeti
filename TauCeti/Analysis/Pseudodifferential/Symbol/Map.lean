@@ -23,8 +23,10 @@ the same property (`TauCeti.Symbol.IsUniform.map`, `TauCeti.Symbol.HasCompactSpa
 as does the image of a smoothing symbol (`TauCeti.Symbol.IsSmoothing.map`).
 
 The product `ψ(x) a(x, ξ)` of a symbol with a smooth function of the position
-(`TauCeti.Symbol.smulLeft`) is a symbol of the same order, with compact spatial support when `a`
-or `ψ` has compact support (`TauCeti.Symbol.HasCompactSpatialSupport.smulLeft`,
+(`TauCeti.Symbol.smulLeft`, with coefficient `TauCeti.Symbol.coefficient_smulLeft`, and
+`TauCeti.Symbol.coefficient_smulLeft_ofReal` for a real `ψ`) is a symbol of the same order, with
+compact spatial support when `a` or `ψ` has compact support
+(`TauCeti.Symbol.HasCompactSpatialSupport.smulLeft`,
 `TauCeti.Symbol.hasCompactSpatialSupport_smulLeft`).
 -/
 
@@ -156,6 +158,14 @@ theorem coefficient_smulLeft {ψ : CoordinateSpace n → ℂ} (hψ : ContDiff �
     (a : Symbol n V W m) (p : CoordinateSpace n × CoordinateSpace n) :
     (smulLeft hψ a).coefficient p = ψ p.1 • a.coefficient p := by
   simp [smulLeft, coefficient_inclusion, ContinuousLinearMap.smul_comp]
+
+/-- `TauCeti.Symbol.coefficient_smulLeft` for a real smooth function `ψ`, viewed in `ℂ`: the
+coefficient of `ψ(x) a(x, ξ)` is the real multiple `ψ(x) • a(x, ξ)`. -/
+theorem coefficient_smulLeft_ofReal {ψ : CoordinateSpace n → ℝ}
+    (hψ : ContDiff ℝ ∞ (Complex.ofRealCLM ∘ ψ)) (a : Symbol n V W m)
+    (p : CoordinateSpace n × CoordinateSpace n) :
+    (smulLeft hψ a).coefficient p = ψ p.1 • a.coefficient p := by
+  simp [Complex.coe_smul]
 
 /-- Multiplying a symbol with compact spatial support by a smooth function of the position keeps
 compact spatial support. -/
