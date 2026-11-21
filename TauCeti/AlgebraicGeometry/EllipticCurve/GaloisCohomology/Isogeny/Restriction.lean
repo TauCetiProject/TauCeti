@@ -40,7 +40,9 @@ the image of a local Kummer map of `φ` serve as the local condition of the `φ`
   `K` on the points over the separable closures commutes with restriction along `τ`.
 * `TauCeti.Isogeny.pointRes_kerCoeffIncl`: restriction commutes with
   `H¹(G, E₁[φ]) → H¹(G, E₁)`.
-* `TauCeti.Isogeny.kerH1Congr_kerRes`: compatibility of restriction with kernel congruence.
+* `TauCeti.Isogeny.kerH1Congr_kerRes` and
+  `TauCeti.Isogeny.kerH1Congr_kerRes_eq_explicitMap1`: compatibility of restriction with kernel
+  congruence.
 * `TauCeti.Isogeny.kerRes_kummerMap`: restriction commutes with the Kummer maps of `φ`.
 
 ## References
@@ -169,5 +171,35 @@ theorem kerH1Congr_kerRes {φ ψ : Isogeny W₁.toAffine W₂.toAffine}
     (Hom.ofIsogeny_map φ (algebraMap K L)).trans
       (h.trans (Hom.ofIsogeny_map ψ (algebraMap K L)).symm)
   simp
+
+/-- Transporting a restricted kernel class across an equality from `ofIsogeny (φ.baseChange L)` to
+any target morphism `f` is pullback along the composite compatible pair. -/
+theorem kerH1Congr_kerRes_eq_explicitMap1 (φ : Isogeny W₁.toAffine W₂.toAffine)
+    {f : Hom (W₁⁄L).toAffine (W₂⁄L).toAffine} (h : ofIsogeny (φ.baseChange L) = f)
+    (c : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff) :
+    kerH1Congr h (φ.kerRes τ c) =
+      explicitMap1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff
+        (AbsoluteGaloisGroup L) f.KerCoeff
+        (absoluteGaloisGroupMap τ)
+        ((Hom.kerCoeffCongrHom h : _ →+ _).comp (φ.kerCoeffBaseChange τ))
+        continuous_of_discreteTopology
+        (fun g P ↦ by
+          simp only [AddMonoidHom.comp_apply, AddMonoidHom.coe_ofClass,
+            φ.kerCoeffBaseChange_smul, map_smul])
+        c := by
+  have hcomp := explicitMap1_comp (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff
+    (AbsoluteGaloisGroup L) (ofIsogeny (φ.baseChange L)).KerCoeff
+    (absoluteGaloisGroupMap τ) (φ.kerCoeffBaseChange τ) continuous_of_discreteTopology
+    (φ.kerCoeffBaseChange_smul τ)
+    (AbsoluteGaloisGroup L) f.KerCoeff
+    (ContinuousMonoidHom.id _)
+    (Hom.kerCoeffCongrHom h : _ →+ _)
+    continuous_of_discreteTopology
+    (fun g x ↦ by simp only [AddMonoidHom.coe_ofClass, ContinuousMonoidHom.coe_id, id_eq, map_smul])
+  rw [Hom.kerH1Congr_apply, explicitCoeff1_eq_explicitMap1, kerRes_eq_explicitMap1]
+  exact DFunLike.congr_fun (hcomp.symm.trans (explicitMap1_congr_of_eq
+    (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff
+    (AbsoluteGaloisGroup L) f.KerCoeff
+    _ _ _ _ (by ext; simp) rfl)) c
 
 end TauCeti.Isogeny

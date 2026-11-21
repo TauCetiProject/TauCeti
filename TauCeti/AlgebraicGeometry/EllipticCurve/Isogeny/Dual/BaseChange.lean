@@ -17,6 +17,8 @@ map is sent to zero on both sides.
 
 ## Main results
 
+* `TauCeti.Isogeny.ofIsogeny_dual_map` and `TauCeti.Isogeny.ofIsogeny_dual_baseChange`: the dual
+  commutes with base change on `Hom` carriers.
 * `TauCeti.Isogeny.Hom.dual_map`: the dual of a morphism commutes with base change.
 
 ## References
@@ -26,16 +28,37 @@ map is sent to zero on both sides.
 
 public section
 
-namespace TauCeti.Isogeny.Hom
+namespace TauCeti.Isogeny
+
+open WeierstrassCurve
 
 variable {F K : Type*} [Field F] [Field K] {W₁ W₂ : WeierstrassCurve.Affine F} [W₁.IsElliptic]
-  [W₂.IsElliptic]
+  [W₂.IsElliptic] (φ : Isogeny W₁ W₂)
+
+/-- Base change commutes with the dual isogeny on `Hom` carriers. -/
+theorem ofIsogeny_dual_map (f : F →+* K) :
+    Hom.ofIsogeny (φ.dual.map f) = Hom.ofIsogeny (φ.map f).dual :=
+  congrArg Hom.ofIsogeny (φ.dual_map f)
+
+/-- Base change along `algebraMap F L` commutes with the dual isogeny on `Hom` carriers.
+Stated separately from `ofIsogeny_dual_map` so that the implicit curve parameters match
+`(W₂⁄L).toAffine` and `(W₁⁄L).toAffine` at reducible transparency. -/
+theorem ofIsogeny_dual_baseChange {W₁ W₂ : WeierstrassCurve F} [W₁.IsElliptic] [W₂.IsElliptic]
+    (φ : Isogeny W₁.toAffine W₂.toAffine) (L : Type*) [Field L] [Algebra F L] :
+    Hom.ofIsogeny (φ.dual.baseChange L) = Hom.ofIsogeny (φ.baseChange L).dual :=
+  congrArg Hom.ofIsogeny (φ.dual_map (algebraMap F L))
+
+namespace Hom
+
+variable {W₁ W₂ : WeierstrassCurve.Affine F} [W₁.IsElliptic] [W₂.IsElliptic]
 
 /-- **The dual commutes with base change** along any homomorphism of fields. -/
 @[simp]
 theorem dual_map (f : Hom W₁ W₂) (σ : F →+* K) : f.dual.map σ = (f.map σ).dual := by
   rcases eq_zero_or_exists_ofIsogeny f with rfl | ⟨φ, rfl⟩ <;> simp
 
-end TauCeti.Isogeny.Hom
+end Hom
+
+end TauCeti.Isogeny
 
 end

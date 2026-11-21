@@ -74,9 +74,7 @@ form in which it is additive and the degree is a quadratic form.
 * `TauCeti.Isogeny.dual_comp_dual`: `(ψ ∘ φ)^ = φ̂ ∘ ψ̂`.
 * `TauCeti.Isogeny.dual_dual`: `φ̂̂ = φ`.
 * `TauCeti.Isogeny.dual_mulByIntIsogeny`: `[n]` is self-dual.
-* `TauCeti.Isogeny.dual_map`, `TauCeti.Isogeny.ofIsogeny_dual_map`, and
-  `TauCeti.Isogeny.ofIsogeny_dual_baseChange`: the dual of the base change is the base change of
-  the dual (also on `Hom` carriers).
+* `TauCeti.Isogeny.dual_map`: the dual of the base change is the base change of the dual.
 * `TauCeti.Isogeny.Hom.dual_comp_self`, `TauCeti.Isogeny.Hom.dual_dual` and
   `TauCeti.Isogeny.Hom.dual_comp`: the same identities for the dual of a morphism.
 * `TauCeti.Isogeny.Hom.dual_pointMapHom_comp_pointMapHom`: `f̂ ∘ f` acts on points as
@@ -224,19 +222,6 @@ of `φ̂` is the dual of the base change of `φ`. -/
 theorem dual_map (f : F →+* K) : φ.dual.map f = (φ.map f).dual :=
   (eq_dual_iff_comp_eq _).mpr <| by
     rw [← comp_map, dual_comp, mulByIntIsogeny_map, mulByIntIsogeny_inj, degree_map]
-
-/-- Base change commutes with the dual isogeny on `Hom` carriers. -/
-theorem ofIsogeny_dual_map (f : F →+* K) :
-    Hom.ofIsogeny (φ.dual.map f) = Hom.ofIsogeny (φ.map f).dual :=
-  congrArg Hom.ofIsogeny (φ.dual_map f)
-
-/-- Base change along `algebraMap F L` commutes with the dual isogeny on `Hom` carriers.
-Stated separately from `ofIsogeny_dual_map` so that the implicit curve parameters match
-`(W₂⁄L).toAffine` and `(W₁⁄L).toAffine` at reducible transparency. -/
-theorem ofIsogeny_dual_baseChange {W₁ W₂ : WeierstrassCurve F} [W₁.IsElliptic] [W₂.IsElliptic]
-    (φ : Isogeny W₁.toAffine W₂.toAffine) (L : Type*) [Field L] [Algebra F L] :
-    Hom.ofIsogeny (φ.dual.baseChange L) = Hom.ofIsogeny (φ.baseChange L).dual :=
-  congrArg Hom.ofIsogeny (φ.dual_map (algebraMap F L))
 
 /-! ### The dual of a morphism -/
 

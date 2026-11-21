@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Brauer
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Kummer
+public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.KummerComparison
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.Duality.FiniteModule
 
 /-!
@@ -167,6 +168,21 @@ theorem localTateKerWeilPairing_bijective :
   intro a b
   simp only [localTateKerWeilPairing_apply, kerH1WeilPairing_eq_dualityMap1,
     AddMonoidHom.id_apply, AddEquiv.coe_toAddMonoidHom, AddEquiv.trans_apply]
+
+/-- Local pairing of the two isogeny Kummer images reduces to local pairing of
+multiplication-by-degree Kummer images. -/
+theorem localTateKerWeilPairing_kummerMap [DecidableEq K]
+    (Q : W₂.toAffine.Point) (P : W₁.toAffine.Point) :
+    letI := (φ.isSeparable_dual_and_self_iff.mpr hn.ne_zero).2
+    letI := (φ.isSeparable_dual_and_self_iff.mpr hn.ne_zero).1
+    φ.localTateKerWeilPairing hn (φ.kummerMap Q) (φ.dual.kummerMap P) =
+      W₁.localTateWeilPairing φ.degree hn
+        (W₁.kummerMap φ.degree hn ((ofIsogeny φ.dual).pointMap Q))
+        (W₁.kummerMap φ.degree hn P) := by
+  have := (φ.isSeparable_dual_and_self_iff.mpr hn.ne_zero).2
+  have := (φ.isSeparable_dual_and_self_iff.mpr hn.ne_zero).1
+  simp only [localTateKerWeilPairing_apply, localTateWeilPairing_apply,
+    kerH1WeilPairing_kummerMap]
 
 end TauCeti.Isogeny
 
