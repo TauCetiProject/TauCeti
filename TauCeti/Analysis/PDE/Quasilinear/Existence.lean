@@ -55,7 +55,9 @@ bound, the continuity of `T` and the compactness of its range are public
 * `T` is continuous. If `vₖ → v` in `L²(Ω)`, every subsequence has a further subsequence along
   which `vₖ → v` almost everywhere, so `A(x, vₖ(x)) → A(x, v(x))` almost everywhere. The frozen
   coefficients are bounded by `Λ` uniformly, so the solutions converge in `H¹(Ω)` by dominated
-  convergence (`TauCeti.PDE.tendsto_of_forall_energyFormH1_eq_of_tendsto_ae`).
+  convergence (`TauCeti.PDE.tendsto_of_forall_energyFormH1_eq_of_tendsto_ae`). More generally,
+  the frozen solution depends continuously on the coefficient, the boundary values and the
+  forcing together (`TauCeti.PDE.tendsto_frozenSolution`).
 * `T` has relatively compact range. Its values lie in the translate by the value of `g` of the
   image of the ball of radius `K + 1` of `H¹₀(Ω)` under the value map, which is relatively compact
   by the Rellich–Kondrachov theorem (`TauCeti.W1p0.isCompactOperator_valueL`); no boundary
@@ -224,6 +226,19 @@ theorem eq_frozenSolution_of_sub_mem_w1p0Submodule_of_forall_energyFormH1_eq
   (existsUnique_frozen hA hAm hAc hΩ g ℓ hv).unique ⟨hug, hu⟩
     (frozenSolution_spec hA hAm hAc hΩ g ℓ hv)
 
+/-- The energy form of a frozen coefficient has norm at most `Λ` as a bilinear form on `H¹(Ω)`. -/
+private theorem norm_energyFormH1L_comp_le
+    (hA : ∀ s, UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))
+      (fun x => A x s) lam Lam)
+    (hAm : ∀ s, AEStronglyMeasurable (fun x => A x s) (volume.restrict Omega))
+    (hAc : ∀ᵐ x ∂volume.restrict Omega, Continuous (A x))
+    {v : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} (hv : AEStronglyMeasurable v (volume.restrict Omega)) :
+    ‖energyFormH1L (memLp_energyIntegrand_comp hA hAm hAc hv)‖ ≤ Lam := by
+  simpa using norm_energyFormH1L_le_of_bounds (memLp_energyIntegrand_comp hA hAm hAc hv)
+    (hA 0).upper_nonneg ((ae_restrict_mem Omega.isOpen.measurableSet).mono fun x hx η ξ =>
+      (UniformlyEllipticOn.apply_of_forall hA v).upper_bound hx η ξ)
+    le_rfl le_rfl (beta := 0) (gamma := 0) (by simp) (by simp)
+
 /-- The energy bound for the linear problem with a frozen coefficient: if `u - g ∈ H¹₀(Ω)` and
 `-div (A(x, v) ∇u) = ℓ` weakly, then `‖u - g‖ ≤ 2 ((2R)² + 1) (‖ℓ‖ + Λ ‖g‖) / λ`, whatever `v`. -/
 private theorem norm_sub_le_of_forall_energyFormH1_comp_eq
@@ -241,13 +256,10 @@ private theorem norm_sub_le_of_forall_energyFormH1_comp_eq
   have hcoeff := memLp_energyIntegrand_comp hA hAm hAc hv
   have h := norm_sub_le_of_sub_mem_w1p0Submodule_of_forall_energyFormH1_eq hcoeff
     (by positivity) (mul_norm_sq_le_energyFormH1_comp hA hAm hAc hball hv) hug hu
-  have hnorm : ‖energyFormH1L hcoeff‖ ≤ Lam := by
-    simpa using norm_energyFormH1L_le_of_bounds hcoeff (hA 0).upper_nonneg
-      ((ae_restrict_mem Omega.isOpen.measurableSet).mono fun x hx η ξ =>
-        (UniformlyEllipticOn.apply_of_forall hA v).upper_bound hx η ξ)
-      le_rfl le_rfl (beta := 0) (gamma := 0) (by simp) (by simp)
   calc ‖u - g‖ ≤ (‖ℓ‖ + ‖energyFormH1L hcoeff‖ * ‖g‖) / (lam / (2 * ((2 * R) ^ 2 + 1))) := h
-    _ ≤ (‖ℓ‖ + Lam * ‖g‖) / (lam / (2 * ((2 * R) ^ 2 + 1))) := by gcongr
+    _ ≤ (‖ℓ‖ + Lam * ‖g‖) / (lam / (2 * ((2 * R) ^ 2 + 1))) := by
+      gcongr
+      exact norm_energyFormH1L_comp_le hA hAm hAc hv
     _ = 2 * ((2 * R) ^ 2 + 1) * (‖ℓ‖ + Lam * ‖g‖) / lam := by field_simp
 
 /-- The bound `‖S v - g‖ ≤ 2 ((2R)² + 1) (‖ℓ‖ + Λ ‖g‖) / λ` on the frozen solutions, uniform in
@@ -264,16 +276,108 @@ theorem norm_frozenSolution_sub_le
   have hspec := frozenSolution_spec hA hAm hAc (isBounded_ball.subset hball) g ℓ hv
   norm_sub_le_of_forall_energyFormH1_comp_eq hA hAm hAc hball hv hspec.1 hspec.2
 
-/-- Two frozen coefficients differ by at most `2Λ` as bilinear forms. -/
-private theorem abs_dotProduct_sub_mulVec_le
+/-- For one frozen coefficient the solution depends Lipschitz continuously on the data: with
+`C = λ / (2 ((2R)² + 1))`, `‖S' - S‖ ≤ ‖g' - g‖ + (‖ℓ' - ℓ‖ + Λ ‖g' - g‖) / C` for the frozen
+solutions `S'` and `S` with data `(g', ℓ')` and `(g, ℓ)`. -/
+private theorem norm_frozenSolution_sub_frozenSolution_le
     (hA : ∀ s, UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))
       (fun x => A x s) lam Lam)
-    {x : EuclideanSpace ℝ (Fin (n + 1))} (hx : x ∈ (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))))
-    (s t : ℝ) (η ξ : EuclideanSpace ℝ (Fin (n + 1))) :
-    |η ⬝ᵥ ((A x s - A x t) *ᵥ ξ)| ≤ 2 * Lam * ‖η‖ * ‖ξ‖ := by
-  rw [Matrix.sub_mulVec, dotProduct_sub]
-  linarith [abs_sub (η ⬝ᵥ (A x s *ᵥ ξ)) (η ⬝ᵥ (A x t *ᵥ ξ)), (hA s).upper_bound hx η ξ,
-    (hA t).upper_bound hx η ξ]
+    (hAm : ∀ s, AEStronglyMeasurable (fun x => A x s) (volume.restrict Omega))
+    (hAc : ∀ᵐ x ∂volume.restrict Omega, Continuous (A x))
+    (hball : (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))) ⊆ ball z R)
+    (g g' : W1p volume Omega 2) (ℓ ℓ' : StrongDual ℝ (W1p0 volume Omega 2))
+    {v : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} (hv : AEStronglyMeasurable v (volume.restrict Omega)) :
+    ‖frozenSolution A g' ℓ' v - frozenSolution A g ℓ v‖ ≤
+      ‖g' - g‖ + (‖ℓ' - ℓ‖ + Lam * ‖g' - g‖) / (lam / (2 * ((2 * R) ^ 2 + 1))) := by
+  have hΩ := isBounded_ball.subset hball
+  have hspec := frozenSolution_spec hA hAm hAc hΩ g ℓ hv
+  have hspec' := frozenSolution_spec hA hAm hAc hΩ g' ℓ' hv
+  have hcoeff := memLp_energyIntegrand_comp hA hAm hAc hv
+  -- The functional `B(g' - g, ·)` has norm at most `Λ ‖g' - g‖`.
+  have hN (w : W1p0 volume Omega 2) :
+      |energyFormH1 (fun x => A x (v x)) 0 0 (g' - g) (w : W1p volume Omega 2)| ≤
+        Lam * ‖g' - g‖ * ‖w‖ := by
+    rw [← Submodule.norm_coe w]
+    refine (abs_energyFormH1_le_norm_energyFormH1L_mul hcoeff _ _).trans ?_
+    gcongr
+    exact norm_energyFormH1L_comp_le hA hAm hAc hv
+  have hmem : frozenSolution A g' ℓ' v - frozenSolution A g ℓ v - (g' - g) ∈
+      w1p0Submodule volume Omega 2 := by
+    rw [← sub_sub_sub_comm, ← ClosedSubmodule.mem_toSubmodule_iff]
+    exact sub_mem ((ClosedSubmodule.mem_toSubmodule_iff _ _).2 hspec'.1)
+      ((ClosedSubmodule.mem_toSubmodule_iff _ _).2 hspec.1)
+  simpa only [add_zero] using norm_sub_le_of_sub_sub_mem_w1p0Submodule_of_forall_energyFormH1_eq
+    (b := 0) (c := 0) (a' := fun x => A x (v x)) (b' := 0) (c' := 0) (ℓ := ℓ') (ℓ' := ℓ)
+    (u := frozenSolution A g' ℓ' v) (u' := frozenSolution A g ℓ v) (h := g' - g)
+    (N := Lam * ‖g' - g‖) (D := 0) hcoeff (by have := (hA 0).pos; positivity)
+    (mul_norm_sq_le_energyFormH1_comp hA hAm hAc hball hv)
+    (mul_nonneg (hA 0).upper_nonneg (norm_nonneg _)) hN le_rfl
+    (fun w => by rw [sub_self, abs_zero, zero_mul]) hmem hspec'.2 hspec.2
+
+/-- **Continuity of the frozen solution in the coefficient, the data and the frozen function.**
+Let `Ω ⊆ ℝⁿ⁺¹` be bounded and let `Aᵢ` and `A` be Carathéodory coefficients satisfying the
+hypotheses of `TauCeti.PDE.exists_sub_mem_w1p0Submodule_forall_energyFormH1_quasilinear_eq` with
+common constants `λ, Λ`. Let `vᵢ` and `v` be measurable on `Ω`, and suppose that the frozen
+coefficients converge almost everywhere on `Ω`, `Aᵢ(x, vᵢ(x)) → A(x, v(x))`, along a countably
+generated filter. If the boundary values `gᵢ → g` in `H¹(Ω)` and the forcings `ℓᵢ → ℓ` in
+`H⁻¹(Ω)`, then the frozen solutions converge in `H¹(Ω)`:
+`frozenSolution Aᵢ gᵢ ℓᵢ vᵢ → frozenSolution A g ℓ v`.
+
+For instance, the almost everywhere convergence holds when `vᵢ → v` almost everywhere and, for
+almost every `x`, `Aᵢ(x, ·) → A(x, ·)` locally uniformly. -/
+theorem tendsto_frozenSolution {α : Type*} {l : Filter α} [l.IsCountablyGenerated]
+    {A' : α → EuclideanSpace ℝ (Fin (n + 1)) → ℝ → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
+    (hA : ∀ s, UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))
+      (fun x => A x s) lam Lam)
+    (hAm : ∀ s, AEStronglyMeasurable (fun x => A x s) (volume.restrict Omega))
+    (hAc : ∀ᵐ x ∂volume.restrict Omega, Continuous (A x))
+    (hA' : ∀ i s, UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))
+      (fun x => A' i x s) lam Lam)
+    (hAm' : ∀ i s, AEStronglyMeasurable (fun x => A' i x s) (volume.restrict Omega))
+    (hAc' : ∀ i, ∀ᵐ x ∂volume.restrict Omega, Continuous (A' i x))
+    (hΩ : Bornology.IsBounded (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))))
+    {v : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} {v' : α → EuclideanSpace ℝ (Fin (n + 1)) → ℝ}
+    (hv : AEStronglyMeasurable v (volume.restrict Omega))
+    (hv' : ∀ i, AEStronglyMeasurable (v' i) (volume.restrict Omega))
+    (hlim : ∀ᵐ x ∂volume.restrict Omega, Tendsto (fun i => A' i x (v' i x)) l (𝓝 (A x (v x))))
+    {g : W1p volume Omega 2} {g' : α → W1p volume Omega 2} (hg : Tendsto g' l (𝓝 g))
+    {ℓ : StrongDual ℝ (W1p0 volume Omega 2)} {ℓ' : α → StrongDual ℝ (W1p0 volume Omega 2)}
+    (hℓ : Tendsto ℓ' l (𝓝 ℓ)) :
+    Tendsto (fun i => frozenSolution (A' i) (g' i) (ℓ' i) (v' i)) l
+      (𝓝 (frozenSolution A g ℓ v)) := by
+  obtain ⟨R, hball⟩ := hΩ.subset_ball (0 : EuclideanSpace ℝ (Fin (n + 1)))
+  have hspec := frozenSolution_spec hA hAm hAc hΩ g ℓ hv
+  have hspec' (i : α) := frozenSolution_spec (hA' i) (hAm' i) (hAc' i) hΩ g ℓ (hv' i)
+  -- With the limit data `(g, ℓ)`, the frozen solutions converge by dominated convergence, since
+  -- the frozen coefficients converge almost everywhere and differ by at most `2Λ`.
+  have h₁ : Tendsto (fun i => frozenSolution (A' i) g ℓ (v' i)) l
+      (𝓝 (frozenSolution A g ℓ v)) := by
+    refine tendsto_of_forall_energyFormH1_eq_of_tendsto_ae (Lam := Lam + Lam)
+      (a' := fun i x => A' i x (v' i x)) (memLp_energyIntegrand_comp hA hAm hAc hv)
+      (fun i => memLp_energyIntegrand_comp (hA' i) (hAm' i) (hAc' i) (hv' i))
+      (by have := (hA 0).pos; positivity)
+      (fun i => mul_norm_sq_le_energyFormH1_comp (hA' i) (hAm' i) (hAc' i) hball (hv' i))
+      (fun i => aestronglyMeasurable_comp (hAm' i) (hAc' i) (hv' i))
+      (fun i => (ae_restrict_mem Omega.isOpen.measurableSet).mono fun x hx =>
+        abs_dotProduct_sub_mulVec_le ((hA (v x)).upper_bound hx) ((hA' i (v' i x)).upper_bound hx))
+      hlim hspec.2 (fun i => (hspec' i).2) (fun i => ?_)
+    have h := Submodule.sub_mem _ ((ClosedSubmodule.mem_toSubmodule_iff _ _).2 (hspec' i).1)
+      ((ClosedSubmodule.mem_toSubmodule_iff _ _).2 hspec.1)
+    rwa [sub_sub_sub_cancel_right, ClosedSubmodule.mem_toSubmodule_iff] at h
+  -- For each coefficient, changing the data from `(g, ℓ)` to `(gᵢ, ℓᵢ)` moves the frozen solution
+  -- by `O(‖gᵢ - g‖ + ‖ℓᵢ - ℓ‖)`, uniformly in `i`.
+  have h₂ : Tendsto (fun i => frozenSolution (A' i) (g' i) (ℓ' i) (v' i) -
+      frozenSolution (A' i) g ℓ (v' i)) l (𝓝 0) := by
+    have hg0 := tendsto_iff_norm_sub_tendsto_zero.1 hg
+    -- The type is given explicitly so that the dual's norm topology is found.
+    have hℓ0 := (tendsto_iff_norm_sub_tendsto_zero
+      (E := StrongDual ℝ (W1p0 volume Omega 2))).1 hℓ
+    rw [tendsto_zero_iff_norm_tendsto_zero]
+    refine squeeze_zero (fun _ => norm_nonneg _) (fun i =>
+      norm_frozenSolution_sub_frozenSolution_le (hA' i) (hAm' i) (hAc' i) hball g (g' i) ℓ (ℓ' i)
+        (hv' i)) ?_
+    simpa using hg0.add ((hℓ0.add (hg0.const_mul Lam)).div_const _)
+  simpa using h₂.add h₁
 
 /-- The map `T : v ↦ S v`, the value of the frozen solution, is continuous on `L²(Ω)`. -/
 theorem continuous_value_frozenSolution
@@ -285,10 +389,6 @@ theorem continuous_value_frozenSolution
     (g : W1p volume Omega 2) (ℓ : StrongDual ℝ (W1p0 volume Omega 2)) :
     Continuous fun v : Lp ℝ 2 (volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))) =>
       W1p.value (frozenSolution A g ℓ v) := by
-  have hspec (v : Lp ℝ 2 (volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))))) :=
-    frozenSolution_spec hA hAm hAc hΩ g ℓ (Lp.aestronglyMeasurable v)
-  have hR := hΩ.subset_ball (0 : EuclideanSpace ℝ (Fin (n + 1)))
-  obtain ⟨R, hball⟩ := hR
   rw [continuous_iff_seqContinuous]
   intro vs v hv
   -- Along a further subsequence of any subsequence, `vₖ → v` almost everywhere.
@@ -296,20 +396,10 @@ theorem continuous_value_frozenSolution
   obtain ⟨ms, -, hms⟩ := (tendstoInMeasure_of_tendsto_Lp (hv.comp hns)).exists_seq_tendsto_ae
   refine ⟨ms, ?_⟩
   simp only [Function.comp_def, ← W1p.valueL_apply]
-  refine (W1p.valueL.continuous.tendsto _).comp ?_
-  refine tendsto_of_forall_energyFormH1_eq_of_tendsto_ae (Lam := 2 * Lam)
-    (a' := fun k x => A x (vs (ns (ms k)) x)) (memLp_energyIntegrand_comp hA hAm hAc
-      (Lp.aestronglyMeasurable v)) (fun _ => memLp_energyIntegrand_comp hA hAm hAc
-      (Lp.aestronglyMeasurable _)) (by have := (hA 0).pos; positivity)
-    (fun _ => mul_norm_sq_le_energyFormH1_comp hA hAm hAc hball (Lp.aestronglyMeasurable _))
-    (fun _ => aestronglyMeasurable_comp hAm hAc (Lp.aestronglyMeasurable _))
-    (fun _ => (ae_restrict_mem Omega.isOpen.measurableSet).mono fun x hx =>
-      abs_dotProduct_sub_mulVec_le hA hx _ _) ?_ (hspec v).2 (fun k => (hspec _).2)
-    (fun k => by
-      have h := Submodule.sub_mem _
-        ((ClosedSubmodule.mem_toSubmodule_iff _ _).2 (hspec (vs (ns (ms k)))).1)
-        ((ClosedSubmodule.mem_toSubmodule_iff _ _).2 (hspec v).1)
-      rwa [sub_sub_sub_cancel_right, ClosedSubmodule.mem_toSubmodule_iff] at h)
+  refine (W1p.valueL.continuous.tendsto _).comp (tendsto_frozenSolution (A' := fun _ => A)
+    (g' := fun _ => g) (ℓ' := fun _ => ℓ) hA hAm hAc (fun _ => hA) (fun _ => hAm) (fun _ => hAc)
+    hΩ (Lp.aestronglyMeasurable v) (fun _ => Lp.aestronglyMeasurable _) ?_ tendsto_const_nhds
+    tendsto_const_nhds)
   filter_upwards [hms, hAc] with x hx hcx
   exact (hcx.tendsto _).comp hx
 

@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Distribution.TestFunction.CylinderHomotopy
 public import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 public import TauCeti.Analysis.Distribution.TestFunction.Prod
 import TauCeti.Analysis.Convex.Topology
+import TauCeti.Analysis.Distribution.TestFunction.Basic
 
 /-!
 # The cone over a current
@@ -454,11 +455,8 @@ theorem cone_comp_monoCLM {U : Opens E} {T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) 
       by_contra hx'
       obtain ⟨s, hs, hso, hxs⟩ := (notMem_dsupport_iff x).1 hx'
       have hvan : IsVanishingOn T (s ∩ U) := fun φ hφ ↦ by
-        let ψ : 𝓓(U, E [⋀^Fin k]→L[ℝ] F) :=
-          ⟨φ, φ.contDiff, φ.hasCompactSupport, hφ.trans inter_subset_right⟩
-        have hψ : (monoCLM ℝ ψ : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F)) = φ :=
-          TestFunction.ext fun y ↦ by simp [monoCLM_apply, hUΩ, ψ]
-        simpa [hψ] using hs ψ (hφ.trans inter_subset_left)
+        obtain ⟨ψ, rfl⟩ := exists_monoCLM_eq_of_tsupport_subset hUΩ (hφ.trans inter_subset_right)
+        simpa using hs ψ (by simpa [hUΩ] using hφ.trans inter_subset_left)
       exact (hvan.disjoint_dsupport (hso.inter U.isOpen)).le_bot ⟨⟨hxs, hTU hx⟩, hx⟩
     by_cases hT : IsCompact (dsupport T)
     · obtain ⟨ψ, hψ, -⟩ := exists_eventually_eq_one (n := ⊤) hT hTU

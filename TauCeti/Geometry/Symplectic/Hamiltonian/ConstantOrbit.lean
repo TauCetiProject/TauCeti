@@ -49,7 +49,9 @@ nondegenerate critical point of `F`
 is the step of the comparison between Hamiltonian Floer theory and Morse theory for a `C²`-small
 Morse Hamiltonian `εF` which shows that the constant orbits at the critical points are admissible
 generators. That the constant orbits are the only one-periodic orbits is a separate statement
-(Yorke's period bound), and the index `μ = ind(F) - n` of these generators is not computed here.
+(Yorke's period bound). The Conley–Zehnder index of these generators, `n - ind(F)` in the
+coordinates of `ℂⁿ`, is computed in
+`TauCeti.Geometry.Symplectic.Hamiltonian.ConstantOrbit.ConleyZehnder`.
 
 The evolution is the global time-dependent Hamiltonian flow
 `TauCeti.SymplecticForm.timeDependentHamiltonianFlow`, so a globally Lipschitz Hamiltonian vector

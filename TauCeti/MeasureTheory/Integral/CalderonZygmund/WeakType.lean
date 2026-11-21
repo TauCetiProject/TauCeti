@@ -7,6 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Integral.CalderonZygmund.Decomposition
 import Mathlib.MeasureTheory.Function.LpSeminorm.Count
+import TauCeti.MeasureTheory.Function.L1Space.Integrable
 import TauCeti.MeasureTheory.Function.Lp.InfiniteSum
 
 /-!
@@ -426,10 +427,8 @@ theorem setLIntegral_compl_closedBall_enorm_apply_le_of_hormander [CompleteSpace
     (hsupp : ∀ᵐ x, x ∉ closedBall y r → b x = 0) (hmean : ∫ x, b x = 0) :
     ∫⁻ x in (closedBall y (2 * r))ᶜ, ‖T b x‖ₑ ≤ B * ∫⁻ x, ‖b x‖ₑ := by
   -- A function in `L²` vanishing off a ball is integrable.
-  have : IsFiniteMeasure (volume.restrict (closedBall y r)) :=
-    isFiniteMeasure_restrict.2 measure_closedBall_lt_top.ne
-  have hb : Integrable b := IntegrableOn.integrable_of_ae_notMem_eq_zero
-    (((Lp.memLp b).restrict _).integrable one_le_two) hsupp
+  have hb : Integrable b :=
+    (Lp.memLp b).integrable_of_ae_notMem_eq_zero one_le_two measure_closedBall_lt_top.ne hsupp
   exact setLIntegral_compl_closedBall_enorm_le_of_hormander hK hB hb hsupp hmean
     (hrep b y r hsupp)
 
