@@ -38,8 +38,10 @@ computation is not part of this file.
 
 ## Main declarations
 
+* `TauCeti.ComplexProjectiveSpace.lineVector`: the embedding `(a, b) ↦ a f₀ + b f₁` of unit
+  spheres `S³ → S²ⁿ⁺¹`, with `coe_lineVector_apply` and `lineVector_smul`.
 * `TauCeti.ComplexProjectiveSpace.lineMap`: `(f, [a : b]) ↦ [a f₀ + b f₁]`, jointly continuous,
-  with `lineMap_mk` and `lineMap_mk_single_zero`.
+  with `lineMap_mk_lineVector`, `lineMap_mk` and `lineMap_mk_single_zero`.
 * `TauCeti.ComplexProjectiveSpace.lineSphereFamily`: the projective line of a frame as a map
   `S² → CPⁿ`, with `lineSphereFamily_apply_hopfSphere2`, `lineSphereFamily_apply_north`,
   `lineSphereFamily_apply_south`, `lineSphereFamily_injective`,
@@ -70,21 +72,23 @@ section Line
 
 variable {n : ℕ}
 
-/-- The unit vector `a f₀ + b f₁` of the plane of an orthonormal two-frame `f`, for a unit vector
-`(a, b)` of `ℂ²`. -/
-private def lineVector (f : finiteOrthonormalFrame ℂ 2 (n + 1))
-    (v : sphere (0 : EuclideanSpace ℂ (Fin 2)) 1) :
-    sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1 :=
-  f.property.synthesisMapIsometry.unitSphereMap v
+/-- **The embedding of unit spheres of an orthonormal two-frame**: the isometric embedding
+`S³ → S²ⁿ⁺¹`, `(a, b) ↦ a f₀ + b f₁`, which covers the projective line of `f`. -/
+def lineVector (f : finiteOrthonormalFrame ℂ 2 (n + 1)) :
+    C(sphere (0 : EuclideanSpace ℂ (Fin 2)) 1, sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1) :=
+  ⟨f.property.synthesisMapIsometry.unitSphereMap, LinearIsometry.continuous_unitSphereMap _⟩
 
-private theorem coe_lineVector (f : finiteOrthonormalFrame ℂ 2 (n + 1))
+/-- The embedding of unit spheres of `f` sends `(a, b)` to `a f₀ + b f₁`. -/
+@[simp]
+theorem coe_lineVector_apply (f : finiteOrthonormalFrame ℂ 2 (n + 1))
     (v : sphere (0 : EuclideanSpace ℂ (Fin 2)) 1) :
     (lineVector f v : EuclideanSpace ℂ (Fin (n + 1))) =
       (v : EuclideanSpace ℂ (Fin 2)) 0 • WithLp.toLp 2 (f.val 0) +
         (v : EuclideanSpace ℂ (Fin 2)) 1 • WithLp.toLp 2 (f.val 1) := by
   simp [lineVector, Fin.sum_univ_two]
 
-private theorem lineVector_smul (f : finiteOrthonormalFrame ℂ 2 (n + 1)) (c : sphere (0 : ℂ) 1)
+/-- The embedding of unit spheres of `f` commutes with unit complex scalars. -/
+theorem lineVector_smul (f : finiteOrthonormalFrame ℂ 2 (n + 1)) (c : sphere (0 : ℂ) 1)
     (v : sphere (0 : EuclideanSpace ℂ (Fin 2)) 1) : lineVector f (c • v) = c • lineVector f v :=
   Subtype.ext <| by simp [lineVector]
 
@@ -97,7 +101,7 @@ private theorem continuous_lineVector :
         sphere (0 : EuclideanSpace ℂ (Fin 2)) 1 ↦
       lineVector q.1 q.2 := by
   refine continuous_induced_rng.2 ?_
-  simp only [Function.comp_def, coe_lineVector]
+  simp only [Function.comp_def, coe_lineVector_apply]
   have hv (i : Fin 2) : Continuous fun q : finiteOrthonormalFrame ℂ 2 (n + 1) ×
       sphere (0 : EuclideanSpace ℂ (Fin 2)) 1 ↦ (q.2 : EuclideanSpace ℂ (Fin 2)) i :=
     (PiLp.continuous_apply 2 _ i).comp (continuous_subtypeVal.comp continuous_snd)
@@ -121,6 +125,13 @@ def lineMap :
     exact ((continuous_mk n).comp continuous_lineVector).congr fun q ↦
       (ComplexProjectiveSpace.lift_mk 1 (fun v ↦ mk n (lineVector q.1 v)) _ q.2).symm
 
+/-- **The projective line of `f` is covered by its embedding of unit spheres**: it sends `[v]` to
+`[lineVector f v]`. -/
+theorem lineMap_mk_lineVector (f : finiteOrthonormalFrame ℂ 2 (n + 1))
+    (v : sphere (0 : EuclideanSpace ℂ (Fin 2)) 1) :
+    lineMap n (f, mk 1 v) = mk n (lineVector f v) :=
+  ComplexProjectiveSpace.lift_mk 1 _ _ v
+
 /-- The projective line of `f` sends `[a : b]` to `[a f₀ + b f₁]`. -/
 theorem lineMap_mk (f : finiteOrthonormalFrame ℂ 2 (n + 1))
     (v : sphere (0 : EuclideanSpace ℂ (Fin 2)) 1)
@@ -129,8 +140,8 @@ theorem lineMap_mk (f : finiteOrthonormalFrame ℂ 2 (n + 1))
       (v : EuclideanSpace ℂ (Fin 2)) 0 • WithLp.toLp 2 (f.val 0) +
         (v : EuclideanSpace ℂ (Fin 2)) 1 • WithLp.toLp 2 (f.val 1)) :
     lineMap n (f, mk 1 v) = mk n x := by
-  obtain rfl : x = lineVector f v := Subtype.ext (hx.trans (coe_lineVector f v).symm)
-  exact ComplexProjectiveSpace.lift_mk 1 _ _ v
+  obtain rfl : x = lineVector f v := Subtype.ext (hx.trans (coe_lineVector_apply f v).symm)
+  exact lineMap_mk_lineVector f v
 
 /-- **The projective line of `f` passes through `[f₀]`**: it sends `[1 : 0]` to `[f₀]`. -/
 @[simp]
@@ -189,8 +200,8 @@ theorem lineSphereFamily_injective (f : finiteOrthonormalFrame ℂ 2 (n + 1)) :
   intro x y hxy
   obtain ⟨v, rfl⟩ := hopfSphere2_surjective x
   obtain ⟨w, rfl⟩ := hopfSphere2_surjective y
-  rw [lineSphereFamily_apply_hopfSphere2 f v _ (coe_lineVector f v),
-    lineSphereFamily_apply_hopfSphere2 f w _ (coe_lineVector f w), mk_eq_mk_iff] at hxy
+  rw [lineSphereFamily_apply_hopfSphere2 f v _ (coe_lineVector_apply f v),
+    lineSphereFamily_apply_hopfSphere2 f w _ (coe_lineVector_apply f w), mk_eq_mk_iff] at hxy
   obtain ⟨c, hc⟩ := hxy
   rw [← lineVector_smul] at hc
   rw [← lineVector_injective f hc, hopfSphere2_smul]
@@ -204,8 +215,8 @@ theorem lineSphereFamily_eq_of_smul (c : sphere (0 : ℂ) 1)
   ext1 x
   obtain ⟨v, rfl⟩ := hopfSphere2_surjective x
   rw [lineSphereFamily_apply_hopfSphere2 f' v (c • lineVector f v)
-      (by simp [coe_lineVector, h, WithLp.toLp_smul, smul_add, smul_comm (c : ℂ)]),
-    mk_smul, lineSphereFamily_apply_hopfSphere2 f v _ (coe_lineVector f v)]
+      (by simp [coe_lineVector_apply, h, WithLp.toLp_smul, smul_add, smul_comm (c : ℂ)]),
+    mk_smul, lineSphereFamily_apply_hopfSphere2 f v _ (coe_lineVector_apply f v)]
 
 /-- **The family is equivariant under the unitary group**: applying a unitary matrix `A` to the
 frame moves its two-sphere by `A`. -/
@@ -213,9 +224,9 @@ theorem lineSphereFamily_unitaryMap (A : unitaryGroup (Fin (n + 1)) ℂ)
     (f : finiteOrthonormalFrame ℂ 2 (n + 1)) (x : Sphere2) :
     lineSphereFamily n (finiteOrthonormalFrame.unitaryMap A f) x = A • lineSphereFamily n f x := by
   obtain ⟨v, rfl⟩ := hopfSphere2_surjective x
-  rw [lineSphereFamily_apply_hopfSphere2 f v _ (coe_lineVector f v), smul_mk]
+  rw [lineSphereFamily_apply_hopfSphere2 f v _ (coe_lineVector_apply f v), smul_mk]
   refine lineSphereFamily_apply_hopfSphere2 _ v _ ?_
-  simp [coe_lineVector, Matrix.mulVec_add, Matrix.mulVec_smul]
+  simp [coe_lineVector_apply, Matrix.mulVec_add, Matrix.mulVec_smul]
 
 /-- **On `CP¹`, the two-sphere of every frame is a bijection `S² → CP¹`**: an orthonormal two-frame
 of `ℂ²` is a basis, so every complex line of `ℂ²` is spanned by some `a f₀ + b f₁`. -/
@@ -231,9 +242,9 @@ theorem lineSphereFamily_bijective (f : finiteOrthonormalFrame ℂ 2 2) :
     rw [mem_sphere_zero_iff_norm, ← f.property.synthesisMapIsometry.norm_map]
     exact (congrArg norm hx).trans (norm_eq_of_mem_sphere y)
   refine ⟨hopfSphere2 ⟨x, hx1⟩, ?_⟩
-  rw [lineSphereFamily_apply_hopfSphere2 f _ _ (coe_lineVector f _)]
+  rw [lineSphereFamily_apply_hopfSphere2 f _ _ (coe_lineVector_apply f _)]
   refine congrArg (mk 1) (Subtype.ext ?_)
-  rw [coe_lineVector]
+  rw [coe_lineVector_apply]
   simpa [Orthonormal.synthesisMapIsometry_apply, Fin.sum_univ_two] using hx
 
 /-- **The family of two-spheres through a point.** For a unit vector `u = f₀` of `ℂⁿ⁺¹`, the unit

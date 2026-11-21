@@ -9,7 +9,7 @@ public import TauCeti.Topology.ComplexProjectiveSpace.Hopf.Exact
 public import TauCeti.Topology.ComplexProjectiveSpace.Line
 
 /-!
-# The projective line generates `π₂(CPⁿ)`
+# The projective line induces an isomorphism on `π₂(CPⁿ)`
 
 An ordered orthonormal two-frame `f = (f₀, f₁)` of `ℂⁿ⁺¹` spans a complex plane, whose projective
 line is the image of `ι_f : CP¹ → CPⁿ`, `[a : b] ↦ [a f₀ + b f₁]`
@@ -28,10 +28,10 @@ In degree two both boundary maps are isomorphisms onto `π₁(S¹)`
 `CP¹ ≃ₜ S²` of the Hopf map, the projective line as a two-sphere, `σ_f : S² → CPⁿ`
 (`TauCeti.ComplexProjectiveSpace.lineSphereFamily`), induces an isomorphism
 `π₂(S², north) ≅ π₂(CPⁿ, [f₀])`
-(`TauCeti.ComplexProjectiveSpace.lineSphereHomotopyGroupMulEquiv`). In other words, every
-projective line, parametrized by the two-sphere through the Hopf map, represents a generator of
-`π₂(CPⁿ) ≅ ℤ`: this is the normalized generator from which the based loops `S¹ → ΩCPⁿ` adjoint to a
-projective line, and the splitting `S¹ × ΩS²ⁿ⁺¹ ≃ ΩCPⁿ` they define, are built.
+(`TauCeti.ComplexProjectiveSpace.lineSphereHomotopyGroupMulEquiv`), so it sends a generator of
+`π₂(S²)` to a generator of `π₂(CPⁿ)`. No sign normalization of this generator is fixed here. The
+two-sphere `σ_f` is meant as input for a based loop `S¹ → ΩCPⁿ` adjoint to a projective line; that
+loop is not constructed in this file.
 
 Homotopy groups are indexed as in `TauCeti.ComplexProjectiveSpace.hopfBoundary`: `π_{k+1}` is
 modelled on the cube `I^(Option N)` for a finite type `N` of cardinality `k`, so `π₂` is the case
@@ -72,32 +72,11 @@ variable {n : ℕ} {N : Type*} (f : finiteOrthonormalFrame ℂ 2 (n + 1))
 private abbrev e₀ : sphere (0 : EuclideanSpace ℂ (Fin 2)) 1 :=
   ⟨EuclideanSpace.single 0 1, by simp⟩
 
-/-- The isometric embedding `S³ → S²ⁿ⁺¹`, `(a, b) ↦ a f₀ + b f₁`, covering the projective line
-of `f`. -/
-private def sphereLine :
-    C(sphere (0 : EuclideanSpace ℂ (Fin 2)) 1, sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1) :=
-  ⟨f.property.synthesisMapIsometry.unitSphereMap, LinearIsometry.continuous_unitSphereMap _⟩
-
-private theorem coe_sphereLine_apply (v : sphere (0 : EuclideanSpace ℂ (Fin 2)) 1) :
-    (sphereLine f v : EuclideanSpace ℂ (Fin (n + 1))) =
-      (v : EuclideanSpace ℂ (Fin 2)) 0 • WithLp.toLp 2 (f.val 0) +
-        (v : EuclideanSpace ℂ (Fin 2)) 1 • WithLp.toLp 2 (f.val 1) := by
-  simp [sphereLine, Fin.sum_univ_two]
-
-private theorem sphereLine_smul (c : sphere (0 : ℂ) 1)
-    (v : sphere (0 : EuclideanSpace ℂ (Fin 2)) 1) : sphereLine f (c • v) = c • sphereLine f v :=
-  Subtype.ext <| by simp [sphereLine]
-
-/-- The projective line of `f` is covered by the embedding of unit spheres. -/
-private theorem lineMap_curry_mk (v : sphere (0 : EuclideanSpace ℂ (Fin 2)) 1) :
-    (lineMap n).curry f (mk 1 v) = mk n (sphereLine f v) :=
-  lineMap_mk f v _ (coe_sphereLine_apply f v)
-
 /-- The square of Hopf fibrations given by the projective line of `f`. -/
 private theorem commSq_lineMap :
-    CommSq (TopCat.ofHom (sphereLine f)) (hopfHom 1) (hopfHom n)
+    CommSq (TopCat.ofHom (lineVector f)) (hopfHom 1) (hopfHom n)
       (TopCat.ofHom ((lineMap n).curry f)) :=
-  ⟨by ext v; exact (lineMap_curry_mk f v).symm⟩
+  ⟨by ext v; exact (lineMap_mk_lineVector f v).symm⟩
 
 variable [Finite N]
 
@@ -112,15 +91,15 @@ theorem hopfBoundary_homotopyGroupMap_lineMap
     hopfBoundary (f.toSphere 0) N
         (HomotopyGroup.map ((lineMap n).curry f) (lineMap_mk_single_zero f) a) =
       hopfBoundary ⟨EuclideanSpace.single 0 1, by simp⟩ N a := by
-  have hf₀ : sphereLine f e₀ = f.toSphere 0 := Subtype.ext <| by simp [coe_sphereLine_apply]
+  have hf₀ : lineVector f e₀ = f.toSphere 0 := Subtype.ext <| by simp
   -- The map of fibres over `[e₀]` and `[f₀]` given by the embedding of unit spheres.
   let φ : C((hopfHom 1).fiber (mk 1 e₀), (hopfHom n).fiber (mk n (f.toSphere 0))) :=
-    ⟨fun x ↦ ⟨sphereLine f x.val, by
+    ⟨fun x ↦ ⟨lineVector f x.val, by
       have hx : mk 1 x.val = mk 1 e₀ := x.property
       -- Membership in the fibre of `hopfHom n` over `[f₀]` is the equation `[x] = [f₀]` for
       -- the image `x` of the point; `change` unfolds the preimage and the morphism `hopfHom n`.
-      change mk n (sphereLine f x.val) = mk n (f.toSphere 0)
-      rw [← lineMap_curry_mk, hx, lineMap_curry_mk, hf₀]⟩, by fun_prop⟩
+      change mk n (lineVector f x.val) = mk n (f.toSphere 0)
+      rw [← lineMap_mk_lineVector, hx, lineMap_mk_lineVector, hf₀]⟩, by fun_prop⟩
   have key := TopCat.fibrationBoundary_map_of_eq (commSq_lineMap f) (mk_mem_serreFibrations 1)
     (mk_mem_serreFibrations n) (e := ⟨e₀, rfl⟩) (lineMap_mk_single_zero f)
     (e' := ⟨f.toSphere 0, rfl⟩) φ (fun _ ↦ rfl) (Subtype.ext hf₀) a
@@ -133,7 +112,7 @@ theorem hopfBoundary_homotopyGroupMap_lineMap
   obtain ⟨u, rfl⟩ := (hopfFiberHomeomorph e₀).surjective x
   refine ((hopfFiberHomeomorph (f.toSphere 0)).symm_apply_eq.2 (Subtype.ext ?_)).trans
     ((hopfFiberHomeomorph e₀).symm_apply_apply u).symm
-  simp [φ, coe_hopfFiberHomeomorph_apply, sphereLine_smul, hf₀]
+  simp [φ, coe_hopfFiberHomeomorph_apply, lineVector_smul, hf₀]
 
 /-- **The projective line induces an isomorphism on `π₂`.** For an orthonormal two-frame `f` of
 `ℂⁿ⁺¹`, the projective line `ι_f : CP¹ → CPⁿ` induces a bijection
@@ -151,9 +130,9 @@ theorem bijective_homotopyGroupMap_lineMap [Nonempty N] (hN : Nat.card N < 2) :
     hopfBoundary _ N from funext (hopfBoundary_homotopyGroupMap_lineMap f)]
   exact bijective_hopfBoundary _ (by omega)
 
-/-- **The projective line as a two-sphere generates `π₂(CPⁿ)`.** For an orthonormal two-frame `f`
-of `ℂⁿ⁺¹`, the two-sphere `σ_f : S² → CPⁿ`, `h (a, b) ↦ [a f₀ + b f₁]`, induces a bijection
-`π₂(S², north) → π₂(CPⁿ, [f₀])`. -/
+/-- **The projective line as a two-sphere induces an isomorphism on `π₂`.** For an orthonormal
+two-frame `f` of `ℂⁿ⁺¹`, the two-sphere `σ_f : S² → CPⁿ`, `h (a, b) ↦ [a f₀ + b f₁]`, induces a
+bijection `π₂(S², north) → π₂(CPⁿ, [f₀])`. -/
 theorem bijective_homotopyGroupMap_lineSphereFamily [Nonempty N] (hN : Nat.card N < 2) :
     Function.Bijective
       (HomotopyGroup.map (N := Option N) (lineSphereFamily n f)
