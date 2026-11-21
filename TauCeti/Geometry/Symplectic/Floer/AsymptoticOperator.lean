@@ -12,8 +12,10 @@ public import TauCeti.Geometry.Symplectic.AlmostComplex.Topology
 public import TauCeti.Geometry.Symplectic.Floer.Linearization.Basic
 public import TauCeti.Geometry.Symplectic.Hamiltonian.TimeDependent
 public import TauCeti.Analysis.Sobolev.Circle.LinearODE.Basic
+public import TauCeti.Geometry.Symplectic.Lagrangian.Basic
 import Mathlib.Geometry.Manifold.MFDeriv.FDeriv
 import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.Analysis.Calculus.FDeriv.Submodule
 import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Geometry.Symplectic.Complex.Module.Basic
 import TauCeti.Geometry.Symplectic.Transport
@@ -84,7 +86,12 @@ nondegenerate orbit of a Hamiltonian
 On the cylinder, the same cancellation gives the integrated form of `D* D = -∂s² + A²` over
 `[a, b] × [0, 1]`, in which the cross term only contributes the slice pairings
 `∫₀¹ ω(∂t ξ - S_t ξ, ξ) dt` at `s = a` and `s = b`
-(`Floer.setIntegral_associatedBilinForm_stationaryCylinderOperator`). For compatible `J_t` it
+(`Floer.setIntegral_associatedBilinForm_stationaryCylinderOperator`). The same identity holds on
+the strip `ℝ × [0, 1]` for maps with boundary values `ξ (s, 0) ∈ F₀` and `ξ (s, 1) ∈ F₁` in
+isotropic subspaces, such as the tangent spaces of two Lagrangians at the ends of a Hamiltonian
+chord: periodicity is replaced by the vanishing of `ω(ξ, ∂s ξ)` on the two boundary lines
+(`Floer.setIntegral_associatedBilinForm_stationaryCylinderOperator_of_isIsotropic`). For
+compatible `J_t` the cylinder identity
 shows that a solution of `D ξ = 0` which decays at both ends together with `∂t ξ` vanishes
 (`Floer.eq_zero_of_stationaryCylinderOperator_eq_zero`), with no nondegeneracy assumption.
 
@@ -619,39 +626,14 @@ private theorem hasDerivAt_apply_fderiv_fst_snd (hξ : ContDiff ℝ 2 ξ) (s t :
     (hasDerivAt_fderiv_apply_snd
       ((hξ.fderiv_right (m := 1) le_rfl).differentiable one_ne_zero (s, t)) (1, 0))
 
-/-- The `t`-derivative `∂t ω(ξ, ∂s ξ)` of a map of period one in `t` integrates to zero over
-`[a, b] × [0, 1]`. -/
-private theorem setIntegral_rect_apply_fderiv_fst_snd_eq_zero (hξ : ContDiff ℝ 2 ξ)
-    (hper : ∀ s t, ξ (s, t + 1) = ξ (s, t)) {a b : ℝ}
-    (hφ : Continuous fun z : ℝ × ℝ ↦
-      ω (ξ z) (fderiv ℝ (fderiv ℝ ξ) z (1, 0) (0, 1)) +
-        ω (fderiv ℝ ξ z (0, 1)) (fderiv ℝ ξ z (1, 0))) :
-    ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1,
-      (ω (ξ z) (fderiv ℝ (fderiv ℝ ξ) z (1, 0) (0, 1)) +
-        ω (fderiv ℝ ξ z (0, 1)) (fderiv ℝ ξ z (1, 0))) = 0 := by
-  have hχp (s : ℝ) : ω (ξ (s, 1)) (fderiv ℝ ξ (s, 1) (1, 0)) =
-      ω (ξ (s, 0)) (fderiv ℝ ξ (s, 0) (1, 0)) := by
-    have h1 := fderiv_add_snd_of_periodic_snd (𝕜 := ℝ) hper s 0
-    rw [zero_add] at h1
-    have hξ1 : ξ (s, 1) = ξ (s, 0) := by simpa using hper s 0
-    simp only [h1, hξ1]
-  exact setIntegral_rect_eq_zero_of_hasDerivAt_snd hφ
-    (Φ := fun z ↦ ω (ξ z) (fderiv ℝ ξ z (1, 0))) (hasDerivAt_apply_fderiv_fst_snd hξ) hχp
-
-/-- **The energy identity of the stationary cylinder operator.** Let each `J_t` leave `ω`
-invariant, depend continuously on `t`, and let each `S_t` be infinitesimally symplectic. For a
-`C²` map `ξ` of period one in `t` and `a ≤ b`, the `L²` norm of `D ξ` over `[a, b] × [0, 1]`
-for `g_t = ω(·, J_t ·)` splits as
-
-`∫ g(D ξ, D ξ) = ∫ (g(∂s ξ, ∂s ξ) + g(∂t ξ - S ξ, ∂t ξ - S ξ)) + Φ(b) - Φ(a)`,
-
-where `Φ(s) = ∫₀¹ ω(∂t ξ - S_t ξ, ξ) dt` is the pairing of the slice at `s` with its image under
-the asymptotic operator. This is the integrated form of `D* D = -∂s² + A²`; only the boundary
-slices contribute to the cross term. -/
-theorem setIntegral_associatedBilinForm_stationaryCylinderOperator
+/-- The energy identity of the stationary cylinder operator over `[a, b] × [0, 1]`, for a `C²`
+map `ξ` whose pairing `ω(ξ, ∂s ξ)` takes the same values on the two horizontal sides `t = 0` and
+`t = 1`. This holds for maps of period one in `t` and for maps with isotropic boundary values. -/
+private theorem setIntegral_associatedBilinForm_stationaryCylinderOperator_of_forall_eq
     (hJ : ∀ t, ω.Invariant (J t)) (hJc : Continuous fun p : ℝ × V ↦ J p.1 p.2)
     (hS : ∀ t v w, ω (S t v) w + ω v (S t w) = 0) (hSc : Continuous S) (hξ : ContDiff ℝ 2 ξ)
-    (hper : ∀ s t, ξ (s, t + 1) = ξ (s, t)) {a b : ℝ} (hab : a ≤ b) :
+    (hχ : ∀ s, ω (ξ (s, 1)) (fderiv ℝ ξ (s, 1) (1, 0)) = ω (ξ (s, 0)) (fderiv ℝ ξ (s, 0) (1, 0)))
+    {a b : ℝ} (hab : a ≤ b) :
     ∫ z in Icc a b ×ˢ Icc 0 1, ω.associatedBilinForm (J z.2)
         (stationaryCylinderOperator J S ξ z) (stationaryCylinderOperator J S ξ z) =
       (∫ z in Icc a b ×ˢ Icc 0 1,
@@ -697,9 +679,10 @@ theorem setIntegral_associatedBilinForm_stationaryCylinderOperator
       (ω.associatedBilinForm (J z.2) (ξs z) (ξs z) +
         ω.associatedBilinForm (J z.2) (w z) (w z)) + (φ₁ z + φ₂ z) := fun z ↦
     associatedBilinForm_add_apply_self (hJ z.2) (hS z.2) (ξ z) (ξt z) (ξs z) (M z)
-  -- `χ` has period one in `t`, so `∂t χ` integrates to zero.
+  -- `χ` takes the same values on the two horizontal sides, so `∂t χ` integrates to zero.
   have h₂ : ∫ z in Icc a b ×ˢ Icc 0 1, φ₂ z = 0 :=
-    setIntegral_rect_apply_fderiv_fst_snd_eq_zero hξ hper hφ₂
+    setIntegral_rect_eq_zero_of_hasDerivAt_snd hφ₂
+      (Φ := fun z ↦ ω (ξ z) (fderiv ℝ ξ z (1, 0))) (hasDerivAt_apply_fderiv_fst_snd hξ) hχ
   -- `∂s ψ` integrates to the difference of the boundary slice pairings.
   have h₁ : ∫ z in Icc a b ×ˢ Icc 0 1, φ₁ z =
       (∫ t in (0 : ℝ)..1, ω (w (b, t)) (ξ (b, t))) -
@@ -714,6 +697,80 @@ theorem setIntegral_associatedBilinForm_stationaryCylinderOperator
       (hc₂.continuousOn.integrableOn_compact hR),
     integral_add (hφ₁.continuousOn.integrableOn_compact hR)
       (hφ₂.continuousOn.integrableOn_compact hR), h₁, h₂, add_zero]
+
+/-- **The energy identity of the stationary cylinder operator.** Let each `J_t` leave `ω`
+invariant, depend continuously on `t`, and let each `S_t` be infinitesimally symplectic. For a
+`C²` map `ξ` of period one in `t` and `a ≤ b`, the `L²` norm of `D ξ` over `[a, b] × [0, 1]`
+for `g_t = ω(·, J_t ·)` splits as
+
+`∫ g(D ξ, D ξ) = ∫ (g(∂s ξ, ∂s ξ) + g(∂t ξ - S ξ, ∂t ξ - S ξ)) + Φ(b) - Φ(a)`,
+
+where `Φ(s) = ∫₀¹ ω(∂t ξ - S_t ξ, ξ) dt` is the pairing of the slice at `s` with its image under
+the asymptotic operator. This is the integrated form of `D* D = -∂s² + A²`; only the boundary
+slices contribute to the cross term. -/
+theorem setIntegral_associatedBilinForm_stationaryCylinderOperator
+    (hJ : ∀ t, ω.Invariant (J t)) (hJc : Continuous fun p : ℝ × V ↦ J p.1 p.2)
+    (hS : ∀ t v w, ω (S t v) w + ω v (S t w) = 0) (hSc : Continuous S) (hξ : ContDiff ℝ 2 ξ)
+    (hper : ∀ s t, ξ (s, t + 1) = ξ (s, t)) {a b : ℝ} (hab : a ≤ b) :
+    ∫ z in Icc a b ×ˢ Icc 0 1, ω.associatedBilinForm (J z.2)
+        (stationaryCylinderOperator J S ξ z) (stationaryCylinderOperator J S ξ z) =
+      (∫ z in Icc a b ×ˢ Icc 0 1,
+        (ω.associatedBilinForm (J z.2) (fderiv ℝ ξ z stdComplexLineReal)
+            (fderiv ℝ ξ z stdComplexLineReal) +
+          ω.associatedBilinForm (J z.2) (fderiv ℝ ξ z stdComplexLineImag - S z.2 (ξ z))
+            (fderiv ℝ ξ z stdComplexLineImag - S z.2 (ξ z)))) +
+        ((∫ t in (0 : ℝ)..1,
+            ω (fderiv ℝ ξ (b, t) stdComplexLineImag - S t (ξ (b, t))) (ξ (b, t))) -
+          ∫ t in (0 : ℝ)..1,
+            ω (fderiv ℝ ξ (a, t) stdComplexLineImag - S t (ξ (a, t))) (ξ (a, t))) := by
+  refine setIntegral_associatedBilinForm_stationaryCylinderOperator_of_forall_eq hJ hJc hS hSc hξ
+    (fun s ↦ ?_) hab
+  have h1 := fderiv_add_snd_of_periodic_snd (𝕜 := ℝ) hper s 0
+  rw [zero_add] at h1
+  have hξ1 : ξ (s, 1) = ξ (s, 0) := by simpa using hper s 0
+  simp only [h1, hξ1]
+
+/-- **The energy identity of the stationary strip operator.** Let each `J_t` leave `ω` invariant,
+depend continuously on `t`, and let each `S_t` be infinitesimally symplectic. Let `F₀` and `F₁` be
+isotropic subspaces, for instance Lagrangian ones. For a `C²` map `ξ` with boundary values
+`ξ (s, 0) ∈ F₀` and `ξ (s, 1) ∈ F₁` and `a ≤ b`, the `L²` norm of `D ξ` over the piece
+`[a, b] × [0, 1]` of the strip splits as
+
+`∫ g(D ξ, D ξ) = ∫ (g(∂s ξ, ∂s ξ) + g(∂t ξ - S ξ, ∂t ξ - S ξ)) + Φ(b) - Φ(a)`,
+
+for `g_t = ω(·, J_t ·)`, the operator `D ξ = ∂s ξ + J_t (∂t ξ - S_t ξ)` and the slice pairing
+`Φ(s) = ∫₀¹ ω(∂t ξ - S_t ξ, ξ) dt`, exactly as on the cylinder: the boundary terms `ω(ξ, ∂s ξ)`
+on the two sides `t = 0` and `t = 1` vanish because `ξ` and `∂s ξ` lie in an isotropic subspace
+there. -/
+theorem setIntegral_associatedBilinForm_stationaryCylinderOperator_of_isIsotropic
+    (hJ : ∀ t, ω.Invariant (J t)) (hJc : Continuous fun p : ℝ × V ↦ J p.1 p.2)
+    (hS : ∀ t v w, ω (S t v) w + ω v (S t w) = 0) (hSc : Continuous S) (hξ : ContDiff ℝ 2 ξ)
+    {F₀ F₁ : Submodule ℝ V} (hF₀ : ω.IsIsotropic F₀) (hF₁ : ω.IsIsotropic F₁)
+    (h₀ : ∀ s, ξ (s, 0) ∈ F₀) (h₁ : ∀ s, ξ (s, 1) ∈ F₁) {a b : ℝ} (hab : a ≤ b) :
+    ∫ z in Icc a b ×ˢ Icc 0 1, ω.associatedBilinForm (J z.2)
+        (stationaryCylinderOperator J S ξ z) (stationaryCylinderOperator J S ξ z) =
+      (∫ z in Icc a b ×ˢ Icc 0 1,
+        (ω.associatedBilinForm (J z.2) (fderiv ℝ ξ z stdComplexLineReal)
+            (fderiv ℝ ξ z stdComplexLineReal) +
+          ω.associatedBilinForm (J z.2) (fderiv ℝ ξ z stdComplexLineImag - S z.2 (ξ z))
+            (fderiv ℝ ξ z stdComplexLineImag - S z.2 (ξ z)))) +
+        ((∫ t in (0 : ℝ)..1,
+            ω (fderiv ℝ ξ (b, t) stdComplexLineImag - S t (ξ (b, t))) (ξ (b, t))) -
+          ∫ t in (0 : ℝ)..1,
+            ω (fderiv ℝ ξ (a, t) stdComplexLineImag - S t (ξ (a, t))) (ξ (a, t))) := by
+  -- Along a side `t = c` with values in a subspace `F`, the derivative `∂s ξ` lies in `F` too.
+  have hside {F : Submodule ℝ V} (hF : ω.IsIsotropic F) {c : ℝ} (hc : ∀ s, ξ (s, c) ∈ F)
+      (s : ℝ) : ω (ξ (s, c)) (fderiv ℝ ξ (s, c) (1, 0)) = 0 := by
+    have hd : HasDerivAt (fun s ↦ ξ (s, c)) (fderiv ℝ ξ (s, c) (1, 0)) s :=
+      (hξ.differentiable (by norm_num) _).hasFDerivAt.comp_hasDerivAt s
+        (hasDerivAt_prodMk_left s c)
+    have hmem : fderiv ℝ ξ (s, c) (1, 0) ∈ F := by
+      simpa using hd.hasFDerivAt.apply_mem_of_eventually_sub_mem F.isClosed_of_finiteDimensional
+        (Eventually.of_forall fun y ↦ F.sub_mem (hc y) (hc s)) 1
+    exact SymplecticForm.isIsotropic_iff.1 hF _ (hc s) _ hmem
+  refine setIntegral_associatedBilinForm_stationaryCylinderOperator_of_forall_eq hJ hJc hS hSc hξ
+    (fun s ↦ ?_) hab
+  rw [hside hF₀ h₀ s, hside hF₁ h₁ s]
 
 /-- The slice pairing `s ↦ ∫₀¹ ω(∂t ξ - S_t ξ, ξ) dt` tends to zero as `|s| → ∞` when `ξ` and
 `∂t ξ` do, uniformly in `t`. -/
