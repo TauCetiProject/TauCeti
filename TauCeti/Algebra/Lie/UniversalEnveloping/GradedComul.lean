@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Lie.UniversalEnveloping.DegreeFiltration
 public import TauCeti.Algebra.Module.GradedModule.TensorProduct.Basic
 public import TauCeti.RingTheory.FilteredAlgebra.TensorProduct.Basic
+public import TauCeti.RingTheory.GradedAlgebra.TensorProduct
 
 /-!
 # The comultiplication of a graded enveloping algebra
@@ -77,22 +78,6 @@ section Comul
 
 variable [GradedLieAlgebra ℒ]
 
-/-- Left multiplication by a bihomogeneous pure tensor raises the total degree. -/
-private theorem tmul_mul_mem_tensorProduct {i j m : ℕ} {u v : U} (hu : u ∈ 𝒜 i) (hv : v ∈ 𝒜 j)
-    {t : U ⊗[R] U} (ht : t ∈ 𝒯 m) : (u ⊗ₜ[R] v) * t ∈ 𝒯 (i + j + m) := by
-  have hle : 𝒯 m ≤ (𝒯 (i + j + m)).comap (LinearMap.mulLeft R (u ⊗ₜ[R] v)) := by
-    refine InternalGrading.tensorProduct_piece_le_of_add_eq _ _ fun k l hkl a ha b hb => ?_
-    rw [InternalGrading.ofDecomposition_piece] at ha hb
-    have hdeg : i + k + (j + l) = i + j + m := by omega
-    simpa only [Submodule.mem_comap, LinearMap.mulLeft_apply,
-      Algebra.TensorProduct.tmul_mul_tmul, hdeg] using
-      InternalGrading.tmul_mem_tensorProduct 𝒢 𝒢
-        ((InternalGrading.ofDecomposition_piece 𝒜).symm ▸ SetLike.mul_mem_graded hu ha :
-          u * a ∈ (𝒢).piece (i + k))
-        ((InternalGrading.ofDecomposition_piece 𝒜).symm ▸ SetLike.mul_mem_graded hv hb :
-          v * b ∈ (𝒢).piece (j + l))
-  exact hle ht
-
 /-- The comultiplication is homogeneous of degree `0` for the total-degree grading of `U ⊗ U`:
 it sends the degree-`n` piece into the span of the tensors `a ⊗ b` with `a` and `b` homogeneous
 of degrees adding to `n`. -/
@@ -109,11 +94,8 @@ theorem isHomogeneous_comul :
   induction l generalizing n with
   | nil =>
     subst hl
-    simpa only [List.map_nil, List.prod_nil, List.sum_nil, Bialgebra.comul_one,
-      Algebra.TensorProduct.one_def, add_zero] using
-      InternalGrading.tmul_mem_tensorProduct 𝒢 𝒢
-        ((InternalGrading.ofDecomposition_piece 𝒜).symm ▸ h1 : (1 : U) ∈ (𝒢).piece 0)
-        ((InternalGrading.ofDecomposition_piece 𝒜).symm ▸ h1 : (1 : U) ∈ (𝒢).piece 0)
+    simpa only [List.map_nil, List.prod_nil, List.sum_nil, Bialgebra.comul_one] using
+      SetLike.one_mem_graded 𝒯
   | cons x l ih =>
     subst hl
     have hx := ι_mem_homogeneousSubmodule ℒ x.2.property
@@ -121,44 +103,10 @@ theorem isHomogeneous_comul :
     simp only [List.map_cons, List.prod_cons, List.sum_cons, Bialgebra.comul_mul, comul_ι,
       add_mul]
     refine Submodule.add_mem _ ?_ ?_
-    · simpa only [add_zero] using tmul_mul_mem_tensorProduct ℒ hx h1 hl
-    · simpa only [zero_add] using tmul_mul_mem_tensorProduct ℒ h1 hx hl
-
-/-- A bihomogeneous projection of total degree other than `n` kills the bihomogeneous tensors
-of total degree `n`. -/
-private theorem map_proj_eq_zero_of_mem_tensorProduct {n i j : ℕ} {t : U ⊗[R] U}
-    (ht : t ∈ 𝒯 n) (hij : i + j ≠ n) : TensorProduct.map (π i) (π j) t = 0 := by
-  have hle : 𝒯 n ≤ LinearMap.ker (TensorProduct.map (π i) (π j)) := by
-    refine InternalGrading.tensorProduct_piece_le_of_add_eq _ _ fun k l hkl a ha b hb => ?_
-    rw [InternalGrading.ofDecomposition_piece] at ha hb
-    rw [LinearMap.mem_ker, TensorProduct.map_tmul]
-    by_cases hik : k = i
-    · simp [_root_.GradedAlgebra.proj_apply,
-        DirectSum.decompose_of_mem_ne 𝒜 hb (show l ≠ j by omega)]
-    · simp [_root_.GradedAlgebra.proj_apply, DirectSum.decompose_of_mem_ne 𝒜 ha hik]
-  exact hle ht
-
-/-- The bihomogeneous projections of total degree `n` recover the bihomogeneous tensors of total
-degree `n`. -/
-private theorem sum_map_proj_of_mem_tensorProduct {n : ℕ} {t : U ⊗[R] U} (ht : t ∈ 𝒯 n) :
-    ∑ p ∈ antidiagonal n, TensorProduct.map (π p.1) (π p.2) t = t := by
-  have hle : 𝒯 n ≤
-      LinearMap.eqLocus (∑ p ∈ antidiagonal n, TensorProduct.map (π p.1) (π p.2))
-        LinearMap.id := by
-    refine InternalGrading.tensorProduct_piece_le_of_add_eq _ _ fun k l hkl a ha b hb => ?_
-    rw [InternalGrading.ofDecomposition_piece] at ha hb
-    rw [LinearMap.mem_eqLocus, LinearMap.sum_apply, Finset.sum_eq_single (k, l)]
-    · simp [_root_.GradedAlgebra.proj_apply,
-        DirectSum.decompose_of_mem_same 𝒜 ha, DirectSum.decompose_of_mem_same 𝒜 hb]
-    · rintro ⟨i, j⟩ hp hne
-      rw [mem_antidiagonal] at hp
-      rw [TensorProduct.map_tmul]
-      by_cases hik : k = i
-      · simp [_root_.GradedAlgebra.proj_apply,
-          DirectSum.decompose_of_mem_ne 𝒜 hb (show l ≠ j by grind)]
-      · simp [_root_.GradedAlgebra.proj_apply, DirectSum.decompose_of_mem_ne 𝒜 ha hik]
-    · exact fun h => absurd (mem_antidiagonal.mpr hkl) h
-  simpa [LinearMap.sum_apply] using hle ht
+    · simpa only [add_zero] using SetLike.mul_mem_graded
+        (InternalGrading.tmul_mem_tensorProduct_ofDecomposition 𝒜 𝒜 hx h1) hl
+    · simpa only [zero_add] using SetLike.mul_mem_graded
+        (InternalGrading.tmul_mem_tensorProduct_ofDecomposition 𝒜 𝒜 h1 hx) hl
 
 /-- The bihomogeneous component `(π i ⊗ π j) (Δ a)` depends only on the component of `a` of
 degree `i + j`. -/
@@ -170,7 +118,7 @@ theorem map_proj_comul (i j : ℕ) (a : U) :
   rw [map_sum, map_sum, Finset.sum_eq_single (i + j)]
   · rw [_root_.GradedAlgebra.proj_apply]
   · intro m _ hm
-    exact map_proj_eq_zero_of_mem_tensorProduct ℒ
+    exact TauCeti.GradedAlgebra.map_proj_eq_zero_of_mem_tensorProduct 𝒜 𝒜
       ((isHomogeneous_comul ℒ).map_mem (DirectSum.decompose 𝒜 a m).property) (Ne.symm hm)
   · intro h
     rw [DFinsupp.notMem_support_iff.mp h]
@@ -181,7 +129,7 @@ of the comultiplication in bidegrees `(i, j)` with `i + j = n`. -/
 theorem comul_proj (n : ℕ) (a : U) :
     Coalgebra.comul (R := R) (π n a) =
       ∑ p ∈ antidiagonal n, TensorProduct.map (π p.1) (π p.2) (Coalgebra.comul (R := R) a) := by
-  conv_lhs => rw [← sum_map_proj_of_mem_tensorProduct ℒ
+  conv_lhs => rw [← TauCeti.GradedAlgebra.sum_map_proj_of_mem_tensorProduct 𝒜 𝒜
     ((isHomogeneous_comul ℒ).map_mem (TauCeti.GradedAlgebra.proj_mem 𝒜 n a))]
   refine Finset.sum_congr rfl fun p hp => ?_
   rw [map_proj_comul ℒ p.1 p.2 a, mem_antidiagonal.mp hp]
@@ -193,13 +141,9 @@ theorem isPrimitiveElem_proj {a : U} {n : ℕ}
     (h : ∀ i j, i + j = n → TensorProduct.map (π i) (π j) (Coalgebra.comul (R := R) a) =
       TensorProduct.map (π i) (π j) (1 ⊗ₜ[R] a + a ⊗ₜ[R] 1)) :
     Bialgebra.IsPrimitiveElem R (π n a) := by
-  have h1 : ∀ k, k ≠ 0 → π k (1 : U) = 0 := by
-    intro k hk
-    rw [_root_.GradedAlgebra.proj_apply,
-      DirectSum.decompose_of_mem_ne 𝒜 (SetLike.one_mem_graded 𝒜) (Ne.symm hk)]
-  have h0 : π 0 (1 : U) = 1 := by
-    rw [_root_.GradedAlgebra.proj_apply,
-      DirectSum.decompose_of_mem_same 𝒜 (SetLike.one_mem_graded 𝒜)]
+  have h1 : ∀ k, k ≠ 0 → π k (1 : U) = 0 := fun k hk =>
+    TauCeti.GradedAlgebra.proj_of_mem_ne (SetLike.one_mem_graded 𝒜) (Ne.symm hk)
+  have h0 : π 0 (1 : U) = 1 := TauCeti.GradedAlgebra.proj_of_mem_same (SetLike.one_mem_graded 𝒜)
   rw [Bialgebra.isPrimitiveElem_iff_comul_eq_tmul_add_tmul, comul_proj,
     Finset.sum_congr rfl fun p hp => h p.1 p.2 (mem_antidiagonal.mp hp)]
   simp only [map_add, TensorProduct.map_tmul, Finset.sum_add_distrib]

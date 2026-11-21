@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.TensorProduct.Graded.Internal
 public import Mathlib.RingTheory.GradedAlgebra.AlgHom
 public import TauCeti.Algebra.Module.GradedModule.TensorProduct.Basic
+public import TauCeti.RingTheory.GradedAlgebra.Basic
 
 /-!
 # The graded tensor product of two internally graded algebras is graded
@@ -23,9 +24,10 @@ for any Koszul-signed degree semiring `ι` (`[CommSemiring ι] [DecidableEq ι]
 Mathlib stops at the ring and algebra structures.  This file supplies the grading they are
 compatible with: the total-degree grading of the underlying tensor product of graded modules turns
 `𝒜 ᵍ⊗[R] ℬ` into an internally `ι`-graded algebra.  It also records unsigned multiplicative
-compatibility (`SetLike.GradedOne`, `SetLike.GradedMul`, `SetLike.GradedMonoid`, and
-`TauCeti.tensorProductGradedAlgebra`) on `A ⊗[R] B` for `ℤ`-gradings, as well as degree-zero
-homogeneity of `LinearMap.mul'` (`TauCeti.isHomogeneous_mul'`).
+compatibility on `A ⊗[R] B` (`SetLike.GradedOne`, `SetLike.GradedMul` and `SetLike.GradedMonoid`
+for gradings by a commutative monoid, and `TauCeti.tensorProductGradedAlgebra` for `ℤ`-gradings),
+degree-zero homogeneity of `LinearMap.mul'` (`TauCeti.isHomogeneous_mul'`), and how the
+bihomogeneous projections `π i ⊗ π j` act on the total-degree pieces.
 
 ## Main definitions
 
@@ -46,6 +48,10 @@ homogeneity of `LinearMap.mul'` (`TauCeti.isHomogeneous_mul'`).
   `TauCeti.InternalGrading.instGradedMulTensorProductPiece`,
   `TauCeti.InternalGrading.instGradedMonoidTensorProductPiece`, and `TauCeti.isHomogeneous_mul'`:
   unsigned total-degree multiplication compatibility and degree-zero homogeneity of multiplication.
+* `TauCeti.GradedAlgebra.map_proj_eq_zero_of_mem_tensorProduct` and
+  `TauCeti.GradedAlgebra.sum_map_proj_of_mem_tensorProduct`: on the degree-`n` piece of
+  `A ⊗[R] B`, `π i ⊗ π j` vanishes unless `i + j = n`, and these projections over `i + j = n` sum
+  to the identity.
 * `TauCeti.gradedTensorHomOfMemZero_comm`: maps induced by degree-zero homomorphisms
   intertwine the ordinary tensor flip with Mathlib's Koszul symmetry.
 * `TauCeti.tmul_mem_gradedTensorGrading`: degrees add on pure tensors.
@@ -84,43 +90,51 @@ section UnsignedTensorProduct
 
 namespace InternalGrading
 
+/-- The pieces of `ofDecomposition 𝒜` are those of `𝒜`, so they inherit its graded-monoid
+structure. -/
+instance instGradedMonoidOfDecompositionPiece {R : Type uR} {A : Type uA} {ι : Type uι}
+    [CommSemiring R] [Semiring A] [Algebra R A] [DecidableEq ι] [AddMonoid ι]
+    (𝒜 : ι → Submodule R A) [DirectSum.Decomposition 𝒜] [SetLike.GradedMonoid 𝒜] :
+    SetLike.GradedMonoid (ofDecomposition 𝒜).piece := by
+  rw [ofDecomposition_piece]
+  infer_instance
+
 /-- On the ordinary tensor product `A ⊗[R] B`, if `1 ∈ GA.piece 0` and `1 ∈ GB.piece 0`, then
 `1 ∈ (GA.tensorProduct GB).piece 0`. -/
-instance instGradedOneTensorProductPiece {R : Type uR} {A : Type uA} {B : Type uB}
+instance instGradedOneTensorProductPiece {R : Type uR} {A : Type uA} {B : Type uB} {ι : Type uι}
     [CommSemiring R] [AddCommMonoidWithOne A] [AddCommMonoidWithOne B] [Module R A] [Module R B]
-    (GA : InternalGrading R A ℤ) (GB : InternalGrading R B ℤ)
+    [DecidableEq ι] [AddZeroClass ι] (GA : InternalGrading R A ι) (GB : InternalGrading R B ι)
     [SetLike.GradedOne GA.piece] [SetLike.GradedOne GB.piece] :
     SetLike.GradedOne (GA.tensorProduct GB).piece where
   one_mem := by
-    rw [Algebra.TensorProduct.one_def, ← add_zero (0 : ℤ)]
+    rw [Algebra.TensorProduct.one_def, ← add_zero (0 : ι)]
     exact GA.tmul_mem_tensorProduct GB (SetLike.one_mem_graded GA.piece)
       (SetLike.one_mem_graded GB.piece)
 
 /-- Unsigned multiplication on `A ⊗[R] B` adds total degrees in `(GA.tensorProduct GB).piece`. -/
-instance instGradedMulTensorProductPiece {R : Type uR} {A : Type uA} {B : Type uB}
+instance instGradedMulTensorProductPiece {R : Type uR} {A : Type uA} {B : Type uB} {ι : Type uι}
     [CommSemiring R] [NonUnitalNonAssocSemiring A] [NonUnitalNonAssocSemiring B]
     [Module R A] [Module R B] [SMulCommClass R A A] [IsScalarTower R A A]
-    [SMulCommClass R B B] [IsScalarTower R B B]
-    (GA : InternalGrading R A ℤ) (GB : InternalGrading R B ℤ)
+    [SMulCommClass R B B] [IsScalarTower R B B] [DecidableEq ι] [AddCommMonoid ι]
+    (GA : InternalGrading R A ι) (GB : InternalGrading R B ι)
     [SetLike.GradedMul GA.piece] [SetLike.GradedMul GB.piece] :
     SetLike.GradedMul (GA.tensorProduct GB).piece where
   mul_mem i j z₁ z₂ hz₁ hz₂ := by
-    refine GA.tensorProduct_piece_le GB
+    refine GA.tensorProduct_piece_le_of_add_eq GB
       (C := ((GA.tensorProduct GB).piece (i + j)).comap (_root_.LinearMap.mulRight R z₂))
-      (fun p a₁ ha₁ b₁ hb₁ => GA.tensorProduct_piece_le GB
+      (fun p q hpq a₁ ha₁ b₁ hb₁ => GA.tensorProduct_piece_le_of_add_eq GB
         (C := ((GA.tensorProduct GB).piece (i + j)).comap
-          (_root_.LinearMap.mulLeft R (a₁ ⊗ₜ[R] b₁))) (fun q a₂ ha₂ b₂ hb₂ => ?_) hz₂) hz₁
-    rw [Submodule.mem_comap, _root_.LinearMap.mulLeft_apply, Algebra.TensorProduct.tmul_mul_tmul]
-    have hdeg : i + j = (p + q) + ((i - p) + (j - q)) := by ring
-    rw [hdeg]
+          (_root_.LinearMap.mulLeft R (a₁ ⊗ₜ[R] b₁))) (fun p' q' hpq' a₂ ha₂ b₂ hb₂ => ?_) hz₂) hz₁
+    rw [Submodule.mem_comap, _root_.LinearMap.mulLeft_apply, Algebra.TensorProduct.tmul_mul_tmul,
+      ← hpq, ← hpq', add_add_add_comm]
     exact GA.tmul_mem_tensorProduct GB (SetLike.mul_mem_graded ha₁ ha₂)
       (SetLike.mul_mem_graded hb₁ hb₂)
 
 /-- Unsigned multiplication and unit on `A ⊗[R] B` form a `SetLike.GradedMonoid` for the
 total-degree grading `(GA.tensorProduct GB).piece`. -/
 instance instGradedMonoidTensorProductPiece {R : Type uR} {A : Type uA} {B : Type uB}
-    [CommSemiring R] [Semiring A] [Semiring B] [Algebra R A] [Algebra R B]
-    (GA : InternalGrading R A ℤ) (GB : InternalGrading R B ℤ)
+    {ι : Type uι} [CommSemiring R] [Semiring A] [Semiring B] [Algebra R A] [Algebra R B]
+    [DecidableEq ι] [AddCommMonoid ι] (GA : InternalGrading R A ι) (GB : InternalGrading R B ι)
     [SetLike.GradedMonoid GA.piece] [SetLike.GradedMonoid GB.piece] :
     SetLike.GradedMonoid (GA.tensorProduct GB).piece where
 
@@ -134,12 +148,8 @@ noncomputable def tensorProductGradedAlgebra {R : Type uR} {A : Type uA} {B : Ty
     [CommSemiring R] [Semiring A] [Semiring B] [Algebra R A] [Algebra R B]
     (𝒜 : ℤ → Submodule R A) (ℬ : ℤ → Submodule R B) [GradedAlgebra 𝒜] [GradedAlgebra ℬ] :
     GradedAlgebra (((InternalGrading.ofDecomposition 𝒜).tensorProduct
-      (InternalGrading.ofDecomposition ℬ)).piece) := by
-  haveI : SetLike.GradedMonoid (InternalGrading.ofDecomposition 𝒜).piece := by
-    rw [InternalGrading.ofDecomposition_piece]; infer_instance
-  haveI : SetLike.GradedMonoid (InternalGrading.ofDecomposition ℬ).piece := by
-    rw [InternalGrading.ofDecomposition_piece]; infer_instance
-  exact (((InternalGrading.ofDecomposition 𝒜).tensorProduct
+      (InternalGrading.ofDecomposition ℬ)).piece) :=
+  (((InternalGrading.ofDecomposition 𝒜).tensorProduct
     (InternalGrading.ofDecomposition ℬ)).isInternal).gradedAlgebra
 
 /-- Multiplication on an internally `ℤ`-graded `R`-algebra is homogeneous of degree `0` from the
@@ -159,6 +169,58 @@ theorem isHomogeneous_mul' {R : Type uR} {A : Type uA} [CommSemiring R]
   have hdeg : n = p + (n - p) := by omega
   rw [Submodule.mem_comap, _root_.LinearMap.mul'_apply, hdeg]
   exact SetLike.mul_mem_graded hx hy
+
+section Proj
+
+variable {R : Type uR} {A : Type uA} {B : Type uB} {ι : Type uι}
+  [CommSemiring R] [Semiring A] [Semiring B] [Algebra R A] [Algebra R B]
+  [DecidableEq ι] [AddMonoid ι]
+  (𝒜 : ι → Submodule R A) (ℬ : ι → Submodule R B) [GradedAlgebra 𝒜] [GradedAlgebra ℬ]
+
+/-- A bihomogeneous projection `π i ⊗ π j` with `i + j ≠ n` kills the degree-`n` piece of the
+total-degree grading of `A ⊗[R] B`. -/
+theorem GradedAlgebra.map_proj_eq_zero_of_mem_tensorProduct {n i j : ι} {t : A ⊗[R] B}
+    (ht : t ∈ ((InternalGrading.ofDecomposition 𝒜).tensorProduct
+      (InternalGrading.ofDecomposition ℬ)).piece n) (hij : i + j ≠ n) :
+    TensorProduct.map (_root_.GradedAlgebra.proj 𝒜 i) (_root_.GradedAlgebra.proj ℬ j) t = 0 := by
+  refine InternalGrading.tensorProduct_piece_le_of_add_eq _ _
+    (C := _root_.LinearMap.ker (TensorProduct.map (_root_.GradedAlgebra.proj 𝒜 i)
+      (_root_.GradedAlgebra.proj ℬ j))) (fun k l hkl a ha b hb => ?_) ht
+  rw [InternalGrading.ofDecomposition_piece] at ha hb
+  rw [_root_.LinearMap.mem_ker, TensorProduct.map_tmul]
+  by_cases hik : k = i
+  · rw [GradedAlgebra.proj_of_mem_ne hb fun hlj => hij (by rw [← hik, ← hlj, hkl]),
+      TensorProduct.tmul_zero]
+  · rw [GradedAlgebra.proj_of_mem_ne ha hik, TensorProduct.zero_tmul]
+
+/-- The bihomogeneous projections `π p.1 ⊗ π p.2` over the pairs `p` with `p.1 + p.2 = n` sum to
+the identity on the degree-`n` piece of the total-degree grading of `A ⊗[R] B`. -/
+theorem GradedAlgebra.sum_map_proj_of_mem_tensorProduct [Finset.HasAntidiagonal ι] {n : ι}
+    {t : A ⊗[R] B} (ht : t ∈ ((InternalGrading.ofDecomposition 𝒜).tensorProduct
+      (InternalGrading.ofDecomposition ℬ)).piece n) :
+    ∑ p ∈ Finset.antidiagonal n,
+      TensorProduct.map (_root_.GradedAlgebra.proj 𝒜 p.1) (_root_.GradedAlgebra.proj ℬ p.2) t =
+        t := by
+  have hle : ((InternalGrading.ofDecomposition 𝒜).tensorProduct
+      (InternalGrading.ofDecomposition ℬ)).piece n ≤
+        _root_.LinearMap.eqLocus (∑ p ∈ Finset.antidiagonal n,
+          TensorProduct.map (_root_.GradedAlgebra.proj 𝒜 p.1) (_root_.GradedAlgebra.proj ℬ p.2))
+          _root_.LinearMap.id := by
+    refine InternalGrading.tensorProduct_piece_le_of_add_eq _ _ fun k l hkl a ha b hb => ?_
+    rw [InternalGrading.ofDecomposition_piece] at ha hb
+    rw [_root_.LinearMap.mem_eqLocus, _root_.LinearMap.sum_apply,
+      Finset.sum_eq_single (k, l) (fun p _ hne => ?_)
+        (fun h => absurd (Finset.mem_antidiagonal.mpr hkl) h),
+      TensorProduct.map_tmul, GradedAlgebra.proj_of_mem_same ha,
+      GradedAlgebra.proj_of_mem_same hb, _root_.LinearMap.id_apply]
+    rw [TensorProduct.map_tmul]
+    by_cases hik : k = p.1
+    · rw [GradedAlgebra.proj_of_mem_ne hb fun hl => hne (Prod.ext hik.symm hl.symm),
+        TensorProduct.tmul_zero]
+    · rw [GradedAlgebra.proj_of_mem_ne ha hik, TensorProduct.zero_tmul]
+  simpa [_root_.LinearMap.sum_apply] using hle ht
+
+end Proj
 
 end UnsignedTensorProduct
 

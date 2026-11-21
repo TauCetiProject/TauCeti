@@ -32,6 +32,8 @@ that divides it produces a homogeneous polynomial of one degree less.
 * `TauCeti.GradedAlgebra.mem_of_mul_mem_add_of_isLeftRegular`: if `a ∈ 𝒜 i` is left regular and
   `a * b ∈ 𝒜 (i + j)`, then `b ∈ 𝒜 j`.
 * `TauCeti.GradedAlgebra.proj_mem`: the degree-`i` projection lands in the degree-`i` component.
+* `TauCeti.GradedAlgebra.proj_of_mem_same` and `TauCeti.GradedAlgebra.proj_of_mem_ne`: the
+  degree-`j` projection fixes elements of degree `j` and kills elements of any other degree.
 * `TauCeti.GradedAlgebra.isScalarTower_gradeZero`: the scalars act on a graded algebra through its
   degree-zero part.
 -/
@@ -158,6 +160,17 @@ variable {R A ι : Type*} [DecidableEq ι] [AddMonoid ι] [CommSemiring R] [Semi
 theorem proj_mem (i : ι) (a : A) : _root_.GradedAlgebra.proj 𝒜 i a ∈ 𝒜 i := by
   rw [_root_.GradedAlgebra.proj_apply]
   exact (decompose 𝒜 a i).property
+
+variable {𝒜}
+
+/-- The degree-`i` projection fixes elements of degree `i`. -/
+theorem proj_of_mem_same {i : ι} {a : A} (ha : a ∈ 𝒜 i) : _root_.GradedAlgebra.proj 𝒜 i a = a := by
+  rw [_root_.GradedAlgebra.proj_apply, decompose_of_mem_same 𝒜 ha]
+
+/-- The degree-`j` projection kills elements of degree `i ≠ j`. -/
+theorem proj_of_mem_ne {i j : ι} {a : A} (ha : a ∈ 𝒜 i) (hij : i ≠ j) :
+    _root_.GradedAlgebra.proj 𝒜 j a = 0 := by
+  rw [_root_.GradedAlgebra.proj_apply, decompose_of_mem_ne 𝒜 ha hij]
 
 end Proj
 

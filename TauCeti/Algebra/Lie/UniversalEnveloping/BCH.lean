@@ -87,8 +87,8 @@ theorem exists_ι_sub_mem_of_comul_sub_mem {u : U} {k : ℕ}
     intro n
     have hn := TauCeti.GradedAlgebra.proj_mem 𝒜 n u
     split_ifs with h
-    · rw [_root_.GradedAlgebra.proj_apply, DirectSum.decompose_of_mem_same 𝒜 (h ▸ hn), h]
-    · rw [_root_.GradedAlgebra.proj_apply, DirectSum.decompose_of_mem_ne 𝒜 hn h]
+    · rw [TauCeti.GradedAlgebra.proj_of_mem_same (h ▸ hn), h]
+    · rw [TauCeti.GradedAlgebra.proj_of_mem_ne hn h]
   rw [← _root_.GradedAlgebra.proj_apply, map_sub, map_sum, map_sum]
   simp only [hf, hproj]
   rw [Finset.sum_eq_single ⟨m, hmk⟩ (fun n _ hn => by simp [Fin.ext_iff] at hn; simp [hn])
