@@ -239,14 +239,29 @@ theorem ratio_mono_left (h : S ⊆ S') (T : Set ι) (X : ℝ) : F.ratio S T X �
   exact div_le_div_of_nonneg_right
     (by exact_mod_cast F.count_mono_set (Set.inter_subset_inter_left T h) X) (by positivity)
 
+/-- Enlarging a subfamily enlarges its lower relative density. -/
+theorem lowerDensity_mono_left (h : S ⊆ S') (T : Set ι) :
+    F.lowerDensity S T ≤ F.lowerDensity S' T :=
+  liminf_le_liminf (.of_forall (ratio_mono_left h T)) (F.isBoundedUnder_ge_ratio S T atTop)
+    (F.isBoundedUnder_le_ratio S' T atTop).isCoboundedUnder_ge
+
+/-- Enlarging a subfamily enlarges its upper relative density. -/
+theorem upperDensity_mono_left (h : S ⊆ S') (T : Set ι) :
+    F.upperDensity S T ≤ F.upperDensity S' T :=
+  limsup_le_limsup (.of_forall (ratio_mono_left h T))
+    (F.isBoundedUnder_ge_ratio S T atTop).isCoboundedUnder_le (F.isBoundedUnder_le_ratio S' T atTop)
+
 /-- Within a reference family with a member of height at most `X`, the proportion of the
 complement is one minus the proportion. -/
 theorem ratio_sdiff {X : ℝ} (hT : 0 < F.count T X) (S : Set ι) :
     F.ratio (T \ S) T X = 1 - F.ratio S T X := by
   have h := F.count_inter_add_count_sdiff T S X
-  rw [ratio_apply, ratio_apply, Set.inter_eq_left.mpr Set.sdiff_subset, Set.inter_comm,
-    eq_sub_iff_add_eq, ← add_div, div_eq_one_iff_eq (by positivity)]
-  exact_mod_cast (add_comm _ _).trans h
+  have hT' : (F.count T X : ℝ) ≠ 0 := by positivity
+  rw [ratio_apply, ratio_apply, Set.inter_eq_left.mpr Set.sdiff_subset, Set.inter_comm S T]
+  field_simp
+  rw [← h]
+  push_cast
+  ring
 
 /-- The complement of a subfamily of density `d` in a nonempty reference family `T` has
 density `1 - d` in `T`. -/
@@ -290,47 +305,6 @@ theorem HasDensity.congr_finite (hSS' : (symmDiff S S').Finite) (hT : T.Infinite
 
 /-! ### Strict and inclusive cutoffs -/
 
-variable (F) in
-/-- Around every cutoff `X` there is a gap `δ ∈ (0, 1]` free of heights, except possibly `X`
-itself, so that strict and inclusive counts at `X` are inclusive and strict counts at
-`X - δ` and `X + δ`. -/
-theorem exists_countLT_eq_count_sub_and_count_eq_countLT_add (X : ℝ) :
-    ∃ δ, 0 < δ ∧ δ ≤ 1 ∧ ∀ S : Set ι,
-      F.countLT S X = F.count S (X - δ) ∧ F.count S X = F.countLT S (X + δ) := by
-  have hsub : {i | F.height i ≤ X + 1 ∧ F.height i ≠ X} ⊆ {i | F.height i ≤ X + 1} :=
-    fun _ hi ↦ hi.1
-  have hfin : (F.height '' {i | F.height i ≤ X + 1 ∧ F.height i ≠ X}).Finite :=
-    ((F.finite_height_le (X + 1)).subset hsub).image _
-  have hX : X ∉ F.height '' {i | F.height i ≤ X + 1 ∧ F.height i ≠ X} := by
-    rintro ⟨i, ⟨-, hi⟩, rfl⟩
-    exact hi rfl
-  obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.mp hfin.isClosed.isOpen_compl X hX
-  -- every height `h ≤ X + 1` other than `X` satisfies `|h - X| ≥ ε`
-  have hgap : ∀ i, F.height i ≤ X + 1 → F.height i ≠ X → ε ≤ |F.height i - X| := by
-    intro i hi hiX
-    by_contra! hlt
-    exact hball (Metric.mem_ball.mpr hlt) ⟨i, ⟨hi, hiX⟩, rfl⟩
-  refine ⟨min ε 1, lt_min hε one_pos, min_le_right _ _, fun S ↦ ⟨?_, ?_⟩⟩
-  · rw [countLT_eq_ncard, count_eq_ncard]
-    congr 1
-    ext i
-    simp only [Set.mem_ofPred_eq, and_congr_right_iff]
-    intro _
-    refine ⟨fun hi ↦ ?_, fun hi ↦ hi.trans_lt (by linarith [lt_min hε one_pos])⟩
-    have := hgap i (by linarith) hi.ne
-    rw [abs_of_neg (by linarith)] at this
-    linarith [min_le_left ε 1]
-  · rw [countLT_eq_ncard, count_eq_ncard]
-    congr 1
-    ext i
-    simp only [Set.mem_ofPred_eq, and_congr_right_iff]
-    intro _
-    refine ⟨fun hi ↦ hi.trans_lt (by linarith [lt_min hε one_pos]), fun hi ↦ ?_⟩
-    by_contra! hXi
-    have := hgap i (by linarith [min_le_right ε 1]) hXi.ne'
-    rw [abs_of_pos (by linarith)] at this
-    linarith [min_le_left ε 1]
-
 /-- The inclusive and strict cutoffs give the same relative densities. -/
 theorem hasDensity_iff_tendsto_ratioLT :
     F.HasDensity S T d ↔ Tendsto (F.ratioLT S T) atTop (𝓝 d) := by
@@ -357,6 +331,7 @@ theorem ratio_rescale (c : ℝ) (hc : 0 < c) (S T : Set ι) (X : ℝ) :
   simp [ratio_apply, count_rescale]
 
 /-- Rescaling the height by a positive constant does not change relative densities. -/
+@[simp]
 theorem hasDensity_rescale_iff (c : ℝ) (hc : 0 < c) :
     (F.rescale c hc).HasDensity S T d ↔ F.HasDensity S T d := by
   constructor

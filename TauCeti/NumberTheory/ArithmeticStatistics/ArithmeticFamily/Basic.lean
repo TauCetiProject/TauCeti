@@ -231,6 +231,46 @@ theorem count_le_countLT_of_lt (S : Set ι) {X Y : ℝ} (h : X < Y) :
   exact Finset.mem_filter.mpr
     ⟨F.heightLE_mono h.le hiX, hiS, ((mem_heightLE F).mp hiX).trans_lt h⟩
 
+/-- Around every cutoff `X` there is a gap `δ ∈ (0, 1]` free of heights, except possibly `X`
+itself, so that strict and inclusive counts at `X` are inclusive and strict counts at
+`X - δ` and `X + δ`. -/
+theorem exists_countLT_eq_count_sub_and_count_eq_countLT_add (X : ℝ) :
+    ∃ δ, 0 < δ ∧ δ ≤ 1 ∧ ∀ S : Set ι,
+      F.countLT S X = F.count S (X - δ) ∧ F.count S X = F.countLT S (X + δ) := by
+  have hsub : {i | F.height i ≤ X + 1 ∧ F.height i ≠ X} ⊆ {i | F.height i ≤ X + 1} :=
+    fun _ hi ↦ hi.1
+  have hfin : (F.height '' {i | F.height i ≤ X + 1 ∧ F.height i ≠ X}).Finite :=
+    ((F.finite_height_le (X + 1)).subset hsub).image _
+  have hX : X ∉ F.height '' {i | F.height i ≤ X + 1 ∧ F.height i ≠ X} := by
+    rintro ⟨i, ⟨-, hi⟩, rfl⟩
+    exact hi rfl
+  obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.mp hfin.isClosed.isOpen_compl X hX
+  -- every height `h ≤ X + 1` other than `X` satisfies `|h - X| ≥ ε`
+  have hgap : ∀ i, F.height i ≤ X + 1 → F.height i ≠ X → ε ≤ |F.height i - X| := by
+    intro i hi hiX
+    by_contra! hlt
+    exact hball (Metric.mem_ball.mpr hlt) ⟨i, ⟨hi, hiX⟩, rfl⟩
+  refine ⟨min ε 1, lt_min hε one_pos, min_le_right _ _, fun S ↦ ⟨?_, ?_⟩⟩
+  · rw [countLT_eq_ncard, count_eq_ncard]
+    congr 1
+    ext i
+    simp only [Set.mem_ofPred_eq, and_congr_right_iff]
+    intro _
+    refine ⟨fun hi ↦ ?_, fun hi ↦ hi.trans_lt (by linarith [lt_min hε one_pos])⟩
+    have := hgap i (by linarith) hi.ne
+    rw [abs_of_neg (by linarith)] at this
+    linarith [min_le_left ε 1]
+  · rw [countLT_eq_ncard, count_eq_ncard]
+    congr 1
+    ext i
+    simp only [Set.mem_ofPred_eq, and_congr_right_iff]
+    intro _
+    refine ⟨fun hi ↦ hi.trans_lt (by linarith [lt_min hε one_pos]), fun hi ↦ ?_⟩
+    by_contra! hXi
+    have := hgap i (by linarith [min_le_right ε 1]) hXi.ne'
+    rw [abs_of_pos (by linarith)] at this
+    linarith [min_le_left ε 1]
+
 /-- Descend an invariant height to a quotient, requiring finiteness on the quotient itself.
 Finiteness of representatives is neither required nor implied. -/
 def ofQuotient (s : Setoid ι) (h : ι → ℝ) (hinv : ∀ i j, s.r i j → h i = h j)
