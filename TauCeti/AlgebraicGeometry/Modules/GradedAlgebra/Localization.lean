@@ -9,6 +9,8 @@ public import Mathlib.AlgebraicGeometry.Sites.SmallAffineZariski
 public import TauCeti.Algebra.Module.LocalizedModule.DirectSum
 public import TauCeti.AlgebraicGeometry.Modules.GradedAlgebra.Sections
 public import TauCeti.AlgebraicGeometry.Modules.Localization
+public import TauCeti.RingTheory.GradedAlgebra.Coarsen
+public import TauCeti.RingTheory.GradedAlgebra.Localization.Away
 
 /-!
 # Graded rings of sections over basic opens
@@ -36,6 +38,12 @@ constructions with graded algebras. It is the graded counterpart of
   `CategoryTheory.CommMon.algebraGradedSectionsBasicOpen`.
 * `CategoryTheory.CommMon.coequifibered_toGradedSectionsPresheaf`: on the affine opens of `X`, the
   presheaf of graded rings of sections is coequifibered over the structure presheaf.
+* `CategoryTheory.CommMon.awayGradedSectionsBasicOpenEquiv`: the resulting ring isomorphism from
+  `Localization.Away f` of `⨁ n, Γ(Aₙ, U)` onto `⨁ n, Γ(Aₙ, X.basicOpen f)`, and
+  `CategoryTheory.CommMon.awayGradedSectionsBasicOpenEquiv_mem_iff`: it carries the grading
+  `TauCeti.GradedAlgebra.awayGrading` of the localization, in each degree `n`, onto the summand
+  `Γ(Aₙ, X.basicOpen f)`. So the graded rings of sections over basic opens are the localizations
+  of graded rings with their localization gradings, in all degrees and not only in degree zero.
 -/
 
 public section
@@ -152,6 +160,71 @@ theorem _root_.CategoryTheory.CommMon.isBaseChange_restrictGradedSections
   exact LinearMap.ext fun x ↦ A.restrictGradedSectionsGradedHom_apply _ x
 
 end BaseChange
+
+section AwayGrading
+
+variable [∀ n, (A.X n).IsQuasicoherent] {U : X.Opens}
+
+/-- The ring of sections `⨁ n, Γ(Aₙ, X.basicOpen f)` over a basic open of an affine open `U` is the
+localization of `⨁ n, Γ(Aₙ, U)` away from `f`, placed in degree zero, through the lift of the
+restriction of sections. Its gradings are compared in
+`CommMon.awayGradedSectionsBasicOpenEquiv_mem_iff`. -/
+def _root_.CategoryTheory.CommMon.awayGradedSectionsBasicOpenEquiv (hU : IsAffineOpen U)
+    (f : Γ(X, U)) : Localization.Away (algebraMap Γ(X, U) (⨁ n, Γ(A.X n, U)) f) ≃+*
+      ⨁ n, Γ(A.X n, X.basicOpen f) :=
+  RingEquiv.ofBijective _ (GradedAlgebra.awayLift_bijective
+    (coarsenGrading (A.gradedSectionsGrading U) (Nat.castAddMonoidHom ℤ))
+    (SetLike.algebraMap_mem_graded _ f)
+    ((A.restrictGradedSectionsGradedHom (homOfLE (X.basicOpen_le f))).coarsenGrading _)
+    (by
+      rw [GradedRingHom.coe_coarsenGrading, CommMon.restrictGradedSectionsGradedHom_apply,
+        CommMon.restrictGradedSections_algebraMap]
+      exact (X.toRingedSpace.isUnit_res_basicOpen f).map _)
+    (by
+      rw [GradedRingHom.toRingHom_coarsenGrading, CommMon.restrictGradedSectionsGradedHom_toRingHom]
+      exact A.isLocalization_gradedSections_basicOpen hU f))
+
+/-- `CommMon.awayGradedSectionsBasicOpenEquiv` extends the restriction of sections. -/
+@[simp]
+theorem _root_.CategoryTheory.CommMon.awayGradedSectionsBasicOpenEquiv_algebraMap
+    (hU : IsAffineOpen U) (f : Γ(X, U)) (x : ⨁ n, Γ(A.X n, U)) :
+    A.awayGradedSectionsBasicOpenEquiv hU f (algebraMap _ _ x) =
+      A.restrictGradedSections (homOfLE (X.basicOpen_le f)) x := by
+  rw [CommMon.awayGradedSectionsBasicOpenEquiv, RingEquiv.ofBijective_apply,
+    GradedAlgebra.awayLift_algebraMap, GradedRingHom.coe_coarsenGrading,
+    CommMon.restrictGradedSectionsGradedHom_apply]
+
+/-- **The grading of `Localization.Away` agrees with the affine graded charts.** Grade
+`⨁ n, Γ(Aₙ, U)` by `ℤ` through `ℕ → ℤ`, so that `TauCeti.GradedAlgebra.awayGrading` grades its
+localization away from the degree-zero element `f`. Then
+`CommMon.awayGradedSectionsBasicOpenEquiv` carries this grading onto the grading of
+`⨁ n, Γ(Aₙ, X.basicOpen f)` by its summands, coarsened in the same way. -/
+theorem _root_.CategoryTheory.CommMon.awayGradedSectionsBasicOpenEquiv_mem_coarsenGrading_iff
+    (hU : IsAffineOpen U) (f : Γ(X, U)) {d : ℤ}
+    {x : Localization.Away (algebraMap Γ(X, U) (⨁ n, Γ(A.X n, U)) f)} :
+    A.awayGradedSectionsBasicOpenEquiv hU f x ∈
+        coarsenGrading (A.gradedSectionsGrading (X.basicOpen f)) (Nat.castAddMonoidHom ℤ) d ↔
+      x ∈ GradedAlgebra.awayGrading
+        (coarsenGrading (A.gradedSectionsGrading U) (Nat.castAddMonoidHom ℤ))
+        (SetLike.algebraMap_mem_graded _ f) d :=
+  GradedAlgebra.awayLift_mem_iff _ _ _ _ (A.awayGradedSectionsBasicOpenEquiv hU f).injective
+
+/-- In degree `n`, `CommMon.awayGradedSectionsBasicOpenEquiv` identifies the degree-`n` part of
+the localization `Localization.Away f` of `⨁ n, Γ(Aₙ, U)`, graded by
+`TauCeti.GradedAlgebra.awayGrading`, with the summand `Γ(Aₙ, X.basicOpen f)`. -/
+theorem _root_.CategoryTheory.CommMon.awayGradedSectionsBasicOpenEquiv_mem_iff
+    (hU : IsAffineOpen U) (f : Γ(X, U)) {n : ℕ}
+    {x : Localization.Away (algebraMap Γ(X, U) (⨁ n, Γ(A.X n, U)) f)} :
+    A.awayGradedSectionsBasicOpenEquiv hU f x ∈ A.gradedSectionsGrading (X.basicOpen f) n ↔
+      x ∈ GradedAlgebra.awayGrading
+        (coarsenGrading (A.gradedSectionsGrading U) (Nat.castAddMonoidHom ℤ))
+        (SetLike.algebraMap_mem_graded _ f) n := by
+  have h : coarsenGrading (A.gradedSectionsGrading (X.basicOpen f)) (Nat.castAddMonoidHom ℤ) n =
+      A.gradedSectionsGrading (X.basicOpen f) n :=
+    coarsenGrading_apply_of_injective _ Nat.cast_injective n
+  rw [← A.awayGradedSectionsBasicOpenEquiv_mem_coarsenGrading_iff hU f, h]
+
+end AwayGrading
 
 /-- On the affine opens of `X`, the presheaf of graded rings of sections of a graded algebra with
 quasicoherent homogeneous components is coequifibered over the structure presheaf: its graded rings
