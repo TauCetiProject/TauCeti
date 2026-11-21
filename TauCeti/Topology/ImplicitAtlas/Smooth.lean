@@ -99,7 +99,7 @@ structure IsSmoothEnhancement : Prop where
   /-- The group `Γ_I` acts on `X_I^reg` by smooth maps. -/
   contMDiff_act : ∀ (I : Finset A) (g : (α : I) → Γ α),
     ContMDiff (𝓡 (N I)) (𝓡 (N I)) ∞
-      (fun x : 𝒜.regLocus I ↦ (⟨act I g x, 𝒜.act_mem_regLocus I g x x.2⟩ : 𝒜.regLocus I))
+      (fun x : 𝒜.regLocus I ↦ (⟨act I g x, 𝒜.act_mem_regLocus I g x x.property⟩ : 𝒜.regLocus I))
   /-- The Kuranishi maps `s_α` are smooth on `X_I^reg`. -/
   contMDiff_kuranishi : ∀ (I : Finset A) (α : I),
     ContMDiff (𝓡 (N I)) 𝓘(ℝ, E α) ∞ (fun x : 𝒜.regLocus I ↦ 𝒜.kuranishi I α x)
@@ -109,12 +109,12 @@ structure IsSmoothEnhancement : Prop where
   exists_isLocalDiffeomorphAt : ∀ ⦃I J : Finset A⦄ (h : I ⊆ J)
     (x : kuranishiZeroSet 𝒜.kuranishi I J) (hx : 𝒜.footprintMap h x ∈ 𝒜.regLocus I),
     ∃ τ : 𝒜.regLocus J → 𝒜.regLocus I,
-      (∀ᶠ y in 𝓝 (⟨x.1, 𝒜.mem_regLocus_of_footprintMap_mem h x hx⟩ : 𝒜.regLocus J),
-        ∀ hy : y.1 ∈ kuranishiZeroSet 𝒜.kuranishi I J,
-          (τ y : T I) = 𝒜.footprintMap h ⟨y.1, hy⟩) ∧
+      (∀ᶠ y in 𝓝 (⟨x.val, 𝒜.mem_regLocus_of_footprintMap_mem h x hx⟩ : 𝒜.regLocus J),
+        ∀ hy : y.val ∈ kuranishiZeroSet 𝒜.kuranishi I J,
+          (τ y : T I) = 𝒜.footprintMap h ⟨y.val, hy⟩) ∧
       IsLocalDiffeomorphAt (𝓡 (N J)) ((𝓡 (N I)).prod 𝓘(ℝ, (α : ↥(J \ I)) → E α)) ∞
         (fun y ↦ (τ y, kuranishiSdiff 𝒜.kuranishi I J y))
-        ⟨x.1, 𝒜.mem_regLocus_of_footprintMap_mem h x hx⟩
+        ⟨x.val, 𝒜.mem_regLocus_of_footprintMap_mem h x hx⟩
 
 namespace IsSmoothEnhancement
 
@@ -125,8 +125,8 @@ regular locus, as a diffeomorphism with inverse the action of `g⁻¹`. -/
 noncomputable def actDiffeomorph (hS : 𝒜.IsSmoothEnhancement N) (I : Finset A)
     (g : (α : I) → Γ α) :
     Diffeomorph (𝓡 (N I)) (𝓡 (N I)) (𝒜.regLocus I) (𝒜.regLocus I) ∞ where
-  toFun x := ⟨act I g x, 𝒜.act_mem_regLocus I g x x.2⟩
-  invFun x := ⟨act I g⁻¹ x, 𝒜.act_mem_regLocus I g⁻¹ x x.2⟩
+  toFun x := ⟨act I g x, 𝒜.act_mem_regLocus I g x x.property⟩
+  invFun x := ⟨act I g⁻¹ x, 𝒜.act_mem_regLocus I g⁻¹ x x.property⟩
   left_inv x := Subtype.ext <| by
     simp only [map_inv, Homeomorph.inv_apply, Homeomorph.symm_apply_apply]
   right_inv x := Subtype.ext <| by
@@ -159,17 +159,17 @@ theorem exists_openPartialHomeomorph (hS : 𝒜.IsSmoothEnhancement N) {I J : Fi
     (N I : ℤ) = d + ∑ α ∈ I, (Module.finrank ℝ (E α) : ℤ) ∧
       ∃ e : OpenPartialHomeomorph (T J)
           (EuclideanSpace ℝ (Fin (N I)) × ((α : ↥(J \ I)) → E α)),
-        x.1 ∈ e.source ∧ (∀ y ∈ e.source, (e y).2 = kuranishiSdiff 𝒜.kuranishi I J y) ∧
-        ∀ y : kuranishiZeroSet 𝒜.kuranishi I J, y.1 ∈ e.source →
+        x.val ∈ e.source ∧ (∀ y ∈ e.source, (e y).2 = kuranishiSdiff 𝒜.kuranishi I J y) ∧
+        ∀ y : kuranishiZeroSet 𝒜.kuranishi I J, y.val ∈ e.source →
           ∃ hy : 𝒜.footprintMap h y ∈ 𝒜.regLocus I,
             (e y).1 = chartAt (EuclideanSpace ℝ (Fin (N I)))
               (⟨𝒜.footprintMap h x, hx⟩ : 𝒜.regLocus I) ⟨𝒜.footprintMap h y, hy⟩ := by
   refine ⟨hS.natCast_eq I ⟨_, hx⟩, ?_⟩
-  set x' : 𝒜.regLocus J := ⟨x.1, 𝒜.mem_regLocus_of_footprintMap_mem h x hx⟩
+  set x' : 𝒜.regLocus J := ⟨x.val, 𝒜.mem_regLocus_of_footprintMap_mem h x hx⟩
   obtain ⟨τ, hτ, Φ, hxΦ, hfΦ⟩ := hS.exists_isLocalDiffeomorphAt h x hx
   have hΦ : ∀ y ∈ Φ.source, Φ y = (τ y, kuranishiSdiff 𝒜.kuranishi I J y) :=
     fun _ hy ↦ (hfΦ hy).symm
-  have hτx : τ x' = ⟨𝒜.footprintMap h x, hx⟩ := Subtype.ext (hτ.self_of_nhds x.2)
+  have hτx : τ x' = ⟨𝒜.footprintMap h x, hx⟩ := Subtype.ext (hτ.self_of_nhds x.property)
   -- Near `x'`, `τ` extends `ψ_IJ` and the local diffeomorphism `Φ` is defined.
   obtain ⟨W, hW, hWo, hxW⟩ := eventually_nhds_iff.1 <| hτ.and <| Φ.open_source.mem_nhds hxΦ
   set c := chartAt (EuclideanSpace ℝ (Fin (N I))) (⟨𝒜.footprintMap h x, hx⟩ : 𝒜.regLocus I)
@@ -193,11 +193,11 @@ theorem exists_openPartialHomeomorph (hS : 𝒜.IsSmoothEnhancement N) {I J : Fi
   · rintro _ ⟨y, hy, rfl⟩
     rw [OpenPartialHomeomorph.lift_openEmbedding_apply, (he₀ y hy).2]
   · rintro y ⟨y', hy', hyy'⟩
-    have hy'Z : y'.1 ∈ kuranishiZeroSet 𝒜.kuranishi I J := hyy' ▸ y.2
+    have hy'Z : y'.val ∈ kuranishiZeroSet 𝒜.kuranishi I J := hyy' ▸ y.property
     have hτy : (τ y' : T I) = 𝒜.footprintMap h y := by
       rw [(hW y' (he₀ y' hy').1).1 hy'Z]
       congr
-    refine ⟨hτy ▸ (τ y').2, ?_⟩
+    refine ⟨hτy ▸ (τ y').property, ?_⟩
     rw [← hyy', OpenPartialHomeomorph.lift_openEmbedding_apply, (he₀ y' hy').2]
     exact congrArg c (Subtype.ext hτy)
 

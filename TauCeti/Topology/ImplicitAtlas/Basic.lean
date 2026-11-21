@@ -117,12 +117,12 @@ Kuranishi maps `s J α : X_J → E_α`: the components of `s_J` indexed by `J \ 
 def kuranishiSdiff [DecidableEq A] {T : Finset A → Type*} {E : A → Type*}
     (s : ∀ (J : Finset A) (α : J), T J → E α) (I J : Finset A) (y : T J) :
     (α : ↥(J \ I)) → E α :=
-  fun α ↦ s J ⟨α.1, (Finset.mem_sdiff.1 α.2).1⟩ y
+  fun α ↦ s J ⟨α.val, (Finset.mem_sdiff.1 α.property).1⟩ y
 
 @[simp]
 theorem kuranishiSdiff_apply [DecidableEq A] {T : Finset A → Type*} {E : A → Type*}
     (s : ∀ (J : Finset A) (α : J), T J → E α) (I J : Finset A) (y : T J) (α : ↥(J \ I)) :
-    kuranishiSdiff s I J y α = s J ⟨α.1, (Finset.mem_sdiff.1 α.2).1⟩ y := by
+    kuranishiSdiff s I J y α = s J ⟨α.val, (Finset.mem_sdiff.1 α.property).1⟩ y := by
   simp only [kuranishiSdiff]
 
 /-- The zero set of the extra obstruction `s_(J \ I)` is `Z_IJ`. -/
@@ -130,8 +130,8 @@ theorem kuranishiSdiff_eq_zero_iff [DecidableEq A] {T : Finset A → Type*} {E :
     [∀ α, Zero (E α)] {s : ∀ (J : Finset A) (α : J), T J → E α} {I J : Finset A} {y : T J} :
     kuranishiSdiff s I J y = 0 ↔ y ∈ kuranishiZeroSet s I J := by
   simp only [funext_iff, kuranishiSdiff_apply, Pi.zero_apply, mem_kuranishiZeroSet]
-  exact ⟨fun h α hα ↦ h ⟨α.1, Finset.mem_sdiff.2 ⟨α.2, hα⟩⟩,
-    fun h α ↦ h _ (Finset.mem_sdiff.1 α.2).2⟩
+  exact ⟨fun h α hα ↦ h ⟨α.val, Finset.mem_sdiff.2 ⟨α.property, hα⟩⟩,
+    fun h α ↦ h _ (Finset.mem_sdiff.1 α.property).2⟩
 
 /-- An **implicit atlas** of virtual dimension `d` on `X` (Pardon, Definition 3.1.1), with finite
 isotropy groups `Γ α`, obstruction representations `ρ α` on `E α`, thickenings `T I` and actions

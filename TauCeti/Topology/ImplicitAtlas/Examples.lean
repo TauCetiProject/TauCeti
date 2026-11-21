@@ -121,9 +121,9 @@ theorem isSmoothEnhancement_ofChartedSpace [IsManifold (𝓡 n) ∞ X] :
   natCast_eq I _ := by simp [Finset.eq_empty_of_isEmpty I]
   isManifold _ := inferInstanceAs (IsManifold (𝓡 n) ∞ (⊤ : TopologicalSpace.Opens X))
   contMDiff_act _ _ := contMDiff_id
-  contMDiff_kuranishi _ α := (IsEmpty.false α.1).elim
+  contMDiff_kuranishi _ α := (IsEmpty.false α.val).elim
   exists_isLocalDiffeomorphAt I J _ x _ := by
-    have : IsEmpty ↥(J \ I) := ⟨fun α ↦ IsEmpty.false α.1⟩
+    have : IsEmpty ↥(J \ I) := ⟨fun α ↦ IsEmpty.false α.val⟩
     -- With no extra obstruction, `y ↦ (y, s_(J \ I) y)` is the diffeomorphism `X ≃ X × 0`.
     let Φ : Diffeomorph (𝓡 n) ((𝓡 n).prod 𝓘(ℝ, (α : ↥(J \ I)) → E α))
         ((ofChartedSpace Γ E ρ n X).regLocus J)
