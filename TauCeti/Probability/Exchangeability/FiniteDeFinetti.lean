@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Exchangeability.SamplingWithoutReplacement
 public import TauCeti.Probability.PopulationSampling.Discrepancy
+public import TauCeti.Probability.PopulationSampling.Ties
 
 /-!
 # Quantitative finite de Finetti approximation
@@ -45,6 +46,11 @@ error `1 - n.descFactorial m / n^m`, and twice that error for the signed-measure
 This includes `m = n = 0`, whose error is zero. For a nonempty population the error is the
 exact index-collision probability.
 
+If the first `n` coordinates repeat a value with positive probability, the error improves further:
+for a measurable set `S` of populations with a repeated value, it is
+`1 - p - t * min p (1 - p) * P((X₀, …, Xₙ₋₁) ∈ S)`, where `p = n.descFactorial m / n^m` and
+`t = m.descFactorial 2 / n.descFactorial 2`.
+
 ## Main declarations
 
 * `TauCeti.Probability.ExchangeableAt.sampleWithReplacement_eq_prefixLaw_of_le_one`: exact
@@ -60,7 +66,11 @@ exact index-collision probability.
   the total-variation and real eventwise forms;
 * `TauCeti.Probability.ExchangeableAt.finiteDeFinetti_exact_collision`: the sharper eventwise
   bound using the exact collision probability, with corresponding `etvDist`, `tvDist`, and
-  `Measure.real` theorems.
+  `Measure.real` theorems;
+* `TauCeti.Probability.ExchangeableAt.finiteDeFinetti_ties` and
+  `TauCeti.Probability.ExchangeableAt.etvDist_prefixLaw_sampleWithReplacement_le_ties`: the
+  eventwise and `etvDist` bounds whose error decreases with the probability of a repeated value
+  among the first `n` coordinates.
 
 ## References
 
@@ -265,6 +275,47 @@ theorem ExchangeableAt.abs_prefixLaw_real_sub_sampleWithReplacement_real_le_exac
   simpa using
     abs_sampleWithoutReplacement_real_sub_sampleWithReplacement_real_le_exact_collision
       (ι := Fin m) (prefixLaw μ X n) A
+
+/-- **Finite de Finetti with ties.** Let the first `n` coordinates of a process be exchangeable,
+`m ≤ n`, and let `S` be a measurable set of populations `Fin n → α` with a repeated value. Then the
+`m`-prefix law and the with-replacement sample of the `n`-prefix law differ on every event, in
+both directions, by at most `1 - p - t * min p (1 - p) * P((X₀, …, Xₙ₋₁) ∈ S)`, where
+`p = n.descFactorial m / n ^ m` and `t = m.descFactorial 2 / n.descFactorial 2`. For `S = ∅` this
+is `finiteDeFinetti_exact_collision`. -/
+theorem ExchangeableAt.finiteDeFinetti_ties
+    {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ]
+    {X : ℕ → Ω → α} {m n : ℕ} (h : ExchangeableAt μ X n) (hmn : m ≤ n)
+    (hX : ∀ i : Fin n, AEMeasurable (X i.val) μ) {S : Set (Fin n → α)} (hS : MeasurableSet S)
+    (hSx : ∀ x ∈ S, ¬ Function.Injective x) (A : Set (Fin m → α)) :
+    let p : ℝ := n.descFactorial m / (n : ℝ) ^ m
+    let t : ℝ := m.descFactorial 2 / n.descFactorial 2
+    prefixLaw μ X m A ≤ sampleWithReplacement (ι := Fin m) (prefixLaw μ X n) A +
+        ENNReal.ofReal (1 - p - t * min p (1 - p) * (prefixLaw μ X n S).toReal) ∧
+      sampleWithReplacement (ι := Fin m) (prefixLaw μ X n) A ≤ prefixLaw μ X m A +
+        ENNReal.ofReal (1 - p - t * min p (1 - p) * (prefixLaw μ X n S).toReal) := by
+  rw [← h.sampleWithoutReplacement_eq_prefixLaw hmn hX]
+  constructor
+  · simpa using sampleWithoutReplacement_le_sampleWithReplacement_add_ties
+      (prefixLaw μ X n) hS hSx A
+  · simpa using sampleWithReplacement_le_sampleWithoutReplacement_add_ties
+      (prefixLaw μ X n) hS hSx A
+
+/-- **Finite de Finetti with ties, total-variation form.** Under the hypotheses of
+`finiteDeFinetti_ties`, Mathlib's extended total variation distance between the `m`-prefix law
+and the with-replacement sample of the `n`-prefix law is at most
+`2 * ENNReal.ofReal (1 - p - t * min p (1 - p) * P((X₀, …, Xₙ₋₁) ∈ S))`. -/
+theorem ExchangeableAt.etvDist_prefixLaw_sampleWithReplacement_le_ties
+    {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ]
+    {X : ℕ → Ω → α} {m n : ℕ} (h : ExchangeableAt μ X n) (hmn : m ≤ n)
+    (hX : ∀ i : Fin n, AEMeasurable (X i.val) μ) {S : Set (Fin n → α)} (hS : MeasurableSet S)
+    (hSx : ∀ x ∈ S, ¬ Function.Injective x) :
+    let p : ℝ := n.descFactorial m / (n : ℝ) ^ m
+    let t : ℝ := m.descFactorial 2 / n.descFactorial 2
+    etvDist (prefixLaw μ X m) (sampleWithReplacement (ι := Fin m) (prefixLaw μ X n)) ≤
+      2 * ENNReal.ofReal (1 - p - t * min p (1 - p) * (prefixLaw μ X n S).toReal) := by
+  rw [← h.sampleWithoutReplacement_eq_prefixLaw hmn hX]
+  simpa using etvDist_sampleWithoutReplacement_sampleWithReplacement_le_ties
+    (ι := Fin m) (prefixLaw μ X n) hS hSx
 
 end FiniteExchangeability
 
