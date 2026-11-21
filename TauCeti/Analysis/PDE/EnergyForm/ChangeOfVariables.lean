@@ -438,8 +438,8 @@ theorem exists_holderOnWith_matrixBilinearForm_pullbackPrincipal
     simpa only [mul_one, Function.comp_def] using ha.comp hΦ.holderOnWith hmaps
   have hh := hJ.prodMk (haΦ.prodMk ((ContinuousLinearMap.adjoint (𝕜 := ℝ)
     (E := EuclideanSpace ℝ ι) (F := EuclideanSpace ℝ ι)).isometry.comp_holderOnWith hTh))
-  obtain ⟨K, hK⟩ := hg.contDiffOn.exists_holderOnWith_comp hh (R := max J (max M L))
-    fun x hx => by
+  obtain ⟨K, hK⟩ := hg.contDiffOn.exists_holderOnWith_comp (convex_closedBall 0 (max J (max M L)))
+    (isCompact_closedBall 0 _) hh fun x hx => mem_closedBall_zero_iff.2 <| by
       simp only [Function.comp_apply, norm_prod_le_iff, Real.norm_eq_abs, abs_abs,
         LinearIsometryEquiv.norm_map]
       exact ⟨(hJb x hx).trans (le_max_left _ _),
@@ -472,12 +472,13 @@ theorem exists_holderOnWith_pullbackDrift {s t : Set (EuclideanSpace ℝ ι)}
     contDiff_fst.smul ((contDiff_snd.comp contDiff_snd).clm_apply (contDiff_fst.comp contDiff_snd))
   have hbΦ : HolderOnWith (Kb * KΦ ^ (r : ℝ)) r (fun x => b (Φ x)) s := by
     simpa only [mul_one, Function.comp_def] using hb.comp hΦ.holderOnWith hmaps
-  obtain ⟨K, hK⟩ := hg.contDiffOn.exists_holderOnWith_comp (hJ.prodMk (hbΦ.prodMk hTh))
-    (R := max J (max M L)) fun x hx => by
-      simp only [norm_prod_le_iff, Real.norm_eq_abs, abs_abs]
-      exact ⟨(hJb x hx).trans (le_max_left _ _),
-        (hbM _ (hmaps hx)).trans ((le_max_left _ _).trans (le_max_right _ _)),
-        (hTL x hx).trans ((le_max_right _ _).trans (le_max_right _ _))⟩
+  obtain ⟨K, hK⟩ := hg.contDiffOn.exists_holderOnWith_comp (convex_closedBall 0 (max J (max M L)))
+    (isCompact_closedBall 0 _) (hJ.prodMk (hbΦ.prodMk hTh)) fun x hx =>
+      mem_closedBall_zero_iff.2 <| by
+        simp only [norm_prod_le_iff, Real.norm_eq_abs, abs_abs]
+        exact ⟨(hJb x hx).trans (le_max_left _ _),
+          (hbM _ (hmaps hx)).trans ((le_max_left _ _).trans (le_max_right _ _)),
+          (hTL x hx).trans ((le_max_right _ _).trans (le_max_right _ _))⟩
   exact ⟨K, hK.congr fun z hz => (pullbackDrift_eq_smul_apply b (hT z hz)).symm⟩
 
 end Holder
