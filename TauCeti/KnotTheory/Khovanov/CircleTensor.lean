@@ -232,9 +232,7 @@ variable [DecidableEq ι]
 variable (R) in
 /-- The action of `X` on the circle `i`: multiplication by `X = ε` placed in the factor `i`. -/
 noncomputable def circleX (i : ι) : CircleTensor R ι →ₗ[R] CircleTensor R ι :=
-  -- `Algebra.lmul` reads the algebra structure off the codomain of `singleAlgHom`, rather than
-  -- searching for one on the abbreviation `CircleTensor R ι`.
-  Algebra.lmul R _ (singleAlgHom (A := fun _ ↦ R[ε]) i ε)
+  LinearMap.mulLeft R (singleAlgHom (A := fun _ ↦ R[ε]) i ε)
 
 /-- The `X` action on the circle `i` is multiplication by `X` in the factor `i`. -/
 theorem circleX_apply (i : ι) (x : CircleTensor R ι) :

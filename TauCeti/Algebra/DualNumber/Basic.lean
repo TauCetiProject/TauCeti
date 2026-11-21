@@ -14,9 +14,11 @@ import Mathlib.RingTheory.DualNumber
 /-!
 # Basic properties of dual numbers
 
-A coordinatewise scalar action on dual numbers commutes with multiplication whenever the
-action on the coefficients does. These instances make bilinear multiplication and convolution
-available with that module structure.
+A coordinatewise scalar action on dual numbers forms a scalar tower with multiplication whenever
+the action on the coefficients does, and it commutes with multiplication whenever the action on
+the coefficients does; the two laws lift separately. When the coordinatewise action is a module
+structure over a commutative semiring, together they make multiplication bilinear, which makes
+bilinear multiplication and convolution available with that module structure.
 Dual numbers over an Artinian ring are also Artinian, using their product module structure, and
 they are a finite module over their coefficient ring.
 Multiplication by `ε` is exact over any semiring. Over any ring, each element
@@ -62,22 +64,18 @@ variable {R B : Type*} [Semiring B] [SMul R B]
 /-- Coordinatewise scalar multiplication associates with multiplication of dual numbers
 whenever it associates with multiplication of the coefficients. -/
 instance dualNumberIsScalarTower [IsScalarTower R B B] :
-    IsScalarTower R (DualNumber B) (DualNumber B) where
-  smul_assoc r x y := by
-    -- `r • b = (r • 1) * b`, so `r • ·` is additive on `B`.
-    have h (a b : B) : r • (a + b) = r • a + r • b := by
-      rw [← smul_one_mul r (a + b), mul_add, smul_one_mul, smul_one_mul]
-    ext <;> simp [smul_eq_mul, h, smul_mul_assoc]
+    IsScalarTower R (DualNumber B) (DualNumber B) :=
+  .of_smul_one_mul fun r x ↦ by
+    have h : r • (0 : B) = 0 := by rw [← smul_one_mul, mul_zero]
+    ext <;> simp [h, smul_one_mul]
 
 /-- Coordinatewise scalar multiplication commutes with left multiplication of dual numbers
 whenever it commutes with left multiplication of the coefficients. -/
 instance dualNumberSMulCommClass [SMulCommClass R B B] :
-    SMulCommClass R (DualNumber B) (DualNumber B) where
-  smul_comm r x y := by
-    -- `r • b = b * (r • 1)`, so `r • ·` is additive on `B`.
-    have h (a b : B) : r • (a + b) = r • a + r • b := by
-      rw [← mul_smul_one r (a + b), add_mul, mul_smul_one, mul_smul_one]
-    ext <;> simp [smul_eq_mul, h, mul_smul_comm]
+    SMulCommClass R (DualNumber B) (DualNumber B) :=
+  .of_mul_smul_one fun r x ↦ by
+    have h : r • (0 : B) = 0 := by rw [← mul_smul_one, zero_mul]
+    ext <;> simp [h, mul_smul_one]
 
 /-- Dual numbers over an Artinian ring form an Artinian ring. -/
 instance dualNumberIsArtinianRing {R : Type*} [Ring R] [IsArtinianRing R] :
