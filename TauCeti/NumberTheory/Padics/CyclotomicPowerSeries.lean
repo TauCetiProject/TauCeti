@@ -111,6 +111,11 @@ theorem cyclotomicSubst_X (a : ℤ_[p]) : cyclotomicSubst O a X = binomialSeries
 theorem cyclotomicSubst_C (a : ℤ_[p]) (c : O) : cyclotomicSubst O a (C c) = C c :=
   (cyclotomicSubst O a).commutes c
 
+/-- The cyclotomic substitutions commute: `γ_a ∘ γ_b = γ_b ∘ γ_a`. -/
+theorem cyclotomicSubst_comm (a b : ℤ_[p]) (f : O⟦X⟧) :
+    cyclotomicSubst O a (cyclotomicSubst O b f) = cyclotomicSubst O b (cyclotomicSubst O a f) := by
+  rw [← AlgHom.mul_apply, ← map_mul, mul_comm a b, map_mul, AlgHom.mul_apply]
+
 /-- `γ_a` sends the binomial series `(1 + X) ^ b` to `(1 + X) ^ (a b)`. -/
 @[simp]
 theorem cyclotomicSubst_binomialSeries (a b : ℤ_[p]) :
@@ -247,7 +252,7 @@ theorem cyclotomicFrobenius_cyclotomicSubst (a : ℤ_[p]) (f : O⟦X⟧) :
     cyclotomicFrobenius p σ (cyclotomicSubst O a f) =
       cyclotomicSubst O a (cyclotomicFrobenius p σ f) := by
   rw [cyclotomicFrobenius_eq_cyclotomicSubst, cyclotomicFrobenius_eq_cyclotomicSubst,
-    map_cyclotomicSubst, ← AlgHom.mul_apply, ← map_mul, mul_comm, map_mul, AlgHom.mul_apply]
+    map_cyclotomicSubst, cyclotomicSubst_comm]
 
 /-- The Frobenius `φ_σ` is injective when `σ` is injective and `O` has no zero divisors. -/
 theorem cyclotomicFrobenius_injective [NoZeroDivisors O] (hσ : Function.Injective σ) :
