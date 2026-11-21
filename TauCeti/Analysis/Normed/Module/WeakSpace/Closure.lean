@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Module.Convex
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
-public import TauCeti.Analysis.LocallyConvex.WeakSpace
+public import TauCeti.Analysis.LocallyConvex.WeakSpace.Basic
 import Mathlib.Topology.Order.IntermediateValue
 import TauCeti.Topology.Algebra.Module.WeakSpace
 

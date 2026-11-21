@@ -51,6 +51,10 @@ Hazewinkel classification, and Cartier–Quillen's canonical strict `p`-typicali
 * `FormalGroup.pTypicalCurveSubgroup`: the additive subgroup of `p`-typical curves in `F.Curve`.
 * `FormalGroup.pTypicalProjectorCurve`: Cartier's idempotent `p`-typicalization projector
   `F.Curve →+ F.Curve` when every prime `q ≠ p` is a unit in `R`.
+* `FormalGroup.pTypicalCurveEquiv`: the direct-sum decomposition
+  `F.Curve ≃+ F.pTypicalCurveSubgroup p × (F.pTypicalProjectorCurve p hunit).ker`.
+* `TauCeti.FormalGroupIso.pTypicalCurveSubgroupEquiv`: the equivalence of `p`-typical curve
+  subgroups induced by an isomorphism of formal group laws.
 
 ## Main results
 
@@ -69,6 +73,9 @@ Hazewinkel classification, and Cartier–Quillen's canonical strict `p`-typicali
   `FormalGroup.pTypicalProjectorCurve_verschiebungCurve_of_forall_coprime`: commutation of Cartier's
   projector with `f_m` and `V_m` for `m ≠ 0` coprime to every prime `q ≠ p` (specializing to
   `f_{p^r}` and `V_{p^r}` when `p` is prime).
+* `FormalGroup.pTypicalProjectorCurve_cartierProjectorCurve_of_prime` and
+  `FormalGroup.cartierProjectorCurve_pTypicalProjectorCurve_of_prime`: Cartier's projector absorbs
+  every elementary Cartier projector `1 - V_q [q]⁻¹ f_q` at a prime `q ≠ p`.
 
 ## References
 
@@ -435,6 +442,48 @@ theorem pTypicalCurveSubgroup_eq_iInf_ker (F : FormalGroup R) [F.IsComm] (p : �
       ⨅ (q : ℕ) (hq : q.Prime) (_ : q ≠ p), (F.frobeniusCurve q hq.ne_zero).ker := by
   ext γ
   simp [mem_pTypicalCurveSubgroup, Curve.isPTypical_def]
+
+section Iso
+
+variable {F G : FormalGroup R} [F.IsComm] [G.IsComm]
+
+/-- An isomorphism of commutative formal group laws induces an additive equivalence between their
+subgroups of `p`-typical curves. -/
+noncomputable def _root_.TauCeti.FormalGroupIso.pTypicalCurveSubgroupEquiv
+    (e : TauCeti.FormalGroupIso F G) (p : ℕ) :
+    F.pTypicalCurveSubgroup p ≃+ G.pTypicalCurveSubgroup p where
+  toFun γ :=
+    ⟨e.curveEquiv γ.val, (G.mem_pTypicalCurveSubgroup p _).mpr
+      ((Curve.isPTypical_curveEquiv_iff e p _).mpr
+        ((F.mem_pTypicalCurveSubgroup p _).mp γ.property))⟩
+  invFun γ :=
+    ⟨e.curveEquiv.symm γ.val, (F.mem_pTypicalCurveSubgroup p _).mpr <| by
+      rw [← e.curveEquiv_symm]
+      exact (Curve.isPTypical_curveEquiv_iff e.symm p _).mpr
+        ((G.mem_pTypicalCurveSubgroup p _).mp γ.property)⟩
+  left_inv γ := Subtype.ext (e.curveEquiv.symm_apply_apply γ.val)
+  right_inv γ := Subtype.ext (e.curveEquiv.apply_symm_apply γ.val)
+  map_add' γ₁ γ₂ := Subtype.ext (map_add e.curveEquiv γ₁.val γ₂.val)
+
+@[simp]
+theorem _root_.TauCeti.FormalGroupIso.coe_pTypicalCurveSubgroupEquiv
+    (e : TauCeti.FormalGroupIso F G) (p : ℕ) (γ : F.pTypicalCurveSubgroup p) :
+    (e.pTypicalCurveSubgroupEquiv p γ : G.Curve) = e.curveEquiv γ.val :=
+  (rfl)
+
+theorem _root_.TauCeti.FormalGroupIso.coe_pTypicalCurveSubgroupEquiv_symm
+    (e : TauCeti.FormalGroupIso F G) (p : ℕ) (γ : G.pTypicalCurveSubgroup p) :
+    ((e.pTypicalCurveSubgroupEquiv p).symm γ : F.Curve) = e.curveEquiv.symm γ.val :=
+  (rfl)
+
+@[simp]
+theorem _root_.TauCeti.FormalGroupIso.pTypicalCurveSubgroupEquiv_symm
+    (e : TauCeti.FormalGroupIso F G) (p : ℕ) :
+    (e.pTypicalCurveSubgroupEquiv p).symm = e.symm.pTypicalCurveSubgroupEquiv p :=
+  AddEquiv.ext fun _ ↦ Subtype.ext (by
+    simp [TauCeti.FormalGroupIso.coe_pTypicalCurveSubgroupEquiv_symm])
+
+end Iso
 
 /-! ### Cartier's infinite `p`-typicalization projector -/
 
@@ -938,6 +987,53 @@ theorem pTypicalProjectorCurve_eq_iff (p : ℕ)
   exact ⟨by rintro rfl; exact ⟨F.isPTypical_pTypicalProjectorCurve p hunit γ,
       by rw [F.pTypicalProjectorCurve_pTypicalProjectorCurve, sub_self]⟩,
     fun ⟨hδ, hker⟩ ↦ sub_eq_zero.mp (F.pTypicalProjectorCurve_eq_self p hunit hδ ▸ hker)⟩
+
+/-- When every prime `q ≠ p` is invertible in `R`, every curve on `F` decomposes uniquely as the
+sum of a `p`-typical curve and a curve in the kernel of Cartier's `p`-typicalization projector. -/
+noncomputable def pTypicalCurveEquiv (p : ℕ)
+    (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) :
+    F.Curve ≃+ F.pTypicalCurveSubgroup p × (F.pTypicalProjectorCurve p hunit).ker where
+  toFun γ :=
+    (⟨F.pTypicalProjectorCurve p hunit γ,
+        (F.mem_pTypicalCurveSubgroup p _).mpr (F.isPTypical_pTypicalProjectorCurve p hunit γ)⟩,
+      ⟨γ - F.pTypicalProjectorCurve p hunit γ, by
+        rw [AddMonoidHom.mem_ker, map_sub, pTypicalProjectorCurve_pTypicalProjectorCurve,
+          sub_self]⟩)
+  invFun δ := δ.fst.val + δ.snd.val
+  left_inv γ := add_sub_cancel _ _
+  right_inv := by
+    rintro ⟨⟨δ₁, h₁⟩, ⟨δ₂, h₂⟩⟩
+    rw [AddMonoidHom.mem_ker] at h₂
+    have hproj : F.pTypicalProjectorCurve p hunit (δ₁ + δ₂) = δ₁ := by
+      rw [map_add, F.pTypicalProjectorCurve_eq_self p hunit
+        ((F.mem_pTypicalCurveSubgroup p _).mp h₁), h₂, _root_.add_zero]
+    apply Prod.ext
+    · exact Subtype.ext hproj
+    · exact Subtype.ext (by dsimp only; rw [hproj, add_sub_cancel_left])
+  map_add' γ₁ γ₂ := by
+    apply Prod.ext
+    · exact Subtype.ext (map_add _ γ₁ γ₂)
+    · apply Subtype.ext
+      simp only [Prod.snd_add, AddSubgroup.coe_add, map_add]
+      abel
+
+@[simp]
+theorem coe_pTypicalCurveEquiv_fst (p : ℕ) (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R))
+    (γ : F.Curve) :
+    ((F.pTypicalCurveEquiv p hunit γ).fst : F.Curve) = F.pTypicalProjectorCurve p hunit γ :=
+  (rfl)
+
+@[simp]
+theorem coe_pTypicalCurveEquiv_snd (p : ℕ) (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R))
+    (γ : F.Curve) :
+    ((F.pTypicalCurveEquiv p hunit γ).snd : F.Curve) = γ - F.pTypicalProjectorCurve p hunit γ :=
+  (rfl)
+
+theorem pTypicalCurveEquiv_symm_apply (p : ℕ)
+    (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R))
+    (δ : F.pTypicalCurveSubgroup p × (F.pTypicalProjectorCurve p hunit).ker) :
+    (F.pTypicalCurveEquiv p hunit).symm δ = δ.fst.val + δ.snd.val :=
+  (rfl)
 
 /-- Cartier's `p`-typicalization projector kills `V_n γ` whenever `n ≠ 0` is divisible by a prime
 `q ≠ p`. -/
