@@ -22,15 +22,10 @@ Stampacchia's and De Giorgi's methods, `w` is a truncation `(u - k)⁺`, `A` is 
 `{u > k}`, and the power of its measure is the source of the superlinear gain that drives the
 iteration.
 
-The same three-exponent argument on a finite measure space, with `A` the whole space, bounds
-`∫⁻ ‖f‖ₑ ‖g‖ₑ` for `1/p + 1/q = 1/r` and `1 ≤ r`.
-
 ## Main declarations
 
 * `TauCeti.MeasureTheory.norm_integral_smul_le_eLpNorm_mul_eLpNorm_mul_measureReal_rpow`: the
   inequality.
-* `TauCeti.MeasureTheory.lintegral_enorm_mul_enorm_le_eLpNorm_mul_eLpNorm_mul_rpow_measure_univ`:
-  `∫⁻ ‖f‖ₑ ‖g‖ₑ ≤ ‖f‖_{Lᵖ} ‖g‖_{L^q} μ(univ) ^ (1 - 1/r)` for a Hölder triple `(p, q, r)`.
 -/
 
 public section
@@ -90,32 +85,6 @@ theorem norm_integral_smul_le_eLpNorm_mul_eLpNorm_mul_measureReal_rpow {f : Ω �
     finiteness [hf.eLpNorm_ne_top, hw.eLpNorm_ne_top, hAfin]
   simpa [ENNReal.toReal_mul, ← ENNReal.toReal_rpow, ← measureReal_def] using
     ENNReal.toReal_mono hfin key
-
-omit [NormedSpace ℝ E] in
-/-- **Hölder's inequality for the lower integral of a product.** For a Hölder triple
-`1/p + 1/q = 1/r` with `1 ≤ r`,
-
-`∫⁻ ‖f‖ₑ ‖g‖ₑ ≤ ‖f‖_{Lᵖ} ‖g‖_{L^q} μ(univ) ^ (1 - 1/r)`.
-
-The factor `μ(univ) ^ (1 - 1/r)` compares the `L¹` and `Lʳ` seminorms of the product. -/
-theorem lintegral_enorm_mul_enorm_le_eLpNorm_mul_eLpNorm_mul_rpow_measure_univ {F : Type*}
-    [NormedAddCommGroup F] {p q r : ℝ≥0∞} [ENNReal.HolderTriple p q r] (hr : 1 ≤ r) {f : Ω → E}
-    {g : Ω → F} (hf : AEStronglyMeasurable f μ) (hg : AEStronglyMeasurable g μ) :
-    ∫⁻ x, ‖f x‖ₑ * ‖g x‖ₑ ∂μ ≤
-      eLpNorm f p μ * eLpNorm g q μ * μ univ ^ (1 - 1 / r.toReal) := by
-  have hm : AEStronglyMeasurable (fun x => ‖f x‖ * ‖g x‖) μ := hf.norm.mul hg.norm
-  have hH := eLpNorm_le_eLpNorm_mul_eLpNorm_of_norm (μ := μ) (p := p) (q := q) (r := r)
-    (fun (a : E) (b : F) => ‖a‖ * ‖b‖) (1 : ℝ≥0)
-    ((continuous_norm.comp continuous_fst).mul (continuous_norm.comp continuous_snd)) hf hg
-    (Filter.Eventually.of_forall fun x => by simp)
-  simp only [ENNReal.coe_one, one_mul] at hH
-  calc ∫⁻ x, ‖f x‖ₑ * ‖g x‖ₑ ∂μ = eLpNorm (fun x => ‖f x‖ * ‖g x‖) 1 μ := by
-        rw [eLpNorm_one_eq_lintegral_eNorm hm]
-        refine lintegral_congr fun x => ?_
-        simp
-    _ ≤ eLpNorm (fun x => ‖f x‖ * ‖g x‖) r μ * μ univ ^ (1 - 1 / r.toReal) := by
-        simpa using eLpNorm_le_eLpNorm_mul_rpow_measure_univ hr hm
-    _ ≤ _ := by gcongr
 
 end MeasureTheory
 

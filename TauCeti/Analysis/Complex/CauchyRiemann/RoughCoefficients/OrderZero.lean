@@ -14,7 +14,7 @@ import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.Sobolev.Local.Approximation
 import TauCeti.Analysis.Sobolev.Local.Morrey.Higher
-import TauCeti.MeasureTheory.Integral.Bochner.Holder
+import TauCeti.MeasureTheory.Integral.MeanInequalities
 
 /-!
 # Order-zero regularity for real Cauchy–Riemann equations with Sobolev coefficients
@@ -379,7 +379,7 @@ private theorem lintegral_enorm_coeffTerm_le [ENNReal.HolderTriple p q r] (hr : 
     (memLpLoc_iff.1 hc.memLpLoc_deriv K hKΩ hK).aestronglyMeasurable.sub
       (hA.continuous_fderiv (by simp)).aestronglyMeasurable
   have hHolder :=
-    (MeasureTheory.lintegral_enorm_mul_enorm_le_eLpNorm_mul_eLpNorm_mul_rpow_measure_univ (p := p)
+    (lintegral_enorm_mul_enorm_le_eLpNorm_mul_eLpNorm_mul_rpow_measure_univ (p := p)
       (q := q) hr hDBm hWK.aestronglyMeasurable).trans
         (mul_le_mul_left (mul_le_mul_left
           ((eLpNorm_sub_comm DJ (fderiv ℝ A) p _).trans_le hAD) _) _)
