@@ -60,6 +60,25 @@ def moebiusThomPairSingularHomologyOneEquiv (R : Type) [CommRing R] :
     continuous_norm_moebiusCore (finrank_self ℝ) isEmpty_vectorBundleOrientation_moebiusCore
     moebiusOrientationOne
 
+/-- The identification `H₁(E, E₀; R) ≅ R ⧸ 2R` for the Möbius line is
+`TauCeti.VectorBundleOrientationCover.thomPairSingularHomologyOneEquivQuotientTwo` for the Möbius
+line bundle, constructed from any orientation `o` of any fibre. -/
+theorem moebiusThomPairSingularHomologyOneEquiv_eq (R : Type) [CommRing R] {b : Circle}
+    (o : Orientation ℝ (moebiusCore.Fiber b) (Fin 1)) :
+    haveI : LocallyPathConnectedSpace Circle :=
+      ChartedSpace.locallyPathConnectedSpace (EuclideanSpace ℝ (Fin 1)) Circle
+    moebiusThomPairSingularHomologyOneEquiv R =
+      VectorBundleOrientationCover.thomPairSingularHomologyOneEquivQuotientTwo
+        continuous_norm_moebiusCore (finrank_self ℝ) isEmpty_vectorBundleOrientation_moebiusCore
+        o := by
+  have : LocallyPathConnectedSpace Circle :=
+    ChartedSpace.locallyPathConnectedSpace (EuclideanSpace ℝ (Fin 1)) Circle
+  ext x
+  rw [moebiusThomPairSingularHomologyOneEquiv,
+    VectorBundleOrientationCover.thomPairSingularHomologyOneEquivQuotientTwo_apply,
+    VectorBundleOrientationCover.thomPairSingularHomologyOneEquivQuotientTwo_apply,
+    VectorBundleOrientationCover.twistedHomology₀EquivQuotientTwo_eq _ _ moebiusOrientationOne o]
+
 /-- **The Thom comparison for the Möbius line needs its orientation local system.** The first
 homology of the Thom pair of the Möbius line `E` over the circle, `H₁(E, E₀; ℤ) ≅ ℤ/2`, is not
 isomorphic to the zeroth homology `H₀(S¹; ℤ) ≅ ℤ` of the circle with constant integer coefficients:

@@ -251,6 +251,18 @@ def VectorBundleOrientation.thomPairSingularHomologyOneEquiv [PathConnectedSpace
   (thomPairSingularHomologySuccIsoOrientationTwistedHomology hnorm hF R 0).toLinearEquiv ≪≫ₗ
     VectorBundleOrientation.twistedHomology₀Equiv _ o b
 
+/-- The identification of `H₁(E, E₀; R)` with `R` given by an orientation `o` is the Thom
+isomorphism with orientation coefficients followed by the identification of `H₀(B; o(E))` with `R`
+given by `o`. -/
+theorem VectorBundleOrientation.thomPairSingularHomologyOneEquiv_apply [PathConnectedSpace B]
+    (o : VectorBundleOrientation F E (Fin 1)) (b : B)
+    (x : ((thomPair F E).singularHomology (ModuleCat.of R R) 1 : ModuleCat R)) :
+    haveI : FiniteDimensional ℝ F := Module.finite_of_finrank_eq_succ hF
+    thomPairSingularHomologyOneEquiv hnorm hF o b x =
+      VectorBundleOrientation.twistedHomology₀Equiv ((Fintype.card_fin 1).trans hF.symm) o b
+        ((thomPairSingularHomologySuccIsoOrientationTwistedHomology hnorm hF R 0).hom x) :=
+  (rfl)
+
 /-- **The first homology of the Thom pair of a non-orientable line bundle.** Over a connected,
 locally path-connected base, if the line bundle `E` is not orientable, then
 `H₁(E, E₀; R) ≅ H₀(B; o(E)) ≅ R ⧸ 2R`. With integer coefficients this is `ℤ/2`, not the group
@@ -264,6 +276,20 @@ def VectorBundleOrientationCover.thomPairSingularHomologyOneEquivQuotientTwo [Co
   haveI : FiniteDimensional ℝ F := Module.finite_of_finrank_eq_succ hF
   (thomPairSingularHomologySuccIsoOrientationTwistedHomology hnorm hF R 0).toLinearEquiv ≪≫ₗ
     VectorBundleOrientationCover.twistedHomology₀EquivQuotientTwo _ h o
+
+/-- The identification of `H₁(E, E₀; R)` with `R ⧸ 2R` for a non-orientable line bundle is the Thom
+isomorphism with orientation coefficients followed by the identification of `H₀(B; o(E))` with
+`R ⧸ 2R`. -/
+theorem VectorBundleOrientationCover.thomPairSingularHomologyOneEquivQuotientTwo_apply
+    [ConnectedSpace B] [LocallyPathConnectedSpace B]
+    (h : IsEmpty (VectorBundleOrientation F E (Fin 1))) {b : B} (o : Orientation ℝ (E b) (Fin 1))
+    (x : ((thomPair F E).singularHomology (ModuleCat.of R R) 1 : ModuleCat R)) :
+    haveI : FiniteDimensional ℝ F := Module.finite_of_finrank_eq_succ hF
+    thomPairSingularHomologyOneEquivQuotientTwo hnorm hF h o x =
+      VectorBundleOrientationCover.twistedHomology₀EquivQuotientTwo
+        ((Fintype.card_fin 1).trans hF.symm) h o
+        ((thomPairSingularHomologySuccIsoOrientationTwistedHomology hnorm hF R 0).hom x) :=
+  (rfl)
 
 end OrientationCoefficients
 

@@ -483,7 +483,8 @@ theorem eq_or_eq_sphereBundleNeg_of_sphereBundleProj_eq (hF : Module.finrank ℝ
   · exact .inl (Subtype.ext (by simp))
   · exact .inr (Subtype.ext (by simp))
 
-/-- In rank one, each fibre of the unit sphere bundle consists of two opposite unit vectors. -/
+/-- In rank one, each fibre of the unit sphere bundle is finite: its points are a unit vector and
+its negative (`TauCeti.eq_or_eq_sphereBundleNeg_of_sphereBundleProj_eq`). -/
 theorem finite_preimage_sphereBundleProj (hF : Module.finrank ℝ F = 1) (b : B) :
     (sphereBundleProj F E ⁻¹' {b}).Finite := by
   have : Nontrivial F := Module.nontrivial_of_finrank_eq_succ hF
