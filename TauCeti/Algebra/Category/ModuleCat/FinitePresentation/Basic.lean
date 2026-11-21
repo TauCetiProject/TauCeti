@@ -1,0 +1,261 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
+public import Mathlib.Algebra.Module.FinitePresentation
+public import Mathlib.CategoryTheory.Abelian.Subcategory
+public import TauCeti.Algebra.Category.ModuleCat.CartanMap.Basic
+public import TauCeti.Algebra.Category.ModuleCat.Progenerator
+public import TauCeti.CategoryTheory.FinitelyPresentedFunctor.RestrictedYoneda
+
+import TauCeti.Algebra.Module.FinitePresentation
+
+/-!
+# Finitely presented modules as finitely presented functors
+
+For a ring `R`, a module is finitely presented exactly when it is the cokernel of a morphism between
+finitely generated projective modules. So the Yoneda description of the finitely presented functors
+on a category of projective objects identifies the finitely presented `R`-modules with
+`mod (proj R)`, the finitely presented functors on the category of finitely generated projective
+`R`-modules. Evaluating the functor attached to a module at the regular module `R` recovers the
+underlying abelian group of the module.
+
+Over any ring `R`, the object property `TauCeti.finitePresentationModules R` contains the zero
+module and is closed under finite products, cokernels and retracts; over a left Noetherian ring it
+agrees with finite generation (`TauCeti.finitePresentationModules_eq_finiteModules`). Its inclusion
+into `ModuleCat R` preserves epimorphisms, projective objects of
+`(finitePresentationModules R).FullSubcategory` are precisely the finitely presented projective
+`R`-modules (`TauCeti.projective_finitePresentationModules_iff`), and progenerators are precisely
+the finitely presented projective module-theoretic generators
+(`TauCeti.isProgenerator_finitePresentationModules_iff`), including the regular module `R`
+(`TauCeti.isProgenerator_finitePresentationModulesRegular`).
+
+## Main definitions
+
+* `TauCeti.finitePresentationModules`: the finitely presented modules, as a property of objects of
+  `ModuleCat R`.
+* `TauCeti.finitePresentationModulesRegular`: the regular module `R`, as an object of
+  `(finitePresentationModules R).FullSubcategory`.
+* `TauCeti.finitePresentationEquivalenceMod`: the equivalence between the finitely presented
+  `R`-modules and `mod (proj R)`.
+* `TauCeti.finitePresentationEquivalenceModCompEvaluationIso`: the composite of this equivalence
+  with evaluation at `R` is the underlying abelian group of a module.
+
+## Main results
+
+* `TauCeti.presented_finiteProjectiveModules`: the finitely presented modules are the modules with a
+  presentation by finitely generated projective modules.
+* `TauCeti.finiteProjectiveModules_le_finitePresentationModules`,
+  `TauCeti.finitePresentationModules_le_finiteModules`, and
+  `TauCeti.finitePresentationModules_eq_finiteModules`: comparison with finitely generated
+  projective and finitely generated modules.
+* `TauCeti.projective_finitePresentationModules_iff`,
+  `TauCeti.isProgenerator_finitePresentationModules_iff`, and
+  `TauCeti.isProgenerator_finitePresentationModulesRegular`: characterization of projective objects
+  and progenerators in `(finitePresentationModules R).FullSubcategory`.
+-/
+
+public section
+
+universe u
+
+open CategoryTheory Limits Opposite
+
+namespace TauCeti
+
+variable (R : Type u) [Ring R]
+
+/-- The object property of being a finitely presented module. -/
+def finitePresentationModules : ObjectProperty (ModuleCat.{u} R) :=
+  fun M ↦ Module.FinitePresentation R M
+
+variable {R} in
+@[simp]
+theorem finitePresentationModules_iff {M : ModuleCat.{u} R} :
+    finitePresentationModules R M ↔ Module.FinitePresentation R M :=
+  Iff.rfl
+
+/-- A module is finitely presented exactly when it is the cokernel of a morphism between finitely
+generated projective modules. -/
+theorem presented_finiteProjectiveModules :
+    (finiteProjectiveModules R).presented = finitePresentationModules R := by
+  ext M
+  constructor
+  · rintro @⟨A, B, f, c, hc, hA, hB⟩
+    obtain ⟨hA, -⟩ := finiteProjectiveModules_iff.1 hA
+    obtain ⟨hB, hB'⟩ := finiteProjectiveModules_iff.1 hB
+    have hepi : Epi c.π := Cofork.IsColimit.epi hc
+    have hS : (ShortComplex.mk f c.π c.condition).Exact :=
+      ShortComplex.exact_of_g_is_cokernel _ (IsColimit.ofIsoColimit hc (Cofork.ext (Iso.refl _)))
+    have := Module.finitePresentation_of_projective R B
+    refine Module.finitePresentation_of_surjective c.π.hom
+      ((ModuleCat.epi_iff_surjective _).1 hepi) ?_
+    rw [← (ShortComplex.moduleCat_exact_iff_range_eq_ker _).1 hS]
+    exact Module.Finite.iff_fg.1 inferInstance
+  · intro hM
+    rw [finitePresentationModules_iff] at hM
+    obtain ⟨n, m, g, f, hg, hfg⟩ := Module.FinitePresentation.exists_fin' R M
+    let S : ShortComplex (ModuleCat.{u} R) :=
+      .mk (ModuleCat.ofHom f) (ModuleCat.ofHom g)
+        (ModuleCat.hom_ext (LinearMap.ext hfg.apply_apply_eq_zero))
+    have hS : S.Exact := (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact S).2 hfg
+    have : Epi S.g := (ModuleCat.epi_iff_surjective _).2 hg
+    have hf : MorphismProperty.ofObjectProperty _ _ S.f :=
+      ⟨finiteProjectiveModules_iff.2 ⟨inferInstanceAs (Module.Finite R (Fin m → R)),
+          inferInstanceAs (Module.Projective R (Fin m → R))⟩,
+        finiteProjectiveModules_iff.2 ⟨inferInstanceAs (Module.Finite R (Fin n → R)),
+          inferInstanceAs (Module.Projective R (Fin n → R))⟩⟩
+    exact (MorphismProperty.cokernels.of_isColimit S.f _ hS.gIsCokernel hf :)
+
+instance : (finitePresentationModules R).IsClosedUnderIsomorphisms :=
+  presented_finiteProjectiveModules R ▸ inferInstance
+
+/-! ### Unconditional closure properties of `finitePresentationModules` -/
+
+/-- The underlying module of an object in `(finitePresentationModules R).FullSubcategory` is
+finitely presented. -/
+instance (X : (finitePresentationModules R).FullSubcategory) :
+    Module.FinitePresentation R X.obj :=
+  finitePresentationModules_iff.mp X.property
+
+/-- Every finitely generated projective `R`-module is finitely presented. -/
+theorem finiteProjectiveModules_le_finitePresentationModules :
+    finiteProjectiveModules R ≤ finitePresentationModules R := fun M hM ↦ by
+  obtain ⟨_, _⟩ := finiteProjectiveModules_iff.mp hM
+  exact finitePresentationModules_iff.mpr (Module.finitePresentation_of_projective R M)
+
+/-- Every finitely presented `R`-module is finitely generated. -/
+theorem finitePresentationModules_le_finiteModules :
+    finitePresentationModules R ≤ ModuleCat.isFG R := fun M hM ↦ by
+  have : Module.FinitePresentation R M := finitePresentationModules_iff.mp hM
+  exact (ModuleCat.isFG_iff M).mpr inferInstance
+
+/-- Over a left Noetherian ring, finite presentation agrees with finite generation. -/
+theorem finitePresentationModules_eq_finiteModules [IsNoetherianRing R] :
+    finitePresentationModules R = ModuleCat.isFG R :=
+  le_antisymm (finitePresentationModules_le_finiteModules R) fun M hM ↦ by
+    have : Module.Finite R M := (ModuleCat.isFG_iff M).mp hM
+    exact finitePresentationModules_iff.mpr (Module.finitePresentation_of_finite R M)
+
+/-- The zero `R`-module is finitely presented. -/
+instance : (finitePresentationModules R).ContainsZero where
+  exists_zero := ⟨ModuleCat.of R PUnit, ModuleCat.isZero_of_subsingleton _,
+    finitePresentationModules_iff.mpr inferInstance⟩
+
+/-- Finitely presented `R`-modules are closed under binary products. -/
+instance : (finitePresentationModules R).IsClosedUnderBinaryProducts :=
+  ObjectProperty.isClosedUnderBinaryProducts_of_prop_biprod _ fun M N hM hN ↦ by
+    have : Module.FinitePresentation R M := finitePresentationModules_iff.mp hM
+    have : Module.FinitePresentation R N := finitePresentationModules_iff.mp hN
+    exact finitePresentationModules_iff.mpr
+      (Module.FinitePresentation.of_equiv (ModuleCat.biprodIsoProd M N).toLinearEquiv.symm)
+
+/-- Finitely presented `R`-modules are closed under finite products. -/
+instance : (finitePresentationModules R).IsClosedUnderFiniteProducts :=
+  .mk'
+
+/-- Finitely presented `R`-modules are closed under cokernels in `ModuleCat R`: the cokernel of
+`f : M ⟶ N` is the quotient of `N` by the finitely generated submodule `LinearMap.range f.hom`. -/
+instance : (finitePresentationModules R).IsClosedUnderCokernels where
+  cokernels_le := by
+    rintro _ @⟨M, N, f, c, hc, hM, hN⟩
+    have : Module.FinitePresentation R M := finitePresentationModules_iff.mp hM
+    have : Module.FinitePresentation R N := finitePresentationModules_iff.mp hN
+    have hQ : Module.FinitePresentation R (N ⧸ LinearMap.range f.hom) :=
+      Module.FinitePresentation.quotient (Submodule.fg_range f.hom)
+    let e : c.pt ≅ ModuleCat.of R (N ⧸ LinearMap.range f.hom) :=
+      hc.coconePointUniqueUpToIso (ModuleCat.cokernelIsColimit f)
+    exact (finitePresentationModules R).prop_of_iso e.symm (finitePresentationModules_iff.mpr hQ)
+
+/-- Finitely presented `R`-modules are stable under retracts: if `i ≫ r = 𝟙 M`, then `r` is
+surjective with kernel `LinearMap.range (1 - i ∘ r)`, which is finitely generated when `N` is. -/
+instance : (finitePresentationModules R).IsStableUnderRetracts where
+  of_retract {M N} h hN := by
+    have : Module.FinitePresentation R N := finitePresentationModules_iff.mp hN
+    have hcomp : h.r.hom ∘ₗ h.i.hom = LinearMap.id := congrArg ModuleCat.Hom.hom h.retract
+    refine finitePresentationModules_iff.mpr
+      (Module.finitePresentation_of_surjective h.r.hom
+        (LinearMap.surjective_of_comp_eq_id h.i.hom h.r.hom hcomp) ?_)
+    rw [LinearMap.ker_eq_range_of_comp_eq_id hcomp]
+    exact Submodule.fg_range _
+
+/-! ### Projectives and progenerators in `finitePresentationModules` -/
+
+/-- Because `finitePresentationModules R` contains zero and is closed under cokernels, its
+inclusion into `ModuleCat R` preserves epimorphisms. -/
+instance : (finitePresentationModules R).ι.PreservesEpimorphisms :=
+  (finitePresentationModules R).preservesEpimorphisms_ι_of_isNormalMonoCategory
+
+/-- The regular module `R`, viewed as an object of `(finitePresentationModules R).FullSubcategory`.
+-/
+def finitePresentationModulesRegular : (finitePresentationModules R).FullSubcategory :=
+  ⟨ModuleCat.of R R, finitePresentationModules_iff.mpr
+    (inferInstanceAs (Module.FinitePresentation R R))⟩
+
+@[simp]
+theorem finitePresentationModulesRegular_obj :
+    (finitePresentationModulesRegular R).obj = ModuleCat.of R R :=
+  (rfl)
+
+/-- An object `P` of `(finitePresentationModules R).FullSubcategory` is projective if and only if
+its underlying `R`-module is projective. -/
+theorem projective_finitePresentationModules_iff
+    (P : (finitePresentationModules R).FullSubcategory) :
+    Projective P ↔ Module.Projective R P.obj :=
+  (finitePresentationModules R).projective_iff_moduleProjective
+    (eqToIso (finitePresentationModulesRegular_obj R)).toLinearEquiv P
+
+instance : Projective (finitePresentationModulesRegular R) :=
+  (projective_finitePresentationModules_iff R _).mpr (inferInstanceAs (Module.Projective R R))
+
+/-- An object `P` of `(finitePresentationModules R).FullSubcategory` is a categorical progenerator
+if and only if its underlying `R`-module is projective and a generator. -/
+theorem isProgenerator_finitePresentationModules_iff
+    (P : (finitePresentationModules R).FullSubcategory) :
+    IsProgenerator P ↔ Module.Projective R P.obj ∧ TauCeti.Module.IsGenerator R P.obj :=
+  (finitePresentationModules R).isProgenerator_iff_moduleProjective_and_isGenerator
+    (finitePresentationModules_le_finiteModules R)
+    (eqToIso (finitePresentationModulesRegular_obj R)).toLinearEquiv P
+
+/-- Over any ring `R`, the regular module `R` is a progenerator of the category of finitely
+presented `R`-modules. -/
+theorem isProgenerator_finitePresentationModulesRegular :
+    IsProgenerator (finitePresentationModulesRegular R) :=
+  (isProgenerator_finitePresentationModules_iff R _).mpr
+    ⟨inferInstanceAs (Module.Projective R R), inferInstanceAs (TauCeti.Module.IsGenerator R R)⟩
+
+/-! ### Equivalence with `mod (proj R)` -/
+
+/-- **The finitely presented modules are `mod (proj R)`.** The functor `M ↦ (-, M)|_{proj R}` is an
+equivalence from the finitely presented `R`-modules to the finitely presented functors on the
+finitely generated projective `R`-modules. -/
+noncomputable def finitePresentationEquivalenceMod :
+    (finitePresentationModules R).FullSubcategory ≌
+      (isFinitelyPresentedFunctor (finiteProjectiveModules R).FullSubcategory).FullSubcategory :=
+  ObjectProperty.equivalenceMod (finiteProjectiveModules_le_categoryTheory_isProjective R)
+    (presented_finiteProjectiveModules R).symm
+
+/-- The functor of `finitePresentationEquivalenceMod` is `M ↦ (-, M)|_{proj R}`. -/
+noncomputable def finitePresentationEquivalenceModCompιIso :
+    (finitePresentationEquivalenceMod R).functor ⋙ (isFinitelyPresentedFunctor _).ι ≅
+      (finitePresentationModules R).ι ⋙ (finiteProjectiveModules R).restrictedPreadditiveYoneda :=
+  ObjectProperty.equivalenceModCompιIso _ _
+
+/-- The functor attached to a finitely presented `R`-module `M` takes the value `(R, M)` at the
+regular module, and `(R, M)` is the underlying abelian group of `M`, naturally in `M`. -/
+noncomputable def finitePresentationEquivalenceModCompEvaluationIso :
+    ((finitePresentationEquivalenceMod R).functor ⋙ (isFinitelyPresentedFunctor _).ι) ⋙
+        (evaluation _ _).obj (op (finiteProjectiveModulesRegular R)) ≅
+      (finitePresentationModules R).ι ⋙ forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u} :=
+  Functor.isoWhiskerRight (finitePresentationEquivalenceModCompιIso R) _ ≪≫
+    NatIso.ofComponents (fun M ↦ (ModuleCat.homAddEquiv.trans
+      (LinearMap.ringLmapEquivSelf R ℕ M.obj).toAddEquiv).toAddCommGrpIso) fun {M N} f ↦ by
+      ext (g : ModuleCat.of R R ⟶ M.obj)
+      -- Both sides are `f (g 1)`.
+      rfl
+
+end TauCeti

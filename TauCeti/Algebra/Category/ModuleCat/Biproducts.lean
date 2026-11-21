@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Biproducts
 public import Mathlib.Algebra.DirectSum.Module
+public import Mathlib.CategoryTheory.ObjectProperty.FullSubcategory
+public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
 public import Mathlib.RingTheory.Finiteness.Defs
 import Mathlib.RingTheory.Finiteness.Basic
 
@@ -29,10 +31,17 @@ carries the biproduct inclusions to `LinearMap.inl` and `LinearMap.inr`, and tha
 `biprod.map f g` of two bijective maps is bijective. A finite biproduct of finitely generated
 modules over an arbitrary ring is finitely generated (`ModuleCat.finite_biproduct`).
 
+For a full subcategory `S.FullSubcategory` of `ModuleCat R`, the additive inclusion `S.ι` preserves
+finite biproducts, so `(⨁ f).obj` identifies with `∀ j, (f j).obj`
+(`CategoryTheory.ObjectProperty.biproductObjIsoPi`), transferring surjections and epimorphisms
+between the dependent product and the biproduct in `S.FullSubcategory`.
+
 ## Main definitions
 
 * `TauCeti.biproductDirectSumEquiv`: the carrier of a finite biproduct in `ModuleCat A` is the
   external direct sum of the carriers of the summands.
+* `CategoryTheory.ObjectProperty.biproductObjIsoPi`: the carrier of a finite biproduct in a full
+  subcategory of `ModuleCat R` is the dependent product of the underlying modules.
 
 ## Main results
 
@@ -48,11 +57,14 @@ modules over an arbitrary ring is finitely generated (`ModuleCat.finite_biproduc
 * `ModuleCat.bijective_biprod_map`: `biprod.map f g` is bijective when `f` and `g` are.
 * `ModuleCat.finite_biproduct`: a finite biproduct of finitely generated modules is finitely
   generated.
-
 * `ModuleCat.biprod_inl_fst_apply`, `ModuleCat.biprod_inr_fst_apply`,
   `ModuleCat.biprod_inl_snd_apply`, `ModuleCat.biprod_inr_snd_apply` and
   `ModuleCat.biprod_inl_fst_add_inr_snd_apply`: the binary biproduct projections and inclusions on
   elements.
+* `CategoryTheory.ObjectProperty.biproductObjIsoPi_inv_comp_π`,
+  `CategoryTheory.ObjectProperty.epi_homMk_biproductObjIsoPi_comp`, and
+  `CategoryTheory.ObjectProperty.surjective_biproductObjIsoPi_inv_comp`: projection compatibility
+  and epi/surjectivity transfer for finite biproducts in a full subcategory of `ModuleCat R`.
 -/
 
 public section
@@ -189,3 +201,57 @@ theorem finite_biproduct {ι : Type*} [Finite ι] (V : ι → ModuleCat.{v} R)
     biproductIsoPi (fun j : Fin m ↦ V (e.symm j)))).symm.toLinearEquiv
 
 end ModuleCat
+
+namespace CategoryTheory.ObjectProperty
+
+open CategoryTheory.Limits
+
+universe u v
+
+variable {R : Type u} [Ring R] (S : ObjectProperty (ModuleCat.{v} R))
+
+/-- The underlying module of a finite biproduct in a full subcategory of `ModuleCat R` is the
+dependent product of the underlying modules of the summands. -/
+noncomputable def biproductObjIsoPi {J : Type} [Finite J] (f : J → S.FullSubcategory)
+    [HasBiproduct f] :
+    (⨁ f).obj ≅ ModuleCat.of R (∀ j, (f j).obj) :=
+  S.ι.mapBiproduct f ≪≫ ModuleCat.biproductIsoPi fun j ↦ (f j).obj
+
+/-- The inverse of `biproductObjIsoPi` followed by the `j`-th biproduct projection is the `j`-th
+product projection. -/
+@[reassoc (attr := simp)]
+theorem biproductObjIsoPi_inv_comp_π {J : Type} [Finite J] (f : J → S.FullSubcategory)
+    [HasBiproduct f] (j : J) :
+    (S.biproductObjIsoPi f).inv ≫ (biproduct.π f j).hom =
+      ModuleCat.ofHom (LinearMap.proj j : (∀ j, (f j).obj) →ₗ[R] (f j).obj) := by
+  have h : (S.ι.mapBiproduct f).inv ≫ S.ι.map (biproduct.π f j) = biproduct.π _ j := by
+    rw [Iso.inv_comp_eq, Functor.mapBiproduct_hom]
+    exact (biproduct.lift_π (fun j ↦ S.ι.map (biproduct.π f j)) j).symm
+  simp only [biproductObjIsoPi, Iso.trans_inv, Category.assoc]
+  rw [← ι_map, h]
+  exact ModuleCat.biproductIsoPi_inv_comp_π (fun j ↦ (f j).obj) j
+
+/-- A surjective linear map from the product `∀ j, (f j).obj` to `X.obj` induces an epimorphism
+`(⨁ f) ⟶ X` in `S.FullSubcategory`. -/
+theorem epi_homMk_biproductObjIsoPi_comp {J : Type} [Finite J] {f : J → S.FullSubcategory}
+    [HasBiproduct f] {X : S.FullSubcategory} {φ : (∀ j, (f j).obj) →ₗ[R] X.obj}
+    (hφ : Function.Surjective φ) :
+    Epi (ObjectProperty.homMk ((S.biproductObjIsoPi f).hom ≫ ModuleCat.ofHom φ) :
+      (⨁ f) ⟶ X) := by
+  have : Epi (ModuleCat.ofHom φ : ModuleCat.of R (∀ j, (f j).obj) ⟶ X.obj) :=
+    (ModuleCat.epi_iff_surjective _).mpr hφ
+  have : Epi (S.ι.map (ObjectProperty.homMk
+      ((S.biproductObjIsoPi f).hom ≫ ModuleCat.ofHom φ) : (⨁ f) ⟶ X)) :=
+    epi_comp _ _
+  exact S.ι.epi_of_epi_map ‹_›
+
+/-- When `S.ι` preserves epimorphisms, an epimorphism `π : (⨁ f) ⟶ X` in `S.FullSubcategory`
+yields a surjective linear map `(∀ j, (f j).obj) →ₗ[R] X.obj`. -/
+theorem surjective_biproductObjIsoPi_inv_comp [S.ι.PreservesEpimorphisms] {J : Type} [Finite J]
+    {f : J → S.FullSubcategory} [HasBiproduct f] {X : S.FullSubcategory} (π : (⨁ f) ⟶ X)
+    [Epi π] :
+    Function.Surjective ((S.biproductObjIsoPi f).inv ≫ π.hom).hom := by
+  have : Epi (S.ι.map π) := inferInstance
+  exact (ModuleCat.epi_iff_surjective _).mp (epi_comp (S.biproductObjIsoPi f).inv (S.ι.map π))
+
+end CategoryTheory.ObjectProperty
