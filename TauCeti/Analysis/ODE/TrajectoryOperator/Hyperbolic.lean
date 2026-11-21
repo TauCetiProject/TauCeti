@@ -35,14 +35,15 @@ bounded continuous forcing term `g`, and recovers every compactly supported `C¹
 continuous compactly supported `f`
 (`TauCeti.WeakDerivStep.exists_prev_ae_eq_greenIntegral_and_trajectoryOperator_ae_eq`).
 
-For a finite-dimensional `X` and `1 ≤ p < ∞` this shows that the trajectory operator
+For `1 ≤ p < ∞` this shows that the trajectory operator
 `d/ds - A : W^{1,p}(ℝ, X) → Lᵖ(ℝ, X)` (`TauCeti.WeakDerivStep.trajectoryOperator` of the
-constant coefficient `-A`) is bijective. The representation formula gives the estimate
+constant coefficient `-A`) is bijective, on every Banach space `X`, finite-dimensional or not. The
+representation formula gives the estimate
 `‖u‖_{Lᵖ} ≤ 2 K / α ‖u' - A u‖_{Lᵖ}` on smooth compactly supported paths, which extends to
 `W^{1,p}(ℝ, X)` by density, so the operator is injective with closed range; its range contains
 every smooth compactly supported path, hence is dense. In particular it is Fredholm of index zero.
 This is the constant-coefficient, whole-line case of the Fredholm theory of `d/ds - A(s)` with
-hyperbolic limits; neither symmetry of `A` nor an inner product is used.
+hyperbolic limits; neither symmetry of `A`, nor an inner product, nor a finite dimension is used.
 
 ## Main declarations
 
@@ -75,7 +76,7 @@ open scoped NNReal ENNReal
 
 namespace TauCeti.WeakDerivStep
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
   {p : ℝ≥0∞} [Fact (1 ≤ p)] {A P : E →L[ℝ] E} {K α : ℝ≥0}
   {AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
 
@@ -91,7 +92,7 @@ include hs hu hα hAL
 `exp (t A)` on a Banach space `E`, for every continuous compactly supported `f` and
 `1 ≤ p ≤ ∞`, some `u ∈ W^{1,p}(ℝ, E)` represented by the Green integral of `f` solves
 `u' - A u = f`. -/
-theorem exists_prev_ae_eq_greenIntegral_and_trajectoryOperator_ae_eq [CompleteSpace E]
+theorem exists_prev_ae_eq_greenIntegral_and_trajectoryOperator_ae_eq
     {f : ℝ → E} (hf : Continuous f) (hfc : HasCompactSupport f) :
     ∃ u : WeakDerivStep volume ⊤ p
         (ContinuousLinearMap.id ℝ (Lp E p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))),
@@ -123,8 +124,6 @@ theorem exists_prev_ae_eq_greenIntegral_and_trajectoryOperator_ae_eq [CompleteSp
   obtain ⟨u, hux, hu'⟩ := exists_prev_eq_and_trajectoryOperator_eq_of_hasWeakLineDerivOn AL
     ((h.congr_ae hx.symm).congr_ae_deriv hd)
   exact ⟨u, by rw [hux]; exact hx, by rw [hu']; exact hy⟩
-
-variable [FiniteDimensional ℝ E]
 
 /-- **The a priori estimate for `d/ds - A`.** Under an exponential dichotomy for `exp (t A)` with
 constant `K` and rate `α > 0`, and `1 ≤ p < ∞`, every `u ∈ W^{1,p}(ℝ, E)` satisfies
