@@ -159,6 +159,19 @@ theorem universalGSpaceCellularRepIso_inv_toLinearMap (n : ℕ) :
     (universalGSpaceCellularRepIso k G n).inv.hom.toLinearMap =
       (universalGSpaceCellularChainLinearEquiv k G n).symm.toLinearMap := (rfl)
 
+/-- On a geometric cellular basis vector, `universalGSpaceCellularRepIso` yields the corresponding
+ordered simplex generator scaled by `realizationChainScale`. This is not a `simp` lemma because
+`cellularChainBasis_apply` expands its argument first. -/
+theorem universalGSpaceCellularRepIso_hom_cellularChainBasis {n : ℕ}
+    (c : (indexedJoin fun _ : ℕ => G).RealizationCell n) :
+    (universalGSpaceCellularRepIso k G n).hom.hom
+        (cellularChainBasis (univ : Set (universalGSpace G)) k n
+          ((AbstractSimplicialComplex.realizationCellEquiv _ n).symm c)) =
+      MonoidAlgebra.single c (realizationChainScale k n : k) := by
+  rw [← Representation.IntertwiningMap.toLinearMap_apply,
+    universalGSpaceCellularRepIso_hom_toLinearMap]
+  exact universalGSpaceCellularChainLinearEquiv_cellularChainBasis k G c
+
 /-- Geometric and ordered cellular chains are isomorphic before forgetting the action. -/
 def universalGSpaceCellularComplexIso :
     universalGSpaceCellularComplex k G ≅ universalGSpaceChainComplex k G :=
@@ -338,10 +351,8 @@ theorem universalGSpaceCellularRepStandardHomotopyEquiv_hom_f_hom_cellularChainB
   dsimp only [universalGSpaceChainComplex]
   simp only [← ConcreteCategory.comp_apply, ← Category.assoc, eqToHom_trans,
     eqToHom_refl, Category.id_comp]
-  simp only [Rep.hom_comp, Representation.IntertwiningMap.comp_toLinearMap,
-    LinearMap.comp_apply, ← Representation.IntertwiningMap.toLinearMap_apply,
-    universalGSpaceCellularRepIso_hom_toLinearMap, LinearEquiv.coe_coe]
-  erw [universalGSpaceCellularChainLinearEquiv_cellularChainBasis]
+  simp only [Rep.hom_comp, Representation.IntertwiningMap.comp_apply]
+  rw [universalGSpaceCellularRepIso_hom_cellularChainBasis]
   exact universalGSpaceChainComplexToStandardComplex_f_hom_single k G c
     (realizationChainScale k n : k)
 
