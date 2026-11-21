@@ -135,17 +135,6 @@ theorem isKazhdanPair_map_mulEquiv_iff {G' : Type w} [Group G'] {Λ : Subgroup �
     rwa [hΛ, hF] at h'
   · simpa [Finset.map_eq_image] using h.map e.toMonoidHom
 
-/-- Relative property (T) is preserved and reflected by group isomorphisms. -/
-theorem relativePropertyT_map_mulEquiv_iff {G' : Type w} [Group G'] {Λ : Subgroup Γ}
-    (e : Γ ≃* G') :
-    (Λ.map e.toMonoidHom).RelativePropertyT.{u} ↔ Λ.RelativePropertyT.{u} := by
-  refine ⟨fun h ↦ ?_, fun h ↦ h.map e.toMonoidHom⟩
-  have h' := h.map e.symm.toMonoidHom
-  have hΛ : (Λ.map e.toMonoidHom).map e.symm.toMonoidHom = Λ := by
-    rw [Subgroup.map_map]
-    simp
-  rwa [hΛ] at h'
-
 /-- A Kazhdan pair `(F, δ)` with `δ > 0` for `Λ` gives relative property (T) of `Λ`. -/
 theorem IsKazhdanPair.relativePropertyT {Λ : Subgroup Γ} {F : Finset Γ} {δ : ℝ}
     (hΛ : Λ.IsKazhdanPair.{u} F δ) (hδ : 0 < δ) : Λ.RelativePropertyT.{u} :=

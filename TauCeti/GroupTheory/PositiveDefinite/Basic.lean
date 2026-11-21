@@ -10,6 +10,7 @@ public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.Topology.Instances.Matrix
 public import TauCeti.Order.Filter.Cofinite.Basic
 import TauCeti.Analysis.Matrix.PosSemidef.Basic
+import TauCeti.Analysis.PositiveDefinite.Kernel.Kolmogorov
 
 /-!
 # Restriction, limits, zero extension and induction of positive-definite functions
@@ -116,49 +117,21 @@ theorem sqrt_re_one_sub_re_mul_le {φ : G → 𝕜}
     Real.sqrt (RCLike.re (φ 1) - RCLike.re (φ (g * h))) ≤
       Real.sqrt (RCLike.re (φ 1) - RCLike.re (φ g)) +
         Real.sqrt (RCLike.re (φ 1) - RCLike.re (φ h)) := by
-  let A : ℝ := RCLike.re (φ 1) - RCLike.re (φ g)
-  let B : ℝ := RCLike.re (φ 1) - RCLike.re (φ h)
-  let C : ℝ := RCLike.re (φ 1) - RCLike.re (φ (g * h))
-  have hre_inv (z : G) : RCLike.re (φ z⁻¹) = RCLike.re (φ z) := by
-    rw [hφ.isHermitian.apply_inv_eq_star, RCLike.star_def, RCLike.conj_re]
-  -- Evaluate the `3 × 3` principal submatrix on `![1, g, g * h]` against `![t, s - t, -s]`.
-  have hM : ((of fun x y : G ↦ φ (x⁻¹ * y)).submatrix ![1, g, g * h] ![1, g, g * h]).PosSemidef :=
-    hφ.submatrix ![1, g, g * h]
-  have hquad (t s : ℝ) : 0 ≤ A * (t * t) + (C - A - B) * (t * s) + B * (s * s) := by
-    let x : Fin 3 → 𝕜 := ![(t : 𝕜), ((s - t : ℝ) : 𝕜), ((-s : ℝ) : 𝕜)]
-    have hre : 0 ≤ RCLike.re (star x ⬝ᵥ
-        ((of fun a b : G ↦ φ (a⁻¹ * b)).submatrix ![1, g, g * h] ![1, g, g * h]).mulVec x) :=
-      hM.re_dotProduct_nonneg x
-    have heval : RCLike.re (star x ⬝ᵥ
-        ((of fun a b : G ↦ φ (a⁻¹ * b)).submatrix ![1, g, g * h] ![1, g, g * h]).mulVec x) =
-        2 * (A * (t * t) + (C - A - B) * (t * s) + B * (s * s)) := by
-      simp only [x, dotProduct, mulVec, Fin.sum_univ_three, Matrix.submatrix_apply, of_apply,
-        Pi.star_apply, Fin.isValue, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
-        Matrix.tail_cons, Matrix.head_cons, inv_one, one_mul, mul_one, inv_mul_cancel,
-        inv_mul_cancel_left, RCLike.star_def, RCLike.conj_ofReal, map_add,
-        RCLike.re_ofReal_mul, RCLike.re_mul_ofReal]
-      have h1 : (g * h)⁻¹ * g = h⁻¹ := by group
-      rw [h1, hre_inv g, hre_inv h, hre_inv (g * h)]
-      dsimp only [A, B, C]
-      ring
-    linarith
-  have hA : 0 ≤ A := by simpa using hquad 1 0
-  have hB : 0 ≤ B := by simpa using hquad 0 1
-  have hdisc : discrim A (C - A - B) B ≤ 0 :=
-    discrim_le_zero fun t ↦ by simpa using hquad t 1
-  have hsq : (C - A - B) ^ 2 ≤ (2 * (Real.sqrt A * Real.sqrt B)) ^ 2 := by
-    rw [discrim] at hdisc
-    have : (2 * (Real.sqrt A * Real.sqrt B)) ^ 2 = 4 * A * B := by
-      rw [mul_pow, mul_pow, Real.sq_sqrt hA, Real.sq_sqrt hB]
-      ring
-    linarith
-  have hle : C - A - B ≤ 2 * (Real.sqrt A * Real.sqrt B) :=
-    le_of_sq_le_sq hsq (by positivity)
-  refine Real.sqrt_le_iff.mpr ⟨by positivity, ?_⟩
-  have hsq_sum : (Real.sqrt A + Real.sqrt B) ^ 2 = A + B + 2 * (Real.sqrt A * Real.sqrt B) := by
-    rw [add_sq, Real.sq_sqrt hA, Real.sq_sqrt hB]
-    ring
-  linarith
+  have hdist (a b : G) :
+      dist (hφ.kolmogorovFeature a) (hφ.kolmogorovFeature b) =
+        Real.sqrt 2 * Real.sqrt (RCLike.re (φ 1) - RCLike.re (φ (a⁻¹ * b))) := by
+    rw [dist_eq_norm, ← Real.sqrt_sq (norm_nonneg _), hφ.norm_kolmogorovFeature_sub_sq a b]
+    simp only [of_apply, inv_mul_cancel]
+    have hmul :
+        RCLike.re (φ 1) - 2 * RCLike.re (φ (a⁻¹ * b)) + RCLike.re (φ 1) =
+          2 * (RCLike.re (φ 1) - RCLike.re (φ (a⁻¹ * b))) := by ring
+    rw [hmul, Real.sqrt_mul (by norm_num)]
+  have htri := dist_triangle (hφ.kolmogorovFeature 1) (hφ.kolmogorovFeature g)
+    (hφ.kolmogorovFeature (g * h))
+  rw [hdist 1 (g * h), hdist 1 g, hdist g (g * h)] at htri
+  simp only [inv_one, one_mul, inv_mul_cancel_left] at htri
+  rw [← mul_add] at htri
+  exact le_of_mul_le_mul_left htri (by positivity)
 
 /-- The restriction of a positive-definite function on `G` along a group homomorphism `f : K →* G`
 is positive definite. In particular, the restriction to a subgroup is positive definite. -/
