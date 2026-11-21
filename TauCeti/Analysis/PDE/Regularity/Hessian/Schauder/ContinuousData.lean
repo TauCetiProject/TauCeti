@@ -496,7 +496,7 @@ variable [FiniteDimensional ℝ E]
 
 private theorem laplacian_quad {e : Fin 2 → E} (he : Orthonormal ℝ e) (x : E) :
     Δ (quad e) x = 0 := by
-  rw [show quad e = fun y ↦ ⟪e 0, y⟫_ℝ ^ 2 - ⟪e 1, y⟫_ℝ ^ 2 from rfl]
+  unfold quad
   simp [he.1 0, he.1 1]
 
 /-- **The Laplacian of the approximant** `uₜ(x) = h(x) F(‖x‖² + t)`: since `h` is harmonic and

@@ -190,11 +190,12 @@ private theorem exists_abs_laplacian_le_one_and_lt_norm_of_harmonic {q : V → �
   obtain ⟨u, hu, huc, hΔu, hu_le, hDu⟩ := exists_lacunary_sum hφ hφ0 hΔφ
     ((norm_nonneg _).trans (hM 0)) (fun x ↦ (Real.norm_eq_abs _).symm.trans_le (hM x))
     (fun x ↦ (Real.norm_eq_abs _).symm.trans_le (hP x)) N
+  have hK1 (y : ℝ) : |K⁻¹ * y| ≤ 1 ↔ |y| ≤ K := by
+    rw [abs_mul, abs_inv, abs_of_pos hK, inv_mul_le_iff₀ hK, mul_one]
   refine ⟨K⁻¹ • u, hu.const_smul K⁻¹, huc.smul_left, fun x ↦ ?_, fun x ↦ ?_, ?_⟩
-  · rw [laplacian_smul _ (hu.of_le (by simp)).contDiffAt, smul_eq_mul, abs_mul,
-      abs_inv, abs_of_pos hK, inv_mul_le_iff₀ hK, mul_one]
+  · rw [laplacian_smul _ (hu.of_le (by simp)).contDiffAt, smul_eq_mul, hK1]
     exact (hΔu x).trans ((le_max_left _ _).trans (le_max_left _ _))
-  · rw [Pi.smul_apply, smul_eq_mul, abs_mul, abs_inv, abs_of_pos hK, inv_mul_le_iff₀ hK, mul_one]
+  · rw [Pi.smul_apply, smul_eq_mul, hK1]
     exact (hu_le x).trans ((le_max_right _ _).trans (le_max_left _ _))
   · rw [iteratedFDeriv_const_smul_apply (hu.of_le (by simp)).contDiffAt, hDu, hD0,
       smul_smul, norm_smul, Real.norm_of_nonneg (by positivity), ← ha_def]
