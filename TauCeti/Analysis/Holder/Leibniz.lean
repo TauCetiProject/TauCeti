@@ -119,16 +119,17 @@ private theorem holderWith_iteratedFDeriv_bilinear_aux {E A B G : Type u}
 bounds on the derivative fields through order `k` and their Hölder bounds on `s` to the preimage
 of `s`. This is the per-factor step of the universe reduction for Leibniz Hölder bounds. -/
 private theorem contDiffOn_bounds_comp_linearIsometryEquiv
-    {E E' A A' : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup E']
-    [NormedSpace ℝ E'] [NormedAddCommGroup A] [NormedSpace ℝ A] [NormedAddCommGroup A']
-    [NormedSpace ℝ A'] (e : E' ≃ₗᵢ[ℝ] E) (a : A' ≃ₗᵢ[ℝ] A) {k : ℕ} {f : E → A} {s : Set E}
-    {M H α : ℝ≥0} (hf : ContDiffOn ℝ k f s)
-    (hfb : ∀ j ≤ k, ∀ x ∈ s, ‖iteratedFDeriv ℝ j f x‖ ≤ M)
-    (hfH : ∀ j ≤ k, HolderOnWith H α (iteratedFDeriv ℝ j f) s) :
-    ContDiffOn ℝ k (a.symm ∘ f ∘ e) (e ⁻¹' s) ∧
-      (∀ j ≤ k, ∀ x ∈ e ⁻¹' s, ‖iteratedFDeriv ℝ j (a.symm ∘ f ∘ e) x‖ ≤ M) ∧
-      ∀ j ≤ k, HolderOnWith H α (iteratedFDeriv ℝ j (a.symm ∘ f ∘ e)) (e ⁻¹' s) :=
-  ⟨a.symm.contDiff.comp_contDiffOn (hf.comp_continuousLinearMap (e : E' →L[ℝ] E)),
+    {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    {E E' A A' : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup E']
+    [NormedSpace 𝕜 E'] [NormedAddCommGroup A] [NormedSpace 𝕜 A] [NormedAddCommGroup A']
+    [NormedSpace 𝕜 A'] (e : E' ≃ₗᵢ[𝕜] E) (a : A' ≃ₗᵢ[𝕜] A) {k : ℕ} {f : E → A} {s : Set E}
+    {M H α : ℝ≥0} (hf : ContDiffOn 𝕜 k f s)
+    (hfb : ∀ j ≤ k, ∀ x ∈ s, ‖iteratedFDeriv 𝕜 j f x‖ ≤ M)
+    (hfH : ∀ j ≤ k, HolderOnWith H α (iteratedFDeriv 𝕜 j f) s) :
+    ContDiffOn 𝕜 k (a.symm ∘ f ∘ e) (e ⁻¹' s) ∧
+      (∀ j ≤ k, ∀ x ∈ e ⁻¹' s, ‖iteratedFDeriv 𝕜 j (a.symm ∘ f ∘ e) x‖ ≤ M) ∧
+      ∀ j ≤ k, HolderOnWith H α (iteratedFDeriv 𝕜 j (a.symm ∘ f ∘ e)) (e ⁻¹' s) :=
+  ⟨a.symm.contDiff.comp_contDiffOn (hf.comp_continuousLinearMap (e : E' →L[𝕜] E)),
     fun j hj x hx => by
       rw [a.symm.norm_iteratedFDeriv_comp_left, e.norm_iteratedFDeriv_comp_right]
       exact hfb j hj (e x) hx,
@@ -138,30 +139,31 @@ private theorem contDiffOn_bounds_comp_linearIsometryEquiv
 of the spaces in a common universe back to the original spaces. The lifted bound is required for
 every bilinear map between the lifted spaces of norm at most `‖L‖`. -/
 private theorem holderOnWith_iteratedFDeriv_comp₂_of_uLift
+    {𝕜 : Type*} [NontriviallyNormedField 𝕜]
     {E : Type uE} {A : Type uA} {B : Type uB} {G : Type uG}
-    [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [NormedAddCommGroup A] [NormedSpace ℝ A] [NormedAddCommGroup B] [NormedSpace ℝ B]
-    [NormedAddCommGroup G] [NormedSpace ℝ G]
-    (L : A →L[ℝ] B →L[ℝ] G) {k : ℕ} {f : E → A} {g : E → B} {s : Set E} {C α : ℝ≥0}
-    (h : ∀ Lu : ULift.{max uE uB uG, uA} A →L[ℝ] ULift.{max uE uA uG, uB} B →L[ℝ]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [NormedAddCommGroup A] [NormedSpace 𝕜 A] [NormedAddCommGroup B] [NormedSpace 𝕜 B]
+    [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+    (L : A →L[𝕜] B →L[𝕜] G) {k : ℕ} {f : E → A} {g : E → B} {s : Set E} {C α : ℝ≥0}
+    (h : ∀ Lu : ULift.{max uE uB uG, uA} A →L[𝕜] ULift.{max uE uA uG, uB} B →L[𝕜]
         ULift.{max uE uA uB, uG} G, ‖Lu‖₊ ≤ ‖L‖₊ →
-      HolderOnWith C α (iteratedFDeriv ℝ k fun x : ULift.{max uA uB uG, uE} E =>
-        Lu ((LinearIsometryEquiv.ulift ℝ A).symm (f (LinearIsometryEquiv.ulift ℝ E x)))
-          ((LinearIsometryEquiv.ulift ℝ B).symm (g (LinearIsometryEquiv.ulift ℝ E x))))
-        (LinearIsometryEquiv.ulift ℝ E ⁻¹' s)) :
-    HolderOnWith C α (iteratedFDeriv ℝ k (fun x => L (f x) (g x))) s := by
+      HolderOnWith C α (iteratedFDeriv 𝕜 k fun x : ULift.{max uA uB uG, uE} E =>
+        Lu ((LinearIsometryEquiv.ulift 𝕜 A).symm (f (LinearIsometryEquiv.ulift 𝕜 E x)))
+          ((LinearIsometryEquiv.ulift 𝕜 B).symm (g (LinearIsometryEquiv.ulift 𝕜 E x))))
+        (LinearIsometryEquiv.ulift 𝕜 E ⁻¹' s)) :
+    HolderOnWith C α (iteratedFDeriv 𝕜 k (fun x => L (f x) (g x))) s := by
   let Eu : Type max uE uA uB uG := ULift.{max uA uB uG, uE} E
   let Au : Type max uE uA uB uG := ULift.{max uE uB uG, uA} A
   let Bu : Type max uE uA uB uG := ULift.{max uE uA uG, uB} B
   let Gu : Type max uE uA uB uG := ULift.{max uE uA uB, uG} G
-  let e : Eu ≃ₗᵢ[ℝ] E := LinearIsometryEquiv.ulift ℝ E
-  let a : Au ≃ₗᵢ[ℝ] A := LinearIsometryEquiv.ulift ℝ A
-  let b : Bu ≃ₗᵢ[ℝ] B := LinearIsometryEquiv.ulift ℝ B
-  let c : Gu ≃ₗᵢ[ℝ] G := LinearIsometryEquiv.ulift ℝ G
-  let Lu₀ := ((L.comp (a : Au →L[ℝ] A)).flip.comp (b : Bu →L[ℝ] B)).flip
-  let Lu : Au →L[ℝ] Bu →L[ℝ] Gu :=
-    compL ℝ Au (Bu →L[ℝ] G) (Bu →L[ℝ] Gu)
-      (compL ℝ Bu G Gu (c.symm : G →L[ℝ] Gu)) Lu₀
+  let e : Eu ≃ₗᵢ[𝕜] E := LinearIsometryEquiv.ulift 𝕜 E
+  let a : Au ≃ₗᵢ[𝕜] A := LinearIsometryEquiv.ulift 𝕜 A
+  let b : Bu ≃ₗᵢ[𝕜] B := LinearIsometryEquiv.ulift 𝕜 B
+  let c : Gu ≃ₗᵢ[𝕜] G := LinearIsometryEquiv.ulift 𝕜 G
+  let Lu₀ := ((L.comp (a : Au →L[𝕜] A)).flip.comp (b : Bu →L[𝕜] B)).flip
+  let Lu : Au →L[𝕜] Bu →L[𝕜] Gu :=
+    compL 𝕜 Au (Bu →L[𝕜] G) (Bu →L[𝕜] Gu)
+      (compL 𝕜 Bu G Gu (c.symm : G →L[𝕜] Gu)) Lu₀
   have hLu : (fun x => Lu (a.symm (f (e x))) (b.symm (g (e x)))) =
       c.symm ∘ (fun x => L (f x) (g x)) ∘ e := by
     ext x
@@ -171,7 +173,7 @@ private theorem holderOnWith_iteratedFDeriv_comp₂_of_uLift
     refine opNorm_le_bound _ (by positivity) fun w => ?_
     simpa [Lu, Lu₀] using L.le_opNorm₂ (a v) (b w)
   have hbound : HolderOnWith C α
-      (iteratedFDeriv ℝ k fun x => Lu (a.symm (f (e x))) (b.symm (g (e x)))) (e ⁻¹' s) :=
+      (iteratedFDeriv 𝕜 k fun x => Lu (a.symm (f (e x))) (b.symm (g (e x)))) (e ⁻¹' s) :=
     h Lu (by exact_mod_cast hnormReal)
   rw [holderOnWith_iff_dist_le] at hbound ⊢
   intro x hx y hy
@@ -220,19 +222,19 @@ theorem holderWith_iteratedFDeriv_of_tsupport_subset_right
 /-- Single-universe form of `holderOnWith_iteratedFDeriv_comp₂`, proved by induction on the
 order: the derivative of `x ↦ L (f x) (g x)` is the sum of two bilinear products of the same
 kind, with one factor differentiated. -/
-private theorem holderOnWith_iteratedFDeriv_comp₂_aux {E A B G : Type u}
-    [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [NormedAddCommGroup A] [NormedSpace ℝ A] [NormedAddCommGroup B] [NormedSpace ℝ B]
-    [NormedAddCommGroup G] [NormedSpace ℝ G]
-    (k : ℕ) (L : A →L[ℝ] B →L[ℝ] G) {f : E → A} {g : E → B} {s : Set E}
+private theorem holderOnWith_iteratedFDeriv_comp₂_aux {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    {E A B G : Type u} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [NormedAddCommGroup A] [NormedSpace 𝕜 A] [NormedAddCommGroup B] [NormedSpace 𝕜 B]
+    [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+    (k : ℕ) (L : A →L[𝕜] B →L[𝕜] G) {f : E → A} {g : E → B} {s : Set E}
     {M N H K α : ℝ≥0}
-    (hf : ContDiffOn ℝ k f s) (hg : ContDiffOn ℝ k g s) (hs : IsOpen s)
-    (hfb : ∀ j ≤ k, ∀ x ∈ s, ‖iteratedFDeriv ℝ j f x‖ ≤ M)
-    (hgb : ∀ j ≤ k, ∀ x ∈ s, ‖iteratedFDeriv ℝ j g x‖ ≤ N)
-    (hfH : ∀ j ≤ k, HolderOnWith H α (iteratedFDeriv ℝ j f) s)
-    (hgH : ∀ j ≤ k, HolderOnWith K α (iteratedFDeriv ℝ j g) s) :
+    (hf : ContDiffOn 𝕜 k f s) (hg : ContDiffOn 𝕜 k g s) (hs : IsOpen s)
+    (hfb : ∀ j ≤ k, ∀ x ∈ s, ‖iteratedFDeriv 𝕜 j f x‖ ≤ M)
+    (hgb : ∀ j ≤ k, ∀ x ∈ s, ‖iteratedFDeriv 𝕜 j g x‖ ≤ N)
+    (hfH : ∀ j ≤ k, HolderOnWith H α (iteratedFDeriv 𝕜 j f) s)
+    (hgH : ∀ j ≤ k, HolderOnWith K α (iteratedFDeriv 𝕜 j g) s) :
     HolderOnWith ((2 : ℝ≥0)^k * ‖L‖₊ * (M * K + N * H)) α
-      (iteratedFDeriv ℝ k (fun x => L (f x) (g x))) s := by
+      (iteratedFDeriv 𝕜 k (fun x => L (f x) (g x))) s := by
   induction k generalizing A B G with
   | zero =>
     rw [pow_zero, one_mul, TauCeti.holderOnWith_iteratedFDeriv_zero_iff]
@@ -241,10 +243,10 @@ private theorem holderOnWith_iteratedFDeriv_comp₂_aux {E A B G : Type u}
       (by simpa only [norm_iteratedFDeriv_zero] using hfb 0 le_rfl)
       (by simpa only [norm_iteratedFDeriv_zero] using hgb 0 le_rfl)
   | succ k ih =>
-    have hf' : ContDiffOn ℝ k (fderiv ℝ f) s := hf.fderiv_of_isOpen hs (by simp)
-    have hg' : ContDiffOn ℝ k (fderiv ℝ g) s := hg.fderiv_of_isOpen hs (by simp)
-    have hf₀ : ContDiffOn ℝ k f s := hf.of_le (by simp)
-    have hg₀ : ContDiffOn ℝ k g s := hg.of_le (by simp)
+    have hf' : ContDiffOn 𝕜 k (fderiv 𝕜 f) s := hf.fderiv_of_isOpen hs (by simp)
+    have hg' : ContDiffOn 𝕜 k (fderiv 𝕜 g) s := hg.fderiv_of_isOpen hs (by simp)
+    have hf₀ : ContDiffOn 𝕜 k f s := hf.of_le (by simp)
+    have hg₀ : ContDiffOn 𝕜 k g s := hg.of_le (by simp)
     -- The induction hypothesis for the two terms of the Leibniz rule for the derivative.
     have hR := ih (L.precompR E) hf₀ hg' (fun j hj => hfb j (by omega))
       (fun j hj x hx => by rw [norm_iteratedFDeriv_fderiv]; exact hgb (j + 1) (by omega) x hx)
@@ -255,16 +257,16 @@ private theorem holderOnWith_iteratedFDeriv_comp₂_aux {E A B G : Type u}
       (fun j hj => hgb j (by omega))
       (fun j hj => TauCeti.holderOnWith_iteratedFDeriv_succ_iff.mp (hfH (j + 1) (by omega)))
       (fun j hj => hgH j (by omega))
-    have hRdiff : ContDiffOn ℝ k (fun x => L.precompR E (f x) (fderiv ℝ g x)) s :=
+    have hRdiff : ContDiffOn 𝕜 k (fun x => L.precompR E (f x) (fderiv 𝕜 g x)) s :=
       (L.precompR E).isBoundedBilinearMap.contDiff.comp_contDiffOn (hf₀.prodMk hg')
-    have hLdiff : ContDiffOn ℝ k (fun x => L.precompL E (fderiv ℝ f x) (g x)) s :=
+    have hLdiff : ContDiffOn 𝕜 k (fun x => L.precompL E (fderiv 𝕜 f x) (g x)) s :=
       (L.precompL E).isBoundedBilinearMap.contDiff.comp_contDiffOn (hf'.prodMk hg₀)
     -- On the open set `s`, the derivative of the product is given by the Leibniz rule, so the
     -- iterated derivatives of both sides agree there.
-    have hd : ∀ x ∈ s, iteratedFDeriv ℝ k (fderiv ℝ (fun x => L (f x) (g x))) x =
-        iteratedFDeriv ℝ k (fun x => L.precompR E (f x) (fderiv ℝ g x)) x +
-          iteratedFDeriv ℝ k (fun x => L.precompL E (fderiv ℝ f x) (g x)) x := fun x hx => by
-      rw [(Filter.EventuallyEq.iteratedFDeriv ℝ (by
+    have hd : ∀ x ∈ s, iteratedFDeriv 𝕜 k (fderiv 𝕜 (fun x => L (f x) (g x))) x =
+        iteratedFDeriv 𝕜 k (fun x => L.precompR E (f x) (fderiv 𝕜 g x)) x +
+          iteratedFDeriv 𝕜 k (fun x => L.precompL E (fderiv 𝕜 f x) (g x)) x := fun x hx => by
+      rw [(Filter.EventuallyEq.iteratedFDeriv 𝕜 (by
         filter_upwards [hs.mem_nhds hx] with y hy
         exact L.fderiv_of_bilinear ((hf.differentiableOn (by simp) y hy).differentiableAt
           (hs.mem_nhds hy)) ((hg.differentiableOn (by simp) y hy).differentiableAt
@@ -288,24 +290,25 @@ set `s`, with all derivative fields through order `k` bounded by `M` and `N` and
 constants `H` and `K` on `s`, then the `k`-th derivative of `x ↦ L (f x) (g x)` is `α`-Hölder on
 `s` with constant `2 ^ k * ‖L‖ * (M * K + N * H)`. -/
 theorem holderOnWith_iteratedFDeriv_comp₂
+    {𝕜 : Type*} [NontriviallyNormedField 𝕜]
     {E : Type uE} {A : Type uA} {B : Type uB} {G : Type uG}
-    [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [NormedAddCommGroup A] [NormedSpace ℝ A] [NormedAddCommGroup B] [NormedSpace ℝ B]
-    [NormedAddCommGroup G] [NormedSpace ℝ G]
-    (L : A →L[ℝ] B →L[ℝ] G) {k : ℕ} {f : E → A} {g : E → B} {s : Set E}
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [NormedAddCommGroup A] [NormedSpace 𝕜 A] [NormedAddCommGroup B] [NormedSpace 𝕜 B]
+    [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+    (L : A →L[𝕜] B →L[𝕜] G) {k : ℕ} {f : E → A} {g : E → B} {s : Set E}
     {M N H K α : ℝ≥0}
-    (hf : ContDiffOn ℝ k f s) (hg : ContDiffOn ℝ k g s) (hs : IsOpen s)
-    (hfb : ∀ j ≤ k, ∀ x ∈ s, ‖iteratedFDeriv ℝ j f x‖ ≤ M)
-    (hgb : ∀ j ≤ k, ∀ x ∈ s, ‖iteratedFDeriv ℝ j g x‖ ≤ N)
-    (hfH : ∀ j ≤ k, HolderOnWith H α (iteratedFDeriv ℝ j f) s)
-    (hgH : ∀ j ≤ k, HolderOnWith K α (iteratedFDeriv ℝ j g) s) :
+    (hf : ContDiffOn 𝕜 k f s) (hg : ContDiffOn 𝕜 k g s) (hs : IsOpen s)
+    (hfb : ∀ j ≤ k, ∀ x ∈ s, ‖iteratedFDeriv 𝕜 j f x‖ ≤ M)
+    (hgb : ∀ j ≤ k, ∀ x ∈ s, ‖iteratedFDeriv 𝕜 j g x‖ ≤ N)
+    (hfH : ∀ j ≤ k, HolderOnWith H α (iteratedFDeriv 𝕜 j f) s)
+    (hgH : ∀ j ≤ k, HolderOnWith K α (iteratedFDeriv 𝕜 j g) s) :
     HolderOnWith ((2 : ℝ≥0)^k * ‖L‖₊ * (M * K + N * H)) α
-      (iteratedFDeriv ℝ k (fun x => L (f x) (g x))) s := by
+      (iteratedFDeriv 𝕜 k (fun x => L (f x) (g x))) s := by
   -- A common universe permits induction through continuous-linear-map-valued derivatives.
   refine holderOnWith_iteratedFDeriv_comp₂_of_uLift L fun Lu hnorm => ?_
-  let e : ULift.{max uA uB uG, uE} E ≃ₗᵢ[ℝ] E := LinearIsometryEquiv.ulift ℝ E
-  let a : ULift.{max uE uB uG, uA} A ≃ₗᵢ[ℝ] A := LinearIsometryEquiv.ulift ℝ A
-  let b : ULift.{max uE uA uG, uB} B ≃ₗᵢ[ℝ] B := LinearIsometryEquiv.ulift ℝ B
+  let e : ULift.{max uA uB uG, uE} E ≃ₗᵢ[𝕜] E := LinearIsometryEquiv.ulift 𝕜 E
+  let a : ULift.{max uE uB uG, uA} A ≃ₗᵢ[𝕜] A := LinearIsometryEquiv.ulift 𝕜 A
+  let b : ULift.{max uE uA uG, uB} B ≃ₗᵢ[𝕜] B := LinearIsometryEquiv.ulift 𝕜 B
   obtain ⟨hfu, hfub, hfuH⟩ := contDiffOn_bounds_comp_linearIsometryEquiv e a hf hfb hfH
   obtain ⟨hgu, hgub, hguH⟩ := contDiffOn_bounds_comp_linearIsometryEquiv e b hg hgb hgH
   have h := holderOnWith_iteratedFDeriv_comp₂_aux k Lu hfu hgu (hs.preimage e.continuous)

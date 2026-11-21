@@ -11,6 +11,7 @@ import TauCeti.Analysis.Holder.Leibniz
 import TauCeti.LinearAlgebra.ExtendByZero
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
+import Mathlib.Analysis.Normed.Operator.Mul
 
 /-!
 # Products in higher-order Hölder spaces
@@ -297,3 +298,90 @@ theorem norm_compCkHolderOn₂_apply_le (B : E →L[ℝ] F →L[ℝ] G) (hΩ : C
 end OpenSet
 
 end ContinuousLinearMap
+
+namespace TauCeti.CkHolderSpaceOn
+
+variable {k : ℕ} {α : ℝ≥0} {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {Ω : TopologicalSpace.Opens E}
+
+section SMul
+
+variable {R F : Type*} [NormedRing R] [NormedAlgebra ℝ R]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [Module R F] [IsBoundedSMul R F] [IsScalarTower ℝ R F]
+
+/-- Pointwise scalar multiplication of `CkHolderSpaceOn k α Ω F` by `CkHolderSpaceOn k α Ω R` on a
+convex open set `Ω` for `α ≤ 1`, as a continuous bilinear map. -/
+def smulL (hΩ : Convex ℝ (Ω : Set E)) (hα : α ≤ 1) :
+    CkHolderSpaceOn k α Ω R →L[ℝ] CkHolderSpaceOn k α Ω F →L[ℝ] CkHolderSpaceOn k α Ω F :=
+  (ContinuousLinearMap.lsmul ℝ R : R →L[ℝ] F →L[ℝ] F).compCkHolderOn₂ hΩ hα
+
+/-- Pointwise scalar multiplication `smulL` evaluates by multiplying values at `x`. -/
+@[simp]
+theorem smulL_apply (hΩ : Convex ℝ (Ω : Set E)) (hα : α ≤ 1)
+    (f : CkHolderSpaceOn k α Ω R) (g : CkHolderSpaceOn k α Ω F) (x : Ω) :
+    smulL hΩ hα f g x = f x • g x :=
+  ContinuousLinearMap.compCkHolderOn₂_apply _ hΩ hα f g x
+
+/-- Pointwise scalar multiplication on `CkHolderSpaceOn k α Ω` has operator norm at most
+`(k + 7) * 2 ^ k`. -/
+theorem norm_smulL_le (hΩ : Convex ℝ (Ω : Set E)) (hα : α ≤ 1) :
+    ‖smulL (k := k) (R := R) (F := F) hΩ hα‖ ≤ (k + 7) * 2 ^ k := by
+  refine (ContinuousLinearMap.norm_compCkHolderOn₂_le _ hΩ hα).trans ?_
+  calc ((k : ℝ) + 7) * 2 ^ k * ‖(ContinuousLinearMap.lsmul ℝ R : R →L[ℝ] F →L[ℝ] F)‖
+      ≤ ((k : ℝ) + 7) * 2 ^ k * 1 := by
+        gcongr
+        exact ContinuousLinearMap.opNorm_lsmul_le
+    _ = ((k : ℝ) + 7) * 2 ^ k := mul_one _
+
+/-- Norm bound `‖smulL hΩ hα f g‖ ≤ (k + 7) * 2 ^ k * ‖f‖ * ‖g‖` for pointwise scalar
+multiplication. -/
+theorem norm_smulL_apply_le (hΩ : Convex ℝ (Ω : Set E)) (hα : α ≤ 1)
+    (f : CkHolderSpaceOn k α Ω R) (g : CkHolderSpaceOn k α Ω F) :
+    ‖smulL hΩ hα f g‖ ≤ (k + 7) * 2 ^ k * ‖f‖ * ‖g‖ :=
+  ((smulL hΩ hα).le_opNorm₂ f g).trans (by
+    gcongr
+    exact norm_smulL_le hΩ hα)
+
+end SMul
+
+section Mul
+
+variable {A : Type*} [NonUnitalNormedRing A] [NormedSpace ℝ A]
+  [IsScalarTower ℝ A A] [SMulCommClass ℝ A A]
+
+/-- Pointwise multiplication on `CkHolderSpaceOn k α Ω A` for a non-unital normed `ℝ`-algebra `A`
+on a convex open set `Ω` with `α ≤ 1`, as a continuous bilinear map. -/
+def mulL (hΩ : Convex ℝ (Ω : Set E)) (hα : α ≤ 1) :
+    CkHolderSpaceOn k α Ω A →L[ℝ] CkHolderSpaceOn k α Ω A →L[ℝ] CkHolderSpaceOn k α Ω A :=
+  (ContinuousLinearMap.mul ℝ A).compCkHolderOn₂ hΩ hα
+
+/-- Pointwise algebra multiplication `mulL` evaluates by multiplying values at `x`. -/
+@[simp]
+theorem mulL_apply (hΩ : Convex ℝ (Ω : Set E)) (hα : α ≤ 1)
+    (f g : CkHolderSpaceOn k α Ω A) (x : Ω) :
+    mulL hΩ hα f g x = f x * g x :=
+  ContinuousLinearMap.compCkHolderOn₂_apply _ hΩ hα f g x
+
+/-- Pointwise algebra multiplication on `CkHolderSpaceOn k α Ω A` has operator norm at most
+`(k + 7) * 2 ^ k`. -/
+theorem norm_mulL_le (hΩ : Convex ℝ (Ω : Set E)) (hα : α ≤ 1) :
+    ‖mulL (k := k) (A := A) hΩ hα‖ ≤ (k + 7) * 2 ^ k := by
+  refine (ContinuousLinearMap.norm_compCkHolderOn₂_le _ hΩ hα).trans ?_
+  calc ((k : ℝ) + 7) * 2 ^ k * ‖ContinuousLinearMap.mul ℝ A‖
+      ≤ ((k : ℝ) + 7) * 2 ^ k * 1 := by
+        gcongr
+        exact ContinuousLinearMap.opNorm_mul_le ℝ A
+    _ = ((k : ℝ) + 7) * 2 ^ k := mul_one _
+
+/-- Norm bound `‖mulL hΩ hα f g‖ ≤ (k + 7) * 2 ^ k * ‖f‖ * ‖g‖` for pointwise algebra
+multiplication. -/
+theorem norm_mulL_apply_le (hΩ : Convex ℝ (Ω : Set E)) (hα : α ≤ 1)
+    (f g : CkHolderSpaceOn k α Ω A) :
+    ‖mulL hΩ hα f g‖ ≤ (k + 7) * 2 ^ k * ‖f‖ * ‖g‖ :=
+  ((mulL hΩ hα).le_opNorm₂ f g).trans (by
+    gcongr
+    exact norm_mulL_le hΩ hα)
+
+end Mul
+
+end TauCeti.CkHolderSpaceOn

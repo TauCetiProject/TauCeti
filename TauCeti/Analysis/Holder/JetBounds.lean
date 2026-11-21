@@ -20,9 +20,12 @@ import Mathlib.Analysis.Calculus.ContDiff.RCLike
 
 On an open convex set, bounds for a derivative field and its next derivative give a Hölder
 bound for every exponent at most one. Thus local `C^{k,α}` data need a separate Hölder
-hypothesis only at their top derivative. Currying preserves these bounds exactly. On an open set
-that need not be convex, a `C^1` map is locally Lipschitz, hence Hölder on every compact subset,
-so one more derivative makes the top derivative Hölder there.
+hypothesis only at their top derivative. Over any nontrivially normed field, currying preserves
+these bounds exactly, and every iterated derivative of a constant function is constant, hence
+Hölder with any constant and exponent (`TauCeti.holderWith_iteratedFDeriv_const`,
+`TauCeti.holderOnWith_iteratedFDeriv_const`). On an open set that need not be convex, a `C^1` map
+is locally Lipschitz, hence Hölder on every compact subset, so one more derivative makes the top
+derivative Hölder there.
 -/
 
 public section
@@ -32,23 +35,45 @@ open scoped NNReal
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedAddCommGroup F]
 
-variable [NormedSpace ℝ E] [NormedSpace ℝ F]
-
 namespace TauCeti
+
+section Field
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 E] [NormedSpace 𝕜 F]
 
 /-- Currying preserves the Hölder bound of the top derivative exactly. -/
 theorem holderOnWith_iteratedFDeriv_succ_iff {f : E → F} {s : Set E} {j : ℕ}
     {H α : ℝ≥0} :
-    HolderOnWith H α (iteratedFDeriv ℝ (j + 1) f) s ↔
-      HolderOnWith H α (iteratedFDeriv ℝ j (fderiv ℝ f)) s := by
+    HolderOnWith H α (iteratedFDeriv 𝕜 (j + 1) f) s ↔
+      HolderOnWith H α (iteratedFDeriv 𝕜 j (fderiv 𝕜 f)) s := by
   simp only [holderOnWith_iff_dist_le, iteratedFDeriv_succ_eq_comp_right,
     Function.comp_apply, LinearIsometryEquiv.dist_map]
 
 /-- The order-zero derivative field has the same Hölder constant as the original function. -/
 theorem holderOnWith_iteratedFDeriv_zero_iff {f : E → F} {s : Set E} {H α : ℝ≥0} :
-    HolderOnWith H α (iteratedFDeriv ℝ 0 f) s ↔ HolderOnWith H α f s := by
+    HolderOnWith H α (iteratedFDeriv 𝕜 0 f) s ↔ HolderOnWith H α f s := by
   simp only [holderOnWith_iff_dist_le, iteratedFDeriv_zero_eq_comp,
     Function.comp_apply, LinearIsometryEquiv.dist_map]
+
+/-- Every iterated derivative of a constant function is constant, hence globally Hölder with any
+constant `C` and exponent `α`. -/
+theorem holderWith_iteratedFDeriv_const {C α : ℝ≥0} (n : ℕ) (c : F) :
+    HolderWith C α (iteratedFDeriv 𝕜 n (fun _ : E ↦ c)) := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · rw [iteratedFDeriv_zero_eq_comp, Function.comp_def]
+    exact HolderWith.const
+  · rw [iteratedFDeriv_const_of_ne hn]
+    exact HolderWith.zero
+
+/-- Every iterated derivative of a constant function is Hölder with any constant `C` and exponent
+`α` on any set `s`. -/
+theorem holderOnWith_iteratedFDeriv_const {C α : ℝ≥0} {s : Set E} (n : ℕ) (c : F) :
+    HolderOnWith C α (iteratedFDeriv 𝕜 n (fun _ : E ↦ c)) s :=
+  (holderWith_iteratedFDeriv_const n c).holderOnWith s
+
+end Field
+
+variable [NormedSpace ℝ E] [NormedSpace ℝ F]
 
 /-- Every derivative field below the top order is Hölder, controlled by the uniform bound on
 that field and its next derivative. No Hölder assumption on lower derivatives is needed. -/

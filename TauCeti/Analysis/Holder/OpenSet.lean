@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Holder.Iterated
 public import Mathlib.Analysis.Convex.Basic
 public import Mathlib.Topology.Sets.Opens
 import Mathlib.Analysis.Calculus.ContDiff.Comp
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Calculus.UniformLimitsDeriv
 import TauCeti.Analysis.Holder.JetBounds
 
@@ -518,6 +519,18 @@ theorem iteratedFDeriv_add (f g : CkHolderSpaceOn k α Ω F) (i : Fin (k + 1)) :
     (f + g).iteratedFDeriv i = f.iteratedFDeriv i + g.iteratedFDeriv i := by
   simpa only [iteratedFDerivL_apply] using (iteratedFDerivL i).map_add f g
 
+/-- Each derivative field commutes with negation. -/
+@[simp]
+theorem iteratedFDeriv_neg (f : CkHolderSpaceOn k α Ω F) (i : Fin (k + 1)) :
+    (-f).iteratedFDeriv i = -f.iteratedFDeriv i := by
+  simpa only [iteratedFDerivL_apply] using (iteratedFDerivL i).map_neg f
+
+/-- Each derivative field distributes over subtraction. -/
+@[simp]
+theorem iteratedFDeriv_sub (f g : CkHolderSpaceOn k α Ω F) (i : Fin (k + 1)) :
+    (f - g).iteratedFDeriv i = f.iteratedFDeriv i - g.iteratedFDeriv i := by
+  simpa only [iteratedFDerivL_apply] using (iteratedFDerivL i).map_sub f g
+
 /-- Each derivative field commutes with scalar multiplication. -/
 @[simp]
 theorem iteratedFDeriv_smul (c : ℝ) (f : CkHolderSpaceOn k α Ω F) (i : Fin (k + 1)) :
@@ -536,6 +549,18 @@ theorem iteratedFDerivHolder_zero :
 theorem iteratedFDerivHolder_add (f g : CkHolderSpaceOn k α Ω F) :
     (f + g).iteratedFDerivHolder = f.iteratedFDerivHolder + g.iteratedFDerivHolder := by
   simpa only [iteratedFDerivHolderL_apply] using iteratedFDerivHolderL.map_add f g
+
+/-- The `k`-th derivative field, in the bounded Hölder space, commutes with negation. -/
+@[simp]
+theorem iteratedFDerivHolder_neg (f : CkHolderSpaceOn k α Ω F) :
+    (-f).iteratedFDerivHolder = -f.iteratedFDerivHolder := by
+  simpa only [iteratedFDerivHolderL_apply] using iteratedFDerivHolderL.map_neg f
+
+/-- The `k`-th derivative field, in the bounded Hölder space, distributes over subtraction. -/
+@[simp]
+theorem iteratedFDerivHolder_sub (f g : CkHolderSpaceOn k α Ω F) :
+    (f - g).iteratedFDerivHolder = f.iteratedFDerivHolder - g.iteratedFDerivHolder := by
+  simpa only [iteratedFDerivHolderL_apply] using iteratedFDerivHolderL.map_sub f g
 
 /-- The `k`-th derivative field, in the bounded Hölder space, commutes with scalar
 multiplication. -/
@@ -558,6 +583,22 @@ theorem coe_add (f g : CkHolderSpaceOn k α Ω F) : ⇑(f + g) = f + g := by
   ext x
   simp only [← toFun_eq_coe, toFun, iteratedFDeriv_add, FunLike.coe_add,
     Pi.add_apply]
+  simp
+
+/-- The underlying function of a negation is the negation of the underlying function. -/
+@[simp]
+theorem coe_neg (f : CkHolderSpaceOn k α Ω F) : ⇑(-f) = -⇑f := by
+  ext x
+  simp only [← toFun_eq_coe, toFun, iteratedFDeriv_neg, FunLike.coe_neg,
+    Pi.neg_apply]
+  simp
+
+/-- The underlying function of a difference is the difference of the underlying functions. -/
+@[simp]
+theorem coe_sub (f g : CkHolderSpaceOn k α Ω F) : ⇑(f - g) = f - g := by
+  ext x
+  simp only [← toFun_eq_coe, toFun, iteratedFDeriv_sub, FunLike.coe_sub,
+    Pi.sub_apply]
   simp
 
 /-- The underlying function of a scalar multiple is the scalar multiple of the underlying
@@ -660,11 +701,33 @@ theorem norm_toBoundedContinuousFunction (f : CkHolderSpaceOn k α Ω F) :
   congr 1 with x
   exact (norm_iteratedFDeriv_zero f x).symm
 
+/-- The underlying bounded continuous function of the zero element. -/
+@[simp]
+theorem toBoundedContinuousFunction_zero :
+    (0 : CkHolderSpaceOn k α Ω F).toBoundedContinuousFunction = 0 := by
+  ext x
+  simp
+
 /-- The underlying bounded continuous function of a sum. -/
 @[simp]
 theorem toBoundedContinuousFunction_add (f g : CkHolderSpaceOn k α Ω F) :
     (f + g).toBoundedContinuousFunction =
       f.toBoundedContinuousFunction + g.toBoundedContinuousFunction := by
+  ext x
+  simp
+
+/-- The underlying bounded continuous function of a negation. -/
+@[simp]
+theorem toBoundedContinuousFunction_neg (f : CkHolderSpaceOn k α Ω F) :
+    (-f).toBoundedContinuousFunction = -f.toBoundedContinuousFunction := by
+  ext x
+  simp
+
+/-- The underlying bounded continuous function of a difference. -/
+@[simp]
+theorem toBoundedContinuousFunction_sub (f g : CkHolderSpaceOn k α Ω F) :
+    (f - g).toBoundedContinuousFunction =
+      f.toBoundedContinuousFunction - g.toBoundedContinuousFunction := by
   ext x
   simp
 
@@ -693,6 +756,20 @@ theorem toBoundedContinuousFunctionCLM_apply (f : CkHolderSpaceOn k α Ω F) :
 theorem norm_toBoundedContinuousFunctionCLM_le_one :
     ‖toBoundedContinuousFunctionCLM (k := k) (α := α) (Ω := Ω) (F := F)‖ ≤ 1 :=
   LinearMap.mkContinuous_norm_le _ zero_le_one _
+
+/-- Point evaluation at `x : Ω` as a continuous linear map of operator norm at most `1`. -/
+def evalCLM (x : Ω) : CkHolderSpaceOn k α Ω F →L[ℝ] F :=
+  (BoundedContinuousFunction.evalCLM ℝ x).comp toBoundedContinuousFunctionCLM
+
+/-- Point evaluation `evalCLM x` sends `f` to `f x`. -/
+@[simp]
+theorem evalCLM_apply (x : Ω) (f : CkHolderSpaceOn k α Ω F) : evalCLM x f = f x := by
+  simp [evalCLM]
+
+/-- Point evaluation at `x : Ω` has operator norm at most `1`. -/
+theorem norm_evalCLM_le_one (x : Ω) : ‖evalCLM (k := k) (α := α) (F := F) x‖ ≤ 1 :=
+  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun f ↦ by
+    simpa only [evalCLM_apply, one_mul] using f.norm_apply_le x
 
 /-- A bounded continuous field on `Ω` built from a function on the whole space that is continuous
 on `Ω` and bounded there. -/
@@ -878,6 +955,20 @@ theorem norm_restrictL_le_one (h : Ω' ≤ Ω) :
     ‖restrictL (k := k) (α := α) (F := F) h‖ ≤ 1 :=
   LinearMap.mkContinuous_norm_le _ zero_le_one _
 
+/-- Restriction along the reflexive inclusion `Ω ≤ Ω` is the identity map. -/
+@[simp]
+theorem restrictL_rfl :
+    restrictL (le_refl Ω) = ContinuousLinearMap.id ℝ (CkHolderSpaceOn k α Ω F) := by
+  ext f x
+  simp
+
+/-- Restriction along `Ω'' ≤ Ω' ≤ Ω` composes functorially. -/
+@[simp]
+theorem restrictL_comp {Ω'' : Opens E} (h₁ : Ω'' ≤ Ω') (h₂ : Ω' ≤ Ω) :
+    (restrictL (k := k) (α := α) (F := F) h₁).comp (restrictL h₂) = restrictL (h₁.trans h₂) := by
+  ext f x
+  simp
+
 end restrict
 
 section inclusionSucc
@@ -940,6 +1031,286 @@ theorem norm_inclusionSuccL_le (hconv : Convex ℝ (Ω : Set E)) (hα : α ≤ 1
 
 end inclusionSucc
 
+section const
+
+/-- Constant map on `Ω` as an element of `CkHolderSpaceOn k α Ω F`. -/
+def const (y : F) : CkHolderSpaceOn k α Ω F :=
+  ofContDiffOn (fun _ : E ↦ y) contDiffOn_const
+    (fun i _ ↦ ⟨‖y‖, fun x ↦ norm_iteratedFDeriv_const_le i y x.val⟩)
+    (HolderWith.memHolder fun x z ↦
+      holderOnWith_iteratedFDeriv_const (C := 0) (α := α) (s := (Ω : Set E)) k y
+        x.val x.property z.val z.property)
+
+/-- Pointwise evaluation of `const y` on `Ω` returns `y`. -/
+@[simp]
+theorem const_apply (y : F) (x : Ω) : const (k := k) (α := α) (Ω := Ω) y x = y :=
+  ofContDiffOn_apply ..
+
+/-- The constant function with value `0` is `0`. -/
+@[simp]
+theorem const_zero : const (k := k) (α := α) (Ω := Ω) (0 : F) = 0 :=
+  ext fun _ ↦ by simp
+
+/-- Constant functions preserve addition. -/
+@[simp]
+theorem const_add (y₁ y₂ : F) :
+    const (k := k) (α := α) (Ω := Ω) (y₁ + y₂) = const y₁ + const y₂ :=
+  ext fun _ ↦ by simp
+
+/-- Constant functions preserve negation. -/
+@[simp]
+theorem const_neg (y : F) : const (k := k) (α := α) (Ω := Ω) (-y) = -const y :=
+  ext fun _ ↦ by simp
+
+/-- Constant functions preserve subtraction. -/
+@[simp]
+theorem const_sub (y₁ y₂ : F) :
+    const (k := k) (α := α) (Ω := Ω) (y₁ - y₂) = const y₁ - const y₂ :=
+  ext fun _ ↦ by simp
+
+/-- Constant functions preserve scalar multiplication. -/
+@[simp]
+theorem const_smul (c : ℝ) (y : F) :
+    const (k := k) (α := α) (Ω := Ω) (c • y) = c • const y :=
+  ext fun _ ↦ by simp
+
+/-- The underlying bounded continuous function of `const y` is `BoundedContinuousFunction.const`.
+-/
+@[simp]
+theorem toBoundedContinuousFunction_const (y : F) :
+    (const (k := k) (α := α) (Ω := Ω) y).toBoundedContinuousFunction =
+      BoundedContinuousFunction.const Ω y :=
+  BoundedContinuousFunction.ext fun _ ↦ by simp
+
+/-- The `C^{k,α}(Ω)` norm of `const y` is at most `‖y‖`, even on an empty open set. -/
+theorem norm_const_le (y : F) : ‖const (k := k) (α := α) (Ω := Ω) y‖ ≤ ‖y‖ := by
+  refine (norm_le_sum_add_of_norm_iteratedFDeriv_le_of_holderWith
+    (M := fun i : Fin (k + 1) ↦ if i = 0 then ‖y‖ else 0)
+    (fun i ↦ by split_ifs <;> positivity) (fun i x ↦ ?_) (K := 0) ?_).trans_eq ?_
+  · rw [const, iteratedFDeriv_ofContDiffOn]
+    rcases eq_or_ne i 0 with rfl | hi
+    · simp only [↓reduceIte, Fin.val_zero]
+      exact norm_iteratedFDeriv_const_le 0 y x.val
+    · simp only [hi, ↓reduceIte]
+      rw [iteratedFDeriv_const_of_ne (Fin.val_ne_of_ne hi), Pi.zero_apply, norm_zero]
+  · intro x z
+    have hx : (const (k := k) (α := α) (Ω := Ω) y).iteratedFDeriv (Fin.last k) x =
+        _root_.iteratedFDeriv ℝ k (fun _ : E ↦ y) x := by
+      rw [const, iteratedFDeriv_ofContDiffOn]
+      rfl
+    have hz : (const (k := k) (α := α) (Ω := Ω) y).iteratedFDeriv (Fin.last k) z =
+        _root_.iteratedFDeriv ℝ k (fun _ : E ↦ y) z := by
+      rw [const, iteratedFDeriv_ofContDiffOn]
+      rfl
+    rw [hx, hz]
+    exact holderOnWith_iteratedFDeriv_const (C := 0) (α := α) (s := (Ω : Set E)) k y
+      x.val x.property z.val z.property
+  · simp only [Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte, NNReal.coe_zero, add_zero]
+
+/-- On a nonempty open set `Ω`, the `C^{k,α}(Ω)` norm of `const y` is `‖y‖`. -/
+@[simp]
+theorem norm_const [Nonempty Ω] (y : F) : ‖const (k := k) (α := α) (Ω := Ω) y‖ = ‖y‖ := by
+  refine le_antisymm (norm_const_le y) ?_
+  obtain ⟨x⟩ := ‹Nonempty Ω›
+  simpa only [const_apply] using (const (k := k) (α := α) (Ω := Ω) y).norm_apply_le x
+
+/-- Constant-function map `F →L[ℝ] CkHolderSpaceOn k α Ω F`, of operator norm at most `1`. -/
+def constL : F →L[ℝ] CkHolderSpaceOn k α Ω F :=
+  LinearMap.mkContinuous
+    { toFun := const, map_add' := const_add, map_smul' := const_smul } 1 fun y ↦ by
+      rw [one_mul]; exact norm_const_le y
+
+/-- The linear map `constL` sends `y` to `const y`. -/
+@[simp]
+theorem constL_apply (y : F) : constL (k := k) (α := α) (Ω := Ω) y = const y := (rfl)
+
+/-- The constant-function map `constL` has operator norm at most `1`, even on an empty open set. -/
+theorem norm_constL_le_one : ‖constL (k := k) (α := α) (Ω := Ω) (F := F)‖ ≤ 1 :=
+  LinearMap.mkContinuous_norm_le _ zero_le_one _
+
+/-- On a nonempty open set with nontrivial values, `constL` has operator norm `1`. -/
+@[simp]
+theorem norm_constL [Nonempty Ω] [Nontrivial F] :
+    ‖constL (k := k) (α := α) (Ω := Ω) (F := F)‖ = 1 := by
+  obtain ⟨y, hy⟩ := exists_ne (0 : F)
+  refine le_antisymm norm_constL_le_one ?_
+  have h := (constL (k := k) (α := α) (Ω := Ω)).le_opNorm y
+  simpa only [constL_apply, norm_const, le_mul_iff_one_le_left (norm_pos_iff.mpr hy)] using h
+
+/-- On a nonempty open set with nontrivial values, `toBoundedContinuousFunctionCLM` has norm `1`.
+-/
+@[simp]
+theorem norm_toBoundedContinuousFunctionCLM [Nonempty Ω] [Nontrivial F] :
+    ‖toBoundedContinuousFunctionCLM (k := k) (α := α) (Ω := Ω) (F := F)‖ = 1 := by
+  obtain ⟨y, hy⟩ := exists_ne (0 : F)
+  refine le_antisymm norm_toBoundedContinuousFunctionCLM_le_one ?_
+  have h := (toBoundedContinuousFunctionCLM (k := k) (α := α) (Ω := Ω)).le_opNorm (const y)
+  simpa only [toBoundedContinuousFunctionCLM_apply, toBoundedContinuousFunction_const,
+    BoundedContinuousFunction.norm_const_eq, norm_const,
+    le_mul_iff_one_le_left (norm_pos_iff.mpr hy)] using h
+
+/-- With nontrivial values, point evaluation `evalCLM x` has operator norm `1`. -/
+@[simp]
+theorem norm_evalCLM [Nontrivial F] (x : Ω) :
+    ‖evalCLM (k := k) (α := α) (F := F) x‖ = 1 := by
+  have : Nonempty Ω := ⟨x⟩
+  obtain ⟨y, hy⟩ := exists_ne (0 : F)
+  refine le_antisymm (norm_evalCLM_le_one x) ?_
+  have h := (evalCLM (k := k) (α := α) x).le_opNorm (const y)
+  simpa only [evalCLM_apply, const_apply, norm_const,
+    le_mul_iff_one_le_left (norm_pos_iff.mpr hy)] using h
+
+/-- Evaluating a constant function at `x : Ω` recovers its value. -/
+@[simp]
+theorem evalCLM_comp_constL (x : Ω) :
+    (evalCLM (k := k) (α := α) (F := F) x).comp constL = ContinuousLinearMap.id ℝ F := by
+  ext y; simp
+
+end const
+
+section Equiv
+
+private def toHolderSpace (f : CkHolderSpaceOn 0 α Ω F) : HolderSpace α Ω F :=
+  HolderSpace.compLeftL
+    (continuousMultilinearCurryFin0 ℝ E F).toLinearIsometry.toContinuousLinearMap
+    f.iteratedFDerivHolder
+
+private theorem isJetGraph_zero (J : Jet 0 α Ω F) : IsJetGraph J := fun j ↦ Fin.elim0 j
+
+private def ofHolderSpace (g : HolderSpace α Ω F) : CkHolderSpaceOn 0 α Ω F :=
+  mk (WithLp.toLp 1 (0, HolderSpace.compLeftL
+      (continuousMultilinearCurryFin0 ℝ E F).symm.toLinearIsometry.toContinuousLinearMap g))
+    (isJetGraph_zero _)
+
+private theorem toHolderSpace_apply (f : CkHolderSpaceOn 0 α Ω F) (x : Ω) :
+    toHolderSpace f x = f x := by
+  simp only [toHolderSpace, HolderSpace.compLeftL_apply, LinearIsometry.coe_toContinuousLinearMap,
+    LinearIsometryEquiv.coe_toLinearIsometry]
+  have h0 : f.iteratedFDerivHolder x = f.iteratedFDeriv (Fin.last 0) x := by
+    rw [← HolderSpace.coe_toBoundedContinuousFunction,
+      toBoundedContinuousFunction_iteratedFDerivHolder]
+  rw [h0, continuousMultilinearCurryFin0_apply]
+  rfl
+
+private theorem ofHolderSpace_apply (g : HolderSpace α Ω F) (x : Ω) :
+    ofHolderSpace g x = g x := by
+  have hjet : toJet (ofHolderSpace g) = WithLp.toLp 1 (0, HolderSpace.compLeftL
+      (continuousMultilinearCurryFin0 ℝ E F).symm.toLinearIsometry.toContinuousLinearMap g) :=
+    toJet_mk _ _
+  have h0 : (ofHolderSpace g).iteratedFDeriv (Fin.last 0) x =
+      (continuousMultilinearCurryFin0 ℝ E F).symm (g x) := by
+    rw [iteratedFDeriv, fieldL_last, hjet]
+    simp
+  simpa [← toFun_eq_coe, toFun, ContinuousMultilinearMap.curry0_apply] using
+    congrArg ContinuousMultilinearMap.curry0 h0
+
+private theorem norm_toHolderSpace (f : CkHolderSpaceOn 0 α Ω F) : ‖toHolderSpace f‖ = ‖f‖ := by
+  rw [toHolderSpace, HolderSpace.norm_compLeftL_linearIsometry, HolderSpace.norm_def,
+    toBoundedContinuousFunction_iteratedFDerivHolder, norm_eq, Fin.sum_univ_one]
+  exact congrArg (· + _) (congrArg (fun i : Fin 1 ↦ ‖f.iteratedFDeriv i‖) (Fin.eq_zero _))
+
+/-- At order `k = 0`, `CkHolderSpaceOn 0 α Ω F` is linearly isometric to `HolderSpace α Ω F`. -/
+def equivHolderSpace : CkHolderSpaceOn 0 α Ω F ≃ₗᵢ[ℝ] HolderSpace α Ω F where
+  toFun := toHolderSpace
+  invFun := ofHolderSpace
+  left_inv f := ext fun x ↦ (ofHolderSpace_apply _ x).trans (toHolderSpace_apply f x)
+  right_inv g := HolderSpace.ext fun x ↦ (toHolderSpace_apply _ x).trans (ofHolderSpace_apply g x)
+  map_add' f g := HolderSpace.ext fun x ↦ by
+    simp only [toHolderSpace_apply, coe_add, Pi.add_apply, HolderSpace.add_apply]
+  map_smul' c f := HolderSpace.ext fun x ↦ by
+    simp only [toHolderSpace_apply, coe_smul, Pi.smul_apply, RingHom.id_apply,
+      HolderSpace.smul_apply]
+  norm_map' := norm_toHolderSpace
+
+/-- The linear isometry `equivHolderSpace` preserves pointwise values on `Ω`. -/
+@[simp]
+theorem equivHolderSpace_apply (f : CkHolderSpaceOn 0 α Ω F) (x : Ω) :
+    equivHolderSpace f x = f x :=
+  toHolderSpace_apply f x
+
+/-- The inverse of `equivHolderSpace` preserves pointwise values on `Ω`. -/
+@[simp]
+theorem equivHolderSpace_symm_apply (g : HolderSpace α Ω F) (x : Ω) :
+    equivHolderSpace.symm g x = g x :=
+  ofHolderSpace_apply g x
+
+private def toTop (f : CkHolderSpaceOn k α (⊤ : Opens E) F) :
+    CkHolderSpace k α E F :=
+  CkHolderSpace.ofContDiff f.extend
+    (contDiffOn_univ.mp f.contDiffOn_extend)
+    (fun _ hi ↦ ⟨‖f‖, fun x ↦ f.norm_iteratedFDeriv_extend_le hi ⟨x, trivial⟩⟩)
+    (holderOnWith_univ.mp f.holderOnWith_iteratedFDeriv_extend).memHolder
+
+private def ofTop (g : CkHolderSpace k α E F) :
+    CkHolderSpaceOn k α (⊤ : Opens E) F :=
+  ofContDiffOn g g.contDiff.contDiffOn
+    (fun _ hi ↦ ⟨‖g‖, fun x ↦ g.norm_iteratedFDeriv_apply_le hi x⟩)
+    (g.memHolder_iteratedFDeriv.holderWith.comp_lipschitzWith_one
+      (LipschitzWith.subtypeVal ((⊤ : Opens E) : Set E))).memHolder
+
+private theorem toTop_apply (f : CkHolderSpaceOn k α (⊤ : Opens E) F) (x : E) :
+    toTop f x = f ⟨x, trivial⟩ := by
+  simp only [toTop, CkHolderSpace.coe_ofContDiff]
+  exact f.extend_apply ⟨x, trivial⟩
+
+private theorem ofTop_apply (g : CkHolderSpace k α E F) (x : (⊤ : Opens E)) :
+    ofTop g x = g x :=
+  ofContDiffOn_apply ..
+
+private theorem norm_toTop (f : CkHolderSpaceOn k α (⊤ : Opens E) F) :
+    ‖toTop f‖ = ‖f‖ := by
+  have hcoe : ⇑(toTop f) = f.extend := CkHolderSpace.coe_ofContDiff ..
+  have hfield (i : Fin (k + 1)) : ‖(toTop f).iteratedFDeriv i‖ = ‖f.iteratedFDeriv i‖ := by
+    apply le_antisymm
+    · refine (BoundedContinuousFunction.norm_le (norm_nonneg (f.iteratedFDeriv i))).2 fun x ↦ ?_
+      rw [← CkHolderSpace.iteratedFDeriv_eq, hcoe, f.iteratedFDeriv_extend i ⟨x, trivial⟩]
+      exact (f.iteratedFDeriv i).norm_coe_le_norm ⟨x, trivial⟩
+    · refine (BoundedContinuousFunction.norm_le (norm_nonneg ((toTop f).iteratedFDeriv i))).2
+        fun x ↦ ?_
+      rw [← f.iteratedFDeriv_extend i x, ← hcoe, CkHolderSpace.iteratedFDeriv_eq]
+      exact ((toTop f).iteratedFDeriv i).norm_coe_le_norm x.val
+  have htop : nnHolderNorm α (_root_.iteratedFDeriv ℝ k (toTop f)) =
+      nnHolderNorm α (f.iteratedFDeriv (Fin.last k) : (⊤ : Opens E) →
+        E [×k]→L[ℝ] F) := by
+    refine le_antisymm ?_ ?_
+    · rw [hcoe]
+      exact (holderOnWith_univ.mp f.holderOnWith_iteratedFDeriv_extend).nnholderNorm_le
+    · have hdom : (f.iteratedFDeriv (Fin.last k) : (⊤ : Opens E) → E [×k]→L[ℝ] F) =
+          ((⊤ : Opens E) : Set E).domRestrict (_root_.iteratedFDeriv ℝ k (toTop f)) :=
+        funext fun x ↦ (f.iteratedFDeriv_eq (fun y ↦ toTop_apply f y.val) (Fin.last k) x).symm
+      rw [hdom]
+      exact ((toTop f).memHolder_iteratedFDeriv.holderWith.holderOnWith
+        ((⊤ : Opens E) : Set E)).holderWith.nnholderNorm_le
+  rw [CkHolderSpace.norm_eq, norm_eq]
+  simp only [hfield, htop]
+
+/-- On `⊤ : Opens E`, `CkHolderSpaceOn k α ⊤ F ≃ₗᵢ[ℝ] CkHolderSpace k α E F`. -/
+def equivTop :
+    CkHolderSpaceOn k α (⊤ : Opens E) F ≃ₗᵢ[ℝ] CkHolderSpace k α E F where
+  toFun := toTop
+  invFun := ofTop
+  left_inv f := ext fun x ↦ (ofTop_apply _ x).trans (toTop_apply f x.val)
+  right_inv g := CkHolderSpace.ext fun x ↦ (toTop_apply _ x).trans (ofTop_apply g ⟨x, trivial⟩)
+  map_add' f g := CkHolderSpace.ext fun x ↦ by
+    simp only [toTop_apply, coe_add, Pi.add_apply, CkHolderSpace.coe_add]
+  map_smul' c f := CkHolderSpace.ext fun x ↦ by
+    simp only [toTop_apply, coe_smul, Pi.smul_apply, RingHom.id_apply, CkHolderSpace.coe_smul]
+  norm_map' := norm_toTop
+
+/-- The linear isometry `equivTop` preserves pointwise values on `E`. -/
+@[simp]
+theorem equivTop_apply (f : CkHolderSpaceOn k α (⊤ : Opens E) F) (x : E) :
+    equivTop f x = f ⟨x, trivial⟩ :=
+  toTop_apply f x
+
+/-- The inverse of `equivTop` preserves pointwise values on `⊤`. -/
+@[simp]
+theorem equivTop_symm_apply (g : CkHolderSpace k α E F) (x : (⊤ : Opens E)) :
+    equivTop.symm g x = g x :=
+  ofTop_apply g x
+
+end Equiv
+
 end CkHolderSpaceOn
 
 namespace CkHolderSpace
@@ -979,6 +1350,14 @@ theorem iteratedFDeriv_restrictOnL (f : CkHolderSpace k α E F) (i : Fin (k + 1)
 /-- Restriction to an open set does not increase the `C^{k,α}` norm. -/
 theorem norm_restrictOnL_le_one : ‖restrictOnL (k := k) (α := α) (F := F) Ω‖ ≤ 1 :=
   LinearMap.mkContinuous_norm_le _ zero_le_one _
+
+/-- Restricting from `E` to `Ω` and then to `Ω' ≤ Ω` agrees with restricting directly to `Ω'`. -/
+@[simp]
+theorem restrictL_comp_restrictOnL {Ω' : Opens E} (h : Ω' ≤ Ω) :
+    (CkHolderSpaceOn.restrictL (k := k) (α := α) (F := F) h).comp (restrictOnL Ω) =
+      restrictOnL Ω' := by
+  ext g x
+  simp
 
 end CkHolderSpace
 
