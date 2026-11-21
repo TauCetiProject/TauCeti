@@ -83,6 +83,15 @@ theorem ord_pow (v : _root_.Valuation F ℤᵐ⁰) (f : F) (n : ℕ) :
 theorem ord_neg (v : _root_.Valuation F ℤᵐ⁰) (f : F) : ord v (-f) = ord v f := by
   simp [ord_def, _root_.Valuation.map_neg]
 
+/-- Translation between the multiplicative valuation and its additive order. -/
+theorem valuation_eq_exp_neg_ord (v : _root_.Valuation F ℤᵐ⁰) {f : F} (hf : v f ≠ 0) :
+    v f = WithZero.exp (-ord v f) := by
+  rw [ord_def, neg_neg, WithZero.exp_log hf]
+
+theorem ord_eq_iff_valuation_eq_exp_neg (v : _root_.Valuation F ℤᵐ⁰) {f : F}
+    (hf : v f ≠ 0) {n : ℤ} : ord v f = n ↔ v f = WithZero.exp (-n) := by
+  rw [valuation_eq_exp_neg_ord v hf, WithZero.exp_inj, neg_inj]
+
 /-- **A surjective valuation onto `ℤᵐ⁰` is nontrivial.** Surjectivity is the form the hypothesis
 usually arrives in — a `Place` carries it by definition — while the results about order and
 normalization are stated for a nontrivial valuation, and this converts one to the other. -/
@@ -104,9 +113,9 @@ theorem valueGroup_eq_top_of_surjective (v : _root_.Valuation F ℤᵐ⁰)
 
 /-- A surjective `ℤᵐ⁰`-valued valuation has nontrivial value group. -/
 theorem nontrivial_valueGroup_of_surjective (v : _root_.Valuation F ℤᵐ⁰)
-    (hv : Function.Surjective v) : Nontrivial v.valueGroup := by
-  rw [valueGroup_eq_top_of_surjective v hv]
-  exact (Subgroup.topEquiv (G := ℤᵐ⁰ˣ)).toEquiv.nontrivial
+    (hv : Function.Surjective v) : Nontrivial v.valueGroup :=
+  have := isNontrivial_of_surjective hv
+  inferInstance
 
 /-- Uniformizers of a surjective `ℤᵐ⁰`-valuation are exactly the elements of order one. -/
 theorem isUniformizer_iff_ord_eq_one_of_surjective (v : _root_.Valuation F ℤᵐ⁰)
@@ -114,28 +123,14 @@ theorem isUniformizer_iff_ord_eq_one_of_surjective (v : _root_.Valuation F ℤ�
     v.IsUniformizer t ↔ ord v t = 1 := by
   rw [_root_.Valuation.IsUniformizer,
     _root_.Valuation.IsRankOneDiscrete.generator_eq_exp_neg_one_of_surjective hv, Units.val_mk0]
-  constructor
-  · intro ht
-    simp [ord_def, ht]
-  · intro ht
-    have ht0 : v t ≠ 0 := fun h => by simp [ord_def, h] at ht
-    rw [ord_def, neg_eq_iff_eq_neg] at ht
-    rw [← WithZero.exp_log ht0, ht]
+  refine ⟨fun ht ↦ by simp [ord_def, ht], fun ht ↦ ?_⟩
+  exact (ord_eq_iff_valuation_eq_exp_neg v (valuation_ne_zero_of_ord_ne_zero v (by omega))).mp ht
 
 theorem exists_isUniformizer_of_surjective (v : _root_.Valuation F ℤᵐ⁰)
     [Nontrivial v.valueGroup] (hv : Function.Surjective v) :
     ∃ t : F, v.IsUniformizer t := by
   obtain ⟨t, ht⟩ := ord_surjective v hv 1
   exact ⟨t, (isUniformizer_iff_ord_eq_one_of_surjective v hv).mpr ht⟩
-
-/-- Translation between the multiplicative valuation and its additive order. -/
-theorem valuation_eq_exp_neg_ord (v : _root_.Valuation F ℤᵐ⁰) {f : F} (hf : v f ≠ 0) :
-    v f = WithZero.exp (-ord v f) := by
-  rw [ord_def, neg_neg, WithZero.exp_log hf]
-
-theorem ord_eq_iff_valuation_eq_exp_neg (v : _root_.Valuation F ℤᵐ⁰) {f : F}
-    (hf : v f ≠ 0) {n : ℤ} : ord v f = n ↔ v f = WithZero.exp (-n) := by
-  rw [valuation_eq_exp_neg_ord v hf, WithZero.exp_inj, neg_inj]
 
 theorem ord_mul (v : _root_.Valuation F ℤᵐ⁰) {f g : F} (hf : v f ≠ 0) (hg : v g ≠ 0) :
     ord v (f * g) = ord v f + ord v g := by
@@ -148,12 +143,6 @@ theorem ord_units_mul (v : _root_.Valuation F ℤᵐ⁰) (f g : Fˣ) :
     ord v ((f : F) * (g : F)) = ord v (f : F) + ord v (g : F) :=
   ord_mul v (f.isUnit.map v.toMonoidHom).ne_zero (g.isUnit.map v.toMonoidHom).ne_zero
 
-private theorem exp_max (a b : ℤ) :
-    max (WithZero.exp a) (WithZero.exp b) = WithZero.exp (max a b) := by
-  rcases le_total a b with h | h
-  · rw [max_eq_right h, max_eq_right (WithZero.exp_le_exp.mpr h)]
-  · rw [max_eq_left h, max_eq_left (WithZero.exp_le_exp.mpr h)]
-
 /-- The ultrametric inequality in additive form. The sum must lie outside the valuation
 support, where the order has its junk value. -/
 theorem min_ord_le_ord_add (v : _root_.Valuation F ℤᵐ⁰) {f g : F} (h : v (f + g) ≠ 0) :
@@ -164,24 +153,9 @@ theorem min_ord_le_ord_add (v : _root_.Valuation F ℤᵐ⁰) {f g : F} (h : v (
   rcases eq_or_ne (v g) 0 with hg | hg
   · simp only [ord_def, v.map_add_of_right_eq_zero hg, hg, WithZero.log_zero, neg_zero]
     exact min_le_left _ _
-  have hadd := v.map_add f g
+  have hadd := le_max_iff.mp (v.map_add f g)
   rw [valuation_eq_exp_neg_ord v hf, valuation_eq_exp_neg_ord v hg,
-    valuation_eq_exp_neg_ord v h, exp_max, WithZero.exp_le_exp] at hadd
-  omega
-
-/-- The strict triangle inequality for an additive order. -/
-theorem ord_add_eq_min_of_ord_ne (v : _root_.Valuation F ℤᵐ⁰) {f g : F}
-    (hf : v f ≠ 0) (hg : v g ≠ 0) (h : ord v f ≠ ord v g) :
-    ord v (f + g) = min (ord v f) (ord v g) := by
-  have hne : v f ≠ v g := by
-    rw [valuation_eq_exp_neg_ord v hf, valuation_eq_exp_neg_ord v hg]
-    simpa using h
-  have hsum := v.map_add_of_distinct_val hne
-  have hfg : v (f + g) ≠ 0 := by
-    rw [hsum]
-    exact ne_of_gt (lt_max_of_lt_left (pos_iff_ne_zero.mpr hf))
-  rw [valuation_eq_exp_neg_ord v hf, valuation_eq_exp_neg_ord v hg,
-    valuation_eq_exp_neg_ord v hfg, exp_max, WithZero.exp_inj] at hsum
+    valuation_eq_exp_neg_ord v h, WithZero.exp_le_exp, WithZero.exp_le_exp] at hadd
   omega
 
 /-- The order reverses the valuation: an element of larger order has smaller valuation.  The
@@ -190,6 +164,17 @@ theorem ord_lt_ord_iff_valuation_gt (v : _root_.Valuation F ℤᵐ⁰) {f g : F}
     (hg : v g ≠ 0) : ord v f < ord v g ↔ v g < v f := by
   rw [valuation_eq_exp_neg_ord v hf, valuation_eq_exp_neg_ord v hg, WithZero.exp_lt_exp]
   omega
+
+/-- The strict triangle inequality for an additive order. -/
+theorem ord_add_eq_min_of_ord_ne (v : _root_.Valuation F ℤᵐ⁰) {f g : F}
+    (hf : v f ≠ 0) (hg : v g ≠ 0) (h : ord v f ≠ ord v g) :
+    ord v (f + g) = min (ord v f) (ord v g) := by
+  -- The summand of smaller order has the larger valuation, which the sum then takes.
+  rcases h.lt_or_gt with h | h
+  · rw [min_eq_left h.le, ord_def,
+      v.map_add_eq_of_lt_left ((ord_lt_ord_iff_valuation_gt v hf hg).mp h), ← ord_def]
+  · rw [min_eq_right h.le, ord_def,
+      v.map_add_eq_of_lt_right ((ord_lt_ord_iff_valuation_gt v hg hf).mp h), ← ord_def]
 
 /-- The valuation of a finite sum with a strict minimum of orders: the summand of least order
 dominates.  It is stated on the valuation because both
@@ -303,36 +288,27 @@ theorem surjective_of_map_eq_exp_neg_one (v : _root_.Valuation F ℤᵐ⁰) {t :
   intro x
   induction x using WithZero.expRecOn with
   | zero => exact ⟨0, map_zero v⟩
-  | exp n => exact ⟨t ^ (-n), by rw [map_zpow₀, ht, ← WithZero.exp_zsmul, smul_eq_mul, neg_mul_neg,
-      mul_one]⟩
+  | exp n => exact ⟨t ^ (-n), by simp [ht, ← WithZero.exp_zsmul]⟩
 
 /-- Two equivalent normalized `ℤᵐ⁰`-valuations are equal. -/
 theorem eq_of_isEquiv_of_surjective {v w : _root_.Valuation F ℤᵐ⁰}
     (hv : Function.Surjective v) (hw : Function.Surjective w) (h : v.IsEquiv w) : v = w := by
-  have hmem := h.ord_nonneg_iff
   have hzero := h.ord_eq_zero_iff
   -- Choose order-one elements for both normalized valuations and compare their orders.
   obtain ⟨t, ht⟩ := ord_surjective v hv 1
   obtain ⟨s, hs⟩ := ord_surjective w hw 1
   have ht0 : t ≠ 0 := fun h' => by simp [h'] at ht
   have hs0 : s ≠ 0 := fun h' => by simp [h'] at hs
-  have htW : 1 ≤ ord w t := by
-    have h₁ := (hmem t).mp (by omega)
-    have h₂ := (hzero t).not.mp (by omega)
-    omega
-  have hsV : 1 ≤ ord v s := by
-    have h₁ := (hmem s).mpr (by omega)
-    have h₂ := (hzero s).not.mpr (by omega)
-    omega
-  -- Dividing `s` by the appropriate power of `t` has order zero for both valuations;
-  -- this forces the chosen `v`-uniformizer `t` to have `w`-order one.
+  -- Dividing `s` by the appropriate power of `t` has order zero for both valuations, so
+  -- `ord v s * ord w t = 1`; as `ord w t ≥ 0`, the `v`-uniformizer `t` has `w`-order one.
   have hone : ord w t = 1 := by
     have hst : ord v (s / t ^ ord v s) = 0 := by
       rw [ord_div_zpow v hs0 ht0, ht]
       ring
     have hW := (hzero _).mp hst
     rw [ord_div_zpow w hs0 ht0, hs] at hW
-    nlinarith [htW, hsV]
+    exact Int.eq_one_of_mul_eq_one_left (a := ord v s) ((h.ord_nonneg_iff t).mp (by omega))
+      (by linarith)
   -- Removing the `v`-order of an arbitrary nonzero element now shows that both orders,
   -- and hence both valuations, agree pointwise.
   refine _root_.Valuation.ext fun f => ?_
@@ -366,7 +342,7 @@ theorem mem_valuationSubring_iff_ord_nonneg (v : _root_.Valuation F ℤᵐ⁰) {
 theorem valuationSubring_isDiscreteValuationRing_of_surjective
     (v : _root_.Valuation F ℤᵐ⁰) (hv : Function.Surjective v) :
     IsDiscreteValuationRing v.valuationSubring := by
-  let _ := nontrivial_valueGroup_of_surjective v hv
+  have := isNontrivial_of_surjective hv
   exact _root_.Valuation.valuationSubring_isDiscreteValuationRing v
 
 /-- For a `ℤᵐ⁰`-valued valuation, any integer of valuation `exp (-1)` generates the maximal ideal
@@ -375,7 +351,7 @@ theorem maximalIdeal_eq_span_of_map_eq_exp_neg_one (v : _root_.Valuation F ℤ�
     {π : v.valuationSubring} (hπ : v π = WithZero.exp (-1)) :
     IsLocalRing.maximalIdeal v.valuationSubring = Ideal.span {π} := by
   have hv := surjective_of_map_eq_exp_neg_one v hπ
-  let _ := nontrivial_valueGroup_of_surjective v hv
+  have := isNontrivial_of_surjective hv
   refine IsUniformizer.is_generator ?_
   rw [isUniformizer_iff_ord_eq_one_of_surjective v hv]
   simp [ord_def, hπ]
@@ -409,12 +385,8 @@ theorem mem_maximalIdeal_iff_ord_pos (v : _root_.Valuation F ℤᵐ⁰)
   omega
 
 theorem valuationSubring_ne_top_of_surjective (v : _root_.Valuation F ℤᵐ⁰)
-    (hv : Function.Surjective v) : v.valuationSubring ≠ ⊤ := by
-  obtain ⟨t, ht⟩ := ord_surjective v hv 1
-  intro h
-  have ht' : t⁻¹ ∈ v.valuationSubring := h ▸ ValuationSubring.mem_top _
-  rw [mem_valuationSubring_iff_ord_nonneg v, ord_inv, ht] at ht'
-  omega
+    (hv : Function.Surjective v) : v.valuationSubring ≠ ⊤ :=
+  fun h ↦ (valuationSubring_eq_top_iff v).mp h (isNontrivial_of_surjective hv)
 
 end Field
 
