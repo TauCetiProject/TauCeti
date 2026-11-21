@@ -53,10 +53,8 @@ pulling the restricted system back along the subspace component of a map of pair
 def subspaceSystemPullbackIso :
     P.subspaceSystem ((LocalCoefficientSystem.pullback (Hom.fst f).hom).obj L) ≅
       (LocalCoefficientSystem.pullback (Hom.snd f).hom).obj (Q.subspaceSystem L) :=
-  ((LocalCoefficientSystem.pullbackCompIso P.map.hom (Hom.fst f).hom).app L).symm ≪≫
-    eqToIso (congrArg (fun g : P.snd ⟶ Q.fst ↦
-      (LocalCoefficientSystem.pullback g.hom).obj L) (Hom.w f).symm) ≪≫
-    (LocalCoefficientSystem.pullbackCompIso (Hom.snd f).hom Q.map.hom).app L
+  LocalCoefficientSystem.pullbackSquareIso P.map.hom (Hom.fst f).hom (Hom.snd f).hom Q.map.hom L
+    (congrArg (·.hom) (Hom.w f).symm)
 
 /-- The map on twisted chains of the subspaces induced by a map of pairs.  Its source is first
 identified with the pullback of the target subspace system. -/

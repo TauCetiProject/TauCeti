@@ -143,6 +143,14 @@ theorem _root_.IsCompact.exists_tendsto_of_eventually_mem {ι : Type*} {s : Set 
   obtain ⟨x, hx, h⟩ := hs.ultrafilter_le_nhds' (U.map u) (Ultrafilter.mem_map.2 hu)
   exact ⟨x, hx, by rwa [Ultrafilter.coe_map] at h⟩
 
+/-- In a Hausdorff space, the closure of the image of a compact set under a continuous map lies
+in the range of the map. -/
+theorem _root_.IsCompact.closure_image_subset_range {Y : Type*} [TopologicalSpace Y] [T2Space Y]
+    {s : Set X} (hs : IsCompact s) {f : X → Y} (hf : ContinuousOn f s) :
+    closure (f '' s) ⊆ Set.range f := by
+  rw [(hs.image_of_continuousOn hf).isClosed.closure_eq]
+  exact Set.image_subset_range _ _
+
 /-- If the values `u i z` at one point `z ∈ S` tend to the cocompact filter, then no compact set
 contains the images `u i '' S` for every `i`. -/
 theorem not_exists_isCompact_forall_mapsTo_of_tendsto_cocompact {ι α : Type*} {l : Filter ι}

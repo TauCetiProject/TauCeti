@@ -38,7 +38,7 @@ noncomputable section
 
 open CategoryTheory
 
-universe u v w v₁ v₂ v₃
+universe u v w v₁ v₂ v₃ v₄
 
 namespace TauCeti
 
@@ -195,6 +195,39 @@ theorem pullbackCompIso_inv_app_app {X : TopCat.{v₁}} {Y : TopCat.{v₂}} {Z :
   change 𝟙 _ ≫ L.map ((eqToHom (FundamentalGroupoid.map_comp g f).symm).app x) = 𝟙 _
   rw [eqToHom_app, eqToHom_map, Category.id_comp]
   rfl
+
+/-- For a commuting square `b.comp a = d.comp c` of continuous maps, the two iterated pullbacks
+of a local coefficient system around the square are canonically isomorphic. -/
+def pullbackSquareIso {A : TopCat.{v₁}} {B : TopCat.{v₂}} {C : TopCat.{v₃}} {D : TopCat.{v₄}}
+    (a : C(A, B)) (b : C(B, D)) (c : C(A, C)) (d : C(C, D))
+    (L : LocalCoefficientSystem.{u, v₄, w} R D) (h : b.comp a = d.comp c) :
+    (pullback (R := R) a).obj ((pullback (R := R) b).obj L) ≅
+      (pullback (R := R) c).obj ((pullback (R := R) d).obj L) :=
+  ((pullbackCompIso (R := R) a b).app L).symm ≪≫
+    eqToIso (congrArg (fun k : C(A, D) ↦ (pullback (R := R) k).obj L) h) ≪≫
+    (pullbackCompIso (R := R) c d).app L
+
+/-- The forward morphism of `pullbackSquareIso` unfolds to the composite of the two
+`pullbackCompIso` comparisons across the square equality. -/
+theorem pullbackSquareIso_hom {A : TopCat.{v₁}} {B : TopCat.{v₂}} {C : TopCat.{v₃}}
+    {D : TopCat.{v₄}} (a : C(A, B)) (b : C(B, D)) (c : C(A, C)) (d : C(C, D))
+    (L : LocalCoefficientSystem.{u, v₄, w} R D) (h : b.comp a = d.comp c) :
+    (pullbackSquareIso (R := R) a b c d L h).hom =
+      (pullbackCompIso (R := R) a b).inv.app L ≫
+        eqToHom (congrArg (fun k : C(A, D) ↦ (pullback (R := R) k).obj L) h) ≫
+        (pullbackCompIso (R := R) c d).hom.app L := by
+  simp [pullbackSquareIso]
+
+/-- The inverse morphism of `pullbackSquareIso` unfolds to the reversed composite of the two
+`pullbackCompIso` comparisons across the square equality. -/
+theorem pullbackSquareIso_inv {A : TopCat.{v₁}} {B : TopCat.{v₂}} {C : TopCat.{v₃}}
+    {D : TopCat.{v₄}} (a : C(A, B)) (b : C(B, D)) (c : C(A, C)) (d : C(C, D))
+    (L : LocalCoefficientSystem.{u, v₄, w} R D) (h : b.comp a = d.comp c) :
+    (pullbackSquareIso (R := R) a b c d L h).inv =
+      (pullbackCompIso (R := R) c d).inv.app L ≫
+        eqToHom (congrArg (fun k : C(A, D) ↦ (pullback (R := R) k).obj L) h.symm) ≫
+        (pullbackCompIso (R := R) a b).hom.app L := by
+  simp [pullbackSquareIso, Category.assoc]
 
 /-- Pulling back a constant local coefficient system leaves it constant. -/
 def pullbackConstantIso {X : TopCat.{v₁}} {Y : TopCat.{v₂}} (f : C(X, Y))

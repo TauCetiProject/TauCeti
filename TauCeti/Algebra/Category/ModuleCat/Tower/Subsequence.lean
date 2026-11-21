@@ -19,7 +19,9 @@ an inverse to a transition map.
 
 The equivalence is natural in morphisms of towers. It uses Mathlib's cofinality criterion
 `Monotone.final_functor_iff` and `Functor.Initial.isLimitWhiskerEquiv`, applied to
-`ModuleTower.isLimitLimCone`, rather than reconstructing the categorical limit.
+`ModuleTower.isLimitLimCone`, rather than reconstructing the categorical limit. In particular, a
+morphism of towers that is an isomorphism from some index on induces a bijection on `lim`
+(`TauCeti.ModuleTower.limMap_bijective_of_isIso_of_le`).
 
 ## References
 
@@ -129,5 +131,31 @@ theorem subsequenceRestriction_natural_apply (f : F ⟶ G) (x : F.Product) :
       productMap (Functor.whiskerLeft φ.monotone.functor.op f) (F.subsequenceRestriction φ x) := by
   funext n
   simp [productMap_apply]
+
+/-- Shifting a morphism of module towers that is an isomorphism from index `N` on yields an
+isomorphism along a cofinal subsequence. -/
+theorem exists_cofinal_isIso_whiskerLeft_of_isIso_of_le (f : F ⟶ G) (N : ℕ)
+    (hf : ∀ n, N ≤ n → IsIso (f.app (op n))) :
+    ∃ (φ : ℕ →o ℕ), (∀ n, ∃ m, n ≤ φ m) ∧
+      IsIso (Functor.whiskerLeft φ.monotone.functor.op f) := by
+  let φ : ℕ →o ℕ := ⟨(N + ·), fun _ _ h ↦ Nat.add_le_add_left h N⟩
+  refine ⟨φ, fun n ↦ ⟨n, Nat.le_add_left n N⟩, ?_⟩
+  have : ∀ n, IsIso ((Functor.whiskerLeft φ.monotone.functor.op f).app n) :=
+    fun ⟨n⟩ ↦ hf (N + n) (Nat.le_add_right N n)
+  exact NatIso.isIso_of_isIso_app _
+
+/-- A morphism of module towers that is an isomorphism from some index on induces a bijection on
+inverse limits. -/
+theorem limMap_bijective_of_isIso_of_le (f : F ⟶ G) (N : ℕ)
+    (hf : ∀ n, N ≤ n → IsIso (f.app (op n))) :
+    Function.Bijective (limMap f) := by
+  obtain ⟨φ, hφ, hIso⟩ := exists_cofinal_isIso_whiskerLeft_of_isIso_of_le f N hf
+  let f' : F.subsequence φ ⟶ G.subsequence φ := Functor.whiskerLeft φ.monotone.functor.op f
+  have hbij : Function.Bijective (limMap f' ∘ₗ (F.limSubsequenceEquiv φ hφ).toLinearMap) := by
+    have h1 : ⇑(limEquivOfIso (asIso f')) = ⇑(limMap f') := funext (limEquivOfIso_apply _)
+    rw [LinearMap.coe_comp, ← h1]
+    exact (limEquivOfIso (asIso f')).bijective.comp (F.limSubsequenceEquiv φ hφ).bijective
+  rw [← limSubsequenceEquiv_naturality φ hφ f] at hbij
+  exact (Function.Bijective.of_comp_iff' (G.limSubsequenceEquiv φ hφ).bijective _).1 hbij
 
 end TauCeti.ModuleTower
