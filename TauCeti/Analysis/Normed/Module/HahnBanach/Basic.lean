@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.HahnBanach
+public import Mathlib.Analysis.Normed.Module.Seminorm.Basic
 public import TauCeti.Analysis.Normed.Lp.Basic
 
 /-!
-# Hahn–Banach extension along linear isometries
+# Hahn–Banach extension along linear isometries and seminorm norming functionals
 
 A continuous functional extends along a linear isometric embedding without changing its norm.
 This form of Hahn–Banach allows the embedded space to be given by a map rather than a submodule,
@@ -17,7 +18,9 @@ for example when comparing injective tensor norms in different ambient spaces.
 
 The construction applies Mathlib's `exists_extension_norm_eq` to the range of the embedding.
 Applying the scalar extension theorem coordinatewise also extends operators into scalar-valued
-`ℓ∞` without increasing their norm.
+`ℓ∞` without increasing their norm. For any `RCLike` seminorm `p`, equipping the space with the
+induced seminormed structure yields a linear functional attaining `p a` and dominated by `p`
+(`Seminorm.exists_dual_apply_eq_and_norm_le`).
 -/
 
 public section
@@ -95,3 +98,19 @@ theorem exists_extension_norm_eq (i : E →ₗᵢ[𝕜] F) (f : StrongDual 𝕜 
   simpa only [e.symm_apply_apply] using hx
 
 end LinearIsometry
+
+namespace Seminorm
+
+/-- **Hahn–Banach norming functional for a seminorm.** For any `RCLike` seminorm `p` on a vector
+space `E` and any `a : E`, there exists a linear functional `g : Module.Dual 𝕜 E` such that
+`g a = p a` and `‖g y‖ ≤ p y` for all `y : E`. -/
+theorem exists_dual_apply_eq_and_norm_le {𝕜 E : Type*} [RCLike 𝕜] [AddCommGroup E] [Module 𝕜 E]
+    (p : Seminorm 𝕜 E) (a : E) :
+    ∃ g : Module.Dual 𝕜 E, g a = (p a : 𝕜) ∧ ∀ y, ‖g y‖ ≤ p y := by
+  let : SeminormedAddCommGroup E := p.toAddGroupSeminorm.toSeminormedAddCommGroup
+  let : NormedSpace 𝕜 E := ⟨fun c x => (map_smul_eq_mul p c x).le⟩
+  obtain ⟨g, hg_norm, hg_a⟩ := exists_dual_vector'' 𝕜 a
+  exact ⟨g.toLinearMap, hg_a, fun y =>
+    (g.le_opNorm y).trans (mul_le_of_le_one_left (apply_nonneg p y) hg_norm)⟩
+
+end Seminorm

@@ -70,6 +70,73 @@ theorem expect_units_apply_mul_apply (i j : ι) :
     rw [expect_neg_distrib] at h
     linarith
 
+/-- Over the sign cube, summing `ε i • (ε j • m)` gives `card (ι → ℤˣ) • m` on the diagonal and
+`0` off it. -/
+theorem sum_units_smul_units_smul {M : Type*} [AddCommGroup M] (i j : ι) (m : M) :
+    ∑ ε : ι → ℤˣ, ε i • (ε j • m) = if i = j then Fintype.card (ι → ℤˣ) • m else 0 := by
+  split_ifs with hij
+  · subst hij; simp [← mul_smul]
+  · refine Finset.sum_involution (fun ε _ ↦ Pi.mulSingle i (-1) * ε)
+      (fun ε _ => by simp [Ne.symm hij, ← mul_smul])
+      (fun ε _ _ h => absurd (congrFun h i) (by simp)) (fun _ _ => Finset.mem_univ _)
+      fun ε _ => funext fun k => by by_cases hk : k = i <;> simp [hk]
+
+/-- Summing `ε i • ∑ j, ε j • x j` over the sign cube recovers `card (ι → ℤˣ) • x i`. -/
+theorem sum_units_smul_sum_units_smul {M : Type*} [AddCommGroup M] (x : ι → M) (i : ι) :
+    ∑ ε : ι → ℤˣ, ε i • ∑ j, ε j • x j = Fintype.card (ι → ℤˣ) • x i := by
+  simp_rw [Finset.smul_sum]; rw [Finset.sum_comm]; simp [sum_units_smul_units_smul]
+
+/-- Extracting the `i`-th Rademacher coefficient of a Rademacher sum `∑ j, ε j • x j` recovers
+`x i` in any module over a characteristic-zero division semiring. -/
+theorem inv_card_smul_sum_units_smul_sum_units_smul {𝕜 M : Type*} [DivisionSemiring 𝕜]
+    [CharZero 𝕜] [AddCommGroup M] [Module 𝕜 M] (x : ι → M) (i : ι) :
+    (Fintype.card (ι → ℤˣ) : 𝕜)⁻¹ • ∑ ε : ι → ℤˣ, ε i • ∑ j, ε j • x j = x i := by
+  rw [sum_units_smul_sum_units_smul, ← Nat.cast_smul_eq_nsmul 𝕜,
+    inv_smul_smul₀ (Nat.cast_ne_zero.mpr Fintype.card_ne_zero)]
+
+/-- Summed over the sign cube, the product of four Rademacher signs splits into `card (ι → ℤˣ)`
+times the three pair matchings minus twice the quadruple diagonal. -/
+theorem sum_units_apply_mul₄ (i j k l : ι) :
+    ∑ ε : ι → ℤˣ, (ε i : ℤ) * (ε j : ℤ) * (ε k : ℤ) * (ε l : ℤ) =
+      (Fintype.card (ι → ℤˣ) : ℤ) *
+        ((if i = j ∧ k = l then 1 else 0) + (if i = k ∧ j = l then 1 else 0) +
+        (if i = l ∧ j = k then 1 else 0) - 2 * (if i = j ∧ j = k ∧ k = l then 1 else 0)) := by
+  have h2 (a b : ι) : ∑ ε : ι → ℤˣ, (ε a : ℤ) * (ε b : ℤ) =
+      if a = b then (Fintype.card (ι → ℤˣ) : ℤ) else 0 := by
+    simpa [Units.smul_def, mul_assoc] using sum_units_smul_units_smul (M := ℤ) a b 1
+  have hsq (u : ℤˣ) : (u : ℤ) * (u : ℤ) = 1 := by
+    rw [← Units.val_mul, Int.units_mul_self, Units.val_one]
+  by_cases hij : i = j
+  · subst hij; simp_rw [hsq, one_mul, h2]
+    by_cases hkl : k = l <;> by_cases hik : i = k <;> subst_vars <;> simp_all
+  · by_cases hik : i = k
+    · subst hik
+      have h (ε : ι → ℤˣ) : (ε i : ℤ) * (ε j : ℤ) * (ε i : ℤ) * (ε l : ℤ) =
+          (ε j : ℤ) * (ε l : ℤ) := by linear_combination (ε j : ℤ) * (ε l : ℤ) * hsq (ε i)
+      simp_rw [h, h2]; by_cases hjl : j = l <;> subst_vars <;> simp_all
+    · by_cases hil : i = l
+      · subst hil
+        have h (ε : ι → ℤˣ) : (ε i : ℤ) * (ε j : ℤ) * (ε k : ℤ) * (ε i : ℤ) =
+            (ε j : ℤ) * (ε k : ℤ) := by linear_combination (ε j : ℤ) * (ε k : ℤ) * hsq (ε i)
+        simp_rw [h, h2]; by_cases hjk : j = k <;> subst_vars <;> simp_all
+      · simp only [hij, hik, hil, false_and, ite_false, mul_zero, add_zero, sub_zero]
+        have hflip : ∑ ε : ι → ℤˣ, (ε i : ℤ) * (ε j : ℤ) * (ε k : ℤ) * (ε l : ℤ) =
+            ∑ ε : ι → ℤˣ, -((ε i : ℤ) * (ε j : ℤ) * (ε k : ℤ) * (ε l : ℤ)) :=
+          Fintype.sum_equiv (Equiv.mulLeft (Pi.mulSingle i (-1))) _ _ fun ε => by
+            simp [Ne.symm hij, Ne.symm hik, Ne.symm hil]
+        rw [Finset.sum_neg_distrib] at hflip; omega
+
+/-- Averaged over the sign cube, the product of four Rademacher signs splits into the three pair
+matchings minus twice the quadruple diagonal. -/
+theorem expect_units_apply_mul₄ (i j k l : ι) :
+    𝔼 ε : ι → ℤˣ, ((ε i : ℤ) : ℝ) * (ε j : ℤ) * (ε k : ℤ) * (ε l : ℤ) =
+      (if i = j ∧ k = l then 1 else 0) + (if i = k ∧ j = l then 1 else 0) +
+      (if i = l ∧ j = k then 1 else 0) - 2 * (if i = j ∧ j = k ∧ k = l then 1 else 0) := by
+  have hcast := congrArg (Int.cast (R := ℝ)) (sum_units_apply_mul₄ i j k l)
+  push_cast at hcast
+  rw [Finset.expect_eq_sum_div_card, Finset.card_univ, hcast,
+    mul_div_cancel_left₀ _ (Nat.cast_ne_zero.mpr Fintype.card_ne_zero)]
+
 end Signs
 
 variable {ι κ 𝕜 E : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ] [DecidableEq κ]
