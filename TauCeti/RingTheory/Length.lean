@@ -394,7 +394,8 @@ theorem length_residueField_eq_one : Module.length A (ResidueField A) = 1 := by
 variable {M : Type*} [AddCommGroup M] [Module A M]
 
 /-- Over a local ring, a covering `N ⋖ P` of submodules multiplies the cardinality by that of the
-residue field: `P ⧸ N` is a simple module, hence isomorphic to the residue field. -/
+residue field: `P ⧸ N` is a simple module, hence isomorphic to the residue field. This follows the
+proof of Mathlib's `CovBy.length_restrictScalars` (`Mathlib/RingTheory/LocalRing/Length.lean`). -/
 theorem _root_.CovBy.natCard_eq_mul_natCard_residueField {N P : Submodule A M} (h : N ⋖ P) :
     Nat.card P = Nat.card N * Nat.card (ResidueField A) := by
   let f : N →ₗ[A] P := Submodule.inclusion h.le
@@ -410,7 +411,8 @@ theorem _root_.CovBy.natCard_eq_mul_natCard_residueField {N P : Submodule A M} (
 
 /-- **The cardinality of a module of finite length over a local ring.** If `M` has length `n`
 over a local ring `A`, then `M` has `q ^ n` elements, where `q` is the cardinality of the residue
-field of `A`. -/
+field of `A`. The proof adapts the composition-series induction of Mathlib's
+`IsLocalRing.length_restrictScalars`. -/
 theorem natCard_eq_pow_of_length_eq {n : ℕ} (h : Module.length A M = n) :
     Nat.card M = Nat.card (ResidueField A) ^ n := by
   obtain ⟨s, hs_bot, hs_top⟩ := isFiniteLength_iff_exists_compositionSeries.mp

@@ -75,6 +75,9 @@ module `Λ ⧸ (X - ϖ)` has `μ = 0` and `λ = 1`, but `#(M ⧸ ω_n M) = p ^ p
 
 ## Main results
 
+* `TauCeti.Iwasawa.growthTransition_self`, `TauCeti.Iwasawa.growthTransition_succ` and
+  `TauCeti.Iwasawa.monic_growthTransition`: `ν_{j,j} = ξ_j`, `ν_{n₀,n+1} = ν_{n₀,n} ξ_{n+1}`, and
+  `ν_{n₀,n}` is monic.
 * `TauCeti.Iwasawa.prod_range_mul_growthTransition`: `ω_{n₀-1} · ν_{n₀,n} = ω_n`, and
   `TauCeti.Iwasawa.natDegree_prod_range_add_natDegree_growthTransition`: the degrees add up to
   `pⁿ`.
@@ -119,6 +122,27 @@ theorem growthTransition_def (n₀ n : ℕ) :
 
 variable {p O}
 
+/-- Below the bottom level the transition is the empty product `1`. -/
+@[simp]
+theorem growthTransition_of_lt {n₀ n : ℕ} (h : n < n₀) : growthTransition p O n₀ n = 1 := by
+  rw [growthTransition_def, Finset.Icc_eq_empty_of_lt h, Finset.prod_empty]
+
+/-- The transition from level `j` to itself is the single cyclotomic factor `ξ_j`. -/
+@[simp]
+theorem growthTransition_self (j : ℕ) :
+    growthTransition p O j j = (Polynomial.cyclotomic (p ^ j) O).comp (Polynomial.X + 1) := by
+  rw [growthTransition_def, Finset.Icc_self, Finset.prod_singleton]
+
+/-- Raising the top level by one multiplies the transition by the next cyclotomic factor. -/
+theorem growthTransition_succ {n₀ n : ℕ} (h : n₀ ≤ n + 1) :
+    growthTransition p O n₀ (n + 1) =
+      growthTransition p O n₀ n * (Polynomial.cyclotomic (p ^ (n + 1)) O).comp (Polynomial.X + 1) :=
+  Finset.prod_Icc_succ_top h _
+
+/-- The transition polynomial is monic. -/
+theorem monic_growthTransition (n₀ n : ℕ) : (growthTransition p O n₀ n).Monic :=
+  Polynomial.monic_prod_of_monic _ _ fun _ _ ↦ Polynomial.monic_cyclotomic_comp_X_add_one _
+
 /-- Raising the top level from `a` to `k` multiplies the transition by `ξ_{a+1} ⋯ ξ_k`. -/
 theorem growthTransition_mul_prod_Ico {n₀ a k : ℕ} (h₀ : n₀ ≤ a + 1) (hak : a ≤ k) :
     growthTransition p O n₀ a *
@@ -140,9 +164,9 @@ variable [Fact p.Prime]
 `ω_n = (1 + X) ^ pⁿ - 1` by the product `ω_{n₀-1} = ξ_0 ⋯ ξ_{n₀-1}` of the lower cyclotomic
 factors, for `n₀ ≤ n + 1`. -/
 theorem prod_range_mul_growthTransition {n₀ n : ℕ} (h : n₀ ≤ n + 1) :
-    (∏ j ∈ Finset.range n₀, (Polynomial.cyclotomic (p ^ j) O).comp (Polynomial.X + 1)) *
-        growthTransition p O n₀ n =
+    (∏ j ∈ Finset.range n₀, growthTransition p O j j) * growthTransition p O n₀ n =
       (1 + Polynomial.X) ^ p ^ n - 1 := by
+  simp only [growthTransition_self]
   rw [growthTransition_def, ← Finset.Ico_add_one_right_eq_Icc, Finset.range_eq_Ico,
     Finset.prod_Ico_consecutive _ (Nat.zero_le n₀) h, ← Finset.range_eq_Ico,
     Polynomial.prod_range_cyclotomic_prime_pow_comp_X_add_one]
@@ -173,15 +197,12 @@ theorem coeff_zero_growthTransition {n₀ : ℕ} (h₀ : 0 < n₀) (n : ℕ) :
 /-- The degrees of `ω_{n₀-1}` and of `ν_{n₀,n}` add up to `deg ω_n = pⁿ`, for `n₀ ≤ n + 1`. -/
 theorem natDegree_prod_range_add_natDegree_growthTransition [Nontrivial O] {n₀ n : ℕ}
     (h : n₀ ≤ n + 1) :
-    (∏ j ∈ Finset.range n₀, (Polynomial.cyclotomic (p ^ j) O).comp (Polynomial.X + 1)).natDegree +
+    (∏ j ∈ Finset.range n₀, growthTransition p O j j).natDegree +
         (growthTransition p O n₀ n).natDegree =
       p ^ n := by
-  have hmonic : ∀ j, ((Polynomial.cyclotomic (p ^ j) O).comp (Polynomial.X + 1)).Monic :=
-    fun j ↦ (Polynomial.cyclotomic_prime_pow_comp_X_add_one_isDistinguishedAt p
-      (Submodule.mem_top (x := (p : O))) j).monic
-  rw [← Polynomial.Monic.natDegree_mul (Polynomial.monic_prod_of_monic _ _ fun j _ ↦ hmonic j)
-    (isDistinguishedAt_growthTransition (I := ⊤) Submodule.mem_top n₀ n).monic,
-    prod_range_mul_growthTransition h,
+  rw [← Polynomial.Monic.natDegree_mul
+    (Polynomial.monic_prod_of_monic _ _ fun j _ ↦ monic_growthTransition j j)
+    (monic_growthTransition n₀ n), prod_range_mul_growthTransition h,
     TauCeti.Polynomial.natDegree_one_add_X_pow_sub_one]
 
 end Transition
@@ -192,6 +213,13 @@ variable {O : Type*} [CommRing O] [IsDomain O] [IsDiscreteValuationRing O]
   [IsAdicComplete (maximalIdeal O) O] [Finite (ResidueField O)]
   {M : Type*} [AddCommGroup M] [Module O⟦X⟧ M] [Module.Finite O⟦X⟧ M]
   {p : ℕ} [Fact p.Prime]
+
+omit [IsAdicComplete (maximalIdeal O) O] [Finite (ResidueField O)] [Module.Finite O⟦X⟧ M]
+  [Fact p.Prime] in
+/-- If `(p) = 𝔪 ^ e` with `e > 0`, then `p` lies in the maximal ideal. -/
+private theorem natCast_mem_maximalIdeal {e : ℕ} (he : 0 < e)
+    (hpe : Ideal.span {(p : O)} = maximalIdeal O ^ e) : (p : O) ∈ maximalIdeal O :=
+  Ideal.pow_le_self he.ne' (hpe ▸ Ideal.mem_span_singleton_self _)
 
 omit [Finite (ResidueField O)] [Module.Finite O⟦X⟧ M] in
 /-- **The resultant along the transitions.** If `(p) = 𝔪 ^ e` and `a > λ(M) e`, then for `k ≥ a`
@@ -207,8 +235,8 @@ private theorem natCard_quotient_resultant_growthTransition {e : ℕ} (he : 0 < 
   have hF := isDistinguishedAt_charPoly (O := O) (M := M)
   have H := hF.isWeierstrassFactorizationAt
   have hpJ : (p : O) ∈ (⊥ : Ideal O).jacobson := by
-    rw [jacobson_eq_maximalIdeal ⊥ bot_ne_top, ← Ideal.span_singleton_le_iff_mem, hpe]
-    exact Ideal.pow_le_self he.ne'
+    rw [jacobson_eq_maximalIdeal ⊥ bot_ne_top]
+    exact natCast_mem_maximalIdeal he hpe
   -- The norm of `ξ_{a+1} ⋯ ξ_k` on `O⟦X⟧ ⧸ (F_M)` is associated to `p ^ (λ (k - a))`.
   rw [lambdaInvariant_def] at ha
   have hassoc := hF.associated_norm_mk_prod_cyclotomic_prime_pow_comp_X_add_one hpe.ge hpJ ha k
@@ -217,14 +245,22 @@ private theorem natCard_quotient_resultant_growthTransition {e : ℕ} (he : 0 < 
       ∏ j ∈ Finset.Ico a k, ((Polynomial.cyclotomic (p ^ (j + 1)) O).comp (Polynomial.X + 1) :
         O⟦X⟧) :=
     map_prod Polynomial.coeToPowerSeries.ringHom _ _
-  rw [← growthTransition_mul_prod_Ico (p := p) (O := O) h₀ hak, ← H.norm_mk_coe_eq_resultant,
-    Polynomial.coe_mul, map_mul, map_mul, H.norm_mk_coe_eq_resultant, hcoe,
-    ← Ideal.span_singleton_mul_span_singleton,
-    Ideal.span_singleton_eq_span_singleton.mpr hassoc, ← Ideal.absNorm_eq_natCard, map_mul,
-    Ideal.absNorm_eq_natCard, Ideal.absNorm_eq_natCard, ← Ideal.span_singleton_pow, hpe,
-    ← pow_mul, TauCeti.IsDiscreteValuationRing.natCard_quotient_maximalIdeal_pow,
-    lambdaInvariant_def]
-  ring
+  -- The resultant is multiplicative along `ν_{n₀,k} = ν_{n₀,a} · ξ_{a+1} ⋯ ξ_k`.
+  have hres : Ideal.span {(charPoly O M).resultant (growthTransition p O n₀ k)} =
+      Ideal.span {(charPoly O M).resultant (growthTransition p O n₀ a)} *
+        Ideal.span {(p : O) ^ ((charPoly O M).natDegree * (k - a))} := by
+    rw [← growthTransition_mul_prod_Ico (p := p) (O := O) h₀ hak, ← H.norm_mk_coe_eq_resultant,
+      Polynomial.coe_mul, map_mul, map_mul, H.norm_mk_coe_eq_resultant, hcoe,
+      ← Ideal.span_singleton_mul_span_singleton, Ideal.span_singleton_eq_span_singleton.mpr hassoc]
+  -- The ideal `(p ^ (λ (k - a))) = 𝔪 ^ (e λ (k - a))` has index `q ^ (e λ (k - a))`.
+  have hidx : Nat.card (O ⧸ Ideal.span {(p : O) ^ ((charPoly O M).natDegree * (k - a))}) =
+      Nat.card (ResidueField O) ^ (e * lambdaInvariant O M * (k - a)) := by
+    rw [← Ideal.span_singleton_pow, hpe, ← pow_mul,
+      TauCeti.IsDiscreteValuationRing.natCard_quotient_maximalIdeal_pow, lambdaInvariant_def]
+    ring_nf
+  -- Conclude by multiplicativity of the ideal norm.
+  rw [hres, ← Ideal.absNorm_eq_natCard, map_mul, Ideal.absNorm_eq_natCard,
+    Ideal.absNorm_eq_natCard, hidx]
 
 /-- **The order of a quotient by a transition, at a deep level.** Let `(p) = 𝔪 ^ e` with `e > 0`,
 let `a ≥ n₀ - 1` with `a > λ(M) e`, and let `k ≥ a` be a level at which `M ⧸ ν_{n₀,k} M` is
@@ -241,9 +277,7 @@ private theorem natCard_quotSMulTop_growthTransition_eq_mul {e : ℕ} (he : 0 < 
         Nat.card (ResidueField O) ^ (muInvariant O M * (growthTransition p O n₀ k).natDegree) *
         Nat.card (O ⧸ Ideal.span {(charPoly O M).resultant (growthTransition p O n₀ a)}) *
         Nat.card (ResidueField O) ^ (e * lambdaInvariant O M * (k - a)) := by
-  have hp𝔪 : (p : O) ∈ maximalIdeal O :=
-    Ideal.pow_le_self he.ne' (hpe ▸ Ideal.mem_span_singleton_self _)
-  have hD := isDistinguishedAt_growthTransition (p := p) hp𝔪 n₀ k
+  have hD := isDistinguishedAt_growthTransition (p := p) (natCast_mem_maximalIdeal he hpe) n₀ k
   have := finite_torsionBy_of_finite_quotSMulTop hD.monic hfin
   have hE := natCard_quotSMulTop_div_natCard_torsionBy hD hfin
   rw [natCard_quotient_resultant_growthTransition he hpe h₀ ha hak,
@@ -266,8 +300,6 @@ theorem exists_eventually_natCard_quotSMulTop_growthTransition_eq {e : ℕ} (he 
       (Nat.card (QuotSMulTop (growthTransition p O n₀ k : O⟦X⟧) M) : ℚ) =
         (Nat.card (ResidueField O) : ℚ) ^
           (((muInvariant O M * p ^ k + e * lambdaInvariant O M * k : ℕ) : ℤ) + ν) := by
-  have hp𝔪 : (p : O) ∈ maximalIdeal O :=
-    Ideal.pow_le_self he.ne' (hpe ▸ Ideal.mem_span_singleton_self _)
   -- The kernels `M[ν_{n₀,k}]` increase with `k`, so they stabilize from some level `K` on.
   obtain ⟨K, hK⟩ := monotone_stabilizes_iff_noetherian.mpr inferInstance
     ⟨fun k ↦ Submodule.torsionBy O⟦X⟧ M (growthTransition p O n₀ k : O⟦X⟧), fun _ _ hkl ↦
@@ -281,8 +313,7 @@ theorem exists_eventually_natCard_quotSMulTop_growthTransition_eq {e : ℕ} (he 
   have hfa := hK' a (by omega)
   -- `M[ν_{n₀,a}]` and `O ⧸ Res(F_M, ν_{n₀,a})` are finite, of orders powers `q ^ t` and `q ^ v`;
   -- the residue field of `O⟦X⟧` is that of `O`.
-  have := finite_torsionBy_of_finite_quotSMulTop
-    (isDistinguishedAt_growthTransition hp𝔪 n₀ a).monic hfa
+  have := finite_torsionBy_of_finite_quotSMulTop (monic_growthTransition n₀ a) hfa
   have ht := natCard_eq_pow_length_toNat (A := O⟦X⟧)
     (M := Submodule.torsionBy O⟦X⟧ M (growthTransition p O n₀ a : O⟦X⟧))
   rw [Nat.card_congr TauCeti.PowerSeries.residueFieldEquiv.toEquiv] at ht
@@ -294,8 +325,7 @@ theorem exists_eventually_natCard_quotSMulTop_growthTransition_eq {e : ℕ} (he 
     (Submodule.torsionBy O⟦X⟧ M (growthTransition p O n₀ a : O⟦X⟧))).toNat
   set v := (Module.length O
     (O ⧸ Ideal.span {(charPoly O M).resultant (growthTransition p O n₀ a)})).toNat
-  set c := (∏ j ∈ Finset.range n₀,
-    (Polynomial.cyclotomic (p ^ j) O).comp (Polynomial.X + 1)).natDegree
+  set c := (∏ j ∈ Finset.range n₀, growthTransition p O j j).natDegree
   refine ⟨t + v - muInvariant O M * c - e * lambdaInvariant O M * a, ?_⟩
   filter_upwards [eventually_ge_atTop a] with k hk
   -- Compare the exponent of `q` at level `k` with `μ pᵏ + e λ k`, using `deg ν_{n₀,k} = pᵏ - c`.
