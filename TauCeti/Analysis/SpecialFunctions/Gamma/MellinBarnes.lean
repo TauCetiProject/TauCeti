@@ -292,18 +292,23 @@ theorem integral_Gamma_mul_Gamma_sub_mul_cpow_neg {a z : ℂ} {σ : ℝ} (hσ : 
   congr 1
   exact integral_congr_ae (Eventually.of_forall fun _ ↦ by simp [smul_eq_mul, mul_comm, mul_assoc])
 
+private lemma gamma_mellinBarnes_neg_contour (a z : ℂ) (σ y : ℝ) :
+    Gamma (((-σ : ℝ) : ℂ) + (-y : ℝ) * I) * Gamma (a - (((-σ : ℝ) : ℂ) + (-y : ℝ) * I)) *
+        z ^ (-(((-σ : ℝ) : ℂ) + (-y : ℝ) * I)) =
+      Gamma (a + (σ + y * I)) * Gamma (-(σ + y * I)) * z ^ ((σ : ℂ) + y * I) := by
+  have hneg : ((-σ : ℝ) : ℂ) + (-y : ℝ) * I = -((σ : ℂ) + y * I) := by push_cast; ring
+  rw [hneg, sub_neg_eq_add, neg_neg, mul_comm (Gamma _)]
+
 /-- Positive-exponent companion to `Complex.integrable_Gamma_mul_Gamma_sub_mul_cpow_neg`:
 `y ↦ Γ(a + (σ + i y)) Γ(-(σ + i y)) z^{σ + i y}` is integrable on `ℝ` whenever `-σ` and
 `Re a + σ` avoid the nonpositive integers and `z ∈ Complex.slitPlane`. -/
 theorem integrable_Gamma_add_mul_Gamma_neg_mul_cpow {a z : ℂ} {σ : ℝ}
     (hσ : ∀ n : ℕ, -σ ≠ -n) (haσ : ∀ n : ℕ, a.re + σ ≠ -n) (hz : z ∈ slitPlane) :
     Integrable fun y : ℝ ↦
-      Gamma (a + (σ + y * I)) * Gamma (-(σ + y * I)) * z ^ ((σ : ℂ) + y * I) := by
-  refine (integrable_Gamma_mul_Gamma_sub_mul_cpow_neg (a := a) (z := z) (σ := -σ)
-    hσ (by simpa [sub_neg_eq_add] using haσ) hz).comp_neg.congr (Eventually.of_forall fun y ↦ ?_)
-  have hneg : ((-σ : ℝ) : ℂ) + (-y : ℝ) * I = -((σ : ℂ) + y * I) := by push_cast; ring
-  dsimp only [Function.comp_def]
-  rw [hneg, sub_neg_eq_add, neg_neg, mul_comm (Gamma _)]
+      Gamma (a + (σ + y * I)) * Gamma (-(σ + y * I)) * z ^ ((σ : ℂ) + y * I) :=
+  (integrable_Gamma_mul_Gamma_sub_mul_cpow_neg (a := a) (z := z) (σ := -σ)
+    hσ (by simpa [sub_neg_eq_add] using haσ) hz).comp_neg.congr
+    (Eventually.of_forall fun y ↦ gamma_mellinBarnes_neg_contour a z σ y)
 
 /-- Positive-exponent form of the Mellin–Barnes integral of `(1 + z)^{-a}`: for `-Re a < σ < 0` and
 `z ∈ Complex.slitPlane`,
@@ -316,13 +321,9 @@ theorem integral_Gamma_add_mul_Gamma_neg_mul_cpow {a z : ℂ} {σ : ℝ} (hσ : 
   rw [← integral_Gamma_mul_Gamma_sub_mul_cpow_neg (a := a) (z := z) (σ := -σ)
     (neg_pos.2 hσ) (by linarith) hz]
   congr 1
-  rw [← integral_neg_eq_self]
-  refine integral_congr_ae (Eventually.of_forall fun y ↦ ?_)
-  have hneg : -((σ : ℂ) + (-y : ℝ) * I) = ((-σ : ℝ) : ℂ) + y * I := by push_cast; ring
-  have hadd : a + ((σ : ℂ) + (-y : ℝ) * I) = a - (((-σ : ℝ) : ℂ) + y * I) := by push_cast; ring
-  have hexp : (σ : ℂ) + (-y : ℝ) * I = -(((-σ : ℝ) : ℂ) + y * I) := by push_cast; ring
-  dsimp only
-  rw [hneg, hadd, hexp, mul_comm (Gamma _)]
+  conv_rhs => rw [← integral_neg_eq_self]
+  exact integral_congr_ae
+    (Eventually.of_forall fun y ↦ (gamma_mellinBarnes_neg_contour a z σ y).symm)
 
 /-- The product `y ↦ Γ(b + i y) Γ(d - i y)` is integrable on `ℝ` whenever neither `Re b` nor
 `Re d` is a nonpositive integer. -/

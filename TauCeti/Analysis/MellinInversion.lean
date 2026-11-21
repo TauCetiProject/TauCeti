@@ -332,6 +332,72 @@ theorem integral_cpow_div_mul_add_one {c x : ℝ} (hc : 0 < c) (hx : 0 < x) :
   apply (inv_mul_eq_iff_eq_mul₀ hπ).mp
   simpa only [Complex.real_smul, one_div, Complex.ofReal_inv] using h
 
+private lemma exists_nonneg_norm_le_exp_neg_mul_abs {E : Type*} [NormedAddCommGroup E]
+    {g : ℝ → E} {α : ℝ}
+    (hg_bound : ∃ C R : ℝ, ∀ᵐ y : ℝ, ‖g y‖ ≤ C * (1 + |y|) ^ R * Real.exp (-α * |y|)) :
+    ∃ C R : ℝ, 0 ≤ C ∧ ∀ᵐ y : ℝ, ‖g y‖ ≤ C * (1 + |y|) ^ R * Real.exp (-α * |y|) := by
+  obtain ⟨C, R, hg⟩ := hg_bound
+  refine ⟨max C 0, R, le_max_right C 0, ?_⟩
+  filter_upwards [hg] with y hgy
+  exact hgy.trans (mul_le_mul_of_nonneg_right
+    (mul_le_mul_of_nonneg_right (le_max_left C 0) (by positivity)) (Real.exp_nonneg _))
+
+private lemma aestronglyMeasurable_and_norm_neg_le_exp_neg_mul_abs {E : Type*}
+    [NormedAddCommGroup E] {g : ℝ → E} {α : ℝ} (hg_meas : AEStronglyMeasurable g)
+    (hg_bound : ∃ C R : ℝ, ∀ᵐ y : ℝ, ‖g y‖ ≤ C * (1 + |y|) ^ R * Real.exp (-α * |y|)) :
+    AEStronglyMeasurable (fun y : ℝ ↦ g (-y)) ∧
+      ∃ C R : ℝ, ∀ᵐ y : ℝ, ‖g (-y)‖ ≤ C * (1 + |y|) ^ R * Real.exp (-α * |y|) := by
+  obtain ⟨C, R, hg⟩ := hg_bound
+  have hqmp := (Measure.measurePreserving_neg (volume : Measure ℝ)).quasiMeasurePreserving
+  refine ⟨hg_meas.comp_quasiMeasurePreserving hqmp, C, R, ?_⟩
+  filter_upwards [hqmp.tendsto_ae.eventually hg] with y hy
+  simpa [abs_neg] using hy
+
+private lemma neg_contour_eq (σ y : ℝ) :
+    ((-σ : ℝ) : ℂ) + (-y : ℝ) * I = -((σ : ℂ) + y * I) := by
+  push_cast; ring
+
+private lemma mul_rpow_exp_margin_eq {K m α' C R α y : ℝ} :
+    (K * (1 + |y|) ^ m * Real.exp (α' * |y|)) * (C * (1 + |y|) ^ R * Real.exp (-α * |y|)) =
+      (K * C) * ((1 + |y|) ^ (R + m) * Real.exp (-((α - α') * |y|))) := by
+  have h1y : 0 < 1 + |y| := by linarith [abs_nonneg y]
+  calc (K * (1 + |y|) ^ m * Real.exp (α' * |y|)) * (C * (1 + |y|) ^ R * Real.exp (-α * |y|))
+      = (K * C) * ((1 + |y|) ^ R * (1 + |y|) ^ m *
+          (Real.exp (α' * |y|) * Real.exp (-α * |y|))) := by ring
+    _ = (K * C) * ((1 + |y|) ^ (R + m) * Real.exp (-((α - α') * |y|))) := by
+        rw [← Real.rpow_add h1y, ← Real.exp_add]; ring_nf
+
+private lemma norm_cpow_deriv_smul_le {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    {σ y r₀ r₁ α' α C R : ℝ} {w : ℂ} {v : E} (hr₀ : 0 < r₀) (hw_lo : r₀ ≤ ‖w‖)
+    (hw_hi : ‖w‖ ≤ r₁) (hw_arg : |w.arg| ≤ α')
+    (hv : ‖v‖ ≤ C * (1 + |y|) ^ R * Real.exp (-α * |y|)) :
+    ‖(((σ : ℂ) + y * I) * w ^ ((σ : ℂ) + y * I - 1)) • v‖ ≤
+      (max |σ| 1 * max (r₀ ^ (σ - 1)) (r₁ ^ (σ - 1)) * C) *
+        ((1 + |y|) ^ (R + 1) * Real.exp (-((α - α') * |y|))) := by
+  have hs_norm : ‖(σ : ℂ) + y * I‖ ≤ max |σ| 1 * (1 + |y|) :=
+    (norm_add_le _ _).trans <| by
+      simp only [Complex.norm_real, Real.norm_eq_abs, norm_mul, Complex.norm_I, mul_one]
+      nlinarith [le_max_left |σ| 1, le_max_right |σ| 1, abs_nonneg y]
+  have hw_pow : ‖w ^ ((σ : ℂ) + y * I - 1)‖ ≤
+      max (r₀ ^ (σ - 1)) (r₁ ^ (σ - 1)) * Real.exp (α' * |y|) := by
+    simpa using Complex.norm_cpow_le_max_rpow_mul_exp hr₀ hw_lo hw_hi hw_arg ((σ : ℂ) + y * I - 1)
+  have hmul : ‖(σ : ℂ) + y * I‖ * ‖w ^ ((σ : ℂ) + y * I - 1)‖ ≤
+      (max |σ| 1 * max (r₀ ^ (σ - 1)) (r₁ ^ (σ - 1))) * (1 + |y|) ^ (1 : ℝ) *
+        Real.exp (α' * |y|) := by
+    calc ‖(σ : ℂ) + y * I‖ * ‖w ^ ((σ : ℂ) + y * I - 1)‖
+        ≤ (max |σ| 1 * (1 + |y|)) *
+            (max (r₀ ^ (σ - 1)) (r₁ ^ (σ - 1)) * Real.exp (α' * |y|)) :=
+          mul_le_mul hs_norm hw_pow (norm_nonneg _) (by positivity)
+      _ = _ := by rw [Real.rpow_one]; ring
+  rw [norm_smul, norm_mul]
+  calc ‖(σ : ℂ) + y * I‖ * ‖w ^ ((σ : ℂ) + y * I - 1)‖ * ‖v‖
+      ≤ ((max |σ| 1 * max (r₀ ^ (σ - 1)) (r₁ ^ (σ - 1))) * (1 + |y|) ^ (1 : ℝ) *
+          Real.exp (α' * |y|)) * (C * (1 + |y|) ^ R * Real.exp (-α * |y|)) :=
+        mul_le_mul hmul hv (norm_nonneg _) (by positivity)
+    _ = (max |σ| 1 * max (r₀ ^ (σ - 1)) (r₁ ^ (σ - 1)) * C) *
+          ((1 + |y|) ^ (R + 1) * Real.exp (-((α - α') * |y|))) :=
+        mul_rpow_exp_margin_eq
+
 /-- If `g : ℝ → E` is strongly measurable and satisfies
 `‖g y‖ ≤ C (1 + |y|) ^ R e^{-α |y|}` almost everywhere, then `y ↦ w ^ (σ + i y) • g y` is
 integrable on `ℝ` for every `σ : ℝ` and every `w : ℂ` with `|arg w| < α`. -/
@@ -346,27 +412,23 @@ theorem integrable_cpow_smul_of_norm_le_exp_neg_mul_abs {E : Type*} [NormedAddCo
     filter_upwards [hne] with y hy
     have hs : (σ : ℂ) + y * I ≠ 0 := fun h ↦ hy (by simpa using congrArg Complex.im h)
     simp [Complex.zero_cpow hs]
-  obtain ⟨C, R, hg⟩ := hg_bound
-  set C' : ℝ := max C 0
+  obtain ⟨C, R, _, hg⟩ := exists_nonneg_norm_le_exp_neg_mul_abs hg_bound
   set δ : ℝ := α - |w.arg|
   have hδ : 0 < δ := sub_pos.2 harg
   refine ((integrable_one_add_abs_rpow_mul_exp_neg_mul_abs R hδ).const_mul
-    (‖w‖ ^ σ * C')).mono'
+    (‖w‖ ^ σ * C)).mono'
     ((Continuous.const_cpow (by fun_prop) (Or.inl hw)).aestronglyMeasurable.smul hg_meas) ?_
   filter_upwards [hg] with y hgy
-  have hg' : ‖g y‖ ≤ C' * (1 + |y|) ^ R * Real.exp (-α * |y|) :=
-    hgy.trans (mul_le_mul_of_nonneg_right
-      (mul_le_mul_of_nonneg_right (le_max_left C 0) (by positivity)) (Real.exp_nonneg _))
-  have hpow : ‖w ^ ((σ : ℂ) + y * I)‖ ≤ ‖w‖ ^ σ * Real.exp (|w.arg| * |y|) := by
+  have hpow :
+      ‖w ^ ((σ : ℂ) + y * I)‖ ≤ ‖w‖ ^ σ * (1 + |y|) ^ (0 : ℝ) * Real.exp (|w.arg| * |y|) := by
     simpa using Complex.norm_cpow_le_rpow_mul_exp_abs_arg_mul_abs_im w ((σ : ℂ) + y * I)
   rw [norm_smul]
   calc ‖w ^ ((σ : ℂ) + y * I)‖ * ‖g y‖
-      ≤ (‖w‖ ^ σ * Real.exp (|w.arg| * |y|)) * (C' * (1 + |y|) ^ R * Real.exp (-α * |y|)) :=
-        mul_le_mul hpow hg' (norm_nonneg _) (by positivity)
-    _ = ‖w‖ ^ σ * C' * ((1 + |y|) ^ R * (Real.exp (|w.arg| * |y|) * Real.exp (-α * |y|))) := by
-        ring
-    _ = ‖w‖ ^ σ * C' * ((1 + |y|) ^ R * Real.exp (-(δ * |y|))) := by
-        rw [← Real.exp_add]; dsimp [δ]; ring_nf
+      ≤ (‖w‖ ^ σ * (1 + |y|) ^ (0 : ℝ) * Real.exp (|w.arg| * |y|)) *
+          (C * (1 + |y|) ^ R * Real.exp (-α * |y|)) :=
+        mul_le_mul hpow hgy (norm_nonneg _) (by positivity)
+    _ = ‖w‖ ^ σ * C * ((1 + |y|) ^ R * Real.exp (-(δ * |y|))) := by
+        rw [mul_rpow_exp_margin_eq, add_zero]
 
 /-- Negated-exponent companion to `TauCeti.integrable_cpow_smul_of_norm_le_exp_neg_mul_abs`:
 `y ↦ w ^ (-(σ + i y)) • g y` is integrable on `ℝ` whenever `|arg w| < α`. -/
@@ -375,15 +437,11 @@ theorem integrable_cpow_neg_smul_of_norm_le_exp_neg_mul_abs {E : Type*} [NormedA
     (hg_bound : ∃ C R : ℝ, ∀ᵐ y : ℝ, ‖g y‖ ≤ C * (1 + |y|) ^ R * Real.exp (-α * |y|))
     (σ : ℝ) {w : ℂ} (harg : |w.arg| < α) :
     Integrable fun y : ℝ ↦ w ^ (-((σ : ℂ) + y * I)) • g y := by
-  obtain ⟨C, R, hg⟩ := hg_bound
-  have hqmp := (Measure.measurePreserving_neg (volume : Measure ℝ)).quasiMeasurePreserving
-  have hg_neg : ∀ᵐ y : ℝ, ‖g (-y)‖ ≤ C * (1 + |y|) ^ R * Real.exp (-α * |y|) := by
-    filter_upwards [hqmp.tendsto_ae.eventually hg] with y hy
-    simpa [abs_neg] using hy
-  have h := integrable_cpow_smul_of_norm_le_exp_neg_mul_abs
-    (hg_meas.comp_quasiMeasurePreserving hqmp) ⟨C, R, hg_neg⟩ (-σ) harg
-  refine h.comp_neg.congr (Eventually.of_forall fun y ↦ ?_)
-  simp only [Function.comp_def, neg_neg, ofReal_neg]; congr 2; ring
+  obtain ⟨hg_neg_meas, hg_neg_bound⟩ :=
+    aestronglyMeasurable_and_norm_neg_le_exp_neg_mul_abs hg_meas hg_bound
+  refine (integrable_cpow_smul_of_norm_le_exp_neg_mul_abs hg_neg_meas hg_neg_bound (-σ)
+    harg).comp_neg.congr (Eventually.of_forall fun y ↦ ?_)
+  simp only [neg_contour_eq, neg_neg]
 
 /-- **Differentiation under a Mellin–Barnes integral.** If `g : ℝ → E` is strongly measurable and
 satisfies `‖g y‖ ≤ C (1 + |y|) ^ R e^{-α |y|}` almost everywhere, then
@@ -396,8 +454,7 @@ theorem hasDerivAt_integral_cpow_smul {E : Type*} [NormedAddCommGroup E]
     (σ : ℝ) {w₀ : ℂ} (hw₀ : w₀ ∈ slitPlane) (harg : |w₀.arg| < α) :
     HasDerivAt (fun w : ℂ ↦ ∫ y : ℝ, w ^ ((σ : ℂ) + y * I) • g y)
       (∫ y : ℝ, (((σ : ℂ) + y * I) * w₀ ^ ((σ : ℂ) + y * I - 1)) • g y) w₀ := by
-  obtain ⟨C, R, hg⟩ := hg_bound
-  set C' : ℝ := max C 0
+  obtain ⟨C, R, _, hg⟩ := exists_nonneg_norm_le_exp_neg_mul_abs hg_bound
   obtain ⟨U, hU, r₀, r₁, α', hr₀, hα', hU_bounds⟩ :=
     Complex.exists_mem_nhds_slitPlane_norm_and_arg_lt hw₀ harg
   set δ : ℝ := α - α'
@@ -417,31 +474,12 @@ theorem hasDerivAt_integral_cpow_smul {E : Type*} [NormedAddCommGroup E]
   refine (hasDerivAt_integral_of_dominated_loc_of_deriv_le
     (F := fun (w : ℂ) (y : ℝ) ↦ w ^ ((σ : ℂ) + y * I) • g y)
     (F' := fun (w : ℂ) (y : ℝ) ↦ (((σ : ℂ) + y * I) * w ^ ((σ : ℂ) + y * I - 1)) • g y)
-    (bound := fun y : ℝ ↦ S * M₁ * C' * ((1 + |y|) ^ (R + 1) * Real.exp (-(δ * |y|))))
+    (bound := fun y : ℝ ↦ S * M₁ * C * ((1 + |y|) ^ (R + 1) * Real.exp (-(δ * |y|))))
     hU hF_meas (integrable_cpow_smul_of_norm_le_exp_neg_mul_abs hg_meas ⟨C, R, hg⟩ σ harg)
     hF'_meas ?_ ((integrable_one_add_abs_rpow_mul_exp_neg_mul_abs (R + 1) hδ).const_mul _) ?_).2
   · filter_upwards [hg] with y hgy w hw
     obtain ⟨_, hw_lo, hw_hi, hw_arg⟩ := hU_bounds w hw
-    have hs_norm : ‖(σ : ℂ) + y * I‖ ≤ S * (1 + |y|) :=
-      (norm_add_le _ _).trans <| by
-        simp only [Complex.norm_real, Real.norm_eq_abs, norm_mul, Complex.norm_I, mul_one]
-        nlinarith [le_max_left |σ| 1, le_max_right |σ| 1, abs_nonneg y]
-    have hw_pow : ‖w ^ ((σ : ℂ) + y * I - 1)‖ ≤ M₁ * Real.exp (α' * |y|) := by
-      simpa using Complex.norm_cpow_le_max_rpow_mul_exp hr₀ hw_lo hw_hi hw_arg ((σ : ℂ) + y * I - 1)
-    have hg' : ‖g y‖ ≤ C' * (1 + |y|) ^ R * Real.exp (-α * |y|) :=
-      hgy.trans (mul_le_mul_of_nonneg_right
-        (mul_le_mul_of_nonneg_right (le_max_left C 0) (by positivity)) (Real.exp_nonneg _))
-    rw [norm_smul, norm_mul]
-    calc ‖(σ : ℂ) + y * I‖ * ‖w ^ ((σ : ℂ) + y * I - 1)‖ * ‖g y‖
-        ≤ (S * (1 + |y|)) * (M₁ * Real.exp (α' * |y|)) *
-            (C' * (1 + |y|) ^ R * Real.exp (-α * |y|)) :=
-          mul_le_mul (mul_le_mul hs_norm hw_pow (norm_nonneg _) (by positivity)) hg'
-            (norm_nonneg _) (by positivity)
-      _ = S * M₁ * C' * ((1 + |y|) ^ R * (1 + |y|)) *
-            (Real.exp (α' * |y|) * Real.exp (-α * |y|)) := by ring
-      _ = S * M₁ * C' * ((1 + |y|) ^ (R + 1) * Real.exp (-(δ * |y|))) := by
-          rw [← Real.rpow_add_one (by linarith [abs_nonneg y] : (1 + |y|) ≠ 0), ← Real.exp_add]
-          dsimp [δ]; ring_nf
+    exact norm_cpow_deriv_smul_le hr₀ hw_lo hw_hi hw_arg hgy
   · exact Eventually.of_forall fun y w hw ↦
       (Complex.hasStrictDerivAt_cpow_const (hU_bounds w hw).1).hasDerivAt.smul_const (g y)
 
@@ -455,22 +493,18 @@ theorem hasDerivAt_integral_cpow_neg_smul {E : Type*} [NormedAddCommGroup E]
     (σ : ℝ) {w₀ : ℂ} (hw₀ : w₀ ∈ slitPlane) (harg : |w₀.arg| < α) :
     HasDerivAt (fun w : ℂ ↦ ∫ y : ℝ, w ^ (-((σ : ℂ) + y * I)) • g y)
       (∫ y : ℝ, (-((σ : ℂ) + y * I) * w₀ ^ (-((σ : ℂ) + y * I) - 1)) • g y) w₀ := by
-  obtain ⟨C, R, hg⟩ := hg_bound
-  have hqmp := (Measure.measurePreserving_neg (volume : Measure ℝ)).quasiMeasurePreserving
-  have hg_neg : ∀ᵐ y : ℝ, ‖g (-y)‖ ≤ C * (1 + |y|) ^ R * Real.exp (-α * |y|) := by
-    filter_upwards [hqmp.tendsto_ae.eventually hg] with y hy
-    simpa [abs_neg] using hy
-  have h := hasDerivAt_integral_cpow_smul (g := fun y ↦ g (-y))
-    (hg_meas.comp_quasiMeasurePreserving hqmp) ⟨C, R, hg_neg⟩ (-σ) hw₀ harg
+  obtain ⟨hg_neg_meas, hg_neg_bound⟩ :=
+    aestronglyMeasurable_and_norm_neg_le_exp_neg_mul_abs hg_meas hg_bound
+  have h := hasDerivAt_integral_cpow_smul hg_neg_meas hg_neg_bound (-σ) hw₀ harg
   refine (h.congr_of_eventuallyEq (Eventually.of_forall fun w ↦ ?_)).congr_deriv ?_
+  · dsimp only
+    symm
+    rw [← integral_neg_eq_self]
+    refine integral_congr_ae (Eventually.of_forall fun y ↦ ?_)
+    simp only [neg_contour_eq, neg_neg]
   · rw [← integral_neg_eq_self]
     refine integral_congr_ae (Eventually.of_forall fun y ↦ ?_)
-    simp only [ofReal_neg]; congr 2; ring
-  · rw [← integral_neg_eq_self]
-    refine integral_congr_ae (Eventually.of_forall fun y ↦ ?_)
-    simp only [ofReal_neg, neg_neg]
-    have h_exp : -(σ : ℂ) + -(y : ℂ) * I = -((σ : ℂ) + y * I) := by ring
-    rw [h_exp]
+    simp only [neg_contour_eq, neg_neg]
 
 /-- If `g : ℝ → E` is strongly measurable and satisfies
 `‖g y‖ ≤ C (1 + |y|) ^ R e^{-α |y|}` almost everywhere, then `w ↦ ∫ y : ℝ, w ^ (σ + i y) • g y`
