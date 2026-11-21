@@ -90,7 +90,7 @@ lemma ι_linearHomComplexEnrichedComp (F G K : CochainComplex C ℤ) (p q j : �
         ((β_ ((linearHomComplex R F G).X p) ((linearHomComplex R G K).X q)).hom ≫
           cochainCompTensor R F G K q p j (by dsimp at h ⊢; omega)) := by
   rw [linearHomComplexEnrichedComp_def, HomologicalComplex.comp_f, ← Category.assoc,
-    braiding_eq_koszulBraiding, koszulBraiding_hom, ι_koszulBraidingHom,
+    braiding_hom_eq_koszulBraidingHom, ι_koszulBraidingHom,
     koszulBraidingSummand_def, Linear.units_smul_comp, Category.assoc,
     ι_linearHomComplexComp]
 

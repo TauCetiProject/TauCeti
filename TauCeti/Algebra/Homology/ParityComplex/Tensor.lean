@@ -191,9 +191,8 @@ theorem ιTensorObj_superBraiding_hom_f (τ τ' : ZMod 2) (K L : CochainComplex 
           (β_ (K.X p) (L.X r)).hom ≫
           (L.X r ◁ (K.scaleDifferentialXIso (fun _ ↦ (-1 : ℤˣ) ^ τ') p).inv) ≫
           HomologicalComplex.ιTensorObj L (K.signedDifferential τ') r p n (by omega)) := by
-  simp only [superBraiding, braiding_eq_koszulBraiding, koszulBraiding_hom,
-    ι_koszulBraidingHom_assoc, koszulBraidingSummand_def,
-    ιTensorObj_superTensorObjIsoTensorObj_hom_f_assoc,
+  simp only [superBraiding, braiding_hom_eq_koszulBraidingHom, ι_koszulBraidingHom_assoc,
+    koszulBraidingSummand_def, ιTensorObj_superTensorObjIsoTensorObj_hom_f_assoc,
     ιTensorObj_superTensorObjIsoTensorObj_inv_f, HomologicalComplex.zsmul_f_apply,
     HomologicalComplex.comp_f, Preadditive.zsmul_comp, Preadditive.comp_zsmul, Category.assoc,
     Units.smul_def, smul_smul, uzpow_superBraiding]
@@ -210,13 +209,14 @@ theorem ιTensorObj_superBraiding_inv_f (τ τ' : ZMod 2) (K L : CochainComplex 
           (β_ (K.X p) (L.X r)).inv ≫
           (K.X p ◁ (L.scaleDifferentialXIso (fun _ ↦ (-1 : ℤˣ) ^ τ) r).inv) ≫
           HomologicalComplex.ιTensorObj K (L.signedDifferential τ) p r n (by omega)) := by
-  simp only [superBraiding, braiding_eq_koszulBraiding, ι_koszulBraiding_inv_assoc,
+  simp only [superBraiding, braiding_eq_tensorBraiding,
+    HomologicalComplex.ιTensorObj_tensorBraiding_inv_f_assoc, ComplexShape.σ_def,
     ιTensorObj_superTensorObjIsoTensorObj_hom_f_assoc,
     ιTensorObj_superTensorObjIsoTensorObj_inv_f, HomologicalComplex.zsmul_f_apply,
     HomologicalComplex.comp_f, Preadditive.zsmul_comp, Preadditive.comp_zsmul, Category.assoc,
     Units.smul_def, smul_smul]
   -- The sign is that of the `hom` summand formula, with its factors in another order.
-  rw [← uzpow_superBraiding τ τ' p r, mul_comm r p]
+  rw [← uzpow_superBraiding τ τ' p r]
   congr 1
   ring
 
