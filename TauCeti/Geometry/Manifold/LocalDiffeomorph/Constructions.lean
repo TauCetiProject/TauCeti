@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
+import TauCeti.Geometry.Manifold.ContMDiff.Prod
 -- Access the body of `IsLocalDiffeomorphAt` to lower the regularity of its witness.
 import all Mathlib.Geometry.Manifold.LocalDiffeomorph
 
@@ -31,6 +32,9 @@ records the source, target, forward map and inverse map of Mathlib's composition
 * `PartialDiffeomorph.ofLE`: a `C^n` partial diffeomorphism as a `C^m` one, for `m ≤ n`.
 * `ContinuousLinearEquiv.toPartialDiffeomorph`: a continuous linear equivalence as a `C^n` partial
   diffeomorphism defined everywhere, for any `n`.
+* `ContinuousLinearEquiv.toPartialDiffeomorphProd`: a continuous linear equivalence onto a product
+  `F × G` as a `C^n` partial diffeomorphism onto the product manifold, modelled on
+  `𝓘(𝕜, F).prod 𝓘(𝕜, G)`.
 * `PartialDiffeomorph.trans_source`, `PartialDiffeomorph.trans_target`,
   `PartialDiffeomorph.coe_trans`, `PartialDiffeomorph.coe_trans_symm`: the composition of partial
   diffeomorphisms, computed componentwise.
@@ -41,6 +45,8 @@ records the source, target, forward map and inverse map of Mathlib's composition
   `PartialDiffeomorph` through its underlying `PartialEquiv`.
 * `PartialDiffeomorph.exists_transition`: charts with a common coordinate induce a local change
   of parameters carrying the specified points to one another.
+* `ContinuousLinearEquiv.hasMFDerivAt_toPartialDiffeomorphProd`: such a partial diffeomorphism
+  onto a product is its own derivative at every point.
 * `PartialDiffeomorph.exists_curve_single_axis`: pulling a coordinate axis back through a
   partial diffeomorphism into `EuclideanSpace ℝ ι` gives a curve through the centre point, `C^n`
   near `0`.
@@ -227,6 +233,53 @@ theorem toPartialDiffeomorph_toPartialEquiv (A : E ≃L[𝕜] F) :
 theorem coe_toPartialDiffeomorph (A : E ≃L[𝕜] F) :
     ⇑(A.toPartialDiffeomorph (n := n)) = A := by
   simp
+
+section Prod
+
+variable {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+
+/-- A continuous linear equivalence onto a product `F × G` as a `C^n` partial diffeomorphism
+defined everywhere, onto the product manifold `F × G` modelled on `𝓘(𝕜, F).prod 𝓘(𝕜, G)` rather
+than on the self-model `𝓘(𝕜, F × G)` used by `ContinuousLinearEquiv.toPartialDiffeomorph`. -/
+def toPartialDiffeomorphProd (A : E ≃L[𝕜] F × G) :
+    PartialDiffeomorph 𝓘(𝕜, E) (𝓘(𝕜, F).prod 𝓘(𝕜, G)) E (F × G) n where
+  toPartialEquiv := A.toEquiv.toPartialEquiv
+  open_source := isOpen_univ
+  open_target := isOpen_univ
+  contMDiffOn_toFun := (A.contDiff.fst.contMDiff.prodMk A.contDiff.snd.contMDiff).contMDiffOn
+  contMDiffOn_invFun :=
+    contMDiffOn_prod_modelWithCornersSelf_iff.2 A.symm.contDiff.contMDiff.contMDiffOn
+
+/-- The partial equivalence underlying `ContinuousLinearEquiv.toPartialDiffeomorphProd` is the
+underlying equivalence, on the whole space. -/
+@[simp]
+theorem toPartialDiffeomorphProd_toPartialEquiv (A : E ≃L[𝕜] F × G) :
+    (A.toPartialDiffeomorphProd (n := n)).toPartialEquiv = A.toEquiv.toPartialEquiv :=
+  (rfl)
+
+/-- The forward map of a continuous linear equivalence onto a product viewed as a partial
+diffeomorphism. -/
+theorem coe_toPartialDiffeomorphProd (A : E ≃L[𝕜] F × G) :
+    ⇑(A.toPartialDiffeomorphProd (n := n)) = A := by
+  simp
+
+/-- A continuous linear equivalence onto a product, viewed as a partial diffeomorphism, is defined
+everywhere. -/
+theorem toPartialDiffeomorphProd_source (A : E ≃L[𝕜] F × G) :
+    (A.toPartialDiffeomorphProd (n := n)).source = Set.univ := by
+  simp
+
+/-- A continuous linear equivalence onto a product, viewed as a partial diffeomorphism onto the
+product manifold, has derivative itself at every point. -/
+theorem hasMFDerivAt_toPartialDiffeomorphProd (A : E ≃L[𝕜] F × G) (x : E) :
+    HasMFDerivAt 𝓘(𝕜, E) (𝓘(𝕜, F).prod 𝓘(𝕜, G)) (A.toPartialDiffeomorphProd (n := n)) x
+      A.toContinuousLinearMap := by
+  rw [coe_toPartialDiffeomorphProd]
+  -- The two components of `A` are continuous linear maps into the factors.
+  exact ((ContinuousLinearMap.fst 𝕜 F G).comp A.toContinuousLinearMap).hasMFDerivAt.prodMk
+    ((ContinuousLinearMap.snd 𝕜 F G).comp A.toContinuousLinearMap).hasMFDerivAt
+
+end Prod
 
 end ContinuousLinearEquiv
 

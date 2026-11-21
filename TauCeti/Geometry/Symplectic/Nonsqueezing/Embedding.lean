@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.Instances.OnePoint.AreaDisc
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Prod.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.Prod
 public import TauCeti.Geometry.Symplectic.Manifold.Torus.Basic
-import TauCeti.Geometry.Manifold.ContMDiff.Prod
+public import TauCeti.Analysis.InnerProductSpace.PiL2
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
 import TauCeti.Geometry.Symplectic.Manifold.Rescale
 
@@ -40,8 +40,9 @@ The target is the product of the sphere `S²(a) = (OnePoint ℂ, a • ω_FS)` o
 Every bounded set `s ⊆ ℂᵐ⁺¹` whose first coordinates satisfy `|x₀| < R`, with `π R² ≤ a`, lies in
 the source of `euclideanSphereTorusChart a p 0 hr` for one radius `r` and all periods `p i ≥ 2 r`
 (`TauCeti.exists_forall_subset_euclideanSphereTorusChart_source`). In particular this applies to
-the image of a compact ball under a map into the cylinder of radius `R`, and composing such a map
-with the chart carries the form `Im ⟪v, w⟫` to the product form of `S²(a) × T`.
+the image of a compact ball under a continuous map into the cylinder of radius `R`, and composing a
+symplectic embedding of the ball into the cylinder with the chart gives a symplectic embedding into
+`S²(a) × T`.
 
 ## Main definitions
 
@@ -163,76 +164,47 @@ section Euclidean
 
 variable {m : ℕ}
 
-/-- The splitting `ℂᵐ⁺¹ ≅ ℂ × ℂᵐ`, `x ↦ (x 0, (x (i + 1))ᵢ)`, of complex Euclidean space. -/
-private def headTailEquiv (m : ℕ) : EuclideanSpace ℂ (Fin (m + 1)) ≃L[ℝ] ℂ × (Fin m → ℂ) :=
-  (PiLp.continuousLinearEquiv 2 ℝ fun _ : Fin (m + 1) ↦ ℂ).trans
-    (Fin.consEquivL ℝ fun _ : Fin (m + 1) ↦ ℂ).symm
-
-private theorem headTailEquiv_apply (x : EuclideanSpace ℂ (Fin (m + 1))) :
-    headTailEquiv m x = (x 0, fun i ↦ x i.succ) := by
-  ext <;> simp [headTailEquiv, Fin.tail]
-
-/-- The splitting `ℂᵐ⁺¹ ≅ ℂ × ℂᵐ` as a diffeomorphism onto the product manifold `ℂ × ℂᵐ`. -/
-private def headTailChart (m : ℕ) :
-    PartialDiffeomorph 𝓘(ℝ, EuclideanSpace ℂ (Fin (m + 1))) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, Fin m → ℂ))
-      (EuclideanSpace ℂ (Fin (m + 1))) (ℂ × (Fin m → ℂ)) ∞ where
-  toPartialEquiv := (headTailEquiv m).toEquiv.toPartialEquiv
-  open_source := isOpen_univ
-  open_target := isOpen_univ
-  contMDiffOn_toFun := by
-    have hL : ContDiff ℝ ∞ (headTailEquiv m) := (headTailEquiv m).contDiff
-    exact (hL.fst.contMDiff.prodMk hL.snd.contMDiff).contMDiffOn
-  contMDiffOn_invFun := contMDiffOn_prod_modelWithCornersSelf_iff.2
-    (headTailEquiv m).symm.contDiff.contMDiff.contMDiffOn
-
-private theorem headTailChart_apply (x : EuclideanSpace ℂ (Fin (m + 1))) :
-    headTailChart m x = (x 0, fun i ↦ x i.succ) :=
-  headTailEquiv_apply x
-
-private theorem headTailChart_source : (headTailChart m).source = univ :=
-  (rfl)
-
-/-- The splitting has derivative itself at every point. -/
-private theorem hasMFDerivAt_headTailChart (x : EuclideanSpace ℂ (Fin (m + 1))) :
-    HasMFDerivAt 𝓘(ℝ, EuclideanSpace ℂ (Fin (m + 1))) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, Fin m → ℂ))
-      (headTailChart m) x (headTailEquiv m).toContinuousLinearMap :=
-  -- The components of the splitting are continuous linear maps into the factors.
-  (((ContinuousLinearMap.fst ℝ ℂ (Fin m → ℂ)).comp
-    (headTailEquiv m).toContinuousLinearMap).hasMFDerivAt (x := x)).prodMk
-      (((ContinuousLinearMap.snd ℝ ℂ (Fin m → ℂ)).comp
-        (headTailEquiv m).toContinuousLinearMap).hasMFDerivAt (x := x))
-
 variable (a : ℝ) (p : Fin m ⊕ Fin m → ℝ) [∀ i, Fact (0 < p i)]
 
 /-- **The symplectic embedding of a piece of the cylinder into `S²(a) × T`.** On complex Euclidean
-space `ℂᵐ⁺¹`, the map `x ↦ (φ⁻¹ (x 0), π (x (i + 1))ᵢ)`, where `φ` is the disc chart of the sphere
-of area `a` and `π` the covering map of the torus, as a partial diffeomorphism defined where
-`|x 0| < √(a / π)` and `(x (i + 1))ᵢ` lies in the ball of radius `r` about `c`
-(`TauCeti.mem_euclideanSphereTorusChart_source`). It pulls the product form `a • ω_FS ⊕ ω_T` back to
-the standard symplectic form `Im ⟪v, w⟫` (`TauCeti.eval₂_mfderiv_euclideanSphereTorusChart`). -/
+space `ℂᵐ⁺¹`, the map `x ↦ (φ⁻¹ (x 0), ρ (x (i + 1))ᵢ)`, where `φ` is the disc chart of the sphere
+of area `a` and `ρ = TauCeti.complexPiTorusCover p` the covering map of the torus, as a partial
+diffeomorphism defined where `|x 0| < √(a / π)` and `(x (i + 1))ᵢ` lies in the ball of radius `r`
+about `c` (`TauCeti.mem_euclideanSphereTorusChart_source`). It is the splitting
+`EuclideanSpace.consPiEquivL` of `ℂᵐ⁺¹` into `ℂ × ℂᵐ` followed by `TauCeti.sphereTorusChart`. It
+pulls the product form `a • ω_FS ⊕ ω_T` back to the standard symplectic form `Im ⟪v, w⟫`
+(`TauCeti.eval₂_mfderiv_euclideanSphereTorusChart`). -/
 def euclideanSphereTorusChart (c : Fin m → ℂ) {r : ℝ} (hr : ∀ i, 2 * r ≤ p i) :
     PartialDiffeomorph 𝓘(ℝ, EuclideanSpace ℂ (Fin (m + 1)))
       (𝓘(ℝ, ℂ).prod (ModelWithCorners.pi fun _ : Fin m ⊕ Fin m ↦ 𝓘(ℝ)))
       (EuclideanSpace ℂ (Fin (m + 1))) (OnePoint ℂ × ∀ i, AddCircle (p i)) ∞ :=
-  (headTailChart m).trans (sphereTorusChart a p c hr)
+  (EuclideanSpace.consPiEquivL ℂ ℝ m).symm.toPartialDiffeomorphProd.trans
+    (sphereTorusChart a p c hr)
 
 variable {a p} (c : Fin m → ℂ) {r : ℝ} (hr : ∀ i, 2 * r ≤ p i)
 
-/-- The chart sends `x` to `(φ⁻¹ (x 0), π (x (i + 1))ᵢ)`. -/
+/-- The chart sends `x` to `(φ⁻¹ (x 0), ρ (x (i + 1))ᵢ)`, where `φ` is the disc chart of the
+sphere and `ρ` the covering map of the torus. -/
 @[simp]
 theorem euclideanSphereTorusChart_apply (x : EuclideanSpace ℂ (Fin (m + 1))) :
     euclideanSphereTorusChart a p c hr x =
       ((OnePoint.areaDiscChart a).symm (x 0), complexPiTorusCover p fun i ↦ x i.succ) := by
-  rw [euclideanSphereTorusChart, PartialDiffeomorph.coe_trans, Function.comp_apply,
-    headTailChart_apply, sphereTorusChart_apply]
+  simp [euclideanSphereTorusChart]
 
 /-- For `a > 0`, a point `x` lies in the source of the chart exactly when `|x 0| < √(a / π)` and
 `(x (i + 1))ᵢ` lies in the ball of radius `r` about `c`. -/
 theorem mem_euclideanSphereTorusChart_source (ha : 0 < a) {x : EuclideanSpace ℂ (Fin (m + 1))} :
     x ∈ (euclideanSphereTorusChart a p c hr).source ↔
       ‖x 0‖ < √(a / Real.pi) ∧ (fun i ↦ x i.succ) ∈ ball c r := by
-  simp [euclideanSphereTorusChart, headTailChart_source,
-    headTailChart_apply, sphereTorusChart_source c hr ha]
+  simp [euclideanSphereTorusChart, sphereTorusChart_source c hr ha]
+
+/-- The target of the chart is the product of the sphere minus `∞` with the image of the ball under
+the covering map of the torus. -/
+@[simp]
+theorem euclideanSphereTorusChart_target :
+    (euclideanSphereTorusChart a p c hr).target =
+      {(OnePoint.infty : OnePoint ℂ)}ᶜ ×ˢ (complexPiTorusCover p '' ball c r) := by
+  simp [euclideanSphereTorusChart]
 
 /-- **The chart is symplectic.** For `a > 0`, at every point of its source the chart pulls the
 product form `a • ω_FS ⊕ ω_T` of `S²(a) × T` back to the standard symplectic form `Im ⟪v, w⟫` of
@@ -248,27 +220,39 @@ theorem eval₂_mfderiv_euclideanSphereTorusChart (ha : 0 < a) {x : EuclideanSpa
           (𝓘(ℝ, ℂ).prod (ModelWithCorners.pi fun _ : Fin m ⊕ Fin m ↦ 𝓘(ℝ)))
           (euclideanSphereTorusChart a p c hr) x w) =
       (⟪v, w⟫_ℂ).im := by
-  have hx' : headTailChart m x ∈ (sphereTorusChart a p c hr).source := by
-    rw [euclideanSphereTorusChart, PartialDiffeomorph.trans_source] at hx
+  -- The splitting `ℂᵐ⁺¹ ≅ ℂ × ℂᵐ` underlying the chart.
+  set L := (EuclideanSpace.consPiEquivL ℂ ℝ m).symm
+  have hL (u : EuclideanSpace ℂ (Fin (m + 1))) : L u = (u 0, fun i ↦ u i.succ) :=
+    EuclideanSpace.consPiEquivL_symm_apply u
+  have hchart : euclideanSphereTorusChart a p c hr =
+      L.toPartialDiffeomorphProd.trans (sphereTorusChart a p c hr) :=
+    rfl
+  have hLd := L.hasMFDerivAt_toPartialDiffeomorphProd (n := ∞) x
+  rw [ContinuousLinearEquiv.coe_toPartialDiffeomorphProd] at hLd
+  have hx' : L x ∈ (sphereTorusChart a p c hr).source := by
+    rw [hchart, PartialDiffeomorph.trans_source,
+      ContinuousLinearEquiv.coe_toPartialDiffeomorphProd] at hx
     exact hx.2
-  -- The chain rule through the splitting `ℂᵐ⁺¹ ≅ ℂ × ℂᵐ`.
+  -- The chain rule through the splitting.
   have hcomp (u : EuclideanSpace ℂ (Fin (m + 1))) :
       mfderiv 𝓘(ℝ, EuclideanSpace ℂ (Fin (m + 1)))
           (𝓘(ℝ, ℂ).prod (ModelWithCorners.pi fun _ : Fin m ⊕ Fin m ↦ 𝓘(ℝ)))
           (euclideanSphereTorusChart a p c hr) x u =
         mfderiv (𝓘(ℝ, ℂ).prod 𝓘(ℝ, Fin m → ℂ))
           (𝓘(ℝ, ℂ).prod (ModelWithCorners.pi fun _ : Fin m ⊕ Fin m ↦ 𝓘(ℝ)))
-          (sphereTorusChart a p c hr) (headTailChart m x) (headTailEquiv m u) := by
-    rw [euclideanSphereTorusChart, PartialDiffeomorph.coe_trans,
+          (sphereTorusChart a p c hr) (L x) (L u) := by
+    rw [hchart, PartialDiffeomorph.coe_trans, ContinuousLinearEquiv.coe_toPartialDiffeomorphProd,
       mfderiv_comp x ((sphereTorusChart a p c hr).mdifferentiableAt (by simp) hx')
-        (hasMFDerivAt_headTailChart x).mdifferentiableAt,
-      (hasMFDerivAt_headTailChart x).mfderiv]
+        hLd.mdifferentiableAt, hLd.mfderiv]
     -- `rw` cannot use this lemma: the tangent spaces of the intermediate manifold `ℂ × ℂᵐ` and the
     -- model space `ℂ × ℂᵐ` are only definitionally equal.
     exact ContinuousLinearMap.comp_apply _ _ _
-  rw [hcomp, hcomp]
+  have hpt : euclideanSphereTorusChart a p c hr x = sphereTorusChart a p c hr (L x) := by
+    rw [hchart, PartialDiffeomorph.coe_trans, ContinuousLinearEquiv.coe_toPartialDiffeomorphProd,
+      Function.comp_apply]
+  rw [hcomp, hcomp, hpt]
   refine (eval₂_mfderiv_sphereTorusChart c hr ha hx' _ _).trans ?_
-  simp only [SymplecticForm.prod_apply, headTailEquiv_apply, stdComplexSymplecticForm_apply,
+  simp only [SymplecticForm.prod_apply, hL, stdComplexSymplecticForm_apply,
     stdComplexPiSymplecticForm_apply, PiLp.inner_apply, Fin.sum_univ_succ, Complex.add_im,
     Complex.im_sum]
   congr 1
