@@ -71,6 +71,12 @@ open scoped ContDiff Manifold
 
 namespace TauCeti.SmoothEmbedding
 
+-- The orders `∞ + 1` and `1 + 1` required by the normal-bundle API are at most `∞`, so Mathlib's
+-- instances provide the corresponding smooth manifold structures from the `C^∞` ones.
+local instance : ENat.LEInfty (∞ + 1) := ⟨by simp⟩
+
+local instance : ENat.LEInfty (1 + 1) := ⟨by norm_cast⟩
+
 variable {E V F P H G H' Q M N : Type*}
   [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
@@ -112,15 +118,13 @@ private theorem contMDiff_transportedNormalVector
     (hA : ∀ q, ContMDiffAt I 𝓘(ℝ, V →L[ℝ] F) ∞ (inTangentCoordinates J K i g A q) q) :
     letI := i.normalSpaceFiberBundle hn hdim
     ContMDiff (I.prod 𝓘(ℝ, P)) K.tangent ∞ (transportedNormalVector (P := P) i hn A) := by
-  have : IsManifold I (∞ + 1) Q := by simpa using (inferInstance : IsManifold I ∞ Q)
-  have : IsManifold J (∞ + 1) M := by simpa using (inferInstance : IsManifold J ∞ M)
   let := i.normalSpaceFiberBundle hn hdim
-  let := i.normalSpaceVectorBundle hn hdim
-  let := i.normalSpaceContMDiffVectorBundle (m := ∞) hn (by simp) hdim
   have hproj : ContMDiff (I.prod 𝓘(ℝ, P)) I ∞
       (fun p : TotalSpace P (fun q ↦ i.NormalSpace q hn) ↦ p.proj) :=
     contMDiff_proj _
   intro p
+  -- `clm_apply_of_inCoordinates` takes `A` in the `ContinuousLinearMap.inCoordinates` form, so `hϕ`
+  -- is stated that way; `inTangentCoordinates` in `hA` is by definition this `inCoordinates`.
   have hϕ : ContMDiffAt (I.prod 𝓘(ℝ, P)) 𝓘(ℝ, V →L[ℝ] F) ∞
       (fun p' : TotalSpace P (fun q ↦ i.NormalSpace q hn) ↦
         ContinuousLinearMap.inCoordinates V (TangentSpace J (M := M)) F
@@ -197,11 +201,8 @@ private theorem mfderiv_transportedNormalExp_zeroSection_apply
         (zeroSection P (fun q ↦ i.NormalSpace q hn) q)
         ((Bundle.zeroSectionTangentEquiv (I := I) q).symm (u, v)) =
       mfderiv I K g q u + A q (i.normalRepresentative q hn v) := by
-  have : IsManifold I (∞ + 1) Q := by simpa using (inferInstance : IsManifold I ∞ Q)
-  have : IsManifold J (∞ + 1) M := by simpa using (inferInstance : IsManifold J ∞ M)
   let := i.normalSpaceFiberBundle hn hdim
   let := i.normalSpaceVectorBundle hn hdim
-  let := i.normalSpaceContMDiffVectorBundle (m := ∞) hn (by simp) hdim
   have he : MDifferentiableAt (I.prod 𝓘(ℝ, P)) K (transportedNormalExp i hn A)
       (zeroSection P (fun q ↦ i.NormalSpace q hn) q) :=
     ((contMDiffOn_transportedNormalExp i hn A hdim hg hA).contMDiffAt
@@ -223,17 +224,16 @@ private theorem mfderiv_transportedNormalExp_zeroSection [J.Boundaryless] [T2Spa
         (zeroSection P (fun q ↦ i.NormalSpace q hn) q) =
       (A q).comp (mfderiv (I.prod 𝓘(ℝ, P)) J (i.normalExp (P := P) hn)
         (zeroSection P (fun q ↦ i.NormalSpace q hn) q)) := by
-  have : IsManifold I (1 + 1) Q := .of_le (n := ∞) (by norm_cast)
   let := i.normalSpaceFiberBundle hn hdim
   let := i.normalSpaceVectorBundle hn hdim
   ext w
   obtain ⟨⟨u, v⟩, rfl⟩ := (Bundle.zeroSectionTangentEquiv (I := I) q).symm.surjective w
-  -- The tangent spaces of the total space and of `M` at the zero vector over `q` are only
-  -- definitionally the model spaces in which `A q ∘ d(normalExp)` is composed; `erw` sees through.
-  erw [ContinuousLinearMap.comp_apply,
-    mfderiv_transportedNormalExp_zeroSection_apply i hn A hdim hg hA,
-    i.mfderiv_normalExp_zeroSection_apply hn (by simp) hdim, map_add, ← hAi q,
-    ContinuousLinearMap.comp_apply]
+  rw [mfderiv_transportedNormalExp_zeroSection_apply i hn A hdim hg hA, ← hAi q,
+    ContinuousLinearMap.comp_apply, ← map_add]
+  -- The composite on the right is typed over the tangent space of `M` at `normalExp (Z q)`, which
+  -- is only definitionally the tangent space at `i q` on which `A q` acts; `erw` sees through.
+  erw [ContinuousLinearMap.comp_apply]
+  exact congrArg (A q) (i.mfderiv_normalExp_zeroSection_apply hn (by simp) hdim q u v).symm
 
 /-- The transported normal exponential is a local diffeomorphism at every zero normal vector. -/
 private theorem isLocalDiffeomorphAt_transportedNormalExp_zeroSection [I.Boundaryless]
@@ -246,9 +246,6 @@ private theorem isLocalDiffeomorphAt_transportedNormalExp_zeroSection [I.Boundar
     letI := i.normalSpaceFiberBundle hn hdim
     IsLocalDiffeomorphAt (I.prod 𝓘(ℝ, P)) K ∞ (transportedNormalExp i hn A)
       (zeroSection P (fun q ↦ i.NormalSpace q hn) q) := by
-  have : IsManifold I (∞ + 1) Q := by simpa using (inferInstance : IsManifold I ∞ Q)
-  have : IsManifold J (∞ + 1) M := by simpa using (inferInstance : IsManifold J ∞ M)
-  have : IsManifold I (1 + 1) Q := .of_le (n := ∞) (by norm_cast)
   let := i.normalSpaceFiberBundle hn hdim
   let := i.normalSpaceVectorBundle hn hdim
   let := i.normalSpaceContMDiffVectorBundle (m := ∞) hn (by simp) hdim
@@ -275,11 +272,8 @@ private theorem exists_partialDiffeomorph_transportedNormalExp [I.Boundaryless] 
     ∃ Φ : PartialDiffeomorph (I.prod 𝓘(ℝ, P)) K (TotalSpace P (fun q ↦ i.NormalSpace q hn)) N ∞,
       (∀ q, zeroSection P (fun q ↦ i.NormalSpace q hn) q ∈ Φ.source) ∧ Φ.target ⊆ O' ∧
         ⇑Φ = transportedNormalExp i hn A := by
-  have : IsManifold I (∞ + 1) Q := by simpa using (inferInstance : IsManifold I ∞ Q)
-  have : IsManifold J (∞ + 1) M := by simpa using (inferInstance : IsManifold J ∞ M)
   let := i.normalSpaceFiberBundle hn hdim
   let := i.normalSpaceVectorBundle hn hdim
-  let := i.normalSpaceContMDiffVectorBundle (m := ∞) hn (by simp) hdim
   have : T2Space Q := i.isEmbedding.t2Space
   have : SecondCountableTopology Q := i.isEmbedding.isInducing.secondCountableTopology
   have : LocallyCompactSpace H' := K.locallyCompactSpace
@@ -341,9 +335,6 @@ private theorem exists_partialDiffeomorph_mfderiv_eq_of_riemannian [I.Boundaryle
     ∃ Ψ : PartialDiffeomorph J K M N ∞, range i ⊆ Ψ.source ∧ Ψ.source ⊆ O ∧
       Ψ.target ⊆ O' ∧ (∀ q, Ψ (i q) = g q) ∧ ∀ q, mfderiv J K Ψ (i q) = A q := by
   have hn : (∞ : ℕ∞ω) ≠ 0 := by simp
-  have : IsManifold I (∞ + 1) Q := by simpa using (inferInstance : IsManifold I ∞ Q)
-  have : IsManifold J (∞ + 1) M := by simpa using (inferInstance : IsManifold J ∞ M)
-  have : IsManifold I (1 + 1) Q := .of_le (n := ∞) (by norm_cast)
   -- The normal bundle of `i`, with a model fibre of the right dimension.
   let P := EuclideanSpace ℝ (Fin (Module.finrank ℝ V - Module.finrank ℝ E))
   have hdim : Module.finrank ℝ P = Module.finrank ℝ V - Module.finrank ℝ E :=
