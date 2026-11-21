@@ -349,10 +349,10 @@ private lemma integral_sinh_mul_cpow_deriv (ht : 1 < t) {s L : ℂ} (hs : 0 < s.
     h1.add h2
   have hval := integral_Ioi_of_hasDerivAt_of_tendsto'
     (fun u _ => hasDerivAt_sinh_mul_cpow ht s u) ((h12.sub h3).const_mul _) hL
-  rw [integral_const_mul, integral_sub h12 h3, integral_add h1 h2, integral_const_mul,
-    integral_const_mul, integral_const_mul, Real.sinh_zero, ofReal_zero, zero_mul,
-    sub_zero] at hval
-  rw [← hval, mul_inv_cancel_left₀ hb0]
+  rw [integral_const_mul, integral_sub h12 h3, integral_add h1 h2] at hval
+  simp only [integral_const_mul, Real.sinh_zero, ofReal_zero, zero_mul, sub_zero] at hval
+  rw [← hval]
+  field_simp
 
 /-- `Q₁(t) = t Q₀(t) - 1` for `1 < t`. -/
 theorem legendreQ_one (ht : 1 < t) : legendreQ 1 t = t * legendreQ 0 t - 1 := by
@@ -380,10 +380,11 @@ theorem legendreQ_one (ht : 1 < t) : legendreQ 1 t = t * legendreQ 0 t - 1 := by
     push_cast
     ring
   have h := integral_sinh_mul_cpow_deriv ht (s := 1) (by simp) (by simp) hL
+  have hb' : (√(t ^ 2 - 1) : ℂ) * (((√(t ^ 2 - 1))⁻¹ : ℝ) : ℂ) = 1 := by
+    rw [ofReal_inv]
+    exact mul_inv_cancel₀ (ofReal_ne_zero.2 hb.ne')
   rw [legendreQ, legendreQ, zero_add]
-  rw [show (2 : ℂ) * 1 - 1 = 1 by norm_num, sub_self, zero_mul, zero_add, one_mul, one_mul,
-    ofReal_inv, mul_inv_cancel₀ (ofReal_ne_zero.2 hb.ne')] at h
-  linear_combination -h
+  linear_combination -h - hb'
 
 /-- The three-term recurrence `(ν + 1) Q_{ν+1}(t) = (2ν + 1) t Q_ν(t) - ν Q_{ν-1}(t)` for
 `0 < re ν` and `1 < t`. -/
@@ -468,7 +469,8 @@ private lemma eulerSubst_mul_one_sub_eulerSubst (ht : 1 < t) (u : ℝ) :
   have hb := sqrt_sq_sub_one_pos ht
   have hb2 := sq_sqrt_sq_sub_one ht
   have hC := base_pos ht u
-  rw [eulerSubst, Real.cosh_eq, Real.exp_neg] at *
+  rw [Real.cosh_eq, Real.exp_neg] at hC
+  rw [eulerSubst, Real.cosh_eq, Real.exp_neg]
   field_simp
   linear_combination (t - 1) * hb2
 
@@ -500,18 +502,15 @@ private lemma eulerIntegrand_eulerSubst (ht : 1 < t) (s : ℂ) (u : ℝ) :
       inv_cpow_ofReal_nonneg hC.le] at this
   have hxC : (x : ℂ) ≠ 0 := ofReal_ne_zero.2 hx0.ne'
   have hyC : ((1 - x : ℝ) : ℂ) ≠ 0 := ofReal_ne_zero.2 hx1.ne'
-  have hzs : (z : ℂ) ^ s ≠ 0 := by
-    rw [Ne, cpow_eq_zero_iff, not_and_or]
-    exact Or.inl (ofReal_ne_zero.2 hz0.ne')
-  have hws : ((1 - z * x : ℝ) : ℂ) ^ s ≠ 0 := by
-    rw [Ne, cpow_eq_zero_iff, not_and_or]
-    exact Or.inl (ofReal_ne_zero.2 hw.ne')
-  have hCs : ((t + √(t ^ 2 - 1) * Real.cosh u : ℝ) : ℂ) ^ s ≠ 0 := by
-    rw [Ne, cpow_eq_zero_iff, not_and_or]
-    exact Or.inl (ofReal_ne_zero.2 hC.ne')
+  have hzs : (z : ℂ) ^ s ≠ 0 :=
+    cpow_ne_zero_iff.2 (Or.inl (ofReal_ne_zero.2 hz0.ne'))
+  have hws : ((1 - z * x : ℝ) : ℂ) ^ s ≠ 0 :=
+    cpow_ne_zero_iff.2 (Or.inl (ofReal_ne_zero.2 hw.ne'))
+  have hCs : ((t + √(t ^ 2 - 1) * Real.cosh u : ℝ) : ℂ) ^ s ≠ 0 :=
+    cpow_ne_zero_iff.2 (Or.inl (ofReal_ne_zero.2 hC.ne'))
   rw [show 2 * s - s - 1 = s - 1 by ring,
-    show (1 : ℂ) - x = ((1 - x : ℝ) : ℂ) by push_cast; rfl,
-    show (1 : ℂ) - z * x = ((1 - z * x : ℝ) : ℂ) by push_cast; rfl,
+    show (1 : ℂ) - x = ((1 - x : ℝ) : ℂ) by push_cast; ring,
+    show (1 : ℂ) - z * x = ((1 - z * x : ℝ) : ℂ) by push_cast; ring,
     cpow_sub _ _ hxC, cpow_sub _ _ hyC, cpow_one, cpow_one, cpow_neg, cpow_neg]
   rw [ofReal_mul]
   -- Replace the powers and casts by atoms, so that `field_simp` does not rewrite inside the casts
@@ -550,9 +549,8 @@ theorem legendreQ_eq_regularizedGaussHGFun {ν : ℂ} (hν : -1 < ν.re) (ht : 1
   have hsc : (ν + 1).re < (2 * (ν + 1)).re := by simp; linarith
   have hz0 : 0 < 2 / (1 + t) := div_pos two_pos (by linarith)
   have hz1 : 2 / (1 + t) < 1 := by rw [div_lt_one (by linarith)]; linarith
-  have hzs : ((2 / (1 + t) : ℝ) : ℂ) ^ (ν + 1) ≠ 0 := by
-    rw [Ne, cpow_eq_zero_iff, not_and_or]
-    exact Or.inl (ofReal_ne_zero.2 hz0.ne')
+  have hzs : ((2 / (1 + t) : ℝ) : ℂ) ^ (ν + 1) ≠ 0 :=
+    cpow_ne_zero_iff.2 (Or.inl (ofReal_ne_zero.2 hz0.ne'))
   have hG := Gamma_ne_zero_of_re_pos hs
   rw [regularizedGaussHGFun_eq_eulerIntegral _ hs hsc
     (by rw [norm_real, Real.norm_of_nonneg hz0.le]; exact hz1), eulerIntegral_def]
