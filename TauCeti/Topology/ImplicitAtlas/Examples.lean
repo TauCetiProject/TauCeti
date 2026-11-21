@@ -29,9 +29,9 @@ for the virtual fundamental class.
 
 The two examples behave differently under restriction to the empty set of indices
 (`TauCeti.ImplicitAtlas.restrict`): the manifold atlas restricts, because its footprint at `∅` is
-already all of `X` (`TauCeti.ImplicitAtlas.footprintsCover_empty_ofChartedSpace`), whereas
+already all of `X` (`TauCeti.ImplicitAtlas.footprintsCover_ofChartedSpace_empty`), whereas
 `powAtlas` does not, because the regular locus of `X_∅` is empty
-(`TauCeti.ImplicitAtlas.not_footprintsCover_empty_powAtlas`).
+(`TauCeti.ImplicitAtlas.not_footprintsCover_powAtlas_empty`).
 
 The thickenings of `powAtlas` are the subtypes `{x : ℝ // I = ∅ → x = 0}` of `ℝ`
 (`TauCeti.ImplicitAtlas.PowThickening`): the point `{0}` for `I = ∅` and `ℝ` for `I = {α}`.
@@ -113,7 +113,7 @@ theorem footprint_ofChartedSpace (I : Finset A) : (ofChartedSpace Γ E ρ n X).f
 
 /-- The manifold atlas restricts to the empty set of indices: its footprint at `∅` is already the
 whole space. -/
-theorem footprintsCover_empty_ofChartedSpace : (ofChartedSpace Γ E ρ n X).FootprintsCover ∅ :=
+theorem footprintsCover_ofChartedSpace_empty : (ofChartedSpace Γ E ρ n X).FootprintsCover ∅ :=
   footprintsCover_iff _ |>.2 fun y ↦ ⟨∅, by simp, by simp⟩
 
 end ChartedSpace
@@ -274,7 +274,7 @@ theorem footprint_powAtlas_empty (hm : m ≠ 0) : (powAtlas hm).footprint ∅ = 
 
 /-- `TauCeti.ImplicitAtlas.powAtlas` does not restrict to the empty set of indices: the only
 footprint left, `V_∅`, is empty and does not cover the point. -/
-theorem not_footprintsCover_empty_powAtlas (hm : m ≠ 0) :
+theorem not_footprintsCover_powAtlas_empty (hm : m ≠ 0) :
     ¬ (powAtlas hm).FootprintsCover ∅ := fun h ↦ by
   obtain ⟨I, hI, hy⟩ := (footprintsCover_iff _).1 h ⟨0, fun _ ↦ rfl⟩
   rw [Finset.coe_eq_empty.1 (Set.subset_empty_iff.1 hI), footprint_powAtlas_empty] at hy

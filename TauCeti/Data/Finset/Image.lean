@@ -18,6 +18,7 @@ public import Mathlib.Data.Finset.Image
   set `t` mapping onto `u ∩ v`, map onto `u` when `u ⊆ f(s) ∪ v`.
 * `Finset.mem_map_subtype`: an element lies in the image of a finset of a subtype under the
   subtype embedding exactly when it satisfies the predicate and lies in the finset.
+* `Finset.equivMapSdiff`: an embedding `f` restricts to a bijection `s \ t ≃ f s \ f t`.
 -/
 
 public section
@@ -58,5 +59,23 @@ theorem mem_map_subtype {p : α → Prop} {s : Finset {a // p a}} {a : α} :
     exact ⟨hb, hs⟩
   · rintro ⟨h, hs⟩
     exact mem_map_of_mem _ hs
+
+/-- An embedding `f` restricts to a bijection `s \ t ≃ f s \ f t`: `Finset.equivMap` on `s \ t`,
+whose image is `f s \ f t` by `Finset.map_sdiff`. The body is exposed so that the image of `x` is
+definitionally `f x`, which transporting a family indexed by `f s \ f t` along it needs. -/
+@[expose] noncomputable def equivMapSdiff [DecidableEq α] (f : α ↪ β) (s t : Finset α) :
+    ↥(s \ t) ≃ ↥(s.map f \ t.map f) :=
+  ((s \ t).equivMap f).trans (Equiv.subtypeEquivRight fun _ ↦ by rw [map_sdiff])
+
+@[simp]
+theorem coe_equivMapSdiff_apply [DecidableEq α] (f : α ↪ β) (s t : Finset α) (x : ↥(s \ t)) :
+    (equivMapSdiff f s t x : β) = f x :=
+  (rfl)
+
+@[simp]
+theorem apply_coe_equivMapSdiff_symm_apply [DecidableEq α] (f : α ↪ β) (s t : Finset α)
+    (y : ↥(s.map f \ t.map f)) : f ((equivMapSdiff f s t).symm y) = y := by
+  conv_rhs => rw [← (equivMapSdiff f s t).apply_symm_apply y]
+  rfl
 
 end Finset

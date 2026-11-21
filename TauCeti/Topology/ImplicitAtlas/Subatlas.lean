@@ -9,6 +9,7 @@ public import TauCeti.Topology.ImplicitAtlas.Basic
 public import TauCeti.Algebra.Group.Equiv.Pi
 public import Mathlib.Topology.Homeomorph.Lemmas
 import Mathlib.Topology.OpenPartialHomeomorph.Constructions
+import TauCeti.Data.Finset.Image
 
 /-!
 # Subatlases and injective relabelling of implicit atlases
@@ -80,6 +81,7 @@ noncomputable def relabelAct (act : ∀ I : Finset A, ((α : I) → Γ α) →* 
   (act (I.map f)).comp (MulEquiv.piFinsetMap Γ f I).toMonoidHom
 
 /-- The relabelled action of `g` is the action of the relabelled group element. -/
+@[simp]
 theorem relabelAct_apply (act : ∀ I : Finset A, ((α : I) → Γ α) →* (T I ≃ₜ T I)) (f : B ↪ A)
     (I : Finset B) (g : (β : I) → Γ (f β)) :
     relabelAct act f I g = act (I.map f) (MulEquiv.piFinsetMap Γ f I g) :=
@@ -195,17 +197,6 @@ private theorem isQuotientMap_relabelFootprintMap {I J : Finset B} (h : I ⊆ J)
   exact (Homeomorph.setCongr hr).symm.isQuotientMap.comp
     ((𝒜.isQuotientMap_footprintMap _).comp (𝒜.zeroSetHomeomorph f I J).isQuotientMap)
 
-/-- The bijection `J \ I ≃ f J \ f I` induced by `f`, which relabels the obstruction coordinates
-of the local product models. -/
-private noncomputable def sdiffEquiv [DecidableEq B] (I J : Finset B) :
-    ↥(J \ I) ≃ ↥(J.map f \ I.map f) :=
-  ((J \ I).equivMap f).trans (Equiv.subtypeEquivRight fun _ ↦ by rw [Finset.map_sdiff])
-
-/-- The relabelling of the obstruction coordinates along `sdiffEquiv`. -/
-private noncomputable def sdiffPiHomeomorph [DecidableEq B] (I J : Finset B) :
-    ((α : ↥(J.map f \ I.map f)) → E α) ≃ₜ ((β : ↥(J \ I)) → E (f β)) :=
-  (Homeomorph.piCongrLeft (Y := fun α : ↥(J.map f \ I.map f) ↦ E α) (sdiffEquiv f I J)).symm
-
 variable {f} in
 /-- The local product models of the relabelled atlas: the product model of `𝒜` at `f I ⊆ f J`,
 with its obstruction coordinates relabelled along `J \ I ≃ f J \ f I`. -/
@@ -220,10 +211,11 @@ private theorem exists_openPartialHomeomorph_relabel [DecidableEq B] {I J : Fins
             𝒜.relabelKuranishi f J ⟨β.val, (Finset.mem_sdiff.1 β.property).1⟩ y := by
   obtain ⟨n, hn, e, hxe, he⟩ :=
     𝒜.exists_openPartialHomeomorph (Finset.map_subset_map.2 h) (𝒜.zeroSetHomeomorph f I J x) hx
-  refine ⟨n, by rw [hn, Finset.sum_map],
-    e.transHomeomorph ((Homeomorph.refl _).prodCongr (sdiffPiHomeomorph f I J)), hxe,
+  let φ := (Homeomorph.piCongrLeft (Y := fun α : ↥(J.map f \ I.map f) ↦ E α)
+    (Finset.equivMapSdiff f J I)).symm
+  refine ⟨n, by rw [hn, Finset.sum_map], e.transHomeomorph ((Homeomorph.refl _).prodCongr φ), hxe,
     fun y hy ↦ funext fun β ↦ ?_⟩
-  exact congrFun (congrArg (sdiffPiHomeomorph f I J) (he y hy)) β
+  exact congrFun (congrArg φ (he y hy)) β
 
 variable {f} [DecidableEq B]
 
@@ -361,6 +353,44 @@ noncomputable def restrict :
 /-- The restriction of `𝒜` to `S` is its relabelling along the inclusion `S ↪ A`. -/
 theorem restrict_eq_relabel (h : 𝒜.FootprintsCover (range (Embedding.subtype (· ∈ S)))) :
     𝒜.restrict S hS = 𝒜.relabel h :=
+  (rfl)
+
+/-- The restriction of `𝒜` has the identification `X_∅ ≃ₜ X` of `𝒜`. -/
+@[simp]
+theorem baseHomeomorph_restrict : (𝒜.restrict S hS).baseHomeomorph = 𝒜.baseHomeomorph :=
+  (rfl)
+
+/-- The Kuranishi map of `α` on `X_J` in the restriction of `𝒜` is that of `α` in `𝒜`. -/
+@[simp]
+theorem kuranishi_restrict_apply (J : Finset S) (α : J)
+    (x : T (J.map (Embedding.subtype (· ∈ S)))) :
+    (𝒜.restrict S hS).kuranishi J α x =
+      𝒜.kuranishi (J.map (Embedding.subtype (· ∈ S)))
+        ⟨α.val.val, Finset.mem_map_of_mem _ α.property⟩ x :=
+  (rfl)
+
+/-- The regular locus of `I` in the restriction of `𝒜` is the regular locus of `I` in `𝒜`. -/
+@[simp]
+theorem regLocus_restrict (I : Finset S) :
+    (𝒜.restrict S hS).regLocus I = 𝒜.regLocus (I.map (Embedding.subtype (· ∈ S))) :=
+  (rfl)
+
+/-- The zero sets of the restriction of `𝒜` are the zero sets of `𝒜`. -/
+theorem kuranishiZeroSet_restrict (I J : Finset S) :
+    kuranishiZeroSet (T := fun J ↦ T (J.map (Embedding.subtype (· ∈ S))))
+        (E := fun α : S ↦ E α) (𝒜.restrict S hS).kuranishi I J =
+      kuranishiZeroSet 𝒜.kuranishi (I.map (Embedding.subtype (· ∈ S)))
+        (J.map (Embedding.subtype (· ∈ S))) :=
+  𝒜.kuranishiZeroSet_relabelKuranishi _ I J
+
+/-- The footprint maps of the restriction of `𝒜` are the footprint maps of `𝒜`. -/
+@[simp]
+theorem footprintMap_restrict {I J : Finset S} (h : I ⊆ J)
+    (x : kuranishiZeroSet (T := fun J ↦ T (J.map (Embedding.subtype (· ∈ S))))
+      (E := fun α : S ↦ E α) (𝒜.restrict S hS).kuranishi I J) :
+    (𝒜.restrict S hS).footprintMap h x =
+      𝒜.footprintMap (Finset.map_subset_map.2 h)
+        ⟨x.val, 𝒜.kuranishiZeroSet_restrict S hS I J ▸ x.property⟩ :=
   (rfl)
 
 /-- The regular footprint of `I` in the restriction of `𝒜` is the regular footprint of `I` in
