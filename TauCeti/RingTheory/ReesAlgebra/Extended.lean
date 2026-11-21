@@ -102,12 +102,13 @@ theorem mem_extendedReesAlgebra_iff_forall_natCast {f : R[T;T⁻¹]} :
   · simp [Int.toNat_eq_zero.mpr hn.le]
 
 /-- The coefficient of degree `n ≥ 0` of an element of the extended Rees algebra lies in `Iⁿ`. -/
-theorem coeff_natCast_mem_pow {f : R[T;T⁻¹]} (hf : f ∈ I.extendedReesAlgebra) (n : ℕ) :
-    f.coeff n ∈ I ^ n :=
+theorem extendedReesAlgebra.coeff_natCast_mem_pow {f : R[T;T⁻¹]} (hf : f ∈ I.extendedReesAlgebra)
+    (n : ℕ) : f.coeff n ∈ I ^ n :=
   mem_extendedReesAlgebra_iff_forall_natCast.mp hf n
 
 /-- The monomial `r Tⁿ` lies in the extended Rees algebra exactly when `r ∈ Iⁿ`, a condition
 that is empty for `n < 0`. -/
+@[simp high]
 theorem C_mul_T_mem_extendedReesAlgebra_iff {r : R} {n : ℤ} :
     C r * T n ∈ I.extendedReesAlgebra ↔ r ∈ I ^ n.toNat := by
   classical
@@ -146,7 +147,7 @@ theorem adjoin_eq_extendedReesAlgebra :
   rcases le_or_gt 0 n with hn | hn
   · lift n to ℕ using hn
     refine hrees ⟨Polynomial.monomial n (f.coeff n), reesAlgebra.monomial_mem.mpr
-      (coeff_natCast_mem_pow hf n), ?_⟩
+      (extendedReesAlgebra.coeff_natCast_mem_pow hf n), ?_⟩
     simp [Polynomial.toLaurentAlg_apply, ← Polynomial.C_mul_X_pow_eq_monomial]
   · -- In negative degree, `r Tⁿ = r (t⁻¹)⁻ⁿ`.
     obtain ⟨k, rfl⟩ := Int.exists_eq_neg_ofNat hn.le
@@ -169,16 +170,7 @@ extended Rees algebra that are polynomials. -/
 theorem map_toLaurentAlg_reesAlgebra :
     (reesAlgebra I).map Polynomial.toLaurentAlg =
       I.extendedReesAlgebra ⊓ Polynomial.toLaurentAlg.range := by
-  ext f
-  refine ⟨?_, ?_⟩
-  · rintro ⟨p, hp, rfl⟩
-    refine ⟨?_, p, rfl⟩
-    rw [← comap_toLaurentAlg_extendedReesAlgebra] at hp
-    exact hp
-  · rintro ⟨hf, p, rfl⟩
-    refine ⟨p, ?_, rfl⟩
-    rw [← comap_toLaurentAlg_extendedReesAlgebra]
-    exact hf
+  rw [← comap_toLaurentAlg_extendedReesAlgebra, Subalgebra.map_comap_eq]
 
 namespace extendedReesAlgebra
 
@@ -387,6 +379,7 @@ theorem toAssociatedGraded_C_mul_T_natCast {n : ℕ} {r : R} (hr : r ∈ I ^ n) 
   rw [coe_toAssociatedGraded, symbolFun_C_mul_T_natCast]
 
 /-- The symbol of a monomial of negative degree vanishes. -/
+@[simp]
 theorem toAssociatedGraded_C_mul_T_of_neg {n : ℤ} (hn : n < 0) {r : R}
     (h : C r * T n ∈ I.extendedReesAlgebra) : toAssociatedGraded I ⟨C r * T n, h⟩ = 0 := by
   rw [coe_toAssociatedGraded, symbolFun_C_mul_T_of_neg I hn]
@@ -401,6 +394,7 @@ theorem toAssociatedGraded_tInv : toAssociatedGraded I (tInv I) = 0 := by
 
 /-- The degree `n` component of the symbol of `f` is the class of the coefficient of degree `n`
 of `f` in `Iⁿ ⧸ Iⁿ⁺¹`. -/
+@[simp]
 theorem toAssociatedGraded_apply (f : I.extendedReesAlgebra) (n : ℕ) :
     toAssociatedGraded I f n =
       Submodule.Quotient.mk ⟨(f : R[T;T⁻¹]).coeff n, coeff_natCast_mem_pow f.property n⟩ := by
@@ -447,6 +441,7 @@ theorem quotientEquivAssociatedGraded_mk (f : I.extendedReesAlgebra) :
   (rfl)
 
 /-- The inverse isomorphism sends the class of `r ∈ Iⁿ` in degree `n` to the class of `r Tⁿ`. -/
+@[simp]
 theorem quotientEquivAssociatedGraded_symm_mk {n : ℕ} {r : R} (hr : r ∈ I ^ n) :
     (quotientEquivAssociatedGraded I).symm (AssociatedGraded.mk I n ⟨r, hr⟩) =
       Ideal.Quotient.mk _
