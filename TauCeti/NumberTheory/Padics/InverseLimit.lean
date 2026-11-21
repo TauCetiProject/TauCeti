@@ -87,7 +87,7 @@ def proj (n : ℕ) : inverseLimit p →+* ZMod (p ^ n) :=
   (Pi.evalRingHom (fun n : ℕ ↦ ZMod (p ^ n)) n).comp (inverseLimit p).subtype
 
 @[simp]
-theorem proj_apply (n : ℕ) (x : inverseLimit p) : proj p n x = x.1 n :=
+theorem proj_apply (n : ℕ) (x : inverseLimit p) : proj p n x = x.val n :=
   (rfl)
 
 /-- The projections from the inverse limit form a compatible family. -/
@@ -95,7 +95,7 @@ theorem proj_apply (n : ℕ) (x : inverseLimit p) : proj p n x = x.1 n :=
 theorem cast_proj (m n : ℕ) (h : m ≤ n) :
     (ZMod.castHom (pow_dvd_pow p h) (ZMod (p ^ m))).comp (proj p n) = proj p m := by
   ext x
-  exact x.2 h
+  exact x.property h
 
 variable {R : Type*} [NonAssocSemiring R] (f : ∀ n : ℕ, R →+* ZMod (p ^ n))
   (hf : ∀ (m n : ℕ) (h : m ≤ n),
@@ -109,7 +109,7 @@ def lift : R →+* inverseLimit p :=
     mem_inverseLimit_iff.mpr fun m n h ↦ DFunLike.congr_fun (hf m n h) x
 
 @[simp]
-theorem lift_apply (x : R) (n : ℕ) : (lift p f hf x).1 n = f n x :=
+theorem lift_apply (x : R) (n : ℕ) : (lift p f hf x).val n = f n x :=
   (rfl)
 
 /-- `PadicInt.inverseLimit.lift` recovers the given family on each projection. -/
@@ -159,7 +159,7 @@ theorem inverseLimit_proj_toInverseLimit (n : ℕ) :
 
 @[simp]
 theorem toInverseLimit_apply (x : ℤ_[p]) (n : ℕ) :
-    (toInverseLimit p x).1 n = toZModPow n x :=
+    (toInverseLimit p x).val n = toZModPow n x :=
   (rfl)
 
 /-- A compatible residue family determines a `p`-adic integer by Mathlib's inverse-limit

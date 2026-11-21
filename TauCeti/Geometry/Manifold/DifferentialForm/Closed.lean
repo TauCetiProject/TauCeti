@@ -48,22 +48,22 @@ section OnceDifferentiable
 variable [IsManifold I 1 M] {form : SmoothForm I M F k}
 
 /-- A smooth form is closed when the generic manifold exterior derivative vanishes. -/
-def IsClosed (form : SmoothForm I M F k) : Prop := mextDeriv form.1 = 0
+def IsClosed (form : SmoothForm I M F k) : Prop := mextDeriv form.val = 0
 
 /-- Closedness is exactly the vanishing of the manifold exterior derivative. -/
 theorem isClosed_def (form : SmoothForm I M F k) :
-    form.IsClosed ↔ mextDeriv form.1 = 0 :=
+    form.IsClosed ↔ mextDeriv form.val = 0 :=
   Iff.rfl
 
 /-- On a manifold of finite dimension at most `k`, every smooth `k`-form is closed, since there are
 no nonzero `(k + 1)`-forms. In particular, top-degree forms are closed. -/
 theorem isClosed_of_finrank_le [FiniteDimensional ℝ E] (h : Module.finrank ℝ E ≤ k)
     (form : SmoothForm I M F k) : form.IsClosed :=
-  mextDeriv_eq_zero_of_finrank_le h form.1
+  mextDeriv_eq_zero_of_finrank_le h form.val
 
 /-- Closedness can equivalently be checked pointwise on the exterior derivative. -/
 theorem isClosed_iff_forall_mextDeriv_apply_eq_zero (form : SmoothForm I M F k) :
-    form.IsClosed ↔ ∀ x, mextDeriv form.1 x = 0 := by
+    form.IsClosed ↔ ∀ x, mextDeriv form.val x = 0 := by
   rw [isClosed_def, funext_iff]
   simp only [Pi.zero_apply]
 
@@ -76,8 +76,8 @@ theorem isClosed_zero : (0 : SmoothForm I M F k).IsClosed := by
 theorem IsClosed.add {form' : SmoothForm I M F k} (h : form.IsClosed)
     (h' : form'.IsClosed) : (form + form').IsClosed := by
   rw [isClosed_def, SmoothForm.add_toRoughForm]
-  have hform : IsSmoothForm I ∞ form.1 := form.isSmoothForm
-  have hform' : IsSmoothForm I ∞ form'.1 := form'.isSmoothForm
+  have hform : IsSmoothForm I ∞ form.val := form.isSmoothForm
+  have hform' : IsSmoothForm I ∞ form'.val := form'.isSmoothForm
   funext x
   rw [mextDeriv_add
     ((hform.contDiffWithinAt_inChartAt_self x).differentiableWithinAt (by simp))
@@ -146,8 +146,8 @@ within the model range, at every point of the chart target. -/
 theorem isClosed_iff_forall_extDerivWithin_inChartAt_eq_zero
     (form : SmoothForm I M F k) :
     form.IsClosed ↔ ∀ x₀ z, z ∈ (extChartAt I x₀).target →
-      extDerivWithin (RoughForm.inChartAt form.1 x₀) (Set.range I) z = 0 := by
-  have hform : IsSmoothForm I 1 form.1 := form.isSmoothForm.of_le (by norm_num)
+      extDerivWithin (RoughForm.inChartAt form.val x₀) (Set.range I) z = 0 := by
+  have hform : IsSmoothForm I 1 form.val := form.isSmoothForm.of_le (by norm_num)
   constructor
   · intro h x₀ z hz
     rw [isClosed_def] at h
@@ -164,8 +164,8 @@ of its coordinate expression in any preferred chart vanishes on the interior of 
 target. -/
 theorem IsClosed.extDeriv_inChartAt_eq_zero
     (h : form.IsClosed) (x₀ : M) {z : E} (hz : z ∈ interior (extChartAt I x₀).target) :
-    extDeriv (RoughForm.inChartAt form.1 x₀) z = 0 := by
-  have hform : IsSmoothForm I 1 form.1 := form.isSmoothForm.of_le (by norm_num)
+    extDeriv (RoughForm.inChartAt form.val x₀) z = 0 := by
+  have hform : IsSmoothForm I 1 form.val := form.isSmoothForm.of_le (by norm_num)
   rw [isClosed_def] at h
   rw [← hform.inChartAt_mextDeriv_eq_extDeriv x₀ hz, h, RoughForm.inChartAt_zero, Pi.zero_apply]
 

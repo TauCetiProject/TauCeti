@@ -77,7 +77,7 @@ theorem stabilizer_Gamma1_eq_bot (hN : 4 ≤ N) (z : ℍ) :
   intro g hg
   rw [Subgroup.mem_bot]
   apply Subtype.ext
-  exact eq_one_of_mem_Gamma1_of_smul_eq_self hN g.2
+  exact eq_one_of_mem_Gamma1_of_smul_eq_self hN g.property
     (by simpa only [mem_stabilizer_iff, Subgroup.smul_def] using hg)
 
 /-- The effective image of `Γ₁(N)` in `PSL(2, ℝ)` has no elliptic stabilizers
@@ -87,7 +87,7 @@ theorem stabilizer_Gamma1_map_eq_bot (hN : 4 ≤ N) (z : ℍ) :
     stabilizer ((Gamma1 N).map sl2zToPSL2R) z = ⊥ := by
   apply eq_bot_iff.mpr
   intro g hg
-  obtain ⟨γ, hγ, hγg⟩ := g.2
+  obtain ⟨γ, hγ, hγg⟩ := g.property
   have hfix : γ • z = z := by
     have h := hg
     rw [mem_stabilizer_iff, Subgroup.smul_def, ← hγg, ← psl2zToPSL2R_mk,

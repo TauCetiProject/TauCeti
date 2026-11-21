@@ -411,6 +411,23 @@ theorem singularCubicalHomologyIso_inv (X : TopCat.{u}) (n : ℕ) :
   rfl
 
 variable (k) in
+/-- On a coproduct, the sum of the comparisons `TauCeti.singularCubicalHomologyIso` is the sum of
+the maps induced on homology by `TauCeti.singularToCubical`. -/
+theorem sigmaMapIso_singularCubicalHomologyIso_hom {J : Type u} (Z : J → TopCat.{u}) (n : ℕ) :
+    (Sigma.mapIso fun j ↦ singularCubicalHomologyIso k (Z j) n).hom =
+      Limits.Sigma.map fun j ↦ HomologicalComplex.homologyMap ((singularToCubical k).app (Z j)) n :=
+  Sigma.hom_ext _ _ fun j ↦ by simp
+
+variable (k) in
+/-- On a coproduct, the sum of the inverses of the comparisons
+`TauCeti.singularCubicalHomologyIso` is the sum of the maps induced on homology by
+`TauCeti.cubicalToSingular`. -/
+theorem sigmaMapIso_singularCubicalHomologyIso_inv {J : Type u} (Z : J → TopCat.{u}) (n : ℕ) :
+    (Sigma.mapIso fun j ↦ singularCubicalHomologyIso k (Z j) n).inv =
+      Limits.Sigma.map fun j ↦ HomologicalComplex.homologyMap ((cubicalToSingular k).app (Z j)) n :=
+  Sigma.hom_ext _ _ fun j ↦ by simp
+
+variable (k) in
 /-- The point cube at `x`, as a cycle of degree zero of the normalized cubical chains of `X`. -/
 def cubicalCycleOfPoint {X : TopCat.{u}} (x : X) :
     ((normalizedCubicalChainComplex k).obj X).cycles 0 :=

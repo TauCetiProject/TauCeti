@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Bicategory.Functor.LocallyDiscrete
 public import Mathlib.CategoryTheory.Category.Cat
+public import Mathlib.CategoryTheory.Comma.Over.Basic
 
 /-!
 # Prelax functors and locally discrete bicategories
@@ -22,7 +23,8 @@ bicategory are determined by equalities of `1`-morphisms. So the comparisons of 
 `P`, for instance for `P = Functor.toPseudofunctor ψ` induced by a functor of categories.
 Consequently, pulling `F : LocallyDiscrete Λ ⥤ᵖ C` back along the identity functor, or along a
 composite `f ⋙ g` instead of first along `g` and then along `f`, does not change its unit and
-composition comparisons.
+composition comparisons. The restriction `F.over U` of `F : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat` to the
+slice `Over U` is the instance `P = (Over.forget U).op.toPseudofunctor` of such a composite.
 
 Finally, `CategoryTheory.LocallyDiscrete.mkCatPseudofunctor` builds a pseudofunctor
 `LocallyDiscrete B₀ ⥤ᵖ Cat` from functors, unit isomorphisms and composition isomorphisms
@@ -149,6 +151,22 @@ lemma toPseudofunctor_comp_comp_mapComp (f : Γ ⥤ Λ) (g : Λ ⥤ Λ') (F : Lo
   rfl
 
 end ToPseudofunctor
+
+/-! ### Restriction to a slice -/
+
+section Over
+
+universe v' u'
+
+variable {C : Type*} [Category* C] (F : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{v', u'}) (U : C)
+
+/-- The restriction of a pseudofunctor `F : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat` to the slice `Over U`,
+that is `F` precomposed with `(Over.forget U).op`. Its fibre over `X : Over U` is the fibre of
+`F` over `X.left`, and its pullback along `g : X ⟶ Y` is the pullback of `F` along `g.left`. -/
+abbrev over : LocallyDiscrete (Over U)ᵒᵖ ⥤ᵖ Cat.{v', u'} :=
+  (Over.forget U).op.toPseudofunctor.comp F
+
+end Over
 
 end CategoryTheory.Pseudofunctor
 

@@ -122,7 +122,7 @@ def cubicalCrossProduct :
     (TauCeti.cubicalCrossProduct k P.fst Y ≫
       cokernel.π ((normalizedCubicalChainComplex k).map (P.prodRight Y).map))
     ((whiskerRight_comp_cubicalCrossProduct_assoc k P Y _).trans ((Category.assoc _ _ _).trans
-      ((TauCeti.cubicalCrossProduct k P.snd Y ≫= cokernel.condition _).trans comp_zero)))).1
+      ((TauCeti.cubicalCrossProduct k P.snd Y ≫= cokernel.condition _).trans comp_zero)))).val
 
 /-- The relative cross product of the classes of chains of `X` and `Y` is the class of their
 cross product. -/
@@ -133,7 +133,8 @@ theorem cokernelπ_whiskerRight_cubicalCrossProduct :
       TauCeti.cubicalCrossProduct k P.fst Y ≫
         cokernel.π ((normalizedCubicalChainComplex k).map (P.prodRight Y).map) :=
   (CokernelCofork.IsColimit.desc'
-    (P.shortExact_tensorRightShortComplex_cubicalChainComplexShortComplex k Y).gIsCokernel _ _).2
+    (P.shortExact_tensorRightShortComplex_cubicalChainComplexShortComplex k Y).gIsCokernel _
+        _).property
 
 /-- The cross products of `A × Y`, of `X × Y` and of the pair, as a morphism from the chain
 sequence of `P` tensored with `N(Y)` to the chain sequence of the pair `(X × Y, A × Y)`. -/

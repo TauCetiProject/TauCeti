@@ -281,7 +281,7 @@ theorem coe_vertexTensorBimoduleDifferential (hd : IsDGAlgebra (gradeBy k wt) d)
     (vertexTensorBimoduleDifferential wt d u : 𝒜ᵉ) = envelopeDifferential (gradeBy k wt) d 0 u := by
   rw [coe_vertexTensorBimoduleDifferential_apply,
     ← envelopeDifferential_mul_vertexTensorIdempotent hd hdε,
-    mem_vertexTensorBimodule_iff.1 u.2]
+    mem_vertexTensorBimodule_iff.1 u.property]
 
 /-- **The differential of `kQ ⊗_{kQ₀} kQ` squares to zero.** -/
 @[simp]
