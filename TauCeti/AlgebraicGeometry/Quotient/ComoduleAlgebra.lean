@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.Limits
-public import Mathlib.AlgebraicGeometry.Morphisms.IsIso
 public import Mathlib.AlgebraicGeometry.Morphisms.Finite
 public import TauCeti.Algebra.Bialgebra.ComoduleAlgebra.Integral
 
@@ -49,7 +47,8 @@ a ring by a monoid action, `TauCeti.AffineInvariantQuotient` in
 
 For a finite locally free group scheme, the projection is integral and surjective
 (`isIntegralHom_projection`, `surjective_projection`), including for non-free actions.
-It is finite when `A` is of finite type over `R` (`isFinite_projection_of_finiteType`).
+It is finite when `A` is of finite type over the coinvariants (`isFinite_projection`), in
+particular when `A` is of finite type over `R` (`isFinite_projection_of_finiteType`).
 
 ## References
 
@@ -195,14 +194,19 @@ instance surjective_projection : Surjective (projection R H A) := by
   let := isIntegral_coinvariants (R := R) (H := H) (A := A)
   exact ⟨Algebra.IsIntegral.comap_surjective _ _⟩
 
+/-- For a finite locally free group scheme, the projection to the affine quotient is finite
+when `A` is of finite type over the coinvariants. -/
+theorem isFinite_projection [Algebra.FiniteType (coinvariants R H A) A] :
+    IsFinite (projection R H A) := by
+  let := isIntegral_coinvariants (R := R) (H := H) (A := A)
+  rw [projection_def]
+  exact (IsFinite.SpecMap_iff _).mpr (RingHom.finite_algebraMap.mpr Algebra.IsIntegral.finite)
+
 /-- For a finite locally free group scheme acting on a finite-type affine scheme, the
 projection to the affine quotient is finite. -/
 theorem isFinite_projection_of_finiteType [Algebra.FiniteType R A] :
-    IsFinite (projection R H A) := by
-  let := isIntegral_coinvariants (R := R) (H := H) (A := A)
-  have : Algebra.FiniteType (coinvariants R H A) A :=
-    .of_restrictScalars_finiteType R _ _
-  rw [projection_def]
-  exact (IsFinite.SpecMap_iff _).mpr (RingHom.finite_algebraMap.mpr Algebra.IsIntegral.finite)
+    IsFinite (projection R H A) :=
+  have : Algebra.FiniteType (coinvariants R H A) A := .of_restrictScalars_finiteType R _ _
+  isFinite_projection R H A
 
 end TauCeti.ComoduleAlgebra.AffineQuotient

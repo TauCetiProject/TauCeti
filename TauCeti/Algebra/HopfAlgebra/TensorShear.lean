@@ -119,14 +119,37 @@ noncomputable def tensorShearMulRightBaseChange :
     | tmul a h => simp [tensorShearMulRightBaseChangeAux]
     | add x y hx hy => simp only [TensorProduct.add_tmul, map_add, hx, hy]
 
-/-- On pure tensors the scalar-extended shear fixes the first coordinate and applies
-comultiplication to the last one. -/
+/-- On pure tensors the scalar-extended shear fixes the first coordinate and multiplies the
+middle one into the comultiplication of the last: after reassociation it sends
+`(a ⊗ g) ⊗ h` to `a ⊗ ((g ⊗ 1) * Δ(h))`. -/
 @[simp]
 theorem tensorShearMulRightBaseChange_tmul (a : A) (g h : H) :
     tensorShearMulRightBaseChange A ((a ⊗ₜ[R] g) ⊗ₜ[R] h) =
       (Algebra.TensorProduct.assoc R R R A H H).symm
         (a ⊗ₜ[R] ((g ⊗ₜ[R] 1) * Coalgebra.comul (R := R) h)) := by
   simp [tensorShearMulRightBaseChange, tensorShearMulRightBaseChangeAux]
+
+/-- On pure tensors the inverse scalar-extended shear fixes the first coordinate and divides the
+last by the middle one: after reassociation it sends `(a ⊗ g) ⊗ h` to
+`a ⊗ ((g ⊗ 1) * (S ⊗ id)(Δ(h)))`. -/
+@[simp]
+theorem tensorShearMulRightBaseChange_symm_tmul (a : A) (g h : H) :
+    (tensorShearMulRightBaseChange A).symm ((a ⊗ₜ[R] g) ⊗ₜ[R] h) =
+      (Algebra.TensorProduct.assoc R R R A H H).symm
+        (a ⊗ₜ[R] ((g ⊗ₜ[R] 1) * TensorProduct.map (HopfAlgebraStruct.antipode R) LinearMap.id
+          (Coalgebra.comul (R := R) h))) := by
+  simp [tensorShearMulRightBaseChange, tensorShearMulRightBaseChangeAux]
+
+/-- On tensors from `A ⊗[R] H` included in the first and last factors, the scalar-extended shear
+is comultiplication of the `H` factor: it sends the image of `a ⊗ h` to `(a ⊗ h₍₁₎) ⊗ h₍₂₎`. -/
+theorem tensorShearMulRightBaseChange_rTensor_includeLeft (z : A ⊗[R] H) :
+    tensorShearMulRightBaseChange A
+        (Algebra.TensorProduct.rTensor H (includeLeft : A →ₐ[R] A ⊗[R] H) z) =
+      (Algebra.TensorProduct.assoc R R R A H H).symm
+        ((Coalgebra.comul (R := R) (A := H)).lTensor A z) := by
+  induction z with
+  | tmul a h => simp [← Algebra.TensorProduct.one_def]
+  | add x y hx hy => simp only [map_add, hx, hy]
 
 end BaseChange
 
