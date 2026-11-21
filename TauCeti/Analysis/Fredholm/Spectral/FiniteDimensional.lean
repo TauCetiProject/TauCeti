@@ -30,23 +30,19 @@ spectral cut of `A` on all of `[a, b]` (`TauCeti.isSpectralCutOn_of_forall_norm_
 of eigenvalues of `A t` in `[0, c]` is then the number `dim H - n⁻(A t)` of its nonnegative
 eigenvalues (`TauCeti.spectralCount_eq_finrank_pointSpectralSubspace`).
 
-Two consequences are recorded.
+As a consequence, this file proves **the regular-crossing formula**. On a real space, if the
+endpoints are invertible and every crossing `t`, a time at which `A t` is not injective, is regular,
+that is, `A` has a derivative `A' t` there and the crossing form `v ↦ ⟪A' t v, v⟫` on the kernel
+of `A t` is nondegenerate, then the spectral flow is the sum over the crossings of the signatures
+of the crossing forms (`TauCeti.spectralFlow_eq_finsum_sigPos_sub_sigNeg_crossingForm`). Positive
+crossings count positively. This is Robbin and Salamon's formula, and it rests on the drop of the
+negative index along a path of symmetric bilinear forms with regular crossings
+(`ContinuousLinearMap.sigNeg_sub_sigNeg_eq_finsum_sigPos_sub_sigNeg_crossingForm`).
 
-* **Negation.** When the endpoints are invertible, the spectral flow of `-A` is minus that of `A`
-  (`TauCeti.spectralFlow_neg`): the negative eigenvalues of `-T` are the positive eigenvalues of
-  `T`, and `n⁺(T) + n⁻(T) = dim H` for invertible `T`.
-* **The regular-crossing formula.** On a real space, if the endpoints are invertible and every
-  crossing `t`, a time at which `A t` is not injective, is regular, that is, `A` has a derivative
-  `A' t` there and the crossing form `v ↦ ⟪A' t v, v⟫` on the kernel of `A t` is nondegenerate,
-  then the spectral flow is the sum over the crossings of the signatures of the crossing forms
-  (`TauCeti.spectralFlow_eq_finsum_sigPos_sub_sigNeg_crossingForm`). Positive crossings count
-  positively. This is Robbin and Salamon's formula, and it rests on the drop of the negative index
-  along a path of symmetric bilinear forms with regular crossings
-  (`ContinuousLinearMap.sigNeg_sub_sigNeg_eq_finsum_sigPos_sub_sigNeg_crossingForm`).
-
-These are the finite-dimensional forms of the statements that the spectral flow of `A` is the
-index of the trajectory operator `d/ds + A` and minus that of `d/ds - A`; see
-`TauCeti.WeakDerivStep.eventually_index_trajectoryOperator_eq_spectralFlow`.
+This is the finite-dimensional form of the statement that the spectral flow of `A` is the index
+of the trajectory operator `d/ds + A`; see
+`TauCeti.WeakDerivStep.eventually_index_trajectoryOperator_eq_spectralFlow`. The form for
+`d/ds - A` also needs `TauCeti.spectralFlow_neg_of_ker_eq_bot` from `Fredholm/Spectral/Neg.lean`.
 
 ## Main results
 
@@ -59,7 +55,6 @@ index of the trajectory operator `d/ds + A` and minus that of `d/ds - A`; see
   number of nonnegative eigenvalues.
 * `TauCeti.spectralFlow_eq_finrank_pointSpectralSubspace_sub_finrank`: the spectral flow is
   `n⁻(A a) - n⁻(A b)`.
-* `TauCeti.spectralFlow_neg`: negating a path with invertible endpoints negates its spectral flow.
 * `TauCeti.spectralFlow_eq_finsum_sigPos_sub_sigNeg_crossingForm`: the regular-crossing formula.
 
 ## References
@@ -161,29 +156,6 @@ theorem spectralFlow_eq_finrank_pointSpectralSubspace_sub_finrank {a b : ℝ} (h
   have h₁ := hAa.finrank_pointSpectralSubspace_add_finrank_pointSpectralSubspace_compl (Iio 0)
   have h₂ := hAb.finrank_pointSpectralSubspace_add_finrank_pointSpectralSubspace_compl (Iio 0)
   rw [compl_Iio] at h₁ h₂
-  omega
-
-/-- **Negation.** On a finite-dimensional space, negating a continuous path of self-adjoint
-operators with invertible endpoints negates its spectral flow. -/
-theorem spectralFlow_neg {a b : ℝ} (hab : a ≤ b) (hA : ContinuousOn A (Icc a b))
-    (hsa : ∀ t ∈ Icc a b, IsSelfAdjoint (A t)) (ha : LinearMap.ker (A a : H →ₗ[𝕜] H) = ⊥)
-    (hb : LinearMap.ker (A b : H →ₗ[𝕜] H) = ⊥) :
-    spectralFlow (fun t ↦ -A t) a b = -spectralFlow A a b := by
-  have ha' : a ∈ Icc a b := ⟨le_rfl, hab⟩
-  have hb' : b ∈ Icc a b := ⟨hab, le_rfl⟩
-  rw [spectralFlow_eq_finrank_pointSpectralSubspace_sub_finrank (A := fun t ↦ -A t) hab hA.neg
-      fun t ht ↦ (hsa t ht).neg,
-    spectralFlow_eq_finrank_pointSpectralSubspace_sub_finrank hab hA hsa]
-  -- The negative eigenvalues of `-T` are the positive ones of `T`, and for invertible `T` the
-  -- positive and the negative eigenvalues together have the dimension of `H`.
-  rw [ContinuousLinearMap.toLinearMap_neg, ContinuousLinearMap.toLinearMap_neg,
-    Module.End.pointSpectralSubspace_neg, Module.End.pointSpectralSubspace_neg, neg_Iio, neg_zero]
-  have hAa := (hsa a ha').isSymmetric
-  have hAb := (hsa b hb').isSymmetric
-  have h₁ :=
-    hAa.finrank_pointSpectralSubspace_Iio_zero_add_finrank_pointSpectralSubspace_Ioi_zero ha
-  have h₂ :=
-    hAb.finrank_pointSpectralSubspace_Iio_zero_add_finrank_pointSpectralSubspace_Ioi_zero hb
   omega
 
 end TauCeti

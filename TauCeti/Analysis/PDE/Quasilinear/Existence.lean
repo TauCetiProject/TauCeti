@@ -11,6 +11,7 @@ import TauCeti.Analysis.Convex.SchauderFixedPoint
 import TauCeti.Analysis.PDE.DirichletProblem.ContinuousDependence
 import TauCeti.Analysis.Sobolev.RellichKondrachov
 import TauCeti.MeasureTheory.Function.StronglyMeasurable.Caratheodory
+import TauCeti.Topology.Algebra.Module.ClosedSubmodule
 import TauCeti.Topology.Instances.Matrix
 
 /-!
@@ -34,10 +35,10 @@ This file proves that the problem has a weak solution on every bounded open set
 (`TauCeti.PDE.exists_sub_mem_w1p0Submodule_forall_energyFormH1_quasilinear_eq`), in every
 dimension and with no regularity of `∂Ω`, and that every weak solution satisfies the energy bound
 `‖u - g‖_{H¹} ≤ 2 ((2R)² + 1) (‖ℓ‖ + Λ ‖g‖) / λ`
-(`TauCeti.PDE.norm_sub_le_of_forall_energyFormH1_quasilinear_eq_of_subset_ball`), which depends
-on `A` only through `λ` and `Λ`. No uniqueness is claimed. Since a weak solution `u` solves the
-linear equation with the measurable coefficient `a = A(·, u)`, `λ ≤ a ≤ Λ`, every regularity
-theorem for linear equations with bounded measurable coefficients applies to it.
+(`PDE.norm_sub_le_of_sub_mem_w1p0Submodule_of_forall_energyFormH1_quasilinear_eq_of_subset_ball`),
+which depends on `A` only through `λ` and `Λ`. No uniqueness is claimed. Since a weak solution
+`u` solves the linear equation with the measurable coefficient `a = A(·, u)`, `λ ≤ a ≤ Λ`, every
+regularity theorem for linear equations with bounded measurable coefficients applies to it.
 
 ## The argument
 
@@ -302,10 +303,8 @@ private theorem norm_frozenSolution_sub_frozenSolution_le
     gcongr
     exact norm_energyFormH1L_comp_le hA hAm hAc hv
   have hmem : frozenSolution A g' ℓ' v - frozenSolution A g ℓ v - (g' - g) ∈
-      w1p0Submodule volume Omega 2 := by
-    rw [← sub_sub_sub_comm, ← ClosedSubmodule.mem_toSubmodule_iff]
-    exact sub_mem ((ClosedSubmodule.mem_toSubmodule_iff _ _).2 hspec'.1)
-      ((ClosedSubmodule.mem_toSubmodule_iff _ _).2 hspec.1)
+      w1p0Submodule volume Omega 2 :=
+    sub_sub_sub_comm (frozenSolution A g' ℓ' v) g' _ _ ▸ sub_mem hspec'.1 hspec.1
   simpa only [add_zero] using norm_sub_le_of_sub_sub_mem_w1p0Submodule_of_forall_energyFormH1_eq
     (b := 0) (c := 0) (a' := fun x => A x (v x)) (b' := 0) (c' := 0) (ℓ := ℓ') (ℓ' := ℓ)
     (u := frozenSolution A g' ℓ' v) (u' := frozenSolution A g ℓ v) (h := g' - g)
@@ -360,10 +359,8 @@ theorem tendsto_frozenSolution {α : Type*} {l : Filter α} [l.IsCountablyGenera
       (fun i => aestronglyMeasurable_comp (hAm' i) (hAc' i) (hv' i))
       (fun i => (ae_restrict_mem Omega.isOpen.measurableSet).mono fun x hx =>
         abs_dotProduct_sub_mulVec_le ((hA (v x)).upper_bound hx) ((hA' i (v' i x)).upper_bound hx))
-      hlim hspec.2 (fun i => (hspec' i).2) (fun i => ?_)
-    have h := Submodule.sub_mem _ ((ClosedSubmodule.mem_toSubmodule_iff _ _).2 (hspec' i).1)
-      ((ClosedSubmodule.mem_toSubmodule_iff _ _).2 hspec.1)
-    rwa [sub_sub_sub_cancel_right, ClosedSubmodule.mem_toSubmodule_iff] at h
+      hlim hspec.2 (fun i => (hspec' i).2) fun i => by
+        simpa using sub_mem (hspec' i).1 hspec.1
   -- For each coefficient, changing the data from `(g, ℓ)` to `(gᵢ, ℓᵢ)` moves the frozen solution
   -- by `O(‖gᵢ - g‖ + ‖ℓᵢ - ℓ‖)`, uniformly in `i`.
   have h₂ : Tendsto (fun i => frozenSolution (A' i) (g' i) (ℓ' i) (v' i) -
@@ -450,8 +447,8 @@ everywhere strongly measurable on `Ω` for every `s`, and `A x` is continuous fo
 
 `∫_Ω ⟨A(x, u) ∇u, ∇φ⟩ = ℓ φ` for every `φ ∈ H¹₀(Ω)`.
 
-No regularity of `∂Ω` is assumed, and no uniqueness is claimed. Every solution obeys the bound
-of `TauCeti.PDE.norm_sub_le_of_forall_energyFormH1_quasilinear_eq_of_subset_ball`. -/
+No regularity of `∂Ω` is assumed, and no uniqueness is claimed. Every solution obeys the bound of
+`PDE.norm_sub_le_of_sub_mem_w1p0Submodule_of_forall_energyFormH1_quasilinear_eq_of_subset_ball`. -/
 theorem exists_sub_mem_w1p0Submodule_forall_energyFormH1_quasilinear_eq
     (hA : ∀ s, UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))
       (fun x => A x s) lam Lam)
@@ -485,7 +482,7 @@ satisfies
 
 The bound depends on `A` only through `λ` and `Λ`, and on `Ω` only through the radius `R` of a
 ball containing it. -/
-theorem norm_sub_le_of_forall_energyFormH1_quasilinear_eq_of_subset_ball
+theorem norm_sub_le_of_sub_mem_w1p0Submodule_of_forall_energyFormH1_quasilinear_eq_of_subset_ball
     (hA : ∀ s, UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))
       (fun x => A x s) lam Lam)
     (hAm : ∀ s, AEStronglyMeasurable (fun x => A x s) (volume.restrict Omega))
