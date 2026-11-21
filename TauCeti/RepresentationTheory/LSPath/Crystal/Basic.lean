@@ -440,38 +440,6 @@ theorem unattach_normalCrystalOn_fIter (i : b.support) (n : ℕ) (π : S) :
   | zero => simp
   | succ n ih => simp [NormalCrystal.fIter_succ, lowerIter_succ, ih]
 
-/-- Equality of `eIter` in `normalCrystalOn` reduces to equality of `raiseIter` on underlying
-paths. -/
-theorem normalCrystalOn_eIter_eq_iff {i : b.support} {n : ℕ} {π : S} {o : Option S} :
-    (normalCrystalOn hf hF hS).eIter i n π = o ↔
-      raiseIter (F i) (f (P.root i)) n π.val = o.unattach := by
-  rw [← unattach_normalCrystalOn_eIter (hf := hf) (hF := hF) (hS := hS)]
-  cases (normalCrystalOn hf hF hS).eIter i n π <;> cases o <;> simp [Subtype.ext_iff]
-
-/-- Equality of `fIter` in `normalCrystalOn` reduces to equality of `lowerIter` on underlying
-paths. -/
-theorem normalCrystalOn_fIter_eq_iff {i : b.support} {n : ℕ} {π : S} {o : Option S} :
-    (normalCrystalOn hf hF hS).fIter i n π = o ↔
-      lowerIter (F i) (f (P.root i)) n π.val = o.unattach := by
-  rw [← unattach_normalCrystalOn_fIter (hf := hf) (hF := hF) (hS := hS)]
-  cases (normalCrystalOn hf hF hS).fIter i n π <;> cases o <;> simp [Subtype.ext_iff]
-
-/-- Equality of `eIter` with `o.map g` in `normalCrystalOn` reduces to `raiseIter` on underlying
-paths. -/
-theorem normalCrystalOn_eIter_eq_map_iff {B : Type*} {i : b.support} {n : ℕ} {π : S}
-    {o : Option B} {g : B → S} :
-    (normalCrystalOn hf hF hS).eIter i n π = o.map g ↔
-      raiseIter (F i) (f (P.root i)) n π.val = o.map (fun x ↦ (g x).val) := by
-  rw [normalCrystalOn_eIter_eq_iff, Option.unattach, Option.map_map, Function.comp_def]
-
-/-- Equality of `fIter` with `o.map g` in `normalCrystalOn` reduces to `lowerIter` on underlying
-paths. -/
-theorem normalCrystalOn_fIter_eq_map_iff {B : Type*} {i : b.support} {n : ℕ} {π : S}
-    {o : Option B} {g : B → S} :
-    (normalCrystalOn hf hF hS).fIter i n π = o.map g ↔
-      lowerIter (F i) (f (P.root i)) n π.val = o.map (fun x ↦ (g x).val) := by
-  rw [normalCrystalOn_fIter_eq_iff, Option.unattach, Option.map_map, Function.comp_def]
-
 /-- Adjacency in the crystal graph of `normalCrystalOn` is single-step root-operator adjacency. -/
 @[simp]
 theorem normalCrystalOn_graph_adj_iff {π π' : S} :

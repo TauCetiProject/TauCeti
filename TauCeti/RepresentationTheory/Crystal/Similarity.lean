@@ -334,6 +334,21 @@ theorem compStrictHom_comp {B''' : Type*} {d'' : NormalCrystal P b B'''}
     θ.compStrictHom (χ.comp ψ) = (θ.compStrictHom χ).compStrictHom ψ :=
   ext fun _ ↦ by simp
 
+private theorem eq_cast_of_forall {k l : ℕ} (h : k = l) {ψ : SimilarityHom l c d}
+    {χ : SimilarityHom k c d} (happly : ∀ x, ψ x = χ x) :
+    ψ = h ▸ χ := by
+  subst h
+  exact ext happly
+
+theorem compStrictHom_eq_comp_ofStrictHom (ψ : SimilarityHom n d d') (φ : StrictHom c d) :
+    ψ.compStrictHom φ = Nat.mul_one n ▸ ψ.comp (ofStrictHom φ) :=
+  eq_cast_of_forall (Nat.mul_one n) fun _ ↦ rfl
+
+theorem comp_compStrictHom {B''' : Type*} {d'' : NormalCrystal P b B'''}
+    (θ : SimilarityHom m d' d'') (χ : SimilarityHom n d d') (φ : StrictHom c d) :
+    (θ.comp χ).compStrictHom φ = θ.comp (χ.compStrictHom φ) :=
+  (rfl)
+
 /-- A similarity morphism induces a similarity morphism of the same scale factor between the dual
 crystals. -/
 def dual (ψ : SimilarityHom n c d) : SimilarityHom n c.dual d.dual where
@@ -508,6 +523,21 @@ theorem compSimilarityHom_compStrictHom {B''' : Type*} {d'' : NormalCrystal P b 
     (θ.compSimilarityHom ψ).compStrictHom φ = θ.compSimilarityHom (ψ.compStrictHom φ) :=
   (rfl)
 
+theorem compSimilarityHom_eq_ofStrictHom_comp (φ : StrictHom d d') (ψ : SimilarityHom n c d) :
+    φ.compSimilarityHom ψ = Nat.one_mul n ▸ (SimilarityHom.ofStrictHom φ).comp ψ :=
+  SimilarityHom.eq_cast_of_forall (Nat.one_mul n) fun _ ↦ rfl
+
+theorem compSimilarityHom_comp {B''' : Type*} {d'' : NormalCrystal P b B'''} {m : ℕ}
+    (φ : StrictHom d' d'') (χ : SimilarityHom m d d') (ψ : SimilarityHom n c d) :
+    φ.compSimilarityHom (χ.comp ψ) = (φ.compSimilarityHom χ).comp ψ :=
+  (rfl)
+
 end StrictHom
+
+theorem SimilarityHom.comp_compSimilarityHom {B''' : Type*} {d'' : NormalCrystal P b B'''} {m n : ℕ}
+    {c : NormalCrystal P b B} {d : NormalCrystal P b B'} {d' : NormalCrystal P b B''}
+    (θ : SimilarityHom m d' d'') (φ : StrictHom d d') (ψ : SimilarityHom n c d) :
+    θ.comp (φ.compSimilarityHom ψ) = (θ.compStrictHom φ).comp ψ :=
+  (rfl)
 
 end TauCeti.NormalCrystal
