@@ -77,11 +77,11 @@ admissible functions through their boundary traces:
   bounded on the sum spaces** (`ComplexMethodSpace.norm_analyticFamilyMap_le`): if
   `‖T₀ t x‖ ≤ M₀ ‖x‖` and `‖T₁ t x‖ ≤ M₁ ‖x‖` for all `t`, then
   `‖T θ u‖_θ ≤ M₀ ^ (1 - θ) * M₁ ^ θ * ‖u‖_θ` for `0 ≤ θ ≤ 1`. Stein's theorem in general allows
-  operators `T z` defined only on a dense subspace of the intersection, such as the Bessel
-  potentials of varying order between Bessel potential spaces of different orders; that form needs
-  the density of intersection-valued admissible functions (Bergh–Löfström, Lemma 4.2.3) and is
-  `TauCeti.CompatibleCouple.ComplexMethodSpace.exists_map_of_forall_elementaryStripTraces`, used in
-  `TauCeti.CompatibleCouple.exists_besselPotentialSpace_complexMethod_map`.
+  operators `T z` defined only on a dense subspace of the intersection, such as Bessel potentials of
+  varying order. By the density of intersection-valued admissible functions (Bergh–Löfström,
+  Lemma 4.2.3), that form reduces to elementary admissible functions; it is carried out for the
+  Bessel potentials in `TauCeti.CompatibleCouple.exists_besselPotentialSpace_complexMethod_map`
+  through `TauCeti.CompatibleCouple.ComplexMethodSpace.exists_map_of_forall_elementaryStripTraces`.
 * `ComplexMethodSpace.map`: the constant families (`IsBoundedAnalyticFamily.const`). Continuous
   linear maps `T₀ : X₀ → Y₀`, `T₁ : X₁ → Y₁` that agree on the intersection, with norms at most
   `M₀, M₁ ≥ 0`, induce a map `[X₀, X₁]_θ → [Y₀, Y₁]_θ` of norm at most `M₀ ^ (1 - θ) * M₁ ^ θ`

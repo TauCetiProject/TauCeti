@@ -79,22 +79,17 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 
 namespace BesselPotentialSpace
 
-/-- For `re w ≤ 0` the Bessel potential `J^w` maps `H^{0,p}` into itself, `1 < p < ∞`. -/
-theorem memSobolev_zero_fourierMultiplierCLM_japaneseBracketCpow (hp : 1 < p) (hp_top : p ≠ ∞)
-    {w : ℂ} (hw : w.re ≤ 0) (u : H^{0, p}(E, F)) :
-    (fourierMultiplierCLM F (TauCeti.japaneseBracketCpow w) u.toDistr).MemSobolev 0 p :=
-  (u.memSobolev_toDistr.fourierMultiplierCLM_japaneseBracketCpow hp hp_top w).of_le (by linarith)
-
 open scoped Classical in
 /-- **The Bessel potential of order with nonpositive real part on `Lᵖ`.** For `1 < p < ∞` and
 `re w ≤ 0`, the Fourier multiplier `J^w` with symbol `⟨ξ⟩ ^ w` as a bounded operator on
-`H^{0,p}(E, F) = Lᵖ(E, F)`. For `re w > 0` it does not preserve `H^{0,p}`, and the operator is
-defined to be `0`. -/
+`H^{0,p}(E, F) = Lᵖ(E, F)`: the Bessel potential `besselPotentialCLM hp hp_top w` into
+`H^{-re w,p}`, followed by the inclusion into `H^{0,p}`. For `re w > 0` it does not preserve
+`H^{0,p}`, and the operator is defined to be `0`. -/
 def besselPotentialNonposCLM (hp : 1 < p) (hp_top : p ≠ ∞) (w : ℂ) :
     H^{0, p}(E, F) →L[ℂ] H^{0, p}(E, F) :=
   if hw : w.re ≤ 0 then
-    mapCLM (fourierMultiplierCLM F (TauCeti.japaneseBracketCpow w))
-      (memSobolev_zero_fourierMultiplierCLM_japaneseBracketCpow hp hp_top hw)
+    inclusion (by simpa using hw) ∘L
+      (besselPotentialCLM hp hp_top w : H^{0, p}(E, F) →L[ℂ] H^{0 - w.re, p}(E, F))
   else 0
 
 variable {hp : 1 < p} {hp_top : p ≠ ∞}
@@ -105,8 +100,7 @@ distributions as the Fourier multiplier with symbol `⟨ξ⟩ ^ w`. -/
 theorem toDistr_besselPotentialNonposCLM {w : ℂ} (hw : w.re ≤ 0) (u : H^{0, p}(E, F)) :
     (besselPotentialNonposCLM hp hp_top w u).toDistr =
       fourierMultiplierCLM F (TauCeti.japaneseBracketCpow w) u.toDistr := by
-  simp only [besselPotentialNonposCLM, hw, ↓reduceDIte]
-  exact toDistr_mapCLM _ _ u
+  simp [besselPotentialNonposCLM, hw, toDistr_besselPotentialCLM]
 
 /-- On Schwartz functions, `besselPotentialNonposCLM hp hp_top w` is the Bessel potential
 `SchwartzMap.besselPotentialCLM w` of complex order. -/
@@ -114,11 +108,8 @@ theorem besselPotentialNonposCLM_toBesselPotentialSpaceCLM {w : ℂ} (hw : w.re 
     (ψ : 𝓢(E, F)) :
     besselPotentialNonposCLM hp hp_top w (SchwartzMap.toBesselPotentialSpaceCLM 0 p ψ) =
       SchwartzMap.toBesselPotentialSpaceCLM 0 p (SchwartzMap.besselPotentialCLM w ψ) := by
-  ext1
-  rw [toDistr_besselPotentialNonposCLM hw, SchwartzMap.toDistr_toBesselPotentialSpaceCLM,
-    SchwartzMap.toDistr_toBesselPotentialSpaceCLM, SchwartzMap.besselPotentialCLM_def,
-    fourierMultiplierCLM_toTemperedDistributionCLM_eq
-      (TauCeti.hasTemperateGrowth_japaneseBracketCpow w)]
+  simp only [besselPotentialNonposCLM, hw, ↓reduceDIte, ContinuousLinearMap.comp_apply,
+    besselPotentialCLM_toBesselPotentialSpaceCLM, inclusion_toBesselPotentialSpaceCLM]
 
 variable (hp hp_top) in
 /-- **The norm of `J^w` on `Lᵖ` grows polynomially in the order.** For `1 < p < ∞` there is a
@@ -136,6 +127,8 @@ theorem exists_norm_besselPotentialNonposCLM_le :
   -- The `Lᵖ` function of `J^w u` is the `Lᵖ` function `g` given by the Mihlin bound.
   have hv : (besselPotentialNonposCLM hp hp_top w u).toLp = g := by
     refine Lp.toTemperedDistribution_injective ?_
+    -- The injectivity lemma is stated for `fun f ↦ (f : 𝓢'(E, F))`; beta-reduce so that the
+    -- rewrites below see the coercions of the two `Lᵖ` functions.
     beta_reduce
     rw [toTemperedDistribution_toLp_zero, toDistr_besselPotentialNonposCLM hw,
       ← toTemperedDistribution_toLp_zero, hg]
@@ -238,10 +231,7 @@ private theorem toReal_eLpNorm_besselPotentialCLM_sub_le {r : ℝ≥0∞} (hr : 
   have hsub := eLpNorm_sub_le (μ := volume) (p := r)
     (f := ⇑(SchwartzMap.besselPotentialCLM w ψ))
     (g := ⇑(SchwartzMap.besselPotentialCLM w₀ ψ)) hr
-  have hcoe : (⇑(SchwartzMap.besselPotentialCLM w ψ - SchwartzMap.besselPotentialCLM w₀ ψ) :
-      E → F) = ⇑(SchwartzMap.besselPotentialCLM w ψ) -
-        ⇑(SchwartzMap.besselPotentialCLM w₀ ψ) := (rfl)
-  rw [hcoe]
+  rw [FunLike.coe_sub]
   refine (ENNReal.toReal_mono (ENNReal.add_ne_top.2
     ⟨(SchwartzMap.eLpNorm_lt_top _ _ volume).ne, (SchwartzMap.eLpNorm_lt_top _ _ volume).ne⟩)
       hsub).trans ?_

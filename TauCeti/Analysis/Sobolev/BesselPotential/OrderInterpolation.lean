@@ -361,6 +361,8 @@ private theorem exists_traces_expGaussianTrace {p₀ p₁ : ℝ≥0∞}
       (∀ t, g.2 t = boundaryOp hp₁ hp₁_top a₁ b₁ κ 1 θ t
         (((besselPotentialSpace E F a₀ p₀ a₁ p₁).expGaussianTrace hδ ω x :
           C₀(ℝ, H^{a₀, p₀}(E, F)) × C₀(ℝ, H^{a₁, p₁}(E, F))).2 t)) := by
+  -- The goal depends on `x`, so `set` alone would add a new `x` of the abbreviated type and
+  -- shadow the one the goal mentions; reverting `x` first lets `set` abstract the goal as well.
   revert x
   set X := besselPotentialSpace E F a₀ p₀ a₁ p₁
   intro x
@@ -426,6 +428,8 @@ private theorem exists_isBoundedStripFunction_expGaussianTrace {p₀ p₁ : ℝ�
           ((besselPotentialSpace E F a₀ p₀ a₁ p₁).sumSpaceEmbed
             ((besselPotentialSpace E F a₀ p₀ a₁ p₁).stripEval θ
               ((besselPotentialSpace E F a₀ p₀ a₁ p₁).expGaussianTrace hδ ω x))) := by
+  -- As in `exists_traces_expGaussianTrace`, `x` and `hΨ` are reverted so that `set` abstracts
+  -- the couples in the goal instead of shadowing them with copies the goal does not mention.
   revert x hΨ
   set X := besselPotentialSpace E F a₀ p₀ a₁ p₁
   set Y := besselPotentialSpace E F b₀ p₀ b₁ p₁
@@ -537,6 +541,34 @@ private theorem exists_besselPotentialSpace_complexMethod_map_aux {p₀ p₁ : �
       exact ⟨Ψ, g, hΨ, hθG, norm_le_mul_norm_of_forall_apply_eq hK _ g T₀ T₁ hT₀ hT₁ hg₀ hg₁⟩
   exact ⟨T, hT⟩
 
+/-- The strip function of `exists_besselPotentialSpace_complexMethod_map`, computed from the
+component `u ∈ H^{a,q}` of `x ∈ H^{a₀,p₀} ∩ H^{a₁,p₁}` on the boundary line `re z = c`, when
+`(re z - c) κ ≤ 0` on the strip. It is
+`z ↦ exp ((z - θ)²) exp (δ z² + ω z) ι (J^{-b} J^{(z - c) κ} J^a u)`, where
+`ι : H^{b,q} → H^{b₀,p₀} + H^{b₁,p₁}` is the inclusion of the matching component. -/
+private theorem exists_strip_of_component {p₀ p₁ q : ℝ≥0∞} [Fact (1 ≤ p₀)] [Fact (1 ≤ p₁)]
+    [Fact (1 ≤ q)] (hq : 1 < q) (hq_top : q ≠ ∞) {a₀ a₁ b₀ b₁ a b c κ θ : ℝ}
+    (hθ : θ ∈ Icc (0 : ℝ) 1) (hc : c ∈ Icc (0 : ℝ) 1) (hcl : ∀ y ∈ Icc (0 : ℝ) 1, (y - c) * κ ≤ 0)
+    (hop : κ = 0 ∨ ∀ y ∈ Ioo (0 : ℝ) 1, (y - c) * κ < 0) (hab : a - b - c * κ = a₀ - b₀)
+    (ι : H^{b, q}(E, F) →L[ℂ] (besselPotentialSpace E F b₀ p₀ b₁ p₁).SumSpace)
+    (hι : ∀ v, (besselPotentialSpace E F b₀ p₀ b₁ p₁).sumSpaceEmbed (ι v) = v.toDistr)
+    (x : (besselPotentialSpace E F a₀ p₀ a₁ p₁).inter) (u : H^{a, q}(E, F))
+    (hu : u.toDistr = ((besselPotentialSpace E F a₀ p₀ a₁ p₁).interFst x).toDistr) {δ : ℝ}
+    (hδ : 0 < δ) (ω : ℝ) :
+    ∃ Ψ : ℂ → (besselPotentialSpace E F b₀ p₀ b₁ p₁).SumSpace,
+      DiffContOnCl ℂ Ψ (verticalStrip 0 1) ∧ Bornology.IsBounded (Ψ '' verticalClosedStrip 0 1) ∧
+      ∀ z ∈ verticalClosedStrip 0 1, (besselPotentialSpace E F b₀ p₀ b₁ p₁).sumSpaceEmbed (Ψ z) =
+        stripGaussian 1 θ z • cexp ((δ : ℂ) * z ^ 2 + (ω : ℂ) * z) •
+          fourierMultiplierCLM F (japaneseBracketCpow (a₀ + z * κ - b₀))
+            ((besselPotentialSpace E F a₀ p₀ a₁ p₁).interFst x).toDistr := by
+  obtain ⟨hdc, hbd⟩ := diffContOnCl_and_isBounded_aux hq hq_top ι hc hcl hop u hδ ω hθ
+  refine ⟨_, hdc, hbd, fun z hz ↦ ?_⟩
+  have hre : ((z - c) * κ).re ≤ 0 := by simpa using hcl z.re hz
+  have hab' : (a : ℂ) - b - c * κ = a₀ - b₀ := mod_cast hab
+  simp only [map_smul, hι]
+  rw [toDistr_shiftedFamily hre, hu,
+    show (a : ℂ) + (z - c) * κ - b = a₀ + z * κ - b₀ by linear_combination hab']
+
 /-- **Stein interpolation of the Bessel potentials between Bessel-potential couples.** Let
 `1 < p₀, p₁ < ∞`, `0 ≤ θ ≤ 1` and real orders `a₀, a₁, b₀, b₁`. The Bessel potential
 `J^{λ_θ}`, `λ_θ = (1 - θ) (a₀ - b₀) + θ (a₁ - b₁)`, restricts to a bounded operator
@@ -558,43 +590,16 @@ theorem exists_besselPotentialSpace_complexMethod_map {p₀ p₁ : ℝ≥0∞} [
   intro x δ hδ ω
   rcases le_total 0 κ with hκ | hκ
   · -- `λ₀ ≤ λ₁`: compute `J^{λ(z)} x` from the component of `x` in `H^{a₁,p₁}`.
-    have hx : (X.interSnd x).toDistr = (X.interFst x).toDistr := by
-      simpa [X] using (X.embed₀_interFst x).symm
-    obtain ⟨hdc, hbd⟩ := diffContOnCl_and_isBounded_aux hp₁ hp₁_top Y.sndToSum
-      (c := 1) (κ := κ) ⟨zero_le_one, le_rfl⟩
+    exact exists_strip_of_component hp₁ hp₁_top hθ ⟨zero_le_one, le_rfl⟩
       (fun y hy ↦ mul_nonpos_of_nonpos_of_nonneg (by linarith [hy.2]) hκ)
       (hκ.eq_or_lt.imp Eq.symm fun h y hy ↦ mul_neg_of_neg_of_pos (by linarith [hy.2]) h)
-      (X.interSnd x) hδ ω hθ
-    refine ⟨_, hdc, hbd, fun z hz ↦ ?_⟩
-    have hre : ((z - (1 : ℝ)) * κ).re ≤ 0 := by
-      have : z.re ≤ 1 := hz.2
-      simp only [Complex.mul_re, Complex.sub_re, Complex.ofReal_re, Complex.sub_im,
-        Complex.ofReal_im, mul_zero, sub_zero]
-      nlinarith
-    simp only [map_smul, sumSpaceEmbed_sndToSum, Y, besselPotentialSpace_embed₁_apply]
-    rw [toDistr_shiftedFamily hre, hx]
-    congr 4
-    rw [hκ_def]
-    push_cast
-    ring_nf
+      (by rw [hκ_def]; ring) Y.sndToSum (fun v ↦ by simp [Y]) x (X.interSnd x)
+      (by simpa [X] using (X.embed₀_interFst x).symm) hδ ω
   · -- `λ₀ ≥ λ₁`: compute `J^{λ(z)} x` from the component of `x` in `H^{a₀,p₀}`.
-    obtain ⟨hdc, hbd⟩ := diffContOnCl_and_isBounded_aux hp₀ hp₀_top Y.fstToSum
-      (c := 0) (κ := κ) ⟨le_rfl, zero_le_one⟩
+    exact exists_strip_of_component hp₀ hp₀_top hθ ⟨le_rfl, zero_le_one⟩
       (fun y hy ↦ mul_nonpos_of_nonneg_of_nonpos (by linarith [hy.1]) hκ)
       (hκ.eq_or_lt.imp id fun h y hy ↦ mul_neg_of_pos_of_neg (by linarith [hy.1]) h)
-      (X.interFst x) hδ ω hθ
-    refine ⟨_, hdc, hbd, fun z hz ↦ ?_⟩
-    have hre : ((z - (0 : ℝ)) * κ).re ≤ 0 := by
-      have : 0 ≤ z.re := hz.1
-      simp only [Complex.mul_re, Complex.sub_re, Complex.ofReal_re, Complex.sub_im,
-        Complex.ofReal_im, mul_zero, sub_zero]
-      nlinarith
-    simp only [map_smul, sumSpaceEmbed_fstToSum, Y, besselPotentialSpace_embed₀_apply]
-    rw [toDistr_shiftedFamily hre]
-    congr 4
-    rw [hκ_def]
-    push_cast
-    ring_nf
+      (by ring) Y.fstToSum (fun v ↦ by simp [Y]) x (X.interFst x) rfl hδ ω
 
 end Stein
 

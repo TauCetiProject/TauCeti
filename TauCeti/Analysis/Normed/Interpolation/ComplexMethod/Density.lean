@@ -26,7 +26,9 @@ This file proves Bergh–Löfström §4.2 (Lemmas 4.2.1 and 4.2.3, Theorem 4.2.2
   function `G` is matched by a bounded-boundary strip function with value `L (G θ)` at `θ` and
   traces of norm at most `K ‖G‖`
   (`TauCeti.CompatibleCouple.ComplexMethodSpace.exists_map_of_forall_elementaryStripTraces`). This
-  is Stein's interpolation theorem for analytic families defined on `X₀ ∩ X₁`.
+  is the density and extension step of Stein's interpolation theorem for analytic families defined
+  on `X₀ ∩ X₁`: it reduces the theorem to elementary admissible functions, for which the caller
+  constructs and bounds the strip functions.
 
 ## References
 
@@ -454,10 +456,12 @@ variable {Y₀ Y₁ W : Type*} [NormedAddCommGroup Y₀] [NormedSpace ℂ Y₀] 
 `(Y₀, Y₁)` with `Ψ θ = L (G θ)` in `W`, whose boundary traces have norm at most `K` times those of
 `G`. Then `L` restricts to a map `[X₀, X₁]_θ → [Y₀, Y₁]_θ` of norm at most `K`.
 
-This is the form of Stein's interpolation theorem in which the analytic family `z ↦ T z` is only
-applied to functions with values in `X₀ ∩ X₁`: the strip function `Ψ` is typically
-`z ↦ T z (G z)`, and Calderón's density lemma (`CompatibleCouple.dense_elementaryStripTraces`)
-extends the estimate to all admissible functions. -/
+This is the density and extension step of Stein's interpolation theorem for analytic families
+`z ↦ T z` defined only on `X₀ ∩ X₁`. It does not construct the strip functions: the caller
+supplies, for each elementary admissible function `G`, a strip function `Ψ`, typically
+`z ↦ T z (G z)`, and bounds its traces. Calderón's density lemma
+(`CompatibleCouple.dense_elementaryStripTraces`) then extends the estimate to all admissible
+functions. -/
 theorem exists_map_of_forall_elementaryStripTraces [CompleteSpace X₀]
     [CompleteSpace X₁] [CompleteSpace Y₀] [CompleteSpace Y₁] {θ : ℝ} (hθ : θ ∈ Icc 0 1)
     (L : V →L[ℂ] W) {K : ℝ} (hK : 0 ≤ K)
