@@ -341,11 +341,6 @@ theorem value_ae_eq_toContinuousMap (hab : a < b) (u : EvolutionSpace ι a b) :
   rw [toContinuousMap_apply]
   exact representativeₗ_ae hab u
 
-/-- The canonical time trace, extended to `ℝ` by the projection onto `[a,b]`, is continuous. -/
-theorem continuous_toContinuousMap_projIcc (hab : a < b) (u : EvolutionSpace ι a b) :
-    Continuous fun t ↦ toContinuousMap hab u (projIcc a b hab.le t) :=
-  (toContinuousMap hab u).continuous.comp continuous_projIcc
-
 /-- A continuous function is the time trace exactly when it represents the pivot value field. -/
 theorem toContinuousMap_eq_iff (hab : a < b) (u : EvolutionSpace ι a b)
     (w : C(Icc a b, H)) : toContinuousMap hab u = w ↔
@@ -373,7 +368,7 @@ theorem norm_sq_sub_norm_sq_eq_integral (hab : a < b) (u : EvolutionSpace ι a b
     projIcc_of_mem hab.le s.property] using
     (hasWeakLineDerivOn u).norm_sq_sub_norm_sq_eq_of_gelfandDual
       (Lp.memLp (value u)) (Lp.memLp (timeDeriv u))
-      (continuous_toContinuousMap_projIcc hab u).continuousOn
+      ((toContinuousMap hab u).continuous.comp continuous_projIcc).continuousOn
       (value_ae_eq_toContinuousMap hab u) s.property t.property
 
 end EvolutionSpace

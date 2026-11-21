@@ -120,9 +120,11 @@ theorem eq_of_ae_timeDeriv_add_eq (hab : a < b) (hα : 0 < α) (hβ : 0 ≤ β)
     u = v :=
   ext <| Lp.ext <| (hasWeakLineDerivOn u).ae_eq_of_gelfandDual (hasWeakLineDerivOn v)
     (Lp.memLp _) (Lp.memLp _) (Lp.memLp _) (Lp.memLp _) hα hβ hA_garding hu hv
-    (continuous_toContinuousMap_projIcc hab u).continuousOn (value_ae_eq_toContinuousMap hab u)
-    (continuous_toContinuousMap_projIcc hab v).continuousOn (value_ae_eq_toContinuousMap hab v)
-    (by simpa only [projIcc_left] using h₀)
+    ((toContinuousMap hab u).continuous.comp continuous_projIcc).continuousOn
+    (value_ae_eq_toContinuousMap hab u)
+    ((toContinuousMap hab v).continuous.comp continuous_projIcc).continuousOn
+    (value_ae_eq_toContinuousMap hab v)
+    (by simpa only [Function.comp_apply, projIcc_left] using h₀)
 
 /-- The energy estimate at time `t` for an element of the energy space solving
 `u' + A(t) u = f`. -/
@@ -135,9 +137,10 @@ private theorem norm_sq_add_mul_integral_le (hab : a < b) (hα : 0 < α) (hβ : 
       exp (2 * β * (t - a)) *
         (‖toContinuousMap hab u ⟨a, left_mem_Icc.2 hab.le⟩‖ ^ 2 +
           α⁻¹ * ∫ s in a..t, ‖f s‖ ^ 2) := by
-  simpa only [projIcc_of_mem hab.le t.property, projIcc_left] using
+  simpa only [Function.comp_apply, projIcc_of_mem hab.le t.property, projIcc_left] using
     (hasWeakLineDerivOn u).norm_sq_add_mul_integral_le_of_gelfandDual (Lp.memLp _) (Lp.memLp _)
-      (Lp.memLp f) hα hβ hA_garding hu (continuous_toContinuousMap_projIcc hab u).continuousOn
+      (Lp.memLp f) hα hβ hA_garding hu
+      ((toContinuousMap hab u).continuous.comp continuous_projIcc).continuousOn
       (value_ae_eq_toContinuousMap hab u) t.property
 
 /-- **The energy estimate in `L²(a, b; V)`.** Under Gårding's inequality
