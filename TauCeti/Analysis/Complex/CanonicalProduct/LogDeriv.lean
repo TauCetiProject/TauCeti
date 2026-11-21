@@ -99,14 +99,6 @@ theorem summable_norm_natCast_mul_logDerivWeierstrassFactorOneMul (z : ℂ) :
   simpa only [tsum_fintype, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
     nsmul_eq_mul, norm_mul, norm_natCast] using hs
 
-private theorem tsum_natCast_mul_logDerivWeierstrassFactorOneMul_eq_sigma (z : ℂ) :
-    (∑' i, (m i : ℂ) * (logDerivWeierstrassFactorOneMul (a i) z)) =
-      ∑' p : Σ i, Fin (m i), logDerivWeierstrassFactorOneMul (a p.1) z := by
-  have hs := (summable_norm_logDerivWeierstrassFactorOneMul (fun p : Σ i, Fin (m i) ↦ a p.1)
-    ((TauCeti.summable_sigma_fin_iff (fun i ↦ sq_nonneg ‖a i‖) m).mpr hm) z).of_norm
-  rw [hs.tsum_sigma]
-  simp
-
 /-- The paired rational series with natural multiplicities converges uniformly on compact sets. -/
 theorem hasSumUniformlyOn_natCast_mul_logDerivWeierstrassFactorOneMul
     {K : Set ℂ} (hK : IsCompact K) :
@@ -114,8 +106,8 @@ theorem hasSumUniformlyOn_natCast_mul_logDerivWeierstrassFactorOneMul
       (fun z ↦ ∑' i, (m i : ℂ) * (logDerivWeierstrassFactorOneMul (a i) z)) K := by
   have h := (hasSumUniformlyOn_logDerivWeierstrassFactorOneMul (fun p : Σ i, Fin (m i) ↦ a p.1)
     ((TauCeti.summable_sigma_fin_iff (fun i ↦ sq_nonneg ‖a i‖) m).mpr hm) hK).sigma_of_finite
-  simpa only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul,
-    ← tsum_natCast_mul_logDerivWeierstrassFactorOneMul_eq_sigma a m hm] using h
+  simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul] at h
+  exact h.summableUniformlyOn.hasSumUniformlyOn
 
 /-- The weighted paired rational series converges locally uniformly on the plane. -/
 theorem hasSumLocallyUniformlyOn_natCast_mul_logDerivWeierstrassFactorOneMul :

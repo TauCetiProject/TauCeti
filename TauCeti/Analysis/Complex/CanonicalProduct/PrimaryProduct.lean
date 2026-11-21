@@ -281,8 +281,8 @@ theorem hasProdUniformlyOn_weierstrassFactor_div_pow
   have h := (hasProdUniformlyOn_weierstrassFactor_div
     (a := fun q : Σ i, Fin (m i) ↦ a q.1) (p := fun q : Σ i, Fin (m i) ↦ p q.1)
     (summable_sigma_div_pow m hm) hK).sigma_of_finite
-  simpa only [Finset.prod_const, Finset.card_univ, Fintype.card_fin,
-    ← tprod_weierstrassFactor_div_pow_eq_sigma hm] using h
+  simp only [Finset.prod_const, Finset.card_univ, Fintype.card_fin] at h
+  exact h.multipliableUniformlyOn.hasProdUniformlyOn
 
 /-- Weighted primary products with natural multiplicities converge locally uniformly on `ℂ`. -/
 theorem hasProdLocallyUniformlyOn_weierstrassFactor_div_pow
@@ -340,36 +340,31 @@ theorem analyticOrderAt_tprod_weierstrassFactor_div_pow_of_injective
     (hm : ∀ R : ℝ, 0 < R → Summable fun j ↦ (m j : ℝ) * (R / ‖a j‖) ^ (p j + 1))
     (hinj : Function.Injective a) (i : ι) :
     analyticOrderAt (fun w ↦ ∏' j, weierstrassFactor (p j) (w / a j) ^ m j) (a i) = m i := by
-  classical
-  let s : Finset (Σ j, Fin (m j)) := Finset.univ.map ⟨Sigma.mk i, sigma_mk_injective⟩
-  have hs : ∀ q : Σ j, Fin (m j), a q.1 = a i ↔ q ∈ s := by
-    rintro ⟨j, k⟩
-    simp only [s, Finset.mem_map, Finset.mem_univ, true_and, Function.Embedding.coeFn_mk]
-    constructor
-    · intro hj
-      obtain rfl : j = i := hinj hj
-      exact ⟨k, rfl⟩
-    · rintro ⟨l, heq⟩
-      cases heq
-      rfl
-  rw [analyticOrderAt_tprod_weierstrassFactor_div_pow ha hm (a i)]
-  have hset : {q : Σ j, Fin (m j) | a q.1 = a i} = (s : Set (Σ j, Fin (m j))) := by
+  have hset : {q : Σ j, Fin (m j) | a q.1 = a i} = Set.range (Sigma.mk i) := by
+    rw [Set.range_sigmaMk]
     ext q
-    exact hs q
-  rw [hset, Set.ncard_coe_finset]
-  simp [s]
+    exact hinj.eq_iff
+  rw [analyticOrderAt_tprod_weierstrassFactor_div_pow ha hm (a i), hset,
+    Set.ncard_range_of_injective sigma_mk_injective, Nat.card_fin]
 
 /-- Outside the active roots (`∀ j, m j ≠ 0 → a j ≠ z`), a weighted primary product has analytic
 order `0`. -/
 theorem analyticOrderAt_tprod_weierstrassFactor_div_pow_eq_zero
-    (ha : ∀ j, m j ≠ 0 → a j ≠ 0)
     (hm : ∀ R : ℝ, 0 < R → Summable fun j ↦ (m j : ℝ) * (R / ‖a j‖) ^ (p j + 1)) {z : ℂ}
     (hz : ∀ j, m j ≠ 0 → a j ≠ z) :
     analyticOrderAt (fun w ↦ ∏' j, weierstrassFactor (p j) (w / a j) ^ m j) z = 0 := by
   have h0 : (∏' j, weierstrassFactor (p j) (z / a j) ^ m j) ≠ 0 := by
-    rw [ne_eq, tprod_weierstrassFactor_div_pow_eq_zero_iff ha hm]
-    rintro ⟨j, hmj, hj⟩
-    exact hz j hmj hj
+    rw [tprod_weierstrassFactor_div_pow_eq_sigma hm]
+    have hvan := (summableUniformlyOn_norm_weierstrassFactor_div_sub_one
+      (a := fun q : Σ j, Fin (m j) ↦ a q.1) (p := fun q : Σ j, Fin (m j) ↦ p q.1)
+      (summable_sigma_div_pow m hm) (isCompact_singleton (x := z))).tprod_one_add_eq_zero_iff
+      (mem_singleton z)
+    simp only [add_sub_cancel, weierstrassFactor_eq_zero_iff] at hvan
+    rw [ne_eq, hvan]
+    rintro ⟨⟨j, k⟩, hq⟩
+    by_cases haj : a j = 0
+    · simp [haj] at hq
+    · exact hz j (Nat.ne_zero_of_lt k.isLt) ((div_eq_one_iff_eq haj).mp hq).symm
   exact ((differentiable_tprod_weierstrassFactor_div_pow hm).analyticAt
     z).analyticOrderAt_eq_zero.mpr h0
 
@@ -395,14 +390,13 @@ theorem divisor_tprod_weierstrassFactor_div_pow_of_injective
 /-- Outside the active roots (`∀ j, m j ≠ 0 → a j ≠ z`), a weighted primary product has
 whole-plane divisor `0`. -/
 theorem divisor_tprod_weierstrassFactor_div_pow_eq_zero
-    (ha : ∀ j, m j ≠ 0 → a j ≠ 0)
     (hm : ∀ R : ℝ, 0 < R → Summable fun j ↦ (m j : ℝ) * (R / ‖a j‖) ^ (p j + 1)) {z : ℂ}
     (hz : ∀ j, m j ≠ 0 → a j ≠ z) :
     MeromorphicOn.divisor
       (fun w ↦ ∏' j, weierstrassFactor (p j) (w / a j) ^ m j) Set.univ z = 0 := by
   simpa using divisor_univ_eq_of_analyticOrderAt_eq
     (differentiable_tprod_weierstrassFactor_div_pow hm) (n := 0)
-    (by simpa using analyticOrderAt_tprod_weierstrassFactor_div_pow_eq_zero ha hm hz)
+    (by simpa using analyticOrderAt_tprod_weierstrassFactor_div_pow_eq_zero hm hz)
 
 end Weighted
 
@@ -450,7 +444,7 @@ theorem analyticOrderAt_pow_mul_tprod_weierstrassFactor_div_pow {f : ℂ → ℂ
       simpa [P, a₀] using analyticOrderAt_tprod_weierstrassFactor_div_pow_of_injective
         (fun a _ ↦ a.property.1) hm_sum Subtype.val_injective a₀
     · have hPz : analyticOrderAt P z = 0 :=
-        analyticOrderAt_tprod_weierstrassFactor_div_pow_eq_zero (fun a _ ↦ a.property.1) hm_sum
+        analyticOrderAt_tprod_weierstrassFactor_div_pow_eq_zero hm_sum
           fun a _ ha ↦ hfz (ha ▸ a.property.2)
       rw [hPz, analyticOrderNatAt, (hf.analyticAt z).analyticOrderAt_eq_zero.mpr hfz,
         ENat.toNat_zero, Nat.cast_zero]

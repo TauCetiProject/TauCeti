@@ -97,7 +97,10 @@ theorem exists_differentiableOn_eqOn_mul_exp_of_divisor_eq {U : Set ℂ} {f g : 
 
 /-- On a preconnected open domain, the holomorphic exponent in `g · * exp (L ·)` is unique up to
 an integer multiple of `2 * π * I` whenever `g` is continuous on the domain and not identically
-zero there. -/
+zero there. Applies `ContinuousOn.eqOn_of_eqOn_exp_comp`
+(`TauCeti.Analysis.Complex.BranchLogRoot`) on a small disc where `g` does not vanish, then extends
+the resulting local equality to `U` via the analytic identity theorem
+(`AnalyticOnNhd.eqOn_of_preconnected_of_eventuallyEq`). -/
 theorem exists_int_eqOn_add_mul_two_pi_I_of_eqOn_mul_exp {U : Set ℂ} {g L₁ L₂ : ℂ → ℂ}
     (hUc : IsPreconnected U) (hUo : IsOpen U) (hg : ContinuousOn g U) (hg0 : ∃ z ∈ U, g z ≠ 0)
     (hL₁ : DifferentiableOn ℂ L₁ U) (hL₂ : DifferentiableOn ℂ L₂ U)

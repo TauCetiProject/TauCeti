@@ -46,6 +46,19 @@ infinite products and sums on a set `s`:
 * `Equiv.hasProdUniformlyOn_iff` / `Equiv.hasSumUniformlyOn_iff` and
   `Equiv.hasProdLocallyUniformlyOn_iff` / `Equiv.hasSumLocallyUniformlyOn_iff`: reindexing by an
   equivalence preserves uniform and locally uniform convergence to the same limit function.
+
+## Provenance
+
+* `HasProdUniformlyOn.sigma_of_finite` and `HasSumUniformlyOn.sigma_of_finite` lift Tau Ceti's
+  `HasProd.sigma_of_finite` and `HasSum.sigma_of_finite` from
+  `TauCeti.Topology.Algebra.InfiniteSum.Sigma` through `UniformOnFun.ofFun {s}`.
+* `HasProdUniformlyOn.sigma_of_finite`, `HasSumUniformlyOn.sigma_of_finite`,
+  `HasProdLocallyUniformlyOn.sigma_of_finite`, and `HasSumLocallyUniformlyOn.sigma_of_finite`
+  generalize the genus-one finite-fibre regrouping proofs formerly in
+  `TauCeti.Analysis.Complex.CanonicalProduct.Convergence`
+  (`hasProdUniformlyOn_weierstrassFactor_one_pow`) and
+  `TauCeti.Analysis.Complex.CanonicalProduct.LogDeriv`
+  (`hasSumUniformlyOn_natCast_mul_logDerivWeierstrassFactorOneMul`).
 -/
 
 public section
@@ -146,10 +159,14 @@ end MultipliableUniformlyOn
 
 /-- **Regrouping a uniformly convergent product along finite fibres.** If a family over a sigma
 type with finite fibres has product `g` uniformly on `s`, then so does the family of its fibre
-products. -/
+products. Lifts `HasProd.sigma_of_finite` (`TauCeti.Topology.Algebra.InfiniteSum.Sigma`) via
+`UniformOnFun.ofFun {s}`, generalizing the genus-one regrouping proof in
+`TauCeti.Analysis.Complex.CanonicalProduct.Convergence`. -/
 @[to_additive /-- **Regrouping a uniformly convergent series along finite fibres.** If a family
 over a sigma type with finite fibres sums to `g` uniformly on `s`, then so does the family of its
-fibre sums. -/]
+fibre sums. Lifts `HasSum.sigma_of_finite` (`TauCeti.Topology.Algebra.InfiniteSum.Sigma`) via
+`UniformOnFun.ofFun {s}`, generalizing the genus-one regrouping proof in
+`TauCeti.Analysis.Complex.CanonicalProduct.LogDeriv`. -/]
 theorem HasProdUniformlyOn.sigma_of_finite {ι β α : Type*} {γ : ι → Type*}
     [CommMonoid α] [UniformSpace α] [∀ i, Fintype (γ i)]
     {f : (Σ i, γ i) → β → α} {g : β → α} {s : Set β}
@@ -160,10 +177,14 @@ theorem HasProdUniformlyOn.sigma_of_finite {ι β α : Type*} {γ : ι → Type*
 
 /-- **Regrouping a locally uniformly convergent product along finite fibres.** If a family over a
 sigma type with finite fibres has product `g` locally uniformly on `s`, then so does the family of
-its fibre products. -/
+its fibre products. Generalizes the finite-fibre `tendsto_finset_sigma_univ_atTop` regrouping
+proofs in `TauCeti.Analysis.Complex.CanonicalProduct.Convergence` and
+`TauCeti.Analysis.Complex.CanonicalProduct.LogDeriv`. -/
 @[to_additive /-- **Regrouping a locally uniformly convergent series along finite fibres.** If a
 family over a sigma type with finite fibres sums to `g` locally uniformly on `s`, then so does the
-family of its fibre sums. -/]
+family of its fibre sums. Generalizes the finite-fibre `tendsto_finset_sigma_univ_atTop` regrouping
+proofs in `TauCeti.Analysis.Complex.CanonicalProduct.Convergence` and
+`TauCeti.Analysis.Complex.CanonicalProduct.LogDeriv`. -/]
 theorem HasProdLocallyUniformlyOn.sigma_of_finite {ι β α : Type*} {γ : ι → Type*}
     [CommMonoid α] [UniformSpace α] [TopologicalSpace β] [∀ i, Fintype (γ i)]
     {f : (Σ i, γ i) → β → α} {g : β → α} {s : Set β}

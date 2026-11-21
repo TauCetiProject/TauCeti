@@ -169,14 +169,6 @@ theorem analyticOrderAt_weierstrassFactor_one (p : ℕ) :
     (weierstrassFactor_one p)
   simp [deriv_weierstrassFactor]
 
-/-- Analytic order of `weierstrassFactor p` at an arbitrary complex point `z`. -/
-theorem analyticOrderAt_weierstrassFactor (p : ℕ) (z : ℂ) :
-    analyticOrderAt (weierstrassFactor p) z = if z = 1 then 1 else 0 := by
-  split_ifs with hz
-  · exact hz ▸ analyticOrderAt_weierstrassFactor_one p
-  · exact (analyticAt_weierstrassFactor p z).analyticOrderAt_eq_zero.mpr
-      (mt (weierstrassFactor_eq_zero_iff p).mp hz)
-
 /-- The rational logarithmic derivative, using total division at the unique zero. -/
 theorem logDeriv_weierstrassFactor (p : ℕ) (z : ℂ) :
     logDeriv (weierstrassFactor p) z = -z ^ p / (1 - z) := by

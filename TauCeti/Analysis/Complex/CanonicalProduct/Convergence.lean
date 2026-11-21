@@ -198,25 +198,14 @@ root. -/
 theorem analyticOrderAt_tprod_weierstrassFactor_one_pow_of_injective {z : ℂ} {i : ι}
     (ha : Function.Injective a) (hi : a i * z = 1) :
     analyticOrderAt (fun w ↦ ∏' j, weierstrassFactor 1 (a j * w) ^ m j) z = m i := by
-  classical
-  let s : Finset (Σ j, Fin (m j)) := Finset.univ.map ⟨Sigma.mk i, sigma_mk_injective⟩
-  have hs : ∀ q : Σ j, Fin (m j), a q.1 * z = 1 ↔ q ∈ s := by
-    rintro ⟨j, k⟩
-    simp only [s, Finset.mem_map, Finset.mem_univ, true_and, Function.Embedding.coeFn_mk]
-    constructor
-    · intro hj
-      have hz0 : z ≠ 0 := right_ne_zero_of_mul (by rw [hi]; exact one_ne_zero)
-      obtain rfl : j = i := ha (mul_right_cancel₀ hz0 (hj.trans hi.symm))
-      exact ⟨k, rfl⟩
-    · rintro ⟨l, heq⟩
-      cases heq
-      exact hi
-  have heq : (fun w ↦ ∏' j, weierstrassFactor 1 (a j * w) ^ m j) =
-      fun w ↦ ∏' q : Σ j, Fin (m j), weierstrassFactor 1 (a q.1 * w) :=
-    funext (tprod_weierstrassFactor_one_pow_eq_sigma a m hm)
-  rw [heq]
-  simpa [s] using analyticOrderAt_tprod_weierstrassFactor_one_of_finset
-    (fun q : Σ j, Fin (m j) ↦ a q.1) (summable_sigma_sq a m hm) s hs
+  have hz0 : z ≠ 0 := right_ne_zero_of_mul (by rw [hi]; exact one_ne_zero)
+  have hset : {q : Σ j, Fin (m j) | a q.1 * z = 1} = Set.range (Sigma.mk i) := by
+    rw [Set.range_sigmaMk]
+    ext q
+    exact ⟨fun h ↦ ha (mul_right_cancel₀ hz0 (h.trans hi.symm)), fun (h : q.1 = i) ↦ by
+      simp [h, hi]⟩
+  rw [analyticOrderAt_tprod_weierstrassFactor_one_pow a m hm z, hset,
+    Set.ncard_range_of_injective sigma_mk_injective, Nat.card_fin]
 
 /-- Products with natural multiplicities converge uniformly on every bounded set. -/
 theorem hasProdUniformlyOn_weierstrassFactor_one_pow {K : Set ℂ} (hK : Bornology.IsBounded K) :
@@ -224,8 +213,8 @@ theorem hasProdUniformlyOn_weierstrassFactor_one_pow {K : Set ℂ} (hK : Bornolo
       (fun z ↦ ∏' i, weierstrassFactor 1 (a i * z) ^ m i) K := by
   have h := (hasProdUniformlyOn_weierstrassFactor_one _ (summable_sigma_sq a m hm)
     hK).sigma_of_finite
-  simpa only [Finset.prod_const, Finset.card_univ, Fintype.card_fin,
-    ← tprod_weierstrassFactor_one_pow_eq_sigma a m hm] using h
+  simp only [Finset.prod_const, Finset.card_univ, Fintype.card_fin] at h
+  exact h.multipliableUniformlyOn.hasProdUniformlyOn
 
 /-- Products with natural multiplicities converge locally uniformly on the whole plane. -/
 theorem hasProdLocallyUniformlyOn_weierstrassFactor_one_pow :
