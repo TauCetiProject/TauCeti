@@ -1,0 +1,151 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Geometric
+public import TauCeti.Geometry.Manifold.SmoothTriangulation.StarImmersion
+
+/-!
+# Smooth triangulations from rectilinear complexes
+
+A geometric simplicial complex `K` in a real normed space `V` is read as an abstract complex
+through its vertex scheme, and the comparison map `K.realizationToSpace : |K.vertexScheme| → V`
+(`TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Geometric`) sends a point with
+barycentric coordinates `x` to `∑ v, x v • v`. This map is linear in barycentric coordinates on
+every closed simplex and injective, so it is its own secant map and an injective star immersion
+of every class `Cⁿ`. In particular the separation, perturbation and secant approximation theorems
+for star immersions apply to rectilinear complexes in a vector space.
+
+Following the comparison map by a map `F : V → M` into a manifold gives an immersion of each
+closed simplex as soon as `F` is `Cⁿ` on that simplex with a derivative injective on the
+directions of its affine span. When moreover `F` restricts to a homeomorphism from `K.space` onto
+`M`, and `K` is locally finite, the composite of `K.realizationHomeomorph` with that homeomorphism
+is a `Cⁿ` triangulation of `M` (`TauCeti.IsSmoothTriangulation`). The derivative is asked to be
+injective only along the simplices, not on all of `V`: the radial projection of the boundary of
+a tetrahedron onto the sphere around an interior point kills the radial direction, which is
+transverse to every face.
+
+This is how a rectilinear complex in a coordinate chart, such as the complexes produced there by
+subdivision and by triangulating unions of polyhedra, becomes an embedded smooth complex in a
+manifold, the local form in which Whitehead's and Munkres' construction of a smooth triangulation
+fits triangulations together.
+
+## Main results
+
+* `Geometry.SimplicialComplex.secantMap_realizationToSpace`: the comparison map is its own secant
+  map.
+* `Geometry.SimplicialComplex.isStarImmersion_realizationToSpace`: the comparison map is a star
+  immersion of every class.
+* `Geometry.SimplicialComplex.isSimplexImmersion_comp_realizationToSpace_comp_faceInclusion`:
+  following it by a map with injective derivative along a simplex gives an immersion of that
+  simplex.
+* `Geometry.SimplicialComplex.isSmoothTriangulation_realizationHomeomorph_trans`: a homeomorphism
+  from a locally finite rectilinear polyhedron onto a manifold, `Cⁿ` with injective derivative
+  along every simplex, is a smooth triangulation.
+
+## References
+
+* J. H. C. Whitehead, *On C¹-complexes*, Ann. of Math. 41 (1940), 809–824.
+* J. Munkres, *Elementary Differential Topology*, Annals of Math. Studies 54 (1966), Chapter II,
+  Definitions 8.1–8.3 and Theorems 10.5–10.6.
+-/
+
+public section
+
+noncomputable section
+
+open Set Function AbstractSimplicialComplex TauCeti.SetLike
+open scoped Manifold ContDiff
+
+namespace Geometry.SimplicialComplex
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {K : SimplicialComplex ℝ V}
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {H : Type*} [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  {n : WithTop ℕ∞}
+
+/-- The comparison map of a geometric complex is its own secant map: it is linear in barycentric
+coordinates on every closed simplex. -/
+@[simp]
+theorem secantMap_realizationToSpace :
+    K.vertexScheme.secantMap K.realizationToSpace = K.realizationToSpace := by
+  funext x
+  simp [secantMap_apply, realizationToSpace_apply, Finsupp.linearCombination_apply]
+
+/-- The comparison map of a geometric complex is a star immersion of every class `Cⁿ`. -/
+theorem isStarImmersion_realizationToSpace : TauCeti.IsStarImmersion n K.realizationToSpace := by
+  have h := isStarImmersion_secantMap (n := n) (f := K.realizationToSpace) (by
+    rw [secantMap_realizationToSpace]
+    exact injective_realizationToSpace)
+  rwa [secantMap_realizationToSpace] at h
+
+/-- Let `σ` be a face of `K`. If `F : V → M` is `Cⁿ` within the closed simplex of `σ`, with a
+derivative within it at every point which is injective on the directions of the affine span of
+`σ`, then `F` following the comparison map is a `Cⁿ` immersion of the closed simplex of `σ`. -/
+theorem isSimplexImmersion_comp_realizationToSpace_comp_faceInclusion (σ : Face K.vertexScheme)
+    {F : V → M}
+    (hF : ContMDiffOn 𝓘(ℝ, V) I n F
+      (convexHull ℝ (σ.val.map (Embedding.subtype (· ∈ K.vertices)) : Set V)))
+    (hF' : ∀ x ∈ convexHull ℝ (σ.val.map (Embedding.subtype (· ∈ K.vertices)) : Set V),
+      ∃ F' : V →L[ℝ] E,
+        HasMFDerivWithinAt 𝓘(ℝ, V) I F
+          (convexHull ℝ (σ.val.map (Embedding.subtype (· ∈ K.vertices)) : Set V)) x F' ∧
+        ∀ v ∈ vectorSpan ℝ (σ.val.map (Embedding.subtype (· ∈ K.vertices)) : Set V),
+          F' v = 0 → v = 0) :
+    TauCeti.IsSimplexImmersion I n (F ∘ K.realizationToSpace ∘ faceInclusion K.vertexScheme σ) := by
+  set p : σ.val → V := fun a => ((a : K.vertices) : V)
+  have hp : range p = (σ.val.map (Embedding.subtype (· ∈ K.vertices)) : Set V) := by
+    ext x
+    simp [p]
+  rw [← hp] at hF hF'
+  -- In barycentric coordinates the comparison map is the linear combination of the vertices.
+  let L : (σ.val → ℝ) →L[ℝ] V := (Fintype.linearCombination ℝ p).toContinuousLinearMap
+  have hmaps : MapsTo L (range fun t : Convexity.StdSimplex ℝ σ.val => ⇑t.weights)
+      (convexHull ℝ (range p)) := by
+    rw [← Finset.range_standardSimplex_coordinates,
+      ← Finset.range_linearCombination_standardSimplex]
+    rintro _ ⟨y, rfl⟩
+    exact ⟨y, rfl⟩
+  refine TauCeti.isSimplexImmersion_iff.mpr ⟨F ∘ L,
+    fun y => by simp [L, p, realizationToSpace_faceInclusion],
+    hF.comp L.contMDiff.contMDiffOn hmaps, fun t => ?_⟩
+  obtain ⟨F', hFt, hinj⟩ := hF' _ (hmaps ⟨t, rfl⟩)
+  refine ⟨F'.comp L, hFt.comp (⇑t.weights) L.hasMFDerivWithinAt hmaps.subset_preimage,
+    fun v hv hv0 => ?_⟩
+  -- A direction of the simplex is sent into the vector span of its vertices.
+  have hLv : L v ∈ vectorSpan ℝ (range p) := by
+    have h := weightedVSub_mem_vectorSpan (s := Finset.univ) (w := v) hv p
+    rwa [Finset.weightedVSub_eq_linear_combination _ hv] at h
+  have hL0 : ∑ a, v a • p a = 0 := by
+    simpa [L, Fintype.linearCombination_apply] using hinj _ hLv hv0
+  exact funext fun a => (affineIndependent_vertexScheme σ).eq_zero_of_sum_eq_zero
+    (s := Finset.univ) hv hL0 a (Finset.mem_univ a)
+
+/-- **Smooth triangulations from rectilinear polyhedra.** Let `K` be a geometric simplicial
+complex in `V` whose closed simplices form a locally finite family, and let `f : K.space ≃ₜ M` be
+a homeomorphism onto a manifold which is the restriction of a map `F : V → M`. If on every closed
+simplex `F` is `Cⁿ`, with a derivative within the simplex injective on the directions of its
+affine span, then `f` composed with the homeomorphism `|K.vertexScheme| ≃ₜ K.space` is a `Cⁿ`
+triangulation of `M`. -/
+theorem isSmoothTriangulation_realizationHomeomorph_trans
+    (hK : LocallyFinite fun s : K.faces => convexHull ℝ (s : Set V)) (f : K.space ≃ₜ M)
+    {F : V → M} (hFf : ∀ x : K.space, F x = f x)
+    (hF : ∀ s ∈ K.faces, ContMDiffOn 𝓘(ℝ, V) I n F (convexHull ℝ (s : Set V)))
+    (hF' : ∀ s ∈ K.faces, ∀ x ∈ convexHull ℝ (s : Set V), ∃ F' : V →L[ℝ] E,
+      HasMFDerivWithinAt 𝓘(ℝ, V) I F (convexHull ℝ (s : Set V)) x F' ∧
+        ∀ v ∈ vectorSpan ℝ (s : Set V), F' v = 0 → v = 0) :
+    TauCeti.IsSmoothTriangulation I n ((K.realizationHomeomorph hK).trans f) := by
+  refine TauCeti.isSmoothTriangulation_iff.mpr fun σ => ?_
+  have h : (K.realizationHomeomorph hK).trans f ∘ faceInclusion K.vertexScheme σ =
+      F ∘ K.realizationToSpace ∘ faceInclusion K.vertexScheme σ := by
+    funext y
+    rw [comp_apply, Homeomorph.trans_apply, ← hFf, coe_realizationHomeomorph_apply, comp_apply,
+      comp_apply]
+  rw [h]
+  exact isSimplexImmersion_comp_realizationToSpace_comp_faceInclusion σ
+    (hF _ (mem_vertexScheme_iff.mp σ.property)) (hF' _ (mem_vertexScheme_iff.mp σ.property))
+
+end Geometry.SimplicialComplex
