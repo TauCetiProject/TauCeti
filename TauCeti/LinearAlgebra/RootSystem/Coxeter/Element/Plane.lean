@@ -13,12 +13,11 @@ public import TauCeti.LinearAlgebra.RootSystem.Chamber
 public import TauCeti.LinearAlgebra.RootSystem.CorootEval
 public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.Bipartite
 public import TauCeti.RepresentationTheory.BaseChange
-import Mathlib.Algebra.Order.Star.Real
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Angle
 import TauCeti.Data.List.Pairwise
 import TauCeti.LinearAlgebra.Matrix.OfReal
 import TauCeti.LinearAlgebra.Matrix.PerronFrobenius.Irreducible
-import TauCeti.LinearAlgebra.Matrix.PosDef.Basic
+import TauCeti.LinearAlgebra.RootSystem.FiniteType.Perron
 import TauCeti.LinearAlgebra.RootSystem.Inversions.StrongExchange
 
 /-!
@@ -101,31 +100,6 @@ variable {ι R M N : Type*} [CommRing R] [CharZero R] [IsDomain R]
   [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
   {P : RootPairing ι R M N} [Finite ι] [P.IsCrystallographic]
 
-omit [CharZero R] [IsDomain R] [Finite ι] in
-private theorem perronEigenvalue_lt_two [DecidableEq ι] (b : P.Base) [Nonempty b.support]
-    (hft : IsFiniteType b.cartanMatrix) {μ : ℝ} {x : b.support → ℝ} (hx : ∀ i, 0 < x i)
-    (hBx : ((2 : ℝ) • 1 - (b.cartanMatrixᵀ).map (Int.castRingHom ℝ)) *ᵥ x = μ • x) : μ < 2 := by
-  obtain ⟨d, hd, hpd_rat⟩ := hft.exists_symmetrizer
-  set S_rat : Matrix b.support b.support ℚ := Matrix.of fun i j ↦ d i * (b.cartanMatrix i j : ℚ)
-  have hd_pos (i : b.support) : 0 < (d i : ℝ) := by exact_mod_cast hd i
-  let y : b.support → ℝ := fun i ↦ x i / (d i : ℝ)
-  have hy_pos (i : b.support) : 0 < y i := div_pos (hx i) (hd_pos i)
-  have hM : (S_rat.map (Rat.cast : ℚ → ℝ)) *ᵥ y = (2 - μ) • x := funext fun i ↦ by
-    have hi := congrFun hBx i; rw [sub_mulVec, smul_mulVec, one_mulVec] at hi
-    simp only [Pi.sub_apply, Pi.smul_apply, smul_eq_mul, mulVec, dotProduct, Matrix.map_apply,
-      Int.coe_castRingHom, transpose_apply] at hi ⊢
-    have hsum : ∑ j, (S_rat i j : ℝ) * y j = ∑ j, (b.cartanMatrix j i : ℝ) * x j :=
-      Finset.sum_congr rfl fun j _ ↦ by
-        have hsym := congrArg (Rat.cast : ℚ → ℝ) (hpd_rat.isHermitian.apply j i)
-        simp only [S_rat, Matrix.of_apply, star_trivial, Rat.cast_mul, Rat.cast_intCast] at hsym ⊢
-        rw [hsym, mul_comm (d j : ℝ), mul_assoc, mul_div_cancel₀ _ (hd_pos j).ne']
-    linarith
-  have hq := (TauCeti.Matrix.posDef_map_ratCast_iff.mpr hpd_rat).dotProduct_mulVec_pos (x := y)
-    fun h ↦ (hy_pos (Classical.arbitrary _)).ne' (congrFun h _)
-  rw [hM, star_trivial, dotProduct_smul, smul_eq_mul] at hq
-  linarith [pos_of_mul_pos_left hq
-    (Finset.sum_pos (fun i _ ↦ mul_pos (hy_pos i) (hx i)) Finset.univ_nonempty).le]
-
 private theorem eq_one_of_actsBy_fix_of_forall_pos [P.IsReduced] (b : P.Base)
     {y₀ : b.support → ℝ} (hy₀ : ∀ k : b.support, 0 < b.corootEval ℝ (k : ι) y₀)
     {g : P.weylGroup} {G : Matrix b.support b.support ℤ} (hG : b.ActsBy g G)
@@ -206,15 +180,13 @@ private theorem colorClassMatrix_mulVec_colorVec (s : Bool) :
       ite_mul, one_mul, zero_mul, Finset.sum_ite_eq, Finset.mem_univ, ↓reduceIte,
       corootEval_coe_support]
     congr 1; by_cases hck : col k = s <;> simp [hck]
-  refine ⟨funext fun k ↦ ?_, funext fun k ↦ ?_⟩
-  · obtain ⟨hsame, -⟩ := corootEval_colorVec b col hBx k
+  refine ⟨funext fun k ↦ ?_, funext fun k ↦ ?_⟩ <;>
+    obtain ⟨hsame, hopp⟩ := corootEval_colorVec b col hBx k <;>
     by_cases hck : col k = s
-    · subst hck; simp [hrow, hsame]; ring
-    · simp [hrow, hck]
-  · obtain ⟨-, hopp⟩ := corootEval_colorVec b col hBx k
-    by_cases hck : col k = s
-    · subst hck; simp [hrow, hopp, show col k ≠ !(col k) by simp]
-    · simp [hrow, hck]
+  · subst hck; simp [hrow, hsame]; ring
+  · simp [hrow, hck]
+  · subst hck; simp [hrow, hopp, show col k ≠ !(col k) by simp]
+  · simp [hrow, hck]
 
 variable {θ : ℝ} (hμ_eq : μ = 2 * Real.cos θ)
 include hμ_eq
@@ -248,8 +220,8 @@ private theorem coxeterPlane_rotation :
   have hC₂_e₂ : C₂ *ᵥ e₂ = Real.sin (2 * θ) • e₁ - Real.cos (2 * θ) • e₂ := funext fun i ↦ by
     simp only [e₁, e₂, planeBasis₁, planeBasis₂, mulVec_smul, C₂, hC₂t, hμ_eq, Real.cos_two_mul,
       Real.sin_two_mul, Pi.add_apply, Pi.sub_apply, Pi.smul_apply, smul_eq_mul]; ring
-  have hW : W = C₁ * C₂ := by
-    dsimp only [W, C₁, C₂]; rw [b.bipartiteCoxeterMatrix_def]; exact Matrix.map_mul ..
+  have hW : W = C₁ * C₂ := (congrArg (Matrix.map · _) (b.bipartiteCoxeterMatrix_def col)).trans
+    (Matrix.map_mul ..)
   refine ⟨by simp [hW, ← mulVec_mulVec, hC₂_e₁, mulVec_add, mulVec_smul, hC₁_e₁, hC₁_e₂,
       sub_eq_add_neg],
     by simp [hW, ← mulVec_mulVec, hC₂_e₂, mulVec_sub, mulVec_smul, hC₁_e₁, hC₁_e₂], fun k φ ↦ ?_⟩
@@ -361,10 +333,14 @@ theorem exists_coxeterPlane_bipartiteCoxeterElement_of_isFiniteType
       (∀ φ : ℝ, 0 < φ → φ < Real.pi / h →
         ∀ k : b.support, 0 < b.corootEval ℝ (k : ι) (Real.cos φ • e₁ + Real.sin φ • e₂)) := by
   intro c h W Winv
-  obtain ⟨μ, hμpos, x, hx, hBx⟩ :=
-    (b.isIrreducible_two_smul_one_sub_transpose_cartanMatrix_of_preconnected
-      hconn).exists_mulVec_eq_smul
-  have hμlt : μ < 2 := perronEigenvalue_lt_two b hft hx hBx; set θ : ℝ := Real.arccos (μ / 2)
+  obtain ⟨κ, hκpos, hκlt, x, hx, hxC⟩ := hft.exists_pos_vecMul_eq_smul <|
+    (Matrix.isIndecomposable_iff_reflTransGen b.cartanMatrix).2 fun i j ↦
+      let ⟨w⟩ := hconn i j
+      w.recOn .refl fun {_ _ _} hadj _ ih ↦ .head (diagramGraph_adj.mp hadj).2.1 ih
+  set μ : ℝ := 2 - κ; set θ : ℝ := Real.arccos (μ / 2)
+  have hBx : ((2 : ℝ) • 1 - (b.cartanMatrixᵀ).map (Int.castRingHom ℝ)) *ᵥ x = μ • x := by
+    rw [sub_mulVec, smul_mulVec, one_mulVec, Matrix.transpose_map, Matrix.mulVec_transpose,
+      sub_smul]; exact congrArg (2 • x - ·) hxC
   have hθpos : 0 < θ := Real.arccos_pos.mpr (by linarith)
   have hθlt : θ < Real.pi / 2 := Real.arccos_lt_pi_div_two.mpr (by linarith)
   have hμ_eq : μ = 2 * Real.cos θ := by rw [Real.cos_arccos (by linarith) (by linarith)]; ring
@@ -577,10 +553,10 @@ private theorem exists_eigenvector_baseChange_isEmpty [P.IsIrreducible] [IsEmpty
   set r₀ := P.toLinearMap m₀ n₀
   have hS_top : LinearMap.range (LinearMap.lsmul R M r₀) = ⊤ :=
     IsIrreducible.eq_top_of_invtSubmodule_reflection (P := P) _ (fun i ↦ (IsEmpty.false i).elim)
-      fun hbot ↦ by
-        have h0 : r₀ • m₀ = 0 :=
-          (Submodule.mem_bot R).mp (hbot ▸ LinearMap.mem_range_self (LinearMap.lsmul R M r₀) m₀)
-        exact hr₀ (mul_self_eq_zero.mp (by
+      fun hbot ↦
+        have h0 : r₀ • m₀ = 0 := (Submodule.mem_bot R).mp
+          (hbot ▸ LinearMap.mem_range_self (LinearMap.lsmul R M r₀) m₀)
+        hr₀ (mul_self_eq_zero.mp (by
           simpa [r₀] using congrArg (fun f ↦ f n₀) (congrArg P.toLinearMap h0)))
   obtain ⟨m₁, hm₁⟩ : ∃ m₁ : M, r₀ • m₁ = m₀ := LinearMap.mem_range.mp (hS_top ▸ Submodule.mem_top)
   have hp₁ : P.toLinearMap m₁ n₀ = 1 := mul_left_cancel₀ hr₀ <| by
@@ -673,10 +649,9 @@ private theorem exists_isRegularWeight_eigenvector_of_baseChange {c : P.weylGrou
   let e := TensorProduct.lid ℂ M
   have he_act (g : P.weylGroup) (x : ℂ ⊗[ℂ] M) :
       e (P.weylGroupRootRep.baseChange ℂ g x) = g • e x := by
-    simpa [RootPairing.weylGroupRootRep] using LinearMap.congr_fun
-      (TensorProduct.ext' fun _ _ ↦ by simp [e, RootPairing.weylGroupRootRep] :
-        e.toLinearMap ∘ₗ P.weylGroupRootRep.baseChange ℂ g =
-          P.weylGroupRootRep g ∘ₗ e.toLinearMap) x
+    simpa [RootPairing.weylGroupRootRep] using LinearMap.congr_fun (TensorProduct.ext' fun _ _ ↦ by
+      simp [e, RootPairing.weylGroupRootRep] : e.toLinearMap ∘ₗ
+        P.weylGroupRootRep.baseChange ℂ g = P.weylGroupRootRep g ∘ₗ e.toLinearMap) x
   have he_cor (j : ι) : LinearMap.liftBaseChange ℂ (Algebra.linearMap ℂ ℂ ∘ₗ P.coroot' j) =
       P.coroot' j ∘ₗ e.toLinearMap := TensorProduct.ext' fun _ _ ↦ by simp [e]
   refine ⟨e v₀, fun h0 ↦ hv₀_ne (e.map_eq_zero_iff.mp h0), by rw [← he_act, hv₀_eig, map_smul],

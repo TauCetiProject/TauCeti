@@ -408,8 +408,8 @@ theorem card_quotient_sameCycle_weylGroupToPerm_wordProd :
     exact b.card_quotient_sameCycle_weylGroupToPerm_wordProd_of_isFiniteType
       (isFiniteType_cartanMatrix b) (preconnected_diagramGraph_cartanMatrix b) hnd hall
   · have : IsEmpty ι := not_nonempty_iff.mp hne; have : IsEmpty b.support := ⟨(IsEmpty.false ·.val)⟩
-    have : IsEmpty (Quotient (Equiv.Perm.SameCycle.setoid
-        (P.weylGroupToPerm (wordProd P b l)))) := ⟨Quotient.ind fun x ↦ IsEmpty.false x⟩
+    have : IsEmpty (Quotient (Equiv.Perm.SameCycle.setoid (P.weylGroupToPerm (wordProd P b l)))) :=
+      ⟨Quotient.ind IsEmpty.false⟩
     simp [Nat.card_eq_fintype_card, ← Fintype.card_coe]
 
 /-- **Steinberg's unique inversion per Coxeter orbit.** For any Coxeter element

@@ -36,9 +36,10 @@ of the transpose (simplicity as a root of the characteristic polynomial, and the
 
 ## Main results
 
-* `Matrix.toQuiverPathOfWalk` and `Matrix.isIrreducible_of_preconnected`: walks in a simple graph
-  whose edges have strictly positive entries lift to quiver paths of the same length, so a
-  nonnegative matrix on a nontrivial index type dominating a preconnected graph is irreducible.
+* `Matrix.isIrreducible_iff_forall_transGen`: a nonnegative matrix is irreducible exactly when
+  nonempty chains of positive entries join every index to every index.
+* `Matrix.isIrreducible_of_preconnected`: a nonnegative matrix on a nontrivial index type
+  dominating a preconnected simple graph is irreducible.
 * `Matrix.IsIrreducible.isPrimitive_one_add`: if `A` is irreducible, then `1 + A` is primitive.
 * `Matrix.IsIrreducible.exists_mulVec_eq_smul`: an irreducible real matrix has an eigenvector with
   strictly positive entries, for a strictly positive eigenvalue.
@@ -64,62 +65,49 @@ open scoped Matrix
 
 namespace Matrix
 
-section PreconnectedGraph
-
-variable {m R : Type*} [Ring R] [LinearOrder R]
-
-section Walk
-
-variable (A : Matrix m m R) {G : SimpleGraph m} (hG : ∀ {i j}, G.Adj i j → 0 < A i j)
-
-/-- Convert a walk in a simple graph `G` into a path of the same length in `A.toQuiver` whenever
-every edge of `G` corresponds to a strictly positive entry of `A`. -/
-def toQuiverPathOfWalk {i j : m} : letI := A.toQuiver; G.Walk i j → Quiver.Path i j
-  | .nil => letI := A.toQuiver; Quiver.Path.nil
-  | .cons hadj w =>
-    letI := A.toQuiver; (Quiver.Hom.toPath (PLift.up (hG hadj))).comp (toQuiverPathOfWalk w)
-
-/-- `Matrix.toQuiverPathOfWalk` sends the empty walk to the empty path. -/
-@[simp] theorem toQuiverPathOfWalk_nil (i : m) :
-    letI := A.toQuiver; A.toQuiverPathOfWalk hG (.nil : G.Walk i i) = Quiver.Path.nil := (rfl)
-
-/-- `Matrix.toQuiverPathOfWalk` sends a cons walk to the edge path composed with the tail path. -/
-@[simp] theorem toQuiverPathOfWalk_cons {i j k : m} (hadj : G.Adj i j) (w : G.Walk j k) :
-    letI := A.toQuiver; A.toQuiverPathOfWalk hG (.cons hadj w) =
-      (Quiver.Hom.toPath (PLift.up (hG hadj))).comp (A.toQuiverPathOfWalk hG w) := (rfl)
-
-/-- `Matrix.toQuiverPathOfWalk` sends walk concatenation to path composition. -/
-@[simp] theorem toQuiverPathOfWalk_append {i j k : m} (w₁ : G.Walk i j) (w₂ : G.Walk j k) :
-    letI := A.toQuiver; A.toQuiverPathOfWalk hG (w₁.append w₂) =
-      (A.toQuiverPathOfWalk hG w₁).comp (A.toQuiverPathOfWalk hG w₂) := by
-  let := A.toQuiver; induction w₁ with
-  | nil => simp
-  | cons _ _ ih => simp [ih, Quiver.Path.comp_assoc]
-
-/-- `Matrix.toQuiverPathOfWalk` preserves walk length. -/
-@[simp] theorem length_toQuiverPathOfWalk {i j : m} (w : G.Walk i j) :
-    letI := A.toQuiver; (A.toQuiverPathOfWalk hG w).length = w.length := by
-  let := A.toQuiver; induction w with
-  | nil => simp
-  | cons _ w ih => simpa [ih] using Nat.add_comm 1 w.length
-
-end Walk
+/-- A matrix with nonnegative entries is irreducible exactly when every index reaches every index,
+itself included, through a nonempty chain of strictly positive entries. -/
+theorem isIrreducible_iff_forall_transGen {n R : Type*} [Ring R] [LinearOrder R]
+    {A : Matrix n n R} (hA : ∀ i j, 0 ≤ A i j) :
+    A.IsIrreducible ↔ ∀ i j, Relation.TransGen (fun i j ↦ 0 < A i j) i j := by
+  let := toQuiver A
+  refine ⟨fun h i j ↦ ?_, fun h ↦ ⟨hA, fun i j ↦ ?_⟩⟩
+  · obtain ⟨p, hp⟩ := h.connected i j
+    induction p with
+    | nil => simp at hp
+    | cons p e ih =>
+      rcases Nat.eq_zero_or_pos p.length with h0 | h0
+      · obtain rfl := Quiver.Path.eq_of_length_zero p h0
+        exact .single e.down
+      · exact (ih h0).tail e.down
+  · induction h i j with
+    | single hab => exact ⟨Quiver.Path.nil.cons ⟨hab⟩, by simp⟩
+    | tail _ hbc ih =>
+      obtain ⟨p, -⟩ := ih
+      exact ⟨p.cons ⟨hbc⟩, by simp⟩
 
 /-- A nonnegative matrix on a nontrivial index type whose strictly positive entries contain the
 adjacency relation of a preconnected simple graph is irreducible. -/
-theorem isIrreducible_of_preconnected [Nontrivial m] {A : Matrix m m R}
-    (hnonneg : ∀ i j, 0 ≤ A i j) {G : SimpleGraph m} (hconn : G.Preconnected)
-    (hG : ∀ {i j}, G.Adj i j → 0 < A i j) : A.IsIrreducible := by
-  let := A.toQuiver; refine ⟨hnonneg, fun i j ↦ ?_⟩
+theorem isIrreducible_of_preconnected {m R : Type*} [Ring R] [LinearOrder R] [Nontrivial m]
+    {A : Matrix m m R} (hnonneg : ∀ i j, 0 ≤ A i j) {G : SimpleGraph m}
+    (hconn : G.Preconnected) (hG : ∀ {i j}, G.Adj i j → 0 < A i j) : A.IsIrreducible := by
+  refine (isIrreducible_iff_forall_transGen hnonneg).2 fun i j ↦ ?_
+  have hwalk {a b : m} (w : G.Walk a b) (hw : 0 < w.length) :
+      Relation.TransGen (fun x y ↦ 0 < A x y) a b := by
+    induction w with
+    | nil => simp at hw
+    | @cons a c b hadj w ih =>
+      rcases Nat.eq_zero_or_pos w.length with h0 | h0
+      · obtain rfl := w.eq_of_length_eq_zero h0
+        exact .single (hG hadj)
+      · exact .head (hG hadj) (ih h0)
   rcases eq_or_ne i j with rfl | hij
-  · obtain ⟨k, hki⟩ := exists_ne i; obtain ⟨w⟩ := hconn i k
+  · obtain ⟨k, hki⟩ := exists_ne i
+    obtain ⟨w⟩ := hconn i k
     have hw : 0 < w.length := Nat.pos_of_ne_zero fun h0 ↦ hki.symm (w.eq_of_length_eq_zero h0)
-    exact ⟨A.toQuiverPathOfWalk hG (w.append w.reverse), by simp; omega⟩
+    exact (hwalk w hw).trans (hwalk w.reverse (by simpa using hw))
   · obtain ⟨w⟩ := hconn i j
-    exact ⟨A.toQuiverPathOfWalk hG w,
-      by simp [Nat.pos_of_ne_zero fun h0 ↦ hij (w.eq_of_length_eq_zero h0)]⟩
-
-end PreconnectedGraph
+    exact hwalk w (Nat.pos_of_ne_zero fun h0 ↦ hij (w.eq_of_length_eq_zero h0))
 
 variable {n : Type*} [Fintype n]
 

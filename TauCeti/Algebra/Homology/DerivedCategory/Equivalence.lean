@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Homology.DerivedCategory.ExactFunctor
+public import TauCeti.Algebra.Homology.DerivedCategory.Functoriality
 public import Mathlib.CategoryTheory.Triangulated.Adjunction
 
 /-!
@@ -23,36 +23,6 @@ public section
 open CategoryTheory CategoryTheory.Limits CategoryTheory.Functor
 
 universe w₁ w₂ v₁ v₂ u₁ u₂
-
-namespace CategoryTheory.NatIso
-
-variable {A : Type u₁} [Category.{v₁} A] [Abelian A] [HasDerivedCategory.{w₁} A]
-  {B : Type u₂} [Category.{v₂} B] [Abelian B] [HasDerivedCategory.{w₂} B]
-  {F G : A ⥤ B} [F.Additive] [G.Additive] [PreservesFiniteLimits F] [PreservesFiniteLimits G]
-  [PreservesFiniteColimits F] [PreservesFiniteColimits G]
-
-/-- An isomorphism of exact functors induces an isomorphism of their derived actions. -/
-noncomputable def mapDerivedCategory (α : F ≅ G) :
-    F.mapDerivedCategory ≅ G.mapDerivedCategory :=
-  Localization.liftNatIso DerivedCategory.Q
-    (HomologicalComplex.quasiIso A (ComplexShape.up ℤ)) _ _ _ _
-    (isoWhiskerRight (NatIso.mapHomologicalComplex α (ComplexShape.up ℤ)) DerivedCategory.Q)
-
-/-- The forward map of the derived isomorphism is Mathlib's derived natural transformation. -/
-@[simp]
-lemma mapDerivedCategory_hom (α : F ≅ G) :
-    (mapDerivedCategory α).hom = NatTrans.mapDerivedCategory α.hom := (rfl)
-
-/-- The inverse map of the derived isomorphism is Mathlib's derived natural transformation. -/
-@[simp]
-lemma mapDerivedCategory_inv (α : F ≅ G) :
-    (mapDerivedCategory α).inv = NatTrans.mapDerivedCategory α.inv := (rfl)
-
-/-- The derived isomorphism commutes with integer shifts. -/
-instance (α : F ≅ G) : NatTrans.CommShift (mapDerivedCategory α).hom ℤ :=
-  inferInstanceAs (NatTrans.CommShift (NatTrans.mapDerivedCategory α.hom) ℤ)
-
-end CategoryTheory.NatIso
 
 namespace CategoryTheory.Equivalence
 

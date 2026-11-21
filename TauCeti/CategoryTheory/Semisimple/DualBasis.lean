@@ -199,14 +199,11 @@ from the basis of `S ⟶ A` to the dual basis of `A' ⟶ S` does not change the 
 theorem sum_homDual_comp (a : Basis ι k (S ⟶ A)) (a' : Basis ι' k (S ⟶ A')) (h : A ⟶ A')
     (β : (A ⟶ S) →ₗ[k] (S ⟶ A') →ₗ[k] M) :
     ∑ i, β (a.homDual i) (a i ≫ h) = ∑ j, β (h ≫ a'.homDual j) (a' j) := by
-  -- Expand `a i ≫ h` in the basis `a'` and `h ≫ a'.homDual j` in the basis `a.homDual`; both
-  -- sides become `∑ i, ∑ j, c i j • β (a.homDual i) (a' j)` with `c i j` the pairing of
-  -- `a i ≫ h ≫ a'.homDual j`.
-  conv_lhs => enter [2, i]; rw [← a'.sum_repr (a i ≫ h)]
-  conv_rhs => enter [2, j]; rw [← a.homDual.sum_repr (h ≫ a'.homDual j)]
-  simp only [map_sum, map_smul, LinearMap.sum_apply, LinearMap.smul_apply, ← homPairing_homDual,
-    homDual_repr, homPairing_comp]
-  exact Finset.sum_comm
+  have : FiniteDimensional k (S ⟶ A) := Module.Finite.of_basis a
+  have hp : (homPairingOfBijective (bijective_algebraMap_end_of_simple k S) A).IsPerfPair := by
+    rw [← homPairing_eq_homPairingOfBijective]
+    infer_instance
+  exact a.sum_dual_comp hp a.apply_comp_homDual a' a'.apply_comp_homDual h β
 
 /-- The canonical element `∑ i, b.homDual i ⊗ b i` does not depend on the basis `b`. -/
 theorem sum_homDual_eq (a : Basis ι k (S ⟶ X)) (a' : Basis ι' k (S ⟶ X))

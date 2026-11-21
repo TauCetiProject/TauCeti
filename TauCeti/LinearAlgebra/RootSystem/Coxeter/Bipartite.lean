@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.Coxeter.Graph
+public import TauCeti.GroupTheory.Coxeter.Bipartite
 public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Matrix
+public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Presentation
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Diagram
 
 /-!
@@ -38,6 +39,8 @@ two colourings are mutually inverse and conjugate
   is connected.
 * `RootPairing.Base.cartanMatrix_eq_zero_of_color_eq`: distinct simple roots of the same colour
   in a two-colouring of the Coxeter graph have vanishing Cartan entry.
+* `RootPairing.colorClassProd_smul`: the product of the simple reflections of one colour subtracts
+  from a vector its components along the simple roots of that colour.
 
 ## References
 
@@ -101,5 +104,52 @@ theorem Base.cartanMatrix_eq_zero_of_color_eq {P : RootPairing ι R M N} [P.IsCr
     (hpq : p ≠ q) (hc : col p = col q) : b.cartanMatrix p q = 0 :=
   by_contra fun hne ↦ col.valid ((graph_coxeterMatrixOfBase P b).symm ▸ (diagramGraph_adj ..).mpr
     ⟨hpq, hne, fun hqp ↦ hne (b.cartanMatrix_apply_eq_zero_iff_symm.mpr hqp)⟩) hc
+
+/-! ### The action of a colour class -/
+
+omit [Finite ι] [CharZero R] [IsDomain R] [P.IsCrystallographic] in
+/-- A product of pairwise orthogonal simple reflections subtracts from `m` its components along
+their simple roots. -/
+theorem noncommProd_ofIdx_smul (s : Finset b.support) (f : b.support → P.weylGroup)
+    (hf : ∀ i, f i = weylGroup.ofIdx P (i : ι))
+    (hs : ∀ i ∈ s, ∀ j ∈ s, i ≠ j → P.pairing i j = 0) (comm) (m : M) :
+    s.noncommProd f comm • m = m - ∑ j ∈ s, P.coroot' j m • P.root j := by
+  classical
+  induction s using Finset.induction_on generalizing m with
+  | empty => simp
+  | insert a s ha ih =>
+    rw [Finset.noncommProd_insert_of_notMem _ _ _ _ ha, mul_smul,
+      ih (fun i hi j hj ↦ hs i (Finset.mem_insert_of_mem hi) j (Finset.mem_insert_of_mem hj)), hf,
+      weylGroup.ofIdx_smul, Equiv.reflection_smul, reflection_apply, Finset.sum_insert ha]
+    have h0 : P.coroot' a (∑ j ∈ s, P.coroot' j m • P.root j) = 0 := by
+      rw [map_sum]
+      refine Finset.sum_eq_zero fun j hj ↦ ?_
+      rw [map_smul, root_coroot'_eq_pairing, hs j (Finset.mem_insert_of_mem hj) a
+        (Finset.mem_insert_self a s) (by rintro rfl; exact ha hj), smul_zero]
+    rw [map_sub, h0, sub_zero]
+    abel
+
+/-- Distinct simple roots of the same colour are orthogonal. -/
+theorem pairingIn_eq_zero_of_color_eq (c : (coxeterMatrixOfBase P b).graph.Coloring Bool)
+    {i j : b.support} (hij : i ≠ j) (h : c i = c j) : P.pairingIn ℤ i j = 0 := by
+  have hadj : ¬ (coxeterMatrixOfBase P b).graph.Adj i j := fun hadj ↦ c.valid hadj h
+  rw [graph_coxeterMatrixOfBase, diagramGraph_adj] at hadj
+  rw [← Base.cartanMatrixIn_def]
+  by_contra hne
+  exact hadj ⟨hij, hne, fun h' ↦ hne (b.cartanMatrix_apply_eq_zero_iff_symm.2 h')⟩
+
+/-- The product of the simple reflections of colour `x` subtracts from `m` its components along
+the simple roots of colour `x`. -/
+theorem colorClassProd_smul [P.IsReduced] (c : (coxeterMatrixOfBase P b).graph.Coloring Bool)
+    (x : Bool) (m : M) :
+    (weylCoxeterSystem P b).colorClassProd c x • m =
+      m - ∑ j, (if c j = x then P.coroot' j m else 0) • P.root j := by
+  classical
+  rw [CoxeterSystem.colorClassProd_def,
+    noncommProd_ofIdx_smul P b _ _ (weylCoxeterSystem_simple P b)]
+  · simp_rw [Finset.sum_filter, ite_smul, zero_smul]
+  · intro i hi j hj hij
+    rw [← P.algebraMap_pairingIn ℤ, pairingIn_eq_zero_of_color_eq P b c hij
+      ((Finset.mem_filter.1 hi).2.trans (Finset.mem_filter.1 hj).2.symm), map_zero]
 
 end RootPairing

@@ -243,10 +243,9 @@ theorem eq_of_cos_pos_of_cos_add_one_nonpos {h : ℕ} {α₀ : ℝ} {k₁ k₂ :
   set n : ℤ := (k₂ : ℤ) - (k₁ : ℤ) - (m₂ - m₁) * (h : ℤ)
   have hdiff : (n : ℝ) * δ = (α₂ - m₂ * (2 * Real.pi)) - (α₁ - m₁ * (2 * Real.pi)) := by
     simp only [n, α₁, α₂, δ]; push_cast; field_simp; ring
-  have hn_gt : (-1 : ℤ) < n := (Int.cast_lt (R := ℝ)).mp
-    (lt_of_mul_lt_mul_right (a := δ) (by push_cast; linarith) hδ0.le)
-  have hn_lt : n < (1 : ℤ) := (Int.cast_lt (R := ℝ)).mp
-    (lt_of_mul_lt_mul_right (a := δ) (by push_cast; linarith) hδ0.le)
+  have h0 : (-1 : ℤ) < n ∧ n < 1 := ⟨(Int.cast_lt (R := ℝ)).mp (lt_of_mul_lt_mul_right
+      (a := δ) (by push_cast; linarith) hδ0.le),
+    (Int.cast_lt (R := ℝ)).mp (lt_of_mul_lt_mul_right (a := δ) (by push_cast; linarith) hδ0.le)⟩
   have := Nat.eq_zero_of_dvd_of_lt (by
     simpa using Int.natAbs_dvd_natAbs.mpr
       (⟨m₂ - m₁, by rw [mul_comm]; omega⟩ : (h : ℤ) ∣ (k₂ : ℤ) - k₁)) (by omega)
