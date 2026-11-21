@@ -8,12 +8,18 @@ module
 public import Mathlib.GroupTheory.Coxeter.Basic
 
 /-!
-# Elementary facts about Coxeter words
+# Elementary facts about Coxeter words and systems
 
 This file evaluates Mathlib's alternating words through an arbitrary family, specialises that
-evaluation to the lengths the braid relations are read off at, and computes the reversal of an
-alternating word. It also records the degenerate rank-zero case: a Coxeter system whose simple
-reflections are indexed by an empty type has a trivial group.
+evaluation to the lengths the braid relations are read off at, computes the reversal of an
+alternating word, and proves that involutions in a monoid satisfying the braid-word equations of a
+Coxeter matrix are liftable (`CoxeterMatrix.isLiftable_of_mul_self_of_braidWord`). It also provides
+elementary transport and rank-zero helpers for Coxeter systems.
+
+## Main definitions
+
+* `CoxeterSystem.castMatrix`: transport a `CoxeterSystem M W` along an equality `M = M'` of Coxeter
+  matrices on the same index type.
 
 ## Main results
 
@@ -28,11 +34,20 @@ reflections are indexed by an empty type has a trivial group.
   of length `m` have product of order dividing `m`.
 * `TauCeti.reverse_alternatingWord`: reversing an alternating word swaps its two letters when
   its length is even, and leaves it unchanged when its length is odd.
+* `CoxeterMatrix.isLiftable_of_mul_self_of_braidWord` and
+  `CoxeterMatrix.isLiftable_iff_mul_self_and_braidWord`: `M.IsLiftable f` is equivalent to each
+  `f i` squaring to `1` together with the braid-word equations of `M`.
+* `CoxeterSystem.castMatrix_simple` and `CoxeterSystem.wordProd_castMatrix`: `castMatrix` preserves
+  simple reflections and word products.
 * `CoxeterSystem.subsingleton_of_isEmpty`: a Coxeter system of rank zero has a trivial group.
 * `CoxeterSystem.commute_simple_of_eq_two`: two simple reflections commute when their entry of the
   Coxeter matrix is `2`.
 * `CoxeterSystem.isConj_wordProd_append_comm`: rotating a word `l₁ ++ l₂` to `l₂ ++ l₁` conjugates
   the element it spells.
+
+## References
+
+* N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Chapter IV, §1.
 -/
 
 public section
@@ -110,9 +125,74 @@ theorem reverse_alternatingWord (i i' : B) (m : ℕ) :
 
 end TauCeti
 
+namespace CoxeterMatrix
+
+variable {B G : Type*}
+
+/-- **Liftability from involutions and braid words.** A family `f : B → G` into a monoid satisfies
+`M.IsLiftable f` whenever each `f i` squares to `1` and `f` satisfies the Artin--Tits braid-word
+equations of `M`. -/
+theorem isLiftable_of_mul_self_of_braidWord [Monoid G] (M : CoxeterMatrix B) {f : B → G}
+    (hsq : ∀ i, f i * f i = 1)
+    (hbraid : ∀ i i', ((CoxeterSystem.braidWord M i i').map f).prod =
+      ((CoxeterSystem.braidWord M i' i).map f).prod) :
+    M.IsLiftable f := by
+  let u (i : B) : Gˣ := ⟨f i, f i, hsq i, hsq i⟩
+  have hu_sq (i : B) : u i * u i = 1 := Units.ext (hsq i)
+  have hcoe (ω : List B) : (((ω.map u).prod : Gˣ) : G) = (ω.map f).prod := by
+    induction ω with
+    | nil => rfl
+    | cons k ω ih => simp [u, ih]
+  intro i i'
+  have hb : ((CoxeterSystem.alternatingWord i i' (M i i')).map u).prod =
+      ((CoxeterSystem.alternatingWord i' i (M i i')).map u).prod := by
+    have hbraid' := hbraid i i'
+    rw [CoxeterSystem.braidWord, CoxeterSystem.braidWord, M.symmetric i' i] at hbraid'
+    exact Units.ext ((hcoe _).trans (hbraid'.trans (hcoe _).symm))
+  simpa [u] using congrArg Units.val
+    (TauCeti.pow_eq_one_of_prod_map_alternatingWord_eq u (hu_sq i) (hu_sq i') (M i i') hb)
+
+/-- A family `f : B → G` into a monoid is liftable along `M` if and only if each `f i` squares to
+`1` and `f` satisfies the braid-word equations of `M`. -/
+theorem isLiftable_iff_mul_self_and_braidWord [Monoid G] (M : CoxeterMatrix B) {f : B → G} :
+    M.IsLiftable f ↔
+      (∀ i, f i * f i = 1) ∧
+        ∀ i i', ((CoxeterSystem.braidWord M i i').map f).prod =
+          ((CoxeterSystem.braidWord M i' i).map f).prod := by
+  refine ⟨fun hf => ⟨fun i => by simpa using hf i i, fun i i' => ?_⟩,
+    fun ⟨hsq, hbraid⟩ => M.isLiftable_of_mul_self_of_braidWord hsq hbraid⟩
+  let φ : M.Group →* G := M.toCoxeterSystem.lift ⟨f, hf⟩
+  have hword (ω : List B) : (ω.map f).prod = φ (M.toCoxeterSystem.wordProd ω) := by
+    induction ω with
+    | nil => simp
+    | cons k ω ih =>
+      rw [List.map_cons, List.prod_cons, CoxeterSystem.wordProd_cons, map_mul,
+        M.toCoxeterSystem.lift_apply_simple hf k, ih]
+  rw [hword, hword, M.toCoxeterSystem.wordProd_braidWord_eq]
+
+end CoxeterMatrix
+
 namespace CoxeterSystem
 
 variable {B W : Type*} [Group W] {M : CoxeterMatrix B} (cs : CoxeterSystem M W)
+
+/-- Transport a `CoxeterSystem` along an equality of Coxeter matrices on the same index type. -/
+protected def castMatrix {M' : CoxeterMatrix B} (h : M = M') : CoxeterSystem M' W :=
+  h ▸ cs
+
+/-- `CoxeterSystem.castMatrix` leaves every simple reflection unchanged. -/
+@[simp]
+theorem castMatrix_simple {M' : CoxeterMatrix B} (h : M = M') (i : B) :
+    (cs.castMatrix h).simple i = cs.simple i := by
+  subst h
+  rfl
+
+/-- `CoxeterSystem.castMatrix` leaves every word product unchanged. -/
+@[simp]
+theorem wordProd_castMatrix {M' : CoxeterMatrix B} (h : M = M') (ω : List B) :
+    (cs.castMatrix h).wordProd ω = cs.wordProd ω := by
+  subst h
+  rfl
 
 include cs in
 /-- A Coxeter system whose simple reflections are indexed by an empty type has a trivial group:
