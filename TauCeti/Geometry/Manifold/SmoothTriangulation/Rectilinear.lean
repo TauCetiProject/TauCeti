@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Geometric
-public import TauCeti.Geometry.Manifold.SmoothTriangulation.StarImmersion
+public import TauCeti.Geometry.Manifold.SmoothTriangulation.Basic
 
 /-!
 # Smooth triangulations from rectilinear complexes
@@ -16,10 +16,8 @@ through its vertex scheme, and the comparison map `K.realizationToAmbient : |K.v
 (`TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Geometric`) sends a point with
 barycentric coordinates `x` to `∑ v, x v • v`. This map is linear in barycentric coordinates on
 every closed simplex and injective, so it is its own secant map
-(`Geometry.SimplicialComplex.secantMap_realizationToAmbient`) and an injective star immersion
-of every class `Cⁿ`. For finite vertex schemes and regularity at least `C¹`, the separation,
-perturbation and secant approximation theorems apply with their individual further hypotheses,
-including an ordered vertex type for edgewise subdivision and a smooth cutoff for interpolation.
+(`Geometry.SimplicialComplex.secantMap_realizationToAmbient`). Its star-immersion property is
+proved in `TauCeti.Geometry.Manifold.SmoothTriangulation.Geometric`.
 
 Following the comparison map by a map `F : V → M` into a manifold gives an immersion of a
 closed simplex as soon as `F` is `Cⁿ` on that simplex with a derivative injective on the
@@ -37,8 +35,6 @@ fits triangulations together.
 
 ## Main results
 
-* `Geometry.SimplicialComplex.isStarImmersion_realizationToAmbient`: the comparison map is a star
-  immersion of every class.
 * `Geometry.SimplicialComplex.isSimplexImmersion_comp_realizationToAmbient_comp_faceInclusion`:
   following it by a map `F` which is `Cⁿ` within a closed simplex, and has at every point of it a
   derivative within the simplex injective on the directions of its affine span, gives a `Cⁿ`
@@ -68,14 +64,6 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {K : SimplicialC
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {H : Type*} [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   {n : WithTop ℕ∞}
-
-/-- The comparison map of a geometric complex is a star immersion of every class `Cⁿ`. -/
-theorem isStarImmersion_realizationToAmbient :
-    TauCeti.IsStarImmersion n K.realizationToAmbient := by
-  have h := isStarImmersion_secantMap (n := n) (f := K.realizationToAmbient) (by
-    rw [secantMap_realizationToAmbient]
-    exact realizationToAmbient_injective)
-  rwa [secantMap_realizationToAmbient] at h
 
 /-- Let `σ` be a face of `K`. If `F : V → M` is `Cⁿ` within the closed simplex of `σ`, with a
 derivative within it at every point which is injective on the directions of the affine span of

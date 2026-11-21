@@ -124,37 +124,44 @@ theorem affineIndependent_vertexScheme_face (σ : Face K.vertexScheme) :
 
 /-! ### Subcomplexes -/
 
+attribute [local instance] Classical.decEq
+
 /-- A subcomplex `K ≤ L` induces the simplicial map of vertex schemes sending each vertex of `K`
 to itself, as a vertex of `L`. -/
-def vertexSchemeInclusion [DecidableEq E] {L : SimplicialComplex 𝕜 E} (h : K ≤ L) :
+noncomputable def vertexSchemeInclusion {L : SimplicialComplex 𝕜 E} (h : K ≤ L) :
     PreAbstractSimplicialComplex.SimplicialMap K.vertexScheme.toPreAbstractSimplicialComplex
-      L.vertexScheme.toPreAbstractSimplicialComplex :=
-  (L.toPreAbstractSimplicialComplex.restrictInclusionOfSubset (vertices_mono h)).domainRestrict
-    (PreAbstractSimplicialComplex.restrict_mono h K.vertices)
+      L.vertexScheme.toPreAbstractSimplicialComplex := by
+  classical
+  exact
+    (L.toPreAbstractSimplicialComplex.restrictInclusionOfSubset (vertices_mono h)).domainRestrict
+      (PreAbstractSimplicialComplex.restrict_mono h K.vertices)
 
 /-- The simplicial map induced by a subcomplex is the inclusion of vertices. -/
 @[simp]
-theorem coe_vertexSchemeInclusion [DecidableEq E] {L : SimplicialComplex 𝕜 E} (h : K ≤ L) :
-    ⇑(vertexSchemeInclusion h) = inclusion (vertices_mono h) :=
-  (PreAbstractSimplicialComplex.SimplicialMap.coe_domainRestrict _ _).trans
+theorem coe_vertexSchemeInclusion {L : SimplicialComplex 𝕜 E} (h : K ≤ L) :
+    ⇑(vertexSchemeInclusion h) = inclusion (vertices_mono h) := by
+  classical
+  exact (PreAbstractSimplicialComplex.SimplicialMap.coe_domainRestrict _ _).trans
     (PreAbstractSimplicialComplex.coe_restrictInclusionOfSubset _ _)
 
 /-- The reflexive subcomplex inclusion induces the identity vertex-scheme map. -/
 @[simp]
-theorem vertexSchemeInclusion_refl [DecidableEq E] (h : K ≤ K) :
+theorem vertexSchemeInclusion_refl (h : K ≤ K) :
     vertexSchemeInclusion h = PreAbstractSimplicialComplex.SimplicialMap.id
-      K.vertexScheme.toPreAbstractSimplicialComplex :=
-  DFunLike.coe_injective (by
+      K.vertexScheme.toPreAbstractSimplicialComplex := by
+  classical
+  exact DFunLike.coe_injective (by
     rw [coe_vertexSchemeInclusion, PreAbstractSimplicialComplex.SimplicialMap.coe_id]
     exact inclusion_eq_id _)
 
 /-- Composing subcomplex inclusions agrees with the inclusion for the transitive inequality. -/
 @[simp]
-theorem vertexSchemeInclusion_comp [DecidableEq E] {L N : SimplicialComplex 𝕜 E}
+theorem vertexSchemeInclusion_comp {L N : SimplicialComplex 𝕜 E}
     (hLN : L ≤ N) (hKL : K ≤ L) :
     (vertexSchemeInclusion hLN).comp (vertexSchemeInclusion hKL) =
-      vertexSchemeInclusion (hKL.trans hLN) :=
-  DFunLike.coe_injective (by
+      vertexSchemeInclusion (hKL.trans hLN) := by
+  classical
+  exact DFunLike.coe_injective (by
     rw [PreAbstractSimplicialComplex.SimplicialMap.coe_comp,
       coe_vertexSchemeInclusion, coe_vertexSchemeInclusion, coe_vertexSchemeInclusion]
     exact inclusion_comp_inclusion _ _)

@@ -43,6 +43,9 @@ space used in the definition of a triangulation (`TauCeti.IsTriangulable`).
 * `mem_realization_iff`: a finitely supported function belongs to the polyhedron exactly when it
   lies in the convex hull of the coordinate image of some abstract face.
 * `faceBarycenter_mem`: a face barycenter belongs to its closed simplex.
+* `mem_range_faceInclusion_carrier`, `iUnion_range_faceInclusion`: closed faces cover the
+  realization, with each point in the face of its carrier.
+* `isQuotientMap_sigma_faceInclusion`: the closed faces present the realization as a quotient.
 * `vertex`: the canonical point of the realization corresponding to a vertex.
 * `realizationBotHomeomorph`: the realization of the bottom complex is its discrete vertex space.
 -/
@@ -457,6 +460,30 @@ theorem mem_range_faceInclusion_iff (K : AbstractSimplicialComplex ι) (σ : Fac
     exact StandardSimplex.support_subset y
   · intro hx
     exact ⟨_, faceInclusion_mk_val K σ x (Realization.mem_convexHull_of_support_subset K x hx)⟩
+
+/-- Every point of the realization lies in the closed simplex of its carrier. -/
+theorem mem_range_faceInclusion_carrier (K : AbstractSimplicialComplex ι) (x : Realization K) :
+    x ∈ range (faceInclusion K (carrier K x)) :=
+  ⟨_, faceInclusion_mk_val K _ x (mem_convexHull_carrier K x)⟩
+
+/-- The closed simplices cover the realization. -/
+theorem iUnion_range_faceInclusion (K : AbstractSimplicialComplex ι) :
+    ⋃ σ : Face K, range (faceInclusion K σ) = univ := by
+  apply eq_univ_of_forall
+  intro x
+  exact mem_iUnion.mpr ⟨carrier K x, mem_range_faceInclusion_carrier K x⟩
+
+/-- The closed simplices present the weak realization as a quotient of their disjoint union. -/
+theorem isQuotientMap_sigma_faceInclusion (K : AbstractSimplicialComplex ι) :
+    Topology.IsQuotientMap
+      (fun p : Σ σ : Face K, StandardSimplex σ.val => faceInclusion K p.1 p.2) := by
+  apply Topology.isQuotientMap_iff_isClosed.mpr
+  refine ⟨?_, fun s => ?_⟩
+  · intro x
+    obtain ⟨y, hy⟩ := mem_range_faceInclusion_carrier K x
+    exact ⟨⟨carrier K x, y⟩, hy⟩
+  · rw [isClosed_iff_faceInclusion, isClosed_sigma_iff]
+    rfl
 
 /-- The carrier is contained in every finite vertex set whose closed simplex contains the point. -/
 theorem carrier_minimal (K : AbstractSimplicialComplex ι) (x : Realization K) {σ : Finset ι}

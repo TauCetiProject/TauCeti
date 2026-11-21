@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Map
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Realization
 
 /-!
 # Linear extension of vertex data over a realization
@@ -33,8 +33,9 @@ geometric complex to its ambient space, where `p` is the inclusion of the vertic
   vertex `v`.
 * `AbstractSimplicialComplex.linearExtension_faceInclusion`: on a closed simplex the extension is
   the combination of the values of `p` at its vertices.
+* `AbstractSimplicialComplex.range_linearExtension_comp_faceInclusion`: the image of a closed
+  simplex is the convex hull of the vertex data on that face.
 * `AbstractSimplicialComplex.eq_linearExtension`: uniqueness from the formula on each closed face.
-* `AbstractSimplicialComplex.linearExtension_realizationMap`: naturality under simplicial maps.
 * `AbstractSimplicialComplex.continuous_linearExtension`: the extension is continuous.
 * `AbstractSimplicialComplex.secantMap_linearExtension`: taking the secant map fixes linear
   extensions.
@@ -42,6 +43,9 @@ geometric complex to its ambient space, where `p` is the inclusion of the vertic
   every closed simplex, with the same vertex values as `f`, is the secant map of `f`.
 * `AbstractSimplicialComplex.secantMap_eq_self_iff`: a map is its own secant map exactly when it is
   linear in barycentric coordinates on every closed simplex.
+
+Naturality under simplicial maps is proved in
+`TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Map`.
 
 ## References
 
@@ -91,6 +95,15 @@ theorem linearExtension_faceInclusion (p : ι → E) (σ : Face K) (x : Standard
   have hx := (mem_range_faceInclusion_iff K σ _).mp (Set.mem_range_self x)
   rw [linearExtension_eq_sum_of_support_subset p hx, faceInclusion_val]
 
+/-- The image of a closed simplex under the linear extension is the convex hull of the
+vertex data on that face. -/
+theorem range_linearExtension_comp_faceInclusion (p : ι → E) (σ : Face K) :
+    range (K.linearExtension p ∘ faceInclusion K σ) =
+      convexHull ℝ (range fun a : σ.val => p a) := by
+  rw [← Finset.range_linearCombination_standardSimplex]
+  exact congrArg range (funext fun x => by
+    rw [comp_apply, linearExtension_faceInclusion, Fintype.linearCombination_apply])
+
 /-- The linear extension of vertex data into a space with continuous addition and continuous real
 scalar multiplication is continuous for the weak topology on the realization. -/
 theorem continuous_linearExtension [TopologicalSpace E] [ContinuousAdd E] [ContinuousSMul ℝ E]
@@ -108,24 +121,12 @@ theorem eq_linearExtension {p : ι → E} {g : Realization K → E}
       g (faceInclusion K σ x) = ∑ a : σ.val, x.val a • p a) :
     g = K.linearExtension p := by
   funext x
-  obtain ⟨y, hy⟩ := (mem_range_faceInclusion_iff K (carrier K x) x).mpr
-    (carrier_val K x).symm.subset
+  obtain ⟨y, hy⟩ := mem_range_faceInclusion_carrier K x
   calc
     g x = g (faceInclusion K (carrier K x) y) := congrArg g hy.symm
     _ = K.linearExtension p (faceInclusion K (carrier K x) y) := by
       rw [hg, linearExtension_faceInclusion]
     _ = K.linearExtension p x := congrArg (K.linearExtension p) hy
-
-/-- Pulling a linear extension back along a simplicial realization map pulls back vertex data. -/
-theorem linearExtension_realizationMap {κ : Type*} [DecidableEq κ]
-    {L : AbstractSimplicialComplex κ}
-    (f : PreAbstractSimplicialComplex.SimplicialMap
-      K.toPreAbstractSimplicialComplex L.toPreAbstractSimplicialComplex)
-    (p : κ → E) (x : Realization K) :
-    L.linearExtension p (f.realizationMap x) = K.linearExtension (p ∘ f) x := by
-  rw [linearExtension_apply, linearExtension_apply,
-    PreAbstractSimplicialComplex.SimplicialMap.realizationMap_val,
-    Finsupp.linearCombination_mapDomain]
 
 variable (K)
 

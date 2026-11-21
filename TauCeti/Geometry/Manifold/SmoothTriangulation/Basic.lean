@@ -121,6 +121,21 @@ theorem isSimplexImmersion_iff {σ : Finset ι} {g : StandardSimplex σ → M} :
             ∀ v : σ → ℝ, ∑ a, v a = 0 → F' v = 0 → v = 0 :=
   Iff.rfl
 
+/-- Composing a linear map from simplex coordinates with a map smooth within a set gives a
+simplex immersion if the composite derivatives are injective on zero-sum directions. -/
+theorem _root_.ContinuousLinearMap.isSimplexImmersion_comp
+    {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {σ : Finset ι}
+    (L : (σ → ℝ) →L[ℝ] V) {F : V → M} {s : Set V}
+    (hL : MapsTo L (range fun t : Convexity.StdSimplex ℝ σ => ⇑t.weights) s)
+    (hF : ContMDiffOn 𝓘(ℝ, V) I n F s)
+    (hF' : ∀ t : Convexity.StdSimplex ℝ σ, ∃ F' : V →L[ℝ] E,
+      HasMFDerivWithinAt 𝓘(ℝ, V) I F s (L t.weights) F' ∧
+        ∀ v : σ → ℝ, ∑ a, v a = 0 → F' (L v) = 0 → v = 0) :
+    IsSimplexImmersion I n (fun x : StandardSimplex σ => F (L fun a => x.val a)) := by
+  refine ⟨F ∘ L, fun _ => rfl, hF.comp L.contMDiff.contMDiffOn hL, fun t => ?_⟩
+  obtain ⟨F', hFt, hinj⟩ := hF' t
+  exact ⟨F'.comp L, hFt.comp (⇑t.weights) L.hasMFDerivWithinAt hL.subset_preimage, hinj⟩
+
 /-- Composing the barycentric map of an affinely independent vertex family with a map smooth
 within its convex hull gives an immersion if the derivative is injective along its affine span. -/
 theorem isSimplexImmersion_comp_linearCombination
@@ -142,18 +157,14 @@ theorem isSimplexImmersion_comp_linearCombination
       ← Finset.range_linearCombination_standardSimplex]
     rintro _ ⟨y, rfl⟩
     exact ⟨y, by simp only [hL, Fintype.linearCombination_apply]⟩
-  refine TauCeti.isSimplexImmersion_iff.mpr ⟨F ∘ L,
-    fun y => by
-      simp only [comp_apply, hL, Fintype.linearCombination_apply],
-    hF.comp L.contMDiff.contMDiffOn hmaps, fun t => ?_⟩
+  refine L.isSimplexImmersion_comp hmaps hF fun t => ?_
   obtain ⟨F', hFt, hinj⟩ := hF' _ (hmaps ⟨t, rfl⟩)
-  refine ⟨F'.comp L, hFt.comp (⇑t.weights) L.hasMFDerivWithinAt hmaps.subset_preimage,
-    fun v hv hv0 => ?_⟩
+  refine ⟨F', hFt, fun v hv hv0 => ?_⟩
   -- A direction of the simplex is sent into the vector span of its vertices.
   have hLv : L v ∈ vectorSpan ℝ (range p) := by
     have h := weightedVSub_mem_vectorSpan (s := Finset.univ) (w := v) hv p
     rwa [Finset.weightedVSub_eq_linear_combination _ hv, ← hL] at h
-  have hL0 := hinj _ hLv (by rwa [ContinuousLinearMap.comp_apply] at hv0)
+  have hL0 := hinj _ hLv hv0
   rw [hL] at hL0
   exact funext fun a => hp.eq_zero_of_sum_eq_zero
     (s := Finset.univ) hv hL0 a (Finset.mem_univ a)
@@ -219,16 +230,16 @@ theorem comp_linear {κ : Type*} {τ : Finset κ} (h : IsSimplexImmersion I n g)
   have hsum := L.sum_apply_eq_of_mapsTo_range_weights hmaps
   -- The domain of `L` is finite dimensional, so `L` is continuous.
   let L' : (τ → ℝ) →L[ℝ] (σ → ℝ) := L.toContinuousLinearMap
-  refine ⟨F ∘ L', fun x => by rw [comp_apply, LinearMap.coe_toContinuousLinearMap', ← hφ, hFg,
-    comp_apply], hF.comp L'.contMDiff.contMDiffOn hmaps, fun t => ?_⟩
+  suffices IsSimplexImmersion I n (fun x : StandardSimplex τ => F (L' fun a => x.val a)) by
+    simpa only [L', LinearMap.coe_toContinuousLinearMap', ← hφ, hFg, comp_def] using this
+  refine L'.isSimplexImmersion_comp hmaps hF fun t => ?_
   obtain ⟨s, hs⟩ := hmaps ⟨t, rfl⟩
   obtain ⟨F', hFs, hinj⟩ := hF' s
   have hFt : HasMFDerivWithinAt 𝓘(ℝ, σ → ℝ) I F
       (range fun t : Convexity.StdSimplex ℝ σ => ⇑t.weights) (L t.weights) F' := by
     rw [← hs]
     exact hFs
-  exact ⟨F'.comp L', hFt.comp (⇑t.weights) L'.hasMFDerivWithinAt hmaps.subset_preimage,
-    fun v hv hv0 => hL v hv (hinj (L v) ((hsum v).trans hv) hv0)⟩
+  exact ⟨F', hFt, fun v hv hv0 => hL v hv (hinj (L v) ((hsum v).trans hv) hv0)⟩
 
 end IsSimplexImmersion
 

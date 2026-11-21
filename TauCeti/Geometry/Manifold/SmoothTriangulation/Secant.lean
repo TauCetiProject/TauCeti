@@ -22,7 +22,8 @@ simplex; it is defined, with its uniqueness and idempotence, in
 Whitehead and Munkres pass from smooth to piecewise-linear maps: both the existence of smooth
 triangulations and their uniqueness up to linearly isomorphic subdivisions (Munkres, Theorems
 10.5 and 10.6) replace a smooth map, simplex by simplex, by its secant map, and use that the
-secant map is again non-degenerate.
+secant map is again non-degenerate on sufficiently small simplices of a subdivision with a
+uniform fatness bound.
 
 The estimate behind that replacement on a single simplex, in barycentric coordinates, is proved in
 `TauCeti.Analysis.Convex.SecantEstimate`. Let `F : (σ → ℝ) → E` be differentiable within the

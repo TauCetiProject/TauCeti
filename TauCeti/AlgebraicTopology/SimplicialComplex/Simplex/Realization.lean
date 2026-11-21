@@ -194,12 +194,14 @@ theorem injective_linearCombination_standardSimplex {p : σ → E} (hp : AffineI
   ext a
   exact h a (Finset.mem_univ a)
 
+variable {E : Type*} [AddCommMonoid E] [Module ℝ E] in
 /-- The range of the map from the closed coordinate simplex sending barycentric coordinates to the
 corresponding linear combination of a family `p` is the convex hull of `p`. -/
 theorem range_linearCombination_standardSimplex (p : σ → E) :
     Set.range (fun y : StandardSimplex σ => Fintype.linearCombination ℝ p fun a => y.val a) =
       convexHull ℝ (Set.range p) := by
   classical
+  let := Module.addCommMonoidToAddCommGroup ℝ (M := E)
   let : Convexity.ConvexSpace ℝ E := .ofModule
   rw [Set.range_comp' (Fintype.linearCombination ℝ p), range_standardSimplex_coordinates,
     ← Set.range_comp']

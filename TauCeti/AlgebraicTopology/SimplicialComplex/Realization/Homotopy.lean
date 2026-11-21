@@ -43,17 +43,6 @@ namespace AbstractSimplicialComplex
 variable {ι : Type*} {K : AbstractSimplicialComplex ι}
   {P X : Type*} [TopologicalSpace P] [TopologicalSpace X]
 
-/-- The closed simplices present the weak realization as a quotient of their disjoint union. -/
-theorem isQuotientMap_sigma_faceInclusion (K : AbstractSimplicialComplex ι) :
-    IsQuotientMap (fun p : Σ σ : Face K, StandardSimplex σ.val => faceInclusion K p.1 p.2) := by
-  apply isQuotientMap_iff_isClosed.mpr
-  refine ⟨?_, fun s => ?_⟩
-  · intro x
-    exact ⟨⟨carrier K x, ⟨x.val, mem_convexHull_carrier K x⟩⟩,
-      Subtype.ext (faceInclusion_val _ _ _)⟩
-  · rw [isClosed_iff_faceInclusion, isClosed_sigma_iff]
-    rfl
-
 /-- Joint continuity with a locally compact parameter can be checked on closed simplex
 cylinders. Neither the realization nor the vertex type needs to be locally compact or finite. -/
 theorem continuous_prod_iff_faceInclusion [LocallyCompactSpace P]

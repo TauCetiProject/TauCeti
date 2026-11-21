@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.LocallyFinite
-public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.LinearExtension
-public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Homotopy
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Map
 public import TauCeti.AlgebraicTopology.SimplicialComplex.VertexScheme
 
 /-!
@@ -123,8 +122,8 @@ hull of that face in `E`. -/
 theorem range_realizationToAmbient_comp_faceInclusion (σ : Face K.vertexScheme) :
     range (K.realizationToAmbient ∘ faceInclusion K.vertexScheme σ) =
       convexHull ℝ (σ.val.map (Embedding.subtype (· ∈ K.vertices)) : Set E) := by
-  rw [← range_vertexScheme_face_coe, ← Finset.range_linearCombination_standardSimplex]
-  exact congrArg range (funext (realizationToAmbient_faceInclusion σ))
+  rw [← range_vertexScheme_face_coe]
+  exact range_linearExtension_comp_faceInclusion _ σ
 
 /-- The comparison map sends a point of the realization into the closed simplex of `K` spanned by
 the carrier of the point. -/
@@ -132,8 +131,7 @@ private theorem realizationToAmbient_mem_convexHull_carrier (x : Realization K.v
     K.realizationToAmbient x ∈ convexHull ℝ
       ((carrier K.vertexScheme x).val.map (Embedding.subtype (· ∈ K.vertices)) : Set E) := by
   rw [← range_realizationToAmbient_comp_faceInclusion]
-  obtain ⟨y, hy⟩ := (mem_range_faceInclusion_iff _ (carrier K.vertexScheme x) x).mpr
-    (carrier_val _ x).symm.subset
+  obtain ⟨y, hy⟩ := mem_range_faceInclusion_carrier K.vertexScheme x
   exact ⟨y, congrArg K.realizationToAmbient hy⟩
 
 /-- Two points of the realization whose barycentric supports lie in a common face and which have
@@ -218,10 +216,12 @@ theorem secantMap_realizationToAmbient :
 
 /-! ### Subcomplexes -/
 
+attribute [local instance] Classical.decEq
+
 /-- For a subcomplex `K ≤ L`, the realization of the inclusion of vertex schemes followed by the
 comparison map of `L` is the comparison map of `K`. -/
 @[simp]
-theorem realizationToAmbient_realizationMap_vertexSchemeInclusion [DecidableEq E]
+theorem realizationToAmbient_realizationMap_vertexSchemeInclusion
     {L : SimplicialComplex ℝ E} (h : K ≤ L) (x : Realization K.vertexScheme) :
     L.realizationToAmbient ((vertexSchemeInclusion h).realizationMap x) =
       K.realizationToAmbient x := by
@@ -230,7 +230,7 @@ theorem realizationToAmbient_realizationMap_vertexSchemeInclusion [DecidableEq E
 
 /-- For a subcomplex `K ≤ L`, the comparison map of `K` factors through the realization of the
 inclusion of vertex schemes and the comparison map of `L`. -/
-theorem realizationToAmbient_comp_realizationMap_vertexSchemeInclusion [DecidableEq E]
+theorem realizationToAmbient_comp_realizationMap_vertexSchemeInclusion
     {L : SimplicialComplex ℝ E} (h : K ≤ L) :
     L.realizationToAmbient ∘ (vertexSchemeInclusion h).realizationMap = K.realizationToAmbient :=
   funext (realizationToAmbient_realizationMap_vertexSchemeInclusion h)
@@ -254,13 +254,10 @@ theorem isClosedMap_codRestrict_realizationToAmbient [T2Space K.space]
   set g := codRestrict K.realizationToAmbient K.space realizationToAmbient_mem_space
   -- The image of `C` is the union of the images of its traces on the closed simplices, since
   -- every point of the realization lies in the closed simplex of its carrier.
-  have hcover : ⋃ σ : Face K.vertexScheme, range (faceInclusion K.vertexScheme σ) = univ :=
-    (range_sigma_eq_iUnion_range _).symm.trans
-      (range_eq_univ.mpr (isQuotientMap_sigma_faceInclusion K.vertexScheme).surjective)
   have hC' : g '' C = ⋃ σ : Face K.vertexScheme,
       (g ∘ faceInclusion K.vertexScheme σ) '' (faceInclusion K.vertexScheme σ ⁻¹' C) := by
-    simp only [image_comp, image_preimage_eq_range_inter, ← image_iUnion, ← iUnion_inter, hcover,
-      univ_inter]
+    simp only [image_comp, image_preimage_eq_range_inter, ← image_iUnion, ← iUnion_inter,
+      iUnion_range_faceInclusion, univ_inter]
   rw [hC']
   refine LocallyFinite.isClosed_iUnion ?_ fun σ =>
     (((isClosed_iff_faceInclusion.mp hC σ).isCompact.image
@@ -318,7 +315,19 @@ def realizationHomeomorph [T2Space K.space]
 theorem coe_realizationHomeomorph_apply [T2Space K.space]
     (hK : LocallyFinite fun s : K.faces => ((↑) : K.space → E) ⁻¹' convexHull ℝ (s : Set E))
     (x : Realization K.vertexScheme) :
-    (K.realizationHomeomorph hK x : E) = K.realizationToAmbient x :=
-  (rfl)
+    (K.realizationHomeomorph hK x : E) = K.realizationToAmbient x := by
+  unfold realizationHomeomorph
+  rw [Equiv.toHomeomorphOfContinuousClosed_apply]
+  exact (congrArg Subtype.val (congrFun (Equiv.coe_ofBijective _ _) x)).trans
+    (val_codRestrict_apply _ _ _ _)
+
+/-- Transporting a point of the underlying space back to the realization preserves its ambient
+coordinates. -/
+@[simp]
+theorem realizationToAmbient_realizationHomeomorph_symm_apply [T2Space K.space]
+    (hK : LocallyFinite fun s : K.faces => ((↑) : K.space → E) ⁻¹' convexHull ℝ (s : Set E))
+    (p : K.space) :
+    K.realizationToAmbient ((K.realizationHomeomorph hK).symm p) = (p : E) := by
+  rw [← coe_realizationHomeomorph_apply hK, Homeomorph.apply_symm_apply]
 
 end Geometry.SimplicialComplex

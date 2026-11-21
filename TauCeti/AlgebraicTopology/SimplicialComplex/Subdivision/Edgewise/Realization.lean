@@ -9,7 +9,6 @@ public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Edgewise.B
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.LinearExtension
 
 import Mathlib.Data.Fin.Tuple.Sort
-import Mathlib.LinearAlgebra.Finsupp.Pi
 import TauCeti.Data.Fintype.Card.FilterOrder
 
 /-!
@@ -159,8 +158,8 @@ theorem edgewiseSubdivisionRealizationMap_val (x : Realization (K.edgewiseSubdiv
 /-- A vertex `u` of the edgewise subdivision is sent to `edgewisePoint u`, the average of its
 entries. -/
 theorem edgewiseSubdivisionRealizationMap_vertex (u : K.EdgewiseVertex k) :
-    (edgewiseSubdivisionRealizationMap K k (vertex _ u) : ι →₀ ℝ) = edgewisePoint u.val :=
-  linearExtension_vertex _ u
+    (edgewiseSubdivisionRealizationMap K k (vertex _ u) : ι →₀ ℝ) = edgewisePoint u.val := by
+  rw [edgewiseSubdivisionRealizationMap_val, ← linearExtension_apply, linearExtension_vertex]
 
 /-- On a simplex `ρ` of the edgewise subdivision whose vertices have their entries in a face `σ`
 of `K`, the edgewise realization map is the edgewise face map followed by the face inclusion
@@ -183,15 +182,12 @@ theorem range_edgewiseSubdivisionRealizationMap_faceInclusion
     range (fun x : StandardSimplex ρ.val =>
       ((edgewiseSubdivisionRealizationMap K k (faceInclusion _ ρ x)).val : ι → ℝ)) =
       convexHull ℝ (range fun a : ρ.val => (edgewisePoint a.val.val : ι → ℝ)) := by
-  have hformula : (fun x : StandardSimplex ρ.val =>
-      ((edgewiseSubdivisionRealizationMap K k (faceInclusion _ ρ x)).val : ι → ℝ)) =
-      fun x : StandardSimplex ρ.val => Fintype.linearCombination ℝ
-        (fun a : ρ.val => (edgewisePoint a.val.val : ι → ℝ)) (fun a => x.val a) := by
-    funext x i
-    rw [edgewiseSubdivisionRealizationMap_val, ← linearExtension_apply,
-      linearExtension_faceInclusion, Fintype.linearCombination_apply]
-    simp only [Finsupp.finsetSum_apply, Finset.sum_apply, Finsupp.smul_apply, Pi.smul_apply]
-  rw [hformula, Finset.range_linearCombination_standardSimplex]
+  convert range_linearExtension_comp_faceInclusion
+    (fun u : K.EdgewiseVertex k => (edgewisePoint u.val : ι → ℝ)) ρ using 1
+  congr 1
+  funext x
+  rw [Function.comp_apply, edgewiseSubdivisionRealizationMap_val, linearExtension_apply]
+  exact Finsupp.apply_linearCombination ℝ (Finsupp.lcoeFun (R := ℝ)) _ _
 
 /-- The edgewise realization map is continuous for the weak topologies on both realizations. -/
 theorem continuous_edgewiseSubdivisionRealizationMap :
