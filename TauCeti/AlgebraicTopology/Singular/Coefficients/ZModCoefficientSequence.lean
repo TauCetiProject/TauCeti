@@ -186,22 +186,30 @@ theorem singularHomologyReductionZMod_naturality {X Y : TopCat.{u}} (f : X ⟶ Y
   ((singularHomologyFunctor (ModuleCat.{u} ℤ) n).map
     (TauCeti.zmodCoefficientSequence.{u} m).g).naturality f
 
+/-- For `m = 0`, reduction modulo `0` is the isomorphism on singular homology induced by
+`TauCeti.zmodZeroModuleIso.symm`. -/
+theorem singularHomologyReductionZMod_zero_eq (X : TopCat.{u}) (n : ℕ) :
+    X.singularHomologyReductionZMod 0 n =
+      (((singularHomologyFunctor (ModuleCat.{u} ℤ) n).mapIso
+        TauCeti.zmodZeroModuleIso.symm).app X).hom :=
+  congrArg (fun f ↦ ((singularHomologyFunctor (ModuleCat.{u} ℤ) n).map f).app X)
+    TauCeti.zmodCoefficientSequence_zero_g
+
 /-- For `m = 0`, reduction modulo `0` acts as the identity on integral singular homology. -/
 @[simp]
 theorem singularHomologyReductionZMod_zero_apply (X : TopCat.{u}) (n : ℕ)
     (x : ((singularHomologyFunctor (ModuleCat.{u} ℤ) n).obj
       (ModuleCat.of ℤ (ULift.{u} ℤ))).obj X) :
     X.singularHomologyReductionZMod 0 n x = x := by
-  have hEq : X.singularHomologyReductionZMod 0 n =
-      (((singularHomologyFunctor (ModuleCat.{u} ℤ) n).mapIso
-        TauCeti.zmodZeroModuleIso.symm).app X).hom :=
-    congrArg (fun f ↦ ((singularHomologyFunctor (ModuleCat.{u} ℤ) n).map f).app X)
-      TauCeti.zmodCoefficientSequence_zero_g
+  rw [X.singularHomologyReductionZMod_zero_eq n]
   have h : ((singularHomologyFunctor (ModuleCat.{u} ℤ) n).map
       TauCeti.zmodZeroModuleIso.inv).app X x = x := by
-    erw [CategoryTheory.Functor.map_id, NatTrans.id_app]
-    rfl
-  exact (ConcreteCategory.congr_hom hEq x).trans h
+    rw [TauCeti.zmodZeroModuleIso_inv]
+    -- `ZMod 0 = ℤ` definitionally, so `.map` now acts on `𝟙 (ModuleCat.of ℤ (ULift ℤ))`.
+    change ((singularHomologyFunctor (ModuleCat.{u} ℤ) n).map
+      (𝟙 (ModuleCat.of ℤ (ULift.{u} ℤ)))).app X x = x
+    rw [CategoryTheory.Functor.map_id, NatTrans.id_app, ModuleCat.id_apply]
+  exact h
 
 /-- **The kernel of the reduction modulo `m`**: an integral homology class reduces to zero modulo
 `m` exactly when it is an `m`-multiple of a class (for all `m : ℕ`, including `m = 0`). -/
@@ -210,12 +218,9 @@ theorem ker_singularHomologyReductionZMod (X : TopCat.{u}) (m n : ℕ) :
       LinearMap.range (LinearMap.lsmul ℤ (((singularHomologyFunctor (ModuleCat.{u} ℤ) n).obj
         (ModuleCat.of ℤ (ULift.{u} ℤ))).obj X) m) := by
   rcases eq_or_ne m 0 with rfl | hm
-  · have hEq : X.singularHomologyReductionZMod 0 n =
-        (((singularHomologyFunctor (ModuleCat.{u} ℤ) n).mapIso
-          TauCeti.zmodZeroModuleIso.symm).app X).hom :=
-      congrArg (fun f ↦ ((singularHomologyFunctor (ModuleCat.{u} ℤ) n).map f).app X)
-        TauCeti.zmodCoefficientSequence_zero_g
-    have : Mono (X.singularHomologyReductionZMod 0 n) := by rw [hEq]; infer_instance
+  · have : Mono (X.singularHomologyReductionZMod 0 n) := by
+      rw [X.singularHomologyReductionZMod_zero_eq n]
+      infer_instance
     rw [LinearMap.ker_eq_bot.2 ((ModuleCat.mono_iff_injective _).1 this)]
     simp
   · have : NeZero m := ⟨hm⟩

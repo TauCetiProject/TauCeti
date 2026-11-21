@@ -132,11 +132,7 @@ theorem isZero_singularHomology_of_bijective_zsmul_int {X : Type} [TopologicalSp
       hscalar, hpt, zero_add]
   have hFzero : Limits.IsZero
       ((FCh.obj ((singularChains ℤ).obj (TopCat.of X))).homology (n + 1)) :=
-    (Limits.IsZero.iff_id_eq_zero _).2 <|
-      (IsIso.hom_inv_id (HomologicalComplex.homologyMap
-        (FCh.map (zsmulAddProjEndo x m)) (n + 1))).symm.trans <|
-        (congrArg (· ≫ inv (HomologicalComplex.homologyMap
-          (FCh.map (zsmulAddProjEndo x m)) (n + 1))) hzero).trans Limits.zero_comp
+    Limits.IsZero.of_epi_eq_zero _ hzero
   exact (hFzero.of_iso
     (H.mapIso ((Functor.singularChainComplexFunctorObjCompMapIso F (ModuleCat.of ℤ ℤ)).app
       (TopCat.of X))).symm).of_iso

@@ -56,10 +56,31 @@ theorem zmodCoefficientSequence_g_apply (n : ℕ) (z : ℤ) :
 
 /-- Identification of `ModuleCat.of ℤ (ULift.{u} (ZMod 0))` with `ModuleCat.of ℤ (ULift.{u} ℤ)`,
 isolating the definitional equality `ZMod 0 = ℤ`. -/
-@[expose]
 def zmodZeroModuleIso :
     ModuleCat.of ℤ (ULift.{u} (ZMod 0)) ≅ ModuleCat.of ℤ (ULift.{u} ℤ) :=
   Iso.refl _
+
+/-- The forward map of `TauCeti.zmodZeroModuleIso` is the identity (via `ZMod 0 = ℤ`). -/
+theorem zmodZeroModuleIso_hom :
+    zmodZeroModuleIso.{u}.hom = 𝟙 (ModuleCat.of ℤ (ULift.{u} ℤ)) :=
+  (rfl)
+
+/-- The inverse map of `TauCeti.zmodZeroModuleIso` is the identity (via `ZMod 0 = ℤ`). -/
+theorem zmodZeroModuleIso_inv :
+    zmodZeroModuleIso.{u}.inv = 𝟙 (ModuleCat.of ℤ (ULift.{u} ℤ)) :=
+  (rfl)
+
+/-- Pointwise action of `TauCeti.zmodZeroModuleIso.hom` (via `ZMod 0 = ℤ`). -/
+@[simp]
+theorem zmodZeroModuleIso_hom_apply (x : ModuleCat.of ℤ (ULift.{u} (ZMod 0))) :
+    zmodZeroModuleIso.{u}.hom x = x :=
+  (rfl)
+
+/-- Pointwise action of `TauCeti.zmodZeroModuleIso.inv` (via `ZMod 0 = ℤ`). -/
+@[simp]
+theorem zmodZeroModuleIso_inv_apply (x : ModuleCat.of ℤ (ULift.{u} ℤ)) :
+    zmodZeroModuleIso.{u}.inv x = x :=
+  (rfl)
 
 /-- For modulus `0`, `ZMod 0` is `ℤ` and the reduction map `(zmodCoefficientSequence 0).g` is the
 inverse of `TauCeti.zmodZeroModuleIso`. -/
