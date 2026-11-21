@@ -64,10 +64,9 @@ instance, so the kinetic energy `(m / 2) v²` below names the power of `ℝ` exp
 private theorem inverse_fderiv_fderiv_mul_sq (hm : m ≠ 0) (w : ℝ) (φ : ℝ →L[ℝ] ℝ) :
     (fderiv ℝ (fderiv ℝ fun v : ℝ ↦ m / 2 * v ^ 2) w).inverse φ = φ 1 / m := by
   have hD : ∀ a b, fderiv ℝ (fderiv ℝ fun v : ℝ ↦ m / 2 * v ^ 2) w a b = m * a * b := fun a b ↦ by
-    rw [fderiv_fderiv_apply_eq_smul_iteratedDeriv]
-    simp only [smul_eq_mul]
     -- The second derivative of `(m / 2) v²` is `m`.
-    simp
+    have h2 : iteratedDeriv 2 (fun v : ℝ ↦ m / 2 * v ^ 2) w = m := by simp
+    rw [fderiv_fderiv_apply_eq_smul_iteratedDeriv, h2, smul_eq_mul]
     ring
   have hinv : (fderiv ℝ (fderiv ℝ fun v : ℝ ↦ m / 2 * v ^ 2) w).IsInvertible :=
     isInvertible_fderiv_fderiv_iff_iteratedDeriv_two_ne_zero.2 (by simpa using hm)

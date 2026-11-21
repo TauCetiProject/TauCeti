@@ -39,9 +39,9 @@ force is `-g_x⁻¹ dV_x`, minus the gradient of `V`.
 
 On a normed space `E`, with tangent vectors written as pairs `(q, v)` of a position and a velocity,
 a Lagrangian `f(v)` depending only on the velocity has the uniform motion `(q, v) ↦ (v, 0)` as a
-Lagrangian vector field (`TauCeti.isHamiltonianVectorField_lagrangianEnergy_comp_snd`), with no
-regularity assumption. With a potential `V(q)` and an invertible second derivative of `f`, the
-Lagrangian vector field of `f(v) - V(q)` is therefore
+Lagrangian vector field (`TauCeti.isHamiltonianVectorField_lagrangianEnergy_comp_snd`). With a
+potential `V(q)` and an invertible second derivative of `f`, the Lagrangian vector field of
+`f(v) - V(q)` is therefore
 
 `(q, v) ↦ (v, -D²f(v)⁻¹ DV(q))`
 
@@ -57,11 +57,8 @@ Lagrangian vector field of `f(v) - V(q)` is therefore
   the force to a Lagrangian vector field of `L` gives a Lagrangian vector field of `L - V ∘ π`.
 * `TauCeti.IsRegularLagrangian.hamiltonianVectorField_lagrangianEnergy_sub_comp_proj`: the
   Lagrangian vector field of `L - V ∘ π` on a finite-dimensional boundaryless manifold.
-* `TauCeti.eval₂_cartanTwoForm_comp_snd`, `TauCeti.mvfderiv_lagrangianEnergy_comp_snd`: the
-  Cartan two-form and the differential of the energy of `f(v)` on a normed space.
-* `TauCeti.isHamiltonianVectorField_lagrangianEnergy_comp_snd`,
-  `TauCeti.hamiltonianVectorField_lagrangianEnergy_comp_snd_sub`: the Lagrangian vector fields of
-  `f(v)` and of `f(v) - V(q)` on a normed space.
+* `TauCeti.hamiltonianVectorField_lagrangianEnergy_comp_snd_sub`: the Lagrangian vector field of
+  `f(v) - V(q)` on a finite-dimensional normed space.
 
 ## References
 
@@ -104,8 +101,8 @@ theorem potentialForce_def (L : TangentBundle I M → ℝ) (V : M → ℝ) (v : 
 theorem mfderiv_proj_potentialForce (L : TangentBundle I M → ℝ) (V : M → ℝ)
     (v : TangentBundle I M) :
     mfderiv I.tangent I (π E (TangentSpace I)) v (potentialForce L V v) = 0 := by
-  rw [Bundle.mfderiv_proj]
-  rfl
+  rw [Bundle.mfderiv_proj, potentialForce_def]
+  exact congrFun (ContinuousLinearMap.coe_fst' (R := ℝ) (M₁ := E) (M₂ := E)) _
 
 /-- The force of a potential, with its fibre component read in the trivialization of `TM` at the
 base point; this is the form in which `TauCeti.eval₂_cartanTwoForm_vertical` sees it. -/
@@ -115,7 +112,7 @@ private theorem potentialForce_eq_continuousLinearMapAt (L : TangentBundle I M �
       ((0 : E), (trivializationAt E (TangentSpace I) v.proj).continuousLinearMapAt ℝ v.proj
         (-(fiberHessian L v).inverse (mvfderiv I V v.proj))) := by
   rw [Manifold.continuousLinearMapAt_trivializationAt_self]
-  rfl
+  exact potentialForce_def L V v
 
 namespace IsRegularLagrangian
 
@@ -194,89 +191,8 @@ end Manifold
 
 section VectorSpace
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {f : E → ℝ} {V : E → ℝ}
-
-/-- The charts of `TE` read a tangent vector `v ∈ T_q E` as the pair `(q, v)`, so a Lagrangian
-`f(v)` reads as `(q, v) ↦ f(v)` in every chart. -/
-private theorem comp_extChartAt_symm_comp_snd (f : E → ℝ) (v : TangentBundle 𝓘(ℝ, E) E) :
-    ((fun v : TangentBundle 𝓘(ℝ, E) E ↦ f v.snd) ∘ (extChartAt 𝓘(ℝ, E).tangent v).symm) =
-      fun y : E × E ↦ f y.2 := by
-  funext y
-  simp [extChartAt, OpenPartialHomeomorph.extend, tangentBundle_model_space_chartAt]
-  -- The inverse chart is `(TotalSpace.toProd E E).symm`, which sends `(q, v)` to `⟨q, v⟩`.
-  rfl
-
-/-- The chart of `TE` at `v ∈ T_q E` reads `v` as the pair `(q, v)`. -/
-private theorem extChartAt_tangent_self_modelSpace (v : TangentBundle 𝓘(ℝ, E) E) :
-    extChartAt 𝓘(ℝ, E).tangent v v = ((v.proj, v.snd) : E × E) := by
-  rw [TangentBundle.extChartAt_self, extChartAt_model_space_eq_id, PartialEquiv.refl_coe, id]
-  rfl
-
-/-- The Legendre map `(q, v) ↦ (q, Df(v))` of `(q, v) ↦ f(v)` on `E × E` has derivative
-`(a, b) ↦ (a, D²f(v) b)` at `(q, v)`. -/
-private theorem hasFDerivAt_linearLegendreMap_comp_snd (hf : ContDiff ℝ ∞ f) (y : E × E) :
-    HasFDerivAt (linearLegendreMap fun y : E × E ↦ f y.2)
-      ((ContinuousLinearMap.fst ℝ E E).prod
-        ((fderiv ℝ (fderiv ℝ f) y.2).comp (ContinuousLinearMap.snd ℝ E E))) y := by
-  have hLLM : linearLegendreMap (fun y : E × E ↦ f y.2) = fun y ↦ (y.1, fderiv ℝ f y.2) :=
-    funext fun y ↦ Prod.ext (linearLegendreMap_fst _ y) (linearLegendreMap_snd _ y)
-  rw [hLLM]
-  exact hasFDerivAt_fst.prodMk ((((hf.fderiv_right (m := 1) (by simp)).differentiable
-    one_ne_zero) y.2).hasFDerivAt.comp y hasFDerivAt_snd)
-
-/-- **The Cartan two-form of a Lagrangian depending only on the velocity.** On a normed space,
-for a smooth Lagrangian `f(v)`, the Cartan two-form at `(q, v)` pairs the tangent vectors
-`X = (a, b)` and `W = (c, d)` of `TE` by `ω_L(X, W) = D²f(v)(d, a) - D²f(v)(b, c)`. -/
-theorem eval₂_cartanTwoForm_comp_snd
-    (hL : ContMDiff 𝓘(ℝ, E).tangent 𝓘(ℝ, ℝ) ∞ fun v : TangentBundle 𝓘(ℝ, E) E ↦ f v.snd)
-    (v : TangentBundle 𝓘(ℝ, E) E) (X W : TangentSpace 𝓘(ℝ, E).tangent v) :
-    SmoothBundleForm.eval₂ (cartanTwoForm _ hL) v X W =
-      fderiv ℝ (fderiv ℝ f) v.snd W.2 X.1 - fderiv ℝ (fderiv ℝ f) v.snd X.2 W.1 := by
-  -- `f` is smooth: it is `L` along a fibre of `TE`.
-  have hf : ContDiff ℝ ∞ f :=
-    contMDiff_iff_contDiff.1 (hL.comp (contMDiff_tangentBundle_mk_constBase contMDiff_id 0))
-  rw [eval₂_cartanTwoForm_eq_fderiv_linearLegendreMap, comp_extChartAt_symm_comp_snd,
-    extChartAt_tangent_self_modelSpace, (hasFDerivAt_linearLegendreMap_comp_snd hf _).fderiv]
-  exact strongDualCotangentSymplecticForm_apply _ _
-
-/-- **The differential of the energy of a Lagrangian depending only on the velocity.** On a
-normed space, for a smooth Lagrangian `f(v)`, the differential of the energy
-`E_L(q, v) = Df(v)(v) - f(v)` at `(q, v)` sends the tangent vector `W = (c, d)` of `TE` to
-`D²f(v)(d, v)`. -/
-theorem mvfderiv_lagrangianEnergy_comp_snd
-    (hL : ContMDiff 𝓘(ℝ, E).tangent 𝓘(ℝ, ℝ) ∞ fun v : TangentBundle 𝓘(ℝ, E) E ↦ f v.snd)
-    (v : TangentBundle 𝓘(ℝ, E) E) (W : TangentSpace 𝓘(ℝ, E).tangent v) :
-    mvfderiv 𝓘(ℝ, E).tangent (lagrangianEnergy fun v : TangentBundle 𝓘(ℝ, E) E ↦ f v.snd) v W =
-      fderiv ℝ (fderiv ℝ f) v.snd W.2 v.snd := by
-  have hf : ContDiff ℝ ∞ f :=
-    contMDiff_iff_contDiff.1 (hL.comp (contMDiff_tangentBundle_mk_constBase contMDiff_id 0))
-  -- In the chart the energy is `(q, v) ↦ Df(v)(v) - f(v)`; the terms `Df(v)(d)` cancel.
-  have hE : HasFDerivAt (fun y : E × E ↦ (linearLegendreMap (fun y : E × E ↦ f y.2) y).2 y.2 -
-      f y.2) _ ((v.proj, v.snd) : E × E) :=
-    ((hasFDerivAt_linearLegendreMap_comp_snd hf _).snd.clm_apply hasFDerivAt_snd).sub
-      (((hf.differentiable (by simp)) v.snd).hasFDerivAt.comp ((v.proj, v.snd) : E × E)
-        hasFDerivAt_snd)
-  rw [mvfderiv_lagrangianEnergy_eq_fderiv hL (by simp), comp_extChartAt_symm_comp_snd,
-    extChartAt_tangent_self_modelSpace, hE.fderiv]
-  simp
-  -- `W` is a pair of the model `E × E`, and `(D²f(v) ∘ snd).flip v` sends it to `D²f(v)(W.2)(v)`.
-  rfl
-
-/-- **Uniform motion is Lagrangian for a Lagrangian depending only on the velocity.** On a normed
-space, for a smooth Lagrangian `f(v)` that does not depend on the position, the uniform motion
-`(q, v) ↦ (v, 0)` is a Hamiltonian vector field of the energy for the Cartan two-form. No
-regularity of `f` is needed. -/
-theorem isHamiltonianVectorField_lagrangianEnergy_comp_snd
-    (hL : ContMDiff 𝓘(ℝ, E).tangent 𝓘(ℝ, ℝ) ∞ fun v : TangentBundle 𝓘(ℝ, E) E ↦ f v.snd) :
-    (cartanTwoForm _ hL).IsHamiltonianVectorField
-      (lagrangianEnergy fun v : TangentBundle 𝓘(ℝ, E) E ↦ f v.snd)
-      fun v ↦ ((v.snd, 0) : TangentSpace 𝓘(ℝ, E).tangent v) := by
-  refine SmoothTwoForm.isHamiltonianVectorField_iff.2 fun v W ↦ ?_
-  refine (eval₂_cartanTwoForm_comp_snd hL v _ W).trans ?_
-  rw [mvfderiv_lagrangianEnergy_comp_snd hL]
-  simp
-
-variable [FiniteDimensional ℝ E]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {f : E → ℝ} {V : E → ℝ}
 
 /-- **Newton's equation on a normed space.** For a smooth Lagrangian `f(v) - V(q)` on a
 finite-dimensional normed space whose kinetic part `f` has invertible second derivatives, the
@@ -293,9 +209,7 @@ theorem hamiltonianVectorField_lagrangianEnergy_comp_snd_sub
   have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   -- `f` is smooth: up to the constant `V 0`, it is `L` along the fibre of `TE` over `0`.
   have hf' : ContDiff ℝ ∞ f := by
-    have h := (contMDiff_iff_contDiff.1
-      (hLV.comp (contMDiff_tangentBundle_mk_constBase contMDiff_id 0))).add
-      (contDiff_const (c := V 0))
+    have h := (hLV.contDiff_tangentBundle_mk_constBase 0).add (contDiff_const (c := V 0))
     convert h using 1
     funext w
     simp
@@ -308,8 +222,12 @@ theorem hamiltonianVectorField_lagrangianEnergy_comp_snd_sub
   rw [hreg.hamiltonianVectorField_lagrangianEnergy_sub_comp_proj hL hLV, ← hX,
     potentialForce_def, fiberHessian_comp_snd]
   refine Prod.ext (add_zero _) ((zero_add _).trans ?_)
-  rw [mvfderiv_eq_fderiv]
-  rfl
+  -- On a normed space `mvfderiv` is `fderiv`, read through the identification of `T_q E` with `E`.
+  have hV : mvfderiv 𝓘(ℝ, E) V v.proj = fderiv ℝ V v.proj :=
+    ContinuousLinearMap.ext fun u ↦ by
+      rw [mvfderiv_eq_fderiv, ContinuousLinearMap.comp_apply]
+      exact congrArg (fderiv ℝ V v.proj) (NormedSpace.fromTangentSpace_apply v.proj u)
+  exact congrArg (fun φ ↦ -(fderiv ℝ (fderiv ℝ f) v.snd).inverse φ) hV
 
 end VectorSpace
 
