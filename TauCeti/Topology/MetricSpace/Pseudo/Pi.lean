@@ -19,11 +19,11 @@ coordinate (`Pi.ball_unique` and `Pi.closedBall_unique`). This is the pointwise 
 `IsometryEquiv.funUnique`, stated for dependent families.
 
 Over any finite index type, the sup distance controls weighted sums of squared coordinate
-distances `∑ᵢ wᵢ dist(xᵢ, pᵢ)²` with nonnegative weights: outside the ball of radius `ρ` around
-`p` such a sum is at least `(minᵢ wᵢ) ρ²` (`TauCeti.mul_sq_le_sum_mul_dist_sq_of_notMem_ball`),
-and on the closed ball of radius `δ` it is at most `(∑ᵢ wᵢ) δ²`
-(`TauCeti.sum_mul_dist_sq_le_mul_sq_of_mem_closedBall`). On `ι → ℝ` these are the weighted sums
-of squares `∑ᵢ wᵢ (xᵢ - pᵢ)²`, by `Real.dist_eq` and `sq_abs`.
+distances `∑ᵢ wᵢ dist(xᵢ, pᵢ)²` with nonnegative weights: outside the ball of nonnegative radius
+`ρ` around `p` such a sum is at least `c ρ²` for any common lower bound `c` of the weights
+(`TauCeti.mul_sq_le_sum_mul_dist_sq_of_notMem_ball`), and on the closed ball of radius `δ` it is
+at most `(∑ᵢ wᵢ) δ²` (`TauCeti.sum_mul_dist_sq_le_mul_sq_of_mem_closedBall`). On `ι → ℝ` these
+are the weighted sums of squares `∑ᵢ wᵢ (xᵢ - pᵢ)²`, by `Real.dist_eq` and `sq_abs`.
 -/
 
 public section
@@ -74,19 +74,23 @@ namespace TauCeti
 
 variable {w : ι → ℝ} {x p : ∀ i, X i}
 
-/-- Outside the ball of radius `ρ` around `p`, a weighted sum of squared coordinate distances
-`∑ᵢ wᵢ dist(xᵢ, pᵢ)²` with nonnegative weights `wᵢ ≥ c` is at least `c ρ²`. -/
-theorem mul_sq_le_sum_mul_dist_sq_of_notMem_ball {c ρ : ℝ} (hρ : 0 < ρ) (hw : ∀ i, 0 ≤ w i)
+/-- Outside the ball of nonnegative radius `ρ` around `p`, a weighted sum of squared coordinate
+distances `∑ᵢ wᵢ dist(xᵢ, pᵢ)²` with nonnegative weights `wᵢ ≥ c` is at least `c ρ²`. -/
+theorem mul_sq_le_sum_mul_dist_sq_of_notMem_ball {c ρ : ℝ} (hρ : 0 ≤ ρ) (hw : ∀ i, 0 ≤ w i)
     (hc : ∀ i, c ≤ w i) (hx : x ∉ ball p ρ) :
     c * ρ ^ 2 ≤ ∑ i, w i * dist (x i) (p i) ^ 2 := by
+  have hnn : ∀ j ∈ Finset.univ, 0 ≤ w j * dist (x j) (p j) ^ 2 :=
+    fun j _ ↦ mul_nonneg (hw j) (sq_nonneg _)
+  obtain rfl | hρ := hρ.eq_or_lt
+  · rw [zero_pow two_ne_zero, mul_zero]
+    exact Finset.sum_nonneg hnn
   rw [mem_ball, dist_pi_lt_iff hρ] at hx
   simp only [not_forall, not_lt] at hx
   obtain ⟨i, hi⟩ := hx
   calc c * ρ ^ 2 ≤ w i * dist (x i) (p i) ^ 2 :=
         mul_le_mul (hc i) (pow_le_pow_left₀ hρ.le hi 2) (sq_nonneg _) (hw i)
     _ ≤ ∑ j, w j * dist (x j) (p j) ^ 2 :=
-        Finset.single_le_sum (f := fun j ↦ w j * dist (x j) (p j) ^ 2)
-          (fun j _ ↦ mul_nonneg (hw j) (sq_nonneg _)) (Finset.mem_univ i)
+        Finset.single_le_sum (f := fun j ↦ w j * dist (x j) (p j) ^ 2) hnn (Finset.mem_univ i)
 
 /-- On the closed ball of radius `δ` around `p`, a weighted sum of squared coordinate distances
 `∑ᵢ wᵢ dist(xᵢ, pᵢ)²` with nonnegative weights is at most `(∑ᵢ wᵢ) δ²`. -/

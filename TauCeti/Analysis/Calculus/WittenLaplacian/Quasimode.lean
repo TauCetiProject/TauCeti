@@ -279,7 +279,7 @@ private theorem integral_sub_mul_exp_le {a p : ι → ℝ} {c ρ t K : ℝ} (hρ
   -- On `ℝ`, the squared coordinate distances are the squared differences.
   have hsum : c * ρ ^ 2 ≤ ∑ i, |a i| * (x i - p i) ^ 2 := by
     simpa only [Real.dist_eq, sq_abs] using
-      mul_sq_le_sum_mul_dist_sq_of_notMem_ball hρ (fun i ↦ abs_nonneg (a i)) hca hx
+      mul_sq_le_sum_mul_dist_sq_of_notMem_ball hρ.le (fun i ↦ abs_nonneg (a i)) hca hx
   have hexp : Real.exp (-(t * ∑ i, |a i| * (x i - p i) ^ 2)) ≤
       Real.exp (-(t * (c * ρ ^ 2))) :=
     Real.exp_le_exp.2 (neg_le_neg (mul_le_mul_of_nonneg_left hsum ht))
