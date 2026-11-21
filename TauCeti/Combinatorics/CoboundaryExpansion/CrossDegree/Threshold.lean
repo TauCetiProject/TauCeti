@@ -8,7 +8,6 @@ module
 public import TauCeti.Combinatorics.CoboundaryExpansion.CrossDegree.Invariance
 import Mathlib.Data.Nat.Choose.Cast
 import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.Ring
 
 /-!
@@ -21,13 +20,13 @@ unequal-degree baseline, no gauge in a different symmetric group can beat the co
 This file develops that threshold principle and applies it—together with relabelling invariance—to
 both families of complete-complex extremizers:
 
-* **General and degree-`3` unequal-degree threshold exactness**
+* **Unequal-degree threshold exactness**
   (`Finset.ciInf_sum_distErr_mul_inv_le_of_le_card_div_add_one`,
-  `Finset.ciInf₂_sum_distErr_mul_inv_eq_ciInf_sum_movedNorm_div_of_le`, and
-  `Finset.ciInf₂_sum_distErr_three_mul_inv_eq_ciInf_sum_movedNorm_div_three_of_le`): on any finite
-  edge set `E`, if the equal-degree `movedNorm (Fin n)` gauge-cost infimum (`2 ≤ n`) is at most
-  `n * #E / (n + 1)` (`3 * #E / 4` at `n = 3`), then the global cross-degree infimum over all
-  `m + 2 ≥ 2` equals `1 / n` times the equal-degree `movedNorm (Fin n)` infimum.
+  `Finset.ciInf₂_sum_distErr_mul_inv_eq_ciInf_of_le_card_div_add_one`, and
+  `Finset.ciInf₂_sum_distErr_mul_inv_eq_ciInf_sum_movedNorm_div_of_le`): on any finite edge set `E`,
+  if the equal-degree `movedNorm (Fin n)` gauge-cost infimum (`2 ≤ n`) is at most `n * #E / (n + 1)`
+  (`3 * #E / 4` when `n = 3`), then the global cross-degree infimum over all `m + 2 ≥ 2` equals
+  `1 / n` times the equal-degree `movedNorm (Fin n)` infimum.
 * **Arbitrary-vertex-type cluster replication and multiples of four**
   (`Equiv.ciInf_sum_filter_lt_distErr_prod`,
   `Equiv.ciInf₂_sum_filter_lt_distErr_prod_eq_card_sq_mul_ciInf_of_le_of_forall_le`,
@@ -123,21 +122,6 @@ theorem ciInf₂_sum_distErr_mul_inv_eq_ciInf_sum_movedNorm_div_of_le (E : Finse
   rw [E.ciInf₂_sum_distErr_mul_inv_eq_ciInf_of_le_card_div_add_one α hn hle',
     E.ciInf_sum_distErr_mul_inv_eq_ciInf_sum_movedNorm_div α]
 
-/-- Degree-`3` moved-norm threshold exactness: when the `movedNorm (Fin 3)` gauge-cost infimum on
-`E` is at most `3 * #E / 4`, the global cross-degree infimum over all `m + 2 ≥ 2` equals `1 / 3`
-times the `movedNorm (Fin 3)` infimum. -/
-theorem ciInf₂_sum_distErr_three_mul_inv_eq_ciInf_sum_movedNorm_div_three_of_le
-    (E : Finset (V × V)) (α : V → V → Perm (Fin 3))
-    (hle : (⨅ β : V → Perm (Fin 3),
-        ∑ e ∈ E, movedNorm (Fin 3) ((β e.1)⁻¹ * α e.1 e.2 * β e.2)) ≤ 3 * (#E : ℝ) / 4) :
-    (⨅ (m : ℕ) (β : V → Perm (Fin (m + 2))),
-        ∑ e ∈ E, distErr (α e.1 e.2) (β e.1 * (β e.2)⁻¹)) =
-      (⨅ β : V → Perm (Fin 3),
-        ∑ e ∈ E, movedNorm (Fin 3) ((β e.1)⁻¹ * α e.1 e.2 * β e.2)) / 3 := by
-  have h := E.ciInf₂_sum_distErr_mul_inv_eq_ciInf_sum_movedNorm_div_of_le α (by decide)
-    (hle.trans_eq (by ring))
-  rwa [Nat.cast_ofNat] at h
-
 end Finset
 
 /-! ### Arbitrary-vertex-type cluster replication and multiples of four -/
@@ -145,6 +129,17 @@ end Finset
 namespace Equiv
 
 open Equiv.Perm TauCeti
+
+/-- Replicating a skew-symmetric assignment along `U ×ₗ ι` with identity labels inside each
+cluster preserves skew-symmetry. -/
+private theorem if_ofLex_fst_eq_inv {U ι : Type*} [DecidableEq U] {n : ℕ}
+    (α : U → U → Perm (Fin n)) (hα : ∀ u v : U, u ≠ v → α v u = (α u v)⁻¹)
+    (x y : U ×ₗ ι) (_ : x ≠ y) :
+    (if (ofLex y).1 = (ofLex x).1 then 1 else α (ofLex y).1 (ofLex x).1) =
+      (if (ofLex x).1 = (ofLex y).1 then 1 else α (ofLex x).1 (ofLex y).1)⁻¹ := by
+  by_cases h1 : (ofLex x).1 = (ofLex y).1
+  · simp [h1]
+  · simp [h1, Ne.symm h1, hα (ofLex x).1 (ofLex y).1 h1]
 
 /-- Pulling the cluster replication of a skew-symmetric assignment on `U` (with identity labels
 inside each cluster `{u} × ι`) back along an arbitrary bijection `e : V ≃ U × ι`—requiring neither
@@ -164,16 +159,10 @@ theorem ciInf_sum_filter_lt_distErr_prod {V U ι : Type*} [Fintype V] [LinearOrd
           ⨅ β₀ : U → Perm (Fin m),
             ∑ p : U × U with p.1 < p.2, distErr (α p.1 p.2) (β₀ p.1 * (β₀ p.2)⁻¹) := by
   let _ : LinearOrder ι := LinearOrder.lift' (Fintype.equivFin ι) (Fintype.equivFin ι).injective
-  let αLex (x y : U ×ₗ ι) : Perm (Fin n) :=
-    if (ofLex x).1 = (ofLex y).1 then 1 else α (ofLex x).1 (ofLex y).1
-  have hαLex : ∀ x y : U ×ₗ ι, x ≠ y → αLex y x = (αLex x y)⁻¹ := by
-    intro x y _
-    dsimp only [αLex]
-    by_cases h1 : (ofLex x).1 = (ofLex y).1
-    · simp [h1]
-    · simp [h1, Ne.symm h1, hα (ofLex x).1 (ofLex y).1 h1]
-  have hrel := (e.trans toLex).ciInf_sum_filter_lt_distErr_mul_inv αLex hαLex m
-  dsimp only [αLex, trans_apply, ofLex_toLex] at hrel
+  have hrel := (e.trans toLex).ciInf_sum_filter_lt_distErr_mul_inv
+    (fun x y : U ×ₗ ι => if (ofLex x).1 = (ofLex y).1 then 1 else α (ofLex x).1 (ofLex y).1)
+    (if_ofLex_fst_eq_inv α hα) m
+  dsimp only [trans_apply, ofLex_toLex] at hrel
   exact hrel.trans (ciInf_sum_distErr_lex (V := U) (ι := ι) α m)
 
 /-- Whenever a skew-symmetric degree-`n` assignment (`2 ≤ n`) on `U` attains its global cross-degree
@@ -197,9 +186,11 @@ theorem ciInf₂_sum_filter_lt_distErr_prod_eq_card_sq_mul_ciInf_of_le_of_forall
         ⨅ β₀ : U → Perm (Fin n),
           ∑ p : U × U with p.1 < p.2, distErr (α p.1 p.2) (β₀ p.1 * (β₀ p.2)⁻¹) := by
   let _ : LinearOrder ι := LinearOrder.lift' (Fintype.equivFin ι) (Fintype.equivFin ι).injective
-  exact (iInf_congr fun m =>
-    (e.ciInf_sum_filter_lt_distErr_prod α hα (m + 2)).trans
-      (ciInf_sum_distErr_lex (V := U) (ι := ι) α (m + 2)).symm).trans
+  have hrel := (e.trans toLex).ciInf₂_sum_filter_lt_distErr_mul_inv
+    (fun x y : U ×ₗ ι => if (ofLex x).1 = (ofLex y).1 then 1 else α (ofLex x).1 (ofLex y).1)
+    (if_ofLex_fst_eq_inv α hα)
+  dsimp only [trans_apply, ofLex_toLex] at hrel
+  exact hrel.trans
     (ciInf₂_sum_distErr_lex_eq_card_sq_mul_ciInf_of_le_of_forall_le (V := U) (ι := ι) α hn hmin)
 
 /-- Pulling the cluster replication of a skew-symmetric three-transposition seed on `Fin 4` back
@@ -221,13 +212,15 @@ theorem ciInf₂_sum_filter_lt_distErr_fin_four_prod_of_eq_setOf_isSwap
   have : Finite ι :=
     Finite.of_injective (fun i : ι => ((0 : Fin 4), i)) fun _ _ h => (Prod.mk.inj h).2
   let _ : Fintype ι := Fintype.ofFinite ι
-  have hprod := e.ciInf₂_sum_filter_lt_distErr_prod_eq_card_sq_mul_ciInf_of_le_of_forall_le α hα
-    (by decide) fun m => by
-      rw [ciInf_sum_distErr_fin_four_three_of_eq_setOf_isSwap α h0 hswaps]
-      exact le_ciInf (two_le_sum_distErr_fin_four_of_eq_setOf_isSwap α h0 hswaps)
+  let _ : LinearOrder ι := LinearOrder.lift' (Fintype.equivFin ι) (Fintype.equivFin ι).injective
+  have hrel := (e.trans toLex).ciInf₂_sum_filter_lt_distErr_mul_inv
+    (fun x y : Fin 4 ×ₗ ι => if (ofLex x).1 = (ofLex y).1 then 1 else α (ofLex x).1 (ofLex y).1)
+    (if_ofLex_fst_eq_inv α hα)
+  dsimp only [trans_apply, ofLex_toLex] at hrel
   have hcard : Fintype.card V = 4 * Fintype.card ι := by
     simpa [Fintype.card_prod] using Fintype.card_congr e
-  rw [hprod, ciInf_sum_distErr_fin_four_three_of_eq_setOf_isSwap α h0 hswaps, hcard,
+  refine hrel.trans ?_
+  rw [ciInf₂_sum_distErr_lex_fin_four_of_eq_setOf_isSwap α h0 hswaps, hcard,
     Nat.cast_mul, Nat.cast_ofNat]
   ring
 
@@ -349,11 +342,13 @@ theorem ciInf₂_sum_distErr_three_eq_ciInf_sum_movedNorm_div_three_of_card_eq
         ∑ e : V × V with e.1 < e.2, distErr (α e.1 e.2) (β e.1 * (β e.2)⁻¹)) =
       (⨅ β : V → Perm (Fin 3),
         ∑ e : V × V with e.1 < e.2, movedNorm (Fin 3) ((β e.1)⁻¹ * α e.1 e.2 * β e.2)) / 3 := by
-  refine (univ.filter fun p : V × V => p.1 < p.2
-    ).ciInf₂_sum_distErr_three_mul_inv_eq_ciInf_sum_movedNorm_div_three_of_le α ?_
-  rw [Fintype.card_product_filter_lt, hcard]
-  have hbase := sq_mul_mul_add_one_div_three_le_choose_two_div_four q t
-  linarith
+  have h := (univ.filter fun p : V × V => p.1 < p.2
+    ).ciInf₂_sum_distErr_mul_inv_eq_ciInf_sum_movedNorm_div_of_le α (by decide) ?_
+  · simpa only [Nat.cast_ofNat] using h
+  · rw [Fintype.card_product_filter_lt, hcard]
+    have hbase := sq_mul_mul_add_one_div_three_le_choose_two_div_four q t
+    rw [Nat.cast_ofNat]
+    linarith
 
 /-- Exact cross-degree gauge-cost evaluation `q ^ 2 * t * (t + 1) / 3` for any degree-`3` assignment
 on `Fintype.card V = q * (2 * t + 1)` vertices whose `movedNorm (Fin 3)` gauge-cost infimum equals
