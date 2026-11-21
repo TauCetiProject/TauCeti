@@ -154,8 +154,10 @@ theorem toFiniteQuadraticModule_oddCyclic (p k : ℕ) (hp : p.Prime) (hodd : Odd
       FiniteQuadraticModule.oddCyclic (p ^ k) hodd.pow θ := (rfl)
 
 @[simp]
-theorem toFiniteQuadraticModule_dyadicCyclic (k : ℕ) [NeZero k] (hk : 0 < k) (θ : ℤ) :
-    (dyadicCyclic k hk θ).toFiniteQuadraticModule = FiniteQuadraticModule.dyadicCyclic k θ := (rfl)
+theorem toFiniteQuadraticModule_dyadicCyclic (k : ℕ) (hk : 0 < k) (θ : ℤ) :
+    (dyadicCyclic k hk θ).toFiniteQuadraticModule =
+      haveI : NeZero k := ⟨hk.ne'⟩
+      FiniteQuadraticModule.dyadicCyclic k θ := (rfl)
 
 @[simp]
 theorem toFiniteQuadraticModule_dyadicU (k : ℕ) :
@@ -215,7 +217,6 @@ theorem isAdmissible_iff (g : NikulinGenerator) :
     rw [IsCoprime.pow_left_iff hk, ← Nat.prime_iff_prime_int.mp hp |>.coprime_iff_not_dvd]
     exact ⟨fun h ↦ ⟨h.2, Nat.one_lt_pow hk.ne' hp.one_lt⟩, fun h ↦ ⟨hk, h.1⟩⟩
   | dyadicCyclic k hk θ =>
-    have : NeZero k := ⟨hk.ne'⟩
     rw [natCard_toFiniteQuadraticModule_dyadicCyclic, toFiniteQuadraticModule_dyadicCyclic,
       isNondegenerate_dyadicCyclic_iff, isAdmissible_dyadicCyclic_iff]
     exact ⟨fun h ↦ ⟨h, Nat.one_lt_two_pow hk.ne'⟩, And.left⟩
@@ -262,6 +263,11 @@ instance : Unique (orthogonalSumNikulinGenerators []) :=
   inferInstanceAs (Unique PUnit)
 
 @[simp]
+theorem orthogonalSumNikulinGenerators_nil :
+    orthogonalSumNikulinGenerators [] =
+      ofQuadraticMap (0 : QuadraticMap ℤ PUnit.{1} (AddCircle (1 : ℚ))) := (rfl)
+
+@[simp]
 theorem orthogonalSumNikulinGenerators_cons (g : NikulinGenerator) (gs : List NikulinGenerator) :
     orthogonalSumNikulinGenerators (g :: gs) =
       g.toFiniteQuadraticModule.prod (orthogonalSumNikulinGenerators gs) := (rfl)
@@ -271,7 +277,7 @@ theorem natCard_orthogonalSumNikulinGenerators (gs : List NikulinGenerator) :
     Nat.card (orthogonalSumNikulinGenerators gs) =
       (gs.map fun g ↦ Nat.card g.toFiniteQuadraticModule).prod := by
   induction gs with
-  | nil => simp
+  | nil => exact Nat.card_unique
   | cons g gs ih => rw [orthogonalSumNikulinGenerators_cons, Nat.card_prod, ih]; simp
 
 /-- An orthogonal sum of generators is nondegenerate exactly when every summand is. -/
@@ -297,7 +303,7 @@ theorem gaussSign_orthogonalSumNikulinGenerators {gs : List NikulinGenerator}
     (orthogonalSumNikulinGenerators gs).gaussSign =
       (gs.map fun g ↦ g.toFiniteQuadraticModule.gaussSign).sum := by
   induction gs with
-  | nil => simp [gaussSign_eq_zero_of_subsingleton]
+  | nil => exact gaussSign_eq_zero_of_subsingleton _
   | cons g gs ih =>
     rw [List.forall_mem_cons] at h
     rw [orthogonalSumNikulinGenerators_cons,
@@ -361,6 +367,7 @@ theorem nonempty_isometry_restrict_primaryComponent_orthogonalSumNikulinGenerato
       (orthogonalSumNikulinGenerators (gs.filter fun g ↦ g.prime = p))) := by
   induction gs with
   | nil =>
+    -- The carrier of `A.restrict H` is `↥H`, here a subgroup of `PUnit`.
     have : Subsingleton ((orthogonalSumNikulinGenerators []).restrict
         (AddCommGroup.primaryComponent (orthogonalSumNikulinGenerators []) p)) :=
       inferInstanceAs (Subsingleton (AddCommGroup.primaryComponent PUnit p))
@@ -381,8 +388,9 @@ theorem nonempty_isometry_restrict_primaryComponent_orthogonalSumNikulinGenerato
       rw [List.filter_cons_of_neg (by simpa using hg)]
       have hbot := g.primaryComponent_toFiniteQuadraticModule_eq_bot hp hg
       let t := g.toFiniteQuadraticModule.restrictCongr hbot
-      obtain ⟨_⟩ : Nonempty (Unique (g.toFiniteQuadraticModule.restrict ⊥)) :=
-        ⟨(inferInstance : Unique (⊥ : AddSubgroup g.toFiniteQuadraticModule))⟩
+      -- The carrier of `A.restrict H` is `↥H`, so the restriction to `⊥` is trivial.
+      have : Unique (g.toFiniteQuadraticModule.restrict ⊥) :=
+        (inferInstance : Unique (⊥ : AddSubgroup g.toFiniteQuadraticModule))
       exact ⟨(s.trans (t.prod e)).trans (QuadraticMap.IsometryEquiv.uniqueProd _ _)⟩
 
 /-! ## Generator decompositions -/
