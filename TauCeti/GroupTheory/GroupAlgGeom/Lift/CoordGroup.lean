@@ -28,7 +28,8 @@ inclusion of the variables `X` induces a `G`-homomorphism of coordinate groups
   Proposition 3).
 * Lifts compose: if `T(X, Y)` admits an `S`-lift `Y(X)` and `T'(X, Y, Z)` admits an
   `(S ∪ T)`-lift `Z(X, Y)`, then `(Y(X), Z(X, Y(X)))` is an `S`-lift of `T ∪ T'`, where
-  `Z(X, Y(X))` is the image of `Z(X, Y)` under the retraction determined by `Y(X)`.
+  `Z(X, Y(X))` is the image of `Z(X, Y)` under the left inverse of `coordGroupMap` determined by
+  `Y(X)`.
 
 ## Main definitions
 
@@ -366,11 +367,11 @@ section Composition
 variable {Z : Type*} {T' : Set (GX G ((X ⊕ Y) ⊕ Z))}
 
 /-- The composite of two lifts: let `w = Y(X)` be an `S`-lift of `T(X, Y)` and `z = Z(X, Y)` an
-`(S ∪ T)`-lift of `T'(X, Y, Z)`, and let `ρ` be the retraction of `G_{R(S ∪ T)}` onto `G_{R(S)}`
-determined by `w` ([IFT], Lemma 40), which substitutes `Y(X)` for `Y`. Then `(Y(X), Z(X, Y(X)))`,
-that is `Sum.elim w (ρ ∘ z)`, is an `S`-lift of `T ∪ T'`. Here `T ∪ T'` is `jointSystem T T'`
-with its variables renamed from `(X ⊔ Y) ⊔ Z` to `X ⊔ (Y ⊔ Z)` along `Equiv.sumAssoc`, so that
-`Y ⊔ Z` are the further variables of the lift. -/
+`(S ∪ T)`-lift of `T'(X, Y, Z)`, and let `ρ` be the left inverse of `coordGroupMap ι S T`, a
+retraction of `G_{R(S ∪ T)}` onto `G_{R(S)}`, determined by `w` ([IFT], Lemma 40); it substitutes
+`Y(X)` for `Y`. Then `(Y(X), Z(X, Y(X)))`, that is `Sum.elim w (ρ ∘ z)`, is an `S`-lift of
+`T ∪ T'`. Here `T ∪ T'` is `jointSystem T T'` with its variables renamed from `(X ⊔ Y) ⊔ Z` to
+`X ⊔ (Y ⊔ Z)` along `Equiv.sumAssoc`, so that `Y ⊔ Z` are the further variables of the lift. -/
 theorem sumElim_mem_V_image_jointSystem {w : Y → CoordGroup ι S}
     (hw : Sum.elim (CoordGroup.genericPoint ι S) w ∈ V (CoordGroup.coeff ι S) T)
     {z : Z → CoordGroup ι (jointSystem S T)}
@@ -399,8 +400,9 @@ theorem sumElim_mem_V_image_jointSystem {w : Y → CoordGroup ι S}
 /-- Lifts compose: if `T(X, Y)` admits an `S`-lift and `T'(X, Y, Z)` admits an `(S ∪ T)`-lift,
 then `T ∪ T'`, with its variables renamed as in `sumElim_mem_V_image_jointSystem`, admits an
 `S`-lift. By [IFT], §6, Proposition 3 (`hasLift_iff_exists_gHom`), the first hypothesis holds
-exactly when `G_{R(S ∪ T)}` retracts onto `G_{R(S)}`, so no separate retraction hypothesis is
-needed. -/
+exactly when the canonical map `coordGroupMap ι S T : G_{R(S)} → G_{R(S ∪ T)}` has a left inverse
+`G`-homomorphism, that is a retraction of `G_{R(S ∪ T)}` onto `G_{R(S)}` splitting it, so no
+separate retraction hypothesis is needed. -/
 theorem HasLift.trans (h : HasLift ι S T) (h' : HasLift ι (jointSystem S T) T') :
     HasLift ι S (GX.renameEquiv G (Equiv.sumAssoc X Y Z) '' jointSystem T T') := by
   obtain ⟨w, hw⟩ := hasLift_iff.1 h
