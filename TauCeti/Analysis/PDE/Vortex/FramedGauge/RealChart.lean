@@ -146,21 +146,14 @@ theorem contDiff_continuousRepField {n : ℕ} (hs : n + 1 < s) {h : 0 ≤ s}
   exact contDiff_piLp' (p := 2) fun j ↦ by
     simpa only [continuousRepField_apply] using contDiff_continuousRep hs' (u j)
 
-/-- For `k ≥ 2`, real `H^(k+1)` coordinates lie above the threshold for `C¹` fields. -/
-theorem natCast_one_add_one_lt (hk : 2 ≤ k) : ((1 : ℕ) : ℝ) + 1 < k + 1 := by
+private theorem natCast_one_add_one_lt (hk : 2 ≤ k) : ((1 : ℕ) : ℝ) + 1 < k + 1 := by
   have : (2 : ℝ) ≤ k := by exact_mod_cast hk
   push_cast
   linarith
 
-/-- For `k ≥ 2`, the order `k + 1` lies above the threshold `1` for continuous fields. -/
-theorem one_lt_natCast_add_one (hk : 2 ≤ k) : 1 < (k : ℝ) + 1 := by
+private theorem one_lt_natCast_add_one (hk : 2 ≤ k) : 1 < (k : ℝ) + 1 := by
   have : (2 : ℝ) ≤ k := by exact_mod_cast hk
   linarith
-
-/-- For `k ≥ 2`, the order `k` lies above the Sobolev embedding threshold of `H^k(ℂ)` into
-continuous functions. -/
-theorem finrank_real_complex_lt_two_mul_of_two_le (hk : 2 ≤ k) : (finrank ℝ ℂ : ℝ) < 2 * k :=
-  finrank_real_complex_lt_two_mul (by have : (2 : ℝ) ≤ k := (by exact_mod_cast hk); linarith)
 
 /-- For `s > 1`, the field of real `H^s` coordinates lies in `sobolevFields s`. -/
 theorem continuousRepField_mem_sobolevFields (hs : 1 < s) {h : 0 ≤ s}

@@ -129,6 +129,12 @@ theorem realSobolevGaugeFixedOperator_apply (hk : 2 ≤ k)
 
 /-! ### The operator computes the pointwise one -/
 
+/-- For `k ≥ 2`, the field of real `H^(k+1)` coordinates is `C¹`. -/
+private theorem contDiff_one_continuousRepField (hk : 2 ≤ k)
+    (u : Fin 4 → realSubmodule ℂ (k.cast_add_one_pos (α := ℝ)).le) :
+    ContDiff ℝ 1 (continuousRepField u) :=
+  contDiff_continuousRepField (by norm_cast; omega) u
+
 section Pointwise
 
 variable (hk : 2 ≤ k) (u v : Fin 4 → realSubmodule ℂ (k.cast_add_one_pos (α := ℝ)).le)
@@ -141,9 +147,8 @@ private theorem continuous_gaugeFixedOperator_continuousRepField_apply (j : Fin 
       gaugeFixedOperator (referenceField f m + continuousRepField u) (continuousRepField v) z
         j :=
   (PiLp.continuous_apply 2 _ j).comp (continuous_gaugeFixedOperator
-    ((contDiff_referenceField f m).continuous.add
-      (contDiff_continuousRepField (natCast_one_add_one_lt hk) u).continuous)
-    (contDiff_continuousRepField (natCast_one_add_one_lt hk) v))
+    ((contDiff_referenceField f m).continuous.add (contDiff_one_continuousRepField hk u).continuous)
+    (contDiff_one_continuousRepField hk v))
 
 /-- **The real gauge-fixing row is the pointwise one.** The continuous representative of
 `realSobolevGaugeAdjoint f m hk u v` is `d₀* y` at `x`, where `x = x_m + continuousRepField u` is
@@ -151,15 +156,14 @@ the field with real coordinates `u` and `y = continuousRepField v` the field of 
 theorem continuousRep_realSobolevGaugeAdjoint :
     continuousRep (realSobolevGaugeAdjoint f m hk u v) =
       gaugeAdjoint (referenceField f m + continuousRepField u) (continuousRepField v) := by
-  have hs := one_lt_natCast_add_one hk
-  refine continuousRep_eq_of_ae_eq (finrank_real_complex_lt_two_mul_of_two_le hk) ?_ ?_
-  · exact (continuous_gaugeFixedOperator_continuousRepField_apply (f := f) (m := m) hk u v 0).congr
-      fun z ↦ gaugeFixedOperator_apply_zero _ _ z
+  have hs : 1 < (k : ℝ) + 1 := by norm_cast; omega
+  refine continuousRep_eq_of_ae_eq (finrank_real_complex_lt_two_mul (Nat.one_lt_cast.2 hk)) ?_ ?_
+  · exact continuous_gaugeAdjoint ((contDiff_referenceField f m).continuous.add
+      (contDiff_one_continuousRepField hk u).continuous) (contDiff_one_continuousRepField hk v)
   · rw [coe_realSobolevGaugeAdjoint_apply]
     exact coeFn_inclusionLp_sobolevGaugeAdjoint_ae_eq _
       (coeFn_inclusionLp_ae_eq_continuousRepField hs u)
-      (coeFn_inclusionLp_ae_eq_continuousRepField hs v)
-      (contDiff_continuousRepField (natCast_one_add_one_lt hk) v)
+      (coeFn_inclusionLp_ae_eq_continuousRepField hs v) (contDiff_one_continuousRepField hk v)
 
 /-- **The real linearized equation is the pointwise one.** The continuous representative of the
 `i`-th row of `realSobolevLinearizedEquation f m hk u v` is the `i`-th row of `d₁ y` at `x`, where
@@ -168,15 +172,14 @@ theorem continuousRep_realSobolevLinearizedEquation (i : Fin 3) :
     continuousRep (realSobolevLinearizedEquation f m hk u v i) = fun z ↦
       linearizedEquation (referenceField f m + continuousRepField u) (continuousRepField v) z
         i := by
-  have hs := one_lt_natCast_add_one hk
-  refine continuousRep_eq_of_ae_eq (finrank_real_complex_lt_two_mul_of_two_le hk) ?_ ?_
+  have hs : 1 < (k : ℝ) + 1 := by norm_cast; omega
+  refine continuousRep_eq_of_ae_eq (finrank_real_complex_lt_two_mul (Nat.one_lt_cast.2 hk)) ?_ ?_
   · exact (continuous_gaugeFixedOperator_continuousRepField_apply (f := f) (m := m) hk u v
       i.succ).congr fun z ↦ gaugeFixedOperator_apply_succ _ _ z i
   · rw [coe_realSobolevLinearizedEquation_apply]
     exact coeFn_inclusionLp_sobolevLinearizedEquation_ae_eq _
       (coeFn_inclusionLp_ae_eq_continuousRepField hs u)
-      (coeFn_inclusionLp_ae_eq_continuousRepField hs v)
-      (contDiff_continuousRepField (natCast_one_add_one_lt hk) v) i
+      (coeFn_inclusionLp_ae_eq_continuousRepField hs v) (contDiff_one_continuousRepField hk v) i
 
 /-- **The gauge-fixed operator on real coordinates is the pointwise one.** Let
 `x = x_m + continuousRepField u` be the field with real coordinates `u` and
@@ -190,7 +193,7 @@ theorem realSobolevGaugeFixedOperator_eq_iff
           continuousRep w.1 ∧
         ∀ i, (fun z ↦ linearizedEquation (referenceField f m + continuousRepField u)
           (continuousRepField v) z i) = continuousRep (w.2 i) := by
-  have hfin := finrank_real_complex_lt_two_mul_of_two_le hk
+  have hfin := finrank_real_complex_lt_two_mul (Nat.one_lt_cast.2 hk)
   rw [realSobolevGaugeFixedOperator_apply, Prod.ext_iff, funext_iff,
     ← continuousRep_realSobolevGaugeAdjoint hk, (continuousRep_injective hfin).eq_iff]
   simp only [← continuousRep_realSobolevLinearizedEquation hk,
@@ -219,19 +222,26 @@ variable (hk : 2 ≤ k) (x₀ : SobolevFieldSpace f m ((k : ℝ) + 1))
 
 include hmem
 
+/-- At `x₀`, a field `y` lies in `gaugeFixedKernel x₀` exactly when it is `C¹`, lies in
+`sobolevFields (k + 1)` and solves `L_{x₀} y = 0` pointwise. -/
+private theorem mem_gaugeFixedKernel_iff_mem_sobolevFields_add_one
+    {y : ℂ → EuclideanSpace ℝ (Fin 4)} :
+    y ∈ gaugeFixedKernel x₀ ↔
+      ContDiff ℝ 1 y ∧ y ∈ sobolevFields ((k : ℝ) + 1) ∧ ∀ z, gaugeFixedOperator x₀ y z = 0 :=
+  mem_gaugeFixedKernel_iff_mem_sobolevFields (contDiff_of_forall_mem_framedFieldSpace x₀.continuous
+    hmem) (fun i n ↦ exists_norm_iteratedFDeriv_le_of_mem_framedFieldSpace x₀.continuous i n
+      (hmem (n + 2))) _
+
 /-- Taking fields sends the kernel of `L_{x₀}` on real coordinates into `gaugeFixedKernel x₀`. -/
 private theorem continuousRepField_mem_gaugeFixedKernel
     {v : Fin 4 → realSubmodule ℂ (k.cast_add_one_pos (α := ℝ)).le}
     (hv : v ∈ (realSobolevGaugeFixedOperator f m hk (x₀.realSubRef _)).ker) :
     continuousRepField v ∈ gaugeFixedKernel x₀ := by
-  have hx₀ := x₀.continuous
-  refine (mem_gaugeFixedKernel_iff_mem_sobolevFields (contDiff_of_forall_mem_framedFieldSpace hx₀
-    hmem) (fun i n ↦ exists_norm_iteratedFDeriv_le_of_mem_framedFieldSpace hx₀ i n (hmem (n + 2)))
-    ((k : ℝ) + 1)).2 ⟨contDiff_continuousRepField (natCast_one_add_one_lt hk) v,
-      continuousRepField_mem_sobolevFields (one_lt_natCast_add_one hk) v, ?_⟩
+  have hs : 1 < (k : ℝ) + 1 := by norm_cast; omega
+  refine (mem_gaugeFixedKernel_iff_mem_sobolevFields_add_one x₀ hmem).2
+    ⟨contDiff_one_continuousRepField hk v, continuousRepField_mem_sobolevFields hs v, ?_⟩
   have hv' := (mem_ker_realSobolevGaugeFixedOperator_iff hk _ v).1 hv
-  rwa [SobolevFieldSpace.referenceField_add_continuousRepField_realSubRef
-    (one_lt_natCast_add_one hk)] at hv'
+  rwa [SobolevFieldSpace.referenceField_add_continuousRepField_realSubRef hs] at hv'
 
 /-- Every element of `gaugeFixedKernel x₀` is the field of real coordinates in the kernel of
 `L_{x₀}` on real coordinates: the field `x_m + y` of `A_m^(k+1)` has real coordinates whose field
@@ -239,12 +249,9 @@ is `y`. -/
 private theorem exists_mem_ker_continuousRepField_eq (y : gaugeFixedKernel x₀) :
     ∃ v ∈ (realSobolevGaugeFixedOperator f m hk (x₀.realSubRef _)).ker,
       continuousRepField v = y := by
-  have hs := one_lt_natCast_add_one hk
-  have hx₀ := x₀.continuous
-  obtain ⟨hy₁, hyS, hyker⟩ := (mem_gaugeFixedKernel_iff_mem_sobolevFields
-    (contDiff_of_forall_mem_framedFieldSpace hx₀ hmem) (fun i n ↦
-      exists_norm_iteratedFDeriv_le_of_mem_framedFieldSpace hx₀ i n (hmem (n + 2)))
-    ((k : ℝ) + 1)).1 y.property
+  have hs : 1 < (k : ℝ) + 1 := by norm_cast; omega
+  obtain ⟨hy₁, hyS, hyker⟩ := (mem_gaugeFixedKernel_iff_mem_sobolevFields_add_one x₀ hmem).1
+    y.property
   let X : SobolevFieldSpace f m ((k : ℝ) + 1) :=
     ⟨referenceField f m + y, mem_framedFieldSpace.2 (by simpa using hyS),
       (contDiff_referenceField f m).continuous.add hy₁.continuous⟩
@@ -269,7 +276,7 @@ def kerRealSobolevGaugeFixedOperatorEquiv :
           continuousRepField_mem_gaugeFixedKernel hk x₀ hmem v.property⟩
       map_add' := fun v w ↦ Subtype.ext (by simp [continuousRepField_add])
       map_smul' := fun c v ↦ Subtype.ext (by simp [continuousRepField_smul]) }
-    ⟨fun _ _ hvw ↦ Subtype.ext (continuousRepField_injective (one_lt_natCast_add_one hk)
+    ⟨fun _ _ hvw ↦ Subtype.ext (continuousRepField_injective (by norm_cast; omega)
       (congrArg Subtype.val hvw)),
     fun y ↦
       have ⟨v, hv, hvy⟩ := exists_mem_ker_continuousRepField_eq hk x₀ hmem y
@@ -320,7 +327,7 @@ private theorem exists_forall_gaugeFixedOperator_continuousRepField_eq
     {G : ℂ → EuclideanSpace ℝ (Fin 4)} (hG : G ∈ sobolevFields k) (hGc : Continuous G) :
     ∃ v : Fin 4 → realSubmodule ℂ (k.cast_add_one_pos (α := ℝ)).le,
       ∀ z, gaugeFixedOperator x₀ (continuousRepField v) z = G z := by
-  have hs := one_lt_natCast_add_one hk
+  have hs : 1 < (k : ℝ) + 1 := by norm_cast; omega
   have hx₀ := x₀.continuous
   have hGL : MemLp G 2 volume := memLp_of_mem_sobolevFields hG
   -- The weak right inverse of `L_{x₀}` sends `G ∈ H^k` to a weak solution in `H^(k+1)`.
@@ -343,7 +350,7 @@ private theorem exists_forall_gaugeFixedOperator_continuousRepField_eq
     simpa using hz
   -- The weak solution is a classical solution of `L_{x₀} y = G`.
   refine ⟨v, (forall_integral_inner_gaugeFixedAdjoint_eq_iff (μ := volume) hx₀
-    (contDiff_continuousRepField (natCast_one_add_one_lt hk) v) hGc).1 fun η hη hηc ↦ ?_⟩
+    (contDiff_one_continuousRepField hk v) hGc).1 fun η hη hηc ↦ ?_⟩
   calc ∫ z, ⟪continuousRepField v z, gaugeFixedAdjoint x₀ η z⟫
       = ∫ z, ⟪Q (hGL.toLp G) z, gaugeFixedAdjoint x₀ η z⟫ :=
         integral_congr_ae (hyQ.mono fun z hz ↦ by simp only [hz])
@@ -366,8 +373,7 @@ theorem realSobolevGaugeFixedOperator_surjective :
   simp only [gaugeFixedOperator_eq_iff, continuousRepField_apply, r, Fin.cons_zero,
     Fin.cons_succ] at hLy
   refine ⟨v, (realSobolevGaugeFixedOperator_eq_iff hk _ v w).2 ?_⟩
-  rw [SobolevFieldSpace.referenceField_add_continuousRepField_realSubRef
-    (one_lt_natCast_add_one hk)]
+  rw [SobolevFieldSpace.referenceField_add_continuousRepField_realSubRef (by linarith)]
   exact ⟨funext fun z ↦ (hLy z).1, fun i ↦ funext fun z ↦ (hLy z).2 i⟩
 
 include hsol in
@@ -452,8 +458,7 @@ theorem coulombSliceMap_realSubRef_eq_zero_iff (hk : 2 ≤ k)
     (x₀ x : SobolevFieldSpace f m ((k : ℝ) + 1)) :
     coulombSliceMap f m hk (x₀.realSubRef _) (x.realSubRef _) = 0 ↔
       gaugeAdjoint x₀ (x - x₀) = 0 ∧ equation x = 0 := by
-  have hs := one_lt_natCast_add_one hk
-  have hfin := finrank_real_complex_lt_two_mul_of_two_le hk
+  have hs : 1 < (k : ℝ) + 1 := by norm_cast; omega
   have hx : continuousRepField (x.realSubRef (by positivity)) -
       continuousRepField (x₀.realSubRef (by positivity)) = ⇑x - ⇑x₀ := by
     rw [← SobolevFieldSpace.referenceField_add_continuousRepField_realSubRef hs
@@ -461,10 +466,14 @@ theorem coulombSliceMap_realSubRef_eq_zero_iff (hk : 2 ≤ k)
       ← SobolevFieldSpace.referenceField_add_continuousRepField_realSubRef hs
         (h := by positivity) x₀]
     abel
-  rw [coulombSliceMap_apply, Prod.mk_eq_zero, realSobolevEquation_realSubRef_eq_zero_iff,
-    ← (continuousRep_injective hfin).eq_iff, map_zero, continuousRep_realSobolevGaugeAdjoint hk,
-    continuousRepField_sub, hx,
-    SobolevFieldSpace.referenceField_add_continuousRepField_realSubRef hs]
+  -- The gauge row vanishes exactly when its continuous representative does.
+  have hgauge : realSobolevGaugeAdjoint f m hk (x₀.realSubRef _)
+      (x.realSubRef _ - x₀.realSubRef _) = 0 ↔ gaugeAdjoint x₀ (x - x₀) = 0 := by
+    rw [← (continuousRep_injective (finrank_real_complex_lt_two_mul (Nat.one_lt_cast.2 hk))).eq_iff,
+      continuousRep_realSobolevGaugeAdjoint hk]
+    simp only [continuousRepField_sub, hx, map_zero,
+      SobolevFieldSpace.referenceField_add_continuousRepField_realSubRef hs]
+  rw [coulombSliceMap_apply, Prod.mk_eq_zero, hgauge, realSobolevEquation_realSubRef_eq_zero_iff]
 
 /-- At a vortex `x₀` the Coulomb slice map through its real coordinates vanishes at them. -/
 theorem coulombSliceMap_self_eq_zero (hk : 2 ≤ k) (x₀ : SobolevFieldSpace f m ((k : ℝ) + 1))
