@@ -37,16 +37,19 @@ precisely, a linear functional bounded by `C * ‖f j‖` is evaluation at a vec
 (`TauCeti.dualProjectiveLimit.exists_norm_le_forall_apply_eq`): the functional descends to the
 image of the projection to `B j′`, where Hahn–Banach and Gantmacher's criterion for `T j`
 represent it (`ContinuousLinearMap.IsWeaklyCompact.exists_norm_le_forall_apply_eq`). Since the
-projective limit is barrelled, a pointwise bounded family of continuous functionals is bounded by
-a single coordinate norm, so it consists of evaluations at a norm-bounded set of vectors of one
-space `B j` (`TauCeti.dualProjectiveLimit.exists_forall_exists_norm_le_eval_eq`), so bounded sets
-of the strong dual `StrongDual 𝕜 (dualProjectiveLimit T)` are contained in images of stage balls
-(`TauCeti.dualProjectiveLimit.isVonNBounded_strongDual_iff`). In addition,
-composing a strong-bidual element with the stage evaluations recovers a compatible family of
-functionals (`TauCeti.dualProjectiveLimit.fromStrongBidual`), so `dualProjectiveLimit T` is
-strongly reflexive (`TauCeti.dualProjectiveLimit.bidualEquiv`), and the inverse of the strong
-transpose of this isomorphism is the canonical bidual evaluation of its strong dual
-(`TauCeti.dualProjectiveLimit.toLinearMap_bidualEquiv_arrowCongr_refl`). When the bonding maps
+projective limit is barrelled, when the bonding maps are weakly compact, a pointwise bounded family
+of continuous functionals is bounded by a single coordinate norm, so it consists of evaluations at a
+norm-bounded set of vectors of one space `B j`
+(`TauCeti.dualProjectiveLimit.exists_forall_exists_norm_le_eval_eq`), and bounded sets of the
+strong dual `StrongDual 𝕜 (dualProjectiveLimit T)` are contained in images of stage balls under
+`eval` (`TauCeti.dualProjectiveLimit.isVonNBounded_strongDual_iff`). Unconditionally, restricting a
+strong-bidual element along the stage evaluations yields a continuous left inverse to canonical
+bidual evaluation (`TauCeti.dualProjectiveLimit.fromStrongBidual`,
+`TauCeti.dualProjectiveLimit.fromStrongBidual_applyₗ`); when the bonding maps are weakly compact,
+it is also a right inverse (`TauCeti.dualProjectiveLimit.applyₗ_fromStrongBidual`), so
+`dualProjectiveLimit T` is strongly reflexive (`TauCeti.dualProjectiveLimit.bidualEquiv`), and the
+inverse of the strong transpose of this isomorphism is the canonical bidual evaluation of its strong
+dual (`TauCeti.dualProjectiveLimit.toLinearMap_bidualEquiv_arrowCongr_refl`). When the bonding maps
 are compact, Schauder's theorem makes each adjoint linking map compact (making
 `dualProjectiveLimit T` a Fréchet–Schwartz space), and hence every bounded subset of
 `dualProjectiveLimit T` has compact closure
@@ -80,10 +83,12 @@ separate points of `L` and surjective when the bonding maps are weakly compact.
   set of vectors of a single space `B j`.
 * `TauCeti.dualProjectiveLimit.exists_eval_eq`: for weakly compact bonding maps, every continuous
   functional on the projective limit is an evaluation.
-* `TauCeti.dualProjectiveLimit.isVonNBounded_strongDual_iff`: bounded sets of the strong dual of
-  `dualProjectiveLimit T` lie in images of balls under `eval`.
-* `TauCeti.dualProjectiveLimit.fromStrongBidual`: continuous left inverse to canonical bidual
-  evaluation on `dualProjectiveLimit T`.
+* `TauCeti.dualProjectiveLimit.isVonNBounded_strongDual_iff`: for weakly compact bonding maps,
+  bounded sets of the strong dual of `dualProjectiveLimit T` lie in images of balls under `eval`.
+* `TauCeti.dualProjectiveLimit.fromStrongBidual`,
+  `TauCeti.dualProjectiveLimit.coord_comp_fromStrongBidual`: continuous left inverse to canonical
+  bidual evaluation on `dualProjectiveLimit T` (also a right inverse under weak compactness), and
+  its coordinate projections.
 * `TauCeti.dualProjectiveLimit.bidualEquiv`: strong reflexivity of `dualProjectiveLimit T` for
   weakly compact bonding maps.
 * `TauCeti.dualProjectiveLimit.isCompact_closure_of_isVonNBounded`: for compact bonding maps,
@@ -266,6 +271,27 @@ theorem eval_comp (j : ℕ) : (eval T (j + 1)).comp (T j) = eval T j := by
   ext x f
   simp
 
+section Precomp
+
+variable {L : Type*} [AddCommGroup L] [Module 𝕜 L] [TopologicalSpace L] {ι : ∀ n, B n →L[𝕜] L}
+
+variable (ι) in
+/-- Precomposition with compatible maps `ι j : B j → L` sends a continuous functional `φ` on `L`
+to the point `(φ ∘ ι j)_j` of the projective limit `lim_j B j′`. -/
+def precomp (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n) :
+    StrongDual 𝕜 L →L[𝕜] dualProjectiveLimit T where
+  toFun φ := ⟨fun n ↦ φ.comp (ι n), mem_dualProjectiveLimit.2 fun n ↦ by rw [comp_assoc, hι]⟩
+  map_add' φ ψ := by ext; simp
+  map_smul' c φ := by ext; simp
+  cont := (continuous_pi fun n ↦ (ContinuousLinearMap.precomp 𝕜 (ι n)).continuous).subtype_mk _
+
+@[simp]
+theorem precomp_apply (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n) (φ : StrongDual 𝕜 L) (n : ℕ) :
+    (precomp ι hι φ : ∀ n, StrongDual 𝕜 (B n)) n = φ.comp (ι n) :=
+  (rfl)
+
+end Precomp
+
 /-- A linear functional on the projective limit that is bounded by `C` times the `j`-th
 coordinate norm is evaluation at a vector of the next stage `B (j + 1)` of norm at most
 `‖T j‖ * C`, provided the bonding map `T j` is weakly compact. -/
@@ -352,11 +378,10 @@ theorem isVonNBounded_strongDual_iff (hT : ∀ n, (T n).IsWeaklyCompact)
     ((NormedSpace.isVonNBounded_closedBall 𝕜 (B j) R).image (eval T j)).subset hS⟩
   have hbdd (f : dualProjectiveLimit T) :
       BddAbove (Set.range fun φ : S ↦ ‖(φ : StrongDual 𝕜 (dualProjectiveLimit T)) f‖) := by
-    obtain ⟨C, hC⟩ := isBounded_iff_forall_norm_le.1
-      ((NormedSpace.isVonNBounded_iff 𝕜).1 (hS.image (strongEval 𝕜 (dualProjectiveLimit T) f)))
-    refine ⟨C, ?_⟩
-    rintro _ ⟨φ, rfl⟩
-    simpa using hC _ (Set.mem_image_of_mem (strongEval 𝕜 (dualProjectiveLimit T) f) φ.property)
+    have h := ((NormedSpace.isVonNBounded_iff 𝕜).1
+      (hS.image (strongEval 𝕜 (dualProjectiveLimit T) f))).bddAbove_norm
+    rw [Set.image_image, ← Subtype.range_coe (s := S), ← Set.range_comp'] at h
+    simpa using h
   obtain ⟨j, R, hrep⟩ := exists_forall_exists_norm_le_eval_eq hT (fun φ : S ↦ φ.val) hbdd
   refine ⟨j, R, fun φ hφ ↦ ?_⟩
   obtain ⟨x, hx, heq⟩ := hrep ⟨φ, hφ⟩
@@ -367,19 +392,20 @@ variable (T) in
 evaluations `eval T n` produces a compatible family in `dualProjectiveLimit T`, left-inverse to
 canonical evaluation `ContinuousLinearMap.applyₗ 𝕜 (RingHom.id 𝕜)`. -/
 def fromStrongBidual :
-    StrongDual 𝕜 (StrongDual 𝕜 (dualProjectiveLimit T)) →L[𝕜] dualProjectiveLimit T where
-  toFun Ψ := ⟨fun n ↦ Ψ.comp (eval T n),
-    mem_dualProjectiveLimit.2 fun n ↦ by rw [comp_assoc, eval_comp]⟩
-  map_add' Ψ₁ Ψ₂ := by ext; simp
-  map_smul' c Ψ := by ext; simp
-  cont := (continuous_pi fun n ↦
-    (ContinuousLinearMap.precomp 𝕜 (eval T n)).continuous).subtype_mk _
+    StrongDual 𝕜 (StrongDual 𝕜 (dualProjectiveLimit T)) →L[𝕜] dualProjectiveLimit T :=
+  precomp (eval T) (eval_comp (T := T))
 
 @[simp]
 theorem fromStrongBidual_apply
     (Ψ : StrongDual 𝕜 (StrongDual 𝕜 (dualProjectiveLimit T))) (n : ℕ) :
     (fromStrongBidual T Ψ : ∀ k, StrongDual 𝕜 (B k)) n = Ψ.comp (eval T n) :=
   (rfl)
+
+@[simp]
+theorem coord_comp_fromStrongBidual (n : ℕ) :
+    (coord T n).comp (fromStrongBidual T) = ContinuousLinearMap.precomp 𝕜 (eval T n) := by
+  ext Ψ x
+  simp [fromStrongBidual_apply]
 
 @[simp]
 theorem fromStrongBidual_applyₗ (f : dualProjectiveLimit T) :
@@ -423,20 +449,13 @@ theorem toLinearMap_bidualEquiv (hT : ∀ n, (T n).IsWeaklyCompact) :
     (bidualEquiv hT).toLinearMap = ContinuousLinearMap.applyₗ 𝕜 (RingHom.id 𝕜) :=
   toLinearMap_strongBidualEquivOfSurjective (applyₗ_id_surjective hT)
 
-theorem coe_bidualEquiv_symm (hT : ∀ n, (T n).IsWeaklyCompact) :
-    ⇑(bidualEquiv hT).symm = fromStrongBidual T := by
-  ext1 Ψ
-  apply (bidualEquiv hT).injective
-  rw [(bidualEquiv hT).apply_symm_apply]
-  ext φ
-  rw [bidualEquiv_apply_apply]
-  conv_lhs => rw [← applyₗ_fromStrongBidual hT Ψ]
-  rfl
-
 @[simp]
 theorem toContinuousLinearMap_bidualEquiv_symm (hT : ∀ n, (T n).IsWeaklyCompact) :
-    (bidualEquiv hT).symm.toContinuousLinearMap = fromStrongBidual T :=
-  DFunLike.coe_injective (coe_bidualEquiv_symm hT)
+    (bidualEquiv hT).symm.toContinuousLinearMap = fromStrongBidual T := by
+  ext1 Ψ
+  rw [ContinuousLinearEquiv.coe_coe, (bidualEquiv hT).symm_apply_eq,
+    ← ContinuousLinearEquiv.coe_toLinearEquiv, ← LinearEquiv.coe_coe,
+    toLinearMap_bidualEquiv, applyₗ_fromStrongBidual hT]
 
 @[simp]
 theorem bidualEquiv_symm_apply_apply (hT : ∀ n, (T n).IsWeaklyCompact)
@@ -486,21 +505,6 @@ theorem totallyBounded_of_isVonNBounded (hT : ∀ n, IsCompactOperator (T n))
 section Precomp
 
 variable {L : Type*} [AddCommGroup L] [Module 𝕜 L] [TopologicalSpace L] {ι : ∀ n, B n →L[𝕜] L}
-
-variable (ι) in
-/-- Precomposition with compatible maps `ι j : B j → L` sends a continuous functional `φ` on `L`
-to the point `(φ ∘ ι j)_j` of the projective limit `lim_j B j′`. -/
-def precomp (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n) :
-    StrongDual 𝕜 L →L[𝕜] dualProjectiveLimit T where
-  toFun φ := ⟨fun n ↦ φ.comp (ι n), mem_dualProjectiveLimit.2 fun n ↦ by rw [comp_assoc, hι]⟩
-  map_add' φ ψ := by ext; simp
-  map_smul' c φ := by ext; simp
-  cont := (continuous_pi fun n ↦ (ContinuousLinearMap.precomp 𝕜 (ι n)).continuous).subtype_mk _
-
-@[simp]
-theorem precomp_apply (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n) (φ : StrongDual 𝕜 L) (n : ℕ) :
-    (precomp ι hι φ : ∀ n, StrongDual 𝕜 (B n)) n = φ.comp (ι n) :=
-  (rfl)
 
 /-- A continuous functional on `L` is determined by its composites with the maps `ι j` when the
 ranges of these maps cover `L`. -/

@@ -31,7 +31,12 @@ evaluation-compatible maps under double precomposition (`precomp G (precomp G u)
 * `ContinuousLinearEquiv.arrowCongr_refl_apply_of_forall_apply_eq`,
   `ContinuousLinearEquiv.toLinearMap_arrowCongr_refl_of_forall_apply_eq`: when `e` agrees
   pointwise with canonical evaluation, `e.arrowCongr (.refl 𝕜 G)` agrees with canonical evaluation
-  on `E →L[𝕜] G`.
+  on `E →L[𝕜] G` (for `G = 𝕜`, the strong-dual reflexivity of Bourbaki, *Topological Vector
+  Spaces*, Chapter IV, §3, no. 3).
+
+## References
+
+* N. Bourbaki, *Topological Vector Spaces*, Chapter IV, §3, no. 3.
 -/
 
 public section

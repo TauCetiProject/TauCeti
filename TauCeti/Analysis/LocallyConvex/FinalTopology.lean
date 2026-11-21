@@ -34,9 +34,7 @@ composed with each generating map is continuous
 
 The comparison criterion permits replacing the generating family by another family through finite
 sums of continuous factorizations. This allows partition-of-unity decompositions when comparing
-chart-generated test-section topologies with fixed-support inductive limits. Companion `*_of_eq`
-lemmas transport the additive-group, local-convexity, and `RCLike` scalar-continuity instances to
-any topology equal to `finalLocallyConvexTopology`.
+chart-generated test-section topologies with fixed-support inductive limits.
 
 The construction and universal-property proof generalize Mathlib's
 `TestFunction.topologicalSpace` and `TestFunction.continuous_iff_continuous_comp` from a particular
@@ -77,18 +75,6 @@ instance : @ContinuousSMul ℝ F _ _ (finalLocallyConvexTopology f) :=
 
 instance : @LocallyConvexSpace ℝ F _ _ _ _ (finalLocallyConvexTopology f) :=
   .sInf fun _ ⟨_, _, _, ht⟩ ↦ ht
-
-variable {f} in
-/-- A topology equal to `finalLocallyConvexTopology f` makes addition and negation continuous. -/
-theorem isTopologicalAddGroup_of_eq [t : TopologicalSpace F]
-    (ht : t = finalLocallyConvexTopology f) : IsTopologicalAddGroup F :=
-  ht ▸ inferInstance
-
-variable {f} in
-/-- A topology equal to `finalLocallyConvexTopology f` is locally convex over `ℝ`. -/
-theorem locallyConvexSpace_of_eq [t : TopologicalSpace F]
-    (ht : t = finalLocallyConvexTopology f) : LocallyConvexSpace ℝ F :=
-  ht ▸ inferInstance
 
 /-- Every generating map is continuous for the final locally convex topology. -/
 @[fun_prop]
@@ -260,16 +246,6 @@ theorem continuousSMul {R : Type*} [RCLike R] [Module R F] [IsScalarTower ℝ R 
   let := finalLocallyConvexTopology f
   have := continuousConstSMul f hf
   RCLike.continuousSMul_of_continuousConstSMul
-
-variable {f} in
-/-- A topology equal to `finalLocallyConvexTopology f` has jointly continuous `R`-scalar
-multiplication when every generator is `R`-equivariant and each source has continuous constant
-`R`-scalar multiplication. -/
-theorem continuousSMul_of_eq {R : Type*} [RCLike R] [Module R F] [IsScalarTower ℝ R F]
-    [∀ i, SMul R (E i)] [∀ i, ContinuousConstSMul R (E i)] [t : TopologicalSpace F]
-    (ht : t = finalLocallyConvexTopology f) (hf : ∀ i (c : R) x, f i (c • x) = c • f i x) :
-    ContinuousSMul R F :=
-  ht ▸ continuousSMul f hf
 
 end SMul
 

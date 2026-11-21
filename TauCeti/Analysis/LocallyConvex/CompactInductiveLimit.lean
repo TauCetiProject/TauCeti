@@ -141,11 +141,9 @@ theorem isVonNBounded_iff_exists_subset_image_closedBall [SeparatingDual 𝕜 L]
   have hbdd (f : dualProjectiveLimit T) :
       BddAbove (Set.range fun x : A ↦ ‖evalInductive hι hinj hcover x f‖) := by
     obtain ⟨φ, rfl⟩ := precomp_surjective hι hinj hcover hfinal f
-    obtain ⟨C, hC⟩ := isBounded_iff_forall_norm_le.1
-      ((NormedSpace.isVonNBounded_iff 𝕜).1 (hA.image φ))
-    refine ⟨C, ?_⟩
-    rintro _ ⟨x, rfl⟩
-    simpa using hC _ (Set.mem_image_of_mem φ x.property)
+    have h := ((NormedSpace.isVonNBounded_iff 𝕜).1 (hA.image φ)).bddAbove_norm
+    rw [Set.image_image, ← Subtype.range_coe (s := A), ← Set.range_comp'] at h
+    simpa using h
   obtain ⟨j, R, hrep⟩ := exists_forall_exists_norm_le_eval_eq hT _ hbdd
   refine ⟨j, R, fun x hx ↦ ?_⟩
   obtain ⟨z, hz, heq⟩ := hrep ⟨x, hx⟩
@@ -523,18 +521,20 @@ theorem completeSpace_of_continuous_evalInductive {L : Type*} [AddCommGroup L] [
 
 /-- **Strong reflexivity of compact inductive limits.** When `L` is a `T₁` locally convex space over
 `ℝ` or `ℂ` covered by compatible injective continuous linear maps with weakly compact bonding maps
-and `evalInductive` is continuous, composing `evalEquiv` with
-`(strongDualEquiv …).symm.arrowCongr (.refl 𝕜 𝕜)` yields the canonical topological linear
-isomorphism from `L` onto its strong bidual `StrongDual 𝕜 (StrongDual 𝕜 L)`. -/
+and `evalInductive` is continuous, canonical bidual evaluation yields a topological linear
+isomorphism from `L` onto its strong bidual `StrongDual 𝕜 (StrongDual 𝕜 L)`, factoring as
+`evalEquiv` followed by `(strongDualEquiv …).symm.arrowCongr (.refl 𝕜 𝕜)`. -/
 def inductiveBidualEquiv [Module ℝ L] [IsScalarTower ℝ 𝕜 L] [IsTopologicalAddGroup L]
     [ContinuousSMul 𝕜 L] [LocallyConvexSpace ℝ L] [T1Space L]
     (hT : ∀ n, (T n).IsWeaklyCompact) (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n)
     (hinj : ∀ n, Function.Injective (ι n)) (hcover : ∀ x : L, ∃ n, ∃ y, ι n y = x)
     (hcont : Continuous (evalInductive hι hinj hcover)) :
     L ≃L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 L) :=
-  let hfinal := continuous_of_continuous_evalInductive_of_continuous_comp hι hinj hcover hcont
-  (evalEquiv hT hι hinj hcover hcont).trans <|
-    (strongDualEquiv hT hι hinj hcover hfinal).symm.arrowCongr (ContinuousLinearEquiv.refl 𝕜 𝕜)
+  ContinuousLinearEquiv.bidualEquivOfDualEquiv
+    (strongDualEquiv hT hι hinj hcover
+      (continuous_of_continuous_evalInductive_of_continuous_comp hι hinj hcover hcont))
+    (evalEquiv hT hι hinj hcover hcont)
+    fun x ℓ ↦ by simp [evalInductive_apply_precomp]
 
 /-- `inductiveBidualEquiv` factors as `evalEquiv` followed by the strong transpose of
 `strongDualEquiv`. -/
@@ -547,8 +547,8 @@ theorem inductiveBidualEquiv_eq_trans [Module ℝ L] [IsScalarTower ℝ 𝕜 L]
       (evalEquiv hT hι hinj hcover hcont).trans
         ((strongDualEquiv hT hι hinj hcover
           (continuous_of_continuous_evalInductive_of_continuous_comp hι hinj hcover
-            hcont)).symm.arrowCongr (ContinuousLinearEquiv.refl 𝕜 𝕜)) := by
-  rfl
+            hcont)).symm.arrowCongr (ContinuousLinearEquiv.refl 𝕜 𝕜)) :=
+  ContinuousLinearEquiv.bidualEquivOfDualEquiv_eq_trans _ _ _
 
 /-- `inductiveBidualEquiv` agrees pointwise with canonical evaluation, sending `x : L` and
 `ℓ : StrongDual 𝕜 L` to `ℓ x`. -/
@@ -558,8 +558,8 @@ theorem inductiveBidualEquiv_apply_apply [Module ℝ L] [IsScalarTower ℝ 𝕜 
     (hT : ∀ n, (T n).IsWeaklyCompact) (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n)
     (hinj : ∀ n, Function.Injective (ι n)) (hcover : ∀ x : L, ∃ n, ∃ y, ι n y = x)
     (hcont : Continuous (evalInductive hι hinj hcover)) (x : L) (ℓ : StrongDual 𝕜 L) :
-    inductiveBidualEquiv hT hι hinj hcover hcont x ℓ = ℓ x := by
-  simp [inductiveBidualEquiv]
+    inductiveBidualEquiv hT hι hinj hcover hcont x ℓ = ℓ x :=
+  ContinuousLinearEquiv.bidualEquivOfDualEquiv_apply_apply _ _ _ x ℓ
 
 /-- The underlying linear map of `inductiveBidualEquiv` is the canonical bidual evaluation
 `ContinuousLinearMap.applyₗ 𝕜 (RingHom.id 𝕜)`. -/
@@ -570,9 +570,8 @@ theorem toLinearMap_inductiveBidualEquiv [Module ℝ L] [IsScalarTower ℝ 𝕜 
     (hinj : ∀ n, Function.Injective (ι n)) (hcover : ∀ x : L, ∃ n, ∃ y, ι n y = x)
     (hcont : Continuous (evalInductive hι hinj hcover)) :
     (inductiveBidualEquiv hT hι hinj hcover hcont).toLinearMap =
-      ContinuousLinearMap.applyₗ 𝕜 (RingHom.id 𝕜) := by
-  ext x ℓ
-  simp
+      ContinuousLinearMap.applyₗ 𝕜 (RingHom.id 𝕜) :=
+  ContinuousLinearEquiv.toLinearMap_bidualEquivOfDualEquiv _ _ _
 
 /-- The inverse of the strong transpose of `inductiveBidualEquiv` is the canonical strong-bidual
 evaluation map of `StrongDual 𝕜 L`. -/

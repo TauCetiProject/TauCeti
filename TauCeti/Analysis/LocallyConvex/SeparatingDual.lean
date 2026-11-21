@@ -17,14 +17,18 @@ continuous linear operator on `E` if and only if it is a scalar multiple of the 
 (`ContinuousLinearMap.commute_forall_iff`). In particular this applies to every normed space over
 `ℝ` or `ℂ`.
 
-Furthermore, separating dual is characterized by injectivity of canonical evaluation into the strong
-bidual (`TauCeti.injective_applyₗ_id_iff`), and any evaluation-like map recovering continuous linear
-functionals is injective (`TauCeti.injective_of_forall_apply_eq`).
+Furthermore, forgetting continuity on the codomain of canonical evaluation
+`ContinuousLinearMap.applyₗ` recovers the flipped coercion `(ContinuousLinearMap.coeLM 𝕜).flip`
+used in Mathlib's `separatingDual_iff_injective` (`ContinuousLinearMap.coeLM_comp_applyₗ`), and
+any evaluation-like map recovering continuous linear functionals is injective
+(`TauCeti.injective_of_forall_apply_eq`).
 -/
 
 public section
 
 namespace ContinuousLinearMap
+
+section Commutant
 
 variable {𝕜 E : Type*} [Field 𝕜] [AddCommGroup E] [TopologicalSpace 𝕜] [TopologicalSpace E]
   [IsTopologicalRing 𝕜] [Module 𝕜 E] [SeparatingDual 𝕜 E] [IsTopologicalAddGroup E]
@@ -40,6 +44,17 @@ theorem commute_forall_iff {T : E →L[𝕜] E} :
   rw [hmem, Algebra.IsCentral.mem_center_iff (K := 𝕜)]
   exact exists_congr fun _ => by simp [Algebra.algebraMap_eq_smul_one]
 
+end Commutant
+
+/-- Forgetting continuity on the codomain of canonical evaluation `applyₗ` recovers the flipped
+coercion `(coeLM 𝕜).flip` used in `separatingDual_iff_injective`. -/
+theorem coeLM_comp_applyₗ {𝕜 E G : Type*} [NormedField 𝕜] [AddCommGroup E] [Module 𝕜 E]
+    [TopologicalSpace E] [ContinuousSMul 𝕜 E] [AddCommGroup G] [Module 𝕜 G]
+    [TopologicalSpace G] [IsTopologicalAddGroup G] [ContinuousConstSMul 𝕜 G] :
+    (coeLM (R := 𝕜) 𝕜 (M := E →L[𝕜] G) (N₃ := G)).comp (applyₗ G (RingHom.id 𝕜)) =
+      (coeLM (R := 𝕜) 𝕜 (M := E) (N₃ := G)).flip :=
+  rfl
+
 end ContinuousLinearMap
 
 namespace TauCeti
@@ -54,16 +69,5 @@ theorem injective_of_forall_apply_eq {𝕜 E G H : Type*} [Ring 𝕜] [Topologic
     Function.Injective ev := fun x y hxy ↦
   (SeparatingDual.eq_iff_forall_dual_eq (R := 𝕜)).2 fun φ ↦ by
     rw [← hev x φ, ← hev y φ, hxy]
-
-/-- Canonical evaluation into the strong bidual is injective if and only if continuous linear
-functionals separate points of `E`. -/
-theorem injective_applyₗ_id_iff (𝕜 E : Type*) [NormedField 𝕜] [AddCommGroup E] [Module 𝕜 E]
-    [TopologicalSpace E] [ContinuousSMul 𝕜 E] :
-    Function.Injective (ContinuousLinearMap.applyₗ 𝕜 (RingHom.id 𝕜) :
-      E →ₗ[𝕜] StrongDual 𝕜 (StrongDual 𝕜 E)) ↔ SeparatingDual 𝕜 E := by
-  refine ⟨fun hinj ↦ ⟨fun x hx ↦ ?_⟩, fun _ ↦
-    injective_of_forall_apply_eq (p := id) fun _ _ ↦ rfl⟩
-  contrapose! hx
-  exact hinj (ContinuousLinearMap.ext fun f ↦ by simp [hx f])
 
 end TauCeti
