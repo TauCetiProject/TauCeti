@@ -124,7 +124,7 @@ then also has finite index): if `ϕ' : H' →* A` corresponds to `ϕ : H →* A`
 `transfer ϕ' (e g) = transfer ϕ g`. -/
 theorem transfer_apply_of_mulEquiv {G' : Type*} [Group G'] (e : G ≃* G') {H' : Subgroup G'}
     [H.FiniteIndex] (he : H.map (e : G →* G') = H') (ϕ' : H' →* A)
-    (hϕ : ∀ h : H, ϕ' ⟨e h, he ▸ mem_map_of_mem _ h.2⟩ = ϕ h) (g : G) :
+    (hϕ : ∀ h : H, ϕ' ⟨e h, he ▸ mem_map_of_mem _ h.property⟩ = ϕ h) (g : G) :
     haveI := H.finiteIndex_of_map_eq (e : G →* G') e.surjective he
     transfer ϕ' (e g) = transfer ϕ g := by
   let _ := H.fintypeQuotientOfFiniteIndex

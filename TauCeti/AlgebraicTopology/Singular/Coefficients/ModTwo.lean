@@ -23,7 +23,8 @@ long exact sequence of `0 ⟶ ℤ ⟶ ℤ ⟶ ℤ/2 ⟶ 0`, or with the field `�
 `ModuleCat 𝔽₂`, which is how mod-two homology is computed, for instance by a spectral sequence of
 `𝔽₂`-vector spaces. The two agree: restriction of scalars along `ℤ → 𝔽₂` preserves coproducts and
 homology, so the integer-module homology is the mod-two homology with its scalars restricted
-(`TopCat.singularHomologyModTwoIso`). In particular one vanishes exactly when the other does
+(`TopCat.singularHomologyModTwoNatIso`, specialized to `ℤ/2` in `TopCat.singularHomologyModTwoIso`).
+In particular one vanishes exactly when the other does
 (`TopCat.isZero_singularHomology_modTwo_iff`, and `TopCat.isZero_singularHomology_modTwo_iff'` for
 spaces in the lowest universe, with the coefficients `ℤ/2` and `𝔽₂` themselves rather than lifted),
 and a map induces an isomorphism on one exactly when it induces an isomorphism on the other
@@ -73,7 +74,7 @@ namespace TopCat
 /-- For any `ZMod 2`-module `M` carrying a compatible `ℤ`-module structure, singular homology with
 `ℤ`-module coefficients `M` is naturally isomorphic to singular homology with `ZMod 2`-module
 coefficients `M` followed by restriction of scalars along `ℤ →+* ZMod 2`. -/
-private def singularHomologyModTwoNatIso (M : Type u) [AddCommGroup M] [Module (ZMod 2) M]
+def singularHomologyModTwoNatIso (M : Type u) [AddCommGroup M] [Module (ZMod 2) M]
     [IsScalarTower ℤ (ZMod 2) M] (n : ℕ) :
     (singularHomologyFunctor (ModuleCat.{u} ℤ) n).obj (ModuleCat.of ℤ M) ≅
       (singularHomologyFunctor (ModuleCat.{u} (ZMod 2)) n).obj (ModuleCat.of (ZMod 2) M) ⋙

@@ -88,14 +88,14 @@ def ptSimplexEquiv : (toSSet.obj X).PtSimplex (n + 1) (toSSetObj₀Equiv.symm x)
     simpa only [toSSetObjEquiv_yonedaEquiv_δ_comp_apply,
       toSSetObjEquiv_yonedaEquiv_const_apply] using this⟩
   invFun φ :=
-    { map := yonedaEquiv.symm ((X.toSSetObjEquiv _).symm φ.1)
+    { map := yonedaEquiv.symm ((X.toSSetObjEquiv _).symm φ.val)
       comm := by
         ext i : 1
         simp only [boundary.ι_ι_assoc, comp_const, const_comp]
         refine hom_ext_stdSimplex fun z => ?_
         rw [toSSetObjEquiv_yonedaEquiv_δ_comp_apply, Equiv.apply_symm_apply,
           Equiv.apply_symm_apply]
-        exact φ.2 i z }
+        exact φ.property i z }
   left_inv p := by ext : 1; simp
   right_inv φ := by ext : 1; simp
 
@@ -105,7 +105,7 @@ variable {X x n}
 lemma ptSimplexEquiv_symm_apply_map
     (φ : {φ : C(StdSimplex ℝ (Fin (n + 2)), X) //
       ∀ (i : Fin (n + 2)) (z : StdSimplex ℝ (Fin (n + 1))), φ (z.map i.succAbove) = x}) :
-    ((ptSimplexEquiv X x n).symm φ).map = yonedaEquiv.symm ((X.toSSetObjEquiv _).symm φ.1) :=
+    ((ptSimplexEquiv X x n).symm φ).map = yonedaEquiv.symm ((X.toSSetObjEquiv _).symm φ.val) :=
   (rfl)
 
 @[simp]
@@ -122,9 +122,9 @@ theorem nonempty_relStruct₀_iff
     Nonempty (p.RelStruct₀ q) ↔
       ∃ τ : C(StdSimplex ℝ (Fin (n + 3)), X),
         (∀ z : StdSimplex ℝ (Fin (n + 2)),
-          τ (z.map (0 : Fin (n + 3)).succAbove) = (ptSimplexEquiv X x n p).1 z) ∧
+          τ (z.map (0 : Fin (n + 3)).succAbove) = (ptSimplexEquiv X x n p).val z) ∧
         (∀ z : StdSimplex ℝ (Fin (n + 2)),
-          τ (z.map (1 : Fin (n + 3)).succAbove) = (ptSimplexEquiv X x n q).1 z) ∧
+          τ (z.map (1 : Fin (n + 3)).succAbove) = (ptSimplexEquiv X x n q).val z) ∧
         ∀ j : Fin (n + 3), 1 < j → ∀ z : StdSimplex ℝ (Fin (n + 2)),
           τ (z.map j.succAbove) = x := by
   constructor
@@ -234,7 +234,7 @@ theorem toSSetPiEquivHomotopyGroup_mul_reverse
   have hface {j : Fin (n + 3)} {r : (toSSet.obj X).PtSimplex (n + 1) (toSSetObj₀Equiv.symm x)}
       (hj : stdSimplex.δ j ≫ h.map = r.map) (z : StdSimplex ℝ (Fin (n + 2))) :
       X.toSSetObjEquiv _ (yonedaEquiv h.map) (z.map j.succAbove) =
-        (ptSimplexEquiv X x n r).1 z := by
+        (ptSimplexEquiv X x n r).val z := by
     have := congrArg (fun f => X.toSSetObjEquiv _ (yonedaEquiv f) z) hj
     simpa only [toSSetObjEquiv_yonedaEquiv_δ_comp_apply, coe_ptSimplexEquiv_apply] using this
   refine (Quotient.sound (GenLoop.homotopic_simplexEquiv_transAt_last
