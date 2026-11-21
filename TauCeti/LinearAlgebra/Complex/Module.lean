@@ -33,7 +33,8 @@ A real-bilinear map is unchanged by conjugating both arguments exactly when it v
 `(1, I)` and `(I, 1)` (`LinearMap.forall_apply_conj_apply_conj_eq_iff`).
 Multiplication by `I` and by `-I` are mutually inverse on any complex multiplication action.
 Multiplication by `I` squares to `-1` as a real-linear endomorphism of a complex module
-(`Complex.toLinearMap_I_comp_toLinearMap_I`).
+(`Complex.toLinearMap_I_comp_toLinearMap_I`), so it negates a real scalar multiple it surrounds
+(`Complex.I_smul_smul_I_smul`).
 
 A real-linear map between complex modules that commutes with multiplication by `I` is complex
 linear (`LinearMap.complexOfMapISmul`), and one that anticommutes with it is conjugate-linear
@@ -46,10 +47,11 @@ conjugacy `g z = w * f z * w⁻¹` by a unit `w` between two such maps holds eve
 at `I` (`Units.conj_complexAlgHom_apply`).
 
 The real part `ℜ a = (a + a*) / 2` of an element of a complex star module is `a` corrected by
-half its skew difference `a* - a` (`TauCeti.realPart_eq_add_half_star_sub`). Multiplication by
-`-I` is a real linear equivalence from the skew-adjoint onto the self-adjoint elements, with
-inverse multiplication by `I` (`skewAdjoint.negISMulEquiv`), extending Mathlib's
-`skewAdjoint.negISMul`.
+half its skew difference `a* - a` (`TauCeti.realPart_eq_add_half_star_sub`). For a real-linear `J`
+with `J ∘ J = -1`, the map `a + b i ↦ a - b J` from `ℂ` is multiplicative
+(`TauCeti.re_smul_sub_im_smul_apply_mul`). Multiplication by `-I` is a real linear equivalence
+from the skew-adjoint onto the self-adjoint elements, with inverse multiplication by `I`
+(`skewAdjoint.negISMulEquiv`), extending Mathlib's `skewAdjoint.negISMul`.
 
 A vector lies in the real span of a complex basis exactly when its coordinates are real
 (`Module.Basis.mem_span_real_range_iff`). In particular, the real span of the standard basis of
@@ -93,6 +95,12 @@ theorem toLinearMap_I_comp_toLinearMap_I {W : Type*} [AddCommGroup W] [Module �
     [IsScalarTower ℝ ℂ W] :
     DistribSMul.toLinearMap ℝ W I ∘ₗ DistribSMul.toLinearMap ℝ W I = -LinearMap.id :=
   LinearMap.ext fun v ↦ by simp [smul_smul]
+
+/-- Multiplication by `I` on both sides of a real scalar multiplication negates it:
+`I • c • I • z = -(c • z)`. -/
+theorem I_smul_smul_I_smul {W : Type*} [AddCommGroup W] [Module ℂ W] [Module ℝ W]
+    [IsScalarTower ℝ ℂ W] (c : ℝ) (z : W) : I • c • I • z = -(c • z) := by
+  rw [smul_comm I c, smul_smul I I, I_mul_I, neg_one_smul, smul_neg]
 
 /-- Decompose a complex scalar action into its real and imaginary parts. -/
 @[simp]
@@ -213,6 +221,15 @@ theorem realPart_eq_add_half_star_sub {A : Type*} [AddCommGroup A] [Module ℂ A
 theorem mem_span_real_range_basisFun_iff {ι : Type*} [Finite ι] (w : ι → ℂ) :
     w ∈ Submodule.span ℝ (Set.range (Pi.basisFun ℂ ι)) ↔ ∀ i, (w i).im = 0 := by
   simp [(Pi.basisFun ℂ ι).mem_span_real_range_iff]
+
+/-- When `J ∘ J = -1` for a real-linear `J`, the map `a + b i ↦ a - b J` from `ℂ` is
+multiplicative: transforming by `d` and then by `c` is transforming by `c * d`. -/
+theorem re_smul_sub_im_smul_apply_mul {V F : Type*} [AddCommGroup V] [Module ℝ V] [FunLike F V V]
+    [LinearMapClass F ℝ V V] {J : F} (hJ : ∀ y, J (J y) = -y) (c d : ℂ) (x : V) :
+    c.re • (d.re • x - d.im • J x) - c.im • J (d.re • x - d.im • J x) =
+      (c * d).re • x - (c * d).im • J x := by
+  rw [map_sub, map_smul, map_smul, hJ, Complex.mul_re, Complex.mul_im]
+  module
 
 end TauCeti
 

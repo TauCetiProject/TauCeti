@@ -8,6 +8,7 @@ module
 public import TauCeti.RepresentationTheory.Crystal.Component
 public import TauCeti.RepresentationTheory.Crystal.Highest
 public import TauCeti.RepresentationTheory.LSPath.Crystal.Basic
+public import TauCeti.RepresentationTheory.LSPath.Dual
 public import TauCeti.RepresentationTheory.LSPath.Highest
 public import TauCeti.RepresentationTheory.LSPath.Raise
 public import TauCeti.RepresentationTheory.LSPath.Realization
@@ -30,10 +31,9 @@ with `PLPath.raise`, `PLPath.lower`, and `PLPath.minHeight` in every realization
 
 ## Main definitions and results
 
-* `TauCeti.LSPath.crystal`, `TauCeti.LSPath.isCrystalSet_range_toPLPath`,
-  `TauCeti.LSPath.isIntegralPath_toPLPath`, `TauCeti.LSPath.raise_toPLPath`,
-  `TauCeti.LSPath.lower_toPLPath`, `TauCeti.LSPath.toPLPathHom`,
-  `TauCeti.LSPath.toPLPathComponentIso`.
+* `TauCeti.LSPath.crystal`, `TauCeti.LSPath.isIntegralPath_toPLPath`,
+  `TauCeti.LSPath.raise_toPLPath`, `TauCeti.LSPath.lower_toPLPath`,
+  `TauCeti.LSPath.toPLPathHom`, `TauCeti.LSPath.toPLPathComponentIso`.
 * `TauCeti.LSPath.congrIso`, `TauCeti.LSPath.dualIso`: shape transport and path duality.
 * `TauCeti.LSPath.forall_crystal_e_eq_none_iff`, `TauCeti.LSPath.exists_fWord_straight_eq_some`,
   `TauCeti.LSPath.connected_crystal_graph`,
@@ -99,23 +99,10 @@ variable {𝕜 V : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing �
 
 include hlam hF
 
-/-- **Admissibility of realized LS paths.** In every realization `(𝕜, V, f, F)`, the image of
-`LSPath.toPLPath` for dominant `λ` is crystal-admissible. -/
-theorem isCrystalSet_range_toPLPath :
-    PLPath.IsCrystalSet b f F (Set.range fun π : LSPath P b lam ↦ π.toPLPath 𝕜 f) := by
-  have := P.flip_isReduced
-  exact
-    { endpoint_mem_range := by rintro _ ⟨π, rfl⟩; exact ⟨π.weight hlam, apply_weight 𝕜 f hlam π⟩
-      exists_minHeight_eq_intCast := by
-        rintro _ ⟨π, rfl⟩ i; exact π.exists_minHeight_eq_intCast hlam f i (F i) (hF i)
-      mem_of_raise_eq_some hr hπ := mem_range_toPLPath_of_raise_eq_some hlam f _ (F _) (hF _) hπ hr
-      mem_of_lower_eq_some hl hπ :=
-        mem_range_toPLPath_of_lower_eq_some hlam f _ (F _) (hF _) hπ hl }
-
 /-- Every realized Lakshmibai–Seshadri path of dominant shape is an integral path. -/
 theorem isIntegralPath_toPLPath (π : LSPath P b lam) :
     PLPath.IsIntegralPath b f F (π.toPLPath 𝕜 f) :=
-  (isCrystalSet_range_toPLPath hlam f F hF).subset_isIntegralPath ⟨π, rfl⟩
+  (isCrystalSet_range_toPLPath hlam f hF).subset_isIntegralPath ⟨π, rfl⟩
 
 /-- The straight path along a dominant weight `λ` is an integral path in every realization. -/
 theorem isIntegralPath_straight :
@@ -130,7 +117,7 @@ private noncomputable abbrev ratCrystalOn (hlam : lam ∈ dominantChamber P b) :
     (f := (TensorProduct.mk ℤ ℚ X 1).toAddMonoidHom)
     (F := fun i ↦ Module.Dual.baseChange ℚ (P.coroot' i))
     (injective_mkRatAddHom P) baseChange_coroot'_mkRat
-    (isCrystalSet_range_toPLPath hlam _ _ baseChange_coroot'_mkRat)
+    (isCrystalSet_range_toPLPath hlam _ baseChange_coroot'_mkRat)
 
 private noncomputable abbrev toRatRangeEquiv (hlam : lam ∈ dominantChamber P b) :
     LSPath P b lam ≃ Set.range (toRatPLPath (P := P) (b := b) (lam := lam)) :=
@@ -457,7 +444,7 @@ theorem mem_range_toPLPath_iff_reflTransGen (f : X →+ V) (F : b.support → Mo
       Relation.ReflTransGen (PLPath.RootStep b f F) (PLPath.straight 𝕜 (f lam)) p :=
   ⟨fun hp ↦ let ⟨_, hw⟩ := (mem_range_toPLPath_iff_exists_lowerWord hlam f F hF).mp hp
     PLPath.reflTransGen_rootStep_of_lowerWord_eq_some hw,
-    fun h ↦ (isCrystalSet_range_toPLPath hlam f F hF).mem_of_reflTransGen_rootStep h
+    fun h ↦ (isCrystalSet_range_toPLPath hlam f hF).mem_of_reflTransGen_rootStep h
       ⟨straight lam, toPLPath_straight 𝕜 f⟩⟩
 
 section ComponentIso

@@ -8,7 +8,7 @@ module
 public import TauCeti.GroupTheory.Coxeter.LongestElement
 public import TauCeti.GroupTheory.Coxeter.Poincare
 public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Presentation
-public import TauCeti.LinearAlgebra.RootSystem.Opposition
+public import TauCeti.LinearAlgebra.RootSystem.Opposition.Basic
 
 /-!
 # Length and subwords in the Weyl group

@@ -38,6 +38,8 @@ its limiting point is fixed by the flow.  Time reversal exchanges the two constr
   point of a trajectory is fixed.
 * `Flow.disjoint_stableSet` and `Flow.disjoint_unstableSet`: stable (respectively unstable) sets
   of distinct points are disjoint.
+* `Flow.eq_of_mem_stableSet` and `Flow.eq_of_mem_unstableSet`: a fixed point lies on no stable
+  (respectively unstable) set but its own.
 * `Flow.stableSet_reverse` and `Flow.unstableSet_reverse`: time reversal exchanges
   stable and unstable sets.
 * `Homeomorph.image_stableSet_eq` and `Homeomorph.image_unstableSet_eq`: a topological conjugacy
@@ -337,6 +339,14 @@ theorem eq_of_mem_unstableSet_of_periodic (hx : x ∈ unstableSet φ q) {T : ℝ
   apply eq_of_mem_stableSet_of_periodic (φ := φ.reverse) (by simpa using hx) hT
   intro t
   simpa only [_root_.Flow.reverse_apply, neg_add_rev, add_comm] using (hper.neg (-t))
+
+/-- A fixed point of the flow lies on no stable set but its own. -/
+theorem eq_of_mem_stableSet {c : α} (hx : ∀ t, φ t x = x) (h : x ∈ stableSet φ c) : x = c :=
+  eq_of_mem_stableSet_of_periodic h one_ne_zero fun t ↦ by simp only [hx]
+
+/-- A fixed point of the flow lies on no unstable set but its own. -/
+theorem eq_of_mem_unstableSet {c : α} (hx : ∀ t, φ t x = x) (h : x ∈ unstableSet φ c) : x = c :=
+  eq_of_mem_unstableSet_of_periodic h one_ne_zero fun t ↦ by simp only [hx]
 
 /-- A nonconstant orbit that converges in forward time is injectively parametrized by time. -/
 theorem orbit_injective_of_mem_stableSet_of_ne
