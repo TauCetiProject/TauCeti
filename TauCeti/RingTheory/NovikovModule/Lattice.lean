@@ -35,8 +35,9 @@ properties:
   is obtained from a single lattice by inverting them. In the action-weighted case, with
   exponents `G × ℝ`, periods `(g, t) ↦ E g + t` and the monomials `T^t = e^(0, t)`, `t ≥ 0`,
   this says that the completed module is `⋃ᵣ T^(-r) C⟨0⟩`, and `T^(-r) C⟨0⟩ = C⟨r⟩`;
-* chosen lifts all of potential `r` form a basis of `C⟨r⟩` over `Λ₀`. In the action-weighted
-  case such lifts always exist, so each lattice is a finite free `Λ₀`-module.
+* chosen lifts all of potential `r` form a basis of `C⟨r⟩` over `Λ₀`. When the period map is
+  surjective, as in the action-weighted case, such lifts always exist, so each lattice is a
+  finite free `Λ₀`-module.
 
 The localization statement is Mathlib's `IsLocalizedModule`, so its universal property applies:
 a `Λ₀`-linear map out of a lattice into a module on which the monomials act invertibly extends
@@ -54,8 +55,6 @@ not restrict to one on a lattice without a shift of the cutoff.
 
 ## Main results
 
-* `TauCeti.NovikovModule.smul_mem_potentialFiltration_sub`: a Novikov series supported in periods
-  at least `D` maps `U_C` into `U_(C - D)`.
 * `TauCeti.NovikovModule.single_smul_mem_lattice_iff`: `e^h • a ∈ C⟨C⟩ ↔ a ∈ C⟨C + N h⟩`.
 * `TauCeti.NovikovModule.iUnion_lattice`, `TauCeti.NovikovModule.iInf_lattice`: the lattices
   exhaust the completed combinations and meet in `0`.
@@ -63,8 +62,8 @@ not restrict to one on a lattice without a shift of the cutoff.
   at monomials of unbounded period.
 * `TauCeti.NovikovModule.isLocalizedModule_lattice_map_inr`: in the action-weighted case, the
   inclusion of a lattice is a localization at the monomials `T^r`, `r ≥ 0`.
-* `TauCeti.NovikovModule.free_lattice_inr`, `TauCeti.NovikovModule.finite_lattice_inr`: in the
-  action-weighted case each lattice is a finite free module over the nonnegative subring.
+* `TauCeti.NovikovModule.free_lattice`, `TauCeti.NovikovModule.finite_lattice`: for a surjective
+  period map, each lattice is a finite free module over the nonnegative subring.
 
 ## References
 
@@ -86,21 +85,6 @@ section Ring
 variable {R H ι : Type*} [Ring R] [AddGroup H] [Finite ι] {P : ι → Type*}
     [∀ i, AddTorsor H (P i)] {N : H →+ ℝ} {F : (Σ i, P i) → ℝ}
     (hF : ∀ i h (p : P i), F ⟨i, h +ᵥ p⟩ = F ⟨i, p⟩ - N h)
-
-/-- **Filtered scalar action.** A Novikov series whose coefficients vanish below the period `D`
-maps the completed combinations vanishing above the potential `C` to those vanishing above
-`C - D`. -/
-theorem smul_mem_potentialFiltration_sub {b : NovikovSeries R H N} {a : NovikovModule R F}
-    {C D : ℝ} (hb : b ∈ periodFiltration R N D) (ha : a ∈ potentialFiltration R F C) :
-    letI := module (R := R) hF
-    b • a ∈ potentialFiltration R F (C - D) := by
-  let := module (R := R) hF
-  let r : ∀ i, P i := fun i => Classical.arbitrary (P i)
-  rw [mem_potentialFiltration_iff_coordinates hF r] at ha ⊢
-  intro i
-  rw [coordinates_smul, Pi.smul_apply, smul_eq_mul]
-  have := mul_mem_periodFiltration hb (ha i)
-  rwa [show D + (F ⟨i, r i⟩ - C) = F ⟨i, r i⟩ - (C - D) by ring] at this
 
 variable (R) in
 /-- The **shifted lattice** of cutoff `C`: the completed combinations whose coefficients vanish at
@@ -132,8 +116,8 @@ theorem toAddSubgroup_lattice (C : ℝ) :
   (rfl)
 
 /-- The lattices increase with the cutoff. For `C ≤ D` the inclusion of the lattice of cutoff `C`
-into that of cutoff `D` is `Submodule.inclusion (lattice_mono hF h)`. -/
-theorem lattice_mono : Monotone (lattice R hF) :=
+into that of cutoff `D` is `Submodule.inclusion (monotone_lattice hF h)`. -/
+theorem monotone_lattice : Monotone (lattice R hF) :=
   fun _ _ h _ ha => monotone_potentialFiltration h ha
 
 /-- The lattices exhaust the completed combinations: every completed combination has valuation
@@ -233,6 +217,35 @@ theorem coe_latticeBasis_repr_apply (r : ∀ i, P i) (hr : ∀ i, F ⟨i, r i⟩
     ((latticeBasis hF r hr).repr a i : NovikovSeries R H N) = coordinates hF r a i := by
   simp [latticeBasis]
 
+omit [Finite ι] in
+include hF in
+/-- If the period map is surjective, every orbit has a generator of any prescribed potential:
+translate any generator by an element of period `F p - C`. -/
+theorem exists_potential_eq (hN : Function.Surjective N) (i : ι) (C : ℝ) :
+    ∃ p : P i, F ⟨i, p⟩ = C := by
+  obtain ⟨p⟩ : Nonempty (P i) := inferInstance
+  obtain ⟨h, hh⟩ := hN (F ⟨i, p⟩ - C)
+  exact ⟨h +ᵥ p, by rw [hF, hh, sub_sub_cancel]⟩
+
+/-- If the period map is surjective, each lattice is a free module over the nonnegative subring,
+on lifts of potential `C`. This applies in the action-weighted case, with exponents `G × ℝ` and
+periods `(g, t) ↦ E g + t`. -/
+theorem free_lattice (hN : Function.Surjective N) (C : ℝ) :
+    letI := module (R := R) hF
+    Module.Free (nonnegSubring R N) (lattice R hF C) := by
+  let := module (R := R) hF
+  choose r hr using fun i => exists_potential_eq hF hN i C
+  exact .of_basis (latticeBasis hF r hr)
+
+/-- If the period map is surjective, each lattice is a finitely generated module over the
+nonnegative subring. -/
+theorem finite_lattice (hN : Function.Surjective N) (C : ℝ) :
+    letI := module (R := R) hF
+    Module.Finite (nonnegSubring R N) (lattice R hF C) := by
+  let := module (R := R) hF
+  choose r hr using fun i => exists_potential_eq hF hN i C
+  exact .of_basis (latticeBasis hF r hr)
+
 end Ring
 
 section CommRing
@@ -265,7 +278,7 @@ theorem isLocalizedModule_lattice {M : AddSubmonoid H} (hM : ∀ D : ℝ, ∃ m 
     obtain ⟨m, hmM, hm⟩ := hM (max (D - C) 0)
     have hm₀ : 0 ≤ N m := (le_max_right _ _).trans hm
     refine ⟨(⟨NovikovSeries.single m 1 • y, (single_smul_mem_lattice_iff hF m).2 <|
-      lattice_mono hF (by linarith [le_max_left (D - C) 0]) hD⟩,
+      monotone_lattice hF (by linarith [le_max_left (D - C) 0]) hD⟩,
       ⟨_, single_mem_monomialSubmonoid hmM hm₀⟩), ?_⟩
     rw [Submonoid.smul_def, Subring.smul_def, Submodule.subtype_apply]
 
@@ -286,39 +299,5 @@ theorem isLocalizedModule_lattice_map_inr {G : Type*} [AddCommGroup G] {E : G �
     (fun D => ⟨(0, max D 0), ⟨_, le_max_right _ _, rfl⟩, by simp⟩) C
 
 end CommRing
-
-section ActionWeighted
-
-variable {R G ι : Type*} [Ring R] [AddGroup G] [Finite ι] {E : G →+ ℝ} {P : ι → Type*}
-    [∀ i, AddTorsor (G × ℝ) (P i)] {F : (Σ i, P i) → ℝ}
-    (hF : ∀ i h (p : P i), F ⟨i, h +ᵥ p⟩ = F ⟨i, p⟩ - E.coprod (AddMonoidHom.id ℝ) h)
-
-omit [Finite ι] in
-include hF in
-/-- In the action-weighted case every orbit has a generator of any prescribed potential: translate
-any generator by the real class `(0, F p - C)`. -/
-theorem exists_potential_eq (i : ι) (C : ℝ) : ∃ p : P i, F ⟨i, p⟩ = C := by
-  obtain ⟨p⟩ : Nonempty (P i) := inferInstance
-  exact ⟨((0 : G), F ⟨i, p⟩ - C) +ᵥ p, by simp [hF]⟩
-
-/-- In the action-weighted case each lattice is a free module over the nonnegative subring, on
-lifts of potential `C`. -/
-theorem free_lattice_inr (C : ℝ) :
-    letI := module (R := R) hF
-    Module.Free (nonnegSubring R (E.coprod (AddMonoidHom.id ℝ))) (lattice R hF C) := by
-  let := module (R := R) hF
-  choose r hr using fun i => exists_potential_eq hF i C
-  exact .of_basis (latticeBasis hF r hr)
-
-/-- In the action-weighted case each lattice is a finitely generated module over the nonnegative
-subring. -/
-theorem finite_lattice_inr (C : ℝ) :
-    letI := module (R := R) hF
-    Module.Finite (nonnegSubring R (E.coprod (AddMonoidHom.id ℝ))) (lattice R hF C) := by
-  let := module (R := R) hF
-  choose r hr using fun i => exists_potential_eq hF i C
-  exact .of_basis (latticeBasis hF r hr)
-
-end ActionWeighted
 
 end TauCeti.NovikovModule
