@@ -235,26 +235,42 @@ section Append
 variable {Z' : Type v} {S₀' : Set (GX G Z')} {Y Y'' X : Type v} {B : Block G Z S₀ Y}
   {B'' : Block G Z' S₀' Y''} {q : Y → GX G Y''}
 
+/-- The word map extending `q : Y → G[Y'']` by the identity on new variables `X`. -/
+private def consWordMap (q : Y → GX G Y'') : X ⊕ Y → GX G (X ⊕ Y'') :=
+  Sum.elim (fun x ↦ inr (FreeGroup.of (Sum.inl x)))
+    fun y ↦ Monoid.Coprod.map (.id G) (FreeGroup.map Sum.inr) (q y)
+
+private theorem wordMap_consWordMap_comp_inl (v : X ⊕ Y'' → G) :
+    wordMap (.id G) (consWordMap q) v ∘ Sum.inl = v ∘ Sum.inl := by
+  funext x
+  simp [consWordMap]
+
+private theorem wordMap_consWordMap_comp_inr (v : X ⊕ Y'' → G) :
+    wordMap (.id G) (consWordMap q) v ∘ Sum.inr = wordMap (.id G) q (v ∘ Sum.inr) := by
+  funext y
+  simp [consWordMap]
+
 /-- A word map `q` from the solutions of `B''` to those of `B` extends, by the identity on the
 variables of a level `L` over `B`, to a word map from the solutions of `L` put on `B''` with its
 coefficients substituted by `q` to the solutions of `L` put on `B`. -/
-private theorem mapsTo_wordMap_extendWords [Finite X]
+private theorem mapsTo_wordMap_consWordMap [Finite X]
     (hq : Set.MapsTo (wordMap (.id G) q) (V (.id G) B''.equations) (V (.id G) B.equations))
-    (L : BlockLevel (GX G Y) X) : Set.MapsTo (wordMap (.id G) (extendWords X q))
+    (L : BlockLevel (GX G Y) X) : Set.MapsTo (wordMap (.id G) (consWordMap q))
       (V (.id G) (cons B'' X (L.map (eval inl q))).equations)
       (V (.id G) (cons B X L).equations) := by
   intro v hv
   rw [mem_V_cons] at hv ⊢
-  refine ⟨by simpa using hq hv.1, ?_⟩
-  simpa [mem_V, eval_comp_eval] using hv.2
+  refine ⟨wordMap_consWordMap_comp_inr v ▸ hq hv.1, ?_⟩
+  simpa [mem_V, eval_comp_eval, wordMap_consWordMap_comp_inl, wordMap_consWordMap_comp_inr]
+    using hv.2
 
-/-- Under the hypothesis of `mapsTo_wordMap_extendWords`, if the fundamental points of `B` over
+/-- Under the hypothesis of `mapsTo_wordMap_consWordMap`, if the fundamental points of `B` over
 `P` are images under `q` of fundamental points of `B''` over `P''`, the same holds for a level `L`
 put on `B`, and on `B''` with its coefficients substituted by `q`. -/
 private theorem fundPoints_cons_subset_image [Finite X] {P : Set (Z → G)} {P'' : Set (Z' → G)}
     (hq : Set.MapsTo (wordMap (.id G) q) (V (.id G) B''.equations) (V (.id G) B.equations))
     (hB : B.fundPoints P ⊆ wordMap (.id G) q '' B''.fundPoints P'') (L : BlockLevel (GX G Y) X) :
-    (cons B X L).fundPoints P ⊆ wordMap (.id G) (extendWords X q) ''
+    (cons B X L).fundPoints P ⊆ wordMap (.id G) (consWordMap q) ''
       (cons B'' X (L.map (eval inl q))).fundPoints P'' := by
   rintro v ⟨hv, s, hs, hvs⟩
   obtain ⟨u, hu, hvu⟩ := hB hv
@@ -265,7 +281,10 @@ private theorem fundPoints_cons_subset_image [Finite X] {P : Set (Z → G)} {P''
   · funext x
     rw [Sum.elim_comp_inl, Sum.elim_comp_inr, hvs, ← hvu]
     exact (DFunLike.congr_fun (eval_comp_eval q u) (s x)).symm
-  · simp [hvu]
+  · funext i
+    rcases i with x | y
+    · simp [consWordMap]
+    · simpa [consWordMap] using congrFun hvu y
 
 /-- Let `B` be a block over `S₀` and `B'` a block over another system, with a word map `p` sending
 the solutions of `B'` to solutions of `S₀`. Then there are a block `B''` over the system of `B'`
@@ -285,8 +304,8 @@ theorem exists_append {Y : Type v} (B : Block G Z S₀ Y) {Z' Y' : Type v} {S₀
   | base => exact ⟨Y', B', p, equations_base (S₀ := S₀) ▸ hp, fun P₀ ↦ (fundPoints_base _).subset⟩
   | cons B X L ih =>
     obtain ⟨Y'', B'', q, hq, hB⟩ := ih
-    exact ⟨X ⊕ Y'', cons B'' X (L.map (eval inl q)), extendWords X q,
-      mapsTo_wordMap_extendWords hq L, fun P₀ ↦ fundPoints_cons_subset_image hq (hB P₀) L⟩
+    exact ⟨X ⊕ Y'', cons B'' X (L.map (eval inl q)), consWordMap q,
+      mapsTo_wordMap_consWordMap hq L, fun P₀ ↦ fundPoints_cons_subset_image hq (hB P₀) L⟩
 
 end Append
 

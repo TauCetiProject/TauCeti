@@ -98,11 +98,12 @@ theorem IsResidual.hasLiftNe {ι : G →* H} {S₂ : Set (GX G P)} {S : Set (GX 
     mem_V.2 fun d hd => (eval_sumElim_wordMap m' v d).trans (mem_Rad.1 (hmΔ d hd) v hv)
   -- The reconstruction words `y` in `Q ⊔ P`, with the words `m'` substituted for `M`.
   set y : Z → GX G (Q ⊕ P) := fun z => eval (inl : G →* GX G (Q ⊕ P))
-    (Sum.elim (fun u => inr (FreeGroup.of u)) (extendWords Q m' ∘ Sum.inr)) (q z)
+    (Sum.elim (fun u => inr (FreeGroup.of u))
+      fun j => Monoid.Coprod.map (.id G) (FreeGroup.map Sum.inr) (m' j)) (q z)
   have hy (v : Q ⊕ P → H) :
-      wordMap ι y v = wordMap ι q (Sum.elim v (wordMap ι m' (v ∘ Sum.inr))) := by
-    rw [← wordMap_wordMap, wordMap_sumElim, wordMap_id]
-    exact congrArg (wordMap ι q <| Sum.elim v ·) (funext fun j => by simp)
+      wordMap ι y v = wordMap ι q (Sum.elim v (wordMap ι m' (v ∘ Sum.inr))) :=
+    (wordMap_wordMap _ q v).symm.trans <| congrArg (wordMap ι q) <| funext fun j => by
+      cases j <;> simp
   refine hasLiftNe_iff.2 ⟨wordMap (CoordGroup.coeff ι S) y (CoordGroup.genericPoint ι S),
     mem_V.2 fun t ht => ?_, fun hW => ?_⟩
   · rw [eval_sumElim_wordMap, CoordGroup.eval_genericPoint, QuotientGroup.eq_one_iff]
