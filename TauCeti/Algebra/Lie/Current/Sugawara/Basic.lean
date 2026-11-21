@@ -9,6 +9,8 @@ public import TauCeti.Algebra.Lie.Current.Center
 public import TauCeti.Algebra.Lie.Current.NormalOrder
 public import TauCeti.Algebra.Lie.Killing.DualBasis
 
+import TauCeti.LinearAlgebra.BilinearForm.Basic
+
 /-!
 # Segal--Sugawara modes in the completed enveloping algebra
 
@@ -22,7 +24,11 @@ it under `κ_L`, the **Segal--Sugawara modes** are
 
 the modes of the normally ordered Casimir field `∑ᵢ :J^{xᵢ}(z) J^{yᵢ}(z):`
 (`TauCeti.CurrentAlgebra.sugawaraMode`). They do not depend on the basis
-(`TauCeti.CurrentAlgebra.sugawaraMode_eq_sum`).
+(`TauCeti.CurrentAlgebra.sugawaraMode_eq_sum`), have finite-window coordinates and smooth-module
+actions (`TauCeti.CurrentAlgebra.limπ_sugawaraMode`, `TauCeti.CurrentAlgebra.limSmul_sugawaraMode`),
+rescale inversely under rescaling the invariant form
+(`TauCeti.CurrentAlgebra.sugawaraMode_eq_inv_smul_sum_dualBasis`), and are preserved by the
+completed level comparison (`TauCeti.CurrentAlgebra.levelCompletedEnvelopingEquiv_sugawaraMode`).
 
 The main result is the commutator of a current with these modes
 (`TauCeti.CurrentAlgebra.toCompletedEnveloping_mul_sugawaraMode_sub_mul`): for the current
@@ -59,6 +65,12 @@ Segal--Sugawara modes are `h^∨ Sₙ`, and at the level `κ = k κ₀` the form
   for `Φ = c κ_L`, the commutator `[z_k, Sₙ] = k (1 - 2 a c) z_{n+k}`.
 * `TauCeti.CurrentAlgebra.sugawaraMode_mem_center`: at the critical level `2 a Φ = κ_L`, the
   Segal--Sugawara modes are central.
+* `TauCeti.CurrentAlgebra.limπ_sugawaraMode`, `TauCeti.CurrentAlgebra.limSmul_sugawaraMode`:
+  finite-window formulas for the coordinates and smooth-module action of `Sₙ`.
+* `TauCeti.CurrentAlgebra.sugawaraMode_eq_inv_smul_sum_dualBasis`: expansion of `Sₙ` along the dual
+  basis of a rescaled invariant form.
+* `TauCeti.CurrentAlgebra.levelCompletedEnvelopingEquiv_sugawaraMode`: compatibility with the
+  completed level comparison, including at level zero.
 
 ## References
 
@@ -73,7 +85,8 @@ public section
 noncomputable section
 
 open scoped TensorProduct
-open LieAlgebra.ofTwoCocycle (envelopingι)
+open TauCeti.UniversalEnvelopingAlgebra
+open LieAlgebra.ofTwoCocycle (centralElement envelopingι)
 
 namespace TauCeti.CurrentAlgebra
 
@@ -181,5 +194,76 @@ theorem sugawaraMode_mem_center (h : (2 * a) • Φ = killingForm K L) (n : ℤ)
     sub_self, TensorProduct.tmul_zero, map_zero, map_zero, smul_zero]
 
 end Sugawara
+
+/-! ### Coordinates, smooth action, rescaled forms and level comparison -/
+
+section Basic
+
+variable {K L : Type*} [Field K] [LieRing L] [LieAlgebra K L]
+  [FiniteDimensional K L] [LieAlgebra.IsKilling K L]
+
+section FixedForm
+
+variable {Φ : LinearMap.BilinForm K L} {hΦ : Φ.lieInvariant L} {hΦs : Φ.IsSymm} {a : K}
+
+local notation "UK" => CentralQuotient K (centralElement (twoCocycleOfBilinear K L Φ hΦ hΦs)) a
+
+/-- **The coordinates of the Segal--Sugawara modes are finite sums.** Modulo `I_N`, `Sₙ` is
+represented in any basis `b` by the summands of `:bᵢ b'ᵢ:_n` in the window
+`min (n + 1 - N) 0 ≤ m < N`. -/
+theorem limπ_sugawaraMode {ι : Type*} [DecidableEq ι] [Fintype ι] (b : Module.Basis ι K L)
+    (n : ℤ) (N : ℕ) :
+    (orderQuotientTower Φ hΦ hΦs a).limπ N (sugawaraMode Φ hΦ hΦs a n) =
+      ModuleTower.quotientsπ _ (orderLeftIdeal_natCast_antitone Φ hΦ hΦs a) N
+        (∑ i, ∑ m ∈ Finset.Ico (min (n + 1 - N) 0) N,
+          normalOrderedSummand Φ hΦ hΦs a 0 n m (b i) (killingDualBasis b i)) := by
+  rw [sugawaraMode_eq_sum b, map_sum, map_sum]
+  exact Finset.sum_congr rfl fun i _ ↦ limπ_normalOrderedMode n (b i) (killingDualBasis b i) N
+
+/-- **The action of a Segal--Sugawara mode on a smooth vector is a finite sum.** On a vector `v`
+killed by `I_N`, `Sₙ` acts in any basis `b` by the summands with `min (n + 1 - N) 0 ≤ m < N`. -/
+theorem limSmul_sugawaraMode {M : ModuleCat UK}
+    (hM : smoothModules (fun n : ℕ ↦ orderLeftIdeal Φ hΦ hΦs a n) M)
+    {ι : Type*} [DecidableEq ι] [Fintype ι] (b : Module.Basis ι K L) (n : ℤ) {v : M} {N : ℕ}
+    (hv : ∀ c ∈ orderLeftIdeal Φ hΦ hΦs a N, c • v = 0) :
+    ModuleTower.limSmul hM (sugawaraMode Φ hΦ hΦs a n) v =
+      ∑ i, ∑ m ∈ Finset.Ico (min (n + 1 - N) 0) N,
+        normalOrderedSummand Φ hΦ hΦs a 0 n m (b i) (killingDualBasis b i) • v := by
+  rw [ModuleTower.limSmul_eq_smul hM _ hv (limπ_sugawaraMode b n N).symm]
+  simp only [Finset.sum_smul]
+
+/-- **Expansion of the Segal--Sugawara modes along a rescaled bilinear form.** If `κ_L = d • B` for
+a nondegenerate form `B` and `d ≠ 0`, then `Sₙ = d⁻¹ • ∑ᵢ :bᵢ b^i:_n`, where `b^i` is the basis
+dual to `b` under `B`. -/
+theorem sugawaraMode_eq_inv_smul_sum_dualBasis {B : LinearMap.BilinForm K L}
+    (hB : B.Nondegenerate) {d : K} (hd : d ≠ 0) (h : killingForm K L = d • B)
+    {ι : Type*} [DecidableEq ι] [Fintype ι] (b : Module.Basis ι K L) (n : ℤ) :
+    sugawaraMode Φ hΦ hΦs a n =
+      d⁻¹ • ∑ i, normalOrderedMode Φ hΦ hΦs a n (b i) (B.dualBasis hB b i) := by
+  have hcongr (B₁ B₂ : LinearMap.BilinForm K L) (h₁ : B₁.Nondegenerate) (h₂ : B₂.Nondegenerate)
+      (heq : B₁ = B₂) (i : ι) : B₁.dualBasis h₁ b i = B₂.dualBasis h₂ b i := by
+    subst heq
+    rfl
+  rw [sugawaraMode_eq_sum b, Finset.smul_sum]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [killingDualBasis, hcongr _ (d • B) _
+    ((TauCeti.BilinForm.nondegenerate_smul_iff (IsRegular.of_ne_zero hd)).mpr hB) h,
+    b.dualBasis_smul_apply B hB d hd i, map_smul]
+
+end FixedForm
+
+/-- **The completed level comparison preserves the Segal--Sugawara modes.** If `Ψ = k • Φ`, the
+completed level comparison from `Û(ĝ_Ψ)` at central value `1` to `Û(ĝ_Φ)` at central value `k`
+sends `Sₙ` to `Sₙ`, for every `k : K`, including `k = 0`. -/
+@[simp]
+theorem levelCompletedEnvelopingEquiv_sugawaraMode {Φ Ψ : LinearMap.BilinForm K L}
+    (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm) (hΨ : Ψ.lieInvariant L) (hΨs : Ψ.IsSymm)
+    {k : K} (h : Ψ = k • Φ) (n : ℤ) :
+    levelCompletedEnvelopingEquiv hΦ hΦs hΨ hΨs h (sugawaraMode Ψ hΨ hΨs 1 n) =
+      sugawaraMode Φ hΦ hΦs k n := by
+  rw [sugawaraMode_eq_sum (Module.finBasis K L), sugawaraMode_eq_sum (Module.finBasis K L), map_sum]
+  simp only [levelCompletedEnvelopingEquiv_normalOrderedMode]
+
+end Basic
 
 end TauCeti.CurrentAlgebra

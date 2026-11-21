@@ -166,6 +166,29 @@ theorem add_limSmul (x y : (quotients J hJ).lim) (m : M) :
 theorem zero_limSmul (m : M) : limSmul hM (0 : (quotients J hJ).lim) m = 0 := by
   rw [← map_zero (toLimQuotients J hJ), limSmul_toLimQuotients, zero_smul]
 
+/-- Negation in the completion acts by negation on every smooth module. -/
+@[simp]
+theorem neg_limSmul (x : (quotients J hJ).lim) (m : M) :
+    limSmul hM (-x) m = -limSmul hM x m :=
+  eq_neg_of_add_eq_zero_left (by rw [← add_limSmul, neg_add_cancel, zero_limSmul])
+
+/-- Subtraction in the completion distributes over the action on every smooth module. -/
+theorem sub_limSmul (x y : (quotients J hJ).lim) (m : M) :
+    limSmul hM (x - y) m = limSmul hM x m - limSmul hM y m :=
+  eq_sub_of_add_eq (by rw [← add_limSmul, sub_add_cancel])
+
+/-- Scalar multiplication on the completion is compatible with its action on every smooth module
+whenever both scalar actions factor through `A`. -/
+@[simp]
+theorem smul_limSmul {S : Type*} [SMul S A] [SMul S (quotients J hJ).lim] [SMul S M]
+    [IsScalarTower S A (quotients J hJ).lim] [IsScalarTower S A M]
+    (r : S) (x : (quotients J hJ).lim) (m : M) :
+    limSmul hM (r • x) m = r • limSmul hM x m := by
+  obtain ⟨n, b, hn, hb, h⟩ := exists_limSmul_eq_smul hM x m
+  have hb' : quotientsπ J hJ n ((r • (1 : A)) * b) = (quotients J hJ).limπ n (r • x) := by
+    rw [← smul_eq_mul, map_smul, hb, ← map_smul, smul_assoc, one_smul]
+  rw [limSmul_eq_smul hM (r • x) hn hb', mul_smul, h, smul_assoc, one_smul]
+
 /-- **The action of the completion commutes with linear maps** between smooth modules. -/
 theorem map_limSmul {N : ModuleCat.{w} A} (hN : smoothModules J N) (f : M →ₗ[A] N)
     (x : (quotients J hJ).lim) (m : M) : f (limSmul hM x m) = limSmul hN x (f m) := by

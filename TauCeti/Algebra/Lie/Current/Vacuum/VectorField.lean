@@ -107,6 +107,13 @@ def vacuumVectorField (h : R⸨X⸩) (hh : 0 ≤ h.orderTop) :
 
 variable {Φ hΦ hΦs a}
 
+/-- Equal regular Laurent series induce the same vector field operator on the vacuum module. -/
+theorem vacuumVectorField_congr {f g : R⸨X⸩} (hf : 0 ≤ f.orderTop) (hg : 0 ≤ g.orderTop)
+    (h : f = g) :
+    vacuumVectorField Φ hΦ hΦs a f hf = vacuumVectorField Φ hΦ hΦs a g hg := by
+  subst h
+  rfl
+
 /-- The vector field `h d/dt` sends `u |0⟩` to `δ_h(u) |0⟩`. -/
 @[simp]
 theorem vacuumVectorField_smul_vacuum {h : R⸨X⸩} (hh : 0 ≤ h.orderTop) (u : UK) :

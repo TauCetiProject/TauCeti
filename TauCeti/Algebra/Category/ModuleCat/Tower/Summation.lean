@@ -39,6 +39,14 @@ theorem summable_iff_forall_eventually_limπ_eq_zero {ι : Type*} (f : ι → F.
   rw [NonarchimedeanAddGroup.summable_iff_tendsto_cofinite_zero, tendsto_nhds_iff]
   simp
 
+/-- Multiplying the terms of a summable family in the inverse limit by arbitrary scalars preserves
+summability, since each coordinate projection is linear and vanishes cofinitely. -/
+theorem summable_smul {ι : Type*} {f : ι → F.lim} (hf : Summable f) (r : ι → R) :
+    Summable fun i ↦ r i • f i := by
+  refine (summable_iff_forall_eventually_limπ_eq_zero F _).2 fun n ↦ ?_
+  filter_upwards [(summable_iff_forall_eventually_limπ_eq_zero F f).1 hf n] with i hi
+  rw [map_smul, hi, smul_zero]
+
 /-- Each coordinate of a convergent series is the sum over any finite set outside which that
 coordinate vanishes. -/
 theorem limπ_tsum_eq_sum {ι : Type*} {f : ι → F.lim} (hf : Summable f)
