@@ -341,7 +341,7 @@ theorem elliott_intertwining_of_isSeqColimitCocone
   have hθ (n : ℕ) : ApproximatelyUnitarilyEquivalent
       (θ.toNonUnitalStarAlgHom.comp (ιA n)) ((ιB (n + 1)).comp (φ₀ n)) := by
     rw [hinter.toNonUnitalStarAlgHom_equiv]
-    refine ((hinter.isApproximateCocone_comp_left hιB).approximatelyUnitarilyEquivalent_hom_comp
+    refine ((hinter.isApproximateCocone_forward hιB).approximatelyUnitarilyEquivalent_hom_comp
       hιA (fun m ↦ ?_) n).trans (hconj n)
     exact ((hconj (m + 1)).precomp (α m)).trans ((hstep₀ m).trans (hconj m).symm)
   refine ⟨θ, hθ, fun n ↦ (ApproximatelyUnitarilyEquivalent.symm_comp_iff θ).mpr ?_⟩

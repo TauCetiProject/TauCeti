@@ -73,9 +73,27 @@ theorem seqTransHom_comp_apply (α : ∀ n, A n →⋆ₙₐ[R] A (n + 1)) {i j 
     seqTransHom α hjk (seqTransHom α hij a) = seqTransHom α (hij.trans hjk) a :=
   DFunLike.congr_fun (seqTransHom_comp α hij hjk) a
 
+@[simp]
 theorem seqTransHom_comp_step (α : ∀ n, A n →⋆ₙₐ[R] A (n + 1)) {m n : ℕ} (h : m + 1 ≤ n) :
     (seqTransHom α h).comp (α m) = seqTransHom α (Nat.le_of_succ_le h) := by
   rw [← seqTransHom_comp α (Nat.le_succ m) h, seqTransHom_le_succ]
+
+@[simp]
+theorem seqTransHom_comp_step_apply (α : ∀ n, A n →⋆ₙₐ[R] A (n + 1)) {m n : ℕ} (h : m + 1 ≤ n)
+    (a : A m) :
+    seqTransHom α h (α m a) = seqTransHom α (Nat.le_of_succ_le h) a :=
+  DFunLike.congr_fun (seqTransHom_comp_step α h) a
+
+@[simp]
+theorem step_comp_seqTransHom (α : ∀ n, A n →⋆ₙₐ[R] A (n + 1)) {m n : ℕ} (h : m ≤ n) :
+    (α n).comp (seqTransHom α h) = seqTransHom α (Nat.le_succ_of_le h) :=
+  (seqTransHom_succ α h (Nat.le_succ_of_le h)).symm
+
+@[simp]
+theorem step_comp_seqTransHom_apply (α : ∀ n, A n →⋆ₙₐ[R] A (n + 1)) {m n : ℕ} (h : m ≤ n)
+    (a : A m) :
+    α n (seqTransHom α h a) = seqTransHom α (Nat.le_succ_of_le h) a :=
+  DFunLike.congr_fun (step_comp_seqTransHom α h) a
 
 /-- Iterating step `⋆`-homomorphisms `α n : A n →⋆ₙₐ[R] A (n + 1)` forms a `DirectedSystem`. -/
 instance directedSystem_seqTransHom (α : ∀ n, A n →⋆ₙₐ[R] A (n + 1)) :

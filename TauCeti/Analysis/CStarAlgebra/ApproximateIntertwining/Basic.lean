@@ -37,7 +37,7 @@ stagewise density (`exists_approx_of_denseSeed_subset`).
   `comp_hom_eq_of_norm_sub_le`) and tail estimate `IsApproximateCocone.norm_hom_sub_le`.
 * `TauCeti.IsApproximateIntertwining` and `TauCeti.IsApproximateIntertwining.equiv`: two-sided
   approximate intertwining inducing `C ≃⋆ₐ[ℂ] D`, with one-sided cocones
-  `isApproximateCocone_comp_left` and `isApproximateCocone_comp_right`, uniqueness `equiv_unique`,
+  `isApproximateCocone_forward` and `isApproximateCocone_backward`, uniqueness `equiv_unique`,
   and forward/backward tail estimates `norm_equiv_sub_le` and `norm_equiv_symm_sub_le`.
 
 ## References
@@ -369,7 +369,7 @@ private theorem norm_cocone_sub_le {X : Type*} [NonUnitalCStarAlgebra X]
 
 /-- The forward stage maps `(ιB (n + 1)).comp (φ n)` form an approximate cocone on `(A, α)` with
 step error `δ n + ε (n + 1)`. -/
-theorem isApproximateCocone_comp_left (h : IsApproximateIntertwining α β φ ψ F G δ ε)
+theorem isApproximateCocone_forward (h : IsApproximateIntertwining α β φ ψ F G δ ε)
     (hιB : IsSeqColimitCocone β ιB) :
     IsApproximateCocone α (fun n ↦ (ιB (n + 1)).comp (φ n)) F (fun n ↦ δ n + ε (n + 1)) where
   mapsTo := h.mapsTo_α
@@ -381,7 +381,7 @@ theorem isApproximateCocone_comp_left (h : IsApproximateIntertwining α β φ ψ
 
 /-- The backward stage maps `(ιA n).comp (ψ n)` form an approximate cocone on `(B, β)` with step
 error `ε n + δ n`. -/
-theorem isApproximateCocone_comp_right (h : IsApproximateIntertwining α β φ ψ F G δ ε)
+theorem isApproximateCocone_backward (h : IsApproximateIntertwining α β φ ψ F G δ ε)
     (hιA : IsSeqColimitCocone α ιA) :
     IsApproximateCocone β (fun n ↦ (ιA n).comp (ψ n)) G (fun n ↦ ε n + δ n) where
   mapsTo := h.mapsTo_β
@@ -415,10 +415,10 @@ private theorem comp_hom_eq_of_isApproximateCocone {E : Type*} [NonUnitalCStarAl
 
 private theorem backward_comp_forward (h : IsApproximateIntertwining α β φ ψ F G δ ε)
     (hιA : IsSeqColimitCocone α ιA) (hιB : IsSeqColimitCocone β ιB) :
-    ((h.isApproximateCocone_comp_right hιA).hom hιB).comp
-      ((h.isApproximateCocone_comp_left hιB).hom hιA) = .id ℂ C := by
+    ((h.isApproximateCocone_backward hιA).hom hιB).comp
+      ((h.isApproximateCocone_forward hιB).hom hιA) = .id ℂ C := by
   refine comp_hom_eq_of_isApproximateCocone (σ := fun n ↦ n + 1)
-    (h.isApproximateCocone_comp_left hιB) hιA (h.isApproximateCocone_comp_right hιA) hιB
+    (h.isApproximateCocone_forward hιB) hιA (h.isApproximateCocone_backward hιA) hιB
     (tendsto_add_atTop_nat 1) h.mapsTo_φ h.summable_δ.tendsto_atTop_zero fun n a ha ↦ ?_
   simp only [NonUnitalStarAlgHom.comp_apply, NonUnitalStarAlgHom.coe_id, id_eq]
   rw [← hιA.comp_apply n a, ← map_sub]
@@ -426,10 +426,10 @@ private theorem backward_comp_forward (h : IsApproximateIntertwining α β φ ψ
 
 private theorem forward_comp_backward (h : IsApproximateIntertwining α β φ ψ F G δ ε)
     (hιA : IsSeqColimitCocone α ιA) (hιB : IsSeqColimitCocone β ιB) :
-    ((h.isApproximateCocone_comp_left hιB).hom hιA).comp
-      ((h.isApproximateCocone_comp_right hιA).hom hιB) = .id ℂ D := by
+    ((h.isApproximateCocone_forward hιB).hom hιA).comp
+      ((h.isApproximateCocone_backward hιA).hom hιB) = .id ℂ D := by
   refine comp_hom_eq_of_isApproximateCocone (σ := fun n ↦ n)
-    (h.isApproximateCocone_comp_right hιA) hιB (h.isApproximateCocone_comp_left hιB) hιA
+    (h.isApproximateCocone_backward hιA) hιB (h.isApproximateCocone_forward hιB) hιA
     tendsto_id h.mapsTo_ψ h.summable_ε.tendsto_atTop_zero fun n b hb ↦ ?_
   simp only [NonUnitalStarAlgHom.comp_apply, NonUnitalStarAlgHom.coe_id, id_eq]
   rw [← hιB.comp_apply n b, ← map_sub]
@@ -440,22 +440,22 @@ inverse forward and backward approximate cocones (Rørdam, Proposition 2.3.2). -
 noncomputable def equiv (h : IsApproximateIntertwining α β φ ψ F G δ ε)
     (hιA : IsSeqColimitCocone α ιA) (hιB : IsSeqColimitCocone β ιB) : C ≃⋆ₐ[ℂ] D :=
   StarAlgEquiv.ofNonUnitalStarAlgHom
-    ((h.isApproximateCocone_comp_left hιB).hom hιA)
-    ((h.isApproximateCocone_comp_right hιA).hom hιB)
+    ((h.isApproximateCocone_forward hιB).hom hιA)
+    ((h.isApproximateCocone_backward hιA).hom hιB)
     (h.backward_comp_forward hιA hιB)
     (h.forward_comp_backward hιA hιB)
 
 @[simp]
 theorem toNonUnitalStarAlgHom_equiv (h : IsApproximateIntertwining α β φ ψ F G δ ε)
     (hιA : IsSeqColimitCocone α ιA) (hιB : IsSeqColimitCocone β ιB) :
-    (h.equiv hιA hιB).toNonUnitalStarAlgHom = (h.isApproximateCocone_comp_left hιB).hom hιA :=
+    (h.equiv hιA hιB).toNonUnitalStarAlgHom = (h.isApproximateCocone_forward hιB).hom hιA :=
   StarAlgEquiv.toNonUnitalStarAlgHom_ofNonUnitalStarAlgHom ..
 
 @[simp]
 theorem toNonUnitalStarAlgHom_equiv_symm (h : IsApproximateIntertwining α β φ ψ F G δ ε)
     (hιA : IsSeqColimitCocone α ιA) (hιB : IsSeqColimitCocone β ιB) :
     (h.equiv hιA hιB).symm.toNonUnitalStarAlgHom =
-      (h.isApproximateCocone_comp_right hιA).hom hιB :=
+      (h.isApproximateCocone_backward hιA).hom hιB :=
   StarAlgEquiv.toNonUnitalStarAlgHom_symm_ofNonUnitalStarAlgHom ..
 
 /-- Forward stagewise convergence characterizing `IsApproximateIntertwining.equiv`. -/
@@ -464,7 +464,7 @@ theorem tendsto_equiv (h : IsApproximateIntertwining α β φ ψ F G δ ε)
     Tendsto (fun k ↦ ιB (n + k + 1) (φ (n + k) (seqTransHom α (Nat.le_add_right n k) a)))
       atTop (𝓝 (h.equiv hιA hιB (ιA n a))) := by
   rw [← StarAlgEquiv.toNonUnitalStarAlgHom_apply, h.toNonUnitalStarAlgHom_equiv]
-  exact (h.isApproximateCocone_comp_left hιB).tendsto_hom hιA n a
+  exact (h.isApproximateCocone_forward hιB).tendsto_hom hιA n a
 
 /-- Backward stagewise convergence characterizing `(IsApproximateIntertwining.equiv).symm`. -/
 theorem tendsto_equiv_symm (h : IsApproximateIntertwining α β φ ψ F G δ ε)
@@ -472,7 +472,7 @@ theorem tendsto_equiv_symm (h : IsApproximateIntertwining α β φ ψ F G δ ε)
     Tendsto (fun k ↦ ιA (n + k) (ψ (n + k) (seqTransHom β (Nat.le_add_right n k) b)))
       atTop (𝓝 ((h.equiv hιA hιB).symm (ιB n b))) := by
   rw [← StarAlgEquiv.toNonUnitalStarAlgHom_apply, h.toNonUnitalStarAlgHom_equiv_symm]
-  exact (h.isApproximateCocone_comp_right hιA).tendsto_hom hιB n b
+  exact (h.isApproximateCocone_backward hιA).tendsto_hom hιB n b
 
 /-- Uniqueness of the `⋆`-isomorphism induced by an approximate intertwining. -/
 theorem equiv_unique (h : IsApproximateIntertwining α β φ ψ F G δ ε)
@@ -484,7 +484,7 @@ theorem equiv_unique (h : IsApproximateIntertwining α β φ ψ F G δ ε)
     θ = h.equiv hιA hιB := by
   have heq : θ.toNonUnitalStarAlgHom = (h.equiv hιA hιB).toNonUnitalStarAlgHom := by
     rw [h.toNonUnitalStarAlgHom_equiv]
-    exact (h.isApproximateCocone_comp_left hιB).hom_unique hιA hθ
+    exact (h.isApproximateCocone_forward hιB).hom_unique hιA hθ
   ext x
   exact DFunLike.congr_fun heq x
 
@@ -495,7 +495,7 @@ theorem norm_equiv_sub_le (h : IsApproximateIntertwining α β φ ψ F G δ ε)
     (ha : a ∈ F n) :
     ‖h.equiv hιA hιB (ιA n a) - ιB (n + 1) (φ n a)‖ ≤ ∑' k, (δ (n + k) + ε (n + k + 1)) := by
   rw [← StarAlgEquiv.toNonUnitalStarAlgHom_apply, h.toNonUnitalStarAlgHom_equiv]
-  exact (h.isApproximateCocone_comp_left hιB).norm_hom_sub_le hιA ha
+  exact (h.isApproximateCocone_forward hιB).norm_hom_sub_le hιA ha
 
 /-- Quantitative backward tail-error bound: on `b ∈ G n`, `(h.equiv hιA hιB).symm (ιB n b)` is
 within `∑' k, (ε (n + k) + δ (n + k))` of `ιA n (ψ n b)`. -/
@@ -504,7 +504,7 @@ theorem norm_equiv_symm_sub_le (h : IsApproximateIntertwining α β φ ψ F G δ
     (hb : b ∈ G n) :
     ‖(h.equiv hιA hιB).symm (ιB n b) - ιA n (ψ n b)‖ ≤ ∑' k, (ε (n + k) + δ (n + k)) := by
   rw [← StarAlgEquiv.toNonUnitalStarAlgHom_apply, h.toNonUnitalStarAlgHom_equiv_symm]
-  exact (h.isApproximateCocone_comp_right hιA).norm_hom_sub_le hιB hb
+  exact (h.isApproximateCocone_backward hιA).norm_hom_sub_le hιB hb
 
 end IsApproximateIntertwining
 
