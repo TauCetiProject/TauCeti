@@ -74,8 +74,8 @@ finite-dimensional spaces, is isolated in its fibre (`HasFDerivAt.eventually_ne`
 fibre consisting of such points is finite (`IsCompact.finite_of_hasFDerivAt`); this is the
 finiteness of the preimage of a regular value under a proper map. The same holds for a compact
 part `s ∩ f⁻¹(y)` of a fibre (`IsCompact.finite_inter_preimage_of_hasFDerivAt`), as for the
-fibre of a map defined on an open subset `s`. In particular, if `f` is differentiable at every
-point of a compact set `K` with invertible derivative at every point of `K ∩ f⁻¹(y)`, then
+fibre of a map defined on an open subset `s`. In particular, if `f` is continuous on a compact
+set `K` and differentiable with invertible derivative at every point of `K ∩ f⁻¹(y)`, then
 `K ∩ f⁻¹(y)` is finite (`IsCompact.finite_inter_preimage_of_differentiableAt_of_isInvertible`).
 -/
 
@@ -317,19 +317,18 @@ theorem IsCompact.finite_inter_preimage_of_hasFDerivAt {𝕜 : Type*} [Nontrivia
   hK.finite (isDiscrete_iff_nhdsNE.2 fun x hx ↦ inf_principal_eq_bot.2
     (((hf x hx).eventually_ne (hf' x hx)).mono fun _ hz hzK ↦ hz (hzK.2.trans hx.2.symm)))
 
-/-- **The nondegenerate points of a fibre in a compact set are finite.** If `f` is differentiable
-at every point of a compact set `K` and its derivative is invertible at every point of
-`K ∩ f⁻¹(y)`, then `K ∩ f⁻¹(y)` is finite. -/
+/-- **The nondegenerate points of a fibre in a compact set are finite.** If `f` is continuous on
+a compact set `K`, differentiable at every point of `K ∩ f⁻¹(y)` and its derivative is invertible
+at each of these points, then `K ∩ f⁻¹(y)` is finite. -/
 theorem IsCompact.finite_inter_preimage_of_differentiableAt_of_isInvertible
     {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E F : Type*} [NormedAddCommGroup E]
     [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F] {f : E → F} {K : Set E} {y : F}
-    (hK : IsCompact K) (hf : ∀ x ∈ K, DifferentiableAt 𝕜 f x)
+    (hK : IsCompact K) (hc : ContinuousOn f K) (hf : ∀ x ∈ K ∩ f ⁻¹' {y}, DifferentiableAt 𝕜 f x)
     (hinv : ∀ x ∈ K ∩ f ⁻¹' {y}, (fderiv 𝕜 f x).IsInvertible) : (K ∩ f ⁻¹' {y}).Finite := by
   have hclosed : IsClosed (K ∩ f ⁻¹' {y}) :=
-    ContinuousOn.preimage_isClosed_of_isClosed
-      (fun x hx ↦ (hf x hx).continuousAt.continuousWithinAt) hK.isClosed isClosed_singleton
+    hc.preimage_isClosed_of_isClosed hK.isClosed isClosed_singleton
   refine (hK.of_isClosed_subset hclosed inter_subset_left).finite_inter_preimage_of_hasFDerivAt
-    (fun x hx ↦ (hf x hx.1).hasFDerivAt) fun x hx ↦ ?_
+    (fun x hx ↦ (hf x hx).hasFDerivAt) fun x hx ↦ ?_
   obtain ⟨L, hL⟩ := hinv x hx
   rw [← hL]
   exact ⟨_, L.antilipschitzWith⟩

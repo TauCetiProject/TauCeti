@@ -37,12 +37,14 @@ compactness of `K` and continuous convergence of the values
 the solutions for `Φ₀` lie in the interior of `K` cannot be dropped: solutions for nearby maps may
 leave `K` through its boundary.
 
-A typical application is the transverse preimage `u⁻¹(D)` of a codimension-two submanifold
-`D = g⁻¹(0)` under a map `u` of a surface, the set of zeros of `g ∘ u`: transverse intersection
-points are nondegenerate zeros, so along a `C¹`-converging family of maps their number is
-eventually constant and they converge to the original intersection points. This is the count that
-makes a stabilization of unstable sphere components by the full preimage of a transverse cut carry
-a fixed number of extra marked points over a neighbourhood of a given map.
+A typical application is local, to the transverse preimage `u⁻¹(D)` of a codimension-two
+submanifold `D` under a map `u` of a surface. In a chart where `D = g⁻¹(0)`, the points of `u⁻¹(D)`
+are the zeros of `g ∘ u`, and transverse intersection points are nondegenerate zeros. So in a
+compact set of the chart whose zeros are interior, along a `C¹`-converging family of maps the
+number of these points is eventually constant and they converge to the original intersection
+points. This local count is one ingredient of a stabilization of unstable sphere components by the
+full preimage of a transverse cut; the results here are stated only for maps between Banach spaces
+on a single compact set.
 
 ## Main results
 
@@ -135,7 +137,8 @@ theorem exists_tendsto_bijOn_inter_preimage_singleton_of_tendstoContDiffAt (hs :
         ∀ x ∈ K ∩ Φ i ⁻¹' {y}, (fderiv 𝕜 (Φ i) x).IsInvertible := by
   set Z := K ∩ Φ₀ ⁻¹' {y}
   have hZfin : Z.Finite := hK.finite_inter_preimage_of_differentiableAt_of_isInvertible
-    (fun x hx ↦ (hΦ₀.contDiffAt (hs.mem_nhds (hKs hx))).differentiableAt one_ne_zero) hinv
+    (hΦ₀.continuousOn.mono hKs)
+    (fun x hx ↦ (hΦ₀.contDiffAt (hs.mem_nhds (hKs hx.1))).differentiableAt one_ne_zero) hinv
   -- Disjoint open neighbourhoods `V x` of the finitely many solutions for `Φ₀`.
   obtain ⟨V, hV, hVdisj⟩ := hZfin.t2_separation
   -- Around each solution, it persists uniquely in a neighbourhood `U x ⊆ V x ∩ interior K`.
