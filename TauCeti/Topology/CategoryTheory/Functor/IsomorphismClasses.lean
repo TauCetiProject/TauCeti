@@ -18,7 +18,10 @@ quotient map, so is the induced map. Consequently a full functor reflecting isom
 object map is quotient induces a homeomorphism
 `CategoryTheory.Functor.isomorphismClassesHomeomorph`. This covers fully faithful functors and
 full functors out of groupoids. In particular this applies to fully faithful refinements with
-open surjective object map.
+open surjective object map. The object map need not be surjective: a full, essentially surjective
+functor reflecting isomorphisms whose continuous object map becomes open after projecting to the
+target's isomorphism classes also induces a homeomorphism
+(`CategoryTheory.Functor.isHomeomorph_isomorphismClasses_map`).
 A full functor reflecting isomorphisms whose object map is continuous and closed, with range
 closed under isomorphisms, induces a closed embedding
 (`CategoryTheory.Functor.isClosedEmbedding_isomorphismClasses_map`).
@@ -93,6 +96,27 @@ theorem isClosedEmbedding_isomorphismClasses_map (F : C ⥤ D) [F.Full] [F.Refle
       (Quotient.sound (s := isIsomorphicSetoid C) ⟨asIso (F.preimage e.hom)⟩)).mp hq
   · rintro ⟨x, hx, rfl⟩
     exact ⟨_, hx, hφ x⟩
+
+/-- A full, essentially surjective functor reflecting isomorphisms induces a homeomorphism of
+isomorphism classes when its object map is continuous and becomes open after projecting to the
+isomorphism classes of `D`. Unlike `isomorphismClassesHomeomorph`, the object map need not be
+surjective: it suffices that it meets every isomorphism class. For groupoids this applies to the
+induced functor from the pullback along an open map whose image meets every orbit. -/
+theorem isHomeomorph_isomorphismClasses_map (F : C ⥤ D) [F.Full] [F.ReflectsIsomorphisms]
+    [F.EssSurj] (hF : Continuous F.obj)
+    (hF' : IsOpenMap (Quotient.mk (isIsomorphicSetoid D) ∘ F.obj)) :
+    IsHomeomorph (X := Quotient (isIsomorphicSetoid C))
+      (Y := Quotient (isIsomorphicSetoid D)) (isomorphismClasses.map F.toCatHom) where
+  continuous := F.continuous_isomorphismClasses_map hF
+  isOpenMap W hW := by
+    set φ : Quotient (isIsomorphicSetoid C) → Quotient (isIsomorphicSetoid D) :=
+      ⇑(isomorphismClasses.map F.toCatHom)
+    have hφ (x : C) : φ (Quotient.mk _ x) = Quotient.mk _ (F.obj x) := F.isomorphismClasses_map_mk x
+    -- The image of `W` is the image of its preimage in `C` under the projected object map.
+    rw [← Quotient.mk_surjective.image_preimage W, Set.image_image]
+    simp only [hφ]
+    exact hF' _ (hW.preimage continuous_quotient_mk')
+  bijective := ⟨F.isomorphismClasses_map_injective, F.isomorphismClasses_map_surjective⟩
 
 /-- A full functor reflecting isomorphisms, for instance a fully faithful functor, with quotient
 object map identifies the spaces of isomorphism classes homeomorphically. For groupoids this is
