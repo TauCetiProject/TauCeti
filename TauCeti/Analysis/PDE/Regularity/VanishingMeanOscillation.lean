@@ -12,6 +12,7 @@ import TauCeti.Analysis.PDE.EnergyForm.Measurability
 import TauCeti.Analysis.Sobolev.W1p.CompactSupport
 import TauCeti.Analysis.SpecificLimits.Absorption
 import TauCeti.MeasureTheory.Function.Lp.IntermediateExponent
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # The interior `W^{1,p}` estimate for coefficients of vanishing mean oscillation
@@ -56,10 +57,10 @@ functions whose gradient vanishes outside a small ball, so the work is the local
   bounds `‖∇u‖_{Lᵖ(B_s)}` by `‖G‖_{Lᵖ(B_R)}`, `‖H‖_{Lᵖ}` and the Sobolev–Poincaré bound
   `‖u - u_{B_t}‖_{Lᵖ(B_t)} ≲ t |B_t|^(-ε) ‖∇u‖_{L^q(B_t)}`. Both carry the gain from `q` to `p`.
 * **Absorption.** The `L^q` norm of `∇u` lies between its `L²` and `Lᵖ` norms,
-  `‖∇u‖_q ≤ ‖∇u‖₂^θ ‖∇u‖_p^(1-θ)`. Young's inequality then gives
-  `f(s) ≤ f(t) / 2 + A (t - s)^(-1/θ) + B` for `f(σ) = ‖∇u‖_{Lᵖ(B_σ)}`, and the absorption lemma
-  `TauCeti.exists_le_mul_mul_rpow_add_of_le_mul_add` bounds `f(R/2)`. The exponent `q` is chosen
-  with `ε < 1/(n + 1)`, as the Sobolev–Poincaré inequality requires.
+  `‖∇u‖_q ≤ ‖∇u‖₂^θ ‖∇u‖_p^(1-θ)`. Young's inequality (`Real.mul_rpow_mul_rpow_le_half_add`)
+  then gives `f(s) ≤ f(t) / 2 + A (t - s)^(-1/θ) + B` for `f(σ) = ‖∇u‖_{Lᵖ(B_σ)}`, and the
+  absorption lemma `TauCeti.exists_le_mul_add_rpow_mul_of_le` bounds `f(R/2)`. The exponent `q` is
+  chosen with `ε < 1/(n + 1)`, as the Sobolev–Poincaré inequality requires.
 
 ## Main declarations
 
@@ -390,9 +391,7 @@ private theorem eLpNorm_value_sub_setAverage_le_of_memLp (u : W1p volume Ω 2)
     (htR : t ≤ R) :
     eLpNorm (fun x => W1p.value u x - ⨍ y in ball x₀ t, W1p.value u y) p
         (volume.restrict (ball x₀ t)) ≤
-      ENNReal.ofReal (2 ^ finrank ℝ (EuclideanSpace ℝ (Fin (n + 1))) /
-          finrank ℝ (EuclideanSpace ℝ (Fin (n + 1))) *
-          ((1 - δ) / ((finrank ℝ (EuclideanSpace ℝ (Fin (n + 1))) : ℝ)⁻¹ - δ)) ^ (1 - δ) * t) *
+      ENNReal.ofReal (sobolevPoincareConst (finrank ℝ (EuclideanSpace ℝ (Fin (n + 1)))) δ * t) *
         volume (ball x₀ t) ^ (-δ) * eLpNorm (W1p.gradient u) q (volume.restrict (ball x₀ t)) := by
   set BR : Opens (EuclideanSpace ℝ (Fin (n + 1))) := ⟨ball x₀ R, isOpen_ball⟩
   have hBR : BR ≤ Ω := hball
@@ -416,7 +415,7 @@ private theorem eLpNorm_value_sub_setAverage_le_of_memLp (u : W1p volume Ω 2)
     Measure.restrict_mono hsub le_rfl
   have hδ' : q.toReal⁻¹ - ((p.toNNReal : ℝ≥0) : ℝ)⁻¹ = δ := by
     rw [ENNReal.coe_toNNReal_eq_toReal]; exact hδ
-  have h := W1p.eLpNorm_value_sub_setAverage_le_of_ball_subset (μ := volume) (s := p.toNNReal)
+  have h := W1p.eLpNorm_value_sub_setAverage_le_of_ball_subset (mu := volume) (s := p.toNNReal)
     (ne_top_of_le_ne_top hp hqp) hqp (by rw [hpN]; exact hqp) hδ' hδn ht hsub uR
   have hvt : W1p.value uR =ᵐ[volume.restrict (ball x₀ t)] W1p.value u := ae_mono hle hvR
   have hgt : W1p.gradient uR =ᵐ[volume.restrict (ball x₀ t)] W1p.gradient u := ae_mono hle hgR
@@ -426,21 +425,6 @@ private theorem eLpNorm_value_sub_setAverage_le_of_memLp (u : W1p volume Ω 2)
       (ball x₀ t)] fun x => W1p.value u x - ⨍ y in ball x₀ t, W1p.value u y :=
     hvt.mono fun x hx => by simp only [hx, havg]
   rwa [hpN, eLpNorm_congr_ae h1, eLpNorm_congr_ae hgt] at h
-
-/-- The field `x ↦ a(x) ξ(x)` is a.e. strongly measurable for a.e. strongly measurable `a`, `ξ`. -/
-private theorem aestronglyMeasurable_toEuclideanCLM_apply
-    {μ : Measure (EuclideanSpace ℝ (Fin (n + 1)))}
-    {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
-    (ha : AEStronglyMeasurable a μ)
-    {ξ : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))}
-    (hξ : AEStronglyMeasurable ξ μ) :
-    AEStronglyMeasurable (fun x => toEuclideanCLM (𝕜 := ℝ) (a x) (ξ x)) μ := by
-  have hT : Continuous fun A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ => toEuclideanCLM (𝕜 := ℝ) A :=
-    LinearMap.continuous_of_finiteDimensional
-      (toEuclideanCLM (𝕜 := ℝ) (n := Fin (n + 1))).toAlgEquiv.toLinearEquiv.toLinearMap
-  have hc : Continuous fun q : (EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ]
-      EuclideanSpace ℝ (Fin (n + 1))) × EuclideanSpace ℝ (Fin (n + 1)) => q.1 q.2 := by fun_prop
-  exact hc.comp_aestronglyMeasurable ((hT.comp_aestronglyMeasurable ha).prodMk hξ)
 
 /-- The `Lᵖ` norm of the divergence datum `ζ G + v a ∇ζ` of a cutoff, for `|ζ| ≤ 1` and
 `‖∇ζ‖ ≤ L`. -/
@@ -463,7 +447,8 @@ private theorem eLpNorm_indicator_cutoffField_le
     hζc.aestronglyMeasurable.smul hG
   have hm2 : AEStronglyMeasurable (fun y => v y • toEuclideanCLM (𝕜 := ℝ) (a y) (∇ ζ y))
       (volume.restrict V) :=
-    hv.smul (aestronglyMeasurable_toEuclideanCLM_apply ha.restrict hgζ.aestronglyMeasurable)
+    hv.smul <| (continuous_uncurry_toEuclideanCLM (𝕜 := ℝ)).comp_aestronglyMeasurable
+      (f := fun y => (a y, ∇ ζ y)) (ha.restrict.prodMk hgζ.aestronglyMeasurable)
   rw [eLpNorm_indicator_eq_eLpNorm_restrict hV.nullMeasurableSet]
   refine (eLpNorm_add_le (f := fun y => ζ y • G y) Fact.out).trans (add_le_add ?_ ?_)
   · simpa using eLpNorm_le_mul_eLpNorm_of_ae_le_mul (c := 1) hm1 (ae_of_all _ fun y => by
@@ -501,26 +486,6 @@ private theorem eLpNorm_indicator_cutoffForcing_le
       (aestronglyMeasurable_matrixBilinearForm_apply hBm hgζ.aestronglyMeasurable hg)
       (ae_of_all _ fun y => ?_) q
     exact ((matrixBilinearForm (a y)).le_opNorm₂ _ _).trans (by gcongr; exacts [hbd y, hgradL y])
-
-/-- A function in `Lᵖ` paired with the gradient of a test function is integrable. -/
-private theorem integrable_inner_gradient_testFunction {p : ℝ≥0∞} [Fact (1 ≤ p)]
-    {F : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))} (hF : MemLp F p volume)
-    (φ : 𝓓((⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))), ℝ)) :
-    Integrable (fun x => ⟪F x, ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ) := by
-  have hφ : MemLp (fun x => ‖∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x‖) p.conjExponent
-      volume :=
-    (φ.hasCompactSupport.memLp_gradient (φ.contDiff.of_le (by simp))).norm
-  exact (hF.norm.integrable_mul hφ).mono'
-    (hF.aestronglyMeasurable.inner (continuous_gradient_testFunction φ).aestronglyMeasurable)
-    (ae_of_all _ fun x => norm_inner_le_norm _ _)
-
-/-- A function in `Lᵖ` times a test function is integrable. -/
-private theorem integrable_mul_testFunction {p : ℝ≥0∞} [Fact (1 ≤ p)]
-    {h : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} (hh : MemLp h p volume)
-    (φ : 𝓓((⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))), ℝ)) :
-    Integrable (fun x => h x * φ x) :=
-  hh.integrable_mul (q := p.conjExponent)
-    (φ.continuous.memLp_of_hasCompactSupport φ.hasCompactSupport)
 
 /-- Moving the scalar part of a weak equation on `V` into the divergence datum: if `-div H` is the
 scalar `1_V k`, then `∫_V (⟪F, ∇φ⟫ + k φ) = ∫ ⟪1_V F + H, ∇φ⟫`. -/
@@ -661,8 +626,7 @@ private theorem step_bound_le {CW CD : ℝ≥0} {A At X Y Gq ε ε' : ℝ≥0∞
     CD * ENNReal.ofReal (2 * c₀ * Lam))
   have hS : ((CW * (1 + (2 * c₀).toNNReal * CD + ((2 * c₀ * Lam * K).toNNReal +
       CD * (2 * c₀ * Lam).toNNReal)) : ℝ≥0) : ℝ≥0∞) = CW * S := by
-    simp only [S, ENNReal.coe_mul, ENNReal.coe_add, ENNReal.coe_one]
-    rfl
+    simp only [S, ENNReal.coe_mul, ENNReal.coe_add, ENNReal.coe_one, ENNReal.ofNNReal_toNNReal]
   rw [hS]
   calc (CW : ℝ≥0∞) * (At + ENNReal.ofReal (Lam * (2 * c₀ / (t - s))) * Y +
         CD * ENNReal.ofReal t * ε * (ENNReal.ofReal (2 * c₀ / (t - s)) * Gq +
@@ -689,14 +653,6 @@ private theorem step_bound_le {CW CD : ℝ≥0} {A At X Y Gq ε ε' : ℝ≥0∞
             _ ≤ S * τ * A := by gcongr
         · gcongr
     _ = CW * S * ((1 + τ) * A + τ * ε * X) := by ring
-
-/-- A function equal to `1` on `closedBall x₀ s` has vanishing gradient on `ball x₀ s`. -/
-private theorem gradient_eq_zero_of_eqOn_one {ζ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ}
-    {x₀ : EuclideanSpace ℝ (Fin (n + 1))} {s : ℝ} (hζ1 : EqOn ζ 1 (closedBall x₀ s))
-    {x : EuclideanSpace ℝ (Fin (n + 1))} (hx : x ∈ ball x₀ s) : ∇ ζ x = 0 := by
-  have h : ζ =ᶠ[𝓝 x] fun _ => 1 :=
-    Filter.eventually_of_mem (isOpen_ball.mem_nhds hx) fun y hy => hζ1 (ball_subset_closedBall hy)
-  rw [gradient_eq_zero_iff, h.fderiv_eq, fderiv_const_apply]
 
 /-- Cutoffs between concentric balls: `ζ = 1` on `closedBall x₀ s`, supported in `B(x₀, t)`, with
 values in `[0, 1]` and `‖∇ζ‖ ≤ c₀ / ((s + t)/2 - s)`. -/
@@ -750,7 +706,8 @@ private theorem eLpNorm_le_of_ae_eq_indicator_cutoff {p : ℝ≥0∞}
   refine le_trans (le_of_eq (eLpNorm_congr_ae ?_)) (eLpNorm_mono_measure _ Measure.restrict_le_self)
   filter_upwards [ae_restrict_of_ae hw, ae_restrict_mem measurableSet_ball] with x hx hxs
   rw [hx, indicator_of_mem (ball_subset_ball hst hxs), hζ1 (ball_subset_closedBall hxs),
-    gradient_eq_zero_of_eqOn_one hζ1 hxs]
+    ((hasGradientAt_const x (1 : ℝ)).congr_of_eventuallyEq (Filter.eventually_of_mem
+      (isOpen_ball.mem_nhds hxs) fun y hy => hζ1 (ball_subset_closedBall hy))).gradient]
   simp
 
 /-- **The step between concentric balls.** Let `2 < p < ∞` and `1 < q ≤ p` with
@@ -790,12 +747,8 @@ private theorem exists_eLpNorm_gradient_ball_le_step {p q : ℝ≥0∞} [Fact (1
     (μ := (volume : Measure (EuclideanSpace ℝ (Fin (n + 1))))) hq hqp hp_top hδ hδn
   obtain ⟨c₀, hc₀, hcut⟩ := exists_cutoff_ball (n := n)
   set d := finrank ℝ (EuclideanSpace ℝ (Fin (n + 1)))
-  set K : ℝ := 2 ^ d / d * ((1 - δ) / ((d : ℝ)⁻¹ - δ)) ^ (1 - δ)
-  have hK : 0 ≤ K := by
-    have hn : (1 : ℝ) ≤ d := by exact_mod_cast finrank_pos
-    have hδ1 : δ < 1 := hδn.trans_le (inv_le_one_of_one_le₀ hn)
-    exact mul_nonneg (by positivity)
-      (Real.rpow_nonneg (div_nonneg (by linarith) (sub_nonneg.2 hδn.le)) _)
+  set K : ℝ := sobolevPoincareConst d δ
+  have hK : 0 ≤ K := sobolevPoincareConst_nonneg hδn
   refine ⟨CW * (1 + (2 * c₀).toNNReal * CD + ((2 * c₀ * Lam * K).toNNReal +
     CD * (2 * c₀ * Lam).toNNReal)), δ₀, hδ₀,
     fun {a r₀} ha hbd hosc {Ω x₀ R} hRr₀ hball u G hu hv hg hG {s t} hs hst htR => ?_⟩
@@ -835,123 +788,7 @@ private theorem exists_eLpNorm_gradient_ball_le_step {p q : ℝ≥0∞} [Fact (1
 
 end Step
 
-section Absorption
-
-/-- Young's inequality in the form used for absorption:
-`K X^θ F^(1-θ) ≤ F / 2 + (2 K)^(1/θ) X` for `K, X, F ≥ 0` and `0 < θ ≤ 1`. -/
-private theorem mul_rpow_mul_rpow_le_half_add {K X F θ : ℝ} (hK : 0 ≤ K) (hX : 0 ≤ X)
-    (hF : 0 ≤ F) (hθ0 : 0 < θ) (hθ1 : θ ≤ 1) :
-    K * (X ^ θ * F ^ (1 - θ)) ≤ F / 2 + (2 * K) ^ θ⁻¹ * X := by
-  have hp₁ : 0 ≤ (2 * K) ^ θ⁻¹ * X := by positivity
-  have hp₂ : 0 ≤ F / 2 := by positivity
-  have hAM := Real.geom_mean_le_arith_mean2_weighted hθ0.le (sub_nonneg.2 hθ1) hp₁ hp₂
-    (by ring)
-  have h1 : ((2 * K) ^ θ⁻¹ * X) ^ θ = 2 * K * X ^ θ := by
-    rw [Real.mul_rpow (by positivity) hX, Real.rpow_inv_rpow (by positivity) hθ0.ne']
-  have h2 : (F / 2) ^ (1 - θ) = F ^ (1 - θ) / 2 ^ (1 - θ) := Real.div_rpow hF (by norm_num) _
-  have h3 : (2 : ℝ) ^ (1 - θ) ≤ 2 := by
-    simpa using Real.rpow_le_rpow_of_exponent_le (by norm_num : (1 : ℝ) ≤ 2)
-      (by linarith : 1 - θ ≤ 1)
-  have h4 : (0 : ℝ) < 2 ^ (1 - θ) := by positivity
-  calc K * (X ^ θ * F ^ (1 - θ)) ≤ 2 * K * X ^ θ * F ^ (1 - θ) / 2 ^ (1 - θ) := by
-        rw [le_div_iff₀ h4]
-        have : 0 ≤ K * X ^ θ * F ^ (1 - θ) := by positivity
-        nlinarith
-    _ = ((2 * K) ^ θ⁻¹ * X) ^ θ * (F / 2) ^ (1 - θ) := by rw [h1, h2]; ring
-    _ ≤ θ * ((2 * K) ^ θ⁻¹ * X) + (1 - θ) * (F / 2) := hAM
-    _ ≤ (2 * K) ^ θ⁻¹ * X + F / 2 := by
-        gcongr ?_ + ?_
-        · exact mul_le_of_le_one_left hp₁ hθ1
-        · exact mul_le_of_le_one_left hp₂ (by linarith)
-    _ = _ := by ring
-
-/-- One step of the absorption: Young's inequality turns the step estimate into
-`f s ≤ f t / 2 + A (t - s)^(-1/θ) + B`. -/
-private theorem le_half_add_of_step {θ Cs R Γ X ε : ℝ} (hθ0 : 0 < θ) (hθ1 : θ ≤ 1)
-    (hCs : 0 ≤ Cs) (hΓ : 0 ≤ Γ) (hX : 0 ≤ X) (hε : 0 ≤ ε) {f : ℝ → ℝ} (hf0 : ∀ σ, 0 ≤ f σ)
-    {s t : ℝ} (hs : R / 2 ≤ s) (hst : s < t) (htR : t ≤ R)
-    (hstep : f s ≤ Cs * ((1 + t / (t - s)) * Γ + t / (t - s) * ε * (X ^ θ * f t ^ (1 - θ)))) :
-    f s ≤ 1 / 2 * f t + ((2 * Cs * ε * R) ^ θ⁻¹ * X + Cs * Γ * R * (R / 2) ^ (θ⁻¹ - 1)) *
-      (t - s) ^ (-θ⁻¹) + Cs * Γ := by
-  set β := θ⁻¹
-  have hβ1 : 1 ≤ β := one_le_inv₀ hθ0 |>.2 hθ1
-  have hR : 0 < R := by linarith
-  have hts : 0 < t - s := sub_pos.2 hst
-  have htsR : t - s ≤ R / 2 := by linarith
-  have ht : 0 < t := by linarith
-  have hτ : t / (t - s) ≤ R * (R / 2) ^ (β - 1) * (t - s) ^ (-β) := by
-    have e : (t - s)⁻¹ = (t - s) ^ (β - 1) * (t - s) ^ (-β) := by
-      rw [← Real.rpow_add hts, show β - 1 + -β = -1 by ring, Real.rpow_neg_one]
-    calc t / (t - s) ≤ R / (t - s) := by gcongr
-      _ = R * ((t - s) ^ (β - 1) * (t - s) ^ (-β)) := by rw [div_eq_mul_inv, e]
-      _ ≤ R * ((R / 2) ^ (β - 1) * (t - s) ^ (-β)) := by
-        gcongr
-      _ = _ := by ring
-  have hK : (2 * (Cs * (t / (t - s)) * ε)) ^ β ≤ (2 * Cs * ε * R) ^ β * (t - s) ^ (-β) := by
-    rw [Real.rpow_neg hts.le, ← div_eq_mul_inv, ← Real.div_rpow (by positivity) hts.le]
-    gcongr
-    rw [le_div_iff₀ hts]
-    have : t / (t - s) * (t - s) = t := div_mul_cancel₀ _ hts.ne'
-    nlinarith [mul_nonneg hCs hε]
-  have hY := mul_rpow_mul_rpow_le_half_add (K := Cs * (t / (t - s)) * ε)
-    (mul_nonneg (mul_nonneg hCs (div_nonneg ht.le hts.le)) hε) hX (hf0 t) hθ0 hθ1
-  calc f s ≤ Cs * ((1 + t / (t - s)) * Γ + t / (t - s) * ε * (X ^ θ * f t ^ (1 - θ))) :=
-        hstep
-    _ = Cs * Γ + Cs * Γ * (t / (t - s)) +
-        Cs * (t / (t - s)) * ε * (X ^ θ * f t ^ (1 - θ)) := by ring
-    _ ≤ Cs * Γ + Cs * Γ * (R * (R / 2) ^ (β - 1) * (t - s) ^ (-β)) +
-        (f t / 2 + (2 * Cs * ε * R) ^ β * (t - s) ^ (-β) * X) := by
-        refine add_le_add (add_le_add le_rfl (mul_le_mul_of_nonneg_left hτ (by positivity)))
-          (hY.trans ?_)
-        gcongr
-    _ = _ := by ring
-
-/-- **Absorption over concentric balls.** Fix `0 < θ ≤ 1` and `Cs ≥ 0`. If a nonnegative function
-`f`, bounded on `[R/2, R]`, satisfies for `R/2 ≤ s < t ≤ R`
-
-`f s ≤ Cs ((1 + t/(t - s)) Γ + t/(t - s) ε X^θ (f t)^(1-θ))`,
-
-then `f (R/2) ≤ C₁ (Γ + ε^(1/θ) X)`, with `C₁` depending only on `θ` and `Cs`. -/
-private theorem exists_le_mul_add_rpow_mul_of_le {θ : ℝ} (hθ0 : 0 < θ) (hθ1 : θ ≤ 1) {Cs : ℝ}
-    (hCs : 0 ≤ Cs) :
-    ∃ C₁ : ℝ, 0 ≤ C₁ ∧ ∀ {f : ℝ → ℝ} {R Γ X ε : ℝ}, 0 < R → 0 ≤ Γ → 0 ≤ X → 0 ≤ ε →
-      (∀ σ, 0 ≤ f σ) → BddAbove (f '' Icc (R / 2) R) →
-      (∀ s t, R / 2 ≤ s → s < t → t ≤ R →
-        f s ≤ Cs * ((1 + t / (t - s)) * Γ + t / (t - s) * ε * (X ^ θ * f t ^ (1 - θ)))) →
-      f (R / 2) ≤ C₁ * (Γ + ε ^ θ⁻¹ * X) := by
-  obtain ⟨Cab, hCab, habs⟩ :=
-    exists_le_mul_mul_rpow_add_of_le_mul_add (θ := 1 / 2) (by norm_num) (by norm_num) θ⁻¹
-  refine ⟨Cab * ((4 * Cs) ^ θ⁻¹ + 3 * Cs), by positivity,
-    fun {f R Γ X ε} hR hΓ hX hε hf0 hbdd hstep => ?_⟩
-  set β := θ⁻¹
-  set A := (2 * Cs * ε * R) ^ β * X + Cs * Γ * R * (R / 2) ^ (β - 1)
-  have hA : 0 ≤ A := by positivity
-  have key : ∀ s t, R / 2 ≤ s → s < t → t ≤ R →
-      f s ≤ 1 / 2 * f t + A * (t - s) ^ (-β) + Cs * Γ := fun s t hs hst htR =>
-    le_half_add_of_step hθ0 hθ1 hCs hΓ hX hε hf0 hs hst htR (hstep s t hs hst htR)
-  have h := habs (f := f) (r₀ := R / 2) (r₁ := R) (by linarith) hA (by positivity) hbdd key
-  have hR2 : 0 < R / 2 := by positivity
-  have hAR : A * (R - R / 2) ^ (-β) = (4 * Cs) ^ β * ε ^ β * X + 2 * (Cs * Γ) := by
-    rw [show R - R / 2 = R / 2 by ring]
-    simp only [A, add_mul]
-    congr 1
-    · rw [mul_comm _ X, mul_assoc, ← Real.mul_rpow (by positivity) (by positivity),
-        Real.rpow_neg hR2.le, ← Real.inv_rpow hR2.le,
-        ← Real.mul_rpow (by positivity) (by positivity),
-        show 2 * Cs * ε * R * (R / 2)⁻¹ = 4 * Cs * ε by field_simp; ring,
-        Real.mul_rpow (by positivity) hε]
-      ring
-    · rw [mul_assoc, ← Real.rpow_add hR2, show β - 1 + -β = -1 by ring, Real.rpow_neg_one]
-      field_simp
-  rw [hAR] at h
-  calc f (R / 2) ≤ Cab * ((4 * Cs) ^ β * ε ^ β * X + 2 * (Cs * Γ) + Cs * Γ) := h
-    _ ≤ Cab * (((4 * Cs) ^ β + 3 * Cs) * (Γ + ε ^ β * X)) := by
-        gcongr
-        nlinarith [mul_nonneg (Real.rpow_nonneg (by positivity : (0 : ℝ) ≤ 4 * Cs) β)
-          (mul_nonneg (Real.rpow_nonneg hε β) hX), mul_nonneg hCs hΓ,
-          mul_nonneg hCs (mul_nonneg (Real.rpow_nonneg hε β) hX),
-          mul_nonneg (Real.rpow_nonneg (by positivity : (0 : ℝ) ≤ 4 * Cs) β) hΓ]
-    _ = _ := by ring
+section Interpolation
 
 /-- The intermediate exponent `q` with `1/q = θ/2 + (1 - θ)/p`, for `2 < p < ∞` and `0 < θ < 1`:
 it lies in `(1, p]`, and `1/q - 1/p = θ (1/2 - 1/p)`. -/
@@ -988,7 +825,7 @@ private theorem exists_interpolation_exponent {p : ℝ≥0∞} (hp : 2 < p) (hp_
     simp only [Q]
     ring
 
-end Absorption
+end Interpolation
 
 /-- The step between concentric balls in real numbers, after interpolating the `L^q` norm of the
 gradient between its `L²` and `Lᵖ` norms and comparing `|B_t|` with `|B_{R/2}|`. -/
@@ -1049,29 +886,6 @@ private theorem step_toReal {p q : ℝ≥0∞} {θ δ : ℝ} (hθ0 : 0 < θ) (h�
     ENNReal.toReal_mul, ENNReal.toReal_rpow, ENNReal.toReal_rpow, ENNReal.toReal_rpow,
     ENNReal.toReal_ofReal hτ, ENNReal.toReal_one, ENNReal.coe_toReal]
 
-/-- Halving the radius of a ball divides its volume by `2ᵈ`, so for `e ≥ -1`,
-`|B_{R/2}|^e ≤ 2ᵈ |B_R|^e`. -/
-private theorem toReal_volume_ball_half_rpow_le {x₀ : EuclideanSpace ℝ (Fin (n + 1))} {R : ℝ}
-    (hR : 0 < R) {e : ℝ} (he1 : -1 ≤ e) :
-    (volume (ball x₀ (R / 2))).toReal ^ e ≤
-      2 ^ finrank ℝ (EuclideanSpace ℝ (Fin (n + 1))) * (volume (ball x₀ R)).toReal ^ e := by
-  set d := finrank ℝ (EuclideanSpace ℝ (Fin (n + 1)))
-  have hμR : 0 < (volume (ball x₀ R)).toReal :=
-    ENNReal.toReal_pos (measure_ball_pos volume x₀ hR).ne' measure_ball_lt_top.ne
-  have hμR2 : (volume (ball x₀ (R / 2))).toReal = (2 ^ d)⁻¹ * (volume (ball x₀ R)).toReal := by
-    rw [Measure.addHaar_ball volume x₀ hR.le,
-      Measure.addHaar_ball volume x₀ (by positivity : 0 ≤ R / 2), ENNReal.toReal_mul,
-      ENNReal.toReal_mul, ENNReal.toReal_ofReal (by positivity),
-      ENNReal.toReal_ofReal (by positivity), div_pow]
-    field_simp
-    ring
-  rw [hμR2, Real.mul_rpow (by positivity) hμR.le, Real.inv_rpow (by positivity),
-    ← Real.rpow_neg (by positivity)]
-  gcongr
-  calc ((2 : ℝ) ^ d) ^ (-e) ≤ ((2 : ℝ) ^ d) ^ (1 : ℝ) :=
-        Real.rpow_le_rpow_of_exponent_le (one_le_pow₀ one_le_two) (by linarith)
-    _ = 2 ^ d := Real.rpow_one _
-
 /-- Returning from real numbers to `ℝ≥0∞`: a bound `A.toReal ≤ C (Γ.toReal + m.toReal^e X.toReal)`
 for finite `A`, `Γ`, `X` and finite positive `m` gives `A ≤ C (Γ + m^e X)`. -/
 private theorem le_mul_add_rpow_mul_of_toReal_le {A Γ X m : ℝ≥0∞} {C e : ℝ} (hC : 0 ≤ C)
@@ -1084,8 +898,7 @@ private theorem le_mul_add_rpow_mul_of_toReal_le {A Γ X m : ℝ≥0∞} {C e : 
     _ = _ := by
         rw [ENNReal.ofReal_mul hC, ENNReal.ofReal_add ENNReal.toReal_nonneg (by positivity),
           ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_toReal hΓ, ENNReal.ofReal_toReal hX,
-          ← ENNReal.ofReal_rpow_of_pos hmR, ENNReal.ofReal_toReal hm]
-        rfl
+          ← ENNReal.ofReal_rpow_of_pos hmR, ENNReal.ofReal_toReal hm, ENNReal.ofNNReal_toNNReal]
 
 /-- Absorption and the return to `ℝ≥0∞` in the interior estimate: if the step estimate between
 concentric balls holds for `g` on `B_R`, with the `L^q` norm on the right, then
@@ -1147,7 +960,8 @@ private theorem eLpNorm_ball_half_le_of_step {p q : ℝ≥0∞} (hp : 2 < p)
       simp only [δ]; field_simp; ring
     rw [← Real.rpow_mul hR2pos.le, he]
     have : 0 ≤ p.toReal⁻¹ := by positivity
-    exact toReal_volume_ball_half_rpow_le hR (by linarith)
+    simpa only [measureReal_def] using
+      Measure.addHaar_real_ball_half_rpow_le volume x₀ hR (by linarith)
   set Γ := (eLpNorm G p (volume.restrict (ball x₀ R))).toReal
   set X := (eLpNorm g 2 (volume.restrict (ball x₀ R))).toReal
   have hΓ : 0 ≤ Γ := ENNReal.toReal_nonneg

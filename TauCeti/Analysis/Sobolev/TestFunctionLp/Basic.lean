@@ -64,6 +64,12 @@ theorem memLp_testFunction (q : ENNReal) (phi : 𝓓(Omega, ℝ)) :
     MemLp (phi : E → ℝ) q (mu.restrict Omega) :=
   phi.continuous.memLp_of_hasCompactSupport phi.hasCompactSupport
 
+/-- A function in `Lᵖ` times a test function is integrable. -/
+theorem integrable_mul_testFunction {p : ENNReal} [Fact (1 ≤ p)] {h : E → ℝ} (hh : MemLp h p mu)
+    (phi : 𝓓(Omega, ℝ)) : Integrable (fun x => h x * phi x) mu :=
+  hh.integrable_mul (q := p.conjExponent)
+    (phi.continuous.memLp_of_hasCompactSupport phi.hasCompactSupport)
+
 /-- A test function on `Omega` as an element of `Lᵠ(Omega)`. -/
 def testFunctionLp (q : ENNReal) (phi : 𝓓(Omega, ℝ)) : Lp ℝ q (mu.restrict Omega) :=
   (memLp_testFunction (mu := mu) q phi).toLp phi
@@ -326,6 +332,15 @@ theorem support_gradient_testFunction_subset (phi : 𝓓(Omega, ℝ)) :
   (Function.support_comp_subset (map_zero (InnerProductSpace.toDual ℝ E).symm) _).trans <|
     (subset_tsupport _).trans <| (tsupport_fderiv_subset ℝ).trans phi.tsupport_subset
 
+/-- The directional derivative of a test function along `v` is the pairing of `v` with its
+gradient. -/
+theorem lineDerivCLM_apply_eq_inner (phi : 𝓓(Omega, ℝ)) (v x : E) :
+    (TestFunction.lineDerivCLM (n := ⊤) (k := ⊤) ℝ v phi : E → ℝ) x =
+      ⟪v, ∇ (phi : E → ℝ) x⟫_ℝ := by
+  rw [TestFunction.lineDerivCLM_apply_of_le le_top, real_inner_comm, gradient,
+    InnerProductSpace.toDual_symm_apply,
+    (phi.contDiff.differentiable (by simp) x).lineDeriv_eq_fderiv]
+
 variable [MeasurableSpace E] [OpensMeasurableSpace E] {mu : Measure E}
   [IsFiniteMeasureOnCompacts mu]
 
@@ -335,6 +350,17 @@ theorem memLp_gradient_testFunction (q : ENNReal) (phi : 𝓓(Omega, ℝ)) :
     MemLp (fun x => ∇ (phi : E → ℝ) x) q (mu.restrict Omega) :=
   (continuous_gradient_testFunction phi).memLp_of_hasCompactSupport
     phi.hasCompactSupport.gradient
+
+/-- A field in `Lᵖ` paired with the gradient of a test function is integrable. -/
+theorem integrable_inner_gradient_testFunction {p : ENNReal} [Fact (1 ≤ p)] {F : E → E}
+    (hF : MemLp F p mu) (phi : 𝓓(Omega, ℝ)) :
+    Integrable (fun x => ⟪F x, ∇ (phi : E → ℝ) x⟫_ℝ) mu := by
+  have hc := continuous_gradient_testFunction phi
+  have hs := phi.hasCompactSupport.gradient
+  exact (hF.norm.integrable_mul (q := p.conjExponent) (hc.memLp_of_hasCompactSupport hs).norm).mono'
+    (hF.aestronglyMeasurable.inner
+      (hc.stronglyMeasurable_of_hasCompactSupport hs).aestronglyMeasurable)
+    (ae_of_all _ fun _ => norm_inner_le_norm _ _)
 
 /-- The gradient of a test function on `Ω`, as an element of `Lᵠ(Ω, E)`. -/
 def gradientTestFunctionLp (q : ENNReal) (phi : 𝓓(Omega, ℝ)) : Lp E q (mu.restrict Omega) :=

@@ -59,6 +59,9 @@ theorem `TauCeti.Wkp.dense_contDiffOn_representatives`.
   form on a ball, with averages.
 * `TauCeti.W1p.setLAverage_rpow_enorm_value_sub_setAverage_le_of_ball_subset`: the same for a
   ball inside the domain of a Sobolev function of possibly higher integrability.
+* `TauCeti.W1p.eLpNorm_value_sub_setAverage_le_of_ball_subset`: the same with the averages written
+  as norms, `‖u - u_B‖_{Lˢ(B)} ≤ K t μ(B)^(-δ) ‖∇u‖_{L^q(B)}`, with the constant
+  `K = TauCeti.sobolevPoincareConst n δ`.
 
 ## References
 
@@ -375,6 +378,66 @@ theorem W1p.setLAverage_rpow_enorm_value_sub_setAverage_le_of_ball_subset [Nontr
       ⨍⁻ x in ball c r, ‖W1p.gradient u x‖ₑ ^ p.toReal ∂mu :=
     laverage_congr (hgrad.mono fun x hx => by simp only [hx])
   rwa [h1, h2] at h
+
+/-- The constant `2ⁿ / n · ((1 - δ) / (1/n - δ)) ^ (1 - δ)` of the Sobolev–Poincaré inequality on a
+ball in dimension `n`, where `δ = 1/p - 1/q` is the gap between the exponents
+(`TauCeti.W1p.eLpNorm_value_sub_setAverage_le_of_ball_subset`). -/
+def sobolevPoincareConst (n : ℕ) (δ : ℝ) : ℝ :=
+  2 ^ n / n * ((1 - δ) / ((n : ℝ)⁻¹ - δ)) ^ (1 - δ)
+
+/-- The Sobolev–Poincaré constant is nonnegative in the admissible range `δ < 1/n`. -/
+theorem sobolevPoincareConst_nonneg {n : ℕ} {δ : ℝ} (hδn : δ < (n : ℝ)⁻¹) :
+    0 ≤ sobolevPoincareConst n δ :=
+  mul_nonneg (by positivity) (Real.rpow_nonneg (div_nonneg
+    (by linarith [hδn.trans_le (Nat.cast_inv_le_one n)]) (sub_nonneg.2 hδn.le)) _)
+
+/-- **The Sobolev–Poincaré inequality on a ball, in norms.** Let `n ≥ 1` be the dimension, let
+`1 ≤ q ≤ s < ∞` with `δ = 1/q - 1/s < 1/n`, and let `q ≤ p₀`. If `u ∈ W^{1,p₀}(Omega)` and
+`B = B(x₀, t) ⊆ Omega`, then
+
+`‖u - u_B‖_{Lˢ(B)} ≤ K t mu(B)^(-δ) ‖∇u‖_{L^q(B)}`,
+
+with `K = TauCeti.sobolevPoincareConst n δ = 2ⁿ / n · ((1 - δ) / (1/n - δ)) ^ (1 - δ)` depending
+only on `n`, `q` and `s`. This is
+`TauCeti.W1p.setLAverage_rpow_enorm_value_sub_setAverage_le_of_ball_subset` with the averages
+written as norms. -/
+theorem W1p.eLpNorm_value_sub_setAverage_le_of_ball_subset [Nontrivial E] {p₀ q : ℝ≥0∞}
+    [Fact (1 ≤ p₀)] [Fact (1 ≤ q)] (hq : q ≠ ⊤) (hqp₀ : q ≤ p₀) {s : ℝ≥0} (hqs : q ≤ s) {δ : ℝ}
+    (hδ : q.toReal⁻¹ - (s : ℝ)⁻¹ = δ) (hδn : δ < (finrank ℝ E : ℝ)⁻¹) {x₀ : E} {t : ℝ}
+    (ht : 0 < t) (hball : ball x₀ t ⊆ (Omega : Set E)) (u : W1p mu Omega p₀) :
+    eLpNorm (fun x => W1p.value u x - ⨍ y in ball x₀ t, W1p.value u y ∂mu) s
+        (mu.restrict (ball x₀ t)) ≤
+      ENNReal.ofReal (sobolevPoincareConst (finrank ℝ E) δ * t) *
+        mu (ball x₀ t) ^ (-δ) * eLpNorm (W1p.gradient u) q (mu.restrict (ball x₀ t)) := by
+  set B := ball x₀ t
+  set K := ENNReal.ofReal (sobolevPoincareConst (finrank ℝ E) δ * t)
+  have hq0 : q ≠ 0 := (zero_lt_one.trans_le (Fact.out : (1 : ℝ≥0∞) ≤ q)).ne'
+  have hs0 : (s : ℝ≥0∞) ≠ 0 := ne_bot_of_le_ne_bot hq0 hqs
+  have hB0 : mu B ≠ 0 := (measure_ball_pos mu x₀ ht).ne'
+  have hBt : mu B ≠ ⊤ := measure_ball_lt_top.ne
+  have hSP := W1p.setLAverage_rpow_enorm_value_sub_setAverage_le_of_ball_subset hq hqp₀ ht
+    hball hqs hδ hδn u
+  have hs' : ((s : ℝ≥0∞)).toReal = s := ENNReal.coe_toReal s
+  have hle : mu.restrict B ≤ mu.restrict (Omega : Set E) := Measure.restrict_mono hball le_rfl
+  rw [← hs', laverage_rpow_enorm_rpow_inv_eq hs0 ENNReal.coe_ne_top
+      (f := fun x => W1p.value u x - ⨍ y in B, W1p.value u y ∂mu)
+      (((Lp.aestronglyMeasurable _).mono_measure hle).sub aestronglyMeasurable_const),
+    laverage_rpow_enorm_rpow_inv_eq hq0 hq ((Lp.aestronglyMeasurable _).mono_measure hle), hs',
+    Measure.restrict_apply_univ, ENNReal.div_eq_inv_mul, ENNReal.div_eq_inv_mul,
+    ← ENNReal.rpow_neg, ← ENNReal.rpow_neg, ← sobolevPoincareConst] at hSP
+  -- Multiply by `mu(B)^(1/s)`.
+  have hcancel : mu B ^ (s : ℝ)⁻¹ * mu B ^ (-(s : ℝ)⁻¹) = 1 := by
+    rw [← ENNReal.rpow_add _ _ hB0 hBt, add_neg_cancel, ENNReal.rpow_zero]
+  calc eLpNorm (fun x => W1p.value u x - ⨍ y in B, W1p.value u y ∂mu) s (mu.restrict B)
+      = mu B ^ (s : ℝ)⁻¹ * (mu B ^ (-(s : ℝ)⁻¹) *
+          eLpNorm (fun x => W1p.value u x - ⨍ y in B, W1p.value u y ∂mu) s (mu.restrict B)) := by
+        rw [← mul_assoc, hcancel, one_mul]
+    _ ≤ mu B ^ (s : ℝ)⁻¹ * (K * (mu B ^ (-q.toReal⁻¹) *
+          eLpNorm (W1p.gradient u) q (mu.restrict B))) := by gcongr
+    _ = K * (mu B ^ ((s : ℝ)⁻¹ + -q.toReal⁻¹)) * eLpNorm (W1p.gradient u) q (mu.restrict B) := by
+        rw [ENNReal.rpow_add _ _ hB0 hBt]
+        ring
+    _ = _ := by rw [← hδ]; ring_nf
 
 end W1p
 

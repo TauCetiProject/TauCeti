@@ -66,6 +66,8 @@ of a higher-order Sobolev space.
   sums of coordinate pairs.
 * `Real.le_div_add_rpow_mul_of_le_add_mul_rpow_mul_rpow`: absorption of a power `M^θ`, `θ < 1`,
   in a bound `M ≤ A + B M^θ N^(1 - θ)`.
+* `Real.mul_rpow_mul_rpow_le_half_add`: Young's inequality
+  `K X^θ F^(1 - θ) ≤ F / 2 + (2 K)^(1/θ) X`, which absorbs half of `F`.
 * `Real.pow_mul_le_rpow_mul_rpow`: `s^(a + b) u ≤ M` gives
   `s^a u ≤ M^(a / (a + b)) u^(b / (a + b))`.
 * `ENNReal.geom_mean_le_arith_mean2_weighted_ofReal`: two-point weighted AM-GM in `ℝ≥0∞` with
@@ -206,6 +208,34 @@ theorem pow_mul_le_rpow_mul_rpow {s u M : ℝ} {a b : ℕ} (hb : 0 < b) (hs : 0 
   rw [hsplit]
   exact mul_le_mul_of_nonneg_right (rpow_le_rpow (by positivity) hM (by positivity))
     (by positivity)
+
+/-- **Young's inequality for absorption.**
+`K X^θ F^(1-θ) ≤ F / 2 + (2 K)^(1/θ) X` for `K, X, F ≥ 0` and `0 < θ ≤ 1`. -/
+theorem mul_rpow_mul_rpow_le_half_add {K X F θ : ℝ} (hK : 0 ≤ K) (hX : 0 ≤ X)
+    (hF : 0 ≤ F) (hθ0 : 0 < θ) (hθ1 : θ ≤ 1) :
+    K * (X ^ θ * F ^ (1 - θ)) ≤ F / 2 + (2 * K) ^ θ⁻¹ * X := by
+  have hp₁ : 0 ≤ (2 * K) ^ θ⁻¹ * X := by positivity
+  have hp₂ : 0 ≤ F / 2 := by positivity
+  have hAM := Real.geom_mean_le_arith_mean2_weighted hθ0.le (sub_nonneg.2 hθ1) hp₁ hp₂
+    (by ring)
+  have h1 : ((2 * K) ^ θ⁻¹ * X) ^ θ = 2 * K * X ^ θ := by
+    rw [Real.mul_rpow (by positivity) hX, Real.rpow_inv_rpow (by positivity) hθ0.ne']
+  have h2 : (F / 2) ^ (1 - θ) = F ^ (1 - θ) / 2 ^ (1 - θ) := Real.div_rpow hF (by norm_num) _
+  have h3 : (2 : ℝ) ^ (1 - θ) ≤ 2 := by
+    simpa using Real.rpow_le_rpow_of_exponent_le (by norm_num : (1 : ℝ) ≤ 2)
+      (by linarith : 1 - θ ≤ 1)
+  have h4 : (0 : ℝ) < 2 ^ (1 - θ) := by positivity
+  calc K * (X ^ θ * F ^ (1 - θ)) ≤ 2 * K * X ^ θ * F ^ (1 - θ) / 2 ^ (1 - θ) := by
+        rw [le_div_iff₀ h4]
+        have : 0 ≤ K * X ^ θ * F ^ (1 - θ) := by positivity
+        nlinarith
+    _ = ((2 * K) ^ θ⁻¹ * X) ^ θ * (F / 2) ^ (1 - θ) := by rw [h1, h2]; ring
+    _ ≤ θ * ((2 * K) ^ θ⁻¹ * X) + (1 - θ) * (F / 2) := hAM
+    _ ≤ (2 * K) ^ θ⁻¹ * X + F / 2 := by
+        gcongr ?_ + ?_
+        · exact mul_le_of_le_one_left hp₁ hθ1
+        · exact mul_le_of_le_one_left hp₂ (by linarith)
+    _ = _ := by ring
 
 end Real
 
