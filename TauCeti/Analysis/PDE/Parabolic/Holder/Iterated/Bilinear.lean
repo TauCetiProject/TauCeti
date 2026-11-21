@@ -267,7 +267,7 @@ private theorem continuous_prodField {i j m : ℕ} (h : 2 * (i + j) + m ≤ k) :
   set q : slab (E := E) a b → slab (E := E) a b :=
     fun p ↦ slabMk (p : ParabolicSpaceTime E).space t₀
   have hq : Continuous q := continuous_slabMk.comp
-    ((continuous_space.comp continuous_subtype_val).prodMk continuous_const)
+    ((continuous_space.comp continuous_subtypeVal).prodMk continuous_const)
   have hq₀ : q (slabMk x₀ t₀) = slabMk x₀ t₀ := by simp [q]
   have hbound (p : slab (E := E) a b) :
       ‖prodField B u v i j m p - prodField B u v i j m (slabMk x₀ t₀)‖ ≤
@@ -295,7 +295,7 @@ private theorem continuous_prodField {i j m : ℕ} (h : 2 * (i + j) + m ≤ k) :
   have hspace : Continuous fun p ↦ prodField B u v i j m (q p) := by
     simp only [q, prodField_slabMk]
     exact ((contDiff_prodSlice B (n := m) (by omega) (by omega) t₀).continuous_iteratedFDeriv'
-      ).comp (continuous_space.comp continuous_subtype_val)
+      ).comp (continuous_space.comp continuous_subtypeVal)
   have hlim := ((((hδu.mul_const ‖v‖).add (hδv.const_mul ‖u‖)).const_mul (‖B‖ * 2 ^ m)).add
     (((hspace.tendsto (slabMk x₀ t₀)).sub_const
       (prodField B u v i j m (slabMk x₀ t₀))).norm))
