@@ -13,6 +13,7 @@ import TauCeti.Algebra.BigOperators.Intervals
 import TauCeti.Algebra.Order.Floor.Ring
 import TauCeti.Analysis.SumIntegralComparisons
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # Mertens' count of positive definite binary quadratic forms
@@ -433,11 +434,8 @@ theorem abs_sum_card_reducedForms_sub_le {X : ℝ} (hX : 2 ≤ X) :
     rw [← two_mul_integral_eq X (by positivity)]
     exact abs_sum_Icc_sub_two_mul_integral_le hX0 i.succ_pos
   have h4 := abs_integral_sum_sub_le X hX0
-  have hpow : X ^ (3 / 2 : ℝ) = X * √X := by
-    rw [show (3 / 2 : ℝ) = 1 + 1 / 2 by norm_num, rpow_add (by linarith), rpow_one,
-      sqrt_eq_rpow]
   have h5 := error_le hX
-  rw [sum_card_reducedForms_eq_card_filter_boxForms, hpow]
+  rw [sum_card_reducedForms_eq_card_filter_boxForms, rpow_three_div_two_eq_mul_sqrt]
   rw [abs_le] at h2 h3 h4 ⊢
   constructor <;> linarith
 
