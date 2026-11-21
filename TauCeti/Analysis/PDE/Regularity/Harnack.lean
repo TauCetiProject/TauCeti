@@ -114,7 +114,7 @@ private theorem exists_pos_ae_setAverage_rpow_rpow_inv_le_mul_value_of_pos [None
   have hp₀ : 0 < p₀ := lt_min (mul_pos hc (div_pos hlL.1 (hlL.1.trans_le hlL.2))) two_pos
   have hp₀c : |p₀| ≤ c * (lam / Lam) := (abs_of_pos hp₀).trans_le (min_le_left _ _)
   obtain ⟨D, hD, hlower⟩ := exists_ae_inv_value_le_mul_rpow_mul_setIntegral_rpow
-    (mu := mu) (lam := lam) (Lam := Lam) hp₀ (min_le_right _ _)
+    (mu := mu) (lam := lam) (Lam := Lam) hp₀
   set n : ℝ := (Fintype.card ι : ℝ)
   set V := mu.real (ball (0 : EuclideanSpace ℝ ι) 1)
   have hV : 0 < V := measureReal_ball_pos mu 0 one_pos

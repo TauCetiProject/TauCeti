@@ -44,6 +44,8 @@ The proof has two steps.
 
 ## Main results
 
+* `TauCeti.GTree.isHyperbolic_mul_iff_of_smul_src_eq_of_smul_tgt_eq`: if `s` fixes the source and
+  `t` the target of a dart, then `s * t` is hyperbolic exactly when neither of them fixes the dart.
 * `TauCeti.GTree.isHyperbolic_mul_of_disjoint`: the product of two elliptic elements without a
   common fixed vertex is hyperbolic.
 * `TauCeti.GTree.isEllipticSubgroup_closure_iUnion`: if finitely many sets each generate a
@@ -199,6 +201,21 @@ theorem isHyperbolic_mul_of_isReduced {s t : G} {a b : T.V} {p : T.Path a b}
     subst he' hf'
     rw [rev_smul, mul_smul, Ne, smul_left_cancel_iff, ← rev_smul, (T.rev_injective).eq_iff]
     exact hte e he
+
+/-- Let `s` fix the source and `t` fix the target of a dart `d`. Then `s * t` is hyperbolic exactly
+when neither `s` nor `t` fixes `d`. -/
+theorem isHyperbolic_mul_iff_of_smul_src_eq_of_smul_tgt_eq {s t : G} {d : T.E}
+    (hs : s • T.src d = T.src d) (ht : t • T.tgt d = T.tgt d) :
+    T.IsHyperbolic (s * t) ↔ s • d ≠ d ∧ t • d ≠ d := by
+  refine ⟨fun h ↦ ⟨fun hsd ↦ isHyperbolic_iff.1 h (T.tgt d) ?_,
+    fun htd ↦ isHyperbolic_iff.1 h (T.src d) ?_⟩, fun ⟨hsd, htd⟩ ↦ ?_⟩
+  · -- If `s` fixes `d`, both factors fix its target.
+    rw [mul_smul, ht, ← tgt_smul, hsd]
+  · -- If `t` fixes `d`, both factors fix its source.
+    rw [mul_smul, ← src_smul, htd, hs]
+  · -- Otherwise Serre's criterion applies to the path of length one along `d`.
+    exact isHyperbolic_mul_of_isReduced (p := (T.dart d).toPath) (Path.isReduced_toPath _ _)
+      (T.isAcyclic.src_ne_tgt d) hs (by simpa) ht (by simpa)
 
 /-- **Serre's lemma for two generating sets.** Let `S` and `S'` be sets each generating a
 subgroup which fixes a vertex. If every product of an element of `S` and an element of `S'` is

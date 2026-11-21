@@ -198,12 +198,12 @@ section Boundaryless
 variable [I.Boundaryless] [CompactSpace M]
 
 /-- On a compact boundaryless manifold, `c(M) = 0` exactly when `M` is empty: on a nonempty one
-every continuous function has a critical point. -/
+every function has a critical point. -/
 theorem minCriticalCount_eq_zero_iff : minCriticalCount I M = 0 ↔ IsEmpty M := by
   refine ⟨fun h ↦ not_nonempty_iff.1 fun hM ↦ ?_, fun _ ↦ minCriticalCount_of_isEmpty⟩
-  obtain ⟨f, hf, hfc⟩ := exists_totalCriticalCount_eq_minCriticalCount (I := I) (M := M)
+  obtain ⟨f, -, hfc⟩ := exists_totalCriticalCount_eq_minCriticalCount (I := I) (M := M)
   rw [h, totalCriticalCount_def, encard_eq_zero] at hfc
-  exact (criticalPoints_nonempty (I := I) hf.continuous).ne_empty hfc
+  exact (criticalPoints_nonempty (I := I) (f := f)).ne_empty hfc
 
 /-- On a compact boundaryless manifold with at least two points, every smooth function has at
 least two critical points, so `2 ≤ c(M)`. -/
