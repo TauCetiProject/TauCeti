@@ -86,7 +86,7 @@ private theorem exists_primitive_relation_of_axis (D : ℤ) [Fact (¬ IsSquare D
   let c := (D : ℚ) * τ.im ^ 2 - τ.re ^ 2
   have hτrel : τ * τ =
       (c : QuadraticAlgebra ℚ (D : ℚ) 0) + (d : QuadraticAlgebra ℚ (D : ℚ) 0) * τ := by
-    ext <;> simp [c, d] <;> ring
+    ext <;> simp [c, d, -Rat.cast_pow] <;> ring
   obtain ⟨a, b, e, ha, hb, he, u, v, w, huvw⟩ :=
     Rat.exists_primitive_common_denominator d c
   have hbK : (a : QuadraticAlgebra ℚ (D : ℚ) 0) * (d : QuadraticAlgebra ℚ (D : ℚ) 0) =

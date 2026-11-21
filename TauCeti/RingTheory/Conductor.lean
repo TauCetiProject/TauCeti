@@ -135,11 +135,13 @@ theorem conductor_eq_top_iff : S.conductor = ⊤ ↔ S = ⊤ := by
   exact eq_top_iff.mpr fun _ _ _ ↦ Subring.mem_top _
 
 /-- The conductor of `B` in itself is the unit ideal. -/
+@[simp]
 theorem conductor_top : (⊤ : Subring B).conductor = ⊤ :=
   conductor_eq_top_iff.mpr rfl
 
 /-- The conductor of a subring of a field is zero exactly when the subring is proper. In
 particular a proper subfield has zero conductor, even when the extension is finite. -/
+@[simp]
 theorem conductor_eq_bot_iff {K : Type*} [Field K] {S : Subring K} :
     S.conductor = ⊥ ↔ S ≠ ⊤ := by
   rw [Ne, ← conductor_eq_top_iff]
@@ -155,6 +157,7 @@ theorem image_subtype_comap_conductor :
 
 variable (S) in
 /-- The extension to `B` of the contraction of the conductor to `S` is the conductor. -/
+@[simp]
 theorem map_subtype_comap_conductor :
     (S.conductor.comap S.subtype).map S.subtype = S.conductor :=
   le_antisymm Ideal.map_comap_le fun b hb ↦ by
