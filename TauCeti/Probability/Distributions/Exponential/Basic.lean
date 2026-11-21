@@ -12,7 +12,7 @@ public import Mathlib.Probability.Moments.IntegrableExpMul
 public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 public import Mathlib.Probability.ConditionalProbability
 import Mathlib.NumberTheory.Harmonic.GammaDeriv
-import TauCeti.Probability.Density
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 import TauCeti.Probability.Distributions.Gamma.CharFun
 -- Non-public: the finite-extrema CDF formulas are used only inside proofs.
 import TauCeti.Probability.Distributions.Relations
@@ -161,8 +161,8 @@ theorem expMeasure_map_const_mul {c : ℝ} (hc : 0 < c) :
     (expMeasure r).map (c * ·) = expMeasure (r / c) := by
   simpa only [expMeasure] using gammaMeasure_map_const_mul hc
 
-/-- `expMeasure r` presented by its real-valued density, the form in which the shared density
-bridge of `TauCeti/Probability/Density.lean` applies. -/
+/-- `expMeasure r` presented by its real-valued density, the form in which the real-density
+`withDensity` lemmas of `TauCeti/MeasureTheory/Integral/Bochner/WithDensity.lean` apply. -/
 private lemma expMeasure_eq_withDensity_ofReal (r : ℝ) :
     expMeasure r = volume.withDensity fun x => ENNReal.ofReal (exponentialPDFReal r x) :=
   (rfl)
@@ -176,7 +176,7 @@ rate exactly when its density-weighted version is Lebesgue integrable. -/
 theorem integrable_expMeasure_iff (hr : 0 < r) {g : ℝ → E} :
     Integrable g (expMeasure r) ↔ Integrable fun x => exponentialPDFReal r x • g x := by
   rw [expMeasure_eq_withDensity_ofReal]
-  exact Probability.integrable_withDensity_ofReal_iff
+  exact MeasureTheory.integrable_withDensity_ofReal_iff
     (measurable_exponentialPDFReal r).aemeasurable (ae_of_all _ (exponentialPDFReal_nonneg hr))
 
 /-- **Integral transfer.** An integral against an exponential law with positive rate is the
@@ -184,7 +184,7 @@ density-weighted Lebesgue integral. -/
 theorem integral_expMeasure_eq (hr : 0 < r) (g : ℝ → E) :
     ∫ x, g x ∂expMeasure r = ∫ x, exponentialPDFReal r x • g x := by
   rw [expMeasure_eq_withDensity_ofReal]
-  exact Probability.integral_withDensity_ofReal
+  exact MeasureTheory.integral_withDensity_ofReal
     (measurable_exponentialPDFReal r).aemeasurable (ae_of_all _ (exponentialPDFReal_nonneg hr)) g
 
 /-- Integrability against an exponential law is integrability of the weighted integrand over

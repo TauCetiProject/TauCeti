@@ -49,6 +49,8 @@ For partial diffeomorphisms `ψ`, `χ`, `φ` into normed spaces, such as charts,
 * `PartialDiffeomorph.hasDerivAt_comp_symm_of_mfderiv_eq_zero`: at a critical point of a map into a
   normed space, read through a partial diffeomorphism into a normed space, the derivative along a
   curve `t ↦ φ⁻¹ (L t)` vanishes.
+* `OpenPartialHomeomorph.hasFDerivAt_comp_symm_trans`: the chain rule for transitions
+  `ψ₀ ∘ ψ₂⁻¹ = (ψ₀ ∘ ψ₁⁻¹) ∘ (ψ₁ ∘ ψ₂⁻¹)` of open partial homeomorphisms into normed spaces.
 * `PartialDiffeomorph.differentiableAt_comp_symm`: for partial diffeomorphisms into normed spaces,
   the transition `ψ ∘ φ⁻¹` is differentiable.
 * `PartialDiffeomorph.fderiv_comp_symm_eq_comp`: the derivatives of transitions compose, the
@@ -98,6 +100,32 @@ theorem mfderiv_apply_mfderiv_symm_apply (Φ : OpenPartialHomeomorph M N) {y : N
     (hΦs : MDifferentiableAt J I Φ.symm y) (v : TangentSpace J y) :
     mfderiv I J Φ (Φ.symm y) (mfderiv J I Φ.symm y v) = v :=
   Φ.symm.mfderiv_symm_apply_mfderiv_apply hy hΦs hΦ v
+
+section Transition
+
+variable {V₀ V₁ V₂ : Type*} [NormedAddCommGroup V₀] [NormedSpace 𝕜 V₀]
+  [NormedAddCommGroup V₁] [NormedSpace 𝕜 V₁] [NormedAddCommGroup V₂] [NormedSpace 𝕜 V₂]
+
+/-- **The chain rule for transitions of charts.** For a point `x` in the sources of `ψ₁` and `ψ₂`,
+the transition `ψ₀ ∘ ψ₂⁻¹` agrees near `ψ₂ x` with `(ψ₀ ∘ ψ₁⁻¹) ∘ (ψ₁ ∘ ψ₂⁻¹)`, so its derivative
+there is the composite of the derivatives of the two transitions. -/
+theorem hasFDerivAt_comp_symm_trans (ψ₀ : OpenPartialHomeomorph M V₀)
+    (ψ₁ : OpenPartialHomeomorph M V₁) (ψ₂ : OpenPartialHomeomorph M V₂) {x : M}
+    (hx₁ : x ∈ ψ₁.source) (hx₂ : x ∈ ψ₂.source) {D₀₁ : V₁ →L[𝕜] V₀} {D₁₂ : V₂ →L[𝕜] V₁}
+    (hT₀₁ : HasFDerivAt (fun z ↦ ψ₀ (ψ₁.symm z)) D₀₁ (ψ₁ x))
+    (hT₁₂ : HasFDerivAt (fun z ↦ ψ₁ (ψ₂.symm z)) D₁₂ (ψ₂ x)) :
+    HasFDerivAt (fun z ↦ ψ₀ (ψ₂.symm z)) (D₀₁ ∘L D₁₂) (ψ₂ x) := by
+  have hT₀₁' : HasFDerivAt (fun z ↦ ψ₀ (ψ₁.symm z)) D₀₁ (ψ₁ (ψ₂.symm (ψ₂ x))) := by
+    rwa [ψ₂.left_inv hx₂]
+  refine (hT₀₁'.comp (ψ₂ x) hT₁₂).congr_of_eventuallyEq ?_
+  -- Near `ψ₂ x` the map `ψ₂⁻¹` lands in the source of `ψ₁`, where `ψ₁⁻¹ ∘ ψ₁` is the identity.
+  have hsource : ∀ᶠ z in 𝓝 (ψ₂ x), ψ₂.symm z ∈ ψ₁.source :=
+    ψ₂.continuousAt_symm (ψ₂.map_source hx₂) |>.preimage_mem_nhds
+      (ψ₁.open_source.mem_nhds (by rwa [ψ₂.left_inv hx₂]))
+  filter_upwards [hsource] with z hz
+  simp [ψ₁.left_inv hz]
+
+end Transition
 
 end OpenPartialHomeomorph
 
@@ -176,19 +204,10 @@ theorem fderiv_comp_symm_eq_comp (ψ : PartialDiffeomorph I 𝓘(𝕜, G'') M G'
     (hn : n ≠ 0)
     {x : M} (hψ : x ∈ ψ.source) (hχ : x ∈ χ.source) (hφ : x ∈ φ.source) :
     fderiv 𝕜 (fun z ↦ ψ (φ.symm z)) (φ x) =
-      (fderiv 𝕜 (fun z ↦ ψ (χ.symm z)) (χ x)).comp (fderiv 𝕜 (fun z ↦ χ (φ.symm z)) (φ x)) := by
-  have hφx : φ.symm (φ x) = x := φ.left_inv hφ
-  -- Near `φ x`, the point `φ⁻¹ z` lies in the source of `χ`, so `χ⁻¹ ∘ χ` cancels there.
-  have hsource : ∀ᶠ z in 𝓝 (φ x), φ.symm z ∈ χ.source :=
-    (φ.symm.mdifferentiableAt hn (φ.map_source hφ)).continuousAt.preimage_mem_nhds
-      (by rw [hφx]; exact χ.open_source.mem_nhds hχ)
-  have heq : (fun z ↦ ψ (χ.symm z)) ∘ (fun z ↦ χ (φ.symm z)) =ᶠ[𝓝 (φ x)]
-      fun z ↦ ψ (φ.symm z) :=
-    hsource.mono fun z hz ↦ congrArg ψ (χ.left_inv hz)
-  have hχx : χ (φ.symm (φ x)) = χ x := by rw [hφx]
-  have h₁ := ψ.differentiableAt_comp_symm χ hn hψ hχ
-  rw [← hχx] at h₁
-  rw [← heq.fderiv_eq, fderiv_comp (φ x) h₁ (χ.differentiableAt_comp_symm φ hn hχ hφ), hχx]
+      (fderiv 𝕜 (fun z ↦ ψ (χ.symm z)) (χ x)).comp (fderiv 𝕜 (fun z ↦ χ (φ.symm z)) (φ x)) :=
+  (ψ.toOpenPartialHomeomorph.hasFDerivAt_comp_symm_trans χ.toOpenPartialHomeomorph
+    φ.toOpenPartialHomeomorph hχ hφ (ψ.differentiableAt_comp_symm χ hn hψ hχ).hasFDerivAt
+    (χ.differentiableAt_comp_symm φ hn hχ hφ).hasFDerivAt).fderiv
 
 end Transition
 
