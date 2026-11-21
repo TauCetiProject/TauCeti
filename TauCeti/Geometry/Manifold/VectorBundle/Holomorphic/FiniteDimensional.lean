@@ -15,8 +15,8 @@ import TauCeti.Geometry.Manifold.CoordinateBall
 # Finite determination of holomorphic sections
 
 On a compact Hausdorff complex curve, finitely many fibre evaluations determine every
-holomorphic section of a finite-rank vector bundle. Consequently its native section module
-is finite-dimensional. The proof uses nested coordinate discs, bounds for the actual bundle
+holomorphic section of a vector bundle with arbitrary complex normed model fibre. If the model
+fibre is finite-dimensional, its native holomorphic section module is finite-dimensional. The proof uses nested coordinate discs, bounds for the actual bundle
 transitions on compact overlaps, and the vector-valued Schwarz lemma at a finite set of
 sample points. It chooses no topology on the section module.
 

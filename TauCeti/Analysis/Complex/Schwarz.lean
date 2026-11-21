@@ -35,6 +35,11 @@ at `c`, then `‖g w‖ ≤ M * (‖w - c‖ / ρ) ^ T` throughout `ball c ρ`
 (`Complex.norm_le_mul_div_pow_of_le_analyticOrderAt`), deduced from Mathlib's higher-order Schwarz
 lemma `Complex.dist_le_mul_div_pow_of_mapsTo_ball_of_isLittleO`.
 
+A sampling form also follows from the vector-valued Schwarz lemma: a holomorphic function
+bounded by `C * M` on `ball c (2 * r)` and vanishing on an `r / (4 * C)`-net of
+`closedBall c r` has norm at most `M / 2` there (`TauCeti.norm_le_half_of_eq_zero_on_net`).
+This estimate is used for finite determination of holomorphic bundle sections.
+
 ## Main results
 
 * `TauCeti.norm_le_mul_prod_div_pow`: the bound by the product over the zeros.
