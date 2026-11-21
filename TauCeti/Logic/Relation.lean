@@ -71,7 +71,7 @@ relations generate the same class of `x`. -/
 theorem eqvGen_iff_of_forall_symmGen_iff {α : Type*} {r r' : α → α → Prop} {x : α}
     (h : ∀ y, EqvGen r x y → ∀ z, SymmGen r y z ↔ SymmGen r' y z) {y : α} :
     EqvGen r x y ↔ EqvGen r' x y := by
-  simp only [← EqvGen.reflTransGen_symmGen] at h ⊢
+  simp only [← reflTransGen_symmGen] at h ⊢
   refine ⟨fun hy => ?_, fun hy => ?_⟩
   · induction hy with
     | refl => exact .refl

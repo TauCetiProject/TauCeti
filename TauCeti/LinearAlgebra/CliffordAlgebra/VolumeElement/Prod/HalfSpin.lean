@@ -144,8 +144,8 @@ is bijective onto `End_ℂ (E ⊗ F)`. -/
 theorem complexProdTensor_bijective [FiniteDimensional ℝ W]
     (hρ₁ : Function.Bijective ρ₁) (hρ₂ : Function.Bijective ρ₂) :
     Function.Bijective (complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂) := by
-  have : Module.Finite ℂ E := Module.Finite.of_surjective_end ρ₁ hρ₁.2
-  have : Module.Finite ℂ F := Module.Finite.of_surjective_end ρ₂ hρ₂.2
+  have : Module.Finite ℂ E := Module.Finite.of_surjective_end ρ₁ hρ₁.surjective
+  have : Module.Finite ℂ F := Module.Finite.of_surjective_end ρ₂ hρ₂.surjective
   have hbij : Function.Bijective
       ((complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂).comp (complexWithLpProdEquiv hQ).symm.toAlgHom) := by
     rw [complexProdTensor_comp_complexWithLpProdEquiv_symm hQ o₁ hQ₁ hn ρ₁ ρ₂]
@@ -194,12 +194,12 @@ theorem complexProdTensorComplexVolumeEigenspaceEquiv_apply
       (TensorProduct.map
           (Module.End.eigenProjOfInvolutive (ρ₁.involutive_complexVolume o₁ hQ₁)
             (one_mul 1))
-          (Module.End.eigenProjOfInvolutive (ρ₂.involutive_complexVolume o₂ hQ₂) hμ) z.1,
+          (Module.End.eigenProjOfInvolutive (ρ₂.involutive_complexVolume o₂ hQ₂) hμ) z.val,
         TensorProduct.map
           (Module.End.eigenProjOfInvolutive (ρ₁.involutive_complexVolume o₁ hQ₁)
             ((neg_mul_neg (1 : ℂ) 1).trans (one_mul 1)))
           (Module.End.eigenProjOfInvolutive (ρ₂.involutive_complexVolume o₂ hQ₂)
-            ((neg_mul_neg μ μ).trans hμ)) z.1) := by
+            ((neg_mul_neg μ μ).trans hμ)) z.val) := by
   rw [complexProdTensorComplexVolumeEigenspaceEquiv, LinearEquiv.trans_apply,
     Module.End.eigenspaceTensorMapEquiv_apply, LinearEquiv.coe_ofEq_apply]
 
@@ -213,9 +213,9 @@ theorem coe_complexProdTensorComplexVolumeEigenspaceEquiv_symm_apply
     ((complexProdTensorComplexVolumeEigenspaceEquiv hQ o₁ hQ₁ hn ρ₁ ρ₂ o₂ o hm hQ₂ ho hμ).symm p :
         E ⊗[ℂ] F) =
       TensorProduct.map ((ρ₁ (complexVolume Q₁ o₁)).eigenspace 1).subtype
-          ((ρ₂ (complexVolume Q₂ o₂)).eigenspace μ).subtype p.1 +
+          ((ρ₂ (complexVolume Q₂ o₂)).eigenspace μ).subtype p.fst +
         TensorProduct.map ((ρ₁ (complexVolume Q₁ o₁)).eigenspace (-1)).subtype
-          ((ρ₂ (complexVolume Q₂ o₂)).eigenspace (-μ)).subtype p.2 := by
+          ((ρ₂ (complexVolume Q₂ o₂)).eigenspace (-μ)).subtype p.snd := by
   rw [complexProdTensorComplexVolumeEigenspaceEquiv, LinearEquiv.symm_trans_apply,
     LinearEquiv.ofEq_symm, LinearEquiv.coe_ofEq_apply,
     Module.End.coe_eigenspaceTensorMapEquiv_symm_apply]

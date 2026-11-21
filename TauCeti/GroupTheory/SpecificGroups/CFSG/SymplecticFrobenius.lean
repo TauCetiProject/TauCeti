@@ -87,7 +87,7 @@ theorem symplectic_mem_range_galoisFieldEmbedding_iff (g : GLSymplecticFin m d.C
       apply Matrix.map_injective d.galoisFieldEmbedding.injective
       dsimp only
       rw [Matrix.map_mul, Matrix.map_mul, Matrix.transpose_map, hmat, JFin_map]
-      exact GLSymplecticFin.mem_iff.mp g.2
+      exact GLSymplecticFin.mem_iff.mp g.property
     exact ⟨⟨g₀, hsymp⟩, Subtype.ext ((GLSymplecticFin.coe_map m _ _ _).trans hg₀)⟩
 
 /-- A symplectic matrix over the closure is fixed by the entrywise `q`-power Frobenius exactly when

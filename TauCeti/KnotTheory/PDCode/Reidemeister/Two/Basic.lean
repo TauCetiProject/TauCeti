@@ -386,6 +386,26 @@ private theorem crossingTurn_circleClasp : (D.insertCircleClasp p b).crossingTur
   · intro i t
     simpa only [crossing_apply] using (D.insertCircleClasp p b).crossingTurn_crossing i t
 
+/-- Passing straight through an old crossing is unchanged by the insertion. -/
+@[simp] theorem crossingTurn_insertCircleClasp_old (x : Fin (4 * n)) :
+    (D.insertCircleClasp p b).crossingTurn
+        (halfEdgeSuccEquiv (n + 1) (.inl (halfEdgeSuccEquiv n (.inl x)))) =
+      halfEdgeSuccEquiv (n + 1) (.inl (halfEdgeSuccEquiv n (.inl (D.crossingTurn x)))) := by
+  simp [crossingTurn_circleClasp, circleHalfEdges, Equiv.permCongr_apply]
+
+/-- Passing straight through the first new crossing goes to the opposite slot. -/
+@[simp] theorem crossingTurn_insertCircleClasp_first (s : Fin 4) :
+    (D.insertCircleClasp p b).crossingTurn
+        (halfEdgeSuccEquiv (n + 1) (.inl (halfEdgeSuccEquiv n (.inr s)))) =
+      halfEdgeSuccEquiv (n + 1) (.inl (halfEdgeSuccEquiv n (.inr (oppositeCrossingSlot s)))) := by
+  simp [crossingTurn_circleClasp, circleHalfEdges, Equiv.permCongr_apply]
+
+/-- Passing straight through the second new crossing goes to the opposite slot. -/
+@[simp] theorem crossingTurn_insertCircleClasp_second (s : Fin 4) :
+    (D.insertCircleClasp p b).crossingTurn (halfEdgeSuccEquiv (n + 1) (.inr s)) =
+      halfEdgeSuccEquiv (n + 1) (.inr (oppositeCrossingSlot s)) := by
+  simp [crossingTurn_circleClasp, circleHalfEdges, Equiv.permCongr_apply]
+
 private theorem crossingRotation_circleClasp : (D.insertCircleClasp p b).crossingRotation =
     (circleHalfEdges n).permCongr (Perm.sumCongr D.crossingRotation
       (Perm.sumCongr (finRotate 4) (finRotate 4))) := by

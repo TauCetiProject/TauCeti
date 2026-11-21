@@ -17,8 +17,11 @@ The topological vector-space instances use the same `TauCeti.ManifoldWeakWhitney
 topology itself. No local compactness of the source model is needed.
 
 This comparison allows the native `WithSeminorms` continuity and boundedness criteria to be used
-on smooth maps, and on their fixed-support submodules with the induced topology. It does not
-put an inductive-limit topology on compactly supported maps.
+on smooth maps, and on their fixed-support submodules with the induced topology. In particular, a
+set of smooth maps is von Neumann bounded exactly when each coordinate derivative is bounded on
+each compact subset of each chart target, uniformly over the set
+(`ContMDiffMap.isVonNBounded_iff_forall_exists_norm_chartIteratedFDeriv_le`). The comparison does
+not put an inductive-limit topology on compactly supported maps.
 
 The proof identifies the topology with the one induced by all compact restrictions of chart
 jets, valued in native supremum-norm continuous-map spaces. It uses Mathlib's
@@ -45,7 +48,7 @@ order, and a compact subset of the extended chart target. -/
 noncomputable def chartSeminormFamily :
     SeminormFamily 𝕜 C^n⟮I, M; 𝓘(𝕜, F), F⟯
       (Σ x : M, {m : ℕ // m ≤ n} × TopologicalSpace.Compacts (extChartAt I x).target) :=
-  fun i ↦ chartDerivativeSeminorm i.1 i.2.2 i.2.1.1 i.2.1.2
+  fun i ↦ chartDerivativeSeminorm i.1 i.2.2 i.2.1.val i.2.1.property
 
 /-- An entry of the chart seminorm family is the corresponding compact derivative seminorm. -/
 @[simp]
@@ -60,14 +63,40 @@ empty compact sets, and finite regularity. -/
 theorem withSeminorms_manifoldWeakWhitney :
     WithSeminorms (chartSeminormFamily (I := I) (M := M) (F := F) (n := n)) := by
   let J := Σ x : M, {m : ℕ // m ≤ n} × TopologicalSpace.Compacts (extChartAt I x).target
-  let V (i : J) := C(i.2.2, E [×i.2.1.1]→L[𝕜] F)
+  let V (i : J) := C(i.2.2, E [×i.2.1.val]→L[𝕜] F)
   let e : J ≃ (Σ _ : J, Unit) := (Equiv.sigmaUnique _ _).symm
   have hp := (isInducing_compactChartJet (I := I) (M := M) (F := F) (n := n)).withSeminorms
     ((withSeminorms_pi fun i : J ↦ norm_withSeminorms 𝕜 (V i)).congr_equiv e)
   convert hp using 1
   ext i f
-  exact (chartDerivativeSeminorm_apply i.1 i.2.2 i.2.1.1 i.2.1.2 f).trans
+  exact (chartDerivativeSeminorm_apply i.1 i.2.2 i.2.1.val i.2.1.property f).trans
     (congrArg norm (compactChartJet_apply f i).symm)
+
+/-- A set of vector-valued maps is von Neumann bounded in the weak Whitney topology exactly when,
+on each compact subset of each chart target, each coordinate derivative of its members is bounded
+uniformly over the set. -/
+theorem isVonNBounded_iff_forall_exists_norm_chartIteratedFDeriv_le
+    {s : Set C^n⟮I, M; 𝓘(𝕜, F), F⟯} :
+    Bornology.IsVonNBounded 𝕜 s ↔ ∀ (x : M) (m : ℕ) (hm : m ≤ n)
+      (K : TopologicalSpace.Compacts (extChartAt I x).target),
+      ∃ R, ∀ f ∈ s, ∀ y ∈ K, ‖chartIteratedFDeriv f x m hm y‖ ≤ R := by
+  rw [withSeminorms_manifoldWeakWhitney.isVonNBounded_iff_seminorm_bounded]
+  constructor
+  · rintro h x m hm K
+    obtain ⟨r, -, hr⟩ := h ⟨x, ⟨m, hm⟩, K⟩
+    refine ⟨r, fun f hf y hy ↦ ?_⟩
+    have hle := ContinuousMap.norm_coe_le_norm
+      ((chartIteratedFDeriv f x m hm).restrict (K : Set _)) ⟨y, hy⟩
+    have hrf := hr f hf
+    rw [chartSeminormFamily_apply, chartDerivativeSeminorm_apply] at hrf
+    exact hle.trans hrf.le
+  · rintro h ⟨x, ⟨m, hm⟩, K⟩
+    obtain ⟨R, hR⟩ := h x m hm K
+    refine ⟨max R 0 + 1, by positivity, fun f hf ↦ ?_⟩
+    rw [chartSeminormFamily_apply, chartDerivativeSeminorm_apply]
+    refine ((ContinuousMap.norm_le _ (le_max_right R 0)).2 fun y ↦ ?_).trans_lt
+      (lt_add_one _)
+    exact (hR f hf y y.property).trans (le_max_left R 0)
 
 /-- Addition and negation are continuous for the vector-valued weak Whitney topology. -/
 theorem isTopologicalAddGroup_manifoldWeakWhitney :

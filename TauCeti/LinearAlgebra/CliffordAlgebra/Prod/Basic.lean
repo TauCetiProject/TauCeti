@@ -45,7 +45,7 @@ and `ρ₁`, `ρ₂` are bijective onto `End E` and `End F`, the graded product 
 
 For the spinor modules of oriented even-dimensional Euclidean spaces, `γ` is the chirality
 operator, and the normalized volume element of `V ⊕ W` then acts by the tensor grading; see
-`TauCeti/LinearAlgebra/CliffordAlgebra/VolumeElement/Prod/Basic.lean`.
+`TauCeti/LinearAlgebra/CliffordAlgebra/VolumeElement/Prod.lean`.
 
 ## Main definitions
 
@@ -53,6 +53,8 @@ operator, and the normalized volume element of `V ⊕ W` then acts by the tensor
 
 ## Main results
 
+* `CliffordAlgebra.toProd_tmul`: the inverse map of `CliffordAlgebra.prodEquiv` sends `x ᵍ⊗ₜ y` to
+  the product of the images of `x` and `y` under the two summand inclusions.
 * `AlgHom.cliffordProdTensor_ι`: a vector `(v, w)` acts by `c₁(v) ⊗ 1 + γ ⊗ c₂(w)`.
 * `AlgHom.cliffordProdTensor_map_inl`: `CliffordAlgebra Q₁` acts through the first factor.
 * `AlgHom.cliffordProdTensor_map_inr_prod`: a product of `k` vectors of `M₂` acts by
@@ -77,6 +79,22 @@ operator, and the normalized volume element of `V ⊕ W` then acts by the tensor
 public section
 
 open TensorProduct
+
+namespace CliffordAlgebra
+
+variable {R M₁ M₂ : Type*} [CommRing R]
+  [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂]
+
+/-- `CliffordAlgebra.toProd` sends a pure tensor `x ᵍ⊗ₜ y` to the product of the images of `x`
+and `y` under the two summand inclusions. -/
+@[simp]
+theorem toProd_tmul (Q₁ : QuadraticForm R M₁) (Q₂ : QuadraticForm R M₂) (x : CliffordAlgebra Q₁)
+    (y : CliffordAlgebra Q₂) :
+    toProd Q₁ Q₂ (x ᵍ⊗ₜ y) =
+      map (QuadraticMap.Isometry.inl Q₁ Q₂) x * map (QuadraticMap.Isometry.inr Q₁ Q₂) y := by
+  rw [toProd, GradedTensorProduct.lift_tmul]
+
+end CliffordAlgebra
 
 namespace AlgHom
 
@@ -233,7 +251,7 @@ theorem cliffordProdTensor_toProd_tmul (a : CliffordAlgebra Q₁) {j : ZMod 2}
     {b : CliffordAlgebra Q₂} (hb : b ∈ evenOdd Q₂ j) :
     cliffordProdTensor ρ₁ γ hγ hγρ ρ₂ (toProd Q₁ Q₂ (a ᵍ⊗ₜ b)) =
       map (ρ₁ a * γ ^ j.val) (ρ₂ b) := by
-  rw [toProd, GradedTensorProduct.lift_tmul, map_mul, cliffordProdTensor_map_inl,
+  rw [toProd_tmul, map_mul, cliffordProdTensor_map_inl,
     cliffordProdTensor_map_inr_of_mem_evenOdd ρ₁ γ hγ hγρ ρ₂ hb, LinearMap.rTensor,
     ← Module.End.one_eq_id, ← TensorProduct.map_mul, one_mul]
 
@@ -297,14 +315,14 @@ theorem cliffordProdTensor_bijective [Module.Finite R E] [Module.Projective R E]
     rw [hb, tmul_add, map_add, map_add]
     congr 1
     · change cliffordProdTensor ρ₁ γ hγ hγρ ρ₂ (toProd Q₁ Q₂ (a ᵍ⊗ₜ s₂ (b₀, 0))) = _
-      rw [hs₀, cliffordProdTensor_toProd_tmul ρ₁ γ hγ hγρ ρ₂ a b₀.2, ← hs₀]
+      rw [hs₀, cliffordProdTensor_toProd_tmul ρ₁ γ hγ hγρ ρ₂ a b₀.property, ← hs₀]
       have hp₀ : (prodRight R R (Module.End R E) (evenOdd Q₂ 0) (evenOdd Q₂ 1)).symm
           (ρ₁ a ⊗ₜ b₀, 0) = ρ₁ a ⊗ₜ (b₀, 0) :=
         (prodRight R R _ _ _).symm_apply_eq.mpr (by simp)
       ext e f'
       simp [Ψ, rγ, ZMod.val_zero, hρ₁_eq, hρ₂_eq, s₂.symm_apply_eq.mpr hs₀.symm, hp₀, hs₀]
     · change cliffordProdTensor ρ₁ γ hγ hγρ ρ₂ (toProd Q₁ Q₂ (a ᵍ⊗ₜ s₂ (0, b₁))) = _
-      rw [hs₁, cliffordProdTensor_toProd_tmul ρ₁ γ hγ hγρ ρ₂ a b₁.2, ← hs₁]
+      rw [hs₁, cliffordProdTensor_toProd_tmul ρ₁ γ hγ hγρ ρ₂ a b₁.property, ← hs₁]
       have hp₁ : (prodRight R R (Module.End R E) (evenOdd Q₂ 0) (evenOdd Q₂ 1)).symm
           (0, (ρ₁ a * γ) ⊗ₜ b₁) = (ρ₁ a * γ) ⊗ₜ (0, b₁) :=
         (prodRight R R _ _ _).symm_apply_eq.mpr (by simp)

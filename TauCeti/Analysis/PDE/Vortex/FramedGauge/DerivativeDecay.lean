@@ -89,7 +89,7 @@ theorem gaugeTransform_inv_apply_eq {u : ℂ → Circle} {w : ℂ}
   have hnorm : ∀ᶠ v in 𝓝 w, ‖sectionValue x v‖ = Real.exp (ℓ v / 2) := by
     filter_upwards [hℓ, hpos] with v hℓv hposv
     refine (pow_left_inj₀ (norm_nonneg _) (Real.exp_pos _).le two_ne_zero).1 ?_
-    rw [sq_norm_sectionValue, ← Real.exp_nat_mul, hℓv]
+    rw [sq_norm_sectionValue, ← Real.exp_natCast_mul, hℓv]
     push_cast
     rw [mul_div_cancel₀ _ two_ne_zero, Real.exp_log hposv]
   have hu := differentiableAt_coe_of_sectionValue_eq_norm_mul hp hq

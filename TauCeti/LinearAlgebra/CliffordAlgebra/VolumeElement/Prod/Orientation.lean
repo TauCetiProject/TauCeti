@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Prod.Basic
+public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Prod
 public import TauCeti.LinearAlgebra.Orientation.Prod
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Prod
 import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
@@ -17,9 +17,8 @@ import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
 Let `V` and `W` be real inner product spaces with `V` oriented of even dimension `n`,
 `Q₁ v = -‖v‖²`, `Q (v, w) = Q₁ v + Q₂ w` on `WithLp 2 (V × W)`, and let `E`, `F` be complex
 Clifford modules over `Q₁`, `Q₂`. Reversing `o₁` negates `Γ_V`, replacing `c(0, w) = Γ_V ⊗ c_W(w)`
-by `-Γ_V ⊗ c_W(w)` (equivalently twisting `ρ₂` by `CliffordAlgebra.involute`); when `W` has even
-dimension `m`, `1 ⊗ Γ_W` intertwines the two actions. This file also upgrades the product-volume
-formulas of `VolumeElement/Prod/Basic.lean` to the frame-free product orientation
+by `-Γ_V ⊗ c_W(w)` (equivalently twisting `ρ₂` by `CliffordAlgebra.involute`). This file upgrades
+the product-volume formulas of `VolumeElement/Prod.lean` to the frame-free product orientation
 `Orientation.prod o₁ o₂` for all orientations (including `-positiveOrientation` in dimension zero).
 
 ## Main results
@@ -27,13 +26,11 @@ formulas of `VolumeElement/Prod/Basic.lean` to the frame-free product orientatio
 * `CliffordAlgebra.complexProdTensor_neg_orientation_ι_one_tmul_toLp_inr` and
   `CliffordAlgebra.complexProdTensor_neg_orientation_ι_one_tmul_toLp`: reversing `o₁` negates the
   action of `(0, w)`.
-* `CliffordAlgebra.lTensor_complexVolume_comp_complexProdTensor_neg_orientation`: for even `m`,
-  `1 ⊗ Γ_W` intertwines `complexProdTensor` for `-o₁` and `o₁`.
 * `CliffordAlgebra.complexProdTensor_complexVolume_of_map_prod` and
   `CliffordAlgebra.complexProdTensor_complexVolume_of_odd_of_map_prod`: frame-free product-volume
   formulas for `(o₁.prod o₂).map _ (WithLp.linearEquiv 2 ℝ (V × W)).symm`.
-* `CliffordAlgebra.complexProdTensor_neg_orientation_complexVolume_neg`: reversing `o₁` and the
-  product orientation negates the product chirality.
+* `CliffordAlgebra.complexProdTensor_neg_orientation_complexVolume_neg_of_map_prod`: frame-free
+  version of `complexProdTensor_neg_orientation_complexVolume_neg`.
 
 ## References
 
@@ -94,48 +91,6 @@ private theorem complexProdTensor_neg_orientation_eq_involute :
 section SecondFactor
 
 variable [FiniteDimensional ℝ W] {m : ℕ} [Fact (finrank ℝ W = m)] (o₂ : Orientation ℝ W (Fin m))
-
-/-- **Intertwining under orientation reversal of `V`.** When `W` is also oriented of even dimension
-`m`, the operator `1 ⊗ Γ_W` (`(ρ₂ (complexVolume Q₂ o₂)).lTensor E`) intertwines the graded tensor
-product actions for `-o₁` and `o₁` on every element of `CliffordAlgebra (Q.baseChange ℂ)`. No
-assumption on `Q₂` is needed. -/
-theorem lTensor_complexVolume_comp_complexProdTensor_neg_orientation (hm : Even m)
-    (a : CliffordAlgebra (Q.baseChange ℂ)) :
-    (ρ₂ (complexVolume Q₂ o₂)).lTensor E ∘ₗ complexProdTensor hQ (-o₁) hQ₁ hn ρ₁ ρ₂ a =
-      complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ a ∘ₗ (ρ₂ (complexVolume Q₂ o₂)).lTensor E := by
-  have hgen (z : ℂ ⊗[ℝ] WithLp 2 (V × W)) :
-      (ρ₂ (complexVolume Q₂ o₂)).lTensor E ∘ₗ
-          complexProdTensor hQ (-o₁) hQ₁ hn ρ₁ ρ₂ (ι (Q.baseChange ℂ) z) =
-        complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂
-            (ι (Q.baseChange ℂ) (QuadraticMap.Isometry.id (Q.baseChange ℂ) z)) ∘ₗ
-          (ρ₂ (complexVolume Q₂ o₂)).lTensor E := by
-    induction z using TensorProduct.inductionOn with
-    | tmul c x =>
-      have hc : c ⊗ₜ[ℝ] x = c • ((1 : ℂ) ⊗ₜ[ℝ] WithLp.toLp 2 (WithLp.ofLp x)) := by
-        rw [WithLp.toLp_ofLp, TensorProduct.smul_tmul', smul_eq_mul, mul_one]
-      have hanti : ρ₂ (complexVolume Q₂ o₂) * ρ₂ (ι (Q₂.baseChange ℂ) (1 ⊗ₜ (WithLp.ofLp x).2)) =
-          -(ρ₂ (ι (Q₂.baseChange ℂ) (1 ⊗ₜ (WithLp.ofLp x).2)) * ρ₂ (complexVolume Q₂ o₂)) := by
-        rw [← map_mul, ← map_mul, complexVolume_mul_ι_of_even o₂ hm, map_neg]
-      simp only [QuadraticMap.Isometry.id_apply, hc, map_smul, LinearMap.comp_smul,
-        LinearMap.smul_comp]
-      congr 1
-      rw [complexProdTensor_neg_orientation_ι_one_tmul_toLp, complexProdTensor_ι_one_tmul_toLp]
-      simp only [LinearMap.lTensor, LinearMap.rTensor, ← Module.End.mul_eq_comp,
-        ← Module.End.one_eq_id, mul_sub, add_mul, ← TensorProduct.map_mul,
-        one_mul, mul_one, hanti, map_neg_right, sub_neg_eq_add]
-    | add x y hx hy =>
-      simp only [QuadraticMap.Isometry.id_apply] at hx hy ⊢
-      simp only [map_add, LinearMap.comp_add, LinearMap.add_comp, hx, hy]
-  simpa [CliffordAlgebra.map_id] using comp_eq_map_comp_of_forall_ι hgen a
-
-/-- Pointwise form of
-`CliffordAlgebra.lTensor_complexVolume_comp_complexProdTensor_neg_orientation`. -/
-theorem lTensor_complexVolume_complexProdTensor_neg_orientation_apply (hm : Even m)
-    (a : CliffordAlgebra (Q.baseChange ℂ)) (z : E ⊗[ℂ] F) :
-    (ρ₂ (complexVolume Q₂ o₂)).lTensor E (complexProdTensor hQ (-o₁) hQ₁ hn ρ₁ ρ₂ a z) =
-      complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ a ((ρ₂ (complexVolume Q₂ o₂)).lTensor E z) :=
-  LinearMap.congr_fun
-    (lTensor_complexVolume_comp_complexProdTensor_neg_orientation hQ o₁ hQ₁ hn ρ₁ ρ₂ o₂ hm a) z
 
 /-! ### Frame-free product orientations -/
 
@@ -207,10 +162,10 @@ theorem complexProdTensor_complexVolume_of_odd_of_map_prod (hm : Odd m)
       AlgHom.comp_apply, involute_complexVolume, hm.neg_one_pow, neg_one_smul, map_neg,
       LinearMap.lTensor_neg, neg_neg]
 
-/-- **Product chirality under orientation reversal**: for even `n` and `m`, reversing `o₁` to
-`-o₁` reverses the product orientation `o` to `-o` (`Orientation.prod_neg_left`) and negates the
-action of the product chirality on `E ⊗ F`. -/
-theorem complexProdTensor_neg_orientation_complexVolume_neg (hm : Even m)
+/-- **Product chirality under orientation reversal (frame-free)**: for even `n` and `m`, reversing
+`o₁` to `-o₁` reverses the product orientation `o` to `-o` (`Orientation.prod_neg_left`) and
+negates the action of the product chirality on `E ⊗ F`. -/
+theorem complexProdTensor_neg_orientation_complexVolume_neg_of_map_prod (hm : Even m)
     (hQ₂ : ∀ w, Q₂ w = -‖w‖ ^ 2)
     (ho : (o₁.prod o₂ Fact.out Fact.out).map (Fin (n + m))
       (WithLp.linearEquiv 2 ℝ (V × W)).symm = o) :

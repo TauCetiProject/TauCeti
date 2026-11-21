@@ -151,9 +151,13 @@ theorem dualDistrib_comp_lTensor_complexVolume_comp_complexProdTensor_of_odd_div
       (complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂).cliffordReverseDual a ∘ₗ
         (dualDistrib ℂ E F ∘ₗ
           (ρ₂.cliffordReverseDual (complexVolume Q₂ o₂)).lTensor (Dual ℂ E)) := by
-  have hflip := lTensor_complexVolume_comp_complexProdTensor_neg_orientation hQ (-o₁) hQ₁ hn
-    ρ₁.cliffordReverseDual ρ₂.cliffordReverseDual o₂ hm a
-  rw [_root_.neg_neg o₁] at hflip
+  have hflip : (ρ₂.cliffordReverseDual (complexVolume Q₂ o₂)).lTensor (Dual ℂ E) ∘ₗ
+      complexProdTensor hQ o₁ hQ₁ hn ρ₁.cliffordReverseDual ρ₂.cliffordReverseDual a =
+    complexProdTensor hQ (-o₁) hQ₁ hn ρ₁.cliffordReverseDual ρ₂.cliffordReverseDual a ∘ₗ
+      (ρ₂.cliffordReverseDual (complexVolume Q₂ o₂)).lTensor (Dual ℂ E) := by
+    simpa only [Module.End.mul_eq_comp] using
+      lTensor_complexVolume_mul_complexProdTensor hQ o₁ hQ₁ hn
+        ρ₁.cliffordReverseDual ρ₂.cliffordReverseDual o₂ hm a
   rw [LinearMap.comp_assoc, hflip, ← LinearMap.comp_assoc,
     dualDistrib_comp_complexProdTensor_neg_orientation_of_odd_div_two hQ o₁ hQ₁ hn ρ₁ ρ₂ hodd a,
     LinearMap.comp_assoc]

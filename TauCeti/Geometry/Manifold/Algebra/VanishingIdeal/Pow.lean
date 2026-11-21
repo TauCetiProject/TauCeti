@@ -50,6 +50,9 @@ target, which lets one chart serve all nearby points. The converse is Hadamard's
 * `TauCeti.differentialOperators_apply_eq_of_iteratedFDeriv_eq`: a differential operator of order
   at most `m` on `C^∞(M)` takes the same value at `x` on two functions with the same `m`-jet at
   `x`.
+* `TauCeti.differentialOperators_apply_eq_of_eventuallyEq`,
+  `TauCeti.tsupport_differentialOperators_apply_subset`: in particular differential operators are
+  local and do not enlarge supports.
 
 ## References
 
@@ -139,6 +142,18 @@ theorem mem_smoothVanishingIdeal_pow_succ_iff_of_isInteriorPoint {x : M}
     iteratedFDeriv_comp_extChartAt_symm_eq_zero_of_mem_smoothVanishingIdeal_pow hx hf hk,
     mem_smoothVanishingIdeal_pow_succ_of_iteratedFDeriv_eq_zero hx⟩
 
+/-- **The powers of the vanishing ideal**, indexed by the order of vanishing. At an interior point
+`x`, a smooth function lies in `I_x ^ m` if and only if its chart expression has vanishing
+derivatives of every order `k < m` at the image of `x`. For `m = 0` both sides always hold. -/
+theorem mem_smoothVanishingIdeal_pow_iff_of_isInteriorPoint {x : M}
+    (hx : I.IsInteriorPoint x) (m : ℕ) (f : C^∞⟮I, M; ℝ⟯) :
+    f ∈ smoothVanishingIdeal I x ^ m ↔ ∀ k < m,
+      iteratedFDeriv ℝ k ((f : M → ℝ) ∘ (extChartAt I x).symm) (extChartAt I x x) = 0 := by
+  cases m with
+  | zero => simp
+  | succ m =>
+    simp only [mem_smoothVanishingIdeal_pow_succ_iff_of_isInteriorPoint hx, Nat.lt_succ_iff]
+
 /-- **The powers of the vanishing ideal.** On a finite-dimensional Hausdorff boundaryless real
 manifold, a smooth function is a finite sum of products of `m + 1` smooth functions vanishing at
 `x` if and only if its chart expression has vanishing derivatives of every order at most `m` at
@@ -190,5 +205,41 @@ theorem differentialOperators_apply_eq_of_iteratedFDeriv_eq {m : ℕ}
   rw [smul_eq_mul, Ideal.mul_top, map_sub, mem_smoothVanishingIdeal_iff, ContMDiffMap.coe_sub,
     Pi.sub_apply, sub_eq_zero] at h
   exact h
+
+/-- **Differential operators are local.** At an interior point `x`, a differential operator of
+order at most `m` on `C^∞(M)` takes the same value at `x` on two smooth functions that agree near
+`x`. -/
+theorem differentialOperators_apply_eq_of_eventuallyEq {m : ℕ}
+    {D : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯}
+    (hD : D ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m) {x : M}
+    (hx : I.IsInteriorPoint x) {f g : C^∞⟮I, M; ℝ⟯} (hfg : (f : M → ℝ) =ᶠ[𝓝 x] g) :
+    D f x = D g x := by
+  have h := (continuousAt_extChartAt_symm (I := I) x).tendsto
+  rw [extChartAt_to_inv] at h
+  have hfg' : (f : M → ℝ) ∘ (extChartAt I x).symm =ᶠ[𝓝 (extChartAt I x x)]
+      (g : M → ℝ) ∘ (extChartAt I x).symm :=
+    h.eventually hfg
+  exact differentialOperators_apply_eq_of_iteratedFDeriv_eq hD hx fun k _ ↦
+    (hfg'.iteratedFDeriv ℝ k).eq_of_nhds
+
+/-- A differential operator on `C^∞(M)` does not enlarge supports: on a boundaryless manifold,
+`D f` vanishes outside the closed support of `f`. -/
+theorem tsupport_differentialOperators_apply_subset [BoundarylessManifold I M] {m : ℕ}
+    {D : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯}
+    (hD : D ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m)
+    (f : C^∞⟮I, M; ℝ⟯) : tsupport (D f) ⊆ tsupport f := by
+  refine closure_minimal (fun x hx ↦ ?_) (isClosed_tsupport f)
+  by_contra hf
+  have h := differentialOperators_apply_eq_of_eventuallyEq hD BoundarylessManifold.isInteriorPoint
+    (g := 0) (by simpa using (notMem_tsupport_iff_eventuallyEq.1 hf))
+  exact hx (by simpa using h)
+
+/-- On a boundaryless manifold, a differential operator on `C^∞(M)` sends compactly supported
+functions to compactly supported functions. -/
+theorem _root_.HasCompactSupport.differentialOperators_apply [BoundarylessManifold I M] {m : ℕ}
+    {D : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯}
+    (hD : D ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m)
+    {f : C^∞⟮I, M; ℝ⟯} (hf : HasCompactSupport f) : HasCompactSupport (D f) :=
+  hf.mono' (subset_tsupport _ |>.trans (tsupport_differentialOperators_apply_subset hD f))
 
 end TauCeti

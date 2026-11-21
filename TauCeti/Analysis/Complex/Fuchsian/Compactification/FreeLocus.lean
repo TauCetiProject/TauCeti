@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Fuchsian.Elliptic.Finite
+public import TauCeti.Topology.CWComplex.Classical.FiniteCWType
 import TauCeti.Analysis.Complex.Fuchsian.Compactification.Compactness
-import TauCeti.Analysis.Complex.Fuchsian.ProperAction
+import TauCeti.Analysis.Complex.Fuchsian.Compactification.Manifold
+import TauCeti.Geometry.Manifold.Complex.FiniteCWType
 
 /-!
 # The free locus inside the compactified quotient
@@ -15,7 +17,8 @@ import TauCeti.Analysis.Complex.Fuchsian.ProperAction
 Let `Γ ≤ PSL(2, ℝ)` be discrete. Deleting the elliptic orbits and the adjoined cusps from the
 compactified quotient `X(Γ)` leaves exactly the orbit space of the free locus of `Γ`, the
 points of `ℍ` with trivial stabilizer. When `X(Γ)` is compact, only finitely many points are
-deleted.
+deleted, so the free-locus quotient has finite CW type by the punctured complex-manifold theorem
+(`TauCeti.ComplexManifold.instFiniteCWTypeCompl`).
 
 ## Main results
 
@@ -27,6 +30,8 @@ deleted.
   homeomorphic to the compactified quotient punctured at its elliptic orbits and cusps.
 * `Subgroup.CompactifiedQuotient.finite_ellipticOrbits_union_cusps`: in a compact compactified
   quotient there are finitely many elliptic orbits and cusps.
+* `Subgroup.finiteCWType_orbitRel_quotient_freeLocus`: when `X(Γ)` is compact, the orbit space of
+  the free locus of `Γ` has finite CW type.
 -/
 
 public noncomputable section
@@ -75,21 +80,21 @@ theorem range_ofFreeLocusQuotient :
       · rintro ⟨w, hw⟩
         induction w using Quotient.inductionOn with
         | h w =>
-          exact (mem_freeLocus_iff_of_quotientMk_eq Γ ℍ (ofQuotient_injective hw)).mp w.2
+          exact (mem_freeLocus_iff_of_quotientMk_eq Γ ℍ (ofQuotient_injective hw)).mp w.property
       · exact fun hz ↦ ⟨Quotient.mk _ ⟨z, hz⟩, rfl⟩
 
 variable [DiscreteTopology Γ]
 
 /-- The inclusion of the free-locus quotient is continuous. -/
 theorem continuous_ofFreeLocusQuotient : Continuous (ofFreeLocusQuotient Γ) :=
-  (continuous_ofQuotient.comp (continuous_quotient_mk'.comp continuous_subtype_val)).quotient_lift
+  (continuous_ofQuotient.comp (continuous_quotient_mk'.comp continuous_subtypeVal)).quotient_lift
     _
 
 /-- The inclusion of the free-locus quotient is open: the free locus is open in `ℍ`, and both
 orbit projections and the inclusion of the coarse quotient are open maps. -/
 theorem isOpenMap_ofFreeLocusQuotient : IsOpenMap (ofFreeLocusQuotient Γ) :=
   .of_comp continuous_quotient_mk' Quotient.mk_surjective <| isOpenMap_ofQuotient.comp <|
-    isOpenMap_quotient_mk'_mul.comp (isOpen_freeLocus Γ ℍ).isOpenMap_subtype_val
+    isOpenMap_quotient_mk'_mul.comp (isOpen_freeLocus Γ ℍ).isOpenMap_subtypeVal
 
 /-- The free-locus quotient is an open subspace of the compactified quotient. -/
 theorem isOpenEmbedding_ofFreeLocusQuotient : IsOpenEmbedding (ofFreeLocusQuotient Γ) :=
@@ -117,5 +122,19 @@ theorem finite_ellipticOrbits_union_cusps [CompactSpace Γ.CompactifiedQuotient]
   (Γ.finite_ellipticOrbits.image _).union (finite_range _)
 
 end Subgroup.CompactifiedQuotient
+
+namespace Subgroup
+
+open CompactifiedQuotient in
+/-- **The free-locus quotient of a cofinite Fuchsian group has finite CW type.** When `X(Γ)` is
+compact, the orbit space of the free locus of `Γ` is homeomorphic to `X(Γ)` with the finitely many
+elliptic orbits and cusps deleted. -/
+instance finiteCWType_orbitRel_quotient_freeLocus {Γ : Subgroup PSL(2, ℝ)}
+    [DiscreteTopology Γ] [CompactSpace Γ.CompactifiedQuotient] :
+    FiniteCWType (orbitRel.Quotient Γ (freeLocus Γ ℍ)) :=
+  have := (finite_ellipticOrbits_union_cusps (Γ := Γ)).to_subtype
+  (freeLocusQuotientHomeomorph Γ).finiteCWType
+
+end Subgroup
 
 end
