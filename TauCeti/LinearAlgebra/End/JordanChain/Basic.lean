@@ -503,6 +503,31 @@ theorem basis_coord_comp_pow_eq_zero (c : f.JordanChainBasis ι) {p : Σ i, Fin 
     omega
   · simp
 
+/-- A power `f ^ k` moves the coordinates in a Jordan-chain basis `k` steps down each chain: the
+coordinate of `f ^ k x` at depth `j + k` of chain `i` is the coordinate of `x` at depth `j`. -/
+theorem basis_repr_pow_apply (c : f.JordanChainBasis ι) (k : ℕ) (x : V) (i : ι) (j : ℕ)
+    (h : j + k < c.len i) :
+    c.basis.repr ((f ^ k) x) ⟨i, ⟨j + k, h⟩⟩ = c.basis.repr x ⟨i, ⟨j, by omega⟩⟩ := by
+  classical
+  have key : c.basis.coord ⟨i, ⟨j + k, h⟩⟩ ∘ₗ f ^ k = c.basis.coord ⟨i, ⟨j, by omega⟩⟩ := by
+    refine c.basis.ext fun ⟨i', j'⟩ => ?_
+    rw [LinearMap.comp_apply, c.pow_apply_basis k i' j']
+    split_ifs with h'
+    · rw [Basis.coord_apply, Basis.repr_self, Basis.coord_apply, Basis.repr_self,
+        Finsupp.single_apply, Finsupp.single_apply]
+      refine if_congr ⟨fun e => ?_, fun e => ?_⟩ rfl rfl <;>
+        obtain ⟨rfl, he⟩ := Sigma.mk.inj_iff.1 e <;>
+        rw [heq_iff_eq, Fin.ext_iff] at he <;>
+        exact Sigma.ext rfl (heq_of_eq (Fin.ext (by simp only at he ⊢; omega)))
+    · rw [map_zero, Basis.coord_apply, Basis.repr_self, Finsupp.single_apply, eq_comm,
+        ite_eq_right_iff]
+      intro e
+      obtain ⟨rfl, he⟩ := Sigma.mk.inj_iff.1 e
+      rw [heq_iff_eq, Fin.ext_iff] at he
+      simp only at he
+      omega
+  exact LinearMap.congr_fun key x
+
 /-- The last vector `f ^ (len j - 1) (head j)` of chain `j` lies in the range of `f ^ k` exactly
 when `k < len j`. -/
 theorem pow_apply_head_mem_range_pow_iff [Nontrivial K] (c : f.JordanChainBasis ι) (j : ι)
