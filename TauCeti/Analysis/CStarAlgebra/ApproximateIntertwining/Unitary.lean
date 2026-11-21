@@ -27,8 +27,9 @@ approximate unitary equivalence under point-norm limits
 (`IsApproximateCocone.approximatelyUnitarilyEquivalent_hom_comp`) yields a `⋆`-isomorphism
 `θ : C ≃⋆ₐ[ℂ] D` whose stage restrictions are approximately unitarily equivalent to
 `(ιB (n + 1)).comp (φ₀ n)` in the forward direction and `(ιA n).comp (ψ₀ n)` in the backward
-direction (`elliott_intertwining_of_isSeqColimitCocone`). Specializing to constant systems recovers
-Elliott's two-algebra intertwining theorem (`elliott_intertwining`).
+direction (`elliott_intertwining_of_isSeqColimitCocone`), generalizing the two-algebra theorem
+`TauCeti.elliott_intertwining` to sequential colimit cocones without unitality assumptions on the
+connecting or stage maps.
 
 ## Main results
 
@@ -41,9 +42,6 @@ Elliott's two-algebra intertwining theorem (`elliott_intertwining`).
   `(1 / 2) ^ n`.
 * `TauCeti.elliott_intertwining_of_isSeqColimitCocone`: sequential colimit `⋆`-isomorphism
   `C ≃⋆ₐ[ℂ] D` preserving stagewise approximate unitary equivalence in both directions.
-* `TauCeti.elliott_intertwining`: if `φ : A →⋆ₙₐ[ℂ] B` and `ψ : B →⋆ₙₐ[ℂ] A` between separable
-  unital C⋆-algebras satisfy `ψ ∘ φ ≈_u id_A` and `φ ∘ ψ ≈_u id_B`, then there exists
-  `θ : A ≃⋆ₐ[ℂ] B` with `θ ≈_u φ`.
 
 ## References
 
@@ -117,7 +115,7 @@ private theorem exists_conjHom_comp_sub_le {X Y Z : Type*}
     (w : unitary Y) (S : Finset X) {ε : ℝ} (hε : 0 < ε) :
     ∃ u : unitary Z, ∀ x ∈ S, ‖conjHom u g (conjHom w f x) - h x‖ ≤ ε := by
   have hEq : ApproximatelyUnitarilyEquivalent (g.comp (conjHom w f)) h :=
-    ((ApproximatelyUnitarilyEquivalent.conjStarAlgAut_comp w f).postcomp g).trans hgf
+    ((ApproximatelyUnitarilyEquivalent.conjStarAlgAut_comp w f).postcomp_nonUnital g).trans hgf
   obtain ⟨u, hu⟩ := (approximatelyUnitarilyEquivalent_def _ _).mp hEq S ε hε
   refine ⟨u, fun x hx ↦ ?_⟩
   simpa only [conjHom, NonUnitalStarAlgHom.comp_apply,
@@ -342,13 +340,14 @@ theorem elliott_intertwining_of_isSeqColimitCocone
       ((ιB (m + 1)).comp
         ((Unitary.conjStarAlgAut ℂ (B (m + 1)) (v m)).toNonUnitalStarAlgHom.comp (φ₀ m)))
       ((ιB (m + 1)).comp (φ₀ m)) :=
-    (ApproximatelyUnitarilyEquivalent.conjStarAlgAut_comp (v m) (φ₀ m)).postcomp (ιB (m + 1))
+    (ApproximatelyUnitarilyEquivalent.conjStarAlgAut_comp (v m) (φ₀ m)).postcomp_nonUnital
+      (ιB (m + 1))
   have hstep₀ (m : ℕ) : ApproximatelyUnitarilyEquivalent
       (((ιB (m + 2)).comp (φ₀ (m + 1))).comp (α m)) ((ιB (m + 1)).comp (φ₀ m)) := by
-    have h₁ := (hψφ m).symm.postcomp (φ₀ (m + 1))
+    have h₁ := (hψφ m).symm.postcomp_nonUnital (φ₀ (m + 1))
     have h₂ := (hφψ (m + 1)).precomp (φ₀ m)
     rw [NonUnitalStarAlgHom.comp_assoc] at h₂
-    have h₃ := (h₁.trans h₂).postcomp (ιB (m + 2))
+    have h₃ := (h₁.trans h₂).postcomp_nonUnital (ιB (m + 2))
     rwa [← NonUnitalStarAlgHom.comp_assoc, ← NonUnitalStarAlgHom.comp_assoc,
       hιB.comp_eq (m + 1)] at h₃
   have hθ (n : ℕ) : ApproximatelyUnitarilyEquivalent
@@ -359,26 +358,7 @@ theorem elliott_intertwining_of_isSeqColimitCocone
     exact ((hconj (m + 1)).precomp (α m)).trans ((hstep₀ m).trans (hconj m).symm)
   refine ⟨θ, hθ, fun n ↦ (ApproximatelyUnitarilyEquivalent.symm_comp_iff θ).mpr ?_⟩
   rw [← NonUnitalStarAlgHom.comp_assoc, ← hιB.comp_eq n]
-  exact ((hθ n).precomp (ψ₀ n)).trans ((hφψ n).postcomp (ιB (n + 1)))
-
-/-- Elliott's approximate intertwining theorem (Rørdam, *Classification of Nuclear C⋆-Algebras*,
-§2.3; Kirchberg–Phillips, *Embedding of exact C⋆-algebras in the Cuntz algebra O₂*, Lemma 0.6):
-if `φ : A →⋆ₙₐ[ℂ] B` and `ψ : B →⋆ₙₐ[ℂ] A` are `⋆`-homomorphisms between separable unital
-C⋆-algebras with `ψ ∘ φ` approximately unitarily equivalent to `id_A` and `φ ∘ ψ` approximately
-unitarily equivalent to `id_B`, then there exists a `⋆`-isomorphism `θ : A ≃⋆ₐ[ℂ] B` approximately
-unitarily equivalent to `φ` (and with `θ.symm` approximately unitarily equivalent to `ψ` via
-`ApproximatelyUnitarilyEquivalent.symm_of_comp_id`). -/
-theorem elliott_intertwining {A B : Type*} [CStarAlgebra A] [CStarAlgebra B]
-    [TopologicalSpace.SeparableSpace A] [TopologicalSpace.SeparableSpace B]
-    (φ : A →⋆ₙₐ[ℂ] B) (ψ : B →⋆ₙₐ[ℂ] A)
-    (hψφ : ApproximatelyUnitarilyEquivalent (ψ.comp φ) (NonUnitalStarAlgHom.id ℂ A))
-    (hφψ : ApproximatelyUnitarilyEquivalent (φ.comp ψ) (NonUnitalStarAlgHom.id ℂ B)) :
-    ∃ θ : A ≃⋆ₐ[ℂ] B, ApproximatelyUnitarilyEquivalent θ.toNonUnitalStarAlgHom φ := by
-  obtain ⟨θ, hθ, _⟩ := elliott_intertwining_of_isSeqColimitCocone
-    (IsSeqColimitCocone.const A) (IsSeqColimitCocone.const B)
-    (fun _ ↦ φ) (fun _ ↦ ψ) (fun _ ↦ hψφ) (fun _ ↦ hφψ)
-  refine ⟨θ, ?_⟩
-  simpa only [NonUnitalStarAlgHom.comp_id, NonUnitalStarAlgHom.id_comp] using hθ 0
+  exact ((hθ n).precomp (ψ₀ n)).trans ((hφψ n).postcomp_nonUnital (ιB (n + 1)))
 
 end ColimitIntertwining
 

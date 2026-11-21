@@ -11,9 +11,10 @@ import Mathlib.Algebra.Ring.Idempotent
 /-!
 # Elementary inequalities in seminormed rings
 
-This file records elementary consequences of the submultiplicativity of the norm, exact
-positive-power norms without `NormOneClass`, an estimate for `‖w - 1‖` with `‖w‖ = 1` when the
-norm is multiplicative, norm bounds forcing an idempotent in a normed ring to be `0` or `1`,
+This file records elementary consequences of the submultiplicativity of the norm (for instance, a
+nonzero idempotent has norm at least `1`: `IsIdempotentElem.one_le_norm`, forcing an idempotent
+of norm `< 1` to be `0` and one within `< 1` of `1` to be `1`), exact positive-power norms without
+`NormOneClass`, an estimate for `‖w - 1‖` with `‖w‖ = 1` when the norm is multiplicative,
 convergence to `0` of finite partial products when factors tend to `0` cofinitely
 (`TauCeti.tendsto_finsetProd_cofinite_zero`), and norm bounds for powers of units — including the
 shell lemma `Units.exists_lt_norm_zpow_lt` showing that the norms of integer powers of a unit `u`
@@ -295,14 +296,11 @@ end TauCeti
 
 namespace IsIdempotentElem
 
-/-- A nonzero idempotent in a nonunital normed ring has norm at least one, since
-`‖e‖ = ‖e * e‖ ≤ ‖e‖ * ‖e‖` with `‖e‖ > 0`. No normalization of the norm is needed. -/
-theorem one_le_norm {R : Type*} [NonUnitalNormedRing R] {e : R}
-    (he : IsIdempotentElem e) (he₀ : e ≠ 0) : 1 ≤ ‖e‖ := by
-  have hpos : 0 < ‖e‖ := norm_pos_iff.mpr he₀
-  have hmul : ‖e‖ * 1 ≤ ‖e‖ * ‖e‖ := by
-    simpa only [mul_one, he.eq] using norm_mul_le e e
-  exact le_of_mul_le_mul_left hmul hpos
+/-- A nonzero idempotent in a normed ring has norm at least `1`. -/
+theorem one_le_norm {R : Type*} [NonUnitalNormedRing R] {p : R} (hp : IsIdempotentElem p)
+    (hp0 : p ≠ 0) : 1 ≤ ‖p‖ :=
+  (le_mul_iff_one_le_right (norm_pos_iff.mpr hp0)).mp <| by
+    simpa only [hp.eq] using norm_mul_le p p
 
 /-- An idempotent of norm strictly less than one in a nonunital normed ring is zero. -/
 theorem eq_zero_of_norm_lt_one {R : Type*} [NonUnitalNormedRing R] {e : R}

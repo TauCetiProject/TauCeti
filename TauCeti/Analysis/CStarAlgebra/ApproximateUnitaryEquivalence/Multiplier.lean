@@ -203,8 +203,9 @@ theorem multiplierApproximatelyUnitarilyEquivalent_iff_approximatelyUnitarilyEqu
       ApproximatelyUnitarilyEquivalent.postcomp_of_comp_eq (κ := NonUnitalStarAlgHom.id ℂ B) h
         (DoubleCentralizer.coeStarAlgEquiv ℂ B).symm.toStarAlgHom (by simp)
   · intro h
-    simpa only [DoubleCentralizer.coeStarAlgEquiv_toNonUnitalStarAlgHom] using
+    simpa only [StarAlgEquiv.toNonUnitalStarAlgHom_toStarAlgHom,
+      DoubleCentralizer.coeStarAlgEquiv_toNonUnitalStarAlgHom] using
       ApproximatelyUnitarilyEquivalent.postcomp h
-        (DoubleCentralizer.coeStarAlgEquiv ℂ B).toNonUnitalStarAlgHom
+        (DoubleCentralizer.coeStarAlgEquiv ℂ B).toStarAlgHom
 
 end TauCeti
