@@ -18,7 +18,10 @@ import TauCeti.Geometry.Manifold.Riemannian.Sphere.Gradient
 Let `h` be the height function on the unit sphere `Sⁿ` in the direction of a unit vector `v`
 (`TauCeti.sphereHeight`), with the north pole `v` as its maximum and the south pole `-v` as its
 minimum. This file follows the negative gradient trajectories `γ` of `h` and tests on them the
-convergence theorems for negative gradient flows of Morse functions.
+convergence theorems for negative gradient flows of Morse functions. It also tests the estimates
+by which a negative gradient trajectory crosses a band without critical points in bounded time,
+both for `h` and for the function `h - h³ / 3`, whose critical points are degenerate in positive
+dimension.
 
 * **Convergence to the south pole, for every metric.** For any `C¹` Riemannian metric on `Sⁿ`, the
   trajectory of `-grad h` through a point `x ≠ v` converges to the south pole
@@ -28,10 +31,11 @@ convergence theorems for negative gradient flows of Morse functions.
   value `h x < 1`. So the north pole, although critical, is the limit of no trajectory starting
   elsewhere (`TauCeti.not_tendsto_maximalIntegralCurve_neg_mgradient_sphereHeight_self`).
 * **Crossing a band without a normal form, for every metric.** The function `f = h - h³ / 3` has
-  exactly two critical points, the poles, and both are degenerate. Still, for every `C¹` Riemannian
-  metric and all levels `-2 / 3 < a` and `b < 2 / 3` strictly between its two critical values,
-  after some time `T` the trajectory of `-grad f` through any point of `{f ≤ b}` lies in
-  `{f < a}` (`TauCeti.exists_forall_cubic_comp_sphereHeight_maximalIntegralCurve_neg_mgradient_lt`).
+  exactly two critical points, the poles, and in positive dimension both are degenerate. Still,
+  for every `C¹` Riemannian metric and all levels `-2 / 3 < a` and `b < 2 / 3` strictly between
+  its two critical values, after some time `T` the trajectory of `-grad f` through any point of
+  `{f ≤ b}` lies in `{f < a}`
+  (`TauCeti.exists_forall_cubic_comp_sphereHeight_maximalIntegralCurve_neg_mgradient_lt`).
   This is the general estimate
   `TauCeti.exists_forall_comp_maximalIntegralCurve_neg_mgradient_lt` for the compact band
   `f⁻¹[a, b]`, which contains no critical point: only a positive lower bound for `‖grad f‖` on
@@ -45,7 +49,7 @@ convergence theorems for negative gradient flows of Morse functions.
   `u' = -sin u`.
 * **Crossing a band of latitudes in bounded time, for the round metric.** On the band
   `-r ≤ h ≤ r` the gradient of `h` has squared length at least `1 - r²`, so the trajectory
-  through a point with `h ≤ b` lies below the latitude `a` at every time `t` with
+  through a point with `h ≤ b` lies below the latitude `a` at every time `t ≥ 0` with
   `(1 - r²) t > b - a`, for `-r ≤ a` and `b ≤ r`
   (`TauCeti.sphereHeight_maximalIntegralCurve_neg_mgradient_lt`). For instance the time-`t` map of
   the flow carries the closed cap `{h ≤ 1 / 2}` into the open cap `{h < -1 / 2}` for every
@@ -84,7 +88,7 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
   [Fact (finrank ℝ E = n + 1)] {v x : sphere (0 : E) 1}
 
-/-! ### Convergence for an arbitrary metric -/
+/-! ### An arbitrary metric -/
 
 section AnyMetric
 
@@ -145,10 +149,10 @@ theorem not_tendsto_maximalIntegralCurve_neg_mgradient_sphereHeight_self (hx : x
     (tendsto_nhds_unique h (tendsto_maximalIntegralCurve_neg_mgradient_sphereHeight hx))
 
 /-- **Crossing a band for the degenerate function `h - h³ / 3`.** The critical points of
-`f = h - h³ / 3` are the two poles, both degenerate, with critical values `2 / 3` and `-2 / 3`.
-For any `C¹` Riemannian metric on the sphere and levels `-2 / 3 < a` and `b < 2 / 3`, there is a
-time `T` such that the trajectory of `-grad f` through any point `x` with `f x ≤ b` lies strictly
-below the level `a` at every time `t ≥ T`. -/
+`f = h - h³ / 3` are the two poles, with critical values `2 / 3` and `-2 / 3`; in positive
+dimension both are degenerate. For any `C¹` Riemannian metric on the sphere and levels
+`-2 / 3 < a` and `b < 2 / 3`, there is a time `T` such that the trajectory of `-grad f` through any
+point `x` with `f x ≤ b` lies strictly below the level `a` at every time `t ≥ T`. -/
 theorem exists_forall_cubic_comp_sphereHeight_maximalIntegralCurve_neg_mgradient_lt {a b : ℝ}
     (ha : -(2 / 3) < a) (hb : b < 2 / 3) :
     ∃ T, ∀ x, ((fun t : ℝ ↦ t - t ^ 3 / 3) ∘ sphereHeight v) x ≤ b → ∀ t, T ≤ t →
