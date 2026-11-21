@@ -43,6 +43,79 @@ open CStarModule
 
 namespace CStarModule
 
+/-- A plain function `T : E → F` between `A`-inner-product spaces is *adjointable* if there exists a
+plain function `S : F → E` satisfying `⟪T x, y⟫_A = ⟪x, S y⟫_A` for all `x` and `y`. On complete
+Hilbert C⋆-modules, this forces both `T` and `S` to be bounded `ℂ`-linear `A`-module maps. -/
+def IsAdjointable (A : Type*) {E F : Type*} [Inner A E] [Inner A F] (T : E → F) : Prop :=
+  ∃ S : F → E, ∀ x y, inner A (T x) y = inner A x (S y)
+
+section Inner
+
+variable {A E F G : Type*}
+
+theorem isAdjointable_def [Inner A E] [Inner A F] {T : E → F} :
+    IsAdjointable A T ↔ ∃ S : F → E, ∀ x y, inner A (T x) y = inner A x (S y) :=
+  Iff.rfl
+
+@[simp]
+theorem isAdjointable_id [Inner A E] : IsAdjointable A (id : E → E) :=
+  ⟨id, fun _ _ => rfl⟩
+
+theorem IsAdjointable.comp [Inner A E] [Inner A F] [Inner A G] {S : F → G} {T : E → F}
+    (hS : IsAdjointable A S) (hT : IsAdjointable A T) :
+    IsAdjointable A (S ∘ T) := by
+  rcases hS with ⟨S', hS'⟩
+  rcases hT with ⟨T', hT'⟩
+  exact ⟨T' ∘ S', fun x z => (hS' (T x) z).trans (hT' x (S' z))⟩
+
+end Inner
+
+section NoStarModule
+
+variable {A E F : Type*} [NonUnitalRing A] [StarRing A] [Module ℂ A] [PartialOrder A] [Norm A]
+  [AddCommGroup E] [Module ℂ E] [SMul A E] [Norm E] [CStarModule A E]
+  [AddCommGroup F] [Module ℂ F] [SMul A F] [Norm F] [CStarModule A F]
+
+@[simp]
+theorem isAdjointable_zero : IsAdjointable A (0 : E → F) :=
+  ⟨0, fun _ _ => by simp only [Pi.zero_apply, inner_zero_left', inner_zero_right']⟩
+
+theorem IsAdjointable.add {T₁ T₂ : E → F} (h₁ : IsAdjointable A T₁) (h₂ : IsAdjointable A T₂) :
+    IsAdjointable A (T₁ + T₂) :=
+  let ⟨S₁, h₁⟩ := h₁; let ⟨S₂, h₂⟩ := h₂
+  ⟨S₁ + S₂, fun x y => by
+    simp only [Pi.add_apply, inner_add_left, inner_add_right, h₁ x y, h₂ x y]⟩
+
+theorem IsAdjointable.neg {T : E → F} (h : IsAdjointable A T) : IsAdjointable A (-T) :=
+  let ⟨S, h⟩ := h
+  ⟨-S, fun x y => by simp only [Pi.neg_apply, inner_neg_left', inner_neg_right', h x y]⟩
+
+theorem IsAdjointable.sub {T₁ T₂ : E → F} (h₁ : IsAdjointable A T₁) (h₂ : IsAdjointable A T₂) :
+    IsAdjointable A (T₁ - T₂) :=
+  sub_eq_add_neg T₁ T₂ ▸ h₁.add h₂.neg
+
+theorem IsAdjointable.map_add {T : E → F} (h : IsAdjointable A T) (x y : E) :
+    T (x + y) = T x + T y :=
+  let ⟨_, h⟩ := h
+  CStarModule.ext_inner_right (A := A) fun z => by
+    rw [h (x + y) z, CStarModule.inner_add_left, ← h x z, ← h y z, ← CStarModule.inner_add_left]
+
+theorem IsAdjointable.map_smul {T : E → F} (h : IsAdjointable A T) (c : ℂ) (x : E) :
+    T (c • x) = c • T x :=
+  let ⟨S, h⟩ := h
+  CStarModule.ext_inner_left (A := A) fun z => by
+    rw [← CStarModule.star_inner, h (c • x) z, CStarModule.star_inner,
+      CStarModule.inner_smul_right_complex, ← CStarModule.star_inner x (S z), ← h x z,
+      CStarModule.star_inner, ← CStarModule.inner_smul_right_complex]
+
+theorem IsAdjointable.map_smul_coeff {T : E → F} (h : IsAdjointable A T) (a : A) (x : E) :
+    T (a • x) = a • T x :=
+  let ⟨_, h⟩ := h
+  CStarModule.ext_inner_right (A := A) fun z => by
+    rw [h (a • x) z, CStarModule.inner_op_smul_left, CStarModule.inner_op_smul_left, ← h x z]
+
+end NoStarModule
+
 variable {A E F : Type*} [NonUnitalRing A] [StarRing A] [Module ℂ A] [StarModule ℂ A]
   [PartialOrder A] [Norm A]
   [AddCommGroup E] [Module ℂ E] [SMul A E] [Norm E] [CStarModule A E]
@@ -60,6 +133,17 @@ theorem isAdjointPair_inner_iff :
     simpa [innerₛₗ_apply] using congrArg star (h x y)
   · intro h x y
     simpa [innerₛₗ_apply] using congrArg star (h x y)
+
+theorem isAdjointable_iff_exists_isAdjointPair :
+    IsAdjointable A T ↔
+      ∃ S : F → E, LinearMap.IsAdjointPair (innerₛₗ (A := A) (E := E)).flip
+        (innerₛₗ (A := A) (E := F)).flip T S := by
+  simp_rw [isAdjointPair_inner_iff, IsAdjointable]
+
+theorem IsAdjointable.smul (c : ℂ) (h : IsAdjointable A T) :
+    IsAdjointable A (c • T) :=
+  let ⟨S, h⟩ := h
+  ⟨star c • S, fun x y => by simp [h x y]⟩
 
 end CStarModule
 

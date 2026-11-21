@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import TauCeti.Analysis.Quaternion.Fueter
+import Mathlib.Analysis.Calculus.ContDiff.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Add
 import Mathlib.Analysis.Calculus.FDeriv.Comp
 import Mathlib.Analysis.Calculus.FDeriv.Linear
@@ -19,6 +21,9 @@ Quaternionic conjugation in both the argument and the value exchanges the left a
 Fueter equations. The reflected function is written `fun q ↦ star (f (star q))`, without
 introducing a separate function carrier. The pointwise equivalences also give the exact
 change of domain `star '' s`, needed to transfer ordered integral formulas between sides.
+Because quaternion conjugation is a real linear isometry, reflection also preserves the operator
+norm of `iteratedFDeriv ℝ m` at the conjugate point without any differentiability hypothesis
+(`TauCeti.norm_iteratedFDeriv_star_star`).
 
 Translations and real dilations of the argument preserve each side of regularity. We state
 these together as precomposition by `q ↦ p + r • q`, allowing also the constant map `r = 0`.
@@ -179,5 +184,31 @@ theorem RightFueterOn.comp_const_add_smul (hf : RightFueterOn f s) (p : ℍ) (r 
   rw [rightFueterOn_iff]
   intro q hq
   exact (rightFueterOn_iff.mp hf _ hq).comp_const_add_smul
+
+/-- Quaternion conjugation as a real linear isometry equivalence `ℍ ≃ₗᵢ[ℝ] ℍ`. -/
+private def starLIE : ℍ ≃ₗᵢ[ℝ] ℍ where
+  toFun := star
+  invFun := star
+  left_inv := star_star
+  right_inv := star_star
+  map_add' := star_add
+  map_smul' _ _ := by simp
+  norm_map' := _root_.norm_star
+
+private theorem starLIE_apply (q : ℍ) : starLIE q = star q :=
+  -- `starLIE` is defined directly with `toFun := star`.
+  rfl
+
+/-- Reflecting `f : ℍ → ℍ` in both argument and value preserves the operator norm of its `m`-th
+iterated real derivative at the conjugate point, with no differentiability assumption. -/
+@[simp]
+theorem norm_iteratedFDeriv_star_star (m : ℕ) (f : ℍ → ℍ) (q : ℍ) :
+    ‖iteratedFDeriv ℝ m (fun x ↦ star (f (star x))) q‖ =
+      ‖iteratedFDeriv ℝ m f (star q)‖ := by
+  have hfn : (fun x ↦ star (f (star x))) = (starLIE ∘ f) ∘ starLIE := by
+    funext x
+    simp [starLIE_apply]
+  rw [hfn, starLIE.norm_iteratedFDeriv_comp_right (starLIE ∘ f) q m,
+    starLIE.norm_iteratedFDeriv_comp_left f (starLIE q) m, starLIE_apply]
 
 end TauCeti
