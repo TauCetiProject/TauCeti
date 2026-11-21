@@ -59,11 +59,9 @@ theorem evensNorm_degreeZeroClass (a : (trivialF2 U.toSubgroup).V)
   obtain ⟨z, hz, hzx⟩ := TopRep.exists_cochainClass_eq
     (ContinuousCohomology.degreeZeroClass (trivialF2 U.toSubgroup) a ha)
   -- A homogeneous `0`-cocycle representing the class of `a` takes the value `a` at `1`.
-  have h1 : z.1 1 = a := by
-    have h := (TopRep.cochainClass_eq_degreeZeroClass _ z hz (z.1 1)
-      (fun g ↦ trivialF2_ρ_apply_apply _ g _) rfl).symm.trans hzx
-    simpa only [ContinuousCohomology.coe_zeroIso_hom_degreeZeroClass] using
-      congrArg (fun x ↦ ((ContinuousCohomology.zeroIso _).hom x : (trivialF2 U.toSubgroup).V)) h
+  have h1 : z.1 1 = a := (ContinuousCohomology.degreeZeroClass_inj _ ha).1
+    ((TopRep.cochainClass_eq_degreeZeroClass _ z hz (z.1 1)
+      (fun g ↦ trivialF2_ρ_apply_apply _ g _) rfl).symm.trans hzx)
   rw [← hzx, evensNorm_cochainClass U default]
   -- The cocycle-level computation lands in degree `l · 0`; compare it with the transported class
   -- heterogeneously, so that no unfolding of `l · 0` to `0` is needed.
