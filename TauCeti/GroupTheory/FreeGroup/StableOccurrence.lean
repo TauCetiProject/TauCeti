@@ -9,9 +9,9 @@ public import Mathlib.Order.Lattice.Nat
 public import Mathlib.Data.Nat.ModEq
 public import Mathlib.GroupTheory.FreeGroup.CyclicallyReduced
 public import TauCeti.GroupTheory.ProperPower
+import TauCeti.Data.List.Commutation
 import TauCeti.Data.List.Infix
 import TauCeti.GroupTheory.FreeGroup.CyclicallyReduced
-import TauCeti.GroupTheory.FreeGroup.Periodic
 import TauCeti.GroupTheory.FreeGroup.ProperPower.Basic
 
 /-!
@@ -158,20 +158,23 @@ theorem modEq_of_isStableOccurrence {W A : FreeGroup α} (hA : ¬Group.IsProperP
   · exact (this h₂ h₁ hji hij (by lia)).symm
   obtain ⟨-, u, v, hW, rfl⟩ := h₁
   obtain ⟨-, u', v', hW', rfl⟩ := h₂
-  refine (Nat.modEq_iff_dvd' hle).2
-    ((rotate_eq_self_iff_of_not_isProperPower (by rwa [mk_toWord])).1 ?_)
-  -- the `|A|` letters of `W` from position `|u'|` are the first copy of `A` in the second block
-  -- and the factor at offset `|u'| - |u|` of the first block
+  -- the word of `A` occurs at offset `|u'| - |u|` in the first block and at offset `0` in the
+  -- second, so these offsets are congruent modulo `|A|`
+  refine (Nat.modEq_iff_dvd' hle).2 (Nat.modEq_zero_iff_dvd.1
+    (List.modEq_of_prefix_drop_flatten_replicate
+      (not_exists_eq_flatten_replicate_of_not_isProperPower (by rwa [mk_toWord])) le_rfl
+      (m := q + 2) (m' := r + 2) (List.prefix_iff_eq_take.2 ?_) (by simp [List.replicate_succ])))
   have hX : u'.length - u.length + A.toWord.length ≤ (q + 2) * A.toWord.length := by
     simp only [add_mul, one_mul] at hji ⊢
     lia
-  calc A.toWord.rotate (u'.length - u.length)
+  -- both are the `|A|` letters of `W` from position `|u'|`
+  calc A.toWord
       = ((W.toWord.drop u.length).drop (u'.length - u.length)).take A.toWord.length := by
-        rw [hW, List.append_assoc, List.drop_left, List.drop_append_of_le_length (by simp; lia),
-          List.take_append_of_le_length (by simp; lia), List.take_drop_flatten_replicate _ hX]
-    _ = A.toWord := by
         rw [List.drop_drop, Nat.add_sub_cancel' hle, hW', List.append_assoc, List.drop_left,
           List.replicate_succ, List.flatten_cons, List.append_assoc, List.take_left]
+    _ = _ := by
+        rw [hW, List.append_assoc, List.drop_left, List.drop_append_of_le_length (by simp; lia),
+          List.take_append_of_le_length (by simp; lia)]
 
 /-- A maximal stable occurrence of a power of `A` in `W` ([IFT], §7.1, p. 92): a stable occurrence
 whose power `A ^ q` is not contained in the power of another stable occurrence. -/

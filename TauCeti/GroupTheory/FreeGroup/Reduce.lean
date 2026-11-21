@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Group.Subgroup.ZPowers.Basic
 public import Mathlib.Algebra.Group.Nat.Even
+public import Mathlib.Data.List.Rotate
 public import Mathlib.GroupTheory.FreeGroup.Reduce
 public import TauCeti.Data.List.CommonPrefix
 public import TauCeti.Data.List.Unsplit
@@ -20,10 +21,12 @@ Elementary facts about reduced words complementing `Mathlib.GroupTheory.FreeGrou
 the formal inverse of a one-letter word, uniqueness of reduced representatives, reducedness of
 formal inverses and of words of constant sign, powers of a letter, compatibility of formal
 inversion with membership (`FreeGroup.mem_invRev_iff`), subwords, concatenation of lists of words
-(`FreeGroup.invRev_flatten`), generator renaming (`FreeGroup.map_prodMap_invRev`), and
-factorisations splitting no occurrence of a word (`FreeGroup.invRev_isUnsplit`), and reducedness of
-words `w u w⁻¹` in which no letter cancels at either join, and of words `u⁻¹ v` for reduced `u` and
-`v` with different first letters (`FreeGroup.isReduced_invRev_append`). The reduced word of a
+(`FreeGroup.invRev_flatten`) and of powers of a word (`FreeGroup.invRev_flatten_replicate`),
+cyclic permutations (`List.IsRotated.invRev`), generator renaming
+(`FreeGroup.map_prodMap_invRev`), and factorisations splitting no occurrence of a word
+(`FreeGroup.invRev_isUnsplit`), and reducedness of words `w u w⁻¹` in which no letter cancels at
+either join, and of words `u⁻¹ v` for reduced `u` and `v` with different first letters
+(`FreeGroup.isReduced_invRev_append`). The reduced word of a
 product `of a * of b` of two generators is `[(a, true), (b, true)]` (`FreeGroup.toWord_of_mul_of`).
 A word without repeated generators is reduced, a reduced word representing the identity is
 empty, a word that is not reduced admits a step of free reduction, and inserting a letter followed
@@ -137,6 +140,19 @@ theorem invRev_flatten (M : List (List (α × Bool))) :
   induction M with
   | nil => rfl
   | cons v M ih => simp [invRev_append, ih]
+
+/-- The formal inverse of the concatenation of `n` copies of a word is the concatenation of `n`
+copies of its formal inverse. -/
+@[simp]
+theorem invRev_flatten_replicate (w : List (α × Bool)) (n : ℕ) :
+    invRev (List.replicate n w).flatten = (List.replicate n (invRev w)).flatten := by
+  simp [invRev_flatten]
+
+/-- The formal inverses of two cyclic permutations of each other are cyclic permutations of each
+other. -/
+theorem _root_.List.IsRotated.invRev {u v : List (α × Bool)} (h : u ~r v) :
+    invRev u ~r invRev v := by
+  simpa only [FreeGroup.invRev] using (h.map _).reverse
 
 /-- Renaming the generators of a formal inverse is the formal inverse of the renamed word. -/
 @[simp]

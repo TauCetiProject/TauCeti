@@ -8,14 +8,18 @@ module
 public import Mathlib.Data.List.Infix
 public import Mathlib.Data.List.Rotate
 
+import Mathlib.Algebra.BigOperators.Group.List.Basic
+
 /-!
 # Prefixes of repeated lists, prefix chains, and infixes of concatenations
 
 Concatenating fewer copies of a list gives a prefix of concatenating more copies, and the factor of
 length `|l|` of `m` concatenated copies of `l` starting at position `d` is the rotation of `l` by
-`d`. A list which, followed by an entry `y`, begins with `k` copies of an entry `x ≠ y` itself
-begins with these `k` copies. A list with no entry in `l₁` that is an infix of `l₁ ++ l₂` is an
-infix of `l₂`. An injective map preserves and reflects infixes.
+`d`. Hence a factor of a concatenation of copies of `l` that is at least as long as `l` begins with
+a rotation of `l`, and a factor of a concatenation of copies of a nonempty `l` also occurs in it at
+a position `o < |l|`. A list which, followed by an entry `y`, begins with `k` copies of an entry
+`x ≠ y` itself begins with these `k` copies. A list with no entry in `l₁` that is an infix of
+`l₁ ++ l₂` is an infix of `l₂`. An injective map preserves and reflects infixes.
 -/
 
 public section
@@ -53,6 +57,44 @@ theorem take_drop_flatten_replicate (l : List α) {m d : ℕ} (h : d + l.length 
         obtain rfl : d = 0 := by lia
         simp
       | succ m => rw [replicate_succ, flatten_cons, take_append_of_le_length hd.le]
+
+/-- The factor of the concatenation of `m` copies of `l` that starts at position `o` and is at
+least as long as `l` begins with the rotation of `l` by `o`. -/
+theorem take_eq_rotate_of_prefix_drop_flatten_replicate {w l : List α} {m o : ℕ}
+    (h : w <+: ((replicate m l).flatten).drop o) (hl : l.length ≤ w.length) :
+    w.take l.length = l.rotate o := by
+  rcases eq_or_ne l [] with rfl | hl0
+  · simp
+  obtain ⟨t, ht⟩ := h
+  have hlen := congrArg length ht
+  simp only [length_append, length_drop, length_flatten, map_replicate, sum_replicate_nat] at hlen
+  have := length_pos_iff.2 hl0
+  rw [← take_drop_flatten_replicate l (m := m) (by lia), ← ht, take_append_of_le_length hl]
+
+/-- A factor of the concatenation of `n` copies of a nonempty list `l` also occurs in it at a
+position `o < |l|`. -/
+theorem IsInfix.exists_prefix_drop_flatten_replicate {w l : List α} {n : ℕ}
+    (h : w <:+: (replicate n l).flatten) (hl : l ≠ []) :
+    ∃ o < l.length, w <+: ((replicate n l).flatten).drop o := by
+  obtain ⟨s, t, hst⟩ := h
+  have hq : s.length / l.length ≤ n :=
+    Nat.div_le_of_le_mul (by have := congrArg length hst; simp at this; lia)
+  -- the position `|s|` is `|s| / |l|` whole copies of `l` followed by `|s| % |l|` letters
+  have hdrop := drop_sum_flatten (replicate n l) (s.length / l.length)
+  simp only [map_replicate, take_replicate, drop_replicate, Nat.min_eq_left hq,
+    sum_replicate_nat] at hdrop
+  refine ⟨s.length % l.length, Nat.mod_lt _ (length_pos_iff.2 hl), IsPrefix.trans ⟨t, ?_⟩
+    ((flatten_replicate_prefix_flatten_replicate l (Nat.sub_le n (s.length / l.length))).drop _)⟩
+  rw [← hdrop, drop_drop, Nat.div_add_mod', ← hst, append_assoc, drop_left]
+
+/-- A factor of a concatenation of copies of `l`, at least as long as `l`, begins with a rotation
+of `l`. -/
+theorem IsInfix.take_isRotated_of_flatten_replicate {w l : List α} {n : ℕ}
+    (h : w <:+: (replicate n l).flatten) (hl : l.length ≤ w.length) : w.take l.length ~r l := by
+  obtain ⟨s, t, hst⟩ := h
+  rw [take_eq_rotate_of_prefix_drop_flatten_replicate (m := n) (o := s.length)
+    ⟨t, by rw [← hst, append_assoc, drop_left]⟩ hl]
+  exact IsRotated.forall l _
 
 /-- If `l ++ y :: t` begins with `k` copies of `x` and `x ≠ y`, then `l` begins with these `k`
 copies: the entry `y` cannot lie among them. -/

@@ -5,6 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.List.Rotate
+public import Mathlib.Data.Nat.ModEq
+
 import TauCeti.Data.List.Infix
 
 /-!
@@ -22,11 +25,20 @@ group rests. Write `wⁿ` for the concatenation `(replicate n w).flatten` of `n`
   commute (`List.append_comm_of_prefix_flatten_replicate`); this is a weak form of the
   periodicity lemma of Fine and Wilf (`List.HasPeriod.gcd`). In particular `aᵐ = bⁿ` with
   `m ≠ 0` forces `a` and `b` to commute (`List.append_comm_of_flatten_replicate_eq`).
+* A word `l` that is not a power `uⁿ` of a word with `n ≥ 2` is fixed by no nontrivial rotation:
+  `l.rotate k = l` only when `|l|` divides `k` (`List.rotate_eq_self_iff_length_dvd`), so that its
+  rotations by `i` and by `j` agree exactly when `i ≡ j` modulo `|l|`
+  (`List.rotate_eq_rotate_iff_modEq`). Hence a word at least as long as `l` occurs in the powers of
+  `l` only at positions in a single residue class modulo `|l|`
+  (`List.modEq_of_prefix_drop_flatten_replicate`).
 
 ## References
 
 * R. C. Lyndon, M. P. Schützenberger, *The equation `a^M = b^N c^P` in a free group*, Michigan
   Math. J. 9 (1962), 289–298, §2, Lemmas 2–4 and Corollary 4.1.
+* [IFT] O. Kharlampovich, A. Myasnikov, *Implicit function theorem over free groups*, J. Algebra
+  290 (2005), §5.4, before Lemma 20 (uniqueness of the cut), and §7.1, proof of Lemma 57 (a word
+  fixed by a nontrivial cyclic shift is a proper power).
 * N. J. Fine, H. S. Wilf, *Uniqueness theorems for periodic functions*, Proc. Amer. Math. Soc. 16
   (1965), 109–114.
 -/
@@ -103,5 +115,63 @@ theorem append_comm_of_flatten_replicate_eq {a b : List α} {m n : ℕ} (hm : m 
     have := Nat.le_mul_of_pos_left a.length (Nat.pos_of_ne_zero hm)
     have := Nat.le_mul_of_pos_left b.length hn
     lia
+
+/-- A word that is not a power `uⁿ` of a word `u` with `n ≥ 2` is nonempty, since `[] = []²`. -/
+theorem ne_nil_of_not_exists_eq_flatten_replicate {l : List α}
+    (hl : ¬∃ u n, 2 ≤ n ∧ l = (replicate n u).flatten) : l ≠ [] := by
+  rintro rfl
+  exact hl ⟨[], 2, le_rfl, by simp⟩
+
+/-- **A word that is not a power is fixed by no nontrivial rotation** ([IFT], §7.1, proof of
+Lemma 57). If `l` is not a power `uⁿ` of a word `u` with `n ≥ 2`, then rotating `l` by `k` gives
+`l` back exactly when `|l|` divides `k`. -/
+theorem rotate_eq_self_iff_length_dvd {l : List α}
+    (hl : ¬∃ u n, 2 ≤ n ∧ l = (replicate n u).flatten) {k : ℕ} :
+    l.rotate k = l ↔ l.length ∣ k := by
+  refine ⟨fun hk => ?_, fun ⟨c, hc⟩ => by rw [hc, rotate_length_mul]⟩
+  have hpos := length_pos_iff.2 (ne_nil_of_not_exists_eq_flatten_replicate hl)
+  have hlt := Nat.mod_lt k hpos
+  rw [← rotate_mod, rotate_eq_drop_append_take hlt.le] at hk
+  rw [Nat.dvd_iff_mod_eq_zero]
+  by_contra hr
+  -- the two pieces of `l` cut at `k % |l|` commute, hence are powers of a common word
+  obtain ⟨u, i, j, hi, hj⟩ := exists_eq_flatten_replicate_of_append_comm
+    (a := l.take (k % l.length)) (b := l.drop (k % l.length)) (by rw [take_append_drop, hk])
+  have hi0 : i ≠ 0 := by rintro rfl; simpa [hpos.ne', hr] using congrArg length hi
+  have hj0 : j ≠ 0 := by rintro rfl; have := congrArg length hj; simp at this; lia
+  exact hl ⟨u, i + j, by lia, by
+    rw [← take_append_drop (k % l.length) l, hi, hj, replicate_add, flatten_append]⟩
+
+/-- Let `l` be a word that is not a power `uⁿ` of a word with `n ≥ 2`. Its rotations by amounts
+that are not congruent modulo `|l|` are distinct: rotating `l` by `i` and by `j` gives the same
+word exactly when `i ≡ j` modulo `|l|`. -/
+theorem rotate_eq_rotate_iff_modEq {l : List α}
+    (hl : ¬∃ u n, 2 ≤ n ∧ l = (replicate n u).flatten) {i j : ℕ} :
+    l.rotate i = l.rotate j ↔ i ≡ j [MOD l.length] := by
+  refine ⟨fun h => ?_, fun h => by rw [← rotate_mod l i, h, rotate_mod]⟩
+  wlog hij : i ≤ j generalizing i j
+  · exact (this h.symm (by lia)).symm
+  -- cancel the common rotation by `i`
+  rw [← Nat.sub_add_cancel hij, ← rotate_rotate, rotate_eq_rotate, eq_comm,
+    rotate_eq_self_iff_length_dvd hl] at h
+  exact (Nat.modEq_iff_dvd' hij).2 h
+
+/-- **Uniqueness of the cut** ([IFT], §5.4, before Lemma 20). Let `l` be a word that is not a power
+`uⁿ` of a word with `n ≥ 2`. If a word `w` at least as long as `l` occurs in the concatenation of
+copies of `l` at the positions `o` and `o'` (of possibly different numbers of copies), then
+`o ≡ o'` modulo `|l|`. -/
+theorem modEq_of_prefix_drop_flatten_replicate {w l : List α}
+    (hl : ¬∃ u n, 2 ≤ n ∧ l = (replicate n u).flatten) (hw : l.length ≤ w.length) {m m' o o' : ℕ}
+    (h : w <+: ((replicate m l).flatten).drop o)
+    (h' : w <+: ((replicate m' l).flatten).drop o') : o ≡ o' [MOD l.length] := by
+  rw [← rotate_eq_rotate_iff_modEq hl, ← take_eq_rotate_of_prefix_drop_flatten_replicate h hw,
+    take_eq_rotate_of_prefix_drop_flatten_replicate h' hw]
+
+/-- The cut is not unique for a power: the word `[0, 0] = [0]²` occurs in its square at the
+positions `0` and `1`, which are not congruent modulo `2`. -/
+example : [0, 0] = (replicate 2 [0]).flatten ∧
+    [0, 0] <+: ((replicate 2 [0, 0]).flatten).drop 0 ∧
+    [0, 0] <+: ((replicate 2 [0, 0]).flatten).drop 1 ∧ ¬0 ≡ 1 [MOD [0, 0].length] := by
+  decide
 
 end List

@@ -16,6 +16,8 @@ Free generators and commutators of distinct generators are not proper powers; in
 free generator is not a square. For the commutator this is detected by the integer Heisenberg
 group, in which the commutator has central coordinate one. The same holds for the commutator
 `a⁻¹ b⁻¹ a b` in the convention of surface groups, a conjugate of `⁅a, b⁆ = a b a⁻¹ b⁻¹`.
+A word that is a power `uⁿ`, `n ≥ 2`, of a word represents a proper power, so the words
+representing elements that are not proper powers are not such powers of words.
 -/
 
 public section
@@ -28,6 +30,13 @@ open scoped commutatorElement
 /-- The square of any free generator is a proper power. -/
 theorem isProperPower_of_sq (a : α) : Group.IsProperPower (of a ^ 2) :=
   Group.isProperPower_pow (of a) (by omega)
+
+/-- A word representing an element of the free group that is not a proper power is not itself a
+power `uⁿ` of a word `u` with `n ≥ 2`. -/
+theorem not_exists_eq_flatten_replicate_of_not_isProperPower {w : List (α × Bool)}
+    (hw : ¬Group.IsProperPower (mk w)) : ¬∃ u n, 2 ≤ n ∧ w = (List.replicate n u).flatten := by
+  rintro ⟨u, n, hn, rfl⟩
+  exact hw (Group.isProperPower_iff.2 ⟨mk u, n, hn, by rw [pow_mk]⟩)
 
 /-- A coordinate homomorphism sending a chosen free generator to the generator of
 `Multiplicative ℤ`. -/

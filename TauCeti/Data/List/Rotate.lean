@@ -27,7 +27,9 @@ permutation, and renaming the entries by an equivalence conjugates that permutat
 example, `TauCeti.KnotTheory.BraidWord.Cyclic` uses them to identify the closures of cyclically
 rotated braid words. Separately, rotating a power of a word gives a power of the rotated word:
 in the combinatorics of words of Lyndon and Schützenberger, a cyclic conjugate of a power is used
-throughout as a power of a cyclic conjugate.
+throughout as a power of a cyclic conjugate. Consequently a power of a cyclic conjugate of a word
+is a factor of a power of the word, and a word is a power `uⁿ`, `n ≥ 2`, of a word exactly when
+its cyclic conjugates are.
 
 ## Main results
 
@@ -47,6 +49,10 @@ throughout as a power of a cyclic conjugate.
   gives the `n`-th power of the same rotation of `w`.
 * `List.exists_isRotated_flatten_replicate_of_append_eq`: a cyclic conjugate of a power of a word
   is a power of a cyclic conjugate of that word.
+* `List.IsRotated.flatten_replicate_infix`: a power of a cyclic conjugate of a word is a factor of
+  a power of that word.
+* `List.IsRotated.exists_eq_flatten_replicate_iff`: a word is a power `uⁿ`, `n ≥ 2`, exactly when
+  its cyclic conjugates are.
 
 ## References
 
@@ -231,5 +237,26 @@ theorem exists_isRotated_flatten_replicate_of_append_eq {α : Type*} {w s t : Li
       t ++ s = (replicate n w').flatten :=
   ⟨w.rotate s.length, IsRotated.forall w _,
     by rw [← rotate_append_length_eq, ← h, rotate_flatten_replicate]⟩
+
+/-- If `l` is a rotation of `l'`, the concatenation of `n` copies of `l` is a factor of the
+concatenation of `n + 1` copies of `l'`. -/
+theorem IsRotated.flatten_replicate_infix {α : Type*} {l l' : List α} (h : l ~r l') (n : ℕ) :
+    (replicate n l).flatten <:+: (replicate (n + 1) l').flatten := by
+  obtain ⟨k, hk, rfl⟩ := isRotated_iff_mod.1 h.symm
+  rw [rotate_eq_drop_append_take hk]
+  -- `(x ++ y)ⁿ⁺¹ = x ++ (y ++ x)ⁿ ++ y` with `x = l'.take k` and `y = l'.drop k`
+  refine ⟨l'.take k, l'.drop k, ?_⟩
+  have := append_flatten_map_append (replicate n (l'.drop k)) (l'.take k)
+  simp only [map_replicate] at this
+  rw [this, replicate_succ', flatten_append, flatten_singleton, append_assoc, take_append_drop]
+
+/-- A cyclic rotation of a word is a power `uⁿ` of a word `u` with `n ≥ 2` exactly when the word
+itself is such a power. -/
+theorem IsRotated.exists_eq_flatten_replicate_iff {α : Type*} {l l' : List α} (h : l ~r l') :
+    (∃ u n, 2 ≤ n ∧ l = (replicate n u).flatten) ↔ ∃ u n, 2 ≤ n ∧ l' = (replicate n u).flatten := by
+  suffices ∀ {l l' : List α}, l ~r l' → (∃ u n, 2 ≤ n ∧ l = (replicate n u).flatten) →
+      ∃ u n, 2 ≤ n ∧ l' = (replicate n u).flatten from ⟨this h, this h.symm⟩
+  rintro l l' ⟨k, rfl⟩ ⟨u, n, hn, rfl⟩
+  exact ⟨u.rotate k, n, hn, rotate_flatten_replicate u n k⟩
 
 end List
