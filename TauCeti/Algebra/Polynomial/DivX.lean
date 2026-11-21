@@ -16,7 +16,8 @@ one. Its `m`-th iterate `divX^[m] p` drops the `m` lowest coefficients and lower
 degrees by `m`, so that `(divX^[m] p).coeff n = p.coeff (n + m)`. This file records how the
 iterate interacts with sums, scalars, multiplication by powers of `X` and reflection, and the
 Horner recursion `divX^[m] p = divX^[m + 1] p * X + C (p.coeff m)`, whose values at a point are
-the partial Horner sums of `p`.
+the partial Horner sums of `p`. It also records that `divX` commutes with coefficient change
+and the value of the decomposition `p = divX p * X + C (p.coeff 0)` at a point.
 
 In terms of Laurent polynomials, `divX^[m] (Xᵐ * p)` is `p`, while the reflection
 `reflect m q = Xᵐ q(X⁻¹)` of a polynomial `q` of degree at most `m` keeps only its constant
@@ -101,6 +102,21 @@ theorem iterate_divX_reflect {m : ℕ} {q : R[X]} (hq : q.natDegree ≤ m) :
   · simp [revAt_le]
   · rw [revAt_eq_self_of_lt (by omega), coeff_eq_zero_of_natDegree_lt (by omega)]
     split_ifs <;> first | omega | rfl
+
+/-- `divX` commutes with coefficient change. -/
+@[simp]
+theorem divX_map {S : Type*} [Semiring S] (f : R →+* S) (p : R[X]) :
+    (p.map f).divX = p.divX.map f := by
+  ext n
+  simp [coeff_divX]
+
+/-- Evaluation of the decomposition `p = divX p * X + C (p.coeff 0)` at any point of any
+semiring. -/
+@[simp]
+theorem eval₂_divX_mul_add {S : Type*} [Semiring S] (f : R →+* S) (x : S) (p : R[X]) :
+    p.divX.eval₂ f x * x + f (p.coeff 0) = p.eval₂ f x := by
+  conv_rhs => rw [← divX_mul_X_add p]
+  rw [eval₂_add, eval₂_mul_X, eval₂_C]
 
 end Semiring
 
