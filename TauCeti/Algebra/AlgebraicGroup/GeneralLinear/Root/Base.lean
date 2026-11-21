@@ -33,6 +33,8 @@ to the standard maximal torus of `GL_(n+1)` carries the expected Bourbaki-number
 
 * `TauCeti.GeneralLinear.diagonalSimpleRootIndex`: the root index of `e_i - e_(i+1)`.
 * `TauCeti.GeneralLinear.diagonalRootBase`: the consecutive coordinate roots as a base.
+* `TauCeti.GeneralLinear.bijOn_diagonalSimpleRootIndex`: the consecutive-root indices biject
+  onto the support of this base.
 * `TauCeti.GeneralLinear.diagonalRootBase_isPos_iff`: positive diagonal roots are exactly
   the coordinate differences `e_i - e_j` with `i < j`.
 * `TauCeti.GeneralLinear.hasCartanType_diagonalRootDatum`: this base has Cartan type `A_n`.
@@ -43,8 +45,8 @@ to the standard maximal torus of `GL_(n+1)` carries the expected Bourbaki-number
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, Section 12.1.
 
 The support and telescoping organization follows
-`TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A`, adapted here to the character and
-cocharacter lattices of the diagonal torus in `GL_(n+1)`.
+`TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A.Basic`, adapted here to the character
+and cocharacter lattices of the diagonal torus in `GL_(n+1)`.
 -/
 
 public section
@@ -224,6 +226,14 @@ theorem diagonalRootDatum_coroot_diagonalSimpleRootIndex (n : ℕ) (i : Fin n) :
   simp only [diagonalSimpleRootIndex_fst, diagonalSimpleRootIndex_snd, ULift.down_up]
   exact diagonalCoroot_eq_coordinateCoroot i.castSucc i.succ
 
+/-- In coordinates, the coroot at the `i`-th diagonal simple-root index is `e_i - e_(i+1)`. -/
+theorem diagonalRootDatum_coroot_diagonalSimpleRootIndex_apply (n : ℕ) (i : Fin n)
+    (j : Fin (n + 1)) :
+    (diagonalRootDatum.{u} (n + 1)).coroot (diagonalSimpleRootIndex n i) (ULift.up j) =
+      (Pi.single i.castSucc 1 - Pi.single i.succ 1 : Fin (n + 1) → ℤ) j := by
+  rw [diagonalRootDatum_coroot_diagonalSimpleRootIndex, SplitTorus.coordinateCoroot_apply]
+  simp [Pi.single_apply, ULift.ext_iff]
+
 /-- The support consisting of consecutive coordinate-root indices. -/
 private abbrev diagonalSimpleSupport (n : ℕ) : Finset (DiagonalRootIndex (n + 1)) :=
   simpleSupport (diagonalSimpleRootIndex_injective n)
@@ -287,6 +297,15 @@ indices. -/
 theorem mem_diagonalRootBase_support (n : ℕ) (p : DiagonalRootIndex (n + 1)) :
     p ∈ (diagonalRootBase.{u} n).support ↔ ∃ i : Fin n, diagonalSimpleRootIndex n i = p := by
   rw [diagonalRootBase_support, mem_simpleSupport]
+
+/-- The consecutive-root indices biject onto the support of the diagonal base. -/
+theorem bijOn_diagonalSimpleRootIndex (n : ℕ) :
+    BijOn (diagonalSimpleRootIndex n) univ
+      ((diagonalRootBase.{u} n).support : Set (DiagonalRootIndex.{u} (n + 1))) := by
+  refine ⟨fun i _ ↦ ?_, (diagonalSimpleRootIndex_injective n).injOn, fun p hp ↦ ?_⟩
+  · simp
+  · obtain ⟨i, hi⟩ := (mem_diagonalRootBase_support n p).1 hp
+    exact ⟨i, trivial, hi⟩
 
 /-- The diagonal root index attached to an ordered pair of distinct matrix coordinates. -/
 private def diagonalRootIndexOfNe {n : ℕ} (i j : Fin n) (hij : i ≠ j) :

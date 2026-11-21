@@ -42,6 +42,9 @@ presheaves on the category of all schemes.
 * `CategoryTheory.GrothendieckTopology.isLeftAdjoint_overPullback`: pullback of sheaves to the
   over site `J.over U` is a left adjoint whenever pointwise right Kan extensions along
   `(Over.forget U).op` exist.
+* `CategoryTheory.GrothendieckTopology.ofArrows_mem_over_iff`: a family of morphisms of `Over U`
+  generates a covering sieve for `J.over U` if and only if the underlying family of morphisms of
+  `C` generates a covering sieve for `J`.
 
 ## References
 
@@ -251,5 +254,14 @@ instance isLeftAdjoint_overPullback {C : Type*} [Category* C] (J : GrothendieckT
     [∀ F : (Over U)ᵒᵖ ⥤ A, (Over.forget U).op.HasPointwiseRightKanExtension F] :
     (J.overPullback A U).IsLeftAdjoint :=
   ((Over.forget U).sheafAdjunctionCocontinuous A (J.over U) J).isLeftAdjoint
+
+/-- A family of morphisms `g i : Z i ⟶ Y` of `Over U` generates a covering sieve of `Y` for
+`J.over U` if and only if the underlying family `(g i).left` generates a covering sieve of `Y.left`
+for `J`. -/
+lemma ofArrows_mem_over_iff {C : Type*} [Category* C] (J : GrothendieckTopology C) {U : C}
+    {Y : Over U} {I : Type*} (Z : I → Over U) (g : ∀ i, Z i ⟶ Y) :
+    Sieve.ofArrows Z g ∈ J.over U Y ↔
+      Sieve.ofArrows (fun i ↦ (Z i).left) (fun i ↦ (g i).left) ∈ J Y.left := by
+  rw [mem_over_iff, Sieve.overEquiv_ofArrows]
 
 end CategoryTheory.GrothendieckTopology

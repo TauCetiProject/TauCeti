@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Segment
+public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Segment.Basic
 public import TauCeti.Topology.MetricSpace.CyclicDistanceCut
 public import TauCeti.Topology.PathSpace.Moore.Comparison.Basic
 public import TauCeti.Topology.PathSpace.Moore.FreeLoop
+public import TauCeti.Topology.PathSpace.Moore.Lipschitz
+import TauCeti.Data.Fin.Basic
 import TauCeti.Data.Fin.Tuple.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Minimizing
 
@@ -30,9 +32,11 @@ on the unit interval.
 
 Concatenating the segments through points `q 0, …, q n` whose consecutive distances are less
 than `r` gives the **broken geodesic** `TauCeti.Manifold.brokenGeodesic` through them, of length
-the sum of the consecutive distances. Closing it up with the segment from `q n` back to `q 0`
-gives the closed broken geodesic, a free Moore loop
-(`TauCeti.Manifold.brokenGeodesicLoop`). On the tuples of a cyclic distance cut
+the sum of the consecutive distances. It is `1`-Lipschitz in its time
+(`TauCeti.Manifold.lipschitzWith_brokenGeodesic`) and passes through `q i` at the partial sum of
+the first `i` consecutive distances (`TauCeti.Manifold.brokenGeodesic_apply_partialSum`).
+Closing it up with the segment from `q n` back to `q 0` gives the closed broken geodesic, a free
+Moore loop (`TauCeti.Manifold.brokenGeodesicLoop`). On the tuples of a cyclic distance cut
 `𝓛ⁿM = {q | dist (q i) (q (i - 1)) ≤ δ i}` with all cut-offs below `r`, this is a continuous map
 
 `geoⁿ : 𝓛ⁿM → 𝓛M`
@@ -55,10 +59,15 @@ compatible with the embedding `ιⁿ : 𝓛ⁿM → 𝓛ⁿ⁺¹M` repeating the
 ## Main results
 
 * `TauCeti.Manifold.dist_geodesicSegment_apply`: the geodesic segment travels at unit speed.
+* `TauCeti.Manifold.lipschitzWith_geodesicSegment`, `TauCeti.Manifold.lipschitzWith_brokenGeodesic`,
+  `TauCeti.Manifold.lipschitzWith_brokenGeodesicLoop`: broken geodesics are `1`-Lipschitz.
 * `TauCeti.Manifold.geodesicSegment_self`: the segment from a point to itself is the constant
   path of length zero.
 * `TauCeti.Manifold.length_brokenGeodesic`, `TauCeti.Manifold.length_brokenGeodesicLoop`: the
   length of a broken geodesic is the sum of the distances between consecutive vertices.
+* `TauCeti.Manifold.brokenGeodesic_apply_partialSum`,
+  `TauCeti.Manifold.brokenGeodesicLoop_apply_partialSum`: a broken geodesic passes through its
+  vertices at the partial sums of the distances between consecutive vertices.
 * `TauCeti.Manifold.brokenGeodesicLoop_const`: a constant tuple gives the constant loop.
 * `TauCeti.Manifold.cyclicDistanceCutBrokenGeodesic_cyclicDistanceCutRepeatFirst`:
   `geoⁿ⁺¹ ∘ ιⁿ = geoⁿ`.
@@ -216,6 +225,18 @@ theorem dist_geodesicSegment_apply (p : {p : M × M // dist p.1 p.2 < r}) {s t :
     ← hnorm, ← sub_div, abs_div, abs_of_pos hpos]
   field_simp
 
+/-- The geodesic segment is `1`-Lipschitz in its time: it travels at unit speed up to its length,
+and stops there. -/
+theorem lipschitzWith_geodesicSegment (p : {p : M × M // dist p.1 p.2 < r}) :
+    LipschitzWith 1 (geodesicSegment hr p) := by
+  refine LipschitzWith.of_dist_le_mul fun s t ↦ ?_
+  rw [← MoorePath.apply_min_length (geodesicSegment hr p) s,
+    ← MoorePath.apply_min_length (geodesicSegment hr p) t,
+    dist_geodesicSegment_apply hr p (min_le_right _ _) (min_le_right _ _), NNReal.coe_one, one_mul,
+    NNReal.dist_eq, NNReal.coe_min, NNReal.coe_min]
+  simpa using abs_min_sub_min_le_max (s : ℝ) (geodesicSegment hr p).length t
+    (geodesicSegment hr p).length
+
 end Segment
 
 /-! ### Broken geodesics -/
@@ -228,6 +249,14 @@ private theorem forall_dist_tail_lt {n : ℕ} {q : Fin (n + 2) → M}
     (h : ∀ i : Fin (n + 1), dist (q i.castSucc) (q i.succ) < r) (i : Fin n) :
     dist (Fin.tail q i.castSucc) (Fin.tail q i.succ) < r := by
   simpa only [Fin.tail, Fin.succ_castSucc] using h i.succ
+
+/-- The distances between consecutive vertices of `q 0, …, q (n + 1)`, after the first one, are
+those of `q 1, …, q (n + 1)`. -/
+private theorem tail_nndist_castSucc_succ {n : ℕ} (q : Fin (n + 2) → M) :
+    Fin.tail (fun k : Fin (n + 1) ↦ nndist (q k.castSucc) (q k.succ)) =
+      fun k : Fin n ↦ nndist (Fin.tail q k.castSucc) (Fin.tail q k.succ) := by
+  funext k
+  simp only [Fin.tail, Fin.succ_castSucc]
 
 include hr
 
@@ -352,6 +381,46 @@ theorem brokenGeodesic_cons_of_eq (n : ℕ) {x : M} {q : Fin (n + 1) → M} (hx 
   simp only [hseg, MoorePath.refl_trans]
   exact brokenGeodesic_congr hr _ _ (Fin.tail_cons _ _)
 
+/-- A broken geodesic is `1`-Lipschitz in its time. -/
+theorem lipschitzWith_brokenGeodesic (n : ℕ) (q : Fin (n + 1) → M)
+    (h : ∀ i : Fin n, dist (q i.castSucc) (q i.succ) < r) :
+    LipschitzWith 1 (brokenGeodesic hr n q h) := by
+  induction n with
+  | zero =>
+    rw [brokenGeodesic_zero]
+    exact MoorePath.lipschitzWith_refl _ _
+  | succ n ih =>
+    rw [brokenGeodesic_succ hr n q h (forall_dist_tail_lt h)]
+    exact MoorePath.lipschitzWith_trans _ (lipschitzWith_geodesicSegment hr _) (ih _ _)
+
+/-- **The broken geodesic passes through its vertices at the partial sums of the distances:** it is
+at `q i` at the time `d(q 0, q 1) + ⋯ + d(q (i - 1), q i)`. -/
+theorem brokenGeodesic_apply_partialSum (n : ℕ) (q : Fin (n + 1) → M)
+    (h : ∀ i : Fin n, dist (q i.castSucc) (q i.succ) < r) (i : Fin (n + 1)) :
+    brokenGeodesic hr n q h
+      (Fin.partialSum (fun k : Fin n ↦ nndist (q k.castSucc) (q k.succ)) i) = q i := by
+  induction n with
+  | zero =>
+    rw [Fin.fin_one_eq_zero i, Fin.partialSum_zero, brokenGeodesic_zero, MoorePath.refl_apply]
+  | succ n ih =>
+    rw [brokenGeodesic_succ hr n q h (forall_dist_tail_lt h)]
+    refine Fin.cases ?_ (fun j ↦ ?_) i
+    · rw [Fin.partialSum_zero, ← MoorePath.source_def, MoorePath.source_trans,
+        source_geodesicSegment]
+      exact congrArg q Fin.castSucc_zero
+    · rw [Fin.partialSum_succ', tail_nndist_castSucc_succ,
+        ← length_geodesicSegment hr ⟨(q (Fin.castSucc 0), q (Fin.succ 0)), h 0⟩,
+        MoorePath.trans_apply_length_add]
+      exact ih (Fin.tail q) (forall_dist_tail_lt h) j
+
+/-- The length of a broken geodesic is the last partial sum of the distances between consecutive
+vertices: the broken geodesic reaches its last vertex at its length. -/
+theorem length_brokenGeodesic_eq_partialSum (n : ℕ) (q : Fin (n + 1) → M)
+    (h : ∀ i : Fin n, dist (q i.castSucc) (q i.succ) < r) :
+    (brokenGeodesic hr n q h).length =
+      Fin.partialSum (fun k : Fin n ↦ nndist (q k.castSucc) (q k.succ)) (Fin.last n) := by
+  rw [length_brokenGeodesic, Fin.partialSum_last]
+
 end Broken
 
 /-! ### Closed broken geodesics -/
@@ -367,6 +436,12 @@ private theorem forall_dist_snoc_lt {n : ℕ} {q : Fin (n + 1) → M}
       ((Fin.snoc q (q 0) : Fin (n + 2) → M) i.succ) < r := by
   rw [Fin.snoc_castSucc, Fin.snoc_self_zero_succ, dist_comm]
   simpa only [add_sub_cancel_right] using h (i + 1)
+
+/-- The edges of `q 0, …, q n, q 0` are the cyclic edges of `q`. -/
+private theorem nndist_snoc_castSucc_succ {n : ℕ} (q : Fin (n + 1) → M) :
+    (fun k : Fin (n + 1) ↦ nndist ((Fin.snoc q (q 0) : Fin (n + 2) → M) k.castSucc)
+      ((Fin.snoc q (q 0) : Fin (n + 2) → M) k.succ)) = fun k ↦ nndist (q k) (q (k + 1)) :=
+  funext fun k ↦ by rw [Fin.snoc_castSucc, Fin.snoc_self_zero_succ]
 
 include hr
 
@@ -439,6 +514,33 @@ theorem brokenGeodesicLoop_cons (n : ℕ) (q : Fin (n + 1) → M)
   exact brokenGeodesic_cons_of_eq hr (n + 1)
     (by rw [Fin.snoc_apply_zero]) _ _
 
+/-- A closed broken geodesic is `1`-Lipschitz in its time. -/
+theorem lipschitzWith_brokenGeodesicLoop (n : ℕ) (q : Fin (n + 1) → M)
+    (h : ∀ i, dist (q i) (q (i - 1)) < r) :
+    LipschitzWith 1 (brokenGeodesicLoop hr n q h).toMoorePath := by
+  rw [toMoorePath_brokenGeodesicLoop hr n q h (forall_dist_snoc_lt h)]
+  exact lipschitzWith_brokenGeodesic hr _ _ _
+
+/-- **The closed broken geodesic passes through its vertices at the partial sums of the distances:**
+it is at `q i` at the time `d(q 0, q 1) + ⋯ + d(q (i - 1), q i)`. -/
+theorem brokenGeodesicLoop_apply_partialSum (n : ℕ) (q : Fin (n + 1) → M)
+    (h : ∀ i, dist (q i) (q (i - 1)) < r) (i : Fin (n + 1)) :
+    (brokenGeodesicLoop hr n q h).toMoorePath
+      (Fin.partialSum (fun k ↦ nndist (q k) (q (k + 1))) i.castSucc) = q i := by
+  rw [toMoorePath_brokenGeodesicLoop hr n q h (forall_dist_snoc_lt h),
+    ← nndist_snoc_castSucc_succ q,
+    brokenGeodesic_apply_partialSum, Fin.snoc_castSucc]
+
+/-- The length of the closed broken geodesic through `q 0, …, q n` is the last partial sum
+`d(q 0, q 1) + ⋯ + d(q (n - 1), q n) + d(q n, q 0)` of its cyclic edges. -/
+theorem length_brokenGeodesicLoop_eq_partialSum (n : ℕ) (q : Fin (n + 1) → M)
+    (h : ∀ i, dist (q i) (q (i - 1)) < r) :
+    (brokenGeodesicLoop hr n q h).length =
+      Fin.partialSum (fun k ↦ nndist (q k) (q (k + 1))) (Fin.last (n + 1)) := by
+  rw [← MooreFreeLoopSpace.length_toMoorePath,
+    toMoorePath_brokenGeodesicLoop hr n q h (forall_dist_snoc_lt h), ← nndist_snoc_castSucc_succ q,
+    length_brokenGeodesic_eq_partialSum]
+
 end Loop
 
 /-! ### Broken geodesics on a distance cut -/
@@ -483,6 +585,16 @@ theorem cyclicDistanceCutBrokenGeodesic_cyclicDistanceCutRepeatFirst {n : ℕ} {
       cyclicDistanceCutBrokenGeodesic hr hδ q := by
   simp only [cyclicDistanceCutBrokenGeodesic_apply, coe_cyclicDistanceCutRepeatFirst_apply]
   exact brokenGeodesicLoop_cons hr n q.val _ _
+
+/-- The length of the closed broken geodesic through a tuple of a distance cut is at most the sum of
+the cut-offs. -/
+theorem length_cyclicDistanceCutBrokenGeodesic_le {n : ℕ} {δ : Fin (n + 1) → ℝ}
+    (hδ : ∀ i, δ i < r) (q : cyclicDistanceCut (X := M) δ) :
+    ((cyclicDistanceCutBrokenGeodesic hr hδ q).length : ℝ) ≤ ∑ i, δ i := by
+  rw [cyclicDistanceCutBrokenGeodesic_apply, length_brokenGeodesicLoop, NNReal.coe_sum]
+  exact Finset.sum_le_sum fun i _ ↦ by
+    rw [coe_nndist]
+    exact mem_cyclicDistanceCut.1 q.property i
 
 end Cut
 

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Sites.Descent.DescentData
 public import Mathlib.CategoryTheory.Sites.Hypercover.One
+public import TauCeti.CategoryTheory.Bicategory.Functor.LocallyDiscrete
 
 import Mathlib.CategoryTheory.Sites.Coverage
 import Mathlib.CategoryTheory.Sites.Hypercover.SheafOfTypes
@@ -20,9 +21,15 @@ Mathlib's presheaf of morphisms `Pseudofunctor.presheafHom M N` on `Over S` has 
 `f^* M ⟶ f^* N` at `(Y, f)`, and its value at the terminal object `Over.mk (𝟙 S)` is identified with
 `M ⟶ N` by `Pseudofunctor.presheafHomObjHomEquiv`. This file shows that restricting the element
 given by `φ : M ⟶ N` to `(Y, f)` gives `f^* φ`
-(`CategoryTheory.Pseudofunctor.presheafHom_map_presheafHomObjHomEquiv`), and establishes general
-gluing and closure properties for `IsPrestack` and `IsPrestackFor` by lifting Mathlib's sheaf
-criteria (`Presieve.isSheafFor_trans`, `Presieve.isSheafFor_of_factorsThru`, and
+(`CategoryTheory.Pseudofunctor.presheafHom_map_presheafHomObjHomEquiv`). So a morphism `φ` is an
+amalgamation of a family of local morphisms exactly when its pullbacks are the members of the
+family, which is how the sheaf condition of `presheafHom M N` (the prestack condition) is checked.
+
+It also shows that pulling back morphisms between pullbacks commutes with restricting `F` along a
+functor `p : D ⥤ C`
+(`CategoryTheory.Pseudofunctor.LocallyDiscreteOpToCat.pullHom_toPseudofunctor_comp`), and
+establishes general gluing and closure properties for `IsPrestack` and `IsPrestackFor` by lifting
+Mathlib's sheaf criteria (`Presieve.isSheafFor_trans`, `Presieve.isSheafFor_of_factorsThru`, and
 `GrothendieckTopology.OneHypercover.isSheafFor_sieve_of_pullback` by Christian Merten) to
 `F.presheafHom`.
 
@@ -30,6 +37,8 @@ criteria (`Presieve.isSheafFor_trans`, `Presieve.isSheafFor_of_factorsThru`, and
 
 * `CategoryTheory.Pseudofunctor.presheafHom_map_presheafHomObjHomEquiv`: restricting the element
   of `F.presheafHom M N` given by `φ : M ⟶ N` to `(Y, f)` gives `f^* φ`.
+* `CategoryTheory.Pseudofunctor.LocallyDiscreteOpToCat.pullHom_toPseudofunctor_comp`: pulling back
+  a morphism between pullbacks commutes with restricting `F` along a functor `p : D ⥤ C`.
 * `CategoryTheory.Pseudofunctor.IsPrestack.of_le`: a prestack for a finer Grothendieck topology
   is a prestack for any coarser topology.
 * `CategoryTheory.Pseudofunctor.IsPrestackFor.hom_ext`,
@@ -76,6 +85,33 @@ lemma presheafHom_map_presheafHomObjHomEquiv {M N : F.obj (.mk (op S))} (φ : M 
   exact congr(DescentData.Hom.hom
     $(DescentData.subtypeCompatibleHomEquiv_toCompatible_presheafHomObjHomEquiv F
       (fun _ : PUnit.{1} ↦ y) φ) PUnit.unit)
+
+namespace LocallyDiscreteOpToCat
+
+variable {D : Type*} [Category* D] (p : D ⥤ C)
+
+/-- Pulling back a morphism between pullbacks along a morphism `g` of `D`, for the restriction
+`p.op.toPseudofunctor.comp F` of `F` along `p : D ⥤ C`, is pulling it back along `p.map g` for
+`F`. -/
+lemma pullHom_toPseudofunctor_comp ⦃X₁ X₂ : D⦄
+    ⦃M₁ : (p.op.toPseudofunctor.comp F).obj (.mk (op X₁))⦄
+    ⦃M₂ : (p.op.toPseudofunctor.comp F).obj (.mk (op X₂))⦄ ⦃Y : D⦄ ⦃f₁ : Y ⟶ X₁⦄ ⦃f₂ : Y ⟶ X₂⦄
+    (φ : ((p.op.toPseudofunctor.comp F).map f₁.op.toLoc).toFunctor.obj M₁ ⟶
+      ((p.op.toPseudofunctor.comp F).map f₂.op.toLoc).toFunctor.obj M₂)
+    ⦃Y' : D⦄ (g : Y' ⟶ Y) (gf₁ : Y' ⟶ X₁) (gf₂ : Y' ⟶ X₂) (hgf₁ : g ≫ f₁ = gf₁)
+    (hgf₂ : g ≫ f₂ = gf₂) :
+    pullHom φ g gf₁ gf₂ hgf₁ hgf₂ =
+      pullHom (F := F) (X₁ := p.obj X₁) (X₂ := p.obj X₂) (M₁ := M₁) (M₂ := M₂) (f₁ := p.map f₁)
+        (f₂ := p.map f₂) φ (p.map g) (p.map gf₁) (p.map gf₂) (by rw [← hgf₁, p.map_comp])
+        (by rw [← hgf₂, p.map_comp]) := by
+  unfold pullHom
+  rw [comp_mapComp'_eq_mapComp' _ _ f₁.op.toLoc g.op.toLoc gf₁.op.toLoc (by rw [← hgf₁]; rfl),
+    comp_mapComp'_eq_mapComp' _ _ f₂.op.toLoc g.op.toLoc gf₂.op.toLoc (by rw [← hgf₂]; rfl)]
+  -- Both sides now use the comparisons of `F`; the pullback functors along `g.op.toLoc` for the
+  -- restriction and along `(p.map g).op.toLoc` for `F` agree by unfolding `Pseudofunctor.comp`.
+  rfl
+
+end LocallyDiscreteOpToCat
 
 end
 

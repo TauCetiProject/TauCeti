@@ -352,12 +352,9 @@ theorem boundaryTensorEquiv_tensorPower_mul_mul (g : Matrix.orthogonalGroup (Fin
         ((stdOrthogonalRep R n).tensorPower k g * f * (stdOrthogonalRep R n).tensorPower k g⁻¹) =
       Representation.piTensorProduct (fun _ : Fin k ⊕ Fin k => stdOrthogonalRep R n) g
         (boundaryTensorEquiv R n k f) := by
-  have hinv : ((g⁻¹ : Matrix.orthogonalGroup (Fin n) R) : Matrix (Fin n) (Fin n) R) =
-      (g : Matrix (Fin n) (Fin n) R)ᵀ :=
-    left_inv_eq_right_inv (congrArg Subtype.val (inv_mul_cancel g))
-      ((Matrix.mem_orthogonalGroup_iff (Fin n) R).mp g.property)
   simp only [Representation.piTensorProduct_apply, Representation.tensorPower_apply,
-    stdOrthogonalRep_apply, hinv, Module.End.mul_eq_comp, LinearMap.comp_assoc]
+    stdOrthogonalRep_apply, Matrix.coe_orthogonalGroup_inv g, Module.End.mul_eq_comp,
+    LinearMap.comp_assoc]
   exact boundaryTensorEquiv_piTensorProductMap_comp_comp _ f
 
 /-- **The commutant is the invariant tensors.** An endomorphism of `(Rⁿ)^{⊗k}` commutes with the
