@@ -893,6 +893,13 @@ theorem mfderiv_subtype_val {U : Opens M} (x : U) :
       (I.uniqueDiffOn.uniqueDiffWithinAt hxRange)]
   rfl
 
+/-- The differential of the inclusion of an open submanifold fixes every tangent vector, the
+tangent spaces of the open submanifold and of the ambient manifold being the same. -/
+theorem mfderiv_subtype_val_apply {U : Opens M} (x : U) (v : TangentSpace I x) :
+    mfderiv I I (Subtype.val : U → M) x v = v := by
+  rw [mfderiv_subtype_val]
+  exact tangentSpaceOpenEquiv_apply x v
+
 /-- The differential of an open-submanifold inclusion is injective. -/
 theorem mfderiv_subtype_val_injective {U : Opens M} (x : U) :
     Function.Injective (mfderiv I I (Subtype.val : U → M) x) := by
@@ -946,8 +953,8 @@ theorem mfderiv_subtype_val_comp_apply {U : Opens M} {f : N → U} {x : N}
     mfderiv J I ((Subtype.val : U → M) ∘ f) x v = mfderiv J I f x v := by
   by_cases hf : MDifferentiableAt J I f x
   · rw [mfderiv_comp x (contMDiff_subtypeVal.mdifferentiableAt one_ne_zero) hf,
-      ContinuousLinearMap.comp_apply, mfderiv_subtype_val]
-    exact tangentSpaceOpenEquiv_apply _ _
+      ContinuousLinearMap.comp_apply]
+    exact mfderiv_subtype_val_apply _ _
   · rw [mfderiv_zero_of_not_mdifferentiableAt hf,
       mfderiv_zero_of_not_mdifferentiableAt (mdifferentiableAt_subtype_val_comp_iff.not.mpr hf)]
     rfl
