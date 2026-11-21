@@ -30,7 +30,7 @@ critical points `x`, and also of their unstable sets `W^u(x)`.
   `TauCeti.IsAdaptedPseudoGradient.flowDiffeomorph`: the flow is smooth in time and space, and its
   time-`t` map is a diffeomorphism.
 * `TauCeti.IsAdaptedPseudoGradient.neg_flow`: the flow of `-X` is the reversed flow, so the unstable
-  sets of `X` are the stable sets of `-X`.
+  sets of `X` are the stable sets of `-X` and conversely.
 * `TauCeti.IsAdaptedPseudoGradient.hasDerivAt_comp_flow`: the derivative of `f` along an orbit is
   `df(X)`.
 * `TauCeti.IsAdaptedPseudoGradient.flow_apply_of_mfderiv_eq_zero`: critical points are rest points.
@@ -245,6 +245,13 @@ theorem eq_of_mem_unstableSet_inter_stableSet {x y : M}
   simp only [hX.flow_apply_of_mfderiv_eq_zero hcrit] at hlim
   exact tendsto_nhds_unique tendsto_const_nhds hlim
 
+/-- **A critical point is a constant trajectory from itself to itself**: it lies in its own unstable
+and stable sets, since it is a rest point of the flow. -/
+theorem mem_unstableSet_inter_stableSet_self {x : M} (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) :
+    x ∈ hX.flow.unstableSet x ∩ hX.flow.stableSet x :=
+  ⟨Flow.self_mem_unstableSet_iff.2 (hX.flow_apply_of_mfderiv_eq_zero hx),
+    Flow.self_mem_stableSet_iff.2 (hX.flow_apply_of_mfderiv_eq_zero hx)⟩
+
 /-- **The stable sets of the critical points cover the manifold.** -/
 theorem iUnion_stableSet (hf : IsMorse 𝓘(ℝ, E) f) :
     ⋃ x ∈ {x : M | mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0}, hX.flow.stableSet x = univ := by
@@ -323,6 +330,11 @@ theorem neg_flow (hf : IsMorse 𝓘(ℝ, E) f) :
 theorem unstableSet_eq_stableSet_neg (hf : IsMorse 𝓘(ℝ, E) f) (x : M) :
     hX.flow.unstableSet x = (hX.neg hf).flow.stableSet x := by
   rw [hX.neg_flow hf, Flow.stableSet_reverse]
+
+/-- The stable set of a critical point is its unstable set for the reversed pseudo-gradient. -/
+theorem stableSet_eq_unstableSet_neg (hf : IsMorse 𝓘(ℝ, E) f) (x : M) :
+    hX.flow.stableSet x = (hX.neg hf).flow.unstableSet x := by
+  rw [hX.neg_flow hf, Flow.unstableSet_reverse]
 
 end IsAdaptedPseudoGradient
 

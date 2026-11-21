@@ -144,9 +144,9 @@ private theorem mem_seifertLoops_braidSwap (hab : (a.1 : ℕ) ≠ b.1) {c : ℕ 
 by `braidSwap`. -/
 private def braidLoopsEquiv (hab : (a.1 : ℕ) ≠ b.1) :
     (u ++ a :: b :: a :: v).seifertLoops ≃ (u ++ b :: a :: b :: v).seifertLoops where
-  toFun c := ⟨braidSwap u.length c, (mem_seifertLoops_braidSwap a b hab).2 c.2⟩
+  toFun c := ⟨braidSwap u.length c, (mem_seifertLoops_braidSwap a b hab).2 c.property⟩
   invFun c := ⟨braidSwap u.length c, by
-    rw [← mem_seifertLoops_braidSwap a b hab, braidSwap_braidSwap]; exact c.2⟩
+    rw [← mem_seifertLoops_braidSwap a b hab, braidSwap_braidSwap]; exact c.property⟩
   left_inv c := Subtype.ext (braidSwap_braidSwap _ _)
   right_inv c := Subtype.ext (braidSwap_braidSwap _ _)
 
@@ -298,7 +298,7 @@ private theorem seifertMatrix_braid_entry (hij : (j : ℕ) = i + 1)
   generalize (u ++ (i, ε) :: (j, ε) :: (i, ε) :: v).signAt c₂ = s₂ at *
   clear hsign hlc hld hlc₂ hld₂
   -- what is left is linear arithmetic on the positions, levels and signs
-  grind (splits := 40)
+  grind (branches := 4096)
 
 variable {ε} in
 /-- **The braid relation is a unimodular change of basis of the Seifert matrix.** Replacing the

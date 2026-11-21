@@ -263,7 +263,7 @@ private theorem exists_forall_eval_ne_zero_of_ne_zero {x : AnnularRing p} (hx : 
 
 private theorem exists_padicComplex_ratio (B : ℕ) (hB : 1 ≤ B) :
     ∃ t : ℂ_[p], ‖t‖ ∈ Set.Ioo (p : ℝ)⁻¹ 1 ∧ ‖t‖ = (p : ℝ) ^ (-((B : ℝ) / (2 * B + 1))) := by
-  obtain ⟨t, ht⟩ := PadicComplex.exists_norm_eq_rpow (p := p) ((B : ℚ) / (2 * B + 1))
+  obtain ⟨t, ht⟩ := PadicComplex.exists_norm_eq_rpow (p := p) (-((B : ℚ) / (2 * B + 1)))
   have hnorm : ‖t‖ = (p : ℝ) ^ (-((B : ℝ) / (2 * B + 1))) := by simpa using ht
   have hpos : (0 : ℝ) < 2 * B + 1 := by positivity
   refine ⟨t, ⟨?_, hnorm ▸ (Real.rpow_lt_rpow_of_exponent_lt (one_lt_p (p := p))
@@ -394,7 +394,7 @@ theorem exists_continuous_not_lipschitzWith_eval (hα : α ∈ Set.Ioo 0 1) :
     (max_lt (inv_lt_one_of_one_lt₀ (one_lt_p (p := p))) hα.2)
   obtain ⟨m, hm⟩ := pow_unbounded_of_one_lt (p : ℝ) hβ_inv
   let N : ℕ := m + 2; have hN_pos : (0 : ℝ) < N := by positivity
-  obtain ⟨t, hnorm⟩ := PadicComplex.exists_norm_eq_rpow (p := p) (1 / N : ℚ)
+  obtain ⟨t, hnorm⟩ := PadicComplex.exists_norm_eq_rpow (p := p) (-(1 / N : ℚ))
   have hnorm' : ‖t‖ = (p : ℝ) ^ (-((1 : ℝ) / N)) := by simpa using hnorm
   have hβ_lt_t : β < ‖t‖ := by
     have hrpow := Real.rpow_lt_rpow hp_pos.le

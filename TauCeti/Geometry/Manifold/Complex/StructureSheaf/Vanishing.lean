@@ -48,13 +48,13 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 At `x`, the germ must lie in the `D x`-th power of the stalk evaluation kernel. -/
 def vanishingIdeal (D : X →₀ ℕ) (U : Opens X) :
     Ideal ((holomorphicStructureSheaf I X).obj.obj (op U)) :=
-  ⨅ x : U, Ideal.comap ((holomorphicStructureSheaf I X).presheaf.germ U x x.2).hom
+  ⨅ x : U, Ideal.comap ((holomorphicStructureSheaf I X).presheaf.germ U x x.property).hom
     ((RingHom.ker (eval I X x)) ^ D x)
 
 /-- The section ideal is the intersection of the inverse images of the prescribed stalk powers. -/
 theorem vanishingIdeal_def (D : X →₀ ℕ) (U : Opens X) :
     vanishingIdeal I X D U =
-      ⨅ x : U, Ideal.comap ((holomorphicStructureSheaf I X).presheaf.germ U x x.2).hom
+      ⨅ x : U, Ideal.comap ((holomorphicStructureSheaf I X).presheaf.germ U x x.property).hom
         ((RingHom.ker (eval I X x)) ^ D x) := (rfl)
 
 /-- Membership in the section ideal is checked on the germs at the points of the open set. -/
@@ -62,7 +62,7 @@ theorem vanishingIdeal_def (D : X →₀ ℕ) (U : Opens X) :
 theorem mem_vanishingIdeal (D : X →₀ ℕ) (U : Opens X)
     (f : (holomorphicStructureSheaf I X).obj.obj (op U)) :
     f ∈ vanishingIdeal I X D U ↔ ∀ x : U,
-      (holomorphicStructureSheaf I X).presheaf.germ U x x.2 f ∈
+      (holomorphicStructureSheaf I X).presheaf.germ U x x.property f ∈
         (RingHom.ker (eval I X x)) ^ D x := by
   simp [vanishingIdeal]
 
@@ -74,7 +74,7 @@ theorem map_mem_vanishingIdeal (D : X →₀ ℕ) {U V : Opens X} (h : V ⟶ U)
   rw [mem_vanishingIdeal] at hf ⊢
   intro x
   rw [TopCat.Presheaf.germ_res_apply]
-  exact hf ⟨x, h.le x.2⟩
+  exact hf ⟨x, h.le x.property⟩
 
 /-- The zero divisor imposes no vanishing condition. -/
 @[simp]
@@ -118,9 +118,9 @@ theorem vanishingIdeal_single (p : X) (n : ℕ) (U : Opens X) :
   · intro hf hp
     simpa only [Finsupp.single_eq_same] using hf ⟨p, hp⟩
   · intro hf x
-    by_cases hx : x.1 = p
+    by_cases hx : x.val = p
     · subst p
-      simpa only [Finsupp.single_eq_same] using hf x.2
+      simpa only [Finsupp.single_eq_same] using hf x.property
     · simp [Finsupp.single_eq_of_ne hx]
 
 /-- A point with multiplicity one imposes precisely evaluation-zero on sections. -/
@@ -133,8 +133,8 @@ theorem mem_vanishingIdeal_single_one (p : X) (U : Opens X)
 /-- The restriction map on holomorphic sections with the given vanishing conditions. -/
 private def vanishingRestrict (D : X →₀ ℕ) {U V : Opens X} (h : V ⟶ U) :
     vanishingIdeal I X D U →ₗ[ℂ] vanishingIdeal I X D V where
-  toFun f := ⟨(holomorphicStructureSheaf I X).obj.map h.op f.1,
-    map_mem_vanishingIdeal I X D h f.2⟩
+  toFun f := ⟨(holomorphicStructureSheaf I X).obj.map h.op f.val,
+    map_mem_vanishingIdeal I X D h f.property⟩
   map_add' _ _ := Subtype.ext (map_add _ _ _)
   map_smul' c f := by
     apply Subtype.ext
@@ -145,7 +145,7 @@ private def vanishingRestrict (D : X →₀ ℕ) {U V : Opens X} (h : V ⟶ U) :
 @[simp]
 private theorem coe_vanishingRestrict (D : X →₀ ℕ) {U V : Opens X} (h : V ⟶ U)
     (f : vanishingIdeal I X D U) :
-    (vanishingRestrict I X D h f).1 = (holomorphicStructureSheaf I X).obj.map h.op f.1 := (rfl)
+    (vanishingRestrict I X D h f).val = (holomorphicStructureSheaf I X).obj.map h.op f.val := (rfl)
 
 /-- The presheaf of complex vector spaces of holomorphic sections with prescribed vanishing. -/
 private def vanishingPresheaf (D : X →₀ ℕ) :
@@ -171,23 +171,23 @@ private theorem vanishingPresheaf_isSheaf (D : X →₀ ℕ) :
   rw [TopCat.Presheaf.isSheaf_iff_isSheafUniqueGluing]
   intro ι U f hf
   have hc : TopCat.Presheaf.IsCompatible (holomorphicStructureSheaf I X).obj
-      U (fun i ↦ (f i).1) := by
+      U (fun i ↦ (f i).val) := by
     intro i j
     exact congrArg Subtype.val (hf i j)
   obtain ⟨s, hs, hu⟩ := TopCat.Presheaf.IsSheaf.isSheafUniqueGluing
-    (holomorphicStructureSheaf I X).property U (fun i ↦ (f i).1) hc
+    (holomorphicStructureSheaf I X).property U (fun i ↦ (f i).val) hc
   have hmem : s ∈ vanishingIdeal I X D (iSup U) := by
     rw [mem_vanishingIdeal]
     intro x
-    obtain ⟨i, hi⟩ := (Opens.mem_iSup.mp x.2)
-    have hg := (mem_vanishingIdeal I X D (U i) (f i).1).mp (f i).2 ⟨x, hi⟩
-    have hsi : (holomorphicStructureSheaf I X).obj.map (Opens.leSupr U i).op s = (f i).1 := hs i
+    obtain ⟨i, hi⟩ := (Opens.mem_iSup.mp x.property)
+    have hg := (mem_vanishingIdeal I X D (U i) (f i).val).mp (f i).property ⟨x, hi⟩
+    have hsi : (holomorphicStructureSheaf I X).obj.map (Opens.leSupr U i).op s = (f i).val := hs i
     rw [← hsi] at hg
     rw [TopCat.Presheaf.germ_res_apply] at hg
     exact hg
   refine ⟨⟨s, hmem⟩, fun i ↦ Subtype.ext (hs i), ?_⟩
   intro t ht
-  exact Subtype.ext (hu t.1 (fun i ↦ congrArg Subtype.val (ht i)))
+  exact Subtype.ext (hu t.val (fun i ↦ congrArg Subtype.val (ht i)))
 
 /-- The sheaf of complex vector spaces of holomorphic sections whose germs vanish to the
 multiplicities prescribed by a finitely supported function. -/
@@ -207,8 +207,8 @@ def vanishingSheafSectionsEquiv (D : X →₀ ℕ) (U : Opens X) :
 @[simp]
 theorem vanishingSheafSectionsEquiv_map (D : X →₀ ℕ) {U V : Opens X} (h : V ⟶ U)
     (f : (vanishingSheaf I X D).obj.obj (op U)) :
-    (vanishingSheafSectionsEquiv I X D V ((vanishingSheaf I X D).obj.map h.op f)).1 =
-      (holomorphicStructureSheaf I X).obj.map h.op (vanishingSheafSectionsEquiv I X D U f).1 :=
+    (vanishingSheafSectionsEquiv I X D V ((vanishingSheaf I X D).obj.map h.op f)).val =
+      (holomorphicStructureSheaf I X).obj.map h.op (vanishingSheafSectionsEquiv I X D U f).val :=
   (rfl)
 
 /-- The vanishing sheaf includes into the holomorphic structure sheaf as complex vector spaces. -/
@@ -227,9 +227,9 @@ def vanishingSheafι (D : X →₀ ℕ) :
     -- Erase the ModuleCat compositions and ideal-subtype inclusions before using the
     -- public evaluation API; their dependent section carriers prevent simp from matching.
     change (holomorphicStructureSheafModules.sectionsLinearEquiv I X V).symm
-        ((holomorphicStructureSheaf I X).obj.map h f.1) x =
+        ((holomorphicStructureSheaf I X).obj.map h f.val) x =
       (holomorphicStructureSheafModules I X).obj.map h
-        ((holomorphicStructureSheafModules.sectionsLinearEquiv I X U).symm f.1) x
+        ((holomorphicStructureSheafModules.sectionsLinearEquiv I X U).symm f.val) x
     simp only [holomorphicStructureSheafModules.sectionsLinearEquiv_symm_apply,
       holomorphicStructureSheafModules.map_apply, map_apply]
 
@@ -239,10 +239,10 @@ def vanishingSheafι (D : X →₀ ℕ) :
 theorem vanishingSheafι_app_apply (D : X →₀ ℕ) (U : Opens X)
     (f : (vanishingSheaf I X D).obj.obj (op U)) (x : U) :
     (vanishingSheafι I X D).hom.app (op U) f x =
-      (vanishingSheafSectionsEquiv I X D U f).1 x := by
+      (vanishingSheafSectionsEquiv I X D U f).val x := by
   dsimp only [vanishingSheafι, ModuleCat.hom_ofHom, LinearMap.comp_apply,
     Submodule.subtype_apply, vanishingSheafSectionsEquiv, LinearEquiv.refl_apply]
-  exact holomorphicStructureSheafModules.sectionsLinearEquiv_symm_apply I X (op U) f.1 x
+  exact holomorphicStructureSheafModules.sectionsLinearEquiv_symm_apply I X (op U) f.val x
 
 /-- The inclusion is injective on sections. -/
 theorem vanishingSheafι_app_injective (D : X →₀ ℕ) (U : Opens X) :
@@ -280,8 +280,8 @@ def vanishingSheafMapOfLE {D D' : X →₀ ℕ} (h : D ≤ D') :
 theorem vanishingSheafMapOfLE_app {D D' : X →₀ ℕ} (h : D ≤ D') (U : Opens X)
     (f : (vanishingSheaf I X D').obj.obj (op U)) :
     (vanishingSheafSectionsEquiv I X D U
-      ((vanishingSheafMapOfLE I X h).hom.app (op U) f)).1 =
-        (vanishingSheafSectionsEquiv I X D' U f).1 := (rfl)
+      ((vanishingSheafMapOfLE I X h).hom.app (op U) f)).val =
+        (vanishingSheafSectionsEquiv I X D' U f).val := (rfl)
 
 /-- The inclusion between vanishing sheaves commutes with inclusion into the structure sheaf. -/
 @[reassoc (attr := simp), simp]
@@ -305,7 +305,7 @@ theorem exists_germ_eq_of_mem_pow_ker_eval [T1Space X] (D : X →₀ ℕ) (x : X
     {g : (holomorphicStructureSheaf I X).presheaf.stalk x}
     (hg : g ∈ (RingHom.ker (eval I X x)) ^ D x) :
     ∃ (U : Opens X) (hx : x ∈ U) (f : vanishingIdeal I X D U),
-      (holomorphicStructureSheaf I X).presheaf.germ U x hx f.1 = g := by
+      (holomorphicStructureSheaf I X).presheaf.germ U x hx f.val = g := by
   classical
   obtain ⟨V, hxV, s, hs⟩ := (holomorphicStructureSheaf I X).presheaf.exists_germ_eq g
   let W : Opens X := ⟨(↑(D.support.erase x) : Set X)ᶜ,
@@ -333,11 +333,11 @@ theorem mem_pow_ker_eval_iff_exists_germ [T1Space X] (D : X →₀ ℕ) (x : X)
     (g : (holomorphicStructureSheaf I X).presheaf.stalk x) :
     g ∈ (RingHom.ker (eval I X x)) ^ D x ↔
       ∃ (U : Opens X) (hx : x ∈ U) (f : vanishingIdeal I X D U),
-        (holomorphicStructureSheaf I X).presheaf.germ U x hx f.1 = g := by
+        (holomorphicStructureSheaf I X).presheaf.germ U x hx f.val = g := by
   constructor
   · exact exists_germ_eq_of_mem_pow_ker_eval I X D x
   · rintro ⟨U, hx, f, rfl⟩
-    exact (mem_vanishingIdeal I X D U f.1).mp f.2 ⟨x, hx⟩
+    exact (mem_vanishingIdeal I X D U f.val).mp f.property ⟨x, hx⟩
 
 /-- On a compact connected complex manifold, a nonzero multiplicity function admits no nonzero
 global holomorphic section with the prescribed vanishing. -/

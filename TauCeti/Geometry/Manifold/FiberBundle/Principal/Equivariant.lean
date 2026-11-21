@@ -75,7 +75,7 @@ theorem contMDiff_symm_of_equivariant [LieGroup IG n G]
   have hq : ContMDiffAt (IB.prod IG) (IB.prod IG) n
       (fun y : ManifoldTotalSpace G Q ↦ ManifoldTotalSpace.homeomorph G Q
         ⟨((ManifoldTotalSpace.homeomorph G Q).symm y).proj,
-          ((ManifoldTotalSpace.homeomorph G Q).symm y).2⟩) q := by
+          ((ManifoldTotalSpace.homeomorph G Q).symm y).snd⟩) q := by
     exact contMDiffAt_id.congr_of_eventuallyEq (.of_forall fun y ↦ by
       simp only [TotalSpace.eta, Homeomorph.apply_symm_apply, id_eq])
   have hd := hfs.division hq
@@ -116,14 +116,14 @@ variable [LieGroup IG n G] (e : ∀ b, P b ≃ Q b)
 @[simp]
 theorem diffeomorphOfEquivariant_apply (p : TotalSpace G P) :
     diffeomorphOfEquivariant G e he hf (ManifoldTotalSpace.homeomorph G P p) =
-      ManifoldTotalSpace.homeomorph G Q ⟨p.proj, e _ p.2⟩ := by
+      ManifoldTotalSpace.homeomorph G Q ⟨p.proj, e _ p.snd⟩ := by
   exact fiberwiseMap_homeomorph (fun b ↦ e b) p
 
 /-- On each fibre the inverse diffeomorphism is the inverse equivalence. -/
 @[simp]
 theorem diffeomorphOfEquivariant_symm_apply (q : TotalSpace G Q) :
     (diffeomorphOfEquivariant G e he hf).symm (ManifoldTotalSpace.homeomorph G Q q) =
-      ManifoldTotalSpace.homeomorph G P ⟨q.proj, (e _).symm q.2⟩ := by
+      ManifoldTotalSpace.homeomorph G P ⟨q.proj, (e _).symm q.snd⟩ := by
   exact fiberwiseMap_homeomorph (fun b ↦ (e b).symm) q
 
 /-- Reading the induced diffeomorphism in the original total space gives the fibre equivalence
@@ -132,7 +132,7 @@ at any point of the charted total space. -/
 theorem homeomorph_symm_diffeomorphOfEquivariant_apply (x : ManifoldTotalSpace G P) :
     (ManifoldTotalSpace.homeomorph G Q).symm (diffeomorphOfEquivariant G e he hf x) =
       ⟨((ManifoldTotalSpace.homeomorph G P).symm x).proj,
-        e _ ((ManifoldTotalSpace.homeomorph G P).symm x).2⟩ :=
+        e _ ((ManifoldTotalSpace.homeomorph G P).symm x).snd⟩ :=
   homeomorph_symm_fiberwiseMap (fun b ↦ e b) x
 
 /-- Reading the inverse diffeomorphism in the original total space gives the inverse fibre
@@ -141,7 +141,7 @@ equivalence at any point of the charted total space. -/
 theorem homeomorph_symm_diffeomorphOfEquivariant_symm_apply (y : ManifoldTotalSpace G Q) :
     (ManifoldTotalSpace.homeomorph G P).symm ((diffeomorphOfEquivariant G e he hf).symm y) =
       ⟨((ManifoldTotalSpace.homeomorph G Q).symm y).proj,
-        (e _).symm ((ManifoldTotalSpace.homeomorph G Q).symm y).2⟩ :=
+        (e _).symm ((ManifoldTotalSpace.homeomorph G Q).symm y).snd⟩ :=
   homeomorph_symm_fiberwiseMap (fun b ↦ (e b).symm) y
 
 /-- The induced diffeomorphism lies over the identity on the base. -/
