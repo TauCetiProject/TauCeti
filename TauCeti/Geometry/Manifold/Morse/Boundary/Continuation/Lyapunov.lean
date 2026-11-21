@@ -22,7 +22,8 @@ rate `C > 0` (`TauCeti.IsContinuationField`): in the open slab `M × (0, 1)` its
 `f₀` does not increase along `X₀` and `f₁` does not increase along `X₁`, as for pseudo-gradients
 adapted to `f₀` and `f₁` (`TauCeti.IsAdaptedPseudoGradient.mvfderiv_apply_nonpos`). This file
 constructs a function on the slab that strictly increases along every trajectory of `V` through
-it, so that `V` is gradient-like on the open slab, as `X₀` and `X₁` are for `-f₀` and `-f₁`.
+it, so that `V` is gradient-like on the open slab, even though `f₀` and `f₁` are only assumed
+non-increasing along `X₀` and `X₁`.
 
 Let `F` be a `C¹` function on `M × ℝ` interpolating between the two functions in time: equal to
 `f₀ (x)` near `t = 0` and to `f₁ (x)` near `t = 1`, uniformly in `x`. When `f₀` and `f₁` are `C¹`,
