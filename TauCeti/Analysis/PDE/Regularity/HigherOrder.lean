@@ -142,7 +142,7 @@ theorem energyFormH1_ofTestFunctionₗ_eq_neg_of_hasWeakLineDerivOn {u d : W1p m
     ext x i j
     simp
   rw [h0]
-  simp [energyFormH1_zero_zero_eq_setIntegral, matrixBilinearForm_apply]
+  simp [energyFormH1_zero_zero_eq_setIntegral]
 
 /-- **A weak derivative of a weak solution is a weak solution.** Let `A` be a constant matrix and
 let `u ∈ H¹(Ω)` satisfy `a(u, v) = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`, where
