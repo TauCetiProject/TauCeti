@@ -41,10 +41,10 @@ Hamiltonians it is continuous wherever the map and the direction are `C¹`
 (`continuousAt_floerLinearization`), and continuous everywhere when they are so everywhere
 (`continuous_floerLinearization`), so its `L²` norms over compact sets are finite, and the square of
 its norm is integrable in directions of compact support (`integrable_norm_floerLinearization_sq`).
-Multiplying the direction by a cutoff `β` with values in `[0, 1]` costs at most a multiple of the
-norm of the direction on the set where `dβ` is nonzero, pointwise
-(`norm_floerLinearization_smul_sq_le`) and in `L²`
-(`exists_integral_norm_floerLinearization_smul_sq_le`).
+Multiplying the direction by a cutoff `β` with values in `[0, 1]` bounds `‖D_u (β ξ)‖²` by
+`2 ‖D_u ξ‖²` plus a multiple of `‖ξ‖²` where `dβ` is nonzero, pointwise
+(`norm_floerLinearization_smul_sq_le`), and in `L²` with the error over a compact set off which
+`dβ` vanishes (`exists_integral_norm_floerLinearization_smul_sq_le`).
 It is `∂s ξ + J(z, u z) ∂t ξ` plus a zeroth-order term `floerLinearizationCoeff`
 (`floerLinearization_eq_add`), whose coefficient is continuous in `z` where the data are `C¹`
 (`continuousAt_floerLinearizationCoeff`, `continuousOn_floerLinearizationCoeff`); so two
@@ -493,7 +493,8 @@ theorem integrable_norm_floerLinearization_sq (ω : SymplecticForm V)
 
 /-- **The cost of a cutoff.** Let `β` be a `C¹` function with values in `[0, 1]` whose derivative
 vanishes off a compact set `K`. Then multiplying a `C¹` direction `ξ` of compact
-support by `β` changes the `L²` norm of `D_u ξ` by at most an `L²` norm of `ξ` over `K`:
+support by `β` gives a direction whose `D_u` has squared `L²` norm at most twice that of `D_u ξ`
+plus a multiple of the squared `L²` norm of `ξ` over `K`:
 `∫ ‖D_u (β ξ)‖² ≤ 2 ∫ ‖D_u ξ‖² + C ∫_K ‖ξ‖²`. -/
 theorem exists_integral_norm_floerLinearization_smul_sq_le (ω : SymplecticForm V)
     {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}

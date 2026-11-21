@@ -37,7 +37,8 @@ kernel and closed range once `D_u` is realized on Sobolev spaces.
   The section is cut into an end piece and a core piece by smooth cutoffs of the plane. On the end
   piece the end estimate applies, on the core piece the estimate of `D_u` on a disc
   (`TauCeti.SymplecticForm.exists_forall_setIntegral_le_mul_integral_floerLinearization_add_of_lt`),
-  and the cutoffs cost only `L²` norms of `ξ` on a compact disc, by the Leibniz rule
+  and the cutoffs cost a factor `2` on `∫ ‖D_u ξ‖²` and `L²` norms of `ξ` on a compact disc, by
+  the Leibniz rule
   `D_u (β ξ) = β D_u ξ + (∂s β) ξ + J ((∂t β) ξ)`
   (`TauCeti.SymplecticForm.exists_integral_norm_floerLinearization_smul_sq_le`).
 * `exists_forall_le_mul_integral_floerLinearization_add_of_finite_energy` is the semi-Fredholm
