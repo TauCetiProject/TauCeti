@@ -322,6 +322,12 @@ theorem degreeOneEquiv_coe_eq_zero_iff {φ : SmoothForm I M F 1} {x : M} :
   · rw [degreeOneEquiv_coe_apply, h, LinearMap.zero_apply,
       ContinuousAlternatingMap.coe_zero, Pi.zero_apply]
 
+/-- The linear functional `RoughForm.eval` of a smooth real one-form at `x` is its section, read as
+a linear map. -/
+theorem eval_val (φ : SmoothForm I M ℝ 1) (x : M) :
+    RoughForm.eval φ.val x = (degreeOneEquiv φ x : TangentSpace I x →ₗ[ℝ] ℝ) :=
+  LinearMap.ext fun v ↦ by rw [RoughForm.eval_apply, degreeOneEquiv_coe_apply]
+
 /-- The one-form of a smooth section evaluates a single tangent vector as the section does. -/
 @[simp]
 theorem degreeOneEquiv_symm_apply_apply
