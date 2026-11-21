@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Group.ControlledClosure
 public import Mathlib.Analysis.Normed.Group.HomCompletion
 public import Mathlib.Analysis.Normed.Module.Completion
+public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 public import Mathlib.Analysis.Normed.Operator.Extend
 public import Mathlib.LinearAlgebra.Dimension.LinearMap
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
@@ -80,6 +81,8 @@ space `V` and `c < s`, then `ContinuousLinearMap.denseRange_comp` and rescaling 
   `n` between the completions.
 * `ContinuousLinearMap.rank_fromCompletion_le_of_le`: over a complete scalar field, for complete
   Hausdorff `F`, `R.rank ≤ n → R.fromCompletion.rank ≤ n`.
+* `IsCompactOperator.fromCompletion`: extending a compact operator into a complete Hausdorff space
+  to the completion of its domain gives a compact operator.
 * `ContinuousLinearMap.exists_norm_le_and_mul_norm_le_norm_apply_of_completion`: over `ℝ` or `ℂ`,
   a finite-dimensional map into `Completion E` making `T.completion` strictly more than
   `c`-coercive can be pulled back to `E` with norm at most `‖A'‖` and `T` still `c`-coercive.
@@ -329,6 +332,30 @@ theorem exists_rank_le_norm_completion_sub_lt
     _ = ε := div_mul_cancel₀ ε (by positivity)
 
 end ContinuousLinearMap
+
+namespace IsCompactOperator
+
+variable {R S α β : Type*} [Semiring R] [Semiring S] {σ : R →+* S}
+  [UniformSpace α] [AddCommGroup α] [IsUniformAddGroup α] [Module R α]
+  [UniformContinuousConstSMul R α]
+  [UniformSpace β] [AddCommGroup β] [IsUniformAddGroup β] [Module S β]
+  [UniformContinuousConstSMul S β] [T0Space β] [CompleteSpace β]
+
+/-- Extending a compact operator into a complete Hausdorff space to the completion of its domain
+gives a compact operator: the closure of the image of a neighbourhood of `0` in `α` is a
+neighbourhood of `0` in `Completion α`. -/
+theorem fromCompletion {f : α →SL[σ] β} (hf : IsCompactOperator f) :
+    IsCompactOperator f.fromCompletion := by
+  obtain ⟨K, hK, hKf⟩ := hf
+  refine ⟨K, hK, ?_⟩
+  have hU := Completion.isDenseInducing_coe.closure_image_mem_nhds hKf
+  rw [Completion.coe_zero] at hU
+  refine Filter.mem_of_superset hU
+    (closure_minimal ?_ (hK.isClosed.preimage f.fromCompletion.continuous))
+  rintro _ ⟨x, hx, rfl⟩
+  simpa [ContinuousLinearMap.fromCompletion_apply_coe] using hx
+
+end IsCompactOperator
 
 namespace LinearIsometry
 

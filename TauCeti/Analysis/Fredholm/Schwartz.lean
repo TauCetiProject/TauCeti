@@ -10,35 +10,38 @@ public import TauCeti.Analysis.Normed.Operator.Surjective
 public import TauCeti.Analysis.Normed.Operator.NonlinearRightInverse
 public import TauCeti.Analysis.Normed.Module.Quotient
 public import TauCeti.Analysis.Fredholm.ClosedRange
-public import Mathlib.Analysis.Normed.Module.Completion
+public import TauCeti.Analysis.Normed.Operator.Completion
+import TauCeti.LinearAlgebra.Prod
 
 /-!
 # Compact perturbations of surjections
 
 The functional-analytic Schwartz lemma used in the finite-dimensionality proof for cohomology
-on compact Riemann surfaces: a compact perturbation of a surjective map between Banach spaces
-has closed range of finite codimension. The kernel of the surjection need not be finite
-or complemented.
+on compact Riemann surfaces: a compact perturbation of a surjective map between Banach spaces over
+a complete nontrivially normed field has closed range of finite codimension. The kernel of the
+surjection need not be finite or complemented.
 
 The proof uses the compact-operator quotient estimate and bounded nonlinear right inverses.
 These lower-level APIs require neither Fredholm hypotheses nor complemented kernels. No
 approximation property or finite-rank operator-norm approximation is assumed.
 
-In the cohomological application the lemma is used in a second form: for `δ : E → F` between
-Banach spaces and a compact `r : G → F` from a normed space `G` that need not be complete, if every
-`y` is `r g + δ e`, then the range of `δ` has finite codimension and is closed. Here `δ`
+In the cohomological application the lemma is used in a second form: for a continuous linear map
+`δ : E →L[𝕜] F` between Banach spaces and a compact continuous linear map `r : G →L[𝕜] F` from a
+normed space `G` that need not be complete, if every `y` is `r g + δ e`, then the range of `δ` has
+finite codimension and is closed. Here `δ`
 is the coboundary of cochains and `r` restricts cocycles to a relatively compact refinement, so
 surjectivity of `(g, e) ↦ r g + δ e` says that every cocycle on the refinement is cohomologous to
 a restricted one. This is the lemma applied to the surjection `(g, e) ↦ r g + δ e` and the compact
-perturbation `(g, e) ↦ -r g`.
+perturbation `(g, e) ↦ -r g`, after extending `r` to the completion of `G`
+(`IsCompactOperator.fromCompletion`).
 
 ## Main statements
 
 * `ContinuousLinearMap.cofg_range_add_of_surjective_of_isCompactOperator`: Schwartz's lemma.
 * `ContinuousLinearMap.isClosed_range_add_of_surjective_of_isCompactOperator`: the range of a
   compact perturbation of a surjection is closed.
-* `ContinuousLinearMap.cofg_range_of_surjective_coprod_of_isCompactOperator` and
-  `ContinuousLinearMap.isClosed_range_of_surjective_coprod_of_isCompactOperator`: the
+* `ContinuousLinearMap.cofg_range_right_of_surjective_coprod_of_isCompactOperator_left` and
+  `ContinuousLinearMap.isClosed_range_right_of_surjective_coprod_of_isCompactOperator_left`: the
   cohomological form.
 
 ## References
@@ -46,6 +49,11 @@ perturbation `(g, e) ↦ -r g`.
 * O. Forster, *Lectures on Riemann Surfaces*, GTM 81, §14 (Lemma 14.8 and Theorem 14.9).
 * L. Schwartz, *Homomorphismes et applications complètement continues*, C. R. Acad. Sci. Paris
   237 (1953), 1355–1357.
+
+The statements of the cohomological form are taken from split 1 of the lookahead development
+`lookahead/ModularForms/finite-dimensional-h1-structure-sheaf`, where they were proved from that
+branch's own proof of Schwartz's lemma. Here they are re-proved from the lemma above, with
+`Submodule.CoFG` for finite codimension and without completeness of the source of `r`.
 -/
 
 public noncomputable section
@@ -55,13 +63,14 @@ open scoped NNReal Topology
 
 namespace ContinuousLinearMap
 
-variable {𝕜 E F G : Type*} [RCLike 𝕜]
+variable {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   [NormedAddCommGroup G] [NormedSpace 𝕜 G]
 
-/-- **Schwartz's lemma.** A compact perturbation of a surjection between real or complex
-Banach spaces has finite-dimensional cokernel, without any hypothesis on its kernel. -/
+/-- **Schwartz's lemma.** A compact perturbation of a surjection between Banach spaces over a
+complete nontrivially normed field has finite-dimensional cokernel, without any hypothesis on its
+kernel. -/
 theorem cofg_range_add_of_surjective_of_isCompactOperator [CompleteSpace E] [CompleteSpace F]
     (T K : E →L[𝕜] F) (hT : Function.Surjective T) (hK : IsCompactOperator K) :
     (T + K).range.CoFG := by
@@ -100,8 +109,9 @@ theorem cofg_range_add_of_surjective_of_isCompactOperator [CompleteSpace E] [Com
     exact hm'
   exact Module.Finite.of_surjective L hL
 
-/-- A compact perturbation of a surjection between real or complex Banach spaces has closed
-range. The finite-dimensional cokernel, rather than a kernel complement, supplies closedness. -/
+/-- A compact perturbation of a surjection between Banach spaces over a complete nontrivially
+normed field has closed range. The finite-dimensional cokernel, rather than a kernel complement,
+supplies closedness. -/
 theorem isClosed_range_add_of_surjective_of_isCompactOperator [CompleteSpace E] [CompleteSpace F]
     (T K : E →L[𝕜] F) (hT : Function.Surjective T) (hK : IsCompactOperator K) :
     IsClosed ((T + K).range : Set F) := by
@@ -109,41 +119,36 @@ theorem isClosed_range_add_of_surjective_of_isCompactOperator [CompleteSpace E] 
   exact (T + K).isClosed_range_of_finite_coker
 
 open UniformSpace in
-/-- **Schwartz's lemma, cohomological form.** Let `δ : E → F` be a map between real or complex
-Banach spaces. If every point of `F` is of the form `r g + δ e` with `r` compact, then the range
-of `δ` has finite codimension. The source `G` of `r` need not be complete: the proof extends `r`
-to the completion of `G`. -/
-theorem cofg_range_of_surjective_coprod_of_isCompactOperator [CompleteSpace E] [CompleteSpace F]
-    (r : G →L[𝕜] F) (δ : E →L[𝕜] F) (h : Function.Surjective (r.coprod δ))
+/-- **Schwartz's lemma, cohomological form.** Let `δ : E →L[𝕜] F` be a continuous linear map
+between Banach spaces and `r : G →L[𝕜] F` a compact continuous linear map. If every point of `F`
+is of the form `r g + δ e`, then the range of `δ` has finite codimension. The source `G` of `r`
+need not be complete. -/
+theorem cofg_range_right_of_surjective_coprod_of_isCompactOperator_left [CompleteSpace E]
+    [CompleteSpace F] (r : G →L[𝕜] F) (δ : E →L[𝕜] F) (h : Function.Surjective (r.coprod δ))
     (hr : IsCompactOperator r) : δ.range.CoFG := by
   let r' : Completion G →L[𝕜] F := r.fromCompletion
-  have hr' : IsCompactOperator r' := by
-    obtain ⟨K, hK, hKr⟩ := hr
-    refine ⟨K, hK, ?_⟩
-    have hU := Completion.isDenseInducing_coe.closure_image_mem_nhds hKr
-    rw [Completion.coe_zero] at hU
-    refine Filter.mem_of_superset hU (closure_minimal ?_ (hK.isClosed.preimage r'.continuous))
-    rintro _ ⟨x, hx, rfl⟩
-    simpa [r'] using hx
-  have h' : Function.Surjective (r'.coprod δ) := fun y => by
-    obtain ⟨⟨g, e⟩, rfl⟩ := h y
-    exact ⟨(g, e), by simp [r']⟩
+  have hcomp : r' ∘L Completion.toComplL = r := by
+    ext x
+    exact r.fromCompletion_apply_coe x
+  have h' : Function.Surjective (r'.coprod δ) :=
+    LinearMap.surjective_coprod_of_comp_left (h := (Completion.toComplL : G →L[𝕜] _).toLinearMap)
+      (by rwa [← toLinearMap_comp, hcomp])
   have hK : IsCompactOperator (-(r'.comp (fst 𝕜 (Completion G) E))) :=
-    (hr'.comp_clm (fst 𝕜 _ E)).neg
+    (hr.fromCompletion.comp_clm (fst 𝕜 _ E)).neg
   have hδ : r'.coprod δ + -(r'.comp (fst 𝕜 (Completion G) E)) = δ.comp (snd 𝕜 _ E) := by
-    ext <;> simp
-  have := cofg_range_add_of_surjective_of_isCompactOperator _ _ h' hK
-  rwa [hδ, toLinearMap_comp, coe_snd,
-    LinearMap.range_comp_of_range_eq_top _ (Submodule.range_snd ..)] at this
+    rw [← comp_fst_add_comp_snd]
+    abel
+  simpa [hδ, LinearMap.range_comp] using
+    cofg_range_add_of_surjective_of_isCompactOperator _ _ h' hK
 
-/-- Let `δ : E → F` be a map between real or complex Banach spaces. If every point of `F` is of
-the form `r g + δ e` with `r` compact, then the range of `δ` is closed. The source `G` of `r` need
-not be complete. -/
-theorem isClosed_range_of_surjective_coprod_of_isCompactOperator [CompleteSpace E]
+/-- Let `δ : E →L[𝕜] F` be a continuous linear map between Banach spaces and `r : G →L[𝕜] F` a
+compact continuous linear map. If every point of `F` is of the form `r g + δ e`, then the range of
+`δ` is closed. The source `G` of `r` need not be complete. -/
+theorem isClosed_range_right_of_surjective_coprod_of_isCompactOperator_left [CompleteSpace E]
     [CompleteSpace F] (r : G →L[𝕜] F) (δ : E →L[𝕜] F)
     (h : Function.Surjective (r.coprod δ)) (hr : IsCompactOperator r) :
     IsClosed (δ.range : Set F) := by
-  have := cofg_range_of_surjective_coprod_of_isCompactOperator r δ h hr
+  have := cofg_range_right_of_surjective_coprod_of_isCompactOperator_left r δ h hr
   exact δ.isClosed_range_of_finite_coker
 
 end ContinuousLinearMap
