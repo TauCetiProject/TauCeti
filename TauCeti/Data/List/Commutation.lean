@@ -114,6 +114,7 @@ theorem append_comm_of_flatten_replicate_eq {a b : List α} {m n : ℕ} (hm : m 
 
 /-- `m` concatenated copies of `n` concatenated copies of `w` are `m * n` concatenated copies of
 `w`: `(wⁿ)ᵐ = wᵐⁿ`. -/
+@[simp]
 theorem flatten_replicate_flatten_replicate (w : List α) (m n : ℕ) :
     (replicate m (replicate n w).flatten).flatten = (replicate (m * n) w).flatten := by
   rw [← flatten_replicate_replicate, flatten_flatten, map_replicate]
