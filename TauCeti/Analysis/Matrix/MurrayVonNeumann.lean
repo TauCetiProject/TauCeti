@@ -22,8 +22,8 @@ orthonormal basis of that range form a rectangular matrix `W` with `Wᴴ W = 1_r
 of matrix projections over `ℂ` up to equivalence, which is the computation behind
 `K₀(Mₙ(ℂ)) = ℤ`.
 
-Over a general star ring equivalent projections still have equal rank
-(`Matrix.IsMurrayVonNeumannEquivalent.rank_eq`); the converse uses orthonormal bases.
+Over any commutative star ring with the strong rank condition, equivalent projections still have
+equal rank (`Matrix.IsMurrayVonNeumannEquivalent.rank_eq`); the converse uses orthonormal bases.
 
 ## References
 
@@ -55,8 +55,8 @@ theorem _root_.IsStarProjection.isMurrayVonNeumannEquivalent_one {p : Matrix m m
   -- the columns of `W` form an orthonormal basis of `U`
   let b : OrthonormalBasis (Fin r) 𝕜 U := (stdOrthonormalBasis 𝕜 U).reindex (finCongr hU)
   let W : Matrix m (Fin r) 𝕜 := of fun a k => (b k : EuclideanSpace 𝕜 m) a
-  refine ⟨hp, .one _, Wᴴ, ?_, ?_⟩
-  · rw [conjTranspose_conjTranspose]
+  -- `W Wᴴ = ∑ₖ bₖ bₖᴴ` is the orthogonal projection onto `U`, which is `p`
+  have hWW : W * Wᴴ = p := by
     have hsum : W * Wᴴ = ∑ k, vecMulVec (b k : EuclideanSpace 𝕜 m)
         (star (b k : EuclideanSpace 𝕜 m)) := by
       ext a c
@@ -65,11 +65,13 @@ theorem _root_.IsStarProjection.isMurrayVonNeumannEquivalent_one {p : Matrix m m
     simp_rw [← InnerProductSpace.symm_toEuclideanLin_rankOne]
     rw [← map_sum, LinearEquiv.symm_apply_eq, ← coe_toEuclideanCLM_eq_toEuclideanLin, hP,
       b.starProjection_eq_sum_rankOne, ContinuousLinearMap.toLinearMap_sum]
-  · rw [conjTranspose_conjTranspose]
+  -- the columns of `W` are orthonormal
+  have hWW' : Wᴴ * W = 1 := by
     ext k l
-    rw [Matrix.mul_apply, Matrix.one_apply, ← orthonormal_iff_ite.mp b.orthonormal k l,
-      Submodule.coe_inner, PiLp.inner_apply]
-    simp [W, mul_comm]
+    simpa [W, Matrix.mul_apply, Matrix.one_apply, Submodule.coe_inner, PiLp.inner_apply,
+      mul_comm] using orthonormal_iff_ite.mp b.orthonormal k l
+  exact ⟨hp, .one _, Wᴴ, by rw [conjTranspose_conjTranspose, hWW],
+    by rw [conjTranspose_conjTranspose, hWW']⟩
 
 /-- Over `ℝ` or `ℂ`, matrix projections of any sizes are Murray–von Neumann equivalent exactly
 when they have the same rank. -/

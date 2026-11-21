@@ -18,10 +18,11 @@ Over `𝕜 = ℝ` or `ℂ`, two `⋆`-homomorphisms `φ ψ : Mₙ(𝕜) → Mₘ
 (`NonUnitalStarAlgHom.exists_mem_unitary_mul_map_mul_star_eq_iff`). In particular any two unital
 `⋆`-homomorphisms `Mₙ(𝕜) → Mₘ(𝕜)` are unitarily conjugate
 (`StarAlgHom.exists_mem_unitary_mul_map_mul_star_eq`). Together with the realisation of
-multiplicities (`Matrix.exists_nonUnitalStarAlgHom_homMultiplicity_eq_iff`), this classifies the
-`⋆`-homomorphisms `Mₙ(𝕜) → Mₘ(𝕜)` up to unitary conjugacy by the natural numbers `μ` with
-`n * μ ≤ m`, the single-block case of the classification of `⋆`-homomorphisms between
-finite-dimensional C⋆-algebras by multiplicity matrices.
+multiplicities (`Matrix.exists_nonUnitalStarAlgHom_homMultiplicity_eq_iff`), this classifies, for
+`n ≠ 0`, the `⋆`-homomorphisms `Mₙ(𝕜) → Mₘ(𝕜)` up to unitary conjugacy by the natural numbers `μ`
+with `n * μ ≤ m` (for `n = 0` the only multiplicity is `0`), the single-block case of the
+classification of `⋆`-homomorphisms between finite-dimensional C⋆-algebras by multiplicity
+matrices.
 
 Equal multiplicities make the images `φ(Eᵢᵢ)` and `ψ(Eᵢᵢ)` of a diagonal matrix unit projections of
 equal rank, and likewise the complements `1 - φ 1` and `1 - ψ 1`; such projections are

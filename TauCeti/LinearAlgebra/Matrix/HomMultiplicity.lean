@@ -9,24 +9,25 @@ public import Mathlib.Algebra.Star.StarAlgHom
 public import Mathlib.Data.Matrix.Basis
 public import Mathlib.LinearAlgebra.Matrix.Rank
 public import TauCeti.Algebra.Star.PartialIsometry
+public import TauCeti.LinearAlgebra.Matrix.TensorProduct
 import Mathlib.Algebra.Star.StarProjection
 import Mathlib.LinearAlgebra.Matrix.Kronecker
 import Mathlib.LinearAlgebra.Matrix.Trace
-import TauCeti.LinearAlgebra.Matrix.TensorProduct
 import TauCeti.LinearAlgebra.Trace.Idempotent
 
 /-!
 # Homomorphisms between full matrix algebras
 
 Let `f : Mₙ(K) → Mₘ(K)` be a possibly nonunital algebra homomorphism between full matrix algebras
-over a field `K` of characteristic zero. The images `f (Eᵢᵢ)` of the diagonal matrix units are
-idempotents of one common rank, the **multiplicity** `Matrix.homMultiplicity f` of `f`: the number
-of times the defining representation of `Mₙ(K)` occurs in `Kᵐ` through `f`. It determines the
-trace of `f`, `tr (f x) = homMultiplicity f * tr x`, and hence the rank of the image of every
-idempotent. In particular `n * homMultiplicity f ≤ m`, with equality exactly when `f` is unital,
-and the multiplicity of a composite is the product of the multiplicities. Every multiplicity
-allowed by this inequality is realised by a `⋆`-homomorphism, unital in the case of equality, and
-a unital homomorphism `Mₙ(K) → Mₘ(K)` exists exactly when `n ∣ m`.
+over a field `K`. The images `f (Eᵢᵢ)` of the diagonal matrix units are orthogonal idempotents of
+one common rank, the **multiplicity** `Matrix.homMultiplicity f` of `f`: the number of times the
+defining representation of `Mₙ(K)` occurs in `Kᵐ` through `f`. It determines the trace of `f`,
+`tr (f x) = homMultiplicity f * tr x`, and the rank of the image of every matrix,
+`rank (f x) = homMultiplicity f * rank x`. In particular `n * homMultiplicity f ≤ m`, with
+equality exactly when `f` is unital, and the multiplicity of a composite is the product of the
+multiplicities. Every multiplicity allowed by this inequality is realised by a `⋆`-homomorphism,
+unital in the case of equality, and a unital homomorphism `Mₙ(K) → Mₘ(K)` exists exactly when
+`n ∣ m`.
 
 The rank of an idempotent is its class in `K₀(Mₙ(K)) = ℤ`, so the multiplicity is the map induced
 by `f` on `K₀` in these coordinates. Two `⋆`-homomorphisms into a unital `⋆`-ring are conjugate by
@@ -44,13 +45,18 @@ classification of `⋆`-homomorphisms `Mₙ(ℂ) → Mₘ(ℂ)` to the multiplic
 
 * `Matrix.homMultiplicity_eq_rank_map_single`: the multiplicity is the rank of the image of any
   diagonal matrix unit.
-* `Matrix.trace_map_eq_homMultiplicity_mul` and `Matrix.rank_map_of_isIdempotentElem`: the trace
-  of `f x` and the rank of the image of an idempotent.
+* `Matrix.trace_map_eq_homMultiplicity_mul` and `Matrix.rank_map_eq_homMultiplicity_mul`: the
+  trace and the rank of `f x`.
 * `Matrix.card_mul_homMultiplicity_le` and `Matrix.card_mul_homMultiplicity_eq_card_iff`:
   `n * homMultiplicity f ≤ m`, with equality exactly for unital `f`; hence
   `Matrix.card_dvd_card_of_map_one`.
-* `NonUnitalAlgHom.homMultiplicity_comp`, `NonUnitalStarAlgHom.homMultiplicity_comp`: the
+* `Matrix.homMultiplicity_eq_mul_of_apply_eq` and its specialisations
+  `NonUnitalAlgHom.homMultiplicity_comp`, `AlgHom.homMultiplicity_comp`,
+  `NonUnitalStarAlgHom.homMultiplicity_comp` and `StarAlgHom.homMultiplicity_comp`: the
   multiplicity of a composite.
+* `AlgHom.homMultiplicity_id` (and its variants) and
+  `Matrix.homMultiplicity_kroneckerOneStarAlgHom`: the identity has multiplicity one and
+  `x ↦ x ⊗ 1_ι` has multiplicity `card ι`.
 * `Matrix.exists_nonUnitalStarAlgHom_homMultiplicity_eq_iff`,
   `Matrix.exists_starAlgHom_homMultiplicity_eq_iff` and `Matrix.nonempty_starAlgHom_iff`: which
   multiplicities occur.
@@ -75,9 +81,9 @@ namespace Matrix
 variable {K n m l F : Type*} [Field K] [Fintype n] [DecidableEq n]
 
 /-- The **multiplicity** of a homomorphism `f : Mₙ(K) → Mₘ(K)`: the rank of `f 1` divided by `n`.
-For an algebra homomorphism over a field of characteristic zero this is the common rank of the
-images of the diagonal matrix units (`Matrix.homMultiplicity_eq_rank_map_single`), the number of
-copies of the defining representation of `Mₙ(K)` in `Kᵐ`. -/
+For an algebra homomorphism this is the common rank of the images of the diagonal matrix units
+(`Matrix.homMultiplicity_eq_rank_map_single`), the number of copies of the defining
+representation of `Mₙ(K)` in `Kᵐ`. -/
 noncomputable def homMultiplicity [FunLike F (Matrix n n K) (Matrix m m K)] (f : F) : ℕ :=
   (f 1).rank / Fintype.card n
 
@@ -96,13 +102,24 @@ variable [Fintype m] [FunLike F (Matrix n n K) (Matrix m m K)]
 theorem isIdempotentElem_map_single (i : n) : IsIdempotentElem (f (single i i 1)) :=
   IsIdempotentElem.map (by simp [IsIdempotentElem]) f
 
+/-- The images of the diagonal matrix units are orthogonal idempotents. -/
+private theorem orthogonalIdempotents_map_single [DecidableEq m] :
+    OrthogonalIdempotents fun i : n => f (single i i 1) :=
+  ⟨isIdempotentElem_map_single f, fun i j hij => by simp [← map_mul, hij]⟩
+
+omit [DecidableEq n] in
+/-- The image of a product `a * b * c` has rank at most that of the image of `b`. -/
+private theorem rank_map_mul_mul_le (a b c : Matrix n n K) : (f (a * b * c)).rank ≤ (f b).rank := by
+  rw [map_mul, map_mul]
+  exact (rank_mul_le_left _ _).trans (rank_mul_le_right _ _)
+
 /-- `f (Eⱼⱼ) = f (Eⱼᵢ) f (Eᵢᵢ) f (Eᵢⱼ)`, so its rank is at most that of `f (Eᵢᵢ)`. -/
 private theorem rank_map_single_le (i j : n) :
     (f (single j j 1)).rank ≤ (f (single i i 1)).rank := by
-  have h : f (single j j 1) = f (single j i 1) * f (single i i 1) * f (single i j 1) := by
-    simp only [← map_mul, single_mul_single_same, mul_one]
+  have h : single j j (1 : K) = single j i 1 * single i i 1 * single i j 1 := by
+    simp only [single_mul_single_same, mul_one]
   rw [h]
-  exact (rank_mul_le_left _ _).trans (rank_mul_le_right _ _)
+  exact rank_map_mul_mul_le f _ _ _
 
 /-- The images of the diagonal matrix units all have the same rank. -/
 theorem rank_map_single_eq (i j : n) : (f (single i i 1)).rank = (f (single j j 1)).rank :=
@@ -132,14 +149,15 @@ private theorem trace_map_eq_rank_map_single_mul (i : n) (x : Matrix n n K) :
   rw [trace, Finset.mul_sum]
   exact Finset.sum_congr rfl fun _ _ => mul_comm _ _
 
-variable [CharZero K]
-
-/-- `f 1` is the sum of the `n` idempotents `f (Eᵢᵢ)`, each of rank `homMultiplicity f`. -/
+/-- `f 1` is the sum of the `n` orthogonal idempotents `f (Eᵢᵢ)`, each of rank
+`homMultiplicity f`. -/
 private theorem card_mul_rank_map_single (i : n) :
     Fintype.card n * (f (single i i 1)).rank = (f 1).rank := by
-  have h := trace_map_eq_rank_map_single_mul f i 1
-  rw [trace_one, IsIdempotentElem.trace_eq_rank (IsIdempotentElem.one.map f)] at h
-  exact_mod_cast (h.trans (mul_comm _ _)).symm
+  classical
+  rw [← sum_single_one, map_sum,
+    OrthogonalIdempotents.rank_sum (orthogonalIdempotents_map_single f),
+    Finset.sum_congr rfl fun j _ => rank_map_single_eq f j i, Finset.sum_const, Finset.card_univ,
+    smul_eq_mul]
 
 /-- The multiplicity is the rank of the image of any diagonal matrix unit. -/
 theorem homMultiplicity_eq_rank_map_single (i : n) :
@@ -165,13 +183,37 @@ theorem trace_map_eq_homMultiplicity_mul (x : Matrix n n K) :
     obtain ⟨i⟩ := h
     rw [homMultiplicity_eq_rank_map_single f i, trace_map_eq_rank_map_single_mul]
 
-/-- The image of an idempotent `e` has rank `homMultiplicity f * rank e`: in the coordinates
-`K₀(Mₙ(K)) = ℤ` given by the rank, `f` acts on `K₀` as multiplication by its multiplicity. -/
-theorem rank_map_of_isIdempotentElem {e : Matrix n n K} (he : IsIdempotentElem e) :
-    (f e).rank = homMultiplicity f * e.rank := by
-  have h := trace_map_eq_homMultiplicity_mul f e
-  rw [IsIdempotentElem.trace_eq_rank (he.map f), IsIdempotentElem.trace_eq_rank he] at h
-  exact_mod_cast h
+/-- The image of a matrix `x` has rank `homMultiplicity f * rank x`. For an idempotent `x` this
+says that, in the coordinates `K₀(Mₙ(K)) = ℤ` given by the rank, `f` acts on `K₀` as
+multiplication by its multiplicity. -/
+theorem rank_map_eq_homMultiplicity_mul (x : Matrix n n K) :
+    (f x).rank = homMultiplicity f * x.rank := by
+  classical
+  -- `V x U = N` for invertible `V`, `U` and `N = ∑ₖ Eₖₖ`, the sum over `rank x` indices
+  obtain ⟨_, _, e, ⟨V, rfl⟩, ⟨U, rfl⟩, h⟩ := exists_rank_normal_form x
+  set N : Matrix n n K := (fromBlocks 1 0 0 0).submatrix e e
+  let σ : Fin x.rank ↪ n := Function.Embedding.inl.trans e.symm.toEmbedding
+  have hN : N = ∑ k, single (σ k) (σ k) (1 : K) := by
+    ext a b
+    obtain ⟨p, rfl⟩ := e.symm.surjective a
+    obtain ⟨q, rfl⟩ := e.symm.surjective b
+    simp only [N, submatrix_apply, Equiv.apply_symm_apply, Matrix.sum_apply]
+    rcases p with k | k <;> rcases q with l | l <;>
+      simp [σ, single_apply, ite_and, eq_comm, Matrix.one_apply]
+  have hx : x = (↑V⁻¹ : Matrix n n K) * N * (↑U⁻¹ : Matrix n n K) := by
+    rw [← h, mul_assoc (V : Matrix n n K), Units.inv_mul_cancel_left, Units.mul_inv_cancel_right]
+  have hfN : (f N).rank = homMultiplicity f * x.rank := by
+    have hsum := OrthogonalIdempotents.rank_sum
+      ((orthogonalIdempotents_map_single f).embedding σ) Finset.univ
+    simp only [Function.comp_apply] at hsum
+    rw [hN, map_sum, hsum]
+    simp [← homMultiplicity_eq_rank_map_single, mul_comm]
+  refine le_antisymm ?_ ?_
+  · have hle := rank_map_mul_mul_le f (↑V⁻¹ : Matrix n n K) N (↑U⁻¹ : Matrix n n K)
+    rw [← hx] at hle
+    exact hle.trans hfN.le
+  · rw [← hfN, ← h]
+    exact rank_map_mul_mul_le f _ _ _
 
 /-- A homomorphism `Mₙ(K) → Mₘ(K)` of multiplicity `μ` has `n * μ ≤ m`. -/
 theorem card_mul_homMultiplicity_le : Fintype.card n * homMultiplicity f ≤ Fintype.card m :=
@@ -183,9 +225,10 @@ theorem card_mul_homMultiplicity_eq_card_iff [DecidableEq m] :
     Fintype.card n * homMultiplicity f = Fintype.card m ↔ f 1 = 1 := by
   rw [card_mul_homMultiplicity]
   refine ⟨fun h => ?_, fun h => by rw [h, rank_one]⟩
+  -- an idempotent of full rank is invertible, hence `1`
   have he : IsIdempotentElem (f 1) := IsIdempotentElem.one.map f
-  refine (sub_eq_zero.mp (IsIdempotentElem.eq_zero_of_trace_eq_zero he.one_sub ?_)).symm
-  rw [trace_sub, trace_one, IsIdempotentElem.trace_eq_rank he, h, sub_self]
+  exact (IsIdempotentElem.iff_eq_one_of_isUnit
+    (mulVec_surjective_iff_isUnit.mp (mulVec_surjective_iff_rank_eq_card.mpr h))).mp he
 
 /-- If there is a unital homomorphism `Mₙ(K) → Mₘ(K)`, then `n ∣ m`. -/
 theorem card_dvd_card_of_map_one [DecidableEq m] (hf : f 1 = 1) : Fintype.card n ∣ Fintype.card m :=
@@ -195,9 +238,11 @@ end NonUnitalAlgHomClass
 
 section Comp
 
-variable [CharZero K] [Fintype m] [DecidableEq m] [Fintype l]
+variable [Fintype m] [DecidableEq m] [Fintype l]
 
-private theorem homMultiplicity_eq_mul_of_apply_eq {G H : Type*}
+/-- The multiplicity of a homomorphism that agrees pointwise with a composite `g ∘ f` of
+homomorphisms between matrix algebras is the product of the multiplicities. -/
+theorem homMultiplicity_eq_mul_of_apply_eq {G H : Type*}
     [FunLike F (Matrix n n K) (Matrix m m K)]
     [NonUnitalAlgHomClass F K (Matrix n n K) (Matrix m m K)]
     [FunLike G (Matrix m m K) (Matrix l l K)]
@@ -207,9 +252,8 @@ private theorem homMultiplicity_eq_mul_of_apply_eq {G H : Type*}
   cases isEmpty_or_nonempty n with
   | inl _ => simp
   | inr hn =>
-    rw [homMultiplicity, hgf, rank_map_of_isIdempotentElem g (IsIdempotentElem.one.map f),
-      ← card_mul_homMultiplicity f, Nat.mul_left_comm,
-      Nat.mul_div_cancel_left _ Fintype.card_pos]
+    rw [homMultiplicity, hgf, rank_map_eq_homMultiplicity_mul g, ← card_mul_homMultiplicity f,
+      Nat.mul_left_comm, Nat.mul_div_cancel_left _ Fintype.card_pos]
 
 /-- The multiplicity of a composite of homomorphisms between matrix algebras is the product of
 the multiplicities. -/
@@ -219,6 +263,14 @@ theorem _root_.NonUnitalAlgHom.homMultiplicity_comp (g : Matrix m m K →ₙₐ[
     homMultiplicity (g.comp f) = homMultiplicity g * homMultiplicity f :=
   homMultiplicity_eq_mul_of_apply_eq f g _ (NonUnitalAlgHom.comp_apply g f)
 
+/-- The multiplicity of a composite of unital homomorphisms between matrix algebras is the
+product of the multiplicities. -/
+@[simp]
+theorem _root_.AlgHom.homMultiplicity_comp [DecidableEq l] (g : Matrix m m K →ₐ[K] Matrix l l K)
+    (f : Matrix n n K →ₐ[K] Matrix m m K) :
+    homMultiplicity (g.comp f) = homMultiplicity g * homMultiplicity f :=
+  homMultiplicity_eq_mul_of_apply_eq f g _ (AlgHom.comp_apply g f)
+
 /-- The multiplicity of a composite of `⋆`-homomorphisms between matrix algebras is the product
 of the multiplicities. -/
 @[simp]
@@ -227,17 +279,63 @@ theorem _root_.NonUnitalStarAlgHom.homMultiplicity_comp [Star K]
     homMultiplicity (g.comp f) = homMultiplicity g * homMultiplicity f :=
   homMultiplicity_eq_mul_of_apply_eq f g _ (NonUnitalStarAlgHom.comp_apply g f)
 
+/-- The multiplicity of a composite of unital `⋆`-homomorphisms between matrix algebras is the
+product of the multiplicities. -/
+@[simp]
+theorem _root_.StarAlgHom.homMultiplicity_comp [DecidableEq l] [Star K]
+    (g : Matrix m m K →⋆ₐ[K] Matrix l l K) (f : Matrix n n K →⋆ₐ[K] Matrix m m K) :
+    homMultiplicity (g.comp f) = homMultiplicity g * homMultiplicity f :=
+  homMultiplicity_eq_mul_of_apply_eq f g _ (StarAlgHom.comp_apply g f)
+
 end Comp
+
+section Id
+
+variable [Nonempty n]
+
+/-- The identity of `Mₙ(K)`, for `n ≠ 0`, has multiplicity one. -/
+@[simp]
+theorem _root_.NonUnitalAlgHom.homMultiplicity_id :
+    homMultiplicity (NonUnitalAlgHom.id K (Matrix n n K)) = 1 := by
+  simp [homMultiplicity, Nat.div_self Fintype.card_pos]
+
+/-- The identity of `Mₙ(K)`, for `n ≠ 0`, has multiplicity one. -/
+@[simp]
+theorem _root_.AlgHom.homMultiplicity_id : homMultiplicity (AlgHom.id K (Matrix n n K)) = 1 := by
+  simp [homMultiplicity, Nat.div_self Fintype.card_pos]
+
+/-- The identity of `Mₙ(K)`, for `n ≠ 0`, has multiplicity one. -/
+@[simp]
+theorem _root_.NonUnitalStarAlgHom.homMultiplicity_id [Star K] :
+    homMultiplicity (NonUnitalStarAlgHom.id K (Matrix n n K)) = 1 := by
+  simp [homMultiplicity, Nat.div_self Fintype.card_pos]
+
+/-- The identity of `Mₙ(K)`, for `n ≠ 0`, has multiplicity one. -/
+@[simp]
+theorem _root_.StarAlgHom.homMultiplicity_id [Star K] :
+    homMultiplicity (StarAlgHom.id K (Matrix n n K)) = 1 := by
+  simp [homMultiplicity, Nat.div_self Fintype.card_pos]
+
+end Id
 
 section Existence
 
 variable [StarRing K] [Fintype m]
 
+/-- For `n ≠ 0`, the map `x ↦ x ⊗ 1_ι` has multiplicity `card ι`. -/
+@[simp]
+theorem homMultiplicity_kroneckerOneStarAlgHom [Nonempty n] (ι : Type*) [Fintype ι]
+    [DecidableEq ι] : homMultiplicity (kroneckerOneStarAlgHom K ι : Matrix n n K →⋆ₐ[K] _) =
+      Fintype.card ι := by
+  refine Nat.eq_of_mul_eq_mul_left (Fintype.card_pos (α := n)) ?_
+  rw [(card_mul_homMultiplicity_eq_card_iff _).mpr (map_one _), Fintype.card_prod]
+
 /-- For `n * μ ≤ m`, the map `x ↦ (x ⊗ 1_μ) ⊕ 0`, reindexed to `m`, is a `⋆`-homomorphism
-`Mₙ(K) → Mₘ(K)` with `tr (φ 1) = n * μ`. -/
-private theorem exists_nonUnitalStarAlgHom_trace_map_one_eq {μ : ℕ}
+`Mₙ(K) → Mₘ(K)` with `rank (φ 1) = n * μ`. -/
+private theorem exists_nonUnitalStarAlgHom_rank_map_one_eq {μ : ℕ}
     (hμ : Fintype.card n * μ ≤ Fintype.card m) :
-    ∃ φ : Matrix n n K →⋆ₙₐ[K] Matrix m m K, (φ 1).trace = (Fintype.card n * μ : ℕ) := by
+    ∃ φ : Matrix n n K →⋆ₙₐ[K] Matrix m m K, (φ 1).rank = Fintype.card n * μ := by
+  classical
   let r := Fintype.card m - Fintype.card n * μ
   let e : (n × Fin μ) ⊕ Fin r ≃ m := Fintype.equivOfCardEq (by simp [r]; omega)
   let corner : Matrix (n × Fin μ) (n × Fin μ) K →⋆ₙₐ[K]
@@ -248,22 +346,22 @@ private theorem exists_nonUnitalStarAlgHom_trace_map_one_eq {μ : ℕ}
       map_add' y z := by simp [fromBlocks_add]
       map_mul' y z := by simp [fromBlocks_multiply]
       map_star' y := by simp [star_eq_conjTranspose, fromBlocks_conjTranspose] }
+  have hrank : (fromBlocks (1 : Matrix (n × Fin μ) (n × Fin μ) K) 0 0
+      (0 : Matrix (Fin r) (Fin r) K)).rank = Fintype.card n * μ := by
+    rw [← diagonal_one, ← diagonal_zero, fromBlocks_diagonal, rank_diagonal]
+    simp [Fintype.card_subtype, Finset.card_filter, Fintype.sum_sum_type]
   refine ⟨(reindexStarAlgEquiv K K e).toNonUnitalStarAlgHom.comp
     (corner.comp (kroneckerOneStarAlgHom K (Fin μ)).toNonUnitalStarAlgHom), ?_⟩
-  simp [corner, trace, Fintype.sum_sum_type, Equiv.sum_comp e.symm (fun j => (fromBlocks
-    (1 : Matrix (n × Fin μ) (n × Fin μ) K) 0 0 0) j j)]
+  simpa [corner] using hrank
 
 /-- **Realisation of multiplicities.** For `n ≠ 0`, a `⋆`-homomorphism `Mₙ(K) → Mₘ(K)` of
 multiplicity `μ` exists exactly when `n * μ ≤ m`. -/
-theorem exists_nonUnitalStarAlgHom_homMultiplicity_eq_iff [CharZero K] [Nonempty n] {μ : ℕ} :
+theorem exists_nonUnitalStarAlgHom_homMultiplicity_eq_iff [Nonempty n] {μ : ℕ} :
     (∃ φ : Matrix n n K →⋆ₙₐ[K] Matrix m m K, homMultiplicity φ = μ) ↔
       Fintype.card n * μ ≤ Fintype.card m := by
   refine ⟨fun ⟨φ, hφ⟩ => hφ ▸ card_mul_homMultiplicity_le φ, fun hμ => ?_⟩
-  obtain ⟨φ, hφ⟩ := exists_nonUnitalStarAlgHom_trace_map_one_eq (K := K) hμ
-  refine ⟨φ, Nat.eq_of_mul_eq_mul_left (Fintype.card_pos (α := n)) ?_⟩
-  have h := trace_map_eq_homMultiplicity_mul φ 1
-  rw [hφ, trace_one] at h
-  exact_mod_cast (h.trans (mul_comm _ _)).symm
+  obtain ⟨φ, hφ⟩ := exists_nonUnitalStarAlgHom_rank_map_one_eq (K := K) hμ
+  exact ⟨φ, Nat.eq_of_mul_eq_mul_left Fintype.card_pos ((card_mul_homMultiplicity φ).trans hφ)⟩
 
 /-- For `n * μ = m`, the map `x ↦ x ⊗ 1_μ`, reindexed to `m`, is a unital `⋆`-homomorphism. -/
 private theorem nonempty_starAlgHom_of_card_mul_eq [DecidableEq m] {μ : ℕ}
@@ -274,7 +372,7 @@ private theorem nonempty_starAlgHom_of_card_mul_eq [DecidableEq m] {μ : ℕ}
 
 /-- **Realisation of unital multiplicities.** For `n ≠ 0`, a unital `⋆`-homomorphism
 `Mₙ(K) → Mₘ(K)` of multiplicity `μ` exists exactly when `n * μ = m`. -/
-theorem exists_starAlgHom_homMultiplicity_eq_iff [CharZero K] [DecidableEq m] [Nonempty n] {μ : ℕ} :
+theorem exists_starAlgHom_homMultiplicity_eq_iff [DecidableEq m] [Nonempty n] {μ : ℕ} :
     (∃ φ : Matrix n n K →⋆ₐ[K] Matrix m m K, homMultiplicity φ = μ) ↔
       Fintype.card n * μ = Fintype.card m := by
   refine ⟨fun ⟨φ, hφ⟩ => hφ ▸ (card_mul_homMultiplicity_eq_card_iff φ).mpr (map_one φ),
@@ -284,7 +382,7 @@ theorem exists_starAlgHom_homMultiplicity_eq_iff [CharZero K] [DecidableEq m] [N
     (((card_mul_homMultiplicity_eq_card_iff φ).mpr (map_one φ)).trans hμ.symm)⟩
 
 /-- A unital `⋆`-homomorphism `Mₙ(K) → Mₘ(K)` exists exactly when `n ∣ m`. -/
-theorem nonempty_starAlgHom_iff [CharZero K] [DecidableEq m] :
+theorem nonempty_starAlgHom_iff [DecidableEq m] :
     Nonempty (Matrix n n K →⋆ₐ[K] Matrix m m K) ↔ Fintype.card n ∣ Fintype.card m :=
   ⟨fun ⟨φ⟩ => card_dvd_card_of_map_one φ (map_one φ),
     fun ⟨_, hμ⟩ => nonempty_starAlgHom_of_card_mul_eq hμ.symm⟩
@@ -356,20 +454,18 @@ private theorem star_sum_mul_sum (hv : IsPartialIsometry v) (hvφ : star v * v =
     Finset.sum_ite_eq', Finset.mem_univ, ite_true]
   rw [← map_sum, sum_single_one]
 
-/-- The final projection of `V = ∑ₖ ψ(Eₖᵢ) v φ(Eᵢₖ)` is `ψ 1`. -/
+/-- The final projection of `V = ∑ₖ ψ(Eₖᵢ) v φ(Eᵢₖ)` is `ψ 1`: `star V` is the element built
+from `ψ`, `φ` and the partial isometry `star v`, whose initial projection is `ψ 1`. -/
 private theorem sum_mul_star_sum (hv : IsPartialIsometry v) (hvφ : star v * v = φ (single i i 1))
     (hvψ : v * star v = ψ (single i i 1)) :
     (∑ j, ψ (single j i 1) * v * φ (single i j 1)) *
       star (∑ j, ψ (single j i 1) * v * φ (single i j 1)) = ψ 1 := by
-  have hφv (y : B) : φ (single i i 1) * (star v * y) = star v * y := by
-    have h := hv.star.mul_star_mul_self
-    rw [star_star] at h
-    rw [← mul_assoc, ← hvφ, h]
-  have hvv (y : B) : v * (star v * y) = ψ (single i i 1) * y := by rw [← mul_assoc, hvψ]
-  simp only [star_sum, star_mul, star_map_single, Finset.sum_mul, Finset.mul_sum, mul_assoc,
-    map_single_mul_map_single_mul, map_single_mul_map_single, hφv, hvv, mul_ite, mul_zero,
-    Finset.sum_ite_eq', Finset.mem_univ, ite_true]
-  rw [← map_sum, sum_single_one]
+  have hV : star (∑ j, ψ (single j i 1) * v * φ (single i j 1)) =
+      ∑ j, φ (single j i 1) * star v * ψ (single i j 1) := by
+    simp [star_sum, star_mul, star_map_single, mul_assoc]
+  have h := star_sum_mul_sum (φ := ψ) (ψ := φ) hv.star (by rw [star_star, hvψ])
+    (by rw [star_star, hvφ])
+  rwa [← hV, star_star] at h
 
 variable (φ ψ i) in
 /-- **Unitary conjugacy of `⋆`-homomorphisms out of a matrix algebra.** Let `φ ψ : Mₙ(R) → B` be
@@ -386,28 +482,28 @@ theorem _root_.NonUnitalStarAlgHom.exists_mem_unitary_mul_map_mul_star_eq {w : B
   have hVV : star V * V = φ 1 := star_sum_mul_sum hv hvφ hvψ
   have hVV' : V * star V = ψ 1 := sum_mul_star_sum hv hvφ hvψ
   have hψV : ψ 1 * V = V := map_one_mul_sum φ ψ i
-  have hVφ : V * φ 1 = V := by rw [sum_mul_map, hψV]
+  have hVx (x : Matrix n n R) : V * φ x = ψ x * V := sum_mul_map φ ψ i x
+  have hVφ : V * φ 1 = V := by rw [hVx, hψV]
   -- `w` vanishes on the range of `φ 1`, and its range is orthogonal to the range of `ψ 1`
   have hwφx (x : Matrix n n R) : w * φ x = 0 := by
-    calc w * φ x = w * (star w * w) * φ x := by rw [← mul_assoc, hw.mul_star_mul_self]
-      _ = 0 := by rw [hwφ, mul_assoc, sub_mul, one_mul, ← map_mul, one_mul, sub_self, mul_zero]
+    rw [← hw.mul_star_mul_self, mul_assoc w, hwφ]
+    simp [mul_assoc, sub_mul, ← map_mul]
   have hψw : ψ 1 * w = 0 := by
-    rw [← hw.mul_star_mul_self, hwψ, ← mul_assoc, mul_sub, mul_one, ← map_mul, mul_one, sub_self,
-      zero_mul]
+    rw [← hw.mul_star_mul_self, hwψ]
+    simp [← mul_assoc, mul_sub, ← map_mul]
   have hVw : star V * w = 0 := by
-    rw [← hψV, star_mul, ← map_star, star_one, mul_assoc, hψw, mul_zero]
+    rw [← hψV]
+    simp [mul_assoc, ← map_star, hψw]
   have hwV : star w * V = 0 := by rw [← star_star V, ← star_mul, hVw, star_zero]
-  have hVw' : V * star w = 0 := by
-    rw [← hVφ, mul_assoc, ← star_star (φ 1), ← star_mul, ← map_star, star_one, hwφx, star_zero,
-      mul_zero]
-  have hwV' : w * star V = 0 := by rw [← star_star w, ← star_mul, hVw', star_zero]
+  have hwV' : w * star V = 0 := by
+    rw [← hVφ]
+    simp [← mul_assoc, ← map_star, hwφx]
+  have hVw' : V * star w = 0 := by rw [← star_star V, ← star_mul, hwV', star_zero]
   refine ⟨V + w, Unitary.mem_iff.mpr ⟨?_, ?_⟩, fun x => ?_⟩
-  · rw [star_add, add_mul, mul_add, mul_add, hVV, hVw, hwV, hwφ]
-    abel
-  · rw [star_add, add_mul, mul_add, mul_add, hVV', hVw', hwV', hwψ]
-    abel
-  · rw [add_mul, hwφx, add_zero, sum_mul_map, mul_assoc, star_add, mul_add, hVV', hVw', add_zero,
-      ← map_mul, mul_one]
+  · simp [add_mul, mul_add, hVV, hVw, hwV, hwφ]
+  · simp [add_mul, mul_add, hVV', hVw', hwV', hwψ]
+  · rw [add_mul, hwφx, add_zero, hVx]
+    simp [mul_assoc, mul_add, hVV', hVw', ← map_mul]
 
 end Unitary
 
