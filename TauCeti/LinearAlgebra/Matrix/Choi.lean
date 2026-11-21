@@ -60,18 +60,6 @@ theorem choiMatrix_sum {ι m n R : Type*} [DecidableEq n] [AddCommMonoid R] [One
   ext p q
   simp only [choiMatrix_apply, Matrix.sum_apply]
 
-/-- A linear map with a finite input index type is determined by its Choi matrix.
-The output index type is arbitrary. -/
-theorem choiMatrix_injective {m n R : Type*} [Finite n] [DecidableEq n] [Semiring R] :
-    Function.Injective (fun Φ : Matrix n n R →ₗ[R] Matrix m m R => choiMatrix Φ) := by
-  let := Fintype.ofFinite n
-  intro Φ Ψ h
-  apply (Matrix.stdBasis R n n).ext
-  rintro ⟨i, j⟩
-  rw [Matrix.stdBasis_eq_single]
-  ext a b
-  simpa only [choiMatrix_apply] using congrFun (congrFun h (i, a)) (j, b)
-
 /-- The additive equivalence sending a linear map with a finite input index type to its
 Choi matrix. The output index type is arbitrary. The inverse reconstructs the linear map
 that sends each matrix unit to the corresponding block. -/
@@ -90,6 +78,14 @@ theorem choiMatrixAddEquiv_apply {m n R : Type*} [Finite n] [DecidableEq n] [Sem
   apply Matrix.ext
   rintro ⟨i, a⟩ ⟨j, b⟩
   simp [choiMatrixAddEquiv, Function.curry, Matrix.stdBasis_eq_single]
+
+/-- A linear map with a finite input index type is determined by its Choi matrix.
+The output index type is arbitrary. -/
+theorem choiMatrix_injective {m n R : Type*} [Finite n] [DecidableEq n] [Semiring R] :
+    Function.Injective (fun Φ : Matrix n n R →ₗ[R] Matrix m m R => choiMatrix Φ) := by
+  intro Φ Ψ h
+  apply choiMatrixAddEquiv.injective
+  simpa only [choiMatrixAddEquiv_apply] using h
 
 /-- The reconstructed linear map sends the `(i, j)` matrix unit to the `(i, j)` block. -/
 @[simp]
