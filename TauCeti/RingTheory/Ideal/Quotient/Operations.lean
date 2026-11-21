@@ -43,6 +43,9 @@ on the quotient by `I` (`MonoidHom.quotientRingAut`), assembled from Mathlib's
 If every class modulo a maximal ideal `m` comes from `f`, then `m.comap f` is maximal
 (`Ideal.isMaximal_comap_of_surjective_quotient_mk_comp`).
 
+For ideals `J ≤ I`, the image of `I` in `R ⧸ J` is a minimal nonzero ideal exactly when `I` covers
+`J` (`Ideal.isAtom_map_mk_iff_covBy`).
+
 For an element `p` of a commutative `R`-algebra `B`, the sequence `B → B → B ⧸ (p)`, whose first
 map is multiplication by `p`, is exact (`Ideal.exact_mulLeft_mkₐ_span_singleton`).
 
@@ -136,6 +139,32 @@ theorem isMaximal_comap_of_surjective_quotient_mk_comp {A S F : Type*} [Ring A] 
   let := Quotient.field m
   have := RingHom.ker_isMaximal_of_surjective ((Quotient.mk m).comp (f : A →+* S)) hf
   rwa [← RingHom.comap_ker, mk_ker, comap_coe] at this
+
+/-- For ideals `J ≤ I`, the image of `I` in `R ⧸ J` is a minimal nonzero ideal exactly when `I`
+covers `J`, that is, when no ideal lies strictly between `J` and `I`. -/
+theorem isAtom_map_mk_iff_covBy {I J : Ideal R} (h : J ≤ I) :
+    IsAtom (I.map (Quotient.mk J)) ↔ J ⋖ I := by
+  have hbot {K : Ideal R} : K.map (Quotient.mk J) = ⊥ ↔ K ≤ J := by
+    rw [map_eq_bot_iff_le_ker, mk_ker]
+  have hle {K L : Ideal R} (hL : J ≤ L) :
+      K.map (Quotient.mk J) ≤ L.map (Quotient.mk J) ↔ K ≤ L := by
+    rw [map_le_iff_le_comap, comap_map_of_surjective _ Quotient.mk_surjective,
+      ← RingHom.ker_eq_comap_bot, mk_ker, sup_of_le_left hL]
+  constructor
+  · rintro ⟨hne, hmin⟩
+    refine ⟨h.lt_of_ne fun hJI ↦ hne (hbot.2 hJI.ge), fun K hJK hKI ↦ hJK.not_ge (hbot.1 ?_)⟩
+    exact hmin _ ((map_mono hKI.le).lt_of_not_ge fun hIK ↦ hKI.not_ge ((hle hJK.le).1 hIK))
+  · rintro ⟨hJI, hcov⟩
+    refine ⟨fun h0 ↦ hJI.not_ge (hbot.1 h0), fun L hL ↦ ?_⟩
+    -- Every ideal of `R ⧸ J` is the image of its preimage, which contains `J`.
+    have hJK : J ≤ L.comap (Quotient.mk J) := fun x hx ↦ by
+      rw [mem_comap, Quotient.eq_zero_iff_mem.2 hx]
+      exact L.zero_mem
+    rw [← map_comap_of_surjective _ Quotient.mk_surjective L] at hL ⊢
+    obtain hJL | hJL := hJK.lt_or_eq
+    · refine (hcov hJL ((hle h).1 hL.le |>.lt_of_not_ge fun hIL ↦ ?_)).elim
+      exact hL.not_ge ((hle hJK).2 hIL)
+    · exact hbot.2 hJL.ge
 
 /-- A linear endomorphism commuting with multiplication by each element of a set `s` preserves the
 ideal spanned by `s`, so it induces a compatible endomorphism of the quotient by that ideal. -/
