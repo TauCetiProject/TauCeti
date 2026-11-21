@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.Submodule.Ker
-public import Mathlib.Data.Finset.Image
 
 /-!
 # Kernels in commuting squares
