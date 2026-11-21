@@ -55,8 +55,9 @@ approximates `a`.
   with `isOpen_integralAdeles`, `isClosed_integralAdeles`, and `isCompact_integralAdeles`.
 * `IsDedekindDomain.FiniteAdeleRing.integralEmbedding`: the continuous embedding of the product of
   the local integer rings into the finite adeles, with range `integralAdeles`.
-* `IsDedekindDomain.FiniteAdeleRing.one_apply`, `add_apply`, `sub_apply`, and `mul_apply`: the
-  corresponding operations are computed place by place.
+* `IsDedekindDomain.FiniteAdeleRing.one_apply`, `add_apply`, `sub_apply`, `mul_apply`,
+  `algebraMap_apply_eq_algebraMap`, and `smul_apply`: the corresponding operations and diagonal
+  scalar maps are computed place by place.
 * `IsDedekindDomain.FiniteAdeleRing.continuous_ofAdicCompletion`: the embedding of the completion
   at a finite place into the finite adeles is continuous.
 * `IsDedekindDomain.FiniteAdeleRing.sIntegralAdeles`: the `R`-subalgebra of `S`-integral finite
@@ -126,6 +127,22 @@ variable {R K}
 /-- Multiplication of finite adeles is computed place by place. -/
 @[simp] theorem mul_apply (a b : FiniteAdeleRing R K) (v : HeightOneSpectrum R) :
     (a * b) v = a v * b v := rfl
+
+/-- Evaluating the diagonal image of an element of a scalar ring `S` at a finite place `v` agrees
+with its image under `algebraMap S (v.adicCompletion K)`. -/
+theorem algebraMap_apply_eq_algebraMap {S : Type*} [CommSemiring S] [Algebra S K]
+    [Algebra S (FiniteAdeleRing R K)] [IsScalarTower S K (FiniteAdeleRing R K)]
+    (x : S) (v : HeightOneSpectrum R) :
+    algebraMap S (FiniteAdeleRing R K) x v = algebraMap S (v.adicCompletion K) x := by
+  rw [IsScalarTower.algebraMap_apply S K (FiniteAdeleRing R K), algebraMap_apply,
+    HeightOneSpectrum.algebraMap_adicCompletion, Function.comp_apply]
+
+/-- Scalar multiplication on finite adeles is computed place by place. -/
+theorem smul_apply {S : Type*} [CommSemiring S] [Algebra S K]
+    [Algebra S (FiniteAdeleRing R K)] [IsScalarTower S K (FiniteAdeleRing R K)]
+    (c : S) (a : FiniteAdeleRing R K) (v : HeightOneSpectrum R) :
+    (c • a) v = c • a v := by
+  rw [Algebra.smul_def, Algebra.smul_def, mul_apply, algebraMap_apply_eq_algebraMap]
 
 variable (R K) in
 /-- The **integral finite adeles** `∏_v 𝒪_v`: the finite adeles that are integral at every finite
