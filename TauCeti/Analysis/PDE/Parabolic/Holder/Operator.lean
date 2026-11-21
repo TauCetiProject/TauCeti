@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PDE.Parabolic.Holder.Interpolation
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Trace
 public import TauCeti.Analysis.PDE.MaximumPrinciple.Parabolic.WholeSpace
 public import TauCeti.Analysis.Holder.Bilinear
+public import TauCeti.Analysis.Holder.Coefficient
 
 /-!
 # Second-order parabolic operators on order-two parabolic Hölder spaces
@@ -506,17 +507,10 @@ theorem le_exp_mul_mul_add_mul_of_euclideanParabolicOperatorL_le
       (c := fun t x ↦ c (slabMk x (projIcc t₀ t₁ ht.le (t + t₀))))
       (T := t₁ - t₀) (Lam := ∑ i, ‖a i i‖) (β := ∑ i, ‖b i‖)
       (fun t _ x ξ ↦ ha _ ξ)
-      (fun t _ x ↦ by
-        have hx : 1 ≤ 1 + ‖x‖ ^ 2 := by nlinarith [sq_nonneg ‖x‖]
-        have h₀ : 0 ≤ ∑ i, ‖a i i‖ := by positivity
-        calc _ ≤ ∑ i, ‖a i i‖ := Finset.sum_le_sum fun i _ ↦
-                (le_abs_self _).trans (HolderSpace.norm_apply_le (a i i) _)
-          _ ≤ _ := le_mul_of_one_le_right h₀ hx)
-      (fun t _ x ↦ by
-        have h₀ : 0 ≤ ∑ i, ‖b i‖ := by positivity
-        calc _ ≤ ∑ i, ‖b i‖ := (norm_sum_le _ _).trans (Finset.sum_le_sum fun i _ ↦ by
-                simpa [norm_smul] using HolderSpace.norm_apply_le (b i) _)
-          _ ≤ _ := le_mul_of_one_le_right h₀ (by linarith [norm_nonneg x]))
+      (fun t _ x ↦ (HolderSpace.trace_le_sum_norm a _).trans (le_mul_of_one_le_right (by positivity)
+        (by nlinarith [sq_nonneg ‖x‖])))
+      (fun t _ x ↦ (HolderSpace.norm_sum_apply_smul_single_le_sum_norm b _).trans
+        (le_mul_of_one_le_right (by positivity) (by linarith [norm_nonneg x])))
       (fun t _ x ↦ hc _) hγ hM hK hcont.continuousOn
       (hbdd.subset (image_subset_range _ _)).bddAbove
       (fun t _ x ↦ (u.contDiff_spatialSlice _).contDiffAt)

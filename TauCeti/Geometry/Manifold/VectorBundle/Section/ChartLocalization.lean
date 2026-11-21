@@ -42,15 +42,6 @@ topology is the final locally convex topology of the chart extensions
 The converse direction of the universal property is
 `Bundle.Trivialization.continuous_chartTestSection`.
 
-The final locally convex topology of the chart extensions over all chart data needs no choice of
-frames, so we make it the canonical topology on compactly supported sections
-(`ContMDiffSection.instTopologicalSpaceCompactlySupported`). On a boundaryless Hausdorff
-`σ`-compact manifold with finite-dimensional model it is the topology
-`ContMDiffSection.compactlySupportedTopology` of every covering frame system
-(`ContMDiffSection.topologicalSpace_compactlySupported_eq_compactlySupportedTopology`), so the
-fixed-compact continuity, embedding and universal-property lemmas of that topology transfer to the
-canonical one.
-
 ## Main declarations
 
 * `Bundle.Trivialization.chartLocalization`: the chart localization of sections, a linear map into
@@ -66,13 +57,6 @@ canonical one.
   property of the test topology with respect to chart extensions.
 * `ContMDiffSection.compactlySupportedTopology_eq_finalLocallyConvexTopology_chartTestSection`:
   the test topology is the final locally convex topology of the chart extensions.
-* `ContMDiffSection.instTopologicalSpaceCompactlySupported`: the frame-free test topology on
-  compactly supported sections.
-* `ContMDiffSection.continuous_iff_continuous_comp_chartTestSection`: its universal property.
-* `ContMDiffSection.continuous_iff_continuous_comp_ofSupportedIn`,
-  `ContMDiffSection.isEmbedding_ofSupportedIn`: its fixed-compact universal property, and the
-  embedding of each fixed-compact stage, for the compact derivative topology of a covering frame
-  system.
 
 The fixed-support part rests on
 `ContDiffMapSupportedIn.continuous_iff_continuous_toContMDiffMap`: on a fixed compact support, the
@@ -350,28 +334,12 @@ def ChartTestData.chartTestSection (p : ChartTestData I F V n) :
 
 /-- The chart extension indexed by chart data is the chart extension of its trivialization and
 chart. -/
+@[simp]
 theorem ChartTestData.chartTestSection_def (p : ChartTestData I F V n) :
     letI := p.memTrivializationAtlas
     p.chartTestSection =
       p.trivialization.chartTestSection p.chart p.contMDiffOn_chart p.source_subset :=
   (rfl)
-
-/-- On the chart source, the chart extension is the inverse frame applied to the value of the test
-function at the image of the point. -/
-theorem ChartTestData.chartTestSection_apply_of_mem (p : ChartTestData I F V n)
-    (φ : 𝓓^{n}(⟨p.chart.target, p.chart.open_target⟩, F)) {x : M} (hx : x ∈ p.chart.source) :
-    letI := p.memTrivializationAtlas
-    (p.chartTestSection φ : Cₛ^n⟮I; F, V⟯) x = p.trivialization.symmL ℝ x (φ (p.chart x)) :=
-  letI := p.memTrivializationAtlas
-  Bundle.Trivialization.chartTestSection_apply_of_mem _ _ _ _ φ hx
-
-/-- The chart extension vanishes outside the chart source. -/
-@[simp]
-theorem ChartTestData.chartTestSection_apply_of_notMem (p : ChartTestData I F V n)
-    (φ : 𝓓^{n}(⟨p.chart.target, p.chart.open_target⟩, F)) {x : M} (hx : x ∉ p.chart.source) :
-    (p.chartTestSection φ : Cₛ^n⟮I; F, V⟯) x = 0 :=
-  letI := p.memTrivializationAtlas
-  Bundle.Trivialization.chartTestSection_apply_of_notMem _ _ _ _ φ hx
 
 end ChartTestData
 
@@ -439,10 +407,10 @@ private theorem exists_ofSupportedIn_eq_sum (K : Compacts M) :
   · rw [(σ : Cₛ^n⟮I; F, V⟯).eq_zero_of_notMem_tsupport fun h ↦ hy (mem_supportedIn.1 σ.property h),
       smul_zero]
 
-/-- **Bundle tests are spanned by chart extensions.** On a boundaryless Hausdorff `σ`-compact
-manifold with finite-dimensional model, every compactly supported section is a finite sum of chart
-extensions of native test functions. In particular a linear map on compactly supported sections is
-determined by its composites with the chart extensions. -/
+/-- **Compactly supported sections are spanned by chart extensions.** On a boundaryless Hausdorff
+`σ`-compact manifold with finite-dimensional model, every compactly supported section is a finite
+sum of chart extensions of native test functions. In particular a linear map on compactly supported
+sections is determined by its composites with the chart extensions. -/
 theorem span_iUnion_range_chartTestSection :
     Submodule.span ℝ (⋃ p : ChartTestData I F V n, range p.chartTestSection) = ⊤ := by
   refine Submodule.eq_top_iff'.2 fun s ↦ ?_
@@ -496,7 +464,7 @@ theorem compactlySupportedTopology_eq_finalLocallyConvexTopology_chartTestSectio
   · exact (TestFunction.ofSupportedInCLM ℝ (hL x)).continuous.comp
       ((continuous_chartLocalization _ _ (contMDiffOn_testChart_symm V x) _ _ _ (hL x) (hψ x) e U hU
         hcover).comp continuous_subtypeVal)
-  · simp [p, hdecomp σ, ChartTestData.chartTestSection_def]
+  · simp [p, hdecomp σ]
 
 variable {G : Type*} [AddCommGroup G] [Module ℝ G] [TopologicalSpace G]
   [IsTopologicalAddGroup G] [ContinuousSMul ℝ G] [LocallyConvexSpace ℝ G]
@@ -519,130 +487,5 @@ theorem continuous_compactlySupportedTopology_iff_chartTestSection
   · let := p.memTrivializationAtlas
     rw [ChartTestData.chartTestSection_def]
     exact h _ _ p.contMDiffOn_chart p.source_subset
-
-end ContMDiffSection
-
-namespace ContMDiffSection
-
-variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  [TopologicalSpace M] [ChartedSpace H M] [T2Space M]
-  [NormedAddCommGroup F] [NormedSpace ℝ F]
-  {V : M → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
-  [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
-  [FiberBundle F V] [VectorBundle ℝ F V]
-  {n : ℕ∞} [ContMDiffVectorBundle n F V I]
-
-/-- The **test topology** on compactly supported sections: the final locally convex topology of
-the chart extensions of native test functions, over all chart data. It needs no choice of frames.
-On a boundaryless Hausdorff `σ`-compact manifold with finite-dimensional model it agrees with
-`ContMDiffSection.compactlySupportedTopology` for every covering frame system
-(`topologicalSpace_compactlySupported_eq_compactlySupportedTopology`). -/
-instance instTopologicalSpaceCompactlySupported :
-    TopologicalSpace (compactlySupported I F n V) :=
-  TauCeti.finalLocallyConvexTopology
-    (ChartTestData.chartTestSection (I := I) (F := F) (V := V) (n := n))
-
-instance instIsTopologicalAddGroupCompactlySupported :
-    IsTopologicalAddGroup (compactlySupported I F n V) :=
-  inferInstanceAs (@IsTopologicalAddGroup _ (TauCeti.finalLocallyConvexTopology
-    (ChartTestData.chartTestSection (I := I) (F := F) (V := V) (n := n))) _)
-
-instance instContinuousSMulCompactlySupported :
-    ContinuousSMul ℝ (compactlySupported I F n V) :=
-  inferInstanceAs (@ContinuousSMul ℝ _ _ _ (TauCeti.finalLocallyConvexTopology
-    (ChartTestData.chartTestSection (I := I) (F := F) (V := V) (n := n))))
-
-instance instLocallyConvexSpaceCompactlySupported :
-    LocallyConvexSpace ℝ (compactlySupported I F n V) :=
-  inferInstanceAs (@LocallyConvexSpace ℝ _ _ _ _ _ (TauCeti.finalLocallyConvexTopology
-    (ChartTestData.chartTestSection (I := I) (F := F) (V := V) (n := n))))
-
-/-- The chart extension of native test functions given by chart data, as a continuous linear
-map into the bundle tests. -/
-def ChartTestData.chartTestSectionCLM (p : ChartTestData I F V n) :
-    𝓓^{n}(⟨p.chart.target, p.chart.open_target⟩, F) →L[ℝ] compactlySupported I F n V :=
-  ⟨p.chartTestSection, TauCeti.FinalLocallyConvexTopology.continuous
-    (ChartTestData.chartTestSection (I := I) (F := F) (V := V) (n := n)) p⟩
-
-@[simp]
-theorem ChartTestData.coe_chartTestSectionCLM (p : ChartTestData I F V n) :
-    ⇑p.chartTestSectionCLM = p.chartTestSection :=
-  (rfl)
-
-/-- **The universal property of bundle tests.** A linear map from the bundle tests into a locally
-convex space is continuous exactly when its composite with the chart extension of native test
-functions is continuous for all chart data. -/
-theorem continuous_iff_continuous_comp_chartTestSection {G : Type*} [AddCommGroup G]
-    [Module ℝ G] [TopologicalSpace G] [IsTopologicalAddGroup G] [ContinuousSMul ℝ G]
-    [LocallyConvexSpace ℝ G] (g : compactlySupported I F n V →ₗ[ℝ] G) :
-    Continuous g ↔ ∀ p : ChartTestData I F V n, Continuous (g ∘ p.chartTestSection) :=
-  TauCeti.FinalLocallyConvexTopology.continuous_iff_continuous_comp _ g
-
-section Manifold
-
-variable [FiniteDimensional ℝ E] [I.Boundaryless] [SigmaCompactSpace M] [IsManifold I ∞ M]
-
-/-- The test topology is the fixed-compact inductive topology
-`ContMDiffSection.compactlySupportedTopology` of any covering frame system. -/
-theorem topologicalSpace_compactlySupported_eq_compactlySupportedTopology {ι : Type*}
-    (e : ι → Trivialization F (π F V)) [∀ i, MemTrivializationAtlas (e i)]
-    (U : ι → Opens M) (hU : ∀ i, (U i : Set M) ⊆ (e i).baseSet)
-    (hcover : ∀ x : M, ∃ i, x ∈ U i) :
-    instTopologicalSpaceCompactlySupported = compactlySupportedTopology (I := I) (n := n) e U hU :=
-  (compactlySupportedTopology_eq_finalLocallyConvexTopology_chartTestSection e U hU hcover).symm
-
-/-- The bundle tests form a Hausdorff space. -/
-instance instT2SpaceCompactlySupported : T2Space (compactlySupported I F n V) := by
-  let U : M → Opens M := fun x ↦ ⟨(trivializationAt F V x).baseSet,
-    (trivializationAt F V x).open_baseSet⟩
-  have hcover : ∀ x : M, ∃ y, x ∈ U y := fun x ↦ ⟨x, mem_baseSet_trivializationAt F V x⟩
-  rw [topologicalSpace_compactlySupported_eq_compactlySupportedTopology
-    (fun x ↦ trivializationAt F V x) U (fun _ ↦ subset_rfl) hcover]
-  exact t2Space_compactlySupportedTopology _ U (fun _ ↦ subset_rfl) hcover
-
-variable {ι : Type*} (e : ι → Trivialization F (π F V)) [∀ i, MemTrivializationAtlas (e i)]
-  (U : ι → Opens M) (hU : ∀ i, (U i : Set M) ⊆ (e i).baseSet) (hcover : ∀ x : M, ∃ i, x ∈ U i)
-
-include hcover in
-/-- Every fixed-compact support inclusion is continuous into the bundle tests, for the compact
-derivative topology of any covering frame system. -/
-theorem continuous_ofSupportedIn (K : Compacts M) :
-    letI := frameTopology (I := I) (n := n) e U hU
-    Continuous (ofSupportedIn (I := I) (F := F) (V := V) (n := n) K) := by
-  rw [topologicalSpace_compactlySupported_eq_compactlySupportedTopology e U hU hcover]
-  exact continuous_ofSupportedIn_compactlySupportedTopology e U hU K
-
-include hcover in
-/-- Forgetting compact support is continuous from the bundle tests into the compact derivative
-topology of any covering frame system. -/
-theorem continuous_val_compactlySupported :
-    letI := frameTopology (I := I) (n := n) e U hU
-    Continuous (Subtype.val : compactlySupported I F n V → Cₛ^n⟮I; F, V⟯) := by
-  rw [topologicalSpace_compactlySupported_eq_compactlySupportedTopology e U hU hcover]
-  exact continuous_val_compactlySupportedTopology e U hU
-
-include hcover in
-/-- Each fixed-compact stage, with the compact derivative topology of any covering frame system,
-is embedded in the bundle tests. -/
-theorem isEmbedding_ofSupportedIn (K : Compacts M) :
-    letI := frameTopology (I := I) (n := n) e U hU
-    IsEmbedding (ofSupportedIn (I := I) (F := F) (V := V) (n := n) K) := by
-  rw [topologicalSpace_compactlySupported_eq_compactlySupportedTopology e U hU hcover]
-  exact isEmbedding_ofSupportedIn_compactlySupportedTopology e U hU K
-
-include hcover in
-/-- **The fixed-compact universal property of bundle tests.** A linear map from the bundle tests
-into a locally convex space is continuous exactly when its restriction to every fixed-compact
-stage is continuous for the compact derivative topology of a covering frame system. -/
-theorem continuous_iff_continuous_comp_ofSupportedIn {G : Type*} [AddCommGroup G] [Module ℝ G]
-    [TopologicalSpace G] [IsTopologicalAddGroup G] [ContinuousSMul ℝ G] [LocallyConvexSpace ℝ G]
-    (g : compactlySupported I F n V →ₗ[ℝ] G) :
-    letI := frameTopology (I := I) (n := n) e U hU
-    Continuous g ↔ ∀ K : Compacts M, Continuous (g ∘ ofSupportedIn K) := by
-  rw [topologicalSpace_compactlySupported_eq_compactlySupportedTopology e U hU hcover]
-  exact continuous_compactlySupportedTopology_iff e U hU g
-
-end Manifold
 
 end ContMDiffSection

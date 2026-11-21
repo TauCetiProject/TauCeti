@@ -38,7 +38,8 @@ half-interval onto a disconnected punctured interval
 An orientation of the interior is recorded topologically, by a set `𝒪` of charts to `ℝ` covering
 the interior points whose transition maps are increasing near every common point. A boundary point
 is *outward* when the charts of `𝒪` decrease along an injective path leaving it, and *inward* when
-they increase.
+they increase. Orientations by coherent local coordinates defined at every point, boundary points
+included, are in `TauCeti.Geometry.Manifold.Boundary.OrientingCoordinates`.
 
 ## Strategy
 
@@ -678,6 +679,29 @@ private theorem CutData.base_notMem (D : CutData M) {B : Finset M}
     exact disjoint_left.1 ((D.sides p hp).disjoint c) ((D.sides p hp).mem c)
   · exact disjoint_right.1 D.disjoint (hB y hy)
 
+/-- A side, in an arc `K`, of a point `p` of `P` lies in `K`, and the coordinate of `p` is an
+endpoint, not attained by `K`, of the interval of coordinates of `K`. -/
+private theorem CutData.inl_end [T2Space M] (D : CutData M)
+    {e : OpenPartialHomeomorph M (EuclideanHalfSpace 1)} {α β : ℝ} {K : Set M}
+    (h : IsArcIn e α β K) (hKP : Disjoint K D.P) {p : M} (hp : p ∈ D.P) {c : Bool}
+    (hK : D.arcOf (.inl (p, c)) = K) :
+    D.J p c ⊆ K ∧ p ∈ e.source ∧ (e p).val 0 ∉ (fun z ↦ (e z).val 0) '' K ∧
+      ((e p).val 0 = sInf ((fun z ↦ (e z).val 0) '' K) ∨
+        (e p).val 0 = sSup ((fun z ↦ (e z).val 0) '' K)) := by
+  have hJ : D.J p c ⊆ K := by rw [← hK]; exact D.J_subset_arcOf hp c
+  exact ⟨hJ, h.coord_of_mem_closure (closure_mono hJ ((D.sides p hp).mem_closure c))
+    (disjoint_right.1 hKP hp)⟩
+
+/-- A boundary point whose arc is `K` lies in `K`, and its coordinate `0` is the attained infimum
+of the coordinates of `K`. -/
+private theorem CutData.inr_end (D : CutData M)
+    {e : OpenPartialHomeomorph M (EuclideanHalfSpace 1)} {α β : ℝ} {K : Set M}
+    (h : IsArcIn e α β K) {y : M} (hy : y ∈ (𝓡∂ 1).boundary M) (hK : D.arcOf (.inr y) = K) :
+    y ∈ K ∧ (e y).val 0 ∈ (fun z ↦ (e z).val 0) '' K ∧
+      (e y).val 0 = sInf ((fun z ↦ (e z).val 0) '' K) := by
+  have hyK : y ∈ K := by rw [← hK]; exact mem_connectedComponentIn (disjoint_right.1 D.disjoint hy)
+  exact ⟨hyK, h.coord_eq_sInf_of_mem_boundary hyK hy⟩
+
 /-- **Every arc has exactly two ends.** Among the sides of the points of `P` and the boundary
 points, those lying in a given component of the complement of `P` are exactly two: in any chart in
 which the component is an arc, the coordinate of the point of `P` or of the boundary point is a
@@ -694,8 +718,6 @@ private theorem CutData.injOn_and_image_filter_arcOf [T2Space M] (D : CutData M)
           sSup ((fun z ↦ (e z).val 0) '' D.arcOf ω₀)} := by
   classical
   set Ω := D.ends hB.toFinset
-  have hbase : ∀ ω ∈ Ω, D.base ω ∉ D.P := fun ω hω ↦
-    D.base_notMem (fun y hy ↦ hB.mem_toFinset.1 hy) hω
   set K := D.arcOf ω₀
   set I := (fun z ↦ (e z).val 0) '' K
   set v : M × Bool ⊕ M → ℝ := fun ω ↦ (e (Sum.elim Prod.fst id ω)).val 0
@@ -706,15 +728,12 @@ private theorem CutData.injOn_and_image_filter_arcOf [T2Space M] (D : CutData M)
       p ∈ D.P ∧ D.J p c ⊆ K ∧ p ∈ e.source ∧ v (.inl (p, c)) ∉ I ∧
         (v (.inl (p, c)) = sInf I ∨ v (.inl (p, c)) = sSup I) := fun p c hω hK ↦ by
     have hp : p ∈ D.P := by simpa [Ω, CutData.ends] using hω
-    have hJ : D.J p c ⊆ K := by rw [← hK]; exact D.J_subset_arcOf hp c
-    exact ⟨hp, hJ, h.coord_of_mem_closure (closure_mono hJ ((D.sides p hp).mem_closure c))
-      (disjoint_right.1 hKP hp)⟩
+    exact ⟨hp, D.inl_end h hKP hp hK⟩
   -- A boundary point in the arc has coordinate `0`, the attained infimum.
   have hinr : ∀ y, (.inr y : M × Bool ⊕ M) ∈ Ω → D.arcOf (.inr y) = K →
       y ∈ e.source ∧ v (.inr y) ∈ I ∧ v (.inr y) = sInf I := fun y hω hK ↦ by
-    have hyK : y ∈ K := by rw [← hK]; exact mem_connectedComponentIn (hbase _ hω)
-    exact ⟨(h.mem y hyK).1,
-      h.coord_eq_sInf_of_mem_boundary hyK (by simpa [Ω, CutData.ends] using hω)⟩
+    obtain ⟨hyK, hy⟩ := D.inr_end h (by simpa [Ω, CutData.ends] using hω) hK
+    exact ⟨(h.mem y hyK).1, hy⟩
   refine ⟨?_, ?_⟩
   · rintro (⟨p, c⟩ | y) hω (⟨p', c'⟩ | y') hω' hvv <;>
       rw [Finset.coe_filter, mem_ofPred_eq] at hω hω'

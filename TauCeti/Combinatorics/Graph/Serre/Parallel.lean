@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Serre.Multigraph
-public import TauCeti.Combinatorics.Graph.Serre.Tree
+public import TauCeti.Combinatorics.Graph.Serre.SpanningTree
 
 /-!
 # Two vertices joined by parallel edges
@@ -24,6 +24,9 @@ crosses the edge `a` and comes back along the edge `b`, is reduced and nonempty;
 backtracks and reduces to the empty path. Hence the graph is acyclic exactly when `α` has at
 most one element, and a tree exactly when `α` has exactly one element: multiple edges are
 detected by the tree predicate. Traversed backwards, `parallelLoop a b` is `parallelLoop b a`.
+
+The two darts of a single edge `a` form a spanning tree `parallelTree a`, whose tree path from
+`false` to `true` crosses the edge `a`; distinct edges give distinct spanning trees.
 
 ## References
 
@@ -95,8 +98,10 @@ instance [DecidableEq α] : DecidableEq (parallelGraph α).E :=
 /-- A graph of parallel edges indexed by an empty type has no dart. -/
 instance [IsEmpty α] : IsEmpty (parallelGraph α).E := inferInstanceAs (IsEmpty (α × Bool))
 
-/-- The darts leaving the vertex `true` form an orientation of a graph of parallel edges. -/
-theorem parallelGraph_isOrientation : (parallelGraph α).IsOrientation {e | e.2 = true} :=
+/-- Choosing for each edge `a` one of its two darts `(a, o a)` gives an orientation of a graph
+of parallel edges. For `o = fun _ => true` these are the darts leaving the vertex `true`. -/
+theorem parallelGraph_isOrientation (o : α → Bool) :
+    (parallelGraph α).IsOrientation {e | e.2 = o e.1} :=
   (isOrientation_iff _ _).mpr fun e => by simp
 
 /-- Two darts of a graph of parallel edges lie on the same undirected edge exactly when they
@@ -232,6 +237,34 @@ theorem parallelGraph_not_isAcyclic {a b : α} (hab : a ≠ b) : ¬(parallelGrap
 @[simp] theorem parallelGraph_isTree_iff :
     (parallelGraph α).IsTree ↔ Nonempty α ∧ Subsingleton α := by
   rw [isTree_iff, parallelGraph_connected_iff, parallelGraph_isAcyclic_iff]
+
+/-- The spanning tree of a graph of parallel edges formed by the two darts of the edge `a`: a
+single edge joins the two vertices. -/
+def parallelTree (a : α) : (parallelGraph α).SpanningTree where
+  darts := {e | e.1 = a}
+  rev_mem _ h := h
+  isTree := by
+    -- Forgetting the edge label identifies the restriction to the edge `a` with the segment.
+    let f : ((parallelGraph α).restrict {e | e.1 = a} fun _ h => h).Hom segment :=
+      { mapV := id, mapE := fun e => e.val.2, map_src := fun _ => rfl, map_rev := fun _ => rfl }
+    refine (f.toIso Function.bijective_id ⟨fun e e' h => ?_, fun b => ⟨⟨(a, b), rfl⟩, rfl⟩⟩
+      ).isTree_iff.mpr segment_isTree
+    exact Subtype.ext (Prod.ext (e.property.trans e'.property.symm) h)
+
+@[simp] theorem mem_parallelTree_darts {a : α} {e : (parallelGraph α).E} :
+    e ∈ (parallelTree a).darts ↔ e.1 = a :=
+  Iff.rfl
+
+/-- The tree path of `parallelTree a` from `false` to `true` crosses the edge `a`. -/
+@[simp] theorem parallelTree_path_false_true (a : α) :
+    (parallelTree a).path false true = (parallelDart a).toPath :=
+  ((parallelTree a).eq_path (Path.isReduced_toPath _ _) (by simp)).symm
+
+/-- The tree path of `parallelTree a` from `true` to `false` crosses the edge `a` backwards. -/
+@[simp] theorem parallelTree_path_true_false (a : α) :
+    (parallelTree a).path true false = (Quiver.reverse (parallelDart a)).toPath :=
+  ((parallelTree a).eq_path (Path.isReduced_toPath _ _)
+    (by simp [reverse_val (parallelGraph α)])).symm
 
 /-- Two vertices joined by two edges do not form a tree. -/
 theorem double_edge_not_tree : ¬(parallelGraph Bool).IsTree :=
