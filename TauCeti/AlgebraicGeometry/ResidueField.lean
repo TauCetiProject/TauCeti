@@ -30,10 +30,10 @@ canonical morphism `Spec κ(x) ⟶ X` on the opens containing `x`.
 
 ## Main results
 
-* `AlgebraicGeometry.Scheme.Hom.natCast_residueField_ne_zero`: if `N` is invertible in the residue
-  field at `f x`, then it is invertible in the residue field at `x`, for any morphism `f`.
-* `AlgebraicGeometry.Spec.natCast_residueField_ne_zero`: if `N` is invertible in a field `K`, then
-  it is invertible in the residue field of `Spec K`.
+* `AlgebraicGeometry.Scheme.Hom.natCast_residueField_ne_zero_iff`: `N` is invertible in the
+  residue field at `x` iff it is invertible in the residue field at `f x`, for any morphism `f`.
+* `AlgebraicGeometry.Spec.natCast_residueField_ne_zero_iff`: `N` is invertible in the residue field
+  of `Spec K` at any point iff it is invertible in the field `K`.
 * `AlgebraicGeometry.Spec.isSepClosed_residueField`: the residue field of the spectrum of a
   separably closed field is separably closed.
 * `AlgebraicGeometry.Scheme.eq_of_SpecMap_comp_fromSpecResidueField`: maps out of `κ(x)` are
@@ -76,7 +76,8 @@ The pullback arguments use Mathlib's `Scheme.Pullback.Triplet.tensor` descriptio
 over a pair as the spectrum of the tensor product of their residue fields.
 
 The two results on natural numbers only use that a ring homomorphism between fields, such as
-Mathlib's `Scheme.Hom.residueFieldMap`, preserves natural number casts and is injective.
+Mathlib's `Scheme.Hom.residueFieldMap` or `Scheme.Spec.residueFieldIsoOfField`, preserves natural
+number casts and is injective.
 -/
 
 public section
@@ -87,19 +88,18 @@ namespace AlgebraicGeometry
 
 universe u
 
-/-- If `N` is invertible in the residue field at `f x`, it is invertible in the residue field
-at `x`. -/
-theorem Scheme.Hom.natCast_residueField_ne_zero {X Y : Scheme.{u}} (f : X ⟶ Y) {x : X} {N : ℕ}
-    (hN : (N : Y.residueField (f x)) ≠ 0) : (N : X.residueField x) ≠ 0 := by
+/-- `N` is invertible in the residue field at `x` iff it is invertible in the residue field at
+`f x`. -/
+theorem Scheme.Hom.natCast_residueField_ne_zero_iff {X Y : Scheme.{u}} (f : X ⟶ Y) {x : X}
+    {N : ℕ} : (N : X.residueField x) ≠ 0 ↔ (N : Y.residueField (f x)) ≠ 0 := by
   rw [← map_natCast (f.residueFieldMap x).hom]
-  exact (map_ne_zero _).mpr hN
+  exact map_ne_zero _
 
-/-- If `N` is invertible in a field `K`, it is invertible in the residue field of `Spec K`. -/
-theorem Spec.natCast_residueField_ne_zero {K : Type u} [Field K] {N : ℕ} (hN : (N : K) ≠ 0)
-    (s : Spec (.of K)) : (N : (Spec (.of K)).residueField s) ≠ 0 := by
-  rw [← map_natCast ((Scheme.ΓSpecIso (.of K)).inv ≫
-    (Spec (.of K)).presheaf.germ ⊤ s trivial ≫ (Spec (.of K)).residue s).hom]
-  exact (map_ne_zero _).mpr hN
+/-- `N` is invertible in the residue field of `Spec K` iff it is invertible in the field `K`. -/
+theorem Spec.natCast_residueField_ne_zero_iff {K : Type u} [Field K] {N : ℕ}
+    (s : Spec (.of K)) : (N : (Spec (.of K)).residueField s) ≠ 0 ↔ (N : K) ≠ 0 := by
+  rw [← map_natCast (Scheme.Spec.residueFieldIsoOfField s).inv.hom]
+  exact map_ne_zero _
 
 /-- The residue field of the spectrum of a separably closed field is separably closed: it is the
 field itself (`AlgebraicGeometry.Scheme.Spec.residueFieldIsoOfField`). -/
@@ -238,8 +238,8 @@ theorem Scheme.eq_of_SpecMap_comp_fromSpecResidueField {X : Scheme.{u}} {x : X}
 
 /-- A morphism surjective on stalks induces isomorphisms on residue fields. -/
 instance Scheme.Hom.isIso_residueFieldMap_of_surjectiveOnStalks {X Y : Scheme.{u}}
-    (f : X ⟶ Y) [SurjectiveOnStalks f] (x : X) : IsIso (f.residueFieldMap x) := by
-  exact (ConcreteCategory.isIso_iff_bijective _).mpr
+    (f : X ⟶ Y) [SurjectiveOnStalks f] (x : X) : IsIso (f.residueFieldMap x) :=
+  (ConcreteCategory.isIso_iff_bijective _).mpr
     ((f.residueDegree_eq_one_iff x).mp
       (f.residueDegree_eq_one_of_surjectiveOnStalks x))
 
@@ -271,20 +271,18 @@ theorem Scheme.Hom.isIso_residueFieldMap_of_lift {X U : Scheme.{u}} (f : U ⟶ X
     (hs : s ≫ f = Spec.map φ ≫ X.fromSpecStalk x) :
     f (s (closedPoint A)) = x ∧ IsIso (f.residueFieldMap (s (closedPoint A))) := by
   -- Read off the point and the local homomorphism of `s ≫ f` from `Spec A`.
-  have h := (SpecToEquivOfLocalRing X (.of A)).apply_symm_apply
-    ⟨x, φ, ‹_›⟩
-  rw [show (SpecToEquivOfLocalRing X (.of A)).symm ⟨x, φ, ‹_›⟩ =
-    s ≫ f from hs.symm] at h
+  have h : SpecToEquivOfLocalRing X (.of A) (s ≫ f) = ⟨x, φ, ‹_›⟩ := by
+    rw [← Equiv.eq_symm_apply, SpecToEquivOfLocalRing_symm_apply]
+    exact hs
   obtain ⟨hx, hφ'⟩ := SpecToEquivOfLocalRing_eq_iff.mp h
   -- The components of `SpecToEquivOfLocalRing` are by definition the image of the closed point
-  -- and `stalkClosedPointTo`.
+  -- and `stalkClosedPointTo`; the identification of stalks is along `(s ≫ f) c = f (s c)`.
   change f (s (closedPoint A)) = x at hx
   subst hx
-  change Scheme.stalkClosedPointTo (s ≫ f) = _ ≫ φ at hφ'
-  rw [Scheme.stalkClosedPointTo_comp, TopCat.Presheaf.stalkCongr_hom] at hφ'
-  -- The specialization `x ⤳ x` in `hφ'` is stated for `(s ≫ f) c` rather than `f (s c)`, so
-  -- `stalkSpecializes_refl` only matches up to unfolding the composite.
-  erw [TopCat.Presheaf.stalkSpecializes_refl, Category.id_comp] at hφ'
+  change Scheme.stalkClosedPointTo (s ≫ f) =
+    (X.presheaf.stalkCongr (.refl (f (s (closedPoint A))))).hom ≫ φ at hφ'
+  rw [Scheme.stalkClosedPointTo_comp, TopCat.Presheaf.stalkCongr_hom,
+    TopCat.Presheaf.stalkSpecializes_refl, Category.id_comp] at hφ'
   -- `κ(f (s c)) → κ(s c) → κ(A)` is the bijection induced by `φ`.
   have key (y) : ResidueField.map (Scheme.stalkClosedPointTo s).hom
       (f.residueFieldMap (s (closedPoint A)) y) = ResidueField.map φ.hom y := by
@@ -321,8 +319,7 @@ theorem eq_of_fst_eq_snd_eq_of_isIso {z z' : ↑(pullback f g)}
     [IsIso (g.residueFieldMap (pullback.snd f g z'))] : z = z' := by
   let T := Triplet.ofPoint z'
   have : IsIso (g.residueFieldMap T.y) := by
-    have hy : T.y = pullback.snd f g z' := Triplet.ofPoint_y z'
-    rw [hy]
+    rw [show T.y = _ from Triplet.ofPoint_y z']
     infer_instance
   have : Subsingleton (Spec T.tensor) :=
     (Scheme.homeoOfIso (asIso (Spec.map T.tensorInl))).injective.subsingleton
@@ -341,8 +338,7 @@ theorem isIso_residueFieldMap_fst (z : ↑(pullback f g))
     IsIso ((pullback.fst f g).residueFieldMap z) := by
   let T := Triplet.ofPoint z
   have : IsIso (g.residueFieldMap T.y) := by
-    have hy : T.y = pullback.snd f g z := Triplet.ofPoint_y z
-    rw [hy]
+    rw [show T.y = _ from Triplet.ofPoint_y z]
     infer_instance
   have : SurjectiveOnStalks (T.SpecTensorTo ≫ pullback.fst f g) := by
     rw [T.specTensorTo_fst]
@@ -467,8 +463,8 @@ namespace AlgebraicGeometry
 universe u
 
 /-- The map `Spec R ⟶ U ⊆ S` induced by the structure map of a `Γ(S, U)`-algebra `R` on an
-affine open `U` induces an isomorphism of residue fields at a point `u` over the prime `s` of
-`Γ(S, U)` as soon as `κ(s) ≅ κ(u)`. -/
+affine open `U` induces an isomorphism of residue fields at a point `u` as soon as the induced map
+`κ(p) → κ(u)` is bijective, where `u` lies over the prime `p` of `Γ(S, U)` corresponding to `s`. -/
 theorem IsAffineOpen.isIso_residueFieldMap_spec_algebraMap_comp_fromSpec {S : Scheme.{u}}
     {U : S.Opens} (hU : IsAffineOpen U) {s : S} (hs : s ∈ U) (R : Type u) [CommRing R]
     [Algebra Γ(S, U) R] (u : Spec ↧R)
@@ -479,7 +475,8 @@ theorem IsAffineOpen.isIso_residueFieldMap_spec_algebraMap_comp_fromSpec {S : Sc
     IsIso ((Spec.map (CommRingCat.ofHom (algebraMap Γ(S, U) R)) ≫ hU.fromSpec).residueFieldMap
       u) := by
   have := u.isPrime
-  -- the residue field map of the open immersion `hU.fromSpec`, then 00UJ.
+  -- The residue field map of the open immersion `hU.fromSpec` is an isomorphism, and that of
+  -- `Spec R ⟶ Spec Γ(S, U)` is one by `hres`.
   have := ((algebraMap Γ(S, U) R).isIso_SpecMap_residueFieldMap_iff u _
     (u.asIdeal.over_def _)).mpr hres
   rw [Scheme.residueFieldMap_comp]

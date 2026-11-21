@@ -52,6 +52,9 @@ orbit, where products over all orbits converge in the period topology.
   the period neighbourhood `U_(N γ * n)`.
 * `TauCeti.NovikovSeries.ofPowerSeries_mem_nonnegSubring`: the image lies in the nonnegative
   subring.
+* `TauCeti.NovikovSeries.mapRingHom_ofPowerSeries`: pushing forward along a coefficient map `ρ`
+  and an exponent map `φ` turns the substitution at `e^γ` into the substitution at `e^(φ γ)` of
+  the series with coefficients mapped by `ρ`.
 
 ## References
 
@@ -190,6 +193,29 @@ theorem coeff_ofPowerSeries_of_forall_nsmul_ne {h : H} (hh : ∀ n : ℕ, n • 
     (ofPowerSeries γ hγ f).coeff h = 0 := by
   rw [ofPowerSeries_apply]
   exact coeff_map_eq_zero_of_notMem_range _ _ _ _ fun ⟨n, hn⟩ => hh n hn
+
+/-- **Naturality of the substitution.** Pushing the image of a power series at `e^γ` forward along
+a coefficient map `ρ` and an exponent homomorphism `φ` rescaling periods gives the image of the
+power series with coefficients mapped by `ρ` at `e^(φ γ)`. -/
+theorem mapRingHom_ofPowerSeries {S : Type*} [Semiring S] {H' : Type*} [AddMonoid H']
+    {N' : H' →+ ℝ} (ρ : R →+* S) (φ : H →+ H') (hφ : ∃ c > 0, ∀ h, N' (φ h) = c * N h)
+    (hφγ : 0 < N' (φ γ)) (f : R⟦X⟧) :
+    mapRingHom ρ φ hφ (ofPowerSeries γ hγ f) = ofPowerSeries (φ γ) hφγ (PowerSeries.map ρ f) := by
+  -- On `ℕ`, mapping the coefficients of a power series is the pushforward along `ρ`.
+  have hmap : (toPowerSeries.symm (PowerSeries.map ρ f) :
+      NovikovSeries S ℕ (Nat.castAddMonoidHom ℝ)) =
+        mapRingHom ρ (AddMonoidHom.id ℕ) exists_period_rescale_id (toPowerSeries.symm f) := by
+    ext n
+    simp [mapRingHom_apply]
+  simp only [ofPowerSeries, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe,
+    RingEquiv.coe_toRingHom]
+  rw [hmap,
+    ← RingHom.comp_apply (mapRingHom ρ φ hφ), ← RingHom.comp_apply (mapRingHom (RingHom.id S) _ _),
+    mapRingHom_comp, mapRingHom_comp]
+  rw [RingHom.comp_id, RingHom.id_comp]
+  congr 2
+  ext
+  simp
 
 end OfPowerSeries
 

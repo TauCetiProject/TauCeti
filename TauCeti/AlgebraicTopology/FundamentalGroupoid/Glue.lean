@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.FundamentalGroupoid.CoverGeneration
 public import TauCeti.Topology.MetricSpace.Lebesgue
 public import Mathlib.CategoryTheory.Functor.OfSequence
+import TauCeti.Topology.Path.Basic
 import TauCeti.Topology.UnitInterval.Contractible
 
 /-!
@@ -278,9 +279,11 @@ private lemma locVal_congr_index (i j : ι) {x y : X} (P : Path x y) (hi : ∀ t
 
 /-- The local value of a concatenation is the composite of the local values. -/
 private lemma locVal_trans (i : ι) {x y z : X} (P : Path x y) (Q : Path y z)
-    (hP : ∀ t, P t ∈ U i) (hQ : ∀ t, Q t ∈ U i) (hPQ : ∀ t, P.trans Q t ∈ U i) :
-    locVal hU F hF i (P.trans Q) hPQ = locVal hU F hF i P hP ≫ locVal hU F hF i Q hQ := by
-  have h : (P.trans Q).codRestrict (x := ⟨x, P.source ▸ hP 0⟩) (y := ⟨z, Q.target ▸ hQ 1⟩) hPQ =
+    (hP : ∀ t, P t ∈ U i) (hQ : ∀ t, Q t ∈ U i) :
+    locVal hU F hF i (P.trans Q) (Path.trans_mem_of_mem P Q hP hQ) =
+      locVal hU F hF i P hP ≫ locVal hU F hF i Q hQ := by
+  have h : (P.trans Q).codRestrict (x := ⟨x, P.source ▸ hP 0⟩) (y := ⟨z, Q.target ▸ hQ 1⟩)
+      (Path.trans_mem_of_mem P Q hP hQ) =
       (P.codRestrict (x := ⟨x, P.source ▸ hP 0⟩) (y := ⟨y, P.target ▸ hP 1⟩) hP).trans
         (Q.codRestrict (x := ⟨y, P.target ▸ hP 1⟩) (y := ⟨z, Q.target ▸ hQ 1⟩) hQ) := by
     ext t
@@ -338,12 +341,7 @@ private lemma locVal_comm_of_homotopy (i : ι) {Y : Type*} [TopologicalSpace Y]
   obtain rfl : Q = (K.evalAt y₂).map continuous_subtypeVal := Path.ext (funext hQ)
   obtain rfl : R = (K.evalAt y₁).map continuous_subtypeVal := Path.ext (funext hR)
   obtain rfl : S = (p.map f₁.continuous).map continuous_subtypeVal := Path.ext (funext hS)
-  have hmem : ∀ {u v w : X} (A : Path u v) (B : Path v w), (∀ t, A t ∈ U i) →
-      (∀ t, B t ∈ U i) → ∀ t, (A.trans B) t ∈ U i := fun A B hA hB ↦
-    range_subset_iff.1 <| (Path.trans_range _ _).trans_subset <|
-      union_subset (range_subset_iff.2 hA) (range_subset_iff.2 hB)
-  rw [← locVal_trans hU F hF i _ _ mP mQ (hmem _ _ mP mQ),
-    ← locVal_trans hU F hF i _ _ mR mS (hmem _ _ mR mS)]
+  rw [← locVal_trans hU F hF i _ _ mP mQ, ← locVal_trans hU F hF i _ _ mR mS]
   simp only [locVal, ← Path.map_trans]
   have hcr : ∀ {u v : U i} (Z : Path u v) (h : ∀ t, (Z.map continuous_subtypeVal) t ∈ U i),
       (Z.map continuous_subtypeVal).codRestrict (x := u) (y := v) h = Z := fun Z h ↦ by
