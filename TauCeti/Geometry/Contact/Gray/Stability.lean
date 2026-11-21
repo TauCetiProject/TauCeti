@@ -73,6 +73,8 @@ statement `TauCeti.SmoothForm.mpullback_grayPartialDiffeomorph_apply`; in a loca
   stability near a set of points with stationary contact hyperplanes.
 * `TauCeti.IsContactDistributionFamily.map_mfderiv_grayDiffeomorph`: Gray's stability theorem on a
   compact manifold.
+* `TauCeti.IsContactDistributionFamily.contMDiff_grayDiffeomorph`: Gray's isotopy depends smoothly
+  on both times and the point.
 
 ## References
 
@@ -144,9 +146,7 @@ private theorem mfderiv_timeDependentFlowOf_restrictTimeDependentField_mem_kerDi
       (fun p : ℝ × U ↦ (⟨p.2, Z p.1 p.2⟩ : TangentBundle I U)) :=
     (contMDiff_restrictTimeDependentField hξ.contMDiff_distributionGrayVectorField U).of_le
       (by simp)
-  have hJ : uIcc a b ⊆ {u | ((a, u), z) ∈ timeDependentFlowDomain Z} :=
-    (ordConnected_setOf_mem_timeDependentFlowDomain a z).uIcc_subset
-      (mem_timeDependentFlowDomain_self_of_mem hdom) hdom
+  have hJ := uIcc_subset_setOf_mem_timeDependentFlowDomain hdom
   -- Between `a` and `b`, the Gray vector field of `ξ` on `U` is the Gray vector field of `α`.
   have hZα (u : ℝ) (hu : u ∈ uIcc a b) : Z u = α.grayVectorField u :=
     funext fun y ↦ (restrictTimeDependentField_apply U u y).trans
@@ -158,19 +158,11 @@ private theorem mfderiv_timeDependentFlowOf_restrictTimeDependentField_mem_kerDi
     mpullback_timeDependentFlowOf_mpullback_prodMk_apply_eq_exp_integral_smul_of_forall_mem_uIcc
       (α := α.val) hZ hdom (g := fun u ↦ α.grayRate (u, timeDependentFlowOf Z a u z))
       (fun u hu ↦ by
-        have hc := contMDiffAt_apply_reebVectorField_mpullback_prodMk α α.timeDeriv
-          (p := (u, timeDependentFlowOf Z a u z))
+        have hc := contMDiffAt_grayRate (α := α) (p := (u, timeDependentFlowOf Z a u z))
           ((isLocalContactFormFamily_iff.1 (hα u hu)).mono fun _ h ↦ h.1)
         have hγ := (hasMFDerivAt_timeDependentFlowOf (hZ.of_le (by simp)) (hJ hu)).continuousAt
         refine (ContinuousAt.comp (g := α.grayRate) ?_
           (continuousAt_id.prodMk hγ)).continuousWithinAt
-        have hgr : α.grayRate = fun q : ℝ × U ↦
-            (SmoothForm.mpullback (Prod.mk q.1) (contMDiff_const.prodMk contMDiff_id)
-              α.timeDeriv).val q.2
-              ![(SmoothForm.mpullback (Prod.mk q.1) (contMDiff_const.prodMk contMDiff_id)
-                α).reebVectorField q.2] :=
-          funext fun q ↦ grayRate_def α q.1 q.2
-        rw [hgr]
         exact hc.continuousAt)
       (fun _ _ ↦ (α.contMDiff.of_le (by simp)).contMDiffAt)
       (fun u hu ↦ by
@@ -184,9 +176,7 @@ private theorem mfderiv_timeDependentFlowOf_restrictTimeDependentField_mem_kerDi
   rw [hv, smul_zero, TauCeti.mpullback_apply] at h
   rw [mem_kerDistribution, coe_mpullback]
   convert h using 2
-  funext i
-  fin_cases i
-  rfl
+  simp only [Matrix.vec_single_eq_const]
 
 /-- **The local step of Gray's argument.** For initial and final times near `t₀` and initial
 points near `y`, the flow of the Gray vector field is defined and its differential maps the
@@ -373,6 +363,16 @@ theorem mem_grayPartialDiffeomorph_target_iff {s t : ℝ} {x : M} :
       ((t, s), x) ∈ timeDependentFlowDomain (distributionGrayVectorField ξ) :=
   mem_timeDependentFlowPartialDiffeomorph_target_iff _ _
 
+/-- Gray's partial isotopy depends smoothly on the final time and the point, on the open set of
+pairs `(t, x)` for which the flow from `(s, x)` is defined up to time `t`. -/
+theorem contMDiffOn_grayPartialDiffeomorph (s : ℝ) :
+    ContMDiffOn (𝓘(ℝ, ℝ).prod I) I ∞ (fun p : ℝ × M ↦ hξ.grayPartialDiffeomorph s p.1 p.2)
+      {p | ((s, p.1), p.2) ∈ timeDependentFlowDomain (distributionGrayVectorField ξ)} := by
+  simp only [grayPartialDiffeomorph_apply]
+  exact (contMDiffOn_timeDependentFlowOf le_top hξ.contMDiff_distributionGrayVectorField).comp
+    (((contMDiff_const (c := s)).prodMk contMDiff_fst).prodMk contMDiff_snd).contMDiffOn
+    fun _ hp ↦ hp
+
 /-- **Gray's stability theorem on the source of the partial isotopy.** Gray's partial isotopy from
 `s` to `t` carries `ξ_s` onto `ξ_t` at every point of its source. -/
 theorem map_mfderiv_grayPartialDiffeomorph {s t : ℝ} {x : M}
@@ -383,13 +383,6 @@ theorem map_mfderiv_grayPartialDiffeomorph {s t : ℝ} {x : M}
       timeDependentFlowOf (distributionGrayVectorField ξ) s t from
     funext (hξ.grayPartialDiffeomorph_apply s t)]
   exact hξ.map_mfderiv_timeDependentFlowOf ((hξ.mem_grayPartialDiffeomorph_source_iff).1 hx)
-
-omit [T2Space M] in
-/-- At a point at which the contact hyperplane `ξ_u` is the same for all times, the Gray vector
-field vanishes at all times. -/
-private theorem distributionGrayVectorField_eq_zero_of_forall_eq {x : M}
-    (hx : ∀ u, ξ u x = ξ 0 x) (u : ℝ) : distributionGrayVectorField ξ u x = 0 :=
-  hξ.distributionGrayVectorField_eq_zero (.of_forall fun v ↦ (hx v).trans (hx u).symm)
 
 /-- A point at which the contact hyperplane `ξ_u` is the same for all times lies in the source of
 Gray's partial isotopy between any two times. -/
@@ -451,10 +444,39 @@ def grayDiffeomorph (s t : ℝ) : M ≃ₘ⟮I, I⟯ M :=
     hξ.contMDiff_distributionGrayVectorField s t
 
 /-- Gray's isotopy is the time-dependent flow of the Gray vector field. -/
-@[simp]
 theorem grayDiffeomorph_apply (s t : ℝ) (x : M) :
     hξ.grayDiffeomorph s t x = timeDependentFlowOf (distributionGrayVectorField ξ) s t x :=
   timeDependentFlowDiffeomorph_apply _ _ _ s t x
+
+/-- The inverse of Gray's isotopy from `s` to `t` is Gray's isotopy from `t` to `s`. -/
+@[simp]
+theorem grayDiffeomorph_symm_apply (s t : ℝ) (x : M) :
+    (hξ.grayDiffeomorph s t).symm x = hξ.grayDiffeomorph t s x :=
+  (timeDependentFlowDiffeomorph_symm_apply _ _ _ s t x).trans (hξ.grayDiffeomorph_apply t s x).symm
+
+/-- Gray's isotopy from a time to itself is the identity. -/
+@[simp]
+theorem grayDiffeomorph_self (s : ℝ) (x : M) : hξ.grayDiffeomorph s s x = x := by
+  rw [grayDiffeomorph_apply, timeDependentFlowOf_self]
+
+/-- Gray's isotopy composes: flowing from `r` to `s` and then from `s` to `t` is flowing from `r`
+to `t`. -/
+@[simp]
+theorem grayDiffeomorph_grayDiffeomorph (r s t : ℝ) (x : M) :
+    hξ.grayDiffeomorph s t (hξ.grayDiffeomorph r s x) = hξ.grayDiffeomorph r t x := by
+  simp only [grayDiffeomorph_apply]
+  exact timeDependentFlowOf_trans
+    hξ.isCompleteVectorField_timeDependentSuspensionField_distributionGrayVectorField
+    hξ.contMDiff_one_distributionGrayVectorField r s t x
+
+/-- Gray's isotopy depends smoothly on the initial time, the final time and the point. -/
+theorem contMDiff_grayDiffeomorph :
+    ContMDiff ((𝓘(ℝ, ℝ).prod 𝓘(ℝ, ℝ)).prod I) I ∞
+      (fun p : (ℝ × ℝ) × M ↦ hξ.grayDiffeomorph p.1.1 p.1.2 p.2) := by
+  simp only [grayDiffeomorph_apply]
+  exact contMDiff_timeDependentFlowOf
+    hξ.isCompleteVectorField_timeDependentSuspensionField_distributionGrayVectorField le_top
+    hξ.contMDiff_distributionGrayVectorField
 
 /-- **Gray's stability theorem on a compact manifold.** On a compact manifold without boundary,
 Gray's isotopy of a smooth family of contact structures carries `ξ_s` onto `ξ_t` at every point:

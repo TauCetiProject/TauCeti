@@ -168,6 +168,9 @@ theorem mfderiv_timeDependentFlowOf_restrictTimeDependentField_apply [FiniteDime
   rw [← mfderiv_subtype_val_comp_apply, (hd.congr_of_eventuallyEq heq).mfderiv]
   simp only [ContinuousLinearMap.comp_apply, mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe,
     tangentSpaceOpenEquiv_apply]
+  -- Both sides apply the differential of the flow of `X` to `v`, once read in `TangentSpace I z`
+  -- and once in `TangentSpace I ↑z`. Both tangent spaces are the model space `E` by definition,
+  -- as in Mathlib's `mfderiv_congr_point`, so the two vectors are the same.
   rfl
 
 end TauCeti

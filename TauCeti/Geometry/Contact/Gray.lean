@@ -332,6 +332,14 @@ theorem grayVectorField_eq_of_kerDistribution_eq
 
 end Naturality
 
+/-- The Gray rate `μ_t = (∂_t α_t)(R_{α_t})` of a smooth family of one-forms is smooth near a time
+and point at which the slices are contact forms at all nearby times. -/
+theorem contMDiffAt_grayRate {p : ℝ × M}
+    (hc : ∀ᶠ t in 𝓝 p.1,
+      (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).IsContactForm) :
+    ContMDiffAt (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) ∞ α.grayRate p :=
+  contMDiffAt_apply_reebVectorField_mpullback_prodMk α α.timeDeriv hc
+
 variable (hc : ∀ t, (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).IsContactForm)
 include hc
 
@@ -344,8 +352,8 @@ theorem contMDiff_grayVectorField :
 
 /-- The Gray rate `μ_t = (∂_t α_t)(R_{α_t})` of a smooth family of contact forms depends smoothly
 on time and point. -/
-theorem contMDiff_grayRate : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) ∞ α.grayRate :=
-  contMDiff_apply_reebVectorField_mpullback_prodMk α α.timeDeriv hc
+theorem contMDiff_grayRate : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) ∞ α.grayRate := fun _ ↦
+  contMDiffAt_grayRate (.of_forall hc)
 
 /-- The Gray vector field of a smooth family of contact forms vanishes at every time at a point
 where the contact hyperplane `ker α_u` is the same for all times `u`. -/

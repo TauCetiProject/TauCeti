@@ -492,9 +492,7 @@ theorem mpullback_timeDependentFlowOf_mpullback_prodMk_apply_eq_exp_integral_smu
     mpullback I I (timeDependentFlowOf X s t) (mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t) α) x =
       Real.exp (∫ u in s..t, g u) • mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk s) α x := by
   -- The flow from `(s, x)` is defined at all times between `s` and `t`.
-  have hJ : uIcc s t ⊆ {u | ((s, u), x) ∈ timeDependentFlowDomain X} :=
-    (ordConnected_setOf_mem_timeDependentFlowDomain s x).uIcc_subset
-      (mem_timeDependentFlowDomain_self_of_mem h) h
+  have hJ := uIcc_subset_setOf_mem_timeDependentFlowDomain h
   -- The pullbacks at `x`, as alternating maps on the model space.
   set P : ℝ → E [⋀^Fin k]→L[ℝ] F := fun u ↦
     mpullback I I (timeDependentFlowOf X s u) (mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk u) α) x
@@ -503,6 +501,7 @@ theorem mpullback_timeDependentFlowOf_mpullback_prodMk_apply_eq_exp_integral_smu
       (hα u hu)).congr_deriv ?_).hasDerivWithinAt
     rw [mpullback_apply_eq_compContinuousLinearMapCLM, hL u hu, _root_.map_smul,
       ← mpullback_apply_eq_compContinuousLinearMapCLM]
+    -- The remaining pullback is `P u`, by the definition of `P`.
     rfl
   have hP0 : P s = mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk s) α x := by
     have h : timeDependentFlowOf X s s = id := funext (timeDependentFlowOf_self X s)
@@ -529,9 +528,7 @@ theorem mpullback_timeDependentFlowOf_mpullback_prodMk_apply_eq_exp_integral_smu
     mpullback I I (timeDependentFlowOf X s t) (mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t) α) x =
       Real.exp (∫ u in s..t, g (u, timeDependentFlowOf X s u x)) •
         mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk s) α x := by
-  have hJ : uIcc s t ⊆ {u | ((s, u), x) ∈ timeDependentFlowDomain X} :=
-    (ordConnected_setOf_mem_timeDependentFlowDomain s x).uIcc_subset
-      (mem_timeDependentFlowDomain_self_of_mem h) h
+  have hJ := uIcc_subset_setOf_mem_timeDependentFlowDomain h
   refine
     mpullback_timeDependentFlowOf_mpullback_prodMk_apply_eq_exp_integral_smul_of_forall_mem_uIcc
       hX h ?_ (fun _ _ ↦ hα.contMDiffAt) fun u _ ↦ by rw [hL u]
@@ -557,24 +554,9 @@ theorem mpullback_timeDependentFlowOf_mpullback_prodMk_apply_eq_of_forall_mem_uI
           (timeDependentFlowOf X s u x) = 0) :
     mpullback I I (timeDependentFlowOf X s t) (mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t) α) x =
       mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk s) α x := by
-  -- The flow from `(s, x)` is defined at all times between `s` and `t`.
-  have hJ : uIcc s t ⊆ {u | ((s, u), x) ∈ timeDependentFlowDomain X} :=
-    (ordConnected_setOf_mem_timeDependentFlowDomain s x).uIcc_subset
-      (mem_timeDependentFlowDomain_self_of_mem h) h
-  -- The pullbacks `(φ_{s,u}^* α_u)ₓ` have zero velocity between `s` and `t`.
-  have hd (u : ℝ) (hu : u ∈ uIcc s t) : HasDerivWithinAt (F := E [⋀^Fin k]→L[ℝ] F)
-      (fun u ↦ mpullback I I (timeDependentFlowOf X s u)
-        (mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk u) α) x) 0 (uIcc s t) u := by
-    refine ((hasDerivAt_mpullback_timeDependentFlowOf_mpullback_prodMk hX (hJ hu)
-      (hα u hu)).congr_deriv ?_).hasDerivWithinAt
-    rw [mpullback_apply_eq_compContinuousLinearMapCLM, hL u hu, _root_.map_zero]
-    -- The two zeros are those of the fibre `T_x M` and of the model space `E` of forms.
-    rfl
-  -- So they are constant there.
-  have hconst := (convex_uIcc s t).norm_image_sub_le_of_norm_hasDerivWithin_le hd
-    (fun _ _ ↦ norm_zero.le) left_mem_uIcc right_mem_uIcc
-  have hid : timeDependentFlowOf X s s = id := funext (timeDependentFlowOf_self X s)
-  rw [sub_eq_zero.1 (norm_le_zero_iff.1 (hconst.trans_eq (zero_mul _))), hid, mpullback_id]
+  simpa using
+    mpullback_timeDependentFlowOf_mpullback_prodMk_apply_eq_exp_integral_smul_of_forall_mem_uIcc
+      hX h (g := 0) continuousOn_const hα fun u hu ↦ by rw [hL u hu, Pi.zero_apply, zero_smul]
 
 /-- **Moser's principle for families of forms**, invariance case along the domain of the flow.
 Let `X` be a jointly `C²` time-dependent vector field with time-dependent flow `φ`, defined at `x`
