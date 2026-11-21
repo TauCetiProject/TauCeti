@@ -20,7 +20,7 @@ real points of such a circle and on which side of a second circle its points lie
 
 * `Complex.normSq_sub_ofReal_sub_normSq_sub_ofReal`: the radical-line identity.
 * `Complex.norm_sq_add_I_mul_div_sqrt_two`: the squared norm of a normalized complex pair.
-* `Complex.eq_sub_of_normSq_eq_of_lt_add`, `Complex.eq_add_of_normSq_eq_of_sub_lt`: a real
+* `Complex.eq_sub_of_normSq_eq_of_ne_add`, `Complex.eq_add_of_normSq_eq_of_ne_sub`: a real
   point of the circle of centre `m` and radius `ρ` other than `m + ρ` is `m - ρ`, and one other
   than `m - ρ` is `m + ρ`.
 * `Complex.lt_normSq_sub_of_le_normSq_sub`: if the second of two circles has its centre to the
@@ -28,8 +28,8 @@ real points of such a circle and on which side of a second circle its points lie
   to the second, the points on or outside the first circle to the left of `a` lie strictly outside
   the second.
 * `Complex.lt_normSq_sub_of_normSq_eq`: the same, for `a` on the radical line, with the order of
-  the centres witnessed by a point on or inside the first circle, to the left of `a`, strictly
-  outside the second.
+  the centres witnessed by a point to the left of `a` whose power with respect to the first circle
+  is less than that with respect to the second.
 * `Complex.le_normSq_sub_of_le_normSq_sub`: points on or outside one circle, between two of its
   points that lie on or outside a second circle, lie on or outside the second circle.
 * `Complex.norm_one_add_sq_div_sq_of_norm_eq`: on the circle `‖z‖ = R`, `‖1 + z² / R²‖` is
@@ -65,17 +65,17 @@ private theorem eq_add_or_eq_sub_of_normSq_eq {x m ρ : ℝ} (hx : normSq ((x : 
   rw [← ofReal_sub, normSq_ofReal, ← sq, sq_eq_sq_iff_eq_or_eq_neg] at hx
   exact hx.imp (fun h ↦ by linarith) fun h ↦ by linarith
 
-/-- A real point `x` of the circle of centre `m` and radius `ρ`, to the left of `m + ρ`, is the
+/-- A real point `x` of the circle of centre `m` and radius `ρ`, other than `m + ρ`, is the
 other real point `m - ρ`. -/
-theorem eq_sub_of_normSq_eq_of_lt_add {x m ρ : ℝ} (hx : normSq ((x : ℂ) - m) = ρ ^ 2)
-    (hxρ : x < m + ρ) : x = m - ρ :=
-  (eq_add_or_eq_sub_of_normSq_eq hx).resolve_left hxρ.ne
+theorem eq_sub_of_normSq_eq_of_ne_add {x m ρ : ℝ} (hx : normSq ((x : ℂ) - m) = ρ ^ 2)
+    (hxρ : x ≠ m + ρ) : x = m - ρ :=
+  (eq_add_or_eq_sub_of_normSq_eq hx).resolve_left hxρ
 
-/-- A real point `x` of the circle of centre `m` and radius `ρ`, to the right of `m - ρ`, is the
+/-- A real point `x` of the circle of centre `m` and radius `ρ`, other than `m - ρ`, is the
 other real point `m + ρ`. -/
-theorem eq_add_of_normSq_eq_of_sub_lt {x m ρ : ℝ} (hx : normSq ((x : ℂ) - m) = ρ ^ 2)
-    (hxρ : m - ρ < x) : x = m + ρ :=
-  (eq_add_or_eq_sub_of_normSq_eq hx).resolve_right hxρ.ne'
+theorem eq_add_of_normSq_eq_of_ne_sub {x m ρ : ℝ} (hx : normSq ((x : ℂ) - m) = ρ ^ 2)
+    (hxρ : x ≠ m - ρ) : x = m + ρ :=
+  (eq_add_or_eq_sub_of_normSq_eq hx).resolve_right hxρ
 
 /-- **The radical line of two circles.** Consider two circles centred on the real axis, the level
 sets `|· - m₁|² = r₁` and `|· - m₂|² = r₂`, with `m₁ < m₂`, and a point `a` whose power
@@ -91,16 +91,17 @@ theorem lt_normSq_sub_of_le_normSq_sub {a z : ℂ} {m₁ r₁ m₂ r₂ : ℝ}
 
 /-- **The radical line of two circles, with a witness.** Consider two circles centred on the real
 axis, the level sets `|· - m₁|² = r₁` and `|· - m₂|² = r₂`, and a point `a` with the same power
-with respect to both, and let `w` lie on or inside the first, to the left of `a` and strictly
-outside the second. Then every point `z` on or outside the first circle to the left of `a` is
-strictly outside the second. -/
+with respect to both, and let `w`, to the left of `a`, have smaller power with respect to the
+first than with respect to the second. Then every point `z` on or outside the first circle to the
+left of `a` is strictly outside the second. -/
 theorem lt_normSq_sub_of_normSq_eq {a w z : ℂ} {m₁ r₁ m₂ r₂ : ℝ}
     (ha : normSq (a - m₁) - r₁ = normSq (a - m₂) - r₂)
-    (hw₁ : normSq (w - m₁) ≤ r₁) (hw₂ : r₂ < normSq (w - m₂))
+    (hw : normSq (w - m₁) - r₁ < normSq (w - m₂) - r₂)
     (hz₁ : r₁ ≤ normSq (z - m₁)) (hwa : w.re < a.re) (hza : z.re < a.re) :
     r₂ < normSq (z - m₂) := by
-  -- the second centre lies to the right of the first, since `w` is outside the second circle
-  have hw := normSq_sub_ofReal_sub_normSq_sub_ofReal (c₁ := m₁) (c₂ := m₂) a w
+  -- the second centre lies to the right of the first: the second power minus the first is zero
+  -- at `a` and positive at `w`, to its left
+  have hd := normSq_sub_ofReal_sub_normSq_sub_ofReal (c₁ := m₁) (c₂ := m₂) a w
   have hm : m₁ < m₂ := by nlinarith
   exact lt_normSq_sub_of_le_normSq_sub ha.le hm hz₁ hza
 
