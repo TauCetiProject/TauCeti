@@ -23,7 +23,8 @@ commutative solutions in `G`:
 * `G` has unique roots, so every solution of `x₁² x₂² = 1` has `x₂ = x₁⁻¹`.
 * By Lyndon's theorem in free groups, `G` satisfies Vaught's condition
   (`TauCeti.LimitGroup.IsResiduallyFree.isVaught`); it is also torsion-free, so every solution of
-  `x₁² x₂² x₃² = 1` consists of pairwise commuting `x₁`, `x₂`, `x₃` with `x₁ x₂ x₃ = 1`.
+  `x₁² x₂² x₃² = 1` consists of pairwise commuting `x₁`, `x₂`, `x₃` with `x₁ x₂ x₃ = 1`
+  (`Group.IsVaught.mul_mul_eq_one_of_sq_mul_sq_mul_sq_eq_one`).
 
 So the radicals of both equations are larger than their normal closures. If `G` is not abelian,
 they are described by these relations:
@@ -105,15 +106,6 @@ private theorem exists_ice_embedding_coordGroup_sq_mul_sq (hG : IsFullyResiduall
     GX.ext_hom (fun g => by simp) fun y => by by_cases hy : y = x 1 <;> simp [p, hy, hv₁]
   rw [← hfac, MonoidHom.comp_apply, MonoidHom.mem_ker.1 hw, map_one]
 
--- In a fully residually free group, by Vaught's condition and torsion-freeness, `a² b² c² = 1`
--- forces `a` and `b` to commute and `c = (a b)⁻¹`.
-private theorem commute_and_eq_inv_of_sq_mul_sq_mul_sq (hG : IsFullyResiduallyFree G) {a b c : G}
-    (h : a ^ 2 * b ^ 2 * c ^ 2 = 1) : Commute a b ∧ c = (a * b)⁻¹ := by
-  have := hG.isResiduallyFree.isMulTorsionFree
-  obtain ⟨hab, hac, hbc⟩ := (Group.isVaught_iff G).1 hG.isResiduallyFree.isVaught _ _ _ h
-  refine ⟨hab, eq_inv_of_mul_eq_one_right ((pow_eq_one_iff_left two_ne_zero).1 ?_)⟩
-  simpa [(hac.mul_left hbc).mul_pow, hab.mul_pow] using h
-
 -- Over a nonabelian fully residually free group, every solution of `x₁² x₂² x₃² = 1` factors
 -- through the map `G[X] →* G[X] ∗ ℤ²` sending `x₁`, `x₂` to the generators `a₁`, `a₂` of `ℤ²` and
 -- `x₃` to `(a₁ a₂)⁻¹`.
@@ -122,7 +114,6 @@ private theorem exists_ice_embedding_coordGroup_sq_mul_sq_mul_sq (hG : IsFullyRe
     ∃ (E : Type u) (_ : Group E) (j : G →* E) (_ : ICE G E j)
       (f : GHom (CoordGroup.coeff (MonoidHom.id G) {(nonorientable 3 three_pos x hx).toWord}) j),
       Function.Injective f := by
-  classical
   rw [show (nonorientable (G := G) 3 three_pos x hx).toWord = inr (FreeGroup.of (x 0)) ^ 2 *
       inr (FreeGroup.of (x 1)) ^ 2 * inr (FreeGroup.of (x 2)) ^ 2 by
     simp [toWord_def, List.ofFn_succ, mul_assoc]]
@@ -136,19 +127,21 @@ private theorem exists_ice_embedding_coordGroup_sq_mul_sq_mul_sq (hG : IsFullyRe
       (exists_ice_embedding_GX hG hna X) 2) (evalGHom _ p)
     (by simpa [p, hx.extend_apply] using congrArg (inr : _ →* Monoid.Coprod (GX G X) _) ha)
     fun w hw => mem_Rad.2 fun v hv => ?_
-  -- `v x₁`, `v x₂` commute and `v x₃ = (v x₁ v x₂)⁻¹`.
-  obtain ⟨h01, hv₃⟩ := commute_and_eq_inv_of_sq_mul_sq_mul_sq hG (by simpa using (mem_V.1 hv) _ rfl)
+  -- By Vaught's condition and torsion-freeness, `v x₁`, `v x₂` commute and `v x₁ v x₂ v x₃ = 1`.
+  have := hG.isResiduallyFree.isMulTorsionFree
+  have hsq : v (x 0) ^ 2 * v (x 1) ^ 2 * v (x 2) ^ 2 = 1 := by simpa using (mem_V.1 hv) _ rfl
+  have h01 := ((Group.isVaught_iff G).1 hG.isResiduallyFree.isVaught _ _ _ hsq).1
+  have hv₃ := hG.isResiduallyFree.isVaught.mul_mul_eq_one_of_sq_mul_sq_mul_sq_eq_one hsq
   let τ : Fin 2 → G := ![v (x 0), v (x 1)]
   have hτ : ∀ i j, Commute (τ i) (τ j) := by simp [τ, Fin.forall_fin_two, h01, h01.symm]
   have hfac : (Monoid.Coprod.lift (eval (.id G) v) (zpowersPiHom τ hτ)).comp
       (evalGHom (inl.comp inl) p : GX G X →* Monoid.Coprod (GX G X) (Fin 2 → Multiplicative ℤ)) =
         eval (.id G) v := by
     refine GX.ext_hom (fun g => by simp) fun y => ?_
-    by_cases hy : ∃ i, x i = y
-    · obtain ⟨i, rfl⟩ := hy
-      simp only [MonoidHom.coe_comp, MonoidHom.coe_ofClass, coe_evalGHom, Function.comp_apply,
+    obtain ⟨i, rfl⟩ | hy := em (∃ i, x i = y)
+    · simp only [MonoidHom.coe_comp, MonoidHom.coe_ofClass, coe_evalGHom, Function.comp_apply,
         eval_inr, FreeGroup.lift_apply_of, hx.extend_apply, lift_apply_inr, p]
-      fin_cases i <;> simp [τ, a, hv₃]
+      fin_cases i <;> simp [τ, a, eq_inv_of_mul_eq_one_right hv₃]
     · simp [p, Function.extend_apply' _ _ _ hy]
   rw [← hfac, MonoidHom.comp_apply, MonoidHom.mem_ker.1 hw, map_one]
 

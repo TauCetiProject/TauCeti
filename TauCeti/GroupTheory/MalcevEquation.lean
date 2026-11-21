@@ -47,6 +47,8 @@ pairwise commuting elements.
   Vaught's condition.
 * `Group.IsVaught.isMulCommutative_closure`: in a group satisfying Vaught's condition, a solution
   of `x ^ 2 * y ^ 2 * z ^ 2 = 1` generates a commutative subgroup.
+* `Group.IsVaught.mul_mul_eq_one_of_sq_mul_sq_mul_sq_eq_one`: in a torsion-free group satisfying
+  Vaught's condition, every solution of `x ^ 2 * y ^ 2 * z ^ 2 = 1` has `x * y * z = 1`.
 * `TauCeti.pairwise_commute_of_sq_mul_sq_mul_sq_eq_one_of_commute`: if
   `a ^ 2 * b ^ 2 * c ^ 2 = 1` and `a * b * c` commutes with `a` and `b` and squares to the
   identity, then `a`, `b` and `c` commute pairwise.
@@ -109,6 +111,14 @@ theorem IsVaught.isMulCommutative_closure (hG : IsVaught G) {x y z : G}
   obtain ⟨hxy, hxz, hyz⟩ := hG x y z h
   exact Subgroup.isMulCommutative_closure <| by
     simp [Set.pairwise_insert, hxy, hxz, hyz, hxy.symm, hxz.symm, hyz.symm]
+
+/-- In a torsion-free group satisfying Vaught's condition, `x ^ 2 * y ^ 2 * z ^ 2 = 1` forces
+`x * y * z = 1`. -/
+theorem IsVaught.mul_mul_eq_one_of_sq_mul_sq_mul_sq_eq_one [IsMulTorsionFree G] (hG : IsVaught G)
+    {x y z : G} (h : x ^ 2 * y ^ 2 * z ^ 2 = 1) : x * y * z = 1 := by
+  obtain ⟨hxy, hxz, hyz⟩ := hG x y z h
+  refine (pow_eq_one_iff_left two_ne_zero).1 ?_
+  rwa [(hxz.mul_left hyz).mul_pow, hxy.mul_pow]
 
 end Group
 
