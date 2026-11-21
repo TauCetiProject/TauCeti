@@ -8,7 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 public import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
 
-import TauCeti.Topology.VectorBundle.Section
+import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
 # Regularity of sums and differences of sections along a map

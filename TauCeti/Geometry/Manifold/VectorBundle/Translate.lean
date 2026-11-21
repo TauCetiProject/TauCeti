@@ -75,7 +75,7 @@ theorem vectorBundleTranslateDiffeomorph_symm (σ : ∀ y, V y)
     (hσ : ContMDiff IB (IB.prod 𝓘(𝕜, F)) n fun y ↦ TotalSpace.mk' F y (σ y)) :
     (vectorBundleTranslateDiffeomorph σ hσ).symm =
       vectorBundleTranslateDiffeomorph (-σ) hσ.neg_section :=
-  Diffeomorph.ext fun _ ↦ rfl
+  Diffeomorph.ext fun p ↦ (vectorBundleTranslateDiffeomorph σ hσ).injective <| by simp
 
 /-- Translation by the zero section is the identity diffeomorphism. -/
 @[simp]
