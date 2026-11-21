@@ -93,21 +93,6 @@ section Defect
 variable {R : Type u} {A : Type v} [CommRing R] [Ring A] [Algebra R A]
   {N N' : ModuleCat.{t} A}
 
-/-- The first map of a short exact sequence of modules is injective. -/
-theorem injective_extension_f (e : (ExactStructure.abelian _).Extension N' N) :
-    Function.Injective e.f.hom :=
-  e.shortExact.moduleCat_injective_f
-
-/-- The second map of a short exact sequence of modules is surjective. -/
-theorem surjective_extension_g (e : (ExactStructure.abelian _).Extension N' N) :
-    Function.Surjective e.g.hom :=
-  e.shortExact.moduleCat_surjective_g
-
-/-- A short exact sequence of modules is exact in the middle. -/
-theorem exact_extension_f_g (e : (ExactStructure.abelian _).Extension N' N) :
-    Function.Exact e.f.hom e.g.hom :=
-  (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).mp e.shortExact.exact
-
 variable (R) in
 /-- **The contravariant defect is `Ext¹`.** For a short exact sequence `N ⟶ I ⟶ N'` of
 `A`-modules with `I` injective, the cokernel of `Hom_A(Y, I) → Hom_A(Y, N')` is `Ext¹(Y, N)`,
@@ -223,7 +208,8 @@ noncomputable def dualExt1EquivCostableHom :
           (matlisDualTranspose R E P)) :=
   (contravariantDefectEquivExt1 R e he X).symm.arrowCongr (LinearEquiv.refl R E) ≪≫ₗ
     Function.Exact.dualContravariantDefectEquivCovariantDefect P.exact P.surjective
-      (injective_extension_f e) (surjective_extension_g e) (exact_extension_f_g e) ≪≫ₗ
+      e.shortExact.moduleCat_injective_f e.shortExact.moduleCat_surjective_g
+      ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).mp e.shortExact.exact) ≪≫ₗ
     covariantDefectEquivCostableHom R E P e he
 
 /-- The defect formula applied to `χ ∘ (δ^*(X) ≅ Ext¹(X, N))`, read in `(A/ℐ)(N, τX)`. -/
@@ -232,7 +218,8 @@ theorem dualExt1EquivCostableHom_apply
     dualExt1EquivCostableHom R E P e he χ =
       covariantDefectEquivCostableHom R E P e he
         (Function.Exact.dualContravariantDefectEquivCovariantDefect P.exact P.surjective
-          (injective_extension_f e) (surjective_extension_g e) (exact_extension_f_g e)
+          e.shortExact.moduleCat_injective_f e.shortExact.moduleCat_surjective_g
+          ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).mp e.shortExact.exact)
           (χ ∘ₗ (contravariantDefectEquivExt1 R e he X).toLinearMap)) :=
   (rfl)
 
@@ -264,10 +251,12 @@ theorem dualExt1EquivCostableHom_naturality (h₁ : e.f ≫ a₂ = a ≫ e'.f)
     rfl
   rw [dualExt1EquivCostableHom_apply, hχ,
     Function.Exact.dualContravariantDefectEquivCovariantDefect_naturality _ _ _ _ _
-      (injective_extension_f e') (surjective_extension_g e') (exact_extension_f_g e') k₁ k₂,
+      e'.shortExact.moduleCat_injective_f e'.shortExact.moduleCat_surjective_g
+      ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).mp e'.shortExact.exact) k₁ k₂,
     dualExt1EquivCostableHom_apply]
   generalize Function.Exact.dualContravariantDefectEquivCovariantDefect P.exact P.surjective
-    (injective_extension_f e') (surjective_extension_g e') (exact_extension_f_g e')
+    e'.shortExact.moduleCat_injective_f e'.shortExact.moduleCat_surjective_g
+    ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).mp e'.shortExact.exact)
     (χ ∘ₗ (contravariantDefectEquivExt1 R e' he' X).toLinearMap) = y
   induction y using Submodule.Quotient.induction_on with
   | _ u =>
