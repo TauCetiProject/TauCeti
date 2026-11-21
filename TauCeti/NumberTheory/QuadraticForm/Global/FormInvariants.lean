@@ -189,7 +189,8 @@ theorem globalInvariants_weightedSumSquares_fin_one (c : Kˣ)
     (h : (QuadraticMap.weightedSumSquares K ![(c : K)]).Nondegenerate) :
     globalInvariants (QuadraticMap.weightedSumSquares K ![(c : K)]) h =
       { rank := 1, discr := squareClass c, finiteHasse := 1,
-        realPositiveIndex := fun w => if 0 < embedding_of_isReal w.2 (c : K) then 1 else 0 } := by
+        realPositiveIndex := fun w => if 0 < embedding_of_isReal w.property (c : K) then 1 else 0 }
+            := by
   let _ : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
   refine GlobalFormInvariants.ext ?_ ?_ ?_ ?_
   · simp
@@ -294,7 +295,8 @@ theorem globalInvariants_weightedSumSquares_one_self_neg {K : Type*} [Field K] [
       _root_.QuadraticForm.realPositiveIndex_weightedSumSquares]
     dsimp only
     -- Exactly one of `a` and `-a` is positive at `w`.
-    rcases (map_ne_zero (InfinitePlace.embedding_of_isReal w.2)).mpr a.ne_zero |>.lt_or_gt with
+    rcases (map_ne_zero (InfinitePlace.embedding_of_isReal w.property)).mpr a.ne_zero |>.lt_or_gt
+        with
       ha | ha
     · convert Set.ncard_pair (a := (0 : Fin 3)) (b := 2) (by decide)
       rename_i i

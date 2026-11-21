@@ -124,6 +124,10 @@ integrable, this is the estimate of Schwarz.
   `SmoothTwoForm.integrableOn_hamiltonianCurvature_pairOfPantsPerturbation_truncation`: the
   curvature along a map continuous on a truncation at given heights, or on `S_R`, is integrable
   over it.
+* `SmoothTwoForm`'s
+  `IsNondegenerate.integrableOn_floerEnergyDensity_pairOfPantsPerturbation_truncationAt`: the
+  energy density along a map of class `C¹` near a truncation at nonnegative heights is integrable
+  over it, for a manifold target.
 * `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_pairOfPantsPerturbation_truncationAt`:
   the energy identity on the truncation at given heights, for a manifold target, and its case
   `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_pairOfPantsPerturbation_inter` with
@@ -408,7 +412,7 @@ theorem hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt (ω : Smo
   have key := det_mul_hamiltonianCurvature_pairOfPantsPerturbation_endChart ω hH hHs
     (by linarith : 0 < q.endSign * w.1) x
   have hβ : deriv smoothTransition (q.endSign * w.1 - 1) = 0 :=
-    smoothTransition.deriv_of_one_lt (by linarith)
+    smoothTransition.deriv_of_one_le (by linarith)
   rw [hβ, mul_zero, zero_mul] at key
   exact (mul_eq_zero.1 key).resolve_left (det_fderiv_endChart_pos q w).ne'
 
@@ -465,8 +469,8 @@ theorem integrableOn_hamiltonianCurvature_pairOfPantsPerturbation (ω : SmoothTw
       exact hwC ⟨⟨by linarith [h.1], by linarith [h.2]⟩,
         Ico_subset_Icc_self (mem_endStrip_iff.1 hw).2⟩
     rcases hσ with hσ | hσ
-    · simp [smoothTransition.deriv_of_neg hσ]
-    · simp [smoothTransition.deriv_of_one_lt hσ]
+    · simp [smoothTransition.deriv_of_nonpos hσ.le]
+    · simp [smoothTransition.deriv_of_one_le hσ.le]
   · rw [hamiltonianCurvature_perturbationPullback_endChart ω hH hHs
       (endSign_mul_pos_of_mem_endStrip hw)]
 
@@ -561,7 +565,7 @@ end, which contains its support. -/
 private theorem setIntegral_deriv_smoothTransition_endSign (q : Puncture) :
     ∫ s in {s : ℝ | 1 / 2 < q.endSign * s}, deriv smoothTransition (q.endSign * s - 1) = 1 := by
   rw [setIntegral_eq_integral_of_forall_compl_eq_zero fun s hs ↦
-      smoothTransition.deriv_of_neg (by linarith [not_lt.1 (notMem_ofPred_iff.1 hs)]),
+      smoothTransition.deriv_of_nonpos (by linarith [not_lt.1 (notMem_ofPred_iff.1 hs)]),
     smoothTransition.integral_deriv_mul_sub, abs_endSign, inv_one]
 
 /-- **The one-sided curvature bound on one end, for a manifold target.** If `h` is a function of
@@ -798,6 +802,31 @@ private theorem IsNondegenerate.integral_floerEnergyDensity_image_endPiece
       intervalIntegral.integral_zero, zero_sub, intervalIntegral.integral_const_mul]
     ring
 
+/-- **The energy density is integrable over a truncation, for a manifold target.** Let `K` be the
+pair-of-pants perturbation of period-one `C¹` Hamiltonians `H_q` on a finite-dimensional manifold
+with a nondegenerate two-form, let `R q ≥ 0` be heights on the three ends, and let `u` be a map
+which is `C¹` on an open set `V` containing the truncation `S_R` at these heights. Then the Floer
+energy density of `u` for `K` is integrable over `S_R`. Nothing is assumed about `u` off `V`. -/
+theorem IsNondegenerate.integrableOn_floerEnergyDensity_pairOfPantsPerturbation_truncationAt
+    (hω : ω.IsNondegenerate) (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q))) {u : ℝ × ℝ → M}
+    {R : Puncture → ℝ} (hR : ∀ q, 0 ≤ R q) {V : Set (ℝ × ℝ)} (hVo : IsOpen V)
+    (hTV : Complex.equivRealProdCLM.symm ⁻¹' truncationAt R ⊆ V)
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u V) :
+    IntegrableOn (ω.floerEnergyDensity
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u)
+      (Complex.equivRealProdCLM.symm ⁻¹' truncationAt R) := by
+  have hKp := contMDiffOn_thricePuncturedSphereReal_prod_univ_of_forall_contMDiffAt
+    (contMDiffAt_pairOfPantsPerturbation (n := 1) hH hHs)
+  exact hω.integrableOn_floerEnergyDensity (hVo.inter isOpen_thricePuncturedSphereReal)
+    (hu.mono inter_subset_left) ((hKp 1).mono (prod_mono inter_subset_right subset_rfl))
+    ((hKp Complex.I).mono (prod_mono inter_subset_right subset_rfl))
+    (isCompact_preimage_truncationAt R)
+    (subset_inter hTV (preimage_truncationAt_subset_thricePuncturedSphereReal R))
+    (integrableOn_hamiltonianCurvature_pairOfPantsPerturbation_truncationAt ω hH hHs hR
+      (hu.continuousOn.mono hTV))
+
 /-- **The energy identity on a truncation of the pair of pants at given heights, for a manifold
 target.** Let `K` be the pair-of-pants perturbation of period-one `C¹` Hamiltonians `H_q` on a
 finite-dimensional manifold with a nondegenerate two-form, with components `K_s(z) = K(z)(1)` and
@@ -844,12 +873,8 @@ theorem IsNondegenerate.integral_floerEnergyDensity_pairOfPantsPerturbation_trun
   have harea := ω.integrableOn_eval₂_mfderiv hVo hu hT hTV stdComplexLineReal stdComplexLineImag
   have hcurv := integrableOn_hamiltonianCurvature_pairOfPantsPerturbation_truncationAt ω hH hHs
     hR₀ (hu.continuousOn.mono hTV)
-  have hKp := contMDiffOn_thricePuncturedSphereReal_prod_univ_of_forall_contMDiffAt
-    (contMDiffAt_pairOfPantsPerturbation (n := 1) hH hHs)
-  have hE := hω.integrableOn_floerEnergyDensity (hVo.inter isOpen_thricePuncturedSphereReal)
-    (hu.mono inter_subset_left) ((hKp 1).mono (prod_mono inter_subset_right subset_rfl))
-    ((hKp Complex.I).mono (prod_mono inter_subset_right subset_rfl)) hT (subset_inter hTV hTS)
-    hcurv
+  have hE := hω.integrableOn_floerEnergyDensity_pairOfPantsPerturbation_truncationAt hH hHs hR₀ hVo
+    hTV hu
   -- The truncation is the disjoint union of its core `C`, where every `±s < 1`, and the three
   -- end pieces.
   have hAm (q : Puncture) : MeasurableSet (A q) := measurableSet_image_endPiece q (R q)

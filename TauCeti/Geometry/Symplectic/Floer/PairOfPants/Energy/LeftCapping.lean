@@ -216,7 +216,7 @@ private theorem IsNondegenerate.integral_floerEnergyDensity_cappedExchangePertur
   have hK (w : ThricePuncturedSphere) (x : M) :
       ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, ℂ →L[ℝ] ℝ) 1
         (fun p : ℂ × M ↦ cappedExchangePerturbation H L 0 p.1 p.2) ((w : ℂ), x) := by
-    exact (contMDiffAt_cappedExchangePerturbation hH hHs hL 0 w.2.2 x).comp
+    exact (contMDiffAt_cappedExchangePerturbation hH hHs hL 0 w.property.2 x).comp
       (f := fun p : ℂ × M ↦ ((0 : ℝ), p)) _ (contMDiffAt_const.prodMk contMDiffAt_id)
   -- The Hamiltonian terms of the loops along the three ends converge.
   have hloop (q : Puncture) (hq : q ≠ zero) {xq : ℝ → M}

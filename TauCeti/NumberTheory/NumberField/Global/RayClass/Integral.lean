@@ -79,7 +79,7 @@ by the exponent divides the finite part (`Modulus.pow_exponent_dvd_finitePart`);
 conditions are carried over unchanged. -/
 theorem isCongrOne_of_sub_one_mem {𝔪 : Modulus K} {x : Kˣ} {a : 𝓞 K} (hxa : (x : K) = a)
     (hmem : a - 1 ∈ 𝔪.finitePart)
-    (hpos : ∀ w ∈ 𝔪.infinitePart, 0 < InfinitePlace.embedding_of_isReal w.2 (x : K)) :
+    (hpos : ∀ w ∈ 𝔪.infinitePart, 0 < InfinitePlace.embedding_of_isReal w.property (x : K)) :
     IsCongrOne 𝔪 x := by
   exact isCongrOne_iff_mem_congruenceSubgroup_and_pos.mpr
     ⟨(Ideal.mem_congruenceSubgroup_iff_sub_one_mem hxa).mpr hmem, hpos⟩
@@ -116,7 +116,7 @@ theorem exists_mem_isCongrOne {𝔪 : Modulus K} {D : Ideal (𝓞 K)} (hD : D �
     simpa only [sub_add_sub_cancel] using
       𝔪.finitePart.add_mem (Ideal.mul_le_right hbu) hu1
   exact ⟨b, Units.mk0 (b : K) (RingOfIntegers.coe_ne_zero_iff.mpr hb0), hbD, rfl,
-    isCongrOne_of_sub_one_mem rfl hb1 fun w _ ↦ isTotallyPositive_iff.mp hbpos w.1 w.2⟩
+    isCongrOne_of_sub_one_mem rfl hb1 fun w _ ↦ isTotallyPositive_iff.mp hbpos w.val w.property⟩
 
 /-! ### The moving lemma -/
 
@@ -130,7 +130,7 @@ theorem exists_isCongrOne_span_eq_mul {𝔪 : Modulus K} (I : integralIdealsPrim
     ∃ (J : integralIdealsPrimeTo 𝔪) (a : 𝓞 K) (x : Kˣ), (x : K) = a ∧ IsCongrOne 𝔪 x ∧
       Ideal.span {a} = (I : Ideal (𝓞 K)) * (J : Ideal (𝓞 K)) := by
   obtain ⟨hIbot, hsup⟩ :=
-    Modulus.isCoprimeTo_iff_sup_eq_top.mp (Modulus.mem_integralIdealsPrimeTo.mp I.2)
+    Modulus.isCoprimeTo_iff_sup_eq_top.mp (Modulus.mem_integralIdealsPrimeTo.mp I.property)
   obtain ⟨a, x, haI, hxa, hx⟩ := exists_mem_isCongrOne hIbot hsup
   obtain ⟨J, hJ⟩ :=
     Ideal.dvd_iff_le.mpr ((Ideal.span_singleton_le_iff_mem (I := (I : Ideal (𝓞 K)))).mpr haI)
@@ -190,7 +190,7 @@ theorem idealClass_surjective (𝔪 : Modulus K) : Function.Surjective (idealCla
     rw [Subgroup.coe_subtype, NumberFieldArithmetic.coe_integralIdealsAwayHom, hPv]
   intro c
   obtain ⟨I, rfl⟩ := rayClassMk_surjective 𝔪 c
-  obtain ⟨I', hI', hI'I⟩ := Subgroup.mem_map.mp (hT I.2)
+  obtain ⟨I', hI', hI'I⟩ := Subgroup.mem_map.mp (hT I.property)
   obtain ⟨J, hJ⟩ := hI'
   exact ⟨J, by rw [hJ]; congr 1; exact Subtype.ext hI'I⟩
 
@@ -288,7 +288,7 @@ part and positive at every real place of the infinite part.  This differs from
 spelled out instead of packaged as `IsCongrOne`. -/
 theorem idealClass_eq_one_iff_exists_generator {𝔪 : Modulus K} (J : integralIdealsPrimeTo 𝔪) :
     idealClass 𝔪 J = 1 ↔ ∃ α : 𝓞 K, α - 1 ∈ 𝔪.finitePart ∧ (∀ w ∈ 𝔪.infinitePart,
-      0 < InfinitePlace.embedding_of_isReal w.2 (algebraMap (𝓞 K) K α)) ∧
+      0 < InfinitePlace.embedding_of_isReal w.property (algebraMap (𝓞 K) K α)) ∧
       (J : Ideal (𝓞 K)) = Ideal.span {α} := by
   rw [idealClass_eq_one_iff]
   constructor

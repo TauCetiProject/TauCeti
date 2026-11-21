@@ -109,7 +109,7 @@ theorem singularValue_lpOne_eq_kolmogorovNumber (S : lp (fun _ : ι ↦ 𝕜) 1 
     NNReal.coe_le_coe.mp <| le_of_forall_pos_lt_add fun ε hε ↦ ?_
   have : FiniteDimensional 𝕜 V :=
     Module.rank_lt_aleph0_iff.mp (hV.trans_lt Cardinal.natCast_lt_aleph0)
-  have hex (i : ι) : ∃ v : V, ‖S (lp.single 1 i 1) - v.1‖ ≤ ‖V.mkQL ∘L S‖ + ε / 2 := by
+  have hex (i : ι) : ∃ v : V, ‖S (lp.single 1 i 1) - v.val‖ ≤ ‖V.mkQL ∘L S‖ + ε / 2 := by
     obtain ⟨m, hm, hmlt⟩ :=
       Submodule.Quotient.norm_mk_lt (V.mkQL (S (lp.single 1 i 1))) (half_pos hε)
     refine ⟨⟨S (lp.single 1 i 1) - m, (Submodule.Quotient.eq V).mp hm.symm⟩, ?_⟩
