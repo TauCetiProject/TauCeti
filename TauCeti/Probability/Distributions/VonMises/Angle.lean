@@ -18,6 +18,10 @@ the Haar density divided by `2π`. The cdf integrates that density from `-π`, i
 below the chart, and is one above it. The interior quantile is the unique root of this
 integral, is continuous and strictly increasing, and tends to the two chart endpoints.
 
+The named densities `vonMisesAnglePDFReal` and `vonMisesAnglePDF` extend by zero outside
+the fixed chart and at invalid negative concentrations. They provide the Lebesgue `HasPDF`,
+canonical `pdf`, and Radon--Nikodym interfaces for the real angle law.
+
 The location remains a circle point, so every formula is independent of its real
 representative. The angle cdf and quantile use the fixed chart, rather than a chart
 centered at the location.
@@ -63,19 +67,105 @@ theorem isProbabilityMeasure_vonMisesAngleMeasure (m : AddCircle (2 * π)) (hκ 
   rw [vonMisesAngleMeasure_def]
   infer_instance
 
-/-- The angle density is the lifted Haar density divided by `2π`, restricted to the
-fixed chart. -/
-theorem vonMisesAngleMeasure_eq_withDensity (hκ : 0 ≤ κ) :
-    vonMisesAngleMeasure m κ = (volume.restrict (Ico (-π) π)).withDensity
+/-! ### Density interfaces -/
+
+/-- The real density of the von Mises angle in the fixed chart `[-π, π)`.
+
+It is zero outside the chart and for invalid negative concentrations. -/
+def vonMisesAnglePDFReal (m : AddCircle (2 * π)) (κ t : ℝ) : ℝ :=
+  if 0 ≤ κ then (Ico (-π) π).indicator (fun s ↦ vonMisesPDFReal m κ s / (2 * π)) t else 0
+
+/-- The `ℝ≥0∞`-valued density of the von Mises angle in the fixed chart. -/
+def vonMisesAnglePDF (m : AddCircle (2 * π)) (κ t : ℝ) : ℝ≥0∞ :=
+  ENNReal.ofReal (vonMisesAnglePDFReal m κ t)
+
+/-- The real fixed-chart von Mises density is nonnegative. -/
+theorem vonMisesAnglePDFReal_nonneg (m : AddCircle (2 * π)) (κ t : ℝ) :
+    0 ≤ vonMisesAnglePDFReal m κ t := by
+  rw [vonMisesAnglePDFReal]
+  split_ifs
+  · exact indicator_nonneg (fun _ _ ↦
+      div_nonneg (vonMisesPDFReal_pos _ _ _).le two_pi_pos.le) _
+  · exact le_rfl
+
+/-- The extended fixed-chart density is the real density embedded in `ℝ≥0∞`. -/
+theorem vonMisesAnglePDF_eq_ofReal (m : AddCircle (2 * π)) (κ t : ℝ) :
+    vonMisesAnglePDF m κ t = ENNReal.ofReal (vonMisesAnglePDFReal m κ t) := by
+  rw [vonMisesAnglePDF]
+
+/-- The real fixed-chart von Mises density is measurable. -/
+@[fun_prop]
+theorem measurable_vonMisesAnglePDFReal (m : AddCircle (2 * π)) (κ : ℝ) :
+    Measurable (vonMisesAnglePDFReal m κ) := by
+  by_cases hκ : 0 ≤ κ
+  · change Measurable fun t ↦
+      if 0 ≤ κ then (Ico (-π) π).indicator
+        (fun s ↦ vonMisesPDFReal m κ s / (2 * π)) t else 0
+    simpa [hκ] using (((continuous_vonMisesPDFReal m κ).comp
+      (AddCircle.continuous_mk' _)).measurable.div_const _).indicator measurableSet_Ico
+  · change Measurable fun t ↦
+      if 0 ≤ κ then (Ico (-π) π).indicator
+        (fun s ↦ vonMisesPDFReal m κ s / (2 * π)) t else 0
+    simp [hκ]
+
+/-- The extended fixed-chart von Mises density is measurable. -/
+@[fun_prop]
+theorem measurable_vonMisesAnglePDF (m : AddCircle (2 * π)) (κ : ℝ) :
+    Measurable (vonMisesAnglePDF m κ) :=
+  (measurable_vonMisesAnglePDFReal m κ).ennreal_ofReal
+
+/-- At a valid concentration, the fixed-chart density is the restricted Haar density divided
+by the chart length. -/
+theorem vonMisesAnglePDF_eq_indicator (hκ : 0 ≤ κ) :
+    vonMisesAnglePDF m κ = (Ico (-π) π).indicator
       (fun t : ℝ ↦ ENNReal.ofReal (vonMisesPDFReal m κ t / (2 * π))) := by
-  rw [vonMisesAngleMeasure_def, vonMisesMeasure_of_nonneg hκ,
-    AddCircle.map_coe_equivIco_withDensity_haarAddCircle (-π)]
-  have hπ : -π + 2 * π = π := by ring
-  rw [hπ]
-  congr 1
   funext t
-  simp only [vonMisesPDF_def]
-  rw [ENNReal.ofReal_div_of_pos two_pi_pos, div_eq_mul_inv, mul_comm]
+  by_cases ht : t ∈ Ico (-π) π <;>
+    simp [vonMisesAnglePDF, vonMisesAnglePDFReal, hκ, ht]
+
+/-- The von Mises angle law is Lebesgue measure weighted by its fixed-chart density.
+
+This includes the invalid negative-concentration branch, where both sides are zero. -/
+theorem vonMisesAngleMeasure_eq_withDensity :
+    vonMisesAngleMeasure m κ = volume.withDensity (vonMisesAnglePDF m κ) := by
+  by_cases hκ : 0 ≤ κ
+  · rw [vonMisesAngleMeasure_def, vonMisesMeasure_of_nonneg hκ,
+      vonMisesAnglePDF_eq_indicator hκ,
+      withDensity_indicator measurableSet_Ico,
+      AddCircle.map_coe_equivIco_withDensity_haarAddCircle (-π)]
+    have hπ : -π + 2 * π = π := by ring
+    rw [hπ]
+    congr 1
+    funext t
+    simp only [vonMisesPDF_def]
+    rw [ENNReal.ofReal_div_of_pos two_pi_pos, div_eq_mul_inv, mul_comm]
+  · rw [vonMisesAngleMeasure_of_neg (lt_of_not_ge hκ)]
+    have hpdf : vonMisesAnglePDF m κ = 0 := by
+      funext t
+      rw [vonMisesAnglePDF, vonMisesAnglePDFReal, ite_eq_right hκ, ENNReal.ofReal_zero]
+      rfl
+    rw [hpdf, withDensity_zero]
+
+/-- A random variable with the von Mises fixed-angle law has a Lebesgue density. -/
+theorem hasPDF_of_hasLaw_vonMisesAngleMeasure {Ω : Type*} [MeasurableSpace Ω]
+    {P : Measure Ω} {X : Ω → ℝ} (hX : HasLaw X (vonMisesAngleMeasure m κ) P) :
+    HasPDF X P :=
+  hasPDF_of_hasLaw_withDensity (measurable_vonMisesAnglePDF m κ).aemeasurable
+    (vonMisesAngleMeasure_eq_withDensity ▸ hX)
+
+/-- The canonical density of a von Mises fixed-angle random variable is the named density. -/
+theorem pdf_eq_vonMisesAnglePDF_of_hasLaw_vonMisesAngleMeasure
+    {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ}
+    (hX : HasLaw X (vonMisesAngleMeasure m κ) P) :
+    pdf X P =ᵐ[volume] vonMisesAnglePDF m κ :=
+  pdf_eq_of_hasLaw_withDensity (measurable_vonMisesAnglePDF m κ).aemeasurable
+    (vonMisesAngleMeasure_eq_withDensity ▸ hX)
+
+/-- The Radon--Nikodym derivative of the von Mises fixed-angle law is its named density. -/
+theorem rnDeriv_vonMisesAngleMeasure (m : AddCircle (2 * π)) (κ : ℝ) :
+    (vonMisesAngleMeasure m κ).rnDeriv volume =ᵐ[volume] vonMisesAnglePDF m κ := by
+  rw [vonMisesAngleMeasure_eq_withDensity]
+  exact Measure.rnDeriv_withDensity volume (measurable_vonMisesAnglePDF m κ)
 
 /-- Every chosen angle lies in the half-open chart, including at the seam. -/
 theorem ae_mem_Ico_vonMisesAngleMeasure (m : AddCircle (2 * π)) (κ : ℝ) :
@@ -93,7 +183,7 @@ theorem ae_mem_Ico_vonMisesAngleMeasure (m : AddCircle (2 * π)) (κ : ℝ) :
 instance nullSingletonClass_vonMisesAngleMeasure (m : AddCircle (2 * π)) (κ : ℝ) :
     NullSingletonClass (vonMisesAngleMeasure m κ) := by
   by_cases hκ : 0 ≤ κ
-  · rw [vonMisesAngleMeasure_eq_withDensity hκ]
+  · rw [vonMisesAngleMeasure_eq_withDensity]
     infer_instance
   · rw [vonMisesAngleMeasure_of_neg (lt_of_not_ge hκ)]
     exact ⟨fun _ ↦ rfl⟩
@@ -109,7 +199,7 @@ endpoints belong to the support although the chosen representatives exclude `π`
 @[simp]
 theorem support_vonMisesAngleMeasure (hκ : 0 ≤ κ) :
     (vonMisesAngleMeasure m κ).support = Icc (-π) π := by
-  rw [vonMisesAngleMeasure_eq_withDensity hκ, ← withDensity_indicator measurableSet_Ico]
+  rw [vonMisesAngleMeasure_eq_withDensity, vonMisesAnglePDF_eq_indicator hκ]
   have hf : Measurable fun t : ℝ ↦ ENNReal.ofReal (vonMisesPDFReal m κ t / (2 * π)) :=
     ((continuous_vonMisesPDFReal m κ).comp (AddCircle.continuous_mk' _)).measurable.div_const
       _ |>.ennreal_ofReal
@@ -134,7 +224,8 @@ theorem cdf_vonMisesAngleMeasure_eq_integral (hκ : 0 ≤ κ) (hx : x ∈ Icc (-
   have := isProbabilityMeasure_vonMisesAngleMeasure m hκ
   have hf : Continuous fun t : ℝ ↦ vonMisesPDFReal m κ t / (2 * π) :=
     ((continuous_vonMisesPDFReal m κ).comp (AddCircle.continuous_mk' _)).div_const _
-  rw [cdf_eq_real, vonMisesAngleMeasure_eq_withDensity hκ,
+  rw [cdf_eq_real, vonMisesAngleMeasure_eq_withDensity, vonMisesAnglePDF_eq_indicator hκ,
+    withDensity_indicator measurableSet_Ico,
     Measure.restrict_congr_set Ico_ae_eq_Ioc,
     MeasureTheory.measureReal_withDensity_ofReal
       (ae_of_all _ fun t ↦ (div_pos (vonMisesPDFReal_pos _ _ _) two_pi_pos).le)

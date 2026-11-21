@@ -20,6 +20,10 @@ of that density from `-π`, with zero and one extensions outside the chart. Inte
 are the unique roots of this integral, vary continuously and strictly increasingly with the
 probability level, and tend to the chart endpoints.
 
+The named densities `wrappedCauchyAnglePDFReal` and `wrappedCauchyAnglePDF` extend by zero
+outside the fixed chart and at the atomic zero-scale boundary. At positive scale they provide
+the Lebesgue `HasPDF`, canonical `pdf`, and Radon--Nikodym interfaces.
+
 At scale zero the angle law is the Dirac mass at the chosen representative of the location.
 The location parameter remains a circle point, so the formulas are independent of its real
 representative. The cdf uses the fixed chart rather than a chart centered at the location.
@@ -71,12 +75,67 @@ instance isProbabilityMeasure_wrappedCauchyAngleMeasure (m : AddCircle (2 * π))
   rw [wrappedCauchyAngleMeasure_def]
   infer_instance
 
-/-- The angle density is the lifted Haar density divided by `2π`, restricted to the
-fixed chart. -/
-theorem wrappedCauchyAngleMeasure_eq_withDensity (hγ : 0 < γ) :
-    wrappedCauchyAngleMeasure m γ = (volume.restrict (Ico (-π) π)).withDensity
+/-! ### Density interfaces -/
+
+/-- The real density of the wrapped Cauchy angle in the fixed chart `[-π, π)`.
+
+It is zero outside the chart and at zero scale, where the law is a Dirac measure. -/
+def wrappedCauchyAnglePDFReal (m : AddCircle (2 * π)) (γ : ℝ≥0) (t : ℝ) : ℝ :=
+  if γ = 0 then 0
+  else (Ico (-π) π).indicator (fun s ↦ wrappedCauchyPDFReal m γ s / (2 * π)) t
+
+/-- The `ℝ≥0∞`-valued density of the wrapped Cauchy angle in the fixed chart. -/
+def wrappedCauchyAnglePDF (m : AddCircle (2 * π)) (γ : ℝ≥0) (t : ℝ) : ℝ≥0∞ :=
+  ENNReal.ofReal (wrappedCauchyAnglePDFReal m γ t)
+
+/-- The real fixed-chart wrapped Cauchy density is nonnegative. -/
+theorem wrappedCauchyAnglePDFReal_nonneg (m : AddCircle (2 * π)) (γ : ℝ≥0) (t : ℝ) :
+    0 ≤ wrappedCauchyAnglePDFReal m γ t := by
+  rw [wrappedCauchyAnglePDFReal]
+  split_ifs
+  · exact le_rfl
+  · exact indicator_nonneg (fun _ _ ↦
+      div_nonneg (wrappedCauchyPDFReal_nonneg _ _ _) two_pi_pos.le) _
+
+/-- The extended fixed-chart density is the real density embedded in `ℝ≥0∞`. -/
+theorem wrappedCauchyAnglePDF_eq_ofReal (m : AddCircle (2 * π)) (γ : ℝ≥0) (t : ℝ) :
+    wrappedCauchyAnglePDF m γ t = ENNReal.ofReal (wrappedCauchyAnglePDFReal m γ t) := by
+  rw [wrappedCauchyAnglePDF]
+
+/-- The real fixed-chart wrapped Cauchy density is measurable. -/
+@[fun_prop]
+theorem measurable_wrappedCauchyAnglePDFReal (m : AddCircle (2 * π)) (γ : ℝ≥0) :
+    Measurable (wrappedCauchyAnglePDFReal m γ) := by
+  by_cases hγ : γ = 0
+  · change Measurable fun t ↦ if γ = 0 then 0 else
+      (Ico (-π) π).indicator (fun s ↦ wrappedCauchyPDFReal m γ s / (2 * π)) t
+    simp [hγ]
+  · change Measurable fun t ↦ if γ = 0 then 0 else
+      (Ico (-π) π).indicator (fun s ↦ wrappedCauchyPDFReal m γ s / (2 * π)) t
+    simpa [hγ] using (((continuous_wrappedCauchyPDFReal m γ).comp
+      (AddCircle.continuous_mk' _)).measurable.div_const _).indicator measurableSet_Ico
+
+/-- The extended fixed-chart wrapped Cauchy density is measurable. -/
+@[fun_prop]
+theorem measurable_wrappedCauchyAnglePDF (m : AddCircle (2 * π)) (γ : ℝ≥0) :
+    Measurable (wrappedCauchyAnglePDF m γ) :=
+  (measurable_wrappedCauchyAnglePDFReal m γ).ennreal_ofReal
+
+/-- At positive scale, the fixed-chart density is the restricted Haar density divided by the
+chart length. -/
+theorem wrappedCauchyAnglePDF_eq_indicator (hγ : 0 < γ) :
+    wrappedCauchyAnglePDF m γ = (Ico (-π) π).indicator
       (fun t : ℝ ↦ ENNReal.ofReal (wrappedCauchyPDFReal m γ t / (2 * π))) := by
+  funext t
+  by_cases ht : t ∈ Ico (-π) π <;>
+    simp [wrappedCauchyAnglePDF, wrappedCauchyAnglePDFReal, hγ.ne', ht]
+
+/-- At positive scale the wrapped Cauchy angle law is Lebesgue measure weighted by its
+fixed-chart density. -/
+theorem wrappedCauchyAngleMeasure_eq_withDensity (hγ : 0 < γ) :
+    wrappedCauchyAngleMeasure m γ = volume.withDensity (wrappedCauchyAnglePDF m γ) := by
   rw [wrappedCauchyAngleMeasure_def, wrappedCauchyMeasure_eq_withDensity m hγ,
+    wrappedCauchyAnglePDF_eq_indicator hγ, withDensity_indicator measurableSet_Ico,
     AddCircle.map_coe_equivIco_withDensity_haarAddCircle (-π)]
   have hπ : -π + 2 * π = π := by ring
   rw [hπ]
@@ -84,6 +143,29 @@ theorem wrappedCauchyAngleMeasure_eq_withDensity (hγ : 0 < γ) :
   funext t
   simp only [wrappedCauchyPDF_apply]
   rw [ENNReal.ofReal_div_of_pos two_pi_pos, div_eq_mul_inv, mul_comm]
+
+/-- A positive-scale wrapped Cauchy fixed-angle variable has a Lebesgue density. -/
+theorem hasPDF_of_hasLaw_wrappedCauchyAngleMeasure {Ω : Type*} [MeasurableSpace Ω]
+    {P : Measure Ω} {X : Ω → ℝ} (hγ : 0 < γ)
+    (hX : HasLaw X (wrappedCauchyAngleMeasure m γ) P) : HasPDF X P :=
+  hasPDF_of_hasLaw_withDensity (measurable_wrappedCauchyAnglePDF m γ).aemeasurable
+    (wrappedCauchyAngleMeasure_eq_withDensity hγ ▸ hX)
+
+/-- The canonical density of a positive-scale wrapped Cauchy fixed-angle variable is the named
+density. -/
+theorem pdf_eq_wrappedCauchyAnglePDF_of_hasLaw_wrappedCauchyAngleMeasure
+    {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ} (hγ : 0 < γ)
+    (hX : HasLaw X (wrappedCauchyAngleMeasure m γ) P) :
+    pdf X P =ᵐ[volume] wrappedCauchyAnglePDF m γ :=
+  pdf_eq_of_hasLaw_withDensity (measurable_wrappedCauchyAnglePDF m γ).aemeasurable
+    (wrappedCauchyAngleMeasure_eq_withDensity hγ ▸ hX)
+
+/-- The Radon--Nikodym derivative of a positive-scale wrapped Cauchy fixed-angle law is its named
+density. -/
+theorem rnDeriv_wrappedCauchyAngleMeasure (m : AddCircle (2 * π)) {γ : ℝ≥0} (hγ : 0 < γ) :
+    (wrappedCauchyAngleMeasure m γ).rnDeriv volume =ᵐ[volume] wrappedCauchyAnglePDF m γ := by
+  rw [wrappedCauchyAngleMeasure_eq_withDensity hγ]
+  exact Measure.rnDeriv_withDensity volume (measurable_wrappedCauchyAnglePDF m γ)
 
 /-- Every chosen angle lies in the half-open chart, including at the seam. -/
 theorem ae_mem_Ico_wrappedCauchyAngleMeasure (m : AddCircle (2 * π)) (γ : ℝ≥0) :
@@ -114,7 +196,7 @@ endpoints belong to the support although the chosen representatives exclude `π`
 @[simp]
 theorem support_wrappedCauchyAngleMeasure (hγ : 0 < γ) :
     (wrappedCauchyAngleMeasure m γ).support = Icc (-π) π := by
-  rw [wrappedCauchyAngleMeasure_eq_withDensity hγ, ← withDensity_indicator measurableSet_Ico]
+  rw [wrappedCauchyAngleMeasure_eq_withDensity hγ, wrappedCauchyAnglePDF_eq_indicator hγ]
   have hf : Measurable fun t : ℝ ↦ ENNReal.ofReal (wrappedCauchyPDFReal m γ t / (2 * π)) :=
     ((continuous_wrappedCauchyPDFReal m γ).comp (AddCircle.continuous_mk' _)).measurable.div_const
       _ |>.ennreal_ofReal
@@ -139,6 +221,7 @@ theorem cdf_wrappedCauchyAngleMeasure_eq_integral (hγ : 0 < γ) (hx : x ∈ Icc
   have hf : Continuous fun t : ℝ ↦ wrappedCauchyPDFReal m γ t / (2 * π) :=
     ((continuous_wrappedCauchyPDFReal m γ).comp (AddCircle.continuous_mk' _)).div_const _
   rw [cdf_eq_real, wrappedCauchyAngleMeasure_eq_withDensity hγ,
+    wrappedCauchyAnglePDF_eq_indicator hγ, withDensity_indicator measurableSet_Ico,
     Measure.restrict_congr_set Ico_ae_eq_Ioc,
     MeasureTheory.measureReal_withDensity_ofReal
       (ae_of_all _ fun t ↦ (div_pos (wrappedCauchyPDFReal_pos _ hγ _) two_pi_pos).le)

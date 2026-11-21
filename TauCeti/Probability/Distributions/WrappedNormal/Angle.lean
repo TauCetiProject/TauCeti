@@ -21,6 +21,10 @@ of that density from `-π`, with zero and one extensions outside the chart. Inte
 are the unique roots of this integral, vary continuously and strictly increasingly with the
 probability level, and tend to the chart endpoints.
 
+The named densities `wrappedNormalAnglePDFReal` and `wrappedNormalAnglePDF` extend by zero
+outside the fixed chart and at the atomic zero-variance boundary. At positive variance they
+provide the Lebesgue `HasPDF`, canonical `pdf`, and Radon--Nikodym interfaces.
+
 At variance zero the angle law is the Dirac mass at the chosen representative of the location.
 The location parameter remains a circle point, so the formulas are independent of its real
 representative. The cdf uses the fixed chart rather than a chart centered at the location.
@@ -74,12 +78,67 @@ instance isProbabilityMeasure_wrappedNormalAngleMeasure (m : AddCircle (2 * π))
   rw [wrappedNormalAngleMeasure_def]
   infer_instance
 
-/-- The angle density is the lifted Haar density divided by `2π`, restricted to the
-fixed chart. -/
-theorem wrappedNormalAngleMeasure_eq_withDensity (hv : v ≠ 0) :
-    wrappedNormalAngleMeasure m v = (volume.restrict (Ico (-π) π)).withDensity
+/-! ### Density interfaces -/
+
+/-- The real density of the wrapped normal angle in the fixed chart `[-π, π)`.
+
+It is zero outside the chart and at zero variance, where the law is a Dirac measure. -/
+def wrappedNormalAnglePDFReal (m : AddCircle (2 * π)) (v : ℝ≥0) (t : ℝ) : ℝ :=
+  if v = 0 then 0
+  else (Ico (-π) π).indicator (fun s ↦ wrappedNormalPDFReal m v s / (2 * π)) t
+
+/-- The `ℝ≥0∞`-valued density of the wrapped normal angle in the fixed chart. -/
+def wrappedNormalAnglePDF (m : AddCircle (2 * π)) (v : ℝ≥0) (t : ℝ) : ℝ≥0∞ :=
+  ENNReal.ofReal (wrappedNormalAnglePDFReal m v t)
+
+/-- The real fixed-chart wrapped normal density is nonnegative. -/
+theorem wrappedNormalAnglePDFReal_nonneg (m : AddCircle (2 * π)) (v : ℝ≥0) (t : ℝ) :
+    0 ≤ wrappedNormalAnglePDFReal m v t := by
+  rw [wrappedNormalAnglePDFReal]
+  split_ifs
+  · exact le_rfl
+  · exact indicator_nonneg (fun _ _ ↦
+      div_nonneg (wrappedNormalPDFReal_nonneg _ _ _) two_pi_pos.le) _
+
+/-- The extended fixed-chart density is the real density embedded in `ℝ≥0∞`. -/
+theorem wrappedNormalAnglePDF_eq_ofReal (m : AddCircle (2 * π)) (v : ℝ≥0) (t : ℝ) :
+    wrappedNormalAnglePDF m v t = ENNReal.ofReal (wrappedNormalAnglePDFReal m v t) := by
+  rw [wrappedNormalAnglePDF]
+
+/-- The real fixed-chart wrapped normal density is measurable. -/
+@[fun_prop]
+theorem measurable_wrappedNormalAnglePDFReal (m : AddCircle (2 * π)) (v : ℝ≥0) :
+    Measurable (wrappedNormalAnglePDFReal m v) := by
+  by_cases hv : v = 0
+  · change Measurable fun t ↦ if v = 0 then 0 else
+      (Ico (-π) π).indicator (fun s ↦ wrappedNormalPDFReal m v s / (2 * π)) t
+    simp [hv]
+  · change Measurable fun t ↦ if v = 0 then 0 else
+      (Ico (-π) π).indicator (fun s ↦ wrappedNormalPDFReal m v s / (2 * π)) t
+    simpa [hv] using (((continuous_wrappedNormalPDFReal m v).comp
+      (AddCircle.continuous_mk' _)).measurable.div_const _).indicator measurableSet_Ico
+
+/-- The extended fixed-chart wrapped normal density is measurable. -/
+@[fun_prop]
+theorem measurable_wrappedNormalAnglePDF (m : AddCircle (2 * π)) (v : ℝ≥0) :
+    Measurable (wrappedNormalAnglePDF m v) :=
+  (measurable_wrappedNormalAnglePDFReal m v).ennreal_ofReal
+
+/-- At positive variance, the fixed-chart density is the restricted Haar density divided by the
+chart length. -/
+theorem wrappedNormalAnglePDF_eq_indicator (hv : v ≠ 0) :
+    wrappedNormalAnglePDF m v = (Ico (-π) π).indicator
       (fun t : ℝ ↦ ENNReal.ofReal (wrappedNormalPDFReal m v t / (2 * π))) := by
+  funext t
+  by_cases ht : t ∈ Ico (-π) π <;>
+    simp [wrappedNormalAnglePDF, wrappedNormalAnglePDFReal, hv, ht]
+
+/-- At positive variance the wrapped normal angle law is Lebesgue measure weighted by its
+fixed-chart density. -/
+theorem wrappedNormalAngleMeasure_eq_withDensity (hv : v ≠ 0) :
+    wrappedNormalAngleMeasure m v = volume.withDensity (wrappedNormalAnglePDF m v) := by
   rw [wrappedNormalAngleMeasure_def, wrappedNormalMeasure_eq_withDensity m hv,
+    wrappedNormalAnglePDF_eq_indicator hv, withDensity_indicator measurableSet_Ico,
     AddCircle.map_coe_equivIco_withDensity_haarAddCircle (-π)]
   have hπ : -π + 2 * π = π := by ring
   rw [hπ]
@@ -87,6 +146,29 @@ theorem wrappedNormalAngleMeasure_eq_withDensity (hv : v ≠ 0) :
   funext t
   simp only [wrappedNormalPDF_apply]
   rw [ENNReal.ofReal_div_of_pos two_pi_pos, div_eq_mul_inv, mul_comm]
+
+/-- A positive-variance wrapped normal fixed-angle variable has a Lebesgue density. -/
+theorem hasPDF_of_hasLaw_wrappedNormalAngleMeasure {Ω : Type*} [MeasurableSpace Ω]
+    {P : Measure Ω} {X : Ω → ℝ} (hv : v ≠ 0)
+    (hX : HasLaw X (wrappedNormalAngleMeasure m v) P) : HasPDF X P :=
+  hasPDF_of_hasLaw_withDensity (measurable_wrappedNormalAnglePDF m v).aemeasurable
+    (wrappedNormalAngleMeasure_eq_withDensity hv ▸ hX)
+
+/-- The canonical density of a positive-variance wrapped normal fixed-angle variable is the
+named density. -/
+theorem pdf_eq_wrappedNormalAnglePDF_of_hasLaw_wrappedNormalAngleMeasure
+    {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ} (hv : v ≠ 0)
+    (hX : HasLaw X (wrappedNormalAngleMeasure m v) P) :
+    pdf X P =ᵐ[volume] wrappedNormalAnglePDF m v :=
+  pdf_eq_of_hasLaw_withDensity (measurable_wrappedNormalAnglePDF m v).aemeasurable
+    (wrappedNormalAngleMeasure_eq_withDensity hv ▸ hX)
+
+/-- The Radon--Nikodym derivative of a positive-variance wrapped normal fixed-angle law is its
+named density. -/
+theorem rnDeriv_wrappedNormalAngleMeasure (m : AddCircle (2 * π)) {v : ℝ≥0} (hv : v ≠ 0) :
+    (wrappedNormalAngleMeasure m v).rnDeriv volume =ᵐ[volume] wrappedNormalAnglePDF m v := by
+  rw [wrappedNormalAngleMeasure_eq_withDensity hv]
+  exact Measure.rnDeriv_withDensity volume (measurable_wrappedNormalAnglePDF m v)
 
 /-- Every chosen angle lies in the half-open chart, including at the seam. -/
 theorem ae_mem_Ico_wrappedNormalAngleMeasure (m : AddCircle (2 * π)) (v : ℝ≥0) :
@@ -117,7 +199,7 @@ endpoints belong to the support although the chosen representatives exclude `π`
 @[simp]
 theorem support_wrappedNormalAngleMeasure (hv : v ≠ 0) :
     (wrappedNormalAngleMeasure m v).support = Icc (-π) π := by
-  rw [wrappedNormalAngleMeasure_eq_withDensity hv, ← withDensity_indicator measurableSet_Ico]
+  rw [wrappedNormalAngleMeasure_eq_withDensity hv, wrappedNormalAnglePDF_eq_indicator hv]
   have hf : Measurable fun t : ℝ ↦ ENNReal.ofReal (wrappedNormalPDFReal m v t / (2 * π)) :=
     ((continuous_wrappedNormalPDFReal m v).comp (AddCircle.continuous_mk' _)).measurable.div_const
       _ |>.ennreal_ofReal
@@ -142,6 +224,7 @@ theorem cdf_wrappedNormalAngleMeasure_eq_integral (hv : v ≠ 0) (hx : x ∈ Icc
   have hf : Continuous fun t : ℝ ↦ wrappedNormalPDFReal m v t / (2 * π) :=
     ((continuous_wrappedNormalPDFReal m v).comp (AddCircle.continuous_mk' _)).div_const _
   rw [cdf_eq_real, wrappedNormalAngleMeasure_eq_withDensity hv,
+    wrappedNormalAnglePDF_eq_indicator hv, withDensity_indicator measurableSet_Ico,
     Measure.restrict_congr_set Ico_ae_eq_Ioc,
     MeasureTheory.measureReal_withDensity_ofReal
       (ae_of_all _ fun t ↦ (div_pos (wrappedNormalPDFReal_pos _ hv _) two_pi_pos).le)
