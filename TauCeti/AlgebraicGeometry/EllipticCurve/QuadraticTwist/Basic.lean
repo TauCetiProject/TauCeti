@@ -52,6 +52,8 @@ change of variables, again over any commutative ring in which the relevant param
   original curve, and changing the generator moves the twist by a change of variables.
 * `WeierstrassCurve.exists_smul_quadraticTwistOf_zero_eq`: in characteristic other than `2`,
   completing the square makes the trace parameter `0`.
+* `WeierstrassCurve.exists_smul_eq_quadraticTwistOf_zero_neg_sq`: in characteristic other than
+  `2`, the twist by `(0, -c²)` with `c ≠ 0` is trivial.
 * `WeierstrassCurve.isElliptic_quadraticTwistOf_trace_norm`,
   `WeierstrassCurve.exists_smul_quadraticTwistOf_trace_norm_eq`: the twist by the trace and norm
   of a generator `θ` of a *separable* quadratic extension `L/K` is elliptic when `E` is.
@@ -421,6 +423,15 @@ theorem exists_smul_quadraticTwistOf_zero_eq (h2 : (2 : K) ≠ 0) :
   refine ⟨C⁻¹, ?_⟩
   rw [inv_smul_eq_iff, hC]
   congr 1 <;> field_simp <;> ring
+
+/-- **Twisting by a split quadratic with trace `0`.** In characteristic other than `2`, the twist
+by `(0, -c²)`, the trace and norm of a root of `(x + c)(x - c)`, is isomorphic to `E` when
+`c ≠ 0`. -/
+theorem exists_smul_eq_quadraticTwistOf_zero_neg_sq (h2 : (2 : K) ≠ 0) {c : K} (hc : c ≠ 0) :
+    ∃ C : VariableChange K, C • E = E.quadraticTwistOf 0 (-c ^ 2) := by
+  obtain ⟨C, hC⟩ := E.exists_smul_eq_quadraticTwistOf_add_mul (-c) c
+    (isUnit_iff_ne_zero.mpr (by rw [sub_neg_eq_add, ← two_mul]; exact mul_ne_zero h2 hc))
+  exact ⟨C, by rw [hC, neg_add_cancel, neg_mul, ← sq]⟩
 
 variable {L : Type*} [CommRing L] [Algebra K L] [Algebra.IsQuadraticExtension K L]
 

@@ -9,6 +9,7 @@ public import Mathlib.FieldTheory.KrullTopology
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Basic
 import TauCeti.FieldTheory.Galois.SquareRoot
+import TauCeti.FieldTheory.KrullTopology
 
 /-!
 # The sign character of a square root
@@ -65,15 +66,11 @@ theorem exists_continuousMonoidHom_apply_eq_zsmul_of_sq_eq {a : L} {c : K}
     · simp [f, hg]
     · simp only [f, MonoidHom.coe_mk, OneHom.coe_mk, ite_eq_right hg]
       simp [(hpm g).resolve_left hg]
-  refine ⟨⟨f, continuous_of_continuousAt_one f ?_⟩, hf⟩
-  -- `f` is `1` on the open subgroup of automorphisms fixing `K⟮a⟯`
+  -- `f g` depends only on `g a`, and the orbit map of the integral element `a` is locally constant
   have hint : IsIntegral K a := ⟨Polynomial.X ^ 2 - Polynomial.C c,
     Polynomial.monic_X_pow_sub_C c two_ne_zero, by simp [ha]⟩
-  have : FiniteDimensional K K⟮a⟯ := adjoin.finiteDimensional hint
-  refine (continuousAt_const (y := (1 : ℤˣ))).congr (Filter.eventually_of_mem
-    ((fixingSubgroup_isOpen K⟮a⟯).mem_nhds (one_mem _)) fun g hg ↦ ?_)
-  have hga : g a = a := (mem_fixingSubgroup_iff _ _).mp hg a (mem_adjoin_simple_self K a)
-  simp [f, hga]
+  exact ⟨⟨f, (hint.isLocallyConstant_apply.comp fun y ↦ if y = a then (1 : ℤˣ) else -1).continuous⟩,
+    hf⟩
 
 /-- **The sign character of a square root is unique.** If `a ≠ 0` and `2 ≠ 0` in `L`, two
 characters `η, η'` with `g a = η(g) • a = η'(g) • a` for every automorphism `g` are equal. -/

@@ -42,6 +42,9 @@ The trivial character gives exactly the curves isomorphic to `W` over `K`
 
 * `WeierstrassCurve.isQuadraticTwistBy_smul_iff`: being a twist by `η` is invariant under
   isomorphism over `K`.
+* `WeierstrassCurve.IsQuadraticTwistBy.exists_smul_eq`,
+  `WeierstrassCurve.isQuadraticTwistBy_iff_exists_smul_eq`: the twist by `η` may be computed from
+  any unit `d` and square root of `d` on which `η` describes the Galois action.
 * `WeierstrassCurve.isQuadraticTwistBy_one_iff`: the twist by the trivial character is `W` itself,
   up to isomorphism over `K`.
 * `WeierstrassCurve.exists_isQuadraticTwistBy_iff_j_eq`: for `j(W) ∉ {0, 1728}`, an elliptic
@@ -102,6 +105,44 @@ theorem isQuadraticTwistBy_smul_iff {W E : WeierstrassCurve K}
   ⟨fun ⟨d, a, ha, hη, C', hC'⟩ ↦ ⟨d, a, ha, hη, C⁻¹ * C', by rw [mul_smul, hC', inv_smul_smul]⟩,
     fun ⟨d, a, ha, hη, C', hC'⟩ ↦ ⟨d, a, ha, hη, C * C', by rw [mul_smul, hC']⟩⟩
 
+/-- **The twist depends only on the character.** In characteristic other than `2`, if `E` is the
+twist of `W` by `η`, then `E` is isomorphic over `K` to the twist by `(0, -d')` for *every* unit
+`d'` with a square root `a'` on which `η` describes the Galois action: `a' / a` is fixed by every
+automorphism, so `d' / d` is the square of an element of `K`. -/
+theorem IsQuadraticTwistBy.exists_smul_eq {W E : WeierstrassCurve K}
+    {η : Gal(AlgebraicClosure K/K) →ₜ* ℤˣ} (h : W.IsQuadraticTwistBy E η) (h2 : (2 : K) ≠ 0)
+    (d' : Kˣ) {a' : AlgebraicClosure K} (ha' : a' ^ 2 = algebraMap K (AlgebraicClosure K) d')
+    (hη' : ∀ g : Gal(AlgebraicClosure K/K), g a' = (η g : ℤ) • a') :
+    ∃ C : VariableChange K, C • W.quadraticTwistOf 0 (-(d' : K)) = E := by
+  obtain ⟨d, a, ha, hη, C, rfl⟩ := h
+  -- `a' / a` is fixed by every automorphism and squares to `d' / d`, so it is some `w ∈ K`
+  obtain ⟨w, hw⟩ := TauCeti.mem_range_algebraMap_of_sq_eq_of_forall_apply_eq (a := a' / a)
+    (c := (d' : K) / d) (by rw [div_pow, ha, ha', map_div₀]) h2 fun g ↦ by
+      rw [map_div₀, hη, hη']
+      rcases Int.units_eq_one_or (η g) with h1 | h1 <;> simp [h1, neg_div_neg_eq]
+  have hd' : (d' : K) = w ^ 2 * d := (algebraMap K (AlgebraicClosure K)).injective (by
+    rw [map_mul, map_pow, hw, div_pow, ha, ha',
+      div_mul_cancel₀ _ ((map_ne_zero _).mpr d.ne_zero)])
+  have hw0 : w ≠ 0 := by
+    rintro rfl
+    exact d'.ne_zero (by simp [hd'])
+  -- rescaling the generator by `w⁻¹` moves the twist by `(0, -w²d)` to the twist by `(0, -d)`
+  obtain ⟨C', hC'⟩ := W.exists_smul_quadraticTwistOf_eq 0 (-(d' : K)) (a := w⁻¹) 0
+    (isUnit_iff_ne_zero.mpr (inv_ne_zero hw0))
+  refine ⟨C * C', ?_⟩
+  rw [mul_smul, hC', hd']
+  congr 2 <;> field_simp <;> ring
+
+/-- With a fixed unit `d` and a square root `a` of `d` on which `η` describes the Galois action,
+`E` is the twist of `W` by `η` exactly when it is isomorphic over `K` to the twist by `(0, -d)`, in
+characteristic other than `2`. -/
+theorem isQuadraticTwistBy_iff_exists_smul_eq {W E : WeierstrassCurve K}
+    {η : Gal(AlgebraicClosure K/K) →ₜ* ℤˣ} (h2 : (2 : K) ≠ 0) (d : Kˣ) {a : AlgebraicClosure K}
+    (ha : a ^ 2 = algebraMap K (AlgebraicClosure K) d)
+    (hη : ∀ g : Gal(AlgebraicClosure K/K), g a = (η g : ℤ) • a) :
+    W.IsQuadraticTwistBy E η ↔ ∃ C : VariableChange K, C • W.quadraticTwistOf 0 (-(d : K)) = E :=
+  ⟨fun h ↦ h.exists_smul_eq h2 d ha hη, fun ⟨C, hC⟩ ↦ .intro d ha hη C hC⟩
+
 /-- **The twist by the trivial character is the trivial twist.** In characteristic other than
 `2`, a Weierstrass curve is the quadratic twist of `W` by the trivial character exactly when it is
 isomorphic to `W` over `K`. -/
@@ -117,18 +158,12 @@ theorem isQuadraticTwistBy_one_iff {W E : WeierstrassCurve K} (h2 : (2 : K) ≠ 
     have hc : c ≠ 0 := by
       rintro rfl
       exact d.ne_zero (by simp [hd])
-    -- the twist by `(0, -c²)` is the twist by the split quadratic `(x + c)(x - c)`
-    obtain ⟨C₁, hC₁⟩ := W.exists_smul_eq_quadraticTwistOf_add_mul (-c) c
-      (isUnit_iff_ne_zero.mpr (by rw [sub_neg_eq_add, ← two_mul]; exact mul_ne_zero h2 hc))
-    refine ⟨C * C₁, ?_⟩
-    rw [mul_smul, hC₁, ← hC, hd, neg_add_cancel, neg_mul, ← sq]
-  · -- the twist by `(0, -1)` is the twist by the split quadratic `(x + 1)(x - 1)`
-    obtain ⟨C₁, hC₁⟩ := W.exists_smul_eq_quadraticTwistOf_add_mul (-1) 1
-      (isUnit_iff_ne_zero.mpr (by rwa [sub_neg_eq_add, one_add_one_eq_two]))
+    obtain ⟨C₁, hC₁⟩ := W.exists_smul_eq_quadraticTwistOf_zero_neg_sq h2 hc
+    exact ⟨C * C₁, by rw [mul_smul, hC₁, ← hC, hd]⟩
+  · obtain ⟨C₁, hC₁⟩ := W.exists_smul_eq_quadraticTwistOf_zero_neg_sq h2 one_ne_zero
+    rw [one_pow] at hC₁
     refine ⟨1, 1, by simp, fun g ↦ by simp, C * C₁⁻¹, ?_⟩
-    rw [mul_smul, Units.val_one,
-      show W.quadraticTwistOf 0 (-1) = W.quadraticTwistOf (-1 + 1) (-1 * 1) by norm_num, ← hC₁,
-      inv_smul_smul, hC]
+    rw [mul_smul, Units.val_one, ← hC₁, inv_smul_smul, hC]
 
 variable (W : WeierstrassCurve K) [W.IsElliptic]
 
@@ -179,7 +214,7 @@ theorem exists_isQuadraticTwistBy_iff_j_eq (h2 : (2 : K) ≠ 0) (hj₀ : W.j ≠
   refine ⟨fun ⟨η, h⟩ ↦ h.j_eq, fun hj ↦ ?_⟩
   obtain ⟨t, n, hD, C, hC⟩ := W.exists_smul_quadraticTwistOf_eq_of_j_eq hj₀ hj₁₇₂₈ E hj
   obtain ⟨C', hC'⟩ := W.exists_smul_quadraticTwistOf_zero_eq t n h2
-  set d : Kˣ := Units.mk0 ((t ^ 2 - 4 * n) / 4) 
+  set d : Kˣ := Units.mk0 ((t ^ 2 - 4 * n) / 4)
     (div_ne_zero hD (TauCeti.four_ne_zero_of_two_ne_zero h2))
   obtain ⟨a, ha⟩ := IsAlgClosed.exists_pow_nat_eq (algebraMap K (AlgebraicClosure K) d) two_pos
   obtain ⟨η, hη⟩ := TauCeti.exists_continuousMonoidHom_apply_eq_zsmul_of_sq_eq ha
