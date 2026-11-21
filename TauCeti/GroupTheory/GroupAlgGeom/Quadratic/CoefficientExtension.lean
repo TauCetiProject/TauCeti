@@ -159,9 +159,9 @@ private theorem exists_injective_nonempty_V (S : Standard G X) :
     ∃ (P : Type u) (_ : Group P) (ι : G →* P), Injective ι ∧ (V ι {S.toWord}).Nonempty := by
   cases S with
   | orientable n hn x y inj =>
-    exact ⟨G, _, .id G, injective_id, 1, by simp [orientableWord_def]⟩
+    exact ⟨G, _, .id G, injective_id, 1, by simp⟩
   | nonorientable n hn x inj =>
-    exact ⟨G, _, .id G, injective_id, 1, by simp [nonorientableWord_def]⟩
+    exact ⟨G, _, .id G, injective_id, 1, by simp⟩
   | orientableCoeff n m hnm x y z inj c hc d hd =>
     rcases n with _ | n
     · exact exists_injective_nonempty_V_orientableCoeff_zero hnm inj hc hd

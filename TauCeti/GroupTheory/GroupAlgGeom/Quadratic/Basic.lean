@@ -954,7 +954,7 @@ theorem isCommutative_comp_iff {K : Type*} [Group K] {ιK : G →* K} (f : GHom 
 
 end Solutions
 
-/-! ### Solutions of the equations without coefficients -/
+/-! ### Solutions of the commutator equations -/
 
 section Commutators
 
@@ -1011,16 +1011,47 @@ theorem not_isGeneralPosition_of_mem_V_genusTwo {ι : G →* H} {v : X → H} {x
 
 end Commutators
 
-/-- The trivial point is a solution of every standard quadratic equation without the constant `d`,
-that is, of `∏ᵢ₌₁ⁿ [xᵢ, yᵢ] = 1` and of `∏ᵢ₌₁ⁿ xᵢ² = 1`: the word of the equation evaluates to `1`
-there. -/
-@[simp]
-theorem eval_one_toWord_of_constant_eq_one (ι : G →* H) {S : Standard G X}
-    (hc : S.constant = 1) : eval ι 1 S.toWord = 1 := by
-  cases S with
-  | orientable _ hn _ _ inj => exact mem_V.1 (one_mem_V_orientable ι hn inj) _ rfl
-  | nonorientable => simp [toWord_def, map_list_prod, List.map_ofFn, Function.comp_def]
-  | _ => simp_all
+/-! ### The value at the trivial point -/
+
+section TrivialPoint
+
+variable (ι : G →* H) {n m : ℕ} {x y : Fin n → X} {z : Fin m → X} {c : Fin m → G} {d : G}
+
+/- The priority `high` makes these formulas fire before the evaluation formulas at a general point,
+`eval_toWord_orientable` and its analogues in `Quadratic.Surface`, which would rewrite the value at
+the trivial point into a surface word. -/
+
+/-- The trivial point is a solution of `∏ᵢ₌₁ⁿ [xᵢ, yᵢ] = 1`: the word evaluates to `1` there. -/
+@[simp high]
+theorem eval_one_toWord_orientable (hn : 0 < n) (inj : (Sum.elim x y).Injective) :
+    eval ι 1 (orientable n hn x y inj).toWord = 1 :=
+  mem_V.1 (one_mem_V_orientable ι hn inj) _ rfl
+
+/-- The value of `∏ᵢ₌₁ⁿ [xᵢ, yᵢ] ∏ⱼ₌₁ᵐ zⱼ⁻¹ cⱼ zⱼ d` at the trivial point is the product
+`∏ⱼ₌₁ᵐ cⱼ d` of its coefficients, mapped to `H`. -/
+@[simp high]
+theorem eval_one_toWord_orientableCoeff (hnm : 0 < n + m)
+    (inj : (Sum.elim (Sum.elim x y) z).Injective) (hc : ∀ j, c j ≠ 1) (hd : d ≠ 1) :
+    eval ι 1 (orientableCoeff n m hnm x y z inj c hc d hd).toWord =
+      (List.ofFn fun j => ι (c j)).prod * ι d := by
+  simp [toWord_def, map_list_prod, List.map_ofFn, Function.comp_def, map_commutatorElement]
+
+/-- The trivial point is a solution of `∏ᵢ₌₁ⁿ xᵢ² = 1`: the word evaluates to `1` there. -/
+@[simp high]
+theorem eval_one_toWord_nonorientable (hn : 0 < n) (inj : x.Injective) :
+    eval ι 1 (nonorientable (G := G) n hn x inj).toWord = 1 := by
+  simp [toWord_def, map_list_prod, List.map_ofFn, Function.comp_def]
+
+/-- The value of `∏ᵢ₌₁ⁿ xᵢ² ∏ⱼ₌₁ᵐ zⱼ⁻¹ cⱼ zⱼ d` at the trivial point is the product `∏ⱼ₌₁ᵐ cⱼ d` of
+its coefficients, mapped to `H`. -/
+@[simp high]
+theorem eval_one_toWord_nonorientableCoeff (hn : 0 < n) (inj : (Sum.elim x z).Injective)
+    (hc : ∀ j, c j ≠ 1) (hd : d ≠ 1) :
+    eval ι 1 (nonorientableCoeff n m hn x z inj c hc d hd).toWord =
+      (List.ofFn fun j => ι (c j)).prod * ι d := by
+  simp [toWord_def, map_list_prod, List.map_ofFn, Function.comp_def]
+
+end TrivialPoint
 
 end Standard
 

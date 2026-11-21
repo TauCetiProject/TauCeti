@@ -158,10 +158,9 @@ theorem exists_ice_embedding_coordGroup_of_not_isOrientable_of_genus_eq_two
     (hc : S.constant = 1) (hg : S.genus = 2) :
     ∃ (E : Type u) (_ : Group E) (j : G →* E) (_ : ICE G E j)
       (f : GHom (CoordGroup.coeff (MonoidHom.id G) {S.toWord}) j), Function.Injective f := by
-  by_cases hna : IsMulCommutative G
-  · exact exists_ice_embedding_coordGroup_of_isMulCommutative hG.isResiduallyFree _
-      ⟨1, by simp [hc]⟩
   obtain ⟨n, hn, x, inj, rfl⟩ := exists_eq_nonorientable_of_not_isOrientable ho hc
+  by_cases hna : IsMulCommutative G
+  · exact exists_ice_embedding_coordGroup_of_isMulCommutative hG.isResiduallyFree _ ⟨1, by simp⟩
   obtain rfl : n = 2 := by simpa using hg
   exact exists_ice_embedding_coordGroup_sq_mul_sq hG hna inj
 
@@ -173,10 +172,9 @@ theorem exists_ice_embedding_coordGroup_of_not_isOrientable_of_genus_eq_three
     (hc : S.constant = 1) (hg : S.genus = 3) :
     ∃ (E : Type u) (_ : Group E) (j : G →* E) (_ : ICE G E j)
       (f : GHom (CoordGroup.coeff (MonoidHom.id G) {S.toWord}) j), Function.Injective f := by
-  by_cases hna : IsMulCommutative G
-  · exact exists_ice_embedding_coordGroup_of_isMulCommutative hG.isResiduallyFree _
-      ⟨1, by simp [hc]⟩
   obtain ⟨n, hn, x, inj, rfl⟩ := exists_eq_nonorientable_of_not_isOrientable ho hc
+  by_cases hna : IsMulCommutative G
+  · exact exists_ice_embedding_coordGroup_of_isMulCommutative hG.isResiduallyFree _ ⟨1, by simp⟩
   obtain rfl : n = 3 := by simpa using hg
   exact exists_ice_embedding_coordGroup_sq_mul_sq_mul_sq hG hna inj
 
