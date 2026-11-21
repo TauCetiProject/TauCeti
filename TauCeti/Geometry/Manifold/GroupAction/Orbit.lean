@@ -52,6 +52,10 @@ a free point of a proper smooth action is a smooth embedding with closed image**
 (`TauCeti.isSmoothEmbedding_smul_const`). This is the first step of the proof of the quotient
 manifold theorem for free proper actions.
 
+At an arbitrary point the orbit map factors through the homogeneous space `G ⧸ G_x`; that map is
+an injective immersion, and for a proper action a smooth embedding with closed image, in
+`TauCeti.Geometry.Manifold.GroupAction.HomogeneousOrbit`.
+
 ## References
 
 * J. M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Springer, 2013, Proposition 21.7 (orbits

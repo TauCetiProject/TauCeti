@@ -27,7 +27,8 @@ An unbounded set stays unbounded after removing a closed ball, since a closed ba
 A bound on the norms of a set with two distinct points is positive, since one of the points is
 nonzero.
 
-A continuous function on `ℝ` with limits at `±∞` is bounded.
+A continuous function on `ℝ` with limits at `±∞` is bounded, and a function continuous on
+`[a, ∞)` with a limit at `+∞` is bounded on `[a, ∞)`.
 
 A map bounded by `M` on a set sends it into the closed ball of radius `2 * M` around any of its
 values there.
@@ -47,6 +48,9 @@ The points at which a map comes within `ε` of a set form the preimage of the un
 A point off a finite set stays farther than `ε` from all of its points for every small enough
 `ε > 0`.
 
+A fixed point `v` of a map `T` with `‖T v‖ ≤ R + γ ‖v‖` and `γ < 1` has norm at most
+`R / (1 - γ)`.
+
 ## Main declarations
 
 * `TauCeti.norm_sub_sq_le_two_mul` -- the squared triangle inequality through an intermediate
@@ -62,6 +66,8 @@ A point off a finite set stays farther than `ε` from all of its points for ever
 * `Set.Nontrivial.pos_of_forall_norm_le` -- a bound on the norms of a nontrivial set is positive.
 * `TauCeti.exists_forall_norm_le_of_tendsto` -- a continuous function `ℝ → F` with limits at `±∞`
   is bounded.
+* `TauCeti.exists_forall_ge_norm_le_of_tendsto` -- a function `ℝ → F` continuous on `[a, ∞)` with
+  a limit at `+∞` is bounded on `[a, ∞)`.
 * `TauCeti.exists_enorm_sub_le_mul_of_reflTransGen` -- constants joined by a chain of related
   indices are uniformly close if constants at related indices are.
 * `TauCeti.mapsTo_closedBall_of_forall_norm_le` -- a map bounded by `M` on `s` sends `s` into the
@@ -75,6 +81,8 @@ A point off a finite set stays farther than `ε` from all of its points for ever
   preimage under `f` of the union of the closed `ε`-balls about the points of `S`.
 * `TauCeti.eventually_not_exists_norm_sub_le` -- a point off a finite set `S` is, for every small
   enough `ε > 0`, farther than `ε` from each point of `S`.
+* `TauCeti.norm_le_div_of_isFixedPt` -- a fixed point `v` of `T` with `‖T v‖ ≤ R + γ ‖v‖` and
+  `γ < 1` satisfies `‖v‖ ≤ R / (1 - γ)`.
 -/
 
 public section
@@ -164,6 +172,18 @@ theorem exists_forall_norm_le_of_tendsto {F : Type*} [SeminormedAddCommGroup F] 
       ⟨htop.isBigO_one ℝ, hbot.isBigO_one ℝ⟩)
   exact ⟨M, fun s ↦ hM _ (Set.mem_range_self s)⟩
 
+/-- A function `ℝ → F` into a seminormed group, continuous on `[a, ∞)` and with a limit at `+∞`,
+is bounded on `[a, ∞)`. -/
+theorem exists_forall_ge_norm_le_of_tendsto {F : Type*} [SeminormedAddCommGroup F] {A : ℝ → F}
+    {a : ℝ} {L : F} (hA : ContinuousOn A (Set.Ici a)) (htop : Tendsto A atTop (𝓝 L)) :
+    ∃ M, ∀ s, a ≤ s → ‖A s‖ ≤ M := by
+  obtain ⟨T, hT⟩ := eventually_atTop.1 (htop.norm.eventually (gt_mem_nhds (lt_add_one ‖L‖)))
+  obtain ⟨C, hC⟩ := isCompact_Icc.exists_bound_of_continuousOn (hA.mono Set.Icc_subset_Ici_self)
+  refine ⟨max C (‖L‖ + 1), fun s hs ↦ ?_⟩
+  rcases le_total s T with hsT | hsT
+  · exact (hC s ⟨hs, hsT⟩).trans (le_max_left _ _)
+  · exact (hT s hsT).le.trans (le_max_right _ _)
+
 /-- Families of vectors joined by a chain of related indices are uniformly close, if the vectors at
 related indices are: if `‖a k j - a k i‖ ≤ D * G k` for related `i j` and all `k`, then the
 same holds, with a constant `D'` independent of `k`, for any `j` reachable from `i₀`. -/
@@ -213,5 +233,14 @@ theorem eventually_not_exists_norm_sub_le {E : Type*} [NormedAddGroup E] {z : E}
       fun h : z = s => hz (h ▸ hs)).filter_mono nhdsWithin_le_nhds
   filter_upwards [hlt] with ε hε ⟨s, hs, hle⟩
   exact (hε s hs).not_ge hle
+
+/-- A fixed point `v` of a map `T` with `‖T v‖ ≤ R + γ ‖v‖` for some `γ < 1` has norm at most
+`R / (1 - γ)`. -/
+theorem norm_le_div_of_isFixedPt {E : Type*} [Norm E] {T : E → E} {v : E} {R γ : ℝ}
+    (hγ : γ < 1) (hT : ‖T v‖ ≤ R + γ * ‖v‖) (hv : Function.IsFixedPt T v) :
+    ‖v‖ ≤ R / (1 - γ) := by
+  rw [hv.eq] at hT
+  rw [le_div_iff₀ (sub_pos.2 hγ)]
+  linarith
 
 end TauCeti

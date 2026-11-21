@@ -6,27 +6,28 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Module
+public import Mathlib.Algebra.Order.Ring.Defs
 
-import Mathlib.Algebra.Order.Ring.Int
+import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
 import TauCeti.Algebra.Order.BigOperators.Sum.ByParts
 
 /-!
 # A strict majorization criterion for staircase sequences
 
-This file identifies an integer sequence from three numerical properties: it is antitone, it is
-majorized by the finite staircase `N - 1, ..., 0`, and it has the same value as that staircase
-under a particular quadratic weighted sum.
+This file identifies a sequence in an ordered commutative ring from three numerical properties: it
+is antitone, it is majorized by the finite staircase `N - 1, ..., 0`, and it has the same value as
+that staircase under a particular quadratic weighted sum.
 
 The criterion is intended for uniqueness arguments in which prefix inequalities alone leave many
 possible sequences, but equality of a strictly convex statistic forces the extremal staircase.
-Its integer-valued statement applies directly to occupation-number tuples after passing between
-finite indices and natural-number ranges.
+Its integer instance applies directly to occupation-number tuples after passing between finite
+indices and natural-number ranges.
 
 ## Main result
 
 * `TauCeti.eq_staircase_of_antitone_of_prefix_sum_le_of_sum_eq_of_casimir_eq`: an antitone
-  integer sequence satisfying the staircase prefix, total, and quadratic-sum conditions agrees
+  sequence satisfying the staircase prefix, total, and quadratic-sum conditions agrees
   with the staircase throughout the prescribed range.
 
 ## References
@@ -44,31 +45,36 @@ open scoped BigOperators
 /-- **A sequence majorized by the finite staircase and having its quadratic sum is that
 staircase.**
 
-Let `a : ℕ → ℤ` be weakly decreasing through the first `N` entries. Suppose every proper
-initial sum of `a` is at most that of `i ↦ N - (i + 1)`, and suppose their total sums agree. If
-they also have the same value under
+Let `a : ℕ → R` be a sequence in an ordered commutative ring, weakly decreasing through the first
+`N` entries. Suppose every proper initial sum of `a` is at most that of `i ↦ N - (i + 1)`, and
+suppose their total sums agree. If they also have the same value under
 
 `a ↦ ∑ i < N, a i * (a i + N - 2i)`,
 
 then their first `N` entries agree. No sign condition on `a` is needed. -/
 theorem eq_staircase_of_antitone_of_prefix_sum_le_of_sum_eq_of_casimir_eq
-    {N : ℕ} (a : ℕ → ℤ) (ha : ∀ i, i + 1 < N → a (i + 1) ≤ a i)
+    {R : Type*} [CommRing R] [PartialOrder R] [IsStrictOrderedRing R]
+    {N : ℕ} (a : ℕ → R) (ha : ∀ i, i + 1 < N → a (i + 1) ≤ a i)
     (hmajor : ∀ (k : ℕ), k < N →
       (∑ i ∈ Finset.range k, a i) ≤
-        ∑ i ∈ Finset.range k, ((N - (i + 1) : ℕ) : ℤ))
+        ∑ i ∈ Finset.range k, ((N - (i + 1) : ℕ) : R))
     (hsum : (∑ i ∈ Finset.range N, a i) =
-      ∑ i ∈ Finset.range N, ((N - (i + 1) : ℕ) : ℤ))
+      ∑ i ∈ Finset.range N, ((N - (i + 1) : ℕ) : R))
     (hcasimir :
-      (∑ i ∈ Finset.range N, a i * (a i + (N : ℤ) - 2 * i)) =
-      ∑ i ∈ Finset.range N, ((N - (i + 1) : ℕ) : ℤ) *
-        (((N - (i + 1) : ℕ) : ℤ) + (N : ℤ) - 2 * i)) :
-    ∀ i, i < N → a i = ((N - (i + 1) : ℕ) : ℤ) := by
+      (∑ i ∈ Finset.range N, a i * (a i + (N : R) - 2 * i)) =
+      ∑ i ∈ Finset.range N, ((N - (i + 1) : ℕ) : R) *
+        (((N - (i + 1) : ℕ) : R) + (N : R) - 2 * i)) :
+    ∀ i, i < N → a i = ((N - (i + 1) : ℕ) : R) := by
   have hpartial := sum_range_eq_zero_of_sum_smul_eq_zero
-    (d := fun i => ((N - (i + 1) : ℕ) : ℤ) - a i)
-    (w := fun i => ((N - (i + 1) : ℕ) : ℤ) + a i + N - 2 * i)
+    (d := fun i => ((N - (i + 1) : ℕ) : R) - a i)
+    (w := fun i => ((N - (i + 1) : ℕ) : R) + a i + N - 2 * i)
     (fun k hk => by rw [Finset.sum_sub_distrib]; exact sub_nonneg.mpr (hmajor k hk))
     (by rw [Finset.sum_sub_distrib, hsum, sub_self])
-    (fun k hk => by have := ha k hk; omega)
+    (fun k hk => by
+      -- the weight drops by `3 + (a k - a (k + 1)) > 0` from `k` to `k + 1`
+      rw [show N - (k + 1) = N - (k + 1 + 1) + 1 by omega]
+      push_cast
+      linear_combination ha k hk)
     (by
       simp only [smul_eq_mul]
       rw [← sub_eq_zero.mpr hcasimir.symm, ← Finset.sum_sub_distrib]

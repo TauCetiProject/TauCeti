@@ -62,7 +62,10 @@ on the completed capped modules. This file proves:
   `-1`, have `ε = -1`.
 * **Change of reference caps.** Moving the reference caps by lifts `g₁, g₂, g₀ ∈ G` multiplies
   the generating series by `q^(g₀ - g₁ - g₂)` and leaves the kernel, hence the product, unchanged
-  (`TauCeti.Floer.kernelOfMatrix_coefficientComparison_vadd`).
+  (`TauCeti.Floer.kernelOfMatrix_coefficientComparison_vadd`), by
+  `TauCeti.NovikovModule.kernelOfMatrix_vadd_single_mul`. Likewise the trilinear map of the
+  associativity homotopy is unchanged when its series are multiplied by `q^(g₀ - g₁ - g₂ - g₃)`
+  (`TauCeti.Floer.novikovTrilinearOfMatrix_coefficientComparison_vadd`).
 * **The Leibniz rule from the count identity.** The rigid Floer cylinders between reference
   capped orbits of each end are counted in the same way, by generating series `Dₗ` whose
   comparisons are the matrices of the differentials on the completed capped modules
@@ -128,6 +131,9 @@ spaces are to supply; no moduli space, orientation or count is constructed here.
 
 ## References
 
+* H. Hofer and D. A. Salamon, *Floer homology and Novikov rings*, in *The Floer memorial
+  volume*, Progr. Math. 133 (1995), 483–524, for the independence from the choice of reference
+  caps.
 * S. Piunikhin, D. Salamon and M. Schwarz, *Symplectic Floer–Donaldson theory and quantum
   cohomology*, in *Contact and symplectic geometry*, Publ. Newton Inst. 8 (1996), 171–200.
 * M. Schwarz, *Cohomology operations from S¹-cobordisms in Floer homology*, PhD thesis,
@@ -1083,11 +1089,13 @@ theorem kernelOfMatrix_coefficientComparison_vadd [Semiring R]
         (fun k => q (g₀ k) +ᵥ r₀ k) (fun i j k => coefficientComparison q hq
           (NovikovSeries.single (g₀ k - g₁ i - g₂ j) 1 * Q i j k)) =
       kernelOfMatrix r₁ r₂ r₀ (fun i j k => coefficientComparison q hq (Q i j k)) := by
-  funext ⟨i, D₁⟩ ⟨j, D₂⟩ ⟨k, D₀⟩
-  rw [kernelOfMatrix_apply, kernelOfMatrix_apply, _root_.map_mul, coefficientComparison_single,
-    coeff_single_mul, one_mul, vsub_vadd_eq_vsub_sub, vsub_vadd_eq_vsub_sub,
-    vsub_vadd_eq_vsub_sub, map_sub, map_sub]
+  refine Eq.trans ?_ (kernelOfMatrix_vadd_single_mul r₁ r₂ r₀
+    (fun i j k => coefficientComparison q hq (Q i j k)) (fun i => q (g₁ i)) (fun j => q (g₂ j))
+    fun k => q (g₀ k))
   congr 1
+  funext i j k
+  simp only [_root_.map_mul, coefficientComparison_single, map_sub]
+  congr 2
   abel
 
 variable [CommSemiring R] [Finite ι₁] [Finite ι₂] [Finite ι₀] {F₁ : (Σ i, P₁ i) → ℝ}
@@ -1112,6 +1120,32 @@ theorem novikovProductOfMatrix_coefficientComparison_vadd
   refine LinearMap.ext fun a => LinearMap.ext fun b => Subtype.ext (funext fun p₀ => ?_)
   rw [novikovProductOfMatrix_apply_val, novikovProductOfMatrix_apply_val,
     kernelOfMatrix_coefficientComparison_vadd]
+
+omit [Finite ι₁] [Finite ι₂] [Finite ι₀] in
+/-- **The associativity homotopy of class-indexed counts does not depend on the reference caps.**
+Moving the reference caps to `q gₗ # rₗ` changes the class of a counted four-punctured sphere
+relative to the reference caps by `g₀ - g₁ - g₂ - g₃`, so the generating series become
+`q^(g₀ - g₁ - g₂ - g₃) K`; the trilinear map on capped generators is unchanged. -/
+theorem novikovTrilinearOfMatrix_coefficientComparison_vadd {ι₃ : Type*} {P₃ : ι₃ → Type*}
+    [∀ k, AddTorsor (PeriodGroup ω c) (P₃ k)] (r₃ : ∀ k, P₃ k) [Fintype ι₁] [Fintype ι₂]
+    [Fintype ι₃] [Fintype ι₀] {F₃ : (Σ k, P₃ k) → ℝ}
+    (hF₃ : ∀ k γ (D : P₃ k), F₃ ⟨k, γ +ᵥ D⟩ = F₃ ⟨k, D⟩ - (-area ω c) γ)
+    (K : ι₁ → ι₂ → ι₃ → ι₀ → NovikovSeries R G ωG) (g₁ : ι₁ → G) (g₂ : ι₂ → G) (g₃ : ι₃ → G)
+    (g₀ : ι₀ → G) :
+    novikovTrilinearOfMatrix hF₁ hF₂ hF₃ hF₀ (fun i => q (g₁ i) +ᵥ r₁ i)
+        (fun j => q (g₂ j) +ᵥ r₂ j) (fun k => q (g₃ k) +ᵥ r₃ k) (fun l => q (g₀ l) +ᵥ r₀ l)
+        (fun i j k l => coefficientComparison q hq
+          (NovikovSeries.single (g₀ l - g₁ i - g₂ j - g₃ k) 1 * K i j k l)) =
+      novikovTrilinearOfMatrix hF₁ hF₂ hF₃ hF₀ r₁ r₂ r₃ r₀
+        (fun i j k l => coefficientComparison q hq (K i j k l)) := by
+  refine Eq.trans ?_ (novikovTrilinearOfMatrix_vadd_single_mul hF₁ hF₂ hF₃ hF₀ r₁ r₂ r₃ r₀
+    (fun i j k l => coefficientComparison q hq (K i j k l)) (fun i => q (g₁ i))
+    (fun j => q (g₂ j)) (fun k => q (g₃ k)) fun l => q (g₀ l))
+  congr 1
+  funext i j k l
+  simp only [_root_.map_mul, coefficientComparison_single, map_sub]
+  congr 2
+  abel
 
 end Reference
 

@@ -7,11 +7,17 @@ module
 
 public import Mathlib.Algebra.Order.AbsoluteValue.Int
 public import Mathlib.Algebra.Order.Ring.IsNonarchimedean
+public import Mathlib.LinearAlgebra.Matrix.Adjugate
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 import Mathlib.Algebra.Order.BigOperators.Ring.Finset
+import Mathlib.Data.Fintype.Order
 
 /-!
-# The `ℓ¹` and ultrametric forms of Hadamard's determinant bound
+# Entrywise absolute-value bounds for matrices
+
+This file bounds the determinant, the entries of a product and the entries of the adjugate of a
+matrix through entrywise bounds, starting with the `ℓ¹` and ultrametric forms of Hadamard's
+determinant bound.
 
 For a square matrix `A` and an absolute value `abv`, the absolute value of the determinant is at
 most the product over the rows of the `ℓ¹` norms of the rows:
@@ -31,6 +37,12 @@ keeps a separate bound for each row, and the `ℓ¹` form is sharper when the ro
 sizes, as for the logarithmic embeddings of a family of units in
 the bound on the regulator.
 
+Over a linearly ordered commutative ring, the same entrywise reasoning bounds `|·|` of the entries
+of a matrix product by the inner dimension times the product of the entrywise bounds, and of the
+entries of an adjugate, which are determinants, through the factorial bound. Every finite matrix
+is bounded entrywise, so multiplying a family of matrices by fixed factors on both sides keeps it
+bounded entrywise.
+
 ## Main results
 
 * `Matrix.abv_det_le_prod_sum_abv`: `abv A.det ≤ ∏ i, ∑ j, abv (A i j)`, the row form.
@@ -47,6 +59,11 @@ the bound on the regulator.
 * `Matrix.abv_det_le_factorial_prod` and `Matrix.abv_det_le_factorial_prod'`: for any absolute
   value, entrywise row bounds `b i` or column bounds `b j` give
   `abv A.det ≤ n! · ∏ i, b i` and `abv A.det ≤ n! · ∏ j, b j`.
+* `Matrix.abs_mul_apply_le` and `Matrix.abs_adjugate_apply_le`: entrywise bounds on `|·|` for a
+  product of two matrices and for the adjugate of a square matrix.
+* `Matrix.exists_abs_apply_le` and `Matrix.exists_abs_mul_mul_apply_le`: a finite matrix is
+  bounded entrywise, and fixed factors on both sides preserve the entrywise boundedness of a
+  family of matrices.
 -/
 
 public section
@@ -175,5 +192,48 @@ theorem abv_det_le_factorial_prod (A : Matrix n n R) (abv : AbsoluteValue R S) {
     abv A.det ≤ (Fintype.card n).factorial * ∏ i, b i := by
   simpa only [det_transpose, transpose_apply] using
     abv_det_le_factorial_prod' Aᵀ abv fun i j ↦ hA j i
+
+/-- Entrywise bounds `|A i k| ≤ C` and `|B k j| ≤ D` bound every entry of `A * B` by `m · C · D`,
+where `m` is the number of columns of `A`. -/
+theorem abs_mul_apply_le {l m o : Type*} [Fintype m] {A : Matrix l m S} {B : Matrix m o S}
+    {C D : S} (hA : ∀ i k, |A i k| ≤ C) (hB : ∀ k j, |B k j| ≤ D) (i : l) (j : o) :
+    |(A * B) i j| ≤ Fintype.card m * (C * D) := by
+  rw [Matrix.mul_apply]
+  calc |∑ k, A i k * B k j| ≤ ∑ k, |A i k * B k j| := abs_sum_le_sum_abs _ _
+    _ ≤ ∑ _k : m, C * D := sum_le_sum fun k _ ↦ by
+        rw [abs_mul]
+        exact mul_le_mul (hA i k) (hB k j) (abs_nonneg _) ((abs_nonneg _).trans (hA i k))
+    _ = Fintype.card m * (C * D) := by simp
+
+/-- A matrix with finitely many rows and columns is bounded entrywise in absolute value. -/
+theorem exists_abs_apply_le {l m : Type*} [Finite l] [Finite m] (A : Matrix l m S) :
+    ∃ C, ∀ i j, |A i j| ≤ C := by
+  obtain ⟨C, hC⟩ := Finite.exists_le fun p : l × m ↦ |A p.1 p.2|
+  exact ⟨C, fun i j ↦ hC (i, j)⟩
+
+/-- Multiplying by fixed matrices on both sides preserves the entrywise boundedness in absolute
+value of a family of matrices. -/
+theorem exists_abs_mul_mul_apply_le {ι l m o p : Type*} [Finite l] [Fintype m] [Fintype o]
+    [Finite p] {F : ι → Matrix m o S} (P : Matrix l m S) (Q : Matrix o p S)
+    (hF : ∃ C, ∀ x i j, |F x i j| ≤ C) : ∃ C, ∀ x i j, |(P * F x * Q) i j| ≤ C := by
+  obtain ⟨C, hC⟩ := hF
+  obtain ⟨c, hc⟩ := exists_abs_apply_le P
+  obtain ⟨d, hd⟩ := exists_abs_apply_le Q
+  exact ⟨_, fun x ↦ abs_mul_apply_le (abs_mul_apply_le hc (hC x)) hd⟩
+
+/-- An entrywise bound `|A i j| ≤ C` bounds every entry of the adjugate of `A` by
+`n! · (max C 1) ^ n`, where `n` is the size of the matrix: each entry of the adjugate is the
+determinant of `A` with one row replaced by a standard basis vector. -/
+theorem abs_adjugate_apply_le {A : Matrix n n S} {C : S} (hA : ∀ i j, |A i j| ≤ C) (i j : n) :
+    |adjugate A i j| ≤ (Fintype.card n).factorial * max C 1 ^ Fintype.card n := by
+  rw [adjugate_apply]
+  calc _ ≤ (Fintype.card n).factorial * ∏ _k : n, max C 1 :=
+        abv_det_le_factorial_prod _ AbsoluteValue.abs fun k l ↦ ?_
+    _ = _ := by rw [prod_const, card_univ]
+  rw [AbsoluteValue.abs_apply, updateRow_apply]
+  split_ifs
+  · rw [Pi.single_apply]
+    split_ifs <;> simp
+  · exact (hA k l).trans (le_max_left _ _)
 
 end Matrix

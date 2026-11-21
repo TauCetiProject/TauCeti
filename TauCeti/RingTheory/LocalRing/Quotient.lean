@@ -18,9 +18,10 @@ an element of `Q` maps into `𝔪_A²` exactly when it lies in `ker π + 𝔪_Q�
 lifts to `Q` of a basis of the cotangent space `𝔪_A / 𝔪_A²` span `𝔪_Q` modulo `ker π + 𝔪_Q²`,
 and they are linearly independent modulo it.
 
-For a local homomorphism `R → S` with `S` local and an ideal `J` of `R`, the induced map
-`R ⧸ J → S ⧸ J S` is again local. Dividing both sides of a local homomorphism by an ideal of the
-base, as in inductions on the dimension of the base, therefore stays among local homomorphisms.
+The quotient of a local ring by a proper ideal is again local. For a local homomorphism `R → S`
+with `S` local and an ideal `J` of `R`, the induced map `R ⧸ J → S ⧸ J S` is again local.
+Dividing both sides of a local homomorphism by an ideal of the base, as in inductions on the
+dimension of the base, therefore stays among local homomorphisms.
 When `J` is the maximal ideal of `R` and generates the maximal ideal of `S`, this map is the
 residue field extension, whose degree is then the rank of a finite free `S`.
 
@@ -34,6 +35,7 @@ residue field extension, whose degree is then the rank of a finite free `S`.
   of the `yⱼ` generate the maximal ideal of `Q ⧸ J`.
 * `TauCeti.IsLocalRing.exists_lift_finBasis_cotangentSpace`: lifts to `Q` of a basis of the
   cotangent space of `A`.
+* `TauCeti.isLocalRing_quotient`: the quotient of a local ring by a proper ideal is local.
 * `Ideal.Quotient.isLocalHom_algebraMap_quotient_map_quotient`: `R ⧸ J → S ⧸ J S` is a local
   homomorphism when `R → S` is one and `S` is local.
 * `TauCeti.IsLocalRing.finrank_residueField_eq_finrank`: if `S` is finite free over `R` and
@@ -150,6 +152,16 @@ theorem exists_lift_finBasis_cotangentSpace (hfg : (maximalIdeal Q).FG) {π : Q 
   exact ⟨y, hy𝔪, fun a ha ↦ hcov a ha, hind⟩
 
 end TauCeti.IsLocalRing
+
+namespace TauCeti
+
+/-- The quotient of a commutative local ring by a proper ideal is a local ring. -/
+theorem isLocalRing_quotient {A : Type*} [CommRing A] [IsLocalRing A] {I : Ideal A} (hI : I ≠ ⊤) :
+    IsLocalRing (A ⧸ I) :=
+  have : Nontrivial (A ⧸ I) := Ideal.Quotient.nontrivial_iff.mpr hI
+  .of_surjective' _ Ideal.Quotient.mk_surjective
+
+end TauCeti
 
 namespace Ideal.Quotient
 
