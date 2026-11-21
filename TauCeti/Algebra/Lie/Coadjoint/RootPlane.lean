@@ -37,9 +37,11 @@ These are formulas for `B(q_p A, q_X C)`. They read as the Hessian of the height
 along the orbit at `p` when `B` is invariant and `⁅X, p⁆ = 0` (for instance when `t` is abelian):
 then `p` is a critical point of `f_X` on its orbit, and `-B(q_p A, q_X A)` is the second derivative
 of `t ↦ B(Ad_(exp tA) p, X)` at `t = 0`, computed in
-`TauCeti.Geometry.Lie.Adjoint.Exponential.Height`. If `B` is moreover symmetric, polarization gives
-the Hessian bilinear form `Hess_p f_X(q_p A, q_p C) = -α(X) α(p) B(A, C)`, that is
-`Hess_p f_X(x, y) = -α(X) B(x, y) / α(p)` in tangent vectors.
+`TauCeti.Geometry.Lie.Adjoint.Exponential.Height`. Polarization gives the Hessian bilinear form
+`Hess_p f_X(q_p A, q_p C) = -α(X) α(p) B(A, C)`, that is `Hess_p f_X(x, y) = -α(X) B(x, y) / α(p)`
+in tangent vectors. This needs no symmetry of `B`: for an invariant `B` with `⁅X, p⁆ = 0` the form
+`(A, C) ↦ B(q_p A, q_X C)` is already symmetric
+(`LinearMap.BilinForm.lieInvariant.apply_lie_lie_comm`).
 
 For an invariant form, root planes whose roots satisfy `α(H)² ≠ α'(H)²` for some `H ∈ t` are
 orthogonal (`TauCeti.IsRootPlane.le_orthogonal`), and two root planes that are orthogonal for `B`
@@ -51,8 +53,8 @@ with `α(p) ≠ 0` injects into the algebraic tangent model `L ⧸ L_ν`, while 
 lies in the stabilizer (`TauCeti.IsRootPlane.le_lieAnnihilator`, which needs only invariance).
 
 The formulas themselves are linear algebra over a commutative ring and need neither symmetry nor
-positivity of `B`; symmetry enters only their reading as a Hessian bilinear form, and the absence
-of zero divisors and nondegeneracy only the orthogonality and stabilizer statements.
+positivity of `B`, and their reading as a Hessian bilinear form needs only invariance; the absence
+of zero divisors and nondegeneracy enter only the orthogonality and stabilizer statements.
 
 The root plane of `so(3)` and its height Hessian are worked out in
 `TauCeti.Algebra.Lie.Orthogonal.CrossProduct.RootPlane`.
@@ -160,7 +162,7 @@ theorem mul_kksForm_mk (h : IsRootPlane B t α E J) (hB : B.lieInvariant L) (p :
   ring
 
 /-- **The form behind the height Hessian on a root plane.** For `p, X ∈ t` and `A, C` in a root
-plane, `B(q_p A, q_X C) = α(p) α(X) B(A, C)`. When `B` is invariant and symmetric and
+plane, `B(q_p A, q_X C) = α(p) α(X) B(A, C)`. When `B` is invariant and
 `⁅X, p⁆ = 0` (for instance when `t` is abelian), its negative `-B(⁅A, p⁆, ⁅C, X⁆)` is the Hessian
 at the critical point `p` of the height `f_X = B(·, X)` along the orbit through `p`, so
 `Hess_p f_X(q_p A, q_p C) = -α(X) α(p) B(A, C)`. -/
@@ -179,7 +181,7 @@ theorem apply_lie_lie_self (h : IsRootPlane B t α E J) (p : t) (v w : E) :
 
 /-- **The height Hessian in tangent vectors.** For `p, X ∈ t` and the tangent vectors
 `x = q_p A`, `y = q_p C` of the orbit at `p`, `α(p) (-B(⁅A, p⁆, ⁅C, X⁆)) = -α(X) B(x, y)`. When
-`B` is invariant and symmetric and `⁅X, p⁆ = 0`, the factor `-B(⁅A, p⁆, ⁅C, X⁆)` is
+`B` is invariant and `⁅X, p⁆ = 0`, the factor `-B(⁅A, p⁆, ⁅C, X⁆)` is
 `Hess_p f_X(x, y)` (`TauCeti.IsRootPlane.apply_lie_lie`), so when `α(p)` is also invertible,
 `Hess_p f_X(x, y) = -α(X) B(x, y) / α(p)`. -/
 theorem mul_apply_lie_lie (h : IsRootPlane B t α E J) (p X : t) (v w : E) :
@@ -239,8 +241,8 @@ end Orthogonal
 /-- A root plane with `α(p) = 0` lies in the stabilizer of `B p`. -/
 theorem le_lieAnnihilator (h : IsRootPlane B t α E J) (hB : B.lieInvariant L) {p : t}
     (hp : α p = 0) : E ≤ (lieAnnihilator R L (B p)).toSubmodule := fun v hv ↦ by
-  rw [LieSubalgebra.mem_toSubmodule, mem_lieAnnihilator, hB.lie_apply_eq,
-    h.lie_left ⟨v, hv⟩ p, hp, zero_smul, neg_zero, map_zero]
+  rw [LieSubalgebra.mem_toSubmodule, hB.mem_lieAnnihilator_iff, h.lie_left ⟨v, hv⟩ p, hp,
+    zero_smul, neg_zero, map_zero]
 
 section Stabilizer
 
@@ -262,7 +264,7 @@ theorem mem_lieAnnihilator_iff (h : IsRootPlane B t α E J) (hB : B.lieInvariant
     (v : L) ∈ lieAnnihilator R L (B p) ↔ α p = 0 ∨ v = 0 := by
   have hinj : Function.Injective B :=
     LinearMap.ker_eq_bot.mp ((LinearMap.separatingLeft_iff_ker_eq_bot).mp hsep)
-  rw [mem_lieAnnihilator, hB.lie_apply_eq, h.lie_left]
+  rw [hB.mem_lieAnnihilator_iff, h.lie_left]
   simp [map_eq_zero_iff B hinj, map_eq_zero_iff J h.injective]
 
 /-- A root plane with `α(p) ≠ 0` meets the stabilizer of `B p` only in `0`, so it injects into

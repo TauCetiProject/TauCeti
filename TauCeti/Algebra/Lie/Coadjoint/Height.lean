@@ -26,14 +26,17 @@ bilinear form
 
 `h_(p,X)(A, C) = -B(⁅A, p⁆, ⁅C, X⁆)`
 
-on `L` (`LinearMap.BilinForm.heightHessian`). For a symmetric invariant form and `⁅X, p⁆ = 0` it is
+on `L` (`LinearMap.BilinForm.heightHessian`). For an invariant form and `⁅X, p⁆ = 0` it is
 symmetric (`LinearMap.BilinForm.isSymm_heightHessian`), and it is the Hessian of `f_X` at `p`
 pulled back to `L` along the orbit derivative `A ↦ ⁅A, p⁆`, whose kernel, the centralizer of `p`,
 lies in the kernel of `h_(p,X)` (`LinearMap.BilinForm.ker_ad_le_ker_heightHessian`). Since the
 orbit derivative is onto the tangent space, the indices of inertia of `h_(p,X)` are those of the
 Hessian on the orbit (`QuadraticForm.sigNeg_comp_of_surjective`): its negative index is the Morse
 index of `f_X` at `p`. The critical point is nondegenerate exactly when the kernel of `h_(p,X)` is
-the centralizer of `p`.
+the centralizer of `p`. The stabilizer `L_ν` of `ν = B p` also lies in the radical of the Hessian
+quadratic form (`LinearMap.BilinForm.lieAnnihilator_le_radical_heightHessian`), so the Hessian
+descends to the algebraic tangent model `L ⧸ L_ν` of the coadjoint orbit through `ν`
+(`LinearMap.BilinForm.liftHeightHessian`) with the same indices of inertia.
 
 These invariants are computed from a **root-plane decomposition**
 (`TauCeti.IsRootPlaneDecomposition B t α E J`): an abelian subspace `t` and pairwise orthogonal
@@ -56,10 +59,20 @@ inertia,
   (`TauCeti.IsRootPlaneDecomposition.ker_heightHessian_eq_ker_ad_iff`). This holds at every
   `p ∈ t` when `X` is regular, `α_i(X) ≠ 0` for all `i`.
 
+For a separating invariant form the stabilizer of `ν = B p` is `t` together with the planes with
+`α_i(p) = 0` (`TauCeti.IsRootPlaneDecomposition.lieAnnihilator_eq`), so the orbit has dimension
+`dim (L ⧸ L_ν) = Σ {dim E_i | α_i(p) ≠ 0}`
+(`TauCeti.IsRootPlaneDecomposition.finrank_quotient_lieAnnihilator`), and the Hessian descended to
+`L ⧸ L_ν` has nullity `Σ {dim E_i | α_i(p) ≠ 0, α_i(X) = 0}`
+(`TauCeti.IsRootPlaneDecomposition.finrank_radical_liftHeightHessian`); for nonzero planes it is
+nondegenerate exactly when `α_i(X) ≠ 0` whenever `α_i(p) ≠ 0`
+(`TauCeti.IsRootPlaneDecomposition.nondegenerate_liftHeightHessian_iff`).
+
 The index formula `index_p(f_X) = 2 #{α ∈ Φ⁺ | α(p) ≠ 0, α(X) α(p) > 0}` is the one behind Bott's
 computation of the homology of flag manifolds. The decomposition, its positivity and the dimension
-of the planes are hypotheses here; the formulas themselves are linear algebra over an ordered
-field and use neither the invariance nor the symmetry of `B`.
+of the planes are hypotheses here; the index and kernel formulas are linear algebra over an ordered
+field and use neither the invariance nor the symmetry of `B`, while the stabilizer and the tangent
+model need a separating invariant form.
 
 The decomposition of `so(3)` into a line and its orthogonal plane is worked out in
 `TauCeti.Algebra.Lie.Orthogonal.CrossProduct.RootPlane`.
@@ -67,6 +80,8 @@ The decomposition of `so(3)` into a line and its orthogonal plane is worked out 
 ## Main definitions
 
 * `LinearMap.BilinForm.heightHessian B p X`: the form `(A, C) ↦ -B(⁅A, p⁆, ⁅C, X⁆)`.
+* `LinearMap.BilinForm.liftHeightHessian`: the Hessian quadratic form on the tangent model
+  `L ⧸ L_ν`.
 * `TauCeti.IsRootPlaneDecomposition B t α E J`: `L` is spanned by the abelian subspace `t` and the
   pairwise orthogonal, positive root planes `E_i` with roots `α_i` and rotations `J_i`.
 
@@ -74,12 +89,21 @@ The decomposition of `so(3)` into a line and its orthogonal plane is worked out 
 
 * `LinearMap.BilinForm.forall_apply_lie_eq_zero_iff`: the critical points of a height.
 * `LinearMap.BilinForm.isSymm_heightHessian`: the Hessian is symmetric at a critical point.
+* `LinearMap.BilinForm.lieAnnihilator_le_radical_heightHessian`,
+  `LinearMap.BilinForm.sigPos_liftHeightHessian`, `LinearMap.BilinForm.sigNeg_liftHeightHessian`:
+  the Hessian descends to the tangent model `L ⧸ L_ν`, keeping both indices of inertia.
 * `TauCeti.IsRootPlaneDecomposition.heightHessian_add_sum_add_sum`: the Hessian is diagonal in a
   root-plane decomposition.
 * `TauCeti.IsRootPlaneDecomposition.sigNeg_toQuadraticMap_heightHessian`,
   `TauCeti.IsRootPlaneDecomposition.sigPos_toQuadraticMap_heightHessian`: the Morse index and the
   positive index.
 * `TauCeti.IsRootPlaneDecomposition.ker_heightHessian_eq_ker_ad_iff`: nondegeneracy.
+* `TauCeti.IsRootPlaneDecomposition.lieAnnihilator_eq`,
+  `TauCeti.IsRootPlaneDecomposition.finrank_quotient_lieAnnihilator`: the stabilizer and the
+  dimension of the orbit.
+* `TauCeti.IsRootPlaneDecomposition.finrank_radical_liftHeightHessian`,
+  `TauCeti.IsRootPlaneDecomposition.nondegenerate_liftHeightHessian_iff`: nullity and
+  nondegeneracy of the Hessian on the tangent model.
 
 ## References
 
@@ -140,21 +164,85 @@ theorem ker_ad_le_ker_heightHessian :
   ext C
   simp [hA]
 
-/-- **The Hessian of a height is symmetric at a critical point.** For a symmetric invariant form
-`B` and `⁅X, p⁆ = 0`, the form `(A, C) ↦ -B(⁅A, p⁆, ⁅C, X⁆)` is symmetric. -/
-theorem isSymm_heightHessian (hB : B.lieInvariant L) (hBs : B.IsSymm) (hXp : ⁅X, p⁆ = 0) :
-    (B.heightHessian p X).IsSymm := by
-  refine ⟨fun A C ↦ ?_⟩
-  -- `B(p, ⁅Y, X⁆) = -B(⁅X, Y⁆, p) = B(Y, ⁅X, p⁆)` vanishes for every `Y`.
-  have hp (Y : L) : B p ⁅Y, X⁆ = 0 := by
-    simp [hBs.eq p, ← lie_skew Y X, -lie_skew, hB X Y p, hXp]
-  -- The Jacobi identity turns `B(p, ⁅⁅A, C⁆, X⁆) = 0` into the symmetry.
-  have hJ := hp ⁅A, C⁆
-  rw [lie_lie, map_sub, sub_eq_zero] at hJ
-  simp only [heightHessian_apply, neg_inj]
-  rw [hB A p, hB C p, hJ]
+/-- **The Hessian of a height is symmetric at a critical point.** For an invariant form `B` and
+`⁅X, p⁆ = 0`, the form `(A, C) ↦ -B(⁅A, p⁆, ⁅C, X⁆)` is symmetric. No symmetry of `B` is
+needed (`LinearMap.BilinForm.lieInvariant.apply_lie_lie_comm`). -/
+theorem isSymm_heightHessian (hB : B.lieInvariant L) (hXp : ⁅X, p⁆ = 0) :
+    (B.heightHessian p X).IsSymm :=
+  ⟨fun A C ↦ by simp [hB.apply_lie_lie_comm hXp A C]⟩
+
+/-- **The polar form of the Hessian of a height.** For an invariant form and `⁅X, p⁆ = 0`, the
+polar form of the Hessian quadratic form is `(A, C) ↦ -2 B(⁅A, p⁆, ⁅C, X⁆)`. -/
+theorem polar_toQuadraticMap_heightHessian (hB : B.lieInvariant L) (hXp : ⁅X, p⁆ = 0) (A C : L) :
+    polar (B.heightHessian p X).toQuadraticMap A C = -(2 * B ⁅A, p⁆ ⁅C, X⁆) := by
+  rw [LinearMap.BilinMap.polar_toQuadraticMap, heightHessian_apply, heightHessian_apply,
+    hB.apply_lie_lie_comm hXp C A]
+  ring
+
+/-- **The Hessian of a height descends to the tangent model.** For an invariant form and
+`⁅X, p⁆ = 0`, the stabilizer `L_ν` of `ν = B p` lies in the radical of the Hessian quadratic form,
+which is therefore induced by a quadratic form on the algebraic tangent model `L ⧸ L_ν` of the
+coadjoint orbit through `ν` (`LinearMap.BilinForm.liftHeightHessian`). -/
+theorem lieAnnihilator_le_radical_heightHessian (hB : B.lieInvariant L) (hXp : ⁅X, p⁆ = 0) :
+    (TauCeti.lieAnnihilator R L (B p)).toSubmodule ≤
+      (B.heightHessian p X).toQuadraticMap.radical := by
+  intro A hA
+  rw [LieSubalgebra.mem_toSubmodule, hB.mem_lieAnnihilator_iff] at hA
+  have hAC (C : L) : B ⁅C, p⁆ ⁅A, X⁆ = 0 := by
+    rw [← hB.apply_lie_lie_comm hXp, hA, LinearMap.zero_apply]
+  refine mem_radical_iff'.mpr ⟨by simp [hA], fun C ↦ ?_⟩
+  simp [add_lie, hA, hAC]
+
+/-- **The Hessian of a height on the tangent model.** For an invariant form and `⁅X, p⁆ = 0`, the
+quadratic form on the algebraic tangent model `L ⧸ L_ν` of the coadjoint orbit through `ν = B p`
+induced by the Hessian of the height `f_X` at `p`
+(`LinearMap.BilinForm.lieAnnihilator_le_radical_heightHessian`). -/
+def liftHeightHessian (hB : B.lieInvariant L) (hXp : ⁅X, p⁆ = 0) :
+    QuadraticForm R (L ⧸ (TauCeti.lieAnnihilator R L (B p)).toSubmodule) :=
+  (B.heightHessian p X).toQuadraticMap.lift _ (lieAnnihilator_le_radical_heightHessian hB hXp)
+
+@[simp]
+theorem liftHeightHessian_mk (hB : B.lieInvariant L) (hXp : ⁅X, p⁆ = 0) (A : L) :
+    liftHeightHessian hB hXp (Submodule.Quotient.mk A) = (B.heightHessian p X).toQuadraticMap A :=
+  lift_mk _ A
+
+section LinearOrderedField
+
+variable {K L : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K] [LieRing L]
+  [LieAlgebra K L] [FiniteDimensional K L] {B : LinearMap.BilinForm K L} {p X : L}
+
+/-- Descending the Hessian of a height to the tangent model `L ⧸ L_ν` preserves its positive
+index of inertia. -/
+@[simp]
+theorem sigPos_liftHeightHessian (hB : B.lieInvariant L) (hXp : ⁅X, p⁆ = 0) :
+    sigPos (liftHeightHessian hB hXp) = sigPos (B.heightHessian p X).toQuadraticMap :=
+  QuadraticForm.sigPos_lift _ _ _
+
+/-- Descending the Hessian of a height to the tangent model `L ⧸ L_ν` preserves its negative
+index of inertia, the Morse index. -/
+@[simp]
+theorem sigNeg_liftHeightHessian (hB : B.lieInvariant L) (hXp : ⁅X, p⁆ = 0) :
+    sigNeg (liftHeightHessian hB hXp) = sigNeg (B.heightHessian p X).toQuadraticMap :=
+  QuadraticForm.sigNeg_lift _ _ _
+
+end LinearOrderedField
 
 end LinearMap.BilinForm
+
+/-! ### The Hessian of a height on a root plane -/
+
+namespace TauCeti.IsRootPlane
+
+variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] {B : LinearMap.BilinForm R L}
+  {t : Submodule R L} {α : Dual R t} {E : Submodule R L} {J : Module.End R E}
+
+/-- **The Hessian of a height on a root plane.** For `p, X ∈ t` and `A, C` in a root plane with
+root `α`, `h_(p,X)(A, C) = -α(p) α(X) B(A, C)`. -/
+theorem heightHessian_apply (h : IsRootPlane B t α E J) (p X : t) (v w : E) :
+    B.heightHessian p X v w = -(α p * α X * B v w) := by
+  rw [LinearMap.BilinForm.heightHessian_apply, h.apply_lie_lie]
+
+end TauCeti.IsRootPlane
 
 /-! ### Root-plane decompositions -/
 
@@ -283,10 +371,8 @@ variable {K L : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K] [LieRin
 omit [IsStrictOrderedRing K] [Fintype ι] in
 /-- The dimension of the sum of the planes indexed by `s` is the sum of their dimensions. -/
 theorem finrank_biSup [FiniteDimensional K L] (hD : IsRootPlaneDecomposition B t α E J)
-    (s : Finset ι) : finrank K ↥(⨆ i ∈ s, E i) = ∑ i ∈ s, finrank K (E i) := by
-  rw [iSup_subtype', finrank_iSup_eq_sum_finrank_of_iSupIndep (V := fun i : s ↦ E i)
-      (hD.iSupIndep.comp Subtype.val_injective),
-    Finset.sum_coe_sort s fun i ↦ finrank K (E i)]
+    (s : Finset ι) : finrank K ↥(⨆ i ∈ s, E i) = ∑ i ∈ s, finrank K (E i) :=
+  finrank_biSup_eq_sum_finrank_of_iSupIndep hD.iSupIndep s
 
 omit [Fintype ι] in
 /-- The Hessian `h_(p,X)` is negative definite on the planes `E_i` with `α_i(p) α_i(X) > 0`. -/
@@ -433,6 +519,155 @@ theorem ker_heightHessian_eq_ker_ad_iff [Finite ι] (hD : IsRootPlaneDecompositi
   rw [h, LinearMap.mem_ker, LieAlgebra.ad_apply,
     (hD.isRootPlane i).lie_eq_zero_iff p ⟨v, hv⟩] at hker
   exact hker.elim hp fun h0 ↦ hv0 (congrArg Subtype.val h0)
+
+end IsRootPlaneDecomposition
+
+/-! ### The stabilizer and the tangent model of the orbit -/
+
+namespace IsRootPlaneDecomposition
+
+section Domain
+
+variable {R L ι : Type*} [CommRing R] [IsDomain R] [PartialOrder R] [DecidableEq R] [LieRing L]
+  [LieAlgebra R L] [Fintype ι] {B : LinearMap.BilinForm R L} {t : Submodule R L}
+  {α : ι → Dual R t} {E : ι → Submodule R L} {J : ∀ i, Module.End R (E i)}
+
+omit [IsDomain R] in
+/-- The subspace `t` and the planes span `L`, split by whether their roots vanish at `p`. -/
+private theorem sup_biSup_eq_top (hD : IsRootPlaneDecomposition B t α E J) (p : t) :
+    (t ⊔ ⨆ i ∈ ({i | α i p = 0} : Finset ι), E i) ⊔ ⨆ i ∈ ({i | α i p ≠ 0} : Finset ι), E i =
+      ⊤ := by
+  refine eq_top_iff.mpr (hD.sup_eq_top.symm.le.trans (sup_le ?_ (iSup_le fun i ↦ ?_)))
+  · exact le_sup_of_le_left le_sup_left
+  · by_cases hi : α i p = 0
+    · exact le_sup_of_le_left
+        (le_sup_of_le_right (le_biSup E (Finset.mem_filter.mpr ⟨mem_univ i, hi⟩)))
+    · exact le_sup_of_le_right (le_biSup E (Finset.mem_filter.mpr ⟨mem_univ i, hi⟩))
+
+omit [IsDomain R] in
+/-- For an invariant form, `t` and the planes whose roots vanish at `p ∈ t` stabilize `B p`. -/
+private theorem sup_biSup_le_lieAnnihilator (hD : IsRootPlaneDecomposition B t α E J)
+    (hB : B.lieInvariant L) (p : t) :
+    t ⊔ ⨆ i ∈ ({i | α i p = 0} : Finset ι), E i ≤ (lieAnnihilator R L (B p)).toSubmodule := by
+  refine sup_le (fun H hH ↦ ?_) (iSup₂_le fun i hi ↦ ?_)
+  · rw [LieSubalgebra.mem_toSubmodule, hB.mem_lieAnnihilator_iff, hD.lie_eq_zero hH p.property,
+      map_zero]
+  · exact (hD.isRootPlane i).le_lieAnnihilator hB (Finset.mem_filter.mp hi).2
+
+/-- For a separating invariant form, the planes whose roots do not vanish at `p ∈ t` meet the
+stabilizer of `B p` only in `0`. -/
+private theorem disjoint_biSup_lieAnnihilator (hD : IsRootPlaneDecomposition B t α E J)
+    (hB : B.lieInvariant L) (hsep : B.SeparatingLeft) (p : t) :
+    Disjoint (⨆ i ∈ ({i | α i p ≠ 0} : Finset ι), E i) (lieAnnihilator R L (B p)).toSubmodule := by
+  refine Submodule.disjoint_def.mpr fun x hxA hxN ↦ ?_
+  obtain ⟨μ, rfl⟩ := (Submodule.mem_iSup_finset_iff_exists_sum E x).mp hxA
+  rw [LieSubalgebra.mem_toSubmodule, hB.mem_lieAnnihilator_iff] at hxN
+  have hlie : ∑ i ∈ ({i | α i p ≠ 0} : Finset ι), ⁅(μ i : L), (p : L)⁆ = 0 := by
+    rw [← sum_lie]
+    exact hsep _ fun y ↦ by rw [hxN, LinearMap.zero_apply]
+  -- Each bracket `⁅μ i, p⁆ = -α_i(p) J μ i` lies in `E i`, so independence kills each of them.
+  have hzero := (iSupIndep_iff_finsetSum_eq_zero_imp_eq_zero E).mp hD.iSupIndep _
+    (fun i ↦ ⁅(μ i : L), (p : L)⁆) (fun i _ ↦ by
+      rw [(hD.isRootPlane i).lie_left]
+      exact neg_mem (Submodule.smul_mem _ _ (J i (μ i)).property)) hlie
+  refine Finset.sum_eq_zero fun i hi ↦ ?_
+  have hmem : (μ i : L) ∈ lieAnnihilator R L (B p) := by
+    rw [hB.mem_lieAnnihilator_iff, hzero i hi, map_zero]
+  rcases ((hD.isRootPlane i).mem_lieAnnihilator_iff hB hsep p (μ i)).mp hmem with h | h
+  · exact absurd h (Finset.mem_filter.mp hi).2
+  · simp [h]
+
+/-- **The stabilizer in a root-plane decomposition.** For a separating invariant form and
+`p ∈ t`, the stabilizer of `ν = B p` is `t` together with the planes whose roots vanish at `p`. -/
+theorem lieAnnihilator_eq (hD : IsRootPlaneDecomposition B t α E J) (hB : B.lieInvariant L)
+    (hsep : B.SeparatingLeft) (p : t) :
+    (lieAnnihilator R L (B p)).toSubmodule = t ⊔ ⨆ i ∈ ({i | α i p = 0} : Finset ι), E i := by
+  have hle := hD.sup_biSup_le_lieAnnihilator hB p
+  calc (lieAnnihilator R L (B p)).toSubmodule
+      = ((t ⊔ ⨆ i ∈ ({i | α i p = 0} : Finset ι), E i) ⊔
+          ⨆ i ∈ ({i | α i p ≠ 0} : Finset ι), E i) ⊓ (lieAnnihilator R L (B p)).toSubmodule := by
+        rw [hD.sup_biSup_eq_top p, top_inf_eq]
+    _ = t ⊔ ⨆ i ∈ ({i | α i p = 0} : Finset ι), E i := by
+        rw [sup_inf_assoc_of_le _ hle, (hD.disjoint_biSup_lieAnnihilator hB hsep p).eq_bot,
+          sup_bot_eq]
+
+/-- For a separating invariant form and `p ∈ t`, the planes whose roots do not vanish at `p` span
+a complement of the stabilizer `L_ν` of `ν = B p`, a model of the tangent space `L ⧸ L_ν` of the
+orbit through `ν`. -/
+theorem isCompl_biSup_lieAnnihilator (hD : IsRootPlaneDecomposition B t α E J)
+    (hB : B.lieInvariant L) (hsep : B.SeparatingLeft) (p : t) :
+    IsCompl (⨆ i ∈ ({i | α i p ≠ 0} : Finset ι), E i) (lieAnnihilator R L (B p)).toSubmodule :=
+  ⟨hD.disjoint_biSup_lieAnnihilator hB hsep p, codisjoint_iff.mpr (eq_top_iff.mpr
+    ((hD.sup_biSup_eq_top p).symm.le.trans
+      (sup_le (le_sup_of_le_right (hD.sup_biSup_le_lieAnnihilator hB p)) le_sup_left)))⟩
+
+end Domain
+
+/-- **The dimension of the coadjoint orbit through a torus element.** For a separating invariant
+form and `p ∈ t`, the algebraic tangent model `L ⧸ L_ν` of the orbit through `ν = B p` has
+dimension `Σ {dim E_i | α_i(p) ≠ 0}`. -/
+theorem finrank_quotient_lieAnnihilator {K L ι : Type*} [Field K] [PartialOrder K] [DecidableEq K]
+    [LieRing L] [LieAlgebra K L] [FiniteDimensional K L] [Fintype ι] {B : LinearMap.BilinForm K L}
+    {t : Submodule K L} {α : ι → Dual K t} {E : ι → Submodule K L} {J : ∀ i, Module.End K (E i)}
+    (hD : IsRootPlaneDecomposition B t α E J) (hB : B.lieInvariant L) (hsep : B.SeparatingLeft)
+    (p : t) :
+    finrank K (L ⧸ (lieAnnihilator K L (B p)).toSubmodule) =
+      ∑ i with α i p ≠ 0, finrank K (E i) := by
+  rw [(Submodule.quotientEquivOfIsCompl _ _
+      (hD.isCompl_biSup_lieAnnihilator hB hsep p).symm).finrank_eq,
+    finrank_biSup_eq_sum_finrank_of_iSupIndep hD.iSupIndep]
+
+section LinearOrderedField
+
+variable {K L ι : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K] [LieRing L]
+  [LieAlgebra K L] [FiniteDimensional K L] [Fintype ι] {B : LinearMap.BilinForm K L}
+  {t : Submodule K L} {α : ι → Dual K t} {E : ι → Submodule K L} {J : ∀ i, Module.End K (E i)}
+
+/-- **The nullity of a height on the tangent model.** For a separating invariant form and
+`p, X ∈ t`, the radical of the Hessian induced on the tangent model `L ⧸ L_ν` of the orbit through
+`ν = B p` has dimension `Σ {dim E_i | α_i(p) ≠ 0, α_i(X) = 0}`. -/
+theorem finrank_radical_liftHeightHessian (hD : IsRootPlaneDecomposition B t α E J)
+    (hB : B.lieInvariant L) (hsep : B.SeparatingLeft) (p X : t) :
+    finrank K (LinearMap.BilinForm.liftHeightHessian hB
+        (hD.lie_eq_zero X.property p.property)).radical =
+      ∑ i with α i p ≠ 0 ∧ α i X = 0, finrank K (E i) := by
+  have hrad := QuadraticForm.sigPos_add_sigNeg_add_radical
+    (Q := LinearMap.BilinForm.liftHeightHessian hB (hD.lie_eq_zero X.property p.property))
+  rw [LinearMap.BilinForm.sigPos_liftHeightHessian, LinearMap.BilinForm.sigNeg_liftHeightHessian,
+    hD.sigPos_toQuadraticMap_heightHessian, hD.sigNeg_toQuadraticMap_heightHessian,
+    hD.finrank_quotient_lieAnnihilator hB hsep] at hrad
+  -- Each plane with `α_i(p) ≠ 0` is counted by exactly one of the three sums.
+  have hsum : (∑ i with α i p * α i X < 0, finrank K (E i)) +
+      (∑ i with 0 < α i p * α i X, finrank K (E i)) +
+      ∑ i with α i p ≠ 0 ∧ α i X = 0, finrank K (E i) =
+        ∑ i with α i p ≠ 0, finrank K (E i) := by
+    simp only [Finset.sum_filter, ← Finset.sum_add_distrib]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    rcases eq_or_ne (α i p) 0 with hp | hp
+    · simp [hp]
+    rcases eq_or_ne (α i X) 0 with hX | hX
+    · simp [hp, hX]
+    rcases (mul_ne_zero hp hX).lt_or_gt with h | h
+    · simp [hp, hX, h, h.not_gt]
+    · simp [hp, hX, h, h.not_gt]
+  omega
+
+omit [Fintype ι] in
+/-- **Nondegeneracy of a height on the tangent model.** For a separating invariant form, nonzero
+planes and `p, X ∈ t`, the Hessian induced on the tangent model `L ⧸ L_ν` of the orbit through
+`ν = B p` is nondegenerate exactly when `α_i(X) ≠ 0` for every plane with `α_i(p) ≠ 0`. -/
+theorem nondegenerate_liftHeightHessian_iff [Finite ι] (hD : IsRootPlaneDecomposition B t α E J)
+    (hB : B.lieInvariant L) (hsep : B.SeparatingLeft) (hE : ∀ i, E i ≠ ⊥) (p X : t) :
+    (LinearMap.BilinForm.liftHeightHessian hB
+        (hD.lie_eq_zero X.property p.property)).Nondegenerate ↔
+      ∀ i, α i p ≠ 0 → α i X ≠ 0 := by
+  have := Fintype.ofFinite ι
+  have : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
+  rw [nondegenerate_iff_radical_eq_bot, ← Submodule.finrank_eq_zero,
+    hD.finrank_radical_liftHeightHessian hB hsep, Finset.sum_eq_zero_iff]
+  simp [Submodule.finrank_eq_zero, hE]
+
+end LinearOrderedField
 
 end IsRootPlaneDecomposition
 
