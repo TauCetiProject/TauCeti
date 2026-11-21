@@ -56,7 +56,7 @@ lemma firstHalf_comp_pathEquiv_symm_trans_hom (γ : _root_.Path x₀ x₁) (δ :
   ext t
   rw [ConcreteCategory.comp_apply, pathEquiv_symm_hom_apply, pathEquiv_symm_hom_apply,
     ← Path.extend_extends', ← Path.extend_extends', I.coe_homeomorph_firstHalf_apply,
-    Path.extend_trans_of_le_half _ _ (by linarith [(I.homeomorph t).2.2]),
+    Path.extend_trans_of_le_half _ _ (by linarith [(I.homeomorph t).property.2]),
     mul_div_cancel₀ _ two_ne_zero]
 
 /-- On the second half of the interval, the concatenation of two paths is the second path. -/
@@ -65,7 +65,7 @@ lemma secondHalf_comp_pathEquiv_symm_trans_hom (γ : _root_.Path x₀ x₁) (δ 
   ext t
   rw [ConcreteCategory.comp_apply, pathEquiv_symm_hom_apply, pathEquiv_symm_hom_apply,
     ← Path.extend_extends', ← Path.extend_extends', I.coe_homeomorph_secondHalf_apply,
-    Path.extend_trans_of_half_le _ _ (by linarith [(I.homeomorph t).2.1]),
+    Path.extend_trans_of_half_le _ _ (by linarith [(I.homeomorph t).property.1]),
     mul_div_cancel₀ _ two_ne_zero, add_sub_cancel_right]
 
 end TopCat

@@ -134,7 +134,7 @@ theorem cupCochain_cochainsMap (m n : ℕ) (a : (TopRep.homogeneousCochains X).X
   apply Subtype.ext
   rw [ContinuousCohomology.coe_cochainsMap_f_apply, coe_cupCochain, coe_cupCochain,
     ContinuousCohomology.coe_cochainsMap_f_apply, ContinuousCohomology.coe_cochainsMap_f_apply]
-  exact P.resolutionCupPairing_resolutionMap P' φ fX fY fZ hpair m n a.1 b.1
+  exact P.resolutionCupPairing_resolutionMap P' φ fX fY fZ hpair m n a.val b.val
 
 /-- **The cup product of cocycles is natural in compatible pairs.** -/
 theorem cupCocycles_cocyclesMap (m n : ℕ) (a : cocycles X m) (b : cocycles Y n) :

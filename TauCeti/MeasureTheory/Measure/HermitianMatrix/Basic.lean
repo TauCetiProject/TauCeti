@@ -85,7 +85,7 @@ theorem norm_sq_eq_re_trace_sq {p : ℕ}
 /-- Reading off an entry of a Hermitian matrix is continuous. -/
 theorem continuous_coe_apply_complex {p : ℕ} (i j : Fin p) :
     Continuous fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℂ) ↦
-      (A : Matrix (Fin p) (Fin p) ℂ) i j := continuous_subtype_val.matrix_elem i j
+      (A : Matrix (Fin p) (Fin p) ℂ) i j := continuous_subtypeVal.matrix_elem i j
 
 /-- Reading off an entry of a Hermitian matrix is measurable. -/
 @[fun_prop] theorem measurable_coe_apply_complex {p : ℕ} (i j : Fin p) :

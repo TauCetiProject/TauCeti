@@ -37,8 +37,12 @@ and, since the rows of an invertible matrix are unimodular, it gives every such 
 * `Module.Basis.isUnimodular`: every vector of a basis is unimodular.
 * `MonoidAlgebra.isUnimodular_single`: the basis vectors `single i 1` of a monoid algebra are
   unimodular.
-* `Matrix.isUnimodular_apply_of_isUnit_det`: every row of a square matrix of unit determinant is
-  unimodular.
+* `Matrix.isUnimodular_apply_of_isUnit_det` and `Matrix.GeneralLinearGroup.isUnimodular_apply`:
+  every row of an invertible square matrix is unimodular, and
+  `Matrix.GeneralLinearGroup.isUnimodular_vecMul_iff`: right-multiplying by an invertible matrix
+  preserves unimodularity.
+* `TauCeti.Module.isUnimodular_pi_iff`: a finitely indexed coordinate vector `v : ι → R` over a
+  semiring is unimodular if and only if `∑ i, v i * b i = 1` for some `b`.
 * `TauCeti.Module.isUnimodular_iff_exists_isUnit`: over a directly finite local semiring, a vector
   with finitely many coordinates is unimodular if and only if one of its coordinates is a unit.
 * `TauCeti.forall_mul_eq_mul_iff_exists_units`: two coordinate families generating the unit ideal
@@ -126,7 +130,53 @@ theorem Matrix.isUnimodular_apply_of_isUnit_det {R m : Type*} [CommRing R] [Fint
   have hone : (σ * σ⁻¹) l l = 1 := by rw [Matrix.mul_nonsing_inv _ hσ, Matrix.one_apply_eq]
   simpa [Matrix.mul_apply, Matrix.vecMul, dotProduct] using hone
 
+section Matrix
+
+open scoped Matrix
+
+/-- Right-multiplying a row vector by an invertible matrix over a semiring preserves
+unimodularity. -/
+@[simp]
+theorem Matrix.GeneralLinearGroup.isUnimodular_vecMul_iff {R m : Type*} [Semiring R] [Fintype m]
+    [DecidableEq m] (g : Matrix.GeneralLinearGroup m R) {v : m → R} :
+    Module.IsUnimodular R (v ᵥ* (g : Matrix m m R)) ↔ Module.IsUnimodular R v := by
+  let e : (m → R) ≃ₗ[R] (m → R) :=
+    LinearEquiv.ofLinearMap (Matrix.vecMulLinear (g : Matrix m m R))
+      (Matrix.vecMulLinear (↑g⁻¹ : Matrix m m R))
+      (LinearMap.ext fun x ↦ by simp [Matrix.vecMul_vecMul])
+      (LinearMap.ext fun x ↦ by simp [Matrix.vecMul_vecMul])
+  exact e.isUnimodular_apply_iff
+
+/-- Every row of an invertible matrix over a semiring is unimodular. -/
+theorem Matrix.GeneralLinearGroup.isUnimodular_apply {R m : Type*} [Semiring R] [Fintype m]
+    [DecidableEq m] (g : Matrix.GeneralLinearGroup m R) (i : m) :
+    Module.IsUnimodular R (g i) := by
+  have h : Module.IsUnimodular R (Pi.single i (1 : R)) :=
+    IsUnit.isUnimodular_pi (i := i) (by simp)
+  simpa [Matrix.single_vecMul, Matrix.row_def] using
+    (g.isUnimodular_vecMul_iff (v := Pi.single i 1)).mpr h
+
+end Matrix
+
 namespace TauCeti.Module
+
+/-- Over any semiring, a finitely indexed coordinate vector `v : ι → R` is unimodular if and only
+if its coordinates generate `R` as a right ideal, that is `∑ i, v i * b i = 1` for some `b`. -/
+theorem isUnimodular_pi_iff {R ι : Type*} [Semiring R] [Fintype ι] {v : ι → R} :
+    Module.IsUnimodular R v ↔ ∃ b : ι → R, ∑ i, v i * b i = 1 := by
+  classical
+  constructor
+  · intro h
+    obtain ⟨f, hf⟩ := Module.isUnimodular_iff.mp h
+    rw [LinearMap.pi_apply_eq_sum_univ] at hf
+    refine ⟨fun i ↦ f (Pi.single i 1), Eq.trans (Finset.sum_congr rfl fun i _ ↦ ?_) hf⟩
+    rw [smul_eq_mul]
+    congr 1
+    exact congrArg f (funext fun j ↦ by simp [Pi.single_apply, eq_comm])
+  · rintro ⟨b, hb⟩
+    refine Module.isUnimodular_of_apply_eq_one
+      (f := ∑ i : ι, (LinearMap.mulRight R (b i)).comp (LinearMap.proj i)) ?_
+    simpa [LinearMap.sum_apply, LinearMap.mulRight_apply] using hb
 
 /-- Over a directly finite local semiring, a vector with finitely many coordinates is unimodular
 if and only if one of its coordinates is a unit. -/

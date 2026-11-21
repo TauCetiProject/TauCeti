@@ -207,9 +207,9 @@ private lemma exists_compactSupportCohomologyExtend_eq_neg_of_add_eq_zero (hUV :
     C'.isCompact.binary_compact_cover U.isOpen V.isOpen
       (by rw [← Opens.coe_sup, hUV, Opens.coe_top]; exact Set.subset_univ _)
   obtain ⟨K₂, hK₂⟩ := exists_compacts_map_inclusion'_eq (K := KX ⊔ ⟨K₁, hK₁⟩)
-    (Set.union_subset (by rintro _ ⟨x, -, rfl⟩; exact x.2) hK₁U)
+    (Set.union_subset (by rintro _ ⟨x, -, rfl⟩; exact x.property) hK₁U)
   obtain ⟨L₂, hL₂⟩ := exists_compacts_map_inclusion'_eq (K := LX ⊔ ⟨L₁, hL₁⟩)
-    (Set.union_subset (by rintro _ ⟨x, -, rfl⟩; exact x.2) hL₁V)
+    (Set.union_subset (by rintro _ ⟨x, -, rfl⟩; exact x.property) hL₁V)
   let S := (K₂.map _ (Opens.inclusion' U).hom.continuous : Set X)
   let T := (L₂.map _ (Opens.inclusion' V).hom.continuous : Set X)
   have hSeq : S = (KX : Set X) ∪ K₁ := hK₂
@@ -240,8 +240,8 @@ private lemma exists_compactSupportCohomologyExtend_eq_neg_of_add_eq_zero (hUV :
   obtain ⟨M', hM'⟩ := exists_compacts_map_inclusion'_eq (U := U ⊓ V)
     (K := ⟨S ∩ T, (K₂.map _ (map_continuous _)).isCompact.inter_right
       (L₂.map _ (map_continuous _)).isCompact.isClosed⟩)
-    (Set.inter_subset_inter (by rintro _ ⟨x, -, rfl⟩; exact x.2)
-      (by rintro _ ⟨x, -, rfl⟩; exact x.2))
+    (Set.inter_subset_inter (by rintro _ ⟨x, -, rfl⟩; exact x.property)
+      (by rintro _ ⟨x, -, rfl⟩; exact x.property))
   refine ⟨compactSupportCohomologyι n M' (singularCohomologyComplCompactsMap hiW.injective M'
     n (singularCohomologyComplRestrict R k M hM'.ge n z)), ?_, ?_⟩
   · rw [compactSupportCohomologyExtend_compactSupportCohomologyι_singularCohomologyComplCompactsMap
