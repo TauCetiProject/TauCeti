@@ -22,15 +22,20 @@ Schauder basis.
 Over real or complex scalars, a uniform bound on the projections of a basis onto all finite sets
 controls all bounded coordinate multipliers. If every such projection has norm at most `C`, the
 multiplier `x ↦ ∑ i ∈ A, a i • b.coord i x • b i` has norm at most `2 * t * C` for real
-coefficients and `4 * t * C` for scalar coefficients of norm at most `t`. In particular a uniform
-bound on finite coordinate projections is equivalent to one on signed coordinate multipliers
+coefficients and `4 * t * C` for scalar coefficients of norm at most `t`. Conversely, a bound `K`
+on signed coordinate multipliers over a finite set `B` bounds every sub-projection `A ⊆ B` by
+`(1 + K) / 2` times the projection onto `B`
+(`GeneralSchauderBasis.norm_proj_apply_le_of_sign_bound`). In particular a uniform bound on finite
+coordinate projections is equivalent to one on signed coordinate multipliers
 (`GeneralSchauderBasis.exists_forall_norm_proj_le_iff`), and in a Banach space either bound
 characterizes when a generalized Schauder basis with nontrivial summation filter has
 unconditionally convergent expansions. For an `ℕ`-indexed generalized Schauder basis, a bound `C` on
 signed coordinate multipliers over initial segments `Finset.range N` extends with the same
-constant `C` to all finite index sets and all finite coordinate projections. These finite
-estimates hold for any summation filter; for an unconditional basis of a Banach space the bound
-`C` is supplied by `UnconditionalSchauderBasis.nnNormProjBound`.
+constant `C` to all finite index sets and all finite coordinate projections, while a bound `K`
+relative to `‖b.proj N x‖` together with `‖b.proj N‖ ≤ M` gives
+`‖GeneralSchauderBasis.proj b A‖ ≤ (1 + K) / 2 * M` (`SchauderBasis.norm_proj_le_of_sign_bound`).
+These finite estimates hold for any summation filter; for an unconditional basis of a Banach space
+the bound `C` is supplied by `UnconditionalSchauderBasis.nnNormProjBound`.
 
 In a Banach space every bounded scalar family `a ∈ ℓ^∞(β, 𝕜)` then defines the multiplier
 `x ↦ ∑' i, a i • b.coord i x • b i`, whose series converges unconditionally
@@ -121,6 +126,33 @@ theorem norm_sum_smul_coord_smul_le {C : ℝ} (hC : ∀ A : Finset β, ‖b.proj
   rw [mul_assoc _ C]
   refine TauCeti.norm_sum_smul_le_four_mul (fun u _ ↦ ?_) ht ha
   simpa using (b.proj u).le_of_opNorm_le (hC u) x
+
+/-- If signed coordinate multipliers of a generalized Schauder basis over a finite set `B` satisfy
+`‖∑ i ∈ B, (ε i : 𝕜) • b.coord i x • b i‖ ≤ K * ‖b.proj B x‖` for all `ε : β → ℝ` with
+`ε i = ±1`, then every sub-projection `A ⊆ B` satisfies
+`‖b.proj A x‖ ≤ (1 + K) / 2 * ‖b.proj B x‖`. -/
+theorem norm_proj_apply_le_of_sign_bound {A B : Finset β} (hAB : A ⊆ B) {K : ℝ} {x : X}
+    (hK : ∀ ε : β → ℝ, (∀ i, ε i = 1 ∨ ε i = -1) →
+      ‖∑ i ∈ B, (ε i : 𝕜) • b.coord i x • b i‖ ≤ K * ‖b.proj B x‖) :
+    ‖b.proj A x‖ ≤ (1 + K) / 2 * ‖b.proj B x‖ := by
+  classical
+  let ε : β → ℝ := fun i ↦ if i ∈ A then 1 else -1
+  have hε : ∀ i, ε i = 1 ∨ ε i = -1 := fun i ↦ by dsimp [ε]; split_ifs <;> simp
+  -- Averaging the identity and the sign multiplier `ε` on `B` isolates the projection onto `A`.
+  have h2 : b.proj B x + ∑ i ∈ B, (ε i : 𝕜) • b.coord i x • b i = (2 : 𝕜) • b.proj A x := by
+    rw [proj_apply, proj_apply, Finset.smul_sum, ← Finset.sum_add_distrib,
+      ← Finset.sum_subset hAB fun i _ hi ↦ by simp [ε, hi]]
+    refine Finset.sum_congr rfl fun i hi ↦ ?_
+    simp [ε, hi, ← one_add_one_eq_two, add_smul]
+  have hnorm2 : ‖(2 : 𝕜) • b.proj A x‖ = 2 * ‖b.proj A x‖ := by
+    rw [norm_smul, ← RCLike.ofReal_ofNat, RCLike.norm_ofReal, abs_of_nonneg two_pos.le]
+  have hle : 2 * ‖b.proj A x‖ ≤ (1 + K) * ‖b.proj B x‖ := by
+    calc 2 * ‖b.proj A x‖ = ‖b.proj B x + ∑ i ∈ B, (ε i : 𝕜) • b.coord i x • b i‖ := by
+          rw [h2, hnorm2]
+      _ ≤ ‖b.proj B x‖ + ‖∑ i ∈ B, (ε i : 𝕜) • b.coord i x • b i‖ := norm_add_le _ _
+      _ ≤ ‖b.proj B x‖ + K * ‖b.proj B x‖ := by gcongr; exact hK ε hε
+      _ = (1 + K) * ‖b.proj B x‖ := by ring
+  linarith
 
 /-- The finite coordinate projections of a generalized Schauder basis are uniformly bounded if
 and only if its signed coordinate multipliers `x ↦ ∑ i ∈ A, ε i • b.coord i x • b i`, with
@@ -216,6 +248,41 @@ theorem norm_proj_finset_le_of_range_signed {C : ℝ}
 end
 
 end GeneralSchauderBasis
+
+namespace SchauderBasis
+
+/-- If signed coordinate multipliers on initial segments satisfy a uniform bound
+`‖∑ i ∈ range N, (ε i : 𝕜) • b.coord i x • b i‖ ≤ K * ‖b.proj N x‖` and the initial projections
+have norm at most `M`, then every finite coordinate projection has norm at most
+`(1 + K) / 2 * M`. -/
+theorem norm_proj_le_of_sign_bound {𝕜 X : Type*} [RCLike 𝕜] [NormedAddCommGroup X]
+    [NormedSpace 𝕜 X] (b : SchauderBasis 𝕜 X) {K M : ℝ}
+    (hK : ∀ (N : ℕ) (ε : ℕ → ℝ), (∀ i, ε i = 1 ∨ ε i = -1) → ∀ x,
+      ‖∑ i ∈ Finset.range N, (ε i : 𝕜) • b.coord i x • b i‖ ≤ K * ‖b.proj N x‖)
+    (hM : ∀ N, ‖b.proj N‖ ≤ M) (A : Finset ℕ) :
+    ‖GeneralSchauderBasis.proj b A‖ ≤ (1 + K) / 2 * M := by
+  have hb0 : 0 < ‖b 0‖ := norm_pos_iff.2 fun h0 ↦ by
+    have h := b.ortho 0 0
+    simp [h0] at h
+  have hK1 : 1 ≤ K := by
+    have h1 := hK 1 (fun _ ↦ 1) (fun _ ↦ Or.inl rfl) (b 0)
+    simp only [Finset.range_one, Finset.sum_singleton, RCLike.ofReal_one, one_smul,
+      b.ortho, Pi.single_eq_same, SchauderBasis.proj_apply] at h1
+    nlinarith
+  have hM0 : 0 ≤ M := (norm_nonneg (b.proj 0)).trans (hM 0)
+  let N := A.sup id + 1
+  have hAN : A ⊆ Finset.range N := fun i hi ↦
+    Finset.mem_range.2 (Nat.lt_succ_of_le (Finset.le_sup (f := id) hi))
+  refine (GeneralSchauderBasis.proj b A).opNorm_le_bound (by positivity) fun x ↦ ?_
+  calc ‖GeneralSchauderBasis.proj b A x‖
+      ≤ (1 + K) / 2 * ‖b.proj N x‖ :=
+        GeneralSchauderBasis.norm_proj_apply_le_of_sign_bound b hAN (fun ε hε ↦ hK N ε hε x)
+    _ ≤ (1 + K) / 2 * (M * ‖x‖) := by
+        gcongr
+        exact (b.proj N).le_of_opNorm_le (hM N) x
+    _ = (1 + K) / 2 * M * ‖x‖ := (mul_assoc _ _ _).symm
+
+end SchauderBasis
 
 namespace UnconditionalSchauderBasis
 

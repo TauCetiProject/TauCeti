@@ -8,6 +8,9 @@ module
 public import Mathlib.Analysis.Normed.Module.Bases
 public import TauCeti.MeasureTheory.Constructions.UnitInterval.Dyadic
 public import TauCeti.MeasureTheory.Function.ConditionalExpectation
+import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
+import TauCeti.Analysis.Normed.Module.Bases.Basic
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # The Haar basis of `Lᵖ([0, 1])`
@@ -29,6 +32,10 @@ identity by the martingale convergence theorem. The basis is assembled from them
 `SchauderBasis.RankOneDecomposition`: `dyadicProj 𝕜 p N` has rank `N`, and `hₙ` spans the range of
 `dyadicProj 𝕜 p (n + 1) - dyadicProj 𝕜 p n`.
 
+The Haar functions are pairwise orthogonal in `L²(I)` with `∫ hₙ ^ 2 = 2 ^ (-⌊log₂ n⌋)` for every
+`n` (including `n = 0`), so the `n`-th coordinate functional of `haarBasis 𝕜 p hp` is
+`f ↦ 2 ^ ⌊log₂ n⌋ * ∫ hₙ * f`.
+
 ## Main definitions
 
 * `TauCeti.unitInterval.haarFun n`: the `n`-th Haar function.
@@ -39,7 +46,9 @@ identity by the martingale convergence theorem. The basis is assembled from them
 
 * `TauCeti.unitInterval.haarFun_eq_of_mem_dyadicCell`: for `k < N`, `hₖ` is constant on the dyadic
   cell numbered `N`.
-* `TauCeti.unitInterval.integral_haarFun_mul_of_ne`: distinct Haar functions are orthogonal on `I`.
+* `TauCeti.unitInterval.integral_haarFun_sq` and
+  `TauCeti.unitInterval.integral_haarFun_mul_of_ne`: `L²` norms and orthogonality of Haar
+  functions on `I`.
 * `TauCeti.unitInterval.condExp_haarFun`: `hₙ` has conditional expectation zero given
   `dyadicFiltration n`, for `0 < n`.
 * `TauCeti.unitInterval.dyadicProj_eq_sum`: the projections average over the dyadic atoms.
@@ -48,6 +57,8 @@ identity by the martingale convergence theorem. The basis is assembled from them
 * `TauCeti.unitInterval.finrank_range_dyadicProj`: `dyadicProj 𝕜 p N` has rank `N`.
 * `TauCeti.unitInterval.haarBasis_proj`: the initial projections of the Haar basis are the dyadic
   averaging projections.
+* `TauCeti.unitInterval.haarBasis_coord`: the coordinate functionals of the Haar basis are given by
+  integration against the scaled Haar functions.
 
 ## References
 
@@ -158,6 +169,18 @@ theorem memLp_ofReal_haarFun (𝕜 : Type*) [RCLike 𝕜] (p : ℝ≥0∞) (n : 
     (RCLike.continuous_ofReal.measurable.comp (measurable_haarFun n)).aestronglyMeasurable
     1 (ae_of_all _ fun x => by simpa using norm_haarFun_le n x)
 
+/-- For `0 < n`, the square of the Haar function `hₙ` is the indicator of `dyadicCell n`. -/
+theorem haarFun_sq_eq_indicator {n : ℕ} (hn : 0 < n) :
+    (fun x => haarFun n x ^ 2) = (dyadicCell n).indicator 1 := by
+  funext x
+  by_cases hx : x ∈ dyadicCell n
+  · rw [Set.indicator_of_mem hx, Pi.one_apply]
+    rw [dyadicCell_eq_union hn] at hx
+    rcases hx with h0 | h1
+    · rw [haarFun_eq_one hn h0, one_pow]
+    · rw [haarFun_eq_neg_one hn h1]; norm_num
+  · rw [Set.indicator_of_notMem hx, haarFun_eq_zero hn hx, zero_pow two_ne_zero]
+
 /-- For `0 < n`, the Haar function `hₙ` has integral zero. -/
 theorem integral_haarFun {n : ℕ} (hn : 0 < n) : ∫ x, haarFun n x = 0 := by
   have hint (m : ℕ) : Integrable ((dyadicCell m).indicator (1 : I → ℝ)) :=
@@ -166,6 +189,14 @@ theorem integral_haarFun {n : ℕ} (hn : 0 < n) : ∫ x, haarFun n x = 0 := by
   have h1 := volume_dyadicCell_two_mul_add hn one_lt_two
   simp [haarFun_of_ne_zero hn.ne', integral_sub (hint _) (hint _),
     integral_indicator_one (measurableSet_dyadicCell _), measureReal_def, h0, h1]
+
+/-- The squared `L²` norm of every Haar function `hₙ` is `2 ^ (-⌊log₂ n⌋)` (including `n = 0`). -/
+theorem integral_haarFun_sq (n : ℕ) :
+    ∫ x, haarFun n x ^ 2 = ((2 ^ Nat.log 2 n : ℕ) : ℝ)⁻¹ := by
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · simp
+  · rw [haarFun_sq_eq_indicator hn, integral_indicator_one (measurableSet_dyadicCell n),
+      measureReal_def, volume_dyadicCell hn, ENNReal.toReal_inv, ENNReal.toReal_natCast]
 
 /-- Distinct Haar functions are orthogonal on the unit interval. -/
 theorem integral_haarFun_mul_of_ne {m n : ℕ} (hmn : m ≠ n) :
@@ -449,5 +480,54 @@ theorem coeFn_haarBasis (hp : p ≠ ∞) (n : ℕ) :
 @[simp]
 theorem haarBasis_proj (hp : p ≠ ∞) : (haarBasis 𝕜 p hp).proj = dyadicProj 𝕜 p :=
   SchauderBasis.RankOneDecomposition.basis_proj _
+
+/-- The `n`-th coordinate functional of the Haar basis is `2 ^ ⌊log₂ n⌋` times integration against
+the `n`-th Haar function. -/
+theorem haarBasis_coord (hp : p ≠ ∞) (n : ℕ) (f : Lp 𝕜 p (volume : Measure I)) :
+    (haarBasis 𝕜 p hp).coord n f =
+      ((2 ^ Nat.log 2 n : ℕ) : 𝕜) * ∫ x, (haarFun n x : 𝕜) * f x := by
+  have hnorm (g : Lp 𝕜 p (volume : Measure I)) (x : I) :
+      ‖(haarFun n x : 𝕜) * g x‖ ≤ 1 * ‖g x‖ := by
+    rw [norm_mul, RCLike.norm_ofReal, one_mul]
+    exact mul_le_of_le_one_left (norm_nonneg _)
+      (by simpa [Real.norm_eq_abs] using norm_haarFun_le n x)
+  have hint (g : Lp 𝕜 p (volume : Measure I)) : Integrable fun x => (haarFun n x : 𝕜) * g x :=
+    ((Lp.memLp g).integrable Fact.out).norm.mono'
+      ((memLp_ofReal_haarFun 𝕜 1 n).aestronglyMeasurable.mul (Lp.aestronglyMeasurable g))
+      (ae_of_all _ fun x => by simpa using hnorm g x)
+  let Λ : StrongDual 𝕜 (Lp 𝕜 p (volume : Measure I)) :=
+    LinearMap.mkContinuous
+      { toFun g := ((2 ^ Nat.log 2 n : ℕ) : 𝕜) * ∫ x, (haarFun n x : 𝕜) * g x
+        map_add' g₁ g₂ := by
+          rw [← mul_add, ← integral_add (hint g₁) (hint g₂)]
+          exact congrArg _ <| integral_congr_ae <| (Lp.coeFn_add g₁ g₂).mono fun x hx => by
+            dsimp only; rw [hx, Pi.add_apply, mul_add]
+        map_smul' c g := by
+          simp only [RingHom.id_apply, smul_eq_mul]
+          rw [mul_left_comm c, ← integral_const_mul c]
+          exact congrArg _ <| integral_congr_ae <| (Lp.coeFn_smul c g).mono fun x hx => by
+            dsimp only; rw [hx, Pi.smul_apply, smul_eq_mul, mul_left_comm] }
+      ((2 ^ Nat.log 2 n : ℕ) : ℝ) fun g => by
+        simp only [LinearMap.coe_mk, AddHom.coe_mk, norm_mul, RCLike.norm_natCast]
+        gcongr
+        simpa [measure_univ] using Lp.norm_integral_le_of_ae_norm_le_mul g (ae_of_all _ (hnorm g))
+  have hΛ : (haarBasis 𝕜 p hp).coord n = Λ := by
+    refine ContinuousLinearMap.ext_on (haarBasis 𝕜 p hp).dense_span ?_
+    rintro _ ⟨m, rfl⟩
+    rw [(haarBasis 𝕜 p hp).ortho n m]
+    dsimp [Λ]
+    have hcongr : ∫ x, (haarFun n x : 𝕜) * haarBasis 𝕜 p hp m x =
+        ((∫ x, haarFun n x * haarFun m x : ℝ) : 𝕜) := by
+      rw [← integral_ofReal]
+      exact integral_congr_ae <| (coeFn_haarBasis (𝕜 := 𝕜) hp m).mono fun x hx => by
+        dsimp only; rw [hx, RCLike.ofReal_mul]
+    rw [hcongr]
+    by_cases hnm : n = m
+    · subst hnm
+      simp only [Pi.single_eq_same, ← sq, integral_haarFun_sq, RCLike.ofReal_inv,
+        RCLike.ofReal_natCast]
+      exact (mul_inv_cancel₀ (Nat.cast_ne_zero.2 (Nat.two_pow_pos _).ne')).symm
+    · simp [hnm, integral_haarFun_mul_of_ne hnm]
+  exact congrArg (fun φ => φ f) hΛ
 
 end TauCeti.unitInterval
