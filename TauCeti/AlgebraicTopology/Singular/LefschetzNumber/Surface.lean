@@ -41,7 +41,9 @@ formula
 For the monodromy `φ` of a surface mapping torus, the coefficients of `det (1 - t P) / (1 - t)²`
 for symplectic `P` are computed in `TauCeti.LinearAlgebra.Matrix.Charpoly.Symplectic`. When every
 iterate of `φ` has only nondegenerate fixed points, the Lefschetz fixed point theorem, which is not
-proved here, identifies `ζ_φ` with the dynamical zeta function of `φ`.
+proved here, identifies `ζ_φ` with the dynamical zeta function that counts the periodic points of
+`φ` weighted by their fixed-point indices `±1`, rather than the unweighted Artin–Mazur zeta
+function.
 
 ## Main results
 
