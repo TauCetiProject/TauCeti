@@ -97,9 +97,8 @@ theorem integralTopForm_mpullback_prod [CompactSpace C] (o : Manifold.Orientatio
         integralTopForm o (SmoothForm.mpullback (Prod.snd ∘ u) (contMDiff_snd.comp hu) τ).val := by
   rw [SmoothTwoForm.prod_def, map_add, SmoothForm.mpullback_mpullback,
     SmoothForm.mpullback_mpullback, SmoothForm.add_toRoughForm]
-  exact integralTopForm_add o ((SmoothForm.isSmoothForm _).of_le (by simp))
-    ((SmoothForm.isSmoothForm _).of_le (by simp)) (isClosed_tsupport _).isCompact
-    (isClosed_tsupport _).isCompact
+  exact integralTopForm_add_of_compactSpace o ((SmoothForm.isSmoothForm _).of_le (by simp))
+    ((SmoothForm.isSmoothForm _).of_le (by simp))
 
 end Prod
 
