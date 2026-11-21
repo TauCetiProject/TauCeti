@@ -57,17 +57,15 @@ instance instIsPrincipalIdealRingFixedPointsSubring :
     IsPrincipalIdealRing (FixedPoints.subring B G) where
   principal I := by
     by_cases hI : I = ⊥; · exact ⟨0, by simp [hI]⟩
-    obtain ⟨x₀, hx₀I, hx₀0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hI
-    let f (z : {x : FixedPoints.subring B G // x ∈ I ∧ x ≠ 0}) := (addVal B (z.val : B)).toNat
-    obtain ⟨⟨a, haI, ha0⟩, -, hmin⟩ :=
-      (InvImage.wf f Nat.lt_wfRel.wf).has_min Set.univ ⟨⟨x₀, hx₀I, hx₀0⟩, trivial⟩
-    refine ⟨a, le_antisymm (fun y hyI ↦ ?_) (Ideal.span_le.2 (Set.singleton_subset_iff.2 haI))⟩
+    let s : Set (FixedPoints.subring B G) := {x | x ∈ I ∧ x ≠ 0}
+    let f (x : FixedPoints.subring B G) := addVal B (x : B)
+    have hs : s.Nonempty := Submodule.exists_mem_ne_zero_of_ne_bot hI
+    have haI : Function.argminOn f s hs ∈ I := (Function.argminOn_mem f s hs).1
+    refine ⟨Function.argminOn f s hs,
+      le_antisymm (fun y hyI ↦ ?_) (Ideal.span_le.2 (Set.singleton_subset_iff.2 haI))⟩
     by_cases hy0 : y = 0; · simp [hy0]
-    refine Ideal.mem_span_singleton.2 <| coe_dvd_coe_fixedPoints_subring_iff.1 <|
-      addVal_le_iff_dvd.1 ?_
-    rw [← ENat.natCast_toNat (addVal_eq_top_iff.not.2 (Subtype.coe_ne_coe.2 ha0)),
-      ← ENat.natCast_toNat (addVal_eq_top_iff.not.2 (Subtype.coe_ne_coe.2 hy0))]
-    exact_mod_cast not_lt.1 (hmin ⟨y, hyI, hy0⟩ trivial)
+    exact Ideal.mem_span_singleton.2 <| coe_dvd_coe_fixedPoints_subring_iff.1 <|
+      addVal_le_iff_dvd.1 (Function.argminOn_le f s ⟨hyI, hy0⟩)
 
 /-- The fixed-point subalgebra of a DVR under any monoid action is a principal ideal ring. -/
 instance instIsPrincipalIdealRingFixedPointsSubalgebra {A : Type*} [CommSemiring A] [Algebra A B]
@@ -134,8 +132,9 @@ theorem exists_adjoin_eq_top :
     ∃ y : FixedPoints.subalgebra A B G, Algebra.adjoin A {y} = ⊤ := by
   have : Module.Finite A (FixedPoints.subalgebra A B G) :=
     Module.Finite.of_injective (Subalgebra.val _).toLinearMap Subtype.val_injective
-  have : IsLocalHom (algebraMap (FixedPoints.subalgebra A B G) B) :=
-    ⟨fun _ ↦ IsLocalHom.map_nonunit (f := (FixedPoints.subalgebra A B G).val) _⟩
+  have : IsLocalHom (algebraMap (FixedPoints.subalgebra A B G) B) := by
+    rw [Subalgebra.algebraMap_eq]
+    infer_instance
   have := Algebra.isSeparable_tower_bot_of_isSeparable (ResidueField A)
     (ResidueField (FixedPoints.subalgebra A B G)) (ResidueField B)
   obtain ⟨π, hπ⟩ := _root_.IsDiscreteValuationRing.exists_irreducible (FixedPoints.subalgebra A B G)

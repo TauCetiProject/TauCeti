@@ -134,14 +134,12 @@ private theorem herbrandFun_sub (a b : ℝ) :
     herbrandFun G S b - herbrandFun G S a = ∫ t in a..b, herbrandDensity G S t :=
   integral_interval_sub_left (herbrandDensity_antitone G S).intervalIntegrable
     (herbrandDensity_antitone G S).intervalIntegrable
-private theorem sub_mul_eq_integral_const (a b c : ℝ) : (b - a) * c = ∫ _ in a..b, c := by
-  rw [← smul_eq_mul, ← intervalIntegral.integral_const]
 /-- On `[a, b]` where `(a, b]` has constant `G_t = H`, `herbrandFun` has slope `#H / #G_0`. -/
 theorem herbrandFun_sub_of_forall_eq {a b : ℝ} (hab : a ≤ b) {H : Subgroup G}
     (h : ∀ t : ℝ, a < t → t ≤ b → ramificationGroupReal G S t = H) :
     herbrandFun G S b - herbrandFun G S a =
       (b - a) * (Nat.card H / Nat.card (ramificationGroup G S 0)) := by
-  rw [herbrandFun_sub, sub_mul_eq_integral_const]
+  rw [herbrandFun_sub, ← smul_eq_mul, ← intervalIntegral.integral_const]
   exact integral_congr_ae <| Filter.Eventually.of_forall fun t ht ↦ by
     rw [uIoc_of_le hab] at ht; rw [herbrandDensity, h t ht.1 ht.2]
 /-- On any subinterval `[a, b] ⊆ [i - 1, i]`, `herbrandFun` is affine of slope `#G_i / #G_0`. -/
@@ -152,7 +150,7 @@ theorem herbrandFun_sub_of_sub_one_le_of_le {i : ℤ} {a b : ℝ} (ha : (i : ℝ
     ramificationGroupReal_eq_of_sub_one_lt_of_le G S (ha.trans_lt ht₁) (ht₂.trans hb)
 private theorem div_sub_le_herbrandFun_sub {a b : ℝ} (hab : a ≤ b) :
     (b - a) / Nat.card (ramificationGroup G S 0) ≤ herbrandFun G S b - herbrandFun G S a := by
-  rw [herbrandFun_sub, div_eq_mul_inv, sub_mul_eq_integral_const]
+  rw [herbrandFun_sub, div_eq_mul_inv, ← smul_eq_mul, ← intervalIntegral.integral_const]
   exact integral_mono_on hab intervalIntegrable_const
     (herbrandDensity_antitone G S).intervalIntegrable fun _ _ ↦ by
       rw [herbrandDensity, div_eq_mul_inv]
@@ -171,7 +169,7 @@ theorem herbrandFun_slope_anti_adjacent {u v w : ℝ} (huv : u < v) (hvw : v < w
   have hd := herbrandDensity_antitone G S
   refine le_trans (b := herbrandDensity G S v)
     ((div_le_iff₀' (sub_pos.2 hvw)).2 ?_) ((le_div_iff₀' (sub_pos.2 huv)).2 ?_) <;>
-    rw [herbrandFun_sub, sub_mul_eq_integral_const]
+    rw [herbrandFun_sub, ← smul_eq_mul, ← intervalIntegral.integral_const]
   · exact integral_mono_on hvw.le hd.intervalIntegrable intervalIntegrable_const fun _ ht ↦ hd ht.1
   · exact integral_mono_on huv.le intervalIntegrable_const hd.intervalIntegrable fun _ ht ↦ hd ht.2
 /-- The Herbrand function is concave on `ℝ`. -/
@@ -218,6 +216,23 @@ theorem herbrandFun_intCast_of_nonneg {m : ℤ} (hm : 0 ≤ m) : herbrandFun G S
     (∑ i ∈ Finset.Icc 1 m.toNat, (Nat.card (ramificationGroup G S i) : ℝ)) /
       Nat.card (ramificationGroup G S 0) := by
   rw [← herbrandFun_natCast]; congr 1; exact_mod_cast (Int.toNat_of_nonneg hm).symm
+/-- Arithmetic core of Serre's lemma: if `#G_0 · n = ∑ k ∈ range j, #G_k`, then
+`φ_G(j - 1) = n - 1`. -/
+theorem herbrandFun_sub_one_of_card_mul_eq_sum {j n : ℕ}
+    (hsum : Nat.card (ramificationGroup G S 0) * n =
+      ∑ k ∈ Finset.range j, Nat.card (ramificationGroup G S k)) :
+    herbrandFun G S ((j : ℝ) - 1) = (n : ℝ) - 1 := by
+  rcases j with _ | m
+  · rw [herbrandFun_eq_self_of_neg_one_le_of_nonpos G S (by norm_num) (by norm_num)]
+    simp only [Finset.range_zero, Finset.sum_empty, mul_eq_zero, Nat.card_pos.ne', false_or] at hsum
+    simp [hsum]
+  · rw [(by push_cast; ring : ((m + 1 : ℕ) : ℝ) - 1 = m), herbrandFun_natCast,
+      div_eq_iff (Nat.cast_ne_zero.2 Nat.card_pos.ne')]
+    rw [Finset.range_eq_Ico, Finset.sum_eq_sum_Ico_succ_bot (Nat.add_one_pos m), Nat.cast_zero,
+      zero_add, Finset.Ico_add_one_right_eq_Icc] at hsum
+    linear_combination -(by exact_mod_cast hsum : (Nat.card (ramificationGroup G S 0) : ℝ) * n =
+      Nat.card (ramificationGroup G S 0) +
+        ∑ i ∈ Finset.Icc 1 m, (Nat.card (ramificationGroup G S i) : ℝ))
 /-- The Herbrand function is surjective onto `ℝ`. -/
 theorem herbrandFun_surjective : Function.Surjective (herbrandFun G S) := fun y ↦ by
   have hg : (0 : ℝ) < Nat.card (ramificationGroup G S 0) := Nat.cast_pos.2 Nat.card_pos

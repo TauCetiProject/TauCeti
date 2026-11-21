@@ -122,24 +122,9 @@ theorem coe_herbrand_lowerIndex_sub_one (σ : M ≃ₐ[K] M) {j : ℕ}
     (lowerIndex_restrictNormal_ne_top σ (hj ▸ ENat.natCast_ne_top j) hσ)
   rw [← hn, ← Nat.cast_mul, ← Nat.cast_sum, Nat.cast_inj, ← natCard_lowerRamificationGroup_zero]
     at hsum
-  rw [← hn, ENat.toNat_natCast]
-  have h0 : (Nat.card (lowerRamificationGroup L M 0) : ℝ) ≠ 0 := by
-    exact_mod_cast Nat.card_pos.ne'
-  rcases j with _ | m
-  · -- `j = 0`: both sides are `-1`.
-    rw [herbrand_of_coe_le_zero L M (by simp)]
-    simp only [Finset.range_zero, Finset.sum_empty, mul_eq_zero, Nat.card_pos.ne', false_or]
-      at hsum
-    simp [hsum]
-  · -- `j = m + 1`: `#H_0 · n = #H_0 + (#H_1 + ⋯ + #H_m)` and `φ(m) = (#H_1 + ⋯ + #H_m) / #H_0`.
-    rw [coe_herbrand_of_coe_eq_natCast L M m (by push_cast; ring), div_eq_iff h0]
-    rw [Finset.range_eq_Ico, Finset.sum_eq_sum_Ico_succ_bot (Nat.add_one_pos m), Nat.cast_zero,
-      zero_add, Finset.Ico_add_one_right_eq_Icc] at hsum
-    have hsumR : (Nat.card (lowerRamificationGroup L M 0) : ℝ) * n =
-        Nat.card (lowerRamificationGroup L M 0) +
-          ∑ i ∈ Finset.Icc 1 m, (Nat.card (lowerRamificationGroup L M i) : ℝ) := by
-      exact_mod_cast hsum
-    linear_combination -hsumR
+  simp_rw [lowerRamificationGroup_def] at hsum
+  rw [← hn, ENat.toNat_natCast, coe_herbrand_eq_herbrandFun]
+  exact TauCeti.IsLocalRing.herbrandFun_sub_one_of_card_mul_eq_sum (M ≃ₐ[L] M) 𝒪[M] hsum
 
 /-- For `σ` of largest lower index in its coset `σ H`, the restriction `σ|_L` lies in the lower
 ramification group of `L/K` at `φ_{M/L}(u)` exactly when `σ` lies in that of `M/K` at `u`. -/

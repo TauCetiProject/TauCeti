@@ -49,17 +49,7 @@ theorem herbrandFun_lowerIndex_sub_one (g : G) {j : ℕ} (hj : lowerIndex B g = 
   rw [← hn, ← Nat.cast_mul, ← Nat.cast_sum, Nat.cast_inj,
     ← natCard_ramificationGroup_zero_fixedPoints A B H] at hsum
   rw [← hn, ENat.toNat_natCast]
-  rcases j with _ | m
-  · rw [herbrandFun_eq_self_of_neg_one_le_of_nonpos H B (by norm_num) (by norm_num)]
-    simp only [Finset.range_zero, Finset.sum_empty, mul_eq_zero, Nat.card_pos.ne', false_or] at hsum
-    simp [hsum]
-  · rw [(by push_cast; ring : ((m + 1 : ℕ) : ℝ) - 1 = m), herbrandFun_natCast,
-      div_eq_iff (Nat.cast_ne_zero.2 Nat.card_pos.ne')]
-    rw [Finset.range_eq_Ico, Finset.sum_eq_sum_Ico_succ_bot (Nat.add_one_pos m), Nat.cast_zero,
-      zero_add, Finset.Ico_add_one_right_eq_Icc] at hsum
-    linear_combination -(by exact_mod_cast hsum : (Nat.card (ramificationGroup H B 0) : ℝ) * n =
-      Nat.card (ramificationGroup H B 0) +
-        ∑ i ∈ Finset.Icc 1 m, (Nat.card (ramificationGroup H B i) : ℝ))
+  exact herbrandFun_sub_one_of_card_mul_eq_sum H B hsum
 private theorem quotient_mk_mem_ramificationGroupReal_herbrandFun_iff (g : G)
     (hg : ∀ h : H, lowerIndex B (g * h) ≤ lowerIndex B g) (u : ℝ) :
     QuotientGroup.mk' H g ∈

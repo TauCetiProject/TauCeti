@@ -134,8 +134,9 @@ theorem natCard_ramificationGroup_zero_fixedPoints :
       (maximalIdeal B).ramificationIdx (FixedPoints.subalgebra A B G) :=
   let _ : IsGaloisGroup G (FixedPoints.subalgebra A B G) B :=
     ⟨inferInstance, inferInstance, inferInstance⟩
-  let _ : IsLocalHom (algebraMap (FixedPoints.subalgebra A B G) B) :=
-    ⟨fun _ ↦ IsLocalHom.map_nonunit (f := (FixedPoints.subalgebra A B G).val) _⟩
+  have _ : IsLocalHom (algebraMap (FixedPoints.subalgebra A B G) B) := by
+    rw [Subalgebra.algebraMap_eq]
+    infer_instance
   have _ : Algebra.IsSeparable (ResidueField (FixedPoints.subalgebra A B G)) (ResidueField B) :=
     Algebra.isSeparable_tower_top_of_isSeparable (ResidueField A) _ (ResidueField B)
   natCard_ramificationGroup_zero
@@ -155,10 +156,11 @@ theorem ramificationIdx_mul_lowerIndex_quotient_mk'_eq_finsum (H : Subgroup G) [
   have _ : FaithfulSMul R₀ C :=
     (faithfulSMul_iff_algebraMap_injective R₀ C).2 (Subalgebra.inclusion_injective hle)
   have _ : IsLocalHom (algebraMap R₀ B) := by
-    rw [Subalgebra.algebraMap_eq, Algebra.algebraMap_self, RingHom.id_comp]
-    exact ⟨fun _ ↦ IsLocalHom.map_nonunit (f := R₀.val) _⟩
-  have _ : IsLocalHom (algebraMap C B) :=
-    ⟨fun _ ↦ IsLocalHom.map_nonunit (f := C.val) _⟩
+    rw [Subalgebra.algebraMap_eq]
+    infer_instance
+  have _ : IsLocalHom (algebraMap C B) := by
+    rw [Subalgebra.algebraMap_eq]
+    infer_instance
   have _ : IsLocalHom ((algebraMap C B).comp (algebraMap R₀ C)) :=
     IsScalarTower.algebraMap_eq R₀ C B ▸ inferInstance
   have _ : IsLocalHom (algebraMap R₀ C) := isLocalHom_of_comp _ (algebraMap C B)

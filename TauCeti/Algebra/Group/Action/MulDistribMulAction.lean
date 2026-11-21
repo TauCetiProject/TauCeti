@@ -38,9 +38,8 @@ instance smulDistribClass_self (G A : Type*) [Monoid G] [Monoid A] [MulDistribMu
 
 /-- If `g` fixes a unit `u : Bˣ` under a multiplicative action, `g` also fixes `u⁻¹`. -/
 theorem smul_val_inv_eq_of_smul_eq {B G : Type*} [Monoid B] [Monoid G] [MulDistribMulAction G B]
-    {u : Bˣ} {g : G} (hu : g • (u : B) = u) : g • (↑u⁻¹ : B) = ↑u⁻¹ := by
-  have hmul : g • (↑u⁻¹ : B) * (u : B) = 1 := by rw [← hu, ← smul_mul', Units.inv_mul, smul_one]
-  rw [← mul_one (g • (↑u⁻¹ : B)), ← Units.mul_inv u, ← mul_assoc, hmul, one_mul]
+    {u : Bˣ} {g : G} (hu : g • (u : B) = u) : g • (↑u⁻¹ : B) = ↑u⁻¹ :=
+  Units.mul_eq_one_iff_eq_inv.mp <| by rw [← hu, ← smul_mul', Units.inv_mul, smul_one]
 
 /-- Inclusion `FixedPoints.submonoid G B →* B` reflects and preserves units. -/
 @[simp] theorem isUnit_coe_fixedPoints_submonoid_iff {B G : Type*} [Monoid B] [Monoid G]

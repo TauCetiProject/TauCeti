@@ -523,8 +523,6 @@ variable {A B G : Type*} [CommSemiring A] [CommSemiring B] [Algebra A B] [Monoid
 
 /-- The fixed-point subalgebra of a local ring is a local ring. -/
 instance isLocalRing_subalgebra [IsLocalRing B] : IsLocalRing (FixedPoints.subalgebra A B G) :=
-  let _ : IsLocalHom ((FixedPoints.subalgebra A B G).val : FixedPoints.subalgebra A B G →+* B) :=
-    ⟨fun _ ↦ IsLocalHom.map_nonunit (f := (FixedPoints.subalgebra A B G).val) _⟩
   ((FixedPoints.subalgebra A B G).val : FixedPoints.subalgebra A B G →+* B).domain_isLocalRing
 
 end IsLocalHom
@@ -623,8 +621,6 @@ theorem fixedPointsSubringEquivSubalgebra_smul (A B G : Type*) [CommRing A] [Com
 
 section QuotientFixedPoints
 variable {B G : Type*} [CommRing B] [Group G] [MulSemiringAction G B] {H : Subgroup G} [H.Normal]
-@[simp] theorem coe_quotient_smul_fixedPoints_subring (g : G) (y : FixedPoints.subring B H) :
-    (((g : G ⧸ H) • y : FixedPoints.subring B H) : B) = g • (y : B) := rfl
 section Algebra
 variable {A : Type*} [CommRing A] [Algebra A B] [SMulCommClass G A B]
 /-- If `G` commutes with the scalar action of `R` on `B`, then `G ⧸ H` commutes with any
