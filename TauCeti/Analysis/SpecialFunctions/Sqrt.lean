@@ -52,6 +52,7 @@ to `0` as
   is positive, has an explicit derivative, and maps `ℝ` onto `(0, ∞)` for `p > 0`.
 * `Real.contDiff_div_sqrt_pow`: if `ψ` is `C^k` with support in `(0, ∞)`, then
   `t ↦ ψ (√t) / (√t) ^ n` is `C^k`.
+* `Real.tendsto_sqrt_mul_sqrt_add_one_sub_sqrt`: `√x (√(x + 1) - √x) → 1/2` as `x → ∞`.
 
 ## References
 
@@ -300,6 +301,24 @@ theorem sqrt_add_le_add_sqrt (a b : ℝ) : √(a + b) ≤ √a + √b := by
       exact sqrt_le_sqrt (by linarith)
   · rw [sqrt_eq_zero_of_nonpos ha.le, zero_add]
     exact sqrt_le_sqrt (by linarith)
+
+/-- The forward difference of the square root is asymptotic to its derivative:
+`√x (√(x + 1) - √x) → 1/2` as `x → ∞`. -/
+theorem tendsto_sqrt_mul_sqrt_add_one_sub_sqrt :
+    Tendsto (fun x : ℝ => √x * (√(x + 1) - √x)) atTop (𝓝 (1 / 2)) := by
+  have hlim : Tendsto (fun x : ℝ => (√(1 + x⁻¹) + 1)⁻¹) atTop (𝓝 (1 / 2)) := by
+    have h := ((tendsto_inv_atTop_zero.const_add 1).sqrt.add_const 1).inv₀ (by norm_num)
+    norm_num at h
+    simpa [one_div] using h
+  refine hlim.congr' ?_
+  filter_upwards [eventually_gt_atTop 0] with x hx
+  have ha : 0 < √x := sqrt_pos.2 hx
+  have hq : √(1 + x⁻¹) = √(x + 1) / √x := by
+    rw [← sqrt_div (by linarith) x]
+    congr 1
+    field_simp
+  rw [hq, div_add_one ha.ne', inv_div, eq_comm, eq_div_iff (by positivity)]
+  linear_combination √x * (sq_sqrt (show 0 ≤ x + 1 by linarith) - sq_sqrt hx.le)
 
 end Real
 
