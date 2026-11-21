@@ -299,6 +299,13 @@ lemma preimageSkeleton_natCast (f : E → X) (n : ℕ) :
     preimageSkeleton C f n = f ⁻¹' skeleton C n := by
   simp [preimageSkeleton, skeleton]
 
+/-- The stage `n - 1` of the skeletal filtration is the preimage of the `(n - 1)`-skeleton
+`skeletonLT C n`. -/
+@[simp]
+lemma preimageSkeleton_natCast_sub_one (f : E → X) (n : ℕ) :
+    preimageSkeleton C f ((n : ℤ) - 1) = f ⁻¹' skeletonLT C n := by
+  rw [preimageSkeleton_def, show ((n : ℤ) - 1 + 1).toNat = n by lia]
+
 /-- The stage `0` of the skeletal filtration is the preimage of the `0`-skeleton. -/
 @[simp]
 lemma preimageSkeleton_zero (f : E → X) : preimageSkeleton C f 0 = f ⁻¹' skeleton C 0 := by
