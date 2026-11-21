@@ -52,7 +52,7 @@ of `j` are handled as follows.
   `TauCeti.Symbol.IsUniform.exists_integral_norm_mixedDeriv_littlewoodPaleyPiece_le`; so on the
   tempered distribution of an `Lᵖ` function the quantization of such a piece is an `Lᵖ` function,
   bounded by the row and column integrals of its kernel
-  (`TauCeti.Symbol.IsUniform.exists_quantizeTempered_littlewoodPaleyPieceLow_eq_and_norm_le`).
+  (`TauCeti.Symbol.IsUniform.exists_quantizeTempered_littlewoodPaleyPieceOfOrder_eq_and_norm_le`).
   So `‖Op(a) Δₖ u‖_p ≤ C ‖Δₖ u‖_p`, and `j = k` follows.
 * **High output frequencies, `j > k`.** A derivative falls either on the input or on the position
   variable of the symbol, `∂_v Op(a) = Op(a) ∂_v + Op(∂_{x, v} a)`
@@ -159,21 +159,21 @@ private theorem IsUniform.exists_quantizeTempered_eq_and_norm_le_of_isVanishingO
   -- into cutoffs in the angular frequency `ξ = 2πζ` of the quantization.
   set ψ := φ.dilate Real.two_pi_pos
   obtain ⟨C, hC, hpiece⟩ :=
-    ha.exists_quantizeTempered_littlewoodPaleyPieceLow_eq_and_norm_le (F := F) ψ
+    ha.exists_quantizeTempered_littlewoodPaleyPieceOfOrder_eq_and_norm_le (F := F) ψ
   refine ⟨2 * L * C, by positivity, fun k {p} _ f hf ↦ ?_⟩
   set g : CoordinateSpace n → ℂ := fun ζ ↦ ((φ.enlargedLittlewoodPaley L k ζ : ℝ) : ℂ)
   have hg : g.HasTemperateGrowth := φ.hasTemperateGrowth_ofReal_enlargedLittlewoodPaley L k
   have hgf : fourierMultiplierCLM F g (f : 𝓢'(CoordinateSpace n, F)) = f :=
     fourierMultiplierCLM_eq_self_of_isVanishingOn hf hg (hL k)
   set s := Finset.Ico (k + 1 - L) (k + L)
-  have hb (i : ℕ) := ha.littlewoodPaleyPieceLow ψ i
+  have hb (i : ℕ) := ha.littlewoodPaleyPieceOfOrder ψ i
   have hq : quantizeTempered F a ha (f : 𝓢'(CoordinateSpace n, F)) =
-      ∑ i ∈ s, quantizeTempered F (a.littlewoodPaleyPieceLow ψ i) (hb i) f := by
+      ∑ i ∈ s, quantizeTempered F (a.littlewoodPaleyPieceOfOrder ψ i) (hb i) f := by
     conv_lhs => rw [← hgf]
     rw [ha.quantizeTempered_fourierMultiplierCLM (IsUniform.sum fun i _ ↦ hb i) hg ?_,
       quantizeTempered_sum hb s, sum_apply]
     intro x ξ
-    simp only [coefficient_sum, Finset.sum_apply, coefficient_littlewoodPaleyPieceLow,
+    simp only [coefficient_sum, Finset.sum_apply, coefficient_littlewoodPaleyPieceOfOrder,
       coefficient_littlewoodPaleyPiece, ContDiffBump.inhomogeneousLittlewoodPaley_dilate, g,
       ContDiffBump.enlargedLittlewoodPaley_apply, ← Finset.sum_smul, Complex.coe_smul, s, ψ]
   choose v hv hvn using fun i ↦ hpiece i f
@@ -424,31 +424,17 @@ private theorem IsUniform.exists_littlewoodPaleyBlock_quantizeTempered_eq_and_no
   obtain ⟨C₂, hC₂, h₂⟩ := ha.exists_lowFrequencyBound (F := F) φ N
   obtain ⟨C₀, hC₀, h₀⟩ :=
     ha.exists_littlewoodPaleyBlock_quantizeTempered_eq_and_norm_le_of_isVanishingOn (F := F) φ
-  refine ⟨C₁ + C₂ * 2 ^ N + C₀, by positivity, fun {p} _ j k u f hf ↦ ?_⟩
-  have hfv : IsVanishingOn (𝓕 (f : 𝓢'(CoordinateSpace n, F)) : 𝓢'(CoordinateSpace n, F))
-      (offSpectrum φ k) := hf ▸ isVanishingOn_offSpectrum φ k u
-  have hK (K : ℝ) (hKK : K ≤ C₁ + C₂ * 2 ^ N + C₀) :
-      K * (2 : ℝ) ^ (-(N * |(j : ℝ) - k|)) * ‖f‖ ≤
-        (C₁ + C₂ * 2 ^ N + C₀) * (2 : ℝ) ^ (-(N * |(j : ℝ) - k|)) * ‖f‖ := by
-    gcongr
-  have hC₂' : 0 ≤ C₂ * 2 ^ N := by positivity
-  rcases lt_trichotomy k j with hkj | rfl | hjk
-  · -- High output frequency.
-    obtain ⟨v, hv, hvn⟩ := h₁ hkj f hfv
-    refine ⟨v, hv, (hvn.trans_eq ?_).trans (hK C₁ (by linarith))⟩
-    rw [Real.pow_div_pow_pow_eq_rpow_of_le two_pos hkj.le]
-  · -- Equal frequencies: `Op(a)` is bounded on the block, and so is `Δⱼ`.
-    obtain ⟨v, hv, hvn⟩ := h₀ k k f hfv
-    refine ⟨v, hv, (hvn.trans_eq ?_).trans (hK C₀ (by linarith))⟩
-    rw [sub_self, abs_zero, mul_zero, neg_zero, Real.rpow_zero, mul_one]
-  · -- Low output frequency: the block `f` has spectrum in the `k`-th dyadic annulus.
-    obtain ⟨k, rfl⟩ : ∃ k', k = k' + 1 := ⟨k - 1, by omega⟩
-    obtain ⟨v, hv, hvn⟩ := h₂ j k f hfv
-    refine ⟨v, hv, (hvn.trans_eq ?_).trans (hK (C₂ * 2 ^ N) (by linarith))⟩
-    rw [abs_sub_comm, ← Real.pow_div_pow_pow_eq_rpow_of_le two_pos hjk.le, div_pow, div_pow,
-      pow_succ]
-    field_simp
-    ring
+  have hrIn := φ.rIn_pos
+  refine ⟨C₁ + C₂ * φ.rIn ^ N * (2 / φ.rIn) ^ N + C₀, by positivity,
+    fun {p} _ j k u f hf ↦ ?_⟩
+  refine exists_littlewoodPaleyBlock_eq_and_norm_le_of_ball_of_annulus φ (quantizeTempered F a ha)
+    hC₀ hC₁ (by positivity) (fun k u f hf ↦ h₀ k k f (hf ▸ isVanishingOn_offSpectrum φ k u))
+    (fun hkj u f hf ↦ h₁ hkj f (hf ▸ isVanishingOn_offSpectrum φ _ u))
+    (fun j k u f hf ↦ ?_) j k u f hf
+  obtain ⟨v, hv, hvn⟩ := h₂ j k f (hf ▸ isVanishingOn_offSpectrum φ (k + 1) u)
+  refine ⟨v, hv, hvn.trans_eq ?_⟩
+  rw [div_pow, div_pow, mul_pow]
+  field_simp
 
 end Dyadic
 

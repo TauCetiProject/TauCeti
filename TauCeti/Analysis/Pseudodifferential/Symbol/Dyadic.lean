@@ -38,7 +38,7 @@ the pieces with constants independent of `j`.
   bounded family of symbols of order `m`, uniform in the position when `a` is.
 * `TauCeti.Symbol.IsUniform.ofBoundedFrequencySupport`: a uniform symbol with bounded frequency
   support, such as a piece of a uniform symbol, is a uniform symbol of every order.
-* `TauCeti.Symbol.littlewoodPaleyPieceLow φ a j`: the piece `ψⱼ(ξ) a(x, ξ)` as a symbol of order
+* `TauCeti.Symbol.littlewoodPaleyPieceOfOrder φ a j`: the piece `ψⱼ(ξ) a(x, ξ)` as a symbol of order
   `-(n + 1)`, at which its kernel is integrable.
 * `TauCeti.Symbol.IsUniform.exists_norm_mixedDeriv_littlewoodPaleyPiece_le_two_pow`: the dyadic
   estimates `‖∂ₓ^α ∂_ξ^β aⱼ(x, ξ)‖ ≤ C (2^j) ^ (m - |β|)` for a uniform symbol.
@@ -214,19 +214,19 @@ theorem IsUniform.ofBoundedFrequencySupport {m' : ℝ} {a : Symbol n V W m} (ha 
 
 /-- The `j`-th Littlewood–Paley piece of a symbol, as a symbol of order `-(n + 1)`: its frequency
 support is bounded, so it is a symbol of every order. -/
-def littlewoodPaleyPieceLow (a : Symbol n V W m) (j : ℕ) : Symbol n V W (-(n + 1)) :=
+def littlewoodPaleyPieceOfOrder (a : Symbol n V W m) (j : ℕ) : Symbol n V W (-(n + 1)) :=
   ofBoundedFrequencySupport (a.littlewoodPaleyPiece φ j).coefficient
     (a.littlewoodPaleyPiece φ j).contDiff_coefficient (2 ^ j * φ.rOut)
     fun x _ hξ => a.coefficient_littlewoodPaleyPiece_eq_zero_of_le_norm φ x hξ
 
 @[simp]
-theorem coefficient_littlewoodPaleyPieceLow (a : Symbol n V W m) (j : ℕ) :
-    (a.littlewoodPaleyPieceLow φ j).coefficient = (a.littlewoodPaleyPiece φ j).coefficient :=
+theorem coefficient_littlewoodPaleyPieceOfOrder (a : Symbol n V W m) (j : ℕ) :
+    (a.littlewoodPaleyPieceOfOrder φ j).coefficient = (a.littlewoodPaleyPiece φ j).coefficient :=
   coefficient_ofBoundedFrequencySupport _ _ _ _
 
 /-- The Littlewood–Paley pieces of a uniform symbol are uniform symbols of order `-(n + 1)`. -/
-theorem IsUniform.littlewoodPaleyPieceLow {a : Symbol n V W m} (ha : a.IsUniform) (j : ℕ) :
-    (a.littlewoodPaleyPieceLow φ j).IsUniform :=
+theorem IsUniform.littlewoodPaleyPieceOfOrder {a : Symbol n V W m} (ha : a.IsUniform) (j : ℕ) :
+    (a.littlewoodPaleyPieceOfOrder φ j).IsUniform :=
   (ha.littlewoodPaleyPiece φ j).ofBoundedFrequencySupport _ _
 
 /-! ### Dyadic estimates -/

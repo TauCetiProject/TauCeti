@@ -127,7 +127,8 @@ its norm is at most `C (2^j)^m`
 def quantizeLittlewoodPaleyPiece (a : Symbol n V W m) (ha : a.IsUniform) (j : ℕ) :
     Lp V p (volume : Measure (CoordinateSpace n)) →L[ℂ]
       Lp W p (volume : Measure (CoordinateSpace n)) :=
-  quantizeLp p (a.littlewoodPaleyPieceLow φ j) (by linarith) (ha.littlewoodPaleyPieceLow φ j)
+  quantizeLp p (a.littlewoodPaleyPieceOfOrder φ j) (by linarith)
+    (ha.littlewoodPaleyPieceOfOrder φ j)
 
 variable {a : Symbol n V W m} {ha : a.IsUniform}
 
@@ -136,7 +137,7 @@ theorem coeFn_quantizeLittlewoodPaleyPiece (j : ℕ)
     (u : Lp V p (volume : Measure (CoordinateSpace n))) :
     quantizeLittlewoodPaleyPiece p φ a ha j u =ᵐ[volume]
       fun x ↦ ∫ y, quantizationKernel (a.littlewoodPaleyPiece φ j).coefficient x y (u y) := by
-  rw [← coefficient_littlewoodPaleyPieceLow]
+  rw [← coefficient_littlewoodPaleyPieceOfOrder]
   exact coeFn_quantizeLp u
 
 /-- On Schwartz functions, the quantization of a Littlewood–Paley piece is the quantization
@@ -145,7 +146,7 @@ theorem coeFn_quantizeLittlewoodPaleyPiece_toLp [CompleteSpace V] [CompleteSpace
     (u : 𝓢(CoordinateSpace n, V)) :
     quantizeLittlewoodPaleyPiece p φ a ha j (u.toLp p) =ᵐ[volume]
       quantizeSchwartzValue (a.littlewoodPaleyPiece φ j).coefficient u := by
-  rw [← coefficient_littlewoodPaleyPieceLow]
+  rw [← coefficient_littlewoodPaleyPieceOfOrder]
   exact coeFn_quantizeLp_toLp u
 
 /-- **Uniform bounds for the Littlewood–Paley pieces.** For a uniform symbol `a` of order `m`, the
@@ -176,11 +177,11 @@ theorem IsUniform.exists_norm_quantizeLittlewoodPaleyPiece_le (ha : a.IsUniform)
     rw [Real.rpow_neg ht.le, Real.rpow_natCast, inv_pow]
   refine (norm_quantizeLp_le (A := D * ((2 : ℝ) ^ j) ^ (m + n)) (R := ((2 : ℝ) ^ j)⁻¹)
     (inv_pos.2 ht) (fun x ↦ ?_) (fun x i ↦ ?_)).trans_eq ?_
-  · rw [coefficient_littlewoodPaleyPieceLow]
+  · rw [coefficient_littlewoodPaleyPieceOfOrder]
     have h := h₀ j x
     simp only [mixedDeriv_nil_nil, List.length_nil, Nat.cast_zero, sub_zero] at h
     exact h.trans (by gcongr)
-  · rw [coefficient_littlewoodPaleyPieceLow, hpow, mul_assoc, ← Real.rpow_add ht]
+  · rw [coefficient_littlewoodPaleyPieceOfOrder, hpow, mul_assoc, ← Real.rpow_add ht]
     refine (h₁ i j x).trans ?_
     rw [List.length_replicate]
     push_cast
@@ -212,7 +213,7 @@ theorem quantizeLittlewoodPaleyPiece_comp_adjoint_succ_eq_zero (a : Symbol n V W
     quantizeLittlewoodPaleyPiece 2 φ a ha j ∘L
       adjoint (quantizeLittlewoodPaleyPiece 2 φ b hb (k + 1)) = 0 := by
   refine quantizeLp_comp_adjoint_eq_zero _ _ _ _ _ _ fun x z ξ ↦ ?_
-  simp only [coefficient_littlewoodPaleyPieceLow]
+  simp only [coefficient_littlewoodPaleyPieceOfOrder]
   rcases le_or_gt (2 ^ j * φ.rOut) ‖ξ‖ with h | h
   · rw [a.coefficient_littlewoodPaleyPiece_eq_zero_of_le_norm φ x h,
       ContinuousLinearMap.zero_comp]
@@ -227,7 +228,7 @@ theorem quantizeLittlewoodPaleyPiece_succ_comp_adjoint_eq_zero (a : Symbol n V W
     quantizeLittlewoodPaleyPiece 2 φ a ha (k + 1) ∘L
       adjoint (quantizeLittlewoodPaleyPiece 2 φ b hb j) = 0 := by
   refine quantizeLp_comp_adjoint_eq_zero _ _ _ _ _ _ fun x z ξ ↦ ?_
-  simp only [coefficient_littlewoodPaleyPieceLow]
+  simp only [coefficient_littlewoodPaleyPieceOfOrder]
   rcases le_or_gt (2 ^ j * φ.rOut) ‖ξ‖ with h | h
   · rw [b.coefficient_littlewoodPaleyPiece_eq_zero_of_le_norm φ z h, map_zero,
       ContinuousLinearMap.comp_zero]

@@ -35,7 +35,7 @@ are allowed, the scalar symbol acting on `F` by multiplication.
 * `TauCeti.Symbol.exists_quantizeTempered_eq_and_norm_le`: `Op(b)` maps the tempered distribution
   of an `Lᵖ` function to the tempered distribution of an `Lᵖ` function, of norm at most
   `C A Rⁿ ‖f‖_p`.
-* `TauCeti.Symbol.IsUniform.exists_quantizeTempered_littlewoodPaleyPieceLow_eq_and_norm_le`: the
+* `TauCeti.Symbol.IsUniform.exists_quantizeTempered_littlewoodPaleyPieceOfOrder_eq_and_norm_le`: the
   same for the Littlewood–Paley pieces of a uniform symbol of order `m`, with the bound
   `C (2^j)^m ‖f‖_p` of `TauCeti.Symbol.IsUniform.exists_norm_quantizeLittlewoodPaleyPiece_le`.
 -/
@@ -266,12 +266,12 @@ theorem exists_quantizeTempered_eq_and_norm_le :
 is `C` such that, for `1 ≤ p ≤ ∞` and `f ∈ Lᵖ(ℝⁿ; F)`, the quantization of the `j`-th
 Littlewood–Paley piece of `a` maps the tempered distribution of `f` to the tempered distribution of
 an `Lᵖ` function `v` with `‖v‖_p ≤ C (2^j)^m ‖f‖_p`. -/
-theorem IsUniform.exists_quantizeTempered_littlewoodPaleyPieceLow_eq_and_norm_le
+theorem IsUniform.exists_quantizeTempered_littlewoodPaleyPieceOfOrder_eq_and_norm_le
     (ψ : ContDiffBump (0 : CoordinateSpace n)) {a : Symbol n ℂ ℂ m} (ha : a.IsUniform) :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ (j : ℕ) {p : ℝ≥0∞} [Fact (1 ≤ p)]
       (f : Lp F p (volume : Measure (CoordinateSpace n))),
       ∃ v : Lp F p (volume : Measure (CoordinateSpace n)),
-        quantizeTempered F (a.littlewoodPaleyPieceLow ψ j) (ha.littlewoodPaleyPieceLow ψ j)
+        quantizeTempered F (a.littlewoodPaleyPieceOfOrder ψ j) (ha.littlewoodPaleyPieceOfOrder ψ j)
             (f : 𝓢'(CoordinateSpace n, F)) = v ∧
           ‖v‖ ≤ C * ((2 : ℝ) ^ j) ^ m * ‖f‖ := by
   obtain ⟨C, hC, h⟩ :=
@@ -279,16 +279,16 @@ theorem IsUniform.exists_quantizeTempered_littlewoodPaleyPieceLow_eq_and_norm_le
   refine ⟨C, hC, fun j {p} _ f ↦ ⟨quantizeLittlewoodPaleyPiece p ψ _ (ha.map _) j f, ?_,
     (ContinuousLinearMap.le_opNorm _ f).trans (by gcongr; exact h p j)⟩⟩
   have hcoef :
-      ((a.littlewoodPaleyPieceLow ψ j).map ((scalarSMulL ℂ F).restrictScalars ℝ)).coefficient =
+      ((a.littlewoodPaleyPieceOfOrder ψ j).map ((scalarSMulL ℂ F).restrictScalars ℝ)).coefficient =
       ((a.map ((scalarSMulL ℂ F).restrictScalars ℝ)).littlewoodPaleyPiece ψ j).coefficient := by
     ext x : 1
-    simp only [coefficient_map, coefficient_littlewoodPaleyPieceLow,
+    simp only [coefficient_map, coefficient_littlewoodPaleyPieceOfOrder,
       coefficient_littlewoodPaleyPiece, map_smul]
   rw [quantizeTempered_toTemperedDistribution _ (by linarith)]
   congr 1
   refine Lp.ext ?_
   filter_upwards [coeFn_quantizeLp (hm := (by linarith : (-(n + 1) : ℝ) < -n))
-    (ha := (ha.littlewoodPaleyPieceLow ψ j).map ((scalarSMulL ℂ F).restrictScalars ℝ)) f,
+    (ha := (ha.littlewoodPaleyPieceOfOrder ψ j).map ((scalarSMulL ℂ F).restrictScalars ℝ)) f,
     coeFn_quantizeLittlewoodPaleyPiece ψ (ha := ha.map ((scalarSMulL ℂ F).restrictScalars ℝ)) j f]
     with x h₁ h₂
   rw [h₁, h₂, hcoef]
