@@ -52,6 +52,11 @@ The conventions follow Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, p
 * `TauCeti.lengthPermRankTwo_lengthPermRankTwo` and `TauCeti.lengthPermF4_lengthPermF4`: the length
   permutations are involutions, and `TauCeti.lengthPermRankTwo_apply`,
   `TauCeti.graphPermA_apply` and `TauCeti.lengthPermF4_apply` evaluate them as reversals.
+* `TauCeti.DynkinType.graphPermA_mem_diagramSymmetry`,
+  `TauCeti.DynkinType.graphPermD_mem_diagramSymmetry`,
+  `TauCeti.DynkinType.graphPermE6_mem_diagramSymmetry` and
+  `TauCeti.DynkinType.trialityPermD4_mem_diagramSymmetry`: each graph permutation lies in the
+  corresponding `diagramSymmetry` group.
 * `TauCeti.DynkinType.diagramSymmetry_E8_eq_bot`: the diagram of `E₈` has no nontrivial symmetry.
 -/
 
@@ -399,6 +404,27 @@ theorem mem_diagramSymmetry_iff :
     σ ∈ t.diagramSymmetry ↔ ∀ i j, t.cartanMatrix (σ i) (σ j) = t.cartanMatrix i j :=
   mem_diagramSymmetry_iff_submatrix.trans
     ⟨fun h i j => congrFun₂ h i j, fun h => by ext i j; exact h i j⟩
+
+/-- Chain reversal lies in the diagram symmetry group of `Aₙ`. -/
+@[simp]
+theorem graphPermA_mem_diagramSymmetry (n : ℕ) : graphPermA n ∈ (A n).diagramSymmetry :=
+  mem_diagramSymmetry_iff.mpr (cartanMatrix_A_graphPermA n)
+
+/-- Exchanging the two fork nodes lies in the diagram symmetry group of `Dₙ` for `4 ≤ n`. -/
+@[simp]
+theorem graphPermD_mem_diagramSymmetry {n : ℕ} (hn : 4 ≤ n) :
+    graphPermD n (by omega) ∈ (D n).diagramSymmetry :=
+  mem_diagramSymmetry_iff.mpr (cartanMatrix_D_graphPermD n hn)
+
+/-- The order-two symmetry lies in the diagram symmetry group of `E₆`. -/
+@[simp]
+theorem graphPermE6_mem_diagramSymmetry : graphPermE6 ∈ E6.diagramSymmetry :=
+  mem_diagramSymmetry_iff.mpr cartanMatrix_E6_graphPermE6
+
+/-- Triality lies in the diagram symmetry group of `D₄`. -/
+@[simp]
+theorem trialityPermD4_mem_diagramSymmetry : trialityPermD4 ∈ (D 4).diagramSymmetry :=
+  mem_diagramSymmetry_iff.mpr cartanMatrix_D4_trialityPermD4
 
 open _root_.Matrix in
 /-- A permutation of the nodes of `E₈` preserving the Cartan matrix is the identity. -/

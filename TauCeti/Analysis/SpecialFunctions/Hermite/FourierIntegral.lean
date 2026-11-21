@@ -144,8 +144,8 @@ theorem integral_pow_mul_cexp_neg_sq_div_two_sub_I_mul (n : ℕ) (y : ℂ) :
       ring
   | more n hn hn' =>
       rw [integral_pow_mul_cexp_recurrence,
-        Nat.add_sub_cancel, hn, hn', hermite_add_two, map_sub, map_mul, aeval_X,
-        map_nsmul, nsmul_eq_mul, pow_succ, pow_succ, Nat.cast_add, Nat.cast_one]
+        Nat.add_sub_cancel, hn, hn', aeval_hermite_add_two, pow_succ, pow_succ, Nat.cast_add,
+        Nat.cast_one]
       ring_nf
       simp [I_sq]
 

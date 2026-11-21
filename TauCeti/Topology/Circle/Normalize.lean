@@ -31,6 +31,7 @@ multiplicative and sends `1` to `1`.
   `(‖f x‖ : ℂ) * (f.normalizeToCircle hf x : ℂ) = f x`.
 * `ContinuousMap.normalizeToCircle_mul`, `ContinuousMap.normalizeToCircle_one`: radial
   normalization preserves products and `1` in `C(X, Circle)`.
+* `Circle.ne_zero_of_coe_eq_div_norm`: a point of the circle equal to `w / ‖w‖` forces `w ≠ 0`.
 -/
 
 public section
@@ -77,5 +78,15 @@ theorem normalizeToCircle_one
   simp [coe_normalizeToCircle_apply]
 
 end ContinuousMap
+
+namespace Circle
+
+/-- A point of the circle that is the direction `w / ‖w‖` of a complex number `w` forces
+`w ≠ 0`, since `0 / ‖0‖ = 0` is not on the circle. -/
+theorem ne_zero_of_coe_eq_div_norm {z : Circle} {w : ℂ} (h : (z : ℂ) = w / ‖w‖) : w ≠ 0 := by
+  rintro rfl
+  simp at h
+
+end Circle
 
 end

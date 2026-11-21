@@ -8,8 +8,11 @@ module
 public import Mathlib.Geometry.Manifold.SmoothEmbedding
 public import Mathlib.Topology.Algebra.ProperAction.Basic
 public import TauCeti.Geometry.Lie.Subgroup.Stabilizer
+import TauCeti.Algebra.GroupAction.TypeTags
 import TauCeti.Geometry.Lie.FundamentalVectorField.OrbitMap
+import TauCeti.Geometry.Manifold.Algebra.TypeTags
 import TauCeti.Geometry.Manifold.Immersion.Differential
+import TauCeti.Topology.Algebra.ProperAction.Basic
 import TauCeti.Topology.Algebra.ProperAction.Orbit
 
 /-!
@@ -33,12 +36,21 @@ Hence the orbit map is an **immersion** exactly
 when the action is locally free at `x`, that is, `𝔤_x = 0`
 (`TauCeti.isImmersion_smul_const_iff`). For finite-dimensional `G`, by
 `TauCeti.Lie.discreteTopology_stabilizer_iff_isotropy_eq_bot` this means that the stabilizer `G_x`
-is discrete; in particular the orbit map is an immersion where the stabilizer is trivial
+is discrete; in particular, where the stabilizer is trivial on a Hausdorff manifold, `𝔤_x = 0`
+(`TauCeti.Lie.isotropy_eq_bot_of_stabilizer_eq_bot`) and the orbit map is an immersion
 (`TauCeti.isImmersion_smul_const_of_stabilizer_eq_bot`). For a proper action the orbit map is
 moreover a closed topological embedding at such a point
-(`ProperSMul.isClosedEmbedding_smul_const`). Hence **the orbit map of a free point of a proper
-smooth action is a smooth embedding with closed image** (`TauCeti.isSmoothEmbedding_smul_const`).
-This is the first step of the proof of the quotient manifold theorem for free proper actions.
+(`ProperSMul.isClosedEmbedding_smul_const`), and `𝔤_x = 0` and `dim G ≤ dim M` hold at such a point
+(and globally on any nonempty manifold for a free proper action, including additive Lie groups)
+without an explicit Hausdorff hypothesis
+(`TauCeti.isotropy_fundamental_eq_bot_of_properSMul_of_stabilizer_eq_bot`,
+`TauCeti.finrank_le_of_properSMul_of_stabilizer_eq_bot`,
+`TauCeti.finrank_le_of_properSMul_of_isCancelSMul`,
+`TauCeti.finrank_le_of_properVAdd_of_stabilizer_eq_bot`,
+`TauCeti.finrank_le_of_properVAdd_of_isCancelVAdd`). Hence **the orbit map of
+a free point of a proper smooth action is a smooth embedding with closed image**
+(`TauCeti.isSmoothEmbedding_smul_const`). This is the first step of the proof of the quotient
+manifold theorem for free proper actions.
 
 ## References
 
@@ -58,6 +70,8 @@ open scoped ContDiff Manifold
 namespace TauCeti
 
 attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
+
+section Immersion
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
@@ -90,14 +104,10 @@ omit [CompleteSpace E] [CompleteSpace E'] in
 /-- **Orbit maps of free points are immersions.** Where the stabilizer of `x` is trivial, the
 orbit map `g ↦ g • x` of a smooth action on a Hausdorff manifold is an immersion. -/
 theorem isImmersion_smul_const_of_stabilizer_eq_bot [T2Space M] {x : M}
-    (hx : MulAction.stabilizer G x = ⊥) : IsImmersion I I' ∞ (fun g : G ↦ g • x) := by
-  have : CompleteSpace E' := FiniteDimensional.completeSpace ℝ E'
-  have : T2Space G := I.t2Space_of_lieGroup ∞
-  have : Subsingleton (MulAction.stabilizer G x) := by
-    rw [hx]
-    infer_instance
-  exact isImmersion_smul_const_iff.2
-    ((Lie.discreteTopology_stabilizer_iff_isotropy_eq_bot (I := I) (I' := I')).1 inferInstance)
+    (hx : MulAction.stabilizer G x = ⊥) : IsImmersion I I' ∞ (fun g : G ↦ g • x) :=
+  letI := FiniteDimensional.completeSpace ℝ E
+  letI := FiniteDimensional.completeSpace ℝ E'
+  isImmersion_smul_const_iff.2 (Lie.isotropy_eq_bot_of_stabilizer_eq_bot hx)
 
 omit [CompleteSpace E] [CompleteSpace E'] in
 /-- **Free orbits of proper smooth actions are closed embedded submanifolds.** Where the stabilizer
@@ -109,5 +119,85 @@ theorem isSmoothEmbedding_smul_const [ProperSMul G M] {x : M}
   have : T2Space M := t2Space_of_properSMul_of_t1Group (G := G)
   exact ⟨isImmersion_smul_const_of_stabilizer_eq_bot hx,
     (ProperSMul.isClosedEmbedding_smul_const hx).isEmbedding⟩
+
+end Immersion
+
+section Proper
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I ∞ G]
+  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+  {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H' M] [IsManifold I' ∞ M] [MulAction G M]
+  [ContMDiffSMul I I' ∞ G M] [BoundarylessManifold I' M] [ProperSMul G M]
+
+/-- Where the stabilizer of `x` is trivial, the isotropy Lie algebra `𝔤_x` of a proper smooth Lie
+group action on a boundaryless manifold vanishes (without an explicit Hausdorffness assumption on
+`M`). -/
+theorem isotropy_fundamental_eq_bot_of_properSMul_of_stabilizer_eq_bot [CompleteSpace E'] {x : M}
+    (hx : MulAction.stabilizer G x = ⊥) :
+    (InfinitesimalAction.fundamental I G I' M).isotropy x = ⊥ := by
+  have : T2Space G := I.t2Space_of_lieGroup ∞
+  have : T2Space M := t2Space_of_properSMul_of_t1Group (G := G)
+  exact Lie.isotropy_eq_bot_of_stabilizer_eq_bot hx
+
+include I I' in
+variable (I I') in
+/-- Where the stabilizer of `x` is trivial, a proper smooth action of a finite-dimensional real Lie
+group `G` on a finite-dimensional boundaryless manifold `M` satisfies `dim G ≤ dim M` (without an
+explicit Hausdorffness assumption on `M`). -/
+theorem finrank_le_of_properSMul_of_stabilizer_eq_bot [FiniteDimensional ℝ E'] {x : M}
+    (hx : MulAction.stabilizer G x = ⊥) :
+    Module.finrank ℝ E ≤ Module.finrank ℝ E' := by
+  have : T2Space G := I.t2Space_of_lieGroup ∞
+  have : T2Space M := t2Space_of_properSMul_of_t1Group (G := G)
+  exact Lie.finrank_le_of_stabilizer_eq_bot I I' hx
+
+include I G I' M in
+variable (I G I' M) in
+/-- When a finite-dimensional real Lie group `G` acts smoothly, freely and properly on a nonempty
+finite-dimensional boundaryless manifold `M`, we have `dim G ≤ dim M` (without an explicit
+Hausdorffness assumption on `M`). -/
+theorem finrank_le_of_properSMul_of_isCancelSMul [FiniteDimensional ℝ E']
+    [IsCancelSMul G M] [Nonempty M] :
+    Module.finrank ℝ E ≤ Module.finrank ℝ E' :=
+  let ⟨x⟩ := ‹Nonempty M›
+  finrank_le_of_properSMul_of_stabilizer_eq_bot I I' (IsCancelSMul.stabilizer_eq_bot (G := G) x)
+
+end Proper
+
+section Additive
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {A : Type*} [TopologicalSpace A] [ChartedSpace H A] [AddGroup A] [LieAddGroup I ∞ A]
+  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
+  {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
+  {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold I' ∞ N] [AddAction A N]
+  [ContMDiffVAdd I I' ∞ A N] [BoundarylessManifold I' N] [ProperVAdd A N]
+
+include I I' in
+variable (I I') in
+/-- Where the additive stabilizer of `x` is trivial, a proper smooth action of a finite-dimensional
+additive real Lie group `A` on a finite-dimensional boundaryless manifold `N` satisfies
+`dim A ≤ dim N` (without an explicit Hausdorffness assumption on `N`). -/
+theorem finrank_le_of_properVAdd_of_stabilizer_eq_bot {x : N}
+    (hx : AddAction.stabilizer A x = ⊥) :
+    Module.finrank ℝ E ≤ Module.finrank ℝ E' :=
+  finrank_le_of_properSMul_of_stabilizer_eq_bot (G := Multiplicative A) I I' (x := x)
+    (by simp [hx])
+
+include I A I' N in
+variable (I A I' N) in
+/-- When a finite-dimensional additive real Lie group `A` acts smoothly, freely and properly on a
+nonempty finite-dimensional boundaryless manifold `N`, we have `dim A ≤ dim N` (without an explicit
+Hausdorffness assumption on `N`). -/
+theorem finrank_le_of_properVAdd_of_isCancelVAdd [IsCancelVAdd A N] [Nonempty N] :
+    Module.finrank ℝ E ≤ Module.finrank ℝ E' :=
+  let ⟨x⟩ := ‹Nonempty N›
+  finrank_le_of_properVAdd_of_stabilizer_eq_bot I I' (IsCancelVAdd.stabilizer_eq_bot (G := A) x)
+
+end Additive
 
 end TauCeti

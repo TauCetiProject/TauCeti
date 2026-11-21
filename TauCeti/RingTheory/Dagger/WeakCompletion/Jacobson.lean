@@ -67,9 +67,9 @@ private noncomputable def geomPoly (P : ℕ → MvPolynomial ι O) : ℕ → MvP
   | 0 => 1
   | n + 1 =>
     ∑ j ∈ (range (n + 1)).attach,
-      P j.1 *
-        have : n - j.1 < n + 1 := Nat.lt_succ_of_le (Nat.sub_le n j.1)
-        geomPoly P (n - j.1)
+      P j.val *
+        have : n - j.val < n + 1 := Nat.lt_succ_of_le (Nat.sub_le n j.val)
+        geomPoly P (n - j.val)
 
 private theorem geomPoly_zero (P : ℕ → MvPolynomial ι O) : geomPoly P 0 = 1 := by
   rw [geomPoly]

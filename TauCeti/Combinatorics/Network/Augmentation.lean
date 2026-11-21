@@ -44,6 +44,8 @@ and upper bounds and preserves every excess: this is cycle augmentation of bound
   weighting a walk.
 * `TauCeti.excessAt_walkAssignment`: a walk from `s` to `t` weighted by `q` has excess `q` at `t`
   and `-q` at `s`.
+* `TauCeti.walkAssignment_nonneg_of_nodup`: a walk repeating no arrow, weighted by `q ≥ 0`, gives a
+  nonnegative assignment.
 * `TauCeti.walkAssignment_mem_Icc`: a walk repeating no arrow, weighted by `q`, lies between zero
   and any nonnegative capacities that are at least `q` along the walk.
 * `TauCeti.walkAssignment_bottleneck_le`: a walk repeating no arrow, weighted by its bottleneck
@@ -177,14 +179,22 @@ theorem walkAssignment_le {s t : V} {p : ArrowWalk Q s t} (hp : p.arrows.Nodup) 
   · rw [walkAssignment_eq_zero_of_notMem p q he]
     exact hq
 
+/-- A walk that traverses no arrow twice, weighted by `q ≥ 0`, gives a nonnegative assignment: on
+each arrow it carries either `q` or `0`. -/
+theorem walkAssignment_nonneg_of_nodup {s t : V} {p : ArrowWalk Q s t} (hp : p.arrows.Nodup)
+    {q : K} (hq : 0 ≤ q) : 0 ≤ walkAssignment p q := by
+  intro x y e
+  by_cases he : ⟨x, y, e⟩ ∈ p.arrows
+  · simpa only [walkAssignment_eq_of_mem hp q he, Pi.zero_apply] using hq
+  · simp only [walkAssignment_eq_zero_of_notMem p q he, Pi.zero_apply, le_refl]
+
 /-- **Feasibility of a walk.** A walk that traverses no arrow twice, weighted by `q ≥ 0`, lies
 between zero and any nonnegative capacities that are at least `q` on every arrow it traverses. -/
 theorem walkAssignment_mem_Icc {s t : V} {p : ArrowWalk Q s t} (hp : p.arrows.Nodup) {q : K}
     (hq : 0 ≤ q) {cap : Assignment Q K} (hcap : 0 ≤ cap) (hle : ∀ a ∈ p.arrows, q ≤ cap a.2.2) :
     walkAssignment p q ∈ Set.Icc 0 cap := by
-  constructor <;> intro x y e <;> by_cases he : ⟨x, y, e⟩ ∈ p.arrows
-  · simpa only [walkAssignment_eq_of_mem hp q he, Pi.zero_apply] using hq
-  · simp only [walkAssignment_eq_zero_of_notMem p q he, Pi.zero_apply, le_refl]
+  refine ⟨walkAssignment_nonneg_of_nodup hp hq, fun x y e ↦ ?_⟩
+  by_cases he : ⟨x, y, e⟩ ∈ p.arrows
   · simpa only [walkAssignment_eq_of_mem hp q he] using hle _ he
   · simpa only [walkAssignment_eq_zero_of_notMem p q he, Pi.zero_apply] using hcap x y e
 

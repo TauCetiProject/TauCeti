@@ -98,9 +98,9 @@ theorem exists_wordProd_eraseIdx_eraseIdx_eq (l : List b.support)
       wordProd P b (l.take k) * RootPairing.weylGroup.ofIdx P (l[k] : ι) := by
     rw [hsucc, wordProd_append, wordProd_cons, wordProd_nil, mul_one]
   have hmem : (l[k] : ι) ∈ inversions P b (wordProd P b (l.take k)) := by
-    rw [← ncard_inversions_mul_ofIdx_lt_iff P b _ (b.isPos_of_mem_support l[k].2), ← hword,
+    rw [← ncard_inversions_mul_ofIdx_lt_iff P b _ (b.isPos_of_mem_support l[k].property), ← hword,
       hprefix]
-    have hstep := ncard_inversions_mul_ofIdx P (wordProd P b (l.take k)) b l[k].2
+    have hstep := ncard_inversions_mul_ofIdx P (wordProd P b (l.take k)) b l[k].property
     rw [← hword, hprefix] at hstep
     omega
   obtain ⟨hmempos, hmemneg⟩ := (mem_inversions P b _ _).mp hmem

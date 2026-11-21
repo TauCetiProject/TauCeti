@@ -19,6 +19,8 @@ General lemmas on `LinearPMap` that Mathlib does not provide.
 * `LinearPMap.neg_smul` and `LinearPMap.smul_neg`: a negation moves through a scalar multiple.
 * `LinearPMap.apply_eq_neg_smul_of_anticommute`: a linear map preserving `A.domain` and
   anticommuting with `A` negates eigenvalues on eigenvectors.
+* `LinearPMap.eq_of_le_of_smul_sub_surjective_of_injective`: an extension `B` of `A` equals `A`
+  when `lambda • I - A` is surjective and `lambda • I - B` is injective.
 * `LinearPMap.exists_eq_add_smul_supSpanSingleton`: every vector of the domain of
   `f.supSpanSingleton x y hx` is `s + c • x` with `s` in the domain of `f`, sent to `f s + σ c • y`.
 * `LinearPMap.supSpanSingleton_injective`: extending an injective partial map by `x ↦ y` with `y`
@@ -56,10 +58,31 @@ sends an eigenvector of `A` with eigenvalue `r` to one with eigenvalue `-r`. -/
 theorem apply_eq_neg_smul_of_anticommute {𝕜 E G : Type*} [Ring 𝕜] [AddCommGroup E] [Module 𝕜 E]
     [FunLike G E E] [LinearMapClass G 𝕜 E E] {A : E →ₗ.[𝕜] E} {γ : G}
     (hγdom : ∀ x ∈ A.domain, γ x ∈ A.domain)
-    (hγA : ∀ x : A.domain, γ (A x) = -A ⟨γ x, hγdom x x.2⟩)
+    (hγA : ∀ x : A.domain, γ (A x) = -A ⟨γ x, hγdom x x.property⟩)
     (x : A.domain) {r : 𝕜} (hx : A x = r • (x : E)) :
-    A ⟨γ x, hγdom x x.2⟩ = (-r) • γ x := by
-  rw [← neg_neg (A ⟨γ x, hγdom x x.2⟩), ← hγA x, hx, _root_.map_smul, _root_.neg_smul]
+    A ⟨γ x, hγdom x x.property⟩ = (-r) • γ x := by
+  rw [← neg_neg (A ⟨γ x, hγdom x x.property⟩), ← hγA x, hx, _root_.map_smul, _root_.neg_smul]
+
+/-- **An operator has no proper extension on which a shift stays injective.** If `A ≤ B`,
+`lambda • I - A` maps `D(A)` onto `E` and `lambda • I - B` is injective on `D(B)`, then `A = B`.
+
+Unlike `LinearPMap.eq_of_le_of_mem_resolventSet`, no continuity or bounded inverse is required,
+so it applies when injectivity of `lambda • I - B` is all that is known about the extension. -/
+theorem eq_of_le_of_smul_sub_surjective_of_injective {A B : E →ₗ.[R] E} {lambda : R}
+    (hAB : A ≤ B) (hA : Function.Surjective fun x : A.domain => lambda • (x : E) - A x)
+    (hB : Function.Injective fun x : B.domain => lambda • (x : E) - B x) : A = B := by
+  -- A vector `y ∈ D(B)` has `lambda • y - B y = lambda • x - A x` for some `x ∈ D(A)`;
+  -- injectivity for `B` then forces `y = x`, so `D(B) ⊆ D(A)`.
+  refine eq_of_le_of_domain_eq hAB (le_antisymm hAB.1 fun y hy => ?_)
+  obtain ⟨x, hx⟩ := hA (lambda • y - B ⟨y, hy⟩)
+  obtain ⟨x', hx'coe, hx'val⟩ := exists_of_le hAB x
+  have hxy : x' = (⟨y, hy⟩ : B.domain) := by
+    refine hB ?_
+    simp only [← hx'coe, ← hx'val]
+    exact hx
+  have hcoe : (x : E) = y := by rw [hx'coe, hxy]
+  rw [← hcoe]
+  exact x.property
 
 section supSpanSingleton
 

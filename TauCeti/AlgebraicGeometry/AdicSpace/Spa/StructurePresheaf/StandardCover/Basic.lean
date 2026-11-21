@@ -193,7 +193,7 @@ theorem isSheafFor_ofArrows_inf_spaBasicOpen_of_laurentGluing
         (hC.isSheafFor_ofArrows_inf_laurentCoverOpen (completionLocalization P U s _ hden) hB
           hBplus) R hV
   rw [← Presieve.ofArrows_comp_eq_of_surjective _ (a := fun t : T ↦
-    (⟨ρ t, Finset.mem_image_of_mem ρ t.2⟩ : T.image ρ)) ?_] at hB
+    (⟨ρ t, Finset.mem_image_of_mem ρ t.property⟩ : T.image ρ)) ?_] at hB
   · -- a family of inclusions into `Z` is determined by its domains
     have key {Y Y' : T → Opens ↥(spa (completedPlusSubring P Aplus U s _ hden))} (e : Y = Y')
         {Z : Opens ↥(spa (completedPlusSubring P Aplus U s _ hden))} (h : ∀ t, Y t ≤ Z)
@@ -231,7 +231,7 @@ theorem isSheafFor_ofArrows_inf_spaBasicOpen_of_subset_laurentPiece_of_isSheafFo
     simp [TJ]
   -- the pieces of sign `≤` are empty on `V`
   have hempty (t : T) (ht : t ∉ J) : V ⊓ spaBasicOpen Aplus T t = ⊥ :=
-    inf_spaBasicOpen_eq_bot_of_subset_laurentPiece (fun v _ ↦ hϖ v.1 v.2) hVJ ht
+    inf_spaBasicOpen_eq_bot_of_subset_laurentPiece (fun v _ ↦ hϖ v.val v.property) hVJ ht
   -- the pieces of sign `≥` are cut out by `TJ`
   have hpiece (t : T) (ht : t ∈ J) :
       V ⊓ spaBasicOpen Aplus T t = V ⊓ spaBasicOpen Aplus TJ t :=
@@ -241,8 +241,8 @@ theorem isSheafFor_ofArrows_inf_spaBasicOpen_of_subset_laurentPiece_of_isSheafFo
   · -- no generator has sign `≥`, so `V` is empty and the cover is trivial
     obtain ⟨t₀, ht₀⟩ := hT
     have hV : V = ⊥ :=
-      eq_bot_of_subset_laurentPiece_of_eq_empty (fun v _ ↦ hϖ v.1 v.2)
-        (fun t ht ↦ hmemTJ.mpr ⟨t.2, ht⟩) hVJ hTJ
+      eq_bot_of_subset_laurentPiece_of_eq_empty (fun v _ ↦ hϖ v.val v.property)
+        (fun t ht ↦ hmemTJ.mpr ⟨t.property, ht⟩) hVJ hTJ
     have hV₀ : V ≤ V ⊓ spaBasicOpen Aplus T t₀ := by simp [hV]
     rw [(Sieve.id_mem_iff_eq_top (S := Sieve.generate _)).mp
       ⟨_, homOfLE hV₀, _, Presieve.ofArrows.mk (⟨t₀, ht₀⟩ : T), rfl⟩]
@@ -258,7 +258,7 @@ theorem isSheafFor_ofArrows_inf_spaBasicOpen_of_subset_laurentPiece_of_isSheafFo
       exact ⟨⟨a, haT⟩, homOfLE (e.le.trans (hpiece _ haJ).symm.le), rfl⟩
     · rintro ⟨t, e, -⟩
       by_cases ht : t ∈ J
-      · exact ⟨⟨t, hmemTJ.mpr ⟨t.2, ht⟩⟩, homOfLE (e.le.trans (hpiece t ht).le), rfl⟩
+      · exact ⟨⟨t, hmemTJ.mpr ⟨t.property, ht⟩⟩, homOfLE (e.le.trans (hpiece t ht).le), rfl⟩
       · obtain ⟨a, ha⟩ := hTJ
         exact ⟨⟨a, ha⟩, homOfLE (e.le.trans ((hempty t ht).le.trans bot_le)), rfl⟩
 
@@ -308,7 +308,7 @@ theorem isSheafFor_ofArrows_inf_spaBasicOpen_of_span_eq_top_of_isSheafFor
     simp only [Sieve.mem_ofArrows_iff, Sieve.pullback_apply]
     constructor
     · rintro ⟨t, e, -⟩
-      exact ⟨⟨J, e.le.trans (inf_le_left.trans hVJ)⟩, t, t.2, e.le.trans inf_le_right⟩
+      exact ⟨⟨J, e.le.trans (inf_le_left.trans hVJ)⟩, t, t.property, e.le.trans inf_le_right⟩
     · rintro ⟨-, t, ht, hUt⟩
       exact ⟨⟨t, ht⟩, homOfLE (le_inf g.le hUt), rfl⟩
   -- `S` satisfies the sheaf condition: glue over each `Y J`, then over `W`
@@ -335,7 +335,7 @@ theorem isSheafFor_ofArrows_inf_spaBasicOpen_of_span_eq_top_of_isSheafFor
     (fun _ ↦ (hlaurent R
       (inf_mem_spaRationalOpens hW (spaBasicOpen_mem_spaRationalOpens hTopen))).isSeparatedFor)
     hS (fun U g hg ↦ ?_)
-    fun t U g hg ↦ ⟨U, 𝟙 U, _, ⟨hRY g inf_le_left hg, t, t.2, g.le.trans inf_le_right⟩,
+    fun t U g hg ↦ ⟨U, 𝟙 U, _, ⟨hRY g inf_le_left hg, t, t.property, g.le.trans inf_le_right⟩,
       Category.id_comp _⟩
   obtain ⟨-, t, ht, hUt⟩ := hg
   exact ⟨W ⊓ spaBasicOpen Aplus T t, homOfLE (le_inf g.le hUt), homOfLE inf_le_left,
