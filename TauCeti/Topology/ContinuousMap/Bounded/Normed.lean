@@ -292,9 +292,8 @@ theorem norm_norm_smul_one_sub_le_of_nonneg {X : Type*} [TopologicalSpace X] {f 
 division ring is computed pointwise. -/
 theorem ringInverse_apply {α 𝕜 : Type*} [TopologicalSpace α] [NormedDivisionRing 𝕜]
     {F : α →ᵇ 𝕜} (hF : IsUnit F) (x : α) : Ring.inverse F x = (F x)⁻¹ := by
-  have h := congrArg (fun G : α →ᵇ 𝕜 ↦ G x) (Ring.mul_inverse_cancel F hF)
-  simp only [mul_apply, one_apply] at h
-  exact eq_inv_of_mul_eq_one_right h
+  simpa using
+    hF.map_ringInverse ((Pi.evalMonoidHom (fun _ ↦ 𝕜) x).comp (FunLike.coeMonoidHom (α →ᵇ 𝕜) α 𝕜))
 
 section Dilate
 

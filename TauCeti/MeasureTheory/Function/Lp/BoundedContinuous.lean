@@ -5,12 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Function.Holder
 public import Mathlib.MeasureTheory.Function.LpOrder
 public import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 public import Mathlib.MeasureTheory.Function.LpSpace.ContinuousFunctions
 public import TauCeti.MeasureTheory.Function.Lp.One
 public import TauCeti.MeasureTheory.Measure.OpenPos
-import TauCeti.MeasureTheory.Function.Lp.Multiplication
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
@@ -34,9 +34,8 @@ almost-everywhere bound. If `μ` also charges every point, the only null set is 
 real values, as ordered spaces. For instance, `L∞` of a counting measure, or of a Haar measure
 on a discrete group, consists of all bounded functions.
 
-Composing `toLpTop` with the bilinear multiplication operators of `Lᵖ` by `L∞`
-(`MeasureTheory.Lp.multiplicationOperatorL`) makes multiplication of `Lᵖ` by bounded continuous
-scalar functions a bounded bilinear map, again for every measure
+Composing `toLpTop` with Hölder's product `L∞ × Lᵖ → Lᵖ` makes multiplication of `Lᵖ` by bounded
+continuous scalar functions a bounded bilinear map, again for every measure
 (`BoundedContinuousFunction.mulLpL`).
 
 ## Main definitions
@@ -196,17 +195,18 @@ variable {α 𝕜 E : Type*} [TopologicalSpace α] [MeasurableSpace α] [BorelSp
   [NormedSpace 𝕜 E] (μ : Measure α) (p : ℝ≥0∞) [Fact (1 ≤ p)]
 
 /-- Multiplication of `Lᵖ(μ, E)` by bounded continuous scalar functions, as a continuous bilinear
-map: the multiplication operator (`MeasureTheory.Lp.multiplicationOperatorL`) of the class of the
+map: Hölder's product `L∞ × Lᵖ → Lᵖ` (`ContinuousLinearMap.holderL`) applied to the class of the
 multiplier in `L∞`. No finiteness of the measure is needed. -/
 def mulLpL : (α →ᵇ 𝕜) →L[𝕜] Lp E p μ →L[𝕜] Lp E p μ :=
-  Lp.multiplicationOperatorL.comp (toLpTop μ 𝕜)
+  ((ContinuousLinearMap.lsmul 𝕜 𝕜).holderL μ ∞ p p).comp (toLpTop μ 𝕜)
 
 /-- `mulLpL μ p F f` is almost everywhere the pointwise product `F • f`. -/
 theorem coeFn_mulLpL (F : α →ᵇ 𝕜) (f : Lp E p μ) :
     mulLpL μ p F f =ᵐ[μ] fun x ↦ F x • f x := by
-  filter_upwards [Lp.multiplicationOperator_ae (toLpTop μ 𝕜 F) f,
+  filter_upwards [(ContinuousLinearMap.lsmul 𝕜 𝕜).coeFn_holder (r := p) (toLpTop μ 𝕜 F) f,
     coeFn_toLpTop μ (𝕜 := 𝕜) F] with x h₁ h₂
-  rw [mulLpL, ContinuousLinearMap.comp_apply, Lp.multiplicationOperatorL_apply, h₁, h₂]
+  rw [mulLpL, ContinuousLinearMap.comp_apply, ContinuousLinearMap.holderL_apply_apply, h₁, h₂,
+    ContinuousLinearMap.lsmul_apply]
 
 end BoundedContinuousFunction
 

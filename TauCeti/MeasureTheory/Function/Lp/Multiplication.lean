@@ -27,8 +27,6 @@ Over a nontrivially normed field `𝕜` on a sigma-finite measure space with non
 operator norm on `Lp E p μ` equals the `L∞` norm `‖a‖` (`norm_multiplicationOperator`). On
 `Lp E 2 μ` for a complete inner-product space `E` over `𝕜` (`[RCLike 𝕜]`), the Hilbert adjoint of
 multiplication by `a` is multiplication by `star a` (`adjoint_multiplicationOperator`).
-Since the operator norm is at most `‖a‖`, the operators form a continuous bilinear map of the
-symbol and the function (`multiplicationOperatorL`).
 -/
 
 public section
@@ -174,20 +172,6 @@ most its `L∞` norm. -/
 theorem norm_multiplicationOperator_le (a : Lp 𝕜 ∞ μ) :
     ‖multiplicationOperator (E := E) (p := p) a‖ ≤ ‖a‖ :=
   LinearMap.mkContinuous_norm_le _ (norm_nonneg a) _
-
-/-- Multiplication operators as a continuous bilinear map of the symbol `a : Lp 𝕜 ∞ μ` and the
-function `f : Lp E p μ`. -/
-def multiplicationOperatorL : Lp 𝕜 ∞ μ →L[𝕜] Lp E p μ →L[𝕜] Lp E p μ :=
-  LinearMap.mkContinuous
-    { toFun := multiplicationOperator
-      map_add' := multiplicationOperator_add
-      map_smul' := multiplicationOperator_smul }
-    1 fun a ↦ (one_mul ‖a‖).symm ▸ norm_multiplicationOperator_le a
-
-@[simp]
-theorem multiplicationOperatorL_apply (a : Lp 𝕜 ∞ μ) :
-    multiplicationOperatorL (E := E) (p := p) a = multiplicationOperator a :=
-  (rfl)
 
 /-- If `0 < c` and `c ≤ ‖a‖` almost everywhere on `s`, then multiplication by `a` scales the `Lᵖ`
 norm of a constant indicator of `s` by at least `c`. -/
