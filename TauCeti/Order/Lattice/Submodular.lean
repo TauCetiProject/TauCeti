@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.Order.Filter.Extr
-public import Mathlib.Order.Hom.Lattice
 public import Mathlib.Order.SupClosed
 
 /-!
