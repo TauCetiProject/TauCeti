@@ -36,6 +36,10 @@ The proof uses Mathlib's `LinearMap.toKerLocalized_isLocalizedModule` (localizat
 commutes with kernels) and `IsLocalizedModule.prodMap` (localization commutes with
 binary products).
 
+In formal gluing, `N` and `P` are modules over an `R`-algebra `S` and `g` is `S`-linear;
+`LinearMap.isLocalizedModule_fst_ker_coprod_restrictScalars` states the comparison when `g`
+becomes bijective after inverting the image of `r : R` in `S`.
+
 ## References
 
 * The Stacks Project, Proposition 15.91.16 (05ER), formal gluing of modules;
@@ -170,6 +174,27 @@ theorem surjective_localizedMap_liftBaseChange_snd_ker_coprod
     rw [← LinearMap.coe_comp, hsq]
     exact hf.comp hb_bij.2
   exact (Surjective.of_comp_iff' hg _).mp hsurj
+
+/-- **Localization of compatible pairs, for a map of modules over an algebra.** If `g : N → P`
+is `S`-linear and becomes bijective after inverting the image of `r : R` in `S`, then the map
+from pairs `(x, y)` satisfying `f x = g y` to the localization of `M` at `r` is a localization
+map. -/
+theorem isLocalizedModule_fst_ker_coprod_restrictScalars (f : M →ₗ[R] P) (g : N →ₗ[S] P) (r : R)
+    (hg : Bijective (LocalizedModule.map (.powers (algebraMap R S r)) g)) :
+    IsLocalizedModule (.powers r) (LocalizedModule.mkLinearMap (.powers r) M ∘ₗ
+      fst R M N ∘ₗ (ker (f.coprod (-g.restrictScalars R))).subtype) := by
+  let n := (LocalizedModule.mkLinearMap (.powers (algebraMap R S r)) N).restrictScalars R
+  let p := (LocalizedModule.mkLinearMap (.powers (algebraMap R S r)) P).restrictScalars R
+  have : IsLocalizedModule (.powers r) n := IsLocalizedModule.restrictScalars_powers r _
+  have : IsLocalizedModule (.powers r) p := IsLocalizedModule.restrictScalars_powers r _
+  refine isLocalizedModule_fst_ker_coprod f (g.restrictScalars R) _ _ n p ?_
+  have heq : IsLocalizedModule.map (.powers r) n p (g.restrictScalars R) =
+      (LocalizedModule.map (.powers (algebraMap R S r)) g).restrictScalars R := by
+    apply IsLocalizedModule.linearMap_ext (.powers r) n p
+    ext x
+    simp [n, p, IsLocalizedModule.map_comp]
+  rw [heq]
+  exact hg
 
 end BaseChange
 

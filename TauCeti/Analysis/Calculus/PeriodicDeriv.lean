@@ -14,6 +14,10 @@ public import Mathlib.Analysis.Calculus.LogDeriv
 import Mathlib.Algebra.Order.ToIntervalMod
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.Shift
+import Mathlib.Analysis.Calculus.ContDiff.Deriv
+import Mathlib.Analysis.Calculus.MeanValue
+public import Mathlib.Topology.EMetricSpace.Lipschitz
+import Mathlib.Topology.Instances.Real.Lemmas
 import TauCeti.Analysis.Calculus.FDeriv.ConstantDirection
 
 /-!
@@ -42,6 +46,8 @@ protected so that opening `Function.Periodic` does not shadow `deriv` and `logDe
   periodic.
 * `Function.Periodic.logDeriv`: the logarithmic derivative of a periodic
   function is periodic.
+* `Function.Periodic.exists_lipschitzWith`: a continuously differentiable periodic function of a
+  real variable is Lipschitz.
 * `TauCeti.fderiv_add_eq_smul`: a scalar twist `f (x + c) = a • f x` under translation passes to
   the Fréchet derivative.
 * `TauCeti.fderiv_apply_eq_zero_of_forall_periodic_smul`: a function invariant under all
@@ -98,6 +104,18 @@ protected theorem Periodic.logDeriv {𝕜' : Type*} [NontriviallyNormedField �
     [NormedAlgebra 𝕜 𝕜'] {f : 𝕜 → 𝕜'} {c : 𝕜} (hf : Periodic f c) :
     Periodic (logDeriv f) c :=
   hf.deriv.div hf
+
+/-- **A periodic `C¹` function is Lipschitz.** A continuously differentiable periodic function of
+a real variable with nonzero period is Lipschitz. -/
+theorem Periodic.exists_lipschitzWith {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {f : ℝ → F} {c : ℝ} (hf : Periodic f c) (hc : c ≠ 0) (hf₁ : ContDiff ℝ 1 f) :
+    ∃ K, LipschitzWith K f := by
+  obtain ⟨C, hC⟩ :=
+    (hf.deriv.isBounded_of_continuous hc (hf₁.continuous_deriv le_rfl)).exists_norm_le
+  refine ⟨C.toNNReal,
+    lipschitzWith_of_nnNorm_deriv_le (hf₁.differentiable one_ne_zero) fun x ↦ ?_⟩
+  rw [← NNReal.coe_le_coe, coe_nnNorm]
+  exact (hC _ (Set.mem_range_self x)).trans (Real.le_coe_toNNReal C)
 
 end Function
 

@@ -458,6 +458,20 @@ lemma isZero_singularHomology_ofInclusion_congr {X : TopCat.{w}} {A A' S S' : Se
   subst hA hS
   rfl
 
+/-- Two maps of pairs of subspaces acting by the same map `g` induce the same map on homology, up
+to equalities of the subspaces: one is an isomorphism exactly when the other is. -/
+lemma isIso_singularHomologyMap_ofInclusion_congr {X Y : TopCat.{w}} (g : X → Y)
+    {s t s₁ t₁ : Set X} {s' t' s₁' t₁' : Set Y} {h : s ⊆ t} {h' : s' ⊆ t'} {h₁ : s₁ ⊆ t₁}
+    {h₁' : s₁' ⊆ t₁'} (hs : s = s₁) (ht : t = t₁) (hs' : s' = s₁') (ht' : t' = t₁')
+    (φ : ofInclusion h ⟶ ofInclusion h') (ψ : ofInclusion h₁ ⟶ ofInclusion h₁')
+    (hφ : ∀ x, (Hom.fst φ x).val = g x.val) (hψ : ∀ x, (Hom.fst ψ x).val = g x.val) (n : ℕ) :
+    IsIso (TopPair.singularHomologyMap φ R n) ↔ IsIso (TopPair.singularHomologyMap ψ R n) := by
+  subst hs ht hs' ht'
+  obtain rfl : φ = ψ := hom_ext_of_fst _ (by
+    ext x
+    exact Subtype.ext ((hφ x).trans (hψ x).symm))
+  rfl
+
 /-- **A pair whose subspace is everything has no relative homology.** If the embedding of the
 subspace of `P` is surjective, the relative singular homology of `P` vanishes in every degree. -/
 lemma isZero_singularHomology_of_surjective_map (hP : Function.Surjective P.map) (n : ℕ) :
