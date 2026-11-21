@@ -29,7 +29,7 @@ three quadratic statistics of `X`.
   `∑ⱼ λⱼ Zⱼ²`, where `λⱼ` are the eigenvalues of `S` and the `Zⱼ` are independent standard
   normal variables.
 
-The `HasLaw` forms transfer the first two statements to random vectors on any probability space.
+The `HasLaw` forms transfer the three statements to random vectors on any probability space.
 
 The central case of the first statement is adapted from the lean-CKSD project
 (<https://github.com/bjbraams/lean-CKSD>, `CKSD/LinearModels/Multivariate/SampleLaws.lean`).
@@ -41,7 +41,11 @@ The central case of the first statement is adapted from the lean-CKSD project
 * `TauCeti.Probability.map_quadForm_pseudoInverse_multivariateGaussian`: the chi-squared law of
   `Xᵀ S⁺ X` for singular `S`;
 * `TauCeti.Probability.map_norm_sq_multivariateGaussian_eq_map_sum_eigenvalues_mul_sq`: the law
-  of `‖X‖²` as a weighted sum of squares of independent standard normal variables.
+  of `‖X‖²` as a weighted sum of squares of independent standard normal variables;
+* `ProbabilityTheory.HasLaw.quadForm_inv_multivariateGaussian`,
+  `ProbabilityTheory.HasLaw.quadForm_pseudoInverse_multivariateGaussian`,
+  `ProbabilityTheory.HasLaw.norm_sq_map_sum_eigenvalues_mul_sq`: the same laws for a random vector
+  `X` with law `N(m, S)`.
 
 ## References
 
@@ -62,6 +66,7 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 /-- **Gaussian quadratic form in the inverse covariance.** For positive-definite `S`, the
 quadratic form `xᵀ S⁻¹ x` under `N(m, S)` has the noncentral chi-squared law with `card ι`
 degrees of freedom and noncentrality `mᵀ S⁻¹ m`. -/
+@[simp]
 theorem map_quadForm_inv_multivariateGaussian (m : EuclideanSpace ℝ ι) (S : Matrix ι ι ℝ)
     (hS : S.PosDef) :
     (multivariateGaussian m S).map (fun x ↦ WithLp.ofLp x ⬝ᵥ (S⁻¹ *ᵥ WithLp.ofLp x)) =
@@ -69,25 +74,16 @@ theorem map_quadForm_inv_multivariateGaussian (m : EuclideanSpace ℝ ι) (S : M
         (WithLp.ofLp m ⬝ᵥ (S⁻¹ *ᵥ WithLp.ofLp m)).toNNReal := by
   have hq (x : EuclideanSpace ℝ ι) :
       WithLp.ofLp x ⬝ᵥ (S⁻¹ *ᵥ WithLp.ofLp x) = ‖(CFC.sqrt S)⁻¹.toEuclideanLin x + 0‖ ^ 2 := by
-    rw [add_zero, hS.posSemidef.norm_sq_toEuclideanLin_inv_sqrt,
-      Matrix.dotProduct_mulVec_eq_inner_toEuclideanLin]
-  have hu := hS.isUnit_det_sqrt
-  have hT : ((CFC.sqrt S)⁻¹).transpose = (CFC.sqrt S)⁻¹ := by
-    rw [Matrix.transpose_nonsing_inv, ← Matrix.conjTranspose_eq_transpose_of_trivial,
-      (Matrix.LE.le.posSemidef (CFC.sqrt_nonneg S)).isHermitian.eq]
-  have hcov : (CFC.sqrt S)⁻¹ * S * ((CFC.sqrt S)⁻¹).transpose = 1 := by
-    calc (CFC.sqrt S)⁻¹ * S * ((CFC.sqrt S)⁻¹).transpose
-        _ = (CFC.sqrt S)⁻¹ * (CFC.sqrt S * CFC.sqrt S) * (CFC.sqrt S)⁻¹ := by
-          rw [hT, CFC.sqrt_mul_sqrt_self S hS.posSemidef.nonneg]
-        _ = 1 := by
-          rw [← Matrix.mul_assoc, Matrix.nonsing_inv_mul _ hu, Matrix.one_mul,
-            Matrix.mul_nonsing_inv _ hu]
+    have h := hS.posSemidef.norm_sq_toEuclideanLin_inv_sqrt x
+    rw [← Matrix.star_dotProduct_mulVec_eq_inner_toEuclideanLin] at h
+    simpa using h.symm
   have hf : (fun x : EuclideanSpace ℝ ι ↦ WithLp.ofLp x ⬝ᵥ (S⁻¹ *ᵥ WithLp.ofLp x)) =
       (fun y ↦ ‖y‖ ^ 2) ∘ fun x ↦ (CFC.sqrt S)⁻¹.toEuclideanLin x + 0 := by
     funext x
     exact hq x
   rw [hf, ← Measure.map_map (by fun_prop) (by fun_prop),
-    map_affine_multivariateGaussian m hS.posSemidef (CFC.sqrt S)⁻¹ 0, hcov,
+    map_affine_multivariateGaussian m hS.posSemidef (CFC.sqrt S)⁻¹ 0,
+    hS.inv_sqrt_mul_mul_transpose_inv_sqrt,
     map_norm_sq_multivariateGaussian_noncentral, hq m]
   congr 1
   ext
@@ -96,6 +92,7 @@ theorem map_quadForm_inv_multivariateGaussian (m : EuclideanSpace ℝ ι) (S : M
 /-- **Gaussian quadratic form in the pseudoinverse.** Under `N(0, S)` with `S` positive
 semidefinite, the quadratic form `xᵀ S⁺ x` in the Moore–Penrose inverse `S⁺` has the
 chi-squared law with `rank S` degrees of freedom. Singular and zero `S` are included. -/
+@[simp]
 theorem map_quadForm_pseudoInverse_multivariateGaussian (S : Matrix ι ι ℝ)
     (hS : S.PosSemidef) :
     (multivariateGaussian 0 S).map
@@ -106,14 +103,22 @@ theorem map_quadForm_pseudoInverse_multivariateGaussian (S : Matrix ι ι ℝ)
         Matrix.toEuclideanCLM (𝕜 := ℝ) (CFC.sqrt S) =
       fun z ↦ ‖(LinearMap.range S.toEuclideanLin).starProjection z‖ ^ 2 := by
     funext z
-    rw [Function.comp_apply, Matrix.dotProduct_mulVec_eq_inner_toEuclideanLin,
-      Matrix.inner_toEuclideanCLM_sqrt_toEuclideanLin,
-      Matrix.sqrt_mul_covariancePseudoInverse_mul_sqrt,
-      Matrix.toEuclideanLin_covariancePseudoInverse_mul hS, ContinuousLinearMap.coe_coe,
-      real_inner_comm]
-    have h := (LinearMap.range S.toEuclideanLin).re_inner_starProjection_eq_normSq z
-    rw [RCLike.re_to_real] at h
-    rw [h, Submodule.starProjection_apply, Submodule.norm_coe]
+    have hdot (x : EuclideanSpace ℝ ι) :
+        WithLp.ofLp x ⬝ᵥ (S.covariancePseudoInverse *ᵥ WithLp.ofLp x) =
+          ⟪x, S.covariancePseudoInverse.toEuclideanLin x⟫ := by
+      simpa using Matrix.star_dotProduct_mulVec_eq_inner_toEuclideanLin _ x x
+    calc WithLp.ofLp (Matrix.toEuclideanCLM (𝕜 := ℝ) (CFC.sqrt S) z) ⬝ᵥ
+          (S.covariancePseudoInverse *ᵥ
+            WithLp.ofLp (Matrix.toEuclideanCLM (𝕜 := ℝ) (CFC.sqrt S) z))
+        _ = ⟪z, (S.covariancePseudoInverse * S).toEuclideanLin z⟫ := by
+          rw [hdot, Matrix.inner_toEuclideanCLM_sqrt_toEuclideanLin,
+            Matrix.sqrt_mul_covariancePseudoInverse_mul_sqrt]
+        _ = ⟪(LinearMap.range S.toEuclideanLin).starProjection z, z⟫ := by
+          rw [Matrix.toEuclideanLin_covariancePseudoInverse_mul hS, real_inner_comm]
+          rfl
+        _ = ‖(LinearMap.range S.toEuclideanLin).starProjection z‖ ^ 2 := by
+          simpa only [RCLike.re_to_real, Submodule.starProjection_apply, Submodule.norm_coe]
+            using (LinearMap.range S.toEuclideanLin).re_inner_starProjection_eq_normSq z
   rw [multivariateGaussian_zero_eq_map_stdGaussian_sqrt, Measure.map_map (by fun_prop)
     (by fun_prop), hf, Submodule.map_norm_sq_starProjection_stdGaussian,
     Matrix.rank_eq_finrank_range_toEuclideanLin]
@@ -165,5 +170,16 @@ theorem HasLaw.quadForm_pseudoInverse_multivariateGaussian {S : Matrix ι ι ℝ
     HasLaw (fun ω ↦ WithLp.ofLp (X ω) ⬝ᵥ (S.covariancePseudoInverse *ᵥ WithLp.ofLp (X ω)))
       (chiSquaredMeasure S.rank) P :=
   (HasLaw.mk (by fun_prop) (map_quadForm_pseudoInverse_multivariateGaussian S hS)).fun_comp hX
+
+/-- For a random vector `X` with law `N(0, S)` and positive-semidefinite `S`, the squared norm
+`‖X‖²` has the law of `∑ j, λ j * Z j ^ 2`, where `λ` are the eigenvalues of `S` and the `Z j`
+are independent standard normal variables. -/
+theorem HasLaw.norm_sq_map_sum_eigenvalues_mul_sq {S : Matrix ι ι ℝ}
+    (hX : HasLaw X (multivariateGaussian 0 S) P) (hS : S.PosSemidef) :
+    HasLaw (fun ω ↦ ‖X ω‖ ^ 2)
+      ((Measure.pi fun _ : ι ↦ gaussianReal 0 1).map
+        (fun z ↦ ∑ j, hS.isHermitian.eigenvalues j * z j ^ 2)) P :=
+  (HasLaw.mk (by fun_prop)
+    (map_norm_sq_multivariateGaussian_eq_map_sum_eigenvalues_mul_sq hS)).fun_comp hX
 
 end ProbabilityTheory

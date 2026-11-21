@@ -53,8 +53,8 @@ diagonal matrix `diag(w)` the quadratic form is `x ↦ ∑ᵢ |xᵢ|² wᵢ`.
 
 * `Matrix.re_inner_toEuclideanLin_diagonal_apply_self` — the quadratic form of `diag(w)` is
   `x ↦ ∑ᵢ |xᵢ|² wᵢ`;
-* `Matrix.dotProduct_mulVec_eq_inner_toEuclideanLin` — over the reals, the coordinate quadratic
-  form `xᵀ A x` is `⟪x, A x⟫`;
+* `Matrix.star_dotProduct_mulVec_eq_inner_toEuclideanLin` — the coordinate pairing
+  `star y ⬝ᵥ A x` is `⟪y, A x⟫`;
 * `Matrix.exists_mem_unitaryGroup_mul_mul_star_apply_self_eq_inner` — the values of the quadratic
   form of `A` on an orthonormal basis are the diagonal entries of a unitary conjugate `U A Uᴴ`;
 * `Matrix.rank_eq_finrank_range_toEuclideanLin`, `Matrix.rank_coe_toEuclideanCLM` — the matrix
@@ -154,10 +154,12 @@ theorem re_inner_toEuclideanLin_diagonal_apply_self (w : ι → ℝ) (x : Euclid
   norm_cast
   simp [mul_comm]
 
-/-- Over the reals, the coordinate quadratic form `xᵀ A x` is the inner product `⟪x, A x⟫` on
+omit [DecidableEq κ] in
+/-- The coordinate pairing `star y ⬝ᵥ A x` of a matrix `A` is the inner product `⟪y, A x⟫` on
 Euclidean space. -/
-theorem dotProduct_mulVec_eq_inner_toEuclideanLin (A : Matrix ι ι ℝ) (x : EuclideanSpace ℝ ι) :
-    WithLp.ofLp x ⬝ᵥ (A *ᵥ WithLp.ofLp x) = ⟪x, toEuclideanLin A x⟫_ℝ := by
+theorem star_dotProduct_mulVec_eq_inner_toEuclideanLin (A : Matrix κ ι 𝕜)
+    (x : EuclideanSpace 𝕜 ι) (y : EuclideanSpace 𝕜 κ) :
+    star (WithLp.ofLp y) ⬝ᵥ (A *ᵥ WithLp.ofLp x) = ⟪y, toEuclideanLin A x⟫_𝕜 := by
   simp [EuclideanSpace.inner_eq_star_dotProduct, dotProduct_comm]
 
 /-- An orthonormal basis `e` of `EuclideanSpace 𝕜 ι` gives a unitary matrix `U`, whose rows are
