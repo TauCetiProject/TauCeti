@@ -357,6 +357,17 @@ private theorem counitLF_naturality {A A' : C} {b : HalfBraiding A} {b' : HalfBr
           rw [hβ]; simp only [comp_whiskerRight, Category.assoc]; monoidal
     _ = _ := by rw [← whisker_exchange, Category.assoc, rightUnitor_naturality]; simp
 
+omit [MonoidalCategory C] [MonoidalPreadditive C] [MonoidalLinear k C] [RigidCategory C]
+  [Simple (𝟙_ C)] [Fintype (SimpleClasses C)] [∀ X Y : C, FiniteDimensional k (X ⟶ Y)] in
+private theorem homDual_map_homCongr {S S' X : C} [Simple S] [Simple S']
+    [FiniteDimensional k (S ⟶ S)] [FiniteDimensional k (S' ⟶ S')]
+    {ι : Type*} [Finite ι] [DecidableEq ι] (b : Basis ι k (S ⟶ X)) (u : S' ≅ S) (i : ι) :
+    (b.map (Linear.homCongr k u.symm (Iso.refl X))).homDual i = b.homDual i ≫ u.inv := by
+  refine ((Basis.eq_homDual_iff _ _ i).2 fun l ↦ ?_).symm
+  rw [Basis.map_apply, Linear.homCongr_apply, Iso.symm_inv, Iso.refl_hom, Category.comp_id,
+    Category.assoc, ← Category.assoc (b l), b.apply_comp_homDual l i]
+  split_ifs <;> simp
+
 private theorem sum_kernel_eq_evaluation (U : C) (S : SimpleClasses C) :
     (∑ T : SimpleClasses C, ∑ i,
       (𝟙 (S.repr ⊗ S.reprᘁ ⊗ U) ⊗≫ Module.finBasis k (S.repr ⟶ U ⊗ T.repr) i ▷ (S.reprᘁ ⊗ U) ⊗≫
@@ -379,18 +390,11 @@ private theorem sum_kernel_eq_evaluation (U : C) (S : SimpleClasses C) :
     set d := (Module.finBasis k (S.repr ⟶ U ⊗ T.repr)).map (oppositeMateEquiv k U S T)
     let u := SimpleClasses.dualReprIso T
     let d' := d.map (Linear.homCongr k u.symm (Iso.refl (S.reprᘁ ⊗ U)))
-    have hd' (i) : d'.homDual i = d.homDual i ≫ u.inv :=
-      ((d'.eq_homDual_iff _ i).2 fun l ↦ by
-        have hl : d' l = u.hom ≫ d l := by simp [d', Linear.homCongr_apply]
-        rw [hl, Category.assoc, ← Category.assoc (d l), d.apply_comp_homDual l i]
-        split_ifs <;> simp).symm
     have hsum : ∑ i, d.homDual i ≫ d i = ∑ i, d'.homDual i ≫ d' i :=
       Finset.sum_congr rfl fun i _ ↦ by
-        simp [hd' i, d', Linear.homCongr_apply, Category.assoc]
+        simp [d', homDual_map_homCongr, Linear.homCongr_apply, Category.assoc]
     rw [hsum]
-    exact d'.sum_homDual_eq (c T.dual)
-      (LinearMap.mk₂ k (fun p q ↦ p ≫ q) (fun _ _ _ ↦ by simp) (fun _ _ _ ↦ by simp)
-        (fun _ _ _ ↦ by simp) (fun _ _ _ ↦ by simp))
+    exact d'.sum_homDual_eq (c T.dual) (Linear.comp _ _ _)
   simp_rw [hT]
   exact (Fintype.sum_equiv (Function.Involutive.toPerm _ SimpleClasses.dual_involutive)
     (fun T ↦ ∑ j, (c T.dual).homDual j ≫ c T.dual j)
@@ -577,6 +581,10 @@ theorem inductionForgetAdjunction_unit_app_assoc (X : C) {W : C}
   exact (Category.assoc _ _ _).trans (congrArg _ ((Category.assoc _ _ _).trans
     (congrArg _ (Category.assoc _ _ _))))
 
+private theorem inductionForgetAdjunction_counit_app_f (Z : Center C) :
+    ((inductionForgetAdjunction k C).counit.app Z).f = counitLF Z.2 :=
+  rfl
+
 /-- Component of the counit of `inductionForgetAdjunction` on the `S`-summand of
 `inductionObj Z.1`. -/
 @[simp]
@@ -585,8 +593,7 @@ theorem ι_comp_inductionForgetAdjunction_counit_app_f (Z : Center C) (S : Simpl
       (α_ S.repr Z.1 S.reprᘁ).inv ≫ (Z.2.β S.repr).inv ▷ S.reprᘁ ≫ (α_ Z.1 S.repr S.reprᘁ).hom ≫
         Z.1 ◁ @ExactPairing.evaluation C _ _ S.reprᘁ S.repr (simpleOppositeExactPairing S.repr) ≫
         (ρ_ Z.1).hom := by
-  -- Unfold the counit component of `inductionForgetAdjunction` to `biproduct.desc`.
-  change biproduct.ι (inductionSummand Z.1) S ≫ counitLF Z.2 = _
+  rw [inductionForgetAdjunction_counit_app_f]
   simp [counitLF, counitComponent]
 
 /-- Reassociated form of `ι_comp_inductionForgetAdjunction_counit_app_f`.

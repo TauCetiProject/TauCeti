@@ -178,22 +178,30 @@ theorem forgetInductionAdjunction_unit_app_comp_inductionForgetAdjunction_counit
     MonoidalLinear.whiskerLeft_smul, whiskerLeft_id, Linear.smul_comp, Linear.comp_smul,
     Category.id_comp, Iso.inv_hom_id]
 
+private theorem inv_endAlgEquivOfSimple_normGlobalDim_smul_unit_comp_counit
+    {a : ∀ S : SimpleClasses C, S.repr ≅ ((S.repr)ᘁ : C)ᘁ}
+    (hdim : normGlobalDim C a ≠ 0) (Z : Center C) :
+    (endAlgEquivOfSimple k (𝟙_ C) (End.of (normGlobalDim C a)))⁻¹ •
+        ((forgetInductionAdjunction k C).unit.app Z ≫
+          (inductionForgetAdjunction k C).counit.app Z) =
+      𝟙 Z := by
+  have hd : endAlgEquivOfSimple k (𝟙_ C) (End.of (normGlobalDim C a)) ≠ 0 := fun h ↦
+    hdim (by simpa using (endAlgEquivOfSimple_apply_eq_iff (End.of (normGlobalDim C a)) 0).1 h)
+  rw [forgetInductionAdjunction_unit_app_comp_inductionForgetAdjunction_counit_app k a,
+    smul_smul, inv_mul_cancel₀ hd, one_smul]
+
 /-- In a fusion category `C` over an algebraically closed field `k` with
 `TauCeti.normGlobalDim C a ≠ 0` (for some family `a S : S.repr ≅ S.reprᘁᘁ`), every component of
 `(forgetInductionAdjunction k C).unit` is a split monomorphism. -/
 theorem isSplitMono_forgetInductionAdjunction_unit_app_of_normGlobalDim_ne_zero
     {a : ∀ S : SimpleClasses C, S.repr ≅ ((S.repr)ᘁ : C)ᘁ}
     (hdim : normGlobalDim C a ≠ 0) (Z : Center C) :
-    IsSplitMono ((forgetInductionAdjunction k C).unit.app Z) := by
-  set d := endAlgEquivOfSimple k (𝟙_ C) (End.of (normGlobalDim C a))
-  have hd : d ≠ 0 := fun h ↦
-    hdim (by simpa using (endAlgEquivOfSimple_apply_eq_iff (End.of (normGlobalDim C a)) 0).1 h)
-  exact IsSplitMono.mk'
-    { retraction := d⁻¹ • (inductionForgetAdjunction k C).counit.app Z
-      id := by
-        rw [Linear.comp_smul,
-          forgetInductionAdjunction_unit_app_comp_inductionForgetAdjunction_counit_app k a,
-          smul_smul, inv_mul_cancel₀ hd, one_smul]; rfl }
+    IsSplitMono ((forgetInductionAdjunction k C).unit.app Z) :=
+  IsSplitMono.mk'
+    { retraction := (endAlgEquivOfSimple k (𝟙_ C) (End.of (normGlobalDim C a)))⁻¹ •
+        (inductionForgetAdjunction k C).counit.app Z
+      id := (Linear.comp_smul _ _ _ _ _ _).trans
+        (inv_endAlgEquivOfSimple_normGlobalDim_smul_unit_comp_counit k hdim Z) }
 
 /-- In a fusion category `C` over an algebraically closed field `k` with
 `TauCeti.normGlobalDim C a ≠ 0` (for some family `a S : S.repr ≅ S.reprᘁᘁ`), every component of
@@ -201,16 +209,12 @@ theorem isSplitMono_forgetInductionAdjunction_unit_app_of_normGlobalDim_ne_zero
 theorem isSplitEpi_inductionForgetAdjunction_counit_app_of_normGlobalDim_ne_zero
     {a : ∀ S : SimpleClasses C, S.repr ≅ ((S.repr)ᘁ : C)ᘁ}
     (hdim : normGlobalDim C a ≠ 0) (Z : Center C) :
-    IsSplitEpi ((inductionForgetAdjunction k C).counit.app Z) := by
-  set d := endAlgEquivOfSimple k (𝟙_ C) (End.of (normGlobalDim C a))
-  have hd : d ≠ 0 := fun h ↦
-    hdim (by simpa using (endAlgEquivOfSimple_apply_eq_iff (End.of (normGlobalDim C a)) 0).1 h)
-  exact IsSplitEpi.mk'
-    { section_ := d⁻¹ • (forgetInductionAdjunction k C).unit.app Z
-      id := by
-        rw [Linear.smul_comp,
-          forgetInductionAdjunction_unit_app_comp_inductionForgetAdjunction_counit_app k a,
-          smul_smul, inv_mul_cancel₀ hd, one_smul]; rfl }
+    IsSplitEpi ((inductionForgetAdjunction k C).counit.app Z) :=
+  IsSplitEpi.mk'
+    { section_ := (endAlgEquivOfSimple k (𝟙_ C) (End.of (normGlobalDim C a)))⁻¹ •
+        (forgetInductionAdjunction k C).unit.app Z
+      id := (Linear.smul_comp _ _ _ _ _ _).trans
+        (inv_endAlgEquivOfSimple_normGlobalDim_smul_unit_comp_counit k hdim Z) }
 
 include k in
 /-- **Maschke's theorem for the Drinfeld centre** (Etingof–Nikshych–Ostrik, Müger): if `C` is a
@@ -306,30 +310,23 @@ theorem finite_simpleClasses_of_globalDim_ne_zero (hdim : globalDim C ≠ 0) :
 `(induction k C).obj X`, read in `C`, is `globalDim C ≫ leftDim X`. -/
 theorem leftDim_induction_obj_f (X : C) :
     (leftDim ((induction k C).obj X)).f = globalDim C ≫ leftDim X := by
-  have : EssentiallySmall.{max u v} C := essentiallySmall_of_small_of_locallySmall C
   refine (leftDim_f ((induction k C).obj X)).trans ?_
-  rw [induction_obj, inductionCenterObj_fst, leftDim_biproduct, globalDim_eq_sum_leftDimChar_smul k,
-    ← SplitK0.leftDimChar_of_smul_id k X, Linear.smul_comp, Linear.comp_smul, Category.id_comp,
-    smul_smul, Finset.sum_mul, Finset.sum_smul]
+  rw [induction_obj, inductionCenterObj_fst, leftDim_biproduct,
+    globalDim_eq_sum_leftDim_comp_rightDim, Preadditive.sum_comp]
   refine Finset.sum_congr rfl fun T _ ↦ ?_
-  rw [← SplitK0.leftDimChar_of_smul_id k (inductionSummand X T)]
-  congr 1; simp only [inductionSummand, ← SplitK0.of_mul_of, map_mul]; ring
+  rw [inductionSummand, leftDim_tensor_eq_comp_of_simple k, leftDim_tensor_eq_comp_of_simple k,
+    leftDim_rightDual, scalar_comm (leftDim X), Category.assoc]
 
 /-- In a pivotal fusion category `C` over an algebraically closed field `k`, the right dimension of
 `(induction k C).obj X`, read in `C`, is `globalDim C ≫ rightDim X`. -/
 theorem rightDim_induction_obj_f (X : C) :
     (rightDim ((induction k C).obj X)).f = globalDim C ≫ rightDim X := by
-  have : EssentiallySmall.{max u v} C := essentiallySmall_of_small_of_locallySmall C
   refine (rightDim_f ((induction k C).obj X)).trans ?_
   rw [induction_obj, inductionCenterObj_fst, rightDim_biproduct,
-    globalDim_eq_sum_leftDimChar_smul k, ← SplitK0.rightDimChar_of_smul_id k X, Linear.smul_comp,
-    Linear.comp_smul, Category.id_comp, smul_smul, Finset.sum_mul, Finset.sum_smul]
+    globalDim_eq_sum_leftDim_comp_rightDim, Preadditive.sum_comp]
   refine Finset.sum_congr rfl fun T _ ↦ ?_
-  rw [← SplitK0.rightDimChar_of_smul_id k (inductionSummand X T)]
-  congr 1
-  simp only [inductionSummand, ← SplitK0.of_mul_of, map_mul, ← SplitK0.dual_of,
-    SplitK0.leftDimChar_dual, SplitK0.rightDimChar_dual]
-  ring
+  rw [inductionSummand, rightDim_tensor_eq_comp_of_simple k, rightDim_tensor_eq_comp_of_simple k,
+    rightDim_rightDual, scalar_comm (rightDim X), ← Category.assoc, scalar_comm (rightDim T.repr)]
 
 private theorem sum_simpleMultiplicities_mul_leftDimChar_eq
     [IsFiniteSemisimpleCategory (Center C)] [Fintype (SimpleClasses (Center C))]
