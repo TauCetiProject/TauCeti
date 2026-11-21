@@ -45,8 +45,9 @@ additive, and all statements below are about the order rather than about a chose
 * `Valuation.tameSymbol_of_ord_eq_zero`: the symbol of two units of `𝒪_v` is trivial.
 * `Valuation.tameSymbol_coe_left`, `Valuation.tameSymbol_coe_right`:
   `∂_v{u, f} = res u ^ ord_v f` and `∂_v{f, u} = res u ^ (-ord_v f)` for a unit `u` of `𝒪_v`; in
-  particular `∂_v{u, t} = res u` when `ord_v t = 1` (`Valuation.tameSymbol_coe_of_ord_eq_one`).
-* `Valuation.tameSymbol_self`: `∂_v{f, f} = (-1) ^ ord_v f`, and `Valuation.tameSymbol_neg_right`:
+  particular `∂_v{u, t} = res u` and `∂_v{t, u} = (res u)⁻¹` when `ord_v t = 1`
+  (`Valuation.tameSymbol_coe_left_of_ord_eq_one`, `Valuation.tameSymbol_coe_right_of_ord_eq_one`).
+* `Valuation.tameSymbol_self`: `∂_v{f, f} = (-1) ^ ord_v f`, and `Valuation.tameSymbol_self_neg`:
   `∂_v{f, -f} = 1`.
 * `Valuation.tameSymbol_eq_unitPart`: the expression through unit parts relative to any element of
   order one.
@@ -78,15 +79,11 @@ theorem tameUnit_def (f g : Fˣ) : v.tameUnit f g =
     (-1) ^ (v.ord (f : F) * v.ord (g : F)) * f ^ v.ord (g : F) * g ^ (-v.ord (f : F)) :=
   (rfl)
 
-private theorem ord_units_zpow (f : Fˣ) (n : ℤ) :
-    v.ord ((f ^ n : Fˣ) : F) = n * v.ord (f : F) := by
-  rw [Units.val_zpow_eq_zpow_val, ord_zpow]
-
 /-- The tame unit has order zero. -/
 @[simp]
 theorem ord_tameUnit (f g : Fˣ) : v.ord (v.tameUnit f g : F) = 0 := by
-  rw [tameUnit_def, Units.val_mul, ord_units_mul, Units.val_mul, ord_units_mul, ord_units_zpow,
-    ord_units_zpow, ord_units_zpow, Units.val_neg, Units.val_one, ord_neg, ord_one]
+  rw [tameUnit_def, Units.val_mul, ord_units_mul, Units.val_mul, ord_units_mul]
+  simp [ord_neg]
   ring
 
 /-- The tame unit is a unit of the valuation ring. -/
@@ -108,9 +105,9 @@ theorem tameUnit_mul_right (f g₁ g₂ : Fˣ) :
 
 /-- Swapping the arguments inverts the tame unit. -/
 theorem tameUnit_swap (f g : Fˣ) : v.tameUnit g f = (v.tameUnit f g)⁻¹ := by
-  rw [tameUnit_def, tameUnit_def, mul_comm (v.ord (g : F)), mul_inv, mul_inv, ← inv_zpow (-1),
-    inv_neg_one, ← zpow_neg, ← zpow_neg, neg_neg]
-  simp only [mul_comm, mul_assoc]
+  simp only [tameUnit_def, mul_inv, ← zpow_neg, mul_comm (v.ord (g : F)), ← inv_zpow', inv_neg_one,
+    inv_inv]
+  simp only [mul_comm, mul_left_comm]
 
 /-- The tame unit of a field unit and a unit of the valuation ring is a power of the latter. -/
 theorem tameUnit_coe_right (f : Fˣ) (u : v.valuationSubring.unitGroup) :
@@ -137,9 +134,8 @@ theorem tameUnit_self (f : Fˣ) : v.tameUnit f f = (-1) ^ v.ord (f : F) := by
 theorem tameUnit_eq_unitPart (t : Fˣ) (ht : v.ord (t : F) = 1) (f g : Fˣ) :
     v.tameUnit f g = (-1) ^ (v.ord (f : F) * v.ord (g : F)) *
       (v.unitPart t ht f : Fˣ) ^ v.ord (g : F) * (v.unitPart t ht g : Fˣ) ^ (-v.ord (f : F)) := by
-  rw [tameUnit_def, coe_unitPart, coe_unitPart, mul_zpow, mul_zpow, ← zpow_mul, ← zpow_mul,
-    show -v.ord (g : F) * -v.ord (f : F) = -(-v.ord (f : F) * v.ord (g : F)) by ring, zpow_neg t]
-  rw [mul_assoc, mul_assoc, mul_assoc, mul_left_comm (t ^ _) (g ^ _), mul_inv_cancel, mul_one]
+  simp only [tameUnit_def, coe_unitPart, mul_zpow, zpow_neg]
+  group
 
 end TameUnit
 
@@ -151,7 +147,7 @@ section TameSymbol
 tame unit `Valuation.tameUnit`, a unit of the residue field of the valuation ring.
 
 This is the convention in which `∂_v{u, t} = res u` for a unit `u` of the valuation ring and `t` of
-order one (`Valuation.tameSymbol_coe_of_ord_eq_one`); the tame symbol of Weibel's *K-book*,
+order one (`Valuation.tameSymbol_coe_left_of_ord_eq_one`); the tame symbol of Weibel's *K-book*,
 Lemma III.6.3, is `v.tameSymbol g f = (v.tameSymbol f g)⁻¹` (`Valuation.tameSymbol_swap`). -/
 noncomputable def tameSymbol (f g : Fˣ) : (IsLocalRing.ResidueField v.valuationSubring)ˣ :=
   v.valuationSubring.unitGroupToResidueFieldUnits ⟨v.tameUnit f g, v.tameUnit_mem_unitGroup f g⟩
@@ -161,38 +157,43 @@ theorem tameSymbol_def (f g : Fˣ) : v.tameSymbol f g =
       ⟨v.tameUnit f g, v.tameUnit_mem_unitGroup f g⟩ :=
   (rfl)
 
+/-- If the tame unit of `f` and `g` is the unit `u` of the valuation ring, then the tame symbol of
+`f` and `g` is the residue of `u`. -/
+theorem tameSymbol_eq_of_tameUnit_eq {f g : Fˣ} (u : v.valuationSubring.unitGroup)
+    (h : v.tameUnit f g = u) :
+    v.tameSymbol f g = v.valuationSubring.unitGroupToResidueFieldUnits u :=
+  congrArg _ (Subtype.ext h)
+
 /-- The tame symbol is multiplicative in its first argument. -/
 theorem tameSymbol_mul_left (f₁ f₂ g : Fˣ) :
     v.tameSymbol (f₁ * f₂) g = v.tameSymbol f₁ g * v.tameSymbol f₂ g := by
-  simp only [tameSymbol_def, ← map_mul]
-  exact congrArg _ (Subtype.ext (v.tameUnit_mul_left f₁ f₂ g))
+  rw [v.tameSymbol_eq_of_tameUnit_eq (⟨_, v.tameUnit_mem_unitGroup f₁ g⟩ *
+    ⟨_, v.tameUnit_mem_unitGroup f₂ g⟩) (v.tameUnit_mul_left f₁ f₂ g), map_mul, tameSymbol_def,
+    tameSymbol_def]
 
 /-- The tame symbol is multiplicative in its second argument. -/
 theorem tameSymbol_mul_right (f g₁ g₂ : Fˣ) :
     v.tameSymbol f (g₁ * g₂) = v.tameSymbol f g₁ * v.tameSymbol f g₂ := by
-  simp only [tameSymbol_def, ← map_mul]
-  exact congrArg _ (Subtype.ext (v.tameUnit_mul_right f g₁ g₂))
+  rw [v.tameSymbol_eq_of_tameUnit_eq (⟨_, v.tameUnit_mem_unitGroup f g₁⟩ *
+    ⟨_, v.tameUnit_mem_unitGroup f g₂⟩) (v.tameUnit_mul_right f g₁ g₂), map_mul, tameSymbol_def,
+    tameSymbol_def]
 
 /-- **Swapping the arguments inverts the tame symbol.** In particular the tame symbol of
 Weibel's *K-book*, Lemma III.6.3, is `v.tameSymbol g f`. -/
 theorem tameSymbol_swap (f g : Fˣ) : v.tameSymbol g f = (v.tameSymbol f g)⁻¹ := by
-  refine eq_inv_of_mul_eq_one_left ?_
-  rw [tameSymbol_def, tameSymbol_def, ← map_mul,
-    ← map_one v.valuationSubring.unitGroupToResidueFieldUnits]
-  exact congrArg _ (Subtype.ext (by simp [v.tameUnit_swap f g]))
+  rw [v.tameSymbol_eq_of_tameUnit_eq ⟨_, v.tameUnit_mem_unitGroup f g⟩⁻¹ (v.tameUnit_swap f g),
+    _root_.map_inv, tameSymbol_def]
 
 /-- The tame symbol of a field unit and a unit `u` of the valuation ring is
 `res u ^ (-ord_v f)`. -/
 theorem tameSymbol_coe_right (f : Fˣ) (u : v.valuationSubring.unitGroup) :
     v.tameSymbol f u = v.valuationSubring.unitGroupToResidueFieldUnits u ^ (-v.ord (f : F)) := by
-  rw [tameSymbol_def, ← map_zpow]
-  exact congrArg _ (Subtype.ext (v.tameUnit_coe_right f u))
+  rw [v.tameSymbol_eq_of_tameUnit_eq (u ^ (-v.ord (f : F))) (v.tameUnit_coe_right f u), map_zpow]
 
 /-- The tame symbol of a unit `u` of the valuation ring and a field unit is `res u ^ ord_v f`. -/
 theorem tameSymbol_coe_left (u : v.valuationSubring.unitGroup) (f : Fˣ) :
     v.tameSymbol u f = v.valuationSubring.unitGroupToResidueFieldUnits u ^ v.ord (f : F) := by
-  rw [tameSymbol_def, ← map_zpow]
-  exact congrArg _ (Subtype.ext (v.tameUnit_coe_left u f))
+  rw [v.tameSymbol_eq_of_tameUnit_eq (u ^ v.ord (f : F)) (v.tameUnit_coe_left u f), map_zpow]
 
 /-- The tame symbol of two field units of order zero is trivial. -/
 theorem tameSymbol_of_ord_eq_zero {f g : Fˣ} (hf : v.ord (f : F) = 0) (hg : v.ord (g : F) = 0) :
@@ -237,40 +238,11 @@ theorem tameSymbol_zpow_right (f g : Fˣ) (n : ℤ) :
     v.tameSymbol f (g ^ n) = v.tameSymbol f g ^ n := by
   simpa [tameSymbolRight] using map_zpow (v.tameSymbolRight f) g n
 
-/-- The residue of a unit of the valuation ring is `IsLocalRing.residue` of the corresponding
-unit of the ring. -/
-private theorem coe_unitGroupToResidueFieldUnits (u : v.valuationSubring.unitGroup) :
-    (v.valuationSubring.unitGroupToResidueFieldUnits u :
-      IsLocalRing.ResidueField v.valuationSubring) =
-      IsLocalRing.residue v.valuationSubring
-        ((v.valuationSubring.unitGroupMulEquiv u : v.valuationSubringˣ) : v.valuationSubring) :=
-  -- `IsLocalRing.residue` is by definition the quotient map by the maximal ideal, which is what
-  -- `ValuationSubring.coe_unitGroupToResidueFieldUnits_apply` produces.
-  (rfl)
-
-/-- A unit `u` of the valuation ring with `ord_v (u - 1) > 0` has residue one. -/
-private theorem unitGroupToResidueFieldUnits_eq_one (u : v.valuationSubring.unitGroup)
-    (h : 0 < v.ord (((u : Fˣ) : F) - 1)) :
-    v.valuationSubring.unitGroupToResidueFieldUnits u = 1 := by
-  set x : v.valuationSubring :=
-    ((v.valuationSubring.unitGroupMulEquiv u : v.valuationSubringˣ) : v.valuationSubring) with hx
-  have hxu : ((x - 1 : v.valuationSubring) : F) = ((u : Fˣ) : F) - 1 := by simp [hx]
-  have hne : ((x - 1 : v.valuationSubring) : F) ≠ 0 := by
-    intro h0
-    rw [← hxu, h0, ord_zero] at h
-    exact h.false
-  ext
-  rw [coe_unitGroupToResidueFieldUnits, ← hx, Units.val_one, ← sub_eq_zero, ← map_one
-    (IsLocalRing.residue v.valuationSubring), ← _root_.map_sub, IsLocalRing.residue_eq_zero_iff,
-    v.mem_maximalIdeal_iff_ord_pos hne, hxu]
-  exact h
-
 /-- The tame symbol of a field unit with itself is `(-1) ^ ord_v f`. -/
 theorem tameSymbol_self (f : Fˣ) : v.tameSymbol f f = (-1) ^ v.ord (f : F) := by
-  have h : (⟨v.tameUnit f f, v.tameUnit_mem_unitGroup f f⟩ : v.valuationSubring.unitGroup) =
-      ⟨-1, v.valuationSubring.neg_one_mem_unitGroup⟩ ^ v.ord (f : F) :=
-    Subtype.ext (v.tameUnit_self f)
-  rw [tameSymbol_def, h, map_zpow, ValuationSubring.unitGroupToResidueFieldUnits_neg_one]
+  rw [v.tameSymbol_eq_of_tameUnit_eq (⟨-1, v.valuationSubring.neg_one_mem_unitGroup⟩ ^
+    v.ord (f : F)) (v.tameUnit_self f), map_zpow,
+    ValuationSubring.unitGroupToResidueFieldUnits_neg_one]
 
 /-- The tame symbol of `-1` and a field unit is `(-1) ^ ord_v f`. -/
 theorem tameSymbol_neg_one_left (f : Fˣ) : v.tameSymbol (-1) f = (-1) ^ v.ord (f : F) := by
@@ -281,20 +253,20 @@ theorem tameSymbol_neg_one_right (f : Fˣ) : v.tameSymbol f (-1) = (-1) ^ v.ord 
   rw [v.tameSymbol_swap (-1) f, tameSymbol_neg_one_left, ← inv_zpow, inv_neg_one]
 
 /-- The tame symbol of `f` and `-f` is trivial. -/
-theorem tameSymbol_neg_right (f : Fˣ) : v.tameSymbol f (-f) = 1 := by
+theorem tameSymbol_self_neg (f : Fˣ) : v.tameSymbol f (-f) = 1 := by
   rw [← neg_one_mul, tameSymbol_mul_right, tameSymbol_neg_one_right, tameSymbol_self, ← mul_zpow,
     neg_one_mul, neg_neg, one_zpow]
 
 /-- **The tame symbol of a unit `u` of order zero and an element `t` of order one is the residue
 `res u`.** -/
-theorem tameSymbol_coe_of_ord_eq_one (u : v.valuationSubring.unitGroup) {t : Fˣ}
+theorem tameSymbol_coe_left_of_ord_eq_one (u : v.valuationSubring.unitGroup) {t : Fˣ}
     (ht : v.ord (t : F) = 1) :
     v.tameSymbol u t = v.valuationSubring.unitGroupToResidueFieldUnits u := by
   rw [tameSymbol_coe_left, ht, zpow_one]
 
 /-- The tame symbol of an element `t` of order one and a unit `u` of order zero is
 `(res u)⁻¹`. -/
-theorem tameSymbol_of_ord_eq_one_coe {t : Fˣ} (ht : v.ord (t : F) = 1)
+theorem tameSymbol_coe_right_of_ord_eq_one {t : Fˣ} (ht : v.ord (t : F) = 1)
     (u : v.valuationSubring.unitGroup) :
     v.tameSymbol t u = (v.valuationSubring.unitGroupToResidueFieldUnits u)⁻¹ := by
   rw [tameSymbol_coe_right, ht, zpow_neg_one]
@@ -307,11 +279,10 @@ theorem tameSymbol_eq_unitPart (t : Fˣ) (ht : v.ord (t : F) = 1) (f g : Fˣ) :
     v.tameSymbol f g = (-1) ^ (v.ord (f : F) * v.ord (g : F)) *
       v.valuationSubring.unitGroupToResidueFieldUnits (v.unitPart t ht f) ^ v.ord (g : F) *
       v.valuationSubring.unitGroupToResidueFieldUnits (v.unitPart t ht g) ^ (-v.ord (f : F)) := by
-  have h : (⟨v.tameUnit f g, v.tameUnit_mem_unitGroup f g⟩ : v.valuationSubring.unitGroup) =
-      ⟨-1, v.valuationSubring.neg_one_mem_unitGroup⟩ ^ (v.ord (f : F) * v.ord (g : F)) *
-        v.unitPart t ht f ^ v.ord (g : F) * v.unitPart t ht g ^ (-v.ord (f : F)) :=
-    Subtype.ext (by simp [v.tameUnit_eq_unitPart t ht f g])
-  rw [tameSymbol_def, h, map_mul, map_mul, map_zpow, map_zpow, map_zpow,
+  rw [v.tameSymbol_eq_of_tameUnit_eq (⟨-1, v.valuationSubring.neg_one_mem_unitGroup⟩ ^
+      (v.ord (f : F) * v.ord (g : F)) * v.unitPart t ht f ^ v.ord (g : F) *
+      v.unitPart t ht g ^ (-v.ord (f : F))) (v.tameUnit_eq_unitPart t ht f g),
+    map_mul, map_mul, map_zpow, map_zpow, map_zpow,
     ValuationSubring.unitGroupToResidueFieldUnits_neg_one]
 
 /-- The Steinberg relation when the first entry has positive order. -/
@@ -324,7 +295,7 @@ private theorem tameSymbol_of_add_eq_one_of_ord_pos {r s : Fˣ} (h : (r : F) + s
     omega
   let u : v.valuationSubring.unitGroup := ⟨s, (v.mem_unitGroup_iff_ord_eq_zero s).2 hs0⟩
   have hu : v.valuationSubring.unitGroupToResidueFieldUnits u = 1 :=
-    unitGroupToResidueFieldUnits_eq_one v u (by
+    v.unitGroupToResidueFieldUnits_eq_one_of_ord_sub_one_pos u (by
       rw [show ((u : Fˣ) : F) - 1 = -(r : F) by simp [u, hs], ord_neg]
       exact hr)
   simpa [hu] using v.tameSymbol_coe_right r u
@@ -340,7 +311,7 @@ private theorem tameSymbol_of_add_eq_one_of_ord_neg {r s : Fˣ} (h : (r : F) + s
     linear_combination -h
   have hs : s = -r * -(s * r⁻¹) := by
     rw [neg_mul_neg, mul_left_comm, mul_inv_cancel, mul_one]
-  rw [hs, tameSymbol_mul_right, tameSymbol_neg_right, one_mul, ← inv_inv r, tameSymbol_inv_left,
+  rw [hs, tameSymbol_mul_right, tameSymbol_self_neg, one_mul, ← inv_inv r, tameSymbol_inv_left,
     inv_inv, tameSymbol_of_add_eq_one_of_ord_pos v h' (by simpa using hr), inv_one]
 
 /-- **The Steinberg relation**: `∂_v{r, s} = 1` whenever `r + s = 1`. -/

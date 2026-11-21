@@ -43,9 +43,9 @@ theorem unitGroupToResidueFieldUnits_neg_one (A : ValuationSubring K) :
   have h : ((A.unitGroupMulEquiv ⟨-1, A.neg_one_mem_unitGroup⟩ : Aˣ) : A) = -1 :=
     Subtype.ext (by simp)
   ext
-  rw [coe_unitGroupToResidueFieldUnits_apply, h, Units.val_neg, Units.val_one]
-  -- `IsLocalRing.residue A` is by definition the quotient map by the maximal ideal of `A`, which
-  -- is the map `coe_unitGroupToResidueFieldUnits_apply` produces.
-  exact (map_neg (IsLocalRing.residue A) 1).trans (congrArg Neg.neg (map_one _))
+  rw [coe_unitGroupToResidueFieldUnits_apply, h, Units.val_neg, Units.val_one, map_neg, map_one]
+  -- The two sides differ only in the `Neg` and `One` instances of `A ⧸ maximalIdeal A` and of
+  -- `IsLocalRing.ResidueField A`, which is defined as that quotient.
+  rfl
 
 end ValuationSubring
