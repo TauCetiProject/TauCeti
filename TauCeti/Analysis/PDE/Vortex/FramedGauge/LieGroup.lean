@@ -48,6 +48,8 @@ linear part of `sin F` is `F`.
 * `TauCeti.Vortex.hasFDerivAt_subOne_expGauge`, `TauCeti.Vortex.hasFDerivAt_subOne_expGauge_zero`:
   the derivative of `F ↦ exp (i F) - 1`, which is `G ↦ i G` at `F = 0`.
 * `TauCeti.Vortex.contDiff_subOne_expGauge`: `F ↦ exp (i F) - 1` is smooth.
+* `TauCeti.Vortex.hasFDerivAt_subOne_inv_expGauge_zero`: the derivative of
+  `F ↦ exp (i F)⁻¹ - 1`, which is `G ↦ -i G` at `F = 0`.
 * `TauCeti.Vortex.hasFDerivAt_reSubOne_expGauge_zero`,
   `TauCeti.Vortex.hasFDerivAt_imPart_expGauge_zero`: the derivatives of `F ↦ cos F - 1` and
   `F ↦ sin F` at `F = 0`.
@@ -128,19 +130,18 @@ theorem contDiff_subOne_expGauge :
     (I • (realSubmodule ℂ (zero_le_one.trans hs.le)).subtypeL).contDiff using 1
   exact funext fun G ↦ subOne_expGauge_eq_expSubOne hs G
 
-/-- At `F = 0` the derivative of `F ↦ exp (-i F) - 1`, the coordinate of the inverse gauge, is
+/-- At `F = 0` the derivative of `F ↦ exp (i F)⁻¹ - 1`, the coordinate of the inverse gauge, is
 `G ↦ -i G`. -/
-private theorem hasFDerivAt_subOne_expGauge_neg_zero :
-    HasFDerivAt (fun F ↦ subOne (expGauge hs (-F)))
+theorem hasFDerivAt_subOne_inv_expGauge_zero :
+    HasFDerivAt (fun F ↦ subOne (expGauge hs F)⁻¹)
       (-(I • (realSubmodule ℂ (zero_le_one.trans hs.le)).subtypeL)) 0 := by
-  have h : HasFDerivAt (fun F ↦ subOne (expGauge hs F))
+  have hg : HasFDerivAt (fun F ↦ subOne (expGauge hs F))
       (I • (realSubmodule ℂ (zero_le_one.trans hs.le)).subtypeL) (-0) := by
     rw [neg_zero]
     exact hasFDerivAt_subOne_expGauge_zero
-  refine (h.comp (0 : realSubmodule ℂ (zero_le_one.trans hs.le)) (hasFDerivAt_id _).neg)
-    |>.congr_fderiv ?_
-  ext G : 1
-  simp
+  have h := hg.comp (0 : realSubmodule ℂ (zero_le_one.trans hs.le)) (hasFDerivAt_id 0).neg
+  simp only [Function.comp_def, AddChar.map_neg_eq_inv] at h
+  exact h.congr_fderiv (ContinuousLinearMap.ext fun G ↦ by simp)
 
 /-- At `F = 0` the derivative of `F ↦ Re (exp (i F)) - 1` vanishes: in `H^s(ℂ)` this is the
 element `reSubOne (exp (i F)) = cos F - 1`, which is quadratically small in `F`. -/
@@ -148,9 +149,9 @@ theorem hasFDerivAt_reSubOne_expGauge_zero :
     HasFDerivAt (fun F : realSubmodule ℂ (zero_le_one.trans hs.le) ↦ reSubOne (expGauge hs F))
       (0 : realSubmodule ℂ (zero_le_one.trans hs.le) →L[ℝ] H^{s}(ℂ)) 0 := by
   have h := ((hasFDerivAt_subOne_expGauge_zero (hs := hs)).add
-    (hasFDerivAt_subOne_expGauge_neg_zero (hs := hs))).const_smul ((2 : ℂ)⁻¹)
+    (hasFDerivAt_subOne_inv_expGauge_zero (hs := hs))).const_smul ((2 : ℂ)⁻¹)
   refine (h.congr_of_eventuallyEq (Eventually.of_forall fun F ↦ ?_)).congr_fderiv ?_
-  · simp [reSubOne_def, AddChar.map_neg_eq_inv]
+  · simp [reSubOne_def]
   · simp
 
 /-- At `F = 0` the derivative of `F ↦ Im (exp (i F))` is `G ↦ G`: in `H^s(ℂ)` this is the element
@@ -159,9 +160,9 @@ theorem hasFDerivAt_imPart_expGauge_zero :
     HasFDerivAt (fun F : realSubmodule ℂ (zero_le_one.trans hs.le) ↦ imPart (expGauge hs F))
       (realSubmodule ℂ (zero_le_one.trans hs.le)).subtypeL 0 := by
   have h := ((hasFDerivAt_subOne_expGauge_zero (hs := hs)).sub
-    (hasFDerivAt_subOne_expGauge_neg_zero (hs := hs))).const_smul (-(I / 2))
+    (hasFDerivAt_subOne_inv_expGauge_zero (hs := hs))).const_smul (-(I / 2))
   refine (h.congr_of_eventuallyEq (Eventually.of_forall fun F ↦ ?_)).congr_fderiv ?_
-  · simp [imPart_def, AddChar.map_neg_eq_inv]
+  · simp [imPart_def]
   · ext G ψ
     simp [smul_smul]
     linear_combination -((G : H^{s}(ℂ)).toDistr ψ) * I_sq
