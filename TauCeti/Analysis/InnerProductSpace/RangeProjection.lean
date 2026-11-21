@@ -10,6 +10,7 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.Completion
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 import TauCeti.Analysis.InnerProductSpace.Adjoint
+import TauCeti.Analysis.InnerProductSpace.Projection.Completeness
 
 /-!
 # The orthogonal projection onto the range of an operator
@@ -35,6 +36,9 @@ depends continuously, and over `ℝ` or `ℂ` real-smoothly, on `κ`.
 
 ## Main results
 
+* `ContinuousLinearMap.isClosed_range_of_isUnit_adjoint_comp`,
+  `ContinuousLinearMap.hasOrthogonalProjection_range_of_isUnit_adjoint_comp`: an operator with
+  invertible Gram operator `B† B` has closed range and admits an orthogonal projection onto it.
 * `ContinuousLinearMap.starProjection_range_eq`: the formula `B (B† B)⁻¹ B†` for the orthogonal
   projection onto the range of `B`.
 * `ContinuousLinearMap.comp_adjoint_eq_starProjection_range`: for an isometry `B` it reduces to
@@ -134,6 +138,37 @@ theorem contDiffAt_gramLeftInverse
   exact (((compL 𝕜 V F F).bilinearRestrictScalars ℝ).contDiff.contDiffAt.comp A
     (hi.comp (f := fun B : F →L[𝕜] V ↦ adjoint B ∘L B) A hgram.contDiffAt)).clm_apply
       ha.contDiffAt
+
+/-- An operator whose Gram operator `B† B` is invertible has closed range. -/
+theorem isClosed_range_of_isUnit_adjoint_comp {B : F →L[𝕜] V}
+    (hB : IsUnit (adjoint B ∘L B)) : IsClosed (Set.range B) := by
+  let P : V →L[𝕜] V := B ∘L Ring.inverse (adjoint B ∘L B) ∘L adjoint B
+  have hinv : Ring.inverse (adjoint B ∘L B) ∘L (adjoint B ∘L B) = 1 :=
+    Ring.inverse_mul_cancel _ hB
+  have hP : IsIdempotentElem P := by
+    rw [IsIdempotentElem, mul_def]
+    calc P ∘L P
+        = B ∘L (Ring.inverse (adjoint B ∘L B) ∘L (adjoint B ∘L B)) ∘L
+            Ring.inverse (adjoint B ∘L B) ∘L adjoint B := by
+          simp only [P, comp_assoc]
+      _ = P := by rw [hinv, one_def, id_comp]
+  have hrange : (P.range : Set V) = Set.range B := by
+    ext v
+    simp only [SetLike.mem_coe, LinearMap.mem_range, coe_coe, Set.mem_range]
+    refine ⟨fun ⟨w, hw⟩ ↦ ⟨Ring.inverse (adjoint B ∘L B) (adjoint B w), hw⟩,
+      fun ⟨x, hx⟩ ↦ ⟨B x, ?_⟩⟩
+    have hx' : (Ring.inverse (adjoint B ∘L B) ∘L (adjoint B ∘L B)) x = x := by
+      rw [hinv, one_def, id_apply]
+    simpa only [P, comp_apply, hx] using congrArg B hx'
+  rw [← hrange]
+  exact ContinuousLinearMap.IsIdempotentElem.isClosed_range hP
+
+/-- The range of an operator whose Gram operator `B† B` is invertible admits an orthogonal
+projection. -/
+theorem hasOrthogonalProjection_range_of_isUnit_adjoint_comp {B : F →L[𝕜] V}
+    (hB : IsUnit (adjoint B ∘L B)) : B.range.HasOrthogonalProjection :=
+  Submodule.hasOrthogonalProjection_iff_isClosed.mpr
+    (by simpa only [LinearMap.coe_range, coe_coe] using isClosed_range_of_isUnit_adjoint_comp hB)
 
 /-- The orthogonal projection onto the range of `B` is `B (B† B)⁻¹ B†`, that is `B` composed with
 `ContinuousLinearMap.gramLeftInverse B`, when the Gram operator `B† B` is invertible. -/

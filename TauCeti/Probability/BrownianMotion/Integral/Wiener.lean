@@ -216,9 +216,7 @@ theorem integral_wienerIntegral (hB : IsPreBrownianReal B P) (T : ℝ≥0)
     ∫ ω, hB.wienerIntegral T f ω ∂P = 0 := by
   have : IsProbabilityMeasure P := (hB.hasLaw_eval 0).isProbabilityMeasure
   let one : Lp ℝ 2 P := Lp.const 2 P 1
-  have hexpect (g : Lp ℝ 2 P) : ⟪one, g⟫_ℝ = ∫ ω, g ω ∂P := by
-    dsimp only [one]
-    rw [← indicatorConstLp_univ, L2.inner_indicatorConstLp_one, setIntegral_univ]
+  have hexpect (g : Lp ℝ 2 P) : ⟪one, g⟫_ℝ = ∫ ω, g ω ∂P := L2.inner_const_one g
   have hz : ∀ t : ℝ≥0, ⟪one, hB.toL2 t⟫_ℝ = 0 := by
     intro t
     rw [hexpect, integral_congr_ae (hB.coeFn_toL2 t), hB.integral_eval]

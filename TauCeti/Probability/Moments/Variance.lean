@@ -13,6 +13,7 @@ public import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 public import TauCeti.MeasureTheory.Function.Lp.Norm
 public import TauCeti.MeasureTheory.Integral.Lebesgue.SetOfEqZero
 public import TauCeti.Probability.Moments.Mixture
+import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.OuterMeasure.BorelCantelli
 
 /-!
@@ -52,6 +53,8 @@ variances and Borel--Cantelli almost-sure convergence to the mean from summable 
   `2k`-th absolute moment.
 * `MeasureTheory.MeasurePreserving.evariance_fun_comp`: the variance is invariant under
   composition with a measure-preserving measurable embedding.
+* `ProbabilityTheory.variance_eq_norm_sub_const_sq`: for `f ∈ L²(μ)` on a finite measure space,
+  `Var[f; μ] = ‖f - ∫ f dμ‖²`.
 * `ProbabilityTheory.tendsto_variance_of_tendsto_eLpNorm_sub`: variance is continuous under
   L² convergence on a finite measure space.
 * `TauCeti.Probability.evariance_integral_prod_le` and
@@ -76,6 +79,18 @@ open scoped NNReal RealInnerProductSpace Topology
 
 namespace ProbabilityTheory
 
+/-- For `f ∈ L²(μ)` on a finite measure space, the variance of `f` equals
+`‖f - Lp.const 2 μ (∫ x, f x ∂μ)‖ ^ 2`. -/
+theorem variance_eq_norm_sub_const_sq {α : Type*} [MeasurableSpace α] {μ : Measure α}
+    [IsFiniteMeasure μ] (f : Lp ℝ 2 μ) :
+    variance (f : α → ℝ) μ = ‖f - Lp.const 2 μ (∫ x, f x ∂μ)‖ ^ 2 := by
+  rw [variance_eq_integral (Lp.aestronglyMeasurable f).aemeasurable,
+    ← Lp.integral_norm_sq_eq_norm_sq]
+  refine integral_congr_ae ?_
+  filter_upwards [Lp.coeFn_sub f (Lp.const 2 μ (∫ x, f x ∂μ)),
+    Lp.coeFn_const 2 μ (∫ x, f x ∂μ)] with x hx hc
+  rw [hx, Pi.sub_apply, hc, Function.const_apply, Real.norm_eq_abs, sq_abs]
+
 /-- The variance is continuous under L² convergence on a finite measure space. -/
 theorem tendsto_variance_of_tendsto_eLpNorm_sub {α ι : Type*} [MeasurableSpace α]
     {μ : Measure α} [IsFiniteMeasure μ] {f : α → ℝ} {g : ι → α → ℝ} {l : Filter ι}
@@ -87,7 +102,7 @@ theorem tendsto_variance_of_tendsto_eLpNorm_sub {α ι : Type*} [MeasurableSpace
     simpa only [Lp.edist_toLp_toLp] using ht
   have hmean_eq (u : α → ℝ) (hu : MemLp u 2 μ) :
       inner ℝ (Lp.const 2 μ (1 : ℝ)) (hu.toLp u) = ∫ x, u x ∂μ := by
-    rw [← indicatorConstLp_univ, L2.inner_indicatorConstLp_one, setIntegral_univ]
+    rw [L2.inner_const_one]
     exact integral_congr_ae hu.coeFn_toLp
   have hmeanLp : Tendsto (fun i ↦ inner ℝ (Lp.const 2 μ (1 : ℝ)) ((hg i).toLp (g i))) l
       (𝓝 (inner ℝ (Lp.const 2 μ (1 : ℝ)) (hf.toLp f))) :=
@@ -100,11 +115,8 @@ theorem tendsto_variance_of_tendsto_eLpNorm_sub {α ι : Type*} [MeasurableSpace
       ((Lp.constL 2 μ ℝ : ℝ →L[ℝ] Lp ℝ 2 μ).continuous.tendsto _).comp hmean
   have hvar (u : α → ℝ) (hu : MemLp u 2 μ) :
       variance u μ = ‖hu.toLp u - Lp.const 2 μ (∫ x, u x ∂μ)‖ ^ 2 := by
-    rw [variance_eq_integral hu.aemeasurable, ← Lp.integral_norm_sq_eq_norm_sq]
-    apply integral_congr_ae
-    filter_upwards [Lp.coeFn_sub (hu.toLp u) (Lp.const 2 μ (∫ x, u x ∂μ)),
-      hu.coeFn_toLp, Lp.coeFn_const 2 μ (∫ x, u x ∂μ)] with x hx hu hc
-    simp only [hx, Pi.sub_apply, hu, hc, Function.const_apply, Real.norm_eq_abs, sq_abs]
+    rw [← variance_congr hu.coeFn_toLp, variance_eq_norm_sub_const_sq,
+      integral_congr_ae hu.coeFn_toLp]
   simpa only [← hvar] using (hLp.sub hconst).norm.pow 2
 
 end ProbabilityTheory

@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 public import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
+import TauCeti.Analysis.InnerProductSpace.Projection.Completeness
 
 /-!
 # Products and norms of orthogonal projections
@@ -112,6 +113,13 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
   `(P_U - P_V)² P_U = P_U (P_U - P_V)² = P_U - P_U P_V P_U`.
 * `Submodule.span_range_starProjection_orthogonal_basis_succ`: if the zeroth coordinate of `v` in
   a basis is nonzero, the projections onto `(𝕜 ∙ v)ᗮ` of the other basis vectors span it.
+* `Submodule.IsOrtho.sub_add_starProjection_mem_orthogonal`: subtracting the orthogonal projections
+  onto two orthogonal subspaces `U` and `V` leaves a vector orthogonal to `U ⊔ V`.
+* `Submodule.IsOrtho.hasOrthogonalProjection_sup`, `Submodule.IsOrtho.starProjection_sup`: the sum
+  of two orthogonal subspaces admitting orthogonal projections admits an orthogonal projection equal
+  to the sum of the two projections.
+* `Submodule.closure_image_starProjection_of_dense`: the orthogonal projection onto `U` sends a
+  dense set to a set with closure `U`.
 * `Submodule.apply_starProjection_eq_of_forall_mem_orthogonal`,
   `Submodule.mul_starProjection_eq_self`, `Submodule.commute_starProjection_orthogonal_iff`,
   `Submodule.apply_mem_of_commute_starProjection`: additive maps vanishing on `Uᗮ` factor through
@@ -412,6 +420,53 @@ theorem span_range_starProjection_orthogonal_basis_succ
         simp only [map_sum, map_smul]
   rw [hw']
   exact sum_mem fun j _ ↦ smul_mem _ _ (subset_span ⟨j, rfl⟩)
+
+/-- For orthogonal subspaces `U` and `V` admitting orthogonal projections, subtracting the sum of
+their orthogonal projections of `x` from `x` leaves a vector orthogonal to `U ⊔ V`. -/
+theorem IsOrtho.sub_add_starProjection_mem_orthogonal {U V : Submodule 𝕜 E}
+    [U.HasOrthogonalProjection] [V.HasOrthogonalProjection] (hUV : U.IsOrtho V) (x : E) :
+    x - (U.starProjection x + V.starProjection x) ∈ (U ⊔ V)ᗮ := by
+  rw [← Submodule.inf_orthogonal, Submodule.mem_inf]
+  refine ⟨?_, ?_⟩
+  · have hVx : V.starProjection x ∈ Uᗮ := hUV.symm (V.starProjection_apply_mem x)
+    simpa only [sub_add_eq_sub_sub] using
+      Submodule.sub_mem _ (U.sub_starProjection_mem_orthogonal x) hVx
+  · have hUx : U.starProjection x ∈ Vᗮ := hUV (U.starProjection_apply_mem x)
+    simpa only [sub_add_eq_sub_sub, sub_right_comm] using
+      Submodule.sub_mem _ (V.sub_starProjection_mem_orthogonal x) hUx
+
+/-- The sum of two orthogonal subspaces admitting orthogonal projections admits an orthogonal
+projection. -/
+theorem IsOrtho.hasOrthogonalProjection_sup {U V : Submodule 𝕜 E}
+    [U.HasOrthogonalProjection] [V.HasOrthogonalProjection] (hUV : U.IsOrtho V) :
+    (U ⊔ V).HasOrthogonalProjection :=
+  ⟨fun x ↦ ⟨U.starProjection x + V.starProjection x,
+    Submodule.add_mem_sup (U.starProjection_apply_mem x) (V.starProjection_apply_mem x),
+    hUV.sub_add_starProjection_mem_orthogonal x⟩⟩
+
+/-- The orthogonal projection onto the sum of two orthogonal subspaces is the sum of their
+orthogonal projections. -/
+theorem IsOrtho.starProjection_sup {U V : Submodule 𝕜 E}
+    [U.HasOrthogonalProjection] [V.HasOrthogonalProjection] (hUV : U.IsOrtho V)
+    [(U ⊔ V).HasOrthogonalProjection] :
+    (U ⊔ V).starProjection = U.starProjection + V.starProjection := by
+  ext x
+  exact Submodule.eq_starProjection_of_mem_orthogonal
+    (Submodule.add_mem_sup (U.starProjection_apply_mem x) (V.starProjection_apply_mem x))
+    (hUV.sub_add_starProjection_mem_orthogonal x)
+
+/-- If `S` is dense in `E`, then the closure of the image of `S` under the orthogonal projection
+onto `U` equals `U`. -/
+theorem closure_image_starProjection_of_dense {S : Set E} (hS : Dense S) :
+    closure (U.starProjection '' S) = (U : Set E) := by
+  refine Set.Subset.antisymm (closure_minimal ?_ U.isClosed_of_hasOrthogonalProjection) ?_
+  · rintro _ ⟨x, -, rfl⟩
+    exact U.starProjection_apply_mem x
+  · have hrange : Set.range U.starProjection = (U : Set E) := by
+      simpa only [LinearMap.coe_range, ContinuousLinearMap.coe_coe] using
+        congrArg SetLike.coe U.range_starProjection
+    rw [← hrange]
+    exact U.starProjection.continuous.range_subset_closure_image_dense hS
 
 section Real
 

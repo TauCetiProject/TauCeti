@@ -36,6 +36,9 @@ L² function with a continuous function is an integral
 (`MeasureTheory.L2.inner_toLp_continuousMap`), extending Mathlib's `ContinuousMap.inner_toLp`.
 More generally, the L² pairing of an L² function with the class of any square-integrable
 function is the integral of their pointwise inner product (`MeasureTheory.L2.inner_toLp`).
+On a finite measure space, the L² inner product of a constant function `Lp.const 2 μ c` with `f`
+is `⟪c, ∫ f ∂μ⟫` (`MeasureTheory.L2.inner_const_eq_inner_integral`), and for the scalar constant
+`1` it equals `∫ f ∂μ` (`MeasureTheory.L2.inner_const_one`).
 The second moment of a finite sum of pairwise orthogonal functions with values in a real inner
 product space is the sum of their second moments
 (`TauCeti.integral_norm_sum_sq_of_pairwise_integral_inner_eq_zero`), with a scalar specialization
@@ -248,6 +251,20 @@ theorem L2.inner_toLp (f : Lp E 2 μ) {g : α → E} (hg : MemLp g 2 μ) :
   refine integral_congr_ae ?_
   filter_upwards [hg.coeFn_toLp] with x hx
   rw [hx]
+
+/-- On a finite measure space, the `L²` inner product of a constant function `Lp.const 2 μ c` with
+`f` equals `⟪c, ∫ x, f x ∂μ⟫`. -/
+theorem L2.inner_const_eq_inner_integral [IsFiniteMeasure μ] [CompleteSpace E] [NormedSpace ℝ E]
+    (c : E) (f : Lp E 2 μ) :
+    ⟪Lp.const 2 μ c, f⟫_𝕜 = ⟪c, ∫ x, f x ∂μ⟫_𝕜 := by
+  rw [← indicatorConstLp_univ, L2.inner_indicatorConstLp_eq_inner_setIntegral, setIntegral_univ]
+
+/-- On a finite measure space, the `L²` inner product of the constant function `1` with a scalar
+`L²` function `f` is its integral. -/
+theorem L2.inner_const_one [IsFiniteMeasure μ] (f : Lp 𝕜 2 μ) :
+    ⟪Lp.const 2 μ (1 : 𝕜), f⟫_𝕜 = ∫ x, f x ∂μ := by
+  rw [L2.inner_const_eq_inner_integral]
+  simp
 
 open Filter in
 /-- **The squared `L²` norm of the positive part is differentiable**: on real `L²`, the map
