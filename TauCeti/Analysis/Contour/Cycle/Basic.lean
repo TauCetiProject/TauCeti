@@ -408,6 +408,7 @@ theorem integral_sub {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {f g
   simp only [smul_sub]
 
 /-- The integral over a cycle commutes with finite sums of integrands continuous on its trace. -/
+@[simp]
 theorem integral_finsetSum {ι E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
     {s : Finset ι} {f : ι → ℂ → E} {C : Cycle} (hf : ∀ i ∈ s, ContinuousOn (f i) (trace C)) :
     integral (fun z ↦ ∑ i ∈ s, f i z) C = ∑ i ∈ s, integral (f i) C := by

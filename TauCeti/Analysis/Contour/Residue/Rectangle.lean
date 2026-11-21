@@ -48,15 +48,13 @@ integral to small circle integrals around `P`, which evaluate to `2πi · ∑ p 
 
 * `TauCeti.Contour.classicalResidueTheorem_rectBoundary`: the residue theorem along
   `Complex.rectBoundary z w`.
-* `TauCeti.Contour.integral_boundary_rect_eq_two_pi_I_mul_sum_residue`: the unpacked four-edge
-  residue formula on `Rectangle (σ₀ + T₁ * I) (σ₁ + T₂ * I)`.
+* `TauCeti.Contour.rectangle_boundary_integral_eq_residues`: the four-edge boundary integral of `f`
+  around `[σ₁, σ₂] ×ℂ [t₁, t₂]` equals `2πi · ∑ p ∈ P, residue f p`, assuming only continuity on
+  the closed rectangle off `P` and complex differentiability on its interior off `P`.
 * `TauCeti.Contour.integral_add_mul_I_sub_integral_add_mul_I_eq_two_pi_mul_sum_residue`: shifting an
   improper vertical-line integral across a strip with finitely many poles.
 * `TauCeti.Contour.integral_add_mul_I_sub_integral_add_mul_I_eq_two_pi_mul_sum_residue_of_norm_le`:
   the same vertical-line shift under a uniform decay bound on horizontal segments.
-* `TauCeti.Contour.rectangle_boundary_integral_eq_residues`: the four-edge boundary integral of `f`
-  around `[σ₁, σ₂] ×ℂ [t₁, t₂]` equals `2πi · ∑ p ∈ P, residue f p`, assuming only continuity on
-  the closed rectangle off `P` and complex differentiability on its interior off `P`.
 * `TauCeti.Contour.vertical_integral_eq_uShaped_add_residues`: the finite-height U-shaped identity
   expressing the right vertical edge in terms of the left vertical edge, the horizontal edges, and
   the enclosed residues.
@@ -121,46 +119,38 @@ theorem classicalResidueTheorem_rectBoundary {f : ℂ → ℂ} {S : Finset ℂ} 
   rw [windingNumber_rectBoundary_eq_one (mem_Ioo_reProdIm_of_mem_rectangle hre him hsR hsfr),
     one_mul]
 
-open scoped Classical in
-/-- **The four-edge residue formula on an axis-parallel rectangle.** For `σ₀ ≤ σ₁` and `T₁ ≤ T₂`,
-if `f` is analytic on `Icc σ₀ σ₁ ×ℂ Icc T₁ T₂ \ S` and meromorphic at the points of `S` in that
-rectangle, and `S` avoids the boundary of the rectangle, then the signed sum of the four edge
-integrals equals `2πi` times the sum of the residues of `f` in the open rectangle
-`Ioo σ₀ σ₁ ×ℂ Ioo T₁ T₂`. -/
-theorem integral_boundary_rect_eq_two_pi_I_mul_sum_residue {f : ℂ → ℂ} {S : Finset ℂ}
-    {σ₀ σ₁ T₁ T₂ : ℝ} (hσ : σ₀ ≤ σ₁) (hT : T₁ ≤ T₂)
-    (hf : ∀ x ∈ Icc σ₀ σ₁ ×ℂ Icc T₁ T₂, x ∉ S → AnalyticAt ℂ f x)
-    (hmero : ∀ s ∈ S, s ∈ Icc σ₀ σ₁ ×ℂ Icc T₁ T₂ → MeromorphicAt f s)
-    (hS : ∀ s ∈ S, s ∉ frontier (Rectangle ((σ₀ : ℂ) + T₁ * I) ((σ₁ : ℂ) + T₂ * I))) :
-    (∫ x : ℝ in σ₀..σ₁, f (x + T₁ * I)) - (∫ x : ℝ in σ₀..σ₁, f (x + T₂ * I)) +
-        I * (∫ y : ℝ in T₁..T₂, f (σ₁ + y * I)) -
-        I * (∫ y : ℝ in T₁..T₂, f (σ₀ + y * I)) =
-      2 * π * I * ∑ s ∈ S with s ∈ Ioo σ₀ σ₁ ×ℂ Ioo T₁ T₂, residue f s := by
-  set z : ℂ := (σ₀ : ℂ) + T₁ * I
-  set w : ℂ := (σ₁ : ℂ) + T₂ * I
-  have hzre : z.re = σ₀ := by simp [z]
-  have hzim : z.im = T₁ := by simp [z]
-  have hwre : w.re = σ₁ := by simp [w]
-  have hwim : w.im = T₂ := by simp [w]
-  have hrect : Rectangle z w = Icc σ₀ σ₁ ×ℂ Icc T₁ T₂ := by
-    rw [Rectangle, hzre, hzim, hwre, hwim, uIcc_of_le hσ, uIcc_of_le hT]
-  have hcont : ContinuousOn f (frontier (Rectangle z w)) := fun x hx ↦
-    (hf x (hrect ▸ (isClosed_rectangle z w).frontier_subset hx)
-      fun hxS ↦ hS x hxS hx).continuousAt.continuousWithinAt
-  have hres := classicalResidueTheorem_rectBoundary (hzre.trans_le (hσ.trans_eq hwre.symm))
-    (hzim.trans_le (hT.trans_eq hwim.symm)) (hrect ▸ hf) (hrect ▸ hmero) hS
-  rw [integral_rectBoundary hcont, hzre, hzim, hwre, hwim] at hres
-  simp only [smul_eq_mul] at hres
-  rw [hres]
-  refine congrArg _ (Finset.sum_congr (Finset.ext fun s ↦ ?_) fun _ _ ↦ rfl)
-  simp only [Finset.mem_filter, and_congr_right_iff]
-  intro hs
-  constructor
-  · exact fun hsR ↦ hzre ▸ hwre ▸ hzim ▸ hwim ▸ mem_Ioo_reProdIm_of_mem_rectangle
-      (hzre.trans_le (hσ.trans_eq hwre.symm)) (hzim.trans_le (hT.trans_eq hwim.symm)) hsR (hS s hs)
-  · intro hsI
-    rw [hrect]
-    exact ⟨Ioo_subset_Icc_self hsI.1, Ioo_subset_Icc_self hsI.2⟩
+/-- **The rectangle residue theorem in four-edge form.** Let `σ₁ ≤ σ₂`, `t₁ ≤ t₂`, `P` a finite
+subset of the open rectangle `(σ₁, σ₂) ×ℂ (t₁, t₂)`, and `f : ℂ → ℂ` continuous on the closed
+rectangle minus `P`, complex differentiable on the open rectangle minus `P`, and meromorphic at
+each point of `P`. Then Mathlib's counterclockwise four-edge boundary integral equals
+`2πi · ∑ p ∈ P, residue f p`.
+
+No open neighbourhood of the closed rectangle is required, and poles in `P` may have arbitrary
+order (or be removable). -/
+theorem rectangle_boundary_integral_eq_residues {σ₁ σ₂ t₁ t₂ : ℝ} (hσ : σ₁ ≤ σ₂) (ht : t₁ ≤ t₂)
+    {P : Finset ℂ} (hP : ∀ p ∈ P, p ∈ Ioo σ₁ σ₂ ×ℂ Ioo t₁ t₂) {f : ℂ → ℂ}
+    (hc : ContinuousOn f (Icc σ₁ σ₂ ×ℂ Icc t₁ t₂ \ P))
+    (hd : DifferentiableOn ℂ f (Ioo σ₁ σ₂ ×ℂ Ioo t₁ t₂ \ P))
+    (hmer : ∀ p ∈ P, MeromorphicAt f p) :
+    (∫ x : ℝ in σ₁..σ₂, f (x + t₁ * I)) - (∫ x : ℝ in σ₁..σ₂, f (x + t₂ * I)) +
+        I * (∫ y : ℝ in t₁..t₂, f (σ₂ + y * I)) - I * (∫ y : ℝ in t₁..t₂, f (σ₁ + y * I)) =
+      2 * π * I * ∑ p ∈ P, residue f p := by
+  let U : Set ℂ := Ioo σ₁ σ₂ ×ℂ Ioo t₁ t₂
+  have hU : IsOpen U := isOpen_Ioo.reProdIm isOpen_Ioo
+  obtain ⟨r, hr, hP_ball, hsep⟩ := TauCeti.exists_pos_closedBall_subset_and_lt_dist
+    (T := P) (U := fun _ ↦ U) (fun p hp ↦ hU.mem_nhds (hP p hp))
+  have hdisj : (P : Set ℂ).Pairwise fun p q ↦ Disjoint (closedBall p r) (closedBall q r) :=
+    fun p hp q hq hne ↦ disjoint_left.2 fun z hzp hzq ↦ by
+      linarith [hsep p hp q hq hne, dist_triangle_left p q z, mem_closedBall.1 hzp,
+        mem_closedBall.1 hzq]
+  have hcirc := rectangle_boundary_integral_eq_sum_circleIntegral hσ ht hr hP_ball hdisj hc hd
+  simp only [smul_eq_mul] at hcirc
+  rw [hcirc, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun p hp ↦ ?_
+  refine circleIntegral_eq_residue (mem_ball_self hr) (hmer p hp) fun z hz hzp ↦ ?_
+  have hzUP : z ∈ U \ P := ⟨hP_ball p hp hz, fun hzP ↦
+    disjoint_left.1 (hdisj hp hzP hzp.symm) hz (mem_closedBall_self hr.le)⟩
+  exact hd.analyticAt ((hU.sdiff P.finite_toSet.isClosed).mem_nhds hzUP)
 
 /-- **Shifting a vertical-line integral across poles.** Let `σ₀ ≤ σ₁` and let `S` be a finite set
 of points in the open strip `σ₀ < Re s < σ₁`. Suppose `f` is analytic on the closed strip
@@ -195,18 +185,16 @@ theorem integral_add_mul_I_sub_integral_add_mul_I_eq_two_pi_mul_sum_residue
     have hT0 : 0 < T := lt_of_lt_of_le (by positivity) hT
     have hST (s : ℂ) (hs : s ∈ S) : s ∈ Ioo σ₀ σ₁ ×ℂ Ioo (-T) T :=
       ⟨hS s hs, abs_lt.mp ((hSim s hs).trans_le hT)⟩
-    have hfr (s : ℂ) (hs : s ∈ S) :
-        s ∉ frontier (Rectangle ((σ₀ : ℂ) + (-T : ℝ) * I) ((σ₁ : ℂ) + T * I)) := by
-      have hint : s ∈ interior (Rectangle ((σ₀ : ℂ) + (-T : ℝ) * I) ((σ₁ : ℂ) + T * I)) := by
-        rw [interior_rectangle (by simpa using hσ) (by simp; linarith)]
-        simpa using hST s hs
-      exact disjoint_left.1 disjoint_interior_frontier hint
-    have hedge := integral_boundary_rect_eq_two_pi_I_mul_sum_residue hσ (by linarith : -T ≤ T)
-      (fun x hx hxS ↦ hf x hx.1 hxS) (fun s hs _ ↦ hmero s hs) hfr
+    have hc : ContinuousOn f (Icc σ₀ σ₁ ×ℂ Icc (-T) T \ S) := fun z hz ↦
+      (hf z hz.1.1 (by simpa using hz.2)).continuousAt.continuousWithinAt
+    have hd : DifferentiableOn ℂ f (Ioo σ₀ σ₁ ×ℂ Ioo (-T) T \ S) := fun z hz ↦
+      (hf z (Ioo_subset_Icc_self hz.1.1) (by simpa using hz.2)).differentiableAt
+        |>.differentiableWithinAt
+    have hedge := rectangle_boundary_integral_eq_residues hσ (by linarith : -T ≤ T) hST hc hd hmero
     have hsub : ∀ x : ℝ, (x : ℂ) + (-T : ℝ) * I = (x : ℂ) - T * I := fun x ↦ by
       push_cast; ring
     simp_rw [hsub] at hedge
-    rw [hedge, Finset.filter_true_of_mem hST]
+    exact hedge
   have hlim : Tendsto (fun T : ℝ ↦ (∫ x : ℝ in σ₀..σ₁, f (x - T * I)) -
       (∫ x : ℝ in σ₀..σ₁, f (x + T * I)) +
       I * (∫ y : ℝ in (-T)..T, f (σ₁ + y * I)) -
@@ -245,39 +233,6 @@ theorem integral_add_mul_I_sub_integral_add_mul_I_eq_two_pi_mul_sum_residue_of_n
     hint₀ hint₁
     (hseg (fun T x ↦ f ((x : ℂ) - T * I)) (hbound.mono fun T hT x hx ↦ (hT x hx).2))
     (hseg (fun T x ↦ f ((x : ℂ) + T * I)) (hbound.mono fun T hT x hx ↦ (hT x hx).1))
-
-/-- **The rectangle residue theorem in four-edge form.** Let `σ₁ ≤ σ₂`, `t₁ ≤ t₂`, `P` a finite
-subset of the open rectangle `(σ₁, σ₂) ×ℂ (t₁, t₂)`, and `f : ℂ → ℂ` continuous on the closed
-rectangle minus `P`, complex differentiable on the open rectangle minus `P`, and meromorphic at
-each point of `P`. Then Mathlib's counterclockwise four-edge boundary integral equals
-`2πi · ∑ p ∈ P, residue f p`.
-
-No open neighbourhood of the closed rectangle is required, and poles in `P` may have arbitrary
-order (or be removable). -/
-theorem rectangle_boundary_integral_eq_residues {σ₁ σ₂ t₁ t₂ : ℝ} (hσ : σ₁ ≤ σ₂) (ht : t₁ ≤ t₂)
-    {P : Finset ℂ} (hP : ∀ p ∈ P, p ∈ Ioo σ₁ σ₂ ×ℂ Ioo t₁ t₂) {f : ℂ → ℂ}
-    (hc : ContinuousOn f (Icc σ₁ σ₂ ×ℂ Icc t₁ t₂ \ P))
-    (hd : DifferentiableOn ℂ f (Ioo σ₁ σ₂ ×ℂ Ioo t₁ t₂ \ P))
-    (hmer : ∀ p ∈ P, MeromorphicAt f p) :
-    (∫ x : ℝ in σ₁..σ₂, f (x + t₁ * I)) - (∫ x : ℝ in σ₁..σ₂, f (x + t₂ * I)) +
-        I * (∫ y : ℝ in t₁..t₂, f (σ₂ + y * I)) - I * (∫ y : ℝ in t₁..t₂, f (σ₁ + y * I)) =
-      2 * π * I * ∑ p ∈ P, residue f p := by
-  let U : Set ℂ := Ioo σ₁ σ₂ ×ℂ Ioo t₁ t₂
-  have hU : IsOpen U := isOpen_Ioo.reProdIm isOpen_Ioo
-  obtain ⟨r, hr, hP_ball, hsep⟩ := TauCeti.exists_pos_closedBall_subset_and_lt_dist
-    (T := P) (U := fun _ ↦ U) (fun p hp ↦ hU.mem_nhds (hP p hp))
-  have hdisj : (P : Set ℂ).Pairwise fun p q ↦ Disjoint (closedBall p r) (closedBall q r) :=
-    fun p hp q hq hne ↦ disjoint_left.2 fun z hzp hzq ↦ by
-      linarith [hsep p hp q hq hne, dist_triangle_left p q z, mem_closedBall.1 hzp,
-        mem_closedBall.1 hzq]
-  have hcirc := rectangle_boundary_integral_eq_sum_circleIntegral hσ ht hr hP_ball hdisj hc hd
-  simp only [smul_eq_mul] at hcirc
-  rw [hcirc, Finset.mul_sum]
-  refine Finset.sum_congr rfl fun p hp ↦ ?_
-  refine circleIntegral_eq_residue (mem_ball_self hr) (hmer p hp) fun z hz hzp ↦ ?_
-  have hzUP : z ∈ U \ P := ⟨hP_ball p hp hz, fun hzP ↦
-    disjoint_left.1 (hdisj hp hzP hzp.symm) hz (mem_closedBall_self hr.le)⟩
-  exact hd.analyticAt ((hU.sdiff P.finite_toSet.isClosed).mem_nhds hzUP)
 
 /-- **Finite-height U-shaped contour identity.** Under the hypotheses of
 `rectangle_boundary_integral_eq_residues` (with no integrability hypothesis), the right vertical
