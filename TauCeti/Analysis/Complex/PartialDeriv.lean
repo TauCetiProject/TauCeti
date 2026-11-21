@@ -64,6 +64,7 @@ theorem hasDerivAt_comp_update [Finite ι] {f : (ι → ℂ) → E} {z : ι → 
     (hf : DifferentiableAt ℂ f (update z i s)) :
     HasDerivAt (fun s ↦ f (update z i s)) (partialDeriv i f (update z i s)) s := by
   have := Fintype.ofFinite ι
+  rw [partialDeriv_apply]
   exact hf.hasFDerivAt.comp_hasDerivAt s (hasDerivAt_update z i s)
 
 /-- The restriction of an entire function to a line parallel to a coordinate axis is entire. -/

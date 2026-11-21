@@ -25,7 +25,8 @@ variable at `ζ`* is the function `g = TauCeti.partialDslope i f ζ` with
   `f z = f₀ z + (zᵢ - ζ) • g z`:
 
 on `zᵢ ≠ ζ` it is the difference quotient `(f z - f₀ z) / (zᵢ - ζ)`, and on the hyperplane
-`zᵢ = ζ` it is the partial derivative `∂ᵢ f z`. On each line parallel to the `i`-th coordinate
+`zᵢ = ζ` it is the derivative of `f` along the `i`-th coordinate axis, which is the partial
+derivative `∂ᵢ f z` for `f` differentiable at `z`. On each line parallel to the `i`-th coordinate
 axis it is Mathlib's `dslope`. Repeating this division along the roots of a polynomial `P(zᵢ)` is
 how an entire function is divided by `P(zᵢ)` with a remainder that is a polynomial in `zᵢ`, the
 first step of Schwarz's lemma for Cartesian products in the transcendence method of Schneider,
@@ -79,8 +80,9 @@ variable {ι E : Type*} [DecidableEq ι] [NormedAddCommGroup E] [NormedSpace ℂ
 
 /-- The divided difference of `f : (ι → ℂ) → E` in the `i`-th variable at `ζ`: the function `g`
 with `f z = f (update z i ζ) + (z i - ζ) • g z`. It is the difference quotient
-`(z i - ζ)⁻¹ • (f z - f (update z i ζ))` off the hyperplane `z i = ζ` and the partial derivative
-`∂ᵢ f z` on it, that is, Mathlib's `dslope` on each line parallel to the `i`-th axis. -/
+`(z i - ζ)⁻¹ • (f z - f (update z i ζ))` off the hyperplane `z i = ζ` and, for `f` differentiable
+at `z`, the partial derivative `∂ᵢ f z` on it. On each line parallel to the `i`-th axis it is
+Mathlib's `dslope`. -/
 noncomputable def partialDslope (i : ι) (f : (ι → ℂ) → E) (ζ : ℂ) : (ι → ℂ) → E :=
   fun z ↦ dslope (fun s ↦ f (update z i s)) ζ (z i)
 
@@ -220,15 +222,14 @@ theorem norm_partialDslope_le [CompleteSpace E] (hf : Differentiable ℂ f) (hζ
     rw [h, sub_self, norm_zero] at hsζ
     linarith
   rw [partialDslope_update, dslope_of_ne _ hne, slope_def_module, norm_smul, norm_inv,
-    inv_mul_le_iff₀ (norm_pos_iff.2 (sub_ne_zero.2 hne)), mul_div_assoc']
+    inv_mul_eq_div]
   have hf₁ := hM _ (Pi.norm_update_le (i := i) hz hs.le)
   have hf₂ := norm_apply_update_le (i := i) (hζ.trans hrR.le) hM hz
-  have hM0 : 0 ≤ M := (norm_nonneg _).trans hf₂
-  rw [le_div_iff₀ (by linarith)]
-  calc ‖f (update z i s) - f (update z i ζ)‖ * (R - r)
-      ≤ (M + M) * ‖s - ζ‖ :=
-        mul_le_mul ((norm_sub_le _ _).trans (add_le_add hf₁ hf₂)) hsζ (by linarith) (by linarith)
-    _ = ‖s - ζ‖ * (2 * M) := by ring
+  -- The numerator is at most `M + M = 2 M` and the denominator at least `R - r > 0`.
+  have hnum : ‖f (update z i s) - f (update z i ζ)‖ ≤ 2 * M := by
+    linarith [norm_sub_le (f (update z i s)) (f (update z i ζ))]
+  have hM0 : 0 ≤ 2 * M := (norm_nonneg _).trans hnum
+  exact div_le_div₀ hM0 hnum (sub_pos.2 hrR) hsζ
 
 end Bounds
 
@@ -292,7 +293,8 @@ theorem iterate_partialDeriv_partialDslope_eq_zero (hf : Differentiable ℂ f) {
   refine congrFun
     (Differentiable.iteratedDeriv_dslope_eq_zero (differentiable_comp_update hf z i) ?_ ζ) (z i)
   rw [iteratedDeriv_comp_update hf, he]
-  rfl
+  funext _
+  simp
 
 end Degree
 
