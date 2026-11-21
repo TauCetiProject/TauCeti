@@ -37,9 +37,8 @@ coefficients nonnegative. At `m = 5`, `b = 2` the coefficients at `[3]` and `[2]
   the integral Stickelberger ideal.
 * `TauCeti.smoothedStickelberger_zero`, `TauCeti.smoothedStickelberger_one`: `s_{m,0} = 0` and
   `s_{m,1} = 0`.
-* `TauCeti.smoothedStickelberger_add_self`: `s_{m,b+m} = s_{m,b} + s_{m,m}`; the smoothing is not a
-  function of the residue of `b`.
-* `TauCeti.smoothedStickelberger_mul`: for `b, d` prime to `m`,
+* `TauCeti.smoothedStickelberger_add_self`: `s_{m,b+m} = s_{m,b} + s_{m,m}`.
+* `TauCeti.smoothedStickelberger_mul`: for `d` prime to `m` and every natural `b`,
   `s_{m,bd} = b s_{m,d} + [d] s_{m,b}`.
 * `TauCeti.stickelbergerIdeal_three_eq_top`: at conductor three, `s_{3,2} = [2]` is a unit, so the
   integral Stickelberger ideal is the whole group ring.
@@ -48,6 +47,11 @@ coefficients nonnegative. At `m = 5`, `b = 2` the coefficients at `[3]` and `[2]
 
 * R. Sharifi, *Iwasawa theory* (lecture notes), Lemma 4.5.2 and its proof.
 * L. C. Washington, *Introduction to Cyclotomic Fields*, §6.2.
+* C. Birkbeck, AINTLIB, module `BernoulliRegular.Stickelberger` (see the references of
+  `TauCeti.NumberTheory.Cyclotomic.Stickelberger.Basic` for the commit): at a prime `m = p`, the
+  identity `mapRingHom_smoothedStickelberger_self` is AINTLIB's `smul_stickelbergerElement`, and
+  `smoothedStickelberger p p` has the coefficients of its `stickelbergerScaled p`. The code here
+  is not copied from it.
 -/
 
 public section
@@ -75,10 +79,8 @@ theorem coeff_smoothedStickelberger (b : ℕ) (c : (ZMod m)ˣ) :
     (smoothedStickelberger m b).coeff c =
       ((b * ((c⁻¹ : (ZMod m)ˣ) : ZMod m).val / m : ℕ) : ℤ) := by
   classical
-  rw [smoothedStickelberger_def, coeff_sum, Finset.sum_apply',
-    Finset.sum_eq_single_of_mem c⁻¹ (Finset.mem_univ _) fun a _ hac ↦ ?_]
-  · simp
-  · rw [coeff_single, Finsupp.single_eq_of_ne (by rintro rfl; simp at hac)]
+  simp [smoothedStickelberger_def, coeff_sum, coeff_single, Finsupp.single_apply,
+    inv_eq_iff_eq_inv]
 
 /-- Smoothing with `b = 0` gives zero. -/
 @[simp]
@@ -92,8 +94,7 @@ theorem smoothedStickelberger_one : smoothedStickelberger m 1 = 0 := by
   simp [Nat.div_eq_of_lt (ZMod.val_lt _)]
 
 /-- Adding `m` to `b` adds `s_{m,m}`, the integral element `m θ_m`
-(`mapRingHom_smoothedStickelberger_self`). In particular the smoothing depends on `b` and not only
-on its residue modulo `m`. -/
+(`mapRingHom_smoothedStickelberger_self`). -/
 theorem smoothedStickelberger_add_self (b : ℕ) :
     smoothedStickelberger m (b + m) = smoothedStickelberger m b + smoothedStickelberger m m := by
   ext c
@@ -116,16 +117,17 @@ theorem mapRingHom_smoothedStickelberger {b : ℕ} (hb : b.Coprime m) :
       ((b : MonoidAlgebra ℚ (ZMod m)ˣ) - single (ZMod.unitOfCoprime b hb) 1) * stickelberger m := by
   ext c
   have hm : (m : ℚ) ≠ 0 := Nat.cast_ne_zero.2 (NeZero.ne m)
-  set v := ((c⁻¹ : (ZMod m)ˣ) : ZMod m).val with hv
-  -- The representative of `c⁻¹ b` is `b v mod m`.
+  set v := ((c⁻¹ : (ZMod m)ˣ) : ZMod m).val
+  -- The representative of `c⁻¹ b` is `b v mod m`, and `b v = m ⌊b v / m⌋ + (b v mod m)`.
   have hval : (((ZMod.unitOfCoprime b hb)⁻¹ * c)⁻¹ : (ZMod m)ˣ).val.val = b * v % m := by
-    rw [mul_inv_rev, inv_inv, Units.val_mul, ZMod.coe_unitOfCoprime, ← ZMod.natCast_zmod_val
-      ((c⁻¹ : (ZMod m)ˣ) : ZMod m), ← hv, mul_comm, ← Nat.cast_mul, ZMod.val_natCast]
-  rw [sub_mul, coeff_sub, Finsupp.sub_apply, coeff_natCast_mul, coeff_single_mul_apply,
-    coeff_stickelberger, coeff_stickelberger, hval, coeff_mapRingHom, coeff_smoothedStickelberger,
-    ← hv, one_mul, eq_comm, mul_div_assoc', div_sub_div_same, div_eq_iff hm, eq_intCast,
-    Int.cast_natCast, sub_eq_iff_eq_add]
-  exact_mod_cast (Nat.div_add_mod' (b * v) m).symm
+    simp [v, mul_comm, ZMod.coe_unitOfCoprime, ZMod.val_mul, ZMod.val_natCast]
+  have h : (m : ℚ) * (b * v / m : ℕ) + (b * v % m : ℕ) = b * v := by
+    exact_mod_cast Nat.div_add_mod (b * v) m
+  simp only [coeff_mapRingHom, coeff_smoothedStickelberger, sub_mul, coeff_sub, Finsupp.sub_apply,
+    coeff_natCast_mul, coeff_single_mul_apply, coeff_stickelberger, hval, Int.coe_castRingHom,
+    Int.cast_natCast, one_mul]
+  field_simp
+  linear_combination h
 
 /-- For `b` prime to `m`, the smoothing `s_{m,b}` lies in the integral Stickelberger ideal: it is
 `x θ_m` for `x = b - [b]`. -/
@@ -134,21 +136,21 @@ theorem smoothedStickelberger_mem_stickelbergerIdeal {b : ℕ} (hb : b.Coprime m
   mem_stickelbergerIdeal.2 ⟨(b : MonoidAlgebra ℤ (ZMod m)ˣ) - single (ZMod.unitOfCoprime b hb) 1,
     by simp [mapRingHom_smoothedStickelberger hb]⟩
 
-/-- **Product relation for smoothings.** For `b` and `d` prime to `m`,
+/-- **Product relation for smoothings.** For `d` prime to `m` and every natural number `b`,
 `s_{m,bd} = b s_{m,d} + [d] s_{m,b}`. -/
-theorem smoothedStickelberger_mul {b d : ℕ} (hb : b.Coprime m) (hd : d.Coprime m) :
+theorem smoothedStickelberger_mul (b : ℕ) {d : ℕ} (hd : d.Coprime m) :
     smoothedStickelberger m (b * d) =
       (b : MonoidAlgebra ℤ (ZMod m)ˣ) * smoothedStickelberger m d +
         single (ZMod.unitOfCoprime d hd) 1 * smoothedStickelberger m b := by
-  apply map_injective (Int.castRingHom ℚ : ℤ →+ ℚ) Int.cast_injective
-  rw [← coe_mapRingHom, map_add, map_mul, map_mul, map_natCast, mapRingHom_single,
-    mapRingHom_smoothedStickelberger hb, mapRingHom_smoothedStickelberger hd,
-    mapRingHom_smoothedStickelberger (Nat.coprime_mul_iff_left.2 ⟨hb, hd⟩),
-    ZMod.unitOfCoprime_mul hb hd, map_one]
-  have hsingle : single (ZMod.unitOfCoprime b hb * ZMod.unitOfCoprime d hd) (1 : ℚ) =
-      single (ZMod.unitOfCoprime b hb) 1 * single (ZMod.unitOfCoprime d hd) 1 := by
-    rw [single_mul_single, mul_one]
-  rw [hsingle]
+  ext c
+  set v := ((c⁻¹ : (ZMod m)ˣ) : ZMod m).val
+  -- The representative of `c⁻¹ d` is `d v mod m`; write `d v = m q + r` with `r = d v mod m`.
+  have hval : (((ZMod.unitOfCoprime d hd)⁻¹ * c)⁻¹ : (ZMod m)ˣ).val.val = d * v % m := by
+    simp [v, mul_comm, ZMod.coe_unitOfCoprime, ZMod.val_mul, ZMod.val_natCast]
+  simp only [coeff_smoothedStickelberger, coeff_add, Finsupp.add_apply, coeff_natCast_mul,
+    coeff_single_mul_apply, hval, one_mul]
+  conv_lhs => rw [mul_assoc, ← Nat.div_add_mod (d * v) m, mul_add, ← mul_assoc, mul_comm b m,
+    mul_assoc, Nat.mul_add_div (NeZero.pos m)]
   push_cast
   ring
 

@@ -7,6 +7,8 @@ module
 
 public import Mathlib.RingTheory.Ideal.Span
 public import TauCeti.NumberTheory.Cyclotomic.Stickelberger.Basic
+import TauCeti.Algebra.MonoidAlgebra.Basic
+import TauCeti.Data.Rat.Lemmas
 
 /-!
 # The denominator ideal and the integral Stickelberger ideal
@@ -121,46 +123,27 @@ theorem coeff_mapRingHom_mul_stickelberger (x : MonoidAlgebra ℤ (ZMod m)ˣ) (c
   refine Finset.sum_congr rfl fun a _ ↦ ?_
   simp [mul_div_assoc]
 
-/-- A rational number `n / m` is an integer exactly when `m ∣ n`. -/
-private theorem intCast_div_natCast_mem_range_iff (n : ℤ) :
-    (n : ℚ) / m ∈ Set.range ((↑) : ℤ → ℚ) ↔ (m : ℤ) ∣ n := by
-  have hm : (m : ℚ) ≠ 0 := Nat.cast_ne_zero.2 (NeZero.ne m)
-  constructor
-  · rintro ⟨k, hk⟩
-    refine ⟨k, Int.cast_injective (α := ℚ) ?_⟩
-    rw [eq_div_iff hm] at hk
-    push_cast
-    rw [← hk, mul_comm]
-  · rintro ⟨k, rfl⟩
-    exact ⟨k, by push_cast; field_simp⟩
-
-/-- The ring homomorphism `ℤ[(ZMod m)ˣ] → ZMod m` induced by the inclusion `(ZMod m)ˣ → ZMod m`
-sends `∑_a n_a [a]` to `∑_a n_a a`. -/
-private theorem lift_coeHom_apply (x : MonoidAlgebra ℤ (ZMod m)ˣ) :
-    lift ℤ (ZMod m) (ZMod m)ˣ (Units.coeHom (ZMod m)) x =
-      ∑ a : (ZMod m)ˣ, (x.coeff a : ZMod m) * a := by
-  rw [lift_apply, Finsupp.sum_fintype _ _ (by simp)]
-  simp [zsmul_eq_mul]
-
 /-- **The denominator ideal is a kernel.** `J_m` is the kernel of the ring homomorphism
 `ℤ[(ZMod m)ˣ] → ZMod m`, `∑_a n_a [a] ↦ ∑_a n_a a`, induced by the inclusion of the units. -/
 theorem stickelbergerDenominatorIdeal_eq_ker :
     stickelbergerDenominatorIdeal m =
       RingHom.ker (lift ℤ (ZMod m) (ZMod m)ˣ (Units.coeHom (ZMod m))) := by
   ext x
-  rw [mem_stickelbergerDenominatorIdeal, RingHom.mem_ker, lift_coeHom_apply]
+  rw [mem_stickelbergerDenominatorIdeal, RingHom.mem_ker, lift_apply_eq_sum]
   rw [← SetLike.mem_coe, RingHom.coe_range, coe_mapRingHom, range_map, Set.mem_ofPred_eq]
   simp only [← coe_mapRingHom, coeff_mapRingHom_mul_stickelberger]
   -- Each coefficient condition is the vanishing of `c⁻¹ ∑_a n_a a` in `ZMod m`.
   have key : ∀ c : (ZMod m)ˣ, ((m : ℤ) ∣ ∑ a : (ZMod m)ˣ,
       x.coeff a * ((c⁻¹ * a : (ZMod m)ˣ) : ZMod m).val) ↔
-        ∑ a : (ZMod m)ˣ, (x.coeff a : ZMod m) * a = 0 := fun c ↦ by
+        ∑ a : (ZMod m)ˣ, x.coeff a • (Units.coeHom (ZMod m) a) = 0 := fun c ↦ by
     rw [← ZMod.intCast_zmod_eq_zero_iff_dvd]
     push_cast
-    simp only [ZMod.natCast_val, ZMod.cast_id', id]
+    simp only [ZMod.natCast_val, ZMod.cast_id', id, Units.coeHom_apply, zsmul_eq_mul]
     conv_rhs => rw [← (c⁻¹).isUnit.mul_right_eq_zero, Finset.mul_sum]
     exact Iff.of_eq (congrArg (· = 0) (Finset.sum_congr rfl fun a _ ↦ by ring))
-  simp only [AddMonoidHom.coe_ofClass, Int.coe_castRingHom, intCast_div_natCast_mem_range_iff, key]
+  have hdiv (n : ℤ) : (n : ℚ) / m ∈ Set.range ((↑) : ℤ → ℚ) ↔ (m : ℤ) ∣ n := by
+    exact_mod_cast Rat.intCast_div_intCast_mem_range_iff (Int.natCast_ne_zero.2 (NeZero.ne m)) n
+  simp only [AddMonoidHom.coe_ofClass, Int.coe_castRingHom, hdiv, key]
   exact ⟨fun h ↦ h 1, fun h _ ↦ h⟩
 
 /-- **Congruence criterion for the denominator ideal.** `∑_a n_a [a] ∈ J_m` exactly when
@@ -168,13 +151,12 @@ theorem stickelbergerDenominatorIdeal_eq_ker :
 theorem mem_stickelbergerDenominatorIdeal_iff_dvd {x : MonoidAlgebra ℤ (ZMod m)ˣ} :
     x ∈ stickelbergerDenominatorIdeal m ↔
       (m : ℤ) ∣ ∑ a : (ZMod m)ˣ, x.coeff a * (a : ZMod m).val := by
-  rw [stickelbergerDenominatorIdeal_eq_ker, RingHom.mem_ker, lift_coeHom_apply,
+  rw [stickelbergerDenominatorIdeal_eq_ker, RingHom.mem_ker, lift_apply_eq_sum,
     ← ZMod.intCast_zmod_eq_zero_iff_dvd]
   push_cast
-  simp [ZMod.natCast_val]
+  simp [ZMod.natCast_val, zsmul_eq_mul]
 
-/-- For `m ≠ 1` the denominator ideal is proper: `1 ∉ J_m`, since the coefficient of `θ_m` at
-`[1]` is `1 / m`. -/
+/-- For `m ≠ 1` the denominator ideal `J_m` is a proper ideal. -/
 theorem stickelbergerDenominatorIdeal_ne_top (hm : m ≠ 1) :
     stickelbergerDenominatorIdeal m ≠ ⊤ := by
   have : Nontrivial (ZMod m) := ZMod.nontrivial_iff.2 hm
@@ -245,14 +227,11 @@ see `mapRingHom_stickelbergerMul`. -/
 noncomputable def stickelbergerMul :
     stickelbergerDenominatorIdeal m →ₗ[MonoidAlgebra ℤ (ZMod m)ˣ] stickelbergerIdeal m where
   toFun x := ⟨stickelbergerMulFun m x, x, mapRingHom_stickelbergerMulFun m x⟩
-  map_add' x y := Subtype.ext <|
-    map_injective (Int.castRingHom ℚ : ℤ →+ ℚ) Int.cast_injective <| by
-      simp only [← coe_mapRingHom, Submodule.coe_add, map_add, mapRingHom_stickelbergerMulFun,
-        add_mul]
-  map_smul' r x := Subtype.ext <|
-    map_injective (Int.castRingHom ℚ : ℤ →+ ℚ) Int.cast_injective <| by
-      simp only [← coe_mapRingHom, SetLike.val_smul, smul_eq_mul, map_mul,
-        mapRingHom_stickelbergerMulFun, mul_assoc, RingHom.id_apply]
+  map_add' x y := Subtype.ext <| mapRingHom_injective (Int.castRingHom ℚ) Int.cast_injective <| by
+    simp only [Submodule.coe_add, map_add, mapRingHom_stickelbergerMulFun, add_mul]
+  map_smul' r x := Subtype.ext <| mapRingHom_injective (Int.castRingHom ℚ) Int.cast_injective <| by
+    simp only [SetLike.val_smul, smul_eq_mul, map_mul, mapRingHom_stickelbergerMulFun, mul_assoc,
+      RingHom.id_apply]
 
 variable {m}
 
@@ -267,8 +246,7 @@ theorem mapRingHom_stickelbergerMul (x : stickelbergerDenominatorIdeal m) :
 theorem stickelbergerMul_surjective : Function.Surjective (stickelbergerMul m) := by
   rintro ⟨y, hy⟩
   obtain ⟨x, hxJ, hx⟩ := exists_mem_stickelbergerDenominatorIdeal_of_mem_stickelbergerIdeal hy
-  refine ⟨⟨x, hxJ⟩, Subtype.ext <|
-    map_injective (Int.castRingHom ℚ : ℤ →+ ℚ) Int.cast_injective ?_⟩
-  rw [← coe_mapRingHom, mapRingHom_stickelbergerMul, hx]
+  refine ⟨⟨x, hxJ⟩, Subtype.ext <| mapRingHom_injective (Int.castRingHom ℚ) Int.cast_injective ?_⟩
+  rw [mapRingHom_stickelbergerMul, hx]
 
 end TauCeti

@@ -18,10 +18,11 @@ rational Stickelberger element is the element
 `θ_m = ∑_{a ∈ (ZMod m)ˣ} (a₀ / m) [a⁻¹]`
 
 of the rational group ring `ℚ[(ZMod m)ˣ]`, where `a₀ ∈ {0, …, m - 1}` is the least nonnegative
-representative of `a` and `[g]` is the basis element of `g`. Its integral multiples annihilate
-the ideal class group of `ℚ(ζ_m)` (Stickelberger's theorem), and its evaluations at Dirichlet
-characters are the first generalized Bernoulli numbers, which is how Bernoulli numbers enter the
-arithmetic of cyclotomic class groups.
+representative of `a` and `[g]` is the basis element of `g`. The elements of `ℤ[G] θ_m` with
+integral coefficients annihilate the ideal class group of `ℚ(ζ_m)` (Stickelberger's theorem), and
+evaluating `θ_m` at a nontrivial Dirichlet character `χ` modulo `m` gives the first generalized
+Bernoulli number `B_{1, χ⁻¹}` at modulus `m`, which is how Bernoulli numbers enter the arithmetic
+of cyclotomic class groups.
 
 The basis inverse matters: the coefficient of `θ_m` at `[b]` is the representative of `b⁻¹`
 divided by `m`. At `m = 5` the coefficients at `[3]` and `[2]` are `2 / 5` and `3 / 5`.
@@ -47,6 +48,13 @@ divided by `m`. At `m = 5` the coefficients at `[3]` and `[2]` are `2 / 5` and `
 
 * R. Sharifi, *Iwasawa theory* (lecture notes), Definition 4.5.1(a) and Theorem 4.5.7.
 * L. C. Washington, *Introduction to Cyclotomic Fields*, §6.2.
+* C. Birkbeck, AINTLIB (`github.com/CBirkbeck/AINTLIB`, Apache-2.0), module
+  `BernoulliRegular.Stickelberger` of the `FltRegularBernoulli` project, at commit
+  `c3bc9bfafaf32cf281da174a7ec287c1e56acc99`: the prime-conductor element
+  `BernoulliRegular.stickelbergerElement p`, with the same inverse-indexed basis. The code here
+  is not copied from it: `stickelberger` is stated for every modulus, with the coefficient inside
+  `single`, and its proofs are separate. It was checked against that source: at a prime `m = p`,
+  `stickelberger p` and `stickelbergerElement p` have the same coefficients.
 -/
 
 public section
@@ -74,10 +82,7 @@ by `m`. -/
 theorem coeff_stickelberger (b : (ZMod m)ˣ) :
     (stickelberger m).coeff b = (((b⁻¹ : (ZMod m)ˣ) : ZMod m).val : ℚ) / m := by
   classical
-  rw [stickelberger_def, coeff_sum, Finset.sum_apply',
-    Finset.sum_eq_single_of_mem b⁻¹ (Finset.mem_univ _) fun a _ hab ↦ ?_]
-  · simp
-  · rw [coeff_single, Finsupp.single_eq_of_ne (by rintro rfl; simp at hab)]
+  simp [stickelberger_def, coeff_sum, coeff_single, Finsupp.single_apply, inv_eq_iff_eq_inv]
 
 /-- At conductor one the unique unit has representative `0`, so `θ_1 = 0`. -/
 @[simp]
@@ -88,28 +93,17 @@ theorem stickelberger_one : stickelberger 1 = 0 := by
 
 variable {m}
 
-/-- For `1 < m`, the representatives of a unit residue and of its negative add up to `m`. -/
-private theorem val_add_val_neg_of_isUnit (hm : 1 < m) (u : (ZMod m)ˣ) :
-    ((u : ZMod m).val : ℚ) + ((-(u : ZMod m)).val : ℚ) = m := by
-  have : Fact (1 < m) := ⟨hm⟩
-  rw [ZMod.neg_val, ite_eq_right u.ne_zero, Nat.cast_sub (ZMod.val_lt _).le]
-  ring
-
 /-- **Conjugation formula.** For `1 < m`, write `c = [-1]` for the class of complex conjugation.
 Then `(1 + c) θ_m` is the norm element `∑_a [a]` of the group ring. At `m = 2` the conjugation is
 trivial and this reads `2 θ_2 = [1]`. -/
 theorem one_add_single_neg_one_mul_stickelberger (hm : 1 < m) :
     (1 + single (-1) 1) * stickelberger m = ∑ a : (ZMod m)ˣ, single a 1 := by
   classical
+  have : Fact (1 < m) := ⟨hm⟩
   ext b
-  have hm0 : (m : ℚ) ≠ 0 := Nat.cast_ne_zero.2 (NeZero.ne m)
-  have hsum : (∑ a : (ZMod m)ˣ, single a (1 : ℚ)).coeff b = 1 := by
-    rw [coeff_sum, Finset.sum_apply', Finset.sum_eq_single_of_mem b (Finset.mem_univ _)
-      fun a _ hab ↦ by rw [coeff_single, Finsupp.single_eq_of_ne hab.symm]]
-    simp
-  rw [hsum, add_mul, one_mul, coeff_add, Finsupp.add_apply, coeff_single_mul_apply, one_mul,
-    coeff_stickelberger, coeff_stickelberger, ← add_div, div_eq_one_iff_eq hm0]
-  simpa using val_add_val_neg_of_isUnit hm b⁻¹
+  -- The representatives of the unit `b⁻¹` and of its negative add up to `m`.
+  simp [add_mul, coeff_sum, coeff_single, Finsupp.single_apply, coeff_single_mul_apply,
+    ← add_div, -ZMod.natCast_val, ZMod.neg_val, Units.ne_zero, Nat.cast_sub (ZMod.val_lt _).le]
 
 /-- For `1 < m`, the augmentation of `θ_m` is `φ(m) / 2`. At `m = 1` the element `θ_1` is zero,
 so the formula, which would give `1 / 2`, does not extend there. -/

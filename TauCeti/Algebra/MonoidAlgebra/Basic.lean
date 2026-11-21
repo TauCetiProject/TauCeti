@@ -44,6 +44,10 @@ none of the further theory built on it.
 * `MonoidAlgebra.singleOneUnit`: in a group algebra, `single g 1` as a unit with inverse
   `single g⁻¹ 1`, and `MonoidAlgebra.coeff_single_mul_mul_single_inv`: conjugating by it
   conjugates the indices of the coefficients.
+* `MonoidAlgebra.mapRingHom_injective`: the coefficientwise map along an injective ring
+  homomorphism is injective.
+* `MonoidAlgebra.lift_apply_eq_sum`: over a finite monoid, `lift F x` is the finite sum
+  `∑ m, x_m • F m`.
 
 ## References
 
@@ -264,6 +268,26 @@ omit [CommSemiring R] in
 theorem coeff_single_mul_mul_single_inv [Semiring R] (g h : G) (x : MonoidAlgebra R G) :
     (single g (1 : R) * x * single g⁻¹ 1).coeff h = x.coeff (g⁻¹ * h * g) := by
   simp [mul_assoc]
+
+section Map
+
+variable {R S M : Type*} [Semiring R] [Semiring S] [Monoid M]
+
+/-- The coefficientwise map `R[M] → S[M]` along an injective ring homomorphism is injective. -/
+@[to_additive (dont_translate := R S)
+  /-- The coefficientwise map along an injective ring homomorphism is injective. -/]
+theorem mapRingHom_injective (f : R →+* S) (hf : Function.Injective f) :
+    Function.Injective (mapRingHom M f) :=
+  map_injective (f : R →+ S) hf
+
+end Map
+
+/-- Over a finite monoid, the algebra map `lift F` out of `R[M]` sends `x` to the finite sum
+`∑ m, x_m • F m`. -/
+theorem lift_apply_eq_sum {R A M : Type*} [CommSemiring R] [Semiring A] [Algebra R A] [Monoid M]
+    [Fintype M] (F : M →* A) (x : MonoidAlgebra R M) :
+    lift R A M F x = ∑ m, x.coeff m • F m := by
+  rw [lift_apply, Finsupp.sum_fintype _ _ (by simp)]
 
 end MonoidAlgebra
 
