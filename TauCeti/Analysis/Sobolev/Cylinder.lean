@@ -444,6 +444,25 @@ theorem coeFn_jetOperator {M : ℝ × ℝ → V × V × V →L[ℝ] W} (hM : Mem
     (hM.toLp M) f, hM.coeFn_toLp] with z h₁ h₂
   rw [h₁, ContinuousLinearMap.id_apply, h₂]
 
+/-- The first-order operator is additive in its coefficient field. -/
+theorem jetOperator_add {M N : ℝ × ℝ → V × V × V →L[ℝ] W} (hM : MemLp M ∞ stripMeasure)
+    (hN : MemLp N ∞ stripMeasure) : jetOperator (M + N) = jetOperator M + jetOperator N := by
+  ext1 f
+  refine Lp.ext ?_
+  filter_upwards [coeFn_jetOperator (hM.add hN) f, coeFn_jetOperator hM f,
+    coeFn_jetOperator hN f, Lp.coeFn_add (jetOperator M f) (jetOperator N f)] with z h h₁ h₂ h₃
+  rw [add_apply, h₃, Pi.add_apply, h, h₁, h₂, Pi.add_apply, add_apply]
+
+/-- An almost everywhere bound `‖M z‖ ≤ C` on the coefficient field bounds the first-order
+operator by `C`. -/
+theorem norm_jetOperator_apply_le {M : ℝ × ℝ → V × V × V →L[ℝ] W} (hM : MemLp M ∞ stripMeasure)
+    {C : ℝ} (hC : ∀ᵐ z ∂stripMeasure, ‖M z‖ ≤ C) (f : Lp (V × V × V) 2 stripMeasure) :
+    ‖jetOperator M f‖ ≤ C * ‖f‖ :=
+  Lp.norm_le_mul_norm_of_ae_le_mul (by
+    filter_upwards [coeFn_jetOperator hM f, hC] with z h₁ h₂
+    rw [h₁]
+    exact ((M z).le_opNorm _).trans (mul_le_mul_of_nonneg_right h₂ (norm_nonneg _)))
+
 /-- On the jet of a test section `ξ`, the first-order operator of a coefficient field `M` is
 `z ↦ M z (ξ z, ∂s ξ z, ∂t ξ z)`. -/
 theorem jetOperator_jetLp_ae_eq {M : ℝ × ℝ → V × V × V →L[ℝ] W} (hM : MemLp M ∞ stripMeasure)
