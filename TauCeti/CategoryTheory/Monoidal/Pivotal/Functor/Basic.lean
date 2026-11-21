@@ -38,8 +38,9 @@ between symmetric rigid categories is pivotal for their canonical pivotal struct
   preserves the pivotal structure;
 * `CategoryTheory.Functor.isPivotal_iff_map_pivotalIsoApp_hom_comp_mapDoubleRightDualIso_hom`:
   the pivotal condition in terms of the bidual comparison;
-* `CategoryTheory.Functor.isPivotal_id` and `CategoryTheory.Functor.isPivotal_comp`: identities
-  and composites of pivotal functors are pivotal;
+* `CategoryTheory.Functor.isPivotal_id`, `CategoryTheory.Functor.isPivotal_id_iff_eq`, and
+  `CategoryTheory.Functor.isPivotal_comp`: identities and composites of pivotal functors are
+  pivotal, and `𝟭 C` is pivotal between two pivotal structures on `C` iff they agree;
 * `CategoryTheory.Functor.rightTrace_map` and `CategoryTheory.Functor.leftTrace_map`: a pivotal
   functor preserves the two traces, with the corollaries `CategoryTheory.Functor.rightDim_map`,
   `CategoryTheory.Functor.leftDim_map`, `CategoryTheory.Functor.trace_map` and
@@ -112,6 +113,27 @@ theorem isPivotal_iff_map_pivotalIsoApp_hom_comp_mapDoubleRightDualIso_hom :
 /-- The identity functor is pivotal. -/
 instance isPivotal_id : (𝟭 C).IsPivotal where
   map_pivotalIsoApp_hom X := by simp
+
+/-- The identity functor `𝟭 C` is pivotal from a pivotal structure `P` to a pivotal structure `Q`
+if and only if `P = Q`. -/
+@[simp]
+theorem isPivotal_id_iff_eq {C : Type*} [Category* C] [MonoidalCategory C] [RigidCategory C]
+    (P Q : PivotalCategory C) :
+    @IsPivotal C _ _ C _ _ _ P _ Q (𝟭 C) _ ↔ P = Q := by
+  constructor
+  · intro h
+    have hEq := (@isPivotal_iff_map_pivotalIsoApp_hom_comp_mapDoubleRightDualIso_hom
+      C _ _ C _ _ _ P _ Q (𝟭 C) _).mp h
+    apply PivotalCategory.ext
+    ext X
+    have hX := hEq X
+    simp only [Functor.id_obj, Functor.id_map, mapDoubleRightDualIso_id, Iso.refl_hom,
+      Category.comp_id] at hX
+    exact (@pivotalIso_hom_app C _ _ _ P X).trans
+      (hX.trans (@pivotalIso_hom_app C _ _ _ Q X).symm)
+  · rintro rfl
+    let := P
+    infer_instance
 
 /-- A composite of pivotal functors is pivotal. -/
 instance isPivotal_comp {E : Type*} [Category* E] [MonoidalCategory E] [RigidCategory E]

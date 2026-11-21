@@ -13,6 +13,7 @@ public import Mathlib.RingTheory.Localization.Away.Basic
 public import Mathlib.Algebra.MvPolynomial.Eval
 public import Mathlib.Algebra.Ring.ULift
 public import Mathlib.AlgebraicGeometry.EllipticCurve.VariableChange
+import Mathlib.Algebra.CharP.Algebra
 
 /-!
 # The coordinate algebra of Weierstrass changes of variables
@@ -67,6 +68,28 @@ of admissible changes of variables of Weierstrass curves. -/
 abbrev ChangeRing : Type _ := Localization.Away (X 0 : MvPolynomial (Fin 4) B)
 
 namespace ChangeRing
+
+/-- `B[u, u⁻¹, r, s, t]` is a domain when `B` is. -/
+instance isDomain [IsDomain B] : IsDomain (ChangeRing B) :=
+  Localization.Away.isDomain (X_ne_zero 0)
+
+/-- The localization map `B[u, r, s, t] → B[u, u⁻¹, r, s, t]` is injective, since `u` is not a
+zero divisor. -/
+instance faithfulSMul_mvPolynomial : FaithfulSMul (MvPolynomial (Fin 4) B) (ChangeRing B) :=
+  (faithfulSMul_iff_algebraMap_injective _ _).2 <|
+    IsLocalization.injective _ (Submonoid.powers_le.2 (isRegular_X (n := 0)).mem_nonZeroDivisors)
+
+/-- The coefficient map `B → B[u, u⁻¹, r, s, t]` is injective. -/
+instance faithfulSMul : FaithfulSMul B (ChangeRing B) :=
+  .trans B (MvPolynomial (Fin 4) B) (ChangeRing B)
+
+/-- `B[u, u⁻¹, r, s, t]` has characteristic `p` when `B` has. -/
+instance charP (p : ℕ) [CharP B p] : CharP (ChangeRing B) p :=
+  charP_of_injective_algebraMap' B p
+
+/-- `B[u, u⁻¹, r, s, t]` has characteristic zero when `B` has. -/
+instance charZero [CharZero B] : CharZero (ChangeRing B) :=
+  CharP.charP_to_charZero (ChangeRing B)
 
 variable (B) in
 /-- The universal change of variables `(u, r, s, t)` over `B[u, u⁻¹, r, s, t]`. -/
@@ -216,13 +239,13 @@ pairs `(g, h)` of ring homomorphisms out of `B'` and out of `B[u, u⁻¹, r, s, 
 def pushoutLift (f : B →+* B') :
     {p : (B' →+* R) × (ChangeRing B →+* R) // p.1.comp f = p.2.comp (algebraMap B _)} ≃
       (ChangeRing B' →+* R) where
-  toFun p := lift (p.1.1, (universalChange B).map p.1.2)
+  toFun p := lift (p.val.1, (universalChange B).map p.val.2)
   invFun k := ⟨(k.comp (algebraMap B' _), k.comp (map f)), by
     rw [RingHom.comp_assoc, RingHom.comp_assoc, map_comp_algebraMap]⟩
   left_inv p := by
     refine Subtype.ext (Prod.ext (lift_comp_algebraMap _) (ringHom_ext ?_ ?_))
     · rw [RingHom.comp_assoc, map_comp_algebraMap, ← RingHom.comp_assoc, lift_comp_algebraMap,
-        p.2]
+        p.property]
     · rw [← VariableChange.map_map, universalChange_map_map, map_lift]
   right_inv k := ringHom_ext (lift_comp_algebraMap _) (by
     rw [map_lift]
@@ -233,14 +256,14 @@ def pushoutLift (f : B →+* B') :
 restriction along `algebraMap`. -/
 @[simp]
 theorem pushoutLift_symm_apply_fst (f : B →+* B') (k : ChangeRing B' →+* R) :
-    ((pushoutLift f).symm k).1.1 = k.comp (algebraMap B' _) :=
+    ((pushoutLift f).symm k).val.1 = k.comp (algebraMap B' _) :=
   (rfl)
 
 /-- The second component of the pair classified by `k : B'[u, u⁻¹, r, s, t] →+* R` is its
 restriction along `map f`. -/
 @[simp]
 theorem pushoutLift_symm_apply_snd (f : B →+* B') (k : ChangeRing B' →+* R) :
-    ((pushoutLift f).symm k).1.2 = k.comp (map f) :=
+    ((pushoutLift f).symm k).val.2 = k.comp (map f) :=
   (rfl)
 
 variable (f : B →+* B')
@@ -248,27 +271,27 @@ variable (f : B →+* B')
 
 /-- `pushoutLift f (g, h)` restricts to `g` along `algebraMap`. -/
 @[simp]
-theorem pushoutLift_comp_algebraMap : (pushoutLift f p).comp (algebraMap B' _) = p.1.1 :=
-  congrArg (fun q ↦ q.1.1) ((pushoutLift f).left_inv p)
+theorem pushoutLift_comp_algebraMap : (pushoutLift f p).comp (algebraMap B' _) = p.val.1 :=
+  congrArg (fun q ↦ q.val.1) ((pushoutLift f).left_inv p)
 
 /-- `pushoutLift f (g, h)` restricts to `h` along `map f`. -/
 @[simp]
-theorem pushoutLift_comp_map : (pushoutLift f p).comp (map f) = p.1.2 :=
-  congrArg (fun q ↦ q.1.2) ((pushoutLift f).left_inv p)
+theorem pushoutLift_comp_map : (pushoutLift f p).comp (map f) = p.val.2 :=
+  congrArg (fun q ↦ q.val.2) ((pushoutLift f).left_inv p)
 
 @[simp]
-theorem pushoutLift_algebraMap (b : B') : pushoutLift f p (algebraMap B' _ b) = p.1.1 b :=
+theorem pushoutLift_algebraMap (b : B') : pushoutLift f p (algebraMap B' _ b) = p.val.1 b :=
   RingHom.congr_fun (pushoutLift_comp_algebraMap f p) b
 
 @[simp]
-theorem pushoutLift_map (x : ChangeRing B) : pushoutLift f p (map f x) = p.1.2 x :=
+theorem pushoutLift_map (x : ChangeRing B) : pushoutLift f p (map f x) = p.val.2 x :=
   RingHom.congr_fun (pushoutLift_comp_map f p) x
 
 /-- `pushoutLift f (g, h)` carries the universal change of variables over `B'` to the change
 classified by `h`. -/
 @[simp]
 theorem universalChange_map_pushoutLift :
-    (universalChange B').map (pushoutLift f p) = (universalChange B).map p.1.2 :=
+    (universalChange B').map (pushoutLift f p) = (universalChange B).map p.val.2 :=
   map_lift _
 
 open CategoryTheory CategoryTheory.Limits in

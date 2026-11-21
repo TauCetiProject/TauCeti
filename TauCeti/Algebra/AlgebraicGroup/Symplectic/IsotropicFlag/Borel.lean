@@ -145,7 +145,7 @@ private theorem isInvariantForm_toBilin'_JFin (π : Symplectic.coordinateHopfAlg
       GeneralLinear.basePointsRepresentation_eq_mulVec, ← GeneralLinear.pointsMulEquiv_apply,
       BialgHom.mapDomain_apply, ← pointsMulEquiv_comp_coordinateMap, BialgHom.comp_toAlgHom,
       BialgHom.mapDomain_apply, ofConv_toConv, AlgHom.comp_assoc]
-  have hS := GLSymplecticFin.mem_iff'.mp S.2
+  have hS := GLSymplecticFin.mem_iff'.mp S.property
   rw [hact, hact, Matrix.toBilin'_apply', Matrix.toBilin'_apply']
   conv_rhs => rw [← hS, ← Matrix.mulVec_mulVec, ← Matrix.mulVec_mulVec,
     Matrix.dotProduct_mulVec, Matrix.vecMul_transpose]

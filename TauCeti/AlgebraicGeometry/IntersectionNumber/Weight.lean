@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.IntersectionNumber.FieldTower
 public import TauCeti.AlgebraicGeometry.IntersectionNumber.Matrix
+public import TauCeti.AlgebraicGeometry.SpecialFiber.Weight
 
 /-!
 # Weights of the components of the special fibre divide the intersection matrix
@@ -56,9 +57,10 @@ codimension at most two and generic point away from the closed point, the weight
 of the intersection matrix. -/
 theorem specialFiberWeight_dvd_specialFiberIntersectionMatrix (hX : ∀ x : X, coheight x ≤ 2)
     (hη : toBase (genericPoint X) ≠ closedPoint R) (i j) :
-    (toBase.specialFiberWeight ((Set.Finite.mem_toFinset _).mp i.2) : ℤ) ∣
+    (toBase.specialFiberWeight ((Set.Finite.mem_toFinset _).mp i.property) : ℤ) ∣
       toBase.specialFiberIntersectionMatrix hX hη i j := by
-  have hi : toBase (i : CodimensionOnePoint X) = closedPoint R := (Set.Finite.mem_toFinset _).mp i.2
+  have hi : toBase (i : CodimensionOnePoint X) = closedPoint R := (Set.Finite.mem_toFinset _).mp
+      i.property
   let := subschemeOverResidueField (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton hi)
   rw [specialFiberWeight_def, specialFiberIntersectionMatrix_apply]
   exact LineBundleClass.finrank_cohomology_zero_trivial_dvd_intersectionNumber (ResidueField R) _

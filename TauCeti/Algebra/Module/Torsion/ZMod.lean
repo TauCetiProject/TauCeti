@@ -50,7 +50,7 @@ def torsionByZModLinearMap (f : A →+ B) (n : ℕ)
     ((f.domRestrict (AddSubgroup.torsionBy A (n : ℤ))).codRestrict
       (AddSubgroup.torsionBy B (n : ℤ)) fun x ↦ by
         rw [AddSubgroup.torsionBy.nsmul_iff, AddMonoidHom.domRestrict_apply, ← map_nsmul,
-          AddSubgroup.torsionBy.nsmul_iff.mp x.2, map_zero])
+          AddSubgroup.torsionBy.nsmul_iff.mp x.property, map_zero])
 
 /-- Evaluating `f.torsionByZModLinearMap n` and coercing to `B` agrees with `f`. -/
 @[simp]

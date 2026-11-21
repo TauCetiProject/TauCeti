@@ -54,7 +54,7 @@ private theorem exp_neg_abs_shell_bound (μ : Measure ℝ) (C : ℝ≥0)
       simpa [mul_comm] using mul_le_mul_left hm (ENNReal.ofReal (Real.exp (-(n : ℝ))))
     _ = _ := by
       have hneg : -(n : ℝ) = n * (-1 : ℝ) := by ring
-      rw [hneg, Real.exp_nat_mul,
+      rw [hneg, Real.exp_natCast_mul,
         ENNReal.ofReal_pow (Real.exp_pos _).le, ENNReal.coe_add]
 
 private theorem exp_neg_abs_tail_bound (μ : Measure ℝ) (C : ℝ≥0)

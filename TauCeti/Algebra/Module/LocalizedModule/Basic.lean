@@ -33,7 +33,7 @@ theorem isLocalizedModule_id_of_bijective_smul {S : Submonoid R}
     IsLocalizedModule S (LinearMap.id : M →ₗ[R] M) where
   map_units s := by
     rw [Module.End.isUnit_iff, funext (Module.algebraMap_end_apply R R M (s : R))]
-    exact h s s.2
+    exact h s s.property
   surj x := ⟨⟨x, 1⟩, by simp⟩
   exists_of_eq hxy := ⟨1, by simpa using hxy⟩
 
