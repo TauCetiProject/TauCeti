@@ -15,6 +15,9 @@ comparison of `x ^ n` with `b ^ m` is a comparison of `Real.logb b x` with the r
 inequalities reverse because `Real.logb b` is antitone for such a base. In the same way, the
 integer floor `⌊logb b x⌋` is the largest integer `n` with `x ≤ b ^ n`.
 
+For a base `b > 0`, `b ≠ 1` and `0 < A`, raising `b` to a sum plus `logb b A` splits off the
+factor `A` and turns the sum into a product of powers of `b`.
+
 For a base greater than one, the natural floor of the logarithm locates a real number at least
 one between two consecutive powers. These intervals support dyadic decompositions and
 convergence estimates.
@@ -25,6 +28,7 @@ convergence estimates.
 * `Real.pow_le_pow_iff_logb_le_div_of_base_lt_one`: `b ^ m ≤ x ^ n ↔ logb b x ≤ m / n`.
 * `Real.le_floor_logb_iff_zpow_le_of_base_lt_one`: `n ≤ ⌊logb b x⌋ ↔ x ≤ b ^ n` for `n : ℤ`.
 * `Real.logb_zpow_self`: `logb b (b ^ n) = n` for `n : ℤ` and a base `b > 0`, `b ≠ 1`.
+* `Real.rpow_sum_add_logb`: `b ^ (∑ t ∈ s, a t + logb b A) = A * ∏ t ∈ s, b ^ a t`.
 * `Real.pow_natFloor_logb_le_self`: `b ^ ⌊logb b x⌋₊ ≤ x` for `1 < b` and `1 ≤ x`.
 * `Real.lt_pow_natFloor_logb_add_one`: `x < b ^ (⌊logb b x⌋₊ + 1)` for `1 < b` and `0 < x`.
 -/
@@ -59,6 +63,13 @@ theorem pow_le_pow_iff_logb_le_div_of_base_lt_one (b_pos : 0 < b) (b_lt_one : b 
 theorem le_floor_logb_iff_zpow_le_of_base_lt_one (b_pos : 0 < b) (b_lt_one : b < 1)
     (hx : 0 < x) (n : ℤ) : n ≤ ⌊logb b x⌋ ↔ x ≤ b ^ n := by
   rw [Int.le_floor, le_logb_iff_rpow_le_of_base_lt_one b_pos b_lt_one hx, rpow_intCast]
+
+/-- For a base `b > 0`, `b ≠ 1` and `0 < A`, `b` raised to `∑ t ∈ s, a t + logb b A` is `A` times
+the product of the `b ^ a t` over `t ∈ s`. -/
+theorem rpow_sum_add_logb {α : Type*} {A : ℝ} (b_pos : 0 < b) (b_ne_one : b ≠ 1) (hA : 0 < A)
+    (s : Finset α) (a : α → ℝ) :
+    b ^ (∑ t ∈ s, a t + logb b A) = A * ∏ t ∈ s, b ^ a t := by
+  rw [rpow_add b_pos, rpow_sum_of_pos b_pos, rpow_logb b_pos b_ne_one hA, mul_comm]
 
 /-- For `b > 1` and `x ≥ 1`, the power of `b` at the natural floor of `logb b x` is at most
 `x`. -/

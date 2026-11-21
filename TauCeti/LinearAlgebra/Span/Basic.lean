@@ -26,8 +26,9 @@ exactly when it sends that vector to a multiple of itself. Finally, a submodule 
 subring that is a direct sum `⊕ i, J i • y i` with nonzero ideal coefficients spans the same
 subspace over the larger field as the family `y`. A unitriangular change of a family indexed by a
 well-founded order, where each `z j` is `x j` plus a combination of the earlier `x l`, preserves
-the spans of initial segments. A ring homomorphism carries a span over `A` into a span over `B`
-as soon as it carries the generators into the target span and the scalars in `A` to scalars in `B`.
+the spans of initial segments, and more generally of lower sets of indices. A ring homomorphism
+carries a span over `A` into a span over `B` as soon as it carries the generators into the target
+span and the scalars in `A` to scalars in `B`.
 Over a scalar extension, the image span of a semilinear map is spanned by its values on any
 spanning family of the domain. The span of any countable set admits a spanning sequence indexed
 by `ℕ` (`Set.Countable.exists_span_range_eq_top`).
@@ -56,6 +57,32 @@ theorem span_insert_erase_eq_span_of_isUnit [DecidableEq M] {s : Finset M} {i x 
     _ = _root_.Submodule.span A (insert x (s : Set M)) := by
       rw [Set.insert_comm, ← Finset.coe_insert, Finset.insert_erase hi]
     _ = _ := Submodule.span_insert_eq_span hx
+
+section Unitriangular
+
+variable {ι : Type*} [Preorder ι] [WellFoundedLT ι]
+
+/-- A lower set `s` of indices spans the same submodule through `x` and through `z` when every
+`z j` with `j ∈ s` is `x j` plus a combination of the earlier `x l`. -/
+theorem span_image_eq_span_image_of_isLowerSet {x z : ι → M} {s : Set ι}
+    (h : ∀ j ∈ s, z j - x j ∈ _root_.Submodule.span A (x '' Set.Iio j)) (hs : IsLowerSet s) :
+    _root_.Submodule.span A (z '' s) = _root_.Submodule.span A (x '' s) := by
+  have hIio {j : ι} (hj : j ∈ s) : x '' Set.Iio j ⊆ x '' s :=
+    Set.image_mono fun _ hl ↦ hs (le_of_lt hl) hj
+  refine le_antisymm (Submodule.span_le.2 ?_) (Submodule.span_le.2 ?_) <;>
+    rintro _ ⟨j, hj, rfl⟩
+  · have hmem := add_mem (Submodule.span_mono (hIio hj) (h j hj))
+      (Submodule.subset_span (R := A) ⟨j, hj, rfl⟩)
+    rwa [sub_add_cancel] at hmem
+  -- Each `x j` is `z j` minus a combination of earlier `x l`, which lie in the span by induction.
+  induction j using WellFoundedLT.induction with
+  | _ j ih =>
+    have hx : _root_.Submodule.span A (x '' Set.Iio j) ≤ _root_.Submodule.span A (z '' s) :=
+      Submodule.span_le.2 fun _ ⟨l, hl, hxl⟩ ↦ hxl ▸ ih l hl (hs (le_of_lt hl) hj)
+    have hmem := sub_mem (Submodule.subset_span (R := A) (Set.mem_image_of_mem z hj)) (hx (h j hj))
+    rwa [sub_sub_cancel] at hmem
+
+end Unitriangular
 
 end TauCeti.Submodule
 
@@ -151,19 +178,8 @@ variable {R M ι : Type*} [Ring R] [AddCommGroup M] [Module R M] [Preorder ι] [
 combination of the earlier `x l`. -/
 theorem span_image_Iio_eq_span_image_Iio {x z : ι → M}
     (h : ∀ j, z j - x j ∈ span R (x '' Set.Iio j)) (j : ι) :
-    span R (z '' Set.Iio j) = span R (x '' Set.Iio j) := by
-  refine le_antisymm (span_le.2 ?_) ?_
-  · rintro _ ⟨l, hl, rfl⟩
-    have hmem := add_mem (span_mono (Set.image_mono (Set.Iio_subset_Iio hl.le)) (h l))
-      (subset_span (R := R) ⟨l, hl, rfl⟩)
-    rwa [sub_add_cancel] at hmem
-  induction j using WellFoundedLT.induction with
-  | _ j ih =>
-    rw [span_le]
-    rintro _ ⟨l, hl, rfl⟩
-    have hmem := sub_mem (subset_span (R := R) (Set.mem_image_of_mem z hl)) <|
-      span_mono (Set.image_mono (Set.Iio_subset_Iio hl.le)) (ih l hl (h l))
-    rwa [sub_sub_cancel] at hmem
+    span R (z '' Set.Iio j) = span R (x '' Set.Iio j) :=
+  TauCeti.Submodule.span_image_eq_span_image_of_isLowerSet (fun l _ ↦ h l) (IsLowerSet.Iio j)
 
 end Unitriangular
 
