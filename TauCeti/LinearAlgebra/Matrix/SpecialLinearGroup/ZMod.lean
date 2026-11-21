@@ -16,6 +16,7 @@ import Mathlib.Algebra.Field.ZMod
 import Mathlib.GroupTheory.SpecificGroups.Alternating.Centralizer
 import Mathlib.GroupTheory.SpecificGroups.Alternating.Simple
 import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Card
+import TauCeti.Data.ZMod.MulCastHom
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Projective
 import TauCeti.LinearAlgebra.Projectivization.PSL.Simple
 
@@ -126,48 +127,23 @@ theorem map_zmod_castHom_surjective {M N : ℕ} (h : M ∣ N) :
 
 section PrimePowerKernel
 
-/-- Lift `u : ZMod p` into the `p^k`-torsion ideal of `ZMod (p^(k+1))` as `(p^k * u.val)`. -/
-private def liftMulPow (p k : ℕ) (u : ZMod p) : ZMod (p ^ (k + 1)) :=
-  ((p ^ k * u.val : ℕ) : ZMod (p ^ (k + 1)))
+private theorem mulCastHom_mul_eq_zero {p k : ℕ} (hk : 1 ≤ k) (u v : ZMod p) :
+    ZMod.mulCastHom (p ^ k) (pow_succ' p k).symm u *
+      ZMod.mulCastHom (p ^ k) (pow_succ' p k).symm v = 0 := by
+  have hsq := ZMod.ker_castHom_sq_eq_bot (p ^ k) (pow_succ' p k).symm (dvd_pow_self p (by omega))
+  rw [pow_two] at hsq
+  exact Ideal.mem_bot.mp <| hsq ▸ Ideal.mul_mem_mul
+    (RingHom.mem_ker.mpr (ZMod.castHom_mulCastHom (p ^ k) (pow_succ' p k).symm u))
+    (RingHom.mem_ker.mpr (ZMod.castHom_mulCastHom (p ^ k) (pow_succ' p k).symm v))
 
-private theorem liftMulPow_injective {p k : ℕ} [NeZero p] :
-    Function.Injective (liftMulPow p k) := fun u v huv ↦ by
-  have hpk : 0 < p ^ k := pow_pos (NeZero.pos p) k
-  have hlt : ∀ w : ZMod p, p ^ k * w.val < p ^ (k + 1) := fun w ↦ by
-    rw [pow_succ]; exact Nat.mul_lt_mul_of_pos_left w.val_lt hpk
-  have hval := congrArg ZMod.val huv
-  rw [liftMulPow, liftMulPow, ZMod.val_natCast_of_lt (hlt u),
-    ZMod.val_natCast_of_lt (hlt v)] at hval
-  exact ZMod.val_injective p (Nat.eq_of_mul_eq_mul_left hpk hval)
-
-private theorem castHom_liftMulPow {p k : ℕ} (u : ZMod p) :
-    ZMod.castHom (pow_dvd_pow p (Nat.le_succ k)) (ZMod (p ^ k)) (liftMulPow p k u) = 0 := by
-  rw [liftMulPow, map_natCast, Nat.cast_mul, ZMod.natCast_self, zero_mul]
-
-private theorem exists_liftMulPow_of_castHom_eq_zero {p k : ℕ} [NeZero p]
-    {x : ZMod (p ^ (k + 1))}
-    (hx : ZMod.castHom (pow_dvd_pow p (Nat.le_succ k)) (ZMod (p ^ k)) x = 0) :
-    ∃ u : ZMod p, liftMulPow p k u = x := by
-  have : NeZero (p ^ (k + 1)) := ⟨pow_ne_zero _ (NeZero.ne p)⟩
-  have hxval : ((x.val : ℕ) : ZMod (p ^ k)) = 0 := by
-    rw [← map_natCast (ZMod.castHom (pow_dvd_pow p (Nat.le_succ k)) (ZMod (p ^ k))),
-      ZMod.natCast_zmod_val, hx]
-  obtain ⟨m, hm⟩ := (ZMod.natCast_eq_zero_iff x.val (p ^ k)).mp hxval
-  have hmp : m < p := Nat.lt_of_mul_lt_mul_left (by rw [← hm, ← pow_succ]; exact x.val_lt)
-  exact ⟨(m : ZMod p), by rw [liftMulPow, ZMod.val_natCast_of_lt hmp, ← hm, ZMod.natCast_zmod_val]⟩
-
-private theorem liftMulPow_mul_liftMulPow {p k : ℕ} (hk : 1 ≤ k) (u v : ZMod p) :
-    liftMulPow p k u * liftMulPow p k v = 0 := by
-  rw [liftMulPow, liftMulPow, ← Nat.cast_mul, ZMod.natCast_eq_zero_iff]
-  exact (pow_dvd_pow p (by omega : k + 1 ≤ k + k)).trans
-    (by rw [pow_add]; exact ⟨u.val * v.val, by ring⟩)
-
-private theorem det_one_add_liftMulPow {p k : ℕ} (hk : 1 ≤ k) (a b c : ZMod p) :
-    (!![1 + liftMulPow p k a, liftMulPow p k b;
-        liftMulPow p k c, 1 - liftMulPow p k a] :
+private theorem det_one_add_mulCastHom {p k : ℕ} (hk : 1 ≤ k) (a b c : ZMod p) :
+    (!![1 + ZMod.mulCastHom (p ^ k) (pow_succ' p k).symm a,
+          ZMod.mulCastHom (p ^ k) (pow_succ' p k).symm b;
+        ZMod.mulCastHom (p ^ k) (pow_succ' p k).symm c,
+          1 - ZMod.mulCastHom (p ^ k) (pow_succ' p k).symm a] :
         Matrix (Fin 2) (Fin 2) (ZMod (p ^ (k + 1)))).det = 1 := by
   simp only [Matrix.det_fin_two_of]
-  linear_combination -liftMulPow_mul_liftMulPow hk a a - liftMulPow_mul_liftMulPow hk b c
+  linear_combination -mulCastHom_mul_eq_zero hk a a - mulCastHom_mul_eq_zero hk b c
 
 /-- **Explicit parametrization of the `p^k → p^{k+1}` congruence kernel.** For `0 < p` and
 `1 ≤ k`, the kernel of `SL₂(ℤ/p^{k+1}ℤ) →* SL₂(ℤ/p^kℤ)` corresponds bijectively to `(ZMod p)³`
@@ -176,43 +152,46 @@ noncomputable def kerMapZModPowSuccEquiv {p k : ℕ} [NeZero p] (hk : 1 ≤ k) :
     (ZMod p × ZMod p × ZMod p) ≃
       (map (ZMod.castHom (pow_dvd_pow p (Nat.le_succ k)) (ZMod (p ^ k))) :
         SL(2, ZMod (p ^ (k + 1))) →* SL(2, ZMod (p ^ k))).ker :=
+  let m : ZMod p →+ ZMod (p ^ (k + 1)) := ZMod.mulCastHom (p ^ k) (pow_succ' p k).symm
   Equiv.ofBijective
     (fun t ↦
       let g : SL(2, ZMod (p ^ (k + 1))) :=
-        ⟨!![1 + liftMulPow p k t.1, liftMulPow p k t.2.1;
-            liftMulPow p k t.2.2, 1 - liftMulPow p k t.1],
-         det_one_add_liftMulPow hk t.1 t.2.1 t.2.2⟩
+        ⟨!![1 + m t.1, m t.2.1; m t.2.2, 1 - m t.1], det_one_add_mulCastHom hk t.1 t.2.1 t.2.2⟩
       ⟨g, by
         rw [MonoidHom.mem_ker]
         simp_rw [ext_iff, map_apply_coe, RingHom.mapMatrix_apply, Matrix.map_apply]
         intro i j
-        fin_cases i <;> fin_cases j <;> simp [g, -ZMod.castHom_apply, castHom_liftMulPow]⟩)
+        fin_cases i <;> fin_cases j <;>
+          simp [g, m, -ZMod.castHom_apply, ZMod.castHom_mulCastHom]⟩)
     ⟨fun ⟨a₁, b₁, c₁⟩ ⟨a₂, b₂, c₂⟩ h ↦ by
-      have h00 : liftMulPow p k a₁ = liftMulPow p k a₂ := by
-        simpa using congrArg (fun M ↦ M.1.1 0 0) h
-      have h01 : liftMulPow p k b₁ = liftMulPow p k b₂ := congrArg (fun M ↦ M.1.1 0 1) h
-      have h10 : liftMulPow p k c₁ = liftMulPow p k c₂ := congrArg (fun M ↦ M.1.1 1 0) h
-      exact Prod.ext (liftMulPow_injective h00)
-        (Prod.ext (liftMulPow_injective h01) (liftMulPow_injective h10)),
+      have hinj := ZMod.mulCastHom_injective (p ^ k) (pow_succ' p k).symm
+        (pow_ne_zero k (NeZero.ne p))
+      have h00 : m a₁ = m a₂ := by simpa [m] using congrArg (fun M ↦ M.1.1 0 0) h
+      have h01 : m b₁ = m b₂ := congrArg (fun M ↦ M.1.1 0 1) h
+      have h10 : m c₁ = m c₂ := congrArg (fun M ↦ M.1.1 1 0) h
+      exact Prod.ext (hinj h00) (Prod.ext (hinj h01) (hinj h10)),
      fun M ↦ by
       have hM : ∀ i j, ZMod.castHom (pow_dvd_pow p (Nat.le_succ k)) (ZMod (p ^ k))
           (M.1 i j - (1 : Matrix (Fin 2) (Fin 2) _) i j) = 0 := fun i j ↦ by
         rw [map_sub, sub_eq_zero]
         simpa [Matrix.one_apply] using congrArg (fun X : SL(2, ZMod (p ^ k)) ↦ X i j) M.2
-      obtain ⟨a, ha⟩ := exists_liftMulPow_of_castHom_eq_zero (by simpa using hM 0 0)
-      obtain ⟨b, hb⟩ := exists_liftMulPow_of_castHom_eq_zero (by simpa using hM 0 1)
-      obtain ⟨c, hc⟩ := exists_liftMulPow_of_castHom_eq_zero (by simpa using hM 1 0)
-      obtain ⟨d, hd⟩ := exists_liftMulPow_of_castHom_eq_zero (by simpa using hM 1 1)
-      have h00 : M.1 0 0 = 1 + liftMulPow p k a := by linear_combination -ha
-      have h11' : M.1 1 1 = 1 + liftMulPow p k d := by linear_combination -hd
+      obtain ⟨a, ha⟩ :=
+        (ZMod.exact_mulCastHom_castHom (p ^ k) (pow_succ' p k).symm _).mp (by simpa using hM 0 0)
+      obtain ⟨b, hb⟩ :=
+        (ZMod.exact_mulCastHom_castHom (p ^ k) (pow_succ' p k).symm _).mp (by simpa using hM 0 1)
+      obtain ⟨c, hc⟩ :=
+        (ZMod.exact_mulCastHom_castHom (p ^ k) (pow_succ' p k).symm _).mp (by simpa using hM 1 0)
+      obtain ⟨d, hd⟩ :=
+        (ZMod.exact_mulCastHom_castHom (p ^ k) (pow_succ' p k).symm _).mp (by simpa using hM 1 1)
+      have h00 : M.1 0 0 = 1 + m a := by linear_combination -ha
+      have h11' : M.1 1 1 = 1 + m d := by linear_combination -hd
       have hdet := fin_two_mul_sub_mul_eq_one M.1
       rw [h00, ← hb, ← hc, h11'] at hdet
-      have h11 : M.1 1 1 = 1 - liftMulPow p k a := by
+      have h11 : M.1 1 1 = 1 - m a := by
         rw [h11']
-        linear_combination hdet - liftMulPow_mul_liftMulPow hk a d +
-          liftMulPow_mul_liftMulPow hk b c
+        linear_combination hdet - mulCastHom_mul_eq_zero hk a d + mulCastHom_mul_eq_zero hk b c
       refine ⟨(a, b, c), ?_⟩
-      ext i j; fin_cases i <;> fin_cases j <;> simp [h00, hb, hc, h11]⟩
+      ext i j; fin_cases i <;> fin_cases j <;> simp [m, h00, hb, hc, h11]⟩
 
 /-- The `(0, 0)` entry of `kerMapZModPowSuccEquiv hk t` is `1 + p^k · t.1.val` in
 `ZMod (p ^ (k + 1))`. -/
@@ -221,7 +200,10 @@ theorem kerMapZModPowSuccEquiv_apply_zero_zero {p k : ℕ} [NeZero p] (hk : 1 �
     (t : ZMod p × ZMod p × ZMod p) :
     (kerMapZModPowSuccEquiv hk t : SL(2, ZMod (p ^ (k + 1)))) 0 0 =
       1 + (p : ZMod (p ^ (k + 1))) ^ k * (t.1.val : ZMod (p ^ (k + 1))) := by
-  simp [kerMapZModPowSuccEquiv, liftMulPow]
+  unfold kerMapZModPowSuccEquiv
+  simp only [Equiv.ofBijective_apply, coe_mk, Matrix.of_apply,
+    Matrix.cons_val_zero, ZMod.mulCastHom_apply, ZMod.cast_eq_val, Nat.cast_pow]
+  rw [mul_comm]
 
 /-- The `(0, 1)` entry of `kerMapZModPowSuccEquiv hk t` is `p^k · t.2.1.val` in
 `ZMod (p ^ (k + 1))`. -/
@@ -230,7 +212,11 @@ theorem kerMapZModPowSuccEquiv_apply_zero_one {p k : ℕ} [NeZero p] (hk : 1 ≤
     (t : ZMod p × ZMod p × ZMod p) :
     (kerMapZModPowSuccEquiv hk t : SL(2, ZMod (p ^ (k + 1)))) 0 1 =
       (p : ZMod (p ^ (k + 1))) ^ k * (t.2.1.val : ZMod (p ^ (k + 1))) := by
-  simp [kerMapZModPowSuccEquiv, liftMulPow]
+  unfold kerMapZModPowSuccEquiv
+  simp only [Equiv.ofBijective_apply, coe_mk, Matrix.of_apply,
+    Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one, ZMod.mulCastHom_apply,
+    ZMod.cast_eq_val, Nat.cast_pow]
+  rw [mul_comm]
 
 /-- The `(1, 0)` entry of `kerMapZModPowSuccEquiv hk t` is `p^k · t.2.2.val` in
 `ZMod (p ^ (k + 1))`. -/
@@ -239,7 +225,11 @@ theorem kerMapZModPowSuccEquiv_apply_one_zero {p k : ℕ} [NeZero p] (hk : 1 ≤
     (t : ZMod p × ZMod p × ZMod p) :
     (kerMapZModPowSuccEquiv hk t : SL(2, ZMod (p ^ (k + 1)))) 1 0 =
       (p : ZMod (p ^ (k + 1))) ^ k * (t.2.2.val : ZMod (p ^ (k + 1))) := by
-  simp [kerMapZModPowSuccEquiv, liftMulPow]
+  unfold kerMapZModPowSuccEquiv
+  simp only [Equiv.ofBijective_apply, coe_mk, Matrix.of_apply,
+    Matrix.cons_val_one, Matrix.cons_val_zero, Matrix.cons_val_fin_one, ZMod.mulCastHom_apply,
+    ZMod.cast_eq_val, Nat.cast_pow]
+  rw [mul_comm]
 
 /-- The `(1, 1)` entry of `kerMapZModPowSuccEquiv hk t` is `1 - p^k · t.1.val` in
 `ZMod (p ^ (k + 1))`. -/
@@ -248,7 +238,11 @@ theorem kerMapZModPowSuccEquiv_apply_one_one {p k : ℕ} [NeZero p] (hk : 1 ≤ 
     (t : ZMod p × ZMod p × ZMod p) :
     (kerMapZModPowSuccEquiv hk t : SL(2, ZMod (p ^ (k + 1)))) 1 1 =
       1 - (p : ZMod (p ^ (k + 1))) ^ k * (t.1.val : ZMod (p ^ (k + 1))) := by
-  simp [kerMapZModPowSuccEquiv, liftMulPow]
+  unfold kerMapZModPowSuccEquiv
+  simp only [Equiv.ofBijective_apply, coe_mk, Matrix.of_apply,
+    Matrix.cons_val_one, Matrix.cons_val_fin_one, ZMod.mulCastHom_apply, ZMod.cast_eq_val,
+    Nat.cast_pow]
+  rw [mul_comm]
 
 /-- For `0 < p` and `1 ≤ k`, the kernel of `SL₂(ℤ/p^{k+1}ℤ) →* SL₂(ℤ/p^kℤ)` has order `p³`. -/
 theorem card_ker_map_zmod_pow_succ {p k : ℕ} [NeZero p] (hk : 1 ≤ k) :
