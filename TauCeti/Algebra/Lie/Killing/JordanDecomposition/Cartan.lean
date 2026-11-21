@@ -74,7 +74,7 @@ theorem isSemisimple_of_mem_isCartanSubalgebra [PerfectField K]
   obtain ⟨n, hn, s, hs, hnil, hss, hxns⟩ := (x : Module.End K V).exists_isNilpotent_isSemisimple
   have hc : Commute n s := Algebra.commute_of_mem_adjoin_singleton_of_commute hs
     (Algebra.commute_of_mem_adjoin_self hn).symm
-  let n' : L := ⟨n, hL hc hnil hss (hxns ▸ x.2)⟩
+  let n' : L := ⟨n, hL hc hnil hss (hxns ▸ x.property)⟩
   -- `n` is a polynomial in `x`, so it commutes with every element of the abelian algebra `H`;
   -- hence it normalizes `H`, and lies in `H` because `H` is self-normalizing.
   have hn'H : n' ∈ H := by

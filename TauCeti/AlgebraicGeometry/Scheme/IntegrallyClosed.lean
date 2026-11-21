@@ -21,7 +21,8 @@ rings of the scheme at points of `V`.
   stalk is equivalent to normality of the corresponding localization of affine sections.
 * `AlgebraicGeometry.IsAffineOpen.isIntegrallyClosed`: a domain of sections over an affine
   open is integrally closed when its local rings are.
-* `TauCeti.AlgebraicGeometry.isDomain_and_isIntegrallyClosed_stalk_iff_of_isOpenImmersion`: open
+* `AlgebraicGeometry.Scheme.Hom.isDomain_stalk_of_isOpenImmersion` and
+  `TauCeti.AlgebraicGeometry.isDomain_and_isIntegrallyClosed_stalk_iff_of_isOpenImmersion`: open
   immersions preserve the domain and integral-closure conditions on stalks.
 -/
 
@@ -53,19 +54,25 @@ end TauCeti.AlgebraicGeometry
 
 namespace AlgebraicGeometry
 
+/-- The stalks of the source of an open immersion into a scheme with domain stalks are domains. -/
+theorem Scheme.Hom.isDomain_stalk_of_isOpenImmersion {U X : Scheme.{u}} (j : U ⟶ X)
+    [IsOpenImmersion j] [∀ x : X, IsDomain (X.presheaf.stalk x)] (u : U) :
+    IsDomain (U.presheaf.stalk u) :=
+  (asIso (j.stalkMap u)).commRingCatIsoToRingEquiv.symm.toMulEquiv.isDomain _
+
 variable {T : Scheme.{u}}
 
 /-- The stalk at a point of an affine open is an integrally closed domain exactly when the
 localization of its ring of sections at the corresponding prime is an integrally closed domain. -/
 theorem IsAffineOpen.isDomain_and_isIntegrallyClosed_stalk_iff {V : T.Opens}
     (hV : IsAffineOpen V) (x : V) :
-    (IsDomain (T.presheaf.stalk x.1) ∧ IsIntegrallyClosed (T.presheaf.stalk x.1)) ↔
+    (IsDomain (T.presheaf.stalk x.val) ∧ IsIntegrallyClosed (T.presheaf.stalk x.val)) ↔
       (IsDomain (Localization.AtPrime (hV.primeIdealOf x).asIdeal) ∧
         IsIntegrallyClosed (Localization.AtPrime (hV.primeIdealOf x).asIdeal)) := by
   let := T.presheaf.algebra_section_stalk x
   have := hV.isLocalization_stalk x
   let e := IsLocalization.algEquiv (hV.primeIdealOf x).asIdeal.primeCompl
-    (T.presheaf.stalk x.1) (Localization.AtPrime (hV.primeIdealOf x).asIdeal)
+    (T.presheaf.stalk x.val) (Localization.AtPrime (hV.primeIdealOf x).asIdeal)
   constructor
   · rintro ⟨_, _⟩
     exact ⟨e.symm.toMulEquiv.isDomain _, .of_equiv e.toRingEquiv⟩

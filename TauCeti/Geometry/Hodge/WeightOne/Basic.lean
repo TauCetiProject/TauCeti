@@ -436,10 +436,10 @@ noncomputable def hodgeStructureEquiv :
       {hs : Hodge.HodgeStructureOn (ℂ ⊗[ℝ] U) (Hodge.complexificationConjugation U) 1 //
         hs.IsEffective} where
   toFun J := ⟨J.hodgeStructure, J.isEffective_hodgeStructure⟩
-  invFun hs := hs.1.almostComplexStructure odd_one
+  invFun hs := hs.val.almostComplexStructure odd_one
   left_inv := almostComplexStructure_hodgeStructure
   right_inv hs := Subtype.ext
-    (hs.1.hodgeStructure_almostComplexStructure (hs.1.isEffective_iff.mp hs.2))
+    (hs.val.hodgeStructure_almostComplexStructure (hs.val.isEffective_iff.mp hs.property))
 
 /-- The equivalence sends `J` to its weight-one Hodge structure. -/
 @[simp]
@@ -453,7 +453,7 @@ theorem coe_hodgeStructureEquiv_apply (J : AlmostComplexStructure U) :
 theorem hodgeStructureEquiv_symm_apply
     (hs : {hs : Hodge.HodgeStructureOn (ℂ ⊗[ℝ] U) (Hodge.complexificationConjugation U) 1 //
       hs.IsEffective}) :
-    hodgeStructureEquiv.symm hs = hs.1.almostComplexStructure odd_one :=
+    hodgeStructureEquiv.symm hs = hs.val.almostComplexStructure odd_one :=
   (rfl)
 
 end TauCeti.AlmostComplexStructure

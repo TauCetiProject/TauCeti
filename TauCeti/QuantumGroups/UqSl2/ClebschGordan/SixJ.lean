@@ -188,23 +188,23 @@ theorem invRecouplingCoeff_eq_ite (hq : IsGenericQuantumParameter q) (ε δ ζ :
 `RightSixJChannel` in the `α₀ = 1` normalization of `clebschGordanInclusion`. -/
 def sixJMatrix (hq : IsGenericQuantumParameter q) (ε δ ζ : ℤˣ) (m n p k : ℕ) :
     Matrix (RightSixJChannel m n p k) (LeftSixJChannel m n p k) ℂ :=
-  fun v u => sixJ hq ε δ ζ m n p k u.1 v.1
+  fun v u => sixJ hq ε δ ζ m n p k u.val v.val
 
 /-- Inverse change-of-decomposition matrix at total weight `k` from `RightSixJChannel` to
 `LeftSixJChannel` in the `α₀ = 1` normalization of `clebschGordanInclusion`. -/
 def invSixJMatrix (hq : IsGenericQuantumParameter q) (ε δ ζ : ℤˣ) (m n p k : ℕ) :
     Matrix (LeftSixJChannel m n p k) (RightSixJChannel m n p k) ℂ :=
-  fun u v => invSixJ hq ε δ ζ m n p k v.1 u.1
+  fun u v => invSixJ hq ε δ ζ m n p k v.val u.val
 
 /-- Entry formula for `sixJMatrix`. -/
 @[simp] theorem sixJMatrix_apply (hq : IsGenericQuantumParameter q) (ε δ ζ : ℤˣ) (m n p k : ℕ)
     (v : RightSixJChannel m n p k) (u : LeftSixJChannel m n p k) :
-    sixJMatrix hq ε δ ζ m n p k v u = sixJ hq ε δ ζ m n p k u.1 v.1 := (rfl)
+    sixJMatrix hq ε δ ζ m n p k v u = sixJ hq ε δ ζ m n p k u.val v.val := (rfl)
 
 /-- Entry formula for `invSixJMatrix`. -/
 @[simp] theorem invSixJMatrix_apply (hq : IsGenericQuantumParameter q) (ε δ ζ : ℤˣ) (m n p k : ℕ)
     (u : LeftSixJChannel m n p k) (v : RightSixJChannel m n p k) :
-    invSixJMatrix hq ε δ ζ m n p k u v = invSixJ hq ε δ ζ m n p k v.1 u.1 := (rfl)
+    invSixJMatrix hq ε δ ζ m n p k u v = invSixJ hq ε δ ζ m n p k v.val u.val := (rfl)
 
 /-! ### Orthogonality and matrix invertibility -/
 
@@ -292,9 +292,9 @@ theorem sum_sixJ_mul_invSixJ (hq : IsGenericQuantumParameter q) (ε δ ζ : ℤ�
   ext u₁ u₂; simp only [Matrix.mul_apply, Matrix.one_apply, invSixJMatrix_apply, sixJMatrix_apply]
   rw [Finset.sum_subtype_eq_sum_of_mem (Finset.range (n + p + 1))
     (fun _ h => Finset.mem_range.mpr (Nat.lt_succ_of_le h.1.le_add))
-    (fun v => invSixJ hq ε δ ζ m n p k v u₁.1 * sixJ hq ε δ ζ m n p k u₂.1 v)
+    (fun v => invSixJ hq ε δ ζ m n p k v u₁.val * sixJ hq ε δ ζ m n p k u₂.val v)
     (fun _ _ hv => by rw [sixJ_eq_zero_of_not hq ε δ ζ (fun h => hv h.2), mul_zero]),
-    sum_invSixJ_mul_sixJ hq ε δ ζ u₁.2 u₂.2]; simp [Subtype.ext_iff]
+    sum_invSixJ_mul_sixJ hq ε δ ζ u₁.property u₂.property]; simp [Subtype.ext_iff]
 
 /-- `invSixJMatrix` is a right inverse to `sixJMatrix`. -/
 @[simp] theorem sixJMatrix_mul_invSixJMatrix (hq : IsGenericQuantumParameter q) (ε δ ζ : ℤˣ)
@@ -302,9 +302,9 @@ theorem sum_sixJ_mul_invSixJ (hq : IsGenericQuantumParameter q) (ε δ ζ : ℤ�
   ext v₁ v₂; simp only [Matrix.mul_apply, Matrix.one_apply, sixJMatrix_apply, invSixJMatrix_apply]
   rw [Finset.sum_subtype_eq_sum_of_mem (Finset.range (m + n + 1))
     (fun _ h => Finset.mem_range.mpr (Nat.lt_succ_of_le h.1.le_add))
-    (fun u => sixJ hq ε δ ζ m n p k u v₁.1 * invSixJ hq ε δ ζ m n p k v₂.1 u)
+    (fun u => sixJ hq ε δ ζ m n p k u v₁.val * invSixJ hq ε δ ζ m n p k v₂.val u)
     (fun _ _ hu => by rw [sixJ_eq_zero_of_not hq ε δ ζ (fun h => hu h.1), zero_mul]),
-    sum_sixJ_mul_invSixJ hq ε δ ζ v₁.2 v₂.2]; simp [Subtype.ext_iff]
+    sum_sixJ_mul_invSixJ hq ε δ ζ v₁.property v₂.property]; simp [Subtype.ext_iff]
 
 /-- Left and right triple-product decompositions have the same multiplicity at every total
 highest weight `k`. -/

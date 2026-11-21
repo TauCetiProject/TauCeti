@@ -98,7 +98,7 @@ theorem repr_signlessPreprojectiveRelator_eq_zero (v : V)
   refine Finset.sum_eq_zero fun w _ => ?_
   rw [backtrackElem_eq_ofPath, ofPath_eq_single, pathAlgebraBasis_repr_single]
   exact Finsupp.single_eq_of_ne fun hpath =>
-    hx w.1 ((G.mem_neighborSet v w).1 w.2) hpath
+    hx w.val ((G.mem_neighborSet v w).1 w.property) hpath
 
 /-- The coordinate of the signless relator at `v` on a path which is not a loop vanishes: every
 backtrack returns to its source. -/

@@ -115,9 +115,9 @@ private theorem d4SpinIndexSubtype_bijective : Function.Bijective d4SpinIndexSub
   · intro s t h
     exact d4SpinIndex_injective (congrArg Subtype.val h)
   · intro a
-    have ha : a.1 ∈ Set.range d4SpinIndex := by
+    have ha : a.val ∈ Set.range d4SpinIndex := by
       rw [range_d4SpinIndex]
-      exact a.2
+      exact a.property
     obtain ⟨s, hs⟩ := ha
     exact ⟨s, Subtype.ext hs⟩
 
