@@ -12,8 +12,8 @@ public import Mathlib.RingTheory.PowerSeries.Basic
 
 Mathlib's `PowerSeries.constantCoeff` is the constant coefficient `S⟦X⟧ → S` as a ring
 homomorphism. This file records it as a homomorphism of `A`-algebras for any commutative semiring
-`A` over which `S` is an algebra (evaluation at `X = 0`), as well as basic `@[simp]` lemmas on
-univariate formal power series missing from `Mathlib.RingTheory.PowerSeries.Basic`.
+`A` over which `S` is an algebra: evaluation at `X = 0`. It also records how a change of
+coefficients `map f` acts on the constant coefficient.
 
 ## Main definitions
 
@@ -23,8 +23,8 @@ univariate formal power series missing from `Mathlib.RingTheory.PowerSeries.Basi
 
 * `PowerSeries.constantCoeffAlgHom_comp_toAlgHom`: evaluation at `X = 0` is a retraction of the
   inclusion of constants.
-* `PowerSeries.constantCoeff_map`: the constant coefficient of `PowerSeries.map f p` is
-  `f (constantCoeff p)`.
+* `PowerSeries.constantCoeff_map`: a change of coefficients `map f` acts on the constant
+  coefficient by `f`, as `MvPowerSeries.constantCoeff_map` does for multivariate power series.
 -/
 
 public section
@@ -66,11 +66,11 @@ section Map
 
 variable {R S : Type*} [Semiring R] [Semiring S]
 
-/-- The constant coefficient of `PowerSeries.map f p` is `f (constantCoeff p)`. -/
+/-- A change of coefficients `map f` acts on the constant coefficient by `f`. -/
 @[simp]
-theorem constantCoeff_map (f : R →+* S) (p : R⟦X⟧) :
-    constantCoeff (map f p) = f (constantCoeff p) :=
-  MvPowerSeries.constantCoeff_map f p
+theorem constantCoeff_map (f : R →+* S) (φ : R⟦X⟧) :
+    constantCoeff (map f φ) = f (constantCoeff φ) := by
+  rw [← coeff_zero_eq_constantCoeff_apply, coeff_map, coeff_zero_eq_constantCoeff_apply]
 
 end Map
 
