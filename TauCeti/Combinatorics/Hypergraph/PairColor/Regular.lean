@@ -161,10 +161,17 @@ theorem isRegularPair_singleton (hε : 0 < ε) (u v : V) : S.IsRegularPair ε {u
   simpa using hε.le
 
 /-- Renaming the palette along an equivalence preserves `IsRegularPair`. -/
+@[simp]
+theorem isRegularPair_relabel_iff {κ' : Type*} (e : κ ≃ κ') :
+    (S.relabel e).IsRegularPair ε s t ↔ S.IsRegularPair ε s t := by
+  refine ⟨fun h c s' hs' t' ht' hs ht ↦ ?_, fun h c s' hs' t' ht' hs ht ↦ ?_⟩
+  · simpa only [pairColorDensity_relabel, e.symm_apply_apply] using h (e c) s' hs' t' ht' hs ht
+  · simpa only [pairColorDensity_relabel] using h (e.symm c) s' hs' t' ht' hs ht
+
+/-- Renaming the palette along an equivalence preserves `IsRegularPair`. -/
 theorem IsRegularPair.relabel {κ' : Type*} (h : S.IsRegularPair ε s t) (e : κ ≃ κ') :
-    (S.relabel e).IsRegularPair ε s t := by
-  intro c s' hs' t' ht' hs ht
-  simpa only [pairColorDensity_relabel] using h (e.symm c) s' hs' t' ht' hs ht
+    (S.relabel e).IsRegularPair ε s t :=
+  (isRegularPair_relabel_iff e).2 h
 
 section Discrepancy
 
@@ -318,17 +325,29 @@ theorem relabel_pairColors {κ' : Type*} (e : κ ≃ κ') :
     (S.relabel e).pairColors = S.pairColors.relabel e :=
   (rfl)
 
+/-- Renaming the pair palette preserves pair-color regularity of a lower skeleton. -/
+@[simp]
+theorem isPairColorRegular_relabel_iff {κ' : Type*} (e : κ ≃ κ') :
+    (S.relabel e).IsPairColorRegular ε ↔ S.IsPairColorRegular ε := by
+  simp [IsPairColorRegular]
+
 /-- Renaming the palette along an equivalence preserves `IsPairColorRegular`. -/
 theorem IsPairColorRegular.relabel {κ' : Type*} (h : S.IsPairColorRegular ε) (e : κ ≃ κ') :
     (S.relabel e).IsPairColorRegular ε :=
-  fun A hA B hB ↦ (h A hA B hB).relabel e
+  (isPairColorRegular_relabel_iff e).2 h
+
+/-- Renaming the pair palette preserves scheduled lower-skeleton regularity. -/
+@[simp]
+theorem lowerSkeletonRegular_relabel_iff {κ' : Type*} [Fintype κ] [Fintype κ'] (e : κ ≃ κ')
+    {F : ℕ → ℝ} :
+    (S.relabel e).LowerSkeletonRegular F ↔ S.LowerSkeletonRegular F := by
+  simp [LowerSkeletonRegular, Fintype.card_congr e]
 
 /-- Renaming the palette along an equivalence preserves `LowerSkeletonRegular`. -/
 theorem LowerSkeletonRegular.relabel {κ' : Type*} [Fintype κ] [Fintype κ'] {F : ℕ → ℝ}
     (h : S.LowerSkeletonRegular F) (e : κ ≃ κ') :
-    (S.relabel e).LowerSkeletonRegular F := by
-  rw [lowerSkeletonRegular_iff, relabel_vertexPart, Fintype.card_congr e.symm]
-  exact IsPairColorRegular.relabel h e
+    (S.relabel e).LowerSkeletonRegular F :=
+  (lowerSkeletonRegular_relabel_iff e).2 h
 
 end PairSkeleton3
 

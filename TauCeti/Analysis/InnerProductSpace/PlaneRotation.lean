@@ -204,14 +204,14 @@ theorem _root_.Continuous.planeRotation {X : Type*} [TopologicalSpace X] {ι : X
   have hinner (w a : ℂ) : Continuous fun x ↦ (innerSL ℝ (ι x w)).smulRight a := by
     have hw : Continuous fun x ↦ ι x w := by
       simpa only [coe_toContinuousLinearMap] using hι.clm_apply continuous_const
-    exact ((ContinuousLinearMap.smulRightL ℝ E ℂ).continuous.comp
+    exact ((ContinuousLinearMap.smulRightL ℝ ℝ ℝ E ℂ).continuous.comp
       ((innerSL ℝ).continuous.comp hw)).clm_apply continuous_const
   have hcoord : Continuous fun x ↦ planeCoord (ι x) := by
     unfold planeCoord
     exact (hinner 1 1).add (hinner I I)
   have hmul : Continuous fun x ↦ ContinuousLinearMap.mul ℝ ℂ ((c x : ℂ) - 1) :=
     (ContinuousLinearMap.mul ℝ ℂ).continuous.comp
-      ((continuous_subtype_val.comp hc).sub continuous_const)
+      ((continuous_subtypeVal.comp hc).sub continuous_const)
   refine ((continuous_const (y := ContinuousLinearMap.id ℝ E)).add
     (hι.clm_comp (hmul.clm_comp hcoord))).congr fun x ↦ ?_
   ext y

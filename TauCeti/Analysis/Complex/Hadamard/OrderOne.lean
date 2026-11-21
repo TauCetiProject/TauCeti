@@ -31,13 +31,21 @@ uniformly on the complement of the zeros.
 
 ## Main results
 
-* `TauCeti.OrderLE.exists_eq_cexp_mul_divisorProductOne` and `TauCeti.hadamard_of_orderLE_one`:
-  Hadamard's factorization, with the product as `divisorProductOne f` and as a multipliable
-  product over `ℂ`.
+* `TauCeti.OrderLE.exists_eq_cexp_mul_divisorProductOne`,
+  `TauCeti.OrderLE.eq_mul_cexp_logDeriv_mul_divisorProductOne`, and
+  `TauCeti.hadamard_of_orderLE_one`: Hadamard's factorization, with the product as
+  `divisorProductOne f` and as a multipliable product over `ℂ`.
 * `TauCeti.OrderLE.logDeriv_eq_add_tsum`,
-  `TauCeti.OrderLE.summable_norm_divisor_mul_one_div_sub_add_one_div` and
+  `TauCeti.OrderLE.summable_norm_divisor_mul_one_div_sub_add_one_div`, and
   `TauCeti.OrderLE.hasSumLocallyUniformlyOn_logDeriv_sub`: the partial-fraction expansion of
-  the logarithmic derivative; absolute convergence holds for every order below two.
+  the logarithmic derivative; absolute convergence holds at every point for every order below two.
+* `TauCeti.OrderLE.summable_divisor_toNat_mul_re_one_div_sub_iff`,
+  `TauCeti.OrderLE.summable_divisor_toNat_mul_re_one_div`,
+  `TauCeti.OrderLE.summable_divisor_toNat_mul_re_one_div_sub`, and
+  `TauCeti.OrderLE.re_logDeriv_eq_add_tsum_add_tsum`: for every order below two, summability of
+  `m_ρ * Re (1 / (z - ρ))` is equivalent to summability of `m_ρ * Re (1 / ρ)` (guaranteed in
+  particular when all zeros lie in a bounded vertical strip `|Re ρ| ≤ B`), splitting
+  `Re (logDeriv f z)` into three terms at order at most one.
 
 The examples `exp (c s)` and `1 - s` use `TauCeti.divisorProductOne_cexp_mul` and
 `TauCeti.divisorProductOne_one_sub`.
@@ -166,7 +174,7 @@ private theorem norm_finsum_sub_tsum_le (hf : Differentiable ℂ f) (hf0 : f 0 �
       simp only [ψ, ite_eq_right hρ,
         Function.locallyFinsuppWithin.apply_eq_zero_of_notMem _ hmem, Int.cast_zero, zero_div]
   have hg : Summable g :=
-    (summable_norm_natCast_divisor_mul_one_div_sub_add_one_div h0 hsum hzS).of_norm
+    (summable_norm_natCast_divisor_mul_one_div_sub_add_one_div hsum z).of_norm
   have hψ : Summable fun ρ : d.support ↦ ψ ρ :=
     summable_of_hasFiniteSupport (hψfin.preimage Subtype.val_injective.injOn)
   rw [hfinsum, ← hψ.tsum_sub hg, ← tsum_mul_left]
@@ -193,15 +201,32 @@ private theorem landau_bound_le_mul_sqrt {K r : ℝ} (hK : 0 ≤ Real.log K) (hr
   rw [h1]
   linarith
 
+private theorem landau_exponential_bound_le_mul_sqrt {K r : ℝ}
+    (hK : 0 ≤ Real.log K) (hr : 1 ≤ r) :
+    48 / (4 * r) * Real.log (K * Real.exp ((4 * r) ^ (3 / 2 : ℝ))) ≤
+      (12 * Real.log K + 96) * √r := by
+  by_cases hK0 : K = 0
+  · simp only [hK0, zero_mul, Real.log_zero, mul_zero, zero_add]
+    positivity
+  have hfour : √(4 : ℝ) = 2 :=
+    (Real.sqrt_eq_iff_eq_sq (by norm_num) (by norm_num)).mpr (by norm_num)
+  have hlogM : Real.log (K * Real.exp ((4 * r) ^ (3 / 2 : ℝ))) =
+      Real.log K + 8 * r * √r := by
+    rw [Real.log_mul hK0 (Real.exp_ne_zero _), Real.log_exp,
+      Real.rpow_three_div_two_eq_mul_sqrt, Real.sqrt_mul (by norm_num),
+      hfour]
+    ring
+  rw [hlogM]
+  exact landau_bound_le_mul_sqrt hK hr
+
 /-- Off the zeros and away from the origin, the logarithmic derivatives of an entire function of
 order at most one and of its genus-one divisor product differ by `O(√‖z‖)`. This is the
 quotient-growth estimate, proved from Landau's local lemma on `closedBall 0 (4 ‖z‖)`. -/
 private theorem OrderLE.exists_norm_logDeriv_sub_logDeriv_divisorProductOne_le
-    (h : OrderLE f 1) (hf : Differentiable ℂ f) (hf0 : f 0 ≠ 0)
-    (hsum : Summable (fun ρ : (MeromorphicOn.divisor f Set.univ).support ↦
-      ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * ‖(ρ : ℂ)⁻¹‖ ^ 2)) :
+    (h : OrderLE f 1) (hf : Differentiable ℂ f) (hf0 : f 0 ≠ 0) :
     ∃ C R₀ : ℝ, ∀ z, R₀ ≤ ‖z‖ → f z ≠ 0 →
       ‖logDeriv f z - logDeriv (divisorProductOne f) z‖ ≤ C * √‖z‖ := by
+  have hsum := h.summable_divisor_toNat_mul_norm_inv_sq hf (by norm_num)
   have h0 : (0 : ℂ) ∉ (MeromorphicOn.divisor f Set.univ).support :=
     (hf.analyticAt _).notMem_divisor_support_of_ne_zero hf0
   -- Constants: the zero sum `S = ∑ m_ρ ‖ρ‖ ^ (-3/2)` and the order bound
@@ -213,7 +238,6 @@ private theorem OrderLE.exists_norm_logDeriv_sub_logDeriv_divisorProductOne_le
   obtain ⟨L, _, hL⟩ := Filter.hasBasis_cobounded_norm.mem_iff.mp hb.bound
   set K := max 1 (c / ‖f 0‖)
   have hK : 1 ≤ K := le_max_left _ _
-  have hlogK : 0 ≤ Real.log K := Real.log_nonneg hK
   refine ⟨12 * Real.log K + 96 + 2 * S, max (L / 4) 1, fun z hz hfz ↦ ?_⟩
   have hz1 : 1 ≤ ‖z‖ := (le_max_right _ _).trans hz
   have hzL : L ≤ 4 * ‖z‖ := by linarith [(le_max_left (L / 4) 1).trans hz]
@@ -233,7 +257,7 @@ private theorem OrderLE.exists_norm_logDeriv_sub_logDeriv_divisorProductOne_le
       _ = _ := by ring
   -- Landau's lemma: `logDeriv f z` is the zero sum over `closedBall 0 (2 ‖z‖)` up to `O(√‖z‖)`.
   have hland := AnalyticOnNhd.norm_logDeriv_sub_finsum_divisor_half_le
-    (fun w _ ↦ hf.analyticAt w) hR hf0 hM (z := z) (by simp) hfz
+    (fun w _ ↦ hf.analyticAt w) hR hM (z := z) (by simp) hfz
   rw [show 4 * ‖z‖ / 2 = 2 * ‖z‖ by ring] at hland
   -- The tail: that finite sum is the paired series up to `2 √‖z‖ S`.
   have htail := norm_finsum_sub_tsum_le hf hf0 hsum hS hfz
@@ -242,17 +266,36 @@ private theorem OrderLE.exists_norm_logDeriv_sub_logDeriv_divisorProductOne_le
     (hf.analyticAt _).notMem_divisor_support_of_ne_zero hfz
   rw [logDeriv_divisorProductOne h0 hsum hzS]
   -- Combine the two estimates.
-  have hlogM : Real.log (K * Real.exp ((4 * ‖z‖) ^ (3 / 2 : ℝ))) =
-      Real.log K + 8 * ‖z‖ * √‖z‖ := by
-    rw [Real.log_mul (by positivity) (Real.exp_ne_zero _), Real.log_exp,
-      Real.rpow_three_div_two_eq_mul_sqrt, Real.sqrt_mul (by norm_num),
-      show √(4 : ℝ) = 2 by rw [show (4 : ℝ) = 2 ^ 2 by norm_num, Real.sqrt_sq (by norm_num)]]
-    ring
-  rw [hlogM] at hland
   refine (norm_sub_le_norm_sub_add_norm_sub _ _ _).trans ((add_le_add hland htail).trans ?_)
   calc _ ≤ (12 * Real.log K + 96) * √‖z‖ + 2 * √‖z‖ * S :=
-        add_le_add_left (landau_bound_le_mul_sqrt hlogK hz1) _
+        add_le_add_left (landau_exponential_bound_le_mul_sqrt (Real.log_nonneg hK) hz1) _
     _ = _ := by ring
+
+/-- The Landau cofactor bound extends across zeros to any continuous function equal to the
+logarithmic-derivative difference off the zeros. -/
+private theorem OrderLE.isBigO_logDeriv_cofactor (h : OrderLE f 1) (hf : Differentiable ℂ f)
+    (hf0 : f 0 ≠ 0) {g : ℂ → ℂ} (hg : Continuous g)
+    (hgf : ∀ z, f z ≠ 0 → g z = logDeriv f z - logDeriv (divisorProductOne f) z) :
+    g =O[cobounded ℂ] (fun z : ℂ ↦ √‖z‖) := by
+  obtain ⟨C, R₀, hC⟩ := h.exists_norm_logDeriv_sub_logDeriv_divisorProductOne_le hf hf0
+  have hbound (z : ℂ) (hz : R₀ + 1 ≤ ‖z‖) : ‖g z‖ ≤ C * √‖z‖ := by
+    have hev : ∀ᶠ w in 𝓝[≠] z, ‖g w‖ ≤ C * √‖w‖ := by
+      have hfar : ∀ᶠ w in 𝓝[≠] z, R₀ < ‖w‖ :=
+        nhdsWithin_le_nhds ((continuous_norm.tendsto z).eventually
+          (eventually_gt_nhds (by linarith)))
+      filter_upwards [AnalyticOnNhd.eventually_ne_zero_nhdsNE_of_preconnected
+        (fun u _ ↦ hf.analyticAt u) isPreconnected_univ (Set.mem_univ 0) hf0 (Set.mem_univ z),
+        hfar] with w hw hwR
+      rw [hgf w hw]
+      exact hC w hwR.le hw
+    exact le_of_tendsto_of_tendsto
+      ((hg.tendsto z).mono_left nhdsWithin_le_nhds).norm
+      (((by fun_prop : Continuous fun w : ℂ ↦ C * √‖w‖).tendsto z).mono_left nhdsWithin_le_nhds)
+      hev
+  refine Asymptotics.IsBigO.of_bound C ?_
+  filter_upwards [tendsto_norm_cobounded_atTop.eventually_ge_atTop (R₀ + 1)] with z hz
+  rw [Real.norm_of_nonneg (Real.sqrt_nonneg _)]
+  exact hbound z hz
 
 /-- **Hadamard factorization at order at most one.** An entire function `f` of order at most one
 with `f 0 ≠ 0` is `exp (a + b z)` times the genus-one product over its zeros, with
@@ -276,28 +319,10 @@ theorem OrderLE.exists_eq_cexp_mul_divisorProductOne (h : OrderLE f 1) (hf : Dif
   -- Off the zeros, `L'` is the difference of the two logarithmic derivatives.
   have hlog {z : ℂ} (hfz : f z ≠ 0) : logDeriv f z = logDeriv P z + deriv L z := by
     rw [hfe, logDeriv_mul_cexp (hPz hfz) (hP z) (hL' z)]
-  obtain ⟨C, R₀, hC⟩ :=
-    h.exists_norm_logDeriv_sub_logDeriv_divisorProductOne_le hf hf0 hsum
-  -- The bound extends across the zeros by continuity.
-  have hbound (z : ℂ) (hz : R₀ + 1 ≤ ‖z‖) : ‖deriv L z‖ ≤ C * √‖z‖ := by
-    have hev : ∀ᶠ w in 𝓝[≠] z, ‖deriv L w‖ ≤ C * √‖w‖ := by
-      have hfar : ∀ᶠ w in 𝓝[≠] z, R₀ < ‖w‖ :=
-        nhdsWithin_le_nhds ((continuous_norm.tendsto z).eventually
-          (eventually_gt_nhds (by linarith)))
-      filter_upwards [AnalyticOnNhd.eventually_ne_zero_nhdsNE_of_preconnected
-        (fun u _ ↦ hf.analyticAt u) isPreconnected_univ (Set.mem_univ 0) hf0 (Set.mem_univ z),
-        hfar] with w hw hwR
-      rw [← sub_eq_of_eq_add' (hlog hw)]
-      exact hC w hwR.le hw
-    exact le_of_tendsto_of_tendsto
-      ((hdL.continuous.tendsto z).mono_left nhdsWithin_le_nhds).norm
-      (((by fun_prop : Continuous fun w : ℂ ↦ C * √‖w‖).tendsto z).mono_left nhdsWithin_le_nhds)
-      hev
-  have hbigO : deriv L =O[cobounded ℂ] (fun z : ℂ ↦ √‖z‖) := by
-    refine Asymptotics.IsBigO.of_bound C ?_
-    filter_upwards [tendsto_norm_cobounded_atTop.eventually_ge_atTop (R₀ + 1)] with z hz
-    rw [Real.norm_of_nonneg (Real.sqrt_nonneg _)]
-    exact hbound z hz
+  have hbigO : deriv L =O[cobounded ℂ] (fun z : ℂ ↦ √‖z‖) :=
+    h.isBigO_logDeriv_cofactor hf hf0 hdL.continuous fun z hz ↦ by
+      rw [hlog hz]
+      simp [hPdef]
   obtain ⟨p, hp, hpL⟩ := hdL.exists_eq_polynomial_eval_of_isLittleO_pow (n := 0)
     (hbigO.trans_isLittleO (isLittleO_sqrt_norm_id_cobounded.congr_right fun z ↦ (pow_one z).symm))
   have hconst (z : ℂ) : deriv L z = deriv L 0 := by
@@ -317,6 +342,14 @@ theorem OrderLE.exists_eq_cexp_mul_divisorProductOne (h : OrderLE f 1) (hf : Dif
         (fun q ↦ (fderiv_apply_one_eq_deriv (f := L) (x := q)).trans (hconst q)) 0 z
     rw [hLz, hb, mul_comm, mul_comm z]
 
+/-- **Hadamard factorization at order at most one**, with explicit leading constant `f 0`:
+`f z = f 0 * exp (logDeriv f 0 * z) * divisorProductOne f z`. -/
+theorem OrderLE.eq_mul_cexp_logDeriv_mul_divisorProductOne (h : OrderLE f 1)
+    (hf : Differentiable ℂ f) (hf0 : f 0 ≠ 0) (z : ℂ) :
+    f z = f 0 * exp (logDeriv f 0 * z) * divisorProductOne f z := by
+  obtain ⟨a, ha, hfa⟩ := h.exists_eq_cexp_mul_divisorProductOne hf hf0
+  rw [hfa z, exp_add, ha]
+
 /-- **Hadamard's theorem at order at most one**, with the product taken over all of `ℂ`: for
 every `s` the family `ρ ↦ E₁(ρ⁻¹ s) ^ m_ρ` over `ℂ` is multipliable and
 `f s = exp (a + b s) ∏' ρ, E₁(ρ⁻¹ s) ^ m_ρ`, where `m_ρ` is the divisor of `f`,
@@ -324,9 +357,9 @@ every `s` the family `ρ ↦ E₁(ρ⁻¹ s) ^ m_ρ` over `ℂ` is multipliable 
 theorem hadamard_of_orderLE_one (h : OrderLE f 1) (hf : Differentiable ℂ f) (hf0 : f 0 ≠ 0) :
     ∃ a b : ℂ, exp a = f 0 ∧ b = logDeriv f 0 ∧ ∀ s : ℂ,
       Multipliable (fun ρ : ℂ ↦
-        weierstrassFactorOne (ρ⁻¹ * s) ^ (MeromorphicOn.divisor f Set.univ ρ).toNat) ∧
+        weierstrassFactor 1 (ρ⁻¹ * s) ^ (MeromorphicOn.divisor f Set.univ ρ).toNat) ∧
       f s = exp (a + b * s) * ∏' ρ : ℂ,
-        weierstrassFactorOne (ρ⁻¹ * s) ^ (MeromorphicOn.divisor f Set.univ ρ).toNat := by
+        weierstrassFactor 1 (ρ⁻¹ * s) ^ (MeromorphicOn.divisor f Set.univ ρ).toNat := by
   have hsum := h.summable_divisor_toNat_mul_norm_inv_sq hf (by norm_num)
   obtain ⟨a, ha, hfa⟩ := h.exists_eq_cexp_mul_divisorProductOne hf hf0
   refine ⟨a, logDeriv f 0, ha, rfl, fun s ↦ ⟨(hasProd_divisorProductOne hsum s).multipliable, ?_⟩⟩
@@ -357,16 +390,14 @@ theorem OrderLE.logDeriv_eq_add_tsum (h : OrderLE f 1) (hf : Differentiable ℂ 
       (h.summable_divisor_toNat_mul_norm_inv_sq hf (by norm_num))
       ((hf.analyticAt _).notMem_divisor_support_of_ne_zero hz)]
 
-/-- The partial-fraction series of an entire function of order less than two, nonzero at the
-origin, converges absolutely off its zeros. -/
+/-- The partial-fraction series of an entire function of order less than two converges absolutely
+at every point, using total division at `ρ = 0` and `ρ = z`. -/
 theorem OrderLE.summable_norm_divisor_mul_one_div_sub_add_one_div {A : ℝ} (h : OrderLE f A)
-    (hf : Differentiable ℂ f) (hf0 : f 0 ≠ 0) (hA : A < 2) {z : ℂ} (hz : f z ≠ 0) :
+    (hf : Differentiable ℂ f) (hA : A < 2) (z : ℂ) :
     Summable (fun ρ : (MeromorphicOn.divisor f Set.univ).support ↦
       ‖((MeromorphicOn.divisor f Set.univ ρ).toNat : ℂ) * (1 / (z - ρ) + 1 / ρ)‖) :=
   summable_norm_natCast_divisor_mul_one_div_sub_add_one_div
-    ((hf.analyticAt _).notMem_divisor_support_of_ne_zero hf0)
-    (h.summable_divisor_toNat_mul_norm_inv_sq hf hA)
-    ((hf.analyticAt _).notMem_divisor_support_of_ne_zero hz)
+    (h.summable_divisor_toNat_mul_norm_inv_sq hf hA) z
 
 /-- The partial-fraction series of an entire function of order at most one converges locally
 uniformly off its zeros to `logDeriv f - logDeriv f 0`. -/
@@ -383,9 +414,70 @@ theorem OrderLE.hasSumLocallyUniformlyOn_logDeriv_sub (h : OrderLE f 1)
   refine hasSumLocallyUniformlyOn_iff_tendstoLocallyUniformlyOn.mpr <|
     (hasSumLocallyUniformlyOn_iff_tendstoLocallyUniformlyOn.mp
       (hasSumLocallyUniformlyOn_logDeriv_divisorProductOne h0 hsum)).congr_right fun z hz ↦ ?_
-  have hfz : f z ≠ 0 := fun hfz ↦ divisorProductOne_ne_zero hsum h0 hz
+  have hfz : f z ≠ 0 := fun hfz ↦ divisorProductOne_ne_zero hsum
+    (fun _ ↦ le_of_eq (Function.notMem_support.mp hz))
     ((divisorProductOne_eq_zero_iff hf hf0 hsum z).mpr hfz)
   rw [h.logDeriv_eq_add_logDeriv_divisorProductOne hf hf0 hfz, add_sub_cancel_left]
+
+/-! ### Vertical-strip zero location and real-part unpairing -/
+
+/-- For an entire function `f` of order less than two and every `z : ℂ`, the unsubtracted
+real-part series `ρ ↦ m_ρ * Re (1 / (z - ρ))` is summable on the divisor support if and only if
+`ρ ↦ m_ρ * Re (1 / ρ)` is summable. -/
+theorem OrderLE.summable_divisor_toNat_mul_re_one_div_sub_iff {A : ℝ} (h : OrderLE f A)
+    (hf : Differentiable ℂ f) (hA : A < 2) (z : ℂ) :
+    Summable (fun ρ : (MeromorphicOn.divisor f Set.univ).support ↦
+      ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * (1 / (z - ρ)).re) ↔
+    Summable (fun ρ : (MeromorphicOn.divisor f Set.univ).support ↦
+      ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * (1 / (ρ : ℂ)).re) :=
+  TauCeti.summable_divisor_toNat_mul_re_one_div_sub_iff
+    (h.summable_divisor_toNat_mul_norm_inv_sq hf hA) z
+
+/-- For an entire function `f` of order less than two whose zeros have bounded real part
+(`|ρ.re| ≤ B`), the real-part series `ρ ↦ m_ρ * Re (1 / ρ)` is summable on the divisor support. -/
+theorem OrderLE.summable_divisor_toNat_mul_re_one_div {A : ℝ} (h : OrderLE f A)
+    (hf : Differentiable ℂ f) (hA : A < 2) {B : ℝ} (hre : ∀ ρ : ℂ, f ρ = 0 → |ρ.re| ≤ B) :
+    Summable (fun ρ : (MeromorphicOn.divisor f Set.univ).support ↦
+      ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * (1 / (ρ : ℂ)).re) :=
+  TauCeti.summable_divisor_toNat_mul_re_one_div
+    (h.summable_divisor_toNat_mul_norm_inv_sq hf hA)
+    fun ρ hρ ↦ hre ρ ((hf.analyticAt ρ).apply_eq_zero_of_divisor_ne_zero hρ.ne')
+
+/-- For an entire function `f` of order less than two whose zeros have bounded real part
+(`|ρ.re| ≤ B`), the unsubtracted real-part series `ρ ↦ m_ρ * Re (1 / (z - ρ))` is summable on the
+divisor support for every `z : ℂ`. -/
+theorem OrderLE.summable_divisor_toNat_mul_re_one_div_sub {A : ℝ} (h : OrderLE f A)
+    (hf : Differentiable ℂ f) (hA : A < 2) {B : ℝ} (hre : ∀ ρ : ℂ, f ρ = 0 → |ρ.re| ≤ B)
+    (z : ℂ) :
+    Summable (fun ρ : (MeromorphicOn.divisor f Set.univ).support ↦
+      ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * (1 / (z - ρ)).re) :=
+  (h.summable_divisor_toNat_mul_re_one_div_sub_iff hf hA z).mpr
+    (h.summable_divisor_toNat_mul_re_one_div hf hA hre)
+
+/-- Off the zeros of an entire function `f` of order at most one with `f 0 ≠ 0`, whenever
+`ρ ↦ m_ρ * Re (1 / ρ)` is summable on the divisor support, the real part of `logDeriv f z` splits
+into the separately convergent sum
+`Re (logDeriv f 0) + ∑' ρ, m_ρ * Re (1 / (z - ρ)) + ∑' ρ, m_ρ * Re (1 / ρ)`. -/
+theorem OrderLE.re_logDeriv_eq_add_tsum_add_tsum (h : OrderLE f 1) (hf : Differentiable ℂ f)
+    (hf0 : f 0 ≠ 0)
+    (hinv : Summable (fun ρ : (MeromorphicOn.divisor f Set.univ).support ↦
+      ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * (1 / (ρ : ℂ)).re))
+    {z : ℂ} (hz : f z ≠ 0) :
+    (logDeriv f z).re = (logDeriv f 0).re +
+      (∑' ρ : (MeromorphicOn.divisor f Set.univ).support,
+        ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * (1 / (z - ρ)).re) +
+      (∑' ρ : (MeromorphicOn.divisor f Set.univ).support,
+        ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * (1 / (ρ : ℂ)).re) := by
+  have hc := (h.summable_norm_divisor_mul_one_div_sub_add_one_div hf (by norm_num) z).of_norm
+  have hsub := (h.summable_divisor_toNat_mul_re_one_div_sub_iff hf (by norm_num) z).mpr hinv
+  have htsum_re : (∑' ρ : (MeromorphicOn.divisor f Set.univ).support,
+      ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℂ) * (1 / (z - ρ) + 1 / ρ)).re =
+      ∑' ρ : (MeromorphicOn.divisor f Set.univ).support,
+        (((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * (1 / (z - ρ)).re +
+          ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * (1 / (ρ : ℂ)).re) := by
+    rw [Complex.re_tsum hc]
+    exact tsum_congr fun ρ ↦ by simp; ring
+  rw [h.logDeriv_eq_add_tsum hf hf0 hz, add_re, htsum_re, Summable.tsum_add hsub hinv, add_assoc]
 
 /-! ### Examples -/
 
@@ -404,7 +496,7 @@ example (s : ℂ) :
     1 - s = exp (0 + (-1) * s) * divisorProductOne (fun s ↦ 1 - s) s ∧
       logDeriv (fun s : ℂ ↦ 1 - s) 0 = -1 := by
   refine ⟨?_, by simp [logDeriv_apply]⟩
-  rw [divisorProductOne_one_sub, weierstrassFactorOne_def, mul_left_comm, ← exp_add]
+  rw [divisorProductOne_one_sub, weierstrassFactor_one_left, mul_left_comm, ← exp_add]
   simp
 
 end TauCeti

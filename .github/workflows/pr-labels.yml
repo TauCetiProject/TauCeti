@@ -1,8 +1,9 @@
 name: PR status labels
 
-# Labels use the same pinned merge gate as Auto-merge. A ready label means the PR
-# passes its prerequisites; queue membership/reservations are reported separately.
-# Only trusted base and pinned policy code execute; PR contents are API data.
+# Labels use the TauCetiReview main merge gate, checked out through
+# .github/actions/checkout-merge-policy. A ready label means the PR passes its prerequisites;
+# queue membership/reservations are reported separately.
+# Only trusted base and merge policy code execute; PR contents are API data.
 
 # Per-event reconciliation lives in pr-status.yml, which batches bursts of events so that they do not
 # each take a runner. This workflow keeps the bounded rotating backstop and the manual re-sync.
@@ -94,12 +95,11 @@ jobs:
             .github/actions/checkout-merge-policy
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@1f5d35c117736e8907bbc09be80a4704196536e5
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@main
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 1f5d35c117736e8907bbc09be80a4704196536e5
           project-directory: .
-      - name: Checkout the pinned merge policy (read-only)
+      - name: Checkout the merge policy (read-only)
         uses: ./.github/actions/checkout-merge-policy
 
       - name: Reconcile status label
@@ -184,12 +184,11 @@ jobs:
             .github/actions/checkout-merge-policy
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@1f5d35c117736e8907bbc09be80a4704196536e5
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@main
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 1f5d35c117736e8907bbc09be80a4704196536e5
           project-directory: .
-      - name: Checkout the pinned merge policy (read-only)
+      - name: Checkout the merge policy (read-only)
         uses: ./.github/actions/checkout-merge-policy
 
       - name: Restore sweep progress

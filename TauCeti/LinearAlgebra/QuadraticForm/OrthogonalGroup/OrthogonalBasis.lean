@@ -62,7 +62,7 @@ theorem basis_value_mul_repr_orthogonal_eq_basis_value_mul_repr_inv
     (2 * Q (b i)) * b.repr ((g : V ≃ₗ[R] V) (b j)) i =
       (2 * Q (b j)) * b.repr (((g⁻¹ : orthogonalGroup Q) : V ≃ₗ[R] V) (b i)) j := by
   rw [← polar_basis_left Q b hb, ← polar_basis_left Q b hb, polar_comm]
-  have h := polar_apply_of_mem_orthogonalGroup g.2
+  have h := polar_apply_of_mem_orthogonalGroup g.property
     (((g⁻¹ : orthogonalGroup Q) : V ≃ₗ[R] V) (b i)) (b j)
   simpa [polar_comm] using h
 

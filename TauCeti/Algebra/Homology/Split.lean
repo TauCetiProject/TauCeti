@@ -271,11 +271,11 @@ namespace Split
 `𝟙 - r ≫ ι` of `Kⱼ` onto the complement of the cycles factors. -/
 private def fromBoundaries {j i : ι} (hji : c.Rel j i) : kernel (K.homologyπ i) ⟶ K.X j :=
   (CokernelCofork.IsColimit.desc' (K.toBoundariesIsCokernel hji)
-    (𝟙 _ - retraction (K.iCycles j) ≫ K.iCycles j) (by simp [Preadditive.comp_sub])).1
+    (𝟙 _ - retraction (K.iCycles j) ≫ K.iCycles j) (by simp [Preadditive.comp_sub])).val
 
 private lemma toBoundaries_fromBoundaries {j i : ι} (hji : c.Rel j i) :
     K.toBoundaries j i ≫ fromBoundaries K hji = 𝟙 _ - retraction (K.iCycles j) ≫ K.iCycles j :=
-  (CokernelCofork.IsColimit.desc' (K.toBoundariesIsCokernel hji) _ _).2
+  (CokernelCofork.IsColimit.desc' (K.toBoundariesIsCokernel hji) _ _).property
 
 /-- The map `Bᵢ ⟶ Kⱼ` is a section of the differential: followed by the differential it is the
 inclusion of the boundaries. -/
