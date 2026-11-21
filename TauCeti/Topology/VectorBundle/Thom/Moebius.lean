@@ -45,6 +45,10 @@ open Bundle CategoryTheory Module
 
 namespace TauCeti
 
+/-- The circle is locally path-connected, being a manifold modelled on `ℝ¹`. -/
+local instance : LocallyPathConnectedSpace Circle :=
+  ChartedSpace.locallyPathConnectedSpace (EuclideanSpace ℝ (Fin 1)) Circle
+
 /-- The orientation of the fibre of the Möbius line bundle over `1` given by the vector `1`. -/
 private def moebiusOrientationOne : Orientation ℝ (moebiusCore.Fiber 1) (Fin 1) :=
   (Module.Basis.singleton (Fin 1) ℝ).orientation
@@ -54,8 +58,6 @@ commutative ring `R`, `H₁(E, E₀; R) ≅ H₀(S¹; o(E)) ≅ R ⧸ 2R`. -/
 def moebiusThomPairSingularHomologyOneEquiv (R : Type) [CommRing R] :
     ((thomPair ℝ moebiusCore.Fiber).singularHomology (ModuleCat.of R R) 1 : ModuleCat R) ≃ₗ[R]
       R ⧸ Ideal.span {(2 : R)} :=
-  haveI : LocallyPathConnectedSpace Circle :=
-    ChartedSpace.locallyPathConnectedSpace (EuclideanSpace ℝ (Fin 1)) Circle
   VectorBundleOrientationCover.thomPairSingularHomologyOneEquivQuotientTwo
     continuous_norm_moebiusCore (finrank_self ℝ) isEmpty_vectorBundleOrientation_moebiusCore
     moebiusOrientationOne
@@ -65,14 +67,10 @@ def moebiusThomPairSingularHomologyOneEquiv (R : Type) [CommRing R] :
 line bundle, constructed from any orientation `o` of any fibre. -/
 theorem moebiusThomPairSingularHomologyOneEquiv_eq (R : Type) [CommRing R] {b : Circle}
     (o : Orientation ℝ (moebiusCore.Fiber b) (Fin 1)) :
-    haveI : LocallyPathConnectedSpace Circle :=
-      ChartedSpace.locallyPathConnectedSpace (EuclideanSpace ℝ (Fin 1)) Circle
     moebiusThomPairSingularHomologyOneEquiv R =
       VectorBundleOrientationCover.thomPairSingularHomologyOneEquivQuotientTwo
         continuous_norm_moebiusCore (finrank_self ℝ) isEmpty_vectorBundleOrientation_moebiusCore
         o := by
-  have : LocallyPathConnectedSpace Circle :=
-    ChartedSpace.locallyPathConnectedSpace (EuclideanSpace ℝ (Fin 1)) Circle
   ext x
   rw [moebiusThomPairSingularHomologyOneEquiv,
     VectorBundleOrientationCover.thomPairSingularHomologyOneEquivQuotientTwo_apply,
