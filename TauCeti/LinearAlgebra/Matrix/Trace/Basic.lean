@@ -25,6 +25,8 @@ one equivalence preserves the trace.
 * `Matrix.trace_two_mul_sub_one`: `trace (2 P - 1) = 2 trace P - n` for an `n × n` matrix `P`.
 * `Matrix.trace_reindex_self`: reindexing rows and columns along one equivalence preserves the
   trace.
+* `Matrix.trace_mul_transpose_self_pos`: `0 < (A * Aᵀ).trace` for any nonzero matrix `A` over a
+  linearly strict ordered ring.
 -/
 
 public section
@@ -53,5 +55,17 @@ trace. -/
 theorem trace_reindex_self {R : Type*} [AddCommMonoid R] (e : m ≃ n) (A : Matrix m m R) :
     (reindex e e A).trace = A.trace := by
   simpa [trace] using e.symm.sum_comp (fun i ↦ A i i)
+
+/-- The trace of `A * Aᵀ` is strictly positive for any nonzero matrix `A` over a linearly strict
+ordered ring. -/
+theorem trace_mul_transpose_self_pos {R : Type*} [Ring R] [LinearOrder R] [IsStrictOrderedRing R]
+    {A : Matrix m n R} (hA : A ≠ 0) : 0 < (A * Aᵀ).trace := by
+  obtain ⟨i, j, hij⟩ : ∃ i j, A i j ≠ 0 := by
+    by_contra! h
+    exact hA (Matrix.ext h)
+  simp only [Matrix.trace, diag_apply, Matrix.mul_apply, Matrix.transpose_apply]
+  exact Finset.sum_pos' (fun _ _ ↦ Finset.sum_nonneg fun _ _ ↦ mul_self_nonneg _)
+    ⟨i, Finset.mem_univ _, Finset.sum_pos' (fun _ _ ↦ mul_self_nonneg _)
+      ⟨j, Finset.mem_univ _, mul_self_pos.mpr hij⟩⟩
 
 end Matrix

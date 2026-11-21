@@ -13,6 +13,7 @@ import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 import Mathlib.Tactic.NoncommRing
 import TauCeti.Algebra.Lie.GeneralLinear.Killing
 import TauCeti.Algebra.Lie.OfAssociative
+import TauCeti.LinearAlgebra.Matrix.Trace.Basic
 import TauCeti.LinearAlgebra.Matrix.Trace.LinearMap
 import TauCeti.Algebra.Lie.BaseChange.Radical
 import TauCeti.Algebra.Lie.SkewAdjoint
@@ -329,14 +330,7 @@ theorem killingForm_cartanInvolution_self_neg {K : Type*} [Field K] [LinearOrder
     [IsStrictOrderedRing K] {X : sp l K} (hX : X ≠ 0) :
     killingForm K (sp l K) X (cartanInvolution l K X) < 0 := by
   rw [killingForm_cartanInvolution_apply, neg_lt_zero]
-  obtain ⟨i, j, hij⟩ : ∃ i j, (X : Matrix (l ⊕ l) (l ⊕ l) K) i j ≠ 0 := by
-    by_contra! h
-    exact hX (Subtype.ext (Matrix.ext h))
-  have htrace : 0 < ((X : Matrix (l ⊕ l) (l ⊕ l) K) * (X : Matrix (l ⊕ l) (l ⊕ l) K)ᵀ).trace := by
-    simp only [Matrix.trace, diag_apply, Matrix.mul_apply, Matrix.transpose_apply]
-    exact Finset.sum_pos' (fun _ _ ↦ Finset.sum_nonneg fun _ _ ↦ mul_self_nonneg _)
-      ⟨i, Finset.mem_univ _, Finset.sum_pos' (fun _ _ ↦ mul_self_nonneg _)
-        ⟨j, Finset.mem_univ _, mul_self_pos.mpr hij⟩⟩
+  have htrace := Matrix.trace_mul_transpose_self_pos (fun h ↦ hX (Subtype.ext h))
   positivity
 
 end LieAlgebra.Symplectic

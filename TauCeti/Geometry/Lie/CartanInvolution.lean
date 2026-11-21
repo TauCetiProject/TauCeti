@@ -15,22 +15,9 @@ import TauCeti.Geometry.Lie.Adjoint.Exponential.Formula
 /-!
 # Conjugacy of Cartan involutions on the Lie algebra of a real Lie group
 
-On the Lie algebra `LeftInvariantDerivation I G` of a finite-dimensional real Lie group `G`, any
-two Cartan involutions `θ` and `θ'` are conjugate by an inner automorphism of the form
-`Ad (lieExp Z)` with `Z ∈ θ.cartanP`.
-
-The algebraic conjugacy theorem (`LieEquiv.IsCartanInvolution.exists_mem_cartanP_conj_eq`) produces
-`Z ∈ θ.cartanP` and a Lie automorphism `φ` intertwining `θ` and `θ'` that acts as `Real.exp μ` on
-every `μ`-eigenvector of `ad Z`. Since `ad Z` is diagonalizable over `ℝ`
-(`LieEquiv.IsCartanInvolution.iSup_eigenspace_ad_eq_top`), `φ` agrees with the operator exponential
-`exp (ad Z)` on all of `LeftInvariantDerivation I G`, and `LeftInvariantDerivation.Ad_lieExp_apply`
-identifies `exp (ad Z)` with `Ad (lieExp Z)`.
-
-## Main results
-
-* `TauCeti.Lie.exists_conj_cartanInvolution`: any two Cartan involutions `θ, θ'` of
-  `LeftInvariantDerivation I G` satisfy `θ' (Ad (lieExp Z) Y) = Ad (lieExp Z) (θ Y)` for some
-  `Z ∈ θ.cartanP`.
+On `LeftInvariantDerivation I G` of a finite-dimensional real Lie group `G`, any two Cartan
+involutions `θ` and `θ'` are conjugate by `Ad (lieExp Z)` for some `Z ∈ θ.cartanP`
+(`TauCeti.Lie.exists_conj_cartanInvolution`).
 
 ## References
 
@@ -71,18 +58,14 @@ theorem exists_conj_cartanInvolution
         LinearMap.eqLocus (NormedSpace.exp A).toLinearMap φ.toLinearEquiv.toLinearMap := by
       refine iSup_le fun μ v hv ↦ ?_
       have hZv : ⁅Z, v⁆ = μ • v := Module.End.mem_eigenspace_iff.mp hv
-      have hAv : A v = μ • v := hZv
+      have hAv : A v = μ • v := by simp [A, hZv]
       rw [LinearMap.mem_eqLocus, ContinuousLinearMap.coe_coe,
         ContinuousLinearMap.exp_apply_of_apply_eq_smul A hAv, ← Real.exp_eq_exp_ℝ]
       exact (heig μ v hZv).symm
     rw [hθ.iSup_eigenspace_ad_eq_top hZP, top_le_iff] at hle
-    intro Y
-    have hY :
-        Y ∈ LinearMap.eqLocus (NormedSpace.exp A).toLinearMap φ.toLinearEquiv.toLinearMap := by
-      rw [hle]; trivial
-    exact LinearMap.mem_eqLocus.mp hY
+    exact fun Y ↦ LinearMap.mem_eqLocus.mp (hle.symm ▸ Submodule.mem_top)
   refine ⟨Z, hZP, fun Y ↦ ?_⟩
-  rw [LeftInvariantDerivation.Ad_lieExp_apply, LeftInvariantDerivation.Ad_lieExp_apply]
-  rw [hexp_eq Y, hexp_eq (θ Y), hconj Y]
+  rw [LeftInvariantDerivation.Ad_lieExp_apply, LeftInvariantDerivation.Ad_lieExp_apply,
+    hexp_eq Y, hexp_eq (θ Y), hconj Y]
 
 end TauCeti.Lie

@@ -11,21 +11,13 @@ public import Mathlib.Algebra.Lie.Solvable
 # Restrictions of Lie algebra equivalences to the derived series
 
 Every Lie algebra equivalence `e : L ≃ₗ⁅R⁆ M` carries each term of the derived series onto the
-corresponding term of `M` (`LieEquiv.map_derivedSeries`), deduced from Mathlib's
-`LieIdeal.derivedSeries_map_eq`, inducing a Lie algebra equivalence `LieEquiv.restrictDerivedSeries`
-that respects inverses and composition.
+corresponding term of `M` (`LieEquiv.map_derivedSeries`), inducing `LieEquiv.restrictDerivedSeries`.
 
-## Main definitions
+## Main definitions and results
 
-* `LieEquiv.restrictDerivedSeries`: restriction of a Lie algebra equivalence to the `k`-th term of
-  the derived series.
-
-## Main results
-
-* `LieEquiv.map_derivedSeries`: every Lie algebra equivalence maps each term of the derived series
-  onto the corresponding term of the target.
-* `LieEquiv.restrictDerivedSeries_symm` and `LieEquiv.restrictDerivedSeries_trans`: compatibility of
-  `LieEquiv.restrictDerivedSeries` with inverses and composition.
+* `LieEquiv.map_derivedSeries`, `LieEquiv.restrictDerivedSeries`,
+  `LieEquiv.restrictDerivedSeries_refl`, `LieEquiv.restrictDerivedSeries_symm`,
+  `LieEquiv.restrictDerivedSeries_trans`.
 -/
 
 public section
@@ -63,21 +55,26 @@ theorem coe_restrictDerivedSeries_symm (e : L ≃ₗ⁅R⁆ M) (k : ℕ) (y : de
     ((e.restrictDerivedSeries k).symm y : L) = e.symm y :=
   e.ofSubalgebras_symm_apply _ _ (e.map_derivedSeries k) y
 
+/-- Restricting the identity equivalence to a derived-series term gives the identity. -/
+@[simp]
+theorem restrictDerivedSeries_refl (k : ℕ) :
+    (LieEquiv.refl : L ≃ₗ⁅R⁆ L).restrictDerivedSeries k = LieEquiv.refl := by
+  ext x; simp
+
 /-- Restricting the inverse equivalence to a derived-series term equals the inverse of the
 restriction. -/
 @[simp]
 theorem restrictDerivedSeries_symm (e : L ≃ₗ⁅R⁆ M) (k : ℕ) :
     e.symm.restrictDerivedSeries k = (e.restrictDerivedSeries k).symm := by
-  ext x
-  simp
+  ext x; simp
 
 /-- Restricting a composite equivalence to a term of the derived series composes the
 restrictions. -/
+@[simp]
 theorem restrictDerivedSeries_trans {N : Type*} [LieRing N] [LieAlgebra R N]
     (e₁ : L ≃ₗ⁅R⁆ M) (e₂ : M ≃ₗ⁅R⁆ N) (k : ℕ) :
     (e₁.trans e₂).restrictDerivedSeries k =
       (e₁.restrictDerivedSeries k).trans (e₂.restrictDerivedSeries k) := by
-  ext x
-  simp
+  ext x; simp
 
 end LieEquiv

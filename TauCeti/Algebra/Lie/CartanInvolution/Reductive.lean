@@ -15,36 +15,17 @@ import TauCeti.Algebra.Lie.Reductive.Basic
 
 A **reductive Cartan involution** of a Lie algebra `L` over an ordered ring `R` is an involutive
 automorphism `θ : L ≃ₗ⁅R⁆ L` of a Lie algebra splitting as `L = Z(L) ⊕ [L, L]` whose restriction
-to the derived ideal `[L, L]` is a Cartan involution (`LieEquiv.IsReductiveCartanInvolution`).
-On the centre `Z(L)`, `θ` may be an arbitrary involution.
+to `[L, L]` is a Cartan involution (`LieEquiv.IsReductiveCartanInvolution`).
 
-When `L = Z(L) ⊕ [L, L]`, the `-1`-eigenspace splits correspondingly as
-`𝔭 = (𝔭 ∩ Z(L)) ⊕ (𝔭 ∩ [L, L])` (`LieEquiv.cartanP_eq_sup_center_derivedSeries` and
-`LieEquiv.disjoint_cartanP_center_derivedSeries`), and any involution of `Z(L)` together with a
-Cartan involution of `[L, L]` assembles into a reductive Cartan involution of `L`
-(`LieEquiv.isReductiveCartanInvolution_ofCenterDerived`).
+## Main definitions and results
 
-Over a partially ordered field, every Cartan involution is a reductive Cartan involution, and any
-Lie algebra admitting a reductive Cartan involution has semisimple finite-dimensional derived ideal
-and central radical (`LieAlgebra.HasCentralRadical`). On an abelian Lie algebra, `[L, L] = 0`, so
-every involution is a reductive Cartan involution.
-
-## Main definitions
-
-* `LieEquiv.IsReductiveCartanInvolution`: predicate for a reductive Cartan involution.
-
-## Main results
-
-* `LieEquiv.isReductiveCartanInvolution_iff`: characterization of a reductive Cartan involution.
-* `LieEquiv.cartanP_eq_sup_center_derivedSeries` and
-  `LieEquiv.disjoint_cartanP_center_derivedSeries`: the splitting
-  `𝔭 = (𝔭 ∩ Z(L)) ⊕ (𝔭 ∩ [L, L])`.
-* `LieEquiv.isReductiveCartanInvolution_ofCenterDerived`: extending a Cartan involution of `[L, L]`
-  by any involution of `Z(L)`.
-* `LieEquiv.IsCartanInvolution.isReductiveCartanInvolution`: every Cartan involution is reductive.
-* `LieEquiv.IsReductiveCartanInvolution.hasCentralRadical` and
-  `LieEquiv.IsReductiveCartanInvolution.isSemisimple_derivedSeries`: structure consequences.
-* `LieEquiv.isReductiveCartanInvolution_iff_involutive_of_isLieAbelian`: the abelian case.
+* `LieEquiv.IsReductiveCartanInvolution`, `LieEquiv.isReductiveCartanInvolution_iff`,
+  `LieEquiv.cartanP_eq_sup_center_derivedSeries`,
+  `LieEquiv.isReductiveCartanInvolution_ofCenterDerived_iff`,
+  `LieEquiv.IsCartanInvolution.isReductiveCartanInvolution`,
+  `LieEquiv.IsReductiveCartanInvolution.hasCentralRadical`,
+  `LieEquiv.IsReductiveCartanInvolution.isSemisimple_derivedSeries`,
+  `LieEquiv.isReductiveCartanInvolution_iff_involutive_of_isLieAbelian`.
 
 ## References
 
@@ -80,27 +61,18 @@ theorem cartanP_eq_sup_center_derivedSeries
         (θ.cartanP ⊓ (derivedSeries R L 1).toSubmodule) := by
   refine le_antisymm ?_ (sup_le inf_le_left inf_le_left)
   intro x hx
-  let a := prodCenterDerivedEquiv hcompl
-  obtain ⟨⟨z, d⟩, hzd⟩ := a.surjective x
-  have hsum : (z : L) + d = x := by simpa [a] using hzd
+  obtain ⟨⟨z, d⟩, hzd⟩ := (prodCenterDerivedEquiv hcompl).surjective x
+  have hsum : (z : L) + d = x := by simpa using hzd
   have hpair : (θ.restrictCenter z, θ.restrictDerivedSeries 1 d) = (-z, -d) := by
-    apply a.injective
-    calc
-      a (θ.restrictCenter z, θ.restrictDerivedSeries 1 d) = θ z + θ d := by
-        simp [a]
-      _ = θ ((z : L) + d) := (map_add θ _ _).symm
-      _ = -x := by rw [hsum, mem_cartanP_iff.mp hx]
-      _ = -((z : L) + d) := by rw [hsum]
-      _ = a (-z, -d) := by
-        simp only [a, prodCenterDerivedEquiv_apply, NegMemClass.coe_neg]
-        abel
-  have hzP : (z : L) ∈ θ.cartanP := by
-    rw [mem_cartanP_iff, ← coe_restrictCenter]
+    apply (prodCenterDerivedEquiv hcompl).injective
+    simp only [coe_toLieHom, prodCenterDerivedEquiv_apply, coe_restrictCenter,
+      coe_restrictDerivedSeries, NegMemClass.coe_neg, ← map_add, hsum, mem_cartanP_iff.mp hx]
+    rw [← hsum, neg_add]
+  refine Submodule.mem_sup.mpr ⟨z, ⟨?_, z.property⟩, d, ⟨?_, d.property⟩, hsum⟩
+  · rw [SetLike.mem_coe, mem_cartanP_iff, ← coe_restrictCenter]
     exact congrArg (fun p : center R L × derivedSeries R L 1 ↦ (p.1 : L)) hpair
-  have hdP : (d : L) ∈ θ.cartanP := by
-    rw [mem_cartanP_iff, ← coe_restrictDerivedSeries]
+  · rw [SetLike.mem_coe, mem_cartanP_iff, ← coe_restrictDerivedSeries]
     exact congrArg (fun p : center R L × derivedSeries R L 1 ↦ (p.2 : L)) hpair
-  exact Submodule.mem_sup.mpr ⟨z, ⟨hzP, z.property⟩, d, ⟨hdP, d.property⟩, hsum⟩
 
 end CommRing
 
@@ -133,17 +105,18 @@ variable {θ : L ≃ₗ⁅R⁆ L}
 
 /-- A Lie algebra admitting a reductive Cartan involution splits as `Z(L) ⊕ [L, L]`. -/
 theorem isCompl_center_derivedSeries (hθ : θ.IsReductiveCartanInvolution) :
-    IsCompl (center R L) (derivedSeries R L 1) :=
-  hθ.1
+    IsCompl (center R L) (derivedSeries R L 1) := hθ.1
 
 /-- A reductive Cartan involution is involutive. -/
-theorem involutive (hθ : θ.IsReductiveCartanInvolution) : Function.Involutive θ :=
-  hθ.2.1
+theorem involutive (hθ : θ.IsReductiveCartanInvolution) : Function.Involutive θ := hθ.2.1
+
+/-- A reductive Cartan involution is its own inverse. -/
+theorem symm_eq_self (hθ : θ.IsReductiveCartanInvolution) : θ.symm = θ :=
+  LieEquiv.ext fun x ↦ by rw [symm_apply_eq, hθ.involutive x]
 
 /-- The restriction of a reductive Cartan involution to `[L, L]` is a Cartan involution. -/
 theorem isCartanInvolution_restrictDerivedSeries (hθ : θ.IsReductiveCartanInvolution) :
-    (θ.restrictDerivedSeries 1).IsCartanInvolution :=
-  hθ.2.2
+    (θ.restrictDerivedSeries 1).IsCartanInvolution := hθ.2.2
 
 /-- The restriction of a reductive Cartan involution to the centre is involutive. -/
 theorem involutive_restrictCenter (hθ : θ.IsReductiveCartanInvolution) :
@@ -167,19 +140,33 @@ theorem conj (hθ : θ.IsReductiveCartanInvolution) (e : L ≃ₗ⁅R⁆ M) :
     (e.symm.trans (θ.trans e)).IsReductiveCartanInvolution := by
   refine ⟨?_, fun y ↦ by simp [hθ.involutive (e.symm y)], ?_⟩
   · rw [← LieSubmodule.isCompl_toSubmodule]
-    have hL := LieSubmodule.isCompl_toSubmodule.mpr hθ.isCompl_center_derivedSeries
     have hZ : (center R L).toSubmodule.map (e.toLinearEquiv : L →ₗ[R] M) =
-        (center R M).toSubmodule :=
-      congrArg LieSubalgebra.toSubmodule e.map_center
+        (center R M).toSubmodule := congrArg LieSubalgebra.toSubmodule e.map_center
     have hD : (derivedSeries R L 1).toSubmodule.map (e.toLinearEquiv : L →ₗ[R] M) =
         (derivedSeries R M 1).toSubmodule :=
       congrArg LieSubalgebra.toSubmodule (e.map_derivedSeries 1)
     rw [← hZ, ← hD]
-    exact hL.map (Submodule.orderIsoMapComap e.toLinearEquiv)
-  · rw [restrictDerivedSeries_trans, restrictDerivedSeries_trans, restrictDerivedSeries_symm]
-    exact hθ.isCartanInvolution_restrictDerivedSeries.conj (e.restrictDerivedSeries 1)
+    exact (LieSubmodule.isCompl_toSubmodule.mpr hθ.isCompl_center_derivedSeries).map
+      (Submodule.orderIsoMapComap e.toLinearEquiv)
+  · simpa using hθ.isCartanInvolution_restrictDerivedSeries.conj (e.restrictDerivedSeries 1)
 
 end IsReductiveCartanInvolution
+
+/-- **Extension from the derived ideal and centre**: when `L = Z(L) ⊕ [L, L]`, an assembled
+automorphism `ofCenterDerived hcompl θZ θD` is a reductive Cartan involution iff `θZ` is involutive
+and `θD` is a Cartan involution. -/
+@[simp]
+theorem isReductiveCartanInvolution_ofCenterDerived_iff
+    (hcompl : IsCompl (center R L) (derivedSeries R L 1))
+    {θZ : center R L ≃ₗ⁅R⁆ center R L}
+    {θD : derivedSeries R L 1 ≃ₗ⁅R⁆ derivedSeries R L 1} :
+    (ofCenterDerived hcompl θZ θD).IsReductiveCartanInvolution ↔
+      Function.Involutive θZ ∧ θD.IsCartanInvolution := by
+  refine ⟨fun h ↦ ⟨by simpa using h.involutive_restrictCenter,
+      by simpa using h.isCartanInvolution_restrictDerivedSeries⟩, fun ⟨hθZ, hθD⟩ ↦
+    ⟨hcompl, fun x ↦ ?_, by simpa using hθD⟩⟩
+  obtain ⟨⟨z, d⟩, rfl⟩ := (prodCenterDerivedEquiv hcompl).surjective x
+  simp [hθZ z, hθD.involutive d]
 
 /-- **Extension from the derived ideal and centre**: when `L = Z(L) ⊕ [L, L]`, any involutive
 automorphism of the centre and Cartan involution of the derived ideal assemble into a reductive
@@ -189,30 +176,23 @@ theorem isReductiveCartanInvolution_ofCenterDerived
     {θZ : center R L ≃ₗ⁅R⁆ center R L}
     {θD : derivedSeries R L 1 ≃ₗ⁅R⁆ derivedSeries R L 1}
     (hθZ : Function.Involutive θZ) (hθD : θD.IsCartanInvolution) :
-    (ofCenterDerived hcompl θZ θD).IsReductiveCartanInvolution := by
-  refine ⟨hcompl, fun x ↦ ?_, by rwa [restrictDerivedSeries_ofCenterDerived]⟩
-  obtain ⟨⟨z, d⟩, rfl⟩ := (prodCenterDerivedEquiv hcompl).surjective x
-  simp [hθZ z, hθD.involutive d]
+    (ofCenterDerived hcompl θZ θD).IsReductiveCartanInvolution :=
+  (isReductiveCartanInvolution_ofCenterDerived_iff hcompl).mpr ⟨hθZ, hθD⟩
 
 /-- On an abelian Lie algebra, `[L, L] = 0`, so every involutive automorphism is a reductive Cartan
 involution. -/
 theorem isReductiveCartanInvolution_iff_involutive_of_isLieAbelian [IsLieAbelian L]
-    {θ : L ≃ₗ⁅R⁆ L} :
-    θ.IsReductiveCartanInvolution ↔ Function.Involutive θ := by
+    {θ : L ≃ₗ⁅R⁆ L} : θ.IsReductiveCartanInvolution ↔ Function.Involutive θ := by
   have hZ : center R L = ⊤ := (isLieAbelian_iff_center_eq_top R L).mp inferInstance
   have hD : derivedSeries R L 1 = ⊥ := by
     rw [eq_bot_iff, derivedSeries_def, derivedSeriesOfIdeal_succ, derivedSeriesOfIdeal_zero,
       LieSubmodule.lie_le_iff]
-    intro x _ y _
-    simp [trivial_lie_zero]
+    exact fun x _ y _ ↦ by simp [trivial_lie_zero]
   refine ⟨fun h ↦ h.involutive, fun hθ ↦ ⟨by rw [hZ, hD]; exact isCompl_top_bot, hθ, ?_⟩⟩
   rw [isCartanInvolution_iff]
   refine ⟨fun x ↦ Subtype.ext (by simpa using hθ (x : L)), fun x hx ↦ ?_⟩
-  exfalso
-  apply hx
-  apply Subtype.ext
   have hx' : (x : L) ∈ (⊥ : LieIdeal R L) := hD ▸ x.property
-  exact (LieSubmodule.mem_bot _).mp hx'
+  exact absurd (Subtype.ext ((LieSubmodule.mem_bot _).mp hx')) hx
 
 end PartialOrder
 
@@ -232,18 +212,15 @@ theorem IsCartanInvolution.isReductiveCartanInvolution {θ : L ≃ₗ⁅K⁆ L}
     LieEquiv.ofEq (⊤ : LieSubalgebra K L) (derivedSeries K L 1).toLieSubalgebra
       (by rw [hθ.derivedSeries_one_eq_top, LieIdeal.top_toLieSubalgebra])
   let e : L ≃ₗ⁅K⁆ derivedSeries K L 1 := e₁.trans e₂
-  have he (y : L) : (e y : L) = y := by
-    calc
-      (e y : L) = (e₂ (e₁ y) : L) := congrArg Subtype.val (trans_apply e₁ e₂ y)
-      _ = (e₁ y : L) := LieEquiv.ofEq_apply _ _ _ (e₁ y)
-      _ = LieSubalgebra.topEquiv (e₁ y) := (LieSubalgebra.topEquiv_apply (e₁ y)).symm
-      _ = y := (LieSubalgebra.topEquiv (R := K) (L := L)).apply_symm_apply y
+  have he (y : L) : (e y : L) = y := calc
+    (e y : L) = (e₂ (e₁ y) : L) := congrArg Subtype.val (trans_apply e₁ e₂ y)
+    _ = (e₁ y : L) := LieEquiv.ofEq_apply _ _ _ (e₁ y)
+    _ = LieSubalgebra.topEquiv (e₁ y) := (LieSubalgebra.topEquiv_apply (e₁ y)).symm
+    _ = y := (LieSubalgebra.topEquiv (R := K) (L := L)).apply_symm_apply y
   have hes (x : derivedSeries K L 1) : e.symm x = (x : L) := by
     rw [← he (e.symm x), apply_symm_apply]
-  have hconj : θ.restrictDerivedSeries 1 = e.symm.trans (θ.trans e) := by
-    ext x
-    rw [coe_restrictDerivedSeries, trans_apply, trans_apply, he, hes]
-  rw [hconj]
+  rw [show θ.restrictDerivedSeries 1 = e.symm.trans (θ.trans e) from
+    LieEquiv.ext fun x ↦ Subtype.ext (by simp [he, hes])]
   exact hθ.conj e
 
 namespace IsReductiveCartanInvolution
@@ -259,9 +236,9 @@ theorem isSemisimple_derivedSeries (hθ : θ.IsReductiveCartanInvolution) :
 /-- A Lie algebra admitting a reductive Cartan involution is reductive: its radical equals its
 centre (`LieAlgebra.HasCentralRadical`). -/
 theorem hasCentralRadical (hθ : θ.IsReductiveCartanInvolution) :
-    HasCentralRadical K L := by
+    HasCentralRadical K L :=
   have := hθ.isSemisimple_derivedSeries
-  exact TauCeti.hasCentralRadical_of_hasTrivialRadical_derivedSeries K L
+  TauCeti.hasCentralRadical_of_hasTrivialRadical_derivedSeries K L
 
 end IsReductiveCartanInvolution
 

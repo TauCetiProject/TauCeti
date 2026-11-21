@@ -11,37 +11,17 @@ public import TauCeti.Algebra.Lie.Matrix.NegTranspose
 import Mathlib.Algebra.Lie.Killing
 import TauCeti.Algebra.Lie.GeneralLinear.Basic
 import TauCeti.Algebra.Lie.GeneralLinear.Killing
+import TauCeti.LinearAlgebra.Matrix.Trace.Basic
 
 /-!
 # Negative transpose and the Killing form on `sl n R`
 
-The special linear Lie algebra `LieAlgebra.SpecialLinear.sl n R` of trace-zero matrices is stable
-under transpose. Restricting `TauCeti.negTransposeLieEquiv` gives the involutive automorphism
-`X ↦ -Xᵀ` (`LieAlgebra.SpecialLinear.cartanInvolution`), whose fixed and negated vectors are the
-skew-symmetric and symmetric trace-zero matrices respectively.
-
-Because `sl n R` is a Lie ideal of `Matrix n n R`, its Killing form over any principal ideal domain
-is the restriction of `Matrix.killingForm_apply`:
-
-`κ(X, Y) = 2 n trace (X * Y)`
-
-where `n = Fintype.card n`. Composing with `θ Y = -Yᵀ` gives
-`κ(X, θ Y) = -(2 n trace (X * Yᵀ))`; in particular, `κ(X, θ X) < 0` for every nonzero `X` over any
-ordered principal ideal domain.
-
-## Main definitions
-
-* `LieAlgebra.SpecialLinear.cartanInvolution`: the involutive Lie automorphism `X ↦ -Xᵀ` of
-  `sl n R`.
-
-## Main results
-
-* `LieAlgebra.SpecialLinear.killingForm_apply`: `κ(X, Y) = 2 n trace (X * Y)` on `sl n R` over a
-  principal ideal domain.
-* `LieAlgebra.SpecialLinear.killingForm_cartanInvolution_apply`:
-  `κ(X, θ Y) = -(2 n trace (X * Yᵀ))`.
-* `LieAlgebra.SpecialLinear.killingForm_cartanInvolution_self_neg`: `κ(X, θ X) < 0` for nonzero `X`
-  over an ordered principal ideal domain.
+Restricting `TauCeti.negTransposeLieEquiv` to `LieAlgebra.SpecialLinear.sl n R` yields `X ↦ -Xᵀ`
+(`LieAlgebra.SpecialLinear.cartanInvolution`). Over a principal ideal domain `R`,
+`κ(X, Y) = 2 n trace (X * Y)` (`LieAlgebra.SpecialLinear.killingForm_apply`), so
+`κ(X, θ Y) = -(2 n trace (X * Yᵀ))` (`LieAlgebra.SpecialLinear.killingForm_cartanInvolution_apply`)
+and `κ(X, θ X) < 0` for nonzero `X` over an ordered principal ideal domain
+(`LieAlgebra.SpecialLinear.killingForm_cartanInvolution_self_neg`).
 
 ## References
 
@@ -87,16 +67,13 @@ theorem coe_cartanInvolution (X : sl n R) :
 /-- Applying the special linear involution twice gives the original vector. -/
 @[simp]
 theorem cartanInvolution_cartanInvolution (X : sl n R) :
-    cartanInvolution n R (cartanInvolution n R X) = X := by
-  apply Subtype.ext
-  simp
+    cartanInvolution n R (cartanInvolution n R X) = X :=
+  Subtype.ext (by simp)
 
 /-- The special linear involution is its own inverse. -/
 @[simp]
-theorem cartanInvolution_symm : (cartanInvolution n R).symm = cartanInvolution n R := by
-  apply LieEquiv.ext
-  intro X
-  rw [LieEquiv.symm_apply_eq, cartanInvolution_cartanInvolution]
+theorem cartanInvolution_symm : (cartanInvolution n R).symm = cartanInvolution n R :=
+  LieEquiv.ext fun X ↦ by rw [LieEquiv.symm_apply_eq, cartanInvolution_cartanInvolution]
 
 /-- Fixed vectors of the involution are the skew-symmetric trace-zero matrices. -/
 @[simp]
@@ -108,8 +85,7 @@ theorem cartanInvolution_eq_self_iff (X : sl n R) :
 @[simp]
 theorem cartanInvolution_eq_neg_iff (X : sl n R) :
     cartanInvolution n R X = -X ↔ (X : Matrix n n R)ᵀ = X := by
-  rw [← Subtype.coe_inj, coe_cartanInvolution]
-  exact neg_inj
+  rw [← Subtype.coe_inj, coe_cartanInvolution]; exact neg_inj
 
 end CommRing
 
@@ -126,20 +102,13 @@ theorem killingForm_apply (X Y : sl n R) :
   let e : sl n R ≃ₗ⁅R⁆ TauCeti.slIdeal R n :=
     LieEquiv.ofEq (sl n R) (TauCeti.slIdeal R n).toLieSubalgebra
       (congrArg SetLike.coe (TauCeti.slIdeal_toLieSubalgebra_eq_sl (R := R) (n := n)).symm)
-  have he (Z : sl n R) : (e Z : Matrix n n R) = Z :=
-    LieEquiv.ofEq_apply (sl n R) (TauCeti.slIdeal R n).toLieSubalgebra _ Z
-  have h1 : killingForm R (sl n R) X Y = killingForm R (TauCeti.slIdeal R n) (e X) (e Y) :=
-    (killingForm_of_equiv_apply e X Y).symm
-  have h2 : killingForm R (TauCeti.slIdeal R n) (e X) (e Y) =
-      killingForm R (Matrix n n R) X Y := by
-    calc
-      killingForm R (TauCeti.slIdeal R n) (e X) (e Y)
-          = (killingForm R (Matrix n n R)).restrict (TauCeti.slIdeal R n) (e X) (e Y) :=
-            congrArg (fun B ↦ B (e X) (e Y))
-              (LieIdeal.killingForm_eq (R := R) (L := Matrix n n R) (I := TauCeti.slIdeal R n))
-      _ = killingForm R (Matrix n n R) (e X) (e Y) :=
-            LinearMap.domRestrict₁₂_apply (killingForm R (Matrix n n R)) _ _ (e X) (e Y)
-      _ = killingForm R (Matrix n n R) X Y := by rw [he, he]
+  have he (Z : sl n R) : (e Z : Matrix n n R) = Z := LieEquiv.ofEq_apply _ _ _ Z
+  have h1 := (killingForm_of_equiv_apply e X Y).symm
+  have h2 : killingForm R (TauCeti.slIdeal R n) (e X) (e Y) = killingForm R (Matrix n n R) X Y := by
+    have hres := (congrArg (fun B ↦ B (e X) (e Y))
+      (LieIdeal.killingForm_eq (R := R) (L := Matrix n n R) (I := TauCeti.slIdeal R n))).trans
+      (LinearMap.domRestrict₁₂_apply (killingForm R (Matrix n n R)) _ _ (e X) (e Y))
+    simpa only [he] using hres
   rw [h1, h2, Matrix.killingForm_apply, mem_sl_iff.mp X.property, mem_sl_iff.mp Y.property]
   ring
 
@@ -162,16 +131,10 @@ for every nonzero `X`. -/
 theorem killingForm_cartanInvolution_self_neg {X : sl n R} (hX : X ≠ 0) :
     killingForm R (sl n R) X (cartanInvolution n R X) < 0 := by
   rw [killingForm_cartanInvolution_apply, neg_lt_zero]
-  obtain ⟨i, j, hij⟩ : ∃ i j, (X : Matrix n n R) i j ≠ 0 := by
-    by_contra! h
-    exact hX (Subtype.ext (Matrix.ext h))
-  have : Nonempty n := ⟨i⟩
+  have hXmat : (X : Matrix n n R) ≠ 0 := fun h ↦ hX (Subtype.ext h)
+  have : Nonempty n := by by_contra! h; exact hXmat (Matrix.ext fun i _ ↦ h.elim i)
   have : (0 : R) < Fintype.card n := Nat.cast_pos.mpr Fintype.card_pos
-  have htrace : 0 < ((X : Matrix n n R) * (X : Matrix n n R)ᵀ).trace := by
-    simp only [Matrix.trace, diag_apply, Matrix.mul_apply, Matrix.transpose_apply]
-    exact Finset.sum_pos' (fun _ _ ↦ Finset.sum_nonneg fun _ _ ↦ mul_self_nonneg _)
-      ⟨i, Finset.mem_univ _, Finset.sum_pos' (fun _ _ ↦ mul_self_nonneg _)
-        ⟨j, Finset.mem_univ _, mul_self_pos.mpr hij⟩⟩
+  have htrace := Matrix.trace_mul_transpose_self_pos hXmat
   positivity
 
 end OrderedPID
