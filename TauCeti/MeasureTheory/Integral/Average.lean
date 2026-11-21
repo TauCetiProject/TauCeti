@@ -916,7 +916,8 @@ theorem setIntegral_norm_sub_inner_setAverage_div_smul_sq_le (hs : μ s ≠ ⊤)
   -- The projection of `m` onto `ℝ ∙ ν` is at least as close to `m` as `t • ν ∈ ℝ ∙ ν`.
   have h := ((ℝ ∙ ν).dist_starProjection_eq_infDist m).trans_le
     (Metric.infDist_le_dist_of_mem (Submodule.smul_mem _ t (Submodule.mem_span_singleton_self ν)))
-  rw [Submodule.starProjection_singleton, dist_eq_norm, dist_eq_norm, real_inner_comm] at h
+  rw [Submodule.starProjection_singleton, RCLike.ofReal_real_eq_id, id_eq, dist_eq_norm,
+    dist_eq_norm, real_inner_comm] at h
   exact pow_le_pow_left₀ (norm_nonneg _) h 2
 
 end InnerProduct

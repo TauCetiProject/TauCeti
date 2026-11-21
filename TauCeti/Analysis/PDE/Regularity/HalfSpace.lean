@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.PDE.Regularity.Basic
 import TauCeti.Analysis.Distribution.TestFunction.Integral
 import TauCeti.Analysis.InnerProductSpace.HalfSpace
-import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 import TauCeti.Analysis.PDE.Regularity.DifferentiatedEquation
 import TauCeti.Analysis.Sobolev.Leibniz
 import TauCeti.Analysis.Sobolev.W1p.Symmetry
@@ -374,12 +373,16 @@ private theorem exists_norm_le_hasWeakLineDerivOn_inner_gradient_normal
   set D : ℝ := Lam * M + K * ‖W1p.gradient U‖
   have hν' : (‖e‖ ^ 2)⁻¹ • e = e := by simp [he]
   have hb : ∀ i, ‖b i‖ = 1 := fun i => b.orthonormal.1 i
+  -- `P` is the orthogonal projection onto `(ℝ ∙ e)ᗮ`.
+  have hPeq : ∀ z, P z = (ℝ ∙ e)ᗮ.starProjection z := fun z => by
+    rw [Submodule.starProjection_orthogonal_val, Submodule.starProjection_singleton,
+      RCLike.ofReal_real_eq_id, id_eq, real_inner_comm]
   have hP : ∀ z, ⟪P z, e⟫_ℝ = 0 := fun z => by
-    simpa only [P, real_inner_comm z e, RCLike.ofReal_real_eq_id, id_eq] using
-      inner_sub_div_norm_sq_smul_self_eq_zero (𝕜 := ℝ) z e
+    rw [hPeq, ← Submodule.mem_orthogonal_singleton_iff_inner_left]
+    exact Submodule.starProjection_apply_mem _ z
   have hPb : ∀ i, ‖P (b i)‖ ≤ 1 := fun i => by
-    simpa only [P, real_inner_comm (b i) e, RCLike.ofReal_real_eq_id, id_eq, hb i] using
-      norm_sub_div_norm_sq_smul_self_le (𝕜 := ℝ) (b i) e
+    rw [hPeq]
+    exact (Submodule.norm_starProjection_apply_le _ (b i)).trans_eq (hb i)
   have hgK : 0 ≤ (K : ℝ) * ‖W1p.gradient U‖ := by positivity
   -- The tangential terms `Gᵢⱼ = ∂_{P eᵢ} (aⁱʲ ∂ⱼu)`, each of norm at most `D`.
   choose G hGn hG using fun i j =>
@@ -443,15 +446,13 @@ private theorem exists_norm_le_hasWeakLineDerivOn_inner_gradient_normal_of_tange
     (y : EuclideanSpace ℝ ι) :
     ∃ G : Lp ℝ 2 (mu.restrict Omega), ‖G‖ ≤ ‖y‖ * (C + M) ∧
       HasWeakLineDerivOn mu Omega (fun x => ⟪W1p.gradient U x, y⟫_ℝ) G e := by
-  set Py := y - (⟪y, e⟫_ℝ / ‖e‖ ^ 2) • e
-  have hdec : y = ⟪y, e⟫_ℝ • e + Py := by simp [Py, he]
+  set Py := (ℝ ∙ e)ᗮ.starProjection y
+  have hdec : y = ⟪y, e⟫_ℝ • e + Py := by
+    simp [Py, Submodule.starProjection_singleton, he, real_inner_comm]
   -- `∂_e ∂_y u = ⟪y, e⟫ ∂_e ∂_e u + ∂_{P y} ∂_e u`, where weak derivatives commute.
-  have hPy : ⟪Py, e⟫_ℝ = 0 := by
-    simpa only [Py, real_inner_comm y e, RCLike.ofReal_real_eq_id, id_eq] using
-      inner_sub_div_norm_sq_smul_self_eq_zero (𝕜 := ℝ) y e
-  have hPyn : ‖Py‖ ≤ ‖y‖ := by
-    simpa only [Py, real_inner_comm y e, RCLike.ofReal_real_eq_id, id_eq] using
-      norm_sub_div_norm_sq_smul_self_le (𝕜 := ℝ) y e
+  have hPy : ⟪Py, e⟫_ℝ = 0 :=
+    Submodule.mem_orthogonal_singleton_iff_inner_left.1 (Submodule.starProjection_apply_mem _ y)
+  have hPyn : ‖Py‖ ≤ ‖y‖ := Submodule.norm_starProjection_apply_le _ y
   obtain ⟨G₁, hG₁n, hG₁⟩ := htan e Py hPy
   have hsplit : ∀ x, ⟪y, e⟫_ℝ * ⟪W1p.gradient U x, e⟫_ℝ + ⟪W1p.gradient U x, Py⟫_ℝ =
       ⟪W1p.gradient U x, y⟫_ℝ := fun x => by
@@ -482,16 +483,14 @@ private theorem exists_norm_le_hasWeakLineDerivOn_inner_gradient_of_normal_of_ta
     (y w : EuclideanSpace ℝ ι) :
     ∃ G : Lp ℝ 2 (mu.restrict Omega), ‖G‖ ≤ ‖y‖ * ‖w‖ * (C + 2 * M) ∧
       HasWeakLineDerivOn mu Omega (fun x => ⟪W1p.gradient U x, y⟫_ℝ) G w := by
-  set Pw := w - (⟪w, e⟫_ℝ / ‖e‖ ^ 2) • e
-  have hdec : ⟪w, e⟫_ℝ • e + Pw = w := by simp [Pw, he]
+  set Pw := (ℝ ∙ e)ᗮ.starProjection w
+  have hdec : ⟪w, e⟫_ℝ • e + Pw = w := by
+    simp [Pw, Submodule.starProjection_singleton, he, real_inner_comm]
   obtain ⟨G₁, hG₁n, hG₁⟩ :=
     exists_norm_le_hasWeakLineDerivOn_inner_gradient_normal_of_tangential he hM hGeen hGee htan y
-  have hPw : ⟪Pw, e⟫_ℝ = 0 := by
-    simpa only [Pw, real_inner_comm w e, RCLike.ofReal_real_eq_id, id_eq] using
-      inner_sub_div_norm_sq_smul_self_eq_zero (𝕜 := ℝ) w e
-  have hPwn : ‖Pw‖ ≤ ‖w‖ := by
-    simpa only [Pw, real_inner_comm w e, RCLike.ofReal_real_eq_id, id_eq] using
-      norm_sub_div_norm_sq_smul_self_le (𝕜 := ℝ) w e
+  have hPw : ⟪Pw, e⟫_ℝ = 0 :=
+    Submodule.mem_orthogonal_singleton_iff_inner_left.1 (Submodule.starProjection_apply_mem _ w)
+  have hPwn : ‖Pw‖ ≤ ‖w‖ := Submodule.norm_starProjection_apply_le _ w
   obtain ⟨G₂, hG₂n, hG₂⟩ := htan y Pw hPw
   -- `∂_w = ⟪w, e⟫ ∂_e + ∂_{P w}`.
   have hw := (hG₁.smul_direction ⟪w, e⟫_ℝ).add_direction hG₂
