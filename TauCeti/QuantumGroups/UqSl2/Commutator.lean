@@ -125,7 +125,7 @@ theorem f_mul_kUnit_zpow (b : ℤ) :
     calc
       f q * ((kUnit q ^ ((n : ℤ) + 1) : (UqSl2 q)ˣ) : UqSl2 q) =
           (f q * ((kUnit q ^ (n : ℤ) : (UqSl2 q)ˣ) : UqSl2 q)) * k q := by
-        rw [zpow_add_one, Units.val_mul, kUnit_val, ← mul_assoc]
+        rw [zpow_add_one, Units.val_mul, val_kUnit, ← mul_assoc]
       _ = (q ^ (2 * (n : ℤ)) •
           (((kUnit q ^ (n : ℤ) : (UqSl2 q)ˣ) : UqSl2 q) * f q)) * k q := by
         rw [ih]
@@ -135,7 +135,7 @@ theorem f_mul_kUnit_zpow (b : ℤ) :
         rw [smul_mul_assoc, mul_assoc, hk]
       _ = q ^ (2 * ((n : ℤ) + 1)) •
           (((kUnit q ^ ((n : ℤ) + 1) : (UqSl2 q)ˣ) : UqSl2 q) * f q) := by
-        rw [hExp, zpow_add_one, Units.val_mul, kUnit_val]
+        rw [hExp, zpow_add_one, Units.val_mul, val_kUnit]
         simp only [mul_smul_comm, smul_smul, mul_assoc,
           ← zpow_add₀ (Fact.out : q ≠ 0)]
   | pred n ih =>
@@ -143,7 +143,7 @@ theorem f_mul_kUnit_zpow (b : ℤ) :
     calc
       f q * ((kUnit q ^ (-(n : ℤ) - 1) : (UqSl2 q)ˣ) : UqSl2 q) =
           (f q * ((kUnit q ^ (-(n : ℤ)) : (UqSl2 q)ˣ) : UqSl2 q)) * kInv q := by
-        rw [zpow_sub_one, Units.val_mul, kUnit_inv, ← mul_assoc]
+        rw [zpow_sub_one, Units.val_mul, val_inv_kUnit, ← mul_assoc]
       _ = (q ^ (2 * -(n : ℤ)) •
           (((kUnit q ^ (-(n : ℤ)) : (UqSl2 q)ˣ) : UqSl2 q) * f q)) * kInv q := by
         rw [ih]
@@ -153,7 +153,7 @@ theorem f_mul_kUnit_zpow (b : ℤ) :
         rw [smul_mul_assoc, mul_assoc, hkInv]
       _ = q ^ (2 * (-(n : ℤ) - 1)) •
           (((kUnit q ^ (-(n : ℤ) - 1) : (UqSl2 q)ˣ) : UqSl2 q) * f q) := by
-        rw [hExp, zpow_sub_one, Units.val_mul, kUnit_inv]
+        rw [hExp, zpow_sub_one, Units.val_mul, val_inv_kUnit]
         simp only [mul_smul_comm, smul_smul, mul_assoc,
           ← zpow_add₀ (Fact.out : q ≠ 0)]
 

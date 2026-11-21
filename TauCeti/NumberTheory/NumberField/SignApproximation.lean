@@ -31,8 +31,8 @@ or complex, keeps the element away from `0`.
   prescribed sign at every real place.
 * `NumberField.InfinitePlace.IsReal.mul_pos_of_apply_sub_lt`: an element closer to a target than
   the target is to `0`, as measured by a real place, has the sign of that target there.
-* `NumberField.ne_zero_of_infinitePlace_sub_lt`: an element closer to a target than the target is
-  to `0`, as measured by any infinite place, is nonzero.
+* `NumberField.InfinitePlace.ne_zero_of_apply_sub_lt`: an element closer to a target than the
+  target is to `0`, as measured by any infinite place, is nonzero.
 * `NumberField.exists_ne_zero_forall_isReal_pos`: a nonzero element of `K` whose real
   embeddings have prescribed signs.
 * `NumberField.exists_ne_zero_neg_iff_mem`: the same statement with the prescription given
@@ -70,7 +70,7 @@ theorem exists_forall_infinitePlace_sub_lt (a : InfinitePlace K → K)
   let δ := Finset.univ.inf' Finset.univ_nonempty r
   have hδ : 0 < δ := (Finset.lt_inf'_iff _).2 fun v _ => hr v
   obtain ⟨x, hx⟩ := Metric.denseRange_iff.mp (InfinitePlace.denseRange_algebraMap_pi K)
-    (fun v => WithAbs.toAbs v.1 (a v)) δ hδ
+    (fun v => WithAbs.toAbs v.val (a v)) δ hδ
   refine ⟨x, fun v => ?_⟩
   have h := (dist_pi_lt_iff hδ).mp hx v
   rw [dist_eq_norm, WithAbs.norm_eq_apply_ofAbs, WithAbs.ofAbs_sub] at h
@@ -85,16 +85,16 @@ place, whose entry at `v` has absolute value one at `v` and whose entry at a rea
 there exactly the prescribed sign.
 
 This is the family that weak approximation at the infinite places is aimed at: an approximation
-to within `1` is nonzero by `NumberField.ne_zero_of_infinitePlace_sub_lt`, and
+to within `1` is nonzero by `NumberField.InfinitePlace.ne_zero_of_apply_sub_lt`, and
 `NumberField.InfinitePlace.IsReal.mul_pos_of_apply_sub_lt` turns it into a sign prescription. -/
 theorem exists_forall_apply_eq_one_and_embedding_of_isReal_eq
     (s : {w : InfinitePlace K // w.IsReal} → ℤˣ) :
     ∃ b : InfinitePlace K → K, (∀ v : InfinitePlace K, v (b v) = 1) ∧
       ∀ w : {w : InfinitePlace K // w.IsReal},
-        embedding_of_isReal w.2 (b w.1) = ((s w : ℤ) : ℝ) := by
+        embedding_of_isReal w.property (b w.val) = ((s w : ℤ) : ℝ) := by
   classical
   refine ⟨fun v => if h : v.IsReal then ((s ⟨v, h⟩ : ℤ) : K) else 1, fun v => ?_,
-    fun w => by simp [w.2]⟩
+    fun w => by simp [w.property]⟩
   by_cases h : v.IsReal
   · rcases Int.units_eq_one_or (s ⟨v, h⟩) with hs | hs <;> simp [h, hs, coe_apply]
   · simp [h]
@@ -113,8 +113,8 @@ theorem InfinitePlace.IsReal.mul_pos_of_apply_sub_lt {w : InfinitePlace K} (hw :
     cases abs_cases (embedding_of_isReal hw y) <;> nlinarith
 
 /-- An element closer to `y` than `y` is to `0`, as measured by an infinite place, is nonzero. -/
-theorem ne_zero_of_infinitePlace_sub_lt {w : InfinitePlace K} {x y : K} (h : w (x - y) < w y) :
-    x ≠ 0 := by
+theorem InfinitePlace.ne_zero_of_apply_sub_lt {w : InfinitePlace K} {x y : K}
+    (h : w (x - y) < w y) : x ≠ 0 := by
   rintro rfl
   simp [coe_apply] at h
 
@@ -127,14 +127,14 @@ reals `s`, indexed by the real infinite places of a number field `K`, some nonze
 theorem exists_ne_zero_forall_isReal_pos (s : {w : InfinitePlace K // w.IsReal} → ℝ)
     (hs : ∀ w, s w ≠ 0) :
     ∃ x : K, x ≠ 0 ∧
-      ∀ w : {w : InfinitePlace K // w.IsReal}, 0 < s w * embedding_of_isReal w.2 x := by
+      ∀ w : {w : InfinitePlace K // w.IsReal}, 0 < s w * embedding_of_isReal w.property x := by
   -- Aim at `1` where the prescribed sign is positive and at `-1` where it is negative.
   obtain ⟨b, habs, hb⟩ := exists_forall_apply_eq_one_and_embedding_of_isReal_eq (K := K)
     fun w => if 0 < s w then 1 else -1
   obtain ⟨x, hx⟩ := exists_forall_infinitePlace_sub_lt b (fun v => v (b v)) fun v => by
     simp [habs]
-  refine ⟨x, ne_zero_of_infinitePlace_sub_lt (hx (Classical.arbitrary _)), fun w => ?_⟩
-  have h := w.2.mul_pos_of_apply_sub_lt (hx w.1)
+  refine ⟨x, InfinitePlace.ne_zero_of_apply_sub_lt (hx (Classical.arbitrary _)), fun w => ?_⟩
+  have h := w.property.mul_pos_of_apply_sub_lt (hx w.val)
   rw [hb w] at h
   rcases (hs w).lt_or_gt with h' | h' <;> simp [h', h'.not_gt] at h <;> nlinarith
 
@@ -143,7 +143,7 @@ real places at which an element is negative determine its sign pattern, this is
 `NumberField.exists_ne_zero_forall_isReal_pos` with the pattern presented as a set. -/
 theorem exists_ne_zero_neg_iff_mem (S : Set {w : InfinitePlace K // w.IsReal}) :
     ∃ x : K, x ≠ 0 ∧
-      ∀ w : {w : InfinitePlace K // w.IsReal}, embedding_of_isReal w.2 x < 0 ↔ w ∈ S := by
+      ∀ w : {w : InfinitePlace K // w.IsReal}, embedding_of_isReal w.property x < 0 ↔ w ∈ S := by
   classical
   obtain ⟨x, hx0, hx⟩ :=
     exists_ne_zero_forall_isReal_pos (K := K) (fun w => if w ∈ S then -1 else 1)

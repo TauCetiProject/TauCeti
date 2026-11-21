@@ -45,7 +45,7 @@ variable {p : ℝ} [Fact (0 < p)]
 image of a real number `x`, the time form `dt_p` of `ℝ / pℤ` integrates to `p` times the winding
 number of `g`. -/
 theorem periodHom_timeForm (x : ℝ) (g : FundamentalGroup (AddCircle p) (x : AddCircle p)) :
-    periodHom (timeForm p).1 (x : AddCircle p) (Additive.ofMul g) = windingNumber g * p := by
+    periodHom (timeForm p).val (x : AddCircle p) (Additive.ofMul g) = windingNumber g * p := by
   -- `g` is the class of the loop winding `windingNumber g` times.
   have hg : g = FundamentalGroup.fromPath (.mk (zsmulLoop p x (windingNumber g))) := by
     apply (windingNumberIso (x : AddCircle p)).injective
@@ -66,7 +66,7 @@ theorem periodHom_timeForm (x : ℝ) (g : FundamentalGroup (AddCircle p) (x : Ad
 class of `ℝ / pℤ`. -/
 @[simp]
 theorem homologyPeriodHom_timeForm_fundamentalClass :
-    homologyPeriodHom (timeForm p).1 (fundamentalClass p) = p := by
+    homologyPeriodHom (timeForm p).val (fundamentalClass p) = p := by
   have h := periodHom_timeForm (p := p) 0 (FundamentalGroup.fromPath (.mk (zsmulLoop p 0 1)))
   rw [windingNumber_zsmulLoop, periodHom_apply] at h
   rw [fundamentalClass_def, homologyPeriodHom_loopClass]
@@ -76,7 +76,7 @@ theorem homologyPeriodHom_timeForm_fundamentalClass :
 Hurewicz image of a loop class, along which `dt_p` integrates to `p` times the winding number. -/
 theorem exists_homologyPeriodHom_timeForm_eq_intCast_mul
     (c : ((singularChains ℤ).obj (TopCat.of (AddCircle p))).homology 1) :
-    ∃ n : ℤ, homologyPeriodHom (timeForm p).1 c = n * p := by
+    ∃ n : ℤ, homologyPeriodHom (timeForm p).val c = n * p := by
   obtain ⟨a, rfl⟩ := (hurewiczHomologyAddEquiv (X := TopCat.of (AddCircle p))
     ((0 : ℝ) : AddCircle p)).surjective c
   obtain ⟨a, rfl⟩ := Additive.ofMul.surjective a

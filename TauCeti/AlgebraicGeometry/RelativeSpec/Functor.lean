@@ -60,13 +60,13 @@ def _root_.CategoryTheory.CommMon.relativeSpecMap (f : A ⟶ B) :
 lemma _root_.CategoryTheory.CommMon.relativeSpecCover_f_relativeSpecMap
     (f : A ⟶ B) (U : X.AffineZariskiSite) :
     B.relativeSpecCover.f U ≫ CommMon.relativeSpecMap f =
-      Spec.map (CommRingCat.ofHom (CommMon.sectionsAlgHom f U.1).toRingHom) ≫
+      Spec.map (CommRingCat.ofHom (CommMon.sectionsAlgHom f U.val).toRingHom) ≫
         A.relativeSpecCover.f U := by
   let α : B.relativeSpecGluingData.functor ⟶ A.relativeSpecGluingData.functor :=
     Functor.whiskerRight
       (((toOpensFunctor X).op.whiskerLeft (CommMon.sectionsPresheafMap f)).rightOp) Scheme.Spec
   have hα : α.app U =
-      Spec.map (CommRingCat.ofHom (CommMon.sectionsAlgHom f U.1).toRingHom) := by
+      Spec.map (CommRingCat.ofHom (CommMon.sectionsAlgHom f U.val).toRingHom) := by
     dsimp only [α, Functor.whiskerRight_app, NatTrans.rightOp_app, Functor.whiskerLeft_app]
     rw [CommMon.sectionsPresheafMap_app]
     rfl
@@ -86,18 +86,18 @@ lemma _root_.CategoryTheory.CommMon.relativeSpecMap_relativeSpecToBase (f : A �
     CommMon.relativeSpecMap f ≫ A.relativeSpecToBase = B.relativeSpecToBase := by
   apply B.relativeSpec_hom_ext
   intro U
-  let fU := CommRingCat.ofHom (CommMon.sectionsAlgHom f U.1).toRingHom
+  let fU := CommRingCat.ofHom (CommMon.sectionsAlgHom f U.val).toRingHom
   -- Rebind chart inclusions at their explicit spectrum source, rather than the
   -- definitionally equal object of the open cover.
-  let ιA : Spec (CommRingCat.of Γ(A.X, U.1)) ⟶ A.relativeSpec := A.relativeSpecCover.f U
-  let ιB : Spec (CommRingCat.of Γ(B.X, U.1)) ⟶ B.relativeSpec := B.relativeSpecCover.f U
-  let aU : CommRingCat.of Γ(X, U.1) ⟶ CommRingCat.of Γ(A.X, U.1) :=
-    A.toSectionsPresheaf.app (op U.1)
-  let bU : CommRingCat.of Γ(X, U.1) ⟶ CommRingCat.of Γ(B.X, U.1) :=
-    B.toSectionsPresheaf.app (op U.1)
-  let pU : Spec (CommRingCat.of Γ(X, U.1)) ⟶ X := U.2.fromSpec
+  let ιA : Spec (CommRingCat.of Γ(A.X, U.val)) ⟶ A.relativeSpec := A.relativeSpecCover.f U
+  let ιB : Spec (CommRingCat.of Γ(B.X, U.val)) ⟶ B.relativeSpec := B.relativeSpecCover.f U
+  let aU : CommRingCat.of Γ(X, U.val) ⟶ CommRingCat.of Γ(A.X, U.val) :=
+    A.toSectionsPresheaf.app (op U.val)
+  let bU : CommRingCat.of Γ(X, U.val) ⟶ CommRingCat.of Γ(B.X, U.val) :=
+    B.toSectionsPresheaf.app (op U.val)
+  let pU : Spec (CommRingCat.of Γ(X, U.val)) ⟶ X := U.property.fromSpec
   have hab : aU ≫ fU = bU := by
-    have h := NatTrans.congr_app (CommMon.toSectionsPresheaf_comp_sectionsPresheafMap f) (op U.1)
+    have h := NatTrans.congr_app (CommMon.toSectionsPresheaf_comp_sectionsPresheafMap f) (op U.val)
     rw [NatTrans.comp_app, CommMon.sectionsPresheafMap_app] at h
     exact h
   exact calc
@@ -122,8 +122,8 @@ lemma _root_.CategoryTheory.CommMon.relativeSpecMap_id (A : CommMon X.Modules)
   apply A.relativeSpec_hom_ext
   intro U
   simp only [CommMon.relativeSpecCover_f_relativeSpecMap, Category.comp_id]
-  have h : CommRingCat.ofHom (CommMon.sectionsAlgHom (𝟙 A) U.1).toRingHom =
-      𝟙 (CommRingCat.of Γ(A.X, U.1)) := by
+  have h : CommRingCat.ofHom (CommMon.sectionsAlgHom (𝟙 A) U.val).toRingHom =
+      𝟙 (CommRingCat.of Γ(A.X, U.val)) := by
     rw [CommMon.sectionsAlgHom_id]
     ext x
     simp
@@ -135,17 +135,17 @@ lemma _root_.CategoryTheory.CommMon.relativeSpecMap_comp (f : A ⟶ B) (g : B �
     CommMon.relativeSpecMap (f ≫ g) = CommMon.relativeSpecMap g ≫ CommMon.relativeSpecMap f := by
   apply C.relativeSpec_hom_ext
   intro U
-  let fU := CommRingCat.ofHom (CommMon.sectionsAlgHom f U.1).toRingHom
-  let gU := CommRingCat.ofHom (CommMon.sectionsAlgHom g U.1).toRingHom
-  have hU : CommRingCat.ofHom (CommMon.sectionsAlgHom (f ≫ g) U.1).toRingHom = fU ≫ gU := by
+  let fU := CommRingCat.ofHom (CommMon.sectionsAlgHom f U.val).toRingHom
+  let gU := CommRingCat.ofHom (CommMon.sectionsAlgHom g U.val).toRingHom
+  have hU : CommRingCat.ofHom (CommMon.sectionsAlgHom (f ≫ g) U.val).toRingHom = fU ≫ gU := by
     rw [CommMon.sectionsAlgHom_comp]
     ext x
     simp [fU, gU]
   -- Explicit sources keep the spectrum formulas independent of the cover's
   -- object accessor when composing chart maps.
-  let ιA : Spec (CommRingCat.of Γ(A.X, U.1)) ⟶ A.relativeSpec := A.relativeSpecCover.f U
-  let ιB : Spec (CommRingCat.of Γ(B.X, U.1)) ⟶ B.relativeSpec := B.relativeSpecCover.f U
-  let ιC : Spec (CommRingCat.of Γ(C.X, U.1)) ⟶ C.relativeSpec := C.relativeSpecCover.f U
+  let ιA : Spec (CommRingCat.of Γ(A.X, U.val)) ⟶ A.relativeSpec := A.relativeSpecCover.f U
+  let ιB : Spec (CommRingCat.of Γ(B.X, U.val)) ⟶ B.relativeSpec := B.relativeSpecCover.f U
+  let ιC : Spec (CommRingCat.of Γ(C.X, U.val)) ⟶ C.relativeSpec := C.relativeSpecCover.f U
   exact calc
     ιC ≫ CommMon.relativeSpecMap (f ≫ g) =
         Spec.map (fU ≫ gU) ≫ ιA :=

@@ -32,11 +32,11 @@ variable {α : Type u} {β : Type v} (G : Graph α β)
 -- transporting a vertex map underneath internalEdges or incidentEdges.
 private theorem map_internalEdges_of_le {H : Graph α β} [Fintype E(G)] [Fintype E(H)]
     [DecidablePred (· ∈ E(H))]
-    (h : H ≤ G) (fV : V(G) ↪ V(H)) (hfV : ∀ x, (fV x).1 = x.1)
+    (h : H ≤ G) (fV : V(G) ↪ V(H)) (hfV : ∀ x, (fV x).val = x.val)
     (S : Finset V(G)) (T : Finset V(H)) (hT : T = S.map fV) :
     (H.internalEdges T).map
         (Set.embeddingOfSubset _ _ h.edgeSet_mono) =
-      (G.internalEdges S).filter (fun e ↦ e.1 ∈ E(H)) := by
+      (G.internalEdges S).filter (fun e ↦ e.val ∈ E(H)) := by
   classical
   rw [hT]
   ext e
@@ -48,9 +48,9 @@ private theorem map_internalEdges_of_le {H : Graph α β} [Fintype E(G)] [Fintyp
     obtain ⟨y, hyS, rfl⟩ := Finset.mem_map.1 hy
     exact ⟨(mem_internalEdges _).2
       ⟨x, hxS, y, hyS,
-        by simpa only [hfV, Set.embeddingOfSubset_apply_coe] using hxy.mono h⟩, d.2⟩
+        by simpa only [hfV, Set.embeddingOfSubset_apply_coe] using hxy.mono h⟩, d.property⟩
   · rintro ⟨he, heH⟩
-    refine ⟨⟨e.1, heH⟩, ?_, rfl⟩
+    refine ⟨⟨e.val, heH⟩, ?_, rfl⟩
     obtain ⟨x, hx, y, hy, hxy⟩ := (mem_internalEdges _).1 he
     exact (mem_internalEdges _).2
       ⟨_, Finset.mem_map.2 ⟨x, hx, rfl⟩, _, Finset.mem_map.2 ⟨y, hy, rfl⟩,
@@ -58,11 +58,11 @@ private theorem map_internalEdges_of_le {H : Graph α β} [Fintype E(G)] [Fintyp
 
 private theorem map_incidentEdges_of_le {H : Graph α β} [Fintype E(G)] [Fintype E(H)]
     [DecidablePred (· ∈ E(H))]
-    (h : H ≤ G) (fV : V(G) ↪ V(H)) (hfV : ∀ x, (fV x).1 = x.1)
+    (h : H ≤ G) (fV : V(G) ↪ V(H)) (hfV : ∀ x, (fV x).val = x.val)
     (S : Finset V(G)) (T : Finset V(H)) (hT : T = S.map fV) :
     (H.incidentEdges T).map
         (Set.embeddingOfSubset _ _ h.edgeSet_mono) =
-      (G.incidentEdges S).filter (fun e ↦ e.1 ∈ E(H)) := by
+      (G.incidentEdges S).filter (fun e ↦ e.val ∈ E(H)) := by
   classical
   rw [hT]
   ext e
@@ -72,9 +72,9 @@ private theorem map_incidentEdges_of_le {H : Graph α β} [Fintype E(G)] [Fintyp
     obtain ⟨x, hx, hdx⟩ := (mem_incidentEdges _).1 hd
     obtain ⟨x, hxS, rfl⟩ := Finset.mem_map.1 hx
     exact ⟨(mem_incidentEdges _).2
-      ⟨x, hxS, by simpa only [hfV, Set.embeddingOfSubset_apply_coe] using hdx.mono h⟩, d.2⟩
+      ⟨x, hxS, by simpa only [hfV, Set.embeddingOfSubset_apply_coe] using hdx.mono h⟩, d.property⟩
   · rintro ⟨he, heH⟩
-    refine ⟨⟨e.1, heH⟩, ?_, rfl⟩
+    refine ⟨⟨e.val, heH⟩, ?_, rfl⟩
     obtain ⟨x, hx, hex⟩ := (mem_incidentEdges _).1 he
     exact (mem_incidentEdges _).2
       ⟨_, Finset.mem_map.2 ⟨x, hx, rfl⟩,
@@ -91,7 +91,7 @@ retained set, with their original identities. -/
 theorem map_internalEdges_restrict (S : Finset V(G)) :
     ((G.restrict E₀).internalEdges S).map
         (Set.embeddingOfSubset _ _ (restrict_le (G := G) (E₀ := E₀)).edgeSet_mono) =
-      (G.internalEdges S).filter (fun e ↦ e.1 ∈ E₀) := by
+      (G.internalEdges S).filter (fun e ↦ e.val ∈ E₀) := by
   classical
   simpa using G.map_internalEdges_of_le (restrict_le (E₀ := E₀))
     (Function.Embedding.refl _) (fun _ ↦ rfl) S S Finset.map_refl.symm
@@ -102,7 +102,7 @@ retained set, with their original identities. -/
 theorem map_incidentEdges_restrict (S : Finset V(G)) :
     ((G.restrict E₀).incidentEdges S).map
         (Set.embeddingOfSubset _ _ (restrict_le (G := G) (E₀ := E₀)).edgeSet_mono) =
-      (G.incidentEdges S).filter (fun e ↦ e.1 ∈ E₀) := by
+      (G.incidentEdges S).filter (fun e ↦ e.val ∈ E₀) := by
   classical
   simpa using G.map_incidentEdges_of_le (restrict_le (E₀ := E₀))
     (Function.Embedding.refl _) (fun _ ↦ rfl) S S Finset.map_refl.symm
@@ -110,19 +110,19 @@ theorem map_incidentEdges_restrict (S : Finset V(G)) :
 /-- Count internal edges of an edge restriction by filtering the original finite set. -/
 theorem card_internalEdges_restrict (S : Finset V(G)) :
     ((G.restrict E₀).internalEdges S).card =
-      ((G.internalEdges S).filter (fun e ↦ e.1 ∈ E₀)).card := by
+      ((G.internalEdges S).filter (fun e ↦ e.val ∈ E₀)).card := by
   rw [← map_internalEdges_restrict, Finset.card_map]
 
 /-- Count incident edges of an edge restriction by filtering the original finite set. -/
 theorem card_incidentEdges_restrict (S : Finset V(G)) :
     ((G.restrict E₀).incidentEdges S).card =
-      ((G.incidentEdges S).filter (fun e ↦ e.1 ∈ E₀)).card := by
+      ((G.incidentEdges S).filter (fun e ↦ e.val ∈ E₀)).card := by
   rw [← map_incidentEdges_restrict, Finset.card_map]
 
 /-- The retained and omitted internal-edge counts add to the original internal-edge count. -/
 theorem card_internalEdges_restrict_add_card_filter (S : Finset V(G)) :
     ((G.restrict E₀).internalEdges S).card +
-        ((G.internalEdges S).filter (fun e ↦ e.1 ∉ E₀)).card =
+        ((G.internalEdges S).filter (fun e ↦ e.val ∉ E₀)).card =
       (G.internalEdges S).card := by
   rw [card_internalEdges_restrict]
   exact Finset.card_filter_add_card_filter_not _
@@ -130,7 +130,7 @@ theorem card_internalEdges_restrict_add_card_filter (S : Finset V(G)) :
 /-- The retained and omitted incident-edge counts add to the original incident-edge count. -/
 theorem card_incidentEdges_restrict_add_card_filter (S : Finset V(G)) :
     ((G.restrict E₀).incidentEdges S).card +
-        ((G.incidentEdges S).filter (fun e ↦ e.1 ∉ E₀)).card =
+        ((G.incidentEdges S).filter (fun e ↦ e.val ∉ E₀)).card =
       (G.incidentEdges S).card := by
   rw [card_incidentEdges_restrict]
   exact Finset.card_filter_add_card_filter_not _
@@ -146,7 +146,7 @@ selected for deletion, with their original identities. -/
 theorem map_internalEdges_deleteEdges (S : Finset V(G)) :
     ((G.deleteEdges F).internalEdges S).map
         (Set.embeddingOfSubset _ _ (deleteEdges_le (G := G) (F := F)).edgeSet_mono) =
-      (G.internalEdges S).filter (fun e ↦ e.1 ∉ F) := by
+      (G.internalEdges S).filter (fun e ↦ e.val ∉ F) := by
   classical
   simpa using G.map_internalEdges_of_le (deleteEdges_le (F := F))
     (Function.Embedding.refl _) (fun _ ↦ rfl) S S Finset.map_refl.symm
@@ -157,7 +157,7 @@ selected for deletion, with their original identities. -/
 theorem map_incidentEdges_deleteEdges (S : Finset V(G)) :
     ((G.deleteEdges F).incidentEdges S).map
         (Set.embeddingOfSubset _ _ (deleteEdges_le (G := G) (F := F)).edgeSet_mono) =
-      (G.incidentEdges S).filter (fun e ↦ e.1 ∉ F) := by
+      (G.incidentEdges S).filter (fun e ↦ e.val ∉ F) := by
   classical
   simpa using G.map_incidentEdges_of_le (deleteEdges_le (F := F))
     (Function.Embedding.refl _) (fun _ ↦ rfl) S S Finset.map_refl.symm
@@ -165,19 +165,19 @@ theorem map_incidentEdges_deleteEdges (S : Finset V(G)) :
 /-- Count internal edges after deletion by filtering the original finite set. -/
 theorem card_internalEdges_deleteEdges (S : Finset V(G)) :
     ((G.deleteEdges F).internalEdges S).card =
-      ((G.internalEdges S).filter (fun e ↦ e.1 ∉ F)).card := by
+      ((G.internalEdges S).filter (fun e ↦ e.val ∉ F)).card := by
   rw [← map_internalEdges_deleteEdges, Finset.card_map]
 
 /-- Count incident edges after deletion by filtering the original finite set. -/
 theorem card_incidentEdges_deleteEdges (S : Finset V(G)) :
     ((G.deleteEdges F).incidentEdges S).card =
-      ((G.incidentEdges S).filter (fun e ↦ e.1 ∉ F)).card := by
+      ((G.incidentEdges S).filter (fun e ↦ e.val ∉ F)).card := by
   rw [← map_incidentEdges_deleteEdges, Finset.card_map]
 
 /-- The surviving and deleted internal-edge counts add to the original internal-edge count. -/
 theorem card_internalEdges_deleteEdges_add_card_filter (S : Finset V(G)) :
     ((G.deleteEdges F).internalEdges S).card +
-        ((G.internalEdges S).filter (fun e ↦ e.1 ∈ F)).card =
+        ((G.internalEdges S).filter (fun e ↦ e.val ∈ F)).card =
       (G.internalEdges S).card := by
   rw [card_internalEdges_deleteEdges, add_comm]
   exact Finset.card_filter_add_card_filter_not _
@@ -185,7 +185,7 @@ theorem card_internalEdges_deleteEdges_add_card_filter (S : Finset V(G)) :
 /-- The surviving and deleted incident-edge counts add to the original incident-edge count. -/
 theorem card_incidentEdges_deleteEdges_add_card_filter (S : Finset V(G)) :
     ((G.deleteEdges F).incidentEdges S).card +
-        ((G.incidentEdges S).filter (fun e ↦ e.1 ∈ F)).card =
+        ((G.incidentEdges S).filter (fun e ↦ e.val ∈ F)).card =
       (G.incidentEdges S).card := by
   rw [card_incidentEdges_deleteEdges, add_comm]
   exact Finset.card_filter_add_card_filter_not _

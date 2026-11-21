@@ -419,13 +419,13 @@ restriction. -/
 
 @[simp]
 theorem restrict_quadratic (H : AddSubgroup A) (x : H) :
-    (A.restrict H).quadratic x = A.quadratic x.1 := by
+    (A.restrict H).quadratic x = A.quadratic x.val := by
   rfl
 
 @[simp]
 theorem restrict_pairing (H : AddSubgroup A) (x y : H) :
     (A.restrict H).toFiniteBilinearModule.pairing x y =
-      A.toFiniteBilinearModule.pairing x.1 y.1 := by
+      A.toFiniteBilinearModule.pairing x.val y.val := by
   rfl
 
 /-- Taking the polar bilinear module commutes with restriction. -/
@@ -451,7 +451,7 @@ theorem restrictHom_toFiniteBilinearModule (H : AddSubgroup A) :
   calc
     (A.restrictHom H).toFiniteBilinearModule x = A.restrictHom H x :=
       Hom.toFiniteBilinearModule_apply _ _
-    _ = x.1 := restrictHom_apply A H x
+    _ = x.val := restrictHom_apply A H x
     _ = A.toFiniteBilinearModule.restrictHom H x :=
       (FiniteBilinearModule.restrictHom_apply _ H x).symm
 
@@ -518,13 +518,6 @@ theorem prod_toFiniteBilinearModule (B : FiniteQuadraticModule) :
 theorem isNondegenerate_prod (B : FiniteQuadraticModule) :
     (A.prod B).IsNondegenerate ↔ A.IsNondegenerate ∧ B.IsNondegenerate :=
   A.toFiniteBilinearModule.isNondegenerate_prod B.toFiniteBilinearModule
-
-/-- An orthogonal product of two quadratic isometries acts componentwise on the two factors. -/
-@[simp]
-theorem Isometry.prod_apply {A₁ A₂ A₃ A₄ : FiniteQuadraticModule}
-    (e₁ : Isometry A₁ A₃) (e₂ : Isometry A₂ A₄) (x : A₁) (y : A₂) :
-    (QuadraticMap.IsometryEquiv.prod e₁ e₂ (x, y) : A₃.carrier × A₄.carrier) = (e₁ x, e₂ y) :=
-  (rfl)
 
 /-! ## Quadratic forms with values in `½ℤ/ℤ` -/
 
@@ -682,7 +675,7 @@ theorem isIsotropic_iff_restrict_eq_zero (H : AddSubgroup A) :
   constructor
   · intro hH
     ext x
-    exact hH x.1 x.2
+    exact hH x.val x.property
   · intro h x hx
     rw [← A.restrict_quadratic H (⟨x, hx⟩ : H), h]
     rfl
@@ -942,7 +935,7 @@ theorem isIsotropic_subgroupInOrthogonalComplement {H : AddSubgroup A}
     (A.restrict (A.toFiniteBilinearModule.orthogonalComplement H)).IsIsotropic
       (A.subgroupInOrthogonalComplement H) := by
   intro x hx
-  exact hH x.1 (A.mem_subgroupInOrthogonalComplement_iff H x |>.mp hx)
+  exact hH x.val (A.mem_subgroupInOrthogonalComplement_iff H x |>.mp hx)
 
 /-- The copy of a quadratic-isotropic subgroup in its orthogonal complement lies in the radical of
 the quadratic map restricted to that complement. -/
@@ -1030,7 +1023,7 @@ theorem orthogonalQuotientUnderlyingEquiv_symm_orthogonalQuotientMk (H : AddSubg
 theorem orthogonalQuotient_quadratic_mk (H : AddSubgroup A) (hH : A.IsIsotropic H)
     (x : A.toFiniteBilinearModule.orthogonalComplement H) :
     (A.orthogonalQuotient H hH).quadratic (A.orthogonalQuotientMk H hH x) =
-      A.quadratic x.1 :=
+      A.quadratic x.val :=
   quotientOfLeQuadraticRadical_quadratic_mk
     (A.restrict (A.toFiniteBilinearModule.orthogonalComplement H))
     (A.subgroupInOrthogonalComplement H)
@@ -1042,7 +1035,7 @@ theorem orthogonalQuotient_pairing_mk (H : AddSubgroup A) (hH : A.IsIsotropic H)
     (x y : A.toFiniteBilinearModule.orthogonalComplement H) :
     (A.orthogonalQuotient H hH).toFiniteBilinearModule.pairing
       (A.orthogonalQuotientMk H hH x) (A.orthogonalQuotientMk H hH y) =
-      A.toFiniteBilinearModule.pairing x.1 y.1 :=
+      A.toFiniteBilinearModule.pairing x.val y.val :=
   quotientOfLeQuadraticRadical_pairing_mk
     (A.restrict (A.toFiniteBilinearModule.orthogonalComplement H))
     (A.subgroupInOrthogonalComplement H)
@@ -1101,7 +1094,7 @@ theorem orthogonalQuotientCongr_orthogonalQuotientMk {H K : AddSubgroup A} (hH :
     (hK : A.IsIsotropic K) (h : H = K)
     (x : A.toFiniteBilinearModule.orthogonalComplement H) :
     A.orthogonalQuotientCongr hH hK h (A.orthogonalQuotientMk H hH x) =
-      A.orthogonalQuotientMk K hK ⟨x.1, h ▸ x.2⟩ := by
+      A.orthogonalQuotientMk K hK ⟨x.val, h ▸ x.property⟩ := by
   subst h
   rfl
 
@@ -1157,7 +1150,7 @@ private theorem orthogonalQuotientBilinearMapAddEquiv_orthogonalQuotientMk
       B.toFiniteBilinearModule.orthogonalQuotientMk (H.map f.toAddEquiv)
         ⟨f (x : A), FiniteBilinearModule.Isometry.map_mem_orthogonalComplement_of_map_eq
           A.toFiniteBilinearModule f.toFiniteBilinearModule
-          (by rw [f.toFiniteBilinearModule_toAddEquiv]) x.2⟩ := by
+          (by rw [f.toFiniteBilinearModule_toAddEquiv]) x.property⟩ := by
   rw [orthogonalQuotientBilinearMapAddEquiv]
   -- The definition ends by forgetting a bilinear isometry to its additive equivalence; normalize
   -- that coercion so the two public representative formulas apply.
@@ -1203,7 +1196,7 @@ private theorem orthogonalQuotientMapAddEquiv_orthogonalQuotientMk (f : Isometry
       B.orthogonalQuotientMk (H.map f.toAddEquiv) hK
         ⟨f (x : A), FiniteBilinearModule.Isometry.map_mem_orthogonalComplement_of_map_eq
           A.toFiniteBilinearModule f.toFiniteBilinearModule
-          (by rw [f.toFiniteBilinearModule_toAddEquiv]) x.2⟩ := by
+          (by rw [f.toFiniteBilinearModule_toAddEquiv]) x.property⟩ := by
   rw [orthogonalQuotientMapAddEquiv, AddEquiv.trans_apply, AddEquiv.trans_apply,
     A.orthogonalQuotientUnderlyingEquiv_orthogonalQuotientMk,
     orthogonalQuotientBilinearMapAddEquiv_orthogonalQuotientMk]
@@ -1239,7 +1232,7 @@ private theorem orthogonalQuotientMap_orthogonalQuotientMk (f : Isometry A B)
       B.orthogonalQuotientMk (H.map f.toAddEquiv) ((f.isIsotropic_map_iff (H := H)).mpr hH)
         ⟨f (x : A), FiniteBilinearModule.Isometry.map_mem_orthogonalComplement_of_map_eq
           A.toFiniteBilinearModule f.toFiniteBilinearModule
-          (by rw [f.toFiniteBilinearModule_toAddEquiv]) x.2⟩ :=
+          (by rw [f.toFiniteBilinearModule_toAddEquiv]) x.property⟩ :=
   by
     rw [orthogonalQuotientMap]
     -- Normalize the reflexive coercion from the additive equivalence used by the structure field.
@@ -1270,7 +1263,7 @@ theorem orthogonalQuotientEquiv_orthogonalQuotientMk (f : Isometry A B)
           apply FiniteBilinearModule.Isometry.map_mem_orthogonalComplement_of_map_eq
             A.toFiniteBilinearModule f.toFiniteBilinearModule (K := K) (x := (x : A))
           · simpa only [toFiniteBilinearModule_toAddEquiv] using h
-          · exact x.2⟩ := by
+          · exact x.property⟩ := by
   rw [orthogonalQuotientEquiv, trans_apply, orthogonalQuotientMap_orthogonalQuotientMk,
     B.orthogonalQuotientCongr_orthogonalQuotientMk]
 
@@ -1297,7 +1290,7 @@ theorem orthogonalQuotientEquiv_symm_orthogonalQuotientMk (f : Isometry A B)
           change (y : B) ∈
             (A.toFiniteBilinearModule.orthogonalComplement H).map f.toAddEquiv
           rw [hcomp, h]
-          exact y.2⟩ := by
+          exact y.property⟩ := by
   refine (Equiv.symm_apply_eq
     (f.orthogonalQuotientEquiv hH h).toLinearEquiv.toEquiv).mpr ?_
   -- `Equiv.symm_apply_eq` exposes the `toEquiv` coercion; normalize it to the isometry coercion

@@ -106,7 +106,7 @@ theorem Continuous.bilin_bundle_apply
 theorem ContinuousOn.bilin_bundle_self {K : Set B}
     {b : ∀ x, E x →L[𝕜] E x →L[𝕜] G}
     (hb : ContinuousOn (fun x ↦ TotalSpace.mk' (F →L[𝕜] F →L[𝕜] G) x (b x)) K) :
-    ContinuousOn (fun z : TotalSpace F E ↦ b z.proj z.2 z.2) (TotalSpace.proj ⁻¹' K) :=
+    ContinuousOn (fun z : TotalSpace F E ↦ b z.proj z.snd z.snd) (TotalSpace.proj ⁻¹' K) :=
   (hb.comp (FiberBundle.continuous_proj F E).continuousOn (fun _ hz ↦ hz)).bilin_bundle_apply
     continuousOn_id continuousOn_id
 
@@ -165,24 +165,24 @@ variable [FiniteDimensional ℝ F]
 defines an open subset of the total space. The forms are not required to be symmetric. -/
 theorem isOpen_setOf_forall_bilinear_bundle_apply_self_pos :
     IsOpen {z : TotalSpace (F →L[ℝ] F →L[ℝ] ℝ)
-      (fun x ↦ V x →L[ℝ] V x →L[ℝ] ℝ) | ∀ v, v ≠ 0 → 0 < z.2 v v} := by
+      (fun x ↦ V x →L[ℝ] V x →L[ℝ] ℝ) | ∀ v, v ≠ 0 → 0 < z.snd v v} := by
   rw [isOpen_iff_mem_nhds]
   intro z hz
   have hcoord := (continuousAt_hom_bundle (RingHom.id ℝ) _).mp
     (continuousAt_id : ContinuousAt
       (id : TotalSpace (F →L[ℝ] F →L[ℝ] ℝ)
         (fun x ↦ V x →L[ℝ] V x →L[ℝ] ℝ) → _) z)
-  have hbase : ∀ᶠ w in 𝓝 z, w.1 ∈ (trivializationAt F V z.1).baseSet :=
-    hcoord.1 ((trivializationAt F V z.1).open_baseSet.mem_nhds
-      (mem_baseSet_trivializationAt F V z.1))
+  have hbase : ∀ᶠ w in 𝓝 z, w.proj ∈ (trivializationAt F V z.proj).baseSet :=
+    hcoord.1 ((trivializationAt F V z.proj).open_baseSet.mem_nhds
+      (mem_baseSet_trivializationAt F V z.proj))
   have hpos : ∀ᶠ w in 𝓝 z, ∀ v : F, v ≠ 0 →
       0 < inCoordinates F V (F →L[ℝ] ℝ) (fun x ↦ V x →L[ℝ] ℝ)
-        z.1 w.1 z.1 w.1 w.2 v v :=
+        z.proj w.proj z.proj w.proj w.snd v v :=
     hcoord.2 (isOpen_setOf_forall_bilinear_apply_self_pos.mem_nhds
       ((forall_inCoordinates_bilinear_apply_self_pos_iff
-        (mem_baseSet_trivializationAt F V z.1) z.2).mpr hz))
+        (mem_baseSet_trivializationAt F V z.proj) z.snd).mpr hz))
   filter_upwards [hbase, hpos] with w hw hp
-  exact (forall_inCoordinates_bilinear_apply_self_pos_iff hw w.2).mp hp
+  exact (forall_inCoordinates_bilinear_apply_self_pos_iff hw w.snd).mp hp
 
 /-- Positivity of a continuous family of bilinear fields on a compact subset of the base is
 an open condition on the parameter. This applies in particular to symmetric metric fields. -/
@@ -223,7 +223,7 @@ theorem IsCompact.exists_pos_mul_bilin_self_le (hK : IsCompact K)
     (fun x ↦ E x →L[ℝ] E x →L[ℝ] ℝ)).comp (continuous_fst.neg.prodMk hb₀')
   have hcont : Continuous (fun p : ℝ × K ↦
       TotalSpace.mk' (F →L[ℝ] F →L[ℝ] ℝ) (E := fun x ↦ E x →L[ℝ] E x →L[ℝ] ℝ)
-        (p.2 : B) (b p.2 + (-p.1) • b₀ p.2)) :=
+        (p.snd : B) (b p.snd + (-p.fst) • b₀ p.snd)) :=
     hb'.add_totalSpace ℝ hsmul
   have hopen := TauCeti.isOpen_setOf_forall_bilinear_bundle_apply_self_pos.preimage hcont
   have hevent : ∀ᶠ t : ℝ in 𝓝 0, ∀ x : K, ∀ v : E x, v ≠ 0 →
@@ -233,7 +233,7 @@ theorem IsCompact.exists_pos_mul_bilin_self_le (hK : IsCompact K)
         (P := fun t (x : K) ↦ ∀ v : E x, v ≠ 0 → 0 < (b x + (-t) • b₀ x) v v)
         (x₀ := (0 : ℝ)) (fun x _ ↦ hopen.mem_nhds (x := (0, x))
           (by simpa only [mem_preimage, mem_ofPred_eq, neg_zero, _root_.add_apply,
-            _root_.smul_apply, smul_eq_mul, zero_mul, add_zero] using hpos x x.2))
+            _root_.smul_apply, smul_eq_mul, zero_mul, add_zero] using hpos x x.property))
   obtain ⟨ε, hε, he⟩ := Metric.mem_nhds_iff.mp hevent
   have ht : ε / 2 ∈ Metric.ball (0 : ℝ) ε := by
     simpa [Real.dist_eq, abs_of_pos hε] using half_lt_self hε

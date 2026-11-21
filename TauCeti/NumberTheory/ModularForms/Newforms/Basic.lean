@@ -462,6 +462,7 @@ theorem diamondOpCusp_mem_cuspFormsOld [NeZero N] (u : (ZMod N)ˣ)
   refine cuspFormsOld_le (V := (cuspFormsOld N k).comap (diamondOpCusp k u)) ?_ hf
   intro M d hdvd hM g
   have := NeZero.of_dvd (dvd_of_mul_left_dvd hdvd)
+  have : NeZero d := NeZero.of_dvd (dvd_of_mul_right_dvd hdvd)
   rw [Submodule.mem_comap, CuspForm.diamondOpCusp_levelRaise hdvd]
   exact levelRaise_mem_cuspFormsOld hdvd hM k _
 

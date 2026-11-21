@@ -40,20 +40,20 @@ variable
 /-- Two differentiable metrics are uniformly comparable on a compact subset, with strictly
 positive constants valid for every fibre vector. The reference metric may have a different
 regularity from the metric being estimated. -/
-theorem exists_pos_mul_inner_self_le_and_le_of_isCompact (g : ContMDiffRiemannianMetric IB n F E)
+theorem exists_mul_inner_le_inner_and_inner_le_mul_inner (g : ContMDiffRiemannianMetric IB n F E)
     (g₀ : ContMDiffRiemannianMetric IB m F E) {K : Set B} (hK : IsCompact K) :
-    ∃ c C : ℝ, 0 < c ∧ 0 < C ∧ ∀ x ∈ K, ∀ v : E x,
+    ∃ c > 0, ∃ C > 0, ∀ x ∈ K, ∀ v : E x,
       c * g₀.inner x v v ≤ g.inner x v v ∧ g.inner x v v ≤ C * g₀.inner x v v :=
-  g.toContinuousRiemannianMetric.exists_pos_mul_inner_self_le_and_le_of_isCompact
+  g.toContinuousRiemannianMetric.exists_mul_inner_le_inner_and_inner_le_mul_inner
     g₀.toContinuousRiemannianMetric hK
 
 /-- On a compact base, any two differentiable metrics have global positive two-sided comparison
 constants. This includes smooth metrics on a closed manifold, in every dimension. -/
-theorem exists_pos_mul_inner_self_le_and_le_of_compactSpace [CompactSpace B]
+theorem exists_mul_inner_le_inner_and_inner_le_mul_inner_of_compactSpace [CompactSpace B]
     (g : ContMDiffRiemannianMetric IB n F E) (g₀ : ContMDiffRiemannianMetric IB m F E) :
-    ∃ c C : ℝ, 0 < c ∧ 0 < C ∧ ∀ x, ∀ v : E x,
+    ∃ c > 0, ∃ C > 0, ∀ x, ∀ v : E x,
       c * g₀.inner x v v ≤ g.inner x v v ∧ g.inner x v v ≤ C * g₀.inner x v v :=
-  g.toContinuousRiemannianMetric.exists_pos_mul_inner_self_le_and_le_of_compactSpace
+  g.toContinuousRiemannianMetric.exists_mul_inner_le_inner_and_inner_le_mul_inner_of_compactSpace
     g₀.toContinuousRiemannianMetric
 
 end Bundle.ContMDiffRiemannianMetric

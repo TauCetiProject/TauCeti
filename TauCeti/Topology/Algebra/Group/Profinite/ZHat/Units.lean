@@ -56,7 +56,7 @@ theorem isUnit_iff_component (a : Additive zHat.{u}) :
   · exact fun ha ℓ _ ↦ ha.map (component ℓ)
   · intro h
     rw [← MulEquiv.isUnit_map ringEquivPiPadicInt.{u}, Pi.isUnit_iff]
-    exact fun ℓ ↦ by simpa only [ringEquivPiPadicInt_apply] using h ℓ ⟨ℓ.2⟩
+    exact fun ℓ ↦ by simpa only [ringEquivPiPadicInt_apply] using h ℓ ⟨ℓ.property⟩
 
 /-- A profinite integer is a unit exactly when its reduction modulo every positive integer is a
 unit. -/

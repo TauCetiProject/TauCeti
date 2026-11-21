@@ -40,9 +40,9 @@ tag 01M1).
   the degree-`n` component of `Sym F` and the quasicoherent symmetric power `Symⁿ F`;
 * `TauCeti.AlgebraicGeometry.gradedSymmetricAlgebraDegreeOneIso`: the natural isomorphism between
   the degree-one component of `Sym F` and `F`;
-* `TauCeti.AlgebraicGeometry.epi_one_gradedSymmetricAlgebra` and
+* `TauCeti.AlgebraicGeometry.isIso_one_gradedSymmetricAlgebra` and
   `TauCeti.AlgebraicGeometry.epi_mul_gradedSymmetricAlgebra`: the unit and the multiplications of
-  `Sym F` are epimorphisms;
+  `Sym F` are respectively an isomorphism and epimorphisms;
 * `TauCeti.AlgebraicGeometry.gradedSymmetricAlgebra_hom_ext`: a graded algebra morphism out of
   `Sym F` is determined by its degree-one component;
 * `TauCeti.AlgebraicGeometry.gradedSymmetricAlgebra_map_degreeOne`: a graded algebra morphism
@@ -266,24 +266,20 @@ recovered from its action in degree one. -/
 instance : (gradedSymmetricAlgebra X).Faithful :=
   CategoryTheory.Functor.Faithful.of_comp_iso (gradedSymmetricAlgebraDegreeOneIso X)
 
-/-- The unit `𝒪_X ⟶ Sym⁰ F` of the graded symmetric algebra is an epimorphism, being an
-isomorphism. -/
-instance epi_one_gradedSymmetricAlgebra (F : QuasicoherentSheaf X) :
-    Epi ((gradedSymmetricAlgebra X).obj F).obj.toMon.one := by
-  -- The factors of the unit are morphisms of `SheafOfModules X.ringCatSheaf`, whose category
-  -- instance is identified with that of `X.Modules` only by unfolding, so typeclass search does
-  -- not find their `Epi` instances; they are supplied by hand.
-  have h {A B : X.Modules} (p : A = B) : Epi (eqToHom p) := (eqToIso p).isIso_hom.epi_of_iso
+/-- The unit `𝒪_X ⟶ Sym⁰ F` of the graded symmetric algebra is an isomorphism. -/
+instance isIso_one_gradedSymmetricAlgebra (F : QuasicoherentSheaf X) :
+    IsIso ((gradedSymmetricAlgebra X).obj F).obj.toMon.one := by
+  -- The factors live in the sheaf category, so supply their isomorphism instances explicitly.
+  have h {A B : X.Modules} (p : A = B) : IsIso (eqToHom p) := (eqToIso p).isIso_hom
   rw [one_gradedSymmetricAlgebra]
-  exact epi_comp' (inferInstanceAs (Epi ((SheafOfModules.symmetricPowerZeroIso X.sheaf).inv.app
-    F.obj))) (h _)
+  exact IsIso.comp_isIso'
+    (inferInstanceAs (IsIso ((SheafOfModules.symmetricPowerZeroIso X.sheaf).inv.app F.obj))) (h _)
 
 /-- The multiplications `Symⁱ F ⊗ Symʲ F ⟶ Symⁱ⁺ʲ F` of the graded symmetric algebra are
 epimorphisms; in particular the graded symmetric algebra is generated in degree one. -/
 instance epi_mul_gradedSymmetricAlgebra (F : QuasicoherentSheaf X) (i j : ℕ) :
     Epi (((gradedSymmetricAlgebra X).obj F).obj.toMon.mul i j) := by
-  -- As for `epi_one_gradedSymmetricAlgebra`, the `Epi` instances of the factors are supplied by
-  -- hand.
+  -- The factors live in the sheaf category, so supply their epimorphism instances explicitly.
   have h {A B : X.Modules} (p : A = B) : Epi (eqToHom p) := (eqToIso p).isIso_hom.epi_of_iso
   rw [mul_gradedSymmetricAlgebra]
   exact epi_comp' (h _) (epi_comp' (SheafOfModules.epi_symmetricPowerMul (R := X.sheaf) F.obj i j)
@@ -298,8 +294,7 @@ theorem gradedSymmetricAlgebra_hom_ext {F : QuasicoherentSheaf X}
   refine hom_ext_of_epi_mul ?_
   have h' := congrArg (fun f ↦ f.hom) h
   simp only [degree_map_hom] at h'
-  -- The transports are cancelled as isomorphisms: typeclass search does not find their `Epi`
-  -- and `Mono` instances, as in `epi_one_gradedSymmetricAlgebra`.
+  -- Cancel the transports explicitly as isomorphisms of scheme modules.
   exact (Iso.cancel_iso_hom_right _ _ (eqToIso (degree_obj_obj A 1).symm)).1
     ((Iso.cancel_iso_hom_left (eqToIso (degree_obj_obj ((gradedSymmetricAlgebra X).obj F) 1))
       _ _).1 h')

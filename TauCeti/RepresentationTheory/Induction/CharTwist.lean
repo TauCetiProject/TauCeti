@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.CharacterTwist
+public import TauCeti.RepresentationTheory.Character.Twist
 public import TauCeti.RepresentationTheory.Induction.Basic
 public import TauCeti.RepresentationTheory.Induction.Projection
 

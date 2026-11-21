@@ -64,16 +64,23 @@ and moving the remaining factors by vectors of that subspace does not change the
 * `TauCeti.ExteriorAlgebra.ιMulti_comp_cast`: an exterior product in the exterior algebra is
   unchanged by renumbering its factors along `Fin.cast`, and
   `TauCeti.ExteriorAlgebra.ιMulti_comp_append` splits the image of an appended family.
+* `TauCeti.ExteriorAlgebra.ιMulti_of_eq_zero`: an exterior product of a family indexed by `Fin n`
+  with `n = 0` is `1`.
 * `TauCeti.ExteriorAlgebra.ιMulti_mul_ιMulti_eq_neg_one_pow_smul`: exterior products of `i` and
-  `j` vectors commute up to the scalar sign `(-1) ^ (j * i)`.
+  `j` vectors commute up to the scalar sign `(-1) ^ (j * i)`, and so do all elements of `⋀ⁱ M`
+  and `⋀ʲ M` (`TauCeti.ExteriorAlgebra.mul_eq_neg_one_pow_smul_mul_of_mem`); elements of even
+  degree are central (`TauCeti.ExteriorAlgebra.mem_center_of_mem_of_even`).
 * `TauCeti.ExteriorAlgebra.exteriorPower_map_map`: the image of `⋀ⁿ M` in the exterior algebra
-  under the map induced by `f` is the `n`th power of the degree-one image of `f`.
+  under the map induced by `f` is the `n`th power of the degree-one image of `f`; in particular
+  that map preserves the exterior degree (`LinearMap.exteriorAlgebra_map_mem_exteriorPower`).
 * `TauCeti.ExteriorAlgebra.ι_mem_exteriorPower_one` and
   `TauCeti.ExteriorAlgebra.ι_ιInv_of_mem_exteriorPower_one`: the first exterior power consists of
   the vectors, and `ExteriorAlgebra.ιInv` recovers the vector from its image.
 * `TauCeti.ExteriorAlgebra.ι_mul_mem_exteriorPower` and `TauCeti.ExteriorAlgebra.wedgeLeft`:
   left multiplication by a vector carries `⋀ⁿ M` into `⋀ⁿ⁺¹ M`, packaged as the linear map
-  `v ↦ m ∧ v` with values in degree `n + 1`.
+  `v ↦ m ∧ v` with values in degree `n + 1`; it squares to zero
+  (`TauCeti.ExteriorAlgebra.wedgeLeft_comp_wedgeLeft`), and
+  `TauCeti.ExteriorAlgebra.wedgeLeftₗ` is exterior multiplication as a bilinear map.
 * `exteriorPower.not_finite_of_not_finite`: a positive exterior power of an infinite-dimensional
   vector space is infinite-dimensional.
 * `TauCeti.exteriorPower.finrank_range_map`: over a field, the image of `⋀ⁿ V` under the map
@@ -372,7 +379,7 @@ theorem ιMulti_eq_zero_of_finrank_lt {n : ℕ} {x : Fin n → V} (P : Submodule
     [FiniteDimensional K P] (s : Finset (Fin n)) (hs : Module.finrank K P < s.card)
     (hx : ∀ i ∈ s, x i ∈ P) : exteriorPower.ιMulti K n x = 0 := by
   refine (exteriorPower.ιMulti K n).map_linearDependent x fun hli ↦ hs.not_ge ?_
-  have hli' : LinearIndependent K (fun i : s ↦ (⟨x i, hx i i.2⟩ : P)) :=
+  have hli' : LinearIndependent K (fun i : s ↦ (⟨x i, hx i i.property⟩ : P)) :=
     LinearIndependent.of_comp P.subtype (hli.comp _ Subtype.val_injective)
   simpa using hli'.fintype_card_le_finrank
 
@@ -425,6 +432,13 @@ theorem ιMulti_comp_cast {n m : ℕ} (h : n = m) (v : Fin m → M) :
   subst h
   rfl
 
+/-- An exterior product with a number of factors equal to zero, but not definitionally `0`, is the
+empty product `1`. -/
+theorem ιMulti_of_eq_zero {n : ℕ} (h : n = 0) (v : Fin n → M) :
+    _root_.ExteriorAlgebra.ιMulti R n v = 1 := by
+  subst h
+  exact _root_.ExteriorAlgebra.ιMulti_zero_apply v
+
 /-- The exterior product of the image of an appended family under a linear map splits as the
 product of the exterior products of the images of the two parts. -/
 theorem ιMulti_comp_append {n m : ℕ} (f : M →ₗ[R] N) (a : Fin n → M) (b : Fin m → M) :
@@ -452,6 +466,13 @@ theorem exteriorPower_map_map (n : ℕ) (f : M →ₗ[R] N) :
   rw [_root_.ExteriorAlgebra.exteriorPower, Submodule.map_pow,
     _root_.ExteriorAlgebra.ι_range_map_map]
 
+/-- The map of exterior algebras induced by a linear map preserves the exterior degree: it carries
+`⋀ⁿ M` into `⋀ⁿ N`. -/
+theorem _root_.LinearMap.exteriorAlgebra_map_mem_exteriorPower (f : M →ₗ[R] N) {n : ℕ}
+    {x : _root_.ExteriorAlgebra R M} (hx : x ∈ ⋀[R]^n M) :
+    _root_.ExteriorAlgebra.map f x ∈ ⋀[R]^n N := by
+  simpa only [exteriorPower.coe_map] using (exteriorPower.map n f ⟨x, hx⟩).property
+
 /-- A vector lies in the first exterior power. -/
 theorem ι_mem_exteriorPower_one (m : M) : _root_.ExteriorAlgebra.ι R m ∈ ⋀[R]^1 M := by
   rw [_root_.ExteriorAlgebra.exteriorPower, pow_one]
@@ -464,6 +485,37 @@ theorem ι_ιInv_of_mem_exteriorPower_one {x : _root_.ExteriorAlgebra R M} (hx :
   rw [_root_.ExteriorAlgebra.exteriorPower, pow_one] at hx
   obtain ⟨m, rfl⟩ := hx
   rw [_root_.ExteriorAlgebra.ι_leftInverse]
+
+/-- **Graded commutativity of the exterior algebra.** Elements of the `i`th and `j`th exterior
+powers commute up to the sign `(-1) ^ (j * i)`. -/
+theorem mul_eq_neg_one_pow_smul_mul_of_mem {i j : ℕ} {x y : _root_.ExteriorAlgebra R M}
+    (hx : x ∈ ⋀[R]^i M) (hy : y ∈ ⋀[R]^j M) : x * y = (-1 : R) ^ (j * i) • (y * x) := by
+  rw [← exteriorPower.ιMulti_span_fixedDegree] at hx hy
+  induction hx, hy using Submodule.span_induction₂ with
+  | mem_mem x y hx hy =>
+    obtain ⟨u, rfl⟩ := hx
+    obtain ⟨v, rfl⟩ := hy
+    exact ιMulti_mul_ιMulti_eq_neg_one_pow_smul u v
+  | zero_left => simp
+  | zero_right => simp
+  | add_left _ _ _ _ _ _ h h' => rw [add_mul, h, h', mul_add, smul_add]
+  | add_right _ _ _ _ _ _ h h' => rw [mul_add, h, h', add_mul, smul_add]
+  | smul_left r _ _ _ _ h => rw [smul_mul_assoc, h, mul_smul_comm, smul_comm]
+  | smul_right r _ _ _ _ h => rw [mul_smul_comm, h, smul_mul_assoc, smul_comm]
+
+/-- **Elements of even exterior degree are central.** An element of `⋀ⁱ M` with `i` even commutes
+with every element of the exterior algebra. -/
+theorem mem_center_of_mem_of_even {i : ℕ} {x : _root_.ExteriorAlgebra R M} (hx : x ∈ ⋀[R]^i M)
+    (hi : Even i) : x ∈ Subalgebra.center R (_root_.ExteriorAlgebra R M) := by
+  rw [Subalgebra.mem_center_iff]
+  intro y
+  induction y using _root_.ExteriorAlgebra.induction with
+  | algebraMap r => exact Algebra.commutes r x
+  | ι m =>
+    rw [mul_eq_neg_one_pow_smul_mul_of_mem (ι_mem_exteriorPower_one m) hx,
+      (hi.mul_right 1).neg_one_pow, one_smul]
+  | mul a b ha hb => rw [mul_assoc, hb, ← mul_assoc, ha, mul_assoc]
+  | add a b ha hb => rw [add_mul, mul_add, ha, hb]
 
 /-- Left multiplication by a vector raises the exterior degree by one: it carries the `n`-th
 exterior power into the `(n + 1)`-th. -/
@@ -492,6 +544,27 @@ theorem wedgeLeft_ιMulti (m : M) (n : ℕ) (v : Fin n → M) :
     wedgeLeft m n (exteriorPower.ιMulti R n v) = exteriorPower.ιMulti R (n + 1) (Fin.cons m v) := by
   ext
   simp [_root_.ExteriorAlgebra.ιMulti_succ_apply, Matrix.vecTail]
+
+/-- Wedging twice with the same vector gives zero, `m ∧ m ∧ v = 0`: exterior multiplication by `m`
+is a differential on the exterior powers. -/
+@[simp]
+theorem wedgeLeft_comp_wedgeLeft (m : M) (n : ℕ) :
+    wedgeLeft (R := R) m (n + 1) ∘ₗ wedgeLeft m n = 0 :=
+  LinearMap.ext fun x ↦ Subtype.ext <| by simp [← mul_assoc]
+
+variable (R M) in
+/-- Exterior multiplication `(m, v) ↦ m ∧ v` as a bilinear map, linear in the vector `m` as well
+as in `v`. -/
+def wedgeLeftₗ (n : ℕ) : M →ₗ[R] ⋀[R]^n M →ₗ[R] ⋀[R]^(n + 1) M :=
+  LinearMap.mk₂ R (fun m x ↦ wedgeLeft m n x)
+    (fun _ _ _ ↦ Subtype.ext <| by simp [add_mul])
+    (fun _ _ _ ↦ Subtype.ext <| by simp)
+    (fun _ _ _ ↦ Subtype.ext <| by simp)
+    (fun _ _ _ ↦ Subtype.ext <| by simp)
+
+@[simp]
+theorem wedgeLeftₗ_apply (n : ℕ) (m : M) : wedgeLeftₗ R M n m = wedgeLeft m n :=
+  (rfl)
 
 end ExteriorAlgebra
 

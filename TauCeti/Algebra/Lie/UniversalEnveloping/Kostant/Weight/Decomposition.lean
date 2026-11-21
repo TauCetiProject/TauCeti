@@ -230,7 +230,7 @@ theorem iSup_weightComponent_eq {M : Submodule ℤ V}
   rw [DFinsupp.sum] at hf
   have hw : ∀ m ∈ f.support,
       ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (h j)) (f m : V) = (m : ℚ) • (f m : V) :=
-    fun m _ => Module.End.mem_eigenspace_iff.1 (f m).2
+    fun m _ => Module.End.mem_eigenspace_iff.1 (f m).property
   rw [← hf]
   refine sum_mem fun m hm => Submodule.mem_iSup_of_mem m ?_
   rw [mem_weightComponent_iff]
