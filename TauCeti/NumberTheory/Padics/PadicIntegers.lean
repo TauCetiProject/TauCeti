@@ -67,7 +67,8 @@ calculation for first continuous cohomology with trivial integer coefficients.
 * `PadicInt.not_isUnit_iff_dvd`: the nonunits of `ℤ_[p]` are the multiples of `p`; in
   particular an integer is a unit of `ℤ_[p]` exactly when `p` does not divide it
   (`PadicInt.isUnit_intCast_iff`, and `PadicInt.isUnit_natCast_iff` for natural numbers), and `2`
-  is not a unit of `ℤ_[2]` (`PadicInt.not_isUnit_two`).
+  is not a unit of `ℤ_[2]` (`PadicInt.not_isUnit_two`) nor in `(2) ^ 2`
+  (`PadicInt.two_notMem_span_two_sq`).
 * `PadicInt.intCast_not_surjective`: not every `p`-adic integer is an integer.
 * `PadicInt.inv_eq_inverse`, `PadicInt.continuous_inverse`: Mathlib's `PadicInt.inv` is
   `Ring.inverse`, the inverse on units extended by `0`, and it is continuous because the nonunits
@@ -233,6 +234,16 @@ theorem intCast_not_surjective : ¬Function.Surjective (Int.cast : ℤ → ℤ_[
 /-- `2` is not a unit in `ℤ_2`. -/
 theorem not_isUnit_two : ¬IsUnit (2 : ℤ_[2]) := by
   exact_mod_cast not_isUnit_iff_dvd.mpr (dvd_refl ((2 : ℕ) : ℤ_[2]))
+
+/-- In `ℤ_[2]`, `2` does not belong to `(2) ^ 2`. -/
+theorem two_notMem_span_two_sq : (2 : ℤ_[2]) ∉ (Ideal.span {(2 : ℤ_[2])}) ^ 2 := by
+  rw [Ideal.span_singleton_pow]
+  intro h
+  have hval := (mem_span_pow_iff_le_valuation (2 : ℤ_[2]) (NeZero.ne _) 2).mp <| by
+    simpa only [Nat.cast_ofNat] using h
+  have hvp : ((2 : ℤ_[2])).valuation = 1 := by
+    simpa only [Nat.cast_ofNat] using valuation_p (p := 2)
+  omega
 
 /-- The ring inverse of `ℤ_p`, extended by `0` on the nonunits, is continuous. -/
 theorem continuous_inverse : Continuous (Ring.inverse : ℤ_[p] → ℤ_[p]) :=

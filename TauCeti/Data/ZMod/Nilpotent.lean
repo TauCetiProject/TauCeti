@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.ZMod.Basic
-public import Mathlib.RingTheory.Ideal.Operations
 public import Mathlib.RingTheory.Nilpotent.Defs
 import Mathlib.RingTheory.Nilpotent.Basic
 
@@ -24,8 +23,6 @@ is needed. For `p = 2` these say that the units of `ℤ/2^{k+1}` are exactly the
 * `ZMod.isUnit_natCast_mul_add`: `p c + u` is a unit in `ℤ/p^n` when `u` is.
 * `ZMod.not_isUnit_natCast_mul`: `p c` is not a unit in a nontrivial `ℤ/p^n`.
 * `ZMod.natCast_self_pow_ne_zero`: `p ≠ 0` in `ℤ/p^n` for `1 < p` and `1 < n`.
-* `ZMod.span_pow_eq_zero`: `(p) ^ e = 0` in `ZMod (p ^ e)`.
-* `ZMod.isNilpotent_span_natCast`: `IsNilpotent (Ideal.span {(p : ZMod (p ^ e))})`.
 -/
 
 public section
@@ -54,14 +51,5 @@ theorem natCast_self_pow_ne_zero (hp : 1 < p) (hn : 1 < n) : (p : ZMod (p ^ n)) 
   intro h
   have : n ≤ 1 := (Nat.pow_dvd_pow_iff_le_right hp).mp (by rwa [pow_one])
   omega
-
-/-- In `ZMod (p ^ e)`, the `e`-th power of the principal ideal `(p)` vanishes. -/
-theorem span_pow_eq_zero (p e : ℕ) : (Ideal.span {(p : ZMod (p ^ e))}) ^ e = 0 := by
-  rw [Ideal.span_singleton_pow, Ideal.zero_eq_bot, Ideal.span_singleton_eq_bot,
-    ← Nat.cast_pow, ZMod.natCast_self]
-
-/-- In `ZMod (p ^ e)`, the principal ideal `(p)` is nilpotent in the ordinary sense. -/
-theorem isNilpotent_span_natCast (p e : ℕ) : IsNilpotent (Ideal.span {(p : ZMod (p ^ e))}) :=
-  ⟨e, span_pow_eq_zero p e⟩
 
 end ZMod

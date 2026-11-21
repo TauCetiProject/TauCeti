@@ -8,6 +8,8 @@ module
 public import Mathlib.RingTheory.DividedPowers.RatAlgebra
 public import Mathlib.RingTheory.DividedPowers.SubDPIdeal
 
+import Mathlib.Algebra.GradedMonoid
+
 /-!
 # The divided power filtration of a divided power ideal
 
@@ -40,8 +42,6 @@ filtration coincides with the ordinary power filtration `I ^ n`.
 ## Main results
 
 * `DividedPowers.pdFiltration_le_iff`: universal containment criterion `hI.pdFiltration n ≤ K`.
-* `DividedPowers.mem_pdFiltration_iff`: elementwise membership characterization in
-  `hI.pdFiltration n`.
 * `DividedPowers.pdFiltration_zero`, `DividedPowers.pdFiltration_one`: `F⁰ = ⊤` and `F¹ = I`.
 * `DividedPowers.pdFiltration_antitone`: `n ↦ hI.pdFiltration n` is antitone.
 * `DividedPowers.pdFiltration_mul_le`:
@@ -143,44 +143,6 @@ theorem list_prod_dpow_mem_pdFiltration {n : ℕ} (l : List (ℕ × R)) (hl : �
     (l.map fun p ↦ hI.dpow p.1 p.2).prod ∈ hI.pdFiltration n :=
   (hI.pdFiltration_le_iff.mp le_rfl) l hl hn
 
-/-- An element `x : R` belongs to `hI.pdFiltration n` if and only if it is a finite
-`R`-linear combination of weighted products `∏ j, hI.dpow e_j x_j` with `x_j ∈ I` and
-`∑ j, e_j ≥ n`. -/
-theorem mem_pdFiltration_iff {n : ℕ} {x : R} :
-    x ∈ hI.pdFiltration n ↔
-      ∃ (k : ℕ) (c : Fin k → R) (l : Fin k → List (ℕ × R)),
-        (∀ i, ∀ p ∈ l i, p.2 ∈ I) ∧ (∀ i, n ≤ ((l i).map Prod.fst).sum) ∧
-        ∑ i, c i * ((l i).map fun p ↦ hI.dpow p.1 p.2).prod = x := by
-  constructor
-  · intro hx
-    rw [pdFiltration_def] at hx
-    induction hx using Submodule.span_induction with
-    | mem r hr =>
-      obtain ⟨l, hl, hn, rfl⟩ := hr
-      exact ⟨1, fun _ ↦ 1, fun _ ↦ l, fun _ ↦ hl, fun _ ↦ hn, by simp⟩
-    | zero =>
-      exact ⟨0, Fin.elim0, Fin.elim0, fun i ↦ i.elim0, fun i ↦ i.elim0, by simp⟩
-    | add x y _ _ ihx ihy =>
-      obtain ⟨k₁, c₁, l₁, hl₁, hn₁, rfl⟩ := ihx
-      obtain ⟨k₂, c₂, l₂, hl₂, hn₂, rfl⟩ := ihy
-      refine ⟨k₁ + k₂, Fin.append c₁ c₂, Fin.append l₁ l₂, ?_, ?_, ?_⟩
-      · intro i
-        induction i using Fin.addCases with
-        | left i => simpa using hl₁ i
-        | right i => simpa using hl₂ i
-      · intro i
-        induction i using Fin.addCases with
-        | left i => simpa using hn₁ i
-        | right i => simpa using hn₂ i
-      · simp [Fin.sum_univ_add]
-    | smul r x _ ihx =>
-      obtain ⟨k, c, l, hl, hn, rfl⟩ := ihx
-      refine ⟨k, fun i ↦ r * c i, l, hl, hn, ?_⟩
-      simp [Finset.mul_sum, mul_assoc]
-  · rintro ⟨k, c, l, hl, hn, rfl⟩
-    exact Submodule.sum_mem _ fun i _ ↦
-      Ideal.mul_mem_left _ (c i) (hI.list_prod_dpow_mem_pdFiltration (l i) (hl i) (hn i))
-
 /-- For `x ∈ I` and `n : ℕ`, `hI.dpow n x` belongs to `hI.pdFiltration n`. -/
 theorem dpow_mem_pdFiltration {n : ℕ} {x : R} (hx : x ∈ I) :
     hI.dpow n x ∈ hI.pdFiltration n := by
@@ -236,18 +198,12 @@ sum of weights is at least `n`. -/
 theorem prod_dpow_mem_pdFiltration {ι : Type*} {s : Finset ι} {e : ι → ℕ} {x : ι → R}
     (hx : ∀ i ∈ s, x i ∈ I) {n : ℕ} (hn : n ≤ ∑ i ∈ s, e i) :
     (∏ i ∈ s, hI.dpow (e i) (x i)) ∈ hI.pdFiltration n := by
-  classical
-  have hsum : ∀ {t : Finset ι}, (∀ i ∈ t, x i ∈ I) →
-      (∏ i ∈ t, hI.dpow (e i) (x i)) ∈ hI.pdFiltration (∑ i ∈ t, e i) := by
-    intro t ht
-    induction t using Finset.induction with
-    | empty => simp
-    | @insert a t hat ih =>
-      rw [Finset.prod_insert hat, Finset.sum_insert hat]
-      exact hI.pdFiltration_mul_le _ _ <|
-        Ideal.mul_mem_mul (hI.dpow_mem_pdFiltration (ht a (Finset.mem_insert_self a t)))
-          (ih fun i hi ↦ ht i (Finset.mem_insert_of_mem hi))
-  exact hI.pdFiltration_antitone hn (hsum hx)
+  have : SetLike.GradedMonoid hI.pdFiltration :=
+    { one_mem := by simp
+      mul_mem := fun _ _ _ _ ha hb ↦ hI.pdFiltration_mul_le _ _ (Ideal.mul_mem_mul ha hb) }
+  exact hI.pdFiltration_antitone hn <|
+    SetLike.prod_mem_graded hI.pdFiltration e (fun i ↦ hI.dpow (e i) (x i))
+      fun i hi ↦ hI.dpow_mem_pdFiltration (hx i hi)
 
 /-- Powers of a divided power filtration step satisfy `(Fⁿ)ᵐ ≤ Fᵐⁿ`. -/
 theorem pdFiltration_pow_le (m n : ℕ) :
@@ -384,23 +340,15 @@ theorem pdFiltration_eq_span_of_eq_span {S : Set R} (hS : I = Ideal.span S) (n :
   refine le_antisymm ?_ ?_
   · rw [pdFiltration_le_iff]
     intro l hl hn
-    have hprod : ∀ {t : List (ℕ × R)}, (∀ p ∈ t, p.2 ∈ I) →
-        (t.map fun p ↦ hI.dpow p.1 p.2).prod ∈
-          Ideal.span { r : R | ∃ l : List (ℕ × R), (∀ p ∈ l, p.2 ∈ S) ∧
-            (t.map Prod.fst).sum ≤ (l.map Prod.fst).sum ∧
-            (l.map fun p ↦ hI.dpow p.1 p.2).prod = r } := by
-      intro t ht
-      induction t with
-      | nil =>
-        simp only [List.map_nil, List.prod_nil, List.sum_nil]
-        rw [hI.span_words_zero S]
-        exact Submodule.mem_top
-      | cons p t ih =>
-        simp only [List.map_cons, List.prod_cons, List.sum_cons]
-        exact hI.span_words_mul_le S p.1 (t.map Prod.fst).sum
-          (Ideal.mul_mem_mul (hI.dpow_mem_span_words hS (ht p List.mem_cons_self) p.1)
-            (ih fun q hq ↦ ht q (List.mem_cons_of_mem p hq)))
-    exact hI.span_words_antitone S hn (hprod hl)
+    let A : ℕ → Ideal R := fun k ↦
+      Ideal.span { r : R | ∃ l : List (ℕ × R), (∀ p ∈ l, p.2 ∈ S) ∧
+        k ≤ (l.map Prod.fst).sum ∧ (l.map fun p ↦ hI.dpow p.1 p.2).prod = r }
+    have : SetLike.GradedMonoid A :=
+      { one_mem := by rw [show A 0 = ⊤ from hI.span_words_zero S]; exact Submodule.mem_top
+        mul_mem := fun m n _ _ ha hb ↦ hI.span_words_mul_le S m n (Ideal.mul_mem_mul ha hb) }
+    exact hI.span_words_antitone S hn <|
+      SetLike.list_prod_map_mem_graded (A := A) l Prod.fst (fun p ↦ hI.dpow p.1 p.2)
+        fun p hp ↦ hI.dpow_mem_span_words hS (hl p hp) p.1
   · rw [pdFiltration_def]
     refine Ideal.span_mono ?_
     rintro r ⟨l, hlS, hln, rfl⟩
@@ -427,16 +375,16 @@ theorem pdFiltration_eq_span_of_eq_span_singleton {a : R} (ha : I = Ideal.span {
   refine le_antisymm ?_ ?_
   · rw [hI.pdFiltration_le_iff_of_eq_span ha]
     intro l hl hn
-    have hprod : (l.map fun p ↦ hI.dpow p.1 p.2).prod =
+    have hmap : l.map (fun p ↦ hI.dpow p.1 p.2) = l.map fun p ↦ hI.dpow p.1 a :=
+      List.map_congr_left fun p hp ↦ by rw [Set.mem_singleton_iff.mp (hl p hp)]
+    have hprod : (l.map fun p ↦ hI.dpow p.1 a).prod =
         ∏ i : Fin l.length, hI.dpow l[i].1 a := by
       conv_lhs => rw [← List.ofFn_get l, List.map_ofFn, Fin.prod_ofFn]
-      refine Finset.prod_congr rfl fun i _ ↦ ?_
-      dsimp
-      rw [Set.mem_singleton_iff.mp (hl l[↑i] (List.getElem_mem _))]
+      rfl
     have hsum : (l.map Prod.fst).sum = ∑ i : Fin l.length, l[i].1 := by
       conv_lhs => rw [← List.ofFn_get l, List.map_ofFn, Fin.sum_ofFn]
       rfl
-    rw [hprod, hI.prod_dpow haI, ← hsum]
+    rw [hmap, hprod, hI.prod_dpow haI, ← hsum]
     exact Ideal.mul_mem_left _ _ (Ideal.subset_span ⟨(l.map Prod.fst).sum, hn, rfl⟩)
   · rw [Ideal.span_le]
     rintro _ ⟨m, hm, rfl⟩
@@ -463,19 +411,13 @@ theorem IsDPMorphism.map_pdFiltration_le {f : R →+* S} (hf : IsDPMorphism hI h
   rw [Ideal.map_le_iff_le_comap, pdFiltration_le_iff]
   intro l hl hn
   rw [Ideal.mem_comap]
-  have hmap : ∀ {t : List (ℕ × R)}, (∀ p ∈ t, p.2 ∈ I) →
-      f (t.map fun p ↦ hI.dpow p.1 p.2).prod =
-        ((t.map fun p ↦ (p.1, f p.2)).map fun q ↦ hJ.dpow q.1 q.2).prod := by
-    intro t ht
+  have hmap : f (l.map fun p ↦ hI.dpow p.1 p.2).prod =
+      ((l.map fun p ↦ (p.1, f p.2)).map fun q ↦ hJ.dpow q.1 q.2).prod := by
     rw [map_list_prod]
+    simp only [List.map_map]
     congr 1
-    induction t with
-    | nil => simp
-    | cons p t ih =>
-      simp only [List.map_cons, List.cons.injEq]
-      exact ⟨hf.map_dpow (ht p List.mem_cons_self),
-        ih fun q hq ↦ ht q (List.mem_cons_of_mem p hq)⟩
-  rw [hmap hl]
+    exact List.map_congr_left fun p hp ↦ hf.map_dpow (hl p hp)
+  rw [hmap]
   refine hJ.list_prod_dpow_mem_pdFiltration _ ?_ ?_
   · intro q hq
     obtain ⟨p, hp, rfl⟩ := List.mem_map.mp hq
@@ -538,16 +480,12 @@ theorem pdFiltration_eq_pow_of_dpow_mem_pow (hI : DividedPowers I)
   refine le_antisymm ?_ (hI.pow_le_pdFiltration n)
   rw [pdFiltration_le_iff]
   intro l hl hn
-  have hprod : ∀ {t : List (ℕ × R)}, (∀ p ∈ t, p.2 ∈ I) →
-      (t.map fun p ↦ hI.dpow p.1 p.2).prod ∈ I ^ (t.map Prod.fst).sum := by
-    intro t ht
-    induction t with
-    | nil => simp
-    | cons p t ih =>
-      simp only [List.map_cons, List.prod_cons, List.sum_cons, pow_add]
-      exact Ideal.mul_mem_mul (hall p.1 p.2 (ht p List.mem_cons_self))
-        (ih fun q hq ↦ ht q (List.mem_cons_of_mem p hq))
-  exact Ideal.pow_le_pow_right hn (hprod hl)
+  have : SetLike.GradedMonoid (fun k : ℕ ↦ I ^ k) :=
+    { one_mem := by simp
+      mul_mem := fun m n _ _ ha hb ↦ by rw [pow_add]; exact Ideal.mul_mem_mul ha hb }
+  exact Ideal.pow_le_pow_right hn <|
+    SetLike.list_prod_map_mem_graded l Prod.fst (fun p ↦ hI.dpow p.1 p.2)
+      fun p hp ↦ hall p.1 p.2 (hl p hp)
 
 /-- The divided power filtration coincides with the ordinary power filtration `I ^ n` for all `n`
 if and only if `hI.dpow m x ∈ I ^ m` for every `m ≥ 2` and `x ∈ I`. -/
