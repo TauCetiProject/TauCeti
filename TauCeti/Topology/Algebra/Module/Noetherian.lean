@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Noetherian.Defs
+public import Mathlib.Topology.Algebra.Module.Basic
 public import Mathlib.Topology.Baire.CompleteMetrizable
-public import TauCeti.Topology.Algebra.Module.Baire
+import TauCeti.Topology.Algebra.Module.Baire
 
 /-!
 # Noetherianity from closed submodules
@@ -24,9 +25,9 @@ the remaining implications of Wedhorn's Theorem 6.16, in
 
 Over such a ring, a completely pseudometrisable topological module all of whose submodules are
 closed is noetherian, generalising the converse half of Wedhorn's Proposition 6.17. Given an
-ascending chain of submodules, their union `S` is closed, hence completely pseudometrisable and so
-a Baire space. The members of the chain are closed submodules of `S` covering it, so one of them is
-all of `S`, and the chain stops there.
+`ℕ`-indexed ascending chain of submodules, their union `S` is closed, hence completely
+pseudometrisable and so a Baire space. The members of the chain are countably many closed
+submodules of `S` covering it, so one of them is all of `S`, and the chain stops there.
 
 Over a complete Hausdorff Tate ring the forward half, that every submodule of a noetherian module is
 closed, is `TauCeti.Huber.isClosed_of_isNoetherian`; the two halves are assembled into Wedhorn's
@@ -68,7 +69,9 @@ theorem isNoetherian_of_forall_isClosed [TopologicalSpace M]
   obtain ⟨n, hn⟩ : ∃ n, (f n).comap S.subtype = ⊤ := by
     by_contra! hne
     obtain ⟨x, hx⟩ := Submodule.exists_forall_notMem_of_isClosed _
-      (fun n ↦ (h (f n)).preimage continuous_subtypeVal) hne
+      (fun n ↦ by
+        rw [Submodule.comap_coe, Submodule.coe_subtype]
+        exact (h (f n)).preimage continuous_subtypeVal) hne
     obtain ⟨n, hn⟩ := (Submodule.mem_iSup_of_directed f f.monotone.directed_le).mp x.property
     exact hx n (Submodule.mem_comap.mpr hn)
   have hS : S ≤ f n := Submodule.comap_subtype_eq_top.mp hn
