@@ -8,6 +8,7 @@ module
 public import TauCeti.GroupTheory.CSA
 public import TauCeti.GroupTheory.FreeGroup.MaximalRoot.Basic
 public import TauCeti.GroupTheory.HNNExtension
+import TauCeti.GroupTheory.FreeGroup.ProperPower.Basic
 
 /-!
 # Free groups are CSA
