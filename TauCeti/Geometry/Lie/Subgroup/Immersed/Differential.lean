@@ -29,6 +29,9 @@ supplies the Hausdorff instance needed by the exponential API.
 * `TauCeti.Lie.ImmersedLieSubgroupData.injective_lieMapToHom`: the differential is injective.
 * `TauCeti.Lie.ImmersedLieSubgroupData.range_lieMapToHom_le`: its range lies in
   `TauCeti.Lie.lieSubalgebraOfSubgroup K`.
+* `TauCeti.Lie.ImmersedLieSubgroupData.range_mfderiv_toHom_one`: in the tangent space at the
+  identity, the range of the differential of the presenting homomorphism is the range of
+  `lieMapToHom`.
 
 * `TauCeti.Lie.ImmersedLieSubgroupData.toHom_lieExp`: exponential naturality.
 * `TauCeti.Lie.ImmersedLieSubgroupData.lieHomOfRangeLe`: the canonical Lie-algebra
@@ -114,6 +117,29 @@ theorem injective_lieMapToHom (d : ImmersedLieSubgroupData I K) :
     Function.Injective d.lieMapToHom := by
   apply ContMDiffMonoidMorphism.lieMap_injective_of_mfderiv_injective
   exact d.injective_mfderiv_toHom 1
+
+/-- In the tangent space at the identity, the range of the differential of the presenting
+homomorphism is the image of the range of `lieMapToHom`. -/
+theorem range_mfderiv_toHom_one (d : ImmersedLieSubgroupData I K) :
+    LinearMap.range (mfderiv d.I' I d.toHom 1).toLinearMap =
+      (d.lieMapToHom.range.map (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I)
+        (ContMDiffMul.isInteriorPoint (n := ∞) (by simp) (1 : G))).toLieHom).toSubmodule := by
+  let eX := leftInvariantDerivationLieEquivGroupLieAlgebra
+    (ContMDiffMul.isInteriorPoint (I := d.I') (G := d.X) (n := ∞) (by simp) 1)
+  have hφ : ⇑d.toContMDiffMonoidMorphism = d.toHom := funext d.toContMDiffMonoidMorphism_apply
+  have h (D : LeftInvariantDerivation d.I' d.X) :
+      leftInvariantDerivationLieEquivGroupLieAlgebra
+          (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G)) (d.lieMapToHom D) =
+        mfderiv d.I' I d.toHom 1 (eX D) := by
+    rw [lieMapToHom_apply, ← hφ]
+    exact leftInvariantDerivationLieEquivGroupLieAlgebra_lieMap d.toContMDiffMonoidMorphism D
+  ext v
+  constructor
+  · rintro ⟨w, rfl⟩
+    obtain ⟨D, rfl⟩ := eX.surjective w
+    exact ⟨d.lieMapToHom D, ⟨D, rfl⟩, h D⟩
+  · rintro ⟨_, ⟨D, rfl⟩, rfl⟩
+    exact ⟨eX D, (h D).symm⟩
 
 section AmbientSubalgebra
 
