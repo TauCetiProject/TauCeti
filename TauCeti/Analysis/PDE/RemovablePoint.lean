@@ -73,7 +73,6 @@ theorem setIntegral_inner_gradient_eq_zero_of_forall_notMem_tsupport
     (φ : 𝓓(Ω, ℝ)) : ∫ x in Ω, ⟪V x, ∇ (φ : E → ℝ) x⟫_ℝ ∂μ = 0 := by
   set C' := max C 0
   have hC' (x : E) (hx : x ∈ Ω) : ‖V x‖ ≤ C' := (hC x hx).trans (le_max_left _ _)
-  have hC'0 : 0 ≤ C' := le_max_right _ _
   let b : ContDiffBump (0 : E) := ⟨1, 2, one_pos, one_lt_two⟩
   have hb1 : ContDiff ℝ 1 b := b.contDiff
   obtain ⟨K, hK⟩ := (hb1.continuous_fderiv one_ne_zero).bounded_above_of_compact_support
