@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.SpecialFunctions.LogIntegral.Basic
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.AbelSummation
+import TauCeti.Analysis.SpecialFunctions.Log.Asymptotics
 
 /-!
 # From the weighted prime count to the unweighted one
@@ -103,7 +104,7 @@ theorem primeCount_sub_mul_logIntegral_isLittleO
         fun x : ℝ ↦ x / Real.log x :=
     Real.isLittleO_integral_div_mul_log_sq
       (fun x _ ↦ intervalIntegrable_primeTheta_sub_const_mul S δ 2 x) h.isBigO
-  have hconst := Real.isLittleO_const_div_log (2 * δ / Real.log 2)
+  have hconst := _root_.Real.isLittleO_const_div_log (2 * δ / Real.log 2)
   refine ((hboundary.add hintegral).add hconst).congr' ?_ EventuallyEq.rfl
   filter_upwards [eventually_ge_atTop (2 : ℝ)] with x hx
   exact (primeCount_sub_mul_logIntegral_eq S δ hx).symm

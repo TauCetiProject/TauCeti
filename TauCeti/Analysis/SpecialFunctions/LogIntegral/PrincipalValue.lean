@@ -13,6 +13,7 @@ import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.Analysis.SpecialFunctions.NonIntegrable
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.Analysis.SpecialFunctions.Exp.DividedDifference
+import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.Analysis.SpecialFunctions.Log.InvLog
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
 import TauCeti.NumberTheory.Harmonic.GammaDeriv
@@ -30,8 +31,8 @@ and `li 2`:
 * On `(1, ∞)`, `li x` is the Cauchy principal value
   `lim_{ε → 0⁺} (∫ t in 0..(1 - ε), (log t)⁻¹ + ∫ t in (1 + ε)..x, (log t)⁻¹)`.
 * In exponential-integral coordinates `t = e^u`, `∫ u in Iic y, exp u / u = li (exp y)` for
-  `y < 0`, and `∫ u in (-ε⁻¹)..(-ε), exp u / u + ∫ u in ε..y, exp u / u → li (exp y)` as `ε → 0⁺`
-  for `y > 0`.
+  `y < 0`, `li (exp y) = γ + log |y| + ∫ u in 0..y, (exp u - 1) / u` for all `y : ℝ`, and
+  `∫ u in (-ε⁻¹)..(-ε), exp u / u + ∫ u in ε..y, exp u / u → li (exp y)` as `ε → 0⁺` for `y > 0`.
 * Subtracting `(t - 1)⁻¹` cancels the pole at `t = 1` and gives the absolutely convergent
   representation `li x = log |x - 1| + ∫ t in 0..x, ((log t)⁻¹ - (t - 1)⁻¹)` for all `x > 0`,
   `x ≠ 1`.
@@ -46,11 +47,12 @@ and `li 2`:
 * `Real.tendsto_li_one_add_sub_one_sub` and `Real.tendsto_integral_inv_log_principalValue` —
   Cauchy principal value on `(1, ∞)`.
 * `Real.hasDerivAt_li_exp`, `Real.integral_exp_div_eq_li_exp_sub`,
-  `Real.integral_Iic_exp_div_eq_li_exp`, and `Real.tendsto_integral_exp_div_principalValue` —
-  exponential-integral forms.
+  `Real.integral_Iic_exp_div_eq_li_exp`, `Real.li_exp`, and
+  `Real.tendsto_integral_exp_div_principalValue` — exponential-integral forms.
 * `Real.continuousAt_inv_log_sub_inv_sub_one_zero`,
   `Real.tendsto_inv_log_sub_inv_sub_one_nhdsNE_one`,
-  `Real.intervalIntegrable_inv_log_sub_inv_sub_one`, and
+  `Real.intervalIntegrable_inv_log_sub_inv_sub_one`,
+  `Real.exists_abs_inv_log_sub_inv_sub_one_le`, and
   `Real.li_eq_log_abs_sub_one_add_integral` — absolutely convergent regularized integral.
 * `Real.tendsto_inv_log_one_add_add_inv_log_one_sub_nhdsNE_zero`,
   `Real.continuousAt_inv_log_one_add_add_inv_log_one_sub_one`,
@@ -205,6 +207,12 @@ theorem integral_Iic_exp_div_eq_li_exp {y : ℝ} (hy : y < 0) :
     (fun u hu ↦ hasDerivAt_li_exp (lt_of_le_of_lt hu hy).ne)
     (integrableOn_exp_div_Iic hy) hlim
 
+/-- **Exponential-integral representation via the regularized integrand** `(exp u - 1) / u`:
+for every `y : ℝ`, `li (exp y) = γ + log |y| + ∫ u in 0..y, (exp u - 1) / u`. -/
+theorem li_exp (y : ℝ) :
+    li (exp y) = eulerMascheroniConstant + log |y| + ∫ u in (0 : ℝ)..y, (exp u - 1) / u := by
+  rw [li_eq_add_log_abs, log_exp, integral_exp_sub_one_div_eq_tsum]
+
 /-- **Exponential-integral principal value representation of `li` on `(1, ∞)`**: for `y > 0`,
 `∫ u in (-ε⁻¹)..(-ε), exp u / u + ∫ u in ε..y, exp u / u → li (exp y)` as `ε → 0⁺`. -/
 theorem tendsto_integral_exp_div_principalValue {y : ℝ} (hy : 0 < y) :
@@ -297,49 +305,58 @@ theorem tendsto_inv_log_sub_inv_sub_one_nhdsNE_one :
   have hsub : t - 1 ≠ 0 := sub_ne_zero.mpr ht1
   field_simp [hlt, hsub]
 
+private theorem continuousOn_update_inv_log_sub_inv_sub_one :
+    ContinuousOn (Function.update (fun t : ℝ ↦ (log t)⁻¹ - (t - 1)⁻¹) 1 (1 / 2)) (Ici 0) := by
+  rw [continuousOn_update_iff]
+  refine ⟨fun t ⟨ht0, ht1⟩ ↦ ?_, fun _ ↦
+    tendsto_inv_log_sub_inv_sub_one_nhdsNE_one.mono_left
+      (nhdsWithin_mono 1 fun _ h ↦ h.2)⟩
+  rcases eq_or_lt_of_le ht0 with rfl | htpos
+  · exact continuousAt_inv_log_sub_inv_sub_one_zero.continuousWithinAt
+  · have htne : t ≠ 0 := htpos.ne'
+    have hlt : log t ≠ 0 := log_ne_zero_of_pos_of_ne_one htpos ht1
+    have hsub : t - 1 ≠ 0 := sub_ne_zero.mpr ht1
+    exact (by fun_prop (disch := assumption) :
+      ContinuousAt (fun u : ℝ ↦ (log u)⁻¹ - (u - 1)⁻¹) t).continuousWithinAt
+
 /-- The regularized integrand `(log t)⁻¹ - (t - 1)⁻¹` is interval integrable on any interval in
 `[0, ∞)`. -/
 theorem intervalIntegrable_inv_log_sub_inv_sub_one {a b : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) :
     IntervalIntegrable (fun t : ℝ ↦ (log t)⁻¹ - (t - 1)⁻¹) volume a b := by
-  let g : ℝ → ℝ := Function.update (fun t : ℝ ↦ (log t)⁻¹ - (t - 1)⁻¹) 1 (1 / 2)
-  have hg_cont : ContinuousOn g (Ici 0) := by
-    rw [continuousOn_update_iff]
-    refine ⟨fun t ⟨ht0, ht1⟩ ↦ ?_, fun _ ↦
-      tendsto_inv_log_sub_inv_sub_one_nhdsNE_one.mono_left
-        (nhdsWithin_mono 1 fun _ h ↦ h.2)⟩
-    rcases eq_or_lt_of_le ht0 with rfl | htpos
-    · exact continuousAt_inv_log_sub_inv_sub_one_zero.continuousWithinAt
-    · have htne : t ≠ 0 := htpos.ne'
-      have hlt : log t ≠ 0 := log_ne_zero_of_pos_of_ne_one htpos ht1
-      have hsub : t - 1 ≠ 0 := sub_ne_zero.mpr ht1
-      exact (by fun_prop (disch := assumption) :
-        ContinuousAt (fun u : ℝ ↦ (log u)⁻¹ - (u - 1)⁻¹) t).continuousWithinAt
-  have hg_int : IntervalIntegrable g volume a b :=
-    (hg_cont.mono fun t (ht : t ∈ uIcc a b) ↦ (le_min ha hb).trans ht.1).intervalIntegrable
+  have hg_int : IntervalIntegrable
+      (Function.update (fun t : ℝ ↦ (log t)⁻¹ - (t - 1)⁻¹) 1 (1 / 2)) volume a b :=
+    (continuousOn_update_inv_log_sub_inv_sub_one.mono
+      fun t (ht : t ∈ uIcc a b) ↦ (le_min ha hb).trans ht.1).intervalIntegrable
   refine hg_int.congr_ae ?_
   filter_upwards [ae_restrict_of_ae (volume.ae_ne (1 : ℝ))] with t ht1
   exact Function.update_of_ne ht1 _ _
+
+/-- The regularized integrand `(log t)⁻¹ - (t - 1)⁻¹` is bounded in absolute value on every
+compact interval `[a, b]` with `0 ≤ a`. -/
+theorem exists_abs_inv_log_sub_inv_sub_one_le {a b : ℝ} (ha : 0 ≤ a) :
+    ∃ C : ℝ, ∀ t ∈ Icc a b, |(log t)⁻¹ - (t - 1)⁻¹| ≤ C := by
+  obtain ⟨C, hC⟩ := isCompact_Icc.exists_bound_of_continuousOn
+    (continuousOn_update_inv_log_sub_inv_sub_one.mono fun t (ht : t ∈ Icc a b) ↦ ha.trans ht.1)
+  refine ⟨max C 0, fun t ht ↦ ?_⟩
+  rcases eq_or_ne t 1 with rfl | ht1
+  · simp
+  · calc |(log t)⁻¹ - (t - 1)⁻¹|
+        = ‖Function.update (fun u : ℝ ↦ (log u)⁻¹ - (u - 1)⁻¹) 1 (1 / 2) t‖ := by
+          rw [Function.update_of_ne ht1, norm_eq_abs]
+      _ ≤ C := hC t ht
+      _ ≤ max C 0 := le_max_left _ _
 
 /-- **Absolutely convergent integral representation of `li`**: for every `x > 0`, `x ≠ 1`,
 `li x = log |x - 1| + ∫ t in 0..x, ((log t)⁻¹ - (t - 1)⁻¹)`. -/
 theorem li_eq_log_abs_sub_one_add_integral {x : ℝ} (hx0 : 0 < x) (hx1 : x ≠ 1) :
     li x = log |x - 1| + ∫ t in (0 : ℝ)..x, ((log t)⁻¹ - (t - 1)⁻¹) := by
-  have hint_inv {a b : ℝ} (h1 : (1 : ℝ) ∉ uIcc a b) :
-      (∫ t in a..b, (t - 1)⁻¹) = log |b - 1| - log |a - 1| := by
-    have h0 : (0 : ℝ) ∉ uIcc (a - 1) (b - 1) := fun h ↦ h1 <| by
-      rcases mem_uIcc.mp h with ⟨h1', h2'⟩ | ⟨h1', h2'⟩
-      · exact mem_uIcc.mpr (Or.inl ⟨by linarith, by linarith⟩)
-      · exact mem_uIcc.mpr (Or.inr ⟨by linarith, by linarith⟩)
-    rw [intervalIntegral.integral_comp_sub_right (fun u : ℝ ↦ u⁻¹) (1 : ℝ), integral_inv h0,
-      log_div (fun h ↦ h0 (h ▸ right_mem_uIcc)) (fun h ↦ h0 (h ▸ left_mem_uIcc)),
-      log_abs, log_abs]
   rcases lt_or_gt_of_ne hx1 with hx_lt | hx_gt
   · have h1 : (1 : ℝ) ∉ uIcc 0 x := by rw [uIcc_of_le hx0.le]; intro h; linarith [h.2]
     have hdiff := intervalIntegral.integral_sub
       (intervalIntegrable_inv_log_of_lt_one le_rfl one_pos hx0.le hx_lt)
       (intervalIntegrable_sub_inv_iff.mpr (Or.inr h1))
-    rw [← li_eq_integral_inv_log hx0 hx_lt, hint_inv h1, zero_sub, abs_neg, abs_one, log_one,
-      sub_zero] at hdiff
+    rw [← li_eq_integral_inv_log hx0 hx_lt, integral_sub_inv h1, zero_sub, abs_neg, abs_one,
+      log_one, sub_zero] at hdiff
     linarith
   · have h1 := (TauCeti.intervalIntegral.tendsto_integral_excise (c := 1)
       (by rw [uIoo_of_le hx0.le]; exact ⟨one_pos, hx_gt⟩)
@@ -365,7 +382,7 @@ theorem li_eq_log_abs_sub_one_add_integral {x : ℝ} (hx0 : 0 < x) (hx1 : x ≠ 
           intervalIntegral.integral_sub
             (by simpa [pow_one] using intervalIntegrable_inv_log_pow 1 (by linarith) hx_gt)
             (intervalIntegrable_sub_inv_iff.mpr (Or.inr hnot2)),
-          hint_inv hnot1, hint_inv hnot2]
+          integral_sub_inv hnot1, integral_sub_inv hnot2]
       have hε_sub : |1 - ε - 1| = ε := by rw [sub_sub_cancel_left, abs_neg, abs_of_pos hε0]
       have hε_add : |1 + ε - 1| = ε := by rw [add_sub_cancel_left, abs_of_pos hε0]
       rw [hε_sub, hε_add]

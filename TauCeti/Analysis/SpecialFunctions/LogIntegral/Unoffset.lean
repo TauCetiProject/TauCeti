@@ -34,7 +34,8 @@ follow as theorems.
 
 ## Main declarations
 
-* `Real.li` — the unoffset logarithmic integral, with `Real.li_def` and `Real.li_eq_add_log_abs`.
+* `Real.li`, `Real.li_def`, `Real.li_eq_add_log_abs`, `Real.li_zero`, `Real.li_one`,
+  `Real.li_neg_eq` — the unoffset logarithmic integral and its normalization lemmas.
 * `Real.hasDerivAt_li`, `Real.deriv_li`, `Real.differentiableAt_li`, `Real.continuousAt_li`,
   `Real.measurable_li` — derivative `(log x)⁻¹` and regularity of `li`.
 * `Real.tendsto_li_nhdsGT_zero` — `li x → 0` as `x → 0⁺`.
@@ -84,6 +85,21 @@ theorem li_eq_add_log_abs (x : ℝ) :
     li x = eulerMascheroniConstant + log |log x| +
       ∑' n : ℕ, log x ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ)) := by
   rw [li_def, log_abs]
+
+/-- `li 0` takes the junk value `γ`. -/
+@[simp]
+theorem li_zero : li 0 = eulerMascheroniConstant := by
+  simp [li_def]
+
+/-- `li 1` takes the junk value `γ`. -/
+@[simp]
+theorem li_one : li 1 = eulerMascheroniConstant := by
+  simp [li_def]
+
+/-- `li` is symmetric in sign (for `x < 0`, `li x` takes the junk value `li (-x)`). -/
+@[simp]
+theorem li_neg_eq (x : ℝ) : li (-x) = li x := by
+  simp [li_def]
 
 /-- The unoffset logarithmic integral has derivative `(log x)⁻¹` for every `x > 0`, `x ≠ 1`. -/
 theorem hasDerivAt_li {x : ℝ} (hx0 : 0 < x) (hx1 : x ≠ 1) :

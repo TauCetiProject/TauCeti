@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.SpecialFunctions.LogIntegral.Unoffset
 import Mathlib.Analysis.Complex.ExponentialBounds
 import TauCeti.Analysis.SpecialFunctions.Exp.DividedDifference
+import TauCeti.Analysis.SpecialFunctions.Log.Asymptotics
 import TauCeti.Analysis.SpecialFunctions.Log.Bounds
 
 /-!

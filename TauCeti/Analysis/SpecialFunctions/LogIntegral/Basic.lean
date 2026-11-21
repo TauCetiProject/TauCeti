@@ -40,8 +40,6 @@ the remaining integral is `o (x / log x)`. Splitting that integral at `√x` bou
 * `Real.integral_inv_log_rpow_le_sqrt_add`, `Real.integral_inv_log_rpow_lt_div_add`,
   `Real.integral_inv_log_pow_le_sqrt_add`, `Real.integral_inv_log_pow_lt_div_add` — explicit upper
   bounds for `∫ t in 2..x, (log t ^ k)⁻¹` with `k ≥ 0` and `x ≥ 2`.
-* `Real.tendsto_div_log_pow_atTop` and `Real.isLittleO_const_div_log_pow` — divergence of
-  `x / log x ^ n` and `c = o(x / log x ^ n)` for every `n : ℕ`.
 * `TauCeti.Real.logIntegral` — the offset logarithmic integral.
 * `TauCeti.Real.hasDerivAt_logIntegral` — its derivative `(log x)⁻¹` for `x > 1`.
 * `TauCeti.Real.le_logIntegral` — the elementary lower bound `(x - 2) / log x ≤ Li x`.
@@ -246,23 +244,6 @@ theorem integral_inv_log_pow_lt_div_add (n : ℕ) {x : ℝ} (hx : 2 ≤ x) :
   have h := integral_inv_log_rpow_lt_div_add (k := (n : ℝ)) (Nat.cast_nonneg n) hx
   simpa only [rpow_natCast, ← Nat.cast_add_one] using h
 
-/-- For every `n : ℕ`, `x / log x ^ n → +∞` as `x → +∞`. -/
-theorem tendsto_div_log_pow_atTop (n : ℕ) :
-    Tendsto (fun x : ℝ ↦ x / log x ^ n) atTop atTop := by
-  have hlog : Tendsto (fun x : ℝ ↦ log x ^ n / x) atTop (𝓝 0) :=
-    isLittleO_pow_log_id_atTop.tendsto_div_nhds_zero
-  have hpos : Tendsto (fun x : ℝ ↦ log x ^ n / x) atTop (𝓝[>] 0) :=
-    tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _ hlog <| by
-      filter_upwards [eventually_gt_atTop (1 : ℝ)] with x hx
-      exact div_pos (pow_pos (log_pos hx) n) (zero_lt_one.trans hx)
-  exact hpos.inv_tendsto_nhdsGT_zero.congr fun x ↦ inv_div _ _
-
-/-- A constant is `o(x / log x ^ n)` as `x → ∞` for every `n : ℕ`. -/
-theorem isLittleO_const_div_log_pow (c : ℝ) (n : ℕ) :
-    (fun _ : ℝ ↦ c) =o[atTop] fun x : ℝ ↦ x / log x ^ n :=
-  isLittleO_const_left.mpr <| Or.inr <|
-    (tendsto_abs_atTop_atTop.comp (tendsto_div_log_pow_atTop n)).congr fun _ ↦ (norm_eq_abs _).symm
-
 end Real
 
 namespace TauCeti.Real
@@ -432,11 +413,6 @@ The integral `∫ t in 2..x, f t / (t * log t ^ 2)` is what Abel summation leave
 logarithmically weighted counting function is converted into an unweighted one.  It is negligible
 on the scale `x / log x` as soon as `f` grows at most linearly. -/
 
-/-- A constant is `o (x / log x)`, because that scale diverges. -/
-theorem isLittleO_const_div_log (c : ℝ) :
-    (fun _ : ℝ ↦ c) =o[atTop] fun x : ℝ ↦ x / Real.log x := by
-  simpa only [pow_one] using Real.isLittleO_const_div_log_pow c 1
-
 /-- An error of `o (x / log x)` relative to `δ Li x` gives the ratio limit `f x / (x / log x) → δ`,
 since `Li x ~ x / log x`. -/
 theorem tendsto_div_div_log_of_isLittleO_logIntegral {f : ℝ → ℝ} {δ : ℝ}
@@ -581,7 +557,7 @@ theorem isLittleO_integral_div_mul_log_sq {f : ℝ → ℝ}
     simpa [Real.norm_eq_abs, abs_of_nonneg (by linarith : (0 : ℝ) ≤ t)] using (hT t ht).1
   have hc0 : 0 ≤ c := by nlinarith [hbound T le_rfl, abs_nonneg (f T)]
   -- Both summands of `abs_integral_div_mul_log_sq_le` are `o (x / log x)`.
-  have hconst := isLittleO_const_div_log |∫ t in (2 : ℝ)..T, f t / (t * Real.log t ^ 2)|
+  have hconst := _root_.Real.isLittleO_const_div_log |∫ t in (2 : ℝ)..T, f t / (t * Real.log t ^ 2)|
   have hrem : (fun x : ℝ ↦ c * ∫ t in (2 : ℝ)..x, (Real.log t ^ 2)⁻¹) =o[atTop]
       fun x : ℝ ↦ x / Real.log x := isLittleO_integral_inv_log_sq.const_mul_left c
   rw [isLittleO_iff]
