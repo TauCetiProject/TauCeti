@@ -97,39 +97,8 @@ induced by the topological group isomorphism `realCliffordSpinContinuousMulEquiv
 def realSpinLieEquivUnitsRange (n : ℕ) :
     LeftInvariantDerivation 𝓘(ℝ, realSpinLieModel n) (spinGroup (realCliffordForm n 0)) ≃ₗ⁅ℝ⁆
       LeftInvariantDerivation 𝓘(ℝ, realSpinLieModel n)
-        (MonoidHom.range (spinGroup.toUnits (Q := realCliffordForm n 0))) := by
-  let f : spinGroup (realCliffordForm n 0) →ₜ*
-      MonoidHom.range (spinGroup.toUnits (Q := realCliffordForm n 0)) :=
-    realCliffordSpinContinuousMulEquivUnitsRange n
-  let g : MonoidHom.range (spinGroup.toUnits (Q := realCliffordForm n 0)) →ₜ*
-      spinGroup (realCliffordForm n 0) :=
-    (realCliffordSpinContinuousMulEquivUnitsRange n).symm
-  refine LieEquiv.mk
-    (ContinuousMonoidHom.lieMap
-      (I := 𝓘(ℝ, realSpinLieModel n)) (I' := 𝓘(ℝ, realSpinLieModel n)) f)
-    (ContinuousMonoidHom.lieMap
-      (I := 𝓘(ℝ, realSpinLieModel n)) (I' := 𝓘(ℝ, realSpinLieModel n)) g)
-    (fun X ↦ ?_) (fun Y ↦ ?_)
-  · have hcomp : g.comp f = ContinuousMonoidHom.id _ := by
-      apply ContinuousMonoidHom.ext
-      intro s
-      exact (realCliffordSpinContinuousMulEquivUnitsRange n).symm_apply_apply s
-    have h := LieHom.congr_fun
-      (ContinuousMonoidHom.lieMap_comp
-        (I := 𝓘(ℝ, realSpinLieModel n)) (I' := 𝓘(ℝ, realSpinLieModel n))
-        (I'' := 𝓘(ℝ, realSpinLieModel n)) f g) X
-    simpa only [LinearMap.toFun_eq_coe, LieHom.coe_toLinearMap, hcomp,
-      ContinuousMonoidHom.lieMap_id, one_apply_eq_self, LieHom.comp_apply] using h.symm
-  · have hcomp : f.comp g = ContinuousMonoidHom.id _ := by
-      apply ContinuousMonoidHom.ext
-      intro y
-      exact (realCliffordSpinContinuousMulEquivUnitsRange n).apply_symm_apply y
-    have h := LieHom.congr_fun
-      (ContinuousMonoidHom.lieMap_comp
-        (I := 𝓘(ℝ, realSpinLieModel n)) (I' := 𝓘(ℝ, realSpinLieModel n))
-        (I'' := 𝓘(ℝ, realSpinLieModel n)) g f) Y
-    simpa only [LinearMap.toFun_eq_coe, LieHom.coe_toLinearMap, hcomp,
-      ContinuousMonoidHom.lieMap_id, one_apply_eq_self, LieHom.comp_apply] using h.symm
+        (MonoidHom.range (spinGroup.toUnits (Q := realCliffordForm n 0))) :=
+  (realCliffordSpinContinuousMulEquivUnitsRange n).lieEquiv
 
 /-- The forward Lie-algebra comparison is the Lie map of the units-range group isomorphism. -/
 @[simp]
@@ -141,7 +110,7 @@ theorem realSpinLieEquivUnitsRange_apply (n : ℕ)
         (realCliffordSpinContinuousMulEquivUnitsRange n :
           spinGroup (realCliffordForm n 0) →ₜ*
             MonoidHom.range (spinGroup.toUnits (Q := realCliffordForm n 0))) X :=
-  (rfl)
+  ContinuousMulEquiv.lieEquiv_apply _ X
 
 /-- The inverse Lie-algebra comparison is the Lie map of the inverse units-range group
 isomorphism. -/
@@ -155,7 +124,7 @@ theorem realSpinLieEquivUnitsRange_symm_apply (n : ℕ)
         ((realCliffordSpinContinuousMulEquivUnitsRange n).symm :
           MonoidHom.range (spinGroup.toUnits (Q := realCliffordForm n 0)) →ₜ*
             spinGroup (realCliffordForm n 0)) Y :=
-  (rfl)
+  ContinuousMulEquiv.lieEquiv_symm_apply _ Y
 
 /-- The Lie algebra of native compact Spin identified directly with the quadratic Clifford Lie
 subalgebra. -/

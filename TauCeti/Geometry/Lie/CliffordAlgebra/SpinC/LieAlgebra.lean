@@ -345,9 +345,9 @@ bracket and annihilate the determinant component. -/
 theorem lie_realQuadraticProdDetLinearEquiv
     (p q : quadraticLieSubalgebra (realCliffordForm n 0) × ℝ) :
     ⁅realQuadraticProdDetLinearEquiv n hQ p, realQuadraticProdDetLinearEquiv n hQ q⁆ =
-      realQuadraticProdDetLinearEquiv n hQ (⁅p.1, q.1⁆, 0) :=
-  (lie_realSpinProdDetLinearEquiv n hQ _ _).trans <|
-    congrArg (fun X : 𝔰 ↦ realSpinProdDetLinearEquiv n hQ (X, 0))
-      ((realSpinLieEquivQuadratic n).symm.map_lie p.1 q.1).symm
+      realQuadraticProdDetLinearEquiv n hQ (⁅p.1, q.1⁆, 0) := by
+  rw [realQuadraticProdDetLinearEquiv_apply, realQuadraticProdDetLinearEquiv_apply,
+    realQuadraticProdDetLinearEquiv_apply, lie_realSpinProdDetLinearEquiv,
+    ← (realSpinLieEquivQuadratic n).symm.map_lie p.1 q.1]
 
 end CliffordAlgebra.spinCGroup

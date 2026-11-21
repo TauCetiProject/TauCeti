@@ -210,24 +210,16 @@ theorem lieMap_realToSpecialOrthogonalRange_realDetLieLift (a : ℝ) :
 theorem lieMap_realToSpecialOrthogonalRange_lieMap_ofSpin (X : 𝔰) :
     πO (ContinuousMonoidHom.lieMap (I := IS) (I' := IC)
       (ofSpinContinuousMonoidHom _ hQ) X) = realSpinToSpecialOrthogonalLieEquiv n X := by
-  let pSpin : SpinUnitsRange →ₜ* SpecialOrthogonalUnitsRange :=
-    realCliffordSpinToSpecialOrthogonalRange n
-  let eSpin : spinGroup (realCliffordForm n 0) →ₜ* SpinUnitsRange :=
-    realCliffordSpinContinuousMulEquivUnitsRange n
-  have h1 := (LieHom.congr_fun
-    (ContinuousMonoidHom.lieMap_comp (I := IS) (I' := IC) (I'' := ISO)
-      (ofSpinContinuousMonoidHom _ hQ) (realToSpecialOrthogonalRange n hQ)) X).symm
-  have h2 := LieHom.congr_fun (congrArg (ContinuousMonoidHom.lieMap (I := IS) (I' := ISO))
-    (realToSpecialOrthogonalRange_comp_ofSpinContinuousMonoidHom n hQ)) X
-  have h3 := LieHom.congr_fun
-    (ContinuousMonoidHom.lieMap_comp (I := IS) (I' := IS) (I'' := ISO) eSpin pSpin) X
-  refine h1.trans (h2.trans (h3.trans ?_))
-  exact (congrArg (ContinuousMonoidHom.lieMap (I := IS) (I' := ISO) pSpin)
-      (realSpinLieEquivUnitsRange_apply n X).symm).trans <|
-    (LieHom.congr_fun
-      (realCliffordSpinToSpecialOrthogonalRangeLieMap_eq_continuousMonoidHomLieMap n).symm
-      (realSpinLieEquivUnitsRange n X)).trans
-      (realCliffordSpinToSpecialOrthogonalRangeLieEquiv_apply n _).symm
+  have hlieHom := congrArg (ContinuousMonoidHom.lieMap (I := IS) (I' := ISO))
+    (realToSpecialOrthogonalRange_comp_ofSpinContinuousMonoidHom n hQ)
+  rw [ContinuousMonoidHom.lieMap_comp (I := IS) (I' := IC) (I'' := ISO),
+    ContinuousMonoidHom.lieMap_comp (I := IS) (I' := IS) (I'' := ISO)] at hlieHom
+  have hlie := LieHom.congr_fun hlieHom X
+  rw [LieHom.comp_apply, LieHom.comp_apply, ← realSpinLieEquivUnitsRange_apply n X,
+    ← realCliffordSpinToSpecialOrthogonalRangeLieMap_eq_continuousMonoidHomLieMap n,
+    ← realCliffordSpinToSpecialOrthogonalRangeLieEquiv_apply n,
+    ← realSpinToSpecialOrthogonalLieEquiv_apply n X] at hlie
+  exact hlie
 
 /-- Evaluating the rotation differential on `realSpinProdDetLinearEquiv (X, a)` projects onto the
 Spin factor via `realSpinToSpecialOrthogonalLieEquiv`. -/
@@ -332,10 +324,11 @@ the central determinant parameter. -/
 theorem lie_realSpecialOrthogonalProdDetLinearEquiv (p q : 𝔬 × ℝ) :
     ⁅realSpecialOrthogonalProdDetLinearEquiv n hQ p,
         realSpecialOrthogonalProdDetLinearEquiv n hQ q⁆ =
-      realSpecialOrthogonalProdDetLinearEquiv n hQ (⁅p.1, q.1⁆, 0) :=
-  (lie_realSpinProdDetLinearEquiv n hQ _ _).trans <|
-    congrArg (fun X : 𝔰 ↦ realSpinProdDetLinearEquiv n hQ (X, 0))
-      ((realSpinToSpecialOrthogonalLieEquiv n).symm.map_lie p.1 q.1).symm
+      realSpecialOrthogonalProdDetLinearEquiv n hQ (⁅p.1, q.1⁆, 0) := by
+  rw [realSpecialOrthogonalProdDetLinearEquiv_apply,
+    realSpecialOrthogonalProdDetLinearEquiv_apply,
+    realSpecialOrthogonalProdDetLinearEquiv_apply, lie_realSpinProdDetLinearEquiv,
+    ← (realSpinToSpecialOrthogonalLieEquiv n).symm.map_lie p.1 q.1]
 
 /-- **Full `Spinᶜ(n)` adjoint equivariance of the `Lie(SO(n)) × ℝ` lift**: any `g ∈ Spinᶜ(n)` acts
 through its `SO(n)` image on the first component and trivially on the determinant component. -/
@@ -405,10 +398,23 @@ annihilate the central determinant parameter. -/
 @[simp]
 theorem lie_realSoProdDetLinearEquiv (p q : LieAlgebra.Orthogonal.so (Fin n) ℝ × ℝ) :
     ⁅realSoProdDetLinearEquiv n hQ p, realSoProdDetLinearEquiv n hQ q⁆ =
-      realSoProdDetLinearEquiv n hQ (⁅p.1, q.1⁆, 0) :=
-  (lie_realSpecialOrthogonalProdDetLinearEquiv n hQ _ _).trans <|
-    congrArg (fun W : 𝔬 ↦ realSpecialOrthogonalProdDetLinearEquiv n hQ (W, 0))
-      ((realCliffordSpecialOrthogonalLieEquivSo n).symm.map_lie p.1 q.1).symm
+      realSoProdDetLinearEquiv n hQ (⁅p.1, q.1⁆, 0) := by
+  rw [realSoProdDetLinearEquiv_apply, realSoProdDetLinearEquiv_apply,
+    realSoProdDetLinearEquiv_apply, lie_realSpecialOrthogonalProdDetLinearEquiv,
+    ← (realCliffordSpecialOrthogonalLieEquivSo n).symm.map_lie p.1 q.1]
+
+/-- Compatibility of the two routes from native Spin to skew matrices: taking quadratic Clifford
+coordinates then applying `realCliffordSpinToSpecialOrthogonalCoordinateLieEquiv` agrees with
+projecting to `Lie(SO(n))` via `realSpinToSpecialOrthogonalLieEquiv` then taking skew-matrix
+coordinates. -/
+theorem realCliffordSpinToSpecialOrthogonalCoordinateLieEquiv_realSpinLieEquivQuadratic
+    (X : 𝔰) :
+    realCliffordSpinToSpecialOrthogonalCoordinateLieEquiv n (realSpinLieEquivQuadratic n X) =
+      realCliffordSpecialOrthogonalLieEquivSo n (realSpinToSpecialOrthogonalLieEquiv n X) := by
+  simp only [realCliffordSpinToSpecialOrthogonalCoordinateLieEquiv_apply,
+    realCliffordSpinToSpecialOrthogonalCoordinateLieHom_apply, realSpinLieEquivQuadratic_apply,
+    LieEquiv.symm_apply_apply, realSpinToSpecialOrthogonalLieEquiv_apply,
+    realCliffordSpinToSpecialOrthogonalRangeLieEquiv_apply]
 
 /-- Comparison between `𝔰𝔬(n) × ℝ` coordinates and quadratic Clifford–determinant coordinates on
 `Lie(Spinᶜ(n))` via the Spin-to-`𝔰𝔬(n)` coordinate equivalence
@@ -418,27 +424,18 @@ theorem realSoProdDetLinearEquiv_eq_realQuadraticProdDetLinearEquiv
     realSoProdDetLinearEquiv n hQ p =
       realQuadraticProdDetLinearEquiv n hQ
         ((realCliffordSpinToSpecialOrthogonalCoordinateLieEquiv n).symm p.1, p.2) := by
-  let x := (realCliffordSpinToSpecialOrthogonalCoordinateLieEquiv n).symm p.1
-  let y := (realCliffordSpinLieEquivQuadratic n).symm x
-  have h1 := (congrArg (realCliffordSpecialOrthogonalLieEquivSo n)
-    ((realSpinToSpecialOrthogonalLieEquiv n).apply_symm_apply _)).trans
-    ((realCliffordSpecialOrthogonalLieEquivSo n).apply_symm_apply p.1)
-  have h2a := (congrArg (realSpinToSpecialOrthogonalLieEquiv n)
-    (realSpinLieEquivQuadratic_symm_apply n x)).trans <|
-    (congrArg (realCliffordSpinToSpecialOrthogonalRangeLieEquiv n)
-      ((realSpinLieEquivUnitsRange n).apply_symm_apply y)).trans
-      (realCliffordSpinToSpecialOrthogonalRangeLieEquiv_apply n y)
-  have h2 := (congrArg (realCliffordSpecialOrthogonalLieEquivSo n) h2a).trans <|
-    (realCliffordSpinToSpecialOrthogonalCoordinateLieHom_apply n x).symm.trans <|
-    (realCliffordSpinToSpecialOrthogonalCoordinateLieEquiv_apply n x).symm.trans
-      ((realCliffordSpinToSpecialOrthogonalCoordinateLieEquiv n).apply_symm_apply p.1)
+  rw [realSoProdDetLinearEquiv_apply, realSpecialOrthogonalProdDetLinearEquiv_apply,
+    realQuadraticProdDetLinearEquiv_apply]
+  let X : 𝔰 := (realSpinLieEquivQuadratic n).symm
+    ((realCliffordSpinToSpecialOrthogonalCoordinateLieEquiv n).symm p.1)
+  have hcomp : p.1 =
+      realCliffordSpecialOrthogonalLieEquivSo n (realSpinToSpecialOrthogonalLieEquiv n X) := by
+    simpa only [X, LieEquiv.apply_symm_apply] using
+      realCliffordSpinToSpecialOrthogonalCoordinateLieEquiv_realSpinLieEquivQuadratic n X
   have hspin : (realSpinToSpecialOrthogonalLieEquiv n).symm
-        ((realCliffordSpecialOrthogonalLieEquivSo n).symm p.1) =
-      (realSpinLieEquivQuadratic n).symm x :=
-    EquivLike.injective (realSpinToSpecialOrthogonalLieEquiv n)
-      (EquivLike.injective (realCliffordSpecialOrthogonalLieEquivSo n) (h1.trans h2.symm))
-  exact (congrArg (fun X : 𝔰 ↦ realSpinProdDetLinearEquiv n hQ (X, p.2)) hspin).trans
-    (realQuadraticProdDetLinearEquiv_apply n hQ (x, p.2)).symm
+        ((realCliffordSpecialOrthogonalLieEquivSo n).symm p.1) = X := by
+    rw [hcomp, LieEquiv.symm_apply_apply, LieEquiv.symm_apply_apply]
+  rw [hspin]
 
 /-- The Lie differential of the paired rotation-and-determinant homomorphism
 `Spinᶜ(n) → SO(n) × Circle` is bijective. -/

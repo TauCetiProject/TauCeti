@@ -24,6 +24,8 @@ the smooth Lie functor.
 * `ContinuousMonoidHom.lieMap_injective` gives faithfulness on preconnected sources.
 * `ContinuousMonoidHom.isLocalDiffeomorph_iff_lieMap_bijective` characterizes smooth local
   diffeomorphisms via bijectivity of `lieMap`.
+* `ContinuousMulEquiv.lieEquiv` is the Lie-algebra equivalence induced by a continuous
+  multiplicative equivalence.
 -/
 
 public section
@@ -150,4 +152,58 @@ theorem isLocalDiffeomorph_iff_lieMap_bijective (f : G →ₜ* G') :
   ⟨fun hf ↦ lieMap_bijective_of_isLocalDiffeomorphAt f (hf 1),
     isLocalDiffeomorph_of_lieMap_bijective f⟩
 
+/-- A left inverse pair of continuous homomorphisms induces a left inverse pair of Lie maps. -/
+theorem leftInverse_lieMap (f : G →ₜ* G') (g : G' →ₜ* G)
+    (h : g.comp f = ContinuousMonoidHom.id G) :
+    Function.LeftInverse
+      (lieMap (I := I') (I' := I) g) (lieMap (I := I) (I' := I') f) := by
+  intro X
+  have h' := LieHom.congr_fun
+    (ContinuousMonoidHom.lieMap_comp (I := I) (I' := I') (I'' := I) f g) X
+  simpa only [h, lieMap_id, LieHom.comp_apply, one_apply_eq_self] using h'.symm
+
 end ContinuousMonoidHom
+
+namespace ContinuousMulEquiv
+
+attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
+attribute [local instance] ContMDiffMul.boundarylessManifold
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
+  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+  {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
+  {G' : Type*} [TopologicalSpace G'] [ChartedSpace H' G'] [Group G']
+  [FiniteDimensional ℝ E] [FiniteDimensional ℝ E']
+  [LieGroup I ∞ G] [LieGroup I' ∞ G']
+
+/-- The Lie-algebra equivalence induced by a continuous multiplicative equivalence between
+finite-dimensional real Lie groups. -/
+public noncomputable def lieEquiv (e : G ≃ₜ* G') :
+    LeftInvariantDerivation I G ≃ₗ⁅ℝ⁆ LeftInvariantDerivation I' G' :=
+  LieEquiv.mk
+    (ContinuousMonoidHom.lieMap (I := I) (I' := I') (e : G →ₜ* G'))
+    (ContinuousMonoidHom.lieMap (I := I') (I' := I) (e.symm : G' →ₜ* G))
+    (ContinuousMonoidHom.leftInverse_lieMap (I := I) (I' := I')
+      (e : G →ₜ* G') (e.symm : G' →ₜ* G)
+      (ContinuousMonoidHom.ext fun x ↦ e.symm_apply_apply x))
+    (ContinuousMonoidHom.leftInverse_lieMap (I := I') (I' := I)
+      (e.symm : G' →ₜ* G) (e : G →ₜ* G')
+      (ContinuousMonoidHom.ext fun y ↦ e.apply_symm_apply y))
+
+/-- The forward map of `ContinuousMulEquiv.lieEquiv` is the Lie map of the equivalence. -/
+@[simp]
+theorem lieEquiv_apply (e : G ≃ₜ* G') (X : LeftInvariantDerivation I G) :
+    lieEquiv (I := I) (I' := I') e X =
+      ContinuousMonoidHom.lieMap (I := I) (I' := I') (e : G →ₜ* G') X :=
+  (rfl)
+
+/-- The inverse map of `ContinuousMulEquiv.lieEquiv` is the Lie map of the inverse equivalence. -/
+@[simp]
+theorem lieEquiv_symm_apply (e : G ≃ₜ* G') (Y : LeftInvariantDerivation I' G') :
+    (lieEquiv (I := I) (I' := I') e).symm Y =
+      ContinuousMonoidHom.lieMap (I := I') (I' := I) (e.symm : G' →ₜ* G) Y :=
+  (rfl)
+
+end ContinuousMulEquiv

@@ -250,19 +250,9 @@ theorem unitsLieAlgebraEquiv_lieMap_realSpinCHalfSpinUnitsSmoothHom_ofSpin
     realCliffordSpinContinuousMulEquivUnitsRange 4
   have hlieHom :
       (lieMap φ).comp (ContinuousMonoidHom.lieMap (I := IS) (I' := IC) f) =
-        (lieMap ψ).comp (ContinuousMonoidHom.lieMap (I := IS) (I' := IS) g) :=
-    calc
-      (lieMap φ).comp (ContinuousMonoidHom.lieMap (I := IS) (I' := IC) f)
-          = (lieMap φ).comp (lieMap (f.toContMDiffMonoidMorphism IS IC)) :=
-            congrArg (lieMap φ).comp (ContinuousMonoidHom.lieMap_def (I := IS) (I' := IC) f)
-      _ = lieMap (φ.comp (f.toContMDiffMonoidMorphism IS IC)) :=
-            (lieMap_comp (f.toContMDiffMonoidMorphism IS IC) φ).symm
-      _ = lieMap (ψ.comp (g.toContMDiffMonoidMorphism IS IS)) :=
-            congrArg lieMap (realSpinCHalfSpinUnitsSmoothHom_comp_ofSpin o hQ b ρ ε)
-      _ = (lieMap ψ).comp (lieMap (g.toContMDiffMonoidMorphism IS IS)) :=
-            lieMap_comp (g.toContMDiffMonoidMorphism IS IS) ψ
-      _ = (lieMap ψ).comp (ContinuousMonoidHom.lieMap (I := IS) (I' := IS) g) :=
-            congrArg (lieMap ψ).comp (ContinuousMonoidHom.lieMap_def (I := IS) (I' := IS) g).symm
+        (lieMap ψ).comp (ContinuousMonoidHom.lieMap (I := IS) (I' := IS) g) := by
+    simpa only [lieMap_comp, ← ContinuousMonoidHom.lieMap_def] using
+      congrArg lieMap (realSpinCHalfSpinUnitsSmoothHom_comp_ofSpin o hQ b ρ ε)
   have hlie :
       lieMap φ (ContinuousMonoidHom.lieMap (I := IS) (I' := IC) f X) =
         lieMap ψ (realSpinLieEquivUnitsRange 4 X) := by
