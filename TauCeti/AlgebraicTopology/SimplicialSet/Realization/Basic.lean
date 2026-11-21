@@ -13,6 +13,7 @@ public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
 public import TauCeti.AlgebraicTopology.SimplicialSet.ULift
 public import TauCeti.AlgebraicTopology.TopologicalSimplex
 import Mathlib.CategoryTheory.Adjunction.FullyFaithful
+import Mathlib.CategoryTheory.Functor.KanExtension.DenseAtYoneda
 import Mathlib.CategoryTheory.Limits.Preserves.FunctorCategory
 import Mathlib.CategoryTheory.Limits.Preserves.Ulift
 import TauCeti.CategoryTheory.Functor.KanExtension.Dense
@@ -99,35 +100,6 @@ coordinates along `stdSimplex.objEquiv x`. -/
   rw [Equiv.apply_symm_apply, toTopObjMk_eq_toTop_map, ← yonedaEquiv_map θ,
     Equiv.symm_apply_apply, SimplexCategory.toTopHomeo_naturality_apply,
     Homeomorph.apply_symm_apply]
-
-/-- Every point of `|X|` lies in the image of `toTopObjMk` for some simplex of `X`. -/
-lemma exists_toTopObjMk (p : |X|) :
-    ∃ (n : ℕ) (x : X _⦋n⦌) (w : StdSimplex ℝ (Fin (n + 1))), p = toTopObjMk x w := by
-  obtain ⟨⟨m, _, f⟩, y, hy⟩ := Types.jointly_surjective_of_isColimit
-    (isColimitOfPreserves (toTop ⋙ forget TopCat) (stdSimplex.{u}.denseAt X)) p
-  dsimp at y hy; rw [Category.id_comp] at hy
-  induction m using SimplexCategory.rec with | _ n => ?_
-  exact ⟨n, yonedaEquiv f, ⦋n⦌.toTopHomeo y,
-    by rw [toTopObjMk_eq_toTop_map, Equiv.symm_apply_apply, Homeomorph.symm_apply_apply, hy]⟩
-
-/-- Every point of `|X|` can be joined by a path in `|X|` to the realization of a vertex of `X`. -/
-lemma exists_joined_toTopPoint (p : |X|) : ∃ x : X _⦋0⦌, Joined (toTopPoint x) p := by
-  obtain ⟨n, s, w, rfl⟩ := exists_toTopObjMk p
-  exact ⟨X.map (SimplexCategory.const ⦋0⦌ ⦋n⦌ 0).op s, by
-    rw [← toTopObjMk_single]; exact (PathConnectedSpace.joined _ w).map (continuous_toTopObjMk s)⟩
-
-/-- The geometric realization `|X|` is nonempty if and only if `X` has a `0`-simplex. -/
-@[simp] lemma nonempty_toTop_iff (X : SSet.{u}) : Nonempty |X| ↔ X.Nonempty :=
-  ⟨fun ⟨p⟩ ↦ let ⟨_, x, _, _⟩ := exists_toTopObjMk p; .mk x, fun ⟨x⟩ ↦ ⟨toTopPoint x⟩⟩
-
-/-- The geometric realization `|X|` is empty if and only if `X` has no `0`-simplices. -/
-@[simp] lemma isEmpty_toTop_iff (X : SSet.{u}) : IsEmpty |X| ↔ IsEmpty (X _⦋0⦌) := by
-  rw [← not_nonempty_iff, nonempty_toTop_iff, SSet.Nonempty, not_nonempty_iff]
-
-instance isEmpty_toTop (X : SSet.{u}) [IsEmpty (X _⦋0⦌)] : IsEmpty |X| :=
-  (isEmpty_toTop_iff X).2 ‹_›
-
-instance nonempty_toTop (X : SSet.{u}) [X.Nonempty] : Nonempty |X| := (nonempty_toTop_iff X).2 ‹_›
 
 /-- `SSet.const y` realizes to `TopCat.const (toTopPoint y)` (dual to `TopCat.toSSet_map_const`). -/
 @[simp] lemma toTop_map_const (X : SSet.{u}) {Y : SSet.{u}} (y : Y _⦋0⦌) :
@@ -300,6 +272,36 @@ lemma toTopIsoGeometricRealization_inv_ι {X : SSet.{u}} {n : ℕ}
       toTopObjMk x t.down :=
   toTopFromGeometricRealizationHom_ι x t
 
+/-- Every point of `|X|` lies in the image of `toTopObjMk` for some simplex of `X`. -/
+lemma exists_toTopObjMk {X : SSet.{u}} (p : |X|) :
+    ∃ (n : ℕ) (x : X _⦋n⦌) (w : StdSimplex ℝ (Fin (n + 1))), p = toTopObjMk x w := by
+  obtain ⟨n, x, t, ht⟩ := SimplicialObject.geometricRealization.ι_jointly_surjective
+    (X ⋙ TopCat.discrete) ((toTopIsoGeometricRealization X).hom p)
+  refine ⟨n, x, t.down, ?_⟩
+  rw [← toTopIsoGeometricRealization_inv_ι x t, ht, ← ConcreteCategory.comp_apply,
+    Iso.hom_inv_id, TopCat.id_app]
+
+/-- Every point of `|X|` can be joined by a path in `|X|` to the realization of a vertex of
+`X`. -/
+lemma exists_joined_toTopPoint {X : SSet.{u}} (p : |X|) :
+    ∃ x : X _⦋0⦌, Joined (toTopPoint x) p := by
+  obtain ⟨n, s, w, rfl⟩ := exists_toTopObjMk p
+  exact ⟨X.map (SimplexCategory.const ⦋0⦌ ⦋n⦌ 0).op s, by
+    rw [← toTopObjMk_single]; exact (PathConnectedSpace.joined _ w).map (continuous_toTopObjMk s)⟩
+
+/-- The geometric realization `|X|` is nonempty if and only if `X` has a `0`-simplex. -/
+@[simp] lemma nonempty_toTop_iff (X : SSet.{u}) : Nonempty |X| ↔ X.Nonempty :=
+  ⟨fun ⟨p⟩ ↦ let ⟨_, x, _, _⟩ := exists_toTopObjMk p; .mk x, fun ⟨x⟩ ↦ ⟨toTopPoint x⟩⟩
+
+/-- The geometric realization `|X|` is empty if and only if `X` has no `0`-simplices. -/
+@[simp] lemma isEmpty_toTop_iff (X : SSet.{u}) : IsEmpty |X| ↔ IsEmpty (X _⦋0⦌) := by
+  rw [← not_nonempty_iff, nonempty_toTop_iff, SSet.Nonempty, not_nonempty_iff]
+
+instance isEmpty_toTop (X : SSet.{u}) [IsEmpty (X _⦋0⦌)] : IsEmpty |X| :=
+  (isEmpty_toTop_iff X).2 ‹_›
+
+instance nonempty_toTop (X : SSet.{u}) [X.Nonempty] : Nonempty |X| := (nonempty_toTop_iff X).2 ‹_›
+
 /-- Milnor's open-cell bijection for `|X|`, transporting
 `SimplicialObject.geometricRealization.NormalForm.realizationEquiv` along
 `toTopIsoGeometricRealization X`. -/
@@ -441,6 +443,7 @@ noncomputable def toTopUliftNatIso :
     inferInstanceAs (PreservesColimitsOfSize.{0, u}
       ((Functor.whiskeringRight SimplexCategoryᵒᵖ (Type u) (Type max u v)).obj
         CategoryTheory.uliftFunctor.{v, u}))
+  haveI : stdSimplex.{u}.IsDense := inferInstanceAs uliftYoneda.{u}.IsDense
   haveI := Functor.IsDense.isLeftKanExtension_id stdSimplex.{u}
     (uliftFunctor.{v, u} ⋙ toTop.{max u v})
   haveI := Functor.IsDense.isLeftKanExtension_id stdSimplex.{u}
@@ -472,6 +475,7 @@ private lemma toTopUliftNatIso_hom_app_stdSimplex (m : SimplexCategory) :
     inferInstanceAs (PreservesColimitsOfSize.{0, u}
       ((Functor.whiskeringRight SimplexCategoryᵒᵖ (Type u) (Type max u v)).obj
         CategoryTheory.uliftFunctor.{v, u}))
+  have : stdSimplex.{u}.IsDense := inferInstanceAs uliftYoneda.{u}.IsDense
   have := Functor.IsDense.isLeftKanExtension_id stdSimplex.{u}
     (uliftFunctor.{v, u} ⋙ toTop.{max u v})
   have := Functor.IsDense.isLeftKanExtension_id stdSimplex.{u}

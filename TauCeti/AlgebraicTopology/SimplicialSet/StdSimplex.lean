@@ -9,7 +9,6 @@ public import Mathlib.AlgebraicTopology.Quasicategory.Nerve
 public import Mathlib.AlgebraicTopology.SimplicialSet.Boundary
 public import Mathlib.AlgebraicTopology.SimplicialSet.Homotopy
 public import Mathlib.AlgebraicTopology.SimplicialSet.PiZero
-public import Mathlib.CategoryTheory.Functor.KanExtension.DenseAtYoneda
 public import Mathlib.Data.Finset.Sort
 
 /-!
@@ -26,7 +25,6 @@ faces of the increasing enumeration of a set `J` enumerate the sets `J` with one
 
 ## Main results
 
-* `SSet.stdSimplex.isDense`: the standard simplex functor `SSet.stdSimplex` is dense.
 * `SSet.stdSimplex.hom_app_apply`: the vertices of the image of a simplex under a map of standard
   simplices.
 * `SSet.stdSimplex.const_app_apply`: the constant map at a vertex of `Δ[n]` sends every simplex
@@ -64,10 +62,6 @@ open CategoryTheory Finset Opposite Simplicial MonoidalCategory CartesianMonoida
 universe u
 
 namespace SSet.stdSimplex
-
-/-- The standard simplex functor `SSet.stdSimplex` is dense in `SSet`. -/
-instance isDense : stdSimplex.{u}.IsDense :=
-  inferInstanceAs uliftYoneda.{u}.IsDense
 
 /-- A map of standard simplices `q : Δ[m] ⟶ Δ[n]` sends a simplex `x` of `Δ[m]` to the simplex
 whose `j`-th vertex is the image of the `j`-th vertex of `x` under the vertex map of `q`. -/

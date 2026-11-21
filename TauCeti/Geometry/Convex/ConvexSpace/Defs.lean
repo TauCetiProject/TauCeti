@@ -401,10 +401,11 @@ theorem eq_of_monotone_map_eq_of_weights_ne_zero [LinearOrder X] [PartialOrder Y
   have hpos (a : X) : 0 < w.weights a := lt_of_le_of_ne (w.nonneg a) (hw a).symm
   have hset (y : Y) :
       Finset.univ.filter (f₁ · ≤ y) = Finset.univ.filter (f₂ · ≤ y) := by
-    have hmap (g : X → Y) : ((w.map g).weights.sum fun z r ↦ if z ≤ y then r else 0) =
+    let χ : Y → Fin 2 := fun z ↦ if z ≤ y then 0 else 1
+    have hmap (g : X → Y) : ((w.map g).map χ).weights 0 =
         ∑ a ∈ Finset.univ.filter (g · ≤ y), w.weights a := by
-      rw [weights_map, Finsupp.sum_mapDomain_index (by simp) (fun _ _ _ ↦ by split_ifs <;> simp),
-        Finsupp.sum_fintype _ _ (by simp), Finset.sum_filter]
+      rw [StdSimplex.map_map, weights_map_apply]
+      simp [χ]
     have hsum : ∑ a ∈ Finset.univ.filter (f₁ · ≤ y), w.weights a =
         ∑ a ∈ Finset.univ.filter (f₂ · ≤ y), w.weights a := by rw [← hmap f₁, ← hmap f₂, h]
     have hsub {g₁ g₂ : X → Y} (hg₁ : Monotone g₁) (hg₂ : Monotone g₂)

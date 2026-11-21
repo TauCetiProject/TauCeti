@@ -9,7 +9,6 @@ public import Mathlib.CategoryTheory.Category.Cat
 public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.FundamentalGroupoid
 public import TauCeti.AlgebraicTopology.SimplicialSet.Realization.FundamentalGroupoid
 import TauCeti.CategoryTheory.Category.ULift
-import TauCeti.Topology.Category.TopCat.Basic
 
 /-!
 # Classifying space of a category and of a functor
@@ -77,6 +76,12 @@ lemma classifyingSpaceMap_comp {C D E : Type u} [Category.{v} C] [Category.{v} D
     (nerveFunctor.map_comp (X := Cat.of C) (Y := Cat.of D) (Z := Cat.of E)
       F.toCatHom G.toCatHom)).trans
     (SSet.toTop.map_comp (nerveMap F) (nerveMap G))
+
+/-- `classifyingSpaceMap` is injective on functors. -/
+theorem classifyingSpaceMap_injective {C D : Type u} [Category.{v} C] [Category.{v} D] :
+    Function.Injective
+      (classifyingSpaceMap : (C ⥤ D) → (classifyingSpace C ⟶ classifyingSpace D)) :=
+  fun _ _ h ↦ TauCeti.nerveMap_injective (SSet.toTop.map_injective h)
 
 -- `@[expose]` is required by `module` so `classifyingSpaceFunctor.obj` reduces in public APIs.
 /-- The classifying space functor `Cat.{v, u} ⥤ TopCat.{max u v}`, defined as
@@ -255,7 +260,7 @@ theorem mapOfFunctor_injective {C : Type u₁} [Category.{v₁} C] {D : Type u�
       (by simpa [mapOfFunctor] using congrArg (· p) h)
   simpa only [AsSmall.up_comp_down_comp_up_comp_down] using
     congrArg (fun H ↦ (AsSmall.up ⋙ H) ⋙ AsSmall.down)
-      (TauCeti.nerveMap_injective (SSet.toTop.map_injective hmap))
+      (classifyingSpaceMap_injective hmap)
 
 /-- Strictly mutually inverse functors `F : C ⥤ D` and `G : D ⥤ C` induce a homeomorphism on
 classifying spaces. -/
@@ -548,22 +553,25 @@ noncomputable instance instUnique (C : Type u) [Category.{v} C] [Unique C] [IsDi
 /-- `classifyingSpace (Discrete S)` is isomorphic in `TopCat` to discrete `S`. -/
 noncomputable def discreteIso (S : Type u) :
     classifyingSpace (Discrete S) ≅ TopCat.discrete.obj S :=
-  isDiscreteIso (Discrete S) ≪≫ TopCat.discrete.mapIso (Equiv.ulift.trans discreteEquiv).toIso
+  SSet.toTop.mapIso (nerve.discreteIso S) ≪≫ SSet.toTopConstIso S
 
 @[simp] lemma discreteIso_hom_vertex (S : Type u) (s : S) :
     (discreteIso S).hom (vertex (Discrete.mk s)) = s := by
   rw [discreteIso, Iso.trans_hom, ConcreteCategory.comp_apply, Functor.mapIso_hom,
-    isDiscreteIso_hom_vertex, TauCeti.TopCat.discrete_map_apply]
-  have h : (Equiv.ulift.{u}.trans discreteEquiv).toIso.hom (ULift.up (Discrete.mk s)) = s := by
-    simp [Equiv.toIso, discreteEquiv]
-  exact h
+    vertex_eq_toTopPoint, SSet.toTop_map_toTopPoint]
+  dsimp only [Functor.comp_obj, Functor.const_obj_obj]
+  rw [nerve.discreteIso_hom_app, Equiv.apply_symm_apply, nerveEquiv_symm_obj]
+  exact SSet.toTopConstIso_hom_toTopPoint S s
 
 @[simp] lemma discreteIso_inv_apply (S : Type u) (s : S) :
     (discreteIso S).inv s = vertex (Discrete.mk s) := by
+  have h0 : (Functor.const (Fin 1)).obj (Discrete.mk s) = nerveEquiv.symm (Discrete.mk s) :=
+    ComposableArrows.ext (fun _ ↦ rfl) (fun _ _ ↦ Subsingleton.elim _ _)
   rw [discreteIso, Iso.trans_inv, Functor.mapIso_inv,
     ConcreteCategory.comp_apply (X := TopCat.discrete.obj S) _ _ s,
-    TauCeti.TopCat.discrete_map_apply]
-  simp [Equiv.toIso, discreteEquiv]
+    SSet.toTopConstIso_inv_apply, SSet.toTop_map_toTopPoint]
+  dsimp only [Functor.comp_obj, Functor.const_obj_obj]
+  rw [nerve.discreteIso_inv_app, h0, ← vertex_eq_toTopPoint]
 
 /-- Homeomorphism between `classifyingSpace (Discrete S)` and discrete `S`. -/
 noncomputable def discreteHomeomorph (S : Type u) :
@@ -709,13 +717,6 @@ theorem not_exists_classifyingSpaceMap_eq_finTwoReflect :
 end Examples
 
 end classifyingSpace
-
-/-- `classifyingSpaceMap` is injective on functors. -/
-theorem classifyingSpaceMap_injective {C D : Type u} [Category.{v} C] [Category.{v} D] :
-    Function.Injective
-      (classifyingSpaceMap : (C ⥤ D) → (classifyingSpace C ⟶ classifyingSpace D)) := fun _ _ h ↦
-  classifyingSpace.mapOfFunctor_injective
-    (by simp [classifyingSpace.mapOfFunctor_eq_classifyingSpaceMap, h])
 
 /-- The classifying space functor `Cat.{v, u} ⥤ TopCat.{max u v}` is faithful. -/
 instance : classifyingSpaceFunctor.{v, u}.Faithful :=
