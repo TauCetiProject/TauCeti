@@ -191,8 +191,12 @@ theorem hyperbolicPlaneSplittingIsometry_apply_tmul (x : Fin 2 → ℚ) (r : ℚ
     L.hyperbolicPlaneSplittingIsometry hv hw hvw (x, r ⊗ₜ[ℤ] t) =
       x 0 • (v : V) + x 1 • (w : V) + r • ((t : L) : V) := by
   rw [hyperbolicPlaneSplittingIsometry, Isometry.trans_apply, Isometry.orthogonalSum_apply,
-    Isometry.refl_apply, spanPairIsometry_apply,
-    show r ⊗ₜ[ℤ] t = r ⊗ₜ[ℤ] t + (0 : ℚ) ⊗ₜ[ℤ] t by simp, ← Prod.mk_add_mk, map_add]
+    Isometry.refl_apply, spanPairIsometry_apply]
+  -- `orthogonalSplittingIsometry_apply_tmul` evaluates only pairs of pure tensors, while the
+  -- first coordinate is now `x 0 ⊗ₜ v + x 1 ⊗ₜ w`. Padding the second coordinate to
+  -- `r ⊗ₜ t + 0 ⊗ₜ t` writes the pair as the sum of the pure-tensor pairs `(x 0 ⊗ₜ v, r ⊗ₜ t)`
+  -- and `(x 1 ⊗ₜ w, 0 ⊗ₜ t)`, and additivity of the isometry evaluates each one.
+  rw [show r ⊗ₜ[ℤ] t = r ⊗ₜ[ℤ] t + (0 : ℚ) ⊗ₜ[ℤ] t by simp, ← Prod.mk_add_mk, map_add]
   simp only [orthogonalSplittingIsometry_apply_tmul, zero_smul, add_zero]
   abel
 
