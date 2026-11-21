@@ -23,7 +23,7 @@ empty has no solution.
 
 ## Main results
 
-* `TauCeti.EqIneqSystem.exists_isCancellationScheme_of_isSolution`: **Lemma 14(3)**, every
+* `TauCeti.EqIneqSystem.exists_solution_wordMap_eq_of_isSolution`: **Lemma 14(3)**, every
   solution `W` of `S` is `x ↦ P_x(U)`, graphically, for a solution `U` of the generalised
   equation of a cancellation scheme `T` over the auxiliary alphabet `Fin (systemSize S.toWords)`.
 * `TauCeti.EqIneqSystem.not_isSolution_of_cancellationFamily_eq_empty`: **Lemma 14(1)**, over a
@@ -55,7 +55,7 @@ over the auxiliary alphabet `Fin n`, where `n = systemSize S.toWords`, with entr
 `Fin n ⊕ A` (a member of the cancellation family when `A` is finite), and a solution `U` of its
 generalised equation: `W = P(U)`, graphically, as `P_x(U)` is the reduced word of `W x` for every
 variable `x`. -/
-theorem exists_isCancellationScheme_of_isSolution {S : EqIneqSystem X A} {W : X → FreeGroup A}
+theorem exists_solution_wordMap_eq_of_isSolution {S : EqIneqSystem X A} {W : X → FreeGroup A}
     (hW : S.IsSolution W FreeGroup.of) :
     ∃ T : Occurrence S.toWords → List ((Fin (systemSize S.toWords) ⊕ A) × Bool),
       S.IsCancellationScheme T ∧ ∃ U : (S.genEq T).Solution,
@@ -76,7 +76,7 @@ inequations over `F(A)`, for a finite alphabet `A`, whose cancellation family is
 solution in `F(A)`. -/
 theorem not_isSolution_of_cancellationFamily_eq_empty [Finite A] {S : EqIneqSystem X A}
     (h : S.cancellationFamily = ∅) (W : X → FreeGroup A) : ¬ S.IsSolution W FreeGroup.of :=
-  fun hW => have ⟨T, hT, _⟩ := exists_isCancellationScheme_of_isSolution hW
+  fun hW => have ⟨T, hT, _⟩ := exists_solution_wordMap_eq_of_isSolution hW
     Finset.eq_empty_iff_forall_notMem.1 h T (mem_cancellationFamily.2 hT)
 
 /-! ### Examples -/
@@ -88,7 +88,7 @@ a solution `U` of its generalised equation with `P_x(U) = a`. -/
 example [Finite A] (x : X) (a : A) :
     ∃ T ∈ (⟨[], [FreeGroup.of (Sum.inl x)]⟩ : EqIneqSystem X A).cancellationFamily,
       ∃ U : (genEq _ T).Solution, substituteVars U.word (wordMap _ T x) = [(a, true)] := by
-  obtain ⟨T, hT, U, hU⟩ := exists_isCancellationScheme_of_isSolution
+  obtain ⟨T, hT, U, hU⟩ := exists_solution_wordMap_eq_of_isSolution
     (S := ⟨[], [FreeGroup.of (Sum.inl x)]⟩) (W := fun _ => FreeGroup.of a)
     (by simp [isSolution_iff])
   exact ⟨T, mem_cancellationFamily.2 hT, U, (hU x).trans (FreeGroup.toWord_of a)⟩
