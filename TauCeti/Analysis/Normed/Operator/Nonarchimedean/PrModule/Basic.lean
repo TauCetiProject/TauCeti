@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Algebra.Module.Complement
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.Resolvent
 public import TauCeti.Analysis.Normed.Operator.RowCompact.PrModule
 public import TauCeti.LinearAlgebra.Charpoly.Projective
@@ -53,6 +54,8 @@ finite projective module may vary over `Spec R`.
   space it is the principal-minor series of the matrix.
 * `ContinuousLinearMap.IsPrCompact.charPowerSeries_comp_comm`: cyclicity
   `det (1 - T (u ∘ v)) = det (1 - T (v ∘ u))`.
+* `ContinuousLinearMap.IsPrCompact.charPowerSeries_restrict_of_isTopCompl`: Fredholm series of
+  the restriction to an invariant topologically complemented submodule.
 * `ContinuousLinearMap.IsPrCompact.charPowerSeries_conj`: invariance under conjugation.
 * `ContinuousLinearMap.IsPrCompact.isEntire_charPowerSeries`: the series is entire.
 * `ContinuousLinearMap.charPowerSeries_eq_projectiveCharpolyRev`: comparison with the finite
@@ -192,6 +195,26 @@ theorem IsPrCompact.charPowerSeries_comp_comm {u : M →L[R] N} (hu : u.IsPrComp
   have h₂ : iM.comp ((v.comp u).comp rM) = (iM.comp (v.comp rN)).comp (iN.comp (u.comp rM)) :=
     ext fun x ↦ by simp [hN']
   rw [h₁, h₂, h.charPowerSeries_matrixCoeff_comp_comm]
+
+omit [NormOneClass R] in
+/-- For a topological direct sum `p ⊕ q = M` preserved by a `(Pr)`-compact operator `u`, the
+Fredholm series of the restriction `u|_{p}` equals that of `u * p.projectionL q h`. -/
+theorem IsPrCompact.charPowerSeries_restrict_of_isTopCompl {u : M →L[R] M} (hu : u.IsPrCompact)
+    {p q : Submodule R M} (h : p.IsTopCompl q) (hu_maps : ∀ x ∈ p, u x ∈ p) :
+    (u.restrict hu_maps).charPowerSeries = (u * p.projectionL q h).charPowerSeries := by
+  have hri : (p.projectionOntoL q h).comp p.subtypeL = .id R p :=
+    ext fun x ↦ Submodule.projectionOntoL_apply_left h x
+  have hPr : TauCeti.HasPr R p := hu.hasPr_source.of_retract p.subtypeL _ hri
+  have hfac : u.restrict hu_maps = (p.projectionOntoL q h).comp (u.comp p.subtypeL) := by
+    refine ext fun x ↦ Subtype.ext ?_
+    rw [coe_restrict_apply, comp_apply, comp_apply, Submodule.coe_subtypeL,
+      Submodule.coe_subtype, Submodule.coe_projectionOntoL_apply]
+    exact (Submodule.projectionL_apply_left h ⟨u x, hu_maps x x.property⟩).symm
+  have hcomp : (u.comp p.subtypeL).comp (p.projectionOntoL q h) = u * p.projectionL q h := by
+    ext x
+    simp only [mul_def, comp_apply, Submodule.coe_subtypeL, Submodule.coe_subtype,
+      Submodule.projectionL_apply]
+  rw [hfac, ← (hu.comp_clm p.subtypeL hPr).charPowerSeries_comp_comm, hcomp]
 
 omit [NormOneClass R] in
 /-- **Invariance under conjugation.** The Fredholm series of a row-compact endomorphism `u` of a

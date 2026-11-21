@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.RieszColeman.Decomposition
 import TauCeti.LinearAlgebra.End.Split
 import TauCeti.RingTheory.Polynomial.Resultant.Coleman
+import TauCeti.RingTheory.PowerSeries.Dvd
 
 /-!
 # Riesz–Coleman projections on modules with property (Pr)
@@ -321,25 +322,10 @@ theorem charPowerSeries_mul_one_sub_of_isPrCompact {u E : M →L[R] M} {Q : R[X]
   rw [huE.charPowerSeries_eq hri, hext]
   exact hE'.charPowerSeries_matrixCoeff_mul_one_sub hv hQ0 hQ hS hQS' hcop
 
-omit [IsBoundedSMul R M] in
-/-- For a topological direct sum `p ⊕ q = M` preserved by `u`, the Fredholm series of `u|_{p}`
-equals that of `u * p.projectionL q h`. -/
-private theorem charPowerSeries_restrict_of_isTopCompl {u : M →L[R] M} (hu : u.IsPrCompact)
-    {p q : Submodule R M} (h : p.IsTopCompl q) (hu_maps : ∀ x ∈ p, u x ∈ p) :
-    (u.restrict hu_maps).charPowerSeries = (u * p.projectionL q h).charPowerSeries := by
-  have hri : (p.projectionOntoL q h).comp p.subtypeL = .id R p :=
-    ext fun x ↦ Submodule.projectionOntoL_apply_left h x
-  have hPr : TauCeti.HasPr R p := hu.hasPr_source.of_retract p.subtypeL _ hri
-  have hfac : u.restrict hu_maps = (p.projectionOntoL q h).comp (u.comp p.subtypeL) := by
-    refine ext fun x ↦ Subtype.ext ?_
-    rw [coe_restrict_apply, comp_apply, comp_apply, Submodule.coe_subtypeL,
-      Submodule.coe_subtype, Submodule.coe_projectionOntoL_apply]
-    exact (Submodule.projectionL_apply_left h ⟨u x, hu_maps x x.property⟩).symm
-  rw [hfac, ← (hu.comp_clm p.subtypeL hPr).charPowerSeries_comp_comm, comp_assoc]
-  rfl
-
-/-- **Fredholm series of the restriction to `range E`.** For a normalised coprime factorisation
-`H_u = Q * S` with `Q(0) = 1`, the restriction of `u` to `range E` has Fredholm series `Q`. -/
+/-- **Fredholm series of the restriction to `range E`.** For a `(Pr)`-compact operator `u` with a
+Riesz–Coleman projection `E` for a coprime factorisation `H_u = Q * S`, where `Q(0) = 1`,
+`IsUnit Q.leadingCoeff`, and `S` is entire, the restriction of `u` to `range E` has Fredholm series
+`Q`. -/
 theorem charPowerSeries_restrict_range_of_isPrCompact {u E : M →L[R] M} {Q : R[X]} {S : R⟦X⟧}
     (hE : IsRieszColemanProjection u Q E) (hu : u.IsPrCompact)
     (hQ0 : Q.coeff 0 = 1) (hQ : IsUnit Q.leadingCoeff) (hS : S.IsEntire)
@@ -348,13 +334,14 @@ theorem charPowerSeries_restrict_range_of_isPrCompact {u E : M →L[R] M} {Q : R
       IsEntire.subring R) ⟨S, IsEntire.mem_subring.mpr hS⟩) :
     (u.restrict hE.mapsTo_range).charPowerSeries = (Q : R⟦X⟧) := by
   have hcompl := ContinuousLinearMap.IsIdempotentElem.isTopCompl hE.isIdempotentElem
-  rw [charPowerSeries_restrict_of_isTopCompl hu hcompl hE.mapsTo_range,
+  rw [hu.charPowerSeries_restrict_of_isTopCompl hcompl hE.mapsTo_range,
     ← ContinuousLinearMap.IsIdempotentElem.eq_projectionL hE.isIdempotentElem]
   exact hE.charPowerSeries_mul_of_isPrCompact hu hQ0 hQ hS hQS hcop
 
-/-- **Fredholm series of the restriction to `ker E`.** For a normalised coprime factorisation
-`H_u = Q * S` with `Q(0) = 1`, the restriction of `u` to the complementary summand `ker E` has
-Fredholm series `S`. -/
+/-- **Fredholm series of the restriction to `ker E`.** For a `(Pr)`-compact operator `u` with a
+Riesz–Coleman projection `E` for a coprime factorisation `H_u = Q * S`, where `Q(0) = 1`,
+`IsUnit Q.leadingCoeff`, and `S` is entire, the restriction of `u` to the complementary summand
+`ker E` has Fredholm series `S`. -/
 theorem charPowerSeries_restrict_ker_of_isPrCompact {u E : M →L[R] M} {Q : R[X]} {S : R⟦X⟧}
     (hE : IsRieszColemanProjection u Q E) (hu : u.IsPrCompact)
     (hQ0 : Q.coeff 0 = 1) (hQ : IsUnit Q.leadingCoeff) (hS : S.IsEntire)
@@ -363,7 +350,7 @@ theorem charPowerSeries_restrict_ker_of_isPrCompact {u E : M →L[R] M} {Q : R[X
       IsEntire.subring R) ⟨S, IsEntire.mem_subring.mpr hS⟩) :
     (u.restrict hE.mapsTo_ker).charPowerSeries = S := by
   have hcompl := ContinuousLinearMap.IsIdempotentElem.isTopCompl hE.isIdempotentElem
-  rw [charPowerSeries_restrict_of_isTopCompl hu hcompl.symm hE.mapsTo_ker,
+  rw [hu.charPowerSeries_restrict_of_isTopCompl hcompl.symm hE.mapsTo_ker,
     Submodule.projectionL_eq_id_sub_projectionL hcompl,
     ← ContinuousLinearMap.IsIdempotentElem.eq_projectionL hE.isIdempotentElem, ← one_def]
   exact hE.charPowerSeries_mul_one_sub_of_isPrCompact hu hQ0 hQ hS hQS hcop
