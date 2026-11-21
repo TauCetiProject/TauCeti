@@ -86,35 +86,21 @@ theorem tendstoInMeasure_delta_method_remainder
   have hT := tendstoInMeasure_const_of_isBoundedInProbability_smul_sub ha hbd
   let r : E → ℝ := fun x ↦ ‖g x - g θ - D (x - θ)‖ / ‖x - θ‖
   have hr_cont : ContinuousAt r θ := by
-    rw [Metric.continuousAt_iff]
-    intro ε hε
-    obtain ⟨δ, hδ, hlip⟩ :=
-      Metric.eventually_nhds_iff.1 (Asymptotics.isLittleO_iff.1 hd.isLittleO (half_pos hε))
-    refine ⟨δ, hδ, fun {x} hx ↦ ?_⟩
-    have hrθ : r θ = 0 := by simp [r]
-    rw [hrθ, Real.dist_eq, sub_zero, abs_of_nonneg (div_nonneg (norm_nonneg _) (norm_nonneg _))]
-    by_cases h0 : ‖x - θ‖ = 0
-    · simp [h0, hε]
-    · have hpos : 0 < ‖x - θ‖ := lt_of_le_of_ne (norm_nonneg _) (Ne.symm h0)
-      exact ((div_le_iff₀ hpos).2 (hlip hx)).trans_lt (half_lt_self hε)
+    simpa [ContinuousAt, r] using hd.isLittleO.norm_norm.tendsto_div_nhds_zero
   have hr_lim : TendstoInMeasure μ (fun n ω ↦ r (T n ω)) atTop (fun _ ↦ 0) := by
     simpa [r] using hT.continuousAt_const_comp hr_cont
   have hprod := tendstoInMeasure_smul_zero_of_tendstoInMeasure_zero hr_lim hbd
-  obtain ⟨δ, hδ, hlip⟩ :=
-    Metric.eventually_nhds_iff.1 (Asymptotics.isLittleO_iff.1 hd.isLittleO zero_lt_one)
+  obtain ⟨δ, hδ, hcancel⟩ :=
+    Metric.eventually_nhds_iff.1 hd.isLittleO.norm_norm.eventually_mul_div_cancel
   refine hprod.zero_of_norm_le_on (A := fun n ↦ {ω | dist (T n ω) θ < δ}) ?_ ?_
   · simpa only [Set.compl_ofPred, not_lt] using tendstoInMeasure_iff_dist.1 hT δ hδ
   · filter_upwards [ha.eventually_ge_atTop 0] with n hn ω hω
     rw [map_smul, ← smul_sub, norm_smul, Real.norm_of_nonneg hn,
       norm_smul, norm_smul, Real.norm_of_nonneg (div_nonneg (norm_nonneg _) (norm_nonneg _)),
       Real.norm_of_nonneg hn]
-    by_cases h0 : ‖T n ω - θ‖ = 0
-    · have hzero : ‖g (T n ω) - g θ - D (T n ω - θ)‖ ≤ 0 := by
-        simpa [h0] using hlip (Set.mem_ofPred_eq.mp hω)
-      have hzero' : ‖g (T n ω) - g θ - D (T n ω - θ)‖ = 0 := le_antisymm hzero (norm_nonneg _)
-      rw [hzero', h0, mul_zero]
-      norm_num
-    · exact le_of_eq (by field_simp)
+    have hmul : r (T n ω) * ‖T n ω - θ‖ = ‖g (T n ω) - g θ - D (T n ω - θ)‖ :=
+      hcancel (Set.mem_ofPred_eq.mp hω)
+    rw [← mul_assoc, mul_comm (r (T n ω)) (a n), mul_assoc, hmul]
 
 /-- **General-rate delta method.** If `aₙ • (Tₙ - θ) → Z` in distribution for a diverging sequence
 `aₙ → ∞` and `g : E → F` is Fréchet differentiable at `θ` with derivative `D`, with each `g ∘ Tₙ`
