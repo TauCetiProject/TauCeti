@@ -66,6 +66,9 @@ vanishes (`TauCeti.SmoothForm.IsContactHamiltonianVectorField.mem_kerDistributio
 * `TauCeti.SmoothForm.IsContactHamiltonianVectorField.mlieDerivForm_eq`: `L_X α = (R_α f) α`.
 * `TauCeti.SmoothForm.IsContactHamiltonianVectorField.mlieBracket_mem_kerDistribution`:
   infinitesimal preservation of the contact distribution.
+* `TauCeti.SmoothForm.mlieDerivForm_apply_eq_of_eventuallyEq`,
+  `TauCeti.SmoothForm.mlieBracket_mem_kerDistribution_of_eventuallyEq`: the same two statements at
+  a point, for a vector field satisfying the defining equations only near that point.
 * `TauCeti.SmoothForm.IsContactForm.isContactHamiltonianVectorField_iff_mlieDerivForm`,
   `TauCeti.SmoothForm.IsContactForm.eq_contactHamiltonianVectorField_of_mlieDerivForm_eq_smul`:
   contact vector fields are the contact Hamiltonian vector fields of their Hamiltonians.
@@ -120,6 +123,51 @@ theorem isContactHamiltonianVectorField_iff :
         mvfderiv I f x (α.reebVectorField x) * α.val x ![v] - mvfderiv I f x v :=
   Iff.rfl
 
+/-! ### The defining equations near a point -/
+
+section Pointwise
+
+variable {x : M}
+
+/-- **Cartan's formula for a vector field satisfying the contact Hamiltonian equations at a
+point.** If `α(X) = f` near `x`, `ι_X dα = (R_α f) α - df` at `x` and `X` is differentiable at `x`,
+then `L_X α = (R_α f) α` at `x`. -/
+theorem mlieDerivForm_apply_eq_of_eventuallyEq
+    (hf : (fun y ↦ α.val y ![X y]) =ᶠ[𝓝 x] f) (hd : ∀ v, mextDeriv α.val x ![X x, v] =
+      mvfderiv I f x (α.reebVectorField x) * α.val x ![v] - mvfderiv I f x v)
+    (hXd : MDifferentiableAt I I.tangent (fun y ↦ (X y : TangentBundle I M)) x) :
+    mlieDerivForm X α.val x = mvfderiv I f x (α.reebVectorField x) • α.val x := by
+  ext v
+  obtain ⟨w, rfl⟩ : ∃ w, v = ![w] := ⟨v 0, by ext i; fin_cases i; rfl⟩
+  rw [mlieDerivForm_apply_eq_mextDeriv_add (fun _ ↦ rfl) (α.mdifferentiableAt x) hXd,
+    hf.mvfderiv_eq, hd, ContinuousAlternatingMap.smul_apply, smul_eq_mul, sub_add_cancel]
+
+/-- **A vector field satisfying the contact Hamiltonian equations near a point preserves the
+kernel there.** If `α(X) = f` near `x`, `ι_X dα = (R_α f) α - df` at `x` and `X` is differentiable
+at `x`, then the bracket of `X` at `x` with a vector field differentiable at `x` and tangent to
+`ker α` near `x` is tangent to `ker α` at `x`. -/
+theorem mlieBracket_mem_kerDistribution_of_eventuallyEq
+    (hf : (fun y ↦ α.val y ![X y]) =ᶠ[𝓝 x] f) (hd : ∀ v, mextDeriv α.val x ![X x, v] =
+      mvfderiv I f x (α.reebVectorField x) * α.val x ![v] - mvfderiv I f x v)
+    (hXd : MDifferentiableAt I I.tangent (fun y ↦ (X y : TangentBundle I M)) x)
+    {W : (y : M) → TangentSpace I y}
+    (hWd : MDifferentiableAt I I.tangent (fun y ↦ (W y : TangentBundle I M)) x)
+    (hW : ∀ᶠ y in 𝓝 x, W y ∈ α.kerDistribution y) :
+    mlieBracket I X W x ∈ α.kerDistribution x := by
+  -- The bracket formula `X(α(W)) - α([X, W]) = (R_α f) α(W)`, where `α(W) = 0` near `x`.
+  have h := mlieDerivForm_apply_one (V := X) (α.mdifferentiableAt x) hWd
+  rw [mlieDerivForm_apply_eq_of_eventuallyEq hf hd hXd, ContinuousAlternatingMap.smul_apply,
+    smul_eq_mul] at h
+  have h0 : mvfderiv I (fun y ↦ α.val y ![W y]) x = 0 := by
+    rw [Filter.EventuallyEq.mvfderiv_eq (f := fun _ ↦ (0 : ℝ))
+      (hW.mono fun y hy ↦ mem_kerDistribution.1 hy)]
+    exact mvfderiv_const (0 : ℝ)
+  rw [mem_kerDistribution.1 hW.self_of_nhds, h0, mul_zero, zero_apply, zero_sub, eq_comm,
+    neg_eq_zero] at h
+  exact mem_kerDistribution.2 h
+
+end Pointwise
+
 namespace IsContactHamiltonianVectorField
 
 /-- A contact Hamiltonian vector field of `f` takes the value `f` under `α`. -/
@@ -151,11 +199,9 @@ theorem mvfderiv_apply_self (hX : α.IsContactHamiltonianVectorField f X) (x : M
 differentiable: `L_X α = (R_α f) α`. -/
 theorem mlieDerivForm_apply_eq (hX : α.IsContactHamiltonianVectorField f X) {x : M}
     (hXd : MDifferentiableAt I I.tangent (fun y ↦ (X y : TangentBundle I M)) x) :
-    mlieDerivForm X α.val x = mvfderiv I f x (α.reebVectorField x) • α.val x := by
-  ext v
-  obtain ⟨w, rfl⟩ : ∃ w, v = ![w] := ⟨v 0, by ext i; fin_cases i; rfl⟩
-  rw [mlieDerivForm_apply_eq_mextDeriv_add hX.apply_eq (α.mdifferentiableAt x) hXd,
-    hX.mextDeriv_apply_eq, ContinuousAlternatingMap.smul_apply, smul_eq_mul, sub_add_cancel]
+    mlieDerivForm X α.val x = mvfderiv I f x (α.reebVectorField x) • α.val x :=
+  mlieDerivForm_apply_eq_of_eventuallyEq (Filter.Eventually.of_forall hX.apply_eq)
+    (hX.mextDeriv_apply_eq x) hXd
 
 /-- The derivative of `α(W)` along a contact Hamiltonian vector field `X` of `f`, from
 `L_X α = (R_α f) α`: `X(α(W)) - α([X, W]) = (R_α f) α(W)`. -/
@@ -183,16 +229,9 @@ theorem mlieBracket_mem_kerDistribution (hX : α.IsContactHamiltonianVectorField
     {Y : (x : M) → TangentSpace I x}
     (hYd : MDifferentiableAt I I.tangent (fun y ↦ (Y y : TangentBundle I M)) x)
     (hY : ∀ᶠ y in 𝓝 x, Y y ∈ α.kerDistribution y) :
-    mlieBracket I X Y x ∈ α.kerDistribution x := by
-  -- The bracket formula `X(α(Y)) - α([X, Y]) = (R_α f) α(Y)`, where `α(Y) = 0` near `x`.
-  have h := hX.mvfderiv_apply_sub_apply_mlieBracket hXd hYd
-  have hd : mvfderiv I (fun y ↦ α.val y ![Y y]) x = 0 := by
-    rw [Filter.EventuallyEq.mvfderiv_eq (f := fun _ ↦ (0 : ℝ))
-      (hY.mono fun y hy ↦ mem_kerDistribution.1 hy)]
-    exact mvfderiv_const (0 : ℝ)
-  rw [mem_kerDistribution.1 hY.self_of_nhds, hd, mul_zero, zero_apply, zero_sub,
-    neg_eq_zero] at h
-  exact mem_kerDistribution.2 h
+    mlieBracket I X Y x ∈ α.kerDistribution x :=
+  mlieBracket_mem_kerDistribution_of_eventuallyEq (Filter.Eventually.of_forall hX.apply_eq)
+    (hX.mextDeriv_apply_eq x) hXd hYd hY
 
 end IsContactHamiltonianVectorField
 
@@ -346,21 +385,10 @@ theorem mlieBracket_contactHamiltonianVectorField_mem_kerDistribution
     {W : (y : M) → TangentSpace I y}
     (hWd : MDifferentiableAt I I.tangent (fun y ↦ (W y : TangentBundle I M)) x)
     (hW : ∀ᶠ y in 𝓝 x, W y ∈ α.kerDistribution y) :
-    mlieBracket I (α.contactHamiltonianVectorField f) W x ∈ α.kerDistribution x := by
-  -- `L_X α (W) = X(α(W)) - α([X, W])`, where `α(W)` vanishes near `x`.
-  have h1 := mlieDerivForm_apply_one (V := α.contactHamiltonianVectorField f)
-    (α.mdifferentiableAt x) hWd
-  rw [Filter.EventuallyEq.mvfderiv_eq (f := fun _ ↦ (0 : ℝ))
-    (hW.mono fun y hy ↦ mem_kerDistribution.1 hy), mvfderiv_const, zero_apply, zero_sub] at h1
-  -- Cartan's formula `L_X α = ι_X dα + d(α(X))`, where `α(X) = f` near `x`.
-  have h2 := mlieDerivForm_apply_eq_mextDeriv_add (fun _ ↦ rfl) (α.mdifferentiableAt x) hXd (W x)
-  have hf : (fun y ↦ α.val y ![α.contactHamiltonianVectorField f y]) =ᶠ[𝓝 x] f :=
-    h.mono fun y hy ↦ apply_contactHamiltonianVectorField_of_isContactFormAt hy f
-  rw [hf.mvfderiv_eq, mextDeriv_contactHamiltonianVectorField_left_of_isContactFormAt
-    h.self_of_nhds, mem_kerDistribution.1 hW.self_of_nhds, mul_zero, zero_sub,
-    neg_add_cancel] at h2
-  rw [mem_kerDistribution]
-  linarith [h1.symm.trans h2]
+    mlieBracket I (α.contactHamiltonianVectorField f) W x ∈ α.kerDistribution x :=
+  mlieBracket_mem_kerDistribution_of_eventuallyEq
+    (h.mono fun _ hy ↦ apply_contactHamiltonianVectorField_of_isContactFormAt hy f)
+    (mextDeriv_contactHamiltonianVectorField_left_of_isContactFormAt h.self_of_nhds f) hXd hWd hW
 
 end ContactPoint
 

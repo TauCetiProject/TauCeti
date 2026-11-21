@@ -83,12 +83,6 @@ theorem preservesDistribution_iff : PreservesDistribution I D X ↔
       CMDiff[U] ∞ (T% V) → (∀ x ∈ U, V x ∈ D x) → ∀ x ∈ U, mlieBracket I X V x ∈ D x :=
   Iff.rfl
 
-/-- The zero vector field preserves every distribution. -/
-@[simp]
-theorem preservesDistribution_zero : PreservesDistribution I D 0 := fun _ _ _ _ _ x _ ↦ by
-  rw [mlieBracket_zero_left]
-  exact zero_mem _
-
 /-! ### Preserving a distribution at a point -/
 
 variable (I) in
@@ -119,6 +113,18 @@ theorem PreservesDistribution.preservesDistributionAt (h : PreservesDistribution
     PreservesDistributionAt I D X x :=
   preservesDistribution_iff_forall_preservesDistributionAt.1 h x
 
+/-- The zero vector field preserves every distribution at every point. -/
+@[simp]
+theorem preservesDistributionAt_zero {x : M} : PreservesDistributionAt I D 0 x :=
+  fun _ _ _ _ _ _ ↦ by
+  rw [mlieBracket_zero_left]
+  exact zero_mem _
+
+/-- The zero vector field preserves every distribution. -/
+@[simp]
+theorem preservesDistribution_zero : PreservesDistribution I D 0 :=
+  preservesDistribution_iff_forall_preservesDistributionAt.2 fun _ ↦ preservesDistributionAt_zero
+
 namespace PreservesDistributionAt
 
 variable {x : M}
@@ -128,6 +134,12 @@ theorem congr_of_eventuallyEq (h : PreservesDistributionAt I D X x) (hXY : X =�
     PreservesDistributionAt I D Y x := fun _ hU hx V hV hVD ↦ by
   have h' := h hU hx hV hVD
   rwa [hXY.mlieBracket_vectorField_eq (Filter.EventuallyEq.refl (𝓝 x) V)] at h'
+
+/-- A constant multiple of a vector field preserving `D` at `x` preserves `D` at `x`. -/
+theorem const_smul (hX : PreservesDistributionAt I D X x) (c : 𝕜) :
+    PreservesDistributionAt I D (c • X) x := fun _ hU hx _ hV hVD ↦ by
+  rw [mlieBracket_const_smul_left_field]
+  exact Submodule.smul_mem _ c (hX hU hx hV hVD)
 
 /-- The negative of a vector field preserving `D` at `x` preserves `D` at `x`. -/
 theorem neg (hX : PreservesDistributionAt I D X x) : PreservesDistributionAt I D (-X) x :=
@@ -163,9 +175,9 @@ namespace PreservesDistribution
 
 /-- A constant multiple of a vector field preserving `D` preserves `D`. -/
 theorem const_smul (hX : PreservesDistribution I D X) (c : 𝕜) :
-    PreservesDistribution I D (c • X) := fun _ hU _ hV hVD x hx ↦ by
-  rw [mlieBracket_const_smul_left_field]
-  exact Submodule.smul_mem _ c (hX hU hV hVD x hx)
+    PreservesDistribution I D (c • X) :=
+  preservesDistribution_iff_forall_preservesDistributionAt.2 fun x ↦
+    (hX.preservesDistributionAt x).const_smul c
 
 /-- The negative of a vector field preserving `D` preserves `D`. -/
 theorem neg (hX : PreservesDistribution I D X) : PreservesDistribution I D (-X) :=
