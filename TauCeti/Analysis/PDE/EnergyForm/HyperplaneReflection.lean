@@ -62,6 +62,11 @@ the restriction of `φ - φ ∘ ρ`, which lies in `H¹₀(U ∩ H)`; so it equa
   coefficients are invariant under the change of variables `ρ`.
 * `TauCeti.PDE.energyIntegrand_reflectPrincipal_zero_zero`: a principal coefficient that is
   already invariant under the reflection is unchanged by it.
+* `TauCeti.PDE.matrixBilinearForm_reflectPrincipal_of_lt`: below the hyperplane, the reflected
+  principal coefficient is `a'(x) = R a(ρ x) R`.
+* `TauCeti.PDE.norm_matrixBilinearForm_reflectPrincipal_sub_le`: the reflected principal
+  coefficient stays within `δ` of a reflection-invariant constant matrix `A` when `a` does, and
+  `TauCeti.PDE.norm_matrixBilinearForm_reflectPrincipal_le`: it keeps the bound `Λ` of `a`.
 * `TauCeti.PDE.energyFormH1_reflectPrincipal_sub_compHyperplaneReflectionL`: the odd reflection
   of a weak solution vanishing on the flat boundary is a weak solution of the reflected equation.
 * `TauCeti.PDE.energyFormH1_reflectPrincipal_sub_compHyperplaneReflectionL_eq_setIntegral`: the
@@ -234,13 +239,14 @@ theorem matrixBilinearForm_reflectPrincipal_of_lt (hx : ⟪x, ν⟫_ℝ < c₀) 
     matrixBilinearForm (reflectPrincipal ν c₀ a x) η ξ =
       matrixBilinearForm (a (hyperplaneReflection ν c₀ x)) ((ℝ ∙ ν)ᗮ.reflection η)
         ((ℝ ∙ ν)ᗮ.reflection ξ) := by
-  have h := energyIntegrand_pullback_hyperplaneReflection (a := a)
-    (b := (0 : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι)) (c := (0 : EuclideanSpace ℝ ι → ℝ))
-    (ν := ν) (c₀ := c₀) (x := x) (0, ξ) (0, η)
-  rw [reflectPrincipal_of_lt hx]
-  simpa only [energyIntegrand_apply, driftForm_apply, massForm_apply, pullbackDrift_apply,
-    pullbackDensity_apply, Pi.zero_apply, map_zero, inner_zero_left, inner_zero_right, mul_zero,
-    zero_mul, add_zero, smul_zero, zero_apply] using h
+  have hR : ((ℝ ∙ ν)ᗮ.reflection : EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι) ∘L
+      fderiv ℝ (hyperplaneReflection ν c₀) x = ContinuousLinearMap.id ℝ _ := by
+    ext1 v
+    simp
+  rw [reflectPrincipal_of_lt hx, matrixBilinearForm_pullbackPrincipal_eq_bilinearComp a hR,
+    abs_det_fderiv_hyperplaneReflection, one_smul,
+    (Submodule.isSelfAdjoint_reflection _).adjoint_eq]
+  rfl
 
 /-- **The reflected coefficient stays close to a reflection-invariant matrix.** Let `A` be a
 constant matrix invariant under the reflection, `A = R A R` with `R` the linear part of `ρ`. If
@@ -282,21 +288,13 @@ the reflected coefficient at every point. -/
 theorem norm_matrixBilinearForm_reflectPrincipal_le (hν : ν ≠ 0) {Lam : ℝ}
     (ha : ∀ y, c₀ ≤ ⟪y, ν⟫_ℝ → ‖matrixBilinearForm (a y)‖ ≤ Lam) (x : EuclideanSpace ℝ ι) :
     ‖matrixBilinearForm (reflectPrincipal ν c₀ a x)‖ ≤ Lam := by
-  by_cases hx : c₀ ≤ ⟪x, ν⟫_ℝ
-  · rw [reflectPrincipal_of_le hx]
-    exact ha x hx
-  -- Below the hyperplane, the form is the form at `ρ x` on reflected vectors.
-  have hρ : c₀ ≤ ⟪hyperplaneReflection ν c₀ x, ν⟫_ℝ := by
-    rw [inner_hyperplaneReflection hν]
-    linarith [not_le.1 hx]
-  have hLam := ha _ hρ
-  refine ContinuousLinearMap.opNorm_le_bound₂ _ (le_trans (by positivity) hLam) fun η ξ => ?_
-  rw [matrixBilinearForm_reflectPrincipal_of_lt (not_le.1 hx)]
-  calc _ ≤ ‖matrixBilinearForm (a (hyperplaneReflection ν c₀ x))‖ *
-        ‖(ℝ ∙ ν)ᗮ.reflection η‖ * ‖(ℝ ∙ ν)ᗮ.reflection ξ‖ := ContinuousLinearMap.le_opNorm₂ _ _ _
-    _ ≤ Lam * ‖η‖ * ‖ξ‖ := by
-      rw [LinearIsometryEquiv.norm_map, LinearIsometryEquiv.norm_map]
-      gcongr
+  have h0 (B : EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι →L[ℝ] ℝ) :
+      B - matrixBilinearForm (0 : Matrix ι ι ℝ) = B := by
+    ext
+    simp
+  have h := norm_matrixBilinearForm_reflectPrincipal_sub_le (a := a) (A := 0) (δ := Lam) hν
+    (fun η ξ => by simp) (fun y hy => by rw [h0]; exact ha y hy) x
+  rwa [h0] at h
 
 @[simp]
 theorem reflectDrift_zero :

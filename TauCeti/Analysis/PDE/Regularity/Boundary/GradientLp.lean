@@ -100,8 +100,7 @@ private theorem memLp_reflectDatum {p : ℝ≥0∞} (hp : 1 ≤ p) {H : Opens E}
         p volume ≤ 2 * eLpNorm G p (volume.restrict H) := by
   set R : E ≃ₗᵢ[ℝ] E := (ℝ ∙ ν)ᗮ.reflection
   have hRGm : MemLp (fun y => R (G y)) p (volume.restrict H) :=
-    hGp.congr_norm (R.continuous.comp_aestronglyMeasurable hGp.aestronglyMeasurable)
-      (Filter.Eventually.of_forall fun y => (R.norm_map (G y)).symm)
+    R.toContinuousLinearEquiv.toContinuousLinearMap.comp_memLp' hGp
   have hRG : eLpNorm (fun y => R (G y)) p (volume.restrict H) =
       eLpNorm G p (volume.restrict H) :=
     eLpNorm_congr_norm_ae hRGm.aestronglyMeasurable hGp.aestronglyMeasurable
@@ -189,14 +188,12 @@ private theorem integrable_and_memLp_gradient_sub_compHyperplaneReflectionL {p :
       (mapsTo_hyperplaneReflection_top ν c₀) u) =ᵐ[volume]
         fun x => W1p.gradient u x - R (W1p.gradient u (hyperplaneReflection ν c₀ x)) := by
     simpa only [Opens.coe_top, Measure.restrict_univ] using
-      W1p.gradient_sub_compHyperplaneReflectionL_ae_eq ENNReal.ofNat_ne_top
+      W1p.gradient_sub_compHyperplaneReflectionL_ae ENNReal.ofNat_ne_top
         (mapsTo_hyperplaneReflection_top ν c₀) u
-  -- Composing with `ρ` and with the isometry `R` preserves integrability and `Lᵖ` membership.
+  -- Composing with `ρ` and with `R` preserves integrability and `Lᵖ` membership.
   have hR : ∀ {q : ℝ≥0∞}, MemLp (W1p.gradient u : E → E) q volume →
       MemLp (fun x => R (W1p.gradient u (hyperplaneReflection ν c₀ x))) q volume := fun hq =>
-    (hq.comp_measurePreserving hρ).congr_norm
-      (R.continuous.comp_aestronglyMeasurable (hq.comp_measurePreserving hρ).aestronglyMeasurable)
-      (Filter.Eventually.of_forall fun x => (R.norm_map _).symm)
+    R.toContinuousLinearEquiv.toContinuousLinearMap.comp_memLp' (hq.comp_measurePreserving hρ)
   exact ⟨(hint.sub (memLp_one_iff_integrable.1 (hR (memLp_one_iff_integrable.2 hint)))).congr
     hgw.symm, (hgp.sub (hR hgp)).ae_eq hgw.symm⟩
 
@@ -208,7 +205,7 @@ private theorem ae_norm_gradient_le_norm_gradient_sub_compHyperplaneReflectionL 
     {u : W1p volume (⊤ : Opens E) 2} (hu0 : ∀ᵐ x, x ∉ H → W1p.value u x = 0) :
     ∀ᵐ x, ‖W1p.gradient u x‖ ≤ ‖W1p.gradient (u - W1p.compHyperplaneReflectionL
       ENNReal.ofNat_ne_top ν c₀ (mapsTo_hyperplaneReflection_top ν c₀) u) x‖ := by
-  have hgw := W1p.gradient_sub_compHyperplaneReflectionL_ae_eq ENNReal.ofNat_ne_top
+  have hgw := W1p.gradient_sub_compHyperplaneReflectionL_ae ENNReal.ofNat_ne_top
     (mapsTo_hyperplaneReflection_top ν c₀) u
   have hu0' : ∀ᵐ x ∂volume.restrict ((⊤ : Opens E) : Set E), x ∉ H → W1p.value u x = 0 := by
     simpa only [Opens.coe_top, Measure.restrict_univ] using hu0
@@ -343,8 +340,8 @@ theorem exists_eLpNorm_gradient_le_of_norm_sub_le_of_ae_gradient_eq_zero {p : �
       (add_le_add hAn ((hb x).trans (min_le_right _ _)))
   · exact (hA.mono_set (subset_univ _)).mono_constants hA.pos le_rfl (by linarith)
   · -- The reflected coefficient of `b` is within `min δ 1` of `A` everywhere.
-    refine (Real.le_norm_self _).trans ((norm_setAverage_le_of_norm_le_const hm measure_ball_lt_top
-      fun x _ => ?_).trans (min_le_left _ _))
+    refine (Real.le_norm_self _).trans
+      ((norm_setAverage_le_of_norm_le_const hm fun x _ => ?_).trans (min_le_left _ _))
     rw [Real.norm_eq_abs, abs_of_nonneg (by positivity)]
     exact hb' x
   · -- `u` solves the equation with `b`, which agrees with `a` where `∇u` does not vanish.

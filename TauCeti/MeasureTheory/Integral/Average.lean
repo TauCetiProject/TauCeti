@@ -106,8 +106,9 @@ applied to an integrable function that is almost everywhere at least `a`.
   over a subset `s ⊆ t` is at most `μ t / μ s` times its average over `t`.
 * `TauCeti.enorm_setAverage_sub_le_of_subset`: the extended-norm form of
   `TauCeti.norm_setAverage_sub_le_of_subset`.
-* `TauCeti.norm_setAverage_le_of_norm_le_const`: an average of a function bounded in norm by `C`
-  on a set of finite measure is bounded in norm by `C`.
+* `TauCeti.norm_setAverage_le_of_norm_le_const_ae'` and
+  `TauCeti.norm_setAverage_le_of_norm_le_const`: an average of a function bounded in norm by `C`
+  on `s`, almost everywhere or everywhere, is bounded in norm by `C`.
 * `TauCeti.enorm_setAverage_sub_le_setLAverage`: on a set of finite positive measure, the average
   differs from a constant `c` by at most the average of `‖f - c‖ₑ`, with no integrability
   assumption.
@@ -692,17 +693,26 @@ theorem enorm_setAverage_sub_le_of_subset (hst : s ⊆ t) (hs : μ s ≠ 0) (ht 
   exact le_top
 
 omit [CompleteSpace F] in
-/-- The average of a function bounded in norm by `C` on a set of finite measure is bounded in
-norm by `C`. This is the average form of `MeasureTheory.norm_setIntegral_le_of_norm_le_const`. -/
-theorem norm_setAverage_le_of_norm_le_const {C : ℝ} (hC : 0 ≤ C) (hs : μ s < ⊤)
-    (hf : ∀ x ∈ s, ‖f x‖ ≤ C) : ‖⨍ x in s, f x ∂μ‖ ≤ C := by
+/-- The average of a function almost everywhere bounded in norm by `C` on `s` is bounded in norm by
+`C`. This is the average form of `MeasureTheory.norm_setIntegral_le_of_norm_le_const_ae'`; no
+finiteness of `μ s` is needed, since the average over a set of infinite measure is zero. -/
+theorem norm_setAverage_le_of_norm_le_const_ae' {C : ℝ} (hC : 0 ≤ C)
+    (hf : ∀ᵐ x ∂μ, x ∈ s → ‖f x‖ ≤ C) : ‖⨍ x in s, f x ∂μ‖ ≤ C := by
   rw [setAverage_eq, norm_smul, norm_inv, Real.norm_of_nonneg measureReal_nonneg]
   rcases eq_or_ne (μ.real s) 0 with h0 | h0
   · simpa [h0] using hC
   calc (μ.real s)⁻¹ * ‖∫ x in s, f x ∂μ‖ ≤ (μ.real s)⁻¹ * (C * μ.real s) := by
         gcongr
-        exact norm_setIntegral_le_of_norm_le_const hs hf
+        exact norm_setIntegral_le_of_norm_le_const_ae'
+          (ENNReal.toReal_ne_zero.1 h0).2.lt_top hf
     _ = C := by field_simp
+
+omit [CompleteSpace F] in
+/-- The average of a function bounded in norm by `C` on `s` is bounded in norm by `C`. This is the
+average form of `MeasureTheory.norm_setIntegral_le_of_norm_le_const`. -/
+theorem norm_setAverage_le_of_norm_le_const {C : ℝ} (hC : 0 ≤ C) (hf : ∀ x ∈ s, ‖f x‖ ≤ C) :
+    ‖⨍ x in s, f x ∂μ‖ ≤ C :=
+  norm_setAverage_le_of_norm_le_const_ae' hC (Filter.Eventually.of_forall hf)
 
 /-- On a set of finite positive measure, the average of an almost everywhere strongly measurable
 `f` differs from a constant `c` by at most the average of `‖f - c‖ₑ`. No integrability is assumed:
