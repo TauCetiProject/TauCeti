@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Interpolation.L1Linfty
-public import TauCeti.Analysis.Normed.Interpolation.RealMethod
+public import TauCeti.Analysis.Normed.Interpolation.RealMethod.Basic
 public import TauCeti.MeasureTheory.Function.Lorentz
 import TauCeti.Analysis.SpecialFunctions.Pow.Integral
 import TauCeti.MeasureTheory.Integral.Hardy
@@ -363,19 +363,25 @@ def lebesgueOneTopKMethodEquivLp (hθ : θ ∈ Ioo 0 1) (hp : p⁻¹ = ENNReal.o
       ⟨ENNReal.inv_le_one.1 (hp.trans_le (ENNReal.ofReal_le_one.2 (sub_le_self 1 hθ.1.le)))⟩
     (lebesgue 𝕜 E μ 1 ∞).KMethodSpace θ p ≃L[𝕜] Lp E p μ :=
   letI : Fact (1 ≤ p) := ⟨one_le_of_inv_eq hθ hp⟩
-  ContinuousLinearEquiv.equivOfInverse
+  ContinuousLinearEquiv.ofContinuousLinearMap
     (lebesgueOneTopKMethodToLp hθ hp) (lpToLebesgueOneTopKMethod hθ hp)
-    (fun u ↦ KMethodSpace.ext <| (lebesgue 𝕜 E μ 1 ∞).sumSpaceEmbed_injective <|
+    (ContinuousLinearMap.ext <|
+      show Function.RightInverse (lpToLebesgueOneTopKMethod hθ hp)
+        (lebesgueOneTopKMethodToLp hθ hp) from
+      fun g ↦ Lp.ext <| (memLp_toAEEqFun_kMethodSpace hθ hp _).coeFn_toLp.trans <| by
+      simp only [lpToLebesgueOneTopKMethod, LinearMap.mkContinuous_apply, LinearMap.coe_mk,
+        AddHom.coe_mk, KMethodSpace.toSumₗ_mk, sumSpaceEmbed_lpToLebesgueSum,
+        L1AddLinfty.toAEEqFun_ofLp]
+      exact EventuallyEq.rfl)
+    (ContinuousLinearMap.ext <|
+      show Function.LeftInverse (lpToLebesgueOneTopKMethod hθ hp)
+        (lebesgueOneTopKMethodToLp hθ hp) from
+      fun u ↦ KMethodSpace.ext <| (lebesgue 𝕜 E μ 1 ∞).sumSpaceEmbed_injective <|
       L1AddLinfty.toAEEqFun_injective <| AEEqFun.ext <| by
         simp only [lpToLebesgueOneTopKMethod, lebesgueOneTopKMethodToLp,
           LinearMap.mkContinuous_apply, LinearMap.coe_mk, AddHom.coe_mk, KMethodSpace.toSumₗ_mk,
           sumSpaceEmbed_lpToLebesgueSum, L1AddLinfty.toAEEqFun_ofLp]
         exact MemLp.coeFn_toLp _)
-    (fun g ↦ Lp.ext <| (memLp_toAEEqFun_kMethodSpace hθ hp _).coeFn_toLp.trans <| by
-      simp only [lpToLebesgueOneTopKMethod, LinearMap.mkContinuous_apply, LinearMap.coe_mk,
-        AddHom.coe_mk, KMethodSpace.toSumₗ_mk, sumSpaceEmbed_lpToLebesgueSum,
-        L1AddLinfty.toAEEqFun_ofLp]
-      exact EventuallyEq.rfl)
 
 /-- The diagonal isomorphism `(L¹, L^∞)_{θ, p} ≃L[𝕜] L^p(μ; E)` sends `u` to an `L^p` element
 representing the same function almost everywhere as `u` in `L¹ + L^∞`. -/

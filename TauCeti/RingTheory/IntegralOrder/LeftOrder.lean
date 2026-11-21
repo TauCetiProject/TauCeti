@@ -127,12 +127,14 @@ variable {R F E : Type*} [CommRing R] [IsNoetherianRing R] [Field F] [Ring E] [A
 
 /-- **The left order of a lattice is an order.** Over a noetherian ring `R` with fraction field `F`,
 the left order of an `R`-lattice in an `F`-algebra `E` is an `R`-order in `E`. -/
-theorem leftOrder_isOrder (M : Submodule R E) [M.IsLattice F] :
+theorem leftOrder_isOrder (M : Submodule R E) [M.IsFullLattice F] :
     TauCeti.IntegralOrder.IsOrder F M.leftOrder := by
   have : IsDomain R := (IsFractionRing.isDomain_iff_isField (K := F)).2 (Field.toIsField F)
   have hspan (v : E) : v ∈ span F (M : Set E) := by
-    simp [IsLattice.span_eq_top (A := F) (M := M)]
-  refine TauCeti.IntegralOrder.isOrder_iff_isLattice.2 ⟨?_, eq_top_iff.2 fun y _ => ?_⟩
+    simp [IsFullLattice.span_eq_top (A := F) (M := M)]
+  refine TauCeti.IntegralOrder.isOrder_iff.2
+    ⟨Module.Finite.iff_fg (N := Subalgebra.toSubmodule M.leftOrder) |>.2 ?_,
+      eq_top_iff.2 fun y _ => ?_⟩
   · -- some `s ∈ R⁰` has `s • 1 ∈ M`, and then `x ↦ s • x = x * (s • 1)` embeds `O_l(M)` into `M`
     obtain ⟨s, hs, hs1⟩ :=
       (fg_span_singleton (1 : E)).exists_smul_mem_of_le_span R⁰ fun v _ => hspan v

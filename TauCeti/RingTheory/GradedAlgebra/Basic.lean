@@ -102,7 +102,7 @@ theorem eq_zero_of_isIdempotentElem_of_decompose_zero (hneg : ∀ p < 0, 𝒜 p 
   have hr1 : ∀ i < (1 : ℤ), r i = 0 := by
     intro i hi
     rcases lt_or_eq_of_le (show i ≤ 0 by omega) with hi | rfl
-    · exact Subtype.ext (hzero hi (r i).2)
+    · exact Subtype.ext (hzero hi (r i).property)
     · exact Subtype.ext h0
   have hpow (n : ℕ) : r = r ^ (n + 1) := by
     have h : decompose 𝒜 (f ^ (n + 1)) = decompose 𝒜 f ^ (n + 1) :=
@@ -144,7 +144,7 @@ theorem mem_of_mul_mem_add_of_isLeftRegular {a b : A} {i j : ι} (ha : a ∈ �
       rw [DirectSum.of_eq_same]
     · rw [hk k hkj, DirectSum.of_eq_of_ne _ _ _ hkj]
   rw [← (decompose 𝒜).symm_apply_apply b, hb, decompose_symm_of]
-  exact (decompose 𝒜 b j).2
+  exact (decompose 𝒜 b j).property
 
 end Regular
 

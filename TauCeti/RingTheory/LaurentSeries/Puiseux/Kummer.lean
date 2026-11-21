@@ -74,7 +74,7 @@ private theorem twistEquiv_ratChar_mem (ζ : PrimeToPTateModule 1 K) {x : HahnSe
 fixes `K⸨X⸩` because the character is trivial on integer exponents. -/
 private noncomputable def kummerAlgHom (ζ : PrimeToPTateModule 1 K) :
     puiseuxField K →ₐ[K⸨X⸩] puiseuxField K where
-  toFun x := ⟨twistEquiv (ratChar K ζ) x, twistEquiv_ratChar_mem K ζ x.2⟩
+  toFun x := ⟨twistEquiv (ratChar K ζ) x, twistEquiv_ratChar_mem K ζ x.property⟩
   map_one' := Subtype.ext (map_one _)
   map_mul' x y := Subtype.ext (map_mul _ _ _)
   map_zero' := Subtype.ext (map_zero _)
@@ -150,7 +150,7 @@ theorem kummer_coe_level (ζ : PrimeToPTateModule 1 K) {n : ℕ+} (x : level K n
   · obtain ⟨k, rfl⟩ := (Rat.den_dvd_iff_exists_eq_intCast_div n.ne_zero).mp hq
     rw [coeff_kummer_intCast_div, coeff_levelKummer]
   -- Away from the exponents `k / n`, both level-`n` series have vanishing coefficients.
-  obtain ⟨f, hf⟩ : ∃ f, levelEmbedding K n f = x := (mem_level_iff K n x).mp x.2
+  obtain ⟨f, hf⟩ : ∃ f, levelEmbedding K n f = x := (mem_level_iff K n x).mp x.property
   obtain ⟨g, hg⟩ : ∃ g, levelEmbedding K n g = levelKummer K n
       (proj (⟨n, n.ne_zero, Nat.coprime_one_right _⟩ : {m : ℕ // m ≠ 0 ∧ m.Coprime 1}) ζ) x :=
     (mem_level_iff K n _).mp (SetLike.coe_mem _)
@@ -194,7 +194,7 @@ theorem fixedField_zpowers_kummer_pow {ζ : PrimeToPTateModule 1 K}
     rintro _ ⟨m, rfl⟩
     have h1 : proj N ((ζ ^ (n : ℕ)) ^ m) = 1 := by
       have hN : proj N ζ ^ (n : ℕ) = 1 := Subtype.ext <| by
-        simpa using (mem_rootsOfUnity _ _).mp (proj N ζ).2
+        simpa using (mem_rootsOfUnity _ _).mp (proj N ζ).property
       rw [map_zpow, map_pow, hN, one_zpow]
     simp only
     rw [← map_pow, ← map_zpow, kummer_coe_level _ (⟨x, hx⟩ : level K n), h1, map_one,

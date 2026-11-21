@@ -10,6 +10,7 @@ public import TauCeti.KnotTheory.Grid.CrossingChange.UnknottingNumber
 public import TauCeti.KnotTheory.Grid.Homology.Commutation.Tau
 public import TauCeti.KnotTheory.Grid.Move.Tau
 import TauCeti.KnotTheory.Grid.CrossingChange.Homotopy.Equation
+import TauCeti.KnotTheory.Grid.Homology.Commutation.Tau
 
 /-!
 # Crossing change maps, the invariant `τ`, and the unknotting bound
@@ -198,6 +199,36 @@ theorem natAbs_tau_sub_le_one_of_isCrossCommutation {H : GridDiagram n} (hH : H.
   · exact hG.natAbs_tau_sub_le_one_of_isColumnCrossCommutation K hH h
 
 end IsKnot
+
+/-! ### Cross-commutation bounds on knot diagrams -/
+
+/-- A column cross-commutation between knot grid diagrams alters `τ` by at most `1`. -/
+theorem IsColumnCrossCommutation.natAbs_tau_sub_le_one {n : ℕ} {G G' : GridDiagram n}
+    (h : G.IsColumnCrossCommutation G') (hG : G.IsKnot) (hG' : G'.IsKnot)
+    (K : Type*) [CommRing K] [CharP K 2] :
+    (hG'.tau K - hG.tau K).natAbs ≤ 1 := by
+  obtain ⟨a, ha, rfl⟩ := (isColumnCrossCommutation_iff _ _).mp h
+  exact Nat.cast_le.mp
+    ((Int.natCast_natAbs _).trans_le (hG.abs_tau_swapColumns_sub_tau_le_one K ha))
+
+/-- A row cross-commutation between knot grid diagrams alters `τ` by at most `1`. -/
+theorem IsRowCrossCommutation.natAbs_tau_sub_le_one {n : ℕ} {G G' : GridDiagram n}
+    (h : G.IsRowCrossCommutation G') (hG : G.IsKnot) (hG' : G'.IsKnot)
+    (K : Type*) [CommRing K] [CharP K 2] :
+    (hG'.tau K - hG.tau K).natAbs ≤ 1 := by
+  simpa only [IsKnot.tau_transpose] using
+    ((G.isColumnCrossCommutation_transpose G').mpr h).natAbs_tau_sub_le_one
+      ((G.isKnot_transpose).mpr hG) ((G'.isKnot_transpose).mpr hG') K
+
+/-- Any cross-commutation (of rows or columns) between knot grid diagrams alters `τ` by at most
+`1`. -/
+theorem IsCrossCommutation.natAbs_tau_sub_le_one {n : ℕ} {G G' : GridDiagram n}
+    (h : G.IsCrossCommutation G') (hG : G.IsKnot) (hG' : G'.IsKnot)
+    (K : Type*) [CommRing K] [CharP K 2] :
+    (hG'.tau K - hG.tau K).natAbs ≤ 1 := by
+  rcases (isCrossCommutation_iff _ _).mp h with h | h
+  · exact h.natAbs_tau_sub_le_one hG hG' K
+  · exact h.natAbs_tau_sub_le_one hG hG' K
 
 end GridDiagram
 

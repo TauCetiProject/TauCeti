@@ -67,7 +67,7 @@ regularity. -/
 theorem contMDiff_coe_posDefOpens {k : ℕ∞ω} :
     ContMDiff 𝓘(ℝ, selfAdjoint (Matrix n n 𝕜)) 𝓘(ℝ, Matrix n n 𝕜) k
       (fun P : posDefOpens n 𝕜 ↦ ((P : selfAdjoint (Matrix n n 𝕜)) : Matrix n n 𝕜)) :=
-  (selfAdjoint.contDiff_subtype_val ℝ).contMDiff.comp contMDiff_subtype_val
+  (selfAdjoint.contDiff_subtype_val ℝ).contMDiff.comp contMDiff_subtypeVal
 
 variable (n 𝕜) in
 /-- Exponential coordinates on the positive-definite cone: a global real diffeomorphism from
@@ -80,7 +80,7 @@ def hermitianExpDiffeomorph (k : ℕ∞ω) :
       𝓘(ℝ, selfAdjoint (Matrix n n 𝕜))⟯ posDefOpens n 𝕜 where
   toFun X := ⟨⟨exp (X : Matrix n n 𝕜), X.prop.exp⟩,
     (isHermitian_iff_isSelfAdjoint.mpr X.prop).posDef_exp⟩
-  invFun P := ⟨cfc Real.log (P.1 : Matrix n n 𝕜), cfc_predicate _ _⟩
+  invFun P := ⟨cfc Real.log (P.val : Matrix n n 𝕜), cfc_predicate _ _⟩
   left_inv X := Subtype.ext ((isHermitian_iff_isSelfAdjoint.mpr X.prop).cfc_log_exp)
   right_inv P := Subtype.ext (Subtype.ext P.prop.exp_cfc_log)
   contMDiff_toFun := by
@@ -96,18 +96,18 @@ def hermitianExpDiffeomorph (k : ℕ∞ω) :
     have h := (selfAdjointPartL ℝ (Matrix n n 𝕜)).contDiff.contMDiff.comp
       (hlog.contMDiffOn.comp_contMDiff contMDiff_coe_posDefOpens fun P ↦ P.prop)
     refine h.congr fun P ↦ ?_
-    exact ((cfc_predicate Real.log (P.1 : Matrix n n 𝕜)).selfAdjointPart_apply ℝ).symm
+    exact ((cfc_predicate Real.log (P.val : Matrix n n 𝕜)).selfAdjointPart_apply ℝ).symm
 
 /-- The underlying matrix of exponential coordinates is the matrix exponential. -/
 @[simp]
 theorem coe_hermitianExpDiffeomorph_apply (k : ℕ∞ω) (X : selfAdjoint (Matrix n n 𝕜)) :
-    (((hermitianExpDiffeomorph n 𝕜 k X).1 : selfAdjoint (Matrix n n 𝕜)) : Matrix n n 𝕜) =
+    (((hermitianExpDiffeomorph n 𝕜 k X).val : selfAdjoint (Matrix n n 𝕜)) : Matrix n n 𝕜) =
       exp (X : Matrix n n 𝕜) := (rfl)
 
 /-- The inverse coordinates are the continuous-functional-calculus matrix logarithm. -/
 @[simp]
 theorem coe_hermitianExpDiffeomorph_symm_apply (k : ℕ∞ω) (P : posDefOpens n 𝕜) :
     ((hermitianExpDiffeomorph n 𝕜 k).symm P : Matrix n n 𝕜) =
-      cfc Real.log (P.1 : Matrix n n 𝕜) := (rfl)
+      cfc Real.log (P.val : Matrix n n 𝕜) := (rfl)
 
 end Matrix

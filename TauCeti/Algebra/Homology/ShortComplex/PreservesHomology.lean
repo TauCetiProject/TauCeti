@@ -117,7 +117,7 @@ noncomputable def homologyDiagramIso (F : J ⥤ ShortComplex C)
     (fun j ↦ homologyMapIso (diagramEvaluationIso F j).symm ≪≫
       ((functorEquivalence J C).inverse.obj F).mapHomologyIso ((evaluation J C).obj j))
     (fun {X Y} f ↦ by
-      dsimp [homologyFunctor, homologyMapIso]
+      dsimp only [homologyFunctor, homologyMapIso, Functor.comp_map, Iso.trans_hom, Iso.symm_hom]
       rw [Category.assoc, ← mapHomologyIso_evaluation_naturality F f, ← Category.assoc,
         ← Category.assoc, ← homologyMap_comp, ← homologyMap_comp,
         diagramEvaluationIso_inv_naturality])

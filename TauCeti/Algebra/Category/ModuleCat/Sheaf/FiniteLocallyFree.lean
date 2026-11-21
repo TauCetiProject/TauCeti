@@ -122,7 +122,7 @@ theorem subsingleton_of_epi_free_of_infinite {I K : Type u} [Finite I] [Infinite
     apply (freeHomEquiv _).injective
     funext j
     simp only [r, freeHomEquiv_comp_apply, freeHomEquiv_freeMap, Function.comp_apply,
-      sectionsMap_freeHomEquiv_symm_freeSection, dite_eq_left j.2, Subtype.coe_eta]
+      sectionsMap_freeHomEquiv_symm_freeSection, dite_eq_left j.property, Subtype.coe_eta]
   have : IsSplitEpi r := ⟨⟨⟨freeMap Subtype.val, hr⟩⟩⟩
   refine subsingleton_of_epi_free_of_card_lt (f ≫ r) ?_ W
   rw [Nat.card_eq_finsetCard, hs]

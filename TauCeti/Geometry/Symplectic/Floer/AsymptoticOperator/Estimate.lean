@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.AsymptoticOperator
 import TauCeti.Analysis.Calculus.FDeriv.ExpSmul
+import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.Analysis.ODE.Periodic
 import TauCeti.Geometry.Symplectic.CompatibleMetric
 import TauCeti.MeasureTheory.Integral.Rectangle
@@ -63,6 +64,10 @@ property of the linearized operator on the cylindrical ends of Floer's moduli sp
   the form in which the estimate passes to the linearized operator of a Floer solution on a far
   part of a cylindrical end, which is such a perturbation of `D`
   (`TauCeti.Geometry.Symplectic.Floer.EndLinearization`).
+* **The norm of `V`.** Since the `g_t` are uniformly equivalent to the norm of `V` for `t ∈ [0, 1]`
+  and `‖∂t ξ‖² ≤ 2 ‖∂t ξ - S ξ‖² + 2 ‖S‖² ‖ξ‖²`, an estimate of the energy of `ξ` in the `g_t` by
+  `∫ g(η, η)` gives one of `∫ (‖∂s ξ‖² + ‖∂t ξ‖² + ‖ξ‖²)` by `∫ ‖η‖²`
+  (`SymplecticForm.exists_forall_setIntegral_le_mul_mul_setIntegral_norm_sq_of_le`).
 
 In contrast, `Floer.eq_zero_of_stationaryCylinderOperator_eq_zero` shows that `D` is injective on
 decaying maps with no nondegeneracy assumption, but without an estimate; at a degenerate orbit
@@ -569,6 +574,78 @@ theorem eventually_exists_forall_setIntegral_le_mul_setIntegral_stationaryCylind
     (ω.continuous_fderiv_hamiltonianVectorField_comp hH
       (continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt))
     (ω.det_one_sub_dysonSeriesLeft_ne_zero_of_isNondegenerateFixedPt hX hH hx hnd)
+
+/-- **From the norms `ω(·, J₀(t) ·)` to the norm of `V`.** Let `J₀(t)` be `ω`-tame complex
+structures and `S(t)` linear maps, both continuous in `t`. Then there is a constant `k ≥ 0` with
+the following property. If a `C¹` map `ξ` and a map `η` continuous on `[a, b] × [0, 1]` satisfy
+
+`∫ (g(∂s ξ, ∂s ξ) + g(∂t ξ - S ξ, ∂t ξ - S ξ) + g(ξ, ξ)) ≤ C ∫ g(η, η)`
+
+over `[a, b] × [0, 1]`, for `g_t = ω(·, J₀(t) ·)` and a constant `C ≥ 0`, then
+`∫ (‖∂s ξ‖² + ‖∂t ξ‖² + ‖ξ‖²) ≤ k C ∫ ‖η‖²` over the same rectangle. This turns the estimates of
+stationary cylinder operators and their perturbations, stated in the norms `g_t`, into estimates
+in the norm of `V`. -/
+theorem exists_forall_setIntegral_le_mul_mul_setIntegral_norm_sq_of_le (ω : SymplecticForm V)
+    {J₀ : ℝ → AlmostComplexStructure V} {S : ℝ → V →L[ℝ] V} (hJ₀ : ∀ t, ω.Tames (J₀ t))
+    (hJ₀c : Continuous fun t ↦ (J₀ t).toLinearMap.toContinuousLinearMap) (hSc : Continuous S) :
+    ∃ k, 0 ≤ k ∧ ∀ ⦃ξ η : ℝ × ℝ → V⦄ ⦃a b C : ℝ⦄, ContDiff ℝ 1 ξ →
+      ContinuousOn η (Icc a b ×ˢ Icc 0 1) → 0 ≤ C →
+      ∫ z in Icc a b ×ˢ Icc 0 1,
+          ((ω.associatedBilinForm (J₀ z.2) (fderiv ℝ ξ z stdComplexLineReal)
+              (fderiv ℝ ξ z stdComplexLineReal) +
+            ω.associatedBilinForm (J₀ z.2) (fderiv ℝ ξ z stdComplexLineImag - S z.2 (ξ z))
+              (fderiv ℝ ξ z stdComplexLineImag - S z.2 (ξ z))) +
+            ω.associatedBilinForm (J₀ z.2) (ξ z) (ξ z)) ≤
+        C * ∫ z in Icc a b ×ˢ Icc 0 1, ω.associatedBilinForm (J₀ z.2) (η z) (η z) →
+      ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, (‖fderiv ℝ ξ z stdComplexLineReal‖ ^ 2 +
+          ‖fderiv ℝ ξ z stdComplexLineImag‖ ^ 2 + ‖ξ z‖ ^ 2) ≤
+        k * C * ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, ‖η z‖ ^ 2 := by
+  -- The inner products `g_t` are uniformly equivalent to the norm, and `‖S_t‖ ≤ m`, for
+  -- `t ∈ [0, 1]`.
+  obtain ⟨a₀, ha₀, b₀, hb₀, hg⟩ := ω.exists_pos_forall_mul_norm_sq_le_associatedBilinForm
+    (isCompact_Icc (a := (0 : ℝ)) (b := 1)) hJ₀c.continuousOn fun t _ ↦ hJ₀ t
+  obtain ⟨m, hm⟩ := (isCompact_Icc (a := (0 : ℝ)) (b := 1)).exists_bound_of_continuousOn
+    hSc.continuousOn
+  set k₁ := (2 + 2 * m ^ 2) / a₀
+  refine ⟨k₁ * b₀, by positivity, fun ξ η a b C hξ hη hC hest ↦ ?_⟩
+  have hrect := isCompact_Icc (a := a) (b := b) |>.prod (isCompact_Icc (a := (0 : ℝ)) (b := 1))
+  have hmeas : MeasurableSet (Icc a b ×ˢ Icc (0 : ℝ) 1) :=
+    measurableSet_Icc.prod measurableSet_Icc
+  have hJzc : ContinuousOn (fun z : ℝ × ℝ ↦ (J₀ z.2).toLinearMap.toContinuousLinearMap)
+      (Icc a b ×ˢ Icc (0 : ℝ) 1) := (hJ₀c.comp continuous_snd).continuousOn
+  have hdξ := hξ.continuous_fderiv one_ne_zero
+  have hξc := hξ.continuous
+  -- The energy density of `ξ` in the inner products `g_t`.
+  set G : ℝ × ℝ → ℝ := fun z ↦
+    (ω.associatedBilinForm (J₀ z.2) (fderiv ℝ ξ z stdComplexLineReal)
+        (fderiv ℝ ξ z stdComplexLineReal) +
+      ω.associatedBilinForm (J₀ z.2) (fderiv ℝ ξ z stdComplexLineImag - S z.2 (ξ z))
+        (fderiv ℝ ξ z stdComplexLineImag - S z.2 (ξ z))) +
+      ω.associatedBilinForm (J₀ z.2) (ξ z) (ξ z)
+  have hG : ContinuousOn G (Icc a b ×ˢ Icc (0 : ℝ) 1) := by
+    have hSz : Continuous fun z : ℝ × ℝ ↦ fderiv ℝ ξ z stdComplexLineImag - S z.2 (ξ z) := by
+      have : Continuous fun z : ℝ × ℝ ↦ S z.2 := hSc.comp continuous_snd
+      fun_prop
+    exact ((ω.continuousOn_associatedBilinForm_apply_self hJzc
+      (hdξ.clm_apply continuous_const).continuousOn).add
+      (ω.continuousOn_associatedBilinForm_apply_self hJzc hSz.continuousOn)).add
+      (ω.continuousOn_associatedBilinForm_apply_self hJzc hξc.continuousOn)
+  calc _ ≤ ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, k₁ * G z :=
+        setIntegral_mono_on (ContinuousOn.integrableOn_compact hrect (by fun_prop))
+          ((hG.integrableOn_compact hrect).const_mul k₁) hmeas fun z hz ↦
+            norm_sq_add_norm_sq_add_norm_sq_le ha₀ (fun w ↦ (hg z.2 hz.2 w).1) (hm z.2 hz.2) _ _ _
+    _ = k₁ * ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, G z := integral_const_mul _ _
+    _ ≤ k₁ * (C * ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, b₀ * ‖η z‖ ^ 2) := by
+        refine mul_le_mul_of_nonneg_left (hest.trans (mul_le_mul_of_nonneg_left ?_ hC))
+          (by positivity)
+        exact setIntegral_mono_on
+          ((ω.continuousOn_associatedBilinForm_apply_self hJzc hη).integrableOn_compact
+            (μ := volume) hrect)
+          ((hη.norm.pow 2).integrableOn_compact (μ := volume) hrect |>.const_mul b₀) hmeas
+          fun z hz ↦ (hg z.2 hz.2 _).2
+    _ = _ := by
+        rw [integral_const_mul]
+        ring
 
 end SymplecticForm
 

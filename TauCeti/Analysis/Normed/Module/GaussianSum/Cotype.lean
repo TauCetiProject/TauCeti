@@ -100,7 +100,7 @@ Gaussian cotype `2` with the same constant. -/
 theorem HasCotype.hasGaussianCotype_two (h : HasCotype Y 2 C) : HasGaussianCotype Y 2 C := by
   intro n y
   refine (sq_le_sq₀ (by positivity)
-    (mul_nonneg C.2 (gaussianSecondMoment_nonneg _))).1 ?_
+    (mul_nonneg C.property (gaussianSecondMoment_nonneg _))).1 ?_
   -- For each value `g` of the Gaussian vector, the cotype inequality for `(gᵢ yᵢ)ᵢ`.
   have hpt (g : EuclideanSpace ℝ (Fin n)) :
       ‖WithLp.toLp 2 (fun i ↦ g i • y i)‖ ^ 2 ≤
@@ -155,7 +155,7 @@ variable {ι E Y : Type*} [Fintype ι] [NormedAddCommGroup E] [InnerProductSpace
 theorem summingENorm_two_le_of_hasGaussianCotype (U : E →L[ℝ] Y) (b : OrthonormalBasis ι ℝ E)
     (h : HasGaussianCotype Y 2 C) :
     U.summingENorm 2 ≤ ENNReal.ofReal (C * gaussianSecondMoment fun i ↦ U (b i)) := by
-  refine (summingENorm_le_ofReal_iff (mul_nonneg C.2 (gaussianSecondMoment_nonneg _))).2 ?_
+  refine (summingENorm_le_ofReal_iff (mul_nonneg C.property (gaussianSecondMoment_nonneg _))).2 ?_
   intro n x
   set w := weakLpNorm (𝕜 := ℝ) 2 x
   have hw : 0 ≤ w := apply_nonneg _ _
