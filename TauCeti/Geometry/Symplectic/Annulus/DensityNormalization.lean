@@ -449,7 +449,7 @@ private theorem isOpenMap_domRestrict_stripDensityNormalization (hρ : ContDiff 
       (stripColumnMean_pos_of_forall hρ.continuous.continuousOn hpos p.1).ne'
   -- The source is open, so the neighbourhoods of `p` in it map onto those in the plane; the
   -- restricted map is `Φ` composed with the inclusion of the source, which closes the goal.
-  have hnhds := map_nhds_subtype_coe_eq_nhds hp
+  have hnhds := map_nhds_subtypeVal_eq_nhds hp
     ((isOpen_stripDensityNormalizationSource hρ.continuous).mem_nhds hp)
   rw [domRestrict_apply, ← hΦ.map_nhds_eq_of_equiv, ← hnhds, Filter.map_map]
   rfl

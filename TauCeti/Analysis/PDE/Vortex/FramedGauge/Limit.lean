@@ -306,7 +306,7 @@ theorem exists_gaugeTransform_eq_of_tendstoLocallyUniformly [l.NeBot]
     tendstoLocallyUniformly_iff_filter.2 fun z ↦
       (tendstoLocallyUniformly_iff_filter.1 h z).mono_left hU
   have hc : Tendsto (fun i ↦ (us i 0 : ℂ)) U (𝓝 ((U.map fun i ↦ us i 0).lim : ℂ)) :=
-    (continuous_subtype_val.tendsto _).comp (U.map fun i ↦ us i 0).le_nhds_lim
+    (continuous_subtypeVal.tendsto _).comp (U.map fun i ↦ us i 0).le_nhds_lim
   obtain ⟨v, hvd, hv, -⟩ := exists_gaugeTransform_eq_of_tendsto_apply hus hxy (hmono hx)
     (hmono hy) hxc hyc hc
   exact ⟨v, hvd, hv⟩
@@ -395,8 +395,8 @@ theorem mem_orbit_sobolevGaugeGroup_of_tendstoLocallyUniformly [l.NeBot] {k : �
   have h2 : 2 < (k : ℝ) + 1 := by linarith
   obtain ⟨v, hvG, hv, -⟩ :=
     exists_mem_sobolevGaugeGroup_gaugeTransform_eq_and_tendstoLocallyUniformly hk
-      (fun i ↦ differentiable_of_mem_sobolevGaugeGroup h2 (us i).2)
-      (fun i ↦ congrArg Subtype.val (hus i)) hx hy hxc hyc x.2 y.2
+      (fun i ↦ differentiable_of_mem_sobolevGaugeGroup h2 (us i).property)
+      (fun i ↦ congrArg Subtype.val (hus i)) hx hy hxc hyc x.property y.property
   exact ⟨⟨v, hvG⟩, Subtype.ext hv⟩
 
 end TauCeti.Vortex

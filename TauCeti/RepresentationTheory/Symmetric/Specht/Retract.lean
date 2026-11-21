@@ -108,7 +108,8 @@ private theorem regularToSpecht_comp_spechtToRegular :
         (y : MonoidAlgebra ℚ (Equiv.Perm (Fin μ.card))) := by
     rw [mul_assoc, ← mul_assoc (rowSymmetrizer t), ← youngSymmetrizer_def, ← mul_assoc]
     -- `c_t` acts on `y ∈ ℚ[Sₙ] c_t` as the scalar `κ`, twice
-    simp only [mul_youngSymmetrizer_of_mem_spechtIdeal y.2, smul_mul_assoc, smul_smul, ← κ.eq_1]
+    simp only [mul_youngSymmetrizer_of_mem_spechtIdeal y.property, smul_mul_assoc, smul_smul,
+        ← κ.eq_1]
     have := κ_ne_zero t
     rw [show (κ t)⁻¹ ^ 2 * (κ t * κ t) = 1 by field_simp, one_smul]
   rw [IntertwiningMap.toLinearMap_apply, IntertwiningMap.toLinearMap_apply,

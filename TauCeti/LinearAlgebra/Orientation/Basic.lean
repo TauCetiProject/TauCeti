@@ -203,7 +203,7 @@ theorem Orientation.eq_or_eq_neg_of_card_eq_finrank (x₁ x₂ : Orientation R M
     · exact .inr rfl
     · exact .inl rfl
   · have : FiniteDimensional R M := Module.finite_of_finrank_pos (h ▸ Fintype.card_pos)
-    exact Orientation.eq_or_eq_neg x₁ x₂ h
+    exact Orientation.eq_or_eq_neg x₁ x₂ (Nat.card_eq_fintype_card.trans h)
 
 /-- If the index type has cardinality equal to the dimension, an orientation equals the negation of
 another orientation if and only if they are not equal. Unlike `Orientation.ne_iff_eq_neg`, this

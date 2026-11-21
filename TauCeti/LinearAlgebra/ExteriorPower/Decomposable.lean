@@ -291,7 +291,7 @@ theorem mem_range_ιMulti_iff_forall_ι_contract_mul_eq_zero (θ : ⋀[K]^(r + 1
     simp [A]
   have hcA (η : ⋀[K]^r (Dual K V)) : contract K V r η θ ∈ A := by
     have hη := h η
-    rw [ExteriorAlgebra.ι_mul_eq_neg_one_pow_smul_mul θ.2, smul_eq_zero] at hη
+    rw [ExteriorAlgebra.ι_mul_eq_neg_one_pow_smul_mul θ.property, smul_eq_zero] at hη
     exact (hmemA _).mpr (hη.resolve_left (pow_ne_zero _ (neg_ne_zero.mpr one_ne_zero)))
   -- Extend a basis `s` of `A` to a basis `e` of `V`.
   obtain ⟨s, hsA, hspan, hs⟩ := exists_linearIndependent K (A : Set V)

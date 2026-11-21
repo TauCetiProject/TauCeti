@@ -65,7 +65,7 @@ theorem pullback_genericFiberι_eq_one_iff
     pullback (genericFiberι R K toBase) a = 1 ↔
       ∃ v : (toBase.finite_setOf_base_eq_closedPoint
           (toBase.maximalIdeal_ne_bot_of_base_ne_closedPoint hη) hη).toFinset → ℤ,
-        a = ∏ i, primeDivisorClass i.1 ^ v i :=
+        a = ∏ i, primeDivisorClass i.val ^ v i :=
   have := isOpenImmersion_genericFiberι R K toBase
   LineBundleClass.pullback_eq_one_iff_exists_prod_of_isOpenImmersion (genericFiberι R K toBase)
     fun _ ↦ by rw [range_genericFiberι_of_isDiscreteValuationRing]; simp
@@ -88,7 +88,7 @@ theorem pullback_genericFiberι_eq_one_iff_of_isRegular
           (toBase.maximalIdeal_ne_bot_of_base_ne_closedPoint hη) hη).toFinset → ℤ,
         a = ∏ i, (LineBundleClass.mk
           (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular hX
-            i.1.2).toInvertibleSheaf)⁻¹ ^ v i := by
+            i.val.property).toInvertibleSheaf)⁻¹ ^ v i := by
   have := fun x ↦ TauCeti.AlgebraicGeometry.IsRegular.uniqueFactorizationMonoid_stalk x (hX x)
   simpa only [LineBundleClass.primeDivisorClass_def] using
     toBase.pullback_genericFiberι_eq_one_iff K hη (a := a)
