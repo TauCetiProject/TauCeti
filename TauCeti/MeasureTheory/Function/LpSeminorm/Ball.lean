@@ -144,9 +144,7 @@ theorem eLpNorm_le_of_ae_eLpNorm_restrict_ball_le (hp0 : p ≠ 0) (hp : p ≠ �
 
 `⨍_{B(y, r/2)} g^p ≤ C ((⨍_{B(y, r)} g^t)^(p/t) + ⨍_{B(y, r)} k^p)`.
 
-Then `∫ g^p ≤ C (μ (B(0, r))^(1 - p/t) (∫ g^t)^(p/t) + ∫ k^p)`. Of the power `p/t` of the local
-`t`-mean, the part `p/t - 1` is bounded through the global integral of `g^t`; what remains is
-linear in `g^t` and in `k^p`, so it integrates over the centres. This turns the local higher
+Then `∫ g^p ≤ C (μ (B(0, r))^(1 - p/t) (∫ g^t)^(p/t) + ∫ k^p)`. This turns the local higher
 integrability given by Gehring's lemma into a global estimate. -/
 theorem lintegral_rpow_le_of_forall_setLAverage_rpow_le {g k : E → ℝ≥0∞} (hg : AEMeasurable g μ)
     (hk : AEMeasurable k μ) {t p r : ℝ} (ht : 0 < t) (htp : t ≤ p) (hr : 0 < r) {C : ℝ≥0}
@@ -165,7 +163,8 @@ theorem lintegral_rpow_le_of_forall_setLAverage_rpow_le {g k : E → ℝ≥0∞}
   have hMM : M * M⁻¹ = 1 := ENNReal.mul_inv_cancel (measure_ball_pos μ 0 hr).ne'
     measure_ball_lt_top.ne
   -- On each ball, write the means as integrals and split `(⨍ g^t)^(p/t)` as
-  -- `(⨍ g^t)^e · ⨍ g^t`, the first factor bounded through `G`.
+  -- `(⨍ g^t)^e · ⨍ g^t`, the first factor bounded through `G`. What remains is linear in `g^t`
+  -- and in `k^p`, so it integrates over the centres.
   have hloc' : ∀ y, ∫⁻ x in ball y (r / 2), g x ^ p ∂μ ≤
       m * C * ∫⁻ x in ball y r, ((M⁻¹ * G) ^ e * M⁻¹ * g x ^ t + M⁻¹ * k x ^ p) ∂μ := fun y => by
     have hA : ∫⁻ x in ball y r, g x ^ t ∂μ ≤ G := setLIntegral_le_lintegral _ _

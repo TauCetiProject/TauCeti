@@ -752,21 +752,12 @@ theorem exists_forall_energyFormH1_eq_ae_abs_le_divergence [Nonempty ι] {q : �
   refine ⟨C, hC, fun {D a lam Lam F} hD h ha hF => ?_⟩
   have : IsFiniteMeasure (mu.restrict (D : Set (EuclideanSpace ℝ ι))) :=
     isFiniteMeasure_restrict.2 hD
-  -- The datum `v ↦ -∫_D ⟪F, ∇v⟫` is the functional `divergenceForcing F`, since `F ∈ L²(D)`.
+  -- The weak solution exists since `F ∈ L²(D)`.
   have hF2 : MemLp F 2 (mu.restrict D) :=
     hF.mono_exponent (by exact_mod_cast (show ((2 : ℝ≥0) : ℝ) ≤ q by exact_mod_cast hq.le))
-  have hℓ : ∀ v : W1p0 mu D 2, divergenceForcing (hF2.toLp F) v =
-      -∫ x in D, ⟪F x, W1p.gradient (v : W1p mu D 2) x⟫ ∂mu := fun v => by
-    rw [divergenceForcing_apply_eq_neg_setIntegral, neg_inj]
-    refine integral_congr_ae ?_
-    filter_upwards [hF2.coeFn_toLp] with x hx
-    rw [hx]
-  obtain ⟨w, hw, -⟩ := h.existsUnique_forall_energyFormH1_eq_of_measure_ne_top (c := 0)
-    (gamma := 0) ha aestronglyMeasurable_const (fun _ _ => by simp) (fun _ _ => le_rfl) hD
-    (divergenceForcing (hF2.toLp F))
-  exact ⟨w, fun v => (hw v).trans (hℓ v), hstamp (c := 0) (gamma := 0) hD h ha
-    aestronglyMeasurable_const (fun _ _ => by simp) (fun _ _ => le_rfl) hF
-    (fun v => (hw v).trans (hℓ v))⟩
+  obtain ⟨w, hw⟩ := h.exists_forall_energyFormH1_eq_divergence_of_measure_ne_top ha hD hF2
+  exact ⟨w, hw, hstamp (c := 0) (gamma := 0) hD h ha
+    aestronglyMeasurable_const (fun _ _ => by simp) (fun _ _ => le_rfl) hF hw⟩
 
 /-- **Splitting off a right-hand side in divergence form on a ball.** Let `n ≥ 1` be the
 dimension and let `q > 2` with `q > n`. There is `K > 0`, depending only on `n`, `q` and the
@@ -813,20 +804,12 @@ theorem exists_forall_energyFormH1_eq_zero_ae_abs_sub_le_divergence [Nonempty ι
   have hBell : UniformlyEllipticOn (B : Set (EuclideanSpace ℝ ι)) a lam Lam := h.mono_set hball
   have hBmeas : AEStronglyMeasurable a (mu.restrict B) :=
     ha.mono_measure (Measure.restrict_mono hball le_rfl)
-  -- The datum `v ↦ -∫_B ⟪F, ∇v⟫` is the functional `divergenceForcing F`, since `F ∈ L²(B)`.
   have hF2 : MemLp F 2 (mu.restrict B) :=
     hF.mono_exponent (by exact_mod_cast (show ((2 : ℝ≥0) : ℝ) ≤ q by exact_mod_cast hq.le))
-  have hℓ : ∀ v : W1p0 mu B 2, divergenceForcing (hF2.toLp F) v =
-      -∫ x in B, ⟪F x, W1p.gradient (v : W1p mu B 2) x⟫ ∂mu := fun v => by
-    rw [divergenceForcing_apply_eq_neg_setIntegral, neg_inj]
-    refine integral_congr_ae ?_
-    filter_upwards [hF2.coeFn_toLp] with x hx
-    rw [hx]
   -- The weak solution `w ∈ H¹₀(B)` of `-∂ᵢ(aⁱʲ ∂ⱼw) = ∂ᵢFⁱ` on `B`, and its bound; `u|_B - w` is
   -- the homogeneous part.
-  obtain ⟨w, hw, -⟩ := hBell.existsUnique_forall_energyFormH1_eq_of_measure_ne_top (c := 0)
-    (gamma := 0) hBmeas aestronglyMeasurable_const (fun _ _ => by simp) (fun _ _ => le_rfl) hBfin
-    (divergenceForcing (hF2.toLp F))
+  obtain ⟨w, hw⟩ :=
+    hBell.exists_forall_energyFormH1_eq_divergence_of_measure_ne_top hBmeas hBfin hF2
   -- `|B|^e = ρ^(n e) |B(0, 1)|^e`, with `n e = 1 - n/q`.
   have hmeas : mu.real (ball x₀ ρ) ^ e =
       ρ ^ (1 - n / q) * mu.real (ball (0 : EuclideanSpace ℝ ι) 1) ^ e := by
@@ -835,10 +818,9 @@ theorem exists_forall_energyFormH1_eq_zero_ae_abs_sub_le_divergence [Nonempty ι
     simp only [e, n]
     field_simp
   exact exists_forall_energyFormH1_eq_zero_ae_abs_sub_le_of_ae_abs_le h ha hB w
-    (fun v => (energyFormH1_restrictL_eq_neg_setIntegral_inner hB hu v).trans
-      ((hw v).trans (hℓ v)).symm)
+    (fun v => (energyFormH1_restrictL_eq_neg_setIntegral_inner hB hu v).trans (hw v).symm)
     ((hstamp (Omega := B) (c := 0) (gamma := 0) hBfin hBell hBmeas aestronglyMeasurable_const
-      (fun _ _ => by simp) (fun _ _ => le_rfl) hF (fun v => (hw v).trans (hℓ v))).mono
+      (fun _ _ => by simp) (fun _ _ => le_rfl) hF hw).mono
       fun x hx => hx.trans_eq (by simp only [B, Opens.coe_mk]; rw [hmeas]; ring))
 
 /-- **Local boundedness of weak solutions with a right-hand side in divergence form.** Let

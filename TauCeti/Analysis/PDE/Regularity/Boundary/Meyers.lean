@@ -205,10 +205,7 @@ theorem exists_eLpNorm_gradient_le_divergence [Nonempty ι] (K : ℝ) {θ : ℝ}
     have hpow := eLpNorm_rpow_eq_lintegral (by simpa using hq) ENNReal.ofReal_ne_top
       (hF.aestronglyMeasurable.eNorm.div_const (ENNReal.ofReal lam))
     rw [ENNReal.toReal_ofReal hq.le] at hpow
-    rw [← hpow]
-    simp_rw [div_eq_mul_inv, mul_comm _ (ENNReal.ofReal lam)⁻¹]
-    rw [eLpNorm_const_mul_ennreal_of_pos (ENNReal.ofReal_pos.2 hq),
-      eLpNorm_eNorm _ hF.aestronglyMeasurable]
+    rw [← hpow, eLpNorm_enorm_div_const (by simpa using hq) hF.aestronglyMeasurable]
   refine eLpNorm_le_of_lintegral_rpow_le (by simpa using hq) ENNReal.ofReal_ne_top
     (Lp.aestronglyMeasurable _) ?_
   rw [ENNReal.toReal_ofReal hq.le, mul_div_assoc, ENNReal.mul_rpow_of_nonneg _ _ hq.le,

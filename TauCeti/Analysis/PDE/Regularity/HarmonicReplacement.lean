@@ -10,6 +10,7 @@ public import TauCeti.Analysis.PDE.DirichletProblem
 import TauCeti.Analysis.PDE.WeakLaplacian
 import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
 import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
+import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 
 /-!
 # Harmonic replacement
@@ -175,9 +176,8 @@ theorem UniformlyEllipticOn.lintegral_enorm_gradient_sq_le_of_forall_energyFormH
   calc ENNReal.ofReal ‖g‖ ≤ ENNReal.ofReal (‖hF.toLp F‖ / lam) :=
         ENNReal.ofReal_le_ofReal ((le_div_iff₀ hlam).2 (by linarith))
     _ = eLpNorm (fun x => ‖F x‖ₑ / ENNReal.ofReal lam) 2 (mu.restrict Omega) := by
-        rw [ENNReal.ofReal_div_of_pos hlam, Lp.norm_toLp, ENNReal.ofReal_toReal hF.eLpNorm_ne_top]
-        simp_rw [div_eq_mul_inv, mul_comm _ (ENNReal.ofReal lam)⁻¹]
-        rw [eLpNorm_const_mul_ennreal_of_pos (by norm_num), eLpNorm_eNorm _ hF.aestronglyMeasurable]
+        rw [ENNReal.ofReal_div_of_pos hlam, Lp.norm_toLp, ENNReal.ofReal_toReal hF.eLpNorm_ne_top,
+          eLpNorm_enorm_div_const two_ne_zero hF.aestronglyMeasurable]
 
 /-- **Weakly harmonic Sobolev functions are harmonic.** If `w ∈ H¹(Ω)` solves `Δw = 0` weakly,
 in the sense that `∫_Ω ⟨∇w, ∇φ⟩ = 0` for every test function `φ` on `Ω`, then `w` agrees almost
