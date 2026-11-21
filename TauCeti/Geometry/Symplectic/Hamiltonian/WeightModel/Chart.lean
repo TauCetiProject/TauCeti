@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Convex.LocalToGlobal
 public import TauCeti.Geometry.Symplectic.Hamiltonian.WeightModel.NormalForm
 import TauCeti.Analysis.Normed.Group.Prod
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 import TauCeti.Geometry.Symplectic.Hamiltonian.WeightModel.Convexity
 
 /-!
@@ -37,8 +38,8 @@ model (`TauCeti.weightMomentMap`) on `M` through such a chart.
 * **Stabilizers.** `g` fixes a point `x` of the chart exactly when `χₖ(g) = 1` for every
   coordinate `zₖ(x)` that is nonzero (`TauCeti.smul_eq_self_iff_of_weightRotation`).
 * **Isotropy algebras and orbit rank.** `ξ` generates a vector field vanishing at `x` exactly
-  when `αₖ(ξ) = 0` for every such coordinate, and the orbit through `x` has dimension the rank of
-  those weights (`TauCeti.mem_isotropy_fundamental_iff_of_mfderiv_eq`,
+  when `αₖ(ξ) = 0` for every such coordinate, and the orbit tangent space `𝔤·x` has dimension the
+  rank of those weights (`TauCeti.mem_isotropy_fundamental_iff_of_mfderiv_eq`,
   `TauCeti.finrank_orbitTangent_fundamental_of_mfderiv_eq`).
 
 These hold for any chart with the stated properties, and the corresponding properties of the
@@ -134,6 +135,14 @@ theorem map_nhds_eq_nhdsWithin_vadd_range_weightMomentMap
     (inter_mem (hcont.preimage_mem_nhds hV) (e.open_source.mem_nhds hx))
     fun y ⟨hyV, hy⟩ ↦ hVT ⟨hyV, mapsTo_source_vadd_range_weightMomentMap hf hy⟩)
 
+/-- For a chart `e` onto the ball `‖q‖² + ‖p‖² < r`, the ball of radius `min r r'` lies in the
+target of `e`. -/
+private theorem setOf_lt_min_subset_target {r : ℝ}
+    (htarget : e.target = {z | ‖z.1‖ ^ 2 + ‖z.2‖ ^ 2 < r}) (r' : ℝ) :
+    {z | ‖z.1‖ ^ 2 + ‖z.2‖ ^ 2 < min r r'} ⊆ e.target := fun _ hz ↦ by
+  rw [htarget]
+  exact lt_of_lt_of_le hz (min_le_left r r')
+
 /-- The points of the source of a chart `e` onto the ball `‖q‖² + ‖p‖² < r` lying over the ball
 `‖q‖² + ‖p‖² < r'` and over a set `T` are the image under `e⁻¹` of the points of the smaller of the
 two balls lying over `T`. -/
@@ -142,15 +151,14 @@ private theorem source_inter_preimage_setOf_lt_eq_symm_image {r : ℝ}
     (T : Set (EuclideanSpace ℝ ι × EuclideanSpace ℝ ι)) :
     e.source ∩ e ⁻¹' ({z | ‖z.1‖ ^ 2 + ‖z.2‖ ^ 2 < r'} ∩ T) =
       e.symm '' ({z | ‖z.1‖ ^ 2 + ‖z.2‖ ^ 2 < min r r'} ∩ T) := by
-  rw [e.symm_image_eq_source_inter_preimage fun z hz ↦ ?_]
-  · ext x
-    simp only [mem_inter_iff, mem_preimage, mem_ofPred_eq, lt_min_iff]
-    refine and_congr_right fun hx ↦ ?_
-    have hxr : ‖(e x).1‖ ^ 2 + ‖(e x).2‖ ^ 2 < r := by
-      simpa only [htarget, mem_ofPred_eq] using e.map_source hx
-    tauto
-  rw [htarget]
-  exact lt_of_lt_of_le hz.1 (min_le_left r r')
+  rw [e.symm_image_eq_source_inter_preimage
+    (inter_subset_left.trans (setOf_lt_min_subset_target htarget r'))]
+  ext x
+  simp only [mem_inter_iff, mem_preimage, mem_ofPred_eq, lt_min_iff]
+  refine and_congr_right fun hx ↦ ?_
+  have hxr : ‖(e x).1‖ ^ 2 + ‖(e x).2‖ ^ 2 < r := by
+    simpa only [htarget, mem_ofPred_eq] using e.map_source hx
+  tauto
 
 /-- **Preconnected preimages of convex sets.** Let `f` be the weight model moment map read through a
 chart `e` onto the ball `‖q‖² + ‖p‖² < r`, up to a constant. Inside the part of the chart over
@@ -173,9 +181,8 @@ theorem isPreconnected_source_inter_preimage_setOf_lt_inter_preimage
       exact ⟨⟨hx, hxr⟩, (hf x hx).symm ▸ hxS⟩
   rw [hset, source_inter_preimage_setOf_lt_eq_symm_image htarget, inter_comm]
   refine (isPreconnected_preimage_weightMomentMap_inter α (hS.translate_preimage_right ν)
-    (min r r')).image _ (e.continuousOn_symm.mono fun z hz ↦ ?_)
-  rw [htarget]
-  exact lt_of_lt_of_le hz.2 (min_le_left r r')
+    (min r r')).image _
+    (e.continuousOn_symm.mono (inter_subset_right.trans (setOf_lt_min_subset_target htarget r')))
 
 /-- **Convexity charts from a weight chart.** Let `f` be the weight model moment map read through a
 chart `e` onto the ball `‖q‖² + ‖p‖² < r`, up to a constant. Then the part of the chart over every
@@ -193,9 +200,7 @@ theorem isConvexChart_source_inter_preimage_setOf_lt
     rw [hU, image_image, EqOn.image_eq (f₂ := fun z ↦ ν + weightMomentMap α z) fun z hz ↦ ?_,
       ← image_image (ν + ·)]
     · exact (convex_image_weightMomentMap_setOf_lt α (min r r')).translate ν
-    have hzt : z ∈ e.target := by
-      rw [htarget]
-      exact lt_of_lt_of_le hz (min_le_left r r')
+    have hzt : z ∈ e.target := setOf_lt_min_subset_target htarget r' hz
     simp only [hf _ (e.map_target hzt), e.right_inv hzt]
   image_mem_nhdsWithin W hW hWo x hx :=
     nhdsWithin_mono _ (((mapsTo_source_vadd_range_weightMomentMap hf).mono_left
@@ -235,16 +240,6 @@ variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [CompleteSpac
     M (EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) ∞}
   {x : M}
 
-omit [CompleteSpace E'] [IsManifold I' ∞ M] in
-/-- The differential of a chart, read in the model vector space, is injective on the tangent
-spaces of its source. -/
-private theorem injective_mvfderiv_chart (hx : x ∈ chart.source) :
-    Function.Injective (mvfderiv I' chart x) := by
-  have h := PartialDiffeomorph.isLocalDiffeomorphAt (φ := chart) (hx := hx)
-  intro u v huv
-  rw [mvfderiv_apply_eq_mfderiv_apply, mvfderiv_apply_eq_mfderiv_apply] at huv
-  exact (h.mfderivToContinuousLinearEquiv (by simp)).injective huv
-
 /-- **Isotropy algebras in a weight chart.** If the differential of a chart at a point `x` of its
 source carries the fundamental vector field of `ξ` to that of the weight model, then `ξ` generates
 a vector field vanishing at `x` exactly when `αₖ(ξ) = 0` for every coordinate `zₖ(x)` that is
@@ -256,12 +251,14 @@ theorem mem_isotropy_fundamental_iff_of_mfderiv_eq (hx : x ∈ chart.source)
     ξ ∈ (InfinitesimalAction.fundamental I G I' M).isotropy x ↔
       ∀ k, ((chart x).1 k ≠ 0 ∨ (chart x).2 k ≠ 0) → α k ξ = 0 := by
   rw [InfinitesimalAction.mem_isotropy_iff, InfinitesimalAction.fundamental_apply,
-    ← (injective_mvfderiv_chart hx).eq_iff' (map_zero _), mvfderiv_apply_eq_mfderiv_apply, hgen]
+    ← (chart.bijective_mvfderiv (by simp) hx).1.eq_iff' (map_zero _),
+    mvfderiv_apply_eq_mfderiv_apply, hgen]
   exact LinearMap.mem_ker.symm.trans (mem_ker_weightInfinitesimalAction_iff α (chart x) ξ)
 
 /-- **Orbit rank in a weight chart.** In a chart whose differential carries the fundamental vector
-fields of the action to those of the weight model, the orbit through a point `x` of the source has
-dimension the rank of the weights `αₖ` for which the coordinate `zₖ(x)` is nonzero. -/
+fields of the action to those of the weight model, the orbit tangent space `𝔤·x` at a point `x` of
+the source has dimension the rank of the weights `αₖ` for which the coordinate `zₖ(x)` is
+nonzero. -/
 theorem finrank_orbitTangent_fundamental_of_mfderiv_eq (hx : x ∈ chart.source)
     (hgen : ∀ ξ : GroupLieAlgebra I G,
       mfderiv I' 𝓘(ℝ, EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) chart x
@@ -279,7 +276,7 @@ theorem finrank_orbitTangent_fundamental_of_mfderiv_eq (hx : x ∈ chart.source)
         mvfderiv_apply_eq_mfderiv_apply]
       exact hgen ξ
   rw [InfinitesimalAction.orbitTangent_eq_range,
-    (Submodule.equivMapOfInjective _ (injective_mvfderiv_chart hx)
+    (Submodule.equivMapOfInjective _ (chart.bijective_mvfderiv (by simp) hx).1
       (LinearMap.range ((InfinitesimalAction.fundamental I G I' M).eval x))).finrank_eq,
     ← LinearMap.range_comp, hcomp]
   exact finrank_range_weightInfinitesimalAction α (chart x)

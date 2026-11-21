@@ -127,6 +127,11 @@ theorem preimage_halfSqRadii_setOf_sum_lt [Fintype ι] (r : ℝ) :
     Finset.sum_add_distrib]
   constructor <;> intro h <;> linarith
 
+/-- The half-space `Σ_i s_i < c` of `ℝ^ι` is convex. -/
+private theorem convex_setOf_sum_lt [Fintype ι] (c : ℝ) : Convex ℝ {s : ι → ℝ | ∑ i, s i < c} :=
+  convex_halfSpace_lt ⟨fun a b ↦ by simp [Finset.sum_add_distrib],
+    fun c a ↦ by simp [Finset.mul_sum]⟩ _
+
 /-- **The half squared radii are open onto the orthant.** The map
 `(q, p) ↦ ((q_i² + p_i²) / 2)_i` sends every neighbourhood of a point of `ℂ^ι` onto a
 neighbourhood of its image in the closed orthant `Ici 0` of `ℝ^ι`. -/
@@ -201,9 +206,7 @@ theorem isPreconnected_preimage_weightMomentMap_inter (α : ι → StrongDual �
     IsPreconnected (weightMomentMap α ⁻¹' S ∩ {x | ‖x.1‖ ^ 2 + ‖x.2‖ ^ 2 < r}) := by
   rw [← preimage_halfSqRadii_setOf_sum_lt, weightMomentMap_eq_linearCombination_comp_halfSqRadii,
     preimage_comp, ← preimage_inter]
-  exact isPreconnected_preimage_halfSqRadii ((hS.linear_preimage _).inter
-    (convex_halfSpace_lt ⟨fun a b ↦ by simp [Finset.sum_add_distrib],
-      fun c a ↦ by simp [Finset.mul_sum]⟩ _))
+  exact isPreconnected_preimage_halfSqRadii ((hS.linear_preimage _).inter (convex_setOf_sum_lt _))
 
 /-- **The image of an invariant ball is convex.** The moment map
 `μ(q, p) = -½ Σ_i (q_i² + p_i²) α_i` of the weight model sends every invariant ball
@@ -213,8 +216,7 @@ theorem convex_image_weightMomentMap_setOf_lt (α : ι → StrongDual ℝ 𝔱) 
   -- The half squared radii send the ball onto the part of the orthant below a half-space.
   rw [← preimage_halfSqRadii_setOf_sum_lt, weightMomentMap_eq_linearCombination_comp_halfSqRadii,
     image_comp, image_preimage_eq_inter_range, range_halfSqRadii]
-  exact ((convex_halfSpace_lt ⟨fun a b ↦ by simp [Finset.sum_add_distrib],
-    fun c a ↦ by simp [Finset.mul_sum]⟩ _).inter (convex_Ici 0)).linear_image _
+  exact ((convex_setOf_sum_lt _).inter (convex_Ici 0)).linear_image _
 
 /-- **The weight model moment map is open onto its image.** The moment map
 `μ(q, p) = -½ Σ_i (q_i² + p_i²) α_i` sends every neighbourhood of a point `z` of `ℂ^ι` onto a
