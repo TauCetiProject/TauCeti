@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Manifold.Flow.Parametric
 import TauCeti.Geometry.Manifold.ContMDiffMap.Extension
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
-import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.MFDeriv.Prod
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 import TauCeti.Geometry.Manifold.VectorField.Transverse
@@ -35,7 +34,7 @@ open neighbourhood `V` of `ι(K)` and a function `h`, smooth on `V`, with `Z h =
 properties near `ι(K)` (`TauCeti.exists_contMDiff_mvfderiv_eq`). At a point `ι s` with
 `g (ι s) = 0`, such a solution has vanishing differential, since `dh` kills both the tangent space
 of the slice and the transverse vector `Z (ι s)`
-(`TauCeti.mvfderiv_eq_zero_of_eventuallyEq_zero`).
+(`TauCeti.mvfderiv_eq_zero_of_comp_eventuallyEq_zero`).
 
 The construction is the classical one. Adjoin to `M` a real coordinate `y` and consider the vector
 field `(y, x) ↦ (g x, Z x)` on `ℝ × M`: along its trajectories the point of `M` follows `Z` while
@@ -61,8 +60,6 @@ contact forms this is the Reeb-direction equation of the strict contact-Moser me
   `ι(K)`, smooth there and vanishing on the slice near `K`.
 * `TauCeti.exists_contMDiff_mvfderiv_eq`: on a σ-compact manifold, a globally smooth function
   solving `Z h = g` near `ι(K)` and vanishing on the slice near `K`.
-* `TauCeti.mvfderiv_eq_zero_of_eventuallyEq_zero`: a solution vanishing on the slice has zero
-  differential wherever `g` vanishes on the slice.
 * `TauCeti.exists_contMDiff_mvfderiv_eq_param`: the same for smooth families of vector fields and
   right sides, uniformly over a compact set of parameters.
 
@@ -116,38 +113,6 @@ private theorem contMDiff_transportField [IsManifold I 1 M] {n : ℕ∞ω}
       -- In the trivialization of `Tℝ` the fibre coordinate of `(y, c)` is `c` itself.
       exact (hg.comp contMDiff_snd p).congr_of_eventuallyEq (.of_forall fun q ↦ by simp)⟩
   exact contMDiff_equivTangentBundleProd_symm.comp (hval.prodMk (hZ.comp contMDiff_snd))
-
-/-! ### Vanishing of the differential on the slice -/
-
-/-- **Vanishing of the differential on a transverse slice.** Let `ι : S → M` have injective
-differential at `s`, with `Z (ι s)` outside its range, where `S` has one dimension less than the
-finite-dimensional `M`. If a function `h`, differentiable at `ι s`, vanishes on the slice near `s`
-and its derivative along `Z` vanishes at `ι s`, then its differential at `ι s` is zero. -/
-theorem mvfderiv_eq_zero_of_eventuallyEq_zero [FiniteDimensional ℝ E]
-    (hdim : finrank ℝ E = finrank ℝ E' + 1) {Z : (x : M) → TangentSpace I x} {ι : S → M}
-    {h : M → ℝ} {s : S}
-    (hh : MDifferentiableAt I 𝓘(ℝ) h (ι s)) (hιs : MDifferentiableAt J I ι s)
-    (h0 : h ∘ ι =ᶠ[𝓝 s] 0) (himm : Injective (mfderiv J I ι s))
-    (htr : Z (ι s) ∉ (mfderiv J I ι s).range) (hZ : mvfderiv I h (ι s) (Z (ι s)) = 0) :
-    mvfderiv I h (ι s) = 0 := by
-  set L := (mfderiv J I ι s).toLinearMap
-  have : FiniteDimensional ℝ E' := finiteDimensional_of_injective_mfderiv himm
-  -- The differential of `h` kills the tangent space of the slice, since `h ∘ ι` vanishes near `s`.
-  have hL (w : TangentSpace J s) : mvfderiv I h (ι s) (L w) = 0 := by
-    have hc := mvfderiv_comp_apply s hh hιs w
-    rw [h0.mvfderiv_eq, mvfderiv_zero] at hc
-    exact hc.symm
-  -- The tangent space of the slice and the line through `Z (ι s)` span the tangent space of `M`.
-  have htop : LinearMap.range L ⊔ ℝ ∙ Z (ι s) = ⊤ := by
-    refine Submodule.eq_top_of_finrank_eq ?_
-    rw [Submodule.finrank_sup_span_singleton htr, LinearMap.finrank_range_of_inj himm]
-    exact hdim.symm
-  refine ContinuousLinearMap.ext fun v ↦ ?_
-  have hv : v ∈ LinearMap.range L ⊔ ℝ ∙ Z (ι s) := htop ▸ Submodule.mem_top
-  obtain ⟨_, ⟨w, rfl⟩, _, hz, rfl⟩ := Submodule.mem_sup.1 hv
-  obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.1 hz
-  rw [map_add, map_smul, hL, hZ]
-  simp
 
 /-! ### Local solutions near a compact part of the slice -/
 
@@ -462,7 +427,7 @@ theorem exists_contMDiff_mvfderiv_eq_param
     exact hz
   · -- The differential of `h` vanishes at `(a, ι s)`, by transversality of the vertical field.
     have hzero : mvfderiv (L.prod I) h (a, ι s) = 0 :=
-      mvfderiv_eq_zero_of_eventuallyEq_zero (Z := verticalField L v) (s := (a, s)) hdim'
+      mvfderiv_eq_zero_of_comp_eventuallyEq_zero (Z := verticalField L v) (s := (a, s)) hdim'
         ((hh.mdifferentiable (by simp)) _) ((hι'.mdifferentiable (by simp)) (a, s))
         (hι0.filter_mono (nhds_le_nhdsSet (show (a, s) ∈ T ×ˢ K from ⟨ha, hs⟩)))
         (himm' (a, s) hs)
