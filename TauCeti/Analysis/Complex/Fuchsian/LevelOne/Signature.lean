@@ -9,6 +9,8 @@ public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Genus
 public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Sphere
 public import TauCeti.Analysis.Complex.Fuchsian.Elliptic.Finite
 public import TauCeti.Analysis.Complex.Fuchsian.LevelOne.Sphere
+import TauCeti.Analysis.Complex.Fuchsian.Compactification.FreeLocus
+import TauCeti.Geometry.Manifold.Complex.FiniteCWType
 
 /-!
 # The signature of the level-one modular curve
@@ -22,7 +24,8 @@ level-one modular curve `X(1)`, the compactified quotient of `ℍ` by the effect
 * The topological genus is read off the Euler characteristic, through `χ = 2 - 2g`. The
   normalized modular invariant identifies `X(1)` biholomorphically with the Riemann sphere
   (`TauCeti.ModularGroup.jBiholomorph`), which is homeomorphic to the `2`-sphere. Hence `X(1)` has
-  finite CW type and Euler characteristic `2`, so genus zero.
+  finite CW type and Euler characteristic `2`, so genus zero, and its free-locus quotient — the
+  Riemann sphere punctured at the two elliptic orbits and the cusp — likewise has finite CW type.
 * The elliptic orbits are the orbits of `ρ = e^{2πi/3}` and `i`, with stabilizers of orders `3`
   and `2`, so `∑ₑ (1 - 1 / mₑ) = 7 / 6`.
 * There is exactly one cusp (`TauCeti.ModularGroup.instUniqueCuspOrbit`).
@@ -35,6 +38,9 @@ the compactified quotient and its complex structure already exist.
 
 ## Main results
 
+* `TauCeti.ModularGroup.finiteCWType_compactifiedQuotient` and
+  `TauCeti.ModularGroup.finiteCWType_freeLocus_psl2zToPSL2RRange`: both `X(1)` and its free-locus
+  quotient have finite CW type.
 * `TauCeti.ModularGroup.eulerChar_compactifiedQuotient`: `χ(X(1)) = 2`.
 * `TauCeti.ModularGroup.genus_compactifiedQuotient`: `X(1)` has topological genus `0`.
 * `TauCeti.ModularGroup.ellipticOrbits_psl2zToPSL2RRange`: the elliptic orbits are those of `ρ`
@@ -66,6 +72,29 @@ with the Riemann sphere. -/
 instance finiteCWType_compactifiedQuotient :
     FiniteCWType psl2zToPSL2R.range.CompactifiedQuotient :=
   jBiholomorph.toHomeomorph.finiteCWType
+
+/-- The orbit space of the free locus of `PSL(2, ℤ)` has finite CW type: `j` identifies it with
+the Riemann sphere punctured at the two elliptic orbits and the cusp. -/
+instance finiteCWType_freeLocus_psl2zToPSL2RRange :
+    FiniteCWType (orbitRel.Quotient psl2zToPSL2R.range (freeLocus psl2zToPSL2R.range ℍ)) := by
+  have hS : (jBiholomorph.toHomeomorph ''
+      (Subgroup.CompactifiedQuotient.ofQuotient '' psl2zToPSL2R.range.ellipticOrbits ∪
+        Set.range Subgroup.CompactifiedQuotient.ofCusp)).Finite :=
+    Subgroup.CompactifiedQuotient.finite_ellipticOrbits_union_cusps.image _
+  have : FiniteCWType ↥(jBiholomorph.toHomeomorph ''
+      (Subgroup.CompactifiedQuotient.ofQuotient '' psl2zToPSL2R.range.ellipticOrbits ∪
+        Set.range Subgroup.CompactifiedQuotient.ofCusp))ᶜ :=
+    have := hS.to_subtype
+    inferInstance
+  let hcompl : ↥(Subgroup.CompactifiedQuotient.ofQuotient '' psl2zToPSL2R.range.ellipticOrbits ∪
+      Set.range Subgroup.CompactifiedQuotient.ofCusp)ᶜ ≃ₜ
+      ↥(jBiholomorph.toHomeomorph ''
+        (Subgroup.CompactifiedQuotient.ofQuotient '' psl2zToPSL2R.range.ellipticOrbits ∪
+          Set.range Subgroup.CompactifiedQuotient.ofCusp))ᶜ :=
+    (jBiholomorph.toHomeomorph.image _).trans
+      (Homeomorph.setCongr (Set.image_compl_eq jBiholomorph.toHomeomorph.bijective))
+  exact ((Subgroup.CompactifiedQuotient.freeLocusQuotientHomeomorph psl2zToPSL2R.range).trans
+    hcompl).finiteCWType
 
 /-- **The Euler characteristic of the level-one modular curve** is `2`, that of the Riemann sphere,
 with which the normalized modular invariant identifies it. Through `χ = 2 - 2g`, the curve has

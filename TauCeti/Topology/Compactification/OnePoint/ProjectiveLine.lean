@@ -64,9 +64,10 @@ stabilizer of a cusp, moved to `∞`, consists of translations.
   under a matrix of determinant one.
 * `Matrix.ProjectiveSpecialLinearGroup.mk_smul_zero_eq_infty_iff`,
   `mk_smul_infty_eq_infty_iff`, `mk_smul_zero_eq_coe_iff`, `mk_smul_infty_eq_coe_iff`: where the
-  class of `!![a, b; c, d]` sends the points `0` and `∞`, in terms of its entries, and
-  `TauCeti.sl2zToPSL2R_smul_infty_eq_infty_iff`: the image of `g ∈ SL(2, ℤ)` in `PSL(2, ℝ)` fixes
-  `∞` exactly when `g 1 0 = 0`.
+  class of `!![a, b; c, d]` sends the points `0` and `∞`, in terms of its entries;
+  `TauCeti.psl2zToPSL2R_smul_boundary`: compatibility of `psl2zToPSL2R` and `mapGL ℝ` on
+  `OnePoint ℝ`; and `TauCeti.sl2zToPSL2R_smul_infty_eq_infty_iff`: the image of `g ∈ SL(2, ℤ)` in
+  `PSL(2, ℝ)` fixes `∞` exactly when `g 1 0 = 0`.
 * `Matrix.ProjectiveSpecialLinearGroup.exists_smul_eq_self`: over an algebraically closed field
   every element of `PSL(2, K)` has a fixed point.
 * `Matrix.ProjectiveSpecialLinearGroup.IsParabolic.smul_eq_self_iff`: a parabolic element fixes
@@ -467,6 +468,14 @@ end Matrix.ProjectiveSpecialLinearGroup
 namespace TauCeti
 
 open Matrix.ProjectiveSpecialLinearGroup OnePoint
+
+/-- The action of `psl2zToPSL2R a` on `OnePoint ℝ` agrees with the action of `mapGL ℝ a`. -/
+theorem psl2zToPSL2R_smul_boundary (a : SL(2, ℤ)) (c : OnePoint ℝ) :
+    psl2zToPSL2R (a : PSL(2, ℤ)) • c = Matrix.SpecialLinearGroup.mapGL ℝ a • c := by
+  rw [psl2zToPSL2R_mk, sl2zToPSL2R_apply, OnePoint.pslMk_smul]
+  -- `Matrix.SpecialLinearGroup.map (Int.castRingHom ℝ) a` is definitionally `mapGL ℝ a`
+  -- after coercion to `GL (Fin 2) ℝ`.
+  rfl
 
 /-- An element of `SL(2, ℤ)` fixes `∞ ∈ OnePoint ℝ` exactly when its lower-left entry vanishes. -/
 theorem sl2zToPSL2R_smul_infty_eq_infty_iff (g : SL(2, ℤ)) :
