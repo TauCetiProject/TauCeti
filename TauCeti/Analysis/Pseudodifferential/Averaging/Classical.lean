@@ -347,8 +347,8 @@ private theorem exists_bound_transport_cutoffSymbol_sub {m' : ℝ}
       simpa only [map_inv, ContinuousLinearEquiv.inv_eq_symm] using
         (hc₀ g⁻¹ (mem_univ _)).trans (le_max_right _ _))
   -- Both cutoffs are `1` once `‖ξ‖ > 2c`, so the difference vanishes there.
-  refine Symbol.exists_bound_of_continuous_jets_of_eq_zero _ (fun k ↦ ?_) (2 * c)
-    (fun g x ξ hξ ↦ ?_) m' hK α β
+  refine Symbol.exists_bound_of_continuous_jets_of_eq_zero (fun _ ↦ Symbol.contDiff_coefficient _)
+    (fun k ↦ ?_) (fun _ _ ↦ ⟨2 * c, fun g x _ ξ hξ ↦ ?_⟩) m' hK α β
   · have hk : ((k : ℕ∞) : ℕ∞ω) ≤ ∞ := by exact_mod_cast le_top
     refine ((Symbol.continuous_iteratedFDeriv_transport hρ hσ hτ
       (HomogeneousSymbol.cutoffSymbol χ h) k).sub

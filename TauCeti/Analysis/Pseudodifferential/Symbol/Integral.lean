@@ -26,9 +26,7 @@ member of the family is at most `C ≥ 0`, the integral has that seminorm at mos
 `μ.real Set.univ * C` (`TauCeti.Symbol.seminorm_integral_le`), as does any symbol whose
 coefficient is that pointwise integral (`TauCeti.Symbol.seminorm_le_of_coefficient_eq_integral`).
 For a probability measure, this is an average with seminorm at most `C`
-(`TauCeti.Symbol.seminorm_integral_le_of_probability`). A compact family with jointly continuous
-jets whose members all vanish beyond a fixed frequency radius satisfies the estimates of every
-order uniformly in the parameter (`TauCeti.Symbol.exists_bound_of_continuous_jets_of_eq_zero`).
+(`TauCeti.Symbol.seminorm_integral_le_of_probability`).
 
 Integration takes place in the coefficient operator space `V →L[ℂ] W`, with no
 finite-dimensionality assumption on `V` or `W`. The parameter space needs only a topology.
@@ -106,47 +104,6 @@ theorem exists_bound_of_bddAbove_seminorm {Y : Type*} {n : ℕ} {V W : Type*}
   exact (le_seminorm ⟨K, hK⟩ α β (a y) hx ξ).trans
     (mul_le_mul_of_nonneg_right ((hC ⟨y, rfl⟩).trans (le_max_left _ _))
       (rpow_weight_pos ξ _).le)
-
-/-- **Uniform estimates for compact families vanishing at large frequencies.** If the symbols of
-a compact family have jointly continuous jets and all vanish at the frequencies of norm greater
-than a fixed `R`, they satisfy the estimates of every order `m'` on each compact set of positions,
-with constants independent of the parameter. -/
-theorem exists_bound_of_continuous_jets_of_eq_zero {Y : Type*} [TopologicalSpace Y]
-    [CompactSpace Y] {n : ℕ} {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
-    [NormedAddCommGroup W] [NormedSpace ℂ W] {m : ℝ} (a : Y → Symbol n V W m)
-    (hjets : ∀ k : ℕ, Continuous
-      (fun p : Y × (CoordinateSpace n × CoordinateSpace n) ↦
-        iteratedFDeriv ℝ k (a p.1).coefficient p.2))
-    (R : ℝ) (ha : ∀ y x ξ, R < ‖ξ‖ → (a y).coefficient (x, ξ) = 0) (m' : ℝ)
-    {K : Set (CoordinateSpace n)} (hK : IsCompact K) (α β : List (Fin n)) :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ y : Y, ∀ x ∈ K, ∀ ξ,
-      ‖mixedDeriv α β (a y).coefficient x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m' - β.length) / 2) := by
-  set e : ℝ := (m' - β.length) / 2
-  -- The jet of order `|α| + |β|`, divided by the weight, is bounded on the compact set of
-  -- parameters, positions in `K` and frequencies of norm at most `R`.
-  have hcont : Continuous fun p : Y × (CoordinateSpace n × CoordinateSpace n) ↦
-      ‖iteratedFDeriv ℝ (α.length + β.length) (a p.1).coefficient p.2‖ *
-        (1 + ‖p.2.2‖ ^ 2) ^ (-e) :=
-    (hjets _).norm.mul ((continuous_const.add (continuous_norm.comp
-      continuous_snd.snd |>.pow 2)).rpow_const fun _ ↦
-        Or.inl (add_pos_of_pos_of_nonneg one_pos (sq_nonneg _)).ne')
-  obtain ⟨C, hC⟩ := (isCompact_univ.prod (hK.prod (isCompact_closedBall 0 R)))
-    |>.exists_bound_of_continuousOn hcont.continuousOn
-  refine ⟨max C 0, le_max_right _ _, fun y x hx ξ ↦ ?_⟩
-  by_cases hξ : ‖ξ‖ ≤ R
-  · have hw : 0 < (1 + ‖ξ‖ ^ 2) ^ e := rpow_weight_pos ξ _
-    have hb := (le_abs_self _).trans ((Real.norm_eq_abs _).symm.le.trans
-      (hC (y, x, ξ) ⟨mem_univ _, hx, mem_closedBall_zero_iff.2 hξ⟩))
-    rw [Real.rpow_neg (by positivity), ← div_eq_mul_inv, div_le_iff₀ hw] at hb
-    exact (norm_mixedDeriv_le α β ((a y).contDiff_coefficient.of_le (by simp)) x ξ).trans
-      (hb.trans (mul_le_mul_of_nonneg_right (le_max_left _ _) hw.le))
-  · -- Beyond `R` the members vanish near `(x, ξ)`, and so do their mixed derivatives.
-    have hzero : (a y).coefficient =ᶠ[nhds (x, ξ)] 0 := by
-      filter_upwards [(isOpen_lt continuous_const (continuous_norm.comp continuous_snd)).mem_nhds
-        (show R < ‖(x, ξ).2‖ from not_le.1 hξ)] with q hq
-      exact ha y q.1 q.2 hq
-    rw [hzero.mixedDeriv_eq, mixedDeriv_zero, norm_zero]
-    exact mul_nonneg (le_max_right _ _) (rpow_weight_pos ξ _).le
 
 section ContinuousJets
 
