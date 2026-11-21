@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Ideal.Operations
 public import Mathlib.RingTheory.LocalRing.MaximalIdeal.Basic
+public import TauCeti.RingTheory.Ideal.Span
 
 /-!
 # Elements in the maximal ideal of a local ring
@@ -58,12 +59,9 @@ theorem IsAtom.maximalIdeal_mul_eq_bot {R : Type*} [CommRing R] [IsLocalRing R] 
   -- Otherwise `𝔪 I = I` by minimality, and a generator `t` of `I` satisfies `t = x t` for some
   -- `x ∈ 𝔪`, forcing `t = 0` as `1 - x` is a unit.
   obtain ⟨t, ht, ht0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hI.1
-  have hspan : Ideal.span {t} = I :=
-    (hI.le_iff.mp ((Ideal.span_singleton_le_iff_mem _).mpr ht)).resolve_left
-      (by rwa [Ideal.span_singleton_eq_bot])
   refine (hI.le_iff.mp Ideal.mul_le_right).resolve_right fun h ↦ ht0 ?_
   have htm : t ∈ IsLocalRing.maximalIdeal R * Ideal.span {t} := by
-    rwa [hspan, h]
+    rwa [hI.span_singleton_eq ht ht0, h]
   obtain ⟨x, hx, hxt⟩ := Ideal.mem_mul_span_singleton.mp htm
   have hunit := IsLocalRing.isUnit_one_sub_self_of_mem_nonunits x hx
   rw [← hunit.mul_right_eq_zero, sub_mul, one_mul, hxt, sub_self]

@@ -479,6 +479,13 @@ induced by the augmentation of `A`. -/
       rw [← AlgHom.coe_comp, Ideal.Quotient.liftₐ_comp]
       exact A.augmentation_surjective)
 
+/-- The augmentation of `A ⧸ I` is the map induced by the augmentation of `A`. -/
+@[simp]
+theorem augmentation_quotient (hI : I ≠ ⊤) :
+    (A.quotient I hI).augmentation =
+      Ideal.Quotient.liftₐ I A.augmentation fun _ ↦ augmentation_eq_zero_of_mem A I hI :=
+  (rfl)
+
 /-- The quotient morphism `A ⟶ A ⧸ I` of `C_Λ`. -/
 def toQuotient (hI : I ≠ ⊤) : A ⟶ A.quotient I hI :=
   homMk' (Ideal.Quotient.mkₐ Λ I) (Ideal.Quotient.liftₐ_comp _ _ _)
@@ -514,6 +521,13 @@ def quotientLift {B : ArtinLocalAlg Λ k} (f : A ⟶ B) (hf : I ≤ RingHom.ker 
     ext x
     obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x
     exact augmentation_hom_apply f a
+
+/-- The factorisation `quotientLift f hf` sends the class of `a` to `f a`. -/
+@[simp]
+theorem quotientLift_hom_left_hom_apply {B : ArtinLocalAlg Λ k} (f : A ⟶ B)
+    (hf : I ≤ RingHom.ker f.hom.left.hom) (a : A.obj.left) :
+    (quotientLift (hI := hI) f hf).hom.left.hom (Ideal.Quotient.mk I a) = f.hom.left.hom a :=
+  (rfl)
 
 /-- The factorisation `quotientLift f hf` composed with the quotient morphism is `f`. -/
 @[reassoc (attr := simp)]

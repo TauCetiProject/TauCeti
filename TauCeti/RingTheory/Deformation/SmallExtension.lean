@@ -85,10 +85,7 @@ theorem isSmallExtension_iff_isAtom_ker {A' A : ArtinLocalAlg Λ k} (f : A' ⟶ 
     rw [Ideal.span_singleton_le_iff_mem]
     simpa [← mul_assoc] using L.mul_mem_left (↑hc.unit⁻¹ : A'.obj.left) hxL
   · obtain ⟨t, ht, ht0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hatom.1
-    have hspan : Ideal.span {t} = RingHom.ker f.hom.left.hom :=
-      (hatom.le_iff.mp ((Ideal.span_singleton_le_iff_mem _).mpr ht)).resolve_left
-        (by rwa [Ideal.span_singleton_eq_bot])
-    refine ⟨t, ht0, hspan.symm, fun x hx ↦ ?_⟩
+    refine ⟨t, ht0, (hatom.span_singleton_eq ht ht0).symm, fun x hx ↦ ?_⟩
     rw [← Ideal.mem_bot, ← hatom.maximalIdeal_mul_eq_bot]
     exact Ideal.mul_mem_mul hx ht
 
