@@ -9,6 +9,8 @@ public import Mathlib.Data.Matrix.Basis
 public import Mathlib.Data.Matrix.Block
 public import TauCeti.Analysis.CStarAlgebra.CStarMatrix.Rectangular
 import Mathlib.Analysis.CStarAlgebra.Hom
+import Mathlib.LinearAlgebra.Matrix.Hermitian
+import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Block
 
 /-!
 # Block matrices, corner embeddings, and block operator norms on `CStarMatrix`
@@ -175,6 +177,11 @@ theorem mapₙₐ_fromBlocks_zero₁₂_zero₂₁ [Fintype m] [Fintype n] [Semi
     mapₙₐ f (fromBlocks M 0 0 N) = fromBlocks (mapₙₐ f M) 0 0 (mapₙₐ f N) := by
   rw [mapₙₐ_fromBlocks]; congr 1 <;> ext <;> simp
 
+private theorem isSelfAdjoint_iff_isHermitian_ofMatrix_symm {k A : Type*} [InvolutiveStar A]
+    (X : CStarMatrix k k A) : IsSelfAdjoint X ↔ (ofMatrix.symm X).IsHermitian := by
+  rw [Matrix.isHermitian_iff_isSelfAdjoint]
+  exact ofMatrix.symm.injective.eq_iff.symm
+
 /-- A square `2 × 2` block `CStarMatrix` is self-adjoint iff its diagonal blocks are self-adjoint
 and its off-diagonal blocks are conjugate transposes of each other. -/
 theorem isSelfAdjoint_fromBlocks_iff [InvolutiveStar A]
@@ -182,9 +189,12 @@ theorem isSelfAdjoint_fromBlocks_iff [InvolutiveStar A]
     {M₂₁ : CStarMatrix n m A} {M₂₂ : CStarMatrix n n A} :
     IsSelfAdjoint (fromBlocks M₁₁ M₁₂ M₂₁ M₂₂) ↔
       IsSelfAdjoint M₁₁ ∧ M₁₂.conjTranspose = M₂₁ ∧ IsSelfAdjoint M₂₂ := by
-  rw [IsSelfAdjoint, star_fromBlocks, fromBlocks_inj]
-  exact ⟨fun ⟨h₁₁, h₂₁, _, h₂₂⟩ ↦ ⟨h₁₁, by simpa using congrArg conjTranspose h₂₁.symm, h₂₂⟩,
-    fun ⟨h₁₁, h₁₂, h₂₂⟩ ↦ ⟨h₁₁, by simpa using congrArg conjTranspose h₁₂.symm, h₁₂, h₂₂⟩⟩
+  rw [isSelfAdjoint_iff_isHermitian_ofMatrix_symm, ofMatrix_symm_fromBlocks,
+    Matrix.isHermitian_fromBlocks_iff, ← isSelfAdjoint_iff_isHermitian_ofMatrix_symm,
+    ← isSelfAdjoint_iff_isHermitian_ofMatrix_symm]
+  simp only [← ofMatrix.symm.injective.eq_iff, ofMatrix_symm_conjTranspose]
+  exact ⟨fun ⟨h₁₁, h₁₂, _, h₂₂⟩ ↦ ⟨h₁₁, h₁₂, h₂₂⟩,
+    fun ⟨h₁₁, h₁₂, h₂₂⟩ ↦ ⟨h₁₁, h₁₂, by simp [← h₁₂], h₂₂⟩⟩
 
 /-- A block-diagonal `CStarMatrix` is self-adjoint iff both diagonal blocks are self-adjoint. -/
 @[simp] theorem isSelfAdjoint_fromBlocks_zero₁₂_zero₂₁ [AddMonoid A] [StarAddMonoid A]
@@ -192,16 +202,20 @@ theorem isSelfAdjoint_fromBlocks_iff [InvolutiveStar A]
     IsSelfAdjoint (fromBlocks M 0 0 N) ↔ IsSelfAdjoint M ∧ IsSelfAdjoint N := by
   simp [isSelfAdjoint_fromBlocks_iff]
 
+private theorem mem_unitary_iff_ofMatrix_symm {k A : Type*} [Fintype k] [DecidableEq k]
+    [Semiring A] [StarRing A] (X : CStarMatrix k k A) :
+    X ∈ unitary (CStarMatrix k k A) ↔ ofMatrix.symm X ∈ unitary (Matrix k k A) := by
+  simp [Unitary.mem_iff, ← ofMatrix.symm.injective.eq_iff, Matrix.star_eq_conjTranspose]
+
 /-- A block-diagonal `CStarMatrix` is unitary iff both diagonal blocks are unitary. -/
 @[simp] theorem fromBlocks_zero₁₂_zero₂₁_mem_unitary [Fintype m] [Fintype n] [DecidableEq m]
     [DecidableEq n] [Semiring A] [StarRing A] {M : CStarMatrix m m A} {N : CStarMatrix n n A} :
     fromBlocks M 0 0 N ∈ unitary (CStarMatrix (m ⊕ n) (m ⊕ n) A) ↔
       M ∈ unitary (CStarMatrix m m A) ∧ N ∈ unitary (CStarMatrix n n A) := by
-  rw [Unitary.mem_iff, Unitary.mem_iff, Unitary.mem_iff, star_fromBlocks,
-    fromBlocks_multiply, fromBlocks_multiply, ← fromBlocks_one]
-  simp only [star_eq_conjTranspose, conjTranspose_zero, CStarMatrix.mul_zero, CStarMatrix.zero_mul,
-    add_zero, zero_add, fromBlocks_inj]
-  tauto
+  rw [mem_unitary_iff_ofMatrix_symm, ofMatrix_symm_fromBlocks,
+    ← of_zero (m := m) (n := n), ← of_zero (m := n) (n := m), Equiv.symm_apply_apply,
+    Equiv.symm_apply_apply, Matrix.fromBlocks_zero_zero_mem_unitary,
+    mem_unitary_iff_ofMatrix_symm, mem_unitary_iff_ofMatrix_symm]
 
 /-- Reindexing rows and columns by `Equiv.sumCongr` acts blockwise on `fromBlocks`. -/
 @[simp] theorem reindexₗ_sumCongr_fromBlocks [Semiring R] [AddCommMonoid A] [Module R A]
@@ -211,7 +225,13 @@ theorem isSelfAdjoint_fromBlocks_iff [InvolutiveStar A]
     reindexₗ R A (e₁.sumCongr e₂) (f₁.sumCongr f₂) (fromBlocks M₁₁ M₁₂ M₂₁ M₂₂) =
       fromBlocks (reindexₗ R A e₁ f₁ M₁₁) (reindexₗ R A e₁ f₂ M₁₂)
         (reindexₗ R A e₂ f₁ M₂₁) (reindexₗ R A e₂ f₂ M₂₂) := by
-  ext (_ | _) (_ | _) <;> rfl
+  apply ofMatrix.symm.injective
+  have hs₁ : ⇑(e₁.symm.sumCongr e₂.symm) = Sum.map e₁.symm e₂.symm :=
+    funext (Equiv.sumCongr_apply _ _)
+  have hs₂ : ⇑(f₁.symm.sumCongr f₂.symm) = Sum.map f₁.symm f₂.symm :=
+    funext (Equiv.sumCongr_apply _ _)
+  simp only [ofMatrix_symm_reindexₗ, ofMatrix_symm_fromBlocks, Matrix.reindex_apply,
+    Equiv.sumCongr_symm, hs₁, hs₂, Matrix.fromBlocks_submatrix_sumMap]
 
 /-- Square `reindexₐ` by `Equiv.sumCongr` acts blockwise on `fromBlocks`. -/
 @[simp] theorem reindexₐ_sumCongr_fromBlocks [Fintype l] [Fintype m] [Fintype n] [Fintype o]
@@ -221,7 +241,8 @@ theorem isSelfAdjoint_fromBlocks_iff [InvolutiveStar A]
     reindexₐ R A (e₁.sumCongr e₂) (fromBlocks M₁₁ M₁₂ M₂₁ M₂₂) =
       fromBlocks (reindexₐ R A e₁ M₁₁) (reindexₗ R A e₁ e₂ M₁₂)
         (reindexₗ R A e₂ e₁ M₂₁) (reindexₐ R A e₂ M₂₂) := by
-  ext (_ | _) (_ | _) <;> rfl
+  rw [← reindexₗ_eq_reindexₐ, reindexₗ_sumCongr_fromBlocks, reindexₗ_eq_reindexₐ,
+    reindexₗ_eq_reindexₐ]
 
 /-- Reindexing by `Equiv.sumComm` swaps the two diagonal and two off-diagonal blocks. -/
 @[simp] theorem reindexₐ_sumComm_fromBlocks [Fintype m] [Fintype n]
@@ -229,7 +250,10 @@ theorem isSelfAdjoint_fromBlocks_iff [InvolutiveStar A]
     (M₁₁ : CStarMatrix m m A) (M₁₂ : CStarMatrix m n A)
     (M₂₁ : CStarMatrix n m A) (M₂₂ : CStarMatrix n n A) :
     reindexₐ R A (Equiv.sumComm m n) (fromBlocks M₁₁ M₁₂ M₂₁ M₂₂) = fromBlocks M₂₂ M₂₁ M₁₂ M₁₁ := by
-  ext (_ | _) (_ | _) <;> rfl
+  apply ofMatrix.symm.injective
+  rw [← reindexₗ_eq_reindexₐ, ofMatrix_symm_reindexₗ, ofMatrix_symm_fromBlocks,
+    ofMatrix_symm_fromBlocks, Matrix.reindex_apply, Equiv.sumComm_symm, Equiv.sumComm_apply,
+    Matrix.fromBlocks_submatrix_sum_swap_sum_swap]
 
 /-- Reindexing a nested three-block diagonal matrix by `Equiv.sumAssoc` reassociates the blocks. -/
 @[simp] theorem reindexₐ_sumAssoc_fromBlocks [Fintype l] [Fintype m] [Fintype n]
@@ -372,62 +396,13 @@ theorem singleStarAlgHom_injective [Fintype n] [DecidableEq n] [Semiring R]
     Function.Injective (singleStarAlgHom (R := R) (A := A) i) := fun a b h ↦ by
   simpa using congrArg (fun M : CStarMatrix n n A ↦ M i i) h
 
-/-- Diagonal `CStarMatrix` with diagonal entries `d : n → A`. -/
-def diagonal [DecidableEq n] [Zero A] (d : n → A) : CStarMatrix n n A :=
-  ofMatrix (Matrix.diagonal d)
-
-@[simp] theorem ofMatrix_symm_diagonal [DecidableEq n] [Zero A] (d : n → A) :
-    ofMatrix.symm (diagonal d) = Matrix.diagonal d := (rfl)
-
-theorem diagonal_apply [DecidableEq n] [Zero A] (d : n → A) (i j : n) :
-    diagonal d i j = if i = j then d i else 0 := (rfl)
-
-@[simp] theorem diagonal_apply_eq [DecidableEq n] [Zero A] (d : n → A) (i : n) :
-    diagonal d i i = d i := Matrix.diagonal_apply_eq d i
-
-@[simp] theorem diagonal_apply_ne [DecidableEq n] [Zero A] (d : n → A) {i j : n} (h : i ≠ j) :
-    diagonal d i j = 0 := Matrix.diagonal_apply_ne d h
-
-@[simp] theorem diagonal_zero [DecidableEq n] [Zero A] :
-    diagonal (0 : n → A) = 0 := Matrix.diagonal_zero
-
-@[simp] theorem diagonal_one [DecidableEq n] [Zero A] [One A] :
-    diagonal (1 : n → A) = 1 := Matrix.diagonal_one
-
-theorem diagonal_add [DecidableEq n] [AddZeroClass A] (d₁ d₂ : n → A) :
-    diagonal (d₁ + d₂) = diagonal d₁ + diagonal d₂ := (Matrix.diagonal_add d₁ d₂).symm
-
-theorem diagonal_mul [Fintype n] [DecidableEq n] [NonUnitalNonAssocSemiring A] (d₁ d₂ : n → A) :
-    diagonal d₁ * diagonal d₂ = diagonal (fun i ↦ d₁ i * d₂ i) := Matrix.diagonal_mul_diagonal d₁ d₂
-
-@[simp] theorem star_diagonal [DecidableEq n] [AddMonoid A] [StarAddMonoid A] (d : n → A) :
-    star (diagonal d) = diagonal (star d) := by
-  ext i j; by_cases h : i = j <;> simp [star_apply, h, eq_comm]
-
 @[simp] theorem fromBlocks_diagonal [DecidableEq l] [DecidableEq m] [Zero A]
     (d₁ : l → A) (d₂ : m → A) :
-    fromBlocks (diagonal d₁) 0 0 (diagonal d₂) = diagonal (Sum.elim d₁ d₂) :=
-  Matrix.fromBlocks_diagonal d₁ d₂
-
-/-- Diagonal `⋆`-homomorphism `(n → A) →⋆ₙₐ[R] CStarMatrix n n A`. -/
-def diagonalStarAlgHom [Fintype n] [DecidableEq n] [Semiring R]
-    [NonUnitalNonAssocSemiring A] [Module R A] [StarAddMonoid A] :
-    (n → A) →⋆ₙₐ[R] CStarMatrix n n A where
-  toFun := diagonal
-  map_smul' c d := Matrix.diagonal_smul c d
-  map_zero' := diagonal_zero
-  map_add' := diagonal_add
-  map_mul' d₁ d₂ := (diagonal_mul d₁ d₂).symm
-  map_star' d := (star_diagonal d).symm
-
-@[simp] theorem diagonalStarAlgHom_apply [Fintype n] [DecidableEq n] [Semiring R]
-    [NonUnitalNonAssocSemiring A] [Module R A] [StarAddMonoid A] (d : n → A) :
-    (diagonalStarAlgHom : (n → A) →⋆ₙₐ[R] CStarMatrix n n A) d = diagonal d := (rfl)
-
-theorem diagonalStarAlgHom_injective [Fintype n] [DecidableEq n] [Semiring R]
-    [NonUnitalNonAssocSemiring A] [Module R A] [StarAddMonoid A] :
-    Function.Injective (diagonalStarAlgHom (n := n) (R := R) (A := A)) := fun d₁ d₂ h ↦ by
-  ext i; simpa using congrArg (fun M : CStarMatrix n n A ↦ M i i) h
+    fromBlocks (diagonal d₁) 0 0 (diagonal d₂) = diagonal (Sum.elim d₁ d₂) := by
+  apply ofMatrix.symm.injective
+  rw [ofMatrix_symm_fromBlocks, ofMatrix_symm_diagonal, ofMatrix_symm_diagonal,
+    ofMatrix_symm_diagonal, ← of_zero (m := l) (n := m), ← of_zero (m := m) (n := l),
+    Equiv.symm_apply_apply, Equiv.symm_apply_apply, Matrix.fromBlocks_diagonal]
 
 end MatrixUnitsAndDiagonal
 
@@ -501,8 +476,9 @@ theorem isometry_singleStarAlgHom [DecidableEq n] [Semiring R] [Module R A] (i :
   AddMonoidHomClass.isometry_of_norm _ (norm_singleStarAlgHom i)
 
 /-- The operator norm of `diagonal d` equals `‖d‖` (`supᵢ ‖d i‖`). -/
-@[simp] theorem norm_diagonal [DecidableEq n] (d : n → A) : ‖diagonal d‖ = ‖d‖ :=
-  NonUnitalStarAlgHom.norm_map (diagonalStarAlgHom (R := ℂ)) diagonalStarAlgHom_injective d
+@[simp] theorem norm_diagonal [DecidableEq n] (d : n → A) : ‖diagonal d‖ = ‖d‖ := by
+  rw [← diagonalStarAlgHom_apply (R := ℂ)]
+  exact NonUnitalStarAlgHom.norm_map (diagonalStarAlgHom (R := ℂ)) diagonalStarAlgHom_injective d
 
 end Norm
 

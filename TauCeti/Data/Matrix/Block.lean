@@ -171,6 +171,27 @@ public theorem Matrix.isStarProjection_fromBlocks_zero₁₂_zero₂₁_iff {m n
     Matrix.conjTranspose_zero, true_and]
   exact and_and_and_comm
 
+section NonUnitalMurrayVonNeumann
+
+variable {m n α : Type*} [Fintype m] [Fintype n] [NonUnitalRing α]
+  {e : Matrix m m α} {f : Matrix n n α} {a : Matrix m n α} {b : Matrix n m α}
+
+/-- Non-unital block calculation underlying stabilized conjugation: for `x = e ⊕ 0` and
+`B = Matrix.fromBlocks e (-a) (-b) f`, if `a * b = e`, `b * a = f`, and `b * e = b`, then
+`x - B * x - (x * B - B * x * B) = 0 ⊕ f`. -/
+public theorem Matrix.fromBlocks_sub_mul_sub_of_mul_eq (hab : a * b = e) (hba : b * a = f)
+    (hbe : b * e = b) :
+    let B := Matrix.fromBlocks e (-a) (-b) f
+    let x := Matrix.fromBlocks e 0 0 (0 : Matrix n n α)
+    x - B * x - (x * B - B * x * B) = Matrix.fromBlocks 0 0 0 f := by
+  have hee : e * e = e := by nth_rw 1 [← hab]; rw [Matrix.mul_assoc, hbe, hab]
+  dsimp only
+  simp only [Matrix.fromBlocks_multiply, Matrix.mul_zero, Matrix.zero_mul, add_zero, zero_add,
+    Matrix.neg_mul, Matrix.mul_neg, neg_neg, hee, hbe, hba]
+  ext (i | i) (j | j) <;> simp
+
+end NonUnitalMurrayVonNeumann
+
 section MurrayVonNeumann
 
 variable {m n α : Type*} [Fintype m] [Fintype n] [DecidableEq m] [DecidableEq n] [Ring α]
@@ -199,8 +220,14 @@ public theorem Matrix.fromBlocks_one_sub_mul_fromBlocks_mul_fromBlocks_one_sub_o
     Matrix.fromBlocks (1 - e) a b (1 - f) * Matrix.fromBlocks e 0 0 0 *
         Matrix.fromBlocks (1 - e) a b (1 - f) =
       Matrix.fromBlocks 0 0 0 f := by
-  have hee : e * e = e := by nth_rw 1 [← hab]; rw [Matrix.mul_assoc, hbe, hab]
-  simp only [Matrix.fromBlocks_multiply, Matrix.mul_sub, Matrix.sub_mul, Matrix.mul_one,
-    Matrix.one_mul, Matrix.mul_zero, Matrix.zero_mul, hee, hbe, hba, sub_self, add_zero]
+  let B := Matrix.fromBlocks e (-a) (-b) f
+  let x := Matrix.fromBlocks e 0 0 (0 : Matrix n n α)
+  have h1 : Matrix.fromBlocks (1 - e) a b (1 - f) = 1 - B := by
+    ext (_ | _) (_ | _) <;> simp [B, Matrix.one_apply]
+  rw [h1]
+  calc (1 - B) * x * (1 - B)
+      = x - B * x - (x * B - B * x * B) := by
+        simp only [Matrix.sub_mul, Matrix.one_mul, Matrix.mul_sub, Matrix.mul_one]
+    _ = Matrix.fromBlocks 0 0 0 f := Matrix.fromBlocks_sub_mul_sub_of_mul_eq hab hba hbe
 
 end MurrayVonNeumann

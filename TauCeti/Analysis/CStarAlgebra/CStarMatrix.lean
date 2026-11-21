@@ -54,8 +54,10 @@ diagonal embedding `b ↦ diag(b, …, b)`.
 * `CStarMatrix.transposeₗ`: the transpose of C⋆-matrices, as a linear map.
 * `CStarMatrix.compStarAlgEquiv`: `Matrix.comp` as a star algebra isomorphism
   `M_m(M_n(A)) ≃ M_{m × n}(A)`.
-* `CStarMatrix.diagonalNonUnitalStarAlgHom`: the diagonal embedding `b ↦ diag(b, …, b)` of `B`
-  in `M_n(B)`, with `CStarMatrix.norm_diagonalNonUnitalStarAlgHom_le`.
+* `CStarMatrix.diagonal`, `CStarMatrix.diagonalStarAlgHom`,
+  `CStarMatrix.diagonalNonUnitalStarAlgHom`: diagonal matrices `(n → B) →⋆ₙₐ[R] M_n(B)` and
+  the constant-diagonal embedding `b ↦ diag(b, …, b)` of `B` in `M_n(B)`, with
+  `CStarMatrix.norm_diagonalNonUnitalStarAlgHom_le`.
 * `CStarMatrix.map_zero_linearMap`, `CStarMatrix.map_add_linearMap`,
   `CStarMatrix.map_smul_linearMap`: applying `0`, `f + g` or `c • f` to every entry.
 * `CStarMatrix.isSelfAdjoint_of_forall_isSelfAdjoint_sum`: a matrix all of whose quadratic forms
@@ -129,19 +131,85 @@ end Comp
 
 section Diagonal
 
+section Basic
+
+variable {n R A : Type*}
+
+/-- Diagonal `CStarMatrix` with diagonal entries `d : n → A`. -/
+def diagonal [DecidableEq n] [Zero A] (d : n → A) : CStarMatrix n n A :=
+  ofMatrix (Matrix.diagonal d)
+
+@[simp]
+theorem ofMatrix_symm_diagonal [DecidableEq n] [Zero A] (d : n → A) :
+    ofMatrix.symm (diagonal d) = Matrix.diagonal d := (rfl)
+
+theorem diagonal_apply [DecidableEq n] [Zero A] (d : n → A) (i j : n) :
+    diagonal d i j = if i = j then d i else 0 := (rfl)
+
+@[simp]
+theorem diagonal_apply_eq [DecidableEq n] [Zero A] (d : n → A) (i : n) :
+    diagonal d i i = d i := Matrix.diagonal_apply_eq d i
+
+@[simp]
+theorem diagonal_apply_ne [DecidableEq n] [Zero A] (d : n → A) {i j : n} (h : i ≠ j) :
+    diagonal d i j = 0 := Matrix.diagonal_apply_ne d h
+
+@[simp]
+theorem diagonal_zero [DecidableEq n] [Zero A] :
+    diagonal (0 : n → A) = 0 := Matrix.diagonal_zero
+
+@[simp]
+theorem diagonal_one [DecidableEq n] [Zero A] [One A] :
+    diagonal (1 : n → A) = 1 := Matrix.diagonal_one
+
+theorem diagonal_add [DecidableEq n] [AddZeroClass A] (d₁ d₂ : n → A) :
+    diagonal (d₁ + d₂) = diagonal d₁ + diagonal d₂ := (Matrix.diagonal_add d₁ d₂).symm
+
+theorem diagonal_mul [Fintype n] [DecidableEq n] [NonUnitalNonAssocSemiring A] (d₁ d₂ : n → A) :
+    diagonal d₁ * diagonal d₂ = diagonal (fun i ↦ d₁ i * d₂ i) :=
+  congrArg ofMatrix (Matrix.diagonal_mul_diagonal d₁ d₂)
+
+@[simp]
+theorem star_diagonal [DecidableEq n] [AddMonoid A] [StarAddMonoid A] (d : n → A) :
+    star (diagonal d) = diagonal (star d) :=
+  congrArg ofMatrix (Matrix.diagonal_conjTranspose d)
+
+/-- Diagonal `⋆`-homomorphism `(n → A) →⋆ₙₐ[R] CStarMatrix n n A`. -/
+def diagonalStarAlgHom [Fintype n] [DecidableEq n] [Monoid R]
+    [NonUnitalNonAssocSemiring A] [DistribMulAction R A] [StarAddMonoid A] :
+    (n → A) →⋆ₙₐ[R] CStarMatrix n n A where
+  toFun := diagonal
+  map_smul' c d := congrArg ofMatrix (Matrix.diagonal_smul c d)
+  map_zero' := diagonal_zero
+  map_add' := diagonal_add
+  map_mul' d₁ d₂ := (diagonal_mul d₁ d₂).symm
+  map_star' d := (star_diagonal d).symm
+
+@[simp]
+theorem diagonalStarAlgHom_apply [Fintype n] [DecidableEq n] [Monoid R]
+    [NonUnitalNonAssocSemiring A] [DistribMulAction R A] [StarAddMonoid A] (d : n → A) :
+    (diagonalStarAlgHom : (n → A) →⋆ₙₐ[R] CStarMatrix n n A) d = diagonal d := (rfl)
+
+theorem diagonalStarAlgHom_injective [Fintype n] [DecidableEq n] [Monoid R]
+    [NonUnitalNonAssocSemiring A] [DistribMulAction R A] [StarAddMonoid A] :
+    Function.Injective (diagonalStarAlgHom (n := n) (R := R) (A := A)) := fun _ _ h ↦ by
+  ext i; simpa using congrArg (fun M : CStarMatrix n n A ↦ M i i) h
+
+end Basic
+
 variable (R n B : Type*) [Fintype n] [DecidableEq n] [Monoid R] [NonUnitalNonAssocSemiring B]
   [StarAddMonoid B] [DistribMulAction R B]
 
-/-- The diagonal embedding `b ↦ diag(b, …, b)` of `B` in `CStarMatrix n n B`. The operations of
-C⋆-matrices are those of the underlying matrices, so each field is the corresponding identity
-for `Matrix.diagonal`. -/
-def diagonalNonUnitalStarAlgHom : B →⋆ₙₐ[R] CStarMatrix n n B where
-  toFun b := ofMatrix (Matrix.diagonal fun _ => b)
-  map_smul' c b := congrArg ofMatrix (Matrix.diagonal_smul c fun _ : n => b)
-  map_zero' := congrArg ofMatrix Matrix.diagonal_zero
-  map_add' a b := congrArg ofMatrix (Matrix.diagonal_add (fun _ : n => a) fun _ => b).symm
-  map_mul' a b := congrArg ofMatrix (Matrix.diagonal_mul_diagonal (fun _ : n => a) fun _ => b).symm
-  map_star' b := congrArg ofMatrix (Matrix.diagonal_conjTranspose fun _ : n => b).symm
+/-- The diagonal embedding `b ↦ diag(b, …, b)` of `B` in `CStarMatrix n n B`, obtained by
+precomposing `CStarMatrix.diagonalStarAlgHom` with the constant-function homomorphism. -/
+def diagonalNonUnitalStarAlgHom : B →⋆ₙₐ[R] CStarMatrix n n B :=
+  (diagonalStarAlgHom (n := n) (R := R) (A := B)).comp
+    { toFun := Function.const n
+      map_smul' _ _ := rfl
+      map_zero' := rfl
+      map_add' _ _ := rfl
+      map_mul' _ _ := rfl
+      map_star' _ := rfl }
 
 variable {R n B}
 

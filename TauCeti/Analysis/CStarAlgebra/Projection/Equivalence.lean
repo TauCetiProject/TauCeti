@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.CStarMatrix.Block
 public import TauCeti.Algebra.Star.PartialIsometry
+public import TauCeti.LinearAlgebra.Matrix.MurrayVonNeumann
 import TauCeti.Data.Matrix.Block
 import Mathlib.LinearAlgebra.Matrix.Hermitian
 import Mathlib.Data.Matrix.ColumnRowPartitioned
@@ -43,11 +44,37 @@ section Algebraic
 variable [NonUnitalSemiring A] [StarRing A]
   {p : CStarMatrix m m A} {q : CStarMatrix n n A} {r : CStarMatrix k k A}
 
+/-- An ordinary matrix star projection lifts to a `CStarMatrix` star projection. -/
+theorem isStarProjection_ofMatrix {p : Matrix m m A} (hp : IsStarProjection p) :
+    IsStarProjection (ofMatrix p) := by
+  rw [isStarProjection_iff, IsIdempotentElem, IsSelfAdjoint]
+  exact ⟨ofMatrix.symm.injective (by simpa [ofMatrix_symm_mul] using hp.isIdempotentElem.eq),
+    ofMatrix.symm.injective (by
+      simpa [ofMatrix_symm_star, ← Matrix.star_eq_conjTranspose] using hp.isSelfAdjoint.star_eq)⟩
+
+/-- Viewing a `CStarMatrix` star projection as an ordinary matrix gives a star projection. -/
+theorem isStarProjection_ofMatrix_symm {p : CStarMatrix m m A} (hp : IsStarProjection p) :
+    IsStarProjection (ofMatrix.symm p) := by
+  rw [isStarProjection_iff, IsIdempotentElem, IsSelfAdjoint]
+  exact ⟨by simpa [ofMatrix_symm_mul] using congrArg ofMatrix.symm hp.isIdempotentElem.eq,
+    by simpa [ofMatrix_symm_star, Matrix.star_eq_conjTranspose] using
+      congrArg ofMatrix.symm hp.isSelfAdjoint.star_eq⟩
+
 /-- Two matrix projections are Murray–von Neumann equivalent when a rectangular matrix has
 them as its initial and final projections. The projection conditions are part of the relation. -/
 def MurrayVonNeumannEquiv (p : CStarMatrix m m A) (q : CStarMatrix n n A) : Prop :=
   IsStarProjection p ∧ IsStarProjection q ∧
     ∃ v : CStarMatrix n m A, v.conjTranspose * v = p ∧ v * v.conjTranspose = q
+
+/-- Murray–von Neumann equivalence of ordinary matrices transports to `CStarMatrix`. -/
+theorem murrayVonNeumannEquiv_ofMatrix {p : Matrix m m A} {q : Matrix n n A}
+    (h : Matrix.IsMurrayVonNeumannEquivalent p q) :
+    MurrayVonNeumannEquiv (ofMatrix p) (ofMatrix q) := by
+  obtain ⟨v, hv₁, hv₂⟩ := h.exists_conjTranspose_mul_self_eq
+  exact ⟨isStarProjection_ofMatrix h.isStarProjection_left,
+    isStarProjection_ofMatrix h.isStarProjection_right, ofMatrix v,
+    ofMatrix.symm.injective (by simpa [ofMatrix_symm_mul, ofMatrix_symm_conjTranspose] using hv₁),
+    ofMatrix.symm.injective (by simpa [ofMatrix_symm_mul, ofMatrix_symm_conjTranspose] using hv₂)⟩
 
 namespace MurrayVonNeumannEquiv
 
@@ -139,27 +166,9 @@ theorem map [NonUnitalSemiring B] [StarRing B] {F : Type*} [FunLike F A B]
 /-- Padding a projection by a zero block does not change its rectangular equivalence class. -/
 theorem pad_zero (hp : IsStarProjection p) :
     MurrayVonNeumannEquiv p (CStarMatrix.fromBlocks p 0 0 (0 : CStarMatrix k k A)) := by
-  have hsa : (ofMatrix.symm p)ᴴ = ofMatrix.symm p := by
-    simpa only [ofMatrix_symm_star] using congrArg ofMatrix.symm hp.isSelfAdjoint.star_eq
-  have hid : ofMatrix.symm p * ofMatrix.symm p = ofMatrix.symm p := by
-    simpa only [ofMatrix_symm_mul] using congrArg ofMatrix.symm hp.isIdempotentElem.eq
-  have hproj : IsStarProjection (CStarMatrix.fromBlocks p 0 0 (0 : CStarMatrix k k A)) :=
-    ⟨by simp [IsIdempotentElem, CStarMatrix.fromBlocks_multiply, hp.isIdempotentElem.eq],
-      by simp [hp.isSelfAdjoint]⟩
-  refine ⟨hp, hproj,
-    ofMatrix (Matrix.fromRows (ofMatrix.symm p) (0 : Matrix k m A)), ?_, ?_⟩ <;>
-    apply ofMatrix.symm.injective
-  · simp only [ofMatrix_symm_mul, ofMatrix_symm_conjTranspose, Equiv.symm_apply_apply,
-      Matrix.conjTranspose_fromRows_eq_fromCols_conjTranspose, Matrix.conjTranspose_zero, hsa]
-    ext i j
-    simpa [Matrix.mul_apply] using congrFun (congrFun hid i) j
-  · simp only [ofMatrix_symm_mul, ofMatrix_symm_conjTranspose, Equiv.symm_apply_apply,
-      Matrix.conjTranspose_fromRows_eq_fromCols_conjTranspose, Matrix.conjTranspose_zero, hsa]
-    ext (i | i) (j | j)
-    · simpa [Matrix.mul_apply] using congrFun (congrFun hid i) j
-    · simp [Matrix.mul_apply]
-    · simp [Matrix.mul_apply]
-    · simp [Matrix.mul_apply]
+  have h := murrayVonNeumannEquiv_ofMatrix
+    ((isStarProjection_ofMatrix_symm hp).isMurrayVonNeumannEquivalent_fromBlocks_zero (n := k))
+  simpa only [of_fromBlocks, of_zero, Equiv.apply_symm_apply] using h
 
 /-- A Murray–von Neumann equivalence is implemented by a matrix supported on its initial
 projection. -/
