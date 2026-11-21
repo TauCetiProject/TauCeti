@@ -51,6 +51,6 @@ theorem biUnion_image {A : Set C(X, E)} (hA : TotallyBounded A) {K : Set X}
   rintro _ ⟨x, hx, rfl⟩
   obtain ⟨g, hg, hfg⟩ := mem_iUnion₂.mp (hAt hf)
   obtain ⟨y, hy, hgy⟩ := mem_iUnion₂.mp (hts (mem_biUnion hg (mem_image_of_mem g hx)))
-  exact mem_biUnion hy (hWV ⟨g x, hfg x hx, hgy⟩)
+  exact mem_biUnion hy (hWV (SetRel.prodMk_mem_comp (hfg x hx) hgy))
 
 end TotallyBounded
