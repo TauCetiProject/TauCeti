@@ -78,11 +78,14 @@ theorem prop_biprod_obj₂_of_distTriang [P.IsTriangulatedClosed₂] [P.IsClosed
     productTriangle_distinguished F fun j => by cases j <;> assumption
   let iso : ∀ f : WalkingPair → C, (∏ᶜ f) ≅ f .left ⊞ f .right := fun f =>
     (HasLimit.isoOfNatIso (diagramIsoPair (Discrete.functor f))).trans (biprod.isoProd _ _).symm
-  have hobj₁ : P (productTriangle F).obj₁ :=
-    P.prop_of_iso (iso fun j => (F j).obj₁).symm h₁
-  have hobj₃ : P (productTriangle F).obj₃ :=
-    P.prop_of_iso (iso fun j => (F j).obj₃).symm h₃
-  exact P.prop_of_iso (iso fun j => (F j).obj₂)
-    (P.ext_of_isTriangulatedClosed₂ _ hF hobj₁ hobj₃)
+  let e₁ : (productTriangle F).obj₁ ≅ T₁.obj₁ ⊞ T₂.obj₁ :=
+    eqToIso (productTriangle_obj₁ F) ≪≫ iso fun j => (F j).obj₁
+  let e₂ : (productTriangle F).obj₂ ≅ T₁.obj₂ ⊞ T₂.obj₂ :=
+    eqToIso (productTriangle_obj₂ F) ≪≫ iso fun j => (F j).obj₂
+  let e₃ : (productTriangle F).obj₃ ≅ T₁.obj₃ ⊞ T₂.obj₃ :=
+    eqToIso (productTriangle_obj₃ F) ≪≫ iso fun j => (F j).obj₃
+  have hobj₁ : P (productTriangle F).obj₁ := P.prop_of_iso e₁.symm h₁
+  have hobj₃ : P (productTriangle F).obj₃ := P.prop_of_iso e₃.symm h₃
+  exact P.prop_of_iso e₂ (P.ext_of_isTriangulatedClosed₂ _ hF hobj₁ hobj₃)
 
 end CategoryTheory.ObjectProperty

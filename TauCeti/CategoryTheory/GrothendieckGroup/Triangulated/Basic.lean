@@ -390,12 +390,8 @@ theorem map_congr {F' : C ⥤ D} [F'.CommShift ℤ] [F'.IsTriangulated]
 of `F.obj X` for some object `X : C`. -/
 theorem mem_range_map_iff {y : TriangulatedK0 D} :
     y ∈ (map F).range ↔ ∃ X : C, (of (F.obj X) : TriangulatedK0 D) = y := by
-  constructor
-  · rintro ⟨x, rfl⟩
-    obtain ⟨X, rfl⟩ := of_surjective x
-    exact ⟨X, (map_of F X).symm⟩
-  · rintro ⟨X, rfl⟩
-    exact ⟨of X, map_of F X⟩
+  rw [AddMonoidHom.mem_range, of_surjective.exists]
+  simp only [map_of]
 
 end Functoriality
 

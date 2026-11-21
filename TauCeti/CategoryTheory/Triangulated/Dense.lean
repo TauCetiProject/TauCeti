@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.ObjectProperty.Retract
 public import TauCeti.CategoryTheory.ObjectProperty.StableClasses
 public import TauCeti.CategoryTheory.Triangulated.FullSubcategory
 import TauCeti.CategoryTheory.Triangulated.Split
@@ -97,7 +96,7 @@ variable {C : Type u} [Category.{v} C] [HasZeroObject C] [HasShift C ℤ] [Pread
 
 /-- **Zero-class criterion**: in a pretriangulated category, an object has zero stable class modulo
 a strictly full triangulated subcategory `A` if and only if it belongs to `A`. -/
-@[grind =]
+@[simp, grind =]
 theorem mk_eq_zero_iff {A : ObjectProperty C} [A.ContainsZero] [A.IsClosedUnderIsomorphisms]
     [A.IsClosedUnderBinaryProducts] [A.IsTriangulatedClosed₁] {X : C} :
     mk A X = 0 ↔ A X := by

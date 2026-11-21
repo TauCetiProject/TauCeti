@@ -33,6 +33,8 @@ comes from an idempotent of `Z`, and its splitting in the source is sent to the 
 
 * `CategoryTheory.ObjectProperty.isIdempotentComplete_fullSubcategory`: the full subcategory of a
   property stable under retracts in an idempotent-complete category is idempotent complete.
+* `CategoryTheory.ObjectProperty.retractClosure_map_ι`: pushing a dense property on a dense
+  strictly full subcategory forward along the inclusion yields a dense property.
 * `CategoryTheory.Functor.essImage_isStableUnderRetracts`: the essential image of a fully faithful
   functor out of an idempotent-complete category is stable under retracts.
 -/
@@ -69,6 +71,17 @@ is a monomorphism. -/
 instance (priority := 100) isStableUnderRetracts_of_isClosedUnderSubobjects {C : Type*}
     [Category* C] (P : ObjectProperty C) [P.IsClosedUnderSubobjects] : P.IsStableUnderRetracts where
   of_retract h hY := P.prop_of_mono h.i hY
+
+/-- Pushing a dense property on a dense strictly full subcategory `A` forward along `A.ι` yields
+a dense property on `C`. -/
+theorem retractClosure_map_ι {C : Type*} [Category* C] {A : ObjectProperty C}
+    (hdense : A.retractClosure = ⊤) {Q : ObjectProperty A.FullSubcategory}
+    (hQ : Q.retractClosure = ⊤) :
+    (Q.map A.ι).retractClosure = ⊤ := by
+  refine eq_top_iff.2 fun X _ => ?_
+  obtain ⟨W, hW, ⟨r₁⟩⟩ := hdense.ge X trivial
+  obtain ⟨Z, hZ, ⟨r₂⟩⟩ := hQ.ge ⟨W, hW⟩ trivial
+  exact ⟨A.ι.obj Z, Q.prop_map_obj A.ι hZ, ⟨r₁.trans (r₂.map A.ι)⟩⟩
 
 end CategoryTheory.ObjectProperty
 

@@ -106,17 +106,13 @@ theorem biprod [A.IsClosedUnderBinaryProducts] {X₁ Y₁ X₂ Y₂ : C}
     A.prop_biprod_of_isClosedUnderBinaryProducts hA₁ hA₂,
     A.prop_biprod_of_isClosedUnderBinaryProducts hB₁ hB₂,
     ⟨?_⟩⟩
-  exact (biprod.associator X₁ X₂ (A₁ ⊞ A₂))
-    ≪≫ biprod.mapIso (Iso.refl X₁) ((biprod.associator X₂ A₁ A₂).symm
-      ≪≫ biprod.mapIso (biprod.braiding X₂ A₁) (Iso.refl A₂)
-      ≪≫ biprod.associator A₁ X₂ A₂)
-    ≪≫ (biprod.associator X₁ A₁ (X₂ ⊞ A₂)).symm
-    ≪≫ biprod.mapIso e₁ e₂
-    ≪≫ biprod.associator Y₁ B₁ (Y₂ ⊞ B₂)
-    ≪≫ biprod.mapIso (Iso.refl Y₁) ((biprod.associator B₁ Y₂ B₂).symm
-      ≪≫ biprod.mapIso (biprod.braiding B₁ Y₂) (Iso.refl B₂)
-      ≪≫ biprod.associator Y₂ B₁ B₂)
-    ≪≫ (biprod.associator Y₁ Y₂ (B₁ ⊞ B₂)).symm
+  let swapIso (W X Y Z : C) : (W ⊞ X) ⊞ (Y ⊞ Z) ≅ (W ⊞ Y) ⊞ (X ⊞ Z) :=
+    biprod.associator W X (Y ⊞ Z)
+      ≪≫ biprod.mapIso (Iso.refl W) ((biprod.associator X Y Z).symm
+        ≪≫ biprod.mapIso (biprod.braiding X Y) (Iso.refl Z)
+        ≪≫ biprod.associator Y X Z)
+      ≪≫ (biprod.associator W Y (X ⊞ Z)).symm
+  exact swapIso X₁ X₂ A₁ A₂ ≪≫ biprod.mapIso e₁ e₂ ≪≫ (swapIso Y₁ Y₂ B₁ B₂).symm
 
 end StableEquiv
 
@@ -129,7 +125,7 @@ theorem equivalence_stableEquiv (A : ObjectProperty C) [A.Nonempty]
   trans := StableEquiv.trans
 
 /-- The setoid of stable equivalence modulo `A`. -/
-def stableSetoid (A : ObjectProperty C) [A.Nonempty] [A.IsClosedUnderBinaryProducts] :
+private def stableSetoid (A : ObjectProperty C) [A.Nonempty] [A.IsClosedUnderBinaryProducts] :
     Setoid C where
   r := StableEquiv A
   iseqv := equivalence_stableEquiv A
