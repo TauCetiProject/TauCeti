@@ -108,37 +108,6 @@ theorem quadraticRefinement_quadratic (hA : Odd (Nat.card A)) (x : A) :
 
 /-! ### Existence of quadratic refinements -/
 
-/-- A quadratic map `Q` on a group `M` presenting `A` through a surjection `π : M → A` descends to a
-quadratic refinement of the pairing of `A`, provided the polar form of `Q` is that pairing read
-through `π` and `Q` vanishes on the kernel of `π`. -/
-private theorem exists_quadraticMap_polar_eq_pairing_of_surjective {M : Type*} [AddCommGroup M]
-    {π : M →+ A} (hπ : Function.Surjective π) (Q : QuadraticMap ℤ M (AddCircle (1 : ℚ)))
-    (hpolar : ∀ x y, QuadraticMap.polar Q x y = A.pairing (π x) (π y))
-    (hker : ∀ k, π k = 0 → Q k = 0) :
-    ∃ q : QuadraticMap ℤ A (AddCircle (1 : ℚ)),
-      ∀ x y, QuadraticMap.polar q x y = A.pairing x y := by
-  -- `Q` is constant on the fibres of `π`: the cross term `b(π x, π (x' - x))` vanishes.
-  have hQ (x x' : M) (h : π x = π x') : Q x' = Q x := by
-    have h0 : π (x' - x) = 0 := by rw [map_sub, h, sub_self]
-    calc Q x' = Q (x + (x' - x)) := by rw [add_sub_cancel]
-      _ = Q x := by
-        rw [QuadraticMap.map_add ⇑Q, hpolar, hker _ h0, h0, pairing_zero_right, add_zero, add_zero]
-  have hs := Function.surjInv_eq hπ
-  let q : QuadraticMap ℤ A (AddCircle (1 : ℚ)) :=
-    { toFun a := Q (Function.surjInv hπ a)
-      toFun_smul m a := by
-        rw [← QuadraticMap.map_smul]
-        exact hQ _ _ (by rw [map_zsmul, hs, hs])
-      exists_companion' := ⟨A.toBilin, fun a a' ↦ by
-        rw [hQ (Function.surjInv hπ a + Function.surjInv hπ a') _ (by rw [map_add, hs, hs, hs]),
-          QuadraticMap.map_add ⇑Q, hpolar, hs, hs, toBilin_apply]⟩ }
-  have hq (x : M) : q (π x) = Q x := hQ _ _ (hs _).symm
-  refine ⟨q, fun a a' ↦ ?_⟩
-  obtain ⟨x, rfl⟩ := hπ a
-  obtain ⟨y, rfl⟩ := hπ a'
-  rw [← hpolar]
-  simp only [QuadraticMap.polar, ← map_add, hq]
-
 /-- A half `c` of the self-pairing `b(x, x)` with `n² c = 0`, for `x` killed by `n`. For odd `n`
 it is `((n + 1) / 2) b(x, x)`; for even `n` any half works. -/
 private theorem exists_two_nsmul_eq_pairing_self {n : ℕ} {x : A} (hx : n • x = 0) :
@@ -174,37 +143,34 @@ private theorem exists_quadraticMap_polar_eq_pairing_sum {ι : Type*} [Fintype �
     · simp [hCdef, h, h.not_gt, h.ne']
     · simp [hCdef, ← two_nsmul, hc2, hb]
     · simp [hCdef, h, h.not_gt, h.ne', hb, A.pairing_comm (g i)]
-  let B : (ι → ℤ) →ₗ[ℤ] (ι → ℤ) →ₗ[ℤ] AddCircle (1 : ℚ) :=
-    LinearMap.mk₂ ℤ (fun x y ↦ ∑ i, ∑ j, (x i * y j) • C i j)
-      (fun x x' y ↦ by simp [add_mul, add_smul, Finset.sum_add_distrib])
-      (fun r x y ↦ by simp [Finset.smul_sum, mul_assoc, mul_smul])
-      (fun x y y' ↦ by simp [mul_add, add_smul, Finset.sum_add_distrib])
-      (fun r x y ↦ by simp [Finset.smul_sum, mul_left_comm _ r, mul_smul])
+  let B : (ι → ℤ) →ₗ[ℤ] (ι → ℤ) →ₗ[ℤ] AddCircle (1 : ℚ) := Matrix.toLinearMap₂' ℤ (Matrix.of C)
   refine ⟨LinearMap.BilinMap.toQuadraticMap B, fun x y ↦ ?_, fun k hk ↦ ?_⟩
   · -- The polar form is `∑ᵢ ∑ⱼ xᵢ yⱼ (C i j + C j i) = ∑ᵢ ∑ⱼ xᵢ yⱼ b(gᵢ, gⱼ)`.
     rw [LinearMap.BilinMap.polar_toQuadraticMap]
-    calc B x y + B y x = ∑ i, ∑ j, (x i * y j) • (C i j + C j i) := by
-          simp only [B, LinearMap.mk₂_apply, smul_add, Finset.sum_add_distrib]
-          rw [Finset.sum_comm (f := fun i j ↦ (y i * x j) • C i j)]
-          simp [mul_comm]
+    calc B x y + B y x = ∑ i, ∑ j, x i • y j • (C i j + C j i) := by
+          simp only [B, Matrix.toLinearMap₂'_apply, Matrix.of_apply, smul_add,
+            Finset.sum_add_distrib]
+          rw [Finset.sum_comm (f := fun i j ↦ y i • x j • C i j)]
+          simp only [smul_comm (y _) (x _)]
       _ = A.pairing (∑ i, x i • g i) (∑ i, y i • g i) := by
           simp only [hC, hb]
           rw [← toBilin_apply]
           simp only [map_sum, map_zsmul, LinearMap.sum_apply, LinearMap.smul_apply, toBilin_apply,
-            Finset.smul_sum, mul_smul]
+            Finset.smul_sum]
           rw [Finset.sum_comm]
           exact Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ smul_comm _ _ _
   · -- Each term `kᵢ kⱼ C i j` vanishes, since `nᵢ b(gᵢ, gⱼ) = 0` and `nᵢ² cᵢ = 0`.
     choose m hm using hk
-    rw [LinearMap.BilinMap.toQuadraticMap_apply]
+    rw [LinearMap.BilinMap.toQuadraticMap_apply, Matrix.toLinearMap₂'_apply]
     refine Finset.sum_eq_zero fun i _ ↦ Finset.sum_eq_zero fun j _ ↦ ?_
-    simp only [hCdef]
+    simp only [Matrix.of_apply, hCdef]
     split_ifs with hij hij'
-    · rw [hm i, mul_assoc, mul_comm, mul_smul, natCast_zsmul, hnb, smul_zero]
+    · rw [hm i, mul_comm, mul_smul]
+      simp [smul_comm (n i) (k j), hnb]
     · subst hij'
-      rw [hm i, show (n i : ℤ) * m i * (n i * m i) = (m i * m i) * ((n i : ℤ) * n i) by ring,
-        mul_smul, mul_smul (n i : ℤ), natCast_zsmul, natCast_zsmul, hcn, smul_zero]
-    · exact smul_zero _
+      rw [hm i, mul_comm, mul_smul, mul_smul]
+      simp [smul_comm (n i : ℤ) (m i), hcn]
+    · simp
 
 /-- **Existence of quadratic refinements.** Every symmetric pairing `b` on a finite abelian group
 is the polar form of a quadratic map `q : A → ℚ/ℤ`, that is, `q(x + y) - q(x) - q(y) = b(x, y)` and
@@ -243,8 +209,20 @@ theorem exists_quadraticMap_polar_eq_pairing :
       simp
     · simp [hj]
   obtain ⟨Q, hpolar, hQ⟩ := exists_quadraticMap_polar_eq_pairing_sum A _ n hg
-  exact exists_quadraticMap_polar_eq_pairing_of_surjective A hπ Q
-    (fun x y ↦ by rw [hpolar, hsum, hsum]) fun k hk ↦ hQ k ((hker k).1 hk)
+  have hpolar' (x y : ι → ℤ) : QuadraticMap.polar Q x y = A.pairing (π x) (π y) := by
+    rw [hpolar, hsum, hsum]
+  -- `Q` vanishes on the kernel of `π`, and so does its polar form, so `Q` descends to `A`.
+  have hrad : LinearMap.ker π.toIntLinearMap ≤ Q.radical := fun k hk ↦
+    ⟨hQ k ((hker k).1 hk), LinearMap.ext fun y ↦ by
+      rw [QuadraticMap.polarBilin_apply_apply, hpolar', show π k = 0 from hk, pairing_zero_left,
+        LinearMap.zero_apply]⟩
+  let q := Q.liftOfSurjective π.toIntLinearMap hπ hrad
+  have hq (x : ι → ℤ) : q (π x) = Q x := Q.liftOfSurjective_apply π.toIntLinearMap hπ hrad x
+  refine ⟨q, fun a a' ↦ ?_⟩
+  obtain ⟨x, rfl⟩ := hπ a
+  obtain ⟨y, rfl⟩ := hπ a'
+  rw [← hpolar']
+  simp only [QuadraticMap.polar, ← map_add, hq]
 
 end FiniteBilinearModule
 
