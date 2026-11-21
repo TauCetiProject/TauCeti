@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Point
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Add.Series
+public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Point.Parameter
 public import TauCeti.RingTheory.MvPowerSeries.Substitution
 import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Add.PairSubst
 import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Add.Unit
@@ -19,9 +19,10 @@ import TauCeti.RingTheory.MvPowerSeries.NonZeroDivisors
 
 **Associativity of the chord addition series**, `F(F(t₁, t₂), t₃) = F(t₁, F(t₂, t₃))`, proved by
 transporting the honest group law of a Weierstrass curve. The parameters are power series, so the
-curve has to be read over a field containing them: this file base changes `W` along
-`O → MvPowerSeries σ O → KK`, records the `w`-equation there, and identifies a parameter with the
-point `(q, w(q))` it names. Chord addition of those points *is* the addition series, so
+curve has to be read over a field containing them: `FormalGroup/Point/Parameter.lean` base changes
+`W` along `O → MvPowerSeries σ O → KK` (`WeierstrassCurve.fracCurve`), records the `w`-equation
+there, and identifies a parameter with the point `(q, w(q))` it names
+(`WeierstrassCurve.thetaPoint`). Chord addition of those points *is* the addition series, so
 associativity of the curve's group law is associativity of the series.
 
 That argument needs a domain, so it runs over the universal curve, whose base `ℤ[A₁, ⋯, A₆]`
@@ -31,16 +32,11 @@ supplies one; `map_specialize` carries the conclusion to every `W` over every co
 
 * `WeierstrassCurve.formalAdd_assoc` : **the associativity of the addition series**, for every
   Weierstrass curve over every commutative ring.
-* `WeierstrassCurve.fracCurve_eq_baseChange` : identifies `WeierstrassCurve.fracCurve W σ KK` with
-  the base change `W⁄KK` whenever `O → MvPowerSeries σ O → KK` is a scalar tower.
 * `WeierstrassCurve.thetaPoint_add_of_subst_separates` : the chord addition of parametrized
   points, `θ(q₁) + θ(q₂) = θ(F(q₁, q₂))` on the curve `WeierstrassCurve.fracCurve` over a fraction
-  field of the series ring, whenever a substitution separates `q₁` from `q₂`. It is exported, with
-  the parametrized point `WeierstrassCurve.thetaPoint`, its nonsingularity witness
-  (`WeierstrassCurve.thetaPoint_nonsingular`), its coordinates
-  (`WeierstrassCurve.thetaPoint_eq_some`), and its injectivity (`WeierstrassCurve.thetaPoint_inj`),
-  because it is also how the addition series is compared
-  with other descriptions of the group law of `W`, such as the projective addition laws.
+  field of the series ring, whenever a substitution separates `q₁` from `q₂`. It is exported
+  because it is also how the addition series is compared with other descriptions of the group law
+  of `W`, such as the projective addition laws.
 
 ## Provenance
 
@@ -48,10 +44,10 @@ Adapted from Michael Stoll's `EllipticCurves` project
 (`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0) at commit
 `66889eada51a74c2f5dfb7fb5909b0b5a0a2d96e`,
 `EllipticCurves/WeierstrassFormalGroup/GroupLaw.lean`, sections `Domain` and `Assembly`,
-declarations `subst_wSeries_ne_zero`, `fracCurve`, `rho_weierstrass`, `thetaPoint`,
-`thetaPoint_add`, `thetaPoint_neg`, `thetaPoint_inj` and `pair_intercept_ne_zero_of_ne`, together
-with the single-parameter helpers `single_u_mul`, `single_iota_eq`, `single_u_eq` and
-`single_wIota` from `EllipticCurves/WeierstrassFormalGroup/ThirdPoint.lean`.
+declarations `rho_weierstrass`, `thetaPoint_add`, `thetaPoint_neg`, and
+`pair_intercept_ne_zero_of_ne`, together with the single-parameter helpers `single_u_mul`,
+`single_iota_eq`, `single_u_eq` and `single_wIota` from
+`EllipticCurves/WeierstrassFormalGroup/ThirdPoint.lean`.
 
 Two of those are proved differently here, because this repository already has the content in a
 more usable form. `pair_intercept_ne_zero_of_ne` collapses the cross combination with the single
@@ -62,12 +58,10 @@ single-parameter helpers are likewise transports of the `FormalGroup/Inverse.lea
 along `PowerSeries.subst q`, not re-derivations of them.
 
 The source's `wSeries` and `vSeries` are `formalW` and `formalU` here, continuing the renaming
-this repository applies to that development, so `subst_wSeries_ne_zero` is
-`subst_formalW_ne_zero`.
+this repository applies to that development.
 
-The `Universal` section of the same file (declarations `universal_Δ_ne_zero` and
-`assoc_addSeries_universal`) is `fracCurve_Δ_ne_zero`, stated here for every curve with nonzero
-discriminant, and `assoc_formalAdd_universal`. Four of that section's nine declarations are not
+The `Universal` section of the same file (declaration `assoc_addSeries_universal`) is
+`assoc_formalAdd_universal`. Four of that section's nine declarations are not
 ported, because this repository already has them: `universal`, `exists_map_universal` and
 `universal_Δ_ne_zero` are `Universal.curve`, `map_specialize` and `Universal.curve_Δ_ne_zero`,
 and the source's `X_ne_X` and `X_ne_zero'` are Mathlib's `MvPowerSeries.X_inj` and
@@ -102,50 +96,8 @@ open MvPowerSeries
 
 variable {O : Type*} [CommRing O]
 
-
-/-- The curve `W` base changed to a commutative ring `KK` over the series ring
-`MvPowerSeries σ O`. The parameters of the chord construction are series, so the group law they
-satisfy is the group law of this curve; the group-law arguments below specialize `KK` to a fraction
-field of the series ring, which is where the chord construction needs division, but the base change
-itself asks only for a commutative algebra. There is no `Algebra O KK` to run
-`WeierstrassCurve.baseChange` along, so this is the composite `map`, and it is Mathlib's `map_*`
-lemmas that unfolding it exposes. -/
-noncomputable def fracCurve (W : WeierstrassCurve O) (σ : Type*) (KK : Type*)
-    [CommRing KK] [Algebra (MvPowerSeries σ O) KK] : WeierstrassCurve KK :=
-  W.map <| (algebraMap (MvPowerSeries σ O) KK).comp (algebraMap O (MvPowerSeries σ O))
-
-/-- `fracCurve W σ KK` is the base change of `W` along `O → MvPowerSeries σ O → KK`. -/
-theorem fracCurve_def (W : WeierstrassCurve O) (σ : Type*) (KK : Type*) [CommRing KK]
-    [Algebra (MvPowerSeries σ O) KK] : fracCurve W σ KK =
-      W.map ((algebraMap (MvPowerSeries σ O) KK).comp (algebraMap O (MvPowerSeries σ O))) :=
-  (rfl)
-
-/-- When `O → MvPowerSeries σ O → KK` is a scalar tower, `fracCurve W σ KK` is the base change
-`W⁄KK`. -/
-theorem fracCurve_eq_baseChange (W : WeierstrassCurve O) {σ : Type*} {KK : Type*} [CommRing KK]
-    [Algebra O KK] [Algebra (MvPowerSeries σ O) KK] [IsScalarTower O (MvPowerSeries σ O) KK] :
-    fracCurve W σ KK = W⁄KK := by
-  rw [fracCurve_def, ← IsScalarTower.algebraMap_eq O (MvPowerSeries σ O) KK]
-  rfl
-
 variable (W : WeierstrassCurve O) {σ : Type*} {KK : Type*} [Field KK]
   [Algebra (MvPowerSeries σ O) KK]
-
-/-- The `w`-expansion read at a substitutable parameter still solves the `w`-equation after being
-pushed into `KK`, where the equation is the one of `fracCurve W`.
-
-`subst_formalW_wEquation` is the same fixed point one level down, over `MvPowerSeries σ O`; here
-the parameter and the solution are both read in `KK`, so the coefficients travel across the base
-change too and the curve on the right is `fracCurve W σ KK` rather than `W`. Consumers such as
-`chord_point_nonsingular` want the equation written out, so this is normally applied through
-`simpa [wEquationRHS_def] using …`. -/
-private theorem algebraMap_subst_formalW_wEquation {q : MvPowerSeries σ O}
-    (hq : PowerSeries.HasSubst q) :
-    algebraMap (MvPowerSeries σ O) KK (PowerSeries.subst q (formalW W)) = wEquationRHS
-      (fracCurve W σ KK) (algebraMap (MvPowerSeries σ O) KK q)
-      (algebraMap (MvPowerSeries σ O) KK (PowerSeries.subst q (formalW W))) := by
-  conv_lhs => rw [subst_formalW_wEquation W hq]
-  simp [fracCurve_def, wEquationRHS_def]
 
 /-! ### The formal inverse at a parameter -/
 
@@ -258,77 +210,9 @@ private theorem subst_subst_formalInverse_eq_zero {σ' : Type*}
       funext fun _ ↦ hga]
   exact subst_zero_of_constantCoeff_zero (constantCoeff_formalInverse W)
 
-/-! ### The parametrized point -/
-
-variable [IsDomain O] in
-/-- Over a domain the `w`-expansion at a nonzero parameter with vanishing constant coefficient is
-itself nonzero: it factors as `q ^ 3 * u(q)`, and `u` has constant coefficient `1`. -/
-private theorem subst_formalW_ne_zero {q : MvPowerSeries σ O} (hq : constantCoeff q = 0)
-    (hq0 : q ≠ 0) : PowerSeries.subst q (formalW W) ≠ 0 := by
-  have hs : PowerSeries.HasSubst q := PowerSeries.HasSubst.of_constantCoeff_zero hq
-  have hexp : PowerSeries.subst q (formalW W) = q ^ 3 * PowerSeries.subst q (formalU W) := by
-    conv_lhs => rw [formalW_eq_X_pow_mul_formalU]
-    rw [← PowerSeries.coe_substAlgHom hs, map_mul, map_pow, PowerSeries.coe_substAlgHom hs,
-      PowerSeries.subst_X hs]
-  rw [hexp]
-  refine mul_ne_zero (pow_ne_zero 3 hq0) fun h ↦ ?_
-  have hc := congrArg constantCoeff h
-  rw [map_zero, PowerSeries.constantCoeff_subst hs] at hc
-  rw [finsum_eq_single _ 0 fun d hd ↦ ?_] at hc
-  · rw [PowerSeries.coeff_zero_eq_constantCoeff, constantCoeff_formalU, pow_zero, map_one,
-      smul_eq_mul, mul_one] at hc
-    exact one_ne_zero hc
-  · rw [map_pow, hq, zero_pow hd, smul_zero]
-
-variable [FaithfulSMul (MvPowerSeries σ O) KK] in
-/-- The `w`-expansion at a nonzero parameter stays nonzero after being pushed into `KK`: a
-faithful algebra map is injective, so it cannot introduce a zero.
-
-Every parametrized point of this file needs its `w`-coordinate invertible in `KK`, so this is the
-form `subst_formalW_ne_zero` is actually used in. -/
-theorem algebraMap_subst_formalW_ne_zero {q : MvPowerSeries σ O}
-    (hq : constantCoeff q = 0) (hq0 : q ≠ 0) :
-    algebraMap (MvPowerSeries σ O) KK (PowerSeries.subst q (formalW W)) ≠ 0 := fun h ↦ by
-  have := IsDomain.of_faithfulSMul (MvPowerSeries σ O) KK
-  have := MvPowerSeries.isDomain_of_isDomain (σ := σ) (R := O)
-  exact W.subst_formalW_ne_zero hq hq0
-    (FaithfulSMul.algebraMap_injective (MvPowerSeries σ O) KK (by rw [h, map_zero]))
+/-! ### Chord addition of parametrized points -/
 
 variable [IsFractionRing (MvPowerSeries σ O) KK]
-
-/-- The affine coordinates `(q / w(q), -1 / w(q))` of the parametrized point `θ(q)` define a
-nonsingular point of `fracCurve W σ KK`. -/
-theorem thetaPoint_nonsingular (hΔ : (fracCurve W σ KK).Δ ≠ 0)
-    {q : MvPowerSeries σ O} (hq : constantCoeff q = 0) (hq0 : q ≠ 0) :
-    (fracCurve W σ KK).toAffine.Nonsingular
-      (algebraMap (MvPowerSeries σ O) KK q /
-        algebraMap (MvPowerSeries σ O) KK (PowerSeries.subst q (formalW W)))
-      (-1 / algebraMap (MvPowerSeries σ O) KK (PowerSeries.subst q (formalW W))) :=
-  chord_point_nonsingular (fracCurve W σ KK)
-    (by
-      simpa [wEquationRHS_def] using
-        W.algebraMap_subst_formalW_wEquation (KK := KK)
-          (PowerSeries.HasSubst.of_constantCoeff_zero hq))
-    (W.algebraMap_subst_formalW_ne_zero hq hq0)
-    hΔ
-
-/-- The point of the base-changed curve carried by the parameter `q`: the solution `(q, w(q))` of
-the `w`-equation, read in `KK` and in the affine coordinates `(q / w, -1 / w)` of the chart. -/
-noncomputable def thetaPoint (hΔ : (fracCurve W σ KK).Δ ≠ 0)
-    {q : MvPowerSeries σ O} (hq : constantCoeff q = 0) (hq0 : q ≠ 0) :
-    (fracCurve W σ KK).toAffine.Point :=
-  Affine.Point.some _ _ (W.thetaPoint_nonsingular hΔ hq hq0)
-
-/-- The coordinates of the parametrized point: `θ(q)` is the affine point
-`(q / w(q), -1 / w(q))`, read in `KK`. The nonsingularity proof is taken rather than built. -/
-theorem thetaPoint_eq_some (hΔ : (fracCurve W σ KK).Δ ≠ 0) {q : MvPowerSeries σ O}
-    (hq : constantCoeff q = 0) (hq0 : q ≠ 0)
-    (h : (fracCurve W σ KK).toAffine.Nonsingular
-      (algebraMap (MvPowerSeries σ O) KK q /
-        algebraMap (MvPowerSeries σ O) KK (PowerSeries.subst q (formalW W)))
-      (-1 / algebraMap (MvPowerSeries σ O) KK (PowerSeries.subst q (formalW W)))) :
-    W.thetaPoint hΔ hq hq0 = .some _ _ h :=
-  (rfl)
 
 variable [DecidableEq KK] in
 /-- The sum of the parametrized points `θ(q₁)` and `θ(q₂)` is the point with affine coordinates
@@ -378,13 +262,13 @@ private theorem thetaPoint_add_eq_some (hΔ : (fracCurve W σ KK).Δ ≠ 0)
         3 * (fracCurve W σ KK).a₆ * ρ Λp ^ 2 * ρ Np) := by
     have h := congrArg ρ (subst_pair_formalThirdRoot_relation W h₁ h₂)
     simp only [map_add, map_mul, map_neg, map_pow, map_one, map_ofNat] at h
-    simpa [fracCurve, MvPowerSeries.c_eq_algebraMap] using h
+    simpa [fracCurve_def, MvPowerSeries.c_eq_algebraMap] using h
   -- nonvanishing
   have hA : (1 + (fracCurve W σ KK).a₂ * ρ Λp + (fracCurve W σ KK).a₄ * ρ Λp ^ 2 +
       (fracCurve W σ KK).a₆ * ρ Λp ^ 3) ≠ 0 := by
     intro h
     refine subst_pair_thirdRootDenom_ne_zero W h₁ h₂ (hinj ?_)
-    simpa [fracCurve, MvPowerSeries.c_eq_algebraMap, map_zero] using h
+    simpa [fracCurve_def, MvPowerSeries.c_eq_algebraMap, map_zero] using h
   have hTp0 : Tp ≠ 0 := subst_pair_formalThirdRoot_ne_zero W h₁ h₂ hN
   have hw₁0 : ρ w₁ ≠ 0 := W.algebraMap_subst_formalW_ne_zero h₁ hq₁0
   have hw₂0 : ρ w₂ ≠ 0 := W.algebraMap_subst_formalW_ne_zero h₂ hq₂0
@@ -449,8 +333,8 @@ private theorem some_eq_thetaPoint_formalAdd (hΔ : (fracCurve W σ KK).Δ ≠ 0
   have hueq : ρ (PowerSeries.subst Tp (formalInverseDenom W)) =
       1 - (fracCurve W σ KK).a₁ * ρ Tp - (fracCurve W σ KK).a₃ * ρ wT := by
     have h := congrArg ρ (subst_pair_formalInverseDenom_eq W h₁ h₂)
-    simp only [map_sub, map_mul, map_one, MvPowerSeries.c_eq_algebraMap] at h
-    exact h
+    simp only [map_sub, map_mul, map_one] at h
+    simpa [fracCurve_def, MvPowerSeries.c_eq_algebraMap, PowerSeries.subst_def, ρ, Tp, wT] using h
   have hFeq : ρ (subst (pairSubstitution q₁ q₂) (formalAdd W)) = -(ρ Tp * ρ sp) := by
     have h := congrArg ρ (subst_pair_formalAdd_eq W h₁ h₂)
     simp only [map_neg, map_mul] at h
@@ -460,7 +344,7 @@ private theorem some_eq_thetaPoint_formalAdd (hΔ : (fracCurve W σ KK).Δ ≠ 0
     have h := congrArg ρ (subst_pair_formalW_formalAdd W h₁ h₂)
     simp only [map_neg, map_mul] at h
     exact h
-  rw [thetaPoint]
+  rw [W.thetaPoint_eq_some hΔ hF hF0 (W.thetaPoint_nonsingular hΔ hF hF0)]
   simp only [Affine.Point.some.injEq]
   constructor
   · rw [hFeq, hwFeq]
@@ -511,11 +395,13 @@ private theorem thetaPoint_neg (hΔ : (fracCurve W σ KK).Δ ≠ 0)
       1 - (fracCurve W σ KK).a₁ * ρ q -
         (fracCurve W σ KK).a₃ * ρ (PowerSeries.subst q (formalW W)) := by
     have h := congrArg ρ (W.subst_formalInverseDenom_eq hs)
-    simp only [map_sub, map_mul, map_one, MvPowerSeries.c_eq_algebraMap] at h
-    exact h
+    simp only [map_sub, map_mul, map_one] at h
+    simpa [fracCurve_def, MvPowerSeries.c_eq_algebraMap, ← hρ] using h
   have hw0 : ρ (PowerSeries.subst q (formalW W)) ≠ 0 :=
     W.algebraMap_subst_formalW_ne_zero hq hq0
-  simp only [thetaPoint, Affine.Point.neg_some, Affine.Point.some.injEq]
+  rw [W.thetaPoint_eq_some hΔ hi hi0 (W.thetaPoint_nonsingular hΔ hi hi0),
+    W.thetaPoint_eq_some hΔ hq hq0 (W.thetaPoint_nonsingular hΔ hq hq0)]
+  simp only [Affine.Point.neg_some, Affine.Point.some.injEq]
   simp only [← hρ]
   constructor
   · rw [hIeq, hwIeq]
@@ -524,33 +410,6 @@ private theorem thetaPoint_neg (hΔ : (fracCurve W σ KK).Δ ≠ 0)
     field_simp
     linear_combination
       ρ (PowerSeries.subst q (PowerSeries.invOfUnit (formalInverseDenom W) 1)) * hueq - hu
-
-/-- **The parametrized point determines the parameter**: `θ` is injective.
-
-The `y`-coordinate `-1 / w(q)` already pins down `w(q)`, and the `x`-coordinate `q / w(q)` then
-pins down `q`. -/
-theorem thetaPoint_inj (hΔ : (fracCurve W σ KK).Δ ≠ 0)
-    {q₁ q₂ : MvPowerSeries σ O} (h₁ : constantCoeff q₁ = 0) (h₂ : constantCoeff q₂ = 0)
-    (hq₁0 : q₁ ≠ 0) (hq₂0 : q₂ ≠ 0) :
-    W.thetaPoint hΔ h₁ hq₁0 = W.thetaPoint hΔ h₂ hq₂0 ↔ q₁ = q₂ := by
-  refine ⟨fun h ↦ ?_, by rintro rfl; rfl⟩
-  classical
-  set ρ := algebraMap (MvPowerSeries σ O) KK with hρ
-  have hinj : Function.Injective ρ := IsFractionRing.injective (MvPowerSeries σ O) KK
-  simp only [thetaPoint, Affine.Point.some.injEq] at h
-  simp only [← hρ] at h
-  have hw₁0 : ρ (PowerSeries.subst q₁ (formalW W)) ≠ 0 :=
-    W.algebraMap_subst_formalW_ne_zero h₁ hq₁0
-  have hw₂0 : ρ (PowerSeries.subst q₂ (formalW W)) ≠ 0 :=
-    W.algebraMap_subst_formalW_ne_zero h₂ hq₂0
-  have hw : ρ (PowerSeries.subst q₁ (formalW W)) = ρ (PowerSeries.subst q₂ (formalW W)) := by
-    have h2 := h.2
-    field_simp at h2
-    linear_combination h2
-  refine hinj ?_
-  have h1 := h.1
-  rw [div_eq_div_iff hw₁0 hw₂0, hw] at h1
-  exact mul_right_cancel₀ hw₂0 h1
 
 /-- The intercept at a pair is nonzero as soon as the two parameters are distinct and not
 mutually inverse.
@@ -584,7 +443,9 @@ private theorem pair_intercept_ne_zero_of_ne (hΔ : (fracCurve W σ KK).Δ ≠ 0
     exact congrArg ρ (by linear_combination hqw)
   -- `xRep` is the projective `x`-coordinate, so the dichotomy comes out on the points themselves
   have hxr : (W.thetaPoint hΔ h₁ hq₁0).xRep = (W.thetaPoint hΔ h₂ hq₂0).xRep := by
-    simp only [thetaPoint, Affine.Point.xRep_some, Matrix.vecCons_inj, and_true]
+    rw [W.thetaPoint_eq_some hΔ h₁ hq₁0 (W.thetaPoint_nonsingular hΔ h₁ hq₁0),
+      W.thetaPoint_eq_some hΔ h₂ hq₂0 (W.thetaPoint_nonsingular hΔ h₂ hq₂0)]
+    simp only [Affine.Point.xRep_some, Matrix.vecCons_inj, and_true]
     exact hx
   have hcase := Affine.Point.eq_or_eq_neg_of_xRep_eq_xRep hxr
   -- the data carried by the inverted parameter
@@ -645,14 +506,6 @@ theorem thetaPoint_add_of_subst_separates (hΔ : (fracCurve W σ KK).Δ ≠ 0)
     (ne_of_subst_eq_X_of_subst_eq_zero hg₁ (subst_subst_formalInverse_eq_zero W hg h₂ hg₂)) hF hF0
 
 /-! ### Associativity -/
-
-/-- A curve with nonzero discriminant stays nonsingular over a fraction field of its series ring:
-`Δ` is carried there by the injective maps `C` and `algebraMap (MvPowerSeries σ O) KK`. -/
-theorem fracCurve_Δ_ne_zero (hΔ : W.Δ ≠ 0) : (fracCurve W σ KK).Δ ≠ 0 := by
-  rw [fracCurve_def, map_Δ, RingHom.comp_apply,
-    map_ne_zero_iff _ (IsFractionRing.injective (MvPowerSeries σ O) KK), ← c_eq_algebraMap,
-    map_ne_zero_iff _ C_injective]
-  exact hΔ
 
 /-- **Associativity of the addition series, from two separating substitutions.**
 

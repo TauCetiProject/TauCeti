@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.InvariantDifferential
 public import TauCeti.RingTheory.FormalGroup.Height.Ideal
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Formula.VariableChange
-import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Add.Assoc
 import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.VariableChange
 import TauCeti.AlgebraicGeometry.EllipticCurve.Universal
 import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Representable
@@ -367,9 +366,7 @@ private theorem coords_subst_formalCoordinate_formalW (C : VariableChange R)
   rw [map_mul, map_one] at hDe
   nth_rw 1 [formalDenom_def] at hDe
   simp only [map_sub, map_mul, map_pow, hC] at hDe
-  have ha0 : ι (formalW (C • W)) ≠ 0 := by
-    simpa [X_subst] using
-      algebraMap_subst_formalW_ne_zero (C • W) (σ := Unit) (KK := K) constantCoeff_X X_ne_zero
+  have ha0 : ι (formalW (C • W)) ≠ 0 := by simp
   have he0 := right_ne_zero_of_mul_eq_one hDe
   rw [subst_formalCoordinate_formalW, formalCoordinate_toPowerSeries]
   simp only [map_mul, map_add, map_pow, hC]

@@ -537,7 +537,8 @@ theorem formalGroupHom_zero : (0 : Hom W₁.toAffine W₂.toAffine).formalGroupH
 
 /-- A morphism to an elliptic curve induces the zero formal-group homomorphism if and only if it is
 the zero morphism. -/
-@[simp]
+-- Handle composites before `formalGroupHom_comp` rewrites them.
+@[simp↓]
 theorem formalGroupHom_eq_zero_iff {f : Hom W₁.toAffine W₂.toAffine} :
     f.formalGroupHom = 0 ↔ f = 0 := by
   rw [← formalGroupHom_zero, formalGroupHom_inj]
@@ -585,13 +586,6 @@ theorem formalGroupHom_zsmul (n : ℤ) (f : Hom W₁.toAffine W₂.toAffine) :
   ext : 1
   simp [formalSeries_zsmul]
 
--- Not `@[simp]`: `simp` already reduces the left-hand side via `formalGroupHom_zero` and
--- `FormalGroupHom.zero_applyPoint`.
-/-- The zero morphism acts as zero on every formal power-series point. -/
-theorem formalGroupHom_zero_applyPoint {σ : Type*} (x : (formalGroup W₁).Point σ) :
-    (0 : Hom W₁.toAffine W₂.toAffine).formalGroupHom.applyPoint x = 0 := by
-  simp
-
 /-- Evaluating `f.formalGroupHom` at `formalPointAddHom g` gives `formalPointAddHom (f.comp g)`. -/
 @[simp]
 theorem formalGroupHom_applyPoint_formalPointAddHom {W₀ : WeierstrassCurve K} [W₁.IsElliptic]
@@ -602,10 +596,10 @@ theorem formalGroupHom_applyPoint_formalPointAddHom {W₀ : WeierstrassCurve K} 
 
 /-- Evaluating `f.formalGroupHom` at the tautological point gives `formalPointAddHom f`. -/
 @[simp]
-theorem formalGroupHom_applyPoint_tautologicalPoint [W₁.IsElliptic]
-    (f : Hom W₁.toAffine W₂.toAffine) :
+theorem formalGroupHom_applyPoint_tautologicalPoint (f : Hom W₁.toAffine W₂.toAffine) :
     f.formalGroupHom.applyPoint (formalGroup W₁).tautologicalPoint = formalPointAddHom f := by
-  rw [← formalPointAddHom_id, formalGroupHom_applyPoint_formalPointAddHom, comp_id]
+  apply Subtype.ext
+  simp [PowerSeries.X_subst]
 
 /-- **A sum of morphisms acts on formal power-series points by addition in
 `formalGroup W₂`.** -/

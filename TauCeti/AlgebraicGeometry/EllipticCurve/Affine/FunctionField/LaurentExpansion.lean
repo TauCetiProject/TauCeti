@@ -96,14 +96,17 @@ theorem functionFieldLaurentExpansion_neg_genericX_div_genericY :
     exact W.laurentExpansion_of_X_eq_neg_X_mul_laurentExpansion_root
   rw [map_div₀, map_neg, hx, neg_neg, mul_div_cancel_right₀ _ hy]
 
+private theorem formalW_eq_neg_inv_functionFieldLaurentExpansion_genericY :
+    (formalW W : K⸨X⸩) = -(W.functionFieldLaurentExpansion W.toAffine.genericY)⁻¹ := by
+  simpa only [map_neg, map_inv₀] using W.functionFieldLaurentExpansion_neg_inv_genericY.symm
+
 /-- Under the Laurent expansion at infinity in `z = -x/y`, the generic abscissa expands as
 `X / w(X)` where `w(X) = e(-1/y)`. -/
 theorem functionFieldLaurentExpansion_genericX_eq_div :
     W.functionFieldLaurentExpansion W.toAffine.genericX =
       ((PowerSeries.X : K⟦X⟧) : K⸨X⸩) / (formalW W : K⸨X⸩) := by
   have hy := W.functionFieldLaurentExpansion_genericY_ne_zero
-  have hw : (formalW W : K⸨X⸩) = -(W.functionFieldLaurentExpansion W.toAffine.genericY)⁻¹ := by
-    simpa only [map_neg, map_inv₀] using W.functionFieldLaurentExpansion_neg_inv_genericY.symm
+  have hw := W.formalW_eq_neg_inv_functionFieldLaurentExpansion_genericY
   have hparam := W.functionFieldLaurentExpansion_neg_genericX_div_genericY
   rw [map_div₀, map_neg] at hparam
   rw [hw, ← hparam]
@@ -113,9 +116,8 @@ theorem functionFieldLaurentExpansion_genericX_eq_div :
 `-1 / w(X)` where `w(X) = e(-1/y)`. -/
 theorem functionFieldLaurentExpansion_genericY_eq_div :
     W.functionFieldLaurentExpansion W.toAffine.genericY = -1 / (formalW W : K⸨X⸩) := by
-  have hw : (formalW W : K⸨X⸩) = -(W.functionFieldLaurentExpansion W.toAffine.genericY)⁻¹ := by
-    simpa only [map_neg, map_inv₀] using W.functionFieldLaurentExpansion_neg_inv_genericY.symm
-  rw [hw, neg_div, div_neg, neg_neg, one_div, inv_inv]
+  have hw := W.formalW_eq_neg_inv_functionFieldLaurentExpansion_genericY
+  simp [hw, -functionFieldLaurentExpansion_genericY]
 
 /-- Laurent expansion at infinity commutes with base change along a field homomorphism `σ`. -/
 theorem functionFieldLaurentExpansion_map {L : Type*} [Field L] (σ : K →+* L)

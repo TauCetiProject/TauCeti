@@ -585,6 +585,11 @@ noncomputable instance : Zero (FormalGroupHom F G) where
 theorem zero_toPowerSeries : (0 : FormalGroupHom F G).toPowerSeries = 0 := (rfl)
 
 @[simp]
+theorem toPowerSeries_eq_zero_iff (f : FormalGroupHom F G) :
+    f.toPowerSeries = 0 ↔ f = 0 :=
+  ⟨fun h ↦ FormalGroupHom.ext (h.trans zero_toPowerSeries.symm), fun h ↦ h ▸ zero_toPowerSeries⟩
+
+@[simp]
 theorem zero_comp (f : FormalGroupHom F G) : (0 : FormalGroupHom G H).comp f = 0 := by
   ext
   simp

@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Add.Fin2
 public import Mathlib.RingTheory.FormalGroup.Basic
 public import TauCeti.RingTheory.FormalGroup.NSMul.Basic
-public import TauCeti.RingTheory.MvPowerSeries.Substitution
 import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Add.Assoc
 import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Add.Inverse
 import TauCeti.RingTheory.MvPowerSeries.Rename
