@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.Harmonic.ZetaAsymp
 public import TauCeti.NumberTheory.LFunctions.Data.Series
 public import TauCeti.NumberTheory.LFunctions.Data.Growth
+public import TauCeti.NumberTheory.LFunctions.Data.SimplePoles
 public import TauCeti.NumberTheory.LSeries.CompletedRiemannZeta
 
 /-!
@@ -126,7 +127,7 @@ others. -/
 theorem riemannZetaData_hasMeromorphicContinuation :
     riemannZetaData.HasMeromorphicContinuation :=
   AnalyticLFunctionData.hasMeromorphicContinuation_of_simple_poles_zero_one
-    riemannZetaData_polarOrder meromorphic_completedRiemannZeta
+    riemannZetaData_polarOrder
     meromorphicOrderAt_completedRiemannZeta_zero meromorphicOrderAt_completedRiemannZeta_one
     fun _ h0 h1 ↦ analyticAt_completedRiemannZeta h0 h1
 

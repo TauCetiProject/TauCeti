@@ -110,14 +110,33 @@ private theorem analyticAt_conductorPower (s : ℂ) :
 
 variable {d}
 
+/-- Away from gamma poles, the reciprocal conductor and gamma factors cancel the conductor and
+gamma factors pointwise. -/
+theorem inv_conductor_cpow_mul_invGammaFactor_mul {s : ℂ} (hγ : d.gammaFactor s ≠ 0) :
+    (((d.conductor : ℕ) : ℂ) ^ (-s / 2) * d.invGammaFactor s) *
+      (((d.conductor : ℕ) : ℂ) ^ (s / 2) * d.gammaFactor s) = 1 := by
+  have hN : ((d.conductor : ℕ) : ℂ) ^ (-s / 2) * ((d.conductor : ℕ) : ℂ) ^ (s / 2) = 1 := by
+    rw [neg_div, Complex.cpow_neg, inv_mul_cancel₀ (d.conductor_cpow_ne_zero (s / 2))]
+  calc
+    (((d.conductor : ℕ) : ℂ) ^ (-s / 2) * d.invGammaFactor s) *
+        (((d.conductor : ℕ) : ℂ) ^ (s / 2) * d.gammaFactor s)
+      = (((d.conductor : ℕ) : ℂ) ^ (-s / 2) * ((d.conductor : ℕ) : ℂ) ^ (s / 2)) *
+          (d.invGammaFactor s * d.gammaFactor s) := by ring
+    _ = 1 := by rw [hN, d.invGammaFactor_mul_gammaFactor hγ, mul_one]
+
 /-- Away from gamma poles, putting back the conductor and gamma factors recovers
 the completion from the raw product, without any meromorphy assumption. -/
 theorem completed_eq_mul_uncompletedProduct {s : ℂ} (hγ : d.gammaFactor s ≠ 0) :
     d.completed s = ((d.conductor : ℕ) : ℂ) ^ (s / 2) * d.gammaFactor s *
       d.uncompletedProduct s := by
-  simp only [uncompletedProduct_def, invGammaFactor_def, neg_div, Complex.cpow_neg]
-  have hN := d.conductor_cpow_ne_zero (s / 2)
-  field_simp
+  rw [uncompletedProduct_def]
+  calc d.completed s
+      = 1 * d.completed s := (one_mul _).symm
+    _ = (((d.conductor : ℕ) : ℂ) ^ (-s / 2) * d.invGammaFactor s) *
+          (((d.conductor : ℕ) : ℂ) ^ (s / 2) * d.gammaFactor s) * d.completed s := by
+        rw [inv_conductor_cpow_mul_invGammaFactor_mul hγ]
+    _ = ((d.conductor : ℕ) : ℂ) ^ (s / 2) * d.gammaFactor s *
+          (((d.conductor : ℕ) : ℂ) ^ (-s / 2) * d.completed s * d.invGammaFactor s) := by ring
 
 /-- Analyticity of the completion passes to the raw uncompleted product. -/
 @[fun_prop]

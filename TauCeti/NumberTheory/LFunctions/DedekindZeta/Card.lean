@@ -6,11 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Trivial
-public import TauCeti.NumberTheory.LFunctions.Data.Growth
-public import TauCeti.NumberTheory.LFunctions.Data.Series
+public import TauCeti.NumberTheory.LFunctions.Data.SimplePoles
 public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Completion
-import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Analytic
-import TauCeti.NumberTheory.NumberField.Discriminant.Basic
 
 /-!
 # The completed L-function card of the Dedekind zeta function
@@ -27,14 +24,13 @@ function defines an analytic L-function card `TauCeti.LFunctions.dedekindZetaDat
 * completed function `TauCeti.LFunctions.completedDedekindZeta K`,
 * polar divisor consisting of simple poles at `0` and `1`.
 
-This file defines `dedekindZetaData K`, proves that it is self-dual and satisfies
-`HasAverageCoefficientGrowth`, `HasDirichletAgreement`, `HasMeromorphicContinuation`, and
-`HasFunctionalEquation`, and shows that supplying its coefficients, conductor, gamma shifts, and
-polar divisor to `AnalyticLFunctionData.ofSeries` recovers both the completed function (including
-canonical normal-form values at `0` and `1`) and the root number `1`.
+This lightweight module defines `dedekindZetaData K` and proves self-duality,
+`HasDirichletAgreement`, `HasMeromorphicContinuation`, and `HasFunctionalEquation`, keeping
+coefficient-growth and `AnalyticLFunctionData.ofSeries` recovery in
+`TauCeti.NumberTheory.LFunctions.DedekindZeta.Card.Series`.
 
-The card definition and the self-duality, meromorphic-continuation, functional-equation, and
-`ofSeries`-recovery proofs are closely adapted from `TauCeti.LFunctions.riemannZetaData`
+The card definition and the self-duality, meromorphic-continuation, and functional-equation proofs
+are closely adapted from `TauCeti.LFunctions.riemannZetaData`
 (`TauCeti.NumberTheory.LFunctions.Data.RiemannZeta`) as their formal template.
 
 ## Main definitions
@@ -44,13 +40,11 @@ The card definition and the self-duality, meromorphic-continuation, functional-e
 ## Main results
 
 * `TauCeti.LFunctions.dedekindZetaData_degree`, `TauCeti.LFunctions.dedekindZetaData_gammaFactor`,
-  `TauCeti.LFunctions.dedekindZetaData_dual`: degree, gamma factor, and self-duality.
-* `TauCeti.LFunctions.dedekindZetaData_hasAverageCoefficientGrowth`,
-  `TauCeti.LFunctions.dedekindZetaData_hasDirichletAgreement`,
+  `TauCeti.LFunctions.dedekindZetaData_conductor_cast`, `TauCeti.LFunctions.dedekindZetaData_dual`:
+  degree, gamma factor, conductor cast, and self-duality.
+* `TauCeti.LFunctions.dedekindZetaData_hasDirichletAgreement`,
   `TauCeti.LFunctions.dedekindZetaData_hasMeromorphicContinuation`,
   `TauCeti.LFunctions.dedekindZetaData_hasFunctionalEquation`: the analytic L-function axioms.
-* `TauCeti.LFunctions.ofSeries_dedekindZetaData`: exact recovery by
-  `AnalyticLFunctionData.ofSeries`.
 -/
 
 public section
@@ -85,6 +79,12 @@ theorem dedekindZetaData_conductor :
     (dedekindZetaData K).conductor =
       ⟨(discr K).natAbs, Int.natAbs_pos.mpr (discr_ne_zero K)⟩ := (rfl)
 
+/-- The complex-valued conductor of `dedekindZetaData K` is `((|discr K| : ℤ) : ℂ)`. -/
+theorem dedekindZetaData_conductor_cast :
+    (((dedekindZetaData K).conductor : ℕ) : ℂ) = ((|discr K| : ℤ) : ℂ) := by
+  simp only [dedekindZetaData_conductor, PNat.mk_coe]
+  rw [← Int.cast_natCast, Int.natCast_natAbs]
+
 @[simp]
 theorem dedekindZetaData_gammaR :
     (dedekindZetaData K).gammaR = Multiset.replicate (nrRealPlaces K) 0 := (rfl)
@@ -118,12 +118,6 @@ theorem dedekindZetaData_gammaFactor (s : ℂ) :
       Gammaℝ s ^ nrRealPlaces K * Gammaℂ s ^ nrComplexPlaces K := by
   simp [AnalyticLFunctionData.gammaFactor_def]
 
-/-- The Dedekind zeta coefficients satisfy the average absolute growth bound. -/
-theorem dedekindZetaData_hasAverageCoefficientGrowth :
-    (dedekindZetaData K).HasAverageCoefficientGrowth := by
-  rw [AnalyticLFunctionData.hasAverageCoefficientGrowth_iff_abscissaOfAbsConv_le,
-    funext (dedekindZetaData_coeff K), abscissaOfAbsConv_normCoeff_one K]
-
 /-- The Dedekind zeta card is self-dual. -/
 @[simp]
 theorem dedekindZetaData_dual : (dedekindZetaData K).dual = dedekindZetaData K := by
@@ -149,10 +143,7 @@ theorem dedekindZetaData_hasDirichletAgreement :
   completed_eq s hs := by
     have hcoeff : (dedekindZetaData K).coeff = ⇑(normCoeff K (1 : IdealArithmeticFunction K)) :=
       funext (dedekindZetaData_coeff K)
-    have hcond : (((dedekindZetaData K).conductor : ℕ) : ℂ) = ((|discr K| : ℤ) : ℂ) := by
-      simp only [dedekindZetaData_conductor, PNat.mk_coe]
-      rw [← Int.cast_natCast, Int.natCast_natAbs]
-    rw [dedekindZetaData_completed, completedDedekindZeta_eq hs, hcond,
+    rw [dedekindZetaData_completed, completedDedekindZeta_eq hs, dedekindZetaData_conductor_cast,
       dedekindZetaData_gammaFactor, hcoeff, dedekindZeta_eq_LSeries_normCoeff_one K s]
     ring
 
@@ -161,7 +152,7 @@ and no other singularities. -/
 theorem dedekindZetaData_hasMeromorphicContinuation :
     (dedekindZetaData K).HasMeromorphicContinuation :=
   AnalyticLFunctionData.hasMeromorphicContinuation_of_simple_poles_zero_one
-    (dedekindZetaData_polarOrder K) (meromorphic_completedDedekindZeta K)
+    (dedekindZetaData_polarOrder K)
     (meromorphicOrderAt_completedDedekindZeta_zero K)
     (meromorphicOrderAt_completedDedekindZeta_one K)
     fun _ h0 h1 ↦ analyticAt_completedDedekindZeta h0 h1
@@ -177,24 +168,5 @@ theorem dedekindZetaData_hasFunctionalEquation :
   completed_eq s _ _ := by
     rw [dedekindZetaData_dual, dedekindZetaData_rootNumber, one_mul, dedekindZetaData_completed,
       completedDedekindZeta_one_sub]
-
-/-- Supplying the coefficients, conductor, gamma shifts, and polar divisor of `dedekindZetaData K`
-to `AnalyticLFunctionData.ofSeries` recovers `dedekindZetaData K` identically, including both the
-completed function (in meromorphic normal form at `0` and `1`) and the root number `1`. -/
-theorem ofSeries_dedekindZetaData :
-    AnalyticLFunctionData.ofSeries (dedekindZetaData K).coeff (dedekindZetaData K).conductor
-      (dedekindZetaData K).gammaR (dedekindZetaData K).gammaC (dedekindZetaData K).polarOrder =
-      dedekindZetaData K := by
-  refine AnalyticLFunctionData.ofSeries_eq (dedekindZetaData_hasDirichletAgreement K)
-    (dedekindZetaData_hasFunctionalEquation K) (meromorphicNFOn_completedDedekindZeta K)
-    (by simp) ?_
-  rw [dedekindZetaData_completed, completedDedekindZeta_eq (by norm_num : 1 < (2 : ℂ).re)]
-  have hd : ((|discr K| : ℤ) : ℂ) ^ ((2 : ℂ) / 2) ≠ 0 :=
-    cpow_ne_zero_iff.mpr (Or.inl (NumberField.cast_abs_discr_ne_zero K))
-  have hΓℝ : Gammaℝ 2 ≠ 0 := Gammaℝ_ne_zero_of_re_pos (by norm_num)
-  have hΓℂ : Gammaℂ 2 ≠ 0 := Gammaℂ_ne_zero_of_re_pos (by norm_num)
-  have hζ : NumberField.dedekindZeta K 2 ≠ 0 :=
-    TauCeti.dedekindZeta_ne_zero_of_one_lt_re (by norm_num)
-  exact mul_ne_zero (mul_ne_zero (mul_ne_zero hd (pow_ne_zero _ hΓℝ)) (pow_ne_zero _ hΓℂ)) hζ
 
 end TauCeti.LFunctions

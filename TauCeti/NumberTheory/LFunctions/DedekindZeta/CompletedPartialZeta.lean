@@ -56,9 +56,13 @@ Hecke's functional equation `Z(I, 1 - s) = Z(I^∨, s)` against the trace dual
 
 * `TauCeti.LFunctions.completedPartialZeta`: the completed partial zeta function of `I` in
   meromorphic normal form on `ℂ`.
+* `TauCeti.LFunctions.completedPartialZetaClass`: the completed partial zeta function descended to
+  an ideal class `c : ClassGroup (𝓞 K)`.
 
 ## Main results
 
+* `TauCeti.LFunctions.completedPartialZetaClass_mk`:
+  `completedPartialZetaClass (ClassGroup.mk K I) = completedPartialZeta I`.
 * `TauCeti.LFunctions.summable_setIntegral_norm_archGaussian_mul_archNorm_rpow_unitCone`: absolute
   convergence of the lattice-point Gaussian integrals over `unitCone D` for `σ > 1`.
 * `TauCeti.LFunctions.completedPartialZeta_eq_toMeromorphicNFOn`: identification of
@@ -81,10 +85,9 @@ Hecke's functional equation `Z(I, 1 - s) = Z(I^∨, s)` against the trace dual
   `TauCeti.LFunctions.meromorphicOrderAt_completedPartialZeta_zero`: regularity, simple poles at
   `0` and `1`, and their residues.
 * `TauCeti.LFunctions.completedPartialZeta_one_sub`,
-  `TauCeti.LFunctions.completedPartialZeta_one_sub_eventuallyEq`,
   `TauCeti.LFunctions.completedPartialZeta_conj`: Hecke's functional equation
   `completedPartialZeta I (1 - s) = completedPartialZeta (FractionalIdeal.dualEquiv ℤ ℚ I) s`
-  (Neukirch VII (5.9)), its punctured-neighborhood form, and reflection symmetry.
+  (Neukirch VII (5.9)) and reflection symmetry.
 
 ## References
 
@@ -142,6 +145,22 @@ theorem completedPartialZeta_congr_class {I J : (FractionalIdeal (𝓞 K)⁰ K)�
     (h : ClassGroup.mk K I = ClassGroup.mk K J) :
     completedPartialZeta I = completedPartialZeta J := by
   rw [completedPartialZeta_def, completedPartialZeta_def, h]
+
+/-- **The completed partial zeta function of an ideal class**: the descent of
+`completedPartialZeta` from invertible fractional ideals to `ClassGroup (𝓞 K)`. -/
+def completedPartialZetaClass (c : ClassGroup (𝓞 K)) : ℂ → ℂ :=
+  meromorphicContinuation 1 fun s ↦
+    ((|discr K| : ℤ) : ℂ) ^ (s / 2) * Gammaℝ s ^ nrRealPlaces K *
+      Gammaℂ s ^ nrComplexPlaces K *
+      ∑' 𝔟 : {𝔟 : (Ideal (𝓞 K))⁰ // ClassGroup.mk0 𝔟 = c⁻¹},
+        (Ideal.absNorm (𝔟 : Ideal (𝓞 K)) : ℂ) ^ (-s)
+
+/-- Evaluating `completedPartialZetaClass` on the class of an invertible fractional ideal `I`
+recovers `completedPartialZeta I`. -/
+@[simp]
+theorem completedPartialZetaClass_mk (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
+    completedPartialZetaClass (ClassGroup.mk K I) = completedPartialZeta I :=
+  (rfl)
 
 /-! ### Unfolding over the unit cone -/
 
@@ -752,17 +771,11 @@ theorem completedPartialZeta_one_sub (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) (s 
     exact mellinKernel_mixedDual_idealLattice (FractionalIdeal.coe_dualEquiv ℤ ℚ I) _ u
   exact congrFun hcongr (s / 2)
 
-/-- **Punctured-neighborhood form of Hecke's functional equation for completed partial zeta
-functions**: `fun z ↦ Z(I, 1 - z)` agrees with `Z(I^∨, ·)` on `𝓝[≠] s` for every `s : ℂ`. -/
-theorem completedPartialZeta_one_sub_eventuallyEq (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) (s : ℂ) :
-    (fun z : ℂ ↦ completedPartialZeta I (1 - z)) =ᶠ[𝓝[≠] s]
-      completedPartialZeta (FractionalIdeal.dualEquiv ℤ ℚ I) :=
-  Eventually.of_forall (completedPartialZeta_one_sub I)
-
 /-! ### Reflection symmetry -/
 
 /-- **Reflection symmetry of a completed partial zeta function**:
 `completedPartialZeta I (conj s) = conj (completedPartialZeta I s)` for every `s : ℂ`. -/
+@[simp]
 theorem completedPartialZeta_conj (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) (s : ℂ) :
     completedPartialZeta I (conj s) = conj (completedPartialZeta I s) := by
   have hnf : MeromorphicNFOn (conj ∘ completedPartialZeta I ∘ conj) univ :=
@@ -781,23 +794,21 @@ theorem completedPartialZeta_conj (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) (s : �
       have h := TauCeti.ofReal_cpow_conj hnonneg (conj z / 2)
       rw [Complex.ofReal_intCast, map_div₀, map_ofNat, Complex.conj_conj] at h
       exact h.symm
-    have hcoeff : star (⇑(normCoeff K (rayClassCoeff (Modulus.one K)
-        (oneEquivClassGroup.symm (ClassGroup.mk K I)⁻¹)))) =
-        ⇑(normCoeff K (rayClassCoeff (Modulus.one K)
-          (oneEquivClassGroup.symm (ClassGroup.mk K I)⁻¹))) := by
-      funext n
-      simp only [Pi.star_apply, normCoeff_eq_sum_normFiber, star_sum, rayClassCoeff_apply]
-      refine Finset.sum_congr rfl fun J _ ↦ ?_
+    have hcoeff : star (rayClassCoeff (Modulus.one K)
+        (oneEquivClassGroup.symm (ClassGroup.mk K I)⁻¹)) =
+        rayClassCoeff (Modulus.one K)
+          (oneEquivClassGroup.symm (ClassGroup.mk K I)⁻¹) := by
+      funext J
+      rw [Pi.star_apply, rayClassCoeff_apply]
       split_ifs <;> simp
     have hL : conj (LSeries (normCoeff K (rayClassCoeff (Modulus.one K)
           (oneEquivClassGroup.symm (ClassGroup.mk K I)⁻¹))) (conj z)) =
         LSeries (normCoeff K (rayClassCoeff (Modulus.one K)
           (oneEquivClassGroup.symm (ClassGroup.mk K I)⁻¹))) z := by
-      have h := TauCeti.LSeries.LSeries_star
-        (normCoeff K (rayClassCoeff (Modulus.one K)
-          (oneEquivClassGroup.symm (ClassGroup.mk K I)⁻¹))) z
-      rw [hcoeff] at h
-      simpa only [Complex.star_def, Complex.conj_conj] using congrArg conj h
+      have h := TauCeti.LSeries_normCoeff_star K (rayClassCoeff (Modulus.one K)
+        (oneEquivClassGroup.symm (ClassGroup.mk K I)⁻¹)) (conj z)
+      rw [hcoeff, Complex.conj_conj] at h
+      simpa only [Complex.star_def] using h.symm
     simp only [map_mul, map_pow, Gammaℝ_conj, Gammaℂ_conj, Complex.conj_conj, hdiscr, hL]
   simpa only [Function.comp_apply, Complex.conj_conj] using (congrFun hfun (conj s)).symm
 
