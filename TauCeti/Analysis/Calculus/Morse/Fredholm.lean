@@ -150,13 +150,6 @@ theorem memLp_top_hessianOperator_comp (hf : ContDiff ℝ 2 f) (hγ : Continuous
       ⟨((hH.tendsto q).comp htop).isBigO_one ℝ, ((hH.tendsto p).comp hbot).isBigO_one ℝ⟩)
   exact memLp_top_of_bound hcont.aestronglyMeasurable C (.of_forall fun s ↦ hC _ ⟨s, rfl⟩)
 
-/-- For a `C²` function, the negative gradient field `-∇f` is `C¹`, hence locally Lipschitz, so
-its trajectory section `TauCeti.WeakDerivStep.boundedTrajectorySection` around a path with bounded
-range is defined. -/
-theorem locallyLipschitz_neg_gradient {n : WithTop ℕ∞} (hf : ContDiff ℝ n f) (hn : 2 ≤ n) :
-    LocallyLipschitz (-∇ f) :=
-  (hf.gradient_right (m := 1) (by rwa [one_add_one_eq_two])).neg.locallyLipschitz
-
 end ContDiff
 
 section TrajectorySection
