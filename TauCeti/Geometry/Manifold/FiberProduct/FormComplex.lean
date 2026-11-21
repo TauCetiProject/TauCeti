@@ -211,7 +211,7 @@ private noncomputable def homotopy (m : ℕ) :
   { toFun φ := ⟨fun y ↦ ∑ i ∈ ρ.finsupport (IteratedFiberProduct.baseProj y),
         ρ i (IteratedFiberProduct.baseProj y) •
           mpullback (F := F) _ _ (fun y ↦ IteratedFiberProduct.cons
-            (s i (IteratedFiberProduct.baseProj y)) y (hs i _)) φ.1 y,
+            (s i (IteratedFiberProduct.baseProj y)) y (hs i _)) φ.val y,
       (isSmoothForm_sum_finsupport_smul_mpullback hρ hU
         (contMDiff_baseProj ENat.LEInfty.out hπ le_rfl)
         (fun _ _ hy ↦ contMDiffAt_cons_section_of_mem hπ hU hs hsU hy) φ).mem_smoothBundleForms⟩
@@ -232,11 +232,11 @@ private theorem coe_homotopy (m : ℕ)
         (IteratedFiberProduct π (m + 2)) F k) :
     letI := iteratedFiberProductChartedSpace ENat.LEInfty.out hπ m
     letI := iteratedFiberProductChartedSpace ENat.LEInfty.out hπ (m + 1)
-    (homotopy hπ F k hρ hU hs hsU m φ).1 = fun y ↦
+    (homotopy hπ F k hρ hU hs hsU m φ).val = fun y ↦
       ∑ i ∈ ρ.finsupport (IteratedFiberProduct.baseProj y),
         ρ i (IteratedFiberProduct.baseProj y) •
           mpullback (F := F) _ _ (fun y ↦ IteratedFiberProduct.cons
-            (s i (IteratedFiberProduct.baseProj y)) y (hs i _)) φ.1 y :=
+            (s i (IteratedFiberProduct.baseProj y)) y (hs i _)) φ.val y :=
   (rfl)
 
 /-- `K ∘ (face 0)^* = id`: omitting the prepended point undoes the prepending. -/
@@ -369,7 +369,7 @@ private theorem exists_mpullback_baseProj_eq_of_mpullback_face_eq
     (contMDiff_const ENat.LEInfty.out hπ le_rfl (s i x)).comp x
       ((hsU i).contMDiffAt ((hU i).mem_nhds hx))
   refine ⟨⟨fun x ↦ ∑ i ∈ ρ.finsupport x, ρ i x • mpullback (F := F) _ _
-      (fun x ↦ IteratedFiberProduct.const (π := π) 1 (s i x)) φ.1 x,
+      (fun x ↦ IteratedFiberProduct.const (π := π) 1 (s i x)) φ.val x,
     (isSmoothForm_sum_finsupport_smul_mpullback hρ hU contMDiff_id hσ
       φ).mem_smoothBundleForms⟩, Subtype.ext (funext fun y ↦ ?_)⟩
   -- Pulling back the pointwise sum along `baseProj` pulls back each summand.

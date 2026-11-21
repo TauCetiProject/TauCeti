@@ -55,15 +55,15 @@ theorem isSmoothForm_sum_finsupport_smul_mpullback {ι : Type*}
     (hU : ∀ i, IsOpen (U i)) {b : X → M} (hb : ContMDiff IX IM ∞ b) {g : ι → X → Z}
     (hg : ∀ i x, b x ∈ U i → ContMDiffAt IX IZ ∞ (g i) x) (φ : SmoothForm IZ Z F k) :
     IsSmoothForm IX ∞
-      (fun x ↦ ∑ i ∈ ρ.finsupport (b x), ρ i (b x) • mpullback (F := F) IX IZ (g i) φ.1 x) := by
+      (fun x ↦ ∑ i ∈ ρ.finsupport (b x), ρ i (b x) • mpullback (F := F) IX IZ (g i) φ.val x) := by
   rw [isSmoothForm_def]
-  have hsum : ∀ x, ∑ i ∈ ρ.finsupport (b x), ρ i (b x) • mpullback (F := F) IX IZ (g i) φ.1 x =
-      ∑ᶠ i, ρ i (b x) • mpullback (F := F) IX IZ (g i) φ.1 x := fun x ↦
+  have hsum : ∀ x, ∑ i ∈ ρ.finsupport (b x), ρ i (b x) • mpullback (F := F) IX IZ (g i) φ.val x =
+      ∑ᶠ i, ρ i (b x) • mpullback (F := F) IX IZ (g i) φ.val x := fun x ↦
     ρ.sum_finsupport_smul_eq_finsum (x₀ := b x)
-      (φ := fun i _ ↦ mpullback (F := F) IX IZ (g i) φ.1 x)
+      (φ := fun i _ ↦ mpullback (F := F) IX IZ (g i) φ.val x)
   simp_rw [hsum]
   refine ContMDiff.finsum_section_of_locallyFinite
-    (t := fun i x ↦ ρ i (b x) • mpullback (F := F) IX IZ (g i) φ.1 x) ?_ fun i ↦ ?_
+    (t := fun i x ↦ ρ i (b x) • mpullback (F := F) IX IZ (g i) φ.val x) ?_ fun i ↦ ?_
   · refine (ρ.locallyFinite.preimage_continuous hb.continuous).subset fun i x hx ↦ ?_
     exact left_ne_zero_of_smul hx
   · refine ContMDiffOn.smul_section_of_tsupport (u := b ⁻¹' U i)

@@ -360,15 +360,15 @@ theorem degeneracy_castSucc_degeneracy {m : ℕ} {i j : Fin (m + 1)} (hij : i �
 `(z, y₀, …, y_m)` of `Y^[m + 2]`. -/
 def cons {m : ℕ} (z : Y) (y : IteratedFiberProduct π (m + 1)) (h : π z = baseProj y) :
     IteratedFiberProduct π (m + 2) :=
-  ⟨Fin.cons z y.1, by
-    have key : ∀ i : Fin (m + 2), π (Fin.cons (α := fun _ ↦ Y) z y.1 i) = baseProj y :=
+  ⟨Fin.cons z y.val, by
+    have key : ∀ i : Fin (m + 2), π (Fin.cons (α := fun _ ↦ Y) z y.val i) = baseProj y :=
       Fin.cases h fun j ↦ by rw [Fin.cons_succ, ← eval_apply]; exact map_eval_eq_baseProj y j
     exact fun i j ↦ (key i).trans (key j).symm⟩
 
 /-- The underlying tuple of `cons z y h` is `Fin.cons z y`. -/
 @[simp]
 theorem coe_cons {m : ℕ} (z : Y) (y : IteratedFiberProduct π (m + 1)) (h : π z = baseProj y) :
-    (cons z y h : Fin (m + 2) → Y) = Fin.cons z y.1 := (rfl)
+    (cons z y h : Fin (m + 2) → Y) = Fin.cons z y.val := (rfl)
 
 /-- Coordinate `0` of `cons z y h` is the prepended point `z`. -/
 theorem eval_zero_cons {m : ℕ} (z : Y) (y : IteratedFiberProduct π (m + 1))
