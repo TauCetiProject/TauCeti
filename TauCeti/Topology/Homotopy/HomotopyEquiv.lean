@@ -27,6 +27,8 @@ the projection `X × Y → X` is a homotopy equivalence when `Y` is contractible
 Finally, the file records that a cylinder `X × [a, b]` is homotopy equivalent to `X`
 through any of its slices `X × {t}`: the interval deforms linearly onto the point `t`. This is how
 the two ends of a cylinder are seen to induce isomorphisms on homology.
+In the same way, a product `X × E` with a real vector space `E` deforms onto its zero section
+`X × {0}` by scaling the second factor.
 
 It also records that inverting a homotopy equivalence twice gives it back, and that a left and
 a right homotopy inverse of the same map are homotopic, so that a left homotopy inverse of a
@@ -52,6 +54,8 @@ homotopy equivalence is automatically a right homotopy inverse.
   the projection, for `Y` contractible.
 * `ContinuousMap.HomotopyEquiv.prodIcc`: the slice `x ↦ (x, t)` is a homotopy equivalence
   `X ≃ₕ X × [a, b]`, with homotopy inverse the projection.
+* `ContinuousMap.HomotopyEquiv.prodZeroSection`: for a real vector space `E`, the zero section
+  `x ↦ (x, 0)` is a homotopy equivalence `X ≃ₕ X × E`, with homotopy inverse the projection.
 * `ContinuousMap.Homotopic.homotopic_of_comp_homotopic_id`: a left and a right homotopy inverse
   of the same map are homotopic.
 * `ContinuousMap.Homotopic.comp_homotopic_id_of_comp_homotopic_id`: a left homotopy inverse that
@@ -233,6 +237,37 @@ theorem HomotopyEquiv.prodIcc_apply {a b : ℝ} (t : Set.Icc a b) (x : X) :
 theorem HomotopyEquiv.prodIcc_symm_apply {a b : ℝ} (t : Set.Icc a b)
     (p : X × Set.Icc a b) : (HomotopyEquiv.prodIcc t).symm p = p.1 :=
   (rfl)
+
+section ZeroSection
+
+variable (X) (E : Type*) [AddCommGroup E] [Module ℝ E] [TopologicalSpace E] [ContinuousSMul ℝ E]
+
+/-- **The zero section of a product with a real vector space is a homotopy equivalence.** The
+zero section `x ↦ (x, 0)` is a homotopy equivalence `X ≃ₕ X × E`, with homotopy inverse the
+projection: at time `t` a point `(x, v)` is sent to `(x, t • v)`. -/
+def HomotopyEquiv.prodZeroSection : X ≃ₕ X × E where
+  toFun := ⟨fun x ↦ (x, 0), by fun_prop⟩
+  invFun := .fst
+  left_inv := ⟨.refl _⟩
+  right_inv := ⟨
+    { toFun p := (p.2.1, (p.1 : ℝ) • p.2.2)
+      continuous_toFun := by fun_prop
+      map_zero_left p := by simp
+      map_one_left p := by simp }⟩
+
+/-- The zero section homotopy equivalence sends `x` to `(x, 0)`. -/
+@[simp]
+theorem HomotopyEquiv.prodZeroSection_apply (x : X) :
+    HomotopyEquiv.prodZeroSection X E x = (x, 0) :=
+  (rfl)
+
+/-- The homotopy inverse of the zero section homotopy equivalence is the projection. -/
+@[simp]
+theorem HomotopyEquiv.prodZeroSection_symm_apply (p : X × E) :
+    (HomotopyEquiv.prodZeroSection X E).symm p = p.1 :=
+  (rfl)
+
+end ZeroSection
 
 /-- **Left and right homotopy inverses are homotopic.** If `l ∘ f ≃ id` and `f ∘ r ≃ id`, then
 `l ≃ l f r ≃ r`. In particular `f` is then a homotopy equivalence, with `l` and `r` both two-sided

@@ -65,13 +65,15 @@ All in the namespace `TauCeti.Vortex`:
   each coordinate) is `O(exp (-c |z|))` for every `c < 1 / 2`.
 * `exists_norm_iteratedFDeriv_sub_referenceField_le_mul_exp`: when `x` is `C^n` with `C²` section,
   `‖Dⁿ(x - x_ref)(z)‖ ≤ K exp (-c |z|)` globally on `ℂ`.
-* `mem_framedFieldSpace_of_sectionValue_eq_mul_windingPhase`: a smooth end-normalized vortex lies
-  in `A_m^s` for every cutoff `f` and real order `s`.
+* `mem_framedFieldSpace_of_sectionValue_eq_mul_windingPhase`,
+  `gaugeTransform_mem_framedFieldSpace_of_eventually_sectionValue_eq`: a smooth end-normalized
+  vortex lies in `A_m^s` for every cutoff `f` and real order `s`.
 * `exists_framedGaugeGroup_smul_mem_framedFieldSpace`: every smooth framed vortex has a smooth
   framed gauge representative lying in `A_m^s` for every cutoff `f` and order `s`, with global
   all-order exponential derivative decay.
-* `exists_contDiff_mem_framedFieldSpace_equation_eq_zero_isZeroMultiplicity`: every `D ∈ Sym ℂ m`
-  is the zero divisor of a smooth vortex in `⋂_s A_m^s` with all-order exponential decay.
+* `exists_contDiff_mem_framedFieldSpace_equation_eq_zero_isZeroMultiplicity`,
+  `exists_contDiff_sobolevVortexDivisor_eq`: every `D ∈ Sym ℂ m` is the zero divisor of a smooth
+  vortex in `⋂_s A_m^s` with all-order exponential decay.
 * `sobolevVortexDivisor_surjective`: every point of `Sym ℂ m` is the divisor of a `C²` vortex of
   `A_m^k`.
 * `exists_contDiff_mem_framedFieldSpace_and_existsUnique_sobolevGaugeGroup_smul_eq`: every `C²`
@@ -233,6 +235,33 @@ theorem mem_framedFieldSpace_of_sectionValue_eq_mul_windingPhase (hx : ContDiff 
 
 /-! ### Smooth framed vortices have representatives in `A_m^s` -/
 
+/-- **A smooth framed vortex normalized at its end lies in every `A_m^s`.** Let `x` be a smooth
+framed degree-`m` vortex and `u` a smooth framed gauge such that the section of `u · x` is `|α|`
+times the winding phase `(z / |z|)^m` outside a compact set. Then `u · x` lies in the affine
+Sobolev space `A_m^s` for every real `s`, and every derivative of `u · x - x_ref` is
+`O(exp (-c |z|))` at infinity for every rate `c < 1 / 2`. -/
+theorem gaugeTransform_mem_framedFieldSpace_of_eventually_sectionValue_eq
+    (f : ContDiffBump (0 : ℝ)) {u : ℂ → Circle} (hu : u ∈ framedGaugeGroup)
+    (hx : ContDiff ℝ ∞ x) (hsol : ∀ z, equation x z = 0)
+    (hframe : Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1))
+    (hphase : ∀ᶠ z in cocompact ℂ, sectionValue (gaugeTransform u x) z =
+      ‖sectionValue (gaugeTransform u x) z‖ * windingPhase m z) :
+    (∀ s : ℝ, gaugeTransform u x ∈ framedFieldSpace f m s) ∧
+      ∀ c < 1 / 2, ∀ n : ℕ, iteratedFDeriv ℝ n (gaugeTransform u x - referenceField f m)
+        =O[cocompact ℂ] fun z ↦ Real.exp (-(c * ‖z‖)) := by
+  obtain ⟨huc, hu1⟩ := (mem_framedGaugeGroup _).1 hu
+  have hy : ContDiff ℝ ∞ (gaugeTransform u x) := contDiff_gaugeTransform (by simpa using huc) hx
+  have hsol' (z : ℂ) : equation (gaugeTransform u x) z = 0 :=
+    (equation_gaugeTransform_eq_zero_iff ((huc.of_le (by norm_cast)).contDiffAt)
+      fun i ↦ ((contDiff_euclidean.1 hx i).differentiable (by simp)).differentiableAt).2 (hsol z)
+  have hlim := tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow
+    (tendsto_sectionValue_gaugeTransform hu1 hframe)
+  have hdec := fun c (hc : c < 1 / 2) n ↦
+    isBigO_iteratedFDeriv_sub_referenceField f ((contDiff_euclidean.1 hy 2).of_le (by simp))
+      ((contDiff_euclidean.1 hy 3).of_le (by simp)) hsol' hlim hphase hc n
+  exact ⟨mem_framedFieldSpace_of_isBigO_iteratedFDeriv_sub_referenceField hy (c := 1 / 4)
+    (by norm_num) (hdec (1 / 4) (by norm_num)), hdec⟩
+
 /-- **Smooth framed gauge representative in `A_m^s` with all-order exponential decay.** Every
 smooth plane vortex with the degree-`m` end framing `α(z) (z / |z|)⁻ᵐ → 1` has a smooth framed
 gauge transform `u • x` whose section is `|α|` times `windingPhase m` outside a compact set, which
@@ -285,14 +314,30 @@ theorem exists_contDiff_mem_framedFieldSpace_equation_eq_zero_isZeroMultiplicity
 
 variable {k : ℕ} [Fact (1 < k)]
 
+/-- **Smooth existence on the Sobolev scale.** For `k ≥ 2`, every effective divisor of degree `m`,
+repeated points included, is the divisor of a smooth vortex of `A_m^k` lying in the affine Sobolev
+space `A_m^s` for every real `s`, such that every derivative of its difference with the reference
+field is `O(exp (-c |z|))` at infinity for every rate `c < 1 / 2`. -/
+theorem exists_contDiff_sobolevVortexDivisor_eq (D : Sym ℂ m) :
+    ∃ x : sobolevVortices f m k, sobolevVortexDivisor x = D ∧
+      ContDiff ℝ ∞ (x : ℂ → EuclideanSpace ℝ (Fin 4)) ∧
+      (∀ s : ℝ, (x : ℂ → EuclideanSpace ℝ (Fin 4)) ∈ framedFieldSpace f m s) ∧
+      ∀ c < 1 / 2, ∀ n : ℕ,
+        iteratedFDeriv ℝ n ((x : ℂ → EuclideanSpace ℝ (Fin 4)) - referenceField f m)
+          =O[cocompact ℂ] fun z ↦ Real.exp (-(c * ‖z‖)) := by
+  obtain ⟨x, hx, hsol, -, hmem, hdec, hD⟩ :=
+    exists_contDiff_mem_framedFieldSpace_equation_eq_zero_isZeroMultiplicity D
+  refine ⟨⟨⟨x, hmem f k⟩, mem_sobolevVortices.2 ⟨hx.of_le (by simp), hsol⟩⟩,
+    sobolevVortexDivisor_eq_iff.2 hD, hx, hmem f, fun c hc n ↦ ?_⟩
+  obtain ⟨K, hK⟩ := hdec f c hc n
+  exact IsBigO.of_bound K (.of_forall fun z ↦ by
+    simpa [Real.norm_eq_abs, abs_of_pos (Real.exp_pos _)] using hK z)
+
 /-- **Existence on the Sobolev scale.** For `k ≥ 2`, every effective divisor of degree `m`,
 repeated points included, is the divisor of a `C²` vortex of `A_m^k`. -/
 theorem sobolevVortexDivisor_surjective :
-    Function.Surjective (sobolevVortexDivisor (f := f) (m := m) (k := k)) := fun D ↦ by
-  obtain ⟨x, hx, hsol, -, hmem, -, hD⟩ :=
-    exists_contDiff_mem_framedFieldSpace_equation_eq_zero_isZeroMultiplicity D
-  exact ⟨⟨⟨x, hmem f k⟩, mem_sobolevVortices.2 ⟨hx.of_le (by simp), hsol⟩⟩,
-    sobolevVortexDivisor_eq_iff.2 hD⟩
+    Function.Surjective (sobolevVortexDivisor (f := f) (m := m) (k := k)) := fun D ↦
+  (exists_contDiff_sobolevVortexDivisor_eq D).imp fun _ hx ↦ hx.left
 
 /-- **Smooth representative in every Sobolev vortex orbit.** Every `C²` vortex `x` of `A_m^k`,
 `k ≥ 2`, is carried by a unique element of `G_(k+1)` from a smooth vortex `y` of `A_m^k` whose

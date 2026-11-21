@@ -14,8 +14,9 @@ public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.Homology.Basic
 For `M : C ⥤ A` in preadditive `A` with homology and coproducts of size `max u v`,
 `(categoryChainComplex M).d 1 0` sends `(f : X ⟶ Y, m)` to `M(f)(m) - m`, presenting
 `categoryHomology M 0` as a colimit of `M` (`TauCeti.ιCategoryHomology₀`,
-`TauCeti.isColimitCategoryHomology₀Cocone`, `TauCeti.categoryHomology₀IsoColimit`,
-`TauCeti.categoryHomology₀NatIsoColim`, and `TauCeti.categoryHomology₀ConstIsoOfIsConnected`).
+`TauCeti.isColimitCategoryHomology₀Cocone`, `TauCeti.categoryHomology₀IsoOfIsColimit`,
+`TauCeti.categoryHomology₀IsoColimit`, `TauCeti.categoryHomology₀NatIsoColim`, and
+`TauCeti.categoryHomology₀ConstIsoOfIsConnected`).
 
 ## References
 
@@ -112,6 +113,21 @@ def isColimitCategoryHomology₀Cocone (M : C ⥤ A) : IsColimit (categoryHomolo
     dsimp [ιCategoryHomology₀, πCategoryHomology₀, HomologicalComplex.descOpcycles']; simp
   uniq _ _ hm := categoryHomology₀_hom_ext fun X ↦ (hm X).trans <| by
     dsimp [ιCategoryHomology₀, πCategoryHomology₀, HomologicalComplex.descOpcycles']; simp
+
+/-- Canonical isomorphism `categoryHomology M 0 ≅ s.pt` for any colimit cocone `s` on `M`. -/
+def categoryHomology₀IsoOfIsColimit (M : C ⥤ A) {s : Cocone M} (hs : IsColimit s) :
+    categoryHomology M 0 ≅ s.pt :=
+  (isColimitCategoryHomology₀Cocone M).coconePointUniqueUpToIso hs
+
+@[reassoc (attr := simp)] lemma ιCategoryHomology₀_isoOfIsColimit_hom (M : C ⥤ A) {s : Cocone M}
+    (hs : IsColimit s) (X : C) :
+    ιCategoryHomology₀ M X ≫ (categoryHomology₀IsoOfIsColimit M hs).hom = s.ι.app X :=
+  (isColimitCategoryHomology₀Cocone M).comp_coconePointUniqueUpToIso_hom hs X
+
+@[reassoc (attr := simp)] lemma ι_categoryHomology₀IsoOfIsColimit_inv (M : C ⥤ A) {s : Cocone M}
+    (hs : IsColimit s) (X : C) :
+    s.ι.app X ≫ (categoryHomology₀IsoOfIsColimit M hs).inv = ιCategoryHomology₀ M X :=
+  (isColimitCategoryHomology₀Cocone M).comp_coconePointUniqueUpToIso_inv hs X
 
 /-- Canonical isomorphism `categoryHomology M 0 ≅ colimit M` when `M` has a chosen colimit. -/
 def categoryHomology₀IsoColimit (M : C ⥤ A) [HasColimit M] : categoryHomology M 0 ≅ colimit M :=
