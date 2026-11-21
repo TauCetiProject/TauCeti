@@ -35,6 +35,8 @@ without any differentiability assumption; for instance, the real derivative of `
   on the field of scalars.
 * `DifferentiableAt.injective_fderiv_restrictScalars_iff`: neither does its injectivity.
 * `TauCeti.fderiv_comp_smul_apply`: the derivative over `𝕜` of `w ↦ f (c • w)` for `c : 𝕜'`.
+* `TauCeti.hasFDerivAtFilter_restrictScalars_iff`: a `𝕜'`-linear map is a derivative exactly when
+  its scalar restriction to `𝕜` is, assuming only `LinearMap.CompatibleSMul`.
 -/
 
 public section
@@ -95,5 +97,22 @@ theorem fderiv_comp_smul_apply {𝕜 𝕜' V F : Type*} [NontriviallyNormedField
   · have h := ((ContinuousLinearEquiv.smulLeft (R₁ := 𝕜') (Units.mk0 c hc)).restrictScalars 𝕜
       |>.comp_right_fderiv (f := f) (x := x))
     simpa [Function.comp_def] using congrArg (fun L ↦ L v) h
+
+end TauCeti
+
+namespace TauCeti
+
+variable (𝕜 : Type*) {𝕜' E F : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜']
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedSpace 𝕜' E] [NormedAddCommGroup F]
+  [NormedSpace 𝕜 F] [NormedSpace 𝕜' F] [LinearMap.CompatibleSMul E F 𝕜 𝕜']
+
+/-- A `𝕜'`-linear map is a derivative of `f` along a filter exactly when its scalar restriction to
+`𝕜` is: both are the same `o`-condition. Unlike `HasFDerivAtFilter.restrictScalars`, this needs
+only the scalar compatibility `LinearMap.CompatibleSMul` that `ContinuousLinearMap.restrictScalars`
+assumes, rather than a normed algebra with scalar towers. -/
+theorem hasFDerivAtFilter_restrictScalars_iff {f : E → F} {f' : E →L[𝕜'] F}
+    {L : Filter (E × E)} :
+    HasFDerivAtFilter f (f'.restrictScalars 𝕜) L ↔ HasFDerivAtFilter f f' L := by
+  simp only [hasFDerivAtFilter_iff_isLittleO, ContinuousLinearMap.coe_restrictScalars']
 
 end TauCeti

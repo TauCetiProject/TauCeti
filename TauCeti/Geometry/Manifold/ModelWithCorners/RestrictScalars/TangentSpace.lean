@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Algebra.RestrictScalars
 public import TauCeti.Geometry.Manifold.ModelWithCorners.RestrictScalars.Basic
 
 /-!
@@ -50,10 +49,13 @@ spaces with the map's scalar restriction.
 * `ContinuousLinearMap.tangentSpaceCastModel_comp_restrictScalarsTangent_comp`: read in the model
   spaces, it is `ContinuousLinearMap.restrictScalars`.
 * `ContinuousLinearMap.restrictScalarsTangent_comp`, `_id`, `_zero`, `_add`, `_neg`, `_sub`: it
-  preserves composition, identities, zero, addition, negation and subtraction;
-  `ContinuousLinearMap.restrictScalarsTangent_algebraMap_smul` and
-  `ContinuousLinearMap.restrictScalarsTangent_smul`: under a scalar tower on the target, it
-  preserves multiplication by scalars of the base field.
+  preserves composition, identities, zero, addition, negation and subtraction.
+* `ContinuousLinearMap.restrictScalarsTangent_algebraMap_smul`: given an algebra `Algebra 𝕜 𝕜'`
+  and a scalar tower `IsScalarTower 𝕜 𝕜' E'` on the target model space, it sends multiplication
+  by `algebraMap 𝕜 𝕜' c` to multiplication by `c : 𝕜`.
+* `ContinuousLinearMap.restrictScalarsTangent_smul`: given an action `SMul 𝕜 𝕜'`, an action of `𝕜`
+  on the `𝕜'`-linear maps factoring through `𝕜'` (`IsScalarTower 𝕜 𝕜'` on the maps) and a scalar
+  tower `IsScalarTower 𝕜 𝕜' E'` on the target model space, it preserves multiplication by `c : 𝕜`.
 * `ContinuousLinearMap.restrictScalarsTangent_modelWithCornersSelf`: for the self models it is
   `ContinuousLinearMap.restrictScalars`.
 * `ContinuousLinearMap.restrictScalarsTangent_tangentSpaceRestrictScalarsSelfLinearEquiv`: the
