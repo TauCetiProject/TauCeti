@@ -31,6 +31,8 @@ when `[F' : F] = [k' : k]` its elements are those whose coordinates in a basis o
 ## Main definitions
 
 * `TauCeti.Place.constantSpanIntegers`: the `k'`-span `𝒪_P · k'` of `𝒪_P` in `F'`.
+* `TauCeti.Place.constantSpanSubmodule`: `𝒪_P · k'` viewed as an `𝒪_P`-submodule of `𝒪_{P'}`
+  for a place `P'` lying over `P`.
 * `TauCeti.Place.integralClosureSubmodule`: the integral closure `𝒪'_P` of `𝒪_P` in `F'`.
 
 ## Main results
@@ -41,6 +43,7 @@ when `[F' : F] = [k' : k]` its elements are those whose coordinates in a basis o
   containing the image of `𝒪_P`.
 * `TauCeti.Place.mem_constantSpanIntegers_iff`: `𝒪_P · k'` in the coordinates of a basis of
   constants.
+* `TauCeti.Place.constantSpanSubmodule_eq_span`: `𝒪_P`-spanning set of `𝒪_P · k'` inside `𝒪_{P'}`.
 * `TauCeti.Place.constantSpanIntegers_le_integralClosureSubmodule`: `𝒪_P · k' ⊆ 𝒪'_P`.
 
 ## Reference
@@ -172,6 +175,67 @@ theorem mem_constantSpanIntegers_iff {ι : Type*} [Fintype ι] (b : Basis ι k k
     exact Submodule.smul_mem _ _ (Submodule.subset_span ⟨_, hz j, rfl⟩)
 
 end FinrankEq
+
+section Submodule
+
+variable (k F) in
+/-- At a place `P'` over `P = P'|_F`, the `(P'.restrict k F).integers`-submodule of `P'.integers`
+cut out by `P.constantSpanIntegers k' F'`. -/
+noncomputable def constantSpanSubmodule [Algebra.IsIntegral F F']
+    (P' : Place k' F') : Submodule (P'.restrict k F).integers P'.integers where
+  carrier := {x | (x : F') ∈ (P'.restrict k F).constantSpanIntegers k' F'}
+  add_mem' ha hb := by
+    rw [Set.mem_ofPred_eq, AddMemClass.coe_add]
+    exact add_mem ha hb
+  zero_mem' := by
+    rw [Set.mem_ofPred_eq, ZeroMemClass.coe_zero]
+    exact zero_mem _
+  smul_mem' r x hx := by
+    rw [Set.mem_ofPred_eq, Algebra.smul_def, Subring.coe_mul, Place.coe_algebraMap_integers]
+    exact Place.mul_mem_constantSpanIntegers k' F'
+      (Place.algebraMap_mem_constantSpanIntegers k' F' r.property) hx
+
+/-- Membership in `P'.constantSpanSubmodule k F` is membership in
+`(P'.restrict k F).constantSpanIntegers k' F'`. -/
+theorem mem_constantSpanSubmodule_iff [Algebra.IsIntegral F F']
+    (P' : Place k' F') {x : P'.integers} :
+    x ∈ P'.constantSpanSubmodule k F ↔
+      (x : F') ∈ (P'.restrict k F).constantSpanIntegers k' F' :=
+  (Iff.rfl)
+
+/-- In coordinates with respect to a `k`-basis `b` of `k'`, `P'.constantSpanSubmodule k F` is
+spanned over `𝒪_P` by the images of `b`. -/
+theorem constantSpanSubmodule_eq_span [FiniteDimensional k k']
+    [Algebra.IsIntegral F F'] (h : constantCompositum F k' F' = ⊤)
+    (hn : finrank F F' = finrank k k') (P' : Place k' F') {ι : Type*} [Finite ι]
+    (b : Basis ι k k') :
+    P'.constantSpanSubmodule k F = Submodule.span (P'.restrict k F).integers
+      (Set.range fun i ↦ (⟨algebraMap k' F' (b i), P'.algebraMap_mem_integers (b i)⟩ :
+        P'.integers)) := by
+  classical
+  cases nonempty_fintype ι
+  set P := P'.restrict k F
+  refine le_antisymm (fun x hx ↦ ?_) (Submodule.span_le.2 ?_)
+  · have hcoord := (P.mem_constantSpanIntegers_iff h hn b).1
+      ((mem_constantSpanSubmodule_iff P').1 hx)
+    let cF := constantBasisOfFinrankEq h hn b
+    have hx_eq : x = ∑ i, (⟨cF.repr (x : F') i, hcoord i⟩ : P.integers) •
+        (⟨algebraMap k' F' (b i), P'.algebraMap_mem_integers (b i)⟩ : P'.integers) := by
+      refine Subtype.ext ?_
+      conv_lhs => rw [← cF.sum_repr (x : F')]
+      rw [AddSubmonoidClass.coe_finsetSum]
+      refine Finset.sum_congr rfl fun i _ ↦ ?_
+      rw [Algebra.smul_def, Algebra.smul_def, Subring.coe_mul, Place.coe_algebraMap_integers,
+        constantBasisOfFinrankEq_apply]
+    rw [hx_eq]
+    exact Submodule.sum_mem _ fun i _ ↦ Submodule.smul_mem _ _ (Submodule.subset_span ⟨i, rfl⟩)
+  · rintro _ ⟨i, rfl⟩
+    rw [SetLike.mem_coe, Place.mem_constantSpanSubmodule_iff]
+    dsimp only
+    rw [← mul_one (algebraMap k' F' (b i)), ← map_one (algebraMap F F'), ← Algebra.smul_def]
+    exact Submodule.smul_mem _ (b i) (Place.algebraMap_mem_constantSpanIntegers k' F' (one_mem _))
+
+end Submodule
 
 section IntegralClosure
 

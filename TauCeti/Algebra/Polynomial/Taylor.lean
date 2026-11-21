@@ -93,6 +93,7 @@ theorem nextCoeff_taylor {R : Type*} [CommSemiring R] (p : R[X]) (r : R) :
 
 /-- Shifting `f` to `c` and subtracting its constant term `f.eval c` yields a multiple of `X`, so
 every coefficient of `(taylor c f - C (f.eval c)) ^ i` in degree below `i` vanishes. -/
+@[simp]
 theorem coeff_taylor_sub_C_eval_pow_of_lt {R : Type*} [Ring R] (f : R[X]) (c : R) {k i : ℕ}
     (hki : k < i) :
     ((taylor c f - C (f.eval c)) ^ i).coeff k = 0 := by
@@ -104,6 +105,7 @@ theorem coeff_taylor_sub_C_eval_pow_of_lt {R : Type*} [Ring R] (f : R[X]) (c : R
   simp [coeff_X_pow_mul', not_le_of_gt hki]
 
 /-- The `i`-th coefficient of `(taylor c f - C (f.eval c)) ^ i` is `(f.derivative.eval c) ^ i`. -/
+@[simp]
 theorem coeff_taylor_sub_C_eval_pow_self {R : Type*} [Ring R] (f : R[X]) (c : R) (i : ℕ) :
     ((taylor c f - C (f.eval c)) ^ i).coeff i = f.derivative.eval c ^ i := by
   set g := divX (taylor c f - C (f.eval c))

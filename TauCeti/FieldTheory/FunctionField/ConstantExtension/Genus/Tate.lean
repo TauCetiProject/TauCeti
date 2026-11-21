@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.PowerBasis
 public import TauCeti.FieldTheory.FunctionField.ConstantExtension.Genus.Change
-import Mathlib.FieldTheory.Minpoly.IsIntegrallyClosed
-import Mathlib.RingTheory.Polynomial.RationalRoot
+import Mathlib.RingTheory.PowerBasis
+import TauCeti.FieldTheory.FunctionField.ConstantExtension.Genus.Stabilization
 import TauCeti.FieldTheory.FunctionField.Place.Extension.PurelyInseparable
 import TauCeti.FieldTheory.FunctionField.Place.OrderOfVanishing
 import TauCeti.FieldTheory.IntermediateField.Adjoin.PrimitiveElement
@@ -16,7 +15,6 @@ import TauCeti.FieldTheory.PurelyInseparable.Basic
 import TauCeti.FieldTheory.PurelyInseparable.Exponent
 import TauCeti.LinearAlgebra.Matrix.Nonsingular.Basic
 import TauCeti.RingTheory.Length.Determinant
-import TauCeti.RingTheory.LocalRing.Monogenic
 import TauCeti.RingTheory.Polynomial.Truncated.Determinant
 
 /-!
@@ -41,11 +39,9 @@ genus-change formula `g(F / k) - 1 = [k'' : k'] (g(F' / k'') - 1) + ∑_P δ_P` 
 `TauCeti.FieldTheory.FunctionField.ConstantExtension.Genus.Change` with a local determinant
 computation at a purely inseparable constant step `k' / k` of prime degree `p`:
 
-1. **Local monogenicity.** At the unique place `P'` of `F' / k'` above `P`, the fundamental
-   identity reads `e(P' ∣ P) · f(P' ∣ P) = p`. Whether `(e, f) = (p, 1)` or `(1, p)`, Nakayama's
-   criterion (`TauCeti.IsLocalRing.adjoin_eq_top_of_span_eval_eq_maximalIdeal`) produces a single
-   generator `β` of `𝒪_{P'}` over `𝒪_P`, hence an `𝒪_P`-power basis `1, β, …, β ^ (p - 1)` with
-   `β ^ p ∈ 𝒪_P`.
+1. **Local monogenicity.** At the unique place `P'` of `F' / k'` above `P`,
+   `TauCeti.Place.exists_powerBasis_integers_of_finrank_eq_prime` produces an `𝒪_P`-power basis
+   `1, β, …, β ^ (p - 1)` of `𝒪_{P'}` with `β ^ p ∈ 𝒪_P`.
 2. **Local singularity degree.** Writing a primitive element `α` of `k' / k` as `f(β)` for a
    polynomial `f ∈ 𝒪_P[X]` of degree `< p`, the transition matrix `A` from `1, β, …, β ^ (p - 1)`
    to `1, α, …, α ^ (p - 1)` reduces `f(X) ^ i` modulo `X ^ p - β ^ p`. Over `𝒪_{P'}`, this modulus
@@ -61,8 +57,6 @@ computation at a purely inseparable constant step `k' / k` of prime degree `p`:
 
 ## Main results
 
-* `TauCeti.Place.exists_powerBasis_integers_of_finrank_eq_prime`: local monogenicity of `𝒪_{P'}`
-  over `𝒪_P` for a purely inseparable constant extension of prime degree `p`.
 * `TauCeti.Place.exists_two_mul_singularityDegree_restrict_eq_of_finrank_eq_prime` and
   `TauCeti.Place.sub_one_dvd_two_mul_singularityDegree_of_finrank_eq_prime`: the local
   Tate–Schröer formula `2 δ_P = (p - 1) · m · deg P'` and divisibility `(p - 1) ∣ 2 δ_P` for a
@@ -95,9 +89,9 @@ namespace TauCeti
 
 universe u u' v v'
 
-/-! ### Local monogenicity at a prime purely inseparable constant step -/
+/-! ### The local Tate–Schröer formula -/
 
-section LocalMonogenic
+section LocalFormula
 
 variable {k : Type u} {k' : Type u'} {F : Type v} {F' : Type v'}
 variable [Field k] [Field k'] [Field F] [Field F']
@@ -105,56 +99,6 @@ variable [Algebra k k'] [Algebra k F] [Algebra k F'] [Algebra k' F'] [Algebra F 
 variable [IsScalarTower k k' F'] [IsScalarTower k F F']
 
 attribute [local instance 10] Place.algebraIntegersExtension Place.isScalarTowerIntegersExtension
-
-variable (k F) in
-/-- At a place `P'` over `P = P'|_F`, the `(P'.restrict k F).integers`-submodule of `P'.integers`
-cut out by `P.constantSpanIntegers k' F'`. -/
-private noncomputable def Place.constantSpanSubmodule [Algebra.IsIntegral F F']
-    (P' : Place k' F') : Submodule (P'.restrict k F).integers P'.integers where
-  carrier := {x | (x : F') ∈ (P'.restrict k F).constantSpanIntegers k' F'}
-  add_mem' ha hb := add_mem ha hb
-  zero_mem' := zero_mem _
-  smul_mem' r x hx := by
-    rw [Set.mem_ofPred_eq, Algebra.smul_def, Subring.coe_mul, Place.coe_algebraMap_integers]
-    exact Place.mul_mem_constantSpanIntegers k' F'
-      (Place.algebraMap_mem_constantSpanIntegers k' F' r.property) hx
-
-private theorem Place.mem_constantSpanSubmodule_iff [Algebra.IsIntegral F F']
-    (P' : Place k' F') {x : P'.integers} :
-    x ∈ P'.constantSpanSubmodule k F ↔
-      (x : F') ∈ (P'.restrict k F).constantSpanIntegers k' F' :=
-  Iff.rfl
-
-/-- In coordinates with respect to a `k`-basis `b` of `k'`, `P'.constantSpanSubmodule k F` is
-spanned over `𝒪_P` by the images of `b`. -/
-private theorem Place.constantSpanSubmodule_eq_span [FiniteDimensional k k']
-    [Algebra.IsIntegral F F'] (h : constantCompositum F k' F' = ⊤)
-    (hn : finrank F F' = finrank k k') (P' : Place k' F') {ι : Type*} [Finite ι]
-    (b : Basis ι k k') :
-    P'.constantSpanSubmodule k F = Submodule.span (P'.restrict k F).integers
-      (Set.range fun i ↦ (⟨algebraMap k' F' (b i), P'.algebraMap_mem_integers (b i)⟩ :
-        P'.integers)) := by
-  classical
-  cases nonempty_fintype ι
-  set P := P'.restrict k F
-  refine le_antisymm (fun x hx ↦ ?_) (Submodule.span_le.2 ?_)
-  · have hcoord := (P.mem_constantSpanIntegers_iff h hn b).1 hx
-    let cF := constantBasisOfFinrankEq h hn b
-    have hx_eq : x = ∑ i, (⟨cF.repr (x : F') i, hcoord i⟩ : P.integers) •
-        (⟨algebraMap k' F' (b i), P'.algebraMap_mem_integers (b i)⟩ : P'.integers) := by
-      refine Subtype.ext ?_
-      conv_lhs => rw [← cF.sum_repr (x : F')]
-      rw [AddSubmonoidClass.coe_finsetSum]
-      refine Finset.sum_congr rfl fun i _ ↦ ?_
-      rw [Algebra.smul_def, Algebra.smul_def, Subring.coe_mul, Place.coe_algebraMap_integers,
-        constantBasisOfFinrankEq_apply]
-    rw [hx_eq]
-    exact Submodule.sum_mem _ fun i _ ↦ Submodule.smul_mem _ _ (Submodule.subset_span ⟨i, rfl⟩)
-  · rintro _ ⟨i, rfl⟩
-    rw [SetLike.mem_coe, Place.mem_constantSpanSubmodule_iff]
-    dsimp only
-    rw [← mul_one (algebraMap k' F' (b i)), ← map_one (algebraMap F F'), ← Algebra.smul_def]
-    exact Submodule.smul_mem _ (b i) (Place.algebraMap_mem_constantSpanIntegers k' F' (one_mem _))
 
 variable (k F) in
 /-- When `F' / F` is purely inseparable, `P'` is the unique place over `P = P'|_F`, so `𝒪'_P`
@@ -191,119 +135,11 @@ private noncomputable def Place.singularityQuotientLinearEquiv [Algebra.IsIntegr
         (P.integralClosureSubmodule k' F')).restrictScalars k) eTop (by
         ext ⟨z, hz⟩
         simp only [Submodule.mem_map, Submodule.restrictScalars_mem]
-        exact ⟨fun ⟨x, hx, hxz⟩ ↦ by cases hxz; exact hx,
-          fun hz' ↦ ⟨⟨z, (hmem z).1 hz⟩, hz', rfl⟩⟩))).trans
+        exact ⟨fun ⟨x, hx, hxz⟩ ↦ by
+            cases hxz; exact (Place.mem_constantSpanSubmodule_iff P').1 hx,
+          fun hz' ↦
+            ⟨⟨z, (hmem z).1 hz⟩, (Place.mem_constantSpanSubmodule_iff P').2 hz', rfl⟩⟩))).trans
     (Submodule.Quotient.restrictScalarsEquiv k _)
-
-/-- At any place `P'` of a purely inseparable constant field extension `F' = F · k'` with
-`[F' : F] = [k' : k]`, the valuation ring `𝒪_{P'}` is module-finite over `𝒪_P` (`P = P'|_F`). -/
-private theorem Place.moduleFinite_integers_of_isPurelyInseparable [FiniteDimensional k k']
-    [IsPurelyInseparable F F'] (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
-    (h : constantCompositum F k' F' = ⊤) (hn : finrank F F' = finrank k k') (P' : Place k' F') :
-    Module.Finite (P'.restrict k F).integers P'.integers := by
-  have := finiteDimensional_of_constantCompositum_eq_top (k := k) h
-  have hF' := hF.of_constantCompositum_eq_top h
-  let _ := Place.integersAlgebraBase k P'
-  have := Place.isScalarTower_integersAlgebraBase k P'
-  have := Place.isScalarTower_integers_restrict k F P'
-  have : Module.Finite (P'.restrict k F).integers (P'.constantSpanSubmodule k F) := by
-    rw [P'.constantSpanSubmodule_eq_span h hn (finBasis k k')]
-    exact Module.Finite.span_of_finite _ (Set.finite_range _)
-  have := (P'.restrict k F).finiteDimensional_singularityQuotient hF hex h hn
-  have : FiniteDimensional k ((P'.restrict k F).singularityQuotient k' F') :=
-    Module.Finite.trans k' _
-  have : Module.Finite k (P'.integers ⧸ P'.constantSpanSubmodule k F) :=
-    Module.Finite.equiv (P'.singularityQuotientLinearEquiv k F hF').symm
-  have : Module.Finite (P'.restrict k F).integers (P'.integers ⧸ P'.constantSpanSubmodule k F) :=
-    Module.Finite.of_restrictScalars_finite k (P'.restrict k F).integers _
-  exact Module.Finite.of_submodule_quotient (P'.constantSpanSubmodule k F)
-
-/-- Nakayama monogenicity of `𝒪_{P'}` over `𝒪_P` when `e(P' ∣ P) · f(P' ∣ P) = p` is prime. -/
-private theorem Place.exists_adjoin_integers_eq_top_of_finrank_eq_prime {p : ℕ} (hp : p.Prime)
-    [FiniteDimensional k k'] [IsPurelyInseparable F F'] (hF : IsFunctionField k F)
-    (hex : IsIntegrallyClosedIn k F) (h : constantCompositum F k' F' = ⊤)
-    (hFF' : finrank F F' = p) (hn : finrank F F' = finrank k k') (P' : Place k' F') :
-    ∃ β : P'.integers, Algebra.adjoin (P'.restrict k F).integers {β} = ⊤ := by
-  have := finiteDimensional_of_constantCompositum_eq_top (k := k) h
-  have : Module.Finite (P'.restrict k F).integers P'.integers :=
-    P'.moduleFinite_integers_of_isPurelyInseparable hF hex h hn
-  have hef : Place.ramificationIdx F P' * Place.relativeDegree k F P' = p :=
-    (Place.ramificationIdx_mul_relativeDegree_eq_finrank_of_isPurelyInseparable k F hF P').trans
-      hFF'
-  rw [Place.relativeDegree_def] at hef
-  rcases hp.eq_one_or_self_of_dvd _ ⟨_, ((mul_comm _ _).trans hef).symm⟩ with hf1 | hfp
-  · obtain ⟨_, hπ⟩ := _root_.IsDiscreteValuationRing.exists_irreducible P'.integers
-    have hsurj := (Algebra.finrank_eq_one_iff_bijective_algebraMap.1 hf1).2
-    exact ⟨_,
-      IsLocalRing.adjoin_eq_top_of_algebraMap_residueField_surjective_of_span_eq_maximalIdeal
-        hsurj hπ.maximalIdeal_eq.symm⟩
-  · have he1 : Place.ramificationIdx F P' = 1 := by
-      rw [hfp] at hef
-      nlinarith [hp.pos]
-    obtain ⟨bar_b, hbar⟩ := Field.exists_adjoin_simple_eq_top_of_finrank_prime (hfp ▸ hp)
-    obtain ⟨β, hβ⟩ := residue_surjective (R := P'.integers) bar_b
-    obtain ⟨t₀, ht₀⟩ := (P'.restrict k F).exists_isUniformizer
-    have ht₀_ord : (P'.restrict k F).ord t₀ = 1 :=
-      (P'.restrict k F).isUniformizer_iff_ord_eq_one.1 ht₀
-    let π₀ : (P'.restrict k F).integers :=
-      ⟨t₀, (P'.restrict k F).mem_integers_iff_ord_nonneg.2 (by omega)⟩
-    have hπ₀_unif : P'.valuation.IsUniformizer
-        ((algebraMap (P'.restrict k F).integers P'.integers π₀ : P'.integers) : F') := by
-      rw [P'.isUniformizer_iff_ord_eq_one, Place.coe_algebraMap_integers,
-        Place.ord_algebraMap_restrict k F P', he1, Nat.cast_one, one_mul, ht₀_ord]
-    have hspan : Ideal.span {aeval β (C π₀)} = maximalIdeal P'.integers := by
-      rw [aeval_C]
-      exact (P'.irreducible_of_isUniformizer hπ₀_unif).maximalIdeal_eq.symm
-    refine ⟨β, TauCeti.IsLocalRing.adjoin_eq_top_of_span_eval_eq_maximalIdeal (g := C π₀) ?_ hspan⟩
-    rw [hβ, ← IntermediateField.adjoin_simple_toSubalgebra_of_isAlgebraic
-      (Algebra.IsAlgebraic.isAlgebraic bar_b), hbar]
-    rfl
-
-/-- **Local monogenicity at a prime purely inseparable step**: for a purely inseparable constant
-field extension `F' = F · k'` of prime degree `[k' : k] = p` over a function field `F / k` with
-exact constant field `k`, at any place `P'` of `F' / k'` above `P = P'|_F`, the valuation ring
-`𝒪_{P'}` admits a power basis of dimension `p` over `𝒪_P`. -/
-theorem Place.exists_powerBasis_integers_of_finrank_eq_prime {p : ℕ} [Fact p.Prime]
-    [IsPurelyInseparable k k'] [Algebra.IsIntegral F F'] (hk' : finrank k k' = p)
-    (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
-    (h : constantCompositum F k' F' = ⊤) (P' : Place k' F') :
-    ∃ pb : PowerBasis (P'.restrict k F).integers P'.integers, pb.dim = p := by
-  have hp : p.Prime := Fact.out
-  have : FiniteDimensional k k' := Module.finite_of_finrank_pos (hk' ▸ hp.pos)
-  have := finiteDimensional_of_constantCompositum_eq_top (k := k) h
-  have : IsPurelyInseparable F F' := isPurelyInseparable_of_constantCompositum_eq_top (k := k) h
-  have hFF' : finrank F F' = p := by
-    have hdeg := finrank_constantCompositum_eq_finrank_of_finrank_prime F k' F' hex (hk' ▸ hp)
-    rwa [h, IntermediateField.finrank_top', hk'] at hdeg
-  have hn : finrank F F' = finrank k k' := hFF'.trans hk'.symm
-  have : Module.Finite (P'.restrict k F).integers P'.integers :=
-    P'.moduleFinite_integers_of_isPurelyInseparable hF hex h hn
-  obtain ⟨β, hβ⟩ := P'.exists_adjoin_integers_eq_top_of_finrank_eq_prime hp hF hex h hFF' hn
-  have : FaithfulSMul (P'.restrict k F).integers P'.integers :=
-    (faithfulSMul_iff_algebraMap_injective _ _).2 fun x y hxy ↦ Subtype.ext <|
-      (algebraMap F F').injective
-        (by simpa [Place.coe_algebraMap_integers] using congrArg Subtype.val hxy)
-  have : IsScalarTower (P'.restrict k F).integers P'.integers F' :=
-    .of_algebraMap_eq fun x ↦ by
-      rw [IsScalarTower.algebraMap_apply (P'.restrict k F).integers F F',
-        ValuationSubring.algebraMap_apply, ValuationSubring.algebraMap_apply,
-        Place.coe_algebraMap_integers]
-  refine ⟨PowerBasis.ofAdjoinEqTop' (IsIntegral.of_finite _ β) hβ, ?_⟩
-  rw [← PowerBasis.finrank, ← IsFractionRing.finrank_eq (P'.restrict k F).integers F P'.integers F',
-    hFF']
-
-end LocalMonogenic
-
-/-! ### The local Tate–Schröer formula -/
-
-section LocalFormula
-
-variable {k : Type u} {k' : Type u'} {F : Type v} {F' : Type v'}
-variable [Field k] [Field k'] [Field F] [Field F']
-variable [Algebra k k'] [Algebra k F] [Algebra k F'] [Algebra k' F'] [Algebra F F']
-variable [IsScalarTower k k' F'] [IsScalarTower k F F']
-
-attribute [local instance 10] Place.algebraIntegersExtension Place.isScalarTowerIntegersExtension
 
 /-- Comparing `𝒪_P`-length and `k'`-dimension identifies `p · δ_P` with `ord_P(det A) · deg P`. -/
 private theorem Place.mul_singularityDegree_eq_toNat_ord_det_mul_degree {n p : ℕ} (hp : p.Prime)
@@ -419,7 +255,8 @@ theorem Place.exists_two_mul_singularityDegree_restrict_eq_of_finrank_eq_prime {
   have : CharP k' p := charP_of_injective_algebraMap (algebraMap k k').injective p
   have : CharP P'.integers p :=
     charP_of_injective_algebraMap (algebraMap k' P'.integers).injective p
-  obtain ⟨pb, hdim⟩ := P'.exists_powerBasis_integers_of_finrank_eq_prime hk' hF hex h
+  obtain ⟨pb, hdim⟩ :=
+    P'.exists_powerBasis_integers_of_finrank_eq_prime hF (hF.of_constantCompositum_eq_top h) hFF'
   obtain ⟨b₀, hb₀⟩ := TauCeti.IsPurelyInseparable.pow_mem_of_finrank_le_pow F F' p (n := 1)
     (by simp [hFF']) (pb.gen : F')
   rw [pow_one] at hb₀
@@ -488,41 +325,6 @@ end LocalFormula
 /-! ### Tate's genus-change theorem -/
 
 section Tate
-
-/-- In a degree-`p` purely inseparable constant extension over an exact base constant field `k`,
-any algebraic constant enlargement `k'' / k'` inside `F'` is purely inseparable over `k'`. -/
-private theorem isPurelyInseparable_enlargement_of_finrank_eq_prime {k : Type u} {k' : Type u'}
-    {F : Type v} {F' : Type v'} [Field k] [Field k'] [Field F] [Field F'] [Algebra k k']
-    [Algebra k F] [Algebra k F'] [Algebra k' F'] [Algebra F F'] [IsScalarTower k k' F']
-    [IsScalarTower k F F'] {p : ℕ} (hp : p.Prime) [CharP k p] [FiniteDimensional k k']
-    [IsPurelyInseparable F F'] (hex : IsIntegrallyClosedIn k F) (hFF' : finrank F F' = p)
-    {k'' : Type*} [Field k''] [Algebra k' k''] [Algebra k'' F'] [IsScalarTower k' k'' F']
-    [Algebra.IsAlgebraic k' k''] :
-    IsPurelyInseparable k' k'' := by
-  have : FiniteDimensional F F' := Module.finite_of_finrank_pos (hFF' ▸ hp.pos)
-  have : CharP F p := charP_of_injective_algebraMap (algebraMap k F).injective p
-  have : ExpChar F p := .prime hp
-  have : CharP k' p := charP_of_injective_algebraMap (algebraMap k k').injective p
-  have : ExpChar k' p := .prime hp
-  let _ : Algebra k k'' := RingHom.toAlgebra ((algebraMap k' k'').comp (algebraMap k k'))
-  have : IsScalarTower k k' k'' := .of_algebraMap_eq fun _ ↦ rfl
-  have : IsScalarTower k k'' F' := .of_algebraMap_eq fun c ↦ by
-    rw [RingHom.algebraMap_toAlgebra, RingHom.comp_apply,
-      ← IsScalarTower.algebraMap_apply k' k'' F', ← IsScalarTower.algebraMap_apply k k' F']
-  have : Algebra.IsAlgebraic k k'' := Algebra.IsAlgebraic.trans k k' k''
-  rw [isPurelyInseparable_iff_pow_mem k' p]
-  intro c
-  obtain ⟨y, hy⟩ := TauCeti.IsPurelyInseparable.pow_mem_of_finrank_le_pow F F' p (n := 1)
-    (by simp [hFF']) (algebraMap k'' F' c)
-  rw [pow_one] at hy
-  have hy_int : IsIntegral k y := by
-    refine (isIntegral_algHom_iff (IsScalarTower.toAlgHom k F F') (algebraMap F F').injective).1 ?_
-    rw [IsScalarTower.toAlgHom_apply, hy, ← map_pow]
-    exact (Algebra.IsIntegral.isIntegral (R := k) (c ^ p)).map (IsScalarTower.toAlgHom k k'' F')
-  obtain ⟨c₀, rfl⟩ := IsIntegrallyClosedIn.isIntegral_iff.1 hy_int
-  refine ⟨1, algebraMap k k' c₀, (algebraMap k'' F').injective ?_⟩
-  rw [pow_one, map_pow, ← hy, ← IsScalarTower.algebraMap_apply k F F',
-    ← IsScalarTower.algebraMap_apply k' k'' F', ← IsScalarTower.algebraMap_apply k k' F']
 
 /-- Tate's genus-change divisibility for a single purely inseparable constant step of prime degree
 `p`, allowing constant growth into an exact constant field `k''` of `F'`. -/
@@ -721,27 +523,6 @@ theorem sub_one_dvd_two_mul_genus_sub_genus_of_isIntegrallyClosedIn {p : ℕ} [F
   have hFL : constantCompositum F L FL = ⊤ := (constantCompositum_eq_top_iff F L F' FL).2 rfl
   rw [← hgL]
   exact sub_one_dvd_two_mul_genus_sub_genus_of_finite_of_isIntegrallyClosedIn hF hex hFL hexL
-
-/-- Composing `k → k' → k''` preserves `constantCompositum F _ F' = ⊤` and the genus bound
-`genus k'' F' ≤ genus k F`. -/
-private theorem genus_le_and_constantCompositum_eq_top_of_enlargement [Algebra.IsAlgebraic k k']
-    (hF : IsFunctionField k F) (h : constantCompositum F k' F' = ⊤) {k'' : Type*} [Field k'']
-    [Algebra k' k''] [Algebra k'' F'] [IsScalarTower k' k'' F'] [Algebra.IsAlgebraic k' k''] :
-    letI : Algebra k k'' := RingHom.toAlgebra ((algebraMap k' k'').comp (algebraMap k k'))
-    ∃ (_ : IsScalarTower k k'' F') (_ : Algebra.IsAlgebraic k k''),
-      constantCompositum F k'' F' = ⊤ ∧ genus k'' F' ≤ genus k F := by
-  let _ : Algebra k k'' := RingHom.toAlgebra ((algebraMap k' k'').comp (algebraMap k k'))
-  have : IsScalarTower k k' k'' := .of_algebraMap_eq fun _ ↦ rfl
-  have hst : IsScalarTower k k'' F' := .of_algebraMap_eq fun c ↦ by
-    rw [RingHom.algebraMap_toAlgebra, RingHom.comp_apply,
-      ← IsScalarTower.algebraMap_apply k' k'' F', ← IsScalarTower.algebraMap_apply k k' F']
-  have halg : Algebra.IsAlgebraic k k'' := Algebra.IsAlgebraic.trans k k' k''
-  have h'' : constantCompositum F k'' F' = ⊤ := by
-    rw [eq_top_iff, ← h]
-    refine (constantCompositum_le_iff F k' F').2 fun c ↦ ?_
-    rw [IsScalarTower.algebraMap_apply k' k'' F']
-    exact algebraMap_mem_constantCompositum F k'' F' (algebraMap k' k'' c)
-  exact ⟨hst, halg, h'', genus_le_genus_of_constantCompositum_eq_top hF h''⟩
 
 /-- **Tate's genus-change theorem** (allowing constant growth): for any algebraic constant field
 extension `F' = F · k'` of a function field `F / k` in prime characteristic `p` with `k` exact in

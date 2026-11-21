@@ -59,6 +59,7 @@ closure of `k`, this is Stichtenoth's splitting `[F' : F] = [F' · K : F · K] �
   gives `K(t)` as a subfield of the ambient field.
 * `TauCeti.constantCompositum_eq_top_iff`: an intermediate field into which `k'` maps is generated
   over `F` by the image of `k'` exactly when it is the compositum `F · k'`.
+* `TauCeti.constantCompositum_bot`: adjoining the bottom intermediate field `⊥` over `k` gives `⊥`.
 * `TauCeti.constantCompositum_eq_top_iff_of_range_eq`: the compositum `F · k'` depends only on
   the image of `F` in `F'`.
 * `TauCeti.constantCompositum_eq_top_of_eq_top`: if `F' = F · k'`, then `F' = E · k'` for every
@@ -319,6 +320,20 @@ theorem geometricDegree_eq_finrank : geometricDegree F k' F' = Module.finrank F 
 end ConstantsInBase
 
 end Compositum
+
+/-- **Adjoining the trivial intermediate field `⊥ : IntermediateField k k'` gives `⊥`**: the
+compositum of `F` with `⊥` inside `F'` is `F` itself. -/
+@[simp]
+theorem constantCompositum_bot [Field k] [Field k'] [Algebra k k'] [Algebra k F] [Algebra k F']
+    [Algebra k' F'] [Algebra F F'] [IsScalarTower k k' F'] [IsScalarTower k F F'] :
+    constantCompositum F (⊥ : IntermediateField k k') F' = ⊥ := by
+  refine le_antisymm ((constantCompositum_le_iff F (⊥ : IntermediateField k k') F').2 fun c ↦ ?_)
+    bot_le
+  obtain ⟨a, ha⟩ := IntermediateField.mem_bot.1 c.property
+  rw [IsScalarTower.algebraMap_apply (⊥ : IntermediateField k k') k' F',
+    IntermediateField.algebraMap_apply, ← ha, ← IsScalarTower.algebraMap_apply k k' F',
+    IsScalarTower.algebraMap_apply k F F']
+  exact IntermediateField.algebraMap_mem _ _
 
 /-! ### The compositum of an intermediate field with the constants -/
 

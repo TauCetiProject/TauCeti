@@ -53,6 +53,9 @@ extension. Multiples of a pole divisor also admit a statement without any fibre 
 * `TauCeti.Divisor.dim_nsmul_poles_le_of_linearDisjoint`: if `F` and `k'` are linearly disjoint
   over `k`, then `ℓ(n (z)_∞)` of `F / k` is at most that of `F' / k'`, with no separability or
   exactness hypothesis.
+* `TauCeti.Divisor.dim_nsmul_poles_le_of_forall_exists`: if an intermediate function field `(M, E)`
+  contains a `k'`-basis of `L(l (z)_∞)` in `F'`, then `ℓ(l (z)_∞)` over `(M, E)` is at least
+  that over `(k', F')`.
 * `TauCeti.finrank_span_image_riemannRochSpace_of_linearDisjoint`: if `F` and `k'` are linearly
   disjoint over `k`, then `L(D) · k'` has `k'`-dimension `ℓ(D)`.
 
@@ -345,6 +348,41 @@ theorem Divisor.dim_nsmul_poles_le_of_linearDisjoint [Algebra.IsIntegral F F']
           (b i).property⟩
   have hv : LinearIndependent k' v := .of_comp (riemannRochSpace D').subtype hli
   simpa [Divisor.dim_def] using hv.fintype_card_le_finrank
+
+omit [Algebra.IsSeparable k k'] [Algebra k k'] [Algebra k F] [Algebra k F']
+    [IsScalarTower k k' F'] [IsScalarTower k F F'] in
+/-- If an intermediate function field `(M, E)` contains a `k'`-basis of `L(l • (z)_∞)` in `F'`,
+then `ℓ(l • (z)_∞)` over `(M, E)` is at least `ℓ(l • (z)_∞)` over `(k', F')`. -/
+theorem Divisor.dim_nsmul_poles_le_of_forall_exists {M E : Type*} [Field M] [Field E]
+    [Algebra M k'] [Algebra M E] [Algebra M F'] [Algebra E F'] [IsScalarTower M k' F']
+    [IsScalarTower M E F'] [Algebra F E] [IsScalarTower F E F'] [Algebra.IsIntegral E F']
+    (hFE : IsFunctionField M E) (hF' : IsFunctionField k' F') (z : Fˣ) (l : ℕ)
+    {ι : Type*} [Finite ι]
+    (b : Module.Basis ι k' (riemannRochSpace
+      (l • Divisor.poles hF' (Units.map (algebraMap F F' : F →* F') z))))
+    (hb : ∀ i, ∃ y : E, algebraMap E F' y = b i) :
+    (l • Divisor.poles hF' (Units.map (algebraMap F F' : F →* F') z)).dim ≤
+      (l • Divisor.poles hFE (Units.map (algebraMap F E : F →* E) z)).dim := by
+  classical
+  cases nonempty_fintype ι
+  choose y hy using hb
+  have hz_eq : Units.map (algebraMap E F' : E →* F') (Units.map (algebraMap F E : F →* E) z) =
+      Units.map (algebraMap F F' : F →* F') z :=
+    Units.ext (IsScalarTower.algebraMap_apply F E F' z).symm
+  let v : ι → riemannRochSpace (l • Divisor.poles hFE (Units.map (algebraMap F E : F →* E) z)) :=
+    fun i ↦ ⟨y i, (mem_riemannRochSpace_nsmul_poles_map_iff hFE hF' l
+      (Units.map (algebraMap F E : F →* E) z) (y i)).1 (by rw [hy i, hz_eq]; exact (b i).property)⟩
+  have hcomp : ((IsScalarTower.toAlgHom M E F').toLinearMap.comp
+      (riemannRochSpace _).subtype) ∘ v = (riemannRochSpace _).subtype ∘ b :=
+    funext fun i ↦ hy i
+  have hli : LinearIndependent M v :=
+    .of_comp ((IsScalarTower.toAlgHom M E F').toLinearMap.comp (riemannRochSpace _).subtype) <|
+      hcomp.symm ▸ ((b.linearIndependent.map' (riemannRochSpace _).subtype
+        (Submodule.ker_subtype _)).restrict_scalars' M)
+  have := finiteDimensional_riemannRochSpace hFE
+    (l • Divisor.poles hFE (Units.map (algebraMap F E : F →* E) z))
+  rw [Divisor.dim_def, Divisor.dim_def, Module.finrank_eq_card_basis b]
+  exact hli.fintype_card_le_finrank
 
 
 omit [Algebra.IsSeparable k k'] in
