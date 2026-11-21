@@ -13,6 +13,7 @@ import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
 import TauCeti.GroupTheory.Perm.Fin
 import TauCeti.GroupTheory.Perm.ProdCongr
+import TauCeti.KnotTheory.Grid.Rectangle.Count
 
 /-!
 # The multi-pointed Heegaard diagram of a grid diagram
@@ -38,9 +39,13 @@ it, and the Euler measure of every domain is `0`
 * **Generators.** A generator, one intersection point on each horizontal and each vertical
   circle, is a grid state (`TauCeti.GridDiagram.gridStateEquivGenerator`).
 * **Rectangles.** The domain of a toroidal rectangle (`TauCeti.GridRectangle.domain`) has
-  multiplicity one on the squares it covers. Its boundary turns at the four corners of the
-  rectangle, so the domain of an oriented rectangle from `x` to `y` is a domain from `x` to `y`
-  (`TauCeti.GridDiagram.isDomainBetween_domain`).
+  multiplicity one on the squares it covers, and distinct rectangles from `x` to `y` have
+  distinct domains (`TauCeti.GridRectangleBetween.toGridRectangle_domain_injective`). Its
+  boundary turns at the four corners of the rectangle, so the domain of an oriented rectangle
+  from `x` to `y` is a domain from `x` to `y` (`TauCeti.GridDiagram.isDomainBetween_domain`).
+  Across a horizontal or vertical circle its multiplicity jumps only at the sides of the
+  rectangle (`TauCeti.GridDiagram.alphaBoundary_domain`,
+  `TauCeti.GridDiagram.betaBoundary_domain`).
 * **Maslov index.** The point measure of a rectangle is `1` at an interior grid point, `1 / 2` on
   a side and `1 / 4` at a corner. Lipshitz's formula therefore gives the domain of a rectangle
   from `x` to `y` the Maslov index `1 + 2 #(x ∩ Int(r))`
@@ -59,8 +64,9 @@ it, and the Euler measure of every domain is `0`
   rectangle counted by the fully blocked grid complex, is one of the domains counted by the hat
   differential of the multi-pointed diagram (`TauCeti.GridDiagram.domain_mem_hatDomains`).
 
-The converse, that every nonnegative domain of Maslov index one avoiding all basepoints is the
-domain of an empty rectangle, is not proved here.
+The converse, that every nonnegative domain of Maslov index one is the domain of an empty
+rectangle, is `TauCeti.GridDiagram.exists_gridRectangleBetween_isEmpty_domain_eq` in
+`TauCeti.LowDimTopology.Heegaard.Grid.HatDifferential`.
 
 ## References
 
@@ -108,6 +114,29 @@ theorem domain_nonneg (R : GridRectangle n) : 0 ≤ R.domain :=
   Set.indicator_nonneg fun _ _ => zero_le_one
 
 end GridRectangle
+
+namespace GridRectangleBetween
+
+variable {x y : GridState n}
+
+/-- **Distinct rectangles from `x` to `y` have distinct domains.** The two rectangles from `x` to
+`y` with the same side columns cover the complementary arcs of columns. -/
+theorem toGridRectangle_domain_injective :
+    Function.Injective fun R : GridRectangleBetween x y => R.toGridRectangle.domain := by
+  intro R S h
+  rcases R.eq_or_eq_swapSides S with rfl | rfl
+  · rfl
+  -- The square at the lower-left corner of `R` is covered by `R` and not by `R.swapSides`.
+  have h₁ := congrFun h (R.left, R.bottom)
+  simp only [GridRectangle.domain_apply_mk, GridRectangleBetween.swapSides_toGridRectangle,
+    GridRectangleBetween.toGridRectangle_left, GridRectangleBetween.toGridRectangle_right,
+    GridRectangleBetween.toGridRectangle_bottom, GridRectangleBetween.toGridRectangle_top,
+    Grid.left_mem_cIco R.left_ne_right, Grid.left_mem_cIco R.bottom_ne_top,
+    Grid.right_notMem_cIco, ite_true, ite_false, one_mul, zero_mul] at h₁
+  exact absurd h₁ one_ne_zero
+
+
+end GridRectangleBetween
 
 namespace GridDiagram
 
@@ -328,6 +357,30 @@ theorem betaArcBoundary_betaBoundary_domain (R : GridRectangle n) (q : Fin n × 
     ((if c = R.left then 1 else 0 : ℤ) - if c = R.right then 1 else 0) * hr +
       ((if r ∈ Grid.cIco R.bottom R.top then 1 else 0 : ℤ) -
         if (finRotate n).symm r ∈ Grid.cIco R.bottom R.top then 1 else 0) * hc
+
+/-- The `α`-boundary of the domain of a rectangle: going up across the horizontal circle `r` in a
+covered column enters the rectangle at its bottom side and leaves it at its top side. -/
+theorem alphaBoundary_domain (R : GridRectangle n) (c r : Fin n) :
+    G.heegaardRegionSystem.alphaBoundary R.domain (c, r) =
+      (if c ∈ Grid.cIco R.left R.right then 1 else 0) *
+        ((if r = R.bottom then 1 else 0) - if r = R.top then 1 else 0) := by
+  have h := Grid.ite_mem_cIco_finRotate_sub_ite_mem_cIco R.bottom R.top ((finRotate n).symm r)
+  simp only [Equiv.apply_symm_apply] at h
+  simp only [HeegaardRegionSystem.alphaBoundary_apply, heegaardRegionSystem_alphaLeft,
+    heegaardRegionSystem_alphaRight, GridRectangle.domain_apply_mk]
+  linear_combination (if c ∈ Grid.cIco R.left R.right then 1 else 0 : ℤ) * h
+
+/-- The `β`-boundary of the domain of a rectangle: going left across the vertical circle `c` in a
+covered row enters the rectangle at its right side and leaves it at its left side. -/
+theorem betaBoundary_domain (R : GridRectangle n) (c r : Fin n) :
+    G.heegaardRegionSystem.betaBoundary R.domain (c, r) =
+      (if r ∈ Grid.cIco R.bottom R.top then 1 else 0) *
+        ((if c = R.right then 1 else 0) - if c = R.left then 1 else 0) := by
+  have h := Grid.ite_mem_cIco_finRotate_sub_ite_mem_cIco R.left R.right ((finRotate n).symm c)
+  simp only [Equiv.apply_symm_apply] at h
+  simp only [HeegaardRegionSystem.betaBoundary_apply, heegaardRegionSystem_betaLeft,
+    heegaardRegionSystem_betaRight, GridRectangle.domain_apply_mk]
+  linear_combination (-(if r ∈ Grid.cIco R.bottom R.top then 1 else 0 : ℤ)) * h
 
 variable {x y : GridState n}
 
