@@ -77,6 +77,11 @@ instance isMonoidal_isInvertible (X : Scheme.{u}) : (isInvertible X).IsMonoidal 
     exact (isInvertible X).prop_of_iso
       (SheafOfModules.tensorProductIso X.sheaf M N ≪≫ (M.tensorUnderlyingIso N).symm) hprod
 
+/-- The monoidal tensor product of two invertible sheaves is invertible. -/
+instance isInvertible_tensorObj {X : Scheme.{u}} (M N : X.Modules)
+    [isInvertible X M] [isInvertible X N] : isInvertible X (M ⊗ N) :=
+  ObjectProperty.prop_tensor ‹_› ‹_›
+
 /-- The monoidal tensor powers of an invertible sheaf are invertible. -/
 instance isInvertible_tensorPow {X : Scheme.{u}} (M : X.Modules) [isInvertible X M] (n : ℕ) :
     isInvertible X (TauCeti.tensorPow M n) := by

@@ -283,11 +283,11 @@ theorem tensorObjIso_hom_app_tmulRight (U : (Proj 𝒜).Opens) (s : Γ(twistingS
     (tensorObjIso f hf hcover m n).hom.app U
       (Scheme.Modules.tmulRight (twistingSheaf 𝒜 m) t s) = mul 𝒜 U m n s t := by
   rw [tensorObjIso_hom]
-  -- The factors of `tensorObjIso` are stated for the site presentation `(Proj 𝒜).sheaf` of the
-  -- structure sheaf, so composing and evaluating them requires unfolding to `(Proj 𝒜).Modules`.
-  erw [Scheme.Modules.Hom.comp_app, ConcreteCategory.comp_apply]
-  rw [Scheme.Modules.tensorUnderlyingIso_hom_app_tmulRight]
-  exact tensorProductIso_hom_tmul f hf hcover m n U s t
+  have h := Scheme.Modules.tensorUnderlyingIso_hom_comp_app_tmulRight (twistingSheaf 𝒜 m)
+    ((TauCeti.SheafOfModules.tensorProductIso (Proj 𝒜).sheaf
+      (twistingSheaf 𝒜 m) (twistingSheaf 𝒜 n)).inv ≫
+        (tensorProductIso f hf hcover m n).hom) t s
+  exact h.trans (tensorProductIso_hom_tmul f hf hcover m n U s t)
 
 end Cover
 

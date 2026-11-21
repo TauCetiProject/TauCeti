@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicGeometry.Modules.Tilde
 public import Mathlib.Topology.QuasiSeparated
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Restriction
 public import TauCeti.AlgebraicGeometry.Scheme.Opens
+import TauCeti.AlgebraicGeometry.Modules.Sections
 import TauCeti.Algebra.Group.Action.Pow
 import TauCeti.Algebra.Module.LocalizedModule.Away.Basic
 
@@ -63,8 +64,8 @@ morphisms.
   quasi-coherent if these restriction maps are localizations on the members of an affine open
   cover; `AlgebraicGeometry.Scheme.Modules.isQuasicoherent_iff_isLocalizedModule` is the
   resulting characterization.
-* `AlgebraicGeometry.Scheme.Modules.isQuasicoherent_Spec_field`: every module on the spectrum of a
-  field is quasi-coherent.
+* `AlgebraicGeometry.Scheme.Modules.isQuasicoherent_of_discreteTopology`: every module on a
+  discrete scheme is quasi-coherent.
 
 ## References
 
@@ -296,33 +297,42 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.isQuasicoherent_iff_isLocalizedM
     M.isQuasicoherent_of_isLocalizedModule (fun U : X.affineOpens ↦ U.val) (fun U ↦ U.property)
       (iSup_affineOpens_eq_top X) fun U ↦ h U.val U.property⟩
 
-/-- Every module on the spectrum of a field is quasi-coherent: a function on `Spec k` is zero or a
-unit, so its basic open is empty or everything. -/
-theorem _root_.AlgebraicGeometry.Scheme.Modules.isQuasicoherent_Spec_field {k : Type u} [Field k]
-    (N : (Spec (.of k)).Modules) : N.IsQuasicoherent := by
-  have hk : IsField Γ(Spec (.of k), ⊤) :=
-    (Scheme.ΓSpecIso _).commRingCatIsoToRingEquiv.toMulEquiv.isField (Field.toIsField k)
-  refine N.isQuasicoherent_of_isLocalizedModule (fun _ : Unit ↦ ⊤) (fun _ ↦ isAffineOpen_top _)
-    iSup_const fun _ f ↦ ?_
-  obtain rfl | hf := eq_or_ne f 0
-  · exact .mk_of_addCommGroup (N.isUnit_algebraMap_end_basicOpen 0)
-      (fun _ ↦ ⟨1, 0, by simp⟩) fun _ _ ↦ ⟨1, by simp⟩
-  have hfu : IsUnit f := by
-    let := hk.toField
-    exact hf.isUnit
-  -- The basic open of a unit is everything, so restricting to it is bijective.
-  have : IsIso (homOfLE ((Spec (.of k)).basicOpen_le f)) :=
-    homOfLE_isIso_of_eq _ (Scheme.basicOpen_of_isUnit _ hfu)
-  have he : ⇑(N.basicOpenRestrict f) =
-      N.presheaf.map (homOfLE ((Spec (.of k)).basicOpen_le f)).op :=
-    funext (N.basicOpenRestrict_apply f)
-  have hbij : Function.Bijective (N.basicOpenRestrict f) := by
-    rw [he]
-    exact ConcreteCategory.bijective_of_isIso _
-  rw [IsLocalizedModule.Away, ← LinearMap.id_comp (N.basicOpenRestrict f),
-    IsLocalizedModule.comp_iff_of_bijective_right _ _ hbij]
-  exact Function.Bijective.isLocalizedModule_id_powers
-    (hfu.smul_bijective (β := Γ(N, (Spec (.of k)).basicOpen f)))
+/-- Every module on a scheme with discrete topology is quasi-coherent. This includes
+nonreduced one-point schemes as well as spectra of fields. -/
+instance _root_.AlgebraicGeometry.Scheme.Modules.isQuasicoherent_of_discreteTopology
+    [DiscreteTopology X] : M.IsQuasicoherent := by
+  let V (x : X) : X.Opens := ⟨{x}, isOpen_discrete _⟩
+  have hV (x : X) : IsAffineOpen (V x) := IsAffineOpen.of_subsingleton Set.subsingleton_singleton
+  have hcov : ⨆ x, V x = ⊤ := by ext x; simp [V]
+  refine M.isQuasicoherent_of_isLocalizedModule V hV hcov fun x f ↦ ?_
+  by_cases hx : x ∈ X.basicOpen f
+  · have hb : X.basicOpen f = V x := le_antisymm (X.basicOpen_le f) fun y hy ↦ by
+      obtain rfl : y = x := hy
+      exact hx
+    have hfu : IsUnit f := X.toRingedSpace.isUnit_of_isUnit_germ (V x) f fun y hy ↦
+      (X.mem_basicOpen f y hy).mp (hb.symm ▸ hy)
+    have : IsIso (homOfLE (X.basicOpen_le f)) := homOfLE_isIso_of_eq _ hb
+    have hbij : Function.Bijective (M.basicOpenRestrict f) := by
+      have he : ⇑(M.basicOpenRestrict f) =
+          M.presheaf.map (homOfLE (X.basicOpen_le f)).op := funext (M.basicOpenRestrict_apply f)
+      rw [he]
+      exact ConcreteCategory.bijective_of_isIso _
+    rw [IsLocalizedModule.Away, ← LinearMap.id_comp (M.basicOpenRestrict f),
+      IsLocalizedModule.comp_iff_of_bijective_right _ _ hbij]
+    exact Function.Bijective.isLocalizedModule_id_powers
+      (hfu.smul_bijective (β := Γ(M, X.basicOpen f)))
+  · have hb : X.basicOpen f = ⊥ := by
+      apply le_bot_iff.mp
+      intro y hy
+      obtain rfl : y = x := X.basicOpen_le f hy
+      exact (hx hy).elim
+    obtain ⟨n, hn⟩ :=
+      (Scheme.isNilpotent_iff_basicOpen_eq_bot_of_isCompact (hV x).isCompact f).mpr hb
+    have : IsEmpty (X.basicOpen f) := ⟨fun y ↦ by simpa [hb] using y.property⟩
+    have : Subsingleton Γ(M, X.basicOpen f) :=
+      ⟨fun s t ↦ Scheme.Modules.section_ext_of_isEmpty s t⟩
+    exact .mk_of_addCommGroup (M.isUnit_algebraMap_end_basicOpen f)
+      (fun _ ↦ ⟨1, 0, Subsingleton.elim _ _⟩) fun _ _ ↦ ⟨n, by simp [hn]⟩
 
 open Scheme.Modules in
 /-- **Sections over a basic open extend after multiplication by a power of the function.** For a

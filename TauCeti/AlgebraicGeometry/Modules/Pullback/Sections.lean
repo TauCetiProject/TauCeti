@@ -179,39 +179,11 @@ lemma pullbackSectionsLE_comp_hom {W : Z.Opens} (hW : W ≤ f ⁻¹ᵁ V)
     (fun a : (pullback (f ≫ g)).obj M ⟶ (pullback (f ≫ g)).obj M ↦ a.app W
       (pullbackSectionsLE (f ≫ g) M U W _ s)) ((pullbackComp f g).app M).inv_hom_id
 
-/-- Pulling back sections over `U` along the open immersion `U.ι : U ⟶ Y` identifies them with the
-global sections of the pullback to `U`. The global open is given as any `T` equal to `⊤`, such as
-the preimage of `⊤` under a morphism into `U`. -/
-theorem _root_.AlgebraicGeometry.Scheme.Modules.bijective_pullbackSectionsLE_ι {Y : Scheme.{u}}
-    (P : Y.Modules) (U : Y.Opens) (T : U.toScheme.Opens) (hT : T = ⊤) :
-    Function.Bijective (U.ι.pullbackSectionsLE P U T (hT ▸ by simp)) := by
-  subst hT
-  have hu := Adjunction.unit_leftAdjointUniq_hom_app (restrictAdjunction U.ι)
-    (pullbackPushforwardAdjunction U.ι) P
-  have h₁ : IsIso (((restrictAdjunction U.ι).unit.app P).app U) :=
-    isIso_restrictAdjunction_unit_app_app U.ι P (by simp)
-  have h₂ : IsIso (((pullback U.ι).obj P).presheaf.map
-      (homOfLE (show ⊤ ≤ U.ι ⁻¹ᵁ U by simp)).op) :=
-    have : homOfLE (show ⊤ ≤ U.ι ⁻¹ᵁ U by simp) = eqToHom (by simp) := Subsingleton.elim _ _
-    this ▸ inferInstance
-  -- The pullback of sections along `U.ι` is the restriction-pushforward unit followed by the
-  -- comparison of restriction with pullback, then restriction from `U.ι ⁻¹ᵁ U` to `⊤`.
-  have h₃ : (U.ι.pullbackSectionsLE P U ⊤ (by simp) : Γ(P, U) → _) =
-      ((pullback U.ι).obj P).presheaf.map (homOfLE (show ⊤ ≤ U.ι ⁻¹ᵁ U by simp)).op ∘
-        ((restrictFunctorIsoPullback U.ι).hom.app P).app (U.ι ⁻¹ᵁ U) ∘
-        ((restrictAdjunction U.ι).unit.app P).app U := by
-    ext s
-    rw [pullbackSectionsLE_apply, pullbackSections_apply, ← hu]
-    rfl
-  rw [h₃]
-  exact (ConcreteCategory.bijective_of_isIso _).comp
-    ((ConcreteCategory.bijective_of_isIso _).comp (ConcreteCategory.bijective_of_isIso _))
-
 /-- Along an open immersion `j`, the comparison `N|_Z ≅ j^* N` sends the restriction of a section
 `s` of `N` over `j(U)` to the pullback of `s` restricted to `U`. -/
 theorem
     _root_.AlgebraicGeometry.Scheme.Modules.restrictFunctorIsoPullback_hom_app_restrictAppIso_inv
-    (j : Z ⟶ Y) [IsOpenImmersion j] (N : Y.Modules) (U : Z.Opens) (s : Γ(N, j ''ᵁ U)) :
+    (N : Y.Modules) (j : Z ⟶ Y) [IsOpenImmersion j] (U : Z.Opens) (s : Γ(N, j ''ᵁ U)) :
     ((restrictFunctorIsoPullback j).hom.app N).app U ((N.restrictAppIso j U).inv s) =
       j.pullbackSectionsLE N (j ''ᵁ U) U (j.preimage_image_eq U).ge s := by
   have hu := Adjunction.unit_leftAdjointUniq_hom_app (restrictAdjunction j)
@@ -220,13 +192,58 @@ theorem
     (homOfLE (j.preimage_image_eq U).ge).op (((restrictAdjunction j).unit.app N).app (j ''ᵁ U) s)
   rw [pullbackSectionsLE_apply, pullbackSections_apply, ← hu]
   refine Eq.trans ?_ (hn.trans rfl)
-  refine congrArg (((restrictFunctorIsoPullback j).hom.app N).app U) ?_
-  -- Both sides are `s`, the right one restricted from `j(U)` to `j(j⁻¹(j(U)))` and back.
+  apply congrArg (((restrictFunctorIsoPullback j).hom.app N).app U)
   rw [restrictAdjunction_unit_app_app]
-  change s = N.presheaf.map _ (N.presheaf.map _ s)
-  rw [← N.presheaf.map_comp_apply]
-  refine Eq.trans ?_ (congrArg (fun i ↦ N.presheaf.map i s) (Subsingleton.elim (𝟙 _) _))
-  rw [N.presheaf.map_id, ConcreteCategory.id_apply]
+  -- The restriction adjunction is constructed with a functor unitor; write its component
+  -- through `restrictAppIso`, retaining that isomorphism rather than reducing it to identity.
+  change (N.restrictAppIso j U).inv s =
+    (N.restrict j).presheaf.map (homOfLE (j.preimage_image_eq U).ge).op
+      ((N.restrictAppIso j (j ⁻¹ᵁ (j ''ᵁ U))).inv
+        (N.presheaf.map (homOfLE (j.image_preimage_le (j ''ᵁ U))).op s))
+  rw [← ConcreteCategory.comp_apply, restrictAppIso_inv_map, ConcreteCategory.comp_apply,
+    ← N.presheaf.map_comp_apply]
+  simpa only [N.presheaf.map_id, ConcreteCategory.id_apply] using
+    congrArg (fun i ↦ (N.restrictAppIso j U).inv (N.presheaf.map i s))
+      (Subsingleton.elim (𝟙 _) _)
+
+/-- Pulling back sections over `U` along the open immersion `U.ι : U ⟶ Y` identifies them with the
+global sections of the pullback to `U`. The global open is given as any `T` equal to `⊤`, such as
+the preimage of `⊤` under a morphism into `U`. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.bijective_pullbackSectionsLE_ι {Y : Scheme.{u}}
+    (P : Y.Modules) (U : Y.Opens) (T : U.toScheme.Opens) (hT : T = ⊤) :
+    Function.Bijective (U.ι.pullbackSectionsLE P U T (hT ▸ by simp)) := by
+  subst hT
+  have h := P.restrictFunctorIsoPullback_hom_app_restrictAppIso_inv U.ι ⊤
+  have he : U.ι ''ᵁ ⊤ = U := by simp
+  have hfun : (U.ι.pullbackSectionsLE P (U.ι ''ᵁ ⊤) ⊤ (by simp) : Γ(P, U.ι ''ᵁ ⊤) → _) =
+      ((restrictFunctorIsoPullback U.ι).hom.app P).app ⊤ ∘ (P.restrictAppIso U.ι ⊤).inv :=
+    funext fun s ↦ (h s).symm
+  have hb : Function.Bijective
+      (U.ι.pullbackSectionsLE P (U.ι ''ᵁ ⊤) ⊤ (by simp)) := by
+    rw [hfun]
+    exact (ConcreteCategory.bijective_of_isIso _).comp (ConcreteCategory.bijective_of_isIso _)
+  have hi : IsIso (homOfLE (U.ι_image_le ⊤)) :=
+    homOfLE_isIso_of_eq _ he
+  have hf : (U.ι.pullbackSectionsLE P U ⊤ (by simp) : Γ(P, U) → _) =
+      U.ι.pullbackSectionsLE P (U.ι ''ᵁ ⊤) ⊤ (by simp) ∘
+        P.presheaf.map (homOfLE (U.ι_image_le ⊤)).op := by
+    ext s
+    exact (U.ι.pullbackSectionsLE_map P U ⊤ (by simp)
+      (homOfLE (U.ι_image_le ⊤)) (by simp) s).symm
+  rw [hf]
+  exact hb.comp (ConcreteCategory.bijective_of_isIso _)
+
+/-- Pullback to a smaller open is injective if pullback to the full inverse image is injective
+and restriction to that smaller open is an isomorphism. -/
+lemma pullbackSectionsLE_injective_of_isIso
+    [IsIso (homOfLE hV)] (h : Function.Injective (g.pullbackSections M U)) :
+    Function.Injective (g.pullbackSectionsLE M U V hV) := by
+  intro s t hst
+  apply h
+  exact (ConcreteCategory.bijective_of_isIso
+    (((pullback g).obj M).presheaf.map (homOfLE hV).op)).injective
+      ((g.pullbackSectionsLE_apply M U V hV s).symm.trans
+        (hst.trans (g.pullbackSectionsLE_apply M U V hV t)))
 
 /-- For `h : f ≫ g = gf`, pulling a global section back along `gf` and identifying
 `gf^* M ≅ f^* g^* M` gives its iterated pullback along `g` and then `f`. -/

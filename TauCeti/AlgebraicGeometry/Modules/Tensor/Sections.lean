@@ -7,9 +7,10 @@ module
 
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.Quasicoherent
 public import TauCeti.AlgebraicGeometry.Modules.Sections
+public import TauCeti.AlgebraicGeometry.Modules.Stalk
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free.Basic
 public import TauCeti.CategoryTheory.Monoidal.TensorPow.Basic
-import all TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Monoidal
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Stalk
 
 /-!
 # Tensoring sections of `𝒪_X`-modules with a section
@@ -45,6 +46,7 @@ locus of a section of an invertible sheaf.
 public section
 
 open CategoryTheory MonoidalCategory AlgebraicGeometry Opposite TopologicalSpace TauCeti
+open scoped TensorProduct
 
 namespace AlgebraicGeometry.Scheme.Modules
 
@@ -74,16 +76,97 @@ theorem tensorUnderlyingIso_hom_app_tmulRight {U : X.Opens} (e : Γ(L, U)) (t : 
     Hom.app (X := X) (F.tensorUnderlyingIso L).hom U (tmulRight F e t) =
       (((PresheafOfModules.sheafificationAdjunction (𝟙 X.ringCatSheaf.obj)).unit.app
         (F.val ⊗ L.val)).app (op U) (t ⊗ₜ e)) := by
-  have h := TauCeti.SheafOfModules.forget_μ_comp_map (R := X.sheaf)
-    (F.tensorUnderlyingIso L).hom
-  -- The scheme and site presentations of the coefficient sheaf agree by unfolding,
-  -- so rewriting the comparison requires elaborator transparency.
-  erw [Iso.inv_hom_id,
-    (TauCeti.SheafOfModules.sheafificationForgetAdjunction X.sheaf).homEquiv_unit,
-    CategoryTheory.Functor.map_id, Category.comp_id] at h
-  unfold TauCeti.SheafOfModules.sheafificationForgetAdjunction at h
   rw [tmulRight_apply]
-  exact congrArg (fun φ ↦ (φ.app (op U)).hom (t ⊗ₜ e)) h
+  have h := TauCeti.SheafOfModules.forget_μ_comp_tensorUnderlyingIso_hom X.sheaf F L
+  have hu := TauCeti.SheafOfModules.sheafificationForgetAdjunction_unit_app
+    X.sheaf (F.val ⊗ L.val)
+  exact congrArg (fun φ ↦ (φ.app (op U)).hom (t ⊗ₜ e)) (h.trans hu)
+
+/-- A morphism from the sheafification of the sectionwise tensor product evaluates a tensor
+of sections by first applying the sheafification unit. -/
+theorem tensorUnderlyingIso_hom_comp_app_tmulRight {P : X.Modules}
+    (p : (PresheafOfModules.sheafification (𝟙 X.ringCatSheaf.obj)).obj (F.val ⊗ L.val) ⟶ P)
+    {U : X.Opens} (e : Γ(L, U)) (t : Γ(F, U)) :
+    Hom.app (X := X) ((F.tensorUnderlyingIso L).hom ≫ p) U
+        (tmulRight F e t) =
+      Hom.app (X := X) p U
+        (((PresheafOfModules.sheafificationAdjunction (𝟙 X.ringCatSheaf.obj)).unit.app
+        (F.val ⊗ L.val)).app (op U) (t ⊗ₜ e)) := by
+  -- Normalize the site presentation once here; consumers use this section-level formula.
+  erw [Hom.comp_app, ConcreteCategory.comp_apply]
+  rw [tensorUnderlyingIso_hom_app_tmulRight]
+
+/-- The stalk of the monoidal tensor product is the tensor product of the stalks over the
+structure-sheaf stalk. -/
+def tensorStalkEquiv (N : X.Modules) (x : X) :
+    (F ⊗ N).presheaf.stalk x ≃ₗ[X.presheaf.stalk x]
+      F.presheaf.stalk x ⊗[X.presheaf.stalk x] N.presheaf.stalk x := by
+  let e := F.tensorUnderlyingIso N ≪≫
+    (TauCeti.SheafOfModules.tensorProductIso X.sheaf F N).symm
+  let f : (F ⊗ N).presheaf.stalk x →ₗ[X.presheaf.stalk x]
+      ↑(TopCat.Presheaf.stalk
+        (TauCeti.SheafOfModules.tensorProduct X.sheaf F N).val.presheaf x) :=
+    PresheafOfModules.stalkMapCommRing (S := X.sheaf.obj) x e.hom.val
+  let g : ↑(TopCat.Presheaf.stalk
+        (TauCeti.SheafOfModules.tensorProduct X.sheaf F N).val.presheaf x) →ₗ[X.presheaf.stalk x]
+      (F ⊗ N).presheaf.stalk x :=
+    PresheafOfModules.stalkMapCommRing (S := X.sheaf.obj) x e.inv.val
+  let e₁ : (F ⊗ N).presheaf.stalk x ≃ₗ[X.presheaf.stalk x]
+      ↑(TopCat.Presheaf.stalk
+        (TauCeti.SheafOfModules.tensorProduct X.sheaf F N).val.presheaf x) :=
+    { __ := f
+      invFun := g
+      left_inv := by
+        intro t
+        obtain ⟨U, hx, t, rfl⟩ := TopCat.Presheaf.exists_germ_eq _ t
+        have hf := PresheafOfModules.stalkMapCommRing_germ (S := X.sheaf.obj)
+          x e.hom.val U hx t
+        have hg := PresheafOfModules.stalkMapCommRing_germ (S := X.sheaf.obj)
+          x e.inv.val U hx (e.hom.val.app (op U) t)
+        exact (congrArg g hf).trans (hg.trans (congrArg ((F ⊗ N).presheaf.germ U x hx)
+          (((_root_.SheafOfModules.evaluation _ (op U)).mapIso e).hom_inv_id_apply t)))
+      right_inv := by
+        intro t
+        obtain ⟨U, hx, t, rfl⟩ := TopCat.Presheaf.exists_germ_eq _ t
+        have hg := PresheafOfModules.stalkMapCommRing_germ (S := X.sheaf.obj)
+          x e.inv.val U hx t
+        have hf := PresheafOfModules.stalkMapCommRing_germ (S := X.sheaf.obj)
+          x e.hom.val U hx (e.inv.val.app (op U) t)
+        exact (congrArg f hg).trans (hf.trans (congrArg (TopCat.Presheaf.germ
+          (TauCeti.SheafOfModules.tensorProduct X.sheaf F N).val.presheaf U x hx)
+          (((_root_.SheafOfModules.evaluation _ (op U)).mapIso e).inv_hom_id_apply t))) }
+  -- Specify the scheme coefficient ring when composing with the site comparison.
+  exact e₁.trans (show _ ≃ₗ[X.presheaf.stalk x] _ from
+    TauCeti.SheafOfModules.tensorStalkEquiv X.sheaf F N x)
+
+/-- The monoidal tensor-stalk equivalence transports through the canonical sheafification
+comparison before applying the sheaf tensor-stalk equivalence. -/
+theorem tensorStalkEquiv_apply (N : X.Modules) (x : X) (t : (F ⊗ N).presheaf.stalk x) :
+    F.tensorStalkEquiv N x t = TauCeti.SheafOfModules.tensorStalkEquiv X.sheaf F N x
+      (PresheafOfModules.stalkMapCommRing (S := X.sheaf.obj) x
+        (F.tensorUnderlyingIso N ≪≫
+          (TauCeti.SheafOfModules.tensorProductIso X.sheaf F N).symm).hom.val t) :=
+  (rfl)
+
+/-- The germ of a tensor of sections of the monoidal product is the tensor of their germs. -/
+@[simp]
+theorem tensorStalkEquiv_germ_tmulRight {N : X.Modules} {U : X.Opens}
+    (s : Γ(F, U)) (t : Γ(N, U)) {x : X} (hx : x ∈ U) :
+    F.tensorStalkEquiv N x ((F ⊗ N).presheaf.germ U x hx (tmulRight F t s)) =
+      F.presheaf.germ U x hx s ⊗ₜ[X.presheaf.stalk x] N.presheaf.germ U x hx t := by
+  rw [tensorStalkEquiv_apply]
+  let e := F.tensorUnderlyingIso N ≪≫
+    (TauCeti.SheafOfModules.tensorProductIso X.sheaf F N).symm
+  have hg := PresheafOfModules.stalkMapCommRing_germ (S := X.sheaf.obj) x e.hom.val
+    U hx (tmulRight F t s)
+  have hs := F.tensorUnderlyingIso_hom_comp_app_tmulRight
+    (TauCeti.SheafOfModules.tensorProductIso X.sheaf F N).inv t s
+  refine (congrArg (TauCeti.SheafOfModules.tensorStalkEquiv X.sheaf F N x) hg).trans ?_
+  refine (congrArg (fun z ↦ TauCeti.SheafOfModules.tensorStalkEquiv X.sheaf F N x
+    (TopCat.Presheaf.germ
+      (TauCeti.SheafOfModules.tensorProduct X.sheaf F N).val.presheaf U x hx z)) hs).trans ?_
+  exact (TauCeti.SheafOfModules.tensorStalkEquiv_apply X.sheaf F N x _).trans
+    (TauCeti.SheafOfModules.tensorStalkComparison_germ_unit_tmul X.sheaf F N x U hx s t)
 
 /-- Tensoring with `e` is linear in `e`. -/
 @[simp]

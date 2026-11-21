@@ -292,6 +292,13 @@ def sheafificationForgetAdjunction :
       _root_.SheafOfModules.forget (ringCatSheaf R) :=
   PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)
 
+/-- The unit of `sheafificationForgetAdjunction` is the original sheafification unit. -/
+lemma sheafificationForgetAdjunction_unit_app
+    (P : PresheafOfModules.{u} (ringCatSheaf R).obj) :
+    (sheafificationForgetAdjunction R).unit.app P =
+      (PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).unit.app P :=
+  (rfl)
+
 /-- The counit of `sheafificationForgetAdjunction` at a sheaf of modules `M` is the
 identification `sheafificationIso` of the sheafification of `M.val` with `M`. -/
 lemma sheafificationForgetAdjunction_counit_app (M : SheafOfModules.{u} (ringCatSheaf R)) :
@@ -336,6 +343,21 @@ lemma forget_μ (M N : SheafOfModules.{u} (ringCatSheaf R)) :
     SheafOfModules.tensorUnderlyingIso_inv, ← sheafificationForgetAdjunction_counit_app,
     ← sheafificationForgetAdjunction_counit_app]
   rfl
+
+/-- Under `tensorUnderlyingIso`, the tensor map of the forgetful functor is the
+sheafification unit on the sectionwise tensor product. -/
+lemma forget_μ_comp_tensorUnderlyingIso_hom (M N : SheafOfModules.{u} (ringCatSheaf R)) :
+    Functor.LaxMonoidal.μ (_root_.SheafOfModules.forget (ringCatSheaf R)) M N ≫
+        (_root_.SheafOfModules.forget (ringCatSheaf R)).map (M.tensorUnderlyingIso N).hom =
+      (sheafificationForgetAdjunction R).unit.app (M.val ⊗ N.val) := by
+  rw [forget_μ]
+  -- The tensor of the two forgotten objects is `M.val ⊗ N.val`; normalize that source
+  -- before composing, without exposing this presentation to downstream section proofs.
+  change ((sheafificationForgetAdjunction R).unit.app (M.val ⊗ N.val) ≫
+      (_root_.SheafOfModules.forget (ringCatSheaf R)).map (M.tensorUnderlyingIso N).inv) ≫
+      (_root_.SheafOfModules.forget (ringCatSheaf R)).map (M.tensorUnderlyingIso N).hom = _
+  rw [Category.assoc, ← Functor.map_comp, Iso.inv_hom_id, CategoryTheory.Functor.map_id]
+  exact Category.comp_id _
 
 /-- The tensor comparison of the original sheafification adjunction agrees with the
 canonical tensor comparison of the forgetful functor. This identifies the comparison data

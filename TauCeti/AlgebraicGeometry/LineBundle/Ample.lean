@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors, Axel Delaval, Jie Xu, Shitan Xu
 module
 
 public import Mathlib.AlgebraicGeometry.QuasiAffine
-public import TauCeti.AlgebraicGeometry.LineBundle.Functoriality
 public import TauCeti.AlgebraicGeometry.LineBundle.GlobalGeneration.TensorProduct
-import Mathlib.AlgebraicGeometry.Morphisms.QuasiSeparated
 import Mathlib.Topology.Separation.Basic
 
 /-!
@@ -157,28 +155,12 @@ theorem isAmple_pow_iff {a : LineBundleClass X} {k : ℕ} (hk : 0 < k) :
     (a ^ k).IsAmple ↔ a.IsAmple :=
   ⟨IsAmple.of_pow hk, fun h ↦ h.pow hk⟩
 
-/-- **An ample class times a globally generated line bundle is ample.** If `a` is ample and the
-line bundle `K` is globally generated, then `a · [K]` is ample. -/
-theorem IsAmple.mul_mk_of_isGloballyGenerated {a : LineBundleClass X} (h : a.IsAmple)
-    {K : InvertibleSheaf X} (hK : K.IsGloballyGenerated) : (a * LineBundleClass.mk K).IsAmple where
-  compactSpace := h.compactSpace
-  exists_isAffineOpen_nonvanishingLocus x := by
-    -- If `s` is a global section of a line bundle of class `aⁿ` with `X_s` affine and `t` is a
-    -- global section of `K^{⊗n}` with `x ∈ X_t`, then `s ⊗ t` vanishes nowhere exactly on the
-    -- affine open `X_s ∩ X_t`.
-    obtain ⟨n, hn, L, hL, s, hxs, hs⟩ := h.exists_isAffineOpen_nonvanishingLocus x
-    obtain ⟨t, hxt⟩ := InvertibleSheaf.isGloballyGenerated_iff.mp (hK.tensorPow n) x
-    let u := Scheme.Modules.tmulRight L.obj t s
-    have hu : (L ⊗ K.tensorPow n).obj.nonvanishingLocus u =
-        L.obj.nonvanishingLocus s ⊓ (K.tensorPow n).obj.nonvanishingLocus t :=
-      Scheme.Modules.nonvanishingLocus_tmulRight s t
-    refine ⟨n, hn, L ⊗ K.tensorPow n, ?_, u, hu ▸ ⟨hxs, hxt⟩, ?_⟩
-    · rw [mk_tensorObj, hL, mk_tensorPow, mul_pow]
-    · exact hu ▸ hs.inf_nonvanishingLocus le_top t
-
-/-- **Products of ample classes are ample.** If `a` and `b` are ample, then so is `a * b`. -/
-theorem IsAmple.mul {a b : LineBundleClass X} (ha : a.IsAmple) (hb : b.IsAmple) :
-    (a * b).IsAmple where
+/-- An ample class remains ample after a twist if, at every point, some positive power of
+the twisting class has a global section nonvanishing there. -/
+theorem IsAmple.mul_of_forall_exists_nonvanishingLocus {a b : LineBundleClass X}
+    (ha : a.IsAmple)
+    (hb : ∀ x : X, ∃ m : ℕ, 0 < m ∧ ∃ (M : InvertibleSheaf X) (_ : LineBundleClass.mk M = b ^ m)
+      (t : Γ(M.obj, ⊤)), x ∈ M.obj.nonvanishingLocus t) : (a * b).IsAmple where
   compactSpace := ha.compactSpace
   exists_isAffineOpen_nonvanishingLocus x := by
     -- Take global sections `s` and `t` of line bundles of classes `aⁿ` and `bᵐ` that do not vanish
@@ -186,7 +168,7 @@ theorem IsAmple.mul {a b : LineBundleClass X} (ha : a.IsAmple) (hb : b.IsAmple) 
     -- powers, a section of a line bundle of class `(a * b)ⁿᵐ`, vanishes nowhere exactly on the
     -- affine open `X_s ∩ X_t`.
     obtain ⟨n, hn, L, hL, s, hxs, hs⟩ := ha.exists_isAffineOpen_nonvanishingLocus x
-    obtain ⟨m, hm, M, hM, t, hxt, -⟩ := hb.exists_isAffineOpen_nonvanishingLocus x
+    obtain ⟨m, hm, M, hM, t, hxt⟩ := hb x
     -- Move both sections to the common power `n * m`.
     obtain ⟨L', hL'⟩ := mk_surjective (a ^ (n * m))
     obtain ⟨s', hs'⟩ := InvertibleSheaf.exists_nonvanishingLocus_eq_of_mk_eq_pow hm
@@ -201,6 +183,21 @@ theorem IsAmple.mul {a b : LineBundleClass X} (ha : a.IsAmple) (hb : b.IsAmple) 
     refine ⟨n * m, Nat.mul_pos hn hm, L' ⊗ M', ?_, u, hu ▸ ⟨hxs, hxt⟩, ?_⟩
     · rw [mk_tensorObj, hL', hM', mul_pow]
     · exact hu ▸ hs.inf_nonvanishingLocus le_top t
+
+/-- **An ample class times a globally generated line bundle is ample.** If `a` is ample and the
+line bundle `K` is globally generated, then `a · [K]` is ample. -/
+theorem IsAmple.mul_mk_of_isGloballyGenerated {a : LineBundleClass X} (h : a.IsAmple)
+    {K : InvertibleSheaf X} (hK : K.IsGloballyGenerated) : (a * LineBundleClass.mk K).IsAmple :=
+  h.mul_of_forall_exists_nonvanishingLocus fun x ↦ by
+    obtain ⟨t, hxt⟩ := InvertibleSheaf.isGloballyGenerated_iff.mp hK x
+    exact ⟨1, Nat.one_pos, K, (pow_one _).symm, t, hxt⟩
+
+/-- **Products of ample classes are ample.** If `a` and `b` are ample, then so is `a * b`. -/
+theorem IsAmple.mul {a b : LineBundleClass X} (ha : a.IsAmple) (hb : b.IsAmple) :
+    (a * b).IsAmple :=
+  ha.mul_of_forall_exists_nonvanishingLocus fun x ↦ by
+    obtain ⟨m, hm, M, hM, t, hxt, -⟩ := hb.exists_isAffineOpen_nonvanishingLocus x
+    exact ⟨m, hm, M, hM, t, hxt⟩
 
 /-- **Ampleness is preserved by pullback along an affine morphism.** If `a` is ample on `Y` and
 `e : X ⟶ Y` is an affine morphism, for instance a closed immersion or an isomorphism, then the
@@ -217,7 +214,7 @@ theorem IsAmple.pullback {Y : Scheme.{u}} {a : LineBundleClass Y} (h : a.IsAmple
     let s' : Γ(((InvertibleSheaf.pullback e).obj L).obj, ⊤) := e.pullbackSections L.obj ⊤ s
     have hs' : ((InvertibleSheaf.pullback e).obj L).obj.nonvanishingLocus s' =
         e ⁻¹ᵁ L.obj.nonvanishingLocus s :=
-      Scheme.Modules.nonvanishingLocus_pullbackSections e s
+      e.nonvanishingLocus_pullbackSections s
     refine ⟨n, hn, (InvertibleSheaf.pullback e).obj L, ?_, s', hs' ▸ hx, hs' ▸ hs.preimage e⟩
     rw [← pullback_mk, hL, pullback_pow]
 
