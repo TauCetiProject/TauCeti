@@ -18,9 +18,9 @@ import TauCeti.Analysis.Normed.Group.Basic
 
 Let `X` be a closed subset of projective space `ℙ(𝕜ⁿ⁺¹)`, over `ℝ` or `ℂ`, and `H = {x_i = 0}` a
 coordinate hyperplane. Suppose the image `Z ⊆ 𝕜ⁿ` of `X \ H` in the standard affine chart is a
-manifold of real dimension `m` on which the squared Euclidean distance `ρ = ‖z - a‖²` from a centre
-`a` is a Morse function whose critical points all have index at most `d`. The reciprocal transform
-`F = (1 + ρ)⁻¹`, extended by `0` on `H`, is the continuous function
+finite-dimensional smooth manifold of real dimension `m` on which the squared Euclidean distance
+`ρ = ‖z - a‖²` from a centre `a` is a Morse function whose critical points all have index at most
+`d`. The reciprocal transform `F = (1 + ρ)⁻¹`, extended by `0` on `H`, is the continuous function
 `Projectivization.affineChartInvOneAddDistSq i a` on projective space. Its sublevel
 `X_ε = X ∩ {F ≤ ε}` is a closed neighbourhood of the hyperplane section `X ∩ H` in `X`.
 
@@ -67,8 +67,9 @@ universe u v w
 
 namespace TauCeti
 
-variable {𝕜 : Type u} [RCLike 𝕜] {n : ℕ} {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+variable {𝕜 : Type u} [RCLike 𝕜] {n : ℕ}
+
+section Sublevel
 
 variable {X : Set (ℙ 𝕜 (Fin (n + 1) → 𝕜))} {i : Fin (n + 1)} {Z : Set (Fin n → 𝕜)}
   {a : EuclideanSpace 𝕜 (Fin n)} {ε : ℝ}
@@ -79,7 +80,7 @@ private theorem inv_one_add_norm_sub_sq_interAffineOpenHomeomorph
     (hZ : affineChart i '' (X ∩ affineOpen i) = Z) (y : ↥(X ∩ affineOpen i)) :
     (1 + ‖WithLp.toLp 2 (interAffineOpenHomeomorph hZ y : Fin n → 𝕜) - a‖ ^ 2)⁻¹ =
       affineChartInvOneAddDistSq i a y := by
-  rw [affineChartInvOneAddDistSq_of_mem y.2.2, dist_eq_norm]
+  rw [affineChartInvOneAddDistSq_of_mem y.property.2, dist_eq_norm]
   simp
 
 /-- **Excision onto the affine part.** For `ε > 0`, the inclusion of the sublevel pair
@@ -96,7 +97,7 @@ private theorem isZero_singularHomology_inter_setOf_le_of_isZero_sublevelPair
         R j) := by
   set g : Z → ℝ := fun z ↦ (1 + ‖WithLp.toLp 2 (z : Fin n → 𝕜) - a‖ ^ 2)⁻¹
   have hF : Continuous fun x : X ↦ affineChartInvOneAddDistSq i a x :=
-    (continuous_affineChartInvOneAddDistSq i a).comp continuous_subtype_val
+    (continuous_affineChartInvOneAddDistSq i a).comp continuous_subtypeVal
   -- The affine part of `X`, as a subspace of `X`, is the image of `Z`.
   let φ : C({z | g z ≤ ε + 1}, X) :=
     ⟨inclusion inter_subset_left ∘ (interAffineOpenHomeomorph hZ).symm ∘ Subtype.val, by fun_prop⟩
@@ -106,7 +107,7 @@ private theorem isZero_singularHomology_inter_setOf_le_of_isZero_sublevelPair
   let f := TopPair.ofInclusionMap (X := TopCat.of Z) (Y := TopCat.of (ℙ 𝕜 (Fin (n + 1) → 𝕜)))
     (sublevel_mono g (by linarith : ε ≤ ε + 1))
     (inter_subset_left : X ∩ {x | affineChartInvOneAddDistSq i a x ≤ ε} ⊆ X) φ
-    fun z hz ↦ ⟨(φ z).2, (hφ ⟨z, _⟩).trans_le hz⟩
+    fun z hz ↦ ⟨(φ z).property, (hφ ⟨z, _⟩).trans_le hz⟩
   have hf (z : {z | g z ≤ ε + 1}) : TopPair.Hom.fst f z = φ z :=
     TopPair.ofInclusionMap_fst_apply (X := TopCat.of Z) (Y := TopCat.of (ℙ 𝕜 (Fin (n + 1) → 𝕜)))
       φ _ z
@@ -123,7 +124,7 @@ private theorem isZero_singularHomology_inter_setOf_le_of_isZero_sublevelPair
     (fun z ⟨⟨y, hyS⟩, hy⟩ ↦ by
       have hyz : y = (φ z : ℙ 𝕜 (Fin (n + 1) → 𝕜)) :=
         (congrArg (Subtype.val : X → ℙ 𝕜 (Fin (n + 1) → 𝕜)) hy).trans (congrArg _ (hf z))
-      exact ⟨⟨z.1, (hφ z).symm.trans_le (hyz ▸ hyS.2)⟩, rfl⟩)
+      exact ⟨⟨z.val, (hφ z).symm.trans_le (hyz ▸ hyS.2)⟩, rfl⟩)
     U (fun b ↦ by cases b <;> exact isOpen_lt (by fun_prop) (by fun_prop))
     (eq_univ_iff_forall.2 fun ⟨x, _⟩ ↦ mem_iUnion.2 <| by
       by_cases hx : affineChartInvOneAddDistSq i a x < ε
@@ -145,12 +146,15 @@ private theorem isZero_singularHomology_inter_setOf_le_of_isZero_sublevelPair
 
 /-- **The relative homology of a projective variety modulo a reciprocal distance sublevel.** Let
 `X ⊆ ℙ(𝕜ⁿ⁺¹)` be closed, and suppose the image `Z ⊆ 𝕜ⁿ` of `X \ {x_i = 0}` in the standard affine
-chart is a smooth manifold of dimension `m` on which the squared distance `‖z - a‖²` is a Morse
-function whose critical points all have index at most `d`. Let `F` be
+chart is a finite-dimensional smooth manifold of dimension `m = finrank ℝ E` on which the squared
+distance `‖z - a‖²` is a Morse function whose critical points all have index at most `d`. Let `F` be
 `Projectivization.affineChartInvOneAddDistSq i a` and `ε > 0` a regular value of `F` on `Z`. Then
-the relative singular homology `Hⱼ(X, X ∩ {F ≤ ε}; R)` vanishes for every `j` with `j + d < m` and
-every coefficient object `R` of an abelian category with coproducts. -/
+the relative singular homology `Hⱼ(X, X ∩ {F ≤ ε}; R)` vanishes for every `j` with `j + d < m`
+(which forces `0 < m` and hence `FiniteDimensional ℝ E`) and every coefficient object `R` of an
+abelian category with coproducts. -/
 theorem isZero_singularHomology_inter_setOf_affineChartInvOneAddDistSq_le
+    {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+    {I : ModelWithCorners ℝ E H} [I.Boundaryless]
     (hX : IsClosed X) (hZ : affineChart i '' (X ∩ affineOpen i) = Z) [ChartedSpace H Z]
     [IsManifold I ∞ Z] (hρ : IsMorse I fun z : Z ↦ ‖WithLp.toLp 2 (z : Fin n → 𝕜) - a‖ ^ 2) {d : ℕ}
     (hd : ∀ z ∈ criticalPoints I fun z : Z ↦ ‖WithLp.toLp 2 (z : Fin n → 𝕜) - a‖ ^ 2,
@@ -162,6 +166,7 @@ theorem isZero_singularHomology_inter_setOf_affineChartInvOneAddDistSq_le
     IsZero ((TopPair.ofInclusion (X := TopCat.of (ℙ 𝕜 (Fin (n + 1) → 𝕜)))
       (inter_subset_left : X ∩ {x | affineChartInvOneAddDistSq i a x ≤ ε} ⊆ X)).singularHomology
         R j) := by
+  have : FiniteDimensional ℝ E := .of_finrank_pos ((Nat.zero_le _).trans_lt hj)
   refine isZero_singularHomology_inter_setOf_le_of_isZero_sublevelPair hZ hε R j ?_
   set ρ : Z → ℝ := fun z ↦ ‖WithLp.toLp 2 (z : Fin n → 𝕜) - a‖ ^ 2
   have hρ₀ (z : Z) : 1 + ρ z ≠ 0 := by positivity
@@ -172,7 +177,7 @@ theorem isZero_singularHomology_inter_setOf_affineChartInvOneAddDistSq_le
       rw [Subtype.isCompact_iff]
       convert (isCompact_setOf_le_affineChartInvOneAddDistSq i a ε).inter_left hX using 1
       ext x
-      exact ⟨fun ⟨y, hy, hyx⟩ ↦ hyx ▸ ⟨y.2.1, hy⟩, fun hx ↦
+      exact ⟨fun ⟨y, hy, hyx⟩ ↦ hyx ▸ ⟨y.property.1, hy⟩, fun hx ↦
         ⟨⟨x, hx.1, setOf_le_affineChartInvOneAddDistSq_subset_affineOpen i a hε hx.2⟩, hx.2,
           rfl⟩⟩
     convert hK.image (interAffineOpenHomeomorph hZ).continuous using 1
@@ -201,6 +206,8 @@ theorem isZero_singularHomology_inter_setOf_affineChartInvOneAddDistSq_le
   exact (hρ.inv_one_add hρ₀).isZero_singularHomology_sublevelPair_of_le_manifoldMorseIndex _
     hcompact hreg (isRegularValue_iff.2 fun z hz ↦
       absurd hz ((hg₁ z).trans_lt (by linarith : (1 : ℝ) < ε + 1)).ne) hidx R (by omega)
+
+end Sublevel
 
 /-- **The relative homology of a projective zero locus modulo a reciprocal distance sublevel.** Let
 `X ⊆ ℂℙⁿ` be the zero locus of a finite family of homogeneous polynomials, and suppose that its part

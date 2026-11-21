@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.Bivariate
+public import Mathlib.Algebra.Polynomial.Taylor
 import Mathlib.RingTheory.Polynomial.UniqueFactorization
 
 /-!
@@ -13,7 +14,8 @@ import Mathlib.RingTheory.Polynomial.UniqueFactorization
 
 Evaluating a bivariate polynomial at a point `(x, y)` is `eval₂` of the evaluation at `x`
 of its coefficients, read at `y`. The bivariate-to-multivariate equivalence also commutes
-with coefficient maps and evaluation.
+with coefficient maps and evaluation. The coefficients of `f(X + Y)` are binomial multiples of
+those of `f`.
 
 This file also provides coefficient and degree formulas for `Bivariate.swap`, nonzero
 specialization of irreducible bivariate polynomials of positive degree, and factorization
@@ -22,6 +24,8 @@ of bivariate polynomials over a UFD into `Y`-content and positive-degree irreduc
 ## Main results
 
 * `Polynomial.aevalAeval_eq_eval₂`: `φ(x, y) = eval₂ (aeval x) y φ`.
+* `Polynomial.coeff_coeff_aeval_C_X_add_Y`: the coefficient of `X ^ a * Y ^ b` in `f(X + Y)` is
+  `(a + b).choose b * f_{a+b}`.
 * `Polynomial.coeff_coeff_swap`: coefficients of `Bivariate.swap P` swap indices.
 * `Polynomial.natDegree_swap_le_iff`: degree of `Bivariate.swap P` bounds the coefficient degrees.
 * `Polynomial.natDegree_swap_C`, `Polynomial.natDegree_swap_mul`: swap degrees of constants and
@@ -65,6 +69,18 @@ theorem Bivariate.aevalAeval_comp_equivMvPolynomial_symm {R A : Type*}
         ((Bivariate.equivMvPolynomial R).symm : MvPolynomial (Fin 2) R →ₐ[R] R[X][Y]) =
       MvPolynomial.aeval ![x, y] :=
   MvPolynomial.algHom_ext fun i ↦ by fin_cases i <;> simp
+
+/-- The coefficient of `X ^ a * Y ^ b` in `f(X + Y)` is `(a + b).choose b * f_{a+b}`. -/
+@[simp]
+theorem coeff_coeff_aeval_C_X_add_Y {R : Type*} [CommSemiring R] (f : R[X]) (a b : ℕ) :
+    ((aeval (C X + Y : R[X][Y]) f).coeff b).coeff a =
+      ((a + b).choose b : R) * f.coeff (a + b) := by
+  -- `f(X + Y)` is the Taylor expansion of `f(Y)` at `X`, whose coefficients are the Hasse
+  -- derivatives of `f`.
+  have h : aeval (C X + Y : R[X][Y]) f = taylor X (f.map C) := by
+    rw [taylor_apply, comp, eval₂_map, aeval_def, add_comm,
+      IsScalarTower.algebraMap_eq R R[X] R[X][X], algebraMap_eq, algebraMap_eq]
+  rw [h, taylor_coeff, hasseDeriv_map, eval_map, eval₂_C_X, hasseDeriv_coeff]
 
 /-- Swapping the two variables of a bivariate polynomial transposes its coefficient indices. -/
 @[simp]

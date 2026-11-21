@@ -128,9 +128,9 @@ private theorem coordinateRingDerivation_mul_mem_eq_zero {x y : F}
   obtain ⟨p, hp⟩ := AdjoinRoot.mk_surjective (a : W.CoordinateRing)
   obtain ⟨q, hq⟩ := AdjoinRoot.mk_surjective (b : W.CoordinateRing)
   have hpa : p.evalEval x y = 0 := by
-    exact (CoordinateRing.mk_mem_XYIdeal_iff heq p).mp (hp.symm ▸ a.2)
+    exact (CoordinateRing.mk_mem_XYIdeal_iff heq p).mp (hp.symm ▸ a.property)
   have hqb : q.evalEval x y = 0 := by
-    exact (CoordinateRing.mk_mem_XYIdeal_iff heq q).mp (hq.symm ▸ b.2)
+    exact (CoordinateRing.mk_mem_XYIdeal_iff heq q).mp (hq.symm ▸ b.property)
   rw [← hp, ← hq, ← map_mul, coordinateRingDerivation_mk, hmul, hpa, hqb,
     zero_mul, zero_mul, add_zero]
 
@@ -331,7 +331,7 @@ private theorem exists_mem_norm_natDegree_le
   set pq := (z : Polynomial.degreeLT F da × Polynomial.degreeLT F db) with hpq
   have hpq_ne : pq ≠ 0 := fun h => hz (Subtype.ext h)
   refine ⟨basisCombMap W da db pq, ?_, basisCombMap_ne_zero pq hpq_ne, ?_⟩
-  · have hz0 : ψ pq = 0 := z.2
+  · have hz0 : ψ pq = 0 := z.property
     rw [hψ, LinearMap.comp_apply, LinearMap.restrictScalars_apply, Submodule.mkQ_apply,
       Submodule.Quotient.mk_eq_zero] at hz0
     exact hz0
@@ -396,11 +396,11 @@ private theorem exists_codimLEOne_inv
       Module.finrank F (W.CoordinateRing ⧸ J) ≤ 1 ∧
         ClassGroup.mk W.FunctionField hJunit.unit =
           (ClassGroup.mk W.FunctionField U)⁻¹ := by
-  let hIunit : IsUnit (U.1.num :
+  let hIunit : IsUnit (U.val.num :
       FractionalIdeal W.CoordinateRing⁰ W.FunctionField) :=
     FractionalIdeal.isUnit_num_iff.mpr U.isUnit
   obtain ⟨J, hJunit, hfin, hclass⟩ :=
-    exists_codimLEOne_inv_integral (F := F) U.1.num hIunit
+    exists_codimLEOne_inv_integral (F := F) U.val.num hIunit
   refine ⟨J, hJunit, hfin, ?_⟩
   rwa [ClassGroup.mk_num U] at hclass
 
