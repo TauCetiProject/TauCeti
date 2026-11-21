@@ -83,7 +83,9 @@ the difference of two weak solutions with the same initial value.
 
 When the coefficients do not depend on time and `a` is symmetric, a forcing in
 `L²(t₀, t₁; L²(Ω))` and an initial value in `H¹₀(Ω)` give a solution with `∂ₜu ∈ L²(t₀, t₁; L²(Ω))`
-that is essentially bounded in `H¹₀(Ω)` (Evans, §7.1.3, Theorem 5). This is the abstract theorem
+that is continuous on `[t₀, t₁]` with values in `H¹₀(Ω)`, so in particular essentially bounded
+there; Evans, §7.1.3, Theorem 5, proves the bounds on `∂ₜu` and `sup_t ‖u(t)‖_{H¹₀}`. This is the
+abstract theorem
 `TauCeti.HasWeakLineDerivOn.exists_memLp_hasWeakLineDerivOn_of_gelfandDual_of_symm` for the
 symmetric coercive part `-∂ᵢ(aⁱʲ ∂ⱼ ·) + λ/2`; the lower-order terms `⟪b, ∇u⟫ + c u`, a bounded
 operator `H¹₀(Ω) → L²(Ω)` (`TauCeti.PDE.lowerOrderL`), and the mass shift
@@ -99,7 +101,7 @@ operator `H¹₀(Ω) → L²(Ω)` (`TauCeti.PDE.lowerOrderL`), and the mass shif
   solutions, for the continuous `L²(Ω)`-valued representative at every time and for the
   `H¹₀(Ω)`-valued solution almost everywhere.
 * `TauCeti.PDE.exists_memLp_hasWeakLineDerivOn_valueL_energyFormH1_of_isSymm`: time regularity,
-  `∂ₜu ∈ L²(t₀, t₁; L²(Ω))` and `u ∈ L^∞(t₀, t₁; H¹₀(Ω))`, for time-independent coefficients with
+  `∂ₜu ∈ L²(t₀, t₁; L²(Ω))` and `u ∈ C([t₀, t₁]; H¹₀(Ω))`, for time-independent coefficients with
   symmetric principal part.
 
 ## References
@@ -447,9 +449,10 @@ elliptic on `Ω` and symmetric almost everywhere, and `b`, `c` bounded and measu
 weak solution of `∂ₜu + L u = F` in `(t₀, t₁) × Ω`, `u = 0` on `(t₀, t₁) × ∂Ω`, with forcing
 `F ∈ L²(t₀, t₁; L²(Ω))`, whose continuous `L²(Ω)`-valued representative starts at `u₀ ∈ H¹₀(Ω)`.
 Then `∂ₜu ∈ L²(t₀, t₁; L²(Ω))`: the `L²(Ω)`-valued map `t ↦ u(t)` has a weak time derivative
-`d ∈ L²(t₀, t₁; L²(Ω))`, which represents `u'` through the `L²(Ω)` pairing, and `u` is essentially
-bounded in `H¹₀(Ω)`. No regularity of `∂Ω`, no continuity of `a`, no boundedness of `Ω` and no
-sign condition on `c` is needed. -/
+`d ∈ L²(t₀, t₁; L²(Ω))`, which represents `u'` through the `L²(Ω)` pairing, and `u` has a
+representative continuous on `[t₀, t₁]` with values in `H¹₀(Ω)` that starts at `u₀`; in particular
+`u ∈ L^∞(t₀, t₁; H¹₀(Ω))`. No regularity of `∂Ω`, no continuity of `a`, no boundedness of `Ω` and
+no sign condition on `c` is needed. -/
 theorem exists_memLp_hasWeakLineDerivOn_valueL_energyFormH1_of_isSymm [DecidableEq ι]
     (ha : AEStronglyMeasurable a (mu.restrict Omega))
     (hb : AEStronglyMeasurable b (mu.restrict Omega))
@@ -476,7 +479,8 @@ theorem exists_memLp_hasWeakLineDerivOn_valueL_energyFormH1_of_isSymm [Decidable
       HasWeakLineDerivOn volume ⟨Ioo t₀ t₁, isOpen_Ioo⟩ (fun t => W1p0.valueL (u t)) d 1 ∧
       (∀ᵐ t ∂volume.restrict (Ioo t₀ t₁), ∀ v : W1p0 mu Omega 2,
         u' t v = ⟪d t, W1p0.valueL v⟫_ℝ) ∧
-      ∃ C, ∀ᵐ t ∂volume.restrict (Ioo t₀ t₁), ‖u t‖ ≤ C := by
+      ∃ v : ℝ → W1p0 mu Omega 2, ContinuousOn v (Icc t₀ t₁) ∧
+        u =ᵐ[volume.restrict (Ioo t₀ t₁)] v ∧ v t₀ = u₀ := by
   have hlam : 0 < lam := hell.pos
   have hcoeff : MemLp (fun x => energyIntegrand (a x) 0 0) ⊤ (mu.restrict Omega) :=
     memLp_energyIntegrand_of_bounds (b := fun _ => 0) (c := fun _ => 0) (beta := 0) (gamma := 0)
@@ -515,17 +519,12 @@ theorem exists_memLp_hasWeakLineDerivOn_valueL_energyFormH1_of_isSymm [Decidable
     simp only [add_apply, ContinuousLinearMap.gelfandDual_apply, inner_add_left, inner_sub_left,
       real_inner_smul_left, hA₀]
     linarith [ht v, hM (u t) v]
-  have key := HasWeakLineDerivOn.exists_memLp_hasWeakLineDerivOn_of_gelfandDual_of_symm
-    hinj hsymm₀ (half_pos hlam) hcoer hg h hu hu' heq₀ hw hae h₀
-  obtain ⟨d, hd, hdd, hu'd, hAu, -⟩ := key
-  refine ⟨d, hd, hdd, ?_, ?_⟩
-  · filter_upwards [hu'd] with t ht v
-    exact (DFunLike.congr_fun ht v).trans (ContinuousLinearMap.gelfandDual_apply _ _ _)
-  · -- With `A₀ u u ≤ K`, coercivity gives `λ/2 ‖u‖² ≤ K`, so `‖u‖ ≤ √(K / (λ/2))`.
-    obtain ⟨K, hK⟩ : ∃ K, ∀ᵐ t ∂volume.restrict (Ioo t₀ t₁), A₀ (u t) (u t) ≤ K := ⟨_, hAu⟩
-    refine ⟨√(K / (lam / 2)), hK.mono fun t ht => Real.le_sqrt_of_sq_le ?_⟩
-    rw [le_div_iff₀ (half_pos hlam)]
-    linarith [hcoer (u t)]
+  obtain ⟨d, v, hd, hdd, hu'd, hv, huv, hv₀, -⟩ :=
+    HasWeakLineDerivOn.exists_memLp_hasWeakLineDerivOn_of_gelfandDual_of_symm
+      hinj hsymm₀ (half_pos hlam) hcoer hg h hu hu' heq₀ hw hae h₀
+  refine ⟨d, hd, hdd, ?_, v, hv, huv, hv₀⟩
+  filter_upwards [hu'd] with t ht φ
+  exact (DFunLike.congr_fun ht φ).trans (ContinuousLinearMap.gelfandDual_apply _ _ _)
 
 end TimeRegularity
 
