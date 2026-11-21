@@ -27,9 +27,10 @@ Exchanging factors of dimensions `m` and `n` multiplies a product orientation by
 factor past each of the `n` basis vectors of the second.
 
 Reassociating `(E × F) × G` as `E × (F × G)` carries the product orientation `(o × o') × o''` to
-`o × (o' × o'')` (`Orientation.map_prodAssoc_prod`): both list the bases of the three factors in
-the same order. Deleting a trivial factor with its positive orientation recovers the orientation of
-the remaining factor (`Orientation.map_uniqueProd_prod_positiveOrientation`,
+`o × (o' × o'')` (`Orientation.map_prodAssoc_prod`, inverse form
+`Orientation.map_prodAssoc_symm_prod`): both list the bases of the three factors in the same
+order. Deleting a trivial factor with its positive orientation recovers the orientation of the
+remaining factor (`Orientation.map_uniqueProd_prod_positiveOrientation`,
 `Orientation.map_prodUnique_prod_positiveOrientation`).
 -/
 
@@ -379,5 +380,18 @@ theorem map_prodUnique_prod_positiveOrientation [Unique F] (o : Orientation R E 
     rw [← hc, prod_basis_orientation, ← Basis.orientation_map, he]
   rcases b.orientation_eq_or_eq_neg o with ho | ho <;> subst o <;>
     simp only [prod_neg_left, Orientation.map_neg, hbase]
+
+/-- Reassociating `E × (F × G)` as `(E × F) × G` carries the product orientation
+`o × (o' × o'')` to `(o × o') × o''`, the inverse form of `Orientation.map_prodAssoc_prod`. -/
+theorem map_prodAssoc_symm_prod (o : Orientation R E (Fin m)) (o' : Orientation R F (Fin n))
+    (o'' : Orientation R G (Fin p)) (hm : Module.finrank R E = m)
+    (hn : Module.finrank R F = n) (hp : Module.finrank R G = p) :
+    Orientation.map (Fin (m + (n + p))) (LinearEquiv.prodAssoc R E F G).symm
+        (prod o (prod o' o'' hn hp) hm (by rw [Module.finrank_prod, hn, hp])) =
+      Orientation.reindex R ((E × F) × G) (finCongr (add_assoc m n p))
+        (prod (prod o o' hm hn) o'' (by rw [Module.finrank_prod, hm, hn]) hp) := by
+  rw [← (Orientation.map _ (LinearEquiv.prodAssoc R E F G)).injective.eq_iff, ← map_symm,
+    Equiv.apply_symm_apply, map_reindex, map_prodAssoc_prod, reindex_finCongr_reindex_finCongr,
+    finCongr_refl, reindex_refl, Equiv.refl_apply]
 
 end Orientation

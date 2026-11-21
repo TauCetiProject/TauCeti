@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Prod.ProdEquiv
-import TauCeti.LinearAlgebra.CliffordAlgebra.Prod.Unit
 
 /-!
 # Orientation-sign and rank-zero unit laws of `CliffordAlgebra.complexProdTensor`
@@ -16,9 +15,8 @@ This file establishes how changing `o₁` affects `CliffordAlgebra.complexProdTe
 
 1. **Reversing `o₁` on `V`**: replacing `o₁` by `-o₁` negates `Γ_V`
    (`CliffordAlgebra.complexProdTensor_neg_orientation_ι_one_tmul_toLp_inr`). When `W` is
-   even-dimensional, `1 ⊗ Γ_W` intertwines the product actions for `o₁` and `-o₁`
-   (`CliffordAlgebra.lTensor_complexVolume_comp_complexProdTensor`,
-   `CliffordAlgebra.conjAlgEquiv_lTensor_complexVolume_complexProdTensor`).
+   even-dimensional, conjugating `complexProdTensor` for `o₁` by `1 ⊗ Γ_W` gives that for `-o₁`
+   (`CliffordAlgebra.conjAlgEquiv_lTensor_complexVolume_complexProdTensor`).
 2. **Rank-zero unit laws**: for `[Unique V]`, `TensorProduct.lid ℂ F` intertwines
    `complexProdTensor` with `ρ₂` for `positiveOrientation` and with `ρ₂ ∘ involute` for
    `-positiveOrientation` (`CliffordAlgebra.conjAlgEquiv_lid_complexProdTensor_positiveOrientation`,
@@ -63,33 +61,16 @@ theorem complexProdTensor_neg_orientation_ι_one_tmul_toLp_inr (w : W) :
 
 variable [FiniteDimensional ℝ W] {m : ℕ} [Fact (finrank ℝ W = m)]
 
-/-- **Intertwining under reversal of `o₁`**: when `W` is even-dimensional, `1 ⊗ Γ_W` intertwines
-`complexProdTensor` for `o₁` with `complexProdTensor` for `-o₁` on every Clifford element. -/
-theorem lTensor_complexVolume_comp_complexProdTensor (o₂ : Orientation ℝ W (Fin m)) (hm : Even m)
-    (x : CliffordAlgebra (Q.baseChange ℂ)) :
-    (ρ₂ (complexVolume Q₂ o₂)).lTensor E ∘ₗ complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ x =
-      complexProdTensor hQ (-o₁) hQ₁ hn ρ₁ ρ₂ x ∘ₗ (ρ₂ (complexVolume Q₂ o₂)).lTensor E := by
-  have hneg : ρ₁ (complexVolume Q₁ (-o₁)) = -ρ₁ (complexVolume Q₁ o₁) := by
-    rw [complexVolume_neg_orientation, map_neg]
-  rw [complexProdTensor_eq_cliffordProdTensor, complexProdTensor_eq_cliffordProdTensor]
-  simpa only [hneg] using
-    AlgHom.lTensor_comp_cliffordProdTensor ρ₁ (ρ₁ (complexVolume Q₁ o₁))
-      (by rw [← map_mul, complexVolume_mul_self o₁ hQ₁, map_one])
-      (fun v ↦ by rw [← map_mul, ← map_mul, complexVolume_mul_ι_of_even o₁ hn, map_neg])
-      ρ₂ (ρ₂ (complexVolume Q₂ o₂))
-      (fun u ↦ by rw [← map_mul, ← map_mul, complexVolume_mul_ι_of_even o₂ hm, map_neg])
-      (equivOfIsometry ((QuadraticMap.IsometryEquiv.withLpProd hQ).baseChangeProd ℂ) x)
-
 /-- **Equivalence of product representations under `o₁ ↦ -o₁`**: when `W` is even-dimensional with
 `Q₂ w = -‖w‖²`, conjugating `complexProdTensor` for `o₁` by `1 ⊗ Γ_W` gives that for `-o₁`. -/
 theorem conjAlgEquiv_lTensor_complexVolume_complexProdTensor (o₂ : Orientation ℝ W (Fin m))
     (hQ₂ : ∀ w, Q₂ w = -‖w‖ ^ 2) (hm : Even m) :
     (((LinearEquiv.ofInvolutive (ρ₂ (complexVolume Q₂ o₂))
-        (map_complexVolume_involutive o₂ hQ₂ ρ₂)).lTensor E).conjAlgEquiv ℂ).toAlgHom.comp
+        (ρ₂.involutive_complexVolume o₂ hQ₂)).lTensor E).conjAlgEquiv ℂ).toAlgHom.comp
         (complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂) =
       complexProdTensor hQ (-o₁) hQ₁ hn ρ₁ ρ₂ := by
   let e := (LinearEquiv.ofInvolutive (ρ₂ (complexVolume Q₂ o₂))
-    (map_complexVolume_involutive o₂ hQ₂ ρ₂)).lTensor E
+    (ρ₂.involutive_complexVolume o₂ hQ₂)).lTensor E
   have he : ∀ t, e t = (ρ₂ (complexVolume Q₂ o₂)).lTensor E t := fun t ↦ by
     induction t using TensorProduct.inductionOn with
     | tmul a b => rfl
@@ -100,7 +81,7 @@ theorem conjAlgEquiv_lTensor_complexVolume_complexProdTensor (o₂ : Orientation
     LinearMap.comp_apply, LinearEquiv.coe_coe]
   rw [e.symm_apply_apply, he, he]
   exact LinearMap.congr_fun
-    (lTensor_complexVolume_comp_complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ o₂ hm x) t
+    (lTensor_complexVolume_mul_complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ o₂ hm x) t
 
 /-- Reversing `o₁` in BOTH `complexProdTensor` and `Orientation.prod` multiplies the product volume
 action by `-(-1) ^ m`. -/
@@ -142,9 +123,10 @@ theorem conjAlgEquiv_lid_complexProdTensor_positiveOrientation :
   refine CliffordAlgebra.hom_ext <| LinearMap.ext fun u ↦ ?_
   induction u using TensorProduct.inductionOn with
   | tmul z x =>
+    have hv : (WithLp.ofLp x).1 = 0 := Subsingleton.elim _ 0
     have hx : z ⊗ₜ[ℝ] x =
-        z • ((1 : ℂ) ⊗ₜ[ℝ] WithLp.toLp 2 ((WithLp.ofLp x).1, (WithLp.ofLp x).2)) := by
-      rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one, WithLp.toLp_ofLp]
+        z • ((1 : ℂ) ⊗ₜ[ℝ] WithLp.toLp 2 (0, (WithLp.ofLp x).2)) := by
+      rw [← hv, TensorProduct.smul_tmul', smul_eq_mul, mul_one, WithLp.toLp_ofLp]
     rw [hx, map_smul, map_smul]; ext f
     simp [LinearEquiv.conjAlgEquiv_apply, complexProdTensor_ι_one_tmul_toLp, equivOfIsometry_apply]
   | add x y hx hy => simp only [map_add, hx, hy]
@@ -175,9 +157,10 @@ theorem conjAlgEquiv_lid_complexProdTensor_neg_positiveOrientation :
   refine CliffordAlgebra.hom_ext <| LinearMap.ext fun u ↦ ?_
   induction u using TensorProduct.inductionOn with
   | tmul z x =>
+    have hv : (WithLp.ofLp x).1 = 0 := Subsingleton.elim _ 0
     have hx : z ⊗ₜ[ℝ] x =
-        z • ((1 : ℂ) ⊗ₜ[ℝ] WithLp.toLp 2 ((WithLp.ofLp x).1, (WithLp.ofLp x).2)) := by
-      rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one, WithLp.toLp_ofLp]
+        z • ((1 : ℂ) ⊗ₜ[ℝ] WithLp.toLp 2 (0, (WithLp.ofLp x).2)) := by
+      rw [← hv, TensorProduct.smul_tmul', smul_eq_mul, mul_one, WithLp.toLp_ofLp]
     rw [hx, map_smul, map_smul]; ext f
     simp [LinearEquiv.conjAlgEquiv_apply, complexProdTensor_ι_one_tmul_toLp, equivOfIsometry_apply]
   | add x y hx hy => simp only [map_add, hx, hy]
@@ -279,9 +262,10 @@ theorem conjAlgEquiv_rid_complexProdTensor :
   refine CliffordAlgebra.hom_ext <| LinearMap.ext fun u ↦ ?_
   induction u using TensorProduct.inductionOn with
   | tmul z x =>
+    have hw : (WithLp.ofLp x).2 = 0 := Subsingleton.elim _ 0
     have hx : z ⊗ₜ[ℝ] x =
-        z • ((1 : ℂ) ⊗ₜ[ℝ] WithLp.toLp 2 ((WithLp.ofLp x).1, (WithLp.ofLp x).2)) := by
-      rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one, WithLp.toLp_ofLp]
+        z • ((1 : ℂ) ⊗ₜ[ℝ] WithLp.toLp 2 ((WithLp.ofLp x).1, 0)) := by
+      rw [← hw, TensorProduct.smul_tmul', smul_eq_mul, mul_one, WithLp.toLp_ofLp]
     rw [hx, map_smul, map_smul]; ext e
     simp [LinearEquiv.conjAlgEquiv_apply, complexProdTensor_ι_one_tmul_toLp, equivOfIsometry_apply]
   | add x y hx hy => simp only [map_add, hx, hy]

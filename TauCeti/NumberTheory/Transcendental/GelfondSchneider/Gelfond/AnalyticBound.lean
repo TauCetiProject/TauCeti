@@ -139,7 +139,7 @@ private theorem norm_gelfond_auxiliary_le_sqrt (l β : ℂ) (c : ℝ) {m n q r :
   -- The exponential: `q (1 + ‖β‖) ‖λ‖ 3 m √r ≤ r (1 + ‖β‖) ‖λ‖ 6 m ^ 2`.
   have hexp : Real.exp (q * (1 + ‖β‖) * ‖l‖ * (3 * m * S)) ≤
       Real.exp ((1 + ‖β‖) * ‖l‖ * (6 * m ^ 2)) ^ r := by
-    rw [← Real.exp_nat_mul]
+    rw [← Real.exp_natCast_mul]
     refine Real.exp_le_exp.2 ?_
     calc (q : ℝ) * (1 + ‖β‖) * ‖l‖ * (3 * m * S) = (1 + ‖β‖) * ‖l‖ * (3 * m * (q * S)) := by
           ring

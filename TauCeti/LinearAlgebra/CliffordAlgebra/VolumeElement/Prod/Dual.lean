@@ -148,10 +148,10 @@ theorem dualDistrib_comp_lTensor_complexProdTensor_of_odd_div_two
       (complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂).cliffordReverseDual x ∘ₗ
         (dualDistrib ℂ E F ∘ₗ
           (ρ₂.cliffordReverseDual (complexVolume Q₂ o₂)).lTensor (Dual ℂ E)) := by
-  rw [LinearMap.comp_assoc,
-    lTensor_complexVolume_comp_complexProdTensor hQ o₁ hQ₁ hn
+  rw [LinearMap.comp_assoc, ← Module.End.mul_eq_comp,
+    lTensor_complexVolume_mul_complexProdTensor hQ o₁ hQ₁ hn
       ρ₁.cliffordReverseDual ρ₂.cliffordReverseDual o₂ hm x,
-    ← LinearMap.comp_assoc,
+    Module.End.mul_eq_comp, ← LinearMap.comp_assoc,
     dualDistrib_complexProdTensor_neg_orientation_of_odd_div_two hQ o₁ hQ₁ hn ρ₁ ρ₂ hndiv x,
     LinearMap.comp_assoc]
 
@@ -165,7 +165,7 @@ theorem cliffordReverseDual_complexProdTensor_eq_conj_of_odd_div_two
     (hndiv : Odd (n / 2)) (x : CliffordAlgebra (Q.baseChange ℂ)) :
     (complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂).cliffordReverseDual x =
       (((LinearEquiv.ofInvolutive (ρ₂.cliffordReverseDual (complexVolume Q₂ o₂))
-          (map_complexVolume_involutive o₂ hQ₂ ρ₂.cliffordReverseDual)).lTensor
+          (ρ₂.cliffordReverseDual.involutive_complexVolume o₂ hQ₂)).lTensor
             (Dual ℂ E)).trans (dualDistribEquiv ℂ E F)).conj
         (complexProdTensor hQ o₁ hQ₁ hn ρ₁.cliffordReverseDual ρ₂.cliffordReverseDual x) := by
   rw [← LinearEquiv.conj_trans, LinearEquiv.trans_apply,

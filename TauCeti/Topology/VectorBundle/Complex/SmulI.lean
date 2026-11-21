@@ -73,8 +73,8 @@ variable (G : Type*) [NormedAddCommGroup G] [NormedSpace ℂ G] (W : B → Type*
 /-- Multiplication by `Complex.I` on the fibres of a complex vector bundle as a homeomorphism of
 its total space, with no finite-rank assumption. -/
 def smulIHomeomorph : TotalSpace G W ≃ₜ TotalSpace G W where
-  toFun p := ⟨p.proj, Complex.I • p.2⟩
-  invFun p := ⟨p.proj, -Complex.I • p.2⟩
+  toFun p := ⟨p.proj, Complex.I • p.snd⟩
+  invFun p := ⟨p.proj, -Complex.I • p.snd⟩
   left_inv := fun ⟨x, v⟩ ↦ congrArg (TotalSpace.mk x) (Complex.neg_I_smul_I_smul v)
   right_inv := fun ⟨x, v⟩ ↦ congrArg (TotalSpace.mk x) (Complex.I_smul_neg_I_smul v)
   continuous_toFun := (continuous_const (y := Complex.I)).smul_totalSpace continuous_id
@@ -83,9 +83,9 @@ def smulIHomeomorph : TotalSpace G W ≃ₜ TotalSpace G W where
 variable {G W}
 
 @[simp] theorem smulIHomeomorph_apply (p : TotalSpace G W) :
-    smulIHomeomorph G W p = ⟨p.proj, Complex.I • p.2⟩ := (rfl)
+    smulIHomeomorph G W p = ⟨p.proj, Complex.I • p.snd⟩ := (rfl)
 @[simp] theorem smulIHomeomorph_symm_apply (p : TotalSpace G W) :
-    (smulIHomeomorph G W).symm p = ⟨p.proj, -Complex.I • p.2⟩ := (rfl)
+    (smulIHomeomorph G W).symm p = ⟨p.proj, -Complex.I • p.snd⟩ := (rfl)
 
 end Homeomorph
 

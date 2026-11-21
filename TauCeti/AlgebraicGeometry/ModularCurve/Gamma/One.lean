@@ -83,8 +83,8 @@ noncomputable def gammaOne : ModuliProblem B where
     {P : 𝟙_ (Over X.unop.base) ⟶ Over.mk X.unop.curve.structureMap //
       X.unop.curve.IsOfExactOrder P N}
   map φ := TypeCat.ofHom fun P ↦
-    ⟨⟨EllipticCurveGeom.pointsPullback φ.unop.isPullback φ.unop.zero_total P.down.1,
-      P.down.2.pointsPullback φ.unop.isPullback φ.unop.zero_total⟩⟩
+    ⟨⟨EllipticCurveGeom.pointsPullback φ.unop.isPullback φ.unop.zero_total P.down.val,
+      P.down.property.pointsPullback φ.unop.isPullback φ.unop.zero_total⟩⟩
   map_id X := by
     ext P
     exact congrArg Over.Hom.left ((EllipticCurveGeom.eq_pointsPullback_iff _ _).mpr
@@ -107,8 +107,8 @@ noncomputable def gammaOneEquiv (X : EllObj B) :
 point along `φ`. -/
 @[simp]
 theorem gammaOneEquiv_map {X Y : EllObj B} (φ : X ⟶ Y) (α : (gammaOne B N).obj (op Y)) :
-    (gammaOneEquiv X ((gammaOne B N).map φ.op α)).1 =
-      EllipticCurveGeom.pointsPullback φ.isPullback φ.zero_total (gammaOneEquiv Y α).1 :=
+    (gammaOneEquiv X ((gammaOne B N).map φ.op α)).val =
+      EllipticCurveGeom.pointsPullback φ.isPullback φ.zero_total (gammaOneEquiv Y α).val :=
   (rfl)
 
 /-- An `S`-point of exact order one is the zero section, so an object of `Ell/B` has exactly one
@@ -116,7 +116,7 @@ theorem gammaOneEquiv_map {X Y : EllObj B} (φ : X ⟶ Y) (α : (gammaOne B N).o
 noncomputable instance (X : (EllObj B)ᵒᵖ) : Unique ((gammaOne B 1).obj X) where
   default := (gammaOneEquiv X.unop).symm ⟨1, EllipticCurveGeom.isOfExactOrder_one_iff.mpr rfl⟩
   uniq α := (gammaOneEquiv X.unop).injective <| Subtype.ext <| by
-    simpa using EllipticCurveGeom.isOfExactOrder_one_iff.mp (gammaOneEquiv X.unop α).2
+    simpa using EllipticCurveGeom.isOfExactOrder_one_iff.mp (gammaOneEquiv X.unop α).property
 
 variable (B) in
 /-- **`[Γ₁(1)]` is the trivial moduli problem** `[Γ(1)]`: the only point of exact order one of an
@@ -146,7 +146,7 @@ projection `E_T ⟶ E`. -/
 theorem gammaOneBaseChangeEquiv_apply_left_comp (X : EllObj B) (T : Over X.base)
     (α : (gammaOne B N).obj (op (X.baseChangeFunctor.obj T))) :
     (gammaOneBaseChangeEquiv X T α).left ≫ (X.curve.exactOrderLocus N).subschemeι =
-      (gammaOneEquiv _ α).1.left ≫ (X.curve.baseChangeIso T.hom).hom ≫ pullback.fst _ _ :=
+      (gammaOneEquiv _ α).val.left ≫ (X.curve.baseChangeIso T.hom).hom ≫ pullback.fst _ _ :=
   EllipticCurveGeom.exactOrderPointsEquivOfIsPullback_apply_left_comp _ _ _
 
 /-- **Naturality of `gammaOneBaseChangeEquiv`.** Along a morphism `k : T' ⟶ T` of schemes over the
@@ -167,7 +167,7 @@ theorem gammaOneBaseChangeEquiv_map (X : EllObj B) {T' T : Over X.base} (k : T' 
   -- the composites are formed by terms, since the base change `E_{T'}` appears both as
   -- `(X.baseChangeFunctor.obj T').curve` and as `X.curve.baseChange T'.hom`
   exact (congrArg (fun m ↦ (EllipticCurveGeom.pointsPullback (X.baseChangeFunctor.map k).isPullback
-    (X.baseChangeFunctor.map k).zero_total (gammaOneEquiv _ α).1).left ≫ m) hk.symm).trans
+    (X.baseChangeFunctor.map k).zero_total (gammaOneEquiv _ α).val).left ≫ m) hk.symm).trans
       (EllipticCurveGeom.pointsPullback_left_comp_assoc _ _ _ _)
 
 /-- Naturality of `gammaOneBaseChangeEquiv`, read backwards: the `[Γ₁(N)]`-structure on `E_{T'}` of

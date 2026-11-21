@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: pi
+Authors: pi, The Tau Ceti contributors
 -/
 module
 
@@ -9,22 +9,32 @@ public import Mathlib.RingTheory.HopfAlgebra.Convolution
 public import Mathlib.LinearAlgebra.TensorProduct.Basis
 public import Mathlib.LinearAlgebra.Basis.VectorSpace
 public import TauCeti.Algebra.Coalgebra.Basic
+public import TauCeti.Algebra.HopfAlgebra.Cointegral.Basic
 public import TauCeti.Algebra.HopfAlgebra.Integral.Basic
+import TauCeti.Algebra.HopfAlgebra.Antipode
 
 /-!
 # Invariant integrals on Hopf algebras
 
-An invariant integral is a linear functional satisfying a Haar slice identity. A nonzero
-right invariant integral has a nondegenerate multiplication pairing in its first argument;
-a nonzero left invariant integral has a nondegenerate pairing in its second argument.
-These are algebraic statements: no norm, positivity, finite dimension, or normalization
-is required. Nondegeneracy is the algebraic input to strict positivity of positive Haar
-integrals and to the faithful algebraic GNS construction.
+An invariant integral is a linear functional satisfying a Haar slice identity, agreeing over any
+bialgebra with `TauCeti.IsRightCointegral` and `TauCeti.IsLeftCointegral`
+(`LinearMap.isRightInvariantIntegral_iff_isRightCointegral`,
+`LinearMap.isLeftInvariantIntegral_iff_isLeftCointegral`). On any bialgebra, a left invariant
+integral `φ` and a right invariant integral `ψ` satisfy `φ a * ψ 1 = ψ a * φ 1`, so any normalized
+left invariant integral agrees with any normalized right invariant integral. On a Hopf algebra,
+precomposing with the antipode swaps left and right invariance, whence every normalized one-sided
+invariant integral is antipode-invariant and two-sided invariant.
+
+Over a field, a nonzero right invariant integral has a nondegenerate multiplication pairing in its
+first argument; a nonzero left invariant integral has a nondegenerate pairing in its second
+argument. These are algebraic statements: no norm, positivity, finite dimension, or normalization
+is required. Nondegeneracy is the algebraic input to strict positivity of positive Haar integrals
+and to the faithful algebraic GNS construction.
 
 ## References
 
-* T. Timmermann, *An Invitation to Quantum Groups and Duality*, Proposition 2.2.4,
-  for algebraic faithfulness of invariant integrals.
+* T. Timmermann, *An Invitation to Quantum Groups and Duality*, Propositions 2.2.2 and 2.2.4,
+  for uniqueness, antipode invariance, and algebraic faithfulness of invariant integrals.
 -/
 
 public section
@@ -59,6 +69,16 @@ theorem isLeftInvariantIntegral_iff : h.IsLeftInvariantIntegral ↔
     ∀ a, TensorProduct.rid R H (h.lTensor H (Coalgebra.comul a)) = h a • (1 : H) :=
   Iff.rfl
 
+/-- `LinearMap.IsRightInvariantIntegral` agrees with `TauCeti.IsRightCointegral`. -/
+theorem isRightInvariantIntegral_iff_isRightCointegral :
+    h.IsRightInvariantIntegral ↔ TauCeti.IsRightCointegral h := by
+  rw [isRightInvariantIntegral_iff, TauCeti.isRightCointegral_def]
+
+/-- `LinearMap.IsLeftInvariantIntegral` agrees with `TauCeti.IsLeftCointegral`. -/
+theorem isLeftInvariantIntegral_iff_isLeftCointegral :
+    h.IsLeftInvariantIntegral ↔ TauCeti.IsLeftCointegral h := by
+  rw [isLeftInvariantIntegral_iff, TauCeti.isLeftCointegral_def]
+
 /-- Right invariance in any finite representation of the coproduct. -/
 theorem IsRightInvariantIntegral.sum_smul {a : H} {ι : Type*}
     (hh : h.IsRightInvariantIntegral) (r : Coalgebra.Repr R a ι) :
@@ -84,6 +104,26 @@ theorem IsLeftInvariantIntegral.sum_sum_mul {a b : H} {ι κ : Type*}
     ∑ i ∈ ra.index, ∑ j ∈ rb.index,
       h (ra.right i * rb.right j) • (ra.left i * rb.left j) = h (a * b) • (1 : H) := by
   simpa [Finset.sum_product] using hh.sum_smul (ra.mul rb)
+
+/-- A left invariant integral `φ` and a right invariant integral `ψ` satisfy
+`φ a * ψ 1 = ψ a * φ 1` on every element `a`. -/
+theorem IsLeftInvariantIntegral.apply_mul_apply_one_comm {φ ψ : H →ₗ[R] R}
+    (hφ : φ.IsLeftInvariantIntegral) (hψ : ψ.IsRightInvariantIntegral) (a : H) :
+    φ a * ψ 1 = ψ a * φ 1 := by
+  let r := ℛ R a
+  have hL : ψ (∑ i ∈ r.index, φ (r.right i) • r.left i) = φ a * ψ 1 := by
+    rw [hφ.sum_smul r, map_smul, smul_eq_mul]
+  have hR : φ (∑ i ∈ r.index, ψ (r.left i) • r.right i) = ψ a * φ 1 := by
+    rw [hψ.sum_smul r, map_smul, smul_eq_mul]
+  rw [← hL, ← hR, map_sum, map_sum]
+  exact Finset.sum_congr rfl fun i _ ↦ by simp only [map_smul, smul_eq_mul, mul_comm]
+
+/-- Any normalized left invariant integral equals any normalized right invariant integral. -/
+theorem IsLeftInvariantIntegral.eq_of_isRightInvariantIntegral {φ ψ : H →ₗ[R] R}
+    (hφ : φ.IsLeftInvariantIntegral) (hψ : ψ.IsRightInvariantIntegral)
+    (hφ1 : φ 1 = 1) (hψ1 : ψ 1 = 1) : φ = ψ := by
+  ext a
+  simpa [hφ1, hψ1] using hφ.apply_mul_apply_one_comm hψ a
 
 end Bialgebra
 
@@ -146,6 +186,82 @@ theorem IsLeftInvariantIntegral.strong_invariance (hh : h.IsLeftInvariantIntegra
     rw [← hfg, ← mul_assoc, LinearMap.antipode_mul_id, one_mul]
   have := congrArg (fun u : WithConv (H →ₗ[R] H) ↦ u.ofConv b) hf
   simpa [f, g, rb.convMul_apply, Algebra.algebraMap_eq_smul_one] using this
+
+private def scalarConv (φ : H →ₗ[R] R) : WithConv (H →ₗ[R] H) :=
+  toConv (Algebra.linearMap R H ∘ₗ φ)
+
+private theorem isLeftInvariantIntegral_iff_id_mul (φ : H →ₗ[R] R) :
+    φ.IsLeftInvariantIntegral ↔ toConv LinearMap.id * scalarConv φ = scalarConv φ := by
+  rw [isLeftInvariantIntegral_iff, ← WithConv.ofConv_injective.eq_iff, LinearMap.ext_iff]
+  refine forall_congr' fun a ↦ ?_
+  let r := ℛ R a
+  have h1 : TensorProduct.rid R H (φ.lTensor H (Coalgebra.comul a)) =
+      (toConv LinearMap.id * scalarConv φ).ofConv a := by
+    rw [← r.eq, map_sum, map_sum, r.convMul_apply]
+    exact Finset.sum_congr rfl fun i _ ↦ by simp [scalarConv, ← Algebra.commutes, Algebra.smul_def]
+  rw [h1]
+  simp [scalarConv, Algebra.algebraMap_eq_smul_one]
+
+private theorem isRightInvariantIntegral_iff_mul_id (φ : H →ₗ[R] R) :
+    φ.IsRightInvariantIntegral ↔ scalarConv φ * toConv LinearMap.id = scalarConv φ := by
+  rw [isRightInvariantIntegral_iff, ← WithConv.ofConv_injective.eq_iff, LinearMap.ext_iff]
+  refine forall_congr' fun a ↦ ?_
+  let r := ℛ R a
+  have h1 : TensorProduct.lid R H (φ.rTensor H (Coalgebra.comul a)) =
+      (scalarConv φ * toConv LinearMap.id).ofConv a := by
+    rw [← r.eq, map_sum, map_sum, r.convMul_apply]
+    exact Finset.sum_congr rfl fun i _ ↦ by simp [scalarConv, Algebra.smul_def]
+  rw [h1]
+  simp [scalarConv, Algebra.algebraMap_eq_smul_one]
+
+/-- Precomposing a right invariant integral with the antipode produces a left invariant
+integral. -/
+theorem IsRightInvariantIntegral.comp_antipode (hh : h.IsRightInvariantIntegral) :
+    (h ∘ₗ HopfAlgebra.antipode R).IsLeftInvariantIntegral := by
+  let S : H →ₗ[R] H := HopfAlgebra.antipode R
+  have hS : toConv S * scalarConv (h ∘ₗ S) = scalarConv (h ∘ₗ S) :=
+    WithConv.ofConv_injective <| LinearMap.ext fun a ↦ by
+      simpa [(ℛ R a).convMul_apply, scalarConv, S, ← Algebra.commutes, Algebra.smul_def] using
+        hh.sum_smul (ℛ R a).antipode
+  rw [isLeftInvariantIntegral_iff_id_mul]
+  calc toConv LinearMap.id * scalarConv (h ∘ₗ S)
+      = (toConv LinearMap.id * toConv S) * scalarConv (h ∘ₗ S) := by rw [mul_assoc, hS]
+    _ = scalarConv (h ∘ₗ S) := by rw [LinearMap.id_mul_antipode, one_mul]
+
+/-- Precomposing a left invariant integral with the antipode produces a right invariant
+integral. -/
+theorem IsLeftInvariantIntegral.comp_antipode (hh : h.IsLeftInvariantIntegral) :
+    (h ∘ₗ HopfAlgebra.antipode R).IsRightInvariantIntegral := by
+  let S : H →ₗ[R] H := HopfAlgebra.antipode R
+  have hS : scalarConv (h ∘ₗ S) * toConv S = scalarConv (h ∘ₗ S) :=
+    WithConv.ofConv_injective <| LinearMap.ext fun a ↦ by
+      simpa [(ℛ R a).convMul_apply, scalarConv, S, Algebra.smul_def] using
+        hh.sum_smul (ℛ R a).antipode
+  rw [isRightInvariantIntegral_iff_mul_id]
+  calc scalarConv (h ∘ₗ S) * toConv LinearMap.id
+      = scalarConv (h ∘ₗ S) * (toConv S * toConv LinearMap.id) := by rw [← mul_assoc, hS]
+    _ = scalarConv (h ∘ₗ S) := by rw [LinearMap.antipode_mul_id, mul_one]
+
+/-- A normalized right invariant integral on a Hopf algebra is invariant under the antipode. -/
+theorem IsRightInvariantIntegral.map_antipode (hr : h.IsRightInvariantIntegral) (h1 : h 1 = 1)
+    (a : H) : h (HopfAlgebra.antipode R a) = h a :=
+  LinearMap.congr_fun (hr.comp_antipode.eq_of_isRightInvariantIntegral hr (by simp [h1]) h1) a
+
+/-- A normalized left invariant integral on a Hopf algebra is invariant under the antipode. -/
+theorem IsLeftInvariantIntegral.map_antipode (hl : h.IsLeftInvariantIntegral) (h1 : h 1 = 1)
+    (a : H) : h (HopfAlgebra.antipode R a) = h a :=
+  (LinearMap.congr_fun
+    (hl.eq_of_isRightInvariantIntegral hl.comp_antipode h1 (by simp [h1])) a).symm
+
+/-- Every normalized right invariant integral on a Hopf algebra is also left invariant. -/
+theorem IsRightInvariantIntegral.isLeftInvariantIntegral (hr : h.IsRightInvariantIntegral)
+    (h1 : h 1 = 1) : h.IsLeftInvariantIntegral :=
+  LinearMap.ext (f := h ∘ₗ HopfAlgebra.antipode R) (hr.map_antipode h1) ▸ hr.comp_antipode
+
+/-- Every normalized left invariant integral on a Hopf algebra is also right invariant. -/
+theorem IsLeftInvariantIntegral.isRightInvariantIntegral (hl : h.IsLeftInvariantIntegral)
+    (h1 : h 1 = 1) : h.IsRightInvariantIntegral :=
+  LinearMap.ext (f := h ∘ₗ HopfAlgebra.antipode R) (hl.map_antipode h1) ▸ hl.comp_antipode
 
 end Hopf
 

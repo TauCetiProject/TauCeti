@@ -68,7 +68,7 @@ def complexProdTensorComplexVolumeEigenspaceEquiv (hQ₂ : ∀ w, Q₂ w = -‖w
   (LinearEquiv.ofEq _ _ (congrArg (Module.End.eigenspace · μ)
       (complexProdTensor_complexVolume_of_map_prod hQ o₁ hQ₁ hn ρ₁ ρ₂ o₂ o hQ₂ hm ho))).trans
     (eigenspaceTensorMapEquiv (ρ₁ (complexVolume Q₁ o₁)) (ρ₂ (complexVolume Q₂ o₂))
-      (map_complexVolume_involutive o₁ hQ₁ ρ₁) (map_complexVolume_involutive o₂ hQ₂ ρ₂) hμ)
+      (ρ₁.involutive_complexVolume o₁ hQ₁) (ρ₂.involutive_complexVolume o₂ hQ₂) hμ)
 
 /-- The forward map of `CliffordAlgebra.complexProdTensorComplexVolumeEigenspaceEquiv` projects onto
 the two complementary tensor summands via `Module.End.eigenProjOfInvolutive`. -/
@@ -79,12 +79,12 @@ theorem complexProdTensorComplexVolumeEigenspaceEquiv_apply (hQ₂ : ∀ w, Q₂
     (z : (complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ (complexVolume Q o)).eigenspace μ) :
     complexProdTensorComplexVolumeEigenspaceEquiv hQ o₁ hQ₁ hn ρ₁ ρ₂ o₂ o hQ₂ hm ho hμ z =
       (TensorProduct.map
-          (eigenProjOfInvolutive (map_complexVolume_involutive o₁ hQ₁ ρ₁) (one_mul 1))
-          (eigenProjOfInvolutive (map_complexVolume_involutive o₂ hQ₂ ρ₂) hμ) z,
+          (eigenProjOfInvolutive (ρ₁.involutive_complexVolume o₁ hQ₁) (one_mul 1))
+          (eigenProjOfInvolutive (ρ₂.involutive_complexVolume o₂ hQ₂) hμ) z,
         TensorProduct.map
-          (eigenProjOfInvolutive (map_complexVolume_involutive o₁ hQ₁ ρ₁)
+          (eigenProjOfInvolutive (ρ₁.involutive_complexVolume o₁ hQ₁)
             ((neg_mul_neg (1 : ℂ) 1).trans (one_mul 1)))
-          (eigenProjOfInvolutive (map_complexVolume_involutive o₂ hQ₂ ρ₂)
+          (eigenProjOfInvolutive (ρ₂.involutive_complexVolume o₂ hQ₂)
             ((neg_mul_neg μ μ).trans hμ)) z) := by
   rw [complexProdTensorComplexVolumeEigenspaceEquiv, LinearEquiv.trans_apply,
     eigenspaceTensorMapEquiv_apply, LinearEquiv.coe_ofEq_apply]
@@ -218,12 +218,12 @@ theorem finrank_eigenspace_complexProdTensor_complexVolume_of_bijective
         finrank ℂ ((ρ₁ (complexVolume Q₁ o₁)).eigenspace (-1)) = 2 ^ (n / 2) := by
       rw [Submodule.finrank_add_eq_of_isCompl
         (TauCeti.isCompl_eigenspace_one_neg_one two_ne_zero.isUnit
-          (map_complexVolume_involutive o₁ hQ₁ ρ₁)), hdimE]
+          (ρ₁.involutive_complexVolume o₁ hQ₁)), hdimE]
     rw [heigF hm0 hμ, heigF hm0 hnegμ, ← Nat.add_mul, hsumE, hn0]; simp
   · have hcomplF : IsCompl ((ρ₂ (complexVolume Q₂ o₂)).eigenspace μ)
         ((ρ₂ (complexVolume Q₂ o₂)).eigenspace (-μ)) := by
       have h := TauCeti.isCompl_eigenspace_one_neg_one two_ne_zero.isUnit
-        (map_complexVolume_involutive o₂ hQ₂ ρ₂)
+        (ρ₂.involutive_complexVolume o₂ hQ₂)
       rcases hμ with rfl | rfl; · exact h
       · rw [neg_neg]; exact h.symm
     have hsumF : finrank ℂ ((ρ₂ (complexVolume Q₂ o₂)).eigenspace μ) +
