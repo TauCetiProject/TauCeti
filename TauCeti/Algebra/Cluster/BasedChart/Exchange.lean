@@ -32,7 +32,7 @@ maps these monomials into it maps all of it into itself, and the powers of a mon
 transverse to `N` have unique left coefficients in it
 (`BasedChart.linearIndependent_zpow_monomial`).
 
-For the data of §0.5, an additive map `l` on the exponents in place of `Λ'`,
+For the data of §0.5, an additive map `l` on the exponents vanishing at `k` in place of `Λ'`,
 `LinearMap.BilinForm.exchange Λ k l` is the alternating form
 `Λ'(a, b) = Λ(a°, b°) + a_k * l(b°) - b_k * l(a°)`, and `BasedChart.exchangeOfDual` is the
 exchanged chart for it.
@@ -69,41 +69,47 @@ namespace LinearMap.BilinForm
 
 variable {I : Type*}
 
-/-- The form of the chart exchanged in direction `k` with cross terms `l` (§0.5): it agrees with
-`Λ` on exponents vanishing at `k` and pairs `e_k` with them by `l`, namely
-`Λ'(a, b) = Λ(a°, b°) + a_k * l(b°) - b_k * l(a°)` with `a° = a - a_k e_k`. -/
+/-- The form of the chart exchanged in direction `k` with cross terms `l` (§0.5), an additive map
+on the exponents vanishing at `k`: it agrees with `Λ` on these exponents and pairs `e_k` with
+them by `l`, namely `Λ'(a, b) = Λ(a°, b°) + a_k * l(b°) - b_k * l(a°)` with
+`a° = a - a_k e_k`. -/
 noncomputable def exchange (Λ : LinearMap.BilinForm ℤ (I →₀ ℤ)) (k : I)
-    (l : Module.Dual ℤ (I →₀ ℤ)) : LinearMap.BilinForm ℤ (I →₀ ℤ) :=
+    (l : Module.Dual ℤ (Finsupp.applyAddHom (M := ℤ) k).ker) : LinearMap.BilinForm ℤ (I →₀ ℤ) :=
+  let l' := l ∘ₗ ((Finsupp.eraseAddHom (M := ℤ) k).codRestrict _ fun _ ↦
+    AddMonoidHom.mem_ker.mpr Finsupp.erase_same).toIntLinearMap
   Λ.compl₁₂ (Finsupp.eraseAddHom k).toIntLinearMap (Finsupp.eraseAddHom k).toIntLinearMap +
-    (Finsupp.lapply k).smulRight (l ∘ₗ (Finsupp.eraseAddHom k).toIntLinearMap) -
-      ((Finsupp.lapply k).smulRight (l ∘ₗ (Finsupp.eraseAddHom k).toIntLinearMap)).flip
+    (Finsupp.lapply k).smulRight l' - ((Finsupp.lapply k).smulRight l').flip
 
 /-- The exchanged form is `Λ'(a, b) = Λ(a°, b°) + a_k * l(b°) - b_k * l(a°)`. -/
 theorem exchange_apply (Λ : LinearMap.BilinForm ℤ (I →₀ ℤ)) (k : I)
-    (l : Module.Dual ℤ (I →₀ ℤ)) (a b : I →₀ ℤ) :
-    Λ.exchange k l a b =
-      Λ (a.erase k) (b.erase k) + a k * l (b.erase k) - b k * l (a.erase k) :=
+    (l : Module.Dual ℤ (Finsupp.applyAddHom (M := ℤ) k).ker) (a b : I →₀ ℤ) :
+    Λ.exchange k l a b = Λ (a.erase k) (b.erase k) +
+      a k * l ⟨b.erase k, AddMonoidHom.mem_ker.mpr Finsupp.erase_same⟩ -
+        b k * l ⟨a.erase k, AddMonoidHom.mem_ker.mpr Finsupp.erase_same⟩ :=
   (rfl)
 
 /-- The exchanged form of an alternating form is alternating. -/
 theorem isAlt_exchange {Λ : LinearMap.BilinForm ℤ (I →₀ ℤ)} (hΛ : Λ.IsAlt) (k : I)
-    (l : Module.Dual ℤ (I →₀ ℤ)) : (Λ.exchange k l).IsAlt := fun a ↦ by
-  rw [exchange_apply, hΛ.self_eq_zero, zero_add, sub_self]
+    (l : Module.Dual ℤ (Finsupp.applyAddHom (M := ℤ) k).ker) : (Λ.exchange k l).IsAlt :=
+  fun a ↦ by rw [exchange_apply, hΛ.self_eq_zero, zero_add, sub_self]
 
 /-- The exchanged form agrees with `Λ` on exponents vanishing at `k`. -/
 theorem exchange_apply_of_apply_eq_zero (Λ : LinearMap.BilinForm ℤ (I →₀ ℤ)) {k : I}
-    (l : Module.Dual ℤ (I →₀ ℤ)) {a b : I →₀ ℤ} (ha : a k = 0) (hb : b k = 0) :
-    Λ.exchange k l a b = Λ a b := by
-  rw [exchange_apply, ha, hb, Finsupp.erase_of_notMem_support (by simpa using ha),
+    (l : Module.Dual ℤ (Finsupp.applyAddHom (M := ℤ) k).ker) {a b : I →₀ ℤ} (ha : a k = 0)
+    (hb : b k = 0) : Λ.exchange k l a b = Λ a b := by
+  rw [exchange_apply, ha, hb, zero_mul, zero_mul, add_zero, sub_zero,
+    Finsupp.erase_of_notMem_support (by simpa using ha),
     Finsupp.erase_of_notMem_support (by simpa using hb)]
-  simp
 
 /-- The exchanged form pairs `e_k` with `b` by `l(b°)`. -/
 @[simp]
 theorem exchange_single_self_apply (Λ : LinearMap.BilinForm ℤ (I →₀ ℤ)) (k : I)
-    (l : Module.Dual ℤ (I →₀ ℤ)) (b : I →₀ ℤ) :
-    Λ.exchange k l (Finsupp.single k 1) b = l (b.erase k) := by
-  simp [exchange_apply, Finsupp.erase_single]
+    (l : Module.Dual ℤ (Finsupp.applyAddHom (M := ℤ) k).ker) (b : I →₀ ℤ) :
+    Λ.exchange k l (Finsupp.single k 1) b =
+      l ⟨b.erase k, AddMonoidHom.mem_ker.mpr Finsupp.erase_same⟩ := by
+  simp only [exchange_apply, Finsupp.erase_single, Finsupp.single_eq_same, one_mul, map_zero]
+  rw [LinearMap.zero_apply, zero_add, sub_eq_self, mul_eq_zero]
+  exact Or.inr (map_zero l)
 
 end LinearMap.BilinForm
 
@@ -418,13 +424,13 @@ noncomputable def exchange (M : BasedChart u Λ B) (hΛ : Λ.IsAlt) (k : I) (hΛ
   monomial_mul := exchangeMonomial_mul M k hΛ' hΛΛ' hy
   linearIndependent := linearIndependent_exchangeMonomial M hΛ k hy hyx
 
-/-- The exchanged chart built from the data of §0.5: an additive map `l` on the exponents and a
-unit `y` with `y * M(a) = u ^ (2 * l(a)) * M(a) * y` whenever `a_k = 0` and `y * M(e_k)` in the
-span of those monomials. It is the chart for the alternating form `Λ.exchange k l`, which agrees
-with `Λ` off `k` and pairs `e_k` with `a°` by `l(a°)`. -/
+/-- The exchanged chart built from the data of §0.5: an additive map `l` on the exponents
+vanishing at `k` and a unit `y` with `y * M(a) = u ^ (2 * l(a)) * M(a) * y` for these exponents
+and `y * M(e_k)` in the span of their monomials. It is the chart for the alternating form
+`Λ.exchange k l`, which agrees with `Λ` off `k` and pairs `e_k` with `a°` by `l(a°)`. -/
 noncomputable def exchangeOfDual (M : BasedChart u Λ B) (hΛ : Λ.IsAlt) (k : I)
-    (l : Module.Dual ℤ (I →₀ ℤ)) (y : Bˣ)
-    (hy : ∀ a : I →₀ ℤ, a k = 0 → y * M.monomial a =
+    (l : Module.Dual ℤ (Finsupp.applyAddHom (M := ℤ) k).ker) (y : Bˣ)
+    (hy : ∀ a : (Finsupp.applyAddHom (M := ℤ) k).ker, y * M.monomial a =
       Units.map (algebraMap R B) (u ^ (2 * l a)) * (M.monomial a * y))
     (hyx : ((y * M.monomial (Finsupp.single k 1) : Bˣ) : B) ∈
       M.subalgebra (Finsupp.applyAddHom k).ker) :
@@ -432,21 +438,21 @@ noncomputable def exchangeOfDual (M : BasedChart u Λ B) (hΛ : Λ.IsAlt) (k : I
   M.exchange hΛ k (LinearMap.BilinForm.isAlt_exchange hΛ k l)
     (fun _ _ ha hb ↦ Λ.exchange_apply_of_apply_eq_zero l ha hb) y
     (fun a ha ↦ by
-      rw [LinearMap.BilinForm.exchange_single_self_apply,
-        Finsupp.erase_of_notMem_support (by simpa using ha)]
-      exact hy a ha)
+      simpa [Finsupp.erase_of_notMem_support (show k ∉ a.support by simpa using ha)] using
+        hy ⟨a, AddMonoidHom.mem_ker.mpr ha⟩)
     hyx
 
 /-- The monomials of the exchanged chart built from `l`: `u ^ (-(a_k * l(a°))) * y ^ a_k * M(a°)`.
 -/
 theorem exchangeOfDual_monomial (M : BasedChart u Λ B) (hΛ : Λ.IsAlt) (k : I)
-    (l : Module.Dual ℤ (I →₀ ℤ)) (y : Bˣ)
-    (hy : ∀ a : I →₀ ℤ, a k = 0 → y * M.monomial a =
+    (l : Module.Dual ℤ (Finsupp.applyAddHom (M := ℤ) k).ker) (y : Bˣ)
+    (hy : ∀ a : (Finsupp.applyAddHom (M := ℤ) k).ker, y * M.monomial a =
       Units.map (algebraMap R B) (u ^ (2 * l a)) * (M.monomial a * y))
     (hyx : ((y * M.monomial (Finsupp.single k 1) : Bˣ) : B) ∈
       M.subalgebra (Finsupp.applyAddHom k).ker) (a : I →₀ ℤ) :
     (M.exchangeOfDual hΛ k l y hy hyx).monomial a =
-      Units.map (algebraMap R B) (u ^ (-(a k * l (a.erase k)))) *
+      Units.map (algebraMap R B)
+          (u ^ (-(a k * l ⟨a.erase k, AddMonoidHom.mem_ker.mpr Finsupp.erase_same⟩))) *
         y ^ a k * M.monomial (a.erase k) := by
   simp [exchangeOfDual, exchange, exchangeMonomial]
 
