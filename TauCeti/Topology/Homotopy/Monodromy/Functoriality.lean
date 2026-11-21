@@ -114,6 +114,19 @@ theorem monodromy_section (hp : _root_.IsCoveringMap p) {s : X → E}
   refine Subtype.ext ((hp.monodromy_eq_apply_one (Γ := ⟨s ∘ γ, hs.comp γ.continuous⟩)
     (funext fun t ↦ hps (γ t)) ?_).trans ?_) <;> simp
 
+/-- Monodromy along the image of a path under a map `g` carries the value at the start of the path
+of a continuous lift `s` of `g` through the covering to its value at the end: the lift lifts the
+image path. For `g` the identity this is `IsCoveringMap.monodromy_section`. -/
+theorem monodromy_map_of_lift (hp : _root_.IsCoveringMap p) {Y : Type*} [TopologicalSpace Y]
+    {g : C(Y, X)} {s : Y → E} (hs : Continuous s) (hps : ∀ y, s y ∈ p ⁻¹' {g y}) {y y' : Y}
+    (a : Path.Homotopic.Quotient y y') :
+    hp.monodromy (a.map g) ⟨s y, hps y⟩ = ⟨s y', hps y'⟩ := by
+  induction a using Path.Homotopic.Quotient.ind with | mk γ => ?_
+  rw [← Path.Homotopic.Quotient.mk_map]
+  refine Subtype.ext ((hp.monodromy_eq_apply_one (γ := γ.map g.continuous)
+    (Γ := ⟨s ∘ γ, hs.comp γ.continuous⟩)
+    (funext fun t ↦ Set.mem_singleton_iff.1 (hps (γ t))) ?_).trans ?_) <;> simp
+
 /-- A map of covers that preserves the numberings of two fibres identifies their numbered
 monodromy representations. -/
 theorem permutationRepresentation_eq_of_fiberMap
