@@ -42,9 +42,13 @@ against `μ_(ξ,ξ)` gives the Bochner integral against `P.diag ξ`.
   `ProjValMeasure.lintegral_enorm_variation_polarizedComplexMeasure_le_eLpNorm`,
   `ProjValMeasure.integrable_polarizedComplexMeasure_of_memLp`,
   `ProjValMeasure.integrable_polarizedComplexMeasure_of_memLp_left`,
-  `ProjValMeasure.integral_norm_variation_polarizedComplexMeasure_le`, and
-  `ProjValMeasure.integral_norm_variation_polarizedComplexMeasure_le_left`: Cauchy–Schwarz variation
-  estimates and `L²`-to-`L¹(|μ_(ψ,ξ)|)` integrability for polarized spectral measures.
+  `ProjValMeasure.integral_norm_variation_polarizedComplexMeasure_le`,
+  `ProjValMeasure.integral_norm_variation_polarizedComplexMeasure_le_left`,
+  `ProjValMeasure.eNorm_integral_polarizedComplexMeasure_le`, and
+  `ProjValMeasure.norm_integral_polarizedComplexMeasure_le`: Cauchy–Schwarz estimates and
+  `L²`-to-`L¹(|μ_(ψ,ξ)|)` integrability for polarized spectral measures.
+* `ProjValMeasure.integral_polarizedComplexMeasure_star`: conjugate symmetry of polarized
+  integrals.
 
 ## References
 
@@ -239,6 +243,57 @@ theorem integral_norm_variation_polarizedComplexMeasure_le_left {E : Type*} [Nor
       ‖ξ‖ * Real.sqrt (∫ t, ‖f t‖ ^ 2 ∂(P.diag ψ)) := by
   rw [P.variation_polarizedComplexMeasure_comm ψ ξ]
   exact P.integral_norm_variation_polarizedComplexMeasure_le hf ξ
+
+/-- Extended-norm Cauchy–Schwarz bound for integration against a polarized spectral measure.
+No measurability or integrability hypothesis is needed. -/
+theorem eNorm_integral_polarizedComplexMeasure_le (P : ProjValMeasure X H) (f : X → ℂ)
+    (ψ ξ : H) :
+    ‖∫ᵛ t, f t ∂[ContinuousLinearMap.mul ℝ ℂ; P.polarizedComplexMeasure ψ ξ]‖ₑ ≤
+      ‖ψ‖ₑ * (∫⁻ t, ‖f t‖ₑ ^ 2 ∂(P.diag ξ)) ^ (1 / 2 : ℝ) := by
+  refine VectorMeasure.eNorm_integral_le_lintegral_eNorm.trans ?_
+  rw [eNorm_eq_nnNorm, ContinuousLinearMap.opNNNorm_mul, ENNReal.coe_one, one_mul]
+  exact P.lintegral_variation_polarizedComplexMeasure_le ψ ξ fun t => ‖f t‖ₑ
+
+/-- Norm Cauchy–Schwarz bound for integration against a polarized spectral measure. -/
+theorem norm_integral_polarizedComplexMeasure_le (P : ProjValMeasure X H) {f : X → ℂ} {ξ : H}
+    (hf : MemLp f 2 (P.diag ξ)) (ψ : H) :
+    ‖∫ᵛ t, f t ∂[ContinuousLinearMap.mul ℝ ℂ; P.polarizedComplexMeasure ψ ξ]‖ ≤
+      ‖ψ‖ * Real.sqrt (∫ t, ‖f t‖ ^ 2 ∂(P.diag ξ)) := by
+  refine VectorMeasure.norm_integral_le_integral_norm.trans ?_
+  calc ‖ContinuousLinearMap.mul ℝ ℂ‖ * ∫ t, ‖f t‖ ∂(P.polarizedComplexMeasure ψ ξ).variation
+      ≤ 1 * ∫ t, ‖f t‖ ∂(P.polarizedComplexMeasure ψ ξ).variation := by
+        gcongr
+        exact ContinuousLinearMap.opNorm_mul_le ℝ ℂ
+    _ = ∫ t, ‖f t‖ ∂(P.polarizedComplexMeasure ψ ξ).variation := one_mul _
+    _ ≤ ‖ψ‖ * Real.sqrt (∫ t, ‖f t‖ ^ 2 ∂(P.diag ξ)) :=
+        P.integral_norm_variation_polarizedComplexMeasure_le hf ψ
+
+/-- **Conjugate symmetry of polarized integrals.** Integrating `star f` against `μ_(ξ,ψ)` is the
+conjugate of integrating `f` against `μ_(ψ,ξ)`, with no integrability hypothesis on `f`. -/
+theorem integral_polarizedComplexMeasure_star (P : ProjValMeasure X H) (f : X → ℂ) (ψ ξ : H) :
+    ∫ᵛ t, star (f t) ∂[ContinuousLinearMap.mul ℝ ℂ; P.polarizedComplexMeasure ξ ψ] =
+      star (∫ᵛ t, f t ∂[ContinuousLinearMap.mul ℝ ℂ; P.polarizedComplexMeasure ψ ξ]) := by
+  have hmap : P.polarizedComplexMeasure ξ ψ =
+      VectorMeasure.mapRangeL (Complex.conjCLE : ℂ →L[ℝ] ℂ)
+        (P.polarizedComplexMeasure ψ ξ) :=
+    (P.mapRangeL_conjCLE_polarizedComplexMeasure ψ ξ).symm
+  by_cases hf : (P.polarizedComplexMeasure ψ ξ).Integrable f
+  · have hf' : (P.polarizedComplexMeasure ψ ξ).Integrable (fun t => star (f t)) :=
+      (Complex.conjCLE : ℂ →L[ℝ] ℂ).integrable_comp hf
+    have hnat := VectorMeasure.map_integral_comp_eq_integral_mapRangeL
+      (P.polarizedComplexMeasure ψ ξ) hf'
+      (Complex.conjCLE : ℂ →L[ℝ] ℂ) (Complex.conjCLE : ℂ →L[ℝ] ℂ)
+      (Complex.conjCLE : ℂ →L[ℝ] ℂ)
+      (B := ContinuousLinearMap.mul ℝ ℂ) (B' := ContinuousLinearMap.mul ℝ ℂ)
+      (fun x y => by simp)
+    rw [← hmap] at hnat
+    simpa [Complex.conjCLE_apply] using hnat.symm
+  · have hfs : ¬ (P.polarizedComplexMeasure ξ ψ).Integrable (fun t => star (f t)) := by
+      intro h
+      rw [VectorMeasure.Integrable, P.variation_polarizedComplexMeasure_comm] at h
+      exact hf (by simpa [Complex.conjCLE_apply] using
+        (Complex.conjCLE : ℂ →L[ℝ] ℂ).integrable_comp h)
+    rw [VectorMeasure.integral_undef hf, VectorMeasure.integral_undef hfs, star_zero]
 
 end ProjValMeasure
 end TauCeti

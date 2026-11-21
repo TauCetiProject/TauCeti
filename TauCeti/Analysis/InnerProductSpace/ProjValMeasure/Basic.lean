@@ -44,10 +44,11 @@ from the structure's laws.
 * `hasSum_proj_of_pairwise_disjoint`: unconditional strong countable additivity
   (`HasSum`) on a pairwise-disjoint measurable family; `tendsto_sum_proj_of_pairwise_disjoint`
   gives convergence of the natural-order partial sums.
-* `diag`, `diag_real_univ`, `diag_univ`, `enorm_sq_proj_apply`, `diag_zero`,
-  `diag_smul`, `diag_neg`, `diag_add_le`, `diag_proj`: the finite diagonal scalar
+* `diag`, `enorm_sq_proj_apply`, `diag_real_univ`, `diag_univ`, `diag_zero`, `diag_smul`,
+  `diag_neg`, `diag_add_add_sub`, `diag_add_le`, `diag_proj`: the finite diagonal scalar
   measures carried by the structure, their real/extended-real total masses, and
   their behavior under vector operations and spectral projections.
+* `tendsto_proj_iUnion_of_monotone`: strong convergence along an increasing measurable sequence.
 * `ext_of_diag`, `ext`, `ext_iff_diag`, `ext_iff`: extensionality from either
   data field.
 
@@ -265,6 +266,21 @@ lemma norm_sq_proj_apply (P : ProjValMeasure X H) (B : Set X) (hB : MeasurableSe
   rw [norm_sq_eq_re_inner (𝕜 := ℂ), h1, P.inner_proj, RCLike.re_eq_complex_re,
     Complex.ofReal_re]
 
+/-- Squared extended norm of a spectral projection equals the diagonal mass
+of the corresponding measurable set. -/
+@[simp]
+theorem enorm_sq_proj_apply (P : ProjValMeasure X H) (B : Set X)
+    (hB : MeasurableSet B) (ξ : H) :
+    ‖P.proj B hB ξ‖ₑ ^ 2 = (P.diag ξ) B := by
+  have hfin : (P.diag ξ) B ≠ ⊤ :=
+    measure_ne_top (μ := P.diag ξ) (s := B)
+  calc
+    ‖P.proj B hB ξ‖ₑ ^ 2 = ENNReal.ofReal (‖P.proj B hB ξ‖ ^ 2) := by
+      rw [ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm]
+    _ = ENNReal.ofReal (((P.diag ξ) B).toReal) := by
+      rw [P.norm_sq_proj_apply B hB ξ]
+    _ = (P.diag ξ) B := ENNReal.ofReal_toReal hfin
+
 /-- The total mass of the diagonal measure as a real number. -/
 @[simp]
 theorem diag_real_univ (P : ProjValMeasure X H) (ξ : H) :
@@ -286,21 +302,6 @@ theorem diag_univ (P : ProjValMeasure X H) (ξ : H) :
     _ = ‖ξ‖ₑ ^ 2 := by
       rw [ENNReal.ofReal_pow (norm_nonneg ξ), ofReal_norm]
 
-/-- Squared extended norm of a spectral projection equals the diagonal mass
-of the corresponding measurable set. -/
-@[simp]
-theorem enorm_sq_proj_apply (P : ProjValMeasure X H) (B : Set X)
-    (hB : MeasurableSet B) (ξ : H) :
-    ‖P.proj B hB ξ‖ₑ ^ 2 = (P.diag ξ) B := by
-  have hfin : (P.diag ξ) B ≠ ⊤ :=
-    measure_ne_top (μ := P.diag ξ) (s := B)
-  calc
-    ‖P.proj B hB ξ‖ₑ ^ 2 = ENNReal.ofReal (‖P.proj B hB ξ‖ ^ 2) := by
-      rw [ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm]
-    _ = ENNReal.ofReal (((P.diag ξ) B).toReal) := by
-      rw [P.norm_sq_proj_apply B hB ξ]
-    _ = (P.diag ξ) B := ENNReal.ofReal_toReal hfin
-
 /-- The diagonal scalar measure of the zero vector is the zero measure. -/
 @[simp]
 theorem diag_zero (P : ProjValMeasure X H) : P.diag 0 = 0 := by
@@ -319,6 +320,19 @@ theorem diag_smul (P : ProjValMeasure X H) (c : ℂ) (ξ : H) :
 @[simp]
 theorem diag_neg (P : ProjValMeasure X H) (ξ : H) : P.diag (-ξ) = P.diag ξ := by
   simpa using P.diag_smul (-1 : ℂ) ξ
+
+/-- **Parallelogram law for diagonal measures**: the sum of the diagonal measures of `ξ + η` and
+`ξ - η` equals twice the sum of the diagonal measures of `ξ` and `η`. -/
+theorem diag_add_add_sub (P : ProjValMeasure X H) (ξ η : H) :
+    P.diag (ξ + η) + P.diag (ξ - η) = (2 : ℝ≥0∞) • P.diag ξ + (2 : ℝ≥0∞) • P.diag η := by
+  refine Measure.ext fun B hB => ?_
+  have hpar := parallelogram_law_with_norm ℂ (P.proj B hB ξ) (P.proj B hB η)
+  rw [← map_add, ← map_sub] at hpar
+  simp only [add_apply, smul_apply, smul_eq_mul, ← P.enorm_sq_proj_apply B hB, eNorm_eq_nnNorm]
+  norm_cast
+  apply NNReal.coe_injective
+  push_cast
+  linarith [hpar]
 
 /-- The diagonal scalar measure of a sum is bounded by twice the sum of the two diagonal
 measures. -/
@@ -511,6 +525,27 @@ theorem hasSum_proj_of_pairwise_disjoint {P : ProjValMeasure X H} {f : ℕ → S
   exact (hsum.hasSum_iff_tendsto_nat).2 (by
     simpa only [Nat.Iio_eq_range, sum_apply] using
       P.tendsto_sum_proj_of_pairwise_disjoint hf hdisj ξ)
+
+/-- Along an increasing sequence of measurable sets, the spectral projections converge strongly
+to the projection of the union. -/
+theorem tendsto_proj_iUnion_of_monotone (P : ProjValMeasure X H) {f : ℕ → Set X}
+    (hf : ∀ n, MeasurableSet (f n)) (hmono : Monotone f) (ξ : H) :
+    Tendsto (fun n => P.proj (f n) (hf n) ξ) Filter.atTop
+      (𝓝 (P.proj (⋃ k, f k) (MeasurableSet.iUnion hf) ξ)) := by
+  refine tendsto_iff_norm_sub_tendsto_zero.2 ?_
+  have hmeas : Tendsto (fun n => (P.diag ξ (⋃ k, f k)).toReal - (P.diag ξ (f n)).toReal)
+      Filter.atTop (𝓝 0) := by
+    simpa [sub_self] using (tendsto_const_nhds (x := (P.diag ξ (⋃ k, f k)).toReal)).sub
+      ((ENNReal.tendsto_toReal (measure_ne_top (μ := P.diag ξ) (s := ⋃ k, f k))).comp
+        (tendsto_measure_iUnion_atTop hmono))
+  have hsq : Tendsto (fun n => ‖P.proj (f n) (hf n) ξ -
+      P.proj (⋃ k, f k) (MeasurableSet.iUnion hf) ξ‖ ^ 2) Filter.atTop (𝓝 0) := by
+    refine hmeas.congr fun n => ?_
+    rw [ContinuousLinearMap.norm_sub_sq_of_selfAdjoint_idempotent_absorption _ _
+      (P.isSelfAdjoint_proj (f n) (hf n)) (P.proj_idem (f n) (hf n))
+      (P.proj_mul_eq_left_of_subset (Set.subset_iUnion f n) (hf n) (MeasurableSet.iUnion hf)) ξ,
+      P.norm_sq_proj_apply, P.norm_sq_proj_apply]
+  simpa [Real.sqrt_sq (norm_nonneg _)] using hsq.sqrt
 
 /-! ## Extensionality
 

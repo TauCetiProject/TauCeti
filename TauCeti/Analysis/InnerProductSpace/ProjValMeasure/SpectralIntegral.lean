@@ -53,24 +53,31 @@ on `H`.
   either vector belongs to the domain, `f` is integrable against `P.polarizedComplexMeasure y x`.
 * `ProjValMeasure.inner_spectralIntegral_apply`,
   `ProjValMeasure.inner_spectralIntegral_apply_left`,
+  `ProjValMeasure.spectralIntegral_apply_eq_of_inner`,
   `ProjValMeasure.polarizedComplexMeasure_spectralIntegral_right`,
   `ProjValMeasure.polarizedComplexMeasure_spectralIntegral_left`, and
   `ProjValMeasure.eq_spectralIntegral_of_domain_of_inner`: matrix-element and weighted-measure
   formulas for `P.spectralIntegral f hf`, and uniqueness from the domain and matrix elements.
 * `ProjValMeasure.spectralIntegral_coe_boundedBorelFunction`,
+  `ProjValMeasure.mem_spectralIntegral_domain_of_ae_eq_boundedBorelFunction`,
+  `ProjValMeasure.spectralIntegral_apply_of_ae_eq_boundedBorelFunction`,
+  `ProjValMeasure.integral_apply_mem_spectralIntegral_domain`,
+  `ProjValMeasure.spectralIntegral_integral_apply`,
   `ProjValMeasure.spectralIntegral_proj_apply`,
   `ProjValMeasure.proj_mem_spectralIntegral_domain_of_bound`,
   `ProjValMeasure.spectralIntegral_proj_eq_integral_indicator_of_ae_eq`, and
-  `ProjValMeasure.spectralIntegral_proj_norm_le_eq_integral_truncate`: compatibility with the
-  bounded Borel integral `P.integral`, spectral projections `P.proj`, and level-set truncations.
+  `ProjValMeasure.spectralIntegral_proj_norm_le_eq_integral_truncate`: compatibility and
+  intertwining with the bounded Borel integral `P.integral`, spectral projections `P.proj`, and
+  level-set truncations.
 * `ProjValMeasure.spectralIntegral_eq_zero_iff`,
   `ProjValMeasure.spectralIntegral_eq_spectralIntegral_iff`, and
   `ProjValMeasure.spectralIntegral_map`: `P`-almost-everywhere characterizations of vanishing and
   equality, and change of variables along measurable maps.
 * `ProjValMeasure.adjoint_spectralIntegral`, `ProjValMeasure.isClosed_spectralIntegral`,
   `ProjValMeasure.norm_adjoint_spectralIntegral_apply`,
-  `ProjValMeasure.isSelfAdjoint_spectralIntegral_iff`, and
-  `ProjValMeasure.isSelfAdjoint_spectralIntegral_iff_proj_im_ne_zero_eq_zero`: the Hilbert adjoint
+  `ProjValMeasure.isSelfAdjoint_spectralIntegral_iff`,
+  `ProjValMeasure.isSelfAdjoint_spectralIntegral_iff_proj_im_ne_zero_eq_zero`, and
+  `ProjValMeasure.isSelfAdjoint_spectralIntegral_ofReal`: the Hilbert adjoint
   is the spectral integral of `star f` (with the same domain), every spectral integral is closed and
   normal, and it is self-adjoint if and only if `star f =ᶠ[P.ae] f` (equivalently, the projection
   of `{t | (f t).im ≠ 0}` vanishes).
@@ -467,6 +474,16 @@ theorem inner_spectralIntegral_apply (P : ProjValMeasure X H) {f : X → ℂ} (h
     P.integral_polarizedComplexMeasure_eq_inner_integral
       (BoundedBorelFunction.truncate f hf M) y x
 
+/-- Characterization of `P.spectralIntegral f hf x` by its matrix elements against all `y : H`. -/
+theorem spectralIntegral_apply_eq_of_inner (P : ProjValMeasure X H) {f : X → ℂ}
+    (hf : Measurable f) (x : (P.spectralIntegral f hf).domain) {w : H}
+    (h : ∀ y : H, ⟪y, w⟫_ℂ =
+      ∫ᵛ t, f t ∂[ContinuousLinearMap.mul ℝ ℂ; P.polarizedComplexMeasure y x]) :
+    P.spectralIntegral f hf x = w := by
+  apply ext_inner_left ℂ
+  intro y
+  rw [P.inner_spectralIntegral_apply hf x y, h y]
+
 /-- **Left-slot matrix elements of the unbounded spectral integral.** For `y` in the domain of
 `P.spectralIntegral f hf` and any `x : H`, `⟪P.spectralIntegral f hf y, x⟫_ℂ` is the scalar
 integral of `star (f t)` against `P.polarizedComplexMeasure y x`. -/
@@ -544,6 +561,64 @@ theorem spectralIntegral_coe_boundedBorelFunction (P : ProjValMeasure X H)
       LinearMap.toPMap_apply (P.integral g : H →ₗ[ℂ] H) ⊤ x
     rw [hx, ContinuousLinearMap.coe_coe]
     exact (P.integral_polarizedComplexMeasure_eq_inner_integral g y x).symm
+
+/-- If `f` agrees `P.diag x`-almost everywhere with a bounded Borel symbol `g`, then `x` lies in
+the domain of `P.spectralIntegral f hf`. -/
+theorem mem_spectralIntegral_domain_of_ae_eq_boundedBorelFunction (P : ProjValMeasure X H)
+    {f : X → ℂ} (hf : Measurable f) {g : BoundedBorelFunction X} {x : H}
+    (h : f =ᵐ[P.diag x] g) :
+    x ∈ (P.spectralIntegral f hf).domain := by
+  rw [P.mem_spectralIntegral_domain_iff_memLp hf]
+  exact (MemLp.of_bound g.measurable.aestronglyMeasurable ‖g‖
+    (Eventually.of_forall g.norm_coe_le_norm)).ae_eq h.symm
+
+/-- If `f` agrees `P.diag x`-almost everywhere with a bounded Borel symbol `g`, then
+`P.spectralIntegral f hf` acts on `x` as the bounded operator `P.integral g`. -/
+theorem spectralIntegral_apply_of_ae_eq_boundedBorelFunction (P : ProjValMeasure X H)
+    {f : X → ℂ} (hf : Measurable f) {g : BoundedBorelFunction X} {x : H}
+    (h : f =ᵐ[P.diag x] g) :
+    P.spectralIntegral f hf
+        ⟨x, P.mem_spectralIntegral_domain_of_ae_eq_boundedBorelFunction hf h⟩ =
+      P.integral g x := by
+  refine P.spectralIntegral_apply_eq_of_inner hf _ fun y => ?_
+  rw [← P.integral_polarizedComplexMeasure_eq_inner_integral g y x]
+  exact (VectorMeasure.integral_congr_ae
+    ((P.variation_polarizedComplexMeasure_absolutelyContinuous_diag y x) h)).symm
+
+/-- Every bounded Borel operator `P.integral g` leaves the domain of `P.spectralIntegral f hf`
+invariant. -/
+theorem integral_apply_mem_spectralIntegral_domain (P : ProjValMeasure X H) {f : X → ℂ}
+    (hf : Measurable f) (g : BoundedBorelFunction X) {x : H}
+    (hx : x ∈ (P.spectralIntegral f hf).domain) :
+    P.integral g x ∈ (P.spectralIntegral f hf).domain := by
+  rw [P.mem_spectralIntegral_domain_iff hf, P.diag_integral,
+    lintegral_withDensity_eq_lintegral_mul₀ (g.measurable.eNorm.pow_const 2).aemeasurable
+      (hf.eNorm.pow_const 2).aemeasurable]
+  have hle : ∫⁻ t, ‖g t‖ₑ ^ 2 * ‖f t‖ₑ ^ 2 ∂(P.diag x) ≤
+      ∫⁻ t, ‖g‖ₑ ^ 2 * ‖f t‖ₑ ^ 2 ∂(P.diag x) := by
+    refine lintegral_mono fun t => ?_
+    gcongr
+    exact eNorm_le_iff_norm_le.2 (g.norm_coe_le_norm t)
+  refine hle.trans_lt ?_
+  rw [lintegral_const_mul _ (hf.eNorm.pow_const 2)]
+  exact ENNReal.mul_lt_top (ENNReal.pow_lt_top eNorm_lt_top)
+    ((P.mem_spectralIntegral_domain_iff hf x).1 hx)
+
+/-- **Intertwining with bounded Borel operators**: `P.spectralIntegral f hf` commutes with
+`P.integral g` on its domain. -/
+theorem spectralIntegral_integral_apply (P : ProjValMeasure X H) {f : X → ℂ} (hf : Measurable f)
+    (g : BoundedBorelFunction X) (x : (P.spectralIntegral f hf).domain) :
+    P.spectralIntegral f hf
+        ⟨P.integral g x, P.integral_apply_mem_spectralIntegral_domain hf g x.property⟩ =
+      P.integral g (P.spectralIntegral f hf x) := by
+  apply ext_inner_left ℂ
+  intro y
+  have hpol : P.polarizedComplexMeasure y (P.integral g x) =
+      P.polarizedComplexMeasure (P.integral (star g) y) x := by
+    rw [P.polarizedComplexMeasure_integral_right, P.polarizedComplexMeasure_integral_left]
+    simp
+  rw [P.inner_spectralIntegral_apply, hpol, ← P.inner_spectralIntegral_apply,
+    map_star, ContinuousLinearMap.star_eq_adjoint, ContinuousLinearMap.adjoint_inner_left]
 
 /-- The unbounded spectral integral of `0` is the everywhere-defined zero partial operator. -/
 @[simp]
@@ -889,6 +964,14 @@ theorem isSelfAdjoint_spectralIntegral_iff_proj_im_ne_zero_eq_zero (P : ProjValM
     ext t
     simpa [Set.mem_compl_iff] using Complex.conj_eq_iff_im.symm
   simp only [EventuallyEq, Pi.star_apply, Filter.eventually_iff, hset]
+
+/-- The unbounded spectral integral of a real-valued measurable function is self-adjoint. -/
+theorem isSelfAdjoint_spectralIntegral_ofReal (P : ProjValMeasure X H) {f : X → ℝ}
+    (hf : Measurable f) :
+    IsSelfAdjoint (P.spectralIntegral (fun t => (f t : ℂ))
+      (Complex.continuous_ofReal.measurable.comp hf)) :=
+  (P.isSelfAdjoint_spectralIntegral_iff _).2
+    (Eventually.of_forall fun t => Complex.conj_ofReal (f t))
 
 /-- **Existence and uniqueness of the unbounded spectral integral.** For a normalized
 projection-valued measure `P` on an arbitrary measurable space `X` and a measurable symbol
