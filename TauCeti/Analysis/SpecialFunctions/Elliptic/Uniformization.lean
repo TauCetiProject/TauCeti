@@ -434,6 +434,16 @@ lemma hasDerivAt_weierstrassP_div_derivWeierstrassP (hl₀ : l₀ ∈ L.lattice)
     (L.analyticAt_cofactor l₀).differentiableAt.hasDerivAt using 1
   norm_num
 
+/-- At a lattice point, the coordinate `1 / ℘'` of the chart at infinity has derivative `0`: it
+vanishes to order three there. -/
+lemma hasDerivAt_inv_derivWeierstrassP (hl₀ : l₀ ∈ L.lattice) :
+    HasDerivAt (fun z ↦ (℘'[L] z)⁻¹) 0 l₀ := by
+  simp_rw [L.inv_derivWeierstrassP_eq hl₀]
+  convert (((hasDerivAt_id' l₀).sub_const l₀).fun_pow 3).div
+    (L.analyticAt_denominator l₀).1.differentiableAt.hasDerivAt (L.analyticAt_denominator l₀).2
+    using 1
+  simp
+
 /-- `℘'` has no zeros in a punctured neighbourhood of a lattice point. -/
 lemma eventually_derivWeierstrassP_ne_zero (hl₀ : l₀ ∈ L.lattice) :
     ∀ᶠ z in 𝓝[≠] l₀, ℘'[L] z ≠ 0 := by
@@ -457,7 +467,7 @@ private lemma nonsingular_toAffine_affineChart {z : ℂ} (hz : z ∉ L.lattice) 
 
 /-- The projective coordinates `[2 ℘ / ℘' : 1 : 2 / ℘']` of the point map in the chart at
 infinity are nonsingular and represent the point map on the domain of that chart. -/
-private lemma nonsingular_toAffine_chartAtInfinity {z : ℂ} (h : ℘'[L] z ≠ 0 ∨ z ∈ L.lattice) :
+lemma nonsingular_toAffine_chartAtInfinity {z : ℂ} (h : ℘'[L] z ≠ 0 ∨ z ∈ L.lattice) :
     L.weierstrassCurve.toProjective.Nonsingular
         ![2 * (℘[L] z / ℘'[L] z), 1, 2 * (℘'[L] z)⁻¹] ∧
       Projective.Point.toAffine L.weierstrassCurve.toProjective
