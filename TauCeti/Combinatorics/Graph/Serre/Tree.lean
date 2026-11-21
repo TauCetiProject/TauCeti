@@ -17,7 +17,7 @@ between two vertices, and a tree has exactly one. These unique reduced paths are
 used to build the free basis of the fundamental group of a graph from a spanning tree. A graph is
 also acyclic exactly when each of its edges separates it, that is, when every path from the target
 of a dart back to its source passes through the dart or its reverse
-(`SerreGraph.isAcyclic_iff_forall_mem_darts`).
+(`SerreGraph.isAcyclic_iff_forall_mem_or_rev_mem_darts`).
 
 An acyclic graph has no loop, hence no dart at all when it has at most one vertex, and no two
 darts with the same endpoints, so the target map identifies the outgoing darts at any vertex with
@@ -193,10 +193,12 @@ theorem isTree_iff_existsUnique_isReduced : Γ.IsTree ↔
     ?_⟩
   exact (Γ.isAcyclic_iff_eq_of_isReduced).mpr fun a b p q hp hq => (h a b).unique hp hq
 
-/-- If every path from the target of a dart back to its source passes through the dart or its
-reverse, then a nonempty reduced closed path contains a shorter one, or backtracks. -/
-private theorem isAcyclic_of_forall_mem_darts (h : ∀ (e : Γ.E) (p : Γ.Path (Γ.tgt e) (Γ.src e)),
-    e ∈ Path.darts Γ p ∨ Γ.rev e ∈ Path.darts Γ p) : Γ.IsAcyclic := by
+/-- A graph is acyclic when every path from the target of a dart back to its source passes
+through the dart or its reverse. -/
+private theorem isAcyclic_of_forall_mem_or_rev_mem_darts
+    (h : ∀ (e : Γ.E) (p : Γ.Path (Γ.tgt e) (Γ.src e)),
+      e ∈ Path.darts Γ p ∨ Γ.rev e ∈ Path.darts Γ p) : Γ.IsAcyclic := by
+  -- A nonempty reduced closed path contains a shorter one, or backtracks.
   refine (isAcyclic_iff Γ).mpr fun u p hp => ?_
   induction hn : p.length using Nat.strong_induction_on generalizing u with
   | _ n ih =>
@@ -225,22 +227,13 @@ private theorem isAcyclic_of_forall_mem_darts (h : ∀ (e : Γ.E) (p : Γ.Path (
 
 /-- A graph is acyclic exactly when each of its edges separates it: every path from the target of a
 dart back to its source passes through the dart or its reverse. -/
-theorem isAcyclic_iff_forall_mem_darts : Γ.IsAcyclic ↔
+theorem isAcyclic_iff_forall_mem_or_rev_mem_darts : Γ.IsAcyclic ↔
     ∀ (e : Γ.E) (p : Γ.Path (Γ.tgt e) (Γ.src e)),
       e ∈ Path.darts Γ p ∨ Γ.rev e ∈ Path.darts Γ p := by
-  refine ⟨fun h e p => ?_, isAcyclic_of_forall_mem_darts Γ⟩
-  -- Otherwise the reduction of `p` followed by `e` is a nonempty reduced closed path.
-  by_contra hp
-  have hq : Path.IsReduced Γ ((Path.reduce Γ p).cons (Γ.dart e)) := by
-    rw [← Quiver.Path.comp_toPath_eq_cons, Path.isReduced_comp_iff]
-    refine ⟨Path.isReduced_reduce Γ p, Path.isReduced_toPath Γ _, fun d hd e' he' => ?_⟩
-    simp only [Path.darts_toPath, dart_val, List.head?_cons, Option.mem_def,
-      Option.some.injEq] at he'
-    subst he'
-    rintro rfl
-    have := (Path.darts_reduce_sublist Γ p).subset (List.mem_of_mem_getLast? hd)
-    exact hp (.inr (by simpa using this))
-  simpa using congrArg Quiver.Path.length ((isAcyclic_iff Γ).mp h _ _ hq)
+  refine ⟨fun h e p => .inr ?_, isAcyclic_of_forall_mem_or_rev_mem_darts Γ⟩
+  -- The one-dart path along `rev e` is reduced, so its dart lies on every path with its ends.
+  simpa using (h.darts_sublist (Path.isReduced_toPath Γ (Γ.dart (Γ.rev e)))
+    (p.cast (Γ.src_rev e).symm (Γ.tgt_rev e).symm)).subset
 
 /-- A Serre graph without darts is acyclic: its only closed paths are empty. -/
 theorem isAcyclic_of_isEmpty_dart [IsEmpty Γ.E] : Γ.IsAcyclic := by
