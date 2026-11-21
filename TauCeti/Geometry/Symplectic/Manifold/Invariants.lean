@@ -47,6 +47,8 @@ is a symplectic submanifold.
 
 * `TauCeti.SmoothTwoForm.IsNondegenerate.symplecticFormAt_tangentRepresentation`: the stabilizer
   of `x` acts on `T_x M` by linear symplectic maps of `σ_x`.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.isSymplectomorphism_tangentAut`: the same statement for
+  the stabilizer's tangent automorphisms `TauCeti.tangentAut`, as linear symplectomorphisms.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.isSymplectic_invariants_tangentRepresentation_of_inner`:
   when the stabilizer of `x` acts by differentials at `x` preserving a Riemannian metric, for
   instance for a group of isometries, its invariant tangent vectors form a symplectic subspace.
@@ -88,10 +90,22 @@ theorem IsNondegenerate.symplecticFormAt_tangentRepresentation (hσ : σ.IsNonde
       hσ.symplecticFormAt x u v := by
   have h := SmoothForm.eval₂_mpullback (fun y : M ↦ (g : G) • y)
     (contMDiff_const_smul (g : G)) σ x u v
-  rw [hσG g g.2] at h
-  have hgx : (g : G) • x = x := g.2
+  rw [hσG g g.property] at h
+  have hgx : (g : G) • x = x := g.property
   rw [IsNondegenerate.symplecticFormAt_apply, IsNondegenerate.symplecticFormAt_apply, h,
     tangentRepresentation_apply, hgx]
+
+/-- If the stabilizer of `x` acts by maps preserving a nondegenerate two-form `σ`, each of its
+elements acts on `T_x M` by a linear symplectomorphism of `σ_x`. -/
+theorem IsNondegenerate.isSymplectomorphism_tangentAut (hσ : σ.IsNondegenerate)
+    (hσG : ∀ g ∈ stabilizer G x, SmoothForm.mpullback (fun y : M ↦ g • y)
+      (contMDiff_const_smul g) σ = σ)
+    (hd : ∀ g ∈ stabilizer G x, MDifferentiableAt I I (fun y : M ↦ g • y) x)
+    (g : stabilizer G x) :
+    SymplecticForm.IsSymplectomorphism (hσ.symplecticFormAt x) (hσ.symplecticFormAt x)
+      (tangentAut hd g) :=
+  SymplecticForm.isSymplectomorphism_iff.2 fun u v ↦ by
+    simpa only [tangentAut_apply] using hσ.symplecticFormAt_tangentRepresentation hσG hd g u v
 
 variable [FiniteDimensional ℝ E] [RiemannianBundle (fun y : M ↦ TangentSpace I y)]
 
@@ -110,7 +124,7 @@ theorem IsNondegenerate.isSymplectic_invariants_tangentRepresentation_of_inner
     (hσ.symplecticFormAt x).IsSymplectic
       (tangentRepresentation hd).toRepresentation.invariants :=
   SymplecticForm.isSymplectic_invariants_of_inner
-    (fun g u w ↦ (inner_tangentRepresentation_apply hd g u w).trans (hK g g.2 u w))
+    (fun g u w ↦ (inner_tangentRepresentation_apply hd g u w).trans (hK g g.property u w))
     (hσ.symplecticFormAt_tangentRepresentation hσG hd)
 
 end ConstSMul
@@ -131,7 +145,7 @@ theorem IsNondegenerate.isSymplectic_invariants_tangentRepresentation (hσ : σ.
     (hd : ∀ g ∈ stabilizer G x, MDifferentiableAt I I (fun y : M ↦ g • y) x) :
     (hσ.symplecticFormAt x).IsSymplectic
       (tangentRepresentation hd).toRepresentation.invariants := by
-  have : ContMDiffConstSMul I ∞ G M := ⟨ContMDiffSMul.contMDiff_const_smul (I := IG)⟩
+  have : ContMDiffConstSMul I ∞ G M := ContMDiffSMul.contMDiffConstSMul IG
   -- The stabilizer is closed in the compact group `G`, hence compact.
   have hcont : Continuous fun g : G ↦ g • x :=
     (ContMDiffSMul.contMDiff_smul (I := IG) (I' := I) (n := ∞) (G := G) (M := M)).continuous.comp

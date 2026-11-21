@@ -1,13 +1,15 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Wentao Li
 -/
 module
 
+public import Mathlib.Data.Finset.SymmDiff
 public import Mathlib.Data.Set.Card
 public import Mathlib.InformationTheory.Hamming
 public import Mathlib.LinearAlgebra.Pi
+import Mathlib.Algebra.Notation.Indicator
 
 /-!
 # Hamming support, and Hamming data under coordinate decompositions and reindexing
@@ -26,7 +28,8 @@ wt(x + y) + #(supp x ∩ supp y) + #(supp x \ supp (x + y)) = wt x + wt y,
 
 where the last set consists of the coordinates at which `y` cancels `x`. It follows that weight is
 additive on words with disjoint supports; weight is also subadditive. Scaling coordinatewise by `c`
-intersects the support with `supp c`.
+intersects the support with `supp c`. The weight of an integer vector, and of its image in any
+additive group with one (such as its reduction modulo `n`), is at most the vector's sum of squares.
 
 The file also records that Hamming weight and distance on a function whose domain is a disjoint
 union split as sums over the two coordinate types. Weight also splits over a retained coordinate
@@ -36,10 +39,42 @@ blocks reduce their Hamming data to the data of the blocks.
 It also proves that Hamming distance and Hamming weight are invariant under relabelling a finite
 coordinate type along an equivalence, and evaluates a product over the coordinates of a word which
 only depends on which coordinates vanish; this is how weight monomials `X^(n - wt x) Y^(wt x)`
-factor over the coordinates.
+factor over the coordinates. For set indicators, weight is cardinality and distance is the
+cardinality of the symmetric difference.
 -/
 
 public section
+
+namespace Finset
+
+open scoped symmDiff
+
+variable {ι A : Type*} [Fintype ι] [Zero A] [One A] [NeZero (1 : A)] [DecidableEq A]
+
+/-- The Hamming weight of the indicator of a finite subset is its cardinality. -/
+@[simp]
+theorem hammingNorm_indicator_one (s : Finset ι) :
+    hammingNorm ((s : Set ι).indicator (1 : ι → A)) = s.card := by
+  classical
+  rw [hammingNorm]
+  congr 1
+  ext i
+  by_cases hi : i ∈ s <;>
+    simp [Set.indicator_apply, hi, NeZero.ne]
+
+/-- Two indicators differ at exactly the elements of the symmetric difference of their sets. -/
+@[simp]
+theorem hammingDist_indicator_one [DecidableEq ι] (s t : Finset ι) :
+    hammingDist ((s : Set ι).indicator (1 : ι → A)) ((t : Set ι).indicator 1) = (s ∆ t).card := by
+  classical
+  rw [hammingDist]
+  congr 1
+  ext i
+  by_cases hs : i ∈ s <;> by_cases ht : i ∈ t <;>
+    simp [Set.indicator_apply, Finset.mem_symmDiff, hs, ht, NeZero.ne,
+      NeZero.ne' (1 : A)]
+
+end Finset
 
 namespace TauCeti
 
@@ -171,6 +206,25 @@ variable {ι κ : Type*} {β : ι ⊕ κ → Type*}
 theorem hammingNorm_const {A : Type*} [Fintype ι] [Zero A] [DecidableEq A] (a : A) :
     hammingNorm (Function.const ι a) = if a = 0 then 0 else Fintype.card ι := by
   by_cases ha : a = 0 <;> simp [hammingNorm, Function.const, ha]
+
+/-- The Hamming weight of an integer vector is bounded by its sum of squares. -/
+theorem hammingNorm_le_sum_sq [Fintype ι] (z : ι → ℤ) : (hammingNorm z : ℤ) ≤ ∑ i, z i ^ 2 := by
+  have hsum : ∑ i, (if z i ≠ 0 then (1 : ℤ) else 0) ≤ ∑ i, z i ^ 2 := by
+    apply Finset.sum_le_sum
+    intro i _
+    split_ifs with hz
+    · have := sq_pos_of_ne_zero hz
+      omega
+    · exact sq_nonneg _
+  simpa only [Finset.sum_boole, hammingNorm] using hsum
+
+/-- The Hamming weight of the image of an integer vector in any additive group with one, such as
+its reduction modulo `n`, is bounded by its sum of squares. -/
+theorem hammingNorm_intCast_le_sum_sq [Fintype ι] (R : Type*) [AddGroupWithOne R]
+    [DecidableEq R] (z : ι → ℤ) : (hammingNorm (fun i ↦ (z i : R)) : ℤ) ≤ ∑ i, z i ^ 2 :=
+  -- Casting coordinatewise sends `0` to `0`, so it cannot increase the Hamming weight.
+  (Nat.cast_le.mpr <| hammingNorm_comp_le_hammingNorm (fun _ ↦ Int.cast) fun _ ↦
+    Int.cast_zero).trans (hammingNorm_le_sum_sq z)
 
 /-- The Hamming distance between two pairs of words combined on a disjoint union is the sum of
 the distances between the respective words. -/

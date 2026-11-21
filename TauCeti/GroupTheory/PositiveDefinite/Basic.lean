@@ -136,7 +136,7 @@ theorem extend_subtype {H : Subgroup G} {φ : H → 𝕜}
     rw [ite_eq_left hgh, one_mul, hc]
     exact Subtype.val_injective.extend_apply φ 0 ⟨g⁻¹ * h, hmem⟩
   · rw [ite_eq_right hgh, zero_mul, Function.extend_apply' _ _ _ fun ⟨a, ha⟩ ↦
-      hgh (QuotientGroup.eq.mpr (ha ▸ a.2)), Pi.zero_apply]
+      hgh (QuotientGroup.eq.mpr (ha ▸ a.property)), Pi.zero_apply]
 
 end Matrix.PosSemidef
 

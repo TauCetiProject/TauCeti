@@ -43,8 +43,9 @@ to maps whose source has strictly larger dimension, where higher regularity is n
   differentiable map between equal-dimensional spaces form a null set.
 * `LipschitzWith.addHaar_image_criticalPoints_eq_zero`: the same nullity for Lipschitz maps,
   including their nondifferentiability points in the totalized critical set.
-* `Differentiable.dense_compl_image_criticalPoints`: the regular values of such a map are
-  dense.
+* `TauCeti.dense_setOf_forall_surjective_fderiv`: the regular values of a map differentiable
+  along a set, restricted to that set, are dense; `Differentiable.dense_compl_image_criticalPoints`
+  is the case of a globally differentiable map.
 
 The measure-theoretic input follows Sébastien Gouëzel's Mathlib formalization of the change of
 variables theorem, itself based on Fremlin, *Measure Theory*, volume 2.
@@ -148,16 +149,28 @@ theorem _root_.LipschitzWith.volume_image_setOf_deriv_eq_zero {K : ℝ≥0} {v :
   rw [fderiv_eq_deriv_mul, hr, zero_mul] at ht
   exact zero_ne_one ht
 
+/-- **Regular values are dense.** Let `f` be a map between equal-dimensional finite-dimensional
+real normed spaces that is differentiable at every point of a set `s`. Then the values `y` at
+whose preimages in `s` the Fréchet derivative of `f` is surjective are dense. -/
+theorem dense_setOf_forall_surjective_fderiv {s : Set E} (hf : ∀ x ∈ s, DifferentiableAt ℝ f x)
+    (hdim : finrank ℝ E = finrank ℝ F) :
+    Dense {y | ∀ x ∈ s, f x = y → Surjective (fderiv ℝ f x)} := by
+  have hnull : (addHaar : Measure F) (f '' {x | x ∈ s ∧ ¬ Surjective (fderiv ℝ f x)}) = 0 :=
+    addHaar_image_eq_zero_of_not_surjective_fderivWithin addHaar hdim
+      (fun x hx ↦ (hf x hx.1).hasFDerivAt.hasFDerivWithinAt) fun x hx ↦ hx.2
+  refine (Measure.dense_of_ae (measure_eq_zero_iff_ae_notMem.1 hnull)).mono
+    fun y hy x hx hxy ↦ ?_
+  by_contra h
+  exact hy ⟨x, ⟨hx, h⟩, hxy⟩
+
 /-- The regular values of a differentiable map between equal-dimensional finite-dimensional real
 normed spaces are dense. Here the regular values are expressed as the complement of the image of
 the points where the Fréchet derivative is not surjective. -/
 theorem _root_.Differentiable.dense_compl_image_criticalPoints
     (hf : Differentiable ℝ f) (hdim : finrank ℝ E = finrank ℝ F) :
     Dense (f '' {x | ¬ Surjective (fderiv ℝ f x)})ᶜ := by
-  let t : Set F := f '' {x | ¬ Surjective (fderiv ℝ f x)}
-  have ht : (addHaar : Measure F) t = 0 :=
-    Differentiable.addHaar_image_criticalPoints_eq_zero (ν := addHaar) hf hdim
-  have htc : ∀ᵐ x ∂(addHaar : Measure F), x ∈ tᶜ := ae_iff.mpr (by simpa using ht)
-  simpa only [ofPred_mem_eq, t] using Measure.dense_of_ae htc
+  refine (dense_setOf_forall_surjective_fderiv (s := univ) (fun x _ ↦ hf x) hdim).mono ?_
+  rintro _ hy ⟨x, hx, rfl⟩
+  exact hx (hy x (mem_univ x) rfl)
 
 end TauCeti

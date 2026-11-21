@@ -100,7 +100,7 @@ private theorem relativePropertyT_of_exists_invariant_half {K Λ : Subgroup Γ}
   let ρΛ := (ρ.restrict Λ.subtype).toRepresentation
   let w : V := (Fintype.card Q : ℂ)⁻¹ • Representation.relNorm ρΛ (K.subgroupOf Λ) v
   have hvK' : ∀ h : K.subgroupOf Λ, ρΛ h v = v := fun h ↦
-    hvK ⟨h.1.1, h.2⟩
+    hvK ⟨h.val.val, h.property⟩
   have hwΛ : w ∈ (ρ.restrict Λ.subtype).invariants := fun g ↦ by
     dsimp only [w]
     rw [map_smul]

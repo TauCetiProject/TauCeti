@@ -19,7 +19,8 @@ needs.
 
 When `p` divides `n ≠ 0`, the last base-`p` digit of `n - 1` is `p - 1`, so Lucas' theorem also
 gives `choose (n - 1) (p - 1) ≡ 1 [MOD p]`; this is the congruence behind Frobenius descent for
-symmetric 2-cocycles.
+symmetric 2-cocycles. Likewise a power `p ^ k` has a single nonzero base-`p` digit, so
+`choose n (p ^ k)` is congruent modulo `p` to the digit of `n` in position `k`.
 
 ## Main results
 
@@ -27,6 +28,7 @@ symmetric 2-cocycles.
   for `c < p`.
 * `Choose.choose_sub_one_sub_one_modEq_one`: `choose (n - 1) (p - 1) ≡ 1 [MOD p]` when `p ∣ n`
   and `n ≠ 0`.
+* `Choose.choose_pow_modEq_div_nat`: `choose n (p ^ k) ≡ n / p ^ k [MOD p]`.
 * `TauCeti.Choose.choose_mul_choose_add_choose_modEq`: the parity identity
   `C(2m, 2) C(2m - 1, 2) + C(2m + 1, 4) ≡ C(m, 2) [MOD 2]`.
 -/
@@ -61,6 +63,19 @@ theorem choose_sub_one_sub_one_modEq_one {n : ℕ} (hpn : p ∣ n) (hn : n ≠ 0
     rw [hsplit, Nat.add_mul_mod_self_left, h₁]
   refine choose_modEq_choose_mod_mul_choose_div_nat.trans ?_
   rw [hmod, h₁, h₂, Nat.choose_self, Nat.choose_zero_right]
+
+/-- For a prime `p`, `choose n (p ^ k)` is congruent to `n / p ^ k` modulo `p`: by Lucas' theorem
+it is congruent to the base-`p` digit of `n` in position `k`. At `p = 2` it says that
+`choose n (2 ^ k)` is odd exactly when bit `k` of `n` is set. -/
+theorem choose_pow_modEq_div_nat (n k : ℕ) : Nat.choose n (p ^ k) ≡ n / p ^ k [MOD p] := by
+  induction k generalizing n with
+  | zero => simp [Nat.ModEq]
+  | succ k ih =>
+    have hp : 0 < p := (Fact.out : p.Prime).pos
+    refine choose_modEq_choose_mod_mul_choose_div_nat.trans ?_
+    rw [pow_succ', Nat.mul_mod_right, Nat.mul_div_cancel_left _ hp, Nat.choose_zero_right,
+      one_mul, ← Nat.div_div_eq_div_mul]
+    exact ih (n / p)
 
 end Choose
 

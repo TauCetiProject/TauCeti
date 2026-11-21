@@ -18,7 +18,8 @@ import TauCeti.RingTheory.AdicCompletion.Algebra
 import TauCeti.RingTheory.AdicCompletion.Noetherian
 import TauCeti.RingTheory.Ideal.Maps
 import TauCeti.RingTheory.QuotSMulTop
-import TauCeti.RingTheory.Regular.RegularSequence
+
+import TauCeti.RingTheory.Regular.Pair
 
 /-!
 # Completions of localizations
@@ -194,13 +195,13 @@ private theorem bijective_quotientMap_toLocalization (hJ : J.FG) {K : Ideal S}
     obtain ⟨_, ⟨m₀, hm₀, rfl⟩, hm⟩ := hr
     rw [← map_mul, AdicCompletion.algebraMap_mem_map_pow_iff] at hm
     rw [← hK, ← Ideal.map_pow, ← Ideal.mul_unit_mem_iff_mem _
-      (IsLocalization.map_units S (⟨m₀ * m, mul_mem hm₀ m.2⟩ : M)), map_mul,
+      (IsLocalization.map_units S (⟨m₀ * m, mul_mem hm₀ m.property⟩ : M)), map_mul,
       mul_left_comm, IsLocalization.mk'_spec, ← map_mul]
     exact Ideal.mem_map_of_mem _ hm
   · -- write `t = x / m₀` with `x ∈ R̂`, and `x ≡ r` modulo `J ^ n R̂` with `r ∈ R`
     obtain ⟨⟨x, m⟩, rfl⟩ := IsLocalization.mk'_surjective
       (Algebra.algebraMapSubmonoid (AdicCompletion J R) M) t
-    obtain ⟨m₀, hm₀, hm⟩ := m.2
+    obtain ⟨m₀, hm₀, hm⟩ := m.property
     obtain ⟨r, hr⟩ := AdicCompletion.exists_sub_algebraMap_mem_map_pow hJ n x
     refine ⟨Ideal.Quotient.mk _ (IsLocalization.mk' S r ⟨m₀, hm₀⟩), ?_⟩
     -- after multiplying by the unit `m₀`, the difference is the image of `r - x ∈ J ^ n R̂`

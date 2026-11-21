@@ -135,18 +135,20 @@ noncomputable def sectionDescentEquiv :
     {s : S ⟶ Y // s ≫ g = 𝟙 S} ≃
       {s' : S' ⟶ pullback g p // s' ≫ pullback.snd g p = 𝟙 S' ∧
         pullback.fst p p ≫ s' ≫ pullback.fst g p = pullback.snd p p ≫ s' ≫ pullback.fst g p} where
-  toFun s := ⟨pullbackSection g p (p ≫ s.1) (by rw [Category.assoc, s.2, Category.comp_id]),
+  toFun s := ⟨pullbackSection g p (p ≫ s.val) (by rw [Category.assoc, s.property,
+      Category.comp_id]),
     pullbackSection_snd _ _ _ _, by simp [pullback.condition_assoc]⟩
-  invFun s' := ⟨descendSection p g s'.1 s'.2.2, descendSection_comp p g _ s'.2.1 _⟩
+  invFun s' := ⟨descendSection p g s'.val s'.property.2, descendSection_comp p g _ s'.property.1 _⟩
   left_inv s := Subtype.ext <| Eq.symm <| eq_descendSection p g _
-    (by simp [pullback.condition_assoc]) s.1 (pullbackSection_fst _ _ _ _).symm
-  right_inv s' := Subtype.ext (pullbackSection_descendSection p g s'.1 s'.2.1 s'.2.2)
+    (by simp [pullback.condition_assoc]) s.val (pullbackSection_fst _ _ _ _).symm
+  right_inv s' := Subtype.ext (pullbackSection_descendSection p g s'.val s'.property.1
+      s'.property.2)
 
 /-- `sectionDescentEquiv` sends a section `s` of `g` to its base change. -/
 @[simp]
 theorem sectionDescentEquiv_apply_coe (s : {s : S ⟶ Y // s ≫ g = 𝟙 S}) :
     (sectionDescentEquiv p g s : S' ⟶ pullback g p) =
-      pullbackSection g p (p ≫ s.1) (by rw [Category.assoc, s.2, Category.comp_id]) :=
+      pullbackSection g p (p ≫ s.val) (by rw [Category.assoc, s.property, Category.comp_id]) :=
   (rfl)
 
 /-- The inverse of `sectionDescentEquiv` is descent of sections. -/
@@ -154,7 +156,7 @@ theorem sectionDescentEquiv_apply_coe (s : {s : S ⟶ Y // s ≫ g = 𝟙 S}) :
 theorem sectionDescentEquiv_symm_apply_coe
     (s' : {s' : S' ⟶ pullback g p // s' ≫ pullback.snd g p = 𝟙 S' ∧
       pullback.fst p p ≫ s' ≫ pullback.fst g p = pullback.snd p p ≫ s' ≫ pullback.fst g p}) :
-    ((sectionDescentEquiv p g).symm s' : S ⟶ Y) = descendSection p g s'.1 s'.2.2 :=
+    ((sectionDescentEquiv p g).symm s' : S ⟶ Y) = descendSection p g s'.val s'.property.2 :=
   (rfl)
 
 end Section
@@ -245,9 +247,9 @@ noncomputable def homDescentEquiv :
         pullback.mapSnd X.hom p _ (pullback.snd p p) pullback.condition.symm ≫ φ.left ≫
           pullback.fst Y.hom p} where
   toFun u := ⟨(Over.pullback p).map u, by simp⟩
-  invFun φ := descendHom p φ.1 φ.2
+  invFun φ := descendHom p φ.val φ.property
   left_inv u := (eq_descendHom p _ _ u (by simp)).symm
-  right_inv φ := Subtype.ext (pullback_map_descendHom p φ.1 φ.2)
+  right_inv φ := Subtype.ext (pullback_map_descendHom p φ.val φ.property)
 
 /-- `homDescentEquiv` sends a morphism over `S` to its base change. -/
 @[simp]
@@ -263,7 +265,7 @@ theorem homDescentEquiv_symm_apply
       pullback.mapSnd X.hom p _ (pullback.fst p p) rfl ≫ φ.left ≫ pullback.fst Y.hom p =
         pullback.mapSnd X.hom p _ (pullback.snd p p) pullback.condition.symm ≫ φ.left ≫
           pullback.fst Y.hom p}) :
-    (homDescentEquiv p).symm φ = descendHom p φ.1 φ.2 :=
+    (homDescentEquiv p).symm φ = descendHom p φ.val φ.property :=
   (rfl)
 
 end Hom

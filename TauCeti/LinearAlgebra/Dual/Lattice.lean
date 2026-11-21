@@ -22,8 +22,8 @@ linear maps. This is the linear-algebra input to contragredient actions on
 admissible integral lattices.
 
 Evaluation restricts to an `R`-valued pairing between the integral dual and the
-submodule. Over a ring with fraction field `K`, this pairing is perfect for a free
-full lattice: its integral dual is its `R`-linear dual.
+submodule. When `R` embeds in `K`, this pairing is perfect for a free full lattice:
+its integral dual is its `R`-linear dual.
 -/
 
 public section
@@ -111,16 +111,21 @@ end Module.Basis
 
 namespace Submodule
 
-variable {R K V : Type*} [CommRing R] [IsDomain R] [Field K] [Algebra R K]
+section IsFractionRing
+
+variable {R K V : Type*} [CommRing R] [Field K] [Algebra R K]
   [IsFractionRing R K] [AddCommGroup V] [Module K V] [Module R V] [IsScalarTower R K V]
 
 /-- The integral dual of a free full lattice is again a full lattice. -/
-instance isLattice_dualLattice (N : Submodule R V) [N.IsLattice K] [Module.Free R N] :
-    (N.dualLattice K).IsLattice K := by
+instance isFullLattice_dualLattice (N : Submodule R V) [N.IsFullLattice K] [Module.Free R N] :
+    (N.dualLattice K).IsFullLattice K := by
   classical
+  have := IsLattice.finite K N
   let b := Module.Free.chooseBasis R N
-  rw [← b.span_range_extendOfIsLattice (K := K), (b.extendOfIsLattice K).dualLattice_span]
-  exact isLattice_span (Set.finite_range _) (b.extendOfIsLattice K).dualBasis.span_eq
+  rw [← b.span_range_extendOfIsFullLattice (K := K), (b.extendOfIsFullLattice K).dualLattice_span]
+  exact isFullLattice_span (Set.finite_range _) (b.extendOfIsFullLattice K).dualBasis.span_eq
+
+end IsFractionRing
 
 section Pairing
 
@@ -133,7 +138,7 @@ noncomputable def dualLatticePairing (N : Submodule R V) :
     N.dualLattice K →ₗ[R] N →ₗ[R] R :=
   LinearMap.restrictScalarsRange₂ (N.dualLattice K).subtype N.subtype (Algebra.linearMap R K)
     (FaithfulSMul.algebraMap_injective R K) LinearMap.id fun φ x ↦
-      Submodule.mem_one.mp ((mem_dualLattice N _).mp φ.2 x x.2)
+      Submodule.mem_one.mp ((mem_dualLattice N _).mp φ.property x x.property)
 
 /-- The integral pairing is evaluation, read back in `K`. -/
 @[simp]
@@ -142,30 +147,24 @@ theorem algebraMap_dualLatticePairing (N : Submodule R V) (φ : N.dualLattice K)
   LinearMap.restrictScalarsRange₂_apply (N.dualLattice K).subtype N.subtype (Algebra.linearMap R K)
     (FaithfulSMul.algebraMap_injective R K) LinearMap.id _ φ x
 
-end Pairing
-
-section PerfectPairing
-
-variable {R K V : Type*} [CommRing R] [Field K] [Algebra R K] [IsFractionRing R K]
-  [AddCommGroup V] [Module K V] [Module R V] [IsScalarTower R K V]
-
 /-- **The integral dual of a free full lattice is its `R`-linear dual.** Evaluation pairs the
 integral dual of `N` perfectly with `N`: every `R`-linear functional on `N` extends uniquely to a
 `K`-linear functional on the ambient space. -/
-instance isPerfPair_dualLatticePairing (N : Submodule R V) [N.IsLattice K] [Module.Free R N] :
+instance isPerfPair_dualLatticePairing (N : Submodule R V) [N.IsFullLattice K] [Module.Free R N] :
     (N.dualLatticePairing K).IsPerfPair := by
+  have := IsLattice.finite K N
   refine .of_bijective _ ⟨fun φ ψ h ↦ ?_, fun g ↦ ?_⟩
-  · refine Subtype.ext <| LinearMap.ext_on (IsLattice.span_eq_top (A := K) (M := N))
+  · refine Subtype.ext <| LinearMap.ext_on (IsFullLattice.span_eq_top (A := K) (M := N))
       fun x hx ↦ ?_
     simpa using congr(algebraMap R K ($h ⟨x, hx⟩))
   · -- Extend `g` along the `K`-basis of `V` given by an `R`-basis of `N`.
     let b := Module.Free.chooseBasis R N
-    let φ : Module.Dual K V := (b.extendOfIsLattice K).constr K fun i ↦ algebraMap R K (g (b i))
+    let φ : Module.Dual K V := (b.extendOfIsFullLattice K).constr K fun i ↦ algebraMap R K (g (b i))
     have hφ (x : N) : φ x = algebraMap R K (g x) := by
       have : (φ.restrictScalars R).comp N.subtype = (Algebra.linearMap R K).comp g :=
         b.ext fun i ↦ by
           rw [LinearMap.comp_apply, Submodule.subtype_apply,
-            ← Module.Basis.extendOfIsLattice_apply K b, LinearMap.restrictScalars_apply,
+            ← Module.Basis.extendOfIsFullLattice_apply K b, LinearMap.restrictScalars_apply,
             Module.Basis.constr_basis, LinearMap.comp_apply, Algebra.linearMap_apply]
       exact congr($this x)
     refine ⟨⟨φ, (mem_dualLattice N φ).mpr fun x hx ↦
@@ -173,6 +172,6 @@ instance isPerfPair_dualLatticePairing (N : Submodule R V) [N.IsLattice K] [Modu
     apply FaithfulSMul.algebraMap_injective R K
     simp [hφ]
 
-end PerfectPairing
+end Pairing
 
 end Submodule

@@ -7,6 +7,9 @@ module
 
 public import TauCeti.Analysis.Normed.Operator.Compact.Basic
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
+public import Mathlib.Analysis.Normed.Group.Quotient
+public import Mathlib.Analysis.RCLike.Basic
+import Mathlib.Analysis.LocallyConvex.HahnBanach
 import TauCeti.Analysis.Normed.Operator.ClosedRange
 
 /-!
@@ -28,8 +31,16 @@ The sequential form says that a bounded sequence whose `T`-images converge has a
 subsequence. Its limit solves the limiting equation. No completeness of either target space
 is needed; the compact-error target may even be seminormed.
 
+On a complete domain the estimate also bounds the distance to the kernel: the quotient norm of
+`x` modulo `ker T` is at most `C' * ‖T x‖`, over any nontrivially normed field. Over `ℝ` or `ℂ`
+(more generally, a field with `IsRCLikeNormedField`) the finite-dimensional kernel moreover has a
+closed complement, and the bound is witnessed by a continuous projection `P` onto `ker T` with
+`‖x - P x‖ ≤ C' * ‖T x‖`. This is the abstract form of the Deny–Lions lemma: applied to the highest
+weak derivative of a Sobolev space with compact lower-order inclusion, it says that the quotient
+norm modulo the kernel of the top derivative is equivalent to the top seminorm.
+
 The argument uses Mathlib's Riesz lemma, uniform-inducing maps, the sequential closed-range
-criterion, and the compact-operator subsequence API in
+criterion and quotient estimate, and the compact-operator subsequence API in
 `TauCeti.Analysis.Normed.Operator.Compact.Basic`.
 The normalization argument extends the one for `1 - K` in
 `IsCompactOperator.exists_pos_mul_norm_le_of_disjoint_ker` to operators with distinct targets
@@ -39,6 +50,10 @@ for the principal term and the compact error.
 
 * D. McDuff, D. Salamon, *J-holomorphic Curves and Symplectic Topology*, 2nd ed.,
   Appendix A.1: estimates with a compact error in the Fredholm criterion.
+* J. Peetre, *Another approach to elliptic boundary problems*, Comm. Pure Appl. Math. 14 (1961),
+  711–731.
+* L. Tartar, *An Introduction to Sobolev Spaces and Interpolation Spaces*, Springer (2007):
+  the Peetre–Tartar lemma, the quotient estimate modulo the kernel.
 -/
 
 public section
@@ -149,6 +164,46 @@ theorem isClosed_range_of_compact_estimate
   T.isClosed_range_of_exists_subseq_tendsto fun hv hTv ↦
     let ⟨x, ψ, hψ, hx, _⟩ := T.exists_subseq_tendsto_of_compact_estimate hK hbound hv hTv
     ⟨x, ψ, hψ, hx⟩
+
+/-- **Abstract Deny–Lions lemma.** A compact-error estimate `‖x‖ ≤ C * ‖T x‖ + ‖K x‖` on a
+complete space bounds the quotient norm of `x` modulo `ker T`, that is the distance from `x` to
+`ker T`, by a constant multiple of `‖T x‖`. No completeness of the target spaces is needed. This
+is the sequential quotient estimate
+`ContinuousLinearMap.exists_norm_quotientMk_ker_le_of_exists_subseq_tendsto`, fed by the
+subsequence form of the compact-error estimate. -/
+theorem exists_norm_quotientMk_ker_le_of_compact_estimate
+    (hK : IsCompactOperator K) (hbound : ∀ x, ‖x‖ ≤ C * ‖T x‖ + ‖K x‖) :
+    ∃ C' : ℝ, 0 ≤ C' ∧ ∀ x, ‖(Submodule.Quotient.mk x : E ⧸ T.ker)‖ ≤ C' * ‖T x‖ :=
+  T.exists_norm_quotientMk_ker_le_of_exists_subseq_tendsto fun hv hTv ↦
+    let ⟨x, ψ, hψ, hx, _⟩ := T.exists_subseq_tendsto_of_compact_estimate hK hbound hv hTv
+    ⟨x, ψ, hψ, hx⟩
+
+section Projection
+
+variable [IsRCLikeNormedField 𝕜]
+
+/-- **Peetre's estimate modulo the kernel.** Over `ℝ` or `ℂ`, a compact-error estimate
+`‖x‖ ≤ C * ‖T x‖ + ‖K x‖` on a complete space yields a continuous projection `P` onto the
+(finite-dimensional) kernel of `T` such that `‖x - P x‖ ≤ C' * ‖T x‖` for every `x`. -/
+theorem exists_projection_norm_sub_le_of_compact_estimate
+    (hK : IsCompactOperator K) (hbound : ∀ x, ‖x‖ ≤ C * ‖T x‖ + ‖K x‖) :
+    ∃ (P : E →L[𝕜] E) (C' : ℝ), 0 ≤ C' ∧ IsIdempotentElem P ∧ P.range = T.ker ∧
+      ∀ x, ‖x - P x‖ ≤ C' * ‖T x‖ := by
+  -- The `RCLike` structure carried by `𝕜` makes it complete.
+  let := IsRCLikeNormedField.rclike 𝕜
+  have := T.finiteDimensional_ker_of_compact_estimate hK hbound
+  -- A finite-dimensional kernel has a closed complement `X`, on which `T` is bounded below.
+  obtain ⟨X, h⟩ := (Submodule.ClosedComplemented.of_finiteDimensional T.ker).exists_isTopCompl
+  obtain ⟨c, hc, hcX⟩ :=
+    T.exists_pos_mul_norm_le_of_compact_estimate hK hbound h.isClosed' h.isCompl.disjoint
+  refine ⟨T.ker.projectionL X h, c⁻¹, inv_nonneg.2 hc.le, Submodule.isIdempotentElem_projectionL h,
+    Submodule.range_projectionL h, fun x ↦ ?_⟩
+  -- `x - P x` is the component of `x` in `X`, and `T` does not see the kernel component.
+  rw [← Submodule.projectionL_eq_self_sub_projectionL, le_inv_mul_iff₀ hc,
+    ← T.apply_projectionL_ker h.symm x]
+  exact hcX _ (Submodule.projectionL_apply_mem h.symm x)
+
+end Projection
 
 end CompleteDomain
 
