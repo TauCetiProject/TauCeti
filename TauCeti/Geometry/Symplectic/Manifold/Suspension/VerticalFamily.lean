@@ -91,36 +91,6 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
   [IsManifold I ∞ M] [T2Space M] [LocallyCompactSpace M] {φ : M ≃ₘ⟮I, I⟯ M}
 
-/-! ### The covering map in coordinates -/
-
-omit [FiniteDimensional ℝ E] in
-/-- The differential of the covering map sends `a ∂_s + b ∂_t + v` at `((s, t), x)` to
-`a ∂_s + b T + v` at `([s], [t, x])`. -/
-private theorem mfderiv_suspensionCover_symm (s t : ℝ) (x : M) (a b : ℝ)
-    (v : TangentSpace I x) :
-    mfderiv (𝓘(ℝ, ℝ × ℝ).prod I) (𝓘(ℝ).prod (𝓘(ℝ).prod I)) (suspensionCover φ) ((s, t), x)
-        ((Manifold.tangentSpaceProdEquiv ((s, t), x)).symm
-          ((NormedSpace.fromTangentSpace (𝕜 := ℝ) (s, t)).symm (a, b), v)) =
-      (Manifold.tangentSpaceProdEquiv (I := 𝓘(ℝ)) (J := 𝓘(ℝ).prod I)
-        ((s : UnitAddCircle), mk φ t x)).symm
-        (a, mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (uncurry (mk φ)) (t, x)
-          ((Manifold.tangentSpaceProdEquiv (t, x)).symm (b, v))) := by
-  rw [mfderiv_suspensionCover_apply, suspensionCover_apply]
-  simp only [ContinuousLinearEquiv.apply_symm_apply]
-
-omit [FiniteDimensional ℝ E] in
-/-- The differential of the covering map sends the vertical vector `0 ∂_s + 0 ∂_t + v` at
-`((s, t), x)` to the vertical vector `0 ∂_s + 0 T + v` at `([s], [t, x])`. -/
-private theorem mfderiv_suspensionCover_symm_zero (s t : ℝ) (x : M) (v : TangentSpace I x) :
-    mfderiv (𝓘(ℝ, ℝ × ℝ).prod I) (𝓘(ℝ).prod (𝓘(ℝ).prod I)) (suspensionCover φ) ((s, t), x)
-        ((Manifold.tangentSpaceProdEquiv ((s, t), x)).symm (0, v)) =
-      (Manifold.tangentSpaceProdEquiv (I := 𝓘(ℝ)) (J := 𝓘(ℝ).prod I)
-        ((s : UnitAddCircle), mk φ t x)).symm
-        ((0 : ℝ), mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (uncurry (mk φ)) (t, x)
-          ((Manifold.tangentSpaceProdEquiv (t, x)).symm ((0 : ℝ), v))) := by
-  have h := mfderiv_suspensionCover_symm (φ := φ) s t x 0 0 v
-  rwa [Prod.mk_zero_zero, map_zero] at h
-
 /-! ### The pullback of a structure on `X_φ` -/
 
 variable (J : SmoothAlmostComplexStructure (𝓘(ℝ).prod (𝓘(ℝ).prod I))
@@ -172,8 +142,8 @@ private theorem coverStructure_symm_zero (p : (ℝ × ℝ) × M) (v : TangentSpa
   have hw : coverStructure J ((s, t), x) ((Manifold.tangentSpaceProdEquiv _).symm (0, v)) =
       (Manifold.tangentSpaceProdEquiv _).symm (0, v') := by
     apply ((isLocalDiffeomorph_suspensionCover φ).isInvertible_mfderiv (by simp) _).injective
-    rw [mfderiv_coverStructure_apply, mfderiv_suspensionCover_symm_zero,
-      mfderiv_suspensionCover_symm_zero, suspensionCover_apply]
+    rw [mfderiv_coverStructure_apply, mfderiv_suspensionCover_mk_zero,
+      mfderiv_suspensionCover_mk_zero, suspensionCover_apply]
     exact hv'
   rw [verticalEndomorphism_apply, hw, ContinuousLinearEquiv.apply_symm_apply]
 
@@ -225,7 +195,7 @@ theorem apply_mk_eq_verticalFamily (s t : ℝ) (x : M) (v : TangentSpace I x) :
         ((0 : ℝ), mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (uncurry (mk φ)) (t, x)
           ((Manifold.tangentSpaceProdEquiv (t, x)).symm
             ((0 : ℝ), verticalFamily J hJV ((s, t), x) v))) := by
-  rw [← mfderiv_suspensionCover_symm_zero, ← mfderiv_suspensionCover_symm_zero,
+  rw [← mfderiv_suspensionCover_mk_zero, ← mfderiv_suspensionCover_mk_zero,
     verticalFamily_apply, ← coverStructure_symm_zero hJV, mfderiv_coverStructure_apply,
     suspensionCover_apply]
 
@@ -247,7 +217,7 @@ theorem verticalFamily_eq_iff (K : ∀ p : (ℝ × ℝ) × M, AlmostComplexStruc
   have h' := (apply_mk_eq_verticalFamily hJV s t x v).symm.trans (h s t x v)
   -- The vertical vectors `0 ∂_s + 0 T + u` are images of `0 ∂_s + 0 ∂_t + u` under the
   -- injective differential of the covering map, so they determine `u`.
-  rw [← mfderiv_suspensionCover_symm_zero, ← mfderiv_suspensionCover_symm_zero] at h'
+  rw [← mfderiv_suspensionCover_mk_zero, ← mfderiv_suspensionCover_mk_zero] at h'
   have h'' := congrArg (fun w ↦ (Manifold.tangentSpaceProdEquiv ((s, t), x) w).2)
     (((isLocalDiffeomorph_suspensionCover φ).isInvertible_mfderiv (by simp) _).injective h')
   simpa only [ContinuousLinearEquiv.apply_symm_apply] using h''
@@ -363,7 +333,7 @@ private theorem coverStructure_symm_one_zero (p : (ℝ × ℝ) × M) :
         ((NormedSpace.fromTangentSpace (𝕜 := ℝ) p.1).symm (0, 1), 0) := by
   obtain ⟨⟨s, t⟩, x⟩ := p
   apply ((isLocalDiffeomorph_suspensionCover φ).isInvertible_mfderiv (by simp) _).injective
-  rw [mfderiv_coverStructure_apply, mfderiv_suspensionCover_symm, mfderiv_suspensionCover_symm,
+  rw [mfderiv_coverStructure_apply, mfderiv_suspensionCover_mk, mfderiv_suspensionCover_mk,
     suspensionCover_apply]
   have h0 : mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (uncurry (mk φ)) (t, x)
       ((Manifold.tangentSpaceProdEquiv (t, x)).symm ((0 : ℝ), (0 : TangentSpace I x))) = 0 :=

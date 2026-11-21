@@ -100,6 +100,14 @@ variable {E H M E' H' N : Type*}
   [TopologicalSpace N] [ChartedSpace H' N]
   {q : M → N}
 
+/-- An almost complex structure takes the same value at equal base points. Every tangent space of
+`M` is the model space `E`, so a tangent vector at `y` is also a tangent vector at any `y' = y`, and
+this statement typechecks. -/
+private theorem apply_of_eq (J : SmoothAlmostComplexStructure I M) {y y' : M} (h : y = y')
+    (w : TangentSpace I y) : J y w = J y' w := by
+  subst h
+  rfl
+
 section Deck
 
 /-- Deck transformations commuting with `J` make `J` compatible with the identifications of `q`:
@@ -164,6 +172,40 @@ variable (hq : IsLocalDiffeomorph I I' ∞ q) (hsurj : Surjective q)
   (hJ : ∀ ⦃x x' : M⦄ (v : TangentSpace I x) (v' : TangentSpace I x'), q x = q x' →
     mfderiv I I' q x v = mfderiv I I' q x' v' →
       mfderiv I I' q x (J x v) = mfderiv I I' q x' (J x' v'))
+
+omit [IsManifold I ∞ M] in
+/-- The chain rule for `q ∘ s = id` on the source of the local inverse `s` of `q` at `x₀`:
+`dq_(s z) (ds_z w) = w`. -/
+private theorem mfderiv_apply_mfderiv_localInverse_apply (x₀ : M) {z : N}
+    (hz : z ∈ (hq x₀).localInverse.source) (w : TangentSpace I' z) :
+    mfderiv I I' q ((hq x₀).localInverse z) (mfderiv I' I (hq x₀).localInverse z w) = w := by
+  have hid : q ∘ (hq x₀).localInverse =ᶠ[𝓝 z] id :=
+    eventuallyEq_of_mem ((hq x₀).localInverse_open_source.mem_nhds hz)
+      (hq x₀).localInverse_eqOn_right
+  have hs : MDifferentiableAt I' I (hq x₀).localInverse z :=
+    ((hq x₀).contMDiffOn_localInverse.contMDiffAt
+      ((hq x₀).localInverse_open_source.mem_nhds hz)).mdifferentiableAt (by simp)
+  have h := mfderiv_comp_apply z ((hq.contMDiff _).mdifferentiableAt (by simp)) hs w
+  rw [hid.mfderiv_eq, mfderiv_id] at h
+  -- The base points `q (s z)` and `z` agree, so `h` is the claim.
+  exact h.symm
+
+omit [IsManifold I ∞ M] in
+/-- The chain rule for `s ∘ q = id` on the target of the local inverse `s` of `q` at `x₀`:
+`ds_(q x) (dq_x w) = w`. -/
+private theorem mfderiv_localInverse_apply_mfderiv_apply (x₀ : M) {x : M}
+    (hx : x ∈ (hq x₀).localInverse.target) (hqx : q x ∈ (hq x₀).localInverse.source)
+    (w : TangentSpace I x) :
+    mfderiv I' I (hq x₀).localInverse (q x) (mfderiv I I' q x w) = w := by
+  have hid : (hq x₀).localInverse ∘ q =ᶠ[𝓝 x] id :=
+    eventuallyEq_of_mem ((hq x₀).localInverse.open_target.mem_nhds hx)
+      (hq x₀).localInverse_eqOn_left
+  have hs : MDifferentiableAt I' I (hq x₀).localInverse (q x) :=
+    ((hq x₀).contMDiffOn_localInverse.contMDiffAt
+      ((hq x₀).localInverse_open_source.mem_nhds hqx)).mdifferentiableAt (by simp)
+  have h := mfderiv_comp_apply x hs ((hq.contMDiff x).mdifferentiableAt (by simp)) w
+  rw [hid.mfderiv_eq, mfderiv_id] at h
+  exact h.symm
 
 /-- The endomorphism `dq_x ∘ J_x ∘ dq_x⁻¹` of the tangent space at `y`, read at the chosen preimage
 `x` of `y`. Tangent spaces of `N` are all the model space, so this is an endomorphism of the tangent
@@ -245,24 +287,12 @@ private theorem contMDiff_descendEndomorphism_family {K : Λ → SmoothAlmostCom
         simpa only [Function.comp_apply, ← hx₀q] using hx₀.localInverse_mem_source))
   filter_upwards [hev] with ⟨l, z, V⟩ hz
   have hqs : q (s z) = z := hx₀.localInverse_right_inv hz
-  -- The chain rule for `q ∘ s = id` near `z`: `dq_(s z) (ds_z V) = V`.
-  have hchain : mfderiv I I' q (s z) (mfderiv I' I s z V) = V := by
-    have hid : q ∘ s =ᶠ[𝓝 z] id :=
-      eventuallyEq_of_mem (hx₀.localInverse_open_source.mem_nhds hz)
-        hx₀.localInverse_eqOn_right
-    have hsz : MDifferentiableAt I' I s z :=
-      (hx₀.contMDiffOn_localInverse.contMDiffAt
-        (hx₀.localInverse_open_source.mem_nhds hz)).mdifferentiableAt (by simp)
-    have h := mfderiv_comp_apply z ((hq.contMDiff (s z)).mdifferentiableAt (by simp)) hsz V
-    rw [hid.mfderiv_eq, mfderiv_id] at h
-    -- The base points `q (s z)` and `z` agree, so `h` is the claim.
-    exact h.symm
   have key (y : M) (v : TangentSpace I y) (hy : q y = z) (hv : mfderiv I I' q y v = V) :
       (⟨z, descendEndomorphism hq hsurj (K l) z V⟩ : TangentBundle I' N) =
         ⟨q y, mfderiv I I' q y (K l y v)⟩ := by
     subst hy
     rw [← hv, descendEndomorphism_apply_mfderiv hq hsurj (K l) (hK l)]
-  exact key (s z) _ hqs hchain
+  exact key (s z) _ hqs (mfderiv_apply_mfderiv_localInverse_apply hq x₀ hz V)
 
 end Family
 
@@ -439,27 +469,16 @@ private theorem contMDiff_localPullbackEndomorphism :
   filter_upwards [(FiberBundle.continuous_proj E (TangentSpace I)).continuousAt.preimage_mem_nhds
     hU] with ⟨x, v⟩ ⟨hqx, hx⟩
   have hsx : s (q x) = x := hx₀.localInverse_left_inv hx
-  -- The chain rule for `s ∘ q = id` near `x`: `ds_(q x) (dq_x w) = w`.
-  have hchain (w : TangentSpace I x) : mfderiv I' I s (q x) (mfderiv I I' q x w) = w := by
-    have hid : s ∘ q =ᶠ[𝓝 x] id :=
-      eventuallyEq_of_mem (s.open_target.mem_nhds hx) hx₀.localInverse_eqOn_left
-    have hs : MDifferentiableAt I' I s (q x) :=
-      (hx₀.contMDiffOn_localInverse.contMDiffAt (s.open_source.mem_nhds hqx)).mdifferentiableAt
-        (by simp)
-    have h := mfderiv_comp_apply x hs ((hq.contMDiff x).mdifferentiableAt (by simp)) w
-    rw [hid.mfderiv_eq, mfderiv_id] at h
-    exact h.symm
   have hv : mfderiv I' I s (q x) (K (q x) (mfderiv I I' q x v)) =
       localPullbackEndomorphism hq K x v := by
-    rw [← mfderiv_localPullbackEndomorphism_apply, hchain]
-  -- The base points `x` and `s (q x)` agree.
-  have key (y : M) (hy : x = y) :
-      (⟨x, localPullbackEndomorphism hq K x v⟩ : TangentBundle I M) =
-        ⟨y, localPullbackEndomorphism hq K x v⟩ := by
-    subst hy
-    rfl
-  exact (key _ hsx.symm).trans
-    (congrArg (fun w ↦ (⟨s (q x), w⟩ : TangentBundle I M)) hv.symm)
+    rw [← mfderiv_localPullbackEndomorphism_apply,
+      mfderiv_localInverse_apply_mfderiv_apply hq x₀ hx hqx]
+  -- Move the base point from `x` to `s (q x)`; the cast is trivial because every tangent space of
+  -- `M` is the model space `E`.
+  change (⟨x, localPullbackEndomorphism hq K x v⟩ : TangentBundle I M) =
+    ⟨s (q x), mfderiv I' I s (q x) (K (q x) (mfderiv I I' q x v))⟩
+  rw [hv, ← TotalSpace.mk_cast hsx.symm]
+  exact congrArg _ (cast_eq _ _)
 
 /-- The pullback `q^* K`, with `(q^* K)_x = (dq_x)⁻¹ ∘ K_(q x) ∘ dq_x`, of a smooth almost complex
 structure along a smooth local diffeomorphism `q : M → N`. It is the only almost complex structure
@@ -526,11 +545,7 @@ theorem mfderiv_localPullback_apply_of_comp_eq {g : M → M} {x : M}
   apply (hq.isInvertible_mfderiv (by simp) (g x)).injective
   rw [hchain, mfderiv_localPullback_apply, mfderiv_localPullback_apply, hchain]
   -- The base points `q x` and `q (g x)` agree, so both sides are `K` at that point.
-  have key (y : N) (hy : q x = y) :
-      K (q x) (mfderiv I I' q x v) = K y (mfderiv I I' q x v) := by
-    subst hy
-    rfl
-  exact key _ hqx.symm
+  exact apply_of_eq K hqx.symm _
 
 /-- The pullback of `K` respects the identifications of `q`: tangent vectors with the same image
 under the differentials of `q` are sent by the pullback to vectors with the same image. This is
@@ -541,11 +556,7 @@ theorem mfderiv_localPullback_apply_eq {x x' : M} (v : TangentSpace I x)
     mfderiv I I' q x (localPullback hq K x v) = mfderiv I I' q x' (localPullback hq K x' v') := by
   rw [mfderiv_localPullback_apply, mfderiv_localPullback_apply, ← hvv']
   -- The base points `q x` and `q x'` agree, so both sides are `K` at that point.
-  have key (y : N) (hy : q x = y) :
-      K (q x) (mfderiv I I' q x v) = K y (mfderiv I I' q x v) := by
-    subst hy
-    rfl
-  exact key _ hxx'
+  exact apply_of_eq K hxx' _
 
 /-- Descending the pullback of `K` along a surjective local diffeomorphism recovers `K`. -/
 @[simp]

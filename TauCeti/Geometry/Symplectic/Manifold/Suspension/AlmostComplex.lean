@@ -229,26 +229,6 @@ theorem suspensionAlmostComplexStructure_mk (s t : ℝ) (x : M) (a b : ℝ) (v :
       (Manifold.tangentSpaceProdEquiv _).symm
         (-b, mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (uncurry (mk φ)) (t, x)
           ((Manifold.tangentSpaceProdEquiv (t, x)).symm (a, K ((s, t), x) v))) := by
-  -- The tangent vectors `a ∂_s + b ∂_t + v` and `-b ∂_s + a ∂_t + K v` are images under the
-  -- covering map; `([s], [t, x])` is the image of `((s, t), x)` by definition.
-  have hv : mfderiv (𝓘(ℝ, ℝ × ℝ).prod I) (𝓘(ℝ).prod (𝓘(ℝ).prod I)) (suspensionCover φ) ((s, t), x)
-      ((Manifold.tangentSpaceProdEquiv ((s, t), x)).symm
-        ((NormedSpace.fromTangentSpace (𝕜 := ℝ) (s, t)).symm (a, b), v)) =
-      (Manifold.tangentSpaceProdEquiv (I := 𝓘(ℝ)) (J := 𝓘(ℝ).prod I)
-        ((s : UnitAddCircle), mk φ t x)).symm
-        (a, mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (uncurry (mk φ)) (t, x)
-          ((Manifold.tangentSpaceProdEquiv (t, x)).symm (b, v))) := by
-    rw [mfderiv_suspensionCover_apply, suspensionCover_apply]
-    simp only [ContinuousLinearEquiv.apply_symm_apply]
-  have hJv : mfderiv (𝓘(ℝ, ℝ × ℝ).prod I) (𝓘(ℝ).prod (𝓘(ℝ).prod I)) (suspensionCover φ)
-      ((s, t), x) ((Manifold.tangentSpaceProdEquiv ((s, t), x)).symm
-        ((NormedSpace.fromTangentSpace (𝕜 := ℝ) (s, t)).symm (-b, a), K ((s, t), x) v)) =
-      (Manifold.tangentSpaceProdEquiv (I := 𝓘(ℝ)) (J := 𝓘(ℝ).prod I)
-        ((s : UnitAddCircle), mk φ t x)).symm
-        (-b, mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (uncurry (mk φ)) (t, x)
-          ((Manifold.tangentSpaceProdEquiv (t, x)).symm (a, K ((s, t), x) v))) := by
-    rw [mfderiv_suspensionCover_apply, suspensionCover_apply]
-    simp only [ContinuousLinearEquiv.apply_symm_apply]
   -- The standard structure of the plane sends `(a, b)` to `(-b, a)`.
   have hJ : (AlmostComplexStructure.product ℝ).constSmooth (s, t)
       ((NormedSpace.fromTangentSpace (𝕜 := ℝ) (s, t)).symm (a, b)) =
@@ -257,7 +237,10 @@ theorem suspensionAlmostComplexStructure_mk (s t : ℝ) (x : M) (a b : ℝ) (v :
     rw [AlmostComplexStructure.fromTangentSpace_constSmooth_apply,
       ContinuousLinearEquiv.apply_symm_apply, ContinuousLinearEquiv.apply_symm_apply,
       AlmostComplexStructure.product_apply]
-  rw [← hv, ← hJv, ← suspensionCover_apply φ s t x]
+  -- The tangent vectors `a ∂_s + b ∂_t + v` and `-b ∂_s + a ∂_t + K v` are images under the
+  -- covering map; `([s], [t, x])` is the image of `((s, t), x)` by definition.
+  rw [← mfderiv_suspensionCover_mk φ s t x a b v,
+    ← mfderiv_suspensionCover_mk φ s t x (-b) a (K ((s, t), x) v), ← suspensionCover_apply φ s t x]
   refine (suspensionAlmostComplexStructure_apply_mfderiv φ hK hs ht ((s, t), x) _).trans ?_
   rw [SmoothAlmostComplexStructure.prodFamily_apply]
   simp only [ContinuousLinearEquiv.apply_symm_apply, hJ]
