@@ -29,7 +29,7 @@ norm come from the C⋆-order: `y⋆(x⋆x)y ≤ ‖x‖² y⋆y` and the trace 
 ## Main declarations
 
 * `CStarMatrix.normalizedTrace`: the normalized trace `tr_k`, with `tr_k(1) = 1` for `k ≠ 0`,
-  `tr_k(xy) = tr_k(yx)` and monotonicity for the C⋆-order.
+  `tr_k(xy) = tr_k(yx)`, invariance under reindexing and monotonicity for the C⋆-order.
 * `CStarMatrix.normalizedTraceMap`: `tr_k` as a positive continuous linear functional, of norm
   at most `1` (`CStarMatrix.norm_normalizedTraceMap_le`), with equality for `k ≠ 0`.
 * `CStarMatrix.normalizedTwoNorm`: the normalized 2-norm `‖x‖₂`.
@@ -165,6 +165,16 @@ theorem normalizedTrace_unitary_conj [DecidableEq n] {u : CStarMatrix n n ℂ}
     (hu : u ∈ unitary (CStarMatrix n n ℂ)) (x : CStarMatrix n n ℂ) :
     normalizedTrace (u * x * star u) = normalizedTrace x :=
   normalizedTrace_conj_of_mul_eq_one (Unitary.star_mul_self_of_mem hu) x
+
+/-- The normalized trace is invariant under reindexing the rows and columns of a matrix. -/
+@[simp]
+theorem normalizedTrace_reindexₐ {m : Type*} [Fintype m] (e : n ≃ m) (x : CStarMatrix n n ℂ) :
+    normalizedTrace (reindexₐ ℂ ℂ e x) = normalizedTrace x := by
+  rw [normalizedTrace_eq_sum, normalizedTrace_eq_sum, Fintype.card_congr e]
+  congr 1
+  -- `reindexₐ` moves entries along `e` by definition; Mathlib's `reindexₐ_apply` states this
+  -- through `Matrix.reindex` applied to a `CStarMatrix`, which `rw` cannot see through
+  exact Fintype.sum_equiv e.symm _ _ fun _ => rfl
 
 /-- The normalized trace of a positive matrix is nonnegative. -/
 theorem normalizedTrace_nonneg {x : CStarMatrix n n ℂ} (hx : 0 ≤ x) :
