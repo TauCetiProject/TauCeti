@@ -195,13 +195,13 @@ private theorem exists_norm_le_lineMap (hα₀ : 0 < α) (hα₁ : α < 1) {lam 
     (fun i j ↦ by
       push_cast
       exact hball ((HolderSpace.norm_const_le _).trans (by
-        rw [Matrix.one_apply]; split_ifs <;> simp [hK.trans' K.2])) ((hak i j).trans hK))
+        rw [Matrix.one_apply]; split_ifs <;> simp [hK.trans' K.property])) ((hak i j).trans hK))
     (fun i ↦ by
       push_cast
-      exact hball (by simpa using K.2.trans hK) ((hbk i).trans hK))
+      exact hball (by simpa using K.property.trans hK) ((hbk i).trans hK))
     (by
       push_cast
-      exact hball (by simpa using K.2.trans hK) (hck.trans hK)) u
+      exact hball (by simpa using K.property.trans hK) (hck.trans hK)) u
   rw [lineMap_prod_spatialTraceL, ContinuousLinearMap.prod_apply, Prod.norm_mk,
     spatialTraceL_apply]
   set P := ‖euclideanParabolicOperatorL hα₁.le (AffineMap.lineMap heatCoeff a s)

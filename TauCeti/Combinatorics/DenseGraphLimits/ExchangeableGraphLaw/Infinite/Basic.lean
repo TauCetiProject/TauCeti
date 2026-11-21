@@ -96,7 +96,7 @@ private theorem restrictFin_eq_restrictFin_iff {n : ℕ} {G G' : SimpleGraph ℕ
   have he : (⟨s((a : ℕ), (b : ℕ)), hs⟩ : EdgeIndex) ∈ edgeWindow n := by
     refine mem_edgeWindow.2 fun c hc => ?_
     rcases Sym2.mem_iff.1 hc with rfl | rfl
-    exacts [a.2, b.2]
+    exacts [a.isLt, b.isLt]
   have := h _ he
   rwa [Bool.eq_iff_iff, SimpleGraph.graphCoordEquiv_apply,
     SimpleGraph.graphCoordEquiv_apply] at this
@@ -128,7 +128,7 @@ private theorem coordLaw_eq_of_le {J : Finset EdgeIndex} {m n : ℕ} (hJ : J ⊆
   congr 1
   funext H
   ext e
-  exact (windowCoord_comap_castLEEmb h H (hJ e.2)).symm
+  exact (windowCoord_comap_castLEEmb h H (hJ e.property)).symm
 
 private theorem coordLaw_eq {J : Finset EdgeIndex} {m n : ℕ} (hm : J ⊆ edgeWindow m)
     (hn : J ⊆ edgeWindow n) : L.coordLaw m J = L.coordLaw n J := by

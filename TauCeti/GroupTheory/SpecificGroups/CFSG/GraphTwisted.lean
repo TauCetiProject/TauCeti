@@ -101,7 +101,7 @@ It is the identity on the untwisted families, the chain reversal `TauCeti.graphP
 fork exchange `TauCeti.graphPermD` on `²Dₙ`, `TauCeti.graphPermE6` on `²E₆`, and
 `TauCeti.trialityPermD4` on `³D₄`. The four Suzuki--Ree and Tits constructors are not indices of
 this subtype, and their branches are closed by that hypothesis rather than by a chosen value. -/
-def diagramPerm : (d : GraphTwistedIndex) → Equiv.Perm (Fin d.1.rank)
+def diagramPerm : (d : GraphTwistedIndex) → Equiv.Perm (Fin d.val.rank)
   | ⟨⟨.A _ _, _⟩, _⟩ => 1
   | ⟨⟨.B _ _, _⟩, _⟩ => 1
   | ⟨⟨.C _ _, _⟩, _⟩ => 1
@@ -295,9 +295,9 @@ end Twisted
 /-- The permutation attached to a graph-twisted index is an automorphism of the Cartan matrix of
 its underlying Dynkin diagram. This is what allows it to be realized, on the pinned Chevalley group
 of that diagram, by an automorphism permuting the simple root subgroups accordingly. -/
-@[simp] theorem cartanMatrix_diagramPerm : ∀ (d : GraphTwistedIndex) (i j : Fin d.1.rank),
-    d.1.dynkinType.cartanMatrix (d.diagramPerm i) (d.diagramPerm j) =
-      d.1.dynkinType.cartanMatrix i j
+@[simp] theorem cartanMatrix_diagramPerm : ∀ (d : GraphTwistedIndex) (i j : Fin d.val.rank),
+    d.val.dynkinType.cartanMatrix (d.diagramPerm i) (d.diagramPerm j) =
+      d.val.dynkinType.cartanMatrix i j
   | ⟨⟨.A _ _, _⟩, _⟩, _, _ | ⟨⟨.B _ _, _⟩, _⟩, _, _ | ⟨⟨.C _ _, _⟩, _⟩, _, _
   | ⟨⟨.D _ _, _⟩, _⟩, _, _ | ⟨⟨.E6 _, _⟩, _⟩, _, _ | ⟨⟨.E7 _, _⟩, _⟩, _, _
   | ⟨⟨.E8 _, _⟩, _⟩, _, _ | ⟨⟨.F4 _, _⟩, _⟩, _, _ | ⟨⟨.G2 _, _⟩, _⟩, _, _ => by
@@ -360,7 +360,7 @@ open LieTypeIndex (not_usesHalfFrobenius_of_isTypeA)
 uses a half-Frobenius, so both carry a diagram permutation: the identity on the untwisted family
 and the chain reversal on the twisted one. -/
 abbrev toGraphTwistedIndex (d : TypeALieIndex) : GraphTwistedIndex :=
-  ⟨d.1, not_usesHalfFrobenius_of_isTypeA d.2⟩
+  ⟨d.val, not_usesHalfFrobenius_of_isTypeA d.property⟩
 
 end TypeALieIndex
 
@@ -374,7 +374,7 @@ open LieTypeIndex (not_usesHalfFrobenius_of_isTypeB)
 untwisted family `Bₙ(q)` lies in this subtype, unlike the Suzuki family it shares the rank-two
 diagram with. -/
 abbrev toGraphTwistedIndex (d : TypeBLieIndex) : GraphTwistedIndex :=
-  ⟨d.1, not_usesHalfFrobenius_of_isTypeB d.2⟩
+  ⟨d.val, not_usesHalfFrobenius_of_isTypeB d.property⟩
 
 /-- **The diagram permutation assigned to the untwisted family `Bₙ(q)` is the identity.** This is
 the index-level convention; no Steinberg map is constructed here. -/
@@ -405,7 +405,7 @@ open LieTypeIndex (not_usesHalfFrobenius_of_isTypeC)
 /-- A type-`C` index, regarded as an ordinary-or-graph-twisted index. The untwisted family does
 not use a half-Frobenius and its diagram permutation is the identity. -/
 abbrev toGraphTwistedIndex (d : TypeCLieIndex) : GraphTwistedIndex :=
-  ⟨d.1, not_usesHalfFrobenius_of_isTypeC d.2⟩
+  ⟨d.val, not_usesHalfFrobenius_of_isTypeC d.property⟩
 
 /-- The diagram permutation of an untwisted type-`C` index is the identity. -/
 @[simp]
@@ -424,7 +424,7 @@ open LieTypeIndex (not_usesHalfFrobenius_of_isTypeE6)
 /-- The untwisted family `E₆(q)`, regarded as an ordinary-or-graph-twisted index. It uses no
 half-Frobenius, so it carries a diagram permutation, namely the identity. -/
 abbrev toGraphTwistedIndex (d : TypeE6LieIndex) : GraphTwistedIndex :=
-  ⟨d.1, not_usesHalfFrobenius_of_isTypeE6 d.2⟩
+  ⟨d.val, not_usesHalfFrobenius_of_isTypeE6 d.property⟩
 
 /-- **The diagram permutation of the untwisted family `E₆(q)` is the identity**, which is what
 places it among the untwisted families, whose Steinberg map is `Frob_q` outright. The nontrivial
@@ -448,14 +448,14 @@ variable (d : TypeTwistedE6LieIndex)
 /-- The graph-twisted family `²E₆(q)`, regarded as an ordinary-or-graph-twisted index. It uses no
 half-Frobenius, so it carries a diagram permutation, namely the nontrivial one. -/
 abbrev toGraphTwistedIndex : GraphTwistedIndex :=
-  ⟨d.1, not_usesHalfFrobenius_of_isTypeTwistedE6 d.2⟩
+  ⟨d.val, not_usesHalfFrobenius_of_isTypeTwistedE6 d.property⟩
 
 /-- **The diagram permutation of the graph-twisted family `²E₆(q)` is `TauCeti.graphPermE6`**, the
 order-two symmetry of the `E₆` diagram, read in the index's own copy `Fin d.1.rank` of the Bourbaki
 index type. This is what makes the Steinberg map of the family `γ₂ ∘ Frob_q`; the
 untwisted family `E₆(q)` takes the identity instead. -/
 @[simp]
-theorem diagramPerm_toGraphTwistedIndex (i : Fin d.1.rank) :
+theorem diagramPerm_toGraphTwistedIndex (i : Fin d.val.rank) :
     d.toGraphTwistedIndex.diagramPerm i =
       finCongr d.rank_eq_six.symm (graphPermE6 (finCongr d.rank_eq_six i)) := by
   obtain ⟨q, rfl⟩ := d.exists_eq_of
@@ -481,7 +481,7 @@ open LieTypeIndex (not_usesHalfFrobenius_of_isTypeE7)
 /-- The untwisted family `E₇(q)`, regarded as an ordinary-or-graph-twisted index. It uses no
 half-Frobenius, so it carries a diagram permutation, namely the identity. -/
 abbrev toGraphTwistedIndex (d : TypeE7LieIndex) : GraphTwistedIndex :=
-  ⟨d.1, not_usesHalfFrobenius_of_isTypeE7 d.2⟩
+  ⟨d.val, not_usesHalfFrobenius_of_isTypeE7 d.property⟩
 
 /-- **The diagram permutation of the untwisted family `E₇(q)` is the identity**, so the Steinberg
 map of the family is the field Frobenius outright. The `E₇` diagram is a tree with no nontrivial
@@ -512,7 +512,7 @@ open LieTypeIndex (not_usesHalfFrobenius_of_hasTypeDDiagram)
 /-- An index on a type-`D` diagram, regarded as an ordinary-or-graph-twisted index. None of the
 three families uses a half-Frobenius, so each carries a diagram permutation. -/
 abbrev toGraphTwistedIndex (d : TypeDDiagramLieIndex) : GraphTwistedIndex :=
-  ⟨d.1, not_usesHalfFrobenius_of_hasTypeDDiagram d.2⟩
+  ⟨d.val, not_usesHalfFrobenius_of_hasTypeDDiagram d.property⟩
 
 end TypeDDiagramLieIndex
 
@@ -538,7 +538,8 @@ the fork exchange is defined at it. -/
 @[simp]
 theorem diagramPerm_toGraphTwistedIndex (d : TypeTwistedDLieIndex) :
     d.toTypeDDiagramLieIndex.toGraphTwistedIndex.diagramPerm =
-      graphPermD d.1.rank ((by norm_num : 2 ≤ 4).trans d.toTypeDDiagramLieIndex.four_le_rank) := by
+      graphPermD d.val.rank ((by norm_num : 2 ≤ 4).trans d.toTypeDDiagramLieIndex.four_le_rank)
+          := by
   obtain ⟨rank, q, hvalid, rfl⟩ := d.exists_eq_of
   rw [GraphTwistedIndex.diagramPerm_twistedD hvalid]
   -- On the introduction form the index's rank unfolds to the constructor's `rank`, and the two
@@ -562,7 +563,7 @@ namespace TypeTrialityD4LieIndex
 copy `Fin d.1.rank` of the Bourbaki index type. It is the permutation of the simple-root subgroups
 that the Steinberg map `γ₃ ∘ Frob_q` of the family realizes. -/
 @[simp]
-theorem diagramPerm_toGraphTwistedIndex (d : TypeTrialityD4LieIndex) (i : Fin d.1.rank) :
+theorem diagramPerm_toGraphTwistedIndex (d : TypeTrialityD4LieIndex) (i : Fin d.val.rank) :
     d.toTypeDDiagramLieIndex.toGraphTwistedIndex.diagramPerm i =
       finCongr d.rank_eq_four.symm (trialityPermD4 (finCongr d.rank_eq_four i)) := by
   obtain ⟨q, rfl⟩ := d.exists_eq_of

@@ -41,14 +41,14 @@ variable {k : ℕ} {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup 
 `x(cᵢ) ≤ x(b)`. -/
 theorem classicalPoint_mem_closedDisc_iff (x : spa (powerBoundedSubring A)) (c : Fin k → A)
     (hc : ∀ i, IsPowerBounded (c i)) (i : Fin k) (b : A) :
-    (classicalPoint x c hc).1 ∈ closedDisc
+    (classicalPoint x c hc).val ∈ closedDisc
         (powerBoundedSubring (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A))
           isWeightFamily_one_weight))
         (weightedX _ isWeightFamily_one_weight i) (weightedC _ isWeightFamily_one_weight b) ↔
-      x.1.toValuativeRel.vle (c i) b := by
+      x.val.toValuativeRel.vle (c i) b := by
   rw [mem_closedDisc_iff, classicalPoint_vle, evalAtHom_weightedX, evalAtHom_weightedC,
     ← closedPolydisc_def]
-  exact and_iff_right (classicalPoint x c hc).2
+  exact and_iff_right (classicalPoint x c hc).property
 
 end ClassicalPoint
 
