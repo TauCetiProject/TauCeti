@@ -55,12 +55,6 @@ namespace TauCeti.Oracle.Single.Code
 
 /-! ### The universal program -/
 
-/-- A primitive recursive function is computed by one program relative to every oracle. -/
-private theorem exists_code_of_primrec {g : ℕ → ℕ} (hg : Primrec g) :
-    ∃ c : Code, ∀ O n, eval O c n = Part.some (g n) :=
-  (exists_forall_eval_eq_of_partrec (Nat.Partrec.of_primrec (Primrec.nat_iff.1 hg))).imp
-    fun _ h O n => by simp [h O]
-
 /-- A program sending `Nat.pair a k` to the code of the string `O 0, …, O (k - 1)`, relative to
 every total oracle `O`. -/
 private theorem exists_code_answers : ∃ c : Code, ∀ (O : ℕ → ℕ) a k,

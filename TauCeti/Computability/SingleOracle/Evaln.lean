@@ -30,6 +30,7 @@ the program relative to every oracle extending those answers.
 
 * `TauCeti.Oracle.Single.Code.Halt`: the output and use of a successful run.
 * `TauCeti.Oracle.Single.Code.evaln`: bounded evaluation against oracle answers.
+* `TauCeti.Oracle.Single.Code.boundedAnswers`: answers computed within separate fuel and use bounds.
 * `TauCeti.Oracle.Single.Code.stageUse`: the use of a run, or `0` when it fails.
 * `TauCeti.Oracle.Single.Code.setAnswers`: the answers of the characteristic function of a set.
 
@@ -585,6 +586,115 @@ theorem mem_eval_iff_exists_evaln {O : ℕ →. ℕ} (hσ : ∀ z y, σ z = some
     {c : Code} {y : ℕ} : y ∈ eval O c n ↔ ∃ k d, evaln σ k c n = some d ∧ d.output = y :=
   ⟨exists_evaln_eq_some_of_mem_eval fun z y => (hσ z y).2, fun ⟨_, _, h, hy⟩ =>
     hy ▸ evaln_sound h fun z _ y' hy' => (hσ z y').1 hy'⟩
+
+/-- If `t` computes the address `q` on the everywhere undefined oracle, then at sufficient
+fuel `comp oracle t` looks up `q` with use `q + 1` when the answer is supplied, and fails
+otherwise. The same threshold works for every answer table. -/
+theorem exists_forall_evaln_comp_oracle_eq_map {t : Code} {x q : ℕ}
+    (h : q ∈ eval (fun _ => Part.none) t x) :
+    ∃ K, ∀ (σ : ℕ → Option ℕ) (k : ℕ), K ≤ k →
+      evaln σ k (comp oracle t) x = (σ q).map (fun y => ⟨y, q + 1⟩) := by
+  obtain ⟨j, ⟨q, u⟩, hr, rfl⟩ := exists_evaln_eq_some_of_mem_eval (σ := fun _ => none)
+    (by simp) h
+  have hzero : u = 0 := Nat.eq_zero_of_le_zero
+    (evaln_use_le_of_forall_eq_none (fun _ _ => rfl) hr)
+  subst u
+  refine ⟨max j (q + 1), fun σ k hk => ?_⟩
+  have hrun := evaln_eq_some_of_use_eq_zero σ
+    (evaln_mono ((le_max_left _ _).trans hk) hr) rfl
+  have hindex := (le_max_right j (q + 1)).trans hk
+  cases k with
+  | zero => simp at hrun
+  | succ k =>
+    have hx := Nat.lt_succ_iff.1 (evaln_bound hrun)
+    have hq := Nat.succ_le_succ_iff.1 hindex
+    apply Option.ext
+    intro r
+    rw [evaln_succ_comp_eq_some, Option.map_eq_some_iff]
+    constructor
+    · rintro ⟨-, r', r'', hr', hr'', rfl⟩
+      rw [evaln_unique hr' hrun] at hr'' ⊢
+      obtain ⟨-, y, hy, rfl⟩ := evaln_succ_oracle_eq_some.1 hr''
+      exact ⟨y, hy, by simp⟩
+    · rintro ⟨y, hy, rfl⟩
+      exact ⟨hx, ⟨q, 0⟩, ⟨y, q + 1⟩, hrun,
+        evaln_succ_oracle_eq_some.2 ⟨hq, y, hy, rfl⟩, by simp⟩
+
+/-! ### Bounded oracle answers -/
+
+section BoundedAnswers
+
+/-- The answer computed by `d` at an address using fuel `k` and at most the first `u` base-oracle
+coordinates. A missing run or a run using a larger prefix supplies no answer. -/
+def boundedAnswers (d : Code) (σ : ℕ → Option ℕ) (k u : ℕ) (x : ℕ) : Option ℕ :=
+  (evaln σ k d x).bind fun h => Option.guard (fun _ => h.use ≤ u) h.output
+
+/-- Bounded answers filter the result of bounded evaluation by its use before returning its
+output. -/
+theorem boundedAnswers_def (d : Code) (σ : ℕ → Option ℕ) (k u x : ℕ) :
+    d.boundedAnswers σ k u x =
+      (evaln σ k d x).bind (fun h => Option.guard (fun _ => h.use ≤ u) h.output) := (rfl)
+
+variable {d : Code} {j u x y : ℕ}
+
+/-- A bounded answer is supplied precisely by a successful run within the use bound. -/
+@[simp]
+theorem boundedAnswers_eq_some_iff :
+    d.boundedAnswers σ j u x = some y ↔
+      ∃ h, evaln σ j d x = some h ∧ h.use ≤ u ∧ h.output = y := by
+  simp [boundedAnswers, Option.bind_eq_some_iff, and_comm]
+
+/-- A bounded answer is missing if evaluation fails or the successful run exceeds the use bound. -/
+@[simp]
+theorem boundedAnswers_eq_none_iff :
+    d.boundedAnswers σ j u x = none ↔
+      evaln σ j d x = none ∨ ∃ h, evaln σ j d x = some h ∧ u < h.use := by
+  cases h : evaln σ j d x <;> simp [boundedAnswers, h]
+
+/-- Enlarging either bound retains any answer already supplied by a query program. -/
+theorem boundedAnswers_eq_some_of_le {j' u' : ℕ} (hj : j ≤ j') (hu : u ≤ u')
+    (h : d.boundedAnswers σ j u x = some y) : d.boundedAnswers σ j' u' x = some y := by
+  obtain ⟨r, hr, hru, rfl⟩ := boundedAnswers_eq_some_iff.1 h
+  exact boundedAnswers_eq_some_iff.2 ⟨r, evaln_mono hj hr, hru.trans hu, rfl⟩
+
+/-- Query answers depend only on the allowed prefix of the base oracle, including when the
+answer is missing. -/
+theorem boundedAnswers_eq_of_eqOn {τ : ℕ → Option ℕ} (h : Set.EqOn σ τ (Set.Iio u)) :
+    d.boundedAnswers σ j u x = d.boundedAnswers τ j u x := by
+  apply Option.ext
+  intro v
+  simp only [boundedAnswers_eq_some_iff]
+  constructor <;> rintro ⟨r, hr, hu, rfl⟩
+  · exact ⟨r, evaln_eq_some_of_eqOn hr (h.mono (Set.Iio_subset_Iio hu)), hu, rfl⟩
+  · exact ⟨r, evaln_eq_some_of_eqOn hr (h.symm.mono (Set.Iio_subset_Iio hu)), hu, rfl⟩
+
+/-- With a fixed use bound `u`, the answers eventually supplied by `d` are exactly the
+values it computes relative to the base oracle restricted to addresses below `u`, provided
+the answer table agrees with the oracle at those addresses. -/
+theorem mem_eval_restrict_iff_exists_boundedAnswers {O : ℕ →. ℕ}
+    (hσ : ∀ z < u, ∀ v, σ z = some v ↔ v ∈ O z) :
+    y ∈ eval (O.restrict (p := Set.Iio u ∩ O.Dom) Set.inter_subset_right) d x ↔
+      ∃ j, d.boundedAnswers σ j u x = some y := by
+  let τ (z : ℕ) := if z < u then σ z else none
+  have hτ (z v : ℕ) :
+      τ z = some v ↔ v ∈ O.restrict (p := Set.Iio u ∩ O.Dom) Set.inter_subset_right z := by
+    by_cases hz : z < u
+    · simp only [τ, hz, ite_true, PFun.mem_restrict, Set.mem_inter_iff, Set.mem_Iio, true_and,
+        hσ z hz]
+      exact ⟨fun hv => ⟨(PFun.mem_dom O z).2 ⟨v, hv⟩, hv⟩, And.right⟩
+    · simp [τ, hz]
+  have hagree : Set.EqOn σ τ (Set.Iio u) := fun z hz => by simp [τ, Set.mem_Iio.1 hz]
+  simp only [mem_eval_iff_exists_evaln hτ, boundedAnswers_eq_of_eqOn hagree,
+    boundedAnswers_eq_some_iff]
+  constructor
+  · rintro ⟨j, r, hr, rfl⟩
+    have hu : r.use ≤ u :=
+      evaln_use_le_of_forall_eq_none (fun z hz => by simp [τ, not_lt.2 hz]) hr
+    exact ⟨j, r, hr, hu, rfl⟩
+  · rintro ⟨j, r, hr, -, rfl⟩
+    exact ⟨j, r, hr, rfl⟩
+
+end BoundedAnswers
 
 /-- A run with fuel `k` depends only on the first `k` answers of a total oracle. Truncating
 that oracle to a string of length `k` preserves failure as well as output and use. -/
