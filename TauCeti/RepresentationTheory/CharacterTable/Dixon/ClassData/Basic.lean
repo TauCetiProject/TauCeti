@@ -56,6 +56,8 @@ order `8` as a closed instance of everything here.
 * `TauCeti.ClassData.map`: class data transported along a multiplicative equivalence.
 * `TauCeti.ClassData.index`, `TauCeti.ClassData.rep`: the numbering and its representatives.
 * `TauCeti.ClassData.equivConjClasses`: the numbering as an equivalence with `ConjClasses G`.
+* `TauCeti.ClassData.centralizerRepMapEquiv`: multiplicative equivalence between centralizers of
+  corresponding representatives under `TauCeti.ClassData.map`.
 * `TauCeti.ClassData.rowsOfMap`: the rows of a numbered matrix, mapped entrywise into another type.
 * `TauCeti.ClassData.reindexTableOfMap`: map the entries of a numbered table and reindex it by the
   conjugacy classes.
@@ -69,13 +71,17 @@ order `8` as a closed instance of everything here.
 
 * `TauCeti.ClassData.classOf_bijective`: `d.classOf` is a bijection onto `ConjClasses G` without
   assuming decidable conjugacy.
+* `TauCeti.ClassData.classOf_eq_inv_iff`, `TauCeti.ClassData.classOf_eq_pow_iff`,
+  `TauCeti.ClassData.classOf_eq_zpow_iff`, `TauCeti.ClassData.classOf_eq_map_iff`:
+  decidability-free conjugacy characterizations of `classOf` labels.
 * `TauCeti.ClassData.numClasses_eq_card_conjClasses`: the numbering has the expected length.
 * `TauCeti.ClassData.sum_index_centralizer_reps`: the class equation, read on the representatives.
 * `TauCeti.ClassData.index_map`, `TauCeti.ClassData.equivConjClasses_map`,
   `TauCeti.ClassData.classFinset_map`, `TauCeti.ClassData.orderOf_rep_map`,
-  `TauCeti.ClassData.index_centralizer_rep_map`: transported class data numbers the image of an
-  element, and of a class, as the original numbers the element and the class, and preserves
-  representative orders and centralizer indices.
+  `TauCeti.ClassData.index_centralizer_rep_map`, `TauCeti.ClassData.card_centralizer_rep_map`:
+  transported class data numbers the image of an element, and of a class, as the original numbers
+  the element and the class, and preserves representative orders and centralizer indices and
+  orders.
 * `TauCeti.ClassData.exists_mem_classes`, `TauCeti.ClassData.pairwise_disjoint_classes`: the
   executable list covers the group and its entries are pairwise disjoint.
 * `TauCeti.ClassData.sum_card_classFinset`: the numbered classes partition the group.
@@ -206,6 +212,31 @@ def classOf (i : Fin d.numClasses) : ConjClasses G := ConjClasses.mk (d.rep i)
 /-- The `i`-th class is the class of the `i`-th representative. This is not a `simp` lemma: it
 would rewrite past `TauCeti.ClassData.classOf_index`, which is the normal form wanted. -/
 theorem classOf_eq_mk (i : Fin d.numClasses) : d.classOf i = ConjClasses.mk (d.rep i) := (rfl)
+
+/-- Two numbered classes satisfy `d.classOf j = (d.classOf i)⁻¹` if and only if the `j`-th
+representative is conjugate to the inverse of the `i`-th. -/
+theorem classOf_eq_inv_iff {i j : Fin d.numClasses} :
+    d.classOf j = (d.classOf i)⁻¹ ↔ IsConj (d.rep j) (d.rep i)⁻¹ := by
+  rw [classOf_eq_mk, classOf_eq_mk, ConjClasses.inv_mk, ConjClasses.mk_eq_mk_iff_isConj]
+
+/-- Two numbered classes satisfy `d.classOf j = d.classOf i ^ n` if and only if the `j`-th
+representative is conjugate to the `n`-th power of the `i`-th. -/
+theorem classOf_eq_pow_iff {n : ℕ} {i j : Fin d.numClasses} :
+    d.classOf j = d.classOf i ^ n ↔ IsConj (d.rep j) (d.rep i ^ n) := by
+  rw [classOf_eq_mk, classOf_eq_mk, ConjClasses.mk_pow, ConjClasses.mk_eq_mk_iff_isConj]
+
+/-- Two numbered classes satisfy `d.classOf j = ConjClasses.mk (d.rep i ^ z)` if and only if the
+`j`-th representative is conjugate to the `z`-th integer power of the `i`-th. -/
+theorem classOf_eq_zpow_iff {z : ℤ} {i j : Fin d.numClasses} :
+    d.classOf j = ConjClasses.mk (d.rep i ^ z) ↔ IsConj (d.rep j) (d.rep i ^ z) := by
+  rw [classOf_eq_mk, ConjClasses.mk_eq_mk_iff_isConj]
+
+/-- For a homomorphism `φ : H →* G`, the `j`-th class of `G` is the image of the `i`-th class of
+`H` under `ConjClasses.map φ` if and only if `d.rep j` is conjugate to `φ (dH.rep i)`. -/
+theorem classOf_eq_map_iff {H : Type*} [Group H] (dH : ClassData H) (φ : H →* G)
+    {i : Fin dH.numClasses} {j : Fin d.numClasses} :
+    d.classOf j = ConjClasses.map φ (dH.classOf i) ↔ IsConj (d.rep j) (φ (dH.rep i)) := by
+  rw [classOf_eq_mk, classOf_eq_mk, ConjClasses.map_mk, ConjClasses.mk_eq_mk_iff_isConj]
 
 /-- **Distinct numbers name distinct classes**: the `Fin`-indexed reading of the
 `pairwise_not_isConj` field. -/
@@ -668,23 +699,46 @@ theorem index_centralizer_rep_map (i : Fin (d.map e).numClasses) :
   rw [hcomap]
   exact Subgroup.index_comap_of_surjective _ e.symm.surjective
 
+/-- Transporting class data along a multiplicative equivalence restricts `e` to a multiplicative
+equivalence between the centralizers of corresponding representatives. -/
+def centralizerRepMapEquiv (i : Fin (d.map e).numClasses) :
+    Subgroup.centralizer {d.rep (Fin.cast (d.numClasses_map e) i)} ≃*
+      Subgroup.centralizer {(d.map e).rep i} where
+  toFun x := ⟨e x, by
+    simpa [rep_map, Subgroup.mem_centralizer_singleton_iff] using
+      congrArg e (Subgroup.mem_centralizer_singleton_iff.mp x.2)⟩
+  invFun y := ⟨e.symm y, by
+    have hy : y.1 * e (d.rep (Fin.cast (d.numClasses_map e) i)) =
+        e (d.rep (Fin.cast (d.numClasses_map e) i)) * y.1 := by
+      simpa only [rep_map] using Subgroup.mem_centralizer_singleton_iff.mp y.2
+    exact Subgroup.mem_centralizer_singleton_iff.mpr (by simpa using congrArg e.symm hy)⟩
+  left_inv x := Subtype.ext (e.symm_apply_apply x)
+  right_inv y := Subtype.ext (e.apply_symm_apply y)
+  map_mul' _ _ := Subtype.ext (e.map_mul _ _)
+
+/-- The centralizer isomorphism `TauCeti.ClassData.centralizerRepMapEquiv` acts as `e` on
+underlying elements. -/
+@[simp]
+theorem coe_centralizerRepMapEquiv_apply (i : Fin (d.map e).numClasses)
+    (x : Subgroup.centralizer {d.rep (Fin.cast (d.numClasses_map e) i)}) :
+    ((d.centralizerRepMapEquiv e i x : Subgroup.centralizer {(d.map e).rep i}) : H) = e x :=
+  (rfl)
+
+/-- The inverse of `TauCeti.ClassData.centralizerRepMapEquiv` acts as `e.symm` on underlying
+elements. -/
+@[simp]
+theorem coe_centralizerRepMapEquiv_symm_apply (i : Fin (d.map e).numClasses)
+    (y : Subgroup.centralizer {(d.map e).rep i}) :
+    (((d.centralizerRepMapEquiv e i).symm y :
+      Subgroup.centralizer {d.rep (Fin.cast (d.numClasses_map e) i)}) : G) = e.symm y :=
+  (rfl)
+
 /-- Transporting class data along a multiplicative equivalence preserves the centralizer order of
 each representative. -/
 theorem card_centralizer_rep_map (i : Fin (d.map e).numClasses) :
     Nat.card (Subgroup.centralizer {(d.map e).rep i}) =
-      Nat.card (Subgroup.centralizer {d.rep (Fin.cast (d.numClasses_map e) i)}) := by
-  refine Nat.card_congr
-    { toFun := fun ⟨y, hy⟩ => ⟨e.symm y, ?_⟩
-      invFun := fun ⟨x, hx⟩ => ⟨e x, ?_⟩
-      left_inv := fun ⟨y, _⟩ => Subtype.ext (e.apply_symm_apply y)
-      right_inv := fun ⟨x, _⟩ => Subtype.ext (e.symm_apply_apply x) }
-  · have hy' : y * e (d.rep (Fin.cast (d.numClasses_map e) i)) =
-        e (d.rep (Fin.cast (d.numClasses_map e) i)) * y := by
-      simpa only [rep_map] using Subgroup.mem_centralizer_singleton_iff.mp hy
-    exact Subgroup.mem_centralizer_singleton_iff.mpr (by simpa using congrArg e.symm hy')
-  · have hx' := Subgroup.mem_centralizer_singleton_iff.mp hx
-    rw [Subgroup.mem_centralizer_singleton_iff, rep_map]
-    simpa using congrArg e hx'
+      Nat.card (Subgroup.centralizer {d.rep (Fin.cast (d.numClasses_map e) i)}) :=
+  Nat.card_congr (d.centralizerRepMapEquiv e i).symm.toEquiv
 
 section Executable
 
