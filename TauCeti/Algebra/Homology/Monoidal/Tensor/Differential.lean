@@ -12,15 +12,18 @@ public import Mathlib.CategoryTheory.Monoidal.Preadditive
 # The differential of a tensor product of complexes
 
 For two complexes `X` and `Y` whose tensor product exists, `[X.HasTensor Y]`, Mathlib's
-`HomologicalComplex.tensorObj X Y` totalizes their degreewise tensor product, with the tensor signs
-`ε₁ = 1` and `ε₂ (p, q) = (-1)^p`. When every pair of complexes has such a tensor product, and the
-tensor product of graded objects is associative, `HomologicalComplex.monoidalCategory` uses this
-construction as the tensor product `X ⊗ Y` of a monoidal structure on all complexes. This file
-records the resulting differential on a homogeneous summand, `d (x ⊗ y) = d x ⊗ y + (-1)^p x ⊗ d y`
-for `x` of degree `p`, in any monoidal preadditive category: as a single rewrite rule for cochain
-complexes indexed by `ℤ`, and as its two parts `HomologicalComplex.mapBifunctor.D₁` and
-`HomologicalComplex.mapBifunctor.D₂` for chain complexes indexed by `ℕ`, where a part vanishes on a
-summand whose factor of degree zero it would differentiate.
+`HomologicalComplex.tensorObj X Y` totalizes their degreewise tensor product. Its signs are the
+tensor signs of the complex shape, `ε₁ (p, q) = 1` and `ε₂ (p, q) = ε p`: this is `p.negOnePow` for
+cochain complexes indexed by `ℤ` and `(-1) ^ p` for chain complexes indexed by `ℕ`. Mathlib's
+`HomologicalComplex.monoidalCategoryStruct`, under the conditions on all graded objects listed in
+the implementation notes, takes `tensorObj X Y` as the tensor product `X ⊗ Y`. The full monoidal
+instance `HomologicalComplex.monoidalCategory` assumes further conditions, and when it is available
+its tensor product is this same `X ⊗ Y`. This file records the resulting differential on a
+homogeneous summand, `d (x ⊗ y) = d x ⊗ y + (-1)^p x ⊗ d y` for `x` of degree `p`, in any monoidal
+preadditive category: as a single rewrite rule for cochain complexes indexed by `ℤ`, and as its two
+parts `HomologicalComplex.mapBifunctor.D₁` and `HomologicalComplex.mapBifunctor.D₂` for chain
+complexes indexed by `ℕ`, where a part vanishes on a summand whose factor of degree zero it would
+differentiate.
 
 ## Main results
 
@@ -78,10 +81,11 @@ lemma ιTensorObj_d (p q j : ℤ) (hpq : p + q = j) :
       (X.d p (p + 1) ▷ Y.X q) ≫ ιTensorObj X Y (p + 1) q (j + 1) (by omega) +
         p.negOnePow • ((X.X p ◁ Y.d q (q + 1)) ≫ ιTensorObj X Y p (q + 1) (j + 1) (by omega)) := by
   simp [mapBifunctor.d_eq,
+    -- `dsimp` unfolds the total degree `ComplexShape.π` of the target summands to a sum.
     mapBifunctor.d₁_eq X Y _ (.up ℤ) (ComplexShape.up_mk p (p + 1) rfl) q (j + 1)
-      (show p + 1 + q = j + 1 by omega),
+      (by dsimp; omega),
     mapBifunctor.d₂_eq X Y _ (.up ℤ) p (ComplexShape.up_mk q (q + 1) rfl) (j + 1)
-      (show p + (q + 1) = j + 1 by omega)]
+      (by dsimp; omega)]
 
 /-- `HomologicalComplex.ιTensorObj_d` with arbitrary indices `p'`, `q'` and `j'` for the
 successors of `p`, `q` and `j`. -/

@@ -118,12 +118,18 @@ private lemma koszulBraidingSummand_comm (X Y : CochainComplex C ℤ)
     HomologicalComplex.ιTensorObj_tensor_d, HomologicalComplex.ιTensorObj_tensor_d_assoc,
     Preadditive.comp_add, Preadditive.add_comp, Linear.comp_units_smul,
     HomologicalComplex.ι_mapBifunctorDesc, smul_add, smul_smul]
+  -- The two Koszul sign identities are Mathlib's compatibilities `σ_ε₂` and `σ_ε₁` of the
+  -- symmetry `σ p q = (p * q).negOnePow` with the tensor signs of the swapped total complex.
   have hs₁ : ((p + 1) * q).negOnePow = (p * q).negOnePow * q.negOnePow := by
-    rw [show (p + 1) * q = p * q + q by ring, Int.negOnePow_add]
+    have h := ComplexShape.σ_ε₂ (.up ℤ) (c₁₂ := .up ℤ) q (ComplexShape.up_mk p (p + 1) rfl)
+    dsimp at h
+    rw [mul_comm q, mul_comm q, one_mul] at h
+    exact h.symm
   have hs₂ : p.negOnePow * (p * (q + 1)).negOnePow = (p * q).negOnePow := by
-    rw [show p * (q + 1) = p * q + p by ring, Int.negOnePow_add, ← mul_assoc,
-      mul_comm p.negOnePow (p * q).negOnePow, mul_assoc, ← Int.negOnePow_add,
-      Int.negOnePow_even _ ⟨p, rfl⟩, mul_one]
+    have h := ComplexShape.σ_ε₁ (c₂ := .up ℤ) (c₁₂ := .up ℤ) (ComplexShape.up_mk q (q + 1) rfl) p
+    dsimp at h
+    rw [mul_comm q, mul_comm (q + 1), mul_one] at h
+    exact h.symm
   rw [hs₁, hs₂, ← BraidedCategory.braiding_naturality_left_assoc,
     ← BraidedCategory.braiding_naturality_right_assoc]
   exact add_comm _ _
