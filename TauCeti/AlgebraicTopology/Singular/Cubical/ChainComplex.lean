@@ -112,6 +112,19 @@ theorem normalizedCubicalChainComplexXEquiv_d_apply (X : TopCat.{u}) (n : ℕ)
         (normalizedCubicalChainComplexXEquiv X (n + 1) g) :=
   normalizedCubicalChainComplex_obj_d_apply X n g
 
+/-- The boundary of a cycle of the normalized cubical chain complex vanishes, for every
+reindexing of its degree `q` as `p + 1`. -/
+theorem NormalizedCubicalChain.boundary_cast_iCycles_eq_zero {X : TopCat.{u}} {q : ℕ}
+    (z : ((normalizedCubicalChainComplex R).obj X).cycles q) (p : ℕ) (hp : q = p + 1) :
+    NormalizedCubicalChain.boundary X R p
+      (NormalizedCubicalChain.cast R hp
+        ((((normalizedCubicalChainComplex R).obj X).iCycles q).hom z)) = 0 := by
+  subst hp
+  exact (congrArg (NormalizedCubicalChain.boundary X R p)
+    (NormalizedCubicalChain.cast_rfl R _)).trans
+      ((normalizedCubicalChainComplex_obj_d_apply X p _).symm.trans
+        (ConcreteCategory.congr_hom (((normalizedCubicalChainComplex R).obj X).iCycles_d _ _) z))
+
 /-- In each degree, the map of normalized cubical chain complexes induced by a map of spaces is
 the push-forward of normalized cubical chains. -/
 theorem normalizedCubicalChainComplex_map_f {X Y : TopCat.{u}} (f : X ⟶ Y) (n : ℕ) :
