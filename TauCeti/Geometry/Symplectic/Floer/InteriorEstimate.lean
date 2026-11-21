@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Linearization.Basic
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.VaryingStructure
+import TauCeti.Topology.Constructions.SumProd
 
 /-!
 # The `L²` estimate of the linearized Floer operator on compact parts of the domain
@@ -57,17 +58,6 @@ open ContinuousLinearMap Function Set MeasureTheory
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
 
-/-- The structures `J(z, u z)` along the graph of `u` are continuous on `K` when `J` is `C¹` at
-the points `(z, u z)` and `u` is `C¹` on `K`. -/
-private theorem continuousOn_toContinuousLinearMap_comp_graph
-    {J : ℝ × ℝ → V → AlmostComplexStructure V} {u : ℝ × ℝ → V} {K : Set (ℝ × ℝ)}
-    (hJ : ∀ z ∈ K, ContDiffAt ℝ 1
-      (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) (z, u z))
-    (hu : ∀ z ∈ K, ContDiffAt ℝ 1 u z) :
-    ContinuousOn (fun z ↦ (J z (u z)).toLinearMap.toContinuousLinearMap) K :=
-  fun z hz ↦ ((hJ z hz).continuousAt.comp₂ continuousAt_id
-    (hu z hz).continuousAt).continuousWithinAt
-
 /-- **The `L²` estimate of the linearized Floer operator on compactly supported sections.** Let
 `K ⊆ ℝ × ℝ` be compact, and suppose that at every `z ∈ K` the structure `J(z, u z)` is
 `ω`-compatible, `J` is `C¹` and the Hamiltonians `Ks`, `Kt` are `C²` at `(z, u z)`, and `u` is
@@ -91,7 +81,8 @@ theorem
             (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u ξ z‖ ^ 2 +
           ‖ξ z‖ ^ 2) ∂μ := by
   obtain ⟨C, hC, h⟩ := exists_forall_setIntegral_norm_fderiv_sq_le_of_tsupport_subset (μ := μ) hK
-    hc (continuousOn_toContinuousLinearMap_comp_graph hJ hu)
+    hc (continuousOn_comp_prodMk_of_continuousAt (fun z hz ↦ (hJ z hz).continuousAt)
+      fun z hz ↦ (hu z hz).continuousAt)
     (ω.continuousOn_floerLinearizationCoeff
       (J := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) hJ hKs hKt hu)
   refine ⟨C, hC, fun ξ hξ hξK ↦ (h hξ hξK).trans_eq ?_⟩
@@ -121,7 +112,8 @@ theorem
             (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u ξ z‖ ^ 2 +
           ‖ξ z‖ ^ 2) := by
   obtain ⟨C, hC, h⟩ := exists_forall_setIntegral_norm_fderiv_sq_le_of_periodic hab hc
-    (continuousOn_toContinuousLinearMap_comp_graph hJ hu)
+    (continuousOn_comp_prodMk_of_continuousAt (fun z hz ↦ (hJ z hz).continuousAt)
+      fun z hz ↦ (hu z hz).continuousAt)
     (ω.continuousOn_floerLinearizationCoeff
       (J := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) hJ hKs hKt hu)
   refine ⟨C, hC, fun ξ hξ hper ha hb ↦ (h hξ hper ha hb).trans_eq ?_⟩

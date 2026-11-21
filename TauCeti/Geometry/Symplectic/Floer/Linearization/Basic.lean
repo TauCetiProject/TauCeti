@@ -492,7 +492,7 @@ theorem integrable_norm_floerLinearization_sq (ω : SymplecticForm V)
         (g := fun v : V ↦ ‖v‖ ^ 2) (by simp))
 
 /-- **The cost of a cutoff.** Let `β` be a `C¹` function with values in `[0, 1]` whose derivative
-is bounded and vanishes off a compact set `K`. Then multiplying a `C¹` direction `ξ` of compact
+vanishes off a compact set `K`. Then multiplying a `C¹` direction `ξ` of compact
 support by `β` changes the `L²` norm of `D_u ξ` by at most an `L²` norm of `ξ` over `K`:
 `∫ ‖D_u (β ξ)‖² ≤ 2 ∫ ‖D_u ξ‖² + C ∫_K ‖ξ‖²`. -/
 theorem exists_integral_norm_floerLinearization_smul_sq_le (ω : SymplecticForm V)
@@ -501,13 +501,13 @@ theorem exists_integral_norm_floerLinearization_smul_sq_le (ω : SymplecticForm 
     (hKs : ∀ z, ContDiffAt ℝ 2 (Function.uncurry Ks) (z, u z))
     (hKt : ∀ z, ContDiffAt ℝ 2 (Function.uncurry Kt) (z, u z)) (hu : ContDiff ℝ 1 u)
     {β : ℝ × ℝ → ℝ} (hβ : ContDiff ℝ 1 β) (hβ1 : ∀ z, β z ∈ Set.Icc 0 1) {K : Set (ℝ × ℝ)}
-    (hK : IsCompact K) (hβK : ∀ z ∉ K, fderiv ℝ β z = 0) {M : ℝ}
-    (hM : ∀ z, ‖fderiv ℝ β z‖ ≤ M) :
+    (hK : IsCompact K) (hβK : ∀ z ∉ K, fderiv ℝ β z = 0) :
     ∃ C, 0 ≤ C ∧ ∀ ⦃ξ : ℝ × ℝ → V⦄, ContDiff ℝ 1 ξ → HasCompactSupport ξ →
       ∫ z, ‖ω.floerLinearization J Ks Kt u (fun w ↦ β w • ξ w) z‖ ^ 2 ≤
         2 * (∫ z, ‖ω.floerLinearization J Ks Kt u ξ z‖ ^ 2) + C * ∫ z in K, ‖ξ z‖ ^ 2 := by
   obtain ⟨B, hB⟩ := hK.exists_bound_of_continuousOn (continuous_comp_prodMk_of_continuousAt
     (fun z ↦ (hJ z).continuousAt) hu.continuous).continuousOn
+  obtain ⟨M, hM⟩ := hK.exists_bound_of_continuousOn (hβ.continuous_fderiv one_ne_zero).continuousOn
   set c := max M 0 * (‖stdComplexLineReal‖ + max B 0 * ‖stdComplexLineImag‖)
   refine ⟨2 * c ^ 2, by positivity, fun ξ hξ hξc ↦ ?_⟩
   have hD := ω.integrable_norm_floerLinearization_sq hJ hKs hKt hu hξ hξc
@@ -523,7 +523,7 @@ theorem exists_integral_norm_floerLinearization_smul_sq_le (ω : SymplecticForm 
     by_cases hz : z ∈ K
     · rw [Set.indicator_of_mem hz]
       gcongr
-      exact mul_le_mul ((hM z).trans (le_max_left _ _))
+      exact mul_le_mul ((hM z hz).trans (le_max_left _ _))
         (by gcongr; exact (hB z hz).trans (le_max_left _ _)) (by positivity) (le_max_right _ _)
     · simp [hβK z hz, Set.indicator_of_notMem hz]
   calc _ ≤ ∫ z, (2 * ‖ω.floerLinearization J Ks Kt u ξ z‖ ^ 2 +

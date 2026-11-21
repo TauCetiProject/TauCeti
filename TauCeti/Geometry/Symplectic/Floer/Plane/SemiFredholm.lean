@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Plane.Linearization
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Complex.EquivRealProd
+import TauCeti.Geometry.Symplectic.Floer.InteriorEstimate
 import TauCeti.Geometry.Symplectic.Floer.SemiFredholm
 import TauCeti.Geometry.Symplectic.Floer.Plane.Curvature
 
@@ -36,9 +37,9 @@ kernel and closed range once `D_u` is realized on Sobolev spaces.
   sections supported far out on the end implies the semi-Fredholm estimate. The section is cut
   into an end piece and a core piece by smooth cutoffs of the plane. On the end piece the end
   estimate applies, on the core piece the `L²` estimate of a Cauchy–Riemann operator with
-  domain-dependent compatible structure
-  (`TauCeti.SymplecticForm.exists_setIntegral_norm_fderiv_sq_le_floerLinearization`), and
-  the cutoffs cost only `L²` norms of `ξ` on a compact disc, by the Leibniz rule
+  domain-dependent compatible structure on sections supported in a compact set
+  (`TauCeti.Geometry.Symplectic.Floer.InteriorEstimate`), and the cutoffs cost only `L²` norms of
+  `ξ` on a compact disc, by the Leibniz rule
   `D_u (β ξ) = β D_u ξ + (∂s β) ξ + J ((∂t β) ξ)`
   (`TauCeti.SymplecticForm.exists_integral_norm_floerLinearization_smul_sq_le`).
 * `exists_forall_le_mul_integral_floerLinearization_add_of_finite_energy` is the semi-Fredholm
@@ -218,7 +219,7 @@ private theorem exists_setIntegral_comp_realChart_le_of_end (ω : SymplecticForm
     Real.exp_lt_exp.2 (by nlinarith [Real.pi_pos])
   -- A cutoff `β = 1 - ψ` vanishing near `‖w‖ ≤ exp (2π Re)` and equal to `1` near
   -- `‖w‖ ≥ exp (2π (Re + 1))`.
-  obtain ⟨ψ, hψ, hψ01, hψ1, hψ0, hψK, M, hM⟩ :=
+  obtain ⟨ψ, hψ, hψ01, hψ1, hψ0, hψK⟩ :=
     (isCompact_setOf_norm_equivRealProdCLM_symm_le _).exists_contDiff_cutoff_sublevel
       Complex.equivRealProdCLM.symm.continuous.norm hlt
   set β : ℝ × ℝ → ℝ := fun z ↦ 1 - ψ z
@@ -233,8 +234,7 @@ private theorem exists_setIntegral_comp_realChart_le_of_end (ω : SymplecticForm
   obtain ⟨C₁, -, herr⟩ := ω.exists_integral_norm_floerLinearization_smul_sq_le
     (J := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) hJ hKs hKt hu
     (hβ.of_le one_le_two) hβ01 (isCompact_setOf_norm_equivRealProdCLM_symm_le _)
-    (fun z hz ↦ by rw [hdβ, hψK z (not_le.1 hz), neg_zero]) (M := M)
-    fun z ↦ by rw [hdβ, norm_neg]; exact hM z
+    fun z hz ↦ by rw [hdβ, hψK z (not_le.1 hz), neg_zero]
   refine ⟨max Ce 0 * max 2 C₁, by positivity, fun ξ hξ hξc ↦ ?_⟩
   -- The cut-off section `β ξ` is supported in the part `‖w‖ > exp (2π Re)` of the end.
   have hξ₁c : HasCompactSupport fun w ↦ β w • ξ w := hξc.smul_left
@@ -276,17 +276,20 @@ private theorem exists_setIntegral_le_of_core (ω : SymplecticForm V)
             ‖ξ z‖ ^ 2) ≤
         C * ((∫ z, ‖ω.floerLinearization (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
           Ks Kt u ξ z‖ ^ 2) + ∫ z in {z | ‖Complex.equivRealProdCLM.symm z‖ ≤ b}, ‖ξ z‖ ^ 2) := by
-  set J' : ℝ × ℝ → V → V →L[ℝ] V := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap
   set K := {z : ℝ × ℝ | ‖Complex.equivRealProdCLM.symm z‖ ≤ b}
   have hK : IsCompact K := isCompact_setOf_norm_equivRealProdCLM_symm_le b
+  have : (volume : Measure (ℝ × ℝ)).IsAddHaarMeasure := Measure.prod.instIsAddHaarMeasure _ _
+  obtain ⟨C₀, hC₀, hcore⟩ :=
+   exists_forall_setIntegral_norm_fderiv_sq_le_mul_setIntegral_floerLinearization_of_tsupport_subset
+      ω (μ := volume) hK (fun z _ ↦ hJ z) (fun z _ ↦ hKs z) (fun z _ ↦ hKt z)
+      (fun z _ ↦ hu.contDiffAt) fun z _ ↦ hc z
+  set J' : ℝ × ℝ → V → V →L[ℝ] V := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap
   -- A cutoff `β` equal to `1` near `‖w‖ ≤ a` and vanishing near `‖w‖ ≥ b`.
-  obtain ⟨β, hβ, hβ01, hβ1, hβ0, hβK, M, hM⟩ :=
+  obtain ⟨β, hβ, hβ01, hβ1, hβ0, hβK⟩ :=
     (isCompact_setOf_norm_equivRealProdCLM_symm_le a).exists_contDiff_cutoff_sublevel
       Complex.equivRealProdCLM.symm.continuous.norm hab
   obtain ⟨C₁, hC₁, herr⟩ := ω.exists_integral_norm_floerLinearization_smul_sq_le (J := J') hJ hKs
-    hKt hu (hβ.of_le (by simp)) hβ01 hK (fun z hz ↦ hβK z (not_le.1 hz)) hM
-  obtain ⟨C₀, hC₀, hcore⟩ :=
-    exists_setIntegral_norm_fderiv_sq_le_floerLinearization ω hJ hKs hKt hu hc hK
+    hKt hu (hβ.of_le (by simp)) hβ01 hK fun z hz ↦ hβK z (not_le.1 hz)
   refine ⟨C₀ * (C₁ + 3) + 1, by positivity, fun ξ hξ hξc ↦ ?_⟩
   set ξ₀ : ℝ × ℝ → V := fun w ↦ β w • ξ w
   have hξ₀ : ContDiff ℝ 2 ξ₀ := (hβ.of_le (by simp)).smul hξ
@@ -301,7 +304,7 @@ private theorem exists_setIntegral_le_of_core (ω : SymplecticForm V)
         fun z _ ↦ by
           simp only [ξ₀, norm_smul, Real.norm_eq_abs, abs_of_nonneg (hβ01 z).1, mul_pow]
           exact mul_le_of_le_one_left (by positivity) (pow_le_one₀ (hβ01 z).1 (hβ01 z).2)
-  -- Combine the disc comparison, the `L²` estimate of `D` and the cost of the cutoff.
+  -- Combine the disc comparison, the `L²` estimate of `D` on `K` and the cost of the cutoff.
   have h₁ : ∫ z in {z | ‖Complex.equivRealProdCLM.symm z‖ ≤ a},
         (‖fderiv ℝ ξ z stdComplexLineReal‖ ^ 2 + ‖fderiv ℝ ξ z stdComplexLineImag‖ ^ 2 +
           ‖ξ z‖ ^ 2) ≤
@@ -313,8 +316,12 @@ private theorem exists_setIntegral_le_of_core (ω : SymplecticForm V)
     herr (hξ.of_le one_le_two) hξc
   have h₃ : ∫ z in K, (‖fderiv ℝ ξ₀ z stdComplexLineReal‖ ^ 2 +
       ‖fderiv ℝ ξ₀ z stdComplexLineImag‖ ^ 2) ≤
-      C₀ * ((∫ z, ‖ω.floerLinearization J' Ks Kt u ξ₀ z‖ ^ 2) + ∫ z in K, ‖ξ₀ z‖ ^ 2) :=
-    hcore hξ₀ hξ₀K
+      C₀ * ((∫ z, ‖ω.floerLinearization J' Ks Kt u ξ₀ z‖ ^ 2) + ∫ z in K, ‖ξ₀ z‖ ^ 2) := by
+    have hD := ω.integrable_norm_floerLinearization_sq (J := J') hJ hKs hKt hu
+      (hξ₀.of_le one_le_two) hξc.smul_left
+    refine (hcore hξ₀ hξ₀K).trans (mul_le_mul_of_nonneg_left ((integral_add hD.integrableOn
+      ((hξ₀.continuous.norm.pow 2).continuousOn.integrableOn_compact hK)).trans_le
+        (add_le_add_left (setIntegral_le_integral hD (ae_of_all _ fun _ ↦ by positivity)) _)) hC₀)
   nlinarith [mul_le_mul_of_nonneg_left (add_le_add h₂ hξ₀ξ) hC₀,
     integral_nonneg (μ := volume) fun z ↦ sq_nonneg ‖ω.floerLinearization J' Ks Kt u ξ z‖,
     mul_nonneg hC₀ (by positivity : 0 ≤ (C₁ + 1) *

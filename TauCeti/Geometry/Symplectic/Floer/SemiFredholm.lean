@@ -32,9 +32,6 @@ in `TauCeti.Geometry.Symplectic.Floer.SemiFredholm.CauchyRiemann`). On the far p
 where `u` is close to a nondegenerate orbit, `D_u` controls the whole `W^{1,2}` norm
 (`TauCeti.SymplecticForm.exists_mem_forall_setIntegral_le_mul_setIntegral_floerLinearization`).
 
-* `exists_setIntegral_norm_fderiv_sq_le_floerLinearization` is the interior estimate on any
-  compact set `K`: for `J` compatible along `u`, `D_u` controls the `L²` norm of the derivatives of
-  sections supported in `K`, up to their `L²` norm on `K`.
 * `exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_add_of_ends` is the patching
   argument for `D_u`: for any data `J`, `K_s`, `K_t` that are regular along `u`, with `J`
   compatible along `u`, estimates of `D_u` on the two ends imply the semi-Fredholm estimate.
@@ -122,48 +119,6 @@ end TauCeti.Floer
 namespace TauCeti.SymplecticForm
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
-
-/-- **The `L²` estimate on a compact set.** If `J` is compatible along `u`, then on sections
-supported in a compact set `K` the operator `D_u` controls the derivatives in `L²`, up to the `L²`
-norm on `K`: `∫_K (‖∂s η‖² + ‖∂t η‖²) ≤ C (∫ ‖D_u η‖² + ∫_K ‖η‖²)`. This is the `L²` estimate of a
-Cauchy–Riemann operator with domain-dependent compatible structure, for `D_u = ∂s + J ∂t + A`. -/
-theorem exists_setIntegral_norm_fderiv_sq_le_floerLinearization (ω : SymplecticForm V)
-    {J : ℝ × ℝ → V → AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
-    (hJ : ∀ z, ContDiffAt ℝ 1
-      (fun q : (ℝ × ℝ) × V ↦ (J q.1 q.2).toLinearMap.toContinuousLinearMap) (z, u z))
-    (hKs : ∀ z, ContDiffAt ℝ 2 (uncurry Ks) (z, u z))
-    (hKt : ∀ z, ContDiffAt ℝ 2 (uncurry Kt) (z, u z)) (hu : ContDiff ℝ 1 u)
-    (hc : ∀ z, ω.Compatible (J z (u z))) {K : Set (ℝ × ℝ)} (hK : IsCompact K) :
-    ∃ C, 0 ≤ C ∧ ∀ ⦃η : ℝ × ℝ → V⦄, ContDiff ℝ 2 η → tsupport η ⊆ K →
-      ∫ z in K, (‖fderiv ℝ η z stdComplexLineReal‖ ^ 2 + ‖fderiv ℝ η z stdComplexLineImag‖ ^ 2) ≤
-        C * ((∫ z, ‖ω.floerLinearization (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
-          Ks Kt u η z‖ ^ 2) + ∫ z in K, ‖η z‖ ^ 2) := by
-  set J' : ℝ × ℝ → V → V →L[ℝ] V := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap
-  have : (volume : Measure (ℝ × ℝ)).IsAddHaarMeasure := Measure.prod.instIsAddHaarMeasure _ _
-  obtain ⟨C, hC, hcore⟩ := exists_forall_setIntegral_norm_fderiv_sq_le_of_tsupport_subset
-    (μ := volume) (J := fun z ↦ J z (u z)) hK (fun z _ ↦ hc z)
-    (continuous_comp_prodMk_of_continuousAt (fun z ↦ (hJ z).continuousAt)
-      hu.continuous).continuousOn
-    (ω.continuousOn_floerLinearizationCoeff (J := J') (fun z _ ↦ hJ z) (fun z _ ↦ hKs z)
-      (fun z _ ↦ hKt z) fun z _ ↦ hu.contDiffAt)
-  refine ⟨C, hC, fun η hη hηK ↦ ?_⟩
-  have hD : Continuous fun z ↦ ‖ω.floerLinearization J' Ks Kt u η z‖ ^ 2 :=
-    ((ω.continuous_floerLinearization (J := J') hJ hKs hKt hu (hη.of_le one_le_two)).norm.pow 2)
-  have hη2 : Continuous fun z ↦ ‖η z‖ ^ 2 := hη.continuous.norm.pow 2
-  -- `∂s η + J ∂t η + A η` is `D η`, and `∫_K ‖D η‖² ≤ ∫ ‖D η‖²`.
-  have hDeq (z : ℝ × ℝ) : fderiv ℝ η z stdComplexLineReal +
-      J z (u z) (fderiv ℝ η z stdComplexLineImag) +
-        ω.floerLinearizationCoeff J' Ks Kt u z (η z) =
-      ω.floerLinearization J' Ks Kt u η z := by
-    simp only [floerLinearization_eq_add, J', LinearMap.coe_toContinuousLinearMap']
-  have h := hcore hη hηK
-  simp only [hDeq] at h
-  rw [integral_add (hD.continuousOn.integrableOn_compact hK)
-    (hη2.continuousOn.integrableOn_compact hK)] at h
-  have hηc : HasCompactSupport η := hK.of_isClosed_subset (isClosed_tsupport η) hηK
-  refine h.trans (mul_le_mul_of_nonneg_left (add_le_add_left (setIntegral_le_integral
-    (ω.integrable_norm_floerLinearization_sq (J := J') hJ hKs hKt hu (hη.of_le one_le_two) hηc)
-    (Eventually.of_forall fun _ ↦ by positivity)) _) hC)
 
 /-- **Patching end estimates into the semi-Fredholm estimate.** Let `J(z)` be compatible along
 `u`, with `J` `C¹` and `K_s`, `K_t` `C²` at the points `(z, u z)`, and `u` `C¹`. Suppose that the
