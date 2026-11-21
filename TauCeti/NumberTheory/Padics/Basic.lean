@@ -34,10 +34,12 @@ For a normed `ℚ_[p]`-algebra `K`, the composite structure map
 `TauCeti.padicIntAlgebraMap p K : ℤ_[p] →+* K` is continuous. When `‖1‖ = 1` in `K` it is an
 isometry, so it maps `ℤ_[p]` into the closed unit ball of `K`, and it is injective when `K` is
 nontrivial. When `‖1‖ = 1` in `K`, the norm of a natural number in `K` is also its `p`-adic norm
-(`TauCeti.norm_natCast_eq_norm_padic`). A continuous ring homomorphism between normed
-`ℚ_[p]`-algebras is automatically `ℚ_[p]`-linear (`RingHom.map_algebraMap_padic_of_continuous`),
-since it fixes the dense subfield `ℚ`; for instance a continuous Frobenius lift on a `p`-adic
-field fixes `ℚ_[p]`.
+(`TauCeti.norm_natCast_eq_norm_padic`). It also records that `ℚ_[p]` has no element of norm
+strictly between `p⁻¹` and `1` (`Padic.not_exists_norm_mem_Ioo`).
+
+A continuous ring homomorphism between normed `ℚ_[p]`-algebras is automatically `ℚ_[p]`-linear
+(`RingHom.map_algebraMap_padic_of_continuous`), since it fixes the dense subfield `ℚ`; for instance
+a continuous Frobenius lift on a `p`-adic field fixes `ℚ_[p]`.
 -/
 
 public section
@@ -92,6 +94,21 @@ theorem closedBall_subset_range_coe_ringHom :
   fun x hx ↦ ⟨⟨x, mem_closedBall_zero_iff.mp hx⟩, rfl⟩
 
 end PadicInt
+
+namespace Padic
+
+/-- `ℚ_[p]` contains no element of norm strictly between `p⁻¹` and `1`. -/
+theorem not_exists_norm_mem_Ioo {p : ℕ} [Fact p.Prime] :
+    ¬ ∃ t : ℚ_[p], ‖t‖ ∈ Set.Ioo (p : ℝ)⁻¹ 1 := by
+  have hp : (1 : ℝ) < p := mod_cast (Fact.out : p.Prime).one_lt
+  rintro ⟨t, hlow, hhigh⟩
+  have ht0 : t ≠ 0 := norm_pos_iff.1 ((inv_pos.2 (zero_lt_one.trans hp)).trans hlow)
+  rw [Padic.norm_eq_zpow_neg_valuation ht0] at hlow hhigh
+  have h1 := (zpow_lt_zpow_iff_right₀ hp).1 (zpow_neg_one (p : ℝ) ▸ hlow)
+  have h2 := (zpow_lt_zpow_iff_right₀ hp).1 (zpow_zero (p : ℝ) ▸ hhigh)
+  omega
+
+end Padic
 
 namespace TauCeti
 

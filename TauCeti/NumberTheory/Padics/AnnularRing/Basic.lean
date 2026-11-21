@@ -344,6 +344,10 @@ instance : Algebra ℤ_[p] (AnnularRing p) :=
 instance : Nontrivial (AnnularRing p) :=
   ⟨⟨0, 1, fun h ↦ by simpa using congr_arg (coeff · 0) h⟩⟩
 
+/-- `AnnularRing p` has characteristic zero, inherited from the constant-term map to `ℤ_p`. -/
+instance instCharZero : CharZero (AnnularRing p) where
+  cast_injective _ _ h := by simpa using congr_arg (coeff · 0) h
+
 /-! ### The elements `T` and `U = p / T` -/
 
 /-- The variable `T`, of normal form `T ^ 1`. -/
@@ -385,6 +389,13 @@ theorem coeff_T_pow (n : ℕ) (m : ℤ) :
     congr 1
     simp only [Nat.cast_succ, sub_eq_iff_eq_add]
 
+/-- Multiplication by `T ^ k` shifts the coefficients of a series up by `k`. -/
+@[simp] theorem coeff_T_pow_mul (x : AnnularRing p) (k : ℕ) (m : ℤ) :
+    ((T : AnnularRing p) ^ k * x).coeff m = x.coeff (m - k) := by
+  induction k generalizing m with
+  | zero => simp
+  | succ k ih => rw [pow_succ', mul_assoc, coeff_T_mul, ih]; exact congr_arg x.coeff (by omega)
+
 theorem coeff_U_pow (n : ℕ) (m : ℤ) :
     ((U : AnnularRing p) ^ n).coeff m = if m = -n then (p : ℤ_[p]) ^ n else 0 := by
   induction n generalizing m with
@@ -394,6 +405,12 @@ theorem coeff_U_pow (n : ℕ) (m : ℤ) :
     by_cases hm : m = -(n + 1 : ℕ)
     · simp [hm, pow_succ']
     · rw [ite_eq_right (show ¬m + 1 = -(n : ℤ) by omega), ite_eq_right hm, mul_zero]
+
+/-- The monomial `T ^ i * U ^ j` equals `p ^ j T ^ (i - j)`. -/
+theorem coeff_T_pow_mul_U_pow (i j : ℕ) (m : ℤ) :
+    ((T : AnnularRing p) ^ i * U ^ j).coeff m =
+      if m = (i : ℤ) - j then (p : ℤ_[p]) ^ j else 0 := by
+  rw [coeff_T_pow_mul, coeff_U_pow]; exact if_congr (by omega) rfl rfl
 
 /-- The defining relation `T U = p` of the annular coefficient ring. -/
 @[simp] theorem T_mul_U : (T : AnnularRing p) * U = (p : AnnularRing p) := by
@@ -412,6 +429,10 @@ theorem span_p_T_eq_span_T : Ideal.span {(p : AnnularRing p), T} = Ideal.span {T
   rintro x (rfl | rfl)
   · exact Ideal.mem_span_singleton'.2 ⟨U, by rw [mul_comm, T_mul_U]⟩
   · exact Ideal.subset_span rfl
+
+/-- `T` is nonzero, since its degree-`1` coefficient is `1`. -/
+theorem T_ne_zero : (T : AnnularRing p) ≠ 0 :=
+  fun h ↦ by simpa [coeff_T] using congr_arg (coeff · 1) h
 
 /-- `T` is a non-zero-divisor. -/
 theorem T_mem_nonZeroDivisors : (T : AnnularRing p) ∈ nonZeroDivisors (AnnularRing p) := by

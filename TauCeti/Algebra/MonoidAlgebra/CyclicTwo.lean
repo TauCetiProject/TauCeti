@@ -15,6 +15,7 @@ public import Mathlib.Tactic.LinearCombination
 public import Mathlib.Tactic.Ring
 public import TauCeti.Algebra.Ring.Prod
 public import TauCeti.Data.ZMod.Two
+import TauCeti.Data.ZMod.Four
 
 /-!
 # The group algebra of the cyclic group of order two
@@ -33,6 +34,9 @@ homomorphism `R[C₂] → R × R`, `a + bσ ↦ (a + b, a - b)`.
 ## Main declarations
 
 * `TauCeti.cyclicTwoSign`: the sign character `Multiplicative (ZMod 2) →* R`.
+* `MonoidAlgebra.eq_single_one_add_single_ofAdd_one`,
+  `MonoidAlgebra.eq_single_one_add_single_neg_one`: the two-term decompositions in
+  `R[Multiplicative (ZMod 2)]` and `R[(ZMod 4)ˣ]`.
 * `MonoidAlgebra.cyclicTwoToProd`: the algebra homomorphism `R[C₂] →ₐ[R] R × R`.
 * `MonoidAlgebra.cyclicTwoEquivProd`: the isomorphism `R[C₂] ≃ₐ[R] R × R` when `2` is
   invertible in `R`.
@@ -100,6 +104,15 @@ theorem eq_single_one_add_single_ofAdd_one (x : MonoidAlgebra R (Multiplicative 
   ext g
   rcases g.eq_one_or_eq_ofAdd_one with rfl | rfl <;>
     simp [coeff_add, coeff_single, one_ne_ofAdd_one, one_ne_ofAdd_one.symm]
+
+/-- Every element of `R[(ℤ/4ℤ)ˣ]` is `a · 1 + b · (-1)`, where `a` and `b` are its coefficients
+at `1` and `-1`. -/
+theorem eq_single_one_add_single_neg_one (x : MonoidAlgebra R (ZMod 4)ˣ) :
+    x = single 1 (x.coeff 1) + single (-1) (x.coeff (-1)) := by
+  ext u
+  rcases ZMod.unitsFour_eq_one_or_neg_one u with rfl | rfl <;>
+    simp [coeff_add, coeff_single, ZMod.neg_one_ne_one_unitsFour,
+      ZMod.neg_one_ne_one_unitsFour.symm]
 
 /-- The product of two elements of `R[C₂]` written as `a + bσ`: since `σ² = 1`,
 `(a + bσ)(a' + b'σ) = (aa' + bb') + (ab' + ba')σ`. -/
