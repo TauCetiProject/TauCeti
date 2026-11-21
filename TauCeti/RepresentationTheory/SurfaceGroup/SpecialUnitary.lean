@@ -28,7 +28,7 @@ degree*, Theorem 3.3.3 and Remark 3.3.7).
 
 When `ζ` is a primitive `r`-th root of unity (equivalently `gcd(r, d) = 1`), the stabilizer of
 every solution under simultaneous conjugation is the center of `SU(r)`
-(`TauCeti.relationSet_stabilizer_central`). The proof is the finite-group form of the exclusion of
+(`TauCeti.relationSet_stabilizer_central`). The proof is the holonomy form of the exclusion of
 parallel subbundles in Wehrheim–Woodward's proof of Theorem 3.3.3: an element commuting with all
 `A_j, B_j` has an eigenspace preserved by all of them, the restricted commutator product has
 determinant `1 = ζ ^ dim`, so the eigenspace is everything. Here this is packaged as the
@@ -89,18 +89,11 @@ theorem relationSet_zero_eq_empty {r : ℕ} (hr : r ≠ 0) {ζ : ℂ} (hζ : ζ 
 `B = !![0, 1; -1, 0]` lie in `SU(2)` and satisfy `A B A⁻¹ B⁻¹ = -1`, so the relation set for
 `r = 2`, `ζ = -1`, `g = 1` is nonempty. -/
 theorem relationSet_two_neg_one_one_nonempty : (relationSet 2 (-1) 1).Nonempty := by
-  have hA : !![Complex.I, 0; 0, -Complex.I] ∈ Matrix.specialUnitaryGroup (Fin 2) ℂ := by
-    refine ⟨Matrix.mem_unitaryGroup_iff.2 ?_, ?_⟩
-    · ext i j
-      fin_cases i <;> fin_cases j <;>
-        simp [Matrix.star_eq_conjTranspose, Matrix.mul_apply, Fin.sum_univ_two]
-    · simp [Matrix.det_fin_two]
-  have hB : !![(0 : ℂ), 1; -1, 0] ∈ Matrix.specialUnitaryGroup (Fin 2) ℂ := by
-    refine ⟨Matrix.mem_unitaryGroup_iff.2 ?_, ?_⟩
-    · ext i j
-      fin_cases i <;> fin_cases j <;>
-        simp [Matrix.star_eq_conjTranspose, Matrix.mul_apply, Fin.sum_univ_two]
-    · simp [Matrix.det_fin_two]
+  obtain ⟨hA, hB⟩ : !![Complex.I, 0; 0, -Complex.I] ∈ Matrix.specialUnitaryGroup (Fin 2) ℂ ∧
+      !![(0 : ℂ), 1; -1, 0] ∈ Matrix.specialUnitaryGroup (Fin 2) ℂ := by
+    constructor <;> refine ⟨Matrix.mem_unitaryGroup_iff.2 ?_, by simp [Matrix.det_fin_two]⟩ <;>
+      ext i j <;> fin_cases i <;> fin_cases j <;>
+      simp [Matrix.star_eq_conjTranspose, Matrix.mul_apply, Fin.sum_univ_two]
   refine ⟨fun _ ↦ (⟨_, hA⟩, ⟨_, hB⟩), mem_relationSet.2 ?_⟩
   ext i j
   fin_cases i <;> fin_cases j <;>

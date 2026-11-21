@@ -71,9 +71,7 @@ dimension divisible by `dim V`, so it is all of `V`. No hypothesis on the field 
 theorem isIrreducible_of_mem_commutator [FiniteDimensional k V] [Nontrivial V] {z : G}
     (hz : z ∈ commutator G) {ζ : k} (hζ : IsPrimitiveRoot ζ (finrank k V))
     (hzζ : ρ z = ζ • 1) : ρ.IsIrreducible where
-  exists_pair_ne := ⟨⊥, ⊤, fun h ↦ bot_ne_top (α := Submodule k V) <| by
-    rw [← Subrepresentation.toSubmodule_bot (ρ := ρ), ← Subrepresentation.toSubmodule_top (ρ := ρ),
-      h]⟩
+  toNontrivial := inferInstance
   eq_bot_or_eq_top σ := by
     refine or_iff_not_imp_left.2 fun hσ ↦ Subrepresentation.toSubmodule_injective ?_
     have hpos : 0 < finrank k σ.toSubmodule := by
