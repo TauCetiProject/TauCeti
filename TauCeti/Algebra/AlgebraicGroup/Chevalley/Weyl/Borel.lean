@@ -10,7 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Weyl
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.BigCell.Triangular
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Blocks
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.RankOne
-import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Quotient
+import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Word
 
 /-!
 # Word factorization of the Weyl subgroup and its intersection with the Borel subgroup

@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Basic
-import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
+import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Weyl
+import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Weyl
+import TauCeti.LinearAlgebra.RootSystem.Weyl.Orbit.Basic
 
 /-!
 # The root action of the Chevalley Weyl subgroup
@@ -17,6 +19,11 @@ of a Weyl element carries each root parameter to a unit multiple of that paramet
 image root. Thus the root subgroup, unlike its parametrization, is independent of the lift.
 These formulas allow Weyl lifts to transport the root-generated subgroups used in Bruhat
 cells. They do not identify the kernel of the Weyl projection with the torus.
+
+By simple-reflection induction and `ChevalleyDatum.weylElement_conj_weylElement`, the Weyl
+subgroup also contains Steinberg's Weyl element `n_γ(s)` for every root `γ` and unit `s`
+(`ChevalleyDatum.weylElement_mem_weylSubgroup_of_root`), and over a field `n_γ(s)` projects to
+the reflection `s_γ` in the Weyl group (`ChevalleyDatum.weylProjection_weylElement_of_root`).
 
 The proof combines the existing pinning equation and the signed simple Weyl conjugation
 formula in `ChevalleyDatum.weylElement_conj_rootSubgroupPoints`. It works over finite fields
@@ -38,6 +45,9 @@ open Multiplicative
 universe v
 
 variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
+
+section Field
+
 variable (K : Type v) [Field K]
 
 private def RescalesRoots (g : D.weylSubgroup K) : Prop :=
@@ -135,5 +145,75 @@ theorem map_iSup_rootSubgroupPoints_conj (g : D.weylSubgroup K)
       ⨆ γ ∈ (t.simplyConnectedRootDatum ht).weylGroupToPerm (D.weylProjection K g) '' S,
         (D.rootSubgroupPoints γ K).range := by
   simp only [Subgroup.map_iSup, D.map_range_rootSubgroupPoints_conj, iSup_image]
+
+end Field
+
+/-- **Steinberg's Weyl element `n_γ(s)` lies in `D.weylSubgroup A` for every root `γ` and unit
+`s`**, over every commutative ring `A`. -/
+theorem weylElement_mem_weylSubgroup_of_root (γ : Fin t.numRoots) (A : Type v) [CommRing A]
+    (s : Aˣ) : D.weylElement γ A s ∈ D.weylSubgroup A := by
+  revert s
+  refine (t.rationalBase ht).induction_simple_reflect γ
+    (p := fun k => ∀ s : Aˣ, D.weylElement k A s ∈ D.weylSubgroup A)
+    (fun k hk s => ?_) (fun k j hk hj s => ?_)
+  · obtain ⟨i, rfl⟩ := exists_simpleIndex_eq_of_mem_support hk
+    rw [D.weylElement_eq_corootPoints_mul, ← D.simpleCorootPoints_eq_corootPoints,
+      D.simpleCorootPoints_eq_torusPoints]
+    exact Subgroup.mul_mem _ (D.torusPoints_mem_weylSubgroup A _)
+      (D.weylElement_mem_weylSubgroup A i)
+  · obtain ⟨i, rfl⟩ := exists_simpleIndex_eq_of_mem_support hj
+    rw [t.reflectionPerm_rationalRootSystem ht]
+    let εA : Aˣ := Units.map (Int.castRingHom A).toMonoidHom
+      (t.chevalleyWeylSign ht (t.simpleIndex ht i) k)
+    have hconj := D.weylElement_conj_weylElement i k A (εA⁻¹ * s)
+    rw [mul_inv_cancel_left] at hconj
+    rw [← hconj]
+    exact Subgroup.mul_mem _
+      (Subgroup.mul_mem _ (D.weylElement_mem_weylSubgroup A i) (hk _))
+      (Subgroup.inv_mem _ (D.weylElement_mem_weylSubgroup A i))
+
+/-- **Over a field, Steinberg's Weyl element `n_γ(s)` of any root `γ` projects to the reflection
+`s_γ` in the Weyl group.** -/
+-- Concrete Dynkin-type rules can normalize root indices inside `Subtype.mk` before matching.
+@[simp↓]
+theorem weylProjection_weylElement_of_root (k : Type v) [Field k] (γ : Fin t.numRoots) (s : kˣ) :
+    D.weylProjection k ⟨D.weylElement γ k s, D.weylElement_mem_weylSubgroup_of_root γ k s⟩ =
+      RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) γ := by
+  revert s
+  refine (t.rationalBase ht).induction_simple_reflect γ
+    (p := fun γ => ∀ s : kˣ,
+      D.weylProjection k
+          ⟨D.weylElement γ k s, D.weylElement_mem_weylSubgroup_of_root γ k s⟩ =
+        RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) γ)
+    (fun γ hγ s => ?_) (fun γ j hγ hj s => ?_)
+  · obtain ⟨i, rfl⟩ := exists_simpleIndex_eq_of_mem_support hγ
+    have hsub :
+        (⟨D.weylElement (t.simpleIndex ht i) k s,
+            D.weylElement_mem_weylSubgroup_of_root _ k s⟩ : D.weylSubgroup k) =
+          ⟨D.torusPoints k (D.simpleCorootParameter i k s),
+            D.torusPoints_mem_weylSubgroup k _⟩ *
+          ⟨D.weylElement (t.simpleIndex ht i) k 1, D.weylElement_mem_weylSubgroup k i⟩ := by
+      apply Subtype.ext
+      rw [Subgroup.coe_mul]
+      exact (D.weylElement_eq_corootPoints_mul (t.simpleIndex ht i) k s).trans <| by
+        rw [← D.simpleCorootPoints_eq_corootPoints, D.simpleCorootPoints_eq_torusPoints]
+    rw [hsub, map_mul, D.weylProjection_torusPoints, one_mul, D.weylProjection_weylElement]
+  · obtain ⟨i, rfl⟩ := exists_simpleIndex_eq_of_mem_support hj
+    rw [t.reflectionPerm_rationalRootSystem ht]
+    let εk : kˣ := Units.map (Int.castRingHom k).toMonoidHom
+      (t.chevalleyWeylSign ht (t.simpleIndex ht i) γ)
+    have hconj := D.weylElement_conj_weylElement i γ k (εk⁻¹ * s)
+    rw [mul_inv_cancel_left] at hconj
+    have hsub :
+        (⟨D.weylElement
+            ((t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht i) γ) k s,
+            D.weylElement_mem_weylSubgroup_of_root _ k s⟩ : D.weylSubgroup k) =
+          ⟨D.weylElement (t.simpleIndex ht i) k 1, D.weylElement_mem_weylSubgroup k i⟩ *
+          ⟨D.weylElement γ k (εk⁻¹ * s), D.weylElement_mem_weylSubgroup_of_root γ k _⟩ *
+          (⟨D.weylElement (t.simpleIndex ht i) k 1, D.weylElement_mem_weylSubgroup k i⟩)⁻¹ :=
+      Subtype.ext hconj.symm
+    rw [hsub, map_mul, map_mul, map_inv, D.weylProjection_weylElement, hγ,
+      ← RootPairing.weylGroup.ofIdx_weylGroupToPerm_eq_conj,
+      RootPairing.weylGroupToPerm_ofIdx_apply]
 
 end TauCeti.DynkinType.ChevalleyDatum

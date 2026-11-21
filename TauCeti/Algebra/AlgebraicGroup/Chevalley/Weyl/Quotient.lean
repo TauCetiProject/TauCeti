@@ -7,18 +7,15 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Weyl
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.RankOne
-import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Weyl
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Braid.Basic
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Braid.DoubleBond
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Orthogonal
 import TauCeti.Algebra.Group.Pow
 import TauCeti.LinearAlgebra.RootSystem.Coxeter.Presentation
-import TauCeti.LinearAlgebra.RootSystem.Inversions.StrongExchange
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Coefficient
-import TauCeti.LinearAlgebra.RootSystem.Weyl.Orbit.Basic
 
 /-!
-# The Weyl quotient of Chevalley data
+# The Weyl quotient of Chevalley data outside type G₂
 
 For every Chevalley datum of type other than G₂ over a nontrivial commutative ring,
 the quotient of `weylSubgroup` by its actual character-lattice torus is the Weyl group of
@@ -26,21 +23,17 @@ the pinned root datum. The equivalence sends the class of each pinned simple Wey
 representative to its simple reflection. Over a field, the kernel of the native Weyl
 projection is exactly that torus.
 
-The Coxeter-presentation argument uses the native rank-one square, single-bond and double-bond
-braid relations outside type G₂. For every valid Dynkin type including G₂ over an arbitrary
-commutative ring `A`, conjugating Steinberg's Weyl element `n_γ(s)` by `n_{αᵢ}(1)` produces
-`n_{sᵢ γ}(ε s)` (`weylElement_conj_weylElement`), so `D.weylSubgroup A` contains `n_γ(s)` for
-every root `γ` and unit `s` (`weylElement_mem_weylSubgroup_of_root`). Adapting the strong-exchange
-word-deletion and identity inductions of `TauCeti.exists_wordProd_eraseIdx_eq_mul_ofIdx` and
-`TauCeti.eq_one_of_inversions_eq_empty` from
-`TauCeti.LinearAlgebra.RootSystem.Inversions.StrongExchange` shows that any word of simple Weyl
-representatives spelling `1` in the Weyl group lies in the actual torus `T_D(A)`
-(`weylWord_mem_range_torusPoints_of_geckWeylWordProd_eq_one`).
+The argument uses the native rank-one square, single-bond and double-bond braid relations.
+Modulo the torus, the pinned representatives satisfy the Coxeter presentation; the induced map back
+from the Weyl group is surjective by generation and injective by reduction to a residue
+field. Over fields its inverse agrees with the native Weyl projection. No point-generation theorem,
+Bruhat decomposition, infinitude assumption, or surjectivity of the full-weight torus
+parametrization is needed. In particular, the result applies to adjoint data and finite
+fields. Type G₂ still requires the additional length-six relation.
 
 ## References
 
-* R. Steinberg, *Lectures on Chevalley Groups*, Chapter 3, Lemmas 19–22 and Chapter 6.
-* J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, Ch. III, §10.3.
+* R. Steinberg, *Lectures on Chevalley Groups*, Chapter 3, Lemmas 19 and 22, and Chapter 6.
 * R. W. Carter, *Simple Groups of Lie Type*, §§6.4 and 7.2.
 -/
 
@@ -313,237 +306,5 @@ theorem weylQuotientEquivOfNeG2_mk (hs : t ≠ .G2) (g : Nₖ) :
   exact (D.weylQuotientEquivOfNeG2_symm_weylProjection K hs g).symm
 
 end
-
-section AllTypes
-
-universe v
-
-variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
-
-/-- **Steinberg's Weyl element `n_γ(s)` lies in `D.weylSubgroup A` for every root `γ` and unit
-`s`**, over every commutative ring `A`. -/
-theorem weylElement_mem_weylSubgroup_of_root (γ : Fin t.numRoots) (A : Type v) [CommRing A]
-    (s : Aˣ) : D.weylElement γ A s ∈ D.weylSubgroup A := by
-  revert s
-  refine (t.rationalBase ht).induction_simple_reflect γ
-    (p := fun k => ∀ s : Aˣ, D.weylElement k A s ∈ D.weylSubgroup A)
-    (fun k hk s => ?_) (fun k j hk hj s => ?_)
-  · obtain ⟨i, rfl⟩ := exists_simpleIndex_eq_of_mem_support hk
-    rw [D.weylElement_eq_corootPoints_mul, ← D.simpleCorootPoints_eq_corootPoints,
-      D.simpleCorootPoints_eq_torusPoints]
-    exact Subgroup.mul_mem _ (D.torusPoints_mem_weylSubgroup A _)
-      (D.weylElement_mem_weylSubgroup A i)
-  · obtain ⟨i, rfl⟩ := exists_simpleIndex_eq_of_mem_support hj
-    rw [t.reflectionPerm_rationalRootSystem ht]
-    let εA : Aˣ := Units.map (Int.castRingHom A).toMonoidHom
-      (t.chevalleyWeylSign ht (t.simpleIndex ht i) k)
-    have hconj := D.weylElement_conj_weylElement i k A (εA⁻¹ * s)
-    rw [mul_inv_cancel_left] at hconj
-    rw [← hconj]
-    exact Subgroup.mul_mem _
-      (Subgroup.mul_mem _ (D.weylElement_mem_weylSubgroup A i) (hk _))
-      (Subgroup.inv_mem _ (D.weylElement_mem_weylSubgroup A i))
-
-/-- **Over a field, Steinberg's Weyl element `n_γ(s)` of any root `γ` projects to the reflection
-`s_γ` in the Weyl group.** -/
--- Concrete Dynkin-type rules can normalize root indices inside `Subtype.mk` before matching.
-@[simp↓]
-theorem weylProjection_weylElement_of_root (k : Type v) [Field k] (γ : Fin t.numRoots) (s : kˣ) :
-    D.weylProjection k ⟨D.weylElement γ k s, D.weylElement_mem_weylSubgroup_of_root γ k s⟩ =
-      RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) γ := by
-  revert s
-  refine (t.rationalBase ht).induction_simple_reflect γ
-    (p := fun γ => ∀ s : kˣ,
-      D.weylProjection k
-          ⟨D.weylElement γ k s, D.weylElement_mem_weylSubgroup_of_root γ k s⟩ =
-        RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) γ)
-    (fun γ hγ s => ?_) (fun γ j hγ hj s => ?_)
-  · obtain ⟨i, rfl⟩ := exists_simpleIndex_eq_of_mem_support hγ
-    have hsub :
-        (⟨D.weylElement (t.simpleIndex ht i) k s,
-            D.weylElement_mem_weylSubgroup_of_root _ k s⟩ : D.weylSubgroup k) =
-          ⟨D.torusPoints k (D.simpleCorootParameter i k s),
-            D.torusPoints_mem_weylSubgroup k _⟩ *
-          ⟨D.weylElement (t.simpleIndex ht i) k 1, D.weylElement_mem_weylSubgroup k i⟩ := by
-      apply Subtype.ext
-      rw [Subgroup.coe_mul]
-      exact (D.weylElement_eq_corootPoints_mul (t.simpleIndex ht i) k s).trans <| by
-        rw [← D.simpleCorootPoints_eq_corootPoints, D.simpleCorootPoints_eq_torusPoints]
-    rw [hsub, map_mul, D.weylProjection_torusPoints, one_mul, D.weylProjection_weylElement]
-  · obtain ⟨i, rfl⟩ := exists_simpleIndex_eq_of_mem_support hj
-    rw [t.reflectionPerm_rationalRootSystem ht]
-    let εk : kˣ := Units.map (Int.castRingHom k).toMonoidHom
-      (t.chevalleyWeylSign ht (t.simpleIndex ht i) γ)
-    have hconj := D.weylElement_conj_weylElement i γ k (εk⁻¹ * s)
-    rw [mul_inv_cancel_left] at hconj
-    have hsub :
-        (⟨D.weylElement
-            ((t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht i) γ) k s,
-            D.weylElement_mem_weylSubgroup_of_root _ k s⟩ : D.weylSubgroup k) =
-          ⟨D.weylElement (t.simpleIndex ht i) k 1, D.weylElement_mem_weylSubgroup k i⟩ *
-          ⟨D.weylElement γ k (εk⁻¹ * s), D.weylElement_mem_weylSubgroup_of_root γ k _⟩ *
-          (⟨D.weylElement (t.simpleIndex ht i) k 1, D.weylElement_mem_weylSubgroup k i⟩)⁻¹ :=
-      Subtype.ext hconj.symm
-    rw [hsub, map_mul, map_mul, map_inv, D.weylProjection_weylElement, hγ,
-      ← RootPairing.weylGroup.ofIdx_weylGroupToPerm_eq_conj,
-      RootPairing.weylGroupToPerm_ofIdx_apply]
-
-private theorem exists_unit_weylWord_conj_weylElement (A : Type v) [CommRing A]
-    (l : List (Fin t.rank)) (γ : Fin t.numRoots) (s : Aˣ) :
-    ∃ s' : Aˣ,
-      (l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod * D.weylElement γ A s *
-          ((l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod)⁻¹ =
-        D.weylElement
-          ((t.simplyConnectedRootDatum ht).weylGroupToPerm (t.geckWeylWordProd ht l) γ) A s' := by
-  induction l generalizing γ s with
-  | nil => exact ⟨s, by simp⟩
-  | cons i l ih =>
-    obtain ⟨s₁, hs₁⟩ := ih γ s
-    refine ⟨Units.map (Int.castRingHom A).toMonoidHom
-      (t.chevalleyWeylSign ht (t.simpleIndex ht i)
-        ((t.simplyConnectedRootDatum ht).weylGroupToPerm
-          (t.geckWeylWordProd ht l) γ)) * s₁, ?_⟩
-    rw [List.map_cons, List.prod_cons, mul_inv_rev, geckWeylWordProd_cons,
-      RootPairing.weylGroupToPerm_ofIdx_mul_apply]
-    calc
-      D.weylElement (t.simpleIndex ht i) A 1 *
-            (l.map fun j => D.weylElement (t.simpleIndex ht j) A 1).prod *
-            D.weylElement γ A s *
-            (((l.map fun j => D.weylElement (t.simpleIndex ht j) A 1).prod)⁻¹ *
-              (D.weylElement (t.simpleIndex ht i) A 1)⁻¹)
-          = D.weylElement (t.simpleIndex ht i) A 1 *
-              ((l.map fun j => D.weylElement (t.simpleIndex ht j) A 1).prod *
-                D.weylElement γ A s *
-                ((l.map fun j => D.weylElement (t.simpleIndex ht j) A 1).prod)⁻¹) *
-              (D.weylElement (t.simpleIndex ht i) A 1)⁻¹ := by group
-      _ = _ := by rw [hs₁, D.weylElement_conj_weylElement]
-
-/-- Head-deletion step for `exists_eraseIdx_weylWord_mul_weylElement` when the first inversion
-occurs at the leading letter `j`. -/
-private theorem exists_eraseIdx_weylWord_mul_weylElement_head (A : Type v) [CommRing A]
-    {γ : Fin t.numRoots} (j : Fin t.rank) (l : List (Fin t.rank))
-    (hpos : (t.simplyConnectedBase ht).IsPos
-      ((t.simplyConnectedRootDatum ht).weylGroupToPerm (t.geckWeylWordProd ht l) γ))
-    (hneg : ¬(t.simplyConnectedBase ht).IsPos
-      ((t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht j)
-        ((t.simplyConnectedRootDatum ht).weylGroupToPerm (t.geckWeylWordProd ht l) γ))) :
-    t.geckWeylWordProd ht l =
-        t.geckWeylWordProd ht (j :: l) *
-          RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) γ ∧
-      ∃ r : Fin t.rank → Aˣ,
-        ((j :: l).map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod *
-            D.weylElement γ A 1 =
-          D.torusPoints A r *
-            (l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod := by
-  let _ := t.isReduced_simplyConnectedRootDatum ht
-  let P := t.simplyConnectedRootDatum ht
-  let b := t.simplyConnectedBase ht
-  have hkey : P.weylGroupToPerm (t.geckWeylWordProd ht l) γ = t.simpleIndex ht j := by
-    by_contra hne
-    have hmem : P.weylGroupToPerm (t.geckWeylWordProd ht l) γ ∈
-        posRoots P b \ {t.simpleIndex ht j} :=
-      ⟨(mem_posRoots P b _).mpr hpos, hne⟩
-    have hjmem : t.simpleIndex ht j ∈ b.support := by
-      rw [← support_rationalBase]
-      exact simpleIndex_mem_support j
-    exact hneg ((mem_posRoots P b _).mp
-      ((reflectionPerm_mem_posRoots_diff_singleton_iff P b hjmem _).mpr hmem).1)
-  refine ⟨?_, ?_⟩
-  · rw [geckWeylWordProd_cons, ← hkey, RootPairing.weylGroup.ofIdx_weylGroupToPerm_eq_conj,
-      inv_mul_cancel_right, mul_assoc, RootPairing.weylGroup.ofIdx_mul_self, mul_one]
-  · obtain ⟨s', hs'⟩ := D.exists_unit_weylWord_conj_weylElement A l γ 1
-    rw [hkey, D.weylElement_eq_corootPoints_mul (t.simpleIndex ht j) A s',
-      ← D.simpleCorootPoints_eq_corootPoints, D.simpleCorootPoints_eq_torusPoints] at hs'
-    have hW :
-        (l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod * D.weylElement γ A 1 =
-          D.torusPoints A (D.simpleCorootParameter j A s') *
-            D.weylElement (t.simpleIndex ht j) A 1 *
-            (l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod :=
-      mul_inv_eq_iff_eq_mul.mp hs'
-    refine ⟨D.simpleReflectionTorusParameter j A (D.simpleCorootParameter j A s') *
-        D.simpleCorootParameter j A (-1), ?_⟩
-    rw [List.map_cons, List.prod_cons, mul_assoc, hW, map_mul,
-      ← D.simpleCorootPoints_eq_torusPoints j A (-1), ← D.weylElement_mul_self,
-      ← D.weylElement_conj_torusPoints]
-    group
-
-/-- **Strong-exchange shortening of Weyl words in `D.points A`.** If `l` spells a Weyl element
-sending a positive root `γ` to a negative root, multiplying the lifted word on the right by
-`n_γ(1)` deletes a letter from `l` up to a left factor in the actual torus `T_D(A)`. -/
-private theorem exists_eraseIdx_weylWord_mul_weylElement (A : Type v) [CommRing A]
-    {γ : Fin t.numRoots} (hγ : (t.simplyConnectedBase ht).IsPos γ) (l : List (Fin t.rank))
-    (h : ¬(t.simplyConnectedBase ht).IsPos
-      ((t.simplyConnectedRootDatum ht).weylGroupToPerm (t.geckWeylWordProd ht l) γ)) :
-    ∃ p < l.length,
-      t.geckWeylWordProd ht (l.eraseIdx p) =
-        t.geckWeylWordProd ht l *
-          RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) γ ∧
-      ∃ r : Fin t.rank → Aˣ,
-        (l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod * D.weylElement γ A 1 =
-          D.torusPoints A r *
-            ((l.eraseIdx p).map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod := by
-  induction l with
-  | nil => exact absurd (by simpa using hγ) h
-  | cons j l ih =>
-    rw [geckWeylWordProd_cons, RootPairing.weylGroupToPerm_ofIdx_mul_apply] at h
-    by_cases hpos : (t.simplyConnectedBase ht).IsPos
-        ((t.simplyConnectedRootDatum ht).weylGroupToPerm (t.geckWeylWordProd ht l) γ)
-    · obtain ⟨hw, r, hr⟩ := D.exists_eraseIdx_weylWord_mul_weylElement_head A j l hpos h
-      exact ⟨0, by simp, hw, r, hr⟩
-    · obtain ⟨p, hp, hw, r, hr⟩ := ih hpos
-      refine ⟨p + 1, by simpa using hp, ?_, D.simpleReflectionTorusParameter j A r, ?_⟩
-      · rw [List.eraseIdx_cons_succ, geckWeylWordProd_cons, hw, geckWeylWordProd_cons, mul_assoc]
-      · rw [List.eraseIdx_cons_succ, List.map_cons, List.prod_cons, List.map_cons, List.prod_cons,
-          mul_assoc, hr, ← D.weylElement_conj_torusPoints]
-        group
-
-/-- **Any word of simple Weyl representatives spelling `1` in the Weyl group lies in the actual
-torus `T_D(A)`**, over an arbitrary commutative ring `A` and for every valid Dynkin type. -/
-theorem weylWord_mem_range_torusPoints_of_geckWeylWordProd_eq_one (A : Type v) [CommRing A]
-    (l : List (Fin t.rank)) (hl : t.geckWeylWordProd ht l = 1) :
-    (l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod ∈ (D.torusPoints A).range := by
-  let P := t.simplyConnectedRootDatum ht
-  let b := t.simplyConnectedBase ht
-  suffices ∀ n (l' : List (Fin t.rank)), l'.length = n → t.geckWeylWordProd ht l' = 1 →
-      (l'.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod ∈ (D.torusPoints A).range from
-    this l.length l rfl hl
-  intro n
-  induction n using Nat.strong_induction_on with
-  | _ n ih =>
-    intro l' hlen hl'
-    rcases List.eq_nil_or_concat l' with rfl | ⟨l₁, k, rfl⟩
-    · exact ⟨1, by simp⟩
-    · rw [List.concat_eq_append, geckWeylWordProd_append, geckWeylWordProd_cons,
-        geckWeylWordProd_nil, mul_one] at hl'
-      have hl₁ :
-          t.geckWeylWordProd ht l₁ = RootPairing.weylGroup.ofIdx P (t.simpleIndex ht k) := by
-        calc
-          t.geckWeylWordProd ht l₁
-              = t.geckWeylWordProd ht l₁ *
-                  (RootPairing.weylGroup.ofIdx P (t.simpleIndex ht k) *
-                    RootPairing.weylGroup.ofIdx P (t.simpleIndex ht k)) := by
-                rw [RootPairing.weylGroup.ofIdx_mul_self, mul_one]
-          _ = (t.geckWeylWordProd ht l₁ * RootPairing.weylGroup.ofIdx P (t.simpleIndex ht k)) *
-                RootPairing.weylGroup.ofIdx P (t.simpleIndex ht k) := (mul_assoc _ _ _).symm
-          _ = RootPairing.weylGroup.ofIdx P (t.simpleIndex ht k) := by rw [hl', one_mul]
-      have hkpos : b.IsPos (t.simpleIndex ht k) := by
-        rw [← mem_posRoots, ← posRoots_rationalRootSystem]
-        exact simpleIndex_mem_posRoots k
-      have hkneg :
-          ¬b.IsPos (P.weylGroupToPerm (t.geckWeylWordProd ht l₁) (t.simpleIndex ht k)) := by
-        rw [hl₁, RootPairing.weylGroupToPerm_ofIdx_apply, ← mem_posRoots]
-        exact reflectionPerm_self_notMem_posRoots P b ((mem_posRoots P b _).mpr hkpos)
-      obtain ⟨p, hp, hwp, r, hr⟩ :=
-        D.exists_eraseIdx_weylWord_mul_weylElement A hkpos l₁ hkneg
-      have hlen_lt : (l₁.eraseIdx p).length < n := by
-        have hlen' := List.length_eraseIdx_add_one hp
-        rw [← hlen, List.concat_eq_append, List.length_append]
-        omega
-      obtain ⟨s, hs⟩ := ih _ hlen_lt (l₁.eraseIdx p) rfl (hwp.trans hl')
-      rw [List.concat_eq_append, List.map_append, List.prod_append, List.map_singleton,
-        List.prod_singleton, hr, ← hs, ← map_mul]
-      exact ⟨r * s, rfl⟩
-
-end AllTypes
 
 end TauCeti.DynkinType.ChevalleyDatum
