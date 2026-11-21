@@ -33,7 +33,7 @@ convention of McDuff–Salamon; the operator `du + J ∘ du ∘ j` used by Wendl
   everywhere (`TauCeti.isPseudoholomorphic_iff_forall_cauchyRiemannSection_eq_zero`).
   Differentiability cannot be dropped: Mathlib's `mfderiv` is `0` where `u` is not
   differentiable, so there `∂bar_J u` is `0` as well
-  (`TauCeti.cauchyRiemannSection_of_not_mdifferentiableAt`).
+  (`TauCeti.cauchyRiemannSection_eq_zero_of_not_mdifferentiableAt`).
 * **Naturality.** Precomposing with a map pseudoholomorphic for the source structures, such as a
   biholomorphism of Riemann surfaces or a holomorphic chart, precomposes the section with its
   derivative (`TauCeti.cauchyRiemannSection_comp_of_isPseudoholomorphicAt_right`), and
@@ -180,7 +180,7 @@ theorem cauchyRiemannSection_const (j : SmoothAlmostComplexStructure I M)
 
 /-- At a point where the map is not differentiable its Cauchy–Riemann section is `0`, because
 Mathlib's `mfderiv` is `0` there. So `cauchyRiemannSection_eq_zero_iff` needs differentiability. -/
-theorem cauchyRiemannSection_of_not_mdifferentiableAt (hu : ¬MDifferentiableAt I I' u x) :
+theorem cauchyRiemannSection_eq_zero_of_not_mdifferentiableAt (hu : ¬MDifferentiableAt I I' u x) :
     cauchyRiemannSection j J u x = 0 := by
   rw [cauchyRiemannSection_def, mfderiv_zero_of_not_mdifferentiableAt hu,
     ContinuousLinearMap.zero_comp, ContinuousLinearMap.comp_zero, add_zero, smul_zero]
