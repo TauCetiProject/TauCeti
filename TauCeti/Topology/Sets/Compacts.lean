@@ -22,7 +22,9 @@ with compact supports covariant in open embeddings. A compact set lies in one me
 directed open cover (`TopologicalSpace.Compacts.exists_subset_of_iSup_eq_top`). A compact set
 whose interior contains `K` is a compact neighbourhood of `K`
 (`TopologicalSpace.Compacts.compactNhdsOfSubsetInterior`), and open sets containing two compact sets
-together contain their union (`TopologicalSpace.Compacts.coe_sup_subset_coe_sup`). Finally, in a
+together contain their union (`TopologicalSpace.Compacts.coe_sup_subset_coe_sup`). A compact set
+covered by two open sets is the union of two compact sets, one inside each of them
+(`TopologicalSpace.Compacts.exists_sup_eq_of_subset_union`). Finally, in a
 Hausdorff space, viewing a compact set as a closed set is monotone, and so a functor
 (`TopologicalSpace.Compacts.toClosedsFunctor`).
 -/
@@ -89,6 +91,14 @@ lemma coe_sup_subset_coe_sup {K L : Compacts α} {U V : Opens α} (hK : (K : Set
     (hL : (L : Set α) ⊆ V) : ((K ⊔ L : Compacts α) : Set α) ⊆ (U ⊔ V : Opens α) := by
   rw [coe_sup, Opens.coe_sup]
   exact union_subset_union hK hL
+
+/-- In an `R₁` space, for instance a Hausdorff space, a compact set covered by two open sets is the
+union of two compact sets, one inside each of them. -/
+lemma exists_sup_eq_of_subset_union [R1Space α] {K : Compacts α} {U V : Set α} (hU : IsOpen U)
+    (hV : IsOpen V) (h : (K : Set α) ⊆ U ∪ V) :
+    ∃ K₁ K₂ : Compacts α, (K₁ : Set α) ⊆ U ∧ (K₂ : Set α) ⊆ V ∧ K₁ ⊔ K₂ = K := by
+  obtain ⟨K₁, K₂, hK₁, hK₂, h₁, h₂, hK⟩ := K.isCompact.binary_compact_cover hU hV h
+  exact ⟨⟨K₁, hK₁⟩, ⟨K₂, hK₂⟩, h₁, h₂, Compacts.ext hK.symm⟩
 
 lemma toCloseds_mono [T2Space α] : Monotone (Compacts.toCloseds (α := α)) :=
   fun _ _ h ↦ h
