@@ -39,8 +39,7 @@ Small real examples for `TauCeti.ConvexLifting.FiniteModel`, its coordinate maps
   height `v = -3/4` is feasible.
 * All three models attain the minimum `-1` at the lifts of `(-1, 0)`.
 * A negative weight breaks separable projection: for the residual `-x` written as `-1` times the
-  component `x`, the lift admits `(x, y) = (-1, 0)`, whose projection violates `-x ≤ 0`. With no
-  components every decomposed residual vanishes and every added budget row reads `0 ≤ 0`.
+  component `x`, the lift admits `(x, y) = (-1, 0)`, whose projection violates `-x ≤ 0`.
 -/
 
 public section
@@ -83,11 +82,15 @@ theorem affineArgument_one_one_zero :
     affineArgument ![1] ![1] 0 ((![-1], ![0]) : Point 1 1) = -1 := by
   norm_num [affineArgument_apply]
 
+namespace FiniteModel
+
 /-- The objective with coefficients `c1 = (2)` and `c2 = (-3)` equals `-2` at `(x, z) = (-1, 0)`.
 -/
 theorem objective_two_neg_three {l r : ℕ} (d : FiniteModel 1 1 l r) (hc1 : d.c1 = ![2])
     (hc2 : d.c2 = ![-3]) : d.objective (![-1], ![0]) = -2 := by
   norm_num [objective_apply, hc1, hc2]
+
+end FiniteModel
 
 /-! ### The running mixed model -/
 
@@ -192,11 +195,10 @@ theorem mem_mixedSquareNormalized_feasibleOn_iff (c : ℝ) (z : Point (1 + 1) 1)
     z ∈ (mixedSquareNormalized c).feasibleOn univ ↔
       project z ∈ mixedSquareModel.feasibleOn univ ∧
         height z 0 = (project z).1 0 + (project z).2 0 + c := by
-  rw [mixedSquareNormalized, feasibleOn_eq_feasibleWith, normalizedLift_lo, normalizedLift_hi,
-    ← preimage_univ (f := (project : Point (1 + 1) 1 → Point 1 1)),
-    mem_normalizedLift_feasibleWith_iff mixedSquareModel univ _ 1 1 (fun _ => c)
-      (fun _ u => (u - c) ^ 2 - 1) 1 (mixedSquareModel_g_eq c),
-    ← feasibleOn_eq_feasibleWith, Fin.forall_fin_one, affineArgument_apply]
+  have h := mem_normalizedLift_feasibleOn_iff mixedSquareModel univ 1 1 (fun _ => c)
+    (fun _ u => (u - c) ^ 2 - 1) 1 (mixedSquareModel_g_eq c) z
+  rw [preimage_univ, Fin.forall_fin_one, affineArgument_apply] at h
+  rw [mixedSquareNormalized, h]
   simp
 
 /-- At `(x, z, u) = (-1, 0, -1)` the added row `-x - z + u` of `mixedSquareNormalized 0`
@@ -315,12 +317,11 @@ def mixedSquareSeparable : FiniteModel (1 + 1 + 1) 1 1 (2 + (1 + 1) + 1) :=
 theorem insertHeight_mem_mixedSquareSeparable_feasibleOn {z : Point (1 + 1) 1}
     (hz : z ∈ (mixedSquareNormalized 0).feasibleOn univ) {v : ℝ} (hv : v = height z 0 ^ 2 - 1) :
     insertHeight z ![v] ∈ mixedSquareSeparable.feasibleOn univ := by
-  rw [feasibleOn_eq_feasibleWith] at hz
-  have key := insertHeight_component_mem_separableLift_feasibleWith (mixedSquareNormalized 0) univ
+  have key := insertHeight_component_mem_separableLift_feasibleOn (mixedSquareNormalized 0) univ
     (fun _ z => height z 0 ^ 2 - 1) 1 mixedSquareNormalized_g_eq hz
   have hv' : ![v] = fun _ => height z 0 ^ 2 - 1 := funext fun j => by fin_cases j; simp [hv]
   rw [preimage_univ, ← hv'] at key
-  rwa [mixedSquareSeparable, feasibleOn_eq_feasibleWith, separableLift_lo, separableLift_hi]
+  exact key
 
 /-- The objective of `mixedSquareSeparable` is `x + z`: the added argument and height
 coordinates have zero objective coefficients. -/
@@ -357,7 +358,7 @@ theorem isMinOn_mixedSquareSeparable :
   rw [mixedSquareSeparable, separableLift_objective, Function.comp_apply, project_insertHeight,
     hval]
 
-/-! ### Negative weights and empty component families -/
+/-! ### Negative weights -/
 
 /-- A model with one continuous coordinate `x`, no integer coordinates, no affine rows and the
 residual `-x ≤ 0`, which is `-1` times the component `x`. -/
@@ -382,8 +383,7 @@ theorem negativeWeightModel_g_eq (i : Fin 1) (p : Point 1 0) :
 theorem mem_negativeWeightModel_separableLift_feasibleOn :
     insertHeight ((![-1], ![]) : Point 1 0) ![0] ∈
       (negativeWeightModel.separableLift (fun (_ : Fin 1) p => p.1 0) (-1)).feasibleOn univ := by
-  rw [feasibleOn_eq_feasibleWith, separableLift_lo, separableLift_hi, mem_feasibleWith_iff,
-    separableLift_nonlinear_rows_iff, separableLift_affine_rows_iff]
+  rw [mem_feasibleOn_iff, separableLift_nonlinear_rows_iff, separableLift_affine_rows_iff]
   simp [negativeWeightModel, -height_apply, funext_iff]
 
 /-- The point `x = -1` violates the residual `-x ≤ 0` of `negativeWeightModel`. -/
@@ -401,22 +401,5 @@ theorem image_project_negativeWeightModel_separableLift_ne :
   intro h
   have hmem := mem_negativeWeightModel_separableLift_feasibleOn
   exact notMem_negativeWeightModel_feasibleOn (h ▸ ⟨_, hmem, project_insertHeight _ _⟩)
-
-/-- With no components, a residual decomposed as a weighted sum of components vanishes. -/
-theorem g_eq_zero_of_eq_sum_fin_zero {n m l r : ℕ} {d : FiniteModel n m l r}
-    {component : Fin 0 → Point n m → ℝ} {weight : Fin l → Fin 0 → ℝ}
-    (hg : ∀ i x, d.g i x = ∑ j, weight i j * component j x) (i : Fin l) (x : Point n m) :
-    d.g i x = 0 := by
-  simp [hg]
-
-/-- With no components, every added budget row of the separable lift reads `0 ≤ 0`. -/
-theorem separableLift_row_budget_fin_zero {n m l r : ℕ} (d : FiniteModel n m l r)
-    (component : Fin 0 → Point n m → ℝ) (weight : Fin l → Fin 0 → ℝ) (i : Fin l)
-    (z : Point (n + 0) m) :
-    (∑ a, (d.separableLift component weight).A (i.natAdd r) a * z.1 a) +
-        (∑ s, (d.separableLift component weight).B (i.natAdd r) s * z.2 s) = 0 ∧
-      (d.separableLift component weight).rhs (i.natAdd r) = 0 := by
-  rw [separableLift_row_budget, separableLift_rhs_budget]
-  simp
 
 end TauCeti.ConvexLifting
