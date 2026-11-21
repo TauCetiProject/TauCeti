@@ -38,7 +38,8 @@ at `Spec L`.
 
 ## Main declarations
 
-* `TauCeti.AlgebraicGeometry.relativePicardFiberDegree_mk_eq_eulerDegree`: at a point of
+* `TauCeti.AlgebraicGeometry.relativePicardFiberDegree_mk_eq_eulerDegree`,
+  `TauCeti.AlgebraicGeometry.relativePicardFiberDegree_eq_eulerDegree`: at a point of
   `Spec L`, the fibre degree of a class on `X_L` is its degree over `L`;
 * `TauCeti.AlgebraicGeometry.mem_relativePicardDegreeZeroSubfunctor_obj_iff_eulerDegree_eq_zero`:
   a section at `Spec L` lies in `Pic⁰_{X/S}` exactly when its class on `X_L` has degree zero.
@@ -106,6 +107,24 @@ theorem relativePicardFiberDegree_mk_eq_eulerDegree {Ω : Type u} [Field Ω]
   exact (relativePicardFiberDegree_mk f (T := op (Over.mk g)) ξ a).trans
     (LineBundleClass.eulerDegree_pullback H a)
 
+/-- **At a field-valued point, every fibre degree of a section is its degree.** For `f`
+quasi-compact and quasi-separated and a point `g : Spec L ⟶ S`, the fibre degree of a section of
+`Pic(X_L) / Pic(Spec L) = Pic(X_L)` at any point `Spec Ω ⟶ Spec L` is the degree over `L` of its
+line-bundle class on `X_L = Spec L ×_S X`. -/
+theorem relativePicardFiberDegree_eq_eulerDegree {Ω : Type u} [Field Ω]
+    (ξ : Spec (.of Ω) ⟶ Spec (.of L)) (c : (relativePicardPresheaf f).obj (op (Over.mk g))) :
+    relativePicardFiberDegree f (T := op (Over.mk g)) ξ c =
+      letI : (pullback g f).Over (Spec (.of L)) := ⟨pullback.fst g f⟩
+      haveI : Subsingleton (LineBundleClass (op (Over.mk g)).unop.left) :=
+        inferInstanceAs (Subsingleton (LineBundleClass (Spec (.of L))))
+      LineBundleClass.eulerDegree L (X := pullback g f)
+        (relativePicardPresheafObjMulEquiv f (op (Over.mk g)) c) := by
+  have : Subsingleton (LineBundleClass (op (Over.mk g)).unop.left) :=
+    inferInstanceAs (Subsingleton (LineBundleClass (Spec (.of L))))
+  obtain ⟨a, rfl⟩ := (relativePicardPresheafObjMulEquiv f (op (Over.mk g))).symm.surjective c
+  rw [MulEquiv.apply_symm_apply, relativePicardPresheafObjMulEquiv_symm_apply]
+  exact relativePicardFiberDegree_mk_eq_eulerDegree f g ξ a
+
 /-- **`Pic⁰_{X/S}` at a field-valued point.** For `f` quasi-compact and quasi-separated and a
 point `g : Spec L ⟶ S`, a section of `Pic(X_L) / Pic(Spec L) = Pic(X_L)` at `g`, with
 `X_L = Spec L ×_S X`, lies in `Pic⁰_{X/S}` exactly when its line-bundle class on `X_L` has degree
@@ -118,20 +137,8 @@ theorem mem_relativePicardDegreeZeroSubfunctor_obj_iff_eulerDegree_eq_zero
         inferInstanceAs (Subsingleton (LineBundleClass (Spec (.of L))))
       LineBundleClass.eulerDegree L (X := pullback g f)
         (relativePicardPresheafObjMulEquiv f (op (Over.mk g)) c) = 0 := by
-  have : Subsingleton (LineBundleClass (op (Over.mk g)).unop.left) :=
-    inferInstanceAs (Subsingleton (LineBundleClass (Spec (.of L))))
-  obtain ⟨a, rfl⟩ := (relativePicardPresheafObjMulEquiv f (op (Over.mk g))).symm.surjective c
-  -- Every fibre degree of `a` is its degree over `L`.
-  have key (Ω : Type u) [Field Ω] (ξ : Spec (.of Ω) ⟶ Spec (.of L)) :
-      relativePicardFiberDegree f ξ
-          ((relativePicardPresheafObjMulEquiv f (op (Over.mk g))).symm a) =
-        letI : (pullback g f).Over (Spec (.of L)) := ⟨pullback.fst g f⟩
-        LineBundleClass.eulerDegree L (X := pullback g f) a :=
-    (congrArg (relativePicardFiberDegree f ξ)
-      (relativePicardPresheafObjMulEquiv_symm_apply f _ a)).trans
-        (relativePicardFiberDegree_mk_eq_eulerDegree f g ξ a)
-  rw [mem_relativePicardDegreeZeroSubfunctor_obj_iff, MulEquiv.apply_symm_apply]
-  simp only [key]
+  simp only [mem_relativePicardDegreeZeroSubfunctor_obj_iff,
+    relativePicardFiberDegree_eq_eulerDegree]
   exact ⟨fun h ↦ h (AlgebraicClosure L)
     (Spec.map (CommRingCat.ofHom (algebraMap L (AlgebraicClosure L)))), fun h _ _ _ _ ↦ h⟩
 
