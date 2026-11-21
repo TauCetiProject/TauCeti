@@ -260,7 +260,8 @@ private lemma alexanderWhitneyTerm_D (n r s : ℕ) (h : r + s = n) :
   have hrs : r + 1 + (s + 1) = n + 2 := by omega
   conv_rhs => rw [← Fin.sum_congr' _ hrs, Fin.sum_univ_add]
   rw [Fin.sum_univ_castSucc (n := r + 1), Fin.sum_univ_succ (n := s + 1)]
-  simp only [SimplexCategory.δ_last_comp_subinterval, SimplexCategory.δ_zero_comp_subinterval]
+  simp only [TauCeti.SimplexCategory.δ_last_comp_subinterval,
+    TauCeti.SimplexCategory.δ_zero_comp_subinterval]
   rw [smul_add, Finset.smul_sum, add_add_add_comm]
   -- the two sums match termwise, and the two remaining terms cancel
   have key {M : Type _} [AddCommGroup M] {P P' a b Q Q' : M} (h₁ : P = P') (h₂ : Q = Q')
@@ -270,14 +271,15 @@ private lemma alexanderWhitneyTerm_D (n r s : ℕ) (h : r + s = n) :
   refine key ?_ ?_ ?_
   · refine Finset.sum_congr rfl fun i _ ↦ ?_
     have := i.isLt
-    rw [SimplexCategory.δ_comp_subinterval (j := 0) i.castSucc
+    rw [TauCeti.SimplexCategory.δ_comp_subinterval (j := 0) i.castSucc
         (Fin.cast (by omega) (Fin.castAdd (s + 1) i)) (by simp),
-      SimplexCategory.subinterval_comp_δ_of_le (j := r) _ (by simp; omega)]
+      TauCeti.SimplexCategory.subinterval_comp_δ_of_le (j := r) _ (by simp; omega)]
     simp
   · refine Finset.sum_congr rfl fun j _ ↦ ?_
-    rw [SimplexCategory.δ_comp_subinterval (j := r) j.succ
+    rw [TauCeti.SimplexCategory.δ_comp_subinterval (j := r) j.succ
         (Fin.cast (by omega) (Fin.natAdd (r + 1) j)) (by simp; omega),
-      SimplexCategory.subinterval_comp_δ_of_lt (j := 0) (q := r) _ (by simp; omega), smul_smul]
+      TauCeti.SimplexCategory.subinterval_comp_δ_of_lt (j := 0) (q := r) _ (by simp; omega),
+      smul_smul]
     congr 1
     simp [pow_add]
   · rw [smul_smul, ← add_smul]

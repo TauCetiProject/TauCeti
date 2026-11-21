@@ -33,54 +33,6 @@ namespace SimplexCategory
 lemma val_subinterval_toOrderHom_apply {n : ℕ} (j l : ℕ) (hjl : j + l ≤ n) (i : Fin (l + 1)) :
     ((subinterval j l hjl).toOrderHom i : ℕ) = i + j := (rfl)
 
-/-- A face of a subinterval is a subinterval of the corresponding face: the `i`-th face of the
-subinterval `j, …, j + q + 1`, which omits its vertex `k = j + i`, is the subinterval `j, …, j + q`
-followed by the coface map skipping `k`. -/
-lemma δ_comp_subinterval {n j q : ℕ} (i : Fin (q + 2)) (k : Fin (n + 2))
-    (hik : j + (i : ℕ) = k) (h : j + (q + 1) ≤ n + 1) :
-    δ i ≫ subinterval j (q + 1) h = subinterval j q (by omega) ≫ δ k := by
-  ext l : 3
-  rw [Fin.ext_iff]
-  simp [δ, Fin.succAbove, Fin.lt_def, apply_ite Fin.val]
-  split_ifs <;> omega
-
-/-- The last face of the subinterval `j, …, j + q + 1` is the subinterval `j, …, j + q`. -/
-@[simp]
-lemma δ_last_comp_subinterval {n j q : ℕ} (h : j + (q + 1) ≤ n) :
-    δ (Fin.last (q + 1)) ≫ subinterval j (q + 1) h = subinterval j q (by omega) := by
-  ext l : 3
-  rw [Fin.ext_iff]
-  simp [δ]
-
-/-- The zeroth face of the subinterval starting at `j` is the subinterval starting at `j + 1`. -/
-@[simp]
-lemma δ_zero_comp_subinterval {n j q : ℕ} (h : j + (q + 1) ≤ n) :
-    δ 0 ≫ subinterval j (q + 1) h = subinterval (j + 1) q (by omega) := by
-  ext i : 3
-  rw [Fin.ext_iff]
-  simp [δ]
-  omega
-
-/-- Deleting a vertex before a subinterval shifts the subinterval. -/
-@[simp]
-lemma subinterval_comp_δ_of_le {n j q : ℕ} (k : Fin (n + 2)) (hk : (k : ℕ) ≤ j)
-    (h : j + q ≤ n) :
-    subinterval j q h ≫ δ k = subinterval (j + 1) q (by omega) := by
-  ext l : 3
-  rw [Fin.ext_iff]
-  simp [δ, Fin.succAbove, Fin.lt_def, apply_ite Fin.val]
-  split_ifs <;> omega
-
-/-- Deleting a vertex after a subinterval does not change it. -/
-@[simp]
-lemma subinterval_comp_δ_of_lt {n j q : ℕ} (k : Fin (n + 2)) (hk : j + q < k)
-    (h : j + q ≤ n) :
-    subinterval j q h ≫ δ k = subinterval j q (by omega) := by
-  ext l : 3
-  rw [Fin.ext_iff]
-  simp [δ, Fin.succAbove, Fin.lt_def, apply_ite Fin.val]
-  omega
-
 /-- A subinterval containing two consecutive vertices `i` and `i + 1` is not injective after the
 codegeneracy `σ i`, which identifies them. -/
 lemma not_mono_subinterval_comp_σ {n j l : ℕ} (h : j + l ≤ n + 1) (i : Fin (n + 1))
@@ -99,6 +51,61 @@ end SimplexCategory
 namespace TauCeti.SimplexCategory
 
 open _root_.SimplexCategory
+
+/-- The coface map `δ k` fixes the vertices before `k` and shifts the others up by one. -/
+private lemma val_δ_toOrderHom_apply {n : ℕ} (k : Fin (n + 2)) (x : Fin (n + 1)) :
+    ((δ k).toOrderHom x : ℕ) = if (x : ℕ) < k then (x : ℕ) else x + 1 := by
+  rw [show (δ k).toOrderHom x = k.succAbove x from δ_apply k x]
+  split_ifs with hx
+  · rw [Fin.succAbove_of_castSucc_lt _ _ hx, Fin.val_castSucc]
+  · rw [Fin.succAbove_of_le_castSucc _ _ (not_lt.1 hx), Fin.val_succ]
+
+/-- A face of a subinterval is a subinterval of the corresponding face: the `i`-th face of the
+subinterval `j, …, j + q + 1`, which omits its vertex `k = j + i`, is the subinterval `j, …, j + q`
+followed by the coface map skipping `k`. -/
+lemma δ_comp_subinterval {n j q : ℕ} (i : Fin (q + 2)) (k : Fin (n + 2))
+    (hik : j + (i : ℕ) = k) (h : j + (q + 1) ≤ n + 1) :
+    δ i ≫ subinterval j (q + 1) h = subinterval j q (by omega) ≫ δ k := by
+  ext l : 3
+  rw [Fin.ext_iff]
+  simp only [comp_toOrderHom, OrderHom.comp_coe, Function.comp_apply, val_δ_toOrderHom_apply,
+    val_subinterval_toOrderHom_apply, ← hik, add_comm j, Nat.add_lt_add_iff_right]
+  split_ifs <;> omega
+
+/-- Deleting a vertex before a subinterval shifts the subinterval. -/
+@[simp]
+lemma subinterval_comp_δ_of_le {n j q : ℕ} (k : Fin (n + 2)) (hk : (k : ℕ) ≤ j)
+    (h : j + q ≤ n) :
+    subinterval j q h ≫ δ k = subinterval (j + 1) q (by omega) := by
+  ext l : 3
+  rw [Fin.ext_iff]
+  simp [val_δ_toOrderHom_apply, show ¬(l : ℕ) + j < k by omega]
+  omega
+
+/-- Deleting a vertex after a subinterval does not change it. -/
+@[simp]
+lemma subinterval_comp_δ_of_lt {n j q : ℕ} (k : Fin (n + 2)) (hk : j + q < k)
+    (h : j + q ≤ n) :
+    subinterval j q h ≫ δ k = subinterval j q (by omega) := by
+  ext l : 3
+  rw [Fin.ext_iff]
+  simp [val_δ_toOrderHom_apply]
+  omega
+
+/-- The last face of the subinterval `j, …, j + q + 1` is the subinterval `j, …, j + q`. -/
+@[simp]
+lemma δ_last_comp_subinterval {n j q : ℕ} (h : j + (q + 1) ≤ n) :
+    δ (Fin.last (q + 1)) ≫ subinterval j (q + 1) h = subinterval j q (by omega) := by
+  obtain ⟨n, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+  rw [δ_comp_subinterval _ ⟨j + q + 1, by omega⟩ (by simp; omega),
+    subinterval_comp_δ_of_lt _ (by simp)]
+
+/-- The zeroth face of the subinterval starting at `j` is the subinterval starting at `j + 1`. -/
+@[simp]
+lemma δ_zero_comp_subinterval {n j q : ℕ} (h : j + (q + 1) ≤ n) :
+    δ 0 ≫ subinterval j (q + 1) h = subinterval (j + 1) q (by omega) := by
+  obtain ⟨n, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+  rw [δ_comp_subinterval _ ⟨j, by omega⟩ (by simp), subinterval_comp_δ_of_le (j := j) _ le_rfl]
 
 /-- A subinterval of a subinterval is a subinterval: the vertices `i, …, i + l` of the
 subinterval `j, …, j + m` are the vertices `j + i, …, j + i + l`. -/
