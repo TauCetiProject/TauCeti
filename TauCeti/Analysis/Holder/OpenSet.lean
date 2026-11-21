@@ -975,16 +975,14 @@ theorem norm_inclusionSuccLOfHolderOnWith_le (C : ℝ≥0)
 private theorem holderOnWith_iteratedFDeriv_extend_succ (hconv : Convex ℝ (Ω : Set E))
     (hα : α ≤ 1) (f : CkHolderSpaceOn (k + 1) α Ω F) :
     HolderOnWith (2 * ‖f‖₊) α (_root_.iteratedFDeriv ℝ k f.extend) Ω := by
-  refine (show HolderOnWith (‖f.iteratedFDeriv (Fin.last (k + 1))‖₊ +
-      2 * ‖f.iteratedFDeriv (Fin.last k).castSucc‖₊) α _ (Ω : Set E) from
-    f.holderOnWith_iteratedFDeriv_of_lt f.extend_apply hconv hα k.lt_succ_self).mono_const ?_
+  refine (f.holderOnWith_iteratedFDeriv_of_lt f.extend_apply hconv hα k.lt_succ_self).mono_const ?_
   have hsum : ∑ i : Fin (k + 2), ‖f.iteratedFDeriv i‖ ≤ ‖f‖ := by
     rw [norm_eq]
     exact le_add_of_nonneg_right (NNReal.coe_nonneg _)
-  rw [Fin.sum_univ_castSucc, Fin.sum_univ_castSucc] at hsum
-  have hk := norm_iteratedFDeriv_le f (Fin.last k).castSucc
-  have h0 : 0 ≤ ∑ i : Fin k, ‖f.iteratedFDeriv i.castSucc.castSucc‖ :=
-    Finset.sum_nonneg fun _ _ ↦ norm_nonneg _
+  have h2 : ‖f.iteratedFDeriv ⟨k + 1, by omega⟩‖ + ‖f.iteratedFDeriv ⟨k, by omega⟩‖ ≤ ‖f‖ :=
+    (Finset.add_le_sum (fun _ _ ↦ norm_nonneg _) (Finset.mem_univ _) (Finset.mem_univ _)
+      (by simp)).trans hsum
+  have hk := norm_iteratedFDeriv_le f ⟨k, by omega⟩
   rw [← NNReal.coe_le_coe]
   push_cast
   linarith

@@ -26,9 +26,12 @@ domains.
 
 ## Main declarations
 
+* `Set.IsLipschitzDomain.exists_holderOnWith_of_norm_fderiv_le`: there is a constant `C`,
+  depending only on `Ω` and `α`, such that every map with `‖g‖ ≤ M` and `‖fderiv ℝ g‖ ≤ L` on
+  `Ω` is `α`-Hölder on `Ω` with constant `C (L + M)`.
 * `TauCeti.CkHolderSpaceOn.exists_holderOnWith_iteratedFDeriv_of_isLipschitzDomain`: there is a
-  constant `C`, depending on `Ω`, `α`, `k` and `F`, such that every derivative field through
-  order `k` of every `f ∈ C^{k,α}(Ω)` is `α`-Hölder on `Ω` with constant `C ‖f‖`.
+  constant `C`, depending only on `Ω` and `α`, such that every derivative field through order `k`
+  of every `f ∈ C^{k,α}(Ω)` is `α`-Hölder on `Ω` with constant `C ‖f‖`.
 * `TauCeti.CkHolderSpaceOn.inclusionSuccLOfIsLipschitzDomain`: the inclusion
   `C^{k+1,α}(Ω) → C^{k,α}(Ω)` as a continuous linear map, built by
   `TauCeti.CkHolderSpaceOn.inclusionSuccLOfHolderOnWith` from that constant.
@@ -46,71 +49,86 @@ noncomputable section
 open TopologicalSpace
 open scoped NNReal
 
+universe u v w
+
+variable {α : ℝ≥0} {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] [ProperSpace E]
+  {E' : Type w} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+
+namespace Set.IsLipschitzDomain
+
+/-- On a bounded Lipschitz domain and for `α ≤ 1`, there is a constant `C`, depending only on `Ω`
+and `α`, such that every map `g` differentiable on `Ω` with `‖g‖ ≤ M` and `‖fderiv ℝ g‖ ≤ L` on
+`Ω` is `α`-Hölder on `Ω` with constant `C (L + M)`. On a convex set the mean value inequality
+gives this directly (`Convex.lipschitzOnWith_of_nnNorm_fderiv_le` and
+`LipschitzOnWith.holderOnWith_of_norm_le`). -/
+theorem exists_holderOnWith_of_norm_fderiv_le {Ω : Set E} (hΩ : Ω.IsLipschitzDomain E')
+    (hb : Bornology.IsBounded Ω) (hα : α ≤ 1) :
+    ∃ C : ℝ≥0, ∀ {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] {g : E → G} {M L : ℝ≥0},
+      (∀ x ∈ Ω, DifferentiableAt ℝ g x) → (∀ x ∈ Ω, ‖g x‖ ≤ M) →
+        (∀ x ∈ Ω, ‖fderiv ℝ g x‖ ≤ L) → HolderOnWith (C * (L + M)) α g Ω := by
+  obtain ⟨C₀, δ, hδ, hchain⟩ := hΩ.exists_segment_chain hb
+  refine ⟨C₀ * δ ^ (1 - (α : ℝ)) + 2 * δ ^ (-(α : ℝ)), fun {G} _ _ g M L hdiff hval hder ↦ ?_⟩
+  -- Lipschitz at scales below `δ`, by the mean value inequality along a chain of segments.
+  have hnear : ∀ x ∈ Ω, ∀ y ∈ Ω, dist x y < δ →
+      dist (g x) (g y) ≤ ((L * C₀ : ℝ≥0) : ℝ) * dist x y ^ ((1 : ℝ≥0) : ℝ) := by
+    intro x hx y hy hxy
+    obtain ⟨p, q, h1, h2, h3, hlen⟩ := hchain x hx y hy hxy
+    rw [dist_comm, dist_eq_norm, NNReal.coe_one, Real.rpow_one, NNReal.coe_mul, mul_assoc]
+    exact (TauCeti.norm_image_sub_le_of_norm_fderiv_le_of_segment_subset hdiff hder h1 h2
+      h3).trans (mul_le_mul_of_nonneg_left hlen L.coe_nonneg)
+  have hfar : ∀ x ∈ Ω, ∀ y ∈ Ω, dist (g x) (g y) ≤ ((2 * M : ℝ≥0) : ℝ) := by
+    intro x hx y hy
+    rw [dist_eq_norm]
+    push_cast
+    linarith [norm_sub_le (g x) (g y), hval x hx, hval y hy]
+  refine (HolderOnWith.of_le_of_dist_le hnear hfar hα hδ).mono_const ?_
+  rw [← NNReal.coe_le_coe]
+  push_cast
+  nlinarith [mul_nonneg (mul_nonneg M.coe_nonneg C₀.coe_nonneg)
+      (Real.rpow_nonneg δ.coe_nonneg (1 - (α : ℝ))),
+    mul_nonneg L.coe_nonneg (Real.rpow_nonneg δ.coe_nonneg (-(α : ℝ)))]
+
+end Set.IsLipschitzDomain
+
 namespace TauCeti
 
 namespace CkHolderSpaceOn
 
-universe u v w
+variable {k : ℕ} {Ω : Opens E} {F : Type v} [NormedAddCommGroup F] [NormedSpace ℝ F]
 
-variable {k : ℕ} {α : ℝ≥0} {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [ProperSpace E] {Ω : Opens E} {F : Type v} [NormedAddCommGroup F] [NormedSpace ℝ F]
-  {E' : Type w} [NormedAddCommGroup E'] [NormedSpace ℝ E']
-
-/-- On a bounded Lipschitz domain and for `α ≤ 1`, there is a constant `C`, depending on `Ω`, `α`,
-`k` and `F`, such that for every `f ∈ C^{k,α}(Ω)` and every function `g` agreeing with `f` on `Ω`,
+/-- On a bounded Lipschitz domain and for `α ≤ 1`, there is a constant `C`, depending only on `Ω`
+and `α`, such that for every `f ∈ C^{k,α}(Ω)` and every function `g` agreeing with `f` on `Ω`,
 each iterated derivative of `g` through order `k` is `α`-Hölder on `Ω` with constant `C ‖f‖`.
 Compare `TauCeti.CkHolderSpaceOn.holderOnWith_iteratedFDeriv_of_le`, with constant `3 ‖f‖`, on a
 convex open set. -/
 theorem exists_holderOnWith_iteratedFDeriv_of_isLipschitzDomain
     (hΩ : (Ω : Set E).IsLipschitzDomain E') (hb : Bornology.IsBounded (Ω : Set E))
     (hα : α ≤ 1) :
-    ∃ C : ℝ≥0, ∀ (f : CkHolderSpaceOn k α Ω F) {g : E → F}, (∀ x : Ω, g x = f x) →
-      ∀ {j : ℕ}, j ≤ k → HolderOnWith (C * ‖f‖₊) α (_root_.iteratedFDeriv ℝ j g) Ω := by
-  obtain ⟨C₀, δ, hδ, hchain⟩ := hΩ.exists_segment_chain hb
-  refine ⟨C₀ * δ ^ (1 - (α : ℝ)) + 2 * δ ^ (-(α : ℝ)) + 1, fun f g hg j hj ↦ ?_⟩
-  have hf : (‖f‖₊ : ℝ) = ‖f‖ := coe_nnNorm f
+    ∃ C : ℝ≥0, ∀ {k : ℕ} {F : Type v} [NormedAddCommGroup F] [NormedSpace ℝ F]
+      (f : CkHolderSpaceOn k α Ω F) {g : E → F}, (∀ x : Ω, g x = f x) →
+        ∀ {j : ℕ}, j ≤ k → HolderOnWith (C * ‖f‖₊) α (_root_.iteratedFDeriv ℝ j g) Ω := by
+  obtain ⟨C, hC⟩ := hΩ.exists_holderOnWith_of_norm_fderiv_le hb hα
+  refine ⟨2 * C + 1, fun {k F} _ _ f g hg j hj ↦ ?_⟩
   rcases hj.eq_or_lt with rfl | hj
   · -- The top derivative: the Hölder seminorm of the top field is at most `‖f‖`.
     refine (f.holderOnWith_iteratedFDeriv hg).mono_const ?_
     rw [← NNReal.coe_le_coe]
     push_cast
-    have hC : 0 ≤ (C₀ : ℝ) * (δ : ℝ) ^ (1 - (α : ℝ)) + 2 * (δ : ℝ) ^ (-(α : ℝ)) := by positivity
-    nlinarith [f.nnHolderNorm_iteratedFDeriv_le, mul_nonneg hC (norm_nonneg f)]
-  -- Below the top order: the next field bounds the derivative of this one by `‖f‖`.
+    nlinarith [f.nnHolderNorm_iteratedFDeriv_le, mul_nonneg C.coe_nonneg (norm_nonneg f)]
+  -- Below the top order: the field and the next one are bounded by `‖f‖`.
   have hcd := f.contDiffOn hg
-  have hdiff : ∀ x ∈ (Ω : Set E), DifferentiableAt ℝ (_root_.iteratedFDeriv ℝ j g) x :=
-    fun x hx ↦ (hcd.contDiffAt (Ω.isOpen.mem_nhds hx)).differentiableAt_iteratedFDeriv
-      (by exact_mod_cast hj)
-  have hder : ∀ x ∈ (Ω : Set E), ‖fderiv ℝ (_root_.iteratedFDeriv ℝ j g) x‖ ≤ ‖f‖ := by
-    intro x hx
-    rw [norm_fderiv_iteratedFDeriv]
-    exact (f.norm_iteratedFDeriv_apply_le_norm_iteratedFDeriv hg ⟨j + 1, by omega⟩
-      ⟨x, hx⟩).trans (f.norm_iteratedFDeriv_le _)
-  have hval : ∀ x ∈ (Ω : Set E), ‖_root_.iteratedFDeriv ℝ j g x‖ ≤ ‖f‖ := fun x hx ↦
-    (f.norm_iteratedFDeriv_apply_le_norm_iteratedFDeriv hg ⟨j, by omega⟩ ⟨x, hx⟩).trans
-      (f.norm_iteratedFDeriv_le _)
-  -- Lipschitz at scales below `δ`, by the mean value inequality along a chain of segments.
-  have hnear : ∀ x ∈ (Ω : Set E), ∀ y ∈ (Ω : Set E), dist x y < δ →
-      dist (_root_.iteratedFDeriv ℝ j g x) (_root_.iteratedFDeriv ℝ j g y) ≤
-        ((‖f‖₊ * C₀ : ℝ≥0) : ℝ) * dist x y ^ ((1 : ℝ≥0) : ℝ) := by
-    intro x hx y hy hxy
-    obtain ⟨p, q, h1, h2, h3, hlen⟩ := hchain x hx y hy hxy
-    rw [dist_comm, dist_eq_norm, NNReal.coe_one, Real.rpow_one, NNReal.coe_mul, hf, mul_assoc]
-    exact (norm_image_sub_le_of_norm_fderiv_le_of_segment_subset hdiff hder h1 h2 h3).trans
-      (mul_le_mul_of_nonneg_left hlen (norm_nonneg f))
-  have hfar : ∀ x ∈ (Ω : Set E), ∀ y ∈ (Ω : Set E),
-      dist (_root_.iteratedFDeriv ℝ j g x) (_root_.iteratedFDeriv ℝ j g y) ≤
-        ((2 * ‖f‖₊ : ℝ≥0) : ℝ) := by
-    intro x hx y hy
-    rw [dist_eq_norm, NNReal.coe_mul, hf]
-    push_cast
-    linarith [norm_sub_le (_root_.iteratedFDeriv ℝ j g x) (_root_.iteratedFDeriv ℝ j g y),
-      hval x hx, hval y hy]
-  refine (HolderOnWith.of_le_of_dist_le hnear hfar hα hδ).mono_const ?_
+  refine (hC (M := ‖f‖₊) (L := ‖f‖₊)
+    (fun x hx ↦ (hcd.contDiffAt (Ω.isOpen.mem_nhds hx)).differentiableAt_iteratedFDeriv
+      (by exact_mod_cast hj))
+    (fun x hx ↦ (f.norm_iteratedFDeriv_apply_le_norm_iteratedFDeriv hg ⟨j, by omega⟩
+      ⟨x, hx⟩).trans (f.norm_iteratedFDeriv_le _))
+    (fun x hx ↦ by
+      rw [norm_fderiv_iteratedFDeriv]
+      exact (f.norm_iteratedFDeriv_apply_le_norm_iteratedFDeriv hg ⟨j + 1, by omega⟩
+        ⟨x, hx⟩).trans (f.norm_iteratedFDeriv_le _))).mono_const ?_
   rw [← NNReal.coe_le_coe]
   push_cast
-  nlinarith [norm_nonneg f, (δ ^ (1 - (α : ℝ)) : ℝ≥0).coe_nonneg,
-    (δ ^ (-(α : ℝ)) : ℝ≥0).coe_nonneg, C₀.coe_nonneg]
+  nlinarith [norm_nonneg f]
 
 /-- On a bounded Lipschitz domain and for `α ≤ 1`, the inclusion `C^{k+1,α}(Ω) → C^{k,α}(Ω)`, as
 a continuous linear map. Compare `TauCeti.CkHolderSpaceOn.inclusionSuccL`, on a convex open set,
@@ -118,7 +136,7 @@ which has operator norm at most `3`. -/
 def inclusionSuccLOfIsLipschitzDomain (hΩ : (Ω : Set E).IsLipschitzDomain E')
     (hb : Bornology.IsBounded (Ω : Set E)) (hα : α ≤ 1) :
     CkHolderSpaceOn (k + 1) α Ω F →L[ℝ] CkHolderSpaceOn k α Ω F :=
-  have hC := exists_holderOnWith_iteratedFDeriv_of_isLipschitzDomain (k := k + 1) (F := F) hΩ hb hα
+  have hC := exists_holderOnWith_iteratedFDeriv_of_isLipschitzDomain hΩ hb hα
   inclusionSuccLOfHolderOnWith hC.choose fun f ↦ hC.choose_spec f f.extend_apply k.le_succ
 
 /-- The inclusion `C^{k+1,α}(Ω) → C^{k,α}(Ω)` on a bounded Lipschitz domain does not change
