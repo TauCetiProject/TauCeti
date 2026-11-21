@@ -75,21 +75,6 @@ open scoped TensorProduct
 
 namespace TauCeti.DeligneTorus
 
-/-- The splitting `ℂ ⊗[ℝ] S ≅ ℂ[ℤ²]` as a bialgebra map, the form the weight-space API takes. -/
-private noncomputable abbrev splittingHom :
-    ℂ ⊗[ℝ] S →ₐc[ℂ] MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ)) :=
-  splittingBialgEquiv
-
-/-- The coalgebra map underlying `splittingHom` is its coercion to a coalgebra map. -/
-private theorem splittingHom_toCoalgHom :
-    splittingHom.toCoalgHom = (splittingHom : ℂ ⊗[ℝ] S →ₗc[ℂ] _) :=
-  rfl
-
-/-- The algebra map underlying `splittingHom` is the `ℂ`-linear extension of `splittingPoint`. -/
-private theorem splittingHom_toAlgHom :
-    splittingHom.toAlgHom = AlgHom.liftEquiv ℝ ℂ S _ splittingPoint.ofConv :=
-  AlgHom.ext fun x ↦ by simp [← splittingBialgEquiv_toAlgHom]
-
 variable (V : Type*) [AddCommGroup V] [Module ℝ V] [Comodule ℝ S V]
 
 /-- **The Hodge component `V^{p,q}`** of a real representation `V` of the Deligne torus: the
@@ -99,7 +84,9 @@ the character `(-p, -q)` of the complexified comodule. -/
 noncomputable def hodgeComponent (p q : ℤ) : Submodule ℂ (ℂ ⊗[ℝ] V) :=
   letI := Comodule.baseChange (R := ℝ) (H := S) (M := V) ℂ
   DiagonalizableGroup.weightSpace (R := ℂ) (C := ℂ ⊗[ℝ] S) (ℂ ⊗[ℝ] V)
-    (splittingHom : ℂ ⊗[ℝ] S →ₗc[ℂ] _) (Multiplicative.ofAdd (-p, -q))
+    ((splittingBialgEquiv : ℂ ⊗[ℝ] S →ₐc[ℂ] MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ))) :
+      ℂ ⊗[ℝ] S →ₗc[ℂ] MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ)))
+    (Multiplicative.ofAdd (-p, -q))
 
 /-- `V^{p,q}` is the weight space of the character `(-p, -q)` of the comodule `ℂ ⊗[ℝ] V` over
 `ℂ ⊗[ℝ] S ≅ ℂ[ℤ²]`. -/
@@ -110,14 +97,6 @@ theorem hodgeComponent_def (p q : ℤ) :
         ((splittingBialgEquiv : ℂ ⊗[ℝ] S →ₐc[ℂ] MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ))) :
           ℂ ⊗[ℝ] S →ₗc[ℂ] MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ)))
         (Multiplicative.ofAdd (-p, -q)) :=
-  (rfl)
-
-/-- `hodgeComponent_def`, stated with `splittingHom`. -/
-private theorem hodgeComponent_eq_weightSpace (p q : ℤ) :
-    letI := Comodule.baseChange (R := ℝ) (H := S) (M := V) ℂ
-    hodgeComponent V p q =
-      DiagonalizableGroup.weightSpace (R := ℂ) (C := ℂ ⊗[ℝ] S) (ℂ ⊗[ℝ] V)
-        (splittingHom : ℂ ⊗[ℝ] S →ₗc[ℂ] _) (Multiplicative.ofAdd (-p, -q)) :=
   (rfl)
 
 variable {V}
@@ -144,13 +123,16 @@ theorem endOfPoint_rTensor_of_mem_hodgeComponent (g : WithConv (S →ₐ[ℝ] R)
   let χ : MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ)) →ₐ[ℂ] R :=
     (AlgHom.liftEquiv ℝ ℂ S R g.ofConv).comp
       (splittingBialgEquiv.symm : MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ)) →ₐ[ℂ] ℂ ⊗[ℝ] S)
-  have hχ : χ.comp (splittingHom : ℂ ⊗[ℝ] S →ₐ[ℂ] _) = AlgHom.liftEquiv ℝ ℂ S R g.ofConv :=
+  have hχ :
+      χ.comp ((splittingBialgEquiv : ℂ ⊗[ℝ] S →ₐc[ℂ] MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ))) :
+        _ →ₐ[ℂ] _) = AlgHom.liftEquiv ℝ ℂ S R g.ofConv :=
     AlgHom.ext fun x ↦ by simp [χ]
   have hχ' : χ (MonoidAlgebra.single (Multiplicative.ofAdd (-p, -q)) 1) =
       characterGroup R (.ofAdd (-p, -q)) g := by
     simp [χ, liftEquiv_splittingBialgEquiv_symm_single, -splittingBialgEquiv_symm_single]
   have h := DiagonalizableGroup.endOfPoint_tmul_of_mem_weightSpace (C := ℂ ⊗[ℝ] S) (ℂ ⊗[ℝ] V)
-    splittingHom χ 1 ((hodgeComponent_eq_weightSpace V p q).le hv)
+    (splittingBialgEquiv : ℂ ⊗[ℝ] S →ₐc[ℂ] MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ))) χ 1
+    ((hodgeComponent_def V p q).le hv)
   rw [hχ, one_mul, hχ'] at h
   have h' := congrArg (TensorProduct.AlgebraTensorModule.cancelBaseChange ℝ ℂ R R V) h
   rwa [Comodule.cancelBaseChange_endOfPoint_liftEquiv,
@@ -202,8 +184,19 @@ theorem mem_hodgeComponent_iff {p q : ℤ} {v : ℂ ⊗[ℝ] V} :
   · rw [endOfPoint_rTensor_of_mem_hodgeComponent _ hv, characterGroup_splittingPoint]
   · let _ := Comodule.baseChange (R := ℝ) (H := S) (M := V) ℂ
     have hiff := DiagonalizableGroup.mem_weightSpace_iff_endOfPoint (R := ℂ) (C := ℂ ⊗[ℝ] S)
-      (ℂ ⊗[ℝ] V) splittingHom (Multiplicative.ofAdd (-p, -q)) v
-    rw [splittingHom_toCoalgHom, ← hodgeComponent_eq_weightSpace, splittingHom_toAlgHom] at hiff
+      (ℂ ⊗[ℝ] V) (splittingBialgEquiv : ℂ ⊗[ℝ] S →ₐc[ℂ] MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ)))
+      (Multiplicative.ofAdd (-p, -q)) v
+    -- match the projections in `hiff` with the coercions in `hodgeComponent_def`
+    have hcoalg : BialgHom.toCoalgHom
+        (splittingBialgEquiv : ℂ ⊗[ℝ] S →ₐc[ℂ] MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ))) =
+          ((splittingBialgEquiv : ℂ ⊗[ℝ] S →ₐc[ℂ] MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ))) :
+            _ →ₗc[ℂ] _) :=
+      CoalgHom.ext fun x ↦ by rw [BialgHom.toCoalgHom_apply, BialgHom.coe_toCoalgHom]
+    have halg :
+        (splittingBialgEquiv : ℂ ⊗[ℝ] S →ₐc[ℂ] MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ))).toAlgHom =
+          AlgHom.liftEquiv ℝ ℂ S _ splittingPoint.ofConv :=
+      AlgHom.ext fun x ↦ by simp [← splittingBialgEquiv_toAlgHom]
+    rw [hcoalg, ← hodgeComponent_def, halg] at hiff
     refine hiff.mpr ?_
     apply (TensorProduct.AlgebraTensorModule.cancelBaseChange ℝ ℂ
       (MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ))) (MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ)))
@@ -226,8 +219,9 @@ private theorem hodgeComponent_eq_comp :
     letI := Comodule.baseChange (R := ℝ) (H := S) (M := V) ℂ
     (fun pq : ℤ × ℤ ↦ hodgeComponent V pq.1 pq.2) =
       DiagonalizableGroup.weightSpace (R := ℂ) (C := ℂ ⊗[ℝ] S) (ℂ ⊗[ℝ] V)
-        (splittingHom : ℂ ⊗[ℝ] S →ₗc[ℂ] _) ∘ hodgeIndexEquiv :=
-  funext fun pq ↦ hodgeComponent_eq_weightSpace V pq.1 pq.2
+        ((splittingBialgEquiv : ℂ ⊗[ℝ] S →ₐc[ℂ] MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ))) :
+          _ →ₗc[ℂ] _) ∘ hodgeIndexEquiv :=
+  funext fun pq ↦ hodgeComponent_def V pq.1 pq.2
 
 variable (V) in
 /-- **The Hodge decomposition of a representation of `S`**: `ℂ ⊗[ℝ] V` is the internal direct sum
@@ -236,7 +230,8 @@ theorem isInternal_hodgeComponent :
     DirectSum.IsInternal fun pq : ℤ × ℤ ↦ hodgeComponent V pq.1 pq.2 := by
   let _ := Comodule.baseChange (R := ℝ) (H := S) (M := V) ℂ
   have h := DiagonalizableGroup.isInternal_weightSpace (R := ℂ) (C := ℂ ⊗[ℝ] S) (ℂ ⊗[ℝ] V)
-    (splittingHom : ℂ ⊗[ℝ] S →ₗc[ℂ] MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ)))
+    ((splittingBialgEquiv : ℂ ⊗[ℝ] S →ₐc[ℂ] MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ))) :
+      ℂ ⊗[ℝ] S →ₗc[ℂ] MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ)))
   -- the weight decomposition is stated with classical decidable equality on the characters
   let _ : DecidableEq (Multiplicative (ℤ × ℤ)) := Classical.decEq _
   rw [hodgeComponent_eq_comp]
@@ -251,13 +246,10 @@ theorem finite_setOf_hodgeComponent_ne_bot [Module.Finite ℝ V] :
     {pq : ℤ × ℤ | hodgeComponent V pq.1 pq.2 ≠ ⊥}.Finite := by
   let _ := Comodule.baseChange (R := ℝ) (H := S) (M := V) ℂ
   have h := DiagonalizableGroup.finite_setOf_weightSpace_ne_bot (R := ℂ) (C := ℂ ⊗[ℝ] S) (ℂ ⊗[ℝ] V)
-    (splittingHom : ℂ ⊗[ℝ] S →ₗc[ℂ] MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ)))
-  have hset : {pq : ℤ × ℤ | hodgeComponent V pq.1 pq.2 ≠ ⊥} = hodgeIndexEquiv ⁻¹'
-      {x | DiagonalizableGroup.weightSpace (R := ℂ) (C := ℂ ⊗[ℝ] S) (ℂ ⊗[ℝ] V)
-        (splittingHom : ℂ ⊗[ℝ] S →ₗc[ℂ] _) x ≠ ⊥} := by
-    ext pq
-    exact Iff.of_eq (congrArg (· ≠ ⊥) (congrFun hodgeComponent_eq_comp pq))
-  rw [hset]
+    ((splittingBialgEquiv : ℂ ⊗[ℝ] S →ₐc[ℂ] MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ))) :
+      ℂ ⊗[ℝ] S →ₗc[ℂ] MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ)))
+  change ((fun pq : ℤ × ℤ ↦ hodgeComponent V pq.1 pq.2) ⁻¹' {W | W ≠ ⊥}).Finite
+  rw [hodgeComponent_eq_comp, Set.preimage_comp]
   exact h.preimage hodgeIndexEquiv.injective.injOn
 
 /-! ### Complex conjugation -/

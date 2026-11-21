@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Bialgebra.MonoidAlgebra
 public import TauCeti.Algebra.AlgebraicGroup.DeligneTorus.Splitting
 public import TauCeti.Algebra.Bialgebra.BaseChange
+public import TauCeti.RingTheory.TensorProduct.LiftEquiv
 
 /-!
 # The coordinate bialgebra of the complex Deligne torus
@@ -27,8 +28,9 @@ the splitting, and the basis element `X^{(p,q)}` corresponds to the character
 
 Thus the characters of `S_ℂ ≅ 𝔾ₘ × 𝔾ₘ` are the pairs `(p, q) ∈ ℤ²`. A representation of `S` on a
 real vector space `V` is a comodule over `S`. After base change to `ℂ` it becomes a comodule over
-`ℂ[ℤ²]`, that is, a `ℤ²`-grading of `ℂ ⊗[ℝ] V`. This grading is the Hodge decomposition of the
-representation.
+`ℂ[ℤ²]`, that is, a `ℤ²`-grading of `ℂ ⊗[ℝ] V`. This grading gives the Hodge decomposition of the
+representation, with the sign flip of the homology convention: the Hodge component `V^{p,q}`
+(`TauCeti.DeligneTorus.hodgeComponent`) is the `(-p, -q)`-graded piece.
 
 Complex conjugation of the coefficients composed with the swap `(p, q) ↦ (q, p)` of `ℤ²` is a real
 algebra automorphism of `ℂ[ℤ²]` (`TauCeti.DeligneTorus.conjSwap`). It fixes the coordinate map of
@@ -115,6 +117,14 @@ private theorem complexSplitting_mapValue_splittingPoint {R : Type*} [CommRing R
 
 /-! ### The bialgebra isomorphism `ℂ ⊗[ℝ] S ≃ ℂ[ℤ²]` -/
 
+/-- The `ℂ`-linear extension of a point `f` of `S`, evaluated at the universal point `1 ⊗ id` of
+`S` in `ℂ ⊗[ℝ] S`, is `f`. -/
+private theorem mapValue_liftEquiv_includeRight {R : Type*} [CommRing R] [Algebra ℝ R]
+    [Algebra ℂ R] [IsScalarTower ℝ ℂ R] (f : S →ₐ[ℝ] R) :
+    AlgHom.mapValue ((AlgHom.liftEquiv ℝ ℂ S R f).restrictScalars ℝ)
+      (toConv (Algebra.TensorProduct.includeRight (R := ℝ) (A := ℂ) (B := S))) = toConv f := by
+  rw [AlgHom.mapValue_apply, ofConv_toConv, AlgHom.liftEquiv_comp_includeRight]
+
 /-- The `ℂ`-algebra map `ℂ ⊗[ℝ] S → ℂ[ℤ²]` extending `splittingPoint`. -/
 private noncomputable def splittingAlgHom :
     ℂ ⊗[ℝ] S →ₐ[ℂ] MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ)) :=
@@ -138,8 +148,7 @@ private theorem splittingInvAlgHom_single (pq : Multiplicative (ℤ × ℤ)) :
 
 private theorem mapValue_splittingAlgHom_universalPoint :
     AlgHom.mapValue (splittingAlgHom.restrictScalars ℝ) universalPoint = splittingPoint := by
-  rw [AlgHom.mapValue_apply, ← toConv_ofConv splittingPoint]
-  exact congrArg toConv (AlgHom.ext fun s ↦ by simp [universalPoint, splittingAlgHom])
+  rw [splittingAlgHom, universalPoint, mapValue_liftEquiv_includeRight, toConv_ofConv]
 
 private theorem splittingAlgHom_comp_splittingInvAlgHom :
     splittingAlgHom.comp splittingInvAlgHom = AlgHom.id ℂ _ := by
@@ -285,13 +294,9 @@ theorem liftEquiv_splittingBialgEquiv_symm_single {R : Type*} [CommRing R] [Alge
     (pq : Multiplicative (ℤ × ℤ)) :
     AlgHom.liftEquiv ℝ ℂ S R g.ofConv (splittingBialgEquiv.symm (MonoidAlgebra.single pq 1)) =
       characterGroup R pq g := by
-  have hg : AlgHom.mapValue ((AlgHom.liftEquiv ℝ ℂ S R g.ofConv).restrictScalars ℝ)
-      (toConv (Algebra.TensorProduct.includeRight (R := ℝ) (A := ℂ) (B := S))) = g := by
-    rw [AlgHom.mapValue_apply, ← toConv_ofConv g]
-    exact congrArg toConv (AlgHom.ext fun s ↦ by simp)
   have h := characterGroup_mapValue (AlgHom.liftEquiv ℝ ℂ S R g.ofConv) pq
     (toConv (Algebra.TensorProduct.includeRight (R := ℝ) (A := ℂ) (B := S)))
-  rw [hg] at h
+  rw [mapValue_liftEquiv_includeRight, toConv_ofConv] at h
   rw [splittingBialgEquiv_symm_single, h, Units.coe_map, MonoidHom.coe_ofClass]
 
 /-! ### Complex conjugation -/
