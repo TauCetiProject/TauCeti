@@ -42,6 +42,7 @@ such paths in `𝓛₀Q` (`TauCeti.constLoopPathHomeomorph`).
 
 * `TauCeti.ClosedUnitPath`, `TauCeti.circleMapHomeomorphClosedUnitPath`:
   `C(Circle, Q) ≃ₜ {p : C(I, Q) // p 0 = p 1}`.
+* `TauCeti.unitAddCircleMapHomeomorphClosedUnitPath`: the same for maps from `UnitAddCircle`.
 * `TauCeti.basedMapCircleOneHomeomorphPath`: `BasedMap Circle Q 1 x ≃ₜ Path x x`.
 * `Path.continuous_toCircle`: reading loops as circle maps is continuous.
 * `Path.joined_toCircle_iff_homotopicWith`: two loops are joined in `C(Circle, Q)` exactly when
@@ -235,6 +236,26 @@ theorem circleMapHomeomorphClosedUnitPath_symm_const (q : Q) :
     circleMapHomeomorphClosedUnitPath.symm ⟨ContinuousMap.const I q, rfl⟩ =
       ContinuousMap.const Circle q :=
   circleMapHomeomorphClosedUnitPath.injective (by simp)
+
+/-- **Maps from `UnitAddCircle` are closed unit-interval paths**:
+`circleMapHomeomorphClosedUnitPath` after identifying `UnitAddCircle` with `Circle` by
+`AddCircle.homeomorphCircle`. -/
+def unitAddCircleMapHomeomorphClosedUnitPath : C(UnitAddCircle, Q) ≃ₜ ClosedUnitPath Q :=
+  ((AddCircle.homeomorphCircle one_ne_zero).arrowCongr (Homeomorph.refl Q)).trans
+    circleMapHomeomorphClosedUnitPath
+
+@[simp]
+theorem unitAddCircleMapHomeomorphClosedUnitPath_apply (γ : C(UnitAddCircle, Q)) (t : I) :
+    (unitAddCircleMapHomeomorphClosedUnitPath γ).val t = γ ((t : ℝ) : UnitAddCircle) := by
+  rw [unitAddCircleMapHomeomorphClosedUnitPath, Homeomorph.trans_apply,
+    circleMapHomeomorphClosedUnitPath_apply]
+  exact congrArg γ (homeomorphCircle_symm_unitToCircle t)
+
+/-- The map from `UnitAddCircle` of a closed path `p` sends the class of `t` to `p t`. -/
+@[simp]
+theorem unitAddCircleMapHomeomorphClosedUnitPath_symm_apply (p : ClosedUnitPath Q) (t : I) :
+    unitAddCircleMapHomeomorphClosedUnitPath.symm p ((t : ℝ) : UnitAddCircle) = p.val t := by
+  rw [← unitAddCircleMapHomeomorphClosedUnitPath_apply, Homeomorph.apply_symm_apply]
 
 /-- Restricting `circleMapHomeomorphClosedUnitPath` to the fibre of evaluation at `1 ∈ Circle` over
 `x` gives the homeomorphism `BasedMap Circle Q 1 x ≃ₜ Path x x`. -/
