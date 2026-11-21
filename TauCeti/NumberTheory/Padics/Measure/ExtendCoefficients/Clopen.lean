@@ -12,8 +12,9 @@ import Mathlib.NumberTheory.Padics.ProperSpace
 /-!
 # Coefficient extension and clopen restriction
 
-Extending the coefficients of a measure along a bounded ring homomorphism commutes with
-restriction to any clopen subset. Both orders give the same integrals on that subset. Together with
+Extending the coefficients of a measure along a uniformly bounded homomorphism from a normed
+commutative ring to a complete ultrametric normed commutative ring commutes with restriction to
+any clopen subset. Both orders give the same integrals on that subset. Together with
 `AbstractMeasure.extendCoefficients_map`, this also compares the ambient extensions by zero.
 
 The coefficient homomorphism need not be continuous: finite projections test only locally constant
@@ -37,8 +38,9 @@ variable {X O K : Type*} [TopologicalSpace X] [CompactSpace X] [T2Space X]
   [NormedCommRing K] [CompleteSpace K] [IsUltrametricDist K] {B : ℝ}
   (j : O →+* K) (hj : ∀ a, ‖j a‖ ≤ B)
 
-/-- Extension of coefficients commutes with restriction to a clopen subset.
-Continuity of the coefficient homomorphism is not required. -/
+/-- Extension along a uniformly bounded homomorphism from a normed commutative ring to a
+complete ultrametric normed commutative ring commutes with restriction to a clopen subset.
+The homomorphism need not be continuous. -/
 @[simp]
 theorem extendCoefficients_restrictClopen (s : Clopens X) (μ : D(X, O)) :
     extendCoefficients j hj (restrictClopen s μ) =

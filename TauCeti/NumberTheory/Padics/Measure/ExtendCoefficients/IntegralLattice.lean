@@ -5,18 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.Padics.Measure.Topology
 public import TauCeti.NumberTheory.Padics.Basic
 public import TauCeti.NumberTheory.Padics.Measure.ExtendCoefficients.Basic
-import Mathlib.Analysis.Normed.Module.WeakDual
 
 /-!
 # Integral lattices of measures
 
-Let `X` be a profinite space and let `j : O →+* K` be a topological embedding onto the closed
-unit ball of a complete ultrametric normed field. Extending coefficients along `j` gives a weakly
-closed set of `K`-valued measures. For `ℚ_p`-valued measures, a single power of `p` carries the
-whole measure into this integral lattice. After scaling, its values on all continuous
+Let `X` be a profinite space and let `j : O →+* K` be a bounded topological embedding with closed
+image in a complete ultrametric normed commutative ring. Extending coefficients along `j` gives a
+weakly closed set of `K`-valued measures. For `ℚ_p`-valued measures, a single power of `p` carries
+the whole measure into this integral lattice. After scaling, its values on all continuous
 `ℤ_p`-valued test functions are integral.
 
 ## References
@@ -30,37 +28,42 @@ public section
 
 open scoped AbstractMeasure
 
+namespace RingHom
+
+open AbstractMeasure
+
+/-- On a profinite space, extension along a bounded coefficient embedding with closed image has
+weakly closed range. -/
+theorem isClosed_range_extendCoefficients_weak
+    {X : Type*} [TopologicalSpace X] [CompactSpace X] [T2Space X]
+    [TotallyDisconnectedSpace X] {O K : Type*}
+    [CommRing O] [TopologicalSpace O] [IsTopologicalRing O]
+    [NormedCommRing K] [CompleteSpace K] [IsUltrametricDist K]
+    (j : O →+* K) {B : ℝ} (hj : ∀ a, ‖j a‖ ≤ B) (hje : Topology.IsEmbedding j)
+    (hjr : IsClosed (Set.range j)) :
+    @IsClosed D(X, K) WeakTopology (extendCoefficients (X := X) j hj).range := by
+  have hrange : ((extendCoefficients (X := X) j hj).range : Set D(X, K)) =
+      ⋂ f : C(X, O), {ν | ν ((⟨j, hje.continuous⟩ : C(O, K)).comp f) ∈ Set.range j} := by
+    ext ν
+    simp only [Set.mem_iInter, Set.mem_ofPred_eq]
+    constructor
+    · rintro ⟨μ, rfl⟩ f
+      exact ⟨μ f, (extendCoefficients_apply_comp j μ hj hje.continuous f).symm⟩
+    · intro hν
+      obtain ⟨μ, hμ⟩ := j.exists_apply_comp_eq_of_mem_range hje ν hν
+      exact ⟨μ, (eq_extendCoefficients_of_apply_comp j μ hj hje.continuous hμ).symm⟩
+  rw [hrange]
+  let : TopologicalSpace D(X, K) := WeakTopology
+  have heval : Continuous (fun μ : D(X, K) ↦ fun f : C(X, K) ↦ μ f) :=
+    continuous_induced_dom
+  exact isClosed_iInter fun f ↦ hjr.preimage
+    ((continuous_apply ((⟨j, hje.continuous⟩ : C(O, K)).comp f)).comp heval)
+
+end RingHom
+
 namespace AbstractMeasure
 
 variable {X : Type*} [TopologicalSpace X] [CompactSpace X]
-
-/-- On a profinite space, extension along a topological embedding onto the closed unit ball of a
-complete ultrametric normed field has weakly closed range. -/
-theorem isClosed_range_extendCoefficients_weak [T2Space X] [TotallyDisconnectedSpace X]
-    {O K : Type*} [CommRing O] [TopologicalSpace O] [IsTopologicalRing O]
-    [NormedField K] [CompleteSpace K] [IsUltrametricDist K]
-    (j : O →+* K) (hj : ∀ a, ‖j a‖ ≤ 1) (hje : Topology.IsEmbedding j)
-    (hjr : Metric.closedBall 0 1 ⊆ Set.range j) :
-    @IsClosed D(X, K) WeakTopology (extendCoefficients (X := X) j hj).range := by
-  rcases NormedField.discreteTopology_or_nontriviallyNormedField K with hK | ⟨_, rfl⟩
-  · let := hK
-    have hsurj : Function.Surjective j := fun k ↦ hjr (by simp)
-    rw [AddMonoidHom.coe_range,
-      Set.range_eq_univ.mpr (extendCoefficients_surjective j hj hje hsurj)]
-    exact @isClosed_univ _ WeakTopology
-  · have hball : ((extendCoefficients (X := X) j hj).range : Set D(X, K)) =
-        toCLMEquiv ⁻¹' Metric.closedBall 0 1 :=
-      Set.ext fun _ ↦ (mem_range_extendCoefficients_iff hj hje hjr).trans
-        mem_closedBall_zero_iff.symm
-    rw [hball]
-    let : TopologicalSpace D(X, K) := WeakTopology
-    have heval : Continuous (fun μ : D(X, K) ↦ fun f : C(X, K) ↦ μ f) :=
-      continuous_induced_dom
-    exact (WeakDual.isClosed_closedBall (𝕜 := K) (E := C(X, K)) 0 1).preimage
-      (WeakDual.continuous_of_continuous_eval
-        (g := fun μ : D(X, K) ↦ StrongDual.toWeakDual (toCLMEquiv μ)) fun f ↦
-        ((continuous_apply f).comp heval).congr fun μ ↦ by
-          rw [Function.comp_apply, StrongDual.toWeakDual_apply, coe_toCLMEquiv])
 
 variable {p : ℕ} [Fact p.Prime] [T2Space X] [TotallyDisconnectedSpace X]
 

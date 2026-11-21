@@ -6,19 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Padics.Measure.ExtendCoefficients.Clopen
-public import TauCeti.NumberTheory.Padics.Measure.ExtendCoefficients.IntegralLattice
 public import TauCeti.NumberTheory.Padics.Measure.Units.Basic
+import TauCeti.NumberTheory.Padics.Basic
 import TauCeti.NumberTheory.Padics.Measure.Dirac
 
 /-!
 # Coefficient extension on the p-adic unit group
 
-Extension of coefficients commutes with restriction from the p-adic integers to their unit group.
-Together with pushforward along the value map, this lets one compute coefficient extension on
-intrinsic unit measures by extending ambient measures and then restricting to the units.
-
-For the inclusion `ℤ_p → ℚ_p`, the integral unit measures identify with the weakly closed unit
-ball, and one power of `p` clears the denominators of any rational unit measure.
+Extension along a uniformly bounded homomorphism from a normed commutative ring to a complete
+ultrametric normed commutative ring commutes with restriction from the p-adic integers to their
+unit group and with the ambient unit projector. Together with pushforward along the value map,
+this lets one compute coefficient extension on intrinsic unit measures by extending ambient
+measures and then restricting to the units.
 
 ## References
 
@@ -35,20 +34,22 @@ namespace AbstractMeasure
 
 variable {p : ℕ} [Fact p.Prime]
 
-/-- Extending coefficients commutes with restriction to the p-adic unit group. -/
+/-- Extension along a uniformly bounded homomorphism from a normed commutative ring to a
+complete ultrametric normed commutative ring commutes with restriction to the p-adic unit group. -/
 @[simp]
 theorem extendCoefficients_restrictUnits {O K : Type*} [NormedCommRing O] [NormedCommRing K]
     [CompleteSpace K] [IsUltrametricDist K] {B : ℝ}
-    (j : O →+* K) (hj : ∀ a, ‖j a‖ ≤ B) (μ : D(ℤ_[p], O)) :
+    (μ : D(ℤ_[p], O)) (j : O →+* K) (hj : ∀ a, ‖j a‖ ≤ B) :
     extendCoefficients j hj (restrictUnits μ) = restrictUnits (extendCoefficients j hj μ) := by
   simp only [restrictUnits_def, coe_arrowCongrLeft, extendCoefficients_map,
     extendCoefficients_restrictClopen]
 
-/-- Coefficient extension commutes with the ambient projector onto measures supported on units. -/
+/-- Extension along a uniformly bounded homomorphism from a normed commutative ring to a
+complete ultrametric normed commutative ring commutes with the ambient unit-support projector. -/
 @[simp]
 theorem extendCoefficients_unitRestriction {O K : Type*} [NormedCommRing O] [NormedCommRing K]
     [CompleteSpace K] [IsUltrametricDist K] {B : ℝ}
-    (j : O →+* K) (hj : ∀ a, ‖j a‖ ≤ B) (μ : D(ℤ_[p], O)) :
+    (μ : D(ℤ_[p], O)) (j : O →+* K) (hj : ∀ a, ‖j a‖ ≤ B) :
     extendCoefficients j hj (unitRestriction μ) = unitRestriction (extendCoefficients j hj μ) := by
   rw [← map_unitsVal_restrictUnits, extendCoefficients_map, extendCoefficients_restrictUnits,
     map_unitsVal_restrictUnits]
@@ -58,10 +59,7 @@ section Examples
 -- The canonical map also extends coefficients into rings whose unit need not have norm one.
 example {R : Type*} [NormedCommRing R] [Algebra ℤ_[p] R] [IsBoundedSMul ℤ_[p] R]
     [CompleteSpace R] [IsUltrametricDist R] (μ : D(ℤ_[p]ˣ, ℤ_[p])) :
-    let hj : ∀ a : ℤ_[p], ‖algebraMap ℤ_[p] R a‖ ≤ ‖(1 : R)‖ := fun a ↦ by
-      rw [Algebra.algebraMap_eq_smul_one]
-      exact (norm_smul_le a (1 : R)).trans <|
-        mul_le_of_le_one_left (norm_nonneg _) (PadicInt.norm_le_one a)
+    let hj := PadicInt.norm_algebraMap_le_norm_one (p := p) (R := R)
     extendCoefficients (algebraMap ℤ_[p] R) hj μ =
       restrictUnits (extendCoefficients (algebraMap ℤ_[p] R) hj
         (map ⟨Units.val, Units.continuous_val⟩ μ)) := by
