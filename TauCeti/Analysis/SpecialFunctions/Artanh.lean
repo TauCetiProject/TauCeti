@@ -45,8 +45,9 @@ follows from the inversion `Real.tanh_artanh` together with the addition formula
 
 * `Real.hasDerivAt_artanh` — `Real.artanh` has derivative `(1 - x ^ 2)⁻¹` at each `x` of
   `(-1, 1)`, with `Real.deriv_artanh`, `Real.differentiableAt_artanh`,
-  `Real.differentiableOn_artanh`, `Real.continuousAt_artanh` and `Real.continuousOn_artanh` as
-  companions, and `HasDerivAt.artanh` as the chain-rule form.
+  `Real.differentiableOn_artanh`, `Real.continuousAt_artanh`, `Real.continuousOn_artanh`,
+  `Real.contDiffAt_artanh` and `Real.contDiffOn_artanh` as companions, and `HasDerivAt.artanh`
+  and `ContDiffAt.artanh` as the composition forms.
 * `Real.tendsto_artanh_div_nhdsNE_zero` — `artanh t / t` tends to `1` as `t` tends to
   `0` through nonzero values: the derivative at the origin, read as a limit of slopes. This is
   what turns a closed-form hyperbolic distance into an infinitesimal one.
@@ -237,12 +238,38 @@ theorem _root_.Real.continuousAt_artanh {x : ℝ} (hx : x ∈ Ioo (-1 : ℝ) 1) 
 theorem _root_.Real.continuousOn_artanh : ContinuousOn Real.artanh (Ioo (-1 : ℝ) 1) := fun _ hx =>
   (Real.continuousAt_artanh hx).continuousWithinAt
 
+/-- `Real.artanh` is `C^n` (including `C^∞` and real-analytic) at each point of `(-1, 1)`. -/
+theorem _root_.Real.contDiffAt_artanh {n : WithTop ℕ∞} {x : ℝ} (hx : x ∈ Ioo (-1 : ℝ) 1) :
+    ContDiffAt ℝ n Real.artanh x := by
+  have hsub : 1 - x ≠ 0 := by linarith [hx.2]
+  have hdiv : (1 + x) / (1 - x) ≠ 0 := (div_pos (by linarith [hx.1]) (by linarith [hx.2])).ne'
+  have hhalf : ContDiffAt ℝ n (fun y : ℝ => 1 / 2 * Real.log ((1 + y) / (1 - y))) x :=
+    contDiffAt_const.mul
+      (((contDiffAt_const.add contDiffAt_id).div (contDiffAt_const.sub contDiffAt_id) hsub).log
+        hdiv)
+  refine hhalf.congr_of_eventuallyEq ?_
+  filter_upwards [isOpen_Ioo.mem_nhds hx] with y hy
+  exact Real.artanh_eq_half_log (Ioo_subset_Icc_self hy)
+
+/-- `Real.artanh` is `C^n` (including `C^∞` and real-analytic) on `(-1, 1)`. -/
+theorem _root_.Real.contDiffOn_artanh {n : WithTop ℕ∞} :
+    ContDiffOn ℝ n Real.artanh (Ioo (-1 : ℝ) 1) := fun _ hx =>
+  (Real.contDiffAt_artanh hx).contDiffWithinAt
+
 /-- The chain rule for `Real.artanh`: composing with a function that is differentiable at `x`
 and takes a value in `(-1, 1)` there multiplies the derivative by `(1 - f x ^ 2)⁻¹`. -/
 theorem _root_.HasDerivAt.artanh {f : ℝ → ℝ} {f' x : ℝ} (hf : HasDerivAt f f' x)
     (hx : f x ∈ Ioo (-1 : ℝ) 1) :
     HasDerivAt (fun y => Real.artanh (f y)) ((1 - f x ^ 2)⁻¹ * f') x :=
   (Real.hasDerivAt_artanh hx).comp x hf
+
+/-- Composing `Real.artanh` with a `C^n` function taking a value in `(-1, 1)` at `x` yields a `C^n`
+function at `x`. -/
+theorem _root_.ContDiffAt.artanh {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {f : E → ℝ} {x : E} {n : WithTop ℕ∞} (hf : ContDiffAt ℝ n f x)
+    (hx : f x ∈ Ioo (-1 : ℝ) 1) :
+    ContDiffAt ℝ n (fun y => Real.artanh (f y)) x :=
+  (Real.contDiffAt_artanh hx).comp x hf
 
 /-! ### The derivative at the origin, as a limit of slopes -/
 
