@@ -294,7 +294,8 @@ private theorem roots_map_spec [DecidableEq L] (hd : IsDistinguished r d f) (hr 
         (_root_.PowerSeries.taylor x (_root_.PowerSeries.map (algebraMap K L) f)).order =
           (P.map (algebraMap K L)).roots.count x := by
   have : IsUltrametricDist L := .of_normedAlgebra K
-  refine ⟨fun z hz ↦ (hd.map_polynomial hr he hf).norm_le_of_eval_eq_zero hr
+  refine ⟨fun z hz ↦ (hd.map_polynomial hr he hf).norm_le_of_eval_eq_zero
+    (fun a n _ ↦ norm_pow a n) hr
     (hP.map (algebraMap K L)) (Polynomial.mem_roots'.mp hz).2, fun x hx ↦ ?_⟩
   rw [order_taylor_map_eq_rootMultiplicity he hP.ne_zero hf hx, Polynomial.count_roots]
 

@@ -15,13 +15,16 @@ public import Mathlib.RingTheory.Polynomial.Vieta
 
 Let `f` be a nonarchimedean, power-multiplicative ring seminorm on a ring `R`, and let `x : R` be
 a root of a monic polynomial `p = X ^ d + ∑_{i < d} aᵢ X ^ i` over `R` itself. Then `f x` is
-controlled by the coefficients: some `i < d` satisfies `f x ^ (d - i) ≤ f aᵢ`, and hence
+controlled by the coefficients: if `R` is nontrivial, some `i < d` satisfies
+`f x ^ (d - i) ≤ f aᵢ`, and hence, over every ring,
 
 `f x ≤ max_{i < d} f aᵢ ^ (1 / (d - i))`.
 
-The first bound only compares natural powers, so it holds more generally for nonnegative,
-submultiplicative functions into a linearly ordered monoid with zero in which multiplication on the
-right by a positive element is strictly monotone, such as valuations.
+Over the zero ring, `d = 0` and the maximum is `0`. Both bounds only use that `f` is nonnegative,
+submultiplicative, power-multiplicative and nonarchimedean, and the second also that `f 0 = 0`.
+The first bound only compares natural powers, so it holds for such functions into a linearly
+ordered monoid with zero in which multiplication on the right by a positive element is strictly
+monotone, such as valuations.
 
 This is the ring-seminorm form of the bound of the norm of a root by the spectral value of a
 polynomial, `norm_root_le_spectralValue`, which treats coefficients in a normed field and roots in
@@ -36,10 +39,11 @@ roots of a split monic polynomial. This adapts the second half of the proof of M
 
 ## Main results
 
-* `Polynomial.Monic.exists_apply_pow_le_apply_coeff_of_eval_eq_zero`: some `i < d` satisfies
-  `f x ^ (d - i) ≤ f aᵢ`, for `f` with values in a linearly ordered monoid with zero.
-* `Polynomial.Monic.apply_le_iSup_apply_coeff_rpow_of_eval_eq_zero`:
-  `f x ≤ ⨆ i < d, f aᵢ ^ (1 / (d - i))`, for a ring seminorm `f`.
+* `Polynomial.Monic.exists_apply_pow_le_apply_coeff_of_eval_eq_zero`: over a nontrivial ring,
+  some `i < d` satisfies `f x ^ (d - i) ≤ f aᵢ`, for `f` with values in a linearly ordered monoid
+  with zero.
+* `Polynomial.Monic.apply_le_iSup_apply_coeff_rpow_of_eval_eq_zero`: over every ring,
+  `f x ≤ ⨆ i < d, f aᵢ ^ (1 / (d - i))`, for real-valued `f` with `f 0 = 0`.
 * `Multiset.apply_esymm_le_pow`: `f (s.esymm k) ≤ M ^ k` when `f a ≤ M` on `s` and `k ≤ card s`.
 * `Polynomial.Monic.apply_coeff_le_pow_of_card_roots`: `f aᵢ ≤ M ^ (d - i)` when `p` has `d` roots,
   all with `f`-value at most `M`.
@@ -117,23 +121,24 @@ theorem exists_apply_pow_le_apply_coeff_of_eval_eq_zero [Nontrivial R] (hp : p.M
 
 end Pow
 
-variable {R F : Type*} [Ring R] [FunLike F R ℝ] [RingSeminormClass F R ℝ] {f : F}
-  {p : R[X]} {x : R}
+variable {R : Type*} [Ring R] {f : R → ℝ} {p : R[X]} {x : R}
 
-/-- **Root bound for monic polynomials.** A root `x` of a monic polynomial `p` of degree `d`
-satisfies `f x ≤ ⨆ i < d, f (p.coeff i) ^ (1 / (d - i))`, for every nonarchimedean
-power-multiplicative ring seminorm `f`. -/
-theorem apply_le_iSup_apply_coeff_rpow_of_eval_eq_zero (hp : p.Monic) (hf_pm : IsPowMul f)
+/-- **Root bound for monic polynomials.** A root `x` of a monic polynomial `p` of degree `d` over
+any ring satisfies `f x ≤ ⨆ i < d, f (p.coeff i) ^ (1 / (d - i))`, for every nonarchimedean,
+power-multiplicative, nonnegative, submultiplicative function `f` with `f 0 = 0`, such as a
+nonarchimedean power-multiplicative ring seminorm. -/
+theorem apply_le_iSup_apply_coeff_rpow_of_eval_eq_zero (hp : p.Monic) (hf0 : f 0 = 0)
+    (hf_nn : ∀ a, 0 ≤ f a) (hf_mul : ∀ a b, f (a * b) ≤ f a * f b) (hf_pm : IsPowMul f)
     (hf_na : IsNonarchimedean f) (hx : p.eval x = 0) :
     f x ≤ ⨆ i : Fin p.natDegree, f (p.coeff i) ^ (1 / (p.natDegree - i : ℝ)) := by
   rcases subsingleton_or_nontrivial R with hR | hR
-  · rw [Subsingleton.elim x 0, map_zero]
-    exact Real.iSup_nonneg fun _ ↦ Real.rpow_nonneg (apply_nonneg f _) _
-  · obtain ⟨i, hi, hle⟩ := hp.exists_apply_pow_le_apply_coeff_of_eval_eq_zero (apply_nonneg f)
-      (map_mul_le_mul f) hf_pm hf_na hx
+  · rw [Subsingleton.elim x 0, hf0]
+    exact Real.iSup_nonneg fun _ ↦ Real.rpow_nonneg (hf_nn _) _
+  · obtain ⟨i, hi, hle⟩ := hp.exists_apply_pow_le_apply_coeff_of_eval_eq_zero hf_nn hf_mul hf_pm
+      hf_na hx
     refine le_ciSup_of_le (Set.finite_range _).bddAbove ⟨i, hi⟩ ?_
-    rw [one_div, ← Nat.cast_sub hi.le, Real.le_rpow_inv_iff_of_pos (apply_nonneg f x)
-      (apply_nonneg f _) (by exact_mod_cast Nat.sub_pos_of_lt hi), Real.rpow_natCast]
+    rw [one_div, ← Nat.cast_sub hi.le, Real.le_rpow_inv_iff_of_pos (hf_nn x) (hf_nn _)
+      (by exact_mod_cast Nat.sub_pos_of_lt hi), Real.rpow_natCast]
     exact hle
 
 end Polynomial.Monic

@@ -108,7 +108,7 @@ theorem IsDistinguished.norm_le_of_mem_roots_of_isUnit_mul (hf : IsDistinguished
     have hP := IsDistinguished.of_isUnit_mul (hmul ▸ hf) hc hu
     rw [← hPQ, Polynomial.coe_mul, Polynomial.coe_C] at hP
     simpa using hP
-  refine hQd.norm_le_of_eval_eq_zero hc hQm ?_
+  refine hQd.norm_le_of_eval_eq_zero (fun a n _ ↦ norm_pow a n) hc hQm ?_
   rw [Polynomial.eval_mul, (Polynomial.isRoot_of_mem_roots hα).eq_zero, mul_zero]
 
 end RootBound
@@ -212,7 +212,8 @@ theorem IsDistinguished.exists_card_eq_isGoodZero [IsAlgClosed K] [DecidableEq K
   obtain ⟨u, P, hu, hP, hmul⟩ :=
     hfd.exists_isUnit_isMonicOfDegree_mul_eq hfd.coeff_ne_zero.isUnit hc hfr
   refine ⟨P.roots, ?_, fun a ha ↦ (IsDistinguished.of_isUnit_mul (hmul ▸ hfd) hc hu
-      ).norm_le_of_eval_eq_zero hc hP (Polynomial.isRoot_of_mem_roots ha), fun a ha ↦ ?_⟩
+      ).norm_le_of_eval_eq_zero (fun a n _ ↦ norm_pow a n) hc hP
+      (Polynomial.isRoot_of_mem_roots ha), fun a ha ↦ ?_⟩
   · rw [← hP.natDegree_eq]
     exact Polynomial.splits_iff_card_roots.1 (IsAlgClosed.splits P)
   · exact _root_.PowerSeries.isGoodZero_count_roots_of_isUnit_mul hu hmul hfd.ne_zero ha

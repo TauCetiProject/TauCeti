@@ -14,9 +14,9 @@ public import Mathlib.Algebra.Polynomial.Splits
 
 A monic polynomial distinguished in its full degree at a positive radius has all its roots
 in the corresponding closed disc. This uses only the Gauss-norm coefficient bounds, without
-Weierstrass division or preparation, and applies over ultrametric normed commutative rings
-with multiplicative norm, without completeness. It supplies the outer root bound for quotients
-of preparation polynomials at nested radii.
+Weierstrass division or preparation, and applies over ultrametric seminormed rings with
+power-multiplicative seminorm, without completeness or commutativity. It supplies the outer root
+bound for quotients of preparation polynomials at nested radii.
 
 The polynomial root estimate is
 `Polynomial.Monic.exists_apply_pow_le_apply_coeff_of_eval_eq_zero`.
@@ -58,19 +58,20 @@ public section
 
 namespace TauCeti.PowerSeries
 
-variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] [NormMulClass R] {c : ℝ} {s : ℕ}
+variable {R : Type*} [SeminormedRing R] [IsUltrametricDist R] {c : ℝ} {s : ℕ}
 
 /-- Every root of a monic polynomial distinguished in its full degree lies in its closed
-disc. The coefficient ring need not be complete or a field. -/
-theorem IsDistinguished.norm_le_of_eval_eq_zero {P : Polynomial R}
+disc, for a power-multiplicative seminorm. The coefficient ring need not be complete,
+commutative or a field, and its seminorm need not be multiplicative. -/
+theorem IsDistinguished.norm_le_of_eval_eq_zero (hR : IsPowMul (‖·‖ : R → ℝ)) {P : Polynomial R}
     (hP : IsDistinguished c s (P : PowerSeries R)) (hc : 0 < c)
     (hm : P.IsMonicOfDegree s) {x : R} (hx : P.eval x = 0) : ‖x‖ ≤ c := by
   have : Nontrivial R := nontrivial_of_ne _ _ hP.coeff_ne_zero
-  have : NormOneClass R := NormMulClass.toNormOneClass
   obtain ⟨i, hi, hxi⟩ := hm.monic.exists_apply_pow_le_apply_coeff_of_eval_eq_zero norm_nonneg
-    norm_mul_le (fun a n _ => norm_pow a n) IsUltrametricDist.isNonarchimedean_norm hx
+    norm_mul_le hR IsUltrametricDist.isNonarchimedean_norm hx
   rw [hm.natDegree_eq] at hi hxi
   have hcoeff : ‖P.coeff i‖ * c ^ i ≤ c ^ s := by
+    refine le_trans ?_ (mul_le_of_le_one_left (pow_nonneg hc.le s) hR.map_one_le_one)
     simpa [← hP.norm_coeff_mul_pow_eq, hm.coeff_coe_self] using
       _root_.PowerSeries.le_gaussNorm norm c (P : PowerSeries R) hP.hasGaussNorm i
   have hpow : ‖x‖ ^ (s - i) ≤ c ^ (s - i) := by
