@@ -93,6 +93,18 @@ theorem isQuadraticTwistBy_iff : E.IsQuadraticTwistBy W η ↔
       ∃ C : VariableChange K, C • W.quadraticTwistOf 0 (-d) = E :=
   Iff.rfl
 
+/-- A twist of `W` by `η` stays one under a change of variables over `K`. -/
+theorem IsQuadraticTwistBy.smul (C : VariableChange K) (h : E.IsQuadraticTwistBy W η) :
+    (C • E).IsQuadraticTwistBy W η := by
+  obtain ⟨d, a, ha, hg, C', hC'⟩ := h
+  exact ⟨d, a, ha, hg, C * C', by rw [mul_smul, hC']⟩
+
+/-- Being the twist of `W` by `η` is invariant under changes of variables over `K`. -/
+@[simp]
+theorem isQuadraticTwistBy_smul_iff (C : VariableChange K) :
+    (C • E).IsQuadraticTwistBy W η ↔ E.IsQuadraticTwistBy W η :=
+  ⟨fun h ↦ by simpa using h.smul C⁻¹, fun h ↦ h.smul C⟩
+
 /-- **The Galois action on the isomorphism of a quadratic twist.** If `E` is the twist of `W` by
 `η`, there is a change of variables `ρ` over `Kᵃˡᵍ` carrying `W` to `E` whose scaling factor `u` is
 a square root of an element of `K` and is multiplied by `η(g)` under every `g ∈ Gal(Kᵃˡᵍ/K)`. -/

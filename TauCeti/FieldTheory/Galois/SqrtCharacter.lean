@@ -57,7 +57,7 @@ noncomputable def sqrtCharacter [Algebra.IsIntegral K L] {a : L} {c : K}
   toFun g := if g a = a then 1 else -1
   map_one' := by simp
   map_mul' g h := by
-    have hgh : (g * h) a = g (h a) := rfl
+    have hgh := AlgEquiv.mul_apply g h a
     by_cases hha : h a = a
     · simp only [hgh, hha, ↓reduceIte, mul_one]
     have hh : h a = -a := (h.apply_eq_or_eq_neg_of_sq_eq ha).resolve_left hha
