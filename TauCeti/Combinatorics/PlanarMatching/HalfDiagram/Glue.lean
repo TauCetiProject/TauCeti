@@ -36,8 +36,9 @@ variable {n m k : ℕ}
 same number of defects. -/
 def defectOrderIso (B : HalfDiagram n k) (T : HalfDiagram m k) :
     {i : Fin n // B.val i = i} ≃o {j : Fin m // T.val j = j} :=
-  (Fintype.orderIsoFinOfCardEq _ (by simpa only [Fintype.card_subtype] using B.2.2)).symm.trans
-    (Fintype.orderIsoFinOfCardEq _ (by simpa only [Fintype.card_subtype] using T.2.2))
+  (Fintype.orderIsoFinOfCardEq _ (by simpa only
+      [Fintype.card_subtype] using B.property.2)).symm.trans
+    (Fintype.orderIsoFinOfCardEq _ (by simpa only [Fintype.card_subtype] using T.property.2))
 
 private def partner (B : HalfDiagram n k) (T : HalfDiagram m k) :
     Fin n ⊕ Fin m → Fin n ⊕ Fin m
@@ -47,8 +48,8 @@ private def partner (B : HalfDiagram n k) (T : HalfDiagram m k) :
 
 private theorem partner_involutive (B : HalfDiagram n k) (T : HalfDiagram m k) :
     Function.Involutive (partner B T) := by
-  have hB := Perm.isHalfDiagram_iff.mp B.2.1
-  have hT := Perm.isHalfDiagram_iff.mp T.2.1
+  have hB := Perm.isHalfDiagram_iff.mp B.property.1
+  have hT := Perm.isHalfDiagram_iff.mp T.property.1
   rintro (i | j)
   · by_cases hi : B.val i = i
     · simp [partner, hi, (B.defectOrderIso T ⟨i, hi⟩).property]
@@ -87,7 +88,7 @@ private theorem not_crossing_bottom (B : HalfDiagram n k) (T : HalfDiagram m k) 
     (hab : boundary n m (.inl i) < boundary n m (.inl j))
     (hba : boundary n m (.inl j) < boundary n m (partner B T (.inl i))) :
     ¬ boundary n m (partner B T (.inl i)) < boundary n m (partner B T (.inl j)) := by
-  have hB := Perm.isHalfDiagram_iff.mp B.2.1
+  have hB := Perm.isHalfDiagram_iff.mp B.property.1
   intro hcross
   by_cases hi : B.val i = i <;> by_cases hj : B.val j = j
   · rw [boundary_left, boundary_left] at hab
@@ -120,7 +121,7 @@ private theorem not_crossing_mixed (B : HalfDiagram n k) (T : HalfDiagram m k)
     (i : Fin n) (j : Fin m)
     (hba : boundary n m (.inr j) < boundary n m (partner B T (.inl i))) :
     ¬ boundary n m (partner B T (.inl i)) < boundary n m (partner B T (.inr j)) := by
-  have hT := Perm.isHalfDiagram_iff.mp T.2.1
+  have hT := Perm.isHalfDiagram_iff.mp T.property.1
   intro hcross
   by_cases hi : B.val i = i
   · by_cases hj : T.val j = j
@@ -153,7 +154,7 @@ private theorem not_crossing_top (B : HalfDiagram n k) (T : HalfDiagram m k) (i 
     (hab : boundary n m (.inr i) < boundary n m (.inr j))
     (hba : boundary n m (.inr j) < boundary n m (partner B T (.inr i))) :
     ¬ boundary n m (partner B T (.inr i)) < boundary n m (partner B T (.inr j)) := by
-  have hT := Perm.isHalfDiagram_iff.mp T.2.1
+  have hT := Perm.isHalfDiagram_iff.mp T.property.1
   intro hcross
   by_cases hi : T.val i = i
   · simp only [partner, hi, dite_true, boundary_right_val, boundary_left,
@@ -217,7 +218,7 @@ def glue (B : HalfDiagram n k) (T : HalfDiagram m k) : PlanarMatching (n + m) :=
 /-- The bottom partner after gluing: retain an arc, or join a defect to the corresponding
 top defect (whose cyclic label is reversed). -/
 theorem glue_apply_bottom (B : HalfDiagram n k) (T : HalfDiagram m k) (i : Fin n) :
-    (B.glue T).1.val (i.castAdd m) =
+    (B.glue T).val.val (i.castAdd m) =
       if h : B.val i = i then
         ⟨n + m - 1 - (B.defectOrderIso T ⟨i, h⟩).val, by
           have := (B.defectOrderIso T ⟨i, h⟩).val.isLt
@@ -232,7 +233,7 @@ theorem glue_apply_bottom (B : HalfDiagram n k) (T : HalfDiagram m k) (i : Fin n
 
 /-- The top partner after gluing, with top indices read left-to-right. -/
 theorem glue_apply_top (B : HalfDiagram n k) (T : HalfDiagram m k) (j : Fin m) :
-    (B.glue T).1.val ⟨n + m - 1 - j, by omega⟩ =
+    (B.glue T).val.val ⟨n + m - 1 - j, by omega⟩ =
       if h : T.val j = j then ((B.defectOrderIso T).symm ⟨j, h⟩).val.castAdd m
       else ⟨n + m - 1 - T.val j, by have := (T.val j).isLt; omega⟩ := by
   have hb : (⟨n + m - 1 - j, by omega⟩ : Fin (n + m)) = boundary n m (.inr j) :=
@@ -305,8 +306,8 @@ theorem _root_.TauCeti.TLDiagram.glue_bottomHalf_topHalf (D : TLDiagram n m) :
 order; cyclic top labels run in the opposite direction. -/
 example :
     let B : HalfDiagram 4 2 := ⟨swap 2 3, by decide, by decide⟩
-    (B.glue B).1.val 0 = 7 ∧ (B.glue B).1.val 1 = 6 ∧
-      (B.glue B).1.val 2 = 3 ∧ (B.glue B).1.val 4 = 5 := by
+    (B.glue B).val.val 0 = 7 ∧ (B.glue B).val.val 1 = 6 ∧
+      (B.glue B).val.val 2 = 3 ∧ (B.glue B).val.val 4 = 5 := by
   dsimp only
   let B : HalfDiagram 4 2 := ⟨swap 2 3, by decide, by decide⟩
   have he : B.defectOrderIso B = OrderIso.refl _ := Subsingleton.elim _ _

@@ -149,7 +149,7 @@ theorem signLocalSystemFiberEquiv_neg {b : B} (o : Orientation ℝ (E b) ι)
       (⟨⟨b, -o⟩, rfl⟩ : (proj ⁻¹' {b} : Set (VectorBundleOrientationCover F E ι))) :=
     Subtype.ext (by simp [deck_apply])
   rw [signLocalSystemFiberEquiv_apply, signLocalSystemFiberEquiv_apply, ← h]
-  exact mem_signFiber_iff.1 (signLocalSystemObjEquiv hι _ f).2 _
+  exact mem_signFiber_iff.1 (signLocalSystemObjEquiv hι _ f).property _
 
 /-- Every loop at `b` acts by `1` or by `-1` on the fibre of the orientation local system over
 `b`. -/

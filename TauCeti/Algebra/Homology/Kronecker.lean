@@ -106,7 +106,7 @@ the morphism which on the class of a cycle is `φ` evaluated on that cycle
 (`TauCeti.ChainComplex.kronecker_homologyπ`). -/
 def kronecker (i : α) : (X.linearYonedaObj k Y).homology i →ₗ[k] (X.homology i ⟶ Y) :=
   (CokernelCofork.IsColimit.desc' ((X.linearYonedaObj k Y).homologyIsCokernel _ i rfl)
-    (kroneckerCyclesHom k X Y i) (toCycles_comp_kroneckerCyclesHom i)).1.hom
+    (kroneckerCyclesHom k X Y i) (toCycles_comp_kroneckerCyclesHom i)).val.hom
 
 /-- **The Kronecker map on classes**: evaluating the class of a cocycle `φ` on the class of a
 cycle is evaluating `φ` on the cycle. -/
@@ -116,7 +116,7 @@ lemma kronecker_homologyπ (i : α) (φ : (X.linearYonedaObj k Y).cycles i) :
       X.iCycles i ≫ (X.linearYonedaObj k Y).iCycles i φ := by
   have hfac := ConcreteCategory.congr_hom (CokernelCofork.IsColimit.desc'
     ((X.linearYonedaObj k Y).homologyIsCokernel _ i rfl) (kroneckerCyclesHom k X Y i)
-    (toCycles_comp_kroneckerCyclesHom i)).2 φ
+    (toCycles_comp_kroneckerCyclesHom i)).property φ
   rw [kronecker]
   exact (congrArg (X.homologyπ i ≫ ·) hfac).trans (homologyπ_kroneckerOfCycles i φ)
 

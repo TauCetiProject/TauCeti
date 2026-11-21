@@ -82,7 +82,7 @@ theorem completionNormalizedAbsValue_apply (w : InfinitePlace K) (x : w.Completi
 theorem Completion.norm_algebraMap (w : InfinitePlace K) (x : K) :
     ‖algebraMap K w.Completion x‖ = w x := by
   rw [Completion.algebraMap_apply_eq_coe]
-  exact AbsoluteValue.Completion.norm_coe (WithAbs.toAbs w.1 x)
+  exact AbsoluteValue.Completion.norm_coe (WithAbs.toAbs w.val x)
 
 /-- Two continuous maps out of an archimedean completion `K_w` into a Hausdorff space agree once
 they agree on `K`. -/

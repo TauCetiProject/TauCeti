@@ -92,7 +92,7 @@ theorem injective_liftBaseChange_iff_primaryComponent_and_localized (f : M →�
       obtain ⟨a, ha⟩ := (IsLocalizedModule.eq_zero_iff (.powers (algebraMap R S g))
         (LocalizedModule.mkLinearMap (.powers (algebraMap R S g)) (S ⊗[R] M))).mp
           (hxloc g hg)
-      obtain ⟨n, hn⟩ := a.2
+      obtain ⟨n, hn⟩ := a.property
       exact ⟨n, by simpa only [Submonoid.smul_def, ← hn] using ha⟩
     obtain ⟨m, hm⟩ := e.surjective ⟨x, hxtors⟩
     have hmx : (1 : S) ⊗ₜ[R] (m : M) = x := by

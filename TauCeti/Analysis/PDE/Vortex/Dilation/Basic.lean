@@ -411,8 +411,8 @@ theorem comp_smul_mem_framedGaugeGroup {u : ℂ → Circle} (hu : u ∈ framedGa
 /-- **Dilation of framed gauges**: the automorphism `u ↦ u (t • ·)` of the smooth framed gauge
 group, for `t ≠ 0`. -/
 def dilateGauge {t : ℝ} (ht : t ≠ 0) : framedGaugeGroup ≃* framedGaugeGroup where
-  toFun u := ⟨fun w ↦ u.1 (t • w), comp_smul_mem_framedGaugeGroup u.2 ht⟩
-  invFun u := ⟨fun w ↦ u.1 (t⁻¹ • w), comp_smul_mem_framedGaugeGroup u.2 (inv_ne_zero ht)⟩
+  toFun u := ⟨fun w ↦ u.val (t • w), comp_smul_mem_framedGaugeGroup u.property ht⟩
+  invFun u := ⟨fun w ↦ u.val (t⁻¹ • w), comp_smul_mem_framedGaugeGroup u.property (inv_ne_zero ht)⟩
   left_inv u := by
     ext w
     simp [mul_inv_cancel_left₀ (Complex.ofReal_ne_zero.2 ht)]
@@ -435,7 +435,7 @@ theorem coe_dilateGauge_symm_apply {t : ℝ} (ht : t ≠ 0) (u : framedGaugeGrou
 theorem dilateField_framedGaugeGroup_smul {t : ℝ} (ht : t ≠ 0) (u : framedGaugeGroup)
     (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
     dilateField t (u • x) = dilateGauge ht u • dilateField t x := by
-  have hu : ((dilateGauge ht u : framedGaugeGroup) : ℂ → Circle) = fun w ↦ u.1 (t • w) :=
+  have hu : ((dilateGauge ht u : framedGaugeGroup) : ℂ → Circle) = fun w ↦ u.val (t • w) :=
     funext (coe_dilateGauge_apply ht u)
   rw [framedGaugeGroup_smul, framedGaugeGroup_smul, hu]
   exact dilateField_gaugeTransform t u x

@@ -85,7 +85,7 @@ def toCompactlySupportedContinuousMap (φ : 𝓓^{n}(Ω, F)) : C_c(Ω, F) where
   continuous_toFun := by fun_prop
   hasCompactSupport' := by
     refine HasCompactSupport.intro' (K := ((↑) : Ω → E) ⁻¹' tsupport φ) ?_
-      ((isClosed_tsupport _).preimage continuous_subtype_val)
+      ((isClosed_tsupport _).preimage continuous_subtypeVal)
       fun x hx => image_eq_zero_of_notMem_tsupport hx
     exact Ω.isOpen.isOpenEmbedding_subtypeVal.isInducing.isCompact_preimage'
       φ.hasCompactSupport.isCompact (by simpa using φ.tsupport_subset)
@@ -190,8 +190,8 @@ theorem enorm_integral_inner_le_withDensity {U : Set E} (hU : MeasurableSet U)
     {φ : 𝓓^{n}(Ω, G)} (hφU : tsupport φ ⊆ U) (hφ : ∀ x, ‖φ x‖ ≤ 1) (m : Measure Ω) (v : Ω → G) :
     ‖∫ x : Ω, ⟪φ x, v x⟫ ∂m‖ₑ ≤
       m.withDensity (fun x => ‖v x‖ₑ) ((↑) ⁻¹' U) := by
-  rw [withDensity_apply _ (hU.preimage measurable_subtype_coe),
-    ← lintegral_indicator (hU.preimage measurable_subtype_coe)]
+  rw [withDensity_apply _ (hU.preimage measurable_subtypeVal),
+    ← lintegral_indicator (hU.preimage measurable_subtypeVal)]
   refine (eNorm_integral_le_lintegral_eNorm _).trans (lintegral_mono fun x => ?_)
   by_cases hx : x ∈ ((↑) ⁻¹' U : Set Ω)
   · rw [Set.indicator_of_mem hx, ← ofReal_norm, ← ofReal_norm]
