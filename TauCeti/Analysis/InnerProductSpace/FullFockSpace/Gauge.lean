@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.FullFockSpace.Basic
+public import TauCeti.Analysis.InnerProductSpace.TensorProduct.Completion
 import Mathlib.Analysis.Normed.Lp.lpHolder
 import Mathlib.Topology.Algebra.InfiniteSum.NatInt
 
@@ -63,59 +64,40 @@ variable {𝕜 : Type u} {H : Type v} [RCLike 𝕜] [NormedAddCommGroup H] [Inne
 private def stepGauge (T : H →L[𝕜] H) (n : ℕ) :
     CompletedTensorPower 𝕜 H (n + 1) →L[𝕜] CompletedTensorPower 𝕜 H (n + 1) :=
   (CompletedTensorPower.succEquiv 𝕜 H n).symm.toLinearIsometry.toContinuousLinearMap ∘L
-    (T.rTensor (CompletedTensorPower 𝕜 H n)).completion ∘L
+    T.rTensorCompletion (CompletedTensorPower 𝕜 H n) ∘L
       (CompletedTensorPower.succEquiv 𝕜 H n).toLinearIsometry.toContinuousLinearMap
 
 private theorem succEquiv_stepGauge (T : H →L[𝕜] H) (n : ℕ)
     (x : CompletedTensorPower 𝕜 H (n + 1)) :
     CompletedTensorPower.succEquiv 𝕜 H n (stepGauge T n x) =
-      (T.rTensor (CompletedTensorPower 𝕜 H n)).completion
+      T.rTensorCompletion (CompletedTensorPower 𝕜 H n)
         (CompletedTensorPower.succEquiv 𝕜 H n x) := by
   simp [stepGauge]
-
-private theorem stepGauge_symm_coe (T : H →L[𝕜] H) (n : ℕ)
-    (z : H ⊗[𝕜] CompletedTensorPower 𝕜 H n) :
-    stepGauge T n ((CompletedTensorPower.succEquiv 𝕜 H n).symm z) =
-      (CompletedTensorPower.succEquiv 𝕜 H n).symm (T.rTensor (CompletedTensorPower 𝕜 H n) z) := by
-  simp [stepGauge]
-
-private theorem stepGauge_ext {n : ℕ}
-    {A B : CompletedTensorPower 𝕜 H (n + 1) →L[𝕜] CompletedTensorPower 𝕜 H (n + 1)}
-    (h : ∀ z : H ⊗[𝕜] CompletedTensorPower 𝕜 H n,
-      A ((CompletedTensorPower.succEquiv 𝕜 H n).symm z) =
-        B ((CompletedTensorPower.succEquiv 𝕜 H n).symm z)) :
-    A = B := by
-  ext x : 1
-  rw [← (CompletedTensorPower.succEquiv 𝕜 H n).symm_apply_apply x]
-  exact Completion.induction_on (CompletedTensorPower.succEquiv 𝕜 H n x)
-    (isClosed_eq (by fun_prop) (by fun_prop)) h
 
 private theorem norm_stepGauge_apply_le (T : H →L[𝕜] H) (n : ℕ)
     (x : CompletedTensorPower 𝕜 H (n + 1)) :
     ‖stepGauge T n x‖ ≤ ‖T‖ * ‖x‖ := by
   rw [← (CompletedTensorPower.succEquiv 𝕜 H n).norm_map (stepGauge T n x),
     succEquiv_stepGauge, ← (CompletedTensorPower.succEquiv 𝕜 H n).norm_map x]
-  refine Completion.induction_on (CompletedTensorPower.succEquiv 𝕜 H n x)
-      (isClosed_le (by fun_prop) (continuous_const.mul continuous_norm)) fun z => ?_
-  rw [ContinuousLinearMap.completion_apply_coe, Completion.norm_coe, Completion.norm_coe]
-  exact ((T.rTensor _).le_opNorm z).trans
-    (mul_le_mul_of_nonneg_right (T.norm_rTensor_le _) (norm_nonneg z))
+  exact (T.rTensorCompletion _).le_of_opNorm_le (norm_rTensorCompletion_le T) _
 
 private theorem stepGauge_add (S T : H →L[𝕜] H) (n : ℕ) :
-    stepGauge (S + T) n = stepGauge S n + stepGauge T n :=
-  stepGauge_ext fun z => by simp [stepGauge_symm_coe, Completion.coe_add]
+    stepGauge (S + T) n = stepGauge S n + stepGauge T n := by
+  simp [stepGauge, comp_add, add_comp]
 
 private theorem stepGauge_smul (c : 𝕜) (T : H →L[𝕜] H) (n : ℕ) :
-    stepGauge (c • T) n = c • stepGauge T n :=
-  stepGauge_ext fun z => by simp [stepGauge_symm_coe, Completion.coe_smul]
+    stepGauge (c • T) n = c • stepGauge T n := by
+  simp [stepGauge, smul_comp]
 
 private theorem stepGauge_id (n : ℕ) :
-    stepGauge (ContinuousLinearMap.id 𝕜 H) n = .id 𝕜 _ :=
-  stepGauge_ext fun z => by simp [stepGauge_symm_coe]
+    stepGauge (ContinuousLinearMap.id 𝕜 H) n = .id 𝕜 _ := by
+  ext x : 1
+  simp [stepGauge]
 
 private theorem stepGauge_comp (S T : H →L[𝕜] H) (n : ℕ) :
-    stepGauge (S ∘L T) n = stepGauge S n ∘L stepGauge T n :=
-  stepGauge_ext fun z => by simp [stepGauge_symm_coe, ContinuousLinearMap.rTensor_comp]
+    stepGauge (S ∘L T) n = stepGauge S n ∘L stepGauge T n := by
+  ext x : 1
+  simp [stepGauge, rTensorCompletion_comp]
 
 private def gaugeCoord (T : H →L[𝕜] H) :
     ∀ n, CompletedTensorPower 𝕜 H n →L[𝕜] CompletedTensorPower 𝕜 H n
@@ -144,7 +126,7 @@ private theorem gauge_apply_succ_eq_stepGauge (T : H →L[𝕜] H) (x : FullFock
 theorem gauge_apply_succ (T : H →L[𝕜] H) (x : FullFockSpace 𝕜 H) (n : ℕ) :
     (T.gauge x) (n + 1) =
       (CompletedTensorPower.succEquiv 𝕜 H n).symm
-        ((T.rTensor (CompletedTensorPower 𝕜 H n)).completion
+        (T.rTensorCompletion (CompletedTensorPower 𝕜 H n)
           (CompletedTensorPower.succEquiv 𝕜 H n (x (n + 1)))) := by
   simp [gauge_apply_succ_eq_stepGauge, stepGauge]
 
@@ -294,19 +276,7 @@ private theorem inner_stepGauge (T : H →L[𝕜] H) (n : ℕ)
     ⟪stepGauge T n x, y⟫_𝕜 = ⟪x, stepGauge T.adjoint n y⟫_𝕜 := by
   rw [← (CompletedTensorPower.succEquiv 𝕜 H n).inner_map_map (stepGauge T n x) y,
     ← (CompletedTensorPower.succEquiv 𝕜 H n).inner_map_map x (stepGauge T.adjoint n y),
-    succEquiv_stepGauge, succEquiv_stepGauge]
-  refine Completion.induction_on₂ (CompletedTensorPower.succEquiv 𝕜 H n x)
-      (CompletedTensorPower.succEquiv 𝕜 H n y)
-      (isClosed_eq (by fun_prop) (by fun_prop)) fun u v => ?_
-  rw [ContinuousLinearMap.completion_apply_coe, ContinuousLinearMap.completion_apply_coe,
-    Completion.inner_coe, Completion.inner_coe]
-  refine TensorProduct.inductionOn u (fun a w => ?_) (fun u₁ u₂ hu₁ hu₂ => ?_)
-  · refine TensorProduct.inductionOn v (fun b z => ?_) (fun v₁ v₂ hv₁ hv₂ => ?_)
-    · rw [ContinuousLinearMap.rTensor_tmul, ContinuousLinearMap.rTensor_tmul,
-        TensorProduct.inner_tmul, TensorProduct.inner_tmul,
-        ContinuousLinearMap.adjoint_inner_right]
-    · rw [map_add, inner_add_right, inner_add_right, hv₁, hv₂]
-  · rw [map_add, inner_add_left, inner_add_left, hu₁, hu₂]
+    succEquiv_stepGauge, succEquiv_stepGauge, ← adjoint_rTensorCompletion, adjoint_inner_right]
 
 /-- When `H` is complete, the free gauge representation commutes with taking Hilbert-space
 adjoints. -/

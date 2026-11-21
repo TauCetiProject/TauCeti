@@ -6,16 +6,20 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.DedekindDomain.AdicValuation.Valuation
+public import Mathlib.RingTheory.Ideal.Quotient.HasFiniteQuotients.Basic
 
 /-!
-# Natural numbers in the residue field of an adic valuation ring
+# Residue fields at height-one primes and adic valuation rings
 
-Let `R` be a Dedekind domain with fraction field `K`, and let `v` be a height one prime of `R`.
-The valuation ring of `K` at `v` is a local ring whose residue field has the same characteristic
-as `R ⧸ v`: a natural number vanishes in it exactly when its image in `R` lies in `v`.
+In a commutative ring `R` with finite quotients, every height-one prime `v` has a finite residue
+ring `R ⧸ v.asIdeal`. When `R` is a Dedekind domain with fraction field `K`, the valuation ring of
+`K` at `v` is a local ring whose residue field has the same characteristic as `R ⧸ v`: a natural
+number vanishes in it exactly when its image in `R` lies in `v`.
 
 ## Main results
 
+* `IsDedekindDomain.HeightOneSpectrum.finite_quotient_asIdeal`: when `R` has finite quotients,
+  every height-one prime `v` of `R` has finite quotient `R ⧸ v.asIdeal`.
 * `IsDedekindDomain.HeightOneSpectrum.natCast_residueField_valuationSubring_eq_zero_iff`: a
   natural number is zero in the residue field of the valuation ring of `K` at `v` exactly when
   it lies in `v`.
@@ -24,6 +28,13 @@ as `R ⧸ v`: a natural number vanishes in it exactly when its image in `R` lies
 public section
 
 namespace IsDedekindDomain.HeightOneSpectrum
+
+/-- In a commutative ring with finite quotients, the quotient by every height-one prime is
+finite. -/
+instance finite_quotient_asIdeal {R : Type*} [CommRing R] [Ring.HasFiniteQuotients R]
+    (v : HeightOneSpectrum R) :
+    Finite (R ⧸ v.asIdeal) :=
+  Ring.HasFiniteQuotients.finiteQuotient v.ne_bot
 
 variable {R : Type*} [CommRing R] [IsDedekindDomain R]
   {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K]

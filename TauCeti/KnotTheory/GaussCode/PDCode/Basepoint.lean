@@ -121,7 +121,7 @@ theorem toOrientedPDCode_rotateBasepoint (D : BasedOrientedGaussCode n) :
         PDCode.crossingBlockEquiv_apply_crossingSlotEquiv, Equiv.refl_symm, Equiv.refl_apply,
         toOrientedPDCode_crossing, crossingVisit_rotateBasepoint,
         crossingOutgoing_rotateBasepoint, visitHalfEdgeRotate_visitHalfEdgeEquiv]
-    · refine Subtype.ext <| Equiv.ext fun h => ?_
+    · ext h
       rw [← (visitHalfEdgeEquiv n).apply_symm_apply h]
       rcases (visitHalfEdgeEquiv n).symm h with ⟨i, outgoing⟩
       rw [OrientedPDCode.relabel_toPDCode, PDCode.relabel_edgePair,
