@@ -13,7 +13,7 @@ import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.MeasureTheory.Integral.Layercake
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.Analysis.SpecialFunctions.Integrability.Log
-import TauCeti.Analysis.SpecialFunctions.Log.PosLog
+import TauCeti.MeasureTheory.Function.BoundedMeanOscillation.Truncation
 import TauCeti.MeasureTheory.Integral.Average
 
 /-!
@@ -49,9 +49,6 @@ The function `log (1 + log⁺ ‖x‖⁻¹)`, which vanishes for `‖x‖ ≥ 1`
 * `TauCeti.ofReal_le_setLAverage_enorm_log_norm_sub_setAverage_ball_zero`,
   `TauCeti.not_memVMO_log_norm`: `log ‖·‖` does not have vanishing mean oscillation.
 * `TauCeti.memBMO_posLog_norm_inv`: `log⁺ ‖·‖⁻¹` has bounded mean oscillation.
-* `TauCeti.memVMO_log_one_add_of_forall_memVMO_min`: `log (1 + f)` has vanishing mean oscillation
-  when `f ≥ 0` has bounded mean oscillation and its truncations `min f n` have vanishing mean
-  oscillation.
 * `TauCeti.memVMO_log_one_add_posLog_norm_inv`,
   `TauCeti.not_memLp_top_log_one_add_posLog_norm_inv`: `log (1 + log⁺ ‖·‖⁻¹)` has vanishing mean
   oscillation and is not essentially bounded.
@@ -77,8 +74,9 @@ continuous compactly supported function `log⁺ (max ‖·‖ e⁻ⁿ)⁻¹`, so
 vanishing mean oscillation. What remains,
 `log (1 + L) - log (1 + min L n) = log⁺ ((1 + L) / (n + 1))`, is an `(n + 1)⁻¹`-Lipschitz function
 of `L`, so its BMO seminorm is at most `2 (n + 1)⁻¹ ‖L‖_{BMO}`. As `n → ∞` this tends to `0`, and
-functions of vanishing mean oscillation are closed in the BMO seminorm
-(`TauCeti.memVMO_of_tendsto_bmoSeminorm`).
+functions of vanishing mean oscillation are closed in the BMO seminorm. This is the general
+truncation criterion `TauCeti.memVMO_log_one_add_of_forall_memVMO_min` of
+`TauCeti.MeasureTheory.Function.BoundedMeanOscillation.Truncation`.
 
 ## References
 
@@ -335,80 +333,6 @@ theorem not_memVMO_log_norm [Nontrivial E] :
   exact (ENNReal.half_lt_self hδ ENNReal.ofReal_ne_top).not_ge this
 
 /-! ### An unbounded function of vanishing mean oscillation -/
-
-section Truncation
-
-variable {X : Type*} [PseudoMetricSpace X] [MeasurableSpace X] [SecondCountableTopology X]
-  {ν : Measure X} [IsLocallyFiniteMeasure ν]
-
-/-- The map `t ↦ log⁺ ((1 + t) / c)` is `c⁻¹`-Lipschitz. -/
-private theorem lipschitzWith_posLog_one_add_div {c : ℝ≥0} (hc : c ≠ 0) :
-    LipschitzWith c⁻¹ fun t : ℝ => Real.posLog ((1 + t) / c) := by
-  have hc' : (0 : ℝ) < c := by positivity
-  have h : LipschitzWith c⁻¹ fun t : ℝ => (1 + t) / c :=
-    LipschitzWith.of_dist_le_mul fun t s => by
-      rw [Real.dist_eq, Real.dist_eq, ← sub_div, add_sub_add_left_eq_sub, abs_div,
-        abs_of_pos hc', NNReal.coe_inv, div_eq_inv_mul]
-  simpa only [one_mul, Function.comp_def] using Real.lipschitzWith_posLog.comp h
-
-/-- For `t ≥ 0`, cutting `t` off at the level `n` lowers `log (1 + t)` by
-`log⁺ ((1 + t) / (n + 1))`. -/
-private theorem log_one_add_sub_log_one_add_min {t : ℝ} (ht : 0 ≤ t) (n : ℕ) :
-    Real.log (1 + t) - Real.log (1 + min t n) = Real.posLog ((1 + t) / ((n : ℝ≥0) + 1 : ℝ≥0)) := by
-  have hn : (0 : ℝ) < n + 1 := by positivity
-  push_cast
-  rcases le_total t n with h | h
-  · rw [min_eq_left h, sub_self, eq_comm, Real.posLog_eq_zero_iff,
-      abs_of_nonneg (by positivity), div_le_one hn]
-    linarith
-  · rw [min_eq_right h, Real.posLog_eq_log (by
-        rw [abs_of_nonneg (by positivity), one_le_div hn]
-        linarith),
-      Real.log_div (by linarith) hn.ne', add_comm (n : ℝ) 1]
-
-/-- **A logarithm of a function of bounded mean oscillation with vanishing truncations has
-vanishing mean oscillation.** Let `f ≥ 0` have bounded mean oscillation, and suppose that its
-truncations `min f n` at every level `n ∈ ℕ` have vanishing mean oscillation. Then `log (1 + f)`
-has vanishing mean oscillation.
-
-Indeed `log (1 + f)` differs from `log (1 + min f n)`, which has vanishing mean oscillation, by
-`log⁺ ((1 + f) / (n + 1))`, a `(n + 1)⁻¹`-Lipschitz function of `f`, whose BMO seminorm is at most
-`2 (n + 1)⁻¹ ‖f‖_{BMO}`. -/
-theorem memVMO_log_one_add_of_forall_memVMO_min {f : X → ℝ} (hf : MemBMO f ν)
-    (hf0 : ∀ᵐ x ∂ν, 0 ≤ f x) (hmin : ∀ n : ℕ, MemVMO (fun x => min (f x) n) ν) :
-    MemVMO (fun x => Real.log (1 + f x)) ν := by
-  -- On `[0, ∞)` the logarithm `log (1 + t)` agrees with the `1`-Lipschitz map `log⁺ (1 + t)`.
-  have hψ : LipschitzWith 1 fun t : ℝ => Real.posLog (1 + t) := by
-    simpa using lipschitzWith_posLog_one_add_div (c := 1) one_ne_zero
-  have hψeq {t : ℝ} (ht : 0 ≤ t) : Real.posLog (1 + t) = Real.log (1 + t) :=
-    Real.posLog_eq_log (by rw [abs_of_nonneg (by linarith)]; linarith)
-  have hloc : LocallyIntegrable (fun x => Real.log (1 + f x)) ν :=
-    ((hf.comp_lipschitz hψ).congr_ae (hf0.mono fun x hx => hψeq hx)).locallyIntegrable
-  have hg (n : ℕ) : MemVMO (fun x => Real.log (1 + min (f x) n)) ν :=
-    ((hmin n).comp_lipschitz hψ).congr_ae
-      (hf0.mono fun x hx => hψeq (le_min hx (Nat.cast_nonneg n)))
-  refine memVMO_of_tendsto_bmoSeminorm (l := atTop) hloc hg ?_
-  -- The remainder `log⁺ ((1 + f) / (n + 1))` has BMO seminorm at most `2 n⁻¹ ‖f‖_{BMO}`.
-  have hle (n : ℕ) : bmoSeminorm ((fun x => Real.log (1 + f x)) -
-      fun x => Real.log (1 + min (f x) n)) ν ≤ 2 * (n : ℝ≥0∞)⁻¹ * bmoSeminorm f ν := by
-    have hc : (n : ℝ≥0) + 1 ≠ 0 := by positivity
-    rw [bmoSeminorm_congr_ae
-      (f := (fun x => Real.log (1 + f x)) - fun x => Real.log (1 + min (f x) n))
-      (g := (fun t : ℝ => Real.posLog ((1 + t) / ((n : ℝ≥0) + 1 : ℝ≥0))) ∘ f)
-      (hf0.mono fun x hx => log_one_add_sub_log_one_add_min hx n)]
-    refine ((lipschitzWith_posLog_one_add_div hc).bmoSeminorm_comp_le
-      hf.locallyIntegrable.aestronglyMeasurable).trans ?_
-    gcongr
-    rw [ENNReal.coe_inv hc]
-    push_cast
-    exact ENNReal.inv_le_inv.2 le_self_add
-  have hlim : Tendsto (fun n : ℕ => 2 * (n : ℝ≥0∞)⁻¹ * bmoSeminorm f ν) atTop (𝓝 0) := by
-    simpa using ENNReal.Tendsto.mul_const
-      (ENNReal.Tendsto.const_mul ENNReal.tendsto_inv_nat_nhds_zero (Or.inr ENNReal.ofNat_ne_top))
-      (Or.inr hf.bmoSeminorm_ne_top)
-  exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hlim (fun _ => zero_le) hle
-
-end Truncation
 
 omit [NormedSpace ℝ E] [MeasurableSpace E] [FiniteDimensional ℝ E] [BorelSpace E] in
 /-- The function `log (1 + log⁺ ‖x‖⁻¹)`, which near the origin is `log log (1 / ‖x‖)` up to a
