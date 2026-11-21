@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.RibbonGraph.Classification
-public import TauCeti.Combinatorics.PermutationTriple.IsoClass
+public import TauCeti.Combinatorics.PermutationTriple.ClassInvariants
+public import TauCeti.Combinatorics.RibbonGraph.CycleData
+public import TauCeti.Combinatorics.RibbonGraph.Genus
 
 /-!
 # Connected ribbon graphs and connected permutation triples
@@ -20,10 +21,12 @@ given by `TauCeti.BipartiteRibbonGraph.autEquivAutomorphismGroup`.
 The equations `connectedIsoClassEquiv_mk` and `connectedIsoClassEquiv_symm_mk` describe the
 classification on representatives. Edge numberings are arbitrary, and the inverse uses universe
 lifting so that graphs in any universe are classified. In degree zero both carriers are empty,
-since connectedness requires a nonempty edge set.
+since connectedness requires a nonempty edge set, and in degree one both have a unique class.
 
 The restriction uses Mathlib's `Equiv.subtypeQuotientEquivQuotientSubtype` to commute invariant
-subtypes with quotients.
+subtypes with quotients. The degree partitions (`cycleData`), Euler characteristic, genus,
+automorphism-group order, and regularity descend to `Quotient (connectedIsoSetoid n)` and match
+those of `TauCeti.ConnectedIsoClass n` along `connectedIsoClassEquiv`.
 
 ## References
 
@@ -33,6 +36,8 @@ subtypes with quotients.
   London Mathematical Society Student Texts 79, Cambridge University Press 2012, §4.2.
 -/
 
+open Equiv
+
 public section
 
 namespace TauCeti.BipartiteRibbonGraph
@@ -40,6 +45,8 @@ namespace TauCeti.BipartiteRibbonGraph
 universe u
 
 variable {n : ℕ}
+
+/-! ### Classification of connected ribbon graphs -/
 
 /-- Isomorphism of connected bipartite ribbon graphs with `n` edges. The inner subtype records
 the edge count; the outer subtype records connectedness. -/
@@ -115,5 +122,91 @@ theorem connectedIsoClassEquiv_symm_mk (t : ConnectedTriple n) :
   simpa only [PermutationTriple.toPermutationTriple_ribbonGraph] using
     equivalent_toPermutationTriple_of_iso t.val.ribbonGraph.uliftIso
       (t.val.ribbonGraph.uliftIso.edge.trans (Equiv.refl (Fin n))) (Equiv.refl (Fin n))
+
+/-- There are no connected bipartite ribbon graphs with zero edges. -/
+instance : IsEmpty (Quotient (connectedIsoSetoid.{u} 0)) := (connectedIsoClassEquiv.{u} 0).isEmpty
+
+/-- Up to isomorphism there is a unique connected bipartite ribbon graph with one edge. -/
+noncomputable instance : Unique (Quotient (connectedIsoSetoid.{u} 1)) :=
+  (connectedIsoClassEquiv.{u} 1).unique
+
+/-! ### Invariants of connected ribbon-graph classes -/
+
+/-- The degree-partition triple `(λ₀, λ₁, λ∞)` of a class of connected ribbon graphs. -/
+def connectedCycleData (n : ℕ) :
+    Quotient (connectedIsoSetoid.{u} n) → Multiset ℕ × Multiset ℕ × Multiset ℕ :=
+  Quotient.lift (fun Γ => Γ.1.1.cycleData) fun _ _ h =>
+    (connectedIsoSetoid_mk_eq_mk_iff.mp (Quotient.sound h)).elim Iso.cycleData_eq
+
+/-- Evaluating `connectedCycleData` on the class of `Γ` gives `Γ.1.1.cycleData`. -/
+@[simp] theorem connectedCycleData_mk
+    (Γ : {Γ : {Γ : BipartiteRibbonGraph.{u} // Fintype.card Γ.E = n} // Γ.1.IsConnected}) :
+    connectedCycleData n (Quotient.mk (connectedIsoSetoid n) Γ) = Γ.1.1.cycleData := (rfl)
+
+/-- `connectedIsoClassEquiv` matches `connectedCycleData` with `ConnectedIsoClass.cycleData`. -/
+@[simp] theorem cycleData_connectedIsoClassEquiv (c : Quotient (connectedIsoSetoid.{u} n)) :
+    (connectedIsoClassEquiv n c).cycleData = connectedCycleData n c :=
+  Quotient.inductionOn c fun _ => by simp
+
+/-- The Euler characteristic `|B| + |W| + F - |E|` of a class of connected ribbon graphs. -/
+def connectedEulerChar (n : ℕ) : Quotient (connectedIsoSetoid.{u} n) → ℤ :=
+  Quotient.lift (fun Γ => Γ.1.1.eulerChar) fun _ _ h =>
+    (connectedIsoSetoid_mk_eq_mk_iff.mp (Quotient.sound h)).elim Iso.eulerChar_eq
+
+/-- Evaluating `connectedEulerChar` on the class of `Γ` gives `Γ.1.1.eulerChar`. -/
+@[simp] theorem connectedEulerChar_mk
+    (Γ : {Γ : {Γ : BipartiteRibbonGraph.{u} // Fintype.card Γ.E = n} // Γ.1.IsConnected}) :
+    connectedEulerChar n (Quotient.mk (connectedIsoSetoid n) Γ) = Γ.1.1.eulerChar := (rfl)
+
+/-- The classification `connectedIsoClassEquiv` preserves the Euler characteristic. -/
+@[simp] theorem eulerChar_connectedIsoClassEquiv (c : Quotient (connectedIsoSetoid.{u} n)) :
+    (connectedIsoClassEquiv n c).eulerChar = connectedEulerChar n c :=
+  Quotient.inductionOn c fun _ => by simp
+
+/-- The combinatorial genus `((2 - χ) / 2).toNat` of a class of connected ribbon graphs. -/
+def connectedGenus (n : ℕ) : Quotient (connectedIsoSetoid.{u} n) → ℕ :=
+  Quotient.lift (fun Γ => Γ.1.1.genus) fun _ _ h =>
+    (connectedIsoSetoid_mk_eq_mk_iff.mp (Quotient.sound h)).elim fun φ => φ.genus_eq
+
+/-- Evaluating `connectedGenus` on the class of `Γ` gives `Γ.1.1.genus`. -/
+@[simp] theorem connectedGenus_mk
+    (Γ : {Γ : {Γ : BipartiteRibbonGraph.{u} // Fintype.card Γ.E = n} // Γ.1.IsConnected}) :
+    connectedGenus n (Quotient.mk (connectedIsoSetoid n) Γ) = Γ.1.1.genus := (rfl)
+
+/-- The classification `connectedIsoClassEquiv` preserves the combinatorial genus. -/
+@[simp] theorem genus_connectedIsoClassEquiv (c : Quotient (connectedIsoSetoid.{u} n)) :
+    (connectedIsoClassEquiv n c).genus = connectedGenus n c :=
+  Quotient.inductionOn c fun _ => by simp
+
+/-- The cardinality of the automorphism group of a class of connected ribbon graphs. -/
+noncomputable def connectedNatCardAut (n : ℕ) : Quotient (connectedIsoSetoid.{u} n) → ℕ :=
+  Quotient.lift (fun Γ => Nat.card Γ.1.1.Aut) fun _ _ h =>
+    (connectedIsoSetoid_mk_eq_mk_iff.mp (Quotient.sound h)).elim Iso.natCard_aut_eq
+
+/-- Evaluating `connectedNatCardAut` on the class of `Γ` gives `Nat.card Γ.1.1.Aut`. -/
+@[simp] theorem connectedNatCardAut_mk
+    (Γ : {Γ : {Γ : BipartiteRibbonGraph.{u} // Fintype.card Γ.E = n} // Γ.1.IsConnected}) :
+    connectedNatCardAut n (Quotient.mk (connectedIsoSetoid n) Γ) = Nat.card Γ.1.1.Aut := (rfl)
+
+/-- The classification `connectedIsoClassEquiv` preserves the automorphism-group order. -/
+@[simp] theorem natCardAutomorphismGroup_connectedIsoClassEquiv
+    (c : Quotient (connectedIsoSetoid.{u} n)) :
+    (connectedIsoClassEquiv n c).natCardAutomorphismGroup = connectedNatCardAut n c :=
+  Quotient.inductionOn c fun _ => by simp
+
+/-- Regularity on isomorphism classes of connected bipartite ribbon graphs. -/
+def ConnectedIsRegular (n : ℕ) : Quotient (connectedIsoSetoid.{u} n) → Prop :=
+  Quotient.lift (fun Γ => Γ.1.1.IsRegular) fun _ _ h =>
+    (connectedIsoSetoid_mk_eq_mk_iff.mp (Quotient.sound h)).elim fun φ => propext φ.isRegular_iff
+
+/-- Evaluating `ConnectedIsRegular` on the class of `Γ` recovers `Γ.1.1.IsRegular`. -/
+@[simp] theorem connectedIsRegular_mk
+    (Γ : {Γ : {Γ : BipartiteRibbonGraph.{u} // Fintype.card Γ.E = n} // Γ.1.IsConnected}) :
+    ConnectedIsRegular n (Quotient.mk (connectedIsoSetoid n) Γ) ↔ Γ.1.1.IsRegular := Iff.rfl
+
+/-- The classification `connectedIsoClassEquiv` preserves regularity. -/
+@[simp] theorem isRegular_connectedIsoClassEquiv (c : Quotient (connectedIsoSetoid.{u} n)) :
+    (connectedIsoClassEquiv n c).IsRegular ↔ ConnectedIsRegular n c :=
+  Quotient.inductionOn c fun _ => by simp
 
 end TauCeti.BipartiteRibbonGraph

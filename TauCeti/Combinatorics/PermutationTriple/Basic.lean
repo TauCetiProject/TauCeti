@@ -541,6 +541,16 @@ theorem automorphismGroup_smul (τ : Perm (Fin n)) (t : PermutationTriple n) :
     (τ • t).automorphismGroup = t.automorphismGroup.map (MulAut.conj τ).toMonoidHom :=
   MulAction.stabilizer_smul_eq_stabilizer_map_conj τ t
 
+/-- Relabeling the sheets conjugates the automorphism group, preserving its cardinality. -/
+@[simp] theorem natCard_automorphismGroup_smul (τ : Perm (Fin n)) (t : PermutationTriple n) :
+    Nat.card (τ • t).automorphismGroup = Nat.card t.automorphismGroup :=
+  (automorphismGroup_smul τ t).symm ▸ Subgroup.card_map_of_injective (MulAut.conj τ).injective
+
+/-- Isomorphic permutation triples have automorphism groups of the same cardinality. -/
+theorem natCard_automorphismGroup_eq_of_equivalent {t t' : PermutationTriple n}
+    (h : Equivalent t t') : Nat.card t.automorphismGroup = Nat.card t'.automorphismGroup := by
+  obtain ⟨τ, rfl⟩ := equivalent_iff_exists_smul_eq.mp h; simp
+
 /-- Translating to the opposite convention preserves the automorphism group, represented on the
 opposite side as the simultaneous centralizer of its first two components. -/
 theorem automorphismGroup_equivOppositeConvention (t : PermutationTriple n) :
