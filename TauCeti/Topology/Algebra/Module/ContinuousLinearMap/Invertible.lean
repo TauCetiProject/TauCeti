@@ -117,22 +117,17 @@ variable {R M₁ M₂ M₃ : Type*} [Semiring R]
   [TopologicalSpace M₃] [AddCommMonoid M₃] [Module R M₃]
 
 /-- A composite `g ∘L f` whose outer factor `g` is injective is invertible exactly when both
-factors are. No dimension or completeness assumption is needed: if `g ∘L f` is a continuous
-linear equivalence `e`, then `e.symm ∘L g` is a continuous inverse of `f`. -/
+factors are. No dimension or completeness assumption is needed: since `g ∘L f` is a
+homeomorphism, the continuous map `g` is a quotient map, hence a homeomorphism as it is injective,
+and then `f` is invertible after cancelling `g`. -/
 theorem isInvertible_comp_iff_of_injective_left {f : M₁ →L[R] M₂} {g : M₂ →L[R] M₃}
     (hg : Function.Injective g) : (g ∘L f).IsInvertible ↔ f.IsInvertible ∧ g.IsInvertible := by
-  refine ⟨fun ⟨e, he⟩ ↦ ?_, fun ⟨hf, hg'⟩ ↦ hg'.comp hf⟩
-  have hcomp (v : M₁) : g (f v) = e v := by
-    rw [← ContinuousLinearEquiv.coe_coe, he, comp_apply]
-  -- `e.symm ∘L g` is a left inverse of `f` by construction, and a right inverse after
-  -- cancelling the injective `g`.
-  obtain ⟨φ, hφ⟩ : f.IsInvertible := .of_inverse (g := e.symm.toContinuousLinearMap ∘L g)
-    (ContinuousLinearMap.ext fun y ↦ hg (by simp [hcomp]))
-    (ContinuousLinearMap.ext fun v ↦ by simp [hcomp])
-  -- Then `g ∘L φ = e`, so `g` is invertible as well.
-  refine ⟨⟨φ, hφ⟩, (isInvertible_comp_equiv (e := φ)).1 ?_⟩
-  rw [hφ, ← he]
-  exact isInvertible_equiv
+  refine ⟨fun h ↦ ?_, fun ⟨hf, hg'⟩ ↦ hg'.comp hf⟩
+  have hgq : Topology.IsQuotientMap g :=
+    .of_comp f.continuous g.continuous h.isHomeomorph.isQuotientMap
+  obtain ⟨e, rfl⟩ : g.IsInvertible :=
+    .of_isHomeomorph (isHomeomorph_iff_isQuotientMap_injective.2 ⟨hgq, hg⟩)
+  exact ⟨isInvertible_equiv_comp.1 h, isInvertible_equiv⟩
 
 end Comp
 
