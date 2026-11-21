@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Manifold.Instances.AddCircle
 public import TauCeti.Geometry.Manifold.IsManifold.Pi
 public import TauCeti.Geometry.Symplectic.Hamiltonian.WeightModel.Basic
 import Mathlib.Geometry.Manifold.Algebra.Structures
-import TauCeti.Geometry.Manifold.ContMDiff.PiLp
 
 /-!
 # Smoothness of the rotation torus action
@@ -72,8 +71,10 @@ theorem contMDiff_torusRotation :
     ext j
     · exact torusRotation_apply_fst p.1 p.2 j
     · exact torusRotation_apply_snd p.1 p.2 j
+  have htoLp := (PiLp.continuousLinearEquiv 2 ℝ fun _ : ι ↦ ℝ).symm.contDiff.contMDiff (n := ∞)
   rw [hfun]
-  refine ContMDiff.prodMk_space (contMDiff_piLp_iff.2 fun j ↦ ?_) (contMDiff_piLp_iff.2 fun j ↦ ?_)
+  refine ContMDiff.prodMk_space (htoLp.comp (contMDiff_pi_module_iff.2 fun j ↦ ?_))
+    (htoLp.comp (contMDiff_pi_module_iff.2 fun j ↦ ?_))
   · exact ((hcos.comp (hθ j)).mul (hq j)).add ((hsin.comp (hθ j)).mul (hp j))
   · exact ((hsin.comp (hθ j)).mul (hq j)).neg.add ((hcos.comp (hθ j)).mul (hp j))
 
