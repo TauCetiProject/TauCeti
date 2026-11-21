@@ -26,9 +26,11 @@ tower `IsScalarTower 𝕜 𝕜' E'` on the target model space, and either an alg
 scalars `algebraMap 𝕜 𝕜' c`) or an action of `𝕜` on the `𝕜'`-linear maps factoring through `𝕜'`
 (for scalars `c : 𝕜`).
 
-For the self models over a normed algebra, a separate fibrewise linear equivalence identifies the
-tangent space over the larger field, with scalars restricted through `RestrictScalars`, with the
-native tangent space over the smaller field.
+For the self models, a separate fibrewise linear equivalence identifies the tangent space over the
+larger field, with scalars restricted through `RestrictScalars`, with the native tangent space over
+the smaller field. It needs only an algebra `Algebra R A` (not a normed algebra) and a scalar tower
+`IsScalarTower R A E` on the model space. It intertwines every map between self-model tangent
+spaces with the map's scalar restriction.
 
 ## Main definitions
 
@@ -53,6 +55,9 @@ native tangent space over the smaller field.
   preserves multiplication by scalars of the base field.
 * `ContinuousLinearMap.restrictScalarsTangent_modelWithCornersSelf`: for the self models it is
   `ContinuousLinearMap.restrictScalars`.
+* `ContinuousLinearMap.restrictScalarsTangent_tangentSpaceRestrictScalarsSelfLinearEquiv`: the
+  self-model fibre equivalence intertwines a map between self-model tangent spaces with its scalar
+  restriction.
 -/
 
 public section
@@ -283,6 +288,33 @@ theorem tangentSpaceRestrictScalarsSelfLinearEquiv_symm_apply (x : M) (v : Tange
       (RestrictScalars.addEquiv R A _).symm
         ((tangentSpaceCastModel 𝓘(A, E) x).symm (tangentSpaceCastModel 𝓘(R, E) x v)) := by
   rfl
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace A F] [NormedSpace R F]
+  [IsScalarTower R A F] {N : Type*} [TopologicalSpace N] [ChartedSpace F N]
+
+/-- The self-model fibre comparison `TauCeti.tangentSpaceRestrictScalarsSelfLinearEquiv`
+intertwines a map `f'` between self-model tangent spaces over `A` with its scalar restriction
+`f'.restrictScalarsTangent R`. The tangent spaces for `𝓘(A, E).restrictScalars R` and `𝓘(R, E)`
+are both `E` with the same `R`-module structure (`modelWithCornersSelf_restrictScalars`). -/
+theorem _root_.ContinuousLinearMap.restrictScalarsTangent_tangentSpaceRestrictScalarsSelfLinearEquiv
+    {x : M} {y : N} (f' : TangentSpace 𝓘(A, E) x →L[A] TangentSpace 𝓘(A, F) y)
+    (v : RestrictScalars R A (TangentSpace 𝓘(A, E) x)) :
+    f'.restrictScalarsTangent R (tangentSpaceRestrictScalarsSelfLinearEquiv R x v) =
+      tangentSpaceRestrictScalarsSelfLinearEquiv R y
+        ((RestrictScalars.addEquiv R A _).symm (f' (RestrictScalars.addEquiv R A _ v))) := by
+  rw [tangentSpaceRestrictScalarsSelfLinearEquiv_apply,
+    tangentSpaceRestrictScalarsSelfLinearEquiv_apply, AddEquiv.apply_symm_apply]
+  -- Compare both sides in the model space `F`, where the scalar restriction of `f'` is
+  -- `ContinuousLinearMap.restrictScalars`.
+  apply (tangentSpaceCastModel 𝓘(R, F) y).injective
+  have hB := DFunLike.congr_fun
+    (ContinuousLinearMap.tangentSpaceCastModel_comp_restrictScalarsTangent_comp R f')
+    (tangentSpaceCastModel 𝓘(A, E) x (RestrictScalars.addEquiv R A _ v))
+  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_restrictScalars',
+    ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.symm_apply_apply] at hB
+  rw [modelWithCornersSelf_restrictScalars, modelWithCornersSelf_restrictScalars] at hB
+  rw [ContinuousLinearEquiv.apply_symm_apply]
+  exact hB
 
 end TauCeti
 
