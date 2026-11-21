@@ -15,10 +15,10 @@ import Mathlib.Analysis.Calculus.ParametricIntegral
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
-import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 import TauCeti.Analysis.SpecialFunctions.Gamma.IntegralComplexRate
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
 
 /-!
 # One-sided Laplace transforms with complex parameter
@@ -511,104 +511,6 @@ theorem intervalIntegrable_of_integrableOn_cexp_neg_mul_smul {g : ℝ → E} {s 
   rw [smul_smul, ← Complex.exp_add]
   simp
 
-/-- Helper exponential identity: `exp (-s t) = exp (-s T) + s * ∫ r in t..T, exp (-s r)`,
-valid for every `s : ℂ` (including `s = 0`). -/
-private lemma cexp_neg_mul_eq_add_mul_integral (s : ℂ) (t T : ℝ) :
-    Complex.exp (-s * t) = Complex.exp (-s * T) + s * ∫ r in t..T, Complex.exp (-s * r) := by
-  have hftc : ∫ r in t..T, -s * Complex.exp (-s * r) =
-      Complex.exp (-s * T) - Complex.exp (-s * t) := by
-    refine intervalIntegral.integral_eq_sub_of_hasDerivAt
-      (f := fun r : ℝ ↦ Complex.exp (-s * r)) (fun r _ ↦ ?_)
-      ((by fun_prop : Continuous fun r : ℝ ↦ -s * Complex.exp (-s * r)).intervalIntegrable t T)
-    simpa [mul_comm] using (((hasDerivAt_id' r).ofReal_comp).const_mul (-s)).cexp
-  rw [intervalIntegral.integral_const_mul] at hftc
-  linear_combination hftc
-
-private lemma integrable_triangle_cexp_neg_mul_smul {g : ℝ → E} (s : ℂ) {T : ℝ} (hT : 0 ≤ T)
-    (hg : IntervalIntegrable g volume 0 T) :
-    Integrable (Function.uncurry fun t r : ℝ ↦ if t ≤ r then Complex.exp (-s * r) • g t else 0)
-      ((volume.restrict (Ioc 0 T)).prod (volume.restrict (Ioc 0 T))) := by
-  set μT : Measure ℝ := volume.restrict (Ioc 0 T)
-  have hgIoc : Integrable g μT := (intervalIntegrable_iff_integrableOn_Ioc_of_le hT).mp hg
-  have hmeas : AEStronglyMeasurable
-      (fun p : ℝ × ℝ ↦ Complex.exp (-s * p.2) • g p.1) (μT.prod μT) :=
-    ((by fun_prop : Continuous fun p : ℝ × ℝ ↦ Complex.exp (-s * p.2)).aestronglyMeasurable).smul
-      hgIoc.aestronglyMeasurable.comp_fst
-  have hbound : Integrable (fun p : ℝ × ℝ ↦ Real.exp (|s.re| * T) * ‖g p.1‖) (μT.prod μT) :=
-    (hgIoc.norm.const_mul (Real.exp (|s.re| * T))).comp_fst μT
-  have hfun : (Function.uncurry fun t r : ℝ ↦ if t ≤ r then Complex.exp (-s * r) • g t else 0) =
-      ({p : ℝ × ℝ | p.1 ≤ p.2}).indicator fun p ↦ Complex.exp (-s * p.2) • g p.1 := by
-    ext ⟨t, r⟩
-    simp [Set.indicator_apply]
-  rw [hfun]
-  refine Integrable.mono' hbound
-    (hmeas.indicator (measurableSet_le measurable_fst measurable_snd)) ?_
-  dsimp only [μT]
-  rw [Measure.prod_restrict]
-  filter_upwards [ae_restrict_mem (measurableSet_Ioc.prod measurableSet_Ioc)] with ⟨t, r⟩ hp
-  have hre_le : -s.re * r ≤ |s.re| * T :=
-    (mul_le_mul_of_nonneg_right (neg_le_abs s.re) hp.2.1.le).trans
-      (mul_le_mul_of_nonneg_left hp.2.2 (abs_nonneg _))
-  rw [Set.indicator_apply]
-  split_ifs
-  · rw [norm_smul, Complex.norm_exp, Complex.re_mul_ofReal, Complex.neg_re]
-    exact mul_le_mul_of_nonneg_right (Real.exp_le_exp.mpr hre_le) (norm_nonneg _)
-  · rw [norm_zero]
-    positivity
-
-private lemma integral_triangle_left [CompleteSpace E] {g : ℝ → E} (s : ℂ) {T : ℝ} (hT : 0 ≤ T) :
-    (∫ t in Ioc 0 T, ∫ r in Ioc 0 T, if t ≤ r then Complex.exp (-s * r) • g t else 0) =
-      ∫ t in (0 : ℝ)..T, (∫ r in t..T, Complex.exp (-s * r)) • g t := by
-  rw [intervalIntegral.integral_of_le hT]
-  refine setIntegral_congr_fun measurableSet_Ioc fun t ht ↦ ?_
-  rw [← intervalIntegral.integral_smul_const, intervalIntegral.integral_of_le ht.2,
-    ← integral_indicator measurableSet_Ioc, ← integral_indicator measurableSet_Ioc]
-  refine integral_congr_ae ?_
-  filter_upwards [Measure.ae_ne volume t] with r hrt
-  simp only [Set.indicator_apply, Set.mem_Ioc]
-  by_cases h1 : t < r ∧ r ≤ T
-  · have h0 : 0 < r := ht.1.trans h1.1
-    simp [h0, h1.1, h1.1.le, h1.2]
-  · simp only [h1, ↓reduceIte]
-    by_cases h2 : 0 < r ∧ r ≤ T
-    · have hlt : r < t := lt_of_le_of_ne (not_lt.mp fun htr ↦ h1 ⟨htr, h2.2⟩) hrt
-      simp [h2, not_le.mpr hlt]
-    · simp [h2]
-
-private lemma integral_triangle_right [CompleteSpace E] {f g : ℝ → E} (s : ℂ) {T : ℝ}
-    (hT : 0 ≤ T) (hfg : ∀ t ∈ Icc (0 : ℝ) T, f t = f 0 + ∫ u in (0 : ℝ)..t, g u)
-    (hg : IntervalIntegrable g volume 0 T) :
-    (∫ r in Ioc 0 T, ∫ t in Ioc 0 T, if t ≤ r then Complex.exp (-s * r) • g t else 0) =
-      (∫ r in (0 : ℝ)..T, Complex.exp (-s * r) • f r) -
-        (∫ r in (0 : ℝ)..T, Complex.exp (-s * r)) • f 0 := by
-  have hf_cont : ContinuousOn f (Icc 0 T) :=
-    (continuousOn_const.add
-      ((intervalIntegral.continuousOn_primitive_interval' hg
-        (by rw [uIcc_of_le hT]; exact left_mem_Icc.mpr hT)).mono
-        (by rw [uIcc_of_le hT]))).congr hfg
-  have hf_int : IntervalIntegrable (fun r : ℝ ↦ Complex.exp (-s * r) • f r) volume 0 T :=
-    (hf_cont.mono (by rw [uIcc_of_le hT])).intervalIntegrable.continuousOn_smul
-      (by fun_prop : Continuous fun r : ℝ ↦ Complex.exp (-s * r)).continuousOn
-  have h0_int : IntervalIntegrable (fun r : ℝ ↦ Complex.exp (-s * r) • f 0) volume 0 T :=
-    (by fun_prop : Continuous fun r : ℝ ↦ Complex.exp (-s * r) • f 0).intervalIntegrable _ _
-  rw [← intervalIntegral.integral_smul_const, ← intervalIntegral.integral_sub hf_int h0_int,
-    intervalIntegral.integral_of_le hT]
-  refine setIntegral_congr_fun measurableSet_Ioc fun r hr ↦ ?_
-  have hfr : ∫ t in (0 : ℝ)..r, g t = f r - f 0 :=
-    eq_sub_of_add_eq' (hfg r (Ioc_subset_Icc_self hr)).symm
-  rw [← smul_sub, ← hfr, ← intervalIntegral.integral_smul, intervalIntegral.integral_of_le hr.1.le,
-    ← integral_indicator measurableSet_Ioc, ← integral_indicator measurableSet_Ioc]
-  congr 1
-  ext t
-  simp only [Set.indicator_apply, Set.mem_Ioc]
-  by_cases h1 : 0 < t ∧ t ≤ r
-  · simp [h1.1, h1.2, h1.2.trans hr.2]
-  · simp only [h1, ↓reduceIte]
-    by_cases h2 : 0 < t ∧ t ≤ T
-    · have hnt : ¬ t ≤ r := fun htr ↦ h1 ⟨h2.1, htr⟩
-      simp [h2, hnt]
-    · simp [h2]
-
 /-- **Finite-horizon integration by parts for the Laplace kernel** (primitive form): if
 `f t = f 0 + ∫ u in 0..t, g u` on `[0, T]` with `g` interval integrable on `[0, T]`, then
 `∫ t in 0..T, exp (-s t) • g t = exp (-s T) • f T - f 0 + s • ∫ t in 0..T, exp (-s t) • f t`. -/
@@ -617,46 +519,52 @@ theorem intervalIntegral_cexp_neg_mul_smul_of_primitive [CompleteSpace E] {f g :
     (hg : IntervalIntegrable g volume 0 T) :
     ∫ t in (0 : ℝ)..T, Complex.exp (-s * t) • g t =
       Complex.exp (-s * T) • f T - f 0 + s • ∫ t in (0 : ℝ)..T, Complex.exp (-s * t) • f t := by
-  have hkernel : ∀ t : ℝ, s * ∫ r in t..T, Complex.exp (-s * r) =
-      Complex.exp (-s * t) - Complex.exp (-s * T) :=
-    fun t ↦ eq_sub_of_add_eq' (cexp_neg_mul_eq_add_mul_integral s t T).symm
-  have h1_int : IntervalIntegrable (fun t : ℝ ↦ Complex.exp (-s * T) • g t) volume 0 T :=
-    hg.smul _
-  have h2_int : IntervalIntegrable
-      (fun t : ℝ ↦ (s * ∫ r in t..T, Complex.exp (-s * r)) • g t) volume 0 T := by
-    simp_rw [hkernel]
-    exact hg.continuousOn_smul
-      (by fun_prop :
-        Continuous fun t : ℝ ↦ Complex.exp (-s * t) - Complex.exp (-s * T)).continuousOn
-  have hsplit : ∫ t in (0 : ℝ)..T, Complex.exp (-s * t) • g t =
-      (∫ t in (0 : ℝ)..T, Complex.exp (-s * T) • g t) +
-        s • ∫ t in (0 : ℝ)..T, (∫ r in t..T, Complex.exp (-s * r)) • g t := by
-    have heq : ∀ t : ℝ, Complex.exp (-s * t) • g t =
-        Complex.exp (-s * T) • g t + (s * ∫ r in t..T, Complex.exp (-s * r)) • g t := fun t ↦ by
-      rw [← add_smul, ← cexp_neg_mul_eq_add_mul_integral s t T]
-    simp_rw [heq]
-    rw [intervalIntegral.integral_add h1_int h2_int]
+  let φ : ℝ → ℂ := fun t : ℝ ↦ Complex.exp (-s * t)
+  have hφ_deriv : ∀ t : ℝ, HasDerivAt φ (-s * Complex.exp (-s * t)) t := fun t ↦ by
+    simpa [φ, mul_comm] using (((hasDerivAt_id' t).ofReal_comp).const_mul (-s)).cexp
+  have hφ_cd : ContDiff ℝ 1 φ :=
+    (contDiff_const.mul Complex.ofRealCLM.contDiff).cexp
+  have hibp := TauCeti.intervalIntegral.integral_deriv_smul_primitive_eq_sub_of_le hT hφ_cd hg
+  have hf_sub : ∀ t ∈ uIcc (0 : ℝ) T, ∫ u in (0 : ℝ)..t, g u = f t - f 0 := fun t ht ↦
+    eq_sub_of_add_eq' (hfg t (uIcc_of_le hT ▸ ht)).symm
+  have hfT : ∫ u in (0 : ℝ)..T, g u = f T - f 0 := hf_sub T right_mem_uIcc
+  have hderiv_eq : ∀ t : ℝ, deriv φ t = -s * Complex.exp (-s * t) := fun t ↦ (hφ_deriv t).deriv
+  have hf_cont : ContinuousOn f (uIcc (0 : ℝ) T) := by
+    rw [uIcc_of_le hT]
+    exact (continuousOn_const.add
+      ((intervalIntegral.continuousOn_primitive_interval' hg
+        (by rw [uIcc_of_le hT]; exact left_mem_Icc.mpr hT)).mono
+        (by rw [uIcc_of_le hT]))).congr hfg
+  have h1_int : IntervalIntegrable (fun t : ℝ ↦ (-s * Complex.exp (-s * t)) • f t) volume 0 T :=
+    hf_cont.intervalIntegrable.continuousOn_smul
+      (by fun_prop : Continuous fun t : ℝ ↦ -s * Complex.exp (-s * t)).continuousOn
+  have h0_int : IntervalIntegrable (fun t : ℝ ↦ (-s * Complex.exp (-s * t)) • f 0) volume 0 T :=
+    (by fun_prop : Continuous fun t : ℝ ↦ (-s * Complex.exp (-s * t)) • f 0).intervalIntegrable _ _
+  have hlhs : ∫ t in (0 : ℝ)..T, deriv φ t • ∫ u in (0 : ℝ)..t, g u =
+      -s • (∫ t in (0 : ℝ)..T, Complex.exp (-s * t) • f t) -
+        (Complex.exp (-s * T) - 1) • f 0 := by
+    have hcongr : EqOn (fun t : ℝ ↦ deriv φ t • ∫ u in (0 : ℝ)..t, g u)
+        (fun t : ℝ ↦ (-s * Complex.exp (-s * t)) • f t - (-s * Complex.exp (-s * t)) • f 0)
+        (uIcc 0 T) := fun t ht ↦ by
+      dsimp only
+      rw [hderiv_eq, hf_sub t ht, smul_sub]
+    rw [intervalIntegral.integral_congr hcongr, intervalIntegral.integral_sub h1_int h0_int]
     congr 1
-    simp_rw [mul_smul]
-    exact intervalIntegral.integral_smul s _
-  have hfT : ∫ t in (0 : ℝ)..T, g t = f T - f 0 :=
-    eq_sub_of_add_eq' (hfg T (right_mem_Icc.mpr hT)).symm
-  have hcoeff0 : Complex.exp (-s * T) + s * ∫ r in (0 : ℝ)..T, Complex.exp (-s * r) = 1 := by
-    simpa using (cexp_neg_mul_eq_add_mul_integral s 0 T).symm
-  rw [hsplit, intervalIntegral.integral_smul, hfT, ← integral_triangle_left s hT,
-    integral_integral_swap (integrable_triangle_cexp_neg_mul_smul s hT hg),
-    integral_triangle_right s hT hfg hg, smul_sub, smul_sub, ← smul_assoc, smul_eq_mul]
-  have hcomb : Complex.exp (-s * T) • f 0 +
-      (s * ∫ r in (0 : ℝ)..T, Complex.exp (-s * r)) • f 0 = f 0 := by
-    rw [← add_smul, hcoeff0, one_smul]
-  rw [← sub_eq_zero]
-  calc Complex.exp (-s * T) • f T - Complex.exp (-s * T) • f 0 +
-          ((s • ∫ r in (0 : ℝ)..T, Complex.exp (-s * r) • f r) -
-            (s * ∫ r in (0 : ℝ)..T, Complex.exp (-s * r)) • f 0) -
-          (Complex.exp (-s * T) • f T - f 0 + s • ∫ t in (0 : ℝ)..T, Complex.exp (-s * t) • f t)
-      = f 0 - (Complex.exp (-s * T) • f 0 +
-          (s * ∫ r in (0 : ℝ)..T, Complex.exp (-s * r)) • f 0) := by abel
-    _ = 0 := by rw [hcomb, sub_self]
+    · simp_rw [mul_smul, intervalIntegral.integral_smul]
+    · rw [intervalIntegral.integral_smul_const,
+        intervalIntegral.integral_eq_sub_of_hasDerivAt (fun t _ ↦ hφ_deriv t)
+          ((by fun_prop : Continuous fun t : ℝ ↦ -s * Complex.exp (-s * t)).intervalIntegrable 0 T)]
+      simp [φ]
+  rw [hlhs, hfT, smul_sub] at hibp
+  dsimp only [φ] at hibp
+  have hres : ∫ t in (0 : ℝ)..T, Complex.exp (-s * t) • g t =
+      Complex.exp (-s * T) • f T - Complex.exp (-s * T) • f 0 -
+        (-s • (∫ t in (0 : ℝ)..T, Complex.exp (-s * t) • f t) -
+          (Complex.exp (-s * T) - 1) • f 0) := by
+    rw [hibp]
+    abel
+  rw [hres, sub_smul, one_smul, neg_smul]
+  abel
 
 /-- **Transform of a derivative (primitive form)**: if `f` is a primitive of `g` on `[0, ∞)`,
 `f` has Laplace transform `z` at `s`, and `t ↦ exp (-s t) • g t` is integrable on `(0, ∞)`, then

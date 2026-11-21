@@ -48,8 +48,8 @@ used to identify weak derivatives on an interval with ordinary primitives.
   `v` in `L¹(a, b)`, is bounded by `‖c‖ + ∫ B` when `‖d v‖ ≤ B`, and then has relatively compact
   range (Arzelà–Ascoli).
 * `TauCeti.intervalIntegral.integral_deriv_smul_primitive_eq_sub_of_le`: integration by parts
-  between a `C¹` real function `φ` and the primitive of an integrable `f`, which need not be
-  differentiable anywhere:
+  between a `C¹` scalar function `φ : ℝ → 𝕜` (`RCLike 𝕜`, e.g., `ℝ` or `ℂ`) and the primitive of
+  an integrable `f`, which need not be differentiable anywhere:
   `∫ t in a..b, φ' t • ∫ s in a..t, f s = φ b • ∫ s in a..b, f s - ∫ t in a..b, φ t • f t`.
   It is proved by exchanging the order of integration (Fubini's theorem), so no differentiation of
   the primitive is needed.
@@ -237,9 +237,10 @@ theorem exists_continuous_primitive_Icc (hf : ContinuousOn f (Icc a b)) :
 
 omit [CompleteSpace E] in
 /-- **Integration by parts against a primitive.** For `a ≤ b`, `f` integrable on `[a, b]` and a
-`C¹` function `φ : ℝ → ℝ`,
+`C¹` scalar function `φ : ℝ → 𝕜` (for `RCLike 𝕜`, e.g., `ℝ` or `ℂ`),
 `∫ t in a..b, φ' t • ∫ s in a..t, f s = φ b • ∫ s in a..b, f s - ∫ t in a..b, φ t • f t`. -/
-theorem integral_deriv_smul_primitive_eq_sub_of_le {φ : ℝ → ℝ} (hab : a ≤ b)
+theorem integral_deriv_smul_primitive_eq_sub_of_le {𝕜 : Type*} [RCLike 𝕜] [NormedSpace 𝕜 E]
+    [SMulCommClass ℝ 𝕜 E] {φ : ℝ → 𝕜} (hab : a ≤ b)
     (hφ : ContDiff ℝ 1 φ) (hf : IntervalIntegrable f volume a b) :
     ∫ t in a..b, deriv φ t • ∫ s in a..t, f s =
       φ b • (∫ s in a..b, f s) - ∫ t in a..b, φ t • f t := by
