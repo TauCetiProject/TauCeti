@@ -32,6 +32,9 @@ with `F`. The canonical identification relates their vanishing, injectivity and 
   linear.
 * `MDifferentiableAt.mvfderiv_prod_eq_add_apply`: the vector-valued derivative on a product
   is the sum of its partial derivatives.
+* `MDifferentiableAt.mvfderiv_prod_eq_apply_of_snd_eq_zero`,
+  `MDifferentiableAt.mvfderiv_prod_eq_apply_of_fst_eq_zero`: along a tangent vector of one factor,
+  the derivative on a product is the derivative of the slice through the point.
 * `MDifferentiableAt.mfderiv_prodMk_id_apply`: the derivative of the graph map `y ↦ (y, u y)`
   sends a tangent vector `v` to `(v, d u v)`.
 * `TauCeti.fderiv_comp_graph_apply_of_mdifferentiableAt`: the chain rule along the graph of a
@@ -42,8 +45,10 @@ with `F`. The canonical identification relates their vanishing, injectivity and 
   family along a `C¹` manifold-valued map is continuous.
 * `TauCeti.mfderiv_apply_eq_zero_of_const_line`: the derivative of a map from a normed space
   vanishes on a direction along which the map is constant.
+* `MDifferentiableAt.mvfderiv_prodMk_apply`: the derivative of a pair map into a product of normed
+  spaces is the pair of the derivatives.
 * `TauCeti.mvfderiv_apply`: the derivative of a component of a function into a finite product is
-  the component of its derivative.
+  the component of its derivative, and `TauCeti.mvfderiv_apply_apply` is its evaluated form.
 * `mvfderiv_apply_eq_mfderiv_apply`: evaluating `mvfderiv` agrees with evaluating `mfderiv`.
 * `Submodule.map_mvfderiv_eq_map_mfderiv`: both derivatives have the same image of a tangent
   submodule.
@@ -178,6 +183,17 @@ theorem _root_.ContinuousLinearMap.mvfderiv_comp_apply (L : F →L[𝕜] F') {g 
     mvfderiv I (L ∘ g) x v = L (mvfderiv I g x v) := by
   rw [mvfderiv_comp_apply_of_differentiableAt L.differentiableAt hg, ContinuousLinearMap.fderiv]
 
+/-- The derivative of a pair map `z ↦ (f z, g z)` into a product of normed spaces is the pair of
+the derivatives of its components. -/
+theorem _root_.MDifferentiableAt.mvfderiv_prodMk_apply {f : M → F} {g : M → F'} {x : M}
+    (hf : MDiffAt f x) (hg : MDiffAt g x) (v : TangentSpace I x) :
+    mvfderiv I (fun z ↦ (f z, g z)) x v = (mvfderiv I f x v, mvfderiv I g x v) := by
+  have hd : MDifferentiableAt I 𝓘(𝕜, F × F') (fun z ↦ (f z, g z)) x := hf.prodMk_space hg
+  -- The components of the pair map are `fst` and `snd` composed with it.
+  ext1
+  · exact ((ContinuousLinearMap.fst 𝕜 F F').mvfderiv_comp_apply hd v).symm
+  · exact ((ContinuousLinearMap.snd 𝕜 F F').mvfderiv_comp_apply hd v).symm
+
 /-- The vector-valued derivative on a product is the sum of its partial derivatives. -/
 theorem _root_.MDifferentiableAt.mvfderiv_prod_eq_add_apply
     {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
@@ -193,6 +209,28 @@ theorem _root_.MDifferentiableAt.mvfderiv_prod_eq_add_apply
     (mfderiv_prod_eq_add_apply hf (v := v))
   simpa only [mvfderiv, ContinuousLinearMap.coe_comp, Function.comp_def,
     ContinuousLinearEquiv.coe_coe, map_add] using h
+
+/-- Along a tangent vector of the first factor, the vector-valued derivative of a function on a
+product is the derivative of its slice through the point. -/
+theorem _root_.MDifferentiableAt.mvfderiv_prod_eq_apply_of_snd_eq_zero
+    {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+    {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+    {M' : Type*} [TopologicalSpace M'] [ChartedSpace H' M'] {f : M × M' → F'} {p : M × M'}
+    (hf : MDifferentiableAt (I.prod I') 𝓘(𝕜, F') f p)
+    {v : TangentSpace (I.prod I') p} (hv : v.2 = (0 : TangentSpace I' p.2)) :
+    mvfderiv (I.prod I') f p v = mvfderiv I (fun y ↦ f (y, p.2)) p.1 v.1 := by
+  rw [hf.mvfderiv_prod_eq_add_apply, hv, map_zero, add_zero]
+
+/-- Along a tangent vector of the second factor, the vector-valued derivative of a function on a
+product is the derivative of its slice through the point. -/
+theorem _root_.MDifferentiableAt.mvfderiv_prod_eq_apply_of_fst_eq_zero
+    {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+    {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+    {M' : Type*} [TopologicalSpace M'] [ChartedSpace H' M'] {f : M × M' → F'} {p : M × M'}
+    (hf : MDifferentiableAt (I.prod I') 𝓘(𝕜, F') f p)
+    {v : TangentSpace (I.prod I') p} (hv : v.1 = (0 : TangentSpace I p.1)) :
+    mvfderiv (I.prod I') f p v = mvfderiv I' (fun y ↦ f (p.1, y)) p.2 v.2 := by
+  rw [hf.mvfderiv_prod_eq_add_apply, hv, map_zero, zero_add]
 
 /-- The derivative of a graph map, evaluated in the product tangent space. -/
 theorem _root_.MDifferentiableAt.mfderiv_prodMk_id_apply {u : F → M} {x : F}
@@ -394,6 +432,14 @@ theorem mvfderiv_apply {ι : Type*} [Fintype ι] {F'' : ι → Type*}
   ext v
   -- The component `fun y ↦ Φ y i` is `proj i ∘ Φ` by definition of the projection.
   exact (ContinuousLinearMap.proj (R := 𝕜) (φ := F'') i).mvfderiv_comp_apply hΦ v
+
+/-- A component of the derivative of a function into a finite product of normed spaces is the
+derivative of the corresponding component of the function, evaluated on a tangent vector. -/
+theorem mvfderiv_apply_apply {ι : Type*} [Fintype ι] {F'' : ι → Type*}
+    [∀ i, NormedAddCommGroup (F'' i)] [∀ i, NormedSpace 𝕜 (F'' i)] {Φ : M → (i : ι) → F'' i}
+    {x : M} (hΦ : MDifferentiableAt I 𝓘(𝕜, (i : ι) → F'' i) Φ x) (v : TangentSpace I x) (i : ι) :
+    mvfderiv I Φ x v i = mvfderiv I (fun y ↦ Φ y i) x v := by
+  rw [mvfderiv_apply hΦ i, ContinuousLinearMap.comp_apply, ContinuousLinearMap.proj_apply]
 
 /-- The derivative of a map from a normed space vanishes on a direction `w` along which the map is
 constant. -/
