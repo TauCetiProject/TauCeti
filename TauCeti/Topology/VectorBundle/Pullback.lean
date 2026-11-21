@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.Topology.VectorBundle.Constructions
+public import Mathlib.Topology.VectorBundle.Hom
+import TauCeti.Topology.FiberBundle.Pullback
 
 /-!
 # Fibres and linear charts of pullback bundles
@@ -16,14 +18,18 @@ structures and their scalar towers from `E (f x)`. Mathlib supplies the additive
 structures. The topological group structures let fibrewise linear equivalences between pullbacks,
 such as the pullback `x ↦ e (f x)` of a family of fibrewise linear equivalences `e`, induce maps of
 total spaces with continuous inverses. The normed instances allow the orthonormal frame bundle of a
-pullback to use exactly the original fibre metrics, with no transport or renorming. A pulled-back
-linear trivialization also induces the original fibre equivalence at the image point
+pullback to use exactly the original fibre metrics, with no transport or renorming, and
+`Bundle.Pullback.instFiberBundleOfNormed` / `Bundle.Pullback.instVectorBundleOfNormed` register
+the fibre and vector bundle structures on normed pullbacks for the norm-induced fibre topology. A
+pulled-back linear trivialization also induces the original fibre equivalence at the image point
 (`Bundle.Trivialization.linearEquivAt_pullback`,
 `Bundle.Trivialization.continuousLinearEquivAt_pullback` and
 `Bundle.Trivialization.continuousLinearMapAt_pullback`), and reads coordinates back into the fibre
 as the original one does (`Bundle.Trivialization.symm_pullback`). Hom coordinates between
 pullbacks by two different base maps agree with the original source and target coordinates
-(`ContinuousLinearMap.inCoordinates_pullback_of_mem`).
+(`ContinuousLinearMap.inCoordinates_pullback_of_mem`), and similarly scalar-valued bilinear forms
+pull back to continuous sections (`ContinuousLinearMap.inCoordinates_bilinear_pullback_of_mem`,
+`TauCeti.continuous_bilinear_pullback`).
 -/
 
 public section
@@ -73,6 +79,29 @@ instance instInnerProductSpace {𝕜 : Type*} [RCLike 𝕜]
     [∀ b, NormedAddCommGroup (E b)] [∀ b, InnerProductSpace 𝕜 (E b)] (x : B') :
     InnerProductSpace 𝕜 ((f *ᵖ E) x) :=
   inferInstanceAs (InnerProductSpace 𝕜 (E (f x)))
+
+section Normed
+
+variable {𝕜 F K : Type*} [TopologicalSpace B] [TopologicalSpace B']
+  [TopologicalSpace (TotalSpace F E)] [∀ b, NormedAddCommGroup (E b)]
+  [FunLike K B' B] [ContinuousMapClass K B' B]
+
+/-- Pulling back a bundle with normed fibres along a continuous map gives a fibre bundle with
+respect to the topology induced by `Bundle.Pullback.instNormedAddCommGroup`, matching
+`FiberBundle.pullback` definitionally. -/
+noncomputable instance instFiberBundleOfNormed [TopologicalSpace F] [FiberBundle F E] (f : K) :
+    @FiberBundle B' F _ _ ((f : B' → B) *ᵖ E) _ (fun _ ↦ UniformSpace.toTopologicalSpace) :=
+  FiberBundle.pullback (F := F) (E := E) f
+
+/-- Pulling back a vector bundle with normed fibres along a continuous map gives a vector bundle
+with respect to the topology induced by `Bundle.Pullback.instNormedAddCommGroup`. -/
+noncomputable instance instVectorBundleOfNormed [NontriviallyNormedField 𝕜] [NormedAddCommGroup F]
+    [NormedSpace 𝕜 F] [∀ b, Module 𝕜 (E b)] [FiberBundle F E] [VectorBundle 𝕜 F E] (f : K) :
+    @VectorBundle 𝕜 B' F ((f : B' → B) *ᵖ E) _ _ _ _ _ _ _
+      (fun _ ↦ UniformSpace.toTopologicalSpace) (instFiberBundleOfNormed f) :=
+  VectorBundle.pullback (F := F) (E := E) 𝕜 f
+
+end Normed
 
 end Bundle.Pullback
 
@@ -181,4 +210,60 @@ theorem inCoordinates_pullback_of_mem (f : K) (g : L) (x₀ x : X)
     Trivialization.continuousLinearEquivAt_pullback]
   rfl
 
+omit [NormedAddCommGroup G] [NormedSpace 𝕜 G] [∀ c, AddCommGroup (W c)] [∀ c, Module 𝕜 (W c)]
+  [∀ c, TopologicalSpace (W c)] [TopologicalSpace (TotalSpace G W)] [FiberBundle G W]
+  [VectorBundle 𝕜 G W] [TopologicalSpace C] [FunLike L X C] [ContinuousMapClass L X C] in
+/-- Reading a scalar-valued bilinear form on a pullback fibre in the preferred hom-bundle charts
+gives the same form on the model fibre as reading it in the preferred charts of the original bundle
+at the image point. -/
+theorem inCoordinates_bilinear_pullback_of_mem (f : K) (x₀ x : X)
+    (b : V (f x) →L[𝕜] V (f x) →L[𝕜] 𝕜)
+    (hV : f x ∈ (trivializationAt F V (f x₀)).baseSet) :
+    inCoordinates F ((f : X → B) *ᵖ V) (F →L[𝕜] 𝕜)
+        (fun y ↦ ((f : X → B) *ᵖ V) y →L[𝕜] 𝕜) x₀ x x₀ x b =
+      inCoordinates F V (F →L[𝕜] 𝕜) (fun y ↦ V y →L[𝕜] 𝕜) (f x₀) (f x) (f x₀) (f x) b := by
+  have hV' : x ∈ (trivializationAt F ((f : X → B) *ᵖ V) x₀).baseSet := by
+    rw [trivializationAt, FiberBundle.pullback_trivializationAt', Trivialization.pullback_baseSet]
+    exact hV
+  ext v w
+  -- The pullback and trivial bundle fibres inherit the original module instances; `erw` resolves
+  -- these type synonyms so `inCoordinates_apply_eq₂` applies.
+  erw [inCoordinates_apply_eq₂ hV' hV' (by simp), inCoordinates_apply_eq₂ hV hV (by simp)]
+  simp only [trivializationAt, FiberBundle.pullback_trivializationAt',
+    Trivial.fiberBundle_trivializationAt', Trivial.linearMapAt_trivialization, LinearMap.id_coe,
+    id_eq, Trivialization.pullback_symm_apply _ f hV]
+  -- The remaining equality identifies the `Bundle.Pullback` fibre type synonym with `V (f x)`.
+  rfl
+
 end ContinuousLinearMap
+
+namespace TauCeti
+
+open ContinuousLinearMap Filter Topology
+
+variable {𝕜 B X F K : Type*} [NontriviallyNormedField 𝕜]
+  [TopologicalSpace B] [TopologicalSpace X]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {V : B → Type*} [∀ b, AddCommGroup (V b)] [∀ b, Module 𝕜 (V b)] [∀ b, TopologicalSpace (V b)]
+  [TopologicalSpace (TotalSpace F V)] [FiberBundle F V] [VectorBundle 𝕜 F V]
+  [FunLike K X B] [ContinuousMapClass K X B]
+
+/-- A continuous section of the bundle of scalar-valued bilinear forms on `V` pulls back along a
+continuous map `f` to a continuous section on `f *ᵖ V`. -/
+theorem continuous_bilinear_pullback (f : K) (g : ∀ b : B, V b →L[𝕜] V b →L[𝕜] 𝕜)
+    (hg : Continuous fun b : B ↦ TotalSpace.mk' (F →L[𝕜] F →L[𝕜] 𝕜) b (g b)) :
+    Continuous fun x : X ↦
+      TotalSpace.mk' (F →L[𝕜] F →L[𝕜] 𝕜)
+        (E := fun y ↦ ((f : X → B) *ᵖ V) y →L[𝕜] ((f : X → B) *ᵖ V) y →L[𝕜] 𝕜) x (g (f x)) := by
+  refine continuous_iff_continuousAt.2 fun x₀ ↦ ?_
+  rw [continuousAt_hom_bundle (RingHom.id 𝕜)]
+  have hg₀ := (continuousAt_hom_bundle (RingHom.id 𝕜) _).1
+    (hg.continuousAt.comp (map_continuous f).continuousAt (x := x₀))
+  have hmem : ∀ᶠ x in 𝓝 x₀, f x ∈ (trivializationAt F V (f x₀)).baseSet :=
+    (map_continuous f).continuousAt
+      ((trivializationAt F V (f x₀)).open_baseSet.mem_nhds (mem_baseSet_trivializationAt F V _))
+  refine ⟨continuousAt_id, hg₀.2.congr_of_eventuallyEq (hmem.mono fun x hx ↦ ?_)⟩
+  dsimp only [Function.comp_apply]
+  exact inCoordinates_bilinear_pullback_of_mem f x₀ x (g (f x)) hx
+
+end TauCeti

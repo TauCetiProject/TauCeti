@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import TauCeti.Topology.VectorBundle.EulerClass
 public import TauCeti.Topology.VectorBundle.OrthonormalFrame.Basic
+import Mathlib.LinearAlgebra.Dimension.Finite
 import TauCeti.Topology.Homotopy.DeformationRetract
 import TauCeti.Topology.VectorBundle.Smul
 
@@ -20,7 +22,8 @@ positive off the zero section (`TauCeti.IsFiberGauge`). Its disc bundle `D_ρ(E)
 `TauCeti.gaugeSphereBundle`). The main example is the fibre norm when it is continuous on the total
 space (`TauCeti.isFiberGauge_norm`), for instance for a continuous Riemannian vector bundle
 (`TauCeti.continuous_norm_bundle`); its disc and sphere bundles are the unit disc bundle `D(E)` and
-the unit sphere bundle `S(E)` (`TauCeti.discBundle`, `TauCeti.sphereBundle`). Another is the
+the unit sphere bundle `S(E)` (`TauCeti.discBundle`, `TauCeti.sphereBundle`), both closed in
+`TotalSpace F E` (`TauCeti.isClosed_discBundle`, `TauCeti.isClosed_sphereBundle`). Another is the
 square root of a continuous function `q` which is positively homogeneous of degree two on the
 fibres and positive off the zero section (`TauCeti.isFiberGauge_sqrt`), such as `v ↦ Q_b(v, v)` for
 a continuous family of positive definite quadratic forms `Q_b`. Its disc bundle `{q ≤ 1}` need not
@@ -30,12 +33,16 @@ on the negative normal bundle. Dividing a fibre gauge by a continuous positive r
 `r : B → ℝ` on the base yields another fibre gauge (`TauCeti.IsFiberGauge.div_comp_proj`), whose
 disc and sphere bundles are `{v | ρ v ≤ r v.proj}` and `{v | ρ v = r v.proj}`
 (`TauCeti.gaugeDiscBundle_div`, `TauCeti.gaugeSphereBundle_div`). Each point of `S(E)` gives a
-unit vector in its fibre (`TauCeti.unitSphereOfSphereBundle`), and the unit sphere bundle projects
-continuously onto the base (`TauCeti.sphereBundleProj`). The pair `(D(E), S(E))`
-(`TauCeti.discSpherePair`) is the gauge disc-sphere pair of the fibre norm
-(`TauCeti.discSpherePair_eq_gaugeDiscSpherePair`). In rank zero every vector is zero, so the unit
-sphere bundle is empty and the unit disc bundle is the whole total space
-(`TauCeti.isEmpty_sphereBundle_of_subsingleton`, `TauCeti.discBundle_eq_univ_of_subsingleton`).
+unit vector in its fibre (`TauCeti.unitSphereOfSphereBundle`), and the unit disc and sphere bundles
+project continuously onto the base (`TauCeti.discBundleProj`, `TauCeti.sphereBundleProj`). The pair
+`(D(E), S(E))` (`TauCeti.discSpherePair`) is the gauge disc-sphere pair of the fibre norm
+(`TauCeti.discSpherePair_eq_gaugeDiscSpherePair`). In rank zero (`Subsingleton` fibres or
+`Module.finrank 𝕜 F = 0`) the sphere bundle is empty
+(`TauCeti.isEmpty_sphereBundle_of_subsingleton`,
+`TauCeti.sphereBundle_eq_empty_of_finrank_eq_zero`), the unit disc bundle is the whole total space
+(`TauCeti.discBundle_eq_univ_of_subsingleton`, `TauCeti.discBundle_eq_univ_of_finrank_eq_zero`), and
+the unit disc bundle is homeomorphic to `B` (`TauCeti.discBundleHomeomorphBaseOfSubsingleton`,
+`TauCeti.discBundleHomeomorphBaseOfFinrankZero`).
 
 The unit disc and sphere bundles are closed in the total space (`TauCeti.isClosed_discBundle`,
 `TauCeti.isClosed_sphereBundle`). For a finite-rank bundle whose fibres carry inner products, the
@@ -428,6 +435,91 @@ theorem isEmbedding_sphereBundleFiberIncl (b : B) :
     fun _ _ h ↦ Subtype.ext (TotalSpace.mk_inj.1 (congrArg Subtype.val h))⟩
 
 end Proj
+
+section DiscBundleBasic
+
+variable {B : Type w} [TopologicalSpace B] (F : Type*) [TopologicalSpace F]
+  (E : B → Type w) [TopologicalSpace (TotalSpace F E)] [∀ b, NormedAddCommGroup (E b)]
+  [FiberBundle F E]
+
+/-- The projection `D(E) → B` of the unit disc bundle of a bundle with normed fibres. -/
+def discBundleProj : C(discBundle F E, B) :=
+  ⟨fun v ↦ (v : TotalSpace F E).proj,
+    (FiberBundle.continuous_proj F E).comp continuous_subtypeVal⟩
+
+@[simp]
+theorem discBundleProj_apply (v : discBundle F E) :
+    discBundleProj F E v = (v : TotalSpace F E).proj :=
+  (rfl)
+
+/-- **Rank-zero disc bundle homeomorphism.** When every bundle fibre is a subsingleton, the
+projection `discBundleProj F E : D(E) → B` is a homeomorphism, with inverse the zero section. -/
+def discBundleHomeomorphBaseOfSubsingleton [∀ b, Subsingleton (E b)] :
+    discBundle F E ≃ₜ B where
+  toFun := discBundleProj F E
+  invFun b := ⟨TotalSpace.mk' F b 0, by simp⟩
+  left_inv := by
+    rintro ⟨⟨b, u⟩, _⟩
+    exact Subtype.ext (TotalSpace.ext rfl (heq_of_eq (Subsingleton.elim 0 u)))
+  right_inv _ := rfl
+  continuous_toFun := (discBundleProj F E).continuous
+  continuous_invFun := by
+    refine Continuous.subtype_mk (continuous_iff_continuousAt.2 fun b₀ ↦ ?_) _
+    have : Subsingleton F := (FiberBundle.homeomorphAt F E b₀).symm.injective.subsingleton
+    rw [FiberBundle.continuousAt_totalSpace]
+    exact ⟨continuousAt_id,
+      (continuousAt_const (y := (trivializationAt F E b₀ ⟨b₀, 0⟩).2)).congr
+        (Filter.Eventually.of_forall fun _ ↦ Subsingleton.elim _ _)⟩
+
+@[simp]
+theorem discBundleHomeomorphBaseOfSubsingleton_apply [∀ b, Subsingleton (E b)]
+    (v : discBundle F E) :
+    discBundleHomeomorphBaseOfSubsingleton F E v = (v : TotalSpace F E).proj :=
+  (rfl)
+
+@[simp]
+theorem coe_discBundleHomeomorphBaseOfSubsingleton_symm_apply [∀ b, Subsingleton (E b)] (b : B) :
+    ((discBundleHomeomorphBaseOfSubsingleton F E).symm b : TotalSpace F E) =
+      TotalSpace.mk' F b 0 :=
+  (rfl)
+
+variable {𝕜 : Type*} [Ring 𝕜] [StrongRankCondition 𝕜] [IsDomain 𝕜]
+  [AddCommGroup F] [Module 𝕜 F] [Module.Finite 𝕜 F] [Module.IsTorsionFree 𝕜 F]
+
+/-- In rank zero (`Module.finrank 𝕜 F = 0`), the unit disc bundle is the whole total space. -/
+theorem discBundle_eq_univ_of_finrank_eq_zero (hF : Module.finrank 𝕜 F = 0) :
+    discBundle F E = univ := by
+  have : Subsingleton F := Module.finrank_zero_iff.1 hF
+  exact discBundle_eq_univ_of_subsingleton (F := F) (E := E)
+
+/-- In rank zero (`Module.finrank 𝕜 F = 0`), the unit sphere bundle is empty. -/
+theorem sphereBundle_eq_empty_of_finrank_eq_zero (hF : Module.finrank 𝕜 F = 0) :
+    sphereBundle F E = ∅ := by
+  have : Subsingleton F := Module.finrank_zero_iff.1 hF
+  exact sphereBundle_eq_empty_of_subsingleton
+
+/-- In rank zero (`Module.finrank 𝕜 F = 0`), the unit disc bundle is homeomorphic to the base `B`
+via the bundle projection, with inverse the zero section. -/
+def discBundleHomeomorphBaseOfFinrankZero (hF : Module.finrank 𝕜 F = 0) :
+    discBundle F E ≃ₜ B :=
+  have : Subsingleton F := Module.finrank_zero_iff.1 hF
+  have (b : B) : Subsingleton (E b) := (FiberBundle.homeomorphAt F E b).injective.subsingleton
+  discBundleHomeomorphBaseOfSubsingleton F E
+
+@[simp]
+theorem discBundleHomeomorphBaseOfFinrankZero_apply (hF : Module.finrank 𝕜 F = 0)
+    (v : discBundle F E) :
+    discBundleHomeomorphBaseOfFinrankZero F E hF v = (v : TotalSpace F E).proj :=
+  (rfl)
+
+@[simp]
+theorem coe_discBundleHomeomorphBaseOfFinrankZero_symm_apply (hF : Module.finrank 𝕜 F = 0)
+    (b : B) :
+    ((discBundleHomeomorphBaseOfFinrankZero F E hF).symm b : TotalSpace F E) =
+      TotalSpace.mk' F b 0 :=
+  (rfl)
+
+end DiscBundleBasic
 
 section Closed
 

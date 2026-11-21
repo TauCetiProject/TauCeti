@@ -18,10 +18,12 @@ Four facts about Mathlib's pullback bundle `f *ᵖ E`, whose fibre over `x` is t
   (`Bundle.Pullback.instSMul`, `Bundle.Pullback.instMulAction`), as Mathlib already does for
   module structures. This is what
   makes the pullback of a principal bundle again carry a right action on its fibres.
-* The coordinate change between the pullbacks `e.pullback f` and `e'.pullback f` of two
-  trivializations, over a point `x` with `f x` in the base set of `e`, is the coordinate change
-  between `e` and `e'` over `f x` (`Bundle.Trivialization.coordChange_pullback`). This transfers
-  regularity of the coordinate changes of `E` to those of `f *ᵖ E`.
+* The fibrewise inverse of a pulled-back trivialization `e.pullback f` agrees with that of `e` at
+  the image point (`Bundle.Trivialization.pullback_symm_apply`), and the coordinate change between
+  the pullbacks `e.pullback f` and `e'.pullback f` of two trivializations, over a point `x` with
+  `f x` in the base set of `e`, is the coordinate change between `e` and `e'` over `f x`
+  (`Bundle.Trivialization.coordChange_pullback`). This transfers regularity of the coordinate
+  changes of `E` to those of `f *ᵖ E`.
 * The canonical lift `Bundle.Pullback.lift f : TotalSpace F (f *ᵖ E) → TotalSpace F E` has range
   `(π F E) ⁻¹' Set.range f` and inherits injectivity, inducingness, and topological (or open /
   closed) embedding properties from `f` (`Bundle.Pullback.isEmbedding_lift`). A point of the
@@ -151,6 +153,14 @@ theorem Bundle.Pullback.trivializationAt_snd [∀ b, TopologicalSpace (E b)] [Fi
       (trivializationAt F E (f x₀) (Pullback.lift f z)).2 := by
   simp only [trivializationAt, FiberBundle.pullback_trivializationAt',
     Trivialization.pullback_apply]
+
+/-- Evaluating the fibrewise inverse of a pulled-back trivialization at `x` agrees with evaluating
+the original fibrewise inverse at `f x` on the base set. -/
+@[simp]
+theorem Bundle.Trivialization.pullback_symm_apply (e : Trivialization F (π F E)) (f : K)
+    {x : B'} (hx : f x ∈ e.baseSet) (v : F) :
+    (e.pullback f).symm x v = e.symm (f x) v :=
+  (e.pullback f).toPretrivialization.symm_apply hx v
 
 /-- The coordinate change between the pullbacks of two trivializations, over a point `x` whose
 image `f x` lies in the base set of the first, is the coordinate change between the
