@@ -97,7 +97,14 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
 * `Submodule.span_range_starProjection_orthogonal_basis_succ`: if the zeroth coordinate of `v` in
   a basis is nonzero, the projections onto `(𝕜 ∙ v)ᗮ` of the other basis vectors span it.
 * `LinearMap.apply_sub_starProjection_ker`,
-  `ContinuousLinearMap.comp_starProjection_orthogonal_ker`: maps ignore their kernel component.
+  `LinearMap.comp_ker_starProjection`,
+  `LinearMap.adjoint_comp_orthogonal_range_starProjection`,
+  `LinearMap.adjoint_comp_orthogonal_range_starProjection_comp_ker`,
+  `LinearMap.comp_adjoint_orthogonal_range_starProjection_comp_ker`,
+  `LinearMap.finrank_range_sub_starProjection_comp_le`,
+  `LinearMap.finrank_range_sub_orthogonal_range_starProjection_comp_ker_le`,
+  `ContinuousLinearMap.comp_starProjection_orthogonal_ker`: kernel, range, and tangent–normal
+  projection identities and rank bounds.
 -/
 
 public section
@@ -153,6 +160,59 @@ theorem finrank_range_comp_starProjection_le {F : Type*} [AddCommGroup F] [Modul
       Module.finrank 𝕜 U := by
   rw [LinearMap.range_comp, range_starProjection]
   exact finrank_map_le _ _
+
+/-- The tangent part `Δ - P_W Δ P_K` of a linear map with respect to orthogonal projections onto
+`W ≤ F` and `K ≤ E` has rank at most `dim Wᗮ + dim Kᗮ`. -/
+theorem _root_.LinearMap.finrank_range_sub_starProjection_comp_le {F : Type*}
+    [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [FiniteDimensional 𝕜 E]
+    [FiniteDimensional 𝕜 F] (Δ : E →ₗ[𝕜] F) (W : Submodule 𝕜 F) (K : Submodule 𝕜 E) :
+    Module.finrank 𝕜
+        (LinearMap.range (Δ - W.starProjection.toLinearMap ∘ₗ Δ ∘ₗ K.starProjection.toLinearMap)) ≤
+      Module.finrank 𝕜 Wᗮ + Module.finrank 𝕜 Kᗮ := by
+  set T₁ : E →ₗ[𝕜] F := Wᗮ.starProjection.toLinearMap ∘ₗ Δ
+  set T₂ : E →ₗ[𝕜] F := W.starProjection.toLinearMap ∘ₗ Δ ∘ₗ Kᗮ.starProjection.toLinearMap
+  have hdecomp :
+      Δ - W.starProjection.toLinearMap ∘ₗ Δ ∘ₗ K.starProjection.toLinearMap = T₁ + T₂ := by
+    ext x
+    have hW := W.starProjection_add_starProjection_orthogonal (Δ x)
+    have hK := K.starProjection_add_starProjection_orthogonal x
+    have hWK : W.starProjection (Δ x) =
+        W.starProjection (Δ (K.starProjection x)) +
+          W.starProjection (Δ (Kᗮ.starProjection x)) := by
+      conv_lhs => rw [← hK, map_add, map_add]
+    calc (Δ - W.starProjection.toLinearMap ∘ₗ Δ ∘ₗ K.starProjection.toLinearMap) x
+        = Δ x - W.starProjection (Δ (K.starProjection x)) := rfl
+      _ = Wᗮ.starProjection (Δ x) + W.starProjection (Δ (Kᗮ.starProjection x)) := by
+          conv_lhs => rw [← hW, hWK]
+          abel
+      _ = (T₁ + T₂) x := rfl
+  rw [hdecomp]
+  have hrng_add : LinearMap.range (T₁ + T₂) ≤ LinearMap.range T₁ ⊔ LinearMap.range T₂ := by
+    rintro _ ⟨x, rfl⟩
+    exact Submodule.add_mem_sup ⟨x, rfl⟩ ⟨x, rfl⟩
+  have h1 : Module.finrank 𝕜 (LinearMap.range T₁) ≤ Module.finrank 𝕜 Wᗮ := by
+    calc Module.finrank 𝕜 (LinearMap.range T₁)
+        ≤ Module.finrank 𝕜 (LinearMap.range Wᗮ.starProjection.toLinearMap) :=
+          Submodule.finrank_mono (LinearMap.range_comp_le_range _ _)
+      _ = Module.finrank 𝕜 Wᗮ := by rw [Wᗮ.range_starProjection]
+  have h2 : Module.finrank 𝕜 (LinearMap.range T₂) ≤ Module.finrank 𝕜 Kᗮ :=
+    Kᗮ.finrank_range_comp_starProjection_le (W.starProjection.toLinearMap ∘ₗ Δ)
+  have hsup := Submodule.finrank_sup_add_finrank_inf_eq (LinearMap.range T₁) (LinearMap.range T₂)
+  have hmono := Submodule.finrank_mono hrng_add
+  omega
+
+/-- For a target map `Θ`, the canonical tangent part `Δ - P_{(range Θ)ᗮ} Δ P_{ker Θ}` has rank
+at most `2 * rank Θ`. -/
+theorem _root_.LinearMap.finrank_range_sub_orthogonal_range_starProjection_comp_ker_le
+    {F : Type*} [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [FiniteDimensional 𝕜 E]
+    [FiniteDimensional 𝕜 F] (Θ Δ : E →ₗ[𝕜] F) :
+    Module.finrank 𝕜
+        (LinearMap.range (Δ - (LinearMap.range Θ)ᗮ.starProjection.toLinearMap ∘ₗ Δ ∘ₗ
+          (LinearMap.ker Θ).starProjection.toLinearMap)) ≤
+      2 * Module.finrank 𝕜 (LinearMap.range Θ) := by
+  have h := Δ.finrank_range_sub_starProjection_comp_le (LinearMap.range Θ)ᗮ (LinearMap.ker Θ)
+  rwa [Submodule.orthogonal_orthogonal, LinearMap.orthogonal_ker,
+    LinearMap.finrank_range_adjoint, ← two_mul] at h
 
 omit [U.HasOrthogonalProjection] [V.HasOrthogonalProjection] in
 /-- For finite-dimensional subspaces of the same dimension, `U ⊓ Vᗮ` and `V ⊓ Uᗮ` have the same
@@ -523,6 +583,44 @@ theorem apply_sub_starProjection_ker (u : E →ₗ[𝕜] F) [u.ker.HasOrthogonal
   rw [mem_ker] at hx
   simpa only [map_add, hx, add_zero] using
     congrArg u (sub_add_cancel x (u.ker.starProjection x))
+
+/-- Composing `Θ` on the right with the orthogonal projection onto `ker Θ` vanishes. -/
+@[simp]
+theorem comp_ker_starProjection (Θ : E →ₗ[𝕜] F) [Θ.ker.HasOrthogonalProjection] :
+    Θ ∘ₗ (ker Θ).starProjection.toLinearMap = 0 := by
+  ext x
+  exact mem_ker.mp ((ker Θ).starProjection_apply_mem x)
+
+section Adjoint
+
+variable {F' : Type*} [NormedAddCommGroup F'] [InnerProductSpace 𝕜 F']
+  [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F']
+
+/-- Composing `Θ†` on the right with the orthogonal projection onto `(range Θ)ᗮ` vanishes. -/
+@[simp]
+theorem adjoint_comp_orthogonal_range_starProjection (Θ : E →ₗ[𝕜] F') :
+    adjoint Θ ∘ₗ (range Θ)ᗮ.starProjection.toLinearMap = 0 := by
+  ext x
+  have hx : (range Θ)ᗮ.starProjection x ∈ ker (adjoint Θ) :=
+    orthogonal_range Θ ▸ (range Θ)ᗮ.starProjection_apply_mem x
+  exact mem_ker.mp hx
+
+/-- The canonical normal part `P_{(range Θ)ᗮ} Δ P_{ker Θ}` satisfies
+`Θ† (P_{(range Θ)ᗮ} Δ P_{ker Θ}) = 0`. -/
+theorem adjoint_comp_orthogonal_range_starProjection_comp_ker (Θ Δ : E →ₗ[𝕜] F') :
+    adjoint Θ ∘ₗ ((range Θ)ᗮ.starProjection.toLinearMap ∘ₗ Δ ∘ₗ
+      (ker Θ).starProjection.toLinearMap) = 0 := by
+  rw [← comp_assoc, adjoint_comp_orthogonal_range_starProjection, zero_comp]
+
+/-- The canonical normal part `P_{(range Θ)ᗮ} Δ P_{ker Θ}` satisfies
+`Θ (P_{(range Θ)ᗮ} Δ P_{ker Θ})† = 0`. -/
+theorem comp_adjoint_orthogonal_range_starProjection_comp_ker (Θ Δ : E →ₗ[𝕜] F') :
+    Θ ∘ₗ adjoint ((range Θ)ᗮ.starProjection.toLinearMap ∘ₗ Δ ∘ₗ
+      (ker Θ).starProjection.toLinearMap) = 0 := by
+  rw [adjoint_comp, adjoint_comp, (ker Θ).starProjection_isSymmetric.adjoint_eq,
+    ← comp_assoc, ← comp_assoc, comp_ker_starProjection, zero_comp, zero_comp]
+
+end Adjoint
 
 end LinearMap
 

@@ -28,9 +28,6 @@ estimates open only `Matrix.Norms.L2Operator` and write the Frobenius pairing ex
 
 ## Main declarations
 
-* `Matrix.trace_toEuclideanLin`, `Matrix.trace_adjoint_comp_toEuclideanLin`:
-  operator traces of `M.toEuclideanLin` and `A.toEuclideanLin† ∘ₗ B.toEuclideanLin` equal
-  `M.trace` and `(Aᴴ * B).trace`.
 * `Matrix.opNorm_toEuclideanLin`, `Matrix.frobenius_toEuclideanLin`: bridges between the operator
   and Frobenius unitarily invariant seminorms of `A.toEuclideanLin` and the scoped matrix norms.
 * `Matrix.nuclear_toEuclideanLin_conjTranspose`, `Matrix.nuclear_toEuclideanLin_vecMulVec`:
@@ -45,6 +42,13 @@ estimates open only `Matrix.Norms.L2Operator` and write the Frobenius pairing ex
   attainment of matrix trace duality for both the nuclear norm and the `ℓ²` operator norm.
 * `Matrix.nuclear_toEuclideanLin_add_of_orthogonal`:
   `‖A + B‖₁ = ‖A‖₁ + ‖B‖₁` whenever `Aᴴ * B = 0` and `A * Bᴴ = 0`.
+* `Matrix.rank_sub_toEuclideanLin_symm_starProjection_comp_le`,
+  `Matrix.conjTranspose_mul_toEuclideanLin_symm_starProjection_comp`,
+  `Matrix.mul_conjTranspose_toEuclideanLin_symm_starProjection_comp`,
+  `Matrix.frobenius_inner_sub_toEuclideanLin_symm_starProjection_comp`,
+  `Matrix.nuclear_toEuclideanLin_add_starProjection_comp_sub_le_nuclear_add`,
+  `Matrix.nuclear_toEuclideanLin_sub_starProjection_comp_le`:
+  explicit canonical tangent–normal projection split properties for matrices.
 * `Matrix.exists_lowRank_decomposition`:
   Wainwright's low-rank tangent–normal decomposition for matrices of rank at most `r`.
 
@@ -64,25 +68,7 @@ open TauCeti.UnitarilyInvariantSeminorm
 
 namespace Matrix
 
-variable {𝕜 n : Type*} [RCLike 𝕜] [Fintype n] [DecidableEq n]
-
-/-- The operator trace of `M.toEuclideanLin` on `EuclideanSpace 𝕜 n` is `M.trace`. -/
-@[simp]
-theorem trace_toEuclideanLin (M : Matrix n n 𝕜) :
-    LinearMap.trace 𝕜 (EuclideanSpace 𝕜 n) M.toEuclideanLin = M.trace := by
-  rw [toEuclideanLin_eq_toLin_orthonormal, trace_toLin_eq]
-
-variable {m : Type*} [Fintype m]
-
-/-- The Hilbert–Schmidt operator trace pairing `tr (A† B)` of `A.toEuclideanLin` and
-`B.toEuclideanLin` equals the matrix trace `(Aᴴ * B).trace`. -/
-theorem trace_adjoint_comp_toEuclideanLin (A B : Matrix m n 𝕜) :
-    LinearMap.trace 𝕜 (EuclideanSpace 𝕜 n)
-        (LinearMap.adjoint A.toEuclideanLin ∘ₗ B.toEuclideanLin) =
-      (Aᴴ * B).trace := by
-  classical
-  rw [← toEuclideanLin_conjTranspose_eq_adjoint, toEuclideanLin, toEuclideanLin,
-    ← toLpLin_mul_same, ← toEuclideanLin, trace_toEuclideanLin]
+variable {𝕜 n : Type*} [RCLike 𝕜] [Fintype n] [DecidableEq n] {m : Type*} [Fintype m]
 
 open scoped Matrix.Norms.L2Operator in
 /-- The operator seminorm of `A.toEuclideanLin` is the scoped `ℓ²` operator norm of `A`. -/
@@ -195,17 +181,90 @@ theorem nuclear_toEuclideanLin_add_of_orthogonal {A B : Matrix m n 𝕜}
         nuclear 𝕜 (EuclideanSpace 𝕜 n) (EuclideanSpace 𝕜 m) B.toEuclideanLin := by
   classical
   have h₁' : LinearMap.adjoint A.toEuclideanLin ∘ₗ B.toEuclideanLin = 0 := by
-    rw [← toEuclideanLin_conjTranspose_eq_adjoint, toEuclideanLin, toEuclideanLin,
-      ← toLpLin_mul_same, h₁, map_zero]
+    rw [← toEuclideanLin_conjTranspose_mul, h₁, map_zero]
   have h₂' : A.toEuclideanLin ∘ₗ LinearMap.adjoint B.toEuclideanLin = 0 := by
-    rw [← toEuclideanLin_conjTranspose_eq_adjoint, toEuclideanLin, toEuclideanLin,
-      ← toLpLin_mul_same, h₂, map_zero]
+    rw [← toEuclideanLin_mul_conjTranspose, h₂, map_zero]
   rw [map_add]
   exact nuclear_add_of_orthogonal h₁' h₂'
 
 section LowRankDecomposition
 
 open scoped Matrix.Norms.Frobenius
+
+/-- Rank bound for the canonical matrix tangent part `Δ - Δ₂`, where
+`Δ₂ = toEuclideanLin.symm (P_{(range Θ)ᗮ} Δ P_{ker Θ})`. -/
+theorem rank_sub_toEuclideanLin_symm_starProjection_comp_le (Θ Δ : Matrix m n 𝕜) :
+    (Δ - toEuclideanLin.symm ((LinearMap.range Θ.toEuclideanLin)ᗮ.starProjection.toLinearMap ∘ₗ
+        Δ.toEuclideanLin ∘ₗ (LinearMap.ker Θ.toEuclideanLin).starProjection.toLinearMap)).rank ≤
+      2 * Θ.rank := by
+  classical
+  rw [rank_eq_finrank_range_toEuclideanLin, rank_eq_finrank_range_toEuclideanLin, map_sub,
+    toEuclideanLin.apply_symm_apply]
+  exact Θ.toEuclideanLin.finrank_range_sub_orthogonal_range_starProjection_comp_ker_le
+    Δ.toEuclideanLin
+
+/-- Left-multiplication by `Θᴴ` annihilates the canonical matrix normal part
+`Δ₂ = toEuclideanLin.symm (P_{(range Θ)ᗮ} Δ P_{ker Θ})`. -/
+theorem conjTranspose_mul_toEuclideanLin_symm_starProjection_comp (Θ Δ : Matrix m n 𝕜) :
+    Θᴴ * toEuclideanLin.symm ((LinearMap.range Θ.toEuclideanLin)ᗮ.starProjection.toLinearMap ∘ₗ
+        Δ.toEuclideanLin ∘ₗ (LinearMap.ker Θ.toEuclideanLin).starProjection.toLinearMap) = 0 := by
+  apply toEuclideanLin.injective
+  rw [toEuclideanLin_conjTranspose_mul, map_zero, toEuclideanLin.apply_symm_apply]
+  exact LinearMap.adjoint_comp_orthogonal_range_starProjection_comp_ker
+    Θ.toEuclideanLin Δ.toEuclideanLin
+
+/-- Right-multiplication by `Δ₂ᴴ` annihilates `Θ` for the canonical matrix normal part
+`Δ₂ = toEuclideanLin.symm (P_{(range Θ)ᗮ} Δ P_{ker Θ})`. -/
+theorem mul_conjTranspose_toEuclideanLin_symm_starProjection_comp (Θ Δ : Matrix m n 𝕜) :
+    Θ * (toEuclideanLin.symm ((LinearMap.range Θ.toEuclideanLin)ᗮ.starProjection.toLinearMap ∘ₗ
+        Δ.toEuclideanLin ∘ₗ (LinearMap.ker Θ.toEuclideanLin).starProjection.toLinearMap))ᴴ = 0 := by
+  classical
+  apply toEuclideanLin.injective
+  rw [toEuclideanLin_mul_conjTranspose, map_zero, toEuclideanLin.apply_symm_apply]
+  exact LinearMap.comp_adjoint_orthogonal_range_starProjection_comp_ker
+    Θ.toEuclideanLin Δ.toEuclideanLin
+
+/-- The canonical matrix tangent and normal parts are Frobenius-orthogonal: `⟪Δ - Δ₂, Δ₂⟫_𝕜 = 0`. -/
+theorem frobenius_inner_sub_toEuclideanLin_symm_starProjection_comp (Θ Δ : Matrix m n 𝕜) :
+    ⟪Δ - toEuclideanLin.symm ((LinearMap.range Θ.toEuclideanLin)ᗮ.starProjection.toLinearMap ∘ₗ
+          Δ.toEuclideanLin ∘ₗ (LinearMap.ker Θ.toEuclideanLin).starProjection.toLinearMap),
+        toEuclideanLin.symm ((LinearMap.range Θ.toEuclideanLin)ᗮ.starProjection.toLinearMap ∘ₗ
+          Δ.toEuclideanLin ∘ₗ (LinearMap.ker Θ.toEuclideanLin).starProjection.toLinearMap)⟫_𝕜 =
+      0 := by
+  rw [frobenius_inner_eq_trace_conjTranspose_mul, ← trace_adjoint_comp_toEuclideanLin, map_sub,
+    toEuclideanLin.apply_symm_apply]
+  exact Δ.toEuclideanLin.trace_adjoint_sub_starProjection_comp_eq_zero
+    (LinearMap.range Θ.toEuclideanLin)ᗮ (LinearMap.ker Θ.toEuclideanLin)
+
+/-- **Explicit matrix nuclear-norm decomposability** for the canonical tangent–normal split
+around `Θ`: `‖Θ‖₁ + ‖Δ₂‖₁ - ‖Δ - Δ₂‖₁ ≤ ‖Θ + Δ‖₁`. -/
+theorem nuclear_toEuclideanLin_add_starProjection_comp_sub_le_nuclear_add (Θ Δ : Matrix m n 𝕜) :
+    nuclear 𝕜 (EuclideanSpace 𝕜 n) (EuclideanSpace 𝕜 m) Θ.toEuclideanLin +
+        nuclear 𝕜 (EuclideanSpace 𝕜 n) (EuclideanSpace 𝕜 m)
+          (toEuclideanLin.symm ((LinearMap.range Θ.toEuclideanLin)ᗮ.starProjection.toLinearMap ∘ₗ
+            Δ.toEuclideanLin ∘ₗ
+            (LinearMap.ker Θ.toEuclideanLin).starProjection.toLinearMap)).toEuclideanLin -
+        nuclear 𝕜 (EuclideanSpace 𝕜 n) (EuclideanSpace 𝕜 m)
+          (Δ - toEuclideanLin.symm
+              ((LinearMap.range Θ.toEuclideanLin)ᗮ.starProjection.toLinearMap ∘ₗ
+                Δ.toEuclideanLin ∘ₗ
+                (LinearMap.ker Θ.toEuclideanLin).starProjection.toLinearMap)).toEuclideanLin ≤
+      nuclear 𝕜 (EuclideanSpace 𝕜 n) (EuclideanSpace 𝕜 m) (Θ + Δ).toEuclideanLin := by
+  rw [map_sub, map_add, toEuclideanLin.apply_symm_apply]
+  exact nuclear_add_starProjection_comp_sub_le_nuclear_add Θ.toEuclideanLin Δ.toEuclideanLin
+
+/-- Nuclear-norm bound on the canonical matrix tangent part:
+`‖Δ - Δ₂‖₁ ≤ √(2 * Θ.rank) * ‖Δ‖` (Frobenius norm). -/
+theorem nuclear_toEuclideanLin_sub_starProjection_comp_le (Θ Δ : Matrix m n 𝕜) :
+    nuclear 𝕜 (EuclideanSpace 𝕜 n) (EuclideanSpace 𝕜 m)
+        (Δ - toEuclideanLin.symm ((LinearMap.range Θ.toEuclideanLin)ᗮ.starProjection.toLinearMap ∘ₗ
+          Δ.toEuclideanLin ∘ₗ
+          (LinearMap.ker Θ.toEuclideanLin).starProjection.toLinearMap)).toEuclideanLin ≤
+      √(2 * (Θ.rank : ℝ)) * ‖Δ‖ := by
+  classical
+  rw [map_sub, toEuclideanLin.apply_symm_apply, rank_eq_finrank_range_toEuclideanLin,
+    ← frobenius_toEuclideanLin Δ]
+  exact nuclear_sub_orthogonal_range_ker_le Θ.toEuclideanLin Δ.toEuclideanLin
 
 /-- **Wainwright's low-rank matrix decomposition**: if `Θ.rank ≤ r`, then every perturbation
 `Δ : Matrix m n 𝕜` decomposes as `Δ = Δ₁ + Δ₂` where `Δ₁.rank ≤ 2 * r`, `Θᴴ * Δ₂ = 0`,
@@ -225,34 +284,21 @@ theorem exists_lowRank_decomposition {r : ℕ} {Θ : Matrix m n 𝕜}
         nuclear 𝕜 (EuclideanSpace 𝕜 n) (EuclideanSpace 𝕜 m) (Θ + Δ).toEuclideanLin ∧
       nuclear 𝕜 (EuclideanSpace 𝕜 n) (EuclideanSpace 𝕜 m) Δ₁.toEuclideanLin ≤
         √(2 * (r : ℝ)) * ‖Δ‖ := by
-  classical
-  have hΘ' : Module.finrank 𝕜 (LinearMap.range Θ.toEuclideanLin) ≤ r := by
-    rwa [← rank_eq_finrank_range_toEuclideanLin]
-  obtain ⟨T₁, T₂, hsum, hrank, h₁, h₂, htr, hdec, hnuc⟩ :=
-    TauCeti.UnitarilyInvariantSeminorm.exists_lowRank_decomposition hΘ' Δ.toEuclideanLin
-  let Δ₁ : Matrix m n 𝕜 := toEuclideanLin.symm T₁
-  let Δ₂ : Matrix m n 𝕜 := toEuclideanLin.symm T₂
-  have hΔ₁ : Δ₁.toEuclideanLin = T₁ := toEuclideanLin.apply_symm_apply T₁
-  have hΔ₂ : Δ₂.toEuclideanLin = T₂ := toEuclideanLin.apply_symm_apply T₂
-  refine ⟨Δ₁, Δ₂, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · apply toEuclideanLin.injective
-    rw [map_add, hΔ₁, hΔ₂, hsum]
-  · rw [rank_eq_finrank_range_toEuclideanLin, hΔ₁]
-    exact hrank
-  · apply toEuclideanLin.injective
-    rw [map_zero, toEuclideanLin, toLpLin_mul_same, ← toEuclideanLin, ← toEuclideanLin,
-      toEuclideanLin_conjTranspose_eq_adjoint, hΔ₂]
-    exact h₁
-  · apply toEuclideanLin.injective
-    rw [map_zero, toEuclideanLin, toLpLin_mul_same, ← toEuclideanLin, ← toEuclideanLin,
-      toEuclideanLin_conjTranspose_eq_adjoint, hΔ₂]
-    exact h₂
-  · rw [frobenius_inner_eq_trace_conjTranspose_mul, ← trace_adjoint_comp_toEuclideanLin, hΔ₁, hΔ₂]
-    exact htr
-  · rw [map_add, hΔ₁, hΔ₂]
-    exact hdec
-  · rw [hΔ₁, ← frobenius_toEuclideanLin Δ]
-    exact hnuc
+  let Δ₂ : Matrix m n 𝕜 := toEuclideanLin.symm
+    ((LinearMap.range Θ.toEuclideanLin)ᗮ.starProjection.toLinearMap ∘ₗ Δ.toEuclideanLin ∘ₗ
+      (LinearMap.ker Θ.toEuclideanLin).starProjection.toLinearMap)
+  let Δ₁ : Matrix m n 𝕜 := Δ - Δ₂
+  have hnuc : nuclear 𝕜 (EuclideanSpace 𝕜 n) (EuclideanSpace 𝕜 m) Δ₁.toEuclideanLin ≤
+      √(2 * (r : ℝ)) * ‖Δ‖ := by
+    refine (nuclear_toEuclideanLin_sub_starProjection_comp_le Θ Δ).trans ?_
+    refine mul_le_mul_of_nonneg_right (Real.sqrt_le_sqrt ?_) (norm_nonneg _)
+    gcongr
+  exact ⟨Δ₁, Δ₂, sub_add_cancel Δ Δ₂,
+    (rank_sub_toEuclideanLin_symm_starProjection_comp_le Θ Δ).trans (Nat.mul_le_mul_left 2 hΘ),
+    conjTranspose_mul_toEuclideanLin_symm_starProjection_comp Θ Δ,
+    mul_conjTranspose_toEuclideanLin_symm_starProjection_comp Θ Δ,
+    frobenius_inner_sub_toEuclideanLin_symm_starProjection_comp Θ Δ,
+    nuclear_toEuclideanLin_add_starProjection_comp_sub_le_nuclear_add Θ Δ, hnuc⟩
 
 end LowRankDecomposition
 

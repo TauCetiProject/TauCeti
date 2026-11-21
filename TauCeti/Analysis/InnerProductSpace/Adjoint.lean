@@ -613,6 +613,19 @@ theorem adjoint_apply_mem_of_forall_mem_orthogonal {A : E →ₗ[𝕜] F} {T : S
   T.orthogonal_orthogonal ▸ Submodule.orthogonal_le (fun x hx ↦ hA x hx)
     (A.orthogonal_ker ▸ mem_range_self _ y)
 
+/-- If `X† Y = 0` and the ranges of `S` and `T` sit inside those of `X` and `Y`, then
+`S† T = 0`. -/
+theorem adjoint_comp_eq_zero_of_range_le {E₁ E₂ E₃ E₄ : Type*}
+    [NormedAddCommGroup E₁] [InnerProductSpace 𝕜 E₁] [FiniteDimensional 𝕜 E₁]
+    [AddCommMonoid E₂] [Module 𝕜 E₂]
+    [NormedAddCommGroup E₃] [InnerProductSpace 𝕜 E₃] [FiniteDimensional 𝕜 E₃]
+    [AddCommMonoid E₄] [Module 𝕜 E₄]
+    {X : E₁ →ₗ[𝕜] F} {Y : E₂ →ₗ[𝕜] F} {S : E₃ →ₗ[𝕜] F} {T : E₄ →ₗ[𝕜] F}
+    (h : adjoint X ∘ₗ Y = 0) (hS : range S ≤ range X) (hT : range T ≤ range Y) :
+    adjoint S ∘ₗ T = 0 := by
+  rw [← range_le_ker_iff, ← orthogonal_range] at h ⊢
+  exact hT.trans (h.trans (Submodule.orthogonal_le hS))
+
 /-- Passing a finite-dimensional operator to continuous linear maps preserves its adjoint. -/
 theorem toContinuousLinearMap_star {𝕜 E : Type*} [RCLike 𝕜]
     [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E] [CompleteSpace E]

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.Matrix
 public import Mathlib.LinearAlgebra.Matrix.Rank
+public import Mathlib.LinearAlgebra.Trace
 public import TauCeti.Analysis.Normed.Lp.PiLp
 public import TauCeti.Geometry.Sphere.LinearIsometry
 
@@ -57,6 +58,12 @@ diagonal matrix `diag(w)` the quadratic form is `x ↦ ∑ᵢ |xᵢ|² wᵢ`.
 * `Matrix.rank_eq_finrank_range_toEuclideanLin`, `Matrix.rank_coe_toEuclideanCLM` — the matrix
   rank is the dimension of the range of the induced map, and the `LinearMap.rank` of the induced
   continuous linear map;
+* `Matrix.toEuclideanLin_mul`, `Matrix.toEuclideanLin_conjTranspose_mul`,
+  `Matrix.toEuclideanLin_mul_conjTranspose` — multiplication and adjoint-composition bridges for
+  `toEuclideanLin`;
+* `Matrix.trace_toEuclideanLin`, `Matrix.trace_adjoint_comp_toEuclideanLin` — operator traces of
+  `M.toEuclideanLin` and `A.toEuclideanLin† ∘ₗ B.toEuclideanLin` equal `M.trace` and
+  `(Aᴴ * B).trace`;
 * `Matrix.mem_unitaryGroup_iff_inner_toEuclideanCLM` — a matrix is unitary exactly when its
   Euclidean operator preserves the inner product;
 * `Matrix.adjoint_toEuclideanCLM`, `Matrix.det_toEuclideanCLM`: the adjoint and the determinant
@@ -171,6 +178,51 @@ theorem rank_coe_toEuclideanCLM (A : Matrix ι ι 𝕜) :
       A.rank := by
   rw [LinearMap.rank, coe_toEuclideanCLM_eq_toEuclideanLin, ← Module.finrank_eq_rank,
     rank_eq_finrank_range_toEuclideanLin]
+
+section MultiplicationAndTrace
+
+omit [DecidableEq ι] [DecidableEq κ] in
+/-- Matrix multiplication corresponds to composition under `Matrix.toEuclideanLin`. -/
+theorem toEuclideanLin_mul {m n p : Type*} [Fintype n] [Fintype p]
+    [DecidableEq n] [DecidableEq p] (A : Matrix m n 𝕜) (B : Matrix n p 𝕜) :
+    (A * B).toEuclideanLin = A.toEuclideanLin ∘ₗ B.toEuclideanLin :=
+  toLpLin_mul_same 2 A B
+
+omit [DecidableEq ι] [DecidableEq κ] in
+/-- Multiplying on the left by `Aᴴ` corresponds under `Matrix.toEuclideanLin` to composing with
+`LinearMap.adjoint A.toEuclideanLin`. -/
+theorem toEuclideanLin_conjTranspose_mul {m n p : Type*} [Fintype m] [Fintype n] [Fintype p]
+    [DecidableEq n] [DecidableEq p] (A : Matrix m n 𝕜) (B : Matrix m p 𝕜) :
+    (Aᴴ * B).toEuclideanLin = LinearMap.adjoint A.toEuclideanLin ∘ₗ B.toEuclideanLin := by
+  classical
+  rw [toEuclideanLin_mul, toEuclideanLin_conjTranspose_eq_adjoint]
+
+omit [DecidableEq ι] [DecidableEq κ] in
+/-- Multiplying on the right by `Bᴴ` corresponds under `Matrix.toEuclideanLin` to composing with
+`LinearMap.adjoint B.toEuclideanLin` on the right. -/
+theorem toEuclideanLin_mul_conjTranspose {m n p : Type*} [Fintype n] [Fintype p]
+    [DecidableEq n] [DecidableEq p] (A : Matrix m n 𝕜) (B : Matrix p n 𝕜) :
+    (A * Bᴴ).toEuclideanLin = A.toEuclideanLin ∘ₗ LinearMap.adjoint B.toEuclideanLin := by
+  classical
+  rw [toEuclideanLin_mul, toEuclideanLin_conjTranspose_eq_adjoint]
+
+omit [Fintype κ] [DecidableEq κ] in
+/-- The operator trace of `M.toEuclideanLin` on `EuclideanSpace 𝕜 ι` is `M.trace`. -/
+@[simp]
+theorem trace_toEuclideanLin (M : Matrix ι ι 𝕜) :
+    LinearMap.trace 𝕜 (EuclideanSpace 𝕜 ι) M.toEuclideanLin = M.trace := by
+  rw [toEuclideanLin_eq_toLin_orthonormal, trace_toLin_eq]
+
+omit [DecidableEq κ] in
+/-- The Hilbert–Schmidt operator trace pairing `tr (A† B)` of `A.toEuclideanLin` and
+`B.toEuclideanLin` equals the matrix trace `(Aᴴ * B).trace`. -/
+theorem trace_adjoint_comp_toEuclideanLin (A B : Matrix κ ι 𝕜) :
+    LinearMap.trace 𝕜 (EuclideanSpace 𝕜 ι)
+        (LinearMap.adjoint A.toEuclideanLin ∘ₗ B.toEuclideanLin) =
+      (Aᴴ * B).trace := by
+  rw [← toEuclideanLin_conjTranspose_mul, trace_toEuclideanLin]
+
+end MultiplicationAndTrace
 
 /-- The continuous linear map of a matrix acts as its Euclidean linear map. -/
 @[simp]

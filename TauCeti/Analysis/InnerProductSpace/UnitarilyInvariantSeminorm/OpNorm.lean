@@ -24,8 +24,8 @@ needs to be finite-dimensional.
   seminorm on `E →ₗ[𝕜] F`.
 * `TauCeti.UnitarilyInvariantSeminorm.opNorm_apply`: its value is the operator norm of the
   associated continuous linear map.
-* `TauCeti.UnitarilyInvariantSeminorm.opNorm_add_of_orthogonal`: if `A† B = 0` and `A B† = 0`, then
-  `‖A + B‖ = max ‖A‖ ‖B‖`.
+* `TauCeti.UnitarilyInvariantSeminorm.opNorm_add_eq_max_of_orthogonal`: if `A† B = 0` and
+  `A B† = 0`, then `‖A + B‖ = max ‖A‖ ‖B‖`.
 
 ## References
 
@@ -64,7 +64,7 @@ theorem opNorm_apply (A : E →ₗ[𝕜] F) : opNorm 𝕜 E F A = ‖LinearMap.t
 open scoped InnerProductSpace in
 /-- **Orthogonal maximality of the operator norm**: if `A† B = 0` and `A B† = 0`, then
 `‖A + B‖ = max ‖A‖ ‖B‖`. -/
-theorem opNorm_add_of_orthogonal [FiniteDimensional 𝕜 F] {A B : E →ₗ[𝕜] F}
+theorem opNorm_add_eq_max_of_orthogonal [FiniteDimensional 𝕜 F] {A B : E →ₗ[𝕜] F}
     (h₁ : LinearMap.adjoint A ∘ₗ B = 0) (h₂ : A ∘ₗ LinearMap.adjoint B = 0) :
     opNorm 𝕜 E F (A + B) = max (opNorm 𝕜 E F A) (opNorm 𝕜 E F B) := by
   -- Split the domain along `V = range A†` and `Vᗮ = ker A`: `A` lives on `V` and `B` lives on `Vᗮ`.

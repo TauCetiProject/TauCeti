@@ -21,13 +21,13 @@ seminorm `‖·‖₁` in exact duality:
 
 * **Trace duality**: `‖tr (A† B)‖ ≤ ‖A‖ ‖B‖₁` and `‖tr (A† B)‖ ≤ ‖A‖₁ ‖B‖`.
 * **Variational characterizations**: the dual-norm bounds are attained, giving
-  `‖B‖₁ = ⨆_{‖U‖ ≤ 1} ‖tr (U† B)‖` (attained by the polar partial isometry
-  `U = ∑ᵢ uᵢ ⊗ vᵢ` whose range and adjoint range lie inside those of `B`) and
-  `‖A‖ = ⨆_{‖B‖₁ ≤ 1} ‖tr (A† B)‖` (attained by a rank-one map `u₀ ⊗ v₀`).
+  `‖B‖₁ = ⨆_{‖U‖ ≤ 1} ‖tr (U† B)‖` (attained by a contraction `U` whose range and adjoint
+  range lie inside those of `B`) and `‖A‖ = ⨆_{‖B‖₁ ≤ 1} ‖tr (A† B)‖` (attained by some `B`
+  with `‖B‖₁ ≤ 1`).
 * **Orthogonal additivity**: when `A† B = 0` and `A B† = 0` (orthogonal column and row spaces),
   the polar partial isometries `U_A`, `U_B` inherit the same two-sided orthogonality, so
   `‖U_A + U_B‖ = max ‖U_A‖ ‖U_B‖ ≤ 1` by
-  `TauCeti.UnitarilyInvariantSeminorm.opNorm_add_of_orthogonal` and trace duality yields
+  `TauCeti.UnitarilyInvariantSeminorm.opNorm_add_eq_max_of_orthogonal` and trace duality yields
   `‖A + B‖₁ = ‖A‖₁ + ‖B‖₁`.
 * **Low-rank tangent–normal decomposition**: for any subspaces `W ≤ F` and `K ≤ E`, decomposing
   `Δ = Δ₁ + Δ₂` with normal part `Δ₂ = P_W Δ P_K` and tangent part `Δ₁ = Δ - Δ₂` gives
@@ -53,17 +53,14 @@ seminorm `‖·‖₁` in exact duality:
   attainment and variational formula for the operator norm.
 * `TauCeti.UnitarilyInvariantSeminorm.nuclear_add_of_orthogonal`:
   `‖A + B‖₁ = ‖A‖₁ + ‖B‖₁` whenever `A† B = 0` and `A B† = 0`.
-* `LinearMap.comp_ker_starProjection`,
-  `LinearMap.adjoint_comp_orthogonal_range_starProjection`:
-  `Θ P_{ker Θ} = 0` and `Θ† P_{(range Θ)ᗮ} = 0`.
-* `LinearMap.finrank_range_sub_starProjection_comp_le`,
-  `LinearMap.trace_adjoint_sub_starProjection_comp_eq_zero`:
-  rank bound and trace orthogonality of the tangent–normal projection split
+* `LinearMap.trace_adjoint_sub_starProjection_comp_eq_zero`:
+  trace orthogonality of the tangent–normal projection split
   `Δ = (Δ - P_W Δ P_K) + P_W Δ P_K`.
 * `TauCeti.UnitarilyInvariantSeminorm.nuclear_add_sub_le_nuclear_add_of_orthogonal`,
   `TauCeti.UnitarilyInvariantSeminorm.frobenius_sub_starProjection_comp_le`,
   `TauCeti.UnitarilyInvariantSeminorm.nuclear_sub_starProjection_comp_le`,
-  `TauCeti.UnitarilyInvariantSeminorm.nuclear_sub_orthogonal_range_ker_le`:
+  `TauCeti.UnitarilyInvariantSeminorm.nuclear_sub_orthogonal_range_ker_le`,
+  `TauCeti.UnitarilyInvariantSeminorm.nuclear_add_starProjection_comp_sub_le_nuclear_add`:
   explicit decomposability and tangent-part Frobenius and nuclear bounds.
 * `TauCeti.UnitarilyInvariantSeminorm.exists_lowRank_decomposition`:
   Wainwright's low-rank decomposition for maps of rank at most `r`.
@@ -84,15 +81,6 @@ open scoped ComplexConjugate InnerProductSpace
 
 namespace LinearMap
 
-/-- Composing `Θ` on the right with the orthogonal projection onto `ker Θ` vanishes. -/
-@[simp]
-theorem comp_ker_starProjection {𝕜 E F : Type*} [RCLike 𝕜]
-    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [AddCommGroup F] [Module 𝕜 F]
-    (Θ : E →ₗ[𝕜] F) [Θ.ker.HasOrthogonalProjection] :
-    Θ ∘ₗ (ker Θ).starProjection.toLinearMap = 0 := by
-  ext x
-  exact mem_ker.mp ((ker Θ).starProjection_apply_mem x)
-
 variable {𝕜 E F : Type*} [RCLike 𝕜]
   [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E]
   [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [FiniteDimensional 𝕜 F]
@@ -106,63 +94,6 @@ theorem trace_adjoint_comp_eq_sum_singularValues (A B : E →ₗ[𝕜] F) :
   rw [trace_eq_sum_inner _ B.rightSingularBasis]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [comp_apply, adjoint_inner_right, B.apply_rightSingularBasis i, inner_smul_right]
-
-/-- Composing `Θ†` on the right with the orthogonal projection onto `(range Θ)ᗮ` vanishes. -/
-@[simp]
-theorem adjoint_comp_orthogonal_range_starProjection (Θ : E →ₗ[𝕜] F) :
-    adjoint Θ ∘ₗ (range Θ)ᗮ.starProjection.toLinearMap = 0 := by
-  ext x
-  have hx : (range Θ)ᗮ.starProjection x ∈ ker (adjoint Θ) :=
-    orthogonal_range Θ ▸ (range Θ)ᗮ.starProjection_apply_mem x
-  exact mem_ker.mp hx
-
-/-- The tangent part `Δ - P_W Δ P_K` of a linear map with respect to orthogonal projections onto
-`W ≤ F` and `K ≤ E` has rank at most `dim Wᗮ + dim Kᗮ`. -/
-theorem finrank_range_sub_starProjection_comp_le (Δ : E →ₗ[𝕜] F) (W : Submodule 𝕜 F)
-    (K : Submodule 𝕜 E) :
-    finrank 𝕜 (range (Δ - W.starProjection.toLinearMap ∘ₗ Δ ∘ₗ K.starProjection.toLinearMap)) ≤
-      finrank 𝕜 Wᗮ + finrank 𝕜 Kᗮ := by
-  set T₁ : E →ₗ[𝕜] F := Wᗮ.starProjection.toLinearMap ∘ₗ Δ
-  set T₂ : E →ₗ[𝕜] F := W.starProjection.toLinearMap ∘ₗ Δ ∘ₗ Kᗮ.starProjection.toLinearMap
-  have hdecomp :
-      Δ - W.starProjection.toLinearMap ∘ₗ Δ ∘ₗ K.starProjection.toLinearMap = T₁ + T₂ := by
-    ext x
-    have hW := W.starProjection_add_starProjection_orthogonal (Δ x)
-    have hK := K.starProjection_add_starProjection_orthogonal x
-    have hWK : W.starProjection (Δ x) =
-        W.starProjection (Δ (K.starProjection x)) +
-          W.starProjection (Δ (Kᗮ.starProjection x)) := by
-      conv_lhs => rw [← hK, map_add, map_add]
-    calc (Δ - W.starProjection.toLinearMap ∘ₗ Δ ∘ₗ K.starProjection.toLinearMap) x
-        = Δ x - W.starProjection (Δ (K.starProjection x)) := rfl
-      _ = Wᗮ.starProjection (Δ x) + W.starProjection (Δ (Kᗮ.starProjection x)) := by
-          conv_lhs => rw [← hW, hWK]
-          abel
-      _ = (T₁ + T₂) x := rfl
-  rw [hdecomp]
-  have hrng_add : range (T₁ + T₂) ≤ range T₁ ⊔ range T₂ := by
-    rintro _ ⟨x, rfl⟩
-    exact Submodule.add_mem_sup ⟨x, rfl⟩ ⟨x, rfl⟩
-  have h1 : finrank 𝕜 (range T₁) ≤ finrank 𝕜 Wᗮ := by
-    calc finrank 𝕜 (range T₁)
-        ≤ finrank 𝕜 (range Wᗮ.starProjection.toLinearMap) :=
-          Submodule.finrank_mono (range_comp_le_range _ _)
-      _ = finrank 𝕜 Wᗮ := by rw [Wᗮ.range_starProjection]
-  have hrng2 : range T₂ = Submodule.map (W.starProjection.toLinearMap ∘ₗ Δ)
-      (range Kᗮ.starProjection.toLinearMap) := by
-    dsimp only [T₂]
-    rw [← comp_assoc, range_comp]
-  have h2 : finrank 𝕜 (range T₂) ≤ finrank 𝕜 Kᗮ := by
-    calc finrank 𝕜 (range T₂)
-        = finrank 𝕜 (Submodule.map (W.starProjection.toLinearMap ∘ₗ Δ)
-            (range Kᗮ.starProjection.toLinearMap)) := by rw [hrng2]
-      _ ≤ finrank 𝕜 (range Kᗮ.starProjection.toLinearMap) := Submodule.finrank_map_le _ _
-      _ = finrank 𝕜 Kᗮ := by rw [Kᗮ.range_starProjection]
-  calc finrank 𝕜 (range (T₁ + T₂))
-      ≤ finrank 𝕜 (↥(range T₁ ⊔ range T₂)) := Submodule.finrank_mono hrng_add
-    _ ≤ finrank 𝕜 (range T₁) + finrank 𝕜 (range T₂) := by
-        linarith [Submodule.finrank_sup_add_finrank_inf_eq (range T₁) (range T₂)]
-    _ ≤ finrank 𝕜 Wᗮ + finrank 𝕜 Kᗮ := add_le_add h1 h2
 
 /-- The tangent part `Δ - P_W Δ P_K` and the normal part `P_W Δ P_K` are orthogonal for the
 Hilbert–Schmidt trace pairing: `tr ((Δ - P_W Δ P_K)† (P_W Δ P_K)) = 0`. -/
@@ -236,8 +167,7 @@ theorem norm_trace_adjoint_comp_le_nuclear_mul_opNorm (A B : E →ₗ[𝕜] F) :
   exact norm_trace_adjoint_comp_le_opNorm_mul_nuclear B A
 
 /-- **Attainment of trace duality for the nuclear seminorm**: every map `B` admits a contraction
-`U` (`‖U‖ ≤ 1`, the polar partial isometry `∑ᵢ uᵢ ⊗ vᵢ`) with `range U ≤ range B`,
-`range U† ≤ range B†`, and `tr (U† B) = ‖B‖₁`. -/
+`U` (`‖U‖ ≤ 1`) with `range U ≤ range B`, `range U† ≤ range B†`, and `tr (U† B) = ‖B‖₁`. -/
 theorem exists_opNorm_le_one_trace_adjoint_comp_eq_nuclear (B : E →ₗ[𝕜] F) :
     ∃ U : E →ₗ[𝕜] F,
       opNorm 𝕜 E F U ≤ 1 ∧
@@ -411,28 +341,25 @@ theorem nuclear_add_of_orthogonal {A B : E →ₗ[𝕜] F}
     (h₁ : LinearMap.adjoint A ∘ₗ B = 0) (h₂ : A ∘ₗ LinearMap.adjoint B = 0) :
     nuclear 𝕜 E F (A + B) = nuclear 𝕜 E F A + nuclear 𝕜 E F B := by
   refine le_antisymm (map_add_le_add _ A B) ?_
-  have hortho {X Y S T : E →ₗ[𝕜] F} (h : LinearMap.adjoint X ∘ₗ Y = 0)
-      (hS : LinearMap.range S ≤ LinearMap.range X) (hT : LinearMap.range T ≤ LinearMap.range Y) :
-      LinearMap.adjoint S ∘ₗ T = 0 := by
-    rw [← LinearMap.range_le_ker_iff, ← LinearMap.orthogonal_range] at h ⊢
-    exact hT.trans (h.trans (Submodule.orthogonal_le hS))
   obtain ⟨U, hU_norm, hU_rng, hU_adj_rng, hU_tr⟩ :=
     exists_opNorm_le_one_trace_adjoint_comp_eq_nuclear A
   obtain ⟨V, hV_norm, hV_rng, hV_adj_rng, hV_tr⟩ :=
     exists_opNorm_le_one_trace_adjoint_comp_eq_nuclear B
-  have hUV₁ : LinearMap.adjoint U ∘ₗ V = 0 := hortho h₁ hU_rng hV_rng
+  have hUV₁ : LinearMap.adjoint U ∘ₗ V = 0 :=
+    LinearMap.adjoint_comp_eq_zero_of_range_le h₁ hU_rng hV_rng
   have hUV₂ : U ∘ₗ LinearMap.adjoint V = 0 := by
-    rw [← LinearMap.adjoint_adjoint A] at h₂
-    rw [← LinearMap.range_le_ker_iff, ← LinearMap.orthogonal_range] at h₂
-    rw [← LinearMap.adjoint_adjoint U, ← LinearMap.range_le_ker_iff, ← LinearMap.orthogonal_range]
-    exact hV_adj_rng.trans (h₂.trans (Submodule.orthogonal_le hU_adj_rng))
-  have hUB : LinearMap.adjoint U ∘ₗ B = 0 := hortho h₁ hU_rng le_rfl
+    have h₂' : LinearMap.adjoint (LinearMap.adjoint A) ∘ₗ LinearMap.adjoint B = 0 := by
+      simpa only [LinearMap.adjoint_adjoint] using h₂
+    simpa only [LinearMap.adjoint_adjoint] using
+      LinearMap.adjoint_comp_eq_zero_of_range_le h₂' hU_adj_rng hV_adj_rng
+  have hUB : LinearMap.adjoint U ∘ₗ B = 0 :=
+    LinearMap.adjoint_comp_eq_zero_of_range_le h₁ hU_rng le_rfl
   have hVA : LinearMap.adjoint V ∘ₗ A = 0 := by
     have h₁' : LinearMap.adjoint B ∘ₗ A = 0 := by
       simpa [LinearMap.adjoint_comp] using congrArg LinearMap.adjoint h₁
-    exact hortho h₁' hV_rng le_rfl
+    exact LinearMap.adjoint_comp_eq_zero_of_range_le h₁' hV_rng le_rfl
   have hUV_norm : opNorm 𝕜 E F (U + V) ≤ 1 := by
-    rw [opNorm_add_of_orthogonal hUV₁ hUV₂]
+    rw [opNorm_add_eq_max_of_orthogonal hUV₁ hUV₂]
     exact max_le hU_norm hV_norm
   have htr : LinearMap.trace 𝕜 E (LinearMap.adjoint (U + V) ∘ₗ (A + B)) =
       ((nuclear 𝕜 E F A + nuclear 𝕜 E F B : ℝ) : 𝕜) := by
@@ -504,12 +431,36 @@ theorem nuclear_sub_orthogonal_range_ker_le (Θ Δ : E →ₗ[𝕜] F) :
         (Δ - (LinearMap.range Θ)ᗮ.starProjection.toLinearMap ∘ₗ Δ ∘ₗ
           (LinearMap.ker Θ).starProjection.toLinearMap) ≤
       √(2 * (finrank 𝕜 (LinearMap.range Θ) : ℝ)) * frobenius 𝕜 E F Δ := by
-  have hdim : finrank 𝕜 (LinearMap.range Θ)ᗮᗮ + finrank 𝕜 (LinearMap.ker Θ)ᗮ =
-      2 * finrank 𝕜 (LinearMap.range Θ) := by
-    rw [Submodule.orthogonal_orthogonal, LinearMap.orthogonal_ker, LinearMap.finrank_range_adjoint,
-      two_mul]
-  simpa only [hdim, Nat.cast_mul, Nat.cast_ofNat] using
-    nuclear_sub_starProjection_comp_le (LinearMap.range Θ)ᗮ (LinearMap.ker Θ) Δ
+  have hrank := Θ.finrank_range_sub_orthogonal_range_starProjection_comp_ker_le Δ
+  calc nuclear 𝕜 E F
+        (Δ - (LinearMap.range Θ)ᗮ.starProjection.toLinearMap ∘ₗ Δ ∘ₗ
+          (LinearMap.ker Θ).starProjection.toLinearMap)
+      ≤ √(finrank 𝕜 (LinearMap.range
+            (Δ - (LinearMap.range Θ)ᗮ.starProjection.toLinearMap ∘ₗ Δ ∘ₗ
+              (LinearMap.ker Θ).starProjection.toLinearMap))) *
+          frobenius 𝕜 E F
+            (Δ - (LinearMap.range Θ)ᗮ.starProjection.toLinearMap ∘ₗ Δ ∘ₗ
+              (LinearMap.ker Θ).starProjection.toLinearMap) :=
+        nuclear_apply_le_sqrt_finrank_range_mul_frobenius_apply _
+    _ ≤ √(2 * (finrank 𝕜 (LinearMap.range Θ) : ℝ)) * frobenius 𝕜 E F Δ :=
+        mul_le_mul (Real.sqrt_le_sqrt (by exact_mod_cast hrank))
+          (frobenius_sub_starProjection_comp_le _ _ Δ) (apply_nonneg _ _) (Real.sqrt_nonneg _)
+
+/-- **Explicit nuclear-norm decomposability** for the canonical tangent–normal split around `Θ`:
+`‖Θ‖₁ + ‖P_{(range Θ)ᗮ} Δ P_{ker Θ}‖₁ - ‖Δ - P_{(range Θ)ᗮ} Δ P_{ker Θ}‖₁ ≤ ‖Θ + Δ‖₁`. -/
+theorem nuclear_add_starProjection_comp_sub_le_nuclear_add (Θ Δ : E →ₗ[𝕜] F) :
+    nuclear 𝕜 E F Θ +
+        nuclear 𝕜 E F ((LinearMap.range Θ)ᗮ.starProjection.toLinearMap ∘ₗ Δ ∘ₗ
+          (LinearMap.ker Θ).starProjection.toLinearMap) -
+        nuclear 𝕜 E F (Δ - (LinearMap.range Θ)ᗮ.starProjection.toLinearMap ∘ₗ Δ ∘ₗ
+          (LinearMap.ker Θ).starProjection.toLinearMap) ≤
+      nuclear 𝕜 E F (Θ + Δ) := by
+  simpa only [sub_add_cancel] using
+    nuclear_add_sub_le_nuclear_add_of_orthogonal
+      (Δ₁ := Δ - (LinearMap.range Θ)ᗮ.starProjection.toLinearMap ∘ₗ Δ ∘ₗ
+        (LinearMap.ker Θ).starProjection.toLinearMap)
+      (LinearMap.adjoint_comp_orthogonal_range_starProjection_comp_ker Θ Δ)
+      (LinearMap.comp_adjoint_orthogonal_range_starProjection_comp_ker Θ Δ)
 
 /-- **Wainwright's low-rank tangent–normal decomposition**: if `rank Θ ≤ r`, then every
 perturbation `Δ` splits as `Δ = Δ₁ + Δ₂` where `Δ₁` has rank at most `2 r`, `Δ₂` is two-sided
@@ -526,36 +477,20 @@ theorem exists_lowRank_decomposition {r : ℕ} {Θ : E →ₗ[𝕜] F}
       LinearMap.trace 𝕜 E (LinearMap.adjoint Δ₁ ∘ₗ Δ₂) = 0 ∧
       nuclear 𝕜 E F Θ + nuclear 𝕜 E F Δ₂ - nuclear 𝕜 E F Δ₁ ≤ nuclear 𝕜 E F (Θ + Δ) ∧
       nuclear 𝕜 E F Δ₁ ≤ √(2 * (r : ℝ)) * frobenius 𝕜 E F Δ := by
-  let PW : F →ₗ[𝕜] F := (LinearMap.range Θ)ᗮ.starProjection.toLinearMap
-  let PK : E →ₗ[𝕜] E := (LinearMap.ker Θ).starProjection.toLinearMap
-  let Δ₂ : E →ₗ[𝕜] F := PW ∘ₗ Δ ∘ₗ PK
+  let Δ₂ : E →ₗ[𝕜] F :=
+    (LinearMap.range Θ)ᗮ.starProjection.toLinearMap ∘ₗ Δ ∘ₗ
+      (LinearMap.ker Θ).starProjection.toLinearMap
   let Δ₁ : E →ₗ[𝕜] F := Δ - Δ₂
-  have hsum : Δ₁ + Δ₂ = Δ := sub_add_cancel Δ Δ₂
-  have hrank : finrank 𝕜 (LinearMap.range Δ₁) ≤ 2 * r := by
-    have h := Δ.finrank_range_sub_starProjection_comp_le (LinearMap.range Θ)ᗮ (LinearMap.ker Θ)
-    rw [Submodule.orthogonal_orthogonal, LinearMap.orthogonal_ker,
-      LinearMap.finrank_range_adjoint, ← two_mul] at h
-    exact h.trans (Nat.mul_le_mul_left 2 hΘ)
-  have h₁ : LinearMap.adjoint Θ ∘ₗ Δ₂ = 0 := by
-    dsimp only [Δ₂, PW]
-    rw [← LinearMap.comp_assoc, LinearMap.adjoint_comp_orthogonal_range_starProjection,
-      LinearMap.zero_comp]
-  have h₂ : Θ ∘ₗ LinearMap.adjoint Δ₂ = 0 := by
-    have hPK_adj : LinearMap.adjoint PK = PK :=
-      (LinearMap.ker Θ).starProjection_isSymmetric.adjoint_eq
-    dsimp only [Δ₂]
-    rw [LinearMap.adjoint_comp, LinearMap.adjoint_comp, hPK_adj, ← LinearMap.comp_assoc,
-      ← LinearMap.comp_assoc]
-    dsimp only [PK]
-    rw [LinearMap.comp_ker_starProjection, LinearMap.zero_comp, LinearMap.zero_comp]
-  have htr : LinearMap.trace 𝕜 E (LinearMap.adjoint Δ₁ ∘ₗ Δ₂) = 0 :=
-    Δ.trace_adjoint_sub_starProjection_comp_eq_zero (LinearMap.range Θ)ᗮ (LinearMap.ker Θ)
-  have hdec : nuclear 𝕜 E F Θ + nuclear 𝕜 E F Δ₂ - nuclear 𝕜 E F Δ₁ ≤ nuclear 𝕜 E F (Θ + Δ) := by
-    simpa only [hsum] using nuclear_add_sub_le_nuclear_add_of_orthogonal (Δ₁ := Δ₁) h₁ h₂
   have hnuc : nuclear 𝕜 E F Δ₁ ≤ √(2 * (r : ℝ)) * frobenius 𝕜 E F Δ := by
     refine (nuclear_sub_orthogonal_range_ker_le Θ Δ).trans ?_
     refine mul_le_mul_of_nonneg_right (Real.sqrt_le_sqrt ?_) (apply_nonneg _ _)
     gcongr
-  exact ⟨Δ₁, Δ₂, hsum, hrank, h₁, h₂, htr, hdec, hnuc⟩
+  exact ⟨Δ₁, Δ₂, sub_add_cancel Δ Δ₂,
+    (Θ.finrank_range_sub_orthogonal_range_starProjection_comp_ker_le Δ).trans
+      (Nat.mul_le_mul_left 2 hΘ),
+    LinearMap.adjoint_comp_orthogonal_range_starProjection_comp_ker Θ Δ,
+    LinearMap.comp_adjoint_orthogonal_range_starProjection_comp_ker Θ Δ,
+    Δ.trace_adjoint_sub_starProjection_comp_eq_zero (LinearMap.range Θ)ᗮ (LinearMap.ker Θ),
+    nuclear_add_starProjection_comp_sub_le_nuclear_add Θ Δ, hnuc⟩
 
 end TauCeti.UnitarilyInvariantSeminorm
