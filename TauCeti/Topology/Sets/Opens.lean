@@ -37,6 +37,8 @@ indexed by.
   σ-compact.
 * `TopologicalSpace.Opens.IsBasis.exists_finset_sup_le_of_isCompact` : a compact subset of an
   open set has a neighbourhood inside it which is a finite union of basis members.
+* `IsCompact.preimage_val_of_pairwise_disjoint` : a compact set covered by pairwise disjoint open
+  sets has compact preimage in each of them.
 -/
 
 public section
@@ -135,5 +137,33 @@ theorem exists_finset_sup_le_of_isCompact (hB : Opens.IsBasis B) {K : Set X}
       exact W.property.2
 
 end TopologicalSpace.Opens.IsBasis
+
+open Set in
+/-- A compact set covered by pairwise disjoint open sets meets each of them in a compact set, so
+its preimage in each of them is compact. -/
+theorem IsCompact.preimage_val_of_pairwise_disjoint {X ι : Type*} [TopologicalSpace X]
+    {U : ι → TopologicalSpace.Opens X} {A : Set X} (hA : IsCompact A)
+    (hU : Pairwise fun i k ↦ Disjoint (U i : Set X) (U k)) (hAU : A ⊆ ⋃ i, (U i : Set X))
+    (i : ι) : IsCompact ((Subtype.val : U i → X) ⁻¹' A) := by
+  -- `A ∩ U i` is the closed subset of `A` missing the other open sets.
+  have hAi : A ∩ U i = A ∩ (⋃ (k : ι) (_ : k ≠ i), (U k : Set X))ᶜ := by
+    ext x
+    simp only [mem_inter_iff, mem_compl_iff, mem_iUnion, not_exists, SetLike.mem_coe]
+    refine and_congr_right fun hx ↦ ⟨fun hxi k hki hxk ↦ disjoint_left.1 (hU hki) hxk hxi,
+      fun h ↦ ?_⟩
+    obtain ⟨k, hxk⟩ := mem_iUnion.1 (hAU hx)
+    by_cases hki : k = i
+    · exact hki ▸ hxk
+    · exact (h k hki hxk).elim
+  have hc : IsCompact (A ∩ U i) := by
+    rw [hAi]
+    exact hA.inter_right
+      (isOpen_iUnion fun k ↦ isOpen_iUnion fun _ ↦ (U k).isOpen).isClosed_compl
+  have hpre : (Subtype.val : U i → X) ⁻¹' A = Subtype.val ⁻¹' (A ∩ U i) := by
+    ext x
+    simp
+  rw [hpre]
+  exact ((U i).isOpenEmbedding'.isInducing.isCompact_preimage_iff
+    fun x (hx : x ∈ A ∩ U i) ↦ ⟨⟨x, hx.2⟩, rfl⟩).2 hc
 
 end

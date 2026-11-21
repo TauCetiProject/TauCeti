@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.RestrictedProduct.TopologicalSpace
--- Proof-only: box openness from `RestrictedProduct.isOpen_box`.
-import TauCeti.Topology.Algebra.RestrictedProduct.Box
 
 /-!
 # The topology of a restricted product
@@ -21,9 +19,6 @@ factors it is a closed embedding. Over the cofinite filter, evaluation at an ind
 On a subspace lying in the reference sets at every index of some `T` with `𝓕 ≤ 𝓟 T` (over the
 cofinite filter: outside finitely many indices), the restricted-product topology agrees with the
 product topology.
-
-When every reference set `A i` is open, boxes built from topological bases of the factors form a
-topological basis of `Πʳ i, [R i, A i]` (`isTopologicalBasis_restrictedProduct_boxes`).
 
 The restricted-product topology is finer than the topology induced from the full product
 `Π i, R i`, and in general strictly finer. The clearest instance is a family of discrete spaces
@@ -212,84 +207,5 @@ theorem not_isInducing_coe_bot [∀ i, DiscreteTopology (G i)]
   exact hg hmem
 
 end Discrete
-
-section Bases
-
-private theorem isOpen_restrictedProduct_finset_box (hA : ∀ i, IsOpen (A i)) (S : Finset ι)
-    {U : ∀ i : S, Set (R i)} (hU : ∀ i, IsOpen (U i)) :
-    IsOpen {x : Πʳ i, [R i, A i] | (∀ i : S, x i ∈ U i) ∧ ∀ i ∉ S, x i ∈ A i} := by
-  classical
-  have heq : {x : Πʳ i, [R i, A i] | (∀ i : S, x i ∈ U i) ∧ ∀ i ∉ S, x i ∈ A i} =
-      RestrictedProduct.box fun i ↦ if hi : i ∈ S then U ⟨i, hi⟩ else A i := by
-    ext x
-    simp only [Set.mem_ofPred_eq, RestrictedProduct.mem_box]
-    exact ⟨fun h i ↦ by split_ifs with hi; exacts [h.left ⟨i, hi⟩, h.right i hi],
-      fun h ↦ ⟨fun i ↦ by simpa [i.property] using h i.val,
-        fun i hi ↦ by simpa [hi] using h i⟩⟩
-  rw [heq]
-  refine RestrictedProduct.isOpen_box (fun i ↦ ?_) ?_
-  · split_ifs with hi
-    exacts [hU ⟨i, hi⟩, hA i]
-  · filter_upwards [S.finite_toSet.compl_mem_cofinite] with i hi
-    have hi' : i ∉ S := hi
-    simp [hi']
-
-/-- Given a topological basis `b i` on each factor `R i` and open reference sets `A i`, the boxes
-restricting finitely many coordinates to elements of `b i` and the remaining coordinates to `A i`
-form a topological basis of the restricted product `Πʳ i, [R i, A i]`. -/
-theorem isTopologicalBasis_restrictedProduct_boxes (hA : ∀ i, IsOpen (A i))
-    {b : ∀ i, Set (Set (R i))} (hb : ∀ i, TopologicalSpace.IsTopologicalBasis (b i)) :
-    TopologicalSpace.IsTopologicalBasis
-      {s : Set (Πʳ i, [R i, A i]) |
-        ∃ (S : Finset ι) (U : ∀ i : S, Set (R i)),
-          (∀ i : S, U i ∈ b i.val) ∧
-          s = {x | (∀ i : S, x i ∈ U i) ∧ ∀ i ∉ S, x i ∈ A i}} := by
-  classical
-  refine TopologicalSpace.isTopologicalBasis_of_isOpen_of_nhds ?_ ?_
-  · rintro _ ⟨S, U, hU, rfl⟩
-    exact isOpen_restrictedProduct_finset_box hA S fun i ↦ (hb i.val).isOpen (hU i)
-  · intro x V hxV hV
-    -- Work inside the principal stage determined by the indices where `x i ∈ A i`.
-    set T₀ : Set ι := {i | x i ∈ A i}
-    have hT₀ : (cofinite : Filter ι) ≤ 𝓟 T₀ := le_principal_iff.mpr x.property
-    let x₀ : Πʳ i, [R i, A i]_[𝓟 T₀] := ⟨x, eventually_principal.mpr fun _ hi ↦ hi⟩
-    obtain ⟨W, hW, hW_eq⟩ := RestrictedProduct.isEmbedding_coe_of_principal.isOpen_iff.mp
-      (hV.preimage (RestrictedProduct.continuous_inclusion hT₀))
-    have hxW : (x : ∀ i, R i) ∈ W := by
-      have hx₀ : x₀ ∈ RestrictedProduct.inclusion R A hT₀ ⁻¹' V := hxV
-      rwa [← hW_eq] at hx₀
-    obtain ⟨I, u, hu, hIu⟩ := isOpen_pi_iff.mp hW x hxW
-    let S : Finset ι := I ∪ (mem_cofinite.mp x.property).toFinset
-    -- On `i ∈ S`, intersect with `u i` (when `i ∈ I`) and `A i` (when `x i ∈ A i`) so that points
-    -- of the box remain in the principal stage `𝓟 T₀` and land in `W`.
-    have hU_ex : ∀ i : S, ∃ U ∈ b i.val, x i.val ∈ U ∧
-        (i.val ∈ I → U ⊆ u i.val) ∧ (i.val ∈ T₀ → U ⊆ A i.val) := fun i ↦ by
-      let Wᵢ : Set (R i.val) :=
-        (if i.val ∈ I then u i.val else Set.univ) ∩ (if i.val ∈ T₀ then A i.val else Set.univ)
-      have hWᵢ : IsOpen Wᵢ :=
-        ((by split_ifs with hi; exacts [(hu i.val hi).left, isOpen_univ] : IsOpen _).inter
-          (by split_ifs with hi; exacts [hA i.val, isOpen_univ]))
-      have hxWᵢ : x i.val ∈ Wᵢ :=
-        ⟨by split_ifs with hi; exacts [(hu i.val hi).right, trivial],
-          by split_ifs with hi; exacts [hi, trivial]⟩
-      obtain ⟨U, hUb, hxU, hUWᵢ⟩ := (hb i.val).exists_subset_of_mem_open hxWᵢ hWᵢ
-      exact ⟨U, hUb, hxU, fun hi y hy ↦ by simpa [Wᵢ, hi] using (hUWᵢ hy).left,
-        fun hi y hy ↦ by simpa [Wᵢ, hi] using (hUWᵢ hy).right⟩
-    choose U hUb hxU hUu hUA using hU_ex
-    refine ⟨{y | (∀ i : S, y i ∈ U i) ∧ ∀ i ∉ S, y i ∈ A i}, ⟨S, U, hUb, rfl⟩,
-      ⟨hxU, fun i hi ↦ by_contra fun hxA ↦
-        hi (Finset.mem_union_right I ((Set.Finite.mem_toFinset _).mpr hxA))⟩, fun y hy ↦ ?_⟩
-    have hyT₀ : ∀ i ∈ T₀, y i ∈ A i := fun i hi ↦ by
-      by_cases hiS : i ∈ S
-      · exact hUA ⟨i, hiS⟩ hi (hy.left ⟨i, hiS⟩)
-      · exact hy.right i hiS
-    let y₀ : Πʳ i, [R i, A i]_[𝓟 T₀] := ⟨y, eventually_principal.mpr hyT₀⟩
-    have hyW : y₀ ∈ ((↑) : Πʳ i, [R i, A i]_[𝓟 T₀] → ∀ i, R i) ⁻¹' W :=
-      hIu fun i hi ↦ hUu ⟨i, Finset.mem_union_left _ hi⟩ hi
-        (hy.left ⟨i, Finset.mem_union_left _ hi⟩)
-    rw [hW_eq] at hyW
-    exact hyW
-
-end Bases
 
 end TauCeti
