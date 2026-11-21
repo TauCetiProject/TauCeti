@@ -87,7 +87,6 @@ private theorem eq_of_mem_ball_of_mem_ball {θ : ι → Y} {s : ℝ}
   exact (ball_disjoint_ball (by linarith [hθ i j hij])).ne_of_mem hi hj rfl
 
 /-- A point in the ball around `θ i` has index `i`. -/
-@[simp]
 theorem ballIndex_eq_of_mem_ball {θ : ι → Y} {s : ℝ}
     (hθ : ∀ i j, i ≠ j → 2 * s ≤ dist (θ i) (θ j)) (i₀ : ι) {y : Y} {i : ι}
     (hy : y ∈ ball (θ i) s) : ballIndex θ s i₀ y = i := by
