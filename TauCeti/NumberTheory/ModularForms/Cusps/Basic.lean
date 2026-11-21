@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ModularForms.Basic
+public import TauCeti.NumberTheory.Modular.ConjugateTranslation
 public import Mathlib.GroupTheory.GroupAction.Period
 public import Mathlib.NumberTheory.ModularForms.Cusps
 public import Mathlib.NumberTheory.ModularForms.SlashActions
@@ -56,15 +57,6 @@ open Matrix Matrix.SpecialLinearGroup Subgroup UpperHalfPlane
 open scoped MatrixGroups ModularForm Pointwise
 
 namespace TauCeti
-
-/-- The image of `T ^ n : SL(2, ℤ)` in `GL(2, S)` for any commutative ring `S` is the
-upper-triangular matrix `[1, n; 0, 1]`. -/
-@[simp]
-lemma ModularGroup.mapGL_T_zpow_eq_upperRightHom {S : Type*} [CommRing S] (n : ℤ) :
-    Matrix.SpecialLinearGroup.mapGL S ((ModularGroup.T : SL(2, ℤ))^n) =
-      Matrix.GeneralLinearGroup.upperRightHom (n : S) := by
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp [mapGL_coe_matrix, ModularGroup.coe_T_zpow, -map_zpow]
 
 /-- The image of `T ^ n : SL(2, ℤ)` in `GL(2, S)`, for a natural exponent. -/
 @[simp]

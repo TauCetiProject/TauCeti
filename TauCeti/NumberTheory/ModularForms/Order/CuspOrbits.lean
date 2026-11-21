@@ -81,6 +81,11 @@ theorem orderAtCuspOrbit_nonneg (f : F) (C : (Γ.map sl2zToPSL2R).CuspOrbit) :
 theorem hasFiniteSupport_orderAtCuspOrbit [Γ.FiniteIndex] (f : F) :
     Function.HasFiniteSupport (orderAtCuspOrbit (Γ := Γ) (k := k) f) := Set.toFinite _
 
+/-- The cusp order on every cusp orbit is a half-integer `m / 2` for some `m : ℕ`. -/
+theorem exists_orderAtCuspOrbit_eq_natCast_div_two (f : F) (C : (Γ.map sl2zToPSL2R).CuspOrbit) :
+    ∃ m : ℕ, orderAtCuspOrbit f C = (m : ℚ) / 2 :=
+  TauCeti.exists_orderAtCusp_eq_natCast_div_two _ _
+
 end Slash
 
 section Modular
@@ -338,11 +343,9 @@ theorem orderAtCuspOrbit_pos {f : F} (hf : (⇑f : ℍ → ℂ) ≠ 0) (C : (Γ.
 /-- Every nonzero cusp form has vanishing order at least `1 / 2` at every cusp orbit. -/
 theorem one_div_two_le_orderAtCuspOrbit {f : F} (hf : (⇑f : ℍ → ℂ) ≠ 0)
     (C : (Γ.map sl2zToPSL2R).CuspOrbit) : 1 / 2 ≤ orderAtCuspOrbit f C := by
-  obtain ⟨γ, rfl⟩ := Γ.cuspOrbitOfSL2Z_surjective C
-  have hpos := orderAtCuspOrbit_pos hf (Γ.cuspOrbitOfSL2Z γ)
-  rw [orderAtCuspOrbit_cuspOrbitOfSL2Z, TauCeti.orderAtCusp_def, qExpansionOrderAtCusp_def,
-    Int.cast_natCast] at hpos ⊢
-  generalize (qExpansion _ _).order.toNat = m at hpos ⊢
+  obtain ⟨m, hm⟩ := exists_orderAtCuspOrbit_eq_natCast_div_two f C
+  have hpos := orderAtCuspOrbit_pos hf C
+  rw [hm] at hpos ⊢
   have : (1 : ℚ) ≤ m := by
     exact_mod_cast Nat.succ_le_of_lt (by exact_mod_cast (by linarith : (0 : ℚ) < m) : 0 < m)
   linarith

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ModularForms.Cusps.Regularity
-public import TauCeti.NumberTheory.ModularForms.Norm.Cusps
+public import TauCeti.NumberTheory.ModularForms.Cusps.TranslationOrbit.Basic
 import TauCeti.GroupTheory.GroupAction.ConjAct
 import TauCeti.NumberTheory.Modular.ConjugateTranslation
 

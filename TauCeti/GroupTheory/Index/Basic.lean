@@ -74,8 +74,6 @@ centre gives the `Γ.withCenter` readings.
   and `φ₂` is injective, then the range of `φ₁` has finite index.
 * `MonoidHom.mk_mul_out_bijective`: right cosets of a composite range are represented by
   products of representatives for the two successive ranges.
-* `Subgroup.relIndex_withCenter_eq_one`, `Subgroup.index_eq_index_withCenter`: when `Γ` contains
-  the centre, `Γ` has relative index `1` in `Γ.withCenter` and the same index in `G`.
 * `Subgroup.relIndex_withCenter_eq_two`, `Subgroup.index_eq_two_mul_index_withCenter`: the same
   two facts on `Γ.withCenter`, when the centre is `{1, a}` and `a ∉ Γ`.
 * `Subgroup.relIndex_withCenter_mul_card_center_subgroupOf`: in any group,
@@ -447,15 +445,6 @@ theorem index_eq_two_mul_index_sup (N : Subgroup G) (hnorm : Γ ≤ Subgroup.nor
     Γ.index = 2 * (Γ ⊔ N).index := by
   rw [← Subgroup.relIndex_mul_index (le_sup_left : Γ ≤ Γ ⊔ N),
     relIndex_sup_eq_two N hnorm ha haΓ hN]
-
-/-- **When `Γ` contains the centre, `Γ` has relative index `1` in `Γ.withCenter`.** Adjoining the
-centre leaves `Γ` unchanged by `Subgroup.withCenter_eq_self_iff`. -/
-theorem relIndex_withCenter_eq_one (h : Subgroup.center G ≤ Γ) : Γ.relIndex Γ.withCenter = 1 := by
-  rw [withCenter_eq_self_iff.mpr h, relIndex_self]
-
-/-- **When `Γ` contains the centre, `Γ` and `Γ.withCenter` have the same index in `G`.** -/
-theorem index_eq_index_withCenter (h : Subgroup.center G ≤ Γ) : Γ.index = Γ.withCenter.index := by
-  rw [withCenter_eq_self_iff.mpr h]
 
 /-- **When the centre is `{1, a}` and `a ∉ Γ`, `Γ` has relative index exactly `2` in
 `Γ.withCenter`.** The centre reading of `Subgroup.relIndex_sup_eq_two`. This is the branch in

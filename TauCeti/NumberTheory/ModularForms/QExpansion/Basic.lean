@@ -8,6 +8,9 @@ module
 public import Mathlib.NumberTheory.ModularForms.CuspFormSubmodule
 public import Mathlib.NumberTheory.ModularForms.QExpansion
 public import TauCeti.Analysis.Complex.Periodic
+import TauCeti.Analysis.Complex.UpperHalfPlane.CuspCoordinate
+import TauCeti.LinearAlgebra.Matrix.Triangular
+import TauCeti.NumberTheory.ModularForms.Basic
 
 /-!
 # The `q`-expansion as a linear map, and uniqueness of coefficients for raw functions
@@ -45,6 +48,8 @@ operations, so meromorphy at `q = 0` is preserved by the field operations, twist
 multiplies the cusp function by `q ^ k`, and the `q`-expansion only depends on the cusp function
 on a punctured neighbourhood of `0`. Constant functions have constant cusp functions, and for an
 analytic cusp function the cusp function and the `q`-expansion of a power are the powers.
+Slashing by a positive-determinant upper-triangular `GL(2, ℝ)` matrix scales the cusp function
+and rotates `q`, preserving analyticity at `0`.
 
 Finally, the `q`-parameter as a function on `ℍ`: it is periodic, its own `q`-expansion is `X`
 (and that of its `m`-th power is `X ^ m`),
@@ -72,6 +77,9 @@ expanded through: one multiplies by `q` and divides the expansion of the product
   of cusp functions under the field operations.
 * `TauCeti.UpperHalfPlane.cuspFunction_pow` and `TauCeti.UpperHalfPlane.qExpansion_pow`: powers of
   functions with analytic cusp functions.
+* `TauCeti.cuspFunction_slash_eventuallyEq_of_apply_one_zero_eq_zero` and
+  `TauCeti.analyticAt_cuspFunction_slash_of_apply_one_zero_eq_zero`: behaviour of `cuspFunction`
+  under positive-determinant upper-triangular `GL(2, ℝ)` slashes.
 * `TauCeti.UpperHalfPlane.qExpansion_qParam` and `TauCeti.UpperHalfPlane.qExpansion_qParam_pow`:
   the `q`-expansions of `q` and of its powers are `X` and its powers.
 * `TauCeti.UpperHalfPlane.tendsto_div_qParam_atImInfty`: `f / q` tends to the `q`-coefficient of
@@ -319,6 +327,47 @@ theorem UpperHalfPlane.meromorphicOrderAt_pow_mul_cuspFunction {k : ℕ}
   rw [fun_meromorphicOrderAt_mul hq hf]
   congr 1
   simpa using fun_meromorphicOrderAt_pow_id_sub_const (x := (0 : ℂ)) (n := k)
+
+section
+
+open scoped _root_.ModularForm
+
+/-- Near `q = 0`, slashing by positive-determinant upper-triangular `M ∈ GL(2, ℝ)` scales
+`cuspFunction` by `|det M|^(k-1) * M₁₁^(-k)` and rotates `q` by `exp (2πi (M 0 1 / M 1 1) / h)`. -/
+lemma cuspFunction_slash_eventuallyEq_of_apply_one_zero_eq_zero (hh : 0 < h)
+    {k : ℤ} {M : GL (Fin 2) ℝ} (hdet : 0 < (M : Matrix (Fin 2) (Fin 2) ℝ).det) (hM : M 1 0 = 0)
+    (hg_per : Function.Periodic (g ∘ ofComplex) h) (hg : ContinuousAt (cuspFunction h g) 0) :
+    cuspFunction ((M 1 1 / M 0 0) * h) (g ∣[k] M) =ᶠ[𝓝 0] fun q : ℂ ↦
+      ((|(M.det : ℝ)| : ℝ) : ℂ) ^ (k - 1) * (M 1 1 : ℂ) ^ (-k) * cuspFunction h g
+        (Complex.exp (2 * Real.pi * Complex.I * (M 0 1 / M 1 1 : ℝ) / h) * q) := by
+  have hdiv :=
+    Matrix.apply_one_one_div_apply_zero_zero_pos_of_det_pos_of_apply_one_zero_eq_zero hdet hM
+  have hh' := mul_pos hdiv hh
+  refine UpperHalfPlane.cuspFunction_eventuallyEq_nhds_of_continuousAt
+    (eventually_nhdsWithin_iff.mpr ?_)
+    (continuousAt_const.mul (hg.comp_of_eq (continuousAt_const.mul continuousAt_id) (mul_zero _)))
+  filter_upwards [Metric.ball_mem_nhds (0 : ℂ) one_pos] with q hq_ball hq_ne
+  let τ : ℍ := ⟨Function.Periodic.invQParam ((M 1 1 / M 0 0) * h) q,
+    Function.Periodic.im_invQParam_pos_of_norm_lt_one hh'
+      (mem_ball_zero_iff.mp hq_ball) hq_ne⟩
+  have hqτ : Function.Periodic.qParam ((M 1 1 / M 0 0) * h) (τ : ℂ) = q :=
+    Function.Periodic.qParam_right_inv hh'.ne' hq_ne
+  rw [← hqτ, _root_.UpperHalfPlane.eq_cuspFunction τ hh'.ne'
+      (periodic_slash_of_apply_one_zero_eq_zero hdet hM hg_per),
+    _root_.ModularForm.slash_apply_of_apply_one_zero_eq_zero hdet hM,
+    ← _root_.UpperHalfPlane.eq_cuspFunction (M • τ) hh.ne' hg_per,
+    UpperHalfPlane.qParam_smul_of_apply_one_zero_eq_zero hdet hM τ]
+
+/-- Analyticity at `q = 0` of `cuspFunction` is preserved under upper-triangular `GL(2, ℝ)`. -/
+lemma analyticAt_cuspFunction_slash_of_apply_one_zero_eq_zero (hh : 0 < h)
+    {k : ℤ} {M : GL (Fin 2) ℝ} (hdet : 0 < (M : Matrix (Fin 2) (Fin 2) ℝ).det) (hM : M 1 0 = 0)
+    (hg_per : Function.Periodic (g ∘ ofComplex) h) (hg : AnalyticAt ℂ (cuspFunction h g) 0) :
+    AnalyticAt ℂ (cuspFunction ((M 1 1 / M 0 0) * h) (g ∣[k] M)) 0 :=
+  (analyticAt_const.mul (hg.comp_of_eq (analyticAt_const.mul analyticAt_id) (mul_zero _))).congr
+    (cuspFunction_slash_eventuallyEq_of_apply_one_zero_eq_zero hh hdet hM hg_per
+      hg.continuousAt).symm
+
+end
 
 end CuspFunction
 

@@ -215,13 +215,12 @@ theorem _root_.Subgroup.card_stabilizer_eq_card_center_mul_card_stabilizer_effec
 `Γ ≤ SL(2, ℤ)`. -/
 theorem _root_.Subgroup.card_stabilizer_mapGL (Γ : Subgroup SL(2, ℤ)) (z : ℍ) :
     Nat.card (stabilizer (Γ.map (Matrix.SpecialLinearGroup.mapGL ℝ)) z) =
-      Nat.card (stabilizer Γ z) := by
-  have h := TauCeti.card_stabilizer_eq_card_ker_mul_card_stabilizer
-    ((Matrix.SpecialLinearGroup.mapGL ℝ).subgroupMap Γ) (MonoidHom.subgroupMap_surjective _ _) z
-    fun g ↦ by simp [Subgroup.smul_def, MulAction.compHom_smul_def]
-  rw [Subgroup.ker_subgroupMap,
-    (MonoidHom.ker_eq_bot_iff _).mpr Matrix.SpecialLinearGroup.mapGL_injective] at h
-  simpa using h.symm
+      Nat.card (stabilizer Γ z) :=
+  TauCeti.card_stabilizer_congr
+    (Γ.equivMapOfInjective (Matrix.SpecialLinearGroup.mapGL ℝ)
+      Matrix.SpecialLinearGroup.mapGL_injective)
+    (f := id) z (fun g ↦ by simp [Subgroup.smul_def, MulAction.compHom_smul_def])
+    fun _ h ↦ h
 
 /-- Orbitwise stabiliser splitting: `|Stab_Γ o| = |{±I} ∩ Γ| · e_P`. -/
 theorem cardStabilizerOnOrbit_eq_card_center_mul_effective {Γ : Subgroup SL(2, ℤ)}

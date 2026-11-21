@@ -8,6 +8,8 @@ module
 public import Mathlib.GroupTheory.Index
 public import Mathlib.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
 public import Mathlib.NumberTheory.Modular
+public import TauCeti.GroupTheory.GroupAction.ConjAct
+public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
 import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup.FinTwo
@@ -26,7 +28,10 @@ In `PSL(2, ℤ)`, distinct integer powers of `T` are pairwise non-conjugate
 (`TauCeti.ModularGroup.eq_of_conj_coe_T_zpow_eq`), containment of a conjugate of `⟨T ^ a⟩` in
 `⟨T ^ b⟩` forces `b ∣ a` (`TauCeti.ModularGroup.dvd_of_conj_zpowers_coe_T_zpow_le`), and every
 cyclic translation subgroup `⟨T ^ k⟩` has infinite index
-(`TauCeti.ModularGroup.index_zpowers_coe_T_zpow`).
+(`TauCeti.ModularGroup.index_zpowers_coe_T_zpow`). In `GL(2, ℝ)`,
+`ModularGroup.mapGL_T_zpow_eq_upperRightHom` and
+`exists_int_eq_and_conj_mul_T_zpow_mem_of_mapGL_mul_upperRightHom_mem_conj` (with its
+specializations for `±upperRightHom`) extract integral translations from `γ⁻¹ Γ γ`.
 
 ## References
 
@@ -160,5 +165,61 @@ theorem ModularGroup.index_zpowers_coe_T_zpow (k : ℤ) :
       simp at h00
   rw [Subgroup.index_eq_card]
   exact Nat.card_eq_zero_of_infinite
+
+section MapGL
+
+open Matrix.SpecialLinearGroup
+
+/-- The image of `T ^ n : SL(2, ℤ)` in `GL(2, S)` for any commutative ring `S` is the
+upper-triangular matrix `[1, n; 0, 1]`. -/
+@[simp]
+lemma ModularGroup.mapGL_T_zpow_eq_upperRightHom {S : Type*} [CommRing S] (n : ℤ) :
+    mapGL S ((_root_.ModularGroup.T : SL(2, ℤ)) ^ n) =
+      Matrix.GeneralLinearGroup.upperRightHom (n : S) := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [mapGL_coe_matrix, _root_.ModularGroup.coe_T_zpow, -map_zpow]
+
+/-- If `mapGL ℝ s * upperRightHom w` (`s ∈ SL(2, ℤ)`) belongs to `γ⁻¹ Γ γ`, then `w` is an integer
+`j` and `γ * (s * T ^ j) * γ⁻¹ ∈ Γ`. -/
+theorem exists_int_eq_and_conj_mul_T_zpow_mem_of_mapGL_mul_upperRightHom_mem_conj
+    {Γ : Subgroup SL(2, ℤ)} (γ s : SL(2, ℤ)) {w : ℝ}
+    (hw : mapGL ℝ s * Matrix.GeneralLinearGroup.upperRightHom w ∈
+      ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • Γ.map (mapGL ℝ)) :
+    ∃ j : ℤ, w = j ∧ γ * (s * _root_.ModularGroup.T ^ j) * γ⁻¹ ∈ Γ := by
+  obtain ⟨g, hg, hg_eq⟩ := Subgroup.mem_map.mp (Subgroup.mem_conjAct_inv_smul_iff.mp hw)
+  set u : SL(2, ℤ) := s⁻¹ * (γ⁻¹ * g * γ) with hu_def
+  have hconj : mapGL ℝ u = Matrix.GeneralLinearGroup.upperRightHom w := by
+    rw [hu_def, map_mul, map_inv, map_mul, map_mul, map_inv, hg_eq]; group
+  have hw_eq : w = (u 0 1 : ℝ) := by
+    simpa [mapGL_coe_matrix, Matrix.GeneralLinearGroup.upperRightHom] using
+      (congr_arg (fun M : GL (Fin 2) ℝ ↦ (M : Matrix (Fin 2) (Fin 2) ℝ) 0 1) hconj).symm
+  have hT : u = _root_.ModularGroup.T ^ (u 0 1) :=
+    mapGL_injective (S := ℝ) (by rw [hconj, hw_eq, ModularGroup.mapGL_T_zpow_eq_upperRightHom])
+  have hg_eq' : γ * (s * u) * γ⁻¹ = g := by rw [hu_def]; group
+  exact ⟨u 0 1, hw_eq, by rwa [← hT, hg_eq']⟩
+
+/-- A positive shift `upperRightHom w ∈ γ⁻¹ Γ γ` has integer translation `w = j` with
+`γ * T ^ j * γ⁻¹ ∈ Γ`. -/
+theorem exists_int_eq_and_conj_T_zpow_mem_of_upperRightHom_mem_conj
+    {Γ : Subgroup SL(2, ℤ)} (γ : SL(2, ℤ)) {w : ℝ}
+    (hw : Matrix.GeneralLinearGroup.upperRightHom w ∈
+      ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • Γ.map (mapGL ℝ)) :
+    ∃ j : ℤ, w = j ∧ γ * _root_.ModularGroup.T ^ j * γ⁻¹ ∈ Γ := by
+  simpa only [one_mul] using
+    exists_int_eq_and_conj_mul_T_zpow_mem_of_mapGL_mul_upperRightHom_mem_conj (Γ := Γ) γ 1
+      (by simpa only [map_one, one_mul] using hw)
+
+/-- A negative shift `-upperRightHom w ∈ γ⁻¹ Γ γ` has integer translation `w = j` with
+`-(γ * T ^ j * γ⁻¹) ∈ Γ`. -/
+theorem exists_int_eq_and_neg_conj_T_zpow_mem_of_neg_upperRightHom_mem_conj
+    {Γ : Subgroup SL(2, ℤ)} (γ : SL(2, ℤ)) {w : ℝ}
+    (hw : -Matrix.GeneralLinearGroup.upperRightHom w ∈
+      ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • Γ.map (mapGL ℝ)) :
+    ∃ j : ℤ, w = j ∧ -(γ * _root_.ModularGroup.T ^ j * γ⁻¹) ∈ Γ := by
+  simpa only [neg_one_mul, mul_neg, neg_mul, one_mul] using
+    exists_int_eq_and_conj_mul_T_zpow_mem_of_mapGL_mul_upperRightHom_mem_conj (Γ := Γ) γ (-1)
+      (by simpa only [Matrix.SpecialLinearGroup.mapGL_neg_one, neg_one_mul] using hw)
+
+end MapGL
 
 end TauCeti

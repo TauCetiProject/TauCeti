@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
-public import TauCeti.NumberTheory.ModularForms.Norm.Valence
+public import TauCeti.NumberTheory.ModularForms.Order.SubgroupOrbits
 import TauCeti.Analysis.Complex.Fuchsian.ProperAction
-import TauCeti.NumberTheory.Modular.Stabilizer
 import TauCeti.Topology.Algebra.ConstMulAction
 import TauCeti.Topology.Algebra.Matrix.ProjectiveSpecialLinearGroup
 
@@ -187,9 +186,8 @@ theorem orderOfVanishingOnEffectiveOrbit_pos_iff {f : F} (hf : (⇑f : ℍ → �
 /-- A modular form on finite-index `Γ` has nonzero vanishing order on finitely many orbits. -/
 theorem hasFiniteSupport_orderOfVanishingOnEffectiveOrbit [Γ.FiniteIndex] (f : F) :
     Function.HasFiniteSupport (orderOfVanishingOnEffectiveOrbit (Γ := Γ) (k := k) f) :=
-  ((hasFiniteSupport_orderOfVanishingOnSubgroupOrbit f).image
-    Γ.subgroupOrbitEquivEffectiveOrbit).subset fun P hP ↦
-      ⟨Γ.subgroupOrbitEquivEffectiveOrbit.symm P, hP, Equiv.apply_symm_apply _ _⟩
+  (hasFiniteSupport_orderOfVanishingOnSubgroupOrbit f).preimage
+    Γ.subgroupOrbitEquivEffectiveOrbit.symm.injective.injOn
 
 /-- Only finitely many effective orbits carry nonzero projective weighted order. -/
 theorem hasFiniteSupport_weightedOrderOfVanishingOnEffectiveOrbit [Γ.FiniteIndex] (f : F) :
