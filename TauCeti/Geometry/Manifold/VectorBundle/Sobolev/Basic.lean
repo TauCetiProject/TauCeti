@@ -93,6 +93,8 @@ construction in `TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Bordered.Basic`.
   the section whose readings its chart data are.
 * `TauCeti.SectionChartData.chartValueL_ae_of_eq_fiberMap`: components related by a constant fibre
   map `L` have chart data related by `L`.
+* `TauCeti.SobolevSection.exists_section_ae_eq_coord`: every Sobolev section has an actual section
+  representative with the prescribed chart readings.
 * `TauCeti.SobolevSection.eq_of_ae_eq_coord`: an element of `W^{k,p}(V)` is determined by the
   section whose coordinates its chart data are.
 * `TauCeti.SobolevSection.exists_ae_eq_coord`: every element of `W^{k,p}(V)` consists of the
@@ -102,6 +104,9 @@ construction in `TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Bordered.Basic`.
   coordinates of the sum or the multiple of the sections.
 * `TauCeti.FiniteBundleAtlas.isFiniteMeasure_restrict_image`: chart images have finite measure for
   a measure that is finite on compact sets.
+* `TauCeti.SectionChartData.hasWeakFDerivOn_chartValueL`: the chart data of an order-one tuple are
+  weakly differentiable on the chart image, with weak derivative
+  `TauCeti.SectionChartData.chartDerivL` assembled from the weak gradients of the components.
 * `TauCeti.SectionChartData.exists_continuousLinearMap_chartValueL_ae_eq`: continuous linear maps
   into the chartwise Sobolev spaces whose values are those of the components of a Sobolev section
   assemble into a continuous linear map between spaces of Sobolev sections keeping the section.
@@ -569,6 +574,13 @@ theorem norm_le_sum_of_norm_le {w : C.sobolevSections μ p k}
       (Finset.single_le_sum (f := fun i ↦ ∑ j, b i j)
         (fun i _ ↦ Finset.sum_nonneg fun j _ ↦ hb i j) (Finset.mem_univ i))
 
+variable {C μ p k} in
+/-- Every chartwise component of an element of the Sobolev sections has norm at most the norm of the
+element, the maximum of the component norms. -/
+theorem norm_component_le (w : C.sobolevSections μ p k) (i : Fin C.n) (j : Fin (finrank ℝ F)) :
+    ‖(w : C.SobolevData μ p k) i j‖ ≤ ‖w‖ :=
+  (norm_le_pi_norm _ j).trans (norm_le_pi_norm (w : C.SobolevData μ p k) i)
+
 /-- The continuous inclusion of the Sobolev sections of order `k + 1` into those of order `k`,
 forgetting the highest derivative of every component. -/
 def lowerOrderL : C.sobolevSections μ p (k + 1) →L[ℝ] C.sobolevSections μ p k :=
@@ -956,6 +968,69 @@ end FiberMap
 
 end Sobolev
 
+section ChartDeriv
+
+/-! ### The weak derivative of the chart data of an order-one tuple -/
+
+variable {E : Type u} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [FiniteDimensional ℝ F] {S : Type*} [AddCommGroup S] [Module ℝ S] (C : SectionChartData E F S)
+  (μ : Measure E) [μ.IsAddHaarMeasure] (p : ℝ≥0∞) [Fact (1 ≤ p)]
+
+/-- The weak derivative of the chart data in chart `i` of a tuple of order-one Sobolev functions:
+the `Lᵖ` field `y ↦ ∑ j, ⟪∇ (w i j) y, ·⟫ • bⱼ` assembled from the weak gradients of the chart-`i`
+components of `w`, where `b` is the basis `Module.finBasis ℝ F`
+(`TauCeti.SectionChartData.hasWeakFDerivOn_chartValueL`). -/
+def chartDerivL (i : Fin C.n) :
+    C.SobolevData μ p 1 →L[ℝ] Lp (E →L[ℝ] F) p (μ.restrict (C.image i)) :=
+  ∑ j, ((((StrongDual.smulRightL ℝ E F).flip (finBasis ℝ F j)).comp
+      (innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ)).compLpL p _).comp
+    ((Wkp.iteratedGradientL 0).comp ((ContinuousLinearMap.proj (R := ℝ)
+      (φ := fun _ : Fin (finrank ℝ F) ↦ Wkp μ (C.image i) p 1) j).comp
+      (ContinuousLinearMap.proj (R := ℝ)
+        (φ := fun i : Fin C.n ↦ ∀ _ : Fin (finrank ℝ F), Wkp μ (C.image i) p 1) i)))
+
+/-- Almost everywhere on the image of chart `i`, `chartDerivL` is the sum over the basis vectors
+`bⱼ` of `F` of the weak gradients of the chart-`i` components, paired with `bⱼ`. -/
+theorem chartDerivL_apply_ae (i : Fin C.n) (w : C.SobolevData μ p 1) :
+    ∀ᵐ y ∂μ.restrict (C.image i), C.chartDerivL μ p i w y =
+      ∑ j, (innerSL ℝ (W1p.gradient (w i j) y)).smulRight (finBasis ℝ F j) := by
+  set L : Fin (finrank ℝ F) → E →L[ℝ] E →L[ℝ] F := fun j ↦
+    ((StrongDual.smulRightL ℝ E F).flip (finBasis ℝ F j)).comp
+      (innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ)
+  have heq : C.chartDerivL μ p i w =
+      ∑ j, (L j).compLpL p _ (Wkp.iteratedGradientL 0 (w i j)) := by
+    simp only [chartDerivL, FunLike.coe_sum, Finset.sum_apply, ContinuousLinearMap.coe_comp,
+      Function.comp_apply, ContinuousLinearMap.proj_apply, L]
+  have hsum := Lp.coeFn_finsetSum (μ := μ.restrict (C.image i)) (p := p) Finset.univ fun j ↦
+    (L j).compLpL p _ (Wkp.iteratedGradientL 0 (w i j))
+  have hj (j : Fin (finrank ℝ F)) := ContinuousLinearMap.coeFn_compLpL (p := p)
+    (μ := μ.restrict (C.image i)) (L j) (Wkp.iteratedGradientL 0 (w i j))
+  filter_upwards [hsum, ae_all_iff.2 hj] with y hy hy'
+  rw [heq, hy, Finset.sum_apply]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  rw [hy' j, Wkp.iteratedGradientL_apply, Wkp.iteratedGradient_zero]
+  ext v
+  simp [L]
+
+/-- **Weak differentiability of the chart data.** The chart data in chart `i` of a tuple of
+order-one Sobolev functions have weak derivative `chartDerivL` on the image of chart `i`. -/
+theorem hasWeakFDerivOn_chartValueL (i : Fin C.n) (w : C.SobolevData μ p 1) :
+    HasWeakFDerivOn μ (C.image i) (C.chartValueL μ p 1 i w) (C.chartDerivL μ p i w) := by
+  have hsum := HasWeakFDerivOn.sum Finset.univ fun j _ ↦
+    (Wkp.hasWeakFDerivOn_value (w i j)).clm_comp
+      (ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ) (finBasis ℝ F j))
+  refine (hsum.congr_ae ?_).congr_ae_deriv ?_
+  · filter_upwards [C.chartValueL_apply_ae μ p 1 i w] with y hy
+    simp [hy]
+  · filter_upwards [C.chartDerivL_apply_ae μ p i w] with y hy
+    rw [hy]
+    refine Finset.sum_congr rfl fun j _ ↦ ?_
+    ext v
+    simp
+
+end ChartDeriv
+
 end SectionChartData
 
 namespace FiniteBundleAtlas
@@ -1107,6 +1182,15 @@ variable [FiniteDimensional ℝ F]
 the tuples of chartwise Sobolev components of sections, with the maximum of the component norms. -/
 abbrev SobolevSection : Type u :=
   A.sectionChartData.sobolevSections μ p k
+
+/-- An element of the finite-atlas Sobolev space has an actual section representative, whose
+readings in every chart agree almost everywhere with its chart data. -/
+theorem SobolevSection.exists_section_ae_eq_coord (w : SobolevSection A μ p k) :
+    ∃ s : ∀ x, V x, ∀ i, A.sectionChartData.chartValueL μ p k i w
+      =ᵐ[μ.restrict (A.image i)] A.coord i s := by
+  obtain ⟨s, hs⟩ := A.sectionChartData.exists_section μ p k w
+  refine ⟨s, fun i ↦ ?_⟩
+  exact (hs i).trans (A.sectionChartData_coord_ae_eq μ i s)
 
 /-- **Completeness.** The Sobolev space of sections of a vector bundle is a Banach space. -/
 instance SobolevSection.instCompleteSpace [IsManifold 𝓘(ℝ, E) 1 M] :
