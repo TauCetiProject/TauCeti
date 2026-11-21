@@ -58,7 +58,8 @@ of the pairing: if every `Q (b i)` is nonnegative then `τ (reverse x * x) ≥ 0
   all of `s` multiplies `e_s` on the left by its generator.
 * `CliffordAlgebra.basis_mul_ι_of_mem` and `CliffordAlgebra.basis_mul_ι_of_notMem`: a basis
   vector `e_s` and a basis generator `ι Q (b i)` commute up to the sign `(-1) ^ (|s| - 1)` when
-  `i ∈ s`, and up to `(-1) ^ |s|` when `i ∉ s`.
+  `i ∈ s`, and up to `(-1) ^ |s|` when `i ∉ s`. For even `|s|` the sign is `-1` exactly when
+  `i ∈ s` (`CliffordAlgebra.basis_mul_ι_of_even_card`).
 * `CliffordAlgebra.basis_comm_ι_iff`: a basis vector commutes with every basis generator exactly
   when its support is empty or is the full index set of odd cardinality, under unit-square
   hypotheses.
@@ -228,6 +229,17 @@ theorem basis_mul_ι_of_notMem (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) {
   refine QuadraticMap.associated_isOrtho.mp (hb ?_)
   rintro rfl
   exact hi ((Finset.mem_sort _).1 hj)
+
+/-- **A basis vector of even degree commutes or anticommutes with each basis generator**, for an
+orthogonal basis: `e_s * ι Q (b i) = ± (ι Q (b i) * e_s)` when `|s|` is even, with the sign `-1`
+exactly when `i ∈ s`. -/
+theorem basis_mul_ι_of_even_card (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) {s : Finset I}
+    (hs : Even s.card) (i : I) :
+    basis Q b s * ι Q (b i) = (if i ∈ s then -1 else 1 : R) • (ι Q (b i) * basis Q b s) := by
+  split_ifs with hi
+  · rw [basis_mul_ι_of_mem hb hi,
+      (Nat.Even.sub_odd (Finset.card_pos.2 ⟨i, hi⟩) hs odd_one).neg_one_pow]
+  · rw [basis_mul_ι_of_notMem hb hi, hs.neg_one_pow]
 
 /-- For an orthogonal basis, adjoining an index `a` smaller than every index of `s` multiplies the
 basis vector `e_s` on the left by the generator `ι Q (b a)`. -/

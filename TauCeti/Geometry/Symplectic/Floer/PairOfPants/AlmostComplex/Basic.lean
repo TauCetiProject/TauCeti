@@ -233,11 +233,7 @@ its angular coordinate. -/
 theorem pairOfPantsAlmostComplex_eq_endStructure (h₀ : ω.Compatible J₀)
     {w : ℂ} (hw : 2 ≤ q.endSign * (q.endCoord w).re) (x : M) :
     pairOfPantsAlmostComplex h₀ J hJ w x = J q (q.endCoord w).im x := by
-  have hne : w ≠ q.endCenter :=
-    q.ne_endCenter_of_re_endCoord_ne_zero (by
-      intro h
-      simp only [h, mul_zero] at hw
-      norm_num at hw)
+  have hne : w ≠ q.endCenter := q.ne_endCenter_of_endSign_mul_re_endCoord_pos (two_pos.trans_le hw)
   refine h₀.eq_of_cayley_eq (tames_pairOfPantsAlmostComplex h₀ w x)
     (hJ q (q.endCoord w).im x) ?_
   rw [cayley_pairOfPantsAlmostComplex, Finset.sum_eq_single q]
