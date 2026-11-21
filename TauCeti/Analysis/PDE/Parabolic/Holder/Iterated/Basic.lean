@@ -172,6 +172,10 @@ theorem parabolicDerivPairs_two : parabolicDerivPairs 2 = {(0, 0), (0, 1), (0, 2
   simp only [mem_parabolicDerivPairs, Finset.mem_insert, Finset.mem_singleton, Prod.mk.injEq]
   omega
 
+/-- There are at most `(k + 1)²` pairs `(r, m)` with `2 r + m ≤ k`. -/
+theorem card_parabolicDerivPairs_le (k : ℕ) : (parabolicDerivPairs k).card ≤ (k + 1) ^ 2 :=
+  (Finset.card_filter_le _ _).trans_eq (by rw [Finset.card_product, Finset.card_range, sq])
+
 variable (k α E F) in
 /-- Bounded parabolic Hölder maps of order `k` on a nondegenerate closed time slab
 `E × [a, b]`: maps whose mixed derivatives `D_t^r D_x^m u` with `2 r + m ≤ k` exist and are
