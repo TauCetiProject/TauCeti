@@ -47,9 +47,9 @@ def linearIsometryEquivPathHomotopy (hS : ∀ t, MapsTo (γ t) S S)
     {f₀ f₁ : C(ULift.{u} S, ULift.{u} S)}
     (hf₀ : ∀ x, ((f₀ x).down : E) = γ 0 x.down) (hf₁ : ∀ x, ((f₁ x).down : E) = γ 1 x.down) :
     f₀.Homotopy f₁ where
-  toFun p := ULift.up ⟨γ p.1 p.2.down, hS p.1 p.2.down.2⟩
+  toFun p := ULift.up ⟨γ p.1 p.2.down, hS p.1 p.2.down.property⟩
   continuous_toFun := continuous_uliftUp.comp (((hγ.comp continuous_fst).clm_apply
-    (continuous_subtype_val.comp (continuous_uliftDown.comp continuous_snd))).subtype_mk _)
+    (continuous_subtypeVal.comp (continuous_uliftDown.comp continuous_snd))).subtype_mk _)
   map_zero_left x := ULift.ext (Subtype.ext (hf₀ x).symm)
   map_one_left x := ULift.ext (Subtype.ext (hf₁ x).symm)
 

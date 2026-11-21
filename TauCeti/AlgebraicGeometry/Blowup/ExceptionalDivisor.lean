@@ -251,7 +251,7 @@ theorem IsEffectiveCartier.comap_blowupToBase {D : X.IdealSheafData} (hD : D.IsE
     (J : X.IdealSheafData) : (D.comap J.blowupToBase).IsEffectiveCartier := by
   refine isEffectiveCartier_of_forall_exists_isOpenImmersion _ fun x ↦ ?_
   obtain ⟨U, hxU, b, hb, hUb⟩ := (isEffectiveCartier_iff D).mp hD (J.blowupToBase x)
-  have hU : IsAffineOpen U.1 := U.2
+  have hU : IsAffineOpen U.val := U.property
   refine ⟨_, J.blowupChart hU, inferInstance, ?_, ?_⟩
   · rw [← Scheme.Hom.coe_opensRange, opensRange_blowupChart]
     exact hxU
