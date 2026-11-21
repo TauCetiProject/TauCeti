@@ -14,6 +14,7 @@ import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 import Mathlib.Geometry.Manifold.MFDeriv.FDeriv
 import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 import TauCeti.Geometry.Manifold.IsManifold.Basic
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
@@ -46,6 +47,9 @@ For partial diffeomorphisms `ψ`, `χ`, `φ` into normed spaces, such as charts,
   the inverse.
 * `PartialDiffeomorph.isInvertible_mfderiv`: the differential at a point of the source is a
   linear equivalence.
+* `PartialDiffeomorph.mfderiv_symm_trans_apply_mfderiv_apply`: for partial diffeomorphisms `Φ₁`,
+  `Φ₂` out of the same manifold, the differential of `Φ₂ ∘ Φ₁⁻¹` carries that of `Φ₁` to that of
+  `Φ₂`.
 * `PartialDiffeomorph.bijective_mvfderiv`: for a partial diffeomorphism into a normed space, the
   differential read in that space is bijective at a point of the source.
 * `PartialDiffeomorph.hasDerivAt_comp_symm_of_mfderiv_eq_zero`: at a critical point of a map into a
@@ -160,6 +164,19 @@ equivalence. -/
 theorem isInvertible_mfderiv (Φ : PartialDiffeomorph I J M N n) (hn : n ≠ 0) {x : M}
     (hx : x ∈ Φ.source) : (mfderiv I J Φ x).IsInvertible :=
   (Φ.isLocalDiffeomorphAt I J n hx).isInvertible_mfderiv hn
+
+/-- For partial diffeomorphisms `Φ₁` and `Φ₂` out of the same manifold whose sources contain `x`,
+the differential of the transition `Φ₂ ∘ Φ₁⁻¹` at `Φ₁ x` carries the differential of `Φ₁` at `x`
+to that of `Φ₂`. -/
+theorem mfderiv_symm_trans_apply_mfderiv_apply {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace 𝕜 G] {H'' : Type*} [TopologicalSpace H''] {K : ModelWithCorners 𝕜 G H''}
+    {P : Type*} [TopologicalSpace P] [ChartedSpace H'' P]
+    (Φ₁ : PartialDiffeomorph I J M N n) (Φ₂ : PartialDiffeomorph I K M P n) (hn : n ≠ 0) {x : M}
+    (h₁ : x ∈ Φ₁.source) (h₂ : x ∈ Φ₂.source) (v : TangentSpace I x) :
+    mfderiv J K (Φ₁.symm.trans Φ₂) (Φ₁ x) (mfderiv I J Φ₁ x v) = mfderiv I K Φ₂ x v := by
+  rw [coe_trans, mfderiv_comp_apply_of_eq (Φ₁ x) (Φ₂.mdifferentiableAt hn h₂)
+    (Φ₁.symm.mdifferentiableAt hn (Φ₁.map_source h₁)) (Φ₁.left_inv h₁),
+    Φ₁.mfderiv_symm_apply_mfderiv_apply hn h₁]
 
 /-- The differential of a partial diffeomorphism into a normed space, read in that space, is
 bijective at a point of the source. -/
