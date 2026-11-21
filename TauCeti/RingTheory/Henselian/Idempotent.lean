@@ -8,11 +8,12 @@ module
 public import Mathlib.RingTheory.Artinian.Module
 public import Mathlib.RingTheory.Henselian
 public import Mathlib.RingTheory.Idempotents
-public import TauCeti.RingTheory.Ideal.GoingUp
-public import TauCeti.RingTheory.Idempotents.Jacobson
+public import Mathlib.RingTheory.IntegralClosure.Algebra.Defs
 import Mathlib.RingTheory.Nakayama
 import TauCeti.LinearAlgebra.Matrix.Charpoly.LinearMap
+import TauCeti.RingTheory.Ideal.GoingUp
 import TauCeti.RingTheory.Ideal.Quotient.Defs
+import TauCeti.RingTheory.Idempotents.Jacobson
 
 /-!
 # Idempotents and locality in Henselian rings

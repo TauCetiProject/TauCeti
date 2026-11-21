@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.AdjoinRoot
-public import Mathlib.RingTheory.Jacobson.Ideal
 import TauCeti.Algebra.Polynomial.AlgebraMap
 import TauCeti.Algebra.Polynomial.Derivative
 import TauCeti.RingTheory.Idempotents.Nakayama

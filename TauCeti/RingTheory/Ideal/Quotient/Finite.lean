@@ -8,9 +8,9 @@ module
 public import Mathlib.Algebra.Algebra.Subalgebra.Lattice
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import Mathlib.RingTheory.Noetherian.Defs
-public import TauCeti.RingTheory.Ideal.Extended
 import TauCeti.Algebra.Module.Submodule.Finite
-public import TauCeti.RingTheory.Ideal.Operations
+import TauCeti.RingTheory.Ideal.Extended
+import TauCeti.RingTheory.Ideal.Operations
 import Mathlib.LinearAlgebra.TensorProduct.Quotient
 import Mathlib.RingTheory.Noetherian.Basic
 import Mathlib.RingTheory.TensorProduct.Finite

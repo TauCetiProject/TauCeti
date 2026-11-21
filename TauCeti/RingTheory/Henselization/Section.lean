@@ -12,6 +12,7 @@ import Mathlib.RingTheory.Flat.Stability
 import Mathlib.RingTheory.Ideal.Pure
 import Mathlib.RingTheory.Unramified.LocalStructure
 import TauCeti.RingTheory.Henselian.Idempotent
+import TauCeti.RingTheory.Ideal.GoingUp
 import TauCeti.RingTheory.Idempotents.Nakayama
 import TauCeti.RingTheory.QuasiFinite.ZariskisMainTheorem
 

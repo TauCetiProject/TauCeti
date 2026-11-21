@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.Henselization.Map
 public import TauCeti.RingTheory.Henselian.Idempotent
 public import TauCeti.RingTheory.Henselian.Quotient
+import TauCeti.RingTheory.Idempotents.Jacobson
 
 /-!
 # Henselization along disjoint closed subsets

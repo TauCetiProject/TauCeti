@@ -5,7 +5,7 @@ Authors: Taylor Dupuy, Thomas Tucker, Zhuoran Wang
 -/
 module
 
-public import Mathlib.RingTheory.Jacobson.Ideal
+public import Mathlib.RingTheory.Jacobson.Radical
 import TauCeti.RingTheory.Jacobson.Basic
 
 /-!
