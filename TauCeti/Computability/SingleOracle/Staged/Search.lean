@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Computability.SingleOracle.Code
+import TauCeti.Computability.Partrec.Search
 import TauCeti.Data.PFun.Basic
 
 /-!
@@ -127,25 +128,13 @@ theorem mem_eval_searchStages {c : Code} {x y : ℕ} :
     · exact (Part.mem_map_iff _).2 ⟨_, hs, by simp⟩
     · exact (Part.mem_map_iff _).2 ⟨0, hbefore _ ht, by simp⟩
 
-private theorem mem_rfindOpt_iff {α : Type*} {A : ℕ → Option α} {y : α} :
-    y ∈ Nat.rfindOpt A ↔ ∃ s, A s = some y ∧ ∀ t < s, A t = none := by
-  simp only [Nat.rfindOpt, Part.mem_bind_iff, Part.mem_coe, Option.mem_def]
-  refine exists_congr fun s => ?_
-  constructor
-  · rintro ⟨hfind, hs⟩
-    exact ⟨hs, fun _ ht => Option.isNone_iff_eq_none.1
-      (Option.isSome_eq_false_iff.1 (Part.mem_some_iff.1 (Nat.rfind_min hfind ht)).symm)⟩
-  · rintro ⟨hs, hbefore⟩
-    refine ⟨Nat.mem_rfind.2 ⟨?_, fun {t} ht => ?_⟩, hs⟩
-    · exact Part.mem_some_iff.2 (by simp [hs])
-    · exact Part.mem_some_iff.2 (by simp [hbefore t ht])
-
 /-- The compiler realizes least-stage search for any source program that computes a total
 table of optional observations relative to the given oracle. -/
 theorem eval_searchStages {c : Code} {A : ℕ → Option ℕ} {x : ℕ}
     (hA : ∀ s, eval O c (Nat.pair x s) = Part.some (encode (A s))) :
     eval O c.searchStages x = Nat.rfindOpt A := by
   ext y
-  simp only [mem_eval_searchStages, mem_rfindOpt_iff, hA, Part.mem_some_iff, encode_inj, eq_comm]
+  simp only [mem_eval_searchStages, Nat.mem_rfindOpt_iff, hA, Part.mem_some_iff, encode_inj,
+    eq_comm]
 
 end TauCeti.Oracle.Single.Code

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Computability.SingleOracle.Stage
 public import TauCeti.Computability.RecursiveIn
+import TauCeti.Computability.SingleOracle.Relative
 
 /-!
 # Oracle-relative computability of normalized stage evaluation
@@ -25,14 +26,9 @@ theorem computableIn_evalStage {α : Type*} [Primcodable α] {G : Set (ℕ →. 
     {σ : α → ℕ → Option ℕ} (hσ : ComputableIn₂ G σ) :
     ComputableIn G fun p : α × ℕ × Code × ℕ =>
       evalStage (σ p.1) p.2.1 p.2.2.1 p.2.2.2 := by
-  have hp : ComputableIn G fun p : α × ℕ × Code × ℕ => (List.range p.2.1).map (σ p.1) :=
-    hσ.list_range_map.comp (ComputableIn.fst.pair (ComputableIn.fst.comp ComputableIn.snd))
-  have hlookup : Primrec₂ fun (l : List (Option ℕ)) z => l[z]?.bind id :=
-    (Primrec.option_bind₁ Primrec.id).comp Primrec.list_getElem?
-  have hsim := (primrec_evalStage hlookup).computableIn.comp (hp.pair ComputableIn.snd)
-  refine RecursiveIn.of_eq hsim fun p => congrArg Part.some ?_
-  apply Option.ext
-  intro d
-  simp only [evalStage_eq_some_iff, evaln_range_map_option]
+  simpa only [evalStage_def] using primrec_normalizeStage.computableIn.comp
+    (((ComputableIn.fst.comp ComputableIn.snd).pair
+      (ComputableIn.fst.comp (ComputableIn.snd.comp ComputableIn.snd))).pair
+      (computableIn_evaln_option hσ))
 
 end TauCeti.Oracle.Single.Code

@@ -36,7 +36,7 @@ namespace TauCeti.Oracle.Single.Code
 open Encodable
 
 /-- Keep a bounded run only if its program index and output are below the stage. -/
-private def normalizeStage (s : ℕ) (c : Code) (run : Option Halt) : Option Halt :=
+def normalizeStage (s : ℕ) (c : Code) (run : Option Halt) : Option Halt :=
   if encode c < s then
     run.bind fun d => if d.output < s then some d else none
   else none
@@ -48,6 +48,10 @@ def evalStage (σ : ℕ → Option ℕ) (s : ℕ) (c : Code) (n : ℕ) : Option 
   normalizeStage s c (evaln σ s c n)
 
 variable {σ τ : ℕ → Option ℕ} {s t k n : ℕ} {c : Code} {d : Halt}
+
+/-- Normalized stage evaluation applies the stage bounds to the raw run with fuel `s`. -/
+theorem evalStage_def :
+    evalStage σ s c n = normalizeStage s c (evaln σ s c n) := (rfl)
 
 /-- Normalization keeps exactly the raw runs whose program index and output fit the stage. -/
 @[simp]
@@ -168,7 +172,7 @@ open Primrec
 variable {α : Type*} [Primcodable α]
 
 /-- Filtering a bounded run by the stage bounds is primitive recursive. -/
-private theorem primrec_normalizeStage :
+theorem primrec_normalizeStage :
     Primrec fun p : (ℕ × Code) × Option Halt => normalizeStage p.1.1 p.1.2 p.2 :=
   Primrec.ite (nat_lt.comp (Primrec.encode.comp (snd.comp fst)) (fst.comp fst))
     (option_bind snd <| Primrec₂.mk <|

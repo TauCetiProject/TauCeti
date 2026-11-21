@@ -33,6 +33,7 @@ theorem stage_race (Q : StagedPartial α γ) (x : α) (s : ℕ) :
     (P.race Q).stage x s = Staged.race (P.stage x) (Q.stage x) s := (rfl)
 
 /-- The left value wins when it is present at the first discovery stage. -/
+@[simp]
 theorem inl_mem_eval_race_iff {Q : StagedPartial α γ} {x : α} {y : β} :
     Sum.inl y ∈ (P.race Q).eval x ↔
       ∃ s, (∀ t < s, P.stage x t = none ∧ Q.stage x t = none) ∧ P.stage x s = some y := by
@@ -40,6 +41,7 @@ theorem inl_mem_eval_race_iff {Q : StagedPartial α γ} {x : α} {y : β} :
   exact ⟨fun ⟨_, s, _, h⟩ => ⟨s, h⟩, fun ⟨s, h⟩ => ⟨s, s, le_rfl, h⟩⟩
 
 /-- The right value wins when it is present at the first discovery stage and the left is absent. -/
+@[simp]
 theorem inr_mem_eval_race_iff {Q : StagedPartial α γ} {x : α} {z : γ} :
     Sum.inr z ∈ (P.race Q).eval x ↔
       ∃ s, (∀ t < s, P.stage x t = none ∧ Q.stage x t = none) ∧
