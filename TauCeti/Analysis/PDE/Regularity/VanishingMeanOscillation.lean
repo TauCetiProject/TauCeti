@@ -136,7 +136,7 @@ theorem exists_extendByZero_cutoff (hUΩ : U ≤ Ω)
 /-- Pairings with a bounded continuous field `V` that are integrable on `U`: `⟪G, V⟫` and
 `⟪V, a ∇u⟫`. -/
 private theorem integrable_inner_and_matrixBilinearForm (ha : AEStronglyMeasurable a volume)
-    {Lam : ℝ} (hLam : 0 ≤ Lam) (hbd : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ Lam) (hUΩ : U ≤ Ω)
+    {Lam : ℝ} (hbd : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ Lam) (hUΩ : U ≤ Ω)
     [IsFiniteMeasure (volume.restrict (U : Set (EuclideanSpace ℝ (Fin (n + 1)))))]
     {u : W1p volume Ω 2}
     {G : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))}
@@ -146,6 +146,7 @@ private theorem integrable_inner_and_matrixBilinearForm (ha : AEStronglyMeasurab
     Integrable (fun x => ⟪G x, V x⟫_ℝ) (volume.restrict U) ∧
     Integrable (fun x => matrixBilinearForm (a x) (V x) (W1p.gradient u x))
       (volume.restrict U) := by
+  have hLam : 0 ≤ Lam := (ContinuousLinearMap.opNorm_nonneg _).trans (hbd 0)
   have hle : volume.restrict (U : Set (EuclideanSpace ℝ (Fin (n + 1)))) ≤
       volume.restrict (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))) :=
     Measure.restrict_mono hUΩ le_rfl
@@ -164,7 +165,7 @@ private theorem integrable_inner_and_matrixBilinearForm (ha : AEStronglyMeasurab
 
 /-- The four terms of the weak equation of a cutoff are integrable on `U`. -/
 private theorem integrable_cutoff_terms (ha : AEStronglyMeasurable a volume)
-    {Lam : ℝ} (hLam : 0 ≤ Lam) (hbd : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ Lam) (hUΩ : U ≤ Ω)
+    {Lam : ℝ} (hbd : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ Lam) (hUΩ : U ≤ Ω)
     [IsFiniteMeasure (volume.restrict (U : Set (EuclideanSpace ℝ (Fin (n + 1)))))]
     {u : W1p volume Ω 2}
     {G : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))}
@@ -178,6 +179,7 @@ private theorem integrable_cutoff_terms (ha : AEStronglyMeasurable a volume)
     Integrable (fun x => (W1p.value u x - c) *
       matrixBilinearForm (a x) (∇ φ x) (∇ ζ x)) (volume.restrict U) ∧
     Integrable (fun x => ⟪G x, ζ x • ∇ φ x + φ x • ∇ ζ x⟫_ℝ) (volume.restrict U) := by
+  have hLam : 0 ≤ Lam := (ContinuousLinearMap.opNorm_nonneg _).trans (hbd 0)
   have hle : volume.restrict (U : Set (EuclideanSpace ℝ (Fin (n + 1)))) ≤
       volume.restrict (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))) :=
     Measure.restrict_mono hUΩ le_rfl
@@ -194,7 +196,7 @@ private theorem integrable_cutoff_terms (ha : AEStronglyMeasurable a volume)
   have hvu : MemLp (fun x => W1p.value u x - c) 2 (volume.restrict U) :=
     ((Lp.memLp (W1p.value u)).mono_measure hle).sub (memLp_const c)
   have hgζ := ContDiff.continuous_gradient hζ (by simp)
-  obtain ⟨hT4, hT1⟩ := integrable_inner_and_matrixBilinearForm ha hLam hbd hUΩ hG (u := u)
+  obtain ⟨hT4, hT1⟩ := integrable_inner_and_matrixBilinearForm ha hbd hUΩ hG (u := u)
     (V := fun x => ζ x • ∇ φ x + φ x • ∇ ζ x) (by fun_prop)
     (norm_smul_gradient_add_smul_gradient_le hζN hgradN hφP hgradP)
   have hT2 : Integrable (fun x => φ x * matrixBilinearForm (a x) (∇ ζ x) (W1p.gradient u x))
@@ -263,7 +265,7 @@ by `Lam`, with no ellipticity or continuity assumed. If `u` solves `-div(a ∇u)
 
 both data being supported in `U`. -/
 theorem energyFormH1_extendByZero_cutoff_eq (ha : AEStronglyMeasurable a volume)
-    {Lam : ℝ} (hLam : 0 ≤ Lam) (hbd : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ Lam) (hUΩ : U ≤ Ω)
+    {Lam : ℝ} (hbd : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ Lam) (hUΩ : U ≤ Ω)
     [IsFiniteMeasure (volume.restrict (U : Set (EuclideanSpace ℝ (Fin (n + 1)))))]
     {u : W1p volume Ω 2}
     {G : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))}
@@ -282,7 +284,7 @@ theorem energyFormH1_extendByZero_cutoff_eq (ha : AEStronglyMeasurable a volume)
         (⟪G x, ∇ ζ x⟫_ℝ - matrixBilinearForm (a x) (∇ ζ x) (W1p.gradient u x)) * φ x) := by
   set V := (U : Set (EuclideanSpace ℝ (Fin (n + 1))))
   have hUm : MeasurableSet V := U.isOpen.measurableSet
-  obtain ⟨hT1, hT2, hT3, hT4⟩ := integrable_cutoff_terms ha hLam hbd hUΩ hG hζ hζc c φ (u := u)
+  obtain ⟨hT1, hT2, hT3, hT4⟩ := integrable_cutoff_terms ha hbd hUΩ hG hζ hζc c φ (u := u)
   have hψeq := setIntegral_cutoff_test_eq hUΩ hu hζ hts φ
   -- The energy of `w` is an integral over `U`.
   have hlhs : energyFormH1 a 0 0 w (W1p.ofTestFunctionₗ volume ⊤ 2 φ) =
@@ -325,7 +327,7 @@ theorem energyFormH1_extendByZero_cutoff_eq (ha : AEStronglyMeasurable a volume)
 the equation of a local weak solution with the cutoff `ζ` itself gives
 `∫_U (⟪G, ∇ζ⟫ - ⟪∇ζ, a ∇u⟫) = 0`. -/
 theorem setIntegral_cutoff_forcing_eq_zero (ha : AEStronglyMeasurable a volume)
-    {Lam : ℝ} (hLam : 0 ≤ Lam) (hbd : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ Lam) (hUΩ : U ≤ Ω)
+    {Lam : ℝ} (hbd : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ Lam) (hUΩ : U ≤ Ω)
     [IsFiniteMeasure (volume.restrict (U : Set (EuclideanSpace ℝ (Fin (n + 1)))))]
     {u : W1p volume Ω 2}
     {G : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))}
@@ -336,7 +338,7 @@ theorem setIntegral_cutoff_forcing_eq_zero (ha : AEStronglyMeasurable a volume)
     (hts : tsupport ζ ⊆ U) :
     ∫ x in U, (⟪G x, ∇ ζ x⟫_ℝ - matrixBilinearForm (a x) (∇ ζ x) (W1p.gradient u x)) = 0 := by
   obtain ⟨N, -, -, hgradN⟩ := (hζ.of_le (by simp)).exists_abs_le_and_norm_gradient_le hζc
-  obtain ⟨hT1, hT2⟩ := integrable_inner_and_matrixBilinearForm ha hLam hbd hUΩ hG (u := u)
+  obtain ⟨hT1, hT2⟩ := integrable_inner_and_matrixBilinearForm ha hbd hUΩ hG (u := u)
     (ContDiff.continuous_gradient hζ (by simp)) hgradN
   have h := setIntegral_test_eq hUΩ hu ⟨ζ, hζ, hζc, hts.trans hUΩ⟩
     (by rw [TestFunction.coe_mk]; exact hts)
@@ -353,7 +355,7 @@ variable {Ω : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
 `‖∇ζ‖ ≤ L`. -/
 private theorem eLpNorm_indicator_cutoffField_le
     {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
-    (ha : AEStronglyMeasurable a volume) {Lam : ℝ} (hLam : 0 ≤ Lam)
+    (ha : AEStronglyMeasurable a volume) {Lam : ℝ}
     (hbd : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ Lam) {p : ℝ≥0∞} [Fact (1 ≤ p)]
     {V : Set (EuclideanSpace ℝ (Fin (n + 1)))} (hV : MeasurableSet V)
     {ζ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} (hζc : Continuous ζ) (hζ1 : ∀ x, |ζ x| ≤ 1)
@@ -365,6 +367,7 @@ private theorem eLpNorm_indicator_cutoffField_le
         volume ≤
       eLpNorm G p (volume.restrict V) +
         ENNReal.ofReal (Lam * L) * eLpNorm v p (volume.restrict V) := by
+  have hLam : 0 ≤ Lam := (ContinuousLinearMap.opNorm_nonneg _).trans (hbd 0)
   have hm1 : AEStronglyMeasurable (fun y => ζ y • G y) (volume.restrict V) :=
     hζc.aestronglyMeasurable.smul hG
   have hm2 : AEStronglyMeasurable (fun y => v y • toEuclideanCLM (𝕜 := ℝ) (a y) (∇ ζ y))
@@ -384,7 +387,7 @@ private theorem eLpNorm_indicator_cutoffField_le
 /-- The `L^q` norm of the scalar forcing `⟪G, ∇ζ⟫ - ⟪∇ζ, a ∇u⟫` of a cutoff, for `‖∇ζ‖ ≤ L`. -/
 private theorem eLpNorm_indicator_cutoffForcing_le
     {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
-    (ha : AEStronglyMeasurable a volume) {Lam : ℝ} (hLam : 0 ≤ Lam)
+    (ha : AEStronglyMeasurable a volume) {Lam : ℝ}
     (hbd : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ Lam) {q : ℝ≥0∞} [Fact (1 ≤ q)]
     {V : Set (EuclideanSpace ℝ (Fin (n + 1)))} (hV : MeasurableSet V)
     {ζ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} (hgζ : Continuous (∇ ζ)) {L : ℝ}
@@ -396,6 +399,7 @@ private theorem eLpNorm_indicator_cutoffForcing_le
         volume ≤
       ENNReal.ofReal L * eLpNorm G q (volume.restrict V) +
         ENNReal.ofReal (Lam * L) * eLpNorm g q (volume.restrict V) := by
+  have hLam : 0 ≤ Lam := (ContinuousLinearMap.opNorm_nonneg _).trans (hbd 0)
   have hBm : AEStronglyMeasurable (fun x => matrixBilinearForm (a x)) (volume.restrict V) :=
     (continuous_matrixBilinearForm.comp_aestronglyMeasurable ha).restrict
   rw [eLpNorm_indicator_eq_eLpNorm_restrict hV.nullMeasurableSet]
@@ -445,7 +449,7 @@ the whole space, for an explicit field `F ∈ Lᵖ`: the divergence datum of the
 `H` with `-div H` the scalar forcing of the cutoff. -/
 theorem exists_wholeSpace_cutoff
     {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
-    (ha : AEStronglyMeasurable a volume) {Lam : ℝ} (hLam : 0 ≤ Lam)
+    (ha : AEStronglyMeasurable a volume) {Lam : ℝ}
     (hbd : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ Lam) {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)]
     (hp2 : 2 ≤ p) (hqp : q ≤ p) {δ : ℝ} {CD : ℝ≥0}
     (hD : ∀ {x₀ : EuclideanSpace ℝ (Fin (n + 1))} {t : ℝ}, 0 < t →
@@ -488,9 +492,9 @@ theorem exists_wholeSpace_cutoff
     isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
   have hgζ := ContDiff.continuous_gradient hζ (by simp)
   obtain ⟨w, hw⟩ := exists_extendByZero_cutoff hUΩ u hζ hζc hts c
-  have heq := energyFormH1_extendByZero_cutoff_eq ha hLam hbd hUΩ (hG.mono_exponent hp2) hu hζ hζc
+  have heq := energyFormH1_extendByZero_cutoff_eq ha hbd hUΩ (hG.mono_exponent hp2) hu hζ hζc
     hts c hw
-  have hmean := setIntegral_cutoff_forcing_eq_zero ha hLam hbd hUΩ (hG.mono_exponent hp2) hu hζ hζc
+  have hmean := setIntegral_cutoff_forcing_eq_zero ha hbd hUΩ (hG.mono_exponent hp2) hu hζ hζc
     hts
   set G₁ := (ball x₀ t).indicator fun y =>
     ζ y • G y + (W1p.value u y - c) • toEuclideanCLM (𝕜 := ℝ) (a y) (∇ ζ y)
@@ -498,9 +502,9 @@ theorem exists_wholeSpace_cutoff
     ⟪G y, ∇ ζ y⟫_ℝ - matrixBilinearForm (a y) (∇ ζ y) (W1p.gradient u y)
   have hvc : MemLp (fun x => W1p.value u x - c) p (volume.restrict (ball x₀ t)) :=
     hv.sub (memLp_const c)
-  have hG₁le := eLpNorm_indicator_cutoffField_le (p := p) ha hLam hbd hU hζ.continuous hζ1 hgζ
+  have hG₁le := eLpNorm_indicator_cutoffField_le (p := p) ha hbd hU hζ.continuous hζ1 hgζ
     hgradL hG.aestronglyMeasurable hvc.aestronglyMeasurable
-  have hhle := eLpNorm_indicator_cutoffForcing_le (q := q) ha hLam hbd hU hgζ hgradL
+  have hhle := eLpNorm_indicator_cutoffForcing_le (q := q) ha hbd hU hgζ hgradL
     hG.aestronglyMeasurable hg.aestronglyMeasurable
   have hG₁ : MemLp G₁ p volume :=
     hG₁le.trans_lt (ENNReal.add_lt_top.2 ⟨hG.eLpNorm_lt_top,
@@ -672,7 +676,7 @@ private theorem exists_eLpNorm_gradient_ball_le_step {p q : ℝ≥0∞} [Fact (1
   have hv' := hv.mono_measure hle
   have hg' := hg.mono_measure hle
   have hG' := hG.mono_measure hle
-  obtain ⟨w, F, hw, hF, hweq, hFle⟩ := exists_wholeSpace_cutoff ha hLam hbd hp.le hqp hD ht
+  obtain ⟨w, F, hw, hF, hweq, hFle⟩ := exists_wholeSpace_cutoff ha hbd hp.le hqp hD ht
     hballt u hu
     hv' hg' hG' hζ hζc htsb hζabs hgrad (⨍ y in ball x₀ t, W1p.value u y)
   -- The whole-space estimate applies to `w`, and `∇w = ∇u` on `B_s`.
