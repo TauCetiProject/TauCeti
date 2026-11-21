@@ -101,6 +101,22 @@ theorem serreSum_smul {A : Type*} [Semiring A] [Algebra K A]
   rw [mul_comm (c j), ← mul_assoc (c i ^ _), ← pow_add, Nat.sub_add_cancel hrm]
   ring
 
+/-- In any `Γ`-graded `K`-algebra, if `x i` has degree `cx` and `x j` has degree `cy`, then
+`serreSum D q x i j` is homogeneous of degree `D.serreLength i j • cx + cy`. -/
+theorem serreSum_mem_graded {A Γ S : Type*} [Semiring A] [Algebra K A] [AddCommMonoid Γ]
+    [SetLike S A] [AddSubmonoidClass S A] [SMulMemClass S K A] {𝒜 : Γ → S}
+    [SetLike.GradedMonoid 𝒜] (D : CartanDatum ι X Y) (q : K) {x : ι → A} {i j : ι} {cx cy : Γ}
+    (hxi : x i ∈ 𝒜 cx) (hxj : x j ∈ 𝒜 cy) :
+    serreSum D q x i j ∈ 𝒜 (D.serreLength i j • cx + cy) := by
+  rw [serreSum_def]
+  refine sum_mem fun r hr => SMulMemClass.smul_mem _ ?_
+  have hrm : r ≤ D.serreLength i j := Nat.lt_succ_iff.mp (mem_range.mp hr)
+  have hdeg : r • cx + cy + (D.serreLength i j - r) • cx = D.serreLength i j • cx + cy := by
+    rw [add_right_comm, ← add_nsmul, Nat.add_sub_of_le hrm]
+  exact hdeg ▸ SetLike.mul_mem_graded
+    (SetLike.mul_mem_graded (quantumDividedPower_mem_graded _ hxi r) hxj)
+    (quantumDividedPower_mem_graded _ hxi (D.serreLength i j - r))
+
 private theorem serreSum_add_left_term {A : Type*} [Ring A] [Algebra K A]
     (D : CartanDatum ι X Y) (q : K) {x y : ι → A} {i j : ι} (hij : i ≠ j)
     (hqᵢ : q ^ D.symmetrizer i ≠ 0)
