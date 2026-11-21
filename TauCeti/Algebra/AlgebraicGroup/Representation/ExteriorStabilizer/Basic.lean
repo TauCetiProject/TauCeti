@@ -7,8 +7,10 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Representation.SubspaceStabilizer
 public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.Basic
+public import TauCeti.Algebra.AlgebraicGroup.Representation.Stabilizer
 public import TauCeti.LinearAlgebra.ExteriorAlgebra.TopSubspace
 public import TauCeti.Algebra.Coalgebra.Comodule.ExteriorAlgebra.BaseChange
+import TauCeti.LinearAlgebra.ExteriorPower.Basic
 
 /-!
 # Exterior-line detection of closed subgroups
@@ -26,6 +28,12 @@ existence of a stabilizing line, together with its unique subgroup character, is
 
 * `TauCeti.Comodule.map_endOfPoint_baseChange_range_exteriorPowerMap_finrank_eq_iff`: a point
   stabilizes the top exterior line of a subspace exactly when it stabilizes the subspace.
+* `Submodule.stabilizerHopfIdeal_range_exteriorPowerMap`: the stabilizer Hopf ideal of the top
+  exterior line `range (exteriorPower.map n W.subtype)` of a subspace `W` (where `n = finrank k W`)
+  equals `W.stabilizerHopfIdeal H`.
+* `Submodule.stabilizerHopfIdeal_span_ιMulti`: the stabilizer Hopf ideal of the line spanned by the
+  exterior product of a linearly independent tuple `v` equals
+  `(span k (range v)).stabilizerHopfIdeal H`.
 
 ## References
 
@@ -86,3 +94,50 @@ theorem mem_quotientPointsSubgroup_iff_map_baseChange_range_exteriorPowerMap_eq
   exact I.mem_quotientPointsSubgroup_iff_map_definingSubspace_eq V hgen A g
 
 end TauCeti.HopfIdeal
+
+namespace Submodule
+
+section ExteriorStabilizer
+
+variable {k : Type u} {H : Type v} {M : Type w} [Field k] [CommRing H] [HopfAlgebra k H]
+  [AddCommGroup M] [Module k M] [TauCeti.Comodule k H M] [Module.Finite k M]
+
+/-- Over a field, the stabilizer Hopf ideal of the top exterior line
+`LinearMap.range (exteriorPower.map n W.subtype)` of a subspace `W` of a finite-dimensional
+comodule (where `n = Module.finrank k W`) equals the stabilizer Hopf ideal of `W`. -/
+theorem stabilizerHopfIdeal_range_exteriorPowerMap (W : Submodule k M) {n : ℕ}
+    (hn : Module.finrank k W = n) :
+    (letI : TauCeti.Comodule k H (⋀[k]^n M) := TauCeti.Comodule.exteriorPower k H M n
+     (LinearMap.range (_root_.exteriorPower.map n W.subtype)).stabilizerHopfIdeal H) =
+      W.stabilizerHopfIdeal H := by
+  subst hn
+  let _ : TauCeti.Comodule k H (⋀[k]^(Module.finrank k W) M) :=
+    TauCeti.Comodule.exteriorPower k H M (Module.finrank k W)
+  exact stabilizerHopfIdeal_eq_of_forall_map_endOfPoint_eq_iff _ W fun A _ _ g ↦
+    TauCeti.Comodule.map_endOfPoint_baseChange_range_exteriorPowerMap_finrank_eq_iff W A g
+
+/-- Over a field, the line spanned by the exterior product of a linearly independent tuple `v` in a
+finite-dimensional comodule has the same stabilizer Hopf ideal as `span k (range v)`. -/
+theorem stabilizerHopfIdeal_span_ιMulti {d : ℕ} {v : Fin d → M} (hv : LinearIndependent k v) :
+    (letI : TauCeti.Comodule k H (⋀[k]^d M) := TauCeti.Comodule.exteriorPower k H M d
+     (k ∙ _root_.exteriorPower.ιMulti k d v).stabilizerHopfIdeal H) =
+      (Submodule.span k (Set.range v)).stabilizerHopfIdeal H := by
+  let W := Submodule.span k (Set.range v)
+  have hdimW : Module.finrank k W = d := by
+    rw [finrank_span_eq_card hv, Fintype.card_fin]
+  let E := LinearMap.range (_root_.exteriorPower.map d W.subtype)
+  have hdimE : Module.finrank k E = 1 := by
+    rw [TauCeti.exteriorPower.finrank_range_map W.injective_subtype, hdimW, Nat.choose_self]
+  have hmem : _root_.exteriorPower.ιMulti k d v ∈ E :=
+    ⟨_root_.exteriorPower.ιMulti k d (fun i ↦ ⟨v i, Submodule.subset_span ⟨i, rfl⟩⟩),
+      _root_.exteriorPower.map_apply_ιMulti W.subtype _⟩
+  have hE : k ∙ _root_.exteriorPower.ιMulti k d v = E :=
+    (eq_span_singleton_of_mem_of_finrank_eq_one hdimE hmem
+      ((_root_.exteriorPower.ιMulti_ne_zero_iff v).mpr hv)).symm
+  let _ : TauCeti.Comodule k H (⋀[k]^d M) := TauCeti.Comodule.exteriorPower k H M d
+  rw [hE]
+  exact W.stabilizerHopfIdeal_range_exteriorPowerMap hdimW
+
+end ExteriorStabilizer
+
+end Submodule
