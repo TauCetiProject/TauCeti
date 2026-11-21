@@ -130,8 +130,8 @@ instance hasEnoughRootsOfUnity_cyclotomicTower (i : ℕ) [HasEnoughRootsOfUnity 
       hζ.of_map_of_injective (f := (cyclotomicTower p K L).val) Subtype.val_injective⟩
   -- The roots of unity of `K(μ_{p^∞})` form a subgroup of those of `L`, which are cyclic.
   cyc := isCyclic_of_injective (restrictRootsOfUnity (cyclotomicTower p K L).val (p ^ i))
-    fun _ _ h ↦ Subtype.ext <| Units.ext <| Subtype.val_injective <|
-      congrArg (fun u : rootsOfUnity (p ^ i) L ↦ ((u : Lˣ) : L)) h
+    fun _ _ h ↦ rootsOfUnity.coe_injective <| Subtype.val_injective <| by
+      simpa using congrArg (fun u : rootsOfUnity (p ^ i) L ↦ ((u : Lˣ) : L)) h
 
 section Cyclotomic
 
@@ -266,9 +266,7 @@ theorem range_cyclotomicTowerCharacter [∀ i, HasEnoughRootsOfUnity L (p ^ i)] 
   rw [← he, MonoidHom.range_comp, MonoidHom.range_eq_top.2 (AlgEquiv.autCongr e').surjective,
     ← MonoidHom.range_eq_map, range_cyclotomicTowerCharacter_eq_of_normal]
   -- The absolute Galois group of `K` is `Gal(AlgebraicClosure K/K)`.
-  ext x
-  exact ⟨fun ⟨σ, hσ⟩ ↦ ⟨σ, (localCyclotomicCharacter_apply p K σ).trans hσ⟩,
-    fun ⟨σ, hσ⟩ ↦ ⟨σ, (localCyclotomicCharacter_apply p K σ).symm.trans hσ⟩⟩
+  exact congrArg MonoidHom.range (MonoidHom.ext fun σ ↦ (localCyclotomicCharacter_apply p K σ).symm)
 
 /-- **For `K` finite over `ℚ_p`, the cyclotomic character identifies `Gal(K(μ_{p^∞})/K)` with an
 open subgroup of `ℤ_pˣ`.** -/
