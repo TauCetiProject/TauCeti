@@ -15,7 +15,9 @@ public import TauCeti.NumberTheory.LFunctions.Theta.UnitFundamentalDomain
 
 Hecke's theta kernel has one positive parameter per infinite place, not just a radial
 parameter. The Gaussian `archGaussian y x` is `exp (-π ∑ w, y w * |x w|²)`; a complex place
-occurs once in this sum, in accordance with the Euclidean pairing `mixedInner`.
+occurs once in this sum, in accordance with the Euclidean pairing `mixedInner`, and it splits into
+one-place Gaussians across all infinite places (`archGaussian_eq_prod`) or across real and complex
+places (`archGaussian_eq_prod_mul_prod`).
 
 For positive parameters, the coordinatewise square-root dilation identifies this Gaussian with
 the standard Euclidean Schwartz Gaussian. Its sum over any discrete lattice converges absolutely,
@@ -116,6 +118,34 @@ theorem archGaussian_const (t : ℝ) (x : mixedSpace K) :
 theorem archGaussian_one (x : mixedSpace K) :
     archGaussian (1 : realSpace K) x = ↑(Real.exp (-Real.pi * mixedInner K x x)) := by
   simpa only [Pi.one_def, one_mul] using archGaussian_const (K := K) 1 x
+
+/-- The archimedean Gaussian splits as a product over all infinite places. -/
+theorem archGaussian_eq_prod (y : realSpace K) (x : mixedSpace K) :
+    archGaussian y x =
+      ∏ w : InfinitePlace K, (Real.exp (-(Real.pi * normAtPlace w x ^ 2 * y w)) : ℂ) := by
+  rw [archGaussian_apply, Finset.mul_sum, Real.exp_sum, ofReal_prod]
+  refine Finset.prod_congr rfl fun w _ ↦ ?_
+  congr 2
+  ring
+
+open scoped Classical in
+/-- Splitting `archGaussian y x` into a product over real and complex places. -/
+theorem archGaussian_eq_prod_mul_prod (y : realSpace K) (x : mixedSpace K) :
+    archGaussian y x =
+      (∏ w : {w : InfinitePlace K // w.IsReal},
+          cexp (-(Real.pi : ℂ) * (y w.val : ℂ) * (x.1 w : ℂ) ^ 2)) *
+        ∏ w : {w : InfinitePlace K // w.IsComplex},
+          cexp (-(Real.pi : ℂ) * (y w.val : ℂ) * ‖x.2 w‖ ^ 2) := by
+  rw [archGaussian_eq_prod, prod_eq_prod_mul_prod]
+  congr 1
+  · refine Finset.prod_congr rfl fun w _ ↦ ?_
+    rw [normAtPlace_apply_of_isReal w.property, Real.norm_eq_abs, sq_abs, ofReal_exp]
+    push_cast
+    ring_nf
+  · refine Finset.prod_congr rfl fun w _ ↦ ?_
+    rw [normAtPlace_apply_of_isComplex w.property, ofReal_exp]
+    push_cast
+    ring_nf
 
 open scoped Classical in
 /-- The archimedean Gaussian is the standard Euclidean Gaussian after square-root dilation. -/

@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.NumberField.Global.HeckeCharacter.FiniteCompo
 public import TauCeti.NumberTheory.NumberField.Global.HeckeCharacter.Shift
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Estimates
 import TauCeti.NumberTheory.LocalField.Uniformizer
+import TauCeti.NumberTheory.NumberField.Global.HeckeCharacter.Purity
 import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm.Basic
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 
@@ -59,13 +60,19 @@ L-function `Grossencharacter.lFunctionC` is the canonical meromorphic continuati
 
 ## Main results
 
-* `TauCeti.LFunctions.Grossencharacter.ext`: a presentation is determined by its Hecke character.
+* `TauCeti.LFunctions.Grossencharacter.infinityType_congr` and
+  `TauCeti.LFunctions.Grossencharacter.ext`: a presentation and its algebraic infinity type are
+  determined by the underlying Hecke character.
 * `TauCeti.LFunctions.Grossencharacter.isAlgebraic`: the presented Hecke character is algebraic.
 * `TauCeti.LFunctions.Grossencharacter.conductorExponent_le_exponent`,
   `TauCeti.LFunctions.Grossencharacter.finiteConductor_dvd_finitePart`,
   `TauCeti.LFunctions.Grossencharacter.mk_finiteConductor_dvd_mk_finitePart` and
   `TauCeti.LFunctions.Grossencharacter.mk_finiteConductor_dvd`: the finite conductor of the
   presented character divides the finite part of the modulus.
+* `TauCeti.LFunctions.Grossencharacter.realExponent_toHeckeCharacter`,
+  `TauCeti.LFunctions.Grossencharacter.complexExponent_toHeckeCharacter`, and
+  `TauCeti.LFunctions.Grossencharacter.complexAngularFrequency_toHeckeCharacter`: the archimedean
+  modulus exponents and complex angular frequencies of the underlying Hecke character.
 * `TauCeti.LFunctions.Grossencharacter.toHeckeCharacter_primeIdele`: the value at a prime idele.
 * `TauCeti.LFunctions.Grossencharacter.infinityType_unitaryPart`: the infinity type of the unitary
   part has vanishing real and complex modulus exponents.
@@ -185,9 +192,8 @@ theorem infinityType_eq_zero_of_isFiniteOrder (χ : Grossencharacter K 𝔪)
     (χ.agreesOnIdentityComponent.symm.trans hagrees)
 
 /-- **A presentation is determined by its Hecke character.** The infinity type is determined on
-the identity component (`AlgebraicInfinityType.agreesOnIdentityComponent_toContinuous_iff`), and
-the weight is determined at every prime: at the primes of `𝔪` it vanishes, and at the others it is
-a local component of the unitary part. -/
+the identity component (`infinityType_congr`), and the weight is determined at every prime: at the
+primes of `𝔪` it vanishes, and at the others it is a local component of the unitary part. -/
 @[ext]
 theorem ext {χ ψ : Grossencharacter K 𝔪} (h : χ.toHeckeCharacter = ψ.toHeckeCharacter) :
     χ = ψ := by
@@ -272,6 +278,41 @@ theorem idealShift_congr {𝔫 : Modulus K} {χ : Grossencharacter K 𝔪} {ψ :
 theorem idealShift_eq_zero_of_isFiniteOrder (χ : Grossencharacter K 𝔪)
     (h : χ.toHeckeCharacter.IsFiniteOrder) : χ.idealShift = 0 := by
   rw [idealShift_def, HeckeCharacter.shift_eq_zero_of_isOfFinOrder h, neg_zero]
+
+/-- At a real place `w`, the real modulus exponent of the underlying Hecke character is
+`-χ.idealShift`. -/
+theorem realExponent_toHeckeCharacter (χ : Grossencharacter K 𝔪)
+    (w : {w : InfinitePlace K // w.IsReal}) :
+    χ.toHeckeCharacter.infinityType.realExponent w = (-χ.idealShift : ℂ) := by
+  obtain ⟨hr, -, -⟩ :=
+    (ContinuousInfinityType.agreesOnIdentityComponent_iff _ _).mp χ.agreesOnIdentityComponent
+  have hshift := HeckeCharacter.intCast_eq_shift_of_isReal hr
+    (InfinitePlace.isReal_iff.mp w.property)
+  rw [congrFun hr w, AlgebraicInfinityType.toContinuous_realExponent, idealShift_def,
+    Complex.ofReal_neg, neg_neg, ← hshift, Complex.ofReal_intCast]
+
+/-- At a complex place `w`, the complex modulus exponent of the underlying Hecke character is
+`2 * (-χ.idealShift)`. -/
+theorem complexExponent_toHeckeCharacter (χ : Grossencharacter K 𝔪)
+    (w : {w : InfinitePlace K // w.IsComplex}) :
+    χ.toHeckeCharacter.infinityType.complexExponent w = 2 * (-χ.idealShift : ℂ) := by
+  obtain ⟨hr, hc, -⟩ :=
+    (ContinuousInfinityType.agreesOnIdentityComponent_iff _ _).mp χ.agreesOnIdentityComponent
+  have hshift := congrArg Complex.ofReal
+    (HeckeCharacter.intCast_add_intCast_conjugate_eq_two_mul_shift hr hc w.val.embedding)
+  rw [congrFun hc w, AlgebraicInfinityType.toContinuous_complexExponent, idealShift_def]
+  push_cast at hshift ⊢
+  linear_combination hshift
+
+/-- The complex angular frequency of the underlying Hecke character agrees with that of the
+presented algebraic infinity type. -/
+theorem complexAngularFrequency_toHeckeCharacter (χ : Grossencharacter K 𝔪)
+    (w : {w : InfinitePlace K // w.IsComplex}) :
+    χ.toHeckeCharacter.infinityType.complexAngularFrequency w =
+      (AlgebraicInfinityType.toContinuous χ.infinityType).complexAngularFrequency w :=
+  congrFun
+    ((ContinuousInfinityType.agreesOnIdentityComponent_iff _ _).mp
+      χ.agreesOnIdentityComponent).2.2 w
 
 /-- **The value at a prime idele.** At a uniformizer `π_v` of `K_v`, `v ∤ 𝔪`, the presented Hecke
 character is the unitary weight times the norm to the ideal-side shift:

@@ -60,6 +60,8 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
 * `TauCeti.mul_cpow_of_re_pos` -- the right-half-plane specialization.
 * `TauCeti.ofReal_pow_cpow` -- a principal power of a natural power of a nonnegative real
   multiplies the exponents.
+* `TauCeti.ofReal_prod_pow_cpow` -- a principal power splits across a finite product of natural
+  powers of nonnegative reals.
 * `TauCeti.ofReal_cpow_conj` -- a principal power of a nonnegative real commutes with complex
   conjugation of the exponent.
 * `TauCeti.cpow_sum` -- a principal power of a finite sum splits into a product for a nonzero
@@ -174,6 +176,15 @@ theorem ofReal_pow_cpow {r : ℝ} (hr : 0 ≤ r) (n : ℕ) (s : ℂ) :
     ((r : ℂ) ^ n) ^ s = (r : ℂ) ^ (n * s) := by
   have harg : (r : ℂ).arg = 0 := arg_ofReal_of_nonneg hr
   rw [cpow_nat_mul' (by simp [harg, Real.pi_pos]) (by simp [harg, Real.pi_pos.le])]
+
+/-- A principal complex power splits across a finite product of natural powers of nonnegative
+reals: `((∏ i ∈ s, f i ^ m i : ℝ) : ℂ) ^ z = ∏ i ∈ s, (f i : ℂ) ^ ((m i : ℂ) * z)`. -/
+theorem ofReal_prod_pow_cpow {ι : Type*} (s : Finset ι) {f : ι → ℝ} (hf : ∀ i ∈ s, 0 ≤ f i)
+    {m : ι → ℕ} (z : ℂ) :
+    ((∏ i ∈ s, f i ^ m i : ℝ) : ℂ) ^ z = ∏ i ∈ s, (f i : ℂ) ^ ((m i : ℂ) * z) := by
+  rw [ofReal_prod_cpow s fun i hi ↦ pow_nonneg (hf i hi) _]
+  refine Finset.prod_congr rfl fun i hi ↦ ?_
+  rw [ofReal_pow, ofReal_pow_cpow (hf i hi)]
 
 /-- A principal complex power of a nonnegative real commutes with conjugation of the exponent:
 `(r : ℂ) ^ conj s = conj ((r : ℂ) ^ s)`.  The argument of `(r : ℂ)` is `0`, so this is

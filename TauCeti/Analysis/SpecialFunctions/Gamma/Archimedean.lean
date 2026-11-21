@@ -6,6 +6,7 @@ Authors: OpenAI Codex, The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Deligne
+import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
 /-!
 # Zero locus, relations, regularity, and norms of the archimedean gamma factors
@@ -27,7 +28,8 @@ and `(2π) ^ (-s.re)`. Taking norms and real logarithms separates those exponent
 
 * `Complex.Gammaℂ_eq_zero_iff`: total zeros of `Gammaℂ` occur at `-(n : ℂ)` (`n : ℕ`),
   complementing `Complex.Gammaℝ_eq_zero_iff`.
-* `Complex.two_mul_Gammaℝ_two_mul`: twice the real factor at `2 * z` is `2 ^ z` times `Gammaℂ z`,
+* `Complex.two_mul_Gammaℝ_two_mul`, `Complex.Gammaℝ_two_mul`, and
+  `Complex.Gammaℂ_eq_two_cpow_mul_Gammaℝ`: relations between `Gammaℝ (2 * z)` and `Gammaℂ z`,
   everywhere on `ℂ` including at the poles where both totalized values vanish.
 * `Complex.Gammaℂ_ne_zero_of_re_pos`, `Complex.Gammaℝ_ne_zero_of_im_ne_zero`,
   `Complex.Gammaℂ_ne_zero_of_im_ne_zero`: nonvanishing on the right half-plane and off the real
@@ -61,6 +63,23 @@ theorem two_mul_Gammaℝ_two_mul (z : ℂ) : 2 * Gammaℝ (2 * z) = 2 ^ z * Gamm
     rw [← cpow_add _ _ two_ne_zero, add_neg_cancel, cpow_zero]
   rw [Gammaℝ_def, Gammaℂ_def, neg_div, mul_div_cancel_left₀ _ two_ne_zero, h2π]
   linear_combination 2 * (Real.pi : ℂ) ^ (-z) * Gamma z * h2.symm
+
+/-- The real archimedean gamma factor at `2 * z` is `2 ^ (z - 1)` times Deligne's complex
+archimedean gamma factor at `z`, including at the nonpositive integers where both sides vanish. -/
+theorem Gammaℝ_two_mul (z : ℂ) : Gammaℝ (2 * z) = (2 : ℂ) ^ (z - 1) * Gammaℂ z := by
+  have h2 : (2 : ℂ) ^ (z - 1) * 2 = (2 : ℂ) ^ z := by
+    calc (2 : ℂ) ^ (z - 1) * 2 = (2 : ℂ) ^ (z - 1) * (2 : ℂ) ^ (1 : ℂ) := by rw [cpow_one]
+      _ = (2 : ℂ) ^ (z - 1 + 1) := (cpow_add _ _ two_ne_zero).symm
+      _ = (2 : ℂ) ^ z := by ring_nf
+  apply mul_left_cancel₀ (two_ne_zero : (2 : ℂ) ≠ 0)
+  rw [two_mul_Gammaℝ_two_mul, ← mul_assoc, mul_comm 2 ((2 : ℂ) ^ (z - 1)), h2]
+
+/-- Deligne's complex archimedean gamma factor expressed in terms of `Gammaℝ (2 * z)`. -/
+theorem Gammaℂ_eq_two_cpow_mul_Gammaℝ (z : ℂ) :
+    Gammaℂ z = (2 : ℂ) ^ (1 - z) * Gammaℝ (2 * z) := by
+  rw [Gammaℝ_two_mul, ← mul_assoc, ← cpow_add _ _ two_ne_zero]
+  have hexp : 1 - z + (z - 1) = 0 := by ring
+  rw [hexp, cpow_zero, one_mul]
 
 /-- Deligne's complex archimedean factor `Gammaℂ` is nonzero on the open right half-plane. -/
 theorem Gammaℂ_ne_zero_of_re_pos {s : ℂ} (hs : 0 < s.re) : Gammaℂ s ≠ 0 := by

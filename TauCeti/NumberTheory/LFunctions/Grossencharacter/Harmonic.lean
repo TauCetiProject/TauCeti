@@ -6,9 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LFunctions.Grossencharacter.Basic
+public import TauCeti.NumberTheory.LFunctions.Grossencharacter.Compatibility
+public import TauCeti.NumberTheory.LFunctions.Grossencharacter.Inverse
 public import TauCeti.NumberTheory.LFunctions.Theta.Harmonic
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import TauCeti.NumberTheory.NumberField.Global.HeckeCharacter.RealParity
+import TauCeti.NumberTheory.NumberField.Global.HeckeCharacter.UnitCompatibility
 
 /-!
 # Harmonic polynomials and Hecke's Fourier lemma for Grossencharacters
@@ -30,7 +33,10 @@ archimedean quantities agree with their `ContinuousInfinityType` counterparts on
   `(-i) ^ χ.harmonicDegree * N(y)^(-1/2) * ∏_w y_w^(-P_w)`;
 * multiplying `χ.harmonicFactor (mixedEmbedding K x)` by the archimedean components of
   `χ.toHeckeCharacter.unitaryPart` clears all signs and phases on `Kˣ`, leaving `∏_w |x_w| ^ P_w`
-  (and likewise for the unnormalized `χ.toHeckeCharacter` on `(𝓞 K)ˣ`).
+  (and likewise for `χ.toHeckeCharacter` on `Kˣ` up to `|N(x)| ^ (-χ.idealShift)`, and on
+  `(𝓞 K)ˣ`);
+* for `a ∈ 𝓞 K` congruent to `1` modulo `𝔪`, `Grossencharacter.compatibility` evaluates
+  `χ.harmonicFactor (mixedEmbedding K a)` as `χ.unitaryWeight.1 (Ideal.span {a}) * ∏_w w(a) ^ P_w`.
 
 ## Main definitions
 
@@ -44,9 +50,12 @@ archimedean quantities agree with their `ContinuousInfinityType` counterparts on
   Fourier eigenfunction lemma for `χ`.
 * `TauCeti.LFunctions.Grossencharacter.integral_archGaussian_mul_archWeight_mul_archNorm_cpow`:
   the shifted archimedean gamma integral for `χ`.
-* `TauCeti.LFunctions.Grossencharacter.prod_unitaryPart_infiniteComponent_mul_harmonicFactor` and
-  `TauCeti.LFunctions.Grossencharacter.prod_infiniteComponent_unit_mul_harmonicFactor`: archimedean
-  sign and phase cancellation on `Kˣ` and `(𝓞 K)ˣ`.
+* `TauCeti.LFunctions.Grossencharacter.prod_unitaryPart_infiniteComponent_mul_harmonicFactor`,
+  `TauCeti.LFunctions.Grossencharacter.prod_infiniteComponent_mul_harmonicFactor_mixedEmbedding`,
+  `TauCeti.LFunctions.Grossencharacter.prod_infiniteComponent_unit_mul_harmonicFactor`,
+  `TauCeti.LFunctions.Grossencharacter.harmonicFactor_mixedEmbedding_of_isCongrOne`, and
+  `harmonicFactor_mixedEmbedding_unit_of_mem_unitsCongruenceSubgroup`: archimedean sign and phase
+  cancellation on `Kˣ`, `(𝓞 K)ˣ`, and principal ideals `≡ 1 mod* 𝔪`.
 
 ## References
 
@@ -672,6 +681,333 @@ theorem heckeEpsilon_ofRayClassCharacter_one :
     (ofRayClassCharacter (1 : RayClassCharacter 𝔪)).heckeEpsilon = 1 := by
   rw [heckeEpsilon_eq_one_iff, toHeckeCharacter_ofRayClassCharacter, map_one]
   exact ⟨HeckeCharacter.finiteConductor_one, harmonicDegree_ofRayClassCharacter_one⟩
+
+/-! ### Additional algebraic, regularity, inverse, and congruence compatibility properties -/
+
+open scoped Classical in
+/-- Splitting `harmonicDegree` into the real-place parities and complex-place angular
+frequencies. -/
+theorem harmonicDegree_eq_sum_add_sum (χ : Grossencharacter K 𝔪) :
+    χ.harmonicDegree =
+      (∑ w : {w : InfinitePlace K // w.IsReal},
+        (χ.toHeckeCharacter.infinityType.realParity w).val) +
+      ∑ w : {w : InfinitePlace K // w.IsComplex},
+        ((AlgebraicInfinityType.toContinuous χ.infinityType).complexAngularFrequency w).natAbs := by
+  classical
+  rw [harmonicDegree_def, InfinitePlace.sum_eq_sum_add_sum]
+  refine congrArg₂ _ (Finset.sum_congr rfl fun w _ ↦ χ.harmonicExponent_of_isReal w.property)
+    (Finset.sum_congr rfl fun w _ ↦ ?_)
+  simp [harmonicExponent_def, not_isReal_iff_isComplex.mpr w.property]
+
+/-- The total harmonic degree vanishes if and only if every harmonic exponent vanishes. -/
+theorem harmonicDegree_eq_zero_iff (χ : Grossencharacter K 𝔪) :
+    χ.harmonicDegree = 0 ↔ ∀ w, χ.harmonicExponent w = 0 := by
+  classical simp [harmonicDegree_def]
+
+/-- Inverting a presentation leaves every harmonic exponent unchanged. -/
+@[simp]
+theorem harmonicExponent_inverse (χ : Grossencharacter K 𝔪) (w : InfinitePlace K) :
+    χ.inverse.harmonicExponent w = χ.harmonicExponent w :=
+  harmonicExponent_of_toHeckeCharacter_eq_inv (toHeckeCharacter_inverse χ) w
+
+/-- Inverting a presentation preserves `harmonicDegree`. -/
+@[simp]
+theorem harmonicDegree_inverse (χ : Grossencharacter K 𝔪) :
+    χ.inverse.harmonicDegree = χ.harmonicDegree :=
+  harmonicDegree_of_toHeckeCharacter_eq_inv (toHeckeCharacter_inverse χ)
+
+/-- Inverting a presentation conjugates its harmonic polynomial pointwise. -/
+@[simp]
+theorem harmonicFactor_inverse (χ : Grossencharacter K 𝔪) (x : mixedSpace K) :
+    χ.inverse.harmonicFactor x = conj (χ.harmonicFactor x) :=
+  harmonicFactor_of_toHeckeCharacter_eq_inv (toHeckeCharacter_inverse χ) x
+
+/-- Inverting a presentation preserves `archWeight`. -/
+@[simp]
+theorem archWeight_inverse (χ : Grossencharacter K 𝔪) (y : realSpace K) :
+    χ.inverse.archWeight y = χ.archWeight y :=
+  archWeight_of_toHeckeCharacter_eq_inv (toHeckeCharacter_inverse χ) y
+
+/-- Inverting a presentation preserves `heckeEpsilon`. -/
+@[simp]
+theorem heckeEpsilon_inverse (χ : Grossencharacter K 𝔪) :
+    χ.inverse.heckeEpsilon = χ.heckeEpsilon :=
+  heckeEpsilon_of_toHeckeCharacter_eq_inv (toHeckeCharacter_inverse χ)
+
+/-- A ray class character of `𝔪` has harmonic exponent `0` at every real place outside `𝔪`. -/
+theorem harmonicExponent_ofRayClassCharacter_of_notMem_infinitePart (η : RayClassCharacter 𝔪)
+    (w : {w : InfinitePlace K // w.IsReal}) (hw : w ∉ 𝔪.infinitePart) :
+    (ofRayClassCharacter η).harmonicExponent w.val = 0 := by
+  rw [(ofRayClassCharacter η).harmonicExponent_of_notMem_infinitePart w hw,
+    infinityType_ofRayClassCharacter]
+  simp
+
+/-- At a modulus with empty infinite part, a ray class character has zero harmonic exponents. -/
+theorem harmonicExponent_ofRayClassCharacter_of_infinitePart_eq_empty
+    (h𝔪 : 𝔪.infinitePart = ∅) (η : RayClassCharacter 𝔪) (w : InfinitePlace K) :
+    (ofRayClassCharacter η).harmonicExponent w = 0 := by
+  rcases w.isReal_or_isComplex with hw | hw
+  · exact harmonicExponent_ofRayClassCharacter_of_notMem_infinitePart η ⟨w, hw⟩ (by simp [h𝔪])
+  · exact harmonicExponent_ofRayClassCharacter_of_isComplex η hw
+
+/-- A ray class character at the trivial modulus has harmonic exponent `0` everywhere. -/
+@[simp]
+theorem harmonicExponent_ofRayClassCharacter_of_modulus_one
+    (η : RayClassCharacter (Modulus.one K)) (w : InfinitePlace K) :
+    (ofRayClassCharacter η).harmonicExponent w = 0 :=
+  harmonicExponent_ofRayClassCharacter_of_infinitePart_eq_empty Modulus.one_infinitePart η w
+
+/-- Any presentation of the trivial Hecke character has harmonic exponent `0` everywhere. -/
+theorem harmonicExponent_of_toHeckeCharacter_eq_one {χ : Grossencharacter K 𝔪}
+    (hχ : χ.toHeckeCharacter = 1) (w : InfinitePlace K) : χ.harmonicExponent w = 0 := by
+  rw [harmonicExponent_eq_infinityType, hχ, HeckeCharacter.infinityType_one,
+    ContinuousInfinityType.zero_harmonicExponent]
+
+/-- At a modulus with empty infinite part, every ray class character has harmonic degree `0`. -/
+theorem harmonicDegree_ofRayClassCharacter_of_infinitePart_eq_empty
+    (h𝔪 : 𝔪.infinitePart = ∅) (η : RayClassCharacter 𝔪) :
+    (ofRayClassCharacter η).harmonicDegree = 0 :=
+  (harmonicDegree_eq_zero_iff _).mpr
+    (harmonicExponent_ofRayClassCharacter_of_infinitePart_eq_empty h𝔪 η)
+
+/-- At the trivial modulus, every ray class character has harmonic degree `0`. -/
+@[simp]
+theorem harmonicDegree_ofRayClassCharacter_of_modulus_one
+    (η : RayClassCharacter (Modulus.one K)) :
+    (ofRayClassCharacter η).harmonicDegree = 0 :=
+  harmonicDegree_ofRayClassCharacter_of_infinitePart_eq_empty Modulus.one_infinitePart η
+
+/-- Any presentation of the trivial Hecke character has harmonic degree `0`. -/
+theorem harmonicDegree_of_toHeckeCharacter_eq_one {χ : Grossencharacter K 𝔪}
+    (hχ : χ.toHeckeCharacter = 1) : χ.harmonicDegree = 0 :=
+  (harmonicDegree_eq_zero_iff χ).mpr (harmonicExponent_of_toHeckeCharacter_eq_one hχ)
+
+/-- `harmonicFactor` commutes with natural powers on `mixedSpace K`. -/
+theorem harmonicFactor_pow (χ : Grossencharacter K 𝔪) (x : mixedSpace K) (n : ℕ) :
+    χ.harmonicFactor (x ^ n) = χ.harmonicFactor x ^ n := by
+  induction n with
+  | zero => simp
+  | succ n ih => rw [pow_succ, harmonicFactor_mul, ih, pow_succ]
+
+/-- `harmonicFactor` commutes with coordinatewise inversion on `mixedSpace K`. -/
+theorem harmonicFactor_inv (χ : Grossencharacter K 𝔪) (x : mixedSpace K) :
+    χ.harmonicFactor x⁻¹ = (χ.harmonicFactor x)⁻¹ := by
+  classical
+  have hcomp (w : {w : InfinitePlace K // w.IsComplex}) :
+      TauCeti.complexHarmonicMonomial
+          ((AlgebraicInfinityType.toContinuous χ.infinityType).complexAngularFrequency w)
+          (x.2 w)⁻¹ =
+        (TauCeti.complexHarmonicMonomial
+          ((AlgebraicInfinityType.toContinuous χ.infinityType).complexAngularFrequency w)
+          (x.2 w))⁻¹ := by
+    rcases ((AlgebraicInfinityType.toContinuous
+        χ.infinityType).complexAngularFrequency w).eq_nat_or_neg
+      with ⟨n, hn | hn⟩ <;> simp [hn, inv_pow]
+  simp only [harmonicFactor_def, Prod.fst_inv, Prod.snd_inv, Pi.inv_apply, ofReal_inv, inv_pow,
+    hcomp, mul_inv, Finset.prod_inv_distrib]
+
+/-- When `harmonicDegree` vanishes, `harmonicFactor` is identically `1`. -/
+theorem harmonicFactor_of_harmonicDegree_eq_zero {χ : Grossencharacter K 𝔪}
+    (h : χ.harmonicDegree = 0) (x : mixedSpace K) : χ.harmonicFactor x = 1 := by
+  rw [harmonicFactor_eq_infinityType]
+  rw [harmonicDegree_eq_infinityType] at h
+  obtain ⟨hr, hc⟩ := χ.toHeckeCharacter.infinityType.harmonicDegree_eq_zero_iff.mp h
+  classical simp [ContinuousInfinityType.harmonicFactor_def, hr, hc]
+
+/-- At a modulus with empty infinite part, a ray class character has trivial `harmonicFactor`. -/
+theorem harmonicFactor_ofRayClassCharacter_of_infinitePart_eq_empty
+    (h𝔪 : 𝔪.infinitePart = ∅) (η : RayClassCharacter 𝔪) (x : mixedSpace K) :
+    (ofRayClassCharacter η).harmonicFactor x = 1 :=
+  harmonicFactor_of_harmonicDegree_eq_zero
+    (harmonicDegree_ofRayClassCharacter_of_infinitePart_eq_empty h𝔪 η) x
+
+/-- At the trivial modulus, a ray class character has trivial `harmonicFactor`. -/
+@[simp]
+theorem harmonicFactor_ofRayClassCharacter_of_modulus_one (η : RayClassCharacter (Modulus.one K))
+    (x : mixedSpace K) :
+    (ofRayClassCharacter η).harmonicFactor x = 1 :=
+  harmonicFactor_ofRayClassCharacter_of_infinitePart_eq_empty Modulus.one_infinitePart η x
+
+/-- Any presentation of the trivial Hecke character has `harmonicFactor` identically `1`. -/
+theorem harmonicFactor_of_toHeckeCharacter_eq_one {χ : Grossencharacter K 𝔪}
+    (hχ : χ.toHeckeCharacter = 1) (x : mixedSpace K) : χ.harmonicFactor x = 1 :=
+  harmonicFactor_of_harmonicDegree_eq_zero (harmonicDegree_of_toHeckeCharacter_eq_one hχ) x
+
+/-- On a real-coordinate vector `mixedSpaceOfRealSpace r`, `harmonicFactor` is the product of
+`r w ^ harmonicExponent w` over all infinite places. -/
+theorem harmonicFactor_mixedSpaceOfRealSpace (χ : Grossencharacter K 𝔪) (r : realSpace K) :
+    χ.harmonicFactor (mixedSpaceOfRealSpace r) =
+      ((∏ w : InfinitePlace K, r w ^ χ.harmonicExponent w : ℝ) : ℂ) := by
+  simp only [harmonicFactor_eq_infinityType,
+    ContinuousInfinityType.harmonicFactor_mixedSpaceOfRealSpace, harmonicExponent_eq_infinityType]
+
+/-- `harmonicFactor` is homogeneous of degree `harmonicDegree` under real scalar multiplication. -/
+theorem harmonicFactor_smul (χ : Grossencharacter K 𝔪) (c : ℝ) (x : mixedSpace K) :
+    χ.harmonicFactor (c • x) = (c : ℂ) ^ χ.harmonicDegree * χ.harmonicFactor x := by
+  classical
+  have hsmul : c • x = mixedSpaceOfRealSpace (fun _ ↦ c) * x := by
+    ext w <;> simp [mixedSpaceOfRealSpace_apply]
+  rw [hsmul, harmonicFactor_mixedSpaceOfRealSpace_mul, Finset.prod_pow_eq_pow_sum,
+    ← harmonicDegree_def, ofReal_pow]
+
+/-- When `harmonicDegree` is nonzero, `harmonicFactor` vanishes at the origin. -/
+theorem harmonicFactor_zero_of_harmonicDegree_ne_zero {χ : Grossencharacter K 𝔪}
+    (h : χ.harmonicDegree ≠ 0) : χ.harmonicFactor 0 = 0 := by
+  simp [harmonicFactor_zero_right, h]
+
+/-- Under negation on `mixedSpace K`, `harmonicFactor` transforms by `(-1) ^ harmonicDegree`. -/
+theorem harmonicFactor_neg (χ : Grossencharacter K 𝔪) (x : mixedSpace K) :
+    χ.harmonicFactor (-x) = (-1 : ℂ) ^ χ.harmonicDegree * χ.harmonicFactor x := by
+  simpa using χ.harmonicFactor_smul (-1 : ℝ) x
+
+/-- On `K`, `harmonicFactor` commutes with inversion through `mixedEmbedding K`. -/
+theorem harmonicFactor_mixedEmbedding_inv (χ : Grossencharacter K 𝔪) (x : K) :
+    χ.harmonicFactor (mixedEmbedding K x⁻¹) = (χ.harmonicFactor (mixedEmbedding K x))⁻¹ := by
+  have hinv : mixedEmbedding K x⁻¹ = (mixedEmbedding K x)⁻¹ := by
+    ext w <;> simp
+  rw [hinv, χ.harmonicFactor_inv]
+
+open scoped Classical in
+/-- `harmonicFactor` has temperate growth on `mixedSpace K`. -/
+@[fun_prop]
+theorem hasTemperateGrowth_harmonicFactor (χ : Grossencharacter K 𝔪) :
+    χ.harmonicFactor.HasTemperateGrowth := by
+  rw [funext χ.harmonicFactor_eq_infinityType]
+  exact χ.toHeckeCharacter.infinityType.hasTemperateGrowth_harmonicFactor
+
+open scoped Classical in
+/-- `harmonicFactor` is smooth (`C^n` for every order `n : WithTop ℕ∞`, including real-analytic)
+over `ℝ`. -/
+@[fun_prop]
+theorem contDiff_harmonicFactor (χ : Grossencharacter K 𝔪) {n : WithTop ℕ∞} :
+    ContDiff ℝ n χ.harmonicFactor := by
+  rw [funext χ.harmonicFactor_eq_infinityType]
+  exact χ.toHeckeCharacter.infinityType.contDiff_harmonicFactor
+
+open scoped Classical in
+/-- `harmonicFactor` is differentiable over `ℝ`. -/
+@[fun_prop]
+theorem differentiable_harmonicFactor (χ : Grossencharacter K 𝔪) :
+    Differentiable ℝ χ.harmonicFactor :=
+  (χ.contDiff_harmonicFactor (n := 1)).differentiable one_ne_zero
+
+/-- `harmonicFactor` is continuous on `mixedSpace K`. -/
+@[fun_prop]
+theorem continuous_harmonicFactor (χ : Grossencharacter K 𝔪) :
+    Continuous χ.harmonicFactor := by
+  rw [funext χ.harmonicFactor_eq_infinityType]
+  exact χ.toHeckeCharacter.infinityType.continuous_harmonicFactor
+
+/-- `harmonicFactor` is measurable on `mixedSpace K`. -/
+@[fun_prop]
+theorem measurable_harmonicFactor (χ : Grossencharacter K 𝔪) :
+    Measurable χ.harmonicFactor :=
+  χ.continuous_harmonicFactor.measurable
+
+/-- At the trivial modulus, every ray class character has `heckeEpsilon = 1`. -/
+@[simp]
+theorem heckeEpsilon_ofRayClassCharacter_of_modulus_one (η : RayClassCharacter (Modulus.one K)) :
+    (ofRayClassCharacter η).heckeEpsilon = 1 := by
+  rw [heckeEpsilon_eq_one_iff]
+  refine ⟨top_unique ?_, harmonicDegree_ofRayClassCharacter_of_modulus_one η⟩
+  have hdvd := (ofRayClassCharacter η).finiteConductor_dvd_finitePart
+  rw [Modulus.one_finitePart, Ideal.dvd_iff_le] at hdvd
+  exact hdvd
+
+/-- Any presentation of the trivial Hecke character has `heckeEpsilon = 1`. -/
+theorem heckeEpsilon_of_toHeckeCharacter_eq_one {χ : Grossencharacter K 𝔪}
+    (hχ : χ.toHeckeCharacter = 1) : χ.heckeEpsilon = 1 := by
+  rw [heckeEpsilon_eq_one_iff]
+  exact ⟨by simp [hχ], harmonicDegree_of_toHeckeCharacter_eq_one hχ⟩
+
+/-- **Archimedean compatibility of `harmonicFactor` on `Kˣ`.** Multiplying the product of the
+archimedean components of `χ` at `x : Kˣ` by `χ.harmonicFactor (mixedEmbedding K x)` cancels all
+real sign parities and complex angular frequencies, leaving `|N(x)| ^ (-idealShift)` times the
+placewise norm power `∏_w w(x) ^ harmonicExponent w`. -/
+theorem prod_infiniteComponent_mul_harmonicFactor_mixedEmbedding (χ : Grossencharacter K 𝔪)
+    (x : Kˣ) :
+    ((∏ w : InfinitePlace K,
+        χ.toHeckeCharacter.infiniteComponent w
+          (Units.map (algebraMap K w.Completion).toMonoidHom x)) : ℂ) *
+      χ.harmonicFactor (mixedEmbedding K (x : K)) =
+      ((mixedEmbedding.norm (mixedEmbedding K (x : K)) : ℝ) : ℂ) ^ (-χ.idealShift : ℂ) *
+        ((∏ w : InfinitePlace K, w (x : K) ^ χ.harmonicExponent w : ℝ) : ℂ) := by
+  have hnorm_pow :
+      (∏ w : InfinitePlace K,
+          ((HeckeCharacter.normPow K χ.toHeckeCharacter.shift).infiniteComponent w
+            (Units.map (algebraMap K w.Completion).toMonoidHom x) : ℂ)) =
+        ((mixedEmbedding.norm (mixedEmbedding K (x : K)) : ℝ) : ℂ) ^ (-χ.idealShift : ℂ) := by
+    simp_rw [HeckeCharacter.coe_infiniteComponent_normPow_apply]
+    have hcoord (w : InfinitePlace K) :
+        (completionNormalizedAbsValue w
+          (Units.map (algebraMap K w.Completion).toMonoidHom x) : ℝ) =
+          normAtPlace w (mixedEmbedding K (x : K)) ^ mult w := by
+      simp [normAtPlace_apply]
+    simp_rw [hcoord]
+    rw [← TauCeti.ofReal_prod_cpow _ fun w _ ↦ pow_nonneg (normAtPlace_nonneg w _) _,
+      ← mixedEmbedding.norm_apply, idealShift_def, ofReal_neg, neg_neg]
+  have hprod := χ.prod_unitaryPart_infiniteComponent_mul_harmonicFactor x
+  simp_rw [normAtPlace_apply] at hprod
+  conv_lhs =>
+    rw [← χ.toHeckeCharacter.unitaryPart_mul_normPow_shift]
+  simp only [HeckeCharacter.infiniteComponent_mul, ContinuousMonoidHom.mul_apply,
+    Units.val_mul, Finset.prod_mul_distrib, hnorm_pow]
+  rw [mul_right_comm, hprod, mul_comm]
+
+/-- **Principal-ideal compatibility of `harmonicFactor`** (via `Grossencharacter.compatibility`):
+for `a ∈ 𝓞 K` congruent to `1` modulo `𝔪` (`IsCongrOne 𝔪 x`), `χ.harmonicFactor` at the mixed
+embedding of `a` equals `χ_u((a)) * ∏_w w(a) ^ harmonicExponent w`. -/
+theorem harmonicFactor_mixedEmbedding_of_isCongrOne (χ : Grossencharacter K 𝔪) (x : Kˣ)
+    (hx : IsCongrOne 𝔪 x) (a : 𝓞 K) (ha : algebraMap (𝓞 K) K a = x) :
+    χ.harmonicFactor (mixedEmbedding K (a : K)) =
+      χ.unitaryWeight.val (Ideal.span {a}) *
+        ((∏ w : InfinitePlace K, w (a : K) ^ χ.harmonicExponent w : ℝ) : ℂ) := by
+  have ha' : (a : K) = (x : K) := ha
+  have hpos (w : {w : InfinitePlace K // w.IsReal})
+      (hw : χ.toHeckeCharacter.infinityType.realParity w ≠
+        (AlgebraicInfinityType.toContinuous χ.infinityType).realParity w) :
+      0 < InfinitePlace.embedding_of_isReal w.property (x : K) :=
+    (isCongrOne_iff.mp hx).2 w (not_imp_comm.mp (χ.realParity_eq w) hw)
+  have hinf : ((∏ w : InfinitePlace K, χ.toHeckeCharacter.infiniteComponent w
+        (Units.map (algebraMap K w.Completion).toMonoidHom x)) : ℂ) =
+      ∏ τ : K →+* ℂ, τ (x : K) ^ χ.infinityType τ := by
+    rw [χ.toHeckeCharacter.coe_prod_infiniteComponent_eq_embeddingCharacter_of_realParity
+      χ.infinityType χ.agreesOnIdentityComponent x hpos,
+      AlgebraicInfinityType.coe_embeddingCharacter_apply]
+  have hnorm : ((Ideal.absNorm (Ideal.span {a}) : ℕ) : ℝ) =
+      mixedEmbedding.norm (mixedEmbedding K (x : K)) := by
+    rw [Ideal.absNorm_span_singleton, Nat.cast_natAbs, Int.cast_abs, mixedEmbedding.norm_eq_norm,
+      ← ha', ← Algebra.coe_norm_int, Rat.cast_abs, Rat.cast_intCast]
+  have hnorm0 : mixedEmbedding.norm (mixedEmbedding K (x : K)) ≠ 0 := by
+    rw [Ne, mixedEmbedding.norm_eq_zero_iff' ⟨(x : K), rfl⟩]
+    exact (map_ne_zero_iff (mixedEmbedding K) (mixedEmbedding_injective K)).mpr x.ne_zero
+  have hN : ((Ideal.absNorm (Ideal.span {a}) : ℕ) : ℂ) ^ (χ.idealShift : ℂ) *
+      ((mixedEmbedding.norm (mixedEmbedding K (x : K)) : ℝ) : ℂ) ^ (-χ.idealShift : ℂ) = 1 := by
+    rw [← ofReal_natCast, hnorm, ← cpow_add _ _ (ofReal_ne_zero.mpr hnorm0), add_neg_cancel,
+      cpow_zero]
+  have hM0 : (∏ τ : K →+* ℂ, τ (x : K) ^ χ.infinityType τ) ≠ 0 :=
+    Finset.prod_ne_zero_iff.mpr fun τ _ ↦ zpow_ne_zero _ ((map_ne_zero τ).mpr x.ne_zero)
+  have hprod := χ.prod_infiniteComponent_mul_harmonicFactor_mixedEmbedding x
+  rw [hinf] at hprod
+  have hcomp := χ.compatibility x hx a ha
+  rw [ha']
+  refine mul_left_cancel₀ hM0 ?_
+  linear_combination hprod -
+    (((mixedEmbedding.norm (mixedEmbedding K (x : K)) : ℝ) : ℂ) ^ (-χ.idealShift : ℂ) *
+      ((∏ w : InfinitePlace K, w (x : K) ^ χ.harmonicExponent w : ℝ) : ℂ)) * hcomp +
+    ((∏ τ : K →+* ℂ, τ (x : K) ^ χ.infinityType τ) * χ.unitaryWeight.val (Ideal.span {a}) *
+      ((∏ w : InfinitePlace K, w (x : K) ^ χ.harmonicExponent w : ℝ) : ℂ)) * hN
+
+/-- **Congruence-unit compatibility of `harmonicFactor`.** On a unit `u ∈ unitsCongruenceSubgroup 𝔪`
+(`u ≡ 1 mod* 𝔪`), `χ.harmonicFactor (mixedEmbedding K u)` equals the positive real norm power
+`∏_w w(u) ^ harmonicExponent w`. -/
+theorem harmonicFactor_mixedEmbedding_unit_of_mem_unitsCongruenceSubgroup
+    (χ : Grossencharacter K 𝔪) {u : (𝓞 K)ˣ} (hu : u ∈ unitsCongruenceSubgroup 𝔪) :
+    χ.harmonicFactor (mixedEmbedding K (u : K)) =
+      ((∏ w : InfinitePlace K, w (u : K) ^ χ.harmonicExponent w : ℝ) : ℂ) := by
+  rw [χ.harmonicFactor_mixedEmbedding_of_isCongrOne (Units.map (algebraMap (𝓞 K) K).toMonoidHom u)
+      (mem_unitsCongruenceSubgroup.mp hu) (u : 𝓞 K) rfl,
+    Ideal.span_singleton_eq_top.mpr u.isUnit, ← Ideal.one_eq_top, map_one, one_mul]
 
 end Grossencharacter
 
