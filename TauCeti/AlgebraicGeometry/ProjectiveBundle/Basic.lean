@@ -97,8 +97,7 @@ section of `𝒪(1)` that is `e / 1` on the chart `Proj (Sym Γ(E, U))` over `U`
 def universalQuotient :
     (Scheme.Modules.pullback (projection S E)).obj E ⟶ (twistingSheaf S E 1).obj :=
   ((Scheme.Modules.pullbackPushforwardAdjunction (projection S E)).homEquiv _ _).symm
-    ((eqToIso (gradedSymmetricAlgebra_obj_obj_X _ 1) ≪≫
-      (SheafOfModules.symmetricPowerOneIso S.sheaf).app E).inv ≫
+    ((gradedSymmetricAlgebraXOneIso ⟨E, inferInstance⟩).inv ≫
       ((gradedSymmetricAlgebra S).obj ⟨E, inferInstance⟩).obj.relativeProjToTwistingSheaf
         Nat.cast_one)
 
@@ -107,8 +106,7 @@ def universalQuotient :
 theorem homEquiv_universalQuotient :
     (Scheme.Modules.pullbackPushforwardAdjunction (projection S E)).homEquiv _ _
         (universalQuotient S E) =
-      (eqToIso (gradedSymmetricAlgebra_obj_obj_X _ 1) ≪≫
-        (SheafOfModules.symmetricPowerOneIso S.sheaf).app E).inv ≫
+      (gradedSymmetricAlgebraXOneIso ⟨E, inferInstance⟩).inv ≫
         ((gradedSymmetricAlgebra S).obj ⟨E, inferInstance⟩).obj.relativeProjToTwistingSheaf
           Nat.cast_one :=
   Equiv.apply_symm_apply _ _
@@ -120,9 +118,7 @@ latter is the section of `𝒪(1)` that is `e / 1` on the chart over `U`
 theorem universalQuotient_app_pullbackSections (U : S.Opens) (e : Γ(E, U)) :
     (universalQuotient S E).app _ (Scheme.Hom.pullbackSections (projection S E) E U e) =
       (((gradedSymmetricAlgebra S).obj ⟨E, inferInstance⟩).obj.relativeProjToTwistingSheaf
-        Nat.cast_one).app U
-        (((eqToIso (gradedSymmetricAlgebra_obj_obj_X _ 1) ≪≫
-          (SheafOfModules.symmetricPowerOneIso S.sheaf).app E).inv).app U e) := by
+        Nat.cast_one).app U ((gradedSymmetricAlgebraXOneIso ⟨E, inferInstance⟩).inv.app U e) := by
   have h := congr($(homEquiv_universalQuotient S E).app U e)
   rw [Adjunction.homEquiv_unit] at h
   rw [Scheme.Hom.pullbackSections_apply]
@@ -142,20 +138,18 @@ private theorem π_app_universalQuotient_app_pullbackSectionsLE (U : S.AffineZar
           (Scheme.Hom.pullbackSectionsLE (projection S E) E U.toOpens W hW e)) =
       Proj.toTwistingSheaf ((symAlg S E).gradedSectionsGrading U.toOpens) Nat.cast_one
         (colimit.ι (symAlg S E).relativeProjGluingData.functor U ⁻¹ᵁ W)
-        ⟨DirectSum.of _ 1 (((eqToIso (gradedSymmetricAlgebra_obj_obj_X _ 1) ≪≫
-          (SheafOfModules.symmetricPowerOneIso S.sheaf).app E).inv).app U.toOpens e),
+        ⟨DirectSum.of _ 1 ((gradedSymmetricAlgebraXOneIso ⟨E, inferInstance⟩).inv.app U.toOpens e),
           (symAlg S E).of_mem_gradedSectionsGrading 1 _⟩ := by
-  let π := ((symAlg S E).relativeProjTwistingSheafGlueData 1).π U
-  -- write the pullback to `W` as the restriction of the pullback to `π⁻¹ U`
-  refine (congrArg (fun z ↦ π.app W ((universalQuotient S E).app W z))
-    (Scheme.Hom.pullbackSectionsLE_apply _ _ _ _ hW e)).trans ?_
-  -- move the restriction past the tautological quotient and the projection to the chart
-  refine (congrArg (π.app W) (PresheafOfModules.naturality_apply (universalQuotient S E).val
-    (homOfLE hW).op _)).trans ?_
-  refine (congrArg (fun z ↦ π.app W ((twistingSheaf S E 1).obj.val.map (homOfLE hW).op z))
-    (universalQuotient_app_pullbackSections S E U.toOpens e)).trans ?_
-  refine (PresheafOfModules.naturality_apply π.val (homOfLE hW).op _).trans ?_
-  -- on the chart, the graded map sends `b` to `b / 1`, which restricts to `b / 1`
+  -- write the pullback to `W` as the restriction of the pullback to `π⁻¹ U`, and move the
+  -- restriction past the tautological quotient
+  rw [Scheme.Hom.pullbackSectionsLE_apply, Scheme.Modules.Hom.naturality_apply,
+    universalQuotient_app_pullbackSections]
+  -- `rw` cannot perform the remaining steps: the projection to the chart has source
+  -- `relativeProjTwistingSheaf 1` and lies over `relativeProjToBase`, which are `𝒪(1)` and
+  -- `projection S E` only up to unfolding, so its naturality and the chart formula `b / 1` are
+  -- chained with `Eq.trans`
+  refine (PresheafOfModules.naturality_apply
+    (((symAlg S E).relativeProjTwistingSheafGlueData 1).π U).val (homOfLE hW).op _).trans ?_
   exact (congrArg (((Scheme.Modules.pushforward
       (colimit.ι (symAlg S E).relativeProjGluingData.functor U)).obj
         (((symAlg S E).relativeProjTwistingSheafGlueData 1).obj U)).val.map (homOfLE hW).op)
@@ -168,9 +162,8 @@ standard open `D₊(b)` of the chart over `U`, every section of `𝒪(1)` is a r
 image of the pullback of `e` under the tautological quotient. -/
 private theorem surjective_smul_universalQuotient_app_pullbackSectionsLE
     (U : S.AffineZariskiSite) (e : Γ(E, U.toOpens)) {W : (projectiveBundle S E).Opens}
-    (hW : W ≤ colimit.ι (symAlg S E).relativeProjGluingData.functor U ''ᵁ
-      Proj.basicOpen _ (DirectSum.of _ 1 (((eqToIso (gradedSymmetricAlgebra_obj_obj_X _ 1) ≪≫
-        (SheafOfModules.symmetricPowerOneIso S.sheaf).app E).inv).app U.toOpens e)))
+    (hW : W ≤ colimit.ι (symAlg S E).relativeProjGluingData.functor U ''ᵁ Proj.basicOpen _
+      (DirectSum.of _ 1 ((gradedSymmetricAlgebraXOneIso ⟨E, inferInstance⟩).inv.app U.toOpens e)))
     (hWU : W ≤ projection S E ⁻¹ᵁ U.toOpens) :
     Function.Surjective fun r : Γ(projectiveBundle S E, W) ↦
       r • (universalQuotient S E).app W (Scheme.Hom.pullbackSectionsLE _ E _ _ hWU e) := by
@@ -178,21 +171,21 @@ private theorem surjective_smul_universalQuotient_app_pullbackSectionsLE
   let ι : Proj ((symAlg S E).gradedSectionsGrading U.toOpens) ⟶ projectiveBundle S E :=
     colimit.ι (symAlg S E).relativeProjGluingData.functor U
   have : IsOpenImmersion ι := (symAlg S E).isOpenImmersion_colimit_ι_relativeProjGluingData U
-  have hb := (symAlg S E).of_mem_gradedSectionsGrading 1 (((eqToIso
-    (gradedSymmetricAlgebra_obj_obj_X _ 1) ≪≫
-      (SheafOfModules.symmetricPowerOneIso S.sheaf).app E).inv).app U.toOpens e)
+  have hb := (symAlg S E).of_mem_gradedSectionsGrading 1
+    ((gradedSymmetricAlgebraXOneIso ⟨E, inferInstance⟩).inv.app U.toOpens e)
   have hWA : W ≤ ι.opensRange := hW.trans (ι.image_le_opensRange _)
   have hWb : ι ⁻¹ᵁ W ≤ Proj.basicOpen _ _ :=
     (Scheme.Hom.preimage_mono _ hW).trans (ι.preimage_image_eq _).le
   have := ι.isIso_app W hWA
-  -- on the chart, `r` times the image of the pullback of `e` is `r` times the generator `b / 1`
+  -- on the chart, `r` times the image of the pullback of `e` is `r` times the generator `b / 1`;
+  -- `r` acts on the sections of the pushforward along `ι` through `ι.app W r`
   have key (r : Γ(projectiveBundle S E, W)) :
       (((symAlg S E).relativeProjTwistingSheafGlueData 1).π U).app W
         (r • (universalQuotient S E).app W (Scheme.Hom.pullbackSectionsLE _ E _ _ hWU e)) =
       Proj.twistingSheaf.chartSectionsLinearEquiv 1 _ hb _ hWb (ι.app W r) := by
-    refine (Scheme.Modules.Hom.app_smul _ r _).trans ?_
-    -- `r` acts on the sections of the pushforward along `ι` through `ι.app W r`
-    refine (pushforward_obj_smul ι _ r _).trans ?_
+    -- `rw` does not see `r •` through the source of the projection to the chart or through the
+    -- sections of the pushforward along `ι`, so these steps are chained with `Eq.trans`
+    refine (Scheme.Modules.Hom.app_smul _ r _).trans ((pushforward_obj_smul ι _ r _).trans ?_)
     exact (congrArg (fun z : Γ(Proj.twistingSheaf _ 1, ι ⁻¹ᵁ W) ↦ ι.app W r • z)
       ((π_app_universalQuotient_app_pullbackSectionsLE S E U e hWU).trans
         (Proj.twistingSheaf.toTwistingSheaf_eq_chartGenerator_one _ hb _ hWb))).trans
@@ -201,9 +194,10 @@ private theorem surjective_smul_universalQuotient_app_pullbackSectionsLE
   refine (Function.Surjective.of_comp_iff' (((symAlg S E).relativeProjTwistingSheafGlueData
     1).bijective_π_app ((symAlg S E).bijective_relativeProjTwistingSheafGlueData_map_app 1) hWA)
       _).mp ?_
-  exact Eq.mpr (congrArg Function.Surjective (funext key))
-    ((Proj.twistingSheaf.chartSectionsLinearEquiv 1 _ hb _ hWb).bijective.comp
-      (ConcreteCategory.bijective_of_isIso (ι.app W))).2
+  intro t
+  obtain ⟨r, hr⟩ := ((Proj.twistingSheaf.chartSectionsLinearEquiv 1 _ hb _ hWb).bijective.comp
+    (ConcreteCategory.bijective_of_isIso (ι.app W))).2 t
+  exact ⟨r, (key r).trans hr⟩
 
 /-- **The tautological quotient `π^* E ⟶ 𝒪(1)` is an epimorphism.** Every point of `P(E)` lies on
 the chart `D₊(b)` of a section `b` of `Sym¹ E ≅ E` over an affine open `U` of `S`, and there the
@@ -219,8 +213,7 @@ instance epi_universalQuotient : Epi (universalQuotient S E) := by
       (isGeneratedInDegreeOne_gradedSymmetricAlgebra _) U.toOpens U.property)).ge (Set.mem_univ y))
   obtain ⟨b, rfl⟩ := DirectSum.mem_summand.mp hb
   -- `b` is the image of a section `e` of `E`
-  let φ := (eqToIso (gradedSymmetricAlgebra_obj_obj_X ⟨E, inferInstance⟩ 1) ≪≫
-    (SheafOfModules.symmetricPowerOneIso S.sheaf).app E).inv
+  let φ := (gradedSymmetricAlgebraXOneIso ⟨E, inferInstance⟩).inv
   have : IsIso (φ.app U.toOpens) := Scheme.Modules.Hom.isIso_iff_isIso_app.mp inferInstance _
   obtain ⟨e, rfl⟩ := (ConcreteCategory.bijective_of_isIso (φ.app U.toOpens)).2 b
   let ι := colimit.ι (symAlg S E).relativeProjGluingData.functor U

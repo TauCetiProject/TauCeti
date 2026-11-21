@@ -29,6 +29,8 @@ basis.
   sections over `U` induced by an isomorphism of `𝒪_X`-modules;
 * `TauCeti.AlgebraicGeometry.Scheme.Modules.shortExact_map_toSheaf`: a short exact sequence of
   `𝒪_X`-modules stays short exact after forgetting the module structures;
+* `AlgebraicGeometry.Scheme.Modules.Hom.naturality_apply`: a morphism of `𝒪_X`-modules commutes
+  with restriction of sections;
 * `AlgebraicGeometry.Scheme.Modules.Hom.epi_of_forall_exists_surjective_smul`: a morphism of
   `𝒪_X`-modules is an epimorphism if every point has a neighbourhood on which the image of a single
   section generates the target;
@@ -144,6 +146,12 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.Hom.epi_of_surjective_on_affineO
     have hVU' : V ≤ U := hVU
     exact ⟨V, homOfLE hVU', hf V hV (N.presheaf.map (homOfLE hVU').op s), hxV⟩
   exact (toSheaf X).epi_of_epi_map (Sheaf.epi_of_isLocallySurjective _)
+
+/-- A morphism of `𝒪_X`-modules commutes with restriction of sections. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.Hom.naturality_apply {M N : X.Modules}
+    (f : M ⟶ N) {U V : X.Opens} (i : V ⟶ U) (s : Γ(M, U)) :
+    f.app V (M.presheaf.map i.op s) = N.presheaf.map i.op (f.app U s) :=
+  PresheafOfModules.naturality_apply f.val i.op s
 
 /-- **A morphism onto local generators is an epimorphism.** If every point of `X` has an open
 neighbourhood `V` and a section `s` of `M` over `V` such that, on every open `W ⊆ V`, every section
