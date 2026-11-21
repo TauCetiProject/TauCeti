@@ -10,6 +10,7 @@ public import Mathlib.Geometry.Manifold.PartitionOfUnity
 public import Mathlib.Topology.VectorBundle.Riemannian
 import Mathlib.Analysis.Normed.Module.HahnBanach
 import Mathlib.Geometry.Manifold.VectorBundle.Hom
+import Mathlib.Topology.VectorBundle.FiniteDimensional
 
 /-!
 # Nowhere-zero C^n sections from continuous ones
@@ -193,9 +194,7 @@ theorem exists_contMDiffSection_forall_mem_exists_pos_smul_of_continuousOn
   obtain ⟨t, ht⟩ := exists_contMDiffSection_forall_mem_apply_pos_of_apply_pos hD hℓ
   refine ⟨t, fun x hx ↦ ?_⟩
   -- The fibre `V x` is a line, so `t x` is a multiple `c • s x`, and `ℓ x` is positive on both.
-  have hV : Module.finrank ℝ (V x) = 1 :=
-    ((trivializationAt F V x).continuousLinearEquivAt ℝ x
-      (mem_baseSet_trivializationAt F V x)).toLinearEquiv.finrank_eq.trans hF
+  have hV : Module.finrank ℝ (V x) = 1 := (VectorBundle.finrank_eq ℝ F V x).trans hF
   obtain ⟨c, hc⟩ := (finrank_eq_one_iff_of_ne_zero' (s x) (hne x hx)).1 hV (t x)
   have hpos := ht x hx
   rw [← hc, map_smul, smul_eq_mul] at hpos
