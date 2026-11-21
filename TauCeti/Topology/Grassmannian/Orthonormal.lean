@@ -47,7 +47,9 @@ is the definition `TauCeti.finiteOrthonormalFrame.unitaryMulAction` rather than 
 for `r = N` the two actions would be actions of the same group; it restricts to the special
 unitary group (`TauCeti.finiteOrthonormalFrame.specialUnitaryMulAction`) and, over `ℝ`, to the
 special orthogonal group (`TauCeti.finiteOrthonormalFrame.specialOrthogonalMulAction`). The
-standard orthonormal frame `(e₀, …, e_{r-1})` is `TauCeti.finiteOrthonormalFrame.standard`.
+standard orthonormal frame `(e₀, …, e_{r-1})` is `TauCeti.finiteOrthonormalFrame.standard`, so
+orthonormal `r`-frames exist exactly when `r ≤ N`
+(`TauCeti.finiteOrthonormalFrame.nonempty_iff_le`).
 An orthonormal one-frame is the same as a unit vector
 (`TauCeti.finiteOrthonormalFrame.sphereHomeomorph`).
 
@@ -233,6 +235,13 @@ theorem coe_standard (h : r ≤ N) :
     ((standard 𝕜 h : finiteOrthonormalFrame 𝕜 r N) : Fin r → Fin N → 𝕜) =
       fun i ↦ Pi.single (Fin.castLE h i) 1 :=
   (rfl)
+
+variable (𝕜 r N) in
+/-- There is an orthonormal `r`-frame of `𝕜^N` exactly when `r ≤ N`: an orthonormal family is
+linearly independent, and the standard frame exists for `r ≤ N`. -/
+theorem nonempty_iff_le : Nonempty (finiteOrthonormalFrame 𝕜 r N) ↔ r ≤ N :=
+  ⟨fun ⟨f⟩ ↦ by simpa using f.property.linearIndependent.fintype_card_le_finrank,
+    fun h ↦ ⟨standard 𝕜 h⟩⟩
 
 variable (𝕜 r N) in
 /-- The action of the unitary group `U(N)` on orthonormal `r`-frames by `unitaryMap`. It is a
