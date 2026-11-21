@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
+public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 public import TauCeti.MeasureTheory.Function.Lp.ExtendByZero
+import TauCeti.MeasureTheory.Measure.Lebesgue.Basic
 
 /-!
 # Lebesgue time measure on a finite nonnegative horizon
@@ -36,6 +38,21 @@ noncomputable def timeMeasure (T : ℝ≥0) : Measure ℝ≥0 :=
 theorem timeMeasure_def (T : ℝ≥0) :
     timeMeasure T = (Measure.comap ((↑) : ℝ≥0 → ℝ) volume).restrict (Ioc 0 T) :=
   (rfl)
+
+/-- Coercing the finite-horizon time measure to real time gives Lebesgue measure on `(0,T]`. -/
+theorem map_coe_timeMeasure (T : ℝ≥0) :
+    (timeMeasure T).map ((↑) : ℝ≥0 → ℝ) = volume.restrict (Ioc 0 (T : ℝ)) := by
+  have hc := NNReal.isClosedEmbedding_coe.measurableEmbedding
+  have hsub : Ioc 0 (T : ℝ) ⊆ Ici 0 := fun _ ht ↦ ht.1.le
+  rw [timeMeasure_def, ← NNReal.comap_volume_restrict_Ioc, hc.map_comap,
+    Measure.restrict_restrict hc.measurableSet_range, NNReal.range_coe, inter_eq_right.mpr hsub]
+
+/-- Integrating a real-time function against the finite-horizon time measure is its set
+integral over `(0,T]`. -/
+theorem integral_timeMeasure {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (T : ℝ≥0) (f : ℝ → E) :
+    ∫ u, f (u : ℝ) ∂timeMeasure T = ∫ u in Ioc 0 (T : ℝ), f u := by
+  rw [← NNReal.isClosedEmbedding_coe.measurableEmbedding.integral_map f, map_coe_timeMeasure]
 
 /-- The mass of a measurable time set is its real Lebesgue mass within the horizon. -/
 theorem timeMeasure_apply (T : ℝ≥0) {s : Set ℝ≥0} (hs : MeasurableSet s) :
