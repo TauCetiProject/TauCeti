@@ -100,9 +100,9 @@ theorem projective_of_projective_kernel_of_hasProjectiveDimensionLE_one {X Y : C
     Projective X := by
   -- The image of `g` is a subobject of `Y` with quotient the cokernel of `g`, so it is projective,
   -- and `X` is an extension of it by `kernel g`.
-  have : HasProjectiveDimensionLE (cokernel (image.ι g)) 1 :=
-    hasProjectiveDimensionLT_of_iso (cokernelImageι g).symm _
-  have : Projective (image g) := projective_of_mono_of_hasProjectiveDimensionLE_one (image.ι g)
+  have : Projective (image g) := projective_iff_hasProjectiveDimensionLT_one.mpr
+    ((ShortComplex.shortExact_image_ι_cokernel_π g).hasProjectiveDimensionLT_X₁ 1
+      inferInstance inferInstance)
   have hS : (ShortComplex.mk (kernel.ι g) g (kernel.condition g)).Exact :=
     ShortComplex.kernelSequence_exact g
   exact projective_iff_hasProjectiveDimensionLT_one.mpr
