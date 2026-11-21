@@ -169,7 +169,7 @@ omit [CompactSpace G] [MeasurableSpace G] [OpensMeasurableSpace G] in
 include hρ hσ hτ in
 /-- The jets of the transported symbols `g • a` are jointly continuous in `g` and the
 position-frequency variables. -/
-private theorem continuous_iteratedFDeriv_transport (a : Symbol n V W m) (k : ℕ) :
+theorem continuous_iteratedFDeriv_transport (a : Symbol n V W m) (k : ℕ) :
     Continuous fun q : G × (CoordinateSpace n × CoordinateSpace n) ↦
       iteratedFDeriv ℝ k (transport (ρ q.1) (σ q.1) (τ q.1) a).coefficient q.2 := by
   -- All transported coefficients are slices of one smooth function of the parameters
@@ -261,7 +261,7 @@ omit [MeasurableSpace G] [OpensMeasurableSpace G] in
 include hρ hσ hτ in
 /-- The transported symbols `g • a` satisfy the estimates of order `m` on each compact set of
 positions with constants independent of `g`. -/
-private theorem exists_bound_transport (a : Symbol n V W m) (K : Set (CoordinateSpace n))
+theorem exists_bound_transport (a : Symbol n V W m) (K : Set (CoordinateSpace n))
     (hK : IsCompact K) (α β : List (Fin n)) :
     ∃ B, 0 ≤ B ∧ ∀ g, ∀ x ∈ K, ∀ ξ,
       ‖mixedDeriv α β (transport (ρ g) (σ g) (τ g) a).coefficient x ξ‖ ≤
