@@ -674,6 +674,7 @@ theorem eq_localAddHaar_iff (μ : Measure V) [μ.IsAddLeftInvariant]
 /-- Pushing a lattice-normalized Haar measure forward along a linear equivalence `e : V ≃ₗ[E] W`
 yields the Haar measure attached to the transported lattice
 `L.map ((e : V →ₗ[E] W).restrictScalars 𝒪[E])`. -/
+@[simp]
 theorem map_localAddHaar {W : Type*} [AddCommGroup W] [Module E W] [Module 𝒪[E] W]
     [IsScalarTower 𝒪[E] E W] [TopologicalSpace W] [IsModuleTopology E W]
     [MeasurableSpace W] [BorelSpace W] (e : V ≃ₗ[E] W) :
@@ -770,6 +771,7 @@ theorem localAddHaar_reindex {ι' : Type*} [Finite ι'] (b : Basis ι E V) (e : 
 
 /-- Pushing a basis-normalized Haar measure forward along a linear equivalence `e : V ≃ₗ[E] W`
 yields the Haar measure attached to the transported basis `b.map e`. -/
+@[simp]
 theorem map_localAddHaar {W : Type*} [AddCommGroup W] [Module E W] [Module 𝒪[E] W]
     [IsScalarTower 𝒪[E] E W] [TopologicalSpace W] [IsModuleTopology E W]
     [MeasurableSpace W] [BorelSpace W] (b : Basis ι E V) (e : V ≃ₗ[E] W) :
@@ -817,6 +819,22 @@ theorem localAddHaar_eq_of_valuation_det_eq_one {ι : Type*} [Fintype ι] [Decid
   simp
 
 end BorelV
+
+/-- On the field `E` itself, the singleton basis `Module.Basis.singleton ι E` induces
+`TauCeti.localAddHaar E`. -/
+@[simp]
+theorem localAddHaar_singleton {E ι : Type*} [Field E] [ValuativeRel E] [TopologicalSpace E]
+    [IsNonarchimedeanLocalField E] [MeasurableSpace E] [BorelSpace E] [Unique ι] :
+    (Basis.singleton ι E).localAddHaar = TauCeti.localAddHaar E := by
+  symm
+  refine (Basis.singleton ι E).eq_localAddHaar_iff _ |>.2 ?_
+  have hspan :
+      (Submodule.span 𝒪[E] (Set.range (Basis.singleton ι E)) : Set E) = (𝒪[E] : Set E) := by
+    ext x
+    simp only [SetLike.mem_coe, Basis.mem_span_iff_repr_mem, Basis.singleton_repr,
+      Unique.forall_iff]
+    exact ⟨fun ⟨a, ha⟩ ↦ ha ▸ a.property, fun hx ↦ ⟨⟨x, hx⟩, rfl⟩⟩
+  rw [hspan, localAddHaar_integer]
 
 /-- On the coordinate space `ι → E`, the standard basis `Pi.basisFun E ι` induces the product of
 copies of `TauCeti.localAddHaar E`. -/

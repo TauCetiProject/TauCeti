@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.LocalField.NormalizedValuation
 public import TauCeti.NumberTheory.LocalField.Uniformizer
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Completion
+public import TauCeti.RingTheory.DedekindDomain.AdicValuation.ResidueField
 
 /-!
 # The valuative relation on an adic completion
@@ -354,11 +355,11 @@ theorem coe_normalizedValuation_unitsMap_algebraMap [Finite (R ⧸ v.asIdeal)] (
     Units.coe_map, MonoidHom.coe_ofClass, algebraMap_adicCompletion, Function.comp_apply,
     valuedAdicCompletion_eq_valuation', Algebra.algebraMap_self_apply]
 
-/-- When `R` has finite quotients and `R ⧸ v.asIdeal` is finite, the normalized absolute value of
-`v.adicCompletion K` coincides with its pinned `nnnorm` `‖·‖₊`. -/
+/-- When `R` has finite quotients, the normalized absolute value of `v.adicCompletion K` coincides
+with its pinned `nnnorm` `‖·‖₊`. -/
 @[simp, grind =]
 theorem normalizedAbsoluteValue_adicCompletion_eq_nnnorm [Ring.HasFiniteQuotients R]
-    [Finite (R ⧸ v.asIdeal)] (x : v.adicCompletion K) :
+    (x : v.adicCompletion K) :
     (TauCeti.normalizedAbsoluteValue (v.adicCompletion K) x : NNReal) = ‖x‖₊ := by
   rcases eq_or_ne x 0 with rfl | hx
   · simp

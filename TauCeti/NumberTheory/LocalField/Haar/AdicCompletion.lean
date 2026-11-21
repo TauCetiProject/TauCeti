@@ -67,11 +67,11 @@ theorem localAddHaar_adicCompletionIntegers [Finite (R ⧸ v.asIdeal)]
     rfl
   rw [h, localAddHaar_integer]
 
-/-- **Adic completion Haar character equals pinned `nnnorm`.** When `R` has finite quotients and
-`R ⧸ v.asIdeal` is finite, the distributive Haar character of `a ∈ (v.adicCompletion K)ˣ` coincides
-with `‖a‖₊` for the pinned norm using `Ideal.absNorm v.asIdeal`. -/
+/-- **Adic completion Haar character equals pinned `nnnorm`.** When `R` has finite quotients, the
+distributive Haar character of `a ∈ (v.adicCompletion K)ˣ` coincides with `‖a‖₊` for the pinned
+norm using `Ideal.absNorm v.asIdeal`. -/
 @[simp, grind =]
-theorem distribHaarChar_adicCompletion [Ring.HasFiniteQuotients R] [Finite (R ⧸ v.asIdeal)]
+theorem distribHaarChar_adicCompletion [Ring.HasFiniteQuotients R]
     (a : (v.adicCompletion K)ˣ) :
     distribHaarChar (v.adicCompletion K) a = ‖(a : v.adicCompletion K)‖₊ := by
   rw [a.distribHaarChar_eq_normalizedAbsoluteValue,
