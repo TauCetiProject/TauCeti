@@ -484,7 +484,8 @@ with `‖b‖ ≤ β` and `‖c‖ ≤ γ` almost everywhere on `Ω`, and let `u
 
 `-∂ᵢ(aⁱʲ ∂ⱼu) + ⟨b, ∇u⟩ + c u = f` in `Ω`, with `f ∈ L²(Ω)`,
 
-with no boundary condition. Then every smooth `ψ` compactly supported in `Ω` satisfies
+with no boundary condition. Then every smooth `ψ` with compact support, either contained in `Ω`
+or arbitrary when `u ∈ H¹₀(Ω)`, satisfies
 
 `∫_Ω ψ² ‖∇u‖² ≤ 2 (2Λ/λ)² ∫_Ω ‖∇ψ‖² u² + ((2β/λ)² + 4γ/λ) ∫_Ω ψ² u² + (4/λ) ∫_Ω ψ² f u`.
 
@@ -501,7 +502,7 @@ theorem UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_sq_le_lowerOrder
     (hu : ∀ v : W1p0 mu Omega 2, energyFormH1 a b c u (v : W1p mu Omega 2) =
       ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu)
     {ψ : EuclideanSpace ℝ ι → ℝ} (hψ : ContDiff ℝ ∞ ψ) (hcpt : HasCompactSupport ψ)
-    (hts : tsupport ψ ⊆ (Omega : Set (EuclideanSpace ℝ ι))) :
+    (hts : tsupport ψ ⊆ (Omega : Set (EuclideanSpace ℝ ι)) ∨ u ∈ w1p0Submodule mu Omega 2) :
     ∫ x in Omega, ψ x ^ 2 * ‖W1p.gradient u x‖ ^ 2 ∂mu ≤
       2 * (2 * Lam / lam) ^ 2 * ∫ x in Omega, ‖∇ ψ x‖ ^ 2 * W1p.value u x ^ 2 ∂mu
         + ((2 * beta / lam) ^ 2 + 4 * gamma / lam) *
@@ -517,7 +518,7 @@ theorem UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_sq_le_lowerOrder
       h.upper_nonneg ha aestronglyMeasurable_const aestronglyMeasurable_const
       (fun _ hx eta xi => h.upper_bound hx eta xi) (fun _ _ => by simp) (fun _ _ => by simp)
   obtain ⟨v, hvalue, -, hstep⟩ :=
-    h.exists_setIntegral_sq_mul_norm_gradient_sq_le_energyFormH1 ha u hψ hcpt (.inl hts)
+    h.exists_setIntegral_sq_mul_norm_gradient_sq_le_energyFormH1 ha u hψ hcpt hts
   rw [energyFormH1_principal_eq_setIntegral_sub ha' hbM hcM hu v] at hstep
   have hforce := setIntegral_sub_inner_sub_mul_mul_le hlam hbM hcM hb_bound hc_bound f hvalue hψ
     hcpt
@@ -624,7 +625,7 @@ theorem exists_setIntegral_ball_norm_gradient_sq_le_lowerOrder :
   have hloc := hC u (A := 2 * (2 * Lam / lam) ^ 2) (g := g) (by positivity) hg
     (Eventually.of_forall fun x => by positivity) hrR hball fun ψ hψ hcpt hts => by
       linarith [h.setIntegral_sq_mul_norm_gradient_sq_le_lowerOrder ha hb hc hb_bound hc_bound hu
-        hψ hcpt hts, mul_setIntegral_add_div_mul_setIntegral_le hlam hR
+        hψ hcpt (.inl hts), mul_setIntegral_add_div_mul_setIntegral_le hlam hR
           ((2 * beta / lam) ^ 2 + 4 * gamma / lam) f u hψ hcpt]
   refine hloc.trans_eq ?_
   simp only [g]
