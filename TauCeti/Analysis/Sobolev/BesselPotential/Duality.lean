@@ -13,6 +13,7 @@ public import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
 public import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
 import Mathlib.Analysis.Normed.Operator.Extend
 import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
+import TauCeti.Analysis.Distribution.SchwartzSpace.ReciprocalWeight
 import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
@@ -308,18 +309,15 @@ product of the `L²` parts of `a ∈ H^{-r}` and `b ∈ H^r` is `∫ ⟪a, b⟫`
 theorem inner_toLp_toBesselPotentialSpaceCLM_neg (r : ℝ) (a b : 𝓢(E, F)) :
     ⟪(toBesselPotentialSpaceCLM (-r) 2 a).toLp, (toBesselPotentialSpaceCLM r 2 b).toLp⟫_ℂ =
       ∫ x, ⟪a x, b x⟫_ℂ := by
+  -- The weights `⟨ξ⟩ ^ (-r)` and `⟨ξ⟩ ^ r` are reciprocal.
   rw [toLp_toBesselPotentialSpaceCLM, toLp_toBesselPotentialSpaceCLM,
     inner_toL2_toL2_eq _ _ volume, ← integral_inner_fourier_fourier,
-    ← integral_inner_fourier_fourier a b]
+    integral_inner_eq_integral_inner_smul_fourier
+      (fun ξ ↦ (mul_comm _ _).trans (TauCeti.one_add_norm_sq_rpow_neg_mul_rpow ξ r)) a b]
   congr 1
   funext ξ
-  -- The weights `⟨ξ⟩ ^ (-r)` and `⟨ξ⟩ ^ r` multiply to `1`.
-  have hw : (1 + ‖ξ‖ ^ 2) ^ (-r / 2) * (1 + ‖ξ‖ ^ 2) ^ (r / 2) = 1 :=
-    TauCeti.one_add_norm_sq_rpow_neg_mul_rpow ξ r
   simp only [fourierMultiplierCLM_apply, fourier_fourierInv_eq]
   rw [smulLeftCLM_apply_apply (by fun_prop), smulLeftCLM_apply_apply (by fun_prop)]
-  rw [inner_smul_left, inner_smul_right, ← mul_assoc]
-  simp [← Complex.ofReal_mul, hw]
 
 /-- **Duality of `H^{-r}` and `H^r` under the `L²` pairing**:
 `|∫ ⟪a, b⟫| ≤ ‖a‖_{H^{-r}} ‖b‖_{H^r}` for Schwartz functions `a` and `b`. -/

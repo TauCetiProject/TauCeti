@@ -110,7 +110,7 @@ theorem norm_toBesselPotentialSpaceCLM_le_of_integral_mul_eq {s r C : ℝ} (hC :
     simp only [← integral_conj, map_mul, conjCLM_apply, RCLike.conj_conj] at h
     simp only [RCLike.inner_apply, conjCLM_apply]
     simpa only [mul_comm] using h
-  simpa [hconj] using
+  simpa only [hconj, conjCLM_conjCLM] using
     norm_toBesselPotentialSpaceCLM_le_of_integral_inner_eq hC hadj hAC (conjCLM v)
 
 /-- **Formal adjoints extend to the dual orders.** If `A` extends to a bounded operator
@@ -144,16 +144,12 @@ theorem inner_toLp_eq_of_integral_inner_eq {A : 𝓢(E, F) →L[ℂ] 𝓢(E, G)}
     (g : H^{-r}(E, G)) :
     ⟪(T' g).toLp, f.toLp⟫_ℂ = ⟪g.toLp, (T f).toLp⟫_ℂ := by
   -- Both sides are continuous in `f` and `g`, so it suffices to take Schwartz functions.
-  have hF (σ : ℝ) : Continuous fun f : H^{σ}(E, F) ↦ f.toLp :=
-    (funext toLpₗᵢ_apply : ⇑(toLpₗᵢ E F σ 2) = _) ▸ (toLpₗᵢ E F σ 2).continuous
-  have hG (σ : ℝ) : Continuous fun g : H^{σ}(E, G) ↦ g.toLp :=
-    (funext toLpₗᵢ_apply : ⇑(toLpₗᵢ E G σ 2) = _) ▸ (toLpₗᵢ E G σ 2).continuous
   refine (denseRange_toBesselPotentialSpaceCLM (p := 2) s ENNReal.ofNat_ne_top).induction_on f
-    (isClosed_eq (continuous_const.inner (hF s))
-      (continuous_const.inner ((hG r).comp T.continuous))) fun u ↦ ?_
+    (isClosed_eq (continuous_const.inner continuous_toLp)
+      (continuous_const.inner (continuous_toLp.comp T.continuous))) fun u ↦ ?_
   refine (denseRange_toBesselPotentialSpaceCLM (p := 2) (-r) ENNReal.ofNat_ne_top).induction_on g
-    (isClosed_eq (((hF (-s)).comp T'.continuous).inner continuous_const)
-      ((hG (-r)).inner continuous_const)) fun v ↦ ?_
+    (isClosed_eq ((continuous_toLp.comp T'.continuous).inner continuous_const)
+      (continuous_toLp.inner continuous_const)) fun v ↦ ?_
   have hTu := congr($hT u)
   have hTv := congr($hT' v)
   simp only [ContinuousLinearMap.comp_apply] at hTu hTv
