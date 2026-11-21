@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
+import TauCeti.Topology.Algebra.Module.Spaces.PointwiseConvergenceCLM
 
 /-!
 # Applying a continuous linear map to the values of Bessel-potential functions
@@ -27,6 +28,8 @@ Hilbert-space values with Plancherel's theorem transfer to any finite-dimensiona
   `L : F →L[ℂ] G`.
 * `SchwartzMap.toBesselPotentialSpaceCLM_postcompCLM`: on Schwartz functions it is
   `u ↦ L ∘ u`.
+* `TemperedDistribution.MemSobolev.postcomp`: applying `L` to the values of a tempered
+  distribution in `H^{s,p}(E, F)` gives one in `H^{s,p}(E, G)`.
 -/
 
 public section
@@ -76,6 +79,18 @@ theorem toLp_postcomp (L : F →L[ℂ] G) (f : H^{s, p}(E, F)) :
   (rfl)
 
 end BesselPotentialSpace
+
+/-- **Applying a continuous linear map to the values preserves `H^{s,p}`.** If the tempered
+distribution `f` lies in `H^{s,p}(E, F)`, then `φ ↦ L (f φ)` lies in `H^{s,p}(E, G)`. -/
+theorem TemperedDistribution.MemSobolev.postcomp {s : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    {f : 𝓢'(E, F)} (hf : MemSobolev s p f) (L : F →L[ℂ] G) :
+    MemSobolev s p (PointwiseConvergenceCLM.postcomp _ L f) := by
+  have h : (BesselPotentialSpace.postcomp E s p L hf.toBesselPotentialSpace).toDistr =
+      PointwiseConvergenceCLM.postcomp _ L f := by
+    ext φ
+    rw [BesselPotentialSpace.toDistr_postcomp_apply, MemSobolev.toBesselPotentialSpace_toDistr,
+      PointwiseConvergenceCLM.postcomp_apply_apply]
+  exact h ▸ BesselPotentialSpace.memSobolev_toDistr _
 
 /-- On Schwartz functions, the operator induced by `L` on `H^{s,p}` is `u ↦ L ∘ u`. -/
 theorem SchwartzMap.toBesselPotentialSpaceCLM_postcompCLM {s : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)]
