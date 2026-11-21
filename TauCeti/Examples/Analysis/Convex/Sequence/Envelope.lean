@@ -166,7 +166,7 @@ theorem alternatingHeights_def (n : ℕ) :
   by_cases hn : Even n <;> simp [alternatingHeights_def, hn]
 
 /-- Every alternating height is nonnegative. -/
-theorem zero_le_alternatingHeights (n : ℕ) : 0 ≤ alternatingHeights n := by
+theorem alternatingHeights_nonneg (n : ℕ) : 0 ≤ alternatingHeights n := by
   rw [alternatingHeights_def]
   split_ifs <;> simp
 
@@ -180,7 +180,7 @@ theorem not_isConvexSeq_alternatingHeights : ¬IsConvexSeq alternatingHeights :=
 /-- The lower convex envelope of the alternating heights is the horizontal ray of height `0`. -/
 @[simp] theorem lowerConvexEnvelope_alternatingHeights :
     lowerConvexEnvelope alternatingHeights = 0 := by
-  refine (IsLowerConvexEnvelope.eq_lowerConvexEnvelope ⟨?_, zero_le_alternatingHeights, ?_⟩).symm
+  refine (IsLowerConvexEnvelope.eq_lowerConvexEnvelope ⟨?_, alternatingHeights_nonneg, ?_⟩).symm
   · simpa [Pi.zero_def] using isConvexSeq_affine 0 0
   · intro g hg hga n
     obtain ⟨k, rfl | rfl⟩ := Nat.even_or_odd' n
