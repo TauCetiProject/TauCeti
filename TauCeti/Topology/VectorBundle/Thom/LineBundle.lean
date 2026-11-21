@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.LocalCoefficient.TransferSequence
 public import TauCeti.AlgebraicTopology.Singular.Transfer.CoveringPair
 public import TauCeti.Topology.VectorBundle.SphereBundle.LocallyTrivial
 
@@ -40,6 +41,16 @@ followed by the isomorphism of the pair `(D(E), S(E))` over the double cover
 lifts the connecting map of the pair: composed with the map `Hₙ(B; L) ⟶ Hₙ(B; R[S(E)]) ≅ Hₙ(S(E))`
 induced by `L ⟶ R[S(E)]`, it is that connecting map
 (`TauCeti.gaugeDiscSpherePairMap_comp_thomPairSingularHomologySuccIsoTwistedHomology_hom_comp`).
+
+In characteristic two the twist disappears. If `R` has characteristic two, such as `ZMod 2`, the
+transfer `R ⟶ R[S(E)]`, which sends `r` to `r` times the sum of the two unit vectors, followed by
+the augmentation is short exact
+(`IsCoveringMap.shortExact_permutationLocalSystemTransfer_augmentation`), so `L` may be taken
+constant. This gives the **mod `2` Thom isomorphism of a line bundle**,
+`Hₙ₊₁(E, E₀; R) ≅ Hₙ(B; R)`, with constant coefficients, over an arbitrary base and with no
+orientation (`TauCeti.thomPairSingularHomologySuccIsoSingularHomology`). Followed by the transfer
+`Hₙ(B; R) ⟶ Hₙ(S(E); R)` of the double cover, it is the connecting map of the disc-sphere pair
+(`TauCeti.gaugeDiscSpherePairMap_comp_thomPairSingularHomologySuccIsoSingularHomology_hom_comp`).
 
 ## References
 
@@ -122,5 +133,50 @@ theorem gaugeDiscSpherePairMap_comp_thomPairSingularHomologySuccIsoTwistedHomolo
         (ModuleCat.of R R) (n + 1) n := by
   rw [gaugeDiscSpherePairMap_comp_thomPairSingularHomologySuccIsoTwistedHomology_hom_assoc]
   exact TopPair.singularHomologySuccIsoTwistedHomology_hom_comp _ _ _ _ _ _ n
+
+section CharTwo
+
+variable (R) [CharP R 2]
+
+/-- **The mod `2` Thom isomorphism of a line bundle in homology.** Let `E → B` be a real vector
+bundle of rank one whose fibre norm is continuous on the total space, over an arbitrary base, and
+let `R` be a ring of characteristic two, such as `ZMod 2`. Then `Hₙ₊₁(E, E₀; R) ≅ Hₙ(B; R)`, with
+constant coefficients and no orientation. It is the Thom isomorphism
+`TauCeti.thomPairSingularHomologySuccIsoTwistedHomology` for the short exact sequence
+`0 ⟶ R ⟶ R[S(E)] ⟶ R ⟶ 0` of the transfer and the augmentation of the double cover `S(E) → B`
+(`IsCoveringMap.shortExact_permutationLocalSystemTransfer_augmentation`). -/
+def thomPairSingularHomologySuccIsoSingularHomology (n : ℕ) :
+    (thomPair F E).singularHomology (ModuleCat.of R R) (n + 1) ≅
+      ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj
+        (ModuleCat.of R R)).obj (TopCat.of B) :=
+  thomPairSingularHomologySuccIsoTwistedHomology hnorm hF
+      (IsCoveringMap.shortExact_permutationLocalSystemTransfer_augmentation
+        (p := TopCat.ofHom (sphereBundleProj F E)) (isCoveringMap_sphereBundleProj F E hnorm hF)
+        (finite_sphereBundleProj_preimage_singleton F E hF)
+        (natCard_sphereBundleProj_preimage_singleton F E hF)) n ≪≫
+    LocalCoefficientSystem.twistedHomologyConstantIso (TopCat.of B) (ModuleCat.of R R) n
+
+/-- The mod `2` Thom isomorphism of a line bundle, read on the disc-sphere pair and followed by the
+transfer `Hₙ(B; R) ⟶ Hₙ(S(E); R)` of the double cover `S(E) → B`, is the connecting map
+`Hₙ₊₁(D(E), S(E)) ⟶ Hₙ(S(E))` of the disc-sphere pair. -/
+@[reassoc]
+theorem gaugeDiscSpherePairMap_comp_thomPairSingularHomologySuccIsoSingularHomology_hom_comp
+    (n : ℕ) :
+    TopPair.singularHomologyMap (gaugeDiscSpherePairMap (isFiberGauge_norm hnorm))
+        (ModuleCat.of R R) (n + 1) ≫
+        (thomPairSingularHomologySuccIsoSingularHomology hnorm hF R n).hom ≫
+          HomologicalComplex.homologyMap
+            ((isCoveringMap_sphereBundleProj F E hnorm hF).singularTransfer
+              (p := TopCat.ofHom (sphereBundleProj F E))
+              (finite_sphereBundleProj_preimage_singleton F E hF) (ModuleCat.of R R)) n =
+      (gaugeDiscSpherePair fun v : TotalSpace F E ↦ ‖v.snd‖).singularHomologyδ
+        (ModuleCat.of R R) (n + 1) n := by
+  rw [thomPairSingularHomologySuccIsoSingularHomology, Iso.trans_hom,
+    ← IsCoveringMap.transfer_comp_singularHomologyPermutationIso_inv]
+  simp only [Category.assoc, Iso.hom_inv_id_assoc]
+  exact gaugeDiscSpherePairMap_comp_thomPairSingularHomologySuccIsoTwistedHomology_hom_comp hnorm hF
+    _ n
+
+end CharTwo
 
 end TauCeti
