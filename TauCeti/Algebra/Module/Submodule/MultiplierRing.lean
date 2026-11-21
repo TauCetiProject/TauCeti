@@ -31,7 +31,8 @@ lattice in a finite algebra over a Huber ring yields a pair of definition.
   `Jⁿ ⊆ Iⁿ • M`.
 * `Submodule.smul_subset_coe_map_pow`: if `Iʲ • M ⊆ B₀`, then `I^(n + j) • M ⊆ Jⁿ`.
 * `Submodule.isIntegral_of_mem_multiplierRing`: if `M` is finitely generated and contains `1`,
-  every element of `B₀` is integral over `R`.
+  every element of `B₀` is integral over `R`. This holds in any `R`-algebra `B`, commutative or
+  not, with `B₀` the ring of left multipliers of `M`.
 -/
 
 public section
@@ -40,7 +41,11 @@ open scoped Pointwise
 
 namespace Submodule
 
-variable {R : Type*} [CommRing R] {B : Type*} [CommRing B] [Algebra R B]
+variable {R : Type*} [CommRing R]
+
+section CommRing
+
+variable {B : Type*} [CommRing B] [Algebra R B]
 
 /-- The image of `R` lies in the multiplier ring of an `R`-submodule. -/
 theorem algebraMap_mem_multiplierRing (M : Submodule R B) (a : R) :
@@ -107,12 +112,16 @@ theorem smul_subset_coe_map_pow {M : Submodule R B} {I : Ideal R} {j : ℕ}
   · rintro _ _ ⟨x, hx, rfl⟩ ⟨y, hy, rfl⟩
     exact ⟨x + y, Ideal.add_mem _ hx hy, rfl⟩
 
+end CommRing
+
 /-- **The multiplier ring of a finitely generated submodule containing `1` is integral.** If `M`
-is a finitely generated `R`-submodule of `B` with `1 ∈ M`, every `b ∈ B` with `b M ⊆ M` is
-integral over `R`: by Cayley–Hamilton, multiplication by `b` on `M` satisfies a monic polynomial,
-and evaluating at `1` shows that `b` satisfies it too. -/
-theorem isIntegral_of_mem_multiplierRing {M : Submodule R B} (hM : M.FG) (h1 : (1 : B) ∈ M)
-    {b : B} (hb : b ∈ M.toAddSubgroup.multiplierRing) : IsIntegral R b := by
+is a finitely generated `R`-submodule of an `R`-algebra `B` with `1 ∈ M`, every `b ∈ B` with
+`b M ⊆ M` is integral over `R`. The algebra `B` need not be commutative. By Cayley–Hamilton, left
+multiplication by `b` on `M` satisfies a monic polynomial, and evaluating at `1` shows that `b`
+satisfies it too. -/
+theorem isIntegral_of_mem_multiplierRing {B : Type*} [Ring B] [Algebra R B] {M : Submodule R B}
+    (hM : M.FG) (h1 : (1 : B) ∈ M) {b : B} (hb : b ∈ M.toAddSubgroup.multiplierRing) :
+    IsIntegral R b := by
   have : Module.Finite R M := Module.Finite.iff_fg.mpr hM
   let f : Module.End R M :=
     (LinearMap.mulLeft R b).restrict fun m hm ↦ AddSubgroup.mem_multiplierRing.mp hb m hm
