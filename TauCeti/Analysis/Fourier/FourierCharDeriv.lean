@@ -9,7 +9,6 @@ public import Mathlib.Analysis.Calculus.LineDeriv.Basic
 public import Mathlib.Analysis.Distribution.TemperateGrowth
 public import Mathlib.Analysis.Fourier.FourierTransform
 import Mathlib.Analysis.Fourier.FourierTransformDeriv
-import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.PositiveDefinite.FourierAtom
 import TauCeti.Topology.Circle.Metric
 
