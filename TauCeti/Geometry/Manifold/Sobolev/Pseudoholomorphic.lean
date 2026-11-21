@@ -83,8 +83,9 @@ No dimension hypothesis on `E` is needed; the theorems assume it complete, as we
 require.
 That the equation in one atlas of each implies it in all charts is
 `TauCeti.isWeakPseudoholomorphicOn_iff_of_subset_maximalAtlas`, in
-`TauCeti.Geometry.Manifold.Sobolev.Pseudoholomorphic.Atlas`. Its invariance under
-diffeomorphisms of `M`, and boundary conditions, are not treated here.
+`TauCeti.Geometry.Manifold.Sobolev.Pseudoholomorphic.Atlas`. Invariance under diffeomorphisms
+of `M` is proved in `TauCeti.Geometry.Manifold.Sobolev.Pseudoholomorphic.TargetDiffeomorph`.
+Boundary conditions are not treated here.
 
 ## References
 
