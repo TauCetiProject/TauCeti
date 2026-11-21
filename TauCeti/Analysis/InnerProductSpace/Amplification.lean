@@ -10,6 +10,8 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Topology.Algebra.Module.Spaces.PointwiseConvergenceCLM
 public import TauCeti.Analysis.Normed.Lp.PiLp
 
+import TauCeti.Analysis.InnerProductSpace.PiL2
+
 /-!
 # Amplification and operator matrices on a finite Hilbert sum
 
@@ -18,11 +20,17 @@ acts diagonally on the Hilbert sum `PiLp 2 (fun _ : ι => H)` of copies of `H`, 
 `s ⊕ ⋯ ⊕ s`. This diagonal amplification is a star algebra homomorphism,
 `PiLp.diagStarAlgHom`. Conversely, every operator `T` on the Hilbert sum has matrix entries
 `ContinuousLinearMap.piLpEntry T i j : H →L[𝕜] H`, and `T` acts through them
-(`ContinuousLinearMap.apply_eq_sum_piLpEntry`), is determined by them
+(`ContinuousLinearMap.apply_eq_sum_piLpEntry`), so it is determined by them
 (`ContinuousLinearMap.ext_piLpEntry`), and converges pointwise if and only if every matrix entry
 converges pointwise (`ContinuousLinearMap.forall_tendsto_apply_iff_forall_tendsto_piLpEntry_apply`).
 Extracting a matrix entry is also a continuous linear map for the strong operator topology
-(`PointwiseConvergenceCLM.piLpEntryCLM`).
+(`PointwiseConvergenceCLM.piLpEntryCLM`). Every family of entries arises from the operator
+`ContinuousLinearMap.ofPiLpEntries`. Entries compute products as matrix products
+(`ContinuousLinearMap.piLpEntry_mul`) and adjoints as conjugate transposes
+(`ContinuousLinearMap.piLpEntry_star`), and are bounded in norm by the operator
+(`ContinuousLinearMap.norm_piLpEntry_le`); the adjoint formula reads coordinates off through
+`PiLp.inner_single_left`. The amplification of `s` has `s` on the diagonal
+and `0` off it (`ContinuousLinearMap.piLpEntry_diagStarAlgHom`).
 
 In the opposite direction, `PiLp.singleEntryCLM i j s` places `s` in the `(i, j)` block and `0`
 elsewhere, decomposing every operator on the Hilbert sum into a finite double sum of matrix units
@@ -30,11 +38,10 @@ elsewhere, decomposing every operator on the Hilbert sum into a finite double su
 `singleEntryCLM i j s + singleEntryCLM j i (star s)` has operator norm equal to `‖s‖`
 (`PiLp.norm_singleEntryCLM_add_singleEntryCLM_star`).
 
-For a unital star subalgebra `S : StarSubalgebra 𝕜 (H →L[𝕜] H)`, `S.piLpMatrix ι` is the unital
-star subalgebra of operators on the Hilbert sum whose matrix entries lie in `S`. Its commutant
-consists of block-diagonal operators with constant diagonal entry in `S'`
-(`StarSubalgebra.centralizer_coe_piLpMatrix`), so its double commutant consists of operators whose
-matrix entries lie in `S''` (`StarSubalgebra.centralizer_centralizer_coe_piLpMatrix`).
+Amplification turns statements about finitely many vectors of `H` into statements about a single
+vector of the Hilbert sum; in particular, `PiLp.diagStarAlgHom_mem_centralizer_centralizer` sends
+the double commutant `s''` of any set of operators `s` into the double commutant of its diagonal
+copy, which is how the von Neumann density theorem passes from one vector to finitely many.
 -/
 
 public section
@@ -104,14 +111,13 @@ theorem apply_eq_sum_piLpEntry [Fintype ι]
   conv_lhs => rw [hw]
   simp [map_sum]
 
-/-- Operators on the finite Hilbert sum are determined by their matrix entries. -/
+/-- Two operators on the Hilbert sum with the same matrix entries are equal. -/
 theorem ext_piLpEntry [Finite ι]
-    {S T : PiLp 2 (fun _ : ι => H) →L[𝕜] PiLp 2 (fun _ : ι => H)}
-    (h : ∀ i j, S.piLpEntry i j = T.piLpEntry i j) : S = T := by
+    {T U : PiLp 2 (fun _ : ι => H) →L[𝕜] PiLp 2 (fun _ : ι => H)}
+    (h : ∀ i j, T.piLpEntry i j = U.piLpEntry i j) : T = U := by
   have := Fintype.ofFinite ι
   ext w i
-  rw [S.apply_eq_sum_piLpEntry, T.apply_eq_sum_piLpEntry]
-  simp_rw [h]
+  simp only [apply_eq_sum_piLpEntry, h]
 
 /-- Pointwise convergence of operators on the finite Hilbert sum is equivalent to pointwise
 convergence of every matrix entry. -/
@@ -130,14 +136,13 @@ theorem forall_tendsto_apply_iff_forall_tendsto_piLpEntry_apply [Finite ι] {α 
   exact ((PiLp.continuousLinearEquiv 2 𝕜 (fun _ : ι => H)).symm.continuous.tendsto _).comp
     (tendsto_pi_nhds.2 hcoord)
 
-/-- The matrix entry of a product of operators on the finite Hilbert sum is given by block matrix
-multiplication. -/
+/-- The matrix entries of a product are the matrix products of the entries. -/
 theorem piLpEntry_mul [Fintype ι]
-    (S T : PiLp 2 (fun _ : ι => H) →L[𝕜] PiLp 2 (fun _ : ι => H)) (i j : ι) :
-    (S * T).piLpEntry i j = ∑ k, S.piLpEntry i k * T.piLpEntry k j := by
+    (T U : PiLp 2 (fun _ : ι => H) →L[𝕜] PiLp 2 (fun _ : ι => H))
+    (i k : ι) : (T * U).piLpEntry i k = ∑ j, T.piLpEntry i j * U.piLpEntry j k := by
   ext h
-  rw [piLpEntry_apply, mul_apply_eq_comp, S.apply_eq_sum_piLpEntry]
-  simp only [sum_apply, mul_apply_eq_comp, piLpEntry_apply]
+  rw [piLpEntry_apply, mul_apply_eq_comp, apply_eq_sum_piLpEntry T, sum_apply]
+  simp only [mul_apply_eq_comp, piLpEntry_apply]
 
 /-- Right multiplication by a block-diagonal operator multiplies column `j` on the right by its
 `(j, j)` entry. -/
@@ -163,17 +168,15 @@ theorem piLpEntry_mul_of_offDiag_zero_left [Finite ι]
 
 variable [Fintype ι]
 
+/-- The matrix entries of the adjoint are the adjoints of the transposed entries. -/
 @[simp]
 theorem piLpEntry_star [CompleteSpace H]
     (T : PiLp 2 (fun _ : ι => H) →L[𝕜] PiLp 2 (fun _ : ι => H)) (i j : ι) :
     (star T).piLpEntry i j = star (T.piLpEntry j i) := by
-  simp only [star_eq_adjoint, eq_adjoint_iff]
-  intro x y
-  have h := adjoint_inner_left T (PiLp.single 2 i y) (PiLp.single 2 j x)
-  rw [PiLp.inner_apply, PiLp.inner_apply,
-    Finset.sum_eq_single i (fun k _ hk => by simp [hk]) (by simp),
-    Finset.sum_eq_single j (fun k _ hk => by simp [hk]) (by simp)] at h
-  simpa using h
+  refine ContinuousLinearMap.ext fun h => ext_inner_left 𝕜 fun u => ?_
+  rw [star_eq_adjoint, star_eq_adjoint, piLpEntry_apply, adjoint_inner_right, piLpEntry_apply,
+    ← PiLp.inner_single_left (F := fun _ : ι => H) i u, adjoint_inner_right, ← inner_conj_symm,
+    PiLp.inner_single_left (F := fun _ : ι => H) j, inner_conj_symm]
 
 /-- For a self-adjoint operator on the finite Hilbert sum, taking the adjoint of the `(i, j)`
 matrix entry gives the `(j, i)` matrix entry. -/
@@ -182,17 +185,44 @@ theorem _root_.IsSelfAdjoint.star_piLpEntry [CompleteSpace H]
     (i j : ι) : star (T.piLpEntry i j) = T.piLpEntry j i := by
   rw [← piLpEntry_star, hT.star_eq]
 
-/-- Every matrix entry has operator norm bounded by the operator norm on the Hilbert sum. -/
-theorem norm_piLpEntry_le
-    (T : PiLp 2 (fun _ : ι => H) →L[𝕜] PiLp 2 (fun _ : ι => H)) (i j : ι) :
-    ‖T.piLpEntry i j‖ ≤ ‖T‖ := by
-  refine (T.piLpEntry i j).opNorm_le_bound (norm_nonneg T) fun h => ?_
-  let v : PiLp 2 (fun _ : ι => H) := PiLp.single 2 j h
-  calc ‖T.piLpEntry i j h‖ ≤ ‖T v‖ := PiLp.norm_apply_le (T v) i
-    _ ≤ ‖T‖ * ‖v‖ := T.le_opNorm v
-    _ = ‖T‖ * ‖h‖ := by rw [PiLp.norm_single]
+/-- Every matrix entry of an operator on the Hilbert sum has norm at most that of the operator. -/
+theorem norm_piLpEntry_le (T : PiLp 2 (fun _ : ι => H) →L[𝕜] PiLp 2 (fun _ : ι => H))
+    (i j : ι) : ‖T.piLpEntry i j‖ ≤ ‖T‖ :=
+  opNorm_le_bound _ (norm_nonneg T) fun h => by
+    rw [piLpEntry_apply]
+    exact (PiLp.norm_apply_le (T (PiLp.single 2 j h)) i).trans
+      ((T.le_opNorm _).trans_eq (by rw [PiLp.norm_single]))
 
 end EntryAlgebra
+
+variable [Fintype ι]
+
+/-- The operator on the Hilbert sum with prescribed matrix entries `A i j`: it sends `w` to the
+vector with components `∑ j, A i j (w j)`. -/
+noncomputable def ofPiLpEntries (A : ι → ι → H →L[𝕜] H) :
+    PiLp 2 (fun _ : ι => H) →L[𝕜] PiLp 2 (fun _ : ι => H) :=
+  (PiLp.continuousLinearEquiv 2 𝕜 (fun _ : ι => H)).symm.toContinuousLinearMap ∘L
+    ContinuousLinearMap.pi fun i => ∑ j, A i j ∘L PiLp.proj 2 (fun _ : ι => H) j
+
+@[simp]
+theorem ofPiLpEntries_apply (A : ι → ι → H →L[𝕜] H) (w : PiLp 2 (fun _ : ι => H)) (i : ι) :
+    ofPiLpEntries A w i = ∑ j, A i j (w j) := by
+  simp [ofPiLpEntries, sum_apply]
+
+variable [DecidableEq ι]
+
+@[simp]
+theorem piLpEntry_ofPiLpEntries (A : ι → ι → H →L[𝕜] H) (i j : ι) :
+    (ofPiLpEntries A).piLpEntry i j = A i j := by
+  ext h
+  rw [piLpEntry_apply, ofPiLpEntries_apply,
+    Finset.sum_eq_single j (fun b _ hb => by simp [hb]) (by simp)]
+  simp
+
+@[simp]
+theorem ofPiLpEntries_piLpEntry (T : PiLp 2 (fun _ : ι => H) →L[𝕜] PiLp 2 (fun _ : ι => H)) :
+    ofPiLpEntries T.piLpEntry = T :=
+  ext_piLpEntry fun i j => piLpEntry_ofPiLpEntries _ i j
 
 end ContinuousLinearMap
 
@@ -397,6 +427,29 @@ theorem diagStarAlgHom_apply_single [DecidableEq ι] (s : H →L[𝕜] H) (j : �
   · subst hk; simp
   · simp [hk]
 
+/-- The diagonal amplification of an operator in `s''` lies in the double commutant of the
+diagonal amplification of `s`. -/
+theorem diagStarAlgHom_mem_centralizer_centralizer {s : Set (H →L[𝕜] H)} {x : H →L[𝕜] H}
+    (hx : x ∈ s.centralizer.centralizer) :
+    diagStarAlgHom 𝕜 H ι x ∈ (diagStarAlgHom 𝕜 H ι '' s).centralizer.centralizer := by
+  classical
+  intro T hT
+  -- the matrix entries of an operator commuting with the diagonal copy of `s` lie in `s'`
+  have hentry (i j : ι) : T.piLpEntry i j ∈ s.centralizer := by
+    intro a ha
+    have haT := hT _ ⟨a, ha, rfl⟩
+    ext h
+    have h' := congr_arg (fun w => w i) (DFunLike.congr_fun haT (PiLp.single 2 j h))
+    simp only [mul_apply_eq_comp, diagStarAlgHom_apply, diagStarAlgHom_apply_single] at h'
+    simpa [mul_apply_eq_comp] using h'
+  ext w i
+  simp only [mul_apply_eq_comp]
+  rw [ContinuousLinearMap.apply_eq_sum_piLpEntry, diagStarAlgHom_apply,
+    ContinuousLinearMap.apply_eq_sum_piLpEntry, map_sum]
+  refine Finset.sum_congr rfl fun j _ => ?_
+  rw [diagStarAlgHom_apply]
+  simpa using DFunLike.congr_fun (hx _ (hentry i j)) (w j)
+
 end PiLp
 
 namespace ContinuousLinearMap
@@ -412,117 +465,22 @@ theorem piLpEntry_diagStarAlgHom (s : H →L[𝕜] H) (i j : ι) :
   · subst hij; simp
   · simp [hij]
 
-/-- Left multiplication by a diagonal amplification multiplies every matrix entry on the left. -/
-@[simp]
-theorem piLpEntry_diagStarAlgHom_mul (s : H →L[𝕜] H)
-    (T : PiLp 2 (fun _ : ι => H) →L[𝕜] PiLp 2 (fun _ : ι => H)) (i j : ι) :
-    (PiLp.diagStarAlgHom 𝕜 H ι s * T).piLpEntry i j = s * T.piLpEntry i j := by
-  ext h; simp [mul_apply_eq_comp]
-
-/-- Right multiplication by a diagonal amplification multiplies every matrix entry on the right. -/
+/-- Multiplying on the right by the diagonal amplification of `s` multiplies every matrix entry
+on the right by `s`. -/
 @[simp]
 theorem piLpEntry_mul_diagStarAlgHom
     (T : PiLp 2 (fun _ : ι => H) →L[𝕜] PiLp 2 (fun _ : ι => H)) (s : H →L[𝕜] H) (i j : ι) :
     (T * PiLp.diagStarAlgHom 𝕜 H ι s).piLpEntry i j = T.piLpEntry i j * s := by
-  ext h; simp [mul_apply_eq_comp]
+  ext h
+  simp [mul_apply_eq_comp]
+
+/-- Multiplying on the left by the diagonal amplification of `s` multiplies every matrix entry
+on the left by `s`. -/
+@[simp]
+theorem piLpEntry_diagStarAlgHom_mul
+    (T : PiLp 2 (fun _ : ι => H) →L[𝕜] PiLp 2 (fun _ : ι => H)) (s : H →L[𝕜] H) (i j : ι) :
+    (PiLp.diagStarAlgHom 𝕜 H ι s * T).piLpEntry i j = s * T.piLpEntry i j := by
+  ext h
+  simp [mul_apply_eq_comp]
 
 end ContinuousLinearMap
-
-namespace StarSubalgebra
-
-section MatrixAmplification
-
-variable [CompleteSpace H]
-
-/-- The unital star subalgebra of operators on `PiLp 2 (fun _ : ι => H)` whose `(i, j)` matrix
-entries all belong to `S`. -/
-noncomputable def piLpMatrix (S : StarSubalgebra 𝕜 (H →L[𝕜] H)) (ι : Type*) [Fintype ι]
-    [DecidableEq ι] :
-    StarSubalgebra 𝕜 (PiLp 2 (fun _ : ι => H) →L[𝕜] PiLp 2 (fun _ : ι => H)) where
-  carrier := {T | ∀ i j, T.piLpEntry i j ∈ S}
-  mul_mem' {A B} hA hB i j := by
-    rw [ContinuousLinearMap.piLpEntry_mul]
-    exact sum_mem fun k _ ↦ S.mul_mem (hA i k) (hB k j)
-  add_mem' {A B} hA hB i j := by
-    rw [ContinuousLinearMap.piLpEntry_add]
-    exact S.add_mem (hA i j) (hB i j)
-  algebraMap_mem' r i j := by
-    rw [Algebra.algebraMap_eq_smul_one, ContinuousLinearMap.piLpEntry_smul,
-      ContinuousLinearMap.piLpEntry_one]
-    by_cases hij : i = j
-    · simp [hij, ← Algebra.algebraMap_eq_smul_one, S.algebraMap_mem r]
-    · simp [hij]
-  star_mem' {A} hA i j := by
-    rw [ContinuousLinearMap.piLpEntry_star]
-    exact star_mem (hA j i)
-
-@[simp]
-theorem mem_piLpMatrix_iff {S : StarSubalgebra 𝕜 (H →L[𝕜] H)} {ι : Type*} [Fintype ι]
-    [DecidableEq ι] {T : PiLp 2 (fun _ : ι => H) →L[𝕜] PiLp 2 (fun _ : ι => H)} :
-    T ∈ S.piLpMatrix ι ↔ ∀ i j, T.piLpEntry i j ∈ S :=
-  (Iff.rfl)
-
-@[simp]
-theorem coe_piLpMatrix (S : StarSubalgebra 𝕜 (H →L[𝕜] H)) (ι : Type*) [Fintype ι]
-    [DecidableEq ι] :
-    (S.piLpMatrix ι : Set (PiLp 2 (fun _ : ι => H) →L[𝕜] PiLp 2 (fun _ : ι => H))) =
-      {T | ∀ i j, T.piLpEntry i j ∈ S} :=
-  (rfl)
-
-/-- Placing an element of `S` in a single `(i, j)` block gives an element of `S.piLpMatrix ι`. -/
-theorem singleEntryCLM_mem_piLpMatrix {S : StarSubalgebra 𝕜 (H →L[𝕜] H)} {ι : Type*} [Fintype ι]
-    [DecidableEq ι] (i j : ι) {s : H →L[𝕜] H} (hs : s ∈ S) :
-    PiLp.singleEntryCLM i j s ∈ S.piLpMatrix ι := fun k l ↦ by
-  rw [ContinuousLinearMap.piLpEntry_singleEntryCLM]; split_ifs <;> [exact hs; exact S.zero_mem]
-
-/-- Diagonal amplification maps `S` into `S.piLpMatrix ι`. -/
-theorem diagStarAlgHom_mem_piLpMatrix {S : StarSubalgebra 𝕜 (H →L[𝕜] H)} {ι : Type*} [Fintype ι]
-    [DecidableEq ι] {s : H →L[𝕜] H} (hs : s ∈ S) :
-    PiLp.diagStarAlgHom 𝕜 H ι s ∈ S.piLpMatrix ι := fun i j ↦ by
-  rw [ContinuousLinearMap.piLpEntry_diagStarAlgHom]; split_ifs <;> [exact hs; exact S.zero_mem]
-
-/-- The commutant of the operator-matrix algebra `S.piLpMatrix ι` consists of block-diagonal
-operators with constant diagonal entry in `S'`. -/
-theorem centralizer_coe_piLpMatrix (S : StarSubalgebra 𝕜 (H →L[𝕜] H)) (ι : Type*) [Fintype ι]
-    [DecidableEq ι] :
-    (S.piLpMatrix ι : Set (PiLp 2 (fun _ : ι => H) →L[𝕜] PiLp 2 (fun _ : ι => H))).centralizer =
-      {R | (∀ i j, i ≠ j → R.piLpEntry i j = 0) ∧
-        (∀ i j, R.piLpEntry i i = R.piLpEntry j j) ∧
-        ∀ i, R.piLpEntry i i ∈ (S : Set (H →L[𝕜] H)).centralizer} := by
-  ext R
-  simp only [Set.mem_centralizer_iff, SetLike.mem_coe, mem_piLpMatrix_iff, Set.mem_ofPred_eq]
-  refine ⟨fun hR ↦ ⟨fun i j hij ↦ ?_, fun i j ↦ ?_, fun i s hs ↦ ?_⟩,
-    fun ⟨hoff, hdiag, hcomm⟩ A hA ↦ ContinuousLinearMap.ext_piLpEntry fun i j ↦ ?_⟩
-  · simpa [hij.symm] using congrArg (fun T ↦ T.piLpEntry i j)
-      (hR (PiLp.singleEntryCLM i i 1) (S.singleEntryCLM_mem_piLpMatrix i i S.one_mem))
-  · simpa using (congrArg (fun T ↦ T.piLpEntry i j)
-      (hR (PiLp.singleEntryCLM i j 1) (S.singleEntryCLM_mem_piLpMatrix i j S.one_mem))).symm
-  · simpa using congrArg (fun T ↦ T.piLpEntry i i)
-      (hR (PiLp.singleEntryCLM i i s) (S.singleEntryCLM_mem_piLpMatrix i i hs))
-  · rw [ContinuousLinearMap.piLpEntry_mul_of_offDiag_zero_right hoff,
-      ContinuousLinearMap.piLpEntry_mul_of_offDiag_zero_left hoff, hdiag i j]
-    exact hcomm j (A.piLpEntry i j) (hA i j)
-
-/-- **Double commutant of an operator-matrix algebra.** An operator on `PiLp 2 (fun _ : ι => H)`
-lies in the double commutant of `S.piLpMatrix ι` if and only if each of its matrix entries lies in
-the double commutant of `S`. -/
-theorem centralizer_centralizer_coe_piLpMatrix (S : StarSubalgebra 𝕜 (H →L[𝕜] H)) (ι : Type*)
-    [Fintype ι] [DecidableEq ι] :
-    (S.piLpMatrix ι :
-        Set (PiLp 2 (fun _ : ι => H) →L[𝕜] PiLp 2 (fun _ : ι => H))).centralizer.centralizer =
-      {T | ∀ i j, T.piLpEntry i j ∈ (S : Set (H →L[𝕜] H)).centralizer.centralizer} := by
-  rw [S.centralizer_coe_piLpMatrix ι]
-  ext T
-  simp only [Set.mem_centralizer_iff, Set.mem_ofPred_eq]
-  refine ⟨fun hT i j y hy ↦ ?_,
-    fun hT R ⟨hoff, hdiag, hcomm⟩ ↦ ContinuousLinearMap.ext_piLpEntry fun i j ↦ ?_⟩
-  · simpa using congrArg (fun M ↦ M.piLpEntry i j)
-      (hT (PiLp.diagStarAlgHom 𝕜 H ι y)
-        ⟨fun a b hab ↦ by simp [hab], fun _ _ ↦ by simp, fun _ m hm ↦ by simpa using hy m hm⟩)
-  · rw [ContinuousLinearMap.piLpEntry_mul_of_offDiag_zero_left hoff,
-      ContinuousLinearMap.piLpEntry_mul_of_offDiag_zero_right hoff, hdiag i j]
-    exact hT i j (R.piLpEntry j j) (hcomm j)
-
-end MatrixAmplification
-
-end StarSubalgebra

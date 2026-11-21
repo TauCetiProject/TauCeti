@@ -215,14 +215,8 @@ theorem evenProjectionTrunc_apply (n : ℕ) (x : ℓ^2(ℕ, ℂ)) (k : ℕ) :
 
 /-- `evenProjection` is a positive contraction (`0 ≤ evenProjection` and `evenProjection ≤ 1`). -/
 theorem evenProjection_mem_Icc :
-    evenProjection ∈ Icc (0 : ℓ^2(ℕ, ℂ) →L[ℂ] ℓ^2(ℕ, ℂ)) 1 := by
-  refine ⟨ContinuousLinearMap.nonneg_iff_isPositive.mpr
-    ((lp.isPositive_diagonalCLM_iff evenSeq).2 fun n ↦ ?_), ?_⟩
-  · simp only [evenSeq_apply]; split_ifs <;> simp
-  · have hone : (1 : ℓ^2(ℕ, ℂ) →L[ℂ] ℓ^2(ℕ, ℂ)) = lp.diagonalCLM 1 :=
-      (lp.diagonalCLM_one (p := 2)).symm
-    rw [evenProjection_def, hone, lp.diagonalCLM_le_diagonalCLM_iff]
-    intro n; simp only [evenSeq_apply]; split_ifs <;> simp
+    evenProjection ∈ Icc (0 : ℓ^2(ℕ, ℂ) →L[ℂ] ℓ^2(ℕ, ℂ)) 1 :=
+  isStarProjection_evenProjection.mem_Icc
 
 /-- Each finite-rank truncation `evenProjectionTrunc n` is a positive contraction in
 `finiteRankPlusScalars ℓ^2(ℕ, ℂ)`. -/

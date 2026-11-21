@@ -102,7 +102,7 @@ variable {M N : Type*} [AddCommGroup M] [AddCommGroup N]
 equivalence relation on primitive classes. -/
 private def slopeSetoid (M : Type*) [AddCommGroup M] :
     Setoid {v : M // IsPrimitive v} where
-  r a b := a.1 = b.1 ∨ a.1 = -b.1
+  r a b := a.val = b.val ∨ a.val = -b.val
   iseqv :=
     { refl := fun _ => Or.inl rfl
       symm := fun {a b} h => h.imp Eq.symm fun hab => by rw [hab, neg_neg]
@@ -116,7 +116,7 @@ private def slopeSetoid (M : Type*) [AddCommGroup M] :
 /-- Characterization of the relation defining slopes: representatives agree up to sign. This is
 internal to the quotient construction; consumers use `Slope.mk_eq_mk_iff`. -/
 private theorem slopeSetoid_rel_iff {a b : {v : M // IsPrimitive v}} :
-    slopeSetoid M a b ↔ a.1 = b.1 ∨ a.1 = -b.1 :=
+    slopeSetoid M a b ↔ a.val = b.val ∨ a.val = -b.val :=
   Iff.rfl
 
 /-- A **slope** on a boundary torus with homology `M`: a primitive homology class taken modulo the
@@ -138,17 +138,15 @@ theorem mk_eq_mk {v w : M} (hv : IsPrimitive v) (hw : IsPrimitive w)
 /-- Two primitive representatives define the same slope exactly when they agree up to sign. -/
 @[simp]
 theorem mk_eq_mk_iff {v w : M} (hv : IsPrimitive v) (hw : IsPrimitive w) :
-    mk v hv = mk w hw ↔ v = w ∨ v = -w := by
-  constructor
-  · exact Quotient.exact
-  · exact mk_eq_mk hv hw
+    mk v hv = mk w hw ↔ v = w ∨ v = -w :=
+  Quotient.eq
 
 /-- Induction principle for slopes: it suffices to prove a property for `Slope.mk v hv` with `v`
 primitive. -/
 @[elab_as_elim]
 theorem induction_on {C : Slope M → Prop} (s : Slope M)
     (h : ∀ (v : M) (hv : IsPrimitive v), C (mk v hv)) : C s :=
-  Quotient.inductionOn s fun v => h v.1 v.2
+  Quotient.inductionOn s fun v => h v.val v.property
 
 variable [Module ℤ M] [Module ℤ N]
 
@@ -156,19 +154,11 @@ variable [Module ℤ M] [Module ℤ N]
 isomorphism uses this to carry a slope to the standard lattice. -/
 def congr (φ : M ≃ₗ[ℤ] N) : Slope M ≃ Slope N :=
   Quotient.congr
-    { toFun := fun v => ⟨φ v.1, φ.isPrimitive_iff.mpr v.2⟩
-      invFun := fun w => ⟨φ.symm w.1, φ.symm.isPrimitive_iff.mpr w.2⟩
-      left_inv := fun v => Subtype.ext (φ.symm_apply_apply v.1)
-      right_inv := fun w => Subtype.ext (φ.apply_symm_apply w.1) }
-    fun a b => by
-      simp only [slopeSetoid_rel_iff, Equiv.coe_fn_mk]
-      constructor
-      · rintro (h | h)
-        · exact Or.inl (by rw [h])
-        · exact Or.inr (by rw [h, map_neg])
-      · rintro (h | h)
-        · exact Or.inl (φ.injective h)
-        · exact Or.inr (φ.injective (by rw [map_neg]; exact h))
+    { toFun := fun v => ⟨φ v.val, φ.isPrimitive_iff.mpr v.property⟩
+      invFun := fun w => ⟨φ.symm w.val, φ.symm.isPrimitive_iff.mpr w.property⟩
+      left_inv := fun v => Subtype.ext (φ.symm_apply_apply v.val)
+      right_inv := fun w => Subtype.ext (φ.apply_symm_apply w.val) }
+    fun a b => by simp only [slopeSetoid_rel_iff, Equiv.coe_fn_mk, ← map_neg, φ.injective.eq_iff]
 
 /-- Transporting the slope of a primitive class `v` along `φ` gives the slope of `φ v`. -/
 @[simp]
@@ -250,7 +240,7 @@ theorem slopeValue_neg (v : ℤ × ℤ) : slopeValue (-v) = slopeValue v := by
 
 /-- The `ℚ ∪ {∞}` value of a standard-lattice slope, the ratio of its coordinates. -/
 def Slope.value : Slope (ℤ × ℤ) → OnePoint ℚ :=
-  Quotient.lift (fun v => slopeValue v.1) fun _ _ h => by
+  Quotient.lift (fun v => slopeValue v.val) fun _ _ h => by
     rcases h with h | h
     · rw [h]
     · rw [h, slopeValue_neg]
@@ -452,16 +442,12 @@ theorem slopeEquiv_symm_apply (x : OnePoint ℚ) :
 /-- The framed meridian has slope value `∞`. -/
 @[simp]
 theorem value_meridian : T.value T.meridian = ∞ := by
-  unfold value meridian
-  rw [Slope.congr_mk, Slope.value_mk, T.coord_basis_zero]
-  exact slopeValue_of_snd_eq_zero rfl
+  simp [meridian]
 
 /-- The framed longitude has slope value `0`. -/
 @[simp]
 theorem value_longitude : T.value T.longitude = (0 : ℚ) := by
-  unfold value longitude
-  rw [Slope.congr_mk, Slope.value_mk, T.coord_basis_one, slopeValue_of_snd_ne_zero one_ne_zero]
-  norm_num
+  simp [longitude]
 
 /-- A slope of finite value is not the meridian, whose value is `∞`. -/
 theorem slopeEquiv_symm_coe_ne_meridian (x : ℚ) : T.slopeEquiv.symm x ≠ T.meridian := by

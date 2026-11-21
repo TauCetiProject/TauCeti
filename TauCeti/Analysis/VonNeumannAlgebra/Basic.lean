@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Analysis.VonNeumannAlgebra.Basic
 public import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
-public import TauCeti.Analysis.InnerProductSpace.Amplification
+public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Range
+public import Mathlib.Analysis.InnerProductSpace.StarOrder
+public import TauCeti.Analysis.VonNeumannAlgebra.MatrixAmplification
 
 /-!
 # Concrete von Neumann algebras as C⋆-algebras and operator matrices
@@ -18,7 +20,8 @@ This allows the abstract continuous functional calculus and positive-functional 
 be applied directly to concrete algebras, including those acting on the zero Hilbert space.
 
 The instances use Mathlib's generic subobject constructions, in particular
-`StarSubalgebra.cstarAlgebra`. The underlying star subalgebra has the same instances;
+`StarSubalgebra.cstarAlgebra` and, for the order inherited from the Loewner order on operators,
+`Subtype.starOrderedRing`. The underlying star subalgebra has the same instances;
 no new norm, completion, or algebra carrier is introduced.
 
 For a finite index type `ι`, `VonNeumannAlgebra.piLpMatrix` forms the matrix von Neumann algebra
@@ -45,15 +48,26 @@ instance instIsClosedToStarSubalgebra (M : VonNeumannAlgebra H) :
     IsClosed (M.toStarSubalgebra : Set (H →L[ℂ] H)) := by
   simpa only [coe_toStarSubalgebra] using M.isClosed
 
+/-- The order on a von Neumann algebra inherited from the Loewner order on operators makes it a
+star-ordered ring, so that positive functionals on it are those of the C⋆-algebra `M`. This
+specializes `Subtype.starOrderedRing`, whose instance search over the operators on a concrete
+Hilbert space, such as a GNS space, otherwise rebuilds their continuous functional calculus and
+fails. -/
+instance instStarOrderedRingToStarSubalgebra (M : VonNeumannAlgebra H) :
+    StarOrderedRing M.toStarSubalgebra :=
+  Subtype.starOrderedRing _
+
 /-- The matrix von Neumann algebra `M_ι(M)` of operators on `PiLp 2 (fun _ : ι => H)` whose
 `(i, j)` entries belong to `M`. -/
 noncomputable def piLpMatrix (M : VonNeumannAlgebra H) (ι : Type*) [Fintype ι] [DecidableEq ι] :
     VonNeumannAlgebra (PiLp 2 (fun _ : ι => H)) where
   toStarSubalgebra := M.toStarSubalgebra.piLpMatrix ι
   centralizer_centralizer' := by
-    refine (M.toStarSubalgebra.centralizer_centralizer_coe_piLpMatrix ι).trans
-      (Eq.trans ?_ (M.toStarSubalgebra.coe_piLpMatrix ι).symm)
     ext T
+    change T ∈ (M.toStarSubalgebra.piLpMatrix ι : Set _).centralizer.centralizer ↔
+      T ∈ M.toStarSubalgebra.piLpMatrix ι
+    rw [M.toStarSubalgebra.mem_centralizer_centralizer_piLpMatrix_iff,
+      StarSubalgebra.mem_piLpMatrix]
     simp [M.centralizer_centralizer]
 
 /-- The underlying star subalgebra of `M.piLpMatrix ι` is `M.toStarSubalgebra.piLpMatrix ι`. -/
@@ -67,19 +81,24 @@ theorem toStarSubalgebra_piLpMatrix (M : VonNeumannAlgebra H) (ι : Type*) [Fint
 theorem mem_piLpMatrix_iff {M : VonNeumannAlgebra H} {ι : Type*} [Fintype ι] [DecidableEq ι]
     {T : PiLp 2 (fun _ : ι => H) →L[ℂ] PiLp 2 (fun _ : ι => H)} :
     T ∈ M.piLpMatrix ι ↔ ∀ i j, T.piLpEntry i j ∈ M :=
-  M.toStarSubalgebra.mem_piLpMatrix_iff
+  M.toStarSubalgebra.mem_piLpMatrix
 
 @[simp]
 theorem coe_piLpMatrix (M : VonNeumannAlgebra H) (ι : Type*) [Fintype ι] [DecidableEq ι] :
     (M.piLpMatrix ι : Set (PiLp 2 (fun _ : ι => H) →L[ℂ] PiLp 2 (fun _ : ι => H))) =
-      {T | ∀ i j, T.piLpEntry i j ∈ M} :=
-  M.toStarSubalgebra.coe_piLpMatrix ι
+      {T | ∀ i j, T.piLpEntry i j ∈ M} := by
+  ext T
+  exact M.toStarSubalgebra.mem_piLpMatrix
 
 /-- Placing an element of `M` in a single `(i, j)` block gives an element of `M.piLpMatrix ι`. -/
 theorem singleEntryCLM_mem_piLpMatrix {M : VonNeumannAlgebra H} {ι : Type*} [Fintype ι]
     [DecidableEq ι] (i j : ι) {s : H →L[ℂ] H} (hs : s ∈ M) :
-    PiLp.singleEntryCLM i j s ∈ M.piLpMatrix ι :=
-  M.toStarSubalgebra.singleEntryCLM_mem_piLpMatrix i j hs
+    PiLp.singleEntryCLM i j s ∈ M.piLpMatrix ι := by
+  rw [mem_piLpMatrix_iff]
+  intro k l
+  rw [ContinuousLinearMap.piLpEntry_singleEntryCLM]
+  split_ifs
+  exacts [hs, M.zero_mem]
 
 /-- Diagonal amplification maps `M` into `M.piLpMatrix ι`. -/
 theorem diagStarAlgHom_mem_piLpMatrix {M : VonNeumannAlgebra H} {ι : Type*} [Fintype ι]
@@ -96,9 +115,21 @@ theorem coe_commutant_piLpMatrix (M : VonNeumannAlgebra H) (ι : Type*) [Fintype
       {R | (∀ i j, i ≠ j → R.piLpEntry i j = 0) ∧
         (∀ i j, R.piLpEntry i i = R.piLpEntry j j) ∧
         ∀ i, R.piLpEntry i i ∈ M.commutant} := by
-  rw [coe_commutant, ← coe_toStarSubalgebra, toStarSubalgebra_piLpMatrix,
-    M.toStarSubalgebra.centralizer_coe_piLpMatrix ι]
   ext R
-  simp only [Set.mem_ofPred_eq, ← SetLike.mem_coe, coe_commutant, coe_toStarSubalgebra]
+  simp only [SetLike.mem_coe, mem_commutant_iff, mem_piLpMatrix_iff, Set.mem_ofPred_eq]
+  refine ⟨fun hR ↦ ⟨fun i j hij ↦ ?_, fun i j ↦ ?_, fun i s hs ↦ ?_⟩,
+    fun ⟨hoff, hdiag, hcomm⟩ A hA ↦ ContinuousLinearMap.ext_piLpEntry fun i j ↦ ?_⟩
+  · simpa [hij.symm] using congrArg (fun T ↦ T.piLpEntry i j)
+      (hR (PiLp.singleEntryCLM i i 1)
+        (mem_piLpMatrix_iff.1 (singleEntryCLM_mem_piLpMatrix i i M.one_mem)))
+  · simpa using (congrArg (fun T ↦ T.piLpEntry i j)
+      (hR (PiLp.singleEntryCLM i j 1)
+        (mem_piLpMatrix_iff.1 (singleEntryCLM_mem_piLpMatrix i j M.one_mem)))).symm
+  · simpa using congrArg (fun T ↦ T.piLpEntry i i)
+      (hR (PiLp.singleEntryCLM i i s)
+        (mem_piLpMatrix_iff.1 (singleEntryCLM_mem_piLpMatrix i i hs)))
+  · rw [ContinuousLinearMap.piLpEntry_mul_of_offDiag_zero_right hoff,
+      ContinuousLinearMap.piLpEntry_mul_of_offDiag_zero_left hoff, hdiag i j]
+    exact hcomm j (A.piLpEntry i j) (hA i j)
 
 end VonNeumannAlgebra

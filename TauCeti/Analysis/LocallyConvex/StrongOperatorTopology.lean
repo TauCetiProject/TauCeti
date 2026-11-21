@@ -21,15 +21,17 @@ For sequences on a Banach space the bound follows automatically from Banach–St
 Operator norm bounds also pass to pointwise limits
 (`ContinuousLinearMap.opNorm_le_of_tendsto_pointwise`), so closed operator-norm balls are closed
 in the strong operator topology
-(`PointwiseConvergenceCLM.isClosed_image_toPointwiseConvergenceCLM_closedBall`). Membership in a
-strong-operator closure is characterized by finite-vector approximation
-(`PointwiseConvergenceCLM.toPointwiseConvergenceCLM_mem_closure_image_iff`,
-`PointwiseConvergenceCLM.exists_mem_forall_norm_sub_apply_lt_of_mem_closure`).
+(`PointwiseConvergenceCLM.isClosed_image_toPointwiseConvergenceCLM_closedBall`), and
+finite-vector approximation in a strong-operator closure yields witnesses in the set
+(`PointwiseConvergenceCLM.exists_mem_forall_norm_sub_apply_lt_of_mem_closure`).
 
 On a complete real or complex Hilbert space, orthogonal projections form a strongly closed
 set. Their uniform norm bound lets idempotence pass to the strong limit; self-adjointness
 passes through inner products. The closedness statements use Mathlib's
 `PointwiseConvergenceCLM` copy, leaving the norm topology on continuous linear maps unchanged.
+
+For normal operators with a normal strong limit, the adjoints also converge strongly
+(`ContinuousLinearMap.tendsto_adjoint_apply_of_isStarNormal`).
 
 ## References
 
@@ -39,6 +41,7 @@ passes through inner products. The closedness statements use Mathlib's
 public section
 
 open Filter Topology
+open scoped InnerProduct InnerProductSpace
 
 namespace ContinuousLinearMap
 
@@ -123,6 +126,37 @@ theorem tendsto_comp_apply_of_tendsto_pointwise [CompleteSpace F]
 
 end ContinuousLinearMap
 
+/-! ### Strong convergence of normal operators -/
+
+namespace ContinuousLinearMap
+
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [CompleteSpace E]
+
+/-- If normal operators `T a` converge strongly to a normal operator `T₀`, then their adjoints
+converge strongly to `T₀†`. -/
+theorem tendsto_adjoint_apply_of_isStarNormal {α : Type*} {l : Filter α}
+    {T : α → E →L[𝕜] E} {T₀ : E →L[𝕜] E} (hT : ∀ᶠ a in l, IsStarNormal (T a))
+    (hT₀ : IsStarNormal T₀) (h : ∀ x, Tendsto (fun a ↦ T a x) l (𝓝 (T₀ x))) (y : E) :
+    Tendsto (fun a ↦ ((T a)†) y) l (𝓝 ((T₀†) y)) := by
+  rw [tendsto_iff_norm_sub_tendsto_zero]
+  -- Expand `‖(T a)† y - T₀† y‖²` and use `‖(T a)† y‖ = ‖T a y‖` for the normal `T a`.
+  have hsq : ∀ᶠ a in l, ‖T a y‖ ^ 2 - 2 * RCLike.re ⟪y, T a ((T₀†) y)⟫_𝕜 + ‖(T₀†) y‖ ^ 2 =
+      ‖((T a)†) y - (T₀†) y‖ ^ 2 := by
+    filter_upwards [hT] with a ha
+    rw [@norm_sub_sq 𝕜, ← isStarNormal_iff_norm_eq_adjoint.mp ha y, adjoint_inner_left]
+  -- The expanded expression tends to the same expression for `T₀`, which vanishes.
+  have h0 : ‖T₀ y‖ ^ 2 - 2 * RCLike.re ⟪y, T₀ ((T₀†) y)⟫_𝕜 + ‖(T₀†) y‖ ^ 2 = 0 := by
+    rw [← adjoint_inner_left, isStarNormal_iff_norm_eq_adjoint.mp hT₀ y, ← @norm_sub_sq 𝕜,
+      sub_self, norm_zero, zero_pow two_ne_zero]
+  have hlim := (((h y).norm.pow 2).sub ((((RCLike.continuous_re (K := 𝕜)).tendsto _).comp
+    ((tendsto_const_nhds (x := y)).inner (h ((T₀†) y)))).const_mul 2)).add
+      (tendsto_const_nhds (x := ‖(T₀†) y‖ ^ 2))
+  rw [h0] at hlim
+  simpa [Real.sqrt_sq (norm_nonneg _)] using (hlim.congr' hsq).sqrt
+
+end ContinuousLinearMap
+
 namespace IsStarProjection
 
 variable {𝕜 H ι : Type*} [RCLike 𝕜] [NormedAddCommGroup H]
@@ -196,34 +230,6 @@ theorem isOpen_setOf_forall_norm_sub_apply_lt {ι : Type*} [Finite ι]
   exact isOpen_iInter_of_finite fun i ↦
     isOpen_lt (continuous_const.sub (continuous_eval_const (v i))).norm continuous_const
 
-/-- An operator `x` lies in the strong operator closure of `A` if and only if for every finite set
-`s : Finset E` and `ε > 0` there is `a ∈ A` with `‖x v - a v‖ < ε` for all `v ∈ s`. -/
-theorem toPointwiseConvergenceCLM_mem_closure_image_iff [ContinuousSMul 𝕜₁ E]
-    {A : Set (E →SL[σ] F)} {x : E →SL[σ] F} :
-    ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜₂ σ E F x ∈
-        closure (ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜₂ σ E F '' A) ↔
-      ∀ (s : Finset E) {ε : ℝ}, 0 < ε → ∃ a ∈ A, ∀ v ∈ s, ‖x v - a v‖ < ε := by
-  set q := ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜₂ σ E F
-  rw [mem_closure_iff_nhds_basis
-    ((PointwiseConvergenceCLM.hasBasis_nhds_zero_of_basis
-      (σ := σ) (E := E) Metric.nhds_basis_ball).nhds_of_zero (q x))]
-  refine ⟨fun h s ε hε ↦ ?_, fun h ⟨t, ε⟩ ⟨ht, hε⟩ ↦ ?_⟩
-  · obtain ⟨_, ⟨a, ha, rfl⟩, hball⟩ := h ⟨(s : Set E), ε⟩ ⟨s.finite_toSet, hε⟩
-    refine ⟨a, ha, fun v hv ↦ ?_⟩
-    have hlt := hball v hv
-    rw [Metric.mem_ball, dist_zero_right, sub_apply,
-      ContinuousLinearMap.toPointwiseConvergenceCLM_apply_apply,
-      ContinuousLinearMap.toPointwiseConvergenceCLM_apply_apply, norm_sub_rev] at hlt
-    exact hlt
-  · classical
-    have ht' : t.Finite := ht
-    obtain ⟨a, ha, hlt⟩ := h ht'.toFinset hε
-    refine ⟨q a, ⟨a, ha, rfl⟩, fun v hv ↦ ?_⟩
-    rw [Metric.mem_ball, dist_zero_right, sub_apply,
-      ContinuousLinearMap.toPointwiseConvergenceCLM_apply_apply,
-      ContinuousLinearMap.toPointwiseConvergenceCLM_apply_apply, norm_sub_rev]
-    exact hlt v (ht'.mem_toFinset.2 hv)
-
 /-- If `x` lies in the strong operator closure of `A`, then for every finite family of vectors `v`
 and `ε > 0` there is `a ∈ A` approximating `x` within `ε` on `v`. -/
 theorem exists_mem_forall_norm_sub_apply_lt_of_mem_closure [ContinuousSMul 𝕜₁ E]
@@ -232,7 +238,7 @@ theorem exists_mem_forall_norm_sub_apply_lt_of_mem_closure [ContinuousSMul 𝕜�
       closure (ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜₂ σ E F '' A))
     {ι : Type*} [Finite ι] (v : ι → E) {ε : ℝ} (hε : 0 < ε) :
     ∃ a ∈ A, ∀ i, ‖x (v i) - a (v i)‖ < ε := by
-  obtain ⟨_, ⟨hU, a, ha, rfl⟩⟩ := mem_closure_iff.1 hx _
+  obtain ⟨_, ⟨hU, a, ha, rfl⟩⟩ := _root_.mem_closure_iff.1 hx _
     (isOpen_setOf_forall_norm_sub_apply_lt x v ε)
     (fun i ↦ by rw [ContinuousLinearMap.toPointwiseConvergenceCLM_apply_apply, sub_self, norm_zero]
                 exact hε)
