@@ -245,6 +245,7 @@ private theorem ramifiedGhost_ghostPreimageAux (hq : algebraMap O A π ∣ (q : 
   induction n with
   | zero => simp [ghostPreimageAux]
   | succ n ih =>
+    rw [ghostPreimageAux]
     set x := ghostPreimageAux π q y n
     -- `y_{n+1} - w_n(x ^ q) = (y_{n+1} - σ (y_n)) + (σ (w_n(x)) - w_n(x ^ q))` is divisible by
     -- `π ^ (n + 1)`, so the step solves `π ^ (n + 1) x_{n+1} = y_{n+1} - w_n(x ^ q)`.
@@ -252,7 +253,6 @@ private theorem ramifiedGhost_ghostPreimageAux (hq : algebraMap O A π ∣ (q : 
       have h := dvd_add (hy n)
         (pow_succ_dvd_ramifiedGhost_sub_ramifiedGhost hq fun i _ ↦ hσ (x i))
       rwa [← map_ramifiedGhost, ih, sub_add_sub_cancel] at h
-    rw [show ghostPreimageAux π q y (n + 1) = ghostPreimageStep π q y n x from rfl]
     simp only [ghostPreimageStep, hdvd, ↓reduceDIte]
     rw [ramifiedGhost_succ, Function.update_self,
       ← hdvd.choose_spec, ramifiedGhost_congr fun i hi ↦ by
