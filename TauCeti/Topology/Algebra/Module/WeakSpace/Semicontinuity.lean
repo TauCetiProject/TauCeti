@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Algebra.Module.WeakSpace
+public import TauCeti.Topology.Algebra.Module.WeakSpace.Basic
 public import TauCeti.Topology.Semicontinuity.Sequences
 
 /-!
@@ -34,23 +34,8 @@ theorem seqLowerSemicontinuousOn_toWeakSpace_iff {β : Type*} [Preorder β] {E :
       (toWeakSpace 𝕜 V '' S) ↔
       ∀ (u : ℕ → V) (v : V), (∀ n, u n ∈ S) → v ∈ S →
         Tendsto (fun n ↦ toWeakSpace 𝕜 V (u n)) atTop (𝓝 (toWeakSpace 𝕜 V v)) →
-        ∀ b < E v, ∀ᶠ n in atTop, b < E (u n) := by
-  simp only [seqLowerSemicontinuousOn_iff, seqLowerSemicontinuousWithinAt_iff]
-  constructor
-  · intro hE u v hu hv hlim b hb
-    have h := hE (toWeakSpace 𝕜 V v) (mem_image_of_mem _ hv)
-      (fun n ↦ mem_image_of_mem _ (hu n)) hlim b
-      (by simpa only [LinearEquiv.symm_apply_apply] using hb)
-    simpa only [LinearEquiv.symm_apply_apply] using h
-  · intro hE w hw u hu hlim b hb
-    have hu' : ∀ n, (toWeakSpace 𝕜 V).symm (u n) ∈ S := fun n ↦ by
-      simpa only [(toWeakSpace 𝕜 V).image_eq_preimage_symm, mem_preimage] using hu n
-    have hw' : (toWeakSpace 𝕜 V).symm w ∈ S := by
-      simpa only [(toWeakSpace 𝕜 V).image_eq_preimage_symm, mem_preimage] using hw
-    have hlim' : Tendsto (fun n ↦ toWeakSpace 𝕜 V ((toWeakSpace 𝕜 V).symm (u n))) atTop
-        (𝓝 (toWeakSpace 𝕜 V ((toWeakSpace 𝕜 V).symm w))) := by
-      simpa only [LinearEquiv.apply_symm_apply] using hlim
-    exact hE _ _ hu' hw' hlim' b hb
+        ∀ b < E v, ∀ᶠ n in atTop, b < E (u n) :=
+  (toWeakSpace 𝕜 V).toEquiv.seqLowerSemicontinuousOn_image_iff
 
 /-- Sequential weak lower semicontinuity of a real-valued energy on `S`, expressed via the
 `EReal` lower limit along weakly convergent sequences in `S`. -/
@@ -75,25 +60,7 @@ theorem seqLowerSemicontinuousOn_toWeakSpace_iff_forall_le_of_tendsto {E : V →
       (toWeakSpace 𝕜 V '' S) ↔
       ∀ (u : ℕ → V) (v : V) (r : ℝ), (∀ n, u n ∈ S) → v ∈ S →
         Tendsto (fun n ↦ toWeakSpace 𝕜 V (u n)) atTop (𝓝 (toWeakSpace 𝕜 V v)) →
-        Tendsto (E ∘ u) atTop (𝓝 r) → E v ≤ r := by
-  have hb' : BddBelow ((fun w : WeakSpace 𝕜 V ↦ E ((toWeakSpace 𝕜 V).symm w)) ''
-      (toWeakSpace 𝕜 V '' S)) := by
-    simpa only [image_image, LinearEquiv.symm_apply_apply] using hb
-  rw [seqLowerSemicontinuousOn_iff_forall_le_of_tendsto hb']
-  constructor
-  · intro hE u v r hu hv hlim hEr
-    have h := hE (fun n ↦ toWeakSpace 𝕜 V (u n)) (toWeakSpace 𝕜 V v) r
-      (fun n ↦ mem_image_of_mem _ (hu n)) (mem_image_of_mem _ hv) hlim
-      (by simpa only [Function.comp_def, LinearEquiv.symm_apply_apply] using hEr)
-    simpa only [LinearEquiv.symm_apply_apply] using h
-  · intro hE u w r hu hw hlim hEr
-    have hu' : ∀ n, (toWeakSpace 𝕜 V).symm (u n) ∈ S := fun n ↦ by
-      simpa only [(toWeakSpace 𝕜 V).image_eq_preimage_symm, mem_preimage] using hu n
-    have hw' : (toWeakSpace 𝕜 V).symm w ∈ S := by
-      simpa only [(toWeakSpace 𝕜 V).image_eq_preimage_symm, mem_preimage] using hw
-    have hlim' : Tendsto (fun n ↦ toWeakSpace 𝕜 V ((toWeakSpace 𝕜 V).symm (u n))) atTop
-        (𝓝 (toWeakSpace 𝕜 V ((toWeakSpace 𝕜 V).symm w))) := by
-      simpa only [LinearEquiv.apply_symm_apply] using hlim
-    exact hE _ _ r hu' hw' hlim' hEr
+        Tendsto (E ∘ u) atTop (𝓝 r) → E v ≤ r :=
+  (toWeakSpace 𝕜 V).toEquiv.seqLowerSemicontinuousOn_image_iff_forall_le_of_tendsto hb
 
 end TauCeti

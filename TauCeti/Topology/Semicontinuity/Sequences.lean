@@ -11,7 +11,6 @@ import Mathlib.Order.Filter.AtTopBot.Archimedean
 import Mathlib.Order.Filter.AtTopBot.CountablyGenerated
 import TauCeti.Topology.Order.IsLUB
 import TauCeti.Topology.Semicontinuity.ENat
-import Mathlib.Topology.MetricSpace.ProperSpace.Real
 
 /-!
 # Sequential lower semicontinuity
@@ -493,6 +492,38 @@ section RealEReal
 
 variable {f : X → ℝ}
 
+/-- Coercing a real-valued function to `EReal` preserves and reflects sequential lower
+semicontinuity within `s` at `x`. -/
+@[simp]
+theorem seqLowerSemicontinuousWithinAt_coe_ereal_iff :
+    SeqLowerSemicontinuousWithinAt (fun z ↦ (f z : EReal)) s x ↔
+      SeqLowerSemicontinuousWithinAt f s x := by
+  refine forall_congr' fun u ↦ imp_congr_right fun _ ↦ imp_congr_right fun _ ↦ ?_
+  rw [EReal.forall]
+  simp
+
+/-- Coercing a real-valued function to `EReal` preserves and reflects sequential lower
+semicontinuity at `x`. -/
+@[simp]
+theorem seqLowerSemicontinuousAt_coe_ereal_iff :
+    SeqLowerSemicontinuousAt (fun z ↦ (f z : EReal)) x ↔ SeqLowerSemicontinuousAt f x := by
+  rw [← seqLowerSemicontinuousWithinAt_univ_iff, ← seqLowerSemicontinuousWithinAt_univ_iff,
+    seqLowerSemicontinuousWithinAt_coe_ereal_iff]
+
+/-- Coercing a real-valued function to `EReal` preserves and reflects sequential lower
+semicontinuity on `s`. -/
+@[simp]
+theorem seqLowerSemicontinuousOn_coe_ereal_iff :
+    SeqLowerSemicontinuousOn (fun z ↦ (f z : EReal)) s ↔ SeqLowerSemicontinuousOn f s := by
+  simp only [seqLowerSemicontinuousOn_iff, seqLowerSemicontinuousWithinAt_coe_ereal_iff]
+
+/-- Coercing a real-valued function to `EReal` preserves and reflects global sequential lower
+semicontinuity. -/
+@[simp]
+theorem seqLowerSemicontinuous_coe_ereal_iff :
+    SeqLowerSemicontinuous (fun z ↦ (f z : EReal)) ↔ SeqLowerSemicontinuous f := by
+  simp only [seqLowerSemicontinuous_iff, seqLowerSemicontinuousAt_coe_ereal_iff]
+
 /-- For a real-valued function, sequential lower semicontinuity within `s` at `x` is equivalent to
 the `EReal`-valued `liminf` inequality `(f x : EReal) ≤ liminf (fun n ↦ (f (u n) : EReal)) atTop`
 along sequences in `s` converging to `x`, including sequences unbounded above. -/
@@ -500,9 +531,9 @@ theorem seqLowerSemicontinuousWithinAt_real_iff_le_liminf_ereal :
     SeqLowerSemicontinuousWithinAt f s x ↔
       ∀ ⦃u : ℕ → X⦄, (∀ n, u n ∈ s) → Tendsto u atTop (𝓝 x) →
         (f x : EReal) ≤ liminf (fun n ↦ (f (u n) : EReal)) atTop := by
-  refine forall_congr' fun u ↦ imp_congr_right fun _ ↦ imp_congr_right fun _ ↦ ?_
-  rw [le_liminf_iff, EReal.forall]
-  simp
+  rw [← seqLowerSemicontinuousWithinAt_coe_ereal_iff,
+    seqLowerSemicontinuousWithinAt_iff_le_liminf]
+  rfl
 
 alias ⟨SeqLowerSemicontinuousWithinAt.coe_ereal_le_liminf, _⟩ :=
   seqLowerSemicontinuousWithinAt_real_iff_le_liminf_ereal
@@ -541,34 +572,6 @@ theorem seqLowerSemicontinuous_real_iff_le_liminf_ereal :
 
 alias ⟨SeqLowerSemicontinuous.coe_ereal_le_liminf, _⟩ :=
   seqLowerSemicontinuous_real_iff_le_liminf_ereal
-
-/-- Coercing a real-valued function to `EReal` preserves and reflects sequential lower
-semicontinuity within `s` at `x`. -/
-theorem seqLowerSemicontinuousWithinAt_coe_ereal_iff :
-    SeqLowerSemicontinuousWithinAt (fun z ↦ (f z : EReal)) s x ↔
-      SeqLowerSemicontinuousWithinAt f s x := by
-  refine forall_congr' fun u ↦ imp_congr_right fun _ ↦ imp_congr_right fun _ ↦ ?_
-  rw [EReal.forall]
-  simp
-
-/-- Coercing a real-valued function to `EReal` preserves and reflects sequential lower
-semicontinuity at `x`. -/
-theorem seqLowerSemicontinuousAt_coe_ereal_iff :
-    SeqLowerSemicontinuousAt (fun z ↦ (f z : EReal)) x ↔ SeqLowerSemicontinuousAt f x := by
-  rw [← seqLowerSemicontinuousWithinAt_univ_iff, ← seqLowerSemicontinuousWithinAt_univ_iff,
-    seqLowerSemicontinuousWithinAt_coe_ereal_iff]
-
-/-- Coercing a real-valued function to `EReal` preserves and reflects sequential lower
-semicontinuity on `s`. -/
-theorem seqLowerSemicontinuousOn_coe_ereal_iff :
-    SeqLowerSemicontinuousOn (fun z ↦ (f z : EReal)) s ↔ SeqLowerSemicontinuousOn f s := by
-  simp only [seqLowerSemicontinuousOn_iff, seqLowerSemicontinuousWithinAt_coe_ereal_iff]
-
-/-- Coercing a real-valued function to `EReal` preserves and reflects global sequential lower
-semicontinuity. -/
-theorem seqLowerSemicontinuous_coe_ereal_iff :
-    SeqLowerSemicontinuous (fun z ↦ (f z : EReal)) ↔ SeqLowerSemicontinuous f := by
-  simp only [seqLowerSemicontinuous_iff, seqLowerSemicontinuousAt_coe_ereal_iff]
 
 end RealEReal
 
@@ -760,12 +763,12 @@ theorem seqLowerSemicontinuousWithinAt_sum {ι γ : Type*} [AddCommMonoid γ] [L
     {f : ι → X → γ} {t : Finset ι}
     (hf : ∀ i ∈ t, SeqLowerSemicontinuousWithinAt (f i) s x) :
     SeqLowerSemicontinuousWithinAt (fun z ↦ ∑ i ∈ t, f i z) s x := by
-  classical
-  induction t using Finset.induction_on with
-  | empty => simpa only [Finset.sum_empty] using seqLowerSemicontinuousWithinAt_const
-  | insert i t hi ih =>
-    simpa only [Finset.sum_insert hi] using
-      (hf i (Finset.mem_insert_self i t)).add (ih fun j hj ↦ hf j (Finset.mem_insert_of_mem hj))
+  intro u hu hlim
+  let F : ι → ℕ∞ → γ := fun i k ↦ ENat.recTopCoe (f i x) (fun n ↦ f i (u n)) k
+  have hF (i : ι) (hi : i ∈ t) : LowerSemicontinuousAt (F i) ⊤ :=
+    ENat.lowerSemicontinuousAt_top_iff.2 (hf i hi hu hlim)
+  simpa only [F, ENat.recTopCoe_top, ENat.recTopCoe_natCast] using
+    ENat.lowerSemicontinuousAt_top_iff.1 (lowerSemicontinuousAt_sum hF)
 
 /-- A finite sum of functions sequentially lower semicontinuous at `x` is sequentially lower
 semicontinuous at `x`. -/
@@ -878,11 +881,10 @@ theorem seqLowerSemicontinuousWithinAt_ciSup {ι : Sort*} {γ : Type*}
   have hFbdd : ∀ᶠ k in 𝓝 ⊤, BddAbove (range fun i ↦ F i k) := by
     have hev : ∀ᶠ n : ℕ in atTop, BddAbove (range fun i ↦ f i (u n)) :=
       (tendsto_nhdsWithin_iff.2 ⟨hlim, Eventually.of_forall hu⟩).eventually hbdd
-    obtain ⟨N, hN⟩ := eventually_atTop.1 hev
-    refine eventually_of_mem (Ioi_mem_nhds (ENat.natCast_lt_top N)) fun k hk ↦ ?_
-    cases k with
-    | top => exact hbddx
-    | coe n => exact hN n (Nat.le_of_lt (ENat.natCast_lt_natCast.1 hk))
+    exact (ENat.semicontinuousAt_top_iff
+      (r := fun k (_ : Unit) ↦ BddAbove (range fun i ↦ F i k))).2
+      (fun _ _ ↦ by simpa only [F, ENat.recTopCoe_natCast] using hev) ()
+      (by simpa only [F, ENat.recTopCoe_top] using hbddx)
   simpa only [F, ENat.recTopCoe_top, ENat.recTopCoe_natCast] using
     ENat.lowerSemicontinuousAt_top_iff.1 (lowerSemicontinuousAt_ciSup hFbdd hF)
 
@@ -951,6 +953,30 @@ theorem seqLowerSemicontinuous_iSup {ι : Sort*} {γ : Type*} [CompleteLinearOrd
 
 end AlgebraAndLimits
 
+/-- Sequential lower semicontinuity of `f ∘ e.symm` on `e '' s` along an equivalence `e : X ≃ Y`
+into a topological space `Y`, unpacked in terms of sequences in `X` whose images under `e`
+converge. -/
+theorem _root_.Equiv.seqLowerSemicontinuousOn_image_iff {X Y β : Type*} [TopologicalSpace Y]
+    [Preorder β] (e : X ≃ Y) {f : X → β} {s : Set X} :
+    SeqLowerSemicontinuousOn (fun y ↦ f (e.symm y)) (e '' s) ↔
+      ∀ (u : ℕ → X) (x : X), (∀ n, u n ∈ s) → x ∈ s →
+        Tendsto (fun n ↦ e (u n)) atTop (𝓝 (e x)) →
+        ∀ b < f x, ∀ᶠ n in atTop, b < f (u n) := by
+  simp only [seqLowerSemicontinuousOn_iff, seqLowerSemicontinuousWithinAt_iff]
+  rw [e.surjective.forall]
+  simp only [e.injective.mem_set_image, e.symm_apply_apply]
+  have hconv : ∀ x,
+      (∀ ⦃u : ℕ → Y⦄, (∀ n, u n ∈ e '' s) → Tendsto u atTop (𝓝 (e x)) →
+        ∀ b < f x, ∀ᶠ n in atTop, b < f (e.symm (u n))) ↔
+      (∀ (u : ℕ → X), (∀ n, u n ∈ s) → Tendsto (fun n ↦ e (u n)) atTop (𝓝 (e x)) →
+        ∀ b < f x, ∀ᶠ n in atTop, b < f (u n)) := fun x ↦ by
+    rw [(Equiv.arrowCongr (Equiv.refl ℕ) e).surjective.forall]
+    simp only [Equiv.arrowCongr_apply, Equiv.refl_symm, Equiv.coe_refl, Function.comp_apply,
+      id_eq, e.injective.mem_set_image, e.symm_apply_apply]
+    rfl
+  simp_rw [hconv]
+  exact ⟨fun h u x hu hx ↦ h x hx _ hu, fun h x hx u hu ↦ h u x hu hx⟩
+
 /-- Along a sequence in `s` whose images under an equivalence `e : X ≃ Y` converge to `e x` with
 `x ∈ s` and whose values under `f` converge to `r`, sequential lower semicontinuity of `f ∘ e.symm`
 on `e '' s` gives `f x ≤ r`. -/
@@ -963,6 +989,26 @@ theorem _root_.Equiv.le_of_seqLowerSemicontinuousOn_image {X Y β : Type*} [Topo
   simpa only [Equiv.symm_apply_apply] using
     hf.le_of_tendsto (mem_image_of_mem e hx) (fun n ↦ mem_image_of_mem e (hu n)) hlim
       (by simpa only [Equiv.symm_apply_apply] using hflim)
+
+/-- For a real-valued function bounded below on `s`, sequential lower semicontinuity of
+`f ∘ e.symm` on `e '' s` along an equivalence `e : X ≃ Y` into a topological space `Y` is
+equivalent to `f x ≤ r` whenever `e (u n) → e x` in `s` and `f (u n) → r`. -/
+theorem _root_.Equiv.seqLowerSemicontinuousOn_image_iff_forall_le_of_tendsto {X Y : Type*}
+    [TopologicalSpace Y] (e : X ≃ Y) {f : X → ℝ} {s : Set X} (hb : BddBelow (f '' s)) :
+    SeqLowerSemicontinuousOn (fun y ↦ f (e.symm y)) (e '' s) ↔
+      ∀ (u : ℕ → X) (x : X) (r : ℝ), (∀ n, u n ∈ s) → x ∈ s →
+        Tendsto (fun n ↦ e (u n)) atTop (𝓝 (e x)) → Tendsto (f ∘ u) atTop (𝓝 r) →
+        f x ≤ r := by
+  let : TopologicalSpace X := TopologicalSpace.induced e inferInstance
+  have hind : IsInducing e := ⟨rfl⟩
+  have heq : SeqLowerSemicontinuousOn (fun y ↦ f (e.symm y)) (e '' s) ↔
+      SeqLowerSemicontinuousOn f s := by
+    simp only [e.seqLowerSemicontinuousOn_image_iff, seqLowerSemicontinuousOn_iff,
+      seqLowerSemicontinuousWithinAt_iff, hind.tendsto_nhds_iff]
+    exact ⟨fun h x hx _ hu ↦ h _ x hu hx, fun h u x hu hx ↦ h x hx hu⟩
+  rw [heq, seqLowerSemicontinuousOn_iff_forall_le_of_tendsto hb]
+  simp only [hind.tendsto_nhds_iff]
+  rfl
 
 section SeqCompact
 
