@@ -9,8 +9,8 @@ public import TauCeti.Geometry.Symplectic.Coadjoint
 public import TauCeti.Geometry.Symplectic.Cotangent.Basic
 public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.Slice
 public import TauCeti.Geometry.Symplectic.Lagrangian.CoisotropicModel.Equivariant
-public import TauCeti.Geometry.Symplectic.WittExtension
-public import TauCeti.RepresentationTheory.Subrepresentation.Quotient
+public import TauCeti.Geometry.Symplectic.LinearReduction.Equivariant
+import Mathlib.RepresentationTheory.Maschke
 
 /-!
 # The linear normal form of a Hamiltonian action at a point
@@ -45,11 +45,9 @@ The statement is linear algebra, proved for an arbitrary linear map `ρ : 𝔤 �
 finite-dimensional symplectic vector space `(T, ω)` with `ω(ρ ξ, ρ ζ) = ν ⁅ξ, ζ⁆`
 (`TauCeti.SymplecticForm.exists_isSymplectomorphism_cotangent_prod_kirillov_prod_reduction`).
 Then `ρ(𝔨) = W ∩ W^ω` for `W = ρ(𝔤)`, and the orbit directions together with a lift of the slice
-form a subspace on which `ω` is the restriction of the model form. Since `dim T = 2 dim 𝔪 + dim 𝔮 +
-dim V` by the dimension count of the slice, Witt's extension theorem
-(`TauCeti.SymplecticForm.exists_isSymplectomorphism_extend_of_injective`) extends this partial
-isometry to a symplectomorphism. No finiteness of `𝔤` is needed, and the complements need not be
-invariant under any group.
+form a coisotropic subspace on which `ω` is the restriction of the model form. No finiteness of `𝔤`
+is needed, and the complements need not be invariant under any group: the statement is the case of
+the trivial group of the equivariant normal form below.
 
 **The equivariant normal form.** Let a group `H` act on `(T, ω)` by symplectomorphisms `τ` and on
 `𝔤` by a representation `Ad`, with `ρ` equivariant; for the stabilizer `H = G_x` of a point these
@@ -59,11 +57,10 @@ action of `H` on the model by `Ad` on `𝔪` and `𝔮`, its dual on `𝔪*` and
 provided `𝔪` and `𝔮` are `Ad`-invariant
 (`SymplecticForm.exists_equivariant_isSymplectomorphism_cotangent_prod_kirillov_prod_reduction`).
 Invariant complements exist when `Ad` is semisimple
-(`TauCeti.SymplecticForm.exists_subrepresentation_isCompl_lieAnnihilator`). Witt's theorem has no
-equivariant analogue for arbitrary subspaces, so the proof extends instead from the coisotropic
-subspace `W + W^ω`, the image of `(𝔪 × 𝔮) × V` under the orbit map and an equivariant lift of
-the slice. Its coisotropic model is the normal form model, and the equivariant coisotropic
-embedding theorem
+(`TauCeti.SymplecticForm.exists_subrepresentation_isCompl_lieAnnihilator`). The proof extends
+from the coisotropic subspace `W + W^ω`, the image of `(𝔪 × 𝔮) × V` under the orbit map and an
+equivariant lift of the slice (`TauCeti.SymplecticForm.exists_equivariant_section_reducedSpace`).
+Its coisotropic model is the normal form model, and the equivariant coisotropic embedding theorem
 (`LinearMap.BilinForm.IsAlt.exists_equivariant_isSymplectomorphism_coisotropicModel`) extends the
 embedding equivariantly; only the target representation `τ` needs to be semisimple.
 
@@ -141,24 +138,6 @@ private theorem apply_eq_zero_of_mem {𝔪 : Submodule ℝ 𝔤}
     (ζ : 𝔤) : ω (ρ m) (ρ ζ) = 0 :=
   (mem_lieAnnihilator_iff hρ m).1 (h𝔪 ▸ Submodule.mem_sup_right hm) ζ
 
-/-- The orbit directions `ω`-orthogonal to the orbit, `W ∩ W^ω` for `W = ρ(𝔤)`, are those of the
-coadjoint stabilizer, and so of any complement `𝔪` of `ker ρ` in it. -/
-private theorem range_inf_orthogonal_range {𝔪 : Submodule ℝ 𝔤}
-    (h𝔪 : LinearMap.ker ρ ⊔ 𝔪 = (lieAnnihilator ℝ 𝔤 ν).toSubmodule) :
-    LinearMap.range ρ ⊓ ω.orthogonal (LinearMap.range ρ) = 𝔪.map ρ := by
-  ext u
-  simp only [Submodule.mem_inf, LinearMap.mem_range, mem_orthogonal_iff, Submodule.mem_map,
-    forall_exists_index, forall_apply_eq_imp_iff]
-  constructor
-  · rintro ⟨⟨ξ, rfl⟩, hξ⟩
-    have hK : ξ ∈ (lieAnnihilator ℝ 𝔤 ν).toSubmodule :=
-      (mem_lieAnnihilator_iff hρ ξ).2 fun ζ ↦ ω.isRefl.eq_zero (hξ ζ)
-    rw [← h𝔪] at hK
-    obtain ⟨κ, hκ, m, hm, rfl⟩ := Submodule.mem_sup.1 hK
-    exact ⟨m, hm, by rw [map_add, LinearMap.mem_ker.1 hκ, zero_add]⟩
-  · rintro ⟨m, hm, rfl⟩
-    exact ⟨⟨m, rfl⟩, fun ζ ↦ ω.isRefl.eq_zero (apply_eq_zero_of_mem hρ h𝔪 hm ζ)⟩
-
 /-- On the orbit directions of a complement `𝔪` of `ker ρ` in `𝔤_ν`, the orbit directions of any
 `b, b'`, and a lift `s` of the reduced space of `W^ω`, the form `ω` is the model form: the
 directions of `𝔪` are `ω`-orthogonal to the orbit, and the lift is `ω`-orthogonal to the orbit. -/
@@ -220,100 +199,9 @@ private theorem injective_coprod_coprod [FiniteDimensional ℝ T]
     (a₁ := (a, b)) (a₂ := 0) (by simpa using h)
   rfl
 
-variable [FiniteDimensional ℝ T]
-
-/-- The complements `𝔪` and `𝔮` embed into `T`, so they are finite-dimensional. -/
-private theorem finiteDimensional_and_finiteDimensional :
-    FiniteDimensional ℝ 𝔪 ∧ FiniteDimensional ℝ 𝔮 := by
-  have : FiniteDimensional ℝ (𝔪 × 𝔮) :=
-    Module.Finite.of_injective _ (injective_coprod hρ h𝔪 h𝔪' h𝔮)
-  exact ⟨Module.Finite.of_injective _ (LinearMap.inl_injective (M₂ := 𝔮)),
-    Module.Finite.of_injective _ (LinearMap.inr_injective (M := 𝔪))⟩
-
-/-- The dimension count of the model: `dim T = 2 dim 𝔪 + dim 𝔮 + dim V`. -/
-private theorem finrank_model_eq :
-    finrank ℝ ((𝔪 × Dual ℝ 𝔪) × (𝔮 × ω.ReducedSpace (ω.orthogonal (LinearMap.range ρ)))) =
-      finrank ℝ T := by
-  have hP := injective_coprod hρ h𝔪 h𝔪' h𝔮
-  obtain ⟨_, _⟩ := finiteDimensional_and_finiteDimensional hρ h𝔪 h𝔪' h𝔮
-  have hW : finrank ℝ (LinearMap.range ρ) = finrank ℝ 𝔪 + finrank ℝ 𝔮 := by
-    rw [← range_coprod h𝔪' h𝔮, LinearMap.finrank_range_of_inj hP, Module.finrank_prod]
-  have hWU :
-      finrank ℝ ↥(LinearMap.range ρ ⊓ ω.orthogonal (LinearMap.range ρ)) = finrank ℝ 𝔪 := by
-    have h𝔪ρ : 𝔪.map ρ = LinearMap.range (ρ ∘ₗ 𝔪.subtype) := by
-      rw [LinearMap.range_comp, Submodule.range_subtype]
-    rw [range_inf_orthogonal_range hρ h𝔪', h𝔪ρ]
-    refine LinearMap.finrank_range_of_inj (f := ρ ∘ₗ 𝔪.subtype) fun ξ η h ↦ ?_
-    simpa using hP (a₁ := (ξ, 0)) (a₂ := (η, 0)) (by simpa using h)
-  have := ω.finrank_reducedSpace_orthogonal_add (LinearMap.range ρ)
-  simp only [Module.finrank_prod, Subspace.dual_finrank_eq]
-  omega
-
 end Orbit
 
-/-! ### The linear normal form -/
-
 variable [FiniteDimensional ℝ T] (ω ρ ν)
-
-/-- **The linear normal form of Marle and Guillemin–Sternberg.** Let `ρ : 𝔤 → T` be a linear map
-into a finite-dimensional symplectic vector space `(T, ω)` with `ω(ρ ξ, ρ ζ) = ν ⁅ξ, ζ⁆`, let `𝔪`
-be a complement of `ker ρ` in the coadjoint stabilizer `𝔤_ν`, and `𝔮` a complement of `𝔤_ν` in
-`𝔤`. Write `W = ρ(𝔤)` and `V = W^ω ⧸ (W ∩ W^ω)` for the reduced space of `W^ω`. Then some linear
-symplectomorphism from
-
-`(𝔪 × 𝔪*) × (𝔮 × V)`, `Ω((ξ, a, ζ, v), (ξ', a', ζ', v')) = a'(ξ) - a(ξ') + ν ⁅ζ, ζ'⁆ + ω_V(v, v')`
-
-to `(T, ω)` sends `(ξ, 0, 0, 0)` to `ρ ξ` and `(0, 0, ζ, 0)` to `ρ ζ`, and sends `(0, 0, 0, [u])`,
-for `u ∈ W^ω`, to `u` plus an element of `W`. -/
-theorem exists_isSymplectomorphism_cotangent_prod_kirillov_prod_reduction
-    (hρ : ∀ ξ ζ, ω (ρ ξ) (ρ ζ) = ν ⁅ξ, ζ⁆) {𝔪 𝔮 : Submodule ℝ 𝔤}
-    (h𝔪 : Disjoint (LinearMap.ker ρ) 𝔪)
-    (h𝔪' : LinearMap.ker ρ ⊔ 𝔪 = (lieAnnihilator ℝ 𝔤 ν).toSubmodule)
-    (h𝔮 : IsCompl (lieAnnihilator ℝ 𝔤 ν).toSubmodule 𝔮) :
-    ∃ e : ((𝔪 × Dual ℝ 𝔪) × (𝔮 × ω.ReducedSpace (ω.orthogonal (LinearMap.range ρ)))) ≃ₗ[ℝ] T,
-      IsSymplectomorphism (cotangentSymplecticForm.prod ((ν.kirillovSymplecticForm h𝔮).prod
-        (ω.reduction (ω.orthogonal (LinearMap.range ρ))))) ω e ∧
-      (∀ ξ : 𝔪, e ((ξ, 0), (0, 0)) = ρ ξ) ∧ (∀ ζ : 𝔮, e ((0, 0), (ζ, 0)) = ρ ζ) ∧
-      ∀ u : ω.orthogonal (LinearMap.range ρ),
-        e ((0, 0), (0, Submodule.Quotient.mk u)) - u ∈ LinearMap.range ρ := by
-  set U := ω.orthogonal (LinearMap.range ρ)
-  -- A linear lift `s` of the reduced space `U ⧸ (W ∩ U)` to `U`.
-  obtain ⟨s, hs⟩ := (LinearMap.ker (ω.toBilinForm.restrict U)).mkQ.exists_rightInverse_of_surjective
-    (Submodule.range_mkQ _)
-  have hs' (v : ω.ReducedSpace U) : Submodule.Quotient.mk (s v) = v := LinearMap.congr_fun hs v
-  -- The orbit directions and the lifted slice, as a map `F` from `(𝔪 × 𝔮) × V` to `T`, and the
-  -- inclusion `G` of the same space into the model.
-  let F : (𝔪 × 𝔮) × ω.ReducedSpace U →ₗ[ℝ] T :=
-    ((ρ ∘ₗ 𝔪.subtype).coprod (ρ ∘ₗ 𝔮.subtype)).coprod (U.subtype ∘ₗ s)
-  let G : (𝔪 × 𝔮) × ω.ReducedSpace U →ₗ[ℝ] (𝔪 × Dual ℝ 𝔪) × (𝔮 × ω.ReducedSpace U) :=
-    ((LinearMap.inl ℝ _ _ ∘ₗ LinearMap.inl ℝ _ _ ∘ₗ LinearMap.fst ℝ _ _) +
-      (LinearMap.inr ℝ _ _ ∘ₗ LinearMap.inl ℝ _ _ ∘ₗ LinearMap.snd ℝ _ _)).coprod
-      (LinearMap.inr ℝ _ _ ∘ₗ LinearMap.inr ℝ _ _)
-  have hF (a : 𝔪) (b : 𝔮) (v : ω.ReducedSpace U) : F ((a, b), v) = ρ a + ρ b + s v := by
-    simp [F]
-  have hG (a : 𝔪) (b : 𝔮) (v : ω.ReducedSpace U) : G ((a, b), v) = ((a, 0), (b, v)) := by
-    simp [G]
-  have hGinj : Function.Injective G := by
-    rw [← LinearMap.ker_eq_bot, Submodule.eq_bot_iff]
-    rintro ⟨⟨a, b⟩, v⟩ h
-    obtain ⟨rfl, rfl, rfl⟩ : a = 0 ∧ b = 0 ∧ v = 0 := by simpa [LinearMap.mem_ker, hG] using h
-    rfl
-  obtain ⟨_, _⟩ := finiteDimensional_and_finiteDimensional hρ h𝔪 h𝔪' h𝔮
-  obtain ⟨e, he, hext⟩ := exists_isSymplectomorphism_extend_of_injective
-    (cotangentSymplecticForm.prod ((ν.kirillovSymplecticForm h𝔮).prod (ω.reduction U))) ω
-    (finrank_model_eq hρ h𝔪 h𝔪' h𝔮) hGinj (injective_coprod_coprod hρ h𝔪 h𝔪' h𝔮 s hs')
-    fun ⟨⟨a, b⟩, v⟩ ⟨⟨a', b'⟩, v'⟩ ↦ by
-      rw [hF, hF, apply_add_add_apply_add_add hρ h𝔪' s hs', hG, hG]
-      simp [U]
-  refine ⟨e, he, fun ξ ↦ ?_, fun ζ ↦ ?_, fun u ↦ ?_⟩
-  · simpa [hG, hF] using hext ((ξ, 0), 0)
-  · simpa [hG, hF] using hext ((0, ζ), 0)
-  · have h := hext ((0, 0), Submodule.Quotient.mk u)
-    rw [hG, hF] at h
-    simp only [ZeroMemClass.coe_zero, map_zero, zero_add] at h
-    have hu := ReducedSpace.mk_eq_mk_iff.1 (hs' (Submodule.Quotient.mk u))
-    rw [ω.orthogonal_orthogonal] at hu
-    rwa [h]
 
 /-! ### The equivariant linear normal form -/
 
@@ -332,45 +220,6 @@ theorem apply_mem_orthogonal_range (hτ : ∀ h, IsSymplectomorphism ω ω (τ h
     (fun g ↦ (hτ g).apply) (fun g v hv ↦ by
       obtain ⟨ξ, rfl⟩ := hv
       exact ⟨Ad g ξ, hρτ g ξ⟩) h hu
-
-omit [FiniteDimensional ℝ T] in
-variable {ω} in
-/-- A semisimple action of `H` on `T` by symplectomorphisms preserving `U` admits an `H`-equivariant
-linear lift `s` of the reduced space `U ⧸ (U ∩ U^ω)` to `U`. -/
-private theorem exists_equivariant_lift
-    [Representation.IsSemisimpleRepresentation
-      (LinearEquiv.automorphismGroup.toLinearMapMonoidHom.comp τ : Representation ℝ H T)]
-    (hτ : ∀ h, IsSymplectomorphism ω ω (τ h)) (U : Submodule ℝ T)
-    (hU : ∀ h, ∀ u ∈ U, τ h u ∈ U) :
-    ∃ s : ω.ReducedSpace U →ₗ[ℝ] U, (∀ v, Submodule.Quotient.mk (s v) = v) ∧
-      ∀ h v, (s (ω.reducedSpaceRepresentation τ hτ U hU h v) : T) = τ h (s v) := by
-  let τR : Representation ℝ H T := LinearEquiv.automorphismGroup.toLinearMapMonoidHom.comp τ
-  let Uₛ : Subrepresentation τR := ⟨U, fun h _ hu ↦ hU h _ hu⟩
-  have : Uₛ.toRepresentation.IsSemisimpleRepresentation :=
-    (U.subtype.intertwiningMap_of_isIntertwiningMap Uₛ.toRepresentation τR
-      fun _ _ ↦ rfl).isSemisimpleRepresentation_of_injective Subtype.val_injective
-  -- The kernel `U ∩ U^ω` of the restriction of `ω` is invariant, so it has an invariant
-  -- complement `C`, and `s` is the identification of the quotient with `C`.
-  let Kₛ : Subrepresentation Uₛ.toRepresentation :=
-    ⟨LinearMap.ker (ω.toBilinForm.restrict U), fun h u hu ↦ by
-      rw [mem_ker_restrict_iff] at hu ⊢
-      exact apply_mem_orthogonal (ρ := τR) (fun g ↦ (hτ g).apply) (fun g v hv ↦ hU g v hv) h hu⟩
-  obtain ⟨C, hC⟩ := exists_isCompl Kₛ
-  let e := Subrepresentation.quotientEquivOfIsCompl hC
-  refine ⟨C.toSubmodule.subtype ∘ₗ e.toLinearEquiv.toLinearMap, fun v ↦ ?_, fun h v ↦ ?_⟩ <;>
-    induction v using Submodule.Quotient.induction_on with
-    | H u => ?_
-  · refine (Submodule.Quotient.eq _).2 ?_
-    rw [← neg_mem_iff, neg_sub]
-    exact Subrepresentation.sub_quotientEquivOfIsCompl_apply_mk_mem hC u
-  · have hq : ω.reducedSpaceRepresentation τ hτ U hU h (Submodule.Quotient.mk u) =
-        Kₛ.quotient h (Submodule.Quotient.mk u) := by
-      rw [reducedSpaceRepresentation_apply_mk]
-      exact (Subrepresentation.quotient_apply_mk Kₛ h u).symm
-    have he := Representation.IntertwiningMap.isIntertwining _ _ e.toIntertwiningMap h
-      (Submodule.Quotient.mk u)
-    rw [LinearMap.comp_apply, hq]
-    exact congrArg (fun c : C.toSubmodule ↦ ((c : U) : T)) he
 
 omit [FiniteDimensional ℝ T] in
 variable {ω ρ ν} in
@@ -582,8 +431,10 @@ private theorem orbitSliceMap_apply_prod (hτ : ∀ h, IsSymplectomorphism ω ω
             hτ _ fun h _ ↦ apply_mem_orthogonal_range hτ hρτ h))) h w) =
       τ h (orbitSliceMap 𝔪.toSubmodule 𝔮.toSubmodule s w) := by
   obtain ⟨⟨a, b⟩, v⟩ := w
-  have ha : ((𝔪.toRepresentation h a : 𝔪.toSubmodule) : 𝔤) = Ad h a := rfl
-  have hb : ((𝔮.toRepresentation h b : 𝔮.toSubmodule) : 𝔤) = Ad h b := rfl
+  have ha : ((𝔪.toRepresentation h a : 𝔪.toSubmodule) : 𝔤) = Ad h a := by
+    rw [Subrepresentation.toRepresentation_apply, LinearMap.restrict_apply]
+  have hb : ((𝔮.toRepresentation h b : 𝔮.toSubmodule) : 𝔤) = Ad h b := by
+    rw [Subrepresentation.toRepresentation_apply, LinearMap.restrict_apply]
   simp only [Representation.prod_apply_apply, orbitSliceMap_apply, ha, hb, hρτ,
     MonoidHom.coe_comp, Function.comp_apply,
     LinearEquiv.automorphismGroup.toLinearMapMonoidHom_apply, LinearEquiv.coe_coe, map_add, hsτ]
@@ -595,13 +446,13 @@ variable [Representation.IsSemisimpleRepresentation
 vector space `(T, ω)` by a semisimple representation `τ` by symplectomorphisms, and on a Lie algebra
 `𝔤` by a representation `Ad`. Let `ρ : 𝔤 → T` be an `H`-equivariant linear map with
 `ω(ρ ξ, ρ ζ) = ν ⁅ξ, ζ⁆`, and choose `Ad`-invariant complements `𝔪` of `ker ρ` in the coadjoint
-stabilizer `𝔤_ν` and `𝔮` of `𝔤_ν` in `𝔤`. Then the linear symplectomorphism of
-`exists_isSymplectomorphism_cotangent_prod_kirillov_prod_reduction` from
+stabilizer `𝔤_ν` and `𝔮` of `𝔤_ν` in `𝔤`. Then some linear symplectomorphism from
 
 `(𝔪 × 𝔪*) × (𝔮 × V)`, `V = W^ω ⧸ (W ∩ W^ω)` for `W = ρ(𝔤)`,
 
-to `(T, ω)` can be chosen `H`-equivariant, where `H` acts on `𝔪` and `𝔮` by `Ad`, on `𝔪*` by the
-dual of `Ad`, and on `V` by `[u] ↦ [τ h u]`. -/
+to `(T, ω)` with the properties of
+`exists_isSymplectomorphism_cotangent_prod_kirillov_prod_reduction` is `H`-equivariant, where `H`
+acts on `𝔪` and `𝔮` by `Ad`, on `𝔪*` by the dual of `Ad`, and on `V` by `[u] ↦ [τ h u]`. -/
 theorem exists_equivariant_isSymplectomorphism_cotangent_prod_kirillov_prod_reduction
     (hρ : ∀ ξ ζ, ω (ρ ξ) (ρ ζ) = ν ⁅ξ, ζ⁆) (hτ : ∀ h, IsSymplectomorphism ω ω (τ h))
     (hρτ : ∀ h ξ, ρ (Ad h ξ) = τ h (ρ ξ)) {𝔪 𝔮 : Subrepresentation Ad}
@@ -622,7 +473,7 @@ theorem exists_equivariant_isSymplectomorphism_cotangent_prod_kirillov_prod_redu
             fun h _ ↦ apply_mem_orthogonal_range hτ hρτ h)))) h x) = τ h (e x) := by
   have hU : ∀ h, ∀ u ∈ ω.orthogonal (LinearMap.range ρ), τ h u ∈ ω.orthogonal (LinearMap.range ρ) :=
     fun h _ ↦ apply_mem_orthogonal_range hτ hρτ h
-  obtain ⟨s, hs, hsτ⟩ := exists_equivariant_lift hτ _ hU
+  obtain ⟨s, hs, hsτ⟩ := exists_equivariant_section_reducedSpace hτ _ hU
   -- `H` acts on the source `(𝔪 × 𝔮) × V` of the equivariant embedding `F` into `T`.
   let σ := (𝔪.toRepresentation.prod 𝔮.toRepresentation).prod
     (LinearEquiv.automorphismGroup.toLinearMapMonoidHom.comp
@@ -648,7 +499,8 @@ theorem exists_equivariant_isSymplectomorphism_cotangent_prod_kirillov_prod_redu
   obtain ⟨e₂, he₂, he₂F, he₂σ⟩ := hB.exists_equivariant_isSymplectomorphism_coisotropicModel
     (ρ := LinearEquiv.automorphismGroup.toLinearMapMonoidHom.comp τ) (ι := F) hP
     (Representation.isInvariantForm_iff.2 fun h u v ↦ (hτ h).apply u v) hσB
-    (injective_coprod_coprod hρ h𝔪 h𝔪' h𝔮 s hs) (fun _ _ ↦ rfl)
+    (injective_coprod_coprod hρ h𝔪 h𝔪' h𝔮 s hs)
+    (fun w w' ↦ (LinearMap.compl₁₂_apply ω.toBilinForm F F w w').symm)
     (isCoisotropic_range_orbitSliceMap h𝔪' h𝔮 hs) (orbitSliceMap_apply_prod hτ hρτ hsτ)
     fun h w ↦ by simp [P, hj, σ]
   refine ⟨(modelEquiv j).trans e₂, (isSymplectomorphism_modelEquiv j hB
@@ -664,9 +516,43 @@ theorem exists_equivariant_isSymplectomorphism_cotangent_prod_kirillov_prod_redu
     simpa using coe_apply_mk_sub_mem_range hs u
   · rw [LinearEquiv.trans_apply, LinearEquiv.trans_apply,
       modelEquiv_apply_prod j hσB (fun g a ↦ Subtype.ext (by simp [hj, σ])), he₂σ]
-    rfl
+    simp only [MonoidHom.coe_comp, Function.comp_apply,
+      LinearEquiv.automorphismGroup.toLinearMapMonoidHom_apply, LinearEquiv.coe_coe]
 
 end Equivariant
+
+/-! ### The linear normal form -/
+
+/-- **The linear normal form of Marle and Guillemin–Sternberg.** Let `ρ : 𝔤 → T` be a linear map
+into a finite-dimensional symplectic vector space `(T, ω)` with `ω(ρ ξ, ρ ζ) = ν ⁅ξ, ζ⁆`, let `𝔪`
+be a complement of `ker ρ` in the coadjoint stabilizer `𝔤_ν`, and `𝔮` a complement of `𝔤_ν` in
+`𝔤`. Write `W = ρ(𝔤)` and `V = W^ω ⧸ (W ∩ W^ω)` for the reduced space of `W^ω`. Then some linear
+symplectomorphism from
+
+`(𝔪 × 𝔪*) × (𝔮 × V)`, `Ω((ξ, a, ζ, v), (ξ', a', ζ', v')) = a'(ξ) - a(ξ') + ν ⁅ζ, ζ'⁆ + ω_V(v, v')`
+
+to `(T, ω)` sends `(ξ, 0, 0, 0)` to `ρ ξ` and `(0, 0, ζ, 0)` to `ρ ζ`, and sends `(0, 0, 0, [u])`,
+for `u ∈ W^ω`, to `u` plus an element of `W`. This is the case of the trivial group of
+`exists_equivariant_isSymplectomorphism_cotangent_prod_kirillov_prod_reduction`. -/
+theorem exists_isSymplectomorphism_cotangent_prod_kirillov_prod_reduction
+    (hρ : ∀ ξ ζ, ω (ρ ξ) (ρ ζ) = ν ⁅ξ, ζ⁆) {𝔪 𝔮 : Submodule ℝ 𝔤}
+    (h𝔪 : Disjoint (LinearMap.ker ρ) 𝔪)
+    (h𝔪' : LinearMap.ker ρ ⊔ 𝔪 = (lieAnnihilator ℝ 𝔤 ν).toSubmodule)
+    (h𝔮 : IsCompl (lieAnnihilator ℝ 𝔤 ν).toSubmodule 𝔮) :
+    ∃ e : ((𝔪 × Dual ℝ 𝔪) × (𝔮 × ω.ReducedSpace (ω.orthogonal (LinearMap.range ρ)))) ≃ₗ[ℝ] T,
+      IsSymplectomorphism (cotangentSymplecticForm.prod ((ν.kirillovSymplecticForm h𝔮).prod
+        (ω.reduction (ω.orthogonal (LinearMap.range ρ))))) ω e ∧
+      (∀ ξ : 𝔪, e ((ξ, 0), (0, 0)) = ρ ξ) ∧ (∀ ζ : 𝔮, e ((0, 0), (ζ, 0)) = ρ ζ) ∧
+      ∀ u : ω.orthogonal (LinearMap.range ρ),
+        e ((0, 0), (0, Submodule.Quotient.mk u)) - u ∈ LinearMap.range ρ := by
+  -- The case of the trivial group, with `𝔪` and `𝔮` as subrepresentations of its trivial action.
+  have : NeZero (Nat.card Unit : ℝ) := ⟨by simp⟩
+  obtain ⟨e, he, h₁, h₂, h₃, -⟩ :=
+    exists_equivariant_isSymplectomorphism_cotangent_prod_kirillov_prod_reduction (H := Unit)
+      (Ad := 1) (τ := 1) ω ρ ν hρ (fun _ ↦ isSymplectomorphism_iff.2 fun _ _ ↦ by simp)
+      (fun _ _ ↦ by simp) (𝔪 := ⟨𝔪, fun _ _ h ↦ by simpa using h⟩)
+      (𝔮 := ⟨𝔮, fun _ _ h ↦ by simpa using h⟩) h𝔪 h𝔪' h𝔮
+  exact ⟨e, he, h₁, h₂, h₃⟩
 
 end SymplecticForm
 
