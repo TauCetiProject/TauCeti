@@ -58,18 +58,6 @@ theorem tamagawaNumberAt_def (E : WeierstrassCurve K)
       (E.baseChange (v.adicCompletion K)).tamagawaNumber (valuation (v.adicCompletion K)) :=
   (rfl)
 
-/-- The completed Tamagawa number at `v` may be read using the canonical adic valuation `Valued.v`,
-which is equivalent to `ValuativeRel.valuation`. -/
-theorem tamagawaNumberAt_eq_tamagawaNumber_valued (E : WeierstrassCurve K)
-    (v : HeightOneSpectrum R) :
-    E.tamagawaNumberAt v =
-      (E.baseChange (v.adicCompletion K)).tamagawaNumber
-        (Valued.v : Valuation (v.adicCompletion K) (WithZero (Multiplicative ℤ))) := by
-  let : IsDiscreteValuationRing
-      (Valued.v : Valuation (v.adicCompletion K) (WithZero (Multiplicative ℤ))).valuationSubring :=
-    inferInstanceAs (IsDiscreteValuationRing (v.adicCompletionIntegers K))
-  exact tamagawaNumber_congr _ _ (ValuativeRel.isEquiv _ _)
-
 /-- Each finite-place Tamagawa number is positive. -/
 theorem tamagawaNumberAt_pos (E : WeierstrassCurve K) [E.IsElliptic]
     (v : HeightOneSpectrum R) : 0 < E.tamagawaNumberAt v := by

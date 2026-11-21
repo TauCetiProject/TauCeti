@@ -143,19 +143,6 @@ theorem bsdQuotient_mul_card_sha_mul_kummerRatioProduct_mul_kummerRatio_dual
           Nat.card (AddCommGroup.torsion E₂.toAffine.Point) ^ 2 *
         Nat.card E₁.sha * φ.kummerRatio := by ring
 
-/-- Factoring `#Sha(W₁)` into kernel and image orders of `ψ` along a place family `τ`. -/
-private theorem card_sha_eq_mul_range {W₁ W₂ : WeierstrassCurve ℚ} [W₁.IsElliptic] [W₂.IsElliptic]
-    (ψ : Isogeny W₁.toAffine W₂.toAffine)
-    (τ : ∀ v : GlobalNumberFields.Place ℚ,
-      SeparableClosure ℚ →ₐ[ℚ] SeparableClosure v.Completion) :
-    (Nat.card W₁.sha : ℝ) =
-      Nat.card (ψ.shafarevichTateGroupKer τ) *
-        Nat.card ((Hom.ofIsogeny ψ).shafarevichTateMap τ).range := by
-  rw [W₁.sha_eq_shafarevichTateGroup τ]
-  have h := AddSubgroup.card_ker_mul_card_range ((Hom.ofIsogeny ψ).shafarevichTateMap τ)
-  rw [← ψ.shafarevichTateGroupKer_eq_ker_shafarevichTateMap τ] at h
-  exact_mod_cast h.symm
-
 /-- **Selmer-and-`Sha`-image identity for the Birch–Swinnerton-Dyer quotient under an isogeny**:
 for any family `τ` of embeddings of separable closures over the places of `ℚ`,
 
@@ -173,8 +160,14 @@ theorem bsdQuotient_mul_card_selmerGroup_dual [Finite E₁.sha] [Finite E₂.sha
         (Nat.card (φ.selmerGroup τ) * Nat.card (Hom.ofIsogeny φ.dual).pointMapHom.ker) *
         Nat.card ((Hom.ofIsogeny φ).shafarevichTateMap τ).range := by
   have hbase := φ.bsdQuotient_mul_card_sha_mul_kummerRatioProduct_mul_kummerRatio_dual
-  have hsha₁ := card_sha_eq_mul_range φ τ
-  have hsha₂ := card_sha_eq_mul_range φ.dual τ
+  have hsha₁ : (Nat.card E₁.sha : ℝ) =
+      Nat.card (φ.shafarevichTateGroupKer τ) *
+        Nat.card ((Hom.ofIsogeny φ).shafarevichTateMap τ).range := by
+    exact_mod_cast φ.card_sha_eq_card_shafarevichTateGroupKer_mul τ
+  have hsha₂ : (Nat.card E₂.sha : ℝ) =
+      Nat.card (φ.dual.shafarevichTateGroupKer τ) *
+        Nat.card ((Hom.ofIsogeny φ.dual).shafarevichTateMap τ).range := by
+    exact_mod_cast φ.dual.card_sha_eq_card_shafarevichTateGroupKer_mul τ
   have hsel₁ : (Nat.card (φ.selmerGroup τ) : ℝ) =
       (Hom.ofIsogeny φ).pointMapHom.range.index * Nat.card (φ.shafarevichTateGroupKer τ) := by
     exact_mod_cast φ.card_selmerGroup τ

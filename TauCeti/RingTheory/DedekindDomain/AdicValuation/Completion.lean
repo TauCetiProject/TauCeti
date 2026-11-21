@@ -51,8 +51,6 @@ Everything here concerns one completion. The comparison of two completions along
   topology on `𝒪_v` is the `𝔪`-adic one. The instances
   `isLinearTopology_adicCompletionIntegers` and `fact_isAdic_maximalIdeal_adicCompletionIntegers`
   (in the same namespace) record this for formal-group points with parameters in `𝔪`.
-* `IsDedekindDomain.HeightOneSpectrum.exists_valued_algebraMap_sub_le`: every element of `K_v` is
-  approximated by an element of `K` within any nonzero valuation bound.
 * `IsDedekindDomain.HeightOneSpectrum.exists_valued_sub_le`: every element of `𝒪_v` is
   congruent to an element of `R` modulo any power of the maximal ideal, so `R` is dense in `𝒪_v`;
   `IsDedekindDomain.HeightOneSpectrum.exists_algebraMap_sub_mem_span_singleton` states the same
@@ -448,15 +446,6 @@ instance isAdicComplete_adicCompletionIntegers :
   -- `Eq`; the lemma is `protected` and must be named in full.
   (IsAdic.isAdicComplete_iff (v.isAdic_maximalIdeal_adicCompletionIntegers (K := K))).mpr
     ⟨inferInstance, inferInstance⟩
-
-/-- **`K` is dense in `K_v` quantitatively**: every element of the adic completion `K_v` is
-approximated by an element of `K` within any nonzero valuation bound. -/
-theorem exists_valued_algebraMap_sub_le (x : v.adicCompletion K) {γ : ℤᵐ⁰} (hγ : γ ≠ 0) :
-    ∃ a : K, Valued.v (algebraMap K (v.adicCompletion K) a - x) ≤ γ := by
-  have hopen : IsOpen {y : v.adicCompletion K | Valued.v (y - x) ≤ γ} :=
-    (v.isOpen_setOf_valued_le (K := K) hγ).preimage (continuous_sub_right x)
-  exact (v.denseRange_algebraMap K).exists_mem_open hopen
-    ⟨x, by simp only [Set.mem_ofPred_eq, sub_self, map_zero, zero_le]⟩
 
 /-- **`R` is dense in `𝒪_v`**: every element of the ring of integers of the completion is
 congruent to an element of `R` modulo any power `𝔪 ^ n` of the maximal ideal. -/
