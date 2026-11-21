@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.Graph.Serre.Between
 public import TauCeti.Combinatorics.SimpleGraph.Cohomology.Flag
 public import Mathlib.Combinatorics.SimpleGraph.Connectivity.Connected
+import Mathlib.Algebra.Group.Indicator
 import Mathlib.Tactic.Abel
 
 /-!
@@ -654,7 +655,7 @@ private theorem TrackBefore.of_isBetween {s : (dualGraph Γ Δ f).E} {a b c : V}
 before the source of that dart, and the track of `q`. -/
 private theorem trackBefore_tgt_iff (hΔ : Δ.IsAcyclic) (q : DualDart Γ Δ f)
     {s : (dualGraph Γ Δ f).E} : TrackBefore s q.fst q.snd (Δ.tgt q.dart) ↔
-      TrackBefore s q.fst q.snd (Δ.src q.dart) ∨ q.toDart = s := by
+      TrackBefore s q.fst q.snd (Δ.src q.dart) ∨ s = q.toDart := by
   -- The dart of `q` is crossed from the image of `q.fst` to its own target.
   have ht : Δ.Crosses (f q.fst) (Δ.tgt q.dart) q.dart :=
     crosses_rev.mp (crosses_rev.mpr q.crosses).crosses_src
@@ -663,19 +664,17 @@ private theorem trackBefore_tgt_iff (hΔ : Δ.IsAcyclic) (q : DualDart Γ Δ f)
       (fun h => ⟨q', ha, hb, h, hs⟩) fun h => ?_
     have hd : q'.dart = q.dart := by
       simpa using (hΔ.crosses_iff_mem_darts (Path.isReduced_toPath Δ (Δ.dart q.dart))).mp h
-    rwa [← DualDart.ext ha hb hd]
-  · rintro (⟨q', ha, hb, hq', hs⟩ | hs)
+    rw [← hs, DualDart.ext ha hb hd]
+  · rintro (⟨q', ha, hb, hq', hs⟩ | rfl)
     · exact ⟨q', ha, hb, ht.isBetween_src.crosses_of_crosses_left hq', hs⟩
-    · exact ⟨q, rfl, rfl, ht, hs⟩
+    · exact ⟨q, rfl, rfl, ht, rfl⟩
 
 /-- The track of a crossing `q` is not met along its edge before the source of its dart. -/
 private theorem not_trackBefore_src (q : DualDart Γ Δ f) :
     ¬TrackBefore q.toDart q.fst q.snd (Δ.src q.dart) := by
   rintro ⟨q', ha, hb, hq', hs⟩
   obtain rfl := DualDart.eq_of_toGeomEdge_eq ha.symm hb.symm (congrArg _ hs.symm)
-  have := hq'.dist_tgt
-  have := hq'.isBetween_tgt.dist_add_dist
-  lia
+  exact not_crosses_self _ _ hq'.crosses_src
 
 /-- No track is met along an edge before the image of its first end. -/
 private theorem not_trackBefore_self {s : (dualGraph Γ Δ f).E} {a b : V} :
@@ -686,24 +685,12 @@ section Cochain
 
 variable {A : Type*} [AddCommGroup A]
 
-open Classical in
-/-- The element `a₀` if `P` holds, and `0` otherwise. -/
-private noncomputable def ind (a₀ : A) (P : Prop) : A := if P then a₀ else 0
-
-private theorem ind_or (a₀ : A) {P Q : Prop} (h : ¬(P ∧ Q)) :
-    ind a₀ (P ∨ Q) = ind a₀ P + ind a₀ Q := by
-  by_cases hP : P <;> by_cases hQ : Q <;> simp_all [ind]
-
-private theorem ind_of_not (a₀ : A) {P : Prop} (h : ¬P) : ind a₀ P = 0 :=
-  ite_eq_right h
-
-private theorem ind_of (a₀ : A) {P : Prop} (h : P) : ind a₀ P = a₀ :=
-  ite_eq_left h
-
 /-- The signed number of crossings of the edge `(a, b)` with the track of the dart `t` of the dual
-graph before `x`: `a₀` for a crossing with the orientation of `t`, `-a₀` for the opposite one. -/
+graph before `x`: `a₀` for a crossing with the orientation of `t`, `-a₀` for the opposite one.
+It is the indicator of the set of darts whose tracks are met, at `t` minus at the reverse of `t`. -/
 private noncomputable def trackCount (a₀ : A) (t : (dualGraph Γ Δ f).E) (a b : V) (x : Δ.V) : A :=
-  ind a₀ (TrackBefore t a b x) - ind a₀ (TrackBefore ((dualGraph Γ Δ f).rev t) a b x)
+  {s | TrackBefore s a b x}.indicator (fun _ => a₀) t -
+    {s | TrackBefore s a b x}.indicator (fun _ => a₀) ((dualGraph Γ Δ f).rev t)
 
 variable (a₀ : A) (t : (dualGraph Γ Δ f).E)
 
@@ -711,10 +698,18 @@ variable (a₀ : A) (t : (dualGraph Γ Δ f).E)
 private theorem trackCount_eq_sub (hΔ : Δ.IsAcyclic) {a b : V} {x : Δ.V}
     (hx : Δ.IsBetween (f a) x (f b)) :
     trackCount a₀ t a b (f b) = trackCount a₀ t a b x - trackCount a₀ t b a x := by
-  have key (s : (dualGraph Γ Δ f).E) : ind a₀ (TrackBefore s a b (f b)) =
-      ind a₀ (TrackBefore s a b x) + ind a₀ (TrackBefore ((dualGraph Γ Δ f).rev s) b a x) := by
-    rw [trackBefore_iff hΔ hx, ind_or a₀ not_trackBefore_and_trackBefore]
-  rw [trackCount, key, key, rev_rev, trackCount, trackCount]
+  -- The tracks met before `f b` are those met before `x` and the reverses of those met along
+  -- `(b, a)` before `x`.
+  let T : Set (dualGraph Γ Δ f).E := {s | TrackBefore s b a x}
+  have h : {s | TrackBefore s a b (f b)} =
+      {s | TrackBefore s a b x} ∪ (dualGraph Γ Δ f).rev ⁻¹' T :=
+    Set.ext fun _ => trackBefore_iff hΔ hx
+  have hd : Disjoint {s | TrackBefore s a b x} ((dualGraph Γ Δ f).rev ⁻¹' T) :=
+    Set.disjoint_left.mpr fun _ h₁ h₂ => not_trackBefore_and_trackBefore ⟨h₁, h₂⟩
+  have hT (s) : ((dualGraph Γ Δ f).rev ⁻¹' T).indicator (fun _ => a₀) s =
+      T.indicator (fun _ => a₀) ((dualGraph Γ Δ f).rev s) :=
+    Set.indicator_comp_right (g := fun _ => a₀) _
+  simp only [trackCount, h, Set.indicator_union_of_disjoint hd, hT, rev_rev, T]
   abel
 
 /-- Along two sides `(a, b)` and `(a, c)` of a triangle (or twice the same side) the counts before
@@ -730,11 +725,14 @@ private theorem trackCount_eq_of_isBetween {a b c : V} {x : Δ.V} (hab : a = b �
 `t`, by `-a₀` if it lies on the reverse of `t`, and not at all otherwise. -/
 private theorem trackCount_tgt (hΔ : Δ.IsAcyclic) (q : DualDart Γ Δ f) :
     trackCount a₀ t q.fst q.snd (Δ.tgt q.dart) = trackCount a₀ t q.fst q.snd (Δ.src q.dart) +
-      (ind a₀ (q.toDart = t) - ind a₀ (q.toDart = (dualGraph Γ Δ f).rev t)) := by
-  have hn (s) : ¬(TrackBefore s q.fst q.snd (Δ.src q.dart) ∧ q.toDart = s) := by
-    rintro ⟨h, rfl⟩
-    exact not_trackBefore_src q h
-  simp only [trackCount, trackBefore_tgt_iff hΔ q, ind_or a₀ (hn _)]
+      (({q.toDart} : Set _).indicator (fun _ => a₀) t -
+        ({q.toDart} : Set _).indicator (fun _ => a₀) ((dualGraph Γ Δ f).rev t)) := by
+  have h : {s | TrackBefore s q.fst q.snd (Δ.tgt q.dart)} =
+      {s | TrackBefore s q.fst q.snd (Δ.src q.dart)} ∪ {q.toDart} :=
+    Set.ext fun _ => trackBefore_tgt_iff hΔ q
+  have hd : Disjoint {s | TrackBefore s q.fst q.snd (Δ.src q.dart)} {q.toDart} :=
+    Set.disjoint_singleton_right.mpr (not_trackBefore_src q)
+  simp only [trackCount, h, Set.indicator_union_of_disjoint hd]
   abel
 
 /-- The counts along the edges of `Γ` form a one-cochain of its flag complex: reversing an edge
@@ -743,9 +741,7 @@ private theorem trackCount_swap (hΔ : Δ.Preconnected) (hΔ' : Δ.IsAcyclic) (a
     trackCount a₀ t b a (f a) = -trackCount a₀ t a b (f b) := by
   have h := trackCount_eq_sub a₀ t hΔ' (isBetween_left ((preconnected_iff Δ).mp hΔ (f a) (f b)))
   -- No track is met along `(a, b)` before `f a`.
-  have h0 : trackCount a₀ t a b (f a) = 0 := by
-    rw [trackCount, ind_of_not a₀ not_trackBefore_self, ind_of_not a₀ not_trackBefore_self,
-      sub_zero]
+  have h0 : trackCount a₀ t a b (f a) = 0 := by simp [trackCount, not_trackBefore_self]
   rw [h, h0, zero_sub, neg_neg]
 
 /-- The cochain of the counts is a cocycle: on a triangle of `Γ`, the counts along two sides add
@@ -817,7 +813,8 @@ the reverse of `t`, and not at all otherwise. -/
 private theorem placeColour_reverse_srcPlace (hΔ : Δ.IsAcyclic) {c : V → A}
     (hc : ∀ a b, Γ.Adj a b → trackCount a₀ t a b (f b) = c b - c a) (q : DualDart Γ Δ f) :
     placeColour a₀ t c q.reverse.srcPlace = placeColour a₀ t c q.srcPlace +
-      (ind a₀ (q.toDart = t) - ind a₀ (q.toDart = (dualGraph Γ Δ f).rev t)) := by
+      (({q.toDart} : Set _).indicator (fun _ => a₀) t -
+        ({q.toDart} : Set _).indicator (fun _ => a₀) ((dualGraph Γ Δ f).rev t)) := by
   rw [← placeColour_swap a₀ t hΔ hc]
   simp only [placeColour, DualPlace.swap, DualDart.srcPlace_fst, DualDart.srcPlace_snd,
     DualDart.srcPlace_pt, DualDart.reverse_fst, DualDart.reverse_snd, DualDart.reverse_dart,
@@ -838,25 +835,24 @@ private theorem mem_darts_of_primitive (hΔ : Δ.IsAcyclic) (ha₀ : a₀ ≠ 0)
   have hmem (p : DualPlace Γ Δ f) : p.toVertex ∈ R ↔
       placeColour a₀ q₀.toDart c p = placeColour a₀ q₀.toDart c q₀.srcPlace :=
     ⟨fun h => h p rfl, fun h _ hp => (placeColour_eq_of_toVertex_eq a₀ _ hΔ hc hp).trans h⟩
-  -- The darts off the track of `q₀` keep the colour.
-  let S : Set (dualGraph Γ Δ f).E := {e | e ≠ q₀.toDart ∧ e ≠ (dualGraph Γ Δ f).rev q₀.toDart}
-  have hS : ∀ e ∈ S, (dualGraph Γ Δ f).rev e ∈ S := fun e ⟨he₁, he₂⟩ =>
-    ⟨fun h => he₂ (by rw [← h, rev_rev]), fun h => he₁ (rev_injective _ h)⟩
-  have hR : ∀ e ∈ S, (dualGraph Γ Δ f).src e ∈ R → (dualGraph Γ Δ f).tgt e ∈ R := by
-    rintro e ⟨he₁, he₂⟩
-    induction e using dualGraph_dart_cases with | crossing q => ?_
-    rw [dualGraph_src_toDart, dualGraph_tgt_toDart, hmem, hmem,
-      placeColour_reverse_srcPlace a₀ _ hΔ hc, ind_of_not a₀ he₁, ind_of_not a₀ he₂, sub_zero,
-      add_zero]
-    exact id
-  by_contra hP
-  have h := Path.mem_iff_mem_of_forall_mem_darts _ hS hR P fun e he =>
-    ⟨fun h => hP (.inl (h ▸ he)), fun h => hP (.inr (h ▸ he))⟩
-  -- The track of `q₀` itself changes the colour by `a₀`.
-  rw [dualGraph_src_toDart, dualGraph_tgt_toDart, hmem, hmem,
-    placeColour_reverse_srcPlace a₀ _ hΔ hc, ind_of a₀ rfl,
-    ind_of_not a₀ fun h => rev_ne _ _ h.symm, sub_zero] at h
-  exact ha₀ (by simpa using h)
+  -- Leaving the complement of `R`, the path crosses a dart which changes the colour.
+  obtain ⟨e, he, hs, ht⟩ := Path.exists_boundary_dart _ P Rᶜ (by
+    rw [dualGraph_tgt_toDart, Set.mem_compl_iff, hmem, placeColour_reverse_srcPlace a₀ _ hΔ hc,
+      Set.indicator_of_mem (Set.mem_singleton _),
+      Set.indicator_of_notMem (Set.notMem_singleton_iff.mpr (rev_ne _ _)), sub_zero]
+    simpa using ha₀) (by rw [Set.notMem_compl_iff, dualGraph_src_toDart, hmem])
+  suffices e = q₀.toDart ∨ e = (dualGraph Γ Δ f).rev q₀.toDart by
+    obtain rfl | rfl := this
+    exacts [.inl he, .inr he]
+  induction e using dualGraph_dart_cases with | crossing q => ?_
+  rw [dualGraph_src_toDart, Set.mem_compl_iff, hmem] at hs
+  rw [dualGraph_tgt_toDart, Set.notMem_compl_iff, hmem,
+    placeColour_reverse_srcPlace a₀ _ hΔ hc] at ht
+  -- Off the track of `q₀`, the colour does not change.
+  by_contra! hP
+  rw [Set.indicator_of_notMem (Set.notMem_singleton_iff.mpr hP.1.symm),
+    Set.indicator_of_notMem (Set.notMem_singleton_iff.mpr hP.2.symm), sub_zero, add_zero] at ht
+  exact hs ht
 
 end Cochain
 
