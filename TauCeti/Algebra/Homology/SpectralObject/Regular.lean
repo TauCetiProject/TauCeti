@@ -93,6 +93,16 @@ def IsRegularAt (n t i₀ : ℤ) : Prop :=
 
 variable {X}
 
+/-- The characteristic property of `RangeStableFrom`: `m ≤ s ≤ b`, and the image of
+`H^n(m ≤ b) ⟶ H^n(s ≤ b)` lies in the image of `H^n(i ≤ b) ⟶ H^n(s ≤ b)` for every `i ≤ m`. -/
+lemma rangeStableFrom_iff {n s b m : ℤ} :
+    X.RangeStableFrom n s b m ↔ ∃ (hm : m ≤ s) (hsb : s ≤ b), ∀ (i : ℤ) (hi : i ≤ m),
+      LinearMap.range ((X.H n).map (twoδ₁Toδ₀' (m : EInt) (s : EInt) (b : EInt)
+          (WithBotTop.coe_le_coe.2 hm) (WithBotTop.coe_le_coe.2 hsb))).hom ≤
+        LinearMap.range ((X.H n).map (twoδ₁Toδ₀' (i : EInt) (s : EInt) (b : EInt)
+          (WithBotTop.coe_le_coe.2 (hi.trans hm)) (WithBotTop.coe_le_coe.2 hsb))).hom :=
+  Iff.rfl
+
 /-- The stage `m` from which the images in `H^n(s ≤ b)` stabilize is at most `s`. -/
 lemma RangeStableFrom.le {n s b m : ℤ} (h : X.RangeStableFrom n s b m) : m ≤ s := h.1
 
