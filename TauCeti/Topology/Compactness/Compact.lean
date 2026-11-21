@@ -23,7 +23,11 @@ valid near each point of a compact set to one constant valid on all of it.
 A continuous injection on a compact set `K` restricts to a closed embedding of `K`
 (`IsCompact.isClosedEmbedding_domRestrict`), so neighbourhoods of a point of `K`
 (`IsCompact.exists_mem_nhds_inter_preimage_subset`) and convergence to a point of `K` of a family
-eventually in `K` (`IsCompact.tendsto_nhds_of_tendsto_comp`) can be read through it.
+eventually in `K` (`IsCompact.tendsto_nhds_of_tendsto_comp`) can be read through it. So can
+limits of maps: a continuous limit `g`, pointwise along a nontrivial filter, of maps `f ∘ x i`,
+where the values of the `x i` eventually lie in `K`, is `f ∘ y` for a continuous pointwise limit
+`y` of the `x i` (`IsCompact.exists_tendsto_of_tendsto_comp`). This is how a limit in a manifold
+without a metric is constructed from a limit measured through an embedding into a normed space.
 -/
 
 public section
@@ -134,6 +138,37 @@ theorem _root_.IsCompact.tendsto_nhds_of_tendsto_comp {Y ι : Type*} [Topologica
   have hgt : ∀ᶠ i in l, f (g i) ∈ t := by
     simpa only [Function.comp_apply] using h.eventually_mem ht
   exact (hg.and hgt).mono fun i hi ↦ hts ⟨hi.1, hi.2⟩
+
+/-- **Limits read back through a continuous injection.** Let `f` be continuous and injective on a
+compact set `K`, with values in a Hausdorff space, and let `x i` be maps from a space `T` whose
+values at each point of a set `Ω ⊆ T` eventually lie in `K` along a nontrivial filter `l`. If the
+maps `f ∘ x i` converge along `l` pointwise on `Ω` to a map `g` continuous on `Ω`, then `g = f ∘ y`
+on `Ω` for a map `y` continuous on `Ω` with values in `K`, and the `x i` converge along `l`
+pointwise on `Ω` to `y`. -/
+theorem _root_.IsCompact.exists_tendsto_of_tendsto_comp {Y : Type*} [TopologicalSpace Y]
+    [T2Space Y] {K : Set X} (hK : IsCompact K) {f : X → Y} (hf : ContinuousOn f K)
+    (hinj : InjOn f K) {T : Type*} [TopologicalSpace T] {Ω : Set T} {ι : Type*} {l : Filter ι}
+    [l.NeBot] {x : ι → T → X} (hxK : ∀ t ∈ Ω, ∀ᶠ i in l, x i t ∈ K) {g : T → Y}
+    (hg : ContinuousOn g Ω) (hlim : ∀ t ∈ Ω, Tendsto (fun i ↦ f (x i t)) l (𝓝 (g t))) :
+    ∃ y : T → X, ContinuousOn y Ω ∧ MapsTo y Ω K ∧ EqOn (f ∘ y) g Ω ∧
+      ∀ t ∈ Ω, Tendsto (fun i ↦ x i t) l (𝓝 (y t)) := by
+  obtain ⟨i⟩ := l.nonempty_of_neBot
+  rcases isEmpty_or_nonempty X with hX | hX
+  · -- Then `T` is empty too, as the map `x i : T → X` shows.
+    have := Function.isEmpty (x i)
+    exact ⟨x i, fun t ↦ isEmptyElim t, fun t ↦ isEmptyElim t, fun t ↦ isEmptyElim t,
+      fun t ↦ isEmptyElim t⟩
+  -- The limit takes values in the closed set `f(K)`, on which `f` has a continuous inverse.
+  have hgK : MapsTo g Ω (f '' K) := fun t ht ↦
+    (hK.image_of_continuousOn hf).isClosed.mem_of_tendsto (hlim t ht)
+      ((hxK t ht).mono fun i ↦ mem_image_of_mem f)
+  have hy (t : T) (ht : t ∈ Ω) := Function.invFunOn_pos (hgK ht)
+  refine ⟨Function.invFunOn f K ∘ g,
+    (hf.continuousOn_invFunOn_image_of_isCompact hK subset_rfl hinj (by simp)).comp hg hgK,
+    fun t ht ↦ (hy t ht).1, fun t ht ↦ (hy t ht).2,
+    fun t ht ↦ hK.tendsto_nhds_of_tendsto_comp hf hinj (hxK t ht) (hy t ht).1 ?_⟩
+  rw [Function.comp_apply, (hy t ht).2]
+  exact hlim t ht
 
 /-- A family that eventually lies in a compact set `s` along an ultrafilter converges along it to
 a point of `s`. -/
