@@ -258,14 +258,18 @@ private theorem sampleBrokenGeodesicLoop_apply_arcTime
     ⟨⟨_, unitInterval.arcIndex_lt n.succ_pos s⟩, _,
       unitInterval.arcPoint_arcIndex_arcParam n.succ_pos s⟩
   have hγ := MooreFreeLoopSpace.mem_arcsWithin.1 γ.property
+  -- The end points of the `i`-th arc of the unit-interval path are the samples `i` and `i + 1`.
+  have hi : (γ : MooreFreeLoopSpace M).toMoorePath.toUnitPath (arcPoint (n + 1) i 0) =
+      (γ : MooreFreeLoopSpace M).toMoorePath.sample (n + 1) i :=
+    (MoorePath.sample_eq_toUnitPath_arcPoint _ i).symm
+  have hi' : (γ : MooreFreeLoopSpace M).toMoorePath.toUnitPath (arcPoint (n + 1) (i + 1) 0) =
+      (γ : MooreFreeLoopSpace M).toMoorePath.sample (n + 1) (i + 1) := by
+    rw [← unitInterval.arcPoint_one, MooreFreeLoopSpace.sample_add_one_eq_toUnitPath_arcPoint]
   rw [arcTime_arcPoint, brokenPath_arcPoint_of_arcsWithin
       (isPathInterpolation_geodesicInterpolation hr) hγ i.isLt a,
     sampleBrokenGeodesicLoop_apply, brokenGeodesicLoop_apply_partialSum_add hr n _ _ i
       (mul_le_of_le_one_right zero_le (by exact_mod_cast a.property.2)),
-    geodesicSegment_apply_nndist_mul, ← unitInterval.arcPoint_one,
-    ← MoorePath.sample_eq_toUnitPath_arcPoint,
-    ← MooreFreeLoopSpace.sample_add_one_eq_toUnitPath_arcPoint,
-    geodesicInterpolation_of_dist_lt hr
+    geodesicSegment_apply_nndist_mul, hi, hi', geodesicInterpolation_of_dist_lt hr
       (dist_add_one_lt_of_forall_dist_sub_one_lt
         (MooreFreeLoopSpace.dist_sample_sub_one_lt_of_mem_arcsWithin γ.property) i)]
 

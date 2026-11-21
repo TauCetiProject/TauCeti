@@ -330,8 +330,10 @@ theorem exists_sample_dist_add_one_lt {K : Set (MooreFreeLoopSpace X)} (hK : IsC
   have hcoe := unitInterval.coe_arcPoint i.isLt (1 : I)
   rw [Set.Icc.coe_one] at hcoe
   rw [sample_add_one_eq_toUnitPath_arcPoint]
-  refine h (r + 1) (by omega) γ.toMoorePath ⟨γ, hγ, rfl⟩ i _ ?_ ?_ <;> rw [hcoe]
-  exact div_le_div_of_nonneg_right (by linarith) (by positivity)
+  refine h (r + 1) (by omega) γ.toMoorePath ⟨γ, hγ, rfl⟩ i _ ?_ ?_
+  · rw [hcoe]
+    exact div_le_div_of_nonneg_right (by linarith) (by positivity)
+  · exact hcoe.le
 
 /-- **Compact families of free loops are sampled into the distance cuts.** For a compact family
 `K` of free Moore loops and cut-offs bounded below by `ε > 0`, every sufficiently fine sampling
