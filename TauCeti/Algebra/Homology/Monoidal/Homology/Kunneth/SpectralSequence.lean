@@ -188,7 +188,7 @@ lemma kunnethTorComplexXIso_inv_d (i j p : ℕ) :
 
 /-- The terms of `kunnethTorSumComplex K L q` are the graded tensor products
 `⨁_{i + j = q} Hᵢ(K) ⊗ Hⱼ(Q.X p)`. -/
-def kunnethTorSumComplexXIso (q p : ℕ) :
+def tensorObjIsoKunnethTorSumComplexX (q p : ℕ) :
     GradedObject.Monoidal.tensorObj (fun i ↦ K.homology i)
         (fun j ↦ ((cartanEilenbergResolution L).X p).homology j) q ≅
       (kunnethTorSumComplex K L q).X p :=
@@ -201,32 +201,35 @@ def kunnethTorSumComplexXIso (q p : ℕ) :
     ((HomologicalComplex.eval _ _ p).mapBiproduct _).symm
 
 /-- On the summand `Hᵢ(K) ⊗ Hⱼ(Q.X p)`, the identification
-`HomologicalComplex.kunnethTorSumComplexXIso` is the inclusion of the summand
+`HomologicalComplex.tensorObjIsoKunnethTorSumComplexX` is the inclusion of the summand
 `kunnethTorComplex K L i j` of `kunnethTorSumComplex K L q`, in degree `p`. -/
 @[reassoc (attr := simp)]
-lemma ιTensorObj_kunnethTorSumComplexXIso_hom (q p i j : ℕ) (h : i + j = q) :
+lemma ιTensorObj_tensorObjIsoKunnethTorSumComplexX_hom (q p i j : ℕ) (h : i + j = q) :
     GradedObject.Monoidal.ιTensorObj (fun i ↦ K.homology i)
         (fun j ↦ ((cartanEilenbergResolution L).X p).homology j) i j q h ≫
-      (kunnethTorSumComplexXIso K L q p).hom =
+      (tensorObjIsoKunnethTorSumComplexX K L q p).hom =
     (kunnethTorComplexXIso K L i j p).inv ≫
       (biproduct.ι (fun x : Finset.antidiagonal q ↦ kunnethTorComplex K L x.val.1 x.val.2)
         ⟨(i, j), Finset.mem_antidiagonal.2 h⟩).f p := by
-  simp only [kunnethTorSumComplexXIso, Iso.trans_hom, Iso.symm_hom, biproduct.mapIso_hom,
+  simp only [tensorObjIsoKunnethTorSumComplexX, Iso.trans_hom, Iso.symm_hom, biproduct.mapIso_hom,
     GradedObject.Monoidal.ι_tensorObjIsoBiproduct_hom_assoc]
   rw [biproduct.ι_map_assoc, Functor.mapBiproduct_inv, biproduct.ι_desc, eval_map]
 
-/-- Under the identifications `HomologicalComplex.kunnethTorSumComplexXIso`, the differential of
-`kunnethTorSumComplex K L q` is induced by the maps `homologyMap (Q.d (p + 1) p) j`. -/
+/-- Under the identifications `HomologicalComplex.tensorObjIsoKunnethTorSumComplexX`, the
+differential of `kunnethTorSumComplex K L q` is induced by the maps `homologyMap (Q.d (p + 1) p) j`.
+-/
 @[reassoc]
-lemma kunnethTorSumComplexXIso_hom_d (q p : ℕ) :
-    (kunnethTorSumComplexXIso K L q (p + 1)).hom ≫ (kunnethTorSumComplex K L q).d (p + 1) p =
+lemma tensorObjIsoKunnethTorSumComplexX_hom_d (q p : ℕ) :
+    (tensorObjIsoKunnethTorSumComplexX K L q (p + 1)).hom ≫
+      (kunnethTorSumComplex K L q).d (p + 1) p =
       GradedObject.Monoidal.whiskerLeft (fun i ↦ K.homology i)
           (fun j ↦ homologyMap ((cartanEilenbergResolution L).d (p + 1) p) j) q ≫
-        (kunnethTorSumComplexXIso K L q p).hom := by
+        (tensorObjIsoKunnethTorSumComplexX K L q p).hom := by
   refine GradedObject.Monoidal.tensorObj_ext _ _ fun i j h ↦ ?_
-  simp only [ιTensorObj_kunnethTorSumComplexXIso_hom_assoc, Hom.comm,
+  simp only [ιTensorObj_tensorObjIsoKunnethTorSumComplexX_hom_assoc, Hom.comm,
     GradedObject.Monoidal.ι_tensorHom_assoc]
-  rw [ιTensorObj_kunnethTorSumComplexXIso_hom, kunnethTorComplexXIso_inv_d_assoc, Pi.id_apply,
+  rw [ιTensorObj_tensorObjIsoKunnethTorSumComplexX_hom, kunnethTorComplexXIso_inv_d_assoc,
+    Pi.id_apply,
     id_tensorHom]
 
 /-- The homology of `kunnethTorComplex K L i j` in degree `p` is `Torₚ(Hᵢ(K), Hⱼ(L))`, computed by
@@ -283,13 +286,14 @@ degree `q`, with the term of `kunnethTorSumComplex K L q` in degree `p`. -/
 def kunnethFirstPageXIsoTorSum (p q : ℕ) :
     ((kunnethSpectralSequence K L).page 2).X (-(q : ℤ) - 2 * p, p) ≅
       (kunnethTorSumComplex K L q).X p :=
-  kunnethSpectralSequenceFirstPageXIso K L p q ≪≫ kunnethTorSumComplexXIso K L q p
+  kunnethSpectralSequenceFirstPageXIso K L p q ≪≫ tensorObjIsoKunnethTorSumComplexX K L q p
 
 /-- The identification `kunnethFirstPageXIsoTorSum` is the identification of the first page with
-the graded tensor object, followed by `kunnethTorSumComplexXIso`. -/
+the graded tensor object, followed by `tensorObjIsoKunnethTorSumComplexX`. -/
 lemma kunnethFirstPageXIsoTorSum_eq (p q : ℕ) :
     kunnethFirstPageXIsoTorSum K L p q =
-      kunnethSpectralSequenceFirstPageXIso K L p q ≪≫ kunnethTorSumComplexXIso K L q p := (rfl)
+      kunnethSpectralSequenceFirstPageXIso K L p q ≪≫ tensorObjIsoKunnethTorSumComplexX K L q p :=
+  (rfl)
 
 /-- Under the identifications `HomologicalComplex.kunnethFirstPageXIsoTorSum`, the first
 differential of the Künneth spectral sequence in degree `q` is `(-1)^q` times the differential of
@@ -304,7 +308,7 @@ lemma kunnethSpectralSequence_page_two_d_kunnethFirstPageXIsoTorSum (p q : ℕ) 
   have h := kunnethSpectralSequence_page_two_d K L p q
   rw [Iso.inv_comp_eq] at h
   simp only [kunnethFirstPageXIsoTorSum_eq, Iso.trans_hom, Category.assoc,
-    kunnethTorSumComplexXIso_hom_d]
+    tensorObjIsoKunnethTorSumComplexX_hom_d]
   rw [reassoc_of% h, Preadditive.zsmul_comp, Preadditive.comp_zsmul]
 
 /-- The third component of the comparison of the first page around column `p` with
