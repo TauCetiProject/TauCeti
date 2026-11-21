@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Polynomial.AlgebraMap
 import Mathlib.Algebra.BigOperators.Intervals
 import Mathlib.Tactic.LinearCombination
+import TauCeti.Algebra.BigOperators.Finset.Range
 
 /-!
 # Gaussian polynomials and Gaussian binomial coefficients
@@ -176,15 +177,6 @@ theorem map_gaussianPoly (f : ℕ →+* R) (n k : ℕ) :
   rw [← gaussianBinomial_X, ← coe_mapRingHom, map_gaussianBinomial, coe_mapRingHom, map_X]
 
 end Semiring
-
-/-- Reversing the order of `k` consecutive factors: `∏_{i<k} f(a+k-i) = ∏_{i<k} f(a+i+1)`. -/
-private theorem prod_range_add_sub_eq {M : Type*} [CommMonoid M] (f : ℕ → M) (a k : ℕ) :
-    ∏ i ∈ range k, f (a + k - i) = ∏ i ∈ range k, f (a + i + 1) := by
-  rw [← prod_range_reflect (fun i ↦ f (a + i + 1))]
-  refine prod_congr rfl fun i hi ↦ ?_
-  rw [mem_range] at hi
-  congr 1
-  omega
 
 section CommRing
 

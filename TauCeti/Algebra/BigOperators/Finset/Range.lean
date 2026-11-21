@@ -69,6 +69,8 @@ as those of noncrossing partitions, into sums over `Finset.range`.
   adjacent contributions, retaining the final boundary term.
 * `Finset.prod_range_two_mul_add_one`, `Finset.sum_range_two_mul_add_one`: split a product or sum
   over `range (2 * k + 1)` into its even and odd indices.
+* `Finset.prod_range_add_sub_eq`, `Finset.sum_range_add_sub_eq`: reverse the order of `k`
+  consecutive factors or terms, `∏_{i<k} f(a+k-i) = ∏_{i<k} f(a+i+1)`.
 * `Finset.prod_range_ite_lt`, `Finset.sum_range_ite_lt`: a product or sum over `range n` whose
   factors past `x ≤ n` are replaced by `1` or `0` is the product or sum over `range x`.
 * `Finset.four_dvd_sum_range_two_mul_add_one`: a sum over `range (2 * k + 1)` of even terms,
@@ -114,6 +116,17 @@ theorem prod_range_two_mul_add_one {M : Type*} [CommMonoid M] (g : ℕ → M) (k
       prod_range_succ (fun j => g (2 * j)) (k + 1), prod_range_succ (fun j => g (2 * j + 1)) k,
       show 2 * k + 1 + 1 = 2 * (k + 1) by ring]
     ac_rfl
+
+/-- Reversing the order of `k` consecutive factors: `∏_{i<k} f(a+k-i) = ∏_{i<k} f(a+i+1)`. -/
+@[to_additive /-- Reversing the order of `k` consecutive terms:
+`∑_{i<k} f(a+k-i) = ∑_{i<k} f(a+i+1)`. -/]
+theorem prod_range_add_sub_eq {M : Type*} [CommMonoid M] (f : ℕ → M) (a k : ℕ) :
+    ∏ i ∈ range k, f (a + k - i) = ∏ i ∈ range k, f (a + i + 1) := by
+  rw [← prod_range_reflect (fun i ↦ f (a + i + 1))]
+  refine prod_congr rfl fun i hi ↦ ?_
+  rw [mem_range] at hi
+  congr 1
+  omega
 
 /-- Restricting a product over `range n` to the indices below `x ≤ n`, by replacing the other
 factors with `1`, gives the product over `range x`. -/
