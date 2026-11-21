@@ -52,6 +52,8 @@ All names below are in the `TauCeti.ValuationSpectrum` namespace.
   of `Spa (A⟨T'/s'⟩, A_U'⁺)` to points of `Spa (A⟨T/s⟩, A_U⁺)`.
 * `ringHomOfRationalSubsetSubset_mem_completedPlusSubring` : the comparison map carries `A_U⁺`
   into `A_U'⁺`, so it is a map of Huber pairs.
+* `map_completedPlusSubring_presentationRingEquivOfEq` : `presentationRingEquivOfEq` carries
+  `A_U⁺` onto `A_U'⁺` for two presentations of the same rational subset.
 * `pairHomOfRationalSubsetSubset_toRingHom` : the underlying ring homomorphism of the morphism of
   Huber pairs is the comparison map.
 * `pairHomOfRationalSubsetSubset_self`, `pairHomOfRationalSubsetSubset_comp` : the morphisms of
@@ -204,6 +206,56 @@ theorem ringHomOfRationalSubsetSubset_mem_completedPlusSubring (P : PairOfDefini
   simpa only [comap_vle, map_one] using
     ((mem_spa_iff _ _).mp (comap_ringHomOfRationalSubsetSubset_mem_spa P Aplus hAplus
       T s S hden T' s' S' hden' hsub w hw)).2 f hf
+
+/-- **Presentation independence preserves `completedPlusSubring`.** For two presentations of the
+same rational subset of `Spa(A, A⁺)`, `presentationRingEquivOfEq` maps the completed plus subring
+of the first onto that of the second. -/
+theorem map_completedPlusSubring_presentationRingEquivOfEq (P : PairOfDefinition A)
+    (Aplus : Subring A)
+    (hIplus : ∀ j : P.ringOfDefinition, j ∈ P.idealOfDefinition → (j : A) ∈ Aplus)
+    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) (T : Finset A) (s : A) (S : Type*) [CommRing S]
+    [Algebra A S] [IsLocalization.Away s S] (hden : HasDenominatorPower P T s S) (T' : Finset A)
+    (s' : A) (S' : Type*) [CommRing S'] [Algebra A S'] [IsLocalization.Away s' S']
+    (hden' : HasDenominatorPower P T' s' S')
+    (heq : rationalSubset Aplus T s = rationalSubset Aplus T' s') :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    letI := locUniformSpace P T' s' S' hden'
+    letI := isUniformAddGroup_locUniformSpace P T' s' S' hden'
+    letI := isTopologicalRing_locUniformSpace P T' s' S' hden'
+    (completedPlusSubring P Aplus T s S hden).map
+        (presentationRingEquivOfEq P Aplus hAplus T s S hden T' s' S' hden' heq).toRingHom =
+      completedPlusSubring P Aplus T' s' S' hden' := by
+  let _ := locUniformSpace P T s S hden
+  have _ := isUniformAddGroup_locUniformSpace P T s S hden
+  have _ := isTopologicalRing_locUniformSpace P T s S hden
+  let _ := locUniformSpace P T' s' S' hden'
+  have _ := isUniformAddGroup_locUniformSpace P T' s' S' hden'
+  have _ := isTopologicalRing_locUniformSpace P T' s' S' hden'
+  let e := presentationRingEquivOfEq P Aplus hAplus T s S hden T' s' S' hden' heq
+  have he_fwd : (e : Completion S →+* Completion S') =
+      ringHomOfRationalSubsetSubset P Aplus hAplus T s S hden T' s' S' hden' heq.ge :=
+    eq_ringHomOfRationalSubsetSubset P Aplus hAplus T s S hden T' s' S' hden' heq.ge _
+      (continuous_presentationRingEquivOfEq P Aplus hAplus T s S hden T' s' S' hden' heq)
+      (presentationRingEquivOfEq_coe_comp_toCompletionLoc P Aplus hAplus T s S hden T' s' S' hden'
+        heq)
+  have he_inv : (e.symm : Completion S' →+* Completion S) =
+      ringHomOfRationalSubsetSubset P Aplus hAplus T' s' S' hden' T s S hden heq.le :=
+    eq_ringHomOfRationalSubsetSubset P Aplus hAplus T' s' S' hden' T s S hden heq.le _
+      (continuous_presentationRingEquivOfEq_symm P Aplus hAplus T s S hden T' s' S' hden' heq)
+      (presentationRingEquivOfEq_symm_coe_comp_toCompletionLoc P Aplus hAplus T s S hden T' s' S'
+        hden' heq)
+  refine le_antisymm (Subring.map_le_iff_le_comap.mpr fun x hx ↦ ?_) fun y hy ↦
+    Subring.mem_map.mpr ⟨e.symm y, ?_,
+      by simpa only [RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom] using
+        e.apply_symm_apply y⟩
+  · rw [Subring.mem_comap, RingEquiv.toRingHom_eq_coe, he_fwd]
+    exact ringHomOfRationalSubsetSubset_mem_completedPlusSubring P Aplus hIplus hAplus
+      T s S hden T' s' S' hden' heq.ge x hx
+  · simpa only [← DFunLike.congr_fun he_inv y, RingEquiv.coe_toRingHom] using
+      ringHomOfRationalSubsetSubset_mem_completedPlusSubring P Aplus hIplus hAplus
+        T' s' S' hden' T s S hden heq.le y hy
 
 /-- **The comparison map as a morphism of Huber pairs** (Wedhorn's Proposition 8.2(1)): the
 comparison map `σ : A⟨T/s⟩ → A⟨T'/s'⟩` of a containment `R(T'/s') ⊆ R(T/s)`, bundled with its

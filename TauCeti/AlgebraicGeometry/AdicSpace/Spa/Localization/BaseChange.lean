@@ -13,19 +13,11 @@ public import TauCeti.RingTheory.Huber.LocalizationTopology.Pair
 /-!
 # Geometric base change of rational-localisation Huber pairs
 
-This file provides two Huber-pair and adic-spectrum comparisons used when pulling back and gluing
-completed rational localisations:
-
-1. **Presentation independence of `completedPlusSubring`**
-   (`map_completedPlusSubring_presentationRingEquivOfEq`): for two presentations of the same
-   rational subset of `Spa(A, A⁺)`, `presentationRingEquivOfEq` maps the completed plus subring of
-   the first onto that of the second.
-2. **Wedhorn's geometric universal property for morphisms of Huber pairs**
-   (`existsUnique_pairHom_of_forall_spaComap_mem_rationalSubset`,
-   `pairHomOfForallSpaComapMemRationalSubset`, and `pairHomOfSpaComapImageSubset`): a morphism
-   `f : (A, A⁺) → (B, B⁺)` whose induced map on `Spa` carries `U = R(T'/s') ⊆ Spa(B, B⁺)` into
-   `W = R(T/s) ⊆ Spa(A, A⁺)` induces a unique compatible morphism of rational-localisation Huber
-   pairs `(A⟨T/s⟩, A_W⁺) → (B⟨T'/s'⟩, B_U⁺)`, which is adic whenever `f` is adic.
+This file provides Wedhorn's geometric universal property for morphisms of rational-localisation
+Huber pairs: a morphism `f : (A, A⁺) → (B, B⁺)` whose induced map on `Spa` carries
+`U = R(T'/s') ⊆ Spa(B, B⁺)` into `W = R(T/s) ⊆ Spa(A, A⁺)` induces a unique compatible morphism
+of rational-localisation Huber pairs `(A⟨T/s⟩, A_W⁺) → (B⟨T'/s'⟩, B_U⁺)`, which is adic whenever
+`f` is adic.
 
 ## Main definitions
 
@@ -37,8 +29,6 @@ completed rational localisations:
 
 ## Main results
 
-* `TauCeti.ValuationSpectrum.map_completedPlusSubring_presentationRingEquivOfEq`:
-  `presentationRingEquivOfEq` preserves `completedPlusSubring`.
 * `TauCeti.Huber.PairOfDefinition.existsUnique_pairHom_of_forall_spaComap_mem_rationalSubset`,
   `TauCeti.Huber.PairOfDefinition.eq_pairHomOfSpaComapImageSubset`: existence and uniqueness of
   localised Huber-pair morphisms.
@@ -59,14 +49,6 @@ public section
 open UniformSpace
 
 open TauCeti.Huber.PairOfDefinition in
-local macro "withLoc " P:term:max T:term:max s:term:max S:term:max hden:term:max
-    " in " t:term : term =>
-  `(letI := locUniformSpace $P $T $s $S $hden
-    letI := isUniformAddGroup_locUniformSpace $P $T $s $S $hden
-    letI := isTopologicalRing_locUniformSpace $P $T $s $S $hden
-    $t)
-
-open TauCeti.Huber.PairOfDefinition in
 local macro "withLocHuber " P:term:max T:term:max s:term:max S:term:max hden:term:max
     " in " t:term : term =>
   `(letI := locUniformSpace $P $T $s $S $hden
@@ -74,58 +56,6 @@ local macro "withLocHuber " P:term:max T:term:max s:term:max S:term:max hden:ter
     letI := isTopologicalRing_locUniformSpace $P $T $s $S $hden
     letI := isHuberRing_completion_locTopology $P $T $s $S $hden
     $t)
-
-namespace TauCeti.ValuationSpectrum
-
-section PresentationPlus
-
-open TauCeti.Huber TauCeti.Huber.PairOfDefinition
-
-variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
-
-/-- **Presentation independence preserves `completedPlusSubring`.** For two presentations of the
-same rational subset of `Spa(A, A⁺)`, `presentationRingEquivOfEq` maps the completed plus subring
-of the first onto that of the second. -/
-theorem map_completedPlusSubring_presentationRingEquivOfEq (P : PairOfDefinition A)
-    (Aplus : Subring A)
-    (hIplus : ∀ j : P.ringOfDefinition, j ∈ P.idealOfDefinition → (j : A) ∈ Aplus)
-    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) (T : Finset A) (s : A) (S : Type*) [CommRing S]
-    [Algebra A S] [IsLocalization.Away s S] (hden : HasDenominatorPower P T s S) (T' : Finset A)
-    (s' : A) (S' : Type*) [CommRing S'] [Algebra A S'] [IsLocalization.Away s' S']
-    (hden' : HasDenominatorPower P T' s' S')
-    (heq : rationalSubset Aplus T s = rationalSubset Aplus T' s') :
-    withLoc P T s S hden in withLoc P T' s' S' hden' in
-    (completedPlusSubring P Aplus T s S hden).map
-        (presentationRingEquivOfEq P Aplus hAplus T s S hden T' s' S' hden' heq).toRingHom =
-      completedPlusSubring P Aplus T' s' S' hden' :=
-  withLoc P T s S hden in withLoc P T' s' S' hden' in by
-    let e := presentationRingEquivOfEq P Aplus hAplus T s S hden T' s' S' hden' heq
-    have he_fwd : (e : Completion S →+* Completion S') =
-        ringHomOfRationalSubsetSubset P Aplus hAplus T s S hden T' s' S' hden' heq.ge :=
-      eq_ringHomOfRationalSubsetSubset P Aplus hAplus T s S hden T' s' S' hden' heq.ge _
-        (continuous_presentationRingEquivOfEq P Aplus hAplus T s S hden T' s' S' hden' heq)
-        (presentationRingEquivOfEq_coe_comp_toCompletionLoc P Aplus hAplus T s S hden T' s' S' hden'
-          heq)
-    have he_inv : (e.symm : Completion S' →+* Completion S) =
-        ringHomOfRationalSubsetSubset P Aplus hAplus T' s' S' hden' T s S hden heq.le :=
-      eq_ringHomOfRationalSubsetSubset P Aplus hAplus T' s' S' hden' T s S hden heq.le _
-        (continuous_presentationRingEquivOfEq_symm P Aplus hAplus T s S hden T' s' S' hden' heq)
-        (presentationRingEquivOfEq_symm_coe_comp_toCompletionLoc P Aplus hAplus T s S hden T' s' S'
-          hden' heq)
-    refine le_antisymm (Subring.map_le_iff_le_comap.mpr fun x hx ↦ ?_) fun y hy ↦
-      Subring.mem_map.mpr ⟨e.symm y, ?_,
-        by simpa only [RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom] using
-          e.apply_symm_apply y⟩
-    · rw [Subring.mem_comap, RingEquiv.toRingHom_eq_coe, he_fwd]
-      exact ringHomOfRationalSubsetSubset_mem_completedPlusSubring P Aplus hIplus hAplus
-        T s S hden T' s' S' hden' heq.ge x hx
-    · simpa only [← DFunLike.congr_fun he_inv y, RingEquiv.coe_toRingHom] using
-        ringHomOfRationalSubsetSubset_mem_completedPlusSubring P Aplus hIplus hAplus
-          T' s' S' hden' T s S hden heq.le y hy
-
-end PresentationPlus
-
-end TauCeti.ValuationSpectrum
 
 namespace TauCeti.Huber.PairOfDefinition
 
