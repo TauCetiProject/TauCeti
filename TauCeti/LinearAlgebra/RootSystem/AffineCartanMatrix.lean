@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.RootSystem.CartanMatrix
+public import Mathlib.LinearAlgebra.RootSystem.RootPositive
 public import TauCeti.LinearAlgebra.Matrix.Submatrix
 public import TauCeti.LinearAlgebra.RootSystem.HighestRoot.Basic
+import Mathlib.LinearAlgebra.RootSystem.Finite.CanonicalBilinear
 import TauCeti.LinearAlgebra.RootSystem.HomInvariance
 import TauCeti.LinearAlgebra.RootSystem.Isomorphism
 
@@ -67,6 +69,7 @@ restriction to the simple nodes and extension by fixing the affine node.
 * `RootPairing.Base.affineSimpleRootIndex`: the root index of the simple root at each node, with
   `α₀ = -θ` at the affine node.
 * `RootPairing.Base.affineMarks`: the marks, the coefficients of the null-root relation.
+* `RootPairing.Base.affineComarks`: the comarks, the coefficients of the central-coroot relation.
 * `RootPairing.Base.specialNodes`: the special nodes, those with mark `1`.
 * `RootPairing.Base.affineExtension`: the extension of the symmetries of the finite Cartan matrix
   to symmetries of `A` fixing the affine node.
@@ -85,10 +88,17 @@ restriction to the simple nodes and extension by fixing the affine node.
 * `RootPairing.Base.root_highestRoot_eq_sum_affineMarks` and
   `RootPairing.Base.affineMarks_some_eq_of_root_highestRoot_eq_sum`: the marks are the
   coefficients of the highest root in the simple roots.
-* `RootPairing.Base.affineMarks_vecMul_affineCartanMatrix`: the marks are a left null vector of
-  `A`.
-* `RootPairing.Base.vecMul_affineCartanMatrix_eq_zero_iff`: for a root system, every left null
-  vector of `A` is a multiple of the marks.
+* `RootPairing.Base.coroot_highestRoot_eq_sum_affineComarks`,
+  `RootPairing.Base.affineComarks_mul_form_highestRoot`, `RootPairing.Base.affineComarks_pos`, and
+  `RootPairing.Base.sum_affineComarks`: the comarks expand `θ^∨` in the simple coroots, satisfy
+  `aᵢ^∨ B(θ, θ) = aᵢ B(αᵢ, αᵢ)` for every invariant form `B`, are positive, and sum to the dual
+  Coxeter number `ht(θ^∨) + 1`.
+* `RootPairing.Base.affineMarks_vecMul_affineCartanMatrix` and
+  `RootPairing.Base.affineCartanMatrix_mulVec_affineComarks`: the marks and comarks are left and
+  right null vectors of `A`.
+* `RootPairing.Base.vecMul_affineCartanMatrix_eq_zero_iff` and
+  `RootPairing.Base.affineCartanMatrix_mulVec_eq_zero_iff`: for a root system, the left and right
+  kernels of `A` are spanned by the marks and comarks respectively.
 * `RootPairing.Base.det_affineCartanMatrix`: `A` is singular.
 * `RootPairing.Base.affineMarks_pos`: for a reduced irreducible root pairing, all marks are
   positive.
@@ -197,6 +207,154 @@ theorem affineMarks_pos [IsDomain R] [P.IsCrystallographic] [P.IsReduced] [P.IsI
   · rw [hθ, ← Finset.sum_coe_sort b.support]
     simp
 
+/-! ### The comarks -/
+
+/-- **The comarks** of the affine Cartan matrix: `1` at the affine node and, at a simple node `i`,
+the coefficient of the simple coroot `αᵢ^∨` in the expansion `θ^∨ = ∑ aᵢ^∨ αᵢ^∨` of the coroot of
+the highest root. These are the coefficients of the central coroot `c = ∑ₖ aₖ^∨ hₖ` in an untwisted
+affine realization, and their sum is the dual Coxeter number `1 + ht(θ^∨)`. -/
+noncomputable def affineComarks : Option b.support → ℤ
+  | none => 1
+  | some i => b.flip.toWeightBasisInt.repr (P.flip.rootSpanMem ℤ b.highestRoot) ⟨i.1, i.2⟩
+
+@[simp]
+theorem affineComarks_none : b.affineComarks none = 1 := (rfl)
+
+/-- The coroot of the highest root is the combination of the simple coroots with the comarks as
+coefficients. -/
+theorem coroot_highestRoot_eq_sum_affineComarks :
+    P.coroot b.highestRoot = ∑ i : b.support, b.affineComarks (some i) • P.coroot i := by
+  have h := congrArg Subtype.val
+    (b.flip.toWeightBasisInt.sum_repr (P.flip.rootSpanMem ℤ b.highestRoot))
+  simp only [Submodule.coe_sum, SetLike.val_smul, RootPairing.Base.coe_toWeightBasisInt_apply,
+    RootPairing.flip_root] at h
+  exact h.symm
+
+/-- The comarks are the *only* coefficients expressing the coroot of the highest root in the simple
+coroots. -/
+theorem affineComarks_some_eq_of_coroot_highestRoot_eq_sum {f : b.support → ℤ}
+    (hf : P.coroot b.highestRoot = ∑ i : b.support, f i • P.coroot i) (i : b.support) :
+    b.affineComarks (some i) = f i := by
+  have h : P.flip.rootSpanMem ℤ b.highestRoot =
+      ∑ j : b.flip.support, f ⟨j.1, j.2⟩ • b.flip.toWeightBasisInt j := by
+    refine Subtype.ext ?_
+    simp only [Submodule.coe_sum, SetLike.val_smul, RootPairing.Base.coe_toWeightBasisInt_apply,
+      RootPairing.flip_root]
+    exact hf
+  rw [affineComarks, h, b.flip.toWeightBasisInt.repr_sum_self]
+
+open scoped Classical in
+/-- The expansion `RootPairing.Base.coroot_highestRoot_eq_sum_affineComarks` indexed in `ι`,
+matching `RootPairing.Base.height_eq_sum` on `b.flip`. -/
+private theorem coroot_highestRoot_eq_sum_dite :
+    P.coroot b.highestRoot = ∑ k ∈ b.support,
+      (if h : k ∈ b.support then b.affineComarks (some ⟨k, h⟩) else 0) • P.coroot k := by
+  rw [b.coroot_highestRoot_eq_sum_affineComarks, ← Finset.sum_coe_sort b.support]
+  simp
+
+/-- **The sum of the comarks** is one more than the height of `θ^∨`, which is the dual Coxeter
+number. -/
+theorem sum_affineComarks : ∑ k, b.affineComarks k = b.flip.height b.highestRoot + 1 := by
+  classical
+  rw [Fintype.sum_option, affineComarks_none,
+    b.flip.height_eq_sum b.coroot_highestRoot_eq_sum_dite, RootPairing.Base.flip_support,
+    ← Finset.sum_coe_sort b.support, add_comm]
+  simp
+
+/-- **Marks and comarks are proportional by root squared lengths** for any invariant bilinear form
+`B` on a root system: `aᵢ^∨ B(θ, θ) = aᵢ B(αᵢ, αᵢ)` for every simple root `αᵢ`. -/
+theorem affineComarks_mul_form_highestRoot [P.IsRootSystem] (B : P.InvariantForm)
+    (i : b.support) :
+    b.affineComarks (some i) • B.form (P.root b.highestRoot) (P.root b.highestRoot) =
+      b.affineMarks (some i) • B.form (P.root i) (P.root i) := by
+  let coeff : b.support → R := fun j ↦
+    b.affineComarks (some j) • B.form (P.root b.highestRoot) (P.root b.highestRoot) -
+      b.affineMarks (some j) • B.form (P.root j) (P.root j)
+  suffices hzero : ∑ j : b.support, coeff j • P.coroot j = 0 by
+    exact sub_eq_zero.mp (Fintype.linearIndependent_iff.mp b.linearIndepOn_coroot coeff hzero i)
+  apply P.flip.toPerfPair.injective
+  rw [map_zero]
+  refine LinearMap.ext_on (RootPairing.IsRootSystem.span_root_eq_top (P := P)) ?_
+  rintro _ ⟨k, rfl⟩
+  simp only [LinearMap.zero_apply, map_sum, map_smul, LinearMap.coe_sum, Finset.sum_apply,
+    LinearMap.smul_apply, smul_eq_mul, coeff, sub_mul, Finset.sum_sub_distrib, zsmul_eq_mul,
+    mul_assoc]
+  have hflip (j : b.support) :
+      P.flip.toPerfPair (P.coroot j) (P.root k) = P.toLinearMap (P.root k) (P.coroot j) := rfl
+  simp_rw [hflip]
+  have hL : ∑ j : b.support,
+      (b.affineComarks (some j) : R) *
+        (B.form (P.root b.highestRoot) (P.root b.highestRoot) *
+          P.toLinearMap (P.root k) (P.coroot j)) =
+      2 * B.form (P.root k) (P.root b.highestRoot) := by
+    have hpair : P.toLinearMap (P.root k) (P.coroot b.highestRoot) =
+        ∑ j : b.support, (b.affineComarks (some j) : R) *
+          P.toLinearMap (P.root k) (P.coroot j) := by
+      rw [b.coroot_highestRoot_eq_sum_affineComarks, map_sum]
+      simp [zsmul_eq_mul]
+    rw [B.two_mul_apply_root_root k b.highestRoot, ← RootPairing.root_coroot_eq_pairing, hpair,
+      Finset.sum_mul]
+    refine Finset.sum_congr rfl fun j _ ↦ ?_
+    ring
+  have hR : ∑ j : b.support,
+      (b.affineMarks (some j) : R) *
+        (B.form (P.root j) (P.root j) * P.toLinearMap (P.root k) (P.coroot j)) =
+      2 * B.form (P.root k) (P.root b.highestRoot) := by
+    rw [b.root_highestRoot_eq_sum_affineMarks, map_sum, Finset.mul_sum]
+    refine Finset.sum_congr rfl fun j _ ↦ ?_
+    have hj := B.two_mul_apply_root_root k j
+    rw [← RootPairing.root_coroot_eq_pairing] at hj
+    rw [map_zsmul, zsmul_eq_mul]
+    linear_combination (b.affineMarks (some j) : R) * hj.symm
+  rw [hL, hR, sub_self]
+
+/-- **The comarks are positive** for a reduced irreducible crystallographic root pairing: `a₀^∨ = 1`
+and `aᵢ^∨ (θ, θ) = aᵢ (αᵢ, αᵢ) > 0` for every simple root `αᵢ`. -/
+theorem affineComarks_pos [IsDomain R] [P.IsCrystallographic] [P.IsReduced] [P.IsIrreducible]
+    (k : Option b.support) : 0 < b.affineComarks k := by
+  let _ : Fintype ι := Fintype.ofFinite ι
+  rcases k with _ | i
+  · simp
+  have hθ : P.rootSpanMem ℤ b.highestRoot =
+      ∑ j : b.support, b.affineMarks (some j) • P.rootSpanMem ℤ j :=
+    Subtype.ext <| by simpa using b.root_highestRoot_eq_sum_affineMarks
+  have hpol : P.RootFormIn ℤ (P.rootSpanMem ℤ b.highestRoot) (P.rootSpanMem ℤ b.highestRoot) •
+      P.coroot b.highestRoot =
+      ∑ j : b.support, (b.affineMarks (some j) *
+        P.RootFormIn ℤ (P.rootSpanMem ℤ j) (P.rootSpanMem ℤ j)) • P.coroot j := by
+    rw [P.rootFormIn_self_smul_coroot ℤ b.highestRoot, hθ, map_sum, Finset.smul_sum]
+    refine Finset.sum_congr rfl fun j _ ↦ ?_
+    rw [map_zsmul, smul_comm, ← P.rootFormIn_self_smul_coroot ℤ j, mul_smul]
+  have h1 : P.RootFormIn ℤ (P.rootSpanMem ℤ b.highestRoot) (P.rootSpanMem ℤ b.highestRoot) •
+      P.flip.rootSpanMem ℤ b.highestRoot =
+      ∑ j : b.flip.support, (b.affineComarks (some ⟨j.1, j.2⟩) *
+        P.RootFormIn ℤ (P.rootSpanMem ℤ b.highestRoot) (P.rootSpanMem ℤ b.highestRoot)) •
+        b.flip.toWeightBasisInt j := by
+    refine Subtype.ext ?_
+    simp only [SetLike.val_smul, Submodule.coe_sum, RootPairing.Base.coe_toWeightBasisInt_apply,
+      RootPairing.flip_root]
+    rw [b.coroot_highestRoot_eq_sum_affineComarks, Finset.smul_sum]
+    refine Finset.sum_congr rfl fun j _ ↦ ?_
+    rw [mul_comm, mul_smul]
+  have h2 : P.RootFormIn ℤ (P.rootSpanMem ℤ b.highestRoot) (P.rootSpanMem ℤ b.highestRoot) •
+      P.flip.rootSpanMem ℤ b.highestRoot =
+      ∑ j : b.flip.support, (b.affineMarks (some ⟨j.1, j.2⟩) *
+        P.RootFormIn ℤ (P.rootSpanMem ℤ j) (P.rootSpanMem ℤ j)) • b.flip.toWeightBasisInt j := by
+    refine Subtype.ext ?_
+    simp only [SetLike.val_smul, Submodule.coe_sum, RootPairing.Base.coe_toWeightBasisInt_apply,
+      RootPairing.flip_root]
+    exact hpol
+  have hmul : b.affineComarks (some i) * (P.posRootForm ℤ).rootLength b.highestRoot =
+      b.affineMarks (some i) * (P.posRootForm ℤ).rootLength i := by
+    have hrepr := congrArg (fun x ↦ b.flip.toWeightBasisInt.repr x ⟨i.1, i.2⟩) (h1.symm.trans h2)
+    rw [b.flip.toWeightBasisInt.repr_sum_self, b.flip.toWeightBasisInt.repr_sum_self] at hrepr
+    simpa [RootPairing.RootPositiveForm.rootLength, RootPairing.posRootForm_eq] using hrepr
+  have hpos : 0 < b.affineMarks (some i) * (P.posRootForm ℤ).rootLength i :=
+    mul_pos (b.affineMarks_pos (some i)) ((P.posRootForm ℤ).rootLength_pos i)
+  have hθpos : 0 < (P.posRootForm ℤ).rootLength b.highestRoot :=
+    (P.posRootForm ℤ).rootLength_pos b.highestRoot
+  nlinarith
+
 /-! ### The affine Cartan matrix -/
 
 /-- The root index of the simple root at a node of the affine Dynkin diagram: the simple root `αᵢ`
@@ -299,6 +457,17 @@ private theorem pairingIn_highestRoot_eq_sum_affineMarks (l : ι) :
     ← Finset.sum_coe_sort b.support]
   simp
 
+/-- Pairing a root with the coroot of the highest root expands along the comarks. -/
+private theorem pairingIn_apply_highestRoot_eq_sum_affineComarks (k : ι) :
+    P.pairingIn ℤ k b.highestRoot =
+      ∑ i : b.support, P.pairingIn ℤ k i * b.affineComarks (some i) := by
+  apply FaithfulSMul.algebraMap_injective ℤ R
+  simp only [RootPairing.algebraMap_pairingIn, map_sum, map_mul,
+    ← RootPairing.root_coroot_eq_pairing, b.coroot_highestRoot_eq_sum_affineComarks, map_zsmul,
+    zsmul_eq_mul]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  simp [mul_comm]
+
 /-- **The null-root relation**: the marks are a left null vector of the affine Cartan matrix,
 since `∑ₖ mₖ αₖ = 0` with `α₀ = -θ`. In an affine realization, where `α₀ = δ - θ`, this says that
 the null root `δ = ∑ₖ mₖ αₖ` pairs to zero with every coroot. -/
@@ -311,6 +480,21 @@ theorem affineMarks_vecMul_affineCartanMatrix :
       affineCartanMatrix_apply_same, affineCartanMatrix_some_none, affineCartanMatrix_none_some,
       affineCartanMatrix_some_some, mul_neg, Finset.sum_neg_distrib, Pi.zero_apply,
       ← pairingIn_highestRoot_eq_sum_affineMarks, pairingIn_same]
+  · norm_num
+  · simp
+
+/-- **The central-coroot relation**: the comarks are a right null vector of the affine Cartan
+matrix, since `∑ₖ aₖ^∨ αₖ^∨ = 0` with `α₀^∨ = -θ^∨`. In an affine realization, where
+`h₀ = c - θ^∨`, this says that `c = ∑ₖ aₖ^∨ hₖ` is annihilated by every affine simple root. -/
+@[simp]
+theorem affineCartanMatrix_mulVec_affineComarks :
+    b.affineCartanMatrix *ᵥ b.affineComarks = 0 := by
+  ext k
+  rcases k with _ | i <;>
+    simp only [mulVec, dotProduct, Fintype.sum_option, affineComarks_none, mul_one,
+      affineCartanMatrix_apply_same, affineCartanMatrix_some_none, affineCartanMatrix_none_some,
+      affineCartanMatrix_some_some, neg_mul, Finset.sum_neg_distrib, Pi.zero_apply,
+      ← pairingIn_apply_highestRoot_eq_sum_affineComarks, pairingIn_same]
   · norm_num
   · simp
 
@@ -342,6 +526,29 @@ theorem vecMul_affineCartanMatrix_eq_zero_iff [IsDomain R] [P.IsRootSystem]
     have := congrFun hwA (some j)
     simpa [vecMul, dotProduct, Fintype.sum_option, hw0, cartanMatrixIn_def] using this
   have hsome := b.cartanMatrix_nondegenerate.separatingLeft.eq_zero_of_vecMul_eq_zero hfin
+  rw [← sub_eq_zero]
+  ext k
+  rcases k with _ | i
+  · exact hw0
+  · exact congrFun hsome i
+
+/-- **The right kernel of the affine Cartan matrix is spanned by the comarks**: for a root system, a
+vector `v` with `A *ᵥ v = 0` is `v 0` times the comarks. -/
+theorem affineCartanMatrix_mulVec_eq_zero_iff [IsDomain R] [P.IsRootSystem]
+    {v : Option b.support → ℤ} :
+    b.affineCartanMatrix *ᵥ v = 0 ↔ v = v none • b.affineComarks := by
+  refine ⟨fun hv ↦ ?_, fun hv ↦ by rw [hv, mulVec_smul, affineCartanMatrix_mulVec_affineComarks,
+    smul_zero]⟩
+  set w := v - v none • b.affineComarks with hw
+  have hw0 : w none = 0 := by simp [hw]
+  have hwA : b.affineCartanMatrix *ᵥ w = 0 := by
+    rw [hw, mulVec_sub, mulVec_smul, affineCartanMatrix_mulVec_affineComarks, hv, smul_zero,
+      sub_zero]
+  have hfin : b.cartanMatrix *ᵥ (w ∘ some) = 0 := by
+    ext i
+    have := congrFun hwA (some i)
+    simpa [mulVec, dotProduct, Fintype.sum_option, hw0, cartanMatrixIn_def] using this
+  have hsome := b.cartanMatrix_nondegenerate.separatingRight.eq_zero_of_mulVec_eq_zero hfin
   rw [← sub_eq_zero]
   ext k
   rcases k with _ | i
