@@ -52,6 +52,9 @@ together with modulo-`X ^ m` congruence lifting and a differential reversion ide
 * `PowerSeries.derivative_binomialSeries`, `PowerSeries.one_add_X_mul_derivative_binomialSeries`,
   `PowerSeries.subst_binomialSeries_sub_one`, and `PowerSeries.binomialSeries_algebraMap`:
   derivative, logarithmic ODE, composition law, and scalar-tower compatibility of `binomialSeries`.
+* `PowerSeries.rescale_neg_one_invOneSubPow_zpow`: under `X ↦ -X`, the integer power
+  `(1 - X) ^ (-k)` is the binomial series `binomialSeries R (-k)`, extending Mathlib's
+  `PowerSeries.rescale_neg_one_invOneSubPow` from natural to integer exponents.
 * `PowerSeries.binomialPow_add`, `PowerSeries.binomialPow_binomialPow`,
   `PowerSeries.binomialPow_mul`, `PowerSeries.derivative_binomialPow`,
   `PowerSeries.mul_derivative_binomialPow`: `R`-module laws and chain rules for `binomialPow`.
@@ -233,6 +236,28 @@ theorem subst_binomialSeries_sub_one (r s : R) :
 end CommRing
 
 end BinomialSeries
+
+section InvOneSubPow
+
+variable {R : Type*} [CommRing R]
+
+/-- Under `X ↦ -X`, the integer power `(1 - X) ^ (-k)` becomes the binomial series
+`(1 + X) ^ (-k)`. -/
+theorem rescale_neg_one_invOneSubPow_zpow (k : ℤ) :
+    rescale (-1 : R) (↑(invOneSubPow R 1 ^ k) : R⟦X⟧) = binomialSeries R (-k) := by
+  induction k using Int.induction_on with
+  | zero => simp
+  | succ k ih =>
+    have h1 := rescale_neg_one_invOneSubPow (A := R) 1
+    rw [Nat.cast_one] at h1
+    rw [zpow_add_one, Units.val_mul, map_mul, ih, h1, neg_add, binomialSeries_add]
+  | pred k ih =>
+    have h1 : rescale (-1 : R) (↑(invOneSubPow R 1)⁻¹ : R⟦X⟧) = binomialSeries R (1 : ℤ) := by
+      rw [← Units.inv_eq_val_inv, invOneSubPow_inv_eq_one_sub_pow, binomialSeries_one]
+      simp [rescale_X, sub_eq_add_neg]
+    rw [zpow_sub_one, Units.val_mul, map_mul, ih, h1, neg_sub, sub_eq_neg_add, binomialSeries_add]
+
+end InvOneSubPow
 
 /-! ## Formal binomial powers of principal units -/
 

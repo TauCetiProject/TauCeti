@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.ArithmeticFunction.Moebius
-public import Mathlib.RingTheory.PowerSeries.Binomial
 public import Mathlib.RingTheory.PowerSeries.Derivative
 public import Mathlib.RingTheory.PowerSeries.WellKnown
 public import TauCeti.RingTheory.PowerSeries.Expand
@@ -43,8 +42,6 @@ the cyclotomic identity of Metropolis and Rota.
 * `PowerSeries.expand_invOneSubPow_zpow_neg_natCast`,
   `PowerSeries.expand_invOneSubPow_zpow_natCast_mul_one_sub_X_pow_pow`: the factor
   `expand r _ ↑(invOneSubPow R 1 ^ e)` is `(1 - X ^ r) ^ (-e)`.
-* `PowerSeries.rescale_neg_one_invOneSubPow_zpow`: under `X ↦ -X`, `(1 - X) ^ (-k)` is the
-  binomial series `binomialSeries R (-k)`.
 * `PowerSeries.X_pow_dvd_expand_invOneSubPow_zpow_sub`: `(1 - X ^ r) ^ (-k) = 1 + k X ^ r` modulo
   `X ^ (r + 1)`.
 * `PowerSeries.hasProd_expand_invOneSubPow_zpow_iff`: an integral Euler product converges to `f`
@@ -108,23 +105,6 @@ theorem coeff_one_invOneSubPow_zpow (k : ℤ) :
     rw [zpow_sub_one, Units.val_mul, coeff_one_mul, ih, val_inv_invOneSubPow, pow_one,
       constantCoeff_invOneSubPow_zpow]
     simp [sub_eq_add_neg]
-
-/-- Under `X ↦ -X`, the integer power `(1 - X) ^ (-k)` becomes the binomial series
-`(1 + X) ^ (-k)`. -/
-theorem rescale_neg_one_invOneSubPow_zpow (k : ℤ) :
-    rescale (-1 : R) (↑(invOneSubPow R 1 ^ k) : R⟦X⟧) = binomialSeries R (-k) := by
-  induction k using Int.induction_on with
-  | zero => simp
-  | succ k ih =>
-    have h1 := rescale_neg_one_invOneSubPow (A := R) 1
-    rw [Nat.cast_one] at h1
-    rw [zpow_add_one, Units.val_mul, map_mul, ih, h1, neg_add, binomialSeries_add]
-  | pred k ih =>
-    have h1 : rescale (-1 : R) (↑(invOneSubPow R 1)⁻¹ : R⟦X⟧) = binomialSeries R (1 : ℤ) := by
-      have h2 := binomialSeries_nat (R := ℤ) (A := R) 1
-      rw [Nat.cast_one, pow_one] at h2
-      simp [rescale_X, h2, sub_eq_add_neg]
-    rw [zpow_sub_one, Units.val_mul, map_mul, ih, h1, neg_sub, sub_eq_neg_add, binomialSeries_add]
 
 /-- The integral Euler factor `(1 - X ^ r) ^ (-e)` at `e = -1` is `1 - X ^ r`. -/
 theorem expand_val_inv_invOneSubPow (r : ℕ) (hr : r ≠ 0) :
