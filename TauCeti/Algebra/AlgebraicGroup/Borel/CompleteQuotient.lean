@@ -91,11 +91,9 @@ private theorem isClosed_exteriorFlagZeroLocus (d : ℕ) :
   let 𝒜 := TauCeti.SymmetricAlgebra.homogeneousSubmodule k
     (Module.Dual k (exteriorPower.FlagSpace k M d))
   have hZ : exteriorFlagZeroLocus k M d =
-      ⋂ s ∈ exteriorPower.exteriorFlagForms k M d, ((Proj.basicOpen 𝒜 s).1)ᶜ := by
-    ext x
-    simp [exteriorFlagZeroLocus, 𝒜, Proj.mem_basicOpen]
-  rw [hZ]
-  exact isClosed_biInter fun s _ ↦ (Proj.basicOpen 𝒜 s).isOpen.isClosed_compl
+      ⋂ s ∈ exteriorPower.exteriorFlagForms k M d, ((Proj.basicOpen 𝒜 s).1)ᶜ :=
+    Set.ext fun x ↦ by simp [exteriorFlagZeroLocus, 𝒜, Proj.mem_basicOpen]
+  exact hZ ▸ isClosed_biInter fun s _ ↦ (Proj.basicOpen 𝒜 s).isOpen.isClosed_compl
 
 private theorem mapsTo_projectivePointTranslation_exteriorFlagZeroLocus (d : ℕ)
     (g : WithConv (H →ₐ[k] k)) :
@@ -140,8 +138,8 @@ private theorem isSolvable_points_of_isBorelOverAlgClosed {B : HopfIdeal k G}
     (hB : IsBorelOverAlgClosed k G B) :
     Group.IsSolvable (WithConv ((G ⧸ B.toIdeal) →ₐ[k] k)) := by
   have hcand := ((isBorelOverAlgClosed_iff k G B).mp hB).2.prop
-  let Q := FiniteTypeCommHopfAlgCat.quotient G B
-  let _ : Group.IsSolvable (WithConv (Q →ₐ[k] AlgebraicClosure k)) :=
+  let _ : Group.IsSolvable
+      (WithConv (FiniteTypeCommHopfAlgCat.quotient G B →ₐ[k] AlgebraicClosure k)) :=
     (geometricallySolvablePointsCommHopfAlgProperty_iff _ _).mp hcand.geometricallySolvable
   exact Group.isSolvable_of_isSolvable_injective
     (AlgHom.mapValue_injective (φ := Algebra.ofId k (AlgebraicClosure k))
@@ -176,10 +174,9 @@ private theorem exists_line_stabilizerHopfIdeal_eq (B : HopfIdeal k G) :
   let _ : Module.Finite k V := hV
   let _ : AddCommGroup V := Module.addCommMonoidToAddCommGroup k
   let instComodM : Comodule k G.obj (⋀[k]^r V) := Comodule.exteriorPower k G.obj V r
-  have hB_eq : L.stabilizerHopfIdeal G.obj = B :=
+  exact ⟨⋀[k]^r V, inferInstance, inferInstance, instComodM, inferInstance, L, hL,
     L.stabilizerHopfIdeal_eq_of_forall_mem_quotientPointsSubgroup_iff B fun A _ _ g ↦
-      hstabL (CommAlgCat.of k A) g
-  exact ⟨⋀[k]^r V, inferInstance, inferInstance, instComodM, inferInstance, L, hL, hB_eq⟩
+      hstabL (CommAlgCat.of k A) g⟩
 
 /-- Chevalley's theorem and the Lie--Kolchin theorem produce a finite-dimensional `G`-comodule `M`
 with a basis `b` whose first line has stabilizer `B` and whose corestriction to `G ⧸ B.toIdeal`
@@ -204,17 +201,12 @@ private theorem exists_basis_stabilizerHopfIdeal_eq_of_isBorelOverAlgClosed
     isSolvable_points_of_isBorelOverAlgClosed hB
   let _ : Comodule k (G ⧸ B.toIdeal) M :=
     Comodule.Corestrict (CommHopfAlgCat.mkQuotient G.obj B).hom.toCoalgHom
-  obtain ⟨LQ, hLQ⟩ :=
-    (L.stabilizerHopfIdeal_le_iff_exists_subcomodule_corestrict B).mp hB_eq.le
-  have hdimLQ : Module.finrank k LQ = 1 := by
-    rwa [← Subcomodule.finrank_toSubmodule, hLQ]
+  obtain ⟨LQ, hLQ⟩ := (L.stabilizerHopfIdeal_le_iff_exists_subcomodule_corestrict B).mp hB_eq.le
+  have hdimLQ : Module.finrank k LQ = 1 := by rwa [← Subcomodule.finrank_toSubmodule, hLQ]
   obtain ⟨n, b, htri, hb0⟩ :=
     Comodule.exists_basis_coefficientMatrix_isUpperTriangular_first_span_of_isSolvable
       (k := k) (H := G ⧸ B.toIdeal) (M := M) LQ hdimLQ
-  have hb0_stab : (k ∙ b 0).stabilizerHopfIdeal G = B := by
-    rw [hb0, hLQ]
-    exact hB_eq
-  exact ⟨M, instAddM, instModM, instComodM, instFinM, n, b, hb0_stab, htri⟩
+  exact ⟨M, instAddM, instModM, instComodM, instFinM, n, b, by rwa [hb0, hLQ], htri⟩
 
 variable [_root_.IsReduced G]
 
@@ -255,24 +247,18 @@ theorem IsBorelOverAlgClosed.isClosed_range_projectiveOrbitMap_exteriorFlagVecto
   have hw'_ne : w' ≠ 0 := by
     obtain ⟨φ, hφ⟩ := Module.isUnimodular_iff.mp hw'
     exact fun h ↦ one_ne_zero (by rw [← hφ, h, map_zero])
-  have hfin : Module.finrank k M = 1 + n := by
-    rw [Module.finrank_eq_card_basis b, Fintype.card_fin]
+  have hfin : Module.finrank k M = 1 + n :=
+    (Module.finrank_eq_card_basis b).trans (Fintype.card_fin _)
   obtain ⟨c, b', rfl⟩ :=
     exteriorPower.exists_basis_of_mem_exteriorFlagCone_of_finrank_eq hfin hw'_cone hw'_ne
-  have hspan_w' :
-      k ∙ (c • exteriorPower.exteriorFlagVector k (1 + n) b') =
-        k ∙ exteriorPower.exteriorFlagVector k (1 + n) b' := by
-    rw [Units.smul_def, Submodule.span_singleton_smul_eq c.isUnit]
   set D := (k ∙ (c • exteriorPower.exteriorFlagVector k (1 + n) b')).stabilizerHopfIdeal G
   have hD_eq : D = (k ∙ exteriorPower.exteriorFlagVector k (1 + n) b').stabilizerHopfIdeal G :=
-    congrArg (Submodule.stabilizerHopfIdeal G) hspan_w'
-  have : Group.IsSolvable (WithConv ((G ⧸ D.toIdeal) →ₐ[k] k)) := by
-    rw [hD_eq]
-    exact Comodule.isSolvable_points_quotient_stabilizerHopfIdeal_exteriorFlagVector b' h0
+    congrArg (Submodule.stabilizerHopfIdeal G)
+      (by rw [Units.smul_def, Submodule.span_singleton_smul_eq c.isUnit])
+  have : Group.IsSolvable (WithConv ((G ⧸ D.toIdeal) →ₐ[k] k)) :=
+    hD_eq ▸ Comodule.isSolvable_points_quotient_stabilizerHopfIdeal_exteriorFlagVector b' h0
   have ho_w := Comodule.topologicalKrullDim_range_projectiveOrbitMap_add_ringKrullDim_eq w hw B
-    fun a ↦ by
-      rw [← hstab_w]
-      exact Comodule.mem_quotientPointsSubgroup_stabilizerHopfIdeal_span_iff w hw a
+    fun a ↦ hstab_w ▸ Comodule.mem_quotientPointsSubgroup_stabilizerHopfIdeal_span_iff w hw a
   have ho_w' := Comodule.topologicalKrullDim_range_projectiveOrbitMap_add_ringKrullDim_eq _ hw' D
     (Comodule.mem_quotientPointsSubgroup_stabilizerHopfIdeal_span_iff _ hw')
   exact le_of_add_ringKrullDim_eq_of_ringKrullDim_le ho_w ho_w' (hB.ringKrullDim_quotient_le D)
@@ -288,10 +274,9 @@ private theorem exists_stabilizerHopfIdeal_eq_and_isClosed_range_projectiveOrbit
   let W := exteriorPower.FlagSpace k M (1 + n)
   let instComodW : Comodule k G W := Comodule.exteriorFlag k G M (1 + n)
   let w : W := exteriorPower.exteriorFlagVector k (1 + n) b
-  have hw_ne : w ≠ 0 :=
-    (exteriorPower.exteriorFlagVector_ne_zero_iff (v := b)).mpr b.linearIndependent
-  have hw : Module.IsUnimodular k w :=
-    Module.isUnimodular_iff.mpr (Module.Projective.exists_dual_eq_one k hw_ne)
+  have hw : Module.IsUnimodular k w := Module.isUnimodular_iff.mpr
+    (Module.Projective.exists_dual_eq_one k
+      ((exteriorPower.exteriorFlagVector_ne_zero_iff (v := b)).mpr b.linearIndependent))
   exact ⟨W, inferInstance, inferInstance, instComodW, inferInstance, w, hw,
     Comodule.stabilizerHopfIdeal_span_exteriorFlagVector_eq b B hb0_stab htri,
     hB.isClosed_range_projectiveOrbitMap_exteriorFlagVector b hb0_stab htri hw⟩
@@ -314,21 +299,17 @@ theorem IsBorelOverAlgClosed.exists_isClosed_projectiveOrbit_stabilizerHopfIdeal
           Comodule.projectiveOrbitPointsSheaf (H := G.obj) w hw) := by
   obtain ⟨W, instAddW, instModW, instComodW, instFinW, w, hw, hstab_w, hclosed⟩ :=
     exists_stabilizerHopfIdeal_eq_and_isClosed_range_projectiveOrbitMap hB
-  have hclosedImm : IsClosedImmersion (Comodule.projectiveOrbitι (H := G) w hw) :=
-    IsClosedImmersion.of_isPreimmersion _ (by
-      simpa only [Comodule.range_projectiveOrbitι] using hclosed)
-  have hproper : IsProper (Comodule.projectiveOrbitToSpec (H := G) w hw) :=
-    Comodule.isProper_projectiveOrbitToSpec_of_isClosed W w hw hclosed
   have hcoset (A : CommAlgCat.{u} k) (g h : HopfAlgebra.points (R := k) (H := G.obj) A) :=
-    B.coset_eq_iff_exists_units_matrixCoefficient w hw A
-      (fun a ↦ by
-        have hker : (∀ x ∈ B, a.ofConv x = 0) ↔ B.toIdeal ≤ RingHom.ker a.ofConv :=
-          ⟨fun ha _ hx ↦ ha _ hx, fun ha _ hx ↦ ha hx⟩
-        rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff, hker, ← hstab_w,
-          Submodule.stabilizerHopfIdeal_le_ker_iff])
-      g h
-  exact ⟨W, instAddW, instModW, instComodW, instFinW, w, hw, hstab_w, hclosed, hclosedImm,
-    hproper, ⟨Comodule.fppfHomogeneousQuotientIsoProjectiveOrbitPoints B w hw hcoset⟩⟩
+    B.coset_eq_iff_exists_units_matrixCoefficient w hw A (fun a ↦ by
+      have hker : (∀ x ∈ B, a.ofConv x = 0) ↔ B.toIdeal ≤ RingHom.ker a.ofConv :=
+        ⟨fun ha _ hx ↦ ha _ hx, fun ha _ hx ↦ ha hx⟩
+      rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff, hker, ← hstab_w,
+        Submodule.stabilizerHopfIdeal_le_ker_iff]) g h
+  exact ⟨W, instAddW, instModW, instComodW, instFinW, w, hw, hstab_w, hclosed,
+    IsClosedImmersion.of_isPreimmersion _
+      (by simpa only [Comodule.range_projectiveOrbitι] using hclosed),
+    Comodule.isProper_projectiveOrbitToSpec_of_isClosed W w hw hclosed,
+    ⟨Comodule.fppfHomogeneousQuotientIsoProjectiveOrbitPoints B w hw hcoset⟩⟩
 
 /-- Every Borel homogeneous quotient `G / B` of a reduced affine group `G` of finite type over an
 algebraically closed field is represented by a projective orbit scheme that is closed in projective

@@ -32,7 +32,6 @@ scalars.
   Segre minor relations over any commutative semiring.
 * `TensorProduct.eq_smul_rid_lTensor_tmul_lid_rTensor`: explicit pure-tensor factorization from an
   invertible dual pairing and the Segre minor relations.
-* `Module.IsUnimodular.tmul`: the pure tensor product of two unimodular vectors is unimodular.
 * `Module.IsUnimodular.exists_units_smul_of_tmul_eq_tmul`: uniqueness up to a unit scalar of the
   factors of a pure tensor whose reference factors are unimodular, over any commutative semiring.
 * `Module.IsUnimodular.span_singleton_tmul_eq_iff`: a pure tensor spans the same cyclic submodule as
@@ -69,21 +68,18 @@ theorem dualDistrib_tmul_mul_dualDistrib_tmul (m : M) (n : N)
 
 private theorem comp_rid_lTensor_eq_dualDistrib (φ : Module.Dual R M) (ψ : Module.Dual R N) :
     φ ∘ₗ (TensorProduct.rid R M).toLinearMap ∘ₗ LinearMap.lTensor M ψ =
-      dualDistrib R M N (φ ⊗ₜ ψ) := by
-  ext m n
-  simp [mul_comm]
+      dualDistrib R M N (φ ⊗ₜ ψ) :=
+  TensorProduct.ext' fun _ _ ↦ by simp [mul_comm]
 
 private theorem comp_lid_rTensor_eq_dualDistrib (φ : Module.Dual R M) (ψ : Module.Dual R N) :
     ψ ∘ₗ (TensorProduct.lid R N).toLinearMap ∘ₗ LinearMap.rTensor N φ =
-      dualDistrib R M N (φ ⊗ₜ ψ) := by
-  ext m n
-  simp
+      dualDistrib R M N (φ ⊗ₜ ψ) :=
+  TensorProduct.ext' fun _ _ ↦ by simp
 
 private theorem lid_comp_map_eq_dualDistrib (φ : Module.Dual R M) (ψ : Module.Dual R N) :
     (TensorProduct.lid R R).toLinearMap ∘ₗ TensorProduct.map φ ψ =
-      dualDistrib R M N (φ ⊗ₜ ψ) := by
-  ext m n
-  simp
+      dualDistrib R M N (φ ⊗ₜ ψ) :=
+  TensorProduct.ext' fun _ _ ↦ by simp
 
 end Semiring
 
@@ -131,14 +127,6 @@ section CommSemiring
 variable {R M N : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
   [AddCommMonoid N] [Module R N]
 
-/-- The pure tensor product of two unimodular vectors is unimodular. -/
-theorem tmul {m : M} {n : N} (hm : Module.IsUnimodular R m) (hn : Module.IsUnimodular R n) :
-    Module.IsUnimodular R (m ⊗ₜ[R] n) := by
-  obtain ⟨φ, hφ⟩ := Module.isUnimodular_iff.mp hm
-  obtain ⟨ψ, hψ⟩ := Module.isUnimodular_iff.mp hn
-  exact Module.isUnimodular_of_apply_eq_one
-    (f := TensorProduct.dualDistrib R M N (φ ⊗ₜ ψ)) (by simp [hφ, hψ])
-
 /-- Two pure-tensor representations of the same element of `M ⊗[R] N` over a commutative semiring
 whose reference factors are unimodular differ by reciprocal unit scalars. -/
 theorem exists_units_smul_of_tmul_eq_tmul {m m₀ : M} {n n₀ : N}
@@ -148,16 +136,12 @@ theorem exists_units_smul_of_tmul_eq_tmul {m m₀ : M} {n n₀ : N}
   obtain ⟨φ₀, hφ₀⟩ := Module.isUnimodular_iff.mp hm₀
   obtain ⟨ψ₀, hψ₀⟩ := Module.isUnimodular_iff.mp hn₀
   have hn : φ₀ m • n = n₀ := by
-    simpa [hφ₀] using
-      congrArg ((TensorProduct.lid R N).toLinearMap ∘ₗ LinearMap.rTensor N φ₀) h
+    simpa [hφ₀] using congrArg ((TensorProduct.lid R N).toLinearMap ∘ₗ LinearMap.rTensor N φ₀) h
   have hm : ψ₀ n • m = m₀ := by
-    simpa [hψ₀] using
-      congrArg ((TensorProduct.rid R M).toLinearMap ∘ₗ LinearMap.lTensor M ψ₀) h
-  have hmul : φ₀ m * ψ₀ n = 1 := by
-    simpa [hψ₀, smul_eq_mul] using congrArg ψ₀ hn
+    simpa [hψ₀] using congrArg ((TensorProduct.rid R M).toLinearMap ∘ₗ LinearMap.lTensor M ψ₀) h
+  have hmul : φ₀ m * ψ₀ n = 1 := by simpa [hψ₀, smul_eq_mul] using congrArg ψ₀ hn
   refine ⟨⟨φ₀ m, ψ₀ n, hmul, by rw [mul_comm, hmul]⟩, ?_, ?_⟩
-  · symm
-    rw [Units.smul_def, Units.val_mk, ← hm, smul_smul, hmul, one_smul]
+  · exact Eq.symm (by rw [Units.smul_def, Units.val_mk, ← hm, smul_smul, hmul, one_smul])
   · rw [Units.smul_def, Units.val_mk, hn]
 
 /-- Over a commutative semiring, if `u₀` and `v₀` are unimodular, a pure tensor `u ⊗ₜ v` spans the
