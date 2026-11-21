@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Action
 import TauCeti.Analysis.SpecificLimits.Monotone
 import TauCeti.Geometry.Symplectic.AlmostComplex.Topology
-import TauCeti.Geometry.Symplectic.Floer.Breaking
+import TauCeti.Geometry.Symplectic.Floer.Breaking.Basic
 import TauCeti.Topology.ContinuousMap.Ascoli
 
 /-!
@@ -30,7 +30,7 @@ this is the step that separates levels. Assembling the levels themselves is not 
   `K` (`SymplecticForm.exists_periodic_hasDerivAt_of_tendsto_setLIntegral_comp_add`), and the
   actions of the loops `u_k(σ_k, ·)` are asymptotic to the action of `x`
   (`SymplecticForm.tendsto_hamiltonianAction_sub_hamiltonianAction_of_tendstoLocallyUniformly`);
-  both are in `TauCeti.Geometry.Symplectic.Floer.Breaking`.
+  both are in `TauCeti.Geometry.Symplectic.Floer.Breaking.Basic`.
 * **Far apart loops are joined by a neck.** If `σ'_k - σ_k → ∞`, then along a subsequence there
   are shifts `τ_k` with `τ_k - σ_k → ∞` and `σ'_k - τ_k → ∞` such that the translates by `τ_k`
   converge to the stationary cylinder over an orbit `x` in `K`, and the actions of the loops

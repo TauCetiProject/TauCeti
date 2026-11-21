@@ -368,7 +368,7 @@ private theorem exists_rat_Gammaℝ_eq_mul_meromorphicTrailingCoeffAt {n : ℕ} 
     have hif : (if Even (2 * (j + 1)) then 0 else 1 : ℤ) = 0 := by simp
     refine ⟨j ! * (2 * j + 2)! / ((-1) ^ (j + 1) * 4 ^ (j + 1) * (j + 1)!),
       by simp [Nat.factorial_ne_zero], ?_⟩
-    rw [hx, (analyticAt_Gammaℝ hne).meromorphicTrailingCoeffAt_of_ne_zero hne, hv, hif,
+    rw [hx, (analyticAt_Gammaℝ_of_ne_zero hne).meromorphicTrailingCoeffAt_of_ne_zero hne, hv, hif,
       show ((0 : ℤ) - ((2 * (j + 1) : ℕ) : ℤ)) = -((2 * j + 2 : ℕ) : ℤ) by push_cast; ring,
       zpow_neg, zpow_natCast,
       show ((2 * (j + 1) : ℕ) : ℂ) = 2 * j + 2 by push_cast; ring, Gammaℝ_two_mul_nat_add_two]

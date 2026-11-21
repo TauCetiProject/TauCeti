@@ -42,6 +42,9 @@ so they also apply without a rational point.
   Riemann–Roch theorem, for the Euler characteristic and in terms of the two dimensions;
 * `InvertibleSheaf.eulerCharBelow_eq_relativeDegree_add_one_sub_genus`: Riemann–Roch for a line
   bundle presented as `𝒪_X(D)`;
+* `InvertibleSheaf.eulerCharBelow_eq_eulerDegree_add_one_sub_genus_of_surjective`: Riemann–Roch
+  `χ(L) = deg L + 1 - g` for every line bundle, with the Euler-characteristic degree, when all
+  global functions are constants;
 * `SchemeWeilDivisor.relativeDegree_add_one_sub_genus_le_finrank_cohomology_zero_sheaf`:
   Riemann's inequality;
 * `SchemeWeilDivisor.nonempty_completeLinearSystem_of_genus_le_relativeDegree`: a divisor of
@@ -248,6 +251,24 @@ end CompleteLinearSystem
 end SchemeWeilDivisor
 
 namespace InvertibleSheaf
+
+section Surjective
+
+variable (k : Type u) [Field k] {X : Scheme.{u}} [X.Over (Spec (.of k))]
+
+/-- **The Riemann–Roch theorem for line bundles.** On a nonempty scheme over a field `k` all of
+whose global functions are constants, with finite-dimensional `H¹(X, 𝒪_X)`, every line bundle `L`
+satisfies `χ(L) = deg L + 1 - g`. Here `χ(L) = dim H⁰(X, L) - dim H¹(X, L)`,
+`deg L = χ(L) - χ(𝒪_X)` is the Euler-characteristic degree and `g` is the genus. -/
+theorem eulerCharBelow_eq_eulerDegree_add_one_sub_genus_of_surjective [Nonempty X]
+    [FiniteDimensional k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1)]
+    (hφ : Function.Surjective (Scheme.Modules.baseRingToGlobalSections k X))
+    (L : InvertibleSheaf X) :
+    Scheme.Modules.eulerCharBelow k X L.obj 2 = L.eulerDegree k + 1 - X.genus k := by
+  rw [eulerDegree_def, eulerCharBelow_trivial_eq_one_sub_genus_of_surjective k hφ]
+  ring
+
+end Surjective
 
 variable {X : Scheme.{u}} [IsIntegral X] [IsLocallyNoetherian X]
   [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))]
