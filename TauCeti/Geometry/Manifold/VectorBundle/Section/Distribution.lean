@@ -130,8 +130,11 @@ theorem ext_chartDistribution {u u' : BundleDistribution I F V n G}
     (Ω := ⟨p.chart.target, p.chart.open_target⟩) (F := F) (V := G)).symm (h p)
   simp only [chartDistribution, ContinuousLinearMap.coe_comp, Function.comp_apply,
     ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.symm_apply_apply] at hp
+  have hφ := DFunLike.congr_fun hp φ
+  rw [precompCompactConvergenceCLM_apply, precompCompactConvergenceCLM_apply] at hφ
   rw [← ChartTestData.coe_chartTestSectionCLM]
-  exact DFunLike.congr_fun hp φ
+  -- Evaluation of the composite through the `→L_c` type synonym is evaluation of its factors.
+  exact hφ
 
 /-- Bundle distributions agree exactly when all their chart localizations agree. -/
 theorem ext_chartDistribution_iff {u u' : BundleDistribution I F V n G} :
