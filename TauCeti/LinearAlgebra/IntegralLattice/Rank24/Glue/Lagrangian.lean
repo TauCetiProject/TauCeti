@@ -96,8 +96,10 @@ private theorem encodesMem_zero : EncodesMem t ht H (List.replicate n 0) :=
   ⟨0, H.zero_mem, encodeGlueWord_zero t ht⟩
 
 private theorem EncodesMem.glueWordAdd {l l' : List ℕ} (hl : EncodesMem t ht H l)
-    (hl' : EncodesMem t ht H l') : EncodesMem t ht H (glueWordAdd t l l') :=
-  exists_mem_addSubgroup_glueWordAdd t ht H hl hl'
+    (hl' : EncodesMem t ht H l') : EncodesMem t ht H (glueWordAdd t l l') := by
+  obtain ⟨w, hw, rfl⟩ := hl
+  obtain ⟨w', hw', rfl⟩ := hl'
+  exact ⟨w + w', H.add_mem hw hw', encodeGlueWord_add t ht w w'⟩
 
 private theorem encodesMem_of_mem_glueWordMultiples {S : List (List ℕ)} {g : List ℕ}
     (hg : EncodesMem t ht H g) :
@@ -151,11 +153,12 @@ private def subgroupWords (r : RootfulNiemeierType) : List (List ℕ) :=
 /-- Every listed word of a row is the digit word of a word of its glue subgroup. -/
 private theorem exists_mem_glueSubgroup_of_mem_subgroupWords (r : RootfulNiemeierType)
     {l : List ℕ} (hl : l ∈ r.subgroupWords) :
-    ∃ w ∈ r.glueSubgroup, encodeGlueWord r.componentType r.isSimplyLaced_componentType w = l :=
-  encodesMem_of_mem_glueSpanWords _ _ _ _
-    (fun _ hg ↦ r.exists_mem_glueSubgroup_of_mem_glueWords
-      (of_decide_eq_true (List.mem_filter.mp hg).2))
-    l hl
+    ∃ w ∈ r.glueSubgroup, encodeGlueWord r.componentType r.isSimplyLaced_componentType w = l := by
+  refine encodesMem_of_mem_glueSpanWords _ _ _ _ (fun g hg ↦ ?_) l hl
+  obtain ⟨w, hw, hdec⟩ := exists_decodeGlueWord_mem_glueGenerators
+    (of_decide_eq_true (List.mem_filter.mp hg).2)
+  refine ⟨w, r.glueSubgroup_def ▸ AddSubgroup.subset_closure hw, ?_⟩
+  exact ((decodeGlueWord_eq_some_iff _ _ _ _).mp hdec).symm
 
 /-- The finite check: for each of the 19 enumerated rows, the listed words are distinct, there
 are `|H|` of them, and every nonzero one has glue minimum at least `4`. -/

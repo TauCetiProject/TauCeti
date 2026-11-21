@@ -13,10 +13,9 @@ public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeD.Triality
 
 In the rootful rank-24 table, `TauCeti.RootfulNiemeierType.a5FourthD4` is the unique row whose
 parenthesized pattern symmetry is not a pure coordinate glue symmetry: its glue columns are
-`[2(024)0]`, `[33001]`, `[30302]`, and `[30033]`, and in fact `A₅⁴ D₄` admits no nontrivial
-pure-position glue symmetry at all (`glueSymmetries_a5FourthD4_eq_bot`), so in particular
-rotating the three marked `A₅` positions `1, 2, 3` while leaving the `D₄` label in position `4`
-unchanged fails to preserve the glue subgroup (`a5FourthD4BlockRot_notMem_glueSymmetries`).
+`[2(024)0]`, `[33001]`, `[30302]`, and `[30033]`, and rotating the three marked `A₅` positions
+`1, 2, 3` while leaving the `D₄` label in position `4` unchanged sends `[33001]` outside the glue
+subgroup (`a5FourthD4BlockRot_notMem_glueSymmetries`).
 
 Because the three literal generators cycle the nonzero `D₄` labels `1 ↦ 2 ↦ 3 ↦ 1` (`s ↦ v ↦ c ↦ s`)
 in lockstep with the three marked `A₅` positions, coupling the block rotation with `D₄` triality
@@ -36,10 +35,8 @@ built from the glue-alphabet action there; this file builds it from the general 
 * `TauCeti.RootfulNiemeierType.a5FourthD4BlockRot`: the cyclic rotation of positions `1, 2, 3`
   generating `(GluePattern.cyclic [2] [0, 2, 4] [0]).symmetries`
   (`symmetries_cyclic_a5FourthD4`), of order three (`orderOf_a5FourthD4BlockRot`).
-* `TauCeti.RootfulNiemeierType.glueSymmetries_a5FourthD4_eq_bot`,
-  `TauCeti.RootfulNiemeierType.a5FourthD4BlockRot_notMem_glueSymmetries`: `a5FourthD4` has no
-  nontrivial pure-position glue symmetry, and in particular the uncoupled block rotation is not a
-  glue symmetry.
+* `TauCeti.RootfulNiemeierType.a5FourthD4BlockRot_notMem_glueSymmetries`: the uncoupled block
+  rotation is not a glue symmetry of `a5FourthD4`.
 * `TauCeti.RootfulNiemeierType.a5FourthD4TrialityRotation`: the order-three self-isometry
   (`orderOf_a5FourthD4TrialityRotation`) of `niemeierA5FourthD4` rotating the three marked `A₅`
   components and applying `typeD4Triality` on the `D₄` component.
@@ -152,8 +149,7 @@ theorem a5FourthD4BlockRot_inv_three : a5FourthD4BlockRot⁻¹ 3 = 2 := by
 theorem a5FourthD4BlockRot_inv_four : a5FourthD4BlockRot⁻¹ 4 = 4 := by
   rw [a5FourthD4BlockRot_eq_swap_mul_swap]; decide
 
-/-- The cube of `a5FourthD4BlockRot` is the identity; see `orderOf_a5FourthD4BlockRot` for exact
-order `3`. -/
+/-- `a5FourthD4BlockRot` has order three. -/
 @[simp]
 theorem a5FourthD4BlockRot_pow_three : a5FourthD4BlockRot ^ 3 = 1 := by
   rw [a5FourthD4BlockRot_eq_swap_mul_swap]; decide
@@ -176,126 +172,53 @@ theorem a5FourthD4BlockRot_mem_symmetries :
   rw [symmetries_cyclic_a5FourthD4]
   exact Subgroup.mem_zpowers _
 
-private def a5FourthD4WitnessPairs : List (List ℕ × List ℕ) :=
-  let u₁ := [2, 0, 2, 4, 0]
-  let u₂ := [2, 2, 4, 0, 0]
-  let u₃ := [2, 4, 0, 2, 0]
-  let d₁ := [3, 3, 0, 0, 1]
-  let d₂ := [3, 0, 3, 0, 2]
-  let d₃ := [3, 0, 0, 3, 3]
-  let twoU₁ := glueWordAdd a5FourthD4.componentType u₁ u₁
-  let twoU₂ := glueWordAdd a5FourthD4.componentType u₂ u₂
-  let twoU₃ := glueWordAdd a5FourthD4.componentType u₃ u₃
-  let fiveU₁ := glueWordAdd a5FourthD4.componentType twoU₁
-    (glueWordAdd a5FourthD4.componentType twoU₁ u₁)
-  let v := glueWordAdd a5FourthD4.componentType u₂ fiveU₁
-  [(v, twoU₁), (v, twoU₂), (v, twoU₃), (u₁, twoU₁), (d₁, d₂), (d₁, d₃)]
-
-private theorem exists_mem_glueSubgroup_of_mem_a5FourthD4WitnessPairs :
-    ∀ p ∈ a5FourthD4WitnessPairs,
-      (∃ w ∈ a5FourthD4.glueSubgroup,
-        encodeGlueWord a5FourthD4.componentType a5FourthD4.isSimplyLaced_componentType w = p.1) ∧
-      (∃ w' ∈ a5FourthD4.glueSubgroup,
-        encodeGlueWord a5FourthD4.componentType a5FourthD4.isSimplyLaced_componentType w' =
-          p.2) := by
-  have hadd {l₁ l₂ : List ℕ} := exists_mem_addSubgroup_glueWordAdd a5FourthD4.componentType
-    a5FourthD4.isSimplyLaced_componentType a5FourthD4.glueSubgroup (l₁ := l₁) (l₂ := l₂)
-  have hu₁ := a5FourthD4.exists_mem_glueSubgroup_of_mem_glueWords (l := [2, 0, 2, 4, 0]) (by decide)
-  have hu₂ := a5FourthD4.exists_mem_glueSubgroup_of_mem_glueWords (l := [2, 2, 4, 0, 0]) (by decide)
-  have hu₃ := a5FourthD4.exists_mem_glueSubgroup_of_mem_glueWords (l := [2, 4, 0, 2, 0]) (by decide)
-  have hd₁ := a5FourthD4.exists_mem_glueSubgroup_of_mem_glueWords (l := [3, 3, 0, 0, 1]) (by decide)
-  have hd₂ := a5FourthD4.exists_mem_glueSubgroup_of_mem_glueWords (l := [3, 0, 3, 0, 2]) (by decide)
-  have hd₃ := a5FourthD4.exists_mem_glueSubgroup_of_mem_glueWords (l := [3, 0, 0, 3, 3]) (by decide)
-  have h2u₁ := hadd hu₁ hu₁
-  have h2u₂ := hadd hu₂ hu₂
-  have h2u₃ := hadd hu₃ hu₃
-  have hv := hadd hu₂ (hadd h2u₁ (hadd h2u₁ hu₁))
-  intro p hp
-  simp only [a5FourthD4WitnessPairs, List.mem_cons, List.not_mem_nil, or_false] at hp
-  rcases hp with rfl | rfl | rfl | rfl | rfl | rfl
-  · exact ⟨hv, h2u₁⟩
-  · exact ⟨hv, h2u₂⟩
-  · exact ⟨hv, h2u₃⟩
-  · exact ⟨hu₁, h2u₁⟩
-  · exact ⟨hd₁, hd₂⟩
-  · exact ⟨hd₁, hd₃⟩
-
-private theorem exists_a5FourthD4WitnessPairs_lt_four :
-    ∀ g : Equiv.Perm (Fin a5FourthD4.components.length),
-      g ⟨4, by decide⟩ = ⟨4, by decide⟩ → g ≠ 1 →
-        ∃ p ∈ a5FourthD4WitnessPairs,
-          let l := List.ofFn fun k ↦ p.1.getD (g k).val 0
-          let s := glueWordAdd a5FourthD4.componentType l p.2
-          s ≠ [0, 0, 0, 0, 0] ∧ glueWordMinimum a5FourthD4.componentType s < 4 := by
-  decide +kernel
-
-/-- Any pure-position glue symmetry of `A₅⁴ D₄` preserves component Dynkin types and therefore
-fixes the unique `D₄` component in position `4`. -/
-private theorem apply_four_of_mem_glueSymmetries_a5FourthD4
-    {g : Equiv.Perm (Fin a5FourthD4.components.length)} (hg : g ∈ a5FourthD4.glueSymmetries) :
-    g ⟨4, by decide⟩ = ⟨4, by decide⟩ := by
-  have htype := a5FourthD4.componentType_apply_of_mem_glueSymmetries hg ⟨4, by decide⟩
-  generalize hk : g ⟨4, by decide⟩ = k at htype ⊢
-  fin_cases k <;> simp [componentType, components] at htype ⊢
-
-/-- For any glue symmetry `g` of `A₅⁴ D₄` and any witness pair `p ∈ a5FourthD4WitnessPairs`,
-reindexing the glue word for `p.1` along `g` and adding the glue word for `p.2` stays in
-`a5FourthD4.glueSubgroup`, so when nonzero its glue minimum cannot be strictly below `4`. -/
-private theorem not_glueWordMinimum_lt_four_of_mem_a5FourthD4WitnessPairs
-    {g : Equiv.Perm (Fin a5FourthD4.components.length)} (hg : g ∈ a5FourthD4.glueSymmetries)
-    {p : List ℕ × List ℕ} (hp : p ∈ a5FourthD4WitnessPairs) :
-    let l := List.ofFn fun k ↦ p.1.getD (g k).val 0
-    let s := glueWordAdd a5FourthD4.componentType l p.2
-    s ≠ [0, 0, 0, 0, 0] → ¬ glueWordMinimum a5FourthD4.componentType s < 4 := by
-  intro l s hs0 hslt
-  obtain ⟨⟨w, hw, hwl⟩, ⟨w', hw', hw'l⟩⟩ :=
-    exists_mem_glueSubgroup_of_mem_a5FourthD4WitnessPairs p hp
-  let w_g : a5FourthD4.glueModule :=
-    piGlueAlphabetCongr a5FourthD4.componentType a5FourthD4.isSimplyLaced_componentType g
-      (a5FourthD4.componentType_apply_of_mem_glueSymmetries hg) w
-  have hwg : w_g ∈ a5FourthD4.glueSubgroup :=
-    (a5FourthD4.piGlueAlphabetCongr_mem_glueSubgroup_iff hg w).mpr hw
-  have henc_wg : encodeGlueWord a5FourthD4.componentType a5FourthD4.isSimplyLaced_componentType
-      w_g = l := by
-    rw [encodeGlueWord_piGlueAlphabetCongr_eq_ofFn]
-    congr 1
-    funext k
-    rw [← hwl, List.getD_eq_getElem _ _ (by simp), getElem_encodeGlueWord]
-  have henc_sum : encodeGlueWord a5FourthD4.componentType a5FourthD4.isSimplyLaced_componentType
-      (w_g + w') = s := by
-    rw [encodeGlueWord_add, henc_wg, hw'l]
-  have hne : w_g + w' ≠ 0 := fun h0 ↦ hs0 <| by
-    rw [← henc_sum, h0, encodeGlueWord_zero]
-    decide
-  have hge := four_le_sum_glueMinimum_of_mem_glueSubgroup a5FourthD4 (add_mem hwg hw') hne
-  rw [← glueWordMinimum_encodeGlueWord, henc_sum] at hge
-  exact not_le_of_gt hslt hge
-
-/-- **`A₅⁴ D₄` has no nontrivial pure-position glue symmetry**: every type-preserving permutation
-of its five components other than the identity moves some word of `a5FourthD4.glueSubgroup` outside
-that subgroup. -/
-@[simp]
-theorem glueSymmetries_a5FourthD4_eq_bot : a5FourthD4.glueSymmetries = ⊥ := by
-  rw [Subgroup.eq_bot_iff_forall]
-  intro g hg
-  by_contra hg1
-  obtain ⟨p, hp, hs0, hslt⟩ := exists_a5FourthD4WitnessPairs_lt_four g
-    (apply_four_of_mem_glueSymmetries_a5FourthD4 hg) hg1
-  exact not_glueWordMinimum_lt_four_of_mem_a5FourthD4WitnessPairs hg hp hs0 hslt
-
-/-- **The uncoupled block rotation of `[2(024)0]` is not a glue symmetry of `A₅⁴ D₄`**:
-`a5FourthD4.glueSymmetries` is trivial (`glueSymmetries_a5FourthD4_eq_bot`) and the block rotation
-has order `3` (`orderOf_a5FourthD4BlockRot`). -/
+/-- **The uncoupled block rotation of `[2(024)0]` is not a glue symmetry of `A₅⁴ D₄`**: reindexing
+`[33001]` along `a5FourthD4BlockRot` gives `[30031]`, whose sum with `[30033]` is the nonzero glue
+word `[00002]` of shortest norm `1 < 4`. -/
 theorem a5FourthD4BlockRot_notMem_glueSymmetries :
     (a5FourthD4BlockRot : Equiv.Perm (Fin a5FourthD4.components.length)) ∉
       a5FourthD4.glueSymmetries := by
   intro hrot
-  have hbot : (a5FourthD4BlockRot : Equiv.Perm (Fin a5FourthD4.components.length)) ∈
-      (⊥ : Subgroup (Equiv.Perm (Fin a5FourthD4.components.length))) :=
-    glueSymmetries_a5FourthD4_eq_bot ▸ hrot
-  have h1 : a5FourthD4BlockRot (1 : Fin 5) = 1 :=
-    Equiv.congr_fun (Subgroup.mem_bot.mp hbot) (1 : Fin 5)
-  simp at h1
+  let d₁ : ∀ i : Fin 5, Fin (a5FourthD4.componentType i).glueLabelCount :=
+    fun i ↦ ⟨![3, 3, 0, 0, 1] i, by fin_cases i <;> decide⟩
+  let d₃ : ∀ i : Fin 5, Fin (a5FourthD4.componentType i).glueLabelCount :=
+    fun i ↦ ⟨![3, 0, 0, 3, 3] i, by fin_cases i <;> decide⟩
+  let w₁ : a5FourthD4.glueModule := fun i ↦
+    (a5FourthD4.componentType i).glueLabelEquiv (a5FourthD4.isSimplyLaced_componentType i) (d₁ i)
+  let w₃ : a5FourthD4.glueModule := fun i ↦
+    (a5FourthD4.componentType i).glueLabelEquiv (a5FourthD4.isSimplyLaced_componentType i) (d₃ i)
+  let v := piGlueAlphabetCongr a5FourthD4.componentType a5FourthD4.isSimplyLaced_componentType
+    a5FourthD4BlockRot (a5FourthD4.componentType_apply_of_mem_glueSymmetries hrot)
+    (hs := a5FourthD4.isSimplyLaced_componentType) w₁
+  have hv : v ∈ a5FourthD4.glueSubgroup :=
+    (a5FourthD4.piGlueAlphabetCongr_mem_glueSubgroup_iff hrot w₁).mpr
+      (a5FourthD4.glueLabelEquiv_mem_glueSubgroup d₁ (by decide))
+  have hw₃ : w₃ ∈ a5FourthD4.glueSubgroup :=
+    a5FourthD4.glueLabelEquiv_mem_glueSubgroup d₃ (by decide)
+  have hv_enc : encodeGlueWord a5FourthD4.componentType a5FourthD4.isSimplyLaced_componentType v =
+      [3, 0, 0, 3, 1] := by
+    refine (encodeGlueWord_piGlueAlphabetCongr_eq_ofFn _ _ _ _ _ w₁).trans ?_
+    refine (congrArg List.ofFn (funext fun k : Fin 5 ↦
+      congrArg Fin.val (Equiv.symm_apply_apply _ (d₁ (a5FourthD4BlockRot k))))).trans ?_
+    dsimp only [d₁]
+    rw [a5FourthD4BlockRot_eq_swap_mul_swap]
+    decide
+  have hw₃_enc :
+      encodeGlueWord a5FourthD4.componentType a5FourthD4.isSimplyLaced_componentType w₃ =
+        [3, 0, 0, 3, 3] := by
+    rw [encodeGlueWord_glueLabelEquiv]
+    decide
+  have henc : encodeGlueWord a5FourthD4.componentType a5FourthD4.isSimplyLaced_componentType
+      (v + w₃) = [0, 0, 0, 0, 2] := by
+    refine (encodeGlueWord_add _ _ v w₃).trans ?_
+    rw [hv_enc, hw₃_enc]
+    decide +kernel
+  have hne : v + w₃ ≠ 0 := fun h0 ↦ absurd
+    (henc.symm.trans ((congrArg (encodeGlueWord a5FourthD4.componentType
+      a5FourthD4.isSimplyLaced_componentType) h0).trans (encodeGlueWord_zero _ _))) (by decide)
+  have hmin := four_le_sum_glueMinimum_of_mem_glueSubgroup a5FourthD4 (add_mem hv hw₃) hne
+  rw [← glueWordMinimum_encodeGlueWord, henc] at hmin
+  exact absurd hmin (by decide +kernel)
 
 /-! ### Lifting `[2(024)0]` to `niemeierA5FourthD4` via `D₄` triality -/
 
@@ -449,8 +372,7 @@ theorem a5FourthD4TrialityRotation_apply_four
       typeD4Triality (isSimplyLaced_D 4) (x (4 : Fin 5)) :=
   a5FourthD4TrialityRotation_apply_of_inv_eq x a5FourthD4BlockRot_inv_four
 
-/-- **The cube of the coupled triality rotation is the identity**; see
-`orderOf_a5FourthD4TrialityRotation` for exact order `3`. -/
+/-- **The coupled triality rotation has order three.** -/
 @[simp]
 theorem a5FourthD4TrialityRotation_pow_three : a5FourthD4TrialityRotation ^ 3 = 1 := by
   let τ := typeD4Triality (isSimplyLaced_D 4)
