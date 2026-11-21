@@ -46,14 +46,14 @@ theorem net_card_mul_exp_le {m n : ℕ} {t a b : ℝ}
     a * b * exp (-(4 * (√m + √n + t) ^ 2)) ≤ exp (-(t ^ 2)) := by
   have h9 : (9 : ℝ) ≤ exp 3 := by
     have he : (2.7 : ℝ) ≤ exp 1 := by linarith [Real.exp_one_gt_d9]
-    have h3 : exp 3 = exp 1 ^ 3 := by rw [← Real.exp_nat_mul]; norm_num
+    have h3 : exp 3 = exp 1 ^ 3 := by rw [← Real.exp_natCast_mul]; norm_num
     rw [h3]
     exact (by norm_num : (9 : ℝ) ≤ 2.7 ^ 3).trans
       (pow_le_pow_left₀ (by norm_num) he 3)
   have hpow (k : ℕ) : (9 : ℝ) ^ k ≤ exp (3 * k) := by
     calc
       (9 : ℝ) ^ k ≤ exp 3 ^ k := pow_le_pow_left₀ (by norm_num) h9 k
-      _ = exp (3 * k) := by rw [← Real.exp_nat_mul]; ring_nf
+      _ = exp (3 * k) := by rw [← Real.exp_natCast_mul]; ring_nf
   have hsq : (m : ℝ) + n + t ^ 2 ≤ (√m + √n + t) ^ 2 := by
     nlinarith [Real.sq_sqrt (Nat.cast_nonneg m : (0 : ℝ) ≤ m),
       Real.sq_sqrt (Nat.cast_nonneg n : (0 : ℝ) ≤ n),

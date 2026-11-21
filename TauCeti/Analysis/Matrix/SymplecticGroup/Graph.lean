@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.TotallyReal.Euclidean
 public import TauCeti.LinearAlgebra.TotallyReal.Maslov.Index
 public import TauCeti.LinearAlgebra.TotallyReal.Maslov.RealImage
 import Mathlib.LinearAlgebra.Matrix.SchurComplement
+import TauCeti.LinearAlgebra.Matrix.MulVec
 
 /-!
 # The graph of a loop of symplectic matrices and its Maslov index
@@ -30,7 +31,9 @@ is invertible when `A` is symplectic (`Matrix.isUnit_det_graphFrame`). Its Gram 
 symplectic matrix is Lagrangian for the symplectic form `Im ⟪·, ·⟫`
 (`Matrix.map_im_conjTranspose_graphFrame_mul_graphFrame`). The graphs
 of a loop `γ` of symplectic matrices form a loop of maximal totally real subspaces with a continuous
-frame (`TauCeti.GLSymplectic.graphLoop`).
+frame (`TauCeti.GLSymplectic.graphLoop`). The graph of the inverse of `A` is the image of the graph
+of `A` under the involution `(u, v) ↦ (conj v, conj u)` of `ℂⁿ × ℂⁿ`, which exchanges the two
+factors (`Matrix.graphFrame_mul_map_ofReal_of_mul_eq_one`).
 
 The main result is that **the Maslov index of the graph loop is twice the Maslov index of the
 loop**, `μ(Γ ∘ γ) = 2 μ(γ)` (`TauCeti.GLSymplectic.maslovIndex_graphLoop`). Here `μ(γ)` is the
@@ -87,6 +90,14 @@ noncomputable def graphFrame (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) : Matrix (n �
     (A.toBlocks₁₂.map (↑) + Complex.I • A.toBlocks₂₂.map (↑))
 
 omit [Fintype n] in
+/-- The defining block form of the graph frame. -/
+theorem graphFrame_def (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
+    graphFrame A = fromBlocks 1 (-(Complex.I • 1))
+      (A.toBlocks₁₁.map (↑) + Complex.I • A.toBlocks₂₁.map (↑))
+      (A.toBlocks₁₂.map (↑) + Complex.I • A.toBlocks₂₂.map (↑)) :=
+  (rfl)
+
+omit [Fintype n] in
 /-- The graph frame of a symplectic direct sum is the symplectic direct sum of the graph frames:
 the graph of `A ⊕ B` is the product of the graphs of `A` and `B`, in regrouped coordinates. -/
 theorem graphFrame_symplecticSum {m : Type*} [DecidableEq m]
@@ -111,6 +122,31 @@ theorem graphFrame_mulVec (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) (x : n ⊕ n → 
       ofReal_sum, ofReal_mul]
     simp only [add_mul, Finset.sum_add_distrib, mul_assoc, ← Finset.mul_sum]
     ring
+
+/-- **The graph of the inverse.** If `B A = 1`, the graph of `B` is the image of the graph of `A`
+under the anti-symplectic involution `(u, v) ↦ (conj v, conj u)` of `ℂⁿ × ℂⁿ`, which exchanges the
+two factors: `graphFrame B * A` is the complex conjugate of `graphFrame A` with its two row blocks
+exchanged, since both send the real point `x` to `(conj (φ (A x)), φ x)`. -/
+theorem graphFrame_mul_map_ofReal_of_mul_eq_one {A B : Matrix (n ⊕ n) (n ⊕ n) ℝ}
+    (h : B * A = 1) :
+    graphFrame B * A.map ((↑) : ℝ → ℂ) = ((graphFrame A).map star).submatrix Sum.swap id := by
+  refine ext_of_mulVec_single fun j ↦ ?_
+  set x : n ⊕ n → ℝ := Pi.single j 1
+  have hx : (Pi.single j 1 : n ⊕ n → ℂ) = fun k ↦ (x k : ℂ) := by
+    ext k
+    by_cases hk : k = j <;> simp [x, hk]
+  have hAx : A.map ((↑) : ℝ → ℂ) *ᵥ (fun k ↦ (x k : ℂ)) = fun k ↦ ((A *ᵥ x) k : ℂ) :=
+    funext fun k ↦ (RingHom.map_mulVec Complex.ofRealHom A x k).symm
+  rw [hx, ← mulVec_mulVec, hAx, graphFrame_mulVec, mulVec_mulVec, h, one_mulVec]
+  funext i
+  -- Exchanging the row blocks of a matrix evaluates its values at `Sum.swap i`; this is the
+  -- definition of `submatrix`, for which `Matrix.submatrix_mulVec_equiv` needs an equivalence on
+  -- the columns rather than `id`.
+  change _ = ((graphFrame A).map star *ᵥ fun k ↦ (x k : ℂ)) (Sum.swap i)
+  -- Conjugating the entries of the frame conjugates its values on real points.
+  rw [map_star_mulVec_of_star_eq _ (funext fun k ↦ Complex.conj_ofReal (x k)), Pi.star_apply,
+    graphFrame_mulVec]
+  rcases i with i | i <;> simp
 
 /-- The complex `n × n` matrix `(A₁₂ - A₂₁) + i (A₁₁ + A₂₂)`, whose determinant is that of the
 graph frame and whose realification is `A J + J A`. -/
@@ -297,7 +333,7 @@ variable {n : Type*} [Fintype n] [DecidableEq n]
 /-- The determinant of the graph frame of a symplectic matrix does not vanish. -/
 theorem det_graphFrame_ne_zero (A : GLSymplectic n ℝ) :
     (graphFrame ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)).det ≠ 0 :=
-  (isUnit_det_graphFrame (mem_iff_mem_symplecticGroup.1 A.2)).ne_zero
+  (isUnit_det_graphFrame (mem_iff_mem_symplecticGroup.1 A.property)).ne_zero
 
 /-- The graph frame of a symplectic matrix, as a complex-linear automorphism of `ℂ^{n ⊕ n}`. -/
 noncomputable def graphFrameEquiv (A : GLSymplectic n ℝ) :
@@ -325,7 +361,7 @@ theorem continuous_graphFrameEquiv :
       (graphFrameEquiv A : EuclideanSpace ℂ (n ⊕ n) →L[ℂ] EuclideanSpace ℂ (n ⊕ n)) := by
   simp only [graphFrameEquiv, coe_toEuclideanCLE]
   exact continuous_toEuclideanCLM.comp
-    (continuous_graphFrame.comp (Units.continuous_val.comp continuous_subtype_val))
+    (continuous_graphFrame.comp (Units.continuous_val.comp continuous_subtypeVal))
 
 /-! ### The graph phase -/
 
@@ -346,7 +382,7 @@ theorem coe_graphPhase (A : GLSymplectic n ℝ) :
 `ℂ^{n ⊕ n}`. -/
 theorem coe_graphPhase_eq_maslovPhase (A : GLSymplectic n ℝ) :
     (graphPhase A : ℂ) = isMaximalTotallyReal_realSubspace.maslovPhase
-      (isMaximalTotallyReal_graphSubspace (mem_iff_mem_symplecticGroup.1 A.2)) := by
+      (isMaximalTotallyReal_graphSubspace (mem_iff_mem_symplecticGroup.1 A.property)) := by
   -- `graphSubspace A` is by definition the image `(graphFrame A).realImage` of the real points.
   rw [coe_graphPhase]
   exact (maslovPhase_eq_det_div_conj_det _ _ rfl).symm
@@ -355,7 +391,7 @@ theorem coe_graphPhase_eq_maslovPhase (A : GLSymplectic n ℝ) :
 theorem continuous_graphPhase : Continuous (graphPhase : GLSymplectic n ℝ → Circle) := by
   have hd : Continuous fun A : GLSymplectic n ℝ =>
       (graphFrame ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)).det :=
-    (continuous_graphFrame.comp (Units.continuous_val.comp continuous_subtype_val)).matrix_det
+    (continuous_graphFrame.comp (Units.continuous_val.comp continuous_subtypeVal)).matrix_det
   refine Continuous.subtype_mk ?_ _
   refine (hd.div (continuous_conj.comp hd) fun A => ?_).congr fun A => (coe_graphPhase A).symm
   exact (map_ne_zero _).2 (det_graphFrame_ne_zero A)

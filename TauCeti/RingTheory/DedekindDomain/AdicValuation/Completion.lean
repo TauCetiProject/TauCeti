@@ -210,6 +210,14 @@ theorem exists_isUnit_adicCompletionIntegers_of_valuation_eq_one {c : K}
   exact ⟨⟨_, (mem_adicCompletionIntegers _ K v).mpr hv.le⟩,
     adicCompletionIntegers.isUnit_iff_valued_eq_one.mpr hv, rfl⟩
 
+variable (K) in
+/-- Every integer power `exp n` is attained as the adic valuation of a unit of `K_v`
+(in particular `n = -1` supplies a uniformizer). -/
+theorem exists_unit_valued_eq_exp (n : ℤ) :
+    ∃ u : (v.adicCompletion K)ˣ, Valued.v (u : v.adicCompletion K) = exp n := by
+  obtain ⟨x, hx⟩ := v.valuedAdicCompletion_surjective K (exp n)
+  exact ⟨Units.mk0 x fun h ↦ exp_ne_zero (hx.symm.trans (by rw [h, map_zero])), hx⟩
+
 /-- An irreducible element of the ring of integers of a completion has valuation `exp (-1)`. -/
 theorem valued_algebraMap_eq_exp_neg_one_of_irreducible {π : v.adicCompletionIntegers K}
     (hπ : Irreducible π) :
@@ -380,7 +388,7 @@ theorem isOpen_maximalIdeal_pow_adicCompletionIntegers (n : ℕ) :
         {y : v.adicCompletion K | Valued.v y ≤ exp (-(n : ℤ))} :=
     Set.ext fun x ↦ v.mem_maximalIdeal_pow_iff (K := K)
   rw [h]
-  exact (v.isOpen_setOf_valued_le (K := K) exp_ne_zero).preimage continuous_subtype_val
+  exact (v.isOpen_setOf_valued_le (K := K) exp_ne_zero).preimage continuous_subtypeVal
 
 /-- **Every neighbourhood of `0` in `𝒪_v` contains a power of the maximal ideal.** A neighbourhood
 is cut out by a valuation bound, and `exp` takes some integer below that bound; the corresponding
@@ -391,8 +399,8 @@ theorem exists_maximalIdeal_pow_subset_of_mem_nhds {s : Set (v.adicCompletionInt
   obtain ⟨t, ht, hts⟩ := mem_nhds_subtype _ _ _ |>.mp hs
   rw [ZeroMemClass.coe_zero] at ht
   obtain ⟨γ, hγ⟩ := Valued.mem_nhds_zero.mp ht
-  obtain ⟨m, hm⟩ : ∃ m : ℤ, exp m < MonoidWithZeroHom.ValueGroup₀.embedding γ.1 := by
-    refine ⟨log (MonoidWithZeroHom.ValueGroup₀.embedding γ.1) - 1, ?_⟩
+  obtain ⟨m, hm⟩ : ∃ m : ℤ, exp m < MonoidWithZeroHom.ValueGroup₀.embedding γ.val := by
+    refine ⟨log (MonoidWithZeroHom.ValueGroup₀.embedding γ.val) - 1, ?_⟩
     conv_rhs => rw [← exp_log (MonoidWithZeroHom.ValueGroup₀.embedding_unit_ne_zero γ)]
     exact exp_lt_exp.mpr (by lia)
   refine ⟨(-m).toNat, fun x hx ↦ hts ?_⟩
@@ -449,14 +457,14 @@ theorem exists_valued_sub_le (x : v.adicCompletionIntegers K) (n : ℕ) :
     ((IsLocalRing.maximalIdeal (v.adicCompletionIntegers K) ^ n :
       Ideal (v.adicCompletionIntegers K)) : Set (v.adicCompletionIntegers K))
   have hU : IsOpen (((↑) : v.adicCompletionIntegers K → v.adicCompletion K) '' U) :=
-    (Valued.isOpen_valuationSubring _).isOpenMap_subtype_val _
+    (Valued.isOpen_valuationSubring _).isOpenMap_subtypeVal _
       ((v.isOpen_maximalIdeal_pow_adicCompletionIntegers n).preimage (continuous_sub_right x))
   -- so it contains an element `z` of `K`, which is then integral at `v`
   obtain ⟨z, y, hy, hyz⟩ := (denseRange_algebraMap (K := K) v).exists_mem_open hU
     ⟨x, x, by simp [U], rfl⟩
   have hz : v.valuation K z ≤ 1 := by
     have hy1 : Valued.v (algebraMap K (v.adicCompletion K) z) ≤ 1 :=
-      hyz ▸ (mem_adicCompletionIntegers R K v).mp y.2
+      hyz ▸ (mem_adicCompletionIntegers R K v).mp y.property
     rwa [algebraMap_adicCompletion, Function.comp_apply, valuedAdicCompletion_eq_valuation'] at hy1
   -- and `z` is approximated by an element of `R`
   obtain ⟨a, ha⟩ := v.exists_valuation_sub_lt_of_integer hz (Units.mk0 (exp (-(n : ℤ))) exp_ne_zero)

@@ -115,7 +115,7 @@ theorem norm_truncPow (N : ℝ≥0) {s : ℝ} (hs : 0 < s) (y : E) :
   rcases eq_or_ne y 0 with rfl | hy
   · simp [Real.zero_rpow hs.ne']
   · have hy' : 0 < ‖y‖ := norm_pos_iff.2 hy
-    have := le_min hy'.le N.2
+    have := le_min hy'.le N.property
     rw [truncPow_def, norm_smul, RCLike.norm_ofReal, abs_of_nonneg (by positivity),
       div_mul_cancel₀ _ hy'.ne']
 
@@ -139,8 +139,9 @@ theorem lipschitzWith_truncPow (N : ℝ≥0) {s : ℝ} (hs : 1 ≤ s) :
       gcongr
     have hmin : LipschitzOnWith 1 (fun t : ℝ ↦ min t N) (Ici 0) :=
       (LipschitzWith.id.min_const _).lipschitzOnWith
-    simpa [Function.comp_def] using hpow.comp hmin fun t ht ↦ ⟨le_min ht N.2, min_le_right _ _⟩
-  · have hm : 0 ≤ min t N := le_min ht N.2
+    simpa [Function.comp_def] using hpow.comp hmin fun t ht ↦ ⟨le_min ht N.property,
+        min_le_right _ _⟩
+  · have hm : 0 ≤ min t N := le_min ht N.property
     rw [abs_of_nonneg (by positivity), NNReal.coe_rpow]
     calc min t N ^ s = min t N ^ (s - 1) * min t N := by
           rw [← Real.rpow_add_one' hm (by linarith)]

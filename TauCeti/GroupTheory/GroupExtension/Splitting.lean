@@ -13,8 +13,10 @@ public import TauCeti.GroupTheory.GroupExtension.Basic
 # Splittings, their ranges, and semidirect-product decompositions
 
 The range of a splitting complements the included kernel of an extension, and the range
-determines the splitting uniquely. Equivalences of extensions transport splittings in both
-directions. This file also supplies the evaluation and inverse formulas for Mathlib's
+determines the splitting uniquely. Equivalences of extensions and compatible multiplicative
+equivalences on the middle and quotient groups transport splittings in both directions. These
+results allow splitting criteria to be interpreted as existence criteria for actual subgroup
+complements. This file also supplies the evaluation and inverse formulas for Mathlib's
 `GroupExtension.Splitting.semidirectProductMulEquiv`, expressing the semidirect-product components
 of an extension element `e` in terms of `S.rightHom e` and `e * (s (S.rightHom e))⁻¹`.
 -/
@@ -170,5 +172,55 @@ theorem Equiv.splittingEquiv_symm_apply (e : S.Equiv S') (s : S'.Splitting) (g :
 theorem Equiv.nonempty_splitting_iff (e : S.Equiv S') :
     Nonempty S.Splitting ↔ Nonempty S'.Splitting :=
   e.splittingEquiv.nonempty_congr
+
+section MulEquiv
+
+variable (S)
+
+/-- Compatible multiplicative equivalences `(eE, eG)` on the middle and quotient groups of two
+group extensions induce a bijection between their splittings, sending `s` to `eE ∘ s ∘ eG.symm`. -/
+@[to_additive
+  /-- Compatible additive equivalences `(eE, eG)` on the middle and quotient groups of two additive
+  group extensions induce a bijection between their splittings, sending `s` to
+  `eE ∘ s ∘ eG.symm`. -/]
+def splittingEquivOfMulEquiv {N' E' G' : Type*} [Group N'] [Group E'] [Group G']
+    (S' : GroupExtension N' E' G') (eE : E ≃* E') (eG : G ≃* G')
+    (hright : S'.rightHom.comp eE.toMonoidHom = eG.toMonoidHom.comp S.rightHom) :
+    S.Splitting ≃ S'.Splitting where
+  toFun s :=
+    { toMonoidHom := eE.toMonoidHom.comp ((s : G →* E).comp eG.symm.toMonoidHom)
+      rightInverse_rightHom g' := by
+        have h := DFunLike.congr_fun hright (s (eG.symm g'))
+        simpa only [MonoidHom.toFun_eq_coe, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
+          MonoidHom.coe_ofClass, s.rightHom_splitting, eG.apply_symm_apply] using h }
+  invFun s' :=
+    { toMonoidHom := eE.symm.toMonoidHom.comp ((s' : G' →* E').comp eG.toMonoidHom)
+      rightInverse_rightHom g := by
+        simp only [MonoidHom.toFun_eq_coe, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
+          MonoidHom.coe_ofClass]
+        have h := DFunLike.congr_fun hright (eE.symm (s' (eG g)))
+        simp only [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, eE.apply_symm_apply,
+          s'.rightHom_splitting] at h
+        exact eG.injective h.symm }
+  left_inv s := DFunLike.ext _ _ fun _ => by simp
+  right_inv s' := DFunLike.ext _ _ fun _ => by simp
+
+@[to_additive (attr := simp)]
+theorem splittingEquivOfMulEquiv_apply {N' E' G' : Type*} [Group N'] [Group E'] [Group G']
+    (S' : GroupExtension N' E' G') (eE : E ≃* E') (eG : G ≃* G')
+    (hright : S'.rightHom.comp eE.toMonoidHom = eG.toMonoidHom.comp S.rightHom)
+    (s : S.Splitting) (g' : G') :
+    S.splittingEquivOfMulEquiv S' eE eG hright s g' = eE (s (eG.symm g')) :=
+  (rfl)
+
+@[to_additive (attr := simp)]
+theorem splittingEquivOfMulEquiv_symm_apply {N' E' G' : Type*} [Group N'] [Group E'] [Group G']
+    (S' : GroupExtension N' E' G') (eE : E ≃* E') (eG : G ≃* G')
+    (hright : S'.rightHom.comp eE.toMonoidHom = eG.toMonoidHom.comp S.rightHom)
+    (s' : S'.Splitting) (g : G) :
+    (S.splittingEquivOfMulEquiv S' eE eG hright).symm s' g = eE.symm (s' (eG g)) :=
+  (rfl)
+
+end MulEquiv
 
 end GroupExtension

@@ -88,12 +88,12 @@ theorem siegelFunction_add_intCast_pow_twelve_mul (r : Fin 2 → ℝ) (s : Fin 2
   have ha' : (6 * k : ℂ) * (r 0 : ℂ) = a := by exact_mod_cast ha
   have hb' : (6 * k : ℂ) * (r 1 : ℂ) = b := by exact_mod_cast hb
   have hexp : cexp (-(π * I * (s 0 * r 1 - s 1 * r 0))) ^ (12 * k) = 1 := by
-    rw [← Complex.exp_nat_mul]
+    rw [← Complex.exp_natCast_mul]
     have heq : ((12 * k : ℕ) : ℂ) * (-(π * I * (s 0 * r 1 - s 1 * r 0))) =
         ((s 1 * a - s 0 * b : ℤ) : ℂ) * (2 * π * I) := by
       push_cast
       linear_combination 2 * π * I * ((s 1 : ℂ) * ha' - (s 0 : ℂ) * hb')
-    rw [heq, Complex.exp_int_mul, exp_two_pi_mul_I, _root_.one_zpow]
+    rw [heq, Complex.exp_intCast_mul, exp_two_pi_mul_I, _root_.one_zpow]
   have hsign (z : ℤ) : ((-1 : ℂ) ^ z) ^ (12 * k) = 1 := by
     rw [← zpow_natCast, ← _root_.zpow_mul]
     exact Even.neg_one_zpow ⟨z * (6 * k), by push_cast; ring⟩
@@ -193,7 +193,7 @@ private theorem siegelFunction_div_smul_eq_mul_exp {N : ℕ} (hN : N ≠ 0) {γ 
         siegelFunction (fun i ↦ (a i : ℝ) / N) τ := by
   have hN' : (N : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr hN
   rw [hε, hB, Matrix.vecMul_div_eq_add_intCast_vecMul B (Nat.cast_ne_zero.mpr hN) a,
-    siegelFunction_add_intCast _ _ τ.im_pos, ← Complex.exp_pi_mul_I, ← Complex.exp_int_mul,
+    siegelFunction_add_intCast _ _ τ.im_pos, ← Complex.exp_pi_mul_I, ← Complex.exp_intCast_mul,
     ← Complex.exp_add, mul_assoc ε]
   congr 3
   simp only [translationPhase]
@@ -293,7 +293,7 @@ theorem prod_siegelFunction_div_zpow_smul_eq_zpow_mul {N : ℕ} {γ : SL(2, ℤ)
   obtain ⟨j, hj⟩ := two_mul_dvd_sum_mul_translationPhase hN hdet s a m h₀ h₁ h₀₁
   -- The roots of unity from the integral translations multiply to `1`.
   have hphase : ∏ i ∈ s, cexp (translationPhase N B (a i) * (π * I / N)) ^ m i = 1 := by
-    simp_rw [← Complex.exp_int_mul, ← Complex.exp_sum]
+    simp_rw [← Complex.exp_intCast_mul, ← Complex.exp_sum]
     have hN' : (N : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr hN
     have hsum : ∑ i ∈ s, (m i : ℂ) * (translationPhase N B (a i) * (π * I / N)) =
         j * (2 * π * I) := by

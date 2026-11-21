@@ -71,11 +71,11 @@ open Classical in
 interpolation from the background `K₀ n` towards the prescribed `K₁ n` with weight `ρ n`;
 elsewhere, `K₀ n`. -/
 def cutoffInterp (n : N) : AlmostComplexStructure (TangentSpace I (f n)) :=
-  if h : n ∈ W then (hK₀ n).cayleyInterp (V := E) (hK₁ n h) (hρ n) else K₀ n
+  if h : n ∈ W then (hK₀ n).cayleyInterp (V := E) (hK₁ n h).tames (hρ n) else K₀ n
 
 /-- Over `W`, cutoff interpolation is the compatible Cayley interpolation. -/
 theorem cutoffInterp_of_mem {n : N} (h : n ∈ W) :
-    cutoffInterp hσn hK₀ hK₁ ρ hρ n = (hK₀ n).cayleyInterp (V := E) (hK₁ n h) (hρ n) :=
+    cutoffInterp hσn hK₀ hK₁ ρ hρ n = (hK₀ n).cayleyInterp (V := E) (hK₁ n h).tames (hρ n) :=
   dite_eq_left h
 
 /-- Outside `W`, cutoff interpolation is the background structure. -/
@@ -100,7 +100,7 @@ theorem cutoffInterp_of_eq_zero {n : N} (h : ρ n = 0) :
   by_cases hW : n ∈ W
   · rw [cutoffInterp_of_mem hσn hK₀ hK₁ ρ hρ hW]
     simp only [h]
-    exact (hK₀ n).cayleyInterp_zero (V := E) (hK₁ n hW)
+    exact (hK₀ n).cayleyInterp_zero (V := E) (hK₁ n hW).tames
   · exact cutoffInterp_of_notMem hσn hK₀ hK₁ ρ hρ hW
 
 /-- Over `W`, where the weight is one, cutoff interpolation is the prescribed structure. -/
@@ -109,7 +109,7 @@ theorem cutoffInterp_of_eq_one {n : N} (hW : n ∈ W) (h : ρ n = 1) :
     cutoffInterp hσn hK₀ hK₁ ρ hρ n = K₁ n := by
   rw [cutoffInterp_of_mem hσn hK₀ hK₁ ρ hρ hW]
   simp only [h]
-  exact (hK₀ n).cayleyInterp_one (V := E) (hK₁ n hW)
+  exact (hK₀ n).cayleyInterp_one (V := E) (hK₁ n hW).tames
 
 /-- Where the prescribed structure is the background one, or outside `W`, cutoff interpolation is
 the background structure. -/
@@ -121,7 +121,7 @@ theorem cutoffInterp_of_eq {n : N} (h : n ∈ W → K₁ n = K₀ n) :
     generalize hK₁ n hW = h₁
     revert h₁
     rw [h hW]
-    exact fun h₁ => (hK₀ n).cayleyInterp_self (V := E) h₁ (hρ n)
+    exact fun h₁ => (hK₀ n).cayleyInterp_self (V := E) h₁.tames (hρ n)
   · exact cutoffInterp_of_notMem hσn hK₀ hK₁ ρ hρ hW
 
 /-- Over `W`, cutoff interpolation is the Cayley path expression in the operators of `K₀` and
@@ -131,7 +131,7 @@ theorem toContinuousLinearMap_cutoffInterp {n : N} (h : n ∈ W) :
       cayleyPathFormula (ρ n) (LinearMap.toContinuousLinearMap (K₀ n).toLinearMap)
         (LinearMap.toContinuousLinearMap (K₁ n).toLinearMap) := by
   rw [cutoffInterp_of_mem hσn hK₀ hK₁ ρ hρ h]
-  exact (hK₀ n).toContinuousLinearMap_cayleyInterp (V := E) (hK₁ n h) (hρ n)
+  exact (hK₀ n).toContinuousLinearMap_cayleyInterp (V := E) (hK₁ n h).tames (hρ n)
     (LinearMap.coe_toContinuousLinearMap _) (LinearMap.coe_toContinuousLinearMap _)
 
 /-- **Smoothness of cutoff interpolation.** Along a smooth map `f : N → M`, let the background
