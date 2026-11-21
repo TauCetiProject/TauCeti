@@ -35,7 +35,10 @@ facts about these coproducts which are used to compare homology of tensor produc
   category with zero morphisms (`CategoryTheory.GradedObject.Monoidal.isSplitMono_ιTensorObj`).
   It is an isomorphism when one factor vanishes outside a single degree
   (`CategoryTheory.GradedObject.Monoidal.isIso_ιTensorObj_of_isZero_right`,
-  `CategoryTheory.GradedObject.Monoidal.isIso_ιTensorObj_of_isZero_left`).
+  `CategoryTheory.GradedObject.Monoidal.isIso_ιTensorObj_of_isZero_left`), and the tensor
+  product vanishes in a degree when one factor vanishes in every degree contributing to it
+  (`CategoryTheory.GradedObject.Monoidal.isZero_tensorObj_of_isZero_right`,
+  `CategoryTheory.GradedObject.Monoidal.isZero_tensorObj_of_isZero_left`).
 * If `Y` vanishes in the degrees which are not of the form `q + 1`, for instance in degree `0` for
   graded objects indexed by `ℕ`, then the summands of `X ⊗ Y` in degree `m + 1` are those of `X`
   tensored with `Y` shifted down by one, in degree `m`
@@ -205,6 +208,14 @@ lemma isZero_tensorObj_of_isZero_right [AddMonoid I] [MonoidalCategory C] [HasZe
     {n : I} (hY : ∀ i j, i + j = n → IsZero (Y j)) : IsZero (tensorObj X Y n) :=
   (IsZero.iff_id_eq_zero _).2 <| tensorObj_ext _ _ fun i j h ↦
     ((tensorLeft (X i)).map_isZero (hY i j h)).eq_of_src _ _
+
+/-- If `X` vanishes in every degree `i` with `i + j = n` for some `j`, the tensor product of graded
+objects vanishes in degree `n`. -/
+lemma isZero_tensorObj_of_isZero_left [AddMonoid I] [MonoidalCategory C] [HasZeroMorphisms C]
+    (X Y : GradedObject I C) [HasTensor X Y] [∀ j, (tensorRight (Y j)).PreservesZeroMorphisms]
+    {n : I} (hX : ∀ i j, i + j = n → IsZero (X i)) : IsZero (tensorObj X Y n) :=
+  (IsZero.iff_id_eq_zero _).2 <| tensorObj_ext _ _ fun i j h ↦
+    ((tensorRight (Y j)).map_isZero (hX i j h)).eq_of_src _ _
 
 section SuccRight
 
