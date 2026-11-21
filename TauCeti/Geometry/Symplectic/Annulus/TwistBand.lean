@@ -53,11 +53,10 @@ band, and when `F` preserves area and the line `y = 0`:
 * it vanishes on the lower boundary graph `X = X(x, 0)`
   (`TauCeti.stripBandGeneratingFunction_stripTwistCoord_mk_zero`), which fixes its additive
   constant;
-* it is invariant under the simultaneous translation `(x, X) ↦ (x + a, X + a)` when `F` commutes
-  with `(x, y) ↦ (x + a, y)` on the strip, as a lift of an annulus map does for `a = 1`
-  (`TauCeti.stripBandGeneratingFunction_add_diag`), and then so is the band itself
-  (`TauCeti.add_mem_image_stripTwistCoord_iff`), so that it is periodic on all of `ℝ × ℝ`
-  (`TauCeti.periodic_stripBandGeneratingFunction`);
+* when `F` commutes with `(x, y) ↦ (x + a, y)` on the strip, as a lift of an annulus map does for
+  `a = 1`, the band is invariant under the simultaneous translation `(x, X) ↦ (x + a, X + a)`
+  (`TauCeti.add_mem_image_stripTwistCoord_iff`), and the band generating function is periodic
+  with period `(a, a)` on all of `ℝ × ℝ` (`TauCeti.periodic_stripBandGeneratingFunction`);
 * its mixed second derivative is `∂₁ ∂₂ S' = -1 / ∂_y X`
   (`TauCeti.fderiv_fderiv_stripBandGeneratingFunction_apply`), so its sign is opposite to that of
   the twist.
@@ -207,28 +206,12 @@ theorem stripBandGeneratingFunction_stripTwistCoord_mk_zero
     stripBandGeneratingFunction F J (stripTwistCoord F (x, 0)) = 0 := by
   simpa using stripBandGeneratingFunction_stripTwistCoord hinj (q := (x, 0)) (mem_preimage.2 h0)
 
-/-- **Periodicity of the band generating function.** Let `J` be an open interval containing `0`.
-If `F` commutes on the strip `ℝ × J` with the translation `(x, y) ↦ (x + a, y)`, as a lift of an
-annulus map does for `a = 1`, and the twist coordinates are injective there, then the band
-generating function is invariant under the simultaneous translation `(x, X) ↦ (x + a, X + a)` of
-the band. -/
-theorem stripBandGeneratingFunction_add_diag (hJ : IsOpen J) (hJc : J.OrdConnected) (h0 : 0 ∈ J)
-    (hinj : InjOn (stripTwistCoord F) (Prod.snd ⁻¹' J)) {a : ℝ}
-    (hFa : ∀ q ∈ Prod.snd ⁻¹' J, F (q + (a, 0)) = F q + (a, 0)) {z : ℝ × ℝ}
-    (hz : z ∈ stripTwistCoord F '' (Prod.snd ⁻¹' J)) :
-    stripBandGeneratingFunction F J (z + (a, a)) = stripBandGeneratingFunction F J z := by
-  obtain ⟨q, hq, rfl⟩ := hz
-  have hqa : q + (a, 0) ∈ Prod.snd ⁻¹' J := by simpa using hq
-  have hGa : stripTwistCoord F q + (a, a) = stripTwistCoord F (q + (a, 0)) := by
-    simp [hFa q hq]
-  rw [hGa, stripBandGeneratingFunction_stripTwistCoord hinj hqa,
-    stripBandGeneratingFunction_stripTwistCoord hinj hq]
-  -- The vertical segment below `q` lies in the open strip, where `F` commutes with the
-  -- translation.
-  refine stripGeneratingFunction_add_fst_of_eventuallyEq fun t ht ↦ ?_
-  have ht' : (q.1, t) ∈ Prod.snd ⁻¹' J :=
-    mem_preimage.2 (hJc.uIcc_subset h0 (mem_preimage.1 hq) (uIoo_subset_uIcc_self ht))
-  exact eventually_of_mem ((hJ.preimage continuous_snd).mem_nhds ht') hFa
+/-- If `F` commutes at `q` with the translation `(x, y) ↦ (x + a, y)`, then the twist coordinates
+of `q + (a, 0)` are those of `q` translated by `(a, a)`. -/
+private theorem stripTwistCoord_add_fst {a : ℝ} {q : ℝ × ℝ}
+    (h : F (q + (a, 0)) = F q + (a, 0)) :
+    stripTwistCoord F (q + (a, 0)) = stripTwistCoord F q + (a, a) := by
+  ext <;> simp [h]
 
 /-- **Periodicity of the band.** If `F` commutes on the strip `ℝ × J` with the translation
 `(x, y) ↦ (x + a, y)`, as a lift of an annulus map does for `a = 1`, then the band `G(ℝ × J)` of
@@ -239,26 +222,33 @@ theorem add_mem_image_stripTwistCoord_iff {a : ℝ}
       z ∈ stripTwistCoord F '' (Prod.snd ⁻¹' J) := by
   refine ⟨fun ⟨q, hq, hqz⟩ ↦ ?_, fun ⟨q, hq, hqz⟩ ↦ ⟨q + (a, 0), by simpa using hq, ?_⟩⟩
   · have hq' : q - (a, 0) ∈ Prod.snd ⁻¹' J := by simpa using hq
-    have hF := hFa _ hq'
-    rw [sub_add_cancel] at hF
-    refine ⟨q - (a, 0), hq', ?_⟩
-    rw [← add_left_inj (a, a), ← hqz]
-    ext <;> simp [hF]
-  · rw [← hqz]
-    ext <;> simp [hFa q hq]
+    refine ⟨q - (a, 0), hq', add_right_cancel (b := (a, a)) ?_⟩
+    rw [← stripTwistCoord_add_fst (hFa _ hq'), sub_add_cancel, hqz]
+  · rw [stripTwistCoord_add_fst (hFa q hq), hqz]
 
-/-- **Global periodicity of the band generating function.** Under the hypotheses of
-`TauCeti.stripBandGeneratingFunction_add_diag`, the band generating function is periodic with
-period `(a, a)` on all of `ℝ × ℝ`: on the band this is `stripBandGeneratingFunction_add_diag`, and
-off the band, which is invariant under the translation, it takes the same unspecified value at
-`z` and `z + (a, a)`. -/
+/-- **Periodicity of the band generating function.** Let `J` be an open interval containing `0`.
+If `F` commutes on the strip `ℝ × J` with the translation `(x, y) ↦ (x + a, y)`, as a lift of an
+annulus map does for `a = 1`, and the twist coordinates are injective there, then the band
+generating function is periodic with period `(a, a)` on all of `ℝ × ℝ`: it is invariant under the
+simultaneous translation `(x, X) ↦ (x + a, X + a)` of the band, and off the band, which is
+invariant under the translation (`TauCeti.add_mem_image_stripTwistCoord_iff`), it takes the same
+unspecified value at `z` and `z + (a, a)`. -/
 theorem periodic_stripBandGeneratingFunction (hJ : IsOpen J) (hJc : J.OrdConnected)
     (h0 : 0 ∈ J) (hinj : InjOn (stripTwistCoord F) (Prod.snd ⁻¹' J)) {a : ℝ}
     (hFa : ∀ q ∈ Prod.snd ⁻¹' J, F (q + (a, 0)) = F q + (a, 0)) :
     Periodic (stripBandGeneratingFunction F J) (a, a) := by
   intro z
   by_cases hz : z ∈ stripTwistCoord F '' (Prod.snd ⁻¹' J)
-  · exact stripBandGeneratingFunction_add_diag hJ hJc h0 hinj hFa hz
+  · obtain ⟨q, hq, rfl⟩ := hz
+    have hqa : q + (a, 0) ∈ Prod.snd ⁻¹' J := by simpa using hq
+    rw [← stripTwistCoord_add_fst (hFa q hq), stripBandGeneratingFunction_stripTwistCoord hinj hqa,
+      stripBandGeneratingFunction_stripTwistCoord hinj hq]
+    -- The vertical segment below `q` lies in the open strip, where `F` commutes with the
+    -- translation.
+    refine stripGeneratingFunction_add_fst_of_eventuallyEq fun t ht ↦ ?_
+    have ht' : (q.1, t) ∈ Prod.snd ⁻¹' J :=
+      mem_preimage.2 (hJc.uIcc_subset h0 (mem_preimage.1 hq) (uIoo_subset_uIcc_self ht))
+    exact eventually_of_mem ((hJ.preimage continuous_snd).mem_nhds ht') hFa
   · rw [stripBandGeneratingFunction_def, stripBandGeneratingFunction_def,
       invFunOn_neg ((add_mem_image_stripTwistCoord_iff hFa z).not.2 hz), invFunOn_neg hz]
 
