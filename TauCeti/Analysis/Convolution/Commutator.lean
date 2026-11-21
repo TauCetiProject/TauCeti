@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Calculus.ContDiff.Basic
 public import Mathlib.Analysis.Convolution
 public import Mathlib.Analysis.LConvolution
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
@@ -46,9 +45,8 @@ The same estimates hold, with the same constant, when `f` is replaced by a `K`-L
 `a : G → (F →L[𝕜] F')` of operators acting on `g`
 (`MeasureTheory.eNorm_integral_sub_apply_smul_le`,
 `MeasureTheory.eLpNorm_integral_sub_apply_smul_le`); the scalar statements are the case
-`a = f • 1`. This is the form needed for the commutators of mollifiers with first-order systems
-`a ∂ᵥ`. In the limit of such commutators the operator `a` is replaced by its directional
-derivative `∂ᵥ a`, which is bounded on `Lᵖ` by `K ‖v‖` (`MeasureTheory.eLpNorm_fderiv_apply_le`).
+`a = f • 1`. This is the form needed for Friedrichs' lemma on mollifiers and first-order systems
+`a ∂ᵥ`.
 
 ## Main declarations
 
@@ -59,8 +57,6 @@ derivative `∂ᵥ a`, which is bounded on `Lᵖ` by `K ‖v‖` (`MeasureTheory
 * `MeasureTheory.eNorm_integral_sub_apply_smul_le`,
   `MeasureTheory.eLpNorm_integral_sub_apply_smul_le`: the same bounds for a Lipschitz field of
   operators.
-* `MeasureTheory.eLpNorm_fderiv_apply_le`: the `Lᵖ` bound for the directional derivative of a
-  `C¹` Lipschitz field of operators.
 
 ## References
 
@@ -182,29 +178,5 @@ theorem eLpNorm_integral_sub_smul_smul_le (hf : LipschitzWith K f)
     hκ hg hp
   simp only [smul_apply, id_apply, ← sub_smul] at h
   exact h
-
-end MeasureTheory
-
-namespace MeasureTheory
-
-variable {E F F' : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [SecondCountableTopology E] [MeasurableSpace E] [OpensMeasurableSpace E] [NormedAddCommGroup F]
-  [NormedSpace ℝ F] [NormedAddCommGroup F'] [NormedSpace ℝ F']
-  {μ : Measure E} {a : E → F →L[ℝ] F'} {K : ℝ≥0}
-
-/-- **The directional derivative of a Lipschitz field of operators on `Lᵖ`.** If
-`a : E → F →L[ℝ] F'` is `C¹` and `K`-Lipschitz, then `‖(∂ᵥ a) u‖_p ≤ K ‖v‖ ‖u‖_p`. -/
-theorem eLpNorm_fderiv_apply_le (ha : ContDiff ℝ 1 a) (haK : LipschitzWith K a) {u : E → F}
-    (hu : AEStronglyMeasurable u μ) (v : E) (p : ℝ≥0∞) :
-    eLpNorm (fun x ↦ fderiv ℝ a x v (u x)) p μ ≤ K * ‖v‖ₑ * eLpNorm u p μ := by
-  refine eLpNorm_le_mul_eLpNorm_of_ae_le_mul'' p ?_ (Filter.Eventually.of_forall fun x ↦ ?_)
-  · exact (ContinuousLinearMap.id ℝ (F →L[ℝ] F')).aestronglyMeasurable_comp₂
-      ((ha.continuous_fderiv one_ne_zero).clm_apply continuous_const).aestronglyMeasurable hu
-  · have hda : ‖fderiv ℝ a x‖ₑ ≤ K := by
-      rw [eNorm_eq_nnNorm]
-      exact_mod_cast norm_fderiv_le_of_lipschitz ℝ haK
-    calc ‖fderiv ℝ a x v (u x)‖ₑ ≤ ‖fderiv ℝ a x‖ₑ * ‖v‖ₑ * ‖u x‖ₑ :=
-          ((fderiv ℝ a x v).le_opENorm _).trans (by gcongr; exact (fderiv ℝ a x).le_opENorm v)
-      _ ≤ K * ‖v‖ₑ * ‖u x‖ₑ := by gcongr
 
 end MeasureTheory

@@ -19,14 +19,18 @@ import Mathlib.Analysis.Normed.Lp.SmoothApprox
 
 Let `a : E → (F →L[ℝ] F')` be a `C¹` field of operators that is Lipschitz, `v ∈ E` a direction and
 `ρ` a smooth compactly supported kernel. The first-order operator `g ↦ a ∂ᵥ g` does not commute
-with mollification `g ↦ ρ ⋆ g`. Their commutator, written with both derivatives on the smooth
-side so that it is defined for every locally integrable `g`, is
+with mollification `g ↦ ρ ⋆ g`. Friedrichs' lemma is stated for the commutator of `∂ᵥ (ρ ⋆ ·)`
+with multiplication by `a`, which has both derivatives on the smooth side and so is defined for
+every locally integrable `g`:
 
 `C_ρ g = ∂ᵥ (ρ ⋆ (a g)) - a ∂ᵥ (ρ ⋆ g)`
 
-(`TauCeti.mollifierCommutator`). **Friedrichs' lemma** says that along normalized bumps `ρᵢ` with
-a fixed ratio of radii whose outer radii tend to zero (the usual mollifiers `ε⁻ⁿ ρ (x / ε)`), for
-every `g ∈ Lᵖ` with `1 ≤ p < ∞`,
+(`TauCeti.mollifierCommutator`). It is not the commutator of mollification with `a ∂ᵥ`,
+`[ρ ⋆ ·, a ∂ᵥ] g = ρ ⋆ (a ∂ᵥ g) - a ∂ᵥ (ρ ⋆ g)`: by the product rule
+`∂ᵥ (a g) = (∂ᵥ a) g + a ∂ᵥ g`, so `C_ρ g = [ρ ⋆ ·, a ∂ᵥ] g + ρ ⋆ ((∂ᵥ a) g)`. Where
+`[ρ ⋆ ·, a ∂ᵥ] g` tends to `0`, `C_ρ g` tends to `(∂ᵥ a) g`. **Friedrichs' lemma** says that
+along normalized bumps `ρᵢ` with a fixed ratio of radii whose outer radii tend to zero (the usual
+mollifiers `ε⁻ⁿ ρ (x / ε)`), for every `g ∈ Lᵖ` with `1 ≤ p < ∞`,
 
 `C_{ρᵢ} g → (∂ᵥ a) g` in `Lᵖ`
 
@@ -77,6 +81,8 @@ For the weak solutions, testing the weak equation against `y ↦ ρ (x - y)` giv
 
 ## Main results
 
+* `MeasureTheory.eLpNorm_fderiv_apply_le`: the `Lᵖ` bound for the directional derivative of a
+  `C¹` Lipschitz field of operators.
 * `TauCeti.mollifierCommutator_eq_integral`: the commutator as a single integral.
 * `TauCeti.eLpNorm_mollifierCommutator_le`: its `Lᵖ` bound by the first moment of `∂ᵥ ρ`.
 * `TauCeti.tendsto_eLpNorm_mollifierCommutator_sub`: Friedrichs' lemma.
@@ -102,6 +108,27 @@ open scoped Convolution ENNReal NNReal Pointwise
 variable {E F F' : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedAddCommGroup F'] [NormedSpace ℝ F']
 
+namespace MeasureTheory
+
+variable [SecondCountableTopology E] [MeasurableSpace E] [OpensMeasurableSpace E]
+  {μ : Measure E} {a : E → F →L[ℝ] F'} {K : ℝ≥0}
+
+/-- **The directional derivative of a Lipschitz field of operators on `Lᵖ`.** If
+`a : E → F →L[ℝ] F'` is `C¹` and `K`-Lipschitz, then `‖(∂ᵥ a) u‖_p ≤ K ‖v‖ ‖u‖_p`. -/
+theorem eLpNorm_fderiv_apply_le (ha : ContDiff ℝ 1 a) (haK : LipschitzWith K a) {u : E → F}
+    (hu : AEStronglyMeasurable u μ) (v : E) (p : ℝ≥0∞) :
+    eLpNorm (fun x ↦ fderiv ℝ a x v (u x)) p μ ≤ K * ‖v‖ₑ * eLpNorm u p μ := by
+  refine eLpNorm_le_mul_eLpNorm_of_ae_le_mul'' p ?_ (Filter.Eventually.of_forall fun x ↦ ?_)
+  · exact (ContinuousLinearMap.id ℝ (F →L[ℝ] F')).aestronglyMeasurable_comp₂
+      ((ha.continuous_fderiv one_ne_zero).clm_apply continuous_const).aestronglyMeasurable hu
+  · have hda : ‖fderiv ℝ a x‖ₑ ≤ K := by
+      rw [eNorm_eq_nnNorm]
+      exact_mod_cast norm_fderiv_le_of_lipschitz ℝ haK
+    calc ‖fderiv ℝ a x v (u x)‖ₑ ≤ ‖fderiv ℝ a x‖ₑ * ‖v‖ₑ * ‖u x‖ₑ :=
+          ((fderiv ℝ a x v).le_opENorm _).trans (by gcongr; exact (fderiv ℝ a x).le_opENorm v)
+      _ ≤ K * ‖v‖ₑ * ‖u x‖ₑ := by gcongr
+
+end MeasureTheory
 
 namespace TauCeti
 
@@ -109,10 +136,12 @@ section Commutator
 
 variable [MeasurableSpace E] {μ : Measure E}
 
-/-- The **commutator of a mollifier with a first-order operator**: for a kernel `ρ`, an operator
-field `a : E → (F →L[ℝ] F')` and a direction `v`, the function
-`x ↦ ∂ᵥ (ρ ⋆ (a g)) x - a x (∂ᵥ (ρ ⋆ g) x)`. It is the commutator of `g ↦ ρ ⋆ g` with
-`g ↦ a ∂ᵥ g`, with both derivatives on the smooth side. -/
+/-- The **commutator of a mollified derivative with an operator field**: for a kernel `ρ`, an
+operator field `a : E → (F →L[ℝ] F')` and a direction `v`, the function
+`x ↦ ∂ᵥ (ρ ⋆ (a g)) x - a x (∂ᵥ (ρ ⋆ g) x)`. It is the commutator `[∂ᵥ (ρ ⋆ ·), a]` of
+`g ↦ ∂ᵥ (ρ ⋆ g)` with multiplication by `a`, which has both derivatives on the smooth side.
+It equals `[ρ ⋆ ·, a ∂ᵥ] g + ρ ⋆ ((∂ᵥ a) g)`, the commutator of mollification with `a ∂ᵥ` plus
+the mollification of `(∂ᵥ a) g`, which is why its limit is `(∂ᵥ a) g` rather than `0`. -/
 def mollifierCommutator (μ : Measure E) (ρ : E → ℝ) (a : E → F →L[ℝ] F') (v : E) (g : E → F) :
     E → F' :=
   fun x ↦ fderiv ℝ (ρ ⋆[lsmul ℝ ℝ, μ] fun y ↦ a y (g y)) x v -
@@ -140,7 +169,7 @@ private theorem integrable_sub_apply_smul (hρc : HasCompactSupport ρ) (hρ : C
   simpa [map_smul] using
     (hk.convolutionExists_left (ContinuousLinearMap.id ℝ (F →L[ℝ] F')) hkc hg x).integrable
 
-/-- **The commutator of a mollifier with `a ∂ᵥ` is a single integral.** For a `C¹` compactly
+/-- **The commutator of `∂ᵥ (ρ ⋆ ·)` with `a` is a single integral.** For a `C¹` compactly
 supported kernel `ρ`, a continuous operator field `a` and a locally integrable `g`,
 `∂ᵥ (ρ ⋆ (a g)) x - a x (∂ᵥ (ρ ⋆ g) x) = ∫ (a (x - t) - a x) (∂ᵥ ρ t • g (x - t)) dt`. -/
 theorem mollifierCommutator_eq_integral (hρc : HasCompactSupport ρ) (hρ : ContDiff ℝ 1 ρ)
