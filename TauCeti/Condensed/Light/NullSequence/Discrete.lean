@@ -9,6 +9,8 @@ public import Mathlib.Condensed.Discrete.Module
 public import Mathlib.Data.Finsupp.Defs
 public import TauCeti.Condensed.Light.NullSequence.Basic
 
+import TauCeti.Topology.Compactification.OnePoint.Finsupp
+
 /-!
 # Discrete coefficients of the marked null sequence
 
@@ -20,84 +22,99 @@ shift acts on these coefficients by dropping the zeroth term.
 
 public section
 
-open CategoryTheory LightCondensed OnePoint Filter
+open CategoryTheory LightCondensed OnePoint Filter TauCeti
 open scoped Topology
 
 universe u
 
-namespace TauCeti
+namespace ModuleCat
 
 variable {R : Type u} [Ring R] (M : ModuleCat.{u} R)
 
 private noncomputable def discreteSectionsEquivFinsupp :
-    {s : LocallyConstant liftedSequence.{u} M // s (ULift.up ∞) = 0} ≃ (ℕ →₀ M) := by
+    {s : LocallyConstant liftedSequence.{u} M // s sequenceInfty = 0} ≃ (ℕ →₀ M) := by
   letI : TopologicalSpace M := ⊥
   letI : DiscreteTopology M := ⟨rfl⟩
-  refine
-    { toFun := fun s ↦ Finsupp.ofSupportFinite (fun n ↦ s.val (ULift.up ↑n)) ?_
-      invFun := fun b ↦ ⟨⟨fun x ↦ x.down.elim 0 b, ?_⟩, rfl⟩
-      left_inv := ?_
-      right_inv := ?_ }
-  · have hcont : Continuous (fun x : OnePoint ℕ ↦ s.val (ULift.up x)) :=
-      s.val.continuous.comp continuous_uliftUp
-    have h := (OnePoint.continuous_iff_from_nat _).mp hcont
-    rw [s.property, nhds_discrete, tendsto_pure, ← Nat.cofinite_eq_atTop] at h
-    exact eventually_cofinite.mp h
-  · apply (IsLocallyConstant.iff_continuous _).mpr
-    have h : Continuous (fun x : OnePoint ℕ ↦ x.elim (0 : M) b) := by
-      rw [OnePoint.continuous_iff_from_nat]
-      simp only [OnePoint.elim_infty, nhds_discrete, tendsto_pure, ← Nat.cofinite_eq_atTop]
-      exact eventually_cofinite.mpr b.hasFiniteSupport
-    exact h.comp continuous_uliftDown
-  · intro s
-    apply Subtype.ext
-    apply LocallyConstant.ext
-    intro ⟨x⟩
-    induction x using OnePoint.rec with
-    | infty => exact s.property.symm
-    | coe n => rfl
-  · intro b
-    ext n
-    rfl
+  letI : ContinuousConstSMul R M := ⟨fun _ ↦ continuous_of_discreteTopology⟩
+  let e := TauCeti.OnePoint.finsuppLinearEquivKerEvalInfty ℕ R M
+  let a : {s : LocallyConstant liftedSequence.{u} M // s sequenceInfty = 0} ≃
+      (ContinuousMap.evalCLM R (∞ : OnePoint ℕ) : C(OnePoint ℕ, M) →L[R] M).ker :=
+    { toFun := fun s ↦ ⟨⟨s.val ∘ liftedSequenceEquiv.symm,
+        s.val.continuous.comp liftedSequenceEquiv.symm.continuous⟩, by
+        simpa using s.property⟩
+      invFun := fun f ↦ ⟨⟨f.val ∘ liftedSequenceEquiv,
+        (IsLocallyConstant.iff_continuous _).mpr
+          (f.val.continuous.comp liftedSequenceEquiv.continuous)⟩, by
+        have hf : f.val ∞ = 0 := f.property
+        simpa using hf⟩
+      left_inv := fun s ↦ by
+        apply Subtype.ext
+        ext x
+        simp
+      right_inv := fun f ↦ by
+        apply Subtype.ext
+        ext x
+        simp }
+  exact a.trans e.toEquiv.symm
+
+private lemma discreteSectionsEquivFinsupp_apply
+    (s : {s : LocallyConstant liftedSequence.{u} M // s sequenceInfty = 0}) (n : ℕ) :
+    discreteSectionsEquivFinsupp M s n = s.val (sequencePoint n) := by
+  simp [discreteSectionsEquivFinsupp]
+
+private noncomputable def nullSeqHomEquivFinsuppEquiv :
+    (nullSeq R ⟶ (LightCondMod.LocallyConstant.functor R).obj M) ≃ (ℕ →₀ M) := by
+  let D := (LightCondMod.LocallyConstant.functor R).obj M
+  let e : (D.obj.map inftyPoint.op).hom.toAddMonoidHom.ker ≃
+      {s : LocallyConstant liftedSequence.{u} M // s sequenceInfty = 0} :=
+    Equiv.subtypeEquivRight fun (s : LocallyConstant liftedSequence.{u} M) ↦ by
+      have hval (x : LightProfinite.of PUnit.{u + 1}) :
+          DFunLike.coe (F := LocallyConstant (LightProfinite.of PUnit.{u + 1}) M)
+            (D.obj.map inftyPoint.op s) x = s sequenceInfty :=
+        congrArg s (inftyPoint_apply x)
+      refine ⟨fun h ↦ ?_, fun h ↦ LocallyConstant.ext fun x ↦ (hval x).trans h⟩
+      have hs : D.obj.map inftyPoint.op s = 0 := h
+      rw [← hval PUnit.unit, hs]
+      rfl
+  exact (reducedLightFreeHomEquiv R (Under.mk inftyPoint.{u}) D).toEquiv.trans
+    (e.trans (discreteSectionsEquivFinsupp M))
+
+private lemma nullSeqHomEquivFinsuppEquiv_apply
+    (g : nullSeq R ⟶ (LightCondMod.LocallyConstant.functor R).obj M) (n : ℕ) :
+    nullSeqHomEquivFinsuppEquiv M g n =
+      LocallyConstant.evalₗ R (sequencePoint n)
+        (reducedLightFreeHomEquiv R (Under.mk inftyPoint.{u}) _ g).val := by
+  exact discreteSectionsEquivFinsupp_apply M _ n
 
 /-- Maps from the marked null sequence into the locally constant realization of a discrete
 module are parametrized by the finitely supported coefficient sequences in that module. -/
 noncomputable def nullSeqHomEquivFinsupp :
-    (nullSeq R ⟶ (LightCondMod.LocallyConstant.functor R).obj M) ≃+ (ℕ →₀ M) := by
-  let D := (LightCondMod.LocallyConstant.functor R).obj M
-  let e : {s : LocallyConstant liftedSequence.{u} M // D.obj.map inftyPoint.op s = 0} ≃
-      {s : LocallyConstant liftedSequence.{u} M // s (ULift.up ∞) = 0} :=
-    Equiv.subtypeEquivRight fun s ↦ by
-      have hval (x : LightProfinite.of PUnit.{u + 1}) :
-          DFunLike.coe (F := LocallyConstant (LightProfinite.of PUnit.{u + 1}) M)
-            (D.obj.map inftyPoint.op s) x =
-            s (ULift.up ∞) :=
-        congrArg s (inftyPoint_apply x)
-      refine ⟨fun h ↦ ?_, fun h ↦ LocallyConstant.ext fun x ↦ (hval x).trans h⟩
-      rw [← hval PUnit.unit, h]
-      rfl
-  let X := Under.mk inftyPoint.{u}
-  let coeffs := (reducedLightFreeHomEquiv R X D).trans (e.trans (discreteSectionsEquivFinsupp M))
-  refine { toEquiv := coeffs, map_add' := ?_ }
-  intro g h
-  ext n
-  simp only [Finsupp.add_apply]
-  let evaluate : (D.obj.obj (Opposite.op X.right)) → M :=
-    fun s ↦ DFunLike.coe (F := LocallyConstant liftedSequence.{u} M) s (ULift.up ↑n)
-  let q := (toReducedLightFree R).app X
-  have heval (f : nullSeq R ⟶ D) : coeffs f n = evaluate (X.right.freeModuleHomEquiv (q ≫ f)) :=
-    congrArg evaluate (reducedLightFreeHomEquiv_apply R X f)
-  -- Expose function application of the equivalence for the coefficient formula.
-  change coeffs (g + h) n = coeffs g n + coeffs h n
-  rw [heval, heval g, heval h, Preadditive.comp_add, map_add]
-  rfl
+    (nullSeq R ⟶ (LightCondMod.LocallyConstant.functor R).obj M) ≃+ (ℕ →₀ M) where
+  toEquiv := nullSeqHomEquivFinsuppEquiv M
+  map_add' g h := by
+    ext n
+    simp only [Equiv.toFun_as_coe]
+    rw [nullSeqHomEquivFinsuppEquiv_apply, Finsupp.add_apply,
+      nullSeqHomEquivFinsuppEquiv_apply, nullSeqHomEquivFinsuppEquiv_apply,
+      map_add, AddSubgroup.coe_add]
+    exact (LocallyConstant.evalₗ R (sequencePoint n)).map_add _ _
 
 lemma nullSeqHomEquivFinsupp_apply
     (g : nullSeq R ⟶ (LightCondMod.LocallyConstant.functor R).obj M) (n : ℕ) :
-    nullSeqHomEquivFinsupp M g n =
+    M.nullSeqHomEquivFinsupp g n =
       DFunLike.coe (F := LocallyConstant liftedSequence.{u} M)
-        (reducedLightFreeHomEquiv R (Under.mk inftyPoint.{u}) _ g).val
-        (ULift.up (n : OnePoint ℕ)) := (rfl)
+        (reducedLightFreeHomEquiv R (Under.mk inftyPoint.{u}) _ g).val (sequencePoint n) :=
+  nullSeqHomEquivFinsuppEquiv_apply M g n
+
+/-- A map of discrete coefficient modules acts coefficientwise on null sequences. -/
+lemma nullSeqHomEquivFinsupp_postcomp {N : ModuleCat.{u} R} (f : M ⟶ N)
+    (g : nullSeq R ⟶ (LightCondMod.LocallyConstant.functor R).obj M) :
+    N.nullSeqHomEquivFinsupp (g ≫ (LightCondMod.LocallyConstant.functor R).map f) =
+      Finsupp.mapRange f.hom (map_zero f.hom) (M.nullSeqHomEquivFinsupp g) := by
+  ext n
+  simp only [Finsupp.mapRange_apply, nullSeqHomEquivFinsupp_apply,
+    reducedLightFreeHomEquiv_postcomp_val]
+  rfl
 
 /-- Precomposition with the marked shift takes the coefficient at n + 1 to n. -/
 @[simp↓]
@@ -105,7 +122,7 @@ lemma nullSeqHomEquivFinsupp_nullShift
     (g : nullSeq R ⟶ (LightCondMod.LocallyConstant.functor R).obj M) (n : ℕ) :
     nullSeqHomEquivFinsupp M (nullShift R ≫ g) n = nullSeqHomEquivFinsupp M g (n + 1) := by
   rw [nullSeqHomEquivFinsupp_apply, nullSeqHomEquivFinsupp_apply,
-    reducedLightFreeHomEquiv_nullShift]
+    reducedLightFreeHomEquiv_nullShift_val]
   exact congrArg _ (natShift_apply_coe n)
 
-end TauCeti
+end ModuleCat
