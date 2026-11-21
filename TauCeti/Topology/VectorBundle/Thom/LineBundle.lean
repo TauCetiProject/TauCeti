@@ -218,7 +218,7 @@ theorem
                 (fun b ↦ (finite_preimage_sphereBundleProj hF b).to_subtype)) n ≫
             ((isCoveringMap_sphereBundleProj F E hnorm hF).singularHomologyPermutationIso
               (p := TopCat.ofHom (sphereBundleProj F E)) R n).inv =
-      (gaugeDiscSpherePair fun v : TotalSpace F E ↦ ‖v.2‖).singularHomologyδ
+      (gaugeDiscSpherePair fun v : TotalSpace F E ↦ ‖v.snd‖).singularHomologyδ
         (ModuleCat.of R R) (n + 1) n := by
   have : Nontrivial F := Module.nontrivial_of_finrank_eq_succ hF
   -- By definition, the Thom isomorphism is followed by the coefficient change `sign ≅ o(E)`, which

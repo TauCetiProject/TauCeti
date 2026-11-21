@@ -48,7 +48,7 @@ namespace TauCeti
 variable {B : Type u} [TopologicalSpace B] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {E : B → Type u} [∀ b, NormedAddCommGroup (E b)] [∀ b, NormedSpace ℝ (E b)]
   [TopologicalSpace (TotalSpace F E)] [FiberBundle F E] [VectorBundle ℝ F E]
-  (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.2‖) (hF : Module.finrank ℝ F = 1)
+  (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.snd‖) (hF : Module.finrank ℝ F = 1)
 
 /-- In rank one a unit vector `v` orients its fibre: the map from the unit sphere bundle to the
 orientation double cover sending `v` to the orientation of its fibre in which `v` is positive.
@@ -57,21 +57,21 @@ It lies over the base and carries `-v` to the opposite orientation
 def sphereBundleOrientation : C(sphereBundle F E, VectorBundleOrientationCover F E (Fin 1)) where
   toFun v := ⟨(v : TotalSpace F E).proj,
     (FiniteDimensional.basisSingleton (Fin 1) ((VectorBundle.finrank_eq ℝ F E _).trans hF)
-      (v : TotalSpace F E).2
-      (snd_ne_zero_of_mem_sphereBundle v.2)).orientation⟩
+      (v : TotalSpace F E).snd
+      (snd_ne_zero_of_mem_sphereBundle v.property)).orientation⟩
   continuous_toFun :=
     VectorBundleOrientationCover.continuous_mk_basis_orientation
-      ((FiberBundle.continuous_proj F E).comp continuous_subtype_val) _ fun i ↦ by
+      ((FiberBundle.continuous_proj F E).comp continuous_subtypeVal) _ fun i ↦ by
         simp only [FiniteDimensional.basisSingleton_apply]
-        exact continuous_subtype_val
+        exact continuous_subtypeVal
 
 /-- The orientation map sends a unit vector `v` over `b` to the orientation of `E_b` given by the
 basis `(v)`. -/
 theorem sphereBundleOrientation_apply (v : sphereBundle F E) :
     sphereBundleOrientation hF v = ⟨(v : TotalSpace F E).proj,
       (FiniteDimensional.basisSingleton (Fin 1) ((VectorBundle.finrank_eq ℝ F E _).trans hF)
-        (v : TotalSpace F E).2
-        (snd_ne_zero_of_mem_sphereBundle v.2)).orientation⟩ :=
+        (v : TotalSpace F E).snd
+        (snd_ne_zero_of_mem_sphereBundle v.property)).orientation⟩ :=
   (rfl)
 
 /-- The orientation given by a unit vector lies over the base point of the vector. -/

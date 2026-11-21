@@ -69,7 +69,7 @@ theorem moebiusSign_mul_self (z : Circle) : moebiusSign z * moebiusSign z = 1 :=
 theorem continuousAt_moebiusSign {z : Circle} (hz : (z : ℂ).im ≠ 0) :
     ContinuousAt moebiusSign z := by
   have hc : Continuous fun w : Circle ↦ (w : ℂ).im :=
-    Complex.continuous_im.comp continuous_subtype_val
+    Complex.continuous_im.comp continuous_subtypeVal
   rcases hz.lt_or_gt with h | h
   · refine continuousAt_const.congr (f := fun _ ↦ (-1 : ℝ)) ?_
     filter_upwards [hc.continuousAt.eventually (gt_mem_nhds h)] with w hw
@@ -100,7 +100,7 @@ theorem im_ne_zero_of_mem_moebiusBaseSet {i j : Bool} (hij : i ≠ j) {z : Circl
 identity on the upper half-circle and `-1` on the lower one. -/
 def moebiusCore : VectorBundleCore ℝ Circle ℝ Bool where
   baseSet := moebiusBaseSet
-  isOpen_baseSet i := isOpen_ne_fun continuous_subtype_val continuous_const
+  isOpen_baseSet i := isOpen_ne_fun continuous_subtypeVal continuous_const
   indexAt z := decide ((z : ℂ) = 1)
   mem_baseSet_at z := by
     by_cases h : (z : ℂ) = 1
@@ -159,7 +159,7 @@ theorem norm_moebiusCore_coordChange (i j : Bool) (z : Circle) (v : ℝ) :
 /-- **The fibre norm of the Möbius line bundle is continuous on the total space**, because its
 transition functions are isometries. -/
 theorem continuous_norm_moebiusCore :
-    Continuous fun v : TotalSpace ℝ moebiusCore.Fiber ↦ ‖v.2‖ := by
+    Continuous fun v : TotalSpace ℝ moebiusCore.Fiber ↦ ‖v.snd‖ := by
   refine continuous_iff_continuousAt.2 fun v₀ ↦ ?_
   let e := moebiusCore.localTriv (moebiusCore.indexAt v₀.proj)
   have hv₀ : v₀ ∈ e.source :=

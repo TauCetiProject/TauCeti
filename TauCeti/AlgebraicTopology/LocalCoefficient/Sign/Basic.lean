@@ -206,7 +206,7 @@ def signFiberComap (x : X) : signFiber R τ hτ x →ₗ[R] signFiber R σ hσ x
     (signFiber R τ hτ x).subtype).codRestrict _ fun g ↦ mem_signFiber_iff.2 fun e ↦ by
       simp only [LinearMap.comp_apply, Submodule.subtype_apply, LinearMap.funLeft_apply]
       rw [Function.fiberMap_fiberMap_of_comp_eq hσ hτ hf hfστ e]
-      exact mem_signFiber_iff.1 g.2 _
+      exact mem_signFiber_iff.1 g.property _
 
 @[simp]
 theorem coe_signFiberComap_apply {x : X} (g : signFiber R τ hτ x) (e : p ⁻¹' {x}) :
@@ -238,7 +238,7 @@ def signFiberComapEquiv (x : X) : signFiber R τ hτ x ≃ₗ[R] signFiber R σ 
       have h := Function.fiberMap_fiberMap_of_comp_eq hσ hτ hf hfστ e
       simp only [Function.comp_apply, Equiv.ofBijective_apply, φ] at h ⊢
       rw [← h, Equiv.ofBijective_symm_apply_apply, Equiv.ofBijective_symm_apply_apply]
-      exact mem_signFiber_iff.1 g.2 e
+      exact mem_signFiber_iff.1 g.property e
     · simp [φ]
 
 @[simp]
@@ -434,7 +434,7 @@ def signLocalSystemIsoOfMap : hq.signLocalSystem R τ hτ ≅ hp.signLocalSystem
     -- Both sides evaluate `g` at the image under `f` of a lifted endpoint, by the definition of
     -- the transport; `f` carries lifts for `p` to lifts for `q`.
     fun γ ↦ ModuleCat.hom_ext <| LinearMap.ext fun g ↦ Subtype.ext <| funext fun e ↦
-      congrArg g.1 (hp.fiberMap_monodromy hq f hf (inv γ) e).symm
+      congrArg g.val (hp.fiberMap_monodromy hq f hf (inv γ) e).symm
 
 /-- The isomorphism of sign local systems induced by a map of double covers is precomposition with
 the map. -/

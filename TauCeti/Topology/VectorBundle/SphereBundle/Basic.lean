@@ -419,19 +419,19 @@ variable {B : Type w} [TopologicalSpace B] (F : Type*) [NormedAddCommGroup F] [N
 /-- Fibrewise negation `v ↦ -v` of the unit sphere bundle: a fixed-point-free involution over the
 base, the deck involution of the sphere bundle of a line bundle. -/
 def sphereBundleNeg : C(sphereBundle F E, sphereBundle F E) where
-  toFun v := ⟨⟨(v : TotalSpace F E).proj, -(v : TotalSpace F E).2⟩,
-    mem_sphereBundle.2 ((norm_neg _).trans (mem_sphereBundle.1 v.2))⟩
+  toFun v := ⟨⟨(v : TotalSpace F E).proj, -(v : TotalSpace F E).snd⟩,
+    mem_sphereBundle.2 ((norm_neg _).trans (mem_sphereBundle.1 v.property))⟩
   continuous_toFun := by
     refine Continuous.subtype_mk ?_ _
     -- Negation is the scalar multiplication by `-1`, which is continuous on the total space.
     refine ((VectorBundle.continuous_smul ℝ F E).comp
-      ((continuous_const (y := (-1 : ℝ))).prodMk continuous_subtype_val)).congr fun v ↦ ?_
+      ((continuous_const (y := (-1 : ℝ))).prodMk continuous_subtypeVal)).congr fun v ↦ ?_
     simp only [Function.comp_apply, TotalSpace.mk', neg_one_smul (R := ℝ)]
 
 @[simp]
 theorem coe_sphereBundleNeg_apply (v : sphereBundle F E) :
     (sphereBundleNeg F E v : TotalSpace F E) =
-      ⟨(v : TotalSpace F E).proj, -(v : TotalSpace F E).2⟩ :=
+      ⟨(v : TotalSpace F E).proj, -(v : TotalSpace F E).snd⟩ :=
   (rfl)
 
 /-- Negation of the sphere bundle lies over the identity of the base. -/

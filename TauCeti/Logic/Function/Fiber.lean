@@ -105,14 +105,14 @@ theorem bijective_fiberMap_of_comp_eq {σ : E → E} {τ : F → F} {f : E → F
   refine ⟨fun d₁ d₂ h ↦ ?_, fun e' ↦ ?_⟩
   · have h' : f d₁ = f d₂ := by
       simpa only [fiberMap_apply_coe] using congrArg Subtype.val h
-    rcases hfib d₁ d₂ (d₂.2.trans d₁.2.symm) with h₂ | h₂
+    rcases hfib d₁ d₂ (d₂.property.trans d₁.property.symm) with h₂ | h₂
     · exact Subtype.ext h₂.symm
     · -- Otherwise `f d₂ = f (σ d₁) = τ (f d₁)` would be a fixed point of `τ`.
       have : f d₂ = τ (f d₁) := by rw [h₂]; exact congrFun hfστ d₁
       exact (hfixτ (f d₁) (this.symm.trans h'.symm)).elim
   · obtain ⟨d, hd⟩ := hsurj x
     have hfd : q (f d) = x := (congrFun hf d).trans hd
-    rcases hfibτ (f d) e' (e'.2.trans hfd.symm) with h | h
+    rcases hfibτ (f d) e' (e'.property.trans hfd.symm) with h | h
     · exact ⟨⟨d, hd⟩, Subtype.ext (by rw [fiberMap_apply_coe]; exact h.symm)⟩
     · refine ⟨⟨σ d, (congrFun hσ d).trans hd⟩, Subtype.ext ?_⟩
       rw [fiberMap_apply_coe, h]
