@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric
+public import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
 
 /-!
@@ -114,6 +114,19 @@ theorem airyAi_zero : airyAi 0 = (3 : ℂ) ^ (-2 / 3 : ℂ) / Gamma (2 / 3) := b
 @[simp]
 theorem airyBi_zero : airyBi 0 = (3 : ℂ) ^ (-1 / 6 : ℂ) / Gamma (2 / 3) := by
   simp [airyBi, div_eq_mul_inv]
+
+/-- At the origin, `Bi(0)² = 3 Ai(0)²`. -/
+theorem airyBi_zero_sq : airyBi 0 ^ 2 = 3 * airyAi 0 ^ 2 := by
+  have h3 : (3 : ℂ) ≠ 0 := by norm_num
+  have hpow : ((3 : ℂ) ^ (-1 / 6 : ℂ)) ^ 2 = 3 * ((3 : ℂ) ^ (-2 / 3 : ℂ)) ^ 2 := by
+    nth_rw 2 [← cpow_one (3 : ℂ)]
+    rw [sq, sq, ← cpow_add _ _ h3, ← cpow_add _ _ h3, ← cpow_add _ _ h3]
+    norm_num
+  rw [airyAi_zero, airyBi_zero, div_pow, div_pow, hpow, mul_div_assoc]
+
+/-- At the origin, `Ai(0)² + Bi(0)² = 4 Ai(0)²`. -/
+theorem airyAi_zero_sq_add_airyBi_zero_sq : airyAi 0 ^ 2 + airyBi 0 ^ 2 = 4 * airyAi 0 ^ 2 := by
+  rw [airyBi_zero_sq]; ring
 
 private theorem hasDerivAt_airy_hypergeometric_zero (b : ℂ) :
     HasDerivAt (fun z : ℂ => regularizedHGFun 0 {b} (z ^ 3 / 9)) 0 0 := by

@@ -27,11 +27,18 @@ computed as `(ℤ/5)ˣ`.
 `Polynomial.cyclotomic_thirty` expand `Φ₁₂`, `Φ₁₈` and `Φ₃₀` in the same way, which is what is
 needed to check that these polynomials annihilate an explicit matrix.
 
+Over a nonzero ring, `Polynomial.cyclotomic_ne_one` records that a cyclotomic polynomial of
+positive order is not `1`.
+
 Over any ring, `Polynomial.monic_cyclotomic_comp_X_add_one` and
 `Polynomial.natDegree_cyclotomic_comp_X_add_one` record that the shifted cyclotomic polynomial
 `Φ_n(X + 1)` is monic of degree `φ(n)`, and `Polynomial.cyclotomic_comp_X_add_one_dvd` shows that
 `Φ_m(X + 1)` divides `(1 + X) ^ n - 1` whenever `m ∣ n`. The first two are used for the shifted
-prime-power cyclotomic polynomials in `TauCeti.RingTheory.Polynomial.Cyclotomic.PrimePow`.
+prime-power cyclotomic polynomials in `TauCeti.RingTheory.Polynomial.Cyclotomic.PrimePow`. For a
+prime `p`, `Polynomial.coeff_cyclotomic_prime_comp_X_add_one` gives the coefficients of
+`Φ_p(X + 1)` as the binomial coefficients `p choose (n + 1)`; this is the explicit form behind the
+Eisenstein property of `Φ_p(X + 1)` at `p`, and it computes the Newton polygon of `Φ_p(X + 1)` over
+a `p`-adic field.
 -/
 
 public section
@@ -94,9 +101,25 @@ theorem natDegree_cyclotomic_comp_X_add_one [Nontrivial R] (n : ℕ) :
     natDegree_cyclotomic]
   simp
 
+/-- Over a nonzero ring, a cyclotomic polynomial of positive order is not `1`, as it has positive
+degree. -/
+theorem cyclotomic_ne_one [Nontrivial R] {n : ℕ} (hn : 0 < n) : cyclotomic n R ≠ 1 := fun h ↦ by
+  simpa [h] using degree_cyclotomic_pos n R hn
+
 /-- `Φ_n(X + 1)` is monic. -/
 theorem monic_cyclotomic_comp_X_add_one (n : ℕ) : ((cyclotomic n R).comp (X + 1)).Monic := by
   simpa using (cyclotomic.monic n R).comp_X_add_C 1
+
+/-- For a prime `p`, the coefficients of `Φ_p(X + 1)` are the binomial coefficients
+`p choose (n + 1)`. -/
+@[simp]
+theorem coeff_cyclotomic_prime_comp_X_add_one (p : ℕ) [Fact p.Prime] (n : ℕ) :
+    ((cyclotomic p R).comp (X + 1)).coeff n = (p.choose (n + 1) : R) := by
+  rw [cyclotomic_prime, geom_sum_X_comp_X_add_one_eq_sum, finsetSum_coeff]
+  simp only [← C_eq_natCast, coeff_C_mul_X_pow, Finset.sum_ite_eq, Finset.mem_range]
+  split_ifs with h
+  · rfl
+  · rw [Nat.choose_eq_zero_of_lt (by omega), Nat.cast_zero]
 
 /-- `Φ_m(X + 1)` divides `(1 + X) ^ n - 1` whenever `m ∣ n`. -/
 theorem cyclotomic_comp_X_add_one_dvd {m n : ℕ} (h : m ∣ n) :

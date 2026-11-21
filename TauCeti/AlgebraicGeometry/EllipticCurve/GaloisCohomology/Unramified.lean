@@ -15,7 +15,7 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Index.NSmul
 # Unramified Kummer classes at good reduction
 
 For a Weierstrass curve over a nonarchimedean local field `K`, the unramified subgroup of
-`H¹(K, E[m])` is the kernel of restriction to inertia (`TauCeti.unramifiedCohomology`). The
+`H¹(K, E[m])` is the kernel of restriction to inertia (`TauCeti.unramifiedH1`). The
 coefficient module uses the separable closure, so inertia is transported from the algebraic closure
 through `TauCeti.absoluteGaloisGroupRestrictEquiv`. When `W` is elliptic and `m ≠ 0`, this
 unramified subgroup is finite of order `#E(K)[m]`.
@@ -53,8 +53,12 @@ variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
 /-- The unramified classes in `H¹(K, E[m])`: the kernel of restriction to inertia, transported
 to the automorphisms of the separable closure used by `W.TorsionCoeff m`. -/
 def unramifiedTorsionCohomology : AddSubgroup (H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m)) :=
-  (explicitRes1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m)
-    ((inertiaSubgroup K).map (absoluteGaloisGroupRestrictEquiv K).toMonoidHom)).ker
+  unramifiedH1 K (W.TorsionCoeff m)
+
+/-- `unramifiedTorsionCohomology` is `TauCeti.unramifiedH1` on `W.TorsionCoeff m`. -/
+theorem unramifiedTorsionCohomology_eq_unramifiedH1 :
+    W.unramifiedTorsionCohomology m = unramifiedH1 K (W.TorsionCoeff m) :=
+  (rfl)
 
 /-- A class is unramified exactly when its restriction to inertia is zero. -/
 @[simp]
@@ -62,27 +66,21 @@ theorem mem_unramifiedTorsionCohomology_iff
     {c : H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m)} :
     c ∈ W.unramifiedTorsionCohomology m ↔
       explicitRes1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m)
-        ((inertiaSubgroup K).map (absoluteGaloisGroupRestrictEquiv K).toMonoidHom) c = 0 :=
-  (Iff.rfl)
-
-/-- `unramifiedTorsionCohomology` is `TauCeti.unramifiedCohomology` on `W.TorsionCoeff m`. -/
-theorem unramifiedTorsionCohomology_eq_unramifiedCohomology :
-    W.unramifiedTorsionCohomology m = unramifiedCohomology K (W.TorsionCoeff m) := by
-  ext c
-  rw [mem_unramifiedTorsionCohomology_iff, mem_unramifiedCohomology_iff]
+        (separableClosureInertiaSubgroup K) c = 0 := by
+  rw [unramifiedTorsionCohomology_eq_unramifiedH1, mem_unramifiedH1_iff]
 
 /-- For an elliptic curve and `m ≠ 0`, `unramifiedTorsionCohomology` is finite. -/
 instance finite_unramifiedTorsionCohomology [W.IsElliptic] [NeZero m] :
     Finite (W.unramifiedTorsionCohomology m) := by
-  rw [unramifiedTorsionCohomology_eq_unramifiedCohomology]
+  rw [unramifiedTorsionCohomology_eq_unramifiedH1]
   infer_instance
 
 /-- **Order of unramified `m`-torsion cohomology**: `#H¹_ur(G_K, E[m]) = #E(K)[m]` for `m ≠ 0`. -/
 theorem natCard_unramifiedTorsionCohomology [DecidableEq K] [W.IsElliptic] [NeZero m] :
     Nat.card (W.unramifiedTorsionCohomology m) =
       Nat.card (AddSubgroup.torsionBy W.toAffine.Point m) := by
-  rw [unramifiedTorsionCohomology_eq_unramifiedCohomology,
-    natCard_unramifiedCohomology_eq_natCard_H0]
+  rw [unramifiedTorsionCohomology_eq_unramifiedH1,
+    natCard_unramifiedH1_eq_natCard_H0]
   exact Nat.card_congr (W.baseTorsionEquivInvariants m).symm.toEquiv
 
 /-- **Unramified classes restrict to unramified classes.** For an extension `L/K` of
@@ -95,9 +93,10 @@ theorem torsionRes_mem_unramifiedTorsionCohomology {L : Type*} [Field L] [Valuat
     {c : H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m)}
     (hc : c ∈ W.unramifiedTorsionCohomology m) :
     W.torsionRes τ m c ∈ (W⁄L).unramifiedTorsionCohomology m := by
-  rw [mem_unramifiedTorsionCohomology_iff, torsionRes_eq_explicitMap1]
-  exact (absoluteGaloisGroupMap τ).explicitRes1_explicitMap1_eq_zero_of_map_le _ _ _
-    (τ.map_absoluteGaloisGroupMap_inertiaSubgroup_le) hc
+  rw [unramifiedTorsionCohomology_eq_unramifiedH1] at hc ⊢
+  rw [torsionRes_eq_explicitMap1]
+  exact τ.explicitMap1_mem_unramifiedH1 (W.torsionCoeffBaseChange τ m)
+    continuous_of_discreteTopology (W.torsionCoeffBaseChange_smul τ m) hc
 
 variable [IsIntegral 𝒪[K] W] [(integralModel 𝒪[K] W).IsElliptic]
 
@@ -158,20 +157,11 @@ theorem kummerMap_mem_unramifiedTorsionCohomology
   rename_i hm
   obtain ⟨Q, hQ⟩ := (W.kummerShortExact m hm).proj_surjective (W.basePointCoeff P)
   rw [kummerShortExact_proj, nsmulAddMonoidHom_apply] at hQ
-  rw [mem_unramifiedTorsionCohomology_iff, kummerMap_eq_H1pi hm hQ]
-  have hzero : cocyclesMap1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m)
-      ((inertiaSubgroup K).map (absoluteGaloisGroupRestrictEquiv K).toMonoidHom)
-      (W.TorsionCoeff m) (ContinuousMonoidHom.subgroupSubtype _)
-      (AddMonoidHom.id _) continuous_id
-      (ContinuousMonoidHom.id_subgroupSubtype_smul _ _)
-      ⟨kummerCocycle hQ, kummerCocycle_mem_Z1 hQ⟩ = 0 := by
-    apply Subtype.ext
-    funext σ
-    rw [cocyclesMap1_apply, AddMonoidHom.id_apply, ContinuousMonoidHom.subgroupSubtype_apply]
-    obtain ⟨τ, hτ, hτσ⟩ := σ.2
-    rw [← hτσ]
-    exact kummerCocycle_eq_zero_of_mem_inertiaSubgroup hmres hQ hτ
-  exact (explicitRes1_mk _ _ _ _).trans (congrArg (H1pi _ _) hzero)
+  rw [unramifiedTorsionCohomology_eq_unramifiedH1, kummerMap_eq_H1pi hm hQ,
+    QuotientAddGroup.mk'_apply]
+  exact mk_mem_unramifiedH1_of_forall_mem_inertiaSubgroup
+    (f := ⟨kummerCocycle hQ, kummerCocycle_mem_Z1 hQ⟩)
+    fun _ hσ ↦ kummerCocycle_eq_zero_of_mem_inertiaSubgroup hmres hQ hσ
 
 open scoped Classical in
 /-- At good reduction away from the multiplier, the local Kummer condition is contained in

@@ -37,6 +37,8 @@ additional structures such as filtrations, bialgebras, or antipodes.
   commute.
 * `TauCeti.UniversalEnvelopingAlgebra.zsmul_mul_zsmul_eq_add_nsmul_of_zsmul_lie_eq`: a scaled
   Lie-bracket relation gives the corresponding scaled ring-commutator relation.
+* `TauCeti.UniversalEnvelopingAlgebra.mul_zsmul_eq_add_nsmul_of_zsmul_lie_eq`: a Lie-bracket
+  relation with a scaled right-hand generator gives the corresponding ring-commutator relation.
 * `TauCeti.UniversalEnvelopingAlgebra.mul_eq_mul_add_zsmul_of_lie_eq`: an integral Lie-bracket
   structure constant gives the corresponding ring-commutator relation.
 * `TauCeti.UniversalEnvelopingAlgebra.lie_map_ι`: a ring homomorphism maps the bracket of
@@ -213,6 +215,18 @@ theorem zsmul_mul_zsmul_eq_add_nsmul_of_zsmul_lie_eq (ρ : F) {a b b' : L} {p q 
   rw [← map_zsmul, ← map_zsmul, hab, map_zsmul, map_zsmul] at hbracket
   rw [← sub_eq_iff_eq_add', ← natCast_zsmul, ← mul_zsmul, ← hbracket]
   simp only [smul_sub, mul_smul_comm, smul_mul_assoc, mul_zsmul, smul_comm p q]
+
+/-- A Lie-bracket relation with a scaled right-hand generator becomes the corresponding
+ring-commutator relation under every ring homomorphism from the universal enveloping algebra. -/
+theorem mul_zsmul_eq_add_nsmul_of_zsmul_lie_eq (ρ : F) {a b b' : L} {q r : ℤ} {n : ℕ}
+    (hab : q • ⁅a, b⁆ = ((n : ℤ) * r) • b') :
+    ρ (_root_.UniversalEnvelopingAlgebra.ι R a) *
+        (q • ρ (_root_.UniversalEnvelopingAlgebra.ι R b)) =
+      (q • ρ (_root_.UniversalEnvelopingAlgebra.ι R b)) *
+          ρ (_root_.UniversalEnvelopingAlgebra.ι R a) +
+        n • (r • ρ (_root_.UniversalEnvelopingAlgebra.ι R b')) := by
+  simpa only [one_zsmul] using
+    zsmul_mul_zsmul_eq_add_nsmul_of_zsmul_lie_eq ρ (p := 1) (by simpa only [one_mul] using hab)
 
 /-- A bracket relation with an integral structure constant becomes the corresponding commutator
 relation under every ring homomorphism from the universal enveloping algebra. -/

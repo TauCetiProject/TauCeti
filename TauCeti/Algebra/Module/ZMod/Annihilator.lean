@@ -127,13 +127,8 @@ theorem eq_ker_compl₂_subtype_iff_forall_eq_zero_and_natCard_mul_eq_of_addEqui
     (hd : Function.Bijective d) (hN : ∀ y : N, n • y = 0) (U : AddSubgroup M) (H : AddSubgroup N) :
     U = (d.compl₂ H.subtype).ker ↔
       (∀ x ∈ U, ∀ y ∈ H, d x y = 0) ∧ Nat.card U * Nat.card H = Nat.card M := by
-  let e : M →+ N →+ ZMod n :=
-    mk' (fun x ↦ eC.toAddMonoidHom.comp (d x)) fun x₁ x₂ ↦ by ext y; simp
-  have he : Function.Bijective e := by
-    refine ⟨fun x₁ x₂ h ↦ hd.1 ?_, fun φ ↦ ?_⟩
-    · ext y; exact eC.injective (DFunLike.congr_fun h y)
-    · obtain ⟨x, hx⟩ := hd.2 (eC.symm.toAddMonoidHom.comp φ)
-      exact ⟨x, ext fun y ↦ by simpa [e] using congrArg eC (DFunLike.congr_fun hx y)⟩
+  let e : M →+ N →+ ZMod n := eC.addMonoidHomCongrRight.toAddMonoidHom.comp d
+  have he : Function.Bijective e := eC.addMonoidHomCongrRight.bijective.comp hd
   have hker : (e.compl₂ H.subtype).ker = (d.compl₂ H.subtype).ker := by
     ext x
     simp [e, AddMonoidHom.ext_iff]
@@ -145,13 +140,8 @@ theorem ker_flip_compl₂_subtype_ker_compl₂_subtype_of_addEquiv_zmod
     {C : Type*} [AddCommGroup C] [Finite N] (d : M →+ N →+ C) (eC : C ≃+ ZMod n)
     (hd : Function.Bijective d) (hN : ∀ y : N, n • y = 0) (H : AddSubgroup N) :
     (d.flip.compl₂ (d.compl₂ H.subtype).ker.subtype).ker = H := by
-  let e : M →+ N →+ ZMod n :=
-    mk' (fun x ↦ eC.toAddMonoidHom.comp (d x)) fun x₁ x₂ ↦ by ext y; simp
-  have he : Function.Bijective e := by
-    refine ⟨fun x₁ x₂ h ↦ hd.1 ?_, fun φ ↦ ?_⟩
-    · ext y; exact eC.injective (DFunLike.congr_fun h y)
-    · obtain ⟨x, hx⟩ := hd.2 (eC.symm.toAddMonoidHom.comp φ)
-      exact ⟨x, ext fun y ↦ by simpa [e] using congrArg eC (DFunLike.congr_fun hx y)⟩
+  let e : M →+ N →+ ZMod n := eC.addMonoidHomCongrRight.toAddMonoidHom.comp d
+  have he : Function.Bijective e := eC.addMonoidHomCongrRight.bijective.comp hd
   have hker : (e.compl₂ H.subtype).ker = (d.compl₂ H.subtype).ker := by
     ext x
     simp [e, AddMonoidHom.ext_iff]

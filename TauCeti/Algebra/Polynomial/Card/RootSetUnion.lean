@@ -111,10 +111,10 @@ theorem ncard_biUnion_roots_natDegree_le_abs_intCoeff_le (m : ℤ →+* S) (d B 
 /-- The roots in a domain `S` of all polynomials of degree at most `n` whose `i`-th coefficient
 lies in a finite set `s i` form a finite set. -/
 theorem finite_biUnion_roots_natDegree_le_coeff_mem_pi (m : R →+* S) (n : ℕ)
-    (s : Fin (n + 1) → Finset R) :
+    {s : Fin (n + 1) → Set R} (hs : ∀ i, (s i).Finite) :
     (⋃ (f : R[X]) (_ : f.natDegree ≤ n ∧ ∀ i : Fin (n + 1), f.coeff i ∈ s i),
         ((f.map m).roots.toFinset : Set S)).Finite :=
-  (finite_setOf_natDegree_le_coeff_mem_pi n s).biUnion fun _ _ ↦ Finset.finite_toSet _
+  (finite_setOf_natDegree_le_coeff_mem_pi n hs).biUnion fun _ _ ↦ Finset.finite_toSet _
 
 /-- The roots in a domain `S` of all polynomials of degree at most `n` whose `i`-th coefficient
 lies in a finite set `s i`, mapped along a ring hom `m : R →+* S`, number at most
@@ -125,7 +125,8 @@ theorem ncard_biUnion_roots_natDegree_le_coeff_mem_pi_le (m : R →+* S) (n : �
     (s : Fin (n + 1) → Finset R) :
     (⋃ (f : R[X]) (_ : f.natDegree ≤ n ∧ ∀ i : Fin (n + 1), f.coeff i ∈ s i),
         ((f.map m).roots.toFinset : Set S)).ncard ≤ (∏ i, (s i).card) * n :=
-  (ncard_biUnion_roots_map_le m (finite_setOf_natDegree_le_coeff_mem_pi n s) fun _ hf ↦ hf.1).trans
+  (ncard_biUnion_roots_map_le m
+    (finite_setOf_natDegree_le_coeff_mem_pi n fun i ↦ (s i).finite_toSet) fun _ hf ↦ hf.1).trans
     (by gcongr; exact (ncard_natDegree_le_coeff_mem_pi n s).le)
 
 end TauCeti.Polynomial

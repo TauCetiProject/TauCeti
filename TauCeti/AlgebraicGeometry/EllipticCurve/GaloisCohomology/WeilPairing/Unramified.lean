@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Isogeny.Unramified
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Local
+public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Orthogonality
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.Duality.Unramified
 import TauCeti.Algebra.Module.ZMod.Annihilator
 import TauCeti.NumberTheory.ClassFieldTheory.FiniteCohomology.Basic
@@ -15,15 +16,16 @@ import TauCeti.NumberTheory.ClassFieldTheory.FiniteCohomology.Basic
 # Unramified local Tate duality for elliptic torsion and isogeny kernels
 
 Let `K` be a nonarchimedean local field. Transporting Milne's unramified local duality theorem
-(`TauCeti.ClassFieldTheory.unramifiedCohomology_eq_ker_compl₂_dualityMap1`) along the Galois
+(`TauCeti.ClassFieldTheory.unramifiedH1_eq_ker_compl₂_dualityMap1`) along the Galois
 module isomorphisms given by the Weil pairing (`WeierstrassCurve.torsionCoeffWeilDual_bijective`)
 and the isogeny Weil pairing (`TauCeti.Isogeny.kerCoeffWeilDual_bijective`) yields unramified
 duality for elliptic curves and isogenies:
 
-1. **Over any nonarchimedean local field `K`**, when the multiplier `m` (respectively `deg φ`) is
-   invertible in `K`, `H¹_ur(G_K, E[m])` is isotropic for `W.torsionH1WeilPairing` and
-   `W.localTateWeilPairing`, and `H¹_ur(G_K, E₁[φ])` and `H¹_ur(G_K, E₂[φ̂])` are orthogonal under
-   `φ.kerH1WeilPairing` and `φ.localTateKerWeilPairing`.
+1. **Over any nonarchimedean local field `K`**, when the multiplier `m` is invertible in `K`,
+   `H¹_ur(G_K, E[m])` is isotropic for `W.torsionH1WeilPairing` and `W.localTateWeilPairing`
+   (the isogeny orthogonality counterparts `kerH1WeilPairing_eq_zero_of_mem_unramifiedKerCohomology`
+   and `localTateKerWeilPairing_eq_zero_of_mem_unramifiedKerCohomology` live in
+   `TauCeti/AlgebraicGeometry/EllipticCurve/GaloisCohomology/WeilPairing/Orthogonality.lean`).
 2. **Over a finite extension `K` of `ℚ_p`** (`TauCeti.FinitePadicExtension K p`), when `p ∤ m`
    (respectively `p ∤ deg φ`), `H¹_ur(G_K, E[m])` is its own exact annihilator under
    `W.localTateWeilPairing`, and `H¹_ur(G_K, E₁[φ])` and `H¹_ur(G_K, E₂[φ̂])` are exact mutual
@@ -42,9 +44,6 @@ Greenberg–Wiles comparison of Selmer groups in Cassels' theorem.
 * `WeierstrassCurve.unramifiedTorsionCohomology_eq_ker_compl₂_localTateWeilPairing` and
   `mem_unramifiedTorsionCohomology_iff_forall_localTateWeilPairing_eq_zero`: `H¹_ur(G_K, E[m])` is
   its own exact annihilator over a finite extension of `ℚ_p` when `p ∤ m`.
-* `TauCeti.Isogeny.kerH1WeilPairing_eq_zero_of_mem_unramifiedKerCohomology` and
-  `localTateKerWeilPairing_eq_zero_of_mem_unramifiedKerCohomology`: orthogonality of
-  `H¹_ur(G_K, E₁[φ])` and `H¹_ur(G_K, E₂[φ̂])` over any nonarchimedean local field.
 * `TauCeti.Isogeny.unramifiedKerCohomology_eq_ker_compl₂_localTateKerWeilPairing`,
   `unramifiedKerCohomology_dual_eq_ker_flip_compl₂_localTateKerWeilPairing`,
   `mem_unramifiedKerCohomology_iff_forall_localTateKerWeilPairing_eq_zero`, and
@@ -80,10 +79,10 @@ theorem torsionH1WeilPairing_eq_zero_of_mem_unramifiedTorsionCohomology
     (ha : a ∈ W.unramifiedTorsionCohomology m) (hb : b ∈ W.unramifiedTorsionCohomology m) :
     W.torsionH1WeilPairing m hm a b = 0 := by
   have : NeZero m := NeZero.of_neZero_natCast K (h := ⟨hm.ne_zero⟩)
-  rw [unramifiedTorsionCohomology_eq_unramifiedCohomology] at ha hb
+  rw [unramifiedTorsionCohomology_eq_unramifiedH1] at ha hb
   rw [torsionH1WeilPairing_eq_dualityMap1]
-  exact dualityMap1_kummerCoeff_eq_zero_of_mem_unramifiedCohomology ha
-    (explicitCoeff1_mem_unramifiedCohomology (W.torsionCoeffWeilDual m hm)
+  exact dualityMap1_kummerCoeff_eq_zero_of_mem_unramifiedH1 ha
+    ((W.torsionCoeffWeilDual m hm).explicitCoeff1_mem_unramifiedH1
       continuous_of_discreteTopology hb)
 
 /-- **Unramified `m`-torsion cohomology is isotropic for the local Tate pairing** over any
@@ -117,16 +116,17 @@ theorem mem_unramifiedTorsionCohomology_iff_forall_localTateWeilPairing_eq_zero
     (W.torsionCoeffWeilDual m hm) continuous_of_discreteTopology
   have hd : Function.Bijective d :=
     explicitCoeff1_bijective _ _ (W.torsionCoeffWeilDual_bijective m hm)
-  simp only [unramifiedTorsionCohomology_eq_unramifiedCohomology]
-  rw [mem_unramifiedCohomology_iff_forall_dualityMap1_eq_zero p hpm
+  simp only [unramifiedTorsionCohomology_eq_unramifiedH1]
+  rw [mem_unramifiedH1_iff_forall_dualityMap1_eq_zero p hpm
       (fun P : W.TorsionCoeff m ↦ AddSubgroup.torsionBy.nsmul P) a]
   refine ⟨fun h b hb ↦ ?_, fun h y hy ↦ ?_⟩
   · rw [localTateWeilPairing_apply, torsionH1WeilPairing_eq_dualityMap1,
-      h (d b) (explicitCoeff1_mem_unramifiedCohomology _ _ hb), map_zero, map_zero]
+      h (d b) ((W.torsionCoeffWeilDual m hm).explicitCoeff1_mem_unramifiedH1 _ hb),
+      map_zero, map_zero]
   · obtain ⟨b, rfl⟩ := hd.2 y
-    have hb : b ∈ unramifiedCohomology K (W.TorsionCoeff m) :=
-      (explicitCoeff1_mem_unramifiedCohomology_iff_of_bijective
-        (W.torsionCoeffWeilDual m hm) (W.torsionCoeffWeilDual_bijective m hm)).mp hy
+    have hb : b ∈ unramifiedH1 K (W.TorsionCoeff m) :=
+      ((W.torsionCoeffWeilDual m hm).explicitCoeff1_mem_unramifiedH1_iff_of_bijective
+        (W.torsionCoeffWeilDual_bijective m hm)).mp hy
     have h0 := h b hb
     rwa [localTateWeilPairing_apply, torsionH1WeilPairing_eq_dualityMap1,
       AddEquiv.map_eq_zero_iff, AddEquiv.map_eq_zero_iff] at h0
@@ -152,39 +152,6 @@ namespace TauCeti.Isogeny
 
 open WeierstrassCurve TauCeti.ContCohomology TauCeti.ClassFieldTheory Hom
 
-section General
-
-variable {K : Type} [Field K] [ValuativeRel K] [TopologicalSpace K]
-  [IsNonarchimedeanLocalField K] {W₁ W₂ : WeierstrassCurve K} [W₁.IsElliptic] [W₂.IsElliptic]
-  (φ : Isogeny W₁.toAffine W₂.toAffine) (hn : IsUnit (φ.degree : K))
-
-/-- **Unramified kernel cohomologies of an isogeny and its dual are orthogonal under the isogeny
-Weil cup product** over any nonarchimedean local field in which `deg φ` is invertible. -/
-theorem kerH1WeilPairing_eq_zero_of_mem_unramifiedKerCohomology
-    {a : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff}
-    {b : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff}
-    (ha : a ∈ φ.unramifiedKerCohomology) (hb : b ∈ φ.dual.unramifiedKerCohomology) :
-    φ.kerH1WeilPairing hn a b = 0 := by
-  have : NeZero φ.degree := NeZero.of_neZero_natCast K (h := ⟨hn.ne_zero⟩)
-  have := (ofIsogeny φ).finite_kerCoeff (Hom.ofIsogeny_ne_zero φ)
-  rw [unramifiedKerCohomology_eq_unramifiedCohomology] at ha hb
-  rw [kerH1WeilPairing_eq_dualityMap1]
-  exact dualityMap1_kummerCoeff_eq_zero_of_mem_unramifiedCohomology ha
-    (explicitCoeff1_mem_unramifiedCohomology (φ.kerCoeffWeilDual hn)
-      continuous_of_discreteTopology hb)
-
-/-- **Unramified kernel cohomologies of an isogeny and its dual are orthogonal under the local Tate
-pairing** over any nonarchimedean local field in which `deg φ` is invertible. -/
-theorem localTateKerWeilPairing_eq_zero_of_mem_unramifiedKerCohomology
-    {a : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff}
-    {b : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff}
-    (ha : a ∈ φ.unramifiedKerCohomology) (hb : b ∈ φ.dual.unramifiedKerCohomology) :
-    φ.localTateKerWeilPairing hn a b = 0 := by
-  rw [localTateKerWeilPairing_apply,
-    φ.kerH1WeilPairing_eq_zero_of_mem_unramifiedKerCohomology hn ha hb, map_zero, map_zero]
-
-end General
-
 section Padic
 
 variable (p : ℕ) [Fact p.Prime]
@@ -202,21 +169,20 @@ theorem mem_unramifiedKerCohomology_iff_forall_localTateKerWeilPairing_eq_zero
     a ∈ φ.unramifiedKerCohomology ↔
       ∀ b ∈ φ.dual.unramifiedKerCohomology, φ.localTateKerWeilPairing hn a b = 0 := by
   have : NeZero φ.degree := NeZero.of_neZero_natCast K (h := ⟨hn.ne_zero⟩)
-  have := (ofIsogeny φ).finite_kerCoeff (Hom.ofIsogeny_ne_zero φ)
-  have := (ofIsogeny φ.dual).finite_kerCoeff (Hom.ofIsogeny_ne_zero φ.dual)
   let d := explicitCoeff1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff
     (φ.kerCoeffWeilDual hn) continuous_of_discreteTopology
   have hd : Function.Bijective d := explicitCoeff1_bijective _ _ (φ.kerCoeffWeilDual_bijective hn)
-  simp only [unramifiedKerCohomology_eq_unramifiedCohomology]
-  rw [mem_unramifiedCohomology_iff_forall_dualityMap1_eq_zero p hpn
+  simp only [unramifiedKerCohomology_eq_unramifiedH1]
+  rw [mem_unramifiedH1_iff_forall_dualityMap1_eq_zero p hpn
       φ.degree_nsmul_kerCoeff_eq_zero a]
   refine ⟨fun h b hb ↦ ?_, fun h y hy ↦ ?_⟩
   · rw [localTateKerWeilPairing_apply, kerH1WeilPairing_eq_dualityMap1,
-      h (d b) (explicitCoeff1_mem_unramifiedCohomology _ _ hb), map_zero, map_zero]
+      h (d b) ((φ.kerCoeffWeilDual hn).explicitCoeff1_mem_unramifiedH1 _ hb),
+      map_zero, map_zero]
   · obtain ⟨b, rfl⟩ := hd.2 y
-    have hb : b ∈ unramifiedCohomology K (ofIsogeny φ.dual).KerCoeff :=
-      (explicitCoeff1_mem_unramifiedCohomology_iff_of_bijective
-        (φ.kerCoeffWeilDual hn) (φ.kerCoeffWeilDual_bijective hn)).mp hy
+    have hb : b ∈ unramifiedH1 K (ofIsogeny φ.dual).KerCoeff :=
+      ((φ.kerCoeffWeilDual hn).explicitCoeff1_mem_unramifiedH1_iff_of_bijective
+        (φ.kerCoeffWeilDual_bijective hn)).mp hy
     have h0 := h b hb
     rwa [localTateKerWeilPairing_apply, kerH1WeilPairing_eq_dualityMap1,
       AddEquiv.map_eq_zero_iff, AddEquiv.map_eq_zero_iff] at h0
