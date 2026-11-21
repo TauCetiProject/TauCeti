@@ -132,6 +132,8 @@ theorem isSteinbergPairing_mul_ofUnit :
     IsSteinbergPairing (fun a b : Rˣ ↦ ofUnit a * ofUnit b) where
   map_mul_left a₁ a₂ b := by rw [ofUnit_mul, add_mul]
   map_mul_right a b₁ b₂ := by rw [ofUnit_mul, mul_add]
+  map_one_left b := by simp
+  map_one_right a := by simp
   map_add_eq_one _ _ hab := ofUnit_mul_ofUnit_of_add_eq_one hab
 
 /-- The degree-one unit map bundled as a `ℤ`-linear map `Additive Rˣ →ₗ[ℤ] MilnorK R`. -/

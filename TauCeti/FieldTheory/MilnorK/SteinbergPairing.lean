@@ -66,13 +66,17 @@ namespace TauCeti
 universe u v w
 
 /-- A **Steinberg pairing** on the units of a semiring `R` with values in an additive monoid `A`
-is a bimultiplicative map vanishing on pairs of units that sum to `1` in `R`. -/
+is a bimultiplicative map vanishing on `1` and on pairs of units that sum to `1` in `R`. -/
 structure IsSteinbergPairing {R : Type u} [Semiring R] {A : Type v} [AddMonoid A]
     (c : Rˣ → Rˣ → A) : Prop where
   /-- Multiplicativity in the first argument. -/
   map_mul_left : ∀ a₁ a₂ b : Rˣ, c (a₁ * a₂) b = c a₁ b + c a₂ b
   /-- Multiplicativity in the second argument. -/
   map_mul_right : ∀ a b₁ b₂ : Rˣ, c a (b₁ * b₂) = c a b₁ + c a b₂
+  /-- Vanishing when the first argument is `1`. -/
+  map_one_left : ∀ b : Rˣ, c 1 b = 0
+  /-- Vanishing when the second argument is `1`. -/
+  map_one_right : ∀ a : Rˣ, c a 1 = 0
   /-- The Steinberg relation: complementary units pair to zero. -/
   map_add_eq_one : ∀ a b : Rˣ, (a : R) + b = 1 → c a b = 0
 
@@ -86,6 +90,8 @@ variable {R : Type u} [Semiring R] {A : Type v} [AddMonoid A]
 theorem zero : IsSteinbergPairing (fun _ _ : Rˣ ↦ (0 : A)) where
   map_mul_left _ _ _ := (add_zero 0).symm
   map_mul_right _ _ _ := (add_zero 0).symm
+  map_one_left _ := rfl
+  map_one_right _ := rfl
   map_add_eq_one _ _ _ := rfl
 
 /-- Postcomposing a Steinberg pairing with an additive monoid homomorphism yields a Steinberg
@@ -95,6 +101,8 @@ theorem comp_addMonoidHom {B : Type w} [AddMonoid B] {c : Rˣ → Rˣ → A}
     IsSteinbergPairing (fun a b ↦ f (c a b)) where
   map_mul_left a₁ a₂ b := by rw [hc.map_mul_left, map_add]
   map_mul_right a b₁ b₂ := by rw [hc.map_mul_right, map_add]
+  map_one_left b := by rw [hc.map_one_left, map_zero]
+  map_one_right a := by rw [hc.map_one_right, map_zero]
   map_add_eq_one a b h := by rw [hc.map_add_eq_one a b h, map_zero]
 
 /-- Pulling back a Steinberg pairing along a ring homomorphism yields a Steinberg pairing. -/
@@ -104,21 +112,26 @@ theorem comp_ringHom {S : Type w} [Semiring S] {c : Sˣ → Sˣ → A}
       (fun a b : Rˣ ↦ c (Units.map f.toMonoidHom a) (Units.map f.toMonoidHom b)) where
   map_mul_left a₁ a₂ b := by rw [map_mul, hc.map_mul_left]
   map_mul_right a b₁ b₂ := by rw [map_mul, hc.map_mul_right]
+  map_one_left b := by rw [map_one, hc.map_one_left]
+  map_one_right a := by rw [map_one, hc.map_one_right]
   map_add_eq_one a b h := hc.map_add_eq_one _ _ (by simp [← map_add, h])
 
 end Semiring
 
+section Ring
+
+variable {R : Type u} [Ring R] {A : Type v} [AddMonoid A] {c : Rˣ → Rˣ → A}
+
+/-- Pairing with `-1` on the right gives a `2`-torsion value. -/
+theorem two_nsmul_map_neg_one_right (hc : IsSteinbergPairing c) (a : Rˣ) :
+    2 • c a (-1) = 0 := by
+  rw [two_nsmul, ← hc.map_mul_right, neg_mul_neg, one_mul, hc.map_one_right]
+
+end Ring
+
 section AddGroup
 
 variable {R : Type u} [Semiring R] {A : Type v} [AddGroup A] {c : Rˣ → Rˣ → A}
-
-/-- A Steinberg pairing into an additive group vanishes when its first argument is `1`. -/
-theorem map_one_left (hc : IsSteinbergPairing c) (b : Rˣ) : c 1 b = 0 := by
-  simpa using hc.map_mul_left 1 1 b
-
-/-- A Steinberg pairing into an additive group vanishes when its second argument is `1`. -/
-theorem map_one_right (hc : IsSteinbergPairing c) (a : Rˣ) : c a 1 = 0 := by
-  simpa using hc.map_mul_right a 1 1
 
 /-- Inverting the first argument of a Steinberg pairing negates its value. -/
 theorem map_inv_left (hc : IsSteinbergPairing c) (a b : Rˣ) : c a⁻¹ b = -c a b :=
@@ -204,18 +217,18 @@ pairing it with `-1`. -/
 theorem map_self (hc : IsSteinbergPairing c) (a : Fˣ) : c a a = c a (-1) := by
   have hneg : c a (-1) + c a a = 0 := by
     rw [← hc.map_mul_right, neg_one_mul, hc.map_neg_self]
-  have htwo : c a (-1) + c a (-1) = 0 := by
-    rw [← hc.map_mul_right, neg_mul_neg, one_mul, hc.map_one_right]
+  have htwo := hc.two_nsmul_map_neg_one_right a
+  rw [two_nsmul] at htwo
   exact add_left_cancel (hneg.trans htwo.symm)
 
 /-- The diagonal value `c(a, a)` of a Steinberg pairing on a field is `2`-torsion. -/
 theorem two_nsmul_map_self (hc : IsSteinbergPairing c) (a : Fˣ) : 2 • c a a = 0 := by
-  rw [two_nsmul, hc.map_self, ← hc.map_mul_right, neg_mul_neg, one_mul, hc.map_one_right]
+  rw [hc.map_self, hc.two_nsmul_map_neg_one_right]
 
 /-- Pairing `-1` on the left equals pairing `-1` on the right. -/
 theorem map_neg_one_left (hc : IsSteinbergPairing c) (a : Fˣ) : c (-1) a = c a (-1) := by
-  have htwo : c a (-1) + c a (-1) = 0 := by
-    rw [← hc.map_mul_right, neg_mul_neg, one_mul, hc.map_one_right]
+  have htwo := hc.two_nsmul_map_neg_one_right a
+  rw [two_nsmul] at htwo
   rw [hc.map_swap, ← eq_neg_of_add_eq_zero_left htwo]
 
 /-- In characteristic `2`, every Steinberg pairing is alternating: `c(a, a) = 0`. -/
@@ -264,6 +277,8 @@ theorem isSteinbergPairing_symbol : IsSteinbergPairing (symbol (R := R)) where
     simp only [symbol_def, ofMul_mul, TensorProduct.add_tmul, Submodule.Quotient.mk_add]
   map_mul_right a b₁ b₂ := by
     simp only [symbol_def, ofMul_mul, TensorProduct.tmul_add, Submodule.Quotient.mk_add]
+  map_one_left b := by simp [symbol_def]
+  map_one_right a := by simp [symbol_def]
   map_add_eq_one a b h :=
     (Submodule.Quotient.mk_eq_zero _).mpr (Submodule.subset_span ⟨a, b, h, rfl⟩)
 
@@ -342,6 +357,7 @@ theorem two_nsmul_symbol_self (a : Fˣ) : 2 • symbol a a = 0 :=
   isSteinbergPairing_symbol.two_nsmul_map_self a
 
 /-- Over a field of characteristic `2`, `{a, a} = 0`. -/
+@[simp]
 theorem symbol_self_of_charTwo [CharP F 2] (a : Fˣ) : symbol a a = 0 :=
   isSteinbergPairing_symbol.map_self_of_charTwo a
 
@@ -400,7 +416,10 @@ noncomputable def lift {A : Type v} [AddCommGroup A] (c : Rˣ → Rˣ → A)
 theorem lift_symbol {A : Type v} [AddCommGroup A] (c : Rˣ → Rˣ → A)
     (hc : IsSteinbergPairing c) (a b : Rˣ) :
     lift c hc (symbol a b) = c a b := by
-  exact TensorProduct.lift.tmul (f' := pairingBilin c hc) (Additive.ofMul a) (Additive.ofMul b)
+  rw [symbol_def]
+  exact (Submodule.liftQ_apply (steinbergRelations R) (TensorProduct.lift (pairingBilin c hc))
+    (Additive.ofMul a ⊗ₜ Additive.ofMul b)).trans
+    (TensorProduct.lift.tmul (f' := pairingBilin c hc) (Additive.ofMul a) (Additive.ofMul b))
 
 /-- Additive homomorphisms `SymbolGroup R →+ A` are in canonical bijection with Steinberg pairings
 `Rˣ → Rˣ → A`. -/
