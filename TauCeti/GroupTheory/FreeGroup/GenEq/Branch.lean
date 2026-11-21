@@ -118,6 +118,19 @@ def image (b : Branch Ω Ω') : Set (Fin Ω.numItems → FreeGroup A) :=
 
 theorem image_def (b : Branch Ω Ω') : b.image = b.imageOf (Set.range Solution.point) := (rfl)
 
+/-- A point of `Ω` is reached through a branch over the base points `P₀` if and only if it is the
+image under the word map of a fundamental point of the block over `P₀`. -/
+theorem mem_imageOf_iff {b : Branch Ω Ω'} {P₀ : Set (Fin Ω'.numItems → FreeGroup A)}
+    {v : Fin Ω.numItems → FreeGroup A} :
+    v ∈ b.imageOf P₀ ↔ ∃ p ∈ b.block.fundPoints P₀,
+      GroupAlgGeom.wordMap (MonoidHom.id (FreeGroup A)) b.wordMap p = v := Iff.rfl
+
+/-- A point of `Ω` is in the image of a branch if and only if it is the image under the word map
+of a fundamental point of the block over the points of the solutions of the end. -/
+theorem mem_image_iff {b : Branch Ω Ω'} {v : Fin Ω.numItems → FreeGroup A} :
+    v ∈ b.image ↔ ∃ p ∈ b.block.fundPoints (Set.range Solution.point),
+      GroupAlgGeom.wordMap (MonoidHom.id (FreeGroup A)) b.wordMap p = v := Iff.rfl
+
 /-- The points reached through a branch are monotone in the base points. -/
 @[gcongr]
 theorem imageOf_mono (b : Branch Ω Ω') {P₀ P₁ : Set (Fin Ω'.numItems → FreeGroup A)} (h : P₀ ⊆ P₁) :
@@ -311,10 +324,10 @@ theorem exists_comp {Ω'' : GenEq A} (b : Branch Ω Ω') (b' : Branch Ω' Ω'') 
       b.imageOf (b'.imageOf P₀) ⊆ c.imageOf P₀ := by
   obtain ⟨Y'', B'', q, hq, hfund⟩ := b.block.exists_append b'.block b'.wordMap b'.mapsTo
   refine ⟨⟨Y'', B'', fun k ↦ eval (inl : FreeGroup A →* GX (FreeGroup A) Y'') q
-    (b.wordMap k), mapsTo_wordMap_comp b.mapsTo hq⟩, fun P₀ ↦ ?_⟩
-  rintro _ ⟨v, hv, rfl⟩
-  obtain ⟨v', hv', rfl⟩ := hfund P₀ hv
-  exact ⟨v', hv', by rw [wordMap_wordMap]⟩
+    (b.wordMap k), mapsTo_wordMap_comp b.mapsTo hq⟩, fun P₀ v hv ↦ ?_⟩
+  obtain ⟨p, hp, rfl⟩ := mem_imageOf_iff.1 hv
+  obtain ⟨p', hp', rfl⟩ := hfund P₀ hp
+  exact mem_imageOf_iff.2 ⟨p', hp', by rw [wordMap_wordMap]⟩
 
 /-! ### Examples -/
 
