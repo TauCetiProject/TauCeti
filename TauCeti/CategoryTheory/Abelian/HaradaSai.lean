@@ -47,8 +47,8 @@ links. A finite chain of `n` links is Mathlib's `CategoryTheory.ComposableArrows
 * `TauCeti.map_eq_zero_of_length_le`: **the Harada–Sai lemma**, the case `n = b` of the bound.
 * `TauCeti.ofSequence_map_eq_zero_of_length_le`: the same statement for a sequence of morphisms,
   and `TauCeti.map_op_eq_zero_of_length_le` for a descending chain.
-* `TauCeti.composableArrows_hom_eq_zero_of_length_le`: the same statement for a finite chain
-  `F : ComposableArrows C n`, continued by zero morphisms to a sequence.
+* `CategoryTheory.ComposableArrows.hom_eq_zero_of_length_le`: the same statement for a finite
+  chain `F : ComposableArrows C n`, continued by zero morphisms to a sequence.
 * `TauCeti.jacobsonRadicalIdeal_pow_eq_bot_of_length_le`: in a Krull-Schmidt abelian category whose
   indecomposable objects have length at most `b`, the `(2 ^ b - 1)`-th power of the radical
   vanishes. The bound forces every indecomposable object to have finite length; when every object
@@ -238,11 +238,21 @@ theorem map_op_eq_zero_of_length_le {G : ℕᵒᵖ ⥤ C}
     rwa [Subsingleton.elim φ (homOfLE h)]
   exact key _ _ (by omega) h0
 
+end Chain
+
+end TauCeti
+
+namespace CategoryTheory.ComposableArrows
+
+open TauCeti Limits
+
+variable {C : Type u} [Category.{v} C] [Abelian C]
+
 /-- **The Harada–Sai lemma for a finite chain.** Let `F` be a chain
 `F.obj 0 ⟶ F.obj 1 ⟶ ⋯ ⟶ F.obj n` of `n` morphisms that are not isomorphisms, between
 indecomposable objects of length at most `b` in an abelian category. If `n ≥ 2 ^ b - 1`, its
 composite `F.hom` is zero. -/
-theorem composableArrows_hom_eq_zero_of_length_le {n : ℕ} (F : ComposableArrows C n)
+theorem hom_eq_zero_of_length_le {b n : ℕ} (F : ComposableArrows C n)
     (hF : ∀ i, Indecomposable (F.obj i)) (hlen : ∀ i, length (F.obj i) ≤ b)
     (hf : ∀ (i : ℕ) (hi : i < n), ¬ IsIso (F.map' i (i + 1))) (hn : 2 ^ b - 1 ≤ n) :
     F.hom = 0 := by
@@ -281,7 +291,13 @@ theorem composableArrows_hom_eq_zero_of_length_le {n : ℕ} (F : ComposableArrow
   rw [hcomp n le_rfl] at h0
   exact (key _ _ (Fin.ext (Nat.zero_min n)) (Fin.ext (min_self n)) fun φ ↦ φ = 0).mp h0
 
-end Chain
+end CategoryTheory.ComposableArrows
+
+namespace TauCeti
+
+open CategoryTheory CategoryTheory.Limits
+
+variable {C : Type u} [Category.{v} C] [Abelian C]
 
 /-- **The radical of a Krull-Schmidt abelian category is nilpotent of index at most `2 ^ b - 1`**
 when every indecomposable object has length at most `b`: the `(2 ^ b - 1)`-th power of the radical
@@ -292,6 +308,6 @@ theorem jacobsonRadicalIdeal_pow_eq_bot_of_length_le [HasFiniteBiproducts C] [Is
   refine (jacobsonRadicalIdeal_pow_eq_bot_iff _).mpr fun G hG hl ↦ ?_
   have hind (i : Fin (2 ^ b - 1 + 1)) : Indecomposable (G.obj i) :=
     indecomposable_of_isLocalRing_end
-  exact composableArrows_hom_eq_zero_of_length_le G hind (fun i ↦ h _ (hind i)) hl le_rfl
+  exact G.hom_eq_zero_of_length_le hind (fun i ↦ h _ (hind i)) hl le_rfl
 
 end TauCeti

@@ -17,7 +17,7 @@ A chain of `n` composable morphisms `X₀ ⟶ X₁ ⟶ ⋯ ⟶ Xₙ` is encoded 
 `CategoryTheory.ComposableArrows C n`. Between objects with local endomorphism rings the radical
 morphisms are the non-isomorphisms, so the composite of a chain of `n` non-isomorphisms between such
 objects lies in the `n`-th power of the radical
-(`TauCeti.composableArrows_hom_mem_jacobsonRadicalIdeal_pow`).
+(`CategoryTheory.ComposableArrows.hom_mem_jacobsonRadicalIdeal_pow`).
 
 In a Krull-Schmidt category these composites detect the powers of the radical: `radⁿ` vanishes
 exactly when every composite of a chain of `n` non-isomorphisms between objects with local
@@ -28,8 +28,8 @@ abelian category, bounds the nilpotency index of the radical
 
 ## Main results
 
-* `TauCeti.composableArrows_hom_mem_jacobsonRadicalIdeal_pow`: a chain of `n` non-isomorphisms
-  between objects with local endomorphism rings has its composite in `radⁿ`.
+* `CategoryTheory.ComposableArrows.hom_mem_jacobsonRadicalIdeal_pow`: a chain of `n`
+  non-isomorphisms between objects with local endomorphism rings has its composite in `radⁿ`.
 * `TauCeti.jacobsonRadicalIdeal_pow_eq_bot_iff`: in a Krull-Schmidt category, `radⁿ = 0` exactly
   when all such composites of length `n` vanish.
 
@@ -50,18 +50,18 @@ prepended to the chain.
 
 public section
 
-namespace TauCeti
-
-open CategoryTheory CategoryTheory.Limits
-
 universe v u
+
+namespace CategoryTheory.ComposableArrows
+
+open TauCeti
 
 variable {C : Type u} [Category.{v} C] [Preadditive C]
 
 /-- **A chain of non-isomorphisms lies in a power of the radical**: the composite of a chain of `n`
 morphisms that are not isomorphisms, between objects with local endomorphism rings, lies in the
 `n`-th power of the radical. -/
-theorem composableArrows_hom_mem_jacobsonRadicalIdeal_pow :
+theorem hom_mem_jacobsonRadicalIdeal_pow :
     ∀ {n : ℕ} (F : ComposableArrows C n), (∀ i, IsLocalRing (End (F.obj i))) →
       (∀ (i : ℕ) (hi : i < n), ¬ IsIso (F.map' i (i + 1))) →
       F.hom ∈ (jacobsonRadicalIdeal C ^ n).hom F.left F.right
@@ -76,8 +76,15 @@ theorem composableArrows_hom_mem_jacobsonRadicalIdeal_pow :
     refine MorphismIdeal.comp_mem_mul ?_ ?_
     · rw [jacobsonRadicalIdeal_hom, mem_jacobsonRadical_iff_not_isIso]
       exact hf 0 (by omega)
-    · exact composableArrows_hom_mem_jacobsonRadicalIdeal_pow F.δ₀ (fun i ↦ hF _)
-        fun i hi ↦ hf (i + 1) (by omega)
+    · exact F.δ₀.hom_mem_jacobsonRadicalIdeal_pow (fun i ↦ hF _) fun i hi ↦ hf (i + 1) (by omega)
+
+end CategoryTheory.ComposableArrows
+
+namespace TauCeti
+
+open CategoryTheory CategoryTheory.Limits
+
+variable {C : Type u} [Category.{v} C] [Preadditive C]
 
 variable [HasFiniteBiproducts C] [IsKrullSchmidt C]
 
@@ -99,8 +106,7 @@ private theorem comp_hom_eq_zero_of_mem_pow {n : ℕ}
     rw [pow_succ'] at hf
     refine (MorphismIdeal.mul_hom_le_iff (K := (Preadditive.rightComp X G.hom).ker)).mpr ?_ hf
     intro Z g h hg hh
-    rw [AddMonoidHom.mem_ker]
-    change (g ≫ h) ≫ G.hom = 0
+    simp only [AddMonoidHom.mem_ker, Preadditive.rightComp, AddMonoidHom.mk'_apply]
     -- Split `g ≫ h` along a decomposition of `Z` into objects with local endomorphism rings.
     obtain ⟨r, P, hP, ⟨e⟩⟩ := IsKrullSchmidt.exists_iso_biproduct Z
     have hsum : (g ≫ h) ≫ G.hom = ∑ k, (g ≫ e.hom ≫ biproduct.π P k) ≫
@@ -121,8 +127,10 @@ private theorem comp_hom_eq_zero_of_mem_pow {n : ℕ}
     · have := hP k
       have := hG 0
       rintro (_ | i) hi
-      · change ¬ IsIso (biproduct.ι P k ≫ e.inv ≫ h)
-        rw [← mem_jacobsonRadical_iff_not_isIso, ← jacobsonRadicalIdeal_hom]
+      · simp only [ComposableArrows.precomp_map'_zero_one]
+        -- The first two vertices of the prepended string are `P k` and `G.left`.
+        refine (mem_jacobsonRadical_iff_not_isIso (X := P k) (Y := G.left)).1 ?_
+        rw [← jacobsonRadicalIdeal_hom]
         exact (jacobsonRadicalIdeal C).comp_mem_left _ ((jacobsonRadicalIdeal C).comp_mem_left _ hh)
       · exact hl i (by omega)
 
@@ -135,7 +143,7 @@ theorem jacobsonRadicalIdeal_pow_eq_bot_iff (n : ℕ) :
         (∀ (i : ℕ) (hi : i < n), ¬ IsIso (F.map' i (i + 1))) → F.hom = 0 := by
   refine ⟨fun h F hF hf ↦ ?_, fun h ↦ le_antisymm (MorphismIdeal.le_def.mpr fun X Y f hf ↦ ?_)
     bot_le⟩
-  · have := composableArrows_hom_mem_jacobsonRadicalIdeal_pow F hF hf
+  · have := F.hom_mem_jacobsonRadicalIdeal_pow hF hf
     rwa [h, MorphismIdeal.mem_bot] at this
   rw [MorphismIdeal.mem_bot]
   -- Test `f` against the projections onto a decomposition of `Y`.

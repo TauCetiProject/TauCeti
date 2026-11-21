@@ -18,8 +18,6 @@ of objects: in a modular lattice Krull dimension is additive on intervals
 
 ## Main results
 
-* `CategoryTheory.Subobject.factors_epi_comp_iff`: a morphism factors through a subobject as soon
-  as its precomposition with an epimorphism does.
 * `CategoryTheory.Subobject.isModularLattice`: the subobjects of an object of an abelian
   category form a modular lattice.
 
@@ -29,7 +27,8 @@ The modular law is proved by element chasing up to refinements
 (`Mathlib.CategoryTheory.Abelian.Refinements`). A morphism factoring through `A ⊔ B`, which is the
 image of `A ⨿ B ⟶ X` (`CategoryTheory.Subobject.sup_eq_imageSubobject`), is, after precomposition
 with an epimorphism, a sum `a + b` of morphisms factoring through `A` and `B`. If it also factors
-through `K ≥ A`, then so does `b`, and the sum factors through `A ⊔ (B ⊓ K)`.
+through `K ≥ A`, then so does `b`, and the sum factors through `A ⊔ (B ⊓ K)`. The epimorphism is
+removed by `CategoryTheory.Subobject.factors_epi_comp_iff`.
 
 ## References
 
@@ -46,17 +45,6 @@ universe v u
 namespace CategoryTheory.Subobject
 
 variable {C : Type u} [Category.{v} C] [Abelian C] {X : C}
-
-/-- A morphism factors through a subobject exactly when its precomposition with an epimorphism
-does. -/
-lemma factors_epi_comp_iff (P : Subobject X) {A A' : C} (π : A' ⟶ A) [Epi π] (a : A ⟶ X) :
-    P.Factors (π ≫ a) ↔ P.Factors a := by
-  refine ⟨fun h ↦ ?_, factors_of_factors_right π⟩
-  have hP : P = imageSubobject P.arrow := by rw [imageSubobject_mono, mk_arrow]
-  rw [hP] at h ⊢
-  obtain ⟨A'', π', _, x, hx⟩ := (imageSubobject_factors_iff_up_to_refinements _ _).1 h
-  exact (imageSubobject_factors_iff_up_to_refinements _ _).2
-    ⟨A'', π' ≫ π, inferInstance, x, by rw [Category.assoc, hx]⟩
 
 /-- **The subobjects of an object of an abelian category form a modular lattice.** -/
 instance isModularLattice : IsModularLattice (Subobject X) where
