@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import TauCeti.RingTheory.Polynomial.Cyclotomic.IndexMonoid
+import Mathlib.RingTheory.Polynomial.Quotient
 import TauCeti.RingTheory.AdjoinRoot.Basic
 
 /-!
@@ -35,32 +36,44 @@ completed element by `f` once its image modulo `f` vanishes.
 
 * `TauCeti.compatSubalgebra R S`: the subalgebra of compatible families.
 * `TauCeti.CycloCompletion R S`: the cyclotomic completion `R[q]^S`.
-* `TauCeti.CycloCompletion.proj R S f`: the projection `R[q]^S → R[q]/(f)`.
-* `TauCeti.CycloCompletion.lift`: the algebra map into `R[q]^S` induced by a compatible family of
-  algebra maps into the quotients `R[q]/(f)`.
+* `TauCeti.CycloCompletion.proj f`: the projection `R[q]^S → R[q]/(f)`.
+* `TauCeti.CycloCompletion.liftCompatAlgHom`: the algebra map into `R[q]^S` induced by a
+  compatible family of algebra maps into the quotients `R[q]/(f)`.
 * `TauCeti.CycloCompletion.fromPoly R S`: the map `R[q] → R[q]^S`.
-* `TauCeti.CycloCompletion.quotientSpanEquiv R S f`: the isomorphism
+* `TauCeti.CycloCompletion.quotientSpanAlgEquiv f`: the isomorphism
   `R[q]^S / (f) ≃ₐ[R] R[q]/(f)`.
+* `TauCeti.CycloCompletion.quotientSpanXSubOneAlgEquiv`: when `1 ∈ S`, the evaluation isomorphism
+  `R[q]^S / (q - 1) ≃ₐ[R] R`.
 
 ## Main results
 
 * `TauCeti.CycloCompletion.algHomOfDvd_proj`: the transition equation for `f ∣ g`.
 * `TauCeti.CycloCompletion.ext`: an element is determined by its projections.
-* `TauCeti.CycloCompletion.proj_lift`, `TauCeti.CycloCompletion.lift_unique`: the universal
-  property of the inverse limit.
+* `TauCeti.CycloCompletion.proj_liftCompatAlgHom`,
+  `TauCeti.CycloCompletion.liftCompatAlgHom_unique`: the universal property of the inverse limit.
+* `TauCeti.CycloCompletion.ext_of_cycloChain`,
+  `TauCeti.CycloCompletion.exists_proj_cycloChainIndex_eq_mk`: elements are determined by, and can
+  be built from, their projections along the cofinal chain `cycloChainIndex R S`.
 * `TauCeti.CycloCompletion.proj_surjective`: every projection is surjective.
 * `TauCeti.CycloCompletion.fromPoly_injective_iff`: the polynomial map is injective exactly when
   `S` contains a positive order or `R` is the zero ring.
-* `TauCeti.CycloCompletion.not_isUnit_fromPoly_cyclotomic`: over a nonzero ring the image of a
-  cyclotomic polynomial of positive order in `S` is not a unit.
+* `TauCeti.CycloCompletion.subsingleton_iff`: the completion is the zero ring exactly when `R` is
+  or `S` contains no positive order.
+* `TauCeti.CycloCompletion.isUnit_fromPoly_iff`,
+  `TauCeti.CycloCompletion.not_isUnit_fromPoly_cyclotomic`: the image of an index `f` is a unit
+  exactly when `f = 1`; over a nonzero ring the image of a cyclotomic polynomial of positive order
+  in `S` is not a unit.
 * `TauCeti.CycloCompletion.isRegular_fromPoly`: the image of an index is a regular element.
-* `TauCeti.CycloCompletion.ker_proj`: the finite quotient theorem.
-* `TauCeti.CycloCompletion.exists_eq_fromPoly_add_mul`: every element is `fromPoly b + f c`.
+* `TauCeti.CycloCompletion.ker_proj`, `TauCeti.CycloCompletion.proj_eq_zero_iff_dvd`: the finite
+  quotient theorem.
+* `TauCeti.CycloCompletion.existsUnique_modByMonic_eq_fromPoly_add_mul`,
+  `TauCeti.CycloCompletion.exists_eq_fromPoly_add_mul`: every element is `fromPoly b + f c`,
+  uniquely so with `b` reduced modulo `f`.
 
 ## References
 
 * K. Habiro, *Cyclotomic completions of polynomial rings*, Publ. RIMS Kyoto Univ. 40 (2004),
-  §1 and §3.1.
+  §1, §3.1, §4, and §6 (proof of Theorem 6.1).
 -/
 
 public section
@@ -94,46 +107,94 @@ abbrev CycloCompletion := ↥(compatSubalgebra R S)
 
 namespace CycloCompletion
 
+variable {R S}
+
 /-- The projection `R[q]^S → R[q]/(f)` to the coordinate indexed by `f`. -/
 noncomputable def proj (f : cycloIndex R S) : CycloCompletion R S →ₐ[R] AdjoinRoot (f : R[X]) :=
   (Pi.evalAlgHom R (fun f : cycloIndex R S ↦ AdjoinRoot (f : R[X])) f).comp
     (compatSubalgebra R S).val
 
-variable {R S}
-
 /-- The projection to `R[q]/(f)` reads off the coordinate of the compatible family at `f`. -/
 theorem proj_apply (f : cycloIndex R S) (x : CycloCompletion R S) :
-    proj R S f x = (x : ∀ f : cycloIndex R S, AdjoinRoot (f : R[X])) f := by
+    proj f x = (x : ∀ f : cycloIndex R S, AdjoinRoot (f : R[X])) f := by
   simp [proj]
 
 /-- The projection of a compatible family given by its underlying family is its coordinate. -/
 @[simp]
 theorem proj_mk (f : cycloIndex R S) (x : ∀ f : cycloIndex R S, AdjoinRoot (f : R[X]))
-    (hx : x ∈ compatSubalgebra R S) : proj R S f ⟨x, hx⟩ = x f :=
+    (hx : x ∈ compatSubalgebra R S) : proj f ⟨x, hx⟩ = x f :=
   proj_apply f ⟨x, hx⟩
 
 /-- The transition equation: for `f ∣ g`, reducing the coordinate at `g` modulo `f` gives the
 coordinate at `f`. -/
 @[simp]
 theorem algHomOfDvd_proj {f g : cycloIndex R S} (h : (f : R[X]) ∣ g) (x : CycloCompletion R S) :
-    AdjoinRoot.algHomOfDvd R (g : R[X]) (f : R[X]) h (proj R S g x) = proj R S f x := by
+    AdjoinRoot.algHomOfDvd R (g : R[X]) (f : R[X]) h (proj g x) = proj f x := by
   rw [proj_apply, proj_apply]
   exact mem_compatSubalgebra.mp x.property f g h
 
 /-- An element of the completion is determined by its projections. -/
 @[ext]
-theorem ext {x y : CycloCompletion R S} (h : ∀ f, proj R S f x = proj R S f y) : x = y := by
+theorem ext {x y : CycloCompletion R S} (h : ∀ f, proj f x = proj f y) : x = y := by
   refine Subtype.ext (funext fun f ↦ ?_)
   rw [← proj_apply, ← proj_apply, h]
 
-section lift
+/-- `algHomOfDvd_proj` as an equality of algebra maps out of the completion. -/
+@[simp]
+theorem algHomOfDvd_comp_proj {f g : cycloIndex R S} (h : (f : R[X]) ∣ g) :
+    (AdjoinRoot.algHomOfDvd R (g : R[X]) (f : R[X]) h).comp (proj g) = proj f :=
+  AlgHom.ext (algHomOfDvd_proj h)
+
+/-- Two elements of `CycloCompletion R S` are equal if their projections agree along the cofinal
+chain `cycloChainIndex R S`. -/
+theorem ext_of_cycloChain {x y : CycloCompletion R S}
+    (h : ∀ N : ℕ, proj (cycloChainIndex R S N) x = proj (cycloChainIndex R S N) y) : x = y := by
+  ext f
+  obtain ⟨N, hN⟩ := exists_dvd_cycloChain f.property
+  rw [← coe_cycloChainIndex] at hN
+  rw [← algHomOfDvd_proj hN x, ← algHomOfDvd_proj hN y, h N]
+
+/-- A polynomial sequence `p : ℕ → R[X]` satisfying `cycloChain R S N ∣ p (N + 1) - p N` for all `N`
+determines an element of `CycloCompletion R S` projecting to the class of `p N` at each
+`cycloChainIndex R S N`. -/
+theorem exists_proj_cycloChainIndex_eq_mk {p : ℕ → R[X]}
+    (hp : ∀ N : ℕ, cycloChain R S N ∣ p (N + 1) - p N) :
+    ∃ x : CycloCompletion R S, ∀ N : ℕ,
+      proj (cycloChainIndex R S N) x =
+        AdjoinRoot.mk ((cycloChainIndex R S N : cycloIndex R S) : R[X]) (p N) := by
+  have hp_dvd : ∀ {M N : ℕ}, M ≤ N → cycloChain R S M ∣ p N - p M := by
+    intro M N hMN
+    induction N, hMN using Nat.le_induction with
+    | base => simp
+    | succ N hMN ih =>
+      have hstep : p (N + 1) - p M = (p N - p M) + (p (N + 1) - p N) := by ring
+      rw [hstep]
+      exact dvd_add ih ((cycloChain_dvd_cycloChain S hMN).trans (hp N))
+  have hp_mk_eq : ∀ (f : cycloIndex R S) {M N : ℕ},
+      (f : R[X]) ∣ cycloChain R S M → (f : R[X]) ∣ cycloChain R S N →
+      AdjoinRoot.mk (f : R[X]) (p M) = AdjoinRoot.mk (f : R[X]) (p N) := by
+    intro f M N hM hN
+    have hdM : (f : R[X]) ∣ p (max M N) - p M := hM.trans (hp_dvd (le_max_left M N))
+    have hdN : (f : R[X]) ∣ p (max M N) - p N := hN.trans (hp_dvd (le_max_right M N))
+    have hdMN : (f : R[X]) ∣ p M - p N := by
+      simpa only [sub_sub_sub_cancel_left] using dvd_sub hdN hdM
+    exact sub_eq_zero.mp (by rw [← map_sub]; exact AdjoinRoot.mk_eq_zero.mpr hdMN)
+  choose MOf hMOf using fun f : cycloIndex R S ↦ exists_dvd_cycloChain f.property
+  refine ⟨⟨fun f ↦ AdjoinRoot.mk (f : R[X]) (p (MOf f)), mem_compatSubalgebra.mpr fun f g h ↦ ?_⟩,
+    fun N ↦ ?_⟩
+  · rw [AdjoinRoot.algHomOfDvd_mk]
+    exact hp_mk_eq f (h.trans (hMOf g)) (hMOf f)
+  · rw [proj_mk]
+    exact hp_mk_eq (cycloChainIndex R S N) (hMOf _) (by rw [coe_cycloChainIndex])
+
+section liftCompatAlgHom
 
 variable {A : Type*} [Semiring A] [Algebra R A]
   {φ : ∀ f : cycloIndex R S, A →ₐ[R] AdjoinRoot (f : R[X])}
 
 /-- The universal property of the inverse limit: a family of algebra maps `A → R[q]/(f)` that is
 compatible with the reductions `AdjoinRoot.algHomOfDvd` induces an algebra map `A → R[q]^S`. -/
-noncomputable def lift (φ : ∀ f : cycloIndex R S, A →ₐ[R] AdjoinRoot (f : R[X]))
+noncomputable def liftCompatAlgHom (φ : ∀ f : cycloIndex R S, A →ₐ[R] AdjoinRoot (f : R[X]))
     (hφ : ∀ (f g : cycloIndex R S) (h : (f : R[X]) ∣ g),
       (AdjoinRoot.algHomOfDvd R (g : R[X]) (f : R[X]) h).comp (φ g) = φ f) :
     A →ₐ[R] CycloCompletion R S :=
@@ -142,63 +203,119 @@ noncomputable def lift (φ : ∀ f : cycloIndex R S, A →ₐ[R] AdjoinRoot (f :
 
 /-- The projections of the induced map are the given maps. -/
 @[simp]
-theorem proj_lift (hφ) (f : cycloIndex R S) (a : A) : proj R S f (lift φ hφ a) = φ f a := by
-  simp [proj_apply, lift]
+theorem proj_liftCompatAlgHom (hφ) (f : cycloIndex R S) (a : A) :
+    proj f (liftCompatAlgHom φ hφ a) = φ f a := by
+  simp [proj_apply, liftCompatAlgHom]
 
-/-- `proj_lift` as an equality of algebra maps out of `A`. -/
-theorem proj_comp_lift (hφ) (f : cycloIndex R S) : (proj R S f).comp (lift φ hφ) = φ f :=
-  AlgHom.ext (proj_lift hφ f)
+/-- `proj_liftCompatAlgHom` as an equality of algebra maps out of `A`. -/
+theorem proj_comp_liftCompatAlgHom (hφ) (f : cycloIndex R S) :
+    (proj f).comp (liftCompatAlgHom φ hφ) = φ f :=
+  AlgHom.ext (proj_liftCompatAlgHom hφ f)
 
 /-- Two algebra maps into the completion agree when all their projections agree. -/
 theorem algHom_ext {ψ₁ ψ₂ : A →ₐ[R] CycloCompletion R S}
-    (h : ∀ f, (proj R S f).comp ψ₁ = (proj R S f).comp ψ₂) : ψ₁ = ψ₂ :=
+    (h : ∀ f, (proj f).comp ψ₁ = (proj f).comp ψ₂) : ψ₁ = ψ₂ :=
   AlgHom.ext fun a ↦ ext fun f ↦ DFunLike.congr_fun (h f) a
 
 /-- The induced map is the only algebra map with the given projections. -/
-theorem lift_unique (hφ) (ψ : A →ₐ[R] CycloCompletion R S) (hψ : ∀ f, (proj R S f).comp ψ = φ f) :
-    ψ = lift φ hφ :=
-  algHom_ext fun f ↦ by rw [hψ, proj_comp_lift]
+theorem liftCompatAlgHom_unique (hφ) (ψ : A →ₐ[R] CycloCompletion R S)
+    (hψ : ∀ f, (proj f).comp ψ = φ f) :
+    ψ = liftCompatAlgHom φ hφ :=
+  algHom_ext fun f ↦ by rw [hψ, proj_comp_liftCompatAlgHom]
 
-end lift
+end liftCompatAlgHom
 
 variable (R S)
 
 /-- The map `R[q] → R[q]^S` sending a polynomial to its family of residues: the map induced by the
 quotient maps `R[q] → R[q]/(f)`. -/
 noncomputable def fromPoly : R[X] →ₐ[R] CycloCompletion R S :=
-  lift (fun f ↦ AdjoinRoot.mkₐ (f : R[X])) fun f g h ↦ AlgHom.ext fun p ↦ by simp
+  liftCompatAlgHom (fun f ↦ AdjoinRoot.mkₐ (f : R[X])) fun f g h ↦ AlgHom.ext fun p ↦ by simp
+
+/-- Constants map to the scalars of the completion. -/
+theorem fromPoly_C (r : R) : fromPoly R S (C r) = algebraMap R (CycloCompletion R S) r :=
+  (fromPoly R S).commutes r
 
 variable {R S}
 
 /-- The projection of the image of a polynomial is its residue class. -/
 @[simp]
 theorem proj_fromPoly (f : cycloIndex R S) (p : R[X]) :
-    proj R S f (fromPoly R S p) = AdjoinRoot.mk (f : R[X]) p := by
+    proj f (fromPoly R S p) = AdjoinRoot.mk (f : R[X]) p := by
   simp [fromPoly]
 
 /-- `proj_fromPoly` as an equality of algebra maps out of `R[q]`. -/
 theorem proj_comp_fromPoly (f : cycloIndex R S) :
-    (proj R S f).comp (fromPoly R S) = AdjoinRoot.mkₐ (f : R[X]) :=
+    (proj f).comp (fromPoly R S) = AdjoinRoot.mkₐ (f : R[X]) :=
   AlgHom.ext fun p ↦ proj_fromPoly f p
 
 /-- Every projection is surjective: a residue modulo `f` is the projection of the image of any
 polynomial representing it. -/
-theorem proj_surjective (f : cycloIndex R S) : Function.Surjective (proj R S f) := fun a ↦ by
+theorem proj_surjective (f : cycloIndex R S) : Function.Surjective (proj f) := fun a ↦ by
   obtain ⟨p, rfl⟩ := AdjoinRoot.mk_surjective a
   exact ⟨fromPoly R S p, proj_fromPoly f p⟩
 
+/-- If the only index is `1`, the completion is the zero ring. -/
+theorem subsingleton_of_cycloIndex_eq_bot (h : cycloIndex R S = ⊥) :
+    Subsingleton (CycloCompletion R S) := by
+  refine subsingleton_of_zero_eq_one (ext fun f ↦ ?_)
+  have hf : (f : R[X]) = 1 := Submonoid.mem_bot.mp (h ▸ f.property)
+  rw [map_zero, map_one, ← map_one (AdjoinRoot.mk (f : R[X])), ← hf, AdjoinRoot.mk_self]
+
 /-- If every order in `S` is zero, the only index is `1` and the completion is the zero ring. -/
-theorem subsingleton_of_subset_zero (hS : S ⊆ {0}) : Subsingleton (CycloCompletion R S) := by
-  refine ⟨fun x y ↦ ext fun f ↦ ?_⟩
-  have : Subsingleton (AdjoinRoot (f : R[X])) := by
-    have hf : (f : R[X]) ∈ (⊥ : Submonoid R[X]) :=
-      cycloIndex_eq_bot_of_subset_zero (R := R) hS ▸ f.property
-    rw [Submonoid.mem_bot.mp hf]
-    exact subsingleton_of_zero_eq_one (AdjoinRoot.mk_self.symm.trans (map_one (AdjoinRoot.mk 1)))
-  exact Subsingleton.elim _ _
+theorem subsingleton_of_subset_zero (hS : S ⊆ {0}) : Subsingleton (CycloCompletion R S) :=
+  subsingleton_of_cycloIndex_eq_bot (cycloIndex_eq_bot_of_subset_zero hS)
 
 instance : Subsingleton (CycloCompletion R ∅) :=
   subsingleton_of_subset_zero (Set.empty_subset _)
+
+instance : Subsingleton (CycloCompletion R {0}) :=
+  subsingleton_of_subset_zero subset_rfl
+
+instance [Subsingleton R] : Subsingleton (CycloCompletion R S) :=
+  subsingleton_of_cycloIndex_eq_bot (cycloIndex_eq_bot_iff_subsingleton_or.mpr (Or.inl ‹_›))
+
+/-- When `R` is nontrivial and `S` contains a positive order `n`, `CycloCompletion R S` is
+nontrivial. -/
+theorem nontrivial_of_pos [Nontrivial R] {n : ℕ} (hn : n ∈ S) (hpos : 0 < n) :
+    Nontrivial (CycloCompletion R S) := by
+  let f : cycloIndex R S := ⟨cyclotomic n R, cyclotomic_mem_cycloIndex hn⟩
+  have : Nontrivial (AdjoinRoot (f : R[X])) :=
+    (AdjoinRoot.nontrivial_iff_of_monic (cyclotomic.monic n R)).mpr (degree_cyclotomic_pos n R hpos)
+  exact (proj_surjective f).nontrivial
+
+variable (R S) in
+/-- `CycloCompletion R S` is subsingleton if and only if `R` is subsingleton or `S` contains no
+positive orders. -/
+theorem subsingleton_iff : Subsingleton (CycloCompletion R S) ↔ Subsingleton R ∨ S ⊆ {0} := by
+  rw [← cycloIndex_eq_bot_iff_subsingleton_or]
+  refine ⟨fun h ↦ ?_, subsingleton_of_cycloIndex_eq_bot⟩
+  by_contra hne
+  rw [cycloIndex_eq_bot_iff_subsingleton_or] at hne
+  push Not at hne
+  obtain ⟨hR, hS⟩ := hne
+  obtain ⟨n, hn, hn0⟩ := Set.not_subset.mp hS
+  have : Nontrivial (CycloCompletion R S) := nontrivial_of_pos hn (Nat.pos_of_ne_zero hn0)
+  exact not_subsingleton (CycloCompletion R S) h
+
+/-- For `1 ∈ S`, the image of `X` in the `Φ₁`-quotient of `CycloCompletion R S` is `1`. -/
+theorem proj_cyclotomic_one_fromPoly_X (h1 : 1 ∈ S) :
+    proj ⟨cyclotomic 1 R, cyclotomic_mem_cycloIndex h1⟩ (fromPoly R S X) = 1 := by
+  rw [proj_fromPoly]
+  refine sub_eq_zero.mp ?_
+  rw [← map_one (AdjoinRoot.mk _), ← map_sub, ← cyclotomic_one, AdjoinRoot.mk_self]
+
+/-- For `f : cycloIndex R S`, `fromPoly R S f` is a unit in `CycloCompletion R S` if and only if
+`(f : R[X]) = 1`. -/
+theorem isUnit_fromPoly_iff (f : cycloIndex R S) :
+    IsUnit (fromPoly R S (f : R[X])) ↔ (f : R[X]) = 1 := by
+  refine ⟨fun hu ↦ ?_, fun h ↦ h ▸ by rw [map_one]; exact isUnit_one⟩
+  have h0 : IsUnit (0 : AdjoinRoot (f : R[X])) := by
+    simpa only [proj_fromPoly, AdjoinRoot.mk_self] using hu.map (proj f)
+  have h1 : AdjoinRoot.mk (f : R[X]) 1 = 0 := by
+    rw [map_one]
+    exact (isUnit_zero_iff.mp h0).symm
+  exact (cycloIndex.monic f).eq_one_of_isUnit (isUnit_iff_dvd_one.mpr (AdjoinRoot.mk_eq_zero.mp h1))
 
 /-- Over a nonzero ring, the image of a cyclotomic polynomial of positive order in `S` is not a
 unit in the completion. -/
@@ -207,7 +324,7 @@ theorem not_isUnit_fromPoly_cyclotomic [Nontrivial R] {n : ℕ} (hn : n ∈ S) (
   have : Nontrivial (AdjoinRoot (cyclotomic n R)) :=
     (AdjoinRoot.nontrivial_iff_of_monic (cyclotomic.monic n R)).mpr (degree_cyclotomic_pos n R hpos)
   intro hu
-  have hu' := hu.map (proj R S ⟨cyclotomic n R, cyclotomic_mem_cycloIndex hn⟩)
+  have hu' := hu.map (proj ⟨cyclotomic n R, cyclotomic_mem_cycloIndex hn⟩)
   rw [proj_fromPoly, AdjoinRoot.mk_self] at hu'
   exact not_isUnit_zero hu'
 
@@ -244,8 +361,8 @@ theorem fromPoly_injective_iff :
 /-- For `f ∣ g` in the index monoid, a polynomial representing the coordinate at `g` also represents
 the coordinate at `f`. -/
 theorem proj_eq_mk_of_dvd {f g : cycloIndex R S} (h : (f : R[X]) ∣ g) {x : CycloCompletion R S}
-    {p : R[X]} (hp : proj R S g x = AdjoinRoot.mk (g : R[X]) p) :
-    proj R S f x = AdjoinRoot.mk (f : R[X]) p := by
+    {p : R[X]} (hp : proj g x = AdjoinRoot.mk (g : R[X]) p) :
+    proj f x = AdjoinRoot.mk (f : R[X]) p := by
   rw [← algHomOfDvd_proj h, hp, AdjoinRoot.algHomOfDvd_mk]
 
 /-- The image of an index `f` in the completion is a regular element: multiplication by it is
@@ -254,8 +371,8 @@ theorem isRegular_fromPoly (f : cycloIndex R S) : IsRegular (fromPoly R S (f : R
   refine isLeftRegular_iff_isRegular.mp ?_
   refine (isLeftRegular_iff_right_eq_zero_of_mul (R := CycloCompletion R S)).mpr fun x hx ↦ ?_
   ext g
-  obtain ⟨p, hp⟩ := AdjoinRoot.mk_surjective (proj R S (f * g) x)
-  have hfg := congrArg (proj R S (f * g)) hx
+  obtain ⟨p, hp⟩ := AdjoinRoot.mk_surjective (proj (f * g) x)
+  have hfg := congrArg (proj (f * g)) hx
   rw [map_mul, proj_fromPoly, ← hp, ← map_mul, map_zero, AdjoinRoot.mk_eq_zero,
     Submonoid.coe_mul] at hfg
   have hg : (g : R[X]) ∣ p := (monic_of_mem_cycloIndex f.property).isRegular.left.dvd_cancel_left.mp
@@ -266,13 +383,13 @@ theorem isRegular_fromPoly (f : cycloIndex R S) : IsRegular (fromPoly R S (f : R
 /-- **Finite quotient theorem.** The kernel of the projection `R[q]^S → R[q]/(f)` is the principal
 ideal generated by the image of `f`. -/
 theorem ker_proj (f : cycloIndex R S) :
-    RingHom.ker (proj R S f) = Ideal.span {fromPoly R S (f : R[X])} := by
+    RingHom.ker (proj f) = Ideal.span {fromPoly R S (f : R[X])} := by
   refine le_antisymm (fun x hx ↦ ?_) ?_
   · rw [RingHom.mem_ker] at hx
     -- For each index `g`, write the coordinate of `x` at `f * g` as the class of `f * b g`.
     have hb (g : cycloIndex R S) :
-        ∃ b : R[X], proj R S (f * g) x = AdjoinRoot.mk _ ((f : R[X]) * b) := by
-      obtain ⟨p, hp⟩ := AdjoinRoot.mk_surjective (proj R S (f * g) x)
+        ∃ b : R[X], proj (f * g) x = AdjoinRoot.mk _ ((f : R[X]) * b) := by
+      obtain ⟨p, hp⟩ := AdjoinRoot.mk_surjective (proj (f * g) x)
       have hf : (f : R[X]) ∣ p := by
         rw [← AdjoinRoot.mk_eq_zero, ← proj_eq_mk_of_dvd (dvd_mul_right (f : R[X]) g) hp.symm, hx]
       obtain ⟨b, rfl⟩ := hf
@@ -292,45 +409,136 @@ theorem ker_proj (f : cycloIndex R S) :
   · rw [Ideal.span_le, Set.singleton_subset_iff, SetLike.mem_coe, RingHom.mem_ker, proj_fromPoly,
       AdjoinRoot.mk_self]
 
-/-- Every element of the completion is `fromPoly b + f c` for a polynomial `b` and a completed
-element `c`. -/
-theorem exists_eq_fromPoly_add_mul (f : cycloIndex R S) (x : CycloCompletion R S) :
-    ∃ (b : R[X]) (c : CycloCompletion R S), x = fromPoly R S b + fromPoly R S (f : R[X]) * c := by
-  obtain ⟨b, hb⟩ := AdjoinRoot.mk_surjective (proj R S f x)
-  have hmem : x - fromPoly R S b ∈ Ideal.span {fromPoly R S (f : R[X])} := by
-    rw [← ker_proj, RingHom.mem_ker, map_sub, proj_fromPoly, hb, sub_self]
-  obtain ⟨c, hc⟩ := Ideal.mem_span_singleton'.mp hmem
-  exact ⟨b, c, by rw [mul_comm, hc, add_sub_cancel]⟩
+/-- Left multiplication by `fromPoly R S f` on `CycloCompletion R S` is injective for every
+`f : cycloIndex R S`. -/
+theorem fromPoly_mul_injective (f : cycloIndex R S) :
+    Function.Injective (fromPoly R S (f : R[X]) * ·) :=
+  (isRegular_fromPoly f).left
 
-variable (R S) in
+/-- An element `x : CycloCompletion R S` projects to `0` at `f` if and only if `fromPoly R S f`
+divides `x` in `CycloCompletion R S`. -/
+theorem proj_eq_zero_iff_dvd (f : cycloIndex R S) (x : CycloCompletion R S) :
+    proj f x = 0 ↔ fromPoly R S (f : R[X]) ∣ x := by
+  rw [← RingHom.mem_ker, ker_proj, Ideal.mem_span_singleton]
+
+@[simp]
+theorem ker_proj_one : RingHom.ker (proj (1 : cycloIndex R S)) = ⊤ := by
+  rw [ker_proj]
+  simp
+
+/-- Every `x : CycloCompletion R S` decomposes uniquely as `fromPoly R S b + fromPoly R S f * c`
+where `b : R[X]` is reduced modulo the monic polynomial `f` (`b %ₘ f = b`). -/
+theorem existsUnique_modByMonic_eq_fromPoly_add_mul (f : cycloIndex R S)
+    (x : CycloCompletion R S) :
+    ∃! bc : R[X] × CycloCompletion R S,
+      bc.1 %ₘ (f : R[X]) = bc.1 ∧ x = fromPoly R S bc.1 + fromPoly R S (f : R[X]) * bc.2 := by
+  have hf : (f : R[X]).Monic := cycloIndex.monic f
+  let b₀ := AdjoinRoot.modByMonicHom hf (proj f x)
+  have hb₀_mk : AdjoinRoot.mk (f : R[X]) b₀ = proj f x :=
+    AdjoinRoot.mk_leftInverse hf (proj f x)
+  have hb₀_mod : b₀ %ₘ (f : R[X]) = b₀ := by
+    rw [← AdjoinRoot.modByMonicHom_mk hf b₀, hb₀_mk]
+  have hzero : proj f (x - fromPoly R S b₀) = 0 := by
+    rw [map_sub, proj_fromPoly, hb₀_mk, sub_self]
+  obtain ⟨c₀, hc₀⟩ := (proj_eq_zero_iff_dvd f (x - fromPoly R S b₀)).mp hzero
+  refine ⟨(b₀, c₀), ⟨hb₀_mod, eq_add_of_sub_eq' hc₀⟩, ?_⟩
+  rintro ⟨b, c⟩ ⟨hb_mod, hx_eq⟩
+  have hb_mk : AdjoinRoot.mk (f : R[X]) b = proj f x := by
+    have hproj := congrArg (proj f) hx_eq
+    simpa [AdjoinRoot.mk_self] using hproj.symm
+  have hb_eq : b = b₀ := by
+    calc
+      b = b %ₘ (f : R[X]) := hb_mod.symm
+      _ = AdjoinRoot.modByMonicHom hf (AdjoinRoot.mk (f : R[X]) b) :=
+        (AdjoinRoot.modByMonicHom_mk hf b).symm
+      _ = b₀ := by rw [hb_mk]
+  subst hb_eq
+  refine Prod.ext rfl (fromPoly_mul_injective f ?_)
+  linear_combination hx_eq.symm + hc₀
+
+/-- Every `x : CycloCompletion R S` is `fromPoly b + f c` for a polynomial `b` with the same image
+under `proj f` and a completed element `c`. -/
+theorem exists_eq_fromPoly_add_mul (f : cycloIndex R S) (x : CycloCompletion R S) :
+    ∃ (b : R[X]) (c : CycloCompletion R S),
+      AdjoinRoot.mk (f : R[X]) b = proj f x ∧ x = fromPoly R S b + fromPoly R S (f : R[X]) * c := by
+  obtain ⟨⟨b, c⟩, ⟨_, hx⟩, _⟩ := existsUnique_modByMonic_eq_fromPoly_add_mul f x
+  refine ⟨b, c, ?_, hx⟩
+  have hproj := congrArg (proj f) hx
+  simpa [AdjoinRoot.mk_self] using hproj.symm
+
 /-- The finite quotient isomorphism `R[q]^S / (f) ≃ₐ[R] R[q]/(f)`, induced by the projection. -/
-noncomputable def quotientSpanEquiv (f : cycloIndex R S) :
+noncomputable def quotientSpanAlgEquiv (f : cycloIndex R S) :
     (CycloCompletion R S ⧸ Ideal.span {fromPoly R S (f : R[X])}) ≃ₐ[R] AdjoinRoot (f : R[X]) :=
   (Ideal.quotientEquivAlgOfEq R (ker_proj f).symm).trans
     (Ideal.quotientKerAlgEquivOfSurjective (proj_surjective f))
 
 /-- The finite quotient isomorphism sends the class of `x` to the projection of `x`. -/
 @[simp]
-theorem quotientSpanEquiv_mk (f : cycloIndex R S) (x : CycloCompletion R S) :
-    quotientSpanEquiv R S f (Ideal.Quotient.mk _ x) = proj R S f x := by
-  simp [quotientSpanEquiv]
+theorem quotientSpanAlgEquiv_mk (f : cycloIndex R S) (x : CycloCompletion R S) :
+    quotientSpanAlgEquiv f (Ideal.Quotient.mk _ x) = proj f x := by
+  simp [quotientSpanAlgEquiv]
 
 /-- The inverse of the finite quotient isomorphism sends the residue class of a polynomial to the
 class of its image in the completion. -/
 @[simp]
-theorem quotientSpanEquiv_symm_mk (f : cycloIndex R S) (p : R[X]) :
-    (quotientSpanEquiv R S f).symm (AdjoinRoot.mk (f : R[X]) p) =
+theorem quotientSpanAlgEquiv_symm_mk (f : cycloIndex R S) (p : R[X]) :
+    (quotientSpanAlgEquiv f).symm (AdjoinRoot.mk (f : R[X]) p) =
       Ideal.Quotient.mk _ (fromPoly R S p) := by
-  rw [AlgEquiv.symm_apply_eq, quotientSpanEquiv_mk, proj_fromPoly]
+  rw [AlgEquiv.symm_apply_eq, quotientSpanAlgEquiv_mk, proj_fromPoly]
+
+theorem quotientSpanAlgEquiv_mk_fromPoly (f : cycloIndex R S) (p : R[X]) :
+    quotientSpanAlgEquiv f (Ideal.Quotient.mk _ (fromPoly R S p)) = AdjoinRoot.mk (f : R[X]) p := by
+  simp
+
+@[simp]
+theorem quotientSpanAlgEquiv_symm_proj (f : cycloIndex R S) (x : CycloCompletion R S) :
+    (quotientSpanAlgEquiv f).symm (proj f x) = Ideal.Quotient.mk _ x :=
+  (quotientSpanAlgEquiv f).symm_apply_eq.mpr (quotientSpanAlgEquiv_mk f x).symm
+
+@[simp]
+theorem quotientSpanAlgEquiv_symm_root (f : cycloIndex R S) :
+    (quotientSpanAlgEquiv f).symm (AdjoinRoot.root (f : R[X])) =
+      Ideal.Quotient.mk _ (fromPoly R S X) := by
+  rw [← AdjoinRoot.mk_X, quotientSpanAlgEquiv_symm_mk]
+
+theorem span_fromPoly_le_of_dvd {f g : cycloIndex R S} (h : (f : R[X]) ∣ g) :
+    Ideal.span {fromPoly R S (g : R[X])} ≤ Ideal.span {fromPoly R S (f : R[X])} :=
+  Ideal.span_singleton_le_span_singleton.mpr (map_dvd (fromPoly R S) h)
 
 /-- The finite quotient isomorphisms commute with reduction to a smaller index. -/
-theorem algHomOfDvd_quotientSpanEquiv {f g : cycloIndex R S} (h : (f : R[X]) ∣ g)
+theorem algHomOfDvd_quotientSpanAlgEquiv {f g : cycloIndex R S} (h : (f : R[X]) ∣ g)
     (y : CycloCompletion R S ⧸ Ideal.span {fromPoly R S (g : R[X])}) :
-    AdjoinRoot.algHomOfDvd R (g : R[X]) (f : R[X]) h (quotientSpanEquiv R S g y) =
-      quotientSpanEquiv R S f (Ideal.Quotient.factor (Ideal.span_singleton_le_span_singleton.mpr
-        (map_dvd (fromPoly R S) h)) y) := by
+    AdjoinRoot.algHomOfDvd R (g : R[X]) (f : R[X]) h (quotientSpanAlgEquiv g y) =
+      quotientSpanAlgEquiv f (Ideal.Quotient.factor (span_fromPoly_le_of_dvd h) y) := by
   obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective y
   simp
+
+/-- When `1 ∈ S`, quotienting `CycloCompletion R S` by `fromPoly R S (X - 1)` recovers `R` via
+polynomial evaluation at `1`. -/
+noncomputable def quotientSpanXSubOneAlgEquiv (h1 : 1 ∈ S) :
+    (CycloCompletion R S ⧸ Ideal.span {fromPoly R S (X - 1)}) ≃ₐ[R] R :=
+  let f1 : cycloIndex R S := ⟨cyclotomic 1 R, cyclotomic_mem_cycloIndex h1⟩
+  have hf1 : Ideal.span {fromPoly R S (X - 1)} = Ideal.span {fromPoly R S (f1 : R[X])} := by
+    simp [f1, cyclotomic_one]
+  have hspan : Ideal.span {(f1 : R[X])} = Ideal.span ({X - C (1 : R)} : Set R[X]) := by
+    simp [f1, cyclotomic_one]
+  (Ideal.quotientEquivAlgOfEq R hf1).trans <|
+    (quotientSpanAlgEquiv f1).trans <|
+      (Polynomial.quotientSpanAlgEquivAdjoinRoot (f1 : R[X])).symm.trans <|
+        (Ideal.quotientEquivAlgOfEq R hspan).trans (Polynomial.quotientSpanXSubCAlgEquiv 1)
+
+@[simp]
+theorem quotientSpanXSubOneAlgEquiv_mk_fromPoly (h1 : 1 ∈ S) (p : R[X]) :
+    quotientSpanXSubOneAlgEquiv h1 (Ideal.Quotient.mk _ (fromPoly R S p)) = p.eval 1 := by
+  have hmk := quotientSpanAlgEquiv_mk_fromPoly ⟨cyclotomic 1 R, cyclotomic_mem_cycloIndex h1⟩ p
+  simp only at hmk
+  simp [quotientSpanXSubOneAlgEquiv, hmk]
+
+@[simp]
+theorem quotientSpanXSubOneAlgEquiv_symm_apply (h1 : 1 ∈ S) (r : R) :
+    (quotientSpanXSubOneAlgEquiv h1).symm r =
+      algebraMap R (CycloCompletion R S ⧸ Ideal.span {fromPoly R S (X - 1)}) r :=
+  (quotientSpanXSubOneAlgEquiv h1).symm.commutes r
 
 end CycloCompletion
 
@@ -355,7 +563,7 @@ example : (fun f : cycloIndex ℤ {1} ↦
   simpa [hd] using natDegree_le_of_dvd h one_ne_zero
 
 /-- In the order-one completion, `q` reduces to `1` modulo `q - 1`. -/
-example : CycloCompletion.proj ℤ {1}
+example : CycloCompletion.proj (R := ℤ) (S := {1})
     ⟨X - 1, by simpa using cyclotomic_mem_cycloIndex (R := ℤ) (Set.mem_singleton 1)⟩
     (CycloCompletion.fromPoly ℤ {1} X) = 1 := by
   rw [CycloCompletion.proj_fromPoly, ← map_one (AdjoinRoot.mk _)]
@@ -371,13 +579,13 @@ example (a : ℤ) (ha : a ≠ 0) : CycloCompletion.fromPoly ℤ {1} (C a) ≠ 0 
 /-- The finite quotient isomorphism sends the class of the image of a polynomial to its ordinary
 residue class. -/
 example (S : Set ℕ) (f : cycloIndex ℤ S) (p : ℤ[X]) :
-    CycloCompletion.quotientSpanEquiv ℤ S f (Ideal.Quotient.mk _ (CycloCompletion.fromPoly ℤ S p)) =
+    CycloCompletion.quotientSpanAlgEquiv f (Ideal.Quotient.mk _ (CycloCompletion.fromPoly ℤ S p)) =
       AdjoinRoot.mk (f : ℤ[X]) p := by
   simp
 
 /-- The kernel and regularity statements hold over `ZMod 2`, without a domain hypothesis. -/
 example (f : cycloIndex (ZMod 2) Set.univ) :
-    RingHom.ker (CycloCompletion.proj (ZMod 2) Set.univ f) =
+    RingHom.ker (CycloCompletion.proj f) =
         Ideal.span {CycloCompletion.fromPoly (ZMod 2) Set.univ (f : (ZMod 2)[X])} ∧
       IsRegular (CycloCompletion.fromPoly (ZMod 2) Set.univ (f : (ZMod 2)[X])) :=
   ⟨CycloCompletion.ker_proj f, CycloCompletion.isRegular_fromPoly f⟩

@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
+public import Mathlib.Algebra.Star.Module
+public import Mathlib.Topology.Algebra.Star
 public import Mathlib.LinearAlgebra.Multilinear.Basic
 public import Mathlib.LinearAlgebra.Multilinear.FiniteDimensional
 public import Mathlib.Topology.Algebra.Module.Alternating.Basic
@@ -18,6 +20,9 @@ import TauCeti.LinearAlgebra.Multilinear.Basis
 
 /-!
 # Finite-dimensional topological vector spaces
+
+A compatible star operation on a finite-dimensional Hausdorff topological vector space over a
+complete trivially starred field is continuous (`FiniteDimensional.continuousStar`).
 
 The linear-map conversion API preserves composition and recovers a continuous linear map after
 forgetting continuity. `LinearMap.toContinuousLinearMap_coe` only needs finite dimension on the
@@ -93,6 +98,15 @@ normed field `𝕜` also carries a compatible module action of a finite-dimensio
 -/
 
 public section
+
+/-- A star operation compatible with a finite-dimensional Hausdorff topological vector space over
+a complete trivially starred field is continuous, since it is linear. -/
+theorem FiniteDimensional.continuousStar (𝕜 E : Type*) [NontriviallyNormedField 𝕜]
+    [CompleteSpace 𝕜] [StarRing 𝕜] [TrivialStar 𝕜] [AddCommGroup E] [Module 𝕜 E]
+    [TopologicalSpace E] [IsTopologicalAddGroup E] [ContinuousSMul 𝕜 E] [T2Space E]
+    [FiniteDimensional 𝕜 E] [StarAddMonoid E] [StarModule 𝕜 E] : ContinuousStar E :=
+  ⟨LinearMap.continuous_of_finiteDimensional (𝕜 := 𝕜)
+    { starLinearEquiv 𝕜 (A := E) with map_smul' := fun r x ↦ by simp }⟩
 
 namespace LinearMap
 

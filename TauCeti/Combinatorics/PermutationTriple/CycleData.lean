@@ -162,6 +162,24 @@ theorem cycleData_eq_of_equivalent {t t' : PermutationTriple n} (h : Equivalent 
   obtain ⟨τ, rfl⟩ := equivalent_iff_exists_smul_eq.mp h
   exact (cycleData_smul τ t).symm
 
+/-- Isomorphic permutation triples have the same full cycle type of `σ0`. -/
+theorem fullCycleType_σ0_eq_of_equivalent {t t' : PermutationTriple n} (h : Equivalent t t') :
+    t.σ0.fullCycleType = t'.σ0.fullCycleType := by
+  rw [Equiv.Perm.fullCycleType_def, Equiv.Perm.fullCycleType_def, ← cycleData_σ0,
+    ← cycleData_σ0, cycleData_eq_of_equivalent h]
+
+/-- Isomorphic permutation triples have the same full cycle type of `σ1`. -/
+theorem fullCycleType_σ1_eq_of_equivalent {t t' : PermutationTriple n} (h : Equivalent t t') :
+    t.σ1.fullCycleType = t'.σ1.fullCycleType := by
+  rw [Equiv.Perm.fullCycleType_def, Equiv.Perm.fullCycleType_def, ← cycleData_σ1,
+    ← cycleData_σ1, cycleData_eq_of_equivalent h]
+
+/-- Isomorphic permutation triples have the same full cycle type of `σinf`. -/
+theorem fullCycleType_σinf_eq_of_equivalent {t t' : PermutationTriple n} (h : Equivalent t t') :
+    t.σinf.fullCycleType = t'.σinf.fullCycleType := by
+  rw [Equiv.Perm.fullCycleType_def, Equiv.Perm.fullCycleType_def, ← cycleData_σinf,
+    ← cycleData_σinf, cycleData_eq_of_equivalent h]
+
 /-- Isomorphic permutation triples have the same unordered full cycle partitions. -/
 theorem unorderedCycleData_eq_of_equivalent {t t' : PermutationTriple n}
     (h : Equivalent t t') : t.unorderedCycleData = t'.unorderedCycleData := by

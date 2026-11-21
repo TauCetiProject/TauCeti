@@ -60,10 +60,19 @@ words over a free group into three equations between words over the free monoid 
 Reduced words joined by a letter `s` form a reduced word when none of them begins or ends with
 `s⁻¹` (`FreeGroup.isReduced_intercalate`).
 
+Following Lyndon and Schützenberger [LS62, §2], if `a` is reduced and `invRev a` is a factor of
+`a ++ c`, then it is a factor of `c` (`FreeGroup.IsReduced.invRev_infix_of_append_eq`, Lemma 6);
+more generally, it is a factor of `W₁ ++ a ++ W₂` only if it is a factor of `W₁` or of `W₂`
+(`FreeGroup.IsReduced.invRev_infix_append_append_iff`). Hence `invRev a` is a factor of a power
+of `aᵐ ++ b` with `m ≠ 0` only if it is a factor of `b` (Corollary 6.1), and of a power of `a`
+only if `a = []` (Corollary 6.2).
+
 ## References
 
 * [CDE16] L. Ciobanu, V. Diekert, M. Elder, *Solution sets for equations over free groups are
   EDT0L languages*, Internat. J. Algebra Comput. 26 (2016), 843–886, §4, Lemma 40.
+* [LS62] R. C. Lyndon, M. P. Schützenberger, *The equation `a^M = b^N c^P` in a free group*,
+  Michigan Math. J. 9 (1962), 289–298.
 -/
 
 public section
@@ -203,6 +212,86 @@ theorem IsReduced.invRev_ne_self {w : List (α × Bool)} (hw : IsReduced w) (hw�
     rw [← inv_mk, inv_mul_cancel]
   rw [pow_eq_one_iff_left (Nat.succ_ne_zero 1), one_eq_mk] at hsq
   exact hw₀ (hw.eq_of_mk_eq IsReduced.nil hsq)
+
+section FormalInverseFactor
+
+/-! ### Formal inverses as factors
+
+After Lyndon and Schützenberger [LS62, §2]: if the formal inverse of a reduced word `a` is a
+factor of `W₁ ++ a ++ W₂`, then it is already a factor of `W₁` or of `W₂`. Write `wⁿ` for
+`(List.replicate n w).flatten`. -/
+
+/-- **Lyndon–Schützenberger, Lemma 6.** If `a` is reduced and `invRev a` is a factor of `a ++ c`,
+then `invRev a` is a factor of `c`. See `FreeGroup.IsReduced.invRev_infix_append_append_iff` for a
+copy of `a` with words on both sides. -/
+theorem IsReduced.invRev_infix_of_append_eq {a c u v : List (α × Bool)} (ha : IsReduced a)
+    (h : a ++ c = u ++ FreeGroup.invRev a ++ v) : FreeGroup.invRev a <:+: c := by
+  rw [List.append_assoc, List.append_eq_append_iff] at h
+  rcases h with ⟨u', rfl, rfl⟩ | ⟨w, rfl, hw⟩
+  · exact ⟨u', v, List.append_assoc _ _ _⟩
+  · -- The occurrence of `invRev a` begins inside `a = u ++ w`; then `w` is its own formal inverse.
+    obtain rfl | hw₀ := eq_or_ne w []
+    · exact ⟨[], v, by simpa using hw⟩
+    exact absurd (List.append_inj_left (t₁ := FreeGroup.invRev u ++ v) (t₂ := c)
+      (by simpa [List.append_assoc] using hw) (by simp))
+      ((ha.infix (List.suffix_append u w).isInfix).invRev_ne_self hw₀)
+
+/-- If `a` is reduced, then `invRev a` is a factor of `W₁ ++ a ++ W₂` exactly when it is a factor
+of `W₁` or of `W₂`. -/
+theorem IsReduced.invRev_infix_append_append_iff {a W₁ W₂ : List (α × Bool)} (ha : IsReduced a) :
+    FreeGroup.invRev a <:+: W₁ ++ a ++ W₂ ↔
+      FreeGroup.invRev a <:+: W₁ ∨ FreeGroup.invRev a <:+: W₂ := by
+  refine ⟨fun ⟨u, v, h⟩ ↦ ?_, ?_⟩
+  · rw [List.append_assoc, List.append_assoc, List.append_eq_append_iff] at h
+    rcases h with ⟨u', rfl, h⟩ | ⟨a', rfl, h⟩
+    · -- The occurrence begins inside `W₁ = u ++ u'`, so `invRev a` is a prefix of `u' ++ a`:
+      -- apply Lemma 6 to the formal inverses.
+      obtain ⟨v', hv'⟩ : FreeGroup.invRev a <+: u' ++ a :=
+        List.prefix_of_prefix_length_le ⟨v, h⟩ ⟨W₂, by simp⟩ (by simp)
+      refine .inl ((invRev_isInfix_invRev.1 (ha.invRev.invRev_infix_of_append_eq
+        (u := FreeGroup.invRev v') (v := []) ?_)).trans (List.suffix_append u u').isInfix)
+      simpa using congrArg FreeGroup.invRev hv'.symm
+    · exact .inr (ha.invRev_infix_of_append_eq (u := a') (v := v) (by simpa using h))
+  · rintro (h | h)
+    · exact h.trans ⟨[], a ++ W₂, by simp⟩
+    · exact h.trans (List.suffix_append _ _).isInfix
+
+/-- **Lyndon–Schützenberger, Corollary 6.1.** If `a` is reduced, `m ≠ 0`, and `invRev a` is a
+factor of a power of `aᵐ ++ b`, then `invRev a` is a factor of `b`. The condition `m ≠ 0` is
+needed: for `a = x y` and `b = x⁻¹ y⁻¹`, `invRev a = y⁻¹ x⁻¹` is a factor of `b ++ b` but not
+of `b`. -/
+theorem IsReduced.invRev_infix_of_infix_flatten_replicate_append {a b : List (α × Bool)} {m n : ℕ}
+    (ha : IsReduced a) (hm : m ≠ 0)
+    (h : FreeGroup.invRev a <:+: (List.replicate n ((List.replicate m a).flatten ++ b)).flatten) :
+    FreeGroup.invRev a <:+: b := by
+  -- Deleting copies of `a` at the front keeps `invRev a` as a factor, by Lemma 6.
+  have strip (k : ℕ) {X : List (α × Bool)}
+      (hX : FreeGroup.invRev a <:+: (List.replicate k a).flatten ++ X) :
+      FreeGroup.invRev a <:+: X := by
+    induction k with
+    | zero => simpa using hX
+    | succ k ih =>
+      obtain ⟨s, t, hst⟩ := hX
+      exact ih (ha.invRev_infix_of_append_eq (u := s) (v := t) (by simp [List.replicate_succ, hst]))
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hm
+  rw [List.replicate_succ, List.flatten_cons] at h
+  -- Induction on the number of blocks: `b (a aᵐ b)ⁿ⁺¹ = b · a · aᵐ (b (a aᵐ b)ⁿ)`.
+  replace h := h.trans (List.suffix_append b _).isInfix
+  induction n with
+  | zero => simpa using h
+  | succ n ih =>
+    rw [List.replicate_succ, List.flatten_cons] at h
+    refine ((ha.invRev_infix_append_append_iff (W₁ := b)).1 ?_).elim id (fun h' ↦ ih (strip m h'))
+    simpa [List.append_assoc] using h
+
+/-- **Lyndon–Schützenberger, Corollary 6.2.** The formal inverse of a nonempty reduced word `a`
+is not a factor of any power of `a`. -/
+theorem IsReduced.eq_nil_of_invRev_infix_flatten_replicate {a : List (α × Bool)} {n : ℕ}
+    (ha : IsReduced a) (h : FreeGroup.invRev a <:+: (List.replicate n a).flatten) : a = [] := by
+  simpa [FreeGroup.invRev] using List.eq_nil_of_infix_nil
+    (ha.invRev_infix_of_infix_flatten_replicate_append one_ne_zero (b := []) (by simpa using h))
+
+end FormalInverseFactor
 
 /-- Conjugating a nonempty reduced word not involving the generator `x` by the letter `(x, b)`
 gives a reduced word. -/
