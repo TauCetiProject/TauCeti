@@ -123,6 +123,13 @@ theorem generalizedGammaMeasure_map_const_mul (hb : 0 < b) :
       simpa only [mul_pos_iff_of_pos_left hb] using h
     simp [generalizedGammaMeasure_of_not_valid h, generalizedGammaMeasure_of_not_valid h']
 
+/-- Multiplying a generalized gamma random variable by `b > 0` multiplies its scale by `b`. -/
+theorem _root_.ProbabilityTheory.HasLaw.const_mul_generalizedGammaMeasure {Ω : Type*}
+    [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ}
+    (hX : HasLaw X (generalizedGammaMeasure a c s) P) (hb : 0 < b) :
+    HasLaw (fun ω ↦ b * X ω) (generalizedGammaMeasure a c (b * s)) P :=
+  HasLaw.comp ⟨by fun_prop, generalizedGammaMeasure_map_const_mul hb⟩ hX
+
 /-- Power parameter one recovers the Gamma law with reciprocal-scale rate. -/
 @[simp]
 theorem generalizedGammaMeasure_one (ha : 0 < a) (hs : 0 < s) :

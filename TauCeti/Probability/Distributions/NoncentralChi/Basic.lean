@@ -139,6 +139,12 @@ theorem noncentralChiMeasure_map_const_mul (hc : 0 < c) :
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ}
 
+/-- Multiplying a noncentral chi random variable by `c > 0` multiplies its scale by `c`. -/
+theorem _root_.ProbabilityTheory.HasLaw.const_mul_noncentralChiMeasure
+    (hX : HasLaw X (noncentralChiMeasure k δ s) P) (hc : 0 < c) :
+    HasLaw (fun ω ↦ c * X ω) (noncentralChiMeasure k δ (c * s)) P :=
+  HasLaw.comp ⟨by fun_prop, noncentralChiMeasure_map_const_mul hc⟩ hX
+
 /-- Taking a scaled square root of a noncentral chi-squared variable gives the noncentral chi
 law. -/
 theorem hasLaw_noncentralChiMeasure_of_hasLaw_noncentralChiSquaredMeasure (hs : 0 < s)
