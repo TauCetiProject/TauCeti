@@ -201,14 +201,20 @@ theorem leechPairVector_mem {i j : Fin 24} (hij : i ≠ j) (s t : ℤˣ) :
   rcases Int.units_eq_one_or s with rfl | rfl <;> rcases Int.units_eq_one_or t with rfl | rfl <;>
     decide
 
-private theorem pair_mem_minimalSpan {i j : Fin 24} (hij : i ≠ j) (s t : ℤˣ) :
+/-- A first-shape vector with distinct coordinate positions, halved into rational coordinates,
+occurs in the norm-four shell of the Leech lattice. -/
+theorem leechPairVector_mem_image_vectorsOfNorm {i j : Fin 24} (hij : i ≠ j) (s t : ℤˣ) :
     (fun k ↦ (leechPairVector i j s t k : ℚ) / 2) ∈
-      Submodule.span ℚ (Subtype.val '' leechLattice.vectorsOfNorm 4 : Set (Fin 24 → ℚ)) := by
+      Subtype.val '' leechLattice.vectorsOfNorm 4 := by
   obtain ⟨hmem, hnorm⟩ := leechPairVector_mem hij s t
-  apply Submodule.subset_span
   refine ⟨⟨_, hmem⟩, ?_, rfl⟩
   rw [mem_vectorsOfNorm, leechLattice_norm_intCast_div_two, hnorm]
   norm_num
+
+private theorem pair_mem_minimalSpan {i j : Fin 24} (hij : i ≠ j) (s t : ℤˣ) :
+    (fun k ↦ (leechPairVector i j s t k : ℚ) / 2) ∈
+      Submodule.span ℚ (Subtype.val '' leechLattice.vectorsOfNorm 4 : Set (Fin 24 → ℚ)) :=
+  Submodule.subset_span (leechPairVector_mem_image_vectorsOfNorm hij s t)
 
 /-- The Leech minimal vectors span the entire rational coordinate space. This is a rational
 span assertion; it does not assert that the first family alone generates the integral lattice. -/

@@ -21,6 +21,10 @@ If `A` is injective and the relative error is some `ε < 1`, then `f ∘ invFun 
 pseudo-emetric for which `A` is `c`-antilipschitz and `δ < 1`, then `f` is
 `c (1 - δ)⁻¹`-antilipschitz on `p` (`AntilipschitzWith.domRestrict_of_approx`).
 
+The pointwise estimate `TauCeti.one_sub_mul_norm_le_and_norm_le_one_add_mul_norm`
+bounds `‖x‖` above and below
+when `x` is within a relative error of `y`.
+
 These estimates turn a piecewise approximation of a differentiable map by linear maps, with
 small relative error, into bi-Lipschitz bounds on each piece; the decomposition into injective
 pieces used by the area formula is built this way.
@@ -33,6 +37,15 @@ open scoped NNReal
 
 namespace TauCeti
 
+/-- A vector `x` within `c ‖y‖` of `y` has norm between `(1 - c) ‖y‖` and `(1 + c) ‖y‖`. -/
+theorem one_sub_mul_norm_le_and_norm_le_one_add_mul_norm {G : Type*} [SeminormedAddGroup G]
+    {x y : G} {c : ℝ}
+    (h : ‖x - y‖ ≤ c * ‖y‖) :
+    (1 - c) * ‖y‖ ≤ ‖x‖ ∧ ‖x‖ ≤ (1 + c) * ‖y‖ := by
+  have h1 := norm_le_norm_add_norm_sub' x y
+  have h2 := norm_le_norm_add_norm_sub x y
+  constructor <;> linarith
+
 section AddGroup
 
 variable {U V 𝓕 : Type*} [AddGroup U] [SeminormedAddCommGroup V] [FunLike 𝓕 U V]
@@ -42,22 +55,17 @@ variable {U V 𝓕 : Type*} [AddGroup U] [SeminormedAddCommGroup V] [FunLike �
 `(1 - δ) ‖A x - A y‖ ≤ ‖f x - f y‖` there. -/
 theorem one_sub_mul_norm_sub_le_norm_sub
     (happ : ∀ x ∈ p, ∀ y ∈ p, ‖f x - f y - A (x - y)‖ ≤ δ * ‖A (x - y)‖) {x y : U} (hx : x ∈ p)
-    (hy : y ∈ p) : (1 - δ) * ‖A x - A y‖ ≤ ‖f x - f y‖ := by
-  have h := happ x hx y hy
-  rw [map_sub] at h
-  have := norm_sub_norm_le (A x - A y) (f x - f y)
-  rw [norm_sub_rev (A x - A y)] at this
-  linarith
+    (hy : y ∈ p) : (1 - δ) * ‖A x - A y‖ ≤ ‖f x - f y‖ :=
+  (one_sub_mul_norm_le_and_norm_le_one_add_mul_norm
+    (by simpa only [map_sub] using happ x hx y hy)).1
 
 /-- A map within relative error `δ` of an additive map `A` on `p` satisfies
 `‖f x - f y‖ ≤ (1 + δ) ‖A x - A y‖` there. -/
 theorem norm_sub_le_one_add_mul_norm_sub
     (happ : ∀ x ∈ p, ∀ y ∈ p, ‖f x - f y - A (x - y)‖ ≤ δ * ‖A (x - y)‖) {x y : U} (hx : x ∈ p)
-    (hy : y ∈ p) : ‖f x - f y‖ ≤ (1 + δ) * ‖A x - A y‖ := by
-  have h := happ x hx y hy
-  rw [map_sub] at h
-  have := norm_sub_norm_le (f x - f y) (A x - A y)
-  linarith
+    (hy : y ∈ p) : ‖f x - f y‖ ≤ (1 + δ) * ‖A x - A y‖ :=
+  (one_sub_mul_norm_le_and_norm_le_one_add_mul_norm
+    (by simpa only [map_sub] using happ x hx y hy)).2
 
 /-- A map `f` within relative error `ε < 1` of an injective additive map `A` on `p`, read through
 `A`, is `(1 + ε)`-Lipschitz and `(1 - ε)⁻¹`-antilipschitz on `A '' p`. -/
