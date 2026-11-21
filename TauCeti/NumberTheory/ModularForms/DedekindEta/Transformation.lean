@@ -129,7 +129,7 @@ private theorem denom_ne_zero' (γ : SL(2, ℤ)) (τ : ℍ) : (γ 1 0 : ℂ) * �
 private theorem sqrt_denom_mul_eta_ne_zero (γ : SL(2, ℤ)) (τ : ℍ) :
     Complex.sqrt ((γ 1 0 : ℂ) * τ + γ 1 1) * η τ ≠ 0 :=
   mul_ne_zero (Complex.sqrt_eq_zero_iff.not.2 (denom_ne_zero' γ τ))
-    (_root_.ModularForm.eta_ne_zero τ.2)
+    (_root_.ModularForm.eta_ne_zero τ.coe_im_pos)
 
 /-- `Δ(γ τ) = (c τ + d)¹² Δ(τ)` for `γ ∈ SL(2, ℤ)`, in terms of `η`. -/
 private theorem eta_smul_pow_twentyFour (γ : SL(2, ℤ)) (τ : ℍ) :
@@ -145,7 +145,7 @@ private noncomputable def etaQuotient (γ : SL(2, ℤ)) (τ : ℍ) : ℂ :=
 
 private theorem etaQuotient_pow_twentyFour (γ : SL(2, ℤ)) (τ : ℍ) :
     etaQuotient γ τ ^ 24 = 1 := by
-  have hη : η τ ≠ 0 := _root_.ModularForm.eta_ne_zero τ.2
+  have hη : η τ ≠ 0 := _root_.ModularForm.eta_ne_zero τ.coe_im_pos
   have hs : Complex.sqrt ((γ 1 0 : ℂ) * τ + γ 1 1) ^ 24 = ((γ 1 0 : ℂ) * τ + γ 1 1) ^ 12 :=
     (pow_mul _ 2 12).trans (congrArg (· ^ 12) (Complex.sq_sqrt _))
   rw [etaQuotient, div_pow, mul_pow, hs,
@@ -154,7 +154,8 @@ private theorem etaQuotient_pow_twentyFour (γ : SL(2, ℤ)) (τ : ℍ) :
 
 private theorem continuous_etaQuotient (γ : SL(2, ℤ)) : Continuous (etaQuotient γ) := by
   have hη : Continuous fun τ : ℍ ↦ η τ := continuous_iff_continuousAt.2 fun τ ↦
-    (_root_.ModularForm.differentiableAt_eta_of_mem_upperHalfPlaneSet τ.2).continuousAt.comp
+    (_root_.ModularForm.differentiableAt_eta_of_mem_upperHalfPlaneSet
+        τ.coe_im_pos).continuousAt.comp
       UpperHalfPlane.continuous_coe.continuousAt
   have hγ : Continuous fun τ : ℍ ↦ γ • τ := by
     simp_rw [MulAction.compHom_smul_def]

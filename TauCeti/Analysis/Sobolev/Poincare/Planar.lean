@@ -187,7 +187,8 @@ private theorem integral_modularRoot_pow_three_sq_le (hE : finrank ℝ E = 2) {w
         ((hw.differentiable one_ne_zero) x).hasFDerivAt
     rw [h.fderiv, norm_smul, Real.norm_eq_abs, abs_mul, abs_mul,
       abs_of_pos (by norm_num : (0 : ℝ) < 3 / 2)]
-    have h1 := Real.abs_div_sqrt_one_add_sq_le_one (w x)
+    have h1 : |w x / √(1 + w x ^ 2)| ≤ 1 := by
+      simpa only [add_comm] using Real.abs_div_sqrt_sq_add_le_one zero_le_one (w x)
     calc 3 / 2 * |modularRoot (w x)| * |w x / √(1 + w x ^ 2)| * ‖fderiv ℝ w x‖ ≤
           3 / 2 * |modularRoot (w x)| * 1 * ‖fderiv ℝ w x‖ := by gcongr
       _ = 3 / 2 * (|modularRoot (w x)| * ‖fderiv ℝ w x‖) := by ring

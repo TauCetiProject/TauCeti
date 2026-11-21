@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.FiniteBilinearModule.Quadratic
+public import TauCeti.LinearAlgebra.FiniteBilinearModule.Quadratic.Basic
 public import Mathlib.GroupTheory.Torsion
 import Mathlib.Data.Nat.Factorization.Basic
 
@@ -117,15 +117,15 @@ theorem isNondegenerate_restrict_primaryComponent (hA : A.IsNondegenerate) {p : 
   apply eq_zero_of_coprime_nsmul_eq_zero
       ((Nat.coprime_ordCompl hp hcard).pow_left k)
   · have hmap := DFunLike.congr_fun
-      (map_nsmul A.pairing (p ^ k) (x.1 - y.1)) z
+      (map_nsmul A.pairing (p ^ k) (x.val - y.val)) z
     rw [hk, map_zero] at hmap
     calc
-      p ^ k • A.pairing (x.1 - y.1) z =
-          (p ^ k • A.pairing (x.1 - y.1)) z :=
+      p ^ k • A.pairing (x.val - y.val) z =
+          (p ^ k • A.pairing (x.val - y.val)) z :=
         (AddMonoidHom.nsmul_apply _ _ _).symm
       _ = (0 : CharacterModule A) z := hmap.symm
       _ = 0 := AddMonoidHom.zero_apply z
-  · rw [← map_nsmul (A.pairing (x.1 - y.1))]
+  · rw [← map_nsmul (A.pairing (x.val - y.val))]
     have hz := ordCompl_natCard_nsmul_mem_primaryComponent A p z
     have heval := DFunLike.congr_fun hxy
       (⟨ordCompl[p] (Nat.card A) • z, hz⟩ : AddCommGroup.primaryComponent A p)

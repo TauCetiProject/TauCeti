@@ -378,7 +378,7 @@ theorem exists_mul_lpNorm_iteratedGradient_ball_le_of_sum_mul_inner_add_inner_ad
       ring
     have h1 : 0 ≤ Λ / lam := div_nonneg hΛ hlam.le
     have h2 : 0 ≤ (β * R + γ * R ^ 2) / lam := by positivity
-    have hC0 : (0 : ℝ) ≤ C := C.2
+    have hC0 : (0 : ℝ) ≤ C := C.property
     have hn2 : (0 : ℝ) ≤ C * n ^ 2 := by positivity
     rw [hKQ, hsplit, hD]
     generalize Λ / lam = u₁ at h1 ⊢
@@ -399,7 +399,7 @@ theorem exists_mul_lpNorm_iteratedGradient_ball_le_of_sum_mul_inner_add_inner_ad
         rw [hCfin, show (2 * C + C₂ * D ^ 2) * (X + Y) =
           2 * C * X + C₂ * D ^ 2 * Y + (2 * C * Y + C₂ * D ^ 2 * X) by ring]
         have : 0 ≤ 2 * C * Y + C₂ * D ^ 2 * X :=
-          add_nonneg (mul_nonneg (mul_nonneg zero_le_two C.2) hY0)
+          add_nonneg (mul_nonneg (mul_nonneg zero_le_two C.property) hY0)
             (mul_nonneg (mul_nonneg hC₂0 (sq_nonneg _)) hX0)
         linarith
 

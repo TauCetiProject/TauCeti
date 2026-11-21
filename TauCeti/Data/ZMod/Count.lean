@@ -6,9 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.AlgebraMap
+public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.Data.Int.Interval
 public import Mathlib.Data.ZMod.QuotientRing
 public import Mathlib.GroupTheory.Index
+
+import Mathlib.NumberTheory.Harmonic.Bounds
 import TauCeti.Data.ZMod.FinEquiv
 
 /-!
@@ -38,6 +41,7 @@ become sums over the residues modulo `m`.
 * `ZMod.mul_card_filter_natCast_val`: counting a condition on the reduction modulo `m ∣ n`.
 * `ZMod.sum_comp_natCast_val`: summing a function of the reduction modulo `m ∣ n`.
 * `ZMod.sum_val_eq_sum_range`: summing a function of the representatives over `range n`.
+* `ZMod.sum_inv_val_le_one_add_log`: a logarithmic bound for reciprocal representatives.
 * `ZMod.sum_Ico_mul`: splitting an integer interval into complete residue blocks.
 * `ZMod.sum_ite_dvd_val`: summing over the representatives that are multiples of `n / m`.
 * `ZMod.card_filter_forall_natCast_val`: counting independent conditions on coprime factors.
@@ -120,6 +124,22 @@ theorem sum_val_eq_sum_range {M : Type*} [AddCommMonoid M] [NeZero n] (f : ℕ �
     ∑ x : ZMod n, f x.val = ∑ i ∈ range n, f i := by
   rw [Finset.sum_range, ← (finEquiv n).symm.toEquiv.sum_comp]
   simp
+
+/-- The sum of reciprocal least nonnegative representatives of the nonzero residues is
+bounded by one plus the logarithm of the modulus. -/
+theorem sum_inv_val_le_one_add_log {N : ℕ} [NeZero N] :
+    ∑ k ∈ univ.erase (0 : ZMod N), (k.val : ℝ)⁻¹ ≤ 1 + Real.log N := by
+  have hh : ∑ j ∈ range N, (j : ℝ)⁻¹ ≤ (harmonic N : ℝ) := by
+    rw [sum_range_eq_add_Ico _ (NeZero.pos N), harmonic_eq_sum_Icc]
+    simp only [Nat.cast_zero, _root_.inv_zero, zero_add, Rat.cast_sum, Rat.cast_inv,
+      Rat.cast_natCast]
+    exact sum_le_sum_of_subset_of_nonneg Ico_subset_Icc_self fun j _ _ ↦ by positivity
+  have he : ∑ k ∈ univ.erase (0 : ZMod N), (k.val : ℝ)⁻¹ =
+      ∑ k : ZMod N, (k.val : ℝ)⁻¹ := by
+    rw [← sum_erase_add _ _ (mem_univ (0 : ZMod N))]
+    simp
+  rw [he, ZMod.sum_val_eq_sum_range (fun j ↦ (j : ℝ)⁻¹)]
+  exact hh.trans (harmonic_le_one_add_log N)
 
 /-- Split a sum over an integer interval with endpoints divisible by the modulus into
 complete residue blocks. The summand need not be periodic. -/

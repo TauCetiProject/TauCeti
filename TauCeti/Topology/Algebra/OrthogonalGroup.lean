@@ -198,7 +198,7 @@ instance instPathConnectedSpaceSpecialOrthogonalGroup :
       mem_pathComponent_iff.2 (joined_one_refl_mul_refl hu0 hw0), ?_⟩
     simp only [Submonoid.coe_subtype, refl, TauCeti.toMatrix'_reflection, toQuadraticForm'_apply,
       one_mulVec, invOf_eq_inv, div_eq_mul_inv]
-  obtain ⟨B, hB, hBA⟩ := hle A.2
+  obtain ⟨B, hB, hBA⟩ := hle A.property
   obtain rfl : B = A := Subtype.ext hBA
   exact mem_pathComponent_iff.1 hB
 
@@ -210,11 +210,11 @@ theorem joined_orthogonalGroup_iff_det_eq {A B : orthogonalGroup ι ℝ} :
   · -- The determinant along a path takes only the values `±1`, so it cannot change sign.
     rintro ⟨γ⟩
     have hc : Continuous fun t ↦ ((γ t : orthogonalGroup ι ℝ) : _root_.Matrix ι ι ℝ).det :=
-      (continuous_subtype_val.comp γ.continuous).matrix_det
+      (continuous_subtypeVal.comp γ.continuous).matrix_det
     have h0 : ∀ t, ((γ t : orthogonalGroup ι ℝ) : _root_.Matrix ι ι ℝ).det ≠ 0 := fun t ↦ by
-      rcases det_eq_one_or_neg_one_of_mem_orthogonalGroup (γ t).2 with h | h <;> simp [h]
-    rcases det_eq_one_or_neg_one_of_mem_orthogonalGroup A.2 with hA | hA <;>
-      rcases det_eq_one_or_neg_one_of_mem_orthogonalGroup B.2 with hB | hB
+      rcases det_eq_one_or_neg_one_of_mem_orthogonalGroup (γ t).property with h | h <;> simp [h]
+    rcases det_eq_one_or_neg_one_of_mem_orthogonalGroup A.property with hA | hA <;>
+      rcases det_eq_one_or_neg_one_of_mem_orthogonalGroup B.property with hB | hB
     · rw [hA, hB]
     · obtain ⟨t, ht⟩ := intermediate_value_univ 1 0 hc (show (0 : ℝ) ∈ _ by simp [hA, hB])
       exact (h0 t ht).elim
@@ -225,11 +225,11 @@ theorem joined_orthogonalGroup_iff_det_eq {A B : orthogonalGroup ι ℝ} :
     intro h
     have hdet : ((A⁻¹ * B : orthogonalGroup ι ℝ) : _root_.Matrix ι ι ℝ).det = 1 := by
       simpa [star_eq_conjTranspose, det_conjTranspose, det_mul, h] using
-        congrArg det ((mem_orthogonalGroup_iff' _ _).1 A.2)
-    let C : specialOrthogonalGroup ι ℝ := ⟨A⁻¹ * B, (A⁻¹ * B).2, hdet⟩
+        congrArg det ((mem_orthogonalGroup_iff' _ _).1 A.property)
+    let C : specialOrthogonalGroup ι ℝ := ⟨A⁻¹ * B, (A⁻¹ * B).property, hdet⟩
     have hC : Joined (1 : orthogonalGroup ι ℝ) (A⁻¹ * B) :=
       (PathConnectedSpace.joined 1 C).map (f := fun D : specialOrthogonalGroup ι ℝ ↦
-        (⟨D, D.2.1⟩ : orthogonalGroup ι ℝ)) (continuous_subtype_val.subtype_mk _)
+        (⟨D, D.property.1⟩ : orthogonalGroup ι ℝ)) (continuous_subtypeVal.subtype_mk _)
     simpa using (Joined.refl A).mul hC
 
 end TauCeti.Matrix

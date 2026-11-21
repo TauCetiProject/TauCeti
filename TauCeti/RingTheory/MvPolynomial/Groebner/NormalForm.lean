@@ -156,7 +156,7 @@ noncomputable def IsGroebnerBasis.restrictSupportEquivQuotient (h : m.IsGroebner
     restrictSupport R (m.standardMonomials I) ≃ₗ[R] MvPolynomial σ R ⧸ I :=
   LinearEquiv.ofBijective
     ((Ideal.Quotient.mkₐ R I).toLinearMap ∘ₗ (restrictSupport R (m.standardMonomials I)).subtype)
-    ⟨fun r₁ r₂ hr ↦ Subtype.ext <| eq_of_sub_mem_of_mem_restrictSupport r₁.2 r₂.2 <|
+    ⟨fun r₁ r₂ hr ↦ Subtype.ext <| eq_of_sub_mem_of_mem_restrictSupport r₁.property r₂.property <|
         Ideal.Quotient.eq.1 hr,
       fun x ↦ by
         obtain ⟨f, rfl⟩ := Ideal.Quotient.mk_surjective x
@@ -213,7 +213,7 @@ include h hG
 theorem IsGroebnerBasis.normalForm_mem_restrictSupport (f : MvPolynomial σ R) :
     h.normalForm hG f ∈ restrictSupport R (m.standardMonomials I) :=
   h.coe_restrictSupportEquivQuotient_symm_mk hG f ▸
-    ((h.restrictSupportEquivQuotient hG).symm (Ideal.Quotient.mk I f)).2
+    ((h.restrictSupportEquivQuotient hG).symm (Ideal.Quotient.mk I f)).property
 
 /-- A polynomial and its normal form have the same image in the quotient. -/
 @[simp]

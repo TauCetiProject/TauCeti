@@ -83,7 +83,7 @@ theorem normalizerMap_apply (hq : IsQuotientCoveringMap q H)
     hq.apply_eq_iff_mem_orbit.mp (Function.surjInv_eq hq.surjective (q e))
   have hsurj : Function.surjInv hq.surjective (q e) = (h : Γ) • e := hh.symm
   have hconj : (γ : Γ) * (h : Γ) * (γ : Γ)⁻¹ ∈ H :=
-    (Subgroup.mem_normalizer_iff.mp γ.2 (h : Γ)).mp h.2
+    (Subgroup.mem_normalizer_iff.mp γ.property (h : Γ)).mp h.property
   have hstep : (γ : Γ) • ((h : Γ) • e) = ((⟨_, hconj⟩ : H) : Γ) • ((γ : Γ) • e) := by
     rw [← mul_smul, ← mul_smul]
     congr 1
@@ -164,7 +164,7 @@ translation by that element. -/
 @[simp]
 theorem normalizerDeckHom_apply (hp : IsQuotientCoveringMap p Γ) (hq : IsQuotientCoveringMap q H)
     (hr : r ∘ q = p) (γ : Subgroup.normalizer (H : Set Γ)) (e : E) :
-    (hp.normalizerDeckHom hq hr γ).1 (q e) = q ((γ : Γ) • e) :=
+    (hp.normalizerDeckHom hq hr γ).val (q e) = q ((γ : Γ) • e) :=
   hq.normalizerMap_apply γ e
 
 /-- The inverse of the deck transformation attached to a normalizer element is the descent of
@@ -173,7 +173,7 @@ translation by the inverse element. -/
 theorem normalizerDeckHom_symm_apply (hp : IsQuotientCoveringMap p Γ)
     (hq : IsQuotientCoveringMap q H) (hr : r ∘ q = p) (γ : Subgroup.normalizer (H : Set Γ))
     (e : E) :
-    (hp.normalizerDeckHom hq hr γ).1.symm (q e) = q ((γ : Γ)⁻¹ • e) := by
+    (hp.normalizerDeckHom hq hr γ).val.symm (q e) = q ((γ : Γ)⁻¹ • e) := by
   rw [Homeomorph.symm_apply_eq, hp.normalizerDeckHom_apply, smul_inv_smul]
 
 /-- The kernel of the normalizer-to-deck homomorphism is `H`: a translation descends to the
@@ -193,7 +193,7 @@ theorem ker_normalizerDeckHom (hp : IsQuotientCoveringMap p Γ) (hq : IsQuotient
       rfl
     obtain ⟨h, hh⟩ := hq.apply_eq_iff_mem_orbit.mp h1
     have hcoe : (h : Γ) = (γ : Γ) := IsCancelSMul.right_cancel _ _ e hh
-    exact hcoe ▸ h.2
+    exact hcoe ▸ h.property
   · intro hγ
     refine Subtype.ext (Homeomorph.ext fun y => ?_)
     obtain ⟨e, rfl⟩ := hq.surjective y
@@ -213,7 +213,7 @@ private theorem conj_mem_of_smul_eq (hp : IsQuotientCoveringMap p Γ)
     rw [mul_smul]
     exact hh'
   have hrw : γ * h * γ⁻¹ = (h' : Γ) := by rw [← hcancel, mul_inv_cancel_right]
-  exact hrw ▸ h'.2
+  exact hrw ▸ h'.property
 
 /-- Every deck transformation of the intermediate covering is the descent of a translation by
 a normalizer element. -/
@@ -229,34 +229,34 @@ theorem normalizerDeckHom_surjective (hp : IsQuotientCoveringMap p Γ)
       obtain ⟨e, rfl⟩ := hq.surjective y
       exact (hE.false e).elim)⟩
   obtain ⟨e₀⟩ := hne
-  obtain ⟨e₁, he₁⟩ := hq.surjective (φ.1 (q e₀))
+  obtain ⟨e₁, he₁⟩ := hq.surjective (φ.val (q e₀))
   have hrq : ∀ e : E, r (q e) = p e := fun e => congrFun hr e
   have hpe : p e₁ = p e₀ := by
     rw [← hrq e₁, ← hrq e₀, he₁]
     exact congrFun (deck.comp_eq φ) (q e₀)
   obtain ⟨γ, hγ⟩ := hp.apply_eq_iff_mem_orbit.mp hpe
   -- `φ ∘ q` and `q ∘ (γ • ·)` are two lifts of `p` through `r`, agreeing at `e₀`.
-  have hkey : ∀ e, φ.1 (q e) = q (γ • e) := by
-    refine congrFun (hrc.eq_of_comp_eq (g₁ := fun e => φ.1 (q e)) (g₂ := fun e => q (γ • e))
-      (φ.1.continuous.comp hq.isCoveringMap.continuous)
+  have hkey : ∀ e, φ.val (q e) = q (γ • e) := by
+    refine congrFun (hrc.eq_of_comp_eq (g₁ := fun e => φ.val (q e)) (g₂ := fun e => q (γ • e))
+      (φ.val.continuous.comp hq.isCoveringMap.continuous)
       (hq.isCoveringMap.continuous.comp (continuous_const_smul _)) (funext fun e => ?_) e₀ ?_)
     · calc
-        r (φ.1 (q e)) = r (q e) := congrFun (deck.comp_eq φ) (q e)
+        r (φ.val (q e)) = r (q e) := congrFun (deck.comp_eq φ) (q e)
         _ = p e := hrq e
         _ = p (γ • e) := (hp.map_smul γ).symm
         _ = r (q (γ • e)) := (hrq (γ • e)).symm
     · have hγ' : (γ • e₀ : E) = e₁ := hγ
       rw [hγ', he₁]
-  have hkey' : ∀ e, φ.1.symm (q e) = q (γ⁻¹ • e) := fun e => by
+  have hkey' : ∀ e, φ.val.symm (q e) = q (γ⁻¹ • e) := fun e => by
     rw [Homeomorph.symm_apply_eq, hkey, smul_inv_smul]
   have hstep : ∀ h ∈ H, q ((γ * h) • e₀) = q (γ • e₀) := by
     intro h hh
     rw [mul_smul, ← hkey, ← hkey]
-    exact congrArg φ.1 (hq.map_smul (⟨h, hh⟩ : H))
+    exact congrArg φ.val (hq.map_smul (⟨h, hh⟩ : H))
   have hstep' : ∀ h ∈ H, q ((γ⁻¹ * h) • e₀) = q (γ⁻¹ • e₀) := by
     intro h hh
     rw [mul_smul, ← hkey', ← hkey']
-    exact congrArg φ.1.symm (hq.map_smul (⟨h, hh⟩ : H))
+    exact congrArg φ.val.symm (hq.map_smul (⟨h, hh⟩ : H))
   have hmem : γ ∈ Subgroup.normalizer (H : Set Γ) := by
     rw [Subgroup.mem_normalizer_iff]
     refine fun h => ⟨fun hh => hp.conj_mem_of_smul_eq hq hstep hh, fun hh => ?_⟩
@@ -310,7 +310,7 @@ def deckHomOfNormal (hp : IsQuotientCoveringMap p Γ) (hq : IsQuotientCoveringMa
 @[simp]
 theorem deckHomOfNormal_apply (hp : IsQuotientCoveringMap p Γ) (hq : IsQuotientCoveringMap q H)
     (hr : r ∘ q = p) (γ : Γ) (e : E) :
-    (hp.deckHomOfNormal hq hr γ).1 (q e) = q (γ • e) :=
+    (hp.deckHomOfNormal hq hr γ).val (q e) = q (γ • e) :=
   hp.normalizerDeckHom_apply hq hr _ e
 
 /-- The inverse of the deck transformation attached to `γ` is the descent of translation by
@@ -318,7 +318,7 @@ theorem deckHomOfNormal_apply (hp : IsQuotientCoveringMap p Γ) (hq : IsQuotient
 @[simp]
 theorem deckHomOfNormal_symm_apply (hp : IsQuotientCoveringMap p Γ)
     (hq : IsQuotientCoveringMap q H) (hr : r ∘ q = p) (γ : Γ) (e : E) :
-    (hp.deckHomOfNormal hq hr γ).1.symm (q e) = q (γ⁻¹ • e) :=
+    (hp.deckHomOfNormal hq hr γ).val.symm (q e) = q (γ⁻¹ • e) :=
   hp.normalizerDeckHom_symm_apply hq hr _ e
 
 /-- **For a normal subgroup, the deck group of the intermediate covering is `Γ ⧸ H`.** This is

@@ -116,7 +116,7 @@ theorem maslovPhase_eq_det_sq (U : unitaryGroup n ℂ) {L : Submodule ℝ (Eucli
   rw [maslovPhase_eq_det_div_conj_det _ hL hLU, div_eq_iff ((map_ne_zero _).2 hdet)]
   -- `conj (det U) * det U = 1` since `det U` is unitary.
   have hconj : conj (U : Matrix n n ℂ).det * (U : Matrix n n ℂ).det = 1 :=
-    Unitary.star_mul_self_of_mem (det_of_mem_unitary U.2)
+    Unitary.star_mul_self_of_mem (det_of_mem_unitary U.property)
   linear_combination -(U : Matrix n n ℂ).det * hconj
 
 end UnitaryGroup

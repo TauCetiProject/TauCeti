@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.Characteristic.EvenSublattice
-public import TauCeti.LinearAlgebra.IntegralLattice.Index
 public import TauCeti.LinearAlgebra.IntegralLattice.Neighbor.Isotropic
 public import TauCeti.LinearAlgebra.IntegralLattice.Neighbor.UnitLattice
 public import TauCeti.LinearAlgebra.IntegralLattice.Orthogonal.UnitNorm
@@ -66,8 +65,8 @@ classification follows from the splitting `L ≅ I_k ⊕ L₀`.
   at most nine a vector of norm two is orthogonal to a nonzero vector of norm at most two.
 * `TauCeti.IntegralLattice.IsPosDef.subsingleton_of_vectorsOfNorm_one_eq_empty_of_finrank_le_seven`:
   without vectors of norm one, a lattice of rank at most seven is zero.
-* `IsPosDef.nonempty_isometry_typeE₈RootLattice_of_vectorsOfNorm_one_eq_empty`: without vectors
-  of norm one, a nonzero lattice of rank at most nine is `E₈`.
+* `IntegralLattice.IsPosDef.nonempty_isometry_typeE₈RootLattice_of_vectorsOfNorm_one_eq_empty`:
+  without vectors of norm one, a nonzero lattice of rank at most nine is `E₈`.
 * `TauCeti.IntegralLattice.IsPosDef.nonempty_isometry_of_isUnimodular_of_finrank_le_nine`: a
   lattice of rank at most nine is `Iₙ`, `E₈` or `I₁ ⊕ E₈`.
 * `TauCeti.IntegralLattice.IsPosDef.nonempty_isometry_typeE₈RootLattice_of_isEven`: an even
@@ -142,7 +141,7 @@ private theorem exists_integralForm_eq_zero_of_determinant_eq_four {N : Integral
   obtain ⟨t, rfl⟩ := (ofIntegralForm.carrierEquiv _ _).surjective y
   rw [integralNorm_apply, ofIntegralForm.integralForm_carrierEquiv,
     LinearMap.BilinForm.restrict_apply, LinearMap.domRestrict_apply, ← integralNorm_apply] at hy
-  refine ⟨t, fun ht ↦ hy0 ?_, t.2 x (Submodule.mem_span_singleton_self x), by omega⟩
+  refine ⟨t, fun ht ↦ hy0 ?_, t.property x (Submodule.mem_span_singleton_self x), by omega⟩
   have ht_zero : t = 0 := Subtype.ext ht
   rw [ht_zero, LinearEquiv.map_zero]
 
@@ -265,7 +264,7 @@ theorem exists_integralForm_eq_zero_of_integralNorm_eq_two (h9 : finrank ℤ L �
     (by rwa [IsPosDef, hNform]) hdetN (by omega) (x := r')
     (by rw [hBN, ← integralNorm_apply]; exact hr) fun y ↦ by
       rw [hBN]
-      exact (L.coe_mem_neighborKernel_iff 2 r _).1 ((restrictFull_carrier ..).le y.2)
+      exact (L.coe_mem_neighborKernel_iff 2 r _).1 ((restrictFull_carrier ..).le y.property)
   refine ⟨Submodule.inclusion hNL t, (map_ne_zero_iff _ (Submodule.inclusion_injective hNL)).2 ht0,
     (hBN r' t).symm.trans hrt, ?_⟩
   rwa [integralNorm_apply, ← hBN, ← integralNorm_apply]
