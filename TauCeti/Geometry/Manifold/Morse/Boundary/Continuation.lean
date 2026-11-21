@@ -231,8 +231,8 @@ theorem morseContinuationCoeff_constantContinuationField (hC : 0 < C)
   · rw [morseContinuationCoeff_eq_ncard hind]
     by_cases hqp : q = p
     · subst hqp
-      simp [h.morseContinuationSlice_constantContinuationField_self hf hC q.2]
-    · simp [h.morseContinuationSlice_constantContinuationField_eq_empty hf hC p.2 hind.le
+      simp [h.morseContinuationSlice_constantContinuationField_self hf hC q.property]
+    · simp [h.morseContinuationSlice_constantContinuationField_eq_empty hf hC p.property hind.le
         (Subtype.coe_injective.ne hqp), hqp]
   · have hqp : q ≠ p := by
       rintro rfl

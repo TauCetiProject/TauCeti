@@ -83,12 +83,12 @@ theorem exists_pos_forall_isStarImmersion_and_injective (h : IsStarImmersion n f
     ∃ δ > 0, ∀ {κ : Type*} [Fintype κ] {L : AbstractSimplicialComplex κ}
       {φ : Realization L → Realization K} {g : Realization L → E} {m : WithTop ℕ∞},
       Injective φ →
-      (∃ c > 0, ∃ δ' > 0, ∀ x y : Realization L, ‖(x.1 : κ → ℝ) - y.1‖ < δ' →
-        c * ‖(x.1 : κ → ℝ) - y.1‖ ≤ ‖((φ x).1 : ι → ℝ) - (φ y).1‖) → 1 ≤ m →
-      (∀ ρ : Face L, ∃ G : (ρ.1 → ℝ) → E,
-        (∀ x : StandardSimplex ρ.1, G (fun a => x.1 a) = g (faceInclusion L ρ x)) ∧
-          ContDiffOn ℝ m G (range fun t : Convexity.StdSimplex ℝ ρ.1 => ⇑t.weights)) →
-      (∀ x y, ‖(g x - f (φ x)) - (g y - f (φ y))‖ ≤ δ * ‖((φ x).1 : ι → ℝ) - (φ y).1‖) →
+      (∃ c > 0, ∃ δ' > 0, ∀ x y : Realization L, ‖(x.val : κ → ℝ) - y.val‖ < δ' →
+        c * ‖(x.val : κ → ℝ) - y.val‖ ≤ ‖((φ x).val : ι → ℝ) - (φ y).val‖) → 1 ≤ m →
+      (∀ ρ : Face L, ∃ G : (ρ.val → ℝ) → E,
+        (∀ x : StandardSimplex ρ.val, G (fun a => x.val a) = g (faceInclusion L ρ x)) ∧
+          ContDiffOn ℝ m G (range fun t : Convexity.StdSimplex ℝ ρ.val => ⇑t.weights)) →
+      (∀ x y, ‖(g x - f (φ x)) - (g y - f (φ y))‖ ≤ δ * ‖((φ x).val : ι → ℝ) - (φ y).val‖) →
       IsStarImmersion m g ∧ Injective g := by
   -- `f` is antilipschitz in barycentric coordinates, with some constant `C`.
   obtain ⟨C, hC, hanti⟩ := h.exists_antilipschitzWith hn hf
@@ -99,7 +99,7 @@ theorem exists_pos_forall_isStarImmersion_and_injective (h : IsStarImmersion n f
   -- Measure distances on `|L|` in the barycentric coordinates of `K` through `φ`. Then `f ∘ φ` is
   -- antilipschitz and `g - f ∘ φ` is Lipschitz with a small constant, so `g` is antilipschitz.
   let : PseudoMetricSpace (Realization L) := .induced (fun x => e (φ x)) inferInstance
-  have hdist (x y : Realization L) : dist x y = ‖((φ x).1 : ι → ℝ) - (φ y).1‖ := by
+  have hdist (x y : Realization L) : dist x y = ‖((φ x).val : ι → ℝ) - (φ y).val‖ := by
     change dist (e (φ x)) (e (φ y)) = _
     simp [e, Subtype.dist_eq, dist_eq_norm]
   have hfφ : AntilipschitzWith C (f ∘ φ) := .of_le_mul_dist fun x y =>
@@ -107,7 +107,7 @@ theorem exists_pos_forall_isStarImmersion_and_injective (h : IsStarImmersion n f
   have hgφ : LipschitzWith (2 * C)⁻¹ (g - f ∘ φ) := .of_dist_le_mul fun x y => by
     simpa [hdist, dist_eq_norm] using hlip x y
   obtain ⟨C', hC', hsep⟩ : ∃ C' > (0 : ℝ),
-      ∀ x y : Realization L, ‖((φ x).1 : ι → ℝ) - (φ y).1‖ ≤ C' * ‖g x - g y‖ :=
+      ∀ x y : Realization L, ‖((φ x).val : ι → ℝ) - (φ y).val‖ ≤ C' * ‖g x - g y‖ :=
     ⟨_, NNReal.coe_pos.2 (inv_pos.2 (tsub_pos_iff_lt.2 hCδ)), fun x y => by
       simpa only [hdist, dist_eq_norm] using (hfφ.add_sub_lipschitzWith hgφ hCδ).le_mul_dist x y⟩
   obtain ⟨c, hc, δ, hδ, hφsep⟩ := hφs
@@ -129,13 +129,13 @@ theorem exists_pos_forall_isStarImmersion_and_injective_edgewiseSubdivision [Lin
     (h : IsStarImmersion n f) (hn : 1 ≤ n) (hf : Injective f) :
     ∃ δ > 0, ∀ {k : ℕ} {g : Realization (K.edgewiseSubdivision k) → E} {m : WithTop ℕ∞},
       1 ≤ m →
-      (∀ ρ : Face (K.edgewiseSubdivision k), ∃ G : (ρ.1 → ℝ) → E,
-        (∀ x : StandardSimplex ρ.1, G (fun a => x.1 a) = g (faceInclusion _ ρ x)) ∧
-          ContDiffOn ℝ m G (range fun t : Convexity.StdSimplex ℝ ρ.1 => ⇑t.weights)) →
+      (∀ ρ : Face (K.edgewiseSubdivision k), ∃ G : (ρ.val → ℝ) → E,
+        (∀ x : StandardSimplex ρ.val, G (fun a => x.val a) = g (faceInclusion _ ρ x)) ∧
+          ContDiffOn ℝ m G (range fun t : Convexity.StdSimplex ℝ ρ.val => ⇑t.weights)) →
       (∀ x y, ‖(g x - f (edgewiseSubdivisionRealizationMap K k x)) -
           (g y - f (edgewiseSubdivisionRealizationMap K k y))‖ ≤
-        δ * ‖((edgewiseSubdivisionRealizationMap K k x).1 : ι → ℝ) -
-          (edgewiseSubdivisionRealizationMap K k y).1‖) →
+        δ * ‖((edgewiseSubdivisionRealizationMap K k x).val : ι → ℝ) -
+          (edgewiseSubdivisionRealizationMap K k y).val‖) →
       IsStarImmersion m g ∧ Injective g := by
   obtain ⟨δ, hδ, hpert⟩ := h.exists_pos_forall_isStarImmersion_and_injective hn hf
   refine ⟨δ, hδ, fun {k} g m hm hg hlip => ?_⟩
@@ -144,15 +144,15 @@ theorem exists_pos_forall_isStarImmersion_and_injective_edgewiseSubdivision [Lin
   -- so it is its own secant map. It is injective, so it is a star immersion and separates nearby
   -- points uniformly.
   set p := fun x : Realization (K.edgewiseSubdivision k) =>
-    ((edgewiseSubdivisionRealizationMap K k x).1 : ι → ℝ)
+    ((edgewiseSubdivisionRealizationMap K k x).val : ι → ℝ)
   have hp : (K.edgewiseSubdivision k).secantMap p = p := by
     refine secantMap_eq_self_iff.mpr fun ρ x => ?_
-    have hsupp : x.1 ∈ Finsupp.supported ℝ ℝ (↑ρ.1 : Set (K.EdgewiseVertex k)) :=
-      (Finsupp.mem_supported ℝ x.1).mpr (StandardSimplex.support_subset x)
+    have hsupp : x.val ∈ Finsupp.supported ℝ ℝ (↑ρ.val : Set (K.EdgewiseVertex k)) :=
+      (Finsupp.mem_supported ℝ x.val).mpr (StandardSimplex.support_subset x)
     simp only [p, edgewiseSubdivisionRealizationMap_val, faceInclusion_val,
       Finsupp.linearCombination_apply_of_mem_supported ℝ hsupp, Finsupp.coe_finsetSum,
       Finsupp.coe_smul, vertex_val, Finsupp.linearCombination_single, one_smul]
-    exact (Finset.sum_coe_sort ρ.1 fun u => x.1 u • ⇑(edgewisePoint u.1)).symm
+    exact (Finset.sum_coe_sort ρ.val fun u => x.val u • ⇑(edgewisePoint u.val)).symm
   have hpinj : Injective p := fun x y hxy =>
     edgewiseSubdivisionRealizationMap_injective (Subtype.ext (DFunLike.coe_injective hxy))
   have hps : IsStarImmersion 1 p := by
@@ -172,9 +172,9 @@ on which `φ = 1`, and agrees with `f ∘ π` where `φ = 0`. -/
 theorem eventually_isStarImmersion_and_injective_lineMap_secantMap
     [Finite ι] [LinearOrder ι] {m : WithTop ℕ∞} {φ : Realization K → ℝ} (h : IsStarImmersion n f)
     (hn : 1 ≤ n) (hf : Injective f) (hm : 1 ≤ m)
-    (hφ : ∀ σ : Face K, ∃ Φ : (σ.1 → ℝ) → ℝ,
-      (∀ x : StandardSimplex σ.1, Φ (fun a => x.1 a) = φ (faceInclusion K σ x)) ∧
-        ContDiffOn ℝ m Φ (range fun t : Convexity.StdSimplex ℝ σ.1 => ⇑t.weights)) :
+    (hφ : ∀ σ : Face K, ∃ Φ : (σ.val → ℝ) → ℝ,
+      (∀ x : StandardSimplex σ.val, Φ (fun a => x.val a) = φ (faceInclusion K σ x)) ∧
+        ContDiffOn ℝ m Φ (range fun t : Convexity.StdSimplex ℝ σ.val => ⇑t.weights)) :
     ∀ᶠ k in atTop,
       IsStarImmersion (min n m) (fun x : Realization (K.edgewiseSubdivision k) =>
         AffineMap.lineMap (f (edgewiseSubdivisionRealizationMap K k x))
@@ -188,18 +188,18 @@ theorem eventually_isStarImmersion_and_injective_lineMap_secantMap
   obtain ⟨δ, hδ, hpert⟩ := h.exists_pos_forall_isStarImmersion_and_injective_edgewiseSubdivision
     hn hf
   -- On every closed simplex, `f` is the restriction of a `Cⁿ` map in barycentric coordinates.
-  have hCn (σ : Face K) : ∃ F : (σ.1 → ℝ) → E,
-      (∀ x : StandardSimplex σ.1, F (fun a => x.1 a) = f (faceInclusion K σ x)) ∧
-        ContDiffOn ℝ n F (range fun t : Convexity.StdSimplex ℝ σ.1 => ⇑t.weights) := by
+  have hCn (σ : Face K) : ∃ F : (σ.val → ℝ) → E,
+      (∀ x : StandardSimplex σ.val, F (fun a => x.val a) = f (faceInclusion K σ x)) ∧
+        ContDiffOn ℝ n F (range fun t : Convexity.StdSimplex ℝ σ.val => ⇑t.weights) := by
     obtain ⟨F, hFg, hF, -⟩ := isSimplexImmersion_iff.mp (h.isSimplexImmersion σ)
     exact ⟨F, hFg, contMDiffOn_iff_contDiffOn.mp hF⟩
-  have hC1 (σ : Face K) : ∃ F : (σ.1 → ℝ) → E,
-      (∀ x : StandardSimplex σ.1, F (fun a => x.1 a) = f (faceInclusion K σ x)) ∧
-        ContDiffOn ℝ 1 F (range fun t : Convexity.StdSimplex ℝ σ.1 => ⇑t.weights) :=
+  have hC1 (σ : Face K) : ∃ F : (σ.val → ℝ) → E,
+      (∀ x : StandardSimplex σ.val, F (fun a => x.val a) = f (faceInclusion K σ x)) ∧
+        ContDiffOn ℝ 1 F (range fun t : Convexity.StdSimplex ℝ σ.val => ⇑t.weights) :=
     (hCn σ).imp fun _ hF => ⟨hF.1, hF.2.of_le hn⟩
-  have hφ1 (σ : Face K) : ∃ Φ : (σ.1 → ℝ) → ℝ,
-      (∀ x : StandardSimplex σ.1, Φ (fun a => x.1 a) = φ (faceInclusion K σ x)) ∧
-        ContDiffOn ℝ 1 Φ (range fun t : Convexity.StdSimplex ℝ σ.1 => ⇑t.weights) :=
+  have hφ1 (σ : Face K) : ∃ Φ : (σ.val → ℝ) → ℝ,
+      (∀ x : StandardSimplex σ.val, Φ (fun a => x.val a) = φ (faceInclusion K σ x)) ∧
+        ContDiffOn ℝ 1 Φ (range fun t : Convexity.StdSimplex ℝ σ.val => ⇑t.weights) :=
     (hφ σ).imp fun _ hΦ => ⟨hΦ.1, hΦ.2.of_le hm⟩
   filter_upwards [eventually_norm_lineMap_secantMap_sub_sub_le_edgewiseSubdivision hC1 hφ1 hδ]
     with k hk
@@ -208,9 +208,9 @@ theorem eventually_isStarImmersion_and_injective_lineMap_secantMap
   -- linear, so their interpolation is smooth.
   obtain ⟨Gf, hGf, hGfc⟩ := exists_contDiffOn_edgewiseSubdivisionRealizationMap_faceInclusion hCn ρ
   obtain ⟨Gφ, hGφ, hGφc⟩ := exists_contDiffOn_edgewiseSubdivisionRealizationMap_faceInclusion hφ ρ
-  let Gs : (ρ.1 → ℝ) →L[ℝ] E := (Fintype.linearCombination ℝ fun a : ρ.1 =>
+  let Gs : (ρ.val → ℝ) →L[ℝ] E := (Fintype.linearCombination ℝ fun a : ρ.val =>
     f (edgewiseSubdivisionRealizationMap K k (vertex _ a))).toContinuousLinearMap
-  have hGs (x : StandardSimplex ρ.1) : Gs (fun a => x.1 a) =
+  have hGs (x : StandardSimplex ρ.val) : Gs (fun a => x.val a) =
       (K.edgewiseSubdivision k).secantMap (f ∘ edgewiseSubdivisionRealizationMap K k)
         (faceInclusion _ ρ x) := by
     rw [secantMap_faceInclusion]

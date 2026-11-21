@@ -75,8 +75,8 @@ def equivAntidiagonalTuple : Vertex n ≃ ↥(Finset.Nat.antidiagonalTuple 3 n) 
   toFun p := ⟨p.coord, by
     rw [Finset.Nat.mem_antidiagonalTuple]
     simpa [coord, Fin.sum_univ_succ, add_assoc] using p.sum_eq⟩
-  invFun t := ⟨t.1 0, t.1 1, t.1 2, by
-    have ht := Finset.Nat.mem_antidiagonalTuple.mp t.2
+  invFun t := ⟨t.val 0, t.val 1, t.val 2, by
+    have ht := Finset.Nat.mem_antidiagonalTuple.mp t.property
     simpa [Fin.sum_univ_succ, add_assoc] using ht⟩
   left_inv p := by ext <;> rfl
   right_inv t := by

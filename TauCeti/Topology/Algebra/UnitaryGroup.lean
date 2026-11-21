@@ -82,7 +82,7 @@ variable [CommRing 𝕜] [StarRing 𝕜]
 variable [TopologicalSpace 𝕜] [ContinuousStar 𝕜]
 
 instance : ContinuousInv (Matrix.specialUnitaryGroup n 𝕜) where
-  continuous_inv := continuous_induced_rng.mpr continuous_subtype_val.star
+  continuous_inv := continuous_induced_rng.mpr continuous_subtypeVal.star
 
 section TopologicalSemiring
 
@@ -176,7 +176,7 @@ theorem continuous_fromBlocksOne (m : ℕ) :
   refine continuous_induced_rng.2 ?_
   simp only [Function.comp_def, coe_fromBlocksOne]
   exact (continuous_const.matrix_fromBlocks continuous_const continuous_const
-    continuous_subtype_val).matrix_reindex _ _
+    continuous_subtypeVal).matrix_reindex _ _
 
 end Matrix.UnitaryGroup
 

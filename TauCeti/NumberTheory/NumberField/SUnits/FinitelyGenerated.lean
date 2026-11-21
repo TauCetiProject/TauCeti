@@ -46,7 +46,7 @@ theorem exists_numberField_subgroup_pi_unit_mulEquiv {Γ : Subgroup (ι → Fˣ)
     ∃ (E : IntermediateField ℚ F) (_ : NumberField E)
       (S : Finset (HeightOneSpectrum (𝓞 E)))
       (Δ : Subgroup (ι → (S : Set (HeightOneSpectrum (𝓞 E))).unit E)) (e : Γ ≃* Δ),
-      ∀ (x : Γ) (i : ι), algebraMap E F (((e x).1 i : Eˣ) : E) = (x.1 i : F) := by
+      ∀ (x : Γ) (i : ι), algebraMap E F (((e x).val i : Eˣ) : E) = (x.val i : F) := by
   obtain ⟨E, hE, ΓE, hΓE, hmap⟩ :=
     exists_numberField_map_eq (Γ := Γ) hΓ hΓalg
   let f := (Units.map (algebraMap E F).toMonoidHom).compLeft ι
@@ -62,8 +62,8 @@ theorem exists_numberField_subgroup_pi_unit_mulEquiv {Γ : Subgroup (ι → Fˣ)
   let g : ΓE →* (ι → (S : Set (HeightOneSpectrum (𝓞 E))).unit E) :=
     MonoidHom.pi fun i ↦ ((Pi.evalMonoidHom (fun _ : ι ↦ Eˣ) i).comp ΓE.subtype).codRestrict
       ((S : Set (HeightOneSpectrum (𝓞 E))).unit E) fun x ↦ by
-        simpa using (Subgroup.mem_pi _).mp (hS x.2) i (Set.mem_univ i)
-  have hg_apply (y : ΓE) (i : ι) : (g y i : Eˣ) = y.1 i := by
+        simpa using (Subgroup.mem_pi _).mp (hS x.property) i (Set.mem_univ i)
+  have hg_apply (y : ΓE) (i : ι) : (g y i : Eˣ) = y.val i := by
     simp [g]
   have hg : Function.Injective g := by
     intro x y h
@@ -72,9 +72,9 @@ theorem exists_numberField_subgroup_pi_unit_mulEquiv {Γ : Subgroup (ι → Fˣ)
     rw [← hg_apply, ← hg_apply, h]
   refine ⟨E, hE, S, g.range, e.trans (MonoidHom.ofInjective hg), ?_⟩
   intro x i
-  have he (y : ΓE) : (e.symm y).1 = f y.1 := by
+  have he (y : ΓE) : (e.symm y).val = f y.val := by
     simp [e, Subgroup.coe_equivMapOfInjective_apply]
-  have hx : f (e x).1 = x.1 := (he (e x)).symm.trans
+  have hx : f (e x).val = x.val := (he (e x)).symm.trans
     (congrArg Subtype.val (e.symm_apply_apply x))
   rw [MulEquiv.trans_apply, MonoidHom.ofInjective_apply, hg_apply, ← hf_apply, hx]
 

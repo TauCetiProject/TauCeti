@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.IsManifold.ExtChartAt
 public import TauCeti.Analysis.Convex.SimplyConnected
 public import TauCeti.AlgebraicTopology.SemilocallySimplyConnected.Basic
+import TauCeti.AlgebraicTopology.UniversalCover.Countable
 
 /-!
 # Local topology of real manifolds
@@ -15,7 +16,9 @@ public import TauCeti.AlgebraicTopology.SemilocallySimplyConnected.Basic
 The convex model range makes charted spaces locally path-connected; nonempty preconnected
 charted spaces are therefore path-connected. Extended charts also provide convex-image open
 neighbourhood bases (`ModelWithCorners.isBasis_convex_image_extChartAt`) and simply connected
-neighbourhoods, so real manifolds are semilocally simply connected.
+neighbourhoods, so real manifolds are semilocally simply connected. In a second-countable
+charted space this implies countability of the fundamental group
+(`ModelWithCorners.countable_fundamentalGroup`).
 -/
 
 public section
@@ -114,25 +117,25 @@ theorem isBasis_convex_image_extChartAt (I : ModelWithCorners 𝕜 E H) {M : Typ
     [TopologicalSpace M] [ChartedSpace H M] (x : M) :
     TopologicalSpace.Opens.IsBasis
       {V : TopologicalSpace.Opens (I.extChartAtOpens x) |
-        Convex ℝ ((fun y : I.extChartAtOpens x ↦ extChartAt I x y.1) '' (V : Set _))} := by
-  let φ : I.extChartAtOpens x → E := fun y ↦ extChartAt I x y.1
+        Convex ℝ ((fun y : I.extChartAtOpens x ↦ extChartAt I x y.val) '' (V : Set _))} := by
+  let φ : I.extChartAtOpens x → E := fun y ↦ extChartAt I x y.val
   have hφ : Continuous φ :=
-    (continuousOn_extChartAt (I := I) x).comp_continuous continuous_subtype_val fun y ↦ y.2
+    (continuousOn_extChartAt (I := I) x).comp_continuous continuous_subtypeVal fun y ↦ y.property
   refine TopologicalSpace.Opens.isBasis_iff_nbhd.2 fun {U y} hy ↦ ?_
   have hUM : IsOpen (Subtype.val '' (U : Set (I.extChartAtOpens x))) :=
-    (I.extChartAtOpens x).isOpen.isOpenMap_subtype_val _ U.isOpen
+    (I.extChartAtOpens x).isOpen.isOpenMap_subtypeVal _ U.isOpen
   have hpre : (extChartAt I x).symm ⁻¹' (Subtype.val '' (U : Set (I.extChartAtOpens x))) ∈
       𝓝 (φ y) :=
-    (continuousAt_extChartAt_symm' y.2).preimage_mem_nhds
-      (hUM.mem_nhds ⟨y, hy, ((extChartAt I x).left_inv y.2).symm⟩)
+    (continuousAt_extChartAt_symm' y.property).preimage_mem_nhds
+      (hUM.mem_nhds ⟨y, hy, ((extChartAt I x).left_inv y.property).symm⟩)
   obtain ⟨r, hr_pos, hr⟩ := Metric.mem_nhdsWithin_iff.1
-    (Filter.inter_mem (extChartAt_target_mem_nhdsWithin' y.2) (nhdsWithin_le_nhds hpre))
+    (Filter.inter_mem (extChartAt_target_mem_nhdsWithin' y.property) (nhdsWithin_le_nhds hpre))
   let V : TopologicalSpace.Opens (I.extChartAtOpens x) :=
     ⟨φ ⁻¹' Metric.ball (φ y) r, Metric.isOpen_ball.preimage hφ⟩
   have hV_im : φ '' (V : Set _) = Metric.ball (φ y) r ∩ Set.range I := by
     refine Set.Subset.antisymm ?_ ?_
     · rintro _ ⟨z, hz, rfl⟩
-      exact ⟨hz, extChartAt_target_subset_range x ((extChartAt I x).map_source z.2)⟩
+      exact ⟨hz, extChartAt_target_subset_range x ((extChartAt I x).map_source z.property)⟩
     · rintro v hv
       have hv_tgt : v ∈ (extChartAt I x).target := (hr hv).1
       have hφ_symm : φ ⟨(extChartAt I x).symm v, (extChartAt I x).map_target hv_tgt⟩ = v :=
@@ -144,9 +147,18 @@ theorem isBasis_convex_image_extChartAt (I : ModelWithCorners 𝕜 E H) {M : Typ
     dsimp only [φ] at hV_im
     rw [hV_im]
     exact (convex_ball (φ y) r).inter I.convex_range
-  · have hz_mem := (hr ⟨hz, extChartAt_target_subset_range x ((extChartAt I x).map_source z.2)⟩).2
-    rw [Set.mem_preimage, (extChartAt I x).left_inv z.2] at hz_mem
+  · have hz_mem :=
+      (hr ⟨hz, extChartAt_target_subset_range x ((extChartAt I x).map_source z.property)⟩).2
+    rw [Set.mem_preimage, (extChartAt I x).left_inv z.property] at hz_mem
     obtain ⟨w, hwU, hw⟩ := hz_mem
     exact Subtype.ext hw ▸ hwU
+
+/-- A second-countable manifold has countable fundamental group. -/
+theorem countable_fundamentalGroup (I : ModelWithCorners 𝕜 E H) (M : Type*)
+    [TopologicalSpace M] [ChartedSpace H M] [SecondCountableTopology M] (x₀ : M) :
+    Countable (FundamentalGroup M x₀) :=
+  have := I.locallyPathConnectedSpace_of_chartedSpace M
+  have := I.semilocallySimplyConnectedSpace M
+  TauCeti.countable_fundamentalGroup x₀
 
 end ModelWithCorners

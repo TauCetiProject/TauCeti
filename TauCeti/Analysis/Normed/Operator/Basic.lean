@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Analysis.Normed.Ring.Units
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 import Mathlib.Analysis.Normed.Module.FiniteDimension
+import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 import Mathlib.Analysis.Normed.Operator.NNNorm
 import Mathlib.LinearAlgebra.Pi
 
@@ -63,13 +64,19 @@ and is bounded below by `‖A⁻¹‖⁻¹` (`ContinuousLinearMap.norm_le_norm_r
 and conversely a lower bound `‖x‖ ≤ M ‖A x‖` bounds the norm of the inverse by `M`
 (`ContinuousLinearMap.norm_ringInverse_le_of_forall_norm_le`). An operator bounded below
 is invertible if a sufficiently nearby operator is invertible
-(`ContinuousLinearMap.isUnit_of_forall_mul_norm_le_of_norm_sub_lt`).
+(`ContinuousLinearMap.isUnit_of_forall_mul_norm_le_of_norm_sub_lt`). On a Banach space, for
+`‖A‖ < 1` the Neumann series solves `v + A x = x` with `‖x‖ ≤ ‖v‖ / (1 - ‖A‖)`
+(`ContinuousLinearMap.exists_add_apply_eq_of_norm_lt_one`).
 A family of operators continuous at a point and invertible there changes the size of a
 function near that point only up to constant factors (`TauCeti.isTheta_clm_apply_of_isUnit`).
 
 The diagonal sum `∑ i ∈ s, A (v i) (v i)` of a continuous bilinear map along vectors of norm at
 most one, such as the trace of `A` along an orthonormal basis, is bounded by `#s * ‖A‖`
-(`ContinuousLinearMap.norm_sum_apply_apply_le`).
+(`ContinuousLinearMap.norm_sum_apply_apply_le`). For a sequence `A` of continuous semilinear maps
+and a sequence `v` of vectors, the weighted norm of the finite Cauchy product
+`∑ k ∈ Finset.range (n + 1), A (n - k) (v k)` is bounded termwise by the Cauchy product of the
+weighted norms `‖A m‖ * r ^ m` and `‖v k‖ * r ^ k` for `0 ≤ r`
+(`TauCeti.norm_sum_range_clm_apply_mul_pow_le`).
 
 Over `ℝ` or `ℂ`, two-sided norm bounds `1 - δ < ‖T v‖ < 1 + δ` on a `δ`-net of the unit sphere
 extend to bounds `(1 - 3 δ) ‖v‖ ≤ ‖T v‖ ≤ (1 + 3 δ) ‖v‖` on the whole space
@@ -104,6 +111,8 @@ obtained by replacing one coordinate. The coordinate arguments are adapted from
 `65810c73f9dd7945fc646ab484cb19d673f5291d`,
 `formalization/FunctionalInequalities/Analysis/`, files `PiCoordinates.lean` and
 `Sard/CoordinateChange.lean`; the coordinate bound comes from `Sard/Disk.lean`.
+Bounded linear endomorphisms of a seminormed space act continuously on it
+(`ContinuousLinearMap.instContinuousSMul`).
 -/
 
 public section
@@ -437,6 +446,22 @@ theorem isUnit_of_forall_mul_norm_le_of_norm_sub_lt [CompleteSpace E]
         rwa [heq] at h
   exact (u.ofNearby A hnear).isUnit
 
+/-- **The Neumann series solves `v + A x = x`.** On a Banach space, if `‖A‖ < 1` then the
+equation `v + A x = x` has the solution `x = (1 - A)⁻¹ v`, and `‖x‖ ≤ ‖v‖ / (1 - ‖A‖)`. -/
+theorem exists_add_apply_eq_of_norm_lt_one [CompleteSpace E] (v : E) {A : E →L[𝕜] E}
+    (hA : ‖A‖ < 1) : ∃ x, v + A x = x ∧ ‖x‖ ≤ ‖v‖ / (1 - ‖A‖) := by
+  set u := Units.oneSub A hA
+  set x := (↑u⁻¹ : E →L[𝕜] E) v
+  have hx : x - A x = v := by
+    have h := congr($(u.mul_inv) v)
+    rwa [Units.val_oneSub, mul_apply_eq_comp, sub_apply, one_apply_eq_self,
+      one_apply_eq_self] at h
+  refine ⟨x, by rw [← hx, sub_add_cancel], ?_⟩
+  rw [le_div_iff₀ (sub_pos.2 hA), ← hx]
+  calc ‖x‖ * (1 - ‖A‖) = ‖x‖ - ‖A‖ * ‖x‖ := by ring
+    _ ≤ ‖x‖ - ‖A x‖ := by gcongr; exact le_opNorm A x
+    _ ≤ ‖x - A x‖ := norm_sub_norm_le _ _
+
 end Inverse
 
 /-- The diagonal sum `∑ i ∈ s, A (v i) (v i)` of a continuous bilinear map along vectors of norm
@@ -691,6 +716,36 @@ theorem isTheta_clm_apply_of_isUnit (hΦ : ContinuousAt Φ a) (hΦa : IsUnit (Φ
 
 end
 
+/-- Weighted norm bound for the Cauchy product `∑_{k=0}^n A_{n-k}(v_k)` of a sequence of continuous
+semilinear maps and a sequence of vectors. -/
+theorem norm_sum_range_clm_apply_mul_pow_le
+    {𝕜 𝕜₂ E F : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜₂]
+    [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [SeminormedAddCommGroup F] [NormedSpace 𝕜₂ F]
+    {σ : 𝕜 →+* 𝕜₂} [RingHomIsometric σ]
+    (A : ℕ → E →SL[σ] F) (v : ℕ → E) {r : ℝ} (hr : 0 ≤ r) (n : ℕ) :
+    ‖∑ k ∈ Finset.range (n + 1), A (n - k) (v k)‖ * r ^ n ≤
+      ∑ k ∈ Finset.range (n + 1), (‖A (n - k)‖ * r ^ (n - k)) * (‖v k‖ * r ^ k) := by
+  calc
+    ‖∑ k ∈ Finset.range (n + 1), A (n - k) (v k)‖ * r ^ n
+        ≤ (∑ k ∈ Finset.range (n + 1), ‖A (n - k) (v k)‖) * r ^ n := by
+          gcongr
+          exact norm_sum_le _ _
+    _ = ∑ k ∈ Finset.range (n + 1), ‖A (n - k) (v k)‖ * r ^ n := Finset.sum_mul ..
+    _ ≤ ∑ k ∈ Finset.range (n + 1), (‖A (n - k)‖ * r ^ (n - k)) * (‖v k‖ * r ^ k) := by
+          refine Finset.sum_le_sum fun k hk ↦ ?_
+          have hkn : n - k + k = n :=
+            Nat.sub_add_cancel (Nat.lt_succ_iff.mp (Finset.mem_range.mp hk))
+          calc
+            ‖A (n - k) (v k)‖ * r ^ n
+                ≤ (‖A (n - k)‖ * ‖v k‖) * r ^ (n - k + k) := by
+                  rw [hkn]
+                  gcongr
+                  exact (A (n - k)).le_opNorm (v k)
+            _ = (‖A (n - k)‖ * r ^ (n - k)) * (‖v k‖ * r ^ k) := by
+                  rw [pow_add]
+                  ring
+
 section
 
 variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
@@ -738,6 +793,11 @@ theorem add_apply_eq_iff_sub_apply_eq_neg_apply {A : V →L[𝕜] V} (hA : A * A
     simp only [map_sub, map_neg, hAA, neg_neg] at h'
     rw [← h']
     abel
+
+/-- Bounded linear endomorphisms of a seminormed space act continuously on it. -/
+instance instContinuousSMul {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
+    [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] : ContinuousSMul (E →L[𝕜] E) E where
+  continuous_smul := continuous_fst.clm_apply continuous_snd
 
 end ContinuousLinearMap
 
