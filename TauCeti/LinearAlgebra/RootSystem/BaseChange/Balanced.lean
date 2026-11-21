@@ -381,14 +381,6 @@ theorem rootSpanProj_eq_iff_of_sub_mem {x y : M} (h : y - x ∈ P.rootSpan R) :
   rw [heq, sub_self, ZeroMemClass.coe_zero] at hsub
   exact (sub_eq_zero.mp hsub.symm).symm
 
-omit [P.IsBalanced] in
-/-- Comparable weights in the integral root order differ by an element of the root span. -/
-theorem sub_mem_rootSpan_of_rootLE (b : P.Base) {x y : M} (h : P.rootLE b x y) :
-    y - x ∈ P.rootSpan R := by
-  obtain ⟨n, hn⟩ := (P.rootLE_iff_exists_nat b).mp h
-  rw [hn]
-  exact sum_mem fun i _ ↦ nsmul_mem (subset_span (mem_range_self i)) (n i)
-
 /-- Projecting onto the root span preserves integral root dominance. -/
 theorem rootLE_coe_rootSpanProj_of_rootLE (b : P.Base) {x y : M} (h : P.rootLE b x y) :
     P.rootLE b (P.rootSpanProj x : M) (P.rootSpanProj y : M) := by
