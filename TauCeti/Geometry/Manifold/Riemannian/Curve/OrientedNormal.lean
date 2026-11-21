@@ -97,8 +97,8 @@ theorem riemannianVolumeForm_curveVelocity_orientedUnitNormal
     riemannianVolumeForm o (γ t) ![curveVelocity I γ t, orientedUnitNormal o γ t] =
       ‖curveVelocity I γ t‖ := by
   let := o.fact_finrank_tangentSpace (γ t)
-  rw [riemannianVolumeForm_apply, ← (o.orientationAt (γ t)).areaForm_to_volumeForm,
-    orientedUnitNormal_apply, (o.orientationAt (γ t)).areaForm_rightAngleRotation_right,
+  rw [o.riemannianVolumeForm_eq_areaForm, orientedUnitNormal_apply,
+    (o.orientationAt (γ t)).areaForm_rightAngleRotation_right,
     NormedSpace.normalize, real_inner_smul_right, real_inner_self_eq_norm_sq]
   by_cases h : ‖curveVelocity I γ t‖ = 0
   · simp [h]
