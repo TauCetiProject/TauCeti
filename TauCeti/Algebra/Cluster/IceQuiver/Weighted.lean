@@ -9,9 +9,6 @@ public import TauCeti.Algebra.Cluster.ExchangeMatrix.Mutation
 public import Mathlib.Algebra.Order.Field.Rat
 
 import Mathlib.Tactic.FieldSimp
-import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.LinearCombination
-import Mathlib.Tactic.Ring
 
 /-!
 # Weighted ice quivers and their full matrices
@@ -26,13 +23,15 @@ such that `s_f C_fg = -s_g C_gf` and `s_k ∣ s_f B_fk`. Its *full matrix* `M : 
 * `M f g = C f g` for frozen `f` and `g`.
 
 Every vertex now carries a positive weight `s_i`, these weights skew-symmetrize `M`, and every
-entry of `M` in a mutable row or column is an integer. Conversely, a rational matrix with a
-positive integer skew-symmetrizer that is integral in the mutable rows and columns is the full
-matrix of exactly one weighted ice quiver (`WeightedIceQuiver.fullMatrixEquiv`). The entries
-between frozen vertices may be fractions: these are the half-arrows of Fock and Goncharov, which
-appear when quivers are glued along frozen vertices.
+entry of `M` in a mutable row or column is an integer. Conversely, for a fixed mutable embedding
+`row`, a pair of positive integer weights `s` and a rational matrix `M` that `s` skew-symmetrizes
+and that is integral in the mutable rows and columns comes from exactly one weighted ice quiver,
+whose weights are `s` and whose full matrix is `M` (`WeightedIceQuiver.weightFullMatrixEquiv`).
+The matrix alone does not determine the weights. The entries between frozen vertices are
+arbitrary rationals, subject only to weighted skew-symmetry; the motivating special case is the
+half-arrows of Fock and Goncharov, which appear when quivers are glued along frozen vertices.
 
-Mutation at a mutable vertex applies the usual mutation formula to the whole full matrix, keeps
+Mutation at a mutable vertex applies `TauCeti.matrixMutation` to the whole full matrix, keeps
 the weights, and projects to mutation of the exchange matrix
 (`WeightedIceQuiver.toExchangeMatrix_mutation`). Freezing and defrosting change the mutable
 embedding and keep the full matrix and weights. A frozen vertex can be defrosted when its row and
@@ -45,13 +44,15 @@ vertex preserves this condition and commutes with defrosting and with freezing.
 * `TauCeti.WeightedIceQuiver.weight`, `TauCeti.WeightedIceQuiver.fullMatrix`: the weights of all
   vertices and the full skew-symmetrizable rational matrix.
 * `TauCeti.WeightedIceQuiver.IsFullMatrix row s M`: the conditions characterizing full matrices.
-* `TauCeti.WeightedIceQuiver.fullMatrixEquiv`: weighted ice quivers are equivalent to their full
-  matrices and weights.
+* `TauCeti.WeightedIceQuiver.weightFullMatrixEquiv`: weighted ice quivers are equivalent to their
+  weights together with their full matrices.
 * `TauCeti.WeightedIceQuiver.mutation`, `TauCeti.WeightedIceQuiver.freeze`,
   `TauCeti.WeightedIceQuiver.defrost`: mutation, freezing and defrosting.
 
 ## Main results
 
+* `TauCeti.WeightedIceQuiver.fullMatrix_mutation`: the full matrix of the mutation at `k` is the
+  matrix mutation of the full matrix at `row k`.
 * `TauCeti.WeightedIceQuiver.toExchangeMatrix_mutation`: full matrix mutation projects to
   `TauCeti.ExchangeMatrix.mutation`.
 * `TauCeti.WeightedIceQuiver.mutation_mutation`: mutation is an involution.
@@ -59,6 +60,16 @@ vertex preserves this condition and commutes with defrosting and with freezing.
   vertex.
 * `TauCeti.WeightedIceQuiver.defrost_mutation`, `TauCeti.WeightedIceQuiver.freeze_mutation`:
   mutation commutes with defrosting and with freezing.
+
+## Implementation notes
+
+The rational full matrix reuses the matrix-level theory of `ExchangeMatrix/Basic.lean` and
+`ExchangeMatrix/Mutation.lean`, which is stated over any linearly ordered ring: the weights form
+a `Matrix.IsSkewSymmetrizer` of the full matrix, mutation is `TauCeti.matrixMutation` along
+`Function.Embedding.refl I`, its involutivity is `TauCeti.matrixMutation_matrixMutation`,
+preservation of the skew-symmetrizer is `Matrix.IsSkewSymmetrizer.matrixMutation`, and
+preservation of integrality at a vertex is `TauCeti.forall_matrixMutation_refl_mem_iff` for the
+subring of integers.
 
 ## References
 
@@ -103,13 +114,6 @@ variable {row : K ↪ I} (q : WeightedIceQuiver row)
 
 /-! ### Weights and the full matrix -/
 
-omit q in
-/-- Every vertex is mutable or frozen. -/
-private theorem row_or_frozen (i : I) : (∃ k, row k = i) ∨ ∃ f : ↥(Set.range row)ᶜ, f.val = i := by
-  by_cases hi : i ∈ Set.range row
-  · exact Or.inl hi
-  · exact Or.inr ⟨⟨i, hi⟩, rfl⟩
-
 /-- The weight of a vertex: the symmetrizer at a mutable vertex and the frozen weight at a frozen
 vertex. -/
 noncomputable def weight : I → ℤ :=
@@ -126,9 +130,11 @@ theorem weight_frozen (f : ↥(Set.range row)ᶜ) : q.weight f = q.frozenWeight 
 
 /-- Every vertex weight is positive. -/
 theorem weight_pos (i : I) : 0 < q.weight i := by
-  obtain ⟨k, rfl⟩ | ⟨f, rfl⟩ := row_or_frozen (row := row) i
-  · simpa using q.symmetrizer_pos k
-  · simpa using q.frozenWeight_pos f
+  by_cases hi : i ∈ Set.range row
+  · obtain ⟨k, rfl⟩ := hi
+    simpa using q.symmetrizer_pos k
+  · lift i to ↥(Set.range row)ᶜ using hi
+    simpa using q.frozenWeight_pos i
 
 /-- The entries of the full matrix in a frozen column. -/
 private noncomputable def frozenColumn (j : I) : I → ℚ :=
@@ -163,37 +169,45 @@ theorem fullMatrix_apply_frozen (f g : ↥(Set.range row)ᶜ) :
 theorem weight_mul_fullMatrix (i j : I) :
     (q.weight i : ℚ) * q.fullMatrix i j = -((q.weight j : ℚ) * q.fullMatrix j i) := by
   have hs (k : K) : (q.symmetrizer k : ℚ) ≠ 0 := by exact_mod_cast (q.symmetrizer_pos k).ne'
-  obtain ⟨a, rfl⟩ | ⟨f, rfl⟩ := row_or_frozen (row := row) i <;>
-    obtain ⟨b, rfl⟩ | ⟨g, rfl⟩ := row_or_frozen (row := row) j
-  · simp only [weight_row, fullMatrix_apply_col]
+  by_cases hi : i ∈ Set.range row <;> by_cases hj : j ∈ Set.range row
+  · obtain ⟨a, rfl⟩ := hi
+    obtain ⟨b, rfl⟩ := hj
+    simp only [weight_row, fullMatrix_apply_col]
     exact_mod_cast q.symmetrizer_mul_matrix a b
-  · simp only [weight_row, weight_frozen, fullMatrix_apply_row_frozen, fullMatrix_apply_col]
+  · obtain ⟨a, rfl⟩ := hi
+    lift j to ↥(Set.range row)ᶜ using hj
+    simp only [weight_row, weight_frozen, fullMatrix_apply_row_frozen, fullMatrix_apply_col]
     field_simp [hs a]
-  · simp only [weight_row, weight_frozen, fullMatrix_apply_row_frozen, fullMatrix_apply_col]
+  · obtain ⟨b, rfl⟩ := hj
+    lift i to ↥(Set.range row)ᶜ using hi
+    simp only [weight_row, weight_frozen, fullMatrix_apply_row_frozen, fullMatrix_apply_col]
     field_simp [hs b]
-  · simpa only [weight_frozen, fullMatrix_apply_frozen] using q.frozenWeight_mul_frozenBlock f g
+  · lift i to ↥(Set.range row)ᶜ using hi
+    lift j to ↥(Set.range row)ᶜ using hj
+    simpa only [weight_frozen, fullMatrix_apply_frozen] using q.frozenWeight_mul_frozenBlock i j
+
+/-- The vertex weights form a skew-symmetrizer of the full matrix. -/
+theorem isSkewSymmetrizer_fullMatrix :
+    q.fullMatrix.IsSkewSymmetrizer fun i ↦ (q.weight i : ℚ) :=
+  ⟨fun i ↦ by exact_mod_cast q.weight_pos i, q.weight_mul_fullMatrix⟩
 
 /-- The diagonal of the full matrix vanishes. -/
 @[simp]
-theorem fullMatrix_apply_self (i : I) : q.fullMatrix i i = 0 := by
-  have h := q.weight_mul_fullMatrix i i
-  have hs : (q.weight i : ℚ) ≠ 0 := by exact_mod_cast (q.weight_pos i).ne'
-  have h2 : (q.weight i : ℚ) * q.fullMatrix i i = 0 := by linarith
-  exact (mul_eq_zero.mp h2).resolve_left hs
+theorem fullMatrix_apply_self (i : I) : q.fullMatrix i i = 0 :=
+  q.isSkewSymmetrizer_fullMatrix.apply_self i
 
 /-- The entries of the full matrix in a mutable row are integers. -/
 theorem exists_intCast_eq_fullMatrix_row (k : K) (j : I) :
     ∃ n : ℤ, (n : ℚ) = q.fullMatrix (row k) j := by
-  obtain ⟨b, rfl⟩ | ⟨f, rfl⟩ := row_or_frozen (row := row) j
-  · exact ⟨q.matrix (row k) b, (q.fullMatrix_apply_col _ b).symm⟩
-  obtain ⟨c, hc⟩ := q.symmetrizer_dvd f k
-  have hs : (q.symmetrizer k : ℚ) ≠ 0 := by exact_mod_cast (q.symmetrizer_pos k).ne'
-  have hc' : (q.frozenWeight f : ℚ) * q.matrix f k = q.symmetrizer k * c := by exact_mod_cast hc
-  refine ⟨-c, ?_⟩
-  rw [fullMatrix_apply_row_frozen, hc']
-  field_simp
-  push_cast
-  ring
+  by_cases hj : j ∈ Set.range row
+  · obtain ⟨b, rfl⟩ := hj
+    exact ⟨q.matrix (row k) b, (q.fullMatrix_apply_col _ b).symm⟩
+  lift j to ↥(Set.range row)ᶜ using hj
+  have hd := (Rat.den_div_intCast_eq_one_iff _ _ (q.symmetrizer_pos k).ne').2
+    (q.symmetrizer_dvd j k)
+  refine ⟨-(((q.frozenWeight j * q.matrix j k : ℤ) : ℚ) / q.symmetrizer k).num, ?_⟩
+  rw [Int.cast_neg, (Rat.den_eq_one_iff _).1 hd, fullMatrix_apply_row_frozen, neg_div,
+    Int.cast_mul]
 
 /-- The entries of the full matrix in a mutable column are integers. -/
 theorem exists_intCast_eq_fullMatrix_col (i : I) (k : K) :
@@ -203,13 +217,11 @@ theorem exists_intCast_eq_fullMatrix_col (i : I) (k : K) :
 /-! ### Full matrices -/
 
 /-- The rational matrix `M` with vertex weights `s` is the *full matrix* of a weighted ice quiver
-along `row`: the weights are positive and skew-symmetrize `M`, and every entry of `M` in a
-mutable row or a mutable column is an integer. -/
+along `row`: the weights form a skew-symmetrizer of `M`, and every entry of `M` in a mutable row
+or a mutable column is an integer. -/
 structure IsFullMatrix (row : K ↪ I) (s : I → ℤ) (M : Matrix I I ℚ) : Prop where
-  /-- The weights are positive. -/
-  weight_pos : ∀ i, 0 < s i
   /-- The weights skew-symmetrize the matrix. -/
-  weight_mul : ∀ i j, (s i : ℚ) * M i j = -((s j : ℚ) * M j i)
+  isSkewSymmetrizer : M.IsSkewSymmetrizer fun i ↦ (s i : ℚ)
   /-- The entries in a mutable row are integers. -/
   exists_intCast_eq_row : ∀ k j, ∃ n : ℤ, (n : ℚ) = M (row k) j
   /-- The entries in a mutable column are integers. -/
@@ -218,12 +230,26 @@ structure IsFullMatrix (row : K ↪ I) (s : I → ℤ) (M : Matrix I I ℚ) : Pr
 /-- The full matrix and the weights of a weighted ice quiver satisfy the defining conditions of a
 full matrix. -/
 theorem isFullMatrix : IsFullMatrix row q.weight q.fullMatrix :=
-  ⟨q.weight_pos, q.weight_mul_fullMatrix, q.exists_intCast_eq_fullMatrix_row,
+  ⟨q.isSkewSymmetrizer_fullMatrix, q.exists_intCast_eq_fullMatrix_row,
     q.exists_intCast_eq_fullMatrix_col⟩
 
 namespace IsFullMatrix
 
 variable {s : I → ℤ} {M : Matrix I I ℚ}
+
+/-- The weights of a full matrix are positive. -/
+theorem weight_pos (h : IsFullMatrix row s M) (i : I) : 0 < s i :=
+  Int.cast_pos.mp (h.isSkewSymmetrizer.pos i)
+
+/-- The weights of a full matrix skew-symmetrize it. -/
+theorem weight_mul (h : IsFullMatrix row s M) (i j : I) :
+    (s i : ℚ) * M i j = -((s j : ℚ) * M j i) :=
+  h.isSkewSymmetrizer.mul_apply i j
+
+/-- The row and the column of a full matrix at a mutable vertex lie in the subring of integers. -/
+private theorem mem_bot (h : IsFullMatrix row s M) (k : K) (j : I) :
+    M (row k) j ∈ (⊥ : Subring ℚ) ∧ M j (row k) ∈ (⊥ : Subring ℚ) :=
+  ⟨Subring.mem_bot.2 (h.exists_intCast_eq_row k j), Subring.mem_bot.2 (h.exists_intCast_eq_col j k)⟩
 
 /-- The integer value of a mutable column entry is its numerator. -/
 private theorem num_col (h : IsFullMatrix row s M) (i : I) (k : K) :
@@ -233,24 +259,13 @@ private theorem num_col (h : IsFullMatrix row s M) (i : I) (k : K) :
 
 /-- Restricting the mutable vertices to a subset keeps a full matrix full. -/
 theorem of_range_subset {row' : K' ↪ I} (h : IsFullMatrix row s M)
-    (hr : Set.range row' ⊆ Set.range row) : IsFullMatrix row' s M where
-  weight_pos := h.weight_pos
-  weight_mul := h.weight_mul
-  exists_intCast_eq_row k j := by
+    (hr : Set.range row' ⊆ Set.range row) : IsFullMatrix row' s M :=
+  have H (k : K') (j : I) : M (row' k) j ∈ (⊥ : Subring ℚ) ∧ M j (row' k) ∈ (⊥ : Subring ℚ) := by
     obtain ⟨l, hl⟩ := hr ⟨k, rfl⟩
-    exact hl ▸ h.exists_intCast_eq_row l j
-  exists_intCast_eq_col i k := by
-    obtain ⟨l, hl⟩ := hr ⟨k, rfl⟩
-    exact hl ▸ h.exists_intCast_eq_col i l
-
-/-- A positive weight times the positive part of an entry is the weight of the column vertex
-times the negative part of the transposed entry. -/
-private theorem weight_mul_posPart (h : IsFullMatrix row s M) (i j : I) :
-    (s i : ℚ) * (M i j)⁺ = (s j : ℚ) * (M j i)⁻ := by
-  have hi : (0 : ℚ) ≤ s i := by exact_mod_cast (h.weight_pos i).le
-  have hj : (0 : ℚ) ≤ s j := by exact_mod_cast (h.weight_pos j).le
-  rw [posPart_def, negPart_def, mul_max_of_nonneg _ _ hi, mul_max_of_nonneg _ _ hj,
-    h.weight_mul, mul_neg, mul_zero, mul_zero]
+    rw [← hl]
+    exact h.mem_bot l j
+  ⟨h.isSkewSymmetrizer, fun k j ↦ Subring.mem_bot.1 (H k j).1,
+    fun i k ↦ Subring.mem_bot.1 (H k i).2⟩
 
 end IsFullMatrix
 
@@ -260,7 +275,7 @@ noncomputable def ofFullMatrix (s : I → ℤ) (M : Matrix I I ℚ) (h : IsFullM
   matrix := of fun i k ↦ (M i (row k)).num
   symmetrizer k := s (row k)
   isSkewSymmetrizer :=
-    ⟨fun k ↦ h.weight_pos _, fun a b ↦ by
+    ⟨fun _ ↦ h.weight_pos _, fun a b ↦ by
       have hab := h.weight_mul (row a) (row b)
       rw [← h.num_col (row a) b, ← h.num_col (row b) a] at hab
       simp only [submatrix_apply, of_apply, id_eq]
@@ -271,18 +286,17 @@ noncomputable def ofFullMatrix (s : I → ℤ) (M : Matrix I I ℚ) (h : IsFullM
   frozenWeight_mul_frozenBlock f g := h.weight_mul f g
   symmetrizer_dvd f k := by
     obtain ⟨n, hn⟩ := h.exists_intCast_eq_row k f
-    refine ⟨-n, ?_⟩
-    have hf := h.weight_mul f (row k)
-    rw [← h.num_col, ← hn] at hf
-    have hf' : ((s f * (M f (row k)).num : ℤ) : ℚ) = ((s (row k) * -n : ℤ) : ℚ) := by
-      push_cast
-      linarith
-    exact_mod_cast hf'
+    have hs : (s (row k) : ℚ) ≠ 0 := by exact_mod_cast (h.weight_pos _).ne'
+    have hq : ((s f * (M f (row k)).num : ℤ) : ℚ) / s (row k) = -n := by
+      rw [Int.cast_mul, h.num_col, h.weight_mul, hn, neg_div, mul_div_cancel_left₀ _ hs]
+    exact (Rat.den_div_intCast_eq_one_iff _ _ (h.weight_pos _).ne').1 (by
+      rw [of_apply, hq, Rat.den_neg_eq_den, Rat.den_intCast])
 
 section ofFullMatrix
 
 variable (s : I → ℤ) (M : Matrix I I ℚ) (h : IsFullMatrix row s M)
 
+@[simp]
 theorem ofFullMatrix_matrix (i : I) (k : K) :
     (ofFullMatrix s M h).matrix i k = (M i (row k)).num :=
   (rfl)
@@ -303,24 +317,36 @@ theorem ofFullMatrix_frozenBlock (f g : ↥(Set.range row)ᶜ) :
 
 end ofFullMatrix
 
+/-- The weighted ice quiver built from the weights `s` and the full matrix `M` has the weights
+`s`. -/
 @[simp]
 theorem weight_ofFullMatrix (s : I → ℤ) (M : Matrix I I ℚ) (h : IsFullMatrix row s M) :
     (ofFullMatrix s M h).weight = s := by
   funext i
-  obtain ⟨k, rfl⟩ | ⟨f, rfl⟩ := row_or_frozen (row := row) i <;> simp
+  by_cases hi : i ∈ Set.range row
+  · obtain ⟨k, rfl⟩ := hi
+    simp
+  · lift i to ↥(Set.range row)ᶜ using hi
+    simp
 
+/-- The weighted ice quiver built from the weights `s` and the full matrix `M` has the full
+matrix `M`. -/
 @[simp]
 theorem fullMatrix_ofFullMatrix (s : I → ℤ) (M : Matrix I I ℚ) (h : IsFullMatrix row s M) :
     (ofFullMatrix s M h).fullMatrix = M := by
   have hs (k : K) : (s (row k) : ℚ) ≠ 0 := by exact_mod_cast (h.weight_pos _).ne'
   ext i j
-  obtain ⟨b, rfl⟩ | ⟨g, rfl⟩ := row_or_frozen (row := row) j
-  · exact (fullMatrix_apply_col _ i b).trans (h.num_col i b)
-  obtain ⟨a, rfl⟩ | ⟨f, rfl⟩ := row_or_frozen (row := row) i
-  · have hga := h.weight_mul g (row a)
+  by_cases hj : j ∈ Set.range row
+  · obtain ⟨b, rfl⟩ := hj
+    exact (fullMatrix_apply_col _ i b).trans (h.num_col i b)
+  lift j to ↥(Set.range row)ᶜ using hj
+  by_cases hi : i ∈ Set.range row
+  · obtain ⟨a, rfl⟩ := hi
+    have hga := h.weight_mul j (row a)
     rw [fullMatrix_apply_row_frozen, ofFullMatrix_frozenWeight, ofFullMatrix_matrix,
       ofFullMatrix_symmetrizer, h.num_col, hga, neg_neg, mul_div_cancel_left₀ _ (hs a)]
-  · rw [fullMatrix_apply_frozen, ofFullMatrix_frozenBlock]
+  · lift i to ↥(Set.range row)ᶜ using hi
+    rw [fullMatrix_apply_frozen, ofFullMatrix_frozenBlock]
 
 /-- A weighted ice quiver is recovered from its full matrix and its weights. -/
 @[simp]
@@ -329,20 +355,10 @@ theorem ofFullMatrix_fullMatrix : ofFullMatrix q.weight q.fullMatrix q.isFullMat
   · rw [ofFullMatrix_matrix, fullMatrix_apply_col, Rat.num_intCast]
   all_goals simp
 
-/-- A weighted ice quiver is determined by its weights and its full matrix. -/
-theorem ext_fullMatrix {q q' : WeightedIceQuiver row} (hs : q.weight = q'.weight)
-    (hM : q.fullMatrix = q'.fullMatrix) : q = q' := by
-  ext i k
-  · exact_mod_cast (q.fullMatrix_apply_col i k).symm.trans
-      ((congrFun₂ hM i (row k)).trans (q'.fullMatrix_apply_col i k))
-  · rw [← weight_row, hs, weight_row]
-  · rw [← weight_frozen, hs, weight_frozen]
-  · rw [← fullMatrix_apply_frozen, hM, fullMatrix_apply_frozen]
-
 /-- Weighted ice quivers along `row` correspond bijectively to pairs of positive integer vertex
 weights and rational matrices that these weights skew-symmetrize and that are integral in the
 mutable rows and columns. -/
-noncomputable def fullMatrixEquiv :
+noncomputable def weightFullMatrixEquiv :
     WeightedIceQuiver row ≃ {p : (I → ℤ) × Matrix I I ℚ // IsFullMatrix row p.1 p.2} where
   toFun q := ⟨(q.weight, q.fullMatrix), q.isFullMatrix⟩
   invFun p := ofFullMatrix p.val.1 p.val.2 p.property
@@ -352,13 +368,18 @@ noncomputable def fullMatrixEquiv :
     ext : 1 <;> simp
 
 @[simp]
-theorem fullMatrixEquiv_apply :
-    fullMatrixEquiv q = ⟨(q.weight, q.fullMatrix), q.isFullMatrix⟩ := (rfl)
+theorem weightFullMatrixEquiv_apply :
+    weightFullMatrixEquiv q = ⟨(q.weight, q.fullMatrix), q.isFullMatrix⟩ := (rfl)
 
 @[simp]
-theorem fullMatrixEquiv_symm_apply
+theorem weightFullMatrixEquiv_symm_apply
     (p : {p : (I → ℤ) × Matrix I I ℚ // IsFullMatrix row p.1 p.2}) :
-    fullMatrixEquiv.symm p = ofFullMatrix p.val.1 p.val.2 p.property := (rfl)
+    weightFullMatrixEquiv.symm p = ofFullMatrix p.val.1 p.val.2 p.property := (rfl)
+
+/-- A weighted ice quiver is determined by its weights and its full matrix. -/
+theorem ext_weight_fullMatrix {q q' : WeightedIceQuiver row} (hs : q.weight = q'.weight)
+    (hM : q.fullMatrix = q'.fullMatrix) : q = q' :=
+  weightFullMatrixEquiv.injective (Subtype.ext (Prod.ext hs hM))
 
 /-! ### Integrality at a vertex -/
 
@@ -372,6 +393,7 @@ theorem isIntegralAt_iff {i : I} : q.IsIntegralAt i ↔
   Iff.rfl
 
 /-- The full matrix is integral at every mutable vertex. -/
+@[simp]
 theorem isIntegralAt_row (k : K) : q.IsIntegralAt (row k) :=
   fun j ↦ ⟨q.exists_intCast_eq_fullMatrix_row k j, q.exists_intCast_eq_fullMatrix_col j k⟩
 
@@ -381,83 +403,47 @@ section Mutation
 
 variable [DecidableEq I]
 
-/-- The mutation of a square rational matrix at the vertex `k`. -/
-private def mutatedMatrix (M : Matrix I I ℚ) (k : I) : Matrix I I ℚ :=
-  of fun i j ↦ if i = k ∨ j = k then -M i j
-    else M i j + (M i k)⁺ * (M k j)⁺ - (M i k)⁻ * (M k j)⁻
-
-private theorem mutatedMatrix_apply (M : Matrix I I ℚ) (k i j : I) :
-    mutatedMatrix M k i j = if i = k ∨ j = k then -M i j
-      else M i j + (M i k)⁺ * (M k j)⁺ - (M i k)⁻ * (M k j)⁻ :=
-  (rfl)
-
-private theorem mutatedMatrix_mutatedMatrix (M : Matrix I I ℚ) (k : I) :
-    mutatedMatrix (mutatedMatrix M k) k = M := by
-  ext i j
-  by_cases hik : i = k
-  · simp [mutatedMatrix_apply, hik]
-  by_cases hjk : j = k
-  · simp [mutatedMatrix_apply, hjk]
-  simp only [mutatedMatrix_apply, hik, hjk, or_self, ↓reduceIte, or_true, true_or,
-    posPart_neg, negPart_neg]
-  ring
-
-/-- A mutated entry is an integer if the entry and the two entries in the mutation row and column
-that it involves are integers. -/
-private theorem exists_intCast_eq_mutatedMatrix {M : Matrix I I ℚ} {k i j : I}
-    (hij : ∃ n : ℤ, (n : ℚ) = M i j) (hik : ∃ n : ℤ, (n : ℚ) = M i k)
-    (hkj : ∃ n : ℤ, (n : ℚ) = M k j) : ∃ n : ℤ, (n : ℚ) = mutatedMatrix M k i j := by
-  obtain ⟨a, ha⟩ := hij
-  obtain ⟨b, hb⟩ := hik
-  obtain ⟨c, hc⟩ := hkj
-  refine ⟨if i = k ∨ j = k then -a else a + b⁺ * c⁺ - b⁻ * c⁻, ?_⟩
-  rw [mutatedMatrix_apply, ← ha, ← hb, ← hc]
-  split_ifs <;> simp [posPart_def, negPart_def, Int.cast_max]
-
 namespace IsFullMatrix
 
 variable {s : I → ℤ} {M : Matrix I I ℚ}
 
 /-- Mutation at a mutable vertex keeps a full matrix full, with the same weights. -/
-private theorem mutatedMatrix (h : IsFullMatrix row s M) (k : K) :
-    IsFullMatrix row s (mutatedMatrix M (row k)) where
-  weight_pos := h.weight_pos
-  weight_mul i j := by
-    by_cases hc : i = row k ∨ j = row k
-    · have hc' : j = row k ∨ i = row k := hc.symm
-      simp only [mutatedMatrix_apply, hc, hc', ↓reduceIte]
-      linear_combination -h.weight_mul i j
-    · have hc' : ¬(j = row k ∨ i = row k) := fun h' ↦ hc h'.symm
-      simp only [mutatedMatrix_apply, hc, hc', ↓reduceIte]
-      linear_combination h.weight_mul i j + (M (row k) j)⁺ * h.weight_mul_posPart i (row k) +
-        (M (row k) j)⁻ * h.weight_mul_posPart (row k) i +
-        (M (row k) i)⁻ * h.weight_mul_posPart (row k) j +
-        (M (row k) i)⁺ * h.weight_mul_posPart j (row k)
-  exists_intCast_eq_row l j := exists_intCast_eq_mutatedMatrix (h.exists_intCast_eq_row l j)
-    (h.exists_intCast_eq_row l (row k)) (h.exists_intCast_eq_row k j)
-  exists_intCast_eq_col i l := exists_intCast_eq_mutatedMatrix (h.exists_intCast_eq_col i l)
-    (h.exists_intCast_eq_col i k) (h.exists_intCast_eq_row k (row l))
+protected theorem matrixMutation (h : IsFullMatrix row s M) (k : K) :
+    IsFullMatrix row s (matrixMutation (Function.Embedding.refl I) M (row k)) :=
+  have H (l : K) (j : I) :
+      matrixMutation (Function.Embedding.refl I) M (row k) (row l) j ∈ (⊥ : Subring ℚ) ∧
+        matrixMutation (Function.Embedding.refl I) M (row k) j (row l) ∈ (⊥ : Subring ℚ) :=
+    (forall_matrixMutation_refl_mem_iff (h.mem_bot k) (row l)).2 (h.mem_bot l) j
+  ⟨h.isSkewSymmetrizer.matrixMutation (row k), fun l j ↦ Subring.mem_bot.1 (H l j).1,
+    fun i l ↦ Subring.mem_bot.1 (H l i).2⟩
 
 end IsFullMatrix
 
 /-- The *mutation* of a weighted ice quiver at a mutable vertex `k`: the full matrix is mutated
 at `row k` by the usual formula and the weights are kept. -/
 noncomputable def mutation (k : K) : WeightedIceQuiver row :=
-  ofFullMatrix q.weight (mutatedMatrix q.fullMatrix (row k)) (q.isFullMatrix.mutatedMatrix k)
+  ofFullMatrix q.weight (matrixMutation (Function.Embedding.refl I) q.fullMatrix (row k))
+    (q.isFullMatrix.matrixMutation k)
 
+/-- Mutation keeps all vertex weights. -/
 @[simp]
 theorem weight_mutation (k : K) : (q.mutation k).weight = q.weight :=
   weight_ofFullMatrix _ _ _
 
-/-- The full matrix of a mutated weighted ice quiver. -/
+/-- The full matrix of a mutated weighted ice quiver is the mutation of the full matrix. -/
+@[simp]
+theorem fullMatrix_mutation (k : K) :
+    (q.mutation k).fullMatrix = matrixMutation (Function.Embedding.refl I) q.fullMatrix (row k) :=
+  fullMatrix_ofFullMatrix _ _ _
+
+/-- The entries of the full matrix of a mutated weighted ice quiver. -/
 theorem fullMatrix_mutation_apply (k : K) (i j : I) :
     (q.mutation k).fullMatrix i j = if i = row k ∨ j = row k then -q.fullMatrix i j
       else q.fullMatrix i j + (q.fullMatrix i (row k))⁺ * (q.fullMatrix (row k) j)⁺ -
         (q.fullMatrix i (row k))⁻ * (q.fullMatrix (row k) j)⁻ := by
-  rw [mutation, fullMatrix_ofFullMatrix, mutatedMatrix_apply]
+  rw [fullMatrix_mutation, matrixMutation_apply, Function.Embedding.refl_apply]
 
 /-- Mutation at `k` negates the row of `row k`. -/
-@[simp]
 theorem fullMatrix_mutation_apply_row (k : K) (j : I) :
     (q.mutation k).fullMatrix (row k) j = -q.fullMatrix (row k) j := by
   simp [fullMatrix_mutation_apply]
@@ -466,8 +452,7 @@ theorem fullMatrix_mutation_apply_row (k : K) (j : I) :
 `fullMatrix_apply_col` already rewrites its left-hand side. -/
 theorem fullMatrix_mutation_apply_col (k : K) (i : I) :
     (q.mutation k).fullMatrix i (row k) = -q.fullMatrix i (row k) := by
-  rw [fullMatrix_mutation_apply]
-  simp
+  rw [fullMatrix_mutation, matrixMutation_apply_col]
 
 /-- The entries of the mutated full matrix away from the row and the column of `row k`. -/
 theorem fullMatrix_mutation_apply_of_ne (k : K) {i j : I} (hi : i ≠ row k) (hj : j ≠ row k) :
@@ -478,9 +463,8 @@ theorem fullMatrix_mutation_apply_of_ne (k : K) {i j : I} (hi : i ≠ row k) (hj
 
 /-- Mutating twice at the same vertex gives back the weighted ice quiver. -/
 @[simp]
-theorem mutation_mutation (k : K) : (q.mutation k).mutation k = q := by
-  apply ext_fullMatrix (by simp)
-  simp only [mutation, fullMatrix_ofFullMatrix, mutatedMatrix_mutatedMatrix]
+theorem mutation_mutation (k : K) : (q.mutation k).mutation k = q :=
+  ext_weight_fullMatrix (by simp) (by simp)
 
 /-- Mutation at a fixed vertex is an involution. -/
 theorem mutation_involutive (k : K) :
@@ -491,28 +475,24 @@ theorem mutation_involutive (k : K) :
 @[simp]
 theorem toExchangeMatrix_mutation [DecidableEq K] (k : K) :
     (q.mutation k).toExchangeMatrix = q.toExchangeMatrix.mutation k := by
+  have hB : q.fullMatrix.submatrix id row = q.matrix.map (Int.castRingHom ℚ) := by
+    ext
+    simp
+  have h := (matrixMutation_submatrix (row := Function.Embedding.refl I) (row' := row) (f := id)
+    (g := row) Function.injective_id (fun _ ↦ rfl) q.fullMatrix k).symm
+  rw [hB, matrixMutation_map _ Int.cast_mono] at h
   ext i j
-  · have h := (q.mutation k).fullMatrix_apply_col i j
-    rw [fullMatrix_mutation_apply] at h
-    simp only [fullMatrix_apply_col, row.injective.eq_iff] at h
-    rw [ExchangeMatrix.mutation_matrix, matrixMutation_apply]
-    apply Int.cast_injective (α := ℚ)
-    rw [← h]
-    split_ifs <;> simp [posPart_def, negPart_def, Int.cast_max]
+  · apply Int.cast_injective (α := ℚ)
+    rw [ExchangeMatrix.mutation_matrix, ← fullMatrix_apply_col, fullMatrix_mutation]
+    simpa using congrFun₂ h i j
   · rw [ExchangeMatrix.mutation_symmetrizer, ← weight_row, weight_mutation, weight_row]
 
 /-- Mutation preserves integrality of the full matrix at every vertex. -/
+@[simp]
 theorem isIntegralAt_mutation_iff (k : K) {i : I} :
     (q.mutation k).IsIntegralAt i ↔ q.IsIntegralAt i := by
-  suffices H : ∀ q : WeightedIceQuiver row, q.IsIntegralAt i → (q.mutation k).IsIntegralAt i from
-    ⟨fun h ↦ by simpa using H _ h, H q⟩
-  intro q h j
-  have hk := q.isIntegralAt_row k
-  simp only [fullMatrix_mutation_apply]
-  exact ⟨by simpa [mutatedMatrix_apply] using
-      exists_intCast_eq_mutatedMatrix (h j).1 (hk i).2 (hk j).1,
-    by simpa [mutatedMatrix_apply] using
-      exists_intCast_eq_mutatedMatrix (h j).2 (hk j).2 (hk i).1⟩
+  simpa only [isIntegralAt_iff, fullMatrix_mutation, ← Subring.mem_bot] using
+    forall_matrixMutation_refl_mem_iff (q.isFullMatrix.mem_bot k) i
 
 end Mutation
 
@@ -525,13 +505,21 @@ noncomputable def freeze (ι : K' ↪ K) : WeightedIceQuiver (ι.trans row) :=
     rintro _ ⟨k, rfl⟩
     exact ⟨ι k, rfl⟩))
 
+/-- Freezing keeps all vertex weights. -/
 @[simp]
 theorem weight_freeze (ι : K' ↪ K) : (q.freeze ι).weight = q.weight :=
   weight_ofFullMatrix _ _ _
 
+/-- Freezing keeps the entire full matrix, although fewer vertices are mutable. -/
 @[simp]
 theorem fullMatrix_freeze (ι : K' ↪ K) : (q.freeze ι).fullMatrix = q.fullMatrix :=
   fullMatrix_ofFullMatrix _ _ _
+
+/-- Integrality at a vertex only depends on the full matrix, so it is unchanged by freezing. -/
+@[simp]
+theorem isIntegralAt_freeze_iff (ι : K' ↪ K) {i : I} :
+    (q.freeze ι).IsIntegralAt i ↔ q.IsIntegralAt i := by
+  simp [isIntegralAt_iff]
 
 /-- Freezing deletes the columns of the frozen vertices from the exchange matrix. -/
 @[simp]
@@ -550,26 +538,23 @@ every old mutable vertex stays mutable. The full matrix must be integral at each
 outside the range of `ι`; the full matrix and the weights are kept. -/
 noncomputable def defrost (ι : K ↪ K') (row' : K' ↪ I) (hι : ∀ k, row' (ι k) = row k)
     (h : ∀ k, k ∉ Set.range ι → q.IsIntegralAt (row' k)) : WeightedIceQuiver row' :=
-  ofFullMatrix q.weight q.fullMatrix
-    { weight_pos := q.weight_pos
-      weight_mul := q.weight_mul_fullMatrix
-      exists_intCast_eq_row k j := by
-        by_cases hk : k ∈ Set.range ι
-        · obtain ⟨l, rfl⟩ := hk
-          exact (hι l).symm ▸ q.exists_intCast_eq_fullMatrix_row l j
-        · exact (h k hk j).1
-      exists_intCast_eq_col i k := by
-        by_cases hk : k ∈ Set.range ι
-        · obtain ⟨l, rfl⟩ := hk
-          exact (hι l).symm ▸ q.exists_intCast_eq_fullMatrix_col i l
-        · exact (h k hk i).2 }
+  ofFullMatrix q.weight q.fullMatrix <|
+    have H (k : K') : q.IsIntegralAt (row' k) := by
+      by_cases hk : k ∈ Set.range ι
+      · obtain ⟨l, rfl⟩ := hk
+        rw [hι]
+        exact q.isIntegralAt_row l
+      · exact h k hk
+    ⟨q.isSkewSymmetrizer_fullMatrix, fun k j ↦ (H k j).1, fun i k ↦ (H k i).2⟩
 
+/-- Defrosting keeps all vertex weights. -/
 @[simp]
 theorem weight_defrost (ι : K ↪ K') (row' : K' ↪ I) (hι : ∀ k, row' (ι k) = row k)
     (h : ∀ k, k ∉ Set.range ι → q.IsIntegralAt (row' k)) :
     (q.defrost ι row' hι h).weight = q.weight :=
   weight_ofFullMatrix _ _ _
 
+/-- Defrosting keeps the entire full matrix, although more vertices are mutable. -/
 @[simp]
 theorem fullMatrix_defrost (ι : K ↪ K') (row' : K' ↪ I) (hι : ∀ k, row' (ι k) = row k)
     (h : ∀ k, k ∉ Set.range ι → q.IsIntegralAt (row' k)) :
@@ -592,16 +577,13 @@ theorem defrost_mutation (ι : K ↪ K') (row' : K' ↪ I) (hι : ∀ k, row' (�
     (h : ∀ k, k ∉ Set.range ι → q.IsIntegralAt (row' k)) (k : K) :
     (q.mutation k).defrost ι row' hι (fun l hl ↦ (q.isIntegralAt_mutation_iff k).2 (h l hl)) =
       (q.defrost ι row' hι h).mutation (ι k) := by
-  apply ext_fullMatrix (by simp)
-  ext i j
-  simp [fullMatrix_mutation_apply, hι]
+  apply ext_weight_fullMatrix (by simp)
+  simp [hι]
 
 /-- Mutation at a vertex that stays mutable commutes with freezing. -/
 theorem freeze_mutation (ι : K' ↪ K) (k : K') :
     (q.mutation (ι k)).freeze ι = (q.freeze ι).mutation k := by
-  apply ext_fullMatrix (by simp)
-  ext i j
-  simp [fullMatrix_mutation_apply]
+  exact ext_weight_fullMatrix (by simp) (by simp)
 
 end Mutation
 

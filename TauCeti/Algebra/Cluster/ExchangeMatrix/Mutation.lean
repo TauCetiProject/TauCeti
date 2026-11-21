@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Cluster.ExchangeMatrix.Basic
 
 import Mathlib.LinearAlgebra.Matrix.Notation
+import Mathlib.Tactic.Abel
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
 
@@ -15,8 +16,9 @@ import Mathlib.Tactic.Ring
 # Matrix mutation
 
 Mutation in direction `k` is the operation on exchange matrices that underlies every cluster
-exchange. For an integer matrix `B` with rows `I` and columns `K`, and an embedding
-`row : K ↪ I` of the mutable indices, the mutated matrix `B'` has entries
+exchange. For a matrix `B` over a linearly ordered ring, usually the integers, with rows `I` and
+columns `K`, and an embedding `row : K ↪ I` of the mutable indices, the mutated matrix `B'` has
+entries
 
 * `B' i j = -B i j` if `i = row k` or `j = k`,
 * `B' i j = B i j + [B i k]₊ * [B (row k) j]₊ - [-B i k]₊ * [-B (row k) j]₊` otherwise,
@@ -42,6 +44,11 @@ square matrix is still one after mutation, so mutation acts on exchange matrices
   relabelling of rows and columns.
 * `TauCeti.matrixMutation_fromBlocks_inl`, `TauCeti.matrixMutation_fromBlocks_inr`: mutation
   of a block diagonal matrix mutates one block and fixes the other.
+* `TauCeti.matrixMutation_map`: mutation commutes with order-preserving ring homomorphisms, such
+  as the cast from the integers to the rationals.
+* `TauCeti.matrixMutation_apply_mem`, `TauCeti.forall_matrixMutation_refl_mem_iff`: mutation
+  preserves membership of entries in a subring, such as integrality of rational entries, and in
+  particular of the row and the column at a vertex.
 * `Matrix.IsSkewSymmetrizer.matrixMutation`: a skew-symmetrizer of a square matrix is a
   skew-symmetrizer of each of its mutations.
 * `TauCeti.ExchangeMatrix.mutation_mutation`: mutation of exchange matrices is an involution.
@@ -65,17 +72,19 @@ open Matrix
 
 namespace TauCeti
 
-variable {I I' K K' I₁ I₂ K₁ K₂ : Type*}
+variable {I I' K K' I₁ I₂ K₁ K₂ R S : Type*}
 
 section matrixMutation
 
-variable [DecidableEq I] [DecidableEq K] {row : K ↪ I} {B : Matrix I K ℤ} {k : K}
+variable [Ring R] [LinearOrder R] [DecidableEq I] [DecidableEq K] {row : K ↪ I} {B : Matrix I K R}
+  {k : K}
 
-/-- The *mutation* in direction `k` of an integer matrix `B` whose columns are indexed by the
-mutable indices `K` and whose rows are indexed by `I`, along the embedding `row : K ↪ I` of the
-mutable indices: row `row k` and column `k` change sign, and every other entry `B i j` gains
-`(B i k)⁺ * (B (row k) j)⁺ - (B i k)⁻ * (B (row k) j)⁻`. -/
-def matrixMutation (row : K ↪ I) (B : Matrix I K ℤ) (k : K) : Matrix I K ℤ :=
+/-- The *mutation* in direction `k` of a matrix `B` over a linearly ordered ring, whose columns
+are indexed by the mutable indices `K` and whose rows are indexed by `I`, along the embedding
+`row : K ↪ I` of the mutable indices: row `row k` and column `k` change sign, and every other
+entry `B i j` gains `(B i k)⁺ * (B (row k) j)⁺ - (B i k)⁻ * (B (row k) j)⁻`. Exchange matrices
+have integer entries; the full matrices of weighted ice quivers have rational ones. -/
+def matrixMutation (row : K ↪ I) (B : Matrix I K R) (k : K) : Matrix I K R :=
   of fun i j ↦ if i = row k ∨ j = k then -B i j
     else B i j + (B i k)⁺ * (B (row k) j)⁺ - (B i k)⁻ * (B (row k) j)⁻
 
@@ -119,7 +128,7 @@ theorem matrixMutation_apply_of_apply_row_eq_zero {j : K} (hj : j ≠ k) (h : B 
 
 /-- Mutating twice in the same direction gives back the original matrix. -/
 @[simp]
-theorem matrixMutation_matrixMutation (row : K ↪ I) (B : Matrix I K ℤ) (k : K) :
+theorem matrixMutation_matrixMutation (row : K ↪ I) (B : Matrix I K R) (k : K) :
     matrixMutation row (matrixMutation row B k) k = B := by
   ext i j
   by_cases hi : i = row k
@@ -128,16 +137,16 @@ theorem matrixMutation_matrixMutation (row : K ↪ I) (B : Matrix I K ℤ) (k : 
   · simp [hj]
   simp only [matrixMutation_apply_of_ne hi hj, matrixMutation_apply_row,
     matrixMutation_apply_col, posPart_neg, negPart_neg]
-  ring
+  abel
 
 /-- Mutation in a fixed direction is an involution. -/
 theorem matrixMutation_involutive (row : K ↪ I) (k : K) :
-    Function.Involutive fun B ↦ matrixMutation row B k :=
+    Function.Involutive fun B : Matrix I K R ↦ matrixMutation row B k :=
   fun B ↦ matrixMutation_matrixMutation row B k
 
 /-- Mutation commutes with negation of the matrix. -/
 @[simp]
-theorem matrixMutation_neg (row : K ↪ I) (B : Matrix I K ℤ) (k : K) :
+theorem matrixMutation_neg (row : K ↪ I) (B : Matrix I K R) (k : K) :
     matrixMutation row (-B) k = -matrixMutation row B k := by
   ext i j
   by_cases hi : i = row k
@@ -145,13 +154,13 @@ theorem matrixMutation_neg (row : K ↪ I) (B : Matrix I K ℤ) (k : K) :
   by_cases hj : j = k
   · simp [hj]
   simp only [matrixMutation_apply_of_ne hi hj, Matrix.neg_apply, posPart_neg, negPart_neg]
-  ring
+  abel
 
 /-- Mutation commutes with injective restriction and relabelling of the rows and columns, along
 maps compatible with the mutable embeddings. -/
 theorem matrixMutation_submatrix [DecidableEq I'] [DecidableEq K'] {row' : K' ↪ I'}
     {f : I' → I} {g : K' → K} (hf : Function.Injective f)
-    (h : ∀ k, f (row' k) = row (g k)) (B : Matrix I K ℤ) (k : K') :
+    (h : ∀ k, f (row' k) = row (g k)) (B : Matrix I K R) (k : K') :
     matrixMutation row' (B.submatrix f g) k = (matrixMutation row B (g k)).submatrix f g := by
   have hg : Function.Injective g := fun _ _ hk ↦
     row'.injective (hf (by rw [h, h, hk]))
@@ -161,14 +170,14 @@ theorem matrixMutation_submatrix [DecidableEq I'] [DecidableEq K'] {row' : K' �
 
 /-- Mutation commutes with passage to the principal block: the principal block of the mutated
 matrix is the mutation of the principal block as a square matrix. -/
-theorem matrixMutation_refl_submatrix_row (row : K ↪ I) (B : Matrix I K ℤ) (k : K) :
+theorem matrixMutation_refl_submatrix_row (row : K ↪ I) (B : Matrix I K R) (k : K) :
     matrixMutation (Function.Embedding.refl K) (B.submatrix row id) k =
       (matrixMutation row B k).submatrix row id :=
   matrixMutation_submatrix row.injective (fun _ ↦ rfl) B k
 
 /-- A mutated column is supported on the union of its old support and the old support of
 the mutation column. No skew-symmetrizability hypothesis is needed. -/
-theorem support_matrixMutation_subset (row : K ↪ I) (B : Matrix I K ℤ) (k l : K) :
+theorem support_matrixMutation_subset (row : K ↪ I) (B : Matrix I K R) (k l : K) :
     (Function.support fun i ↦ matrixMutation row B k i l) ⊆
       (Function.support fun i ↦ B i l) ∪ Function.support fun i ↦ B i k := by
   intro i hi
@@ -178,9 +187,9 @@ theorem support_matrixMutation_subset (row : K ↪ I) (B : Matrix I K ℤ) (k l 
 
 /-- A row vanishes after matrix mutation exactly when it vanished before mutation. -/
 @[simp]
-theorem matrixMutation_row_eq_zero_iff (row : K ↪ I) (B : Matrix I K ℤ) (k : K) (i : I) :
+theorem matrixMutation_row_eq_zero_iff (row : K ↪ I) (B : Matrix I K R) (k : K) (i : I) :
     (∀ l, matrixMutation row B k i l = 0) ↔ ∀ l, B i l = 0 := by
-  have hz (C : Matrix I K ℤ) (h : ∀ l, C i l = 0) :
+  have hz (C : Matrix I K R) (h : ∀ l, C i l = 0) :
       ∀ l, matrixMutation row C k i l = 0 := by
     intro l
     simp [matrixMutation_apply, h]
@@ -188,7 +197,7 @@ theorem matrixMutation_row_eq_zero_iff (row : K ↪ I) (B : Matrix I K ℤ) (k :
 
 /-- No finite sequence of matrix mutations creates or removes a nonzero row. -/
 @[simp]
-theorem foldl_matrixMutation_row_eq_zero_iff (row : K ↪ I) (B : Matrix I K ℤ)
+theorem foldl_matrixMutation_row_eq_zero_iff (row : K ↪ I) (B : Matrix I K R)
     (w : List K) (i : I) :
     (∀ l, w.foldl (matrixMutation row) B i l = 0) ↔ ∀ l, B i l = 0 := by
   induction w generalizing B with
@@ -197,13 +206,45 @@ theorem foldl_matrixMutation_row_eq_zero_iff (row : K ↪ I) (B : Matrix I K ℤ
     simpa only [List.foldl_cons] using
       (ih (matrixMutation row B k)).trans (matrixMutation_row_eq_zero_iff row B k i)
 
+/-- Mutation commutes with applying an order-preserving ring homomorphism to the entries. For
+the cast `ℤ → ℚ`, this says that mutating an integer matrix and then viewing it as a rational
+matrix is the same as mutating the rational matrix. -/
+theorem matrixMutation_map [Ring S] [LinearOrder S] (f : R →+* S) (hf : Monotone f)
+    (B : Matrix I K R) (k : K) :
+    matrixMutation row (B.map f) k = (matrixMutation row B k).map f := by
+  have hpos (a : R) : (f a)⁺ = f a⁺ := by
+    rw [posPart_def, posPart_def, hf.map_max, map_zero]
+  have hneg (a : R) : (f a)⁻ = f a⁻ := by
+    rw [negPart_def, negPart_def, hf.map_max, map_neg, map_zero]
+  ext i j
+  simp only [matrixMutation_apply, map_apply, hpos, hneg]
+  split_ifs <;> simp
+
+/-- A mutated entry lies in a subring if the entry and the two entries of the mutation row and
+column that it involves do. For the integers in the rationals, this says that a mutated entry
+is an integer when these three entries are. -/
+theorem matrixMutation_apply_mem {T : Type*} [SetLike T R] [SubringClass T R] {t : T} {i : I}
+    {j : K} (hij : B i j ∈ t) (hik : B i k ∈ t) (hkj : B (row k) j ∈ t) :
+    matrixMutation row B k i j ∈ t := by
+  have hpos {a : R} (ha : a ∈ t) : a⁺ ∈ t := by
+    rw [posPart_def]
+    rcases max_choice a 0 with h | h <;> rw [h]
+    exacts [ha, zero_mem t]
+  have hneg {a : R} (ha : a ∈ t) : a⁻ ∈ t := by
+    rw [← posPart_neg]
+    exact hpos (neg_mem ha)
+  rw [matrixMutation_apply]
+  split_ifs
+  · exact neg_mem hij
+  · exact sub_mem (add_mem hij (mul_mem (hpos hik) (hpos hkj)))
+      (mul_mem (hneg hik) (hneg hkj))
 
 end matrixMutation
 
 section fromBlocks
 
-variable [DecidableEq I₁] [DecidableEq I₂] [DecidableEq K₁] [DecidableEq K₂]
-  (row₁ : K₁ ↪ I₁) (row₂ : K₂ ↪ I₂) (B₁ : Matrix I₁ K₁ ℤ) (B₂ : Matrix I₂ K₂ ℤ)
+variable [Ring R] [LinearOrder R] [DecidableEq I₁] [DecidableEq I₂] [DecidableEq K₁]
+  [DecidableEq K₂] (row₁ : K₁ ↪ I₁) (row₂ : K₂ ↪ I₂) (B₁ : Matrix I₁ K₁ R) (B₂ : Matrix I₂ K₂ R)
 
 /-- Mutating a block diagonal matrix in a direction of the first block mutates the first block
 and fixes the second. -/
@@ -239,13 +280,13 @@ end fromBlocks
 
 section square
 
-variable [DecidableEq K] {B : Matrix K K ℤ} {s : K → ℤ} {k : K}
+variable [Ring R] [LinearOrder R] [DecidableEq K] {B : Matrix K K R} {k : K}
 
 /-- Mutation of a square matrix in direction `k` negates the row `k`. This is
 `TauCeti.matrixMutation_apply_row` along `Function.Embedding.refl K`, in the form `simp` can
 use: there the row index is `k` itself and no longer has the shape `row k`. -/
 @[simp]
-theorem matrixMutation_refl_apply_row (B : Matrix K K ℤ) (k j : K) :
+theorem matrixMutation_refl_apply_row (B : Matrix K K R) (k j : K) :
     matrixMutation (Function.Embedding.refl K) B k k j = -B k j :=
   matrixMutation_apply_row j
 
@@ -256,6 +297,28 @@ theorem matrixMutation_refl_apply_of_ne {i j : K} (hi : i ≠ k) (hj : j ≠ k) 
     matrixMutation (Function.Embedding.refl K) B k i j =
       B i j + (B i k)⁺ * (B k j)⁺ - (B i k)⁻ * (B k j)⁻ :=
   matrixMutation_apply_of_ne hi hj
+
+/-- The row and the column of the mutation of a square matrix at a vertex `i` lie in a subring,
+provided those of the matrix at `i` and at the direction `k` do. Mutation reverses itself, so
+this is an equivalence once the row and the column at `k` lie in the subring. -/
+theorem forall_matrixMutation_refl_mem_iff {T : Type*} [SetLike T R] [SubringClass T R] {t : T}
+    (hk : ∀ j, B k j ∈ t ∧ B j k ∈ t) (i : K) :
+    (∀ j, matrixMutation (Function.Embedding.refl K) B k i j ∈ t ∧
+      matrixMutation (Function.Embedding.refl K) B k j i ∈ t) ↔ ∀ j, B i j ∈ t ∧ B j i ∈ t := by
+  have H (C : Matrix K K R) (hk : ∀ j, C k j ∈ t ∧ C j k ∈ t) (hi : ∀ j, C i j ∈ t ∧ C j i ∈ t)
+      (j : K) : matrixMutation (Function.Embedding.refl K) C k i j ∈ t ∧
+        matrixMutation (Function.Embedding.refl K) C k j i ∈ t :=
+    ⟨matrixMutation_apply_mem (hi j).1 (hk i).2 (hk j).1,
+      matrixMutation_apply_mem (hi j).2 (hk j).2 (hk i).1⟩
+  refine ⟨fun hi j ↦ ?_, H B hk⟩
+  simpa using H _ (fun j ↦ by simpa using hk j) hi j
+
+end square
+
+section skewSymmetrizer
+
+variable [CommRing R] [LinearOrder R] [IsStrictOrderedRing R] [DecidableEq K] {B : Matrix K K R}
+  {s : K → R}
 
 /-- A skew-symmetrizer of a square matrix is a skew-symmetrizer of each of its mutations. -/
 protected theorem _root_.Matrix.IsSkewSymmetrizer.matrixMutation (h : B.IsSkewSymmetrizer s)
@@ -273,14 +336,15 @@ protected theorem _root_.Matrix.IsSkewSymmetrizer.matrixMutation (h : B.IsSkewSy
       (B k j)⁻ * h.mul_negPart i k + (B k i)⁻ * h.mul_posPart k j -
       (B k i)⁺ * h.mul_negPart k j
 
-end square
+end skewSymmetrizer
 
 /-- Matrix mutation preserves skew-symmetry of the principal block of a rectangular matrix. -/
-theorem matrixMutation_skew [DecidableEq I] [DecidableEq K] {row : K ↪ I} {B : Matrix I K ℤ}
+theorem matrixMutation_skew [CommRing R] [LinearOrder R] [IsStrictOrderedRing R] [DecidableEq I]
+    [DecidableEq K] {row : K ↪ I} {B : Matrix I K R}
     (hB : ∀ i j, B (row i) j = -B (row j) i) (k : K) :
     ∀ i j, matrixMutation row B k (row i) j = -matrixMutation row B k (row j) i := by
   have hs : (B.submatrix row id).IsSkewSymmetrizer (fun _ ↦ 1) :=
-    ⟨fun _ ↦ by decide, fun i j ↦ by simpa using hB i j⟩
+    ⟨fun _ ↦ zero_lt_one, fun i j ↦ by simpa using hB i j⟩
   have hm := hs.matrixMutation k
   rw [matrixMutation_refl_submatrix_row] at hm
   intro i j
@@ -288,12 +352,13 @@ theorem matrixMutation_skew [DecidableEq I] [DecidableEq K] {row : K ↪ I} {B :
 
 /-- The matrix with rows `(0, 1)` and `(-2, 0)` is negated by mutation in its first direction. -/
 example :
-    matrixMutation (Function.Embedding.refl (Fin 2)) !![0, 1; -2, 0] 0 = -!![0, 1; -2, 0] := by
+    matrixMutation (Function.Embedding.refl (Fin 2)) !![(0 : ℤ), 1; -2, 0] 0 =
+      -!![0, 1; -2, 0] := by
   decide
 
 /-- Mutating the extended matrix with the single column `(0, 1)`, whose first row is mutable,
 changes the sign of the frozen row. -/
-example : matrixMutation (Fin.castSuccEmb (n := 1)) !![0; 1] 0 = !![0; -1] := by
+example : matrixMutation (Fin.castSuccEmb (n := 1)) !![(0 : ℤ); 1] 0 = !![0; -1] := by
   decide
 
 namespace ExchangeMatrix
