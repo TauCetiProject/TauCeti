@@ -10,8 +10,8 @@ public import TauCeti.Analysis.PDE.EnergyForm.Restriction
 public import TauCeti.Analysis.Sobolev.W1p.CompactSupport
 public import TauCeti.Analysis.Sobolev.W1p.IntegrationByParts
 public import TauCeti.Analysis.PDE.Ellipticity.Extension
-import Mathlib.Analysis.Normed.Operator.Banach
 import TauCeti.Analysis.Normed.Module.Ball.Retraction
+import TauCeti.Analysis.Normed.Operator.Banach
 import TauCeti.Analysis.Normed.Operator.Holder
 import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.Topology.Instances.Matrix
@@ -1356,38 +1356,22 @@ theorem UniformlyEllipticOn.exists_continuousLinearMap_lowerOrder_eq_restrictL_o
       W1p.restrictL (SetLike.coe_subset_coe.mp (subset_closure.trans hVΩ))
         (p : W1p mu Omega 2 × Lp ℝ 2 (mu.restrict Omega)).1 := by
   set hVle : V ≤ Omega := SetLike.coe_subset_coe.mp (subset_closure.trans hVΩ)
-  have hex (p : weakEquationGraph hcoeff) : ∃ U : Wkp mu V 2 2, Wkp.lowerOrder 1 U =
-      W1p.restrictL hVle (p : W1p mu Omega 2 × Lp ℝ 2 (mu.restrict Omega)).1 :=
-    ha.exists_lowerOrder_eq_restrictL_of_locallyLipschitzOn hK hb hc
-      (fun v => ((mem_weakEquationGraph_iff hcoeff).1 p.property v).trans
-        (dirichletForcing_apply_eq_setIntegral _ v)) hV hVΩ
-  choose T hT using hex
-  -- The first-order part, a continuous linear map into `W^{1,2}(V)`, which is injective.
-  let low : Wkp mu V 2 2 →L[ℝ] W1p mu V 2 := Wkp.lowerOrderL 1
-  have hlow (U : Wkp mu V 2 2) : low U = Wkp.lowerOrder 1 U := Wkp.lowerOrderL_apply 1 U
-  have hlowT (p : weakEquationGraph hcoeff) : low (T p) =
-      W1p.restrictL hVle (p : W1p mu Omega 2 × Lp ℝ 2 (mu.restrict Omega)).1 :=
-    (hlow _).trans (hT p)
-  have hinj (U U' : Wkp mu V 2 2) (h : low U = low U') : U = U' :=
-    Wkp.ext_lowerOrder 1 (by rw [← hlow, ← hlow, h])
-  let T₀ : weakEquationGraph hcoeff →ₗ[ℝ] Wkp mu V 2 2 :=
-    { toFun := T
-      map_add' := fun p p' => hinj _ _ <| by
-        rw [map_add, hlowT, hlowT, hlowT, Submodule.coe_add, Prod.fst_add, map_add]
-      map_smul' := fun r p => hinj _ _ <| by
-        rw [map_smul, hlowT, hlowT, RingHom.id_apply, Submodule.coe_smul, Prod.smul_fst,
-          map_smul] }
   have : CompleteSpace (weakEquationGraph hcoeff) :=
     (isClosed_weakEquationGraph hcoeff).completeSpace_coe
-  -- The graph is closed: the first-order part of a limit is the limit of the first-order parts.
-  refine ⟨ContinuousLinearMap.ofSeqClosedGraph (g := T₀) fun p p₀ U hp hU => hinj _ _ ?_, hT⟩
-  refine tendsto_nhds_unique ((low.continuous.tendsto U).comp hU) ?_
-  have hlim : Tendsto (fun n => W1p.restrictL hVle
-      ((p n : weakEquationGraph hcoeff) : W1p mu Omega 2 × Lp ℝ 2 (mu.restrict Omega)).1) atTop
-      (𝓝 (W1p.restrictL hVle (p₀ : W1p mu Omega 2 × Lp ℝ 2 (mu.restrict Omega)).1)) :=
-    ((W1p.restrictL hVle).continuous.comp (continuous_fst.comp continuous_subtypeVal)
-      |>.tendsto p₀).comp hp
-  exact (hlowT p₀).symm ▸ hlim.congr fun n => (hlowT (p n)).symm
+  -- Lift `(u, f) ↦ u|_V` through the first-order part, which is injective.
+  let R : weakEquationGraph hcoeff →L[ℝ] W1p mu V 2 := (W1p.restrictL hVle).comp
+    ((ContinuousLinearMap.fst ℝ _ _).comp (weakEquationGraph hcoeff).subtypeL)
+  have hR : R.range ≤ (Wkp.lowerOrderL 1 : Wkp mu V 2 2 →L[ℝ] W1p mu V 2).range := by
+    rintro _ ⟨p, rfl⟩
+    obtain ⟨U, hU⟩ := ha.exists_lowerOrder_eq_restrictL_of_locallyLipschitzOn hK hb hc
+      (fun v => ((mem_weakEquationGraph_iff hcoeff).1 p.property v).trans
+        (dirichletForcing_apply_eq_setIntegral _ v)) hV hVΩ
+    exact ⟨U, (Wkp.lowerOrderL_apply 1 U).trans hU⟩
+  obtain ⟨T, hT⟩ := ContinuousLinearMap.exists_comp_eq_of_range_le_range R _
+    (fun U U' h => Wkp.ext_lowerOrder 1 <| by
+      rw [← Wkp.lowerOrderL_apply, ← Wkp.lowerOrderL_apply]
+      exact h) hR
+  exact ⟨T, fun p => (Wkp.lowerOrderL_apply 1 (T p)).symm.trans (DFunLike.congr_fun hT p)⟩
 
 /-- **Interior `H²` regularity for families of weak solutions.** Let `a` be uniformly elliptic on
 `Ω`, with `x ↦ a(x)` locally Lipschitz on `Ω` in the operator norm of its bilinear forms, and let

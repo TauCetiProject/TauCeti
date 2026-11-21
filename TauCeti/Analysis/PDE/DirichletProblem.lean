@@ -442,16 +442,6 @@ def weakEquationGraph
     simp only [Prod.smul_fst, Prod.smul_snd, map_smul, smul_apply, hp v,
       dirichletForcing_apply, real_inner_smul_left, smul_eq_mul]
 
-/-- A pair `(u, f)` lies in the graph of the weak equation exactly when
-`a(u, v) = ⟪f, v⟫_{L²(Ω)}` for every `v ∈ H¹₀(Ω)`. -/
-@[simp] theorem mem_weakEquationGraph_iff
-    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
-    {p : W1p mu Omega 2 × Lp ℝ 2 (mu.restrict Omega)} :
-    p ∈ weakEquationGraph hcoeff ↔ ∀ v : W1p0 mu Omega 2,
-      energyFormH1 a b c p.1 (v : W1p mu Omega 2) = dirichletForcing p.2 v := by
-  simp only [← energyFormH1L_apply hcoeff]
-  rfl
-
 /-- The graph of the weak equation as a set: the pairs `(u, f)` with
 `a(u, v) = ⟪f, v⟫_{L²(Ω)}` for every `v ∈ H¹₀(Ω)`. -/
 theorem coe_weakEquationGraph
@@ -459,6 +449,16 @@ theorem coe_weakEquationGraph
     (weakEquationGraph hcoeff : Set (W1p mu Omega 2 × Lp ℝ 2 (mu.restrict Omega))) =
       {p | ∀ v : W1p0 mu Omega 2, energyFormH1L hcoeff p.1 v = dirichletForcing p.2 v} :=
   (rfl)
+
+/-- A pair `(u, f)` lies in the graph of the weak equation exactly when
+`a(u, v) = ⟪f, v⟫_{L²(Ω)}` for every `v ∈ H¹₀(Ω)`. -/
+@[simp] theorem mem_weakEquationGraph_iff
+    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    {p : W1p mu Omega 2 × Lp ℝ 2 (mu.restrict Omega)} :
+    p ∈ weakEquationGraph hcoeff ↔ ∀ v : W1p0 mu Omega 2,
+      energyFormH1 a b c p.1 (v : W1p mu Omega 2) = dirichletForcing p.2 v := by
+  rw [← SetLike.mem_coe, coe_weakEquationGraph, Set.mem_ofPred_eq]
+  simp only [energyFormH1L_apply]
 
 /-- The graph of the weak equation is closed in `H¹(Ω) × L²(Ω)`. -/
 theorem isClosed_weakEquationGraph
@@ -481,16 +481,6 @@ def dirichletGraph
     Submodule ℝ (W1p mu Omega 2 × Lp ℝ 2 (mu.restrict Omega)) :=
   (w1p0Submodule mu Omega 2).toSubmodule.comap (LinearMap.fst ℝ _ _) ⊓ weakEquationGraph hcoeff
 
-/-- The graph of the weak Dirichlet problem as a set: the boundary condition `u ∈ H¹₀(Ω)` and the
-weak equation, each a closed condition. -/
-theorem coe_dirichletGraph
-    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega)) :
-    (dirichletGraph hcoeff : Set (W1p mu Omega 2 × Lp ℝ 2 (mu.restrict Omega))) =
-      {p | p.1 ∈ w1p0Submodule mu Omega 2} ∩ weakEquationGraph hcoeff := by
-  rw [dirichletGraph, Submodule.coe_inf, Submodule.comap_coe, ClosedSubmodule.coe_toSubmodule,
-    LinearMap.coe_fst]
-  rfl
-
 /-- A pair `(u, f)` lies in the graph of the weak Dirichlet problem exactly when `u ∈ H¹₀(Ω)`
 and `a(u, v) = ⟪f, v⟫_{L²(Ω)}` for every `v ∈ H¹₀(Ω)`. -/
 @[simp] theorem mem_dirichletGraph_iff
@@ -499,8 +489,16 @@ and `a(u, v) = ⟪f, v⟫_{L²(Ω)}` for every `v ∈ H¹₀(Ω)`. -/
     p ∈ dirichletGraph hcoeff ↔ p.1 ∈ w1p0Submodule mu Omega 2 ∧
       ∀ v : W1p0 mu Omega 2,
         energyFormH1 a b c p.1 (v : W1p mu Omega 2) = dirichletForcing p.2 v := by
-  rw [dirichletGraph, Submodule.mem_inf, Submodule.mem_comap, LinearMap.fst_apply,
-    ClosedSubmodule.mem_toSubmodule_iff, mem_weakEquationGraph_iff]
+  simp [dirichletGraph]
+
+/-- The graph of the weak Dirichlet problem as a set: the boundary condition `u ∈ H¹₀(Ω)` and the
+weak equation, each a closed condition. -/
+theorem coe_dirichletGraph
+    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega)) :
+    (dirichletGraph hcoeff : Set (W1p mu Omega 2 × Lp ℝ 2 (mu.restrict Omega))) =
+      {p | p.1 ∈ w1p0Submodule mu Omega 2} ∩ weakEquationGraph hcoeff := by
+  ext p
+  simp [mem_dirichletGraph_iff]
 
 /-- For `u ∈ H¹₀(Ω)`, the pair `(u, f)` lies in the graph of the weak Dirichlet problem exactly
 when `u` is a weak solution of `L u = f`. -/
