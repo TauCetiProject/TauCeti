@@ -94,25 +94,28 @@ theorem pairOffDiagTolerance_def (q : ℕ) (α : ℝ) (G : ℕ → ℝ) (t : ℕ
       min (α / (4 * ((max q 1 : ℕ) + 1))) ((min (1 / 2) (G t)) ^ 3 / (4 * (max q 1 : ℕ))) :=
   (rfl)
 
-/-- For positive `α` and a positive schedule `G`, `pairOffDiagTolerance` is positive. -/
+/-- For positive `α` and `0 < G t`, `pairOffDiagTolerance` is positive. -/
 theorem pairOffDiagTolerance_pos (q : ℕ) {α : ℝ} (hα : 0 < α) {G : ℕ → ℝ}
-    (hG : ∀ n, 0 < G n) (t : ℕ) :
+    {t : ℕ} (hGt : 0 < G t) :
     0 < pairOffDiagTolerance q α G t := by
   rw [pairOffDiagTolerance_def]
-  have hδ : 0 < min (1 / 2) (G t) := lt_min (by norm_num) (hG _)
+  have : 0 < min (1 / 2) (G t) := lt_min (by norm_num) hGt
   exact lt_min (by positivity) (by positivity)
 
 /-- `pairOffDiagTolerance` never exceeds `1 / 32`. -/
-theorem pairOffDiagTolerance_le_one_div_32 (q : ℕ) (α : ℝ) {G : ℕ → ℝ}
-    (hG : ∀ n, 0 < G n) (t : ℕ) :
+theorem pairOffDiagTolerance_le_one_div_32 (q : ℕ) (α : ℝ) (G : ℕ → ℝ) (t : ℕ) :
     pairOffDiagTolerance q α G t ≤ 1 / 32 := by
   have hq : (1 : ℝ) ≤ (max q 1 : ℕ) := by exact_mod_cast le_max_right q 1
-  have hδ0 : 0 ≤ min (1 / 2) (G t) := le_min (by norm_num) (hG _).le
-  have hδ : min (1 / 2) (G t) ≤ 1 / 2 := min_le_left _ _
+  have hm3 : (min (1 / 2 : ℝ) (G t)) ^ 3 ≤ (1 / 2 : ℝ) ^ 3 := by
+    obtain hm0 | hm0 := le_total (min (1 / 2 : ℝ) (G t)) 0
+    · exact (Odd.pow_nonpos (by decide) hm0).trans (by norm_num)
+    · exact pow_le_pow_left₀ hm0 (min_le_left _ _) 3
   calc pairOffDiagTolerance q α G t
       ≤ (min (1 / 2) (G t)) ^ 3 / (4 * (max q 1 : ℕ)) := min_le_right _ _
+    _ ≤ (1 / 2 : ℝ) ^ 3 / (4 * (max q 1 : ℕ)) :=
+        div_le_div_of_nonneg_right hm3 (by positivity)
     _ ≤ (1 / 2 : ℝ) ^ 3 / (4 * 1) :=
-        div_le_div₀ (by norm_num) (pow_le_pow_left₀ hδ0 hδ 3) (by norm_num) (by linarith)
+        div_le_div_of_nonneg_left (by norm_num) (by norm_num) (by linarith)
     _ = 1 / 32 := by norm_num
 
 /-- Upper bound on the coarse cell count in off-diagonal strong regular approximation starting from
@@ -137,7 +140,7 @@ theorem pairOffDiagPartsBound_mono (q : ℕ) (α : ℝ) (G : ℕ → ℝ) :
 theorem le_pairOffDiagPartsBound (q : ℕ) {α : ℝ} (hα : 0 < α) {G : ℕ → ℝ}
     (hG : ∀ n, 0 < G n) (l₀ : ℕ) :
     l₀ ≤ pairOffDiagPartsBound q α G l₀ :=
-  le_strongPairColorRegularityBound _ (pairOffDiagTolerance_pos q hα hG) l₀
+  le_strongPairColorRegularityBound _ (fun t ↦ pairOffDiagTolerance_pos q hα (hG t)) l₀
 
 /-- Minimum host size `|V|` for off-diagonal strong regular approximation starting from `l₀`
 cells. -/
@@ -175,7 +178,7 @@ theorem pairOffDiagPartsBound_le_pairOffDiagBound (q : ℕ) {α : ℝ} (hα : 0 
   calc pairOffDiagPartsBound q α G l₀
       ≤ strongPairColorStepBound (pairOffDiagTolerance q α G)
           (pairOffDiagPartsBound q α G l₀) :=
-        le_strongPairColorStepBound (pairOffDiagTolerance_pos q hα hG) _
+        le_strongPairColorStepBound (fun t ↦ pairOffDiagTolerance_pos q hα (hG t)) _
     _ ≤ max 1 (strongPairColorStepBound (pairOffDiagTolerance q α G)
           (pairOffDiagPartsBound q α G l₀)) :=
         le_max_right _ _
@@ -196,17 +199,16 @@ theorem pairApproximationTolerance_def (q : ℕ) (α : ℝ) (F : ℕ → ℝ) (t
         ((min (1 / 2) (F (t + q + 1))) ^ 3 / (4 * (max q 1 : ℕ))) :=
   (rfl)
 
-/-- For positive `α` and a positive schedule `F`, `pairApproximationTolerance` is positive. -/
+/-- For positive `α` and `0 < F (t + q + 1)`, `pairApproximationTolerance` is positive. -/
 theorem pairApproximationTolerance_pos (q : ℕ) {α : ℝ} (hα : 0 < α) {F : ℕ → ℝ}
-    (hF : ∀ n, 0 < F n) (t : ℕ) :
+    {t : ℕ} (hFt : 0 < F (t + q + 1)) :
     0 < pairApproximationTolerance q α F t :=
-  pairOffDiagTolerance_pos q hα (fun _ ↦ hF _) t
+  pairOffDiagTolerance_pos q hα hFt
 
 /-- `pairApproximationTolerance` never exceeds `1 / 32`. -/
-theorem pairApproximationTolerance_le_one_div_32 (q : ℕ) (α : ℝ) {F : ℕ → ℝ}
-    (hF : ∀ n, 0 < F n) (t : ℕ) :
+theorem pairApproximationTolerance_le_one_div_32 (q : ℕ) (α : ℝ) (F : ℕ → ℝ) (t : ℕ) :
     pairApproximationTolerance q α F t ≤ 1 / 32 :=
-  pairOffDiagTolerance_le_one_div_32 q α (fun _ ↦ hF _) t
+  pairOffDiagTolerance_le_one_div_32 q α (fun t ↦ F (t + q + 1)) t
 
 /-- Upper bound on the number of cells of the coarse equipartition in strong pair-color
 approximation, starting from an equipartition with `l₀` cells. -/
@@ -232,7 +234,8 @@ theorem pairApproximationPartsBound_mono (q : ℕ) (α : ℝ) (F : ℕ → ℝ) 
 theorem mul_le_pairApproximationPartsBound (q : ℕ) {α : ℝ} (hα : 0 < α) {F : ℕ → ℝ}
     (hF : ∀ n, 0 < F n) (l₀ : ℕ) :
     max 1 ⌈4 / α⌉₊ * l₀ ≤ pairApproximationPartsBound q α F l₀ :=
-  le_strongPairColorRegularityBound _ (pairApproximationTolerance_pos q hα hF) _
+  le_strongPairColorRegularityBound _
+    (fun t ↦ pairApproximationTolerance_pos q hα (hF (t + q + 1))) _
 
 /-- For positive parameters, `pairApproximationPartsBound` is at least `l₀`. -/
 theorem le_pairApproximationPartsBound (q : ℕ) {α : ℝ} (hα : 0 < α) {F : ℕ → ℝ}
@@ -799,10 +802,10 @@ private theorem exists_refining_equipartition_regular_offDiag_aux
     Fintype.card_pos_iff.1 ((pairOffDiagBound_pos q α G #P₀.parts).trans_le hV)
   obtain ⟨P, Q, hQP, hPP₀, hP, hQ, hPcard, hQcard', hQirreg, hgap⟩ :=
     S.exists_strong_refining_equipartitions P₀ hP₀ (by positivity : 0 < (α / (4 * (q' : ℝ))) ^ 2)
-      (pairOffDiagTolerance_pos q hα hG)
+      (fun t ↦ pairOffDiagTolerance_pos q hα (hG t))
   have hQcard : #Q.parts ≤ M_fine := hQcard'.trans (strongPairColorStepBound_mono _ hPcard)
   set η := pairOffDiagTolerance q α G #P.parts
-  have hη : 0 < η := pairOffDiagTolerance_pos q hα hG #P.parts
+  have hη : 0 < η := pairOffDiagTolerance_pos q hα (hG #P.parts)
   have hQsize (A' : Finset V) (hA' : A' ∈ Q.parts) : (q + 3 : ℝ) ≤ η ^ 2 * #A' := by
     have hKsup : ⌈(q + 3 : ℝ) / η ^ 2⌉₊ ≤ (range (M_coarse + 1)).sup
         (fun t ↦ ⌈(q + 3 : ℝ) / (pairOffDiagTolerance q α G t) ^ 2⌉₊) :=
