@@ -298,14 +298,12 @@ instance infinite_discriminantGroup_bot [Nontrivial E] :
     Infinite (DiscriminantGroup (⊥ : Submodule ℤ E)) := by
   obtain ⟨x, hx⟩ := exists_ne (0 : E)
   refine Infinite.of_injective
-    (fun n : ℤ ↦ (Submodule.Quotient.mk ⟨n • x, mem_dual.2 fun y hy ↦ ?_⟩ :
+    (fun n : ℤ ↦ (Submodule.Quotient.mk ⟨n • x, by simp⟩ :
       DiscriminantGroup (⊥ : Submodule ℤ E)))
     fun m n hmn ↦ ?_
-  · obtain rfl := (mem_bot ℤ).1 hy
-    exact ⟨0, by simp⟩
-  · have h := (discriminantGroup_mk_eq_mk_iff _ _).1 hmn
-    rw [mem_bot, ← sub_smul, ← Int.cast_smul_eq_zsmul ℝ] at h
-    exact sub_eq_zero.1 (Int.cast_eq_zero.1 ((smul_eq_zero.1 h).resolve_right hx))
+  have h := (discriminantGroup_mk_eq_mk_iff _ _).1 hmn
+  rw [mem_bot, ← sub_smul, ← Int.cast_smul_eq_zsmul ℝ] at h
+  exact sub_eq_zero.1 (Int.cast_eq_zero.1 ((smul_eq_zero.1 h).resolve_right hx))
 
 section FiniteDimensional
 
@@ -490,6 +488,12 @@ omit [DiscreteTopology L] [IsZLattice ℝ L] in
 /-- A unimodular lattice has determinant one. -/
 theorem IsUnimodular.det_eq_one (h : IsUnimodular L) : det L = 1 := by
   rw [det_def, h.covolume_eq_one, one_pow]
+
+omit [DiscreteTopology L] [IsZLattice ℝ L] in
+/-- Every lattice in the zero space has determinant one. -/
+@[simp]
+theorem det_of_subsingleton [Subsingleton E] : det L = 1 :=
+  (isUnimodular_of_subsingleton L).det_eq_one
 
 /-- An integral lattice is unimodular exactly when its determinant is one. -/
 theorem IsIntegral.isUnimodular_iff_det_eq_one (h : IsIntegral L) :

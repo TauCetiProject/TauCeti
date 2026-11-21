@@ -15,7 +15,9 @@ For a ring `k` and a field `L` over `k`, `a.numberOfRationalPoints L` is the num
 points of a `k`-scheme `a : X ⟶ Spec k`, that is, of morphisms `Spec L ⟶ X` over `Spec k`, with
 the convention of `Nat.card` that an infinite set of points has count `0`. It is multiplicative in
 fibre products over `k` (`AlgebraicGeometry.Scheme.Hom.numberOfRationalPoints_pullback`), by the
-universal property of the fibre product `CategoryTheory.IsPullback.homIsOverEquiv`.
+universal property of the fibre product `CategoryTheory.IsPullback.homIsOverEquiv`, and it only
+depends on `L` up to isomorphism of `k`-algebras
+(`AlgebraicGeometry.Scheme.Hom.numberOfRationalPoints_congr`).
 
 ## Main definitions
 
@@ -24,6 +26,10 @@ universal property of the fibre product `CategoryTheory.IsPullback.homIsOverEqui
 
 ## Main results
 
+* `AlgebraicGeometry.Scheme.Hom.numberOfRationalPoints_congr`: isomorphic fields of values give
+  the same point count.
+* `AlgebraicGeometry.Scheme.Hom.numberOfRationalPoints_id`: `Spec k` has exactly one point with
+  values in any field over `k`.
 * `AlgebraicGeometry.Scheme.Hom.numberOfRationalPoints_pullback`: point counts are multiplicative
   in fibre products.
 -/
@@ -50,6 +56,30 @@ theorem numberOfRationalPoints_def {X : Scheme.{u}} (a : X ⟶ Spec (.of k)) :
     a.numberOfRationalPoints L =
       Nat.card {x : Spec (.of L) ⟶ X // x ≫ a = Spec.map (CommRingCat.ofHom (algebraMap k L))} :=
   (rfl)
+
+/-- The number of points of a `k`-scheme with values in a field only depends on the field up to
+isomorphism of `k`-algebras: an isomorphism `e : L ≃ₐ[k] L'` matches the `L`-valued points `x`
+with the `L'`-valued points `Spec.map e ≫ x`. -/
+theorem numberOfRationalPoints_congr {L' : Type u} [Field L'] [Algebra k L'] (e : L ≃ₐ[k] L')
+    {X : Scheme.{u}} (a : X ⟶ Spec (.of k)) :
+    a.numberOfRationalPoints L = a.numberOfRationalPoints L' := by
+  -- the isomorphism `Spec L' ≅ Spec L` induced by `e` lies over `Spec k`
+  let φ : Spec (.of L') ≅ Spec (.of L) := Scheme.Spec.mapIso e.toRingEquiv.toCommRingCatIso.op
+  have hφ : φ.hom ≫ Spec.map (CommRingCat.ofHom (algebraMap k L)) =
+      Spec.map (CommRingCat.ofHom (algebraMap k L')) := by
+    have he : (e : L →+* L').comp (algebraMap k L) = algebraMap k L' := RingHom.ext e.commutes
+    simp [φ, ← Spec.map_comp, ← CommRingCat.ofHom_comp, he]
+  rw [numberOfRationalPoints_def, numberOfRationalPoints_def]
+  exact Nat.card_congr <| (φ.symm.homCongr (Iso.refl X)).subtypeEquiv fun x ↦ by
+    simp [← hφ]
+
+/-- The spectrum of `k` has exactly one point with values in any field `L` over `k`: the
+structure morphism `Spec L ⟶ Spec k`. -/
+@[simp]
+theorem numberOfRationalPoints_id :
+    numberOfRationalPoints L (𝟙 (Spec (.of k))) = 1 := by
+  rw [numberOfRationalPoints_def]
+  simp
 
 /-- **Point counts are multiplicative in fibre products.** The number of `L`-valued points of
 `X ×_k Y` is the product of the numbers of `L`-valued points of `X` and of `Y`; with the
