@@ -31,8 +31,8 @@ namespace TauCeti.Oracle.Single.Code
 
 variable {σ : ℕ → Option ℕ} {c d : Code} {j k u x : ℕ} {r : Halt}
 
-/-- Inlining a successful outer stage run gives a successful compiled stage run with the same
-output at any stage large enough for the combined fuel, program index and output. -/
+/-- Inlining a successful outer stage run preserves the output and gives base-oracle use at
+most `u` at any stage large enough for the combined fuel, program index and output. -/
 theorem exists_evalStage_subst_of_evalStage_boundedAnswers {s : ℕ}
     (h : evalStage (d.boundedAnswers σ j u) k c x = some r)
     (hks : j + k ≤ s) (hcs : encode (c.subst d) < s) :
@@ -43,7 +43,8 @@ theorem exists_evalStage_subst_of_evalStage_boundedAnswers {s : ℕ}
 
 /-- A successful compiled stage run can be replayed once the outer stage reaches the compiled
 stage and exceeds the original program's index. Query fuel at least the compiled stage
-suffices when the use bound covers the compiled run's use. -/
+suffices when the use bound covers the compiled run's base-oracle use. The replay preserves
+the output and records its use in the intermediate oracle. -/
 theorem exists_evalStage_boundedAnswers_of_evalStage_subst {s : ℕ}
     (h : evalStage σ k (c.subst d) x = some r) (hj : k ≤ j) (hu : r.use ≤ u)
     (hks : k ≤ s) (hcs : encode c < s) :

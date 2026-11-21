@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Computability.Jump.Low
+import TauCeti.Computability.Jump.Reduction
 
 /-!
 # Finite iterates of the Turing jump
@@ -44,6 +45,8 @@ itself, which need not be one-one.
 -/
 
 public section
+
+open TauCeti.Oracle.Single
 
 namespace Set
 
@@ -106,18 +109,18 @@ theorem strictMono_degree_iterate_jump :
 /-- **Iterating the jump is monotone:** if `A ≤_T B`, then `A⁽ⁿ⁾ ≤_T B⁽ⁿ⁾`. -/
 theorem turingReducible_iterate_jump_iterate_jump (h : TuringReducible A.oracle B.oracle)
     (n : ℕ) : TuringReducible (jump^[n] A).oracle (jump^[n] B).oracle := by
-  induction n with
-  | zero => exact h
-  | succ n ih =>
-    rw [Function.iterate_succ_apply', Function.iterate_succ_apply']
-    exact turingReducible_jump_jump ih
+  obtain ⟨d, hd⟩ := Code.turingReducible_iff_exists_code.1 h
+  exact Code.turingReducible_iff_exists_code.2
+    ⟨_, eval_iterate_jumpProgram_of_eval_eq_oracle hd n⟩
 
 /-- If `A ≤_T B`, then `A⁽ⁿ⁺¹⁾` reduces one-one to `B⁽ⁿ⁺¹⁾`. The first jump turns a Turing
 reduction into a one-one reduction. -/
 theorem oneOneReducible_iterate_jump_iterate_jump (h : TuringReducible A.oracle B.oracle)
     (n : ℕ) : OneOneReducible (· ∈ jump^[n + 1] A) (· ∈ jump^[n + 1] B) := by
-  rw [Function.iterate_succ_apply', Function.iterate_succ_apply']
-  exact oneOneReducible_jump_jump (turingReducible_iterate_jump_iterate_jump h n)
+  obtain ⟨d, hd⟩ := Code.turingReducible_iff_exists_code.1 h
+  let c := Code.jumpProgram^[n] d
+  exact ⟨c.jumpIndex, (Code.primrec₂_jumpIndex.comp (Primrec.const c) Primrec.id).to_comp,
+    c.jumpIndex_injective, fun e => (jumpIndex_mem_iterate_jump_iff hd n e).symm⟩
 
 /-- Turing equivalent sets have Turing equivalent iterated jumps. -/
 theorem turingEquivalent_iterate_jump_iterate_jump (h : TuringEquivalent A.oracle B.oracle)

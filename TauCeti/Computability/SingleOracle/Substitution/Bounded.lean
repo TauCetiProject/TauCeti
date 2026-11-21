@@ -181,18 +181,4 @@ theorem exists_evaln_boundedAnswers_iff_use_le (h : evaln σ k (c.subst d) x = s
     obtain ⟨t, ht, -⟩ := exists_evaln_boundedAnswers_of_evaln_subst h le_rfl hu
     exact ⟨k, k, t, ht⟩
 
--- With a large enough fuel the inlined run has base use three.
-private theorem evaln_search_subst :
-    evaln searchAnswers 4 ((rfind' oracle).subst shiftQuery) (Nat.pair 0 0) = some ⟨1, 3⟩ := by
-  simp [evaln, shiftQuery, searchAnswers, Nat.unpaired, Nat.unpair, Nat.pair]
-
-example : ¬ ∃ j k t, evaln (shiftQuery.boundedAnswers searchAnswers j 2) k (rfind' oracle)
-      (Nat.pair 0 0) = some t := by
-  rw [exists_evaln_boundedAnswers_iff_use_le evaln_search_subst]
-  decide
-
-example : ∃ t, evaln searchAnswers 6 ((rfind' oracle).subst shiftQuery) (Nat.pair 0 0) =
-    some t ∧ t.output = 1 ∧ t.use ≤ 3 :=
-  exists_evaln_subst_of_evaln_boundedAnswers evaln_search_boundedAnswers
-
 end TauCeti.Oracle.Single.Code

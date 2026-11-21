@@ -88,20 +88,21 @@ theorem eval_subst (O : ℕ →. ℕ) (c d : Code) :
 
 private theorem primrec_lookup_subst (ctor : Code → Code → Code) (hctor : Primrec₂ ctor) :
     Primrec₂ fun (p : Code × List Code) (cs : Code × Code) =>
-      p.2[encode cs.1]?.bind fun cf => p.2[encode cs.2]?.map (ctor cf) := by
+      Option.map₂ ctor p.2[encode cs.1]? p.2[encode cs.2]? := by
   have hl : Primrec fun p : (Code × List Code) × (Code × Code) => p.1.2 :=
     snd.comp fst
   have hf := list_getElem?.comp hl (Primrec.encode.comp (fst.comp snd))
   have hg := list_getElem?.comp hl (Primrec.encode.comp (snd.comp snd))
+  unfold Option.map₂
   exact (option_bind hf (option_map (hg.comp fst) (hctor.comp (snd.comp fst) snd).to₂).to₂).to₂
 
 /-- Query substitution is primitive recursive jointly in the source and query programs. -/
 theorem primrec₂_subst : Primrec₂ subst := by
   let step (p : Code × List Code) : Option Code :=
     Code.casesOn (ofNat Code p.2.length) (some zero) (some succ) (some left) (some right) (some p.1)
-      (fun cf cg => p.2[encode cf]?.bind fun f => p.2[encode cg]?.map (pair f))
-      (fun cf cg => p.2[encode cf]?.bind fun f => p.2[encode cg]?.map (comp f))
-      (fun cf cg => p.2[encode cf]?.bind fun f => p.2[encode cg]?.map (prec f))
+      (fun cf cg => Option.map₂ pair p.2[encode cf]? p.2[encode cg]?)
+      (fun cf cg => Option.map₂ comp p.2[encode cf]? p.2[encode cg]?)
+      (fun cf cg => Option.map₂ prec p.2[encode cf]? p.2[encode cg]?)
       (fun cf => p.2[encode cf]?.map rfind')
   have hstep : Primrec step :=
     primrec_casesOn ((Primrec.ofNat _).comp (list_length.comp snd))
