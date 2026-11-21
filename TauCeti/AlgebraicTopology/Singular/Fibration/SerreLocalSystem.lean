@@ -52,7 +52,9 @@ A map of Serre fibrations, that is, a commutative square from `p` to `p'` over `
 the local system of fibre homology of `p` to the pullback along `g` of that of `p'`, acting on the
 fibres by the maps it induces (`CategoryTheory.CommSq.serreFiberLocalSystemMap`). This is an
 isomorphism when the maps of fibres are weak homotopy equivalences, as for the base change of a
-Serre fibration.
+Serre fibration. A linear map of coefficient modules likewise maps the local system of fibre
+homology with coefficients in one to that with coefficients in the other
+(`TauCeti.TopCat.serreFiberLocalSystemMapCoeff`).
 
 ## Main definitions
 
@@ -62,6 +64,8 @@ Serre fibration.
 * `TauCeti.TopCat.serreFiberLocalSystem`: the local system `b ↦ Hₙ(p⁻¹(b); M)`.
 * `CategoryTheory.CommSq.serreFiberLocalSystemMap`: the morphism of local systems induced by a map
   of Serre fibrations.
+* `TauCeti.TopCat.serreFiberLocalSystemMapCoeff`: the morphism of local systems induced by a map of
+  coefficient modules.
 
 ## Main results
 
@@ -70,6 +74,9 @@ Serre fibration.
   functorial.
 * `TauCeti.TopCat.fiberHomologyTransport_naturality`: transport is natural in maps of Serre
   fibrations.
+* `TauCeti.TopCat.fiberHomologyTransport_comp_app`: transport is natural in the coefficients.
+* `TauCeti.TopCat.fiberHomologyTransport_map`: transport along the image of a path in a
+  contractible space is transport over that space.
 * `TauCeti.TopCat.fiberHomologyTransport_eq_singularHomologyMap_fiberTransport`: for a fibration
   with a lifting function, transport on homology is induced by the transport map.
 
@@ -223,6 +230,28 @@ theorem pullbackFiberTransport_comp_left {K' : TopCat.{u}} [ContractibleSpace K'
   simpa using pullbackFiberTransport_naturality hp M n (CommSq.mk (by simp : 𝟙 E ≫ p = p ≫ 𝟙 B))
     hp (φ ≫ g) g φ (Category.comp_id _).symm h₀ h₁ h₀' h₁'
 
+instance isIso_pullbackFiberTransport (g : K ⟶ B) {k₀ k₁ : K} {b₀ b₁ : B} (h₀ : g k₀ = b₀)
+    (h₁ : g k₁ = b₁) : IsIso (pullbackFiberTransport hp M n g h₀ h₁) := by
+  have := isIso_singularHomologyMap_pullbackFiberι hp M n g h₀
+  have := isIso_singularHomologyMap_pullbackFiberι hp M n g h₁
+  unfold pullbackFiberTransport
+  infer_instance
+
+/-- **Transport is natural in the coefficients.** Transport commutes with the maps induced on
+homology by a linear map of coefficient modules. -/
+@[reassoc]
+theorem pullbackFiberTransport_comp_app {M' : ModuleCat.{u} R} (ψ : M ⟶ M') (g : K ⟶ B)
+    {k₀ k₁ : K} {b₀ b₁ : B} (h₀ : g k₀ = b₀) (h₁ : g k₁ = b₁) :
+    pullbackFiberTransport hp M n g h₀ h₁ ≫
+        ((singularHomologyFunctor (ModuleCat.{u} R) n).map ψ).app (p.fiber b₁) =
+      ((singularHomologyFunctor (ModuleCat.{u} R) n).map ψ).app (p.fiber b₀) ≫
+        pullbackFiberTransport hp M' n g h₀ h₁ := by
+  have := isIso_singularHomologyMap_pullbackFiberι hp M' n g h₁
+  rw [← cancel_mono (((singularHomologyFunctor (ModuleCat.{u} R) n).obj M').map
+      (p.pullbackFiberι g h₁)), Category.assoc, Category.assoc,
+    pullbackFiberTransport_comp_map_pullbackFiberι, ← NatTrans.naturality,
+    pullbackFiberTransport_comp_map_pullbackFiberι_assoc, NatTrans.naturality]
+
 end Pullback
 
 /-! ### Transport along paths -/
@@ -281,6 +310,31 @@ theorem eq_fiberHomologyTransport_iff (γ : Path b₀ b₁)
             (TopCat.pathEquiv.symm γ).hom₀) := by
   rw [fiberHomologyTransport_eq_pullbackFiberTransport]
   exact eq_pullbackFiberTransport_iff hp M n _ _ _ f
+
+instance isIso_fiberHomologyTransport (γ : Path b₀ b₁) :
+    IsIso (fiberHomologyTransport hp M n γ) := by
+  rw [fiberHomologyTransport_eq_pullbackFiberTransport]
+  infer_instance
+
+/-- **Transport along the image of a path in a contractible space.** For `g : K ⟶ B` with `K`
+contractible and a path `ε` from `k₀` to `k₁` in `K`, transport along the image of `ε` under `g` is
+transport over `K` from `k₀` to `k₁`. -/
+theorem fiberHomologyTransport_map {K : TopCat.{u}} [ContractibleSpace K] (g : K ⟶ B)
+    {k₀ k₁ : K} (ε : Path k₀ k₁) :
+    fiberHomologyTransport hp M n (ε.map g.hom.continuous) =
+      pullbackFiberTransport hp M n g (rfl : g k₀ = g k₀) (rfl : g k₁ = g k₁) :=
+  pullbackFiberTransport_comp_left hp M n g _ (TopCat.pathEquiv.symm ε).hom
+    (TopCat.pathEquiv_symm_map_hom ε g).symm (TopCat.pathEquiv.symm ε).hom₀
+    (TopCat.pathEquiv.symm ε).hom₁ _ _ _ _
+
+/-- **Transport along a path is natural in the coefficients.** -/
+@[reassoc]
+theorem fiberHomologyTransport_comp_app {M' : ModuleCat.{u} R} (ψ : M ⟶ M') (γ : Path b₀ b₁) :
+    fiberHomologyTransport hp M n γ ≫
+        ((singularHomologyFunctor (ModuleCat.{u} R) n).map ψ).app (p.fiber b₁) =
+      ((singularHomologyFunctor (ModuleCat.{u} R) n).map ψ).app (p.fiber b₀) ≫
+        fiberHomologyTransport hp M' n γ :=
+  pullbackFiberTransport_comp_app hp M n ψ _ _ _
 
 /-- **Transport along a constant path is the identity.** -/
 @[simp]
@@ -397,6 +451,30 @@ theorem serreFiberLocalSystem_map_mk {b₀ b₁ : FundamentalGroupoid B}
   simp only [serreFiberLocalSystemObjIso, Iso.refl_hom, Iso.refl_inv]
   -- `Quotient.lift` evaluates on the class of a path by definition.
   rfl
+
+/-- **Functoriality of the local system of fibre homology in the coefficients.** A linear map
+`ψ : M ⟶ M'` of coefficient modules induces a morphism of local systems of fibre homology, acting
+on the fibre over each point by the map induced on homology by `ψ`. -/
+def serreFiberLocalSystemMapCoeff {M' : ModuleCat.{u} R} (ψ : M ⟶ M') :
+    serreFiberLocalSystem hp M n ⟶ serreFiberLocalSystem hp M' n where
+  app b := (serreFiberLocalSystemObjIso hp M n b).hom ≫
+    ((singularHomologyFunctor (ModuleCat.{u} R) n).map ψ).app (p.fiber b.as) ≫
+      (serreFiberLocalSystemObjIso hp M' n b).inv
+  naturality {b₀ b₁} q := by
+    induction q using Path.Homotopic.Quotient.ind with | mk γ =>
+    simp only [serreFiberLocalSystem_map_mk, Category.assoc, Iso.inv_hom_id_assoc,
+      fiberHomologyTransport_comp_app_assoc]
+
+/-- On the fibre over `b`, the morphism of local systems induced by a map of coefficient modules is
+the map it induces on the homology of the fibre. -/
+@[simp]
+theorem serreFiberLocalSystemMapCoeff_app {M' : ModuleCat.{u} R} (ψ : M ⟶ M')
+    (b : FundamentalGroupoid B) :
+    (serreFiberLocalSystemMapCoeff hp M n ψ).app b =
+      (serreFiberLocalSystemObjIso hp M n b).hom ≫
+        ((singularHomologyFunctor (ModuleCat.{u} R) n).map ψ).app (p.fiber b.as) ≫
+          (serreFiberLocalSystemObjIso hp M' n b).inv :=
+  (rfl)
 
 /-! ### Comparison with the transport of a lifting function -/
 
