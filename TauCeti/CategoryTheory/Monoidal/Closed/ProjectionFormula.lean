@@ -23,11 +23,11 @@ pushforward `f_! ⊣ f^!` together with `f^* ⊣ f_*`.
   natural in `A : D`, is the same as an isomorphism `ihom (L B) ≅ R ⋙ ihom B ⋙ G`, that is,
   `[L B, A'] ≅ G [B, R A']` naturally in `A' : D`
   (`CategoryTheory.MonoidalClosed.ihomLeftAdjointObjEquiv`).
-* Given `A : D`, a projection formula `L ⋙ tensorLeft A ≅ tensorLeft (F A) ⋙ L`, natural in the
-  source object, is the same as an isomorphism `R ⋙ ihom (F A) ≅ ihom A ⋙ R`, that is,
-  `[F A, R A'] ≅ R [A, A']` naturally in `A'`
-  (`CategoryTheory.MonoidalClosed.ihomRightAdjointEquiv`).
-  No adjoint of `F` is needed here.
+* Given `A : D` and `B : C`, a projection formula `L ⋙ tensorLeft A ≅ tensorLeft B ⋙ L`, natural
+  in the source object, is the same as an isomorphism `R ⋙ ihom B ≅ ihom A ⋙ R`, that is,
+  `[B, R A'] ≅ R [A, A']` naturally in `A'`
+  (`CategoryTheory.MonoidalClosed.ihomRightAdjointEquiv`). In applications `B = F A`, and no
+  adjoint of `F` is needed here.
 
 In both cases the correspondence is Mathlib's conjugation of natural isomorphisms between adjoint
 functors (`CategoryTheory.conjugateIsoEquiv`) for composites of the given adjunctions with the
@@ -37,7 +37,7 @@ so are the dualities, and we assemble them into isomorphisms of internal-Hom bif
 `CategoryTheory.MonoidalClosed.ihomRightAdjointIso`).
 
 The projection formula is often given with the tensor factor on the other side, as
-`L B ⊗ A ≅ L (B ⊗ F A)` naturally in `B`; in braided categories,
+`L X ⊗ A ≅ L (X ⊗ F A)` naturally in `X`; in braided categories,
 `CategoryTheory.BraidedCategory.tensorRightIsoEquivTensorLeftIso` converts it into the form used
 by the second duality.
 
@@ -134,6 +134,7 @@ theorem pre_app_comp_ihomLeftAdjointObjEquiv_hom_app {B₁ B₂ : C} [Closed B�
   rw [← conjugateEquiv_comp _ (adj₁.comp ((ihom.adjunction B₂).comp adj₂)),
     ← conjugateEquiv_comp _ (ihom.adjunction (L.obj B₁)), conjugateEquiv_whiskerLeft,
     conjugateEquiv_whiskerRight] at this
+  rw [pre, pre]
   exact (congr_app this A').symm
 
 variable [MonoidalClosed C] [MonoidalClosed D]
@@ -177,83 +178,85 @@ end LeftAdjointObj
 
 section RightAdjoint
 
-variable {F : D ⥤ C} {L : C ⥤ D} {R : D ⥤ C} (adj : L ⊣ R)
+variable {L : C ⥤ D} {R : D ⥤ C} (adj : L ⊣ R)
 
-/-- Let `L ⊣ R` be an adjunction with `L : C ⥤ D`, `F : D ⥤ C` any functor and `A : D`.
-Projection formulas `A ⊗ L X ≅ L (F A ⊗ X)`, natural in `X : C`, correspond bijectively to
-isomorphisms `[F A, R A'] ≅ R [A, A']`, natural in `A' : D`: the functors `L ⋙ tensorLeft A` and
-`tensorLeft (F A) ⋙ L` are left adjoints, to `ihom A ⋙ R` and `R ⋙ ihom (F A)`, and the
+/-- Let `L ⊣ R` be an adjunction with `L : C ⥤ D`, and let `A : D` and `B : C`.
+Projection formulas `A ⊗ L X ≅ L (B ⊗ X)`, natural in `X : C`, correspond bijectively to
+isomorphisms `[B, R A'] ≅ R [A, A']`, natural in `A' : D`: the functors `L ⋙ tensorLeft A` and
+`tensorLeft B ⋙ L` are left adjoints, to `ihom A ⋙ R` and `R ⋙ ihom B`, and the
 correspondence is conjugation of natural isomorphisms. -/
-def ihomRightAdjointEquiv (A : D) [Closed A] [Closed (F.obj A)] :
-    (L ⋙ tensorLeft A ≅ tensorLeft (F.obj A) ⋙ L) ≃ (R ⋙ ihom (F.obj A) ≅ ihom A ⋙ R) :=
-  conjugateIsoEquiv ((ihom.adjunction (F.obj A)).comp adj) (adj.comp (ihom.adjunction A))
+def ihomRightAdjointEquiv (A : D) (B : C) [Closed A] [Closed B] :
+    (L ⋙ tensorLeft A ≅ tensorLeft B ⋙ L) ≃ (R ⋙ ihom B ≅ ihom A ⋙ R) :=
+  conjugateIsoEquiv ((ihom.adjunction B).comp adj) (adj.comp (ihom.adjunction A))
 
 @[simp]
-theorem ihomRightAdjointEquiv_apply_hom (A : D) [Closed A] [Closed (F.obj A)]
-    (e : L ⋙ tensorLeft A ≅ tensorLeft (F.obj A) ⋙ L) :
-    (ihomRightAdjointEquiv adj A e).hom = conjugateEquiv ((ihom.adjunction (F.obj A)).comp adj)
+theorem ihomRightAdjointEquiv_apply_hom (A : D) (B : C) [Closed A] [Closed B]
+    (e : L ⋙ tensorLeft A ≅ tensorLeft B ⋙ L) :
+    (ihomRightAdjointEquiv adj A B e).hom = conjugateEquiv ((ihom.adjunction B).comp adj)
       (adj.comp (ihom.adjunction A)) e.hom :=
   (rfl)
 
 @[simp]
-theorem ihomRightAdjointEquiv_apply_inv (A : D) [Closed A] [Closed (F.obj A)]
-    (e : L ⋙ tensorLeft A ≅ tensorLeft (F.obj A) ⋙ L) :
-    (ihomRightAdjointEquiv adj A e).inv = conjugateEquiv (adj.comp (ihom.adjunction A))
-      ((ihom.adjunction (F.obj A)).comp adj) e.inv :=
+theorem ihomRightAdjointEquiv_apply_inv (A : D) (B : C) [Closed A] [Closed B]
+    (e : L ⋙ tensorLeft A ≅ tensorLeft B ⋙ L) :
+    (ihomRightAdjointEquiv adj A B e).inv = conjugateEquiv (adj.comp (ihom.adjunction A))
+      ((ihom.adjunction B).comp adj) e.inv :=
   (rfl)
 
 @[simp]
-theorem ihomRightAdjointEquiv_symm_apply_hom (A : D) [Closed A] [Closed (F.obj A)]
-    (ψ : R ⋙ ihom (F.obj A) ≅ ihom A ⋙ R) :
-    ((ihomRightAdjointEquiv adj A).symm ψ).hom = (conjugateEquiv
-      ((ihom.adjunction (F.obj A)).comp adj) (adj.comp (ihom.adjunction A))).symm ψ.hom :=
+theorem ihomRightAdjointEquiv_symm_apply_hom (A : D) (B : C) [Closed A] [Closed B]
+    (ψ : R ⋙ ihom B ≅ ihom A ⋙ R) :
+    ((ihomRightAdjointEquiv adj A B).symm ψ).hom = (conjugateEquiv
+      ((ihom.adjunction B).comp adj) (adj.comp (ihom.adjunction A))).symm ψ.hom :=
   (rfl)
 
 @[simp]
-theorem ihomRightAdjointEquiv_symm_apply_inv (A : D) [Closed A] [Closed (F.obj A)]
-    (ψ : R ⋙ ihom (F.obj A) ≅ ihom A ⋙ R) :
-    ((ihomRightAdjointEquiv adj A).symm ψ).inv = (conjugateEquiv
-      (adj.comp (ihom.adjunction A)) ((ihom.adjunction (F.obj A)).comp adj)).symm ψ.inv :=
+theorem ihomRightAdjointEquiv_symm_apply_inv (A : D) (B : C) [Closed A] [Closed B]
+    (ψ : R ⋙ ihom B ≅ ihom A ⋙ R) :
+    ((ihomRightAdjointEquiv adj A B).symm ψ).inv = (conjugateEquiv
+      (adj.comp (ihom.adjunction A)) ((ihom.adjunction B).comp adj)).symm ψ.inv :=
   (rfl)
 
-/-- The isomorphism `ihomRightAdjointEquiv adj A e` is characterised by its compatibility with
-evaluation: transporting it along the two adjunctions to a morphism `A ⊗ L [F A, R A'] ⟶ A'`
+/-- The isomorphism `ihomRightAdjointEquiv adj A B e` is characterised by its compatibility with
+evaluation: transporting it along the two adjunctions to a morphism `A ⊗ L [B, R A'] ⟶ A'`
 gives `e` followed by evaluation. -/
 @[reassoc]
-theorem ihomRightAdjointEquiv_hom_app_comp_counit (A : D) [Closed A] [Closed (F.obj A)]
-    (e : L ⋙ tensorLeft A ≅ tensorLeft (F.obj A) ⋙ L) (A' : D) :
-    A ◁ L.map ((ihomRightAdjointEquiv adj A e).hom.app A') ≫
+theorem ihomRightAdjointEquiv_hom_app_comp_counit (A : D) (B : C) [Closed A] [Closed B]
+    (e : L ⋙ tensorLeft A ≅ tensorLeft B ⋙ L) (A' : D) :
+    A ◁ L.map ((ihomRightAdjointEquiv adj A B e).hom.app A') ≫
         A ◁ adj.counit.app ((ihom A).obj A') ≫ (ihom.ev A).app A' =
-      e.hom.app ((ihom (F.obj A)).obj (R.obj A')) ≫
-        L.map ((ihom.ev (F.obj A)).app (R.obj A')) ≫ adj.counit.app A' := by
+      e.hom.app ((ihom B).obj (R.obj A')) ≫
+        L.map ((ihom.ev B).app (R.obj A')) ≫ adj.counit.app A' := by
   simpa only [ihomRightAdjointEquiv_apply_hom, Adjunction.comp_counit_app,
     Functor.comp_obj, Functor.comp_map, Category.assoc, ihom.ihom_adjunction_counit,
     curriedTensor_obj_map] using
-    conjugateEquiv_counit ((ihom.adjunction (F.obj A)).comp adj) (adj.comp (ihom.adjunction A))
+    conjugateEquiv_counit ((ihom.adjunction B).comp adj) (adj.comp (ihom.adjunction A))
       e.hom A'
 
-/-- Naturality of `ihomRightAdjointEquiv` in the object `A`: if the projection formulas `e₁`
-at `A₁` and `e₂` at `A₂` are compatible with `g : A₁ ⟶ A₂`, then so are the corresponding
-isomorphisms, with precomposition by `F.map g` and by `g` on the two sides. -/
-theorem pre_app_comp_ihomRightAdjointEquiv_hom_app {A₁ A₂ : D} [Closed A₁] [Closed A₂]
-    [Closed (F.obj A₁)] [Closed (F.obj A₂)] (g : A₁ ⟶ A₂)
-    (e₁ : L ⋙ tensorLeft A₁ ≅ tensorLeft (F.obj A₁) ⋙ L)
-    (e₂ : L ⋙ tensorLeft A₂ ≅ tensorLeft (F.obj A₂) ⋙ L)
-    (h : ∀ X : C, g ▷ L.obj X ≫ e₂.hom.app X = e₁.hom.app X ≫ L.map (F.map g ▷ X)) (A' : D) :
-    (pre (F.map g)).app (R.obj A') ≫ (ihomRightAdjointEquiv adj A₁ e₁).hom.app A' =
-      (ihomRightAdjointEquiv adj A₂ e₂).hom.app A' ≫ R.map ((pre g).app A') := by
+/-- Naturality of `ihomRightAdjointEquiv` in the objects `A` and `B`: if the projection formulas
+`e₁` at `(A₁, B₁)` and `e₂` at `(A₂, B₂)` are compatible with `g : A₁ ⟶ A₂` and `g' : B₁ ⟶ B₂`,
+then so are the corresponding isomorphisms, with precomposition by `g'` and by `g` on the two
+sides. -/
+theorem pre_app_comp_ihomRightAdjointEquiv_hom_app {A₁ A₂ : D} {B₁ B₂ : C} [Closed A₁]
+    [Closed A₂] [Closed B₁] [Closed B₂] (g : A₁ ⟶ A₂) (g' : B₁ ⟶ B₂)
+    (e₁ : L ⋙ tensorLeft A₁ ≅ tensorLeft B₁ ⋙ L)
+    (e₂ : L ⋙ tensorLeft A₂ ≅ tensorLeft B₂ ⋙ L)
+    (h : ∀ X : C, g ▷ L.obj X ≫ e₂.hom.app X = e₁.hom.app X ≫ L.map (g' ▷ X)) (A' : D) :
+    (pre g').app (R.obj A') ≫ (ihomRightAdjointEquiv adj A₁ B₁ e₁).hom.app A' =
+      (ihomRightAdjointEquiv adj A₂ B₂ e₂).hom.app A' ≫ R.map ((pre g).app A') := by
   have h' : Functor.whiskerLeft L ((curriedTensor D).map g) ≫ e₂.hom =
-      e₁.hom ≫ Functor.whiskerRight ((curriedTensor C).map (F.map g)) L := by
+      e₁.hom ≫ Functor.whiskerRight ((curriedTensor C).map g') L := by
     ext X
     exact h X
-  have := congr_arg (conjugateEquiv ((ihom.adjunction (F.obj A₂)).comp adj)
+  have := congr_arg (conjugateEquiv ((ihom.adjunction B₂).comp adj)
     (adj.comp (ihom.adjunction A₁))) h'
   rw [← conjugateEquiv_comp _ (adj.comp (ihom.adjunction A₂)),
-    ← conjugateEquiv_comp _ ((ihom.adjunction (F.obj A₁)).comp adj), conjugateEquiv_whiskerLeft,
+    ← conjugateEquiv_comp _ ((ihom.adjunction B₁).comp adj), conjugateEquiv_whiskerLeft,
     conjugateEquiv_whiskerRight] at this
+  rw [pre, pre]
   exact (congr_app this A').symm
 
-variable [MonoidalClosed C] [MonoidalClosed D]
+variable [MonoidalClosed C] [MonoidalClosed D] {F : D ⥤ C}
 
 /-- The isomorphism `[F A, R A'] ≅ R [A, A']` as an isomorphism of bifunctors `Dᵒᵖ ⥤ D ⥤ C`,
 natural in both `A` and `A'`, built from a projection formula `A ⊗ L X ≅ L (F A ⊗ X)` natural in
@@ -264,10 +267,10 @@ def ihomRightAdjointIso
       F ⋙ curriedTensor C ⋙ (Functor.whiskeringRight C C D).obj L) :
     F.op ⋙ internalHom ⋙ (Functor.whiskeringLeft D C C).obj R ≅
       internalHom ⋙ (Functor.whiskeringRight D D C).obj R :=
-  NatIso.ofComponents (fun A ↦ ihomRightAdjointEquiv adj A.unop (π.app A.unop))
+  NatIso.ofComponents (fun A ↦ ihomRightAdjointEquiv adj A.unop (F.obj A.unop) (π.app A.unop))
     fun {A₁ A₂} f ↦ by
       ext A'
-      exact pre_app_comp_ihomRightAdjointEquiv_hom_app adj f.unop _ _
+      exact pre_app_comp_ihomRightAdjointEquiv_hom_app adj f.unop (F.map f.unop) _ _
         (fun X ↦ by simpa using NatTrans.congr_app (π.hom.naturality f.unop) X) A'
 
 @[simp]
@@ -275,7 +278,7 @@ theorem ihomRightAdjointIso_hom_app_app
     (π : curriedTensor D ⋙ (Functor.whiskeringLeft C D D).obj L ≅
       F ⋙ curriedTensor C ⋙ (Functor.whiskeringRight C C D).obj L) (A : Dᵒᵖ) (A' : D) :
     ((ihomRightAdjointIso adj π).hom.app A).app A' =
-      (ihomRightAdjointEquiv adj A.unop (π.app A.unop)).hom.app A' :=
+      (ihomRightAdjointEquiv adj A.unop (F.obj A.unop) (π.app A.unop)).hom.app A' :=
   (rfl)
 
 @[simp]
@@ -283,7 +286,7 @@ theorem ihomRightAdjointIso_inv_app_app
     (π : curriedTensor D ⋙ (Functor.whiskeringLeft C D D).obj L ≅
       F ⋙ curriedTensor C ⋙ (Functor.whiskeringRight C C D).obj L) (A : Dᵒᵖ) (A' : D) :
     ((ihomRightAdjointIso adj π).inv.app A).app A' =
-      (ihomRightAdjointEquiv adj A.unop (π.app A.unop)).inv.app A' :=
+      (ihomRightAdjointEquiv adj A.unop (F.obj A.unop) (π.app A.unop)).inv.app A' :=
   (rfl)
 
 end RightAdjoint
@@ -292,28 +295,41 @@ end MonoidalClosed
 
 namespace BraidedCategory
 
-variable [BraidedCategory C] [BraidedCategory D] (F : D ⥤ C) (L : C ⥤ D) (A : D)
+variable [BraidedCategory C] [BraidedCategory D] (L : C ⥤ D) (A : D) (B : C)
 
-/-- In braided categories, the braidings convert projection formulas `L X ⊗ A ≅ L (X ⊗ F A)`,
-natural in `X`, into projection formulas `A ⊗ L X ≅ L (F A ⊗ X)`, natural in `X`, and back. -/
+/-- In braided categories, the braidings convert projection formulas `L X ⊗ A ≅ L (X ⊗ B)`,
+natural in `X`, into projection formulas `A ⊗ L X ≅ L (B ⊗ X)`, natural in `X`, and back. -/
 def tensorRightIsoEquivTensorLeftIso :
-    (L ⋙ tensorRight A ≅ tensorRight (F.obj A) ⋙ L) ≃
-      (L ⋙ tensorLeft A ≅ tensorLeft (F.obj A) ⋙ L) :=
+    (L ⋙ tensorRight A ≅ tensorRight B ⋙ L) ≃ (L ⋙ tensorLeft A ≅ tensorLeft B ⋙ L) :=
   Iso.isoCongr (Functor.isoWhiskerLeft L (tensorLeftIsoTensorRight A).symm)
-    (Functor.isoWhiskerRight (tensorLeftIsoTensorRight (F.obj A)).symm L)
+    (Functor.isoWhiskerRight (tensorLeftIsoTensorRight B).symm L)
 
 @[simp]
 theorem tensorRightIsoEquivTensorLeftIso_apply_hom_app
-    (e : L ⋙ tensorRight A ≅ tensorRight (F.obj A) ⋙ L) (X : C) :
-    (tensorRightIsoEquivTensorLeftIso F L A e).hom.app X =
-      (β_ A (L.obj X)).hom ≫ e.hom.app X ≫ L.map (β_ (F.obj A) X).inv := by
+    (e : L ⋙ tensorRight A ≅ tensorRight B ⋙ L) (X : C) :
+    (tensorRightIsoEquivTensorLeftIso L A B e).hom.app X =
+      (β_ A (L.obj X)).hom ≫ e.hom.app X ≫ L.map (β_ B X).inv := by
+  simp [tensorRightIsoEquivTensorLeftIso, tensorLeftIsoTensorRight]
+
+@[simp]
+theorem tensorRightIsoEquivTensorLeftIso_apply_inv_app
+    (e : L ⋙ tensorRight A ≅ tensorRight B ⋙ L) (X : C) :
+    (tensorRightIsoEquivTensorLeftIso L A B e).inv.app X =
+      L.map (β_ B X).hom ≫ e.inv.app X ≫ (β_ A (L.obj X)).inv := by
   simp [tensorRightIsoEquivTensorLeftIso, tensorLeftIsoTensorRight]
 
 @[simp]
 theorem tensorRightIsoEquivTensorLeftIso_symm_apply_hom_app
-    (e : L ⋙ tensorLeft A ≅ tensorLeft (F.obj A) ⋙ L) (X : C) :
-    ((tensorRightIsoEquivTensorLeftIso F L A).symm e).hom.app X =
-      (β_ A (L.obj X)).inv ≫ e.hom.app X ≫ L.map (β_ (F.obj A) X).hom := by
+    (e : L ⋙ tensorLeft A ≅ tensorLeft B ⋙ L) (X : C) :
+    ((tensorRightIsoEquivTensorLeftIso L A B).symm e).hom.app X =
+      (β_ A (L.obj X)).inv ≫ e.hom.app X ≫ L.map (β_ B X).hom := by
+  simp [tensorRightIsoEquivTensorLeftIso, tensorLeftIsoTensorRight]
+
+@[simp]
+theorem tensorRightIsoEquivTensorLeftIso_symm_apply_inv_app
+    (e : L ⋙ tensorLeft A ≅ tensorLeft B ⋙ L) (X : C) :
+    ((tensorRightIsoEquivTensorLeftIso L A B).symm e).inv.app X =
+      L.map (β_ B X).inv ≫ e.inv.app X ≫ (β_ A (L.obj X)).hom := by
   simp [tensorRightIsoEquivTensorLeftIso, tensorLeftIsoTensorRight]
 
 end BraidedCategory

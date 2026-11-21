@@ -26,8 +26,7 @@ example : ihomLeftAdjointObjEquiv (Adjunction.id (C := C)) (Adjunction.id (C := 
   simp
 
 -- The second form: the identity projection formula gives the identity of `ihom B`.
-example : ihomRightAdjointEquiv (F := 𝟭 C) (Adjunction.id (C := C)) B (Iso.refl _) =
-    Iso.refl _ := by
+example : ihomRightAdjointEquiv (Adjunction.id (C := C)) B B (Iso.refl _) = Iso.refl _ := by
   ext A'
   rw [ihomRightAdjointEquiv_apply_hom]
   simp
