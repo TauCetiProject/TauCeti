@@ -68,7 +68,7 @@ private def closedBallReading (hn : n ≠ 0)
     (s : Cₛ^n⟮𝓘(ℂ); F, V⟯) : C(closedBall c r, F) where
   toFun z := chartReading e T s z
   continuous_toFun := ((differentiableOn_chartReading hn e he T s).continuousOn.mono h)
-    |>.comp_continuous continuous_subtype_val (fun z ↦ z.2)
+    |>.comp_continuous continuous_subtypeVal (fun z ↦ z.property)
 
 private structure NestedDiscs (ι : Type u) where
   e : ι → OpenPartialHomeomorph X ℂ
@@ -262,7 +262,7 @@ private theorem exists_finset_eval_injective [Finite ι] (A : NestedDiscs (F := 
     exact TauCeti.norm_le_half_of_eq_zero_on_net
       ((differentiableOn_chartReading hn (A.e i) (A.chart_mem i) (A.T i) s).mono
         (ball_subset_closedBall.trans (A.valid i)))
-      (fun z hz ↦ hbound s i z (ball_subset_closedBall hz)) (hP i) (hnet i) (hzero i) z.2
+      (fun z hz ↦ hbound s i z (ball_subset_closedBall hz)) (hP i) (hnet i) (hzero i) z.property
   have hRs : A.readingMap hn s = 0 :=
     norm_eq_zero.mp (by linarith [norm_nonneg (A.readingMap hn s)])
   exact A.readingMap_injective hn (hRs.trans (map_zero _).symm)

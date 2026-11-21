@@ -55,10 +55,10 @@ open scoped ArithmeticFunction.sigma
 namespace TauCeti.TraceFormulaMatrixModule
 
 private noncomputable def fibreWeight (t n : ℤ) : ℚ :=
-  ∑ᶠ A : traceDetFiber (Fin 2) t n, (PopaZagier.weight A.1 : ℚ)
+  ∑ᶠ A : traceDetFiber (Fin 2) t n, (PopaZagier.weight A.val : ℚ)
 
 private lemma fibreWeight_cast (t n : ℤ) :
-    fibreWeight t n = (∑ᶠ A : traceDetFiber (Fin 2) t n, PopaZagier.weight A.1 : ℤ) := by
+    fibreWeight t n = (∑ᶠ A : traceDetFiber (Fin 2) t n, PopaZagier.weight A.val : ℤ) := by
   exact (map_finsum (Int.castAddHom ℚ) (PopaZagier.finite_support_weight_traceDetFiber t n)).symm
 
 private lemma fibreWeight_pair_of_sq_le (n : ℕ) (hn : 0 < n) (t : ℤ)

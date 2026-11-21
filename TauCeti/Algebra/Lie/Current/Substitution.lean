@@ -134,7 +134,7 @@ theorem residuePairing_substLieEquiv (φ : FormalCoordinate K) (Φ : LinearMap.B
   induction u using TensorProduct.inductionOn with
   | tmul f x =>
     induction v using TensorProduct.inductionOn with
-    | tmul g y => simp
+    | tmul g y => simp [LaurentSeries.coe_substAlgEquiv]
     | add v w hv hw => simp only [map_add, hv, hw]
   | add u w hu hw => simp only [map_add, LinearMap.add_apply, hu, hw]
 

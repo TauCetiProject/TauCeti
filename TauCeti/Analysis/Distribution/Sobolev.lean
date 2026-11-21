@@ -196,7 +196,7 @@ summands. -/
 theorem MemSobolev.toBesselPotentialSpace_sum {ι : Type*} {t : Finset ι} {s : ℝ} {p : ENNReal}
     [Fact (1 ≤ p)] {g : ι → 𝓢'(E, F)} (hg : ∀ i ∈ t, MemSobolev s p (g i))
     (h : MemSobolev s p (∑ i ∈ t, g i)) :
-    h.toBesselPotentialSpace = ∑ i ∈ t.attach, (hg i i.2).toBesselPotentialSpace :=
+    h.toBesselPotentialSpace = ∑ i ∈ t.attach, (hg i i.property).toBesselPotentialSpace :=
   BesselPotentialSpace.ext <| by
     rw [MemSobolev.toBesselPotentialSpace_toDistr, ← Finset.sum_attach t g]
     clear h
@@ -214,10 +214,10 @@ theorem MemSobolev.toBesselPotentialSpace_toTemperedDistribution_sum_smul {ι : 
     [μ.HasTemperateGrowth] {a : ι → ℂ} {f : ι → Lp F q μ}
     (hf : ∀ i ∈ t, MemSobolev s p (f i : 𝓢'(E, F)))
     (h : MemSobolev s p ((∑ i ∈ t, a i • f i : Lp F q μ) : 𝓢'(E, F))) :
-    h.toBesselPotentialSpace = ∑ i ∈ t.attach, a i • (hf i i.2).toBesselPotentialSpace := by
+    h.toBesselPotentialSpace = ∑ i ∈ t.attach, a i • (hf i i.property).toBesselPotentialSpace := by
   simp only [Lp.toTemperedDistribution_sum, Lp.toTemperedDistribution_smul,
     MemSobolev.toBesselPotentialSpace_sum fun i hi ↦ (hf i hi).smul (a i),
-    fun (i : t) ↦ (hf i i.2).toBesselPotentialSpace_smul (a i)]
+    fun (i : t) ↦ (hf i i.property).toBesselPotentialSpace_smul (a i)]
 
 /-- The sum of two `Lᵠ` functions in `H^{s,p}` lies in `H^{s,p}`. -/
 theorem MemSobolev.toTemperedDistribution_add {s : ℝ} {p q : ENNReal} [Fact (1 ≤ p)]

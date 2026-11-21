@@ -49,7 +49,7 @@ private theorem baseChange_generator_mul_generator (p q : ℤ) (x y : S ⊗[R] V
     | tmul t y =>
       simp only [Submodule.coe_toBaseChange_tmul, LinearMap.baseChange_tmul,
         Algebra.TensorProduct.tmul_mul_tmul]
-      rw [generator_mul_generator G x.2 y.2, mul_comm s t]
+      rw [generator_mul_generator G x.property y.property, mul_comm s t]
       exact map_zsmul_unit (TensorProduct.mk R S (SignedSym G) (t * s)) _ _
     | add a b ha hb =>
       simpa only [map_add, Submodule.coe_add, mul_add, add_mul, smul_add] using

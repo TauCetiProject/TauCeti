@@ -102,9 +102,17 @@ Hamiltonians, it is `∂_s H_{(s, t)}`, and in particular for a continuation per
   `SymplecticForm.perturbedFDeriv_comp_add_right`) and the energy density
   (`SymplecticForm.floerEnergyDensity_congr_of_eventuallyEq`,
   `SymplecticForm.floerEnergyDensity_comp_add_right`,
-  `SymplecticForm.floerEnergyDensity_cylindrical_comp_add_right`); hence translations preserve the
+  `SymplecticForm.floerEnergyDensity_cylindrical_comp_add_right`), so that data and maps invariant
+  under a translation have invariant energy density
+  (`SymplecticForm.periodic_floerEnergyDensity`); hence translations preserve the
   energy
   (`SymplecticForm.lintegral_floerEnergyDensity_comp_add_right`).
+* `SymplecticForm.tendsto_floerEnergyDensity`,
+  `SymplecticForm.setLIntegral_floerEnergyDensity_le_liminf`: the energy density depends
+  continuously on the value and the derivative of the map, so the energy is lower semicontinuous
+  under pointwise convergence of values and derivatives (Fatou's lemma);
+  `SymplecticForm.integrableOn_floerEnergyDensity_and_setIntegral_le_of_tendsto` bounds the
+  energy of the limit by a bound on the energies along the sequence.
 
 ## References
 
@@ -334,6 +342,17 @@ theorem contDiffOn_hamiltonianOneForm (ω : SymplecticForm V) {P : Type*} [Norme
       ).contDiffWithinAt
   exact (contDiffOn_const.smulRight (hX hKs)).add (contDiffOn_const.smulRight (hX hKt))
 
+/-- On an open set of `(ℝ × ℝ) × V`, the Hamiltonian one-form of a `C^(n+1)` perturbation is
+`Cⁿ`. -/
+theorem contDiffOn_uncurry_hamiltonianOneForm (ω : SymplecticForm V) {Ks Kt : ℝ × ℝ → V → ℝ}
+    {W : Set ((ℝ × ℝ) × V)} {n : WithTop ℕ∞} (hW : IsOpen W)
+    (hKs : ContDiffOn ℝ (n + 1) (uncurry Ks) W) (hKt : ContDiffOn ℝ (n + 1) (uncurry Kt) W) :
+    ContDiffOn ℝ n (uncurry (ω.hamiltonianOneForm Ks Kt)) W :=
+  (ω.contDiffOn_hamiltonianOneForm (P := ℝ) (Ks := fun _ ↦ Ks) (Kt := fun _ ↦ Kt)
+    (W := univ ×ˢ W) (isOpen_univ.prod hW) (hKs.comp contDiffOn_snd fun _ hq ↦ hq.2)
+    (hKt.comp contDiffOn_snd fun _ hq ↦ hq.2)).comp
+    ((contDiff_const (c := (0 : ℝ))).prodMk contDiff_id).contDiffOn fun _ hp ↦ ⟨mem_univ _, hp⟩
+
 /-- The perturbed derivative is `du - X_K(u)`. -/
 theorem perturbedFDeriv_eq_sub (ω : SymplecticForm V) (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V)
     (z : ℝ × ℝ) :
@@ -430,6 +449,16 @@ theorem floerEnergyDensity_comp_add_right (ω : SymplecticForm V) (Ks Kt : ℝ �
     ω.floerEnergyDensity (fun w ↦ Ks (w + v)) (fun w ↦ Kt (w + v)) (fun w ↦ u (w + v)) z =
       ω.floerEnergyDensity Ks Kt u (z + v) := by
   rw [floerEnergyDensity_def, floerEnergyDensity_def, perturbedFDeriv_comp_add_right]
+
+/-- If the perturbation and the map are invariant under the translation of the domain by `v`, then
+so is the Floer energy density. -/
+theorem periodic_floerEnergyDensity (ω : SymplecticForm V) {Ks Kt : ℝ × ℝ → V → ℝ}
+    {u : ℝ × ℝ → V} {v : ℝ × ℝ} (hKs : Function.Periodic Ks v) (hKt : Function.Periodic Kt v)
+    (hu : Function.Periodic u v) : Function.Periodic (ω.floerEnergyDensity Ks Kt u) v := fun z ↦ by
+  have hKs' : (fun w ↦ Ks (w + v)) = Ks := funext hKs
+  have hKt' : (fun w ↦ Kt (w + v)) = Kt := funext hKt
+  have hu' : (fun w ↦ u (w + v)) = u := funext hu
+  rw [← ω.floerEnergyDensity_comp_add_right, hKs', hKt', hu']
 
 /-- For the cylindrical perturbation `K = H_t dt`, the energy density of the translate
 `(s, t) ↦ u(s + c, t)` at `z` is the energy density of `u` at `z + (c, 0)`. -/
@@ -720,6 +749,85 @@ theorem continuousOn_floerEnergyDensity (ω : SymplecticForm V) {U : Set (ℝ ×
     fun z _ ↦ ?_
   simp only [floerEnergyDensity_def, perturbedFDeriv_apply_stdComplexLineReal,
     perturbedFDeriv_apply_stdComplexLineImag, Pi.sub_apply]
+
+/-- **The energy density depends continuously on the value and the derivative.** If `X_K(z, ·)` is
+continuous at `v z`, `uₙ(z) → v(z)` and `duₙ(z) → dv(z)`, then the Floer energy densities
+`ω(∂ₛuₙ - X_{K_s}, ∂ₜuₙ - X_{K_t})` at `z` converge to that of `v`. -/
+theorem tendsto_floerEnergyDensity (ω : SymplecticForm V) {ι : Type*} {l : Filter ι}
+    {u : ι → ℝ × ℝ → V} {v : ℝ × ℝ → V} {z : ℝ × ℝ}
+    (hX : ContinuousAt (ω.hamiltonianOneForm Ks Kt z) (v z))
+    (hu : Tendsto (fun n ↦ u n z) l (𝓝 (v z)))
+    (hdu : Tendsto (fun n ↦ fderiv ℝ (u n) z) l (𝓝 (fderiv ℝ v z))) :
+    Tendsto (fun n ↦ ω.floerEnergyDensity Ks Kt (u n) z) l
+      (𝓝 (ω.floerEnergyDensity Ks Kt v z)) := by
+  have hP : Tendsto (fun n ↦ ω.perturbedFDeriv Ks Kt (u n) z) l
+      (𝓝 (ω.perturbedFDeriv Ks Kt v z)) := by
+    simp only [perturbedFDeriv_eq_sub]
+    exact hdu.sub (hX.tendsto.comp hu)
+  have hPa (a : ℝ × ℝ) : Tendsto (fun n ↦ ω.perturbedFDeriv Ks Kt (u n) z a) l
+      (𝓝 (ω.perturbedFDeriv Ks Kt v z a)) :=
+    ((ContinuousLinearMap.apply ℝ V a).continuous.tendsto _).comp hP
+  have hω := ((ω.continuous_apply_comp (p := fun q : V × V ↦ q.1) continuous_fst
+    continuous_snd).tendsto _).comp ((hPa stdComplexLineReal).prodMk_nhds (hPa stdComplexLineImag))
+  simpa only [floerEnergyDensity_def, Function.comp_def] using hω
+
+/-- **Lower semicontinuity of the Floer energy.** Let `uₙ` be maps whose Floer energy densities are
+almost everywhere measurable on a measurable set `S`. If `uₙ → v` and `duₙ → dv` pointwise on `S`,
+and `X_K(z, ·)` is continuous at `v z` for `z ∈ S`, then the energy of `v` over `S` is at most the
+lower limit of the energies of the `uₙ`. -/
+theorem setLIntegral_floerEnergyDensity_le_liminf (ω : SymplecticForm V)
+    {S : Set (ℝ × ℝ)} {u : ℕ → ℝ × ℝ → V} {v : ℝ × ℝ → V} (hS : MeasurableSet S)
+    (hX : ∀ z ∈ S, ContinuousAt (ω.hamiltonianOneForm Ks Kt z) (v z))
+    (hmeas : ∀ n, AEMeasurable (fun z ↦ ENNReal.ofReal (ω.floerEnergyDensity Ks Kt (u n) z))
+      (volume.restrict S))
+    (hu : ∀ z ∈ S, Tendsto (fun n ↦ u n z) atTop (𝓝 (v z)))
+    (hdu : ∀ z ∈ S, Tendsto (fun n ↦ fderiv ℝ (u n) z) atTop (𝓝 (fderiv ℝ v z))) :
+    ∫⁻ z in S, ENNReal.ofReal (ω.floerEnergyDensity Ks Kt v z) ≤
+      liminf (fun n ↦ ∫⁻ z in S, ENNReal.ofReal (ω.floerEnergyDensity Ks Kt (u n) z)) atTop := by
+  have hlim (z : ℝ × ℝ) (hz : z ∈ S) :
+      Tendsto (fun n ↦ ENNReal.ofReal (ω.floerEnergyDensity Ks Kt (u n) z)) atTop
+        (𝓝 (ENNReal.ofReal (ω.floerEnergyDensity Ks Kt v z))) :=
+    ENNReal.tendsto_ofReal
+      (ω.tendsto_floerEnergyDensity (hX z hz) (hu z hz) (hdu z hz))
+  calc ∫⁻ z in S, ENNReal.ofReal (ω.floerEnergyDensity Ks Kt v z)
+      = ∫⁻ z in S, liminf (fun n ↦ ENNReal.ofReal (ω.floerEnergyDensity Ks Kt (u n) z)) atTop :=
+        setLIntegral_congr_fun hS fun z hz ↦ ((hlim z hz).liminf_eq).symm
+    _ ≤ _ := lintegral_liminf_le' hmeas
+
+/-- **The energy of a limit is at most the energies along the sequence.** Let `uₙ` be maps whose
+energy densities are nonnegative on a measurable set `S` and integrable over `S`, with energies at
+most `E`. If `uₙ → v` and `duₙ → dv` pointwise on `S`, and `X_K(z, ·)` is continuous at `v z` for
+`z ∈ S`, then the energy density of `v` is integrable over `S` and the energy of `v` over `S` is at
+most `E`. -/
+theorem integrableOn_floerEnergyDensity_and_setIntegral_le_of_tendsto (ω : SymplecticForm V)
+    {S : Set (ℝ × ℝ)} {u : ℕ → ℝ × ℝ → V} {v : ℝ × ℝ → V} {E : ℝ} (hS : MeasurableSet S)
+    (hX : ∀ z ∈ S, ContinuousAt (ω.hamiltonianOneForm Ks Kt z) (v z))
+    (hnn : ∀ n, ∀ z ∈ S, 0 ≤ ω.floerEnergyDensity Ks Kt (u n) z)
+    (hint : ∀ n, IntegrableOn (ω.floerEnergyDensity Ks Kt (u n)) S)
+    (hE : ∀ n, ∫ z in S, ω.floerEnergyDensity Ks Kt (u n) z ≤ E)
+    (hu : ∀ z ∈ S, Tendsto (fun n ↦ u n z) atTop (𝓝 (v z)))
+    (hdu : ∀ z ∈ S, Tendsto (fun n ↦ fderiv ℝ (u n) z) atTop (𝓝 (fderiv ℝ v z))) :
+    IntegrableOn (ω.floerEnergyDensity Ks Kt v) S ∧
+      ∫ z in S, ω.floerEnergyDensity Ks Kt v z ≤ E := by
+  have hlim (z : ℝ × ℝ) (hz : z ∈ S) :=
+    ω.tendsto_floerEnergyDensity (hX z hz) (hu z hz) (hdu z hz)
+  have hnnv : 0 ≤ᵐ[volume.restrict S] ω.floerEnergyDensity Ks Kt v :=
+    ae_restrict_of_forall_mem hS fun z hz ↦ ge_of_tendsto' (hlim z hz) fun n ↦ hnn n z hz
+  have hle (n : ℕ) : ∫⁻ z in S, ENNReal.ofReal (ω.floerEnergyDensity Ks Kt (u n) z) ≤
+      ENNReal.ofReal E := by
+    rw [← ofReal_integral_eq_lintegral_ofReal (hint n) (ae_restrict_of_forall_mem hS (hnn n))]
+    exact ENNReal.ofReal_le_ofReal (hE n)
+  have hlint := (ω.setLIntegral_floerEnergyDensity_le_liminf hS hX
+    (fun n ↦ (hint n).aemeasurable.ennreal_ofReal) hu hdu).trans
+    (liminf_le_of_frequently_le' (Frequently.of_forall hle))
+  have hmeas : AEStronglyMeasurable (ω.floerEnergyDensity Ks Kt v) (volume.restrict S) :=
+    aestronglyMeasurable_of_tendsto_ae atTop (fun n ↦ (hint n).aestronglyMeasurable)
+      (ae_restrict_of_forall_mem hS hlim)
+  refine ⟨⟨hmeas, ?_⟩, ?_⟩
+  · rw [hasFiniteIntegral_iff_ofReal hnnv]
+    exact hlint.trans_lt ENNReal.ofReal_lt_top
+  · rw [integral_eq_lintegral_of_nonneg_ae hnnv hmeas]
+    exact ENNReal.toReal_le_of_le_ofReal ((setIntegral_nonneg hS (hnn 0)).trans (hE 0)) hlint
 
 /-- For perturbation data that is `C¹` over an open set `U` of the domain, the curvature evaluated
 along a map continuous on `U` is continuous on `U`. -/
