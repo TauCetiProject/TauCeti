@@ -321,30 +321,29 @@ def fieldEquivalence (K : Type u) [Field K] :
   functor := toAbelianVarietyFunctor K
   inverse := ofAbelianVarietyFunctor K
   unitIso := NatIso.ofComponents
-    (fun A ↦ eqToIso (ofAbelianVariety_toAbelianVariety A).symm) fun {A B} f ↦ by
+    (fun A ↦ eqToIso (by simp)) fun {A B} f ↦ by
       apply Hom.toOverHom_injective
-      change Hom.toOverHom (f ≫ eqToHom (ofAbelianVariety_toAbelianVariety B).symm) =
-        Hom.toOverHom (eqToHom (ofAbelianVariety_toAbelianVariety A).symm ≫
-          Hom.ofAbelianVariety (Hom.toAbelianVariety f))
-      rw [Hom.toOverHom_comp, Hom.toOverHom_comp]
-      simp [toOverHom_eqToHom]
+      rw [Functor.id_map, Functor.comp_map, toAbelianVarietyFunctor_map,
+        ofAbelianVarietyFunctor_map]
+      simp only [eqToIso.hom, Hom.toOverHom_comp, AbelianVariety.Hom.toOverHom_comp,
+        Hom.toOverHom_ofAbelianVariety, Hom.toOverHom_toAbelianVariety, toOverHom_eqToHom,
+        avToOverHom_eqToHom, Category.assoc, eqToHom_trans_assoc, eqToHom_trans, eqToHom_refl,
+        Category.id_comp]
   counitIso := NatIso.ofComponents
-    (fun A ↦ eqToIso (toAbelianVariety_ofAbelianVariety A)) fun {A B} f ↦ by
+    (fun A ↦ eqToIso (by simp)) fun {A B} f ↦ by
       apply AbelianVariety.Hom.toOverHom_injective
-      change AbelianVariety.Hom.toOverHom
-          (Hom.toAbelianVariety (Hom.ofAbelianVariety f) ≫
-            eqToHom (toAbelianVariety_ofAbelianVariety B)) =
-        AbelianVariety.Hom.toOverHom (eqToHom (toAbelianVariety_ofAbelianVariety A) ≫ f)
-      rw [AbelianVariety.Hom.toOverHom_comp, AbelianVariety.Hom.toOverHom_comp]
-      simp [avToOverHom_eqToHom]
+      rw [Functor.comp_map, Functor.id_map, ofAbelianVarietyFunctor_map,
+        toAbelianVarietyFunctor_map]
+      simp only [eqToIso.hom, AbelianVariety.Hom.toOverHom_comp, Hom.toOverHom_comp,
+        Hom.toOverHom_toAbelianVariety, Hom.toOverHom_ofAbelianVariety, avToOverHom_eqToHom,
+        toOverHom_eqToHom, Category.assoc, eqToHom_trans_assoc, eqToHom_trans, eqToHom_refl,
+        Category.comp_id]
   functor_unitIso_comp A := by
     apply AbelianVariety.Hom.toOverHom_injective
-    change AbelianVariety.Hom.toOverHom
-        (Hom.toAbelianVariety (eqToHom (ofAbelianVariety_toAbelianVariety A).symm) ≫
-          eqToHom (toAbelianVariety_ofAbelianVariety (toAbelianVariety A))) =
-      AbelianVariety.Hom.toOverHom (𝟙 (toAbelianVariety A))
-    rw [AbelianVariety.Hom.toOverHom_comp, AbelianVariety.Hom.toOverHom_id]
-    simp [avToOverHom_eqToHom, toOverHom_eqToHom]
+    simp only [NatIso.ofComponents_hom_app, eqToIso.hom, toAbelianVarietyFunctor_map,
+      AbelianVariety.Hom.toOverHom_comp, AbelianVariety.Hom.toOverHom_id,
+      Hom.toOverHom_toAbelianVariety, avToOverHom_eqToHom, toOverHom_eqToHom, Category.assoc,
+      eqToHom_trans, eqToHom_refl]
 
 /-! ### Pointwise group structure on homomorphisms over a field -/
 
@@ -352,18 +351,10 @@ namespace Field
 
 open scoped AbelianVariety.Hom
 
-/-- The bijection on homomorphisms induced by `toAbelianVariety` and `ofAbelianVariety`. -/
+/-- The bijection on homomorphisms induced by `fieldEquivalence`. -/
 def homEquiv (A B : AbelianScheme (Spec (.of K))) :
-    (A ⟶ B) ≃ (toAbelianVariety A ⟶ toAbelianVariety B) where
-  toFun := Hom.toAbelianVariety
-  invFun g :=
-    eqToHom (ofAbelianVariety_toAbelianVariety A).symm ≫ Hom.ofAbelianVariety g ≫
-      eqToHom (ofAbelianVariety_toAbelianVariety B)
-  left_inv f := Hom.toOverHom_injective (by
-    rw [Hom.toOverHom_comp, Hom.toOverHom_comp]; simp [toOverHom_eqToHom])
-  right_inv g := AbelianVariety.Hom.toOverHom_injective (by
-    rw [Hom.toOverHom_toAbelianVariety, Hom.toOverHom_comp, Hom.toOverHom_comp]
-    simp [toOverHom_eqToHom])
+    (A ⟶ B) ≃ (toAbelianVariety A ⟶ toAbelianVariety B) :=
+  (fieldEquivalence K).fullyFaithfulFunctor.homEquiv
 
 /-- Over a field, homomorphisms of abelian schemes form a commutative group under the pointwise
 group law of the target. -/

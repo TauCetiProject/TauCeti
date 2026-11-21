@@ -277,14 +277,16 @@ lemma isoToScheme_trans {A B C : AbelianScheme S} (e : A ≅ B) (f : B ≅ C) :
 instance uniqueHomToIdentity (A : AbelianScheme S) : Unique (A ⟶ identity S) :=
   let e : Grp.mk (identity S).toOver ≅ Grp.trivial (Over S) :=
     Grp.mkIso (eqToIso (identity_toOver S)) (identity_one S) (identity_mul S)
-  ((show _ ≃ (Grp.mk A.toOver ⟶ Grp.mk (identity S).toOver) from InducedCategory.homEquiv).trans
+  ((InducedCategory.homEquiv (F := fun A : AbelianScheme S ↦ Grp.mk A.toOver)
+      (X := A) (Y := identity S)).trans
     ((Iso.refl _).homCongr e)).unique
 
 /-- There is a unique homomorphism from `identity S` to any abelian scheme over `S`. -/
 instance uniqueHomFromIdentity (A : AbelianScheme S) : Unique (identity S ⟶ A) :=
   let e : Grp.mk (identity S).toOver ≅ Grp.trivial (Over S) :=
     Grp.mkIso (eqToIso (identity_toOver S)) (identity_one S) (identity_mul S)
-  ((show _ ≃ (Grp.mk (identity S).toOver ⟶ Grp.mk A.toOver) from InducedCategory.homEquiv).trans
+  ((InducedCategory.homEquiv (F := fun A : AbelianScheme S ↦ Grp.mk A.toOver)
+      (X := identity S) (Y := A)).trans
     (e.homCongr (Iso.refl _))).unique
 
 /-- The unique homomorphism from an abelian scheme to the identity abelian scheme over `S`. -/
@@ -307,8 +309,7 @@ transporting its codomain to `S`. -/
 @[simp]
 lemma toSchemeHom_toIdentity (A : AbelianScheme S) :
     Hom.toSchemeHom (toIdentity A) ≫ eqToHom (identity_toScheme S) = A.toOver.hom := by
-  rw [show eqToHom (identity_toScheme S) = (eqToHom (identity_toOver S)).left from
-    (Over.eqToHom_left (identity_toOver S)).symm]
+  rw [← Over.eqToHom_left (identity_toOver S)]
   exact congrArg Over.Hom.left (toOverHom_toIdentity A)
 
 /-- The morphism over `S` underlying `fromIdentity A` is the unit section of `A`, after
@@ -325,8 +326,7 @@ its domain from `S`. -/
 @[simp]
 lemma toSchemeHom_fromIdentity (A : AbelianScheme S) :
     eqToHom (identity_toScheme S).symm ≫ Hom.toSchemeHom (fromIdentity A) = A.zeroSection := by
-  rw [show eqToHom (identity_toScheme S).symm = (eqToHom (identity_toOver S).symm).left from
-    (Over.eqToHom_left (identity_toOver S).symm).symm]
+  rw [← Over.eqToHom_left (identity_toOver S).symm]
   exact congrArg Over.Hom.left (toOverHom_fromIdentity A)
 
 /-- The identity abelian scheme is terminal in `AbelianScheme S`. -/

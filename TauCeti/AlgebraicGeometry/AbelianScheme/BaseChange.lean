@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.AbelianScheme.Hom
 public import TauCeti.AlgebraicGeometry.GroupScheme.BaseChange
 public import TauCeti.CategoryTheory.Monoidal.Cartesian.Mon
+public import TauCeti.CategoryTheory.Monoidal.Cartesian.Over
 
 /-!
 # Base change of abelian schemes
@@ -243,13 +244,6 @@ lemma baseChangePointMulEquiv_naturality_right {A B : AbelianScheme S} (φ : A �
       (p ≫ eqToHom (baseChange_toOver A f)) (Hom.toOverHom φ)
 
 /-! ### Identity, composition, and trivial base-change isomorphisms -/
-
-/-- The natural isomorphism `Over.pullbackId` preserves the group-object structure on each
-component. -/
-private instance isMonHom_pullbackId_hom_app (A : AbelianScheme S) :
-    IsMonHom ((Over.pullbackId (X := S)).hom.app A.toOver) :=
-  inferInstanceAs
-    (IsMonHom ((Functor.mapMonNatTrans (Over.pullbackId (X := S)).hom).app (Mon.mk A.toOver)).hom)
 
 /-- Base change along the identity morphism is canonically isomorphic to the original abelian
 scheme. -/

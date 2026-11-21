@@ -11,6 +11,7 @@ public import Mathlib.CategoryTheory.Limits.Constructions.Over.Basic
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.Grp
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.GrpLimits
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.Over
+public import TauCeti.CategoryTheory.Comma.Over.Pullback
 
 /-!
 # Points of the base change of a group scheme
@@ -244,40 +245,13 @@ theorem baseChangePointMulEquiv_naturality_right
   simp only [baseChangePointMulEquiv_apply]
   exact (Over.mapPullbackAdj s).homEquiv_naturality_right_symm p φ.hom.hom
 
-/-- The adjunction equivalence for `Over.pullback (𝟙 X)` agrees with `Over.pullbackId`. -/
-private theorem mapPullbackAdj_id_homEquiv_symm (G T : Over X)
-    (p : T ⟶ (Over.pullback (𝟙 X)).obj G) :
-    (Over.mapId X).inv.app T ≫ ((Over.mapPullbackAdj (𝟙 X)).homEquiv T G).symm p =
-      p ≫ (Over.pullbackId (X := X)).hom.app G := by
-  rw [Adjunction.homEquiv_counit, ← (Over.mapId X).inv.naturality_assoc p]
-  have h := conjugateEquiv_counit (Over.mapPullbackAdj (𝟙 X)) (Adjunction.id (C := Over X))
-    (Over.mapId X).inv G
-  simp only [Functor.id_map, Adjunction.id_counit, NatTrans.id_app] at h
-  exact congrArg (p ≫ ·) h.symm
-
 /-- For base change along the identity morphism, the point-group equivalence agrees with
 transport along `Over.pullbackId` and `Over.mapId`. -/
 theorem baseChangePointMulEquiv_id (G : Grp (Over X)) (T : Over X)
     (p : T ⟶ ((Over.pullback (𝟙 X)).mapGrp.obj G).X) :
     (Over.mapId X).inv.app T ≫ baseChangePointMulEquiv (𝟙 X) G T p =
       p ≫ (Over.pullbackId (X := X)).hom.app G.X :=
-  mapPullbackAdj_id_homEquiv_symm G.X T p
-
-/-- The adjunction equivalence for `Over.pullback (s₁ ≫ s₂)` agrees with `Over.pullbackComp`. -/
-private theorem mapPullbackAdj_comp_homEquiv_symm {Z : Scheme.{u}} (s₁ : Z ⟶ Y) (s₂ : Y ⟶ X)
-    (G : Over X) (T : Over Z) (p : T ⟶ (Over.pullback (s₁ ≫ s₂)).obj G) :
-    ((Over.mapPullbackAdj s₂).homEquiv ((Over.map s₁).obj T) G).symm
-        (((Over.mapPullbackAdj s₁).homEquiv T ((Over.pullback s₂).obj G)).symm
-          (p ≫ (Over.pullbackComp s₁ s₂).hom.app G)) =
-      (Over.mapComp s₁ s₂).inv.app T ≫ ((Over.mapPullbackAdj (s₁ ≫ s₂)).homEquiv T G).symm p := by
-  rw [Adjunction.homEquiv_counit, Adjunction.homEquiv_counit, Adjunction.homEquiv_counit,
-    Functor.map_comp, Functor.map_comp, Category.assoc]
-  have h := conjugateEquiv_counit (Over.mapPullbackAdj (s₁ ≫ s₂))
-    ((Over.mapPullbackAdj s₁).comp (Over.mapPullbackAdj s₂)) (Over.mapComp s₁ s₂).inv G
-  simp only [Functor.comp_map, Adjunction.comp_counit, NatTrans.comp_app,
-    Functor.whiskerLeft_app, Functor.whiskerRight_app] at h
-  rw [← (Over.mapComp s₁ s₂).inv.naturality_assoc p]
-  exact congrArg ((Over.map s₂).map ((Over.map s₁).map p) ≫ ·) h
+  Over.mapPullbackAdj_id_homEquiv_symm G.X T p
 
 /-- For iterated base change along `s₁ ≫ s₂`, the point-group equivalence agrees with the
 composite of the two step equivalences, up to `Over.pullbackComp` and `Over.mapComp`. -/
@@ -288,7 +262,7 @@ theorem baseChangePointMulEquiv_comp {Z : Scheme.{u}} (s₁ : Z ⟶ Y) (s₂ : Y
         (baseChangePointMulEquiv s₁ ((Over.pullback s₂).mapGrp.obj G) T
           (p ≫ (Over.pullbackComp s₁ s₂).hom.app G.X)) =
       (Over.mapComp s₁ s₂).inv.app T ≫ baseChangePointMulEquiv (s₁ ≫ s₂) G T p :=
-  mapPullbackAdj_comp_homEquiv_symm s₁ s₂ G.X T p
+  Over.mapPullbackAdj_comp_homEquiv_symm s₁ s₂ G.X T p
 
 /-- Pullback of group schemes along an arbitrary base morphism preserves finite limits. In
 particular, it preserves kernels. -/
