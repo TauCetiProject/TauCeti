@@ -274,12 +274,9 @@ theorem eLpNorm_fderiv_zero_one_le_eLpNorm_jet {μ : Measure (ℝ × ℝ)}
 /-- The `Lᵖ` norm of the derivative is at most twice the `Lᵖ` norm of the jet. -/
 theorem eLpNorm_fderiv_le_two_mul_eLpNorm_jet {μ : Measure (ℝ × ℝ)}
     (hξ : AEStronglyMeasurable (fderiv ℝ ξ) μ) (p : ℝ≥0∞) :
-    eLpNorm (fderiv ℝ ξ) p μ ≤ 2 * eLpNorm (jet ξ) p μ := by
-  have := eLpNorm_le_nnreal_smul_eLpNorm_of_ae_le_mul (c := 2) hξ (g := jet ξ)
-    (Eventually.of_forall fun y ↦ by
-      rw [← NNReal.coe_le_coe, NNReal.coe_mul, coe_nnNorm, coe_nnNorm]
-      exact norm_fderiv_le_two_mul_norm_jet ξ y) p
-  simpa [ENNReal.smul_def] using this
+    eLpNorm (fderiv ℝ ξ) p μ ≤ 2 * eLpNorm (jet ξ) p μ :=
+  (eLpNorm_le_mul_eLpNorm_of_ae_le_mul hξ
+    (.of_forall (norm_fderiv_le_two_mul_norm_jet ξ)) p).trans_eq (by simp)
 
 /-! ### The `L²` jets of a space of sections and their closure -/
 

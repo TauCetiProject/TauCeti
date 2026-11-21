@@ -74,7 +74,7 @@ theorem setLIntegral_ball_le_two_mul_of_periodic {g : ℝ × ℝ → ℝ≥0∞}
   have hsub : ball z 1 ⊆
       (univ : Set ℝ) ×ˢ Icc (z.2 - 1) (z.2 - 1 + 1) ∪ (univ : Set ℝ) ×ˢ Icc z.2 (z.2 + 1) := by
     intro y hy
-    rw [mem_ball, Prod.dist_eq, max_lt_iff, Real.dist_eq, Real.dist_eq, abs_lt, abs_lt] at hy
+    simp only [mem_ball, Prod.dist_eq, max_lt_iff, Real.dist_eq, abs_lt] at hy
     obtain ⟨-, h₁, h₂⟩ := hy
     rcases le_total y.2 z.2 with h | h
     · exact Or.inl ⟨mem_univ _, by linarith, by linarith⟩
