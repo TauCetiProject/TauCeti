@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Module.Lattice
 public import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Basis
 public import TauCeti.Topology.Algebra.Module.GeneralLinearGroup
+import TauCeti.LinearAlgebra.Basis.RangeSpan
 
 /-!
 # The stabilizer of a lattice is `GL_n` of the coefficient ring
@@ -71,7 +72,7 @@ theorem Submodule.map_restrictScalars_eq_of_mem_stabilizer (L : Submodule R V)
     L.map ((g : V ≃ₗ[K] V).restrictScalars R : V →ₗ[R] V) = L := by
   apply SetLike.coe_injective
   rw [Submodule.map_coe]
-  exact g.2
+  simpa [← Set.image_smul, LinearEquiv.smul_def] using MulAction.mem_stabilizer_iff.mp g.2
 
 namespace LinearEquiv
 
@@ -118,7 +119,8 @@ theorem restrictStabilizer_surjective (L : Submodule R V) [L.IsFullLattice K] [M
   · rw [MulAction.mem_stabilizer_iff]
     have h := congrArg ((↑) : Submodule R V → Set V) (LinearEquiv.extendOfIsFullLattice_map
       (K := K) e)
-    rwa [Submodule.map_coe] at h
+    rw [Submodule.map_coe] at h
+    simpa [← Set.image_smul, LinearEquiv.smul_def] using h
   · ext x
     exact LinearEquiv.extendOfIsFullLattice_apply e x
 
@@ -138,6 +140,16 @@ theorem coe_restrictStabilizerEquiv (L : Submodule R V) [L.IsFullLattice K] [Mod
       MulAction.stabilizer (V ≃ₗ[K] V) (L : Set V) → (L ≃ₗ[R] L)) = restrictStabilizer L :=
   (rfl)
 
+/-- The inverse of `restrictStabilizerEquiv L` extends an automorphism of `L` to `V`. -/
+@[simp]
+theorem coe_restrictStabilizerEquiv_symm_apply (L : Submodule R V) [L.IsFullLattice K]
+    [Module.Free R L] (e : L ≃ₗ[R] L) :
+    ((restrictStabilizerEquiv (K := K) L).symm e : V ≃ₗ[K] V) =
+      LinearEquiv.extendOfIsFullLattice e :=
+  LinearEquiv.eq_extendOfIsFullLattice e _ fun x => by
+    rw [← coe_restrictStabilizer_apply, ← coe_restrictStabilizerEquiv (K := K) L,
+      MulEquiv.apply_symm_apply]
+
 end FullLattice
 
 end LinearEquiv
@@ -147,19 +159,6 @@ namespace Module.Basis
 variable {R K V ι : Type*} [CommRing R] [CommRing K] [Algebra R K]
   [AddCommGroup V] [Module R V] [Module K V] [IsScalarTower R K V]
   {L : Submodule R V} [L.IsFullLattice K]
-
-/-- The coordinates of a lattice vector in the extended basis are the images of its coordinates
-in the lattice basis. -/
-theorem extendOfIsFullLattice_repr_apply (b : Basis ι R L) (x : L) (i : ι) :
-    (b.extendOfIsFullLattice K).repr (x : V) i = algebraMap R K (b.repr x i) := by
-  have h : ((b.extendOfIsFullLattice K).coord i).restrictScalars R ∘ₗ L.subtype =
-      Algebra.linearMap R K ∘ₗ b.coord i := by
-    refine b.ext fun j => ?_
-    rw [LinearMap.comp_apply, LinearMap.restrictScalars_apply, Submodule.subtype_apply,
-      ← extendOfIsFullLattice_apply K b j, coord_apply, repr_self, LinearMap.comp_apply,
-      coord_apply, repr_self]
-    rcases eq_or_ne j i with rfl | hji <;> simp [*]
-  exact LinearMap.congr_fun h x
 
 variable [Fintype ι] [DecidableEq ι]
 
@@ -180,6 +179,7 @@ theorem stabilizerEquivGL_apply (b : Basis ι R L)
 
 /-- The matrix over `R` of an element `g` of the stabilizer of `L` is the matrix of its restriction
 to `L` in the basis `b`. -/
+@[simp]
 theorem coe_stabilizerEquivGL_apply (b : Basis ι R L)
     (g : MulAction.stabilizer (V ≃ₗ[K] V) (L : Set V)) :
     (b.stabilizerEquivGL g : Matrix ι ι R) =
@@ -194,29 +194,15 @@ theorem map_stabilizerEquivGL (b : Basis ι R L)
     Matrix.GeneralLinearGroup.map (algebraMap R K) (b.stabilizerEquivGL g) =
       (b.extendOfIsFullLattice K).toGL g := by
   ext i j
-  rw [Matrix.GeneralLinearGroup.map_apply, coe_stabilizerEquivGL_apply, coe_toGL,
-    LinearMap.toMatrix_apply, LinearMap.toMatrix_apply, LinearEquiv.coe_coe,
-    LinearEquiv.coe_coe, ← extendOfIsFullLattice_repr_apply,
-    LinearEquiv.coe_restrictStabilizer_apply, extendOfIsFullLattice_apply]
+  simp [coe_toGL, LinearMap.toMatrix_apply, ← extendOfIsFullLattice_repr_apply]
 
-/-- An endomorphism of `V` whose matrix in the extended basis has entries in `R` maps `L` into
-itself. -/
-theorem mapsTo_of_toMatrix_eq_map (b : Basis ι R L) {f : V →ₗ[K] V} {A : Matrix ι ι R}
-    (h : LinearMap.toMatrix (b.extendOfIsFullLattice K) (b.extendOfIsFullLattice K) f =
-      A.map (algebraMap R K)) :
-    MapsTo f L L := by
-  set c := b.extendOfIsFullLattice K
-  have hspan : span R (range c) ≤ L.comap (f.restrictScalars R) := by
-    rw [span_le]
-    rintro _ ⟨j, rfl⟩
-    have hrepr (i : ι) : c.repr (f (c j)) i = algebraMap R K (A i j) := by
-      rw [← LinearMap.toMatrix_apply, h, Matrix.map_apply]
-    rw [SetLike.mem_coe, mem_comap, LinearMap.restrictScalars_apply, ← c.sum_repr (f (c j))]
-    refine sum_mem fun i _ => ?_
-    rw [hrepr, algebraMap_smul]
-    exact L.smul_mem _ (by simp [c])
-  rw [b.span_range_extendOfIsFullLattice] at hspan
-  exact fun x hx => hspan hx
+/-- The matrix in the extended basis of the automorphism of `V` corresponding to `A : GL ι R` is
+the image of `A` in `GL ι K`. -/
+@[simp]
+theorem toGL_stabilizerEquivGL_symm (b : Basis ι R L) (A : GL ι R) :
+    (b.extendOfIsFullLattice K).toGL ((b.stabilizerEquivGL (K := K)).symm A : V ≃ₗ[K] V) =
+      Matrix.GeneralLinearGroup.map (algebraMap R K) A := by
+  rw [← map_stabilizerEquivGL, MulEquiv.apply_symm_apply]
 
 /-- **The stabilizer of a lattice in a basis.** An automorphism `g` of `V` stabilizes the full
 lattice `L` with basis `b` exactly when its matrix in the extended basis of `V` comes from
@@ -229,10 +215,11 @@ theorem mem_stabilizer_iff_toGL_mem_range (b : Basis ι R L) (g : V ≃ₗ[K] V)
   rintro ⟨A, hA⟩
   have hmat (h : V ≃ₗ[K] V) (B : GL ι R)
       (hB : Matrix.GeneralLinearGroup.map (algebraMap R K) B = (b.extendOfIsFullLattice K).toGL h) :
-      MapsTo h L L :=
-    b.mapsTo_of_toMatrix_eq_map (f := h.toLinearMap) (A := B) <| by
-      ext i j
-      rw [← coe_toGL, ← hB, Matrix.GeneralLinearGroup.map_apply, Matrix.map_apply]
+      MapsTo h L L := by
+    have hm := (b.extendOfIsFullLattice K).mapsTo_span_range_iff_forall_toMatrix_mem (A := R)
+      h.toLinearMap
+    rw [b.span_range_extendOfIsFullLattice] at hm
+    exact hm.mpr fun i j => ⟨B i j, by rw [← coe_toGL, ← hB, Matrix.GeneralLinearGroup.map_apply]⟩
   refine TauCeti.mem_stabilizer_set_iff_mapsTo.mpr ⟨hmat g A hA, hmat g⁻¹ A⁻¹ ?_⟩
   rw [map_inv, map_inv, hA]
 
@@ -266,8 +253,8 @@ noncomputable def stabilizerContinuousMulEquivGL (b : Basis ι R L)
     have hentry (g : MulAction.stabilizer (V ≃ₗ[K] V) (L : Set V)) (i j : ι) :
         algebraMap R K ((b.stabilizerEquivGL g : Matrix ι ι R) i j) =
           c.coord i (LinearMap.applyₗ (c j) ((g : V ≃ₗ[K] V) : Module.End K V)) := by
-      rw [← Matrix.GeneralLinearGroup.map_apply, map_stabilizerEquivGL, coe_toGL,
-        LinearMap.toMatrix_apply, coord_apply, LinearMap.applyₗ_apply_apply, LinearEquiv.coe_coe]
+      rw [← Matrix.GeneralLinearGroup.map_apply, map_stabilizerEquivGL]
+      simp [c, coe_toGL, LinearMap.toMatrix_apply]
     have hmat {f : MulAction.stabilizer (V ≃ₗ[K] V) (L : Set V) →
         MulAction.stabilizer (V ≃ₗ[K] V) (L : Set V)}
         (hf : Continuous fun g => ((f g : V ≃ₗ[K] V) : Module.End K V)) :
@@ -281,8 +268,7 @@ noncomputable def stabilizerContinuousMulEquivGL (b : Basis ι R L)
       (continuous_subtype_val (p := (· ∈ MulAction.stabilizer (V ≃ₗ[K] V) (L : Set V))))
     refine Units.continuous_iff.mpr ⟨hmat (f := id) hc.1, ?_⟩
     exact (hmat (f := fun g => g⁻¹) hc.2).congr fun g => by
-      rw [map_inv]
-      rfl
+      rw [map_inv, MulEquiv.toFun_eq_coe]
   continuous_invFun := by
     set c := b.extendOfIsFullLattice K
     have : ContinuousAdd (Module.End K V) := IsModuleTopology.toContinuousAdd K (Module.End K V)
@@ -292,10 +278,10 @@ noncomputable def stabilizerContinuousMulEquivGL (b : Basis ι R L)
     have hend (A : GL ι R) :
         ((e.symm A : V ≃ₗ[K] V) : Module.End K V) =
           Matrix.toLin c c ((A : Matrix ι ι R).map (algebraMap R K)) := by
-      have h := congrArg Units.val (map_stabilizerEquivGL b (e.symm A))
-      rw [MulEquiv.apply_symm_apply, coe_toGL] at h
-      rw [← Matrix.toLin_toMatrix c c ((e.symm A : V ≃ₗ[K] V) : Module.End K V), ← h]
-      rfl
+      rw [← Matrix.toLin_toMatrix c c ((e.symm A : V ≃ₗ[K] V) : Module.End K V), ← coe_toGL,
+        toGL_stabilizerEquivGL_symm]
+      exact congrArg (Matrix.toLin c c) (Matrix.ext fun i j => by
+        rw [Matrix.GeneralLinearGroup.map_apply, Matrix.map_apply])
     have hcont {f : GL ι R → GL ι R} (hf : Continuous fun A => (f A : Matrix ι ι R)) :
         Continuous fun A => ((e.symm (f A) : V ≃ₗ[K] V) : Module.End K V) := by
       simp only [hend]
@@ -306,8 +292,7 @@ noncomputable def stabilizerContinuousMulEquivGL (b : Basis ι R L)
     have h (A : GL ι R) : ((e.symm A : V ≃ₗ[K] V)⁻¹ : V ≃ₗ[K] V) = (e.symm A⁻¹ : V ≃ₗ[K] V) := by
       rw [map_inv, Subgroup.coe_inv]
     exact (hcont (f := fun A => A⁻¹) Units.continuous_coe_inv).congr fun A => by
-      rw [← h]
-      rfl
+      rw [← h, id_eq]
 
 /-- The underlying group isomorphism of `stabilizerContinuousMulEquivGL` is `stabilizerEquivGL`. -/
 @[simp]

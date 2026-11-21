@@ -95,6 +95,7 @@ noncomputable def toGL (Λ : IntegralModel O ρ) (b : Basis ι O Λ.lattice) : �
   (b.stabilizerEquivGL (K := E)).toMonoidHom.comp Λ.toStabilizer
 
 /-- The matrix form sends `g` to the matrix in `b` of the action of `g` on the lattice. -/
+@[simp]
 theorem coe_toGL_apply (Λ : IntegralModel O ρ) (b : Basis ι O Λ.lattice) (g : Γ) :
     (Λ.toGL b g : Matrix ι ι O) = LinearMap.toMatrix b b (Λ.toContinuousRep g) := by
   rw [toGL, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, Basis.coe_stabilizerEquivGL_apply,
@@ -105,9 +106,11 @@ extended basis of `V`. -/
 theorem toGL_apply_map (Λ : IntegralModel O ρ) (b : Basis ι O Λ.lattice) (g : Γ) :
     (Λ.toGL b g : Matrix ι ι O).map (algebraMap O E) =
       LinearMap.toMatrix (b.extendOfIsFullLattice E) (b.extendOfIsFullLattice E) (ρ g) := by
-  have h := congrArg Units.val (b.map_stabilizerEquivGL (Λ.toStabilizer g))
-  rw [Basis.coe_toGL] at h
-  exact h
+  ext i j
+  rw [Matrix.map_apply, ← Matrix.GeneralLinearGroup.map_apply, toGL, MonoidHom.comp_apply,
+    MulEquiv.coe_toMonoidHom, Basis.map_stabilizerEquivGL, Basis.coe_toGL]
+  exact congrArg (fun f => LinearMap.toMatrix _ _ f i j)
+    (LinearMap.ext (coe_toStabilizer_apply Λ g))
 
 /-- **The matrix form of an integral model is continuous.** If `O` is a topological ring and the
 lattice of `Λ` carries its `O`-module topology, as it does over the valuation ring of a field with
@@ -119,7 +122,7 @@ theorem continuous_toGL [ContinuousInv Γ] [TopologicalSpace O] [IsTopologicalSe
     continuous_matrix fun i j =>
       ((IsModuleTopology.continuous_of_linearMap (b.coord i)).comp
         ((Λ.toContinuousRep.continuous_orbit (b j)).comp hf)).congr fun g => by
-          simp [coe_toGL_apply, LinearMap.toMatrix_apply]
+          simp [LinearMap.toMatrix_apply]
   refine Units.continuous_iff.mpr ⟨hmat continuous_id, ?_⟩
   simpa only [map_inv] using hmat continuous_inv
 
