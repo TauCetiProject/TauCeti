@@ -40,8 +40,6 @@ gives the uniform majorant of the integrand, and the same lower bound controls i
   compact subset of the principal domain.
 * `TauCeti.Polylog.intervalIntegrable_neg_log_pow_div_one_sub_mul`: interval integrability of the
   differentiated kernel `(-log t) ^ k / (1 - t z)` on `[0, 1]` for `z` in the principal domain.
-* `TauCeti.Polylog.hasDerivAt_radialIntegrand`: pointwise complex derivative of the radial
-  integrand away from `t = 0` when `1 - t * w ∈ Complex.slitPlane`.
 * `TauCeti.Polylog.hasDerivAt_integral_radialIntegrand`: parametric complex derivative of the
   weight-`(k + 2)` radial integral on the principal domain.
 
@@ -188,7 +186,7 @@ theorem exists_norm_radialIntegrand_le (k : ℕ) {K : Set ℂ} (hK : IsCompact K
 
 /-- Pointwise complex derivative of the radial polylogarithm integrand in `w` away from `t = 0`
 whenever `1 - t * w ∈ Complex.slitPlane`. -/
-theorem hasDerivAt_radialIntegrand (k : ℕ) {t : ℝ} (ht : t ≠ 0) {w : ℂ}
+private lemma hasDerivAt_radialIntegrand (k : ℕ) {t : ℝ} (ht : t ≠ 0) {w : ℂ}
     (htw : 1 - (t : ℂ) * w ∈ Complex.slitPlane) :
     HasDerivAt
       (fun x : ℂ ↦ ((-Real.log t : ℝ) : ℂ) ^ k * (-Complex.log (1 - (t : ℂ) * x)) / (t : ℂ))

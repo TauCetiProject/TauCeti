@@ -42,10 +42,9 @@ open-disc Euler differential relation that analytically continues across `{z | 1
 * `TauCeti.Polylog.hasFPowerSeriesOnBall_polylog`: native formal power-series expansion of
   `polylog n` on `Metric.eball 0 1`.
 * `TauCeti.Polylog.hasDerivAt_polylog_tsum_of_norm_lt_one`,
-  `TauCeti.Polylog.hasSum_deriv_polylog`, `TauCeti.Polylog.deriv_polylog_eq_tsum`,
+  `TauCeti.Polylog.hasSum_deriv_polylog`,
   `TauCeti.Polylog.hasDerivAt_polylog_add_one_tsum`,
   `TauCeti.Polylog.hasSum_deriv_polylog_add_one`,
-  `TauCeti.Polylog.deriv_polylog_add_one_eq_tsum`,
   `TauCeti.Polylog.hasDerivAt_polylog_zero`, and `TauCeti.Polylog.deriv_polylog_zero`:
   termwise derivative and its convergent series on the open unit disc, and complex
   derivative `1` at `0` for all `n : ℤ`.
@@ -303,11 +302,6 @@ theorem hasSum_deriv_polylog (n : ℤ) {z : ℂ} (hz : ‖z‖ < 1) :
   rw [(hasDerivAt_polylog_tsum_of_norm_lt_one n hz).deriv]
   exact (hasDerivAt_tsum_div_zpow_and_summable n hz).2.hasSum
 
-/-- Power-series expansion of `deriv (polylog n) z` on the open unit disc `‖z‖ < 1`. -/
-theorem deriv_polylog_eq_tsum (n : ℤ) {z : ℂ} (hz : ‖z‖ < 1) :
-    deriv (polylog n) z = ∑' k : ℕ, z ^ k / (k + 1 : ℂ) ^ (n - 1) :=
-  (hasSum_deriv_polylog n hz).tsum_eq.symm
-
 /-- On the open unit disc `‖z‖ < 1`, `polylog (n + 1)` has complex derivative
 `∑_{k ≥ 0} z ^ k / (k + 1) ^ n`. -/
 theorem hasDerivAt_polylog_add_one_tsum (n : ℤ) {z : ℂ} (hz : ‖z‖ < 1) :
@@ -319,11 +313,6 @@ theorem hasDerivAt_polylog_add_one_tsum (n : ℤ) {z : ℂ} (hz : ‖z‖ < 1) :
 theorem hasSum_deriv_polylog_add_one (n : ℤ) {z : ℂ} (hz : ‖z‖ < 1) :
     HasSum (fun k : ℕ ↦ z ^ k / (k + 1 : ℂ) ^ n) (deriv (polylog (n + 1)) z) := by
   simpa only [add_sub_cancel_right] using hasSum_deriv_polylog (n + 1) hz
-
-/-- Power-series expansion of `deriv (polylog (n + 1)) z` on the open unit disc `‖z‖ < 1`. -/
-theorem deriv_polylog_add_one_eq_tsum (n : ℤ) {z : ℂ} (hz : ‖z‖ < 1) :
-    deriv (polylog (n + 1)) z = ∑' k : ℕ, z ^ k / (k + 1 : ℂ) ^ n :=
-  (hasSum_deriv_polylog_add_one n hz).tsum_eq.symm
 
 /-- Every integer-weight polylogarithm has complex derivative `1` at `0`. -/
 theorem hasDerivAt_polylog_zero (n : ℤ) : HasDerivAt (polylog n) 1 0 := by
