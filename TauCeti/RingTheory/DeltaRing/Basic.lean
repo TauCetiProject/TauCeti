@@ -284,11 +284,6 @@ theorem frobenius_sub_pow (x : A) : frobenius p A x - x ^ p = p * delta p x := b
   rw [frobenius_apply]
   ring
 
-/-- An element with `δ x = 0` has Frobenius `x ^ p`. -/
-theorem frobenius_eq_pow_of_delta_eq_zero {x : A} (hx : delta p x = 0) :
-    frobenius p A x = x ^ p := by
-  rw [frobenius_apply, hx, mul_zero, add_zero]
-
 /-- The Frobenius of a `δ`-ring lifts the `p`-th power map modulo `p`. -/
 theorem natCast_dvd_frobenius_sub_pow (x : A) : (p : A) ∣ frobenius p A x - x ^ p :=
   ⟨delta p x, frobenius_sub_pow x⟩

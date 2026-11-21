@@ -145,7 +145,7 @@ include hq
 /-- If `δ q = 0`, then `φ (q - 1) = [p]_q * (q - 1)`. -/
 theorem frobenius_sub_one_of_delta_eq_zero :
     frobenius p D (q - 1) = qInteger q p * (q - 1) := by
-  rw [map_sub, map_one, frobenius_eq_pow_of_delta_eq_zero hq, qInteger_mul_sub_one]
+  rw [map_sub, map_one, frobenius_apply_of_delta_eq_zero hq, qInteger_mul_sub_one]
 
 /-- If `δ q = 0`, then `q - 1 ∈ N(D)`. -/
 theorem sub_one_mem_frobeniusPreimageIdeal : q - 1 ∈ frobeniusPreimageIdeal p q :=
