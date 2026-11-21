@@ -542,15 +542,6 @@ theorem IsProConstructible.exists_isOpen_preimage_image_quotientMk_subset_sInter
     SpectralSpace.isLocallySpectralSpace hR.isLocallyProConstructible hs hR.isSpectralMap_fst
     hWo hWc
 
-/-- Global spectral case of Scholze, Lemma 2.10: if `X` is a spectral space and
-`{q : X × X | r q.1 q.2}` is pro-constructible with open first projection, then `Quotient r` is a
-spectral space. -/
-theorem IsProConstructible.spectralSpace_quotient_of_isOpenMap
-    (hR : IsProConstructible {q : X × X | r q.1 q.2})
-    (hs_open : IsOpenMap fun q : {q : X × X // r q.1 q.2} ↦ q.val.1) :
-    SpectralSpace (Quotient r) :=
-  TauCeti.spectralSpace_quotient_of_isOpenMap hR hs_open
-
 end GlobalSpectral
 
 end TauCeti
