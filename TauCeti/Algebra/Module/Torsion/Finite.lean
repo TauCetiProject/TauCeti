@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.RingTheory.Finiteness.Basic
+public import Mathlib.RingTheory.Ideal.Quotient.HasFiniteQuotients.Basic
 
 /-!
 # Finiteness for modules killed by a scalar
@@ -15,6 +16,11 @@ If an `S`-module is killed by `f`, its scalar action factors through `S ⧸ (f)`
 `S`-module killed by `f` is finite over a coefficient semiring `A` whenever `S ⧸ (f)` is finite
 over `A`. This transfers quotient-finiteness results to modules annihilated by distinguished
 power series.
+
+Over a ring with finite quotients by nonzero ideals, such as the ring of integers of a number
+field, a finitely generated torsion module is killed by a nonzero divisor, hence is a finitely
+generated module over a finite ring, so it is a finite set (`Module.IsTorsion.finite`). This
+generalizes Mathlib's `Module.finite_of_fg_torsion` over `ℤ`.
 -/
 
 public section
@@ -34,3 +40,26 @@ theorem finite_of_finite_quotient {A S M : Type*} [CommSemiring A] [CommRing S] 
   exact Module.Finite.trans (S ⧸ Ideal.span {f}) M
 
 end Module.IsTorsionBy
+
+namespace Module.IsTorsion
+
+/-- **A finitely generated torsion module over a ring with finite quotients is finite.** A nonzero
+divisor `d` annihilates the module, which is then a finitely generated module over the finite ring
+`R ⧸ (d)`. -/
+theorem finite {R M : Type*} [CommRing R] [Ring.HasFiniteQuotients R] [AddCommGroup M]
+    [Module R M] [Module.Finite R M] (hM : Module.IsTorsion R M) : Finite M := by
+  obtain _ | _ := subsingleton_or_nontrivial R
+  · have := Module.subsingleton R M
+    infer_instance
+  obtain ⟨d, hd, hd0⟩ := Submodule.annihilator_top_inter_nonZeroDivisors hM
+  have hdM : Module.IsTorsionBySet R M (Ideal.span {d}) :=
+    (Module.isTorsionBySet_span_singleton_iff d).2 fun m =>
+      Submodule.mem_annihilator.1 hd m Submodule.mem_top
+  have : Finite (R ⧸ Ideal.span {d}) :=
+    Ring.HasFiniteQuotients.finiteQuotient (by simpa using nonZeroDivisors.ne_zero hd0)
+  let := hdM.module
+  have : IsScalarTower R (R ⧸ Ideal.span {d}) M := hdM.isScalarTower
+  have : Module.Finite (R ⧸ Ideal.span {d}) M := .of_restrictScalars_finite R _ M
+  exact Module.finite_of_finite (R ⧸ Ideal.span {d})
+
+end Module.IsTorsion

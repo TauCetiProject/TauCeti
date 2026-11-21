@@ -230,6 +230,24 @@ theorem norm_pos (σ : K →+* ℂ) {x : E} (hx : x ≠ 0) : 0 < E.norm σ x := 
   refine Real.sqrt_pos.2 (lt_of_le_of_ne InnerProductSpace.Core.inner_self_nonneg (Ne.symm ?_))
   exact fun h => E.one_tmul_ne_zero σ hx (InnerProductSpace.Core.normSq_eq_zero.1 h)
 
+variable (E) in
+/-- An integer `a` of `K` scales the norm at `σ` by `|σ(a)|`: `‖a • x‖_σ = |σ(a)| ‖x‖_σ`. -/
+theorem norm_smul (σ : K →+* ℂ) (a : 𝓞 K) (x : E) :
+    E.norm σ (a • x) = ‖σ (algebraMap (𝓞 K) K a)‖ * E.norm σ x := by
+  set c : ℂ := σ (algebraMap (𝓞 K) K a)
+  -- In the fibre, `a` acts on `1 ⊗ x` as the complex number `σ(a)`.
+  have h : (1 : ComplexAlong σ) ⊗ₜ[𝓞 K] (a • x) = c • ((1 : ComplexAlong σ) ⊗ₜ x) := by
+    rw [← smul_tmul, smul_tmul', Algebra.smul_def, Algebra.smul_def, mul_one, mul_one]
+    -- Both images in `ComplexAlong σ`, a type synonym of `ℂ`, are `σ(a)` by the definition of its
+    -- `𝓞 K`-algebra structure (as in `ComplexAlong.toComplex_algebraMap`).
+    rfl
+  have hr : (E.metric.core σ).inner (1 ⊗ₜ x) (c • (1 ⊗ₜ x)) =
+      c * (E.metric.core σ).inner (1 ⊗ₜ x) (1 ⊗ₜ x) :=
+    InnerProductSpace.Core.inner_smul_right (c := (E.metric.core σ).toCore) _ _
+  rw [norm, norm, inner, inner, h, (E.metric.core σ).smul_left, hr, ← mul_assoc, RCLike.conj_mul,
+    ← RCLike.ofReal_pow, RCLike.re_ofReal_mul, Real.sqrt_mul (by positivity),
+    Real.sqrt_sq (norm_nonneg _)]
+
 section Trivial
 
 variable (σ : K →+* ℂ)
