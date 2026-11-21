@@ -247,8 +247,8 @@ theorem IsDelzant.exists_natCard_ker_facetTorusHom_nsmul_inf_stabilizer_eq
   obtain ⟨x, hx, hxy⟩ : y ∈ {y : StrongDual ℝ V | ∃ x ∈ delzantLevel i (fun j ↦ m j • u j)
       (fun j ↦ m j * c j), ∀ j, (x.1 j ^ 2 + x.2 j ^ 2) / 2 + m j * c j = y (i (m j • u j))} := by
     rwa [setOf_exists_mem_delzantLevel, facetPolyhedron_nsmul hm]
-  obtain ⟨s, hys, hs⟩ := hΔ.exists_activeSet_subset_basis hyΔ
+  obtain ⟨v, hv, hyv⟩ := hΔ.exists_isSmoothVertex_activeSet_subset hyΔ
   exact ⟨⟨x, hx⟩, natCard_ker_facetTorusHom_nsmul_inf_stabilizer_of_activeSet_eq_singleton
-    (x := ⟨x, hx⟩) hi hm hxy hys hs hA⟩
+    (x := ⟨x, hx⟩) hi hm hxy hyv (isSmoothVertex_def.1 hv) hA⟩
 
 end TauCeti.Toric
