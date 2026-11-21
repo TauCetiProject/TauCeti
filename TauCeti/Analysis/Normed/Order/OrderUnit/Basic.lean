@@ -587,19 +587,9 @@ theorem zero_mem_completionPosCone {E : Type*} [NormedAddCommGroup E] [PartialOr
 theorem add_mem_completionPosCone {E : Type*} [NormedAddCommGroup E] [PartialOrder E]
     [IsOrderedAddMonoid E] {x y : UniformSpace.Completion E}
     (hx : x ∈ completionPosCone E) (hy : y ∈ completionPosCone E) :
-    x + y ∈ completionPosCone E := by
-  have hxy : (x, y) ∈ closure
-      ((((↑) : E → UniformSpace.Completion E) '' Set.Ici (0 : E)) ×ˢ
-        (((↑) : E → UniformSpace.Completion E) '' Set.Ici (0 : E))) := by
-    rw [closure_prod_eq]
-    exact ⟨hx, hy⟩
-  have hsub : (fun p : UniformSpace.Completion E × UniformSpace.Completion E => p.1 + p.2) ''
-      ((((↑) : E → UniformSpace.Completion E) '' Set.Ici (0 : E)) ×ˢ
-        (((↑) : E → UniformSpace.Completion E) '' Set.Ici (0 : E))) ⊆
-      ((↑) : E → UniformSpace.Completion E) '' Set.Ici (0 : E) := by
-    rintro _ ⟨⟨_, _⟩, ⟨⟨a, ha, rfl⟩, ⟨b, hb, rfl⟩⟩, rfl⟩
-    exact ⟨a + b, add_nonneg ha hb, UniformSpace.Completion.coe_add a b⟩
-  exact (closure_mono hsub) (image_closure_subset_closure_image continuous_add ⟨(x, y), hxy, rfl⟩)
+    x + y ∈ completionPosCone E :=
+  map_mem_closure₂ continuous_add hx hy fun _ ⟨a, ha, ha'⟩ _ ⟨b, hb, hb'⟩ =>
+    ⟨a + b, add_nonneg ha hb, ha' ▸ hb' ▸ UniformSpace.Completion.coe_add a b⟩
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [PartialOrder E]
   [IsOrderedAddMonoid E] {e : E} (he : IsOrderUnitNorm e)
@@ -611,13 +601,8 @@ theorem IsOrderUnitNorm.smul_mem_completionPosCone {c : ℝ} (hc : 0 ≤ c)
     {x : UniformSpace.Completion E} (hx : x ∈ completionPosCone E) :
     c • x ∈ completionPosCone E := by
   have : PosSMulMono ℝ E := he.posSMulMono
-  have hsub : (fun z : UniformSpace.Completion E => c • z) ''
-      (((↑) : E → UniformSpace.Completion E) '' Set.Ici (0 : E)) ⊆
-      ((↑) : E → UniformSpace.Completion E) '' Set.Ici (0 : E) := by
-    rintro _ ⟨_, ⟨a, ha, rfl⟩, rfl⟩
-    exact ⟨c • a, smul_nonneg hc ha, UniformSpace.Completion.coe_smul c a⟩
-  exact (closure_mono hsub)
-    (image_closure_subset_closure_image (continuous_const_smul c) ⟨x, hx, rfl⟩)
+  exact map_mem_closure (continuous_const_smul c) hx fun _ ⟨a, ha, ha'⟩ =>
+    ⟨c • a, smul_nonneg hc ha, ha' ▸ UniformSpace.Completion.coe_smul c a⟩
 
 /-- An element of `E` lies in `completionPosCone E` iff it is nonnegative in `E`. -/
 theorem IsOrderUnitNorm.coe_mem_completionPosCone_iff {a : E} :

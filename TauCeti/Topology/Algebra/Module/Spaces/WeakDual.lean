@@ -8,7 +8,7 @@ module
 public import Mathlib.Topology.Algebra.Module.Spaces.WeakDual
 
 /-!
-# Pointwise operations on the weak dual
+# Pointwise operations and pullback on the weak dual
 
 The addition and the scalar actions on `WeakDual 𝕜 E` are those of `E →L[𝕜] 𝕜`, so they are
 computed pointwise. Registering `IsAddApply` and `IsSMulApply` makes the generic simp lemmas
@@ -19,7 +19,9 @@ actions on `𝕜` to `WeakDual 𝕜 E`; over `RCLike 𝕜` it makes the real act
 compatible with the `𝕜`-action.
 
 It also records that, for ordered `E` and `𝕜`, the functionals that are nonnegative on
-nonnegative elements form a weak-* closed set, `WeakDual.isClosed_setOf_map_nonneg`.
+nonnegative elements form a weak-* closed set, `WeakDual.isClosed_setOf_map_nonneg`, and defines
+precomposition `ContinuousLinearMap.pullbackFunctional` of functionals along a continuous linear
+map `T : E →L[𝕜] F` as a weak-star continuous linear map `WeakDual 𝕜 F →L[𝕜] WeakDual 𝕜 E`.
 -/
 
 public section
@@ -49,3 +51,40 @@ theorem isClosed_setOf_map_nonneg [Preorder 𝕜] [ClosedIciTopology 𝕜] [LE E
   exact isClosed_iInter fun a => isClosed_iInter fun _ => isClosed_Ici.preimage (eval_continuous a)
 
 end WeakDual
+
+namespace ContinuousLinearMap
+
+variable {𝕜 E F G : Type*} [CommSemiring 𝕜] [TopologicalSpace 𝕜] [ContinuousAdd 𝕜]
+  [ContinuousConstSMul 𝕜 𝕜] [AddCommMonoid E] [Module 𝕜 E] [TopologicalSpace E]
+
+/-- Precomposition of functionals with a continuous linear map `T : E →L[𝕜] F`, as a weak-star
+continuous linear map `WeakDual 𝕜 F →L[𝕜] WeakDual 𝕜 E`. -/
+noncomputable def pullbackFunctional [AddCommMonoid F] [Module 𝕜 F] [TopologicalSpace F]
+    (T : E →L[𝕜] F) : WeakDual 𝕜 F →L[𝕜] WeakDual 𝕜 E where
+  toFun φ := StrongDual.toWeakDual ((WeakDual.toStrongDual φ).comp T)
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+  cont := WeakDual.continuous_of_continuous_eval fun a => WeakDual.eval_continuous (T a)
+
+/-- The pullback of a functional along `T` evaluates as `φ (T a)`. -/
+@[simp]
+theorem pullbackFunctional_apply [AddCommMonoid F] [Module 𝕜 F] [TopologicalSpace F]
+    (T : E →L[𝕜] F) (φ : WeakDual 𝕜 F) (a : E) :
+    T.pullbackFunctional φ a = φ (T a) :=
+  (rfl)
+
+/-- Pulling back along the identity map is the identity on `WeakDual 𝕜 E`. -/
+@[simp]
+theorem pullbackFunctional_id :
+    (ContinuousLinearMap.id 𝕜 E).pullbackFunctional =
+      ContinuousLinearMap.id 𝕜 (WeakDual 𝕜 E) :=
+  ContinuousLinearMap.ext fun _ => DFunLike.ext _ _ fun _ => rfl
+
+/-- Pulling back along a composite `S.comp T` factors contravariantly. -/
+@[simp]
+theorem pullbackFunctional_comp [AddCommMonoid F] [Module 𝕜 F] [TopologicalSpace F]
+    [AddCommMonoid G] [Module 𝕜 G] [TopologicalSpace G] (S : F →L[𝕜] G) (T : E →L[𝕜] F) :
+    (S.comp T).pullbackFunctional = T.pullbackFunctional.comp S.pullbackFunctional :=
+  ContinuousLinearMap.ext fun _ => DFunLike.ext _ _ fun _ => rfl
+
+end ContinuousLinearMap

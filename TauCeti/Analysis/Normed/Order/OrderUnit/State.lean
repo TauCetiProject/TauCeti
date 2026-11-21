@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Module.WeakDual
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Positive
 public import TauCeti.Analysis.CStarAlgebra.State.Space
+public import TauCeti.Analysis.LocallyConvex.WeakDual.SelfAdjoint
 public import TauCeti.Analysis.Normed.Order.OrderUnit.Basic
 public import TauCeti.Topology.Algebra.Module.Spaces.WeakDual
 import Mathlib.Analysis.LocallyConvex.Separation
@@ -46,18 +47,20 @@ weak-star dual `WeakDual ℝ E`, carrying the weak-star subspace topology.
 * `TauCeti.OrderUnit.IsOrderUnitNorm.stateSpace_nonempty`, `convex_stateSpace`,
   `isClosed_stateSpace`, `isCompact_stateSpace`: nonemptiness (by Hahn–Banach), convexity,
   weak-star closedness, and weak-star compactness (by Banach–Alaoglu).
-* `TauCeti.OrderUnit.pullbackFunctional`, `mapsTo_pullbackFunctional_stateSpace`,
-  `IsOrderUnitNorm.exists_state_extension_submodule`,
-  `IsOrderUnitNorm.existsUnique_state_extension_completion`,
-  `IsOrderUnitNorm.completionStateSpaceHomeomorph`: pullback along unital positive maps, extension
-  from unital subspaces, and unique weak-star homeomorphic extension to the norm completion.
+* `ContinuousLinearMap.mapsTo_pullbackFunctional_stateSpace`,
+  `TauCeti.OrderUnit.IsOrderUnitNorm.exists_state_extension_submodule`,
+  `TauCeti.OrderUnit.IsOrderUnitNorm.existsUnique_state_extension_completion`,
+  `TauCeti.OrderUnit.IsOrderUnitNorm.completionStateSpaceHomeomorph`: pullback along unital positive
+  maps (via `ContinuousLinearMap.pullbackFunctional`), extension from unital subspaces, and unique
+  weak-star homeomorphic extension to the norm completion.
 * `TauCeti.OrderUnit.IsOrderUnitNorm.nonneg_iff_forall_stateSpace`,
   `exists_mem_stateSpace_abs_apply_eq_norm`, `norm_eq_iSup_states`, `nnNorm_eq_iSup_states`,
   `evalContinuousMap`, `IsOrderUnitNorm.evalLinearIsometry`: order separation, norm detection by
   states, and the isometric unital order embedding `E → C(stateSpace e, ℝ)`.
-* `TauCeti.OrderUnit.restrictToSelfAdjoint`, `extendFromSelfAdjoint`,
-  `cstarStateSpaceHomeomorph`, `cstarPositiveLinearMapEquivStateSpace`: weak-star homeomorphic
-  correspondence between states of a unital C⋆-algebra `A` and states of `selfAdjoint A`.
+* `TauCeti.OrderUnit.cstarStateSpaceHomeomorph`,
+  `TauCeti.OrderUnit.cstarPositiveLinearMapEquivStateSpace`: weak-star homeomorphic correspondence
+  between states of a unital C⋆-algebra `A` and states of `selfAdjoint A`, induced by
+  `WeakDual.restrictToSelfAdjoint` and `WeakDual.extendFromSelfAdjoint`.
 
 ## References
 
@@ -358,48 +361,16 @@ end StateSpace
 
 section Functoriality
 
-/-- Precomposition of real functionals with a continuous real-linear map `T : E →L[ℝ] F`, as a
-weak-star continuous real-linear map `WeakDual ℝ F →L[ℝ] WeakDual ℝ E`. -/
-noncomputable def pullbackFunctional {E F : Type*} [AddCommMonoid E] [Module ℝ E]
-    [TopologicalSpace E] [AddCommMonoid F] [Module ℝ F] [TopologicalSpace F]
-    (T : E →L[ℝ] F) : WeakDual ℝ F →L[ℝ] WeakDual ℝ E where
-  toFun φ := StrongDual.toWeakDual ((toStrongDual φ).comp T)
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
-  cont := continuous_of_continuous_eval fun a => eval_continuous (T a)
-
-/-- The pullback of a functional along `T` evaluates as `φ (T a)`. -/
-@[simp]
-theorem pullbackFunctional_apply {E F : Type*} [AddCommMonoid E] [Module ℝ E]
-    [TopologicalSpace E] [AddCommMonoid F] [Module ℝ F] [TopologicalSpace F]
-    (T : E →L[ℝ] F) (φ : WeakDual ℝ F) (a : E) :
-    pullbackFunctional T φ a = φ (T a) :=
-  (rfl)
-
-/-- Pulling back along the identity map is the identity on `WeakDual ℝ E`. -/
-@[simp]
-theorem pullbackFunctional_id {E : Type*} [AddCommMonoid E] [Module ℝ E] [TopologicalSpace E] :
-    pullbackFunctional (ContinuousLinearMap.id ℝ E) =
-      ContinuousLinearMap.id ℝ (WeakDual ℝ E) :=
-  ContinuousLinearMap.ext fun _ => DFunLike.ext _ _ fun _ => rfl
-
-/-- Pulling back along a composite `S.comp T` factors contravariantly. -/
-@[simp]
-theorem pullbackFunctional_comp {E F G : Type*} [AddCommMonoid E] [Module ℝ E]
-    [TopologicalSpace E] [AddCommMonoid F] [Module ℝ F] [TopologicalSpace F]
-    [AddCommMonoid G] [Module ℝ G] [TopologicalSpace G]
-    (S : F →L[ℝ] G) (T : E →L[ℝ] F) :
-    pullbackFunctional (S.comp T) = (pullbackFunctional T).comp (pullbackFunctional S) :=
-  ContinuousLinearMap.ext fun _ => DFunLike.ext _ _ fun _ => rfl
-
 /-- Composing a state with a unital positive continuous linear map yields a state. -/
-theorem mapsTo_pullbackFunctional_stateSpace {E F : Type*} [AddCommMonoid E] [Module ℝ E]
-    [TopologicalSpace E] [Preorder E] [AddCommMonoid F] [Module ℝ F] [TopologicalSpace F]
-    [Preorder F] {e : E} {f : F} (T : E →L[ℝ] F) (hT : Monotone T) (hTe : T e = f) :
-    MapsTo (pullbackFunctional T) (stateSpace f) (stateSpace e) := by
+theorem _root_.ContinuousLinearMap.mapsTo_pullbackFunctional_stateSpace {E F : Type*}
+    [AddCommMonoid E] [Module ℝ E] [TopologicalSpace E] [Preorder E]
+    [AddCommMonoid F] [Module ℝ F] [TopologicalSpace F] [Preorder F]
+    {e : E} {f : F} (T : E →L[ℝ] F) (hT : Monotone T) (hTe : T e = f) :
+    MapsTo T.pullbackFunctional (stateSpace f) (stateSpace e) := by
   intro φ hφ
-  refine ⟨fun _ _ hab => hφ.1 (hT hab), ?_⟩
-  simpa [hTe] using hφ.2
+  refine ⟨fun _ _ hab => ?_, ?_⟩
+  · simpa [ContinuousLinearMap.pullbackFunctional_apply] using hφ.1 (hT hab)
+  · simpa [hTe] using hφ.2
 
 /-- **Extension of states from a unital subspace.** Every state on a unital real subspace `S` of
 an order-unit space `(E, e)` extends to a state on `E`, by Hahn–Banach. -/
@@ -407,7 +378,7 @@ theorem IsOrderUnitNorm.exists_state_extension_submodule {E : Type*} [Seminormed
     [NormedSpace ℝ E] [PartialOrder E] [IsOrderedAddMonoid E] {e : E} (he : IsOrderUnitNorm e)
     (S : Submodule ℝ E) (heS : e ∈ S) {φ : WeakDual ℝ S}
     (hφ : φ ∈ stateSpace (⟨e, heS⟩ : S)) :
-    ∃ ψ ∈ stateSpace e, pullbackFunctional S.subtypeL ψ = φ := by
+    ∃ ψ ∈ stateSpace e, S.subtypeL.pullbackFunctional ψ = φ := by
   have hS := he.submodule S heS
   have hφnorm : ‖toStrongDual φ‖ = 1 := hS.norm_toStrongDual_of_mem_stateSpace hφ
   obtain ⟨g, hg, hgnorm⟩ := _root_.exists_extension_norm_eq S (toStrongDual φ)
@@ -415,13 +386,13 @@ theorem IsOrderUnitNorm.exists_state_extension_submodule {E : Type*} [Seminormed
     simpa [hφ.2] using hg ⟨e, heS⟩
   refine ⟨StrongDual.toWeakDual g,
     he.mem_stateSpace_iff_norm_eq_one.mpr ⟨hgnorm.trans hφnorm, hge⟩, ?_⟩
-  exact DFunLike.ext _ _ fun x => hg x
+  exact DFunLike.ext _ _ fun x => by simpa using hg x
 
 /-- Restriction of states from `E` to a unital subspace `S` is surjective. -/
 theorem IsOrderUnitNorm.surjOn_pullbackFunctional_subtypeL {E : Type*} [SeminormedAddCommGroup E]
     [NormedSpace ℝ E] [PartialOrder E] [IsOrderedAddMonoid E] {e : E} (he : IsOrderUnitNorm e)
     (S : Submodule ℝ E) (heS : e ∈ S) :
-    SurjOn (pullbackFunctional S.subtypeL) (stateSpace e) (stateSpace (⟨e, heS⟩ : S)) :=
+    SurjOn S.subtypeL.pullbackFunctional (stateSpace e) (stateSpace (⟨e, heS⟩ : S)) :=
   fun _ hφ => he.exists_state_extension_submodule S heS hφ
 
 section CompletionStates
@@ -437,7 +408,7 @@ theorem IsOrderUnitNorm.existsUnique_state_extension_completion {φ : WeakDual �
     (hφ : φ ∈ stateSpace e) :
     ∃! ψ ∈ @stateSpace (UniformSpace.Completion E) _ _ _ he.completionPartialOrder.toPreorder
       (e : UniformSpace.Completion E),
-      pullbackFunctional (UniformSpace.Completion.toComplL (S := ℝ) (α := E)) ψ = φ := by
+      (UniformSpace.Completion.toComplL (S := ℝ) (α := E)).pullbackFunctional ψ = φ := by
   let : PartialOrder (UniformSpace.Completion E) := he.completionPartialOrder
   have : IsOrderedAddMonoid (UniformSpace.Completion E) := he.completionIsOrderedAddMonoid
   have hcompl := he.isOrderUnitNorm_completion
@@ -449,9 +420,9 @@ theorem IsOrderUnitNorm.existsUnique_state_extension_completion {φ : WeakDual �
     simpa [hφ.2] using h1
   have hψmem : StrongDual.toWeakDual g ∈ stateSpace (e : UniformSpace.Completion E) :=
     hcompl.mem_stateSpace_iff_norm_eq_one.mpr ⟨hgnorm.trans hφnorm, hge⟩
-  have hψeq : pullbackFunctional (UniformSpace.Completion.toComplL (S := ℝ) (α := E))
+  have hψeq : (UniformSpace.Completion.toComplL (S := ℝ) (α := E)).pullbackFunctional
       (StrongDual.toWeakDual g) = φ :=
-    DFunLike.ext _ _ fun a => DFunLike.congr_fun hg a
+    DFunLike.ext _ _ fun a => by simpa using DFunLike.congr_fun hg a
   refine ⟨StrongDual.toWeakDual g, ⟨hψmem, hψeq⟩, fun ψ' ⟨_, hψ'eq⟩ => ?_⟩
   have hdense := UniformSpace.Completion.denseRange_coe (α := E)
   have heq :
@@ -459,7 +430,7 @@ theorem IsOrderUnitNorm.existsUnique_state_extension_completion {φ : WeakDual �
     hdense.equalizer (toStrongDual ψ').continuous g.continuous (funext fun a => by
       have h1 := DFunLike.congr_fun hψ'eq a
       have h2 := DFunLike.congr_fun hψeq a
-      exact h1.trans h2.symm)
+      simpa using h1.trans h2.symm)
   exact DFunLike.ext _ _ fun x => congrFun heq x
 
 /-- Restriction along `E → UniformSpace.Completion E` induces a weak-star homeomorphism between the
@@ -474,11 +445,11 @@ noncomputable def IsOrderUnitNorm.completionStateSpaceHomeomorph :
     hcompl.compactSpace_stateSpace
   let T := UniformSpace.Completion.toComplL (S := ℝ) (α := E)
   have hTmono : Monotone T := fun a b hab => he.completion_coe_le_coe_iff.mpr hab
-  have hmaps : MapsTo (pullbackFunctional T)
+  have hmaps : MapsTo T.pullbackFunctional
       (stateSpace (e : UniformSpace.Completion E)) (stateSpace e) :=
-    mapsTo_pullbackFunctional_stateSpace T hTmono rfl
+    T.mapsTo_pullbackFunctional_stateSpace hTmono rfl
   let f : stateSpace (e : UniformSpace.Completion E) → stateSpace e :=
-    fun ψ => ⟨pullbackFunctional T ψ.1, hmaps ψ.2⟩
+    fun ψ => ⟨T.pullbackFunctional ψ.1, hmaps ψ.2⟩
   have hbij : Function.Bijective f := by
     refine ⟨fun ψ₁ ψ₂ h => ?_, fun φ => ?_⟩
     · obtain ⟨_, _, huniq⟩ := he.existsUnique_state_extension_completion (f ψ₂).2
@@ -488,7 +459,7 @@ noncomputable def IsOrderUnitNorm.completionStateSpaceHomeomorph :
     · obtain ⟨ψ, ⟨hψmem, hψeq⟩, _⟩ := he.existsUnique_state_extension_completion φ.2
       exact ⟨⟨ψ, hψmem⟩, Subtype.ext hψeq⟩
   exact Continuous.homeoOfEquivCompactToT2 (f := Equiv.ofBijective f hbij)
-    (((pullbackFunctional T).continuous.comp continuous_subtype_val).subtype_mk _)
+    ((T.pullbackFunctional.continuous.comp continuous_subtype_val).subtype_mk _)
 
 /-- Evaluating `completionStateSpaceHomeomorph` restricts a completion state to `E`. -/
 @[simp]
@@ -496,8 +467,8 @@ theorem IsOrderUnitNorm.completionStateSpaceHomeomorph_apply
     (ψ : @stateSpace (UniformSpace.Completion E) _ _ _ he.completionPartialOrder.toPreorder
       (e : UniformSpace.Completion E)) (a : E) :
     (he.completionStateSpaceHomeomorph ψ).1 a = ψ.1 (a : UniformSpace.Completion E) := by
-  dsimp [completionStateSpaceHomeomorph]
-  rfl
+  change (UniformSpace.Completion.toComplL (S := ℝ) (α := E)).pullbackFunctional ψ.1 a = _
+  simp
 
 /-- Evaluating the inverse of `completionStateSpaceHomeomorph` on a coerced element recovers the
 original state. -/
@@ -689,99 +660,6 @@ end EvalEmbedding
 
 section CStarCorrespondence
 
-section CStarMaps
-
-variable {A : Type*} [NonUnitalCStarAlgebra A]
-
-private theorem continuous_realPart : Continuous (realPart (A := A)) :=
-  continuous_induced_rng.mpr <| by
-    have h : ((↑) : selfAdjoint A → A) ∘ (realPart (A := A)) =
-        fun a => (2 : ℝ)⁻¹ • (a + star a) := funext realPart_apply_coe
-    rw [h]
-    exact continuous_const.smul (continuous_id.add continuous_star)
-
-private theorem continuous_imaginaryPart : Continuous (imaginaryPart (A := A)) :=
-  continuous_induced_rng.mpr <| by
-    have h : ((↑) : selfAdjoint A → A) ∘ (imaginaryPart (A := A)) =
-        fun a => (-Complex.I) • (2 : ℝ)⁻¹ • (a - star a) := funext imaginaryPart_apply_coe
-    rw [h]
-    exact continuous_const.smul (continuous_const.smul (continuous_id.sub continuous_star))
-
-/-- Restriction of a complex-linear functional on `A` to a real-linear functional on
-`selfAdjoint A`, taking the real part, as a weak-star continuous real-linear map. -/
-noncomputable def restrictToSelfAdjoint : WeakDual ℂ A →L[ℝ] WeakDual ℝ (selfAdjoint A) where
-  toFun φ := StrongDual.toWeakDual
-    { toFun := fun a => (φ (a : A)).re
-      map_add' := fun a b => by simp
-      map_smul' := fun r a => by
-        -- Coerce the real scalar action on `selfAdjoint A` to complex scalar multiplication in `A`.
-        change (φ ((r : ℂ) • (a : A))).re = r * (φ (a : A)).re
-        rw [map_smul, smul_eq_mul, Complex.re_ofReal_mul]
-      cont := Complex.continuous_re.comp ((toStrongDual φ).continuous.comp continuous_subtype_val) }
-  map_add' _ _ := DFunLike.ext _ _ fun _ => by simp
-  map_smul' r φ := DFunLike.ext _ _ fun a => by
-    -- Unfold pointwise real scaling in `WeakDual ℂ A`.
-    change ((r • φ) (a : A)).re = r * (φ (a : A)).re
-    simp
-  cont := continuous_of_continuous_eval fun a =>
-    Complex.continuous_re.comp (eval_continuous (a : A))
-
-/-- Evaluating `restrictToSelfAdjoint φ` at a self-adjoint element `a` yields `(φ a).re`. -/
-@[simp]
-theorem restrictToSelfAdjoint_apply (φ : WeakDual ℂ A) (a : selfAdjoint A) :
-    restrictToSelfAdjoint φ a = (φ (a : A)).re :=
-  (rfl)
-
-/-- Unique complex-linear extension of a real-linear functional on `selfAdjoint A` to `A`,
-given by `a ↦ ψ (ℜ a) + I * ψ (ℑ a)`, as a weak-star continuous real-linear map. -/
-noncomputable def extendFromSelfAdjoint : WeakDual ℝ (selfAdjoint A) →L[ℝ] WeakDual ℂ A where
-  toFun ψ := StrongDual.toWeakDual
-    { toFun := fun a => (ψ (ℜ a) : ℂ) + Complex.I * (ψ (ℑ a) : ℂ)
-      map_add' := fun a b => by simp [mul_add]; ring
-      map_smul' := fun z a => by
-        rw [realPart_smul, imaginaryPart_smul]
-        simp only [map_sub, map_add, map_smul, smul_eq_mul, Complex.ofReal_sub, Complex.ofReal_add,
-          Complex.ofReal_mul]
-        apply Complex.ext <;> simp
-      cont :=
-        (Complex.continuous_ofReal.comp ((toStrongDual ψ).continuous.comp continuous_realPart)).add
-          (continuous_const.mul
-            (Complex.continuous_ofReal.comp
-              ((toStrongDual ψ).continuous.comp continuous_imaginaryPart))) }
-  map_add' ψ₁ ψ₂ := DFunLike.ext _ _ fun a => by
-    -- Unfold pointwise addition of functionals in `WeakDual ℂ A`.
-    change (((ψ₁ + ψ₂) (ℜ a) : ℂ) + Complex.I * ((ψ₁ + ψ₂) (ℑ a) : ℂ)) =
-      ((ψ₁ (ℜ a) : ℂ) + Complex.I * (ψ₁ (ℑ a) : ℂ)) +
-        ((ψ₂ (ℜ a) : ℂ) + Complex.I * (ψ₂ (ℑ a) : ℂ))
-    simp only [add_apply, Complex.ofReal_add]
-    ring
-  map_smul' r ψ := DFunLike.ext _ _ fun a => by
-    -- Unfold real scalar multiplication on `WeakDual ℝ (selfAdjoint A)` and `WeakDual ℂ A`.
-    change (((r • ψ) (ℜ a) : ℂ) + Complex.I * ((r • ψ) (ℑ a) : ℂ)) =
-      (r • (StrongDual.toWeakDual _)) a
-    rw [WeakDual.real_smul_apply]
-    simp only [smul_apply, smul_eq_mul, Complex.ofReal_mul]
-    change (r : ℂ) * (ψ (ℜ a) : ℂ) + Complex.I * ((r : ℂ) * (ψ (ℑ a) : ℂ)) =
-      (r : ℂ) * ((ψ (ℜ a) : ℂ) + Complex.I * (ψ (ℑ a) : ℂ))
-    ring
-  cont := continuous_of_continuous_eval fun a =>
-    (Complex.continuous_ofReal.comp (eval_continuous (ℜ a))).add
-      (continuous_const.mul (Complex.continuous_ofReal.comp (eval_continuous (ℑ a))))
-
-/-- Evaluating `extendFromSelfAdjoint ψ` at `a` gives `ψ (ℜ a) + I * ψ (ℑ a)`. -/
-@[simp]
-theorem extendFromSelfAdjoint_apply (ψ : WeakDual ℝ (selfAdjoint A)) (a : A) :
-    extendFromSelfAdjoint ψ a = (ψ (ℜ a) : ℂ) + Complex.I * (ψ (ℑ a) : ℂ) :=
-  (rfl)
-
-/-- Restricting the complex-linear extension of `ψ` recovers `ψ`. -/
-@[simp]
-theorem restrictToSelfAdjoint_extendFromSelfAdjoint (ψ : WeakDual ℝ (selfAdjoint A)) :
-    restrictToSelfAdjoint (extendFromSelfAdjoint ψ) = ψ :=
-  DFunLike.ext _ _ fun a => by simp
-
-end CStarMaps
-
 section CStarStates
 
 variable {A : Type*} [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
@@ -794,7 +672,7 @@ theorem mapsTo_restrictToSelfAdjoint_stateSpace :
   rw [mem_stateSpace_iff_map_nonneg]
   refine ⟨fun a ha => ?_, ?_⟩
   · have hpos : 0 ≤ φ (a : A) := TauCeti.map_nonneg_of_mem_stateSpace hφ ha
-    exact (Complex.le_def.mp hpos).1
+    simpa using (Complex.le_def.mp hpos).1
   · simp [TauCeti.map_one_of_mem_stateSpace hφ]
 
 /-- Extending an order-unit state of `selfAdjoint A` by complex linearity yields a C⋆-algebra
@@ -830,7 +708,7 @@ theorem extendFromSelfAdjoint_restrictToSelfAdjoint_of_mem_stateSpace {φ : Weak
   refine DFunLike.ext _ _ fun a => ?_
   calc
     extendFromSelfAdjoint (restrictToSelfAdjoint φ) a
-        = ((φ (ℜ a : A)).re : ℂ) + Complex.I * ((φ (ℑ a : A)).re : ℂ) := rfl
+        = ((φ (ℜ a : A)).re : ℂ) + Complex.I * ((φ (ℑ a : A)).re : ℂ) := by simp
     _ = φ (ℜ a : A) + Complex.I * φ (ℑ a : A) := by rw [hreal (ℜ a), hreal (ℑ a)]
     _ = φ ((ℜ a : A) + Complex.I • (ℑ a : A)) := by rw [map_add, map_smul, smul_eq_mul]
     _ = φ a := by rw [realPart_add_I_smul_imaginaryPart]
@@ -852,14 +730,14 @@ noncomputable def cstarStateSpaceHomeomorph :
 /-- Evaluating `cstarStateSpaceHomeomorph` takes the real part on self-adjoint elements. -/
 @[simp]
 theorem cstarStateSpaceHomeomorph_apply (φ : TauCeti.stateSpace A) (a : selfAdjoint A) :
-    (cstarStateSpaceHomeomorph φ).1 a = (φ.1 (a : A)).re :=
-  (rfl)
+    (cstarStateSpaceHomeomorph φ).1 a = (φ.1 (a : A)).re := by
+  simp [cstarStateSpaceHomeomorph]
 
 /-- Evaluating the inverse of `cstarStateSpaceHomeomorph` recovers the complex-linear extension. -/
 @[simp]
 theorem cstarStateSpaceHomeomorph_symm_apply (ψ : stateSpace (1 : selfAdjoint A)) (a : A) :
-    (cstarStateSpaceHomeomorph.symm ψ).1 a = (ψ.1 (ℜ a) : ℂ) + Complex.I * (ψ.1 (ℑ a) : ℂ) :=
-  (rfl)
+    (cstarStateSpaceHomeomorph.symm ψ).1 a = (ψ.1 (ℜ a) : ℂ) + Complex.I * (ψ.1 (ℑ a) : ℂ) := by
+  simp [cstarStateSpaceHomeomorph]
 
 /-- The bijection between normalized positive continuous complex-linear functionals
 `{ω : A →P[ℂ] ℂ // ω 1 = 1}` and `OrderUnit.stateSpace (1 : selfAdjoint A)`. -/
@@ -890,8 +768,8 @@ noncomputable def cstarPositiveLinearMapEquivStateSpace :
 @[simp]
 theorem cstarPositiveLinearMapEquivStateSpace_apply (ω : {ω : A →P[ℂ] ℂ // ω 1 = 1})
     (a : selfAdjoint A) :
-    (cstarPositiveLinearMapEquivStateSpace ω).1 a = (ω.1 (a : A)).re :=
-  (rfl)
+    (cstarPositiveLinearMapEquivStateSpace ω).1 a = (ω.1 (a : A)).re := by
+  simp [cstarPositiveLinearMapEquivStateSpace]
 
 /-- Evaluating the inverse of `cstarPositiveLinearMapEquivStateSpace` gives the complex-linear
 extension of `ψ`. -/
@@ -900,7 +778,7 @@ theorem cstarPositiveLinearMapEquivStateSpace_symm_apply (ψ : stateSpace (1 : s
     (a : A) :
     (cstarPositiveLinearMapEquivStateSpace.symm ψ).1 a =
       (ψ.1 (ℜ a) : ℂ) + Complex.I * (ψ.1 (ℑ a) : ℂ) :=
-  (rfl)
+  cstarStateSpaceHomeomorph_symm_apply ψ a
 
 end CStarStates
 
