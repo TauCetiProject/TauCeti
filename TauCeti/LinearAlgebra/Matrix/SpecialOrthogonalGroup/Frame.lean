@@ -8,6 +8,8 @@ module
 public import Mathlib.Topology.Instances.Matrix
 public import TauCeti.LinearAlgebra.Matrix.CrossProduct
 
+import TauCeti.LinearAlgebra.CrossProduct
+
 /-!
 # Rotations of `R³` as oriented orthonormal frames
 
@@ -102,9 +104,7 @@ theorem ofFrame_mem_iff {u v : Fin 3 → R} :
   · simpa using congrFun₂ h 0 0
   · simpa using congrFun₂ h 1 1
   · simpa using congrFun₂ h 0 1
-  have hcross : (u ⨯₃ v) ⬝ᵥ (u ⨯₃ v) = 1 := by
-    rw [cross_dot_cross, hu, hv, dotProduct_comm v u, huv]
-    ring
+  have hcross := TauCeti.cross_dotProduct_cross_self hu hv huv
   refine ⟨?_, hcross⟩
   ext i j
   fin_cases i <;> fin_cases j <;>

@@ -10,6 +10,7 @@ public import Mathlib.GroupTheory.SpecificGroups.Cyclic.Basic
 public import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Axis
 
 import Mathlib.RingTheory.IntegralDomain
+import TauCeti.LinearAlgebra.CrossProduct
 import TauCeti.LinearAlgebra.Matrix.DotProduct
 import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.Basic
 
@@ -46,8 +47,6 @@ axis, is cyclic.
 * `stabilizerToCircle_injective`: this homomorphism is injective.
 * `isCyclic_stabilizer`: in a finite group of rotations, the stabilizer of a nonzero vector is
   cyclic.
-* `TauCeti.exists_dotProduct_self_eq_one_dotProduct_eq_zero`: every real vector, in dimension at
-  least two, is orthogonal to some unit vector.
 
 ## References
 
@@ -59,17 +58,6 @@ public section
 
 open Matrix MulAction
 
-/-- **Every real vector is orthogonal to a unit vector**, in dimension at least two. -/
-theorem TauCeti.exists_dotProduct_self_eq_one_dotProduct_eq_zero {n : Type*} [Fintype n]
-    [Nontrivial n] (p : n → ℝ) : ∃ u, u ⬝ᵥ u = 1 ∧ p ⬝ᵥ u = 0 := by
-  obtain ⟨v, hv, hvp⟩ := exists_ne_zero_dotProduct_eq_zero p
-  have hpos : 0 < v ⬝ᵥ v :=
-    (dotProduct_self_nonneg v).lt_of_ne' (dotProduct_self_eq_zero.not.mpr hv)
-  refine ⟨(√(v ⬝ᵥ v))⁻¹ • v, ?_, by rw [dotProduct_smul, dotProduct_comm p, hvp, smul_zero]⟩
-  simp only [smul_dotProduct, dotProduct_smul, smul_eq_mul]
-  field_simp
-  exact (Real.sq_sqrt hpos.le).symm
-
 namespace TauCeti.Matrix.SpecialOrthogonalGroup
 
 section CommRing
@@ -79,11 +67,6 @@ section CommRing
 Over any commutative ring, let `p` and `u` be orthonormal and `g ∈ SO(3)` fix `p`. -/
 
 variable {R : Type*} [CommRing R] {p u : Fin 3 → R} {g h : Matrix (Fin 3) (Fin 3) R}
-
-private theorem cross_dotProduct_cross_self (hp : p ⬝ᵥ p = 1) (hu : u ⬝ᵥ u = 1)
-    (hpu : p ⬝ᵥ u = 0) : (p ⨯₃ u) ⬝ᵥ (p ⨯₃ u) = 1 := by
-  rw [cross_dot_cross, hp, hu, dotProduct_comm u p, hpu]
-  ring
 
 /-- `g u` lies in the plane spanned by `u` and `p ⨯₃ u`. -/
 private theorem mulVec_eq_of_mulVec_eq_self (hg : g ∈ specialOrthogonalGroup (Fin 3) R)
@@ -251,11 +234,8 @@ theorem isCyclic_stabilizer [Finite K] {p : Fin 3 → ℝ} (hp : p ≠ 0) :
     (dotProduct_self_nonneg p).lt_of_ne' (dotProduct_self_eq_zero.not.mpr hp)
   -- Rescale `p` to the unit vector `c • p` on the same ray, which has the same stabilizer.
   set c : ℝˣ := Units.mk0 (√(p ⬝ᵥ p))⁻¹ (inv_ne_zero (Real.sqrt_pos.mpr hpos).ne')
-  have hq : (c • p) ⬝ᵥ (c • p) = 1 := by
-    simp only [c, Units.smul_mk0, smul_dotProduct, dotProduct_smul, smul_eq_mul]
-    field_simp
-    exact (Real.sq_sqrt hpos.le).symm
-  obtain ⟨u, hu, hqu⟩ := TauCeti.exists_dotProduct_self_eq_one_dotProduct_eq_zero (c • p)
+  have hq : (c • p) ⬝ᵥ (c • p) = 1 := dotProduct_self_inv_sqrt_smul hp
+  obtain ⟨u, hu, hqu⟩ := exists_dotProduct_self_eq_one_dotProduct_eq_zero (c • p)
   rw [← stabilizer_smul_eq_right c p]
   exact isCyclic_of_injective_ringHom (Circle.coeHom.comp (stabilizerToCircle K hq hu hqu))
     (Circle.coe_injective.comp (stabilizerToCircle_injective hq hu hqu))

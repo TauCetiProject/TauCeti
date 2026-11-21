@@ -36,6 +36,8 @@ length whose cross product has zero square are equal or opposite.
 * `TauCeti.cross_cross_cross_eq_smul`: `(u ⨯₃ w) ⨯₃ (v ⨯₃ w) = (u ⬝ᵥ v ⨯₃ w) • w`.
 * `TauCeti.triple_product_eq_zero_iff_mem_span_pair`: for linearly independent `u` and `v`,
   `x ⬝ᵥ u ⨯₃ v = 0` exactly when `x` lies in the span of `u` and `v`.
+* `TauCeti.cross_dotProduct_cross_self`: the cross product of two orthonormal vectors is a unit
+  vector.
 * `TauCeti.eq_or_eq_neg_of_cross_dotProduct_eq_zero`: over a linearly ordered commutative ring, two
   vectors of equal squared length whose cross product has zero square are equal or opposite.
 
@@ -93,6 +95,13 @@ theorem triple_product_eq_zero_iff_mem_span_pair {K : Type*} [Field K] {u v x : 
     exact not_isUnit_zero hdet
   · obtain ⟨a, b, rfl⟩ := Submodule.mem_span_pair.1 hx
     simp [add_dotProduct, dot_self_cross, dot_cross_self]
+
+/-- The cross product of two orthonormal vectors `u` and `v` of `R³`, over a commutative ring `R`,
+satisfies `(u ⨯₃ v) ⬝ᵥ (u ⨯₃ v) = 1`. -/
+theorem cross_dotProduct_cross_self {u v : Fin 3 → R} (hu : u ⬝ᵥ u = 1) (hv : v ⬝ᵥ v = 1)
+    (huv : u ⬝ᵥ v = 0) : (u ⨯₃ v) ⬝ᵥ (u ⨯₃ v) = 1 := by
+  rw [cross_dot_cross, hu, hv, dotProduct_comm v u, huv]
+  ring
 
 /-- Two vectors of `R³` of equal squared length, over a linearly ordered commutative ring `R`
 such as `ℝ`, whose cross product has zero square are equal or opposite. -/
