@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
+import TauCeti.Analysis.Sobolev.BesselPotential.Distribution
 
 /-!
 # Applying a continuous linear map to the values of Bessel-potential functions
@@ -27,6 +28,9 @@ Hilbert-space values with Plancherel's theorem transfer to any finite-dimensiona
   `L : F →L[ℂ] G`.
 * `SchwartzMap.toBesselPotentialSpaceCLM_postcompCLM`: on Schwartz functions it is
   `u ↦ L ∘ u`.
+* `BesselPotentialSpace.sum_postcomp_toSpanSingleton_coord`: for a basis `(e_j)` of a
+  finite-dimensional `F` with coordinate functionals `(c_j)`, every `u ∈ H^{s,p}(E, F)` is
+  `∑ⱼ e_j (c_j u)`.
 -/
 
 public section
@@ -74,6 +78,20 @@ theorem toDistr_postcomp_apply (L : F →L[ℂ] G) (f : H^{s, p}(E, F)) (φ : �
 theorem toLp_postcomp (L : F →L[ℂ] G) (f : H^{s, p}(E, F)) :
     (postcomp E s p L f).toLp = L.compLp f.toLp :=
   (rfl)
+
+/-- **Expansion in a basis of the values.** For a basis `(e_j)` of a finite-dimensional `F` with
+coordinate functionals `(c_j)`, every `u ∈ H^{s,p}(E, F)` is the sum `∑ⱼ e_j (c_j u)` of its
+scalar coordinates `c_j u ∈ H^{s,p}(E, ℂ)` times the basis vectors. -/
+theorem sum_postcomp_toSpanSingleton_coord [FiniteDimensional ℂ F] {ι : Type*} [Fintype ι]
+    (b : Module.Basis ι ℂ F) (u : H^{s, p}(E, F)) :
+    ∑ j, postcomp E s p (ContinuousLinearMap.toSpanSingleton ℂ (b j))
+      (postcomp E s p (b.coord j).toContinuousLinearMap u) = u := by
+  refine ext ?_
+  ext φ
+  rw [← toDistrCLM_apply, map_sum, _root_.sum_apply]
+  simp only [toDistrCLM_apply, toDistr_postcomp_apply, ContinuousLinearMap.toSpanSingleton_apply,
+    LinearMap.coe_toContinuousLinearMap', Module.Basis.coord_apply]
+  exact b.sum_repr _
 
 end BesselPotentialSpace
 
