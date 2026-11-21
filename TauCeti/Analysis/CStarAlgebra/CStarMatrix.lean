@@ -10,6 +10,7 @@ import TauCeti.Algebra.Star.Basic
 import TauCeti.Analysis.CStarAlgebra.Compression
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Instances
 import Mathlib.LinearAlgebra.Matrix.DotProduct
+import Mathlib.Data.Matrix.Composition
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
 
@@ -29,7 +30,8 @@ Hilbert C⋆-module.
 
 The file also collects basic algebraic API for `CStarMatrix` that Mathlib lacks: entries of finite
 sums and of `1 × 1` matrices, entrywise images under sums and scalar multiples of linear maps,
-and the transpose as a linear map.
+the transpose as a linear map, the star algebra isomorphism `M_m(M_n(A)) ≃ M_{m × n}(A)` and the
+diagonal embedding `b ↦ diag(b, …, b)`.
 
 ## Main declarations
 
@@ -43,6 +45,10 @@ and the transpose as a linear map.
 * `CStarMatrix.sum_apply`, `CStarMatrix.toOneByOne_apply`: entries of finite sums and of
   `1 × 1` C⋆-matrices.
 * `CStarMatrix.transposeₗ`: the transpose of C⋆-matrices, as a linear map.
+* `CStarMatrix.compStarAlgEquiv`: `Matrix.comp` as a star algebra isomorphism
+  `M_m(M_n(A)) ≃ M_{m × n}(A)`.
+* `CStarMatrix.diagonalNonUnitalStarAlgHom`: the diagonal embedding `b ↦ diag(b, …, b)` of `B`
+  in `M_n(B)`, with `CStarMatrix.norm_diagonalNonUnitalStarAlgHom_le`.
 * `CStarMatrix.map_zero_linearMap`, `CStarMatrix.map_add_linearMap`,
   `CStarMatrix.map_smul_linearMap`: applying `0`, `f + g` or `c • f` to every entry.
 * `CStarMatrix.isSelfAdjoint_of_forall_isSelfAdjoint_sum`: a matrix all of whose quadratic forms
@@ -70,6 +76,74 @@ public section
 open Matrix
 
 namespace CStarMatrix
+
+section Comp
+
+variable (R m n A : Type*) [Fintype m] [Fintype n] [AddCommMonoid A] [Mul A] [Star A] [SMul R A]
+
+/-- An `m × m` matrix of `n × n` matrices is an `(m × n) × (m × n)` matrix: `Matrix.comp` as a
+star algebra isomorphism of C⋆-matrices. Multiplication of C⋆-matrices is multiplication of the
+underlying matrices, so it is preserved by `Matrix.compRingEquiv`. -/
+def compStarAlgEquiv :
+    CStarMatrix m m (CStarMatrix n n A) ≃⋆ₐ[R] CStarMatrix (m × n) (m × n) A where
+  toFun M := ofMatrix (Matrix.comp m m n n A M)
+  invFun M := (Matrix.comp m m n n A).symm (ofMatrix.symm M)
+  left_inv := (Matrix.comp m m n n A).left_inv
+  right_inv := (Matrix.comp m m n n A).right_inv
+  map_add' _ _ := rfl
+  map_mul' := (Matrix.compRingEquiv m n A).map_mul
+  map_smul' _ _ := rfl
+  map_star' M := by
+    ext ⟨i, k⟩ ⟨j, l⟩
+    -- `Matrix.comp` takes a `Matrix` of `Matrix`es, so `Matrix.comp_apply` does not rewrite it at
+    -- the C⋆-matrix `star M`; `change` reads both entries through the definition of `comp`.
+    change (star M) i j k l = star (M j i l k)
+    simp only [CStarMatrix.star_apply]
+
+variable {R m n A}
+
+@[simp]
+theorem compStarAlgEquiv_apply (M : CStarMatrix m m (CStarMatrix n n A)) (i j : m × n) :
+    compStarAlgEquiv R m n A M i j = M i.1 j.1 i.2 j.2 :=
+  (rfl)
+
+@[simp]
+theorem compStarAlgEquiv_symm_apply (M : CStarMatrix (m × n) (m × n) A) (i j : m) (k l : n) :
+    (compStarAlgEquiv R m n A).symm M i j k l = M (i, k) (j, l) :=
+  (rfl)
+
+/-- Applying a map entrywise commutes with `compStarAlgEquiv`. -/
+theorem compStarAlgEquiv_map {B : Type*} [AddCommMonoid B] [Mul B] [Star B] [SMul R B]
+    (M : CStarMatrix m m (CStarMatrix n n A)) (f : A → B) :
+    compStarAlgEquiv R m n B (M.map (·.map f)) = (compStarAlgEquiv R m n A M).map f :=
+  (rfl)
+
+end Comp
+
+section Diagonal
+
+variable (R n B : Type*) [Fintype n] [DecidableEq n] [Monoid R] [NonUnitalNonAssocSemiring B]
+  [StarAddMonoid B] [DistribMulAction R B]
+
+/-- The diagonal embedding `b ↦ diag(b, …, b)` of `B` in `CStarMatrix n n B`. The operations of
+C⋆-matrices are those of the underlying matrices, so each field is the corresponding identity
+for `Matrix.diagonal`. -/
+def diagonalNonUnitalStarAlgHom : B →⋆ₙₐ[R] CStarMatrix n n B where
+  toFun b := ofMatrix (Matrix.diagonal fun _ => b)
+  map_smul' c b := congrArg ofMatrix (Matrix.diagonal_smul c fun _ : n => b)
+  map_zero' := congrArg ofMatrix Matrix.diagonal_zero
+  map_add' a b := congrArg ofMatrix (Matrix.diagonal_add (fun _ : n => a) fun _ => b).symm
+  map_mul' a b := congrArg ofMatrix (Matrix.diagonal_mul_diagonal (fun _ : n => a) fun _ => b).symm
+  map_star' b := congrArg ofMatrix (Matrix.diagonal_conjTranspose fun _ : n => b).symm
+
+variable {R n B}
+
+@[simp]
+theorem diagonalNonUnitalStarAlgHom_apply (b : B) (i j : n) :
+    diagonalNonUnitalStarAlgHom R n B b i j = if i = j then b else 0 :=
+  Matrix.diagonal_apply ..
+
+end Diagonal
 
 section Algebraic
 
@@ -308,6 +382,11 @@ theorem extend_nonneg {m : Type*} [Fintype m] {f : m → n} (hf : Function.Injec
   refine Fintype.sum_of_injective f hf _ _ (fun l hl => ?_) fun j => ?_
   · simp [hf.extend_apply, Function.extend_apply' _ _ _ (by simpa using hl : ¬∃ a, f a = l)]
   simp [hf.extend_apply]
+
+/-- The diagonal matrix `diag(a, …, a)` has norm at most `‖a‖`. -/
+theorem norm_diagonalNonUnitalStarAlgHom_le [DecidableEq n] (a : A) :
+    ‖diagonalNonUnitalStarAlgHom ℂ n A a‖ ≤ ‖a‖ :=
+  NonUnitalStarAlgHom.norm_apply_le _ a
 
 section Compression
 

@@ -64,21 +64,23 @@ section CommSemiring
 
 variable {R : Type*} [CommSemiring R]
 
-/-- The coordinate plane `[0, 0]` is the hyperbolic plane on a line and its dual. -/
-def isometryEquivBinaryQuadraticFormZeroDualProd :
-    (binaryQuadraticForm R 0 0).IsometryEquiv (QuadraticForm.dualProd R R) where
+/-- A unit multiple of `[0, 0]` is isometric to the hyperbolic plane on a line and its dual.
+The unit is absorbed into the second coordinate. -/
+def isometryEquivSmulBinaryQuadraticFormZeroDualProd (u : Rˣ) :
+    ((u : R) • binaryQuadraticForm R 0 0).IsometryEquiv (QuadraticForm.dualProd R R) where
   toLinearEquiv := (LinearEquiv.finTwoArrow R R).trans
-    ((LinearMap.ringLmapEquivSelf R R R).symm.prodCongr (LinearEquiv.refl R R))
+    ((LinearMap.ringLmapEquivSelf R R R).symm.prodCongr (LinearEquiv.smulOfUnit u))
   map_app' x := by
-    simp [LinearEquiv.finTwoArrow, QuadraticForm.dualProd_apply, mul_comm]
+    simpa [LinearEquiv.finTwoArrow, LinearEquiv.smulOfUnit, QuadraticForm.dualProd_apply,
+      mul_comm] using (show u • (x 0 * x 1) = (u : R) * (x 0 * x 1) from rfl)
 
-/-- The hyperbolic comparison sends the first coordinate to a functional and keeps the second
-coordinate as the vector. -/
+/-- The hyperbolic comparison sends the first coordinate to a functional and rescales the second
+coordinate by the unit. -/
 @[simp]
-theorem isometryEquivBinaryQuadraticFormZeroDualProd_toLinearEquiv :
-    (isometryEquivBinaryQuadraticFormZeroDualProd (R := R)).toLinearEquiv =
+theorem isometryEquivSmulBinaryQuadraticFormZeroDualProd_toLinearEquiv (u : Rˣ) :
+    (isometryEquivSmulBinaryQuadraticFormZeroDualProd u).toLinearEquiv =
       (LinearEquiv.finTwoArrow R R).trans
-        ((LinearMap.ringLmapEquivSelf R R R).symm.prodCongr (LinearEquiv.refl R R)) :=
+        ((LinearMap.ringLmapEquivSelf R R R).symm.prodCongr (LinearEquiv.smulOfUnit u)) :=
   (rfl)
 
 /-- When `a` is a unit, changing `y` to `a⁻¹y` identifies `[a, b]` with `a [1, ab]`. -/
@@ -203,7 +205,8 @@ isotropic. This criterion holds in every characteristic. -/
 theorem equivalent_dualProd_iff_not_anisotropic_of_finrank_eq_two (Q : QuadraticForm K V)
     (hdim : finrank K V = 2) (hQ : Q.radical = ⊥) :
     Q.Equivalent (QuadraticForm.dualProd K K) ↔ ¬Q.Anisotropic := by
-  let e := isometryEquivBinaryQuadraticFormZeroDualProd (R := K)
+  have e : (binaryQuadraticForm K 0 0).IsometryEquiv (QuadraticForm.dualProd K K) := by
+    simpa using isometryEquivSmulBinaryQuadraticFormZeroDualProd (1 : Kˣ)
   refine ⟨fun h ↦ ((h.trans ⟨e.symm⟩).anisotropic_iff.not).mpr
     not_anisotropic_binaryQuadraticForm_zero, fun h ↦ ?_⟩
   obtain ⟨x, y, hx0, hx, hy, hxy⟩ := exists_isotropic_pair_of_radical_eq_bot hQ h

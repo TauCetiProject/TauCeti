@@ -50,6 +50,8 @@ hypothesis and is proved directly in `TauCeti/LinearAlgebra/QuadraticForm/Repres
   finite-dimensional nondegenerate isotropic form splits off a hyperbolic plane.
 * `TauCeti.formClass_hyperbolicPlane`: the regular-form class of the hyperbolic plane is
   `TauCeti.hyperbolicClass`.
+* `TauCeti.RegularFormClass.mk_binary_eq_hyperbolicClass_iff`: the plane `⟨a, b⟩` is hyperbolic
+  exactly when `-ab` is a square.
 
 ## References
 
@@ -237,6 +239,18 @@ theorem formClass_hyperbolicPlane :
   refine formClass_mk _ _ _ ?_
   rw [presentedForm_one_neg_one]
   exact QuadraticMap.Equivalent.refl _
+
+/-- **Hyperbolicity of a diagonal plane.** The class of `⟨a, b⟩` is the hyperbolic class exactly
+when `-ab` is a square. -/
+@[simp]
+theorem RegularFormClass.mk_binary_eq_hyperbolicClass_iff (a b : Kˣ) :
+    Quotient.mk (regularFormSetoid K) ⟨2, ![a, b]⟩ = hyperbolicClass K ↔ IsSquare (-(a * b)) := by
+  have hdisc : IsSquare (a * b * ((1 : Kˣ) * (-1))) ↔ IsSquare (-(a * b)) := by simp
+  rw [hyperbolicClass_def, RegularFormClass.mk_eq_mk_iff, presentedForm_one_neg_one,
+    presentedForm_two, ← hdisc]
+  refine ⟨fun h ↦ ((equivalent_binary_iff a b 1 (-1)).mp (h.trans ?_)).1,
+    equivalent_weightedSumSquares_hyperbolicPlane_of_isSquare⟩
+  exact (equivalent_weightedSumSquares_hyperbolicPlane_of_isSquare ⟨1, by simp⟩).symm
 
 end HyperbolicClass
 
