@@ -244,10 +244,10 @@ theorem mu_bot_top (s : Finset α) :
   have hpair : {m₁, m₂} ⊆ s :=
     insert_subset hm₁ (singleton_subset_iff.2 (mem_of_mem_erase hm₂))
   -- Weisner's theorem at the atom joining `m₁` and `m₂`.
-  have hW := sum_filter_sup_eq_top_mu_bot_eq_zero (𝕜 := 𝕜)
-    (a := ⟨pairPartition s _ _ hpair, isNoncrossing_pairPartition hpair⟩)
+  have hW := sum_filter_sup_eq_mu_eq_zero (𝕜 := 𝕜)
+    (a := ⟨pairPartition s _ _ hpair, isNoncrossing_pairPartition hpair⟩) (d := ⊤)
     fun h => pairPartition_ne_bot (hij := hpair) (ne_of_mem_erase hm₂).symm
-      (congrArg Subtype.val h)
+      (congrArg Subtype.val (le_bot_iff.1 h))
   have htop : (⊤ : NoncrossingPartition s) ∈ ({x | x ⊔ ⟨pairPartition s _ _ hpair,
       isNoncrossing_pairPartition hpair⟩ = ⊤} : Finset (NoncrossingPartition s)) := by simp
   rw [Icc_bot_top, ← add_sum_erase _ _ htop, sum_erase_top_mu_bot hpair hmin₁ hm₂ hmin₂] at hW

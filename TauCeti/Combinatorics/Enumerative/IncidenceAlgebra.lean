@@ -17,16 +17,17 @@ Mathlib's `IncidenceAlgebra.moebius_inversion_bot` recovers `f` from its lower s
 summing the Möbius transform `x ↦ ∑_{z ≤ x} μ(z, x) g z` over the lower set of `x` gives back
 `g x`.
 
-It also proves Weisner's theorem: in a finite lattice, the values `μ(⊥, x)` summed over the
-elements `x` whose join with a fixed `a ≠ ⊥` is `⊤` cancel. Choosing `a` to be an atom turns this
-into a recurrence for `μ(⊥, ⊤)` in terms of the Möbius function on smaller intervals; this is how
-the Möbius function of the lattice of noncrossing partitions is computed.
+It also proves Weisner's theorem: in a locally finite join-semilattice, the values `μ(c, x)`
+summed over the elements `x ∈ [c, d]` whose join with a fixed `a` is `d` cancel, provided
+`¬a ≤ c`. In a finite lattice, taking `c = ⊥`, `d = ⊤` and `a` an atom turns this into a recurrence
+for `μ(⊥, ⊤)` in terms of the Möbius function on smaller intervals; this is how the Möbius function
+of the lattice of noncrossing partitions is computed.
 
 ## Main results
 
 * `IncidenceAlgebra.sum_Iic_sum_Iic_mu_mul` — `∑_{y ≤ x} ∑_{z ≤ y} μ(z, y) g z = g x`.
-* `IncidenceAlgebra.sum_filter_sup_eq_top_mu_bot_eq_zero` — *Weisner's theorem*: for `a ≠ ⊥`,
-  `∑_{x ⊔ a = ⊤} μ(⊥, x) = 0`.
+* `IncidenceAlgebra.sum_filter_sup_eq_mu_eq_zero` — *Weisner's theorem*: for `¬a ≤ c`,
+  `∑_{x ∈ [c, d], x ⊔ a = d} μ(c, x) = 0`.
 
 ## References
 
@@ -53,21 +54,11 @@ theorem mu_map (e : α ≃o β) (a b : α) : mu 𝕜 (e a) (e b) = mu 𝕜 a b :
     by_cases hab : a = b
     · subst b
       simp
-    rw [mu_eq_neg_sum_Ico_of_ne (e.injective.ne hab), mu_eq_neg_sum_Ico_of_ne hab]
-    congr 1
-    refine sum_bij (fun x _ => e.symm x) (fun x hx => ?_) ?_ ?_ ?_
-    · exact mem_Ico.2 ⟨by simpa using e.symm.monotone (mem_Ico.1 hx).1,
-        by simpa using e.symm.strictMono (mem_Ico.1 hx).2⟩
-    · intro x _ y _ hxy
-      exact e.symm.injective hxy
-    · intro x hx
-      exact ⟨e x, by simpa using hx, e.symm_apply_apply x⟩
-    · intro x hx
-      have h := mem_Ico.1 hx
-      have hlt : #(Icc a (e.symm x)) < #(Icc a b) := card_lt_card
-        (Icc_ssubset_Icc_right (by simpa using e.symm.monotone (h.1.trans h.2.le)) le_rfl
-          (by simpa using e.symm.strictMono h.2))
-      simpa using ih _ (hn ▸ hlt) (e.symm x) rfl
+    rw [mu_eq_neg_sum_Ico_of_ne (e.injective.ne hab), mu_eq_neg_sum_Ico_of_ne hab, neg_inj]
+    refine (sum_equiv e.toEquiv (fun x => by simp) fun x hx => ?_).symm
+    obtain ⟨hax, hxb⟩ := mem_Ico.1 hx
+    have hlt := card_lt_card (Icc_ssubset_Icc_right (hax.trans hxb.le) le_rfl hxb)
+    exact (ih _ (hn ▸ hlt) x rfl).symm
 
 end OrderIso
 
@@ -91,29 +82,26 @@ end Converse
 
 section Weisner
 
-variable {𝕜 α : Type*} [Ring 𝕜] [Lattice α] [BoundedOrder α] [LocallyFiniteOrder α]
-  [DecidableEq α]
+variable {𝕜 α : Type*} [Ring 𝕜] [SemilatticeSup α] [LocallyFiniteOrder α] [DecidableEq α]
 
-/-- *Weisner's theorem*: in a finite lattice, for every `a ≠ ⊥` the Möbius function `μ(⊥, x)`
-sums to zero over the elements `x` with `x ⊔ a = ⊤`. -/
-theorem sum_filter_sup_eq_top_mu_bot_eq_zero {a : α} (ha : a ≠ ⊥) :
-    ∑ x ∈ Icc ⊥ ⊤ with x ⊔ a = ⊤, mu 𝕜 ⊥ x = 0 := by
-  classical
-  -- Detect `x ⊔ a = ⊤` by `∑_{x ⊔ a ≤ y} μ(y, ⊤)`, then exchange the two sums: the inner sum
-  -- `∑_{x ≤ y} μ(⊥, x)` vanishes for every `y ≥ a`, since such `y` is not `⊥`.
-  have hdetect (x : α) : (if x ⊔ a = ⊤ then mu 𝕜 ⊥ x else 0) =
-      ∑ y ∈ Icc ⊥ ⊤, if x ⊔ a ≤ y then mu 𝕜 ⊥ x * mu 𝕜 y ⊤ else 0 := by
-    rw [← sum_filter, ← mul_sum,
-      show {y ∈ Icc (⊥ : α) ⊤ | x ⊔ a ≤ y} = Icc (x ⊔ a) ⊤ by ext; simp, sum_Icc_mu_left]
-    split_ifs <;> simp
-  have hinner (y : α) : ∑ x ∈ Icc ⊥ ⊤, (if x ⊔ a ≤ y then mu 𝕜 ⊥ x * mu 𝕜 y ⊤ else 0) = 0 := by
-    by_cases hay : a ≤ y
-    · simp_rw [sup_le_iff, and_iff_left hay]
-      rw [← sum_filter, show {x ∈ Icc (⊥ : α) ⊤ | x ≤ y} = Icc ⊥ y by ext; simp, ← sum_mul,
-        sum_Icc_mu_right, ite_eq_right fun h : ⊥ = y => ha (le_bot_iff.1 (h ▸ hay)), zero_mul]
-    · exact sum_eq_zero fun x _ => ite_eq_right fun h => hay (le_sup_right.trans h)
-  rw [sum_filter, sum_congr rfl fun x _ => hdetect x, sum_comm]
-  exact sum_eq_zero fun y _ => hinner y
+/-- *Weisner's theorem*: in a locally finite join-semilattice, for an interval `[c, d]` and every
+`a` with `¬a ≤ c`, the Möbius function `μ(c, x)` sums to zero over the `x ∈ [c, d]` with
+`x ⊔ a = d`. In a finite lattice with `c = ⊥` and `d = ⊤` the hypothesis reads `a ≠ ⊥`. -/
+theorem sum_filter_sup_eq_mu_eq_zero {a c d : α} (ha : ¬a ≤ c) :
+    ∑ x ∈ Icc c d with x ⊔ a = d, mu 𝕜 c x = 0 := by
+  -- Detect `x ⊔ a = d` by `∑_{x ⊔ a ≤ y ≤ d} μ(y, d)`, then exchange the two sums: the inner sum
+  -- `∑_{c ≤ x ≤ y} μ(c, x)` vanishes for every `y ≥ c ⊔ a`, since such `y` is not `c`.
+  calc ∑ x ∈ Icc c d with x ⊔ a = d, mu 𝕜 c x
+      = ∑ x ∈ Icc c d, ∑ y ∈ Icc (x ⊔ a) d, mu 𝕜 c x * mu 𝕜 y d := by
+        refine (sum_filter _ _).trans (sum_congr rfl fun x _ => ?_)
+        rw [← mul_sum, sum_Icc_mu_left, mul_ite, mul_one, mul_zero]
+    _ = ∑ y ∈ Icc (c ⊔ a) d, ∑ x ∈ Icc c y, mu 𝕜 c x * mu 𝕜 y d := sum_comm' fun x y => by
+        simp only [mem_Icc, sup_le_iff]
+        exact ⟨fun ⟨⟨hcx, _⟩, ⟨hxy, hay⟩, hyd⟩ => ⟨⟨hcx, hxy⟩, ⟨hcx.trans hxy, hay⟩, hyd⟩,
+          fun ⟨⟨hcx, hxy⟩, ⟨_, hay⟩, hyd⟩ => ⟨⟨hcx, hxy.trans hyd⟩, ⟨hxy, hay⟩, hyd⟩⟩
+    _ = 0 := sum_eq_zero fun y hy => by
+        have hcy : c ≠ y := fun h => ha ((le_sup_right.trans (mem_Icc.1 hy).1).trans_eq h.symm)
+        rw [← sum_mul, sum_Icc_mu_right, ite_eq_right hcy, zero_mul]
 
 end Weisner
 
