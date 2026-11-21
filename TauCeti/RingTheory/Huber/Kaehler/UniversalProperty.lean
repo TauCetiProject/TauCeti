@@ -7,51 +7,24 @@ module
 
 public import TauCeti.RingTheory.Huber.Kaehler.FiniteType
 import Mathlib.LinearAlgebra.TensorProduct.Lift
+import TauCeti.RingTheory.Huber.TensorProduct.Derivation
 
 /-!
 # Continuity and universal property of continuous differentials
 
 Let `A → B` be an adic homomorphism into a complete Hausdorff ring `B`. This file establishes
 the universal property of `(Ωᶜ[B⁄A], d)` for continuous `A`-derivations into complete Hausdorff
-nonarchimedean topological `B`-modules (Huber 1996, §1.6, Definition 1.6.1 and (1.6.2)(ii)):
+nonarchimedean `B`-modules (Huber 1996, §1.6, Definition 1.6.1 and (1.6.2)(ii)), extending
+Mathlib's `Derivation.liftKaehlerDifferential` and `KaehlerDifferential.linearMapEquivDerivation`
+(`Mathlib.RingTheory.Kaehler.Basic`):
 
-* **Existence (`lift`) — without finiteness or noetherian hypotheses**: for any complete Hausdorff
-  nonarchimedean `B`-module `M` and any continuous `A`-derivation `δ : B → M`,
-  `CompletedTensor.liftDerivation` extends `(0, δ)` to a continuous `A`-derivation
-  `B ⊗̂_A B → M` over `mulRingHom A B`, whose restriction to `I = ker (mulRingHom A B)` vanishes on
-  `I²` and descends via `Ideal.Cotangent.lift` to a continuous `B`-linear map
-  `lift δ hδ : Ωᶜ[B⁄A] →L[B] M` satisfying `lift δ hδ (d b) = δ b`.
-* **Continuity of `d` and uniqueness (`hom_ext`)**: when `A` is a Huber ring, `B` is a complete
-  Hausdorff Huber ring of noetherian type, and `A → B` is topologically of finite type, the
-  finitely generated ideal `I ⊆ B ⊗̂_A B` carries the `B ⊗̂_A B`-module topology as its subspace
-  topology (`Submodule.isModuleTopology_of_isNoetherianType`), making `fromIdeal : I → Ωᶜ[B⁄A]`
-  and `D : B → Ωᶜ[B⁄A]` continuous (`continuous_fromIdeal`, `continuous_D`), while
-  `span_range_derivation` gives uniqueness of linear and continuous linear maps out of `Ωᶜ[B⁄A]`
-  and `R ⊗[B] Ωᶜ[B⁄A]` (`linearMap_ext`, `linearMap_tensor_ext`, `hom_ext`) and the equivalence
-  `(Ωᶜ[B⁄A] →L[B] M) ≃ {δ : Derivation A B M // Continuous δ}` for complete Hausdorff
-  nonarchimedean `B`-modules `M` (`continuousLinearMapEquivDerivation`).
-* **Finite target modules (`liftOfFinite`)**: when `N` is a finitely generated `B`-module with its
-  natural `B`-module topology and `B` is a complete Hausdorff Huber ring of noetherian type, any
-  continuous `A`-derivation `B → N` lifts directly to a `B`-linear map `Ωᶜ[B⁄A] →ₗ[B] N`.
-
-## Main definitions and results
-
-* `TauCeti.Huber.ContinuousKaehlerDifferential.lift`: universal lift `Ωᶜ[B⁄A] →L[B] M` of a
-  continuous derivation `δ : Derivation A B M` into a complete Hausdorff nonarchimedean
-  `B`-module `M`.
-* `TauCeti.Huber.ContinuousKaehlerDifferential.continuous_fromIdeal`,
-  `TauCeti.Huber.ContinuousKaehlerDifferential.continuous_D`: continuity of `I → Ωᶜ[B⁄A]` and
-  `d : B → Ωᶜ[B⁄A]` when `A → B` is topologically of finite type into `B` of noetherian type.
-* `TauCeti.Huber.ContinuousKaehlerDifferential.linearMap_ext`,
-  `TauCeti.Huber.ContinuousKaehlerDifferential.linearMap_tensor_ext`,
-  `TauCeti.Huber.ContinuousKaehlerDifferential.hom_ext`: uniqueness of linear and continuous
-  linear maps out of `Ωᶜ[B⁄A]` and `R ⊗[B] Ωᶜ[B⁄A]`.
-* `TauCeti.Huber.ContinuousKaehlerDifferential.continuousLinearMapEquivDerivation`: equivalence
-  between `Ωᶜ[B⁄A] →L[B] M` and continuous `A`-derivations `B → M` for a complete Hausdorff
-  nonarchimedean `B`-module `M`, when `A → B` is topologically of finite type into `B` of
-  noetherian type.
-* `TauCeti.Huber.ContinuousKaehlerDifferential.liftOfFinite`: specialisation of `lift` to finite
-  `B`-modules carrying `moduleTopology B N`.
+* `lift` descends `CompletedTensor.liftDerivation 0 δ` via `Ideal.Cotangent.lift` without any
+  finiteness or noetherian hypotheses.
+* When `A` is Huber, `B` is complete Hausdorff Huber of noetherian type, and `A → B` is
+  topologically of finite type, `Submodule.isModuleTopology_of_isNoetherianType` gives continuity
+  of `fromIdeal` and `D` (`continuous_fromIdeal`, `continuous_D`), while `span_range_derivation`
+  gives uniqueness (`hom_ext`, `continuousLinearMapEquivDerivation`) and finite-target lifts
+  (`liftOfFinite`).
 
 ## References
 
@@ -73,10 +46,7 @@ section Lift
 variable {A B : Type*} [CommRing A] [CommRing B] [Algebra A B] [TopologicalSpace A]
   [IsTopologicalRing A] [UniformSpace B] [IsUniformAddGroup B] [NonarchimedeanRing B]
   [CompleteSpace B] [T0Space B] [IsAdicHom (algebraMap A B)]
-
-section TargetModule
-
-variable {M : Type*} [AddCommGroup M] [UniformSpace M] [IsUniformAddGroup M]
+  {M : Type*} [AddCommGroup M] [UniformSpace M] [IsUniformAddGroup M]
   [NonarchimedeanAddGroup M] [CompleteSpace M] [T0Space M]
   [Module A M] [Module B M] [IsScalarTower A B M] [ContinuousSMul B M]
 
@@ -131,12 +101,9 @@ theorem lift_D (δ : Derivation A B M) (hδ : Continuous δ) (b : B) :
 
 /-- Precomposing the universal lift with `D A B` recovers `δ`. -/
 @[simp]
-theorem lift_comp_D (δ : Derivation A B M) (hδ : Continuous δ) :
+theorem compDer_lift_D (δ : Derivation A B M) (hδ : Continuous δ) :
     (lift δ hδ).toLinearMap.compDer (D A B) = δ := by
-  ext b
-  exact lift_D δ hδ b
-
-end TargetModule
+  ext b; exact lift_D δ hδ b
 
 end Lift
 
@@ -147,24 +114,21 @@ variable {A B : Type*} [CommRing A] [CommRing B] [Algebra A B]
   [UniformSpace B] [IsUniformAddGroup B] [IsTopologicalRing B] [IsHuberRing B]
   [CompleteSpace B] [T0Space B] [IsNoetherianType B] [IsAdicHom (algebraMap A B)]
 
-/-- **Continuity of the quotient presentation `I → Ωᶜ[B⁄A]`**: when `A` is a Huber ring, `B` is a
-complete Hausdorff Huber ring of noetherian type, and `A → B` is topologically of finite type,
-`fromIdeal A B` is continuous for the subspace topology on `ideal A B` and the natural `B`-module
-topology on `Ωᶜ[B⁄A]`. -/
+/-- **Continuity of the quotient presentation `I → Ωᶜ[B⁄A]`**: when `A, B` are Huber with `B`
+complete Hausdorff of noetherian type and `A → B` topologically of finite type, `fromIdeal A B` is
+continuous for the subspace topology on `ideal A B` and the `B`-module topology on `Ωᶜ[B⁄A]`. -/
 theorem continuous_fromIdeal (h : IsTopologicallyFiniteType (algebraMap A B)) :
     Continuous (fromIdeal A B) := by
   have : IsNoetherianType (CompletedTensor A B B) :=
     .of_isTopologicallyFiniteType (isTopologicallyFiniteType_inl h)
-  have : Module.Finite (CompletedTensor A B B) (ideal A B) :=
-    Module.Finite.iff_fg.mpr (ideal_fg h)
+  have : Module.Finite (CompletedTensor A B B) (ideal A B) := Module.Finite.iff_fg.mpr (ideal_fg h)
   have : IsModuleTopology (CompletedTensor A B B) (ideal A B) :=
     (ideal A B).isModuleTopology_of_isNoetherianType
   exact IsModuleTopology.continuous_of_linearMap (fromIdeal A B)
 
 /-- **Continuity of the universal derivation** (Huber 1996, §1.6, Definition 1.6.1 and
-(1.6.2)(ii)): when `A` is a Huber ring, `B` is a complete Hausdorff Huber ring of noetherian type,
-and `A → B` is topologically of finite type, `d : B → Ωᶜ[B⁄A]` is continuous for the natural
-`B`-module topology on `Ωᶜ[B⁄A]`. -/
+(1.6.2)(ii)): when `A, B` are Huber with `B` complete Hausdorff of noetherian type and `A → B` is
+topologically of finite type, `d : B → Ωᶜ[B⁄A]` is continuous. -/
 theorem continuous_D (h : IsTopologicallyFiniteType (algebraMap A B)) :
     Continuous (D A B) := by
   have hsub : Continuous fun b : B ↦
@@ -172,9 +136,9 @@ theorem continuous_D (h : IsTopologicallyFiniteType (algebraMap A B)) :
     Continuous.subtype_mk ((continuous_inr A B B).sub (continuous_inl A B B)) _
   exact ((continuous_fromIdeal h).comp hsub).congr fun b ↦ (D_apply A B b).symm
 
-/-- Two `B`-linear maps out of `Ωᶜ[B⁄A]` that agree on `d '' S`, for `S ⊆ B` generating a dense
-`A`-subalgebra, are equal when `A` is a Huber ring, `B` is a complete Hausdorff Huber ring of
-noetherian type, and `A → B` is topologically of finite type. -/
+/-- Two `B`-linear maps out of `Ωᶜ[B⁄A]` that agree on `d '' S` (for `A[S]` dense in `B`) are
+equal when `A → B` is topologically of finite type into complete Hausdorff Huber `B` of noetherian
+type. -/
 theorem linearMap_ext_of_dense_adjoin (h : IsTopologicallyFiniteType (algebraMap A B))
     {S : Set B} (hS : Dense (Algebra.adjoin A S : Set B))
     {M : Type*} [AddCommGroup M] [Module B M]
@@ -182,9 +146,8 @@ theorem linearMap_ext_of_dense_adjoin (h : IsTopologicallyFiniteType (algebraMap
     (heq : ∀ s ∈ S, f₁ (D A B s) = f₂ (D A B s)) : f₁ = f₂ :=
   LinearMap.ext_on (span_D_eq_top h hS) fun _ ⟨s, hs, hds⟩ ↦ hds ▸ heq s hs
 
-/-- **Uniqueness for linear maps out of `Ωᶜ[B⁄A]`** (Huber 1996, §1.6, (1.6.2)(ii)): when `A` is a
-Huber ring, `B` is a complete Hausdorff Huber ring of noetherian type, and `A → B` is topologically
-of finite type, two `B`-linear maps out of `Ωᶜ[B⁄A]` agreeing on `D A B` are equal. -/
+/-- **Uniqueness for linear maps out of `Ωᶜ[B⁄A]`** (Huber 1996, §1.6, (1.6.2)(ii)): two `B`-linear
+maps out of `Ωᶜ[B⁄A]` agreeing on `D A B` are equal. -/
 theorem linearMap_ext (h : IsTopologicallyFiniteType (algebraMap A B))
     {M : Type*} [AddCommGroup M] [Module B M]
     {f₁ f₂ : ContinuousKaehlerDifferential A B →ₗ[B] M}
@@ -192,9 +155,8 @@ theorem linearMap_ext (h : IsTopologicallyFiniteType (algebraMap A B))
   linearMap_ext_of_dense_adjoin h (S := Set.univ) (by simp [Algebra.adjoin_univ])
     fun b _ ↦ heq b
 
-/-- **Uniqueness for `R`-linear maps out of `R ⊗[B] Ωᶜ[B⁄A]`**: when `A` is a Huber ring, `B` is
-a complete Hausdorff Huber ring of noetherian type, and `A → B` is topologically of finite type,
-two `R`-linear maps out of `R ⊗[B] Ωᶜ[B⁄A]` agreeing on `1 ⊗ₜ d b` for all `b : B` are equal. -/
+/-- **Uniqueness for `R`-linear maps out of `R ⊗[B] Ωᶜ[B⁄A]`**: two `R`-linear maps agreeing on
+`1 ⊗ₜ d b` for all `b : B` are equal. -/
 theorem linearMap_tensor_ext (h : IsTopologicallyFiniteType (algebraMap A B))
     {R : Type*} [CommRing R] [Algebra B R]
     {Q : Type*} [AddCommGroup Q] [Module R Q]
@@ -205,9 +167,7 @@ theorem linearMap_tensor_ext (h : IsTopologicallyFiniteType (algebraMap A B))
   exact (LinearMap.liftBaseChangeEquiv R).symm.injective (linearMap_ext h heq)
 
 /-- **Uniqueness for continuous linear maps out of `Ωᶜ[B⁄A]`** (Huber 1996, §1.6, Definition 1.6.1
-and (1.6.2)(ii)): when `A` is a Huber ring, `B` is a complete Hausdorff Huber ring of noetherian
-type, and `A → B` is topologically of finite type, two continuous `B`-linear maps out of
-`Ωᶜ[B⁄A]` agreeing on `D A B` are equal. -/
+and (1.6.2)(ii)): two continuous `B`-linear maps out of `Ωᶜ[B⁄A]` agreeing on `D A B` are equal. -/
 theorem hom_ext (h : IsTopologicallyFiniteType (algebraMap A B))
     {M : Type*} [AddCommGroup M] [TopologicalSpace M] [Module B M]
     {f₁ f₂ : ContinuousKaehlerDifferential A B →L[B] M}
@@ -221,26 +181,21 @@ variable {M : Type*} [AddCommGroup M] [UniformSpace M] [IsUniformAddGroup M]
   [Module A M] [Module B M] [IsScalarTower A B M] [ContinuousSMul B M]
 
 /-- **Universal property of `Ωᶜ[B⁄A]`** (Huber 1996, §1.6, Definition 1.6.1 and (1.6.2)(ii)):
-when `A` is a Huber ring, `B` is a complete Hausdorff Huber ring of noetherian type, and `A → B`
-is topologically of finite type, every continuous `A`-derivation `δ : B → M` into a complete
-Hausdorff nonarchimedean `B`-module factors through a unique continuous `B`-linear map
-`Ωᶜ[B⁄A] →L[B] M`. -/
+every continuous `A`-derivation `δ : B → M` factors through a unique `Ωᶜ[B⁄A] →L[B] M`. -/
 theorem existsUnique_lift (h : IsTopologicallyFiniteType (algebraMap A B))
     (δ : Derivation A B M) (hδ : Continuous δ) :
     ∃! f : ContinuousKaehlerDifferential A B →L[B] M, ∀ b, f (D A B b) = δ b :=
   ⟨lift δ hδ, lift_D δ hδ, fun _ hf ↦ hom_ext h fun b ↦ (hf b).trans (lift_D δ hδ b).symm⟩
 
 /-- **Equivalence between continuous `B`-linear maps `Ωᶜ[B⁄A] →L[B] M` and continuous
-`A`-derivations `B → M`** (Huber 1996, §1.6, Definition 1.6.1 and (1.6.2)(ii)), for a complete
-Hausdorff nonarchimedean `B`-module `M` when `A` is a Huber ring, `B` is a complete Hausdorff Huber
-ring of noetherian type, and `A → B` is topologically of finite type. -/
+`A`-derivations `B → M`** (Huber 1996, §1.6, Definition 1.6.1 and (1.6.2)(ii)). -/
 noncomputable def continuousLinearMapEquivDerivation
     (h : IsTopologicallyFiniteType (algebraMap A B)) :
     (ContinuousKaehlerDifferential A B →L[B] M) ≃ {δ : Derivation A B M // Continuous δ} where
   toFun f := ⟨f.toLinearMap.compDer (D A B), f.continuous.comp (continuous_D h)⟩
   invFun δ := lift δ.1 δ.2
   left_inv _ := hom_ext h fun b ↦ lift_D _ _ b
-  right_inv δ := Subtype.ext (lift_comp_D δ.1 δ.2)
+  right_inv δ := Subtype.ext (compDer_lift_D δ.1 δ.2)
 
 /-- The underlying derivation of `continuousLinearMapEquivDerivation h f` is `f ∘ d`. -/
 @[simp]
@@ -263,7 +218,7 @@ theorem continuousLinearMapEquivDerivation_lift
     (h : IsTopologicallyFiniteType (algebraMap A B))
     (δ : Derivation A B M) (hδ : Continuous δ) :
     continuousLinearMapEquivDerivation h (lift δ hδ) = ⟨δ, hδ⟩ :=
-  Subtype.ext (lift_comp_D δ hδ)
+  Subtype.ext (compDer_lift_D δ hδ)
 
 /-- Lifting the derivation `f ∘ d` recovers the continuous `B`-linear map `f`. -/
 @[simp]
@@ -297,9 +252,8 @@ private noncomputable def liftOfFiniteAux (δ : Derivation A B N) (hδ : Continu
   exact ⟨(lift δ hδ).toLinearMap, lift_D δ hδ⟩
 
 /-- **Universal lift into a finite `B`-module with its natural topology** (Huber 1996, §1.6,
-Definition 1.6.1 and (1.6.2)(ii)): when `B` is a complete Hausdorff Huber ring of noetherian type
-and `N` is a finitely generated `B`-module carrying `moduleTopology B N`, any continuous
-`A`-derivation `δ : B → N` lifts to a `B`-linear map `Ωᶜ[B⁄A] →ₗ[B] N`. -/
+Definition 1.6.1 and (1.6.2)(ii)): any continuous `A`-derivation `δ : B → N` lifts to
+`Ωᶜ[B⁄A] →ₗ[B] N`. -/
 noncomputable def liftOfFinite (δ : Derivation A B N) (hδ : Continuous δ) :
     ContinuousKaehlerDifferential A B →ₗ[B] N :=
   (liftOfFiniteAux δ hδ).1
@@ -312,10 +266,9 @@ theorem liftOfFinite_D (δ : Derivation A B N) (hδ : Continuous δ) (b : B) :
 
 /-- Precomposing `liftOfFinite δ hδ` with `D A B` recovers `δ`. -/
 @[simp]
-theorem liftOfFinite_comp_D (δ : Derivation A B N) (hδ : Continuous δ) :
+theorem compDer_liftOfFinite_D (δ : Derivation A B N) (hδ : Continuous δ) :
     (liftOfFinite δ hδ).compDer (D A B) = δ := by
-  ext b
-  exact liftOfFinite_D δ hδ b
+  ext b; exact liftOfFinite_D δ hδ b
 
 /-- Lifting `f ∘ d` into a finite `B`-module carrying its natural topology recovers `f`, when
 `A` is a Huber ring and `A → B` is topologically of finite type. -/

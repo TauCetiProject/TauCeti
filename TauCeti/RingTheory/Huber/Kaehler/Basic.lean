@@ -52,6 +52,11 @@ here holds for every adic `A → B` with `B` complete and Hausdorff.
   `fromKaehler A B` is bijective whenever `B ⊗[A] B → B ⊗̂_A B` is bijective.
 * `TauCeti.Huber.ContinuousKaehlerDifferential.subsingleton_of_surjective`: `Ωᶜ[B⁄A] = 0` when
   `A → B` is surjective; in particular `Ωᶜ[A⁄A] = 0` for complete Hausdorff `A`.
+* `TauCeti.Huber.ContinuousKaehlerDifferential.closure_span_inr_sub_inl_eq_ideal`,
+  `TauCeti.Huber.ContinuousKaehlerDifferential.closure_span_range_inr_sub_inl_eq_ideal`,
+  `TauCeti.Huber.ContinuousKaehlerDifferential.span_D_eq_top_of_span_eq_ideal`: topological
+  generation of `I` and spanning of `Ωᶜ[B⁄A]` (generalizing Mathlib's
+  `KaehlerDifferential.span_range_derivation` in `Mathlib.RingTheory.Kaehler.Basic`).
 
 ## References
 
@@ -208,17 +213,12 @@ noncomputable def D : Derivation A B (ContinuousKaehlerDifferential A B) :=
   Derivation.mk'
     { toFun b := fromIdeal A B ⟨inr A B B b - inl A B B b, inr_sub_inl_mem_ideal A B b⟩
       map_add' b c := by
-        rw [← map_add]
-        congr 1
-        ext
-        simp only [map_add, Submodule.coe_add]
-        ring
+        rw [← map_add]; congr 1; ext; simp only [map_add, Submodule.coe_add]; ring
       map_smul' a b := by
         rw [RingHom.id_apply,
           ← algebraMap_smul (CompletedTensor A B B) (M := ContinuousKaehlerDifferential A B) a,
           ← map_smul]
-        congr 1
-        ext
+        congr 1; ext
         simp only [Algebra.smul_def, map_mul, inl_algebraMap, inr_algebraMap,
           Submodule.coe_smul, Algebra.algebraMap_self, RingHom.id_apply]
         ring }
@@ -257,15 +257,13 @@ private theorem tensorProductTo_D (x : B ⊗[A] B) :
   induction x using TensorProduct.inductionOn with
   | tmul b c =>
     rw [Derivation.tensorProductTo_tmul, D_apply, ← inl_smul, ← map_smul]
-    congr 1
-    ext
+    congr 1; ext
     simp only [Submodule.coe_smul, smul_eq_mul, toCompletion_tmul,
       Algebra.TensorProduct.lmul'_apply_tmul, map_mul]
     ring
   | add x y hx hy =>
     rw [map_add, hx, hy, ← map_add]
-    congr 1
-    ext
+    congr 1; ext
     simp only [map_add, Submodule.coe_add]
     ring
 
@@ -278,9 +276,7 @@ theorem fromKaehler_fromIdeal (x : KaehlerDifferential.ideal A B) :
         simpa using RingHom.mem_ker.mp x.2⟩ := by
   refine ((D A B).liftKaehlerDifferential_apply x).trans ?_
   rw [tensorProductTo_D]
-  congr 1
-  ext
-  simp [RingHom.mem_ker.mp x.2]
+  congr 1; ext; simp [RingHom.mem_ker.mp x.2]
 
 variable {A B}
 
@@ -294,8 +290,7 @@ theorem fromKaehler_bijective_of_bijective_toCompletion
     simp [e, mem_ideal_iff, KaehlerDifferential.ideal]
   have hmap_sq : ((KaehlerDifferential.ideal A B) ^ 2).map e.toRingHom = ideal A B ^ 2 := by
     rw [Ideal.map_pow]
-    congr 1
-    ext y
+    congr 1; ext y
     obtain ⟨x, rfl⟩ := e.surjective y
     rw [Ideal.mem_map_iff_of_surjective e.toRingHom e.surjective, hmem]
     exact ⟨fun ⟨z, hz, hze⟩ ↦ e.injective hze ▸ hz, fun hx ↦ ⟨x, hx, rfl⟩⟩
@@ -310,9 +305,7 @@ theorem fromKaehler_bijective_of_bijective_toCompletion
     have hx : e.symm y ∈ KaehlerDifferential.ideal A B := (hmem _).mp (by simpa using hy)
     refine ⟨KaehlerDifferential.fromIdeal A B ⟨e.symm y, hx⟩, ?_⟩
     rw [fromKaehler_fromIdeal]
-    congr 1
-    ext
-    exact e.apply_symm_apply y
+    congr 1; ext; exact e.apply_symm_apply y
 
 /-- **Continuous differentials vanish along a surjection**: if `A → B` is surjective, then
 `Ωᶜ[B⁄A] = 0`, because multiplication `B ⊗̂_A B → B` is then injective. -/
@@ -324,6 +317,134 @@ theorem subsingleton_of_surjective (h : Function.Surjective (algebraMap A B)) :
     rw [← inl_mulRingHom_of_surjective h x, mem_ideal_iff.mp hx, map_zero]
   subst hx0
   exact (fromIdeal A B).map_zero
+
+section TopologicalGeneration
+
+variable {A B : Type*} [CommRing A] [CommRing B] [Algebra A B] [TopologicalSpace A]
+  [IsTopologicalRing A] [UniformSpace B] [IsUniformAddGroup B] [NonarchimedeanRing B]
+  [CompleteSpace B] [T0Space B] [IsAdicHom (algebraMap A B)]
+
+omit [IsUniformAddGroup B] [CompleteSpace B] [T0Space B] in
+/-- If `A[S]` is dense in `B`, then `1 ⊗ b − b ⊗ 1` belongs to the closure of the ideal generated
+by `{1 ⊗ s − s ⊗ 1 | s ∈ S}` for every `b ∈ B`. -/
+private theorem inr_sub_inl_mem_closure_span {S : Set B}
+    (hS : Dense (Algebra.adjoin A S : Set B)) (b : B) :
+    inr A B B b - inl A B B b ∈
+      (Ideal.span ((fun s ↦ inr A B B s - inl A B B s) '' S)).closure := by
+  let I₀ := Ideal.span ((fun s ↦ inr A B B s - inl A B B s) '' S)
+  let R₀ : Subalgebra A B :=
+    { carrier := {x : B | inr A B B x - inl A B B x ∈ I₀.closure}
+      algebraMap_mem' a := by simp
+      add_mem' {x y} hx hy := by
+        have hxy : inr A B B (x + y) - inl A B B (x + y) =
+            (inr A B B x - inl A B B x) + (inr A B B y - inl A B B y) := by
+          simp only [map_add]; ring
+        rw [Set.mem_ofPred_eq, hxy]
+        exact I₀.closure.add_mem hx hy
+      mul_mem' {x y} hx hy := by
+        have hxy : inr A B B (x * y) - inl A B B (x * y) =
+            inr A B B x * (inr A B B y - inl A B B y) +
+              inl A B B y * (inr A B B x - inl A B B x) := by
+          simp only [map_mul]; ring
+        rw [Set.mem_ofPred_eq, hxy]
+        exact I₀.closure.add_mem (I₀.closure.mul_mem_left _ hy)
+          (I₀.closure.mul_mem_left _ hx) }
+  have hclosed : IsClosed (R₀ : Set B) := by
+    convert (isClosed_closure (s := (I₀ : Set _))).preimage
+      ((continuous_inr A B B).sub (continuous_inl A B B)) using 1
+    ext x
+    simp [R₀, ← Ideal.coe_closure]
+  have hle : (Algebra.adjoin A S : Set B) ⊆ R₀ :=
+    Algebra.adjoin_le fun s hs ↦ by
+      rw [SetLike.mem_coe, Subalgebra.mem_mk, Subsemiring.mem_mk, Submonoid.mem_mk,
+        Subsemigroup.mem_mk, Set.mem_ofPred_eq, ← SetLike.mem_coe, Ideal.coe_closure]
+      exact subset_closure (Ideal.subset_span ⟨s, hs, rfl⟩)
+  exact closure_minimal hle hclosed (hS b)
+
+omit [IsUniformAddGroup B] [CompleteSpace B] [T0Space B] in
+/-- Every algebraic tensor `x ∈ B ⊗[A] B`, corrected by the left image of its product, lies in the
+closure of the ideal generated by `{1 ⊗ s − s ⊗ 1 | s ∈ S}`. -/
+private theorem toCompletion_sub_inl_lmul_mem_closure_span {S : Set B}
+    (hS : Dense (Algebra.adjoin A S : Set B)) (x : B ⊗[A] B) :
+    toCompletion A B B x - inl A B B (Algebra.TensorProduct.lmul' A x) ∈
+      (Ideal.span ((fun s ↦ inr A B B s - inl A B B s) '' S)).closure := by
+  let J := (Ideal.span ((fun s ↦ inr A B B s - inl A B B s) '' S)).closure
+  induction x using TensorProduct.inductionOn with
+  | tmul b c =>
+    have hbc : toCompletion A B B (b ⊗ₜ[A] c) - inl A B B (Algebra.TensorProduct.lmul' A (b ⊗ₜ c)) =
+        inl A B B b * (inr A B B c - inl A B B c) := by
+      simp only [toCompletion_tmul, Algebra.TensorProduct.lmul'_apply_tmul, map_mul]; ring
+    exact hbc ▸ J.mul_mem_left _ (inr_sub_inl_mem_closure_span hS c)
+  | add x y hx hy =>
+    have hxy : toCompletion A B B (x + y) - inl A B B (Algebra.TensorProduct.lmul' A (x + y)) =
+        (toCompletion A B B x - inl A B B (Algebra.TensorProduct.lmul' A x)) +
+          (toCompletion A B B y - inl A B B (Algebra.TensorProduct.lmul' A y)) := by
+      simp only [map_add]; ring
+    exact hxy ▸ J.add_mem hx hy
+
+/-- **Topological generation of the completed diagonal ideal**: for any subset `S ⊆ B` whose
+`A`-subalgebra `A[S]` is dense in `B`, the completed diagonal ideal `ker (B ⊗̂_A B → B)` is the
+closure of the ideal generated by `{1 ⊗ s − s ⊗ 1 | s ∈ S}`. No noetherian or finite-type
+hypothesis is required. -/
+theorem closure_span_inr_sub_inl_eq_ideal {S : Set B}
+    (hS : Dense (Algebra.adjoin A S : Set B)) :
+    (Ideal.span ((fun s ↦ inr A B B s - inl A B B s) '' S)).closure = ideal A B := by
+  let J := Ideal.span ((fun s ↦ inr A B B s - inl A B B s) '' S)
+  refine le_antisymm ?_ fun z hz ↦ ?_
+  · rw [← SetLike.coe_subset_coe, Ideal.coe_closure]
+    refine closure_minimal ?_ (isClosed_ideal A B)
+    rw [SetLike.coe_subset_coe, Ideal.span_le]
+    rintro _ ⟨s, -, rfl⟩
+    exact inr_sub_inl_mem_ideal A B s
+  · have hclosed : IsClosed {w : CompletedTensor A B B |
+        w - inl A B B (mulRingHom A B w) ∈ J.closure} :=
+      (Ideal.coe_closure J ▸ isClosed_closure).preimage
+        (continuous_id.sub ((continuous_inl A B B).comp (continuous_mulRingHom A B)))
+    have hmem : z - inl A B B (mulRingHom A B z) ∈ J.closure := by
+      refine closure_minimal ?_ hclosed (denseRange_toCompletion A B B z)
+      rintro _ ⟨x, rfl⟩
+      simpa only [Set.mem_ofPred_eq, mulRingHom_toCompletion] using
+        toCompletion_sub_inl_lmul_mem_closure_span hS x
+    simpa [mem_ideal_iff.mp hz] using hmem
+
+variable (A B) in
+/-- The completed diagonal ideal is the closure of the ideal generated by all elements
+`1 ⊗ b − b ⊗ 1` for `b ∈ B`. -/
+theorem closure_span_range_inr_sub_inl_eq_ideal :
+    (Ideal.span (Set.range fun b : B ↦ inr A B B b - inl A B B b)).closure = ideal A B := by
+  simpa [Set.image_univ] using closure_span_inr_sub_inl_eq_ideal (A := A) (B := B) (S := Set.univ)
+    (by simp [Algebra.adjoin_univ])
+
+/-- Whenever `{1 ⊗ s − s ⊗ 1 | s ∈ S}` generates `ideal A B` as an ideal of `B ⊗̂_A B`, its images
+`d '' S` span `Ωᶜ[B⁄A]` as a `B`-module. -/
+theorem span_D_eq_top_of_span_eq_ideal {S : Set B}
+    (hspan : Ideal.span ((fun s ↦ inr A B B s - inl A B B s) '' S) = ideal A B) :
+    Submodule.span B (D A B '' S) = ⊤ := by
+  let M := Submodule.span B (D A B '' S)
+  let P : Ideal (CompletedTensor A B B) :=
+    { carrier := {z | ∃ hz : z ∈ ideal A B, fromIdeal A B ⟨z, hz⟩ ∈ M}
+      zero_mem' := ⟨zero_mem _, by
+        rw [(Submodule.mk_eq_zero _ _).mpr rfl, map_zero]
+        exact M.zero_mem⟩
+      add_mem' {x y} := fun ⟨hx, hfx⟩ ⟨hy, hfy⟩ ↦
+        ⟨add_mem hx hy, by
+          rw [← AddMemClass.mk_add_mk (hx := hx) (hy := hy), map_add]
+          exact M.add_mem hfx hfy⟩
+      smul_mem' r {x} := fun ⟨hx, hfx⟩ ↦
+        ⟨(ideal A B).mul_mem_left r hx, by
+          rw [← SetLike.mk_smul_mk (hx := hx), map_smul, smul_eq_mulRingHom_smul]
+          exact M.smul_mem _ hfx⟩ }
+  have hle : ideal A B ≤ P := by
+    rw [← hspan, Ideal.span_le]
+    rintro _ ⟨s, hs, rfl⟩
+    exact ⟨inr_sub_inl_mem_ideal A B s, Submodule.subset_span ⟨s, hs, D_apply A B s⟩⟩
+  rw [eq_top_iff]
+  rintro ω -
+  obtain ⟨⟨z, hz⟩, rfl⟩ := fromIdeal_surjective A B ω
+  obtain ⟨_, hfz⟩ := hle hz
+  exact hfz
+
+end TopologicalGeneration
 
 end ContinuousKaehlerDifferential
 
